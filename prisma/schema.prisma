@@ -8,54 +8,54 @@ datasource db {
 }
 
 model Merchant {
-  id         String   @id @default(uuid())
+  id         Int       @id @default(autoincrement())
   name       String
-  country    String          // ES, MX, BR...
-  pspId      String?  @map("psp_id")
-  iban       String?         // ES/UE
-  clabe      String?         // MX
-  status     String   @default("active")
+  country    String
+  pspId      String?   @map("psp_id")
+  iban       String?
+  clabe      String?
+  status     String    @default("active")
   charges    Charge[]
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
 
   @@index([country])
   @@map("merchants")
 }
 
 model Customer {
-  id        String   @id @default(uuid())
-  name      String
-  phone     String?
-  email     String?
-  notes     String?
-  charges   Charge[]
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id         Int       @id @default(autoincrement())
+  name       String
+  phone      String?
+  email      String?
+  notes      String?
+  charges    Charge[]
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
 
   @@map("customers")
 }
 
 model Charge {
-  id           String    @id @default(uuid())
-  merchantId   String    @map("merchant_id")
-  customerId   String?   @map("customer_id")
-  concept      String    @map("concepto")
-  amount       Decimal   @db.Decimal(12, 2) @map("importe")
-  currency     String    @map("moneda")
-  method       String    // SCTinst | SPEI | Pix | card
-  status       String    // pending | paid | expired | failed
-  expiresAt    DateTime? @map("vencimiento")
-  reference    String?   @map("referencia")
-  intentId     String?   @map("intent_id")
+  id             Int       @id @default(autoincrement())
+  merchantId     Int       @map("merchant_id")          // <- Int (FK)
+  customerId     Int?      @map("customer_id")          // <- Int? (FK)
+  concept        String    @map("concepto")
+  amount         Decimal   @db.Decimal(12, 2) @map("importe")
+  currency       String    @map("moneda")
+  method         String    // SCTinst | SPEI | Pix | card
+  status         String    // pending | paid | expired | failed
+  expiresAt      DateTime? @map("vencimiento")
+  reference      String?   @map("referencia")
+  intentId       String?   @map("intent_id")
 
-  merchant     Merchant  @relation(fields: [merchantId], references: [id])
-  customer     Customer? @relation(fields: [customerId], references: [id])
-  events       Event[]
+  merchant       Merchant  @relation(fields: [merchantId], references: [id])
+  customer       Customer? @relation(fields: [customerId], references: [id])
+  events         Event[]
   reconciliations Reconciliation[]
 
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
   @@index([merchantId, status])
   @@index([customerId])
@@ -64,8 +64,8 @@ model Charge {
 }
 
 model Event {
-  id        String   @id @default(uuid())
-  chargeId  String   @map("charge_id")
+  id        Int      @id @default(autoincrement())
+  chargeId  Int      @map("charge_id")                 // <- Int (FK)
   type      String   // created | sent | paid | expired | failed | refunded
   payload   Json?
   ts        DateTime @default(now())
@@ -77,8 +77,8 @@ model Event {
 }
 
 model Reconciliation {
-  id        String   @id @default(uuid())
-  chargeId  String   @map("charge_id")
+  id        Int      @id @default(autoincrement())
+  chargeId  Int      @map("charge_id")                 // <- Int (FK)
   bankRef   String?  @map("bank_ref")
   matched   Boolean  @default(false)
   ts        DateTime @default(now())
