@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { IssueInvoiceSchema } from '../schemas';
-import { prisma } from '../lib/prisma';
+import { IssueInvoiceSchema } from '../utils/schemas';
+import { prisma } from '../db/prisma';
 import { ensureInvoiceForCharge } from '../lib/invoicing';
 
 const router = Router();

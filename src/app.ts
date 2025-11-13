@@ -6,8 +6,8 @@ import { config } from './config/env';
 
 // Routers
 import healthRouter from './routes/health';
-import { rawBody as stripeRawBody, router as stripeWebhookRouter } from './routes/webhooks/stripe';
-import pspWebhookRouter from './routes/webhooks/psp';
+import { rawBody as stripeRawBody, router as stripeWebhookRouter } from './routes/stripe';
+import pspWebhookRouter from './routes/psp';
 import chargesRouter from './routes/charges';
 import quotesRouter from './routes/quotes';
 import invoiceRouter from './routes/invoice';

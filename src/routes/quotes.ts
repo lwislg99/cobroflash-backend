@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import axios from 'axios';
-import { prisma } from '../lib/prisma';
-import { CreateQuoteSchema, AcceptQuoteSchema } from '../schemas';
+import { prisma } from '../db/prisma';
+import { CreateQuoteSchema, AcceptQuoteSchema } from '../utils/schemas';
 import { calcTotal, makeReference, normalizePhone } from '../lib/utils';
 import { BASE_URL } from '../config/env';
 

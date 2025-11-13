@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { prisma } from '../lib/prisma';
-import { stripe } from '../lib/stripe';
+import { prisma } from '../db/prisma';
+import { stripe } from '../integrations/stripe';
 import { BASE_URL } from '../config/env';
 
 const router = Router();

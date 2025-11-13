@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { prisma } from '../lib/prisma';
+import { prisma } from '../db/prisma';
 import { esc } from '../lib/utils';
 import { BASE_URL } from '../config/env';
 

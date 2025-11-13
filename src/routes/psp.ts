@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { prisma } from '../../lib/prisma';
-import { PSPWebhookSchema } from '../../schemas';
-import { ensureInvoiceForCharge, emitToN8n } from '../../lib/invoicing';
-import { sendInvoiceEmail } from '../../lib/email';
-import { normalizePhone } from '../../lib/utils';
-import { config } from '../../config/env';
+import { prisma } from '../db/prisma';
+import { PSPWebhookSchema } from '../utils/schemas';
+import { ensureInvoiceForCharge, emitToN8n } from '../lib/invoicing';
+import { sendInvoiceEmail } from '../lib/email';
+import { normalizePhone } from '../lib/utils';
+import { config } from '../config/env';
 
 const router = Router();
 

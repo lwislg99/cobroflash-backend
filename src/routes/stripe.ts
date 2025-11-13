@@ -1,8 +1,8 @@
 import express from 'express';
 import axios from 'axios';
 import type StripeLib from 'stripe';
-import { stripe } from '../../lib/stripe';
-import { config, BASE_URL } from '../../config/env';
+import { stripe } from '../integrations/stripe';
+import { config, BASE_URL } from '../config/env';
 
 export const rawBody = express.raw({ type: 'application/json' });
 export const router = express.Router();

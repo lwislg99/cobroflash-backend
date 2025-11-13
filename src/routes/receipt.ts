@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import axios from 'axios';
-import { prisma } from '../lib/prisma';
+import { prisma } from '../db/prisma';
 import { esc } from '../lib/utils';
-import { stripe } from '../lib/stripe';
+import { stripe } from '../integrations/stripe';
 import { BASE_URL, config } from '../config/env';
 
 const router = Router();

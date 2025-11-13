@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import axios from 'axios';
-import { prisma } from '../lib/prisma';
+import { prisma } from '../db/prisma';
 import { ensureInvoiceForCharge } from '../lib/invoicing';
 import { sendInvoiceEmail } from '../lib/email';
 import { BASE_URL } from '../config/env';
