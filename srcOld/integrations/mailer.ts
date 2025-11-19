@@ -1,9 +1,8 @@
-// srcNew/integrations/mailer.ts
 import nodemailer from 'nodemailer';
 import path from 'path';
 import fs from 'fs';
-import { config } from '../core/config/env';
-import { outboxDir } from '../core/storage/dirs';
+import { config } from '../config/env';
+import { outboxDir } from '../lib/dirs';
 
 export function createMailer() {
   if (config.SMTP_URL) {

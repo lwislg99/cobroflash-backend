@@ -1,20 +1,26 @@
+// srcNew/app.ts
 import express from 'express';
-import path from 'path';
-import { invoicesDir, outboxDir } from './lib/dirs';
-import { jsonError } from './middlewares/jsonError';
-import { config } from './config/env';
+import path from 'path'; // si no lo usas en ningún sitio, puedes borrar este import
 
-// Routers
-import healthRouter from './routes/health';
-import { rawBody as stripeRawBody, router as stripeWebhookRouter } from './routes/stripe';
-import pspWebhookRouter from './routes/psp';
-import chargesRouter from './routes/charges';
-import quotesRouter from './routes/quotes';
-import invoiceRouter from './routes/invoice';
-import receiptRouter from './routes/receipt';
-import payBankRouter from './routes/payBank';
-import payCardRouter from './routes/payCard';
-import devRouter from './routes/dev';
+import { invoicesDir, outboxDir } from './core/storage/dirs';
+import { jsonError } from './core/http/jsonError';
+
+// Routers (módulos)
+import healthRouter from './modules/system/app/routes/health.routes';
+import devRouter from './modules/system/app/routes/dev.routes';
+
+import {
+  rawBody as stripeRawBody,
+  router as stripeWebhookRouter,
+} from './modules/billing/app/routes/stripe.routes';
+import pspWebhookRouter from './modules/billing/app/routes/psp.routes';
+import chargesRouter from './modules/billing/app/routes/charges.routes';
+import receiptRouter from './modules/billing/app/routes/receipt.routes';
+import payBankRouter from './modules/billing/app/routes/payBank.routes';
+import payCardRouter from './modules/billing/app/routes/payCard.routes';
+
+import quotesRouter from './modules/quotes/app/routes/quotes.routes';
+import invoiceRouter from './modules/invoicing/app/routes/invoice.routes';
 
 export const app = express();
 
