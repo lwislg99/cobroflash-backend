@@ -8,18 +8,49 @@ datasource db {
 }
 
 model Merchant {
-  id        Int       @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
+
+  // Nombre comercial que usas hoy
   name      String
+
+  // 🔹 NUEVOS CAMPOS FISCALES / CONFIG 🔹
+  // Razón social legal de la empresa: "Clínica Sonrisa S.L."
+  legalName       String?  @map("legal_name")
+
+  // NIF/CIF: "B12345678", etc.
+  taxId           String?  @map("tax_id")
+
+  // Dirección fiscal opcional
+  address         String?  @map("address")
+
+  // Moneda por defecto para este merchant (EUR por defecto)
+  defaultCurrency String   @default("EUR") @map("default_currency")
+
+  // Prefijo de la serie de facturas: "CF", "TAT", etc.
+  invoiceSeriesPrefix String @default("CF") @map("invoice_series_prefix")
+
+  // Siguiente número de factura (se irá incrementando)
+  nextInvoiceNumber   Int    @default(1) @map("next_invoice_number")
+
+  // Logo opcional para usar en PDF/recibo
+  logoUrl        String? @map("logo_url")
+
+  // Teléfono principal de WhatsApp del negocio (si quieres usarlo luego)
+  whatsappPhone  String? @map("whatsapp_phone")
+
+  // 🔹 CAMPOS QUE YA TENÍAS 🔹
   country   String
   pspId     String?   @map("psp_id")
   iban      String?
   clabe     String?
   status    String    @default("active")
+
   charges   Charge[]
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
   Quote     Quote[]
   Invoice   Invoice[]
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
 
   @@index([country])
   @@map("merchants")
@@ -61,12 +92,15 @@ model Charge {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   Quote     Quote[]
+  invoices  Invoice[]
 
   @@index([merchantId, status])
   @@index([customerId])
   @@index([status, expiresAt])
   @@map("charges")
 }
+
+
 
 model Event {
   id       Int      @id @default(autoincrement())
@@ -98,12 +132,40 @@ model Quote {
   id         Int       @id @default(autoincrement())
   merchantId Int
   customerId Int
-  status     String    @default("draft") // draft|sent|accepted|rejected
+
+  // draft | sent | accepted | rejected
+  status     String    @default("draft")
+
   total      Decimal   @db.Decimal(12, 2)
   currency   String    @db.VarChar(3)
+
+  // JSON con las líneas del presupuesto
   lines      Json
+
+  // ✅ ya tenías esto: momento en que se aceptó (si se acepta)
   acceptedAt DateTime?
+
+  // 🔹 NUEVOS CAMPOS PARA EL NUEVO FLUJO 🔹
+
+  // Condiciones de pago visibles en PDF (ej: "50% al aceptar, 50% al finalizar")
+  paymentTerms    String?
+
+  // Momento en que el presupuesto se rechaza
+  rejectedAt      DateTime?
+
+  // Canal por el que se tomó la decisión (whatsapp, backoffice…)
+  decisionChannel String?
+
+  // Comentario libre (tanto en aceptación como rechazo)
+  decisionComment String?
+
+  // Motivo corto de rechazo (ej: "precio alto", "no lo necesita")
+  rejectionReason String?
+
+  // Evidencias (payload de WhatsApp, IP, etc.)
   evidence   Json?
+
+  // Relación con un charge (legacy, para no romper nada antiguo)
   chargeId   Int?
 
   // Relaciones
@@ -123,17 +185,26 @@ model Invoice {
   merchantId Int
   customerId Int
   quoteId    Int?
+  chargeId   Int?      @map("charge_id")
+
   number     String   @unique
   total      Decimal  @db.Decimal(12, 2)
   currency   String   @db.VarChar(3)
   pdfUrl     String
   qrData     String
   registerId String?
-  createdAt  DateTime @default(now())
+
+  // 🔹 NUEVOS CAMPOS DE ESTADO DE PAGO
+  status        String    @default("pending") @map("status")          // pending | paid | expired
+  paidAt        DateTime? @map("paid_at")
+  clientComment String?   @map("client_comment")
+
+    createdAt  DateTime @default(now())
 
   merchant Merchant @relation(fields: [merchantId], references: [id])
   customer Customer @relation(fields: [customerId], references: [id])
   quote    Quote?   @relation(fields: [quoteId], references: [id])
+  charge   Charge?  @relation(fields: [chargeId], references: [id])
 
   @@map("invoices")
 }

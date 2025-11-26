@@ -1,0 +1,850 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  background: #f4f5fb;
+  color: #111827;
+}
+
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+
+.sidebar {
+  width: 240px;
+  background: #0f172a;
+  color: #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 12px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 8px;
+}
+
+.logo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #22c55e, #22d3ee);
+  font-weight: 700;
+  font-size: 14px;
+  color: #0b1120;
+}
+
+.logo-text {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.menu-item {
+  border: none;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  background: transparent;
+  color: #e5e7eb;
+  cursor: pointer;
+}
+
+.menu-item:hover:not(:disabled) {
+  background: #111827;
+}
+
+.menu-item.active {
+  background: #1f2937;
+  font-weight: 600;
+}
+
+.menu-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Main */
+
+.main {
+  flex: 1;
+  padding: 20px 24px;
+}
+
+.main-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.main-header h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.badge {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+/* View container */
+
+.view-container {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+/* Clientes view */
+
+.customers-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.customers-search {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+}
+
+.customers-search input {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+}
+
+.btn {
+  border-radius: 6px;
+  border: none;
+  padding: 6px 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: #22c55e;
+  color: #052e16;
+  font-weight: 600;
+}
+
+.btn-secondary {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+/* Tabla clientes */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table thead {
+  background: #f9fafb;
+}
+
+.table th,
+.table td {
+  padding: 8px 6px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+.table tbody tr:hover {
+  background: #f3f4f6;
+}
+
+/* Form nuevo cliente */
+
+.customer-form {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.field input,
+.field textarea {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.alert {
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.alert.success {
+  color: #047857;
+}
+
+.alert.error {
+  color: #b91c1c;
+}
+
+/* -------- Presupuestos (Quotes) -------- */
+
+.quotes-header {
+  margin-bottom: 12px;
+}
+
+.quotes-desc {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.quote-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 12px;
+}
+
+.inline-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.radio-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.inline-checkbox {
+  margin-top: 4px;
+}
+
+.quote-result {
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+  font-size: 14px;
+}
+
+.quote-result h3 {
+  margin: 0 0 4px 0;
+  font-size: 15px;
+}
+
+.quote-result ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+
+
+
+
+
+
+/* -------- Cards genéricas -------- */
+
+.card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+}
+
+/* Inputs un poco más premium */
+
+.field input,
+.field textarea,
+.field select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus {
+  outline: none;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.2);
+}
+
+/* Botones más redondeados */
+
+.btn {
+  border-radius: 9999px;
+  border: none;
+  padding: 7px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* -------- Modal genérico -------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+}
+
+.modal {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px 20px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.35);
+  animation: modal-in 0.18s ease-out;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.modal-close {
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modal-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* -------- Clientes: tabla dentro de card -------- */
+
+.view-container {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.customers-card {
+  margin-top: 8px;
+}
+
+/* -------- Presupuestos (Quotes) – layout premium limpio -------- */
+
+/* Layout principal Presupuestos */
+.quotes-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1.1fr);
+  gap: 16px;
+  align-items: flex-start;
+}
+
+@media (max-width: 1024px) {
+  .quotes-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Cards izquierda / derecha */
+.card.quotes-left-card,
+.card.quotes-right-card {
+  padding: 16px 18px;
+}
+
+/* -------- Encabezado de la card izquierda -------- */
+
+.quotes-header-block {
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.quotes-header-block .quotes-title {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.quotes-header-block .quotes-desc {
+  margin: 0;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.quotes-header-block .quotes-merchant-info {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* -------- Card izquierda: contenido -------- */
+
+.quotes-left-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+/* Bloques internos (datos cliente, líneas, totales, acciones) */
+.quote-block {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.quote-block-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 6px 0;
+}
+
+/* Fila de formulario reutilizable (3 columnas en desktop) */
+.quote-form-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .quote-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Checkbox “Enviar por WhatsApp…” */
+.inline-checkbox {
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.inline-checkbox label {
+  font-size: 13px;
+  color: #374151;
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+/* Cabecera líneas + botón añadir */
+.quote-lines-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+/* Tabla de líneas dentro del formulario */
+.quote-lines-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.quote-lines-table th,
+.quote-lines-table td {
+  font-size: 13px;
+  vertical-align: middle;
+  padding: 6px 4px;
+}
+
+.quote-lines-table input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 13px;
+}
+
+/* Botón icono (papelera) */
+.btn-icon {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Totales (bloque gris) */
+.quote-totals {
+  background: #f3f4f6;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.quote-totals div {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.quote-totals .quote-total-final {
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+/* Acciones (botones abajo) */
+.quote-block-actions .form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+/* -------- Panel derecho: preview + estado -------- */
+
+.quotes-right-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+.quote-preview-title {
+  margin-top: 0;
+  margin-bottom: 6px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Caja de vista previa del presupuesto */
+.quote-preview {
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  padding: 12px 14px;
+  background: #f9fafb;
+  max-height: 420px;
+  overflow: auto;
+  font-size: 13px;
+}
+
+/* Encabezado de empresa en la preview */
+.preview-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.preview-logo {
+  max-height: 40px;
+  max-width: 120px;
+  object-fit: contain;
+}
+
+.preview-merchant-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.preview-merchant-name {
+  font-weight: 600;
+}
+
+.preview-merchant-line {
+  color: #4b5563;
+}
+
+/* Cliente en la preview */
+.preview-client-block {
+  margin: 4px 0 8px 0;
+}
+
+.preview-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+  margin-bottom: 2px;
+}
+
+/* Separadores */
+.preview-separator {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 6px 0;
+}
+
+/* Tabla de líneas en la preview */
+.preview-lines-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 4px;
+}
+
+.preview-lines-table th,
+.preview-lines-table td {
+  padding: 4px 2px;
+  font-size: 12px;
+}
+
+.preview-lines-table thead th {
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.preview-lines-table tbody tr:nth-child(even) {
+  background: #f3f4f6;
+}
+
+/* Totales en la preview */
+.preview-totals-block {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.preview-total-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.preview-total-row-main strong {
+  font-size: 14px;
+}
+
+/* Pie de la preview */
+.preview-footer {
+  margin-top: 10px;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+/* -------- Estado del presupuesto (abajo derecha) -------- */
+
+.quote-status-box {
+  margin-top: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  font-size: 13px;
+}
+
+.quote-status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.status-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-pill-accepted {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.quote-status-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+
+
+
+/* --- Submenú Presupuestos --- */
+
+.menu-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.submenu {
+  margin-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.submenu-item {
+  border: none;
+  text-align: left;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.submenu-item:hover:not(:disabled) {
+  background: #111827;
+  color: #e5e7eb;
+}
+
+.submenu-item.active {
+  background: #1f2937;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+/* Cuando un subitem está activo, marcamos también el botón padre */
+.menu-group .menu-item.active {
+  background: #1f2937;
+  font-weight: 600;
+}
+
+
+/* ===== Sidebar: grupos con submenú ===== */
+
+.menu-group {
+  margin-top: 4px;
+}
+
+.menu-item-parent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.menu-chevron {
+  font-size: 10px;
+  opacity: 0.7;
+  transition: transform 0.15s ease;
+}
+
+/* Subitems plegados por defecto */
+.menu-subitems {
+  margin-left: 16px;
+  margin-top: 4px;
+  display: none;
+}
+
+/* Cuando el grupo está abierto, mostramos el submenú */
+.menu-group.open .menu-subitems {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Rotar flechita cuando está abierto */
+.menu-group.open .menu-chevron {
+  transform: rotate(180deg);
+}
+
+/* Subitems algo más pequeños visualmente */
+.menu-subitem {
+  font-size: 13px;
+  padding-left: 18px;
+}
+
+
+
+.status-pill-rejected {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.status-pill-pending {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.status-pill-draft {
+  background: #f9fafb;
+  color: #6b7280;
+}

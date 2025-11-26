@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>CobroFlash – Panel Admin interno</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        --bg: #0f172a;
+        --bg-soft: #111827;
+        --bg-softer: #020617;
+        --card: #020617;
+        --card-soft: #020617;
+        --accent: #22c55e;
+        --accent-soft: rgba(34, 197, 94, 0.15);
+        --accent-strong: #16a34a;
+        --border: #1f2937;
+        --text: #e5e7eb;
+        --text-soft: #9ca3af;
+        --danger: #ef4444;
+        --warning: #facc15;
+        --muted: #6b7280;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+          sans-serif;
+        background: radial-gradient(circle at top, #111827, #020617 55%);
+        color: var(--text);
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        font-weight: 600;
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      .page {
+        min-height: 100vh;
+        padding: 16px 16px 32px;
+      }
+
+      .page-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .page-title {
+        font-size: 24px;
+      }
+
+      .page-subtitle {
+        font-size: 13px;
+        color: var(--text-soft);
+      }
+
+      .badge {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(15, 23, 42, 0.9);
+        color: var(--muted);
+      }
+
+      .badge.badge-green {
+        border-color: rgba(34, 197, 94, 0.35);
+        color: var(--accent);
+        background: rgba(22, 163, 74, 0.1);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.5fr);
+        gap: 16px;
+      }
+
+      @media (max-width: 1024px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      .card {
+        background: rgba(15, 23, 42, 0.95);
+        border-radius: 12px;
+        border: 1px solid rgba(31, 41, 55, 0.9);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.65);
+        padding: 16px 16px 14px;
+        backdrop-filter: blur(18px);
+      }
+
+      .card-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+
+      .card-title {
+        font-size: 16px;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: var(--text-soft);
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 12px;
+        margin-bottom: 8px;
+      }
+
+      .form-row {
+        margin-bottom: 8px;
+      }
+
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--text-soft);
+        margin-bottom: 3px;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: 1px solid #374151;
+        background: #020617;
+        color: var(--text);
+        font-size: 13px;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: 1px solid var(--accent);
+        border-color: var(--accent);
+      }
+
+      textarea {
+        min-height: 70px;
+        resize: vertical;
+      }
+
+      .btn-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 6px;
+      }
+
+      button {
+        border-radius: 999px;
+        padding: 6px 14px;
+        border: none;
+        font-size: 13px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--accent);
+        color: #022c22;
+        font-weight: 500;
+      }
+
+      button.btn-secondary {
+        background: transparent;
+        border: 1px solid #4b5563;
+        color: var(--text-soft);
+      }
+
+      button.btn-ghost {
+        background: transparent;
+        border: none;
+        padding-inline: 8px;
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+
+      small.helper {
+        display: block;
+        margin-top: 2px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .status {
+        margin-top: 6px;
+        font-size: 11px;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: var(--muted);
+      }
+
+      .status.ok .status-dot {
+        background: var(--accent);
+      }
+
+      .status.error .status-dot {
+        background: var(--danger);
+      }
+
+      .status.warn .status-dot {
+        background: var(--warning);
+      }
+
+      pre {
+        background: #020617;
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 11px;
+        color: #e5e7eb;
+        border: 1px solid #1f2937;
+        overflow: auto;
+      }
+
+      .two-cols-vertical {
+        display: grid;
+        grid-template-rows: auto auto;
+        gap: 12px;
+      }
+
+      .customers-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+        font-size: 12px;
+        color: var(--text-soft);
+      }
+
+      .pill {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #020617;
+        border: 1px solid #374151;
+        color: var(--muted);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #020617;
+      }
+
+      th,
+      td {
+        padding: 6px 8px;
+        border-bottom: 1px solid #111827;
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      th {
+        font-weight: 500;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      tbody tr:nth-child(even) {
+        background: rgba(15, 23, 42, 0.6);
+      }
+
+      tbody tr:hover {
+        background: rgba(30, 64, 175, 0.25);
+      }
+
+      .col-id {
+        width: 36px;
+      }
+
+      .col-name {
+        width: 180px;
+      }
+
+      .col-phone {
+        width: 120px;
+      }
+
+      .col-email {
+        width: 190px;
+      }
+
+      .col-notes {
+        width: 220px;
+      }
+
+      .col-created {
+        width: 120px;
+      }
+
+      .quick-quote-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+        gap: 10px;
+      }
+
+      @media (max-width: 900px) {
+        .quick-quote-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      .result-box {
+        border-radius: 8px;
+        border: 1px dashed #374151;
+        background: #020617;
+        padding: 8px 10px;
+        font-size: 12px;
+      }
+
+      .result-box.empty {
+        color: var(--muted);
+        font-style: italic;
+      }
+
+      .link-list {
+        margin-top: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 12px;
+      }
+
+      .link-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .link-row code {
+        font-size: 11px;
+        background: #020617;
+        padding: 2px 4px;
+        border-radius: 4px;
+        border: 1px solid #1f2937;
+        overflow-x: auto;
+      }
+
+      .tag {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 1px 6px;
+        border-radius: 999px;
+        border: 1px solid #4b5563;
+        color: #9ca3af;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="page-header">
+        <div>
+          <div class="page-title">CobroFlash – Panel Admin interno</div>
+          <div class="page-subtitle">
+            Configura tu negocio y gestiona clientes finales para enviarles
+            presupuestos y cobros por WhatsApp.
+          </div>
+        </div>
+        <div class="badge badge-green">SOLO USO INTERNO DEMO</div>
+      </header>
+
+      <main class="layout">
+        <!-- Columna izquierda: perfil merchant + JSON debug -->
+        <section class="two-cols-vertical">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Perfil del comercio</h2>
+                <p class="card-subtitle">
+                  Estos datos se usarán en facturas y mensajes al cliente final.
+                </p>
+              </div>
+              <span class="tag">Merchant</span>
+            </div>
+
+            <form id="merchant-form">
+              <div class="form-grid">
+                <div class="form-row">
+                  <label for="merchant-name">Nombre comercial</label>
+                  <input id="merchant-name" name="name" />
+                </div>
+
+                <div class="form-row">
+                  <label for="merchant-legalName">Razón social</label>
+                  <input id="merchant-legalName" name="legalName" />
+                </div>
+
+                <div class="form-row">
+                  <label for="merchant-taxId">NIF / CIF</label>
+                  <input id="merchant-taxId" name="taxId" />
+                </div>
+
+                <div class="form-row">
+                  <label for="merchant-defaultCurrency">Moneda por defecto</label>
+                  <select id="merchant-defaultCurrency" name="defaultCurrency">
+                    <option value="EUR">EUR</option>
+                    <option value="MXN">MXN</option>
+                    <option value="BRL">BRL</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label for="merchant-address">Dirección fiscal</label>
+                <input id="merchant-address" name="address" />
+              </div>
+
+              <div class="form-grid">
+                <div class="form-row">
+                  <label for="merchant-invoiceSeriesPrefix">Serie factura (prefijo)</label>
+                  <input
+                    id="merchant-invoiceSeriesPrefix"
+                    name="invoiceSeriesPrefix"
+                    placeholder="CF, BARB, CLIN, ..."
+                  />
+                </div>
+
+                <div class="form-row">
+                  <label for="merchant-whatsappPhone">WhatsApp negocio</label>
+                  <input
+                    id="merchant-whatsappPhone"
+                    name="whatsappPhone"
+                    placeholder="34600000000"
+                  />
+                  <small class="helper">
+                    Se usará como remitente por defecto en los enlaces de pago.
+                  </small>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label for="merchant-logoUrl">Logo (URL opcional)</label>
+                <input
+                  id="merchant-logoUrl"
+                  name="logoUrl"
+                  placeholder="https://tudominio.com/logo.png"
+                />
+              </div>
+
+              <div class="btn-row">
+                <button type="submit" id="btn-save-merchant">
+                  Guardar cambios
+                </button>
+                <button
+                  type="button"
+                  id="btn-reset-merchant"
+                  class="btn-secondary"
+                >
+                  Deshacer cambios
+                </button>
+              </div>
+
+              <div id="merchant-status" class="status">
+                <div class="status-dot"></div>
+                <span>Cambios no guardados</span>
+              </div>
+            </form>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">JSON del merchant (debug)</h2>
+                <p class="card-subtitle">
+                  Vista rápida del objeto que devuelve
+                  <code>/admin/merchant</code>.
+                </p>
+              </div>
+            </div>
+            <pre id="merchant-json">{}</pre>
+          </div>
+        </section>
+
+        <!-- Columna derecha: Quick Quote + Clientes -->
+        <section class="two-cols-vertical">
+          <!-- Quick quote -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Crear presupuesto rápido</h2>
+                <p class="card-subtitle">
+                  Elige un cliente final y genera un presupuesto + link de pago
+                  en un solo paso.
+                </p>
+              </div>
+              <span class="tag">Quote &amp; Charge</span>
+            </div>
+
+            <div class="quick-quote-grid">
+              <form id="quick-quote-form">
+                <div class="form-row">
+                  <label for="qq-customer">Cliente</label>
+                  <select id="qq-customer" required>
+                    <option value="">Selecciona un cliente…</option>
+                  </select>
+                  <small class="helper">
+                    La lista viene de <code>/admin/customers</code>.
+                  </small>
+                </div>
+
+                <div class="form-row">
+                  <label for="qq-concept">Concepto</label>
+                  <input
+                    id="qq-concept"
+                    placeholder="Corte de pelo + barba, revisión aire acondicionado…"
+                    required
+                  />
+                </div>
+
+                <div class="form-grid">
+                  <div class="form-row">
+                    <label for="qq-amount">Importe (sin IVA)</label>
+                    <input
+                      id="qq-amount"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="25.00"
+                      required
+                    />
+                  </div>
+                  <div class="form-row">
+                    <label for="qq-tax">IVA (%)</label>
+                    <input
+                      id="qq-tax"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      placeholder="21"
+                    />
+                  </div>
+                </div>
+
+                <div class="form-grid">
+                  <div class="form-row">
+                    <label for="qq-method">Método preferido</label>
+                    <select id="qq-method">
+                      <option value="bank">Pay-by-bank (SCT Inst / SPEI / Pix)</option>
+                      <option value="card">Tarjeta (Stripe)</option>
+                    </select>
+                  </div>
+                  <div class="form-row">
+                    <label>&nbsp;</label>
+                    <label style="display: flex; gap: 6px; font-size: 12px">
+                      <input
+                        type="checkbox"
+                        id="qq-send"
+                        style="width: 14px; margin-top: 2px"
+                      />
+                      Enviar por WhatsApp automáticamente
+                      <span style="color: var(--muted);">
+                        (usa el teléfono del cliente)
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="btn-row">
+                  <button type="submit" id="qq-btn">
+                    Generar presupuesto + cobro
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-ghost"
+                    id="qq-reset-btn"
+                  >
+                    Limpiar resultado
+                  </button>
+                </div>
+
+                <div id="qq-status" class="status">
+                  <div class="status-dot"></div>
+                  <span>Rellena los campos y genera un presupuesto.</span>
+                </div>
+              </form>
+
+              <div class="result-box empty" id="qq-result">
+                No hay ningún presupuesto generado todavía.
+              </div>
+            </div>
+          </div>
+
+          <!-- Clientes -->
+          <div class="card">
+            <div class="customers-header">
+              <div>
+                <strong>Clientes</strong>
+                <div style="font-size: 11px; color: var(--muted);">
+                  Personas a las que se envían presupuestos y enlaces de pago.
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px">
+                <button
+                  id="btn-reload-customers"
+                  type="button"
+                  class="btn-secondary"
+                  style="padding-inline: 10px; font-size: 12px"
+                >
+                  Recargar lista
+                </button>
+                <span class="pill" id="customers-count">Cargando…</span>
+              </div>
+            </div>
+
+            <div style="max-height: 420px; overflow: auto; border-radius: 8px">
+              <table>
+                <thead>
+                  <tr>
+                    <th class="col-id">ID</th>
+                    <th class="col-name">Nombre</th>
+                    <th class="col-phone">Teléfono</th>
+                    <th class="col-email">Email</th>
+                    <th class="col-notes">Notas</th>
+                    <th class="col-created">Creado</th>
+                  </tr>
+                </thead>
+                <tbody id="customers-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      let currentMerchant = null;
+      let customersCache = [];
+
+      // ---------- helpers ----------
+      function formatDateShort(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        return d.toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+      }
+
+      function setStatus(el, type, text) {
+        el.classList.remove('ok', 'error', 'warn');
+        if (type) el.classList.add(type);
+        const span = el.querySelector('span');
+        if (span) span.textContent = text;
+      }
+
+      // ---------- merchant ----------
+      async function loadMerchant() {
+        try {
+          const res = await fetch('/admin/merchant');
+          if (!res.ok) {
+            throw new Error('HTTP ' + res.status);
+          }
+          const data = await res.json();
+          currentMerchant = data;
+
+          document.getElementById('merchant-name').value = data.name || '';
+          document.getElementById('merchant-legalName').value =
+            data.legalName || '';
+          document.getElementById('merchant-taxId').value = data.taxId || '';
+          document.getElementById('merchant-address').value =
+            data.address || '';
+          document.getElementById('merchant-defaultCurrency').value =
+            data.defaultCurrency || 'EUR';
+          document.getElementById('merchant-invoiceSeriesPrefix').value =
+            data.invoiceSeriesPrefix || '';
+          document.getElementById('merchant-whatsappPhone').value =
+            data.whatsappPhone || '';
+          document.getElementById('merchant-logoUrl').value =
+            data.logoUrl || '';
+
+          document.getElementById('merchant-json').textContent = JSON.stringify(
+            data,
+            null,
+            2,
+          );
+
+          setStatus(
+            document.getElementById('merchant-status'),
+            'ok',
+            'Perfil cargado correctamente',
+          );
+        } catch (err) {
+          console.error(err);
+          setStatus(
+            document.getElementById('merchant-status'),
+            'error',
+            'Error al cargar el merchant',
+          );
+        }
+      }
+
+      async function saveMerchant(e) {
+        e.preventDefault();
+        const statusEl = document.getElementById('merchant-status');
+        setStatus(statusEl, '', 'Guardando…');
+
+        const payload = {
+          name: document.getElementById('merchant-name').value.trim(),
+          legalName: document
+            .getElementById('merchant-legalName')
+            .value.trim(),
+          taxId: document.getElementById('merchant-taxId').value.trim(),
+          address: document.getElementById('merchant-address').value.trim(),
+          defaultCurrency: document.getElementById(
+            'merchant-defaultCurrency',
+          ).value,
+          invoiceSeriesPrefix: document
+            .getElementById('merchant-invoiceSeriesPrefix')
+            .value.trim(),
+          whatsappPhone: document
+            .getElementById('merchant-whatsappPhone')
+            .value.trim(),
+          logoUrl: document.getElementById('merchant-logoUrl').value.trim(),
+        };
+
+        try {
+          const res = await fetch('/admin/merchant', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const updated = await res.json();
+          currentMerchant = updated;
+          document.getElementById('merchant-json').textContent =
+            JSON.stringify(updated, null, 2);
+          setStatus(statusEl, 'ok', 'Cambios guardados correctamente');
+        } catch (err) {
+          console.error(err);
+          setStatus(
+            statusEl,
+            'error',
+            'Error al guardar cambios del merchant',
+          );
+        }
+      }
+
+      // ---------- customers ----------
+      async function loadCustomers() {
+        const countEl = document.getElementById('customers-count');
+        countEl.textContent = 'Cargando…';
+        try {
+          const res = await fetch('/admin/customers');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          customersCache = data;
+          countEl.textContent = `Clientes cargados (${data.length})`;
+
+          const tbody = document.getElementById('customers-tbody');
+          tbody.innerHTML = '';
+          data.forEach((c) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td class="col-id">${c.id}</td>
+              <td class="col-name">${c.name || ''}</td>
+              <td class="col-phone">${c.phone || ''}</td>
+              <td class="col-email">${c.email || ''}</td>
+              <td class="col-notes">${c.notes || ''}</td>
+              <td class="col-created">${formatDateShort(c.createdAt)}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+
+          // rellenar select de quick quote
+          const select = document.getElementById('qq-customer');
+          const current = select.value;
+          select.innerHTML =
+            '<option value=\"\">Selecciona un cliente…</option>';
+          data.forEach((c) => {
+            const opt = document.createElement('option');
+            opt.value = String(c.id);
+            opt.textContent = `${c.name} (${c.phone || c.email || 'sin contacto'})`;
+            if (String(c.id) === current) opt.selected = true;
+            select.appendChild(opt);
+          });
+        } catch (err) {
+          console.error(err);
+          countEl.textContent = 'Error al cargar clientes';
+        }
+      }
+
+      // ---------- quick quote ----------
+      async function handleQuickQuote(e) {
+        e.preventDefault();
+        const statusEl = document.getElementById('qq-status');
+        const resultEl = document.getElementById('qq-result');
+        const btn = document.getElementById('qq-btn');
+
+        const customerId = document.getElementById('qq-customer').value;
+        const concept = document.getElementById('qq-concept').value.trim();
+        const amountStr = document.getElementById('qq-amount').value;
+        const taxStr = document.getElementById('qq-tax').value;
+        const method = document.getElementById('qq-method').value;
+        const sendNow = document.getElementById('qq-send').checked;
+
+        const selectedCustomer = customersCache.find(
+            (c) => String(c.id) === String(customerId),
+        );
+        const overrideTo = selectedCustomer?.phone || null;
+
+
+        if (!customerId) {
+          setStatus(statusEl, 'warn', 'Selecciona un cliente primero.');
+          return;
+        }
+        if (!concept || !amountStr) {
+          setStatus(
+            statusEl,
+            'warn',
+            'Concepto e importe son obligatorios.',
+          );
+          return;
+        }
+
+        const amount = parseFloat(amountStr);
+        if (Number.isNaN(amount) || amount <= 0) {
+          setStatus(
+            statusEl,
+            'warn',
+            'El importe debe ser un número mayor que 0.',
+          );
+          return;
+        }
+
+        const taxPercent = parseFloat(taxStr || '0');
+        const taxDecimal = Number.isNaN(taxPercent)
+          ? 0
+          : Math.max(0, taxPercent) / 100;
+
+        const merchantId = currentMerchant?.id || 1;
+        const currency =
+          currentMerchant?.defaultCurrency || 'EUR';
+
+        btn.disabled = true;
+        setStatus(statusEl, '', 'Creando presupuesto…');
+        resultEl.classList.remove('empty');
+        resultEl.textContent = '';
+
+        try {
+          // 1) /quote/create
+          const createRes = await fetch('/quote/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              merchant_id: merchantId,
+              customer_id: Number(customerId),
+              currency,
+              lines: [
+                {
+                  concept,
+                  qty: 1,
+                  price: amount,
+                  tax: taxDecimal,
+                },
+              ],
+            }),
+          });
+          if (!createRes.ok) {
+            const errBody = await createRes.text();
+            throw new Error(
+              'Error en /quote/create: ' +
+                createRes.status +
+                ' ' +
+                errBody,
+            );
+          }
+          const created = await createRes.json();
+
+          setStatus(
+            statusEl,
+            '',
+            `Presupuesto #${created.id} creado, aceptando…`,
+          );
+
+          // 2) /quote/:id/accept
+        const acceptRes = await fetch(`/quote/${created.id}/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+        method_preference: method,
+        send: !!sendNow,
+        // si tenemos teléfono y el checkbox está marcado, lo mandamos como override
+        to: sendNow && overrideTo ? overrideTo : undefined,
+            }),
+        });
+          if (!acceptRes.ok) {
+            const errBody = await acceptRes.text();
+            throw new Error(
+              'Error en /quote/:id/accept: ' +
+                acceptRes.status +
+                ' ' +
+                errBody,
+            );
+          }
+          const accepted = await acceptRes.json();
+
+          setStatus(
+            statusEl,
+            'ok',
+            sendNow
+              ? `Presupuesto aceptado y cobro enviado por WhatsApp (cargo #${accepted.charge_id}).`
+              : `Presupuesto aceptado. Link de cobro generado (cargo #${accepted.charge_id}).`,
+          );
+
+          resultEl.innerHTML = `
+            <div><strong>Presupuesto #${accepted.quote_id}</strong> aceptado para el cliente ID ${customerId}.</div>
+            <div style="margin-top:4px">
+              <span style="color:var(--muted)">Estado:</span> ${
+                accepted.status || 'accepted'
+              }
+            </div>
+            <div class="link-list">
+              <div class="link-row">
+                <strong>Pay-by-bank:</strong>
+                <a href="${accepted.paybank_url}" target="_blank">Abrir link</a>
+              </div>
+              <div class="link-row">
+                <code>${accepted.paybank_url}</code>
+              </div>
+              <div class="link-row" style="margin-top:4px">
+                <strong>Tarjeta (Stripe):</strong>
+                <a href="${accepted.paycard_url}" target="_blank">Abrir link</a>
+              </div>
+              <div class="link-row">
+                <code>${accepted.paycard_url}</code>
+              </div>
+            </div>
+          `;
+        } catch (err) {
+          console.error(err);
+          setStatus(
+            statusEl,
+            'error',
+            'Error creando el presupuesto/cobro. Revisa la consola.',
+          );
+          resultEl.classList.remove('empty');
+          resultEl.textContent = String(err);
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      function resetQuickQuoteResult() {
+        const resultEl = document.getElementById('qq-result');
+        resultEl.classList.add('empty');
+        resultEl.textContent =
+          'No hay ningún presupuesto generado todavía.';
+        setStatus(
+          document.getElementById('qq-status'),
+          '',
+          'Rellena los campos y genera un presupuesto.',
+        );
+      }
+
+      // ---------- init ----------
+      document.addEventListener('DOMContentLoaded', () => {
+        loadMerchant();
+        loadCustomers();
+
+        document
+          .getElementById('merchant-form')
+          .addEventListener('submit', saveMerchant);
+        document
+          .getElementById('btn-reset-merchant')
+          .addEventListener('click', (e) => {
+            e.preventDefault();
+            loadMerchant();
+          });
+
+        document
+          .getElementById('btn-reload-customers')
+          .addEventListener('click', () => loadCustomers());
+
+        document
+          .getElementById('quick-quote-form')
+          .addEventListener('submit', handleQuickQuote);
+
+        document
+          .getElementById('qq-reset-btn')
+          .addEventListener('click', resetQuickQuoteResult);
+      });
+    </script>
+  </body>
+</html>

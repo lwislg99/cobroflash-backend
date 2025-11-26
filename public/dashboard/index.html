@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>PresuFácil · BackOffice</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="logo">
+        <span class="logo-mark">PF</span>
+        <span class="logo-text">PresuFácil</span>
+      </div>
+
+      <nav class="menu">
+        <button class="menu-item" data-view="customers">
+          Clientes
+        </button>
+      
+        <!-- Grupo Presupuestos con submenú -->
+        <div class="menu-group" data-group="quotes">
+          <button class="menu-item menu-item-parent" type="button">
+            <span>Presupuestos</span>
+            <span class="menu-chevron">▾</span>
+          </button>
+          <div class="menu-subitems">
+            <button class="menu-item menu-subitem" data-view="quotes-list">
+              Historial
+            </button>
+            <button class="menu-item menu-subitem" data-view="quotes-new">
+              Crear presupuesto
+            </button>
+          </div>
+        </div>
+      
+        <button class="menu-item" data-view="charges" disabled>
+          Cobros
+        </button>
+        <button class="menu-item" data-view="invoices">
+          Facturas
+        </button>
+        <button class="menu-item" data-view="settings">
+          Configuración
+        </button>
+      </nav>
+           
+    </aside>
+
+    <main class="main">
+      <header class="main-header">
+        <h1 id="view-title">Clientes</h1>
+        <div class="main-header-right">
+          <span class="badge">MVP ensamblado</span>
+        </div>
+      </header>
+
+      <section id="view-container" class="view-container">
+        <!-- Aquí inyectaremos la vista Clientes desde JS -->
+      </section>
+    </main>
+  </div>
+
+    <!-- Scripts (orden importante) -->
+    <script src="./js/api.js"></script>
+<script src="./js/customersView.js"></script>
+<script src="./js/quotesListView.js"></script>
+<script src="./js/quotesView.js"></script>
+<script src="./js/quotesDetailView.js"></script>
+<script src="./js/invoicesView.js"></script>
+<script src="./js/invoiceDetailView.js"></script>
+<script src="./js/settingsView.js"></script>
+<script src="./js/app.js"></script>
+
+
+  
+</body>
+</html>
