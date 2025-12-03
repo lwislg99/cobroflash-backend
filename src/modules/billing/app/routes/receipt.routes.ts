@@ -110,26 +110,56 @@ router.get('/:id', async (req, res) => {
         )}" target="_blank">.eml</a> (modo dev).</div>`
       : '';
 
+    // Consideramos que solo hay PDF real si pdfUrl existe y no es un placeholder
+    const hasRealPdf =
+    !!invoice &&
+    !!invoice.pdfUrl &&
+    !invoice.pdfUrl.startsWith('PENDING');
+
   const emailBlock =
-    invoice && ch.customer?.email
+    hasRealPdf && ch.customer?.email
       ? `<form method="post" action="${BASE_URL}/dev/email-invoice/${ch.id}" style="margin-top:.5rem">
-         <button style="background:#111;color:#fff;padding:.45rem .8rem;border-radius:.5rem;border:none;cursor:pointer">Enviar factura por email</button>
-       </form>
-       <small style="color:#6b7280">Se enviará a: ${esc(ch.customer!.email!)}</small>`
-      : invoice
-      ? `<small style="color:#6b7280">Añade email al cliente para enviar la factura.</small>`
+           <button style="background:#111;color:#fff;padding:.45rem .8rem;border-radius:.5rem;border:none;cursor:pointer">
+             Enviar factura por email
+           </button>
+         </form>
+         <small style="color:#6b7280">Se enviará a: ${esc(ch.customer!.email!)}</small>`
       : '';
 
   const invBlock =
     ch.status === 'paid'
-      ? invoice
-        ? `<p><a href="${invoice.pdfUrl}" target="_blank">📄 Descargar factura (${esc(
-            invoice.number,
-          )})</a></p>${emailBlock}`
-        : `<form method="post" action="${BASE_URL}/dev/issue-invoice/${ch.id}">
-             <button style="background:#111;color:#fff;padding:.5rem .9rem;border-radius:.5rem;border:none;cursor:pointer">Generar factura</button>
-           </form>`
+      ? hasRealPdf
+        ? `<p><a href="${invoice!.pdfUrl}" target="_blank">
+             📄 Descargar factura (${esc(invoice!.number)})
+           </a></p>${emailBlock}`
+        : `<small style="color:#6b7280">
+             La factura se emitirá y se enviará por WhatsApp y email automáticamente.
+           </small>`
       : '';
+
+      const statusMessage =
+      ch.status === 'pending'
+        ? `<div style="background:#fef9c3;border:1px solid #facc15;color:#854d0e;padding:.6rem .8rem;border-radius:.6rem;margin:.75rem 0">
+             Estamos esperando tu pago. Puedes completarlo usando los botones de <b>pago por banco</b> o <b>pago con tarjeta</b> que aparecen más arriba.
+           </div>`
+        : ch.status === 'paid'
+        ? hasRealPdf
+          ? `<div style="background:#dcfce7;border:1px solid #16a34a;color:#166534;padding:.6rem .8rem;border-radius:.6rem;margin:.75rem 0">
+               ✅ <b>Pago recibido correctamente.</b> Tu factura está disponible para descargar y la hemos enviado por WhatsApp. Si tenemos tu correo, también la recibirás por email.
+             </div>`
+          : `<div style="background:#dcfce7;border:1px solid #16a34a;color:#166534;padding:.6rem .8rem;border-radius:.6rem;margin:.75rem 0">
+               ✅ <b>Pago recibido correctamente.</b> Estamos generando tu factura; la recibirás en breve por WhatsApp y, si tenemos tu correo, también por email.
+             </div>`
+        : ch.status === 'failed'
+        ? `<div style="background:#fee2e2;border:1px solid #ef4444;color:#991b1b;padding:.6rem .8rem;border-radius:.6rem;margin:.75rem 0">
+             ❌ No se ha podido completar el pago. Si lo deseas, ponte en contacto con tu proveedor para intentar de nuevo el cobro.
+           </div>`
+        : ch.status === 'expired'
+        ? `<div style="background:#e5e7eb;border:1px solid #9ca3af;color:#374151;padding:.6rem .8rem;border-radius:.6rem;margin:.75rem 0">
+             ⏰ Este enlace de pago ha caducado. Pide a tu proveedor que te envíe un nuevo enlace si todavía quieres realizar el pago.
+           </div>`
+        : '';
+  
 
   const simulateBlock =
     config.NODE_ENV !== 'production'
@@ -174,10 +204,12 @@ router.get('/:id', async (req, res) => {
 </style>
 </head>
 <body>
-  <div class="card">
-    <h2 style="margin:.2rem 0">Recibo</h2>
-    <p style="margin:.3rem 0">Cobro <b>#${ch.id}</b> ${statusBadge}</p>
-    <div class="row" style="margin-top:.5rem">
+<div class="card">
+<h2 style="margin:.2rem 0">Recibo</h2>
+<p style="margin:.3rem 0">Cobro <b>#${ch.id}</b> ${statusBadge}</p>
+${statusMessage}
+<div class="row" style="margin-top:.5rem">
+
       <div><small>Concepto</small><div>${esc(ch.concept)}</div></div>
       <div><small>Importe</small><div><b>${esc(ch.amount.toString())} ${esc(
         ch.currency,

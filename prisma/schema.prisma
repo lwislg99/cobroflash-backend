@@ -162,6 +162,9 @@ model Quote {
   // Motivo corto de rechazo (ej: "precio alto", "no lo necesita")
   rejectionReason String?
 
+  // pdf
+  pdfUrl        String?   @db.Text    // URL pública del PDF de presupuesto
+
   // Evidencias (payload de WhatsApp, IP, etc.)
   evidence   Json?
 

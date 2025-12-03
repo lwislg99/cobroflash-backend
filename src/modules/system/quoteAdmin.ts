@@ -98,7 +98,8 @@ export async function getQuoteDetailAdmin(id: number) {
     currency: quote.currency,
     total: quote.total,
     lines: quote.lines,
-
+    pdfUrl: (quote as any).pdfUrl ?? null,
+    
     merchant: {
       id: quote.merchant.id,
       name: quote.merchant.name,

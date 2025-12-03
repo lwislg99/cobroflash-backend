@@ -12,6 +12,9 @@ import fetch from 'node-fetch';
 const N8N_ON_INVOICE_SEND_URL =
   process.env.N8N_ON_INVOICE_SEND_URL || '';
 
+import { BASE_URL } from '../../../../core/config/env';
+
+
 const router = Router();
 
 /**
@@ -136,7 +139,7 @@ router.post('/:id/resend-whatsapp', async (req, res) => {
       });
     }
 
-    // Cargamos la factura con detalle (merchant, customer, quote, etc.)
+    // 1) Cargamos la factura con detalle (merchant, customer, quote, etc.)
     const invoice = await getInvoiceDetailAdmin(id);
     if (!invoice) {
       return res.status(404).json({ ok: false, error: 'invoice_not_found' });
@@ -151,13 +154,82 @@ router.post('/:id/resend-whatsapp', async (req, res) => {
 
     const customer = invoice.customer;
 
-    // Más adelante aquí podremos colgar pay_bank_url / pay_card_url reales.
-    const payBankUrl = null;
-    const payCardUrl = null;
+    // 2) Creamos un CHARGE para esta factura (para poder pagarla)
+    let chargeId: number | null = null;
+    let payBankUrl: string | null = null;
+    let payCardUrl: string | null = null;
 
+    try {
+      const customerPayload = customer
+        ? {
+            name: customer.name,
+            phone: customer.phone,
+            email: customer.email,
+          }
+        : undefined;
+
+      const chargeResp = await fetch(`${BASE_URL}/charges`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          merchant_id: invoice.merchantId,
+          customer: customerPayload,
+          concept: `Factura ${invoice.number} de Presupuesto #${invoice.quoteId}`,
+          amount: Number(invoice.total),          // nos aseguramos de que es número
+          currency: invoice.currency || 'EUR',
+          method_preference: 'card',
+          meta: {
+            invoice_id: invoice.id,
+            quote_id: invoice.quoteId,
+          },
+        }),
+      });
+
+      if (!chargeResp.ok) {
+        const text = await chargeResp.text().catch(() => '');
+        console.error(
+          '[POST /admin/invoices/:id/resend-whatsapp] error al crear charge',
+          chargeResp.status,
+          text,
+        );
+        return res.status(502).json({
+          ok: false,
+          error: 'charge_creation_failed',
+          status: chargeResp.status,
+          details: text,
+        });
+      }
+
+      const chargeJson: any = await chargeResp.json().catch(() => null);
+      if (!chargeJson?.id) {
+        console.error(
+          '[POST /admin/invoices/:id/resend-whatsapp] respuesta sin id de charge',
+          chargeJson,
+        );
+        return res.status(502).json({
+          ok: false,
+          error: 'charge_creation_invalid_response',
+        });
+      }
+
+      chargeId = chargeJson.id;
+      payBankUrl = `${BASE_URL}/pay/bank/${chargeId}`;
+      payCardUrl = `${BASE_URL}/pay/card/${chargeId}`;
+    } catch (err) {
+      console.error(
+        '[POST /admin/invoices/:id/resend-whatsapp] excepción creando charge',
+        err,
+      );
+      return res
+        .status(500)
+        .json({ ok: false, error: 'charge_creation_exception' });
+    }
+
+    // 3) Payload para n8n (OnInvoiceSend), ya con charge y URLs
     const payload = {
       invoice_id: invoice.id,
       quote_id: invoice.quoteId,
+      charge_id: chargeId,
       to: customer.phone,
       customer_name: customer.name || 'Cliente',
       amount: invoice.total?.toString() ?? '0',
@@ -195,5 +267,6 @@ router.post('/:id/resend-whatsapp', async (req, res) => {
     return res.status(500).json({ ok: false, error: 'internal_error' });
   }
 });
+
 
 export default router;

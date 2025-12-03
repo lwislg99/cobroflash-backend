@@ -51,6 +51,169 @@ function renderQuotesView(container) {
     if (type === "error") alertBox.classList.add("error");
   }
 
+
+
+
+    // ---------- MODAL PREVISUALIZACIÓN PRESUPUESTO ----------
+function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
+  // overlay
+  const overlay = document.createElement("div");
+  overlay.style.position = "fixed";
+  overlay.style.inset = "0";
+  overlay.style.background = "rgba(0,0,0,0.35)";
+  overlay.style.display = "flex";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+  overlay.style.zIndex = "9999";
+
+  // caja
+  const box = document.createElement("div");
+  box.style.background = "#fff";
+  box.style.borderRadius = "12px";
+  box.style.padding = "20px";
+  box.style.maxWidth = "900px";
+  box.style.width = "90%";
+  box.style.maxHeight = "90vh";
+  box.style.overflow = "auto";
+  box.style.boxShadow = "0 10px 30px rgba(0,0,0,0.15)";
+
+  const title = document.createElement("h3");
+  title.textContent = `Presupuesto #${quoteId} generado`;
+  title.style.marginTop = "0";
+  box.appendChild(title);
+
+  const p = document.createElement("p");
+  p.textContent =
+    "Revisa el PDF del presupuesto antes de enviarlo por WhatsApp al cliente.";
+  box.appendChild(p);
+
+  if (pdfUrl) {
+    // Link para abrir en nueva pestaña
+    const link = document.createElement("a");
+    link.href = pdfUrl;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "Abrir PDF del presupuesto en una nueva pestaña";
+    link.style.display = "inline-block";
+    link.style.marginBottom = "12px";
+    box.appendChild(link);
+
+    // Wrapper + iframe con el PDF embebido
+    const frameWrapper = document.createElement("div");
+    frameWrapper.style.marginTop = "8px";
+    frameWrapper.style.border = "1px solid #e5e7eb";
+    frameWrapper.style.borderRadius = "8px";
+    frameWrapper.style.overflow = "hidden";
+
+    const iframe = document.createElement("iframe");
+    iframe.src = pdfUrl;
+    iframe.title = `PDF Presupuesto #${quoteId}`;
+    iframe.loading = "lazy";
+    iframe.style.width = "100%";
+    iframe.style.height = "55vh"; // ajusta si lo quieres más alto/bajo
+    iframe.style.border = "none";
+
+    frameWrapper.appendChild(iframe);
+    box.appendChild(frameWrapper);
+  } else {
+    const warn = document.createElement("p");
+    warn.style.color = "#b45309";
+    warn.textContent =
+      "No se ha encontrado la URL del PDF todavía. Puede tardar unos segundos en generarse.";
+    box.appendChild(warn);
+  }
+
+  const actions = document.createElement("div");
+  actions.style.display = "flex";
+  actions.style.justifyContent = "flex-end";
+  actions.style.gap = "8px";
+  actions.style.marginTop = "16px";
+
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button";
+  closeBtn.textContent = "Seguir editando";
+  closeBtn.className = "btn btn-secondary";
+
+  closeBtn.addEventListener("click", function () {
+    document.body.removeChild(overlay);
+  });
+
+  actions.appendChild(closeBtn);
+
+  if (allowWhatsapp) {
+    const sendBtn = document.createElement("button");
+    sendBtn.type = "button";
+    sendBtn.textContent = "Enviar por WhatsApp";
+    sendBtn.className = "btn btn-primary";
+
+    sendBtn.addEventListener("click", async function () {
+      sendBtn.disabled = true;
+      sendBtn.textContent = "Enviando…";
+
+      try {
+        const res = await fetch(`/admin/quotes/${quoteId}/send-whatsapp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+
+        if (!res.ok) {
+          const bodyText = await res.text();
+          throw new Error(
+            "Error enviando por WhatsApp: " +
+              res.status +
+              " " +
+              bodyText
+          );
+        }
+
+        const body = await res.json();
+        setAlert(
+          "success",
+          body.ok
+            ? "Presupuesto enviado por WhatsApp."
+            : "Presupuesto creado, pero no se ha podido confirmar el envío por WhatsApp."
+        );
+
+        // Actualizamos cajita de estado a la derecha
+        setResult({
+          quote_id: quoteId,
+          status: "DRAFT",
+          sent: !!body.ok,
+        });
+
+        document.body.removeChild(overlay);
+      } catch (err) {
+        setAlert("error", err.message || "Error enviando por WhatsApp.");
+        sendBtn.disabled = false;
+        sendBtn.textContent = "Enviar por WhatsApp";
+      }
+    });
+
+    actions.appendChild(sendBtn);
+  } else {
+    const info = document.createElement("p");
+    info.style.fontSize = "12px";
+    info.style.color = "#6b7280";
+    info.style.marginTop = "8px";
+    info.textContent =
+      "Has desmarcado “Enviar por WhatsApp automáticamente”, por eso no se muestra el botón de WhatsApp.";
+    box.appendChild(info);
+  }
+
+  box.appendChild(actions);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  // Cerrar si clicas fuera de la caja
+  overlay.addEventListener("click", function (e) {
+    if (e.target === overlay) {
+      document.body.removeChild(overlay);
+    }
+  });
+}
+
+
   // ---------- HELPERS DE CAMPOS ----------
   function createField(labelText, name, type = "text", required = false) {
     const wrapper = document.createElement("div");
@@ -233,7 +396,7 @@ function renderQuotesView(container) {
   const submitBtn = document.createElement("button");
   submitBtn.type = "button";
   submitBtn.className = "btn btn-primary";
-  submitBtn.textContent = "Generar presupuesto + cobro";
+  submitBtn.textContent = "Generar presupuesto";
 
   const resetBtn = document.createElement("button");
   resetBtn.type = "button";
@@ -813,8 +976,8 @@ function renderQuotesView(container) {
     renderPreview();
   });
 
-  // ---------- ENVÍO: CREATE + SEND WHATSAPP (quote en DRAFT) ----------
-  submitBtn.addEventListener("click", async function () {
+   // ---------- ENVÍO: CREATE (y luego modal para WhatsApp/PDF) ----------
+   submitBtn.addEventListener("click", async function () {
     setAlert(null, "");
     setResult(null);
 
@@ -870,7 +1033,7 @@ function renderQuotesView(container) {
       submitBtn.disabled = true;
       submitBtn.textContent = "Generando…";
 
-      // 1) Crear el presupuesto en DRAFT
+      // 1) Crear el presupuesto en DRAFT (esto ya genera el PDF en el back)
       const quotePayload = {
         merchant_id: currentMerchant.id,
         customer_id: Number(customerId),
@@ -885,59 +1048,34 @@ function renderQuotesView(container) {
         throw new Error("Respuesta inesperada al crear presupuesto.");
       }
 
-      // 2) (Opcional) Enviar por WhatsApp usando el endpoint de admin (stub)
-      let whatsappSent = false;
-
-      if (waCheck.checked) {
-        const toOverride = fieldTo.input.value.trim();
-
-        const res = await fetch(`/admin/quotes/${quoteId}/send-whatsapp`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            // En el futuro aquí podríamos pasar `to: toOverride`
-            // y otros datos para n8n / plantilla real
-            to: toOverride || undefined,
-          }),
-        });
-
-        if (!res.ok) {
-          const bodyText = await res.text();
-          throw new Error(
-            "Error enviando presupuesto por WhatsApp: " +
-              res.status +
-              " " +
-              bodyText
-          );
+      // 2) Pedimos el detalle al admin para recuperar el pdfUrl del presupuesto
+      let pdfUrl = null;
+      try {
+        const detailRes = await fetch(`/admin/quotes/${quoteId}`);
+        if (detailRes.ok) {
+          const detail = await detailRes.json();
+          pdfUrl = detail.pdfUrl || null;
         }
-
-        const body = await res.json();
-        whatsappSent = !!body.ok;
+      } catch (e) {
+        console.warn("No se pudo obtener pdfUrl del presupuesto", e);
       }
 
-      // 3) Actualizamos UI
-      setAlert(
-        "success",
-        whatsappSent
-          ? "Presupuesto creado en borrador y enviado por WhatsApp."
-          : "Presupuesto creado en borrador."
-      );
+      // 3) Mostramos modal para ver PDF y (opcional) enviar por WhatsApp
+      const allowWhatsapp = waCheck.checked;
+      openQuoteModal({ quoteId, pdfUrl, allowWhatsapp });
 
-      // Reutilizamos setResult para mostrar algo mínimo
+      // 4) Actualizamos cajita de estado a la derecha (de momento sin WhatsApp)
+      setAlert("success", "Presupuesto creado en borrador.");
       setResult({
         quote_id: quoteId,
-        charge_id: null,
         status: "DRAFT",
-        paybank_url: null,
-        paycard_url: null,
-        sent: whatsappSent,
+        sent: false,
       });
     } catch (err) {
       setAlert("error", "Error generando presupuesto: " + err.message);
     } finally {
       submitBtn.disabled = false;
-      submitBtn.textContent = "Generar presupuesto + cobro";
+      submitBtn.textContent = "Generar presupuesto";
     }
   });
 }
-

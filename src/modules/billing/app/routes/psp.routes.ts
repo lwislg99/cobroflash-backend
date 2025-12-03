@@ -32,11 +32,20 @@ router.post('/', async (req, res) => {
           payload: { duplicate: true, body } as any,
         },
       });
-
+    
       if (config.AUTO_INVOICE_ON_PAID) {
         try {
           const inv = await ensureInvoiceForCharge(chargeId, prisma);
-          if (config.AUTO_EMAIL_INVOICE_ON_PAID && charge.customerId) {
+    
+          // Solo enviamos email si hay PDF real
+          const hasRealPdf =
+            !!inv.pdfUrl && inv.pdfUrl !== 'PENDING_PDF' && inv.pdfUrl !== '';
+    
+          if (
+            hasRealPdf &&
+            config.AUTO_EMAIL_INVOICE_ON_PAID &&
+            charge.customerId
+          ) {
             const cust = await prisma.customer.findUnique({
               where: { id: charge.customerId },
             });
@@ -53,9 +62,10 @@ router.post('/', async (req, res) => {
           console.error('auto-invoice/error duplicate', e);
         }
       }
-
+    
       return res.json({ ok: true, status: 'already_paid' });
     }
+    
 
     if (
       (charge.status === 'failed' && body.event === 'payment.failed') ||
@@ -79,27 +89,62 @@ router.post('/', async (req, res) => {
         include: { customer: true },
       });
 
-      if (config.AUTO_INVOICE_ON_PAID) {
+      // 👇 NUEVO: intentamos emitir / asegurar la factura
+        // 👇 NUEVO: intentamos emitir / asegurar la factura
+  let invoiceId: number | null = null;
+
+  if (config.AUTO_INVOICE_ON_PAID) {
+    try {
+      const inv = await ensureInvoiceForCharge(updated.id, prisma);
+      invoiceId = inv.id;
+
+      // Solo enviamos email si hay PDF real
+      const hasRealPdf =
+        !!inv.pdfUrl && inv.pdfUrl !== 'PENDING_PDF' && inv.pdfUrl !== '';
+
+      if (
+        hasRealPdf &&
+        config.AUTO_EMAIL_INVOICE_ON_PAID &&
+        updated.customer?.email
+      ) {
         try {
-          const inv = await ensureInvoiceForCharge(updated.id, prisma);
-          if (config.AUTO_EMAIL_INVOICE_ON_PAID && updated.customer?.email) {
-            try {
-              await sendInvoiceEmail({
-                invoiceId: inv.id,
-                toEmail: updated.customer.email,
-                toName: updated.customer.name ?? '',
-                prisma,
-              });
-            } catch (e) {
-              console.error('auto-email error', e);
-            }
-          }
+          await sendInvoiceEmail({
+            invoiceId: inv.id,
+            toEmail: updated.customer.email,
+            toName: updated.customer.name ?? '',
+            prisma,
+          });
         } catch (e) {
-          console.error('auto-invoice error', e);
+          console.error('auto-email error', e);
         }
       }
+    } catch (e) {
+      console.error('auto-invoice error', e);
+    }
+  }
+
+
+        // 👇 NUEVO: si hemos conseguido una factura, la marcamos como PAGADA
+        if (invoiceId) {
+          try {
+            await prisma.invoice.update({
+              where: { id: invoiceId },
+              data: {
+                status: 'paid',
+                // solo ponemos paidAt si no lo tenía aún, para que sea idempotente
+                paidAt: new Date(),
+              },
+            });
+          } catch (e) {
+            console.error('auto-mark invoice paid error', e);
+          }
+        }
+  
+      
+      
 
       const to = normalizePhone(updated.customer?.phone);
+
       await emitToN8n('paid', {
         to,
         charge_id: updated.id,
@@ -110,10 +155,14 @@ router.post('/', async (req, res) => {
         bank_ref: body.bank_ref,
         merchant_id: updated.merchantId,
         customer_id: updated.customerId,
+        // 👇 NUEVO: pasamos la factura asociada (si la hay)
+        invoice_id: invoiceId,
+        customer_email: updated.customer?.email ?? '',
       });
 
       return res.json({ ok: true, status: 'paid' });
     }
+
 
     if (body.event === 'payment.failed') {
       await prisma.charge.update({

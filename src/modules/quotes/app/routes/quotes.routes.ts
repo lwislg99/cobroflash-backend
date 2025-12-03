@@ -11,6 +11,8 @@ import { getNextBillingStage } from '../../domain/billingPlan';
 
 import fetch from 'node-fetch';
 
+import { generateQuotePdf } from '../../../../lib/pdf';
+
 const BASE_API_URL =
   process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
 
@@ -42,6 +44,7 @@ router.post('/create', async (req, res) => {
 
     const totalNum = calcTotal(lines);
 
+    // 1) Creamos el presupuesto en DRAFT
     const quote = await prisma.quote.create({
       data: {
         merchantId: merchant_id,
@@ -50,11 +53,39 @@ router.post('/create', async (req, res) => {
         total: totalNum.toFixed(2),
         currency: currency.toUpperCase(),
         lines,
-        // 👇 NUEVO: Guardar condiciones de pago elegidas en el backoffice
         paymentTerms: body.paymentTerms ?? null,
+        // pdfUrl lo rellenamos después
       },
     });
-    
+
+    // 2) Intentamos generar el PDF de presupuesto (no rompemos si falla)
+    try {
+      const pdf = await generateQuotePdf({
+        quoteId: quote.id,
+        merchant: {
+          name: merchant.name,
+          legalName: merchant.legalName,
+          taxId: merchant.taxId,
+          address: merchant.address,
+          whatsappPhone: merchant.whatsappPhone,
+        },
+        customer: {
+          name: customer.name,
+          phone: customer.phone,
+          email: customer.email,
+        },
+        currency: quote.currency,
+        total: quote.total.toString(),
+        lines: lines as any, // mismo shape que mandas desde el BO
+      });
+
+      await prisma.quote.update({
+        where: { id: quote.id },
+        data: { pdfUrl: pdf.publicUrlPath },
+      });
+    } catch (e) {
+      console.error('Error generando PDF de presupuesto', e);
+    }
 
     return res.status(201).json({
       id: quote.id,
@@ -73,6 +104,7 @@ router.post('/create', async (req, res) => {
     return res.status(500).json({ error: 'internal_error' });
   }
 });
+
 
 /**
  * POST /quote/:id/accept
@@ -334,6 +366,12 @@ router.post('/:id/decision', async (req, res) => {
         ]);
 
         createdInvoice = invoice;
+
+
+        
+
+        
+
 
         // 3) Si las condiciones de pago son FULL_UPFRONT,
         // disparamos el envío de la factura por WhatsApp (n8n)

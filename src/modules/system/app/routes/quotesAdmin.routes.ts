@@ -267,6 +267,7 @@ router.post('/:id/send-whatsapp', async (req, res) => {
       // por ahora un texto genérico; luego si quieres metemos primer concepto, etc.
       concept: `Presupuesto #${quote.id}`,
       payment_terms: (quote as any).paymentTerms ?? null,
+      quote_pdf_url: quote.pdfUrl ?? null,
     };
 
     const resp = await fetch(n8nUrl, {
