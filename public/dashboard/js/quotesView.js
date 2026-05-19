@@ -291,6 +291,23 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
     );
     waWrapper.appendChild(waLabel);
     blockClient.appendChild(waWrapper);
+
+    // Checkbox: incluir descripción en PDF (MVP: solo afecta a la vista previa por ahora)
+const descWrapper = document.createElement("div");
+descWrapper.className = "field inline-checkbox";
+
+const descLabel = document.createElement("label");
+const descCheck = document.createElement("input");
+descCheck.type = "checkbox";
+descCheck.name = "include_description";
+descCheck.checked = false;
+
+descLabel.appendChild(descCheck);
+descLabel.appendChild(document.createTextNode(" Incluir descripción en el PDF"));
+descWrapper.appendChild(descLabel);
+
+blockClient.appendChild(descWrapper);
+
   
     // ---------- CONDICIONES DE PAGO (SELECT) ----------
     const fieldPaymentTerms = createFieldSelect(
@@ -357,7 +374,7 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
   table.className = "table quote-lines-table";
   const thead = document.createElement("thead");
   const trHead = document.createElement("tr");
-  ["Concepto", "Cantidad", "Precio", "IVA %", "Total línea", ""].forEach(
+  ["Concepto", "Cantidad", "Precio", "Markup %", "IVA %", "Total línea", ""].forEach(
     (h) => {
       const th = document.createElement("th");
       th.textContent = h;
@@ -494,12 +511,31 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
       const price = parseFloat(
         String(line.priceInput.value || "").replace(",", ".")
       );
+
+      const markupPerc = parseFloat(
+        String(line.markupInput?.value || "0").replace(",", ".")
+      );
+      const safeMarkup = Number.isFinite(markupPerc) ? markupPerc : 0;
+      
+            // Opción 2 (pro): el markup aplica SIEMPRE sobre el precio base
+            const p = Number.isFinite(price) ? price : 0;
+            let effectivePrice = p * (1 + safeMarkup / 100);
+      
+            // hint visual (precio final)
+            try {
+              if (line.priceHint) {
+                line.priceHint.textContent = `Final: ${effectivePrice.toFixed(2)}`;
+              }
+            } catch (_e) {}
+      
+      
       const vatPerc = parseFloat(
         String(line.vatInput.value || "").replace(",", ".")
       );
 
       const safeQty = Number.isFinite(qty) ? qty : 0;
-      const safePrice = Number.isFinite(price) ? price : 0;
+      const safePrice = Number.isFinite(effectivePrice) ? effectivePrice : 0;
+
       const safeVat = Number.isFinite(vatPerc) ? vatPerc : 0;
 
       const lineBase = safeQty * safePrice;
@@ -558,17 +594,28 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
 
         if (!concept || safeQty <= 0 || safePrice < 0) return null;
 
-        const base = safeQty * safePrice;
+        const markupPerc = parseFloat(
+          String(line.markupInput?.value || "0").replace(",", ".")
+        );
+        const safeMarkup = Number.isFinite(markupPerc) ? markupPerc : 0;
+
+        const finalPrice = safePrice * (1 + safeMarkup / 100);
+
+
+        const base = safeQty * finalPrice;
+
         const vat = base * (safeVat / 100);
         const totalLine = base + vat;
 
         return {
           concept,
+          description: line.conceptInput.dataset.pfProductDescription || "",
           qty: safeQty,
-          price: safePrice,
+          price: finalPrice,
           vatPerc: safeVat,
           totalLine,
         };
+        
       })
       .filter(Boolean);
 
@@ -728,8 +775,20 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
       previewLines.forEach((l) => {
         const tr = document.createElement("tr");
         const tdConcept = document.createElement("td");
-        tdConcept.textContent = l.concept;
-        tr.appendChild(tdConcept);
+tdConcept.textContent = l.concept;
+
+// Si el toggle está ON y tenemos descripción, la mostramos debajo
+if (descCheck && descCheck.checked && l.description) {
+  const small = document.createElement("div");
+  small.textContent = l.description;
+  small.style.fontSize = "12px";
+  small.style.color = "#6b7280";
+  small.style.marginTop = "2px";
+  tdConcept.appendChild(small);
+}
+
+tr.appendChild(tdConcept);
+
 
         const tdQty = document.createElement("td");
         tdQty.textContent = String(l.qty);
@@ -788,6 +847,454 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
   }
 
   // ---------- GESTIÓN DE LÍNEAS ----------
+    // ----------------------------
+  // Autocomplete productos (MVP)
+  // ----------------------------
+  function attachProductAutocomplete({ conceptInput, priceInput, vatInput, markupInput }) {
+
+    let box = null;
+    let timer = null;
+    let lastQ = "";
+    let suppressOpenOnce = false;
+    let activeIndex = -1;
+    let isOpen = false;
+    let isLoading = false;
+    const cache = new Map(); // q -> items (máx simple)
+    let currentItems = [];
+
+
+
+        // ----------------------------
+    // Recientes (localStorage)
+    // ----------------------------
+    function recentKey() {
+      const mid = currentMerchant && currentMerchant.id ? String(currentMerchant.id) : "unknown";
+      return `pf_recent_products_${mid}`;
+    }
+
+    function loadRecents() {
+      try {
+        const raw = localStorage.getItem(recentKey());
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+      } catch (_e) {
+        return [];
+      }
+    }
+
+    function saveRecent(item) {
+      try {
+        const recents = loadRecents();
+
+        const normalized = {
+          id: item.id,
+          name: item.name,
+          description: item.description || null, // ✅ guardar descripción también
+          price: item.price,
+          vat: item.vat,
+        
+        
+        };
+
+        // quitar duplicado por id
+        const next = [normalized].concat(recents.filter((r) => String(r.id) !== String(normalized.id)));
+
+        // max 5
+        localStorage.setItem(recentKey(), JSON.stringify(next.slice(0, 5)));
+      } catch (_e) {}
+    }
+
+
+
+
+    function ensureBox() {
+      if (box) return box;
+
+      box = document.createElement("div");
+      box.className = "pf-autocomplete";
+      box.style.position = "absolute";
+      box.style.zIndex = "9999";
+      box.style.background = "#fff";
+      box.style.border = "1px solid #e5e7eb";
+      box.style.borderRadius = "8px";
+      box.style.boxShadow = "0 8px 24px rgba(0,0,0,0.08)";
+      box.style.padding = "6px";
+      box.style.display = "none";
+      box.style.minWidth = "260px";
+      document.body.appendChild(box);
+
+      // ✅ PRO: si el ratón sale del dropdown, quitamos el highlight
+      box.addEventListener("mouseleave", () => {
+      activeIndex = -1;
+        refreshActiveRow();
+      });
+
+
+      return box;
+    }
+
+    function placeBox() {
+      const b = ensureBox();
+      const r = conceptInput.getBoundingClientRect();
+      b.style.left = `${r.left + window.scrollX}px`;
+      b.style.top = `${r.bottom + window.scrollY + 4}px`;
+      b.style.width = `${Math.max(260, r.width)}px`;
+    }
+
+    function hide() {
+      if (!box) return;
+      box.style.display = "none";
+      box.innerHTML = "";
+      activeIndex = -1;
+      isOpen = false;
+      isLoading = false;
+
+    }
+
+    function renderLoading() {
+      const b = ensureBox();
+      b.innerHTML = `<div style="padding:10px;font-size:13px;color:#6b7280;">Buscando…</div>`;
+      placeBox();
+      b.style.display = "block";
+      isOpen = true;
+      isLoading = true;
+      activeIndex = -1;
+    }
+    
+    function renderEmpty(msg) {
+      const b = ensureBox();
+      b.innerHTML = `<div style="padding:10px;font-size:13px;color:#6b7280;">${msg || "Sin resultados"}</div>`;
+      placeBox();
+      b.style.display = "block";
+      isOpen = true;
+      isLoading = false;
+      activeIndex = -1;
+    }
+    
+
+    function renderItems(items) {
+      const b = ensureBox();
+      b.innerHTML = "";
+      currentItems = Array.isArray(items) ? items : [];
+
+
+      isOpen = true;
+      isLoading = false;
+      activeIndex = -1;
+
+
+      if (!items || items.length === 0) {
+        hide();
+        return;
+      }
+
+      items.forEach((it) => {
+        const row = document.createElement("div");
+
+        const idx = b.children.length; // índice actual antes del append
+        row.dataset.idx = String(idx);
+
+        row.style.padding = "8px";
+        row.style.borderRadius = "6px";
+        row.style.cursor = "pointer";
+        row.style.display = "flex";
+        row.style.justifyContent = "space-between";
+        row.style.gap = "10px";
+
+        row.addEventListener("mouseenter", () => {
+          activeIndex = Number(row.dataset.idx);
+          refreshActiveRow();
+        });
+        
+      
+
+        const leftWrap = document.createElement("div");
+leftWrap.style.display = "flex";
+leftWrap.style.flexDirection = "column";
+leftWrap.style.gap = "2px";
+
+const title = document.createElement("div");
+title.textContent = it.name || "";
+title.style.fontWeight = "600";
+
+leftWrap.appendChild(title);
+
+// descripción corta (opcional)
+const descRaw = (it.description || "").trim();
+if (descRaw) {
+  const desc = document.createElement("div");
+  desc.textContent = descRaw.length > 60 ? descRaw.slice(0, 60) + "…" : descRaw;
+  desc.style.fontSize = "12px";
+  desc.style.color = "#6b7280";
+  desc.title = descRaw;
+
+  leftWrap.appendChild(desc);
+}
+
+const right = document.createElement("div");
+right.style.whiteSpace = "nowrap";
+right.style.fontWeight = "600";
+const price = Number(it.price || 0);
+right.textContent = Number.isFinite(price) ? price.toFixed(2) : "";
+
+row.appendChild(leftWrap);
+row.appendChild(right);
+
+
+        row.addEventListener("mousedown", (e) => {
+          e.preventDefault();
+          selectItem(it);
+        });
+        
+        
+
+        b.appendChild(row);
+      });
+
+      placeBox();
+      b.style.display = "block";
+    }
+
+    function refreshActiveRow() {
+      if (!box) return;
+      const children = Array.from(box.children);
+      children.forEach((el, i) => {
+        el.style.background = i === activeIndex ? "#f3f4f6" : "transparent";
+      });
+    }
+
+  // ✅ PRO: selección centralizada (vale para click y Enter)
+function selectItem(it) {
+  conceptInput.dataset.pfSelecting = "1";
+
+  if (!it) return;
+
+  suppressOpenOnce = true;
+  saveRecent(it);
+
+  conceptInput.value = it.name || "";
+
+  // PRO: guardamos el producto elegido en esta línea
+conceptInput.dataset.pfProductId = it.id != null ? String(it.id) : "";
+conceptInput.dataset.pfProductDescription = (it.description || "").trim();
+conceptInput.dataset.pfProductName = (it.name || "").trim();
+
+
+
+if (typeof it.price !== "undefined" && it.price !== null && it.price !== "") {
+  const base = Number(it.price);
+  if (Number.isFinite(base)) {
+    // guardamos base
+    priceInput.dataset.pfBasePrice = String(base);
+
+    // dejamos el precio visible como BASE (el cálculo final se ve en el hint "Final")
+priceInput.value = String(base.toFixed(2));
+  }
+}
+
+
+  if (typeof it.vat !== "undefined" && it.vat !== null && it.vat !== "") {
+    const v = Number(it.vat);
+    if (Number.isFinite(v)) vatInput.value = String(v * 100);
+  }
+
+  hide();
+
+  // recalcular / preview sin reabrir dropdown
+  conceptInput.dispatchEvent(new Event("input", { bubbles: true }));
+  priceInput.dispatchEvent(new Event("input", { bubbles: true }));
+  vatInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+  // PRO: si este input era la última línea, añadimos una línea nueva automática
+  try {
+    if (typeof conceptInput._pfIsLastLine === "function" && conceptInput._pfIsLastLine()) {
+      setTimeout(() => {
+        addLine();
+      }, 0);
+    }
+  } catch (_e) {}
+
+  // UX PRO: al seleccionar, saltar al siguiente campo (qty)
+  try {
+    const row = conceptInput.closest("tr");
+    if (row) {
+      const qty = row.querySelector('td:nth-child(2) input');
+      if (qty) qty.focus();
+    }
+  } catch (_e) {}
+
+  setTimeout(() => {
+    delete conceptInput.dataset.pfSelecting;
+  }, 0);
+  
+
+  setTimeout(() => {
+    suppressOpenOnce = false;
+  }, 0);
+}
+
+
+    
+
+
+    async function fetchItems(q) {
+      // Si aún no tenemos merchant, lo pedimos al backend
+      if (!currentMerchant || !currentMerchant.id) {
+        try {
+          const mRes = await fetch('/admin/merchant');
+          const m = await mRes.json().catch(() => null);
+          if (mRes.ok && m && m.id) currentMerchant = m;
+        } catch (_e) {}
+      }
+    
+      if (!currentMerchant || !currentMerchant.id) return [];
+    
+      const url = `/admin/products/autocomplete?merchantId=${encodeURIComponent(
+        currentMerchant.id
+      )}&q=${encodeURIComponent(q)}`;
+    
+      const res = await fetch(url);
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data || !data.ok) return [];
+      return Array.isArray(data.items) ? data.items : [];
+    }
+    
+
+    async function onInput() {
+      console.log('[autocomplete] input:', conceptInput.value, 'merchant:', currentMerchant && currentMerchant.id);
+      if (suppressOpenOnce) return;
+
+      const q = (conceptInput.value || "").trim();
+      lastQ = q;
+
+      if (!q || q.length < 2) {
+        // PRO: si está vacío o <2, mostramos recientes al hacer focus
+        const recents = loadRecents();
+        if (recents.length > 0 && document.activeElement === conceptInput) {
+          renderItems(recents);
+        } else {
+          hide();
+        }
+        return;
+      }
+
+
+      placeBox();
+
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        try {
+          // evita pintar resultados viejos
+          const qNow = (conceptInput.value || "").trim();
+          if (qNow !== lastQ) return;
+
+          // cache hit
+          const key = qNow.toLowerCase();
+          if (cache.has(key)) {
+            renderItems(cache.get(key));
+            return;
+          }
+
+          renderLoading();
+          const items = await fetchItems(qNow);
+          cache.set(key, items);
+          if (!items || items.length === 0) {
+            renderEmpty("Sin resultados");
+            return;
+          }
+          renderItems(items);
+
+
+          
+        } catch (_e) {
+          hide();
+        }
+      }, 150);
+    }
+
+    conceptInput.addEventListener("input", onInput);
+
+    // PRO: si el usuario modifica el texto manualmente, ya no podemos asegurar que sea “ese producto”
+conceptInput.addEventListener("input", () => {
+  if (!suppressOpenOnce) {
+    conceptInput.dataset.pfProductId = "";
+    conceptInput.dataset.pfProductDescription = "";
+    conceptInput.dataset.pfProductName = "";
+  }
+});
+
+    
+
+    conceptInput.addEventListener("focus", onInput);
+
+    conceptInput.addEventListener("blur", () => {
+      // pequeño delay para permitir seleccionar con mouse
+      setTimeout(() => hide(), 120);
+    });
+
+    conceptInput.addEventListener("keydown", (e) => {
+      // ESC: cerrar
+      if (e.key === "Escape") {
+        suppressOpenOnce = true;
+        hide();
+        conceptInput.blur();
+        setTimeout(() => (suppressOpenOnce = false), 0);
+        return;
+      }
+    
+      // Si no está abierto, no hacemos nada
+      if (!box || box.style.display !== "block") return;
+    
+      // Mientras loading, no navegamos
+      if (isLoading) return;
+    
+      const rows = Array.from(box.children);
+      if (rows.length === 0) return;
+    
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        activeIndex = Math.min(rows.length - 1, activeIndex + 1);
+        refreshActiveRow();
+        return;
+      }
+    
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        activeIndex = Math.max(0, activeIndex - 1);
+        refreshActiveRow();
+        return;
+      }
+    
+      if (e.key === "Enter") {
+        if (activeIndex < 0 || activeIndex >= currentItems.length) return;
+        e.preventDefault();
+        e.stopPropagation();
+        selectItem(currentItems[activeIndex]);  // 👈 selecciona el objeto real
+        return;
+      }
+      
+      
+    });
+    
+    
+    // Click fuera cierra
+    document.addEventListener("mousedown", (e) => {
+      if (!box || box.style.display !== "block") return;
+      const target = e.target;
+      if (target === conceptInput) return;
+      if (box.contains(target)) return;
+      hide();
+    });
+    
+
+    window.addEventListener("resize", () => {
+      if (box && box.style.display === "block") placeBox();
+    });
+    window.addEventListener("scroll", () => {
+      if (box && box.style.display === "block") placeBox();
+    }, true);
+  }
+
   function addLine(initial) {
     const tr = document.createElement("tr");
 
@@ -797,6 +1304,13 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
     conceptInput.placeholder = "Concepto / servicio";
     conceptInput.value = initial && initial.concept ? initial.concept : "";
     conceptTd.appendChild(conceptInput);
+
+    // PRO: este campo puede venir de un producto del catálogo
+conceptInput.dataset.pfProductId = ""; // vacío = “manual”
+
+   
+
+
 
     const qtyTd = document.createElement("td");
     const qtyInput = document.createElement("input");
@@ -813,9 +1327,32 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
     priceInput.step = "0.01";
     priceInput.value = initial && initial.price != null ? initial.price : "";
     priceTd.appendChild(priceInput);
+    priceInput.dataset.pfBasePrice = ""; // precio catálogo o base antes de markup
+
+    // Hint: precio final con markup (solo visual)
+const priceHint = document.createElement("div");
+priceHint.style.fontSize = "12px";
+priceHint.style.color = "#6b7280";
+priceHint.style.marginTop = "4px";
+priceHint.textContent = "Final: —";
+priceTd.appendChild(priceHint);
+
+
+    const markupTd = document.createElement("td");
+const markupInput = document.createElement("input");
+markupInput.type = "number";
+markupInput.min = "0";
+markupInput.step = "1";
+markupInput.placeholder = "0";
+markupInput.value = initial && initial.markup != null ? initial.markup : "0";
+markupTd.appendChild(markupInput);
+
 
     const vatTd = document.createElement("td");
     const vatInput = document.createElement("input");
+    attachProductAutocomplete({ conceptInput, priceInput, vatInput, markupInput });
+
+
     vatInput.type = "number";
     vatInput.min = "0";
     vatInput.step = "1";
@@ -841,9 +1378,11 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
     tr.appendChild(conceptTd);
     tr.appendChild(qtyTd);
     tr.appendChild(priceTd);
+    tr.appendChild(markupTd);
     tr.appendChild(vatTd);
     tr.appendChild(totalTd);
     tr.appendChild(actionsTd);
+    
 
     tbody.appendChild(tr);
 
@@ -852,20 +1391,63 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
       conceptInput,
       qtyInput,
       priceInput,
+      markupInput,
       vatInput,
       totalCell: totalTd,
+      priceHint,
+
     };
+    
     lines.push(lineObj);
+
+    // Exponer un helper en el input para saber si es la última línea
+conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
+
 
     const onChange = function () {
       recalcTotals();
       renderPreview();
     };
 
-    conceptInput.addEventListener("input", onChange);
+    conceptInput.addEventListener("input", function () {
+      // Si cambian el texto manualmente, invalidamos el producto elegido
+      try {
+        const storedName = (conceptInput.dataset.pfProductName || "").trim();
+        const now = (conceptInput.value || "").trim();
+        if (storedName && now !== storedName) {
+          conceptInput.dataset.pfProductId = "";
+          conceptInput.dataset.pfProductDescription = "";
+          conceptInput.dataset.pfProductName = "";
+        }
+      } catch (_e) {}
+    
+      onChange();
+    });
+    
     qtyInput.addEventListener("input", onChange);
-    priceInput.addEventListener("input", onChange);
+    priceInput.addEventListener("input", () => {
+      // si el usuario toca el precio manualmente, invalidamos base
+      // (solo si no viene del autocomplete en ese momento)
+      if (!conceptInput.dataset.pfSelecting) {
+        const raw = String(priceInput.value || "").replace(",", ".").trim();
+const n = Number(raw);
+
+// si el usuario mete un número válido, lo tomamos como nueva base
+if (Number.isFinite(n) && n >= 0) {
+  priceInput.dataset.pfBasePrice = String(n);
+} else {
+  // si deja algo inválido, vaciamos base para no arrastrar basura
+  priceInput.dataset.pfBasePrice = "";
+}
+      }
+      onChange();
+    });
+    
     vatInput.addEventListener("input", onChange);
+    markupInput.addEventListener("input", onChange);
+
+    
+
 
     removeBtn.addEventListener("click", function () {
       if (lines.length === 1) {
@@ -873,7 +1455,18 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
         conceptInput.value = "";
         qtyInput.value = "1";
         priceInput.value = "";
+        markupInput.value = "0";
         vatInput.value = fieldVatDefault.input.value || "21";
+
+        conceptInput.dataset.pfProductId = "";
+        conceptInput.dataset.pfProductDescription = "";
+        conceptInput.dataset.pfProductName = "";
+        priceInput.dataset.pfBasePrice = "";
+
+        if (priceHint) {
+          priceHint.textContent = "Final: —";
+        }
+
         recalcTotals();
         renderPreview();
         return;
@@ -970,11 +1563,26 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
   fieldCustomer.select.addEventListener("change", function () {
     renderPreview();
   });
+  descCheck.addEventListener("change", renderPreview);
+
 
   fieldVatDefault.input.addEventListener("input", function () {
     // actualizar IVA de nuevas líneas, pero no tocamos las existentes
     renderPreview();
   });
+
+
+  function pfOneLine(s) {
+    return String(s || "").replace(/\s+/g, " ").trim(); // sin saltos/espacios raros
+  }
+  
+  function pfTruncate(s, max) {
+    const t = pfOneLine(s);
+    if (!t) return "";
+    if (t.length <= max) return t;
+    return t.slice(0, Math.max(0, max - 1)) + "…";
+  }
+  
 
    // ---------- ENVÍO: CREATE (y luego modal para WhatsApp/PDF) ----------
    submitBtn.addEventListener("click", async function () {
@@ -994,7 +1602,10 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
 
     const payloadLines = [];
     lines.forEach(function (line) {
-      const concept = line.conceptInput.value.trim();
+      let concept = line.conceptInput.value.trim();
+
+
+
       const qty = parseFloat(
         String(line.qtyInput.value || "").replace(",", ".")
       );
@@ -1013,12 +1624,43 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
         return;
       }
 
-      payloadLines.push({
-        concept: concept,
-        qty: safeQty,
-        price: safePrice,
-        tax: safeVat / 100,
-      });
+      let conceptForPdf = concept; // ✅ SIN truncar
+
+try {
+  const includeDesc = !!descCheck?.checked;
+  const desc = (line.conceptInput.dataset.pfProductDescription || line.conceptInput.dataset.pfProductDesc || "").trim();
+
+  if (includeDesc && desc) {
+    conceptForPdf = `${conceptForPdf}\n${desc}`; // ✅ descripción completa, sin "…"
+  }
+} catch (_e) {}
+
+let finalPrice = safePrice;
+
+try {
+  const markupPerc = parseFloat(
+    String(line.markupInput?.value || "0").replace(",", ".")
+  );
+  const safeMarkup = Number.isFinite(markupPerc) ? markupPerc : 0;
+
+  // Si viene de catálogo, la base real está aquí
+  const baseRaw = String(line.priceInput.dataset.pfBasePrice || "").trim();
+  const base = baseRaw ? Number(baseRaw) : safePrice;
+
+  const safeBase = Number.isFinite(base) ? base : 0;
+
+  finalPrice = safeBase * (1 + safeMarkup / 100);
+} catch (_e) {}
+
+      
+
+payloadLines.push({
+  concept: conceptForPdf,
+  qty: safeQty,
+  price: finalPrice,
+  tax: safeVat / 100,
+});
+
     });
 
     if (payloadLines.length === 0) {

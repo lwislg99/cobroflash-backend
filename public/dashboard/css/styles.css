@@ -848,3 +848,10 @@ body {
   background: #f9fafb;
   color: #6b7280;
 }
+
+
+/* Presupuestos: no sombrear toda la fila al pasar el ratón */
+.quote-lines-table tbody tr:hover {
+  background: transparent !important;
+}
+

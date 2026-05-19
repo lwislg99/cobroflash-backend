@@ -121,46 +121,143 @@ export async function generateQuotePdf(params: {
   doc.fontSize(12).text('Detalle del presupuesto:');
   doc.moveDown(0.5);
 
+ 
+
+
+ // --- helpers tabla (para no descuadrar con textos largos) ---
+const X0 = 50;
+const W_CONCEPT = 240;
+const X_QTY = 300;
+const W_QTY = 40;
+const X_PRICE = 350;
+const W_PRICE = 70;
+const X_VAT = 430;
+const W_VAT = 40;
+const X_TOTAL = 480;
+const W_TOTAL = 80;
+
+const PAGE_BOTTOM = doc.page.height - doc.page.margins.bottom;
+
+// Inserta "puntos de corte" en palabras MUY largas sin espacios (wwwwww...)
+function softBreakLongTokens(input: string, chunk = 18) {
+  if (!input) return '';
+  // rompe tokens largos (secuencias sin espacios) insertando \u200B (zero-width space)
+  return input.replace(/\S{25,}/g, (tok) => {
+    const parts: string[] = [];
+    for (let i = 0; i < tok.length; i += chunk) parts.push(tok.slice(i, i + chunk));
+    return parts.join('\u200B');
+  });
+}
+
+function drawTableHeader() {
+
+  const y = doc.y;
+
   doc
     .fontSize(10)
-    .text('Concepto', 50, doc.y, { continued: true, width: 240 })
-    .text('Cant.', 300, doc.y, { continued: true, width: 40 })
-    .text('Precio', 350, doc.y, { continued: true, width: 70 })
-    .text('IVA%', 430, doc.y, { continued: true, width: 40 })
-    .text('Total', 480, doc.y, { width: 80 });
+    .text('Concepto', X0, doc.y, { width: W_CONCEPT })
+    .text('Cant.', X_QTY, doc.y - 12, { width: W_QTY, align: 'right' })
+    .text('Precio', X_PRICE, doc.y - 12, { width: W_PRICE, align: 'right' })
+    .text('IVA%', X_VAT, doc.y - 12, { width: W_VAT, align: 'right' })
+    .text('Total', X_TOTAL, doc.y - 12, { width: W_TOTAL, align: 'right' });
+
   doc.moveDown(0.3);
-  doc.moveTo(50, doc.y).lineTo(560, doc.y).stroke();
+  doc.moveTo(X0, doc.y).lineTo(560, doc.y).stroke();
   doc.moveDown(0.3);
+}
 
-  params.lines.forEach((l) => {
-    const lineTotal = l.qty * l.price * (1 + l.tax);
-    doc
-      .fontSize(10)
-      .text(l.concept, 50, doc.y, { continued: true, width: 240 })
-      .text(l.qty.toString(), 300, doc.y, { continued: true, width: 40 })
-      .text(l.price.toFixed(2), 350, doc.y, { continued: true, width: 70 })
-      .text((l.tax * 100).toFixed(0) + '%', 430, doc.y, {
-        continued: true,
-        width: 40,
-      })
-      .text(lineTotal.toFixed(2), 480, doc.y, { width: 80 });
-    doc.moveDown(0.2);
-  });
+drawTableHeader();
 
-  doc.moveDown();
 
-  doc.fontSize(12).text(`Total presupuesto: ${params.total} ${params.currency}`, {
-    align: 'right',
-  });
+params.lines.forEach((l) => {
+  const lineTotal = l.qty * l.price * (1 + l.tax);
 
-  doc.moveDown(2);
-  doc
-    .fontSize(9)
-    .fillColor('#666')
-    .text(
-      'Presupuesto generado automáticamente por PresuFácil — válido salvo indicación en contrario.',
-      { align: 'center' },
-    );
+  const concept = softBreakLongTokens(String(l.concept || '').trim());
+
+  const parts = concept.split('\n').map((s) => s.trim()).filter(Boolean);
+  const title = parts[0] || '';
+  const desc = parts.slice(1).join('\n'); // puede tener varias líneas
+
+  const qty = String(l.qty ?? '');
+  const price = Number.isFinite(l.price) ? l.price.toFixed(2) : '';
+  const vat = Number.isFinite(l.tax) ? (l.tax * 100).toFixed(0) + '%' : '';
+  const total = Number.isFinite(lineTotal) ? lineTotal.toFixed(2) : '';
+
+  const y0 = doc.y;
+
+  // 🔎 calcular alturas ANTES de dibujar
+  doc.font('Helvetica-Bold').fontSize(10);
+  const hTitle = doc.heightOfString(title, { width: W_CONCEPT });
+
+  doc.font('Helvetica').fontSize(9);
+  const hDesc = desc ? doc.heightOfString(desc, { width: W_CONCEPT }) : 0;
+
+  const rowH = Math.max(12, hTitle + (desc ? 2 : 0) + hDesc) + 6;
+
+  // ✅ salto de página ANTES de pintar
+  if (y0 + rowH > PAGE_BOTTOM) {
+    doc.addPage();
+    doc.font('Helvetica').fontSize(12).fillColor('black').text('Detalle del presupuesto:');
+    doc.moveDown(0.5);
+    drawTableHeader();
+  }
+
+  const y = doc.y; // nuevo y0 real tras posible addPage
+
+  // ✅ pintar título + descripción (sin duplicar)
+  doc.font('Helvetica-Bold').fontSize(10).fillColor('black')
+    .text(title, X0, y, { width: W_CONCEPT });
+
+  let yAfter = y + hTitle;
+
+  if (desc) {
+    yAfter += 2;
+    doc.font('Helvetica').fontSize(9).fillColor('#444')
+      .text(desc, X0, yAfter, { width: W_CONCEPT });
+    doc.fillColor('black'); // reset
+    yAfter += hDesc;
+  }
+
+  // columnas numéricas alineadas a la primera línea (y)
+  doc.font('Helvetica').fontSize(10).fillColor('black')
+    .text(qty, X_QTY, y, { width: W_QTY, align: 'right' })
+    .text(price, X_PRICE, y, { width: W_PRICE, align: 'right' })
+    .text(vat, X_VAT, y, { width: W_VAT, align: 'right' })
+    .text(total, X_TOTAL, y, { width: W_TOTAL, align: 'right' });
+
+  // avanzar el cursor al final de la fila
+  doc.y = y + rowH;
+});
+
+
+
+doc.moveDown();
+
+// ✅ Aseguramos que el "Total" se calcula desde el margen izquierdo
+const CONTENT_X = X0;                // 50
+const CONTENT_W = 560 - X0;          // 510 (hasta el borde derecho de tu tabla)
+
+// Total (sin partirse raro)
+doc.fontSize(12).text(
+  `Total presupuesto: ${params.total} ${params.currency}`,
+  CONTENT_X,
+  doc.y,
+  { width: CONTENT_W, align: 'right' },
+);
+
+doc.moveDown(2);
+
+// Footer centrado bien (con ancho fijo)
+doc
+  .fontSize(9)
+  .fillColor('#666')
+  .text(
+    'Presupuesto generado automáticamente por PresuFácil — válido salvo indicación en contrario.',
+    CONTENT_X,
+    doc.y,
+    { width: CONTENT_W, align: 'center' },
+  );
+
 
   doc.end();
 

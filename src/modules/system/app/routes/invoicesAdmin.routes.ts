@@ -14,6 +14,9 @@ const N8N_ON_INVOICE_SEND_URL =
 
 import { BASE_URL } from '../../../../core/config/env';
 
+import { prisma } from '../../../../core/db/prisma';
+
+
 
 const router = Router();
 
@@ -186,18 +189,23 @@ router.post('/:id/resend-whatsapp', async (req, res) => {
       });
 
       if (!chargeResp.ok) {
-        const text = await chargeResp.text().catch(() => '');
+        const raw = await chargeResp.text().catch(() => '');
+        let parsed: any = null;
+        try { parsed = JSON.parse(raw); } catch (_) {}
+
         console.error(
           '[POST /admin/invoices/:id/resend-whatsapp] error al crear charge',
           chargeResp.status,
-          text,
-        );
+          parsed || raw,
+      );
+
         return res.status(502).json({
-          ok: false,
-          error: 'charge_creation_failed',
-          status: chargeResp.status,
-          details: text,
-        });
+        ok: false,
+        error: 'charge_creation_failed',
+        status: chargeResp.status,
+        details: parsed || raw,
+      });
+
       }
 
       const chargeJson: any = await chargeResp.json().catch(() => null);
@@ -213,8 +221,18 @@ router.post('/:id/resend-whatsapp', async (req, res) => {
       }
 
       chargeId = chargeJson.id;
-      payBankUrl = `${BASE_URL}/pay/bank/${chargeId}`;
-      payCardUrl = `${BASE_URL}/pay/card/${chargeId}`;
+
+// ✅ PERSISTIR chargeId en la factura (CN-16)
+// después de: chargeId = chargeJson.id;
+// antes de: payBankUrl = ...
+await prisma.invoice.update({
+  where: { id: invoice.id },
+  data: { chargeId },
+});
+
+payBankUrl = `${BASE_URL}/pay/bank/${chargeId}`;
+payCardUrl = `${BASE_URL}/pay/card/${chargeId}`;
+
     } catch (err) {
       console.error(
         '[POST /admin/invoices/:id/resend-whatsapp] excepción creando charge',

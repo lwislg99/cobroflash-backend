@@ -1,0 +1,624 @@
+// public/dashboard/js/productsView.js
+function renderProductsView(container) {
+    container.innerHTML = "";
+  
+    const wrap = document.createElement("div");
+    wrap.className = "card";
+    container.appendChild(wrap);
+  
+    const header = document.createElement("div");
+    header.style.display = "flex";
+    header.style.justifyContent = "space-between";
+    header.style.alignItems = "center";
+    header.style.gap = "12px";
+    wrap.appendChild(header);
+  
+    const h = document.createElement("div");
+    h.innerHTML = `
+      <h2 style="margin:0">Catálogo de productos</h2>
+      <p style="margin:4px 0 0; color:#6b7280; font-size:13px">
+        Crea, edita o desactiva productos para usarlos en presupuestos.
+      </p>
+    `;
+    header.appendChild(h);
+  
+    const reloadBtn = document.createElement("button");
+    reloadBtn.className = "btn btn-secondary";
+    reloadBtn.type = "button";
+    reloadBtn.textContent = "Recargar";
+    header.appendChild(reloadBtn);
+
+
+    const exportBtn = document.createElement("button");
+exportBtn.className = "btn btn-secondary";
+exportBtn.type = "button";
+exportBtn.textContent = "Exportar CSV";
+header.appendChild(exportBtn);
+
+const importBtn = document.createElement("button");
+importBtn.className = "btn btn-secondary";
+importBtn.type = "button";
+importBtn.textContent = "Importar CSV";
+header.appendChild(importBtn);
+
+const importFile = document.createElement("input");
+importFile.type = "file";
+importFile.accept = ".csv,text/csv";
+importFile.style.display = "none";
+header.appendChild(importFile);
+
+      // --- search + filters (client-side) ---
+  const tools = document.createElement("div");
+  tools.style.display = "flex";
+  tools.style.alignItems = "center";
+  tools.style.gap = "8px";
+
+  const searchI = document.createElement("input");
+  searchI.placeholder = "Buscar producto…";
+  searchI.style.maxWidth = "260px";
+
+  const onlyActiveWrap = document.createElement("label");
+  onlyActiveWrap.style.display = "flex";
+  onlyActiveWrap.style.alignItems = "center";
+  onlyActiveWrap.style.gap = "6px";
+  onlyActiveWrap.style.fontSize = "13px";
+  onlyActiveWrap.style.color = "#6b7280";
+
+  const onlyActiveI = document.createElement("input");
+  onlyActiveI.type = "checkbox";
+  onlyActiveI.checked = false;
+
+  const onlyActiveText = document.createElement("span");
+  onlyActiveText.textContent = "Solo activos";
+
+  onlyActiveWrap.appendChild(onlyActiveI);
+  onlyActiveWrap.appendChild(onlyActiveText);
+
+  tools.appendChild(searchI);
+  tools.appendChild(onlyActiveWrap);
+
+  header.appendChild(tools);
+
+  
+    const alert = document.createElement("div");
+    alert.className = "alert";
+    alert.style.marginTop = "12px";
+    wrap.appendChild(alert);
+  
+    function setAlert(type, msg) {
+      alert.textContent = msg || "";
+      alert.className = "alert";
+      if (type === "success") alert.classList.add("success");
+      if (type === "error") alert.classList.add("error");
+    }
+
+        // --- edit modal (native dialog) ---
+        const editDialog = document.createElement("dialog");
+        editDialog.style.maxWidth = "560px";
+        editDialog.style.width = "100%";
+        editDialog.style.border = "1px solid #e5e7eb";
+        editDialog.style.borderRadius = "12px";
+        editDialog.style.padding = "16px";
+    
+        editDialog.innerHTML = `
+          <form method="dialog" id="pf-edit-form">
+            <h3 style="margin:0 0 10px">Editar producto</h3>
+    
+            <div class="quote-form-row">
+            <div class="field">
+              <label>Nombre *</label>
+              <input name="name" />
+            </div>
+
+            <div class="field">
+              <label>Precio *</label>
+              <input name="price" type="number" step="0.01" min="0" />
+            </div>
+
+            <div class="field">
+              <label>IVA (0..1)</label>
+              <input name="vat" type="number" step="0.01" min="0" max="1" />
+            </div>
+
+            <div class="field">
+              <label>Coste</label>
+              <input name="cost" type="number" step="0.01" min="0" />
+            </div>
+
+            <div class="field">
+              <label>Proveedor</label>
+              <select name="providerId">
+                <option value="">— Sin proveedor —</option>
+              </select>
+            </div>
+          </div>
+    
+            <div class="field">
+              <label>Descripción</label>
+              <input name="description" />
+            </div>
+    
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px">
+              <button class="btn btn-secondary" value="cancel">Cancelar</button>
+              <button class="btn btn-primary" id="pf-edit-save" value="default">Guardar</button>
+            </div>
+          </form>
+        `;
+    
+        document.body.appendChild(editDialog);
+    
+        let _editing = null; // { merchantId, id }
+    
+  
+    // --- form create ---
+    const form = document.createElement("div");
+    form.style.marginTop = "12px";
+    form.innerHTML = `
+      <div class="quote-block">
+        <h3 class="quote-block-title">Nuevo producto</h3>
+  
+        <div class="quote-form-row">
+        <div class="field">
+          <label>Nombre *</label>
+          <input name="name" placeholder="Ej: Detector de humos" />
+        </div>
+
+        <div class="field">
+          <label>Precio *</label>
+          <input name="price" type="number" step="0.01" min="0" placeholder="99.99" />
+        </div>
+
+        <div class="field">
+          <label>IVA (0..1)</label>
+          <input name="vat" type="number" step="0.01" min="0" max="1" placeholder="0.21" />
+        </div>
+
+        <div class="field">
+          <label>Coste</label>
+          <input name="cost" type="number" step="0.01" min="0" placeholder="60.00" />
+        </div>
+
+        <div class="field">
+          <label>Proveedor</label>
+          <select name="providerId">
+            <option value="">— Sin proveedor —</option>
+          </select>
+        </div>
+      </div>
+  
+        <div class="field">
+          <label>Descripción</label>
+          <input name="description" placeholder="Texto opcional" />
+        </div>
+  
+        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px">
+          <button class="btn btn-primary" type="button" id="pf-create-product">Crear producto</button>
+        </div>
+      </div>
+    `;
+    wrap.appendChild(form);
+  
+    const nameI = form.querySelector('input[name="name"]');
+    const priceI = form.querySelector('input[name="price"]');
+    const vatI = form.querySelector('input[name="vat"]');
+    const costI = form.querySelector('input[name="cost"]');
+    const providerSelect = form.querySelector('select[name="providerId"]');
+    const descI = form.querySelector('input[name="description"]');
+    const createBtn = form.querySelector("#pf-create-product");
+  
+    // --- table ---
+    const tableWrap = document.createElement("div");
+    tableWrap.style.marginTop = "14px";
+    wrap.appendChild(tableWrap);
+  
+    const table = document.createElement("table");
+    table.className = "table";
+    table.innerHTML = `
+    <thead>
+    <tr>
+      <th style="width:60px">ID</th>
+      <th>Nombre</th>
+      <th style="width:160px">Proveedor</th>
+      <th style="width:140px">Precio</th>
+      <th style="width:110px">IVA</th>
+      <th style="width:140px">Coste</th>
+      <th style="width:110px">Activo</th>
+      <th style="width:210px"></th>
+    </tr>
+  </thead>  
+      <tbody></tbody>
+    `;
+    tableWrap.appendChild(table);
+  
+    const tbody = table.querySelector("tbody");
+  
+    // --- api helpers ---
+    async function getMerchantId() {
+      // usa tu endpoint real
+      const res = await fetch("/admin/merchant");
+      if (!res.ok) throw new Error("No se pudo cargar /admin/merchant");
+      const m = await res.json();
+      if (!m || !m.id) throw new Error("merchant.id no disponible");
+      return m.id;
+    }
+  
+    async function listProducts(merchantId) {
+      const res = await fetch(`/admin/products?merchantId=${encodeURIComponent(merchantId)}`);
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data || !data.ok) throw new Error(data?.error || "Error listando productos");
+      return data.items || [];
+    }
+
+    async function listProviders(merchantId) {
+      const res = await fetch(`/admin/providers?merchantId=${encodeURIComponent(merchantId)}`);
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data || !data.ok) throw new Error(data?.error || "Error listando proveedores");
+      return data.items || [];
+    }
+  
+    async function createProduct(merchantId, payload) {
+      const res = await fetch(`/admin/products?merchantId=${encodeURIComponent(merchantId)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data || !data.ok) throw new Error(data?.error || "Error creando producto");
+      return data.item;
+    }
+  
+    async function updateProduct(merchantId, id, payload) {
+      const res = await fetch(`/admin/products/${id}?merchantId=${encodeURIComponent(merchantId)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data || !data.ok) throw new Error(data?.error || "Error actualizando producto");
+      return data.item;
+    }
+  
+    async function deleteProduct(merchantId, id) {
+      const res = await fetch(`/admin/products/${id}?merchantId=${encodeURIComponent(merchantId)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data || !data.ok) throw new Error(data?.error || "Error borrando producto");
+      return data.deleted;
+    }
+
+    async function importProductsCsv(merchantId, csvText) {
+      const res = await fetch(`/admin/products/import?merchantId=${encodeURIComponent(merchantId)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ csv: csvText }),
+      });
+    
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data || !data.ok) throw new Error(data?.error || "Error importando CSV");
+      return { inserted: Number(data.inserted || 0) };
+    }
+  
+    function money(v) {
+      if (v === null || typeof v === "undefined") return "—";
+      const n = Number(v);
+      if (!Number.isFinite(n)) return String(v);
+      return n.toFixed(2);
+    }
+  
+    function renderRows(items, merchantId) {
+      tbody.innerHTML = "";
+  
+      if (!items || items.length === 0) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 8;
+        td.textContent = "No hay productos todavía.";
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+  
+      items.forEach((it) => {
+        const tr = document.createElement("tr");
+  
+        tr.innerHTML = `
+        <td>${it.id}</td>
+        <td>
+          <div style="font-weight:600">${it.name || ""}</div>
+          <div style="font-size:12px; color:#6b7280">${it.description || ""}</div>
+        </td>
+        <td>${it.provider?.name || "—"}</td>
+        <td>${money(it.price)}</td>
+        <td>${it.vat === null ? "—" : String(it.vat)}</td>
+        <td>${money(it.cost)}</td>
+        <td>${it.isActive ? "Sí" : "No"}</td>
+        <td></td>
+      `;
+  
+        const actionsTd = tr.lastElementChild;
+  
+        const editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "btn btn-secondary";
+        editBtn.textContent = "Editar";
+  
+        const toggleBtn = document.createElement("button");
+        toggleBtn.type = "button";
+        toggleBtn.className = "btn btn-secondary";
+        toggleBtn.textContent = it.isActive ? "Desactivar" : "Activar";
+  
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "btn btn-secondary";
+        delBtn.textContent = "Borrar";
+  
+        actionsTd.style.display = "flex";
+        actionsTd.style.justifyContent = "flex-end";
+        actionsTd.style.gap = "8px";
+        actionsTd.appendChild(editBtn);
+        actionsTd.appendChild(toggleBtn);
+        actionsTd.appendChild(delBtn);
+  
+        editBtn.addEventListener("click", async () => {
+            try {
+              setAlert(null, "");
+              _editing = { merchantId, id: it.id };
+              const formEl = editDialog.querySelector("#pf-edit-form");
+              formEl.name.value = it.name || "";
+              formEl.price.value = it.price ?? "";
+              formEl.vat.value = it.vat === null ? "" : String(it.vat);
+              formEl.cost.value = it.cost === null ? "" : String(it.cost);
+              formEl.description.value = it.description || "";
+
+              const providerSelectEl = formEl.querySelector('select[name="providerId"]');
+              if (providerSelectEl) {
+                providerSelectEl.innerHTML = `<option value="">— Sin proveedor —</option>`;
+
+                (_providers || []).forEach((p) => {
+                  const opt = document.createElement("option");
+                  opt.value = String(p.id);
+                  opt.textContent = p.name || `Proveedor #${p.id}`;
+                  providerSelectEl.appendChild(opt);
+                });
+
+                providerSelectEl.value = it.providerId == null ? "" : String(it.providerId);
+              }
+
+              editDialog.showModal();
+  
+              // Guardar: interceptamos submit del form
+              const onSubmit = async (e) => {
+                e.preventDefault();
+  
+                const name = String(formEl.name.value || "").trim();
+                const price = Number(formEl.price.value);
+                const vatRaw = String(formEl.vat.value || "").trim();
+                const costRaw = String(formEl.cost.value || "").trim();
+                const providerRaw = String(formEl.providerId?.value || "").trim();
+                const description = String(formEl.description.value || "").trim();
+  
+                if (!name) return setAlert("error", "name_required");
+                if (!Number.isFinite(price) || price <= 0) return setAlert("error", "price_invalid");
+  
+                const payload = {
+                  name,
+                  description: description || null,
+                  price,
+                  vat: vatRaw === "" ? null : Number(vatRaw),
+                  cost: costRaw === "" ? null : Number(costRaw),
+                  providerId: providerRaw === "" ? null : Number(providerRaw),
+                };
+  
+                await updateProduct(_editing.merchantId, _editing.id, payload);
+                editDialog.close();
+                setAlert("success", "Producto actualizado.");
+                await refresh();
+              };
+  
+              formEl.addEventListener("submit", onSubmit, { once: true });
+            } catch (e) {
+              setAlert("error", e.message || "Error actualizando.");
+            }
+          });
+  
+
+
+  
+        toggleBtn.addEventListener("click", async () => {
+          try {
+            setAlert(null, "");
+            await updateProduct(merchantId, it.id, { isActive: !it.isActive });
+            setAlert("success", "Estado actualizado.");
+            await refresh();
+          } catch (e) {
+            setAlert("error", e.message || "Error actualizando estado.");
+          }
+        });
+  
+        delBtn.addEventListener("click", async () => {
+          if (!confirm(`¿Borrar el producto "${it.name}"?`)) return;
+          try {
+            setAlert(null, "");
+            await deleteProduct(merchantId, it.id);
+            setAlert("success", "Producto borrado.");
+            await refresh();
+          } catch (e) {
+            setAlert("error", e.message || "Error borrando.");
+          }
+        });
+  
+        tbody.appendChild(tr);
+      });
+    }
+  
+    let _merchantId = null;
+    let _importing = false;
+    let _providers = [];
+  
+    async function refresh() {
+      const merchantId = _merchantId || (_merchantId = await getMerchantId());
+
+      const [items, providers] = await Promise.all([
+        listProducts(merchantId),
+        listProviders(merchantId),
+      ]);
+
+      _providers = Array.isArray(providers) ? providers : [];
+
+      if (providerSelect) {
+        const currentValue = providerSelect.value;
+        providerSelect.innerHTML = `<option value="">— Sin proveedor —</option>`;
+
+        _providers.forEach((p) => {
+          const opt = document.createElement("option");
+          opt.value = String(p.id);
+          opt.textContent = p.name || `Proveedor #${p.id}`;
+          providerSelect.appendChild(opt);
+        });
+
+        if (currentValue) {
+          providerSelect.value = currentValue;
+        }
+      }
+
+      const q = String(searchI.value || "").trim().toLowerCase();
+      const onlyActive = !!onlyActiveI.checked;
+
+      const filtered = items.filter((p) => {
+        if (onlyActive && !p.isActive) return false;
+        if (!q) return true;
+        const hay = `${p.name || ""} ${p.description || ""}`.toLowerCase();
+        return hay.includes(q);
+      });
+
+      renderRows(filtered, merchantId);
+    }
+  
+    reloadBtn.addEventListener("click", async () => {
+      try {
+        setAlert(null, "");
+        await refresh();
+      } catch (e) {
+        setAlert("error", e.message || "Error recargando.");
+      }
+    });
+
+    exportBtn.addEventListener("click", async () => {
+      try {
+        setAlert(null, "");
+        const merchantId = _merchantId || (_merchantId = await getMerchantId());
+        const url = `/admin/products/export?merchantId=${encodeURIComponent(merchantId)}`;
+        window.open(url, "_blank");
+      } catch (e) {
+        setAlert("error", e.message || "Error exportando.");
+      }
+    });
+
+  
+
+    importBtn.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    
+      if (_importing) return;
+    
+      setAlert(null, "");
+      importFile.value = ""; // permite re-importar el mismo archivo
+      importFile.click();
+    };
+    
+    importFile.onchange = async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    
+      // lock anti-doble disparo
+      if (_importing) return;
+    
+      const file = importFile.files && importFile.files[0];
+      if (!file) return;
+    
+      _importing = true;
+      importBtn.disabled = true;
+      const prevText = importBtn.textContent;
+      importBtn.textContent = "Importando…";
+    
+      try {
+        setAlert(null, "");
+    
+        const csv = await file.text();
+        const merchantId = _merchantId || (_merchantId = await getMerchantId());
+    
+        const res = await fetch(`/admin/products/import?merchantId=${encodeURIComponent(merchantId)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ csv }),
+        });
+    
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data || !data.ok) throw new Error(data?.error || "Error importando");
+    
+        setAlert("success", `CSV importado. Insertados: ${data.inserted ?? 0} · Duplicados omitidos: ${data.skippedDuplicates ?? 0}`);
+        await refresh();
+      } catch (err) {
+        setAlert("error", err.message || "Error importando.");
+      } finally {
+        // MUY importante: limpiar value para que no se “re-dispare” con el mismo archivo
+        importFile.value = "";
+        _importing = false;
+        importBtn.disabled = false;
+        importBtn.textContent = prevText;
+      }
+    };
+    createBtn.addEventListener("click", async () => {
+      try {
+        setAlert(null, "");
+  
+        const merchantId = _merchantId || (_merchantId = await getMerchantId());
+  
+        const name = String(nameI.value || "").trim();
+        const price = Number(priceI.value);
+        const vatRaw = String(vatI.value || "").trim();
+        const costRaw = String(costI.value || "").trim();
+        const providerRaw = String(providerSelect?.value || "").trim();
+        const description = String(descI.value || "").trim();
+  
+        if (!name) return setAlert("error", "name_required");
+        if (!Number.isFinite(price) || price <= 0) return setAlert("error", "price_invalid");
+  
+        const payload = {
+          name,
+          description: description || null,
+          price,
+          vat: vatRaw === "" ? null : Number(vatRaw),
+          cost: costRaw === "" ? null : Number(costRaw),
+          providerId: providerRaw === "" ? null : Number(providerRaw),
+        };
+  
+        await createProduct(merchantId, payload);
+  
+        nameI.value = "";
+        priceI.value = "";
+        vatI.value = "";
+        costI.value = "";
+        if (providerSelect) providerSelect.value = "";
+        descI.value = "";
+  
+        setAlert("success", "Producto creado.");
+        await refresh();
+      } catch (e) {
+        setAlert("error", e.message || "Error creando producto.");
+      }
+    });
+  
+
+
+
+    searchI.addEventListener("input", () => refresh().catch(() => {}));
+    onlyActiveI.addEventListener("change", () => refresh().catch(() => {}));
+
+
+    // init
+    refresh().catch((e) => setAlert("error", e.message || "Error cargando productos."));
+  }
+  

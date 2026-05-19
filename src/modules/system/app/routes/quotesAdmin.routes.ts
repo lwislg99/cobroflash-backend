@@ -113,9 +113,18 @@ router.post('/:id/reject', async (req, res) => {
 
 /**
  * POST /admin/quotes/:id/invoice
- * Crea una factura 100% del presupuesto aceptado.
- * - Solo si status = accepted.
- * - Idempotente: si ya existe, devuelve la misma.
+ *
+ * Genera la siguiente factura del presupuesto, según paymentTerms.
+ * Usa el helper de billingPlan:
+ *   - FULL_UPFRONT  → 1 factura del 100%
+ *   - FIFTY_FIFTY   → 2 facturas del 50%
+ *   - MANUAL / SIN_CONDICIONES → no genera facturas automáticas
+ *
+ * Reglas:
+ *   - Solo permite presupuestos con status = 'accepted'
+ *   - Idempotente por tramo:
+ *       si ya se han generado todas las facturas definidas en el plan,
+ *       devuelve 409 no_more_invoices_for_payment_terms
  */
 router.post('/:id/invoice', async (req, res) => {
   try {
@@ -141,11 +150,14 @@ router.post('/:id/invoice', async (req, res) => {
       return res.status(409).json({ error: 'quote_not_accepted' });
     }
 
-    const existingInvoices = quote.Invoice || [];
-    const paymentTerms =
-      (quote as any).paymentTerms ?? null; // campo de la tabla quotes
+    if (!quote.merchant || !quote.customer) {
+      return res.status(500).json({ error: 'quote_missing_relations' });
+    }
 
-    // Miramos qué tramo toca ahora (FULL_UPFRONT o FIFTY_FIFTY)
+    const existingInvoices = quote.Invoice || [];
+    const paymentTerms = (quote as any).paymentTerms ?? null;
+
+    // Miramos qué tramo toca ahora (FULL_UPFRONT o FIFTY_FIFTY, etc.)
     const stage = getNextBillingStage(paymentTerms, existingInvoices.length);
 
     if (!stage) {
@@ -178,7 +190,7 @@ router.post('/:id/invoice', async (req, res) => {
           number: invoiceNumber,
           total: invoiceAmount.toFixed(2),
           currency: quote.currency,
-          // De momento ponemos placeholders, ya se enganchará el PDF/VeriFactu
+          // De momento placeholders; más adelante enganchamos PDF/VeriFactu
           pdfUrl: 'PENDING_PDF',
           qrData: 'PENDING_QR',
           registerId: null,
@@ -198,15 +210,14 @@ router.post('/:id/invoice', async (req, res) => {
       total: invoice.total.toString(),
       currency: invoice.currency,
       createdAt: invoice.createdAt,
+      percentage, // opcional, por si quieres verlo en el BO
     });
   } catch (err) {
     console.error('[POST /admin/quotes/:id/invoice] error', err);
     return res.status(500).json({ error: 'internal_error' });
   }
-
-
-
 });
+
 
 
 /**

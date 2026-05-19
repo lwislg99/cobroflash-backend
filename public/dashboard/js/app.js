@@ -82,6 +82,30 @@ function initApp() {
         renderInvoicesView(viewContainer);
         break;
 
+
+        case "products":
+          viewTitle.textContent = "Productos";
+          if (typeof window.renderProductsView === "function") {
+            window.renderProductsView(viewContainer);
+          } else if (typeof renderProductsView === "function") {
+            renderProductsView(viewContainer);
+          } else {
+            viewContainer.innerHTML = "<p>No se encuentra la vista de productos.</p>";
+          }
+          break;
+
+          case "providers":
+            viewTitle.textContent = "Proveedores";
+            if (typeof window.renderProvidersView === "function") {
+              window.renderProvidersView(viewContainer);
+            } else if (typeof renderProvidersView === "function") {
+              renderProvidersView(viewContainer);
+            } else {
+              viewContainer.innerHTML = "<p>No se encuentra la vista de proveedores.</p>";
+            }
+            break;
+  
+
       case "invoice-detail":
         viewTitle.textContent = "Factura";
         if (state.invoiceId == null) {
@@ -137,6 +161,12 @@ function initApp() {
     });
   });
 
+    // Si viene un hash tipo #products, lo usamos como vista inicial
+    try {
+      const hash = (window.location.hash || "").replace("#", "").trim();
+      if (hash) window.appState.view = hash;
+    } catch (_e) {}
+  
   // Vista inicial
   renderView(window.appState.view || "customers");
 }

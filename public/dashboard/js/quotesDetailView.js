@@ -534,10 +534,12 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
           btnPaid.textContent = "Guardando…";
 
           try {
-            const res = await fetch(`/admin/invoices/${inv.id}/mark-paid`, {
-              method: "POST",
+            const res = await fetch(`/admin/invoices/${inv.id}/status`, {
+              method: "PUT",
               headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ status: "paid" }),
             });
+            
 
             const data = await res.json().catch(() => ({}));
 
@@ -582,7 +584,8 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   btnInvoice.style.marginTop = "12px";
   invoicesCard.appendChild(btnInvoice);
 
-  const pt = quote.paymentTerms || null;
+  const pt = quote?.decision?.paymentTerms ?? quote?.paymentTerms ?? null;
+
   const stStatus = st; // status ya en minúsculas
 
   const isAccepted = stStatus === "accepted";
