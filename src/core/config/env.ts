@@ -19,6 +19,12 @@ export const config = {
     N8N_ONEXPIRED_URL: process.env.N8N_ONEXPIRED_URL || '',
     N8N_ONSEND_URL: process.env.N8N_ONSEND_URL || '',
     N8N_TOKEN: process.env.N8N_TOKEN || '',
+
+
+
+    WHATSAPP_PHONE_NUMBER_ID: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
+    WHATSAPP_BUSINESS_ACCOUNT_ID: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || '',
+    WHATSAPP_ACCESS_TOKEN: process.env.WHATSAPP_ACCESS_TOKEN || '',
   } as const;
   
   export const BASE_URL = config.PUBLIC_BASE_URL;
