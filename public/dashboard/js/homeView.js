@@ -390,8 +390,8 @@ async function submitQuickQuote() {
       customerId = newCustomer.id;
     }
 
-    // 2. Obtener merchantId del perfil (siempre 1 en Sprint 1)
-    const merchant_id = 1;
+    // 2. merchantId viene de la sesión autenticada
+    const merchant_id = window.appMerchantId;
 
     // 3. Crear el presupuesto
     const quote = await createQuote({

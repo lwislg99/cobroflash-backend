@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <title>PresuFácil — Acceder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, sans-serif;
+      background: #f0f4f8; display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 16px; }
+    .card { background: #fff; border-radius: 20px; padding: 32px 28px;
+      width: 100%; max-width: 400px; box-shadow: 0 8px 32px rgba(0,0,0,0.10); }
+    .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+    .logo-mark { width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg,#22c55e,#22d3ee);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 16px; color: #052e16; }
+    .logo-text { font-weight: 700; font-size: 20px; color: #0f172a; }
+    h1 { margin: 0 0 6px; font-size: 22px; color: #0f172a; }
+    p  { margin: 0 0 24px; font-size: 14px; color: #6b7280; line-height: 1.5; }
+    label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+    input[type=email] { width: 100%; padding: 12px 14px; font-size: 15px;
+      border: 1px solid #d1d5db; border-radius: 10px; outline: none; }
+    input[type=email]:focus { border-color: #22c55e; box-shadow: 0 0 0 2px rgba(34,197,94,.2); }
+    .btn { width: 100%; padding: 13px; font-size: 16px; font-weight: 700;
+      background: #22c55e; color: #052e16; border: none; border-radius: 12px;
+      cursor: pointer; margin-top: 16px; }
+    .btn:disabled { opacity: .6; cursor: default; }
+    .alert { margin-top: 14px; padding: 10px 14px; border-radius: 10px; font-size: 14px; }
+    .alert.ok    { background: #ecfdf5; color: #166534; }
+    .alert.error { background: #fef2f2; color: #991b1b; }
+    .register-link { text-align: center; margin-top: 20px; font-size: 13px; color: #6b7280; }
+    .register-link a { color: #22c55e; font-weight: 600; text-decoration: none; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-mark">PF</div>
+    <div class="logo-text">PresuFácil</div>
+  </div>
+  <h1>Acceder</h1>
+  <p>Introduce tu email y te enviamos un enlace mágico para entrar sin contraseña.</p>
+  <form id="login-form">
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="tu@email.com" required autocomplete="email"/>
+    <button class="btn" type="submit" id="btn">Enviar enlace de acceso</button>
+  </form>
+  <div id="alert" class="alert" style="display:none"></div>
+  <div class="register-link">¿Primera vez? <a href="/register.html">Crea tu cuenta gratis</a></div>
+</div>
+<script>
+  // Si ya hay sesión válida, redirigir al dashboard
+  fetch('/admin/me').then(r => { if (r.ok) window.location.href = '/dashboard/'; }).catch(()=>{});
+
+  // Mostrar errores de URL
+  const params = new URLSearchParams(location.search);
+  if (params.get('error')) {
+    const msgs = { link_expired: 'El enlace ha caducado o ya fue usado. Solicita uno nuevo.', invalid_token: 'Enlace inválido.', internal_error: 'Error interno. Inténtalo de nuevo.' };
+    showAlert(msgs[params.get('error')] || 'Error desconocido.', 'error');
+  }
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value.trim();
+    const btn = document.getElementById('btn');
+    btn.disabled = true;
+    btn.textContent = 'Enviando…';
+    try {
+      const res = await fetch('/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+      const data = await res.json();
+      if (res.ok) { showAlert('¡Listo! Revisa tu email y haz clic en el enlace.', 'ok'); }
+      else { showAlert(data.error || 'Error al enviar el enlace.', 'error'); btn.disabled = false; btn.textContent = 'Enviar enlace de acceso'; }
+    } catch { showAlert('Error de conexión.', 'error'); btn.disabled = false; btn.textContent = 'Enviar enlace de acceso'; }
+  });
+
+  function showAlert(msg, type) {
+    const el = document.getElementById('alert');
+    el.textContent = msg; el.className = 'alert ' + type; el.style.display = 'block';
+  }
+</script>
+</body>
+</html>

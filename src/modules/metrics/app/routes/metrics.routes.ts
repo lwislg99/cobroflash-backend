@@ -3,9 +3,9 @@ import { getHomeMetrics } from '../../domain/metrics.service';
 
 const router = Router();
 
-router.get('/home', async (_req, res) => {
+router.get('/home', async (req, res) => {
   try {
-    const metrics = await getHomeMetrics();
+    const metrics = await getHomeMetrics(req.merchantId);
     return res.json(metrics);
   } catch (err) {
     console.error('[GET /admin/metrics/home]', err);

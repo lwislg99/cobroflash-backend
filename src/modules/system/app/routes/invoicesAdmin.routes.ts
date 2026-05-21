@@ -29,7 +29,7 @@ router.get('/', async (req, res) => {
     const status = req.query.status ? String(req.query.status) : 'all';
     const search = req.query.search ? String(req.query.search) : undefined;
 
-    const invoices = await listInvoicesAdmin(status, search);
+    const invoices = await listInvoicesAdmin(req.merchantId, status, search);
     res.json(invoices);
   } catch (err) {
     console.error('[GET /admin/invoices]', err);

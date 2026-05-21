@@ -24,7 +24,7 @@ const router = Router();
 router.get('/', async (req, res) => {
   try {
     const search = req.query.search ? String(req.query.search) : undefined;
-    const quotes = await listQuotesAdmin(search);
+    const quotes = await listQuotesAdmin(req.merchantId, search);
     return res.json(quotes);
   } catch (err) {
     console.error('[GET /admin/quotes]', err);

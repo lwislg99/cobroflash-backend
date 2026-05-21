@@ -1,39 +1,35 @@
 import { prisma } from '../../core/db/prisma';
 import { Prisma } from '@prisma/client';
-import {
-  CustomerCreateInput,
-  CustomerUpdateInput,
-} from '../../core/validation/schemas';
+import { CustomerCreateInput, CustomerUpdateInput } from '../../core/validation/schemas';
 
-export async function listCustomers(search?: string) {
-  const where: Prisma.CustomerWhereInput | undefined = search
-    ? {
-        OR: [
-          { name:  { contains: search, mode: 'insensitive' } },
-          { phone: { contains: search, mode: 'insensitive' } },
-          { email: { contains: search, mode: 'insensitive' } },
-        ],
-      }
-    : undefined;
+export async function listCustomers(merchantId: number, search?: string) {
+  const where: Prisma.CustomerWhereInput = { merchantId };
 
-  return prisma.customer.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-  });
+  if (search) {
+    where.AND = [{
+      OR: [
+        { name:  { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ],
+    }];
+  }
+
+  return prisma.customer.findMany({ where, orderBy: { createdAt: 'desc' } });
 }
 
-export async function getCustomer(id: number) {
-  return prisma.customer.findUnique({ where: { id } });
+export async function getCustomer(merchantId: number, id: number) {
+  return prisma.customer.findFirst({ where: { id, merchantId } });
 }
 
-export async function createCustomer(data: CustomerCreateInput) {
-  return prisma.customer.create({ data });
+export async function createCustomer(merchantId: number, data: CustomerCreateInput) {
+  return prisma.customer.create({ data: { ...data, merchantId } });
 }
 
-export async function updateCustomer(id: number, data: CustomerUpdateInput) {
-  return prisma.customer.update({ where: { id }, data });
+export async function updateCustomer(merchantId: number, id: number, data: CustomerUpdateInput) {
+  return prisma.customer.updateMany({ where: { id, merchantId }, data });
 }
 
-export async function deleteCustomer(id: number) {
-  return prisma.customer.delete({ where: { id } });
+export async function deleteCustomer(merchantId: number, id: number) {
+  return prisma.customer.deleteMany({ where: { id, merchantId } });
 }

@@ -4,8 +4,8 @@ import { prisma } from '../../core/db/prisma';
 /**
  * Lista de presupuestos para el panel admin.
  */
-export async function listQuotesAdmin(search?: string) {
-  const where: any = {};
+export async function listQuotesAdmin(merchantId: number, search?: string) {
+  const where: any = { merchantId };
 
   if (search && search.trim() !== '') {
     const s = search.trim();

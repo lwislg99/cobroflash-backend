@@ -4,10 +4,11 @@ import { Prisma } from '@prisma/client';
 
 // Listado para el BO (con filtros)
 export async function listInvoicesAdmin(
+  merchantId: number,
   status: string | 'all' = 'all',
   search?: string,
 ) {
-  const where: Prisma.InvoiceWhereInput = {};
+  const where: Prisma.InvoiceWhereInput = { merchantId };
 
   if (status && status !== 'all') {
     where.status = status;

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <title>PresuFácil — Crear cuenta</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, sans-serif;
+      background: #f0f4f8; display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 16px; }
+    .card { background: #fff; border-radius: 20px; padding: 32px 28px;
+      width: 100%; max-width: 420px; box-shadow: 0 8px 32px rgba(0,0,0,0.10); }
+    .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+    .logo-mark { width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg,#22c55e,#22d3ee);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 16px; color: #052e16; }
+    .logo-text { font-weight: 700; font-size: 20px; color: #0f172a; }
+    h1 { margin: 0 0 6px; font-size: 22px; color: #0f172a; }
+    p  { margin: 0 0 24px; font-size: 14px; color: #6b7280; line-height: 1.5; }
+    .field { margin-bottom: 14px; }
+    label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+    input { width: 100%; padding: 12px 14px; font-size: 15px;
+      border: 1px solid #d1d5db; border-radius: 10px; outline: none; }
+    input:focus { border-color: #22c55e; box-shadow: 0 0 0 2px rgba(34,197,94,.2); }
+    select { width: 100%; padding: 12px 14px; font-size: 15px;
+      border: 1px solid #d1d5db; border-radius: 10px; outline: none; background: #fff; }
+    .btn { width: 100%; padding: 13px; font-size: 16px; font-weight: 700;
+      background: #22c55e; color: #052e16; border: none; border-radius: 12px;
+      cursor: pointer; margin-top: 8px; }
+    .btn:disabled { opacity: .6; cursor: default; }
+    .trial-badge { background: #eff6ff; color: #1d4ed8; font-size: 13px;
+      padding: 8px 12px; border-radius: 8px; margin-bottom: 20px; }
+    .alert { margin-top: 14px; padding: 10px 14px; border-radius: 10px; font-size: 14px; }
+    .alert.ok    { background: #ecfdf5; color: #166534; }
+    .alert.error { background: #fef2f2; color: #991b1b; }
+    .login-link { text-align: center; margin-top: 20px; font-size: 13px; color: #6b7280; }
+    .login-link a { color: #22c55e; font-weight: 600; text-decoration: none; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-mark">PF</div>
+    <div class="logo-text">PresuFácil</div>
+  </div>
+  <h1>Crea tu cuenta</h1>
+  <div class="trial-badge">🎉 14 días gratis, sin tarjeta de crédito</div>
+  <form id="register-form">
+    <div class="field">
+      <label for="name">Nombre de tu negocio</label>
+      <input type="text" id="name" placeholder="Ej: Electricidad García" required/>
+    </div>
+    <div class="field">
+      <label for="email">Tu email</label>
+      <input type="email" id="email" placeholder="tu@email.com" required autocomplete="email"/>
+    </div>
+    <div class="field">
+      <label for="country">País</label>
+      <select id="country">
+        <option value="MX">México</option>
+        <option value="CO">Colombia</option>
+        <option value="ES" selected>España</option>
+        <option value="AR">Argentina</option>
+        <option value="PE">Perú</option>
+        <option value="CL">Chile</option>
+      </select>
+    </div>
+    <button class="btn" type="submit" id="btn">Crear cuenta y acceder</button>
+  </form>
+  <div id="alert" class="alert" style="display:none"></div>
+  <div class="login-link">¿Ya tienes cuenta? <a href="/login.html">Acceder</a></div>
+</div>
+<script>
+  document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name    = document.getElementById('name').value.trim();
+    const email   = document.getElementById('email').value.trim();
+    const country = document.getElementById('country').value;
+    const btn = document.getElementById('btn');
+    btn.disabled = true; btn.textContent = 'Creando cuenta…';
+    try {
+      const res = await fetch('/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, country }) });
+      const data = await res.json();
+      if (res.ok) { showAlert('¡Cuenta creada! Revisa tu email para acceder.', 'ok'); }
+      else { showAlert(data.error || 'Error al crear la cuenta.', 'error'); btn.disabled = false; btn.textContent = 'Crear cuenta y acceder'; }
+    } catch { showAlert('Error de conexión.', 'error'); btn.disabled = false; btn.textContent = 'Crear cuenta y acceder'; }
+  });
+
+  function showAlert(msg, type) {
+    const el = document.getElementById('alert');
+    el.textContent = msg; el.className = 'alert ' + type; el.style.display = 'block';
+  }
+</script>
+</body>
+</html>

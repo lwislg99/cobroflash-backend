@@ -13,22 +13,6 @@ async function main() {
       name: 'Demo ES',
       country: 'ES',
       status: 'active',
-
-      // Campos fiscales nuevos
-      legalName: 'Demo ES S.L.',
-      address: 'C/ Ejemplo 123, 28000 Madrid',
-      defaultCurrency: 'EUR',
-      invoiceSeriesPrefix: 'CF',
-      logoUrl: null,
-      taxId: 'B12345678',
-      whatsappPhone: '34600000000'
-      // nextInvoiceNumber lo dejamos que siga su contador (ya tiene default 1)
-    },
-    create: {
-      name: 'Demo ES',
-      country: 'ES',
-      status: 'active',
-
       legalName: 'Demo ES S.L.',
       address: 'C/ Ejemplo 123, 28000 Madrid',
       defaultCurrency: 'EUR',
@@ -36,8 +20,22 @@ async function main() {
       logoUrl: null,
       taxId: 'B12345678',
       whatsappPhone: '34600000000',
-      // Este solo se usa si no existía el merchant
-      nextInvoiceNumber: 1
+    },
+    create: {
+      name: 'Demo ES',
+      email: 'demo@presufacil.online',
+      country: 'ES',
+      status: 'active',
+      legalName: 'Demo ES S.L.',
+      address: 'C/ Ejemplo 123, 28000 Madrid',
+      defaultCurrency: 'EUR',
+      invoiceSeriesPrefix: 'CF',
+      logoUrl: null,
+      taxId: 'B12345678',
+      whatsappPhone: '34600000000',
+      nextInvoiceNumber: 1,
+      plan: 'trial',
+      planExpiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
     }
   });
 
@@ -48,13 +46,14 @@ async function main() {
       name: 'Cliente Prueba',
       phone: '34629965893',
       email: 'cliente@example.com',
-      notes: 'Cliente demo para probar CobroFlash'
+      notes: 'Cliente demo para probar CobroFlash',
     },
     create: {
+      merchantId: 1,
       name: 'Cliente Prueba',
       phone: '34629965893',
       email: 'cliente@example.com',
-      notes: 'Cliente demo para probar CobroFlash'
+      notes: 'Cliente demo para probar CobroFlash',
     }
   });
 

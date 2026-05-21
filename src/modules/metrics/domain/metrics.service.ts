@@ -1,30 +1,24 @@
 import { prisma } from '../../../core/db/prisma';
 
-const MERCHANT_ID = 1;
-
-export async function getHomeMetrics() {
+export async function getHomeMetrics(merchantId: number) {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const [pendingInvoices, sentQuotes, paidThisMonth, recentQuotes] = await Promise.all([
     prisma.invoice.aggregate({
-      where: { merchantId: MERCHANT_ID, status: 'pending' },
+      where: { merchantId, status: 'pending' },
       _sum: { total: true },
       _count: { id: true },
     }),
     prisma.quote.count({
-      where: { merchantId: MERCHANT_ID, status: 'sent' },
+      where: { merchantId, status: 'sent' },
     }),
     prisma.invoice.aggregate({
-      where: {
-        merchantId: MERCHANT_ID,
-        status: 'paid',
-        paidAt: { gte: startOfMonth },
-      },
+      where: { merchantId, status: 'paid', paidAt: { gte: startOfMonth } },
       _sum: { total: true },
     }),
     prisma.quote.findMany({
-      where: { merchantId: MERCHANT_ID },
+      where: { merchantId },
       include: { customer: { select: { name: true } } },
       orderBy: { updatedAt: 'desc' },
       take: 5,

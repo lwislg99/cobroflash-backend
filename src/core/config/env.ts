@@ -2,9 +2,14 @@ export const config = {
     NODE_ENV: process.env.NODE_ENV || 'development',
     PORT: Number(process.env.PORT || 3000),
     PUBLIC_BASE_URL: process.env.PUBLIC_BASE_URL || `http://localhost:${process.env.PORT || 3000}`,
-  
+
+    SESSION_SECRET: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
+
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || '',
+    STRIPE_PRICE_ID_BASIC:   process.env.STRIPE_PRICE_ID_BASIC   || '',
+    STRIPE_PRICE_ID_PRO:     process.env.STRIPE_PRICE_ID_PRO     || '',
+    STRIPE_PRICE_ID_EMPRESA: process.env.STRIPE_PRICE_ID_EMPRESA || '',
   
     SMTP_URL: process.env.SMTP_URL || '',
     EMAIL_FROM: process.env.EMAIL_FROM || 'CobroFlash <no-reply@cobroflash.local>',
