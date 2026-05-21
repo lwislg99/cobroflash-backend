@@ -35,6 +35,7 @@ import invoicesAdminRouter from './modules/system/app/routes/invoicesAdmin.route
 
 import productsAdminRouter from './modules/products/app/routes/products.routes';
 import providersAdminRouter from './modules/providers/app/routes/providers.routes';
+import metricsRouter from './modules/metrics/app/routes/metrics.routes';
 
 
 import { quoteDecisionLandingRouter } from './modules/system/app/routes/quoteDecisionLanding.routes';
@@ -88,6 +89,7 @@ app.use('/admin/invoices', invoicesAdminRouter);
 
 app.use('/admin/products', productsAdminRouter);
 app.use('/admin/providers', providersAdminRouter);
+app.use('/admin/metrics', metricsRouter);
 
 
 

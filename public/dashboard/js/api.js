@@ -123,3 +123,17 @@ async function rejectQuoteAdmin(id, payload = {}) {
     body: JSON.stringify(payload),
   });
 }
+
+// Enviar presupuesto por WhatsApp
+async function sendQuoteWhatsApp(id) {
+  return apiRequest(`/admin/quotes/${id}/send-whatsapp`, { method: "POST" });
+}
+
+// -------- Admin – Productos --------
+
+function getProducts(search = "", limit = 20) {
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  params.set("limit", String(limit));
+  return apiRequest(`/admin/products?${params.toString()}`);
+}

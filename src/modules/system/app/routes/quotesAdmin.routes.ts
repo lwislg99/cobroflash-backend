@@ -276,6 +276,14 @@ router.post('/:id/send-whatsapp', async (req, res) => {
       });
     }
 
+    // Marcar como enviado si estaba en draft
+    if (quote.status === 'draft') {
+      await prisma.quote.update({
+        where: { id: quote.id },
+        data: { status: 'sent' },
+      });
+    }
+
     return res.json({
       ok: true,
       sent: true,

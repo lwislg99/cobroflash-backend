@@ -52,6 +52,11 @@ function initApp() {
     }
 
     switch (view) {
+      case "home":
+        viewTitle.textContent = "Inicio";
+        renderHomeView(viewContainer);
+        break;
+
       case "customers":
         viewTitle.textContent = "Clientes";
         renderCustomersView(viewContainer);
@@ -124,9 +129,9 @@ function initApp() {
         break;
 
       default:
-        viewTitle.textContent = "Clientes";
-        renderCustomersView(viewContainer);
-        view = "customers";
+        viewTitle.textContent = "Inicio";
+        renderHomeView(viewContainer);
+        view = "home";
     }
 
     setActiveMenu(view);
@@ -168,7 +173,7 @@ function initApp() {
     } catch (_e) {}
   
   // Vista inicial
-  renderView(window.appState.view || "customers");
+  renderView(window.appState.view || "home");
 }
 
 document.addEventListener("DOMContentLoaded", initApp);

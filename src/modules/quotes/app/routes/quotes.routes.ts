@@ -6,7 +6,8 @@ import {
   AcceptQuoteSchema,
   RejectQuoteSchema,
 } from '../../../../core/validation/schemas';
-import { calcTotal } from '../../../../core/utils/utils';
+import { calcTotal, normalizePhone } from '../../../../core/utils/utils';
+import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { getNextBillingStage } from '../../domain/billingPlan';
 
 import fetch from 'node-fetch';
@@ -407,8 +408,18 @@ router.post('/:id/decision', async (req, res) => {
       });
     }
 
-    // Respuesta pensada para n8n / WhatsApp
-        // Respuesta pensada para n8n / WhatsApp
+    // Notificar al profesional por WhatsApp (fire-and-forget)
+    const merchantPhone = normalizePhone(quote.merchant?.whatsappPhone);
+    if (merchantPhone) {
+      const customerName = quote.customer?.name || 'El cliente';
+      const text = decision === 'accept'
+        ? `✅ ${customerName} aceptó tu cotización #${quoteId} por ${Number(quote.total).toFixed(2)} ${quote.currency}`
+        : `❌ ${customerName} rechazó la cotización #${quoteId}. Motivo: ${reason || comment || 'Sin especificar'}`;
+      sendWhatsAppText({ to: merchantPhone, text }).catch((err) =>
+        console.error('[decision] Error notificando al merchant:', err)
+      );
+    }
+
     // Nota: usamos `quote` (el original con include) para merchant / customer
     const merchant = quote.merchant;
     const customer = quote.customer;
