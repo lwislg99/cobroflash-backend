@@ -9,13 +9,14 @@ import {
 } from '../../invoiceAdmin';
 
 import fetch from 'node-fetch';
-const N8N_ON_INVOICE_SEND_URL =
-  process.env.N8N_ON_INVOICE_SEND_URL || '';
+
 
 import { BASE_URL } from '../../../../core/config/env';
 
 import { prisma } from '../../../../core/db/prisma';
 
+import { sendWhatsAppTemplate } from '../../../../integrations/whatsapp';
+import { normalizePhone } from '../../../../core/utils/utils';
 
 
 const router = Router();
@@ -125,6 +126,11 @@ router.post('/:id/unpay', async (req, res) => {
  * POST /admin/invoices/:id/resend-whatsapp
  * Envía la factura por WhatsApp vía n8n (OnInvoiceSend)
  */
+/**
+ * POST /admin/invoices/:id/resend-whatsapp
+ * Envía la factura por WhatsApp directamente via API de Meta.
+ * Ya NO usa n8n.
+ */
 router.post('/:id/resend-whatsapp', async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -132,159 +138,112 @@ router.post('/:id/resend-whatsapp', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'invalid_id' });
     }
 
-    // Si no hay URL configurada, devolvemos ok pero sin enviar nada
-    if (!N8N_ON_INVOICE_SEND_URL) {
-      return res.json({
-        ok: true,
-        sent: false,
-        reason: 'n8n_invoice_url_not_configured',
-        invoice_id: id,
-      });
-    }
-
-    // 1) Cargamos la factura con detalle (merchant, customer, quote, etc.)
     const invoice = await getInvoiceDetailAdmin(id);
     if (!invoice) {
       return res.status(404).json({ ok: false, error: 'invoice_not_found' });
     }
 
-    if (!invoice.customer || !invoice.customer.phone) {
-      return res.status(400).json({
-        ok: false,
-        error: 'customer_without_phone',
-      });
+    if (!invoice.customer?.phone) {
+      return res.status(400).json({ ok: false, error: 'customer_without_phone' });
     }
 
     const customer = invoice.customer;
 
-    // 2) Creamos un CHARGE para esta factura (para poder pagarla)
-    let chargeId: number | null = null;
-    let payBankUrl: string | null = null;
+    // Idempotencia: si ya tiene charge, reutilizamos
+    let chargeId: number | null = invoice.chargeId ?? null;
     let payCardUrl: string | null = null;
 
-    try {
-      const customerPayload = customer
-        ? {
-            name: customer.name,
-            phone: customer.phone,
-            email: customer.email,
-          }
-        : undefined;
-
+    if (!chargeId) {
       const chargeResp = await fetch(`${BASE_URL}/charges`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           merchant_id: invoice.merchantId,
-          customer: customerPayload,
-          concept: `Factura ${invoice.number} de Presupuesto #${invoice.quoteId}`,
-          amount: Number(invoice.total),          // nos aseguramos de que es número
+          customer: {
+            name: customer.name,
+            phone: customer.phone,
+            email: customer.email,
+          },
+          concept: `Factura ${invoice.number}`,
+          amount: Number(invoice.total),
           currency: invoice.currency || 'EUR',
           method_preference: 'card',
-          meta: {
-            invoice_id: invoice.id,
-            quote_id: invoice.quoteId,
-          },
+          meta: { invoice_id: invoice.id, quote_id: invoice.quoteId },
         }),
       });
 
       if (!chargeResp.ok) {
-        const raw = await chargeResp.text().catch(() => '');
-        let parsed: any = null;
-        try { parsed = JSON.parse(raw); } catch (_) {}
-
-        console.error(
-          '[POST /admin/invoices/:id/resend-whatsapp] error al crear charge',
-          chargeResp.status,
-          parsed || raw,
-      );
-
-        return res.status(502).json({
-        ok: false,
-        error: 'charge_creation_failed',
-        status: chargeResp.status,
-        details: parsed || raw,
-      });
-
+        return res.status(502).json({ ok: false, error: 'charge_creation_failed' });
       }
 
       const chargeJson: any = await chargeResp.json().catch(() => null);
       if (!chargeJson?.id) {
-        console.error(
-          '[POST /admin/invoices/:id/resend-whatsapp] respuesta sin id de charge',
-          chargeJson,
-        );
-        return res.status(502).json({
-          ok: false,
-          error: 'charge_creation_invalid_response',
-        });
+        return res.status(502).json({ ok: false, error: 'charge_creation_invalid_response' });
       }
 
       chargeId = chargeJson.id;
 
-// ✅ PERSISTIR chargeId en la factura (CN-16)
-// después de: chargeId = chargeJson.id;
-// antes de: payBankUrl = ...
-await prisma.invoice.update({
-  where: { id: invoice.id },
-  data: { chargeId },
-});
-
-payBankUrl = `${BASE_URL}/pay/bank/${chargeId}`;
-payCardUrl = `${BASE_URL}/pay/card/${chargeId}`;
-
-    } catch (err) {
-      console.error(
-        '[POST /admin/invoices/:id/resend-whatsapp] excepción creando charge',
-        err,
-      );
-      return res
-        .status(500)
-        .json({ ok: false, error: 'charge_creation_exception' });
+      await prisma.invoice.update({
+        where: { id: invoice.id },
+        data: { chargeId },
+      });
     }
 
-    // 3) Payload para n8n (OnInvoiceSend), ya con charge y URLs
-    const payload = {
-      invoice_id: invoice.id,
-      quote_id: invoice.quoteId,
-      charge_id: chargeId,
-      to: customer.phone,
-      customer_name: customer.name || 'Cliente',
-      amount: invoice.total?.toString() ?? '0',
-      currency: invoice.currency || 'EUR',
-      concept: `Factura ${invoice.number} de Presupuesto #${invoice.quoteId}`,
-      pay_bank_url: payBankUrl,
-      pay_card_url: payCardUrl,
-    };
+    payCardUrl = `${BASE_URL}/pay/card/${chargeId}`;
 
-    const n8nResponse = await fetch(N8N_ON_INVOICE_SEND_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+    // Envío directo por WhatsApp con plantilla payment_request_es
+    // Variables:
+    //   {{1}} = nombre cliente
+    //   {{2}} = número factura
+    //   {{3}} = importe
+    //   {{4}} = URL de pago
+    const to = normalizePhone(customer.phone);
+    if (!to) {
+      return res.status(400).json({ ok: false, error: 'invalid_phone_format' });
+    }
+
+    const result = await sendWhatsAppTemplate({
+      to,
+      templateName: 'payment_request_es',
+      languageCode: 'es',
+      components: [
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: customer.name || 'Cliente' },
+            { type: 'text', text: invoice.number },
+            { type: 'text', text: Number(invoice.total).toFixed(2) },
+            { type: 'text', text: payCardUrl },
+          ],
+        },
+        {
+          type: 'button',
+          sub_type: 'url',
+          index: '0',
+          parameters: [
+            { type: 'text', text: String(chargeId) },
+          ],
+        },
+      ],
     });
 
-    const n8nBody = (await n8nResponse.json().catch(() => null)) as unknown;
-
-    if (!n8nResponse.ok) {
-      return res.status(502).json({
-        ok: false,
-        error: 'n8n_error',
-        status: n8nResponse.status,
-        n8n_body: n8nBody,
-      });
+    if (!result.ok) {
+      console.error('[resend-whatsapp] Error Meta API:', result.error);
+      return res.status(502).json({ ok: false, error: 'whatsapp_send_failed', detail: result.error });
     }
 
     return res.json({
       ok: true,
       sent: true,
       invoice_id: invoice.id,
-      n8n_result: n8nBody,
+      charge_id: chargeId,
+      to,
     });
+
   } catch (err) {
     console.error('[POST /admin/invoices/:id/resend-whatsapp]', err);
     return res.status(500).json({ ok: false, error: 'internal_error' });
   }
 });
-
 
 export default router;
