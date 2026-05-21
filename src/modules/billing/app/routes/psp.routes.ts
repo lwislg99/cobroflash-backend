@@ -7,7 +7,7 @@ import { ensureInvoiceForCharge } from '../../../../lib/invoicing';
 import { sendInvoiceEmail } from '../../../../lib/email';
 import { normalizePhone } from '../../../../core/utils/utils';
 import { config } from '../../../../core/config/env';
-import { emitToN8n } from '../../../../integrations/n8n';
+import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 
 
 const router = Router();
@@ -143,22 +143,21 @@ router.post('/', async (req, res) => {
       
       
 
-      const to = normalizePhone(updated.customer?.phone);
-
-      await emitToN8n('paid', {
-        to,
-        charge_id: updated.id,
-        reference: updated.reference ?? '',
-        amount: body.amount ?? updated.amount.toString(),
-        currency: body.currency ?? updated.currency,
-        method: updated.method,
-        bank_ref: body.bank_ref,
-        merchant_id: updated.merchantId,
-        customer_id: updated.customerId,
-        // 👇 NUEVO: pasamos la factura asociada (si la hay)
-        invoice_id: invoiceId,
-        customer_email: updated.customer?.email ?? '',
+      // Notificar al profesional por WhatsApp (fire-and-forget)
+      const merchant = await prisma.merchant.findUnique({
+        where: { id: updated.merchantId },
+        select: { whatsappPhone: true },
       });
+      const merchantPhone = normalizePhone(merchant?.whatsappPhone);
+      if (merchantPhone) {
+        const customerName = updated.customer?.name || 'Un cliente';
+        const amount = body.amount ?? updated.amount.toString();
+        const currency = body.currency ?? updated.currency;
+        sendWhatsAppText({
+          to: merchantPhone,
+          text: `💰 Pago recibido de ${customerName}: ${amount} ${currency}`,
+        }).catch((err) => console.error('[psp] Error notificando al merchant:', err));
+      }
 
       return res.json({ ok: true, status: 'paid' });
     }
@@ -172,7 +171,6 @@ router.post('/', async (req, res) => {
           events: { create: { type: 'failed', payload: body as any } },
         },
       });
-      await emitToN8n('failed', { charge_id: chargeId });
       return res.json({ ok: true, status: 'failed' });
     }
 
@@ -184,7 +182,6 @@ router.post('/', async (req, res) => {
           events: { create: { type: 'expired', payload: body as any } },
         },
       });
-      await emitToN8n('expired', { charge_id: chargeId });
       return res.json({ ok: true, status: 'expired' });
     }
 

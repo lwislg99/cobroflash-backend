@@ -19,7 +19,7 @@ export async function getHomeMetrics() {
       where: {
         merchantId: MERCHANT_ID,
         status: 'paid',
-        createdAt: { gte: startOfMonth },
+        paidAt: { gte: startOfMonth },
       },
       _sum: { total: true },
     }),
