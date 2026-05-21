@@ -36,6 +36,7 @@ import { merchantProfileUpdateSchema } from './core/validation/schemas';
 import { getMerchantProfile, updateMerchantProfile } from './modules/system/merchantAdmin';
 import { getSession } from './modules/auth/domain/auth.service';
 import { quoteDecisionLandingRouter } from './modules/system/app/routes/quoteDecisionLanding.routes';
+import { prisma } from './core/db/prisma';
 
 export const app = express();
 
@@ -123,7 +124,6 @@ app.put('/admin/merchant', async (req, res, next) => {
 
 // Onboarding completo
 app.post('/admin/onboarding/complete', async (req, res) => {
-  const { prisma } = await import('./core/db/prisma');
   await prisma.merchant.update({
     where: { id: req.merchantId },
     data: { onboardingCompleted: true },
