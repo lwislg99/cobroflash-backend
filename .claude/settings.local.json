@@ -17,7 +17,14 @@
       "Bash(grep -v \"//.*Presupuesto\")",
       "Bash(node -e ' *)",
       "Bash(git commit -m 'feat\\(3.6\\): i18n básico es-ES/es-MX/es-CO/es-AR/es-PE/es-CL *)",
-      "Bash(git commit -m 'feat\\(Sprint 4\\): Good/Better/Best — 3 opciones de precio por cotización *)"
+      "Bash(git commit -m 'feat\\(Sprint 4\\): Good/Better/Best — 3 opciones de precio por cotización *)",
+      "Bash(curl -s https://cobroflash-backend-production.up.railway.app/health)",
+      "Bash(curl -s -X POST https://cobroflash-backend-production.up.railway.app/quote/create -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(curl -s https://cobroflash-backend-production.up.railway.app/pay/quote/1/accept)",
+      "Bash(curl -s -X POST https://cobroflash-backend-production.up.railway.app/quote/1/decision -H 'Content-Type: application/json' -d '{\"decision\":\"accept\",\"tierId\":\"best\",\"comment\":\"Quiero el Premium\"}')",
+      "Bash(curl -s -X POST https://cobroflash-backend-production.up.railway.app/quote/create -H 'Content-Type: application/json' -d '{\"merchant_id\":1,\"customer_id\":1,\"currency\":\"EUR\",\"tiers\":[ *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'Quote #{d[\\\\\"id\\\\\"]} creado — total: {d[\\\\\"total\\\\\"]}€ \\(tier Estándar\\)'\\)\")",
+      "Bash(git commit -m 'docs+feat\\(Sprint 5\\): doc master v2 + PWA instalable + top clientes/servicios *)"
     ]
   }
 }

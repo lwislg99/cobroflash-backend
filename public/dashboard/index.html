@@ -7,6 +7,12 @@
   <title>PresuFácil · BackOffice</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./css/styles.css" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#22c55e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="PresuFácil" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
 </head>
 <body>
   <div class="layout">
@@ -95,6 +101,11 @@
 <script src="./js/invoiceDetailView.js"></script>
 <script src="./js/settingsView.js"></script>
 <script src="./js/app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+</script>
 
 
   
