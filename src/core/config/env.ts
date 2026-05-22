@@ -4,6 +4,7 @@ export const config = {
     PUBLIC_BASE_URL: process.env.PUBLIC_BASE_URL || `http://localhost:${process.env.PORT || 3000}`,
 
     SESSION_SECRET: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
+    RESEND_API_KEY: process.env.RESEND_API_KEY || '',
 
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || '',

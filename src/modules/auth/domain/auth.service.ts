@@ -1,9 +1,24 @@
 import crypto from 'crypto';
+import axios from 'axios';
 import { prisma } from '../../../core/db/prisma';
 import { createMailer } from '../../../integrations/mailer';
 import { config } from '../../../core/config/env';
 
-const MAGIC_LINK_TTL_MS = 15 * 60 * 1000;   // 15 min
+const MAGIC_LINK_TTL_MS = 15 * 60 * 1000;
+
+async function sendEmail(params: { to: string; subject: string; html: string }) {
+  if (config.RESEND_API_KEY) {
+    await axios.post(
+      'https://api.resend.com/emails',
+      { from: config.EMAIL_FROM, to: [params.to], subject: params.subject, html: params.html },
+      { headers: { Authorization: `Bearer ${config.RESEND_API_KEY}`, 'Content-Type': 'application/json' }, timeout: 10_000 }
+    );
+    return;
+  }
+  // Fallback SMTP
+  const mailer = createMailer();
+  await mailer.sendMail({ from: config.EMAIL_FROM, to: params.to, subject: params.subject, html: params.html });
+}
 const SESSION_TTL_MS    = 30 * 24 * 60 * 60 * 1000; // 30 días
 
 function generateToken() {
@@ -27,12 +42,9 @@ export async function requestMagicLink(email: string): Promise<void> {
   console.log(`[magic-link] to=${email} link=${link}`);
 
   try {
-    const mailer = createMailer();
-    await mailer.sendMail({
-      from: config.EMAIL_FROM,
+    await sendEmail({
       to: email,
       subject: 'Tu enlace de acceso a PresuFácil',
-      text: `Hola ${merchant.name},\n\nHaz clic en este enlace para entrar (válido 15 min):\n\n${link}\n\nSi no solicitaste este acceso, ignora este mensaje.`,
       html: `<p>Hola <strong>${merchant.name}</strong>,</p>
 <p>Haz clic en el botón para acceder a tu cuenta de PresuFácil:</p>
 <p style="margin:24px 0">
@@ -44,7 +56,6 @@ export async function requestMagicLink(email: string): Promise<void> {
     });
     console.log(`[magic-link] email enviado OK a ${email}`);
   } catch (emailErr: any) {
-    // El email falla pero el token ya está en la DB — el admin puede usar el log
     console.error(`[magic-link] ERROR enviando email a ${email}:`, emailErr?.message || emailErr);
   }
 }
