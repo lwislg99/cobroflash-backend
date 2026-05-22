@@ -17,14 +17,12 @@ async function apiRequest(path, options = {}) {
   const res = await fetch(url, finalOptions);
 
   if (!res.ok) {
-    let detail = "";
-    try {
-      const data = await res.json();
-      detail = data?.error || JSON.stringify(data);
-    } catch {
-      // respuesta no JSON
-    }
-    throw new Error(`API ${res.status}: ${detail || res.statusText}`);
+    let data = null;
+    try { data = await res.json(); } catch { /* respuesta no JSON */ }
+    const err = new Error(`API ${res.status}: ${data?.error || res.statusText}`);
+    err.status = res.status;
+    err.data   = data;
+    throw err;
   }
 
   if (res.status === 204) return null;
