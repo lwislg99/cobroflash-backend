@@ -15,6 +15,8 @@ export type MerchantProfileInput = {
   whatsappPhone?: string | null;
   googleReviewUrl?: string | null;
   country?: string;
+  iban?: string | null;
+  clabe?: string | null;
 };
 
 // 1) Obtener el perfil del merchant (para pintar el formulario del dashboard)
@@ -33,6 +35,8 @@ export async function getMerchantProfile(merchantId: number = DEFAULT_MERCHANT_I
       whatsappPhone: true,
       googleReviewUrl: true,
       country: true,
+      iban: true,
+      clabe: true,
     },
   });
 

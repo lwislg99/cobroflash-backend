@@ -29,7 +29,7 @@ function renderSettingsView(container) {
     }
   
     const form = document.createElement("form");
-    form.style.cssText = "display:flex;flex-direction:column;gap:14px;max-width:560px";
+    form.style.cssText = "display:flex;flex-direction:column;gap:14px;width:100%;max-width:560px";
     card.appendChild(form);
   
     function createField(labelText, name, type = "text", required = false) {
