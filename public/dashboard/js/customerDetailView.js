@@ -1,0 +1,231 @@
+// public/dashboard/js/customerDetailView.js
+// Vista Customer 360: historial completo de un cliente
+
+async function renderCustomer360View(container, customerId) {
+  container.innerHTML = '';
+
+  const id = Number(customerId || window.appState?.customerId360);
+  if (!id) {
+    container.innerHTML = '<p style="color:var(--slate-400);padding:24px">Sin cliente seleccionado.</p>';
+    return;
+  }
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:20px;max-width:920px';
+  container.appendChild(wrap);
+
+  // Back button
+  const backBtn = document.createElement('button');
+  backBtn.className = 'btn-ghost btn-sm';
+  backBtn.style.cssText = 'align-self:flex-start';
+  backBtn.innerHTML = '← Volver a Clientes';
+  backBtn.onclick = () => window.renderAppView && renderAppView('customers');
+  wrap.appendChild(backBtn);
+
+  const alertEl = document.createElement('div');
+  alertEl.className = 'alert';
+  wrap.appendChild(alertEl);
+
+  function setAlert(type, msg) {
+    alertEl.textContent = msg || '';
+    alertEl.className = 'alert';
+    if (type === 'success') alertEl.classList.add('success');
+    if (type === 'error')   alertEl.classList.add('error');
+  }
+
+  alertEl.textContent = 'Cargando…';
+
+  let data;
+  try {
+    data = await apiRequest(`/admin/customers/${id}/detail`);
+  } catch {
+    alertEl.textContent = 'Error al cargar el historial del cliente.';
+    alertEl.className = 'alert error';
+    return;
+  }
+  alertEl.textContent = '';
+
+  const { customer, quotes, invoices, stats } = data;
+  const fmt = (n) => Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const currency = invoices[0]?.currency || quotes[0]?.currency || 'EUR';
+  const L = window.appLocale || {};
+
+  // ── Header del cliente ─────────────────────────────────────────────────
+  const header = document.createElement('div');
+  header.className = 'customers-card';
+  header.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap';
+
+  const initials = (customer.name || 'C').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  header.innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0">
+      <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--green-500),#22d3ee);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:var(--green-900);flex-shrink:0">${initials}</div>
+      <div>
+        <h2 style="margin:0 0 4px;font-size:18px;font-weight:800;color:var(--slate-900)">${escC(customer.name)}</h2>
+        <div style="font-size:13px;color:var(--slate-500);display:flex;gap:12px;flex-wrap:wrap">
+          ${customer.phone ? `<span>📱 ${escC(customer.phone)}</span>` : ''}
+          ${customer.email ? `<span>✉️ ${escC(customer.email)}</span>` : ''}
+          <span style="color:var(--slate-400)">Cliente desde ${new Date(customer.createdAt).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
+        </div>
+        ${customer.notes ? `<div style="font-size:12.5px;color:var(--slate-500);margin-top:6px;font-style:italic">${escC(customer.notes)}</div>` : ''}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0">
+      ${customer.portalUrl ? `
+        <button class="btn-secondary btn-sm" id="btn-copy-portal-360" title="Copiar enlace del portal del cliente">
+          🔗 Portal
+        </button>` : ''}
+      <button class="btn-primary btn-sm" id="btn-new-quote-360">+ ${L.quoteNew || 'Nuevo presupuesto'}</button>
+    </div>
+  `;
+  wrap.appendChild(header);
+
+  if (customer.portalUrl) {
+    header.querySelector('#btn-copy-portal-360').onclick = async () => {
+      await navigator.clipboard.writeText(customer.portalUrl).catch(() => {});
+      const btn = header.querySelector('#btn-copy-portal-360');
+      btn.textContent = '¡Copiado!';
+      setTimeout(() => { btn.innerHTML = '🔗 Portal'; }, 2000);
+    };
+  }
+  header.querySelector('#btn-new-quote-360').onclick = () => {
+    if (window.renderAppView) renderAppView('quotes-new');
+  };
+
+  // ── KPIs ────────────────────────────────────────────────────────────────
+  const kpiGrid = document.createElement('div');
+  kpiGrid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px';
+
+  const kpis = [
+    { label: `${L.quotePlural || 'Presupuestos'}`, value: stats.totalQuotes, sub: `${stats.acceptedQuotes} aceptados` },
+    { label: 'Facturas',  value: invoices.length, sub: `${invoices.filter(i=>i.status==='paid').length} pagadas` },
+    { label: 'Facturado', value: fmt(stats.totalBilled) + ' ' + currency, sub: '' },
+    { label: 'Cobrado',   value: fmt(stats.totalPaid)   + ' ' + currency, sub: '', color: 'var(--green-600)' },
+    { label: 'Beneficio', value: fmt(stats.profit)      + ' ' + currency, sub: '', color: stats.profit >= 0 ? 'var(--green-600)' : 'var(--red-600)' },
+  ];
+
+  kpis.forEach(({ label, value, sub, color }) => {
+    const k = document.createElement('div');
+    k.className = 'kpi-card';
+    k.innerHTML = `
+      <div class="kpi-label">${label}</div>
+      <div class="kpi-value" style="font-size:18px${color ? ';color:' + color : ''}">${value}</div>
+      ${sub ? `<div class="kpi-sub">${sub}</div>` : ''}
+    `;
+    kpiGrid.appendChild(k);
+  });
+  wrap.appendChild(kpiGrid);
+
+  // ── Tabs: Presupuestos / Facturas ─────────────────────────────────────
+  const tabsWrap = document.createElement('div');
+  tabsWrap.style.cssText = 'display:flex;gap:4px;border-bottom:2px solid var(--slate-200);margin-bottom:-2px';
+
+  const tabContent = document.createElement('div');
+
+  function makeTab(label, key) {
+    const btn = document.createElement('button');
+    btn.style.cssText = 'background:none;border:none;padding:10px 16px;font-size:13.5px;font-weight:600;color:var(--slate-400);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;font-family:inherit';
+    btn.textContent = label;
+    btn.dataset.key = key;
+    btn.addEventListener('click', () => {
+      tabsWrap.querySelectorAll('button').forEach(b => {
+        b.style.color = 'var(--slate-400)';
+        b.style.borderBottomColor = 'transparent';
+      });
+      btn.style.color = 'var(--green-600)';
+      btn.style.borderBottomColor = 'var(--green-500)';
+      renderTab(key);
+    });
+    return btn;
+  }
+
+  const tabQuotes   = makeTab(`${L.quotePlural || 'Presupuestos'} (${quotes.length})`,   'quotes');
+  const tabInvoices = makeTab(`Facturas (${invoices.length})`, 'invoices');
+  tabsWrap.appendChild(tabQuotes);
+  tabsWrap.appendChild(tabInvoices);
+  wrap.appendChild(tabsWrap);
+  wrap.appendChild(tabContent);
+
+  const STATUS_LABELS = { draft:'Borrador', sent:'Enviado', accepted:'Aceptado', rejected:'Rechazado', pending:'Pendiente', paid:'Pagada', expired:'Caducada' };
+  const STATUS_CLASS  = { accepted:'status-pill-accepted', paid:'status-pill-accepted', sent:'status-pill-pending', pending:'status-pill-pending', rejected:'status-pill-rejected', expired:'status-pill-draft', draft:'status-pill-draft' };
+
+  function renderTab(key) {
+    tabContent.innerHTML = '';
+    const card = document.createElement('div');
+    card.className = 'data-card';
+    tabContent.appendChild(card);
+
+    const scroll = document.createElement('div');
+    scroll.className = 'table-scroll';
+    card.appendChild(scroll);
+
+    const table = document.createElement('table');
+    table.className = 'table';
+    scroll.appendChild(table);
+
+    if (key === 'quotes') {
+      table.innerHTML = `<thead><tr><th>ID</th><th>Fecha</th><th>Total</th><th>Estado</th><th></th></tr></thead>`;
+      const tbody = document.createElement('tbody');
+      if (quotes.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--slate-400);padding:24px">Sin ${L.quotePlural||'presupuestos'}</td></tr>`;
+      }
+      quotes.forEach(q => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-weight:600">#${q.id}</td>
+          <td style="color:var(--slate-500)">${new Date(q.createdAt).toLocaleDateString('es-ES')}</td>
+          <td style="font-weight:600">${fmt(Number(q.total))} ${escC(q.currency)}</td>
+          <td><span class="status-pill ${STATUS_CLASS[q.status]||'status-pill-draft'}">${STATUS_LABELS[q.status]||q.status}</span></td>
+          <td><button class="btn-ghost btn-sm">Ver →</button></td>
+        `;
+        tr.querySelector('button').onclick = () => {
+          if (window.renderAppView) {
+            window.appState.quoteId = q.id;
+            renderAppView('quotes-detail');
+          }
+        };
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+    } else {
+      table.innerHTML = `<thead><tr><th>Nº</th><th>Fecha</th><th>Total</th><th>Estado</th><th></th></tr></thead>`;
+      const tbody = document.createElement('tbody');
+      if (invoices.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--slate-400);padding:24px">Sin facturas</td></tr>`;
+      }
+      invoices.forEach(inv => {
+        const tr = document.createElement('tr');
+        const pdfCell = inv.pdfUrl && inv.pdfUrl !== 'PENDING_PDF'
+          ? `<a href="${inv.pdfUrl}" target="_blank" class="btn-ghost btn-sm" style="text-decoration:none">PDF</a>`
+          : '';
+        tr.innerHTML = `
+          <td style="font-weight:600">${escC(inv.number)}</td>
+          <td style="color:var(--slate-500)">${new Date(inv.createdAt).toLocaleDateString('es-ES')}</td>
+          <td style="font-weight:600">${fmt(Number(inv.total))} ${escC(inv.currency)}</td>
+          <td><span class="status-pill ${STATUS_CLASS[inv.status]||'status-pill-draft'}">${STATUS_LABELS[inv.status]||inv.status}</span></td>
+          <td style="display:flex;gap:6px">
+            ${pdfCell}
+            <button class="btn-ghost btn-sm" data-iid="${inv.id}">Ver →</button>
+          </td>
+        `;
+        tr.querySelector(`[data-iid="${inv.id}"]`).onclick = () => {
+          if (window.renderAppView) {
+            window.appState.invoiceId = inv.id;
+            renderAppView('invoice-detail');
+          }
+        };
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+    }
+  }
+
+  // Activar primer tab
+  tabQuotes.style.color = 'var(--green-600)';
+  tabQuotes.style.borderBottomColor = 'var(--green-500)';
+  renderTab('quotes');
+}
+
+function escC(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}

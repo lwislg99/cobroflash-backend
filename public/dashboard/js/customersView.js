@@ -261,6 +261,18 @@ function renderCustomersView(container) {
         });
         tdActions.appendChild(portalBtn);
 
+        const detailBtn = createElement("button", "btn-ghost btn-sm", "📊 Historial");
+        detailBtn.type = "button";
+        detailBtn.title = "Ver historial completo del cliente";
+        detailBtn.addEventListener("click", () => {
+          if (window.renderAppView) {
+            window.appState = window.appState || {};
+            window.appState.customerId360 = c.id;
+            window.renderAppView('customer-360');
+          }
+        });
+        tdActions.appendChild(detailBtn);
+
         tr.appendChild(tdActions);
 
         tbody.appendChild(tr);

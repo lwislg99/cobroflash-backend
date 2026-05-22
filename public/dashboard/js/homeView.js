@@ -32,15 +32,69 @@ async function renderHomeView(container) {
   document.getElementById("btn-quick-quote").addEventListener("click", openQuickQuoteModal);
 
   try {
-    const data = await apiRequest("/admin/metrics/home");
+    const [data, merchant] = await Promise.all([
+      apiRequest("/admin/metrics/home"),
+      apiRequest("/admin/merchant").catch(() => null),
+    ]);
     renderKpis(data);
     renderActivity(data.recentActivity || []);
     renderTopCustomers(data.topCustomers || []);
     renderTopServices(data.topServices || []);
+
+    // Setup checklist para usuarios nuevos
+    if (merchant) renderSetupChecklist(merchant, data);
+
+    // Badge de solicitudes pendientes
+    if (data.pendingRequests > 0) {
+      const badge = document.getElementById('req-badge');
+      if (badge) { badge.textContent = String(data.pendingRequests); badge.style.display = 'inline-block'; }
+    }
   } catch (err) {
     document.getElementById("kpi-grid").innerHTML =
       `<div style="color:#b91c1c;font-size:13px;grid-column:1/-1">Error cargando métricas</div>`;
   }
+}
+
+function renderSetupChecklist(merchant, data) {
+  const steps = [
+    { label: 'Añade tu logo',            done: !!merchant.logoUrl,       action: 'settings', hint: 'Aparecerá en PDFs' },
+    { label: 'Completa datos fiscales',  done: !!(merchant.taxId && merchant.address), action: 'settings', hint: 'NIF y dirección para facturas legales' },
+    { label: 'Conecta WhatsApp',         done: !!merchant.whatsappPhone,  action: 'settings', hint: 'Recibe notificaciones de pagos' },
+    { label: 'Crea tu primer presupuesto', done: data.recentActivity && data.recentActivity.length > 0, action: 'quotes-new', hint: null },
+  ];
+
+  const incomplete = steps.filter(s => !s.done);
+  if (incomplete.length === 0) return; // todo completo → no mostrar
+
+  const container = document.querySelector('.kpi-grid');
+  if (!container) return;
+
+  const checklist = document.createElement('div');
+  checklist.style.cssText = 'background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #bbf7d0;border-radius:14px;padding:16px 18px;margin-bottom:20px;grid-column:1/-1';
+  checklist.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div>
+        <div style="font-weight:700;font-size:14px;color:#166534">🚀 Completa tu configuración</div>
+        <div style="font-size:12px;color:#4d7c0f;margin-top:2px">${incomplete.length} paso${incomplete.length!==1?'s':''} restante${incomplete.length!==1?'s':''}</div>
+      </div>
+      <div style="background:#dcfce7;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;color:#166534">${steps.filter(s=>s.done).length}/${steps.length}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${steps.map(s => `
+        <div style="display:flex;align-items:center;gap:10px;font-size:13px;${s.done?'opacity:.5':''}">
+          <span style="width:18px;height:18px;border-radius:50%;border:2px solid ${s.done?'#16a34a':'#86efac'};background:${s.done?'#16a34a':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            ${s.done?'<span style="color:#fff;font-size:10px">✓</span>':''}
+          </span>
+          <span style="flex:1;color:${s.done?'#166534':'#374151'};${s.done?'text-decoration:line-through':''}">${s.label}${s.hint?` <span style="color:#94a3b8;font-size:11.5px">· ${s.hint}</span>`:''}
+          </span>
+          ${!s.done?`<button class="btn-ghost btn-sm" onclick="window.renderAppView&&renderAppView('${s.action}')" style="font-size:11.5px;padding:3px 8px;border:1px solid #86efac;color:#166534">Ir →</button>`:''}
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  // Insertar antes del grid de KPIs
+  container.parentNode.insertBefore(checklist, container);
 }
 
 function renderKpis(data) {

@@ -374,6 +374,7 @@ router.post('/:id/regenerate-pdf', async (req, res) => {
         legalName: merchant.legalName,
         taxId: merchant.taxId,
         address: merchant.address,
+        logoUrl: merchant.logoUrl,
       },
       customer: {
         name:  invoice.customer.name,

@@ -64,6 +64,7 @@ export async function ensureInvoiceForCharge(
           legalName: merchant.legalName,
           taxId: merchant.taxId,
           address: merchant.address,
+          logoUrl: merchant.logoUrl,
         },
         customer: { name: customer.name, email: (customer as any).email, phone: (customer as any).phone },
         currency: inv.currency,

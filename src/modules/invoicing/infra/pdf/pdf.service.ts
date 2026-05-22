@@ -1,14 +1,41 @@
 // src/modules/invoicing/infra/pdf/pdf.service.ts
 import path from 'path';
 import fs from 'fs';
+import axios from 'axios';
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
 import { invoicesDir } from '../../../../core/storage/dirs';
 import { getLocale } from '../../../../core/i18n/locales';
 
+/** Descarga el logo del merchant como Buffer para PDFKit.
+ *  Acepta URL http/https o data URIs base64.
+ *  Devuelve null si falla (no aborta la generación del PDF). */
+async function loadLogoBuffer(logoUrl: string | null | undefined): Promise<Buffer | null> {
+  if (!logoUrl) return null;
+  try {
+    if (logoUrl.startsWith('data:')) {
+      const b64 = logoUrl.split(',')[1];
+      if (!b64) return null;
+      return Buffer.from(b64, 'base64');
+    }
+    if (logoUrl.startsWith('http')) {
+      const resp = await axios.get(logoUrl, { responseType: 'arraybuffer', timeout: 5_000 });
+      return Buffer.from(resp.data);
+    }
+    // Ruta local (empieza por /)
+    if (logoUrl.startsWith('/')) {
+      const filePath = path.join(process.cwd(), 'public', logoUrl);
+      if (fs.existsSync(filePath)) return fs.readFileSync(filePath);
+    }
+  } catch {
+    // logo no cargado — continuar sin él
+  }
+  return null;
+}
+
 export async function generateInvoicePdf(params: {
   number: string;
-  merchant: { name: string; legalName?: string | null; taxId?: string | null; address?: string | null };
+  merchant: { name: string; legalName?: string | null; taxId?: string | null; address?: string | null; logoUrl?: string | null };
   customer: { name: string; email?: string | null; phone?: string | null };
   currency: string;
   total: string;
@@ -22,7 +49,10 @@ export async function generateInvoicePdf(params: {
   const isVF     = !!params.vfHash;
   const hasLines = Array.isArray(params.lines) && params.lines.length > 0;
 
-  const qrBuf = await QRCode.toBuffer(params.qrData, { type: 'png', width: 200 });
+  const [qrBuf, logoBuf] = await Promise.all([
+    QRCode.toBuffer(params.qrData, { type: 'png', width: 200 }),
+    loadLogoBuffer(params.merchant.logoUrl),
+  ]);
 
   const doc    = new PDFDocument({ size: 'A4', margin: 50 });
   const stream = fs.createWriteStream(outPath);
@@ -48,14 +78,26 @@ export async function generateInvoicePdf(params: {
   }
 
   // ── 1. CABECERA SUPERIOR ─────────────────────────────────────────────────
-  // Título "FACTURA" a la derecha, caja de referencia a la derecha
   const headerY = doc.y;
+
+  // Logo a la izquierda (si existe)
+  if (logoBuf) {
+    try {
+      doc.image(logoBuf, M, headerY, { height: 44, fit: [120, 44] });
+    } catch { /* logo inválido, ignorar */ }
+  }
+
+  // Título "FACTURA" + Nº + Fecha a la derecha
   doc.fontSize(22).font('Helvetica-Bold').fillColor('#0f172a')
     .text('FACTURA', M, headerY, { width: W, align: 'right' });
   doc.fontSize(10).font('Helvetica').fillColor('#64748b')
     .text(`Nº ${params.number}`, { align: 'right' });
   doc.text(`Fecha: ${dateStr(params.createdAt)}`, { align: 'right' });
-  doc.fillColor('#000').moveDown(0.5);
+  doc.fillColor('#000');
+
+  // Avanzar por debajo del logo (si lo hay) o del texto
+  doc.y = Math.max(doc.y, headerY + (logoBuf ? 50 : 0));
+  doc.moveDown(0.5);
 
   hLine();
   doc.moveDown(0.6);
@@ -265,6 +307,7 @@ export async function generateQuotePdf(params: {
     taxId?: string | null;
     address?: string | null;
     whatsappPhone?: string | null;
+    logoUrl?: string | null;
   };
   customer: {
     name: string | null;
@@ -290,15 +333,30 @@ export async function generateQuotePdf(params: {
   const locale = getLocale(params.country);
   const QUOTE_LABEL = locale.quote; // "Presupuesto" o "Cotización"
 
+  const logoBuf = await loadLogoBuffer(params.merchant.logoUrl);
+
   const doc = new PDFDocument({ size: 'A4', margin: 50 });
   const stream = fs.createWriteStream(outPath);
   doc.pipe(stream);
 
-  // Cabecera
-  doc.fontSize(18).text(QUOTE_LABEL, { align: 'right' });
-  doc.moveDown(0.5);
-  doc.fontSize(12).text(`${QUOTE_LABEL} #${params.quoteId}`, { align: 'right' });
-  doc.moveDown();
+  // ── Cabecera: logo izquierda, título derecha ─────────────────────────────
+  const M = 50;
+  const W = doc.page.width - M * 2;
+  const hY = doc.y;
+
+  if (logoBuf) {
+    try { doc.image(logoBuf, M, hY, { height: 40, fit: [110, 40] }); }
+    catch { /* logo inválido */ }
+  }
+
+  doc.fontSize(18).font('Helvetica-Bold').fillColor('#0f172a')
+    .text(QUOTE_LABEL, M, hY, { width: W, align: 'right' });
+  doc.fontSize(11).font('Helvetica').fillColor('#64748b')
+    .text(`${QUOTE_LABEL} #${params.quoteId}`, { align: 'right' });
+  doc.fillColor('#000');
+
+  doc.y = Math.max(doc.y, hY + (logoBuf ? 46 : 0));
+  doc.moveDown(0.6);
 
   // Datos empresa / cliente (muy sencillos de momento)
   const merchantName =

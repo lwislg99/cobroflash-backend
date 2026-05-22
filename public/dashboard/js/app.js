@@ -165,6 +165,10 @@ async function initApp() {
         viewTitle.textContent = 'Solicitudes';
         if (typeof renderQuoteRequestsView === 'function') renderQuoteRequestsView(viewContainer);
         break;
+      case 'customer-360':
+        viewTitle.textContent = 'Cliente';
+        if (typeof renderCustomer360View === 'function') renderCustomer360View(viewContainer, state.customerId360);
+        break;
       case 'invoices':
         viewTitle.textContent = 'Facturas';
         renderInvoicesView(viewContainer);
