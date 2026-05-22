@@ -31,6 +31,7 @@ import metricsRouter from './modules/metrics/app/routes/metrics.routes';
 
 import authRouter from './modules/auth/app/routes/auth.routes';
 import subscriptionsRouter from './modules/billing/app/routes/subscriptions.routes';
+import expensesRouter from './modules/expenses/app/routes/expenses.routes';
 
 import { merchantProfileUpdateSchema } from './core/validation/schemas';
 import { getMerchantProfile, updateMerchantProfile } from './modules/system/merchantAdmin';
@@ -110,6 +111,7 @@ app.use('/admin/products',   productsAdminRouter);
 app.use('/admin/providers',  providersAdminRouter);
 app.use('/admin/metrics',    metricsRouter);
 app.use('/admin/billing',    requireActivePlan, subscriptionsRouter);
+app.use('/admin/expenses',   expensesRouter);
 
 // Admin – Perfil de merchant
 app.get('/admin/merchant', async (req, res, next) => {

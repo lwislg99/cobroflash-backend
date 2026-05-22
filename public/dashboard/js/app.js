@@ -92,6 +92,11 @@ async function initApp() {
           window.renderInvoiceDetailView(viewContainer, state.invoiceId);
         else viewContainer.innerHTML = '<p>No se ha indicado ninguna factura.</p>';
         break;
+      case 'expenses':
+        viewTitle.textContent = 'Gastos';
+        renderExpensesView(viewContainer);
+        break;
+
       case 'settings':
         viewTitle.textContent = 'Configuración';
         renderSettingsView(viewContainer);

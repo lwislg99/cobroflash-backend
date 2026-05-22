@@ -43,6 +43,7 @@ model Merchant {
   Provider    Provider[]
   Customer    Customer[]
   AuthSession AuthSession[]
+  Expense     Expense[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt      @map("updated_at")
@@ -172,6 +173,7 @@ model Quote {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   Invoice   Invoice[]
+  Expense   Expense[]
 
   @@map("quotes")
 }
@@ -202,6 +204,33 @@ model Invoice {
   charge   Charge?  @relation(fields: [chargeId], references: [id])
 
   @@map("invoices")
+}
+
+model Expense {
+  id         Int      @id @default(autoincrement())
+  merchantId Int      @map("merchant_id")
+  quoteId    Int?     @map("quote_id")
+  providerId Int?     @map("provider_id")
+
+  concept     String
+  amount      Decimal  @db.Decimal(12, 2)
+  currency    String   @default("EUR") @db.VarChar(3)
+  category    String   @default("otros") // materiales|desplazamiento|herramientas|subcontrata|otros
+  date        DateTime @default(now())
+  notes       String?
+  receiptData String?  @db.Text @map("receipt_data")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
+
+  merchant Merchant  @relation(fields: [merchantId], references: [id])
+  quote    Quote?    @relation(fields: [quoteId], references: [id])
+  provider Provider? @relation(fields: [providerId], references: [id])
+
+  @@index([merchantId])
+  @@index([merchantId, quoteId])
+  @@index([merchantId, date])
+  @@map("expenses")
 }
 
 model Product {
@@ -245,6 +274,7 @@ model Provider {
 
   merchant Merchant  @relation(fields: [merchantId], references: [id])
   Product  Product[]
+  Expense  Expense[]
 
   @@index([merchantId])
   @@map("providers")

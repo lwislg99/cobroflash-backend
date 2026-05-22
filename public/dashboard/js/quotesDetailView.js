@@ -705,4 +705,60 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       btnInvoice.textContent = originalText;
     }
   });
+
+  // --- MARGEN DEL TRABAJO ---
+  const marginCard = document.createElement("div");
+  marginCard.className = "customers-card";
+  marginCard.style.marginTop = "12px";
+  wrapper.appendChild(marginCard);
+
+  const mTitle = document.createElement("h3");
+  mTitle.textContent = "Gastos y margen";
+  mTitle.style.margin = "0 0 8px 0";
+  marginCard.appendChild(mTitle);
+
+  const mBody = document.createElement("div");
+  mBody.innerHTML = '<p style="color:#9ca3af;font-size:13px">Cargando…</p>';
+  marginCard.appendChild(mBody);
+
+  // Cargar margen
+  apiRequest(`/admin/expenses/margin/${id}`).then((data) => {
+    if (!data) return;
+    const marginColor = data.margin >= 0 ? '#16a34a' : '#dc2626';
+    mBody.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+        <div style="background:#f9fafb;border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:11px;color:#6b7280;text-transform:uppercase;font-weight:600">Ingresos</div>
+          <div style="font-size:18px;font-weight:700;color:#111827">${fmtAmt(data.revenue, data.currency)}</div>
+        </div>
+        <div style="background:#fef2f2;border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:11px;color:#6b7280;text-transform:uppercase;font-weight:600">Gastos</div>
+          <div style="font-size:18px;font-weight:700;color:#dc2626">${fmtAmt(data.totalExpenses, data.currency)}</div>
+        </div>
+        <div style="background:${data.margin>=0?'#ecfdf5':'#fef2f2'};border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:11px;color:#6b7280;text-transform:uppercase;font-weight:600">Margen</div>
+          <div style="font-size:18px;font-weight:700;color:${marginColor}">${fmtAmt(data.margin, data.currency)}</div>
+          <div style="font-size:12px;color:${marginColor}">${data.marginPct}%</div>
+        </div>
+      </div>
+      ${data.expenses.length ? `
+        <div style="font-size:12px;color:#6b7280;margin-bottom:6px;font-weight:600">GASTOS ASIGNADOS</div>
+        ${data.expenses.map(e => `
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid #f3f4f6">
+            <span>${escHtml(e.concept)}</span>
+            <span style="font-weight:600">${fmtAmt(e.amount, data.currency)}</span>
+          </div>`).join('')}
+      ` : '<p style="font-size:13px;color:#9ca3af">Sin gastos asignados a esta cotización.</p>'}
+      <button onclick="renderAppView('expenses')" class="btn btn-secondary" style="margin-top:10px;font-size:13px">
+        + Añadir gasto a este trabajo
+      </button>
+    `;
+  }).catch(() => {
+    mBody.innerHTML = '<p style="font-size:13px;color:#9ca3af">No hay datos de gastos.</p>';
+  });
+
+  function fmtAmt(amount, currency) {
+    const sym = (currency==='MXN'||currency==='COP') ? '$' : '€';
+    return `${sym}${Number(amount).toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+  }
 }

@@ -45,6 +45,7 @@ async function renderHomeView(container) {
 
 function renderKpis(data) {
   const grid = document.getElementById("kpi-grid");
+  const hasExpenses = data.expensesThisMonth > 0;
   grid.innerHTML = `
     <div class="kpi-card">
       <div class="kpi-label">Pendiente de cobro</div>
@@ -61,6 +62,17 @@ function renderKpis(data) {
       <div class="kpi-value">${fmtMoney(data.collectedThisMonth)}</div>
       <div class="kpi-sub">&nbsp;</div>
     </div>
+    ${hasExpenses ? `
+    <div class="kpi-card">
+      <div class="kpi-label">Gastos este mes</div>
+      <div class="kpi-value" style="color:#dc2626">${fmtMoney(data.expensesThisMonth)}</div>
+      <div class="kpi-sub">${data.expensesCount} gasto${data.expensesCount!==1?'s':''} registrado${data.expensesCount!==1?'s':''}</div>
+    </div>
+    <div class="kpi-card" style="border:2px solid ${data.profitThisMonth>=0?'#22c55e':'#dc2626'}">
+      <div class="kpi-label">Beneficio neto</div>
+      <div class="kpi-value" style="color:${data.profitThisMonth>=0?'#16a34a':'#dc2626'}">${fmtMoney(data.profitThisMonth)}</div>
+      <div class="kpi-sub">ingresos − gastos</div>
+    </div>` : ''}
   `;
 }
 
