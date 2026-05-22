@@ -311,6 +311,7 @@ img { max-width: 100%; display: block; }
   border: 1px solid var(--slate-200);
   box-shadow: var(--shadow-sm);
   padding: 20px;
+  overflow: hidden;
 }
 
 /* ── Buttons ────────────────────────────────────────────────── */
@@ -918,30 +919,41 @@ img { max-width: 100%; display: block; }
   .sidebar-overlay.visible { display: block; }
 }
 
-/* ── Table scroll wrapper (usado en JS para tablas dentro de cards) ── */
+/* ── Table scroll wrapper ───────────────────────────────────── */
 .table-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  margin: 12px -20px -20px;
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
-.table-scroll .table {
-  min-width: 520px;   /* evita que la tabla se comprima demasiado */
-  border-radius: 0;
-}
-/* Card con tabla edge-to-edge: sin padding lateral en la tabla */
-.card-table {
+.table-scroll .table { min-width: 520px; }
+
+/* ── Data card: para vistas de lista con tabla edge-to-edge ─── */
+.data-card {
   background: #fff;
   border-radius: var(--radius-lg);
   border: 1px solid var(--slate-200);
   box-shadow: var(--shadow-sm);
-  overflow: hidden;
+  overflow: hidden;   /* clipa la tabla y el border-radius */
 }
-.card-table-header {
-  padding: 16px 20px 12px;
+.data-card-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
   border-bottom: 1px solid var(--slate-100);
 }
-.card-table .table { border-radius: 0; }
+.data-card-toolbar {
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--slate-100);
+  background: var(--slate-50);
+}
+.data-card .table-scroll { /* hereda, sin márgenes extra */ }
+.data-card .table { border-radius: 0; }
 
 /* ── Input (clase legacy usada en invoicesView) ─────────────── */
 .input {

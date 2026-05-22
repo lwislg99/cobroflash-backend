@@ -3,18 +3,18 @@ function renderProductsView(container) {
     container.innerHTML = "";
   
     const wrap = document.createElement("div");
-    wrap.className = "card";
+    wrap.className = "data-card";
     container.appendChild(wrap);
-  
+
     const header = document.createElement("div");
-    header.style.cssText = "display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px";
+    header.className = "data-card-header";
     wrap.appendChild(header);
-  
+
     const h = document.createElement("div");
     h.innerHTML = `
-      <h2 style="margin:0">Catálogo de productos</h2>
-      <p style="margin:4px 0 0; color:#6b7280; font-size:13px">
-        Crea, edita o desactiva productos para usarlos en presupuestos.
+      <h2 style="margin:0;font-size:16px;font-weight:700;color:var(--slate-900)">Catálogo de productos</h2>
+      <p style="margin:2px 0 0;color:var(--slate-400);font-size:12.5px">
+        Crea, edita o desactiva productos para usarlos en cotizaciones.
       </p>
     `;
     header.appendChild(h);
@@ -46,13 +46,13 @@ header.appendChild(importFile);
 
       // --- search + filters (client-side) ---
   const tools = document.createElement("div");
-  tools.style.display = "flex";
-  tools.style.alignItems = "center";
-  tools.style.gap = "8px";
+  tools.className = "data-card-toolbar";
+  wrap.appendChild(tools); // toolbar al nivel del data-card, no dentro del header
 
   const searchI = document.createElement("input");
   searchI.placeholder = "Buscar producto…";
-  searchI.style.maxWidth = "260px";
+  searchI.className = "input";
+  searchI.style.maxWidth = "240px";
 
   const onlyActiveWrap = document.createElement("label");
   onlyActiveWrap.style.display = "flex";
@@ -74,7 +74,7 @@ header.appendChild(importFile);
   tools.appendChild(searchI);
   tools.appendChild(onlyActiveWrap);
 
-  header.appendChild(tools);
+  // tools ya appended al wrap directamente como toolbar
 
   
     const alert = document.createElement("div");

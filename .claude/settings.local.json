@@ -32,7 +32,8 @@
       "Bash(curl -s https://cobroflash-backend-production.up.railway.app/dashboard/)",
       "Bash(xargs grep -h \"className\\\\|innerHTML\\\\|querySelector\\\\|getElementById\")",
       "Bash(git commit -m 'fix\\(UI polish\\): correcciones post-deploy — clases, empty states, planes, settings *)",
-      "Bash(git commit -m 'fix\\(UI\\): layout desktop + scroll móvil en todas las vistas *)"
+      "Bash(git commit -m 'fix\\(UI\\): layout desktop + scroll móvil en todas las vistas *)",
+      "Bash(git commit -m 'fix\\(UI\\): data-card pattern — tablas edge-to-edge sin overflow en facturas y proveedores *)"
     ]
   }
 }

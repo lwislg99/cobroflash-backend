@@ -4,12 +4,12 @@ function renderQuotesListView(container) {
   container.innerHTML = "";
 
   const wrapper = document.createElement("div");
-  wrapper.className = "customers-card";
+  wrapper.className = "data-card";
   container.appendChild(wrapper);
 
   // Header
   const header = document.createElement("div");
-  header.className = "customers-header";
+  header.className = "data-card-header";
   wrapper.appendChild(header);
 
   const left = document.createElement("div");
@@ -44,17 +44,14 @@ function renderQuotesListView(container) {
   right.appendChild(createBtn);
   header.appendChild(right);
 
-  // Tabla
+  // Tabla en card separado, fuera del wrapper de búsqueda
   const tableWrapper = document.createElement("div");
-  tableWrapper.className = "customers-card";
-  tableWrapper.style.marginTop = "8px";
-  tableWrapper.style.padding = "0";
-  wrapper.appendChild(tableWrapper);
+  tableWrapper.className = "data-card";
+  tableWrapper.style.marginTop = "12px";
+  container.appendChild(tableWrapper);
 
   const tableScroll = document.createElement("div");
   tableScroll.className = "table-scroll";
-  tableScroll.style.margin = "0";
-  tableScroll.style.borderRadius = "var(--radius-lg)";
   tableWrapper.appendChild(tableScroll);
 
   const table = document.createElement("table");
@@ -81,8 +78,8 @@ function renderQuotesListView(container) {
 
   const statusBox = document.createElement("div");
   statusBox.className = "alert";
-  statusBox.style.marginTop = "8px";
-  wrapper.appendChild(statusBox);
+  statusBox.style.cssText = "margin:8px 0;display:none";
+  container.appendChild(statusBox);
 
   function setStatus(type, msg) {
     statusBox.textContent = msg || "";

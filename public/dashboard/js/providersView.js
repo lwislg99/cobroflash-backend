@@ -2,20 +2,17 @@ function renderProvidersView(container) {
     container.innerHTML = "";
   
     const wrap = document.createElement("div");
-    wrap.className = "card";
+    wrap.className = "data-card";
     container.appendChild(wrap);
-  
+
     const header = document.createElement("div");
-    header.style.display = "flex";
-    header.style.justifyContent = "space-between";
-    header.style.alignItems = "center";
-    header.style.gap = "12px";
+    header.className = "data-card-header";
     wrap.appendChild(header);
-  
+
     const h = document.createElement("div");
     h.innerHTML = `
-      <h2 style="margin:0">Proveedores</h2>
-      <p style="margin:4px 0 0; color:#6b7280; font-size:13px">
+      <h2 style="margin:0;font-size:16px;font-weight:700;color:var(--slate-900)">Proveedores</h2>
+      <p style="margin:2px 0 0;color:var(--slate-400);font-size:12.5px">
         Crea y consulta proveedores para asociarlos a productos.
       </p>
     `;

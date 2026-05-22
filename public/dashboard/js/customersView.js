@@ -35,44 +35,38 @@ function renderCustomersView(container) {
 
   let editingCustomer = null;
 
-  const outerCard = createElement("div", "card customers-card");
+  // Card de búsqueda
+  const outerCard = createElement("div", "data-card");
   container.appendChild(outerCard);
 
-  const header = createElement("div", "customers-header");
-
-  // Buscador
+  // Header con search y botón
+  const header = createElement("div", "data-card-header");
   const searchBox = createElement("div", "customers-search");
   const searchInput = document.createElement("input");
   searchInput.type = "text";
   searchInput.placeholder = "Buscar por nombre, teléfono o email…";
-  const searchBtn = createElement("button", "btn btn-secondary", "Buscar");
+  const searchBtn = createElement("button", "btn btn-secondary btn-sm", "Buscar");
   searchBox.appendChild(searchInput);
   searchBox.appendChild(searchBtn);
-
-  // Botón nuevo cliente
-  const newBtn = createElement("button", "btn btn-primary", "Nuevo cliente");
-
+  const newBtn = createElement("button", "btn btn-primary btn-sm", "+ Nuevo cliente");
   header.appendChild(searchBox);
   header.appendChild(newBtn);
   outerCard.appendChild(header);
 
-  // Tabla con scroll horizontal en móvil
+  // Tabla edge-to-edge dentro del data-card
   const tableScroll = createElement("div", "table-scroll");
   outerCard.appendChild(tableScroll);
   const table = createElement("table", "table");
   tableScroll.appendChild(table);
   const thead = document.createElement("thead");
   const trHead = document.createElement("tr");
-  ["ID", "Nombre", "Teléfono", "Email", "Notas", "Alta", "Acciones"].forEach(
-    (h) => {
-      const th = document.createElement("th");
-      th.textContent = h;
-      trHead.appendChild(th);
-    }
-  );
+  ["ID", "Nombre", "Teléfono", "Email", "Notas", "Alta", ""].forEach((h) => {
+    const th = document.createElement("th");
+    th.textContent = h;
+    trHead.appendChild(th);
+  });
   thead.appendChild(trHead);
   table.appendChild(thead);
-  tableScroll.appendChild(table);
   const tbody = document.createElement("tbody");
   table.appendChild(tbody);
   outerCard.appendChild(table);

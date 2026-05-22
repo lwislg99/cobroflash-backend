@@ -25,34 +25,30 @@ async function fetchInvoices(options = {}) {
   async function renderInvoicesView(container) {
     container.innerHTML = '';
   
+    // Card principal
     const wrapper = document.createElement('div');
-    wrapper.className = 'customers-card';
+    wrapper.className = 'data-card';
     container.appendChild(wrapper);
-  
+
+    // Header con título y filtros
     const header = document.createElement('div');
-    header.className = 'customers-header';
+    header.className = 'data-card-header';
     wrapper.appendChild(header);
-  
+
     const left = document.createElement('div');
     const title = document.createElement('h2');
     title.textContent = 'Facturas';
-    title.style.margin = '0 0 4px 0';
+    title.style.cssText = 'margin:0 0 2px;font-size:16px;font-weight:700;color:var(--slate-900)';
     left.appendChild(title);
-  
     const subtitle = document.createElement('p');
     subtitle.textContent = 'Listado de facturas emitidas.';
-    subtitle.style.margin = '0';
-    subtitle.style.fontSize = '13px';
-    subtitle.style.color = '#6b7280';
+    subtitle.style.cssText = 'margin:0;font-size:12.5px;color:var(--slate-400)';
     left.appendChild(subtitle);
-  
     header.appendChild(left);
-  
+
     const right = document.createElement('div');
-    right.style.display = 'flex';
-    right.style.gap = '8px';
-  
-    // Filtro de estado
+    right.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;align-items:center';
+
     const selectStatus = document.createElement('select');
     selectStatus.className = 'input';
     selectStatus.innerHTML = `
@@ -62,20 +58,19 @@ async function fetchInvoices(options = {}) {
       <option value="expired">Vencidas</option>
     `;
     right.appendChild(selectStatus);
-  
-    // Buscador
+
     const inputSearch = document.createElement('input');
     inputSearch.className = 'input';
-    inputSearch.placeholder = 'Buscar por nº, cliente, email...';
+    inputSearch.placeholder = 'Buscar por nº, cliente…';
+    inputSearch.style.minWidth = '160px';
     right.appendChild(inputSearch);
-  
     header.appendChild(right);
-  
+
     const statusBox = document.createElement('div');
     statusBox.className = 'alert';
-    statusBox.style.marginTop = '8px';
+    statusBox.style.cssText = 'margin:8px 16px;display:none';
     wrapper.appendChild(statusBox);
-  
+
     const tableScroll = document.createElement('div');
     tableScroll.className = 'table-scroll';
     wrapper.appendChild(tableScroll);
