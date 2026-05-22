@@ -368,6 +368,14 @@ blockClient.appendChild(descWrapper);
   addLineBtn.textContent = "+ Añadir línea";
   linesHeader.appendChild(addLineBtn);
 
+  const aiBtn = document.createElement("button");
+  aiBtn.type = "button";
+  aiBtn.className = "btn-ghost btn-sm";
+  aiBtn.style.cssText = "font-size:12px;padding:4px 10px;border-radius:6px;border:1px dashed var(--slate-300);color:var(--slate-600)";
+  aiBtn.innerHTML = "✨ Sugerir con IA";
+  aiBtn.title = "Describe el trabajo y Claude sugiere las líneas del presupuesto";
+  linesHeader.appendChild(aiBtn);
+
   blockLines.appendChild(linesHeader);
 
   const table = document.createElement("table");
@@ -1487,6 +1495,26 @@ if (Number.isFinite(n) && n >= 0) {
 
   addLineBtn.addEventListener("click", function () {
     addLine();
+  });
+
+  // Botón IA — añade las líneas sugeridas por Claude
+  aiBtn.addEventListener("click", function () {
+    if (typeof openAiSuggestModal === 'function') {
+      openAiSuggestModal(function (suggestedLines) {
+        // Limpiar la fila vacía si es la única y no tiene datos
+        const existingRows = tbody.querySelectorAll('tr');
+        if (existingRows.length === 1) {
+          const firstConcept = existingRows[0].querySelector('input[type=text]');
+          if (firstConcept && !firstConcept.value.trim()) {
+            tbody.innerHTML = '';
+            lines = [];
+          }
+        }
+        suggestedLines.forEach(function (l) { addLine(l); });
+      });
+    } else {
+      setAlert('error', 'El asistente IA no está cargado. Recarga la página.');
+    }
   });
 
   resetBtn.addEventListener("click", function () {

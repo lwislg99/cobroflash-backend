@@ -35,6 +35,9 @@ export const config = {
     // Mercado Pago
     MP_ACCESS_TOKEN:    process.env.MP_ACCESS_TOKEN    || '',
     MP_WEBHOOK_SECRET:  process.env.MP_WEBHOOK_SECRET  || '',
+
+    // Anthropic / Claude AI
+    ANTHROPIC_API_KEY:  process.env.ANTHROPIC_API_KEY  || '',
   } as const;
   
   export const BASE_URL = config.PUBLIC_BASE_URL;
