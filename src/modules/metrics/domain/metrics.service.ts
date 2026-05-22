@@ -4,7 +4,7 @@ export async function getHomeMetrics(merchantId: number) {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const [pendingInvoices, sentQuotes, paidThisMonth, recentQuotes, topCustomers, topServices, expensesThisMonth] = await Promise.all([
+  const [pendingInvoices, sentQuotes, paidThisMonth, recentQuotes, topCustomers, topServices, expensesThisMonth, pendingRequests] = await Promise.all([
     prisma.invoice.aggregate({
       where: { merchantId, status: 'pending' },
       _sum: { total: true },
@@ -43,6 +43,10 @@ export async function getHomeMetrics(merchantId: number) {
       where: { merchantId, date: { gte: startOfMonth } },
       _sum: { amount: true },
       _count: { id: true },
+    }),
+    // Solicitudes de presupuesto pendientes
+    prisma.quoteRequest.count({
+      where: { merchantId, status: 'pending' },
     }),
   ]);
 
@@ -87,6 +91,7 @@ export async function getHomeMetrics(merchantId: number) {
     expensesThisMonth: Number(expensesThisMonth._sum.amount ?? 0),
     expensesCount: expensesThisMonth._count.id,
     profitThisMonth: Number(paidThisMonth._sum.total ?? 0) - Number(expensesThisMonth._sum.amount ?? 0),
+    pendingRequests,
     topCustomers: topCustomers.map((r) => ({
       customerId: r.customerId,
       name: r.customerId ? (nameMap[r.customerId] ?? '—') : '—',

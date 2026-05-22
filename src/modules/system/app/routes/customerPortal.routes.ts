@@ -1,30 +1,136 @@
+// src/modules/system/app/routes/customerPortal.routes.ts
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { esc } from '../../../../core/utils/utils';
 import { BASE_URL } from '../../../../core/config/env';
+import { sendWhatsAppText } from '../../../../integrations/whatsapp';
+import { normalizePhone } from '../../../../core/utils/utils';
 
 const router = Router();
+
+// ── helpers ───────────────────────────────────────────────────────────────
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Borrador', sent: 'Enviado', accepted: 'Aceptado', rejected: 'Rechazado',
   pending: 'Pendiente', paid: 'Pagada', expired: 'Caducada',
 };
-const STATUS_COLORS: Record<string, string> = {
-  accepted: '#166534', paid: '#166534',
-  sent: '#1d4ed8', pending: '#92400e',
-  rejected: '#991b1b', expired: '#6b7280', draft: '#6b7280',
-};
-const STATUS_BG: Record<string, string> = {
-  accepted: '#dcfce7', paid: '#dcfce7',
-  sent: '#dbeafe', pending: '#fef3c7',
-  rejected: '#fee2e2', expired: '#f3f4f6', draft: '#f3f4f6',
+const STATUS_COLOR: Record<string, { bg: string; fg: string }> = {
+  accepted: { bg: '#dcfce7', fg: '#166534' },
+  paid:     { bg: '#dcfce7', fg: '#166534' },
+  sent:     { bg: '#dbeafe', fg: '#1d4ed8' },
+  pending:  { bg: '#fef3c7', fg: '#92400e' },
+  rejected: { bg: '#fee2e2', fg: '#991b1b' },
+  expired:  { bg: '#f3f4f6', fg: '#6b7280' },
+  draft:    { bg: '#f3f4f6', fg: '#6b7280' },
 };
 
 function pill(status: string) {
   const label = STATUS_LABELS[status] ?? status;
-  const color = STATUS_COLORS[status] ?? '#374151';
-  const bg    = STATUS_BG[status]    ?? '#f3f4f6';
-  return `<span style="display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;background:${bg};color:${color}">${esc(label)}</span>`;
+  const c = STATUS_COLOR[status] ?? { bg: '#f3f4f6', fg: '#374151' };
+  return `<span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:${c.bg};color:${c.fg};letter-spacing:.02em;text-transform:uppercase">${esc(label)}</span>`;
+}
+
+function fmt(n: number) {
+  return n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function dateShort(d: Date | string) {
+  return new Date(d).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function css() {
+  return `
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui,-apple-system,sans-serif; background: #f1f5f9;
+    color: #0f172a; min-height: 100vh; }
+
+  /* Header */
+  .pf-header { background: #0f172a; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px; }
+  .pf-logo { max-height: 38px; max-width: 90px; object-fit: contain; border-radius: 6px; }
+  .pf-brand { color: #fff; font-weight: 700; font-size: 15px; line-height: 1.3; }
+  .pf-brand-sub { color: #94a3b8; font-size: 12px; font-weight: 400; }
+
+  /* Container */
+  .pf-main { max-width: 600px; margin: 0 auto; padding: 20px 14px 60px; }
+
+  /* Greeting */
+  .pf-greeting { font-size: 22px; font-weight: 800; color: #0f172a; margin: 20px 0 4px; }
+  .pf-greeting-sub { font-size: 14px; color: #64748b; margin-bottom: 28px; }
+
+  /* Section */
+  .pf-section { margin-bottom: 28px; }
+  .pf-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .08em; color: #64748b; margin-bottom: 10px; padding-left: 2px; }
+
+  /* Card */
+  .pf-card { background: #fff; border-radius: 14px; padding: 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,.06); margin-bottom: 10px; overflow: hidden; }
+  .pf-card-body { padding: 14px 16px; }
+  .pf-card-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .pf-card-title { font-weight: 700; font-size: 14.5px; color: #0f172a; margin-bottom: 3px; }
+  .pf-card-meta { font-size: 12.5px; color: #64748b; }
+  .pf-card-amount { font-weight: 800; font-size: 17px; color: #0f172a; margin-bottom: 5px; text-align: right; }
+
+  /* Buttons */
+  .pf-btn { display: block; width: 100%; padding: 11px 14px; border-radius: 10px;
+    font-size: 14px; font-weight: 700; text-align: center; text-decoration: none;
+    border: none; cursor: pointer; transition: opacity .15s; }
+  .pf-btn:active { opacity: .8; }
+  .pf-btn-pay { background: #22c55e; color: #052e16; margin-bottom: 6px; }
+  .pf-btn-pdf { background: #f1f5f9; color: #2563eb; margin-bottom: 6px; }
+  .pf-btn-mp  { background: #009ee3; color: #fff; margin-bottom: 6px; }
+  .pf-btn-ghost { background: transparent; color: #64748b; border: 1.5px solid #e2e8f0;
+    font-size: 13px; padding: 8px 14px; }
+
+  /* Lines expandibles */
+  .pf-lines { border-top: 1px solid #f1f5f9; }
+  .pf-lines-toggle { width: 100%; background: none; border: none; padding: 9px 16px;
+    font-size: 12.5px; color: #64748b; cursor: pointer; text-align: left;
+    display: flex; align-items: center; gap: 6px; font-family: inherit; }
+  .pf-lines-toggle:hover { background: #f8fafc; }
+  .pf-lines-body { display: none; padding: 0 16px 12px; }
+  .pf-lines-body.open { display: block; }
+  .pf-line-row { display: flex; justify-content: space-between; gap: 8px;
+    font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid #f1f5f9; }
+  .pf-line-row:last-child { border-bottom: none; }
+  .pf-line-concept { color: #374151; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pf-line-amount { font-weight: 600; color: #0f172a; white-space: nowrap; }
+
+  /* Request form */
+  .pf-request-btn { background: linear-gradient(135deg,#22c55e,#16a34a);
+    color: #052e16; border: none; width: 100%; padding: 14px;
+    border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 4px 14px rgba(34,197,94,.3); font-family: inherit; }
+  .pf-request-form { display: none; background: #fff; border-radius: 14px;
+    padding: 16px; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+  .pf-request-form.open { display: block; }
+  .pf-request-label { font-size: 13px; font-weight: 600; color: #374151; display: block; margin-bottom: 6px; }
+  .pf-request-textarea { width: 100%; padding: 10px 12px; border: 1.5px solid #e2e8f0;
+    border-radius: 10px; font-size: 14px; font-family: inherit; resize: vertical;
+    min-height: 100px; color: #0f172a; }
+  .pf-request-textarea:focus { outline: none; border-color: #22c55e; }
+  .pf-request-submit { background: #22c55e; color: #052e16; border: none; width: 100%;
+    padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 700;
+    cursor: pointer; margin-top: 10px; font-family: inherit; }
+  .pf-request-cancel { background: none; border: none; color: #64748b; font-size: 13px;
+    cursor: pointer; margin-top: 8px; width: 100%; font-family: inherit; }
+  .pf-success { background: #dcfce7; border: 1px solid #bbf7d0; border-radius: 12px;
+    padding: 14px; color: #166534; font-size: 14px; text-align: center; font-weight: 600; }
+
+  /* Empty */
+  .pf-empty { color: #94a3b8; font-size: 14px; text-align: center; padding: 20px 0; }
+
+  /* Footer */
+  .pf-footer { text-align: center; font-size: 12px; color: #cbd5e1; margin-top: 40px; }
+
+  /* Contact */
+  .pf-contact-row { display: flex; gap: 10px; }
+  .pf-wa-btn { flex: 1; display: flex; align-items: center; justify-content: center;
+    gap: 8px; background: #25d366; color: #fff; border-radius: 10px; padding: 11px;
+    text-decoration: none; font-weight: 700; font-size: 13.5px; }
+</style>`;
 }
 
 function page(title: string, body: string) {
@@ -32,59 +138,90 @@ function page(title: string, body: string) {
 <html lang="es">
 <head>
   <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>${esc(title)}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, -apple-system, sans-serif;
-      background: #f0f4f8; color: #111827; padding: 0 0 40px; }
-    .header { background: #0f172a; padding: 16px 20px; display: flex;
-      align-items: center; gap: 12px; }
-    .header-logo { max-height: 40px; max-width: 100px; object-fit: contain; border-radius: 6px; }
-    .header-name { color: #fff; font-weight: 700; font-size: 16px; }
-    .header-sub { color: #94a3b8; font-size: 13px; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px 16px; }
-    .greeting { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-    .greeting-sub { font-size: 14px; color: #6b7280; margin-bottom: 24px; }
-    .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .05em; color: #6b7280; margin: 24px 0 10px; }
-    .card { background: #fff; border-radius: 12px; padding: 14px 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.06); margin-bottom: 10px; }
-    .card-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-    .card-left { flex: 1; min-width: 0; }
-    .card-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
-    .card-meta { font-size: 13px; color: #6b7280; }
-    .card-right { text-align: right; flex-shrink: 0; }
-    .card-amount { font-weight: 700; font-size: 16px; margin-bottom: 6px; }
-    .card-actions { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
-    .btn { display: inline-block; padding: 9px 16px; border-radius: 8px; font-size: 14px;
-      font-weight: 600; text-decoration: none; text-align: center; border: none; cursor: pointer; }
-    .btn-pay { background: #16a34a; color: #fff; width: 100%; }
-    .btn-pdf { background: #f1f5f9; color: #1e40af; width: 100%; }
-    .empty { color: #9ca3af; font-size: 14px; padding: 12px 0; text-align: center; }
-    .powered { text-align: center; font-size: 12px; color: #d1d5db; margin-top: 32px; }
-  </style>
+  ${css()}
 </head>
 <body>
 ${body}
-<p class="powered">Powered by PresuFácil</p>
+<p class="pf-footer">Powered by PresuFácil</p>
+<script>
+  // Expandir líneas de factura
+  document.querySelectorAll('.pf-lines-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const body = btn.nextElementSibling;
+      const open = body.classList.toggle('open');
+      btn.querySelector('.pf-chevron').textContent = open ? '▲' : '▼';
+    });
+  });
+
+  // Formulario de solicitud
+  const reqBtn  = document.getElementById('pf-req-btn');
+  const reqForm = document.getElementById('pf-req-form');
+  const reqCancel = document.getElementById('pf-req-cancel');
+  const reqSubmit = document.getElementById('pf-req-submit');
+  const reqTa    = document.getElementById('pf-req-ta');
+  const reqSuccess = document.getElementById('pf-req-success');
+
+  if (reqBtn) {
+    reqBtn.addEventListener('click', () => {
+      reqBtn.style.display = 'none';
+      reqForm.classList.add('open');
+      reqTa.focus();
+    });
+    reqCancel.addEventListener('click', () => {
+      reqBtn.style.display = 'block';
+      reqForm.classList.remove('open');
+    });
+    reqSubmit.addEventListener('click', async () => {
+      const desc = reqTa.value.trim();
+      if (!desc) { reqTa.focus(); return; }
+      reqSubmit.disabled = true;
+      reqSubmit.textContent = 'Enviando…';
+      try {
+        const r = await fetch(window.PF_REQUEST_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ description: desc }),
+        });
+        if (r.ok) {
+          reqForm.classList.remove('open');
+          reqSuccess.style.display = 'block';
+        } else {
+          alert('Error al enviar. Inténtalo de nuevo.');
+          reqSubmit.disabled = false;
+          reqSubmit.textContent = 'Enviar solicitud';
+        }
+      } catch {
+        alert('Error de conexión.');
+        reqSubmit.disabled = false;
+        reqSubmit.textContent = 'Enviar solicitud';
+      }
+    });
+  }
+</script>
 </body>
 </html>`;
 }
 
+// ── GET /cliente/:token ──────────────────────────────────────────────────
 router.get('/:token', async (req, res) => {
   const { token } = req.params;
 
   const customer = await prisma.customer.findUnique({
     where: { portalToken: token },
     include: {
-      merchant: { select: { name: true, legalName: true, logoUrl: true } },
+      merchant: {
+        select: { id: true, name: true, legalName: true, logoUrl: true, whatsappPhone: true },
+      },
     },
   });
 
   if (!customer) {
     return res.status(404).setHeader('Content-Type', 'text/html; charset=utf-8').send(
-      page('Portal no encontrado', '<div style="padding:40px;text-align:center;color:#6b7280">Este enlace no es válido o ha expirado.</div>')
+      page('Portal no encontrado',
+        '<div style="padding:60px 20px;text-align:center;color:#94a3b8;font-size:15px">Este enlace no es válido o ha expirado.</div>'
+      )
     );
   }
 
@@ -102,89 +239,206 @@ router.get('/:token', async (req, res) => {
     }),
   ]);
 
-  const merchantName = esc(customer.merchant?.legalName || customer.merchant?.name || 'Tu proveedor');
-  const logoHtml = customer.merchant?.logoUrl
-    ? `<img class="header-logo" src="${esc(customer.merchant.logoUrl)}" alt="logo"/>`
-    : '';
+  const m          = customer.merchant!;
+  const mName      = esc(m.legalName || m.name || 'Tu proveedor');
+  const logoHtml   = m.logoUrl
+    ? `<img class="pf-logo" src="${esc(m.logoUrl)}" alt="logo"/>`
+    : `<div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#22c55e,#22d3ee);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#052e16">PF</div>`;
 
-  // --- Cotizaciones ---
+  // ── Cotizaciones ────────────────────────────────────────────────────────
   const quotesHtml = quotes.length
     ? quotes.map((q) => {
-        const date = new Date(q.createdAt).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' });
-        const pdfLink = q.pdfUrl
-          ? `<a class="btn btn-pdf" href="${esc(q.pdfUrl.startsWith('http') ? q.pdfUrl : BASE_URL + q.pdfUrl)}" target="_blank">Descargar PDF</a>`
-          : '';
-        const acceptLink = (q.status === 'sent')
-          ? `<a class="btn btn-pay" href="/pay/quote/${q.id}/accept">Ver y responder</a>`
-          : '';
+        const hasLines = Array.isArray(q.lines) && (q.lines as any[]).length > 0;
+        const linesHtml = hasLines
+          ? `<div class="pf-lines">
+              <button class="pf-lines-toggle">
+                <span class="pf-chevron">▼</span> Ver detalles (${(q.lines as any[]).length} línea${(q.lines as any[]).length !== 1 ? 's' : ''})
+              </button>
+              <div class="pf-lines-body">
+                ${(q.lines as any[]).map((l: any) => {
+                  const total = Number(l.qty||1) * Number(l.price||0) * (1 + Number(l.tax||0));
+                  return `<div class="pf-line-row">
+                    <span class="pf-line-concept">${esc(l.concept||'')}</span>
+                    <span class="pf-line-amount">${fmt(total)} ${esc(q.currency)}</span>
+                  </div>`;
+                }).join('')}
+              </div>
+            </div>` : '';
+        const pdfUrl = q.pdfUrl && q.pdfUrl !== 'PENDING_PDF'
+          ? (q.pdfUrl.startsWith('http') ? q.pdfUrl : BASE_URL + q.pdfUrl)
+          : null;
+        const btnPdf    = pdfUrl ? `<a class="pf-btn pf-btn-pdf" href="${esc(pdfUrl)}" target="_blank">📄 Ver PDF</a>` : '';
+        const btnAccept = q.status === 'sent' ? `<a class="pf-btn pf-btn-pay" href="/pay/quote/${q.id}/accept">✅ Ver y responder</a>` : '';
+        const hasActions = btnAccept || btnPdf;
         return `
-          <div class="card">
-            <div class="card-row">
-              <div class="card-left">
-                <div class="card-title">Cotización #${q.id}</div>
-                <div class="card-meta">${date}</div>
+          <div class="pf-card">
+            <div class="pf-card-body">
+              <div class="pf-card-row">
+                <div>
+                  <div class="pf-card-title">Cotización #${q.id}</div>
+                  <div class="pf-card-meta">${dateShort(q.createdAt)}</div>
+                </div>
+                <div>
+                  <div class="pf-card-amount">${fmt(Number(q.total))} ${esc(q.currency)}</div>
+                  ${pill(q.status)}
+                </div>
               </div>
-              <div class="card-right">
-                <div class="card-amount">${Number(q.total).toFixed(2)} ${esc(q.currency)}</div>
-                ${pill(q.status)}
-              </div>
+              ${hasActions ? `<div style="margin-top:12px">${btnAccept}${btnPdf}</div>` : ''}
             </div>
-            ${pdfLink || acceptLink ? `<div class="card-actions">${acceptLink}${pdfLink}</div>` : ''}
+            ${linesHtml}
           </div>`;
       }).join('')
-    : '<p class="empty">No hay cotizaciones aún.</p>';
+    : '<p class="pf-empty">No hay cotizaciones aún.</p>';
 
-  // --- Facturas ---
+  // ── Facturas ─────────────────────────────────────────────────────────────
   const invoicesHtml = invoices.length
     ? invoices.map((inv) => {
-        const date = new Date(inv.createdAt).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' });
-        const pdfUrl = inv.pdfUrl && inv.pdfUrl !== 'PENDING_PDF' && inv.pdfUrl !== 'PENDING'
+        const lines = inv.lines && Array.isArray(inv.lines) ? inv.lines as any[] : [];
+        const linesHtml = lines.length > 0
+          ? `<div class="pf-lines">
+              <button class="pf-lines-toggle">
+                <span class="pf-chevron">▼</span> Ver detalles (${lines.length} línea${lines.length !== 1 ? 's' : ''})
+              </button>
+              <div class="pf-lines-body">
+                ${lines.map((l: any) => {
+                  const total = Number(l.qty||1) * Number(l.price||0) * (1 + Number(l.tax||0));
+                  return `<div class="pf-line-row">
+                    <span class="pf-line-concept">${esc(l.concept||'')}</span>
+                    <span class="pf-line-amount">${fmt(total)} ${esc(inv.currency)}</span>
+                  </div>`;
+                }).join('')}
+              </div>
+            </div>` : '';
+        const pdfUrl = inv.pdfUrl && inv.pdfUrl !== 'PENDING_PDF'
           ? (inv.pdfUrl.startsWith('http') ? inv.pdfUrl : BASE_URL + inv.pdfUrl)
           : null;
-        const pdfLink = pdfUrl
-          ? `<a class="btn btn-pdf" href="${esc(pdfUrl)}" target="_blank">Descargar PDF</a>`
+        const btnPdf  = pdfUrl ? `<a class="pf-btn pf-btn-pdf" href="${esc(pdfUrl)}" target="_blank">📄 Descargar factura</a>` : '';
+        const btnPay  = inv.status === 'pending' && inv.charge?.id
+          ? `<a class="pf-btn pf-btn-pay" href="/pay/card/${inv.charge.id}">💳 Pagar ahora</a>`
           : '';
-        const payLink = (inv.status === 'pending' && inv.charge?.id)
-          ? `<a class="btn btn-pay" href="/pay/card/${inv.charge.id}">Pagar ahora</a>`
-          : '';
+        const hasActions = btnPay || btnPdf;
         return `
-          <div class="card">
-            <div class="card-row">
-              <div class="card-left">
-                <div class="card-title">Factura ${esc(inv.number)}</div>
-                <div class="card-meta">${date}</div>
+          <div class="pf-card">
+            <div class="pf-card-body">
+              <div class="pf-card-row">
+                <div>
+                  <div class="pf-card-title">Factura ${esc(inv.number)}</div>
+                  <div class="pf-card-meta">${dateShort(inv.createdAt)}${inv.paidAt ? ' · Pagada ' + dateShort(inv.paidAt) : ''}</div>
+                </div>
+                <div>
+                  <div class="pf-card-amount">${fmt(Number(inv.total))} ${esc(inv.currency)}</div>
+                  ${pill(inv.status)}
+                </div>
               </div>
-              <div class="card-right">
-                <div class="card-amount">${Number(inv.total).toFixed(2)} ${esc(inv.currency)}</div>
-                ${pill(inv.status)}
-              </div>
+              ${hasActions ? `<div style="margin-top:12px">${btnPay}${btnPdf}</div>` : ''}
             </div>
-            ${payLink || pdfLink ? `<div class="card-actions">${payLink}${pdfLink}</div>` : ''}
+            ${linesHtml}
           </div>`;
       }).join('')
-    : '<p class="empty">No hay facturas aún.</p>';
+    : '<p class="pf-empty">No hay facturas aún.</p>';
 
-  const html = page(`Portal de ${esc(customer.name)} · ${merchantName}`, `
-    <div class="header">
+  // ── Botón WhatsApp para contactar ────────────────────────────────────────
+  const waPhone    = m.whatsappPhone ? normalizePhone(m.whatsappPhone) : null;
+  const contactHtml = waPhone
+    ? `<div class="pf-section">
+        <div class="pf-section-title">Contacto</div>
+        <div class="pf-contact-row">
+          <a class="pf-wa-btn" href="https://wa.me/${esc(waPhone.replace('+',''))}" target="_blank">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.47 14.38c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.34.22-.64.07-.3-.15-1.26-.46-2.4-1.47-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.34.45-.52.15-.17.2-.29.3-.49.1-.2.05-.37-.02-.52-.07-.15-.67-1.61-.92-2.2-.24-.57-.49-.49-.67-.5h-.57c-.2 0-.52.07-.79.37-.27.3-1.02 1-1.02 2.43 0 1.43 1.04 2.82 1.19 3.01.15.2 2.05 3.13 4.97 4.39.7.3 1.24.48 1.67.61.7.22 1.34.19 1.84.12.56-.08 1.73-.71 1.97-1.39.24-.68.24-1.26.17-1.39-.07-.12-.27-.19-.57-.34z"/><path d="M12 0C5.37 0 0 5.37 0 12c0 2.1.54 4.07 1.49 5.79L.06 23.3a.75.75 0 0 0 .94.93l5.57-1.45A11.95 11.95 0 0 0 12 24c6.63 0 12-5.37 12-12S18.63 0 12 0zm0 21.75A9.72 9.72 0 0 1 6.7 20.1l-.37-.23-3.85 1 1.01-3.77-.25-.39A9.72 9.72 0 0 1 2.25 12C2.25 6.62 6.62 2.25 12 2.25S21.75 6.62 21.75 12 17.38 21.75 12 21.75z"/></svg>
+            WhatsApp
+          </a>
+        </div>
+      </div>`
+    : '';
+
+  const requestUrl = `${BASE_URL}/cliente/${token}/quote-request`;
+
+  const html = page(`Portal de ${esc(customer.name)} · ${mName}`, `
+    <div class="pf-header">
       ${logoHtml}
       <div>
-        <div class="header-name">${merchantName}</div>
-        <div class="header-sub">Tu portal de cliente</div>
+        <div class="pf-brand">${mName}</div>
+        <div class="pf-brand-sub">Tu portal de cliente</div>
       </div>
     </div>
-    <div class="container">
-      <div class="greeting">Hola, ${esc(customer.name)} 👋</div>
-      <div class="greeting-sub">Aquí puedes ver tus cotizaciones, facturas y pagos pendientes.</div>
+    <div class="pf-main">
+      <div class="pf-greeting">Hola, ${esc(customer.name)} 👋</div>
+      <div class="pf-greeting-sub">Aquí tienes tus cotizaciones, facturas y pagos.</div>
 
-      <div class="section-title">Cotizaciones</div>
-      ${quotesHtml}
+      <!-- Solicitar presupuesto -->
+      <div class="pf-section">
+        <button class="pf-request-btn" id="pf-req-btn">✏️ Solicitar nuevo presupuesto</button>
+        <div class="pf-request-form" id="pf-req-form">
+          <label class="pf-request-label">Describe brevemente el trabajo que necesitas:</label>
+          <textarea class="pf-request-textarea" id="pf-req-ta"
+            placeholder="Ej. Quiero reparar una gotera en el baño y revisar las tuberías del suelo..."></textarea>
+          <button class="pf-request-submit" id="pf-req-submit">✅ Enviar solicitud</button>
+          <button class="pf-request-cancel" id="pf-req-cancel">Cancelar</button>
+        </div>
+        <div class="pf-success" id="pf-req-success" style="display:none">
+          ✅ ¡Solicitud enviada! Te contactaremos pronto.
+        </div>
+      </div>
 
-      <div class="section-title">Facturas</div>
-      ${invoicesHtml}
+      ${contactHtml}
+
+      <div class="pf-section">
+        <div class="pf-section-title">Cotizaciones</div>
+        ${quotesHtml}
+      </div>
+
+      <div class="pf-section">
+        <div class="pf-section-title">Facturas</div>
+        ${invoicesHtml}
+      </div>
     </div>
+    <script>window.PF_REQUEST_URL = "${esc(requestUrl)}";</script>
   `);
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8').send(html);
+});
+
+// ── POST /cliente/:token/quote-request ─────────────────────────────────
+router.post('/:token/quote-request', async (req, res) => {
+  const { token } = req.params;
+  const description = String(req.body?.description || '').trim();
+
+  if (!description) return res.status(400).json({ error: 'description_required' });
+  if (description.length > 2000) return res.status(400).json({ error: 'too_long' });
+
+  const customer = await prisma.customer.findUnique({
+    where: { portalToken: token },
+    include: { merchant: { select: { name: true, whatsappPhone: true } } },
+  });
+
+  if (!customer) return res.status(404).json({ error: 'not_found' });
+
+  try {
+    // Guardar la solicitud
+    await prisma.quoteRequest.create({
+      data: {
+        merchantId:  customer.merchantId,
+        customerId:  customer.id,
+        description,
+        status:      'pending',
+      },
+    });
+
+    // Notificar al profesional por WhatsApp (fire-and-forget)
+    const mPhone = normalizePhone(customer.merchant?.whatsappPhone);
+    if (mPhone) {
+      const mName = customer.merchant?.name || 'tu negocio';
+      sendWhatsAppText({
+        to: mPhone,
+        text: `📋 Nueva solicitud de presupuesto de *${customer.name}*:\n\n"${description.slice(0, 300)}${description.length > 300 ? '…' : ''}"\n\nRevísala en tu panel de PresuFácil.`,
+      }).catch((e) => console.error('[quoteRequest] WA error:', e?.message));
+    }
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[POST /cliente/:token/quote-request]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
 });
 
 export default router;

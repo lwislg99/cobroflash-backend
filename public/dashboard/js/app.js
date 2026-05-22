@@ -21,6 +21,24 @@ async function initApp() {
     });
   }
 
+  // Badge de solicitudes pendientes
+  function updateRequestsBadge() {
+    apiRequest('/admin/quote-requests?status=pending').then(function (reqs) {
+      const badge = document.getElementById('req-badge');
+      if (!badge) return;
+      const count = Array.isArray(reqs) ? reqs.length : 0;
+      if (count > 0) {
+        badge.textContent = String(count);
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }).catch(function () {});
+  }
+  updateRequestsBadge();
+  // Refrescar el badge cada 5 minutos
+  setInterval(updateRequestsBadge, 5 * 60 * 1000);
+
   // 2. Inyectar usuario en sidebar
   const initials = (me.name || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   const planLabels = { trial: 'Trial gratuito', basic: 'Plan Básico', pro: 'Plan Pro', empresa: 'Plan Empresa' };
@@ -142,6 +160,10 @@ async function initApp() {
       case 'templates':
         viewTitle.textContent = 'Plantillas';
         if (typeof renderTemplatesView === 'function') renderTemplatesView(viewContainer);
+        break;
+      case 'quote-requests':
+        viewTitle.textContent = 'Solicitudes';
+        if (typeof renderQuoteRequestsView === 'function') renderQuoteRequestsView(viewContainer);
         break;
       case 'invoices':
         viewTitle.textContent = 'Facturas';

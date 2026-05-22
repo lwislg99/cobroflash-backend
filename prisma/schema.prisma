@@ -46,6 +46,7 @@ model Merchant {
   Expense        Expense[]
   TeamMember     TeamMember[]
   QuoteTemplate  QuoteTemplate[]
+  QuoteRequest   QuoteRequest[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt      @map("updated_at")
@@ -82,12 +83,13 @@ model Customer {
   notes       String?
   portalToken String? @unique @map("portal_token")
 
-  merchant  Merchant  @relation(fields: [merchantId], references: [id])
-  charges   Charge[]
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt      @map("updated_at")
-  Quote     Quote[]
-  Invoice   Invoice[]
+  merchant      Merchant       @relation(fields: [merchantId], references: [id])
+  charges       Charge[]
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt      @map("updated_at")
+  Quote         Quote[]
+  Invoice       Invoice[]
+  QuoteRequest  QuoteRequest[]
 
   @@index([merchantId])
   @@map("customers")
@@ -295,6 +297,24 @@ model Provider {
 
   @@index([merchantId])
   @@map("providers")
+}
+
+model QuoteRequest {
+  id          Int    @id @default(autoincrement())
+  merchantId  Int    @map("merchant_id")
+  customerId  Int    @map("customer_id")
+
+  description String @db.Text
+  status      String @default("pending") // pending | read | done
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  merchant Merchant @relation(fields: [merchantId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([merchantId, status])
+  @@index([customerId])
+  @@map("quote_requests")
 }
 
 model QuoteTemplate {

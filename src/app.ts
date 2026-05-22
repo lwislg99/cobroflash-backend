@@ -38,7 +38,8 @@ import teamRouter from './modules/team/app/routes/team.routes';
 import aiRouter      from './modules/ai/app/routes/ai.routes';
 import exportsRouter   from './modules/exports/app/routes/exports.routes';
 import reportsRouter   from './modules/reports/app/routes/reports.routes';
-import templatesRouter from './modules/templates/app/routes/templates.routes';
+import templatesRouter     from './modules/templates/app/routes/templates.routes';
+import quoteRequestsRouter from './modules/quoteRequests/app/routes/quoteRequests.routes';
 
 import { merchantProfileUpdateSchema } from './core/validation/schemas';
 import { getMerchantProfile, updateMerchantProfile } from './modules/system/merchantAdmin';
@@ -134,7 +135,8 @@ app.use('/admin/team',       requireRole('admin'), teamRouter);
 app.use('/admin/ai',         aiRouter);
 app.use('/admin/exports',    exportsRouter);
 app.use('/admin/reports',    reportsRouter);
-app.use('/admin/templates',  templatesRouter);
+app.use('/admin/templates',     templatesRouter);
+app.use('/admin/quote-requests', quoteRequestsRouter);
 
 // Admin – Perfil de merchant (lectura libre, escritura solo admin)
 app.get('/admin/merchant', async (req, res, next) => {
