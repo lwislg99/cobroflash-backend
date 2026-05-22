@@ -97,6 +97,8 @@ function renderSettingsView(container) {
     fCountryWrapper.appendChild(fCountrySelect);
     fCountryWrapper.appendChild(fCountryNote);
     const fGoogleReviewUrl = createField("URL de reseñas en Google (opcional)", "googleReviewUrl", "text", false);
+    const fIban  = createField("IBAN (para pagos por transferencia — España/Europa)", "iban", "text", false);
+    const fClabe = createField("CLABE interbancaria (para pagos por transferencia — México)", "clabe", "text", false);
 
     form.appendChild(fName.wrapper);
     form.appendChild(fLegalName.wrapper);
@@ -108,7 +110,22 @@ function renderSettingsView(container) {
     form.appendChild(fInvoiceSeriesPrefix.wrapper);
     form.appendChild(fLogoUrl.wrapper);
 
-    // Separador visual
+    // Separador — Pagos por transferencia
+    const sepBank = document.createElement("div");
+    sepBank.style.cssText = "border-top:1px solid #e5e7eb;margin:12px 0 4px;padding-top:12px";
+    sepBank.innerHTML = '<p style="font-size:12px;color:#6b7280;margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Datos bancarios para transferencias</p>';
+    form.appendChild(sepBank);
+
+    fIban.input.placeholder = "ES91 2100 0418 4502 0005 1332";
+    fIban.wrapper.querySelector("label").insertAdjacentHTML(
+      "afterend",
+      '<p style="font-size:12px;color:#9ca3af;margin:2px 0 4px">Se muestra al cliente en la página de pago por transferencia bancaria.</p>'
+    );
+    fClabe.input.placeholder = "646180110400000007";
+    form.appendChild(fIban.wrapper);
+    form.appendChild(fClabe.wrapper);
+
+    // Separador visual — Automatizaciones
     const sep = document.createElement("div");
     sep.style.cssText = "border-top:1px solid #e5e7eb;margin:12px 0 4px;padding-top:12px";
     sep.innerHTML = '<p style="font-size:12px;color:#6b7280;margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Automatizaciones</p>';
@@ -146,6 +163,8 @@ function renderSettingsView(container) {
         fInvoiceSeriesPrefix.input.value = merchant.invoiceSeriesPrefix || "";
         fLogoUrl.input.value = merchant.logoUrl || "";
         fGoogleReviewUrl.input.value = merchant.googleReviewUrl || "";
+        fIban.input.value  = merchant.iban  || "";
+        fClabe.input.value = merchant.clabe || "";
         if (merchant.country) fCountrySelect.value = merchant.country;
   
         setAlert(null, "");
@@ -171,6 +190,8 @@ function renderSettingsView(container) {
         logoUrl: fLogoUrl.input.value.trim() || null,
         googleReviewUrl: fGoogleReviewUrl.input.value.trim() || null,
         country: fCountrySelect.value || undefined,
+        iban:  fIban.input.value.trim().replace(/\s/g, '') || null,
+        clabe: fClabe.input.value.trim() || null,
       };
   
       if (!payload.name || !payload.legalName || !payload.taxId || !payload.address || !payload.whatsappPhone) {

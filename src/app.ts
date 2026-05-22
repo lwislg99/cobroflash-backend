@@ -18,6 +18,8 @@ import chargesRouter from './modules/billing/app/routes/charges.routes';
 import receiptRouter from './modules/billing/app/routes/receipt.routes';
 import payBankRouter from './modules/billing/app/routes/payBank.routes';
 import payCardRouter from './modules/billing/app/routes/payCard.routes';
+import payMpRouter   from './modules/billing/app/routes/payMp.routes';
+import mpWebhookRouter from './modules/billing/app/routes/mpWebhook.routes';
 
 import quotesRouter from './modules/quotes/app/routes/quotes.routes';
 import invoiceRouter from './modules/invoicing/app/routes/invoice.routes';
@@ -75,6 +77,8 @@ app.use('/invoice', invoiceRouter);
 app.use('/recibo', receiptRouter);
 app.use('/pay', payBankRouter);
 app.use('/pay', payCardRouter);
+app.use('/pay', payMpRouter);
+app.use('/webhooks/mp', mpWebhookRouter);
 app.use('/dev', devRouter);
 
 // ===========================

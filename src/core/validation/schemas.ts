@@ -82,7 +82,7 @@ export const CreateChargeSchema = z.object({
     })
     .optional(),
   expires_at: z.string().optional(),
-  method_preference: z.enum(['bank', 'card']).optional().default('bank'),
+  method_preference: z.enum(['bank', 'card', 'mp']).optional().default('bank'),
   meta: z.record(z.string(), z.unknown()).optional(),
 });
 
@@ -118,6 +118,8 @@ export const merchantProfileUpdateSchema = z.object({
   whatsappPhone: z.string().min(6).max(20).optional(),
   googleReviewUrl: z.string().url().nullable().optional(),
   country: z.string().length(2).optional(),
+  iban: z.string().min(10).max(34).nullable().optional(),
+  clabe: z.string().length(18).nullable().optional(),
 });
 
 export type MerchantProfileUpdateInput = z.infer<

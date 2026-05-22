@@ -30,6 +30,9 @@ router.post('/', async (req, res) => {
     const reference = makeReference();
     const expiresAt = body.expires_at ? new Date(body.expires_at) : null;
 
+    const methodPref = body.method_preference;
+    const method = methodPref === 'card' ? 'card' : methodPref === 'mp' ? 'mp' : 'bank';
+
     const charge = await prisma.charge.create({
       data: {
         merchantId: body.merchant_id,
@@ -37,7 +40,7 @@ router.post('/', async (req, res) => {
         concept: body.concept,
         amount: body.amount.toFixed(2),
         currency: body.currency.toUpperCase(),
-        method: body.method_preference === 'card' ? 'card' : 'bank',
+        method,
         status: 'pending',
         expiresAt,
         events: {
@@ -55,11 +58,13 @@ router.post('/', async (req, res) => {
 
     const paybank_url = `${BASE_URL}/pay/bank/${charge.id}`;
     const paycard_url = `${BASE_URL}/pay/card/${charge.id}`;
+    const paymp_url   = `${BASE_URL}/pay/mp/${charge.id}`;
 
     return res.status(201).json({
       id: charge.id,
       paybank_url,
       paycard_url,
+      paymp_url,
       expires_at: charge.expiresAt,
       reference: charge.reference,
       status: charge.status,
