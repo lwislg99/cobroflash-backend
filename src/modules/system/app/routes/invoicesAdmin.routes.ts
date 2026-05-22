@@ -10,10 +10,10 @@ import {
 
 import fetch from 'node-fetch';
 
-
 import { BASE_URL } from '../../../../core/config/env';
-
 import { prisma } from '../../../../core/db/prisma';
+import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
+import { generateInvoicePdf } from '../../../../lib/pdf';
 
 import { sendWhatsAppTemplate } from '../../../../integrations/whatsapp';
 import { normalizePhone } from '../../../../core/utils/utils';
@@ -243,6 +243,69 @@ router.post('/:id/resend-whatsapp', async (req, res) => {
   } catch (err) {
     console.error('[POST /admin/invoices/:id/resend-whatsapp]', err);
     return res.status(500).json({ ok: false, error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/invoices/:id/regenerate-pdf
+ * Regenera el PDF de una factura aplicando VeriFactu si corresponde.
+ * Útil para facturas creadas antes del sprint VeriFactu.
+ */
+router.post('/:id/regenerate-pdf', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+
+    const invoice = await prisma.invoice.findFirst({
+      where: { id, merchantId: req.merchantId },
+      include: { merchant: true, customer: true },
+    });
+
+    if (!invoice) return res.status(404).json({ error: 'not_found' });
+    if (!invoice.merchant || !invoice.customer) {
+      return res.status(500).json({ error: 'missing_relations' });
+    }
+
+    const merchant  = invoice.merchant;
+    let qrData      = invoice.qrData;
+    let vfHash      = invoice.vfHash ?? null;
+
+    // (Re)aplicar VeriFactu si es merchant español con NIF
+    if (merchant.country === 'ES' && merchant.taxId) {
+      try {
+        const vf = await applyVeriFactu(invoice, merchant.taxId, prisma);
+        qrData = vf.qrUrl;
+        vfHash = vf.vfHash;
+      } catch (e) {
+        console.error('[regenerate-pdf] VeriFactu error:', e);
+      }
+    }
+
+    const pdf = await generateInvoicePdf({
+      number: invoice.number,
+      merchant: {
+        name: merchant.name,
+        legalName: merchant.legalName,
+        taxId: merchant.taxId,
+        address: merchant.address,
+      },
+      customer: { name: invoice.customer.name },
+      currency: invoice.currency,
+      total: invoice.total.toString(),
+      qrData,
+      vfHash,
+      createdAt: invoice.createdAt,
+    });
+
+    await prisma.invoice.update({
+      where: { id },
+      data: { pdfUrl: pdf.publicUrlPath, qrData },
+    });
+
+    return res.json({ ok: true, pdfUrl: pdf.publicUrlPath, veriFactu: !!vfHash });
+  } catch (err) {
+    console.error('[POST /admin/invoices/:id/regenerate-pdf]', err);
+    return res.status(500).json({ error: 'internal_error' });
   }
 });
 

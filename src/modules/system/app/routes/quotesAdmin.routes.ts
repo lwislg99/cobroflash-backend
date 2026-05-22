@@ -13,6 +13,7 @@ import { getNextBillingStage } from '../../../quotes/domain/billingPlan';
 import { sendWhatsAppTemplate } from '../../../../integrations/whatsapp';
 import { normalizePhone } from '../../../../core/utils/utils';
 import { BASE_URL } from '../../../../core/config/env';
+import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 
 import fetch from 'node-fetch';
 
@@ -167,6 +168,17 @@ router.post('/:id/invoice', async (req, res) => {
       }),
     ]);
 
+    // Aplicar VeriFactu para merchants españoles con NIF
+    let vfApplied = false;
+    if (merchant.country === 'ES' && merchant.taxId) {
+      try {
+        await applyVeriFactu(invoice, merchant.taxId, prisma);
+        vfApplied = true;
+      } catch (e) {
+        console.error('[verifactu] Error al aplicar VeriFactu en quote invoice:', e);
+      }
+    }
+
     return res.status(201).json({
       id: invoice.id,
       number: invoice.number,
@@ -174,6 +186,7 @@ router.post('/:id/invoice', async (req, res) => {
       currency: invoice.currency,
       createdAt: invoice.createdAt,
       percentage: stage.percentage,
+      veriFactu: vfApplied,
     });
   } catch (err) {
     console.error('[POST /admin/quotes/:id/invoice] error', err);

@@ -86,8 +86,14 @@ async function fetchInvoiceDetail(id) {
     wrapper.appendChild(body);
   
     const h3 = document.createElement('h3');
-    h3.textContent = `Factura ${invoice.number}`;
-    h3.style.margin = '0 0 8px 0';
+    h3.style.cssText = 'margin:0 0 4px 0;display:flex;align-items:center;gap:8px';
+    h3.innerHTML = `Factura ${invoice.number}`;
+    if (invoice.vfHash) {
+      const badge = document.createElement('span');
+      badge.style.cssText = 'font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:#dcfce7;color:#166534;border:1px solid #bbf7d0';
+      badge.textContent = '✓ VeriFactu';
+      h3.appendChild(badge);
+    }
     body.appendChild(h3);
   
     const pCustomer = document.createElement('p');
@@ -255,8 +261,33 @@ async function fetchInvoiceDetail(id) {
     });
   
     actions.appendChild(btnTogglePaid);
+
+    // Botón Regenerar PDF (con VeriFactu si aplica)
+    const btnRegen = document.createElement('button');
+    btnRegen.className = 'btn-ghost btn-sm';
+    btnRegen.textContent = invoice.vfHash ? '↻ Regenerar PDF' : '↻ Regenerar PDF (VeriFactu)';
+    btnRegen.title = 'Regenera el PDF aplicando VeriFactu si el merchant tiene NIF configurado';
+    btnRegen.addEventListener('click', async () => {
+      btnRegen.disabled = true;
+      btnRegen.textContent = 'Regenerando…';
+      try {
+        const r = await fetch(`/admin/invoices/${invoice.id}/regenerate-pdf`, { method: 'POST' });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || 'error');
+        statusBox.textContent = d.veriFactu ? '✓ PDF regenerado con VeriFactu.' : '✓ PDF regenerado.';
+        statusBox.className = 'alert success';
+        if (d.pdfUrl) invoice.pdfUrl = d.pdfUrl;
+        if (d.veriFactu) invoice.vfHash = 'updated';
+      } catch (e) {
+        statusBox.textContent = 'Error al regenerar el PDF.';
+        statusBox.className = 'alert error';
+      }
+      btnRegen.disabled = false;
+      btnRegen.textContent = '↻ Regenerar PDF';
+    });
+    actions.appendChild(btnRegen);
   }
-  
+
   // Hacemos la función accesible desde otros scripts
   window.renderInvoiceDetailView = renderInvoiceDetailView;
   

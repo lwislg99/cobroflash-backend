@@ -8,50 +8,99 @@ import { getLocale } from '../../../../core/i18n/locales';
 
 export async function generateInvoicePdf(params: {
   number: string;
-  merchant: { name: string };
+  merchant: { name: string; legalName?: string | null; taxId?: string | null; address?: string | null };
   customer: { name: string };
   currency: string;
   total: string;
   qrData: string;
+  vfHash?: string | null;   // si presente → sección VeriFactu en el PDF
+  createdAt?: Date | null;
 }) {
   const fileName = `${params.number}.pdf`;
   const outPath = path.join(invoicesDir, fileName);
 
-  const qrPngBuffer = await QRCode.toBuffer(params.qrData, {
-    type: 'png',
-    width: 256,
-  });
+  const isVeriFactu = !!params.vfHash;
+
+  const qrPngBuffer = await QRCode.toBuffer(params.qrData, { type: 'png', width: 256 });
 
   const doc = new PDFDocument({ size: 'A4', margin: 50 });
   const stream = fs.createWriteStream(outPath);
   doc.pipe(stream);
 
-  doc.fontSize(18).text('Factura', { align: 'right' });
+  const MARGIN = 50;
+  const PAGE_W = doc.page.width - MARGIN * 2;
+
+  // ── Cabecera ──────────────────────────────────────────────────────────
+  doc.fontSize(20).font('Helvetica-Bold').text('FACTURA', { align: 'right' });
+  doc.moveDown(0.3);
+  doc.fontSize(11).font('Helvetica').fillColor('#555')
+    .text(`Nº ${params.number}`, { align: 'right' });
+  if (params.createdAt) {
+    const d = params.createdAt;
+    const dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+    doc.text(`Fecha: ${dateStr}`, { align: 'right' });
+  }
+  doc.fillColor('black').moveDown();
+
+  doc.moveTo(MARGIN, doc.y).lineTo(MARGIN + PAGE_W, doc.y).strokeColor('#e5e7eb').stroke();
+  doc.strokeColor('black').moveDown(0.5);
+
+  // ── Emisor / Cliente ──────────────────────────────────────────────────
+  const emisorName = params.merchant.legalName || params.merchant.name;
+  doc.fontSize(11).font('Helvetica-Bold').text('Emisor');
+  doc.font('Helvetica').fontSize(10).text(emisorName);
+  if (params.merchant.taxId) doc.text(`NIF/CIF: ${params.merchant.taxId}`);
+  if (params.merchant.address) doc.text(params.merchant.address);
   doc.moveDown(0.5);
-  doc.fontSize(12).text(`Número: ${params.number}`, { align: 'right' });
+
+  doc.font('Helvetica-Bold').fontSize(11).text('Cliente');
+  doc.font('Helvetica').fontSize(10).text(params.customer.name);
   doc.moveDown();
 
-  doc.fontSize(12).text(`Emisor: ${params.merchant.name}`);
-  doc.text(`Cliente: ${params.customer.name}`);
-  doc.moveDown();
+  doc.moveTo(MARGIN, doc.y).lineTo(MARGIN + PAGE_W, doc.y).strokeColor('#e5e7eb').stroke();
+  doc.strokeColor('black').moveDown(0.5);
 
-  doc.fontSize(14).text(`Total: ${params.total} ${params.currency}`);
-  doc.moveDown();
+  // ── Total ─────────────────────────────────────────────────────────────
+  doc.fontSize(14).font('Helvetica-Bold')
+    .text(`Total: ${params.total} ${params.currency}`, { align: 'right' });
+  doc.moveDown(1.5);
 
-  doc.image(qrPngBuffer, doc.x, doc.y, { width: 128 });
-  doc.text(
-    'Escanea el QR para validar la factura',
-    doc.x + 140,
-    doc.y - 120,
-  );
+  // ── Sección QR / VeriFactu ────────────────────────────────────────────
+  const qrY = doc.y;
+  const qrSize = 100;
 
-  doc.moveDown(6);
-  doc
-    .fontSize(9)
-    .fillColor('#666')
-    .text('CobroFlash — Factura generada automáticamente', {
-      align: 'center',
-    });
+  doc.image(qrPngBuffer, MARGIN, qrY, { width: qrSize });
+
+  const textX = MARGIN + qrSize + 16;
+  const textW = PAGE_W - qrSize - 16;
+
+  if (isVeriFactu) {
+    doc.fontSize(10).font('Helvetica-Bold').fillColor('#166534')
+      .text('Factura Verificable — VeriFactu', textX, qrY, { width: textW });
+    doc.font('Helvetica').fontSize(9).fillColor('#555')
+      .text('Escanea el QR para verificar esta factura en la sede electrónica de la AEAT.', textX, doc.y, { width: textW });
+    doc.moveDown(0.4);
+    const hashShort = params.vfHash!.slice(0, 32) + '…';
+    doc.fontSize(8).fillColor('#888')
+      .text(`Huella: ${hashShort}`, textX, doc.y, { width: textW });
+    doc.fillColor('black');
+  } else {
+    doc.fontSize(9).font('Helvetica').fillColor('#555')
+      .text('Escanea el QR para validar la factura.', textX, qrY + 10, { width: textW });
+    doc.fillColor('black');
+  }
+
+  doc.y = Math.max(doc.y, qrY + qrSize + 8);
+  doc.moveDown(1);
+
+  // ── Footer ────────────────────────────────────────────────────────────
+  doc.moveTo(MARGIN, doc.y).lineTo(MARGIN + PAGE_W, doc.y).strokeColor('#e5e7eb').stroke();
+  doc.strokeColor('black').moveDown(0.5);
+  doc.fontSize(8).fillColor('#9ca3af')
+    .text('Factura generada automáticamente por PresuFácil.', { align: 'center' });
+  if (isVeriFactu) {
+    doc.text('Sistema de facturación verificable conforme al RD 1007/2023 (VeriFactu).', { align: 'center' });
+  }
 
   doc.end();
 
