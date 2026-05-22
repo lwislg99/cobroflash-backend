@@ -11,6 +11,7 @@ async function initApp() {
   }
 
   window.appMerchantId = me.merchantId;
+  window.appLocale = me.locale || { quote: 'Presupuesto', quotePlural: 'Presupuestos', quoteNew: 'Nuevo presupuesto', quoteVerb: 'presupuesto', currency: 'EUR', defaultVat: 0.21, vatName: 'IVA' };
 
   const viewContainer = document.getElementById('view-container');
   const viewTitle     = document.getElementById('view-title');
@@ -61,15 +62,15 @@ async function initApp() {
         renderCustomersView(viewContainer);
         break;
       case 'quotes-list':
-        viewTitle.textContent = 'Presupuestos';
+        viewTitle.textContent = window.appLocale?.quotePlural || 'Presupuestos';
         renderQuotesListView(viewContainer);
         break;
       case 'quotes-new':
-        viewTitle.textContent = 'Presupuestos';
+        viewTitle.textContent = window.appLocale?.quotePlural || 'Presupuestos';
         renderQuotesView(viewContainer);
         break;
       case 'quotes-detail':
-        viewTitle.textContent = 'Presupuestos';
+        viewTitle.textContent = window.appLocale?.quotePlural || 'Presupuestos';
         if (state.quoteId != null) renderQuoteDetailView(viewContainer, state.quoteId);
         else viewContainer.innerHTML = '<p>No se ha indicado ningún presupuesto.</p>';
         break;

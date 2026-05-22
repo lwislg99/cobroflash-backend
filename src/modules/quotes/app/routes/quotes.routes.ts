@@ -77,7 +77,8 @@ router.post('/create', async (req, res) => {
         },
         currency: quote.currency,
         total: quote.total.toString(),
-        lines: lines as any, // mismo shape que mandas desde el BO
+        lines: lines as any,
+        country: merchant.country,
       });
 
       await prisma.quote.update({
@@ -343,6 +344,7 @@ router.post('/:id/decision', async (req, res) => {
             lines: quote.lines as any,
             signatureData,
             signedAt: now,
+            country: merchant.country,
           });
           await prisma.quote.update({ where: { id: quoteId }, data: { pdfUrl: pdf.publicUrlPath } });
         } catch (e) {

@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import fetch from 'node-fetch';
 import { prisma } from '../../../../core/db/prisma';
 import { esc } from '../../../../core/utils/utils';
+import { getLocale } from '../../../../core/i18n/locales';
 
 type DecisionApiError = { message?: string; error?: string };
 
@@ -86,7 +87,7 @@ async function loadQuote(id: number) {
   return prisma.quote.findUnique({
     where: { id },
     include: {
-      merchant: { select: { name: true, legalName: true, logoUrl: true, address: true } },
+      merchant: { select: { name: true, legalName: true, logoUrl: true, address: true, country: true } },
       customer: { select: { name: true } },
     },
   });
@@ -220,18 +221,23 @@ quoteDecisionLandingRouter.get('/quote/:id/accept', async (req: Request, res: Re
   const id = Number(quoteId);
 
   let quoteDetail = '';
+  let locale = getLocale('ES');
+
   if (Number.isInteger(id)) {
     const quote = await loadQuote(id).catch(() => null);
-    if (quote && (quote.status === 'draft' || quote.status === 'sent')) {
-      quoteDetail = renderQuoteDetail(quote, quoteId);
-    } else if (quote?.status === 'accepted') {
-      return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
-        renderPage('Cotización ya aceptada', `<div class="status-ok"><strong>Este presupuesto ya fue aceptado.</strong><br/>Gracias por tu confianza.</div>`)
-      );
+    if (quote) {
+      locale = getLocale(quote.merchant?.country);
+      if (quote.status === 'draft' || quote.status === 'sent') {
+        quoteDetail = renderQuoteDetail(quote, quoteId);
+      } else if (quote.status === 'accepted') {
+        return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
+          renderPage(`${locale.quote} ya aceptada`, `<div class="status-ok"><strong>Este ${locale.quoteVerb} ya fue aceptado.</strong><br/>Gracias por tu confianza.</div>`)
+        );
+      }
     }
   }
 
-  const html = renderPage('Aceptar cotización', `
+  const html = renderPage(`Aceptar ${locale.quoteVerb}`, `
     ${quoteDetail}
     <label class="sig-label">Tu firma</label>
     <p class="sig-sub">Dibuja tu firma con el dedo o el ratón</p>
@@ -246,11 +252,11 @@ quoteDecisionLandingRouter.get('/quote/:id/accept', async (req: Request, res: Re
         Acepto sin dibujar firma
       </label>
     </div>
-    <button class="btn-accept" id="btn-accept">Firmar y aceptar cotización</button>
+    <button class="btn-accept" id="btn-accept">Firmar y aceptar ${locale.quoteVerb}</button>
     <div id="sig-error" style="color:#dc2626;font-size:13px;margin-top:8px;display:none">
       Dibuja tu firma o marca "Acepto sin dibujar firma".
     </div>
-    <small>Si no solicitaste esta cotización, cierra esta página.</small>
+    <small>Si no solicitaste este ${locale.quoteVerb}, cierra esta página.</small>
     ${SIG_JS}
     <script>
     document.getElementById('btn-accept').addEventListener('click', async () => {
@@ -276,11 +282,11 @@ quoteDecisionLandingRouter.get('/quote/:id/accept', async (req: Request, res: Re
         const data = await res.json().catch(() => ({}));
         if (res.ok) {
           document.querySelector('.card').innerHTML =
-            '<div class="status-ok"><strong>¡Gracias! Cotización aceptada' +
+            '<div class="status-ok"><strong>¡Gracias! ${locale.quote} aceptada' +
             (sigData ? ' con firma digital ✅' : '') +
             '.</strong><br/>El profesional te informará de los siguientes pasos.</div>';
         } else {
-          btn.disabled = false; btn.textContent = 'Firmar y aceptar cotización';
+          btn.disabled = false; btn.textContent = 'Firmar y aceptar ${locale.quoteVerb}';
           document.getElementById('sig-error').textContent = data.error || 'Error al procesar.';
           document.getElementById('sig-error').style.display = 'block';
         }
@@ -301,14 +307,19 @@ quoteDecisionLandingRouter.get('/quote/:id/reject', async (req: Request, res: Re
   const id = Number(quoteId);
 
   let quoteDetail = '';
+  let locale = getLocale('ES');
+
   if (Number.isInteger(id)) {
     const quote = await loadQuote(id).catch(() => null);
-    if (quote && (quote.status === 'draft' || quote.status === 'sent')) {
-      quoteDetail = renderQuoteDetail(quote, quoteId);
+    if (quote) {
+      locale = getLocale(quote.merchant?.country);
+      if (quote.status === 'draft' || quote.status === 'sent') {
+        quoteDetail = renderQuoteDetail(quote, quoteId);
+      }
     }
   }
 
-  const html = renderPage('Rechazar cotización', `
+  const html = renderPage(`Rechazar ${locale.quoteVerb}`, `
     ${quoteDetail}
     <form method="post">
       <div><label style="font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:5px">Motivo</label>
@@ -325,7 +336,7 @@ quoteDecisionLandingRouter.get('/quote/:id/reject', async (req: Request, res: Re
       </div>
       <button class="btn-reject" type="submit">Enviar rechazo</button>
     </form>
-    <small>Si no solicitaste esta cotización, cierra esta página.</small>
+    <small>Si no solicitaste este ${locale.quoteVerb}, cierra esta página.</small>
   `);
   res.setHeader('Content-Type', 'text/html; charset=utf-8').send(html);
 });

@@ -13,7 +13,10 @@
       "Bash(git commit -m 'feat\\(3.3\\): recordatorio automático 24h para cotizaciones sin respuesta *)",
       "Bash(git commit -m 'feat\\(3.4\\): reseña Google automática al cobrar *)",
       "Bash(git commit -m 'feat\\(3.1\\): firma digital del cliente en landing de aceptación *)",
-      "Bash(git commit -m 'feat\\(3.5\\): portal del cliente — URL permanente con cotizaciones, facturas y pagos *)"
+      "Bash(git commit -m 'feat\\(3.5\\): portal del cliente — URL permanente con cotizaciones, facturas y pagos *)",
+      "Bash(grep -v \"//.*Presupuesto\")",
+      "Bash(node -e ' *)",
+      "Bash(git commit -m 'feat\\(3.6\\): i18n básico es-ES/es-MX/es-CO/es-AR/es-PE/es-CL *)"
     ]
   }
 }

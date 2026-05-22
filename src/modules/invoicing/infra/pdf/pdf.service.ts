@@ -4,6 +4,7 @@ import fs from 'fs';
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
 import { invoicesDir } from '../../../../core/storage/dirs';
+import { getLocale } from '../../../../core/i18n/locales';
 
 export async function generateInvoicePdf(params: {
   number: string;
@@ -88,20 +89,24 @@ export async function generateQuotePdf(params: {
     price: number;
     tax: number;
   }>;
-  signatureData?: string | null;    // base64 PNG data URL — se añade al PDF si está presente
+  signatureData?: string | null;
   signedAt?: Date | null;
+  country?: string | null;          // para localizar "Presupuesto" / "Cotización"
 }) {
   const fileName = `QUOTE-${params.quoteId}.pdf`;
   const outPath = path.join(invoicesDir, fileName); // usamos la misma carpeta /invoices
+
+  const locale = getLocale(params.country);
+  const QUOTE_LABEL = locale.quote; // "Presupuesto" o "Cotización"
 
   const doc = new PDFDocument({ size: 'A4', margin: 50 });
   const stream = fs.createWriteStream(outPath);
   doc.pipe(stream);
 
   // Cabecera
-  doc.fontSize(18).text('Presupuesto', { align: 'right' });
+  doc.fontSize(18).text(QUOTE_LABEL, { align: 'right' });
   doc.moveDown(0.5);
-  doc.fontSize(12).text(`Presupuesto #${params.quoteId}`, { align: 'right' });
+  doc.fontSize(12).text(`${QUOTE_LABEL} #${params.quoteId}`, { align: 'right' });
   doc.moveDown();
 
   // Datos empresa / cliente (muy sencillos de momento)
@@ -120,7 +125,7 @@ export async function generateQuotePdf(params: {
   doc.moveDown();
 
   // Tabla simple de líneas
-  doc.fontSize(12).text('Detalle del presupuesto:');
+  doc.fontSize(12).text(`Detalle del ${locale.quoteVerb}:`);
   doc.moveDown(0.5);
 
  
@@ -199,7 +204,7 @@ params.lines.forEach((l) => {
   // ✅ salto de página ANTES de pintar
   if (y0 + rowH > PAGE_BOTTOM) {
     doc.addPage();
-    doc.font('Helvetica').fontSize(12).fillColor('black').text('Detalle del presupuesto:');
+    doc.font('Helvetica').fontSize(12).fillColor('black').text(`Detalle del ${locale.quoteVerb}:`);
     doc.moveDown(0.5);
     drawTableHeader();
   }
@@ -241,7 +246,7 @@ const CONTENT_W = 560 - X0;          // 510 (hasta el borde derecho de tu tabla)
 
 // Total (sin partirse raro)
 doc.fontSize(12).text(
-  `Total presupuesto: ${params.total} ${params.currency}`,
+  `Total ${locale.quoteVerb}: ${params.total} ${params.currency}`,
   CONTENT_X,
   doc.y,
   { width: CONTENT_W, align: 'right' },
@@ -281,7 +286,7 @@ doc
   .fontSize(9)
   .fillColor('#666')
   .text(
-    'Presupuesto generado automáticamente por PresuFácil — válido salvo indicación en contrario.',
+    `${QUOTE_LABEL} generado automáticamente por PresuFácil — válido salvo indicación en contrario.`,
     CONTENT_X,
     doc.y,
     { width: CONTENT_W, align: 'center' },

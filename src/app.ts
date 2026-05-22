@@ -35,6 +35,7 @@ import subscriptionsRouter from './modules/billing/app/routes/subscriptions.rout
 import { merchantProfileUpdateSchema } from './core/validation/schemas';
 import { getMerchantProfile, updateMerchantProfile } from './modules/system/merchantAdmin';
 import { getSession } from './modules/auth/domain/auth.service';
+import { getLocaleJson } from './core/i18n/locales';
 import { quoteDecisionLandingRouter } from './modules/system/app/routes/quoteDecisionLanding.routes';
 import customerPortalRouter from './modules/system/app/routes/customerPortal.routes';
 import { prisma } from './core/db/prisma';
@@ -87,12 +88,18 @@ app.get('/admin/me', async (req, res) => {
   const session = await getSession(token).catch(() => null);
   if (!session) return res.status(401).json({ error: 'not_authenticated' });
 
+  const merchantFull = await prisma.merchant.findUnique({
+    where: { id: session.merchantId },
+    select: { country: true },
+  });
+
   return res.json({
     merchantId: session.merchantId,
     name: session.merchant.name,
     plan: session.merchant.plan,
     planExpiresAt: session.merchant.planExpiresAt,
     onboardingCompleted: session.merchant.onboardingCompleted,
+    locale: getLocaleJson(merchantFull?.country),
   });
 });
 

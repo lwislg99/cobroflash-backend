@@ -73,6 +73,32 @@ function renderSettingsView(container) {
       true
     );
     const fLogoUrl = createField("Logo (URL opcional)", "logoUrl", "text", false);
+
+    // País / locale
+    const fCountryWrapper = document.createElement("div");
+    fCountryWrapper.className = "field";
+    const fCountryLabel = document.createElement("label");
+    fCountryLabel.textContent = "País";
+    const fCountrySelect = document.createElement("select");
+    fCountrySelect.name = "country";
+    [
+      { value: "ES", label: "España" },
+      { value: "MX", label: "México" },
+      { value: "CO", label: "Colombia" },
+      { value: "AR", label: "Argentina" },
+      { value: "PE", label: "Perú" },
+      { value: "CL", label: "Chile" },
+    ].forEach(({ value, label }) => {
+      const opt = document.createElement("option");
+      opt.value = value; opt.textContent = label;
+      fCountrySelect.appendChild(opt);
+    });
+    const fCountryNote = document.createElement("p");
+    fCountryNote.style.cssText = "font-size:12px;color:#9ca3af;margin:2px 0 0";
+    fCountryNote.textContent = 'Cambia el idioma de los documentos ("Presupuesto" vs "Cotización") y la moneda por defecto.';
+    fCountryWrapper.appendChild(fCountryLabel);
+    fCountryWrapper.appendChild(fCountrySelect);
+    fCountryWrapper.appendChild(fCountryNote);
     const fGoogleReviewUrl = createField("URL de reseñas en Google (opcional)", "googleReviewUrl", "text", false);
 
     form.appendChild(fName.wrapper);
@@ -80,6 +106,7 @@ function renderSettingsView(container) {
     form.appendChild(fTaxId.wrapper);
     form.appendChild(fAddress.wrapper);
     form.appendChild(fWhatsappPhone.wrapper);
+    form.appendChild(fCountryWrapper);
     form.appendChild(fDefaultCurrency.wrapper);
     form.appendChild(fInvoiceSeriesPrefix.wrapper);
     form.appendChild(fLogoUrl.wrapper);
@@ -122,6 +149,7 @@ function renderSettingsView(container) {
         fInvoiceSeriesPrefix.input.value = merchant.invoiceSeriesPrefix || "";
         fLogoUrl.input.value = merchant.logoUrl || "";
         fGoogleReviewUrl.input.value = merchant.googleReviewUrl || "";
+        if (merchant.country) fCountrySelect.value = merchant.country;
   
         setAlert(null, "");
       } catch (err) {
@@ -145,6 +173,7 @@ function renderSettingsView(container) {
         invoiceSeriesPrefix: fInvoiceSeriesPrefix.input.value.trim(),
         logoUrl: fLogoUrl.input.value.trim() || null,
         googleReviewUrl: fGoogleReviewUrl.input.value.trim() || null,
+        country: fCountrySelect.value || undefined,
       };
   
       if (!payload.name || !payload.legalName || !payload.taxId || !payload.address || !payload.whatsappPhone) {

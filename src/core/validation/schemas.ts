@@ -110,6 +110,7 @@ export const merchantProfileUpdateSchema = z.object({
   logoUrl: z.string().url().nullable().optional(),
   whatsappPhone: z.string().min(6).max(20).optional(),
   googleReviewUrl: z.string().url().nullable().optional(),
+  country: z.string().length(2).optional(),
 });
 
 export type MerchantProfileUpdateInput = z.infer<

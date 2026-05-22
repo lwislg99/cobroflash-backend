@@ -8,7 +8,7 @@ async function renderHomeView(container) {
         <div class="kpi-card"><div class="kpi-label">Cargando…</div></div>
         <div class="kpi-card"><div class="kpi-label">Cargando…</div></div>
       </div>
-      <button class="home-cta" id="btn-quick-quote">+ Nueva cotización rápida</button>
+      <button class="home-cta" id="btn-quick-quote">+ ${(window.appLocale && window.appLocale.quoteNew) || 'Nueva cotización'} rápida</button>
       <div style="font-size:13px;font-weight:600;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">
         Actividad reciente
       </div>
@@ -114,7 +114,7 @@ function openQuickQuoteModal() {
   backdrop.innerHTML = `
     <div class="modal" style="max-width:520px">
       <div class="modal-header">
-        <span class="modal-title">Nueva cotización rápida</span>
+        <span class="modal-title">${(window.appLocale && window.appLocale.quoteNew) || 'Nueva cotización'} rápida</span>
         <button class="modal-close" id="qq-close">×</button>
       </div>
 
