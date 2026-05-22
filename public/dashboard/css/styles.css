@@ -989,6 +989,14 @@ img { max-width: 100%; display: block; }
 }
 .input:focus { outline: none; border-color: var(--green-500); box-shadow: 0 0 0 3px rgba(34,197,94,.12); }
 
+/* ── Búsqueda global ─────────────────────────────────────────── */
+#global-search-wrap { display: flex; flex-direction: column; }
+@media (max-width: 600px) {
+  /* En móvil ocultamos el wrap de búsqueda en topbar y lo ponemos en otro sitio */
+  #global-search-wrap { display: none; }
+}
+#global-search-input:focus { outline: none; }
+
 /* ── Toolbar responsive (filtros + botones que deben wrappear) ─ */
 .toolbar {
   display: flex;
