@@ -40,7 +40,7 @@ PresuFácil permite a cualquier profesional de servicios (fontanero, electricist
 
 # PARTE B — ESTADO ACTUAL Y ROADMAP
 
-## Estado del código (Mayo 2026)
+## Estado del código (Mayo 2026 — post Sprint 5 + UI Polish)
 
 ### ✅ COMPLETADO — Sprint 1 "Que funcione end-to-end"
 
@@ -93,24 +93,47 @@ PresuFácil permite a cualquier profesional de servicios (fontanero, electricist
 
 ## ROADMAP PRIORIZADO (post Sprint 4)
 
-### SPRINT 5 — "Que los usuarios vuelvan" (en curso)
+### SPRINT 5 — "Que los usuarios vuelvan" ✅ COMPLETADO
 
-| # | Feature | Impacto | Esfuerzo | Estado |
-|---|---|---|---|---|
-| 5.1 | PWA instalable (manifest + service worker) | Alto | Bajo | ⏳ |
-| 5.2 | Top 5 clientes + top 5 servicios en Home | Alto | Bajo | ⏳ |
-| 5.3 | Comentarios internos por trabajo (nota privada en quote) | Medio | Bajo | ⏳ |
-| 5.4 | Módulo de gastos — registrar facturas de proveedor | Alto | Medio | ⏳ |
-| 5.5 | Margen real por trabajo (ingresos − gastos asignados) | Alto | Medio | ⏳ |
+| # | Feature | Estado |
+|---|---|---|
+| 5.1 | PWA instalable (manifest.json + sw.js + meta tags iOS) | ✅ |
+| 5.2 | Top 5 clientes (por €facturado) + Top 5 servicios (por frecuencia) en Home | ✅ |
+| 5.3 | Notas internas por cotización — autoguardado 1.2s, badge "Solo tú las ves" | ✅ |
+| 5.4 | Módulo de gastos — CRUD, categorías, foto del ticket, link a cotización | ✅ |
+| 5.5 | Margen real: Ingresos − Gastos en detalle de cotización + beneficio neto en Home | ✅ |
+| UI | Design system v2: Inter, SVG icons, data-card pattern, CSS vars, mobile polish | ✅ |
 
-### SPRINT 6 — "Que escale al equipo"
+### SPRINT 6 — "Que escale al equipo" 🔜 SIGUIENTE
 
-| # | Feature | Impacto | Estado |
+**Objetivo:** Un merchant puede tener varios usuarios (técnicos) bajo su cuenta.
+
+| # | Feature | Detalle técnico | Esfuerzo |
 |---|---|---|---|
-| 6.1 | Múltiples usuarios por merchant | Alto | ⏳ |
-| 6.2 | Roles: admin / técnico (puede crear quotes, no ve facturación) | Medio | ⏳ |
-| 6.3 | Mini-proyectos: vincular quote → checklist → cierre | Alto | ⏳ |
-| 6.4 | Agenda básica: ver trabajos de la semana | Medio | ⏳ |
+| 6.1 | **Múltiples usuarios** — invitar por email, sesión propia | Nuevo modelo `User { merchantId, email, role }`. Auth service adaptado para User además de Merchant. | Alto |
+| 6.2 | **Roles: Admin / Técnico** | Admin: todo. Técnico: crear/ver quotes propias, sin facturación ni configuración. Middleware `requireRole`. | Medio |
+| 6.3 | **Asignación de trabajo** — quote.assignedTo (User) | Campo en Quote. Vista filtrada por técnico. Notificación WA al técnico asignado. | Medio |
+| 6.4 | **Mini-proyectos** — checklist vinculado a quote | Nuevo modelo `Checklist { quoteId, items: Json }`. Vista en detalle de cotización. | Medio |
+
+**Schema changes Sprint 6:**
+```sql
+model User {
+  id         Int      @id @default(autoincrement())
+  merchantId Int
+  email      String   @unique
+  name       String
+  role       String   @default("technician")  -- admin | technician
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+}
+ALTER TABLE auth_sessions ADD COLUMN user_id INT NULL;  -- nullable, merchant sessions no tienen user
+ALTER TABLE quotes ADD COLUMN assigned_to_id INT NULL;  -- FK → users
+model Checklist {
+  id      Int    @id @default(autoincrement())
+  quoteId Int
+  items   Json   -- [{ text, done, doneAt }]
+}
+```
 
 ### SPRINT 7 — "España y VeriFactu"
 
@@ -154,6 +177,21 @@ WhatsApp:   Meta Cloud API directa (NO n8n)
 Email:      Resend HTTP API
 PDF:        PDFKit
 Frontend:   HTML/JS vanilla en /public/dashboard/
+```
+
+## Stack completo (actualizado Mayo 2026)
+
+```
+Backend:    Node.js + TypeScript + Express 5 + Prisma 6 + PostgreSQL
+Deploy:     Railway (auto-deploy desde GitHub main)
+URL:        https://cobroflash-backend-production.up.railway.app
+Pagos:      Stripe (tarjeta) + PSP custom (banco)
+WhatsApp:   Meta Cloud API directa (NUNCA n8n)
+Email:      Resend HTTP API (no SMTP)
+PDF:        PDFKit
+Cron:       node-cron (recordatorio 24h dentro del proceso)
+PWA:        manifest.json + sw.js (cache shell)
+Frontend:   HTML/JS vanilla, Inter font, CSS vars design system v2
 ```
 
 ## Módulos implementados
