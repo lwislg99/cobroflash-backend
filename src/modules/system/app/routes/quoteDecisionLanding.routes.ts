@@ -93,6 +93,72 @@ async function loadQuote(id: number) {
   });
 }
 
+function renderTierCards(tiers: any[], quoteId: string, locale: ReturnType<typeof getLocale>): string {
+  return `
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px" id="tier-cards">
+      ${tiers.map((tier) => `
+        <div class="tier-card ${tier.recommended ? 'tier-recommended' : ''}" data-tier-id="${esc(tier.id)}">
+          ${tier.recommended ? `<div class="tier-badge">⭐ Más popular</div>` : ''}
+          <div class="tier-header">
+            <span class="tier-label">${esc(tier.label)}</span>
+            ${tier.description ? `<span class="tier-desc">${esc(tier.description)}</span>` : ''}
+          </div>
+          <div class="tier-lines">
+            ${(tier.lines || []).map((l: any) => `
+              <div class="tier-line">
+                <span>${esc(l.concept)}</span>
+                <span>${(l.qty * l.price * (1 + (l.tax || 0))).toFixed(2)} ${esc(tier.id)}</span>
+              </div>`).join('')}
+          </div>
+          <div class="tier-total">${Number(tier.total).toFixed(2)} ${esc(tier.currency || '')}</div>
+          <button class="btn-tier" onclick="selectTier('${esc(tier.id)}', '${esc(quoteId)}')">
+            Elegir este plan
+          </button>
+        </div>
+      `).join('')}
+    </div>
+    <div id="tier-confirm" style="display:none">
+      <hr class="divider"/>
+      <p style="font-size:14px;color:#374151;margin-bottom:12px">
+        Has elegido: <strong id="chosen-tier-label"></strong>
+      </p>
+    </div>
+  `;
+}
+
+const TIER_CSS = `
+  .tier-card { border: 2px solid #e5e7eb; border-radius: 14px; padding: 16px; position: relative; background: #fff; }
+  .tier-recommended { border-color: #22c55e; background: #f0fdf4; }
+  .tier-badge { position: absolute; top: -10px; left: 16px; background: #22c55e; color: #052e16;
+    font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 999px; }
+  .tier-header { margin-bottom: 10px; }
+  .tier-label { font-weight: 700; font-size: 16px; display: block; }
+  .tier-desc { font-size: 13px; color: #6b7280; }
+  .tier-lines { font-size: 13px; color: #374151; margin-bottom: 10px; }
+  .tier-line { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #f3f4f6; }
+  .tier-total { font-size: 22px; font-weight: 800; color: #111827; margin: 10px 0 12px; }
+  .btn-tier { width: 100%; padding: 12px; font-size: 15px; font-weight: 700; border: none;
+    border-radius: 10px; cursor: pointer; background: #22c55e; color: #052e16; min-height: 48px; }
+  .tier-recommended .btn-tier { background: #16a34a; color: #fff; }
+  .tier-card.selected { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.2); }
+`;
+
+const TIER_JS = (quoteId: string) => `
+<script>
+let selectedTierId = null;
+function selectTier(tierId, qId) {
+  selectedTierId = tierId;
+  document.querySelectorAll('.tier-card').forEach(c => c.classList.remove('selected'));
+  const card = document.querySelector('[data-tier-id="' + tierId + '"]');
+  if (card) card.classList.add('selected');
+  const label = card ? card.querySelector('.tier-label').textContent : tierId;
+  document.getElementById('chosen-tier-label').textContent = label;
+  document.getElementById('tier-confirm').style.display = 'block';
+  document.getElementById('btn-accept').style.display = 'block';
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+</script>`;
+
 function renderQuoteDetail(quote: Awaited<ReturnType<typeof loadQuote>>, quoteId: string): string {
   if (!quote) return `<h1>Cotización #${esc(quoteId)}</h1>`;
 
@@ -222,13 +288,24 @@ quoteDecisionLandingRouter.get('/quote/:id/accept', async (req: Request, res: Re
 
   let quoteDetail = '';
   let locale = getLocale('ES');
+  let tierCards = '';
+  let hasTiers = false;
+  let loadedQuote: Awaited<ReturnType<typeof loadQuote>> | null = null;
 
   if (Number.isInteger(id)) {
     const quote = await loadQuote(id).catch(() => null);
+    loadedQuote = quote;
     if (quote) {
       locale = getLocale(quote.merchant?.country);
       if (quote.status === 'draft' || quote.status === 'sent') {
         quoteDetail = renderQuoteDetail(quote, quoteId);
+        const tiers = (quote as any).tiers as any[] | null;
+        if (tiers && tiers.length > 0) {
+          hasTiers = true;
+          // Añadir currency a cada tier para el render
+          const tiersWithCurrency = tiers.map((t: any) => ({ ...t, currency: quote.currency }));
+          tierCards = renderTierCards(tiersWithCurrency, quoteId, locale);
+        }
       } else if (quote.status === 'accepted') {
         return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
           renderPage(`${locale.quote} ya aceptada`, `<div class="status-ok"><strong>Este ${locale.quoteVerb} ya fue aceptado.</strong><br/>Gracias por tu confianza.</div>`)
@@ -237,8 +314,11 @@ quoteDecisionLandingRouter.get('/quote/:id/accept', async (req: Request, res: Re
     }
   }
 
-  const html = renderPage(`Aceptar ${locale.quoteVerb}`, `
+  const html = renderPage(`Aceptar ${locale.quoteVerb}`, `<style>${TIER_CSS}</style>
     ${quoteDetail}
+    ${hasTiers ? tierCards : ''}
+    ${TIER_JS(quoteId)}
+    <div id="btn-accept-wrapper" style="${hasTiers ? 'display:none' : ''}">
     <label class="sig-label">Tu firma</label>
     <p class="sig-sub">Dibuja tu firma con el dedo o el ratón</p>
     <div class="sig-wrapper" id="sig-wrapper">
@@ -257,6 +337,7 @@ quoteDecisionLandingRouter.get('/quote/:id/accept', async (req: Request, res: Re
       Dibuja tu firma o marca "Acepto sin dibujar firma".
     </div>
     <small>Si no solicitaste este ${locale.quoteVerb}, cierra esta página.</small>
+    </div>
     ${SIG_JS}
     <script>
     document.getElementById('btn-accept').addEventListener('click', async () => {
@@ -277,6 +358,7 @@ quoteDecisionLandingRouter.get('/quote/:id/accept', async (req: Request, res: Re
             decision: 'accept',
             comment: sigData ? 'Aceptado con firma digital' : 'Aceptado desde enlace WhatsApp',
             signatureData: sigData,
+            tierId: (typeof selectedTierId !== 'undefined' ? selectedTierId : null),
           }),
         });
         const data = await res.json().catch(() => ({}));

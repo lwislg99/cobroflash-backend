@@ -16,7 +16,8 @@
       "Bash(git commit -m 'feat\\(3.5\\): portal del cliente — URL permanente con cotizaciones, facturas y pagos *)",
       "Bash(grep -v \"//.*Presupuesto\")",
       "Bash(node -e ' *)",
-      "Bash(git commit -m 'feat\\(3.6\\): i18n básico es-ES/es-MX/es-CO/es-AR/es-PE/es-CL *)"
+      "Bash(git commit -m 'feat\\(3.6\\): i18n básico es-ES/es-MX/es-CO/es-AR/es-PE/es-CL *)",
+      "Bash(git commit -m 'feat\\(Sprint 4\\): Good/Better/Best — 3 opciones de precio por cotización *)"
     ]
   }
 }

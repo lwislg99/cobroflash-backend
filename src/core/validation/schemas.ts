@@ -3,27 +3,34 @@ import { z } from 'zod';
 
 // ------- QUOTES -------
 
+const QuoteLineSchema = z.object({
+  concept: z.string().min(1),
+  qty: z.number().positive(),
+  price: z.number().nonnegative(),
+  tax: z.number().min(0).max(1).optional().default(0),
+});
+
+const QuoteTierSchema = z.object({
+  id: z.enum(['good', 'better', 'best']),
+  label: z.string().min(1),
+  description: z.string().optional(),
+  lines: z.array(QuoteLineSchema).min(1),
+  recommended: z.boolean().optional().default(false),
+  total: z.number().optional(), // calculado en backend, puede venir del cliente
+});
+
 export const CreateQuoteSchema = z.object({
   merchant_id: z.number().int().positive(),
   customer_id: z.number().int().positive(),
   currency: z.string().length(3),
-  lines: z
-    .array(
-      z.object({
-        concept: z.string().min(1),
-        qty: z.number().positive(),
-        price: z.number().nonnegative(),
-        tax: z.number().min(0).max(1).optional(),
-      }),
-    )
-    .min(1),
-
-  // NUEVO — condiciones de pago (código interno, opcional)
-  paymentTerms: z
-    .enum(['FULL_UPFRONT', 'FIFTY_FIFTY', 'MANUAL'])
-    .optional()
-    .nullable(),
+  // Modo clásico: array de líneas
+  lines: z.array(QuoteLineSchema).min(1).optional(),
+  // Modo Good/Better/Best: exactamente 3 tiers
+  tiers: z.array(QuoteTierSchema).length(3).optional(),
+  paymentTerms: z.enum(['FULL_UPFRONT', 'FIFTY_FIFTY', 'MANUAL']).optional().nullable(),
 });
+
+export type QuoteTier = z.infer<typeof QuoteTierSchema>;
 
 
 // imports arriba ya tendrán algo como: import { z } from "zod";

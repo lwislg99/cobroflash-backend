@@ -167,6 +167,29 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   statusP.appendChild(statusSpan);
   statusCard.appendChild(statusP);
 
+  // Badge Good/Better/Best — tier seleccionado
+  if (quote.tiers && quote.tiers.length > 0) {
+    const tierLabels = { good: 'Básico', better: 'Estándar', best: 'Premium' };
+    const chosen = quote.selectedTierId ? tierLabels[quote.selectedTierId] || quote.selectedTierId : null;
+    const tierBadge = document.createElement("div");
+    tierBadge.style.marginTop = "8px";
+    tierBadge.innerHTML = `
+      <div style="font-size:12px;color:#6b7280;margin-bottom:4px">Cotización con 3 opciones</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${quote.tiers.map((t) => `
+          <span style="padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;
+            background:${t.id===quote.selectedTierId?'#dcfce7':t.recommended?'#f0fdf4':'#f3f4f6'};
+            color:${t.id===quote.selectedTierId?'#166534':t.recommended?'#16a34a':'#374151'};
+            border:1px solid ${t.id===quote.selectedTierId?'#22c55e':'#e5e7eb'}">
+            ${t.label} — ${Number(t.total).toFixed(2)} ${quote.currency}
+            ${t.id===quote.selectedTierId?' ✓':''}
+          </span>`).join('')}
+      </div>
+      ${chosen ? `<div style="margin-top:6px;font-size:13px;color:#16a34a;font-weight:600">Cliente eligió: ${chosen}</div>` : ''}
+    `;
+    statusCard.appendChild(tierBadge);
+  }
+
   // Badge firma digital
   if (quote.signatureUrl) {
     const sigBadge = document.createElement("div");

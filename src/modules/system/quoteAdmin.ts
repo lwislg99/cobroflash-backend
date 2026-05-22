@@ -100,6 +100,8 @@ export async function getQuoteDetailAdmin(id: number) {
     lines: quote.lines,
     pdfUrl: (quote as any).pdfUrl ?? null,
     signatureUrl: quote.signatureUrl ?? null,
+    tiers: quote.tiers ?? null,
+    selectedTierId: quote.selectedTierId ?? null,
     
     merchant: {
       id: quote.merchant.id,

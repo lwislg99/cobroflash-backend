@@ -106,7 +106,7 @@ let qqState = {
 function openQuickQuoteModal() {
   if (document.getElementById("qq-modal-backdrop")) return;
 
-  qqState = { customerId: null, customerName: "", customerPhone: "", products: [{ concept: "", qty: 1, price: "" }], paymentTerms: "FULL_UPFRONT" };
+  qqState = { customerId: null, customerName: "", customerPhone: "", products: [{ concept: "", qty: 1, price: "" }], paymentTerms: "FULL_UPFRONT", tiersMode: false };
 
   const backdrop = document.createElement("div");
   backdrop.className = "modal-backdrop";
@@ -133,14 +133,49 @@ function openQuickQuoteModal() {
           </div>
         </div>
 
-        <!-- Líneas -->
+        <!-- Toggle Good/Better/Best -->
         <div class="field">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none">
+            <input type="checkbox" id="qq-tiers-toggle" style="width:16px;height:16px;accent-color:#22c55e"/>
+            <span>Ofrecer 3 opciones de precio (Good/Better/Best)</span>
+          </label>
+        </div>
+
+        <!-- Modo clásico: líneas -->
+        <div class="field" id="qq-classic-mode">
           <label>Concepto / Servicio</label>
           <div id="qq-lines-container"></div>
           <button type="button" id="qq-add-line"
             style="margin-top:6px;font-size:13px;background:none;border:none;color:#22c55e;cursor:pointer;padding:0">
             + Añadir línea
           </button>
+        </div>
+
+        <!-- Modo tiers -->
+        <div id="qq-tiers-mode" style="display:none">
+          <div class="field">
+            <label>Concepto / Servicio</label>
+            <div class="qq-autocomplete-wrapper">
+              <input id="qq-tier-concept" type="text" placeholder="Ej: Instalación eléctrica" autocomplete="off"
+                style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid #d1d5db;font-size:14px"/>
+              <div class="qq-dropdown" id="qq-tier-pdropdown" style="display:none"></div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+            ${['Básico', 'Estándar', 'Premium'].map((label, i) => `
+              <div style="border:2px solid ${i===1?'#22c55e':'#e5e7eb'};border-radius:10px;padding:10px">
+                <div style="font-size:12px;font-weight:700;color:${i===1?'#16a34a':'#6b7280'};margin-bottom:6px">
+                  ${label}${i===1?' ⭐':''}
+                </div>
+                <input type="number" class="qq-tier-price" data-tier-idx="${i}" min="0" step="0.01"
+                  placeholder="Precio"
+                  style="width:100%;padding:7px;border-radius:7px;border:1px solid #d1d5db;font-size:14px"/>
+              </div>
+            `).join('')}
+          </div>
+          <p style="font-size:12px;color:#9ca3af;margin:6px 0 0">
+            El cliente verá las 3 opciones y elegirá la que prefiera.
+          </p>
         </div>
 
         <!-- Condiciones de pago -->
@@ -191,6 +226,22 @@ function openQuickQuoteModal() {
 
   renderQqLines();
   initCustomerAutocomplete();
+
+  // Toggle Good/Better/Best
+  document.getElementById('qq-tiers-toggle')?.addEventListener('change', (e) => {
+    const on = e.target.checked;
+    document.getElementById('qq-classic-mode').style.display = on ? 'none' : 'block';
+    document.getElementById('qq-tiers-mode').style.display = on ? 'block' : 'none';
+    qqState.tiersMode = on;
+  });
+
+  // Autocomplete en el concepto del modo tiers
+  document.getElementById('qq-tier-concept')?.addEventListener('input', (e) => {
+    searchProducts(e.target.value, 'tier');
+  });
+  document.getElementById('qq-tier-concept')?.addEventListener('focus', (e) => {
+    if (e.target.value.length >= 1) searchProducts(e.target.value, 'tier');
+  });
 }
 
 function closeQuickQuote() {
@@ -260,8 +311,10 @@ let productSearchTimer = null;
 
 async function searchProducts(query, lineIdx) {
   clearTimeout(productSearchTimer);
+  const isTierMode = lineIdx === 'tier';
+  const ddId = isTierMode ? 'qq-tier-pdropdown' : `qq-pdropdown-${lineIdx}`;
   if (!query || query.length < 2) {
-    const dd = document.getElementById(`qq-pdropdown-${lineIdx}`);
+    const dd = document.getElementById(ddId);
     if (dd) dd.style.display = "none";
     return;
   }
@@ -269,7 +322,7 @@ async function searchProducts(query, lineIdx) {
     try {
       const res = await apiRequest(`/admin/products/autocomplete?q=${encodeURIComponent(query)}&merchantId=1`);
       const items = Array.isArray(res) ? res : (res.items || res.products || res.data || []);
-      const dd = document.getElementById(`qq-pdropdown-${lineIdx}`);
+      const dd = document.getElementById(ddId);
       if (!dd) return;
       if (!items.length) { dd.style.display = "none"; return; }
       dd.innerHTML = items.map((p) => `
@@ -282,10 +335,17 @@ async function searchProducts(query, lineIdx) {
       dd.querySelectorAll(".qq-dropdown-item").forEach((item) => {
         item.addEventListener("mousedown", (e) => {
           e.preventDefault();
-          const idx = parseInt(item.dataset.idx);
-          qqState.products[idx].concept = item.dataset.name;
-          qqState.products[idx].price = item.dataset.price;
-          renderQqLines();
+          if (isTierMode) {
+            document.getElementById("qq-tier-concept").value = item.dataset.name;
+            // Pre-rellenar precio en Estándar (índice 1)
+            const priceInputs = document.querySelectorAll(".qq-tier-price");
+            if (priceInputs[1]) priceInputs[1].value = item.dataset.price;
+          } else {
+            const idx = parseInt(item.dataset.idx);
+            qqState.products[idx].concept = item.dataset.name;
+            qqState.products[idx].price = item.dataset.price;
+            renderQqLines();
+          }
           dd.style.display = "none";
         });
       });
@@ -367,16 +427,29 @@ async function submitQuickQuote() {
   const customerName = qqState.customerName.trim();
   if (!customerName) { showQqAlert("Indica el nombre del cliente."); return; }
 
-  // Validar líneas
-  const lines = qqState.products.filter((l) => l.concept.trim() && Number(l.price) > 0);
-  if (!lines.length) { showQqAlert("Añade al menos una línea con concepto y precio."); return; }
+  // Validar y construir payload según modo
+  let quotePayload;
 
-  const validLines = lines.map((l) => ({
-    concept: l.concept.trim(),
-    qty: Number(l.qty) || 1,
-    price: Number(l.price),
-    tax: 0,
-  }));
+  if (qqState.tiersMode) {
+    const concept = document.getElementById("qq-tier-concept")?.value.trim();
+    if (!concept) { showQqAlert("Introduce el concepto del servicio."); return; }
+    const prices = Array.from(document.querySelectorAll(".qq-tier-price")).map((el) => Number(el.value));
+    if (prices.some((p) => !p || p <= 0)) { showQqAlert("Introduce los 3 precios."); return; }
+    const labels = ["Básico", "Estándar", "Premium"];
+    const ids = ["good", "better", "best"];
+    quotePayload = {
+      tiers: ids.map((id, i) => ({
+        id, label: labels[i], recommended: i === 1,
+        lines: [{ concept, qty: 1, price: prices[i], tax: 0 }],
+      })),
+    };
+  } else {
+    const lines = qqState.products.filter((l) => l.concept.trim() && Number(l.price) > 0);
+    if (!lines.length) { showQqAlert("Añade al menos una línea con concepto y precio."); return; }
+    quotePayload = {
+      lines: lines.map((l) => ({ concept: l.concept.trim(), qty: Number(l.qty) || 1, price: Number(l.price), tax: 0 })),
+    };
+  }
 
   btn.disabled = true;
   btn.textContent = "Enviando…";
@@ -390,16 +463,15 @@ async function submitQuickQuote() {
       customerId = newCustomer.id;
     }
 
-    // 2. merchantId viene de la sesión autenticada
     const merchant_id = window.appMerchantId;
 
     // 3. Crear el presupuesto
     const quote = await createQuote({
       merchant_id,
       customer_id: customerId,
-      currency: "EUR",
+      currency: (window.appLocale?.currency || "EUR"),
       paymentTerms: qqState.paymentTerms,
-      lines: validLines,
+      ...quotePayload,
     });
 
     // 4. Enviar por WhatsApp

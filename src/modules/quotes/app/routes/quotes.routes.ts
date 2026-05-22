@@ -5,8 +5,13 @@ import {
   CreateQuoteSchema,
   AcceptQuoteSchema,
   RejectQuoteSchema,
+  type QuoteTier,
 } from '../../../../core/validation/schemas';
 import { calcTotal, normalizePhone } from '../../../../core/utils/utils';
+
+function calcTierTotal(lines: Array<{qty: number; price: number; tax?: number}>): number {
+  return Math.round(lines.reduce((s, l) => s + l.qty * l.price * (1 + (l.tax ?? 0)), 0) * 100) / 100;
+}
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { getNextBillingStage } from '../../domain/billingPlan';
 
@@ -27,25 +32,35 @@ const router = Router();
 router.post('/create', async (req, res) => {
   try {
     const body = CreateQuoteSchema.parse(req.body);
-    const { merchant_id, customer_id, currency, lines } = body;
+    const { merchant_id, customer_id, currency } = body;
 
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: merchant_id },
-    });
-    if (!merchant) {
-      return res.status(404).json({ error: 'merchant_not_found' });
+    // Validar: se necesita lines O tiers (no los dos, no ninguno)
+    if (!body.lines && !body.tiers) {
+      return res.status(400).json({ error: 'validation_error', details: 'lines or tiers required' });
     }
 
-    const customer = await prisma.customer.findUnique({
-      where: { id: customer_id },
-    });
-    if (!customer) {
-      return res.status(404).json({ error: 'customer_not_found' });
+    const merchant = await prisma.merchant.findUnique({ where: { id: merchant_id } });
+    if (!merchant) return res.status(404).json({ error: 'merchant_not_found' });
+
+    const customer = await prisma.customer.findUnique({ where: { id: customer_id } });
+    if (!customer) return res.status(404).json({ error: 'customer_not_found' });
+
+    // Calcular total: si hay tiers, usamos el "better" (o el de en medio)
+    let totalNum: number;
+    let tiersWithTotal: (QuoteTier & { total: number })[] | undefined;
+    let canonicalLines: any[];
+
+    if (body.tiers) {
+      tiersWithTotal = body.tiers.map((t) => ({ ...t, total: calcTierTotal(t.lines) }));
+      const betterTier = tiersWithTotal.find((t) => t.id === 'better') ?? tiersWithTotal[1];
+      totalNum = betterTier.total;
+      canonicalLines = betterTier.lines; // líneas del tier recomendado como referencia
+    } else {
+      canonicalLines = body.lines!;
+      totalNum = calcTotal(canonicalLines);
     }
 
-    const totalNum = calcTotal(lines);
-
-    // 1) Creamos el presupuesto en DRAFT
+    // 1) Crear el presupuesto en DRAFT
     const quote = await prisma.quote.create({
       data: {
         merchantId: merchant_id,
@@ -53,31 +68,26 @@ router.post('/create', async (req, res) => {
         status: 'draft',
         total: totalNum.toFixed(2),
         currency: currency.toUpperCase(),
-        lines,
+        lines: canonicalLines,
+        tiers: tiersWithTotal as any ?? undefined,
         paymentTerms: body.paymentTerms ?? null,
-        // pdfUrl lo rellenamos después
       },
     });
 
-    // 2) Intentamos generar el PDF de presupuesto (no rompemos si falla)
+    // 2) Generar PDF
     try {
       const pdf = await generateQuotePdf({
         quoteId: quote.id,
         merchant: {
-          name: merchant.name,
-          legalName: merchant.legalName,
-          taxId: merchant.taxId,
-          address: merchant.address,
+          name: merchant.name, legalName: merchant.legalName,
+          taxId: merchant.taxId, address: merchant.address,
           whatsappPhone: merchant.whatsappPhone,
         },
-        customer: {
-          name: customer.name,
-          phone: customer.phone,
-          email: customer.email,
-        },
+        customer: { name: customer.name, phone: customer.phone, email: customer.email },
         currency: quote.currency,
         total: quote.total.toString(),
-        lines: lines as any,
+        lines: canonicalLines as any,
+        tiers: tiersWithTotal,
         country: merchant.country,
       });
 
@@ -280,6 +290,7 @@ router.post('/:id/decision', async (req, res) => {
     const comment = req.body?.comment ? String(req.body.comment) : undefined;
     const reason = req.body?.reason ? String(req.body.reason) : undefined;
     const signatureData = req.body?.signatureData ? String(req.body.signatureData) : null;
+    const tierId = req.body?.tierId ? String(req.body.tierId) : null;
 
     if (!['accept', 'reject'].includes(decision)) {
       return res.status(400).json({ error: 'invalid_decision' });
@@ -313,6 +324,19 @@ router.post('/:id/decision', async (req, res) => {
     if (decision === 'accept') {
       // 1) Marcamos el presupuesto como ACCEPTED vía WhatsApp
       const now = new Date();
+
+      // Si hay tiers y el cliente eligió uno, recalcular el total
+      let tierTotal: string | undefined;
+      let selectedLines: any[] | undefined;
+      if (tierId && quote.tiers) {
+        const tiers = quote.tiers as QuoteTier[];
+        const chosen = tiers.find((t) => t.id === tierId);
+        if (chosen) {
+          tierTotal = calcTierTotal(chosen.lines).toFixed(2);
+          selectedLines = chosen.lines;
+        }
+      }
+
       updatedQuote = await prisma.quote.update({
         where: { id: quoteId },
         data: {
@@ -323,6 +347,9 @@ router.post('/:id/decision', async (req, res) => {
           rejectionReason: null,
           rejectedAt: null,
           ...(signatureData ? { signatureUrl: signatureData } : {}),
+          ...(tierId ? { selectedTierId: tierId } : {}),
+          ...(tierTotal ? { total: tierTotal } : {}),
+          ...(selectedLines ? { lines: selectedLines } : {}),
         },
       });
 

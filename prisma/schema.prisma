@@ -158,7 +158,9 @@ model Quote {
   decisionComment String?
   rejectionReason String?
   pdfUrl          String?   @db.Text
-  signatureUrl    String?   @db.Text  // base64 PNG data URL de la firma del cliente
+  signatureUrl    String?   @db.Text
+  tiers           Json?                // Array de 3 opciones Good/Better/Best
+  selectedTierId  String?              // 'good' | 'better' | 'best' — elegido por el cliente
   evidence        Json?
   chargeId        Int?
   reminderSentAt  DateTime?

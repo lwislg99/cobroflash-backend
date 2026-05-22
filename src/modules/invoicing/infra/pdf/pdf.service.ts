@@ -91,7 +91,8 @@ export async function generateQuotePdf(params: {
   }>;
   signatureData?: string | null;
   signedAt?: Date | null;
-  country?: string | null;          // para localizar "Presupuesto" / "Cotización"
+  country?: string | null;
+  tiers?: Array<{ id: string; label: string; description?: string; lines: any[]; total: number; recommended?: boolean }> | null;
 }) {
   const fileName = `QUOTE-${params.quoteId}.pdf`;
   const outPath = path.join(invoicesDir, fileName); // usamos la misma carpeta /invoices
@@ -124,7 +125,55 @@ export async function generateQuotePdf(params: {
   if (params.customer.email) doc.text(`Email: ${params.customer.email}`);
   doc.moveDown();
 
-  // Tabla simple de líneas
+  // ===== MODO TIERS: Good/Better/Best =====
+  if (params.tiers && params.tiers.length > 0) {
+    doc.fontSize(12).text('Opciones disponibles:', { underline: true });
+    doc.moveDown(0.5);
+
+    const tierW = 155;
+    const tierGap = 10;
+    const startX = 50;
+
+    params.tiers.forEach((tier, idx) => {
+      const x = startX + idx * (tierW + tierGap);
+      const yStart = doc.y;
+
+      // Caja del tier
+      doc.rect(x, yStart, tierW, 14).fill(tier.recommended ? '#22c55e' : '#f3f4f6');
+      doc.fillColor(tier.recommended ? '#ffffff' : '#374151')
+        .fontSize(9).font('Helvetica-Bold')
+        .text(tier.label + (tier.recommended ? ' ★' : ''), x + 4, yStart + 3, { width: tierW - 8, align: 'center' });
+
+      doc.fillColor('black').font('Helvetica').fontSize(8);
+      let lineY = yStart + 18;
+      if (tier.description) {
+        doc.text(tier.description, x + 4, lineY, { width: tierW - 8 });
+        lineY += 12;
+      }
+      tier.lines.forEach((l: any) => {
+        const lineTotal = (l.qty * l.price * (1 + (l.tax ?? 0))).toFixed(2);
+        const text = `${l.concept} × ${l.qty}`;
+        doc.text(text, x + 4, lineY, { width: tierW - 8 });
+        lineY += 10;
+        doc.text(`${lineTotal} ${params.currency}`, x + 4, lineY, { width: tierW - 8, align: 'right' });
+        lineY += 12;
+      });
+
+      // Total del tier
+      doc.rect(x, lineY, tierW, 14).fill(tier.recommended ? '#dcfce7' : '#e5e7eb');
+      doc.fillColor('#111827').font('Helvetica-Bold').fontSize(9)
+        .text(`Total: ${tier.total.toFixed(2)} ${params.currency}`, x + 4, lineY + 3, { width: tierW - 8, align: 'center' });
+
+      doc.fillColor('black').font('Helvetica');
+    });
+
+    doc.moveDown(14);
+    doc.fontSize(9).fillColor('#6b7280')
+      .text('El cliente puede elegir la opción que mejor se adapte a sus necesidades.', { align: 'center' });
+    doc.fillColor('black').moveDown(1);
+
+  } else {
+  // ===== MODO CLÁSICO: líneas normales =====
   doc.fontSize(12).text(`Detalle del ${locale.quoteVerb}:`);
   doc.moveDown(0.5);
 
@@ -240,9 +289,11 @@ params.lines.forEach((l) => {
 
 doc.moveDown();
 
-// ✅ Aseguramos que el "Total" se calcula desde el margen izquierdo
-const CONTENT_X = X0;                // 50
-const CONTENT_W = 560 - X0;          // 510 (hasta el borde derecho de tu tabla)
+  } // fin else modo clásico
+
+// Total y footer (valores literales para evitar scope de else)
+const CONTENT_X = 50;
+const CONTENT_W = 510;
 
 // Total (sin partirse raro)
 doc.fontSize(12).text(
@@ -264,7 +315,7 @@ if (params.signatureData) {
       : new Date().toLocaleDateString('es', { day: '2-digit', month: 'long', year: 'numeric' });
 
     // Salto de página si no cabe
-    if (doc.y + 120 > PAGE_BOTTOM) doc.addPage();
+    if (doc.y + 120 > doc.page.height - doc.page.margins.bottom) doc.addPage();
 
     doc.moveTo(CONTENT_X, doc.y).lineTo(560, doc.y).stroke();
     doc.moveDown(0.5);
