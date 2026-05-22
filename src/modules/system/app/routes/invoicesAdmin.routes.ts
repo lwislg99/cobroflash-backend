@@ -15,7 +15,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { generateInvoicePdf } from '../../../../lib/pdf';
 
-import { sendWhatsAppTemplate } from '../../../../integrations/whatsapp';
+import { sendWhatsAppTemplate, sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { normalizePhone } from '../../../../core/utils/utils';
 
 
@@ -243,6 +243,88 @@ router.post('/:id/resend-whatsapp', async (req, res) => {
   } catch (err) {
     console.error('[POST /admin/invoices/:id/resend-whatsapp]', err);
     return res.status(500).json({ ok: false, error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/invoices/:id/send-reminder
+ * Envía manualmente un recordatorio de pago al cliente.
+ * Usa payment_request_es si la factura tiene charge; texto libre si no.
+ * Actualiza el campo reminder7SentAt o reminder14SentAt según corresponda.
+ */
+router.post('/:id/send-reminder', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+
+    const invoice = await prisma.invoice.findFirst({
+      where: { id, merchantId: req.merchantId },
+      include: { customer: true, merchant: true },
+    });
+
+    if (!invoice) return res.status(404).json({ error: 'not_found' });
+    if (invoice.status === 'paid') return res.status(409).json({ error: 'invoice_already_paid' });
+
+    const phone = normalizePhone(invoice.customer?.phone);
+    if (!phone) return res.status(400).json({ error: 'customer_missing_phone' });
+
+    const customerName = invoice.customer?.name || 'Cliente';
+    const merchantName = invoice.merchant?.name || 'tu proveedor';
+    const total        = Number(invoice.total).toFixed(2);
+    const chargeId     = invoice.chargeId;
+    const payUrl       = chargeId ? `${BASE_URL}/pay/card/${chargeId}` : null;
+
+    let sent = false;
+
+    if (payUrl) {
+      const result = await sendWhatsAppTemplate({
+        to: phone,
+        templateName: 'payment_request_es',
+        languageCode: 'es',
+        components: [
+          {
+            type: 'body',
+            parameters: [
+              { type: 'text', text: customerName },
+              { type: 'text', text: invoice.number },
+              { type: 'text', text: total },
+              { type: 'text', text: payUrl },
+            ],
+          },
+          {
+            type: 'button',
+            sub_type: 'url',
+            index: '0',
+            parameters: [{ type: 'text', text: String(chargeId) }],
+          },
+        ],
+      });
+      sent = result.ok;
+      if (!result.ok) {
+        console.error('[send-reminder] WA template error:', result.error);
+      }
+    } else {
+      await sendWhatsAppText({
+        to: phone,
+        text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago de la factura *${invoice.number}* por *${total} ${invoice.currency}* de parte de *${merchantName}*.\n\n¡Gracias!`,
+      });
+      sent = true;
+    }
+
+    // Actualizar el campo de recordatorio correspondiente según antigüedad
+    const daysSinceCreation = (Date.now() - new Date(invoice.createdAt).getTime()) / (24 * 60 * 60 * 1000);
+    const updateData: any = {};
+    if (!invoice.reminder7SentAt)  updateData.reminder7SentAt  = new Date();
+    else if (!invoice.reminder14SentAt) updateData.reminder14SentAt = new Date();
+
+    if (Object.keys(updateData).length > 0) {
+      await prisma.invoice.update({ where: { id }, data: updateData });
+    }
+
+    return res.json({ ok: true, sent, via: payUrl ? 'template' : 'text', phone });
+  } catch (err) {
+    console.error('[POST /admin/invoices/:id/send-reminder]', err);
+    return res.status(500).json({ error: 'internal_error' });
   }
 });
 

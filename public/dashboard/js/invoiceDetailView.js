@@ -139,6 +139,25 @@ async function fetchInvoiceDetail(id) {
         : '—'
     }`;
     body.appendChild(pPaidAt);
+
+    // Badges de recordatorios enviados
+    if (invoice.reminder7SentAt || invoice.reminder14SentAt) {
+      const remDiv = document.createElement('div');
+      remDiv.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px';
+      if (invoice.reminder7SentAt) {
+        const b = document.createElement('span');
+        b.style.cssText = 'font-size:11px;padding:2px 8px;border-radius:99px;background:#fef3c7;color:#92400e;font-weight:600';
+        b.textContent = `💬 Recordatorio 7d: ${new Date(invoice.reminder7SentAt).toLocaleDateString('es-ES')}`;
+        remDiv.appendChild(b);
+      }
+      if (invoice.reminder14SentAt) {
+        const b = document.createElement('span');
+        b.style.cssText = 'font-size:11px;padding:2px 8px;border-radius:99px;background:#fee2e2;color:#dc2626;font-weight:600';
+        b.textContent = `💬 Recordatorio 14d: ${new Date(invoice.reminder14SentAt).toLocaleDateString('es-ES')}`;
+        remDiv.appendChild(b);
+      }
+      body.appendChild(remDiv);
+    }
   
     // --- Botones de acción ---
     const actions = document.createElement('div');
@@ -261,6 +280,37 @@ async function fetchInvoiceDetail(id) {
     });
   
     actions.appendChild(btnTogglePaid);
+
+    // Botón Recordar pago (solo visible si la factura está pendiente y el cliente tiene teléfono)
+    if (st === 'pending' && invoice.customer?.phone) {
+      const btnReminder = document.createElement('button');
+      btnReminder.className = 'btn-secondary btn-sm';
+      btnReminder.innerHTML = '💬 Recordar pago';
+      btnReminder.title = 'Envía un WhatsApp recordatorio al cliente';
+      btnReminder.addEventListener('click', async () => {
+        btnReminder.disabled = true;
+        btnReminder.textContent = 'Enviando…';
+        try {
+          const r = await fetch(`/admin/invoices/${invoice.id}/send-reminder`, { method: 'POST' });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(d.error || 'error');
+          statusBox.textContent = '✓ Recordatorio enviado por WhatsApp.';
+          statusBox.className = 'alert success';
+          statusBox.style.display = 'block';
+          // Actualizar badges sin recargar
+          if (!invoice.reminder7SentAt)  invoice.reminder7SentAt  = new Date().toISOString();
+          else                           invoice.reminder14SentAt = new Date().toISOString();
+          btnReminder.textContent = '💬 Recordado';
+        } catch (e) {
+          statusBox.textContent = 'Error al enviar el recordatorio.';
+          statusBox.className = 'alert error';
+          statusBox.style.display = 'block';
+          btnReminder.disabled = false;
+          btnReminder.textContent = '💬 Recordar pago';
+        }
+      });
+      actions.appendChild(btnReminder);
+    }
 
     // Botón Regenerar PDF (con VeriFactu si aplica)
     const btnRegen = document.createElement('button');

@@ -206,6 +206,10 @@ model Invoice {
   vfHash     String? @map("vf_hash")      // huella SHA-256 de esta factura
   vfPrevHash String? @map("vf_prev_hash") // huella de la factura anterior en la cadena
 
+  // Recordatorios de pago automáticos
+  reminder7SentAt  DateTime? @map("reminder_7_sent_at")  // fecha 1er recordatorio (7 días)
+  reminder14SentAt DateTime? @map("reminder_14_sent_at") // fecha 2º recordatorio (14 días)
+
   createdAt DateTime @default(now())
 
   merchant Merchant @relation(fields: [merchantId], references: [id])

@@ -1,8 +1,9 @@
 import cron from 'node-cron';
-import { sendPendingReminders } from '../../modules/quotes/domain/reminder.service';
+import { sendPendingReminders }         from '../../modules/quotes/domain/reminder.service';
+import { sendInvoicePaymentReminders }  from '../../modules/billing/domain/invoiceReminder.service';
 
 export function startCronJobs(): void {
-  // Cada hora en punto: buscar cotizaciones sin respuesta >24h y enviar recordatorio
+  // Cada hora en punto: cotizaciones sin respuesta >24h
   cron.schedule('0 * * * *', async () => {
     console.log('[cron] Ejecutando recordatorios de cotizaciones…');
     try {
@@ -12,5 +13,15 @@ export function startCronJobs(): void {
     }
   });
 
-  console.log('[cron] Jobs registrados: recordatorio cotizaciones (cada hora)');
+  // Cada día a las 10:00 AM: facturas impagadas con 7 y 14 días
+  cron.schedule('0 10 * * *', async () => {
+    console.log('[cron] Ejecutando recordatorios de facturas impagadas…');
+    try {
+      await sendInvoicePaymentReminders();
+    } catch (err: any) {
+      console.error('[cron] Error en sendInvoicePaymentReminders:', err?.message);
+    }
+  });
+
+  console.log('[cron] Jobs registrados: recordatorio cotizaciones (cada hora), recordatorio facturas (diario 10:00)');
 }
