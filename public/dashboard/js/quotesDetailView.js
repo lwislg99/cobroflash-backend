@@ -167,6 +167,22 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   statusP.appendChild(statusSpan);
   statusCard.appendChild(statusP);
 
+  // Badge firma digital
+  if (quote.signatureUrl) {
+    const sigBadge = document.createElement("div");
+    sigBadge.style.cssText = "margin-top:10px;display:flex;flex-direction:column;gap:8px";
+    sigBadge.innerHTML = `
+      <div style="display:inline-flex;align-items:center;gap:6px;background:#ecfdf5;color:#166534;
+        padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;width:fit-content">
+        ✅ Firmado digitalmente
+      </div>
+      <img src="${quote.signatureUrl}" alt="Firma del cliente"
+        style="max-width:200px;max-height:80px;border:1px solid #e5e7eb;border-radius:8px;
+               background:#f9fafb;padding:4px;object-fit:contain"/>
+    `;
+    statusCard.appendChild(sigBadge);
+  }
+
   // =====================
   // Bloque CLIENTE
   // =====================

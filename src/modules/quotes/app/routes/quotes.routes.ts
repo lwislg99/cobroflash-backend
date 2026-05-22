@@ -278,6 +278,7 @@ router.post('/:id/decision', async (req, res) => {
     const decision = String(req.body?.decision || '').toLowerCase();
     const comment = req.body?.comment ? String(req.body.comment) : undefined;
     const reason = req.body?.reason ? String(req.body.reason) : undefined;
+    const signatureData = req.body?.signatureData ? String(req.body.signatureData) : null;
 
     if (!['accept', 'reject'].includes(decision)) {
       return res.status(400).json({ error: 'invalid_decision' });
@@ -310,17 +311,44 @@ router.post('/:id/decision', async (req, res) => {
 
     if (decision === 'accept') {
       // 1) Marcamos el presupuesto como ACCEPTED vía WhatsApp
+      const now = new Date();
       updatedQuote = await prisma.quote.update({
         where: { id: quoteId },
         data: {
           status: 'accepted',
-          acceptedAt: new Date(),
+          acceptedAt: now,
           decisionChannel: 'whatsapp',
           decisionComment: comment,
           rejectionReason: null,
           rejectedAt: null,
+          ...(signatureData ? { signatureUrl: signatureData } : {}),
         },
       });
+
+      // Regenerar PDF con firma si se adjuntó
+      if (signatureData) {
+        try {
+          const merchant = quote.merchant;
+          const customer = quote.customer;
+          const pdf = await generateQuotePdf({
+            quoteId: quote.id,
+            merchant: {
+              name: merchant.name, legalName: merchant.legalName,
+              taxId: merchant.taxId, address: merchant.address,
+              whatsappPhone: merchant.whatsappPhone,
+            },
+            customer: { name: customer.name, phone: customer.phone, email: customer.email },
+            currency: quote.currency,
+            total: quote.total.toString(),
+            lines: quote.lines as any,
+            signatureData,
+            signedAt: now,
+          });
+          await prisma.quote.update({ where: { id: quoteId }, data: { pdfUrl: pdf.publicUrlPath } });
+        } catch (e) {
+          console.error('[decision] Error regenerando PDF con firma:', e);
+        }
+      }
 
       // 2) Según paymentTerms, generamos la siguiente factura
       const existingInvoices = quote.Invoice || [];

@@ -99,6 +99,7 @@ export async function getQuoteDetailAdmin(id: number) {
     total: quote.total,
     lines: quote.lines,
     pdfUrl: (quote as any).pdfUrl ?? null,
+    signatureUrl: quote.signatureUrl ?? null,
     
     merchant: {
       id: quote.merchant.id,

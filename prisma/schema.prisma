@@ -157,6 +157,7 @@ model Quote {
   decisionComment String?
   rejectionReason String?
   pdfUrl          String?   @db.Text
+  signatureUrl    String?   @db.Text  // base64 PNG data URL de la firma del cliente
   evidence        Json?
   chargeId        Int?
   reminderSentAt  DateTime?

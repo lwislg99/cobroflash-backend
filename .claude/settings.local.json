@@ -11,7 +11,8 @@
       "Bash(taskkill /F /IM node.exe)",
       "Bash(npm run *)",
       "Bash(git commit -m 'feat\\(3.3\\): recordatorio automático 24h para cotizaciones sin respuesta *)",
-      "Bash(git commit -m 'feat\\(3.4\\): reseña Google automática al cobrar *)"
+      "Bash(git commit -m 'feat\\(3.4\\): reseña Google automática al cobrar *)",
+      "Bash(git commit -m 'feat\\(3.1\\): firma digital del cliente en landing de aceptación *)"
     ]
   }
 }

@@ -88,6 +88,8 @@ export async function generateQuotePdf(params: {
     price: number;
     tax: number;
   }>;
+  signatureData?: string | null;    // base64 PNG data URL — se añade al PDF si está presente
+  signedAt?: Date | null;
 }) {
   const fileName = `QUOTE-${params.quoteId}.pdf`;
   const outPath = path.join(invoicesDir, fileName); // usamos la misma carpeta /invoices
@@ -247,7 +249,34 @@ doc.fontSize(12).text(
 
 doc.moveDown(2);
 
+// Sección firma digital (si existe)
+if (params.signatureData) {
+  try {
+    const base64 = params.signatureData.replace(/^data:image\/\w+;base64,/, '');
+    const imgBuffer = Buffer.from(base64, 'base64');
+    const signDate = params.signedAt
+      ? params.signedAt.toLocaleDateString('es', { day: '2-digit', month: 'long', year: 'numeric' })
+      : new Date().toLocaleDateString('es', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    // Salto de página si no cabe
+    if (doc.y + 120 > PAGE_BOTTOM) doc.addPage();
+
+    doc.moveTo(CONTENT_X, doc.y).lineTo(560, doc.y).stroke();
+    doc.moveDown(0.5);
+    doc.fontSize(10).fillColor('black').text('Firma del cliente:', CONTENT_X, doc.y);
+    doc.moveDown(0.3);
+    doc.image(imgBuffer, CONTENT_X, doc.y, { width: 180, height: 70, fit: [180, 70] });
+    doc.moveDown(5);
+    doc.fontSize(8).fillColor('#444')
+      .text(`Firmado digitalmente por ${params.customer.name || 'el cliente'} el ${signDate}`, CONTENT_X, doc.y);
+    doc.moveDown(0.5);
+  } catch (e) {
+    // Si la imagen falla, continuamos sin firma
+  }
+}
+
 // Footer centrado bien (con ancho fijo)
+doc.moveDown(1);
 doc
   .fontSize(9)
   .fillColor('#666')
