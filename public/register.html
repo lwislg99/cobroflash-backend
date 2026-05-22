@@ -83,8 +83,16 @@
     try {
       const res = await fetch('/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, country }) });
       const data = await res.json();
-      if (res.ok) { showAlert('¡Cuenta creada! Revisa tu email para acceder.', 'ok'); }
-      else { showAlert(data.error || 'Error al crear la cuenta.', 'error'); btn.disabled = false; btn.textContent = 'Crear cuenta y acceder'; }
+      if (res.ok) {
+        showAlert('✉️ ¡Cuenta creada! Revisa tu email y haz clic en el enlace para acceder.', 'ok');
+        btn.textContent = 'Enlace enviado';
+        // Redirigir a login tras 3s para que puedan reenviar si no llega
+        setTimeout(() => window.location.href = '/login.html', 4000);
+      } else {
+        const msgs = { invalid_email: 'Email inválido.', name_required: 'Escribe el nombre de tu negocio.' };
+        showAlert(msgs[data.error] || data.error || 'Error al crear la cuenta.', 'error');
+        btn.disabled = false; btn.textContent = 'Crear cuenta y acceder';
+      }
     } catch { showAlert('Error de conexión.', 'error'); btn.disabled = false; btn.textContent = 'Crear cuenta y acceder'; }
   });
 
