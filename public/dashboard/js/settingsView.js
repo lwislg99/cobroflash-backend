@@ -137,7 +137,45 @@ function renderSettingsView(container) {
       '<p style="font-size:12px;color:#9ca3af;margin:2px 0 4px">Al recibir un pago, se enviará automáticamente un WhatsApp al cliente pidiéndole una reseña.</p>'
     );
     form.appendChild(fGoogleReviewUrl.wrapper);
-  
+
+    // Separador — Notificaciones por email
+    const sepNotif = document.createElement("div");
+    sepNotif.style.cssText = "border-top:1px solid #e5e7eb;margin:12px 0 4px;padding-top:12px";
+    sepNotif.innerHTML = '<p style="font-size:12px;color:#6b7280;margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Notificaciones por email</p>';
+    form.appendChild(sepNotif);
+
+    function createToggle(id, labelText, hint) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "field inline-checkbox";
+      const label = document.createElement("label");
+      label.style.cssText = "display:flex;align-items:flex-start;gap:8px;cursor:pointer";
+      const chk = document.createElement("input");
+      chk.type = "checkbox";
+      chk.id = id;
+      chk.style.marginTop = "2px;flex-shrink:0";
+      const textBlock = document.createElement("div");
+      textBlock.innerHTML = '<span style="font-weight:600;font-size:13.5px;color:var(--slate-700)">' + labelText + '</span>' +
+        (hint ? '<br/><span style="font-size:12px;color:#9ca3af">' + hint + '</span>' : '');
+      label.appendChild(chk);
+      label.appendChild(textBlock);
+      wrapper.appendChild(label);
+      return { wrapper, chk };
+    }
+
+    const tNotifyPaid = createToggle(
+      "notifyEmailOnPaid",
+      "Recibir email cuando un cliente paga",
+      "Recibirás un email a tu dirección de cuenta cada vez que se confirme un pago."
+    );
+    const tNotifyAccepted = createToggle(
+      "notifyEmailOnQuoteAccepted",
+      "Recibir email cuando un cliente acepta un presupuesto",
+      "Te notificamos cuando el cliente firma y acepta desde su portal."
+    );
+
+    form.appendChild(tNotifyPaid.wrapper);
+    form.appendChild(tNotifyAccepted.wrapper);
+
     const actions = document.createElement("div");
     actions.className = "form-actions";
     const saveBtn = document.createElement("button");
@@ -165,6 +203,8 @@ function renderSettingsView(container) {
         fGoogleReviewUrl.input.value = merchant.googleReviewUrl || "";
         fIban.input.value  = merchant.iban  || "";
         fClabe.input.value = merchant.clabe || "";
+        tNotifyPaid.chk.checked     = merchant.notifyEmailOnPaid     !== false;
+        tNotifyAccepted.chk.checked = !!merchant.notifyEmailOnQuoteAccepted;
         if (merchant.country) fCountrySelect.value = merchant.country;
   
         setAlert(null, "");
@@ -192,6 +232,8 @@ function renderSettingsView(container) {
         country: fCountrySelect.value || undefined,
         iban:  fIban.input.value.trim().replace(/\s/g, '') || null,
         clabe: fClabe.input.value.trim() || null,
+        notifyEmailOnPaid:          tNotifyPaid.chk.checked,
+        notifyEmailOnQuoteAccepted: tNotifyAccepted.chk.checked,
       };
   
       if (!payload.name || !payload.legalName || !payload.taxId || !payload.address || !payload.whatsappPhone) {

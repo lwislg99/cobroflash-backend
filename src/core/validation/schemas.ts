@@ -120,6 +120,8 @@ export const merchantProfileUpdateSchema = z.object({
   country: z.string().length(2).optional(),
   iban: z.string().min(10).max(34).nullable().optional(),
   clabe: z.string().length(18).nullable().optional(),
+  notifyEmailOnPaid:          z.boolean().optional(),
+  notifyEmailOnQuoteAccepted: z.boolean().optional(),
 });
 
 export type MerchantProfileUpdateInput = z.infer<

@@ -94,6 +94,14 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     }
   });
 
+  const duplicateBtn = document.createElement("button");
+  duplicateBtn.className = "btn-ghost btn-sm";
+  duplicateBtn.innerHTML = "⎘ Duplicar";
+  duplicateBtn.title = "Crea un nuevo presupuesto con las mismas líneas";
+  duplicateBtn.style.cssText = "border:1px solid var(--slate-200)";
+  duplicateBtn.addEventListener("click", () => duplicateQuote(id));
+
+  right.appendChild(duplicateBtn);
   right.appendChild(backBtn);
   header.appendChild(right);
 
@@ -806,5 +814,27 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   function fmtAmt(amount, currency) {
     const sym = (currency==='MXN'||currency==='COP') ? '$' : '€';
     return `${sym}${Number(amount).toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+  }
+}
+
+// ── Duplicar presupuesto ──────────────────────────────────────────────────
+async function duplicateQuote(quoteId) {
+  var detail;
+  try {
+    detail = await apiRequest('/admin/quotes/' + quoteId);
+  } catch(e) {
+    alert('Error al cargar el presupuesto para duplicar.');
+    return;
+  }
+  var tpl = {
+    name: 'Copia de #' + quoteId,
+    currency: detail.currency,
+    lines: detail.lines || [],
+    tiers: detail.tiers || null,
+    paymentTerms: detail.paymentTerms || null,
+  };
+  sessionStorage.setItem('pf_load_template', JSON.stringify(tpl));
+  if (window.renderAppView) {
+    renderAppView('quotes-new');
   }
 }

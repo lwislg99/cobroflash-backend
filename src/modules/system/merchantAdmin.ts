@@ -17,6 +17,8 @@ export type MerchantProfileInput = {
   country?: string;
   iban?: string | null;
   clabe?: string | null;
+  notifyEmailOnPaid?: boolean;
+  notifyEmailOnQuoteAccepted?: boolean;
 };
 
 // 1) Obtener el perfil del merchant (para pintar el formulario del dashboard)
@@ -37,6 +39,8 @@ export async function getMerchantProfile(merchantId: number = DEFAULT_MERCHANT_I
       country: true,
       iban: true,
       clabe: true,
+      notifyEmailOnPaid: true,
+      notifyEmailOnQuoteAccepted: true,
     },
   });
 

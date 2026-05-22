@@ -8,6 +8,7 @@ import { sendInvoiceEmail } from '../../../../lib/email';
 import { normalizePhone } from '../../../../core/utils/utils';
 import { config } from '../../../../core/config/env';
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
+import { sendMerchantPaymentEmail } from '../../../messaging/domain/merchantNotifications';
 
 
 const router = Router();
@@ -146,7 +147,7 @@ router.post('/', async (req, res) => {
       // Cargar merchant para notificaciones
       const merchant = await prisma.merchant.findUnique({
         where: { id: updated.merchantId },
-        select: { whatsappPhone: true, googleReviewUrl: true, name: true },
+        select: { whatsappPhone: true, googleReviewUrl: true, name: true, email: true, notifyEmailOnPaid: true },
       });
 
       // Solicitud de reseña Google al cliente (fire-and-forget)
@@ -172,6 +173,19 @@ router.post('/', async (req, res) => {
           to: merchantPhone,
           text: `💰 Pago recibido de ${customerName}: ${amount} ${currency}`,
         }).catch((err) => console.error('[psp] Error notificando al merchant:', err));
+      }
+
+      // Email al merchant si tiene notificaciones activadas
+      if (merchant?.notifyEmailOnPaid && merchant?.email) {
+        const inv = await prisma.invoice.findFirst({ where: { id: invoiceId ?? undefined }, select: { number: true } }).catch(() => null);
+        sendMerchantPaymentEmail({
+          merchantEmail: merchant.email,
+          merchantName: merchant.name || 'Tu negocio',
+          customerName: updated.customer?.name || 'Cliente',
+          amount: (body.amount ?? updated.amount).toString(),
+          currency: body.currency ?? updated.currency,
+          invoiceNumber: inv?.number ?? null,
+        }).catch(() => {});
       }
 
       return res.json({ ok: true, status: 'paid' });

@@ -14,6 +14,7 @@ function calcTierTotal(lines: Array<{qty: number; price: number; tax?: number}>)
 }
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { getNextBillingStage } from '../../domain/billingPlan';
+import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/merchantNotifications';
 
 import fetch from 'node-fetch';
 
@@ -135,6 +136,10 @@ router.post('/:id/accept', async (req, res) => {
 
     const quote = await prisma.quote.findUnique({
       where: { id: quoteId },
+      include: {
+        merchant: { select: { id: true, email: true, name: true, notifyEmailOnQuoteAccepted: true } },
+        customer: { select: { name: true } },
+      },
     });
 
     if (!quote) {
@@ -172,6 +177,18 @@ router.post('/:id/accept', async (req, res) => {
         evidence: body.evidence ?? quote.evidence ?? {},
       },
     });
+
+    // Email al merchant si tiene notificaciones de aceptación activadas
+    if (quote.merchant?.notifyEmailOnQuoteAccepted && quote.merchant?.email) {
+      sendMerchantQuoteAcceptedEmail({
+        merchantEmail: quote.merchant.email,
+        merchantName:  quote.merchant.name || 'Tu negocio',
+        customerName:  quote.customer?.name || 'Cliente',
+        quoteId,
+        total: Number(quote.total).toFixed(2),
+        currency: quote.currency,
+      }).catch(() => {});
+    }
 
     return res.json({
       ok: true,

@@ -36,6 +36,10 @@ model Merchant {
   clabe   String?
   status  String  @default("active")
 
+  // Preferencias de notificaciones por email
+  notifyEmailOnPaid            Boolean @default(true)  @map("notify_email_on_paid")
+  notifyEmailOnQuoteAccepted   Boolean @default(false) @map("notify_email_on_quote_accepted")
+
   charges        Charge[]
   Quote          Quote[]
   Invoice        Invoice[]
