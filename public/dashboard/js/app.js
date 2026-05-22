@@ -139,6 +139,10 @@ async function initApp() {
         viewTitle.textContent = 'Informes';
         if (typeof renderReportsView === 'function') renderReportsView(viewContainer);
         break;
+      case 'templates':
+        viewTitle.textContent = 'Plantillas';
+        if (typeof renderTemplatesView === 'function') renderTemplatesView(viewContainer);
+        break;
       case 'invoices':
         viewTitle.textContent = 'Facturas';
         renderInvoicesView(viewContainer);

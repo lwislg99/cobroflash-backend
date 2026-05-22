@@ -36,15 +36,16 @@ model Merchant {
   clabe   String?
   status  String  @default("active")
 
-  charges     Charge[]
-  Quote       Quote[]
-  Invoice     Invoice[]
-  Product     Product[]
-  Provider    Provider[]
-  Customer    Customer[]
-  AuthSession AuthSession[]
-  Expense     Expense[]
-  TeamMember  TeamMember[]
+  charges        Charge[]
+  Quote          Quote[]
+  Invoice        Invoice[]
+  Product        Product[]
+  Provider       Provider[]
+  Customer       Customer[]
+  AuthSession    AuthSession[]
+  Expense        Expense[]
+  TeamMember     TeamMember[]
+  QuoteTemplate  QuoteTemplate[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt      @map("updated_at")
@@ -287,6 +288,25 @@ model Provider {
 
   @@index([merchantId])
   @@map("providers")
+}
+
+model QuoteTemplate {
+  id         Int    @id @default(autoincrement())
+  merchantId Int    @map("merchant_id")
+
+  name         String
+  currency     String  @default("EUR") @db.VarChar(3)
+  lines        Json                        // Array de líneas igual que en Quote
+  tiers        Json?                       // Opcional: Good/Better/Best
+  paymentTerms String? @map("payment_terms") // FULL_UPFRONT | FIFTY_FIFTY | MANUAL
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
+
+  merchant Merchant @relation(fields: [merchantId], references: [id])
+
+  @@index([merchantId])
+  @@map("quote_templates")
 }
 
 model TeamMember {

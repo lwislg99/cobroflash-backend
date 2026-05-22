@@ -376,6 +376,14 @@ blockClient.appendChild(descWrapper);
   aiBtn.title = "Describe el trabajo y Claude sugiere las líneas del presupuesto";
   linesHeader.appendChild(aiBtn);
 
+  const useTemplateBtn = document.createElement("button");
+  useTemplateBtn.type = "button";
+  useTemplateBtn.className = "btn-ghost btn-sm";
+  useTemplateBtn.style.cssText = "font-size:12px;padding:4px 10px;border-radius:6px;border:1px dashed var(--slate-300);color:var(--slate-600)";
+  useTemplateBtn.innerHTML = "📋 Usar plantilla";
+  useTemplateBtn.title = "Cargar líneas desde una plantilla guardada";
+  linesHeader.appendChild(useTemplateBtn);
+
   blockLines.appendChild(linesHeader);
 
   const table = document.createElement("table");
@@ -428,8 +436,16 @@ blockClient.appendChild(descWrapper);
   resetBtn.className = "btn btn-secondary";
   resetBtn.textContent = "Limpiar formulario";
 
+  const saveTemplateBtn = document.createElement("button");
+  saveTemplateBtn.type = "button";
+  saveTemplateBtn.className = "btn-ghost btn-sm";
+  saveTemplateBtn.style.cssText = "border:1px dashed var(--slate-300);color:var(--slate-500)";
+  saveTemplateBtn.innerHTML = "💾 Guardar como plantilla";
+  saveTemplateBtn.title = "Guarda las líneas actuales como plantilla reutilizable";
+
   actionsRow.appendChild(submitBtn);
   actionsRow.appendChild(resetBtn);
+  actionsRow.appendChild(saveTemplateBtn);
 
   // ---------- PANEL DERECHO: PREVIEW + ESTADO ----------
   const previewTitle = document.createElement("h3");
@@ -1532,11 +1548,188 @@ if (Number.isFinite(n) && n >= 0) {
     setResult(null);
   });
 
+  // ── Botón "📋 Usar plantilla" ────────────────────────────────────────────
+  useTemplateBtn.addEventListener("click", async function () {
+    let templates;
+    try {
+      templates = await apiRequest('/admin/templates');
+    } catch {
+      setAlert('error', 'No se pudieron cargar las plantillas.');
+      return;
+    }
+
+    if (!templates || templates.length === 0) {
+      setAlert('error', 'Aún no tienes plantillas guardadas. Crea una con el botón "💾 Guardar como plantilla".');
+      return;
+    }
+
+    // Modal de selección
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal" style="max-width:480px">
+        <div class="modal-header">
+          <h3 class="modal-title">📋 Usar plantilla</h3>
+          <button class="modal-close" id="tpl-modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size:13px;color:var(--slate-500);margin:0 0 12px">Elige una plantilla para cargar sus líneas en el presupuesto actual.</p>
+          <div style="display:flex;flex-direction:column;gap:8px" id="tpl-list"></div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const closeOverlay = () => overlay.remove();
+    overlay.querySelector('#tpl-modal-close').onclick = closeOverlay;
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeOverlay(); });
+
+    const tplList = overlay.querySelector('#tpl-list');
+    templates.forEach(function (tpl) {
+      const lineCount = Array.isArray(tpl.lines) ? tpl.lines.length : 0;
+      const btn = document.createElement('button');
+      btn.className = 'btn-secondary';
+      btn.style.cssText = 'width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center;padding:12px 14px';
+      btn.innerHTML = `
+        <span>
+          <strong style="color:var(--slate-900)">${tpl.name}</strong>
+          <span style="display:block;font-size:12px;color:var(--slate-400);margin-top:2px">${lineCount} línea${lineCount !== 1 ? 's' : ''} · ${tpl.currency}</span>
+        </span>
+        <span style="font-size:12px;color:var(--green-600);font-weight:600">Usar →</span>
+      `;
+      btn.onclick = function () {
+        // Vaciar líneas actuales vacías
+        const existingRows = tbody.querySelectorAll('tr');
+        if (existingRows.length === 1) {
+          const firstConcept = existingRows[0].querySelector('input[type=text]');
+          if (firstConcept && !firstConcept.value.trim()) {
+            tbody.innerHTML = '';
+            lines = [];
+          }
+        } else {
+          tbody.innerHTML = '';
+          lines = [];
+        }
+        // Cargar líneas de la plantilla
+        const templateLines = Array.isArray(tpl.lines) ? tpl.lines : [];
+        templateLines.forEach(function (l) {
+          addLine({ concept: l.concept, qty: l.qty, price: l.price, tax: (l.tax || 0) });
+        });
+        closeOverlay();
+        setAlert('success', `Plantilla "${tpl.name}" cargada — ${templateLines.length} líneas añadidas.`);
+      };
+      tplList.appendChild(btn);
+    });
+  });
+
+  // ── Botón "💾 Guardar como plantilla" ────────────────────────────────────
+  saveTemplateBtn.addEventListener("click", async function () {
+    // Leer líneas válidas del formulario
+    const templateLines = lines
+      .map(function (line) {
+        const concept = line.conceptInput.value.trim();
+        const qty     = parseFloat(String(line.qtyInput.value   || '1').replace(',', '.'));
+        const price   = parseFloat(String(line.priceInput.value || '0').replace(',', '.'));
+        const vatPerc = parseFloat(String(line.vatInput.value   || '0').replace(',', '.'));
+        if (!concept || !Number.isFinite(price) || price < 0) return null;
+        return {
+          concept,
+          qty:   Number.isFinite(qty)   ? qty   : 1,
+          price: price,
+          tax:   Number.isFinite(vatPerc) ? vatPerc / 100 : 0,
+        };
+      })
+      .filter(Boolean);
+
+    if (templateLines.length === 0) {
+      setAlert('error', 'Añade al menos una línea con concepto y precio antes de guardar la plantilla.');
+      return;
+    }
+
+    // Modal para pedir nombre
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal" style="max-width:400px">
+        <div class="modal-header">
+          <h3 class="modal-title">💾 Guardar plantilla</h3>
+          <button class="modal-close" id="save-tpl-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size:13px;color:var(--slate-500);margin:0 0 12px">Dale un nombre a esta plantilla para reutilizarla en futuros presupuestos.</p>
+          <div class="alert" id="save-tpl-alert"></div>
+          <div class="field">
+            <label>Nombre de la plantilla</label>
+            <input type="text" id="tpl-name-input" placeholder="Ej. Revisión caldera estándar" />
+          </div>
+          <p style="font-size:12px;color:var(--slate-400);margin:4px 0 0">${templateLines.length} línea${templateLines.length !== 1 ? 's' : ''} se guardarán.</p>
+          <button class="btn-primary" id="save-tpl-btn" style="width:100%;margin-top:4px">Guardar plantilla</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const closeOverlay = () => overlay.remove();
+    overlay.querySelector('#save-tpl-close').onclick = closeOverlay;
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeOverlay(); });
+
+    const nameInput = overlay.querySelector('#tpl-name-input');
+    const alertEl   = overlay.querySelector('#save-tpl-alert');
+    const saveBtn   = overlay.querySelector('#save-tpl-btn');
+
+    setTimeout(() => nameInput.focus(), 80);
+
+    saveBtn.onclick = async function () {
+      const name = nameInput.value.trim();
+      if (!name) {
+        alertEl.textContent = 'Escribe un nombre para la plantilla.';
+        alertEl.className = 'alert error';
+        return;
+      }
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Guardando…';
+
+      const currency = currentMerchant?.defaultCurrency || 'EUR';
+
+      try {
+        await apiRequest('/admin/templates', {
+          method: 'POST',
+          body: JSON.stringify({ name, currency, lines: templateLines }),
+        });
+        closeOverlay();
+        setAlert('success', `Plantilla "${name}" guardada. Puedes usarla con el botón "📋 Usar plantilla".`);
+      } catch {
+        alertEl.textContent = 'Error al guardar la plantilla.';
+        alertEl.className = 'alert error';
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Guardar plantilla';
+      }
+    };
+
+    nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveBtn.click(); });
+  });
+
 
   // ---------- CARGA INICIAL: MERCHANT + CLIENTES ----------
   async function loadInitialData() {
     try {
       setAlert(null, "Cargando datos…");
+
+      // Si venimos de la vista de Plantillas, auto-cargar
+      const pendingTemplate = sessionStorage.getItem('pf_load_template');
+      if (pendingTemplate) {
+        sessionStorage.removeItem('pf_load_template');
+        try {
+          const tpl = JSON.parse(pendingTemplate);
+          if (Array.isArray(tpl.lines) && tpl.lines.length > 0) {
+            tbody.innerHTML = '';
+            lines = [];
+            tpl.lines.forEach(function (l) { addLine(l); });
+            setAlert('success', `Plantilla "${tpl.name}" cargada — completa los datos del cliente y genera el presupuesto.`);
+          }
+        } catch (_) {}
+      }
+
       const merchantPromise = getMerchantProfile();
       const customersPromise = getCustomers("");
 
