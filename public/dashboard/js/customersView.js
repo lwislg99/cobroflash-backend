@@ -240,10 +240,29 @@ function renderCustomersView(container) {
         );
 
         const tdActions = document.createElement("td");
+        tdActions.style.display = "flex";
+        tdActions.style.gap = "6px";
+
         const editBtn = createElement("button", "btn btn-secondary", "Editar");
         editBtn.type = "button";
         editBtn.addEventListener("click", () => openModal("edit", c));
         tdActions.appendChild(editBtn);
+
+        const portalBtn = createElement("button", "btn btn-secondary", "Portal");
+        portalBtn.type = "button";
+        portalBtn.title = "Copiar enlace del portal del cliente";
+        portalBtn.addEventListener("click", async () => {
+          try {
+            const data = await apiRequest(`/admin/customers/${c.id}/portal-url`);
+            await navigator.clipboard.writeText(data.portalUrl);
+            portalBtn.textContent = "¡Copiado!";
+            setTimeout(() => { portalBtn.textContent = "Portal"; }, 2000);
+          } catch (err) {
+            alert("Error al obtener el portal: " + err.message);
+          }
+        });
+        tdActions.appendChild(portalBtn);
+
         tr.appendChild(tdActions);
 
         tbody.appendChild(tr);

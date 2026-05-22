@@ -69,11 +69,12 @@ model AuthSession {
 
 model Customer {
   id         Int  @id @default(autoincrement())
-  merchantId Int  @default(1) @map("merchant_id")
-  name       String
-  phone      String?
-  email      String?
-  notes      String?
+  merchantId  Int     @default(1) @map("merchant_id")
+  name        String
+  phone       String?
+  email       String?
+  notes       String?
+  portalToken String? @unique @map("portal_token")
 
   merchant  Merchant  @relation(fields: [merchantId], references: [id])
   charges   Charge[]

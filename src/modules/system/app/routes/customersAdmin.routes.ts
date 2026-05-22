@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { listCustomers, getCustomer, createCustomer, updateCustomer, deleteCustomer } from '../../customerAdmin';
+import { listCustomers, getCustomer, createCustomer, updateCustomer, deleteCustomer, ensurePortalToken } from '../../customerAdmin';
+import { config } from '../../../../core/config/env';
 import { customerCreateSchema, customerUpdateSchema } from '../../../../core/validation/schemas';
 
 const router = Router();
@@ -52,6 +53,21 @@ router.put('/:id', async (req, res) => {
     if (err?.name === 'ZodError') return res.status(400).json({ error: 'validation_error', details: err.errors });
     console.error('[PUT /admin/customers/:id]', err);
     res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// GET /admin/customers/:id/portal-url — genera token si no existe, devuelve URL del portal
+router.get('/:id/portal-url', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    const token = await ensurePortalToken(req.merchantId, id);
+    const portalUrl = `${config.PUBLIC_BASE_URL}/cliente/${token}`;
+    return res.json({ portalUrl, token });
+  } catch (err: any) {
+    if (err.message === 'customer_not_found') return res.status(404).json({ error: 'not_found' });
+    console.error('[GET /admin/customers/:id/portal-url]', err);
+    return res.status(500).json({ error: 'internal_error' });
   }
 });
 
