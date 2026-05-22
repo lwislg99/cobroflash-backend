@@ -140,9 +140,9 @@ function renderQuotesListView(container) {
     list.forEach((q) => {
       const tr = document.createElement("tr");
 
-      // ID
+      // ID + indicador notas
       const tdId = document.createElement("td");
-      tdId.textContent = String(q.id);
+      tdId.innerHTML = `${q.id}${q.internalNotes ? ' <span title="Tiene notas internas" style="color:#9ca3af;font-size:11px">📝</span>' : ''}`;
 
       // Nombre cliente
       const tdClient = document.createElement("td");

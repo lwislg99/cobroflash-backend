@@ -67,6 +67,7 @@ export async function listQuotesAdmin(merchantId: number, search?: string) {
       status: derivedStatus,
       method: q.charge?.method ?? null,
       chargeId: q.charge?.id ?? null,
+      internalNotes: q.internalNotes ?? null,
     };
   });
 }
@@ -102,6 +103,7 @@ export async function getQuoteDetailAdmin(id: number) {
     signatureUrl: quote.signatureUrl ?? null,
     tiers: quote.tiers ?? null,
     selectedTierId: quote.selectedTierId ?? null,
+    internalNotes: quote.internalNotes ?? null,
     
     merchant: {
       id: quote.merchant.id,

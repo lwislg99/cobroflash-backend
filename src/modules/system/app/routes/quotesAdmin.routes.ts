@@ -297,6 +297,26 @@ router.post('/:id/send-whatsapp', async (req, res) => {
 });
 
 /**
+ * PUT /admin/quotes/:id/notes
+ * Guarda notas internas (solo visibles en el BO, nunca al cliente)
+ */
+router.put('/:id/notes', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    const notes = req.body?.notes !== undefined ? String(req.body.notes ?? '') : null;
+    await prisma.quote.updateMany({
+      where: { id, merchantId: req.merchantId },
+      data: { internalNotes: notes || null },
+    });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[PUT /admin/quotes/:id/notes]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
  * GET /admin/quotes/:id
  * IMPORTANTE: siempre al final para no interceptar las rutas anteriores
  */

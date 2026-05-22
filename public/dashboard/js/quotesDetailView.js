@@ -207,6 +207,52 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   }
 
   // =====================
+  // NOTAS INTERNAS (privadas, solo visible en el BO)
+  // =====================
+  const notesCard = document.createElement("div");
+  notesCard.className = "customers-card";
+  notesCard.style.marginTop = "12px";
+  wrapper.appendChild(notesCard);
+
+  const notesHeader = document.createElement("div");
+  notesHeader.style.cssText = "display:flex;justify-content:space-between;align-items:center;margin-bottom:8px";
+  notesHeader.innerHTML = `
+    <h3 style="margin:0;font-size:14px">📝 Notas internas</h3>
+    <span style="font-size:11px;color:#9ca3af;background:#f3f4f6;padding:2px 8px;border-radius:999px">Solo tú las ves</span>
+  `;
+  notesCard.appendChild(notesHeader);
+
+  const notesTextarea = document.createElement("textarea");
+  notesTextarea.value = quote.internalNotes || "";
+  notesTextarea.placeholder = "Anota detalles del trabajo, acuerdos verbales, recordatorios…";
+  notesTextarea.style.cssText = "width:100%;min-height:90px;padding:10px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;resize:vertical;font-family:inherit;line-height:1.5;color:#374151";
+  notesCard.appendChild(notesTextarea);
+
+  const notesSaveStatus = document.createElement("div");
+  notesSaveStatus.style.cssText = "font-size:12px;color:#9ca3af;margin-top:4px;text-align:right;min-height:16px";
+  notesCard.appendChild(notesSaveStatus);
+
+  // Auto-guardado con debounce 1.2s
+  let notesTimer = null;
+  notesTextarea.addEventListener("input", () => {
+    notesSaveStatus.textContent = "Escribiendo…";
+    clearTimeout(notesTimer);
+    notesTimer = setTimeout(async () => {
+      try {
+        await apiRequest(`/admin/quotes/${quote.id}/notes`, {
+          method: "PUT",
+          body: JSON.stringify({ notes: notesTextarea.value }),
+        });
+        notesSaveStatus.textContent = "✓ Guardado automáticamente";
+        setTimeout(() => { notesSaveStatus.textContent = ""; }, 2500);
+      } catch {
+        notesSaveStatus.textContent = "Error al guardar";
+        notesSaveStatus.style.color = "#dc2626";
+      }
+    }, 1200);
+  });
+
+  // =====================
   // Bloque CLIENTE
   // =====================
   const customerCard = document.createElement("div");

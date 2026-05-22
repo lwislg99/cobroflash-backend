@@ -160,8 +160,9 @@ model Quote {
   rejectionReason String?
   pdfUrl          String?   @db.Text
   signatureUrl    String?   @db.Text
-  tiers           Json?                // Array de 3 opciones Good/Better/Best
-  selectedTierId  String?              // 'good' | 'better' | 'best' — elegido por el cliente
+  tiers           Json?
+  selectedTierId  String?
+  internalNotes   String?   @db.Text @map("internal_notes") // Notas privadas del profesional, nunca visibles al cliente
   evidence        Json?
   chargeId        Int?
   reminderSentAt  DateTime?
