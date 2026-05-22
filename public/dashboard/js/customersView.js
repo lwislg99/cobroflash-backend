@@ -221,7 +221,7 @@ function renderCustomersView(container) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
         td.colSpan = 7;
-        td.textContent = "No hay clientes todavía.";
+        td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-title">Sin clientes aún</div><div class="empty-state-desc">Crea el primero con el botón "+ Nuevo cliente".</div></div>';
         tr.appendChild(td);
         tbody.appendChild(tr);
         return;

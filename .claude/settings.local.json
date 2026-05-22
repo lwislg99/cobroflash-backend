@@ -27,7 +27,11 @@
       "Bash(git commit -m 'docs+feat\\(Sprint 5\\): doc master v2 + PWA instalable + top clientes/servicios *)",
       "Bash(git commit -m 'feat\\(5.4\\): módulo de gastos — CRUD, margen por trabajo, beneficio neto en Home *)",
       "Bash(git commit -m 'feat\\(5.3\\): notas internas por cotización — autoguardado, privadas, indicador en lista *)",
-      "Bash(git commit -m 'feat\\(UI polish\\): design system v2 — Inter, sidebar con SVG icons, design tokens *)"
+      "Bash(git commit -m 'feat\\(UI polish\\): design system v2 — Inter, sidebar con SVG icons, design tokens *)",
+      "Bash(curl -s -o /dev/null -w 'HTTP %{http_code} — size: %{size_download} bytes\\\\n' https://cobroflash-backend-production.up.railway.app/dashboard/)",
+      "Bash(curl -s https://cobroflash-backend-production.up.railway.app/dashboard/)",
+      "Bash(xargs grep -h \"className\\\\|innerHTML\\\\|querySelector\\\\|getElementById\")",
+      "Bash(git commit -m 'fix\\(UI polish\\): correcciones post-deploy — clases, empty states, planes, settings *)"
     ]
   }
 }

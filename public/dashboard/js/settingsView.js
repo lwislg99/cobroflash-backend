@@ -4,20 +4,17 @@ function renderSettingsView(container) {
     container.innerHTML = "";
   
     const card = document.createElement("div");
-    card.className = "card";
+    card.className = "customers-card";
     container.appendChild(card);
-  
+
     const title = document.createElement("h2");
     title.textContent = "Datos de la empresa";
-    title.style.marginTop = "0";
+    title.style.cssText = "margin:0 0 4px;font-size:17px;font-weight:700;color:var(--slate-900)";
     card.appendChild(title);
-  
+
     const subtitle = document.createElement("p");
-    subtitle.textContent =
-      "Estos datos se utilizarán en los presupuestos, facturas y comunicaciones con tus clientes.";
-    subtitle.style.marginTop = "0";
-    subtitle.style.fontSize = "14px";
-    subtitle.style.color = "#4b5563";
+    subtitle.textContent = "Se usan en presupuestos, facturas y comunicaciones con clientes.";
+    subtitle.style.cssText = "margin:0 0 20px;font-size:13px;color:var(--slate-400)";
     card.appendChild(subtitle);
   
     const alertBox = document.createElement("div");
@@ -32,7 +29,7 @@ function renderSettingsView(container) {
     }
   
     const form = document.createElement("form");
-    form.className = "settings-form";
+    form.style.cssText = "display:flex;flex-direction:column;gap:14px;max-width:560px";
     card.appendChild(form);
   
     function createField(labelText, name, type = "text", required = false) {
@@ -128,7 +125,7 @@ function renderSettingsView(container) {
     actions.className = "form-actions";
     const saveBtn = document.createElement("button");
     saveBtn.type = "submit";
-    saveBtn.className = "btn btn-primary";
+    saveBtn.className = "btn btn-primary btn-lg";
     saveBtn.textContent = "Guardar cambios";
   
     actions.appendChild(saveBtn);

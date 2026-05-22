@@ -918,6 +918,32 @@ img { max-width: 100%; display: block; }
   .sidebar-overlay.visible { display: block; }
 }
 
+/* ── Tables dentro de cards (sin .table-wrap explícito) ────── */
+.customers-card .table,
+.card .table {
+  margin: -20px;         /* contrarresta el padding del card */
+  width: calc(100% + 40px);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  overflow: hidden;
+}
+.customers-card .table:first-child,
+.card .table:first-child {
+  margin-top: -20px;
+  border-radius: var(--radius-lg);
+}
+/* Tablas standalone (sin card padre) */
+.table-standalone {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--slate-200);
+  background: #fff;
+}
+/* Overflow horizontal en tablas */
+.customers-card,
+.card {
+  overflow-x: auto;
+}
+
 /* ── Legacy compat (usado por JS todavía) ───────────────────── */
 .quotes-header { margin-bottom: 14px; }
 .quotes-desc { margin: 0 0 4px 0; font-size: 13.5px; color: var(--slate-500); }

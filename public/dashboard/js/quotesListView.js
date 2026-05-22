@@ -131,7 +131,8 @@ function renderQuotesListView(container) {
       const tr = document.createElement("tr");
       const td = document.createElement("td");
       td.colSpan = 8;
-      td.textContent = "No hay presupuestos todavía.";
+      const L = window.appLocale || {};
+      td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">Sin ' + (L.quotePlural||'presupuestos') + ' aún</div><div class="empty-state-desc">Crea tu primera cotización desde el botón "Nueva cotización rápida" en Inicio.</div></div>';
       tr.appendChild(td);
       tbody.appendChild(tr);
       return;
@@ -243,7 +244,7 @@ function renderQuotesListView(container) {
 
   // Botón crear presupuesto
   createBtn.addEventListener("click", () => {
-    const menuBtn = document.querySelector('.menu-item[data-view="quotes-new"]');
+    const menuBtn = document.querySelector('.nav-item[data-view="quotes-new"]');
     if (menuBtn) menuBtn.click();
   });
 }
