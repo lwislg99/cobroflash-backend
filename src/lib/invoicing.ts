@@ -55,6 +55,8 @@ export async function ensureInvoiceForCharge(
       const customer = await prisma.customer.findUnique({ where: { id: inv.customerId } });
       if (!merchant || !customer) throw new Error('missing_merchant_or_customer');
 
+      const invLines = inv.lines && Array.isArray(inv.lines) ? inv.lines as any[] : [];
+
       const pdf = await generateInvoicePdf({
         number: inv.number,
         merchant: {
@@ -63,12 +65,13 @@ export async function ensureInvoiceForCharge(
           taxId: merchant.taxId,
           address: merchant.address,
         },
-        customer: { name: customer.name },
+        customer: { name: customer.name, email: (customer as any).email, phone: (customer as any).phone },
         currency: inv.currency,
         total: inv.total.toString(),
         qrData,
         vfHash,
         createdAt: inv.createdAt,
+        lines: invLines,
       });
 
       updated = await prisma.invoice.update({
@@ -110,6 +113,15 @@ export async function ensureInvoiceForCharge(
 
   // 3) Nueva factura desde el charge
   const number = nextInvoiceNumber();
+
+  // Líneas: desde el quote si existe; si no, línea única del charge
+  const quoteLines = quote
+    ? await prisma.quote.findUnique({ where: { id: quote.id }, select: { lines: true } })
+    : null;
+  const invoiceLines: any[] = quoteLines && Array.isArray(quoteLines.lines) && (quoteLines.lines as any[]).length > 0
+    ? (quoteLines.lines as any[])
+    : [{ concept: ch.concept, qty: 1, price: Number(ch.amount), tax: 0 }];
+
   const inv = await prisma.invoice.create({
     data: {
       merchantId: ch.merchantId,
@@ -118,6 +130,7 @@ export async function ensureInvoiceForCharge(
       number,
       total: ch.amount.toString(),
       currency: ch.currency.toUpperCase(),
+      lines: invoiceLines,
       pdfUrl: `${BASE_URL}/invoices/${number}.pdf`,
       qrData: `INV:${number}|AMOUNT:${ch.amount.toString()}|CUR:${ch.currency}|REF:${ch.reference ?? ''}`,
     },

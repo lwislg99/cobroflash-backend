@@ -9,96 +9,237 @@ import { getLocale } from '../../../../core/i18n/locales';
 export async function generateInvoicePdf(params: {
   number: string;
   merchant: { name: string; legalName?: string | null; taxId?: string | null; address?: string | null };
-  customer: { name: string };
+  customer: { name: string; email?: string | null; phone?: string | null };
   currency: string;
   total: string;
   qrData: string;
-  vfHash?: string | null;   // si presente → sección VeriFactu en el PDF
+  vfHash?: string | null;
   createdAt?: Date | null;
+  lines?: Array<{ concept: string; qty: number; price: number; tax: number }> | null;
 }) {
   const fileName = `${params.number}.pdf`;
-  const outPath = path.join(invoicesDir, fileName);
+  const outPath  = path.join(invoicesDir, fileName);
+  const isVF     = !!params.vfHash;
+  const hasLines = Array.isArray(params.lines) && params.lines.length > 0;
 
-  const isVeriFactu = !!params.vfHash;
+  const qrBuf = await QRCode.toBuffer(params.qrData, { type: 'png', width: 200 });
 
-  const qrPngBuffer = await QRCode.toBuffer(params.qrData, { type: 'png', width: 256 });
-
-  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const doc    = new PDFDocument({ size: 'A4', margin: 50 });
   const stream = fs.createWriteStream(outPath);
   doc.pipe(stream);
 
-  const MARGIN = 50;
-  const PAGE_W = doc.page.width - MARGIN * 2;
+  const M   = 50;
+  const W   = doc.page.width - M * 2;   // 495
+  const PB  = doc.page.height - M;      // bottom boundary
 
-  // ── Cabecera ──────────────────────────────────────────────────────────
-  doc.fontSize(20).font('Helvetica-Bold').text('FACTURA', { align: 'right' });
-  doc.moveDown(0.3);
-  doc.fontSize(11).font('Helvetica').fillColor('#555')
-    .text(`Nº ${params.number}`, { align: 'right' });
-  if (params.createdAt) {
-    const d = params.createdAt;
-    const dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-    doc.text(`Fecha: ${dateStr}`, { align: 'right' });
+  function hLine(y?: number, color = '#e5e7eb') {
+    const yy = y ?? doc.y;
+    doc.moveTo(M, yy).lineTo(M + W, yy).strokeColor(color).lineWidth(0.5).stroke();
+    doc.strokeColor('#000').lineWidth(1);
   }
-  doc.fillColor('black').moveDown();
 
-  doc.moveTo(MARGIN, doc.y).lineTo(MARGIN + PAGE_W, doc.y).strokeColor('#e5e7eb').stroke();
-  doc.strokeColor('black').moveDown(0.5);
+  function fmt(v: number) {
+    return v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
 
-  // ── Emisor / Cliente ──────────────────────────────────────────────────
-  const emisorName = params.merchant.legalName || params.merchant.name;
-  doc.fontSize(11).font('Helvetica-Bold').text('Emisor');
-  doc.font('Helvetica').fontSize(10).text(emisorName);
-  if (params.merchant.taxId) doc.text(`NIF/CIF: ${params.merchant.taxId}`);
-  if (params.merchant.address) doc.text(params.merchant.address);
+  function dateStr(d: Date | null | undefined) {
+    if (!d) return '—';
+    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  }
+
+  // ── 1. CABECERA SUPERIOR ─────────────────────────────────────────────────
+  // Título "FACTURA" a la derecha, caja de referencia a la derecha
+  const headerY = doc.y;
+  doc.fontSize(22).font('Helvetica-Bold').fillColor('#0f172a')
+    .text('FACTURA', M, headerY, { width: W, align: 'right' });
+  doc.fontSize(10).font('Helvetica').fillColor('#64748b')
+    .text(`Nº ${params.number}`, { align: 'right' });
+  doc.text(`Fecha: ${dateStr(params.createdAt)}`, { align: 'right' });
+  doc.fillColor('#000').moveDown(0.5);
+
+  hLine();
+  doc.moveDown(0.6);
+
+  // ── 2. EMISOR / CLIENTE (dos columnas) ────────────────────────────────────
+  const colY   = doc.y;
+  const colW   = (W / 2) - 10;
+  const col2X  = M + colW + 20;
+
+  // Columna izquierda: emisor
+  const emisor = params.merchant.legalName || params.merchant.name;
+  doc.fontSize(8).font('Helvetica-Bold').fillColor('#64748b').text('EMISOR', M, colY);
+  doc.moveDown(0.2);
+  doc.fontSize(10).font('Helvetica-Bold').fillColor('#0f172a').text(emisor, { width: colW });
+  doc.font('Helvetica').fontSize(9).fillColor('#374151');
+  if (params.merchant.taxId)  doc.text(`NIF/CIF: ${params.merchant.taxId}`, { width: colW });
+  if (params.merchant.address) doc.text(params.merchant.address, { width: colW });
+
+  // Columna derecha: cliente (posicionado desde colY)
+  const clientY = colY;
+  doc.fontSize(8).font('Helvetica-Bold').fillColor('#64748b').text('CLIENTE', col2X, clientY, { width: colW });
+  const clientTextY = clientY + 16;
+  doc.fontSize(10).font('Helvetica-Bold').fillColor('#0f172a').text(params.customer.name, col2X, clientTextY, { width: colW });
+  doc.font('Helvetica').fontSize(9).fillColor('#374151');
+  let cy = clientTextY + 14;
+  if (params.customer.email) { doc.text(params.customer.email, col2X, cy, { width: colW }); cy += 13; }
+  if (params.customer.phone) { doc.text(params.customer.phone, col2X, cy, { width: colW }); }
+
+  // Avanzar cursor por debajo de ambas columnas
+  doc.y = Math.max(doc.y, cy + 16);
+  doc.fillColor('#000').moveDown(0.4);
+  hLine();
   doc.moveDown(0.5);
 
-  doc.font('Helvetica-Bold').fontSize(11).text('Cliente');
-  doc.font('Helvetica').fontSize(10).text(params.customer.name);
-  doc.moveDown();
+  // ── 3. TABLA DE LÍNEAS ────────────────────────────────────────────────────
+  if (hasLines) {
+    const lines = params.lines!;
 
-  doc.moveTo(MARGIN, doc.y).lineTo(MARGIN + PAGE_W, doc.y).strokeColor('#e5e7eb').stroke();
-  doc.strokeColor('black').moveDown(0.5);
+    // Anchos de columnas
+    const XC  = M;      const WC  = 210;  // concepto
+    const XQ  = XC+WC+4; const WQ = 40;  // cant
+    const XP  = XQ+WQ+4; const WP = 72;  // precio unit
+    const XIV = XP+WP+4; const WIV= 44;  // IVA%
+    const XT  = XIV+WIV+4; const WT = W - (XT - M); // total línea
 
-  // ── Total ─────────────────────────────────────────────────────────────
-  doc.fontSize(14).font('Helvetica-Bold')
-    .text(`Total: ${params.total} ${params.currency}`, { align: 'right' });
-  doc.moveDown(1.5);
+    // Cabecera tabla
+    doc.rect(M, doc.y, W, 16).fill('#f1f5f9');
+    const thY = doc.y + 4;
+    doc.fontSize(8).font('Helvetica-Bold').fillColor('#475569');
+    doc.text('CONCEPTO',    XC,  thY, { width: WC });
+    doc.text('CANT.',       XQ,  thY, { width: WQ,  align: 'right' });
+    doc.text('PRECIO UNIT', XP,  thY, { width: WP,  align: 'right' });
+    doc.text('IVA %',       XIV, thY, { width: WIV, align: 'right' });
+    doc.text('TOTAL',       XT,  thY, { width: WT,  align: 'right' });
+    doc.y += 16;
+    hLine(doc.y, '#cbd5e1');
+    doc.fillColor('#0f172a');
 
-  // ── Sección QR / VeriFactu ────────────────────────────────────────────
-  const qrY = doc.y;
-  const qrSize = 100;
+    // Filas
+    lines.forEach((l, i) => {
+      const qty    = Number(l.qty)   || 1;
+      const price  = Number(l.price) || 0;
+      const taxR   = Number(l.tax)   || 0;
+      const lineTotal = qty * price * (1 + taxR);
+      const bg = i % 2 === 0 ? '#fff' : '#f8fafc';
 
-  doc.image(qrPngBuffer, MARGIN, qrY, { width: qrSize });
+      // Calcular altura de fila
+      doc.font('Helvetica').fontSize(9);
+      const conceptH = doc.heightOfString(l.concept || '—', { width: WC });
+      const rowH = Math.max(20, conceptH + 8);
 
-  const textX = MARGIN + qrSize + 16;
-  const textW = PAGE_W - qrSize - 16;
+      // Salto de página si no cabe
+      if (doc.y + rowH > PB - 80) { doc.addPage(); hLine(); }
 
-  if (isVeriFactu) {
-    doc.fontSize(10).font('Helvetica-Bold').fillColor('#166534')
-      .text('Factura Verificable — VeriFactu', textX, qrY, { width: textW });
-    doc.font('Helvetica').fontSize(9).fillColor('#555')
-      .text('Escanea el QR para verificar esta factura en la sede electrónica de la AEAT.', textX, doc.y, { width: textW });
+      const rowY = doc.y;
+      doc.rect(M, rowY, W, rowH).fill(bg);
+      doc.fillColor('#1e293b');
+
+      doc.font('Helvetica').fontSize(9);
+      doc.text(l.concept || '—', XC, rowY + 4, { width: WC });
+      doc.text(fmt(qty),              XQ,  rowY + 4, { width: WQ,  align: 'right' });
+      doc.text(fmt(price),            XP,  rowY + 4, { width: WP,  align: 'right' });
+      doc.text(taxR > 0 ? `${(taxR*100).toFixed(0)}%` : '—', XIV, rowY + 4, { width: WIV, align: 'right' });
+      doc.font('Helvetica-Bold')
+        .text(fmt(lineTotal),         XT,  rowY + 4, { width: WT,  align: 'right' });
+      doc.font('Helvetica');
+
+      doc.y = rowY + rowH;
+      hLine(doc.y, '#e2e8f0');
+    });
+
     doc.moveDown(0.4);
-    const hashShort = params.vfHash!.slice(0, 32) + '…';
-    doc.fontSize(8).fillColor('#888')
-      .text(`Huella: ${hashShort}`, textX, doc.y, { width: textW });
-    doc.fillColor('black');
+
+    // ── 4. TOTALES ────────────────────────────────────────────────────────
+    // Agrupar IVA por tipo
+    type VatGroup = { base: number; vat: number };
+    const vatMap: Record<string, VatGroup> = {};
+    let subtotal = 0;
+    lines.forEach((l) => {
+      const qty  = Number(l.qty)   || 1;
+      const p    = Number(l.price) || 0;
+      const t    = Number(l.tax)   || 0;
+      const base = qty * p;
+      subtotal += base;
+      const key = `${(t*100).toFixed(0)}%`;
+      if (!vatMap[key]) vatMap[key] = { base: 0, vat: 0 };
+      vatMap[key].base += base;
+      vatMap[key].vat  += base * t;
+    });
+    const totalVat = Object.values(vatMap).reduce((a, b) => a + b.vat, 0);
+    const grandTotal = subtotal + totalVat;
+
+    const totalsX = M + W / 2;
+    const totalsW = W / 2;
+
+    doc.rect(totalsX, doc.y, totalsW, 1).fill('#e2e8f0');
+    doc.moveDown(0.3);
+
+    // Subtotal
+    const ty0 = doc.y;
+    doc.fontSize(9).font('Helvetica').fillColor('#374151')
+      .text('Base imponible:', totalsX, ty0, { width: totalsW * 0.6 })
+      .text(fmt(subtotal) + ' ' + params.currency, totalsX + totalsW * 0.6, ty0, { width: totalsW * 0.4, align: 'right' });
+    doc.moveDown(0.4);
+
+    // Cada tipo de IVA
+    Object.entries(vatMap).forEach(([rate, g]) => {
+      if (g.vat === 0) return;
+      const vy = doc.y;
+      doc.text(`IVA ${rate}:`, totalsX, vy, { width: totalsW * 0.6 })
+        .text(fmt(g.vat) + ' ' + params.currency, totalsX + totalsW * 0.6, vy, { width: totalsW * 0.4, align: 'right' });
+      doc.moveDown(0.4);
+    });
+
+    // Total final
+    doc.rect(totalsX, doc.y, totalsW, 1).fill('#0f172a');
+    doc.moveDown(0.3);
+    const tfY = doc.y;
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('#0f172a')
+      .text('TOTAL:', totalsX, tfY, { width: totalsW * 0.6 })
+      .text(fmt(grandTotal) + ' ' + params.currency, totalsX + totalsW * 0.6, tfY, { width: totalsW * 0.4, align: 'right' });
+    doc.fillColor('#000');
+    doc.moveDown(1.5);
+
   } else {
-    doc.fontSize(9).font('Helvetica').fillColor('#555')
-      .text('Escanea el QR para validar la factura.', textX, qrY + 10, { width: textW });
-    doc.fillColor('black');
+    // Fallback: sin líneas → solo el total
+    doc.fontSize(14).font('Helvetica-Bold')
+      .text(`Total: ${fmt(Number(params.total))} ${params.currency}`, { align: 'right' });
+    doc.moveDown(1.5);
   }
 
-  doc.y = Math.max(doc.y, qrY + qrSize + 8);
-  doc.moveDown(1);
+  // ── 5. VERIFACTU QR ────────────────────────────────────────────────────
+  if (doc.y + 120 > PB) doc.addPage();
 
-  // ── Footer ────────────────────────────────────────────────────────────
-  doc.moveTo(MARGIN, doc.y).lineTo(MARGIN + PAGE_W, doc.y).strokeColor('#e5e7eb').stroke();
-  doc.strokeColor('black').moveDown(0.5);
-  doc.fontSize(8).fillColor('#9ca3af')
+  const qrY   = doc.y;
+  const qrSz  = 90;
+
+  doc.image(qrBuf, M, qrY, { width: qrSz });
+
+  const txX = M + qrSz + 14;
+  const txW = W - qrSz - 14;
+
+  if (isVF) {
+    doc.fontSize(9).font('Helvetica-Bold').fillColor('#166534')
+      .text('Factura Verificable — VeriFactu', txX, qrY, { width: txW });
+    doc.font('Helvetica').fontSize(8).fillColor('#555')
+      .text('Escanea el QR para verificar en la sede electrónica de la AEAT (RD 1007/2023).', txX, doc.y, { width: txW });
+    const hashShort = params.vfHash!.slice(0, 32) + '…';
+    doc.fontSize(7).fillColor('#888')
+      .text(`Huella: ${hashShort}`, txX, doc.y + 2, { width: txW });
+  } else {
+    doc.fontSize(8).font('Helvetica').fillColor('#555')
+      .text('Escanea el QR para validar la factura.', txX, qrY + 6, { width: txW });
+  }
+
+  doc.y = Math.max(doc.y, qrY + qrSz + 8);
+  doc.fillColor('#000').moveDown(0.8);
+
+  // ── 6. FOOTER ────────────────────────────────────────────────────────────
+  hLine();
+  doc.moveDown(0.4);
+  doc.fontSize(7.5).fillColor('#9ca3af')
     .text('Factura generada automáticamente por PresuFácil.', { align: 'center' });
-  if (isVeriFactu) {
+  if (isVF) {
     doc.text('Sistema de facturación verificable conforme al RD 1007/2023 (VeriFactu).', { align: 'center' });
   }
 

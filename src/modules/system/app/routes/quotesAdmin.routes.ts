@@ -148,6 +148,12 @@ router.post('/:id/invoice', async (req, res) => {
     const padded = String(nextNumber).padStart(6, '0');
     const invoiceNumber = `${merchant.invoiceSeriesPrefix}${padded}`;
 
+    // Escalar las líneas de la cotización al porcentaje facturado (ej. 50% en FIFTY_FIFTY)
+    const quoteLines = Array.isArray(quote.lines) ? quote.lines as any[] : [];
+    const scaledLines = stage.percentage < 1
+      ? quoteLines.map((l: any) => ({ ...l, price: Number(l.price) * stage.percentage }))
+      : quoteLines;
+
     const [invoice] = await prisma.$transaction([
       prisma.invoice.create({
         data: {
@@ -157,6 +163,7 @@ router.post('/:id/invoice', async (req, res) => {
           number: invoiceNumber,
           total: invoiceAmount.toFixed(2),
           currency: quote.currency,
+          lines: scaledLines.length > 0 ? scaledLines : undefined,
           pdfUrl: 'PENDING_PDF',
           qrData: 'PENDING_QR',
           registerId: null,

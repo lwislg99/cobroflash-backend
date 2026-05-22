@@ -363,6 +363,10 @@ router.post('/:id/regenerate-pdf', async (req, res) => {
       }
     }
 
+    const invLines = invoice.lines && Array.isArray(invoice.lines)
+      ? invoice.lines as any[]
+      : [];
+
     const pdf = await generateInvoicePdf({
       number: invoice.number,
       merchant: {
@@ -371,12 +375,17 @@ router.post('/:id/regenerate-pdf', async (req, res) => {
         taxId: merchant.taxId,
         address: merchant.address,
       },
-      customer: { name: invoice.customer.name },
+      customer: {
+        name:  invoice.customer.name,
+        email: invoice.customer.email,
+        phone: invoice.customer.phone,
+      },
       currency: invoice.currency,
       total: invoice.total.toString(),
       qrData,
       vfHash,
       createdAt: invoice.createdAt,
+      lines: invLines,
     });
 
     await prisma.invoice.update({
