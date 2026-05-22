@@ -135,6 +135,10 @@ async function initApp() {
         if (state.quoteId != null) renderQuoteDetailView(viewContainer, state.quoteId);
         else viewContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">Sin cotización seleccionada</div></div>`;
         break;
+      case 'reports':
+        viewTitle.textContent = 'Informes';
+        if (typeof renderReportsView === 'function') renderReportsView(viewContainer);
+        break;
       case 'invoices':
         viewTitle.textContent = 'Facturas';
         renderInvoicesView(viewContainer);

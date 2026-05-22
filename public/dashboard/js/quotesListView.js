@@ -40,7 +40,15 @@ function renderQuotesListView(container) {
   createBtn.className = "btn btn-primary";
   createBtn.textContent = "+ Crear presupuesto";
 
+  const exportQBtn = document.createElement('a');
+  exportQBtn.href = '/admin/exports/quotes.csv';
+  exportQBtn.className = 'btn-secondary btn-sm';
+  exportQBtn.style.textDecoration = 'none';
+  exportQBtn.innerHTML = '⬇ CSV';
+  exportQBtn.title = 'Exportar presupuestos a CSV';
+
   right.appendChild(searchInput);
+  right.appendChild(exportQBtn);
   right.appendChild(createBtn);
   header.appendChild(right);
 

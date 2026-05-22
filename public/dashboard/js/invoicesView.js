@@ -64,6 +64,15 @@ async function fetchInvoices(options = {}) {
     inputSearch.placeholder = 'Buscar por nº, cliente…';
     inputSearch.style.minWidth = '160px';
     right.appendChild(inputSearch);
+
+    const exportBtn = document.createElement('a');
+    exportBtn.className = 'btn-secondary btn-sm';
+    exportBtn.style.textDecoration = 'none';
+    exportBtn.innerHTML = '⬇ CSV';
+    exportBtn.title = 'Exportar facturas filtradas a CSV';
+    exportBtn.href = '/admin/exports/invoices.csv';
+    right.appendChild(exportBtn);
+
     header.appendChild(right);
 
     const statusBox = document.createElement('div');
@@ -180,6 +189,9 @@ async function fetchInvoices(options = {}) {
     // Listeners de filtros
     selectStatus.addEventListener('change', () => {
       currentStatus = selectStatus.value;
+      exportBtn.href = currentStatus !== 'all'
+        ? `/admin/exports/invoices.csv?status=${currentStatus}`
+        : '/admin/exports/invoices.csv';
       reload();
     });
   

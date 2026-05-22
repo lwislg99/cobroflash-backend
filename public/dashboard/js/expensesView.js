@@ -33,6 +33,7 @@ async function renderExpensesView(container) {
           ${Object.entries(CATEGORY_LABELS).map(([v,c]) => `<option value="${v}">${c.label}</option>`).join('')}
         </select>
         <button class="btn btn-primary" id="exp-new-btn" style="margin-left:auto">+ Nuevo gasto</button>
+        <a id="exp-export-btn" href="/admin/exports/expenses.csv" class="btn-secondary btn-sm" style="text-decoration:none" title="Exportar gastos filtrados a CSV">⬇ CSV</a>
       </div>
 
       <!-- Lista -->
@@ -41,8 +42,26 @@ async function renderExpensesView(container) {
   `;
 
   document.getElementById('exp-new-btn').addEventListener('click', () => openExpenseModal(null));
-  document.getElementById('exp-filter-month').addEventListener('change', loadExpenses);
-  document.getElementById('exp-filter-cat').addEventListener('change', loadExpenses);
+
+  function updateExportLink() {
+    const monthSel = document.getElementById('exp-filter-month');
+    const catSel   = document.getElementById('exp-filter-cat');
+    const expBtn   = document.getElementById('exp-export-btn');
+    if (!monthSel || !expBtn) return;
+    const [y, m] = (monthSel.value || '').split('-');
+    const params = new URLSearchParams();
+    if (y && m) {
+      params.set('from', `${y}-${m}-01`);
+      const lastDay = new Date(Number(y), Number(m), 0).getDate();
+      params.set('to', `${y}-${m}-${lastDay}`);
+    }
+    if (catSel && catSel.value) params.set('category', catSel.value);
+    expBtn.href = `/admin/exports/expenses.csv?${params.toString()}`;
+  }
+
+  document.getElementById('exp-filter-month').addEventListener('change', () => { updateExportLink(); loadExpenses(); });
+  document.getElementById('exp-filter-cat').addEventListener('change',   () => { updateExportLink(); loadExpenses(); });
+  updateExportLink();
 
   await Promise.all([loadSummary(), loadExpenses()]);
 }
