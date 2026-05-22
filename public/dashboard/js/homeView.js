@@ -16,14 +16,14 @@ async function renderHomeView(container) {
         <div style="color:#9ca3af;font-size:13px">Cargando…</div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px" id="top-grids">
-        <div>
-          <div style="font-size:13px;font-weight:600;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">Top clientes</div>
-          <div id="top-customers"><div style="color:#9ca3af;font-size:13px">Cargando…</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px" id="top-grids">
+        <div class="top-widget-card">
+          <div class="top-widget-title">Top clientes</div>
+          <div id="top-customers"><div style="color:var(--slate-300);font-size:13px">Sin datos aún</div></div>
         </div>
-        <div>
-          <div style="font-size:13px;font-weight:600;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">Top servicios</div>
-          <div id="top-services"><div style="color:#9ca3af;font-size:13px">Cargando…</div></div>
+        <div class="top-widget-card">
+          <div class="top-widget-title">Top servicios</div>
+          <div id="top-services"><div style="color:var(--slate-300);font-size:13px">Sin datos aún</div></div>
         </div>
       </div>
     </div>
@@ -108,31 +108,31 @@ function renderActivity(items) {
 function renderTopCustomers(items) {
   const el = document.getElementById("top-customers");
   if (!el) return;
-  if (!items.length) { el.innerHTML = `<div style="color:#9ca3af;font-size:13px">Sin datos aún</div>`; return; }
+  if (!items.length) { el.innerHTML = `<div class="empty-state" style="padding:20px"><div class="empty-state-desc">Sin facturas cobradas aún</div></div>`; return; }
   el.innerHTML = items.map((c, i) => `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:13px">
+    <div class="top-row">
       <div>
-        <span style="color:#9ca3af;font-weight:600;margin-right:6px">${i+1}.</span>
-        <span style="font-weight:600">${esc(c.name)}</span>
-        <span style="color:#9ca3af;font-size:11px;margin-left:4px">${c.invoices} factura${c.invoices!==1?'s':''}</span>
+        <span style="color:var(--slate-300);font-weight:700;font-size:12px;margin-right:6px">${i+1}</span>
+        <span style="font-weight:600;color:var(--slate-800)">${esc(c.name)}</span>
+        <span style="color:var(--slate-400);font-size:11px;margin-left:5px">${c.invoices}×</span>
       </div>
-      <span style="font-weight:700;color:#111827">${fmtMoney(c.total)}</span>
+      <span style="font-weight:700;color:var(--slate-900)">${fmtMoney(c.total)}</span>
     </div>`).join('');
 }
 
 function renderTopServices(items) {
   const el = document.getElementById("top-services");
   if (!el) return;
-  if (!items.length) { el.innerHTML = `<div style="color:#9ca3af;font-size:13px">Sin datos aún</div>`; return; }
+  if (!items.length) { el.innerHTML = `<div class="empty-state" style="padding:20px"><div class="empty-state-desc">Sin cotizaciones aceptadas aún</div></div>`; return; }
   const max = items[0]?.count || 1;
-  el.innerHTML = items.map((s, i) => `
-    <div style="padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:13px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-        <span style="font-weight:600">${esc(s.name)}</span>
-        <span style="color:#6b7280">${s.count}×</span>
+  el.innerHTML = items.map((s) => `
+    <div class="top-row" style="flex-direction:column;align-items:stretch;gap:5px">
+      <div style="display:flex;justify-content:space-between">
+        <span style="font-weight:600;color:var(--slate-800);font-size:13px">${esc(s.name)}</span>
+        <span style="color:var(--slate-400);font-size:12px">${s.count}×</span>
       </div>
-      <div style="background:#f3f4f6;border-radius:999px;height:4px;overflow:hidden">
-        <div style="background:#22c55e;height:100%;width:${Math.round(s.count/max*100)}%;border-radius:999px"></div>
+      <div style="background:var(--slate-100);border-radius:var(--radius-full);height:4px;overflow:hidden">
+        <div style="background:var(--green-500);height:100%;width:${Math.round(s.count/max*100)}%;border-radius:var(--radius-full);transition:width .4s"></div>
       </div>
     </div>`).join('');
 }
