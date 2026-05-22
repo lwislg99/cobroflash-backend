@@ -73,7 +73,8 @@ function renderSettingsView(container) {
       true
     );
     const fLogoUrl = createField("Logo (URL opcional)", "logoUrl", "text", false);
-  
+    const fGoogleReviewUrl = createField("URL de reseñas en Google (opcional)", "googleReviewUrl", "text", false);
+
     form.appendChild(fName.wrapper);
     form.appendChild(fLegalName.wrapper);
     form.appendChild(fTaxId.wrapper);
@@ -82,6 +83,19 @@ function renderSettingsView(container) {
     form.appendChild(fDefaultCurrency.wrapper);
     form.appendChild(fInvoiceSeriesPrefix.wrapper);
     form.appendChild(fLogoUrl.wrapper);
+
+    // Separador visual
+    const sep = document.createElement("div");
+    sep.style.cssText = "border-top:1px solid #e5e7eb;margin:12px 0 4px;padding-top:12px";
+    sep.innerHTML = '<p style="font-size:12px;color:#6b7280;margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Automatizaciones</p>';
+    form.appendChild(sep);
+
+    fGoogleReviewUrl.input.placeholder = "https://g.page/r/tu-negocio/review";
+    fGoogleReviewUrl.wrapper.querySelector("label").insertAdjacentHTML(
+      "afterend",
+      '<p style="font-size:12px;color:#9ca3af;margin:2px 0 4px">Al recibir un pago, se enviará automáticamente un WhatsApp al cliente pidiéndole una reseña.</p>'
+    );
+    form.appendChild(fGoogleReviewUrl.wrapper);
   
     const actions = document.createElement("div");
     actions.className = "form-actions";
@@ -107,6 +121,7 @@ function renderSettingsView(container) {
         fDefaultCurrency.input.value = merchant.defaultCurrency || "EUR";
         fInvoiceSeriesPrefix.input.value = merchant.invoiceSeriesPrefix || "";
         fLogoUrl.input.value = merchant.logoUrl || "";
+        fGoogleReviewUrl.input.value = merchant.googleReviewUrl || "";
   
         setAlert(null, "");
       } catch (err) {
@@ -129,6 +144,7 @@ function renderSettingsView(container) {
         defaultCurrency: fDefaultCurrency.input.value.trim() || "EUR",
         invoiceSeriesPrefix: fInvoiceSeriesPrefix.input.value.trim(),
         logoUrl: fLogoUrl.input.value.trim() || null,
+        googleReviewUrl: fGoogleReviewUrl.input.value.trim() || null,
       };
   
       if (!payload.name || !payload.legalName || !payload.taxId || !payload.address || !payload.whatsappPhone) {

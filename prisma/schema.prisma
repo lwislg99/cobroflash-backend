@@ -21,6 +21,7 @@ model Merchant {
   nextInvoiceNumber    Int     @default(1)      @map("next_invoice_number")
   logoUrl              String? @map("logo_url")
   whatsappPhone        String? @map("whatsapp_phone")
+  googleReviewUrl      String? @map("google_review_url")
 
   // Auth / plan
   onboardingCompleted  Boolean   @default(false)  @map("onboarding_completed")

@@ -143,11 +143,26 @@ router.post('/', async (req, res) => {
       
       
 
-      // Notificar al profesional por WhatsApp (fire-and-forget)
+      // Cargar merchant para notificaciones
       const merchant = await prisma.merchant.findUnique({
         where: { id: updated.merchantId },
-        select: { whatsappPhone: true },
+        select: { whatsappPhone: true, googleReviewUrl: true, name: true },
       });
+
+      // Solicitud de reseña Google al cliente (fire-and-forget)
+      if (merchant?.googleReviewUrl && updated.customer?.phone) {
+        const reviewPhone = normalizePhone(updated.customer.phone);
+        if (reviewPhone) {
+          const customerName = updated.customer.name || 'Cliente';
+          const merchantName = merchant.name || 'tu proveedor';
+          sendWhatsAppText({
+            to: reviewPhone,
+            text: `¡Hola ${customerName}! Gracias por confiar en ${merchantName} 🙏\n\nSi estás satisfecho con el servicio, nos ayudaría mucho que dejaras una reseña en Google:\n${merchant.googleReviewUrl}`,
+          }).catch((err) => console.error('[review] Error enviando reseña:', err?.message));
+        }
+      }
+
+      // Notificar al profesional por WhatsApp (fire-and-forget)
       const merchantPhone = normalizePhone(merchant?.whatsappPhone);
       if (merchantPhone) {
         const customerName = updated.customer?.name || 'Un cliente';

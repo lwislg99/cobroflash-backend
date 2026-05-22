@@ -109,6 +109,7 @@ export const merchantProfileUpdateSchema = z.object({
   invoiceSeriesPrefix: z.string().min(1).max(10).optional(),
   logoUrl: z.string().url().nullable().optional(),
   whatsappPhone: z.string().min(6).max(20).optional(),
+  googleReviewUrl: z.string().url().nullable().optional(),
 });
 
 export type MerchantProfileUpdateInput = z.infer<

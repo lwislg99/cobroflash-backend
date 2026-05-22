@@ -13,6 +13,7 @@ export type MerchantProfileInput = {
   invoiceSeriesPrefix?: string;
   logoUrl?: string | null;
   whatsappPhone?: string | null;
+  googleReviewUrl?: string | null;
 };
 
 // 1) Obtener el perfil del merchant (para pintar el formulario del dashboard)
@@ -29,6 +30,7 @@ export async function getMerchantProfile(merchantId: number = DEFAULT_MERCHANT_I
       invoiceSeriesPrefix: true,
       logoUrl: true,
       whatsappPhone: true,
+      googleReviewUrl: true,
     },
   });
 
