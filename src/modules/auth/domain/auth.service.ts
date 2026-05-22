@@ -23,13 +23,17 @@ export async function requestMagicLink(email: string): Promise<void> {
 
   const link = `${config.PUBLIC_BASE_URL}/auth/verify?token=${token}`;
 
-  const mailer = createMailer();
-  await mailer.sendMail({
-    from: config.EMAIL_FROM,
-    to: email,
-    subject: 'Tu enlace de acceso a PresuFácil',
-    text: `Hola ${merchant.name},\n\nHaz clic en este enlace para entrar (válido 15 min):\n\n${link}\n\nSi no solicitaste este acceso, ignora este mensaje.`,
-    html: `<p>Hola <strong>${merchant.name}</strong>,</p>
+  // Siempre logueamos el link para poder verificar en logs aunque el email falle
+  console.log(`[magic-link] to=${email} link=${link}`);
+
+  try {
+    const mailer = createMailer();
+    await mailer.sendMail({
+      from: config.EMAIL_FROM,
+      to: email,
+      subject: 'Tu enlace de acceso a PresuFácil',
+      text: `Hola ${merchant.name},\n\nHaz clic en este enlace para entrar (válido 15 min):\n\n${link}\n\nSi no solicitaste este acceso, ignora este mensaje.`,
+      html: `<p>Hola <strong>${merchant.name}</strong>,</p>
 <p>Haz clic en el botón para acceder a tu cuenta de PresuFácil:</p>
 <p style="margin:24px 0">
   <a href="${link}" style="background:#22c55e;color:#052e16;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">
@@ -37,7 +41,12 @@ export async function requestMagicLink(email: string): Promise<void> {
   </a>
 </p>
 <p style="color:#6b7280;font-size:13px">Este enlace es de un solo uso y caduca en 15 minutos.<br/>Si no lo solicitaste, puedes ignorar este correo.</p>`,
-  });
+    });
+    console.log(`[magic-link] email enviado OK a ${email}`);
+  } catch (emailErr: any) {
+    // El email falla pero el token ya está en la DB — el admin puede usar el log
+    console.error(`[magic-link] ERROR enviando email a ${email}:`, emailErr?.message || emailErr);
+  }
 }
 
 export async function verifyMagicLink(token: string): Promise<string | null> {
