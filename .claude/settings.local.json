@@ -4,7 +4,13 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
-      "Bash(git commit -m 'fix: usar API HTTP de Resend para magic links \\(evita timeout SMTP\\) *)"
+      "Bash(git commit -m 'fix: usar API HTTP de Resend para magic links \\(evita timeout SMTP\\) *)",
+      "Bash(git commit -m 'ux: login con countdown reenvío 60s, botón cambiar email, register redirige a login *)",
+      "Bash(npm install *)",
+      "Bash(npx prisma *)",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(npm run *)",
+      "Bash(git commit -m 'feat\\(3.3\\): recordatorio automático 24h para cotizaciones sin respuesta *)"
     ]
   }
 }

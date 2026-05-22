@@ -155,9 +155,10 @@ model Quote {
   decisionChannel String?
   decisionComment String?
   rejectionReason String?
-  pdfUrl       String?  @db.Text
-  evidence     Json?
-  chargeId     Int?
+  pdfUrl          String?   @db.Text
+  evidence        Json?
+  chargeId        Int?
+  reminderSentAt  DateTime?
 
   merchant Merchant @relation(fields: [merchantId], references: [id])
   customer Customer @relation(fields: [customerId], references: [id])
