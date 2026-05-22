@@ -25,14 +25,26 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   }
 
   req.merchantId = session.merchantId;
+  // El propietario (teamMemberId null) siempre es admin
+  req.teamMemberId = session.teamMemberId ?? null;
+  req.userRole = session.teamMember ? (session.teamMember.role as 'admin' | 'tecnico') : 'admin';
   next();
+}
+
+export function requireRole(role: 'admin' | 'tecnico') {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (req.userRole !== role) {
+      return res.status(403).json({ error: 'forbidden', required_role: role });
+    }
+    next();
+  };
 }
 
 // Bloqueo suave tras fin de trial — solo para operaciones de escritura
 export async function requireActivePlan(req: Request, res: Response, next: NextFunction) {
   const cookies = parseCookies(req.headers.cookie);
   const token = cookies['pf_session'];
-  if (!token) return next(); // requireAuth ya habrá bloqueado antes
+  if (!token) return next();
 
   const session = await getSession(token);
   if (!session) return next();
@@ -48,7 +60,7 @@ export async function requireActivePlan(req: Request, res: Response, next: NextF
 
 export function setCookie(res: Response, token: string) {
   const isProd = process.env.NODE_ENV === 'production';
-  const maxAge = 30 * 24 * 60 * 60; // 30 días en segundos
+  const maxAge = 30 * 24 * 60 * 60;
   res.setHeader(
     'Set-Cookie',
     `pf_session=${token}; HttpOnly; Path=/; Max-Age=${maxAge}; SameSite=Lax${isProd ? '; Secure' : ''}`

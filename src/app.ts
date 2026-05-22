@@ -3,7 +3,7 @@ import path from 'path';
 
 import { invoicesDir, outboxDir } from './core/storage/dirs';
 import { jsonError } from './core/http/jsonError';
-import { requireAuth, requireActivePlan } from './core/http/authMiddleware';
+import { requireAuth, requireActivePlan, requireRole } from './core/http/authMiddleware';
 
 // Routers
 import healthRouter from './modules/system/app/routes/health.routes';
@@ -32,6 +32,7 @@ import metricsRouter from './modules/metrics/app/routes/metrics.routes';
 import authRouter from './modules/auth/app/routes/auth.routes';
 import subscriptionsRouter from './modules/billing/app/routes/subscriptions.routes';
 import expensesRouter from './modules/expenses/app/routes/expenses.routes';
+import teamRouter from './modules/team/app/routes/team.routes';
 
 import { merchantProfileUpdateSchema } from './core/validation/schemas';
 import { getMerchantProfile, updateMerchantProfile } from './modules/system/merchantAdmin';
@@ -94,13 +95,20 @@ app.get('/admin/me', async (req, res) => {
     select: { country: true },
   });
 
+  const userRole = session.teamMember ? session.teamMember.role : 'admin';
+  const userName = session.teamMember ? session.teamMember.name : session.merchant.name;
+
   return res.json({
     merchantId: session.merchantId,
-    name: session.merchant.name,
+    name: userName,
+    merchantName: session.merchant.name,
     plan: session.merchant.plan,
     planExpiresAt: session.merchant.planExpiresAt,
     onboardingCompleted: session.merchant.onboardingCompleted,
     locale: getLocaleJson(merchantFull?.country),
+    userRole,
+    teamMemberId: session.teamMemberId ?? null,
+    isOwner: !session.teamMemberId,
   });
 });
 
@@ -110,10 +118,13 @@ app.use('/admin/invoices',   invoicesAdminRouter);
 app.use('/admin/products',   productsAdminRouter);
 app.use('/admin/providers',  providersAdminRouter);
 app.use('/admin/metrics',    metricsRouter);
-app.use('/admin/billing',    requireActivePlan, subscriptionsRouter);
 app.use('/admin/expenses',   expensesRouter);
 
-// Admin – Perfil de merchant
+// Rutas solo para admin
+app.use('/admin/billing',    requireActivePlan, requireRole('admin'), subscriptionsRouter);
+app.use('/admin/team',       requireRole('admin'), teamRouter);
+
+// Admin – Perfil de merchant (lectura libre, escritura solo admin)
 app.get('/admin/merchant', async (req, res, next) => {
   try {
     const merchant = await getMerchantProfile(req.merchantId);
@@ -122,7 +133,7 @@ app.get('/admin/merchant', async (req, res, next) => {
   } catch (err) { return next(err); }
 });
 
-app.put('/admin/merchant', async (req, res, next) => {
+app.put('/admin/merchant', requireRole('admin'), async (req, res, next) => {
   try {
     const parsed = merchantProfileUpdateSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -133,8 +144,8 @@ app.put('/admin/merchant', async (req, res, next) => {
   } catch (err) { return next(err); }
 });
 
-// Onboarding completo
-app.post('/admin/onboarding/complete', async (req, res) => {
+// Onboarding completo — solo propietario (admin)
+app.post('/admin/onboarding/complete', requireRole('admin'), async (req, res) => {
   await prisma.merchant.update({
     where: { id: req.merchantId },
     data: { onboardingCompleted: true },

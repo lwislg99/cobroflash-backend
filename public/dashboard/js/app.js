@@ -7,14 +7,28 @@ async function initApp() {
   catch { window.location.href = '/login.html'; return; }
 
   window.appMerchantId = me.merchantId;
+  window.appUserRole   = me.userRole || 'admin';
   window.appLocale = me.locale || {
     quote: 'Presupuesto', quotePlural: 'Presupuestos', quoteNew: 'Nuevo presupuesto',
     quoteVerb: 'presupuesto', currency: 'EUR', defaultVat: 0.21, vatName: 'IVA',
   };
 
+  // Ocultar elementos de navegación para técnicos
+  if (window.appUserRole !== 'admin') {
+    ['nav-plans', 'nav-team'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+  }
+
   // 2. Inyectar usuario en sidebar
   const initials = (me.name || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   const planLabels = { trial: 'Trial gratuito', basic: 'Plan Básico', pro: 'Plan Pro', empresa: 'Plan Empresa' };
+  const roleLabels = { admin: 'Admin', tecnico: 'Técnico' };
+
+  const sidebarSubtitle = me.isOwner
+    ? (planLabels[me.plan] || me.plan)
+    : `${roleLabels[me.userRole] || me.userRole} · ${me.merchantName || 'Mi negocio'}`;
 
   const sidebarUser = document.getElementById('sidebar-user');
   if (sidebarUser) {
@@ -23,7 +37,7 @@ async function initApp() {
         <div class="sidebar-user-avatar">${initials}</div>
         <div>
           <div class="sidebar-user-name">${me.name || 'Mi negocio'}</div>
-          <div class="sidebar-user-plan">${planLabels[me.plan] || me.plan}</div>
+          <div class="sidebar-user-plan">${sidebarSubtitle}</div>
         </div>
         <button class="sidebar-user-logout" id="btn-logout" title="Cerrar sesión">Salir</button>
       </div>
@@ -34,8 +48,12 @@ async function initApp() {
   // 3. Inyectar merchant en topbar
   const topbarRight = document.getElementById('topbar-right');
   if (topbarRight) {
+    const roleChip = !me.isOwner
+      ? `<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--slate-100);color:var(--slate-500);margin-right:8px">${roleLabels[me.userRole] || me.userRole}</span>`
+      : '';
     topbarRight.innerHTML = `
       <div class="topbar-merchant">
+        ${roleChip}
         <div class="topbar-merchant-avatar">${initials}</div>
         <span class="topbar-merchant-name">${me.name || 'Mi negocio'}</span>
       </div>
@@ -141,6 +159,16 @@ async function initApp() {
       case 'plans':
         viewTitle.textContent = 'Planes';
         renderPlansView(viewContainer);
+        break;
+      case 'team':
+        if (window.appUserRole !== 'admin') {
+          viewTitle.textContent = 'Inicio';
+          renderHomeView(viewContainer);
+          view = 'home';
+        } else {
+          viewTitle.textContent = 'Equipo';
+          renderTeamView(viewContainer);
+        }
         break;
       case 'settings':
         viewTitle.textContent = 'Configuración';

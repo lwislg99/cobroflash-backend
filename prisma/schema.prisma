@@ -44,6 +44,7 @@ model Merchant {
   Customer    Customer[]
   AuthSession AuthSession[]
   Expense     Expense[]
+  TeamMember  TeamMember[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt      @map("updated_at")
@@ -53,18 +54,21 @@ model Merchant {
 }
 
 model AuthSession {
-  id         Int       @id @default(autoincrement())
-  merchantId Int       @map("merchant_id")
-  token      String    @unique
-  type       String    @default("session") // magic_link | session
-  expiresAt  DateTime  @map("expires_at")
-  usedAt     DateTime? @map("used_at")
-  createdAt  DateTime  @default(now()) @map("created_at")
+  id           Int       @id @default(autoincrement())
+  merchantId   Int       @map("merchant_id")
+  teamMemberId Int?      @map("team_member_id") // null = propietario (admin implícito)
+  token        String    @unique
+  type         String    @default("session")    // magic_link | session
+  expiresAt    DateTime  @map("expires_at")
+  usedAt       DateTime? @map("used_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
 
-  merchant Merchant @relation(fields: [merchantId], references: [id])
+  merchant   Merchant    @relation(fields: [merchantId], references: [id])
+  teamMember TeamMember? @relation(fields: [teamMemberId], references: [id])
 
   @@index([token])
   @@index([merchantId])
+  @@index([teamMemberId])
   @@map("auth_sessions")
 }
 
@@ -279,4 +283,23 @@ model Provider {
 
   @@index([merchantId])
   @@map("providers")
+}
+
+model TeamMember {
+  id         Int    @id @default(autoincrement())
+  merchantId Int    @map("merchant_id")
+
+  name   String
+  email  String  @unique
+  role   String  @default("tecnico") // admin | tecnico
+  status String  @default("invited") // invited | active | suspended
+
+  merchant     Merchant      @relation(fields: [merchantId], references: [id])
+  authSessions AuthSession[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
+
+  @@index([merchantId])
+  @@map("team_members")
 }
