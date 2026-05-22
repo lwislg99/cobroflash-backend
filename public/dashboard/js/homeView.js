@@ -2,7 +2,7 @@
 
 async function renderHomeView(container) {
   container.innerHTML = `
-    <div style="max-width:700px">
+    <div>
       <div class="kpi-grid" id="kpi-grid">
         <div class="kpi-card"><div class="kpi-label">Cargando…</div></div>
         <div class="kpi-card"><div class="kpi-label">Cargando…</div></div>
@@ -16,7 +16,7 @@ async function renderHomeView(container) {
         <div style="color:#9ca3af;font-size:13px">Cargando…</div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px" id="top-grids">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:24px" id="top-grids">
         <div class="top-widget-card">
           <div class="top-widget-title">Top clientes</div>
           <div id="top-customers"><div style="color:var(--slate-300);font-size:13px">Sin datos aún</div></div>

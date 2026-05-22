@@ -31,7 +31,8 @@
       "Bash(curl -s -o /dev/null -w 'HTTP %{http_code} — size: %{size_download} bytes\\\\n' https://cobroflash-backend-production.up.railway.app/dashboard/)",
       "Bash(curl -s https://cobroflash-backend-production.up.railway.app/dashboard/)",
       "Bash(xargs grep -h \"className\\\\|innerHTML\\\\|querySelector\\\\|getElementById\")",
-      "Bash(git commit -m 'fix\\(UI polish\\): correcciones post-deploy — clases, empty states, planes, settings *)"
+      "Bash(git commit -m 'fix\\(UI polish\\): correcciones post-deploy — clases, empty states, planes, settings *)",
+      "Bash(git commit -m 'fix\\(UI\\): layout desktop + scroll móvil en todas las vistas *)"
     ]
   }
 }

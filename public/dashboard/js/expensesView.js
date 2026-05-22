@@ -15,7 +15,7 @@ function catPill(category) {
 
 async function renderExpensesView(container) {
   container.innerHTML = `
-    <div style="max-width:800px">
+    <div>
       <!-- Resumen mensual -->
       <div id="exp-summary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
         <div class="kpi-card"><div class="kpi-label">Cargando…</div></div>
@@ -109,33 +109,33 @@ async function loadExpenses() {
     }
 
     el.innerHTML = `
-      <div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)">
-        <table style="width:100%;border-collapse:collapse;font-size:14px">
-          <thead style="background:#f9fafb">
+      <div class="table-scroll" style="margin-top:4px">
+        <table class="table" style="min-width:600px">
+          <thead>
             <tr>
-              <th style="padding:10px 12px;text-align:left;color:#6b7280;font-size:12px;font-weight:600">CONCEPTO</th>
-              <th style="padding:10px 12px;text-align:left;color:#6b7280;font-size:12px;font-weight:600">CATEGORÍA</th>
-              <th style="padding:10px 12px;text-align:left;color:#6b7280;font-size:12px;font-weight:600">TRABAJO</th>
-              <th style="padding:10px 12px;text-align:right;color:#6b7280;font-size:12px;font-weight:600">IMPORTE</th>
-              <th style="padding:10px 12px;text-align:center;color:#6b7280;font-size:12px;font-weight:600"></th>
+              <th>Concepto</th>
+              <th>Categoría</th>
+              <th>Trabajo</th>
+              <th style="text-align:right">Importe</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             ${items.map((e) => `
-              <tr style="border-top:1px solid #f3f4f6;cursor:pointer" onclick="openExpenseModal(${JSON.stringify(e).replace(/"/g,'&quot;')})">
-                <td style="padding:10px 12px">
-                  <div style="font-weight:600">${escHtml(e.concept)}</div>
-                  ${e.notes ? `<div style="font-size:12px;color:#9ca3af">${escHtml(e.notes)}</div>` : ''}
-                  <div style="font-size:11px;color:#9ca3af">${new Date(e.date).toLocaleDateString('es',{day:'2-digit',month:'short'})}</div>
+              <tr style="cursor:pointer" onclick="openExpenseModal(${JSON.stringify(e).replace(/"/g,'&quot;')})">
+                <td>
+                  <div style="font-weight:600;color:var(--slate-800)">${escHtml(e.concept)}</div>
+                  ${e.notes ? `<div style="font-size:12px;color:var(--slate-400)">${escHtml(e.notes)}</div>` : ''}
+                  <div style="font-size:11px;color:var(--slate-400)">${new Date(e.date).toLocaleDateString('es',{day:'2-digit',month:'short'})}</div>
                 </td>
-                <td style="padding:10px 12px">${catPill(e.category)}</td>
-                <td style="padding:10px 12px;font-size:13px;color:#6b7280">
-                  ${e.quote ? `<a href="#" onclick="event.stopPropagation();renderAppView('quotes-detail',{quoteId:${e.quote.id}})" style="color:#2563eb">Cotización #${e.quote.id}</a>` : '—'}
+                <td>${catPill(e.category)}</td>
+                <td style="font-size:13px;color:var(--slate-500)">
+                  ${e.quote ? `<a href="#" onclick="event.stopPropagation();renderAppView('quotes-detail',{quoteId:${e.quote.id}})" style="color:var(--blue-600)">Cotización #${e.quote.id}</a>` : '—'}
                   ${e.provider ? `<div style="font-size:12px">${escHtml(e.provider.name)}</div>` : ''}
                 </td>
-                <td style="padding:10px 12px;text-align:right;font-weight:700;font-size:15px">${fmtEuro(Number(e.amount))}</td>
-                <td style="padding:10px 12px;text-align:center">
-                  <button onclick="event.stopPropagation();deleteExpenseItem(${e.id})" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px" title="Eliminar">🗑</button>
+                <td style="text-align:right;font-weight:700;font-size:15px">${fmtEuro(Number(e.amount))}</td>
+                <td style="text-align:center">
+                  <button class="btn-icon" onclick="event.stopPropagation();deleteExpenseItem(${e.id})" title="Eliminar">🗑</button>
                 </td>
               </tr>
             `).join('')}

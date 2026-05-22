@@ -76,9 +76,12 @@ async function fetchInvoices(options = {}) {
     statusBox.style.marginTop = '8px';
     wrapper.appendChild(statusBox);
   
+    const tableScroll = document.createElement('div');
+    tableScroll.className = 'table-scroll';
+    wrapper.appendChild(tableScroll);
     const table = document.createElement('table');
     table.className = 'table';
-    wrapper.appendChild(table);
+    tableScroll.appendChild(table);
   
     const thead = document.createElement('thead');
     thead.innerHTML = `

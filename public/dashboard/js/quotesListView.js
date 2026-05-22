@@ -29,14 +29,12 @@ function renderQuotesListView(container) {
   header.appendChild(left);
 
   const right = document.createElement("div");
-  right.style.display = "flex";
-  right.style.alignItems = "center";
-  right.style.gap = "8px";
+  right.style.cssText = "display:flex;flex-wrap:wrap;align-items:center;gap:8px";
 
   const searchInput = document.createElement("input");
   searchInput.type = "text";
   searchInput.placeholder = "Buscar por cliente, ID o teléfono…";
-  searchInput.style.minWidth = "220px";
+  searchInput.style.cssText = "min-width:180px;flex:1";
 
   const createBtn = document.createElement("button");
   createBtn.className = "btn btn-primary";
@@ -50,11 +48,18 @@ function renderQuotesListView(container) {
   const tableWrapper = document.createElement("div");
   tableWrapper.className = "customers-card";
   tableWrapper.style.marginTop = "8px";
+  tableWrapper.style.padding = "0";
   wrapper.appendChild(tableWrapper);
+
+  const tableScroll = document.createElement("div");
+  tableScroll.className = "table-scroll";
+  tableScroll.style.margin = "0";
+  tableScroll.style.borderRadius = "var(--radius-lg)";
+  tableWrapper.appendChild(tableScroll);
 
   const table = document.createElement("table");
   table.className = "table";
-  tableWrapper.appendChild(table);
+  tableScroll.appendChild(table);
 
   const thead = document.createElement("thead");
   thead.innerHTML = `

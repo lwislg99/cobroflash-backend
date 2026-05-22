@@ -125,6 +125,7 @@ function renderProvidersView(container) {
     const createBtn = form.querySelector("#pf-create-provider");
   
     const tableWrap = document.createElement("div");
+    tableWrap.className = "table-scroll";
     tableWrap.style.marginTop = "14px";
     wrap.appendChild(tableWrap);
   

@@ -1032,7 +1032,7 @@ if (descRaw) {
 }
 
 const right = document.createElement("div");
-right.style.whiteSpace = "nowrap";
+right.style.flexShrink = "0";
 right.style.fontWeight = "600";
 const price = Number(it.price || 0);
 right.textContent = Number.isFinite(price) ? price.toFixed(2) : "";

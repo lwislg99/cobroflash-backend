@@ -56,8 +56,11 @@ function renderCustomersView(container) {
   header.appendChild(newBtn);
   outerCard.appendChild(header);
 
-  // Tabla
+  // Tabla con scroll horizontal en móvil
+  const tableScroll = createElement("div", "table-scroll");
+  outerCard.appendChild(tableScroll);
   const table = createElement("table", "table");
+  tableScroll.appendChild(table);
   const thead = document.createElement("thead");
   const trHead = document.createElement("tr");
   ["ID", "Nombre", "Teléfono", "Email", "Notas", "Alta", "Acciones"].forEach(
@@ -69,6 +72,7 @@ function renderCustomersView(container) {
   );
   thead.appendChild(trHead);
   table.appendChild(thead);
+  tableScroll.appendChild(table);
   const tbody = document.createElement("tbody");
   table.appendChild(tbody);
   outerCard.appendChild(table);

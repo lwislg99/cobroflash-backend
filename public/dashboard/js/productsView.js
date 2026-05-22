@@ -7,10 +7,7 @@ function renderProductsView(container) {
     container.appendChild(wrap);
   
     const header = document.createElement("div");
-    header.style.display = "flex";
-    header.style.justifyContent = "space-between";
-    header.style.alignItems = "center";
-    header.style.gap = "12px";
+    header.style.cssText = "display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px";
     wrap.appendChild(header);
   
     const h = document.createElement("div");
@@ -208,6 +205,7 @@ header.appendChild(importFile);
   
     // --- table ---
     const tableWrap = document.createElement("div");
+    tableWrap.className = "table-scroll";
     tableWrap.style.marginTop = "14px";
     wrap.appendChild(tableWrap);
   

@@ -918,30 +918,55 @@ img { max-width: 100%; display: block; }
   .sidebar-overlay.visible { display: block; }
 }
 
-/* ── Tables dentro de cards (sin .table-wrap explícito) ────── */
-.customers-card .table,
-.card .table {
-  margin: -20px;         /* contrarresta el padding del card */
-  width: calc(100% + 40px);
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-  overflow: hidden;
-}
-.customers-card .table:first-child,
-.card .table:first-child {
-  margin-top: -20px;
-  border-radius: var(--radius-lg);
-}
-/* Tablas standalone (sin card padre) */
-.table-standalone {
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  border: 1px solid var(--slate-200);
-  background: #fff;
-}
-/* Overflow horizontal en tablas */
-.customers-card,
-.card {
+/* ── Table scroll wrapper (usado en JS para tablas dentro de cards) ── */
+.table-scroll {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 12px -20px -20px;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+.table-scroll .table {
+  min-width: 520px;   /* evita que la tabla se comprima demasiado */
+  border-radius: 0;
+}
+/* Card con tabla edge-to-edge: sin padding lateral en la tabla */
+.card-table {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--slate-200);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.card-table-header {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--slate-100);
+}
+.card-table .table { border-radius: 0; }
+
+/* ── Input (clase legacy usada en invoicesView) ─────────────── */
+.input {
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--slate-200);
+  font-size: 13.5px;
+  color: var(--slate-700);
+  background: #fff;
+  font-family: var(--font);
+  transition: border-color .12s;
+}
+.input:focus { outline: none; border-color: var(--green-500); box-shadow: 0 0 0 3px rgba(34,197,94,.12); }
+
+/* ── Toolbar responsive (filtros + botones que deben wrappear) ─ */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+@media (max-width: 640px) {
+  .toolbar { gap: 8px; }
+  .toolbar .btn { flex: 1; min-width: 100px; }
 }
 
 /* ── Legacy compat (usado por JS todavía) ───────────────────── */
