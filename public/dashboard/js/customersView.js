@@ -49,7 +49,11 @@ function renderCustomersView(container) {
   searchBox.appendChild(searchInput);
   searchBox.appendChild(searchBtn);
   const newBtn = createElement("button", "btn btn-primary btn-sm", "+ Nuevo cliente");
+  const importBtn = createElement("button", "btn-secondary btn-sm", "⬆ Importar CSV");
+  importBtn.title = "Importar clientes desde un fichero CSV o Excel";
+  importBtn.addEventListener("click", openImportCsvModal);
   header.appendChild(searchBox);
+  header.appendChild(importBtn);
   header.appendChild(newBtn);
   outerCard.appendChild(header);
 

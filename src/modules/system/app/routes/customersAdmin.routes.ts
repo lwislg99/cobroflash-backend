@@ -72,6 +72,57 @@ router.get('/:id/portal-url', async (req, res) => {
   }
 });
 
+// POST /admin/customers/import — importación masiva desde CSV (parseo en cliente, batch en servidor)
+router.post('/import', async (req, res) => {
+  try {
+    const rows: Array<{ name?: string; phone?: string; email?: string; notes?: string }> =
+      Array.isArray(req.body?.customers) ? req.body.customers : [];
+
+    if (rows.length === 0) return res.status(400).json({ error: 'no_data' });
+    if (rows.length > 500)  return res.status(400).json({ error: 'too_many_rows', max: 500 });
+
+    const merchantId = req.merchantId;
+    let created = 0, skipped = 0, errors = 0;
+    const errorList: string[] = [];
+
+    for (const row of rows) {
+      const name = String(row.name || '').trim();
+      if (!name) { errors++; continue; }
+
+      const phone = row.phone ? String(row.phone).trim() : null;
+      const email = row.email ? String(row.email).trim().toLowerCase() : null;
+      const notes = row.notes ? String(row.notes).trim() : null;
+
+      try {
+        // Dedup: si ya existe un cliente con el mismo teléfono o email → skip
+        if (phone || email) {
+          const existing = await prisma.customer.findFirst({
+            where: {
+              merchantId,
+              OR: [
+                ...(phone ? [{ phone }] : []),
+                ...(email ? [{ email }] : []),
+              ],
+            },
+          });
+          if (existing) { skipped++; continue; }
+        }
+
+        await prisma.customer.create({ data: { merchantId, name, phone, email, notes } });
+        created++;
+      } catch (e: any) {
+        errors++;
+        errorList.push(`${name}: ${e?.message?.slice(0, 80)}`);
+      }
+    }
+
+    return res.json({ ok: true, created, skipped, errors, errorList: errorList.slice(0, 10) });
+  } catch (err) {
+    console.error('[POST /admin/customers/import]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 // GET /admin/customers/:id/detail — vista 360: historial completo del cliente
 router.get('/:id/detail', async (req, res) => {
   try {

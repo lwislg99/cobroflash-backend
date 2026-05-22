@@ -60,6 +60,33 @@ router.get('/:id', async (req, res) => {
 });
 
 /**
+ * POST /admin/invoices/bulk-paid
+ * Marca múltiples facturas como pagadas en una sola operación.
+ * Body: { ids: number[] }
+ */
+router.post('/bulk-paid', async (req, res) => {
+  try {
+    const ids: number[] = Array.isArray(req.body?.ids) ? req.body.ids.map(Number).filter(Number.isInteger) : [];
+    if (ids.length === 0) return res.status(400).json({ error: 'no_ids' });
+    if (ids.length > 100) return res.status(400).json({ error: 'too_many', max: 100 });
+
+    const result = await prisma.invoice.updateMany({
+      where: {
+        id: { in: ids },
+        merchantId: req.merchantId,
+        status: { not: 'paid' }, // solo las que aún no están pagadas
+      },
+      data: { status: 'paid', paidAt: new Date() },
+    });
+
+    return res.json({ ok: true, updated: result.count });
+  } catch (err) {
+    console.error('[POST /admin/invoices/bulk-paid]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
  * PUT /admin/invoices/:id/status
  * Cambia el estado (pending / paid / expired) – lo usa el botón del BO.
  */
