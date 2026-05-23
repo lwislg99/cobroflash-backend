@@ -58,105 +58,105 @@ function renderQuotesView(container) {
 
     // ---------- MODAL PREVISUALIZACIÓN PRESUPUESTO ----------
 function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
-  const overlay = document.createElement(“div”);
-  overlay.className = “modal-overlay”;
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
 
-  const modal = document.createElement(“div”);
-  modal.className = “modal”;
-  modal.style.maxWidth = “860px”;
+  const modal = document.createElement("div");
+  modal.className = "modal";
+  modal.style.maxWidth = "860px";
 
-  const mHeader = document.createElement(“div”);
-  mHeader.className = “modal-header”;
-  const mTitle = document.createElement(“span”);
-  mTitle.className = “modal-title”;
+  const mHeader = document.createElement("div");
+  mHeader.className = "modal-header";
+  const mTitle = document.createElement("span");
+  mTitle.className = "modal-title";
   mTitle.textContent = `Presupuesto #${quoteId} generado`;
   mHeader.appendChild(mTitle);
   modal.appendChild(mHeader);
 
-  const mBody = document.createElement(“div”);
-  mBody.className = “modal-body”;
-  mBody.style.cssText = “flex-direction:column;gap:10px”;
+  const mBody = document.createElement("div");
+  mBody.className = "modal-body";
+  mBody.style.cssText = "flex-direction:column;gap:10px";
 
-  const desc = document.createElement(“p”);
-  desc.style.cssText = “margin:0;font-size:13.5px;color:var(--slate-500)”;
-  desc.textContent = “Revisa el PDF del presupuesto antes de enviarlo por WhatsApp al cliente.”;
+  const desc = document.createElement("p");
+  desc.style.cssText = "margin:0;font-size:13.5px;color:var(--slate-500)";
+  desc.textContent = "Revisa el PDF del presupuesto antes de enviarlo por WhatsApp al cliente.";
   mBody.appendChild(desc);
 
   if (pdfUrl) {
-    const link = document.createElement(“a”);
+    const link = document.createElement("a");
     link.href = pdfUrl;
-    link.target = “_blank”;
-    link.rel = “noopener noreferrer”;
-    link.textContent = “Abrir PDF en nueva pestaña →”;
-    link.style.cssText = “display:inline-block;margin-bottom:8px;font-size:13px”;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "Abrir PDF en nueva pestaña →";
+    link.style.cssText = "display:inline-block;margin-bottom:8px;font-size:13px";
     mBody.appendChild(link);
 
-    const frameWrapper = document.createElement(“div”);
-    frameWrapper.style.cssText = “border:1px solid var(--slate-200);border-radius:8px;overflow:hidden”;
-    const iframe = document.createElement(“iframe”);
+    const frameWrapper = document.createElement("div");
+    frameWrapper.style.cssText = "border:1px solid var(--slate-200);border-radius:8px;overflow:hidden";
+    const iframe = document.createElement("iframe");
     iframe.src = pdfUrl;
     iframe.title = `PDF Presupuesto #${quoteId}`;
-    iframe.loading = “lazy”;
-    iframe.style.cssText = “width:100%;height:55vh;border:none;display:block”;
+    iframe.loading = "lazy";
+    iframe.style.cssText = "width:100%;height:55vh;border:none;display:block";
     frameWrapper.appendChild(iframe);
     mBody.appendChild(frameWrapper);
   } else {
-    const warn = document.createElement(“p”);
-    warn.style.color = “#b45309”;
-    warn.textContent = “No se ha encontrado la URL del PDF todavía. Puede tardar unos segundos en generarse.”;
+    const warn = document.createElement("p");
+    warn.style.color = "#b45309";
+    warn.textContent = "No se ha encontrado la URL del PDF todavía. Puede tardar unos segundos en generarse.";
     mBody.appendChild(warn);
   }
 
   if (!allowWhatsapp) {
-    const info = document.createElement(“p”);
-    info.style.cssText = “font-size:12px;color:#6b7280;margin:4px 0 0”;
-    info.textContent = 'Has desmarcado “Enviar por WhatsApp automáticamente”, por eso no se muestra el botón de WhatsApp.';
+    const info = document.createElement("p");
+    info.style.cssText = "font-size:12px;color:#6b7280;margin:4px 0 0";
+    info.textContent = 'Has desmarcado "Enviar por WhatsApp automáticamente", por eso no se muestra el botón de WhatsApp.';
     mBody.appendChild(info);
   }
 
   modal.appendChild(mBody);
 
-  const mFooter = document.createElement(“div”);
-  mFooter.className = “modal-footer”;
+  const mFooter = document.createElement("div");
+  mFooter.className = "modal-footer";
 
-  const closeBtn = document.createElement(“button”);
-  closeBtn.type = “button”;
-  closeBtn.textContent = “Seguir editando”;
-  closeBtn.className = “btn btn-secondary”;
-  closeBtn.addEventListener(“click”, function() { overlay.remove(); });
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button";
+  closeBtn.textContent = "Seguir editando";
+  closeBtn.className = "btn btn-secondary";
+  closeBtn.addEventListener("click", function() { overlay.remove(); });
   mFooter.appendChild(closeBtn);
 
   if (allowWhatsapp) {
-    const sendBtn = document.createElement(“button”);
-    sendBtn.type = “button”;
-    sendBtn.textContent = “Enviar por WhatsApp”;
-    sendBtn.className = “btn btn-primary”;
-    sendBtn.addEventListener(“click”, async function() {
+    const sendBtn = document.createElement("button");
+    sendBtn.type = "button";
+    sendBtn.textContent = "Enviar por WhatsApp";
+    sendBtn.className = "btn btn-primary";
+    sendBtn.addEventListener("click", async function() {
       sendBtn.disabled = true;
-      sendBtn.textContent = “Enviando…”;
+      sendBtn.textContent = "Enviando…";
       try {
         const res = await fetch(`/admin/quotes/${quoteId}/send-whatsapp`, {
-          method: “POST”,
-          headers: { “Content-Type”: “application/json” },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({}),
         });
         if (!res.ok) {
           const bodyText = await res.text();
-          throw new Error(“Error enviando por WhatsApp: “ + res.status + “ “ + bodyText);
+          throw new Error("Error enviando por WhatsApp: " + res.status + " " + bodyText);
         }
         const body = await res.json();
         setAlert(
-          “success”,
+          "success",
           body.ok
-            ? “Presupuesto enviado por WhatsApp.”
-            : “Presupuesto creado, pero no se ha podido confirmar el envío por WhatsApp.”
+            ? "Presupuesto enviado por WhatsApp."
+            : "Presupuesto creado, pero no se ha podido confirmar el envío por WhatsApp."
         );
-        setResult({ quote_id: quoteId, status: “DRAFT”, sent: !!body.ok });
+        setResult({ quote_id: quoteId, status: "DRAFT", sent: !!body.ok });
         overlay.remove();
       } catch (err) {
-        setAlert(“error”, err.message || “Error enviando por WhatsApp.”);
+        setAlert("error", err.message || "Error enviando por WhatsApp.");
         sendBtn.disabled = false;
-        sendBtn.textContent = “Enviar por WhatsApp”;
+        sendBtn.textContent = "Enviar por WhatsApp";
       }
     });
     mFooter.appendChild(sendBtn);
@@ -166,7 +166,7 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
-  overlay.addEventListener(“click”, function(e) {
+  overlay.addEventListener("click", function(e) {
     if (e.target === overlay) overlay.remove();
   });
 }
@@ -1196,7 +1196,7 @@ priceInput.value = String(base.toFixed(2));
 
     conceptInput.addEventListener("input", onInput);
 
-    // PRO: si el usuario modifica el texto manualmente, ya no podemos asegurar que sea “ese producto”
+    // PRO: si el usuario modifica el texto manualmente, ya no podemos asegurar que sea "ese producto"
 conceptInput.addEventListener("input", () => {
   if (!suppressOpenOnce) {
     conceptInput.dataset.pfProductId = "";
@@ -1288,7 +1288,7 @@ conceptInput.addEventListener("input", () => {
     conceptTd.appendChild(conceptInput);
 
     // PRO: este campo puede venir de un producto del catálogo
-conceptInput.dataset.pfProductId = ""; // vacío = “manual”
+conceptInput.dataset.pfProductId = ""; // vacío = "manual"
 
    
 
