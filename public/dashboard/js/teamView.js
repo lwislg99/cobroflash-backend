@@ -23,6 +23,7 @@ async function renderTeamView(container) {
   // Alert
   const alertBox = document.createElement('div');
   alertBox.className = 'alert';
+  alertBox.style.display = 'none';
   wrap.appendChild(alertBox);
 
   function setAlert(type, msg) {
@@ -30,6 +31,7 @@ async function renderTeamView(container) {
     alertBox.className = 'alert';
     if (type === 'success') alertBox.classList.add('success');
     if (type === 'error')   alertBox.classList.add('error');
+    alertBox.style.display = (type || msg) ? 'block' : 'none';
   }
 
   // Tabla de miembros

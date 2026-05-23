@@ -108,7 +108,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   // STATUS
   const statusBox = document.createElement("div");
   statusBox.className = "alert";
-  statusBox.style.marginTop = "8px";
+  statusBox.style.cssText = "margin-top:8px;display:none";
   wrapper.appendChild(statusBox);
 
   function setStatus(type, msg) {
@@ -116,6 +116,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     statusBox.className = "alert";
     if (type === "error") statusBox.classList.add("error");
     if (type === "success") statusBox.classList.add("success");
+    statusBox.style.display = (type || msg) ? "block" : "none";
   }
 
   if (!rawId || !Number.isFinite(id)) {

@@ -18,7 +18,7 @@ function openAiSuggestModal(addLinesFn) {
         <p style="font-size:13px;color:var(--slate-500);margin:0 0 12px">
           Describe el trabajo con tus propias palabras y Claude sugerirá las líneas del presupuesto usando tu catálogo de productos.
         </p>
-        <div class="alert" id="ai-alert"></div>
+        <div class="alert" id="ai-alert" style="display:none"></div>
         <div class="field">
           <label>Descripción del trabajo</label>
           <textarea id="ai-description"
@@ -50,6 +50,7 @@ function openAiSuggestModal(addLinesFn) {
     alertEl.className = 'alert';
     if (type === 'error')   alertEl.classList.add('error');
     if (type === 'success') alertEl.classList.add('success');
+    alertEl.style.display = (type || msg) ? 'block' : 'none';
   }
 
   btn.onclick = async () => {
@@ -145,7 +146,7 @@ function openAiMessageModal({ customerName, concept, total, currency, onCopy }) 
         <p style="font-size:13px;color:var(--slate-500);margin:0 0 12px">
           Claude redactará un mensaje personalizado para enviar a ${escHtml(customerName)} junto con el presupuesto.
         </p>
-        <div class="alert" id="ai-msg-alert"></div>
+        <div class="alert" id="ai-msg-alert" style="display:none"></div>
         <div id="ai-msg-result" style="display:none">
           <label style="font-size:12px;font-weight:600;color:var(--slate-500);text-transform:uppercase;letter-spacing:.04em">Mensaje generado</label>
           <textarea id="ai-msg-text" rows="5"
@@ -178,6 +179,7 @@ function openAiMessageModal({ customerName, concept, total, currency, onCopy }) 
     alertEl.className = 'alert';
     if (type === 'error')   alertEl.classList.add('error');
     if (type === 'success') alertEl.classList.add('success');
+    alertEl.style.display = (type || msg) ? 'block' : 'none';
   }
 
   async function generateMessage() {

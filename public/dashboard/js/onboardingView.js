@@ -6,7 +6,7 @@ function showOnboardingWizard(onComplete) {
 
   const backdrop = document.createElement('div');
   backdrop.id = 'onboarding-backdrop';
-  backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.6);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px';
+  backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.6);display:flex;align-items:center;justify-content:center;z-index:300;padding:16px';
 
   backdrop.innerHTML = `
     <div style="background:#fff;border-radius:20px;padding:28px 24px;width:100%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,.2)">

@@ -220,13 +220,13 @@ function openQuickQuoteModal() {
   qqState = { customerId: null, customerName: "", customerPhone: "", products: [{ concept: "", qty: 1, price: "" }], paymentTerms: "FULL_UPFRONT", tiersMode: false };
 
   const backdrop = document.createElement("div");
-  backdrop.className = "modal-backdrop";
+  backdrop.className = "modal-overlay";
   backdrop.id = "qq-modal-backdrop";
   backdrop.innerHTML = `
     <div class="modal" style="max-width:520px">
       <div class="modal-header">
         <span class="modal-title">${(window.appLocale && window.appLocale.quoteNew) || 'Nueva cotización'} rápida</span>
-        <button class="modal-close" id="qq-close">×</button>
+        <button class="modal-close" id="qq-close">&times;</button>
       </div>
 
       <div class="qq-modal-body">
@@ -234,20 +234,20 @@ function openQuickQuoteModal() {
         <div class="field">
           <label>Cliente</label>
           <div class="qq-autocomplete-wrapper">
-            <input id="qq-customer-input" type="text" placeholder="Buscar o crear cliente…" autocomplete="off"
-              style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid #d1d5db;font-size:14px"/>
+            <input id="qq-customer-input" type="text" placeholder="Buscar o crear cliente…" autocomplete="off"/>
             <div class="qq-dropdown" id="qq-customer-dropdown" style="display:none"></div>
           </div>
           <div id="qq-customer-new" style="display:none;margin-top:6px">
-            <input id="qq-customer-phone" type="tel" placeholder="Teléfono WhatsApp (ej: 521XXXXXXXXXX)"
-              style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid #d1d5db;font-size:14px;margin-top:4px"/>
+            <div class="field" style="margin:0">
+              <input id="qq-customer-phone" type="tel" placeholder="Teléfono WhatsApp (ej: 521XXXXXXXXXX)"/>
+            </div>
           </div>
         </div>
 
         <!-- Toggle Good/Better/Best -->
         <div class="field">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none">
-            <input type="checkbox" id="qq-tiers-toggle" style="width:16px;height:16px;accent-color:#22c55e"/>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-weight:500">
+            <input type="checkbox" id="qq-tiers-toggle" style="width:16px;height:16px;accent-color:var(--green-500);flex-shrink:0"/>
             <span>Ofrecer 3 opciones de precio (Good/Better/Best)</span>
           </label>
         </div>
@@ -256,8 +256,7 @@ function openQuickQuoteModal() {
         <div class="field" id="qq-classic-mode">
           <label>Concepto / Servicio</label>
           <div id="qq-lines-container"></div>
-          <button type="button" id="qq-add-line"
-            style="margin-top:6px;font-size:13px;background:none;border:none;color:#22c55e;cursor:pointer;padding:0">
+          <button type="button" id="qq-add-line" class="btn-ghost btn-sm" style="margin-top:6px;align-self:flex-start;color:var(--green-600)">
             + Añadir línea
           </button>
         </div>
@@ -267,24 +266,23 @@ function openQuickQuoteModal() {
           <div class="field">
             <label>Concepto / Servicio</label>
             <div class="qq-autocomplete-wrapper">
-              <input id="qq-tier-concept" type="text" placeholder="Ej: Instalación eléctrica" autocomplete="off"
-                style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid #d1d5db;font-size:14px"/>
+              <input id="qq-tier-concept" type="text" placeholder="Ej: Instalación eléctrica" autocomplete="off"/>
               <div class="qq-dropdown" id="qq-tier-pdropdown" style="display:none"></div>
             </div>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px">
             ${['Básico', 'Estándar', 'Premium'].map((label, i) => `
-              <div style="border:2px solid ${i===1?'#22c55e':'#e5e7eb'};border-radius:10px;padding:10px">
-                <div style="font-size:12px;font-weight:700;color:${i===1?'#16a34a':'#6b7280'};margin-bottom:6px">
+              <div style="border:2px solid ${i===1?'var(--green-500)':'var(--slate-200)'};border-radius:var(--radius-md);padding:10px">
+                <div style="font-size:12px;font-weight:700;color:${i===1?'var(--green-600)':'var(--slate-500)'};margin-bottom:6px">
                   ${label}${i===1?' ⭐':''}
                 </div>
-                <input type="number" class="qq-tier-price" data-tier-idx="${i}" min="0" step="0.01"
-                  placeholder="Precio"
-                  style="width:100%;padding:7px;border-radius:7px;border:1px solid #d1d5db;font-size:14px"/>
+                <div class="field" style="margin:0">
+                  <input type="number" class="qq-tier-price" data-tier-idx="${i}" min="0" step="0.01" placeholder="Precio"/>
+                </div>
               </div>
             `).join('')}
           </div>
-          <p style="font-size:12px;color:#9ca3af;margin:6px 0 0">
+          <p style="font-size:12px;color:var(--slate-400);margin:6px 0 0">
             El cliente verá las 3 opciones y elegirá la que prefiera.
           </p>
         </div>
@@ -306,7 +304,7 @@ function openQuickQuoteModal() {
       </div>
 
       <div class="modal-footer" style="flex-direction:column;gap:8px">
-        <div id="qq-alert" style="font-size:13px;color:#b91c1c;display:none"></div>
+        <div id="qq-alert" class="alert error" style="display:none"></div>
         <div style="display:flex;gap:8px;width:100%;justify-content:flex-end">
           <button class="btn btn-secondary" id="qq-cancel">Cancelar</button>
           <button class="btn btn-primary" id="qq-send" style="min-width:160px">
@@ -366,15 +364,18 @@ function renderQqLines() {
   container.innerHTML = qqState.products.map((line, i) => `
     <div style="display:grid;grid-template-columns:1fr 60px 90px 30px;gap:6px;margin-bottom:6px;align-items:center">
       <div class="qq-autocomplete-wrapper">
-        <input type="text" class="qq-concept" data-idx="${i}" value="${esc(line.concept)}"
-          placeholder="Concepto…" autocomplete="off"
-          style="width:100%;padding:8px;border-radius:7px;border:1px solid #d1d5db;font-size:13px"/>
+        <div class="field" style="margin:0">
+          <input type="text" class="qq-concept" data-idx="${i}" value="${esc(line.concept)}"
+            placeholder="Concepto…" autocomplete="off"/>
+        </div>
         <div class="qq-dropdown qq-product-dropdown" id="qq-pdropdown-${i}" style="display:none"></div>
       </div>
-      <input type="number" class="qq-qty" data-idx="${i}" value="${line.qty}" min="1"
-        style="padding:8px;border-radius:7px;border:1px solid #d1d5db;font-size:13px;text-align:center"/>
-      <input type="number" class="qq-price" data-idx="${i}" value="${line.price}" min="0" step="0.01"
-        placeholder="Precio" style="padding:8px;border-radius:7px;border:1px solid #d1d5db;font-size:13px"/>
+      <div class="field" style="margin:0">
+        <input type="number" class="qq-qty" data-idx="${i}" value="${line.qty}" min="1" style="text-align:center"/>
+      </div>
+      <div class="field" style="margin:0">
+        <input type="number" class="qq-price" data-idx="${i}" value="${line.price}" min="0" step="0.01" placeholder="Precio"/>
+      </div>
       ${qqState.products.length > 1
         ? `<button type="button" class="btn-icon qq-remove-line" data-idx="${i}">🗑</button>`
         : '<span></span>'}
@@ -612,6 +613,7 @@ function showQqAlert(msg) {
   const el = document.getElementById("qq-alert");
   if (!el) return;
   el.textContent = msg;
+  el.className = "alert error";
   el.style.display = "block";
 }
 

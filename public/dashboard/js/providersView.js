@@ -26,7 +26,7 @@ function renderProvidersView(container) {
   
     const alert = document.createElement("div");
     alert.className = "alert";
-    alert.style.marginTop = "12px";
+    alert.style.cssText = "margin:0 20px;display:none";
     wrap.appendChild(alert);
   
     function setAlert(type, msg) {
@@ -34,54 +34,97 @@ function renderProvidersView(container) {
       alert.className = "alert";
       if (type === "success") alert.classList.add("success");
       if (type === "error") alert.classList.add("error");
+      alert.style.display = type ? "block" : "none";
     }
 
-    const editDialog = document.createElement("dialog");
-    editDialog.style.maxWidth = "560px";
-    editDialog.style.width = "100%";
-    editDialog.style.border = "1px solid #e5e7eb";
-    editDialog.style.borderRadius = "12px";
-    editDialog.style.padding = "16px";
-  
-    editDialog.innerHTML = `
-      <form method="dialog" id="pf-edit-provider-form">
-        <h3 style="margin:0 0 10px">Editar proveedor</h3>
-  
-        <div class="quote-form-row">
-          <div class="field">
-            <label>Nombre *</label>
-            <input name="name" />
-          </div>
-  
-          <div class="field">
-            <label>Teléfono</label>
-            <input name="phone" />
-          </div>
-  
-          <div class="field">
-            <label>Email</label>
-            <input name="email" />
-          </div>
-        </div>
-  
-        <div class="field">
-          <label>Notas</label>
-          <input name="notes" />
-        </div>
-  
-        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px">
-          <button class="btn btn-secondary" value="cancel">Cancelar</button>
-          <button class="btn btn-primary" id="pf-edit-provider-save" value="default">Guardar</button>
-        </div>
-      </form>
-    `;
-  
-    document.body.appendChild(editDialog);
-  
+    let editProviderOverlay = null;
     let _editingProvider = null;
+
+    function buildProviderEditModal() {
+      const ov = document.createElement('div');
+      ov.className = 'modal-overlay';
+      ov.style.display = 'none';
+      ov.innerHTML = `
+        <div class="modal" style="max-width:520px">
+          <div class="modal-header">
+            <span class="modal-title">Editar proveedor</span>
+            <button class="modal-close" type="button" id="pf-prov-edit-close">&times;</button>
+          </div>
+          <div class="modal-body" style="gap:12px">
+            <div class="quote-form-row">
+              <div class="field"><label>Nombre *</label><input name="name"/></div>
+              <div class="field"><label>Teléfono</label><input name="phone"/></div>
+              <div class="field"><label>Email</label><input name="email" type="email"/></div>
+            </div>
+            <div class="field"><label>Notas</label><input name="notes"/></div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" id="pf-prov-edit-cancel">Cancelar</button>
+            <button class="btn btn-primary" type="button" id="pf-prov-edit-save">Guardar</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(ov);
+
+      ov.querySelector('#pf-prov-edit-close').addEventListener('click', closeProviderEditModal);
+      ov.querySelector('#pf-prov-edit-cancel').addEventListener('click', closeProviderEditModal);
+      ov.addEventListener('click', (e) => { if (e.target === ov) closeProviderEditModal(); });
+
+      ov.querySelector('#pf-prov-edit-save').addEventListener('click', async () => {
+        if (!_editingProvider) return;
+        const body = ov.querySelector('.modal-body');
+        const name  = body.querySelector('[name="name"]').value.trim();
+        const phone = body.querySelector('[name="phone"]').value.trim();
+        const email = body.querySelector('[name="email"]').value.trim();
+        const notes = body.querySelector('[name="notes"]').value.trim();
+
+        if (!name) return setAlert('error', 'El nombre es obligatorio.');
+
+        const saveBtn = ov.querySelector('#pf-prov-edit-save');
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Guardando…';
+        try {
+          await updateProvider(_editingProvider.merchantId, _editingProvider.id, {
+            name,
+            phone: phone || null,
+            email: email || null,
+            notes: notes || null,
+          });
+          closeProviderEditModal();
+          setAlert('success', 'Proveedor actualizado.');
+          await refresh();
+        } catch (e) {
+          setAlert('error', e.message || 'Error actualizando.');
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Guardar';
+        }
+      });
+
+      return ov;
+    }
+
+    function openProviderEditModal(it) {
+      if (!editProviderOverlay) editProviderOverlay = buildProviderEditModal();
+      _editingProvider = { merchantId: _merchantId, id: it.id };
+
+      const body = editProviderOverlay.querySelector('.modal-body');
+      body.querySelector('[name="name"]').value  = it.name  || '';
+      body.querySelector('[name="phone"]').value = it.phone || '';
+      body.querySelector('[name="email"]').value = it.email || '';
+      body.querySelector('[name="notes"]').value = it.notes || '';
+
+      editProviderOverlay.style.display = 'flex';
+      body.querySelector('[name="name"]').focus();
+    }
+
+    function closeProviderEditModal() {
+      if (editProviderOverlay) editProviderOverlay.style.display = 'none';
+      _editingProvider = null;
+    }
   
     const form = document.createElement("div");
-    form.style.marginTop = "12px";
+    form.style.cssText = "padding:0 20px 4px";
     form.innerHTML = `
       <div class="quote-block">
         <h3 class="quote-block-title">Nuevo proveedor</h3>
@@ -218,75 +261,32 @@ function renderProvidersView(container) {
         `;
   
         const actionsTd = tr.lastElementChild;
-  
+        const actionsDiv = document.createElement("div");
+        actionsDiv.style.cssText = "display:flex;justify-content:flex-end;gap:6px;align-items:center";
+
         const editBtn = document.createElement("button");
         editBtn.type = "button";
-        editBtn.className = "btn btn-secondary";
+        editBtn.className = "btn btn-secondary btn-sm";
         editBtn.textContent = "Editar";
-  
+
         const toggleBtn = document.createElement("button");
         toggleBtn.type = "button";
-        toggleBtn.className = "btn btn-secondary";
+        toggleBtn.className = "btn btn-secondary btn-sm";
         toggleBtn.textContent = it.isActive ? "Desactivar" : "Activar";
-  
+
         const delBtn = document.createElement("button");
         delBtn.type = "button";
-        delBtn.className = "btn btn-secondary";
+        delBtn.className = "btn btn-danger btn-sm";
         delBtn.textContent = "Borrar";
+
+        actionsDiv.appendChild(editBtn);
+        actionsDiv.appendChild(toggleBtn);
+        actionsDiv.appendChild(delBtn);
+        actionsTd.appendChild(actionsDiv);
   
-        actionsTd.style.display = "flex";
-        actionsTd.style.justifyContent = "flex-end";
-        actionsTd.style.gap = "8px";
-        actionsTd.appendChild(editBtn);
-        actionsTd.appendChild(toggleBtn);
-        actionsTd.appendChild(delBtn);
-  
-        editBtn.addEventListener("click", async () => {
-          try {
-            setAlert(null, "");
-            _editingProvider = { merchantId: _merchantId, id: it.id };
-  
-            const formEl = editDialog.querySelector("#pf-edit-provider-form");
-            formEl.name.value = it.name || "";
-            formEl.phone.value = it.phone || "";
-            formEl.email.value = it.email || "";
-            formEl.notes.value = it.notes || "";
-  
-            editDialog.showModal();
-  
-            const onSubmit = async (e) => {
-              e.preventDefault();
-  
-              const name = String(formEl.name.value || "").trim();
-              const phone = String(formEl.phone.value || "").trim();
-              const email = String(formEl.email.value || "").trim();
-              const notes = String(formEl.notes.value || "").trim();
-  
-              if (!name) return setAlert("error", "name_required");
-  
-              await updateProvider(_editingProvider.merchantId, _editingProvider.id, {
-                name,
-                phone: phone || null,
-                email: email || null,
-                notes: notes || null,
-              });
-  
-              editDialog.close();
-              setAlert("success", "Proveedor actualizado.");
-              await refresh();
-            };
-  
-            formEl.addEventListener("submit", onSubmit, { once: true });
-        } catch (e) {
-            const msg = e?.message || "";
-  
-            if (msg === "provider_in_use") {
-              setAlert("error", "No se puede borrar el proveedor porque está asignado a uno o más productos.");
-              return;
-            }
-  
-            setAlert("error", msg || "Error borrando proveedor.");
-          }
+        editBtn.addEventListener("click", () => {
+          setAlert(null, "");
+          openProviderEditModal(it);
         });
   
         toggleBtn.addEventListener("click", async () => {

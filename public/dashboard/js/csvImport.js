@@ -19,7 +19,7 @@ function openImportCsvModal() {
     '<code style="font-size:12px;background:var(--slate-100);padding:2px 6px;border-radius:4px">notas</code>',
     ' (separador coma o punto y coma)',
     '</p>',
-    '<div class="alert" id="csv-alert"></div>',
+    '<div class="alert" id="csv-alert" style="display:none"></div>',
     '<div id="csv-dropzone" style="border:2px dashed var(--slate-300);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:border-color .15s;margin-bottom:8px">',
     '<div style="font-size:13px;color:var(--slate-500)">',
     '📂 Arrastra tu fichero CSV o <span style="color:var(--green-600);font-weight:600;text-decoration:underline">haz click para elegirlo</span>',
@@ -59,6 +59,7 @@ function openImportCsvModal() {
     alertEl.className = 'alert';
     if (type === 'error')   alertEl.classList.add('error');
     if (type === 'success') alertEl.classList.add('success');
+    alertEl.style.display = (type || msg) ? 'block' : 'none';
   }
 
   function readFile(file) {

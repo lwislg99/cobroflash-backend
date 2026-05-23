@@ -24,6 +24,7 @@ async function renderCustomer360View(container, customerId) {
 
   const alertEl = document.createElement('div');
   alertEl.className = 'alert';
+  alertEl.style.display = 'block';
   wrap.appendChild(alertEl);
 
   function setAlert(type, msg) {
@@ -31,6 +32,7 @@ async function renderCustomer360View(container, customerId) {
     alertEl.className = 'alert';
     if (type === 'success') alertEl.classList.add('success');
     if (type === 'error')   alertEl.classList.add('error');
+    alertEl.style.display = (msg || type) ? 'block' : 'none';
   }
 
   alertEl.textContent = 'Cargando…';
@@ -202,9 +204,11 @@ async function renderCustomer360View(container, customerId) {
           <td style="color:var(--slate-500)">${new Date(inv.createdAt).toLocaleDateString('es-ES')}</td>
           <td style="font-weight:600">${fmt(Number(inv.total))} ${escC(inv.currency)}</td>
           <td><span class="status-pill ${STATUS_CLASS[inv.status]||'status-pill-draft'}">${STATUS_LABELS[inv.status]||inv.status}</span></td>
-          <td style="display:flex;gap:6px">
-            ${pdfCell}
-            <button class="btn-ghost btn-sm" data-iid="${inv.id}">Ver →</button>
+          <td>
+            <div style="display:flex;gap:6px;align-items:center">
+              ${pdfCell}
+              <button class="btn-ghost btn-sm" data-iid="${inv.id}">Ver →</button>
+            </div>
           </td>
         `;
         tr.querySelector(`[data-iid="${inv.id}"]`).onclick = () => {

@@ -33,6 +33,7 @@ function renderQuotesListView(container) {
 
   const searchInput = document.createElement("input");
   searchInput.type = "text";
+  searchInput.className = "input";
   searchInput.placeholder = "Buscar por cliente, ID o teléfono…";
   searchInput.style.cssText = "min-width:140px;flex:1";
 
@@ -121,6 +122,7 @@ function renderQuotesListView(container) {
     statusBox.className = "alert";
     if (type === "error") statusBox.classList.add("error");
     if (type === "success") statusBox.classList.add("success");
+    statusBox.style.display = (type || msg) ? "block" : "none";
   }
 
   function formatDate(iso) {
@@ -215,13 +217,12 @@ function renderQuotesListView(container) {
 
       // ACCIONES – Ver detalle
       const tdActions = document.createElement("td");
-      tdActions.style.display = "flex";
-      tdActions.style.gap = "6px";
+      const tdActionsDiv = document.createElement("div");
+      tdActionsDiv.style.cssText = "display:flex;gap:6px;align-items:center";
 
       const btnView = document.createElement("button");
       btnView.textContent = "Ver detalle";
-      btnView.className = "btn btn-secondary";
-      btnView.style.padding = "3px 10px";
+      btnView.className = "btn btn-secondary btn-sm";
 
       btnView.addEventListener("click", () => {
         const containerEl = document.getElementById("view-container");
@@ -237,7 +238,8 @@ function renderQuotesListView(container) {
         }
       });
 
-      tdActions.appendChild(btnView);
+      tdActionsDiv.appendChild(btnView);
+      tdActions.appendChild(tdActionsDiv);
 
       tr.appendChild(tdId);
       tr.appendChild(tdClient);

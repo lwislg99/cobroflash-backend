@@ -64,6 +64,7 @@ async function renderReportsView(container) {
   // ── Área de contenido ────────────────────────────────────────────────────
   const alertEl = document.createElement('div');
   alertEl.className = 'alert';
+  alertEl.style.display = 'none';
   wrap.appendChild(alertEl);
 
   const chartCard = document.createElement('div');

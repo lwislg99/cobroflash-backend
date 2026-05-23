@@ -19,13 +19,15 @@ function renderSettingsView(container) {
   
     const alertBox = document.createElement("div");
     alertBox.className = "alert";
+    alertBox.style.display = "none";
     card.appendChild(alertBox);
-  
+
     function setAlert(type, msg) {
       alertBox.textContent = msg || "";
       alertBox.className = "alert";
       if (type === "success") alertBox.classList.add("success");
       if (type === "error") alertBox.classList.add("error");
+      alertBox.style.display = (type || msg) ? "block" : "none";
     }
   
     const form = document.createElement("form");

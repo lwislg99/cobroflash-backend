@@ -63,9 +63,9 @@ async function fetchInvoiceDetail(id) {
   
     const statusBox = document.createElement('div');
     statusBox.className = 'alert';
-    statusBox.style.marginTop = '8px';
+    statusBox.style.cssText = 'margin-top:8px;display:block';
     wrapper.appendChild(statusBox);
-  
+
     statusBox.textContent = 'Cargando factura…';
   
     let invoice;

@@ -77,6 +77,7 @@ function renderCustomersView(container) {
 
   // Alertas
   const alertBox = createElement("div", "alert");
+  alertBox.style.display = "none";
   outerCard.appendChild(alertBox);
 
   function setAlert(type, msg) {
@@ -84,6 +85,7 @@ function renderCustomersView(container) {
     alertBox.className = "alert";
     if (type === "success") alertBox.classList.add("success");
     if (type === "error") alertBox.classList.add("error");
+    alertBox.style.display = (type || msg) ? "block" : "none";
   }
 
   // -------- Modal --------
@@ -95,7 +97,7 @@ function renderCustomersView(container) {
   let modalSaveBtn = null;
 
   function buildModal() {
-    modalBackdrop = createElement("div", "modal-backdrop");
+    modalBackdrop = createElement("div", "modal-overlay");
     const modal = createElement("div", "modal");
 
     const header = createElement("div", "modal-header");
@@ -242,15 +244,15 @@ function renderCustomersView(container) {
         );
 
         const tdActions = document.createElement("td");
-        tdActions.style.display = "flex";
-        tdActions.style.gap = "6px";
+        const actionsDiv = document.createElement("div");
+        actionsDiv.style.cssText = "display:flex;gap:6px;align-items:center";
 
-        const editBtn = createElement("button", "btn btn-secondary", "Editar");
+        const editBtn = createElement("button", "btn btn-secondary btn-sm", "Editar");
         editBtn.type = "button";
         editBtn.addEventListener("click", () => openModal("edit", c));
-        tdActions.appendChild(editBtn);
+        actionsDiv.appendChild(editBtn);
 
-        const portalBtn = createElement("button", "btn btn-secondary", "Portal");
+        const portalBtn = createElement("button", "btn btn-secondary btn-sm", "Portal");
         portalBtn.type = "button";
         portalBtn.title = "Copiar enlace del portal del cliente";
         portalBtn.addEventListener("click", async () => {
@@ -263,7 +265,7 @@ function renderCustomersView(container) {
             alert("Error al obtener el portal: " + err.message);
           }
         });
-        tdActions.appendChild(portalBtn);
+        actionsDiv.appendChild(portalBtn);
 
         const detailBtn = createElement("button", "btn-ghost btn-sm", "📊 Historial");
         detailBtn.type = "button";
@@ -275,8 +277,9 @@ function renderCustomersView(container) {
             window.renderAppView('customer-360');
           }
         });
-        tdActions.appendChild(detailBtn);
+        actionsDiv.appendChild(detailBtn);
 
+        tdActions.appendChild(actionsDiv);
         tr.appendChild(tdActions);
 
         tbody.appendChild(tr);

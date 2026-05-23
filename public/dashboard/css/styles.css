@@ -610,10 +610,11 @@ img { max-width: 100%; display: block; }
 /* ── Modal ──────────────────────────────────────────────────── */
 .modal-backdrop {
   position: fixed; inset: 0;
-  background: rgba(15,23,42,.4);
+  background: rgba(15,23,42,.45);
   backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
   display: flex; align-items: center; justify-content: center;
-  z-index: 100;
+  z-index: 200;
   padding: 16px;
   animation: fade-in .15s ease;
 }
@@ -975,6 +976,10 @@ img { max-width: 100%; display: block; }
 }
 .data-card .table-scroll { /* hereda, sin márgenes extra */ }
 .data-card .table { border-radius: 0; }
+/* Área con padding para forms/alerts dentro de data-card */
+.data-card-body {
+  padding: 16px 20px;
+}
 
 /* ── Input (clase legacy usada en invoicesView) ─────────────── */
 .input {
@@ -1029,8 +1034,7 @@ img { max-width: 100%; display: block; }
 }
 
 /* ── Modal overlay ────────────────────────────────────────────
-   Alias de .modal-backdrop usado por todos los modales JS.
-   Sin este bloque los modales se renderizan fuera de pantalla.
+   Alias de .modal-backdrop — ambas clases son equivalentes.
    ─────────────────────────────────────────────────────────── */
 .modal-overlay {
   position: fixed;
@@ -1047,11 +1051,13 @@ img { max-width: 100%; display: block; }
 }
 /* En móvil el modal aparece desde abajo como sheet */
 @media (max-width: 768px) {
-  .modal-overlay {
+  .modal-overlay,
+  .modal-backdrop {
     align-items: flex-end;
     padding: 0;
   }
-  .modal-overlay .modal {
+  .modal-overlay .modal,
+  .modal-backdrop .modal {
     max-width: 100%;
     border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
     border-bottom: none;

@@ -79,77 +79,129 @@ header.appendChild(importFile);
   
     const alert = document.createElement("div");
     alert.className = "alert";
-    alert.style.marginTop = "12px";
+    alert.style.cssText = "margin:0 20px 0;display:none";
     wrap.appendChild(alert);
   
     function setAlert(type, msg) {
       alert.textContent = msg || "";
       alert.className = "alert";
-      if (type === "success") alert.classList.add("success");
-      if (type === "error") alert.classList.add("error");
+      alert.style.cssText = "margin:0 20px 0";
+      if (type === "success") { alert.classList.add("success"); alert.style.display = "block"; }
+      else if (type === "error") { alert.classList.add("error"); alert.style.display = "block"; }
+      else { alert.style.display = "none"; }
     }
 
-        // --- edit modal (native dialog) ---
-        const editDialog = document.createElement("dialog");
-        editDialog.style.maxWidth = "560px";
-        editDialog.style.width = "100%";
-        editDialog.style.border = "1px solid #e5e7eb";
-        editDialog.style.borderRadius = "12px";
-        editDialog.style.padding = "16px";
-    
-        editDialog.innerHTML = `
-          <form method="dialog" id="pf-edit-form">
-            <h3 style="margin:0 0 10px">Editar producto</h3>
-    
-            <div class="quote-form-row">
-            <div class="field">
-              <label>Nombre *</label>
-              <input name="name" />
-            </div>
-
-            <div class="field">
-              <label>Precio *</label>
-              <input name="price" type="number" step="0.01" min="0" />
-            </div>
-
-            <div class="field">
-              <label>IVA (0..1)</label>
-              <input name="vat" type="number" step="0.01" min="0" max="1" />
-            </div>
-
-            <div class="field">
-              <label>Coste</label>
-              <input name="cost" type="number" step="0.01" min="0" />
-            </div>
-
-            <div class="field">
-              <label>Proveedor</label>
-              <select name="providerId">
-                <option value="">— Sin proveedor —</option>
-              </select>
-            </div>
-          </div>
-    
-            <div class="field">
-              <label>Descripción</label>
-              <input name="description" />
-            </div>
-    
-            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px">
-              <button class="btn btn-secondary" value="cancel">Cancelar</button>
-              <button class="btn btn-primary" id="pf-edit-save" value="default">Guardar</button>
-            </div>
-          </form>
-        `;
-    
-        document.body.appendChild(editDialog);
-    
+        // --- edit modal (custom modal-overlay) ---
+        let editOverlay = null;
         let _editing = null; // { merchantId, id }
+
+        function buildEditModal() {
+          const ov = document.createElement('div');
+          ov.className = 'modal-overlay';
+          ov.style.display = 'none';
+          ov.innerHTML = `
+            <div class="modal" style="max-width:560px">
+              <div class="modal-header">
+                <span class="modal-title">Editar producto</span>
+                <button class="modal-close" type="button" id="pf-edit-close">&times;</button>
+              </div>
+              <div class="modal-body" style="gap:12px">
+                <div class="quote-form-row">
+                  <div class="field"><label>Nombre *</label><input name="name"/></div>
+                  <div class="field"><label>Precio *</label><input name="price" type="number" step="0.01" min="0"/></div>
+                  <div class="field"><label>IVA (0..1)</label><input name="vat" type="number" step="0.01" min="0" max="1"/></div>
+                  <div class="field"><label>Coste</label><input name="cost" type="number" step="0.01" min="0"/></div>
+                  <div class="field"><label>Proveedor</label><select name="providerId"><option value="">— Sin proveedor —</option></select></div>
+                </div>
+                <div class="field"><label>Descripción</label><input name="description"/></div>
+              </div>
+              <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" id="pf-edit-cancel">Cancelar</button>
+                <button class="btn btn-primary" type="button" id="pf-edit-save">Guardar</button>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(ov);
+
+          ov.querySelector('#pf-edit-close').addEventListener('click', closeEditModal);
+          ov.querySelector('#pf-edit-cancel').addEventListener('click', closeEditModal);
+          ov.addEventListener('click', (e) => { if (e.target === ov) closeEditModal(); });
+
+          ov.querySelector('#pf-edit-save').addEventListener('click', async () => {
+            if (!_editing) return;
+            const body = ov.querySelector('.modal-body');
+            const name = body.querySelector('[name="name"]').value.trim();
+            const price = Number(body.querySelector('[name="price"]').value);
+            const vatRaw = body.querySelector('[name="vat"]').value.trim();
+            const costRaw = body.querySelector('[name="cost"]').value.trim();
+            const providerRaw = body.querySelector('[name="providerId"]').value.trim();
+            const description = body.querySelector('[name="description"]').value.trim();
+
+            if (!name) return setAlert('error', 'El nombre es obligatorio.');
+            if (!Number.isFinite(price) || price <= 0) return setAlert('error', 'El precio debe ser mayor que 0.');
+
+            const payload = {
+              name,
+              description: description || null,
+              price,
+              vat: vatRaw === '' ? null : Number(vatRaw),
+              cost: costRaw === '' ? null : Number(costRaw),
+              providerId: providerRaw === '' ? null : Number(providerRaw),
+            };
+
+            const saveBtn = ov.querySelector('#pf-edit-save');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Guardando…';
+            try {
+              await updateProduct(_editing.merchantId, _editing.id, payload);
+              closeEditModal();
+              setAlert('success', 'Producto actualizado.');
+              await refresh();
+            } catch (e) {
+              setAlert('error', e.message || 'Error actualizando.');
+            } finally {
+              saveBtn.disabled = false;
+              saveBtn.textContent = 'Guardar';
+            }
+          });
+
+          return ov;
+        }
+
+        function openEditModal(it) {
+          if (!editOverlay) editOverlay = buildEditModal();
+          _editing = { merchantId: _merchantId, id: it.id };
+
+          const body = editOverlay.querySelector('.modal-body');
+          body.querySelector('[name="name"]').value = it.name || '';
+          body.querySelector('[name="price"]').value = it.price ?? '';
+          body.querySelector('[name="vat"]').value = it.vat === null ? '' : String(it.vat);
+          body.querySelector('[name="cost"]').value = it.cost === null ? '' : String(it.cost);
+          body.querySelector('[name="description"]').value = it.description || '';
+
+          const provSel = body.querySelector('[name="providerId"]');
+          provSel.innerHTML = '<option value="">— Sin proveedor —</option>';
+          (_providers || []).forEach((p) => {
+            const opt = document.createElement('option');
+            opt.value = String(p.id);
+            opt.textContent = p.name || `Proveedor #${p.id}`;
+            provSel.appendChild(opt);
+          });
+          provSel.value = it.providerId == null ? '' : String(it.providerId);
+
+          editOverlay.style.display = 'flex';
+          body.querySelector('[name="name"]').focus();
+        }
+
+        function closeEditModal() {
+          if (editOverlay) editOverlay.style.display = 'none';
+          _editing = null;
+        }
     
   
     // --- form create ---
     const form = document.createElement("div");
-    form.style.marginTop = "12px";
+    form.style.cssText = "padding:0 20px 4px";
     form.innerHTML = `
       <div class="quote-block">
         <h3 class="quote-block-title">Nuevo producto</h3>
@@ -335,90 +387,33 @@ header.appendChild(importFile);
       `;
   
         const actionsTd = tr.lastElementChild;
-  
+        const actionsDiv = document.createElement("div");
+        actionsDiv.style.cssText = "display:flex;justify-content:flex-end;gap:6px;align-items:center";
+
         const editBtn = document.createElement("button");
         editBtn.type = "button";
-        editBtn.className = "btn btn-secondary";
+        editBtn.className = "btn btn-secondary btn-sm";
         editBtn.textContent = "Editar";
-  
+
         const toggleBtn = document.createElement("button");
         toggleBtn.type = "button";
-        toggleBtn.className = "btn btn-secondary";
+        toggleBtn.className = "btn btn-secondary btn-sm";
         toggleBtn.textContent = it.isActive ? "Desactivar" : "Activar";
-  
+
         const delBtn = document.createElement("button");
         delBtn.type = "button";
-        delBtn.className = "btn btn-secondary";
+        delBtn.className = "btn btn-danger btn-sm";
         delBtn.textContent = "Borrar";
-  
-        actionsTd.style.display = "flex";
-        actionsTd.style.justifyContent = "flex-end";
-        actionsTd.style.gap = "8px";
-        actionsTd.appendChild(editBtn);
-        actionsTd.appendChild(toggleBtn);
-        actionsTd.appendChild(delBtn);
-  
-        editBtn.addEventListener("click", async () => {
-            try {
-              setAlert(null, "");
-              _editing = { merchantId, id: it.id };
-              const formEl = editDialog.querySelector("#pf-edit-form");
-              formEl.name.value = it.name || "";
-              formEl.price.value = it.price ?? "";
-              formEl.vat.value = it.vat === null ? "" : String(it.vat);
-              formEl.cost.value = it.cost === null ? "" : String(it.cost);
-              formEl.description.value = it.description || "";
 
-              const providerSelectEl = formEl.querySelector('select[name="providerId"]');
-              if (providerSelectEl) {
-                providerSelectEl.innerHTML = `<option value="">— Sin proveedor —</option>`;
-
-                (_providers || []).forEach((p) => {
-                  const opt = document.createElement("option");
-                  opt.value = String(p.id);
-                  opt.textContent = p.name || `Proveedor #${p.id}`;
-                  providerSelectEl.appendChild(opt);
-                });
-
-                providerSelectEl.value = it.providerId == null ? "" : String(it.providerId);
-              }
-
-              editDialog.showModal();
+        actionsDiv.appendChild(editBtn);
+        actionsDiv.appendChild(toggleBtn);
+        actionsDiv.appendChild(delBtn);
+        actionsTd.appendChild(actionsDiv);
   
-              // Guardar: interceptamos submit del form
-              const onSubmit = async (e) => {
-                e.preventDefault();
-  
-                const name = String(formEl.name.value || "").trim();
-                const price = Number(formEl.price.value);
-                const vatRaw = String(formEl.vat.value || "").trim();
-                const costRaw = String(formEl.cost.value || "").trim();
-                const providerRaw = String(formEl.providerId?.value || "").trim();
-                const description = String(formEl.description.value || "").trim();
-  
-                if (!name) return setAlert("error", "name_required");
-                if (!Number.isFinite(price) || price <= 0) return setAlert("error", "price_invalid");
-  
-                const payload = {
-                  name,
-                  description: description || null,
-                  price,
-                  vat: vatRaw === "" ? null : Number(vatRaw),
-                  cost: costRaw === "" ? null : Number(costRaw),
-                  providerId: providerRaw === "" ? null : Number(providerRaw),
-                };
-  
-                await updateProduct(_editing.merchantId, _editing.id, payload);
-                editDialog.close();
-                setAlert("success", "Producto actualizado.");
-                await refresh();
-              };
-  
-              formEl.addEventListener("submit", onSubmit, { once: true });
-            } catch (e) {
-              setAlert("error", e.message || "Error actualizando.");
-            }
-          });
+        editBtn.addEventListener("click", () => {
+          setAlert(null, "");
+          openEditModal(it);
+        });
   
 
 

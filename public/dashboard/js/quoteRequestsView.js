@@ -31,6 +31,7 @@ async function renderQuoteRequestsView(container) {
 
   const alertEl = document.createElement('div');
   alertEl.className = 'alert';
+  alertEl.style.display = 'none';
   wrap.appendChild(alertEl);
 
   function setAlert(type, msg) {
@@ -38,6 +39,7 @@ async function renderQuoteRequestsView(container) {
     alertEl.className = 'alert';
     if (type === 'success') alertEl.classList.add('success');
     if (type === 'error')   alertEl.classList.add('error');
+    alertEl.style.display = type ? 'block' : 'none';
   }
 
   // ── Lista ────────────────────────────────────────────────────────────────

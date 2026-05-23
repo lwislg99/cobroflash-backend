@@ -184,58 +184,56 @@ function openExpenseModal(expense) {
   const today = new Date().toISOString().slice(0, 10);
 
   const backdrop = document.createElement('div');
-  backdrop.className = 'modal-backdrop';
+  backdrop.className = 'modal-overlay';
   backdrop.id = 'exp-modal';
   backdrop.innerHTML = `
     <div class="modal" style="max-width:480px">
       <div class="modal-header">
         <span class="modal-title">${isEdit ? 'Editar gasto' : 'Nuevo gasto'}</span>
-        <button class="modal-close" id="exp-close">×</button>
+        <button class="modal-close" id="exp-close">&times;</button>
       </div>
       <div class="modal-body" style="gap:12px">
         <div class="field">
           <label>Concepto *</label>
-          <input id="exp-concept" type="text" placeholder="Ej: Tubería PVC 20mm" value="${escHtml(expense?.concept||'')}" style="width:100%"/>
+          <input id="exp-concept" type="text" placeholder="Ej: Tubería PVC 20mm" value="${escHtml(expense?.concept||'')}"/>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div class="field">
             <label>Importe *</label>
-            <input id="exp-amount" type="number" min="0" step="0.01" placeholder="0.00" value="${expense?.amount||''}" style="width:100%"/>
+            <input id="exp-amount" type="number" min="0" step="0.01" placeholder="0.00" value="${expense?.amount||''}"/>
           </div>
           <div class="field">
             <label>Fecha</label>
-            <input id="exp-date" type="date" value="${expense ? new Date(expense.date).toISOString().slice(0,10) : today}" style="width:100%"/>
+            <input id="exp-date" type="date" value="${expense ? new Date(expense.date).toISOString().slice(0,10) : today}"/>
           </div>
         </div>
         <div class="field">
           <label>Categoría</label>
-          <select id="exp-category" style="width:100%">
+          <select id="exp-category">
             ${Object.entries(CATEGORY_LABELS).map(([v,c]) =>
               `<option value="${v}"${expense?.category===v?' selected':''}>${c.label}</option>`).join('')}
           </select>
         </div>
         <div class="field">
           <label>Cotización vinculada (opcional)</label>
-          <input id="exp-quoteid" type="number" placeholder="ID de la cotización" value="${expense?.quote?.id||expense?.quoteId||''}" style="width:100%"/>
-          <p style="font-size:12px;color:#9ca3af;margin:2px 0 0">Vincula este gasto a un trabajo para calcular el margen.</p>
+          <input id="exp-quoteid" type="number" placeholder="ID de la cotización" value="${expense?.quote?.id||expense?.quoteId||''}"/>
+          <p style="font-size:12px;color:var(--slate-400);margin:2px 0 0">Vincula este gasto a un trabajo para calcular el margen.</p>
         </div>
         <div class="field">
           <label>Proveedor (opcional)</label>
-          <input id="exp-providerid" type="number" placeholder="ID del proveedor" value="${expense?.provider?.id||expense?.providerId||''}" style="width:100%"/>
+          <input id="exp-providerid" type="number" placeholder="ID del proveedor" value="${expense?.provider?.id||expense?.providerId||''}"/>
         </div>
         <div class="field">
           <label>Notas</label>
-          <textarea id="exp-notes" placeholder="Detalles adicionales…" style="width:100%;height:60px;resize:vertical">${expense?.notes||''}</textarea>
+          <textarea id="exp-notes" placeholder="Detalles adicionales…" style="height:60px;resize:vertical">${expense?.notes||''}</textarea>
         </div>
-        <div id="exp-receipt-section">
-          <label style="font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:5px">
-            Foto del ticket (opcional)
-          </label>
-          ${expense?.receiptData ? `<img src="${expense.receiptData}" style="max-width:100%;max-height:120px;border-radius:8px;object-fit:contain;border:1px solid #e5e7eb;margin-bottom:6px"/>` : ''}
+        <div class="field" id="exp-receipt-section">
+          <label>Foto del ticket (opcional)</label>
+          ${expense?.receiptData ? `<img src="${expense.receiptData}" style="max-width:100%;max-height:120px;border-radius:8px;object-fit:contain;border:1px solid var(--slate-200);margin-bottom:6px"/>` : ''}
           <input type="file" id="exp-receipt" accept="image/*" style="font-size:13px"/>
         </div>
+        <div id="exp-error" class="alert error" style="display:none"></div>
       </div>
-      <div id="exp-error" style="color:#b91c1c;font-size:13px;padding:0 0 8px;display:none"></div>
       <div class="modal-footer">
         <button class="btn btn-secondary" id="exp-cancel">Cancelar</button>
         <button class="btn btn-primary" id="exp-save">${isEdit ? 'Guardar cambios' : 'Añadir gasto'}</button>
@@ -301,7 +299,7 @@ function closeExpModal() {
 
 function showExpError(msg) {
   const el = document.getElementById('exp-error');
-  if (el) { el.textContent = msg; el.style.display = 'block'; }
+  if (el) { el.textContent = msg; el.className = 'alert error'; el.style.display = 'block'; }
 }
 
 function fileToBase64(file) {
