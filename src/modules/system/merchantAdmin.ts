@@ -19,6 +19,7 @@ export type MerchantProfileInput = {
   clabe?: string | null;
   notifyEmailOnPaid?: boolean;
   notifyEmailOnQuoteAccepted?: boolean;
+  notifyEmailWeeklyDigest?: boolean;
 };
 
 // 1) Obtener el perfil del merchant (para pintar el formulario del dashboard)
@@ -41,6 +42,7 @@ export async function getMerchantProfile(merchantId: number = DEFAULT_MERCHANT_I
       clabe: true,
       notifyEmailOnPaid: true,
       notifyEmailOnQuoteAccepted: true,
+      notifyEmailWeeklyDigest: true,
     },
   });
 

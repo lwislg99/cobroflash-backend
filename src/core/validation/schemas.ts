@@ -122,6 +122,7 @@ export const merchantProfileUpdateSchema = z.object({
   clabe: z.string().length(18).nullable().optional(),
   notifyEmailOnPaid:          z.boolean().optional(),
   notifyEmailOnQuoteAccepted: z.boolean().optional(),
+  notifyEmailWeeklyDigest:    z.boolean().optional(),
 });
 
 export type MerchantProfileUpdateInput = z.infer<

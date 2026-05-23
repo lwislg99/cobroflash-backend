@@ -7,6 +7,8 @@ export async function listInvoicesAdmin(
   merchantId: number,
   status: string | 'all' = 'all',
   search?: string,
+  dateFrom?: Date | null,
+  dateTo?: Date | null,
 ) {
   const where: Prisma.InvoiceWhereInput = { merchantId };
 
@@ -21,6 +23,12 @@ export async function listInvoicesAdmin(
       { customer: { phone: { contains: search, mode: 'insensitive' } } },
       { customer: { email: { contains: search, mode: 'insensitive' } } },
     ];
+  }
+
+  if (dateFrom || dateTo) {
+    where.createdAt = {};
+    if (dateFrom) (where.createdAt as any).gte = dateFrom;
+    if (dateTo)   (where.createdAt as any).lte = dateTo;
   }
 
   return prisma.invoice.findMany({

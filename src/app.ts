@@ -44,6 +44,7 @@ import searchRouter        from './modules/search/app/routes/search.routes';
 
 import { merchantProfileUpdateSchema } from './core/validation/schemas';
 import { getMerchantProfile, updateMerchantProfile } from './modules/system/merchantAdmin';
+import { getDigestPreview } from './modules/messaging/domain/weeklyDigest.service';
 import { getSession } from './modules/auth/domain/auth.service';
 import { getLocaleJson } from './core/i18n/locales';
 import { quoteDecisionLandingRouter } from './modules/system/app/routes/quoteDecisionLanding.routes';
@@ -134,6 +135,16 @@ app.use('/admin/expenses',   expensesRouter);
 app.use('/admin/billing',    requireActivePlan, requireRole('admin'), subscriptionsRouter);
 app.use('/admin/team',       requireRole('admin'), teamRouter);
 app.use('/admin/ai',         aiRouter);
+
+// Preview del digest semanal
+app.get('/admin/digest/preview', async (req, res) => {
+  try {
+    const preview = await getDigestPreview(req.merchantId);
+    return res.json(preview);
+  } catch (err) {
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
 app.use('/admin/exports',    exportsRouter);
 app.use('/admin/reports',    reportsRouter);
 app.use('/admin/templates',     templatesRouter);

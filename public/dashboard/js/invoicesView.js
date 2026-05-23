@@ -1,24 +1,16 @@
 // public/dashboard/js/invoicesView.js
 
 async function fetchInvoices(options = {}) {
-    const { status = 'all', search = '' } = options;
-  
+    const { status = 'all', search = '', dateFrom = '', dateTo = '' } = options;
+
     const url = new URL('/admin/invoices', window.location.origin);
-    if (status && status !== 'all') {
-      url.searchParams.set('status', status);
-    }
-    if (search) {
-      url.searchParams.set('search', search);
-    }
-  
-    const res = await fetch(url.toString(), {
-      headers: { Accept: 'application/json' },
-    });
-  
-    if (!res.ok) {
-      throw new Error('Error cargando facturas');
-    }
-  
+    if (status && status !== 'all') url.searchParams.set('status', status);
+    if (search)   url.searchParams.set('search', search);
+    if (dateFrom) url.searchParams.set('dateFrom', dateFrom);
+    if (dateTo)   url.searchParams.set('dateTo', dateTo);
+
+    const res = await fetch(url.toString(), { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error('Error cargando facturas');
     return res.json();
   }
   
@@ -62,8 +54,22 @@ async function fetchInvoices(options = {}) {
     const inputSearch = document.createElement('input');
     inputSearch.className = 'input';
     inputSearch.placeholder = 'Buscar por nº, cliente…';
-    inputSearch.style.minWidth = '160px';
+    inputSearch.style.minWidth = '140px';
     right.appendChild(inputSearch);
+
+    const inputFrom = document.createElement('input');
+    inputFrom.type = 'date';
+    inputFrom.className = 'input';
+    inputFrom.style.cssText = 'min-width:0;width:130px';
+    inputFrom.title = 'Desde';
+    right.appendChild(inputFrom);
+
+    const inputTo = document.createElement('input');
+    inputTo.type = 'date';
+    inputTo.className = 'input';
+    inputTo.style.cssText = 'min-width:0;width:130px';
+    inputTo.title = 'Hasta';
+    right.appendChild(inputTo);
 
     const exportBtn = document.createElement('a');
     exportBtn.className = 'btn-secondary btn-sm';
@@ -121,6 +127,8 @@ async function fetchInvoices(options = {}) {
 
     let currentStatus = 'all';
     let currentSearch = '';
+    let currentDateFrom = '';
+    let currentDateTo   = '';
     let selectedIds = new Set();
 
     function updateBulkBar() {
@@ -187,7 +195,7 @@ async function fetchInvoices(options = {}) {
       statusBox.style.display = 'block';
 
       try {
-        const invoices = await fetchInvoices({ status: currentStatus, search: currentSearch });
+        const invoices = await fetchInvoices({ status: currentStatus, search: currentSearch, dateFrom: currentDateFrom, dateTo: currentDateTo });
         tbody.innerHTML = '';
         selectedIds.clear();
         updateBulkBar();
@@ -270,13 +278,22 @@ async function fetchInvoices(options = {}) {
     }
   
     // Listeners de filtros
+    function updateExportHref() {
+      const params = new URLSearchParams();
+      if (currentStatus !== 'all') params.set('status', currentStatus);
+      if (currentDateFrom) params.set('from', currentDateFrom);
+      if (currentDateTo)   params.set('to',   currentDateTo);
+      exportBtn.href = '/admin/exports/invoices.csv' + (params.toString() ? '?' + params.toString() : '');
+    }
+
     selectStatus.addEventListener('change', () => {
       currentStatus = selectStatus.value;
-      exportBtn.href = currentStatus !== 'all'
-        ? `/admin/exports/invoices.csv?status=${currentStatus}`
-        : '/admin/exports/invoices.csv';
+      updateExportHref();
       reload();
     });
+
+    inputFrom.addEventListener('change', () => { currentDateFrom = inputFrom.value; updateExportHref(); reload(); });
+    inputTo.addEventListener('change',   () => { currentDateTo   = inputTo.value;   updateExportHref(); reload(); });
   
     inputSearch.addEventListener('input', () => {
       currentSearch = inputSearch.value.trim();

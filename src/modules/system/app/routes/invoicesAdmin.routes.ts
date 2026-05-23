@@ -26,10 +26,12 @@ const router = Router();
  */
 router.get('/', async (req, res) => {
   try {
-    const status = req.query.status ? String(req.query.status) : 'all';
-    const search = req.query.search ? String(req.query.search) : undefined;
+    const status   = req.query.status   ? String(req.query.status)   : 'all';
+    const search   = req.query.search   ? String(req.query.search)   : undefined;
+    const dateFrom = req.query.dateFrom ? new Date(String(req.query.dateFrom)) : null;
+    const dateTo   = req.query.dateTo   ? (() => { const d = new Date(String(req.query.dateTo)); d.setHours(23,59,59,999); return d; })() : null;
 
-    const invoices = await listInvoicesAdmin(req.merchantId, status, search);
+    const invoices = await listInvoicesAdmin(req.merchantId, status, search, dateFrom, dateTo);
     res.json(invoices);
   } catch (err) {
     console.error('[GET /admin/invoices]', err);

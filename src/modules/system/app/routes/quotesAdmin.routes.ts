@@ -24,8 +24,11 @@ const router = Router();
  */
 router.get('/', async (req, res) => {
   try {
-    const search = req.query.search ? String(req.query.search) : undefined;
-    const quotes = await listQuotesAdmin(req.merchantId, search);
+    const search   = req.query.search   ? String(req.query.search)   : undefined;
+    const status   = req.query.status   ? String(req.query.status)   : undefined;
+    const dateFrom = req.query.dateFrom ? new Date(String(req.query.dateFrom)) : null;
+    const dateTo   = req.query.dateTo   ? (() => { const d = new Date(String(req.query.dateTo)); d.setHours(23,59,59,999); return d; })() : null;
+    const quotes = await listQuotesAdmin(req.merchantId, search, status, dateFrom, dateTo);
     return res.json(quotes);
   } catch (err) {
     console.error('[GET /admin/quotes]', err);

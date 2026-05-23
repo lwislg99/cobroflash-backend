@@ -4,8 +4,18 @@ import { prisma } from '../../core/db/prisma';
 /**
  * Lista de presupuestos para el panel admin.
  */
-export async function listQuotesAdmin(merchantId: number, search?: string) {
+export async function listQuotesAdmin(
+  merchantId: number,
+  search?: string,
+  status?: string,
+  dateFrom?: Date | null,
+  dateTo?: Date | null,
+) {
   const where: any = { merchantId };
+
+  if (status && status !== 'all') {
+    where.status = status;
+  }
 
   if (search && search.trim() !== '') {
     const s = search.trim();
@@ -13,17 +23,15 @@ export async function listQuotesAdmin(merchantId: number, search?: string) {
 
     where.OR = [
       ...(Number.isFinite(maybeId) ? [{ id: maybeId }] : []),
-      {
-        customer: {
-          name: { contains: s, mode: 'insensitive' },
-        },
-      },
-      {
-        customer: {
-          phone: { contains: s, mode: 'insensitive' },
-        },
-      },
+      { customer: { name:  { contains: s, mode: 'insensitive' } } },
+      { customer: { phone: { contains: s, mode: 'insensitive' } } },
     ];
+  }
+
+  if (dateFrom || dateTo) {
+    where.createdAt = {};
+    if (dateFrom) where.createdAt.gte = dateFrom;
+    if (dateTo)   where.createdAt.lte = dateTo;
   }
 
   const quotes = await prisma.quote.findMany({
