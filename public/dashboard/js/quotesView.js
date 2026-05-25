@@ -227,14 +227,6 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
   fieldVatDefault.input.step = "1";
   clientFormRow.appendChild(fieldVatDefault.wrapper);
 
-  const fieldTo = createField(
-    "Teléfono override (E.164 sin +, opcional)",
-    "to",
-    "text",
-    false
-  );
-  clientFormRow.appendChild(fieldTo.wrapper);
-
     // Checkbox WhatsApp
     const waWrapper = document.createElement("div");
     waWrapper.className = "field inline-checkbox";
@@ -1494,7 +1486,6 @@ if (Number.isFinite(n) && n >= 0) {
   resetBtn.addEventListener("click", function () {
     fieldCustomer.select.value = "";
     fieldVatDefault.input.value = "21";
-    fieldTo.input.value = "";
     waCheck.checked = true;
     paymentSelect.value = "FULL_UPFRONT";
 
