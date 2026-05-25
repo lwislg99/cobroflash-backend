@@ -8,9 +8,8 @@ export const config = {
 
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || '',
-    STRIPE_PRICE_ID_BASIC:   process.env.STRIPE_PRICE_ID_BASIC   || '',
-    STRIPE_PRICE_ID_PRO:     process.env.STRIPE_PRICE_ID_PRO     || '',
-    STRIPE_PRICE_ID_EMPRESA: process.env.STRIPE_PRICE_ID_EMPRESA || '',
+    STRIPE_PRICE_ID_PRO:        process.env.STRIPE_PRICE_ID_PRO        || '',
+    STRIPE_PRICE_ID_PRO_ANNUAL: process.env.STRIPE_PRICE_ID_PRO_ANNUAL || '',
   
     SMTP_URL: process.env.SMTP_URL || '',
     EMAIL_FROM: process.env.EMAIL_FROM || 'CobroFlash <no-reply@cobroflash.local>',
