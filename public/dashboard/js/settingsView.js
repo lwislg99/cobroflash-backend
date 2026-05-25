@@ -175,46 +175,8 @@ function renderSettingsView(container) {
       "Te notificamos cuando el cliente firma y acepta desde su portal."
     );
 
-    const tNotifyDigest = createToggle(
-      "notifyEmailWeeklyDigest",
-      "Resumen semanal por email (lunes a las 9h)",
-      "Un email con lo que ocurrió la semana pasada: cobros, presupuestos, clientes nuevos."
-    );
-
     form.appendChild(tNotifyPaid.wrapper);
     form.appendChild(tNotifyAccepted.wrapper);
-    form.appendChild(tNotifyDigest.wrapper);
-
-    // Botón de vista previa del digest
-    const digestPreviewBtn = document.createElement("button");
-    digestPreviewBtn.type = "button";
-    digestPreviewBtn.className = "btn-ghost btn-sm";
-    digestPreviewBtn.style.cssText = "align-self:flex-start;border:1px solid var(--slate-200);font-size:12px";
-    digestPreviewBtn.textContent = "👁 Vista previa del resumen semanal";
-    digestPreviewBtn.addEventListener("click", async () => {
-      digestPreviewBtn.disabled = true;
-      digestPreviewBtn.textContent = "Cargando…";
-      try {
-        const data = await apiRequest("/admin/digest/preview");
-        const s = data.stats;
-        const currency = s.cobrado.currency;
-        const fmtAmt = (n) => Number(n).toLocaleString("es-ES", {minimumFractionDigits:2, maximumFractionDigits:2}) + " " + currency;
-        alert(
-          "📊 Resumen de los últimos 7 días:\n\n" +
-          "💰 Cobrado: " + fmtAmt(s.cobrado.amount) + " (" + s.cobrado.count + " facturas)\n" +
-          "🧾 Facturas emitidas: " + s.facturasEmitidas + "\n" +
-          "✅ Presupuestos aceptados: " + s.presupuestosAceptados + "\n" +
-          "📋 Presupuestos enviados: " + s.presupuestosEnviados + "\n" +
-          "👤 Clientes nuevos: " + s.clientesNuevos + "\n" +
-          "⏳ Pendiente de cobro: " + fmtAmt(s.pendiente.amount) + " (" + s.pendiente.count + " facturas)"
-        );
-      } catch {
-        alert("Error al cargar la vista previa.");
-      }
-      digestPreviewBtn.disabled = false;
-      digestPreviewBtn.textContent = "👁 Vista previa del resumen semanal";
-    });
-    form.appendChild(digestPreviewBtn);
 
     const actions = document.createElement("div");
     actions.className = "form-actions";
@@ -245,7 +207,6 @@ function renderSettingsView(container) {
         fClabe.input.value = merchant.clabe || "";
         tNotifyPaid.chk.checked     = merchant.notifyEmailOnPaid     !== false;
         tNotifyAccepted.chk.checked = !!merchant.notifyEmailOnQuoteAccepted;
-        tNotifyDigest.chk.checked   = !!merchant.notifyEmailWeeklyDigest;
         if (merchant.country) fCountrySelect.value = merchant.country;
   
         setAlert(null, "");
@@ -275,7 +236,6 @@ function renderSettingsView(container) {
         clabe: fClabe.input.value.trim() || null,
         notifyEmailOnPaid:          tNotifyPaid.chk.checked,
         notifyEmailOnQuoteAccepted: tNotifyAccepted.chk.checked,
-        notifyEmailWeeklyDigest:    tNotifyDigest.chk.checked,
       };
   
       if (!payload.name || !payload.legalName || !payload.taxId || !payload.address || !payload.whatsappPhone) {
