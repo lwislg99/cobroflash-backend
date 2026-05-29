@@ -1,5 +1,5 @@
-// Service Worker — PresuFácil PWA
-const CACHE_NAME = 'presufacil-v1';
+// Service Worker — Yaqu PWA
+const CACHE_NAME = 'yaqu-v1';
 
 // Recursos estáticos del dashboard (shell de la app)
 const SHELL = [
