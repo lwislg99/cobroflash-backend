@@ -427,10 +427,12 @@ router.post('/:token/quote-request', async (req, res) => {
     // Notificar al profesional por WhatsApp (fire-and-forget)
     const mPhone = normalizePhone(customer.merchant?.whatsappPhone);
     if (mPhone) {
-      const mName = customer.merchant?.name || 'tu negocio';
+      const trimmed = description.length > 500
+        ? description.slice(0, 500) + '…'
+        : description;
       sendWhatsAppText({
         to: mPhone,
-        text: `📋 Nueva solicitud de presupuesto de *${customer.name}*:\n\n"${description.slice(0, 300)}${description.length > 300 ? '…' : ''}"\n\nRevísala en tu panel de Yaqu.`,
+        text: `📋 *Nueva solicitud de presupuesto*\n\n👤 *Cliente:* ${customer.name}\n\n📝 *Descripción:*\n"${trimmed}"\n\nRevísala en tu panel 👉 ${BASE_URL}/dashboard/#quote-requests`,
       }).catch((e) => console.error('[quoteRequest] WA error:', e?.message));
     }
 
