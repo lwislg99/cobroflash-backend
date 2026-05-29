@@ -174,9 +174,48 @@ function renderSettingsView(container) {
       "Recibir email cuando un cliente acepta un presupuesto",
       "Te notificamos cuando el cliente firma y acepta desde su portal."
     );
+    const tNotifyWeekly = createToggle(
+      "notifyEmailWeeklyDigest",
+      "Recibir resumen semanal por email",
+      "Cada lunes a las 9h te enviamos un resumen con cobrado, facturas emitidas, presupuestos aceptados y pendiente de cobro."
+    );
+
+    const previewBtn = document.createElement("button");
+    previewBtn.type = "button";
+    previewBtn.className = "btn btn-ghost btn-sm";
+    previewBtn.textContent = "Vista previa";
+    previewBtn.style.cssText = "margin-top:6px;margin-left:24px";
+    previewBtn.addEventListener("click", async () => {
+      previewBtn.disabled = true;
+      const original = previewBtn.textContent;
+      previewBtn.textContent = "Cargando…";
+      try {
+        const res = await apiRequest("/admin/digest/preview");
+        const s = res.stats || {};
+        const fmt = (a, c) => Number(a || 0).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " " + (c || "");
+        const msg = [
+          res.subject || "📊 Tu semana en Yaqu",
+          "",
+          "💰 Cobrado: " + fmt(s.cobrado?.amount, s.cobrado?.currency) + "  (" + (s.cobrado?.count || 0) + " factura/s)",
+          "🧾 Facturas emitidas: " + (s.facturasEmitidas || 0),
+          "✅ Presupuestos aceptados: " + (s.presupuestosAceptados || 0),
+          "📋 Presupuestos enviados: " + (s.presupuestosEnviados || 0),
+          "👤 Clientes nuevos: " + (s.clientesNuevos || 0),
+          "⏳ Pendiente: " + fmt(s.pendiente?.amount, s.pendiente?.currency) + "  (" + (s.pendiente?.count || 0) + " factura/s)",
+        ].join("\n");
+        alert(msg);
+      } catch (err) {
+        alert("No se pudo cargar la vista previa: " + (err?.message || "error"));
+      } finally {
+        previewBtn.disabled = false;
+        previewBtn.textContent = original;
+      }
+    });
+    tNotifyWeekly.wrapper.appendChild(previewBtn);
 
     form.appendChild(tNotifyPaid.wrapper);
     form.appendChild(tNotifyAccepted.wrapper);
+    form.appendChild(tNotifyWeekly.wrapper);
 
     const actions = document.createElement("div");
     actions.className = "form-actions";
@@ -207,6 +246,7 @@ function renderSettingsView(container) {
         fClabe.input.value = merchant.clabe || "";
         tNotifyPaid.chk.checked     = merchant.notifyEmailOnPaid     !== false;
         tNotifyAccepted.chk.checked = !!merchant.notifyEmailOnQuoteAccepted;
+        tNotifyWeekly.chk.checked   = !!merchant.notifyEmailWeeklyDigest;
         if (merchant.country) fCountrySelect.value = merchant.country;
   
         setAlert(null, "");
@@ -236,6 +276,7 @@ function renderSettingsView(container) {
         clabe: fClabe.input.value.trim() || null,
         notifyEmailOnPaid:          tNotifyPaid.chk.checked,
         notifyEmailOnQuoteAccepted: tNotifyAccepted.chk.checked,
+        notifyEmailWeeklyDigest:    tNotifyWeekly.chk.checked,
       };
   
       if (!payload.name || !payload.legalName || !payload.taxId || !payload.address || !payload.whatsappPhone) {
