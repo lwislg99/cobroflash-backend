@@ -80,7 +80,7 @@ router.get('/:id', async (req, res) => {
     if (invId) invoice = await prisma.invoice.findUnique({ where: { id: invId } });
   }
 
-  const title = `Recibo #${ch.id} — CobroFlash`;
+  const title = `Recibo #${ch.id} — Yaqu`;
 
   const statusBadge =
     ch.status === 'paid'

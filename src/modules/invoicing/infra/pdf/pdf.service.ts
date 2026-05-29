@@ -280,7 +280,7 @@ export async function generateInvoicePdf(params: {
   hLine();
   doc.moveDown(0.4);
   doc.fontSize(7.5).fillColor('#9ca3af')
-    .text('Factura generada automáticamente por PresuFácil.', { align: 'center' });
+    .text('Factura generada automáticamente por Yaqu.', { align: 'center' });
   if (isVF) {
     doc.text('Sistema de facturación verificable conforme al RD 1007/2023 (VeriFactu).', { align: 'center' });
   }
@@ -585,7 +585,7 @@ doc
   .fontSize(9)
   .fillColor('#666')
   .text(
-    `${QUOTE_LABEL} generado automáticamente por PresuFácil — válido salvo indicación en contrario.`,
+    `${QUOTE_LABEL} generado automáticamente por Yaqu — válido salvo indicación en contrario.`,
     CONTENT_X,
     doc.y,
     { width: CONTENT_W, align: 'center' },

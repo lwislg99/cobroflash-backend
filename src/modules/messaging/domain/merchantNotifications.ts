@@ -41,7 +41,7 @@ export async function sendMerchantPaymentEmail(params: {
   const html = `
 <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#0f172a">
   <div style="background:#0f172a;padding:20px 24px;border-radius:12px 12px 0 0">
-    <span style="color:#22c55e;font-weight:800;font-size:18px">PresuFácil</span>
+    <span style="color:#22c55e;font-weight:800;font-size:18px">Yaqu</span>
   </div>
   <div style="background:#f8fafc;padding:24px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0;border-top:none">
     <h2 style="margin:0 0 8px;font-size:20px;font-weight:800;color:#0f172a">💰 ¡Pago recibido!</h2>
@@ -64,7 +64,7 @@ export async function sendMerchantPaymentEmail(params: {
     </div>
     <p style="color:#94a3b8;font-size:12px;margin:0">
       Este email fue enviado a ${merchantName}.<br/>
-      Para desactivarlo ve a <strong>PresuFácil → Configuración → Notificaciones</strong>.
+      Para desactivarlo ve a <strong>Yaqu → Configuración → Notificaciones</strong>.
     </p>
   </div>
 </div>`;
@@ -89,7 +89,7 @@ export async function sendMerchantQuoteAcceptedEmail(params: {
   const html = `
 <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#0f172a">
   <div style="background:#0f172a;padding:20px 24px;border-radius:12px 12px 0 0">
-    <span style="color:#22c55e;font-weight:800;font-size:18px">PresuFácil</span>
+    <span style="color:#22c55e;font-weight:800;font-size:18px">Yaqu</span>
   </div>
   <div style="background:#f8fafc;padding:24px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0;border-top:none">
     <h2 style="margin:0 0 8px;font-size:20px;font-weight:800;color:#0f172a">✅ Presupuesto aceptado</h2>
@@ -114,7 +114,7 @@ export async function sendMerchantQuoteAcceptedEmail(params: {
       El cliente ha firmado digitalmente el presupuesto. Ya puedes emitir la factura.
     </p>
     <p style="color:#94a3b8;font-size:12px;margin:0">
-      Para desactivarlo ve a <strong>PresuFácil → Configuración → Notificaciones</strong>.
+      Para desactivarlo ve a <strong>Yaqu → Configuración → Notificaciones</strong>.
     </p>
   </div>
 </div>`;

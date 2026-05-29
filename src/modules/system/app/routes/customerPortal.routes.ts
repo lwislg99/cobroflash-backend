@@ -144,7 +144,7 @@ function page(title: string, body: string) {
 </head>
 <body>
 ${body}
-<p class="pf-footer">Powered by PresuFácil</p>
+<p class="pf-footer">Powered by Yaqu</p>
 <script>
   // Expandir líneas de factura
   document.querySelectorAll('.pf-lines-toggle').forEach(btn => {
@@ -430,7 +430,7 @@ router.post('/:token/quote-request', async (req, res) => {
       const mName = customer.merchant?.name || 'tu negocio';
       sendWhatsAppText({
         to: mPhone,
-        text: `📋 Nueva solicitud de presupuesto de *${customer.name}*:\n\n"${description.slice(0, 300)}${description.length > 300 ? '…' : ''}"\n\nRevísala en tu panel de PresuFácil.`,
+        text: `📋 Nueva solicitud de presupuesto de *${customer.name}*:\n\n"${description.slice(0, 300)}${description.length > 300 ? '…' : ''}"\n\nRevísala en tu panel de Yaqu.`,
       }).catch((e) => console.error('[quoteRequest] WA error:', e?.message));
     }
 

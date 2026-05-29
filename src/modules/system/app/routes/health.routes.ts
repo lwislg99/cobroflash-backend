@@ -9,14 +9,14 @@ router.get('/', async (_req, res) => {
     await prisma.$queryRaw`SELECT 1`;
     res.json({
       ok: true,
-      service: 'cobroflash-backend',
+      service: 'yaqu-backend',
       version: '0.1.0',
       db: 'up',
     });
   } catch {
     res
       .status(500)
-      .json({ ok: false, service: 'cobroflash-backend', db: 'down' });
+      .json({ ok: false, service: 'yaqu-backend', db: 'down' });
   }
 });
 

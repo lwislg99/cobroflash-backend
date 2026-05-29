@@ -61,7 +61,7 @@ router.get('/bank/:id', async (req, res) => {
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Pagar por transferencia — PresuFácil</title>
+  <title>Pagar por transferencia — Yaqu</title>
   <style>
     *{box-sizing:border-box}
     body{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#f9fafb;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
@@ -138,7 +138,7 @@ router.get('/bank/:id', async (req, res) => {
       </form>
     </div>` : ''}
 
-    <div class="footer">PresuFácil · Pago seguro por transferencia bancaria</div>
+    <div class="footer">Yaqu · Pago seguro por transferencia bancaria</div>
   </div>
 
   <script>

@@ -46,7 +46,7 @@ export async function sendInvoiceEmail(args: {
     <p>Hola ${toName || ''},</p>
     <p>Adjuntamos la factura <b>${inv.number}</b>. También puedes verla aquí:</p>
     <p><a href="${inv.pdfUrl}">${inv.pdfUrl}</a></p>
-    <p>Gracias,<br/>CobroFlash</p>
+    <p>Gracias,<br/>Yaqu</p>
   `.trim();
 
   const mail = await transporter.sendMail({

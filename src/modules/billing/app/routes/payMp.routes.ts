@@ -102,7 +102,7 @@ router.get('/mp/:id/result', async (req, res) => {
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>${esc(s.title)} — PresuFácil</title>
+  <title>${esc(s.title)} — Yaqu</title>
   <style>
     *{box-sizing:border-box}
     body{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#f9fafb;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
@@ -122,7 +122,7 @@ router.get('/mp/:id/result', async (req, res) => {
     <h1>${esc(s.title)}</h1>
     <p>${esc(s.msg)}</p>
     ${concept ? `<div class="amount">${esc(amount)} ${esc(currency)}<br/><span style="font-size:.85rem;font-weight:400;color:#6b7280">${esc(concept)}</span></div>` : ''}
-    <div class="footer">PresuFácil · Pago gestionado con Mercado Pago</div>
+    <div class="footer">Yaqu · Pago gestionado con Mercado Pago</div>
   </div>
 </body>
 </html>`);

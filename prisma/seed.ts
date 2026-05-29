@@ -23,7 +23,7 @@ async function main() {
     },
     create: {
       name: 'Demo ES',
-      email: 'demo@presufacil.online',
+      email: 'demo@yaqu.app',
       country: 'ES',
       status: 'active',
       legalName: 'Demo ES S.L.',
@@ -46,14 +46,14 @@ async function main() {
       name: 'Cliente Prueba',
       phone: '34629965893',
       email: 'cliente@example.com',
-      notes: 'Cliente demo para probar CobroFlash',
+      notes: 'Cliente demo para probar Yaqu',
     },
     create: {
       merchantId: 1,
       name: 'Cliente Prueba',
       phone: '34629965893',
       email: 'cliente@example.com',
-      notes: 'Cliente demo para probar CobroFlash',
+      notes: 'Cliente demo para probar Yaqu',
     }
   });
 

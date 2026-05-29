@@ -1,2 +1,2 @@
-# cobroflash-backend
-Pay-by-Bank para WhatsApp (ES/MX)
+# yaqu-backend
+Yaqu — cotizaciones WhatsApp-first para profesionales de servicios (LATAM/ES).

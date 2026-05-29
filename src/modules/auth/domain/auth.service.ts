@@ -41,12 +41,12 @@ export async function requestMagicLink(email: string): Promise<void> {
   try {
     await sendEmail({
       to: email,
-      subject: 'Tu enlace de acceso a PresuFácil',
+      subject: 'Tu enlace de acceso a Yaqu',
       html: `<p>Hola <strong>${merchant.name}</strong>,</p>
-<p>Haz clic en el botón para acceder a tu cuenta de PresuFácil:</p>
+<p>Haz clic en el botón para acceder a tu cuenta de Yaqu:</p>
 <p style="margin:24px 0">
   <a href="${link}" style="background:#22c55e;color:#052e16;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">
-    Entrar a PresuFácil
+    Entrar a Yaqu
   </a>
 </p>
 <p style="color:#6b7280;font-size:13px">Este enlace es de un solo uso y caduca en 15 minutos.<br/>Si no lo solicitaste, puedes ignorar este correo.</p>`,
@@ -84,9 +84,9 @@ export async function inviteTeamMember(params: {
   try {
     await sendEmail({
       to: params.memberEmail,
-      subject: `Te han invitado a PresuFácil — ${params.merchantName}`,
+      subject: `Te han invitado a Yaqu — ${params.merchantName}`,
       html: `<p>Hola <strong>${params.memberName}</strong>,</p>
-<p><strong>${params.merchantName}</strong> te ha invitado a colaborar en su cuenta de PresuFácil.</p>
+<p><strong>${params.merchantName}</strong> te ha invitado a colaborar en su cuenta de Yaqu.</p>
 <p style="margin:24px 0">
   <a href="${link}" style="background:#22c55e;color:#052e16;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">
     Aceptar invitación
