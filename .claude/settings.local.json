@@ -34,7 +34,10 @@
       "Bash(git commit -m 'fix\\(UI polish\\): correcciones post-deploy — clases, empty states, planes, settings *)",
       "Bash(git commit -m 'fix\\(UI\\): layout desktop + scroll móvil en todas las vistas *)",
       "Bash(git commit -m 'fix\\(UI\\): data-card pattern — tablas edge-to-edge sin overflow en facturas y proveedores *)",
-      "Bash(git commit -m 'docs: CLAUDE.md v2 + MASTER v2.1 — estado completo post Sprint 5 + Sprint 6 detallado *)"
+      "Bash(git commit -m 'docs: CLAUDE.md v2 + MASTER v2.1 — estado completo post Sprint 5 + Sprint 6 detallado *)",
+      "Bash(powershell *)",
+      "Bash(git commit *)",
+      "PowerShell(npm run *)"
     ]
   }
 }
