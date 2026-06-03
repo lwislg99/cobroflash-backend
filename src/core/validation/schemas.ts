@@ -109,6 +109,13 @@ export const merchantProfileUpdateSchema = z.object({
   legalName: z.string().min(1).optional(),
   taxId: z.string().min(1).optional(),
   address: z.string().min(1).optional(),
+  trade: z
+    .enum([
+      'electricista', 'fontanero', 'reformista', 'pintor',
+      'cerrajero', 'climatizacion', 'otro',
+    ])
+    .nullable()
+    .optional(),
   defaultCurrency: z
     .string()
     .length(3)

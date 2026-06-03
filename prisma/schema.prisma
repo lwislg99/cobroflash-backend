@@ -15,6 +15,7 @@ model Merchant {
   legalName   String?  @map("legal_name")
   taxId       String?  @map("tax_id")
   address     String?  @map("address")
+  trade       String?  @map("trade")  // electricista|fontanero|reformista|pintor|cerrajero|climatizacion|otro
 
   defaultCurrency      String  @default("EUR") @map("default_currency")
   invoiceSeriesPrefix  String  @default("CF")  @map("invoice_series_prefix")

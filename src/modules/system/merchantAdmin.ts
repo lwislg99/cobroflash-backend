@@ -9,6 +9,7 @@ export type MerchantProfileInput = {
   legalName?: string;
   taxId?: string;
   address?: string;
+  trade?: string | null;
   defaultCurrency?: string;
   invoiceSeriesPrefix?: string;
   logoUrl?: string | null;
@@ -32,6 +33,7 @@ export async function getMerchantProfile(merchantId: number = DEFAULT_MERCHANT_I
       legalName: true,
       taxId: true,
       address: true,
+      trade: true,
       defaultCurrency: true,
       invoiceSeriesPrefix: true,
       logoUrl: true,
