@@ -46,14 +46,14 @@ async function main() {
       name: 'Cliente Prueba',
       phone: '34629965893',
       email: 'cliente@example.com',
-      notes: 'Cliente demo para probar Yaqu',
+      notes: 'Cliente demo para probar YaQu',
     },
     create: {
       merchantId: 1,
       name: 'Cliente Prueba',
       phone: '34629965893',
       email: 'cliente@example.com',
-      notes: 'Cliente demo para probar Yaqu',
+      notes: 'Cliente demo para probar YaQu',
     }
   });
 

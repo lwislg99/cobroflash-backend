@@ -1,6 +1,6 @@
 {
-  "name": "Yaqu",
-  "short_name": "Yaqu",
+  "name": "YaQu",
+  "short_name": "YaQu",
   "description": "Cotizaciones profesionales en 30 segundos, cobro integrado",
   "start_url": "/dashboard/",
   "display": "standalone",

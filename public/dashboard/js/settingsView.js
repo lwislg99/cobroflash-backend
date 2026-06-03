@@ -194,7 +194,7 @@ function renderSettingsView(container) {
         const s = res.stats || {};
         const fmt = (a, c) => Number(a || 0).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " " + (c || "");
         const msg = [
-          res.subject || "📊 Tu semana en Yaqu",
+          res.subject || "📊 Tu semana en YaQu",
           "",
           "💰 Cobrado: " + fmt(s.cobrado?.amount, s.cobrado?.currency) + "  (" + (s.cobrado?.count || 0) + " factura/s)",
           "🧾 Facturas emitidas: " + (s.facturasEmitidas || 0),

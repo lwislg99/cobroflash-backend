@@ -43,7 +43,7 @@ export async function createMpPreference(params: {
     auto_return: 'approved',
     notification_url: params.notificationUrl,
     external_reference: `charge_${params.chargeId}`,
-    statement_descriptor: 'Yaqu',
+    statement_descriptor: 'YaQu',
   };
 
   const { data } = await axios.post(`${MP_API}/checkout/preferences`, body, {

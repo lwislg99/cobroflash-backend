@@ -144,7 +144,7 @@ function page(title: string, body: string) {
 </head>
 <body>
 ${body}
-<p class="pf-footer">Powered by Yaqu</p>
+<p class="pf-footer">Powered by YaQu</p>
 <script>
   // Expandir líneas de factura
   document.querySelectorAll('.pf-lines-toggle').forEach(btn => {

@@ -1,4 +1,4 @@
-// Service Worker — Yaqu PWA
+// Service Worker — YaQu PWA
 const CACHE_NAME = 'yaqu-v1';
 
 // Recursos estáticos del dashboard (shell de la app)

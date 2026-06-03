@@ -12,7 +12,7 @@ export const config = {
     STRIPE_PRICE_ID_PRO_ANNUAL: process.env.STRIPE_PRICE_ID_PRO_ANNUAL || '',
   
     SMTP_URL: process.env.SMTP_URL || '',
-    EMAIL_FROM: process.env.EMAIL_FROM || 'Yaqu <no-reply@yaqu.local>',
+    EMAIL_FROM: process.env.EMAIL_FROM || 'YaQu <no-reply@yaqu.local>',
   
     AUTO_INVOICE_ON_PAID:
       String(process.env.AUTO_INVOICE_ON_PAID).toLowerCase() === 'true' || process.env.AUTO_INVOICE_ON_PAID === '1',

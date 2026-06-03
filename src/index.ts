@@ -4,6 +4,6 @@ import { config } from './core/config/env';
 import { startCronJobs } from './core/cron/cron';
 
 app.listen(config.PORT, () => {
-  console.log(`Yaqu API listening on ${config.PUBLIC_BASE_URL}`);
+  console.log(`YaQu API listening on ${config.PUBLIC_BASE_URL}`);
   startCronJobs();
 });

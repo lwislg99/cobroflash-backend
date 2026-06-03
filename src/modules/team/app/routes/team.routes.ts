@@ -62,7 +62,7 @@ router.post('/', async (req, res) => {
       name,
       email,
       role,
-      merchantName: merchant?.name ?? 'Yaqu',
+      merchantName: merchant?.name ?? 'YaQu',
     });
 
     return res.status(201).json(member);

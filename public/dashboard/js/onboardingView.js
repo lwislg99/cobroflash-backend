@@ -12,7 +12,7 @@ function showOnboardingWizard(onComplete) {
     <div style="background:#fff;border-radius:20px;padding:28px 24px;width:100%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,.2)">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:24px">
         <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#22d3ee);display:flex;align-items:center;justify-content:center;font-weight:800;color:#052e16;font-size:14px">YQ</div>
-        <span style="font-weight:700;font-size:18px;color:#0f172a">Bienvenido a Yaqu</span>
+        <span style="font-weight:700;font-size:18px;color:#0f172a">Bienvenido a YaQu</span>
       </div>
 
       <div id="ob-steps"></div>

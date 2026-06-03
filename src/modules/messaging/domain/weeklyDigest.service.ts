@@ -88,7 +88,7 @@ async function sendDigestForMerchant(
 
   const weekStr = `${from.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })} — ${new Date(to.getTime() - 1).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}`;
 
-  const subject = `📊 Tu semana en Yaqu (${weekStr})`;
+  const subject = `📊 Tu semana en YaQu (${weekStr})`;
 
   const statRow = (label: string, value: string, color = '#0f172a') =>
     `<tr><td style="padding:8px 0;color:#64748b;font-size:13px;border-bottom:1px solid #f1f5f9">${label}</td>
@@ -97,7 +97,7 @@ async function sendDigestForMerchant(
   const html = `
 <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#0f172a">
   <div style="background:#0f172a;padding:20px 24px;border-radius:12px 12px 0 0">
-    <span style="color:#22c55e;font-weight:800;font-size:18px">Yaqu</span>
+    <span style="color:#22c55e;font-weight:800;font-size:18px">YaQu</span>
     <span style="color:#64748b;font-size:13px;margin-left:8px">Resumen semanal</span>
   </div>
   <div style="background:#f8fafc;padding:24px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0;border-top:none">
@@ -127,7 +127,7 @@ async function sendDigestForMerchant(
 
     <div style="text-align:center;margin-top:8px">
       <a href="${config.PUBLIC_BASE_URL}/dashboard/" style="display:inline-block;background:#22c55e;color:#052e16;padding:11px 24px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px">
-        Abrir Yaqu →
+        Abrir YaQu →
       </a>
     </div>
 
@@ -159,7 +159,7 @@ export async function getDigestPreview(merchantId: number): Promise<{ subject: s
   const merchant = await prisma.merchant.findUnique({ where: { id: merchantId }, select: { defaultCurrency: true } });
 
   return {
-    subject: `📊 Tu semana en Yaqu`,
+    subject: `📊 Tu semana en YaQu`,
     stats: {
       cobrado:          { amount: Number(paidInvoices._sum.total ?? 0), count: paidInvoices._count.id, currency: merchant?.defaultCurrency || 'EUR' },
       facturasEmitidas: newInvoices,

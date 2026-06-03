@@ -99,7 +99,7 @@ export async function resendInvite(id: number, merchantId: number) {
     teamMemberId: member.id,
     memberName: member.name,
     memberEmail: member.email,
-    merchantName: merchant?.name ?? 'Yaqu',
+    merchantName: merchant?.name ?? 'YaQu',
   });
 
   return { ok: true };
