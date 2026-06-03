@@ -214,7 +214,7 @@ let qqState = {
   paymentTerms: "FULL_UPFRONT",
 };
 
-function openQuickQuoteModal() {
+function openQuickQuoteModal(prefill) {
   if (document.getElementById("qq-modal-backdrop")) return;
 
   qqState = { customerId: null, customerName: "", customerPhone: "", products: [{ concept: "", qty: 1, price: "" }], paymentTerms: "FULL_UPFRONT", tiersMode: false };
@@ -351,6 +351,31 @@ function openQuickQuoteModal() {
   document.getElementById('qq-tier-concept')?.addEventListener('focus', (e) => {
     if (e.target.value.length >= 1) searchProducts(e.target.value, 'tier');
   });
+
+  // Prefill (paso WOW del onboarding): cliente nuevo + primera línea ya rellenados
+  if (prefill && typeof prefill === "object") {
+    if (prefill.customerName) {
+      const custInput = document.getElementById("qq-customer-input");
+      const newSection = document.getElementById("qq-customer-new");
+      if (custInput) custInput.value = prefill.customerName;
+      qqState.customerId = null;
+      qqState.customerName = prefill.customerName;
+      if (newSection) newSection.style.display = "block";
+      if (prefill.customerPhone) {
+        const phoneInput = document.getElementById("qq-customer-phone");
+        if (phoneInput) phoneInput.value = prefill.customerPhone;
+        qqState.customerPhone = prefill.customerPhone;
+      }
+    }
+    if (prefill.line && prefill.line.concept) {
+      qqState.products = [{
+        concept: prefill.line.concept,
+        qty: 1,
+        price: prefill.line.price != null ? String(prefill.line.price) : "",
+      }];
+      renderQqLines();
+    }
+  }
 }
 
 function closeQuickQuote() {
