@@ -31,6 +31,8 @@ export const config = {
     WHATSAPP_BUSINESS_ACCOUNT_ID: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || '',
     WHATSAPP_ACCESS_TOKEN: process.env.WHATSAPP_ACCESS_TOKEN || '',
     WHATSAPP_VERIFY_TOKEN: process.env.WHATSAPP_VERIFY_TOKEN || '',
+    // App Secret de Meta — si está presente, validamos la firma X-Hub-Signature-256 del webhook
+    WHATSAPP_APP_SECRET: process.env.WHATSAPP_APP_SECRET || '',
 
     // Mercado Pago
     MP_ACCESS_TOKEN:    process.env.MP_ACCESS_TOKEN    || '',

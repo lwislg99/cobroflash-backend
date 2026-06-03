@@ -63,8 +63,14 @@ app.disable('etag');
 // Stripe webhook — raw body ANTES del JSON parser
 app.use('/webhooks/stripe', stripeRawBody, stripeWebhookRouter);
 
-// Parsers
-app.use(express.json());
+// Parsers — guardamos el raw body de los webhooks de WhatsApp para validar firma HMAC
+app.use(express.json({
+  verify: (req, _res, buf) => {
+    if ((req.url || '').startsWith('/webhooks/whatsapp')) {
+      (req as any).rawBody = buf;
+    }
+  },
+}));
 app.use(express.urlencoded({ extended: true }));
 app.use(jsonError);
 

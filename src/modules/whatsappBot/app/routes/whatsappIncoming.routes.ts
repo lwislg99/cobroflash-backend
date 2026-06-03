@@ -3,6 +3,7 @@
 // GET  /webhooks/whatsapp  → verificación Meta (handshake hub.challenge)
 // POST /webhooks/whatsapp  → mensajes entrantes (acepto/rechazo por texto libre)
 import { Router } from 'express';
+import crypto from 'crypto';
 import { prisma } from '../../../../core/db/prisma';
 import { config } from '../../../../core/config/env';
 import { normalizePhone } from '../../../../core/utils/utils';
@@ -10,6 +11,22 @@ import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/merchantNotifications';
 
 const router = Router();
+
+// Valida la firma X-Hub-Signature-256 de Meta usando el App Secret.
+// Si no hay WHATSAPP_APP_SECRET configurado, no validamos (devuelve true).
+function isValidSignature(req: any): boolean {
+  const secret = config.WHATSAPP_APP_SECRET;
+  if (!secret) return true; // validación opcional hasta configurar el secret
+  const header = String(req.headers['x-hub-signature-256'] || '');
+  const raw: Buffer | undefined = req.rawBody;
+  if (!header.startsWith('sha256=') || !raw) return false;
+  const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(raw).digest('hex');
+  try {
+    return crypto.timingSafeEqual(Buffer.from(header), Buffer.from(expected));
+  } catch {
+    return false;
+  }
+}
 
 // ── Verificación Meta ─────────────────────────────────────────────────────
 router.get('/', (req, res) => {
@@ -27,6 +44,12 @@ router.get('/', (req, res) => {
 
 // ── Mensajes entrantes ────────────────────────────────────────────────────
 router.post('/', async (req, res) => {
+  // Validar firma de Meta antes de procesar (si hay App Secret configurado)
+  if (!isValidSignature(req)) {
+    console.warn('[WA webhook] Invalid X-Hub-Signature-256 — rejected');
+    return res.status(401).send('invalid signature');
+  }
+
   // ACK inmediato (Meta reintenta si tardamos >20s)
   res.status(200).send('OK');
 
@@ -56,8 +79,9 @@ type Decision = 'accept' | 'reject' | 'unknown';
 
 function parseDecision(text: string): Decision {
   const t = text.toLowerCase().trim();
-  if (/\b(no|rechaz|cancel|paso)\b/i.test(t)) return 'reject';
-  if (/\b(acept|s[ií]|ok|okay|okey|dale|vale|confirm|adelante|de acuerdo|perfecto)\b/i.test(t)) return 'accept';
+  // Rechazo primero (tiene prioridad ante "no gracias", "no me interesa")
+  if (/\b(no|rechaz|cancel|paso|mejor no|no gracias|negativo|nel)\b/i.test(t)) return 'reject';
+  if (/\b(acept|s[ií]|ok|okay|okey|dale|vale|confirm|adelante|de acuerdo|perfecto|me interesa|quiero|listo|va|sale|claro)\b/i.test(t)) return 'accept';
   return 'unknown';
 }
 
