@@ -75,6 +75,10 @@ app.use('/outbox', express.static(outboxDir));
 const publicDir = path.join(__dirname, '../public');
 app.use(express.static(publicDir));
 
+// URLs limpias para políticas legales (privacidad requerida por Meta para publicar la app)
+app.get('/privacidad', (_req, res) => res.sendFile(path.join(publicDir, 'privacidad.html')));
+app.get('/terminos', (_req, res) => res.sendFile(path.join(publicDir, 'terminos.html')));
+
 // Rutas públicas
 app.use('/health', healthRouter);
 app.use('/auth', authRouter);
