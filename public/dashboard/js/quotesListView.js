@@ -171,9 +171,16 @@ function renderQuotesListView(container) {
       const td = document.createElement("td");
       td.colSpan = 8;
       const L = window.appLocale || {};
-      td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">Sin ' + (L.quotePlural||'presupuestos') + ' aún</div><div class="empty-state-desc">Crea tu primera cotización desde el botón "Nueva cotización rápida" en Inicio.</div></div>';
+      td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div>'
+        + '<div class="empty-state-title">Envía tu primer ' + (L.quoteVerb||'presupuesto') + ' y consigue más trabajos</div>'
+        + '<div class="empty-state-desc">La mayoría de clientes responden en menos de 2 horas cuando lo reciben por WhatsApp. Crea uno en 30 segundos.</div>'
+        + '<button id="quotes-empty-cta" class="btn btn-primary btn-sm" style="margin-top:14px">🚀 Crear mi primer ' + (L.quoteVerb||'presupuesto') + '</button></div>';
       tr.appendChild(td);
       tbody.appendChild(tr);
+      const cta = td.querySelector('#quotes-empty-cta');
+      if (cta) cta.addEventListener('click', () => {
+        if (typeof openQuickQuoteModal === 'function') openQuickQuoteModal();
+      });
       return;
     }
 

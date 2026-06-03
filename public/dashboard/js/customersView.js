@@ -225,9 +225,14 @@ function renderCustomersView(container) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
         td.colSpan = 7;
-        td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-title">Sin clientes aún</div><div class="empty-state-desc">Crea el primero con el botón "+ Nuevo cliente".</div></div>';
+        td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div>'
+          + '<div class="empty-state-title">Añade a tu primer cliente</div>'
+          + '<div class="empty-state-desc">Guárdalo una vez y podrás enviarle cotizaciones profesionales por WhatsApp en segundos.</div>'
+          + '<button id="customers-empty-cta" class="btn btn-primary btn-sm" style="margin-top:14px">+ Añadir cliente</button></div>';
         tr.appendChild(td);
         tbody.appendChild(tr);
+        const cta = td.querySelector('#customers-empty-cta');
+        if (cta) cta.addEventListener('click', () => newBtn.click());
         return;
       }
 

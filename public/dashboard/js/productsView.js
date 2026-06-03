@@ -363,9 +363,17 @@ header.appendChild(importFile);
         const tr = document.createElement("tr");
         const td = document.createElement("td");
         td.colSpan = 8;
-        td.textContent = "No hay productos todavía.";
+        td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📦</div>'
+          + '<div class="empty-state-title">Crea tu catálogo de servicios</div>'
+          + '<div class="empty-state-desc">Con tus servicios y precios guardados, montar una cotización es cuestión de segundos gracias al autocompletado.</div>'
+          + '<button id="products-empty-cta" class="btn btn-primary btn-sm" style="margin-top:14px">+ Añadir mi primer servicio</button></div>';
         tr.appendChild(td);
         tbody.appendChild(tr);
+        const cta = td.querySelector('#products-empty-cta');
+        if (cta) cta.addEventListener('click', () => {
+          const nameInput = document.querySelector('input[name="name"]');
+          if (nameInput) { nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); nameInput.focus(); }
+        });
         return;
       }
   
