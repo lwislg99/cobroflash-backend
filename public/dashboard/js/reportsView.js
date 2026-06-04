@@ -75,6 +75,17 @@ async function renderReportsView(container) {
   summaryCard.className = 'customers-card';
   wrap.appendChild(summaryCard);
 
+  // ── Analytics: funnel + rentabilidad por servicio ────────────────────────
+  const funnelCard = document.createElement('div');
+  funnelCard.className = 'customers-card';
+  wrap.appendChild(funnelCard);
+
+  const servicesCard = document.createElement('div');
+  servicesCard.className = 'customers-card';
+  wrap.appendChild(servicesCard);
+
+  loadAnalytics(funnelCard, servicesCard);
+
   async function load(year) {
     chartCard.innerHTML = '<p style="color:var(--slate-400);font-size:13px;padding:8px 0">Cargando…</p>';
     summaryCard.innerHTML = '';
@@ -196,6 +207,148 @@ async function renderReportsView(container) {
 
   yearSelect.addEventListener('change', () => load(yearSelect.value));
   load(currentYear);
+}
+
+// ── Analytics: funnel de conversión + rentabilidad por servicio ──────────
+async function loadAnalytics(funnelCard, servicesCard) {
+  funnelCard.innerHTML = '<p style="color:var(--slate-400);font-size:13px;padding:8px 0">Cargando funnel…</p>';
+  servicesCard.innerHTML = '';
+
+  let funnel, services;
+  try {
+    [funnel, services] = await Promise.all([
+      apiRequest('/admin/metrics/funnel'),
+      apiRequest('/admin/metrics/services'),
+    ]);
+  } catch {
+    funnelCard.innerHTML = '<p style="color:var(--red-600);font-size:13px">Error al cargar analytics.</p>';
+    return;
+  }
+
+  renderFunnel(funnelCard, funnel);
+  renderServices(servicesCard, services);
+}
+
+function renderFunnel(card, data) {
+  const c = data.current || {};
+  const p = data.previous || {};
+  const L = window.appLocale || {};
+  const quoteWord = L.quotePlural || 'Cotizaciones';
+
+  // Embudo: Enviadas → Aceptadas → Facturadas → Cobradas
+  const stages = [
+    { label: 'Enviadas',   value: c.sent || 0,      prev: p.sent || 0,      color: '#22c55e' },
+    { label: 'Aceptadas',  value: c.accepted || 0,  prev: p.accepted || 0,  color: '#10b981' },
+    { label: 'Facturadas', value: c.invoiced || 0,  prev: p.invoiced || 0,  color: '#0ea5e9' },
+    { label: 'Cobradas',   value: c.collected || 0, prev: p.collected || 0, color: '#6366f1' },
+  ];
+  const maxVal = Math.max(...stages.map(s => s.value), 1);
+
+  card.innerHTML = `
+    <h3 style="margin:0 0 4px;font-size:13px;font-weight:700;color:var(--slate-600);text-transform:uppercase;letter-spacing:.04em">Funnel de conversión · ${quoteWord}</h3>
+    <p style="margin:0 0 16px;font-size:12px;color:var(--slate-400)">Mes actual vs mes anterior</p>
+  `;
+
+  const bars = document.createElement('div');
+  bars.style.cssText = 'display:flex;flex-direction:column;gap:10px';
+  stages.forEach(s => {
+    const pct = Math.round((s.value / maxVal) * 100);
+    const diff = s.value - s.prev;
+    const diffTxt = diff === 0 ? '' : (diff > 0 ? `▲ ${diff}` : `▼ ${Math.abs(diff)}`);
+    const diffColor = diff >= 0 ? 'var(--green-600)' : 'var(--red-600)';
+    const row = document.createElement('div');
+    row.innerHTML = `
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px">
+        <span style="color:var(--slate-600);font-weight:600">${s.label}</span>
+        <span style="color:var(--slate-700)"><strong>${s.value}</strong> <span style="color:${diffColor};font-size:11px">${diffTxt}</span></span>
+      </div>
+      <div style="background:var(--slate-100);border-radius:6px;height:14px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:${s.color};border-radius:6px;transition:width .4s"></div>
+      </div>
+    `;
+    bars.appendChild(row);
+  });
+  card.appendChild(bars);
+
+  // KPIs: tasa de aceptación + tiempo de respuesta + pendientes
+  const kpis = document.createElement('div');
+  kpis.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px';
+  const accRate = data.acceptanceRate != null ? data.acceptanceRate + '%' : '—';
+  const respTime = c.avgResponseHours != null ? c.avgResponseHours + ' h' : '—';
+  kpis.innerHTML = `
+    <div class="kpi-card"><div class="kpi-label">Tasa de aceptación</div><div class="kpi-value" style="font-size:20px;color:var(--green-600)">${accRate}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Tiempo medio de respuesta</div><div class="kpi-value" style="font-size:20px">${respTime}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Sin responder</div><div class="kpi-value" style="font-size:20px;color:var(--slate-500)">${c.awaiting || 0}</div></div>
+  `;
+  card.appendChild(kpis);
+
+  // Motivos de rechazo
+  if (Array.isArray(data.rejectionReasons) && data.rejectionReasons.length) {
+    const rej = document.createElement('div');
+    rej.style.cssText = 'margin-top:18px';
+    rej.innerHTML = `<h4 style="margin:0 0 8px;font-size:12px;font-weight:700;color:var(--slate-500);text-transform:uppercase">Motivos de rechazo (este mes)</h4>`;
+    const list = document.createElement('div');
+    list.style.cssText = 'display:flex;flex-direction:column;gap:5px';
+    data.rejectionReasons.forEach(r => {
+      const item = document.createElement('div');
+      item.style.cssText = 'display:flex;justify-content:space-between;font-size:13px;color:var(--slate-600)';
+      item.innerHTML = `<span>${escReport(r.reason)}</span><span style="font-weight:600">${r.count}</span>`;
+      list.appendChild(item);
+    });
+    rej.appendChild(list);
+    card.appendChild(rej);
+  }
+}
+
+function renderServices(card, data) {
+  const services = (data && data.services) || [];
+  card.innerHTML = `
+    <h3 style="margin:0 0 4px;font-size:13px;font-weight:700;color:var(--slate-600);text-transform:uppercase;letter-spacing:.04em">Rentabilidad por servicio</h3>
+    <p style="margin:0 0 14px;font-size:12px;color:var(--slate-400)">Qué servicios cotizas más y cuáles cierras mejor.</p>
+  `;
+
+  if (!services.length) {
+    card.innerHTML += '<p style="color:var(--slate-400);font-size:13px">Aún no hay suficientes datos. Envía cotizaciones para ver estadísticas por servicio.</p>';
+    return;
+  }
+
+  const fmt = (n) => Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const tableWrap = document.createElement('div');
+  tableWrap.className = 'table-scroll';
+  const table = document.createElement('table');
+  table.className = 'table';
+  table.style.minWidth = '520px';
+  table.innerHTML = `
+    <thead><tr>
+      <th>Servicio</th>
+      <th style="text-align:right">Veces cotizado</th>
+      <th style="text-align:right">Aceptación</th>
+      <th style="text-align:right">Precio medio</th>
+      <th style="text-align:right">Ingresos</th>
+    </tr></thead>
+  `;
+  const tbody = document.createElement('tbody');
+  services.slice(0, 20).forEach(s => {
+    const accColor = s.acceptanceRate >= 50 ? 'var(--green-600)' : s.acceptanceRate >= 25 ? 'var(--slate-600)' : 'var(--red-600)';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-weight:600">${escReport(s.name)}</td>
+      <td style="text-align:right">${s.quoted}</td>
+      <td style="text-align:right;color:${accColor};font-weight:600">${s.acceptanceRate}%</td>
+      <td style="text-align:right;color:var(--slate-500)">${fmt(s.avgPrice)}</td>
+      <td style="text-align:right;color:var(--green-700);font-weight:600">${fmt(s.revenue)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  tableWrap.appendChild(table);
+  card.appendChild(tableWrap);
+}
+
+function escReport(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 // ── Gráfico SVG de barras agrupadas ──────────────────────────────────────

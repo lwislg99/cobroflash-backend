@@ -101,3 +101,130 @@ export async function getHomeMetrics(merchantId: number) {
     topServices: topServicesArr,
   };
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// ANALYTICS — Funnel de conversión (ANA-1)
+// ──────────────────────────────────────────────────────────────────────────
+
+function monthRange(offset = 0) {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 1);
+  return { start, end };
+}
+
+async function funnelForPeriod(merchantId: number, start: Date, end: Date) {
+  const inPeriod = { gte: start, lt: end };
+
+  const [sent, accepted, rejected, awaiting, invoiced, collected, decided] = await Promise.all([
+    // Enviadas = cualquier quote que salió de borrador
+    prisma.quote.count({ where: { merchantId, createdAt: inPeriod, status: { not: 'draft' } } }),
+    prisma.quote.count({ where: { merchantId, createdAt: inPeriod, status: 'accepted' } }),
+    prisma.quote.count({ where: { merchantId, createdAt: inPeriod, status: 'rejected' } }),
+    prisma.quote.count({ where: { merchantId, createdAt: inPeriod, status: 'sent' } }),
+    prisma.invoice.count({ where: { merchantId, createdAt: inPeriod, quoteId: { not: null } } }),
+    prisma.invoice.count({ where: { merchantId, status: 'paid', paidAt: inPeriod } }),
+    // Para tiempo medio de respuesta: quotes decididos en el periodo
+    prisma.quote.findMany({
+      where: {
+        merchantId,
+        status: { in: ['accepted', 'rejected'] },
+        createdAt: inPeriod,
+      },
+      select: { createdAt: true, acceptedAt: true, rejectedAt: true },
+    }),
+  ]);
+
+  // Tiempo medio de respuesta (horas) entre creación y decisión
+  let avgResponseHours: number | null = null;
+  const deltas = decided
+    .map((q) => {
+      const decidedAt = q.acceptedAt ?? q.rejectedAt;
+      if (!decidedAt) return null;
+      return (new Date(decidedAt).getTime() - new Date(q.createdAt).getTime()) / 3_600_000;
+    })
+    .filter((h): h is number => h !== null && h >= 0);
+  if (deltas.length) {
+    avgResponseHours = Math.round((deltas.reduce((a, b) => a + b, 0) / deltas.length) * 10) / 10;
+  }
+
+  return { sent, accepted, rejected, awaiting, invoiced, collected, avgResponseHours };
+}
+
+export async function getFunnelMetrics(merchantId: number) {
+  const cur = monthRange(0);
+  const prev = monthRange(-1);
+
+  const [current, previous, rejectedRows] = await Promise.all([
+    funnelForPeriod(merchantId, cur.start, cur.end),
+    funnelForPeriod(merchantId, prev.start, prev.end),
+    prisma.quote.findMany({
+      where: { merchantId, status: 'rejected', createdAt: { gte: cur.start, lt: cur.end } },
+      select: { rejectionReason: true },
+    }),
+  ]);
+
+  // Motivos de rechazo más frecuentes (mes actual)
+  const reasonCount: Record<string, number> = {};
+  for (const r of rejectedRows) {
+    const reason = String(r.rejectionReason || '').trim() || 'Sin motivo';
+    reasonCount[reason] = (reasonCount[reason] || 0) + 1;
+  }
+  const rejectionReasons = Object.entries(reasonCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([reason, count]) => ({ reason, count }));
+
+  const acceptanceRate = current.sent > 0 ? Math.round((current.accepted / current.sent) * 100) : null;
+
+  return { current, previous, rejectionReasons, acceptanceRate };
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// ANALYTICS — Rentabilidad por servicio (ANA-2)
+// ──────────────────────────────────────────────────────────────────────────
+
+export async function getServiceMetrics(merchantId: number) {
+  // Tomamos quotes que salieron de borrador (con decisión o pendientes)
+  const quotes = await prisma.quote.findMany({
+    where: { merchantId, status: { in: ['sent', 'accepted', 'rejected'] } },
+    select: { status: true, lines: true },
+    take: 1000,
+    orderBy: { createdAt: 'desc' },
+  });
+
+  type Stat = { name: string; quoted: number; accepted: number; revenue: number; priceSum: number };
+  const stats: Record<string, Stat> = {};
+
+  for (const q of quotes) {
+    const lines = Array.isArray(q.lines) ? (q.lines as any[]) : [];
+    // Conceptos distintos dentro de un mismo quote (evita contar duplicados de línea)
+    const seen = new Set<string>();
+    for (const l of lines) {
+      const name = String(l.concept || '').trim();
+      if (!name) continue;
+      if (!stats[name]) stats[name] = { name, quoted: 0, accepted: 0, revenue: 0, priceSum: 0 };
+      if (!seen.has(name)) {
+        stats[name].quoted += 1;
+        if (q.status === 'accepted') stats[name].accepted += 1;
+        seen.add(name);
+      }
+      const lineTotal = Number(l.qty || 1) * Number(l.price || 0);
+      stats[name].priceSum += Number(l.price || 0);
+      if (q.status === 'accepted') stats[name].revenue += lineTotal;
+    }
+  }
+
+  const services = Object.values(stats)
+    .map((s) => ({
+      name: s.name,
+      quoted: s.quoted,
+      accepted: s.accepted,
+      acceptanceRate: s.quoted > 0 ? Math.round((s.accepted / s.quoted) * 100) : 0,
+      revenue: Math.round(s.revenue * 100) / 100,
+      avgPrice: s.quoted > 0 ? Math.round((s.priceSum / s.quoted) * 100) / 100 : 0,
+    }))
+    .sort((a, b) => b.quoted - a.quoted);
+
+  return { services };
+}
