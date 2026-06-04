@@ -226,6 +226,19 @@ async function initApp() {
   // Badges del sidebar (contadores) independientes de la vista actual
   if (typeof refreshSidebarBadges === 'function') refreshSidebarBadges();
 
+  // Atajo de teclado: "n" abre una nueva cotización rápida (usuarios avanzados)
+  document.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const t = e.target;
+    const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
+    if (typing) return;
+    if (document.querySelector('.modal-overlay, .modal-backdrop, #qq-modal-backdrop, #onboarding-backdrop')) return;
+    if (e.key === 'n' || e.key === 'N') {
+      e.preventDefault();
+      if (typeof openQuickQuoteModal === 'function') openQuickQuoteModal();
+    }
+  });
+
   // Clicks en el sidebar
   document.querySelectorAll('.nav-item[data-view]').forEach((btn) => {
     btn.addEventListener('click', () => renderView(btn.dataset.view));

@@ -1290,3 +1290,33 @@ tr.dragging { opacity: .5; background: #f0fdf4; }
   margin: 0 0 10px;
 }
 .kpi-grid + .home-section-label, .home-quick-actions + .home-section-label { margin-top: 4px; }
+
+/* ── Home: número héroe (pendiente de cobro) ─────────────────── */
+.home-hero-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--brand);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+}
+.home-hero-label {
+  font-size: 11.5px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px;
+}
+.home-hero-amount {
+  font-size: clamp(2rem, 6vw, 2.6rem); font-weight: 800; color: var(--ink);
+  line-height: 1; letter-spacing: -.03em; font-variant-numeric: tabular-nums;
+}
+.home-hero-sub { font-size: 13px; color: var(--muted); margin-top: 6px; }
+.home-hero-ok { font-size: 13px; font-weight: 600; color: var(--brand); white-space: nowrap; }
+@media (max-width: 480px) {
+  .home-hero-card { flex-direction: column; align-items: flex-start; }
+}
+
+/* Tecla de atajo (kbd) en pistas de UI */
+kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
+  font-family: var(--font); font-size:10.5px; font-weight:700; line-height:16px;
+  background: rgba(0,0,0,.14); border-radius:4px; color: inherit; }

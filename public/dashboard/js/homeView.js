@@ -13,12 +13,15 @@ async function renderHomeView(container) {
         <p>Esto es lo que pasa hoy en tu negocio.</p>
       </header>
 
+      <!-- Número héroe: lo que te deben (foco principal) -->
+      <div id="home-hero"></div>
+
       <!-- Acciones rápidas (FRONT1-1) -->
       <div class="home-section-label">Acciones rápidas</div>
       <div class="home-quick-actions">
         <button class="home-action home-cta" id="btn-quick-quote">
           <span class="home-action-ico">⚡</span>
-          <span><span class="home-action-title">${qLabel}</span><span class="home-action-sub">en 30 segundos</span></span>
+          <span><span class="home-action-title">${qLabel}</span><span class="home-action-sub">en 30 segundos · tecla <kbd>N</kbd></span></span>
         </button>
         <button class="home-action" id="btn-add-customer">
           <span class="home-action-ico">👤</span>
@@ -70,6 +73,7 @@ async function renderHomeView(container) {
       apiRequest("/admin/metrics/home"),
       apiRequest("/admin/merchant").catch(() => null),
     ]);
+    renderHero(data);
     renderKpis(data);
     renderWeekSummary(data);
     renderActivity(data.recentActivity || []);
@@ -161,15 +165,30 @@ function renderSetupChecklist(merchant, data) {
   container.parentNode.insertBefore(checklist, container);
 }
 
+function renderHero(data) {
+  const el = document.getElementById("home-hero");
+  if (!el) return;
+  const count = data.pendingCount || 0;
+  el.innerHTML = `
+    <div class="home-hero-card">
+      <div>
+        <div class="home-hero-label">Pendiente de cobro</div>
+        <div class="home-hero-amount">${fmtMoney(data.pendingAmount)}</div>
+        <div class="home-hero-sub">${count} factura${count !== 1 ? "s" : ""} por cobrar</div>
+      </div>
+      ${count > 0
+        ? `<button class="btn btn-secondary btn-sm" id="hero-go-invoices">Ver facturas →</button>`
+        : `<span class="home-hero-ok">Todo cobrado 🎉</span>`}
+    </div>
+  `;
+  const go = el.querySelector('#hero-go-invoices');
+  if (go) go.addEventListener('click', () => window.renderAppView && renderAppView('invoices'));
+}
+
 function renderKpis(data) {
   const grid = document.getElementById("kpi-grid");
   const hasExpenses = data.expensesThisMonth > 0;
   grid.innerHTML = `
-    <div class="kpi-card">
-      <div class="kpi-label">Pendiente de cobro</div>
-      <div class="kpi-value">${fmtMoney(data.pendingAmount)}</div>
-      <div class="kpi-sub">${data.pendingCount} factura${data.pendingCount !== 1 ? "s" : ""}</div>
-    </div>
     <div class="kpi-card">
       <div class="kpi-label">Cotizaciones sin respuesta</div>
       <div class="kpi-value">${data.quotesAwaiting}</div>
