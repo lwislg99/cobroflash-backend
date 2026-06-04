@@ -71,6 +71,27 @@ function renderPage(title: string, body: string): string {
     select, textarea { width: 100%; font-size: 15px; padding: 10px 12px;
       border-radius: 10px; border: 1px solid #d1d5db; margin-bottom: 12px; }
     textarea { min-height: 80px; resize: vertical; }
+    /* FRONT1-6 — landing cliente premium */
+    .merchant-hero { text-align: center; padding: 8px 0 18px; }
+    .merchant-hero .merchant-logo { max-height: 64px; max-width: 180px; margin-bottom: 10px; }
+    .merchant-hero .merchant-name { font-size: 22px; font-weight: 800; color: #0f172a; }
+    .merchant-hero .merchant-sub { font-size: 13px; color: #6b7280; margin-top: 2px; }
+    .merchant-avatar { width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 10px;
+      background: linear-gradient(135deg,#22c55e,#22d3ee); color: #052e16; font-weight: 800;
+      font-size: 26px; display: flex; align-items: center; justify-content: center; }
+    .line-icon { display: inline-block; width: 22px; text-align: center; margin-right: 4px; }
+    .validity-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px;
+      background: #fffbeb; color: #b45309; padding: 4px 12px; border-radius: 999px; margin-bottom: 12px; }
+    .btn-share { display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 12px; font-size: 15px; font-weight: 700; background: #25D366; color: #fff;
+      border: none; border-radius: 12px; cursor: pointer; text-decoration: none; margin-top: 10px; }
+    .success-check { width: 72px; height: 72px; border-radius: 50%; background: #16a34a; color: #fff;
+      font-size: 40px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;
+      animation: pop .4s cubic-bezier(.2,1.4,.4,1) both; }
+    @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+    .confetti-piece { position: fixed; top: -12px; width: 9px; height: 9px; z-index: 9999;
+      border-radius: 1px; animation: confetti-fall linear forwards; }
+    @keyframes confetti-fall { to { transform: translateY(105vh) rotate(540deg); opacity: 1; } }
   </style>
 </head>
 <body><div class="card">${body}</div></body>
@@ -159,13 +180,22 @@ function selectTier(tierId, qId) {
 }
 </script>`;
 
+function lineIcon(concept: string): string {
+  const c = String(concept || '').toLowerCase();
+  if (/(mano de obra|hora|jornal|instalaci|montaj|reparaci)/.test(c)) return '🔧';
+  if (/(material|tuber|cable|pintura|placa|cemento|pieza|grifo|caldera)/.test(c)) return '📦';
+  if (/(desplaz|viaje|\bkm\b|transporte|dieta)/.test(c)) return '🚚';
+  if (/(revisi|diagn|inspec|presupuesto|estudio)/.test(c)) return '🔍';
+  return '•';
+}
+
 function renderQuoteDetail(quote: Awaited<ReturnType<typeof loadQuote>>, quoteId: string): string {
   if (!quote) return `<h1>Cotización #${esc(quoteId)}</h1>`;
 
-  const logo = quote.merchant?.logoUrl
-    ? `<img class="merchant-logo" src="${esc(quote.merchant.logoUrl)}" alt="logo"/>`
-    : '';
   const merchantName = esc(quote.merchant?.legalName || quote.merchant?.name || '');
+  const hero = quote.merchant?.logoUrl
+    ? `<img class="merchant-logo" src="${esc(quote.merchant.logoUrl)}" alt="logo"/>`
+    : `<div class="merchant-avatar">${esc((merchantName || '?').charAt(0).toUpperCase())}</div>`;
   const customerName = esc(quote.customer?.name || 'Cliente');
   const lines: any[] = Array.isArray(quote.lines) ? quote.lines : [];
 
@@ -174,7 +204,7 @@ function renderQuoteDetail(quote: Awaited<ReturnType<typeof loadQuote>>, quoteId
         <thead><tr><th>Concepto</th><th>Cant.</th><th>Total</th></tr></thead>
         <tbody>${lines.map((l: any) => `
           <tr>
-            <td>${esc(l.concept)}</td>
+            <td><span class="line-icon">${lineIcon(l.concept)}</span>${esc(l.concept)}</td>
             <td>${esc(l.qty)}</td>
             <td>${Number(l.qty * l.price).toFixed(2)} ${esc(quote.currency)}</td>
           </tr>`).join('')}
@@ -183,16 +213,23 @@ function renderQuoteDetail(quote: Awaited<ReturnType<typeof loadQuote>>, quoteId
 
   const terms = (quote as any).paymentTerms ?? null;
 
+  // Validez: 30 días desde la creación
+  let validityHtml = '';
+  if ((quote as any).createdAt) {
+    const until = new Date(new Date((quote as any).createdAt).getTime() + 30 * 86_400_000);
+    const untilStr = until.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+    validityHtml = `<div class="validity-badge">⏳ Válido hasta el ${untilStr}</div>`;
+  }
+
   return `
-    <div class="merchant-header">
-      ${logo}
-      <div>
-        <div class="merchant-name">${merchantName}</div>
-        ${quote.merchant?.address ? `<div class="merchant-sub">${esc(quote.merchant.address)}</div>` : ''}
-      </div>
+    <div class="merchant-hero">
+      ${hero}
+      <div class="merchant-name">${merchantName}</div>
+      ${quote.merchant?.address ? `<div class="merchant-sub">${esc(quote.merchant.address)}</div>` : ''}
     </div>
-    <h1>Hola, ${customerName}</h1>
+    <h1>Hola, ${customerName} 👋</h1>
     <div class="quote-meta">Cotización #${esc(quoteId)}</div>
+    ${validityHtml}
     ${linesHtml}
     <div class="total-row">
       <span>Total</span>
@@ -314,6 +351,9 @@ quoteDecisionLandingRouter.get('/quote/:id/accept', async (req: Request, res: Re
     }
   }
 
+  const shareName = (loadedQuote?.merchant?.legalName || loadedQuote?.merchant?.name || 'el profesional');
+  const shareTextEnc = encodeURIComponent(`✅ He aceptado mi ${locale.quoteVerb} con ${shareName}. ¡Gracias!`);
+
   const html = renderPage(`Aceptar ${locale.quoteVerb}`, `<style>${TIER_CSS}</style>
     ${quoteDetail}
     ${hasTiers ? tierCards : ''}
@@ -340,6 +380,19 @@ quoteDecisionLandingRouter.get('/quote/:id/accept', async (req: Request, res: Re
     </div>
     ${SIG_JS}
     <script>
+    function fireConfetti() {
+      const colors = ['#22c55e','#16a34a','#22d3ee','#fbbf24','#f87171','#a78bfa'];
+      for (let i = 0; i < 80; i++) {
+        const p = document.createElement('div');
+        p.className = 'confetti-piece';
+        p.style.left = Math.random() * 100 + 'vw';
+        p.style.background = colors[i % colors.length];
+        p.style.animationDuration = (2 + Math.random() * 1.5) + 's';
+        p.style.animationDelay = (Math.random() * 0.4) + 's';
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 4200);
+      }
+    }
     document.getElementById('btn-accept').addEventListener('click', async () => {
       const noSig = document.getElementById('no-sig-check').checked;
       const sigData = window.getSignatureData ? window.getSignatureData() : null;
@@ -363,10 +416,16 @@ quoteDecisionLandingRouter.get('/quote/:id/accept', async (req: Request, res: Re
         });
         const data = await res.json().catch(() => ({}));
         if (res.ok) {
+          fireConfetti();
           document.querySelector('.card').innerHTML =
-            '<div class="status-ok"><strong>¡Gracias! ${locale.quote} aceptada' +
-            (sigData ? ' con firma digital ✅' : '') +
-            '.</strong><br/>El profesional te informará de los siguientes pasos.</div>';
+            '<div style="text-align:center;padding:12px 0">' +
+              '<div class="success-check">✓</div>' +
+              '<h1 style="font-size:20px;margin:0 0 6px">¡${locale.quote} aceptada' + (sigData ? ' y firmada' : '') + '!</h1>' +
+              '<p style="color:#6b7280;font-size:14px;margin:0 0 18px">Gracias por tu confianza. El profesional te informará de los siguientes pasos.</p>' +
+              '<a class="btn-share" target="_blank" rel="noopener" href="https://wa.me/?text=${shareTextEnc}">' +
+                '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M.06 24l1.69-6.16a11.87 11.87 0 01-1.59-5.95C.16 5.34 5.5 0 12.06 0a11.82 11.82 0 018.42 3.49 11.82 11.82 0 013.48 8.41c0 6.56-5.34 11.9-11.9 11.9a11.9 11.9 0 01-5.69-1.45L.06 24z"/></svg>' +
+                'Compartir por WhatsApp</a>' +
+            '</div>';
         } else {
           btn.disabled = false; btn.textContent = 'Firmar y aceptar ${locale.quoteVerb}';
           document.getElementById('sig-error').textContent = data.error || 'Error al procesar.';

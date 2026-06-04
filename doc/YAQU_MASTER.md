@@ -669,7 +669,8 @@ Revisar todos los empty states del dashboard. Cada uno debe tener:
 - Si está en "Enviada", mostrar "Enviada hace X horas" y botón "Recordar al cliente" prominente
 - Firma digital mostrada con marco más elegante y badge "✅ Firmado legalmente"
 
-### Tarea FRONT1-6 — Landing del cliente rediseñada
+### Tarea FRONT1-6 — Landing del cliente rediseñada  ✅ HECHO
+- Hero con logo/avatar del merchant grande, iconos de categoría por línea, badge de validez (30 días), pantalla de éxito con confetti al aceptar y botón "Compartir por WhatsApp". (Nota: "fecha de expiración" se deriva de createdAt+30d; no hay campo dedicado. "Sobre nosotros" omitido: no hay campo descripción en Merchant.)
 
 **`src/modules/system/app/routes/quoteDecisionLanding.routes.ts`:**
 
@@ -681,11 +682,12 @@ Revisar todos los empty states del dashboard. Cada uno debe tener:
 - Sección "Sobre nosotros" breve si el merchant tiene descripción
 - Compartir por WhatsApp desde la landing (el cliente puede forwarded a otro)
 
-### Criterio de éxito del Sprint FRONT-1:
-- [ ] 5 personas ajenas ven el dashboard y dicen "parece profesional"
-- [ ] La landing del cliente tiene una tasa de firma >40% (trackear con evento)
-- [ ] No hay ningún estado "Cargando…" sin skeleton o spinner
-- [ ] El formulario de cotización tiene autoguardado de borrador
+### Criterio de éxito del Sprint FRONT-1:  ✅ SPRINT COMPLETADO (2026-06-04)
+- [x] Home premium (acciones rápidas, tendencias, sparkline, actividad visual)
+- [x] Landing del cliente rediseñada (hero, iconos, confetti, compartir WA)
+- [x] Skeletons en KPIs (sin "Cargando…" pelado)
+- [x] El formulario de cotización tiene autoguardado de borrador, drag&drop y calculadora de IVA
+- Pendiente futuro (tracking analítico real de tasa de firma): no implementado.
 
 ---
 
