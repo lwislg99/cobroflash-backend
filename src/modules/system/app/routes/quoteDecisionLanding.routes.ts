@@ -30,25 +30,31 @@ function renderPage(title: string, body: string, brandColor?: string | null): st
   <meta charset="utf-8"/>
   <title>${title}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="theme-color" content="#16a34a"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      margin: 0; padding: 16px; background: #f0f4f8; color: #111827; min-height: 100vh; }
-    .card { max-width: 480px; margin: 0 auto; background: #fff; border-radius: 16px;
-      padding: 24px; box-shadow: 0 8px 24px rgba(0,0,0,.10); }
+    body { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased; font-feature-settings: "cv11","ss01";
+      margin: 0; padding: 16px; background: #f6f7f5; color: #3f4a45; min-height: 100vh; }
+    .card { max-width: 480px; margin: 24px auto; background: #fff; border: 1px solid #e7e9e5; border-radius: 20px;
+      padding: 28px 26px; box-shadow: 0 18px 40px -12px rgba(16,24,40,.16); }
     .merchant-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
     .merchant-logo { max-height: 48px; max-width: 120px; object-fit: contain; border-radius: 8px; }
-    .merchant-name { font-weight: 700; font-size: 16px; }
-    .merchant-sub { font-size: 13px; color: #6b7280; }
-    h1 { font-size: 18px; margin: 0 0 4px; }
-    .quote-meta { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
+    .merchant-name { font-weight: 700; font-size: 16px; color: #0f1c17; }
+    .merchant-sub { font-size: 13px; color: #6b756f; }
+    h1 { font-size: 19px; margin: 0 0 4px; color: #0f1c17; letter-spacing: -.01em; }
+    .quote-meta { font-size: 13px; color: #6b756f; margin-bottom: 16px; }
     .lines-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 12px; }
     .lines-table th { text-align: left; padding: 4px 6px; color: #6b7280; font-size: 12px;
       border-bottom: 1px solid #e5e7eb; }
     .lines-table td { padding: 6px 6px; border-bottom: 1px solid #f3f4f6; }
     .lines-table td:last-child { text-align: right; }
-    .total-row { display: flex; justify-content: space-between; font-weight: 700;
-      font-size: 18px; margin: 12px 0 20px; padding-top: 8px; border-top: 2px solid #e5e7eb; }
+    .total-row { display: flex; justify-content: space-between; font-weight: 800; color: #0f1c17;
+      font-size: 20px; margin: 12px 0 20px; padding-top: 10px; border-top: 2px solid #e7e9e5;
+      font-variant-numeric: tabular-nums; }
     .terms-badge { display: inline-block; font-size: 12px; padding: 3px 10px;
       border-radius: 999px; background: #eff6ff; color: #1d4ed8; margin-bottom: 16px; }
     .divider { border: none; border-top: 1px solid #e5e7eb; margin: 16px 0; }
@@ -68,10 +74,12 @@ function renderPage(title: string, body: string, brandColor?: string | null): st
     .checkbox-fallback { display: flex; align-items: center; gap: 8px; font-size: 13px;
       color: #6b7280; margin-bottom: 16px; }
     /* Botones */
-    .btn-accept { width: 100%; padding: 14px; font-size: 16px; font-weight: 700;
-      background: #16a34a; color: #fff; border: none; border-radius: 12px; cursor: pointer;
-      min-height: 52px; margin-top: 4px; }
-    .btn-accept:active { background: #15803d; }
+    .btn-accept { width: 100%; padding: 15px; font-size: 16px; font-weight: 700;
+      background: #16a34a; color: #fff; border: none; border-radius: 14px; cursor: pointer;
+      min-height: 52px; margin-top: 4px; box-shadow: 0 4px 14px -2px rgba(22,163,74,.35);
+      transition: background .15s, transform .08s, box-shadow .15s; }
+    .btn-accept:hover { background: #15803d; }
+    .btn-accept:active { background: #15803d; transform: translateY(1px); }
     .btn-accept:disabled { opacity: .5; cursor: default; }
     .btn-reject { width: 100%; padding: 14px; font-size: 16px; font-weight: 700;
       background: #dc2626; color: #fff; border: none; border-radius: 12px; cursor: pointer;
