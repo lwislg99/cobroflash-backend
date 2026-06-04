@@ -13,7 +13,7 @@ async function renderTeamView(container) {
   header.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap';
   header.innerHTML = `
     <div>
-      <h2 style="margin:0 0 4px;font-size:17px;font-weight:700;color:var(--slate-900)">Miembros del equipo</h2>
+      <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Miembros del equipo</h2>
       <p style="margin:0;font-size:13px;color:var(--slate-400)">Invita colaboradores a tu cuenta. Los técnicos pueden crear presupuestos pero no modificar la configuración.</p>
     </div>
     <button class="btn-primary btn-sm" id="btn-invite-member">+ Invitar miembro</button>
@@ -163,7 +163,7 @@ function showInviteModal(onSuccess, setAlert, prefill = null) {
         <button class="modal-close" id="modal-close-invite">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="alert" id="invite-alert"></div>
+        <div class="alert error" id="invite-alert" style="display:none"></div>
         <form id="invite-form" style="display:flex;flex-direction:column;gap:14px">
           <div class="field">
             <label>Nombre</label>
@@ -217,6 +217,7 @@ function showInviteModal(onSuccess, setAlert, prefill = null) {
         : 'Error al enviar la invitación.';
       alertEl.textContent = msg;
       alertEl.className = 'alert error';
+      alertEl.style.display = 'block';
       btn.disabled = false;
       btn.textContent = 'Enviar invitación';
     }

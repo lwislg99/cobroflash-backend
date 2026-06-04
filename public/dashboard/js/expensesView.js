@@ -5,7 +5,7 @@ const CATEGORY_LABELS = {
   desplazamiento: { label: 'Desplazamiento',  color: '#d97706', bg: '#fef3c7' },
   herramientas:   { label: 'Herramientas',    color: '#7c3aed', bg: '#ede9fe' },
   subcontrata:    { label: 'Subcontrata',     color: '#dc2626', bg: '#fee2e2' },
-  otros:          { label: 'Otros',           color: '#6b7280', bg: '#f3f4f6' },
+  otros:          { label: 'Otros',           color: 'var(--slate-600)', bg: 'var(--slate-100)' },
 };
 
 function catPill(category) {
@@ -16,6 +16,12 @@ function catPill(category) {
 async function renderExpensesView(container) {
   container.innerHTML = `
     <div>
+      <!-- Cabecera -->
+      <div style="margin-bottom:16px">
+        <h2 style="margin:0;font-size:18px">Gastos</h2>
+        <p style="margin:2px 0 0;font-size:13px;color:var(--muted)">Controla tus costes y vincúlalos a trabajos para ver el margen real.</p>
+      </div>
+
       <!-- Resumen mensual -->
       <div id="exp-summary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
         <div class="kpi-card"><div class="kpi-label">Cargando…</div></div>
@@ -25,19 +31,19 @@ async function renderExpensesView(container) {
 
       <!-- Filtros y botón nuevo -->
       <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
-        <select id="exp-filter-month" style="padding:8px 10px;border-radius:8px;border:1px solid #d1d5db;font-size:14px">
+        <select id="exp-filter-month" class="input" style="width:auto">
           ${getMonthOptions()}
         </select>
-        <select id="exp-filter-cat" style="padding:8px 10px;border-radius:8px;border:1px solid #d1d5db;font-size:14px">
+        <select id="exp-filter-cat" class="input" style="width:auto">
           <option value="">Todas las categorías</option>
           ${Object.entries(CATEGORY_LABELS).map(([v,c]) => `<option value="${v}">${c.label}</option>`).join('')}
         </select>
-        <button class="btn btn-primary" id="exp-new-btn" style="margin-left:auto">+ Nuevo gasto</button>
+        <button class="btn-primary" id="exp-new-btn" style="margin-left:auto">+ Nuevo gasto</button>
         <a id="exp-export-btn" href="/admin/exports/expenses.csv" class="btn-secondary btn-sm" style="text-decoration:none" title="Exportar gastos filtrados a CSV">⬇ CSV</a>
       </div>
 
       <!-- Lista -->
-      <div id="exp-list"><div style="color:#9ca3af;font-size:14px">Cargando gastos…</div></div>
+      <div id="exp-list"><div style="color:var(--muted);font-size:14px">Cargando gastos…</div></div>
     </div>
   `;
 
@@ -115,7 +121,7 @@ async function loadExpenses() {
   const cat   = document.getElementById('exp-filter-cat')?.value   || '';
   const el = document.getElementById('exp-list');
   if (!el) return;
-  el.innerHTML = '<div style="color:#9ca3af;font-size:14px">Cargando…</div>';
+  el.innerHTML = '<div style="color:var(--muted);font-size:14px">Cargando…</div>';
   try {
     const qs = new URLSearchParams({ month });
     if (cat) qs.set('category', cat);
@@ -123,7 +129,12 @@ async function loadExpenses() {
     const items = data.items || [];
 
     if (!items.length) {
-      el.innerHTML = '<div style="color:#9ca3af;font-size:14px;text-align:center;padding:24px">Sin gastos registrados este mes.<br/>Haz clic en "+ Nuevo gasto" para añadir el primero.</div>';
+      el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🧾</div>'
+        + '<div class="empty-state-title">Sin gastos este mes</div>'
+        + '<div class="empty-state-desc">Registra materiales, desplazamientos y subcontratas para conocer el margen real de cada trabajo.</div>'
+        + '<button id="exp-empty-cta" class="btn-primary btn-sm" style="margin-top:14px">+ Añadir mi primer gasto</button></div>';
+      const cta = document.getElementById('exp-empty-cta');
+      if (cta) cta.addEventListener('click', () => openExpenseModal(null));
       return;
     }
 
@@ -152,7 +163,7 @@ async function loadExpenses() {
                   ${e.quote ? `<a href="#" onclick="event.stopPropagation();renderAppView('quotes-detail',{quoteId:${e.quote.id}})" style="color:var(--blue-600)">Cotización #${e.quote.id}</a>` : '—'}
                   ${e.provider ? `<div style="font-size:12px">${escHtml(e.provider.name)}</div>` : ''}
                 </td>
-                <td style="text-align:right;font-weight:700;font-size:15px">${fmtEuro(Number(e.amount))}</td>
+                <td class="amount" style="text-align:right;font-size:15px">${fmtEuro(Number(e.amount))}</td>
                 <td style="text-align:center">
                   <button class="btn-icon" onclick="event.stopPropagation();deleteExpenseItem(${e.id})" title="Eliminar">🗑</button>
                 </td>
@@ -163,7 +174,7 @@ async function loadExpenses() {
       </div>
     `;
   } catch (err) {
-    el.innerHTML = `<div style="color:#b91c1c;font-size:14px">Error: ${err.message}</div>`;
+    el.innerHTML = `<div style="color:var(--red-600);font-size:14px">Error: ${err.message}</div>`;
   }
 }
 
