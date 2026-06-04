@@ -214,9 +214,13 @@ async function initApp() {
         view = 'home';
     }
     setActiveMenu(view);
+    if (typeof maybeShowSectionTip === 'function') maybeShowSectionTip(view);
   }
 
   window.renderAppView = renderView;
+
+  // Botón flotante de ayuda (guía de inicio)
+  if (typeof ensureHelpButton === 'function') ensureHelpButton();
 
   // Clicks en el sidebar
   document.querySelectorAll('.nav-item[data-view]').forEach((btn) => {

@@ -250,6 +250,7 @@ function openQuickQuoteModal(prefill) {
             <input type="checkbox" id="qq-tiers-toggle" style="width:16px;height:16px;accent-color:var(--green-500);flex-shrink:0"/>
             <span>Ofrecer 3 opciones de precio (Good/Better/Best)</span>
           </label>
+          <p style="font-size:12px;color:var(--slate-400);margin:6px 0 0">💡 Los clientes eligen más a menudo cuando ven 3 opciones.</p>
         </div>
 
         <!-- Modo clásico: líneas -->
@@ -300,6 +301,7 @@ function openQuickQuoteModal(prefill) {
               50% · 50%
             </label>
           </div>
+          <p style="font-size:12px;color:var(--slate-400);margin:6px 0 0">💡 "100% al aceptar" genera la factura en cuanto el cliente firma.</p>
         </div>
       </div>
 
