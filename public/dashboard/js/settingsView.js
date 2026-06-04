@@ -12,7 +12,7 @@ function renderSettingsView(container) {
 
     const title = document.createElement("h2");
     title.textContent = "Datos de la empresa";
-    title.style.cssText = "margin:0 0 4px;font-size:17px;font-weight:700;color:var(--slate-900)";
+    title.style.cssText = "margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)";
     card.appendChild(title);
 
     const subtitle = document.createElement("p");
@@ -96,7 +96,7 @@ function renderSettingsView(container) {
       fCountrySelect.appendChild(opt);
     });
     const fCountryNote = document.createElement("p");
-    fCountryNote.style.cssText = "font-size:12px;color:#9ca3af;margin:2px 0 0";
+    fCountryNote.style.cssText = "font-size:12px;color:var(--muted);margin:2px 0 0";
     fCountryNote.textContent = 'Cambia el idioma de los documentos ("Presupuesto" vs "Cotización") y la moneda por defecto.';
     fCountryWrapper.appendChild(fCountryLabel);
     fCountryWrapper.appendChild(fCountrySelect);
@@ -117,14 +117,14 @@ function renderSettingsView(container) {
 
     // Separador — Pagos por transferencia
     const sepBank = document.createElement("div");
-    sepBank.style.cssText = "border-top:1px solid #e5e7eb;margin:12px 0 4px;padding-top:12px";
-    sepBank.innerHTML = '<p style="font-size:12px;color:#6b7280;margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Datos bancarios para transferencias</p>';
+    sepBank.style.cssText = "border-top:1px solid var(--border);margin:12px 0 4px;padding-top:12px";
+    sepBank.innerHTML = '<p style="font-size:12px;color:var(--muted);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Datos bancarios para transferencias</p>';
     form.appendChild(sepBank);
 
     fIban.input.placeholder = "ES91 2100 0418 4502 0005 1332";
     fIban.wrapper.querySelector("label").insertAdjacentHTML(
       "afterend",
-      '<p style="font-size:12px;color:#9ca3af;margin:2px 0 4px">Se muestra al cliente en la página de pago por transferencia bancaria.</p>'
+      '<p style="font-size:12px;color:var(--muted);margin:2px 0 4px">Se muestra al cliente en la página de pago por transferencia bancaria.</p>'
     );
     fClabe.input.placeholder = "646180110400000007";
     form.appendChild(fIban.wrapper);
@@ -132,21 +132,21 @@ function renderSettingsView(container) {
 
     // Separador visual — Automatizaciones
     const sep = document.createElement("div");
-    sep.style.cssText = "border-top:1px solid #e5e7eb;margin:12px 0 4px;padding-top:12px";
-    sep.innerHTML = '<p style="font-size:12px;color:#6b7280;margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Automatizaciones</p>';
+    sep.style.cssText = "border-top:1px solid var(--border);margin:12px 0 4px;padding-top:12px";
+    sep.innerHTML = '<p style="font-size:12px;color:var(--muted);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Automatizaciones</p>';
     form.appendChild(sep);
 
     fGoogleReviewUrl.input.placeholder = "https://g.page/r/tu-negocio/review";
     fGoogleReviewUrl.wrapper.querySelector("label").insertAdjacentHTML(
       "afterend",
-      '<p style="font-size:12px;color:#9ca3af;margin:2px 0 4px">Al recibir un pago, se enviará automáticamente un WhatsApp al cliente pidiéndole una reseña.</p>'
+      '<p style="font-size:12px;color:var(--muted);margin:2px 0 4px">Al recibir un pago, se enviará automáticamente un WhatsApp al cliente pidiéndole una reseña.</p>'
     );
     form.appendChild(fGoogleReviewUrl.wrapper);
 
     // Separador — Notificaciones por email
     const sepNotif = document.createElement("div");
-    sepNotif.style.cssText = "border-top:1px solid #e5e7eb;margin:12px 0 4px;padding-top:12px";
-    sepNotif.innerHTML = '<p style="font-size:12px;color:#6b7280;margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Notificaciones por email</p>';
+    sepNotif.style.cssText = "border-top:1px solid var(--border);margin:12px 0 4px;padding-top:12px";
+    sepNotif.innerHTML = '<p style="font-size:12px;color:var(--muted);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Notificaciones por email</p>';
     form.appendChild(sepNotif);
 
     function createToggle(id, labelText, hint) {
@@ -160,7 +160,7 @@ function renderSettingsView(container) {
       chk.style.marginTop = "2px;flex-shrink:0";
       const textBlock = document.createElement("div");
       textBlock.innerHTML = '<span style="font-weight:600;font-size:13.5px;color:var(--slate-700)">' + labelText + '</span>' +
-        (hint ? '<br/><span style="font-size:12px;color:#9ca3af">' + hint + '</span>' : '');
+        (hint ? '<br/><span style="font-size:12px;color:var(--muted)">' + hint + '</span>' : '');
       label.appendChild(chk);
       label.appendChild(textBlock);
       wrapper.appendChild(label);
@@ -185,10 +185,19 @@ function renderSettingsView(container) {
 
     const previewBtn = document.createElement("button");
     previewBtn.type = "button";
-    previewBtn.className = "btn btn-ghost btn-sm";
+    previewBtn.className = "btn-ghost btn-sm";
     previewBtn.textContent = "Vista previa";
     previewBtn.style.cssText = "margin-top:6px;margin-left:24px";
+
+    const previewBox = document.createElement("div");
+    previewBox.style.cssText = "display:none;margin:8px 0 0 24px;max-width:420px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--slate-50);padding:14px 16px";
+
     previewBtn.addEventListener("click", async () => {
+      // Toggle: si ya está visible, lo ocultamos
+      if (previewBox.style.display === "block") {
+        previewBox.style.display = "none";
+        return;
+      }
       previewBtn.disabled = true;
       const original = previewBtn.textContent;
       previewBtn.textContent = "Cargando…";
@@ -196,25 +205,32 @@ function renderSettingsView(container) {
         const res = await apiRequest("/admin/digest/preview");
         const s = res.stats || {};
         const fmt = (a, c) => Number(a || 0).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " " + (c || "");
-        const msg = [
-          res.subject || "📊 Tu semana en YaQu",
-          "",
-          "💰 Cobrado: " + fmt(s.cobrado?.amount, s.cobrado?.currency) + "  (" + (s.cobrado?.count || 0) + " factura/s)",
-          "🧾 Facturas emitidas: " + (s.facturasEmitidas || 0),
-          "✅ Presupuestos aceptados: " + (s.presupuestosAceptados || 0),
-          "📋 Presupuestos enviados: " + (s.presupuestosEnviados || 0),
-          "👤 Clientes nuevos: " + (s.clientesNuevos || 0),
-          "⏳ Pendiente: " + fmt(s.pendiente?.amount, s.pendiente?.currency) + "  (" + (s.pendiente?.count || 0) + " factura/s)",
-        ].join("\n");
-        alert(msg);
+        const rows = [
+          ["💰 Cobrado", fmt(s.cobrado?.amount, s.cobrado?.currency) + " · " + (s.cobrado?.count || 0) + " factura/s"],
+          ["🧾 Facturas emitidas", String(s.facturasEmitidas || 0)],
+          ["✅ Presupuestos aceptados", String(s.presupuestosAceptados || 0)],
+          ["📋 Presupuestos enviados", String(s.presupuestosEnviados || 0)],
+          ["👤 Clientes nuevos", String(s.clientesNuevos || 0)],
+          ["⏳ Pendiente", fmt(s.pendiente?.amount, s.pendiente?.currency) + " · " + (s.pendiente?.count || 0) + " factura/s"],
+        ];
+        previewBox.innerHTML =
+          '<div style="font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:10px">' +
+          escSettings(res.subject || "📊 Tu semana en YaQu") + '</div>' +
+          rows.map(([k, v]) =>
+            '<div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:4px 0;border-bottom:1px solid var(--border)">' +
+            '<span style="color:var(--muted)">' + k + '</span>' +
+            '<span style="color:var(--body);font-weight:600">' + escSettings(v) + '</span></div>'
+          ).join('');
+        previewBox.style.display = "block";
       } catch (err) {
-        alert("No se pudo cargar la vista previa: " + (err?.message || "error"));
+        setAlert("error", "No se pudo cargar la vista previa: " + (err?.message || "error"));
       } finally {
         previewBtn.disabled = false;
         previewBtn.textContent = original;
       }
     });
     tNotifyWeekly.wrapper.appendChild(previewBtn);
+    tNotifyWeekly.wrapper.appendChild(previewBox);
 
     form.appendChild(tNotifyPaid.wrapper);
     form.appendChild(tNotifyAccepted.wrapper);
@@ -222,8 +238,8 @@ function renderSettingsView(container) {
 
     // ── Enterprise: branding + aprobación (ENT-1, ENT-2) ──────────────────
     const sepEnt = document.createElement("div");
-    sepEnt.style.cssText = "border-top:1px solid #e5e7eb;margin:12px 0 4px;padding-top:12px";
-    sepEnt.innerHTML = '<p style="font-size:12px;color:#6b7280;margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Empresa (Enterprise)</p>';
+    sepEnt.style.cssText = "border-top:1px solid var(--border);margin:12px 0 4px;padding-top:12px";
+    sepEnt.innerHTML = '<p style="font-size:12px;color:var(--muted);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Empresa (Enterprise)</p>';
     form.appendChild(sepEnt);
 
     // Color de marca
@@ -231,11 +247,11 @@ function renderSettingsView(container) {
     fBrandWrapper.className = "field";
     fBrandWrapper.innerHTML = `
       <label>Color de marca</label>
-      <p style="font-size:12px;color:#9ca3af;margin:2px 0 6px">Se usa en el botón de aceptar y los acentos de la página que ve tu cliente.</p>
+      <p style="font-size:12px;color:var(--muted);margin:2px 0 6px">Se usa en el botón de aceptar y los acentos de la página que ve tu cliente.</p>
       <div style="display:flex;align-items:center;gap:10px">
-        <input type="color" id="brand-color-input" value="#22c55e" style="width:48px;height:38px;padding:2px;border:1px solid #d1d5db;border-radius:8px;cursor:pointer"/>
-        <span id="brand-color-hex" style="font-size:13px;color:#6b7280">#22c55e</span>
-        <button type="button" id="brand-color-reset" class="btn-ghost btn-sm" style="border:1px solid #e5e7eb;color:#6b7280">Sin color (por defecto)</button>
+        <input type="color" id="brand-color-input" value="#22c55e" style="width:48px;height:38px;padding:2px;border:1px solid var(--border);border-radius:8px;cursor:pointer"/>
+        <span id="brand-color-hex" style="font-size:13px;color:var(--muted)">#22c55e</span>
+        <button type="button" id="brand-color-reset" class="btn-secondary btn-sm">Sin color (por defecto)</button>
       </div>`;
     form.appendChild(fBrandWrapper);
     const brandColorInput = fBrandWrapper.querySelector("#brand-color-input");
@@ -258,7 +274,7 @@ function renderSettingsView(container) {
     fApproval.input.placeholder = "Ej: 1000 (vacío = sin aprobación)";
     fApproval.wrapper.querySelector("label").insertAdjacentHTML(
       "afterend",
-      '<p style="font-size:12px;color:#9ca3af;margin:2px 0 4px">Las cotizaciones de un técnico por encima de este importe quedarán "pendientes de aprobación" hasta que un admin las apruebe.</p>'
+      '<p style="font-size:12px;color:var(--muted);margin:2px 0 4px">Las cotizaciones de un técnico por encima de este importe quedarán "pendientes de aprobación" hasta que un admin las apruebe.</p>'
     );
     form.appendChild(fApproval.wrapper);
 
@@ -360,7 +376,7 @@ async function renderReferralCard(container) {
   card.className = "customers-card";
   card.style.marginTop = "16px";
   card.innerHTML = `
-    <h2 style="margin:0 0 4px;font-size:17px;font-weight:700;color:var(--slate-900)">Invita y gana meses gratis 🎁</h2>
+    <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Invita y gana meses gratis 🎁</h2>
     <p style="margin:0 0 16px;font-size:13px;color:var(--slate-400)">Por cada profesional que se suscriba con tu enlace, recibes 1 mes gratis.</p>
     <div style="color:var(--slate-400);font-size:13px">Cargando…</div>
   `;
@@ -375,12 +391,12 @@ async function renderReferralCard(container) {
   }
 
   card.innerHTML = `
-    <h2 style="margin:0 0 4px;font-size:17px;font-weight:700;color:var(--slate-900)">Invita y gana meses gratis 🎁</h2>
+    <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Invita y gana meses gratis 🎁</h2>
     <p style="margin:0 0 16px;font-size:13px;color:var(--slate-400)">Por cada profesional que se suscriba con tu enlace, recibes 1 mes gratis.</p>
 
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
       <input id="ref-link" type="text" readonly value="${escSettings(data.link)}"
-        style="flex:1;min-width:220px;padding:11px 13px;border:1px solid #d1d5db;border-radius:10px;font-size:13px;background:#f8fafc;color:#374151"/>
+        style="flex:1;min-width:220px;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:13px;background:var(--slate-50);color:var(--body)"/>
       <button id="ref-copy" class="btn btn-primary btn-sm" style="white-space:nowrap">Copiar link</button>
     </div>
 
