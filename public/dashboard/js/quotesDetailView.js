@@ -2,6 +2,7 @@
 
 // ===============================
 // Vista de detalle de presupuesto
+// Superficie única con secciones planas (sin cards anidadas).
 // ===============================
 
 // Mapeo de códigos internos → texto legible
@@ -19,313 +20,228 @@ function getPaymentTermsLabel(code) {
     case '':
       return 'Sin condiciones específicas';
     default:
-      return code; // por si en el futuro llegan otros códigos
+      return code;
   }
 }
 
+// Formato de dinero coherente con la moneda de la cotización (LATAM/ES)
+function fmtQuoteMoney(amount, currency) {
+  const cur = currency || (window.appLocale && window.appLocale.currency) || 'EUR';
+  return (
+    Number(amount || 0).toLocaleString('es-ES', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }) + ' ' + cur
+  );
+}
 
+// Helper: añade una fila a una <dl> solo si hay valor
+function addDefRow(dl, term, value) {
+  if (value === undefined || value === null || value === '' || value === '—') return;
+  const dt = document.createElement('dt');
+  dt.textContent = term;
+  const dd = document.createElement('dd');
+  dd.textContent = value;
+  dl.appendChild(dt);
+  dl.appendChild(dd);
+}
 
 async function renderQuoteDetailView(container, forcedQuoteId) {
-  // El ID puede venir del estado global (app.js) o del dataset del contenedor
   const rawId =
-    typeof forcedQuoteId !== "undefined"
+    typeof forcedQuoteId !== 'undefined'
       ? String(forcedQuoteId)
       : container.dataset.quoteId;
 
   const id = Number(rawId);
 
-  function humanPaymentTerms(code) {
-    if (!code) return "";
-    switch (String(code)) {
-      case "FULL_UPFRONT":
-        return "Pago 100% al aceptar el presupuesto.";
-      case "FIFTY_FIFTY":
-        return "50% al aceptar, 50% al finalizar el trabajo.";
-      case "MANUAL":
-        return "Solo presupuesto, facturación manual.";
-      default:
-        return String(code); // por si llega texto libre o algo raro
-    }
-  }
+  container.innerHTML = '';
 
+  const page = document.createElement('div');
+  page.className = 'detail-page';
+  container.appendChild(page);
 
-  container.innerHTML = "";
+  // ── Cabecera ────────────────────────────────────────────────
+  const head = document.createElement('div');
+  head.className = 'detail-head';
+  page.appendChild(head);
 
-  const wrapper = document.createElement("div");
-  wrapper.className = "customers-card";
-  container.appendChild(wrapper);
+  const headLeft = document.createElement('div');
+  headLeft.innerHTML =
+    `<h2>Presupuesto #${Number.isFinite(id) ? id : '-'}</h2>` +
+    `<p class="detail-sub">Detalle del presupuesto y decisión del cliente.</p>`;
+  head.appendChild(headLeft);
 
-  // HEADER
-  const header = document.createElement("div");
-  header.className = "customers-header";
-  wrapper.appendChild(header);
+  const headRight = document.createElement('div');
+  headRight.style.cssText = 'display:flex;gap:8px';
 
-  const left = document.createElement("div");
-  const title = document.createElement("h2");
-  title.textContent = `Presupuesto #${Number.isFinite(id) ? id : "-"}`;
-  title.style.margin = "0 0 4px 0";
+  const duplicateBtn = document.createElement('button');
+  duplicateBtn.className = 'btn-secondary btn-sm';
+  duplicateBtn.innerHTML = '⎘ Duplicar';
+  duplicateBtn.title = 'Crea un nuevo presupuesto con las mismas líneas';
+  duplicateBtn.addEventListener('click', () => duplicateQuote(id));
 
-  const subtitle = document.createElement("p");
-  subtitle.textContent =
-    "Detalle del presupuesto y decisión del cliente.";
-  subtitle.style.margin = "0";
-  subtitle.style.fontSize = "13px";
-  subtitle.style.color = "#6b7280";
-
-  left.appendChild(title);
-  left.appendChild(subtitle);
-  header.appendChild(left);
-
-  const right = document.createElement("div");
-  right.style.display = "flex";
-  right.style.gap = "8px";
-
-  const backBtn = document.createElement("button");
-  backBtn.className = "btn btn-secondary";
-  backBtn.textContent = "← Volver";
-  backBtn.addEventListener("click", () => {
-    const viewTitle = document.getElementById("view-title");
-    if (viewTitle) viewTitle.textContent = "Presupuestos";
-
-    if (window.renderAppView) {
-      window.renderAppView("quotes-list");
-    } else {
-      renderQuotesListView(container);
-    }
+  const backBtn = document.createElement('button');
+  backBtn.className = 'btn-secondary btn-sm';
+  backBtn.textContent = '← Volver';
+  backBtn.addEventListener('click', () => {
+    const viewTitle = document.getElementById('view-title');
+    if (viewTitle) viewTitle.textContent = 'Presupuestos';
+    if (window.renderAppView) window.renderAppView('quotes-list');
+    else renderQuotesListView(container);
   });
 
-  const duplicateBtn = document.createElement("button");
-  duplicateBtn.className = "btn-ghost btn-sm";
-  duplicateBtn.innerHTML = "⎘ Duplicar";
-  duplicateBtn.title = "Crea un nuevo presupuesto con las mismas líneas";
-  duplicateBtn.style.cssText = "border:1px solid var(--slate-200)";
-  duplicateBtn.addEventListener("click", () => duplicateQuote(id));
+  headRight.appendChild(duplicateBtn);
+  headRight.appendChild(backBtn);
+  head.appendChild(headRight);
 
-  right.appendChild(duplicateBtn);
-  right.appendChild(backBtn);
-  header.appendChild(right);
-
-  // STATUS
-  const statusBox = document.createElement("div");
-  statusBox.className = "alert";
-  statusBox.style.cssText = "margin-top:8px;display:none";
-  wrapper.appendChild(statusBox);
+  // ── Banner de estado (carga / error / éxito) ────────────────
+  const statusBox = document.createElement('div');
+  statusBox.className = 'alert';
+  statusBox.style.cssText = 'margin:14px 22px 0;display:none';
+  page.appendChild(statusBox);
 
   function setStatus(type, msg) {
-    statusBox.textContent = msg || "";
-    statusBox.className = "alert";
-    if (type === "error") statusBox.classList.add("error");
-    if (type === "success") statusBox.classList.add("success");
-    statusBox.style.display = (type || msg) ? "block" : "none";
+    statusBox.textContent = msg || '';
+    statusBox.className = 'alert';
+    if (type === 'error') statusBox.classList.add('error');
+    if (type === 'success') statusBox.classList.add('success');
+    statusBox.style.display = type || msg ? 'block' : 'none';
   }
 
   if (!rawId || !Number.isFinite(id)) {
-    setStatus("error", "ID de presupuesto no válido.");
-    console.error("[renderQuoteDetailView] quoteId inválido:", rawId);
+    setStatus('error', 'ID de presupuesto no válido.');
+    console.error('[renderQuoteDetailView] quoteId inválido:', rawId);
     return;
   }
 
-  setStatus("", "Cargando presupuesto…");
+  setStatus('', 'Cargando presupuesto…');
 
   let quote;
   try {
     quote = await getQuoteDetail(id);
   } catch (err) {
-    console.error("[renderQuoteDetailView] error en getQuoteDetail:", err);
-    setStatus("error", "Error cargando presupuesto.");
+    console.error('[renderQuoteDetailView] error en getQuoteDetail:', err);
+    setStatus('error', 'Error cargando presupuesto.');
     return;
   }
 
   if (!quote) {
-    setStatus("error", "Presupuesto no encontrado.");
+    setStatus('error', 'Presupuesto no encontrado.');
     return;
   }
 
-  // Si ha llegado hasta aquí, quitamos el mensaje de carga
-  setStatus("", "");
+  setStatus('', '');
 
-  // =====================
-  // Bloque CABECERA ESTADO
-  // =====================
-  const statusCard = document.createElement("div");
-  statusCard.className = "customers-card";
-  statusCard.style.marginTop = "12px";
-  wrapper.appendChild(statusCard);
+  const st = String(quote.status || '').toLowerCase();
+  const cur = quote.currency;
 
-  const statusTitle = document.createElement("h3");
-  statusTitle.textContent = `Presupuesto #${quote.id}`;
-  statusTitle.style.margin = "0 0 4px 0";
-  statusCard.appendChild(statusTitle);
+  // ── Sección: ESTADO + TOTAL destacado + timeline ────────────
+  const summarySec = document.createElement('div');
+  summarySec.className = 'detail-section';
+  page.appendChild(summarySec);
 
-  const statusP = document.createElement("p");
-  statusP.style.margin = "0";
-  statusP.style.fontSize = "13px";
-  statusP.style.color = "#6b7280";
+  const summaryRow = document.createElement('div');
+  summaryRow.className = 'detail-summary';
+  summarySec.appendChild(summaryRow);
 
-  const statusSpan = document.createElement("span");
-  statusSpan.className = "status-pill";
-  const st = String(quote.status || "").toLowerCase();
-  statusSpan.textContent = st.toUpperCase();
+  // Izq: estado
+  const stateBlock = document.createElement('div');
+  const stateLabel = document.createElement('div');
+  stateLabel.className = 'detail-total-label';
+  stateLabel.textContent = 'Estado';
+  stateBlock.appendChild(stateLabel);
 
-  if (st === "accepted") statusSpan.classList.add("status-pill-accepted");
-  else if (st === "rejected") statusSpan.classList.add("status-pill-rejected");
-  else if (st === "draft") statusSpan.classList.add("status-pill-draft");
-  else statusSpan.classList.add("status-pill-pending");
+  const statusSpan = document.createElement('span');
+  statusSpan.className = 'status-pill';
+  statusSpan.textContent = st === 'pending_approval' ? 'PENDIENTE APROBACIÓN' : st.toUpperCase();
+  if (st === 'accepted') statusSpan.classList.add('status-pill-accepted');
+  else if (st === 'rejected') statusSpan.classList.add('status-pill-rejected');
+  else if (st === 'draft') statusSpan.classList.add('status-pill-draft');
+  else if (st === 'pending_approval') statusSpan.classList.add('status-pill-approval');
+  else statusSpan.classList.add('status-pill-pending');
+  stateBlock.appendChild(statusSpan);
+  summaryRow.appendChild(stateBlock);
 
-  statusP.appendChild(document.createTextNode("Estado: "));
-  statusP.appendChild(statusSpan);
-  statusCard.appendChild(statusP);
+  // Der: total destacado (Regla del Importe)
+  const totalBlock = document.createElement('div');
+  totalBlock.style.textAlign = 'right';
+  totalBlock.innerHTML =
+    `<div class="detail-total-label">Total</div>` +
+    `<div class="detail-total-amount">${fmtQuoteMoney(quote.total, cur)}</div>`;
+  summaryRow.appendChild(totalBlock);
 
-  // Timeline visual del estado (FRONT1-5)
-  statusCard.appendChild(buildStatusTimeline(quote));
+  // Timeline visual del estado
+  summarySec.appendChild(buildStatusTimeline(quote));
 
-  // Badge Good/Better/Best — tier seleccionado
+  // Badge Good/Better/Best
   if (quote.tiers && quote.tiers.length > 0) {
     const tierLabels = { good: 'Básico', better: 'Estándar', best: 'Premium' };
     const chosen = quote.selectedTierId ? tierLabels[quote.selectedTierId] || quote.selectedTierId : null;
-    const tierBadge = document.createElement("div");
-    tierBadge.style.marginTop = "8px";
+    const tierBadge = document.createElement('div');
+    tierBadge.style.marginTop = '14px';
     tierBadge.innerHTML = `
-      <div style="font-size:12px;color:#6b7280;margin-bottom:4px">Cotización con 3 opciones</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Cotización con 3 opciones</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         ${quote.tiers.map((t) => `
           <span style="padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;
-            background:${t.id===quote.selectedTierId?'#dcfce7':t.recommended?'#f0fdf4':'#f3f4f6'};
-            color:${t.id===quote.selectedTierId?'#166534':t.recommended?'#16a34a':'#374151'};
-            border:1px solid ${t.id===quote.selectedTierId?'#22c55e':'#e5e7eb'}">
-            ${t.label} — ${Number(t.total).toFixed(2)} ${quote.currency}
-            ${t.id===quote.selectedTierId?' ✓':''}
+            background:${t.id === quote.selectedTierId ? 'var(--green-100)' : t.recommended ? 'var(--green-50)' : 'var(--slate-100)'};
+            color:${t.id === quote.selectedTierId ? 'var(--green-700)' : t.recommended ? 'var(--brand)' : 'var(--slate-600)'};
+            border:1px solid ${t.id === quote.selectedTierId ? 'var(--green-500)' : 'var(--border)'}">
+            ${t.label} — ${fmtQuoteMoney(t.total, cur)}${t.id === quote.selectedTierId ? ' ✓' : ''}
           </span>`).join('')}
       </div>
-      ${chosen ? `<div style="margin-top:6px;font-size:13px;color:#16a34a;font-weight:600">Cliente eligió: ${chosen}</div>` : ''}
+      ${chosen ? `<div style="margin-top:6px;font-size:13px;color:var(--brand);font-weight:600">Cliente eligió: ${chosen}</div>` : ''}
     `;
-    statusCard.appendChild(tierBadge);
+    summarySec.appendChild(tierBadge);
   }
 
-  // Badge firma digital
+  // Firma digital
   if (quote.signatureUrl) {
-    const sigBadge = document.createElement("div");
-    sigBadge.style.cssText = "margin-top:10px;display:flex;flex-direction:column;gap:8px";
+    const sigBadge = document.createElement('div');
+    sigBadge.style.cssText = 'margin-top:14px;display:flex;flex-direction:column;gap:8px';
     sigBadge.innerHTML = `
-      <div style="display:inline-flex;align-items:center;gap:6px;background:#ecfdf5;color:#166534;
+      <div style="display:inline-flex;align-items:center;gap:6px;background:var(--brand-tint);color:var(--green-700);
         padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;width:fit-content">
         ✅ Firmado digitalmente
       </div>
       <img src="${quote.signatureUrl}" alt="Firma del cliente"
-        style="max-width:200px;max-height:80px;border:1px solid #e5e7eb;border-radius:8px;
-               background:#f9fafb;padding:4px;object-fit:contain"/>
+        style="max-width:200px;max-height:80px;border:1px solid var(--border);border-radius:8px;
+               background:var(--slate-50);padding:4px;object-fit:contain"/>
     `;
-    statusCard.appendChild(sigBadge);
+    summarySec.appendChild(sigBadge);
   }
 
-  // =====================
-  // NOTAS INTERNAS (privadas, solo visible en el BO)
-  // =====================
-  const notesCard = document.createElement("div");
-  notesCard.className = "customers-card";
-  notesCard.style.marginTop = "12px";
-  wrapper.appendChild(notesCard);
-
-  const notesHeader = document.createElement("div");
-  notesHeader.style.cssText = "display:flex;justify-content:space-between;align-items:center;margin-bottom:8px";
-  notesHeader.innerHTML = `
-    <h3 style="margin:0;font-size:14px">📝 Notas internas</h3>
-    <span style="font-size:11px;color:#9ca3af;background:#f3f4f6;padding:2px 8px;border-radius:999px">Solo tú las ves</span>
-  `;
-  notesCard.appendChild(notesHeader);
-
-  const notesTextarea = document.createElement("textarea");
-  notesTextarea.value = quote.internalNotes || "";
-  notesTextarea.placeholder = "Anota detalles del trabajo, acuerdos verbales, recordatorios…";
-  notesTextarea.style.cssText = "width:100%;min-height:90px;padding:10px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;resize:vertical;font-family:inherit;line-height:1.5;color:#374151";
-  notesCard.appendChild(notesTextarea);
-
-  const notesSaveStatus = document.createElement("div");
-  notesSaveStatus.style.cssText = "font-size:12px;color:#9ca3af;margin-top:4px;text-align:right;min-height:16px";
-  notesCard.appendChild(notesSaveStatus);
-
-  // Auto-guardado con debounce 1.2s
-  let notesTimer = null;
-  notesTextarea.addEventListener("input", () => {
-    notesSaveStatus.textContent = "Escribiendo…";
-    clearTimeout(notesTimer);
-    notesTimer = setTimeout(async () => {
-      try {
-        await apiRequest(`/admin/quotes/${quote.id}/notes`, {
-          method: "PUT",
-          body: JSON.stringify({ notes: notesTextarea.value }),
-        });
-        notesSaveStatus.textContent = "✓ Guardado automáticamente";
-        setTimeout(() => { notesSaveStatus.textContent = ""; }, 2500);
-      } catch {
-        notesSaveStatus.textContent = "Error al guardar";
-        notesSaveStatus.style.color = "#dc2626";
-      }
-    }, 1200);
-  });
-
-  // =====================
-  // Bloque CLIENTE
-  // =====================
-  const customerCard = document.createElement("div");
-  customerCard.className = "customers-card";
-  customerCard.style.marginTop = "12px";
-  wrapper.appendChild(customerCard);
-
-  const custTitle = document.createElement("h3");
-  custTitle.textContent = "Cliente";
-  custTitle.style.margin = "0 0 8px 0";
-  customerCard.appendChild(custTitle);
-
+  // ── Sección: CLIENTE ────────────────────────────────────────
   const c = quote.customer || {};
-  const pName = document.createElement("p");
-  pName.textContent = c.name || "—";
-  customerCard.appendChild(pName);
+  const custSec = document.createElement('div');
+  custSec.className = 'detail-section';
+  custSec.innerHTML = '<h3 class="detail-section-title">Cliente</h3>';
+  const custDl = document.createElement('dl');
+  custDl.className = 'detail-dl';
+  addDefRow(custDl, 'Nombre', c.name);
+  addDefRow(custDl, 'Teléfono', c.phone);
+  addDefRow(custDl, 'Email', c.email);
+  if (!custDl.children.length) custDl.innerHTML = '<dd style="color:var(--muted)">Sin datos de cliente.</dd>';
+  custSec.appendChild(custDl);
+  page.appendChild(custSec);
 
-  const pPhone = document.createElement("p");
-  pPhone.style.margin = "0";
-  pPhone.textContent = "Teléfono: " + (c.phone || "—");
-  customerCard.appendChild(pPhone);
+  // ── Sección: CONCEPTOS + TOTALES ────────────────────────────
+  const concSec = document.createElement('div');
+  concSec.className = 'detail-section';
+  concSec.innerHTML = '<h3 class="detail-section-title">Conceptos</h3>';
+  page.appendChild(concSec);
 
-  const pEmail = document.createElement("p");
-  pEmail.style.margin = "0";
-  pEmail.textContent = "Email: " + (c.email || "—");
-  customerCard.appendChild(pEmail);
-
-  // =====================
-  // Tabla CONCEPTOS
-  // =====================
-  const conceptsCard = document.createElement("div");
-  conceptsCard.className = "customers-card";
-  conceptsCard.style.marginTop = "12px";
-  wrapper.appendChild(conceptsCard);
-
-  const concTitle = document.createElement("h3");
-  concTitle.textContent = "Conceptos";
-  concTitle.style.margin = "0 0 8px 0";
-  conceptsCard.appendChild(concTitle);
-
-  const table = document.createElement("table");
-  table.className = "table";
-  conceptsCard.appendChild(table);
-
-  const thead = document.createElement("thead");
-  thead.innerHTML = `
-    <tr>
-      <th>Concepto</th>
-      <th>Cant.</th>
-      <th>Precio</th>
-      <th>IVA</th>
-      <th>Total</th>
-    </tr>
-  `;
-  table.appendChild(thead);
-
-  const tbody = document.createElement("tbody");
+  const table = document.createElement('table');
+  table.className = 'table';
+  table.innerHTML = `
+    <thead><tr>
+      <th>Concepto</th><th>Cant.</th><th>Precio</th><th>IVA</th><th style="text-align:right">Total</th>
+    </tr></thead>`;
+  const tbody = document.createElement('tbody');
   table.appendChild(tbody);
+  concSec.appendChild(table);
 
   const lines = Array.isArray(quote.lines) ? quote.lines : [];
-
   let totalBase = 0;
   let totalIva = 0;
 
@@ -334,491 +250,404 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     const qty = Number(l.qty) || 0;
     const price = Number(l.price) || 0;
     const tax = Number(l.tax ?? 0);
-
     const base = qty * price;
     const ivaAmount = base * tax;
     const total = base + ivaAmount;
-
     totalBase += base;
     totalIva += ivaAmount;
 
-    const tr = document.createElement("tr");
-
-    const tdConcept = document.createElement("td");
-    tdConcept.textContent = l.concept || "—";
-    tr.appendChild(tdConcept);
-
-    const tdQty = document.createElement("td");
-    tdQty.textContent = qty.toString();
-    tr.appendChild(tdQty);
-
-    const tdPrice = document.createElement("td");
-    tdPrice.textContent = price.toFixed(2) + " €";
-    tr.appendChild(tdPrice);
-
-    const tdTax = document.createElement("td");
-    tdTax.textContent = (tax * 100).toFixed(0) + " %";
-    tr.appendChild(tdTax);
-
-    const tdTotal = document.createElement("td");
-    tdTotal.textContent = total.toFixed(2) + " €";
-    tr.appendChild(tdTotal);
-
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      `<td>${escHtml(l.concept || '—')}</td>` +
+      `<td>${qty}</td>` +
+      `<td>${fmtQuoteMoney(price, cur)}</td>` +
+      `<td>${(tax * 100).toFixed(0)} %</td>` +
+      `<td style="text-align:right" class="amount">${fmtQuoteMoney(total, cur)}</td>`;
     tbody.appendChild(tr);
   });
 
-  // Totales
-  const totalsCard = document.createElement("div");
-  totalsCard.className = "customers-card";
-  totalsCard.style.marginTop = "12px";
-  wrapper.appendChild(totalsCard);
+  // Totales (base/IVA secundarios, total destacado)
+  const totalsWrap = document.createElement('div');
+  totalsWrap.style.cssText =
+    'margin-top:14px;display:flex;flex-direction:column;gap:4px;align-items:flex-end';
+  totalsWrap.innerHTML = `
+    <div style="font-size:13px;color:var(--muted)">Base imponible: <span class="amount-muted">${fmtQuoteMoney(totalBase, cur)}</span></div>
+    <div style="font-size:13px;color:var(--muted)">IVA: <span class="amount-muted">${fmtQuoteMoney(totalIva, cur)}</span></div>
+    <div style="font-size:16px;color:var(--ink);font-weight:700;margin-top:2px">Total: <span class="amount" style="font-size:18px">${fmtQuoteMoney(quote.total, cur)}</span></div>
+  `;
+  concSec.appendChild(totalsWrap);
 
-  const tTitle = document.createElement("h3");
-  tTitle.textContent = "Totales";
-  tTitle.style.margin = "0 0 8px 0";
-  totalsCard.appendChild(tTitle);
-
-  const pBase = document.createElement("p");
-  pBase.style.margin = "0";
-  pBase.textContent = "Base imponible: " + totalBase.toFixed(2) + " EUR";
-  totalsCard.appendChild(pBase);
-
-  const pIva = document.createElement("p");
-  pIva.style.margin = "0";
-  pIva.textContent = "IVA total: " + totalIva.toFixed(2) + " EUR";
-  totalsCard.appendChild(pIva);
-
-  const pTotal = document.createElement("p");
-  pTotal.style.margin = "0";
-  pTotal.textContent =
-    "Total presupuesto: " + Number(quote.total || 0).toFixed(2) + " EUR";
-  totalsCard.appendChild(pTotal);
-
-  // =====================
-  // Bloque DECISIÓN
-  // =====================
-  const decisionCard = document.createElement("div");
-  decisionCard.className = "customers-card";
-  decisionCard.style.marginTop = "12px";
-  wrapper.appendChild(decisionCard);
-
-  const dTitle = document.createElement("h3");
-  dTitle.textContent = "Decisión";
-  dTitle.style.margin = "0 0 8px 0";
-  decisionCard.appendChild(dTitle);
+  // ── Sección: DECISIÓN ───────────────────────────────────────
+  const decSec = document.createElement('div');
+  decSec.className = 'detail-section';
+  decSec.innerHTML = '<h3 class="detail-section-title">Decisión</h3>';
+  page.appendChild(decSec);
 
   const d = quote.decision || {};
+  const decDl = document.createElement('dl');
+  decDl.className = 'detail-dl';
+  addDefRow(decDl, 'Canal', d.decisionChannel);
+  addDefRow(decDl, 'Comentario', d.decisionComment);
+  addDefRow(decDl, 'Motivo de rechazo', d.rejectionReason);
+  addDefRow(decDl, 'Aceptado', d.acceptedAt ? new Date(d.acceptedAt).toLocaleString('es-ES') : null);
+  addDefRow(decDl, 'Rechazado', d.rejectedAt ? new Date(d.rejectedAt).toLocaleString('es-ES') : null);
+  addDefRow(decDl, 'Condiciones de pago', getPaymentTermsLabel(d.paymentTerms));
+  if (!decDl.children.length) {
+    decDl.innerHTML = '<dd style="color:var(--muted)">Aún sin decisión registrada.</dd>';
+  }
+  decSec.appendChild(decDl);
 
-  const pChannel = document.createElement("p");
-  pChannel.style.margin = "0";
-  pChannel.textContent = "Canal: " + (d.decisionChannel || "—");
-  decisionCard.appendChild(pChannel);
-
-  const pComment = document.createElement("p");
-  pComment.style.margin = "0";
-  pComment.textContent = "Comentario: " + (d.decisionComment || "—");
-  decisionCard.appendChild(pComment);
-
-  const pReason = document.createElement("p");
-  pReason.style.margin = "0";
-  pReason.textContent =
-    "Motivo rechazo: " + (d.rejectionReason || "—");
-  decisionCard.appendChild(pReason);
-
-  const pAcceptedAt = document.createElement("p");
-  pAcceptedAt.style.margin = "0";
-  pAcceptedAt.textContent =
-    "Aceptado en: " +
-    (d.acceptedAt
-      ? new Date(d.acceptedAt).toLocaleString("es-ES")
-      : "—");
-  decisionCard.appendChild(pAcceptedAt);
-
-  const pRejectedAt = document.createElement("p");
-  pRejectedAt.style.margin = "0";
-  pRejectedAt.textContent =
-    "Rechazado en: " +
-    (d.rejectedAt
-      ? new Date(d.rejectedAt).toLocaleString("es-ES")
-      : "—");
-  decisionCard.appendChild(pRejectedAt);
-
-  const pTerms = document.createElement("p");
-  pTerms.style.margin = "0";
-  
-  const paymentLabel = getPaymentTermsLabel(d.paymentTerms);
-  pTerms.textContent = "Condiciones de pago: " + paymentLabel;
-  
-  decisionCard.appendChild(pTerms);
-  
-
-
-  // === BOTONES ADMIN: ACEPTAR / RECHAZAR (solo si sigue en draft/pending) ===
-  if (st === "draft" || st === "pending") {
-    const actions = document.createElement("div");
-    actions.style.marginTop = "12px";
-    actions.style.display = "flex";
-    actions.style.gap = "8px";
-
-    const btnAccept = document.createElement("button");
-    btnAccept.className = "btn btn-primary";
-    btnAccept.textContent = "Aceptar presupuesto";
-
-    const btnReject = document.createElement("button");
-    btnReject.className = "btn btn-secondary";
-    btnReject.textContent = "Rechazar presupuesto";
-
-    actions.appendChild(btnAccept);
-    actions.appendChild(btnReject);
-    decisionCard.appendChild(actions);
-
-    btnAccept.addEventListener("click", async () => {
-      const paymentTerms = prompt(
-        "Condiciones de pago (opcional, se guardan en el presupuesto):",
-        d.paymentTerms || ""
-      );
-      const comment = prompt(
-        "Comentario interno (opcional):",
-        d.decisionComment || ""
-      );
-
-      btnAccept.disabled = true;
-      btnReject.disabled = true;
-
-      try {
-        const res = await fetch(`/admin/quotes/${quote.id}/accept`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            channel: "backoffice",
-            paymentTerms: paymentTerms || undefined,
-            comment: comment || undefined,
-          }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          alert("Error al aceptar presupuesto: " + (data.error || "desconocido"));
-          btnAccept.disabled = false;
-          btnReject.disabled = false;
-          return;
-        }
-
-        // Volvemos a cargar el detalle con el nuevo estado
-        await renderQuoteDetailView(container, quote.id);
-      } catch (err) {
-        alert("Error al aceptar presupuesto: " + err.message);
-        btnAccept.disabled = false;
-        btnReject.disabled = false;
-      }
-    });
-
-    btnReject.addEventListener("click", async () => {
-      const reason = prompt(
-        "Motivo de rechazo (obligatorio, visible en el historial):",
-        d.rejectionReason || ""
-      );
-      if (!reason || !reason.trim()) {
-        alert("El motivo de rechazo es obligatorio.");
-        return;
-      }
-
-      const comment = prompt(
-        "Comentario interno (opcional):",
-        d.decisionComment || ""
-      );
-
-      btnAccept.disabled = true;
-      btnReject.disabled = true;
-
-      try {
-        const res = await fetch(`/admin/quotes/${quote.id}/reject`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            channel: "backoffice",
-            reason: reason.trim(),
-            comment: comment || undefined,
-          }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          alert("Error al rechazar presupuesto: " + (data.error || "desconocido"));
-          btnAccept.disabled = false;
-          btnReject.disabled = false;
-          return;
-        }
-
-        await renderQuoteDetailView(container, quote.id);
-      } catch (err) {
-        alert("Error al rechazar presupuesto: " + err.message);
-        btnAccept.disabled = false;
-        btnReject.disabled = false;
-      }
-    });
+  // Acciones de back-office (flujo residual: panel inline, sin prompt/alert)
+  if (st === 'draft' || st === 'pending') {
+    decSec.appendChild(buildDecisionPanel(quote, d, container, setStatus));
   }
 
-  // =====================
-  // FACTURAS RELACIONADAS
-  // =====================
-  const invoicesCard = document.createElement("div");
-  invoicesCard.className = "customers-card";
-  invoicesCard.style.marginTop = "12px";
-  wrapper.appendChild(invoicesCard);
-
-  const invTitle = document.createElement("h3");
-  invTitle.textContent = "Facturas";
-  invTitle.style.margin = "0 0 8px 0";
-  invoicesCard.appendChild(invTitle);
+  // ── Sección: FACTURAS ───────────────────────────────────────
+  const invSec = document.createElement('div');
+  invSec.className = 'detail-section';
+  invSec.innerHTML = '<h3 class="detail-section-title">Facturas</h3>';
+  page.appendChild(invSec);
 
   const invoices = Array.isArray(quote.invoices) ? quote.invoices : [];
-
-  const invList = document.createElement("div");
-  invoicesCard.appendChild(invList);
+  const invList = document.createElement('div');
+  invSec.appendChild(invList);
 
   function renderInvoices() {
-    invList.innerHTML = "";
-
+    invList.innerHTML = '';
     if (invoices.length === 0) {
-      const p = document.createElement("p");
-      p.textContent = "No hay facturas generadas.";
-      p.style.margin = "0 0 8px 0";
-      invList.appendChild(p);
+      invList.innerHTML = '<p style="margin:0;color:var(--muted);font-size:13px">No hay facturas generadas.</p>';
       return;
     }
-
     invoices.forEach((inv) => {
-      const div = document.createElement("div");
-      div.className = "invoice-item";
-      div.style.cursor = "pointer";
-
-      div.innerHTML = `
-        <p style="margin:0;">
-          <strong>${inv.number}</strong><br>
-          Total: ${Number(inv.total).toFixed(2)} ${inv.currency}<br>
-          Creada: ${
-            inv.createdAt
-              ? new Date(inv.createdAt).toLocaleString("es-ES")
-              : "—"
-          }
-        </p>
-      `;
-
-      // Al hacer click, vamos a la vista de detalle de factura
-      div.addEventListener("click", () => {
-        if (window.renderAppView) {
-          window.renderAppView("invoice-detail", { invoiceId: inv.id });
-        }
+      const div = document.createElement('div');
+      div.className = 'invoice-item';
+      div.style.cursor = 'pointer';
+      div.innerHTML =
+        `<p style="margin:0"><strong>${escHtml(inv.number)}</strong><br>` +
+        `Total: <span class="amount-muted">${fmtQuoteMoney(inv.total, inv.currency || cur)}</span><br>` +
+        `Creada: ${inv.createdAt ? new Date(inv.createdAt).toLocaleString('es-ES') : '—'}</p>`;
+      div.addEventListener('click', () => {
+        if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: inv.id });
       });
 
-     
-    
-
-
-      // Botón "Marcar como pagada" solo si la factura está pendiente
-      if (inv.status === "pending") {
-        const btnPaid = document.createElement("button");
-        btnPaid.className = "btn btn-secondary btn-xs";
-        btnPaid.style.marginTop = "4px";
-        btnPaid.textContent = "Marcar como pagada";
-
-        btnPaid.addEventListener("click", async () => {
+      if (inv.status === 'pending') {
+        const btnPaid = document.createElement('button');
+        btnPaid.className = 'btn-secondary btn-sm';
+        btnPaid.style.marginTop = '6px';
+        btnPaid.textContent = 'Marcar como pagada';
+        btnPaid.addEventListener('click', async (ev) => {
+          ev.stopPropagation();
           btnPaid.disabled = true;
-          const originalText = btnPaid.textContent;
-          btnPaid.textContent = "Guardando…";
-
+          const original = btnPaid.textContent;
+          btnPaid.textContent = 'Guardando…';
           try {
             const res = await fetch(`/admin/invoices/${inv.id}/status`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ status: "paid" }),
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'paid' }),
             });
-            
-
             const data = await res.json().catch(() => ({}));
-
             if (!res.ok) {
-              alert(
-                "Error marcando como pagada: " +
-                  (data.error || "desconocido")
-              );
+              setStatus('error', 'Error marcando como pagada: ' + (data.error || 'desconocido'));
               btnPaid.disabled = false;
-              btnPaid.textContent = originalText;
+              btnPaid.textContent = original;
               return;
             }
-
-            // Recargamos el detalle de la misma quote para ver el nuevo estado
             await renderQuoteDetailView(container, quote.id);
           } catch (err) {
-            const msg =
-              err && err.message
-                ? err.message
-                : typeof err === "string"
-                ? err
-                : "error_desconocido";
-
-            alert("Error marcando como pagada: " + msg);
+            setStatus('error', 'Error marcando como pagada: ' + (err && err.message ? err.message : 'inténtalo de nuevo'));
             btnPaid.disabled = false;
-            btnPaid.textContent = originalText;
+            btnPaid.textContent = original;
           }
         });
-
         div.appendChild(btnPaid);
       }
-
       invList.appendChild(div);
     });
   }
-
   renderInvoices();
 
-  // --- BOTÓN PARA GENERAR FACTURA SEGÚN CONDICIONES ---
-  const btnInvoice = document.createElement("button");
-  btnInvoice.className = "btn btn-primary";
-  btnInvoice.style.marginTop = "12px";
-  invoicesCard.appendChild(btnInvoice);
-
+  // Botón generar factura según condiciones
   const pt = quote?.decision?.paymentTerms ?? quote?.paymentTerms ?? null;
+  const isAccepted = st === 'accepted';
+  const isFullUpfront = pt === 'FULL_UPFRONT';
+  const isFiftyFifty = pt === 'FIFTY_FIFTY';
 
-  const stStatus = st; // status ya en minúsculas
-
-  const isAccepted = stStatus === "accepted";
-  const isFullUpfront = pt === "FULL_UPFRONT";
-  const isFiftyFifty = pt === "FIFTY_FIFTY";
+  const btnInvoice = document.createElement('button');
+  btnInvoice.className = 'btn-primary';
+  btnInvoice.style.marginTop = '12px';
+  invSec.appendChild(btnInvoice);
 
   let canGenerateInvoice = false;
-
   if (!isAccepted) {
-    // Aún no se ha aceptado el presupuesto
-    btnInvoice.textContent = "Solo disponible tras aceptar el presupuesto";
+    btnInvoice.textContent = 'Solo disponible tras aceptar el presupuesto';
     btnInvoice.disabled = true;
   } else if (isFullUpfront) {
-    // 100% al aceptar → una única factura
-    if (invoices.length === 0) {
-      btnInvoice.textContent = "Generar factura (100%)";
-      canGenerateInvoice = true;
-    } else {
-      btnInvoice.textContent = "Factura ya generada";
-      btnInvoice.disabled = true;
-    }
+    if (invoices.length === 0) { btnInvoice.textContent = 'Generar factura (100%)'; canGenerateInvoice = true; }
+    else { btnInvoice.textContent = 'Factura ya generada'; btnInvoice.disabled = true; }
   } else if (isFiftyFifty) {
-    // 50/50 → hasta dos facturas
-    if (invoices.length === 0) {
-      btnInvoice.textContent = "Generar 1ª factura (50%)";
-      canGenerateInvoice = true;
-    } else if (invoices.length === 1) {
-      btnInvoice.textContent = "Generar 2ª factura (50% restante)";
-      canGenerateInvoice = true;
-    } else {
-      btnInvoice.textContent = "Plan de facturación completado";
-      btnInvoice.disabled = true;
-    }
+    if (invoices.length === 0) { btnInvoice.textContent = 'Generar 1ª factura (50%)'; canGenerateInvoice = true; }
+    else if (invoices.length === 1) { btnInvoice.textContent = 'Generar 2ª factura (50% restante)'; canGenerateInvoice = true; }
+    else { btnInvoice.textContent = 'Plan de facturación completado'; btnInvoice.disabled = true; }
   } else {
-    // MANUAL, NONE u otros códigos
-    btnInvoice.textContent = "No disponible para estas condiciones de pago";
+    btnInvoice.textContent = 'No disponible para estas condiciones de pago';
     btnInvoice.disabled = true;
   }
 
-  // Si ahora mismo no es momento de generar factura, no añadimos handler
-  if (!canGenerateInvoice) {
-    return;
-  }
-
-  // Handler de click: delegamos en el backend y recargamos la vista
-  btnInvoice.addEventListener("click", async () => {
-    btnInvoice.disabled = true;
-    const originalText = btnInvoice.textContent;
-    btnInvoice.textContent = "Generando…";
-
-    try {
-      const res = await fetch(`/admin/quotes/${quote.id}/invoice`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        alert("Error generando factura: " + (data.error || "desconocido"));
+  if (canGenerateInvoice) {
+    btnInvoice.addEventListener('click', async () => {
+      btnInvoice.disabled = true;
+      const original = btnInvoice.textContent;
+      btnInvoice.textContent = 'Generando…';
+      try {
+        const res = await fetch(`/admin/quotes/${quote.id}/invoice`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setStatus('error', 'Error generando factura: ' + (data.error || 'desconocido'));
+          btnInvoice.disabled = false;
+          btnInvoice.textContent = original;
+          return;
+        }
+        await renderQuoteDetailView(container, quote.id);
+      } catch (err) {
+        setStatus('error', 'Error generando factura: ' + (err && err.message ? err.message : 'inténtalo de nuevo'));
         btnInvoice.disabled = false;
-        btnInvoice.textContent = originalText;
-        return;
+        btnInvoice.textContent = original;
       }
+    });
+  }
 
-      // Tras generar la factura (1ª o 2ª), recargamos el detalle
-      await renderQuoteDetailView(container, quote.id);
-    } catch (err) {
-      const msg =
-        err && err.message
-          ? err.message
-          : typeof err === "string"
-          ? err
-          : "error_desconocido";
+  // ── Sección: NOTAS INTERNAS ─────────────────────────────────
+  const notesSec = document.createElement('div');
+  notesSec.className = 'detail-section';
+  page.appendChild(notesSec);
 
-      alert("Error generando factura: " + msg);
-      btnInvoice.disabled = false;
-      btnInvoice.textContent = originalText;
-    }
+  const notesHeader = document.createElement('div');
+  notesHeader.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:10px';
+  notesHeader.innerHTML =
+    '<h3 class="detail-section-title" style="margin:0">📝 Notas internas</h3>' +
+    '<span style="font-size:11px;color:var(--muted);background:var(--slate-100);padding:2px 8px;border-radius:999px">Solo tú las ves</span>';
+  notesSec.appendChild(notesHeader);
+
+  const notesTextarea = document.createElement('textarea');
+  notesTextarea.value = quote.internalNotes || '';
+  notesTextarea.placeholder = 'Anota detalles del trabajo, acuerdos verbales, recordatorios…';
+  notesTextarea.style.cssText =
+    'width:100%;min-height:90px;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:13px;resize:vertical;font-family:inherit;line-height:1.5;color:var(--body)';
+  notesSec.appendChild(notesTextarea);
+
+  const notesSaveStatus = document.createElement('div');
+  notesSaveStatus.style.cssText = 'font-size:12px;color:var(--muted);margin-top:4px;text-align:right;min-height:16px';
+  notesSec.appendChild(notesSaveStatus);
+
+  let notesTimer = null;
+  notesTextarea.addEventListener('input', () => {
+    notesSaveStatus.style.color = 'var(--muted)';
+    notesSaveStatus.textContent = 'Escribiendo…';
+    clearTimeout(notesTimer);
+    notesTimer = setTimeout(async () => {
+      try {
+        await apiRequest(`/admin/quotes/${quote.id}/notes`, {
+          method: 'PUT',
+          body: JSON.stringify({ notes: notesTextarea.value }),
+        });
+        notesSaveStatus.textContent = '✓ Guardado automáticamente';
+        setTimeout(() => { notesSaveStatus.textContent = ''; }, 2500);
+      } catch {
+        notesSaveStatus.style.color = 'var(--red-600)';
+        notesSaveStatus.textContent = 'Error al guardar';
+      }
+    }, 1200);
   });
 
-  // --- MARGEN DEL TRABAJO ---
-  const marginCard = document.createElement("div");
-  marginCard.className = "customers-card";
-  marginCard.style.marginTop = "12px";
-  wrapper.appendChild(marginCard);
+  // ── Sección: GASTOS Y MARGEN ────────────────────────────────
+  const marginSec = document.createElement('div');
+  marginSec.className = 'detail-section';
+  marginSec.innerHTML = '<h3 class="detail-section-title">Gastos y margen</h3>';
+  page.appendChild(marginSec);
 
-  const mTitle = document.createElement("h3");
-  mTitle.textContent = "Gastos y margen";
-  mTitle.style.margin = "0 0 8px 0";
-  marginCard.appendChild(mTitle);
+  const mBody = document.createElement('div');
+  mBody.innerHTML = '<p style="color:var(--muted);font-size:13px;margin:0">Cargando…</p>';
+  marginSec.appendChild(mBody);
 
-  const mBody = document.createElement("div");
-  mBody.innerHTML = '<p style="color:#9ca3af;font-size:13px">Cargando…</p>';
-  marginCard.appendChild(mBody);
-
-  // Cargar margen
   apiRequest(`/admin/expenses/margin/${id}`).then((data) => {
     if (!data) return;
-    const marginColor = data.margin >= 0 ? '#16a34a' : '#dc2626';
+    const positive = data.margin >= 0;
+    const marginColor = positive ? 'var(--brand)' : 'var(--red-600)';
     mBody.innerHTML = `
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
-        <div style="background:#f9fafb;border-radius:10px;padding:10px;text-align:center">
-          <div style="font-size:11px;color:#6b7280;text-transform:uppercase;font-weight:600">Ingresos</div>
-          <div style="font-size:18px;font-weight:700;color:#111827">${fmtAmt(data.revenue, data.currency)}</div>
+      <div class="margin-grid">
+        <div class="margin-tile">
+          <div class="margin-tile-label">Ingresos</div>
+          <div class="margin-tile-value" style="color:var(--ink)">${fmtQuoteMoney(data.revenue, data.currency || cur)}</div>
         </div>
-        <div style="background:#fef2f2;border-radius:10px;padding:10px;text-align:center">
-          <div style="font-size:11px;color:#6b7280;text-transform:uppercase;font-weight:600">Gastos</div>
-          <div style="font-size:18px;font-weight:700;color:#dc2626">${fmtAmt(data.totalExpenses, data.currency)}</div>
+        <div class="margin-tile">
+          <div class="margin-tile-label">Gastos</div>
+          <div class="margin-tile-value" style="color:var(--red-600)">${fmtQuoteMoney(data.totalExpenses, data.currency || cur)}</div>
         </div>
-        <div style="background:${data.margin>=0?'#ecfdf5':'#fef2f2'};border-radius:10px;padding:10px;text-align:center">
-          <div style="font-size:11px;color:#6b7280;text-transform:uppercase;font-weight:600">Margen</div>
-          <div style="font-size:18px;font-weight:700;color:${marginColor}">${fmtAmt(data.margin, data.currency)}</div>
+        <div class="margin-tile" style="background:${positive ? 'var(--brand-tint)' : 'var(--red-50)'};border-color:${positive ? 'var(--green-100)' : 'var(--red-50)'}">
+          <div class="margin-tile-label">Margen</div>
+          <div class="margin-tile-value" style="color:${marginColor}">${fmtQuoteMoney(data.margin, data.currency || cur)}</div>
           <div style="font-size:12px;color:${marginColor}">${data.marginPct}%</div>
         </div>
       </div>
-      ${data.expenses.length ? `
-        <div style="font-size:12px;color:#6b7280;margin-bottom:6px;font-weight:600">GASTOS ASIGNADOS</div>
-        ${data.expenses.map(e => `
-          <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid #f3f4f6">
+      ${data.expenses && data.expenses.length ? `
+        <div style="font-size:11.5px;color:var(--muted);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Gastos asignados</div>
+        ${data.expenses.map((e) => `
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid var(--slate-100)">
             <span>${escHtml(e.concept)}</span>
-            <span style="font-weight:600">${fmtAmt(e.amount, data.currency)}</span>
+            <span class="amount-muted">${fmtQuoteMoney(e.amount, data.currency || cur)}</span>
           </div>`).join('')}
-      ` : '<p style="font-size:13px;color:#9ca3af">Sin gastos asignados a esta cotización.</p>'}
-      <button onclick="renderAppView('expenses')" class="btn btn-secondary" style="margin-top:10px;font-size:13px">
+      ` : '<p style="font-size:13px;color:var(--muted)">Sin gastos asignados a esta cotización.</p>'}
+      <button onclick="renderAppView('expenses')" class="btn-secondary btn-sm" style="margin-top:12px">
         + Añadir gasto a este trabajo
       </button>
     `;
   }).catch(() => {
-    mBody.innerHTML = '<p style="font-size:13px;color:#9ca3af">No hay datos de gastos.</p>';
+    mBody.innerHTML = '<p style="font-size:13px;color:var(--muted);margin:0">No hay datos de gastos.</p>';
   });
+}
 
-  function fmtAmt(amount, currency) {
-    const sym = (currency==='MXN'||currency==='COP') ? '$' : '€';
-    return `${sym}${Number(amount).toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+// ── Panel inline de decisión back-office (sustituye prompt/alert) ──────────
+function buildDecisionPanel(quote, d, container, setStatus) {
+  const panel = document.createElement('div');
+  panel.style.cssText =
+    'margin-top:14px;padding-top:14px;border-top:1px dashed var(--border)';
+
+  const hint = document.createElement('p');
+  hint.style.cssText = 'font-size:12.5px;color:var(--muted);margin:0 0 10px';
+  hint.textContent = 'Registrar la decisión manualmente (lo habitual es que el cliente decida por WhatsApp).';
+  panel.appendChild(hint);
+
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap';
+  const btnAccept = document.createElement('button');
+  btnAccept.className = 'btn-primary btn-sm';
+  btnAccept.textContent = 'Aceptar presupuesto';
+  const btnReject = document.createElement('button');
+  btnReject.className = 'btn-secondary btn-sm';
+  btnReject.textContent = 'Rechazar presupuesto';
+  btnRow.appendChild(btnAccept);
+  btnRow.appendChild(btnReject);
+  panel.appendChild(btnRow);
+
+  // Formulario inline que se despliega según la acción
+  const form = document.createElement('div');
+  form.style.cssText = 'display:none;margin-top:12px;flex-direction:column;gap:8px;max-width:420px';
+  panel.appendChild(form);
+
+  const fieldStyle =
+    'width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;color:var(--body)';
+
+  let mode = null; // 'accept' | 'reject'
+
+  function openForm(which) {
+    mode = which;
+    form.style.display = 'flex';
+    form.innerHTML = '';
+
+    if (which === 'accept') {
+      const sel = document.createElement('select');
+      sel.style.cssText = fieldStyle;
+      sel.innerHTML = `
+        <option value="">Condiciones de pago (opcional)…</option>
+        <option value="FULL_UPFRONT">Pago 100% al aceptar</option>
+        <option value="FIFTY_FIFTY">50% al aceptar, 50% al finalizar</option>
+        <option value="MANUAL">Solo presupuesto, facturación manual</option>`;
+      if (d.paymentTerms) sel.value = d.paymentTerms;
+      const comment = document.createElement('input');
+      comment.type = 'text';
+      comment.placeholder = 'Comentario interno (opcional)';
+      comment.style.cssText = fieldStyle;
+      form._sel = sel;
+      form._comment = comment;
+      form.appendChild(sel);
+      form.appendChild(comment);
+    } else {
+      const reason = document.createElement('textarea');
+      reason.placeholder = 'Motivo de rechazo (obligatorio, queda en el historial)';
+      reason.rows = 2;
+      reason.style.cssText = fieldStyle + ';resize:vertical';
+      reason.value = d.rejectionReason || '';
+      const comment = document.createElement('input');
+      comment.type = 'text';
+      comment.placeholder = 'Comentario interno (opcional)';
+      comment.style.cssText = fieldStyle;
+      form._reason = reason;
+      form._comment = comment;
+      form.appendChild(reason);
+      form.appendChild(comment);
+    }
+
+    const confirmRow = document.createElement('div');
+    confirmRow.style.cssText = 'display:flex;gap:8px';
+    const confirm = document.createElement('button');
+    confirm.className = which === 'accept' ? 'btn-primary btn-sm' : 'btn-danger btn-sm';
+    confirm.textContent = which === 'accept' ? 'Confirmar aceptación' : 'Confirmar rechazo';
+    const cancel = document.createElement('button');
+    cancel.className = 'btn-ghost btn-sm';
+    cancel.textContent = 'Cancelar';
+    cancel.addEventListener('click', () => { form.style.display = 'none'; mode = null; });
+    confirmRow.appendChild(confirm);
+    confirmRow.appendChild(cancel);
+    form.appendChild(confirmRow);
+
+    confirm.addEventListener('click', () => submitDecision(confirm));
   }
+
+  async function submitDecision(confirmBtn) {
+    const endpoint = mode === 'accept' ? 'accept' : 'reject';
+    let body;
+    if (mode === 'accept') {
+      body = {
+        channel: 'backoffice',
+        paymentTerms: form._sel.value || undefined,
+        comment: form._comment.value || undefined,
+      };
+    } else {
+      const reason = (form._reason.value || '').trim();
+      if (!reason) {
+        setStatus('error', 'El motivo de rechazo es obligatorio.');
+        form._reason.focus();
+        return;
+      }
+      body = {
+        channel: 'backoffice',
+        reason,
+        comment: form._comment.value || undefined,
+      };
+    }
+
+    confirmBtn.disabled = true;
+    const original = confirmBtn.textContent;
+    confirmBtn.textContent = 'Guardando…';
+    try {
+      const res = await fetch(`/admin/quotes/${quote.id}/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setStatus('error', `No se pudo ${mode === 'accept' ? 'aceptar' : 'rechazar'}: ` + (data.error || 'desconocido'));
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = original;
+        return;
+      }
+      await renderQuoteDetailView(container, quote.id);
+    } catch (err) {
+      setStatus('error', 'Error al guardar la decisión: ' + (err && err.message ? err.message : 'inténtalo de nuevo'));
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = original;
+    }
+  }
+
+  btnAccept.addEventListener('click', () => openForm('accept'));
+  btnReject.addEventListener('click', () => openForm('reject'));
+
+  return panel;
 }
 
 // ── Duplicar presupuesto ──────────────────────────────────────────────────
@@ -826,7 +655,7 @@ async function duplicateQuote(quoteId) {
   var detail;
   try {
     detail = await apiRequest('/admin/quotes/' + quoteId);
-  } catch(e) {
+  } catch (e) {
     alert('Error al cargar el presupuesto para duplicar.');
     return;
   }
@@ -838,72 +667,69 @@ async function duplicateQuote(quoteId) {
     paymentTerms: detail.paymentTerms || null,
   };
   sessionStorage.setItem('pf_load_template', JSON.stringify(tpl));
-  if (window.renderAppView) {
-    renderAppView('quotes-new');
-  }
+  if (window.renderAppView) renderAppView('quotes-new');
 }
 
-// ── Timeline visual del estado del presupuesto (FRONT1-5) ─────────────────
+// ── Timeline visual del estado del presupuesto (tokens) ───────────────────
 function buildStatusTimeline(quote) {
-  const wrap = document.createElement("div");
-  wrap.style.cssText = "margin-top:16px";
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'margin-top:16px';
 
-  const st = String(quote.status || "").toLowerCase();
+  const st = String(quote.status || '').toLowerCase();
   const d = quote.decision || {};
   const invoices = Array.isArray(quote.invoices) ? quote.invoices : [];
-  const paidInv = invoices.find((i) => String(i.status).toLowerCase() === "paid");
+  const paidInv = invoices.find((i) => String(i.status).toLowerCase() === 'paid');
 
   const fmtD = (v) => {
-    if (!v) return "";
-    try { return new Date(v).toLocaleDateString("es-ES", { day: "2-digit", month: "short" }); }
-    catch { return ""; }
+    if (!v) return '';
+    try { return new Date(v).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }); }
+    catch { return ''; }
   };
 
-  const rejected = st === "rejected";
-  const accepted = st === "accepted";
-  const sent = accepted || rejected || st === "sent";
+  const rejected = st === 'rejected';
+  const accepted = st === 'accepted';
+  const sent = accepted || rejected || st === 'sent';
 
   const steps = [
-    { label: "Creada", icon: "📝", state: "done", date: fmtD(quote.createdAt) },
-    { label: "Enviada", icon: "📤", state: sent ? "done" : (st === "draft" ? "current" : "pending"), date: "" },
+    { label: 'Creada', icon: '📝', state: 'done', date: fmtD(quote.createdAt) },
+    { label: 'Enviada', icon: '📤', state: sent ? 'done' : (st === 'draft' ? 'current' : 'pending'), date: '' },
     rejected
-      ? { label: "Rechazada", icon: "✖", state: "rejected", date: fmtD(d.rejectedAt || quote.rejectedAt) }
-      : { label: "Aceptada", icon: "✍️", state: accepted ? "done" : (st === "sent" ? "current" : "pending"), date: fmtD(d.acceptedAt || quote.acceptedAt) },
-    { label: "Facturada", icon: "🧾", state: invoices.length ? "done" : "pending", date: invoices.length ? fmtD(invoices[0].createdAt) : "" },
-    { label: "Cobrada", icon: "💰", state: paidInv ? "done" : "pending", date: paidInv ? fmtD(paidInv.paidAt || paidInv.createdAt) : "" },
+      ? { label: 'Rechazada', icon: '✖', state: 'rejected', date: fmtD(d.rejectedAt || quote.rejectedAt) }
+      : { label: 'Aceptada', icon: '✍️', state: accepted ? 'done' : (st === 'sent' ? 'current' : 'pending'), date: fmtD(d.acceptedAt || quote.acceptedAt) },
+    { label: 'Facturada', icon: '🧾', state: invoices.length ? 'done' : 'pending', date: invoices.length ? fmtD(invoices[0].createdAt) : '' },
+    { label: 'Cobrada', icon: '💰', state: paidInv ? 'done' : 'pending', date: paidInv ? fmtD(paidInv.paidAt || paidInv.createdAt) : '' },
   ];
 
-  const colorFor = (s) => s === "done" ? "#22c55e" : s === "current" ? "#0ea5e9" : s === "rejected" ? "#ef4444" : "#e5e7eb";
-  const textFor  = (s) => s === "pending" ? "#9ca3af" : "#374151";
+  const colorFor = (s) => s === 'done' ? 'var(--brand-bright)' : s === 'current' ? 'var(--blue-600)' : s === 'rejected' ? 'var(--red-500)' : 'var(--slate-200)';
+  const textFor = (s) => s === 'pending' ? 'var(--muted)' : 'var(--slate-700)';
 
-  const row = document.createElement("div");
-  row.style.cssText = "display:flex;align-items:flex-start;justify-content:space-between;gap:4px;margin-top:6px";
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:4px;margin-top:6px';
 
   steps.forEach((step, i) => {
-    const col = document.createElement("div");
-    col.style.cssText = "flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative";
+    const col = document.createElement('div');
+    col.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative';
 
-    // Línea conectora hacia el paso anterior
     if (i > 0) {
-      const line = document.createElement("div");
-      const prevDone = steps[i - 1].state === "done";
-      line.style.cssText = `position:absolute;top:15px;left:-50%;width:100%;height:3px;background:${prevDone ? "#22c55e" : "#e5e7eb"};z-index:0`;
+      const line = document.createElement('div');
+      const prevDone = steps[i - 1].state === 'done';
+      line.style.cssText = `position:absolute;top:15px;left:-50%;width:100%;height:3px;background:${prevDone ? 'var(--brand-bright)' : 'var(--slate-200)'};z-index:0`;
       col.appendChild(line);
     }
 
-    const dot = document.createElement("div");
-    dot.style.cssText = `width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;z-index:1;background:${colorFor(step.state)};color:${step.state === "pending" ? "#9ca3af" : "#fff"};box-shadow:${step.state === "current" ? "0 0 0 4px rgba(14,165,233,.2)" : "none"}`;
+    const dot = document.createElement('div');
+    dot.style.cssText = `width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;z-index:1;background:${colorFor(step.state)};color:${step.state === 'pending' ? 'var(--slate-400)' : '#fff'};box-shadow:${step.state === 'current' ? '0 0 0 4px rgba(37,99,235,.18)' : 'none'}`;
     dot.textContent = step.icon;
     col.appendChild(dot);
 
-    const lbl = document.createElement("div");
+    const lbl = document.createElement('div');
     lbl.style.cssText = `margin-top:6px;font-size:12px;font-weight:600;color:${textFor(step.state)}`;
     lbl.textContent = step.label;
     col.appendChild(lbl);
 
     if (step.date) {
-      const dt = document.createElement("div");
-      dt.style.cssText = "font-size:11px;color:#9ca3af";
+      const dt = document.createElement('div');
+      dt.style.cssText = 'font-size:11px;color:var(--muted)';
       dt.textContent = step.date;
       col.appendChild(dt);
     }

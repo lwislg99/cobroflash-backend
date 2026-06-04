@@ -1320,3 +1320,66 @@ tr.dragging { opacity: .5; background: #f0fdf4; }
 kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
   font-family: var(--font); font-size:10.5px; font-weight:700; line-height:16px;
   background: rgba(0,0,0,.14); border-radius:4px; color: inherit; }
+
+/* ============================================================
+   Cotizaciones — detalle plano (sin cards anidadas) + lista
+   ============================================================ */
+
+/* Importe: Regla del Importe (tinta, peso 700, tabular) */
+.amount { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+.amount-muted { color: var(--body); font-variant-numeric: tabular-nums; }
+
+/* Pill de "pendiente de aprobación" (ámbar) como clase, no inline */
+.status-pill-approval { background: #fff7ed; color: #9a3412; }
+
+/* Detalle: una sola superficie, secciones separadas por divisor (no cards) */
+.detail-page {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.detail-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  padding: 18px 22px; border-bottom: 1px solid var(--border);
+}
+.detail-head h2 { font-size: 18px; margin: 0 0 2px; }
+.detail-head .detail-sub { font-size: 13px; color: var(--muted); margin: 0; }
+.detail-section { padding: 18px 22px; border-bottom: 1px solid var(--border); }
+.detail-section:last-child { border-bottom: none; }
+.detail-section-title {
+  font-size: 11.5px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .06em; margin: 0 0 12px;
+}
+
+/* Cabecera de estado + total destacado */
+.detail-summary {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+}
+.detail-total-label {
+  font-size: 11.5px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px;
+}
+.detail-total-amount {
+  font-size: clamp(1.7rem, 5vw, 2.2rem); font-weight: 800; color: var(--ink);
+  line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+}
+
+/* Lista de definición para datos (cliente, decisión) — oculta vacíos vía JS */
+.detail-dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; }
+.detail-dl dt { font-size: 13px; color: var(--muted); }
+.detail-dl dd { font-size: 13.5px; color: var(--body); margin: 0; }
+
+/* Tarjetas de margen (planas, dentro de su sección) */
+.margin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.margin-tile { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; text-align: center; }
+.margin-tile-label { font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700; letter-spacing: .04em; }
+.margin-tile-value { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 4px; }
+
+/* Columna ocultable en móvil (p.ej. "Método") */
+@media (max-width: 640px) {
+  .col-hide-mobile { display: none; }
+}

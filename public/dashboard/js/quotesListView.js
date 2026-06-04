@@ -3,46 +3,62 @@
 function renderQuotesListView(container) {
   container.innerHTML = "";
 
-  const wrapper = document.createElement("div");
-  wrapper.className = "data-card";
-  container.appendChild(wrapper);
+  const card = document.createElement("div");
+  card.className = "data-card";
+  container.appendChild(card);
 
-  // Header
+  // ── Cabecera: título + conteo + acciones ────────────────────
   const header = document.createElement("div");
   header.className = "data-card-header";
-  wrapper.appendChild(header);
+  card.appendChild(header);
 
   const left = document.createElement("div");
   const title = document.createElement("h2");
   title.textContent = "Historial de presupuestos";
-  title.style.margin = "0 0 4px 0";
+  title.style.cssText = "margin:0;font-size:18px";
 
   const subtitle = document.createElement("p");
-  subtitle.textContent =
-    "Consulta todos los presupuestos enviados, su estado y gestiona decisiones.";
-  subtitle.style.margin = "0";
-  subtitle.style.fontSize = "13px";
-  subtitle.style.color = "#6b7280";
+  subtitle.id = "quotes-count";
+  subtitle.textContent = "Cargando…";
+  subtitle.style.cssText = "margin:2px 0 0;font-size:13px;color:var(--muted)";
 
   left.appendChild(title);
   left.appendChild(subtitle);
   header.appendChild(left);
 
-  const right = document.createElement("div");
-  right.style.cssText = "display:flex;flex-wrap:wrap;align-items:center;gap:8px";
+  const headerActions = document.createElement("div");
+  headerActions.style.cssText = "display:flex;align-items:center;gap:8px";
+
+  const exportQBtn = document.createElement("a");
+  exportQBtn.href = "/admin/exports/quotes.csv";
+  exportQBtn.className = "btn-secondary btn-sm";
+  exportQBtn.innerHTML = "⬇ CSV";
+  exportQBtn.title = "Exportar presupuestos a CSV";
+
+  const createBtn = document.createElement("button");
+  createBtn.className = "btn-primary";
+  createBtn.textContent = "+ Crear presupuesto";
+
+  headerActions.appendChild(exportQBtn);
+  headerActions.appendChild(createBtn);
+  header.appendChild(headerActions);
+
+  // ── Toolbar: búsqueda + filtros ─────────────────────────────
+  const toolbar = document.createElement("div");
+  toolbar.className = "data-card-toolbar";
+  card.appendChild(toolbar);
 
   const searchInput = document.createElement("input");
   searchInput.type = "text";
   searchInput.className = "input";
   searchInput.placeholder = "Buscar por cliente, ID o teléfono…";
-  searchInput.style.cssText = "min-width:140px;flex:1";
+  searchInput.style.cssText = "min-width:160px;flex:1";
 
-  // Filtros de estado
   const statusSel = document.createElement("select");
   statusSel.className = "input";
-  statusSel.style.cssText = "min-width:0;width:auto";
+  statusSel.style.cssText = "width:auto";
   statusSel.innerHTML = `
-    <option value="all">Todos</option>
+    <option value="all">Todos los estados</option>
     <option value="pending_approval">Pendiente de aprobación</option>
     <option value="draft">Borrador</option>
     <option value="sent">Enviado</option>
@@ -53,43 +69,24 @@ function renderQuotesListView(container) {
   const qFromInput = document.createElement("input");
   qFromInput.type = "date";
   qFromInput.className = "input";
-  qFromInput.style.cssText = "min-width:0;width:130px";
+  qFromInput.style.cssText = "width:140px";
   qFromInput.title = "Desde";
 
   const qToInput = document.createElement("input");
   qToInput.type = "date";
   qToInput.className = "input";
-  qToInput.style.cssText = "min-width:0;width:130px";
+  qToInput.style.cssText = "width:140px";
   qToInput.title = "Hasta";
 
-  const createBtn = document.createElement("button");
-  createBtn.className = "btn btn-primary";
-  createBtn.textContent = "+ Crear presupuesto";
+  toolbar.appendChild(searchInput);
+  toolbar.appendChild(statusSel);
+  toolbar.appendChild(qFromInput);
+  toolbar.appendChild(qToInput);
 
-  const exportQBtn = document.createElement('a');
-  exportQBtn.href = '/admin/exports/quotes.csv';
-  exportQBtn.className = 'btn-secondary btn-sm';
-  exportQBtn.style.textDecoration = 'none';
-  exportQBtn.innerHTML = '⬇ CSV';
-  exportQBtn.title = 'Exportar presupuestos a CSV';
-
-  right.appendChild(searchInput);
-  right.appendChild(statusSel);
-  right.appendChild(qFromInput);
-  right.appendChild(qToInput);
-  right.appendChild(exportQBtn);
-  right.appendChild(createBtn);
-  header.appendChild(right);
-
-  // Tabla en card separado, fuera del wrapper de búsqueda
-  const tableWrapper = document.createElement("div");
-  tableWrapper.className = "data-card";
-  tableWrapper.style.marginTop = "12px";
-  container.appendChild(tableWrapper);
-
+  // ── Tabla (edge-to-edge dentro de la misma card) ────────────
   const tableScroll = document.createElement("div");
   tableScroll.className = "table-scroll";
-  tableWrapper.appendChild(tableScroll);
+  card.appendChild(tableScroll);
 
   const table = document.createElement("table");
   table.className = "table";
@@ -101,10 +98,9 @@ function renderQuotesListView(container) {
       <th>ID</th>
       <th>Cliente</th>
       <th>Fecha</th>
-      <th>Importe</th>
+      <th style="text-align:right">Importe</th>
       <th>Estado</th>
-      <th>Método</th>
-      <th>Cobro</th>
+      <th class="col-hide-mobile">Método</th>
       <th>Acciones</th>
     </tr>
   `;
@@ -113,17 +109,20 @@ function renderQuotesListView(container) {
   const tbody = document.createElement("tbody");
   table.appendChild(tbody);
 
+  // Banner solo para errores (el conteo vive en la cabecera)
   const statusBox = document.createElement("div");
-  statusBox.className = "alert";
-  statusBox.style.cssText = "margin:8px 0;display:none";
+  statusBox.className = "alert error";
+  statusBox.style.cssText = "margin:12px 0 0;display:none";
   container.appendChild(statusBox);
 
-  function setStatus(type, msg) {
-    statusBox.textContent = msg || "";
-    statusBox.className = "alert";
-    if (type === "error") statusBox.classList.add("error");
-    if (type === "success") statusBox.classList.add("success");
-    statusBox.style.display = (type || msg) ? "block" : "none";
+  function setError(msg) {
+    if (!msg) { statusBox.style.display = "none"; return; }
+    statusBox.textContent = msg;
+    statusBox.style.display = "block";
+  }
+
+  function setCount(text) {
+    subtitle.textContent = text;
   }
 
   function formatDate(iso) {
@@ -139,14 +138,15 @@ function renderQuotesListView(container) {
   }
 
   function formatMoney(amount, currency) {
-    const num = Number(amount) || 0;
-    const cur = currency || "EUR";
-    return `${num.toFixed(2)} ${cur}`;
+    const cur = currency || (window.appLocale && window.appLocale.currency) || "EUR";
+    return (
+      Number(amount || 0).toLocaleString("es-ES", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }) + " " + cur
+    );
   }
 
-  // ========================
-  // Estado → pill coloreado
-  // ========================
   function buildStatusPill(status) {
     const st = String(status || "").toLowerCase();
     const pill = document.createElement("span");
@@ -154,7 +154,7 @@ function renderQuotesListView(container) {
 
     if (st === "pending_approval") {
       pill.textContent = "PENDIENTE APROBACIÓN";
-      pill.style.cssText = "background:#fff7ed;color:#c2410c;border:1px solid #fed7aa";
+      pill.classList.add("status-pill-approval");
       return pill;
     }
 
@@ -167,108 +167,92 @@ function renderQuotesListView(container) {
     return pill;
   }
 
-  // ==========================
-  // Render filas
-  // ==========================
   function renderRows(list) {
     tbody.innerHTML = "";
 
     if (!list || list.length === 0) {
       const tr = document.createElement("tr");
       const td = document.createElement("td");
-      td.colSpan = 8;
+      td.colSpan = 7;
       const L = window.appLocale || {};
-      td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div>'
-        + '<div class="empty-state-title">Envía tu primer ' + (L.quoteVerb||'presupuesto') + ' y consigue más trabajos</div>'
-        + '<div class="empty-state-desc">La mayoría de clientes responden en menos de 2 horas cuando lo reciben por WhatsApp. Crea uno en 30 segundos.</div>'
-        + '<button id="quotes-empty-cta" class="btn btn-primary btn-sm" style="margin-top:14px">🚀 Crear mi primer ' + (L.quoteVerb||'presupuesto') + '</button></div>';
+      td.innerHTML =
+        '<div class="empty-state"><div class="empty-state-icon">📋</div>' +
+        '<div class="empty-state-title">Envía tu primer ' + (L.quoteVerb || "presupuesto") + ' y consigue más trabajos</div>' +
+        '<div class="empty-state-desc">La mayoría de clientes responden en menos de 2 horas cuando lo reciben por WhatsApp. Crea uno en 30 segundos.</div>' +
+        '<button id="quotes-empty-cta" class="btn-primary btn-sm" style="margin-top:14px">🚀 Crear mi primer ' + (L.quoteVerb || "presupuesto") + '</button></div>';
       tr.appendChild(td);
       tbody.appendChild(tr);
-      const cta = td.querySelector('#quotes-empty-cta');
-      if (cta) cta.addEventListener('click', () => {
-        if (typeof openQuickQuoteModal === 'function') openQuickQuoteModal();
+      const cta = td.querySelector("#quotes-empty-cta");
+      if (cta) cta.addEventListener("click", () => {
+        if (typeof openQuickQuoteModal === "function") openQuickQuoteModal();
       });
       return;
     }
 
     list.forEach((q) => {
       const tr = document.createElement("tr");
+      tr.style.cursor = "pointer";
 
-      // ID + indicador notas
       const tdId = document.createElement("td");
-      tdId.innerHTML = `${q.id}${q.internalNotes ? ' <span title="Tiene notas internas" style="color:#9ca3af;font-size:11px">📝</span>' : ''}`;
+      tdId.innerHTML = `${q.id}${q.internalNotes ? ' <span title="Tiene notas internas" style="color:var(--slate-400);font-size:11px">📝</span>' : ""}`;
 
-      // Nombre cliente
       const tdClient = document.createElement("td");
       tdClient.textContent =
-        q.customerName ||
-        (q.customerPhone ? `(${q.customerPhone})` : "Cliente sin nombre");
+        q.customerName || (q.customerPhone ? `(${q.customerPhone})` : "Cliente sin nombre");
 
-      // Fecha
       const tdDate = document.createElement("td");
       tdDate.textContent = formatDate(q.createdAt);
+      tdDate.style.color = "var(--muted)";
 
-      // Total (del listado viene como totalAmount)
       const tdAmount = document.createElement("td");
+      tdAmount.className = "amount";
+      tdAmount.style.textAlign = "right";
       tdAmount.textContent = formatMoney(q.totalAmount, q.currency);
 
-      // Estado
       const tdStatus = document.createElement("td");
       tdStatus.appendChild(buildStatusPill(q.status));
 
-      // Método de pago
       const tdMethod = document.createElement("td");
+      tdMethod.className = "col-hide-mobile";
+      tdMethod.style.color = "var(--muted)";
       tdMethod.textContent =
-        q.method === "bank"
-          ? "Pay-by-bank"
-          : q.method === "card"
-          ? "Tarjeta"
-          : "—";
+        q.method === "bank" ? "Pay-by-bank" : q.method === "card" ? "Tarjeta" : "—";
 
-      // Cobro
-      const tdCharge = document.createElement("td");
-      tdCharge.textContent = q.chargeId ? `#${q.chargeId}` : "—";
-
-      // ACCIONES – Ver detalle
       const tdActions = document.createElement("td");
       const tdActionsDiv = document.createElement("div");
       tdActionsDiv.style.cssText = "display:flex;gap:6px;align-items:center";
 
-      const btnView = document.createElement("button");
-      btnView.textContent = "Ver detalle";
-      btnView.className = "btn btn-secondary btn-sm";
-
-      btnView.addEventListener("click", () => {
-        const containerEl = document.getElementById("view-container");
+      const openDetail = () => {
         const titleEl = document.getElementById("view-title");
-        if (titleEl) {
-          titleEl.textContent = `Presupuesto #${q.id}`;
-        }
-
+        if (titleEl) titleEl.textContent = `Presupuesto #${q.id}`;
+        const containerEl = document.getElementById("view-container");
         if (typeof renderQuoteDetailView === "function") {
           renderQuoteDetailView(containerEl, q.id);
-        } else {
-          alert("Vista de detalle no disponible en este momento.");
         }
-      });
+      };
 
+      const btnView = document.createElement("button");
+      btnView.textContent = "Ver detalle";
+      btnView.className = "btn-secondary btn-sm";
+      btnView.addEventListener("click", (e) => { e.stopPropagation(); openDetail(); });
       tdActionsDiv.appendChild(btnView);
 
-      // ENT-2: botón Aprobar para admins en cotizaciones pendientes
+      // ENT-2: aprobar (admins, pendientes)
       if (String(q.status).toLowerCase() === "pending_approval" && (window.appUserRole || "admin") === "admin") {
         const btnApprove = document.createElement("button");
         btnApprove.textContent = "✓ Aprobar";
-        btnApprove.className = "btn btn-primary btn-sm";
-        btnApprove.addEventListener("click", async () => {
+        btnApprove.className = "btn-primary btn-sm";
+        btnApprove.addEventListener("click", async (e) => {
+          e.stopPropagation();
           btnApprove.disabled = true;
           btnApprove.textContent = "Aprobando…";
           try {
             await apiRequest(`/admin/quotes/${q.id}/approve`, { method: "POST" });
             loadQuotes();
-          } catch (e) {
+          } catch (err) {
             btnApprove.disabled = false;
             btnApprove.textContent = "✓ Aprobar";
-            alert("No se pudo aprobar la cotización.");
+            setError("No se pudo aprobar la cotización.");
           }
         });
         tdActionsDiv.appendChild(btnApprove);
@@ -276,64 +260,66 @@ function renderQuotesListView(container) {
 
       tdActions.appendChild(tdActionsDiv);
 
+      // Fila clicable → detalle
+      tr.addEventListener("click", openDetail);
+
       tr.appendChild(tdId);
       tr.appendChild(tdClient);
       tr.appendChild(tdDate);
       tr.appendChild(tdAmount);
       tr.appendChild(tdStatus);
       tr.appendChild(tdMethod);
-      tr.appendChild(tdCharge);
       tr.appendChild(tdActions);
 
       tbody.appendChild(tr);
     });
   }
 
-  let currentSearch   = "";
-  let currentStatus   = "all";
+  let currentSearch = "";
+  let currentStatus = "all";
   let currentDateFrom = "";
-  let currentDateTo   = "";
+  let currentDateTo = "";
 
   function updateQuoteExportHref() {
     const params = new URLSearchParams();
-    if (currentStatus !== 'all') params.set('status', currentStatus);
-    if (currentDateFrom) params.set('from', currentDateFrom);
-    if (currentDateTo)   params.set('to',   currentDateTo);
-    exportQBtn.href = '/admin/exports/quotes.csv' + (params.toString() ? '?' + params.toString() : '');
+    if (currentStatus !== "all") params.set("status", currentStatus);
+    if (currentDateFrom) params.set("from", currentDateFrom);
+    if (currentDateTo) params.set("to", currentDateTo);
+    exportQBtn.href = "/admin/exports/quotes.csv" + (params.toString() ? "?" + params.toString() : "");
   }
 
   async function loadQuotes() {
     try {
-      setStatus("", "Cargando presupuestos…");
+      setError("");
+      setCount("Cargando…");
       const params = new URLSearchParams();
-      if (currentSearch)   params.set('search', currentSearch);
-      if (currentStatus !== 'all') params.set('status', currentStatus);
-      if (currentDateFrom) params.set('dateFrom', currentDateFrom);
-      if (currentDateTo)   params.set('dateTo',   currentDateTo);
-      const list = await apiRequest('/admin/quotes' + (params.toString() ? '?' + params.toString() : ''));
+      if (currentSearch) params.set("search", currentSearch);
+      if (currentStatus !== "all") params.set("status", currentStatus);
+      if (currentDateFrom) params.set("dateFrom", currentDateFrom);
+      if (currentDateTo) params.set("dateTo", currentDateTo);
+      const list = await apiRequest("/admin/quotes" + (params.toString() ? "?" + params.toString() : ""));
       renderRows(list);
-      setStatus("success", `${list.length} presupuesto${list.length !== 1 ? 's' : ''}`);
+      setCount(`${list.length} presupuesto${list.length !== 1 ? "s" : ""}`);
     } catch (err) {
       console.error(err);
       renderRows([]);
-      setStatus("error", "Error cargando presupuestos.");
+      setCount("");
+      setError("Error cargando presupuestos.");
     }
   }
 
   loadQuotes();
 
-  // Filtros
   let searchTimeout = null;
   searchInput.addEventListener("input", () => {
     currentSearch = searchInput.value;
     if (searchTimeout) clearTimeout(searchTimeout);
     searchTimeout = setTimeout(loadQuotes, 300);
   });
-  statusSel.addEventListener("change",   () => { currentStatus   = statusSel.value;   updateQuoteExportHref(); loadQuotes(); });
-  qFromInput.addEventListener("change",  () => { currentDateFrom = qFromInput.value;  updateQuoteExportHref(); loadQuotes(); });
-  qToInput.addEventListener("change",    () => { currentDateTo   = qToInput.value;    updateQuoteExportHref(); loadQuotes(); });
+  statusSel.addEventListener("change", () => { currentStatus = statusSel.value; updateQuoteExportHref(); loadQuotes(); });
+  qFromInput.addEventListener("change", () => { currentDateFrom = qFromInput.value; updateQuoteExportHref(); loadQuotes(); });
+  qToInput.addEventListener("change", () => { currentDateTo = qToInput.value; updateQuoteExportHref(); loadQuotes(); });
 
-  // Botón crear presupuesto
   createBtn.addEventListener("click", () => {
     const menuBtn = document.querySelector('.nav-item[data-view="quotes-new"]');
     if (menuBtn) menuBtn.click();
