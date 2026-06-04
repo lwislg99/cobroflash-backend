@@ -15,7 +15,7 @@ async function renderReportsView(container) {
 
   const titleBlock = document.createElement('div');
   titleBlock.innerHTML = `
-    <h2 style="margin:0 0 4px;font-size:17px;font-weight:700;color:var(--slate-900)">Informe de rentabilidad</h2>
+    <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Informe de rentabilidad</h2>
     <p style="margin:0;font-size:13px;color:var(--slate-400)">Ingresos, gastos y beneficio neto por mes.</p>
   `;
   header.appendChild(titleBlock);
@@ -140,8 +140,8 @@ async function renderReportsView(container) {
     legend.style.cssText = 'display:flex;gap:16px;margin-top:10px;font-size:12px;color:var(--slate-500)';
     legend.innerHTML = `
       <span><span style="display:inline-block;width:10px;height:10px;background:#22c55e;border-radius:2px;margin-right:4px"></span>Ingresos</span>
-      <span><span style="display:inline-block;width:10px;height:10px;background:#f87171;border-radius:2px;margin-right:4px"></span>Gastos</span>
-      <span><span style="display:inline-block;width:10px;height:10px;background:#818cf8;border-radius:2px;margin-right:4px"></span>Beneficio</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#ef4444;border-radius:2px;margin-right:4px"></span>Gastos</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#2563eb;border-radius:2px;margin-right:4px"></span>Beneficio</span>
     `;
     chartCard.appendChild(legend);
 
@@ -238,9 +238,9 @@ function renderFunnel(card, data) {
   // Embudo: Enviadas → Aceptadas → Facturadas → Cobradas
   const stages = [
     { label: 'Enviadas',   value: c.sent || 0,      prev: p.sent || 0,      color: '#22c55e' },
-    { label: 'Aceptadas',  value: c.accepted || 0,  prev: p.accepted || 0,  color: '#10b981' },
-    { label: 'Facturadas', value: c.invoiced || 0,  prev: p.invoiced || 0,  color: '#0ea5e9' },
-    { label: 'Cobradas',   value: c.collected || 0, prev: p.collected || 0, color: '#6366f1' },
+    { label: 'Aceptadas',  value: c.accepted || 0,  prev: p.accepted || 0,  color: '#16a34a' },
+    { label: 'Facturadas', value: c.invoiced || 0,  prev: p.invoiced || 0,  color: '#2563eb' },
+    { label: 'Cobradas',   value: c.collected || 0, prev: p.collected || 0, color: '#1d4ed8' },
   ];
   const maxVal = Math.max(...stages.map(s => s.value), 1);
 
@@ -378,7 +378,7 @@ function buildBarChart(months, currency) {
   const baseLine = document.createElementNS(svgNS, 'line');
   baseLine.setAttribute('x1', String(padL)); baseLine.setAttribute('x2', String(W - padR));
   baseLine.setAttribute('y1', String(baseline)); baseLine.setAttribute('y2', String(baseline));
-  baseLine.setAttribute('stroke', '#e2e8f0'); baseLine.setAttribute('stroke-width', '1');
+  baseLine.setAttribute('stroke', '#e7e9e3'); baseLine.setAttribute('stroke-width', '1');
   svg.appendChild(baseLine);
 
   // Líneas horizontales de referencia
@@ -387,7 +387,7 @@ function buildBarChart(months, currency) {
     const line = document.createElementNS(svgNS, 'line');
     line.setAttribute('x1', String(padL)); line.setAttribute('x2', String(W - padR));
     line.setAttribute('y1', String(y)); line.setAttribute('y2', String(y));
-    line.setAttribute('stroke', '#f1f5f9'); line.setAttribute('stroke-width', '1');
+    line.setAttribute('stroke', '#f1f2ee'); line.setAttribute('stroke-width', '1');
     svg.appendChild(line);
 
     const label = document.createElementNS(svgNS, 'text');
@@ -395,7 +395,7 @@ function buildBarChart(months, currency) {
     label.setAttribute('y', String(y + 4));
     label.setAttribute('text-anchor', 'end');
     label.setAttribute('font-size', '10');
-    label.setAttribute('fill', '#94a3b8');
+    label.setAttribute('fill', '#949b92');
     label.textContent = Math.round(maxVal * f).toLocaleString('es-ES');
     svg.appendChild(label);
   });
@@ -406,8 +406,8 @@ function buildBarChart(months, currency) {
 
     const bars = [
       { value: m.revenue,  color: '#22c55e', offset: -barW - 2 },
-      { value: m.expenses, color: '#f87171', offset: 0 },
-      { value: m.profit,   color: '#818cf8', offset: barW + 2 },
+      { value: m.expenses, color: '#ef4444', offset: 0 },
+      { value: m.profit,   color: '#2563eb', offset: barW + 2 },
     ];
 
     bars.forEach(({ value, color, offset }) => {
@@ -439,7 +439,7 @@ function buildBarChart(months, currency) {
     txt.setAttribute('y', String(baseline + 16));
     txt.setAttribute('text-anchor', 'middle');
     txt.setAttribute('font-size', '10');
-    txt.setAttribute('fill', '#64748b');
+    txt.setAttribute('fill', '#6b756f');
     txt.textContent = m.label;
     svg.appendChild(txt);
   });
