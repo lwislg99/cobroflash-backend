@@ -21,6 +21,9 @@ export type MerchantProfileInput = {
   notifyEmailOnPaid?: boolean;
   notifyEmailOnQuoteAccepted?: boolean;
   notifyEmailWeeklyDigest?: boolean;
+  brandColor?: string | null;
+  brandAccentColor?: string | null;
+  approvalThreshold?: number | null;
 };
 
 // 1) Obtener el perfil del merchant (para pintar el formulario del dashboard)
@@ -45,6 +48,9 @@ export async function getMerchantProfile(merchantId: number = DEFAULT_MERCHANT_I
       notifyEmailOnPaid: true,
       notifyEmailOnQuoteAccepted: true,
       notifyEmailWeeklyDigest: true,
+      brandColor: true,
+      brandAccentColor: true,
+      approvalThreshold: true,
     },
   });
 

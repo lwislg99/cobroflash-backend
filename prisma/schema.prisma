@@ -51,6 +51,11 @@ model Merchant {
   freeMonthsEarned   Int       @default(0) @map("free_months_earned")
   referralRewardedAt DateTime? @map("referral_rewarded_at")
 
+  // Enterprise: branding custom + workflow de aprobación
+  brandColor         String?   @map("brand_color")         // hex, ej "#1a56db"
+  brandAccentColor   String?   @map("brand_accent_color")
+  approvalThreshold  Decimal?  @map("approval_threshold") @db.Decimal(12, 2) // null = sin aprobación
+
   charges        Charge[]
   Quote          Quote[]
   Invoice        Invoice[]

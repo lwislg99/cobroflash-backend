@@ -43,6 +43,7 @@ function renderQuotesListView(container) {
   statusSel.style.cssText = "min-width:0;width:auto";
   statusSel.innerHTML = `
     <option value="all">Todos</option>
+    <option value="pending_approval">Pendiente de aprobación</option>
     <option value="draft">Borrador</option>
     <option value="sent">Enviado</option>
     <option value="accepted">Aceptado</option>
@@ -150,8 +151,14 @@ function renderQuotesListView(container) {
     const st = String(status || "").toLowerCase();
     const pill = document.createElement("span");
     pill.className = "status-pill";
-    pill.textContent = st.toUpperCase();
 
+    if (st === "pending_approval") {
+      pill.textContent = "PENDIENTE APROBACIÓN";
+      pill.style.cssText = "background:#fff7ed;color:#c2410c;border:1px solid #fed7aa";
+      return pill;
+    }
+
+    pill.textContent = st.toUpperCase();
     if (st === "accepted") pill.classList.add("status-pill-accepted");
     else if (st === "rejected") pill.classList.add("status-pill-rejected");
     else if (st === "draft") pill.classList.add("status-pill-draft");
@@ -246,6 +253,27 @@ function renderQuotesListView(container) {
       });
 
       tdActionsDiv.appendChild(btnView);
+
+      // ENT-2: botón Aprobar para admins en cotizaciones pendientes
+      if (String(q.status).toLowerCase() === "pending_approval" && (window.appUserRole || "admin") === "admin") {
+        const btnApprove = document.createElement("button");
+        btnApprove.textContent = "✓ Aprobar";
+        btnApprove.className = "btn btn-primary btn-sm";
+        btnApprove.addEventListener("click", async () => {
+          btnApprove.disabled = true;
+          btnApprove.textContent = "Aprobando…";
+          try {
+            await apiRequest(`/admin/quotes/${q.id}/approve`, { method: "POST" });
+            loadQuotes();
+          } catch (e) {
+            btnApprove.disabled = false;
+            btnApprove.textContent = "✓ Aprobar";
+            alert("No se pudo aprobar la cotización.");
+          }
+        });
+        tdActionsDiv.appendChild(btnApprove);
+      }
+
       tdActions.appendChild(tdActionsDiv);
 
       tr.appendChild(tdId);

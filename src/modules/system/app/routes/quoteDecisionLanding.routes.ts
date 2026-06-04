@@ -9,7 +9,21 @@ type DecisionApiError = { message?: string; error?: string };
 const quoteDecisionLandingRouter = Router();
 const BASE_API_URL = process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
 
-function renderPage(title: string, body: string): string {
+function brandOverrideCss(brandColor?: string | null): string {
+  if (!brandColor || !/^#[0-9a-fA-F]{6}$/.test(brandColor)) return '';
+  // Si el merchant tiene color de marca, lo usamos en botones y acentos
+  return `<style>
+    .btn-accept, .btn-tier, .tier-recommended .btn-tier { background: ${brandColor} !important; }
+    .merchant-avatar { background: ${brandColor} !important; color: #fff !important; }
+    .tier-recommended, .tier-card.selected { border-color: ${brandColor} !important; }
+    .tier-badge { background: ${brandColor} !important; color: #fff !important; }
+    .success-check { background: ${brandColor} !important; }
+    .total-row { border-top-color: ${brandColor} !important; }
+    a { color: ${brandColor}; }
+  </style>`;
+}
+
+function renderPage(title: string, body: string, brandColor?: string | null): string {
   return `<!doctype html>
 <html lang="es">
 <head>
@@ -93,6 +107,7 @@ function renderPage(title: string, body: string): string {
       border-radius: 1px; animation: confetti-fall linear forwards; }
     @keyframes confetti-fall { to { transform: translateY(105vh) rotate(540deg); opacity: 1; } }
   </style>
+  ${brandOverrideCss(brandColor)}
 </head>
 <body><div class="card">${body}</div></body>
 </html>`;
@@ -108,7 +123,7 @@ async function loadQuote(id: number) {
   return prisma.quote.findUnique({
     where: { id },
     include: {
-      merchant: { select: { name: true, legalName: true, logoUrl: true, address: true, country: true } },
+      merchant: { select: { name: true, legalName: true, logoUrl: true, address: true, country: true, brandColor: true, brandAccentColor: true } },
       customer: { select: { name: true } },
     },
   });
@@ -328,12 +343,14 @@ quoteDecisionLandingRouter.get('/quote/:id/accept', async (req: Request, res: Re
   let tierCards = '';
   let hasTiers = false;
   let loadedQuote: Awaited<ReturnType<typeof loadQuote>> | null = null;
+  let brandColor: string | null = null;
 
   if (Number.isInteger(id)) {
     const quote = await loadQuote(id).catch(() => null);
     loadedQuote = quote;
     if (quote) {
       locale = getLocale(quote.merchant?.country);
+      brandColor = quote.merchant?.brandColor ?? null;
       if (quote.status === 'draft' || quote.status === 'sent') {
         quoteDetail = renderQuoteDetail(quote, quoteId);
         const tiers = (quote as any).tiers as any[] | null;
@@ -345,7 +362,7 @@ quoteDecisionLandingRouter.get('/quote/:id/accept', async (req: Request, res: Re
         }
       } else if (quote.status === 'accepted') {
         return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
-          renderPage(`${locale.quote} ya aceptada`, `<div class="status-ok"><strong>Este ${locale.quoteVerb} ya fue aceptado.</strong><br/>Gracias por tu confianza.</div>`)
+          renderPage(`${locale.quote} ya aceptada`, `<div class="status-ok"><strong>Este ${locale.quoteVerb} ya fue aceptado.</strong><br/>Gracias por tu confianza.</div>`, brandColor)
         );
       }
     }
@@ -438,7 +455,7 @@ quoteDecisionLandingRouter.get('/quote/:id/accept', async (req: Request, res: Re
       }
     });
     </script>
-  `);
+  `, brandColor);
   res.setHeader('Content-Type', 'text/html; charset=utf-8').send(html);
 });
 
@@ -449,11 +466,13 @@ quoteDecisionLandingRouter.get('/quote/:id/reject', async (req: Request, res: Re
 
   let quoteDetail = '';
   let locale = getLocale('ES');
+  let brandColor: string | null = null;
 
   if (Number.isInteger(id)) {
     const quote = await loadQuote(id).catch(() => null);
     if (quote) {
       locale = getLocale(quote.merchant?.country);
+      brandColor = quote.merchant?.brandColor ?? null;
       if (quote.status === 'draft' || quote.status === 'sent') {
         quoteDetail = renderQuoteDetail(quote, quoteId);
       }
@@ -478,7 +497,7 @@ quoteDecisionLandingRouter.get('/quote/:id/reject', async (req: Request, res: Re
       <button class="btn-reject" type="submit">Enviar rechazo</button>
     </form>
     <small>Si no solicitaste este ${locale.quoteVerb}, cierra esta página.</small>
-  `);
+  `, brandColor);
   res.setHeader('Content-Type', 'text/html; charset=utf-8').send(html);
 });
 

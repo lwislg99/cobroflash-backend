@@ -77,12 +77,18 @@ router.post('/create', async (req, res) => {
     // Atribuir el técnico que crea la cotización (null = propietario)
     const creatorTeamMemberId = await getCreatorTeamMemberId(req);
 
-    // 1) Crear el presupuesto en DRAFT
+    // ENT-2: si un técnico crea una cotización por encima del umbral, requiere aprobación
+    const threshold = merchant.approvalThreshold != null ? Number(merchant.approvalThreshold) : null;
+    const needsApproval =
+      creatorTeamMemberId != null && threshold != null && totalNum > threshold;
+    const initialStatus = needsApproval ? 'pending_approval' : 'draft';
+
+    // 1) Crear el presupuesto
     const quote = await prisma.quote.create({
       data: {
         merchantId: merchant_id,
         customerId: customer_id,
-        status: 'draft',
+        status: initialStatus,
         total: totalNum.toFixed(2),
         currency: currency.toUpperCase(),
         lines: canonicalLines,
@@ -91,6 +97,17 @@ router.post('/create', async (req, res) => {
         teamMemberId: creatorTeamMemberId,
       },
     });
+
+    // Avisar al admin/propietario por WhatsApp si requiere aprobación
+    if (needsApproval) {
+      const adminPhone = normalizePhone(merchant.whatsappPhone);
+      if (adminPhone) {
+        sendWhatsAppText({
+          to: adminPhone,
+          text: `📋 Nueva cotización #${quote.id} por ${totalNum.toFixed(2)} ${quote.currency} pendiente de tu aprobación antes de enviarla al cliente. Revísala en tu panel de YaQu.`,
+        }).catch(() => {});
+      }
+    }
 
     // 2) Generar PDF
     try {

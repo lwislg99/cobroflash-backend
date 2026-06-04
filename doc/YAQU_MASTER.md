@@ -981,7 +981,8 @@ Solo visible para admin con >1 miembro del equipo.
 
 **Objetivo:** Que cuando un director de empresa vea una demo, inmediatamente quiera el plan Equipo.
 
-### Tarea ENT-1 — Custom branding en páginas del cliente
+### Tarea ENT-1 — Custom branding en páginas del cliente  ✅ HECHO (2026-06-04)
+- Merchant.brandColor/brandAccentColor (db push). La landing del cliente aplica brandColor a botón aceptar, acentos, badges y avatar. Campo "Color de marca" (input color) en Configuración. customDomain pospuesto (fase futura).
 
 El director quiere que sus clientes vean LA EMPRESA, no "YaQu".
 
@@ -998,7 +999,8 @@ customDomain     String?  @unique @map("custom_domain")  // para futura fase
 
 **Commit:** `feat(branding): custom color de marca en la landing del cliente`
 
-### Tarea ENT-2 — Aprobación de cotizaciones (workflow de autorización)
+### Tarea ENT-2 — Aprobación de cotizaciones (workflow de autorización)  ✅ HECHO (2026-06-04)
+- Merchant.approvalThreshold (db push). En /quote/create, si un técnico crea una cotización > umbral → status 'pending_approval' + WA al admin. POST /admin/quotes/:id/approve (solo admin) → pending_approval → draft. send-whatsapp bloqueado mientras esté pendiente. quotesListView: pill naranja "PENDIENTE APROBACIÓN", filtro y botón "Aprobar" para admins. Campo "Importe máximo sin aprobación" en Configuración. (Notificación de vuelta al técnico: vía estado en panel; WA/email directo al técnico pendiente.)
 
 El director quiere aprobar cotizaciones >X€ antes de que se envíen.
 

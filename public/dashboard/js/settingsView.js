@@ -220,6 +220,48 @@ function renderSettingsView(container) {
     form.appendChild(tNotifyAccepted.wrapper);
     form.appendChild(tNotifyWeekly.wrapper);
 
+    // ── Enterprise: branding + aprobación (ENT-1, ENT-2) ──────────────────
+    const sepEnt = document.createElement("div");
+    sepEnt.style.cssText = "border-top:1px solid #e5e7eb;margin:12px 0 4px;padding-top:12px";
+    sepEnt.innerHTML = '<p style="font-size:12px;color:#6b7280;margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Empresa (Enterprise)</p>';
+    form.appendChild(sepEnt);
+
+    // Color de marca
+    const fBrandWrapper = document.createElement("div");
+    fBrandWrapper.className = "field";
+    fBrandWrapper.innerHTML = `
+      <label>Color de marca</label>
+      <p style="font-size:12px;color:#9ca3af;margin:2px 0 6px">Se usa en el botón de aceptar y los acentos de la página que ve tu cliente.</p>
+      <div style="display:flex;align-items:center;gap:10px">
+        <input type="color" id="brand-color-input" value="#22c55e" style="width:48px;height:38px;padding:2px;border:1px solid #d1d5db;border-radius:8px;cursor:pointer"/>
+        <span id="brand-color-hex" style="font-size:13px;color:#6b7280">#22c55e</span>
+        <button type="button" id="brand-color-reset" class="btn-ghost btn-sm" style="border:1px solid #e5e7eb;color:#6b7280">Sin color (por defecto)</button>
+      </div>`;
+    form.appendChild(fBrandWrapper);
+    const brandColorInput = fBrandWrapper.querySelector("#brand-color-input");
+    const brandColorHex = fBrandWrapper.querySelector("#brand-color-hex");
+    let brandColorEnabled = false;
+    brandColorInput.addEventListener("input", () => {
+      brandColorEnabled = true;
+      brandColorHex.textContent = brandColorInput.value;
+    });
+    fBrandWrapper.querySelector("#brand-color-reset").addEventListener("click", () => {
+      brandColorEnabled = false;
+      brandColorInput.value = "#22c55e";
+      brandColorHex.textContent = "Sin color";
+    });
+
+    // Importe máximo sin aprobación
+    const fApproval = createField("Importe máximo sin aprobación", "approvalThreshold", "number", false);
+    fApproval.input.min = "0";
+    fApproval.input.step = "0.01";
+    fApproval.input.placeholder = "Ej: 1000 (vacío = sin aprobación)";
+    fApproval.wrapper.querySelector("label").insertAdjacentHTML(
+      "afterend",
+      '<p style="font-size:12px;color:#9ca3af;margin:2px 0 4px">Las cotizaciones de un técnico por encima de este importe quedarán "pendientes de aprobación" hasta que un admin las apruebe.</p>'
+    );
+    form.appendChild(fApproval.wrapper);
+
     const actions = document.createElement("div");
     actions.className = "form-actions";
     const saveBtn = document.createElement("button");
@@ -251,6 +293,12 @@ function renderSettingsView(container) {
         tNotifyAccepted.chk.checked = !!merchant.notifyEmailOnQuoteAccepted;
         tNotifyWeekly.chk.checked   = !!merchant.notifyEmailWeeklyDigest;
         if (merchant.country) fCountrySelect.value = merchant.country;
+        if (merchant.brandColor) {
+          brandColorEnabled = true;
+          brandColorInput.value = merchant.brandColor;
+          brandColorHex.textContent = merchant.brandColor;
+        }
+        fApproval.input.value = merchant.approvalThreshold != null ? merchant.approvalThreshold : "";
   
         setAlert(null, "");
       } catch (err) {
@@ -280,6 +328,8 @@ function renderSettingsView(container) {
         notifyEmailOnPaid:          tNotifyPaid.chk.checked,
         notifyEmailOnQuoteAccepted: tNotifyAccepted.chk.checked,
         notifyEmailWeeklyDigest:    tNotifyWeekly.chk.checked,
+        brandColor: brandColorEnabled ? brandColorInput.value : null,
+        approvalThreshold: fApproval.input.value.trim() === "" ? null : Number(fApproval.input.value),
       };
   
       if (!payload.name || !payload.legalName || !payload.taxId || !payload.address || !payload.whatsappPhone) {

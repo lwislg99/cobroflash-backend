@@ -232,6 +232,10 @@ router.post('/:id/send-whatsapp', async (req, res) => {
       return res.status(400).json({ error: 'customer_missing_phone' });
     }
 
+    if (quote.status === 'pending_approval') {
+      return res.status(409).json({ error: 'pending_approval' });
+    }
+
     if (!quote.pdfUrl || quote.pdfUrl === 'PENDING_PDF') {
       return res.status(400).json({ error: 'quote_pdf_not_ready' });
     }
@@ -315,6 +319,34 @@ router.post('/:id/send-whatsapp', async (req, res) => {
     });
   } catch (err) {
     console.error('[POST /admin/quotes/:id/send-whatsapp]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/quotes/:id/approve — aprueba una cotización pendiente (ENT-2). Solo admin.
+ */
+router.post('/:id/approve', async (req, res) => {
+  try {
+    if (req.userRole !== 'admin') {
+      return res.status(403).json({ error: 'forbidden', required_role: 'admin' });
+    }
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+
+    const quote = await prisma.quote.findFirst({
+      where: { id, merchantId: req.merchantId },
+      select: { id: true, status: true },
+    });
+    if (!quote) return res.status(404).json({ error: 'not_found' });
+    if (quote.status !== 'pending_approval') {
+      return res.status(409).json({ error: 'not_pending_approval' });
+    }
+
+    await prisma.quote.update({ where: { id }, data: { status: 'draft' } });
+    return res.json({ ok: true, id, status: 'draft' });
+  } catch (err) {
+    console.error('[POST /admin/quotes/:id/approve]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });

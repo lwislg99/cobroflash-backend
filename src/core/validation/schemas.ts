@@ -130,6 +130,10 @@ export const merchantProfileUpdateSchema = z.object({
   notifyEmailOnPaid:          z.boolean().optional(),
   notifyEmailOnQuoteAccepted: z.boolean().optional(),
   notifyEmailWeeklyDigest:    z.boolean().optional(),
+  // Enterprise
+  brandColor:        z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(),
+  brandAccentColor:  z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(),
+  approvalThreshold: z.number().min(0).nullable().optional(),
 });
 
 export type MerchantProfileUpdateInput = z.infer<
