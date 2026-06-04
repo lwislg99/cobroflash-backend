@@ -176,6 +176,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   statusP.appendChild(statusSpan);
   statusCard.appendChild(statusP);
 
+  // Timeline visual del estado (FRONT1-5)
+  statusCard.appendChild(buildStatusTimeline(quote));
+
   // Badge Good/Better/Best — tier seleccionado
   if (quote.tiers && quote.tiers.length > 0) {
     const tierLabels = { good: 'Básico', better: 'Estándar', best: 'Premium' };
@@ -838,4 +841,76 @@ async function duplicateQuote(quoteId) {
   if (window.renderAppView) {
     renderAppView('quotes-new');
   }
+}
+
+// ── Timeline visual del estado del presupuesto (FRONT1-5) ─────────────────
+function buildStatusTimeline(quote) {
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "margin-top:16px";
+
+  const st = String(quote.status || "").toLowerCase();
+  const d = quote.decision || {};
+  const invoices = Array.isArray(quote.invoices) ? quote.invoices : [];
+  const paidInv = invoices.find((i) => String(i.status).toLowerCase() === "paid");
+
+  const fmtD = (v) => {
+    if (!v) return "";
+    try { return new Date(v).toLocaleDateString("es-ES", { day: "2-digit", month: "short" }); }
+    catch { return ""; }
+  };
+
+  const rejected = st === "rejected";
+  const accepted = st === "accepted";
+  const sent = accepted || rejected || st === "sent";
+
+  const steps = [
+    { label: "Creada", icon: "📝", state: "done", date: fmtD(quote.createdAt) },
+    { label: "Enviada", icon: "📤", state: sent ? "done" : (st === "draft" ? "current" : "pending"), date: "" },
+    rejected
+      ? { label: "Rechazada", icon: "✖", state: "rejected", date: fmtD(d.rejectedAt || quote.rejectedAt) }
+      : { label: "Aceptada", icon: "✍️", state: accepted ? "done" : (st === "sent" ? "current" : "pending"), date: fmtD(d.acceptedAt || quote.acceptedAt) },
+    { label: "Facturada", icon: "🧾", state: invoices.length ? "done" : "pending", date: invoices.length ? fmtD(invoices[0].createdAt) : "" },
+    { label: "Cobrada", icon: "💰", state: paidInv ? "done" : "pending", date: paidInv ? fmtD(paidInv.paidAt || paidInv.createdAt) : "" },
+  ];
+
+  const colorFor = (s) => s === "done" ? "#22c55e" : s === "current" ? "#0ea5e9" : s === "rejected" ? "#ef4444" : "#e5e7eb";
+  const textFor  = (s) => s === "pending" ? "#9ca3af" : "#374151";
+
+  const row = document.createElement("div");
+  row.style.cssText = "display:flex;align-items:flex-start;justify-content:space-between;gap:4px;margin-top:6px";
+
+  steps.forEach((step, i) => {
+    const col = document.createElement("div");
+    col.style.cssText = "flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative";
+
+    // Línea conectora hacia el paso anterior
+    if (i > 0) {
+      const line = document.createElement("div");
+      const prevDone = steps[i - 1].state === "done";
+      line.style.cssText = `position:absolute;top:15px;left:-50%;width:100%;height:3px;background:${prevDone ? "#22c55e" : "#e5e7eb"};z-index:0`;
+      col.appendChild(line);
+    }
+
+    const dot = document.createElement("div");
+    dot.style.cssText = `width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;z-index:1;background:${colorFor(step.state)};color:${step.state === "pending" ? "#9ca3af" : "#fff"};box-shadow:${step.state === "current" ? "0 0 0 4px rgba(14,165,233,.2)" : "none"}`;
+    dot.textContent = step.icon;
+    col.appendChild(dot);
+
+    const lbl = document.createElement("div");
+    lbl.style.cssText = `margin-top:6px;font-size:12px;font-weight:600;color:${textFor(step.state)}`;
+    lbl.textContent = step.label;
+    col.appendChild(lbl);
+
+    if (step.date) {
+      const dt = document.createElement("div");
+      dt.style.cssText = "font-size:11px;color:#9ca3af";
+      dt.textContent = step.date;
+      col.appendChild(dt);
+    }
+
+    row.appendChild(col);
+  });
+
+  wrap.appendChild(row);
+  return wrap;
 }
