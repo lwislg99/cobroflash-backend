@@ -8,6 +8,7 @@ async function initApp() {
 
   window.appMerchantId = me.merchantId;
   window.appUserRole   = me.userRole || 'admin';
+  window.appUserName   = me.name || '';
   window.appLocale = me.locale || {
     quote: 'Presupuesto', quotePlural: 'Presupuestos', quoteNew: 'Nuevo presupuesto',
     quoteVerb: 'presupuesto', currency: 'EUR', defaultVat: 0.21, vatName: 'IVA',

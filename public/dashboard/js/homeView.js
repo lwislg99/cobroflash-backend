@@ -2,9 +2,19 @@
 
 async function renderHomeView(container) {
   const qLabel = (window.appLocale && window.appLocale.quoteNew) || 'Nueva cotización';
+  const firstName = String(window.appUserName || '').trim().split(/\s+/)[0] || '';
+  const hour = new Date().getHours();
+  const greet = hour < 6 ? 'Buenas noches' : hour < 13 ? 'Buenos días' : hour < 20 ? 'Buenas tardes' : 'Buenas noches';
   container.innerHTML = `
     <div>
+      <!-- Saludo (foco + calidez) -->
+      <header class="home-greeting">
+        <h1>${greet}${firstName ? ', ' + esc(firstName) : ''} 👋</h1>
+        <p>Esto es lo que pasa hoy en tu negocio.</p>
+      </header>
+
       <!-- Acciones rápidas (FRONT1-1) -->
+      <div class="home-section-label">Acciones rápidas</div>
       <div class="home-quick-actions">
         <button class="home-action home-cta" id="btn-quick-quote">
           <span class="home-action-ico">⚡</span>
@@ -20,6 +30,7 @@ async function renderHomeView(container) {
         </button>
       </div>
 
+      <div class="home-section-label">Resumen</div>
       <div class="kpi-grid" id="kpi-grid">
         <div class="kpi-card"><div class="kpi-label skeleton" style="height:14px;width:60%">&nbsp;</div></div>
         <div class="kpi-card"><div class="kpi-label skeleton" style="height:14px;width:60%">&nbsp;</div></div>
@@ -33,7 +44,8 @@ async function renderHomeView(container) {
         Actividad reciente
       </div>
       <div class="activity-feed" id="activity-feed">
-        <div style="color:#9ca3af;font-size:13px">Cargando…</div>
+        <div class="activity-item"><div style="display:flex;align-items:center;gap:10px;width:100%"><span class="skeleton" style="width:32px;height:32px;border-radius:50%"></span><span class="skeleton" style="height:12px;width:40%"></span></div></div>
+        <div class="activity-item"><div style="display:flex;align-items:center;gap:10px;width:100%"><span class="skeleton" style="width:32px;height:32px;border-radius:50%"></span><span class="skeleton" style="height:12px;width:55%"></span></div></div>
       </div>
 
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:24px" id="top-grids">
@@ -255,7 +267,9 @@ function renderActivity(items) {
     const date = new Date(item.updatedAt).toLocaleDateString("es", { day: "2-digit", month: "short" });
     const initial = (item.customer || '?').trim().charAt(0).toUpperCase() || '?';
     return `
-      <div class="activity-item" style="cursor:pointer" onclick="window.renderAppView&&renderAppView('quotes-detail',{quoteId:${item.id}})">
+      <div class="activity-item" style="cursor:pointer" role="button" tabindex="0"
+        data-quote-id="${item.id}"
+        aria-label="Cotización ${item.id} de ${esc(item.customer)}, ${statusLabel}, ${fmtMoney(item.total, item.currency)}">
         <div style="display:flex;align-items:center;gap:10px">
           <span style="width:32px;height:32px;border-radius:50%;background:${statusColor}1a;color:${statusColor};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">${esc(initial)}</span>
           <div>
@@ -270,6 +284,15 @@ function renderActivity(items) {
       </div>
     `;
   }).join("");
+
+  // Accesible: click + teclado (Enter/Espacio) en cada fila
+  feed.querySelectorAll(".activity-item[data-quote-id]").forEach((row) => {
+    const go = () => window.renderAppView && renderAppView("quotes-detail", { quoteId: Number(row.dataset.quoteId) });
+    row.addEventListener("click", go);
+    row.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); }
+    });
+  });
 }
 
 function renderTopCustomers(items) {
