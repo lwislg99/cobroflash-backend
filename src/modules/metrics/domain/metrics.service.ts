@@ -74,7 +74,50 @@ export async function getHomeMetrics(merchantId: number) {
     .slice(0, 5)
     .map(([name, data]) => ({ name, count: data.count, revenue: Math.round(data.revenue * 100) / 100 }));
 
+  // ── Tendencias semanales + sparkline + tiempo de respuesta ──────────────
+  const weekAgo = new Date(now.getTime() - 7 * 86_400_000);
+  const twoWeeksAgo = new Date(now.getTime() - 14 * 86_400_000);
+  const thirtyAgo = new Date(now.getTime() - 30 * 86_400_000);
+
+  const [quotesThisWeek, quotesLastWeek, collectedThisWeekAgg, collectedLastWeekAgg, last7Quotes, decidedRecent] = await Promise.all([
+    prisma.quote.count({ where: { merchantId, status: { not: 'draft' }, createdAt: { gte: weekAgo } } }),
+    prisma.quote.count({ where: { merchantId, status: { not: 'draft' }, createdAt: { gte: twoWeeksAgo, lt: weekAgo } } }),
+    prisma.invoice.aggregate({ where: { merchantId, status: 'paid', paidAt: { gte: weekAgo } }, _sum: { total: true } }),
+    prisma.invoice.aggregate({ where: { merchantId, status: 'paid', paidAt: { gte: twoWeeksAgo, lt: weekAgo } }, _sum: { total: true } }),
+    prisma.quote.findMany({ where: { merchantId, createdAt: { gte: weekAgo } }, select: { createdAt: true } }),
+    prisma.quote.findMany({
+      where: { merchantId, status: { in: ['accepted', 'rejected'] }, createdAt: { gte: thirtyAgo } },
+      select: { createdAt: true, acceptedAt: true, rejectedAt: true },
+    }),
+  ]);
+
+  // Sparkline: cotizaciones por día en los últimos 7 días (índice 0 = hace 6 días, 6 = hoy)
+  const sparkline = [0, 0, 0, 0, 0, 0, 0];
+  for (const q of last7Quotes) {
+    const dayIdx = 6 - Math.floor((now.getTime() - new Date(q.createdAt).getTime()) / 86_400_000);
+    if (dayIdx >= 0 && dayIdx < 7) sparkline[dayIdx]++;
+  }
+
+  // Tiempo medio de respuesta (horas) sobre cotizaciones decididas en 30 días
+  let avgResponseHours: number | null = null;
+  const deltas = decidedRecent
+    .map((q) => {
+      const decidedAt = q.acceptedAt ?? q.rejectedAt;
+      if (!decidedAt) return null;
+      return (new Date(decidedAt).getTime() - new Date(q.createdAt).getTime()) / 3_600_000;
+    })
+    .filter((h): h is number => h !== null && h >= 0);
+  if (deltas.length) avgResponseHours = Math.round((deltas.reduce((a, b) => a + b, 0) / deltas.length) * 10) / 10;
+
   return {
+    weekly: {
+      quotesThisWeek,
+      quotesLastWeek,
+      collectedThisWeek: Number(collectedThisWeekAgg._sum.total ?? 0),
+      collectedLastWeek: Number(collectedLastWeekAgg._sum.total ?? 0),
+    },
+    sparkline,
+    avgResponseHours,
     pendingAmount: Number(pendingInvoices._sum.total ?? 0),
     pendingCount: pendingInvoices._count.id,
     quotesAwaiting: sentQuotes,

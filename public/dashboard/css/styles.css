@@ -1171,3 +1171,49 @@ img { max-width: 100%; display: block; }
 .status-pill-accepted { box-shadow: inset 0 0 0 1px rgba(34,197,94,.25); }
 .status-pill-rejected { box-shadow: inset 0 0 0 1px rgba(239,68,68,.25); }
 .status-pill-pending  { box-shadow: inset 0 0 0 1px rgba(234,179,8,.25); }
+
+/* ── Home: acciones rápidas (FRONT1-1) ───────────────────────── */
+.home-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.home-action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid var(--slate-200, #e2e8f0);
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: transform .12s ease, box-shadow .15s ease, border-color .15s;
+}
+.home-action:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(15,23,42,.08); border-color: #bbf7d0; }
+.home-action-ico { font-size: 22px; flex-shrink: 0; }
+.home-action-title { display: block; font-weight: 700; font-size: 14px; color: var(--slate-900, #0f172a); }
+.home-action-sub { display: block; font-size: 12px; color: var(--slate-400, #94a3b8); }
+.home-action.home-cta { background: linear-gradient(135deg, #22c55e, #16a34a); border: none; }
+.home-action.home-cta .home-action-title { color: #052e16; }
+.home-action.home-cta .home-action-sub { color: #065f46; }
+
+/* ── Home: resumen de la semana ──────────────────────────────── */
+.week-summary-card {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  background: #fff;
+  border: 1px solid var(--slate-200, #e2e8f0);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+.week-summary-label { font-size: 12px; color: var(--slate-400, #94a3b8); margin-bottom: 4px; }
+.week-summary-value { font-size: 20px; font-weight: 700; color: var(--slate-900, #0f172a); display: flex; align-items: baseline; gap: 6px; }
+.week-summary-spark { display: flex; flex-direction: column; justify-content: center; }
+
+@media (max-width: 640px) {
+  .home-quick-actions { grid-template-columns: 1fr; }
+}

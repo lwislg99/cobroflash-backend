@@ -620,11 +620,14 @@ Revisar todos los empty states del dashboard. Cada uno debe tener:
 
 ---
 
-## SPRINT FRONT-1 — Frontend Premium (7 días)
+## SPRINT FRONT-1 — Frontend Premium (7 días)  ▸ EN CURSO (2026-06-04)
 
 **Objetivo:** Que cualquier persona que vea el dashboard diga "esto parece un producto de $50/mes" y no "esto parece un hackathon".
 
-### Tarea FRONT1-1 — Dashboard Home rediseñado
+> **Progreso:** ✅ FRONT1-1 (Home), ✅ FRONT1-2 (sidebar badges), ✅ FRONT1-3 (micro-animaciones/CSS), ✅ FRONT1-5 (timeline detalle). ⏳ FRONT1-4 (formulario cotización), FRONT1-6 (landing cliente).
+
+### Tarea FRONT1-1 — Dashboard Home rediseñado  ✅ HECHO
+- Acciones rápidas (3 botones), KPIs, resumen semanal con tendencia vs semana anterior + sparkline SVG 7 días, tiempo medio de respuesta, actividad con avatar/estado visual y click a detalle.
 
 **`public/dashboard/js/homeView.js`:**
 
@@ -634,15 +637,10 @@ Revisar todos los empty states del dashboard. Cada uno debe tener:
 - Tiempo de respuesta promedio del cliente (badge informativo)
 - "Esta semana": mini-chart de cotizaciones enviadas (sparkline SVG simple)
 
-### Tarea FRONT1-2 — Sidebar mejorada con accesos directos
+### Tarea FRONT1-2 — Sidebar mejorada con accesos directos  ✅ HECHO
+- Badges de contador en Solicitudes, Presupuestos pendientes y Facturas por cobrar (updateSidebarBadges + refreshSidebarBadges al iniciar). Acciones rápidas trasladadas al Home.
 
-**`public/dashboard/index.html`:**
-
-- Añadir badge de count en items del menú: "Solicitudes (3)", "Cotizaciones pendientes (5)"
-- Separar "Cotizaciones" de "Historial" más claramente
-- Quick actions en el sidebar bottom: "+" para nueva cotización directamente
-
-### Tarea FRONT1-3 — Mejoras visuales generales
+### Tarea FRONT1-3 — Mejoras visuales generales  ✅ HECHO (bloque CSS aditivo: hover lift, fade-in vistas, skeleton shimmer, pills expresivas, transiciones)
 
 **`public/dashboard/css/styles.css`:**
 
@@ -661,7 +659,7 @@ Revisar todos los empty states del dashboard. Cada uno debe tener:
 - Preview del PDF en panel derecho que se actualiza en tiempo real (ya existe, mejorar fidelidad)
 - Calculadora de IVA inline: "Base: 850 + IVA 21% = **1.028,50 €**" en tipografía grande
 
-### Tarea FRONT1-5 — Detalle de cotización mejorado
+### Tarea FRONT1-5 — Detalle de cotización mejorado  ✅ HECHO (timeline visual con iconos, fechas y colores por estado)
 
 **`public/dashboard/js/quotesDetailView.js`:**
 

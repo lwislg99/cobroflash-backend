@@ -1,15 +1,35 @@
 // public/dashboard/js/homeView.js
 
 async function renderHomeView(container) {
+  const qLabel = (window.appLocale && window.appLocale.quoteNew) || 'Nueva cotización';
   container.innerHTML = `
     <div>
-      <div class="kpi-grid" id="kpi-grid">
-        <div class="kpi-card"><div class="kpi-label">Cargando…</div></div>
-        <div class="kpi-card"><div class="kpi-label">Cargando…</div></div>
-        <div class="kpi-card"><div class="kpi-label">Cargando…</div></div>
+      <!-- Acciones rápidas (FRONT1-1) -->
+      <div class="home-quick-actions">
+        <button class="home-action home-cta" id="btn-quick-quote">
+          <span class="home-action-ico">⚡</span>
+          <span><span class="home-action-title">${qLabel}</span><span class="home-action-sub">en 30 segundos</span></span>
+        </button>
+        <button class="home-action" id="btn-add-customer">
+          <span class="home-action-ico">👤</span>
+          <span><span class="home-action-title">Añadir cliente</span><span class="home-action-sub">guárdalo una vez</span></span>
+        </button>
+        <button class="home-action" id="btn-view-pending">
+          <span class="home-action-ico">💰</span>
+          <span><span class="home-action-title">Pendientes de cobro</span><span class="home-action-sub">facturas abiertas</span></span>
+        </button>
       </div>
-      <button class="home-cta" id="btn-quick-quote">+ ${(window.appLocale && window.appLocale.quoteNew) || 'Nueva cotización'} rápida</button>
-      <div style="font-size:13px;font-weight:600;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">
+
+      <div class="kpi-grid" id="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label skeleton" style="height:14px;width:60%">&nbsp;</div></div>
+        <div class="kpi-card"><div class="kpi-label skeleton" style="height:14px;width:60%">&nbsp;</div></div>
+        <div class="kpi-card"><div class="kpi-label skeleton" style="height:14px;width:60%">&nbsp;</div></div>
+      </div>
+
+      <!-- Resumen de la semana (sparkline + tendencias) -->
+      <div id="week-summary"></div>
+
+      <div style="font-size:13px;font-weight:600;color:#6b7280;margin:8px 0 8px;text-transform:uppercase;letter-spacing:.04em">
         Actividad reciente
       </div>
       <div class="activity-feed" id="activity-feed">
@@ -30,6 +50,8 @@ async function renderHomeView(container) {
   `;
 
   document.getElementById("btn-quick-quote").addEventListener("click", openQuickQuoteModal);
+  document.getElementById("btn-add-customer").addEventListener("click", () => window.renderAppView && renderAppView('customers'));
+  document.getElementById("btn-view-pending").addEventListener("click", () => window.renderAppView && renderAppView('invoices'));
 
   try {
     const [data, merchant] = await Promise.all([
@@ -37,6 +59,7 @@ async function renderHomeView(container) {
       apiRequest("/admin/merchant").catch(() => null),
     ]);
     renderKpis(data);
+    renderWeekSummary(data);
     renderActivity(data.recentActivity || []);
     renderTopCustomers(data.topCustomers || []);
     renderTopServices(data.topServices || []);
@@ -44,16 +67,42 @@ async function renderHomeView(container) {
     // Setup checklist para usuarios nuevos
     if (merchant) renderSetupChecklist(merchant, data);
 
-    // Badge de solicitudes pendientes
-    if (data.pendingRequests > 0) {
-      const badge = document.getElementById('req-badge');
-      if (badge) { badge.textContent = String(data.pendingRequests); badge.style.display = 'inline-block'; }
-    }
+    // Badges del sidebar (FRONT1-2)
+    updateSidebarBadges(data);
   } catch (err) {
     document.getElementById("kpi-grid").innerHTML =
       `<div style="color:#b91c1c;font-size:13px;grid-column:1/-1">Error cargando métricas</div>`;
   }
 }
+
+function setNavBadge(id, count, max99 = true) {
+  const badge = document.getElementById(id);
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent = max99 && count > 99 ? '99+' : String(count);
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// Actualiza los contadores del sidebar. Expuesto en window para llamarlo desde app.js.
+function updateSidebarBadges(data) {
+  if (!data) return;
+  setNavBadge('req-badge', data.pendingRequests || 0);
+  setNavBadge('nav-quotes-badge', data.quotesAwaiting || 0);
+  setNavBadge('nav-invoices-badge', data.pendingCount || 0);
+}
+window.updateSidebarBadges = updateSidebarBadges;
+
+// Refresca los badges del sidebar sin renderizar el Home (para usar al iniciar la app).
+async function refreshSidebarBadges() {
+  try {
+    const data = await apiRequest('/admin/metrics/home');
+    updateSidebarBadges(data);
+  } catch { /* silencioso */ }
+}
+window.refreshSidebarBadges = refreshSidebarBadges;
 
 function renderSetupChecklist(merchant, data) {
   const steps = [
@@ -130,6 +179,63 @@ function renderKpis(data) {
   `;
 }
 
+function trendChip(current, prev) {
+  if (prev == null) return '';
+  const diff = current - prev;
+  if (diff === 0) return `<span style="font-size:11px;color:#9ca3af">→ igual</span>`;
+  const pct = prev > 0 ? Math.round((diff / prev) * 100) : null;
+  const up = diff > 0;
+  const color = up ? '#16a34a' : '#dc2626';
+  const label = pct !== null ? `${Math.abs(pct)}%` : Math.abs(diff);
+  return `<span style="font-size:11px;color:${color};font-weight:600">${up ? '▲' : '▼'} ${label}</span>`;
+}
+
+function renderWeekSummary(data) {
+  const el = document.getElementById("week-summary");
+  if (!el) return;
+  const w = data.weekly || {};
+  const spark = Array.isArray(data.sparkline) ? data.sparkline : [];
+  const respText = data.avgResponseHours != null
+    ? (data.avgResponseHours < 48 ? `${data.avgResponseHours} h` : `${Math.round(data.avgResponseHours / 24)} d`)
+    : '—';
+
+  el.innerHTML = `
+    <div class="week-summary-card">
+      <div class="week-summary-item">
+        <div class="week-summary-label">Cotizaciones esta semana</div>
+        <div class="week-summary-value">${w.quotesThisWeek ?? 0} ${trendChip(w.quotesThisWeek ?? 0, w.quotesLastWeek ?? 0)}</div>
+      </div>
+      <div class="week-summary-item">
+        <div class="week-summary-label">Cobrado esta semana</div>
+        <div class="week-summary-value">${fmtMoney(w.collectedThisWeek ?? 0)} ${trendChip(w.collectedThisWeek ?? 0, w.collectedLastWeek ?? 0)}</div>
+      </div>
+      <div class="week-summary-item">
+        <div class="week-summary-label">Respuesta media del cliente</div>
+        <div class="week-summary-value">${respText}</div>
+      </div>
+      <div class="week-summary-item week-summary-spark">
+        <div class="week-summary-label">Envíos · últimos 7 días</div>
+        ${buildSparkline(spark)}
+      </div>
+    </div>
+  `;
+}
+
+function buildSparkline(values) {
+  const vals = values.length ? values : [0, 0, 0, 0, 0, 0, 0];
+  const max = Math.max(...vals, 1);
+  const W = 120, H = 32, n = vals.length;
+  const bw = W / n;
+  const bars = vals.map((v, i) => {
+    const h = Math.max(2, (v / max) * (H - 4));
+    const x = i * bw + 1;
+    const y = H - h;
+    const today = i === n - 1;
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw - 2).toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${today ? '#16a34a' : '#bbf7d0'}"><title>${v}</title></rect>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block">${bars}</svg>`;
+}
+
 function renderActivity(items) {
   const feed = document.getElementById("activity-feed");
   if (!items.length) {
@@ -144,15 +250,19 @@ function renderActivity(items) {
       accepted: "#16a34a", rejected: "#dc2626", sent: "#2563eb", draft: "#9ca3af",
     }[item.status] || "#9ca3af";
     const date = new Date(item.updatedAt).toLocaleDateString("es", { day: "2-digit", month: "short" });
+    const initial = (item.customer || '?').trim().charAt(0).toUpperCase() || '?';
     return `
-      <div class="activity-item">
-        <div>
-          <div class="activity-customer">${esc(item.customer)}</div>
-          <div class="activity-meta">Cotización #${item.id} · ${date}</div>
+      <div class="activity-item" style="cursor:pointer" onclick="window.renderAppView&&renderAppView('quotes-detail',{quoteId:${item.id}})">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="width:32px;height:32px;border-radius:50%;background:${statusColor}1a;color:${statusColor};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">${esc(initial)}</span>
+          <div>
+            <div class="activity-customer">${esc(item.customer)}</div>
+            <div class="activity-meta">Cotización #${item.id} · ${date}</div>
+          </div>
         </div>
         <div style="text-align:right">
           <div class="activity-amount">${fmtMoney(item.total, item.currency)}</div>
-          <div style="font-size:12px;color:${statusColor};font-weight:600">${statusLabel}</div>
+          <div style="font-size:12px;color:${statusColor};font-weight:600">● ${statusLabel}</div>
         </div>
       </div>
     `;

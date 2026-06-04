@@ -222,6 +222,9 @@ async function initApp() {
   // Botón flotante de ayuda (guía de inicio)
   if (typeof ensureHelpButton === 'function') ensureHelpButton();
 
+  // Badges del sidebar (contadores) independientes de la vista actual
+  if (typeof refreshSidebarBadges === 'function') refreshSidebarBadges();
+
   // Clicks en el sidebar
   document.querySelectorAll('.nav-item[data-view]').forEach((btn) => {
     btn.addEventListener('click', () => renderView(btn.dataset.view));
