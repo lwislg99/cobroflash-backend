@@ -957,7 +957,9 @@ freeMonthsEarned Int      @default(0) @map("free_months_earned")
 
 **`public/dashboard/js/reportsView.js`:** Tabla de rentabilidad por servicio con columnas: Nombre, Veces cotizado, Tasa aceptación %, Margen promedio.
 
-### Tarea ANA-3 — Dashboard de equipo (para directores)
+### Tarea ANA-3 — Dashboard de equipo (para directores)  ✅ HECHO (2026-06-04)
+- Quote.teamMemberId (db push) atribuye el creador (sesión por cookie en /quote/create). GET /admin/metrics/team → por miembro (propietario + técnicos): cotizaciones, % aceptación, cobrado; badge ⭐ Mejor del mes; alerta de técnicos inactivos esta semana. Sección "Rendimiento del equipo" en homeView, solo admin y si hay técnicos.
+- Nota: cotizaciones históricas (antes del cambio) quedan atribuidas al propietario (teamMemberId null).
 
 Solo visible para admin con >1 miembro del equipo.
 
@@ -968,10 +970,10 @@ Solo visible para admin con >1 miembro del equipo.
 
 **Commit:** `feat(analytics): funnel de conversión + rentabilidad por servicio + dashboard equipo`
 
-### Criterio de éxito:
-- [ ] El informe muestra el funnel de conversión con %, tiempo y motivos de rechazo
-- [ ] La tabla de rentabilidad por servicio está disponible
-- [ ] El dashboard de equipo se muestra cuando hay técnicos activos
+### Criterio de éxito:  ✅ SPRINT ANALYTICS COMPLETADO (ANA-1/2/3, 2026-06-04)
+- [x] El informe muestra el funnel de conversión con %, tiempo y motivos de rechazo
+- [x] La tabla de rentabilidad por servicio está disponible
+- [x] El dashboard de equipo se muestra cuando hay técnicos activos
 
 ---
 

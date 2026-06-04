@@ -188,6 +188,7 @@ model Quote {
   evidence        Json?
   chargeId        Int?
   reminderSentAt  DateTime?
+  teamMemberId    Int?      @map("team_member_id") // técnico que creó la cotización (null = propietario)
 
   merchant Merchant @relation(fields: [merchantId], references: [id])
   customer Customer @relation(fields: [customerId], references: [id])

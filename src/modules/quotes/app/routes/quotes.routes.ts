@@ -15,6 +15,19 @@ function calcTierTotal(lines: Array<{qty: number; price: number; tax?: number}>)
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { getNextBillingStage } from '../../domain/billingPlan';
 import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/merchantNotifications';
+import { getSession } from '../../../auth/domain/auth.service';
+
+// Lee el teamMemberId de la sesión (si hay cookie válida) para atribuir el creador.
+async function getCreatorTeamMemberId(req: any): Promise<number | null> {
+  try {
+    const match = String(req.headers.cookie || '').match(/pf_session=([^;]+)/);
+    if (!match) return null;
+    const session = await getSession(decodeURIComponent(match[1]));
+    return session?.teamMemberId ?? null;
+  } catch {
+    return null;
+  }
+}
 
 import fetch from 'node-fetch';
 
@@ -61,6 +74,9 @@ router.post('/create', async (req, res) => {
       totalNum = calcTotal(canonicalLines);
     }
 
+    // Atribuir el técnico que crea la cotización (null = propietario)
+    const creatorTeamMemberId = await getCreatorTeamMemberId(req);
+
     // 1) Crear el presupuesto en DRAFT
     const quote = await prisma.quote.create({
       data: {
@@ -72,6 +88,7 @@ router.post('/create', async (req, res) => {
         lines: canonicalLines,
         tiers: tiersWithTotal as any ?? undefined,
         paymentTerms: body.paymentTerms ?? null,
+        teamMemberId: creatorTeamMemberId,
       },
     });
 

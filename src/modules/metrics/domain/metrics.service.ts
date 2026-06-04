@@ -271,3 +271,86 @@ export async function getServiceMetrics(merchantId: number) {
 
   return { services };
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// ANALYTICS — Dashboard de equipo (ANA-3)
+// ──────────────────────────────────────────────────────────────────────────
+
+export async function getTeamMetrics(merchantId: number) {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const weekAgo = new Date(now.getTime() - 7 * 86_400_000);
+
+  const [members, monthQuotes, paidInvoices, quoteOwners] = await Promise.all([
+    prisma.teamMember.findMany({
+      where: { merchantId },
+      select: { id: true, name: true, role: true, status: true },
+    }),
+    prisma.quote.findMany({
+      where: { merchantId, status: { not: 'draft' }, createdAt: { gte: monthStart } },
+      select: { teamMemberId: true, status: true, createdAt: true },
+    }),
+    prisma.invoice.findMany({
+      where: { merchantId, status: 'paid', paidAt: { gte: monthStart }, quoteId: { not: null } },
+      select: { total: true, quoteId: true },
+    }),
+    prisma.quote.findMany({ where: { merchantId }, select: { id: true, teamMemberId: true } }),
+  ]);
+
+  // Mapa quoteId -> teamMemberId (para atribuir lo cobrado)
+  const ownerMap = new Map<number, number | null>();
+  quoteOwners.forEach((q) => ownerMap.set(q.id, q.teamMemberId ?? null));
+
+  type Agg = { sent: number; accepted: number; collected: number; thisWeek: number };
+  const agg = new Map<number, Agg>(); // clave 0 = propietario
+  const ensure = (k: number): Agg => {
+    if (!agg.has(k)) agg.set(k, { sent: 0, accepted: 0, collected: 0, thisWeek: 0 });
+    return agg.get(k)!;
+  };
+
+  for (const q of monthQuotes) {
+    const a = ensure(q.teamMemberId ?? 0);
+    a.sent++;
+    if (q.status === 'accepted') a.accepted++;
+    if (new Date(q.createdAt) >= weekAgo) a.thisWeek++;
+  }
+  for (const inv of paidInvoices) {
+    const tm = inv.quoteId != null ? (ownerMap.get(inv.quoteId) ?? null) : null;
+    ensure(tm ?? 0).collected += Number(inv.total);
+  }
+
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const rate = (a: Agg) => (a.sent > 0 ? Math.round((a.accepted / a.sent) * 100) : 0);
+
+  const list: any[] = [];
+  const ownerAgg = ensure(0);
+  list.push({
+    id: null, name: 'Tú (propietario)', role: 'owner', status: 'active',
+    sent: ownerAgg.sent, accepted: ownerAgg.accepted, collected: round2(ownerAgg.collected),
+    acceptanceRate: rate(ownerAgg), thisWeek: ownerAgg.thisWeek, isBest: false,
+  });
+  for (const m of members) {
+    const a = ensure(m.id);
+    list.push({
+      id: m.id, name: m.name, role: m.role, status: m.status,
+      sent: a.sent, accepted: a.accepted, collected: round2(a.collected),
+      acceptanceRate: rate(a), thisWeek: a.thisWeek, isBest: false,
+    });
+  }
+
+  // Mejor del mes: mayor importe cobrado entre quienes tienen actividad
+  let bestId: number | null | undefined;
+  let bestVal = 0;
+  for (const e of list) {
+    if (e.sent > 0 && e.collected > bestVal) { bestVal = e.collected; bestId = e.id; }
+  }
+  if (bestVal > 0) list.forEach((e) => { e.isBest = e.id === bestId; });
+
+  // Técnicos activos sin actividad esta semana
+  const inactive = list
+    .filter((e) => e.role === 'tecnico' && e.status === 'active' && e.thisWeek === 0)
+    .map((e) => e.name);
+
+  const tecnicoCount = members.filter((m) => m.role === 'tecnico').length;
+  return { hasTeam: tecnicoCount > 0, members: list, inactive };
+}

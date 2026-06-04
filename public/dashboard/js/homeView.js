@@ -69,6 +69,9 @@ async function renderHomeView(container) {
 
     // Badges del sidebar (FRONT1-2)
     updateSidebarBadges(data);
+
+    // Rendimiento del equipo (ANA-3) — solo admin con técnicos
+    renderTeamPerformance(container);
   } catch (err) {
     document.getElementById("kpi-grid").innerHTML =
       `<div style="color:#b91c1c;font-size:13px;grid-column:1/-1">Error cargando métricas</div>`;
@@ -299,6 +302,56 @@ function renderTopServices(items) {
         <div style="background:var(--green-500);height:100%;width:${Math.round(s.count/max*100)}%;border-radius:var(--radius-full);transition:width .4s"></div>
       </div>
     </div>`).join('');
+}
+
+async function renderTeamPerformance(container) {
+  // Solo para el propietario/admin
+  if (window.appUserRole && window.appUserRole !== 'admin') return;
+
+  let data;
+  try {
+    data = await apiRequest('/admin/metrics/team');
+  } catch { return; }
+  if (!data || !data.hasTeam || !Array.isArray(data.members)) return;
+
+  const section = document.createElement('div');
+  section.style.cssText = 'margin-top:24px';
+
+  const rows = data.members.map((m) => {
+    const accColor = m.acceptanceRate >= 50 ? 'var(--green-600)' : m.acceptanceRate >= 25 ? 'var(--slate-600)' : 'var(--red-600)';
+    const best = m.isBest ? '<span style="background:#fef9c3;color:#a16207;font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:6px">⭐ Mejor del mes</span>' : '';
+    const roleLabel = m.role === 'owner' ? 'Propietario' : m.role === 'tecnico' ? 'Técnico' : m.role;
+    return `
+      <tr>
+        <td style="font-weight:600">${esc(m.name)}${best}<div style="font-size:11px;color:var(--slate-400);font-weight:400">${roleLabel}</div></td>
+        <td style="text-align:right">${m.sent}</td>
+        <td style="text-align:right;color:${accColor};font-weight:600">${m.acceptanceRate}%</td>
+        <td style="text-align:right;color:var(--green-700);font-weight:600">${fmtMoney(m.collected)}</td>
+      </tr>`;
+  }).join('');
+
+  const inactiveAlert = (data.inactive && data.inactive.length)
+    ? `<div style="margin-top:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px 14px;font-size:13px;color:#9a3412">⚠️ Sin actividad esta semana: <strong>${data.inactive.map(esc).join(', ')}</strong></div>`
+    : '';
+
+  section.innerHTML = `
+    <div style="font-size:13px;font-weight:600;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">Rendimiento del equipo · este mes</div>
+    <div class="data-card">
+      <div class="table-scroll">
+        <table class="table" style="min-width:420px">
+          <thead><tr>
+            <th>Miembro</th>
+            <th style="text-align:right">Cotizaciones</th>
+            <th style="text-align:right">Aceptación</th>
+            <th style="text-align:right">Cobrado</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      ${inactiveAlert ? `<div style="padding:0 16px 14px">${inactiveAlert}</div>` : ''}
+    </div>
+  `;
+  container.appendChild(section);
 }
 
 function fmtMoney(amount, currency) {

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getHomeMetrics, getFunnelMetrics, getServiceMetrics } from '../../domain/metrics.service';
+import { getHomeMetrics, getFunnelMetrics, getServiceMetrics, getTeamMetrics } from '../../domain/metrics.service';
 
 const router = Router();
 
@@ -29,6 +29,16 @@ router.get('/services', async (req, res) => {
     return res.json(metrics);
   } catch (err) {
     console.error('[GET /admin/metrics/services]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+router.get('/team', async (req, res) => {
+  try {
+    const metrics = await getTeamMetrics(req.merchantId);
+    return res.json(metrics);
+  } catch (err) {
+    console.error('[GET /admin/metrics/team]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });
