@@ -11,38 +11,45 @@ function renderProductsView(container) {
     wrap.appendChild(header);
 
     const h = document.createElement("div");
-    h.innerHTML = `
-      <h2 style="margin:0;font-size:16px;font-weight:700;color:var(--slate-900)">Catálogo de productos</h2>
-      <p style="margin:2px 0 0;color:var(--slate-400);font-size:12.5px">
-        Crea, edita o desactiva productos para usarlos en cotizaciones.
-      </p>
-    `;
+    const titleEl = document.createElement("h2");
+    titleEl.textContent = "Catálogo de productos";
+    titleEl.style.cssText = "margin:0;font-size:18px";
+    const countEl = document.createElement("p");
+    countEl.textContent = "Cargando…";
+    countEl.style.cssText = "margin:2px 0 0;color:var(--muted);font-size:13px";
+    h.appendChild(titleEl);
+    h.appendChild(countEl);
     header.appendChild(h);
-  
+
+    function setCount(text) { countEl.textContent = text; }
+
+    const headActions = document.createElement("div");
+    headActions.style.cssText = "display:flex;align-items:center;gap:8px";
+    header.appendChild(headActions);
+
     const reloadBtn = document.createElement("button");
-    reloadBtn.className = "btn btn-secondary";
+    reloadBtn.className = "btn-secondary btn-sm";
     reloadBtn.type = "button";
     reloadBtn.textContent = "Recargar";
-    header.appendChild(reloadBtn);
-
+    headActions.appendChild(reloadBtn);
 
     const exportBtn = document.createElement("button");
-exportBtn.className = "btn btn-secondary";
-exportBtn.type = "button";
-exportBtn.textContent = "Exportar CSV";
-header.appendChild(exportBtn);
+    exportBtn.className = "btn-secondary btn-sm";
+    exportBtn.type = "button";
+    exportBtn.textContent = "⬇ Exportar CSV";
+    headActions.appendChild(exportBtn);
 
-const importBtn = document.createElement("button");
-importBtn.className = "btn btn-secondary";
-importBtn.type = "button";
-importBtn.textContent = "Importar CSV";
-header.appendChild(importBtn);
+    const importBtn = document.createElement("button");
+    importBtn.className = "btn-secondary btn-sm";
+    importBtn.type = "button";
+    importBtn.textContent = "⬆ Importar CSV";
+    headActions.appendChild(importBtn);
 
-const importFile = document.createElement("input");
-importFile.type = "file";
-importFile.accept = ".csv,text/csv";
-importFile.style.display = "none";
-header.appendChild(importFile);
+    const importFile = document.createElement("input");
+    importFile.type = "file";
+    importFile.accept = ".csv,text/csv";
+    importFile.style.display = "none";
+    headActions.appendChild(importFile);
 
       // --- search + filters (client-side) ---
   const tools = document.createElement("div");
@@ -59,7 +66,7 @@ header.appendChild(importFile);
   onlyActiveWrap.style.alignItems = "center";
   onlyActiveWrap.style.gap = "6px";
   onlyActiveWrap.style.fontSize = "13px";
-  onlyActiveWrap.style.color = "#6b7280";
+  onlyActiveWrap.style.color = "var(--muted)";
 
   const onlyActiveI = document.createElement("input");
   onlyActiveI.type = "checkbox";
@@ -268,14 +275,14 @@ header.appendChild(importFile);
     <tr>
       <th style="width:60px">ID</th>
       <th>Nombre</th>
-      <th style="width:160px">Proveedor</th>
-      <th style="width:140px">Precio</th>
-      <th style="width:110px">IVA</th>
-      <th style="width:140px">Coste</th>
+      <th style="width:160px" class="col-hide-mobile">Proveedor</th>
+      <th style="width:140px;text-align:right">Precio</th>
+      <th style="width:90px" class="col-hide-mobile">IVA</th>
+      <th style="width:140px;text-align:right" class="col-hide-mobile">Coste</th>
       <th style="width:110px">Activo</th>
       <th style="width:210px"></th>
     </tr>
-  </thead>  
+  </thead>
       <tbody></tbody>
     `;
     tableWrap.appendChild(table);
@@ -358,15 +365,16 @@ header.appendChild(importFile);
   
     function renderRows(items, merchantId) {
       tbody.innerHTML = "";
-  
+
       if (!items || items.length === 0) {
+        const searching = !!String(searchI.value || "").trim() || !!onlyActiveI.checked;
         const tr = document.createElement("tr");
         const td = document.createElement("td");
         td.colSpan = 8;
         td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📦</div>'
-          + '<div class="empty-state-title">Crea tu catálogo de servicios</div>'
-          + '<div class="empty-state-desc">Con tus servicios y precios guardados, montar una cotización es cuestión de segundos gracias al autocompletado.</div>'
-          + '<button id="products-empty-cta" class="btn btn-primary btn-sm" style="margin-top:14px">+ Añadir mi primer servicio</button></div>';
+          + '<div class="empty-state-title">' + (searching ? 'Sin productos para este filtro' : 'Crea tu catálogo de servicios') + '</div>'
+          + '<div class="empty-state-desc">' + (searching ? 'Prueba con otra búsqueda o desactiva el filtro.' : 'Con tus servicios y precios guardados, montar una cotización es cuestión de segundos gracias al autocompletado.') + '</div>'
+          + (searching ? '' : '<button id="products-empty-cta" class="btn-primary btn-sm" style="margin-top:14px">+ Añadir mi primer servicio</button>') + '</div>';
         tr.appendChild(td);
         tbody.appendChild(tr);
         const cta = td.querySelector('#products-empty-cta');
@@ -374,23 +382,33 @@ header.appendChild(importFile);
           const nameInput = document.querySelector('input[name="name"]');
           if (nameInput) { nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); nameInput.focus(); }
         });
+        setCount(searching ? "0 resultados" : "0 productos");
         return;
       }
-  
+
+      setCount(items.length + " producto" + (items.length !== 1 ? "s" : ""));
+
       items.forEach((it) => {
         const tr = document.createElement("tr");
   
+        const vatPct = (it.vat === null || typeof it.vat === "undefined")
+          ? "—"
+          : (Number(it.vat) * 100).toFixed(0) + " %";
+        const activePill = it.isActive
+          ? '<span class="status-pill status-pill-accepted">ACTIVO</span>'
+          : '<span class="status-pill status-pill-draft">INACTIVO</span>';
+
         tr.innerHTML = `
         <td>${it.id}</td>
         <td>
           <div style="font-weight:600">${it.name || ""}</div>
-          <div style="font-size:12px; color:#6b7280">${it.description || ""}</div>
+          <div style="font-size:12px;color:var(--muted)">${it.description || ""}</div>
         </td>
-        <td>${it.provider?.name || "—"}</td>
-        <td>${money(it.price)}</td>
-        <td>${it.vat === null ? "—" : String(it.vat)}</td>
-        <td>${money(it.cost)}</td>
-        <td>${it.isActive ? "Sí" : "No"}</td>
+        <td class="col-hide-mobile">${it.provider?.name || "—"}</td>
+        <td class="amount" style="text-align:right">${money(it.price)}</td>
+        <td class="col-hide-mobile">${vatPct}</td>
+        <td class="amount-muted col-hide-mobile" style="text-align:right">${money(it.cost)}</td>
+        <td>${activePill}</td>
         <td></td>
       `;
   
@@ -584,8 +602,8 @@ header.appendChild(importFile);
         const providerRaw = String(providerSelect?.value || "").trim();
         const description = String(descI.value || "").trim();
   
-        if (!name) return setAlert("error", "name_required");
-        if (!Number.isFinite(price) || price <= 0) return setAlert("error", "price_invalid");
+        if (!name) return setAlert("error", "El nombre es obligatorio.");
+        if (!Number.isFinite(price) || price <= 0) return setAlert("error", "El precio debe ser mayor que 0.");
   
         const payload = {
           name,
