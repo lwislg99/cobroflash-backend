@@ -25,12 +25,13 @@ router.post('/register', async (req, res) => {
   const name  = String(req.body?.name  || '').trim();
   const email = String(req.body?.email || '').toLowerCase().trim();
   const country = String(req.body?.country || 'ES').trim();
+  const ref = String(req.body?.ref || '').trim();
 
   if (!name)  return res.status(400).json({ error: 'name_required' });
   if (!email || !email.includes('@')) return res.status(400).json({ error: 'invalid_email' });
 
   try {
-    await registerMerchant({ name, email, country });
+    await registerMerchant({ name, email, country, ref: ref || undefined });
     return res.json({ ok: true, message: 'Cuenta creada. Revisa tu email para acceder.' });
   } catch (err) {
     console.error('[POST /auth/register]', err);

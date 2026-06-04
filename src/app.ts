@@ -46,6 +46,7 @@ import searchRouter        from './modules/search/app/routes/search.routes';
 import { merchantProfileUpdateSchema } from './core/validation/schemas';
 import { getMerchantProfile, updateMerchantProfile } from './modules/system/merchantAdmin';
 import { getDigestPreview } from './modules/messaging/domain/weeklyDigest.service';
+import { getReferralStats } from './modules/auth/domain/referral.service';
 import { getSession } from './modules/auth/domain/auth.service';
 import { getLocaleJson } from './core/i18n/locales';
 import { quoteDecisionLandingRouter } from './modules/system/app/routes/quoteDecisionLanding.routes';
@@ -154,6 +155,17 @@ app.get('/admin/digest/preview', async (req, res) => {
     const preview = await getDigestPreview(req.merchantId);
     return res.json(preview);
   } catch (err) {
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// Referidos — código, link y estadísticas
+app.get('/admin/referral', async (req, res) => {
+  try {
+    const stats = await getReferralStats(req.merchantId);
+    return res.json(stats);
+  } catch (err) {
+    console.error('[GET /admin/referral]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });

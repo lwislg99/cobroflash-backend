@@ -2,10 +2,13 @@
 
 function renderSettingsView(container) {
     container.innerHTML = "";
-  
+
     const card = document.createElement("div");
     card.className = "customers-card";
     container.appendChild(card);
+
+    // Tarjeta de Referidos (se rellena de forma asíncrona)
+    renderReferralCard(container);
 
     const title = document.createElement("h2");
     title.textContent = "Datos de la empresa";
@@ -301,3 +304,59 @@ function renderSettingsView(container) {
     });
   }
   
+// ── Tarjeta de Referidos (Sprint REFERRAL) ────────────────────────────────
+async function renderReferralCard(container) {
+  const card = document.createElement("div");
+  card.className = "customers-card";
+  card.style.marginTop = "16px";
+  card.innerHTML = `
+    <h2 style="margin:0 0 4px;font-size:17px;font-weight:700;color:var(--slate-900)">Invita y gana meses gratis 🎁</h2>
+    <p style="margin:0 0 16px;font-size:13px;color:var(--slate-400)">Por cada profesional que se suscriba con tu enlace, recibes 1 mes gratis.</p>
+    <div style="color:var(--slate-400);font-size:13px">Cargando…</div>
+  `;
+  container.appendChild(card);
+
+  let data;
+  try {
+    data = await apiRequest('/admin/referral');
+  } catch {
+    card.querySelector('div').textContent = 'No se pudieron cargar tus referidos.';
+    return;
+  }
+
+  card.innerHTML = `
+    <h2 style="margin:0 0 4px;font-size:17px;font-weight:700;color:var(--slate-900)">Invita y gana meses gratis 🎁</h2>
+    <p style="margin:0 0 16px;font-size:13px;color:var(--slate-400)">Por cada profesional que se suscriba con tu enlace, recibes 1 mes gratis.</p>
+
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+      <input id="ref-link" type="text" readonly value="${escSettings(data.link)}"
+        style="flex:1;min-width:220px;padding:11px 13px;border:1px solid #d1d5db;border-radius:10px;font-size:13px;background:#f8fafc;color:#374151"/>
+      <button id="ref-copy" class="btn btn-primary btn-sm" style="white-space:nowrap">Copiar link</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+      <div class="kpi-card"><div class="kpi-label">Tu código</div><div class="kpi-value" style="font-size:18px">${escSettings(data.code)}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Referidos</div><div class="kpi-value" style="font-size:20px">${data.referredCount} <span style="font-size:12px;color:var(--slate-400)">(${data.payingCount} pagando)</span></div></div>
+      <div class="kpi-card"><div class="kpi-label">Meses gratis ganados</div><div class="kpi-value" style="font-size:20px;color:var(--green-600)">${data.freeMonthsEarned}</div></div>
+    </div>
+  `;
+
+  const copyBtn = card.querySelector('#ref-copy');
+  copyBtn.addEventListener('click', async () => {
+    const link = card.querySelector('#ref-link').value;
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch {
+      const inp = card.querySelector('#ref-link');
+      inp.select(); document.execCommand('copy');
+    }
+    copyBtn.textContent = '¡Copiado!';
+    setTimeout(() => { copyBtn.textContent = 'Copiar link'; }, 1800);
+  });
+}
+
+function escSettings(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}

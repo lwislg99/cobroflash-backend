@@ -45,6 +45,12 @@ model Merchant {
   // Lifecycle emails ya enviados, ej: { "welcome": 1, "day3": 1 } — evita duplicados
   lifecycleEmailsSent          Json?   @map("lifecycle_emails_sent")
 
+  // Sistema de referidos
+  referralCode       String?   @unique @map("referral_code")
+  referredBy         Int?      @map("referred_by")
+  freeMonthsEarned   Int       @default(0) @map("free_months_earned")
+  referralRewardedAt DateTime? @map("referral_rewarded_at")
+
   charges        Charge[]
   Quote          Quote[]
   Invoice        Invoice[]

@@ -49,6 +49,7 @@
   </div>
   <h1>Crea tu cuenta</h1>
   <div class="trial-badge">🎉 14 días gratis, sin tarjeta de crédito</div>
+  <div id="ref-badge" class="trial-badge" style="display:none;background:#ecfdf5;color:#047857">🎁 Te ha invitado un amigo — ¡bienvenido!</div>
   <form id="register-form">
     <div class="field">
       <label for="name">Nombre de tu negocio</label>
@@ -75,6 +76,10 @@
   <div class="login-link">¿Ya tienes cuenta? <a href="/login.html">Acceder</a></div>
 </div>
 <script>
+  // Código de referido desde la URL (?ref=CODIGO)
+  const refCode = (new URLSearchParams(location.search).get('ref') || '').trim();
+  if (refCode) document.getElementById('ref-badge').style.display = 'block';
+
   document.getElementById('register-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const name    = document.getElementById('name').value.trim();
@@ -83,7 +88,7 @@
     const btn = document.getElementById('btn');
     btn.disabled = true; btn.textContent = 'Creando cuenta…';
     try {
-      const res = await fetch('/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, country }) });
+      const res = await fetch('/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, country, ref: refCode }) });
       const data = await res.json();
       if (res.ok) {
         showAlert('✉️ ¡Cuenta creada! Revisa tu email y haz clic en el enlace para acceder.', 'ok');

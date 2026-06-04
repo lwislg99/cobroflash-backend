@@ -4,6 +4,7 @@ import type StripeLib from 'stripe';
 import { stripe } from '../../../../integrations/stripe';
 import { config, BASE_URL } from '../../../../core/config/env';
 import { prisma } from '../../../../core/db/prisma';
+import { rewardReferralOnFirstPayment } from '../../../auth/domain/referral.service';
 
 export const rawBody = express.raw({ type: 'application/json' });
 export const router = express.Router();
@@ -42,6 +43,10 @@ router.post('/', async (req, res) => {
             where: { id: merchantId },
             data: { stripeCustomerId: String(s.customer), plan: planId },
           });
+          // Recompensa de referido (mes gratis al referidor) — idempotente
+          await rewardReferralOnFirstPayment(merchantId).catch((e) =>
+            console.error('[stripe] referral reward:', e?.message),
+          );
         }
       }
 

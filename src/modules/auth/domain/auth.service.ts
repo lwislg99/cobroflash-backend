@@ -4,6 +4,7 @@ import { prisma } from '../../../core/db/prisma';
 import { createMailer } from '../../../integrations/mailer';
 import { config } from '../../../core/config/env';
 import { sendWelcomeEmail } from '../../messaging/domain/lifecycle.service';
+import { generateUniqueReferralCode, resolveReferrer } from './referral.service';
 
 const MAGIC_LINK_TTL_MS = 15 * 60 * 1000;
 const SESSION_TTL_MS    = 30 * 24 * 60 * 60 * 1000; // 30 días
@@ -162,12 +163,17 @@ export async function registerMerchant(params: {
   name: string;
   email: string;
   country?: string;
+  ref?: string;
 }): Promise<void> {
   const existing = await prisma.merchant.findUnique({ where: { email: params.email } });
   if (existing) {
     await requestMagicLink(params.email);
     return;
   }
+
+  // Atribución de referido (si llega un código válido y no es autorreferencia)
+  const referredBy = params.ref ? await resolveReferrer(params.ref) : null;
+  const referralCode = await generateUniqueReferralCode(params.name);
 
   const created = await prisma.merchant.create({
     data: {
@@ -177,6 +183,8 @@ export async function registerMerchant(params: {
       status: 'active',
       plan: 'trial',
       planExpiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      referralCode,
+      referredBy: referredBy ?? null,
     },
   });
 
