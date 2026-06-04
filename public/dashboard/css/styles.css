@@ -1217,3 +1217,25 @@ img { max-width: 100%; display: block; }
 @media (max-width: 640px) {
   .home-quick-actions { grid-template-columns: 1fr; }
 }
+
+/* ── Formulario de cotización (FRONT1-4) ─────────────────────── */
+.quote-vat-calc {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--slate-200, #e2e8f0);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--slate-700, #334155);
+  text-align: right;
+}
+.quote-vat-calc strong { color: #16a34a; font-size: 24px; }
+.quote-drag-handle {
+  cursor: grab;
+  color: var(--slate-300, #cbd5e1);
+  font-size: 16px;
+  padding: 0 6px;
+  user-select: none;
+}
+.quote-drag-handle:hover { color: var(--slate-500, #64748b); }
+.quote-drag-handle:active { cursor: grabbing; }
+tr.dragging { opacity: .5; background: #f0fdf4; }

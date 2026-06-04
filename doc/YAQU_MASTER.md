@@ -650,7 +650,8 @@ Revisar todos los empty states del dashboard. Cada uno debe tener:
 - Colores de estado más expresivos en pills
 - Sombras más pronunciadas en tarjetas del dashboard para efecto 3D sutil
 
-### Tarea FRONT1-4 — Formulario de cotización mejorado
+### Tarea FRONT1-4 — Formulario de cotización mejorado  ✅ HECHO
+- Drag & drop para reordenar líneas (handle ⠿), autoguardado de borrador en localStorage con indicador "Guardado automáticamente" + restauración al volver, calculadora de IVA inline destacada (Base + IVA% = Total). Preview en tiempo real ya existía.
 
 **`public/dashboard/js/quotesView.js`:**
 

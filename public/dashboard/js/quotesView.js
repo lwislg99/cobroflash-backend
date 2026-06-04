@@ -353,6 +353,27 @@ blockClient.appendChild(descWrapper);
   table.appendChild(tbody);
   blockLines.appendChild(table);
 
+  // ---------- DRAG & DROP para reordenar líneas (FRONT1-4) ----------
+  let draggedTr = null;
+  tbody.addEventListener("dragover", function (e) {
+    if (!draggedTr) return;
+    e.preventDefault();
+    const rows = Array.from(tbody.querySelectorAll("tr:not(.dragging)"));
+    let after = null;
+    let closest = Number.NEGATIVE_INFINITY;
+    for (const row of rows) {
+      const box = row.getBoundingClientRect();
+      const offset = e.clientY - box.top - box.height / 2;
+      if (offset < 0 && offset > closest) { closest = offset; after = row; }
+    }
+    if (after == null) tbody.appendChild(draggedTr);
+    else tbody.insertBefore(draggedTr, after);
+  });
+  function syncLinesOrder() {
+    const rows = Array.from(tbody.querySelectorAll("tr"));
+    lines.sort((a, b) => rows.indexOf(a.row) - rows.indexOf(b.row));
+  }
+
   // ---------- BLOQUE C: TOTALES ----------
   const blockTotals = document.createElement("div");
   blockTotals.className = "quote-block quote-block-totals";
@@ -396,6 +417,12 @@ blockClient.appendChild(descWrapper);
   actionsRow.appendChild(submitBtn);
   actionsRow.appendChild(resetBtn);
   actionsRow.appendChild(saveTemplateBtn);
+
+  // Indicador de autoguardado de borrador (FRONT1-4)
+  const draftIndicator = document.createElement("span");
+  draftIndicator.style.cssText = "font-size:12px;color:var(--slate-400);align-self:center;margin-left:auto;transition:opacity .3s;opacity:0";
+  draftIndicator.textContent = "✓ Guardado automáticamente";
+  actionsRow.appendChild(draftIndicator);
 
   // ---------- PANEL DERECHO: PREVIEW + ESTADO ----------
   const previewTitle = document.createElement("h3");
@@ -465,6 +492,60 @@ blockClient.appendChild(descWrapper);
   let lines = [];
   let currentMerchant = null;
   let customersList = [];
+  let draftSaveTimer = null;
+
+  // ---------- AUTOGUARDADO DE BORRADOR (FRONT1-4) ----------
+  function draftKey() {
+    const mid = currentMerchant && currentMerchant.id ? String(currentMerchant.id) : "x";
+    return `pf_quote_draft_${mid}`;
+  }
+  function saveDraft() {
+    if (!currentMerchant || !currentMerchant.id) return;
+    const snapshot = {
+      customerId: fieldCustomer.select.value || "",
+      paymentTerms: paymentSelect.value || "",
+      vatDefault: fieldVatDefault.input.value || "21",
+      lines: lines.map((l) => ({
+        concept: l.conceptInput.value || "",
+        qty: l.qtyInput.value || "",
+        price: l.priceInput.value || "",
+        markup: l.markupInput ? l.markupInput.value : "0",
+        vat: l.vatInput.value || "",
+      })),
+    };
+    // No guardar borradores vacíos
+    const hasContent = snapshot.customerId || snapshot.lines.some((l) => l.concept.trim());
+    try {
+      if (hasContent) localStorage.setItem(draftKey(), JSON.stringify(snapshot));
+      else localStorage.removeItem(draftKey());
+    } catch (_e) {}
+  }
+  function scheduleDraftSave() {
+    clearTimeout(draftSaveTimer);
+    draftSaveTimer = setTimeout(() => {
+      saveDraft();
+      draftIndicator.style.opacity = "1";
+      setTimeout(() => { draftIndicator.style.opacity = "0"; }, 1500);
+    }, 700);
+  }
+  function clearDraft() {
+    try { localStorage.removeItem(draftKey()); } catch (_e) {}
+  }
+  function loadDraft() {
+    try {
+      const raw = localStorage.getItem(draftKey());
+      if (!raw) return false;
+      const d = JSON.parse(raw);
+      if (!d || !Array.isArray(d.lines) || !d.lines.length) return false;
+      tbody.innerHTML = "";
+      lines = [];
+      d.lines.forEach((l) => addLine(l));
+      if (d.vatDefault) fieldVatDefault.input.value = d.vatDefault;
+      if (d.paymentTerms) paymentSelect.value = d.paymentTerms;
+      // customerId se aplica tras cargar la lista de clientes (en loadInitialData)
+      return d.customerId || true;
+    } catch (_e) { return false; }
+  }
 
   // Helper formato dinero simple
   function formatMoney(amount, currency) {
@@ -522,6 +603,9 @@ blockClient.appendChild(descWrapper);
     });
 
     const total = base + vatTotal;
+    const effVat = base > 0 ? Math.round((vatTotal / base) * 100) : 0;
+    const cur = (currentMerchant && currentMerchant.defaultCurrency) || 'EUR';
+    const sym = cur === 'MXN' || cur === 'USD' || cur === 'COP' ? '$' : '€';
 
     totalsBox.innerHTML = `
       <div><span>Base imponible:</span><strong>${base.toFixed(2)}</strong></div>
@@ -529,6 +613,7 @@ blockClient.appendChild(descWrapper);
       <div class="quote-total-final"><span>Total presupuesto:</span><strong>${total.toFixed(
         2
       )}</strong></div>
+      <div class="quote-vat-calc">${sym}${base.toFixed(2)} <span style="color:var(--slate-400)">+ IVA ${effVat}%</span> = <strong>${sym}${total.toFixed(2)}</strong></div>
     `;
 
     return { base, vatTotal, total };
@@ -1342,6 +1427,29 @@ markupTd.appendChild(markupInput);
     totalTd.textContent = "0.00";
 
     const actionsTd = document.createElement("td");
+    actionsTd.style.whiteSpace = "nowrap";
+
+    // Handle de arrastre para reordenar (FRONT1-4)
+    const dragHandle = document.createElement("span");
+    dragHandle.className = "quote-drag-handle";
+    dragHandle.textContent = "⠿";
+    dragHandle.title = "Arrastra para reordenar";
+    dragHandle.draggable = true;
+    dragHandle.addEventListener("dragstart", function (e) {
+      draggedTr = tr;
+      tr.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+    });
+    dragHandle.addEventListener("dragend", function () {
+      tr.classList.remove("dragging");
+      draggedTr = null;
+      syncLinesOrder();
+      recalcTotals();
+      renderPreview();
+      scheduleDraftSave();
+    });
+    actionsTd.appendChild(dragHandle);
+
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
     removeBtn.className = "btn-icon";
@@ -1381,6 +1489,7 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     const onChange = function () {
       recalcTotals();
       renderPreview();
+      scheduleDraftSave();
     };
 
     conceptInput.addEventListener("input", function () {
@@ -1492,6 +1601,7 @@ if (Number.isFinite(n) && n >= 0) {
     tbody.innerHTML = "";
     lines = [];
     addLine();
+    clearDraft();
 
     setAlert(null, "");
     setResult(null);
@@ -1666,6 +1776,7 @@ if (Number.isFinite(n) && n >= 0) {
 
       // Si venimos de la vista de Plantillas, auto-cargar
       const pendingTemplate = sessionStorage.getItem('pf_load_template');
+      var templatePending = !!pendingTemplate;
       if (pendingTemplate) {
         sessionStorage.removeItem('pf_load_template');
         try {
@@ -1720,7 +1831,17 @@ if (Number.isFinite(n) && n >= 0) {
         select.appendChild(opt);
       });
 
-      setAlert(null, "");
+      // Restaurar borrador autoguardado (si no venimos de una plantilla)
+      let draftRestored = false;
+      if (!templatePending) {
+        const restored = loadDraft();
+        if (restored) {
+          draftRestored = true;
+          if (typeof restored === "string") fieldCustomer.select.value = restored;
+          setAlert("info", '📝 Borrador restaurado. Sigue donde lo dejaste o pulsa "Limpiar formulario".');
+        }
+      }
+      if (!draftRestored) setAlert(null, "");
       renderPreview();
     } catch (err) {
       setAlert("error", "Error cargando datos: " + err.message);
@@ -1732,13 +1853,19 @@ if (Number.isFinite(n) && n >= 0) {
 
   fieldCustomer.select.addEventListener("change", function () {
     renderPreview();
+    scheduleDraftSave();
   });
   descCheck.addEventListener("change", renderPreview);
+  paymentSelect.addEventListener("change", function () {
+    renderPreview();
+    scheduleDraftSave();
+  });
 
 
   fieldVatDefault.input.addEventListener("input", function () {
     // actualizar IVA de nuevas líneas, pero no tocamos las existentes
     renderPreview();
+    scheduleDraftSave();
   });
 
 
@@ -1883,6 +2010,7 @@ payloadLines.push({
         status: "DRAFT",
         sent: false,
       });
+      clearDraft(); // el presupuesto ya está creado, descartamos el borrador local
     } catch (err) {
       setAlert("error", "Error generando presupuesto: " + err.message);
     } finally {
