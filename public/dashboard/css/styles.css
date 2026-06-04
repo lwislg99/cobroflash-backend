@@ -640,9 +640,9 @@ img { max-width: 100%; display: block; }
 /* ── Modal ──────────────────────────────────────────────────── */
 .modal-backdrop {
   position: fixed; inset: 0;
-  background: rgba(15,23,42,.45);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
+  background: rgba(15,28,23,.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex; align-items: center; justify-content: center;
   z-index: 200;
   padding: 16px;
@@ -701,6 +701,16 @@ img { max-width: 100%; display: block; }
   background: var(--red-50);
   color: var(--red-600);
   border-color: #fecaca;
+}
+.alert.info {
+  background: var(--brand-tint);
+  color: var(--green-700);
+  border-color: var(--green-100);
+}
+.alert.warning {
+  background: #fff7ed;
+  color: #b45309;
+  border-color: #fed7aa;
 }
 
 /* ── Section header ─────────────────────────────────────────── */
