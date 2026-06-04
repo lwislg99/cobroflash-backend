@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import { sendPendingReminders }         from '../../modules/quotes/domain/reminder.service';
 import { sendInvoicePaymentReminders }  from '../../modules/billing/domain/invoiceReminder.service';
 import { sendWeeklyDigests }            from '../../modules/messaging/domain/weeklyDigest.service';
+import { runLifecycleEmails }           from '../../modules/messaging/domain/lifecycle.service';
 
 export function startCronJobs(): void {
   // Cada hora en punto: cotizaciones sin respuesta >24h
@@ -34,5 +35,15 @@ export function startCronJobs(): void {
     }
   });
 
-  console.log('[cron] Jobs registrados: recordatorio cotizaciones (cada hora), recordatorio facturas (diario 10:00), digest semanal (lunes 9h)');
+  // Cada día a las 8:00 AM: emails del ciclo de vida (día 3/7/12/expirado/inactivo)
+  cron.schedule('0 8 * * *', async () => {
+    console.log('[cron] Ejecutando lifecycle emails…');
+    try {
+      await runLifecycleEmails();
+    } catch (err: any) {
+      console.error('[cron] Error en runLifecycleEmails:', err?.message);
+    }
+  });
+
+  console.log('[cron] Jobs registrados: recordatorio cotizaciones (cada hora), recordatorio facturas (diario 10:00), lifecycle emails (diario 8:00), digest semanal (lunes 9h)');
 }

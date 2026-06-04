@@ -42,6 +42,9 @@ model Merchant {
   notifyEmailOnQuoteAccepted   Boolean @default(false) @map("notify_email_on_quote_accepted")
   notifyEmailWeeklyDigest      Boolean @default(false) @map("notify_email_weekly_digest")
 
+  // Lifecycle emails ya enviados, ej: { "welcome": 1, "day3": 1 } — evita duplicados
+  lifecycleEmailsSent          Json?   @map("lifecycle_emails_sent")
+
   charges        Charge[]
   Quote          Quote[]
   Invoice        Invoice[]

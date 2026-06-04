@@ -3,6 +3,7 @@ import axios from 'axios';
 import { prisma } from '../../../core/db/prisma';
 import { createMailer } from '../../../integrations/mailer';
 import { config } from '../../../core/config/env';
+import { sendWelcomeEmail } from '../../messaging/domain/lifecycle.service';
 
 const MAGIC_LINK_TTL_MS = 15 * 60 * 1000;
 const SESSION_TTL_MS    = 30 * 24 * 60 * 60 * 1000; // 30 días
@@ -168,7 +169,7 @@ export async function registerMerchant(params: {
     return;
   }
 
-  await prisma.merchant.create({
+  const created = await prisma.merchant.create({
     data: {
       name: params.name,
       email: params.email,
@@ -178,6 +179,9 @@ export async function registerMerchant(params: {
       planExpiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
     },
   });
+
+  // Email de bienvenida (no bloquea el registro si falla)
+  sendWelcomeEmail(created.id).catch((e) => console.error('[register] welcome email:', e?.message));
 
   await requestMagicLink(params.email);
 }
