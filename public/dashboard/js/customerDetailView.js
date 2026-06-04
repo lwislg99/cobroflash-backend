@@ -147,8 +147,8 @@ async function renderCustomer360View(container, customerId) {
   wrap.appendChild(tabsWrap);
   wrap.appendChild(tabContent);
 
-  const STATUS_LABELS = { draft:'Borrador', sent:'Enviado', accepted:'Aceptado', rejected:'Rechazado', pending:'Pendiente', paid:'Pagada', expired:'Caducada' };
-  const STATUS_CLASS  = { accepted:'status-pill-accepted', paid:'status-pill-accepted', sent:'status-pill-pending', pending:'status-pill-pending', rejected:'status-pill-rejected', expired:'status-pill-draft', draft:'status-pill-draft' };
+  const STATUS_LABELS = { draft:'Borrador', sent:'Enviado', accepted:'Aceptado', rejected:'Rechazado', pending:'Pendiente', paid:'Pagada', expired:'Caducada', pending_approval:'Pend. aprob.' };
+  const STATUS_CLASS  = { accepted:'status-pill-accepted', paid:'status-pill-accepted', sent:'status-pill-pending', pending:'status-pill-pending', rejected:'status-pill-rejected', expired:'status-pill-draft', draft:'status-pill-draft', pending_approval:'status-pill-approval' };
 
   function renderTab(key) {
     tabContent.innerHTML = '';
@@ -174,8 +174,8 @@ async function renderCustomer360View(container, customerId) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td style="font-weight:600">#${q.id}</td>
-          <td style="color:var(--slate-500)">${new Date(q.createdAt).toLocaleDateString('es-ES')}</td>
-          <td style="font-weight:600">${fmt(Number(q.total))} ${escC(q.currency)}</td>
+          <td style="color:var(--muted)">${new Date(q.createdAt).toLocaleDateString('es-ES')}</td>
+          <td class="amount">${fmt(Number(q.total))} ${escC(q.currency)}</td>
           <td><span class="status-pill ${STATUS_CLASS[q.status]||'status-pill-draft'}">${STATUS_LABELS[q.status]||q.status}</span></td>
           <td><button class="btn-ghost btn-sm">Ver →</button></td>
         `;
@@ -201,8 +201,8 @@ async function renderCustomer360View(container, customerId) {
           : '';
         tr.innerHTML = `
           <td style="font-weight:600">${escC(inv.number)}</td>
-          <td style="color:var(--slate-500)">${new Date(inv.createdAt).toLocaleDateString('es-ES')}</td>
-          <td style="font-weight:600">${fmt(Number(inv.total))} ${escC(inv.currency)}</td>
+          <td style="color:var(--muted)">${new Date(inv.createdAt).toLocaleDateString('es-ES')}</td>
+          <td class="amount">${fmt(Number(inv.total))} ${escC(inv.currency)}</td>
           <td><span class="status-pill ${STATUS_CLASS[inv.status]||'status-pill-draft'}">${STATUS_LABELS[inv.status]||inv.status}</span></td>
           <td>
             <div style="display:flex;gap:6px;align-items:center">

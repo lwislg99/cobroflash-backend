@@ -35,27 +35,43 @@ function renderCustomersView(container) {
 
   let editingCustomer = null;
 
-  // Card de búsqueda
+  // Card principal
   const outerCard = createElement("div", "data-card");
   container.appendChild(outerCard);
 
-  // Header con search y botón
+  // Cabecera: título + conteo + acciones
   const header = createElement("div", "data-card-header");
-  const searchBox = createElement("div", "customers-search");
-  const searchInput = document.createElement("input");
-  searchInput.type = "text";
-  searchInput.placeholder = "Buscar por nombre, teléfono o email…";
-  const searchBtn = createElement("button", "btn btn-secondary btn-sm", "Buscar");
-  searchBox.appendChild(searchInput);
-  searchBox.appendChild(searchBtn);
-  const newBtn = createElement("button", "btn btn-primary btn-sm", "+ Nuevo cliente");
+  const headLeft = createElement("div");
+  const title = createElement("h2", null, "Clientes");
+  title.style.cssText = "margin:0;font-size:18px";
+  const subtitle = createElement("p", null, "Cargando…");
+  subtitle.style.cssText = "margin:2px 0 0;font-size:13px;color:var(--muted)";
+  headLeft.appendChild(title);
+  headLeft.appendChild(subtitle);
+  header.appendChild(headLeft);
+
+  const headActions = createElement("div");
+  headActions.style.cssText = "display:flex;align-items:center;gap:8px";
   const importBtn = createElement("button", "btn-secondary btn-sm", "⬆ Importar CSV");
   importBtn.title = "Importar clientes desde un fichero CSV o Excel";
   importBtn.addEventListener("click", openImportCsvModal);
-  header.appendChild(searchBox);
-  header.appendChild(importBtn);
-  header.appendChild(newBtn);
+  const newBtn = createElement("button", "btn-primary btn-sm", "+ Nuevo cliente");
+  headActions.appendChild(importBtn);
+  headActions.appendChild(newBtn);
+  header.appendChild(headActions);
   outerCard.appendChild(header);
+
+  // Toolbar: búsqueda en vivo
+  const toolbar = createElement("div", "data-card-toolbar");
+  const searchInput = document.createElement("input");
+  searchInput.type = "text";
+  searchInput.className = "input";
+  searchInput.placeholder = "Buscar por nombre, teléfono o email…";
+  searchInput.style.cssText = "min-width:160px;flex:1";
+  toolbar.appendChild(searchInput);
+  outerCard.appendChild(toolbar);
+
+  function setCount(text) { subtitle.textContent = text; }
 
   // Tabla edge-to-edge dentro del data-card
   const tableScroll = createElement("div", "table-scroll");
@@ -64,9 +80,18 @@ function renderCustomersView(container) {
   tableScroll.appendChild(table);
   const thead = document.createElement("thead");
   const trHead = document.createElement("tr");
-  ["ID", "Nombre", "Teléfono", "Email", "Notas", "Alta", ""].forEach((h) => {
+  [
+    { t: "ID" },
+    { t: "Nombre" },
+    { t: "Teléfono" },
+    { t: "Email", cls: "col-hide-mobile" },
+    { t: "Notas", cls: "col-hide-mobile" },
+    { t: "Alta", cls: "col-hide-mobile" },
+    { t: "" },
+  ].forEach(({ t, cls }) => {
     const th = document.createElement("th");
-    th.textContent = h;
+    th.textContent = t;
+    if (cls) th.className = cls;
     trHead.appendChild(th);
   });
   thead.appendChild(trHead);
@@ -215,8 +240,17 @@ function renderCustomersView(container) {
 
   // -------- Carga de clientes --------
 
+  function openCustomer360(c) {
+    if (window.renderAppView) {
+      window.appState = window.appState || {};
+      window.appState.customerId360 = c.id;
+      window.renderAppView('customer-360');
+    }
+  }
+
   async function loadCustomers(searchText = "") {
     setAlert(null, "");
+    setCount("Cargando…");
     try {
       const data = await getCustomers(searchText);
       tbody.innerHTML = "";
@@ -226,48 +260,55 @@ function renderCustomersView(container) {
         const td = document.createElement("td");
         td.colSpan = 7;
         td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div>'
-          + '<div class="empty-state-title">Añade a tu primer cliente</div>'
-          + '<div class="empty-state-desc">Guárdalo una vez y podrás enviarle cotizaciones profesionales por WhatsApp en segundos.</div>'
-          + '<button id="customers-empty-cta" class="btn btn-primary btn-sm" style="margin-top:14px">+ Añadir cliente</button></div>';
+          + '<div class="empty-state-title">' + (searchText ? 'Sin resultados para tu búsqueda' : 'Añade a tu primer cliente') + '</div>'
+          + '<div class="empty-state-desc">' + (searchText ? 'Prueba con otro nombre, teléfono o email.' : 'Guárdalo una vez y podrás enviarle cotizaciones profesionales por WhatsApp en segundos.') + '</div>'
+          + (searchText ? '' : '<button id="customers-empty-cta" class="btn-primary btn-sm" style="margin-top:14px">+ Añadir cliente</button>') + '</div>';
         tr.appendChild(td);
         tbody.appendChild(tr);
         const cta = td.querySelector('#customers-empty-cta');
         if (cta) cta.addEventListener('click', () => newBtn.click());
+        setCount(searchText ? "0 resultados" : "0 clientes");
         return;
       }
 
+      setCount(data.length + " cliente" + (data.length !== 1 ? "s" : ""));
+
       data.forEach((c) => {
         const tr = document.createElement("tr");
+        tr.style.cursor = "pointer";
+        tr.addEventListener("click", () => openCustomer360(c));
+
         addCell(tr, c.id);
         addCell(tr, c.name || "");
         addCell(tr, c.phone || "");
-        addCell(tr, c.email || "");
-        addCell(tr, c.notes || "");
-        addCell(
-          tr,
-          c.createdAt ? new Date(c.createdAt).toLocaleDateString() : ""
-        );
+        addCell(tr, c.email || "", "col-hide-mobile");
+        const notesCell = addCell(tr, c.notes || "", "col-hide-mobile");
+        notesCell.style.cssText += "max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)";
+        if (c.notes) notesCell.title = c.notes;
+        const altaCell = addCell(tr, c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "", "col-hide-mobile");
+        altaCell.style.color = "var(--muted)";
 
         const tdActions = document.createElement("td");
         const actionsDiv = document.createElement("div");
         actionsDiv.style.cssText = "display:flex;gap:6px;align-items:center";
 
-        const editBtn = createElement("button", "btn btn-secondary btn-sm", "Editar");
+        const editBtn = createElement("button", "btn-secondary btn-sm", "Editar");
         editBtn.type = "button";
-        editBtn.addEventListener("click", () => openModal("edit", c));
+        editBtn.addEventListener("click", (e) => { e.stopPropagation(); openModal("edit", c); });
         actionsDiv.appendChild(editBtn);
 
-        const portalBtn = createElement("button", "btn btn-secondary btn-sm", "Portal");
+        const portalBtn = createElement("button", "btn-secondary btn-sm", "Portal");
         portalBtn.type = "button";
         portalBtn.title = "Copiar enlace del portal del cliente";
-        portalBtn.addEventListener("click", async () => {
+        portalBtn.addEventListener("click", async (e) => {
+          e.stopPropagation();
           try {
-            const data = await apiRequest(`/admin/customers/${c.id}/portal-url`);
-            await navigator.clipboard.writeText(data.portalUrl);
+            const res = await apiRequest(`/admin/customers/${c.id}/portal-url`);
+            await navigator.clipboard.writeText(res.portalUrl);
             portalBtn.textContent = "¡Copiado!";
             setTimeout(() => { portalBtn.textContent = "Portal"; }, 2000);
           } catch (err) {
-            alert("Error al obtener el portal: " + err.message);
+            setAlert("error", "Error al obtener el portal: " + err.message);
           }
         });
         actionsDiv.appendChild(portalBtn);
@@ -275,13 +316,7 @@ function renderCustomersView(container) {
         const detailBtn = createElement("button", "btn-ghost btn-sm", "📊 Historial");
         detailBtn.type = "button";
         detailBtn.title = "Ver historial completo del cliente";
-        detailBtn.addEventListener("click", () => {
-          if (window.renderAppView) {
-            window.appState = window.appState || {};
-            window.appState.customerId360 = c.id;
-            window.renderAppView('customer-360');
-          }
-        });
+        detailBtn.addEventListener("click", (e) => { e.stopPropagation(); openCustomer360(c); });
         actionsDiv.appendChild(detailBtn);
 
         tdActions.appendChild(actionsDiv);
@@ -290,29 +325,27 @@ function renderCustomersView(container) {
         tbody.appendChild(tr);
       });
     } catch (err) {
+      setCount("");
       setAlert("error", "Error cargando clientes: " + err.message);
     }
   }
 
-  function addCell(tr, value) {
+  function addCell(tr, value, cls) {
     const td = document.createElement("td");
     td.textContent = value ?? "";
+    if (cls) td.className = cls;
     tr.appendChild(td);
+    return td;
   }
 
   // -------- Eventos --------
 
   newBtn.addEventListener("click", () => openModal("create", null));
 
-  searchBtn.addEventListener("click", () => {
-    loadCustomers(searchInput.value.trim());
-  });
-
-  searchInput.addEventListener("keydown", (ev) => {
-    if (ev.key === "Enter") {
-      ev.preventDefault();
-      loadCustomers(searchInput.value.trim());
-    }
+  let searchTimer = null;
+  searchInput.addEventListener("input", () => {
+    if (searchTimer) clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => loadCustomers(searchInput.value.trim()), 300);
   });
 
   // Carga inicial
