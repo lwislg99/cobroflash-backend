@@ -22,7 +22,7 @@ async function fetchInvoices(options = {}) {
     wrapper.className = 'data-card';
     container.appendChild(wrapper);
 
-    // Header con título y filtros
+    // Cabecera: título + conteo + acciones
     const header = document.createElement('div');
     header.className = 'data-card-header';
     wrapper.appendChild(header);
@@ -30,61 +30,64 @@ async function fetchInvoices(options = {}) {
     const left = document.createElement('div');
     const title = document.createElement('h2');
     title.textContent = 'Facturas';
-    title.style.cssText = 'margin:0 0 2px;font-size:16px;font-weight:700;color:var(--slate-900)';
+    title.style.cssText = 'margin:0;font-size:18px';
     left.appendChild(title);
     const subtitle = document.createElement('p');
-    subtitle.textContent = 'Listado de facturas emitidas.';
-    subtitle.style.cssText = 'margin:0;font-size:12.5px;color:var(--slate-400)';
+    subtitle.textContent = 'Cargando…';
+    subtitle.style.cssText = 'margin:2px 0 0;font-size:13px;color:var(--muted)';
     left.appendChild(subtitle);
     header.appendChild(left);
 
-    const right = document.createElement('div');
-    right.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;align-items:center';
+    const exportBtn = document.createElement('a');
+    exportBtn.className = 'btn-secondary btn-sm';
+    exportBtn.innerHTML = '⬇ CSV';
+    exportBtn.title = 'Exportar facturas filtradas a CSV';
+    exportBtn.href = '/admin/exports/invoices.csv';
+    header.appendChild(exportBtn);
 
-    const selectStatus = document.createElement('select');
-    selectStatus.className = 'input';
-    selectStatus.innerHTML = `
-      <option value="all">Todas</option>
-      <option value="pending">Pendientes</option>
-      <option value="paid">Pagadas</option>
-      <option value="expired">Vencidas</option>
-    `;
-    right.appendChild(selectStatus);
+    // Toolbar: filtros
+    const toolbar = document.createElement('div');
+    toolbar.className = 'data-card-toolbar';
+    wrapper.appendChild(toolbar);
 
     const inputSearch = document.createElement('input');
     inputSearch.className = 'input';
     inputSearch.placeholder = 'Buscar por nº, cliente…';
-    inputSearch.style.minWidth = '140px';
-    right.appendChild(inputSearch);
+    inputSearch.style.cssText = 'min-width:160px;flex:1';
+    toolbar.appendChild(inputSearch);
+
+    const selectStatus = document.createElement('select');
+    selectStatus.className = 'input';
+    selectStatus.style.cssText = 'width:auto';
+    selectStatus.innerHTML = `
+      <option value="all">Todos los estados</option>
+      <option value="pending">Pendientes</option>
+      <option value="paid">Pagadas</option>
+      <option value="expired">Vencidas</option>
+    `;
+    toolbar.appendChild(selectStatus);
 
     const inputFrom = document.createElement('input');
     inputFrom.type = 'date';
     inputFrom.className = 'input';
-    inputFrom.style.cssText = 'min-width:0;width:130px';
+    inputFrom.style.cssText = 'width:140px';
     inputFrom.title = 'Desde';
-    right.appendChild(inputFrom);
+    toolbar.appendChild(inputFrom);
 
     const inputTo = document.createElement('input');
     inputTo.type = 'date';
     inputTo.className = 'input';
-    inputTo.style.cssText = 'min-width:0;width:130px';
+    inputTo.style.cssText = 'width:140px';
     inputTo.title = 'Hasta';
-    right.appendChild(inputTo);
+    toolbar.appendChild(inputTo);
 
-    const exportBtn = document.createElement('a');
-    exportBtn.className = 'btn-secondary btn-sm';
-    exportBtn.style.textDecoration = 'none';
-    exportBtn.innerHTML = '⬇ CSV';
-    exportBtn.title = 'Exportar facturas filtradas a CSV';
-    exportBtn.href = '/admin/exports/invoices.csv';
-    right.appendChild(exportBtn);
-
-    header.appendChild(right);
-
+    // Banner solo para errores/éxito de acciones (el conteo vive en la cabecera)
     const statusBox = document.createElement('div');
     statusBox.className = 'alert';
-    statusBox.style.cssText = 'margin:8px 16px;display:none';
+    statusBox.style.cssText = 'margin:12px 16px 0;display:none';
     wrapper.appendChild(statusBox);
+
+    function setCount(text) { subtitle.textContent = text; }
 
     const tableScroll = document.createElement('div');
     tableScroll.className = 'table-scroll';
@@ -100,9 +103,9 @@ async function fetchInvoices(options = {}) {
         <th style="width:36px"><input type="checkbox" id="inv-check-all" title="Seleccionar todas"/></th>
         <th>Nº factura</th>
         <th>Cliente</th>
-        <th>Total</th>
+        <th style="text-align:right">Total</th>
         <th>Estado</th>
-        <th>Fecha</th>
+        <th class="col-hide-mobile">Fecha</th>
       </tr>
     `;
     table.appendChild(thead);
@@ -114,14 +117,14 @@ async function fetchInvoices(options = {}) {
     const bulkBar = document.createElement('div');
     bulkBar.style.cssText = [
       'display:none;position:sticky;bottom:16px;z-index:50;',
-      'background:var(--slate-900);color:#fff;border-radius:12px;',
+      'background:var(--slate-900);color:#fff;border-radius:var(--radius-md);',
       'padding:10px 16px;display:none;align-items:center;gap:12px;',
-      'box-shadow:0 8px 24px rgba(15,23,42,.35);margin:8px 0;',
+      'box-shadow:var(--shadow-lg);margin:8px 16px;',
     ].join('');
     bulkBar.innerHTML = `
       <span id="bulk-count" style="font-size:13.5px;font-weight:600"></span>
       <button id="bulk-paid-btn" class="btn-primary btn-sm">✓ Marcar como pagadas</button>
-      <button id="bulk-cancel-btn" class="btn-ghost btn-sm" style="color:#94a3b8">Cancelar</button>
+      <button id="bulk-cancel-btn" class="btn-ghost btn-sm" style="color:rgba(255,255,255,.7)">Cancelar</button>
     `;
     wrapper.appendChild(bulkBar);
 
@@ -130,6 +133,11 @@ async function fetchInvoices(options = {}) {
     let currentDateFrom = '';
     let currentDateTo   = '';
     let selectedIds = new Set();
+
+    function fmtInvMoney(amount, currency) {
+      const cur = currency || (window.appLocale && window.appLocale.currency) || 'EUR';
+      return Number(amount || 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + cur;
+    }
 
     function updateBulkBar() {
       const n = selectedIds.size;
@@ -164,10 +172,10 @@ async function fetchInvoices(options = {}) {
           body: JSON.stringify({ ids }),
         });
         selectedIds.clear();
+        await reload();
         statusBox.textContent = '✓ ' + data.updated + ' factura' + (data.updated !== 1 ? 's' : '') + ' marcada' + (data.updated !== 1 ? 's' : '') + ' como pagadas.';
         statusBox.className = 'alert success';
         statusBox.style.display = 'block';
-        await reload();
       } catch {
         btn.disabled = false;
         btn.textContent = '✓ Marcar como pagadas';
@@ -190,9 +198,8 @@ async function fetchInvoices(options = {}) {
     });
 
     async function reload() {
-      statusBox.textContent = 'Cargando facturas…';
-      statusBox.className = 'alert';
-      statusBox.style.display = 'block';
+      setCount('Cargando…');
+      statusBox.style.display = 'none';
 
       try {
         const invoices = await fetchInvoices({ status: currentStatus, search: currentSearch, dateFrom: currentDateFrom, dateTo: currentDateTo });
@@ -204,13 +211,17 @@ async function fetchInvoices(options = {}) {
           const tr = document.createElement('tr');
           const td = document.createElement('td');
           td.colSpan = 6;
-          td.style.cssText = 'text-align:center;color:var(--slate-400);padding:24px';
-          td.textContent = 'No hay facturas para estos filtros.';
+          td.style.cssText = 'text-align:center;color:var(--muted);padding:24px';
+          td.textContent = currentSearch || currentStatus !== 'all' || currentDateFrom || currentDateTo
+            ? 'No hay facturas para estos filtros.'
+            : 'Aún no has emitido facturas. Se generan al cobrar un presupuesto aceptado.';
           tr.appendChild(td);
           tbody.appendChild(tr);
-          statusBox.style.display = 'none';
+          setCount('0 facturas');
           return;
         }
+
+        setCount(invoices.length + ' factura' + (invoices.length !== 1 ? 's' : ''));
 
         invoices.forEach((inv) => {
           const tr = document.createElement('tr');
@@ -242,8 +253,9 @@ async function fetchInvoices(options = {}) {
           tr.appendChild(tdCustomer);
 
           const tdTotal = document.createElement('td');
-          tdTotal.style.fontWeight = '600';
-          tdTotal.textContent = Number(inv.total || 0).toFixed(2) + ' ' + inv.currency;
+          tdTotal.className = 'amount';
+          tdTotal.style.textAlign = 'right';
+          tdTotal.textContent = fmtInvMoney(inv.total, inv.currency);
           tr.appendChild(tdTotal);
 
           const tdStatus = document.createElement('td');
@@ -255,7 +267,8 @@ async function fetchInvoices(options = {}) {
           tr.appendChild(tdStatus);
 
           const tdDate = document.createElement('td');
-          tdDate.style.color = 'var(--slate-500)';
+          tdDate.className = 'col-hide-mobile';
+          tdDate.style.color = 'var(--muted)';
           tdDate.textContent = inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('es-ES') : '—';
           tr.appendChild(tdDate);
 
@@ -295,10 +308,11 @@ async function fetchInvoices(options = {}) {
     inputFrom.addEventListener('change', () => { currentDateFrom = inputFrom.value; updateExportHref(); reload(); });
     inputTo.addEventListener('change',   () => { currentDateTo   = inputTo.value;   updateExportHref(); reload(); });
   
+    let searchTimer = null;
     inputSearch.addEventListener('input', () => {
       currentSearch = inputSearch.value.trim();
-      // un pequeño debounce no vendría mal, pero para MVP vale así
-      reload();
+      if (searchTimer) clearTimeout(searchTimer);
+      searchTimer = setTimeout(reload, 300);
     });
   
     // Primera carga
