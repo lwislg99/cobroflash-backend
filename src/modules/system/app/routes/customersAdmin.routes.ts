@@ -3,6 +3,7 @@ import { listCustomers, getCustomer, createCustomer, updateCustomer, deleteCusto
 import { config } from '../../../../core/config/env';
 import { customerCreateSchema, customerUpdateSchema } from '../../../../core/validation/schemas';
 import { prisma } from '../../../../core/db/prisma';
+import { listCustomerEvents } from '../../customerEvents.service';
 
 const router = Router();
 
@@ -135,7 +136,7 @@ router.get('/:id/detail', async (req, res) => {
     });
     if (!customer) return res.status(404).json({ error: 'not_found' });
 
-    const [quotes, invoices, expenses] = await Promise.all([
+    const [quotes, invoices, expenses, events] = await Promise.all([
       prisma.quote.findMany({
         where: { customerId: id, merchantId: req.merchantId },
         orderBy: { createdAt: 'desc' },
@@ -152,6 +153,7 @@ router.get('/:id/detail', async (req, res) => {
         where: { merchantId: req.merchantId, quote: { customerId: id } },
         _sum: { amount: true },
       }),
+      listCustomerEvents(req.merchantId, id, 50),
     ]);
 
     const totalBilled = invoices.reduce((a, i) => a + Number(i.total), 0);
@@ -164,6 +166,7 @@ router.get('/:id/detail', async (req, res) => {
       customer: { ...customer, portalUrl },
       quotes,
       invoices,
+      events,
       stats: {
         totalQuotes:   quotes.length,
         acceptedQuotes: quotes.filter(q => q.status === 'accepted').length,

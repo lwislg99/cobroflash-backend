@@ -5,6 +5,7 @@ import { esc } from '../../../../core/utils/utils';
 import { BASE_URL } from '../../../../core/config/env';
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { normalizePhone } from '../../../../core/utils/utils';
+import { recordCustomerEvent } from '../../customerEvents.service';
 
 const router = Router();
 
@@ -431,6 +432,15 @@ router.post('/:token/quote-request', async (req, res) => {
         description,
         status:      'pending',
       },
+    });
+
+    // ENT-3: historial
+    recordCustomerEvent({
+      merchantId: customer.merchantId,
+      customerId: customer.id,
+      type: 'quote_requested',
+      title: 'El cliente solicitó un presupuesto',
+      detail: description.length > 140 ? description.slice(0, 140) + '…' : description,
     });
 
     // Notificar al profesional por WhatsApp (fire-and-forget)

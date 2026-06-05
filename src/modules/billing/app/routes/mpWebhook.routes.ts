@@ -8,6 +8,7 @@ import { sendInvoiceEmail } from '../../../../lib/email';
 import { normalizePhone } from '../../../../core/utils/utils';
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { sendPaymentConfirmation } from '../../../../integrations/whatsappNotifications';
+import { recordCustomerEvent } from '../../../system/customerEvents.service';
 
 const router = Router();
 
@@ -139,6 +140,15 @@ router.post('/', async (req, res) => {
           invoiceNumber: invConf?.number || `#${updated.id}`,
           businessName: merchant?.name,
         }).catch(() => {});
+
+        // ENT-3: historial
+        recordCustomerEvent({
+          merchantId: updated.merchantId,
+          customerId: updated.customerId,
+          type: 'payment_received',
+          title: 'Pago recibido (Mercado Pago)',
+          detail: `${Number(updated.amount).toFixed(2)} ${updated.currency}${invConf?.number ? ` · Factura ${invConf.number}` : ''}`,
+        });
       }
 
       // Notificaciones WhatsApp al merchant y reseña al cliente

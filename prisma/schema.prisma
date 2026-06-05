@@ -67,6 +67,7 @@ model Merchant {
   TeamMember     TeamMember[]
   QuoteTemplate  QuoteTemplate[]
   QuoteRequest   QuoteRequest[]
+  CustomerEvent  CustomerEvent[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt      @map("updated_at")
@@ -110,6 +111,7 @@ model Customer {
   Quote         Quote[]
   Invoice       Invoice[]
   QuoteRequest  QuoteRequest[]
+  events        CustomerEvent[]
 
   @@index([merchantId])
   @@map("customers")
@@ -374,4 +376,25 @@ model TeamMember {
 
   @@index([merchantId])
   @@map("team_members")
+}
+
+// ENT-3: historial de comunicaciones/actividad por cliente (timeline en Customer 360).
+model CustomerEvent {
+  id         Int      @id @default(autoincrement())
+  merchantId Int      @map("merchant_id")
+  customerId Int      @map("customer_id")
+
+  type   String  // quote_sent | quote_accepted | quote_rejected | invoice_issued | payment_received | reminder_sent | quote_requested | review_requested
+  title  String
+  detail String?
+  meta   Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  merchant Merchant @relation(fields: [merchantId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([customerId, createdAt])
+  @@index([merchantId])
+  @@map("customer_events")
 }

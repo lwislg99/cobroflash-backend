@@ -31,6 +31,7 @@ async function getCreatorTeamMemberId(req: any): Promise<number | null> {
 
 import { generateQuotePdf } from '../../../../lib/pdf';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
+import { recordCustomerEvent } from '../../../system/customerEvents.service';
 
 
 const router = Router();
@@ -401,6 +402,15 @@ router.post('/:id/decision', async (req, res) => {
         },
       });
 
+      // ENT-3: historial
+      recordCustomerEvent({
+        merchantId: quote.merchantId,
+        customerId: quote.customerId,
+        type: 'quote_accepted',
+        title: `Presupuesto #${quoteId} aceptado por el cliente`,
+        detail: signatureData ? 'Firmado digitalmente' : null,
+      });
+
       // Regenerar PDF con firma si se adjuntó
       if (signatureData) {
         try {
@@ -502,6 +512,15 @@ router.post('/:id/decision', async (req, res) => {
           rejectionReason: reason || comment || null,
           decisionComment: comment ?? null,
         },
+      });
+
+      // ENT-3: historial
+      recordCustomerEvent({
+        merchantId: quote.merchantId,
+        customerId: quote.customerId,
+        type: 'quote_rejected',
+        title: `Presupuesto #${quoteId} rechazado por el cliente`,
+        detail: reason || comment || null,
       });
     }
 

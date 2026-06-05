@@ -9,6 +9,7 @@ import { prisma } from '../../../core/db/prisma';
 import { BASE_URL } from '../../../core/config/env';
 import { normalizePhone } from '../../../core/utils/utils';
 import { sendWhatsAppTemplate } from '../../../integrations/whatsapp';
+import { recordCustomerEvent } from '../../system/customerEvents.service';
 
 export type SendInvoiceWAResult = {
   ok: boolean;
@@ -89,5 +90,15 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
   });
 
   if (!result.ok) return { ok: false, reason: 'whatsapp_send_failed', chargeId: chargeId ?? undefined, to };
+
+  // ENT-3: historial
+  recordCustomerEvent({
+    merchantId: invoice.merchantId,
+    customerId: invoice.customerId,
+    type: 'invoice_issued',
+    title: `Factura ${invoice.number} enviada por WhatsApp`,
+    detail: `${Number(invoice.total).toFixed(2)} ${invoice.currency}`,
+  });
+
   return { ok: true, chargeId: chargeId ?? undefined, to };
 }

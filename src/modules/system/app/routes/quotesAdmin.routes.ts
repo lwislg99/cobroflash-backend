@@ -11,6 +11,7 @@ import {
 import { prisma } from '../../../../core/db/prisma';
 import { getNextBillingStage } from '../../../quotes/domain/billingPlan';
 import { sendWhatsAppTemplate } from '../../../../integrations/whatsapp';
+import { recordCustomerEvent } from '../../customerEvents.service';
 import { normalizePhone } from '../../../../core/utils/utils';
 import { BASE_URL } from '../../../../core/config/env';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
@@ -286,6 +287,15 @@ router.post('/:id/send-whatsapp', async (req, res) => {
         data: { status: 'sent' },
       });
     }
+
+    // ENT-3: historial
+    recordCustomerEvent({
+      merchantId: quote.merchantId,
+      customerId: quote.customerId,
+      type: 'quote_sent',
+      title: `Presupuesto #${quote.id} enviado por WhatsApp`,
+      detail: `${Number(quote.total).toFixed(2)} ${quote.currency}`,
+    });
 
     return res.json({
       ok: true,

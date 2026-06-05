@@ -47,7 +47,7 @@ async function renderCustomer360View(container, customerId) {
   }
   alertEl.textContent = '';
 
-  const { customer, quotes, invoices, stats } = data;
+  const { customer, quotes, invoices, stats, events } = data;
   const fmt = (n) => Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const currency = invoices[0]?.currency || quotes[0]?.currency || 'EUR';
   const L = window.appLocale || {};
@@ -116,6 +116,43 @@ async function renderCustomer360View(container, customerId) {
     kpiGrid.appendChild(k);
   });
   wrap.appendChild(kpiGrid);
+
+  // ── Actividad / historial de comunicaciones (ENT-3) ───────────────────
+  if (Array.isArray(events) && events.length) {
+    const actCard = document.createElement('div');
+    actCard.className = 'customers-card';
+    actCard.innerHTML = '<h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:var(--slate-600);text-transform:uppercase;letter-spacing:.04em">Actividad reciente</h3>';
+
+    const EV_ICON = {
+      quote_sent: '📤', quote_accepted: '✅', quote_rejected: '✖',
+      invoice_issued: '🧾', payment_received: '💰', quote_requested: '✏️',
+      reminder_sent: '🔔', review_requested: '⭐',
+    };
+    const EV_COLOR = {
+      quote_accepted: 'var(--green-600)', payment_received: 'var(--green-600)',
+      quote_rejected: 'var(--red-600)',
+    };
+
+    const list = document.createElement('div');
+    list.style.cssText = 'display:flex;flex-direction:column;gap:0';
+    events.forEach((ev, i) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:12px;align-items:flex-start;padding:10px 0' +
+        (i < events.length - 1 ? ';border-bottom:1px solid var(--slate-100)' : '');
+      const when = new Date(ev.createdAt).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+      row.innerHTML = `
+        <div style="flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--slate-50);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px">${EV_ICON[ev.type] || '•'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13.5px;font-weight:600;color:${EV_COLOR[ev.type] || 'var(--ink)'}">${escC(ev.title)}</div>
+          ${ev.detail ? `<div style="font-size:12.5px;color:var(--muted);margin-top:1px">${escC(ev.detail)}</div>` : ''}
+        </div>
+        <div style="flex-shrink:0;font-size:11.5px;color:var(--muted);white-space:nowrap">${escC(when)}</div>
+      `;
+      list.appendChild(row);
+    });
+    actCard.appendChild(list);
+    wrap.appendChild(actCard);
+  }
 
   // ── Tabs: Presupuestos / Facturas ─────────────────────────────────────
   const tabsWrap = document.createElement('div');

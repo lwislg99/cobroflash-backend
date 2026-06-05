@@ -9,6 +9,7 @@ import { normalizePhone } from '../../../../core/utils/utils';
 import { config } from '../../../../core/config/env';
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { sendPaymentConfirmation } from '../../../../integrations/whatsappNotifications';
+import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { sendMerchantPaymentEmail } from '../../../messaging/domain/merchantNotifications';
 
 
@@ -165,6 +166,15 @@ router.post('/', async (req, res) => {
           invoiceNumber: invConf?.number || `#${updated.id}`,
           businessName: merchant?.name,
         }).catch(() => {});
+
+        // ENT-3: historial
+        recordCustomerEvent({
+          merchantId: updated.merchantId,
+          customerId: updated.customerId,
+          type: 'payment_received',
+          title: 'Pago recibido',
+          detail: `${amt} ${cur}${invConf?.number ? ` · Factura ${invConf.number}` : ''}`,
+        });
       }
 
       // Solicitud de reseña Google al cliente (fire-and-forget)
