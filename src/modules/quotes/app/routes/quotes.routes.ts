@@ -29,12 +29,8 @@ async function getCreatorTeamMemberId(req: any): Promise<number | null> {
   }
 }
 
-import fetch from 'node-fetch';
-
 import { generateQuotePdf } from '../../../../lib/pdf';
-
-const BASE_API_URL =
-  process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
+import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 
 
 const router = Router();
@@ -484,21 +480,12 @@ router.post('/:id/decision', async (req, res) => {
         
 
 
-        // 3) Si las condiciones de pago son FULL_UPFRONT,
-        // disparamos el envío de la factura por WhatsApp (n8n)
+        // 3) Si las condiciones de pago son FULL_UPFRONT, enviamos la factura por
+        // WhatsApp (payment_request_es). Llamada DIRECTA al servicio de dominio:
+        // antes se hacía fetch a /admin/... que fallaba por falta de sesión.
         if (paymentTerms === 'FULL_UPFRONT' && createdInvoice) {
-          const url = `${BASE_API_URL}/admin/invoices/${encodeURIComponent(
-            createdInvoice.id
-          )}/resend-whatsapp`;
-
-          fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-          }).catch((err) => {
-            console.error(
-              '[POST /quote/:id/decision] error al llamar a resend-whatsapp:',
-              err
-            );
+          sendInvoicePaymentRequest(createdInvoice.id).catch((err) => {
+            console.error('[POST /quote/:id/decision] error enviando payment_request:', err);
           });
         }
       }

@@ -8,14 +8,13 @@ import {
   markInvoicePendingAdmin,
 } from '../../invoiceAdmin';
 
-import fetch from 'node-fetch';
-
 import { BASE_URL } from '../../../../core/config/env';
 import { prisma } from '../../../../core/db/prisma';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { generateInvoicePdf } from '../../../../lib/pdf';
 
 import { sendWhatsAppTemplate, sendWhatsAppText } from '../../../../integrations/whatsapp';
+import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { normalizePhone } from '../../../../core/utils/utils';
 
 
@@ -167,103 +166,22 @@ router.post('/:id/resend-whatsapp', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'invalid_id' });
     }
 
-    const invoice = await getInvoiceDetailAdmin(id);
-    if (!invoice) {
-      return res.status(404).json({ ok: false, error: 'invoice_not_found' });
-    }
-
-    if (!invoice.customer?.phone) {
-      return res.status(400).json({ ok: false, error: 'customer_without_phone' });
-    }
-
-    const customer = invoice.customer;
-
-    // Idempotencia: si ya tiene charge, reutilizamos
-    let chargeId: number | null = invoice.chargeId ?? null;
-
-    if (!chargeId) {
-      const chargeResp = await fetch(`${BASE_URL}/charges`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          merchant_id: invoice.merchantId,
-          customer: {
-            name: customer.name,
-            phone: customer.phone,
-            email: customer.email,
-          },
-          concept: `Factura ${invoice.number}`,
-          amount: Number(invoice.total),
-          currency: invoice.currency || 'EUR',
-          method_preference: 'card',
-          meta: { invoice_id: invoice.id, quote_id: invoice.quoteId },
-        }),
-      });
-
-      if (!chargeResp.ok) {
-        return res.status(502).json({ ok: false, error: 'charge_creation_failed' });
-      }
-
-      const chargeJson: any = await chargeResp.json().catch(() => null);
-      if (!chargeJson?.id) {
-        return res.status(502).json({ ok: false, error: 'charge_creation_invalid_response' });
-      }
-
-      chargeId = chargeJson.id;
-
-      await prisma.invoice.update({
-        where: { id: invoice.id },
-        data: { chargeId },
-      });
-    }
-
-    // Plantilla payment_request_es (ver docs/WHATSAPP_TEMPLATES.md)
-    // Cuerpo: {{1}} nombre · {{2}} nombre negocio · {{3}} nº factura · {{4}} importe con moneda
-    // Botón URL dinámica: sufijo {{1}} = chargeId → https://yaqu.app/pay/invoice/{{1}}
-    const to = normalizePhone(customer.phone);
-    if (!to) {
-      return res.status(400).json({ ok: false, error: 'invalid_phone_format' });
-    }
-
-    const businessName = invoice.merchant?.legalName || invoice.merchant?.name || 'Tu proveedor';
-    const result = await sendWhatsAppTemplate({
-      to,
-      templateName: 'payment_request_es',
-      languageCode: 'es',
-      components: [
-        {
-          type: 'body',
-          parameters: [
-            { type: 'text', text: customer.name || 'Cliente' },
-            { type: 'text', text: businessName },
-            { type: 'text', text: invoice.number },
-            { type: 'text', text: `${Number(invoice.total).toFixed(2)} ${invoice.currency}` },
-          ],
-        },
-        {
-          type: 'button',
-          sub_type: 'url',
-          index: '0',
-          parameters: [
-            { type: 'text', text: String(chargeId) },
-          ],
-        },
-      ],
-    });
-
-    if (!result.ok) {
-      console.error('[resend-whatsapp] Error Meta API:', result.error);
-      return res.status(502).json({ ok: false, error: 'whatsapp_send_failed', detail: result.error });
+    // Lógica compartida (asegura cobro + envía payment_request_es)
+    const r = await sendInvoicePaymentRequest(id);
+    if (!r.ok) {
+      const code = r.reason === 'invoice_not_found' ? 404
+        : r.reason === 'customer_without_phone' || r.reason === 'invalid_phone_format' ? 400
+        : 502;
+      return res.status(code).json({ ok: false, error: r.reason || 'whatsapp_send_failed' });
     }
 
     return res.json({
       ok: true,
       sent: true,
-      invoice_id: invoice.id,
-      charge_id: chargeId,
-      to,
+      invoice_id: id,
+      charge_id: r.chargeId,
+      to: r.to,
     });
-
   } catch (err) {
     console.error('[POST /admin/invoices/:id/resend-whatsapp]', err);
     return res.status(500).json({ ok: false, error: 'internal_error' });
