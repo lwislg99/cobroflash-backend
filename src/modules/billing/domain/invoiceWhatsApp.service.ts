@@ -42,11 +42,7 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           merchant_id: invoice.merchantId,
-          customer: {
-            name: invoice.customer.name,
-            phone: invoice.customer.phone,
-            email: invoice.customer.email,
-          },
+          customer_id: invoice.customerId, // cliente real de la factura (no duplicar)
           concept: `Factura ${invoice.number}`,
           amount: Number(invoice.total),
           currency: invoice.currency || 'EUR',

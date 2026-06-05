@@ -74,6 +74,8 @@ export const CreateChargeSchema = z.object({
   concept: z.string().min(1),
   amount: z.number().positive(),
   currency: z.string().length(3),
+  // Cliente existente (preferido): evita duplicar clientes al crear el cobro.
+  customer_id: z.number().int().positive().optional(),
   customer: z
     .object({
       name: z.string().min(1),

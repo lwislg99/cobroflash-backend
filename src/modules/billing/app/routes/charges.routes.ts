@@ -16,7 +16,10 @@ router.post('/', async (req, res) => {
     if (!merchant) return res.status(404).json({ error: 'merchant_not_found' });
 
     let customerId: number | undefined;
-    if (body.customer) {
+    if (body.customer_id) {
+      // Cliente existente: lo usamos tal cual (no duplicamos).
+      customerId = body.customer_id;
+    } else if (body.customer) {
       const c = await prisma.customer.create({
         data: {
           name: body.customer.name,
