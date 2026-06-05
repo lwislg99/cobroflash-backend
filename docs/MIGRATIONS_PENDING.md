@@ -4,7 +4,15 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
-## ENT-3 · `CustomerEvent` (historial de comunicaciones) — PENDIENTE
+## ENT-3 · `CustomerEvent` (historial de comunicaciones) — ✅ APLICADO en prod (2026-06-05)
+
+`prisma db push` aplicado contra `autorack.proxy.rlwy.net` (Railway). Diff confirmado
+solo aditivo (CREATE TABLE customer_events + 2 índices + 2 FKs, sin DROP/ALTER).
+Verificado: `customerEvent.count()` = 0. Instrucciones abajo conservadas como referencia.
+
+---
+
+### (Referencia) ENT-3 · `CustomerEvent`
 
 **Commit del código:** ver feat(enterprise) ENT-3.
 **Tabla nueva:** `customer_events` (modelo `CustomerEvent` en `prisma/schema.prisma`).
