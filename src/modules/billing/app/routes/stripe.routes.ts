@@ -5,6 +5,7 @@ import { stripe } from '../../../../integrations/stripe';
 import { config, BASE_URL } from '../../../../core/config/env';
 import { prisma } from '../../../../core/db/prisma';
 import { rewardReferralOnFirstPayment } from '../../../auth/domain/referral.service';
+import { sendFirstPaymentEmail } from '../../../messaging/domain/lifecycle.service';
 
 export const rawBody = express.raw({ type: 'application/json' });
 export const router = express.Router();
@@ -46,6 +47,10 @@ router.post('/', async (req, res) => {
           // Recompensa de referido (mes gratis al referidor) — idempotente
           await rewardReferralOnFirstPayment(merchantId).catch((e) =>
             console.error('[stripe] referral reward:', e?.message),
+          );
+          // Email de activación "primer pago / bienvenido a Pro" — idempotente
+          await sendFirstPaymentEmail(merchantId).catch((e) =>
+            console.error('[stripe] firstPayment email:', e?.message),
           );
         }
       }
