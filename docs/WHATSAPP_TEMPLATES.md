@@ -94,6 +94,27 @@ Confirmación al cliente cuando se recibe el pago. **Sin botones.**
 
 ---
 
+## Cómo probar (cuando Meta las apruebe)
+
+Script de prueba manual: `scripts/wa-test.mjs`. Envía UNA plantilla a UN número de
+test con la misma estructura que la app. No toca la base de datos.
+
+```bash
+# Ver el payload sin enviar:
+node scripts/wa-test.mjs quote_decision 34600111222 --dry
+
+# Enviar de verdad (necesita credenciales WA en .env o inline):
+WHATSAPP_PHONE_NUMBER_ID=yyy WHATSAPP_ACCESS_TOKEN=xxx \
+  node scripts/wa-test.mjs quote_decision 34600111222
+node scripts/wa-test.mjs payment_request 34600111222 --num=F-2025-014 --id=42
+node scripts/wa-test.mjs payment_confirmation 34600111222
+```
+
+Plantillas válidas: `quote_decision`, `payment_request`, `payment_confirmation`.
+Opciones: `--name --biz --num --amount --id --lang=es --dry`.
+Si Meta responde **#132000** = el nº de variables/botones no coincide con la plantilla
+aprobada; **#132001** = nombre/idioma de plantilla no encontrado.
+
 ## Notas
 - El envío real requiere que las 3 plantillas estén **Approved** en Meta con esta
   estructura exacta y que los botones URL estén configurados con la base indicada.
