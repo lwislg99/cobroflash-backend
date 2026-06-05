@@ -508,6 +508,8 @@ quoteDecisionLandingRouter.get('/quote/:id/reject', async (req: Request, res: Re
 
   const html = renderPage(`Rechazar ${locale.quoteVerb}`, `
     ${quoteDetail}
+    <h2 style="font-size:16px;font-weight:700;color:#0f1c17;margin:0 0 4px;text-align:center">¿Por qué lo rechazas?</h2>
+    <p style="font-size:13px;color:#6b756f;margin:0 0 16px;text-align:center">Tu respuesta ayuda al profesional a mejorar (opcional).</p>
     <form method="post">
       <div><label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Motivo</label>
         <select name="reason">
@@ -523,6 +525,7 @@ quoteDecisionLandingRouter.get('/quote/:id/reject', async (req: Request, res: Re
       </div>
       <button class="btn-reject" type="submit">Enviar rechazo</button>
     </form>
+    <a href="/pay/quote/${esc(quoteId)}" style="display:block;text-align:center;margin-top:16px;font-size:13.5px;color:#15803d;font-weight:600;text-decoration:none">← Volver y aceptar</a>
     <small>Si no solicitaste este ${locale.quoteVerb}, cierra esta página.</small>
   `, brandColor);
   res.setHeader('Content-Type', 'text/html; charset=utf-8').send(html);
