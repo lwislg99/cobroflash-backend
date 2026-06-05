@@ -48,7 +48,7 @@ function showOnboardingWizard(onComplete) {
     <div style="background:#fff;border-radius:20px;padding:28px 24px;width:100%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,.2)">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:24px">
         <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#22d3ee);display:flex;align-items:center;justify-content:center;font-weight:800;color:#052e16;font-size:14px">YQ</div>
-        <span style="font-weight:700;font-size:18px;color:#0f172a">Bienvenido a YaQu</span>
+        <span style="font-weight:700;font-size:18px;color:#0f1c17">Bienvenido a YaQu</span>
       </div>
 
       <div id="ob-steps"></div>
@@ -79,23 +79,23 @@ function showOnboardingWizard(onComplete) {
     {
       title: '¿A qué te dedicas?',
       render: () => `
-        <p style="font-size:14px;color:#6b7280;margin:0 0 16px">En 30 segundos lo tenemos listo.</p>
+        <p style="font-size:14px;color:#6b756f;margin:0 0 16px">En 30 segundos lo tenemos listo.</p>
         <div style="display:flex;flex-direction:column;gap:12px">
           <div>
-            <label style="font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:5px">Nombre de tu negocio</label>
+            <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Nombre de tu negocio</label>
             <input id="ob-name" type="text" placeholder="Ej: Electricidad García" value="${esc(state.name)}"
-              style="width:100%;padding:11px 13px;border:1px solid #d1d5db;border-radius:9px;font-size:14px"/>
+              style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
           </div>
           <div>
-            <label style="font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:5px">Tu oficio</label>
-            <select id="ob-trade" style="width:100%;padding:11px 13px;border:1px solid #d1d5db;border-radius:9px;font-size:14px;background:#fff">
+            <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Tu oficio</label>
+            <select id="ob-trade" style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px;background:#fff">
               <option value="">Selecciona…</option>
               ${OB_TRADES.map((t) => `<option value="${t.value}" ${state.trade === t.value ? 'selected' : ''}>${t.label}</option>`).join('')}
             </select>
           </div>
           <div>
-            <label style="font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:5px">País</label>
-            <select id="ob-country" style="width:100%;padding:11px 13px;border:1px solid #d1d5db;border-radius:9px;font-size:14px;background:#fff">
+            <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">País</label>
+            <select id="ob-country" style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px;background:#fff">
               ${OB_COUNTRIES.map((c) => `<option value="${c.value}" ${state.country === c.value ? 'selected' : ''}>${c.label}</option>`).join('')}
             </select>
           </div>
@@ -118,14 +118,14 @@ function showOnboardingWizard(onComplete) {
     {
       title: '¿Dónde te avisamos cuando cobras?',
       render: () => `
-        <p style="font-size:14px;color:#6b7280;margin:0 0 16px">
+        <p style="font-size:14px;color:#6b756f;margin:0 0 16px">
           Cuando un cliente acepte o pague, te mandamos un WhatsApp al instante.
         </p>
         <div>
-          <label style="font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:5px">Tu número de WhatsApp</label>
+          <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Tu número de WhatsApp</label>
           <input id="ob-phone" type="tel" placeholder="Ej: 521XXXXXXXXXX (con código de país)" value="${esc(state.phone)}"
-            style="width:100%;padding:11px 13px;border:1px solid #d1d5db;border-radius:9px;font-size:14px"/>
-          <p style="font-size:12px;color:#9ca3af;margin:6px 0 0">Sin espacios ni guiones. Incluye el código de país.</p>
+            style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
+          <p style="font-size:12px;color:#6b756f;margin:6px 0 0">Sin espacios ni guiones. Incluye el código de país.</p>
         </div>
         <div style="margin-top:14px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:12px 14px">
           <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#047857">Así te avisaremos:</p>
@@ -146,21 +146,21 @@ function showOnboardingWizard(onComplete) {
         const hasCatalog = state.trade && state.trade !== 'otro';
         if (hasCatalog) {
           return `
-            <p style="font-size:14px;color:#6b7280;margin:0 0 16px">
+            <p style="font-size:14px;color:#6b756f;margin:0 0 16px">
               Hemos preparado una lista de servicios típicos de <strong>${esc(obTradeLabel(state.trade))}</strong> con precios de mercado. Cárgalos como base y edítalos a tu gusto.
             </p>
-            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:12px 14px">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:#f7f8f6;border:1px solid #e7e9e5;border-radius:12px;padding:12px 14px">
               <input type="checkbox" id="ob-load-catalog" checked style="width:18px;height:18px;accent-color:#22c55e;flex-shrink:0"/>
-              <span style="font-size:14px;color:#374151">Sí, cargar el catálogo de <strong>${esc(obTradeLabel(state.trade))}</strong></span>
+              <span style="font-size:14px;color:#333c37">Sí, cargar el catálogo de <strong>${esc(obTradeLabel(state.trade))}</strong></span>
             </label>
-            <p style="font-size:12px;color:#9ca3af;margin:10px 0 0">Podrás añadir, editar o borrar servicios cuando quieras.</p>
+            <p style="font-size:12px;color:#6b756f;margin:10px 0 0">Podrás añadir, editar o borrar servicios cuando quieras.</p>
           `;
         }
         return `
-          <p style="font-size:14px;color:#6b7280;margin:0 0 8px">
+          <p style="font-size:14px;color:#6b756f;margin:0 0 8px">
             Un catálogo te permite crear cotizaciones en segundos con autocompletado.
           </p>
-          <p style="font-size:13px;color:#9ca3af;margin:0">Podrás añadir tus servicios desde la sección <strong>Productos</strong> en cualquier momento.</p>
+          <p style="font-size:13px;color:#6b756f;margin:0">Podrás añadir tus servicios desde la sección <strong>Productos</strong> en cualquier momento.</p>
         `;
       },
       validate: () => true,
@@ -189,20 +189,20 @@ function showOnboardingWizard(onComplete) {
     {
       title: 'Tu primer cliente',
       render: () => `
-        <p style="font-size:14px;color:#6b7280;margin:0 0 16px">
+        <p style="font-size:14px;color:#6b756f;margin:0 0 16px">
           ¿A quién le envías cotizaciones habitualmente? Lo usaremos para tu primera cotización.
         </p>
         <div style="display:flex;flex-direction:column;gap:10px">
           <div>
-            <label style="font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:5px">Nombre del cliente</label>
+            <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Nombre del cliente</label>
             <input id="ob-cust-name" type="text" placeholder="Ej: María López" value="${esc(state.customerName)}"
-              style="width:100%;padding:11px 13px;border:1px solid #d1d5db;border-radius:9px;font-size:14px"/>
+              style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
           </div>
           <div>
-            <label style="font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:5px">Su WhatsApp</label>
+            <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Su WhatsApp</label>
             <input id="ob-cust-phone" type="tel" placeholder="Ej: 521XXXXXXXXXX" value="${esc(state.customerPhone)}"
-              style="width:100%;padding:11px 13px;border:1px solid #d1d5db;border-radius:9px;font-size:14px"/>
-            <p style="font-size:12px;color:#9ca3af;margin:6px 0 0">Con código de país, sin espacios.</p>
+              style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
+            <p style="font-size:12px;color:#6b756f;margin:6px 0 0">Con código de país, sin espacios.</p>
           </div>
         </div>
       `,
@@ -223,14 +223,14 @@ function showOnboardingWizard(onComplete) {
           ? `<p style="margin:0;font-size:13px;color:#065f46">Incluiremos <strong>${esc(state.firstProduct.name)}</strong> como primera línea — podrás ajustarla.</p>`
           : '';
         return `
-          <p style="font-size:14px;color:#6b7280;margin:0 0 16px">
+          <p style="font-size:14px;color:#6b756f;margin:0 0 16px">
             Todo listo${state.customerName ? `, vamos a enviarle una cotización a <strong>${esc(state.customerName)}</strong>` : ''}. El cliente la recibe por WhatsApp y puede firmarla con el dedo en segundos.
           </p>
           <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:14px 16px;margin-bottom:8px">
             <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#047857">El momento que lo cambia todo</p>
             ${productLine}
           </div>
-          ${canQuote ? '' : '<p style="font-size:12px;color:#9ca3af;margin:8px 0 0">Consejo: añade un cliente en el paso anterior para prerrellenar la cotización.</p>'}
+          ${canQuote ? '' : '<p style="font-size:12px;color:#6b756f;margin:8px 0 0">Consejo: añade un cliente en el paso anterior para prerrellenar la cotización.</p>'}
         `;
       },
       renderFooter: (footer) => {
@@ -239,7 +239,7 @@ function showOnboardingWizard(onComplete) {
           <button id="ob-wow" style="width:100%;padding:13px;border-radius:12px;border:none;background:#22c55e;color:#052e16;font-weight:800;font-size:15px;cursor:pointer">
             🚀 Enviar mi primera cotización
           </button>
-          <button id="ob-explore" style="width:100%;padding:11px;border-radius:10px;border:1px solid #e5e7eb;background:#fff;font-size:14px;cursor:pointer;color:#6b7280;margin-top:8px">
+          <button id="ob-explore" style="width:100%;padding:11px;border-radius:10px;border:1px solid #e7e9e5;background:#fff;font-size:14px;cursor:pointer;color:#6b756f;margin-top:8px">
             Explorar el panel
           </button>
         `;
@@ -265,7 +265,7 @@ function showOnboardingWizard(onComplete) {
   function renderStep() {
     const step = steps[currentStep];
     document.getElementById('ob-steps').innerHTML = `
-      <h2 style="margin:0 0 8px;font-size:17px;color:#111827">${step.title}</h2>
+      <h2 style="margin:0 0 8px;font-size:17px;color:#0f1c17">${step.title}</h2>
       ${step.render()}
     `;
     renderFooter();
@@ -284,8 +284,8 @@ function showOnboardingWizard(onComplete) {
 
     footer.innerHTML = `
       ${currentStep > 0
-        ? '<button id="ob-back" style="flex:1;padding:11px;border-radius:10px;border:1px solid #e5e7eb;background:#fff;font-size:14px;cursor:pointer;color:#6b7280">← Atrás</button>'
-        : '<button id="ob-skip" style="flex:1;padding:11px;border-radius:10px;border:1px solid #e5e7eb;background:#fff;font-size:14px;cursor:pointer;color:#6b7280">Saltar por ahora</button>'}
+        ? '<button id="ob-back" style="flex:1;padding:11px;border-radius:10px;border:1px solid #e7e9e5;background:#fff;font-size:14px;cursor:pointer;color:#6b756f">← Atrás</button>'
+        : '<button id="ob-skip" style="flex:1;padding:11px;border-radius:10px;border:1px solid #e7e9e5;background:#fff;font-size:14px;cursor:pointer;color:#6b756f">Saltar por ahora</button>'}
       <button id="ob-next" style="flex:2;padding:11px;border-radius:10px;border:none;background:#22c55e;color:#052e16;font-weight:700;font-size:15px;cursor:pointer">
         Siguiente →
       </button>
@@ -299,7 +299,7 @@ function showOnboardingWizard(onComplete) {
 
   function renderDots() {
     document.getElementById('ob-dots').innerHTML = steps.map((_, i) =>
-      `<div style="width:8px;height:8px;border-radius:50%;background:${i === currentStep ? '#22c55e' : '#e5e7eb'}"></div>`
+      `<div style="width:8px;height:8px;border-radius:50%;background:${i === currentStep ? '#22c55e' : '#e7e9e5'}"></div>`
     ).join('');
   }
 

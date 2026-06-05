@@ -109,7 +109,7 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
 
   if (!allowWhatsapp) {
     const info = document.createElement("p");
-    info.style.cssText = "font-size:12px;color:#6b7280;margin:4px 0 0";
+    info.style.cssText = "font-size:12px;color:#6b756f;margin:4px 0 0";
     info.textContent = 'Has desmarcado "Enviar por WhatsApp automáticamente", por eso no se muestra el botón de WhatsApp.';
     mBody.appendChild(info);
   }
@@ -841,7 +841,7 @@ if (descCheck && descCheck.checked && l.description) {
   const small = document.createElement("div");
   small.textContent = l.description;
   small.style.fontSize = "12px";
-  small.style.color = "#6b7280";
+  small.style.color = "#6b756f";
   small.style.marginTop = "2px";
   tdConcept.appendChild(small);
 }
@@ -974,7 +974,7 @@ tr.appendChild(tdConcept);
       box.style.position = "absolute";
       box.style.zIndex = "9999";
       box.style.background = "#fff";
-      box.style.border = "1px solid #e5e7eb";
+      box.style.border = "1px solid #e7e9e5";
       box.style.borderRadius = "8px";
       box.style.boxShadow = "0 8px 24px rgba(0,0,0,0.08)";
       box.style.padding = "6px";
@@ -1012,7 +1012,7 @@ tr.appendChild(tdConcept);
 
     function renderLoading() {
       const b = ensureBox();
-      b.innerHTML = `<div style="padding:10px;font-size:13px;color:#6b7280;">Buscando…</div>`;
+      b.innerHTML = `<div style="padding:10px;font-size:13px;color:#6b756f;">Buscando…</div>`;
       placeBox();
       b.style.display = "block";
       isOpen = true;
@@ -1022,7 +1022,7 @@ tr.appendChild(tdConcept);
     
     function renderEmpty(msg) {
       const b = ensureBox();
-      b.innerHTML = `<div style="padding:10px;font-size:13px;color:#6b7280;">${msg || "Sin resultados"}</div>`;
+      b.innerHTML = `<div style="padding:10px;font-size:13px;color:#6b756f;">${msg || "Sin resultados"}</div>`;
       placeBox();
       b.style.display = "block";
       isOpen = true;
@@ -1084,7 +1084,7 @@ if (descRaw) {
   const desc = document.createElement("div");
   desc.textContent = descRaw.length > 60 ? descRaw.slice(0, 60) + "…" : descRaw;
   desc.style.fontSize = "12px";
-  desc.style.color = "#6b7280";
+  desc.style.color = "#6b756f";
   desc.title = descRaw;
 
   leftWrap.appendChild(desc);
@@ -1118,7 +1118,7 @@ row.appendChild(right);
       if (!box) return;
       const children = Array.from(box.children);
       children.forEach((el, i) => {
-        el.style.background = i === activeIndex ? "#f3f4f6" : "transparent";
+        el.style.background = i === activeIndex ? "#f1f2ee" : "transparent";
       });
     }
 
@@ -1391,7 +1391,7 @@ conceptInput.dataset.pfProductId = ""; // vacío = "manual"
     // Hint: precio final con markup (solo visual)
 const priceHint = document.createElement("div");
 priceHint.style.fontSize = "12px";
-priceHint.style.color = "#6b7280";
+priceHint.style.color = "#6b756f";
 priceHint.style.marginTop = "4px";
 priceHint.textContent = "Final: —";
 priceTd.appendChild(priceHint);

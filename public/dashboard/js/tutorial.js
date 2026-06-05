@@ -58,7 +58,7 @@ function showTutorialTooltip(target, text, position) {
   const tip = document.createElement('div');
   tip.id = 'tut-tooltip';
   tip.style.cssText = `
-    position:fixed;z-index:400;max-width:260px;background:#0f172a;color:#fff;
+    position:fixed;z-index:400;max-width:260px;background:#0f1c17;color:#fff;
     font-size:13px;line-height:1.45;padding:11px 14px;border-radius:12px;
     box-shadow:0 12px 30px rgba(0,0,0,.25);opacity:0;transition:opacity .2s;
   `;
@@ -128,7 +128,7 @@ function ensureHelpButton() {
   btn.textContent = '?';
   btn.style.cssText = `
     position:fixed;bottom:20px;right:20px;z-index:350;width:48px;height:48px;
-    border-radius:50%;border:none;background:#0f172a;color:#fff;font-size:22px;
+    border-radius:50%;border:none;background:#0f1c17;color:#fff;font-size:22px;
     font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.25);
   `;
   btn.addEventListener('click', openHelpGuide);
@@ -148,22 +148,22 @@ function openHelpGuide() {
   `;
   panel.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-      <h2 style="margin:0;font-size:18px;color:#0f172a">Guía de inicio</h2>
-      <button id="tut-guide-close" style="border:none;background:none;font-size:24px;cursor:pointer;color:#6b7280">&times;</button>
+      <h2 style="margin:0;font-size:18px;color:#0f1c17">Guía de inicio</h2>
+      <button id="tut-guide-close" style="border:none;background:none;font-size:24px;cursor:pointer;color:#6b756f">&times;</button>
     </div>
     ${TUTORIAL_GUIDE.map((g, i) => `
-      <div style="border:1px solid #eef2f7;border-radius:12px;margin-bottom:10px;overflow:hidden">
-        <button class="tut-acc" data-i="${i}" style="width:100%;text-align:left;padding:13px 14px;background:#f8fafc;border:none;cursor:pointer;font-size:14px;font-weight:600;color:#0f172a;display:flex;justify-content:space-between;align-items:center">
+      <div style="border:1px solid #e7e9e5;border-radius:12px;margin-bottom:10px;overflow:hidden">
+        <button class="tut-acc" data-i="${i}" style="width:100%;text-align:left;padding:13px 14px;background:#f7f8f6;border:none;cursor:pointer;font-size:14px;font-weight:600;color:#0f1c17;display:flex;justify-content:space-between;align-items:center">
           <span>${g.q}</span><span style="color:#22c55e">+</span>
         </button>
         <div class="tut-acc-body" data-i="${i}" style="display:none;padding:12px 16px">
-          <ol style="margin:0;padding-left:18px;color:#374151;font-size:14px;line-height:1.7">
+          <ol style="margin:0;padding-left:18px;color:#333c37;font-size:14px;line-height:1.7">
             ${g.steps.map((s) => `<li>${s}</li>`).join('')}
           </ol>
         </div>
       </div>
     `).join('')}
-    <p style="margin-top:18px;font-size:13px;color:#9ca3af">¿Necesitas más ayuda? Escríbenos a <a href="mailto:hola@yaqu.app" style="color:#16a34a">hola@yaqu.app</a></p>
+    <p style="margin-top:18px;font-size:13px;color:#6b756f">¿Necesitas más ayuda? Escríbenos a <a href="mailto:hola@yaqu.app" style="color:#16a34a">hola@yaqu.app</a></p>
   `;
   backdrop.appendChild(panel);
   document.body.appendChild(backdrop);

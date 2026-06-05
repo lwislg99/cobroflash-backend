@@ -8,16 +8,16 @@
   };
   const STATUS_COLORS = {
     accepted: '#166534', paid: '#166534', sent: '#1d4ed8',
-    pending: '#92400e', rejected: '#991b1b', expired: '#6b7280', draft: '#6b7280',
+    pending: '#92400e', rejected: '#991b1b', expired: '#6b756f', draft: '#6b756f',
   };
   const STATUS_BG = {
     accepted: '#dcfce7', paid: '#dcfce7', sent: '#dbeafe',
-    pending: '#fef3c7', rejected: '#fee2e2', expired: '#f3f4f6', draft: '#f3f4f6',
+    pending: '#fef3c7', rejected: '#fee2e2', expired: '#f1f2ee', draft: '#f1f2ee',
   };
 
   function pill(status) {
-    const bg = STATUS_BG[status] || '#f3f4f6';
-    const color = STATUS_COLORS[status] || '#374151';
+    const bg = STATUS_BG[status] || '#f1f2ee';
+    const color = STATUS_COLORS[status] || '#333c37';
     const label = STATUS_LABELS[status] || status;
     return `<span style="display:inline-block;padding:1px 7px;border-radius:999px;font-size:10.5px;font-weight:700;background:${bg};color:${color};text-transform:uppercase;letter-spacing:.02em">${label}</span>`;
   }

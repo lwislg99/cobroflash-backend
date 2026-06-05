@@ -43,7 +43,7 @@ async function renderHomeView(container) {
       <!-- Resumen de la semana (sparkline + tendencias) -->
       <div id="week-summary"></div>
 
-      <div style="font-size:13px;font-weight:600;color:#6b7280;margin:8px 0 8px;text-transform:uppercase;letter-spacing:.04em">
+      <div style="font-size:13px;font-weight:600;color:#6b756f;margin:8px 0 8px;text-transform:uppercase;letter-spacing:.04em">
         Actividad reciente
       </div>
       <div class="activity-feed" id="activity-feed">
@@ -153,7 +153,7 @@ function renderSetupChecklist(merchant, data) {
           <span style="width:18px;height:18px;border-radius:50%;border:2px solid ${s.done?'#16a34a':'#86efac'};background:${s.done?'#16a34a':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
             ${s.done?'<span style="color:#fff;font-size:10px">✓</span>':''}
           </span>
-          <span style="flex:1;color:${s.done?'#166534':'#374151'};${s.done?'text-decoration:line-through':''}">${s.label}${s.hint?` <span style="color:#94a3b8;font-size:11.5px">· ${s.hint}</span>`:''}
+          <span style="flex:1;color:${s.done?'#166534':'#333c37'};${s.done?'text-decoration:line-through':''}">${s.label}${s.hint?` <span style="color:#949b92;font-size:11.5px">· ${s.hint}</span>`:''}
           </span>
           ${!s.done?`<button class="btn-ghost btn-sm" onclick="window.renderAppView&&renderAppView('${s.action}')" style="font-size:11.5px;padding:3px 8px;border:1px solid #86efac;color:#166534">Ir →</button>`:''}
         </div>
@@ -216,7 +216,7 @@ function renderKpis(data) {
 function trendChip(current, prev) {
   if (prev == null) return '';
   const diff = current - prev;
-  if (diff === 0) return `<span style="font-size:11px;color:#9ca3af">→ igual</span>`;
+  if (diff === 0) return `<span style="font-size:11px;color:#6b756f">→ igual</span>`;
   const pct = prev > 0 ? Math.round((diff / prev) * 100) : null;
   const up = diff > 0;
   const color = up ? '#16a34a' : '#dc2626';
@@ -273,7 +273,7 @@ function buildSparkline(values) {
 function renderActivity(items) {
   const feed = document.getElementById("activity-feed");
   if (!items.length) {
-    feed.innerHTML = `<div style="color:#9ca3af;font-size:13px">Sin actividad reciente</div>`;
+    feed.innerHTML = `<div style="color:#6b756f;font-size:13px">Sin actividad reciente</div>`;
     return;
   }
   feed.innerHTML = items.map((item) => {
@@ -281,8 +281,8 @@ function renderActivity(items) {
       draft: "Borrador", sent: "Enviado", accepted: "Aceptado", rejected: "Rechazado",
     }[item.status] || item.status;
     const statusColor = {
-      accepted: "#16a34a", rejected: "#dc2626", sent: "#2563eb", draft: "#9ca3af",
-    }[item.status] || "#9ca3af";
+      accepted: "#16a34a", rejected: "#dc2626", sent: "#2563eb", draft: "#6b756f",
+    }[item.status] || "#6b756f";
     const date = new Date(item.updatedAt).toLocaleDateString("es", { day: "2-digit", month: "short" });
     const initial = (item.customer || '?').trim().charAt(0).toUpperCase() || '?';
     return `
@@ -377,7 +377,7 @@ async function renderTeamPerformance(container) {
     : '';
 
   section.innerHTML = `
-    <div style="font-size:13px;font-weight:600;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">Rendimiento del equipo · este mes</div>
+    <div style="font-size:13px;font-weight:600;color:#6b756f;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">Rendimiento del equipo · este mes</div>
     <div class="data-card">
       <div class="table-scroll">
         <table class="table" style="min-width:420px">
@@ -731,7 +731,7 @@ function initCustomerAutocomplete() {
             <span class="qq-dropdown-item-sub">${esc(c.phone || "")}</span>
           </div>
         `).join("");
-        dd.innerHTML += `<div class="qq-dropdown-item" data-new="1" style="color:#22c55e;border-top:1px solid #e5e7eb">
+        dd.innerHTML += `<div class="qq-dropdown-item" data-new="1" style="color:#22c55e;border-top:1px solid #e7e9e5">
           + Crear "${esc(q)}"</div>`;
         dd.style.display = "block";
         newSection.style.display = "none";
