@@ -39,14 +39,26 @@ function renderPage(title: string, body: string, brandColor?: string | null): st
     body { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       -webkit-font-smoothing: antialiased; font-feature-settings: "cv11","ss01";
       margin: 0; padding: 16px; background: #f6f7f5; color: #3f4a45; min-height: 100vh; }
-    .card { max-width: 480px; margin: 24px auto; background: #fff; border: 1px solid #e7e9e5; border-radius: 20px;
-      padding: 28px 26px; box-shadow: 0 18px 40px -12px rgba(16,24,40,.16); }
+    .card { max-width: 460px; margin: 24px auto; background: #fff; border: 1px solid #e7e9e5; border-radius: 18px;
+      padding: 26px 24px; box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 18px 40px -16px rgba(16,24,40,.16); }
     .merchant-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
     .merchant-logo { max-height: 48px; max-width: 120px; object-fit: contain; border-radius: 8px; }
     .merchant-name { font-weight: 700; font-size: 16px; color: #0f1c17; }
     .merchant-sub { font-size: 13px; color: #6b756f; }
-    h1 { font-size: 19px; margin: 0 0 4px; color: #0f1c17; letter-spacing: -.01em; }
+    h1 { font-size: 19px; margin: 0 0 4px; color: #0f1c17; letter-spacing: -.01em; text-align: center; }
+    h1 + .quote-meta { text-align: center; }
     .quote-meta { font-size: 13px; color: #6b756f; margin-bottom: 16px; }
+    /* Total como héroe (estilo Recibo de confianza) */
+    .amount-hero { text-align: center; padding: 16px 0 18px; margin: 16px 0;
+      border-top: 1px solid #e7e9e5; border-bottom: 1px solid #e7e9e5; }
+    .amount-hero-label { font-size: .72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .07em; color: #6b756f; margin-bottom: .5rem; }
+    .amount-hero-value { font-size: 2.4rem; font-weight: 800; color: #0f1c17; line-height: 1;
+      letter-spacing: -.025em; font-variant-numeric: tabular-nums; }
+    /* Bloque de confianza */
+    .trust { margin-top: 14px; text-align: center; }
+    .trust-main { display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; font-weight: 600; color: #3f4a45; }
+    .trust .lock { width: 13px; height: 13px; vertical-align: -1px; }
     .lines-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 12px; }
     .lines-table th { text-align: left; padding: 4px 6px; color: #6b756f; font-size: 12px;
       border-bottom: 1px solid #e7e9e5; }
@@ -251,15 +263,14 @@ function renderQuoteDetail(quote: Awaited<ReturnType<typeof loadQuote>>, quoteId
       ${quote.merchant?.address ? `<div class="merchant-sub">${esc(quote.merchant.address)}</div>` : ''}
     </div>
     <h1>Hola, ${customerName} 👋</h1>
-    <div class="quote-meta">Cotización #${esc(quoteId)}</div>
-    ${validityHtml}
+    <div class="quote-meta">Presupuesto #${esc(quoteId)}</div>
+    ${validityHtml ? `<div style="text-align:center">${validityHtml}</div>` : ''}
     ${linesHtml}
-    <div class="total-row">
-      <span>Total</span>
-      <span>${Number(quote.total).toFixed(2)} ${esc(quote.currency)}</span>
+    <div class="amount-hero">
+      <div class="amount-hero-label">Total del presupuesto</div>
+      <div class="amount-hero-value">${Number(quote.total).toFixed(2)} ${esc(quote.currency)}</div>
     </div>
-    ${terms ? `<div class="terms-badge">${esc(termsLabel(terms))}</div>` : ''}
-    <hr class="divider"/>
+    ${terms ? `<div style="text-align:center;margin-bottom:4px"><span class="terms-badge">${esc(termsLabel(terms))}</span></div>` : ''}
   `;
 }
 
@@ -399,6 +410,12 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
       </label>
     </div>
     <button class="btn-accept" id="btn-accept">Firmar y aceptar ${locale.quoteVerb}</button>
+    <div class="trust">
+      <span class="trust-main">
+        <svg class="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Tu aceptación queda registrada de forma segura
+      </span>
+    </div>
     <div id="sig-error" style="color:#dc2626;font-size:13px;margin-top:8px;display:none">
       Dibuja tu firma o marca "Acepto sin dibujar firma".
     </div>
