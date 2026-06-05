@@ -424,13 +424,17 @@ function openQuickQuoteModal(prefill) {
 
   qqState = { customerId: null, customerName: "", customerPhone: "", products: [{ concept: "", qty: 1, price: "" }], paymentTerms: "FULL_UPFRONT", tiersMode: false };
 
+  const qNew = (window.appLocale && window.appLocale.quoteNew) || 'Nueva cotización';
+  // Concordancia de género: "Nuevo presupuesto rápido" / "Nueva cotización rápida"
+  const qFast = qNew.trim().toLowerCase().startsWith('nuevo') ? 'rápido' : 'rápida';
+
   const backdrop = document.createElement("div");
   backdrop.className = "modal-overlay";
   backdrop.id = "qq-modal-backdrop";
   backdrop.innerHTML = `
-    <div class="modal" style="max-width:520px">
+    <div class="modal qq-modal" style="max-width:520px">
       <div class="modal-header">
-        <span class="modal-title">${(window.appLocale && window.appLocale.quoteNew) || 'Nueva cotización'} rápida</span>
+        <span class="modal-title">${qNew} ${qFast}</span>
         <button class="modal-close" id="qq-close">&times;</button>
       </div>
 

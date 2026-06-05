@@ -490,6 +490,29 @@ img { max-width: 100%; display: block; }
 .field textarea { resize: vertical; }
 .field select { appearance: none; cursor: pointer; }
 
+/* Checkbox / radio dentro de .field: tamaño nativo, pegados a su etiqueta.
+   (Antes heredaban el estilo de campo de texto —padding, borde, radio— y se
+   renderizaban como cajas grandes separadas de su label.) */
+.field input[type="checkbox"],
+.field input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  flex-shrink: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 4px;
+  accent-color: var(--brand);
+  cursor: pointer;
+  box-shadow: none;
+}
+.field input[type="radio"] { border-radius: 50%; }
+/* Fila checkbox + etiqueta: juntas y alineadas a la primera línea de texto */
+.inline-checkbox label { display: flex; gap: 8px; align-items: flex-start; }
+.inline-checkbox input[type="checkbox"],
+.inline-checkbox input[type="radio"] { margin-top: 1px; }
+
 /* Search input */
 .search-input {
   padding: 9px 12px 9px 38px;
@@ -790,6 +813,25 @@ img { max-width: 100%; display: block; }
   border-color: var(--green-500);
   background: var(--green-50);
   color: var(--green-700);
+}
+
+/* ── Modal presupuesto rápido: alineación de filas + táctil en móvil ── */
+#qq-lines-container > div { align-items: center; }
+.qq-modal .qq-qty { text-align: center; }
+.qq-modal .field input { min-height: 42px; }
+.qq-modal .btn-icon { width: 38px; height: 38px; }
+@media (max-width: 480px) {
+  /* Targets táctiles >=44px y campos cómodos */
+  .qq-modal .field input,
+  .qq-modal .btn,
+  .qq-modal .btn-primary,
+  .qq-modal .btn-secondary { min-height: 44px; }
+  .qq-modal .btn-icon { width: 44px; height: 44px; }
+  /* Footer: botones a ancho completo, "Enviar por WhatsApp" dominante arriba */
+  .qq-modal .modal-footer > div:last-child { flex-direction: column-reverse; gap: 8px; }
+  .qq-modal .modal-footer .btn,
+  .qq-modal .modal-footer .btn-primary,
+  .qq-modal .modal-footer .btn-secondary { width: 100%; }
 }
 
 /* ── Quotes forms ─────────────────────────────────────────────── */
