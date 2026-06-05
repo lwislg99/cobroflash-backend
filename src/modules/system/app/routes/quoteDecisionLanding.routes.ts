@@ -48,31 +48,31 @@ function renderPage(title: string, body: string, brandColor?: string | null): st
     h1 { font-size: 19px; margin: 0 0 4px; color: #0f1c17; letter-spacing: -.01em; }
     .quote-meta { font-size: 13px; color: #6b756f; margin-bottom: 16px; }
     .lines-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 12px; }
-    .lines-table th { text-align: left; padding: 4px 6px; color: #6b7280; font-size: 12px;
-      border-bottom: 1px solid #e5e7eb; }
-    .lines-table td { padding: 6px 6px; border-bottom: 1px solid #f3f4f6; }
+    .lines-table th { text-align: left; padding: 4px 6px; color: #6b756f; font-size: 12px;
+      border-bottom: 1px solid #e7e9e5; }
+    .lines-table td { padding: 6px 6px; border-bottom: 1px solid #f1f2ee; }
     .lines-table td:last-child { text-align: right; }
     .total-row { display: flex; justify-content: space-between; font-weight: 800; color: #0f1c17;
       font-size: 20px; margin: 12px 0 20px; padding-top: 10px; border-top: 2px solid #e7e9e5;
       font-variant-numeric: tabular-nums; }
     .terms-badge { display: inline-block; font-size: 12px; padding: 3px 10px;
       border-radius: 999px; background: #eff6ff; color: #1d4ed8; margin-bottom: 16px; }
-    .divider { border: none; border-top: 1px solid #e5e7eb; margin: 16px 0; }
+    .divider { border: none; border-top: 1px solid #e7e9e5; margin: 16px 0; }
     /* Firma */
-    .sig-label { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; display: block; }
-    .sig-sub { font-size: 12px; color: #9ca3af; margin-bottom: 8px; }
-    .sig-wrapper { border: 2px solid #d1d5db; border-radius: 10px; background: #f9fafb;
+    .sig-label { font-size: 13px; font-weight: 600; color: #333c37; margin-bottom: 6px; display: block; }
+    .sig-sub { font-size: 12px; color: #6b756f; margin-bottom: 8px; }
+    .sig-wrapper { border: 2px solid #cdd2cb; border-radius: 10px; background: #f7f8f6;
       position: relative; overflow: hidden; margin-bottom: 8px; }
     .sig-wrapper.has-sig { border-color: #22c55e; background: #fff; }
     #sig-canvas { display: block; width: 100%; height: 150px; cursor: crosshair; touch-action: none; }
     .sig-actions { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
     .btn-clear { font-size: 13px; padding: 6px 12px; border-radius: 8px;
-      border: 1px solid #e5e7eb; background: #fff; cursor: pointer; color: #6b7280; }
-    .btn-clear:hover { background: #f3f4f6; }
+      border: 1px solid #e7e9e5; background: #fff; cursor: pointer; color: #6b756f; }
+    .btn-clear:hover { background: #f1f2ee; }
     .sig-placeholder { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-      color: #d1d5db; font-size: 14px; pointer-events: none; user-select: none; white-space: nowrap; }
+      color: #cdd2cb; font-size: 14px; pointer-events: none; user-select: none; white-space: nowrap; }
     .checkbox-fallback { display: flex; align-items: center; gap: 8px; font-size: 13px;
-      color: #6b7280; margin-bottom: 16px; }
+      color: #6b756f; margin-bottom: 16px; }
     /* Botones */
     .btn-accept { width: 100%; padding: 15px; font-size: 16px; font-weight: 700;
       background: #16a34a; color: #fff; border: none; border-radius: 14px; cursor: pointer;
@@ -89,15 +89,15 @@ function renderPage(title: string, body: string, brandColor?: string | null): st
     .status-ok strong { color: #166534; }
     .status-error { background: #fef2f2; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
     .status-error strong { color: #991b1b; }
-    small { font-size: 12px; color: #9ca3af; display: block; text-align: center; margin-top: 12px; }
+    small { font-size: 12px; color: #6b756f; display: block; text-align: center; margin-top: 12px; }
     select, textarea { width: 100%; font-size: 15px; padding: 10px 12px;
-      border-radius: 10px; border: 1px solid #d1d5db; margin-bottom: 12px; }
+      border-radius: 10px; border: 1px solid #cdd2cb; margin-bottom: 12px; }
     textarea { min-height: 80px; resize: vertical; }
     /* FRONT1-6 — landing cliente premium */
     .merchant-hero { text-align: center; padding: 8px 0 18px; }
     .merchant-hero .merchant-logo { max-height: 64px; max-width: 180px; margin-bottom: 10px; }
-    .merchant-hero .merchant-name { font-size: 22px; font-weight: 800; color: #0f172a; }
-    .merchant-hero .merchant-sub { font-size: 13px; color: #6b7280; margin-top: 2px; }
+    .merchant-hero .merchant-name { font-size: 22px; font-weight: 800; color: #0f1c17; }
+    .merchant-hero .merchant-sub { font-size: 13px; color: #6b756f; margin-top: 2px; }
     .merchant-avatar { width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 10px;
       background: linear-gradient(135deg,#22c55e,#22d3ee); color: #052e16; font-weight: 800;
       font-size: 26px; display: flex; align-items: center; justify-content: center; }
@@ -163,7 +163,7 @@ function renderTierCards(tiers: any[], quoteId: string, locale: ReturnType<typeo
     </div>
     <div id="tier-confirm" style="display:none">
       <hr class="divider"/>
-      <p style="font-size:14px;color:#374151;margin-bottom:12px">
+      <p style="font-size:14px;color:#333c37;margin-bottom:12px">
         Has elegido: <strong id="chosen-tier-label"></strong>
       </p>
     </div>
@@ -171,16 +171,16 @@ function renderTierCards(tiers: any[], quoteId: string, locale: ReturnType<typeo
 }
 
 const TIER_CSS = `
-  .tier-card { border: 2px solid #e5e7eb; border-radius: 14px; padding: 16px; position: relative; background: #fff; }
+  .tier-card { border: 2px solid #e7e9e5; border-radius: 14px; padding: 16px; position: relative; background: #fff; }
   .tier-recommended { border-color: #22c55e; background: #f0fdf4; }
   .tier-badge { position: absolute; top: -10px; left: 16px; background: #22c55e; color: #052e16;
     font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 999px; }
   .tier-header { margin-bottom: 10px; }
   .tier-label { font-weight: 700; font-size: 16px; display: block; }
-  .tier-desc { font-size: 13px; color: #6b7280; }
-  .tier-lines { font-size: 13px; color: #374151; margin-bottom: 10px; }
-  .tier-line { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #f3f4f6; }
-  .tier-total { font-size: 22px; font-weight: 800; color: #111827; margin: 10px 0 12px; }
+  .tier-desc { font-size: 13px; color: #6b756f; }
+  .tier-lines { font-size: 13px; color: #333c37; margin-bottom: 10px; }
+  .tier-line { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #f1f2ee; }
+  .tier-total { font-size: 22px; font-weight: 800; color: #0f1c17; margin: 10px 0 12px; }
   .btn-tier { width: 100%; padding: 12px; font-size: 15px; font-weight: 700; border: none;
     border-radius: 10px; cursor: pointer; background: #22c55e; color: #052e16; min-height: 48px; }
   .tier-recommended .btn-tier { background: #16a34a; color: #fff; }
@@ -283,7 +283,7 @@ const SIG_JS = `
     canvas.height = rect.height * dpr;
     ctx.scale(dpr, dpr);
     ctx.putImageData(prev, 0, 0);
-    ctx.strokeStyle = '#111827';
+    ctx.strokeStyle = '#0f1c17';
     ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -446,7 +446,7 @@ quoteDecisionLandingRouter.get('/quote/:id/accept', async (req: Request, res: Re
             '<div style="text-align:center;padding:12px 0">' +
               '<div class="success-check">✓</div>' +
               '<h1 style="font-size:20px;margin:0 0 6px">¡${locale.quote} aceptada' + (sigData ? ' y firmada' : '') + '!</h1>' +
-              '<p style="color:#6b7280;font-size:14px;margin:0 0 18px">Gracias por tu confianza. El profesional te informará de los siguientes pasos.</p>' +
+              '<p style="color:#6b756f;font-size:14px;margin:0 0 18px">Gracias por tu confianza. El profesional te informará de los siguientes pasos.</p>' +
               '<a class="btn-share" target="_blank" rel="noopener" href="https://wa.me/?text=${shareTextEnc}">' +
                 '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M.06 24l1.69-6.16a11.87 11.87 0 01-1.59-5.95C.16 5.34 5.5 0 12.06 0a11.82 11.82 0 018.42 3.49 11.82 11.82 0 013.48 8.41c0 6.56-5.34 11.9-11.9 11.9a11.9 11.9 0 01-5.69-1.45L.06 24z"/></svg>' +
                 'Compartir por WhatsApp</a>' +
@@ -490,7 +490,7 @@ quoteDecisionLandingRouter.get('/quote/:id/reject', async (req: Request, res: Re
   const html = renderPage(`Rechazar ${locale.quoteVerb}`, `
     ${quoteDetail}
     <form method="post">
-      <div><label style="font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:5px">Motivo</label>
+      <div><label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Motivo</label>
         <select name="reason">
           <option value="">Selecciona una opción</option>
           <option value="price">El precio es demasiado alto</option>
@@ -499,7 +499,7 @@ quoteDecisionLandingRouter.get('/quote/:id/reject', async (req: Request, res: Re
           <option value="other">Otro motivo</option>
         </select>
       </div>
-      <div><label style="font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:5px">Comentario (opcional)</label>
+      <div><label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Comentario (opcional)</label>
         <textarea name="comment" placeholder="Cuéntanos algo más si quieres..."></textarea>
       </div>
       <button class="btn-reject" type="submit">Enviar rechazo</button>
