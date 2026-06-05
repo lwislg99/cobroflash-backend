@@ -186,6 +186,32 @@ router.get('/:id', async (req, res) => {
     )
     .join('');
 
+  // Héroe de estado (estilo "Recibo de confianza")
+  const SH: Record<string, { icon: string; title: string; cls: string }> = {
+    paid:    { icon: '✓', title: 'Pago confirmado', cls: 'paid' },
+    pending: { icon: '⏳', title: 'Pago pendiente',  cls: 'pending' },
+    failed:  { icon: '✕', title: 'Pago fallido',    cls: 'failed' },
+    expired: { icon: '⏰', title: 'Enlace caducado', cls: 'expired' },
+  };
+  const sh = SH[ch.status] || SH.pending;
+  const business = esc((ch as any).merchant?.legalName || (ch as any).merchant?.name || '');
+  const statusHero = `
+    ${business ? `<div class="biz">${business}</div>` : ''}
+    <div class="status-hero">
+      <div class="status-icon ${sh.cls}">${sh.icon}</div>
+      <div class="status-title">${sh.title}</div>
+      <div class="status-amount">${esc(Number(ch.amount).toFixed(2))} ${esc(ch.currency)}</div>
+      ${ch.concept ? `<div class="status-sub">${esc(ch.concept)}</div>` : ''}
+    </div>`;
+
+  // Detalles internos solo en desarrollo (no para el cliente)
+  const devInternals =
+    config.NODE_ENV !== 'production'
+      ? `<hr style="margin:1.25rem 0;border:none;border-top:1px solid var(--border)"/>
+         <small>Dev · <a href="${BASE_URL}/charges/${ch.id}">Ver JSON</a></small>
+         <ul style="margin-top:.4rem">${eventsList || '<li>—</li>'}</ul>`
+      : '';
+
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.send(`<!doctype html>
 <html lang="es">
@@ -207,38 +233,33 @@ router.get('/:id', async (req, res) => {
   small{color:var(--muted)}
   ul{padding-left:1.1rem;color:var(--body)}
   a{color:var(--brand)}
-  .pay-btn{display:inline-block;padding:.6rem 1.1rem;border-radius:999px;text-decoration:none;font-weight:600;font-size:.9rem}
+  .pay-btn{display:inline-block;padding:.7rem 1.1rem;border-radius:12px;text-decoration:none;font-weight:700;font-size:.92rem;text-align:center}
   .pay-btn-primary{background:var(--brand);color:#fff}
   .pay-btn-secondary{background:var(--surface);color:var(--ink);border:1px solid var(--border)}
+  .biz{text-align:center;font-size:.88rem;font-weight:600;color:var(--ink);margin-bottom:.25rem}
+  .status-hero{text-align:center;padding:.5rem 0 1.1rem;border-bottom:1px solid var(--border);margin-bottom:1rem}
+  .status-icon{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;margin:.4rem auto .6rem}
+  .status-icon.paid{background:#ecfdf5;color:#15803d}
+  .status-icon.pending{background:#fffbeb;color:#b45309}
+  .status-icon.failed{background:#fef2f2;color:#dc2626}
+  .status-icon.expired{background:var(--slate-50);color:var(--muted)}
+  .status-title{font-size:1.05rem;font-weight:700;color:var(--ink)}
+  .status-amount{font-size:2rem;font-weight:800;color:var(--ink);letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:.35rem}
+  .status-sub{font-size:.85rem;color:var(--muted);margin-top:.35rem}
+  .pay-stack{display:flex;flex-direction:column;gap:.5rem;margin:1rem 0}
 </style>
 </head>
 <body>
 <div class="card">
-<h2 style="margin:.2rem 0">Recibo</h2>
-<p style="margin:.3rem 0">Cobro <b>#${ch.id}</b> ${statusBadge}</p>
-${statusMessage}
-<div class="row" style="margin-top:.5rem">
-
-      <div><small>Concepto</small><div>${esc(ch.concept)}</div></div>
-      <div><small>Importe</small><div><b>${esc(ch.amount.toString())} ${esc(
-        ch.currency,
-      )}</b></div></div>
-      <div><small>Cliente</small><div>${esc(ch.customer?.name ?? '—')}</div></div>
-    </div>
-
-    <div style="margin:1rem 0;display:flex;gap:.75rem;align-items:center">
-      ${payBtns}
-      <a href="${BASE_URL}/charges/${ch.id}">Ver JSON</a>
-    </div>
-
-    ${mailBanner}
-    ${invBlock}
-    ${simulateBlock}
-
-    <hr style="margin:1rem 0;border:none;border-top:1px solid #e5e7eb"/>
-    <small>Eventos</small>
-    <ul>${eventsList || '<li>—</li>'}</ul>
-  </div>
+  ${statusHero}
+  ${statusMessage}
+  ${ch.status === 'pending' ? `<div class="pay-stack">${payBtns}</div>` : ''}
+  ${invBlock}
+  ${mailBanner}
+  <div style="margin-top:1rem;text-align:center"><small>Cobro #${ch.id} · Cliente: ${esc(ch.customer?.name ?? '—')}</small></div>
+  ${simulateBlock}
+  ${devInternals}
+</div>
 </body>
 </html>`);
 });
