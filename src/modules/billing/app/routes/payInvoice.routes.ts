@@ -1,6 +1,7 @@
 // src/modules/billing/app/routes/payInvoice.routes.ts
 // Selector de método de pago (tarjeta vía Stripe + transferencia vía PayByBank).
-// Es la landing del botón de payment_request_es: /pay/invoice/:chargeId
+// Landing del botón de payment_request_es: /pay/invoice/:chargeId
+// Diseño "Recibo de confianza" (Impeccable: Stripe/Wise, mobile-first).
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { esc } from '../../../../core/utils/utils';
@@ -15,18 +16,37 @@ router.get('/invoice/:chargeId', async (req, res) => {
 
   const charge = await prisma.charge.findUnique({
     where: { id },
-    include: { merchant: { select: { name: true, legalName: true } } },
+    include: {
+      merchant: { select: { name: true, legalName: true, logoUrl: true, iban: true, clabe: true } },
+    },
   });
   if (!charge) return res.status(404).send('Cobro no encontrado');
 
-  // Si ya está pagado o vencido, mostramos el recibo en lugar del selector
+  // Pagado o vencido → recibo
   if (charge.status === 'paid' || charge.status === 'expired') {
     return res.redirect(303, `/recibo/${id}`);
   }
 
-  const amount = `${Number(charge.amount).toFixed(2)} ${esc(charge.currency)}`;
-  const business = esc(charge.merchant?.legalName || charge.merchant?.name || 'Tu proveedor');
+  // Nº de factura asociada (si existe), para dar contexto
+  const invoice = await prisma.invoice
+    .findFirst({ where: { chargeId: id }, select: { number: true } })
+    .catch(() => null);
+
+  const m = charge.merchant;
+  const business = esc(m?.legalName || m?.name || 'Tu proveedor');
+  const initial = esc((m?.name || m?.legalName || 'Y').trim().charAt(0).toUpperCase());
+  const amount = esc(
+    Number(charge.amount).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
+      ' ' + charge.currency,
+  );
   const concept = esc(charge.concept || '');
+  const invRef = invoice?.number ? `Factura ${esc(invoice.number)}` : '';
+  const subline = [concept, invRef].filter(Boolean).join(' · ');
+  const hasTransfer = !!(m?.iban || m?.clabe);
+
+  const logoHtml = m?.logoUrl
+    ? `<img class="logo-img" src="${esc(m.logoUrl)}" alt="${business}"/>`
+    : `<div class="logo-mark">${initial}</div>`;
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.send(`<!doctype html>
@@ -35,63 +55,81 @@ router.get('/invoice/:chargeId', async (req, res) => {
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <meta name="theme-color" content="#16a34a"/>
-  <title>Pagar — YaQu</title>
+  <title>Pagar ${amount} — YaQu</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <style>
-    :root{--brand:#16a34a;--brand-tint:#ecfdf5;--ink:#0f1c17;--body:#3f4a45;--muted:#6b756f;
-      --bg:#f6f7f5;--surface:#fff;--border:#e7e9e5;--slate-50:#f7f8f6;}
+    :root{--brand:#16a34a;--brand-bright:#22c55e;--brand-tint:#ecfdf5;--ink:#0f1c17;--body:#3f4a45;
+      --muted:#6b756f;--bg:#f6f7f5;--surface:#fff;--border:#e7e9e5;--slate-50:#f7f8f6;}
     *{box-sizing:border-box}
     body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-feature-settings:"cv11","ss01";
       margin:0;background:var(--bg);color:var(--body);min-height:100vh;display:flex;
       align-items:center;justify-content:center;padding:1rem;-webkit-font-smoothing:antialiased}
-    .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;
-      box-shadow:0 1px 2px rgba(16,24,40,.04),0 12px 32px -12px rgba(16,24,40,.12);
-      padding:1.75rem 1.5rem;max-width:440px;width:100%}
-    .biz{font-size:.85rem;color:var(--muted);margin-bottom:.25rem}
-    h1{margin:0 0 1rem;font-size:1.2rem;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
-    .amount-box{background:var(--brand-tint);border:1px solid #bbf7d0;border-radius:12px;
-      padding:1.1rem;text-align:center;margin-bottom:1.5rem}
-    .amount{font-size:2rem;font-weight:800;color:var(--ink);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-    .concept{color:var(--muted);font-size:.85rem;margin-top:.3rem}
-    .label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
-      color:var(--muted);margin-bottom:.6rem}
-    .method{display:flex;align-items:center;gap:.85rem;width:100%;padding:1rem;border-radius:12px;
-      text-decoration:none;margin-bottom:.6rem;min-height:64px;transition:background .15s,border-color .15s}
-    .method-primary{background:var(--brand);color:#fff}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:18px;
+      box-shadow:0 1px 2px rgba(16,24,40,.04),0 18px 40px -16px rgba(16,24,40,.16);
+      padding:1.75rem 1.5rem;max-width:420px;width:100%}
+
+    /* Identidad del negocio */
+    .biz{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.55rem;margin-bottom:1.25rem}
+    .logo-mark{width:44px;height:44px;border-radius:50%;
+      background:linear-gradient(135deg,var(--brand-bright),#22d3ee);
+      display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#052e16}
+    .logo-img{max-height:44px;max-width:130px;object-fit:contain}
+    .biz-name{font-size:.9rem;font-weight:600;color:var(--ink)}
+
+    /* Importe */
+    .amount-wrap{text-align:center;padding:1.1rem 0 1.25rem;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+    .amount-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.45rem}
+    .amount{font-size:2.3rem;font-weight:800;color:var(--ink);letter-spacing:-.025em;line-height:1;font-variant-numeric:tabular-nums}
+    .subline{font-size:.83rem;color:var(--muted);margin-top:.5rem;line-height:1.4}
+
+    /* Métodos */
+    .methods-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:1.25rem 0 .7rem}
+    .method{display:flex;align-items:center;gap:.85rem;width:100%;padding:.95rem 1rem;border-radius:14px;
+      text-decoration:none;margin-bottom:.6rem;min-height:64px;transition:background .15s,border-color .15s,box-shadow .15s}
+    .method-primary{background:var(--brand);color:#fff;box-shadow:0 4px 14px -4px rgba(22,163,74,.45)}
     .method-primary:hover{background:#15803d}
+    .method-primary:active{transform:translateY(1px)}
     .method-secondary{background:var(--surface);color:var(--ink);border:1px solid var(--border)}
     .method-secondary:hover{background:var(--slate-50);border-color:#cdd2cb}
-    .method-ico{font-size:1.5rem;flex-shrink:0;width:28px;text-align:center}
-    .method-txt{flex:1}
-    .method-title{font-weight:700;font-size:.95rem;line-height:1.2}
-    .method-sub{font-size:.78rem;opacity:.85;margin-top:.1rem}
-    .chev{font-size:1.1rem;opacity:.6}
-    .footer{margin-top:1.25rem;text-align:center;font-size:.75rem;color:var(--muted)}
+    .method-ico{font-size:1.45rem;flex-shrink:0;width:30px;text-align:center}
+    .method-txt{flex:1;min-width:0}
+    .method-title{font-weight:700;font-size:.98rem;line-height:1.2}
+    .method-sub{font-size:.76rem;opacity:.82;margin-top:.12rem}
+    .chev{font-size:1.25rem;opacity:.55;flex-shrink:0}
+
+    /* Confianza */
+    .trust{margin-top:1.4rem;text-align:center}
+    .trust-main{display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem;font-weight:600;color:var(--body)}
+    .trust-sub{font-size:.72rem;color:var(--muted);margin-top:.3rem}
+    .lock{width:13px;height:13px;display:inline-block;vertical-align:-1px}
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="biz">${business}</div>
-    <h1>Elige cómo pagar</h1>
-
-    <div class="amount-box">
-      <div class="amount">${amount}</div>
-      ${concept ? `<div class="concept">${concept}</div>` : ''}
+    <div class="biz">
+      ${logoHtml}
+      <div class="biz-name">${business}</div>
     </div>
 
-    <div class="label">Métodos disponibles</div>
+    <div class="amount-wrap">
+      <div class="amount-label">Importe a pagar</div>
+      <div class="amount">${amount}</div>
+      ${subline ? `<div class="subline">${subline}</div>` : ''}
+    </div>
+
+    <div class="methods-label">Elige cómo pagar</div>
 
     <a class="method method-primary" href="/pay/card/${id}">
       <span class="method-ico">💳</span>
       <span class="method-txt">
         <span class="method-title">Pagar con tarjeta</span>
-        <span class="method-sub">Pago seguro al instante</span>
+        <span class="method-sub">Visa · Mastercard · al instante</span>
       </span>
       <span class="chev">›</span>
     </a>
-
+    ${hasTransfer ? `
     <a class="method method-secondary" href="/pay/bank/${id}">
       <span class="method-ico">🏦</span>
       <span class="method-txt">
@@ -99,9 +137,15 @@ router.get('/invoice/:chargeId', async (req, res) => {
         <span class="method-sub">Con los datos y el concepto exacto</span>
       </span>
       <span class="chev">›</span>
-    </a>
+    </a>` : ''}
 
-    <div class="footer">🔒 Pago seguro · YaQu</div>
+    <div class="trust">
+      <span class="trust-main">
+        <svg class="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Pago seguro y cifrado
+      </span>
+      <div class="trust-sub">Procesado por Stripe · Nunca vemos los datos de tu tarjeta</div>
+    </div>
   </div>
 </body>
 </html>`);
