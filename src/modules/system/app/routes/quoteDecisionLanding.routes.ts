@@ -341,8 +341,9 @@ const SIG_JS = `
 })();
 </script>`;
 
-// GET /pay/quote/:id/accept
-quoteDecisionLandingRouter.get('/quote/:id/accept', async (req: Request, res: Response) => {
+// GET /pay/quote/:id  (landing del botón "Ver presupuesto") y alias /quote/:id/accept
+// Muestra el detalle + firma/aceptar + enlace para rechazar.
+quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: Request, res: Response) => {
   const quoteId = req.params.id;
   const id = Number(quoteId);
 
@@ -403,6 +404,7 @@ quoteDecisionLandingRouter.get('/quote/:id/accept', async (req: Request, res: Re
     </div>
     <small>Si no solicitaste este ${locale.quoteVerb}, cierra esta página.</small>
     </div>
+    <a href="/pay/quote/${quoteId}/reject" style="display:block;text-align:center;margin-top:16px;font-size:13.5px;color:#6b756f;text-decoration:underline">No me interesa · Rechazar ${locale.quoteVerb}</a>
     ${SIG_JS}
     <script>
     function fireConfetti() {

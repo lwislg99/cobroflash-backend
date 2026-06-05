@@ -1,7 +1,6 @@
 import { prisma } from '../../../core/db/prisma';
 import { sendWhatsAppTemplate } from '../../../integrations/whatsapp';
 import { normalizePhone } from '../../../core/utils/utils';
-import { BASE_URL } from '../../../core/config/env';
 
 const REMINDER_AFTER_MS = 24 * 60 * 60 * 1000; // 24 horas
 
@@ -35,13 +34,10 @@ export async function sendPendingReminders(): Promise<void> {
     const customerName = quote.customer?.name || 'Cliente';
     const merchantName = quote.merchant?.name || 'Tu proveedor';
     const total = Number(quote.total).toFixed(2);
-    const pdfUrl = quote.pdfUrl?.startsWith('http')
-      ? quote.pdfUrl
-      : quote.pdfUrl ? `${BASE_URL}${quote.pdfUrl}` : null;
 
     try {
-      // Usamos la misma plantilla quote_decision_es — mismo template ya aprobado,
-      // funciona como recordatorio con los botones Aceptar/Rechazar
+      // Reusa quote_decision_es como recordatorio (ver docs/WHATSAPP_TEMPLATES.md)
+      // Cuerpo: nombre · nombre negocio · nº presupuesto · total con moneda · Botón: id presupuesto
       const result = await sendWhatsAppTemplate({
         to: phone,
         templateName: 'quote_decision_es',
@@ -51,14 +47,12 @@ export async function sendPendingReminders(): Promise<void> {
             type: 'body',
             parameters: [
               { type: 'text', text: customerName },
+              { type: 'text', text: merchantName },
               { type: 'text', text: String(quote.id) },
-              { type: 'text', text: total },
-              { type: 'text', text: quote.currency },
-              { type: 'text', text: pdfUrl || `${BASE_URL}/pay/quote/${quote.id}/accept` },
+              { type: 'text', text: `${total} ${quote.currency}` },
             ],
           },
           { type: 'button', sub_type: 'url', index: '0', parameters: [{ type: 'text', text: String(quote.id) }] },
-          { type: 'button', sub_type: 'url', index: '1', parameters: [{ type: 'text', text: String(quote.id) }] },
         ],
       });
 

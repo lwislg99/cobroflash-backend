@@ -19,6 +19,7 @@ import receiptRouter from './modules/billing/app/routes/receipt.routes';
 import payBankRouter from './modules/billing/app/routes/payBank.routes';
 import payCardRouter from './modules/billing/app/routes/payCard.routes';
 import payMpRouter   from './modules/billing/app/routes/payMp.routes';
+import payInvoiceRouter from './modules/billing/app/routes/payInvoice.routes';
 import mpWebhookRouter from './modules/billing/app/routes/mpWebhook.routes';
 import whatsappIncomingRouter from './modules/whatsappBot/app/routes/whatsappIncoming.routes';
 
@@ -97,6 +98,7 @@ app.post('/quote/create', requireActivePlan);
 app.use('/quote', quotesRouter);
 app.use('/invoice', invoiceRouter);
 app.use('/recibo', receiptRouter);
+app.use('/pay', payInvoiceRouter);
 app.use('/pay', payBankRouter);
 app.use('/pay', payCardRouter);
 app.use('/pay', payMpRouter);

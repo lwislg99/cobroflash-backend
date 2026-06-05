@@ -180,7 +180,6 @@ router.post('/:id/resend-whatsapp', async (req, res) => {
 
     // Idempotencia: si ya tiene charge, reutilizamos
     let chargeId: number | null = invoice.chargeId ?? null;
-    let payCardUrl: string | null = null;
 
     if (!chargeId) {
       const chargeResp = await fetch(`${BASE_URL}/charges`, {
@@ -218,19 +217,15 @@ router.post('/:id/resend-whatsapp', async (req, res) => {
       });
     }
 
-    payCardUrl = `${BASE_URL}/pay/card/${chargeId}`;
-
-    // Envío directo por WhatsApp con plantilla payment_request_es
-    // Variables:
-    //   {{1}} = nombre cliente
-    //   {{2}} = número factura
-    //   {{3}} = importe
-    //   {{4}} = URL de pago
+    // Plantilla payment_request_es (ver docs/WHATSAPP_TEMPLATES.md)
+    // Cuerpo: {{1}} nombre · {{2}} nombre negocio · {{3}} nº factura · {{4}} importe con moneda
+    // Botón URL dinámica: sufijo {{1}} = chargeId → https://yaqu.app/pay/invoice/{{1}}
     const to = normalizePhone(customer.phone);
     if (!to) {
       return res.status(400).json({ ok: false, error: 'invalid_phone_format' });
     }
 
+    const businessName = invoice.merchant?.legalName || invoice.merchant?.name || 'Tu proveedor';
     const result = await sendWhatsAppTemplate({
       to,
       templateName: 'payment_request_es',
@@ -240,9 +235,9 @@ router.post('/:id/resend-whatsapp', async (req, res) => {
           type: 'body',
           parameters: [
             { type: 'text', text: customer.name || 'Cliente' },
+            { type: 'text', text: businessName },
             { type: 'text', text: invoice.number },
-            { type: 'text', text: Number(invoice.total).toFixed(2) },
-            { type: 'text', text: payCardUrl },
+            { type: 'text', text: `${Number(invoice.total).toFixed(2)} ${invoice.currency}` },
           ],
         },
         {
@@ -315,9 +310,9 @@ router.post('/:id/send-reminder', async (req, res) => {
             type: 'body',
             parameters: [
               { type: 'text', text: customerName },
+              { type: 'text', text: merchantName },
               { type: 'text', text: invoice.number },
-              { type: 'text', text: total },
-              { type: 'text', text: payUrl },
+              { type: 'text', text: `${total} ${invoice.currency}` },
             ],
           },
           {

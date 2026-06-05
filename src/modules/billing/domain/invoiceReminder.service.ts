@@ -111,9 +111,9 @@ async function sendReminderWA(
             type: 'body',
             parameters: [
               { type: 'text', text: customerName },
+              { type: 'text', text: merchantName },
               { type: 'text', text: inv.number },
-              { type: 'text', text: total },
-              { type: 'text', text: payUrl },
+              { type: 'text', text: `${total} ${inv.currency}` },
             ],
           },
           {

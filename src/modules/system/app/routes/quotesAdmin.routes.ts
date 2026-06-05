@@ -236,28 +236,15 @@ router.post('/:id/send-whatsapp', async (req, res) => {
       return res.status(409).json({ error: 'pending_approval' });
     }
 
-    if (!quote.pdfUrl || quote.pdfUrl === 'PENDING_PDF') {
-      return res.status(400).json({ error: 'quote_pdf_not_ready' });
-    }
-
     const to = normalizePhone(quote.customer.phone);
     if (!to) {
       return res.status(400).json({ error: 'invalid_phone_format' });
     }
 
-    // URL pública del PDF
-    const pdfUrl = quote.pdfUrl.startsWith('http')
-      ? quote.pdfUrl
-      : `${BASE_URL}${quote.pdfUrl}`;
-
-    // Llamada directa a la API de Meta con la plantilla quote_decision_es
-    // Variables:
-    //   {{1}} = nombre cliente
-    //   {{2}} = número presupuesto
-    //   {{3}} = total (número)
-    //   {{4}} = moneda
-    //   {{5}} = URL del PDF
-    // Botón dinámico {{1}} = quote ID (se añade al final de la URL base)
+    // Plantilla quote_decision_es (ver docs/WHATSAPP_TEMPLATES.md)
+    // Cuerpo: {{1}} nombre cliente · {{2}} nombre negocio · {{3}} nº presupuesto · {{4}} total con moneda
+    // Botón URL dinámica: sufijo {{1}} = id presupuesto → https://yaqu.app/pay/quote/{{1}}
+    const businessName = quote.merchant?.legalName || quote.merchant?.name || 'Tu proveedor';
     const result = await sendWhatsAppTemplate({
       to,
       templateName: 'quote_decision_es',
@@ -267,26 +254,15 @@ router.post('/:id/send-whatsapp', async (req, res) => {
           type: 'body',
           parameters: [
             { type: 'text', text: quote.customer.name ?? 'Cliente' },
+            { type: 'text', text: businessName },
             { type: 'text', text: String(quote.id) },
-            { type: 'text', text: Number(quote.total).toFixed(2) },
-            { type: 'text', text: quote.currency },
-            { type: 'text', text: pdfUrl },
+            { type: 'text', text: `${Number(quote.total).toFixed(2)} ${quote.currency}` },
           ],
         },
-        // Botón 0: Aceptar Presupuesto (índice 0)
         {
           type: 'button',
           sub_type: 'url',
           index: '0',
-          parameters: [
-            { type: 'text', text: String(quote.id) },
-          ],
-        },
-        // Botón 1: Rechazar Presupuesto (índice 1)
-        {
-          type: 'button',
-          sub_type: 'url',
-          index: '1',
           parameters: [
             { type: 'text', text: String(quote.id) },
           ],

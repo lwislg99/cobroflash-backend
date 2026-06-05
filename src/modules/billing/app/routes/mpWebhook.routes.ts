@@ -7,6 +7,7 @@ import { ensureInvoiceForCharge } from '../../../../lib/invoicing';
 import { sendInvoiceEmail } from '../../../../lib/email';
 import { normalizePhone } from '../../../../core/utils/utils';
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
+import { sendPaymentConfirmation } from '../../../../integrations/whatsappNotifications';
 
 const router = Router();
 
@@ -125,8 +126,22 @@ router.post('/', async (req, res) => {
         }).catch(() => {});
       }
 
-      // Notificaciones WhatsApp al merchant y reseña al cliente
+      // Confirmación de pago al cliente (payment_confirmation_es, fire-and-forget)
       const merchant = updated.merchant as any;
+      if (updated.customer?.phone) {
+        const invConf = invoiceId
+          ? await prisma.invoice.findUnique({ where: { id: invoiceId }, select: { number: true } }).catch(() => null)
+          : null;
+        sendPaymentConfirmation({
+          toPhone: updated.customer.phone,
+          customerName: updated.customer.name,
+          amountWithCurrency: `${Number(updated.amount).toFixed(2)} ${updated.currency}`,
+          invoiceNumber: invConf?.number || `#${updated.id}`,
+          businessName: merchant?.name,
+        }).catch(() => {});
+      }
+
+      // Notificaciones WhatsApp al merchant y reseña al cliente
       if (merchant?.googleReviewUrl && updated.customer?.phone) {
         const phone = normalizePhone(updated.customer.phone);
         if (phone) {
