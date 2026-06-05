@@ -91,7 +91,7 @@ router.get('/mp/:id/result', async (req, res) => {
     approved: { emoji: '✅', title: '¡Pago aprobado!',        msg: 'Tu pago ha sido procesado correctamente.',                  color: '#16a34a' },
     rejected: { emoji: '❌', title: 'Pago rechazado',          msg: 'El pago no pudo procesarse. Inténtalo de nuevo.',           color: '#dc2626' },
     pending:  { emoji: '⏳', title: 'Pago en proceso',         msg: 'Tu pago está siendo procesado. Te notificaremos pronto.',   color: '#d97706' },
-    expired:  { emoji: '⚠️', title: 'Cobro vencido',           msg: 'Este cobro ha vencido. Contacta con el profesional.',       color: '#6b7280' },
+    expired:  { emoji: '⚠️', title: 'Cobro vencido',           msg: 'Este cobro ha vencido. Contacta con el profesional.',       color: '#6b756f' },
   };
 
   const s = statusMap[status] || statusMap['pending'];
@@ -103,16 +103,20 @@ router.get('/mp/:id/result', async (req, res) => {
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>${esc(s.title)} — YaQu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <style>
+    :root{--ink:#0f1c17;--muted:#6b756f;--bg:#f6f7f5;--surface:#fff;--border:#e7e9e5}
     *{box-sizing:border-box}
-    body{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#f9fafb;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
-    .card{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.08);padding:2.5rem 2rem;max-width:420px;width:100%;text-align:center}
+    body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-feature-settings:"cv11","ss01";margin:0;background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;-webkit-font-smoothing:antialiased}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 12px 32px -12px rgba(16,24,40,.12);padding:2.5rem 2rem;max-width:420px;width:100%;text-align:center}
     .emoji{font-size:3rem;margin-bottom:1rem}
-    h1{margin:0 0 .5rem;font-size:1.4rem;color:${esc(s.color)}}
-    p{color:#6b7280;margin:.5rem 0}
-    .amount{font-size:1.1rem;font-weight:600;color:#111;margin:1rem 0}
-    .badge{display:inline-block;padding:.25rem .75rem;border-radius:99px;font-size:.8rem;font-weight:600;background:${esc(s.color)}22;color:${esc(s.color)};margin-bottom:1rem}
-    .footer{margin-top:2rem;font-size:.75rem;color:#9ca3af}
+    h1{margin:0 0 .5rem;font-size:1.4rem;font-weight:700;letter-spacing:-.01em;color:${esc(s.color)};text-wrap:balance}
+    p{color:var(--muted);margin:.5rem 0;line-height:1.5}
+    .amount{font-size:1.3rem;font-weight:800;color:var(--ink);letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin:1rem 0}
+    .badge{display:inline-block;padding:.25rem .75rem;border-radius:999px;font-size:.75rem;font-weight:700;letter-spacing:.04em;background:${esc(s.color)}1a;color:${esc(s.color)};margin-bottom:1rem}
+    .footer{margin-top:2rem;font-size:.75rem;color:var(--muted)}
   </style>
 </head>
 <body>
@@ -121,7 +125,7 @@ router.get('/mp/:id/result', async (req, res) => {
     <span class="badge">${esc(status.toUpperCase())}</span>
     <h1>${esc(s.title)}</h1>
     <p>${esc(s.msg)}</p>
-    ${concept ? `<div class="amount">${esc(amount)} ${esc(currency)}<br/><span style="font-size:.85rem;font-weight:400;color:#6b7280">${esc(concept)}</span></div>` : ''}
+    ${concept ? `<div class="amount">${esc(amount)} ${esc(currency)}<br/><span style="font-size:.85rem;font-weight:400;color:#6b756f">${esc(concept)}</span></div>` : ''}
     <div class="footer">YaQu · Pago gestionado con Mercado Pago</div>
   </div>
 </body>

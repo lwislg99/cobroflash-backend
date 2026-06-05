@@ -93,8 +93,8 @@ router.get('/:id', async (req, res) => {
 
   const payBtns =
     ch.status === 'pending'
-      ? `<a href="${BASE_URL}/pay/bank/${ch.id}" style="display:inline-block;background:#111;color:#fff;padding:.6rem 1rem;border-radius:.6rem;text-decoration:none">Pagar por banco</a>
-       <a href="${BASE_URL}/pay/card/${ch.id}" style="display:inline-block;background:#2563eb;color:#fff;padding:.6rem 1rem;border-radius:.6rem;text-decoration:none">Pagar con tarjeta</a>`
+      ? `<a href="${BASE_URL}/pay/bank/${ch.id}" class="pay-btn pay-btn-primary">Pagar por transferencia</a>
+       <a href="${BASE_URL}/pay/card/${ch.id}" class="pay-btn pay-btn-secondary">Pagar con tarjeta</a>`
       : '';
 
   const mailParam =
@@ -119,11 +119,11 @@ router.get('/:id', async (req, res) => {
   const emailBlock =
     hasRealPdf && ch.customer?.email
       ? `<form method="post" action="${BASE_URL}/dev/email-invoice/${ch.id}" style="margin-top:.5rem">
-           <button style="background:#111;color:#fff;padding:.45rem .8rem;border-radius:.5rem;border:none;cursor:pointer">
+           <button style="background:#16a34a;color:#fff;padding:.5rem 1rem;border-radius:999px;border:none;cursor:pointer;font-weight:600;font-family:inherit">
              Enviar factura por email
            </button>
          </form>
-         <small style="color:#6b7280">Se enviará a: ${esc(ch.customer!.email!)}</small>`
+         <small style="color:#6b756f">Se enviará a: ${esc(ch.customer!.email!)}</small>`
       : '';
 
   const invBlock =
@@ -132,7 +132,7 @@ router.get('/:id', async (req, res) => {
         ? `<p><a href="${invoice!.pdfUrl}" target="_blank">
              📄 Descargar factura (${esc(invoice!.number)})
            </a></p>${emailBlock}`
-        : `<small style="color:#6b7280">
+        : `<small style="color:#6b756f">
              La factura se emitirá y se enviará por WhatsApp y email automáticamente.
            </small>`
       : '';
@@ -193,14 +193,23 @@ router.get('/:id', async (req, res) => {
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>${esc(title)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
-  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial,sans-serif;margin:0;padding:2rem;background:#f6f7f9;color:#111}
-  .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:1.25rem;max-width:720px;margin:0 auto;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  :root{--brand:#16a34a;--ink:#0f1c17;--body:#3f4a45;--muted:#6b756f;--bg:#f6f7f5;--surface:#fff;--border:#e7e9e5;--slate-50:#f7f8f6}
+  body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-feature-settings:"cv11","ss01";margin:0;padding:2rem 1rem;background:var(--bg);color:var(--body);-webkit-font-smoothing:antialiased}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.5rem;max-width:720px;margin:0 auto;box-shadow:0 1px 2px rgba(16,24,40,.04),0 12px 32px -12px rgba(16,24,40,.10)}
+  h2{color:var(--ink);letter-spacing:-.01em}
   .row{display:flex;gap:1rem;flex-wrap:wrap}
   .row > div{flex:1 1 240px}
-  small{color:#6b7280}
-  ul{padding-left:1.1rem}
-  a{color:#2563eb}
+  .row b{color:var(--ink);font-variant-numeric:tabular-nums}
+  small{color:var(--muted)}
+  ul{padding-left:1.1rem;color:var(--body)}
+  a{color:var(--brand)}
+  .pay-btn{display:inline-block;padding:.6rem 1.1rem;border-radius:999px;text-decoration:none;font-weight:600;font-size:.9rem}
+  .pay-btn-primary{background:var(--brand);color:#fff}
+  .pay-btn-secondary{background:var(--surface);color:var(--ink);border:1px solid var(--border)}
 </style>
 </head>
 <body>
