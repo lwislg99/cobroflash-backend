@@ -14,6 +14,11 @@ export const config = {
     SMTP_URL: process.env.SMTP_URL || '',
     EMAIL_FROM: process.env.EMAIL_FROM || 'YaQu <no-reply@yaqu.local>',
   
+    // Desactiva los crons en proceso (útil en desarrollo para no enviar
+    // recordatorios/emails reales). Por defecto OFF → en prod los crons siguen activos.
+    DISABLE_CRONS:
+      String(process.env.DISABLE_CRONS).toLowerCase() === 'true' || process.env.DISABLE_CRONS === '1',
+
     AUTO_INVOICE_ON_PAID:
       String(process.env.AUTO_INVOICE_ON_PAID).toLowerCase() === 'true' || process.env.AUTO_INVOICE_ON_PAID === '1',
     AUTO_EMAIL_INVOICE_ON_PAID:
