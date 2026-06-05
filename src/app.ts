@@ -47,7 +47,7 @@ import searchRouter        from './modules/search/app/routes/search.routes';
 import { merchantProfileUpdateSchema } from './core/validation/schemas';
 import { getMerchantProfile, updateMerchantProfile } from './modules/system/merchantAdmin';
 import { getDigestPreview } from './modules/messaging/domain/weeklyDigest.service';
-import { getReferralStats } from './modules/auth/domain/referral.service';
+import { getReferralStats, redeemFreeMonth } from './modules/auth/domain/referral.service';
 import { getSession } from './modules/auth/domain/auth.service';
 import { getLocaleJson } from './core/i18n/locales';
 import { quoteDecisionLandingRouter } from './modules/system/app/routes/quoteDecisionLanding.routes';
@@ -175,6 +175,23 @@ app.get('/admin/referral', async (req, res) => {
     return res.json(stats);
   } catch (err) {
     console.error('[GET /admin/referral]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// Canje manual de un mes gratis ganado por referidos (solo admin)
+app.post('/admin/referral/redeem', async (req, res) => {
+  try {
+    if (req.userRole !== 'admin') {
+      return res.status(403).json({ error: 'forbidden', required_role: 'admin' });
+    }
+    const result = await redeemFreeMonth(req.merchantId);
+    if (!result.ok) {
+      return res.status(result.reason === 'no_credit' ? 409 : 400).json({ error: result.reason || 'redeem_failed' });
+    }
+    return res.json(result);
+  } catch (err) {
+    console.error('[POST /admin/referral/redeem]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });

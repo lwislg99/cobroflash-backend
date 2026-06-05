@@ -402,10 +402,40 @@ async function renderReferralCard(container) {
 
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
       <div class="kpi-card"><div class="kpi-label">Tu código</div><div class="kpi-value" style="font-size:18px">${escSettings(data.code)}</div></div>
-      <div class="kpi-card"><div class="kpi-label">Referidos</div><div class="kpi-value" style="font-size:20px">${data.referredCount} <span style="font-size:12px;color:var(--slate-400)">(${data.payingCount} pagando)</span></div></div>
+      <div class="kpi-card"><div class="kpi-label">Referidos</div><div class="kpi-value" style="font-size:20px">${data.referredCount} <span style="font-size:12px;color:var(--muted)">(${data.payingCount} pagando)</span></div></div>
       <div class="kpi-card"><div class="kpi-label">Meses gratis ganados</div><div class="kpi-value" style="font-size:20px;color:var(--green-600)">${data.freeMonthsEarned}</div></div>
     </div>
+
+    ${Number(data.freeMonthsEarned) >= 1 ? `
+    <div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--brand-tint);border:1px solid #bbf7d0;border-radius:12px;padding:12px 14px">
+      <div style="font-size:13px;color:var(--ink)">Tienes <strong>${data.freeMonthsEarned}</strong> mes${Number(data.freeMonthsEarned) !== 1 ? 'es' : ''} gratis disponible${Number(data.freeMonthsEarned) !== 1 ? 's' : ''}. Canjéalo para extender tu plan 30 días.</div>
+      <button id="ref-redeem" class="btn-primary btn-sm" style="white-space:nowrap">Canjear 1 mes gratis</button>
+    </div>
+    <div id="ref-redeem-msg" style="font-size:12.5px;color:var(--muted);margin-top:8px;min-height:16px"></div>
+    ` : ''}
   `;
+
+  const redeemBtn = card.querySelector('#ref-redeem');
+  if (redeemBtn) {
+    redeemBtn.addEventListener('click', async () => {
+      redeemBtn.disabled = true;
+      const original = redeemBtn.textContent;
+      redeemBtn.textContent = 'Canjeando…';
+      const msg = card.querySelector('#ref-redeem-msg');
+      try {
+        const r = await apiRequest('/admin/referral/redeem', { method: 'POST' });
+        const until = r.planExpiresAt ? new Date(r.planExpiresAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }) : null;
+        if (msg) { msg.style.color = 'var(--green-700)'; msg.textContent = '✓ Mes gratis aplicado.' + (until ? ' Tu plan llega hasta el ' + until + '.' : ''); }
+        // Re-render limpio: quitar esta tarjeta y volver a pintarla con el saldo actualizado
+        const parent = card.parentNode;
+        setTimeout(() => { card.remove(); if (parent) renderReferralCard(parent); }, 900);
+      } catch (e) {
+        redeemBtn.disabled = false;
+        redeemBtn.textContent = original;
+        if (msg) { msg.style.color = 'var(--red-600)'; msg.textContent = e?.data?.error === 'no_credit' ? 'No te quedan meses gratis.' : 'No se pudo canjear. Inténtalo de nuevo.'; }
+      }
+    });
+  }
 
   const copyBtn = card.querySelector('#ref-copy');
   copyBtn.addEventListener('click', async () => {

@@ -62,6 +62,37 @@ export async function getReferralStats(merchantId: number) {
   };
 }
 
+// Canje manual de un mes gratis ganado por referidos (sin cupones de Stripe).
+// Extiende planExpiresAt +30 días (desde la expiración actual si está vigente,
+// o desde hoy si ya expiró) y descuenta un crédito. Idempotente por crédito.
+// Nota: para suscripciones Stripe activas, planExpiresAt lo refresca el webhook
+// de Stripe; el canje es plenamente efectivo en trial/acceso manual.
+export async function redeemFreeMonth(
+  merchantId: number,
+): Promise<{ ok: boolean; reason?: string; planExpiresAt?: Date | null; freeMonthsEarned?: number }> {
+  const m = await prisma.merchant.findUnique({
+    where: { id: merchantId },
+    select: { freeMonthsEarned: true, planExpiresAt: true },
+  });
+  if (!m) return { ok: false, reason: 'not_found' };
+  if ((m.freeMonthsEarned ?? 0) < 1) return { ok: false, reason: 'no_credit' };
+
+  const now = new Date();
+  const base = m.planExpiresAt && m.planExpiresAt > now ? m.planExpiresAt : now;
+  const newExpiry = new Date(base.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+  const updated = await prisma.merchant.update({
+    where: { id: merchantId },
+    data: {
+      freeMonthsEarned: { decrement: 1 },
+      planExpiresAt: newExpiry,
+    },
+    select: { planExpiresAt: true, freeMonthsEarned: true },
+  });
+  console.log(`[referral] merchant ${merchantId} canjeó 1 mes gratis → expira ${newExpiry.toISOString()}`);
+  return { ok: true, planExpiresAt: updated.planExpiresAt, freeMonthsEarned: updated.freeMonthsEarned };
+}
+
 // Resuelve un código de referido a su merchantId (para atribuir en el registro).
 export async function resolveReferrer(refCode: string): Promise<number | null> {
   const code = String(refCode || '').trim().toUpperCase();
