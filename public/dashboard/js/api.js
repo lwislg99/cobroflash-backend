@@ -19,6 +19,19 @@ async function apiRequest(path, options = {}) {
   if (!res.ok) {
     let data = null;
     try { data = await res.json(); } catch { /* respuesta no JSON */ }
+
+    // Prueba caducada: en vez de un error feo, llevamos al usuario a Planes
+    // (cerrando cualquier modal abierto) para que pueda suscribirse.
+    if (res.status === 403 && data && data.error === 'trial_expired') {
+      document.querySelectorAll('.modal-overlay').forEach((m) => m.remove());
+      const nav = document.querySelector('.nav-item[data-view="plans"]');
+      if (nav) nav.click();
+      else window.location.hash = '#plans';
+      const e = new Error('Tu prueba ha terminado. Elige un plan para continuar.');
+      e.status = 403; e.data = data; e.handled = true;
+      throw e;
+    }
+
     const err = new Error(`API ${res.status}: ${data?.error || res.statusText}`);
     err.status = res.status;
     err.data   = data;

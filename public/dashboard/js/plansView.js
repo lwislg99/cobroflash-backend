@@ -40,9 +40,12 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans }, annual) {
   const isCurrent = currentPlan === plan.id;
 
   const statusHtml = isTrialExpired ? `
-    <div class="alert error" style="margin-bottom:20px">
-      <strong>Tu periodo de prueba ha terminado.</strong>
-      Suscríbete para seguir creando cotizaciones y facturas.
+    <div class="customers-card" style="display:flex;align-items:center;gap:12px;margin-bottom:20px;border-color:#fde68a;background:#fffbeb">
+      <div style="font-size:28px">⏳</div>
+      <div>
+        <div style="font-weight:700;font-size:15px;color:var(--ink)">Tu prueba ha terminado, elige un plan para seguir</div>
+        <div style="font-size:13px;color:var(--body);margin-top:2px">Puedes ver tus datos, pero para crear y enviar presupuestos necesitas una suscripción activa.</div>
+      </div>
     </div>
   ` : currentPlan === 'trial' ? `
     <div class="customers-card" style="display:flex;align-items:center;gap:12px;margin-bottom:20px">

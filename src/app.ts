@@ -91,6 +91,9 @@ app.use('/health', healthRouter);
 app.use('/auth', authRouter);
 app.use('/webhooks/psp', pspWebhookRouter);
 app.use('/charges', chargesRouter);
+// Crear presupuesto requiere prueba activa (bloqueo suave tras fin de trial).
+// El resto de /quote (accept/reject del cliente) sigue abierto.
+app.post('/quote/create', requireActivePlan);
 app.use('/quote', quotesRouter);
 app.use('/invoice', invoiceRouter);
 app.use('/recibo', receiptRouter);
@@ -137,6 +140,8 @@ app.get('/admin/me', async (req, res) => {
 });
 
 app.use('/admin/customers',  customersAdminRouter);
+// Enviar presupuesto por WhatsApp requiere prueba activa; ver/editar sigue abierto.
+app.post('/admin/quotes/:id/send-whatsapp', requireActivePlan);
 app.use('/admin/quotes',     quotesAdminRouter);
 app.use('/admin/invoices',   invoicesAdminRouter);
 app.use('/admin/products',   productsAdminRouter);
@@ -145,7 +150,9 @@ app.use('/admin/metrics',    metricsRouter);
 app.use('/admin/expenses',   expensesRouter);
 
 // Rutas solo para admin
-app.use('/admin/billing',    requireActivePlan, requireRole('admin'), subscriptionsRouter);
+// Billing SIEMPRE accesible (es donde se paga): no exigir prueba activa aquí,
+// de lo contrario un trial caducado no podría llegar a suscribirse (callejón sin salida).
+app.use('/admin/billing',    requireRole('admin'), subscriptionsRouter);
 app.use('/admin/team',       requireRole('admin'), teamRouter);
 app.use('/admin/ai',         aiRouter);
 
