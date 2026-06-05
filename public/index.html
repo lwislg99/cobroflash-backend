@@ -52,10 +52,10 @@
     /* Hero */
     .hero { background:linear-gradient(180deg,#f0fdf4 0%, var(--bg) 100%); padding:84px 0 64px; text-align:center; }
     .hero h1 { font-size:clamp(2.2rem, 5.2vw, 3.4rem); font-weight:800; line-height:1.06; margin:0 0 18px; letter-spacing:-.03em; }
-    .hero h1 .hl { background:linear-gradient(120deg,#22c55e,#22d3ee); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .hero h1 .hl { color:var(--brand); }
     .hero p.sub { font-size:19px; color:var(--muted); max-width:620px; margin:0 auto 28px; }
     .hero .cta-row { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
-    .hero .note { margin-top:14px; font-size:13px; color:#9ca3af; }
+    .hero .note { margin-top:14px; font-size:13px; color:var(--muted); }
 
     /* Steps */
     section { padding:64px 0; }
@@ -70,7 +70,7 @@
     .step-num { display:inline-flex; width:30px; height:30px; border-radius:50%; background:var(--green); color:#052e16; font-weight:800; align-items:center; justify-content:center; margin-bottom:12px; }
 
     /* Pricing */
-    .pricing { background:#f8fafc; }
+    .pricing { background:var(--bg); }
     .price-card { max-width:380px; margin:0 auto; background:#fff; border:2px solid var(--brand); border-radius:22px; padding:32px 28px; text-align:center; box-shadow:var(--shadow-lg); }
     .price-card .tag { display:inline-block; background:#ecfdf5; color:#047857; font-weight:700; font-size:12px; padding:5px 12px; border-radius:999px; margin-bottom:14px; }
     .price-card .amount { font-size:46px; font-weight:800; letter-spacing:-1px; }
@@ -86,11 +86,11 @@
     .cta-band p { color:#a7f3d0; max-width:520px; margin:0 auto 26px; }
 
     /* Footer */
-    footer { padding:40px 0; border-top:1px solid #eef2f7; }
+    footer { padding:40px 0; border-top:1px solid var(--border); }
     .foot-inner { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; }
     .foot-links a { color:var(--muted); font-size:14px; margin-left:18px; }
     .foot-links a:hover { color:var(--ink); }
-    .foot-copy { color:#9ca3af; font-size:13px; }
+    .foot-copy { color:var(--muted); font-size:13px; }
 
     @media (max-width:640px){
       .hero h1 { font-size:34px; }
@@ -157,7 +157,7 @@
   </section>
 
   <!-- BENEFICIOS -->
-  <section style="background:#f8fafc">
+  <section style="background:var(--bg)">
     <div class="container">
       <h2 class="section-title">Hecho para quien trabaja con las manos</h2>
       <p class="section-sub">Menos administración, más trabajos cerrados.</p>
