@@ -20,13 +20,13 @@ const STATUS_COLOR: Record<string, { bg: string; fg: string }> = {
   sent:     { bg: '#dbeafe', fg: '#1d4ed8' },
   pending:  { bg: '#fef3c7', fg: '#92400e' },
   rejected: { bg: '#fee2e2', fg: '#991b1b' },
-  expired:  { bg: '#f3f4f6', fg: '#6b7280' },
-  draft:    { bg: '#f3f4f6', fg: '#6b7280' },
+  expired:  { bg: '#f1f2ee', fg: '#4b554f' },
+  draft:    { bg: '#f1f2ee', fg: '#4b554f' },
 };
 
 function pill(status: string) {
   const label = STATUS_LABELS[status] ?? status;
-  const c = STATUS_COLOR[status] ?? { bg: '#f3f4f6', fg: '#374151' };
+  const c = STATUS_COLOR[status] ?? { bg: '#f1f2ee', fg: '#4b554f' };
   return `<span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:${c.bg};color:${c.fg};letter-spacing:.02em;text-transform:uppercase">${esc(label)}</span>`;
 }
 
@@ -40,95 +40,103 @@ function dateShort(d: Date | string) {
 
 function css() {
   return `
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
+  :root{
+    --brand:#16a34a;--brand-bright:#22c55e;--brand-tint:#ecfdf5;
+    --ink:#0f1c17;--body:#3f4a45;--muted:#6b756f;
+    --bg:#f6f7f5;--surface:#fff;--border:#e7e9e5;--slate-50:#f7f8f6;--slate-100:#f1f2ee;
+  }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: system-ui,-apple-system,sans-serif; background: #f1f5f9;
-    color: #0f172a; min-height: 100vh; }
+  body { font-family: 'Inter',system-ui,-apple-system,sans-serif; font-feature-settings:"cv11","ss01";
+    background: var(--bg); color: var(--body); min-height: 100vh; -webkit-font-smoothing: antialiased; }
 
   /* Header */
-  .pf-header { background: #0f172a; padding: 14px 20px;
+  .pf-header { background: var(--ink); padding: 14px 20px;
     display: flex; align-items: center; gap: 12px; }
   .pf-logo { max-height: 38px; max-width: 90px; object-fit: contain; border-radius: 6px; }
   .pf-brand { color: #fff; font-weight: 700; font-size: 15px; line-height: 1.3; }
-  .pf-brand-sub { color: #94a3b8; font-size: 12px; font-weight: 400; }
+  .pf-brand-sub { color: rgba(255,255,255,.6); font-size: 12px; font-weight: 400; }
 
   /* Container */
   .pf-main { max-width: 600px; margin: 0 auto; padding: 20px 14px 60px; }
 
   /* Greeting */
-  .pf-greeting { font-size: 22px; font-weight: 800; color: #0f172a; margin: 20px 0 4px; }
-  .pf-greeting-sub { font-size: 14px; color: #64748b; margin-bottom: 28px; }
+  .pf-greeting { font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: var(--ink); margin: 20px 0 4px; }
+  .pf-greeting-sub { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
 
   /* Section */
   .pf-section { margin-bottom: 28px; }
   .pf-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .08em; color: #64748b; margin-bottom: 10px; padding-left: 2px; }
+    letter-spacing: .08em; color: var(--muted); margin-bottom: 10px; padding-left: 2px; }
 
   /* Card */
-  .pf-card { background: #fff; border-radius: 14px; padding: 0;
-    box-shadow: 0 2px 10px rgba(0,0,0,.06); margin-bottom: 10px; overflow: hidden; }
+  .pf-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 0;
+    box-shadow: 0 1px 2px rgba(16,24,40,.04); margin-bottom: 10px; overflow: hidden; }
   .pf-card-body { padding: 14px 16px; }
   .pf-card-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-  .pf-card-title { font-weight: 700; font-size: 14.5px; color: #0f172a; margin-bottom: 3px; }
-  .pf-card-meta { font-size: 12.5px; color: #64748b; }
-  .pf-card-amount { font-weight: 800; font-size: 17px; color: #0f172a; margin-bottom: 5px; text-align: right; }
+  .pf-card-title { font-weight: 700; font-size: 14.5px; color: var(--ink); margin-bottom: 3px; }
+  .pf-card-meta { font-size: 12.5px; color: var(--muted); }
+  .pf-card-amount { font-weight: 800; font-size: 17px; color: var(--ink); margin-bottom: 5px; text-align: right; font-variant-numeric: tabular-nums; }
 
   /* Buttons */
-  .pf-btn { display: block; width: 100%; padding: 11px 14px; border-radius: 10px;
+  .pf-btn { display: block; width: 100%; padding: 12px 14px; border-radius: 12px;
     font-size: 14px; font-weight: 700; text-align: center; text-decoration: none;
-    border: none; cursor: pointer; transition: opacity .15s; }
-  .pf-btn:active { opacity: .8; }
-  .pf-btn-pay { background: #22c55e; color: #052e16; margin-bottom: 6px; }
-  .pf-btn-pdf { background: #f1f5f9; color: #2563eb; margin-bottom: 6px; }
+    border: none; cursor: pointer; transition: opacity .15s, background .15s; }
+  .pf-btn:active { opacity: .85; }
+  .pf-btn-pay { background: var(--brand); color: #fff; margin-bottom: 6px; }
+  .pf-btn-pdf { background: var(--surface); color: var(--ink); border: 1px solid var(--border); margin-bottom: 6px; }
   .pf-btn-mp  { background: #009ee3; color: #fff; margin-bottom: 6px; }
-  .pf-btn-ghost { background: transparent; color: #64748b; border: 1.5px solid #e2e8f0;
+  .pf-btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border);
     font-size: 13px; padding: 8px 14px; }
 
   /* Lines expandibles */
-  .pf-lines { border-top: 1px solid #f1f5f9; }
+  .pf-lines { border-top: 1px solid var(--slate-100); }
   .pf-lines-toggle { width: 100%; background: none; border: none; padding: 9px 16px;
-    font-size: 12.5px; color: #64748b; cursor: pointer; text-align: left;
+    font-size: 12.5px; color: var(--muted); cursor: pointer; text-align: left;
     display: flex; align-items: center; gap: 6px; font-family: inherit; }
-  .pf-lines-toggle:hover { background: #f8fafc; }
+  .pf-lines-toggle:hover { background: var(--slate-50); }
   .pf-lines-body { display: none; padding: 0 16px 12px; }
   .pf-lines-body.open { display: block; }
   .pf-line-row { display: flex; justify-content: space-between; gap: 8px;
-    font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid #f1f5f9; }
+    font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid var(--slate-100); }
   .pf-line-row:last-child { border-bottom: none; }
-  .pf-line-concept { color: #374151; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pf-line-amount { font-weight: 600; color: #0f172a; white-space: nowrap; }
+  .pf-line-concept { color: var(--body); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pf-line-amount { font-weight: 600; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
 
   /* Request form */
-  .pf-request-btn { background: linear-gradient(135deg,#22c55e,#16a34a);
-    color: #052e16; border: none; width: 100%; padding: 14px;
+  .pf-request-btn { background: linear-gradient(135deg,var(--brand-bright),var(--brand));
+    color: #fff; border: none; width: 100%; padding: 14px;
     border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer;
-    box-shadow: 0 4px 14px rgba(34,197,94,.3); font-family: inherit; }
-  .pf-request-form { display: none; background: #fff; border-radius: 14px;
-    padding: 16px; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+    box-shadow: 0 4px 14px rgba(22,163,74,.28); font-family: inherit; }
+  .pf-request-form { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
   .pf-request-form.open { display: block; }
-  .pf-request-label { font-size: 13px; font-weight: 600; color: #374151; display: block; margin-bottom: 6px; }
-  .pf-request-textarea { width: 100%; padding: 10px 12px; border: 1.5px solid #e2e8f0;
+  .pf-request-label { font-size: 13px; font-weight: 600; color: var(--body); display: block; margin-bottom: 6px; }
+  .pf-request-textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border);
     border-radius: 10px; font-size: 14px; font-family: inherit; resize: vertical;
-    min-height: 100px; color: #0f172a; }
-  .pf-request-textarea:focus { outline: none; border-color: #22c55e; }
-  .pf-request-submit { background: #22c55e; color: #052e16; border: none; width: 100%;
-    padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 700;
+    min-height: 100px; color: var(--ink); }
+  .pf-request-textarea:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(34,197,94,.22); }
+  .pf-request-submit { background: var(--brand); color: #fff; border: none; width: 100%;
+    padding: 12px; border-radius: 12px; font-size: 14px; font-weight: 700;
     cursor: pointer; margin-top: 10px; font-family: inherit; }
-  .pf-request-cancel { background: none; border: none; color: #64748b; font-size: 13px;
+  .pf-request-cancel { background: none; border: none; color: var(--muted); font-size: 13px;
     cursor: pointer; margin-top: 8px; width: 100%; font-family: inherit; }
-  .pf-success { background: #dcfce7; border: 1px solid #bbf7d0; border-radius: 12px;
-    padding: 14px; color: #166534; font-size: 14px; text-align: center; font-weight: 600; }
+  .pf-success { background: var(--brand-tint); border: 1px solid #bbf7d0; border-radius: 12px;
+    padding: 14px; color: #15803d; font-size: 14px; text-align: center; font-weight: 600; }
 
   /* Empty */
-  .pf-empty { color: #94a3b8; font-size: 14px; text-align: center; padding: 20px 0; }
+  .pf-empty { color: var(--muted); font-size: 14px; text-align: center; padding: 20px 0; }
 
   /* Footer */
-  .pf-footer { text-align: center; font-size: 12px; color: #cbd5e1; margin-top: 40px; }
+  .pf-footer { text-align: center; font-size: 12px; color: var(--muted); margin-top: 40px; }
 
   /* Contact */
   .pf-contact-row { display: flex; gap: 10px; }
   .pf-wa-btn { flex: 1; display: flex; align-items: center; justify-content: center;
-    gap: 8px; background: #25d366; color: #fff; border-radius: 10px; padding: 11px;
+    gap: 8px; background: #25d366; color: #fff; border-radius: 12px; padding: 12px;
     text-decoration: none; font-weight: 700; font-size: 13.5px; }
 </style>`;
 }
@@ -220,7 +228,7 @@ router.get('/:token', async (req, res) => {
   if (!customer) {
     return res.status(404).setHeader('Content-Type', 'text/html; charset=utf-8').send(
       page('Portal no encontrado',
-        '<div style="padding:60px 20px;text-align:center;color:#94a3b8;font-size:15px">Este enlace no es válido o ha expirado.</div>'
+        '<div style="padding:60px 20px;text-align:center;color:#6b756f;font-size:15px">Este enlace no es válido o ha expirado.</div>'
       )
     );
   }
@@ -241,9 +249,10 @@ router.get('/:token', async (req, res) => {
 
   const m          = customer.merchant!;
   const mName      = esc(m.legalName || m.name || 'Tu proveedor');
+  const initial    = esc((m.name || m.legalName || 'Y').trim().charAt(0).toUpperCase());
   const logoHtml   = m.logoUrl
     ? `<img class="pf-logo" src="${esc(m.logoUrl)}" alt="logo"/>`
-    : `<div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#22c55e,#22d3ee);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#052e16">PF</div>`;
+    : `<div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#22c55e,#22d3ee);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#052e16">${initial}</div>`;
 
   // ── Cotizaciones ────────────────────────────────────────────────────────
   const quotesHtml = quotes.length
