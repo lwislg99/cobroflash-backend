@@ -12,6 +12,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { getNextBillingStage } from '../../../quotes/domain/billingPlan';
 import { sendWhatsAppTemplate } from '../../../../integrations/whatsapp';
 import { recordCustomerEvent } from '../../customerEvents.service';
+import { sendTechQuoteApprovedEmail } from '../../../messaging/domain/merchantNotifications';
 import { normalizePhone } from '../../../../core/utils/utils';
 import { BASE_URL } from '../../../../core/config/env';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
@@ -322,7 +323,10 @@ router.post('/:id/approve', async (req, res) => {
 
     const quote = await prisma.quote.findFirst({
       where: { id, merchantId: req.merchantId },
-      select: { id: true, status: true },
+      select: {
+        id: true, status: true, total: true, currency: true, teamMemberId: true,
+        customer: { select: { name: true } },
+      },
     });
     if (!quote) return res.status(404).json({ error: 'not_found' });
     if (quote.status !== 'pending_approval') {
@@ -330,6 +334,25 @@ router.post('/:id/approve', async (req, res) => {
     }
 
     await prisma.quote.update({ where: { id }, data: { status: 'draft' } });
+
+    // Avisar por email al técnico que creó el presupuesto (si tiene email) — fire-and-forget
+    if (quote.teamMemberId) {
+      const tech = await prisma.teamMember.findUnique({
+        where: { id: quote.teamMemberId },
+        select: { email: true, name: true },
+      }).catch(() => null);
+      if (tech?.email) {
+        sendTechQuoteApprovedEmail({
+          techEmail: tech.email,
+          techName: tech.name || '',
+          quoteId: quote.id,
+          customerName: quote.customer?.name || 'el cliente',
+          total: Number(quote.total).toFixed(2),
+          currency: quote.currency,
+        }).catch(() => {});
+      }
+    }
+
     return res.json({ ok: true, id, status: 'draft' });
   } catch (err) {
     console.error('[POST /admin/quotes/:id/approve]', err);
