@@ -1,0 +1,47 @@
+/* YaQu — design tokens (fuente de verdad compartida).
+   Alineado con DESIGN.md. Lo consumen el landing (index.html), las paginas de
+   auth (auth.css) y cualquier superficie publica. Un unico :root evita que
+   marketing y producto vuelvan a divergir en color, radio, sombra o foco.
+   Solo viven aqui valores reutilizables y con significado; los colores
+   decorativos de un unico uso (degradado del hero, banda CTA) se quedan
+   en su pagina. */
+:root {
+  /* Marca */
+  --brand: #16a34a;          /* Verde Confianza — accion principal, enlaces, foco */
+  --brand-700: #15803d;      /* hover del verde de marca */
+  --brand-bright: #22c55e;   /* Verde Vivo — degradado de marca y micro-acentos */
+  --brand-ink: #052e16;      /* texto sobre verde claro / degradado de marca */
+  --brand-tint: #ecfdf5;     /* fondos de realce suaves (badges, hover de acento) */
+  --brand-tint-ink: #047857; /* texto sobre --brand-tint */
+  --logo-cyan: #22d3ee;      /* cierre del degradado del logo */
+
+  /* Neutros calidos */
+  --ink: #0f1c17;            /* titulares y cifras */
+  --body: #3f4a45;           /* texto de parrafo */
+  --muted: #6b756f;          /* metadatos, ayudas, placeholders */
+  --bg: #f6f7f5;             /* lienzo */
+  --surface: #ffffff;        /* cards, inputs, modales */
+  --border: #e7e9e5;         /* divisores y contornos 1px */
+  --input-border: #cdd2cb;   /* borde de input mas visible (legible a pleno sol) */
+
+  /* Semanticos */
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+  --danger-ink: #991b1b;
+  --ok-bg: #ecfdf5;
+  --ok-ink: #166534;
+
+  /* Radios (DESIGN.md) */
+  --r-sm: 8px;
+  --r-md: 12px;    /* inputs, piezas internas */
+  --r-lg: 16px;    /* cards de contenido */
+  --r-xl: 22px;    /* card hero (precio) */
+  --r-full: 9999px;/* pildoras: botones, tags */
+
+  /* Elevacion (DESIGN.md) */
+  --shadow-sm: 0 1px 2px rgba(16,24,40,.04);                                       /* Reposo */
+  --shadow-md: 0 4px 12px -2px rgba(16,24,40,.08), 0 2px 6px -2px rgba(16,24,40,.05); /* Elevado */
+  --shadow-lg: 0 18px 40px -12px rgba(16,24,40,.18);                               /* Flotante */
+  --shadow-btn: 0 1px 2px rgba(5,46,22,.18);                                       /* boton primario en reposo */
+  --ring: 0 0 0 3px rgba(34,197,94,.30);                                           /* Foco accesible */
+}
