@@ -437,7 +437,22 @@ let qqState = {
 function openQuickQuoteModal(prefill) {
   if (document.getElementById("qq-modal-backdrop")) return;
 
-  qqState = { customerId: null, customerName: "", customerPhone: "", products: [{ concept: "", qty: 1, price: "" }], paymentTerms: "FULL_UPFRONT", tiersMode: false };
+  // Dos modos MUTUAMENTE EXCLUYENTES con su propio estado: al cambiar de modo
+  // no se transforman los datos, cada uno se conserva por separado.
+  qqState = {
+    customerId: null, customerName: "", customerPhone: "",
+    mode: "single",                                   // 'single' | 'tiers'
+    products: [{ concept: "", qty: 1, price: "" }],   // modo "Un precio"
+    tiers: {                                          // modo "3 opciones"
+      concept: "",
+      levels: [
+        { id: "good",   label: "Básico",   price: "", includes: "" },
+        { id: "better", label: "Estándar", price: "", includes: "" },
+        { id: "best",   label: "Premium",  price: "", includes: "" },
+      ],
+    },
+    paymentTerms: "FULL_UPFRONT",
+  };
 
   const qNew = (window.appLocale && window.appLocale.quoteNew) || 'Nueva cotización';
   // Concordancia de género: "Nuevo presupuesto rápido" / "Nueva cotización rápida"
@@ -468,46 +483,68 @@ function openQuickQuoteModal(prefill) {
           </div>
         </div>
 
-        <!-- Conceptos: modo clásico (tabla) o 3 opciones (un concepto + 3 precios) -->
+        <!-- Elección clara del modo de cotización (no un checkbox que muta el form) -->
         <div class="field">
-          <!-- Modo clásico: tabla de líneas -->
-          <div id="qq-classic-mode">
-            <div class="qq-lines-head">
-              <span>Concepto / servicio</span>
-              <span style="text-align:center">Cant.</span>
-              <span>Precio</span>
-              <span></span>
-            </div>
-            <div id="qq-lines-container"></div>
+          <label class="qq-flabel">¿Cómo quieres cotizar?</label>
+          <div class="qq-mode" role="tablist" aria-label="Modo de cotización">
+            <button type="button" class="qq-mode-btn is-active" data-mode="single" role="tab" aria-selected="true">
+              <span class="qq-mode-title">Un precio</span>
+              <span class="qq-mode-sub">Un importe para todo el trabajo</span>
+            </button>
+            <button type="button" class="qq-mode-btn" data-mode="tiers" role="tab" aria-selected="false">
+              <span class="qq-mode-title">3 opciones</span>
+              <span class="qq-mode-sub">El cliente elige nivel y paga ese</span>
+            </button>
           </div>
+        </div>
 
-          <!-- Modo 3 opciones: concepto único + 3 tarjetas de precio -->
-          <div id="qq-tiers-mode" style="display:none">
-            <label class="qq-flabel">Concepto / servicio</label>
-            <div class="qq-autocomplete-wrapper">
-              <input id="qq-tier-concept" type="text" placeholder="Ej: Instalación eléctrica" autocomplete="off"/>
-              <div class="qq-dropdown" id="qq-tier-pdropdown" style="display:none"></div>
-            </div>
-            <div class="qq-tiers-grid">
-              ${['Básico', 'Estándar', 'Premium'].map((label, i) => `
-                <div class="qq-tier-card${i === 1 ? ' is-featured' : ''}">
-                  <div class="qq-tier-card-label">${label}${i === 1 ? ' ⭐' : ''}</div>
+        <!-- MODO "Un precio": líneas que suman a un total -->
+        <div class="field" id="qq-mode-single">
+          <div class="qq-lines-head">
+            <span>Concepto / servicio</span>
+            <span style="text-align:center">Cant.</span>
+            <span>Precio</span>
+            <span></span>
+          </div>
+          <div id="qq-lines-container"></div>
+          <div class="qq-lines-actions">
+            <button type="button" id="qq-add-line" class="btn-ghost btn-sm" style="color:var(--green-600)">+ Añadir línea</button>
+          </div>
+          <div class="qq-total">
+            <span class="qq-total-label">Total</span>
+            <span class="qq-total-amount" id="qq-total-amount">${esc(fmtMoney(0, window.appLocale?.currency))}</span>
+          </div>
+        </div>
+
+        <!-- MODO "3 opciones" (Good/Better/Best): concepto único + 3 niveles apilados -->
+        <div class="field" id="qq-mode-tiers" style="display:none">
+          <label class="qq-flabel">¿De qué es el presupuesto?</label>
+          <div class="qq-autocomplete-wrapper">
+            <input id="qq-tier-concept" type="text" placeholder="Ej: Instalación eléctrica" autocomplete="off"/>
+            <div class="qq-dropdown" id="qq-tier-pdropdown" style="display:none"></div>
+          </div>
+          <div class="qq-tiers-stack">
+            ${[0, 1, 2].map((i) => {
+              const lv = qqState.tiers.levels[i];
+              const feat = lv.id === 'better';
+              return `
+              <div class="qq-tier-row${feat ? ' is-featured' : ''}">
+                <div class="qq-tier-row-head">
+                  <span class="qq-tier-card-label">${lv.label}</span>
+                  ${feat ? '<span class="qq-tier-badge">Recomendada</span>' : ''}
+                </div>
+                <div class="qq-tier-row-fields">
                   <div class="field" style="margin:0">
                     <input type="number" class="qq-tier-price" data-tier-idx="${i}" min="0" step="0.01" placeholder="Precio"/>
                   </div>
+                  <div class="field" style="margin:0">
+                    <input type="text" class="qq-tier-includes" data-tier-idx="${i}" placeholder="Qué incluye (ej: Marcas + garantía)"/>
+                  </div>
                 </div>
-              `).join('')}
-            </div>
-            <p style="font-size:12px;color:var(--neutral-500);margin:8px 0 0">El cliente ve las 3 opciones y elige la que prefiera.</p>
+              </div>`;
+            }).join('')}
           </div>
-
-          <!-- Acciones: añadir línea + chip para activar las 3 opciones -->
-          <div class="qq-lines-actions">
-            <button type="button" id="qq-add-line" class="btn-ghost btn-sm" style="color:var(--green-600)">+ Añadir línea</button>
-            <button type="button" id="qq-tiers-chip" class="qq-chip" aria-pressed="false">
-              <span class="qq-chip-ico">⊞</span> 3 opciones de precio
-            </button>
-          </div>
+          <p class="qq-help">El cliente elige una opción y esa se convierte en su presupuesto.</p>
         </div>
 
         <!-- Condiciones de pago -->
@@ -564,35 +601,30 @@ function openQuickQuoteModal(prefill) {
   renderQqLines();
   initCustomerAutocomplete();
 
-  // Chip "3 opciones de precio": alterna entre tabla multi-línea y concepto único + 3 niveles.
-  document.getElementById('qq-tiers-chip')?.addEventListener('click', () => {
-    const on = !qqState.tiersMode;
-    qqState.tiersMode = on;
-
-    const chip = document.getElementById('qq-tiers-chip');
-    const tierConcept = document.getElementById('qq-tier-concept');
-    const firstClassic = document.querySelector('.qq-concept');
-
-    // El concepto se mantiene al cambiar de modo (no perder de qué es el presupuesto)
-    if (on && firstClassic && firstClassic.value && tierConcept && !tierConcept.value) {
-      tierConcept.value = firstClassic.value;
-    } else if (!on && tierConcept && tierConcept.value && firstClassic && !firstClassic.value) {
-      firstClassic.value = tierConcept.value;
-      if (qqState.products[0]) qqState.products[0].concept = tierConcept.value;
-    }
-
-    chip.setAttribute('aria-pressed', String(on));
-    document.getElementById('qq-classic-mode').style.display = on ? 'none' : 'block';
-    document.getElementById('qq-tiers-mode').style.display = on ? 'block' : 'none';
-    document.getElementById('qq-add-line').style.display = on ? 'none' : '';
+  // Selector de modo: decide qué formulario se muestra. Cada modo conserva su
+  // estado por separado (no se transforma uno en otro).
+  document.querySelectorAll('.qq-mode-btn').forEach((b) => {
+    b.addEventListener('click', () => setQqMode(b.dataset.mode));
   });
 
-  // Autocomplete en el concepto del modo tiers
-  document.getElementById('qq-tier-concept')?.addEventListener('input', (e) => {
+  // Modo "3 opciones": concepto general + binding de precio/qué incluye al estado
+  const tierConceptEl = document.getElementById('qq-tier-concept');
+  tierConceptEl?.addEventListener('input', (e) => {
+    qqState.tiers.concept = e.target.value;
     searchProducts(e.target.value, 'tier');
   });
-  document.getElementById('qq-tier-concept')?.addEventListener('focus', (e) => {
+  tierConceptEl?.addEventListener('focus', (e) => {
     if (e.target.value.length >= 1) searchProducts(e.target.value, 'tier');
+  });
+  document.querySelectorAll('.qq-tier-price').forEach((inp) => {
+    inp.addEventListener('input', (e) => {
+      qqState.tiers.levels[parseInt(e.target.dataset.tierIdx)].price = e.target.value;
+    });
+  });
+  document.querySelectorAll('.qq-tier-includes').forEach((inp) => {
+    inp.addEventListener('input', (e) => {
+      qqState.tiers.levels[parseInt(e.target.dataset.tierIdx)].includes = e.target.value;
+    });
   });
 
   // Prefill (paso WOW del onboarding): cliente nuevo + primera línea ya rellenados
@@ -626,6 +658,31 @@ function closeQuickQuote() {
   const el = document.getElementById("qq-modal-backdrop");
   if (el) el.remove();
   if (qqEscHandler) { document.removeEventListener("keydown", qqEscHandler); qqEscHandler = null; }
+}
+
+// Cambia el modo de cotización mostrando solo su formulario. No transforma datos:
+// cada modo conserva su propio estado (products vs tiers).
+function setQqMode(mode) {
+  qqState.mode = mode;
+  document.querySelectorAll('.qq-mode-btn').forEach((b) => {
+    const active = b.dataset.mode === mode;
+    b.classList.toggle('is-active', active);
+    b.setAttribute('aria-selected', String(active));
+  });
+  const single = document.getElementById('qq-mode-single');
+  const tiers = document.getElementById('qq-mode-tiers');
+  if (single) single.style.display = mode === 'single' ? '' : 'none';
+  if (tiers) tiers.style.display = mode === 'tiers' ? '' : 'none';
+}
+
+// Total en vivo del modo "Un precio" (importe en tinta tabular, como /pay/invoice).
+function updateQqTotal() {
+  const el = document.getElementById('qq-total-amount');
+  if (!el) return;
+  const total = qqState.products.reduce(
+    (sum, l) => sum + (Number(l.qty) || 0) * (Number(l.price) || 0), 0
+  );
+  el.textContent = fmtMoney(total, window.appLocale?.currency);
 }
 
 function renderQqLines() {
@@ -667,12 +724,14 @@ function renderQqLines() {
   container.querySelectorAll(".qq-qty").forEach((inp) => {
     inp.addEventListener("input", (e) => {
       qqState.products[parseInt(e.target.dataset.idx)].qty = Number(e.target.value) || 1;
+      updateQqTotal();
     });
   });
 
   container.querySelectorAll(".qq-price").forEach((inp) => {
     inp.addEventListener("input", (e) => {
       qqState.products[parseInt(e.target.dataset.idx)].price = e.target.value;
+      updateQqTotal();
     });
   });
 
@@ -682,6 +741,8 @@ function renderQqLines() {
       renderQqLines();
     });
   });
+
+  updateQqTotal();
 }
 
 function addQqLine() {
@@ -719,9 +780,11 @@ async function searchProducts(query, lineIdx) {
           e.preventDefault();
           if (isTierMode) {
             document.getElementById("qq-tier-concept").value = item.dataset.name;
+            qqState.tiers.concept = item.dataset.name;
             // Pre-rellenar precio en Estándar (índice 1)
             const priceInputs = document.querySelectorAll(".qq-tier-price");
             if (priceInputs[1]) priceInputs[1].value = item.dataset.price;
+            qqState.tiers.levels[1].price = item.dataset.price;
           } else {
             const idx = parseInt(item.dataset.idx);
             qqState.products[idx].concept = item.dataset.name;
@@ -809,22 +872,26 @@ async function submitQuickQuote() {
   const customerName = qqState.customerName.trim();
   if (!customerName) { showQqAlert("Indica el nombre del cliente."); uiMarkFieldError(document.getElementById("qq-customer-input")); return; }
 
-  // Validar y construir payload según modo
+  // Validar y construir payload según el modo elegido (datos desde el estado).
   let quotePayload;
 
-  if (qqState.tiersMode) {
-    const conceptEl = document.getElementById("qq-tier-concept");
-    const concept = conceptEl?.value.trim();
-    if (!concept) { showQqAlert("Introduce el concepto del servicio."); uiMarkFieldError(conceptEl); return; }
-    const priceEls = Array.from(document.querySelectorAll(".qq-tier-price"));
-    const prices = priceEls.map((el) => Number(el.value));
-    if (prices.some((p) => !p || p <= 0)) { showQqAlert("Introduce los 3 precios."); uiMarkFieldError(priceEls.find((el) => !Number(el.value) || Number(el.value) <= 0)); return; }
-    const labels = ["Básico", "Estándar", "Premium"];
-    const ids = ["good", "better", "best"];
+  if (qqState.mode === "tiers") {
+    const concept = (qqState.tiers.concept || "").trim();
+    if (!concept) { showQqAlert("Escribe de qué es el presupuesto."); uiMarkFieldError(document.getElementById("qq-tier-concept")); return; }
+    const levels = qqState.tiers.levels;
+    const bad = levels.findIndex((lv) => !(Number(lv.price) > 0));
+    if (bad !== -1) {
+      showQqAlert("Pon un precio en las 3 opciones.");
+      uiMarkFieldError(document.querySelector(`.qq-tier-price[data-tier-idx="${bad}"]`));
+      return;
+    }
     quotePayload = {
-      tiers: ids.map((id, i) => ({
-        id, label: labels[i], recommended: i === 1,
-        lines: [{ concept, qty: 1, price: prices[i], tax: 0 }],
+      tiers: levels.map((lv) => ({
+        id: lv.id,
+        label: lv.label,
+        recommended: lv.id === "better",
+        description: (lv.includes || "").trim() || undefined,   // "Qué incluye"
+        lines: [{ concept, qty: 1, price: Number(lv.price), tax: 0 }],
       })),
     };
   } else {

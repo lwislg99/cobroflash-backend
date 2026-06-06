@@ -853,40 +853,79 @@ img { max-width: 100%; display: block; }
 .qq-line-row { margin-bottom: 6px; }
 .qq-line-row .qq-qty { text-align: center; }
 
-/* Fila de acciones bajo las líneas: "+ Añadir línea" + chip "3 opciones". */
+/* Selector de modo de cotización: elección clara arriba (no un checkbox que muta
+   el formulario). Dos botones tipo segmented, cada uno con título + descripción
+   para que la diferencia se entienda a la primera. */
+.qq-mode {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.qq-mode-btn {
+  display: flex; flex-direction: column; gap: 2px; text-align: left;
+  padding: 10px 12px; cursor: pointer; font-family: inherit;
+  background: var(--surface); color: var(--neutral-700);
+  border: 1px solid var(--neutral-200); border-radius: var(--radius-md);
+  transition: background .12s, border-color .12s, box-shadow .12s;
+}
+.qq-mode-btn:hover { border-color: var(--neutral-300); }
+.qq-mode-btn.is-active {
+  border-color: var(--green-600); background: var(--green-50);
+  box-shadow: inset 0 0 0 1px var(--green-600);
+}
+.qq-mode-title { font-size: 13.5px; font-weight: 700; color: var(--ink); }
+.qq-mode-btn.is-active .qq-mode-title { color: var(--green-700); }
+.qq-mode-sub { font-size: 11.5px; line-height: 1.3; color: var(--muted); }
+
+/* Fila de acciones bajo las líneas (modo "Un precio"). */
 .qq-lines-actions {
   display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 8px;
 }
-/* Chip toggle de modo 3 opciones (sustituye al checkbox perdido). */
-.qq-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 12px; font-size: 12.5px; font-weight: 600;
-  font-family: inherit; cursor: pointer;
-  color: var(--neutral-600); background: var(--surface);
-  border: 1px solid var(--neutral-300); border-radius: var(--r-full);
-  transition: background .12s, border-color .12s, color .12s;
-}
-.qq-chip:hover { border-color: var(--neutral-400); color: var(--neutral-800); }
-.qq-chip[aria-pressed="true"] {
-  background: var(--green-50); border-color: var(--green-600); color: var(--green-700);
-}
-.qq-chip .qq-chip-ico { font-size: 13px; line-height: 1; }
 .qq-lines-actions .btn-sm { margin: 0; }
 
-/* Modo 3 opciones: concepto único arriba + 3 tarjetas de precio. */
-.qq-tiers-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px;
+/* Total en vivo del modo "Un precio": mismo lenguaje que /pay/invoice
+   (label en mayúsculas tracked + importe en tinta tabular sobre línea superior). */
+.qq-total {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);
 }
-.qq-tier-card {
+.qq-total-label {
+  font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--muted);
+}
+.qq-total-amount {
+  font-size: 1.25rem; font-weight: 800; color: var(--ink);
+  letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+}
+
+/* Modo "3 opciones": tarjetas APILADAS verticalmente (concepto único arriba). */
+.qq-tiers-stack {
+  display: flex; flex-direction: column; gap: 8px; margin-top: 8px;
+}
+.qq-tier-row {
   border: 1px solid var(--neutral-200); background: var(--surface);
-  border-radius: var(--radius-md); padding: 10px;
+  border-radius: var(--radius-md); padding: 10px 12px;
 }
-.qq-tier-card.is-featured { border-color: var(--green-600); background: var(--green-50); }
+.qq-tier-row.is-featured {
+  border-color: var(--green-600); background: var(--green-50);
+}
+.qq-tier-row-head {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+}
 .qq-tier-card-label {
-  font-size: 11.5px; font-weight: 700; color: var(--muted); margin-bottom: 6px;
-  text-transform: uppercase; letter-spacing: .03em; white-space: nowrap;
+  font-size: 11.5px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .04em;
 }
-.qq-tier-card.is-featured .qq-tier-card-label { color: var(--green-700); }
+.qq-tier-row.is-featured .qq-tier-card-label { color: var(--green-700); }
+.qq-tier-badge {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--green-700); background: color-mix(in srgb, var(--green-600) 14%, transparent);
+  padding: 2px 8px; border-radius: var(--r-full);
+}
+.qq-tier-row-fields {
+  display: grid; grid-template-columns: 38% 1fr; gap: 8px;
+}
+
+/* Texto de ayuda del modo (color con contraste AA). */
+.qq-help { font-size: 12px; color: var(--muted); margin: 8px 0 0; line-height: 1.4; }
 
 .qq-terms { display: flex; gap: 8px; }
 .qq-terms label {
