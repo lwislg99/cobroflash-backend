@@ -89,8 +89,13 @@ async function renderHomeView(container) {
     // Rendimiento del equipo (ANA-3) — solo admin con técnicos
     renderTeamPerformance(container);
   } catch (err) {
-    document.getElementById("kpi-grid").innerHTML =
-      `<div style="color:#b91c1c;font-size:13px;grid-column:1/-1">Error cargando métricas</div>`;
+    uiErrorState(
+      document.getElementById("kpi-grid"),
+      "No pudimos cargar tus métricas. Revisa tu conexión.",
+      () => renderHomeView(container)
+    );
+    const af = document.getElementById("activity-feed");
+    if (af) af.innerHTML = "";   // detener los skeletons que quedaban cargando
   }
 }
 
@@ -788,16 +793,18 @@ async function submitQuickQuote() {
 
   // Validar cliente
   const customerName = qqState.customerName.trim();
-  if (!customerName) { showQqAlert("Indica el nombre del cliente."); return; }
+  if (!customerName) { showQqAlert("Indica el nombre del cliente."); uiMarkFieldError(document.getElementById("qq-customer-input")); return; }
 
   // Validar y construir payload según modo
   let quotePayload;
 
   if (qqState.tiersMode) {
-    const concept = document.getElementById("qq-tier-concept")?.value.trim();
-    if (!concept) { showQqAlert("Introduce el concepto del servicio."); return; }
-    const prices = Array.from(document.querySelectorAll(".qq-tier-price")).map((el) => Number(el.value));
-    if (prices.some((p) => !p || p <= 0)) { showQqAlert("Introduce los 3 precios."); return; }
+    const conceptEl = document.getElementById("qq-tier-concept");
+    const concept = conceptEl?.value.trim();
+    if (!concept) { showQqAlert("Introduce el concepto del servicio."); uiMarkFieldError(conceptEl); return; }
+    const priceEls = Array.from(document.querySelectorAll(".qq-tier-price"));
+    const prices = priceEls.map((el) => Number(el.value));
+    if (prices.some((p) => !p || p <= 0)) { showQqAlert("Introduce los 3 precios."); uiMarkFieldError(priceEls.find((el) => !Number(el.value) || Number(el.value) <= 0)); return; }
     const labels = ["Básico", "Estándar", "Premium"];
     const ids = ["good", "better", "best"];
     quotePayload = {
@@ -808,7 +815,7 @@ async function submitQuickQuote() {
     };
   } else {
     const lines = qqState.products.filter((l) => l.concept.trim() && Number(l.price) > 0);
-    if (!lines.length) { showQqAlert("Añade al menos una línea con concepto y precio."); return; }
+    if (!lines.length) { showQqAlert("Añade al menos una línea con concepto y precio."); uiMarkFieldError(document.querySelector(".qq-concept")); return; }
     quotePayload = {
       lines: lines.map((l) => ({ concept: l.concept.trim(), qty: Number(l.qty) || 1, price: Number(l.price), tax: 0 })),
     };

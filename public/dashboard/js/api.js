@@ -42,6 +42,36 @@ async function apiRequest(path, options = {}) {
   return res.json();
 }
 
+// -------- UI helpers compartidos (carga / error) --------
+
+// Pinta un estado de error con botón de reintento dentro de `container`.
+// onRetry se llama al pulsar "Reintentar". Reutilizable por cualquier vista.
+function uiErrorState(container, message, onRetry) {
+  if (!container) return;
+  container.innerHTML = `
+    <div class="state-error">
+      <div class="state-error-ico">⚠️</div>
+      <div class="state-error-msg">${message || 'No pudimos cargar la información.'}</div>
+      ${onRetry ? '<button type="button" class="state-error-retry">Reintentar</button>' : ''}
+    </div>`;
+  if (onRetry) {
+    container.querySelector('.state-error-retry')?.addEventListener('click', onRetry);
+  }
+}
+window.uiErrorState = uiErrorState;
+
+// Marca un campo como inválido (origen del error) y lo enfoca. Limpia los
+// previos dentro de `scope` para no acumular marcas.
+function uiMarkFieldError(el, scope) {
+  (scope || document).querySelectorAll('.input-error').forEach((n) => n.classList.remove('input-error'));
+  if (!el) return;
+  el.classList.add('input-error');
+  el.focus?.();
+  const clear = () => { el.classList.remove('input-error'); el.removeEventListener('input', clear); };
+  el.addEventListener('input', clear);
+}
+window.uiMarkFieldError = uiMarkFieldError;
+
 // -------- Admin – Merchant --------
 
 function getMerchantProfile() {
