@@ -205,7 +205,7 @@ const table = createElement("table", "table");
 **`window.appUserRole`** — `'admin'` o `'tecnico'`.
 
 **Superficies públicas (HTML estático en `public/`, servido en raíz por `express.static`):**
-- `public/tokens.css` — **fuente de verdad de tokens** (color, radio, sombra, foco) alineada con DESIGN.md. La consumen el landing y las páginas de auth → marketing y producto NO pueden divergir. Editar aquí, se aplica en todas las superficies. Los colores decorativos de un solo uso (degradado del hero, banda CTA) siguen inline en su página.
+- `public/tokens.css` — **fuente de verdad de tokens** (color, radio, sombra, foco) alineada con DESIGN.md. La consumen el landing, las páginas de auth **y el dashboard** (`dashboard/css/styles.css` alia sus `--radius-*`/sombras/marca a `--r-*`/`--shadow-*`/`--brand*`) → marketing y producto NO divergen. Editar aquí, se aplica en todas las superficies. Lo único propio del dashboard es el ramp neutro `--slate-*` y el layout. Los colores decorativos de un solo uso (degradado del hero, banda CTA) siguen inline en su página.
 - `public/auth.css` — estilos compartidos de `login.html` + `register.html` (card, inputs, botón píldora, badges, links). **Hereda** de tokens.css → enlazar `tokens.css` ANTES que `auth.css` en cada página de auth.
 - `public/index.html` (landing): enlaza `tokens.css` + `<style>` inline propio (clases del landing: `.hero`, `.card`, `.price-card`, `.cta-band`, etc.). Botones `.btn` en píldora vía `var(--r-full)`.
 - ⚠️ Las páginas de auth viven en `/login.html` y `/register.html` (NO `/login` ni `/register` → eso da 404).
@@ -263,6 +263,19 @@ GET  /admin/referral, POST /admin/referral/redeem (admin — canjea 1 mes gratis
 
 ## 📌 ESTADO ACTUAL — leer primero al retomar (última sesión: 2026-06-06)
 
+### ✅ Completado en la sesión 2026-06-06 (cont.) — crítica /impeccable end-to-end del móvil (390px)
+Ciclo completo dirigido por `/impeccable critique` sobre **landing + login + register + dashboard** (incluido el dashboard autenticado, renderizado en local con un server efímero que mockea `/admin/*`). **Salud 29 → 32 → 35/40** (3 snapshots en `.impeccable/critique/`, slug `yaqu-app-mobile-landing-auth-dashboard`). 0 P0 / 0 P1 al cerrar. Todo commit→push directo a `main`:
+- **3 P1** → `6fbf2f3`: Regla del Importe (KPIs Gastos/Beneficio vuelven a tinta + chip de estado, fin del rojo en el número y del borde verde de 2px); contraste AA (los `--slate-400`/`-300` de texto sobre blanco suben a slate-500/600); **una sola etiqueta de conversión** en la landing (`/register.html` = "Empezar gratis" en nav/hero/precios/CTA final).
+- **P2 extract** → `08bba3d`: el **dashboard ya consume `tokens.css`** — sus `--radius-*`/sombras son alias de `--r-*`/`--shadow-*` (cards 14→16px, inputs 10→12px), y `--green-*`/`--red-*` alias de `--brand*`/`--danger*`. Se añadió `--r-2xl:24px` a tokens.css. Queda local solo el ramp neutro `--slate-*` (sin equivalente completo en tokens.css).
+- **Onboard** → `c45de69`: el coach-mark (`tutorial.js`) pasa a **spotlight** (ilumina el CTA real con anillo de marca sobre scrim, `pointer-events:none`), flecha al objetivo, no lo tapa, "Entendido" discreto, cierre con Escape/clic-fuera, reposición en scroll/resize.
+- **Badges sidebar** → `67dc2c5`: clase `.nav-badge` con **un solo color de conteo** (info `--blue-600`, blanco 5:1 AA); fin del rojo/azul/ámbar ad hoc.
+- **Layout auth** → `322c91c`: card centrada con patrón `margin:auto` sobre `.auth-wrap` (fin del hueco muerto en móvil alto) + franja `.auth-trust` de confianza bajo la card.
+- **Modal "Nuevo presupuesto rápido"** → `3214c59` (cabeceras de columna Concepto/Cant./Precio compartiendo grid con las filas + proporciones; typo "en cuanto"→"cuando") y `0e04e48` (polish: helper texts a slate-500, tiers de 2px a 1px+tinte).
+- **Harden** → `151f28c`: `.skeleton` con neutros cálidos (antes gris azulado prohibido) + `--radius`; helper compartido **`window.uiErrorState(container,msg,onRetry)`** (`.state-error`, usado en el catch del Home con "Reintentar") y **`window.uiMarkFieldError(el)`** (`.input-error`, la validación del modal marca/enfoca el campo que falla). Cierra las heurísticas 1 (carga) y 9 (recuperación).
+- **A11y** → `af6bb88`: empty-states "Sin datos aún" y ranking del Home de slate-300 (~1.7:1) a slate-500.
+
+**Pendiente menor de esta crítica (≤P2, no bloquea):** skeletons solo en el Home (las listas siguen con "Cargando…" en texto) · Escape no cierra el modal de presupuesto (sí ×/Cancelar/clic-fuera) · `aria-live` en error/toasts · naming interno `--slate-*`. Helpers `uiErrorState`/`uiMarkFieldError` (en `api.js`) listos para reutilizar en otras vistas.
+
 ### ✅ Completado en la sesión 2026-06-06 (diseño público + tooling)
 **Diseño superficies públicas (móvil 390px, verificado en navegador y en prod):**
 - Crítica `/impeccable` de landing + login + register a 390px (snapshot en `.impeccable/critique/`). Salud 29/40; el problema raíz era *deriva artesanal* entre superficies (botón, radios, bordes, color de badge distintos en marketing vs auth).
@@ -313,8 +326,8 @@ GET  /admin/referral, POST /admin/referral/redeem (admin — canjea 1 mes gratis
 
 ### 🎯 Próximos pasos prioritarios al retomar
 1. **Cuando Meta apruebe:** probar las 3 plantillas con `wa-test.mjs` y validar el loop completo (cotización→acepta→factura→pago→confirmación).
-2. **Diseño:** el dashboard (`public/dashboard/`, app autenticada) aún NO consume `tokens.css` — tiene sus propios tokens. Próximo `extract` natural: unificar el dashboard con `tokens.css` para cerrar del todo la deriva marketing↔producto. (Existe ya una crítica vieja de `dashboard.js`/`quoteslistview.js` en `.impeccable/critique/`.)
-3. **Sin bloqueo:** más tests (extraer los *builders* de componentes de plantillas WA a un módulo puro y testearlos); pase de accesibilidad/hardening.
+2. **Diseño (HECHO 2026-06-06 cont.):** el dashboard ya consume `tokens.css` y la salud de la crítica móvil subió a 35/40. Polish menor que queda: skeletons también en las listas (hoy "Cargando…" en texto; reutilizar `window.uiErrorState`/un helper de skeleton), `aria-live` en error/toasts, Escape en el modal de presupuesto, renombrar `--slate-*`.
+3. **Sin bloqueo:** más tests (extraer los *builders* de componentes de plantillas WA a un módulo puro y testearlos); seguir el pase de accesibilidad (lectores de pantalla en estados dinámicos).
 4. **Cuando lleguen creds R2:** Sprint PHOTOS.
 
 ## Próximos sprints — EJECUTAR EN ESTE ORDEN
