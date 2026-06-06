@@ -333,7 +333,7 @@ function renderTopCustomers(items) {
       <div>
         <span style="color:var(--slate-300);font-weight:700;font-size:12px;margin-right:6px">${i+1}</span>
         <span style="font-weight:600;color:var(--slate-800)">${esc(c.name)}</span>
-        <span style="color:var(--slate-400);font-size:11px;margin-left:5px">${c.invoices}×</span>
+        <span style="color:var(--slate-500);font-size:11px;margin-left:5px">${c.invoices}×</span>
       </div>
       <span style="font-weight:700;color:var(--slate-900)">${fmtMoney(c.total)}</span>
     </div>`).join('');
@@ -348,7 +348,7 @@ function renderTopServices(items) {
     <div class="top-row" style="flex-direction:column;align-items:stretch;gap:5px">
       <div style="display:flex;justify-content:space-between">
         <span style="font-weight:600;color:var(--slate-800);font-size:13px">${esc(s.name)}</span>
-        <span style="color:var(--slate-400);font-size:12px">${s.count}×</span>
+        <span style="color:var(--slate-500);font-size:12px">${s.count}×</span>
       </div>
       <div style="background:var(--slate-100);border-radius:var(--radius-full);height:4px;overflow:hidden">
         <div style="background:var(--green-500);height:100%;width:${Math.round(s.count/max*100)}%;border-radius:var(--radius-full);transition:width .4s"></div>
@@ -375,7 +375,7 @@ async function renderTeamPerformance(container) {
     const roleLabel = m.role === 'owner' ? 'Propietario' : m.role === 'tecnico' ? 'Técnico' : m.role;
     return `
       <tr>
-        <td style="font-weight:600">${esc(m.name)}${best}<div style="font-size:11px;color:var(--slate-400);font-weight:400">${roleLabel}</div></td>
+        <td style="font-weight:600">${esc(m.name)}${best}<div style="font-size:11px;color:var(--slate-500);font-weight:400">${roleLabel}</div></td>
         <td style="text-align:right">${m.sent}</td>
         <td style="text-align:right;color:${accColor};font-weight:600">${m.acceptanceRate}%</td>
         <td style="text-align:right;color:var(--green-700);font-weight:600">${fmtMoney(m.collected)}</td>
@@ -469,7 +469,7 @@ function openQuickQuoteModal(prefill) {
             <input type="checkbox" id="qq-tiers-toggle" style="width:16px;height:16px;accent-color:var(--green-500);flex-shrink:0"/>
             <span>Ofrecer 3 opciones de precio (Good/Better/Best)</span>
           </label>
-          <p style="font-size:12px;color:var(--slate-400);margin:6px 0 0">💡 Los clientes eligen más a menudo cuando ven 3 opciones.</p>
+          <p style="font-size:12px;color:var(--slate-500);margin:6px 0 0">💡 Los clientes eligen más a menudo cuando ven 3 opciones.</p>
         </div>
 
         <!-- Modo clásico: líneas -->
@@ -497,7 +497,7 @@ function openQuickQuoteModal(prefill) {
           </div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px">
             ${['Básico', 'Estándar', 'Premium'].map((label, i) => `
-              <div style="border:2px solid ${i===1?'var(--green-500)':'var(--slate-200)'};border-radius:var(--radius-md);padding:10px">
+              <div style="border:1px solid ${i===1?'var(--green-600)':'var(--slate-200)'};background:${i===1?'var(--green-50)':'var(--surface)'};border-radius:var(--radius-md);padding:10px">
                 <div style="font-size:12px;font-weight:700;color:${i===1?'var(--green-600)':'var(--slate-500)'};margin-bottom:6px">
                   ${label}${i===1?' ⭐':''}
                 </div>
@@ -507,7 +507,7 @@ function openQuickQuoteModal(prefill) {
               </div>
             `).join('')}
           </div>
-          <p style="font-size:12px;color:var(--slate-400);margin:6px 0 0">
+          <p style="font-size:12px;color:var(--slate-500);margin:6px 0 0">
             El cliente verá las 3 opciones y elegirá la que prefiera.
           </p>
         </div>
