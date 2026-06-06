@@ -202,15 +202,25 @@ function renderKpis(data) {
     ${hasExpenses ? `
     <div class="kpi-card">
       <div class="kpi-label">Gastos este mes</div>
-      <div class="kpi-value" style="color:#dc2626">${fmtMoney(data.expensesThisMonth)}</div>
+      <div class="kpi-value">${fmtMoney(data.expensesThisMonth)}</div>
       <div class="kpi-sub">${data.expensesCount} gasto${data.expensesCount!==1?'s':''} registrado${data.expensesCount!==1?'s':''}</div>
     </div>
-    <div class="kpi-card" style="border:2px solid ${data.profitThisMonth>=0?'#22c55e':'#dc2626'}">
+    <div class="kpi-card">
       <div class="kpi-label">Beneficio neto</div>
-      <div class="kpi-value" style="color:${data.profitThisMonth>=0?'#16a34a':'#dc2626'}">${fmtMoney(data.profitThisMonth)}</div>
-      <div class="kpi-sub">ingresos − gastos</div>
+      <div class="kpi-value">${fmtMoney(data.profitThisMonth)}</div>
+      <div class="kpi-sub">${profitChip(data.profitThisMonth)}ingresos − gastos</div>
     </div>` : ''}
   `;
+}
+
+// Estado del beneficio como chip pequeño: el importe va siempre en tinta
+// (Regla del Importe) y el color semántico vive en la etiqueta, no en la cifra.
+function profitChip(value) {
+  const positive = value >= 0;
+  const fg = positive ? '#15803d' : '#b91c1c';
+  const bg = positive ? 'rgba(22,163,74,.10)' : 'rgba(220,38,38,.10)';
+  const label = positive ? 'En positivo' : 'En pérdida';
+  return `<span style="display:inline-block;font-size:10.5px;font-weight:700;color:${fg};background:${bg};border-radius:var(--radius-full);padding:1px 7px;margin-right:6px">${label}</span>`;
 }
 
 function trendChip(current, prev) {

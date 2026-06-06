@@ -412,7 +412,7 @@ img { max-width: 100%; display: block; }
 .btn-icon {
   background: transparent; border: none;
   padding: 6px; border-radius: var(--radius);
-  color: var(--slate-400);
+  color: var(--slate-500);
   display: inline-flex; align-items: center; justify-content: center;
   transition: background .12s, color .12s;
 }
@@ -577,7 +577,7 @@ img { max-width: 100%; display: block; }
 .kpi-label {
   font-size: 11.5px;
   font-weight: 700;
-  color: var(--slate-400);
+  color: var(--slate-600);
   text-transform: uppercase;
   letter-spacing: .05em;
   margin-bottom: 8px;
@@ -592,7 +592,7 @@ img { max-width: 100%; display: block; }
 }
 .kpi-sub {
   font-size: 12px;
-  color: var(--slate-400);
+  color: var(--slate-500);
   margin-top: 4px;
 }
 
@@ -610,7 +610,7 @@ img { max-width: 100%; display: block; }
 }
 .activity-item:hover { border-color: var(--slate-300); }
 .activity-customer { font-weight: 600; color: var(--slate-800); font-size: 14px; }
-.activity-meta { font-size: 12px; color: var(--slate-400); margin-top: 2px; }
+.activity-meta { font-size: 12px; color: var(--slate-500); margin-top: 2px; }
 .activity-amount { font-weight: 700; font-size: 14px; text-align: right; }
 
 /* Home CTA */
