@@ -476,6 +476,8 @@ function renderProductsView(container) {
     let _providers = [];
   
     async function refresh() {
+      setCount("Cargando…");
+      uiSkeletonRows(tbody, 8, 6);
       const merchantId = _merchantId || (_merchantId = await getMerchantId());
 
       const [items, providers] = await Promise.all([

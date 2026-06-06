@@ -337,6 +337,7 @@ function renderProvidersView(container) {
     let _merchantId = null;
   
     async function refresh() {
+      uiSkeletonRows(tbody, 6, 5);
       const merchantId = _merchantId || (_merchantId = await getMerchantId());
       const items = await listProviders(merchantId);
       renderRows(items);

@@ -200,6 +200,7 @@ async function fetchInvoices(options = {}) {
     async function reload() {
       setCount('Cargando…');
       statusBox.style.display = 'none';
+      uiSkeletonRows(tbody, 6, 6);
 
       try {
         const invoices = await fetchInvoices({ status: currentStatus, search: currentSearch, dateFrom: currentDateFrom, dateTo: currentDateTo });

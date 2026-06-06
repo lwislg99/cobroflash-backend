@@ -251,6 +251,7 @@ function renderCustomersView(container) {
   async function loadCustomers(searchText = "") {
     setAlert(null, "");
     setCount("Cargando…");
+    uiSkeletonRows(tbody, 7, 6);
     try {
       const data = await getCustomers(searchText);
       tbody.innerHTML = "";

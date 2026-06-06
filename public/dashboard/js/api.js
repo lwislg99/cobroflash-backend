@@ -72,6 +72,23 @@ function uiMarkFieldError(el, scope) {
 }
 window.uiMarkFieldError = uiMarkFieldError;
 
+// Rellena un <tbody> con filas-esqueleto mientras carga una lista. Se sustituyen
+// al pintar los datos (tbody.innerHTML = ''). cols = nº de columnas de la tabla.
+function uiSkeletonRows(tbody, cols, rows = 6) {
+  if (!tbody) return;
+  let html = '';
+  for (let r = 0; r < rows; r++) {
+    let tds = '';
+    for (let c = 0; c < cols; c++) {
+      const w = 45 + ((r + c) % 4) * 14;   // anchos variados 45–87%
+      tds += `<td><span class="skeleton" style="display:block;height:12px;width:${w}%"></span></td>`;
+    }
+    html += `<tr class="skeleton-row" aria-hidden="true">${tds}</tr>`;
+  }
+  tbody.innerHTML = html;
+}
+window.uiSkeletonRows = uiSkeletonRows;
+
 // -------- Admin – Merchant --------
 
 function getMerchantProfile() {

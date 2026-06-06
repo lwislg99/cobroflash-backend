@@ -292,6 +292,7 @@ function renderQuotesListView(container) {
     try {
       setError("");
       setCount("Cargando…");
+      uiSkeletonRows(tbody, 7, 6);
       const params = new URLSearchParams();
       if (currentSearch) params.set("search", currentSearch);
       if (currentStatus !== "all") params.set("status", currentStatus);
