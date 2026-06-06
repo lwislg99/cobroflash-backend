@@ -49,8 +49,8 @@ async function apiRequest(path, options = {}) {
 function uiErrorState(container, message, onRetry) {
   if (!container) return;
   container.innerHTML = `
-    <div class="state-error">
-      <div class="state-error-ico">⚠️</div>
+    <div class="state-error" role="alert" aria-live="assertive">
+      <div class="state-error-ico" aria-hidden="true">⚠️</div>
       <div class="state-error-msg">${message || 'No pudimos cargar la información.'}</div>
       ${onRetry ? '<button type="button" class="state-error-retry">Reintentar</button>' : ''}
     </div>`;

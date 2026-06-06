@@ -535,7 +535,7 @@ function openQuickQuoteModal(prefill) {
       </div>
 
       <div class="modal-footer" style="flex-direction:column;gap:8px">
-        <div id="qq-alert" class="alert error" style="display:none"></div>
+        <div id="qq-alert" class="alert error" role="alert" aria-live="assertive" style="display:none"></div>
         <div style="display:flex;gap:8px;width:100%;justify-content:flex-end">
           <button class="btn btn-secondary" id="qq-cancel">Cancelar</button>
           <button class="btn btn-primary" id="qq-send" style="min-width:160px">
@@ -551,6 +551,10 @@ function openQuickQuoteModal(prefill) {
   document.getElementById("qq-close").addEventListener("click", closeQuickQuote);
   document.getElementById("qq-cancel").addEventListener("click", closeQuickQuote);
   backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeQuickQuote(); });
+
+  // Escape cierra el modal (igual que ×, Cancelar y clic fuera)
+  qqEscHandler = (e) => { if (e.key === "Escape") closeQuickQuote(); };
+  document.addEventListener("keydown", qqEscHandler);
 
   document.getElementById("qq-send").addEventListener("click", submitQuickQuote);
   document.getElementById("qq-add-line").addEventListener("click", addQqLine);
@@ -609,9 +613,11 @@ function openQuickQuoteModal(prefill) {
   }
 }
 
+let qqEscHandler = null;
 function closeQuickQuote() {
   const el = document.getElementById("qq-modal-backdrop");
   if (el) el.remove();
+  if (qqEscHandler) { document.removeEventListener("keydown", qqEscHandler); qqEscHandler = null; }
 }
 
 function renderQqLines() {
@@ -877,6 +883,8 @@ function showQqAlert(msg) {
 
 function showToast(msg, warn = false) {
   const toast = document.createElement("div");
+  toast.setAttribute("role", "status");
+  toast.setAttribute("aria-live", "polite");
   toast.style.cssText = `
     position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
     background:${warn ? "#f59e0b" : "#16a34a"}; color:#fff;
