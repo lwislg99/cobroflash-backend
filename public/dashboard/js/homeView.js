@@ -54,11 +54,11 @@ async function renderHomeView(container) {
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:24px" id="top-grids">
         <div class="top-widget-card">
           <div class="top-widget-title">Top clientes</div>
-          <div id="top-customers"><div style="color:var(--slate-300);font-size:13px">Sin datos aún</div></div>
+          <div id="top-customers"><div style="color:var(--slate-500);font-size:13px">Sin datos aún</div></div>
         </div>
         <div class="top-widget-card">
           <div class="top-widget-title">Top servicios</div>
-          <div id="top-services"><div style="color:var(--slate-300);font-size:13px">Sin datos aún</div></div>
+          <div id="top-services"><div style="color:var(--slate-500);font-size:13px">Sin datos aún</div></div>
         </div>
       </div>
     </div>
@@ -336,7 +336,7 @@ function renderTopCustomers(items) {
   el.innerHTML = items.map((c, i) => `
     <div class="top-row">
       <div>
-        <span style="color:var(--slate-300);font-weight:700;font-size:12px;margin-right:6px">${i+1}</span>
+        <span style="color:var(--slate-500);font-weight:700;font-size:12px;margin-right:6px">${i+1}</span>
         <span style="font-weight:600;color:var(--slate-800)">${esc(c.name)}</span>
         <span style="color:var(--slate-500);font-size:11px;margin-left:5px">${c.invoices}×</span>
       </div>
