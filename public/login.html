@@ -9,41 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    body { margin: 0; font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      -webkit-font-smoothing: antialiased; font-feature-settings: "cv11","ss01";
-      background: #f6f7f5; display: flex; align-items: center; justify-content: center;
-      min-height: 100vh; padding: 16px; }
-    .card { background: #fff; border: 1px solid #e7e9e5; border-radius: 20px; padding: 32px 28px;
-      width: 100%; max-width: 400px; box-shadow: 0 18px 40px -12px rgba(16,24,40,.18); }
-    .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
-    .logo-mark { width: 40px; height: 40px; border-radius: 50%;
-      background: linear-gradient(135deg,#22c55e,#22d3ee);
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 16px; color: #052e16; }
-    .logo-text { font-weight: 700; font-size: 20px; color: #0f1c17; }
-    h1 { margin: 0 0 6px; font-size: 22px; color: #0f1c17; letter-spacing: -.02em; }
-    p  { margin: 0 0 24px; font-size: 14px; color: #6b756f; line-height: 1.5; }
-    label { display: block; font-size: 13px; font-weight: 600; color: #333c37; margin-bottom: 6px; }
-    input[type=email] { width: 100%; padding: 12px 14px; font-size: 15px;
-      border: 1px solid #cdd2cb; border-radius: 10px; outline: none; }
-    input[type=email]:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(34,197,94,.28); }
-    .btn { width: 100%; padding: 14px; font-size: 16px; font-weight: 700;
-      background: #16a34a; color: #fff; border: none; border-radius: 12px;
-      cursor: pointer; margin-top: 16px; transition: background .15s, box-shadow .15s;
-      box-shadow: 0 1px 2px rgba(5,46,22,.18); }
-    .btn:hover:not(:disabled) { background: #15803d; box-shadow: 0 4px 12px -2px rgba(16,24,40,.12); }
-    .btn:disabled { opacity: .6; cursor: default; }
-    .alert { margin-top: 14px; padding: 12px 14px; border-radius: 10px; font-size: 14px; line-height: 1.5; }
-    .alert.ok    { background: #ecfdf5; color: #166534; }
-    .alert.error { background: #fef2f2; color: #991b1b; }
-    .resend-row { margin-top: 14px; text-align: center; font-size: 13px; color: #6b756f; }
-    .resend-row a { color: #15803d; font-weight: 600; text-decoration: none; cursor: pointer; }
-    .resend-row a:hover { text-decoration: underline; }
-    .register-link { text-align: center; margin-top: 20px; font-size: 13px; color: #6b756f; }
-    .register-link a { color: #15803d; font-weight: 600; text-decoration: none; }
-  </style>
+  <link rel="stylesheet" href="/auth.css"/>
 </head>
 <body>
 <div class="card">
@@ -55,7 +21,7 @@
   <p>Introduce tu email y te enviamos un enlace mágico para entrar sin contraseña.</p>
   <form id="login-form">
     <label for="email">Email</label>
-    <input type="email" id="email" placeholder="tu@email.com" required autocomplete="email"/>
+    <input type="email" id="email" placeholder="tu@email.com" required autocomplete="email" autofocus/>
     <button class="btn" type="submit" id="btn">Enviar enlace de acceso</button>
   </form>
   <div id="alert" class="alert" style="display:none"></div>
