@@ -163,7 +163,7 @@ function renderTierCards(tiers: any[], quoteId: string, locale: ReturnType<typeo
             ${(tier.lines || []).map((l: any) => `
               <div class="tier-line">
                 <span>${esc(l.concept)}</span>
-                <span>${(l.qty * l.price * (1 + (l.tax || 0))).toFixed(2)} ${esc(tier.id)}</span>
+                <span>${(l.qty * l.price * (1 + (l.tax || 0))).toFixed(2)} ${esc(tier.currency || '')}</span>
               </div>`).join('')}
           </div>
           <div class="tier-total">${Number(tier.total).toFixed(2)} ${esc(tier.currency || '')}</div>
