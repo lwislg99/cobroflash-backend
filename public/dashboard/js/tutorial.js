@@ -46,51 +46,115 @@ function maybeShowSectionTip(view) {
   setTimeout(() => {
     const target = document.querySelector(tip.selector);
     if (!target) return;
-    showTutorialTooltip(target, tip.text, tip.position || 'bottom');
+    // El objetivo entra en vista antes de iluminarlo (puede estar bajo el fold)
+    target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    setTimeout(() => showTutorialTooltip(target, tip.text, tip.position || 'bottom'), 280);
     tutMarkShown(view);
   }, 600);
 }
 
+// Coach-mark: ilumina el elemento real (spotlight con anillo de marca sobre un
+// scrim que deja pasar el clic), apunta con una flecha y coloca el globo SIN
+// taparlo. El único botón verde de la pantalla sigue siendo el CTA real, así que
+// "Entendido" va discreto (Regla de Una Sola Voz).
 function showTutorialTooltip(target, text, position) {
-  document.getElementById('tut-tooltip')?.remove();
+  closeTutorialTooltip();
 
-  const rect = target.getBoundingClientRect();
+  const GAP = 12;       // separación globo↔objetivo
+  const PAD = 6;        // aire del anillo alrededor del objetivo
+  const EDGE = 12;      // margen mínimo a los bordes de pantalla
+
+  // Scrim + spotlight (recorte vía box-shadow de gran spread; centro libre)
+  const spot = document.createElement('div');
+  spot.id = 'tut-spotlight';
+  spot.style.cssText = `
+    position:fixed;z-index:360;pointer-events:none;border-radius:var(--radius-lg);
+    box-shadow:0 0 0 9999px rgba(15,28,23,.55), 0 0 0 3px var(--brand);
+    opacity:0;transition:opacity .2s;
+  `;
+  document.body.appendChild(spot);
+
+  // Globo
   const tip = document.createElement('div');
   tip.id = 'tut-tooltip';
   tip.style.cssText = `
-    position:fixed;z-index:400;max-width:260px;background:#0f1c17;color:#fff;
-    font-size:13px;line-height:1.45;padding:11px 14px;border-radius:12px;
-    box-shadow:0 12px 30px rgba(0,0,0,.25);opacity:0;transition:opacity .2s;
+    position:fixed;z-index:400;max-width:268px;background:var(--ink);color:#fff;
+    font-size:13px;line-height:1.45;padding:12px 14px;border-radius:var(--radius-md);
+    box-shadow:var(--shadow-lg);opacity:0;transition:opacity .2s;
   `;
   tip.innerHTML = `
     <div>${text}</div>
-    <button id="tut-close" style="margin-top:8px;background:#22c55e;color:#052e16;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">Entendido</button>
+    <button id="tut-close" style="margin-top:10px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:var(--radius-full);padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer">Entendido</button>
   `;
   document.body.appendChild(tip);
 
-  const tw = tip.offsetWidth, th = tip.offsetHeight;
-  let top, left;
-  if (position === 'top') {
-    top = rect.top - th - 10;
-    left = rect.left + rect.width / 2 - tw / 2;
-  } else {
-    top = rect.bottom + 10;
-    left = rect.left + rect.width / 2 - tw / 2;
-  }
-  // Mantener dentro de la pantalla
-  left = Math.max(12, Math.min(left, window.innerWidth - tw - 12));
-  top = Math.max(12, Math.min(top, window.innerHeight - th - 12));
-  tip.style.top = top + 'px';
-  tip.style.left = left + 'px';
-  requestAnimationFrame(() => { tip.style.opacity = '1'; });
+  // Flecha (cuadrado rotado del color del globo)
+  const caret = document.createElement('div');
+  caret.id = 'tut-caret';
+  caret.style.cssText = `position:fixed;z-index:401;width:12px;height:12px;background:var(--ink);transform:rotate(45deg);opacity:0;transition:opacity .2s;`;
+  document.body.appendChild(caret);
 
-  const close = () => tip.remove();
-  tip.querySelector('#tut-close').addEventListener('click', close);
+  const place = () => {
+    const rect = target.getBoundingClientRect();
+
+    // Spotlight pegado al objetivo, con el mismo radio que el elemento iluminado
+    const tr = getComputedStyle(target).borderRadius;
+    spot.style.borderRadius = (tr && tr !== '0px') ? `calc(${tr} + ${PAD}px)` : 'var(--radius-lg)';
+    spot.style.top = (rect.top - PAD) + 'px';
+    spot.style.left = (rect.left - PAD) + 'px';
+    spot.style.width = (rect.width + PAD * 2) + 'px';
+    spot.style.height = (rect.height + PAD * 2) + 'px';
+
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    // Preferimos la posición pedida; si no cabe, volteamos para NO tapar el objetivo
+    let below = position !== 'top';
+    const spaceBelow = window.innerHeight - rect.bottom - GAP - EDGE;
+    const spaceAbove = rect.top - GAP - EDGE;
+    if (below && th > spaceBelow && spaceAbove > spaceBelow) below = false;
+    if (!below && th > spaceAbove && spaceBelow > spaceAbove) below = true;
+
+    let top = below ? rect.bottom + GAP + PAD : rect.top - PAD - GAP - th;
+    let left = rect.left + rect.width / 2 - tw / 2;
+    left = Math.max(EDGE, Math.min(left, window.innerWidth - tw - EDGE));
+    top = Math.max(EDGE, Math.min(top, window.innerHeight - th - EDGE));
+    tip.style.top = top + 'px';
+    tip.style.left = left + 'px';
+
+    // Flecha centrada en el objetivo, pegada al borde del globo que mira hacia él
+    const cx = Math.max(left + 12, Math.min(rect.left + rect.width / 2, left + tw - 12));
+    caret.style.left = (cx - 6) + 'px';
+    caret.style.top = (below ? top - 6 : top + th - 6) + 'px';
+  };
+
+  place();
+  requestAnimationFrame(() => { spot.style.opacity = '1'; tip.style.opacity = '1'; caret.style.opacity = '1'; });
+
+  const onScrollResize = () => place();
+  const onKey = (e) => { if (e.key === 'Escape') closeTutorialTooltip(); };
+  window.addEventListener('resize', onScrollResize);
+  window.addEventListener('scroll', onScrollResize, true);
+  document.addEventListener('keydown', onKey);
+  tip._cleanup = () => {
+    window.removeEventListener('resize', onScrollResize);
+    window.removeEventListener('scroll', onScrollResize, true);
+    document.removeEventListener('keydown', onKey);
+  };
+
+  tip.querySelector('#tut-close').addEventListener('click', closeTutorialTooltip);
+  // Clic fuera del globo (incluido el propio objetivo iluminado) cierra el coach-mark
   setTimeout(() => {
     document.addEventListener('click', function onDoc(e) {
-      if (!tip.contains(e.target)) { close(); document.removeEventListener('click', onDoc); }
+      if (!tip.contains(e.target)) { closeTutorialTooltip(); document.removeEventListener('click', onDoc); }
     });
   }, 100);
+}
+
+function closeTutorialTooltip() {
+  const tip = document.getElementById('tut-tooltip');
+  if (tip && tip._cleanup) tip._cleanup();
+  tip?.remove();
+  document.getElementById('tut-spotlight')?.remove();
+  document.getElementById('tut-caret')?.remove();
 }
 
 // ── Guía de inicio rápido (panel lateral) ─────────────────────────────────
