@@ -36,6 +36,7 @@
   --r-md: 12px;    /* inputs, piezas internas */
   --r-lg: 16px;    /* cards de contenido */
   --r-xl: 22px;    /* card hero (precio) */
+  --r-2xl: 24px;   /* superficies grandes: modales */
   --r-full: 9999px;/* pildoras: botones, tags */
 
   /* Elevacion (DESIGN.md) */

@@ -4,15 +4,19 @@
 
 /* ── Variables ─────────────────────────────────────────────── */
 :root {
+  /* Verde de marca: alias a tokens.css (fuente de verdad) para no duplicar el hex.
+     Solo los tintes muy claros que tokens.css no define quedan locales. */
   --green-50:  #f0fdf4;
   --green-100: #dcfce7;
-  --green-500: #22c55e;
-  --green-600: #16a34a;
-  --green-700: #15803d;
-  --green-900: #052e16;
+  --green-500: var(--brand-bright);  /* #22c55e */
+  --green-600: var(--brand);         /* #16a34a */
+  --green-700: var(--brand-700);     /* #15803d */
+  --green-900: var(--brand-ink);     /* #052e16 */
 
-  /* Neutros cálidos (DESIGN.md — Regla del Neutro Cálido). Mantienen los nombres
-     "slate-*" por compatibilidad pero con una pizca de verde/tierra, nunca gris azulado. */
+  /* Ramp de neutros cálidos: capa primitiva PROPIA del dashboard (tokens.css no
+     expone una escala neutra completa, solo los semánticos --ink/--body/--muted/
+     --border que se derivan de aquí). Pizca de verde/tierra, nunca gris azulado
+     (DESIGN.md — Regla del Neutro Cálido). */
   --slate-50:  #f7f8f6;
   --slate-100: #f1f2ee;
   --slate-200: #e7e9e3;
@@ -24,35 +28,38 @@
   --slate-800: #29322d;
   --slate-900: #0f1c17;
 
-  /* Tokens semánticos de color (--brand, --brand-bright, --brand-ink, --brand-tint,
-     --ink, --body, --muted, --bg, --surface, --border) y --ring: se HEREDAN de
-     /tokens.css (fuente de verdad compartida con el landing y las páginas de auth).
-     No redefinirlos aquí: editarlos en tokens.css. Las escalas primitivas
-     (--green-*, --slate-*, --red-*…), los radios y el layout siguen siendo
-     específicos del dashboard. */
+  /* Tokens semánticos de color (--brand*, --ink, --body, --muted, --bg, --surface,
+     --border, --danger*), los radios (--r-*) y las sombras (--shadow-*) son la
+     fuente de verdad de /tokens.css (compartida con landing y auth) y se HEREDAN
+     o se ALIAN aquí — no redefinir esos valores en este archivo, editarlos en
+     tokens.css. Lo único PROPIO del dashboard: el ramp neutro --slate-*, los
+     tintes claros sin equivalente (--green-50/100, --red-500, --amber-*, --blue-*)
+     y el layout (--sidebar-w, --topbar-h, --font). */
 
-  --red-50:  #fef2f2;
+  --red-50:  var(--danger-bg);  /* #fef2f2 — alias a tokens.css */
   --red-500: #ef4444;
-  --red-600: #dc2626;
+  --red-600: var(--danger);     /* #dc2626 — alias a tokens.css */
   --amber-50:  #fffbeb;
   --amber-500: #f59e0b;
   --blue-50:  #eff6ff;
   --blue-500: #3b82f6;
   --blue-600: #2563eb;
 
-  --radius-sm: 6px;
-  --radius:    8px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
-  --radius-2xl: 24px;
-  --radius-full: 9999px;
+  /* Radios: alias a la escala canónica de tokens.css (DESIGN.md). Conservar los
+     nombres --radius-* del dashboard como capa semántica evita tocar las ~60
+     llamadas, y al apuntar a --r-* se acaba la deriva con landing/auth
+     (cards 16px, inputs 12px). Editar los valores en tokens.css. */
+  --radius-sm:  var(--r-sm);    /* 8px  */
+  --radius:     var(--r-sm);    /* 8px  */
+  --radius-md:  var(--r-md);    /* 12px — inputs, piezas internas */
+  --radius-lg:  var(--r-lg);    /* 16px — cards de contenido */
+  --radius-xl:  var(--r-xl);    /* 22px */
+  --radius-2xl: var(--r-2xl);   /* 24px — modales */
+  --radius-full: var(--r-full);
 
-  /* Sombras suaves y estratificadas (DESIGN.md — Elevation). Nunca duras. */
-  --shadow-sm: 0 1px 2px rgba(16,24,40,.04);
-  --shadow:    0 1px 2px rgba(16,24,40,.04), 0 0 0 1px rgba(16,24,40,.03);
-  --shadow-md: 0 4px 12px -2px rgba(16,24,40,.08), 0 2px 6px -2px rgba(16,24,40,.05);
-  --shadow-lg: 0 18px 40px -12px rgba(16,24,40,.18);
+  /* Elevación: --shadow-sm/md/lg se HEREDAN de tokens.css (valores idénticos).
+     Solo --shadow (borde 1px + sombra de reposo en una) es propia del dashboard. */
+  --shadow: 0 1px 2px rgba(16,24,40,.04), 0 0 0 1px rgba(16,24,40,.03);
 
   --sidebar-w: 248px;
   --topbar-h:  60px;
