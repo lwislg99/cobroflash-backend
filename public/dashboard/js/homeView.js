@@ -474,7 +474,12 @@ function openQuickQuoteModal(prefill) {
 
         <!-- Modo clásico: líneas -->
         <div class="field" id="qq-classic-mode">
-          <label>Concepto / Servicio</label>
+          <div class="qq-lines-head">
+            <span>Concepto / servicio</span>
+            <span style="text-align:center">Cant.</span>
+            <span>Precio</span>
+            <span></span>
+          </div>
           <div id="qq-lines-container"></div>
           <button type="button" id="qq-add-line" class="btn-ghost btn-sm" style="margin-top:6px;align-self:flex-start;color:var(--green-600)">
             + Añadir línea
@@ -520,7 +525,7 @@ function openQuickQuoteModal(prefill) {
               50% · 50%
             </label>
           </div>
-          <p style="font-size:12px;color:var(--slate-400);margin:6px 0 0">💡 "100% al aceptar" genera la factura en cuanto el cliente firma.</p>
+          <p style="font-size:12px;color:var(--slate-500);margin:6px 0 0">💡 "100% al aceptar" genera la factura cuando el cliente firma.</p>
         </div>
       </div>
 
@@ -608,7 +613,7 @@ function renderQqLines() {
   const container = document.getElementById("qq-lines-container");
   if (!container) return;
   container.innerHTML = qqState.products.map((line, i) => `
-    <div style="display:grid;grid-template-columns:1fr 60px 90px 30px;gap:6px;margin-bottom:6px;align-items:center">
+    <div class="qq-line-row">
       <div class="qq-autocomplete-wrapper">
         <div class="field" style="margin:0">
           <input type="text" class="qq-concept" data-idx="${i}" value="${esc(line.concept)}"
