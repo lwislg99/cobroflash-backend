@@ -447,7 +447,7 @@ function openQuickQuoteModal(prefill) {
   backdrop.className = "modal-overlay";
   backdrop.id = "qq-modal-backdrop";
   backdrop.innerHTML = `
-    <div class="modal qq-modal" style="max-width:520px">
+    <div class="modal qq-modal">
       <div class="modal-header">
         <span class="modal-title">${qNew} ${qFast}</span>
         <button class="modal-close" id="qq-close">&times;</button>
@@ -468,53 +468,46 @@ function openQuickQuoteModal(prefill) {
           </div>
         </div>
 
-        <!-- Toggle Good/Better/Best -->
+        <!-- Conceptos: modo clásico (tabla) o 3 opciones (un concepto + 3 precios) -->
         <div class="field">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-weight:500">
-            <input type="checkbox" id="qq-tiers-toggle" style="width:16px;height:16px;accent-color:var(--green-500);flex-shrink:0"/>
-            <span>Ofrecer 3 opciones de precio (Good/Better/Best)</span>
-          </label>
-          <p style="font-size:12px;color:var(--neutral-500);margin:6px 0 0">💡 Los clientes eligen más a menudo cuando ven 3 opciones.</p>
-        </div>
-
-        <!-- Modo clásico: líneas -->
-        <div class="field" id="qq-classic-mode">
-          <div class="qq-lines-head">
-            <span>Concepto / servicio</span>
-            <span style="text-align:center">Cant.</span>
-            <span>Precio</span>
-            <span></span>
+          <!-- Modo clásico: tabla de líneas -->
+          <div id="qq-classic-mode">
+            <div class="qq-lines-head">
+              <span>Concepto / servicio</span>
+              <span style="text-align:center">Cant.</span>
+              <span>Precio</span>
+              <span></span>
+            </div>
+            <div id="qq-lines-container"></div>
           </div>
-          <div id="qq-lines-container"></div>
-          <button type="button" id="qq-add-line" class="btn-ghost btn-sm" style="margin-top:6px;align-self:flex-start;color:var(--green-600)">
-            + Añadir línea
-          </button>
-        </div>
 
-        <!-- Modo tiers -->
-        <div id="qq-tiers-mode" style="display:none">
-          <div class="field">
-            <label>Concepto / Servicio</label>
+          <!-- Modo 3 opciones: concepto único + 3 tarjetas de precio -->
+          <div id="qq-tiers-mode" style="display:none">
+            <label>Concepto / servicio</label>
             <div class="qq-autocomplete-wrapper">
               <input id="qq-tier-concept" type="text" placeholder="Ej: Instalación eléctrica" autocomplete="off"/>
               <div class="qq-dropdown" id="qq-tier-pdropdown" style="display:none"></div>
             </div>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px">
-            ${['Básico', 'Estándar', 'Premium'].map((label, i) => `
-              <div style="border:1px solid ${i===1?'var(--green-600)':'var(--neutral-200)'};background:${i===1?'var(--green-50)':'var(--surface)'};border-radius:var(--radius-md);padding:10px">
-                <div style="font-size:12px;font-weight:700;color:${i===1?'var(--green-600)':'var(--neutral-500)'};margin-bottom:6px">
-                  ${label}${i===1?' ⭐':''}
+            <div class="qq-tiers-grid">
+              ${['Básico', 'Estándar', 'Premium'].map((label, i) => `
+                <div class="qq-tier-card${i === 1 ? ' is-featured' : ''}">
+                  <div class="qq-tier-card-label">${label}${i === 1 ? ' ⭐' : ''}</div>
+                  <div class="field" style="margin:0">
+                    <input type="number" class="qq-tier-price" data-tier-idx="${i}" min="0" step="0.01" placeholder="Precio"/>
+                  </div>
                 </div>
-                <div class="field" style="margin:0">
-                  <input type="number" class="qq-tier-price" data-tier-idx="${i}" min="0" step="0.01" placeholder="Precio"/>
-                </div>
-              </div>
-            `).join('')}
+              `).join('')}
+            </div>
+            <p style="font-size:12px;color:var(--neutral-500);margin:8px 0 0">El cliente ve las 3 opciones y elige la que prefiera.</p>
           </div>
-          <p style="font-size:12px;color:var(--neutral-500);margin:6px 0 0">
-            El cliente verá las 3 opciones y elegirá la que prefiera.
-          </p>
+
+          <!-- Acciones: añadir línea + chip para activar las 3 opciones -->
+          <div class="qq-lines-actions">
+            <button type="button" id="qq-add-line" class="btn-ghost btn-sm" style="color:var(--green-600)">+ Añadir línea</button>
+            <button type="button" id="qq-tiers-chip" class="qq-chip" aria-pressed="false">
+              <span class="qq-chip-ico">⊞</span> 3 opciones de precio
+            </button>
+          </div>
         </div>
 
         <!-- Condiciones de pago -->
@@ -571,12 +564,27 @@ function openQuickQuoteModal(prefill) {
   renderQqLines();
   initCustomerAutocomplete();
 
-  // Toggle Good/Better/Best
-  document.getElementById('qq-tiers-toggle')?.addEventListener('change', (e) => {
-    const on = e.target.checked;
+  // Chip "3 opciones de precio": alterna entre tabla multi-línea y concepto único + 3 niveles.
+  document.getElementById('qq-tiers-chip')?.addEventListener('click', () => {
+    const on = !qqState.tiersMode;
+    qqState.tiersMode = on;
+
+    const chip = document.getElementById('qq-tiers-chip');
+    const tierConcept = document.getElementById('qq-tier-concept');
+    const firstClassic = document.querySelector('.qq-concept');
+
+    // El concepto se mantiene al cambiar de modo (no perder de qué es el presupuesto)
+    if (on && firstClassic && firstClassic.value && tierConcept && !tierConcept.value) {
+      tierConcept.value = firstClassic.value;
+    } else if (!on && tierConcept && tierConcept.value && firstClassic && !firstClassic.value) {
+      firstClassic.value = tierConcept.value;
+      if (qqState.products[0]) qqState.products[0].concept = tierConcept.value;
+    }
+
+    chip.setAttribute('aria-pressed', String(on));
     document.getElementById('qq-classic-mode').style.display = on ? 'none' : 'block';
     document.getElementById('qq-tiers-mode').style.display = on ? 'block' : 'none';
-    qqState.tiersMode = on;
+    document.getElementById('qq-add-line').style.display = on ? 'none' : '';
   });
 
   // Autocomplete en el concepto del modo tiers

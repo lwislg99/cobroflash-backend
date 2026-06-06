@@ -811,15 +811,18 @@ img { max-width: 100%; display: block; }
 .qq-dropdown-item:hover { background: var(--neutral-50); }
 .qq-dropdown-item-sub { font-size: 12px; color: var(--neutral-400); }
 
-.qq-modal-body { display: flex; flex-direction: column; gap: 14px; margin-bottom: 14px; }
+.qq-modal { max-width: 520px; }
+/* Padding horizontal del cuerpo: sin esto el contenido tocaba los bordes del
+   modal ("bordes cortados"). Alineado con header/footer (24px). */
+.qq-modal-body { display: flex; flex-direction: column; gap: 14px; padding: 12px 24px 4px; }
 
 /* Líneas del presupuesto rápido: cabecera y filas comparten EXACTAMENTE el mismo
-   grid para que Concepto/Cant./Precio queden alineados. Concepto flexible,
-   cantidad y precio con ancho fijo cómodo para el número, papelera al final. */
+   grid para que Concepto/Cant./Precio queden alineados. Proporciones pedidas:
+   Concepto 60% · Cant. 15% · Precio 25% (en fr sobre el espacio útil) + papelera. */
 .qq-lines-head,
 .qq-line-row {
   display: grid;
-  grid-template-columns: 1fr 56px 92px 32px;
+  grid-template-columns: 60fr 15fr 25fr 32px;
   gap: 8px;
   align-items: center;
 }
@@ -834,6 +837,40 @@ img { max-width: 100%; display: block; }
 }
 .qq-line-row { margin-bottom: 6px; }
 .qq-line-row .qq-qty { text-align: center; }
+
+/* Fila de acciones bajo las líneas: "+ Añadir línea" + chip "3 opciones". */
+.qq-lines-actions {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 8px;
+}
+/* Chip toggle de modo 3 opciones (sustituye al checkbox perdido). */
+.qq-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; font-size: 12.5px; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+  color: var(--neutral-600); background: var(--surface);
+  border: 1px solid var(--neutral-300); border-radius: var(--r-full);
+  transition: background .12s, border-color .12s, color .12s;
+}
+.qq-chip:hover { border-color: var(--neutral-400); color: var(--neutral-800); }
+.qq-chip[aria-pressed="true"] {
+  background: var(--green-50); border-color: var(--green-600); color: var(--green-700);
+}
+.qq-chip .qq-chip-ico { font-size: 13px; line-height: 1; }
+.qq-lines-actions .btn-sm { margin: 0; }
+
+/* Modo 3 opciones: concepto único arriba + 3 tarjetas de precio. */
+.qq-tiers-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px;
+}
+.qq-tier-card {
+  border: 1px solid var(--neutral-200); background: var(--surface);
+  border-radius: var(--radius-md); padding: 10px;
+}
+.qq-tier-card.is-featured { border-color: var(--green-600); background: var(--green-50); }
+.qq-tier-card-label {
+  font-size: 12px; font-weight: 700; color: var(--neutral-500); margin-bottom: 6px;
+}
+.qq-tier-card.is-featured .qq-tier-card-label { color: var(--green-700); }
 
 .qq-terms { display: flex; gap: 8px; }
 .qq-terms label {
@@ -857,14 +894,14 @@ img { max-width: 100%; display: block; }
 .qq-modal .qq-qty { text-align: center; }
 .qq-modal .field input { min-height: 42px; }
 .qq-modal .btn-icon { width: 38px; height: 38px; }
-@media (max-width: 480px) {
-  /* Targets táctiles >=44px y campos cómodos */
+@media (max-width: 639px) {
+  /* Targets táctiles >=44px y campos cómodos en el bottom sheet */
   .qq-modal .field input,
   .qq-modal .btn,
   .qq-modal .btn-primary,
   .qq-modal .btn-secondary { min-height: 44px; }
   .qq-modal .btn-icon { width: 44px; height: 44px; }
-  /* Footer: botones a ancho completo, "Enviar por WhatsApp" dominante arriba */
+  /* Footer: botones a ancho completo, "Enviar por WhatsApp" verde dominante arriba */
   .qq-modal .modal-footer > div:last-child { flex-direction: column-reverse; gap: 8px; }
   .qq-modal .modal-footer .btn,
   .qq-modal .modal-footer .btn-primary,
@@ -1033,19 +1070,13 @@ img { max-width: 100%; display: block; }
   .quotes-layout { grid-template-columns: 1fr; }
 
   .btn { min-height: 44px; }
+}
 
-  .modal {
-    max-width: 100%; margin: 0;
-    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
-    position: fixed; bottom: 0; left: 0; right: 0;
-    border-bottom: none;
-    animation: slide-from-bottom .2s cubic-bezier(.16,1,.3,1);
-  }
-  @keyframes slide-from-bottom {
-    from { transform: translateY(100%); opacity: 0; }
-    to   { transform: translateY(0);   opacity: 1; }
-  }
-  .modal-backdrop { align-items: flex-end; padding: 0; }
+/* Sheet desde abajo (bottom sheet). Keyframe a nivel superior para que lo use
+   cualquier media query. La conversión a sheet vive en el bloque <640px. */
+@keyframes slide-from-bottom {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);   opacity: 1; }
 }
 
 /* Overlay for mobile sidebar */
@@ -1168,8 +1199,9 @@ img { max-width: 100%; display: block; }
   padding: 16px;
   animation: fade-in .15s ease;
 }
-/* En móvil el modal aparece desde abajo como sheet */
-@media (max-width: 768px) {
+/* En móvil (<640px) el modal es un bottom sheet: pegado abajo, full-width,
+   esquinas superiores 16px, max-height 90vh con scroll, entra deslizando. */
+@media (max-width: 639px) {
   .modal-overlay,
   .modal-backdrop {
     align-items: flex-end;
@@ -1178,10 +1210,11 @@ img { max-width: 100%; display: block; }
   .modal-overlay .modal,
   .modal-backdrop .modal {
     max-width: 100%;
-    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+    width: 100%;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
     border-bottom: none;
-    max-height: 92vh;
-    animation: slide-from-bottom .2s cubic-bezier(.16,1,.3,1);
+    max-height: 90vh;
+    animation: slide-from-bottom .22s cubic-bezier(.16,1,.3,1);
   }
 }
 
