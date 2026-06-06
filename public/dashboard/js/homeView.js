@@ -456,7 +456,7 @@ function openQuickQuoteModal(prefill) {
       <div class="qq-modal-body">
         <!-- Cliente -->
         <div class="field">
-          <label>Cliente</label>
+          <label class="qq-flabel">Cliente</label>
           <div class="qq-autocomplete-wrapper">
             <input id="qq-customer-input" type="text" placeholder="Buscar o crear cliente…" autocomplete="off"/>
             <div class="qq-dropdown" id="qq-customer-dropdown" style="display:none"></div>
@@ -483,7 +483,7 @@ function openQuickQuoteModal(prefill) {
 
           <!-- Modo 3 opciones: concepto único + 3 tarjetas de precio -->
           <div id="qq-tiers-mode" style="display:none">
-            <label>Concepto / servicio</label>
+            <label class="qq-flabel">Concepto / servicio</label>
             <div class="qq-autocomplete-wrapper">
               <input id="qq-tier-concept" type="text" placeholder="Ej: Instalación eléctrica" autocomplete="off"/>
               <div class="qq-dropdown" id="qq-tier-pdropdown" style="display:none"></div>
@@ -512,7 +512,7 @@ function openQuickQuoteModal(prefill) {
 
         <!-- Condiciones de pago -->
         <div class="field">
-          <label>Condiciones de pago</label>
+          <label class="qq-flabel">Condiciones de pago</label>
           <div class="qq-terms" id="qq-terms">
             <label class="selected" id="qq-label-full">
               <input type="radio" name="terms" value="FULL_UPFRONT" checked/>
@@ -765,7 +765,7 @@ function initCustomerAutocomplete() {
             <span class="qq-dropdown-item-sub">${esc(c.phone || "")}</span>
           </div>
         `).join("");
-        dd.innerHTML += `<div class="qq-dropdown-item" data-new="1" style="color:#22c55e;border-top:1px solid #e7e9e5">
+        dd.innerHTML += `<div class="qq-dropdown-item" data-new="1" style="color:var(--green-600);border-top:1px solid var(--border)">
           + Crear "${esc(q)}"</div>`;
         dd.style.display = "block";
         newSection.style.display = "none";
