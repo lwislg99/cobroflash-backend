@@ -24,18 +24,12 @@
   --slate-800: #29322d;
   --slate-900: #0f1c17;
 
-  /* Tokens semánticos (DESIGN.md) */
-  --brand:        #16a34a;  /* verde de acción (botones, enlaces, foco) */
-  --brand-bright: #22c55e;  /* solo degradado de marca / acentos */
-  --brand-ink:    #052e16;
-  --brand-tint:   #ecfdf5;
-  --ink:     #0f1c17;       /* titulares y cifras */
-  --body:    #3f4a45;       /* texto de párrafo */
-  --muted:   #6b756f;       /* metadatos / placeholders */
-  --bg:      #f6f7f5;       /* lienzo cálido de la app */
-  --surface: #ffffff;
-  --border:  #e7e9e5;
-  --ring:    0 0 0 3px rgba(34,197,94,.28);
+  /* Tokens semánticos de color (--brand, --brand-bright, --brand-ink, --brand-tint,
+     --ink, --body, --muted, --bg, --surface, --border) y --ring: se HEREDAN de
+     /tokens.css (fuente de verdad compartida con el landing y las páginas de auth).
+     No redefinirlos aquí: editarlos en tokens.css. Las escalas primitivas
+     (--green-*, --slate-*, --red-*…), los radios y el layout siguen siendo
+     específicos del dashboard. */
 
   --red-50:  #fef2f2;
   --red-500: #ef4444;
