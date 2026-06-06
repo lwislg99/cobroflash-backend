@@ -204,6 +204,12 @@ const table = createElement("table", "table");
 **`window.appMerchantId`** — merchantId de la sesión actual.
 **`window.appUserRole`** — `'admin'` o `'tecnico'`.
 
+**Superficies públicas (HTML estático en `public/`, servido en raíz por `express.static`):**
+- `public/tokens.css` — **fuente de verdad de tokens** (color, radio, sombra, foco) alineada con DESIGN.md. La consumen el landing y las páginas de auth → marketing y producto NO pueden divergir. Editar aquí, se aplica en todas las superficies. Los colores decorativos de un solo uso (degradado del hero, banda CTA) siguen inline en su página.
+- `public/auth.css` — estilos compartidos de `login.html` + `register.html` (card, inputs, botón píldora, badges, links). **Hereda** de tokens.css → enlazar `tokens.css` ANTES que `auth.css` en cada página de auth.
+- `public/index.html` (landing): enlaza `tokens.css` + `<style>` inline propio (clases del landing: `.hero`, `.card`, `.price-card`, `.cta-band`, etc.). Botones `.btn` en píldora vía `var(--r-full)`.
+- ⚠️ Las páginas de auth viven en `/login.html` y `/register.html` (NO `/login` ni `/register` → eso da 404).
+
 ## Rutas públicas (sin auth)
 ```
 POST /auth/login, GET /auth/verify, POST /auth/register, POST /auth/logout
@@ -255,9 +261,21 @@ GET  /admin/referral, POST /admin/referral/redeem (admin — canjea 1 mes gratis
 - ✅ Sprint 6: Múltiples usuarios por merchant, roles Admin/Técnico
 - ✅ Sprints 7-19 + AHORA-1/2 + UX-1 + LANDING + TUTORIAL + EMAIL + FRONT-1 + ANALYTICS + REFERRAL + ENTERPRISE (ver doc/YAQU_MASTER.md y la memoria del proyecto)
 
-## 📌 ESTADO ACTUAL — leer primero al retomar (última sesión: 2026-06-05)
+## 📌 ESTADO ACTUAL — leer primero al retomar (última sesión: 2026-06-06)
 
-### ✅ Completado en la última sesión (feature/bug → commit)
+### ✅ Completado en la sesión 2026-06-06 (diseño público + tooling)
+**Diseño superficies públicas (móvil 390px, verificado en navegador y en prod):**
+- Crítica `/impeccable` de landing + login + register a 390px (snapshot en `.impeccable/critique/`). Salud 29/40; el problema raíz era *deriva artesanal* entre superficies (botón, radios, bordes, color de badge distintos en marketing vs auth).
+- **`public/auth.css` creado** + fixes de coherencia → `96e9d4b` (desplegado y re-verificado en prod):
+  - Botones de auth en **píldora** (antes 12px rectángulo); card 16px e inputs 12px (tokens); borde de input visible y consistente entre login/register.
+  - Badge de prueba en **verde** (antes azul, competía con el CTA). Cards de auth ancladas arriba en móvil (fin del espacio muerto). `autofocus` en el 1er campo.
+  - Landing: nav a ghost → **un solo botón verde en el fold** (regla "Una Sola Voz"). Contraste de la línea de confianza subido. Label a token.
+- **`public/tokens.css` extraído** (refactor) → `c46b625`: un único `:root` (color/radio/sombra/foco) que comparten landing y auth; `index.html` y `auth.css` migrados a `var()`. Sin cambio visual.
+
+**Tooling:**
+- **Chromium de Playwright instalado** (`chromium` + `chromium-headless-shell` build 1224, en `C:\Users\Admin\AppData\Local\ms-playwright`). El **MCP de Playwright sigue `Failed to connect`** y sus tools no se cargan en sesión → workaround usado: conducir Playwright **directo** vía `createRequire` desde la caché de npx (`...\npm-cache\_npx\9833c18b2d85bc59\node_modules`), con un script efímero que sirve `public/` y hace screenshots a 390px. Funciona sin reiniciar.
+
+### ✅ Sesión anterior (2026-06-05) (feature/bug → commit)
 **WhatsApp (código LISTO; plantillas en revisión en Meta):**
 - Plantillas alineadas a la spec definitiva + páginas de pago → `7398323`
 - Fix: enviar la factura al aceptar (servicio de dominio sin auth; antes 401) → `c1a64c9`
@@ -289,12 +307,13 @@ GET  /admin/referral, POST /admin/referral/redeem (admin — canjea 1 mes gratis
 ### 📄 Spec de plantillas WhatsApp — GUARDADA
 `docs/WHATSAPP_TEMPLATES.md` es la **fuente de verdad** de las 3 plantillas (UTILITY/es, variables y botones exactos). El código de envío debe coincidir con ella. `docs/MIGRATIONS_PENDING.md` registra los `db push` (ENT-3 ya aplicado).
 
-### 🎭 Verificación visual — Playwright MCP
-**Registrado** (`claude mcp add playwright "npx @playwright/mcp@latest"`, en `.claude.json` local del proyecto) pero **requiere reiniciar Claude Code** para cargarlo (1ª vez: `npx playwright install chromium`). Aún NADA verificado en navegador.
+### 🎭 Verificación visual — Playwright
+**MCP:** registrado (`claude mcp add playwright "npx @playwright/mcp@latest"`, en `.claude.json` local) pero **`✗ Failed to connect`** — sus tools `browser_*` NO se cargan en la sesión. Reiniciar Claude Code *podría* arreglarlo ahora que Chromium está instalado (era la causa probable del fallo de arranque), pero no es necesario:
+**Workaround probado (no requiere el MCP ni reiniciar):** script efímero en `scripts/` que hace `createRequire(...\_npx\9833c18b2d85bc59\node_modules)` → `playwright`, levanta un server estático mínimo sobre `public/` (con `/admin/me` → 401 para que el redirect del login sea no-op) y screenshotea a viewport 390×844 (iPhone, DPR 2). Para prod: navegar directo a `https://yaqu.app/...`. Borrar el script y `.shots/` al terminar.
 
 ### 🎯 Próximos pasos prioritarios al retomar
-1. **Reiniciar Claude Code** → Playwright vivo → verificación visual de páginas públicas y del flujo de pago/decisión.
-2. **Cuando Meta apruebe:** probar las 3 plantillas con `wa-test.mjs` y validar el loop completo (cotización→acepta→factura→pago→confirmación).
+1. **Cuando Meta apruebe:** probar las 3 plantillas con `wa-test.mjs` y validar el loop completo (cotización→acepta→factura→pago→confirmación).
+2. **Diseño:** el dashboard (`public/dashboard/`, app autenticada) aún NO consume `tokens.css` — tiene sus propios tokens. Próximo `extract` natural: unificar el dashboard con `tokens.css` para cerrar del todo la deriva marketing↔producto. (Existe ya una crítica vieja de `dashboard.js`/`quoteslistview.js` en `.impeccable/critique/`.)
 3. **Sin bloqueo:** más tests (extraer los *builders* de componentes de plantillas WA a un módulo puro y testearlos); pase de accesibilidad/hardening.
 4. **Cuando lleguen creds R2:** Sprint PHOTOS.
 
