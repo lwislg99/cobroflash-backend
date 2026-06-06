@@ -13,10 +13,20 @@ body {
   background: var(--bg);
   color: var(--body);
   display: flex;
-  justify-content: center;
-  align-items: flex-start;               /* anclar arriba: nada de card flotando a media pantalla en móvil */
   min-height: 100vh;
-  padding: clamp(24px, 10vh, 80px) 16px 32px;
+  padding: 24px 16px;
+}
+
+/* margin:auto centra el grupo (card + franja de confianza) en pantallas altas
+   sin dejar hueco muerto, y si el contenido desborda cae a tope arriba con
+   scroll (nunca recorta). Reemplaza el viejo align:flex-start + clamp. */
+.auth-wrap {
+  margin: auto;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .card {
@@ -25,9 +35,23 @@ body {
   border-radius: var(--r-lg);            /* 16px = token lg (antes 20px, fuera de sistema) */
   padding: 32px 28px;
   width: 100%;
-  max-width: 420px;
   box-shadow: var(--shadow-lg);
 }
+
+/* Franja de confianza bajo la card: llena el fold en móvil alto y refuerza la
+   conversión (PRODUCT.md — confianza primero). Texto a token, separadores suaves. */
+.auth-trust {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px 10px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--muted);
+  text-align: center;
+}
+.auth-trust .sep { opacity: .5; }
 
 .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
 .logo-mark {
