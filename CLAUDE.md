@@ -274,7 +274,12 @@ Ciclo completo dirigido por `/impeccable critique` sobre **landing + login + reg
 - **Harden** → `151f28c`: `.skeleton` con neutros cálidos (antes gris azulado prohibido) + `--radius`; helper compartido **`window.uiErrorState(container,msg,onRetry)`** (`.state-error`, usado en el catch del Home con "Reintentar") y **`window.uiMarkFieldError(el)`** (`.input-error`, la validación del modal marca/enfoca el campo que falla). Cierra las heurísticas 1 (carga) y 9 (recuperación).
 - **A11y** → `af6bb88`: empty-states "Sin datos aún" y ranking del Home de slate-300 (~1.7:1) a slate-500.
 
-**Pendiente menor de esta crítica (≤P2, no bloquea):** skeletons solo en el Home (las listas siguen con "Cargando…" en texto) · Escape no cierra el modal de presupuesto (sí ×/Cancelar/clic-fuera) · `aria-live` en error/toasts · naming interno `--slate-*`. Helpers `uiErrorState`/`uiMarkFieldError` (en `api.js`) listos para reutilizar en otras vistas.
+**Backlog ≤P2 de esta crítica → CERRADO (commits posteriores):**
+- `1ddf28c` Escape cierra el modal de presupuesto + `role`/`aria-live` en estados dinámicos (toast, estado de error, alerts del modal y de auth).
+- `4729794` **skeletons en las listas**: helper `window.uiSkeletonRows(tbody, cols, rows)` (api.js) cableado en facturas/clientes/presupuestos/productos/proveedores (gastos usa lista en divs, mantiene texto).
+- `21bbb75` **rename `--slate-*` → `--neutral-*`** en los 20 archivos del dashboard (312 ocurrencias, mismos valores; el nombre "slate" engañaba, son neutros cálidos). Cero `--slate-` restantes.
+
+Helpers reutilizables en `api.js`: `uiErrorState(container,msg,onRetry)`, `uiMarkFieldError(el)`, `uiSkeletonRows(tbody,cols,rows)`. Único resto opcional: `aria-live` aún no en TODAS las vistas dinámicas (cubierto en home/modal/auth), y gastos sin skeleton de tabla (lista en divs).
 
 ### ✅ Completado en la sesión 2026-06-06 (diseño público + tooling)
 **Diseño superficies públicas (móvil 390px, verificado en navegador y en prod):**
@@ -326,7 +331,7 @@ Ciclo completo dirigido por `/impeccable critique` sobre **landing + login + reg
 
 ### 🎯 Próximos pasos prioritarios al retomar
 1. **Cuando Meta apruebe:** probar las 3 plantillas con `wa-test.mjs` y validar el loop completo (cotización→acepta→factura→pago→confirmación).
-2. **Diseño (HECHO 2026-06-06 cont.):** el dashboard ya consume `tokens.css` y la salud de la crítica móvil subió a 35/40. Polish menor que queda: skeletons también en las listas (hoy "Cargando…" en texto; reutilizar `window.uiErrorState`/un helper de skeleton), `aria-live` en error/toasts, Escape en el modal de presupuesto, renombrar `--slate-*`.
+2. **Diseño (HECHO 2026-06-06 cont.):** el dashboard ya consume `tokens.css` y la salud de la crítica móvil subió a 35/40. El backlog ≤P2 que quedaba ya está CERRADO (skeletons en listas, Escape en modal, aria-live en home/modal/auth, rename `--slate-*`→`--neutral-*`). Resto opcional: `aria-live` en el 100% de vistas dinámicas, skeleton de gastos (lista en divs), re-critique para medir el score actualizado (>35).
 3. **Sin bloqueo:** más tests (extraer los *builders* de componentes de plantillas WA a un módulo puro y testearlos); seguir el pase de accesibilidad (lectores de pantalla en estados dinámicos).
 4. **Cuando lleguen creds R2:** Sprint PHOTOS.
 
