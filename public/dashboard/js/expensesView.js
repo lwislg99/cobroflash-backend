@@ -5,7 +5,7 @@ const CATEGORY_LABELS = {
   desplazamiento: { label: 'Desplazamiento',  color: '#d97706', bg: '#fef3c7' },
   herramientas:   { label: 'Herramientas',    color: '#7c3aed', bg: '#ede9fe' },
   subcontrata:    { label: 'Subcontrata',     color: '#dc2626', bg: '#fee2e2' },
-  otros:          { label: 'Otros',           color: 'var(--slate-600)', bg: 'var(--slate-100)' },
+  otros:          { label: 'Otros',           color: 'var(--neutral-600)', bg: 'var(--neutral-100)' },
 };
 
 function catPill(category) {
@@ -154,12 +154,12 @@ async function loadExpenses() {
             ${items.map((e) => `
               <tr style="cursor:pointer" onclick="openExpenseModal(${JSON.stringify(e).replace(/"/g,'&quot;')})">
                 <td>
-                  <div style="font-weight:600;color:var(--slate-800)">${escHtml(e.concept)}</div>
-                  ${e.notes ? `<div style="font-size:12px;color:var(--slate-400)">${escHtml(e.notes)}</div>` : ''}
-                  <div style="font-size:11px;color:var(--slate-400)">${new Date(e.date).toLocaleDateString('es',{day:'2-digit',month:'short'})}</div>
+                  <div style="font-weight:600;color:var(--neutral-800)">${escHtml(e.concept)}</div>
+                  ${e.notes ? `<div style="font-size:12px;color:var(--neutral-400)">${escHtml(e.notes)}</div>` : ''}
+                  <div style="font-size:11px;color:var(--neutral-400)">${new Date(e.date).toLocaleDateString('es',{day:'2-digit',month:'short'})}</div>
                 </td>
                 <td>${catPill(e.category)}</td>
-                <td style="font-size:13px;color:var(--slate-500)">
+                <td style="font-size:13px;color:var(--neutral-500)">
                   ${e.quote ? `<a href="#" onclick="event.stopPropagation();renderAppView('quotes-detail',{quoteId:${e.quote.id}})" style="color:var(--blue-600)">Cotización #${e.quote.id}</a>` : '—'}
                   ${e.provider ? `<div style="font-size:12px">${escHtml(e.provider.name)}</div>` : ''}
                 </td>
@@ -228,7 +228,7 @@ function openExpenseModal(expense) {
         <div class="field">
           <label>Cotización vinculada (opcional)</label>
           <input id="exp-quoteid" type="number" placeholder="ID de la cotización" value="${expense?.quote?.id||expense?.quoteId||''}"/>
-          <p style="font-size:12px;color:var(--slate-400);margin:2px 0 0">Vincula este gasto a un trabajo para calcular el margen.</p>
+          <p style="font-size:12px;color:var(--neutral-400);margin:2px 0 0">Vincula este gasto a un trabajo para calcular el margen.</p>
         </div>
         <div class="field">
           <label>Proveedor (opcional)</label>
@@ -240,7 +240,7 @@ function openExpenseModal(expense) {
         </div>
         <div class="field" id="exp-receipt-section">
           <label>Foto del ticket (opcional)</label>
-          ${expense?.receiptData ? `<img src="${expense.receiptData}" style="max-width:100%;max-height:120px;border-radius:8px;object-fit:contain;border:1px solid var(--slate-200);margin-bottom:6px"/>` : ''}
+          ${expense?.receiptData ? `<img src="${expense.receiptData}" style="max-width:100%;max-height:120px;border-radius:8px;object-fit:contain;border:1px solid var(--neutral-200);margin-bottom:6px"/>` : ''}
           <input type="file" id="exp-receipt" accept="image/*" style="font-size:13px"/>
         </div>
         <div id="exp-error" class="alert error" style="display:none"></div>

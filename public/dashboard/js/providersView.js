@@ -11,8 +11,8 @@ function renderProvidersView(container) {
 
     const h = document.createElement("div");
     h.innerHTML = `
-      <h2 style="margin:0;font-size:16px;font-weight:700;color:var(--slate-900)">Proveedores</h2>
-      <p style="margin:2px 0 0;color:var(--slate-400);font-size:12.5px">
+      <h2 style="margin:0;font-size:16px;font-weight:700;color:var(--neutral-900)">Proveedores</h2>
+      <p style="margin:2px 0 0;color:var(--neutral-400);font-size:12.5px">
         Crea y consulta proveedores para asociarlos a productos.
       </p>
     `;

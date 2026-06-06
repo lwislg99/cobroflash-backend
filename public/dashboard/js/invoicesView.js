@@ -117,7 +117,7 @@ async function fetchInvoices(options = {}) {
     const bulkBar = document.createElement('div');
     bulkBar.style.cssText = [
       'display:none;position:sticky;bottom:16px;z-index:50;',
-      'background:var(--slate-900);color:#fff;border-radius:var(--radius-md);',
+      'background:var(--neutral-900);color:#fff;border-radius:var(--radius-md);',
       'padding:10px 16px;display:none;align-items:center;gap:12px;',
       'box-shadow:var(--shadow-lg);margin:8px 16px;',
     ].join('');

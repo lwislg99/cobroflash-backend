@@ -1,7 +1,7 @@
 // public/dashboard/js/plansView.js
 
 async function renderPlansView(container) {
-  container.innerHTML = `<div style="max-width:520px"><div style="color:var(--slate-400);font-size:13px">Cargando plan…</div></div>`;
+  container.innerHTML = `<div style="max-width:520px"><div style="color:var(--neutral-400);font-size:13px">Cargando plan…</div></div>`;
   let data;
   try {
     data = await apiRequest('/admin/billing/plans');
@@ -51,8 +51,8 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans }, annual) {
     <div class="customers-card" style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       <div style="font-size:28px">🎉</div>
       <div>
-        <div style="font-weight:700;font-size:15px;color:var(--slate-900)">Periodo de prueba gratuito</div>
-        <div style="font-size:13px;color:var(--slate-400);margin-top:2px">
+        <div style="font-weight:700;font-size:15px;color:var(--neutral-900)">Periodo de prueba gratuito</div>
+        <div style="font-size:13px;color:var(--neutral-400);margin-top:2px">
           ${trialDaysLeft !== null ? `${trialDaysLeft} día${trialDaysLeft !== 1 ? 's' : ''} restante${trialDaysLeft !== 1 ? 's' : ''}` : 'Tiempo limitado'}
         </div>
       </div>
@@ -61,8 +61,8 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans }, annual) {
     <div class="customers-card" style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       <div style="font-size:28px">✅</div>
       <div>
-        <div style="font-weight:700;font-size:15px;color:var(--slate-900)">Plan activo: <strong>Pro</strong></div>
-        ${planExpiresAt ? `<div style="font-size:13px;color:var(--slate-400);margin-top:2px">Próxima renovación: ${new Date(planExpiresAt).toLocaleDateString('es', { day: '2-digit', month: 'long', year: 'numeric' })}</div>` : ''}
+        <div style="font-weight:700;font-size:15px;color:var(--neutral-900)">Plan activo: <strong>Pro</strong></div>
+        ${planExpiresAt ? `<div style="font-size:13px;color:var(--neutral-400);margin-top:2px">Próxima renovación: ${new Date(planExpiresAt).toLocaleDateString('es', { day: '2-digit', month: 'long', year: 'numeric' })}</div>` : ''}
       </div>
     </div>
   `;
@@ -87,29 +87,29 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans }, annual) {
 
       <div class="customers-card">
         <div style="display:flex;justify-content:center;margin-bottom:20px">
-          <div style="display:flex;background:var(--slate-100);border-radius:8px;padding:3px;gap:3px">
-            <button id="toggle-monthly" style="padding:6px 16px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;${!annual ? 'background:#fff;color:var(--slate-900);box-shadow:0 1px 3px rgba(0,0,0,.08)' : 'background:transparent;color:var(--slate-400)'}">
+          <div style="display:flex;background:var(--neutral-100);border-radius:8px;padding:3px;gap:3px">
+            <button id="toggle-monthly" style="padding:6px 16px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;${!annual ? 'background:#fff;color:var(--neutral-900);box-shadow:0 1px 3px rgba(0,0,0,.08)' : 'background:transparent;color:var(--neutral-400)'}">
               Mensual
             </button>
-            <button id="toggle-annual" style="padding:6px 16px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;${annual ? 'background:#fff;color:var(--slate-900);box-shadow:0 1px 3px rgba(0,0,0,.08)' : 'background:transparent;color:var(--slate-400)'}">
+            <button id="toggle-annual" style="padding:6px 16px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;${annual ? 'background:#fff;color:var(--neutral-900);box-shadow:0 1px 3px rgba(0,0,0,.08)' : 'background:transparent;color:var(--neutral-400)'}">
               Anual <span style="color:var(--green-600);font-size:11px">-21%</span>
             </button>
           </div>
         </div>
 
-        <div style="text-align:center;margin-bottom:20px;${isCurrent ? 'border:2px solid var(--green-500);border-radius:12px;padding:16px;background:var(--slate-50)' : ''}">
+        <div style="text-align:center;margin-bottom:20px;${isCurrent ? 'border:2px solid var(--green-500);border-radius:12px;padding:16px;background:var(--neutral-50)' : ''}">
           ${isCurrent ? `<div style="display:inline-block;background:var(--green-500);color:#fff;font-size:10px;font-weight:700;padding:2px 10px;border-radius:var(--radius-full);margin-bottom:10px">Plan actual</div>` : ''}
-          <div style="font-weight:700;font-size:18px;color:var(--slate-800);margin-bottom:6px">Plan Pro</div>
-          <div style="font-size:40px;font-weight:800;color:var(--slate-900);letter-spacing:-.5px;line-height:1">
-            $${price}<span style="font-size:16px;font-weight:400;color:var(--slate-400)">${perLabel}</span>
+          <div style="font-weight:700;font-size:18px;color:var(--neutral-800);margin-bottom:6px">Plan Pro</div>
+          <div style="font-size:40px;font-weight:800;color:var(--neutral-900);letter-spacing:-.5px;line-height:1">
+            $${price}<span style="font-size:16px;font-weight:400;color:var(--neutral-400)">${perLabel}</span>
           </div>
           ${saving}
-          <div style="font-size:12px;color:var(--slate-400);margin-top:8px">Todo incluido · Sin límites</div>
+          <div style="font-size:12px;color:var(--neutral-400);margin-top:8px">Todo incluido · Sin límites</div>
         </div>
 
         <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px">
           ${features.map(f => `
-            <li style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--slate-700)">
+            <li style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--neutral-700)">
               <span style="color:var(--green-500);font-weight:700;flex-shrink:0">✓</span> ${f}
             </li>
           `).join('')}
@@ -119,7 +119,7 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans }, annual) {
           <button class="btn-primary plan-btn" data-plan="${plan.id}" style="width:100%;font-size:15px;padding:12px">
             Suscribirme — $${price}${perLabel}
           </button>
-          <p style="text-align:center;font-size:12px;color:var(--slate-400);margin:10px 0 0">
+          <p style="text-align:center;font-size:12px;color:var(--neutral-400);margin:10px 0 0">
             Sin permanencia · Cancela cuando quieras
           </p>
         ` : `

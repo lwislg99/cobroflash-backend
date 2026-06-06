@@ -78,7 +78,7 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
   mBody.style.cssText = "flex-direction:column;gap:10px";
 
   const desc = document.createElement("p");
-  desc.style.cssText = "margin:0;font-size:13.5px;color:var(--slate-500)";
+  desc.style.cssText = "margin:0;font-size:13.5px;color:var(--neutral-500)";
   desc.textContent = "Revisa el PDF del presupuesto antes de enviarlo por WhatsApp al cliente.";
   mBody.appendChild(desc);
 
@@ -92,7 +92,7 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
     mBody.appendChild(link);
 
     const frameWrapper = document.createElement("div");
-    frameWrapper.style.cssText = "border:1px solid var(--slate-200);border-radius:8px;overflow:hidden";
+    frameWrapper.style.cssText = "border:1px solid var(--neutral-200);border-radius:8px;overflow:hidden";
     const iframe = document.createElement("iframe");
     iframe.src = pdfUrl;
     iframe.title = `PDF Presupuesto #${quoteId}`;
@@ -321,7 +321,7 @@ blockClient.appendChild(descWrapper);
   const aiBtn = document.createElement("button");
   aiBtn.type = "button";
   aiBtn.className = "btn-ghost btn-sm";
-  aiBtn.style.cssText = "font-size:12px;padding:4px 10px;border-radius:6px;border:1px dashed var(--slate-300);color:var(--slate-600)";
+  aiBtn.style.cssText = "font-size:12px;padding:4px 10px;border-radius:6px;border:1px dashed var(--neutral-300);color:var(--neutral-600)";
   aiBtn.innerHTML = "✨ Sugerir con IA";
   aiBtn.title = "Describe el trabajo y Claude sugiere las líneas del presupuesto";
   linesHeader.appendChild(aiBtn);
@@ -329,7 +329,7 @@ blockClient.appendChild(descWrapper);
   const useTemplateBtn = document.createElement("button");
   useTemplateBtn.type = "button";
   useTemplateBtn.className = "btn-ghost btn-sm";
-  useTemplateBtn.style.cssText = "font-size:12px;padding:4px 10px;border-radius:6px;border:1px dashed var(--slate-300);color:var(--slate-600)";
+  useTemplateBtn.style.cssText = "font-size:12px;padding:4px 10px;border-radius:6px;border:1px dashed var(--neutral-300);color:var(--neutral-600)";
   useTemplateBtn.innerHTML = "📋 Usar plantilla";
   useTemplateBtn.title = "Cargar líneas desde una plantilla guardada";
   linesHeader.appendChild(useTemplateBtn);
@@ -410,7 +410,7 @@ blockClient.appendChild(descWrapper);
   const saveTemplateBtn = document.createElement("button");
   saveTemplateBtn.type = "button";
   saveTemplateBtn.className = "btn-ghost btn-sm";
-  saveTemplateBtn.style.cssText = "border:1px dashed var(--slate-300);color:var(--slate-500)";
+  saveTemplateBtn.style.cssText = "border:1px dashed var(--neutral-300);color:var(--neutral-500)";
   saveTemplateBtn.innerHTML = "💾 Guardar como plantilla";
   saveTemplateBtn.title = "Guarda las líneas actuales como plantilla reutilizable";
 
@@ -420,7 +420,7 @@ blockClient.appendChild(descWrapper);
 
   // Indicador de autoguardado de borrador (FRONT1-4)
   const draftIndicator = document.createElement("span");
-  draftIndicator.style.cssText = "font-size:12px;color:var(--slate-400);align-self:center;margin-left:auto;transition:opacity .3s;opacity:0";
+  draftIndicator.style.cssText = "font-size:12px;color:var(--neutral-400);align-self:center;margin-left:auto;transition:opacity .3s;opacity:0";
   draftIndicator.textContent = "✓ Guardado automáticamente";
   actionsRow.appendChild(draftIndicator);
 
@@ -613,7 +613,7 @@ blockClient.appendChild(descWrapper);
       <div class="quote-total-final"><span>Total presupuesto:</span><strong>${total.toFixed(
         2
       )}</strong></div>
-      <div class="quote-vat-calc">${sym}${base.toFixed(2)} <span style="color:var(--slate-400)">+ IVA ${effVat}%</span> = <strong>${sym}${total.toFixed(2)}</strong></div>
+      <div class="quote-vat-calc">${sym}${base.toFixed(2)} <span style="color:var(--neutral-400)">+ IVA ${effVat}%</span> = <strong>${sym}${total.toFixed(2)}</strong></div>
     `;
 
     return { base, vatTotal, total };
@@ -1632,7 +1632,7 @@ if (Number.isFinite(n) && n >= 0) {
           <button class="modal-close" id="tpl-modal-close">&times;</button>
         </div>
         <div class="modal-body">
-          <p style="font-size:13px;color:var(--slate-500);margin:0 0 12px">Elige una plantilla para cargar sus líneas en el presupuesto actual.</p>
+          <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">Elige una plantilla para cargar sus líneas en el presupuesto actual.</p>
           <div style="display:flex;flex-direction:column;gap:8px" id="tpl-list"></div>
         </div>
       </div>
@@ -1651,8 +1651,8 @@ if (Number.isFinite(n) && n >= 0) {
       btn.style.cssText = 'width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center;padding:12px 14px';
       btn.innerHTML = `
         <span>
-          <strong style="color:var(--slate-900)">${tpl.name}</strong>
-          <span style="display:block;font-size:12px;color:var(--slate-400);margin-top:2px">${lineCount} línea${lineCount !== 1 ? 's' : ''} · ${tpl.currency}</span>
+          <strong style="color:var(--neutral-900)">${tpl.name}</strong>
+          <span style="display:block;font-size:12px;color:var(--neutral-400);margin-top:2px">${lineCount} línea${lineCount !== 1 ? 's' : ''} · ${tpl.currency}</span>
         </span>
         <span style="font-size:12px;color:var(--green-600);font-weight:600">Usar →</span>
       `;
@@ -1715,13 +1715,13 @@ if (Number.isFinite(n) && n >= 0) {
           <button class="modal-close" id="save-tpl-close">&times;</button>
         </div>
         <div class="modal-body">
-          <p style="font-size:13px;color:var(--slate-500);margin:0 0 12px">Dale un nombre a esta plantilla para reutilizarla en futuros presupuestos.</p>
+          <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">Dale un nombre a esta plantilla para reutilizarla en futuros presupuestos.</p>
           <div class="alert" id="save-tpl-alert"></div>
           <div class="field">
             <label>Nombre de la plantilla</label>
             <input type="text" id="tpl-name-input" placeholder="Ej. Revisión caldera estándar" />
           </div>
-          <p style="font-size:12px;color:var(--slate-400);margin:4px 0 0">${templateLines.length} línea${templateLines.length !== 1 ? 's' : ''} se guardarán.</p>
+          <p style="font-size:12px;color:var(--neutral-400);margin:4px 0 0">${templateLines.length} línea${templateLines.length !== 1 ? 's' : ''} se guardarán.</p>
           <button class="btn-primary" id="save-tpl-btn" style="width:100%;margin-top:4px">Guardar plantilla</button>
         </div>
       </div>

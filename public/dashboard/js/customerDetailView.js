@@ -6,7 +6,7 @@ async function renderCustomer360View(container, customerId) {
 
   const id = Number(customerId || window.appState?.customerId360);
   if (!id) {
-    container.innerHTML = '<p style="color:var(--slate-400);padding:24px">Sin cliente seleccionado.</p>';
+    container.innerHTML = '<p style="color:var(--neutral-400);padding:24px">Sin cliente seleccionado.</p>';
     return;
   }
 
@@ -62,13 +62,13 @@ async function renderCustomer360View(container, customerId) {
     <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0">
       <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--green-500),#22d3ee);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:var(--green-900);flex-shrink:0">${initials}</div>
       <div>
-        <h2 style="margin:0 0 4px;font-size:18px;font-weight:800;color:var(--slate-900)">${escC(customer.name)}</h2>
-        <div style="font-size:13px;color:var(--slate-500);display:flex;gap:12px;flex-wrap:wrap">
+        <h2 style="margin:0 0 4px;font-size:18px;font-weight:800;color:var(--neutral-900)">${escC(customer.name)}</h2>
+        <div style="font-size:13px;color:var(--neutral-500);display:flex;gap:12px;flex-wrap:wrap">
           ${customer.phone ? `<span>📱 ${escC(customer.phone)}</span>` : ''}
           ${customer.email ? `<span>✉️ ${escC(customer.email)}</span>` : ''}
-          <span style="color:var(--slate-400)">Cliente desde ${new Date(customer.createdAt).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
+          <span style="color:var(--neutral-400)">Cliente desde ${new Date(customer.createdAt).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
         </div>
-        ${customer.notes ? `<div style="font-size:12.5px;color:var(--slate-500);margin-top:6px;font-style:italic">${escC(customer.notes)}</div>` : ''}
+        ${customer.notes ? `<div style="font-size:12.5px;color:var(--neutral-500);margin-top:6px;font-style:italic">${escC(customer.notes)}</div>` : ''}
       </div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0">
@@ -121,7 +121,7 @@ async function renderCustomer360View(container, customerId) {
   if (Array.isArray(events) && events.length) {
     const actCard = document.createElement('div');
     actCard.className = 'customers-card';
-    actCard.innerHTML = '<h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:var(--slate-600);text-transform:uppercase;letter-spacing:.04em">Actividad reciente</h3>';
+    actCard.innerHTML = '<h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em">Actividad reciente</h3>';
 
     const EV_ICON = {
       quote_sent: '📤', quote_accepted: '✅', quote_rejected: '✖',
@@ -138,10 +138,10 @@ async function renderCustomer360View(container, customerId) {
     events.forEach((ev, i) => {
       const row = document.createElement('div');
       row.style.cssText = 'display:flex;gap:12px;align-items:flex-start;padding:10px 0' +
-        (i < events.length - 1 ? ';border-bottom:1px solid var(--slate-100)' : '');
+        (i < events.length - 1 ? ';border-bottom:1px solid var(--neutral-100)' : '');
       const when = new Date(ev.createdAt).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
       row.innerHTML = `
-        <div style="flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--slate-50);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px">${EV_ICON[ev.type] || '•'}</div>
+        <div style="flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--neutral-50);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px">${EV_ICON[ev.type] || '•'}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:13.5px;font-weight:600;color:${EV_COLOR[ev.type] || 'var(--ink)'}">${escC(ev.title)}</div>
           ${ev.detail ? `<div style="font-size:12.5px;color:var(--muted);margin-top:1px">${escC(ev.detail)}</div>` : ''}
@@ -156,18 +156,18 @@ async function renderCustomer360View(container, customerId) {
 
   // ── Tabs: Presupuestos / Facturas ─────────────────────────────────────
   const tabsWrap = document.createElement('div');
-  tabsWrap.style.cssText = 'display:flex;gap:4px;border-bottom:2px solid var(--slate-200);margin-bottom:-2px';
+  tabsWrap.style.cssText = 'display:flex;gap:4px;border-bottom:2px solid var(--neutral-200);margin-bottom:-2px';
 
   const tabContent = document.createElement('div');
 
   function makeTab(label, key) {
     const btn = document.createElement('button');
-    btn.style.cssText = 'background:none;border:none;padding:10px 16px;font-size:13.5px;font-weight:600;color:var(--slate-400);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;font-family:inherit';
+    btn.style.cssText = 'background:none;border:none;padding:10px 16px;font-size:13.5px;font-weight:600;color:var(--neutral-400);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;font-family:inherit';
     btn.textContent = label;
     btn.dataset.key = key;
     btn.addEventListener('click', () => {
       tabsWrap.querySelectorAll('button').forEach(b => {
-        b.style.color = 'var(--slate-400)';
+        b.style.color = 'var(--neutral-400)';
         b.style.borderBottomColor = 'transparent';
       });
       btn.style.color = 'var(--green-600)';
@@ -205,7 +205,7 @@ async function renderCustomer360View(container, customerId) {
       table.innerHTML = `<thead><tr><th>ID</th><th>Fecha</th><th>Total</th><th>Estado</th><th></th></tr></thead>`;
       const tbody = document.createElement('tbody');
       if (quotes.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--slate-400);padding:24px">Sin ${L.quotePlural||'presupuestos'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--neutral-400);padding:24px">Sin ${L.quotePlural||'presupuestos'}</td></tr>`;
       }
       quotes.forEach(q => {
         const tr = document.createElement('tr');
@@ -229,7 +229,7 @@ async function renderCustomer360View(container, customerId) {
       table.innerHTML = `<thead><tr><th>Nº</th><th>Fecha</th><th>Total</th><th>Estado</th><th></th></tr></thead>`;
       const tbody = document.createElement('tbody');
       if (invoices.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--slate-400);padding:24px">Sin facturas</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--neutral-400);padding:24px">Sin facturas</td></tr>`;
       }
       invoices.forEach(inv => {
         const tr = document.createElement('tr');

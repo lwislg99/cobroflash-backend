@@ -68,7 +68,7 @@ async function initApp() {
   const topbarRight = document.getElementById('topbar-right');
   if (topbarRight) {
     const roleChip = !me.isOwner
-      ? `<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--slate-100);color:var(--slate-500);margin-right:8px">${roleLabels[me.userRole] || me.userRole}</span>`
+      ? `<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--neutral-100);color:var(--neutral-500);margin-right:8px">${roleLabels[me.userRole] || me.userRole}</span>`
       : '';
     topbarRight.innerHTML = `
       <div class="topbar-merchant">

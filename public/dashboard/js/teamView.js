@@ -14,7 +14,7 @@ async function renderTeamView(container) {
   header.innerHTML = `
     <div>
       <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Miembros del equipo</h2>
-      <p style="margin:0;font-size:13px;color:var(--slate-400)">Invita colaboradores a tu cuenta. Los técnicos pueden crear presupuestos pero no modificar la configuración.</p>
+      <p style="margin:0;font-size:13px;color:var(--neutral-400)">Invita colaboradores a tu cuenta. Los técnicos pueden crear presupuestos pero no modificar la configuración.</p>
     </div>
     <button class="btn-primary btn-sm" id="btn-invite-member">+ Invitar miembro</button>
   `;
@@ -58,12 +58,12 @@ async function renderTeamView(container) {
     try {
       members = await apiRequest('/admin/team');
     } catch {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--slate-400);padding:32px">Error al cargar el equipo.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--neutral-400);padding:32px">Error al cargar el equipo.</td></tr>`;
       return;
     }
 
     if (!members.length) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--slate-400);padding:32px">Aún no hay miembros en el equipo.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--neutral-400);padding:32px">Aún no hay miembros en el equipo.</td></tr>`;
       return;
     }
 
@@ -76,8 +76,8 @@ async function renderTeamView(container) {
       const statusClass = { active: 'status-pill-accepted', invited: 'status-pill-pending', suspended: 'status-pill-rejected' }[m.status] || '';
 
       tr.innerHTML = `
-        <td style="font-weight:500">${esc(m.name)}${m.isOwner ? ' <span style="font-size:11px;color:var(--slate-400)">(propietario)</span>' : ''}</td>
-        <td style="color:var(--slate-500)">${esc(m.email)}</td>
+        <td style="font-weight:500">${esc(m.name)}${m.isOwner ? ' <span style="font-size:11px;color:var(--neutral-400)">(propietario)</span>' : ''}</td>
+        <td style="color:var(--neutral-500)">${esc(m.email)}</td>
         <td><span class="status-pill ${roleClass}">${roleLabel}</span></td>
         <td><span class="status-pill ${statusClass}">${statusLabel}</span></td>
         <td></td>

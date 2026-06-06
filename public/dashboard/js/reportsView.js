@@ -16,7 +16,7 @@ async function renderReportsView(container) {
   const titleBlock = document.createElement('div');
   titleBlock.innerHTML = `
     <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Informe de rentabilidad</h2>
-    <p style="margin:0;font-size:13px;color:var(--slate-400)">Ingresos, gastos y beneficio neto por mes.</p>
+    <p style="margin:0;font-size:13px;color:var(--neutral-400)">Ingresos, gastos y beneficio neto por mes.</p>
   `;
   header.appendChild(titleBlock);
 
@@ -24,7 +24,7 @@ async function renderReportsView(container) {
   const yearRow = document.createElement('div');
   yearRow.style.cssText = 'display:flex;align-items:center;gap:8px';
   const yearSelect = document.createElement('select');
-  yearSelect.style.cssText = 'padding:6px 10px;border:1.5px solid var(--slate-200);border-radius:8px;font-size:13px;background:#fff;cursor:pointer';
+  yearSelect.style.cssText = 'padding:6px 10px;border:1.5px solid var(--neutral-200);border-radius:8px;font-size:13px;background:#fff;cursor:pointer';
   const currentYear = new Date().getFullYear();
   for (let y = currentYear; y >= currentYear - 4; y--) {
     const opt = document.createElement('option');
@@ -87,7 +87,7 @@ async function renderReportsView(container) {
   loadAnalytics(funnelCard, servicesCard);
 
   async function load(year) {
-    chartCard.innerHTML = '<p style="color:var(--slate-400);font-size:13px;padding:8px 0">Cargando…</p>';
+    chartCard.innerHTML = '<p style="color:var(--neutral-400);font-size:13px;padding:8px 0">Cargando…</p>';
     summaryCard.innerHTML = '';
 
     let data;
@@ -116,12 +116,12 @@ async function renderReportsView(container) {
     kpis.forEach(({ label, value, prev, color }) => {
       const pct = prev !== 0 ? Math.round((value - prev) / Math.abs(prev) * 100) : null;
       const sign = pct === null ? '' : pct >= 0 ? '▲' : '▼';
-      const pctColor = pct === null ? 'var(--slate-400)' : pct >= 0 ? 'var(--green-600)' : 'var(--red-600)';
+      const pctColor = pct === null ? 'var(--neutral-400)' : pct >= 0 ? 'var(--green-600)' : 'var(--red-600)';
       const kpi = document.createElement('div');
       kpi.className = 'kpi-card';
       kpi.innerHTML = `
         <div class="kpi-label">${label}</div>
-        <div class="kpi-value" style="color:${color};font-size:22px">${fmt(value)} <span style="font-size:12px;font-weight:400;color:var(--slate-400)">${currency}</span></div>
+        <div class="kpi-value" style="color:${color};font-size:22px">${fmt(value)} <span style="font-size:12px;font-weight:400;color:var(--neutral-400)">${currency}</span></div>
         ${pct !== null ? `<div class="kpi-sub" style="color:${pctColor}">${sign} ${Math.abs(pct)}% vs ${year - 1}</div>` : ''}
       `;
       kpiWrap.appendChild(kpi);
@@ -129,7 +129,7 @@ async function renderReportsView(container) {
 
     // ── Gráfico SVG de barras ─────────────────────────────────────────────
     const chartTitle = document.createElement('h3');
-    chartTitle.style.cssText = 'margin:0 0 12px;font-size:13px;font-weight:700;color:var(--slate-600);text-transform:uppercase;letter-spacing:.04em';
+    chartTitle.style.cssText = 'margin:0 0 12px;font-size:13px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em';
     chartTitle.textContent = `Desglose mensual ${year}`;
     chartCard.appendChild(chartTitle);
 
@@ -137,7 +137,7 @@ async function renderReportsView(container) {
 
     // Leyenda
     const legend = document.createElement('div');
-    legend.style.cssText = 'display:flex;gap:16px;margin-top:10px;font-size:12px;color:var(--slate-500)';
+    legend.style.cssText = 'display:flex;gap:16px;margin-top:10px;font-size:12px;color:var(--neutral-500)';
     legend.innerHTML = `
       <span><span style="display:inline-block;width:10px;height:10px;background:#22c55e;border-radius:2px;margin-right:4px"></span>Ingresos</span>
       <span><span style="display:inline-block;width:10px;height:10px;background:#ef4444;border-radius:2px;margin-right:4px"></span>Gastos</span>
@@ -147,7 +147,7 @@ async function renderReportsView(container) {
 
     // ── Tabla resumen mensual ─────────────────────────────────────────────
     summaryCard.innerHTML = `
-      <h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:var(--slate-600);text-transform:uppercase;letter-spacing:.04em">Resumen mensual</h3>
+      <h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em">Resumen mensual</h3>
     `;
 
     const tableWrap = document.createElement('div');
@@ -174,10 +174,10 @@ async function renderReportsView(container) {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td style="font-weight:600">${m.label}</td>
-        <td style="text-align:right;color:var(--green-700)">${m.revenue > 0 ? fmt(m.revenue) : '<span style="color:var(--slate-300)">—</span>'}</td>
-        <td style="text-align:right;color:var(--red-600)">${m.expenses > 0 ? fmt(m.expenses) : '<span style="color:var(--slate-300)">—</span>'}</td>
+        <td style="text-align:right;color:var(--green-700)">${m.revenue > 0 ? fmt(m.revenue) : '<span style="color:var(--neutral-300)">—</span>'}</td>
+        <td style="text-align:right;color:var(--red-600)">${m.expenses > 0 ? fmt(m.expenses) : '<span style="color:var(--neutral-300)">—</span>'}</td>
         <td style="text-align:right;font-weight:600;color:${profitColor}">${fmt(m.profit)}</td>
-        <td style="text-align:right;color:var(--slate-500)">${margin !== null ? margin + '%' : '—'}</td>
+        <td style="text-align:right;color:var(--neutral-500)">${margin !== null ? margin + '%' : '—'}</td>
       `;
       tbody.appendChild(tr);
     });
@@ -185,7 +185,7 @@ async function renderReportsView(container) {
     // Fila de totales
     const totalMargin = totals.revenue > 0 ? Math.round(totals.profit / totals.revenue * 100) : null;
     const trTotal = document.createElement('tr');
-    trTotal.style.cssText = 'background:var(--slate-50);font-weight:700;border-top:2px solid var(--slate-200)';
+    trTotal.style.cssText = 'background:var(--neutral-50);font-weight:700;border-top:2px solid var(--neutral-200)';
     trTotal.innerHTML = `
       <td>TOTAL ${year}</td>
       <td style="text-align:right;color:var(--green-700)">${fmt(totals.revenue)}</td>
@@ -211,7 +211,7 @@ async function renderReportsView(container) {
 
 // ── Analytics: funnel de conversión + rentabilidad por servicio ──────────
 async function loadAnalytics(funnelCard, servicesCard) {
-  funnelCard.innerHTML = '<p style="color:var(--slate-400);font-size:13px;padding:8px 0">Cargando funnel…</p>';
+  funnelCard.innerHTML = '<p style="color:var(--neutral-400);font-size:13px;padding:8px 0">Cargando funnel…</p>';
   servicesCard.innerHTML = '';
 
   let funnel, services;
@@ -245,8 +245,8 @@ function renderFunnel(card, data) {
   const maxVal = Math.max(...stages.map(s => s.value), 1);
 
   card.innerHTML = `
-    <h3 style="margin:0 0 4px;font-size:13px;font-weight:700;color:var(--slate-600);text-transform:uppercase;letter-spacing:.04em">Funnel de conversión · ${quoteWord}</h3>
-    <p style="margin:0 0 16px;font-size:12px;color:var(--slate-400)">Mes actual vs mes anterior</p>
+    <h3 style="margin:0 0 4px;font-size:13px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em">Funnel de conversión · ${quoteWord}</h3>
+    <p style="margin:0 0 16px;font-size:12px;color:var(--neutral-400)">Mes actual vs mes anterior</p>
   `;
 
   const bars = document.createElement('div');
@@ -259,10 +259,10 @@ function renderFunnel(card, data) {
     const row = document.createElement('div');
     row.innerHTML = `
       <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px">
-        <span style="color:var(--slate-600);font-weight:600">${s.label}</span>
-        <span style="color:var(--slate-700)"><strong>${s.value}</strong> <span style="color:${diffColor};font-size:11px">${diffTxt}</span></span>
+        <span style="color:var(--neutral-600);font-weight:600">${s.label}</span>
+        <span style="color:var(--neutral-700)"><strong>${s.value}</strong> <span style="color:${diffColor};font-size:11px">${diffTxt}</span></span>
       </div>
-      <div style="background:var(--slate-100);border-radius:6px;height:14px;overflow:hidden">
+      <div style="background:var(--neutral-100);border-radius:6px;height:14px;overflow:hidden">
         <div style="width:${pct}%;height:100%;background:${s.color};border-radius:6px;transition:width .4s"></div>
       </div>
     `;
@@ -278,7 +278,7 @@ function renderFunnel(card, data) {
   kpis.innerHTML = `
     <div class="kpi-card"><div class="kpi-label">Tasa de aceptación</div><div class="kpi-value" style="font-size:20px;color:var(--green-600)">${accRate}</div></div>
     <div class="kpi-card"><div class="kpi-label">Tiempo medio de respuesta</div><div class="kpi-value" style="font-size:20px">${respTime}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Sin responder</div><div class="kpi-value" style="font-size:20px;color:var(--slate-500)">${c.awaiting || 0}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Sin responder</div><div class="kpi-value" style="font-size:20px;color:var(--neutral-500)">${c.awaiting || 0}</div></div>
   `;
   card.appendChild(kpis);
 
@@ -286,12 +286,12 @@ function renderFunnel(card, data) {
   if (Array.isArray(data.rejectionReasons) && data.rejectionReasons.length) {
     const rej = document.createElement('div');
     rej.style.cssText = 'margin-top:18px';
-    rej.innerHTML = `<h4 style="margin:0 0 8px;font-size:12px;font-weight:700;color:var(--slate-500);text-transform:uppercase">Motivos de rechazo (este mes)</h4>`;
+    rej.innerHTML = `<h4 style="margin:0 0 8px;font-size:12px;font-weight:700;color:var(--neutral-500);text-transform:uppercase">Motivos de rechazo (este mes)</h4>`;
     const list = document.createElement('div');
     list.style.cssText = 'display:flex;flex-direction:column;gap:5px';
     data.rejectionReasons.forEach(r => {
       const item = document.createElement('div');
-      item.style.cssText = 'display:flex;justify-content:space-between;font-size:13px;color:var(--slate-600)';
+      item.style.cssText = 'display:flex;justify-content:space-between;font-size:13px;color:var(--neutral-600)';
       item.innerHTML = `<span>${escReport(r.reason)}</span><span style="font-weight:600">${r.count}</span>`;
       list.appendChild(item);
     });
@@ -303,12 +303,12 @@ function renderFunnel(card, data) {
 function renderServices(card, data) {
   const services = (data && data.services) || [];
   card.innerHTML = `
-    <h3 style="margin:0 0 4px;font-size:13px;font-weight:700;color:var(--slate-600);text-transform:uppercase;letter-spacing:.04em">Rentabilidad por servicio</h3>
-    <p style="margin:0 0 14px;font-size:12px;color:var(--slate-400)">Qué servicios cotizas más y cuáles cierras mejor.</p>
+    <h3 style="margin:0 0 4px;font-size:13px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em">Rentabilidad por servicio</h3>
+    <p style="margin:0 0 14px;font-size:12px;color:var(--neutral-400)">Qué servicios cotizas más y cuáles cierras mejor.</p>
   `;
 
   if (!services.length) {
-    card.innerHTML += '<p style="color:var(--slate-400);font-size:13px">Aún no hay suficientes datos. Envía cotizaciones para ver estadísticas por servicio.</p>';
+    card.innerHTML += '<p style="color:var(--neutral-400);font-size:13px">Aún no hay suficientes datos. Envía cotizaciones para ver estadísticas por servicio.</p>';
     return;
   }
 
@@ -329,13 +329,13 @@ function renderServices(card, data) {
   `;
   const tbody = document.createElement('tbody');
   services.slice(0, 20).forEach(s => {
-    const accColor = s.acceptanceRate >= 50 ? 'var(--green-600)' : s.acceptanceRate >= 25 ? 'var(--slate-600)' : 'var(--red-600)';
+    const accColor = s.acceptanceRate >= 50 ? 'var(--green-600)' : s.acceptanceRate >= 25 ? 'var(--neutral-600)' : 'var(--red-600)';
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td style="font-weight:600">${escReport(s.name)}</td>
       <td style="text-align:right">${s.quoted}</td>
       <td style="text-align:right;color:${accColor};font-weight:600">${s.acceptanceRate}%</td>
-      <td style="text-align:right;color:var(--slate-500)">${fmt(s.avgPrice)}</td>
+      <td style="text-align:right;color:var(--neutral-500)">${fmt(s.avgPrice)}</td>
       <td style="text-align:right;color:var(--green-700);font-weight:600">${fmt(s.revenue)}</td>
     `;
     tbody.appendChild(tr);

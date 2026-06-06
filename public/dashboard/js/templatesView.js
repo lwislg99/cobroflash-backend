@@ -14,8 +14,8 @@ async function renderTemplatesView(container) {
   header.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap';
   header.innerHTML = `
     <div>
-      <h2 style="margin:0 0 4px;font-size:17px;font-weight:700;color:var(--slate-900)">Plantillas de presupuesto</h2>
-      <p style="margin:0;font-size:13px;color:var(--slate-400)">Guarda trabajos frecuentes como plantillas para crear presupuestos más rápido.</p>
+      <h2 style="margin:0 0 4px;font-size:17px;font-weight:700;color:var(--neutral-900)">Plantillas de presupuesto</h2>
+      <p style="margin:0;font-size:13px;color:var(--neutral-400)">Guarda trabajos frecuentes como plantillas para crear presupuestos más rápido.</p>
     </div>
     <a href="#" onclick="window.renderAppView&&renderAppView('quotes-new');return false" class="btn-primary btn-sm">+ Nuevo presupuesto</a>
   `;
@@ -63,7 +63,7 @@ async function renderTemplatesView(container) {
     try {
       templates = await apiRequest('/admin/templates');
     } catch {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--slate-400);padding:32px">Error al cargar las plantillas.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--neutral-400);padding:32px">Error al cargar las plantillas.</td></tr>`;
       return;
     }
 
@@ -88,12 +88,12 @@ async function renderTemplatesView(container) {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>
-          <span style="font-weight:600;color:var(--slate-900)">${escTpl(tpl.name)}</span>
-          ${lineCount > 0 ? `<div style="font-size:11.5px;color:var(--slate-400);margin-top:2px">${(tpl.lines).slice(0,3).map(l=>escTpl(l.concept||'')).join(' · ')}${lineCount>3?'…':''}</div>` : ''}
+          <span style="font-weight:600;color:var(--neutral-900)">${escTpl(tpl.name)}</span>
+          ${lineCount > 0 ? `<div style="font-size:11.5px;color:var(--neutral-400);margin-top:2px">${(tpl.lines).slice(0,3).map(l=>escTpl(l.concept||'')).join(' · ')}${lineCount>3?'…':''}</div>` : ''}
         </td>
         <td><span class="status-pill status-pill-draft">${lineCount} línea${lineCount!==1?'s':''}</span></td>
-        <td style="color:var(--slate-500)">${escTpl(tpl.currency)}</td>
-        <td style="color:var(--slate-400);font-size:12.5px">${updated}</td>
+        <td style="color:var(--neutral-500)">${escTpl(tpl.currency)}</td>
+        <td style="color:var(--neutral-400);font-size:12.5px">${updated}</td>
         <td></td>
       `;
 

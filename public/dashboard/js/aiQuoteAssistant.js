@@ -15,7 +15,7 @@ function openAiSuggestModal(addLinesFn) {
         <button class="modal-close" id="ai-modal-close">&times;</button>
       </div>
       <div class="modal-body">
-        <p style="font-size:13px;color:var(--slate-500);margin:0 0 12px">
+        <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">
           Describe el trabajo con tus propias palabras y Claude sugerirá las líneas del presupuesto usando tu catálogo de productos.
         </p>
         <div class="alert" id="ai-alert" style="display:none"></div>
@@ -23,7 +23,7 @@ function openAiSuggestModal(addLinesFn) {
           <label>Descripción del trabajo</label>
           <textarea id="ai-description"
             rows="5"
-            style="width:100%;resize:vertical;font-size:14px;padding:8px 10px;border:1px solid var(--slate-200);border-radius:8px;font-family:inherit"
+            style="width:100%;resize:vertical;font-size:14px;padding:8px 10px;border:1px solid var(--neutral-200);border-radius:8px;font-family:inherit"
             placeholder="Ej: Reparar avería en tubería de cocina, cambiar grifo mezclador y revisar sifón. También verificar el calentador de agua."
           ></textarea>
         </div>
@@ -88,19 +88,19 @@ function openAiSuggestModal(addLinesFn) {
     }
 
     // Mostrar las líneas sugeridas con checkboxes para aceptar/rechazar
-    results.innerHTML = `<p style="font-size:13px;font-weight:600;color:var(--slate-700);margin:0 0 8px">Sugerencias (selecciona las que quieras añadir):</p>`;
+    results.innerHTML = `<p style="font-size:13px;font-weight:600;color:var(--neutral-700);margin:0 0 8px">Sugerencias (selecciona las que quieras añadir):</p>`;
 
     const list = document.createElement('div');
     list.style.cssText = 'display:flex;flex-direction:column;gap:6px';
 
     lines.forEach((line, i) => {
       const item = document.createElement('label');
-      item.style.cssText = 'display:flex;align-items:flex-start;gap:8px;background:var(--slate-50);border:1px solid var(--slate-200);border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13px';
+      item.style.cssText = 'display:flex;align-items:flex-start;gap:8px;background:var(--neutral-50);border:1px solid var(--neutral-200);border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13px';
       item.innerHTML = `
         <input type="checkbox" checked style="margin-top:2px;flex-shrink:0" data-idx="${i}"/>
         <div>
-          <div style="font-weight:600;color:var(--slate-900)">${escHtml(line.concept)}</div>
-          <div style="color:var(--slate-500)">
+          <div style="font-weight:600;color:var(--neutral-900)">${escHtml(line.concept)}</div>
+          <div style="color:var(--neutral-500)">
             Cantidad: ${line.qty} · Precio: ${Number(line.price).toFixed(2)} · IVA: ${(line.tax * 100).toFixed(0)}%
           </div>
         </div>
@@ -143,14 +143,14 @@ function openAiMessageModal({ customerName, concept, total, currency, onCopy }) 
         <button class="modal-close" id="ai-msg-close">&times;</button>
       </div>
       <div class="modal-body">
-        <p style="font-size:13px;color:var(--slate-500);margin:0 0 12px">
+        <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">
           Claude redactará un mensaje personalizado para enviar a ${escHtml(customerName)} junto con el presupuesto.
         </p>
         <div class="alert" id="ai-msg-alert" style="display:none"></div>
         <div id="ai-msg-result" style="display:none">
-          <label style="font-size:12px;font-weight:600;color:var(--slate-500);text-transform:uppercase;letter-spacing:.04em">Mensaje generado</label>
+          <label style="font-size:12px;font-weight:600;color:var(--neutral-500);text-transform:uppercase;letter-spacing:.04em">Mensaje generado</label>
           <textarea id="ai-msg-text" rows="5"
-            style="width:100%;resize:vertical;font-size:13px;padding:8px 10px;border:1px solid var(--slate-200);border-radius:8px;margin-top:4px;font-family:inherit"
+            style="width:100%;resize:vertical;font-size:13px;padding:8px 10px;border:1px solid var(--neutral-200);border-radius:8px;margin-top:4px;font-family:inherit"
           ></textarea>
           <div style="display:flex;gap:8px;margin-top:8px">
             <button class="btn-primary btn-sm" id="ai-msg-copy">Copiar mensaje</button>

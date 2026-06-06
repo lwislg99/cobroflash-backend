@@ -184,8 +184,8 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         ${quote.tiers.map((t) => `
           <span style="padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;
-            background:${t.id === quote.selectedTierId ? 'var(--green-100)' : t.recommended ? 'var(--green-50)' : 'var(--slate-100)'};
-            color:${t.id === quote.selectedTierId ? 'var(--green-700)' : t.recommended ? 'var(--brand)' : 'var(--slate-600)'};
+            background:${t.id === quote.selectedTierId ? 'var(--green-100)' : t.recommended ? 'var(--green-50)' : 'var(--neutral-100)'};
+            color:${t.id === quote.selectedTierId ? 'var(--green-700)' : t.recommended ? 'var(--brand)' : 'var(--neutral-600)'};
             border:1px solid ${t.id === quote.selectedTierId ? 'var(--green-500)' : 'var(--border)'}">
             ${t.label} — ${fmtQuoteMoney(t.total, cur)}${t.id === quote.selectedTierId ? ' ✓' : ''}
           </span>`).join('')}
@@ -206,7 +206,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       </div>
       <img src="${quote.signatureUrl}" alt="Firma del cliente"
         style="max-width:200px;max-height:80px;border:1px solid var(--border);border-radius:8px;
-               background:var(--slate-50);padding:4px;object-fit:contain"/>
+               background:var(--neutral-50);padding:4px;object-fit:contain"/>
     `;
     summarySec.appendChild(sigBadge);
   }
@@ -429,7 +429,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   notesHeader.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:10px';
   notesHeader.innerHTML =
     '<h3 class="detail-section-title" style="margin:0">📝 Notas internas</h3>' +
-    '<span style="font-size:11px;color:var(--muted);background:var(--slate-100);padding:2px 8px;border-radius:999px">Solo tú las ves</span>';
+    '<span style="font-size:11px;color:var(--muted);background:var(--neutral-100);padding:2px 8px;border-radius:999px">Solo tú las ves</span>';
   notesSec.appendChild(notesHeader);
 
   const notesTextarea = document.createElement('textarea');
@@ -496,7 +496,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       ${data.expenses && data.expenses.length ? `
         <div style="font-size:11.5px;color:var(--muted);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Gastos asignados</div>
         ${data.expenses.map((e) => `
-          <div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid var(--slate-100)">
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid var(--neutral-100)">
             <span>${escHtml(e.concept)}</span>
             <span class="amount-muted">${fmtQuoteMoney(e.amount, data.currency || cur)}</span>
           </div>`).join('')}
@@ -700,8 +700,8 @@ function buildStatusTimeline(quote) {
     { label: 'Cobrada', icon: '💰', state: paidInv ? 'done' : 'pending', date: paidInv ? fmtD(paidInv.paidAt || paidInv.createdAt) : '' },
   ];
 
-  const colorFor = (s) => s === 'done' ? 'var(--brand-bright)' : s === 'current' ? 'var(--blue-600)' : s === 'rejected' ? 'var(--red-500)' : 'var(--slate-200)';
-  const textFor = (s) => s === 'pending' ? 'var(--muted)' : 'var(--slate-700)';
+  const colorFor = (s) => s === 'done' ? 'var(--brand-bright)' : s === 'current' ? 'var(--blue-600)' : s === 'rejected' ? 'var(--red-500)' : 'var(--neutral-200)';
+  const textFor = (s) => s === 'pending' ? 'var(--muted)' : 'var(--neutral-700)';
 
   const row = document.createElement('div');
   row.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:4px;margin-top:6px';
@@ -713,12 +713,12 @@ function buildStatusTimeline(quote) {
     if (i > 0) {
       const line = document.createElement('div');
       const prevDone = steps[i - 1].state === 'done';
-      line.style.cssText = `position:absolute;top:15px;left:-50%;width:100%;height:3px;background:${prevDone ? 'var(--brand-bright)' : 'var(--slate-200)'};z-index:0`;
+      line.style.cssText = `position:absolute;top:15px;left:-50%;width:100%;height:3px;background:${prevDone ? 'var(--brand-bright)' : 'var(--neutral-200)'};z-index:0`;
       col.appendChild(line);
     }
 
     const dot = document.createElement('div');
-    dot.style.cssText = `width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;z-index:1;background:${colorFor(step.state)};color:${step.state === 'pending' ? 'var(--slate-400)' : '#fff'};box-shadow:${step.state === 'current' ? '0 0 0 4px rgba(37,99,235,.18)' : 'none'}`;
+    dot.style.cssText = `width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;z-index:1;background:${colorFor(step.state)};color:${step.state === 'pending' ? 'var(--neutral-400)' : '#fff'};box-shadow:${step.state === 'current' ? '0 0 0 4px rgba(37,99,235,.18)' : 'none'}`;
     dot.textContent = step.icon;
     col.appendChild(dot);
 

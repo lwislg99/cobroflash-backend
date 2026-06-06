@@ -11,28 +11,28 @@ function openImportCsvModal() {
     '<button class="modal-close" id="csv-modal-close">&times;</button>',
     '</div>',
     '<div class="modal-body">',
-    '<p style="font-size:13px;color:var(--slate-500);margin:0 0 12px">',
+    '<p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">',
     'Sube un fichero <strong>.csv</strong> o pega el contenido. Columnas aceptadas:<br/>',
-    '<code style="font-size:12px;background:var(--slate-100);padding:2px 6px;border-radius:4px">nombre</code> ',
-    '<code style="font-size:12px;background:var(--slate-100);padding:2px 6px;border-radius:4px">telefono</code> ',
-    '<code style="font-size:12px;background:var(--slate-100);padding:2px 6px;border-radius:4px">email</code> ',
-    '<code style="font-size:12px;background:var(--slate-100);padding:2px 6px;border-radius:4px">notas</code>',
+    '<code style="font-size:12px;background:var(--neutral-100);padding:2px 6px;border-radius:4px">nombre</code> ',
+    '<code style="font-size:12px;background:var(--neutral-100);padding:2px 6px;border-radius:4px">telefono</code> ',
+    '<code style="font-size:12px;background:var(--neutral-100);padding:2px 6px;border-radius:4px">email</code> ',
+    '<code style="font-size:12px;background:var(--neutral-100);padding:2px 6px;border-radius:4px">notas</code>',
     ' (separador coma o punto y coma)',
     '</p>',
     '<div class="alert" id="csv-alert" style="display:none"></div>',
-    '<div id="csv-dropzone" style="border:2px dashed var(--slate-300);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:border-color .15s;margin-bottom:8px">',
-    '<div style="font-size:13px;color:var(--slate-500)">',
+    '<div id="csv-dropzone" style="border:2px dashed var(--neutral-300);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:border-color .15s;margin-bottom:8px">',
+    '<div style="font-size:13px;color:var(--neutral-500)">',
     '📂 Arrastra tu fichero CSV o <span style="color:var(--green-600);font-weight:600;text-decoration:underline">haz click para elegirlo</span>',
     '</div>',
     '<input type="file" id="csv-file-input" accept=".csv,.txt" style="display:none"/>',
     '</div>',
-    '<div style="text-align:center;font-size:12px;color:var(--slate-400);margin:4px 0">— o pega el contenido —</div>',
+    '<div style="text-align:center;font-size:12px;color:var(--neutral-400);margin:4px 0">— o pega el contenido —</div>',
     '<textarea id="csv-paste" rows="4" placeholder="nombre,telefono,email\nJuan,+34600000001,juan@email.com" ',
-    'style="width:100%;padding:8px 10px;border:1.5px solid var(--slate-200);border-radius:8px;font-size:12px;font-family:monospace;resize:vertical"></textarea>',
+    'style="width:100%;padding:8px 10px;border:1.5px solid var(--neutral-200);border-radius:8px;font-size:12px;font-family:monospace;resize:vertical"></textarea>',
     '<button class="btn-secondary" id="csv-parse-btn" style="width:100%;margin-top:8px">Vista previa</button>',
     '<div id="csv-preview" style="display:none;margin-top:14px">',
-    '<div style="font-size:12px;font-weight:600;color:var(--slate-500);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px" id="csv-preview-summary"></div>',
-    '<div style="max-height:200px;overflow-y:auto;border:1px solid var(--slate-200);border-radius:8px">',
+    '<div style="font-size:12px;font-weight:600;color:var(--neutral-500);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px" id="csv-preview-summary"></div>',
+    '<div style="max-height:200px;overflow-y:auto;border:1px solid var(--neutral-200);border-radius:8px">',
     '<table class="table" id="csv-preview-table"></table>',
     '</div>',
     '<button class="btn-primary" id="csv-import-btn" style="width:100%;margin-top:10px">✅ Importar clientes</button>',
@@ -74,11 +74,11 @@ function openImportCsvModal() {
     dropzone.style.borderColor = 'var(--green-500)';
   });
   dropzone.addEventListener('dragleave', function() {
-    dropzone.style.borderColor = 'var(--slate-300)';
+    dropzone.style.borderColor = 'var(--neutral-300)';
   });
   dropzone.addEventListener('drop', function(e) {
     e.preventDefault();
-    dropzone.style.borderColor = 'var(--slate-300)';
+    dropzone.style.borderColor = 'var(--neutral-300)';
     var file = e.dataTransfer && e.dataTransfer.files[0];
     if (file) readFile(file);
   });
@@ -105,13 +105,13 @@ function openImportCsvModal() {
     var tbody = document.createElement('tbody');
     valid.slice(0, 25).forEach(function(r) {
       var tr = document.createElement('tr');
-      tr.innerHTML = '<td>' + escImp(r.name) + '</td><td style="color:var(--slate-500)">' +
-        escImp(r.phone||'') + '</td><td style="color:var(--slate-500)">' + escImp(r.email||'') + '</td>';
+      tr.innerHTML = '<td>' + escImp(r.name) + '</td><td style="color:var(--neutral-500)">' +
+        escImp(r.phone||'') + '</td><td style="color:var(--neutral-500)">' + escImp(r.email||'') + '</td>';
       tbody.appendChild(tr);
     });
     if (valid.length > 25) {
       var tr = document.createElement('tr');
-      tr.innerHTML = '<td colspan="3" style="text-align:center;color:var(--slate-400);font-size:12px">… y ' + (valid.length - 25) + ' más</td>';
+      tr.innerHTML = '<td colspan="3" style="text-align:center;color:var(--neutral-400);font-size:12px">… y ' + (valid.length - 25) + ' más</td>';
       tbody.appendChild(tr);
     }
     table.appendChild(tbody);

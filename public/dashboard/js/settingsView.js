@@ -17,7 +17,7 @@ function renderSettingsView(container) {
 
     const subtitle = document.createElement("p");
     subtitle.textContent = "Se usan en presupuestos, facturas y comunicaciones con clientes.";
-    subtitle.style.cssText = "margin:0 0 20px;font-size:13px;color:var(--slate-400)";
+    subtitle.style.cssText = "margin:0 0 20px;font-size:13px;color:var(--neutral-400)";
     card.appendChild(subtitle);
   
     const alertBox = document.createElement("div");
@@ -159,7 +159,7 @@ function renderSettingsView(container) {
       chk.id = id;
       chk.style.marginTop = "2px;flex-shrink:0";
       const textBlock = document.createElement("div");
-      textBlock.innerHTML = '<span style="font-weight:600;font-size:13.5px;color:var(--slate-700)">' + labelText + '</span>' +
+      textBlock.innerHTML = '<span style="font-weight:600;font-size:13.5px;color:var(--neutral-700)">' + labelText + '</span>' +
         (hint ? '<br/><span style="font-size:12px;color:var(--muted)">' + hint + '</span>' : '');
       label.appendChild(chk);
       label.appendChild(textBlock);
@@ -190,7 +190,7 @@ function renderSettingsView(container) {
     previewBtn.style.cssText = "margin-top:6px;margin-left:24px";
 
     const previewBox = document.createElement("div");
-    previewBox.style.cssText = "display:none;margin:8px 0 0 24px;max-width:420px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--slate-50);padding:14px 16px";
+    previewBox.style.cssText = "display:none;margin:8px 0 0 24px;max-width:420px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--neutral-50);padding:14px 16px";
 
     previewBtn.addEventListener("click", async () => {
       // Toggle: si ya está visible, lo ocultamos
@@ -377,8 +377,8 @@ async function renderReferralCard(container) {
   card.style.marginTop = "16px";
   card.innerHTML = `
     <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Invita y gana meses gratis 🎁</h2>
-    <p style="margin:0 0 16px;font-size:13px;color:var(--slate-400)">Por cada profesional que se suscriba con tu enlace, recibes 1 mes gratis.</p>
-    <div style="color:var(--slate-400);font-size:13px">Cargando…</div>
+    <p style="margin:0 0 16px;font-size:13px;color:var(--neutral-400)">Por cada profesional que se suscriba con tu enlace, recibes 1 mes gratis.</p>
+    <div style="color:var(--neutral-400);font-size:13px">Cargando…</div>
   `;
   container.appendChild(card);
 
@@ -392,11 +392,11 @@ async function renderReferralCard(container) {
 
   card.innerHTML = `
     <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Invita y gana meses gratis 🎁</h2>
-    <p style="margin:0 0 16px;font-size:13px;color:var(--slate-400)">Por cada profesional que se suscriba con tu enlace, recibes 1 mes gratis.</p>
+    <p style="margin:0 0 16px;font-size:13px;color:var(--neutral-400)">Por cada profesional que se suscriba con tu enlace, recibes 1 mes gratis.</p>
 
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
       <input id="ref-link" type="text" readonly value="${escSettings(data.link)}"
-        style="flex:1;min-width:220px;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:13px;background:var(--slate-50);color:var(--body)"/>
+        style="flex:1;min-width:220px;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:13px;background:var(--neutral-50);color:var(--body)"/>
       <button id="ref-copy" class="btn btn-primary btn-sm" style="white-space:nowrap">Copiar link</button>
     </div>
 

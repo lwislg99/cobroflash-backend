@@ -64,8 +64,8 @@
 
     // Blur
     input.addEventListener('blur', function () {
-      input.style.borderColor = 'var(--slate-200)';
-      input.style.background = 'var(--slate-50)';
+      input.style.borderColor = 'var(--neutral-200)';
+      input.style.background = 'var(--neutral-50)';
       input.style.boxShadow = '';
     });
 
@@ -101,7 +101,7 @@
       items.forEach((el, i) => {
         if (i === currentFocusIdx) {
           el.classList.add('focused');
-          el.style.background = 'var(--slate-50)';
+          el.style.background = 'var(--neutral-50)';
           el.scrollIntoView({ block: 'nearest' });
         } else {
           el.classList.remove('focused');
@@ -138,7 +138,7 @@
       const total = customers.length + quotes.length + invoices.length;
 
       if (total === 0) {
-        dropdown.innerHTML = `<div style="padding:20px;text-align:center;color:var(--slate-400);font-size:13.5px">Sin resultados para "<strong>${esc(q)}</strong>"</div>`;
+        dropdown.innerHTML = `<div style="padding:20px;text-align:center;color:var(--neutral-400);font-size:13.5px">Sin resultados para "<strong>${esc(q)}</strong>"</div>`;
         dropdown.style.display = 'block';
         allItems = [];
         return;
@@ -151,12 +151,12 @@
 
       function section(title, items, renderFn) {
         if (!items.length) return '';
-        let s = `<div style="padding:8px 12px 4px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-400)">${title}</div>`;
+        let s = `<div style="padding:8px 12px 4px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--neutral-400)">${title}</div>`;
         items.forEach(item => {
           const { h, action } = renderFn(item, q);
           allItems.push(action);
           s += `<div data-idx="${idx++}" style="padding:9px 14px;cursor:pointer;transition:background .08s;border-radius:4px;margin:0 4px"
-                     onmouseenter="this.style.background='var(--slate-50)'"
+                     onmouseenter="this.style.background='var(--neutral-50)'"
                      onmouseleave="this.style.background=''"
                      class="gs-item">${h}</div>`;
         });
@@ -167,8 +167,8 @@
         h: `<div style="display:flex;align-items:center;gap:10px">
               <span style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--green-500),#22d3ee);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;color:var(--green-900);flex-shrink:0">${esc((c.name||'?').slice(0,2).toUpperCase())}</span>
               <div>
-                <div style="font-size:13.5px;font-weight:600;color:var(--slate-900)">${highlight(c.name, q)}</div>
-                <div style="font-size:12px;color:var(--slate-400)">${c.phone ? highlight(c.phone, q) + ' · ' : ''}${c.email ? highlight(c.email, q) : ''}</div>
+                <div style="font-size:13.5px;font-weight:600;color:var(--neutral-900)">${highlight(c.name, q)}</div>
+                <div style="font-size:12px;color:var(--neutral-400)">${c.phone ? highlight(c.phone, q) + ' · ' : ''}${c.email ? highlight(c.email, q) : ''}</div>
               </div>
             </div>`,
         action: { type: 'customer', id: c.id },
@@ -177,8 +177,8 @@
       html += section(L.quotePlural || 'Presupuestos', quotes, (q2, q) => ({
         h: `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
               <div>
-                <span style="font-size:13.5px;font-weight:600;color:var(--slate-900)">#${q2.id}</span>
-                <span style="font-size:12.5px;color:var(--slate-500);margin-left:6px">${highlight(q2.customer?.name, q)}</span>
+                <span style="font-size:13.5px;font-weight:600;color:var(--neutral-900)">#${q2.id}</span>
+                <span style="font-size:12.5px;color:var(--neutral-500);margin-left:6px">${highlight(q2.customer?.name, q)}</span>
               </div>
               <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
                 <span style="font-size:12.5px;font-weight:600">${fmt(Number(q2.total))} ${esc(q2.currency)}</span>
@@ -191,8 +191,8 @@
       html += section('Facturas', invoices, (inv, q) => ({
         h: `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
               <div>
-                <span style="font-size:13.5px;font-weight:600;color:var(--slate-900)">${highlight(inv.number, q)}</span>
-                <span style="font-size:12.5px;color:var(--slate-500);margin-left:6px">${highlight(inv.customer?.name, q)}</span>
+                <span style="font-size:13.5px;font-weight:600;color:var(--neutral-900)">${highlight(inv.number, q)}</span>
+                <span style="font-size:12.5px;color:var(--neutral-500);margin-left:6px">${highlight(inv.customer?.name, q)}</span>
               </div>
               <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
                 <span style="font-size:12.5px;font-weight:600">${fmt(Number(inv.total))} ${esc(inv.currency)}</span>
@@ -202,7 +202,7 @@
         action: { type: 'invoice', id: inv.id },
       }));
 
-      html += `<div style="padding:8px 14px;border-top:1px solid var(--slate-100);font-size:11.5px;color:var(--slate-400);text-align:center">
+      html += `<div style="padding:8px 14px;border-top:1px solid var(--neutral-100);font-size:11.5px;color:var(--neutral-400);text-align:center">
                  ↑↓ para navegar · Enter para abrir · Esc para cerrar
                </div>`;
 

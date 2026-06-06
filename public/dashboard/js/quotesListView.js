@@ -194,7 +194,7 @@ function renderQuotesListView(container) {
       tr.style.cursor = "pointer";
 
       const tdId = document.createElement("td");
-      tdId.innerHTML = `${q.id}${q.internalNotes ? ' <span title="Tiene notas internas" style="color:var(--slate-400);font-size:11px">📝</span>' : ""}`;
+      tdId.innerHTML = `${q.id}${q.internalNotes ? ' <span title="Tiene notas internas" style="color:var(--neutral-400);font-size:11px">📝</span>' : ""}`;
 
       const tdClient = document.createElement("td");
       tdClient.textContent =

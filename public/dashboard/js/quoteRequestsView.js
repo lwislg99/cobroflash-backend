@@ -14,13 +14,13 @@ async function renderQuoteRequestsView(container) {
 
   const titleBlock = document.createElement('div');
   titleBlock.innerHTML = `
-    <h2 style="margin:0 0 4px;font-size:17px;font-weight:700;color:var(--slate-900)">Solicitudes de presupuesto</h2>
-    <p style="margin:0;font-size:13px;color:var(--slate-400)">Peticiones enviadas por clientes desde su portal.</p>
+    <h2 style="margin:0 0 4px;font-size:17px;font-weight:700;color:var(--neutral-900)">Solicitudes de presupuesto</h2>
+    <p style="margin:0;font-size:13px;color:var(--neutral-400)">Peticiones enviadas por clientes desde su portal.</p>
   `;
   header.appendChild(titleBlock);
 
   const filterSel = document.createElement('select');
-  filterSel.style.cssText = 'padding:6px 10px;border:1.5px solid var(--slate-200);border-radius:8px;font-size:13px;background:#fff;cursor:pointer';
+  filterSel.style.cssText = 'padding:6px 10px;border:1.5px solid var(--neutral-200);border-radius:8px;font-size:13px;background:#fff;cursor:pointer';
   filterSel.innerHTML = `
     <option value="pending">Pendientes</option>
     <option value="all">Todas</option>
@@ -49,7 +49,7 @@ async function renderQuoteRequestsView(container) {
 
   async function loadRequests() {
     const status = filterSel.value;
-    listWrap.innerHTML = '<p style="color:var(--slate-400);font-size:13px;padding:8px 0">Cargando…</p>';
+    listWrap.innerHTML = '<p style="color:var(--neutral-400);font-size:13px;padding:8px 0">Cargando…</p>';
 
     let requests;
     try {
@@ -82,15 +82,15 @@ async function renderQuoteRequestsView(container) {
       card.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px">
           <div>
-            <div style="font-weight:700;font-size:15px;color:var(--slate-900)">${escReq(req.customer?.name || 'Cliente')}</div>
-            <div style="font-size:12px;color:var(--slate-400);margin-top:2px">${escReq(req.customer?.email || '')} ${req.customer?.phone ? '· ' + escReq(req.customer.phone) : ''}</div>
+            <div style="font-weight:700;font-size:15px;color:var(--neutral-900)">${escReq(req.customer?.name || 'Cliente')}</div>
+            <div style="font-size:12px;color:var(--neutral-400);margin-top:2px">${escReq(req.customer?.email || '')} ${req.customer?.phone ? '· ' + escReq(req.customer.phone) : ''}</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <span class="status-pill ${statusColors[req.status] || 'status-pill-draft'}">${statusLabels[req.status] || req.status}</span>
-            <span style="font-size:12px;color:var(--slate-400)">${date}</span>
+            <span style="font-size:12px;color:var(--neutral-400)">${date}</span>
           </div>
         </div>
-        <div style="background:var(--slate-50);border-radius:8px;padding:12px;font-size:13.5px;color:var(--slate-700);border:1px solid var(--slate-100);white-space:pre-wrap;word-break:break-word;margin-bottom:12px">${escReq(req.description)}</div>
+        <div style="background:var(--neutral-50);border-radius:8px;padding:12px;font-size:13.5px;color:var(--neutral-700);border:1px solid var(--neutral-100);white-space:pre-wrap;word-break:break-word;margin-bottom:12px">${escReq(req.description)}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap" id="req-actions-${req.id}"></div>
       `;
 

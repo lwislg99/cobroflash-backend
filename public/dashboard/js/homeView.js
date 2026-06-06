@@ -54,11 +54,11 @@ async function renderHomeView(container) {
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:24px" id="top-grids">
         <div class="top-widget-card">
           <div class="top-widget-title">Top clientes</div>
-          <div id="top-customers"><div style="color:var(--slate-500);font-size:13px">Sin datos aún</div></div>
+          <div id="top-customers"><div style="color:var(--neutral-500);font-size:13px">Sin datos aún</div></div>
         </div>
         <div class="top-widget-card">
           <div class="top-widget-title">Top servicios</div>
-          <div id="top-services"><div style="color:var(--slate-500);font-size:13px">Sin datos aún</div></div>
+          <div id="top-services"><div style="color:var(--neutral-500);font-size:13px">Sin datos aún</div></div>
         </div>
       </div>
     </div>
@@ -336,11 +336,11 @@ function renderTopCustomers(items) {
   el.innerHTML = items.map((c, i) => `
     <div class="top-row">
       <div>
-        <span style="color:var(--slate-500);font-weight:700;font-size:12px;margin-right:6px">${i+1}</span>
-        <span style="font-weight:600;color:var(--slate-800)">${esc(c.name)}</span>
-        <span style="color:var(--slate-500);font-size:11px;margin-left:5px">${c.invoices}×</span>
+        <span style="color:var(--neutral-500);font-weight:700;font-size:12px;margin-right:6px">${i+1}</span>
+        <span style="font-weight:600;color:var(--neutral-800)">${esc(c.name)}</span>
+        <span style="color:var(--neutral-500);font-size:11px;margin-left:5px">${c.invoices}×</span>
       </div>
-      <span style="font-weight:700;color:var(--slate-900)">${fmtMoney(c.total)}</span>
+      <span style="font-weight:700;color:var(--neutral-900)">${fmtMoney(c.total)}</span>
     </div>`).join('');
 }
 
@@ -352,10 +352,10 @@ function renderTopServices(items) {
   el.innerHTML = items.map((s) => `
     <div class="top-row" style="flex-direction:column;align-items:stretch;gap:5px">
       <div style="display:flex;justify-content:space-between">
-        <span style="font-weight:600;color:var(--slate-800);font-size:13px">${esc(s.name)}</span>
-        <span style="color:var(--slate-500);font-size:12px">${s.count}×</span>
+        <span style="font-weight:600;color:var(--neutral-800);font-size:13px">${esc(s.name)}</span>
+        <span style="color:var(--neutral-500);font-size:12px">${s.count}×</span>
       </div>
-      <div style="background:var(--slate-100);border-radius:var(--radius-full);height:4px;overflow:hidden">
+      <div style="background:var(--neutral-100);border-radius:var(--radius-full);height:4px;overflow:hidden">
         <div style="background:var(--green-500);height:100%;width:${Math.round(s.count/max*100)}%;border-radius:var(--radius-full);transition:width .4s"></div>
       </div>
     </div>`).join('');
@@ -375,12 +375,12 @@ async function renderTeamPerformance(container) {
   section.style.cssText = 'margin-top:24px';
 
   const rows = data.members.map((m) => {
-    const accColor = m.acceptanceRate >= 50 ? 'var(--green-600)' : m.acceptanceRate >= 25 ? 'var(--slate-600)' : 'var(--red-600)';
+    const accColor = m.acceptanceRate >= 50 ? 'var(--green-600)' : m.acceptanceRate >= 25 ? 'var(--neutral-600)' : 'var(--red-600)';
     const best = m.isBest ? '<span style="background:#fef9c3;color:#a16207;font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:6px">⭐ Mejor del mes</span>' : '';
     const roleLabel = m.role === 'owner' ? 'Propietario' : m.role === 'tecnico' ? 'Técnico' : m.role;
     return `
       <tr>
-        <td style="font-weight:600">${esc(m.name)}${best}<div style="font-size:11px;color:var(--slate-500);font-weight:400">${roleLabel}</div></td>
+        <td style="font-weight:600">${esc(m.name)}${best}<div style="font-size:11px;color:var(--neutral-500);font-weight:400">${roleLabel}</div></td>
         <td style="text-align:right">${m.sent}</td>
         <td style="text-align:right;color:${accColor};font-weight:600">${m.acceptanceRate}%</td>
         <td style="text-align:right;color:var(--green-700);font-weight:600">${fmtMoney(m.collected)}</td>
@@ -474,7 +474,7 @@ function openQuickQuoteModal(prefill) {
             <input type="checkbox" id="qq-tiers-toggle" style="width:16px;height:16px;accent-color:var(--green-500);flex-shrink:0"/>
             <span>Ofrecer 3 opciones de precio (Good/Better/Best)</span>
           </label>
-          <p style="font-size:12px;color:var(--slate-500);margin:6px 0 0">💡 Los clientes eligen más a menudo cuando ven 3 opciones.</p>
+          <p style="font-size:12px;color:var(--neutral-500);margin:6px 0 0">💡 Los clientes eligen más a menudo cuando ven 3 opciones.</p>
         </div>
 
         <!-- Modo clásico: líneas -->
@@ -502,8 +502,8 @@ function openQuickQuoteModal(prefill) {
           </div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px">
             ${['Básico', 'Estándar', 'Premium'].map((label, i) => `
-              <div style="border:1px solid ${i===1?'var(--green-600)':'var(--slate-200)'};background:${i===1?'var(--green-50)':'var(--surface)'};border-radius:var(--radius-md);padding:10px">
-                <div style="font-size:12px;font-weight:700;color:${i===1?'var(--green-600)':'var(--slate-500)'};margin-bottom:6px">
+              <div style="border:1px solid ${i===1?'var(--green-600)':'var(--neutral-200)'};background:${i===1?'var(--green-50)':'var(--surface)'};border-radius:var(--radius-md);padding:10px">
+                <div style="font-size:12px;font-weight:700;color:${i===1?'var(--green-600)':'var(--neutral-500)'};margin-bottom:6px">
                   ${label}${i===1?' ⭐':''}
                 </div>
                 <div class="field" style="margin:0">
@@ -512,7 +512,7 @@ function openQuickQuoteModal(prefill) {
               </div>
             `).join('')}
           </div>
-          <p style="font-size:12px;color:var(--slate-500);margin:6px 0 0">
+          <p style="font-size:12px;color:var(--neutral-500);margin:6px 0 0">
             El cliente verá las 3 opciones y elegirá la que prefiera.
           </p>
         </div>
@@ -530,7 +530,7 @@ function openQuickQuoteModal(prefill) {
               50% · 50%
             </label>
           </div>
-          <p style="font-size:12px;color:var(--slate-500);margin:6px 0 0">💡 "100% al aceptar" genera la factura cuando el cliente firma.</p>
+          <p style="font-size:12px;color:var(--neutral-500);margin:6px 0 0">💡 "100% al aceptar" genera la factura cuando el cliente firma.</p>
         </div>
       </div>
 
