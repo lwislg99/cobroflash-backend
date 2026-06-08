@@ -11,6 +11,7 @@
  */
 import { prisma } from '../../../core/db/prisma';
 import { sendWhatsAppTemplate, sendWhatsAppText } from '../../../integrations/whatsapp';
+import { buildPaymentRequest } from '../../../integrations/whatsappTemplates';
 import { normalizePhone } from '../../../core/utils/utils';
 import { BASE_URL } from '../../../core/config/env';
 
@@ -101,28 +102,16 @@ async function sendReminderWA(
 
   try {
     if (payUrl) {
-      // Usar template aprobado con botón de pago
+      // Usar template aprobado con botón de pago (estructura en whatsappTemplates.ts)
       const result = await sendWhatsAppTemplate({
         to: phone,
-        templateName: 'payment_request_es',
-        languageCode: 'es',
-        components: [
-          {
-            type: 'body',
-            parameters: [
-              { type: 'text', text: customerName },
-              { type: 'text', text: merchantName },
-              { type: 'text', text: inv.number },
-              { type: 'text', text: `${total} ${inv.currency}` },
-            ],
-          },
-          {
-            type: 'button',
-            sub_type: 'url',
-            index: '0',
-            parameters: [{ type: 'text', text: String(chargeId) }],
-          },
-        ],
+        ...buildPaymentRequest({
+          customerName,
+          businessName: merchantName,
+          invoiceNumber: inv.number,
+          amountWithCurrency: `${total} ${inv.currency}`,
+          chargeId: chargeId as number,
+        }),
       });
       if (result.ok) {
         console.log(`[invoiceReminder] ✓ ${day}d → inv #${inv.number} (${customerName})`);

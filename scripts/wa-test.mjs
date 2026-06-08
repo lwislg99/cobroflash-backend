@@ -72,48 +72,29 @@ const id = String(opts.id || opts.num || '128');
 const lang = opts.lang || 'es';
 const dry = !!opts.dry;
 
-const templateName = TEMPLATES[templateKey];
-
-// --- componentes (idénticos a los que envía la app) ---
-let components;
-if (templateKey === 'quote_decision' || templateKey === 'payment_request') {
-  components = [
-    {
-      type: 'body',
-      parameters: [
-        { type: 'text', text: name }, // {{1}} nombre cliente
-        { type: 'text', text: biz },  // {{2}} nombre negocio
-        { type: 'text', text: num },  // {{3}} nº presupuesto/factura
-        { type: 'text', text: amount }, // {{4}} total/importe con moneda
-      ],
-    },
-    {
-      type: 'button',
-      sub_type: 'url',
-      index: '0',
-      parameters: [{ type: 'text', text: id }], // sufijo URL → /pay/quote/{{1}} o /pay/invoice/{{1}}
-    },
-  ];
-} else {
-  // payment_confirmation_es: SIN botones, orden {{1}} nombre, {{2}} importe, {{3}} nº factura, {{4}} negocio
-  components = [
-    {
-      type: 'body',
-      parameters: [
-        { type: 'text', text: name },
-        { type: 'text', text: amount },
-        { type: 'text', text: num },
-        { type: 'text', text: biz },
-      ],
-    },
-  ];
+// --- componentes: MISMOS builders que usa la app (una sola fuente de verdad) ---
+let builders;
+try {
+  builders = await import('../dist/integrations/whatsappTemplates.js');
+} catch {
+  fail('No se encontró dist/. Ejecuta primero: npm run build');
 }
 
+let msg;
+if (templateKey === 'quote_decision') {
+  msg = builders.buildQuoteDecision({ customerName: name, businessName: biz, quoteNumber: num, totalWithCurrency: amount, quoteId: id });
+} else if (templateKey === 'payment_request') {
+  msg = builders.buildPaymentRequest({ customerName: name, businessName: biz, invoiceNumber: num, amountWithCurrency: amount, chargeId: id });
+} else {
+  msg = builders.buildPaymentConfirmation({ customerName: name, amountWithCurrency: amount, invoiceNumber: num, businessName: biz });
+}
+
+const templateName = msg.templateName;
 const payload = {
   messaging_product: 'whatsapp',
   to,
   type: 'template',
-  template: { name: templateName, language: { code: lang }, components },
+  template: { name: templateName, language: { code: lang }, components: msg.components },
 };
 
 console.log(`\n📨 Plantilla: ${templateName} (${lang})  →  ${to}`);

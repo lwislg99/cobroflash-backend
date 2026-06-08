@@ -14,6 +14,7 @@ import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { generateInvoicePdf } from '../../../../lib/pdf';
 
 import { sendWhatsAppTemplate, sendWhatsAppText } from '../../../../integrations/whatsapp';
+import { buildPaymentRequest } from '../../../../integrations/whatsappTemplates';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { normalizePhone } from '../../../../core/utils/utils';
 
@@ -221,25 +222,13 @@ router.post('/:id/send-reminder', async (req, res) => {
     if (payUrl) {
       const result = await sendWhatsAppTemplate({
         to: phone,
-        templateName: 'payment_request_es',
-        languageCode: 'es',
-        components: [
-          {
-            type: 'body',
-            parameters: [
-              { type: 'text', text: customerName },
-              { type: 'text', text: merchantName },
-              { type: 'text', text: invoice.number },
-              { type: 'text', text: `${total} ${invoice.currency}` },
-            ],
-          },
-          {
-            type: 'button',
-            sub_type: 'url',
-            index: '0',
-            parameters: [{ type: 'text', text: String(chargeId) }],
-          },
-        ],
+        ...buildPaymentRequest({
+          customerName,
+          businessName: merchantName,
+          invoiceNumber: invoice.number,
+          amountWithCurrency: `${total} ${invoice.currency}`,
+          chargeId: chargeId as number,
+        }),
       });
       sent = result.ok;
       if (!result.ok) {

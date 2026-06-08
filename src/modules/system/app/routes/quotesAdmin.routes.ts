@@ -11,6 +11,7 @@ import {
 import { prisma } from '../../../../core/db/prisma';
 import { getNextBillingStage } from '../../../quotes/domain/billingPlan';
 import { sendWhatsAppTemplate } from '../../../../integrations/whatsapp';
+import { buildQuoteDecision } from '../../../../integrations/whatsappTemplates';
 import { recordCustomerEvent } from '../../customerEvents.service';
 import { sendTechQuoteApprovedEmail } from '../../../messaging/domain/merchantNotifications';
 import { normalizePhone } from '../../../../core/utils/utils';
@@ -243,33 +244,17 @@ router.post('/:id/send-whatsapp', async (req, res) => {
       return res.status(400).json({ error: 'invalid_phone_format' });
     }
 
-    // Plantilla quote_decision_es (ver docs/WHATSAPP_TEMPLATES.md)
-    // Cuerpo: {{1}} nombre cliente · {{2}} nombre negocio · {{3}} nº presupuesto · {{4}} total con moneda
-    // Botón URL dinámica: sufijo {{1}} = id presupuesto → https://yaqu.app/pay/quote/{{1}}
+    // Plantilla quote_decision_es (estructura en src/integrations/whatsappTemplates.ts)
     const businessName = quote.merchant?.legalName || quote.merchant?.name || 'Tu proveedor';
     const result = await sendWhatsAppTemplate({
       to,
-      templateName: 'quote_decision_es',
-      languageCode: 'es',
-      components: [
-        {
-          type: 'body',
-          parameters: [
-            { type: 'text', text: quote.customer.name ?? 'Cliente' },
-            { type: 'text', text: businessName },
-            { type: 'text', text: String(quote.id) },
-            { type: 'text', text: `${Number(quote.total).toFixed(2)} ${quote.currency}` },
-          ],
-        },
-        {
-          type: 'button',
-          sub_type: 'url',
-          index: '0',
-          parameters: [
-            { type: 'text', text: String(quote.id) },
-          ],
-        },
-      ],
+      ...buildQuoteDecision({
+        customerName: quote.customer.name ?? 'Cliente',
+        businessName,
+        quoteNumber: quote.id,
+        totalWithCurrency: `${Number(quote.total).toFixed(2)} ${quote.currency}`,
+        quoteId: quote.id,
+      }),
     });
 
     if (!result.ok) {

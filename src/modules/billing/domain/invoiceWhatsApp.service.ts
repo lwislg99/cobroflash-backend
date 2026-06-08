@@ -9,6 +9,7 @@ import { prisma } from '../../../core/db/prisma';
 import { BASE_URL } from '../../../core/config/env';
 import { normalizePhone } from '../../../core/utils/utils';
 import { sendWhatsAppTemplate } from '../../../integrations/whatsapp';
+import { buildPaymentRequest } from '../../../integrations/whatsappTemplates';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
 
 export type SendInvoiceWAResult = {
@@ -64,25 +65,13 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
   const businessName = invoice.merchant?.legalName || invoice.merchant?.name || 'Tu proveedor';
   const result = await sendWhatsAppTemplate({
     to,
-    templateName: 'payment_request_es',
-    languageCode: 'es',
-    components: [
-      {
-        type: 'body',
-        parameters: [
-          { type: 'text', text: invoice.customer.name || 'Cliente' },
-          { type: 'text', text: businessName },
-          { type: 'text', text: invoice.number },
-          { type: 'text', text: `${Number(invoice.total).toFixed(2)} ${invoice.currency}` },
-        ],
-      },
-      {
-        type: 'button',
-        sub_type: 'url',
-        index: '0',
-        parameters: [{ type: 'text', text: String(chargeId) }],
-      },
-    ],
+    ...buildPaymentRequest({
+      customerName: invoice.customer.name || 'Cliente',
+      businessName,
+      invoiceNumber: invoice.number,
+      amountWithCurrency: `${Number(invoice.total).toFixed(2)} ${invoice.currency}`,
+      chargeId: chargeId as number,
+    }),
   });
 
   if (!result.ok) return { ok: false, reason: 'whatsapp_send_failed', chargeId: chargeId ?? undefined, to };

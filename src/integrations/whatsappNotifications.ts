@@ -3,6 +3,7 @@
 // La spec canónica de las plantillas vive en docs/WHATSAPP_TEMPLATES.md.
 import { normalizePhone } from '../core/utils/utils';
 import { sendWhatsAppTemplate } from './whatsapp';
+import { buildPaymentConfirmation } from './whatsappTemplates';
 
 /**
  * Confirmación de pago al cliente (plantilla payment_confirmation_es, sin botones).
@@ -22,19 +23,12 @@ export async function sendPaymentConfirmation(params: {
   try {
     const result = await sendWhatsAppTemplate({
       to,
-      templateName: 'payment_confirmation_es',
-      languageCode: 'es',
-      components: [
-        {
-          type: 'body',
-          parameters: [
-            { type: 'text', text: params.customerName || 'Cliente' },
-            { type: 'text', text: params.amountWithCurrency },
-            { type: 'text', text: params.invoiceNumber },
-            { type: 'text', text: params.businessName || 'tu proveedor' },
-          ],
-        },
-      ],
+      ...buildPaymentConfirmation({
+        customerName: params.customerName || 'Cliente',
+        amountWithCurrency: params.amountWithCurrency,
+        invoiceNumber: params.invoiceNumber,
+        businessName: params.businessName || 'tu proveedor',
+      }),
     });
     return { ok: !!result.ok };
   } catch (err: any) {
