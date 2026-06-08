@@ -4,6 +4,7 @@ import path from 'path';
 import { invoicesDir, outboxDir } from './core/storage/dirs';
 import { jsonError } from './core/http/jsonError';
 import { requireAuth, requireActivePlan, requireRole } from './core/http/authMiddleware';
+import { isOwnerEmail } from './core/config/env';
 
 // Routers
 import healthRouter from './modules/system/app/routes/health.routes';
@@ -127,12 +128,16 @@ app.get('/admin/me', async (req, res) => {
   const userRole = session.teamMember ? session.teamMember.role : 'admin';
   const userName = session.teamMember ? session.teamMember.name : session.merchant.name;
 
+  // Cuentas owner (OWNER_EMAILS): se presentan como Pro activo y sin caducidad
+  // para que el front no muestre el paywall ni redirija a #plans.
+  const owner = isOwnerEmail(session.merchant.email);
+
   return res.json({
     merchantId: session.merchantId,
     name: userName,
     merchantName: session.merchant.name,
-    plan: session.merchant.plan,
-    planExpiresAt: session.merchant.planExpiresAt,
+    plan: owner ? 'pro' : session.merchant.plan,
+    planExpiresAt: owner ? null : session.merchant.planExpiresAt,
     onboardingCompleted: session.merchant.onboardingCompleted,
     locale: getLocaleJson(merchantFull?.country),
     userRole,

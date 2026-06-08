@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { getSession } from '../../modules/auth/domain/auth.service';
+import { isOwnerEmail } from '../config/env';
 
 function parseCookies(header: string | undefined): Record<string, string> {
   if (!header) return {};
@@ -49,7 +50,10 @@ export async function requireActivePlan(req: Request, res: Response, next: NextF
   const session = await getSession(token);
   if (!session) return next();
 
-  const { plan, planExpiresAt } = session.merchant;
+  const { email, plan, planExpiresAt } = session.merchant;
+
+  // Cuentas owner (OWNER_EMAILS): exentas del paywall de prueba. No afecta al resto.
+  if (isOwnerEmail(email)) return next();
 
   if (plan === 'trial' && planExpiresAt && planExpiresAt < new Date()) {
     return res.status(403).json({ error: 'trial_expired', redirect: '/dashboard/#plans' });

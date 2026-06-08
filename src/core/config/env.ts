@@ -45,7 +45,21 @@ export const config = {
 
     // Anthropic / Claude AI
     ANTHROPIC_API_KEY:  process.env.ANTHROPIC_API_KEY  || '',
+
+    // Cuentas "owner" exentas del límite de prueba: se tratan como Pro activo y
+    // sin caducidad (no afecta a los demás merchants). Lista de emails separada
+    // por comas, normalizada a minúsculas. Ej: "luis@yaqu.app,otro@yaqu.app".
+    OWNER_EMAILS: (process.env.OWNER_EMAILS || '')
+      .split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean),
   } as const;
-  
+
+  // ¿El email pertenece a una cuenta owner exenta del paywall de prueba?
+  export function isOwnerEmail(email?: string | null): boolean {
+    if (!email) return false;
+    return config.OWNER_EMAILS.includes(email.trim().toLowerCase());
+  }
+
   export const BASE_URL = config.PUBLIC_BASE_URL;
   

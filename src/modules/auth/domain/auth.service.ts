@@ -140,7 +140,7 @@ export async function getSession(token: string) {
     where: { token },
     include: {
       merchant: {
-        select: { id: true, name: true, plan: true, planExpiresAt: true, onboardingCompleted: true },
+        select: { id: true, name: true, email: true, plan: true, planExpiresAt: true, onboardingCompleted: true },
       },
       teamMember: {
         select: { id: true, name: true, role: true, status: true },
