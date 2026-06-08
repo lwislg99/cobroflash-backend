@@ -29,6 +29,18 @@ export function normalizePhone(input?: string | null): string {
     return `CF-INV-${y}${m}-${seq}`;
   }
   
+  // Extrae el id numérico real de un parámetro de ruta, tolerando URLs "sucias".
+  // El botón URL dinámica de WhatsApp puede dejar el placeholder sin sustituir
+  // (p. ej. "{{1}}23" en vez de "23"); aquí quitamos primero cualquier "{{...}}"
+  // (que contiene su propio dígito) y luego nos quedamos solo con los dígitos.
+  // Devuelve NaN si no queda ningún dígito.
+  export function parseNumericId(raw: unknown): number {
+    const digits = String(raw ?? '')
+      .replace(/\{\{.*?\}\}/g, '')  // fuera placeholders tipo {{1}}
+      .replace(/\D/g, '');          // solo dígitos
+    return digits ? Number(digits) : NaN;
+  }
+
   // HTML escape
   export function esc(v?: string | number | null) {
     return String(v ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'} as any)[s]);

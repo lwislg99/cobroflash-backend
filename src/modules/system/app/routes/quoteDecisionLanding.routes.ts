@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import fetch from 'node-fetch';
 import { prisma } from '../../../../core/db/prisma';
-import { esc } from '../../../../core/utils/utils';
+import { esc, parseNumericId } from '../../../../core/utils/utils';
 import { getLocale } from '../../../../core/i18n/locales';
 
 type DecisionApiError = { message?: string; error?: string };
@@ -355,8 +355,8 @@ const SIG_JS = `
 // GET /pay/quote/:id  (landing del botón "Ver presupuesto") y alias /quote/:id/accept
 // Muestra el detalle + firma/aceptar + enlace para rechazar.
 quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: Request, res: Response) => {
-  const quoteId = req.params.id;
-  const id = Number(quoteId);
+  const id = parseNumericId(req.params.id);            // tolera URLs sucias ('{{1}}23' → 23)
+  const quoteId = Number.isInteger(id) ? String(id) : '';  // id limpio para enlaces/forms del HTML
 
   let quoteDetail = '';
   let locale = getLocale('ES');
@@ -488,8 +488,8 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
 
 // GET /pay/quote/:id/reject
 quoteDecisionLandingRouter.get('/quote/:id/reject', async (req: Request, res: Response) => {
-  const quoteId = req.params.id;
-  const id = Number(quoteId);
+  const id = parseNumericId(req.params.id);                 // tolera URLs sucias
+  const quoteId = Number.isInteger(id) ? String(id) : '';   // id limpio para el HTML
 
   let quoteDetail = '';
   let locale = getLocale('ES');
@@ -533,7 +533,7 @@ quoteDecisionLandingRouter.get('/quote/:id/reject', async (req: Request, res: Re
 
 // POST /pay/quote/:id/reject
 quoteDecisionLandingRouter.post('/quote/:id/reject', async (req: Request, res: Response) => {
-  const quoteId = req.params.id;
+  const quoteId = parseNumericId(req.params.id);   // tolera URLs sucias ('{{1}}23' → 23)
   const { reason, comment } = req.body || {};
   const finalComment = (reason ? `Motivo: ${reason}. ` : '') + (comment ? String(comment) : '').trim();
   try {

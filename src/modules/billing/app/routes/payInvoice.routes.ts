@@ -4,14 +4,14 @@
 // Diseño "Recibo de confianza" (Impeccable: Stripe/Wise, mobile-first).
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
-import { esc } from '../../../../core/utils/utils';
+import { esc, parseNumericId } from '../../../../core/utils/utils';
 
 const router = Router();
 
 router.get('/invoice/:chargeId', async (req, res) => {
   res.set('Cache-Control', 'no-store, must-revalidate');
 
-  const id = Number(req.params.chargeId);
+  const id = parseNumericId(req.params.chargeId);
   if (!Number.isInteger(id)) return res.status(400).send('ID inválido');
 
   const charge = await prisma.charge.findUnique({

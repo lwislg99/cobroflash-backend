@@ -7,7 +7,7 @@ import {
   RejectQuoteSchema,
   type QuoteTier,
 } from '../../../../core/validation/schemas';
-import { calcTotal, normalizePhone } from '../../../../core/utils/utils';
+import { calcTotal, normalizePhone, parseNumericId } from '../../../../core/utils/utils';
 
 function calcTierTotal(lines: Array<{qty: number; price: number; tax?: number}>): number {
   return Math.round(lines.reduce((s, l) => s + l.qty * l.price * (1 + (l.tax ?? 0)), 0) * 100) / 100;
@@ -158,7 +158,7 @@ router.post('/create', async (req, res) => {
  */
 router.post('/:id/accept', async (req, res) => {
   try {
-    const quoteId = Number(req.params.id);
+    const quoteId = parseNumericId(req.params.id);
     if (!Number.isInteger(quoteId)) {
       return res.status(400).json({ error: 'invalid_quote_id' });
     }
@@ -245,7 +245,7 @@ router.post('/:id/accept', async (req, res) => {
  */
 router.post('/:id/reject', async (req, res) => {
   try {
-    const quoteId = Number(req.params.id);
+    const quoteId = parseNumericId(req.params.id);
     if (!Number.isInteger(quoteId)) {
       return res.status(400).json({ error: 'invalid_quote_id' });
     }
@@ -330,7 +330,7 @@ router.post('/:id/reject', async (req, res) => {
  */
 router.post('/:id/decision', async (req, res) => {
   try {
-    const quoteId = Number(req.params.id);
+    const quoteId = parseNumericId(req.params.id);
     if (!Number.isInteger(quoteId)) {
       return res.status(400).json({ error: 'invalid_quote_id' });
     }

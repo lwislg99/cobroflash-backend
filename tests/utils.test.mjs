@@ -48,6 +48,19 @@ test('nextInvoiceNumber: formato CF-INV-YYYYMM-XXXX', () => {
   assert.match(U.nextInvoiceNumber(), /^CF-INV-\d{6}-[A-Z0-9]{1,4}$/);
 });
 
+test('parseNumericId: tolera URLs sucias del botón de WhatsApp', () => {
+  assert.equal(U.parseNumericId('23'), 23);             // limpio
+  assert.equal(U.parseNumericId('{{1}}23'), 23);        // placeholder sin sustituir (¡no 123!)
+  assert.equal(U.parseNumericId('{{2}}107'), 107);      // otro índice de placeholder
+  assert.equal(U.parseNumericId('/pay/quote/{{1}}23'.split('/').pop()), 23);
+  assert.equal(U.parseNumericId(' 23 '), 23);           // espacios
+  assert.equal(U.parseNumericId(23), 23);               // ya numérico
+  assert.ok(Number.isNaN(U.parseNumericId('{{1}}')), 'solo placeholder → NaN');
+  assert.ok(Number.isNaN(U.parseNumericId('abc')), 'sin dígitos → NaN');
+  assert.ok(Number.isNaN(U.parseNumericId('')), 'vacío → NaN');
+  assert.ok(Number.isNaN(U.parseNumericId(null)), 'null → NaN');
+});
+
 test('esc: escapa HTML peligroso y tolera null/number', () => {
   assert.equal(U.esc('<b>"x"&\'</b>'), '&lt;b&gt;&quot;x&quot;&amp;&#39;&lt;/b&gt;');
   assert.equal(U.esc(null), '');
