@@ -243,8 +243,8 @@ RESEND_API_KEY                ✅
 EMAIL_FROM                    ✅ (actualizar a yaqu.app cuando se configure dominio email)
 STRIPE_SECRET_KEY             ✅
 STRIPE_WEBHOOK_SECRET         ✅ (actualizado para yaqu.app)
-STRIPE_PRICE_ID_PRO           ❌ CRÍTICO — crear en Stripe
-STRIPE_PRICE_ID_PRO_ANNUAL    ❌ CRÍTICO — crear en Stripe
+STRIPE_PRICE_ID_PRO           ✅ (creado por el usuario)
+STRIPE_PRICE_ID_PRO_ANNUAL    ✅ (creado por el usuario)
 WHATSAPP_PHONE_NUMBER_ID      ✅
 WHATSAPP_ACCESS_TOKEN         ✅
 WHATSAPP_BUSINESS_ACCOUNT_ID  ✅
@@ -252,6 +252,8 @@ PUBLIC_BASE_URL               ✅ https://yaqu.app
 AUTO_INVOICE_ON_PAID          ✅ true
 AUTO_EMAIL_INVOICE_ON_PAID    ✅ true
 ANTHROPIC_API_KEY             ✅
+OWNER_EMAILS                  ✅ luisdragonball@gmail.com (exime del paywall de prueba; lista por comas)
+WHATSAPP_VERIFY_TOKEN         ❌ Pendiente (webhook entrante — tarea usuario en Meta/Railway)
 MP_ACCESS_TOKEN               ⚠️ Opcional (solo si activas Mercado Pago)
 STORAGE_BUCKET_URL            ❌ Pendiente Cloudflare R2 (fotos)
 STORAGE_ACCESS_KEY            ❌
@@ -267,9 +269,16 @@ STORAGE_PUBLIC_URL            ❌
 
 | # | Bug | Impacto |
 |---|---|---|
-| C-01 | `STRIPE_PRICE_ID_PRO/ANNUAL` no creados en Stripe ni en Railway | Nadie puede suscribirse. Billing roto en producción. |
-| C-02 | Branding PresuFácil/CobroFlash en HTML/CSS/manifest/sw.js — debe ser YaQu | Mala imagen. Confusión de marca. |
-| C-03 | Plantillas WhatsApp (`quote_decision_es`, `payment_request_es`, `quote_reminder_es`) deben estar Approved en Meta | Sin esto, no se pueden enviar mensajes outbound. El producto no funciona. |
+| C-01 | ✅ RESUELTO — `STRIPE_PRICE_ID_PRO/ANNUAL` creados por el usuario y en Railway. |
+| C-02 | ✅ RESUELTO — rebrand completo a YaQu (commits cecde67/a18a8db/11547a2). |
+| C-03 | ✅ APROBADAS en Meta (2026-06-08) las 3 plantillas. Pendiente: confirmar que el código de envío coincide con las plantillas aprobadas y prueba real (`scripts/wa-test.mjs`). Sprint WA en curso. |
+
+### C1-bis. Pendientes de verificar (2026-06-08, no bloquean deploy)
+| # | Bug | Estado |
+|---|---|---|
+| C-V1 | Divisa en líneas de tier de la landing mostraba el id (`good/better/best`) | Corregido en código (`addfb76`, `quoteDecisionLanding.routes.ts` → `tier.currency`), tsc limpio. **Falta verificar end-to-end** sobre un `/pay/quote/:id` real con 3 opciones (BD local sin tiers; crear vía API lo bloqueó el clasificador). Riesgo bajo. |
+| C-V2 | Exención owner (`OWNER_EMAILS`) | Lógica verificada sobre el binario + test. Falta confirmación logueado como `luisdragonball@gmail.com` en prod (login magic-link). |
+| C-V3 | Línea de tier sin separador de miles (`.toFixed(2)` crudo) | Cosmético. |
 
 ## C2. ALTO — Confunden al usuario o dan mala imagen
 

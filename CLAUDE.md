@@ -170,6 +170,7 @@ WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_ACCESS_TOKEN        ✅
 WHATSAPP_BUSINESS_ACCOUNT_ID                           ✅
 AUTO_INVOICE_ON_PAID=true, AUTO_EMAIL_INVOICE_ON_PAID=true ✅
 ANTHROPIC_API_KEY                                      ✅
+OWNER_EMAILS=luisdragonball@gmail.com                  ✅ (exime del paywall de prueba; lista por comas)
 STRIPE_PRICE_ID_PRO, STRIPE_PRICE_ID_PRO_ANNUAL        ✅ (configurados por usuario)
 MP_ACCESS_TOKEN            ⚠️ Opcional (Mercado Pago)
 STORAGE_BUCKET_URL / ACCESS_KEY / SECRET_KEY / PUBLIC_URL  ❌ Pendiente (Cloudflare R2 — Sprint PHOTOS)
@@ -261,7 +262,21 @@ GET  /admin/referral, POST /admin/referral/redeem (admin — canjea 1 mes gratis
 - ✅ Sprint 6: Múltiples usuarios por merchant, roles Admin/Técnico
 - ✅ Sprints 7-19 + AHORA-1/2 + UX-1 + LANDING + TUTORIAL + EMAIL + FRONT-1 + ANALYTICS + REFERRAL + ENTERPRISE (ver doc/YAQU_MASTER.md y la memoria del proyecto)
 
-## 📌 ESTADO ACTUAL — leer primero al retomar (última sesión: 2026-06-06)
+## 📌 ESTADO ACTUAL — leer primero al retomar (última sesión: 2026-06-08)
+
+### ✅ Completado en la sesión 2026-06-08 — modal de cotización + exención owner
+Todo commit→push directo a `main`, verificado en navegador a 390px/1100px (preview antes de push en los rediseños):
+- **Modal "Nuevo presupuesto rápido" → bottom sheet + arreglo modo 3 opciones** (`d961eae`): `.qq-modal-body` recibe padding 24px (fin de "bordes cortados"); en <640px es bottom sheet real (esquinas sup. 16px, max-height 90vh, full-width, botón verde full-width); unificado el breakpoint del sheet a 639px (eliminado el `.modal position:fixed` duplicado del bloque 768px).
+- **Polish del modal** (`ad4e4a6`): lenguaje visual de `/pay/invoice` — labels de sección en MAYÚSCULAS tracked (`.qq-flabel`), acción primaria con glow de marca (token `--shadow-brand` vía `color-mix`, **sin hex hardcodeados**).
+- **Elección clara de modo de cotización** (`e3390e0`): selector segmented "¿Cómo quieres cotizar?" (tras Cliente) con **Un precio** (líneas + **TOTAL en vivo** tabular) y **3 opciones** (concepto único "¿De qué es el presupuesto?" + 3 tarjetas APILADAS Básico/Estándar⭐Recomendada/Premium, cada una con precio + **"Qué incluye"** → `tier.description`). Modos **MUTUAMENTE EXCLUYENTES**: el estado guarda `products` (single) y `tiers` (levels) por separado, **no se transforman** al cambiar de modo (`qqState.mode`). Sustituye al chip/checkbox anterior.
+- **Fix divisa en tiers de la landing** (`addfb76`): en `quoteDecisionLanding.routes.ts` cada línea de tier mostraba el **id del tier** (`good/better/best`) como divisa → ahora `tier.currency`. ⚠️ Ver "Bugs/pendientes" (no verificado end-to-end sobre una cotización real con tiers).
+- **Exención de owner del paywall de prueba** (`d28d592` + test `17078ce`): `OWNER_EMAILS` (env, lista por comas) exime del soft-block `trial_expired`; esas cuentas se tratan como **Pro activo sin caducidad**. `env.ts` parsea + `isOwnerEmail()`; `getSession` trae `merchant.email`; `requireActivePlan` hace early-return; `GET /admin/me` devuelve `plan:'pro'`/`planExpiresAt:null` para owners. No afecta a clientes reales. Test `tests/owner.test.mjs`. **Variable Railway añadida por el usuario: `OWNER_EMAILS=luisdragonball@gmail.com`.**
+
+### 🐛 Bugs conocidos / pendientes de verificar (NO perder)
+- **Divisa en tiers de la landing (`addfb76`)**: corregido en código + tsc limpio, pero **sin verificar end-to-end** sobre una cotización real con tiers (la BD local no tiene ninguna: escaneados ids 1-50; el seed no crea tiers; crear una vía API la bloqueó el clasificador de auto-mode por precaución de prod). Verificar cuando exista un `/pay/quote/:id` con 3 opciones (debe mostrar la divisa, no `good/better/best`). Riesgo bajo (1 línea, igual que la línea de total adyacente que ya funcionaba).
+- **Exención owner**: lógica verificada sobre el binario; falta la confirmación end-to-end logueado como `luisdragonball@gmail.com` en prod (login magic-link, solo el usuario puede). Señal de OK: sin paywall + `/admin/me` → `plan:'pro'`.
+- **Backlog ≤P2 de las críticas (no bloquea):** `aria-live` aún no en el 100% de vistas dinámicas (cubierto home/modal/auth); Gastos sin skeleton de tabla (usa lista en divs); `reportsView` usa `—` en `--neutral-300` como placeholder (bajo AA si se considerara contenido).
+- **Tier line en la landing** muestra el importe por línea con `.toFixed(2)` sin separador de miles (cosmético).
 
 ### ✅ Completado en la sesión 2026-06-06 (cont.) — crítica /impeccable end-to-end del móvil (390px)
 Ciclo completo dirigido por `/impeccable critique` sobre **landing + login + register + dashboard** (incluido el dashboard autenticado, renderizado en local con un server efímero que mockea `/admin/*`). **Salud 29 → 32 → 35/40** (3 snapshots en `.impeccable/critique/`, slug `yaqu-app-mobile-landing-auth-dashboard`). 0 P0 / 0 P1 al cerrar. Todo commit→push directo a `main`:
@@ -316,8 +331,8 @@ Helpers reutilizables en `api.js`: `uiErrorState(container,msg,onRetry)`, `uiMar
 - No duplicar cliente al crear el cobro de una factura (`CreateChargeSchema.customer_id`) → `b87a1ec`
 
 ### ⏳ Pendientes y qué INPUT EXTERNO necesitan
-- **WhatsApp — prueba real:** esperando que **Meta** apruebe las 3 plantillas. Al aprobar: `node scripts/wa-test.mjs <quote_decision|payment_request|payment_confirmation> <tel> [--dry]`. Si Meta da #132000 (variables/botones no cuadran) o #132001 (nombre/idioma), ajustar plantilla o código.
-- **WhatsApp — webhook entrante:** crear `WHATSAPP_VERIFY_TOKEN` en Railway y registrar el webhook en Meta (TAREA USUARIO).
+- **WhatsApp — plantillas APROBADAS en Meta (2026-06-08).** 🚀 SPRINT WA EN CURSO. Antes de probar en real: verificar que el código de envío (`src/integrations/whatsapp.ts`, `whatsappNotifications.ts`, quotesAdmin send-whatsapp, reminder, invoiceWhatsApp.service, psp/mp webhooks) coincide EXACTAMENTE con las plantillas aprobadas — el usuario dice tener las plantillas actualizadas, así que CONFIRMAR nombres/variables/botones contra `docs/WHATSAPP_TEMPLATES.md` (y pedir al usuario los detalles exactos de Meta si cambiaron). Prueba: `node scripts/wa-test.mjs <quote_decision|payment_request|payment_confirmation> <tel> [--dry]`. Errores Meta típicos: #132000 (variables/botones no cuadran), #132001 (nombre/idioma).
+- **WhatsApp — webhook entrante:** crear `WHATSAPP_VERIFY_TOKEN` en Railway y registrar el webhook en Meta (TAREA USUARIO). Código WA-2 ya hecho.
 - **Sprint PHOTOS:** bloqueado por credenciales **Cloudflare R2** (`STORAGE_*`). Falta crear `Quote.photoUrls` (db push) + upload + mostrar en landing/PDF.
 - **Sprint LATAM:** credenciales OXXO/PSE + Mercado Pago en producción.
 - **Sprint SPAIN:** alcance VeriFactu XML / modelo 303 / factura rectificativa.
