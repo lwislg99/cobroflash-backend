@@ -92,6 +92,35 @@ router.post('/', async (req, res) => {
         include: { customer: true },
       });
 
+      // P0-3: marcar la factura como PAGADA de forma ROBUSTA, independiente de la
+      // generación del PDF. Antes solo se marcaba si ensureInvoiceForCharge() devolvía
+      // un invoiceId, pero esa función genera el PDF y, si falla (ver P0-2), lanzaba y
+      // la factura se quedaba en PENDIENTE aunque el cobro estuviera pagado. La factura
+      // se localiza por chargeId directo o vía el presupuesto ligado al cobro.
+      try {
+        const linkedQuote = await prisma.quote.findFirst({
+          where: { chargeId: updated.id },
+          select: { id: true },
+        });
+        const linkedInvoice = await prisma.invoice.findFirst({
+          where: {
+            OR: [
+              { chargeId: updated.id },
+              ...(linkedQuote ? [{ quoteId: linkedQuote.id }] : []),
+            ],
+          },
+          select: { id: true },
+        });
+        if (linkedInvoice) {
+          await prisma.invoice.update({
+            where: { id: linkedInvoice.id },
+            data: { status: 'paid', paidAt: new Date() },
+          });
+        }
+      } catch (e) {
+        console.error('[psp] P0-3 marcar factura pagada (robusto) error', e);
+      }
+
       // 👇 NUEVO: intentamos emitir / asegurar la factura
         // 👇 NUEVO: intentamos emitir / asegurar la factura
   let invoiceId: number | null = null;
