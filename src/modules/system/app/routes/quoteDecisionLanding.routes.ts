@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import express, { Router, Request, Response } from 'express';
 import fetch from 'node-fetch';
 import { prisma } from '../../../../core/db/prisma';
 import { esc, parseNumericId } from '../../../../core/utils/utils';
@@ -538,10 +538,21 @@ quoteDecisionLandingRouter.get('/quote/:id/reject', async (req: Request, res: Re
 });
 
 // POST /pay/quote/:id/reject
-quoteDecisionLandingRouter.post('/quote/:id/reject', async (req: Request, res: Response) => {
+// El router /pay se monta ANTES del express.urlencoded global (app.ts), así que
+// parseamos el form aquí mismo; sin esto req.body venía vacío y el motivo/comentario
+// del cliente se perdían (caía al texto genérico) — P1-3.
+quoteDecisionLandingRouter.post('/quote/:id/reject', express.urlencoded({ extended: true }), async (req: Request, res: Response) => {
   const quoteId = parseNumericId(req.params.id);   // tolera URLs sucias ('{{1}}23' → 23)
   const { reason, comment } = req.body || {};
-  const finalComment = (reason ? `Motivo: ${reason}. ` : '') + (comment ? String(comment) : '').trim();
+  // Mapear el código del dropdown a su etiqueta legible (P1-3).
+  const REASON_LABELS: Record<string, string> = {
+    price: 'El precio es demasiado alto',
+    another_provider: 'He elegido otro proveedor',
+    no_longer_needed: 'Ya no necesito el servicio',
+    other: 'Otro motivo',
+  };
+  const reasonLabel = reason ? (REASON_LABELS[String(reason)] || String(reason)) : '';
+  const commentText = comment ? String(comment).trim() : '';
 
   // Locale del merchant para usar su término (presupuesto/cotización) — P1-5.
   const q = Number.isInteger(quoteId)
@@ -554,7 +565,9 @@ quoteDecisionLandingRouter.post('/quote/:id/reject', async (req: Request, res: R
     const apiResponse = await fetch(
       `${BASE_API_URL}/quote/${encodeURIComponent(quoteId)}/decision`,
       { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ decision: 'reject', comment: finalComment || 'Rechazado desde enlace WhatsApp' }) }
+        // P1-3: reenviar el motivo (etiqueta) y el comentario REALES por separado,
+        // sin texto genérico. Si vienen vacíos, se guarda vacío.
+        body: JSON.stringify({ decision: 'reject', reason: reasonLabel || undefined, comment: commentText || undefined }) }
     );
     const json = (await apiResponse.json().catch(() => null)) as DecisionApiError | null;
     if (!apiResponse.ok) {
