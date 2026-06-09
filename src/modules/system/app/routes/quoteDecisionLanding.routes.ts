@@ -393,6 +393,10 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
   const shareName = (loadedQuote?.merchant?.legalName || loadedQuote?.merchant?.name || 'el profesional');
   const shareTextEnc = encodeURIComponent(`✅ He aceptado mi ${locale.quoteVerb} con ${shareName}. ¡Gracias!`);
 
+  // Concordancia de género del sustantivo (presupuesto=masc / cotización=fem)
+  // para "aceptado/a y firmado/a" sin romper LATAM (P1-4).
+  const qg = (locale.quote.endsWith('ón') || locale.quote.endsWith('a')) ? 'a' : 'o';
+
   const html = renderPage(`Aceptar ${locale.quoteVerb}`, `<style>${TIER_CSS}</style>
     ${quoteDetail}
     ${hasTiers ? tierCards : ''}
@@ -466,7 +470,7 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
           document.querySelector('.card').innerHTML =
             '<div style="text-align:center;padding:12px 0">' +
               '<div class="success-check">✓</div>' +
-              '<h1 style="font-size:20px;margin:0 0 6px">¡${locale.quote} aceptada' + (sigData ? ' y firmada' : '') + '!</h1>' +
+              '<h1 style="font-size:20px;margin:0 0 6px">¡${locale.quote} aceptad${qg}' + (sigData ? ' y firmad${qg}' : '') + '!</h1>' +
               '<p style="color:#6b756f;font-size:14px;margin:0 0 18px">Gracias por tu confianza. El profesional te informará de los siguientes pasos.</p>' +
               '<a class="btn-share" target="_blank" rel="noopener" href="https://wa.me/?text=${shareTextEnc}">' +
                 '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M.06 24l1.69-6.16a11.87 11.87 0 01-1.59-5.95C.16 5.34 5.5 0 12.06 0a11.82 11.82 0 018.42 3.49 11.82 11.82 0 013.48 8.41c0 6.56-5.34 11.9-11.9 11.9a11.9 11.9 0 01-5.69-1.45L.06 24z"/></svg>' +
@@ -478,7 +482,7 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
           document.getElementById('sig-error').style.display = 'block';
         }
       } catch {
-        btn.disabled = false; btn.textContent = 'Firmar y aceptar cotización';
+        btn.disabled = false; btn.textContent = 'Firmar y aceptar ${locale.quoteVerb}';
         document.getElementById('sig-error').textContent = 'Error de conexión.';
         document.getElementById('sig-error').style.display = 'block';
       }
@@ -538,6 +542,14 @@ quoteDecisionLandingRouter.post('/quote/:id/reject', async (req: Request, res: R
   const quoteId = parseNumericId(req.params.id);   // tolera URLs sucias ('{{1}}23' → 23)
   const { reason, comment } = req.body || {};
   const finalComment = (reason ? `Motivo: ${reason}. ` : '') + (comment ? String(comment) : '').trim();
+
+  // Locale del merchant para usar su término (presupuesto/cotización) — P1-5.
+  const q = Number.isInteger(quoteId)
+    ? await prisma.quote.findUnique({ where: { id: quoteId }, select: { merchant: { select: { country: true } } } }).catch(() => null)
+    : null;
+  const locale = getLocale(q?.merchant?.country);
+  const delDeLa = (locale.quote.endsWith('ón') || locale.quote.endsWith('a')) ? 'de la' : 'del';
+
   try {
     const apiResponse = await fetch(
       `${BASE_API_URL}/quote/${encodeURIComponent(quoteId)}/decision`,
@@ -551,7 +563,7 @@ quoteDecisionLandingRouter.post('/quote/:id/reject', async (req: Request, res: R
       );
     }
     res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
-      renderPage('Rechazo registrado', `<div class="status-ok"><strong>Gracias por tu respuesta.</strong><br/>Hemos registrado el rechazo de la cotización <strong>#${esc(quoteId)}</strong>.</div>`)
+      renderPage('Rechazo registrado', `<div class="status-ok"><strong>Gracias por tu respuesta.</strong><br/>Hemos registrado el rechazo ${delDeLa} ${esc(locale.quoteVerb)} <strong>#${esc(quoteId)}</strong>.</div>`)
     );
   } catch {
     res.status(500).setHeader('Content-Type', 'text/html; charset=utf-8').send(
