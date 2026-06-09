@@ -932,14 +932,19 @@ async function submitQuickQuote() {
 
     closeQuickQuote();
 
+    const qLabel = (window.appLocale && window.appLocale.quote) || 'presupuesto';
     if (sendResult.sent) {
-      showToast("Cotización enviada por WhatsApp ✓");
+      showToast(`✓ ${qLabel.charAt(0).toUpperCase() + qLabel.slice(1)} enviado por WhatsApp`);
     } else {
-      showToast("Cotización creada. Envío WhatsApp pendiente.", true);
+      showToast(`${qLabel.charAt(0).toUpperCase() + qLabel.slice(1)} creado. Envío WhatsApp pendiente.`, true);
     }
 
-    // Refrescar la vista home
-    setTimeout(() => renderAppView("home"), 500);
+    // P2-2: en vez de volver a Home con un aviso discreto, abrimos el DETALLE del
+    // presupuesto recién enviado (muestra estado SENT + timeline) como feedback claro.
+    setTimeout(() => {
+      if (window.renderAppView) renderAppView("quotes-detail", { quoteId: quote.id });
+      else renderAppView("home");
+    }, 400);
 
   } catch (err) {
     showQqAlert(err.message || "Error al crear la cotización.");
