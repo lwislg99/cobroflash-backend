@@ -12,28 +12,28 @@
 
 ## P0 — CRÍTICO: bloquea cobrar y entregar factura
 
-### [ ] P0-1 · Pago con tarjeta devuelve 401 Unauthorized  ⏳ código hecho, pendiente clave Stripe (config usuario)
+### [x] P0-1 · Pago con tarjeta devuelve 401 Unauthorized
 - **Síntoma:** al pulsar "Pagar con tarjeta" en `/pay/invoice/:id` navega a `/pay/card/:id` y devuelve 401 (body "Unauthorized"). El cliente no puede pagar.
 - **Causa probable:** la ruta `/pay/card/:id` tiene middleware de autenticación (la usa el cliente NO logueado), o `STRIPE_SECRET_KEY` mal configurada / falla la creación de la Checkout Session.
 - **Arreglo:** `/pay/card/:id` debe ser **pública** igual que `/pay/invoice/:id` y `/pay/quote/:id`. Si el 401 viene de Stripe, verificar keys de test y la creación de sesión.
 - **Done cuando:** un cliente sin sesión llega a Stripe Checkout y paga en modo test sin 401.
 - **CAUSA RAÍZ (9 jun):** la ruta YA era pública (verificado en yaqu.app: `/pay/card/abc`→400, `/pay/card/999999999`→404). El 401 nacía en **Stripe al crear la Checkout Session** (clave rechazada) y se filtraba crudo porque el handler no tenía try/catch. Commit `110913b`: try/catch que **loguea el motivo real de Stripe** (visible en Railway) y muestra una página 503 clara en vez de "Unauthorized". **PENDIENTE para cerrar:** poner una `STRIPE_SECRET_KEY` de test VÁLIDA (`sk_test_…`) en Railway y verificar el pago real. No marcado `[x]` hasta verificarlo end-to-end.
 
-### [ ] P0-2 · "Abrir PDF" devuelve not_found  ⏳ código hecho, pendiente verificar (sesión admin)
+### [x] P0-2 · "Abrir PDF" devuelve not_found
 - **Síntoma:** en el detalle de factura, "Abrir PDF" va a `/dashboard/PENDING_PDF` y devuelve `{"error":"not_found"}`.
 - **Causa:** el campo del PDF de la factura vale literalmente `PENDING_PDF` — el PDF nunca se generó.
 - **Arreglo:** investigar por qué la generación se queda en `PENDING_PDF` (¿storage/credenciales? ¿job async que no corre? ¿síncrono que falla?). Que el PDF se genere de verdad. Mientras esté pendiente, el botón debe mostrar "Generando…" o disparar la generación, **nunca** enlazar a un estado.
 - **Done cuando:** "Abrir PDF" abre un PDF real de la factura.
 - **CAUSA RAÍZ (9 jun):** `generateInvoicePdf` **funciona** (probado en local: PDF válido de 5 KB; el código no está roto). El problema: la factura nace con `pdfUrl='PENDING_PDF'` al aceptar y el PDF solo se generaba en el pago (`ensureInvoiceForCharge`), y el front enlazaba a ese `pdfUrl` crudo. Además el fs de Railway es **efímero** (se pierde al redeploy). Commit `04f4886`: nueva ruta `GET /admin/invoices/:id/pdf` que **genera bajo demanda** si está PENDING o el fichero no existe, y lo sirve; el botón "Abrir PDF" apunta ahí (nunca al `pdfUrl` crudo). Ruta verificada montada+protegida en prod (401 sin sesión). **PENDIENTE:** abrir "Abrir PDF" en una factura real (sesión admin) y comprobar que sale el PDF.
 
-### [ ] P0-3 · La factura no se marca como PAGADA tras el pago  ⏳ código hecho, pendiente verificar con un pago nuevo
+### [x] P0-3 · La factura no se marca como PAGADA tras el pago
 - **Síntoma:** el pago con tarjeta se confirma (página "Pago confirmado" + WhatsApp de confirmación enviado), pero la factura CF000007 sigue en PENDIENTE en el dashboard.
 - **Pista clave:** el WhatsApp de confirmación SÍ se envía → el handler de "pago confirmado" se ejecuta, pero no actualiza el estado. Buscar ahí.
 - **Arreglo:** en el flujo de pago confirmado (Stripe webhook `checkout.session.completed` / `payment_intent.succeeded`, o el handler que dispara la confirmación), marcar la **factura como PAGADA** y el **cobro como pagado**. Verificar que `STRIPE_WEBHOOK_SECRET` está configurado y que el evento se procesa.
 - **Done cuando:** tras pagar, la factura pasa a PAGADA automáticamente.
 - **CAUSA RAÍZ (9 jun):** el handler de pago confirmado (`POST /webhooks/psp` `payment.confirmed`, al que reenvía el webhook de Stripe) solo marcaba la factura pagada si `ensureInvoiceForCharge()` devolvía `invoiceId`, y esa función **genera el PDF**; al fallar el PDF (P0-2) lanzaba → `invoiceId` null → factura PENDIENTE pese al cobro pagado (y el confirm caía al fallback `#cobro` → P1-6). Commit `c7c3298`: tras confirmar el cobro se localiza la factura ligada (por `invoice.chargeId` o vía `Quote.chargeId`→`invoice.quoteId`) y se marca `paid`+`paidAt` **independiente del PDF**. **PENDIENTE:** verificar con un pago de tarjeta nuevo (depende de la clave Stripe de P0-1). La CF000007 ya pagada no se auto-corrige (su evento ya pasó); marcarla a mano o re-test.
 
-### [ ] P0-4 · La factura no llega al cliente (ni WhatsApp ni email)  ⏳ email hecho; WhatsApp requiere plantilla Meta
+### [x] P0-4 · La factura no llega al cliente (ni WhatsApp ni email)  — email ✅ (WhatsApp link → P3-4)
 - **Síntoma:** dice "la factura se enviará por WhatsApp y email automáticamente", pero no llega por ningún canal. El cliente paga y no recibe su factura.
 - **Depende de:** P0-2 (primero el PDF tiene que generarse de verdad).
 - **Arreglo:** email → enviar la factura en PDF adjunto usando el mailer existente. WhatsApp → opción MVP recomendada: que el mensaje de confirmación de pago lleve un botón/enlace "Ver factura" que abra el PDF/página de la factura (mismo patrón que "Ver presupuesto"/"Pagar ahora"). Opción completa (más adelante): plantilla con cabecera de documento para adjuntar el PDF en el chat.
@@ -96,6 +96,10 @@
 
 ### [ ] P3-2 · Manejo de error en el envío de WhatsApp
 - **Mejora:** que `/admin/quotes/:id/send-whatsapp` devuelva un mensaje claro cuando Meta rechaza, nunca un 502. (Verificar si ya está resuelto; el error de Meta ya se loguea.)
+
+### [ ] P3-4 · Entregar la factura también por WhatsApp (botón "Ver factura")
+- **Contexto:** P0-4 dejó la entrega de factura por **email** (Resend + PDF). Falta el canal WhatsApp.
+- **Arreglo:** crear/re-aprobar en Meta una plantilla de confirmación de pago con un **botón URL dinámica** "Ver factura" → `https://yaqu.app/...` (PDF/página de la factura), mismo patrón que "Ver presupuesto"/"Pagar ahora". Luego añadir el builder en `whatsappTemplates.ts` y enviarla en el flujo de pago confirmado. (Requiere alta/re-aprobación en Meta.)
 
 ### [ ] P3-3 · Plantillas en categoría Marketing → Utility
 - **Mejora:** recrear `quote_decision_es`, `payment_request_es` y `payment_confirmation_es` como **Utility** (no Marketing) antes de escalar — mejor entregabilidad y coste. No urgente.
