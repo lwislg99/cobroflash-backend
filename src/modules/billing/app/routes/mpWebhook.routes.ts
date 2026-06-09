@@ -138,8 +138,8 @@ router.post('/', async (req, res) => {
           toPhone: updated.customer.phone,
           customerName: updated.customer.name,
           amountWithCurrency: `${Number(updated.amount).toFixed(2)} ${updated.currency}`,
-          invoiceNumber: invConf?.number || `#${updated.id}`,
-          businessName: merchant?.name,
+          invoiceNumber: invConf?.number || String(updated.id),   // P1-6: sin '#' (la plantilla ya lo antepone)
+          businessName: merchant?.legalName || merchant?.name,     // P1-7
         }).catch(() => {});
 
         // ENT-3: historial

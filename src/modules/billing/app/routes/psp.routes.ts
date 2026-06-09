@@ -97,6 +97,7 @@ router.post('/', async (req, res) => {
       // un invoiceId, pero esa función genera el PDF y, si falla (ver P0-2), lanzaba y
       // la factura se quedaba en PENDIENTE aunque el cobro estuviera pagado. La factura
       // se localiza por chargeId directo o vía el presupuesto ligado al cobro.
+      let paidInvoiceNumber: string | null = null;   // nº de factura real para la confirmación (P1-6)
       try {
         const linkedQuote = await prisma.quote.findFirst({
           where: { chargeId: updated.id },
@@ -109,9 +110,10 @@ router.post('/', async (req, res) => {
               ...(linkedQuote ? [{ quoteId: linkedQuote.id }] : []),
             ],
           },
-          select: { id: true },
+          select: { id: true, number: true },
         });
         if (linkedInvoice) {
+          paidInvoiceNumber = linkedInvoice.number;
           await prisma.invoice.update({
             where: { id: linkedInvoice.id },
             data: { status: 'paid', paidAt: new Date() },
@@ -174,7 +176,7 @@ router.post('/', async (req, res) => {
       // Cargar merchant para notificaciones
       const merchant = await prisma.merchant.findUnique({
         where: { id: updated.merchantId },
-        select: { whatsappPhone: true, googleReviewUrl: true, name: true, email: true, notifyEmailOnPaid: true },
+        select: { whatsappPhone: true, googleReviewUrl: true, name: true, legalName: true, email: true, notifyEmailOnPaid: true },
       });
 
       // Confirmación de pago al cliente por WhatsApp (payment_confirmation_es, fire-and-forget)
@@ -188,8 +190,10 @@ router.post('/', async (req, res) => {
           toPhone: updated.customer.phone,
           customerName: updated.customer.name,
           amountWithCurrency: `${amt} ${cur}`,
-          invoiceNumber: invConf?.number || `#${updated.id}`,
-          businessName: merchant?.name,
+          // P1-6: nº de factura REAL (sin '#'; la plantilla ya antepone "#") — no el id del cobro.
+          invoiceNumber: invConf?.number || paidInvoiceNumber || String(updated.id),
+          // P1-7: nombre del negocio como en presupuesto/factura/landing (legalName||name).
+          businessName: merchant?.legalName || merchant?.name,
         }).catch(() => {});
 
         // ENT-3: historial
