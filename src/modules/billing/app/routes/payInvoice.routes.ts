@@ -40,8 +40,14 @@ router.get('/invoice/:chargeId', async (req, res) => {
       ' ' + charge.currency,
   );
   const concept = esc(charge.concept || '');
-  const invRef = invoice?.number ? `Factura ${esc(invoice.number)}` : '';
-  const subline = [concept, invRef].filter(Boolean).join(' · ');
+  const num = invoice?.number ? esc(invoice.number) : '';
+  const invRef = num ? `Factura ${num}` : '';
+  // P1-2: el concepto del cobro a veces YA es "Factura CFxxxx"; no duplicar la
+  // referencia. Si el concepto ya incluye el nº de factura, mostramos solo invRef.
+  const conceptIsInvoiceRef = !!num && concept.includes(num);
+  const subline = conceptIsInvoiceRef
+    ? invRef
+    : [concept, invRef].filter(Boolean).join(' · ');
   const hasTransfer = !!(m?.iban || m?.clabe);
 
   const logoHtml = m?.logoUrl
