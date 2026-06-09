@@ -155,13 +155,13 @@ async function fetchInvoiceDetail(id) {
     actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap';
     actionsSec.appendChild(actions);
 
-    // Abrir PDF
+    // Abrir PDF — siempre vía el endpoint que genera bajo demanda si falta
+    // (nunca enlazar a invoice.pdfUrl directo, que puede valer 'PENDING_PDF').
     const btnPdf = document.createElement('button');
     btnPdf.className = 'btn-primary btn-sm';
     btnPdf.textContent = 'Abrir PDF';
     btnPdf.addEventListener('click', () => {
-      if (invoice.pdfUrl) window.open(invoice.pdfUrl, '_blank');
-      else setStatus('error', 'Esta factura no tiene PDF asociado.');
+      window.open(`/admin/invoices/${invoice.id}/pdf`, '_blank');
     });
     actions.appendChild(btnPdf);
   

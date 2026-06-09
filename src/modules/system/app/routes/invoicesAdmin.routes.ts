@@ -17,6 +17,9 @@ import { sendWhatsAppTemplate, sendWhatsAppText } from '../../../../integrations
 import { buildPaymentRequest } from '../../../../integrations/whatsappTemplates';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { normalizePhone } from '../../../../core/utils/utils';
+import path from 'path';
+import fs from 'fs';
+import { invoicesDir } from '../../../../core/storage/dirs';
 
 
 const router = Router();
@@ -329,6 +332,77 @@ router.post('/:id/regenerate-pdf', async (req, res) => {
   } catch (err) {
     console.error('[POST /admin/invoices/:id/regenerate-pdf]', err);
     return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * GET /admin/invoices/:id/pdf — abre el PDF de la factura.
+ * P0-2: genera el PDF BAJO DEMANDA si la factura está en PENDING_PDF o si el
+ * fichero no existe (el filesystem de Railway es efímero y se pierde al redeploy).
+ * Así "Abrir PDF" siempre sirve un PDF real, sin enlazar nunca a 'PENDING_PDF'.
+ */
+router.get('/:id/pdf', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+
+    const invoice = await prisma.invoice.findFirst({
+      where: { id, merchantId: req.merchantId },
+      include: { merchant: true, customer: true },
+    });
+    if (!invoice) return res.status(404).json({ error: 'not_found' });
+    if (!invoice.merchant || !invoice.customer) {
+      return res.status(500).json({ error: 'missing_relations' });
+    }
+
+    const filePath = path.join(invoicesDir, `${invoice.number}.pdf`);
+    const pdfMissing =
+      !invoice.pdfUrl ||
+      invoice.pdfUrl === 'PENDING_PDF' ||
+      String(invoice.pdfUrl).startsWith('PENDING') ||
+      !fs.existsSync(filePath);
+
+    if (pdfMissing) {
+      const merchant = invoice.merchant;
+      let qrData = invoice.qrData;
+      let vfHash = invoice.vfHash ?? null;
+      if (merchant.country === 'ES' && merchant.taxId) {
+        try {
+          const vf = await applyVeriFactu(invoice, merchant.taxId, prisma);
+          qrData = vf.qrUrl;
+          vfHash = vf.vfHash;
+        } catch (e) {
+          console.error('[invoice pdf] VeriFactu error:', e);
+        }
+      }
+      const invLines = Array.isArray(invoice.lines) ? (invoice.lines as any[]) : [];
+      const pdf = await generateInvoicePdf({
+        number: invoice.number,
+        merchant: {
+          name: merchant.name,
+          legalName: merchant.legalName,
+          taxId: merchant.taxId,
+          address: merchant.address,
+          logoUrl: merchant.logoUrl,
+        },
+        customer: { name: invoice.customer.name, email: invoice.customer.email, phone: invoice.customer.phone },
+        currency: invoice.currency,
+        total: invoice.total.toString(),
+        qrData,
+        vfHash,
+        createdAt: invoice.createdAt,
+        lines: invLines,
+      });
+      await prisma.invoice.update({ where: { id }, data: { pdfUrl: pdf.publicUrlPath, qrData } });
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${invoice.number}.pdf"`);
+    res.setHeader('Cache-Control', 'no-store');
+    return fs.createReadStream(filePath).pipe(res);
+  } catch (err) {
+    console.error('[GET /admin/invoices/:id/pdf]', err);
+    return res.status(500).json({ error: 'pdf_generation_failed' });
   }
 });
 
