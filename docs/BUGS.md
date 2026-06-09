@@ -51,30 +51,36 @@
 - **Arreglo:** el botón primario (aceptar/firmar) **siempre verde de marca**. El rojo solo para rechazar. El avatar puede tener color propio; el CTA no.
 - **Done cuando:** el botón de aceptar es verde en cualquier presupuesto.
 
-### [ ] P1-2 · Texto duplicado en la pantalla de pago
+### [x] P1-2 · Texto duplicado en la pantalla de pago
 - **Síntoma:** `/pay/invoice` muestra "Factura CF000006 · Factura CF000006" (dos veces).
 - **Arreglo:** mostrar el nº de factura una sola vez.
+- **CAUSA RAÍZ (9 jun):** el `charge.concept` ya era "Factura CFxxxx" y la página añadía otra vez la referencia. Commit `9ef6671`: si el concepto ya incluye el nº de factura, se muestra una sola vez.
 
-### [ ] P1-3 · No se guarda el motivo de rechazo real del cliente
+### [x] P1-3 · No se guarda el motivo de rechazo real del cliente
 - **Síntoma:** el detalle del presupuesto rechazado muestra "Motivo de rechazo: Rechazado desde enlace WhatsApp" (texto genérico hardcodeado), no el motivo (dropdown) ni el comentario que eligió el cliente en el formulario.
 - **Arreglo:** persistir el **motivo y el comentario reales** del formulario de rechazo y mostrarlos en el detalle. Si vienen vacíos, dejar vacío, no un texto fijo.
 - **Done cuando:** al rechazar eligiendo motivo + comentario, el detalle muestra exactamente eso.
+- **CAUSA RAÍZ (9 jun):** (1) el router `/pay` se monta antes del `express.urlencoded` global → el POST del form de rechazo llegaba con `req.body` vacío; ahora la ruta parsea su propio body. (2) la landing reenviaba un comentario combinado con fallback genérico; ahora mapea el código del dropdown a su etiqueta y reenvía `reason`+`comment` por separado, sin texto fijo. Commit `9c28055`.
 
-### [ ] P1-4 · Gramática en la confirmación de aceptación
+### [x] P1-4 · Gramática en la confirmación de aceptación
 - **Síntoma:** "¡Presupuesto **aceptada y firmada**!" (femenino).
 - **Arreglo:** "¡Presupuesto **aceptado y firmado**!".
+- **CAUSA RAÍZ (9 jun):** adjetivos hardcodeados en femenino. Commit `d13313a`: concordancia de género según el sustantivo del locale (presupuesto=masc, cotización=fem).
 
-### [ ] P1-5 · Terminología "cotización" en el demo de España
+### [x] P1-5 · Terminología "cotización" en el demo de España
 - **Síntoma:** la confirmación de rechazo dice "rechazo de la **cotización** #24"; el resto del demo (España) usa "presupuesto".
 - **Arreglo:** en el demo ES usar "presupuesto" en todos los textos del cliente. (No tocar i18n LATAM aún — solo unificar el demo ES.)
+- **CAUSA RAÍZ (9 jun):** "de la cotización" hardcodeado. Commit `d13313a`: usa el término del locale del merchant (`presupuesto` en ES) con su artículo (del/de la); también el reset del botón de aceptar. No se tocó i18n LATAM.
 
-### [ ] P1-6 · WhatsApp de confirmación: "factura ##4" (doble # y nº incorrecto)
+### [x] P1-6 · WhatsApp de confirmación: "factura ##4" (doble # y nº incorrecto)
 - **Síntoma:** dice "tu pago de 109.00 EUR de la factura ##4". Doble "#" y usa el **id del cobro** (4) en vez del **nº de factura** (CF000007).
 - **Arreglo:** mostrar el nº de factura real ("CF000007") sin doble #.
+- **CAUSA RAÍZ (9 jun):** se pasaba `#${chargeId}` (la plantilla ya antepone "#"). Commit `3d64887`: usa el nº de factura real sin "#" (de la factura emitida o de la ligada al cobro, P0-3). Aplicado en psp y mpWebhook.
 
-### [ ] P1-7 · WhatsApp de confirmación usa el nombre de cuenta, no el del negocio
+### [x] P1-7 · WhatsApp de confirmación usa el nombre de cuenta, no el del negocio
 - **Síntoma:** dice "Gracias por confiar en Electricista prueba", pero el resto de mensajes al cliente usan "Demo ES S.L.".
 - **Arreglo:** usar el nombre del negocio (el que aparece en presupuesto/factura/landing) de forma consistente en todos los mensajes al cliente.
+- **CAUSA RAÍZ (9 jun):** usaba `merchant.name` (nombre de cuenta). Commit `3d64887`: usa `legalName||name`, como presupuesto/factura/landing. Aplicado en psp y mpWebhook.
 
 ---
 
