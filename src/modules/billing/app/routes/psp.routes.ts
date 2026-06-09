@@ -130,15 +130,11 @@ router.post('/', async (req, res) => {
       const inv = await ensureInvoiceForCharge(updated.id, prisma);
       invoiceId = inv.id;
 
-      // Solo enviamos email si hay PDF real
-      const hasRealPdf =
-        !!inv.pdfUrl && inv.pdfUrl !== 'PENDING_PDF' && inv.pdfUrl !== '';
-
-      if (
-        hasRealPdf &&
-        config.AUTO_EMAIL_INVOICE_ON_PAID &&
-        updated.customer?.email
-      ) {
+      // P0-4: enviar el email de la factura SIEMPRE (sendInvoiceEmail genera el
+      // PDF bajo demanda si falta y envía por Resend con adjunto). Antes se
+      // exigía un PDF "real" y, como la generación se quedaba en PENDING, el
+      // email no salía nunca.
+      if (config.AUTO_EMAIL_INVOICE_ON_PAID && updated.customer?.email) {
         try {
           await sendInvoiceEmail({
             invoiceId: inv.id,

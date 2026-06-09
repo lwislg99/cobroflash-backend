@@ -107,7 +107,8 @@ router.post('/', async (req, res) => {
           const inv = await ensureInvoiceForCharge(chargeId, prisma);
           invoiceId = inv.id;
 
-          if (inv.pdfUrl && inv.pdfUrl !== 'PENDING_PDF' && config.AUTO_EMAIL_INVOICE_ON_PAID && updated.customer?.email) {
+          // P0-4: email SIEMPRE (sendInvoiceEmail genera el PDF si falta y envía por Resend)
+          if (config.AUTO_EMAIL_INVOICE_ON_PAID && updated.customer?.email) {
             await sendInvoiceEmail({
               invoiceId: inv.id,
               toEmail: updated.customer.email,

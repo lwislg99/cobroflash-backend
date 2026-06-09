@@ -1,9 +1,80 @@
 // src/lib/invoicing.ts
+import path from 'path';
+import fs from 'fs';
 import { PrismaClient } from '@prisma/client';
 import { nextInvoiceNumber } from '../core/utils/utils';
 import { generateInvoicePdf } from './pdf';
 import { BASE_URL } from '../core/config/env';
+import { invoicesDir } from '../core/storage/dirs';
 import { applyVeriFactu } from '../modules/invoicing/domain/verifactu.service';
+
+/**
+ * Asegura que el PDF de una factura existe en disco (genera bajo demanda si está
+ * en PENDING_PDF o si el fichero se perdió — el fs de Railway es efímero) y
+ * devuelve la ruta en disco + la URL pública. Reutilizado por "Abrir PDF"
+ * (GET /admin/invoices/:id/pdf) y por el email de factura.
+ */
+export async function ensureInvoicePdf(
+  invoiceId: number,
+  prisma: PrismaClient,
+): Promise<{ diskPath: string; pdfUrl: string; number: string }> {
+  const inv = await prisma.invoice.findUnique({
+    where: { id: invoiceId },
+    include: { merchant: true, customer: true },
+  });
+  if (!inv) throw new Error('invoice_not_found');
+  if (!inv.merchant || !inv.customer) throw new Error('missing_relations');
+
+  const fileName = `${inv.number}.pdf`;
+  const diskPath = path.join(invoicesDir, fileName);
+  const publicUrlPath = `/invoices/${fileName}`;
+
+  const needs =
+    !inv.pdfUrl ||
+    inv.pdfUrl === 'PENDING_PDF' ||
+    String(inv.pdfUrl).startsWith('PENDING') ||
+    !fs.existsSync(diskPath);
+
+  if (needs) {
+    let qrData =
+      inv.qrData && !String(inv.qrData).startsWith('PENDING')
+        ? inv.qrData
+        : `INV:${inv.number}|AMOUNT:${inv.total.toString()}|CUR:${inv.currency}`;
+    let vfHash = inv.vfHash ?? null;
+
+    if (inv.merchant.country === 'ES' && inv.merchant.taxId && !vfHash) {
+      try {
+        const vf = await applyVeriFactu(inv, inv.merchant.taxId, prisma);
+        qrData = vf.qrUrl;
+        vfHash = vf.vfHash;
+      } catch (e) {
+        console.error('[ensureInvoicePdf] VeriFactu error:', e);
+      }
+    }
+
+    const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
+    await generateInvoicePdf({
+      number: inv.number,
+      merchant: {
+        name: inv.merchant.name,
+        legalName: inv.merchant.legalName,
+        taxId: inv.merchant.taxId,
+        address: inv.merchant.address,
+        logoUrl: inv.merchant.logoUrl,
+      },
+      customer: { name: inv.customer.name, email: inv.customer.email, phone: inv.customer.phone },
+      currency: inv.currency,
+      total: inv.total.toString(),
+      qrData,
+      vfHash,
+      createdAt: inv.createdAt,
+      lines,
+    });
+    await prisma.invoice.update({ where: { id: invoiceId }, data: { pdfUrl: publicUrlPath, qrData } });
+  }
+
+  return { diskPath, pdfUrl: publicUrlPath, number: inv.number };
+}
 
 export async function ensureInvoiceForCharge(
   chargeId: number,
