@@ -25,11 +25,12 @@
 - **Arreglo:** investigar por qué la generación se queda en `PENDING_PDF` (¿storage/credenciales? ¿job async que no corre? ¿síncrono que falla?). Que el PDF se genere de verdad. Mientras esté pendiente, el botón debe mostrar "Generando…" o disparar la generación, **nunca** enlazar a un estado.
 - **Done cuando:** "Abrir PDF" abre un PDF real de la factura.
 
-### [ ] P0-3 · La factura no se marca como PAGADA tras el pago
+### [ ] P0-3 · La factura no se marca como PAGADA tras el pago  ⏳ código hecho, pendiente verificar con un pago nuevo
 - **Síntoma:** el pago con tarjeta se confirma (página "Pago confirmado" + WhatsApp de confirmación enviado), pero la factura CF000007 sigue en PENDIENTE en el dashboard.
 - **Pista clave:** el WhatsApp de confirmación SÍ se envía → el handler de "pago confirmado" se ejecuta, pero no actualiza el estado. Buscar ahí.
 - **Arreglo:** en el flujo de pago confirmado (Stripe webhook `checkout.session.completed` / `payment_intent.succeeded`, o el handler que dispara la confirmación), marcar la **factura como PAGADA** y el **cobro como pagado**. Verificar que `STRIPE_WEBHOOK_SECRET` está configurado y que el evento se procesa.
 - **Done cuando:** tras pagar, la factura pasa a PAGADA automáticamente.
+- **CAUSA RAÍZ (9 jun):** el handler de pago confirmado (`POST /webhooks/psp` `payment.confirmed`, al que reenvía el webhook de Stripe) solo marcaba la factura pagada si `ensureInvoiceForCharge()` devolvía `invoiceId`, y esa función **genera el PDF**; al fallar el PDF (P0-2) lanzaba → `invoiceId` null → factura PENDIENTE pese al cobro pagado (y el confirm caía al fallback `#cobro` → P1-6). Commit `c7c3298`: tras confirmar el cobro se localiza la factura ligada (por `invoice.chargeId` o vía `Quote.chargeId`→`invoice.quoteId`) y se marca `paid`+`paidAt` **independiente del PDF**. **PENDIENTE:** verificar con un pago de tarjeta nuevo (depende de la clave Stripe de P0-1). La CF000007 ya pagada no se auto-corrige (su evento ya pasó); marcarla a mano o re-test.
 
 ### [ ] P0-4 · La factura no llega al cliente (ni WhatsApp ni email)
 - **Síntoma:** dice "la factura se enviará por WhatsApp y email automáticamente", pero no llega por ningún canal. El cliente paga y no recibe su factura.
