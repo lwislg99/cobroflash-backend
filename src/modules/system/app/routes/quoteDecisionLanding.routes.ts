@@ -11,9 +11,11 @@ const BASE_API_URL = process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
 
 function brandOverrideCss(brandColor?: string | null): string {
   if (!brandColor || !/^#[0-9a-fA-F]{6}$/.test(brandColor)) return '';
-  // Si el merchant tiene color de marca, lo usamos en botones y acentos
+  // El color de marca del negocio va en ACENTOS (avatar, bordes, badges, enlaces),
+  // NUNCA en el botón primario de aceptar/firmar: ese es SIEMPRE el verde de marca
+  // (P1-1: un brandColor rojo hacía que "Firmar y aceptar" saliera rojo). El rojo
+  // se reserva para rechazar.
   return `<style>
-    .btn-accept, .btn-tier, .tier-recommended .btn-tier { background: ${brandColor} !important; }
     .merchant-avatar { background: ${brandColor} !important; color: #fff !important; }
     .tier-recommended, .tier-card.selected { border-color: ${brandColor} !important; }
     .tier-badge { background: ${brandColor} !important; color: #fff !important; }
