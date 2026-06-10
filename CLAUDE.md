@@ -262,7 +262,27 @@ GET  /admin/referral, POST /admin/referral/redeem (admin — canjea 1 mes gratis
 - ✅ Sprint 6: Múltiples usuarios por merchant, roles Admin/Técnico
 - ✅ Sprints 7-19 + AHORA-1/2 + UX-1 + LANDING + TUTORIAL + EMAIL + FRONT-1 + ANALYTICS + REFERRAL + ENTERPRISE (ver doc/YAQU_MASTER.md y la memoria del proyecto)
 
-## 📌 ESTADO ACTUAL — leer primero al retomar (última sesión: 2026-06-08)
+## 📌 ESTADO ACTUAL — leer primero al retomar (última sesión: 2026-06-10)
+
+### ✅ Completado en la sesión 2026-06-09/10 — SPRINT DE BUGS E2E (backlog `docs/BUGS.md`)
+Tras la prueba E2E del cliente (8 jun), se registró el backlog en **`docs/BUGS.md`** (fuente de verdad, con reglas de trabajo). Recorrido completo, uno a uno, commit+push cada item, causa raíz anotada en BUGS.md. **16 items cerrados por código** + 3 que dependen de acción del usuario en Meta.
+
+**P0 (bloqueaban cobrar) — TODOS cerrados (verificados E2E por el usuario):**
+- P0-1 pago tarjeta 401: la ruta `/pay/card` ya era pública; el 401 venía de Stripe; añadido try/catch que loguea el motivo y no filtra "Unauthorized" (`110913b`). + clave Stripe válida en Railway (usuario).
+- P0-2 "Abrir PDF" → not_found: `generateInvoicePdf` funciona; el pdfUrl se quedaba en `PENDING_PDF`. Nueva ruta `GET /admin/invoices/:id/pdf` que genera bajo demanda y sirve; helper `ensureInvoicePdf` (`04f4886`, refactor `0bf44f7`).
+- P0-3 factura no→PAGADA: el marcado dependía de `ensureInvoiceForCharge` (que genera PDF y podía lanzar). Ahora se marca la factura ligada (chargeId o vía quote) **independiente del PDF** en `psp.routes` (`c7c3298`).
+- P0-4 factura no llega al cliente: `sendInvoiceEmail` usaba nodemailer/SMTP → sin SMTP solo escribía `.eml`. Ahora **Resend + PDF adjunto** (`0bf44f7`). WhatsApp de factura → P3-4 (Meta).
+
+**P1 — todos cerrados (`110c73f`, `9ef6671`, `9c28055`, `d13313a`, `3d64887`):** CTA aceptar/firmar siempre verde (no el brandColor); sin "Factura X · Factura X"; motivo de rechazo REAL persistido (el router `/pay` se montaba antes del `urlencoded` → body vacío; + reenvío de reason/comment por separado); género "aceptado/firmado" por locale; "cotización"→término del locale en demo ES; confirmación WhatsApp con nº de factura real (sin "##") y nombre del negocio (`legalName||name`).
+
+**P2 / P3 cerrados:** P2-1 (Duplicar + motivo, ya existía, desbloqueado por P1-3); P2-2 (tras enviar, abre el detalle SENT+timeline, `11ebdc6`); P3-2 (send-whatsapp devuelve 200 ok:false con mensaje claro, nunca 502, `950d120`).
+
+**🔒 Quedan SOLO acciones del usuario en Meta (no son código):**
+- **P3-1**: poner el botón de plantilla como **URL dinámica** (`…/pay/quote/{{1}}`) + re-aprobar. El código ya es robusto al `{{1}}` (`parseNumericId`, `a25a1ce`), así que no urge.
+- **P3-4**: crear/re-aprobar plantilla de confirmación con botón **"Ver factura"** → al existir, añadir builder en `whatsappTemplates.ts` + envío en el pago confirmado (la factura ya llega por email).
+- **P3-3**: recrear las 3 plantillas como **Utility** (no cambia código).
+
+**⏸️ NO tocado a propósito (lo dice el propio BUGS.md):** P4 (security-review, multi-tenant real — "NO ahora") y sección **"NO TOCAR AÚN"** (fotos/R2, i18n LATAM, métodos de pago extra, verificación visual tiers).
 
 ### ✅ Completado en la sesión 2026-06-08 — modal de cotización + exención owner
 Todo commit→push directo a `main`, verificado en navegador a 390px/1100px (preview antes de push en los rediseños):
@@ -347,25 +367,28 @@ Helpers reutilizables en `api.js`: `uiErrorState(container,msg,onRetry)`, `uiMar
 **MCP:** registrado (`claude mcp add playwright "npx @playwright/mcp@latest"`, en `.claude.json` local) pero **`✗ Failed to connect`** — sus tools `browser_*` NO se cargan en la sesión. Reiniciar Claude Code *podría* arreglarlo ahora que Chromium está instalado (era la causa probable del fallo de arranque), pero no es necesario:
 **Workaround probado (no requiere el MCP ni reiniciar):** script efímero en `scripts/` que hace `createRequire(...\_npx\9833c18b2d85bc59\node_modules)` → `playwright`, levanta un server estático mínimo sobre `public/` (con `/admin/me` → 401 para que el redirect del login sea no-op) y screenshotea a viewport 390×844 (iPhone, DPR 2). Para prod: navegar directo a `https://yaqu.app/...`. Borrar el script y `.shots/` al terminar.
 
-### 🎯 Próximos pasos prioritarios al retomar
-1. **Cuando Meta apruebe:** probar las 3 plantillas con `wa-test.mjs` y validar el loop completo (cotización→acepta→factura→pago→confirmación).
-2. **Diseño (HECHO 2026-06-06 cont.):** el dashboard ya consume `tokens.css` y la salud de la crítica móvil subió a 35/40. El backlog ≤P2 que quedaba ya está CERRADO (skeletons en listas, Escape en modal, aria-live en home/modal/auth, rename `--slate-*`→`--neutral-*`). Resto opcional: `aria-live` en el 100% de vistas dinámicas, skeleton de gastos (lista en divs), re-critique para medir el score actualizado (>35).
-3. **Sin bloqueo:** más tests (extraer los *builders* de componentes de plantillas WA a un módulo puro y testearlos); seguir el pase de accesibilidad (lectores de pantalla en estados dinámicos).
-4. **Cuando lleguen creds R2:** Sprint PHOTOS.
+### 🎯 Próximos pasos prioritarios al retomar (al 10 jun 2026)
+> El recorrido del bug se gobierna por **`docs/BUGS.md`** (mira sus `[x]` y las notas de causa raíz). Todo lo de código está cerrado; lo abierto es acción del usuario o explícitamente diferido.
+1. **Acciones del usuario en Meta** (cierran P3-1/P3-4/P3-3): poner el botón de plantilla como URL dinámica `…/pay/quote/{{1}}`; crear plantilla de confirmación con botón "Ver factura"; recrear plantillas como Utility. Cuando el usuario avise: en P3-4 añadir el builder en `whatsappTemplates.ts` + envío en el flujo de pago confirmado; en P3-1 (opcional) quitar el workaround `parseNumericId`.
+2. **Webhook entrante WhatsApp:** crear `WHATSAPP_VERIFY_TOKEN` en Railway + registrar webhook en Meta (tarea usuario; código WA-2 ya hecho).
+3. **P4 cuando se decida lanzar:** `/security-review` (maneja pagos) + multi-tenant real (quitar `merchantId=1` hardcodeado). Hoy marcado "NO ahora" en BUGS.md.
+4. **Sin bloqueo / opcional:** `aria-live` en el 100% de vistas dinámicas, skeleton de Gastos, re-`critique` móvil (score >35), más tests.
+5. **Cuando lleguen creds R2:** Sprint PHOTOS.
 
 ## Próximos sprints — EJECUTAR EN ESTE ORDEN
 
 > ⚠️ Lista histórica. AHORA-1/2, WA(código), UX-1, FRONT-1, LANDING, TUTORIAL, PHOTOS(bloqueado), EMAIL, REFERRAL, ANALYTICS y ENTERPRISE ya están **hechos** (ver "ESTADO ACTUAL" arriba). Lo realmente pendiente:
 
 ```
-🔴 WhatsApp:  prueba real (esperando aprobación Meta) + webhook entrante (tarea usuario)
+🟢 BUGS:      docs/BUGS.md — P0/P1/P2/P3-2 CERRADOS. Abierto: P3-1/3/4 (acción Meta usuario), P4 (NO ahora)
+🔴 WhatsApp:  plantillas APROBADAS + loop E2E validado por el usuario. Falta: botón URL dinámica/Utility en Meta (P3-1/3) + factura por WA (P3-4) + webhook entrante (verify token)
 🟢 PHOTOS:    Fotos del trabajo — BLOQUEADO por credenciales Cloudflare R2
 ⚫ LATAM:     Pagos LATAM (OXXO, PSE, MP producción) — creds
 ⚫ SPAIN:     VeriFactu XML, modelo 303, factura rectificativa
 ⚫ PWA:       Push, offline, TWA Google Play
 ⚫ WA-BOT:    Bot conversacional WA (crear cotizaciones por WhatsApp)
 ⚫ SEO:       Blog + landing pages por oficio
-🛠 Sin bloqueo: más tests (builders de plantillas WA a módulo puro), accesibilidad/hardening
+🛠 Sin bloqueo: aria-live en todas las vistas, skeleton de Gastos, re-critique móvil, más tests
 ```
 
 ## Documento de producto completo

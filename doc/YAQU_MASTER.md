@@ -265,6 +265,9 @@ STORAGE_PUBLIC_URL            ❌
 
 # PARTE C — BUGS CONOCIDOS Y DEUDA TÉCNICA
 
+> 📌 **Backlog VIVO de bugs: `docs/BUGS.md`** (E2E 8 jun → sprint 9–10 jun). Es la fuente de verdad operativa; esta Parte C es histórica.
+> **Estado 10 jun 2026:** todos los P0/P1/P2 + P3-2 **cerrados por código** (pago tarjeta, factura PAGADA, factura por email con PDF, Abrir PDF on-demand, botón verde, motivo de rechazo real, textos de confirmación…). Abierto solo: **acciones del usuario en Meta** (P3-1 URL dinámica, P3-4 botón "Ver factura"/factura por WhatsApp, P3-3 Marketing→Utility) y **P4** (security-review + multi-tenant real, "NO ahora"). C-V1 (divisa tiers) y C-V2 (owner) verificados en la E2E del cliente.
+
 ## C1. CRÍTICO — Bloquean la venta o el uso normal
 
 | # | Bug | Impacto |
