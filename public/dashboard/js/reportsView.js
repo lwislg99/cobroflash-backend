@@ -75,6 +75,11 @@ async function renderReportsView(container) {
   summaryCard.className = 'customers-card';
   wrap.appendChild(summaryCard);
 
+  // ── IVA repercutido (modelo 303) ─────────────────────────────────────────
+  const vatCard = document.createElement('div');
+  vatCard.className = 'customers-card';
+  wrap.appendChild(vatCard);
+
   // ── Analytics: funnel + rentabilidad por servicio ────────────────────────
   const funnelCard = document.createElement('div');
   funnelCard.className = 'customers-card';
@@ -205,8 +210,93 @@ async function renderReportsView(container) {
     btnQuot.href = `/admin/exports/quotes.csv?from=${year}-01-01&to=${year}-12-31`;
   }
 
-  yearSelect.addEventListener('change', () => load(yearSelect.value));
+  // ── Carga del bloque IVA (modelo 303) ────────────────────────────────────
+  const currentQuarter = Math.floor(new Date().getMonth() / 3) + 1;
+  let vatQuarter = currentQuarter;
+
+  async function loadVat(year) {
+    vatCard.innerHTML = '<p style="color:var(--neutral-400);font-size:13px;padding:8px 0">Cargando IVA…</p>';
+
+    let data;
+    try {
+      data = await apiRequest(`/admin/reports/vat?year=${year}&quarter=${vatQuarter}`);
+    } catch {
+      vatCard.innerHTML = '<p style="color:var(--red-600);font-size:13px">Error al cargar el resumen de IVA.</p>';
+      return;
+    }
+
+    const fmt = (n) => Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    vatCard.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+        <div>
+          <h3 style="margin:0 0 4px;font-size:13px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em">IVA repercutido · modelo 303</h3>
+          <p style="margin:0;font-size:12px;color:var(--neutral-400)">Facturas emitidas del ${data.from} al ${data.to} (devengo). Las rectificativas restan.</p>
+        </div>
+        <div id="vat-quarter-row" style="display:flex;gap:4px"></div>
+      </div>
+    `;
+
+    // Selector de trimestre (segmented)
+    const qRow = vatCard.querySelector('#vat-quarter-row');
+    for (let q = 1; q <= 4; q++) {
+      const b = document.createElement('button');
+      b.className = q === vatQuarter ? 'btn-primary btn-sm' : 'btn-ghost btn-sm';
+      b.textContent = `${q}T`;
+      b.addEventListener('click', () => { vatQuarter = q; loadVat(yearSelect.value); });
+      qRow.appendChild(b);
+    }
+
+    if (!data.rates.length && !data.excluded.count) {
+      vatCard.innerHTML += '<p style="color:var(--neutral-400);font-size:13px">Sin facturas emitidas en este trimestre.</p>';
+      return;
+    }
+
+    const tableWrap = document.createElement('div');
+    tableWrap.className = 'table-scroll';
+    const table = document.createElement('table');
+    table.className = 'table';
+    table.style.minWidth = '420px';
+    table.innerHTML = `
+      <thead><tr>
+        <th>Tipo IVA</th>
+        <th style="text-align:right">Base imponible</th>
+        <th style="text-align:right">Cuota</th>
+      </tr></thead>
+    `;
+    const tbody = document.createElement('tbody');
+    data.rates.forEach((r) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight:600">${r.rate}%</td>
+        <td style="text-align:right">${fmt(r.base)} ${data.currency}</td>
+        <td style="text-align:right;font-weight:600">${fmt(r.cuota)} ${data.currency}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    const trTotal = document.createElement('tr');
+    trTotal.style.cssText = 'background:var(--neutral-50);font-weight:700;border-top:2px solid var(--neutral-200)';
+    trTotal.innerHTML = `
+      <td>TOTAL ${vatQuarter}T ${data.year}</td>
+      <td style="text-align:right">${fmt(data.totals.base)} ${data.currency}</td>
+      <td style="text-align:right;color:var(--green-700)">${fmt(data.totals.cuota)} ${data.currency}</td>
+    `;
+    tbody.appendChild(trTotal);
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+    vatCard.appendChild(tableWrap);
+
+    if (data.excluded.count > 0) {
+      const note = document.createElement('p');
+      note.style.cssText = 'margin:10px 0 0;font-size:12px;color:var(--neutral-500)';
+      note.textContent = `⚠ ${data.excluded.count} factura(s) sin desglose de líneas (total ${fmt(data.excluded.total)} ${data.currency}) no incluidas en el cuadro — revísalas a mano.`;
+      vatCard.appendChild(note);
+    }
+  }
+
+  yearSelect.addEventListener('change', () => { load(yearSelect.value); loadVat(yearSelect.value); });
   load(currentYear);
+  loadVat(currentYear);
 }
 
 // ── Analytics: funnel de conversión + rentabilidad por servicio ──────────

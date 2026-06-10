@@ -1102,9 +1102,40 @@ El director necesita datos para su gestoría.
 ### Tareas:
 1. VeriFactu: completar el envío al SIF de la AEAT — ⏸ DIFERIDO: requiere **certificado digital** del emisor (tarea usuario); el resto del sprint no depende de ello
 2. Exportar RRSIF (formato XML para Hacienda) — pendiente (SPAIN-4)
-3. Resumen IVA trimestral: modelo 303 (desglose IVA repercutido) — pendiente (SPAIN-3)
+3. Resumen IVA trimestral: modelo 303 (desglose IVA repercutido) — ✅ HECHO (SPAIN-3, detalle abajo)
 4. Factura rectificativa (tipo `R1`) para devoluciones — ✅ HECHO (SPAIN-2, detalle abajo)
 5. Series de facturación por año (2026-CF-001, 2027-CF-001) — ✅ HECHO (SPAIN-1, detalle abajo)
+
+### ✅ SPAIN-3 · Resumen IVA trimestral — modelo 303 (2026-06-10)
+
+**Qué se construyó:** cuadro de **IVA repercutido por trimestre** en la vista Informes: base imponible
+y cuota por cada tipo de IVA (21/10/4/0…), exactamente los datos que el profesional (o su gestor)
+copia en las casillas de IVA devengado del modelo 303.
+
+**Archivos:**
+- **Nuevo** `src/modules/invoicing/domain/vat.service.ts` — helper compartido:
+  - `calcVatBreakdown(lines)` → agrupa las líneas por tipo (`tax` es FRACCIÓN, 0.21=21%) y devuelve
+    `{ entries: [{rate, base, cuota}], base, cuota }` con redondeo a 2 decimales al final.
+  - `calcVatCuotaTotal(lines)` → cuota total (lo usa SPAIN-4 para la huella VeriFactu y el XML).
+- **Endpoint** `GET /admin/reports/vat?year=&quarter=` (`src/modules/reports/app/routes/reports.routes.ts`,
+  patrón de `/pl`, multi-tenant por `req.merchantId`): facturas **emitidas** en el trimestre
+  (criterio de **devengo** = `createdAt`, independiente de si están cobradas — así funciona el 303 en
+  régimen general). Las **rectificativas R1 restan** automáticamente (líneas en negativo). Devuelve
+  `{ year, quarter, from, to, currency, rates, totals: {base, cuota}, invoiceCount, excluded }`.
+- **Front** `public/dashboard/js/reportsView.js`: card "IVA repercutido · modelo 303" bajo el resumen
+  mensual, con selector segmented de trimestre (1T-4T) + el selector de año existente; tabla
+  Tipo / Base imponible / Cuota con fila TOTAL.
+- Tests: **nuevo** `tests/vat.test.mjs` (agrupación por tipo, negativos de rectificativa, vacío/null,
+  redondeo); añadido al script `test`.
+
+**Decisiones:**
+- Facturas antiguas **sin `lines`** (solo total): no se pueden desglosar por tipo → se EXCLUYEN del
+  cuadro y se avisa debajo ("N factura(s) sin desglose… revísalas a mano") en vez de inventar un 0%
+  que falsearía la declaración.
+- Solo IVA repercutido (ventas). El soportado (gastos) requeriría desglose de IVA en `Expense`, que
+  hoy no existe — fuera de alcance.
+
+**Commit:** `feat(spain): resumen IVA trimestral (modelo 303) en Informes`
 
 ### ✅ SPAIN-2 · Factura rectificativa R1 (2026-06-10)
 
