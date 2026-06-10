@@ -86,30 +86,36 @@
 
 ## P2 — Mejoras de producto / UX
 
-### [ ] P2-1 · Acciones sobre presupuestos rechazados
+### [x] P2-1 · Acciones sobre presupuestos rechazados
 - **Mejora:** mostrar el motivo del cliente (depende de P1-3) y hacer visible **"Duplicar"** (o "Duplicar y editar") para revisar y reenviar. NO construir versionado/reapertura todavía — Duplicar es suficiente para el MVP.
+- **CERRADO (9 jun):** ya implementado — el detalle muestra "Motivo de rechazo" + "Comentario" (correctos desde P1-3) y el botón "⎘ Duplicar" está siempre visible en la cabecera (carga las líneas/tiers en un presupuesto nuevo, `duplicateQuote`). Sin código nuevo; lo desbloqueaba P1-3.
 
-### [ ] P2-2 · Feedback al enviar presupuesto
+### [x] P2-2 · Feedback al enviar presupuesto
 - **Mejora:** el aviso "Presupuesto enviado por WhatsApp" es muy discreto. Tras enviar, redirigir al detalle del presupuesto (muestra SENT + timeline) o mostrar un toast claro con enlace "Ver presupuesto".
+- **CERRADO (9 jun):** commit `11ebdc6` — tras enviar desde la quick-quote, navega al **detalle** del presupuesto (estado SENT + timeline) con toast acorde al locale.
 
 ---
 
 ## P3 — Técnico / raíz (registrar, abordar después de P1)
 
-### [ ] P3-1 · Plantilla Meta `quote_decision_es`: `{{1}}` sin sustituir
+### [ ] P3-1 · Plantilla Meta `quote_decision_es`: `{{1}}` sin sustituir  🔒 ACCIÓN EN META (usuario) — código ya robusto
 - **Síntoma:** el botón genera `/pay/quote/{{1}}23` (el `{{1}}` no se sustituye). Ya hay un workaround en el backend que hace funcionar el flujo.
 - **Arreglo de raíz:** en WhatsApp Manager, el botón de URL debe ser **"Tipo de URL: Dinámico"**, base `https://yaqu.app/pay/quote/{{1}}`, muestra `https://yaqu.app/pay/quote/abc123`. Revisar también `payment_request_es` por el mismo problema. (Requiere re-aprobación de Meta.)
 - **Done cuando:** la URL del botón llega limpia (`/pay/quote/23`) sin depender del workaround.
+- **Estado (10 jun):** lado código YA resuelto (workaround robusto `parseNumericId`, commit `a25a1ce`). **Lo único pendiente es la acción en Meta** (tipo de URL dinámica) + re-aprobación — no se puede hacer desde el código. Una vez hecho, opcionalmente quitar el workaround.
 
-### [ ] P3-2 · Manejo de error en el envío de WhatsApp
+### [x] P3-2 · Manejo de error en el envío de WhatsApp
 - **Mejora:** que `/admin/quotes/:id/send-whatsapp` devuelva un mensaje claro cuando Meta rechaza, nunca un 502. (Verificar si ya está resuelto; el error de Meta ya se loguea.)
+- **CERRADO (10 jun):** commit `950d120` — responde 200 `ok:false` con `message` legible (incluye el motivo de Meta), nunca 502; el front (quick-quote y quotesView) lo muestra.
 
-### [ ] P3-4 · Entregar la factura también por WhatsApp (botón "Ver factura")
+### [ ] P3-4 · Entregar la factura también por WhatsApp (botón "Ver factura")  🔒 ACCIÓN EN META (usuario)
 - **Contexto:** P0-4 dejó la entrega de factura por **email** (Resend + PDF). Falta el canal WhatsApp.
 - **Arreglo:** crear/re-aprobar en Meta una plantilla de confirmación de pago con un **botón URL dinámica** "Ver factura" → `https://yaqu.app/...` (PDF/página de la factura), mismo patrón que "Ver presupuesto"/"Pagar ahora". Luego añadir el builder en `whatsappTemplates.ts` y enviarla en el flujo de pago confirmado. (Requiere alta/re-aprobación en Meta.)
+- **Estado (10 jun):** bloqueado en acción de Meta (usuario). El builder + envío se añaden cuando exista la plantilla aprobada.
 
-### [ ] P3-3 · Plantillas en categoría Marketing → Utility
+### [ ] P3-3 · Plantillas en categoría Marketing → Utility  🔒 ACCIÓN EN META (usuario)
 - **Mejora:** recrear `quote_decision_es`, `payment_request_es` y `payment_confirmation_es` como **Utility** (no Marketing) antes de escalar — mejor entregabilidad y coste. No urgente.
+- **Estado (10 jun):** acción de Meta (usuario), no hay nada que cambiar en el código (los nombres de plantilla no cambian).
 
 ---
 
