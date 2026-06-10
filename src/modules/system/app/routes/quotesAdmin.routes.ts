@@ -259,9 +259,17 @@ router.post('/:id/send-whatsapp', async (req, res) => {
 
     if (!result.ok) {
       console.error('[send-whatsapp] Error de Meta API:', result.error);
-      return res.status(502).json({
+      // P3-2: NO devolver un 502 crudo. El presupuesto sigue guardado; informamos
+      // con un mensaje claro (incluyendo el motivo de Meta si lo hay) y 200 ok:false.
+      const metaMsg =
+        (result.error as any)?.error?.message ||
+        (typeof result.error === 'string' ? result.error : '') ||
+        'WhatsApp rechazó el envío';
+      return res.status(200).json({
         ok: false,
+        sent: false,
         error: 'whatsapp_send_failed',
+        message: `No se pudo enviar por WhatsApp: ${metaMsg}. El presupuesto quedó guardado; puedes reintentarlo.`,
         detail: result.error,
       });
     }

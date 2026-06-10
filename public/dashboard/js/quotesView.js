@@ -145,12 +145,12 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
           throw new Error("Error enviando por WhatsApp: " + res.status + " " + bodyText);
         }
         const body = await res.json();
-        setAlert(
-          "success",
-          body.ok
-            ? "Presupuesto enviado por WhatsApp."
-            : "Presupuesto creado, pero no se ha podido confirmar el envío por WhatsApp."
-        );
+        // P3-2: si Meta rechazó, el backend devuelve 200 ok:false con un mensaje claro.
+        if (body.ok) {
+          setAlert("success", "Presupuesto enviado por WhatsApp.");
+        } else {
+          setAlert("error", body.message || "Presupuesto creado, pero no se pudo enviar por WhatsApp.");
+        }
         setResult({ quote_id: quoteId, status: "DRAFT", sent: !!body.ok });
         overlay.remove();
       } catch (err) {

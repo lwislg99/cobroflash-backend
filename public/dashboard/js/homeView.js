@@ -933,10 +933,12 @@ async function submitQuickQuote() {
     closeQuickQuote();
 
     const qLabel = (window.appLocale && window.appLocale.quote) || 'presupuesto';
+    const qCap = qLabel.charAt(0).toUpperCase() + qLabel.slice(1);
     if (sendResult.sent) {
-      showToast(`✓ ${qLabel.charAt(0).toUpperCase() + qLabel.slice(1)} enviado por WhatsApp`);
+      showToast(`✓ ${qCap} enviado por WhatsApp`);
     } else {
-      showToast(`${qLabel.charAt(0).toUpperCase() + qLabel.slice(1)} creado. Envío WhatsApp pendiente.`, true);
+      // P3-2: mensaje claro del backend si Meta rechazó (en vez de un 502 críptico)
+      showToast(sendResult.message || `${qCap} creado. Envío WhatsApp pendiente.`, true);
     }
 
     // P2-2: en vez de volver a Home con un aviso discreto, abrimos el DETALLE del
