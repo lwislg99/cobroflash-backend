@@ -1103,8 +1103,49 @@ El director necesita datos para su gestoría.
 1. VeriFactu: completar el envío al SIF de la AEAT — ⏸ DIFERIDO: requiere **certificado digital** del emisor (tarea usuario); el resto del sprint no depende de ello
 2. Exportar RRSIF (formato XML para Hacienda) — pendiente (SPAIN-4)
 3. Resumen IVA trimestral: modelo 303 (desglose IVA repercutido) — pendiente (SPAIN-3)
-4. Factura rectificativa (tipo `R1`) para devoluciones — pendiente (SPAIN-2)
+4. Factura rectificativa (tipo `R1`) para devoluciones — ✅ HECHO (SPAIN-2, detalle abajo)
 5. Series de facturación por año (2026-CF-001, 2027-CF-001) — ✅ HECHO (SPAIN-1, detalle abajo)
+
+### ✅ SPAIN-2 · Factura rectificativa R1 (2026-06-10)
+
+**Qué se construyó:** emisión de facturas rectificativas (tipo `R1`, RD 1619/2012) desde el detalle
+de factura del dashboard. La rectificativa copia las líneas de la original con los **importes en
+negativo**, se numera en una **serie propia separada** (`2026-CF-R-001`, exigencia legal) y queda
+vinculada a la original en ambos sentidos.
+
+**Archivos:**
+- `prisma/schema.prisma`: `Invoice.type String @default("F1")` (`F1`|`R1`), `Invoice.rectifiesId Int?`
+  + self-relation `rectifies`/`rectifiedBy`; `Merchant.nextRectInvoiceNumber Int @default(1)` (contador
+  de la serie R; comparte `invoiceSeriesYear` con la principal — al cambiar de año se resetean LOS DOS).
+- `src/modules/invoicing/domain/invoiceNumber.service.ts`: `allocateInvoiceNumber(tx, merchantId,
+  { rectifying: true })` → usa el contador R y el formato `2026-CF-R-001`.
+- **Endpoint** `POST /admin/invoices/:id/rectify` (`src/modules/system/app/routes/invoicesAdmin.routes.ts`):
+  valida multi-tenant (`req.merchantId`), rechaza rectificar una R1 (`409 cannot_rectify_rectification`)
+  y rectificar dos veces (`409 already_rectified` con el nº existente). Crea la R1 en transacción con su
+  número de serie; si la original no tiene `lines`, genera una línea única "Rectificación de la factura X"
+  por el total en negativo. Aplica VeriFactu con `tipoFactura: 'R1'` (merchants ES con NIF) y registra
+  `CustomerEvent` `invoice_rectified` (fire-and-forget).
+- `src/modules/invoicing/domain/verifactu.service.ts`: `applyVeriFactu` lee `invoice.type` y firma la
+  huella con `R1` cuando corresponde (antes `F1` hardcodeado).
+- **PDF** (`src/modules/invoicing/infra/pdf/pdf.service.ts`): nuevos params `type`/`rectifiesNumber`;
+  si es R1, título "FACTURA RECTIFICATIVA" en rojo + línea "Rectifica a la factura Nº X". Cableado en
+  `ensureInvoicePdf` (botón "Abrir PDF", genera bajo demanda) y en `POST /:id/regenerate-pdf`.
+- `src/modules/system/invoiceAdmin.ts`: el detalle incluye `rectifies` y `rectifiedBy` (id + number).
+- **Front** `public/dashboard/js/invoiceDetailView.js`: badge "RECTIFICATIVA", filas "Rectifica a" /
+  "Rectificada por", botón "⎌ Rectificar factura" (con confirm; solo F1 sin rectificativa previa; al
+  emitir navega al detalle de la R1). En una R1 se ocultan las acciones de cobro (reenviar WhatsApp,
+  marcar pagada/pendiente) porque no es cobrable.
+
+**Decisiones:**
+- La rectificativa nace `status: 'paid'` con `paidAt = ahora`: no es cobrable (no recibe recordatorios,
+  que filtran `pending`) y su total negativo **resta en el P&L** en el mes de emisión — el efecto fiscal
+  y el de caja quedan reflejados sin tocar los reports.
+- La factura original NO cambia de estado: el vínculo `rectifiedBy` deja el rastro y la suma neta de
+  ambas es 0. (Rectificación parcial: fuera de alcance MVP; siempre se rectifica el total.)
+
+**Migración BD (aplicada a prod 2026-06-10):** 3 columnas aditivas + FK self (ver docs/MIGRATIONS_PENDING.md).
+
+**Commit:** `feat(spain): factura rectificativa R1 con serie propia`
 
 ### ✅ SPAIN-1 · Series de facturación por año (2026-06-10)
 

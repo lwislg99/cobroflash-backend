@@ -85,6 +85,7 @@ export async function applyVeriFactu(
     total: { toString(): string };
     createdAt: Date;
     merchantId: number;
+    type?: string | null; // 'F1' (default) | 'R1' rectificativa
   },
   taxId: string,
   prismaClient = defaultPrisma,
@@ -109,7 +110,7 @@ export async function applyVeriFactu(
     nif: taxId,
     serie: invoice.number,
     fecha,
-    tipoFactura: 'F1',
+    tipoFactura: invoice.type === 'R1' ? 'R1' : 'F1',
     cuotaTotal: '0.00', // TODO Sprint N: calcular cuota IVA real desde líneas
     importeTotal,
     prevHash,

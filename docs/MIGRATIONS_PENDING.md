@@ -4,6 +4,16 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
+## SPAIN-2 · Factura rectificativa — ✅ APLICADO en prod (2026-06-10)
+
+`prisma db push` aplicado contra `autorack.proxy.rlwy.net` (Railway), autorizado por el usuario.
+Diff previsualizado con `migrate diff`, 100% aditivo:
+- `ALTER TABLE invoices ADD COLUMN type TEXT NOT NULL DEFAULT 'F1'` (F1 | R1)
+- `ALTER TABLE invoices ADD COLUMN rectifies_id INTEGER` (nullable, FK self a invoices.id, ON DELETE SET NULL)
+- `ALTER TABLE merchants ADD COLUMN next_rect_invoice_number INTEGER NOT NULL DEFAULT 1` (serie R)
+
+---
+
 ## SPAIN-1 · Serie anual de facturación — ✅ APLICADO en prod (2026-06-10)
 
 `prisma db push` aplicado contra `autorack.proxy.rlwy.net` (Railway), autorizado por el usuario.

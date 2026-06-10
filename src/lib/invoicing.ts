@@ -20,7 +20,7 @@ export async function ensureInvoicePdf(
 ): Promise<{ diskPath: string; pdfUrl: string; number: string }> {
   const inv = await prisma.invoice.findUnique({
     where: { id: invoiceId },
-    include: { merchant: true, customer: true },
+    include: { merchant: true, customer: true, rectifies: { select: { number: true } } },
   });
   if (!inv) throw new Error('invoice_not_found');
   if (!inv.merchant || !inv.customer) throw new Error('missing_relations');
@@ -69,6 +69,8 @@ export async function ensureInvoicePdf(
       vfHash,
       createdAt: inv.createdAt,
       lines,
+      type: inv.type,
+      rectifiesNumber: inv.rectifies?.number ?? null,
     });
     await prisma.invoice.update({ where: { id: invoiceId }, data: { pdfUrl: publicUrlPath, qrData } });
   }

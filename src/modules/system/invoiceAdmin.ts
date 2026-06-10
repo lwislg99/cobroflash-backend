@@ -49,6 +49,8 @@ export async function getInvoiceDetailAdmin(id: number) {
       merchant: true,
       customer: true,
       quote: true,
+      rectifies:   { select: { id: true, number: true } }, // original (si esta es R1)
+      rectifiedBy: { select: { id: true, number: true } }, // rectificativa emitida (si existe)
     },
   });
 }

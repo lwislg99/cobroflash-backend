@@ -94,6 +94,12 @@ async function fetchInvoiceDetail(id) {
       badge.textContent = '✓ VeriFactu';
       numLine.appendChild(badge);
     }
+    if (invoice.type === 'R1') {
+      const badge = document.createElement('span');
+      badge.style.cssText = 'font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--red-50);color:var(--red-600);border:1px solid var(--red-600)';
+      badge.textContent = 'RECTIFICATIVA';
+      numLine.appendChild(badge);
+    }
     stateBlock.appendChild(numLine);
 
     const spanStatus = document.createElement('span');
@@ -141,6 +147,8 @@ async function fetchInvoiceDetail(id) {
     addDefRow(dl, 'Cliente', invoice.customer?.name);
     addDefRow(dl, 'Creada', invoice.createdAt ? new Date(invoice.createdAt).toLocaleString('es-ES') : null);
     addDefRow(dl, 'Pagada', invoice.paidAt ? new Date(invoice.paidAt).toLocaleString('es-ES') : null);
+    addDefRow(dl, 'Rectifica a', invoice.rectifies ? invoice.rectifies.number : null);
+    addDefRow(dl, 'Rectificada por', (invoice.rectifiedBy && invoice.rectifiedBy.length) ? invoice.rectifiedBy.map((r) => r.number).join(', ') : null);
     if (!dl.children.length) dl.innerHTML = '<dd style="color:var(--muted)">Sin datos.</dd>';
     dataSec.appendChild(dl);
     page.appendChild(dataSec);
@@ -212,8 +220,9 @@ async function fetchInvoiceDetail(id) {
       }
     });
   
-    actions.appendChild(btnWhatsApp);
-  
+    // Una rectificativa no es cobrable: sin reenvío de cobro por WhatsApp
+    if (invoice.type !== 'R1') actions.appendChild(btnWhatsApp);
+
     // Marcar como PAGADA / PENDIENTE
     const btnTogglePaid = document.createElement('button');
     btnTogglePaid.className = 'btn-secondary btn-sm';
@@ -255,7 +264,7 @@ async function fetchInvoiceDetail(id) {
       }
     });
   
-    actions.appendChild(btnTogglePaid);
+    if (invoice.type !== 'R1') actions.appendChild(btnTogglePaid);
 
     // Botón Recordar pago (solo visible si la factura está pendiente y el cliente tiene teléfono)
     if (st === 'pending' && invoice.customer?.phone) {
@@ -282,6 +291,41 @@ async function fetchInvoiceDetail(id) {
         }
       });
       actions.appendChild(btnReminder);
+    }
+
+    // Botón Rectificar (solo facturas F1 sin rectificativa previa)
+    const alreadyRectified = invoice.rectifiedBy && invoice.rectifiedBy.length > 0;
+    if (invoice.type !== 'R1' && !alreadyRectified) {
+      const btnRectify = document.createElement('button');
+      btnRectify.className = 'btn-danger btn-sm';
+      btnRectify.textContent = '⎌ Rectificar factura';
+      btnRectify.title = 'Emite una factura rectificativa (R1) con los importes en negativo';
+      btnRectify.addEventListener('click', async () => {
+        const ok = window.confirm(
+          `Se emitirá una factura rectificativa de ${invoice.number} con los importes en negativo (anula su efecto fiscal). Esta acción no se puede deshacer. ¿Continuar?`
+        );
+        if (!ok) return;
+        btnRectify.disabled = true;
+        btnRectify.textContent = 'Emitiendo…';
+        try {
+          const r = await fetch(`/admin/invoices/${invoice.id}/rectify`, { method: 'POST' });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            const msg = d.error === 'already_rectified'
+              ? `Esta factura ya tiene rectificativa (${d.rectification?.number || ''}).`
+              : 'Error emitiendo la rectificativa.';
+            throw new Error(msg);
+          }
+          setStatus('success', `✓ Rectificativa ${d.number} emitida.`);
+          // Abrir el detalle de la nueva rectificativa
+          if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: d.id });
+        } catch (e) {
+          setStatus('error', e && e.message ? e.message : 'Error emitiendo la rectificativa.');
+          btnRectify.disabled = false;
+          btnRectify.textContent = '⎌ Rectificar factura';
+        }
+      });
+      actions.appendChild(btnRectify);
     }
 
     // Botón Regenerar PDF (con VeriFactu si aplica)

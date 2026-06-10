@@ -11,6 +11,8 @@ import {
 import { BASE_URL } from '../../../../core/config/env';
 import { prisma } from '../../../../core/db/prisma';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
+import { allocateInvoiceNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { recordCustomerEvent } from '../../customerEvents.service';
 import { generateInvoicePdf } from '../../../../lib/pdf';
 
 import { sendWhatsAppTemplate, sendWhatsAppText } from '../../../../integrations/whatsapp';
@@ -262,6 +264,97 @@ router.post('/:id/send-reminder', async (req, res) => {
 });
 
 /**
+ * POST /admin/invoices/:id/rectify
+ * Emite una FACTURA RECTIFICATIVA (tipo R1, RD 1619/2012) de la factura dada:
+ * mismas líneas con importes en NEGATIVO, serie propia (2026-CF-R-001) y
+ * referencia a la original. La rectificativa nace 'paid' (no es cobrable: no
+ * debe recibir recordatorios y su total negativo resta en el P&L al emitirse).
+ */
+router.post('/:id/rectify', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+
+    const original = await prisma.invoice.findFirst({
+      where: { id, merchantId: req.merchantId },
+      include: { merchant: true },
+    });
+    if (!original) return res.status(404).json({ error: 'not_found' });
+    if (original.type === 'R1') {
+      return res.status(409).json({ error: 'cannot_rectify_rectification' });
+    }
+
+    const existing = await prisma.invoice.findFirst({
+      where: { merchantId: req.merchantId, rectifiesId: id },
+      select: { id: true, number: true },
+    });
+    if (existing) {
+      return res.status(409).json({ error: 'already_rectified', rectification: existing });
+    }
+
+    // Líneas en negativo; si la original no tiene líneas, una única línea por el total
+    const origLines = Array.isArray(original.lines) ? (original.lines as any[]) : [];
+    const negLines = origLines.length > 0
+      ? origLines.map((l: any) => ({ ...l, price: -(Number(l.price) || 0) }))
+      : [{ concept: `Rectificación de la factura ${original.number}`, qty: 1, price: -Number(original.total), tax: 0 }];
+
+    const rect = await prisma.$transaction(async (tx) => {
+      const number = await allocateInvoiceNumber(tx, req.merchantId, { rectifying: true });
+      return tx.invoice.create({
+        data: {
+          merchantId: original.merchantId,
+          customerId: original.customerId,
+          quoteId: original.quoteId,
+          number,
+          total: (-Number(original.total)).toFixed(2),
+          currency: original.currency,
+          lines: negLines,
+          type: 'R1',
+          rectifiesId: original.id,
+          status: 'paid',
+          paidAt: new Date(),
+          pdfUrl: 'PENDING_PDF',
+          qrData: 'PENDING_QR',
+          registerId: null,
+        },
+      });
+    });
+
+    // VeriFactu (tipoFactura R1) para merchants españoles con NIF
+    let vfApplied = false;
+    if (original.merchant?.country === 'ES' && original.merchant.taxId) {
+      try {
+        await applyVeriFactu(rect, original.merchant.taxId, prisma);
+        vfApplied = true;
+      } catch (e) {
+        console.error('[rectify] Error al aplicar VeriFactu:', e);
+      }
+    }
+
+    recordCustomerEvent({
+      merchantId: original.merchantId,
+      customerId: original.customerId,
+      type: 'invoice_rectified',
+      title: `Factura ${original.number} rectificada (${rect.number})`,
+      meta: { invoiceId: original.id, rectificationId: rect.id },
+    });
+
+    return res.status(201).json({
+      ok: true,
+      id: rect.id,
+      number: rect.number,
+      total: rect.total.toString(),
+      currency: rect.currency,
+      rectifies: { id: original.id, number: original.number },
+      veriFactu: vfApplied,
+    });
+  } catch (err) {
+    console.error('[POST /admin/invoices/:id/rectify]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
  * POST /admin/invoices/:id/regenerate-pdf
  * Regenera el PDF de una factura aplicando VeriFactu si corresponde.
  * Útil para facturas creadas antes del sprint VeriFactu.
@@ -273,7 +366,7 @@ router.post('/:id/regenerate-pdf', async (req, res) => {
 
     const invoice = await prisma.invoice.findFirst({
       where: { id, merchantId: req.merchantId },
-      include: { merchant: true, customer: true },
+      include: { merchant: true, customer: true, rectifies: { select: { number: true } } },
     });
 
     if (!invoice) return res.status(404).json({ error: 'not_found' });
@@ -320,6 +413,8 @@ router.post('/:id/regenerate-pdf', async (req, res) => {
       vfHash,
       createdAt: invoice.createdAt,
       lines: invLines,
+      type: invoice.type,
+      rectifiesNumber: invoice.rectifies?.number ?? null,
     });
 
     await prisma.invoice.update({

@@ -21,6 +21,7 @@ model Merchant {
   invoiceSeriesPrefix  String  @default("CF")  @map("invoice_series_prefix")
   nextInvoiceNumber    Int     @default(1)      @map("next_invoice_number")
   invoiceSeriesYear    Int?    @map("invoice_series_year") // año de la serie en curso; al cambiar de año el contador vuelve a 1 (serie anual: 2026-CF-001)
+  nextRectInvoiceNumber Int    @default(1) @map("next_rect_invoice_number") // contador de la serie de rectificativas (2026-CF-R-001), también se resetea por año
   logoUrl              String? @map("logo_url")
   whatsappPhone        String? @map("whatsapp_phone")
   googleReviewUrl      String? @map("google_review_url")
@@ -231,6 +232,10 @@ model Invoice {
   // Líneas de detalle (copiadas del Quote o del Charge al crear la factura)
   lines Json?
 
+  // Tipo de factura (RD 1619/2012 / VeriFactu): F1 = completa estándar | R1 = rectificativa
+  type        String @default("F1")
+  rectifiesId Int?   @map("rectifies_id") // factura original a la que rectifica (solo R1)
+
   // VeriFactu (Reglamento de Facturación España — RTSF RD 1007/2023)
   vfHash     String? @map("vf_hash")      // huella SHA-256 de esta factura
   vfPrevHash String? @map("vf_prev_hash") // huella de la factura anterior en la cadena
@@ -245,6 +250,9 @@ model Invoice {
   customer Customer @relation(fields: [customerId], references: [id])
   quote    Quote?   @relation(fields: [quoteId], references: [id])
   charge   Charge?  @relation(fields: [chargeId], references: [id])
+
+  rectifies   Invoice?  @relation("Rectification", fields: [rectifiesId], references: [id])
+  rectifiedBy Invoice[] @relation("Rectification")
 
   // El número es único POR MERCHANT (antes era único global: dos merchants con el
   // mismo prefijo "CF" colisionaban; la serie es del emisor, no de la plataforma)

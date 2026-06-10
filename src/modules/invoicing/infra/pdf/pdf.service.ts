@@ -43,6 +43,8 @@ export async function generateInvoicePdf(params: {
   vfHash?: string | null;
   createdAt?: Date | null;
   lines?: Array<{ concept: string; qty: number; price: number; tax: number }> | null;
+  type?: string | null;            // 'F1' (default) | 'R1' rectificativa
+  rectifiesNumber?: string | null; // nº de la factura original (solo R1)
 }) {
   const fileName = `${params.number}.pdf`;
   const outPath  = path.join(invoicesDir, fileName);
@@ -87,12 +89,16 @@ export async function generateInvoicePdf(params: {
     } catch { /* logo inválido, ignorar */ }
   }
 
-  // Título "FACTURA" + Nº + Fecha a la derecha
-  doc.fontSize(22).font('Helvetica-Bold').fillColor('#0f172a')
-    .text('FACTURA', M, headerY, { width: W, align: 'right' });
+  // Título "FACTURA" (o "FACTURA RECTIFICATIVA") + Nº + Fecha a la derecha
+  const isRect = params.type === 'R1';
+  doc.fontSize(isRect ? 17 : 22).font('Helvetica-Bold').fillColor(isRect ? '#b91c1c' : '#0f172a')
+    .text(isRect ? 'FACTURA RECTIFICATIVA' : 'FACTURA', M, headerY, { width: W, align: 'right' });
   doc.fontSize(10).font('Helvetica').fillColor('#64748b')
     .text(`Nº ${params.number}`, { align: 'right' });
   doc.text(`Fecha: ${dateStr(params.createdAt)}`, { align: 'right' });
+  if (isRect && params.rectifiesNumber) {
+    doc.text(`Rectifica a la factura Nº ${params.rectifiesNumber}`, { align: 'right' });
+  }
   doc.fillColor('#000');
 
   // Avanzar por debajo del logo (si lo hay) o del texto

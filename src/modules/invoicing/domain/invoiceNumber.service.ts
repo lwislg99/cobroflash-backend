@@ -34,23 +34,43 @@ export function resolveSeriesSeq(
  * Reserva el siguiente número de la serie anual del merchant y avanza el contador.
  * DEBE llamarse dentro de la misma transacción que crea la factura, para que
  * un fallo en el create no deje huecos en la serie.
+ *
+ * `rectifying: true` usa la serie separada de rectificativas (2026-CF-R-001),
+ * obligatoria legalmente. Ambas series comparten `invoiceSeriesYear`: al cambiar
+ * de año se resetean LOS DOS contadores.
  */
 export async function allocateInvoiceNumber(
   tx: Prisma.TransactionClient,
   merchantId: number,
+  opts: { rectifying?: boolean } = {},
   now = new Date(),
 ): Promise<string> {
   const year = now.getFullYear();
   const m = await tx.merchant.findUnique({
     where: { id: merchantId },
-    select: { invoiceSeriesPrefix: true, nextInvoiceNumber: true, invoiceSeriesYear: true },
+    select: {
+      invoiceSeriesPrefix: true,
+      nextInvoiceNumber: true,
+      nextRectInvoiceNumber: true,
+      invoiceSeriesYear: true,
+    },
   });
   if (!m) throw new Error('merchant_not_found');
 
-  const seq = resolveSeriesSeq(m, year);
+  const rect = !!opts.rectifying;
+  const sameYear = m.invoiceSeriesYear === year;
+  const seq = rect
+    ? (sameYear ? m.nextRectInvoiceNumber : 1)
+    : resolveSeriesSeq(m, year);
+
   await tx.merchant.update({
     where: { id: merchantId },
-    data: { nextInvoiceNumber: seq + 1, invoiceSeriesYear: year },
+    data: {
+      invoiceSeriesYear: year,
+      ...(rect
+        ? { nextRectInvoiceNumber: seq + 1, ...(sameYear ? {} : { nextInvoiceNumber: 1 }) }
+        : { nextInvoiceNumber: seq + 1, ...(sameYear ? {} : { nextRectInvoiceNumber: 1 }) }),
+    },
   });
-  return formatInvoiceNumber(m.invoiceSeriesPrefix, year, seq);
+  return formatInvoiceNumber(m.invoiceSeriesPrefix, year, seq, rect);
 }
