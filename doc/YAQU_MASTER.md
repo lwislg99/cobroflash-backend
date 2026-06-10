@@ -1095,7 +1095,7 @@ El director necesita datos para su gestoría.
 
 ---
 
-## SPRINT SPAIN — España completo (5 días) — 🚀 EN CURSO (2026-06-10)
+## SPRINT SPAIN — España completo (5 días) — ✅ COMPLETADO (2026-06-10, salvo envío SIF: requiere certificado digital del usuario)
 
 **Objetivo:** Producto listo para el mercado español y la regulación VeriFactu obligatoria.
 
@@ -1488,7 +1488,7 @@ Semana 9-10:
 
 Semana 11-12:
   SPRINT LATAM: Pagos LATAM (4 días)
-  SPRINT SPAIN: España completo (5 días)
+  SPRINT SPAIN: ✅ COMPLETADO 2026-06-10 (series anuales, R1, modelo 303, XML RRSIF; envío SIF pendiente de certificado)
   SPRINT PWA: Mobile quality (4 días)
 
 Semana 13-16:

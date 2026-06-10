@@ -133,9 +133,13 @@ merchantId, customerId, type, title, detail?, meta (Json?), createdAt
 ### Invoice
 ```
 merchantId, customerId, quoteId?, chargeId?
-number, total, currency, pdfUrl, qrData, status (pending|paid|expired), paidAt
-lines (Json?), vfHash, vfPrevHash (VeriFactu)
+number (único POR MERCHANT, serie anual: 2026-CF-001 / rectificativas 2026-CF-R-001)
+type (F1|R1), rectifiesId? (self-relation rectifies/rectifiedBy)
+total, currency, pdfUrl, qrData, status (pending|paid|expired), paidAt
+lines (Json?), vfHash, vfPrevHash (VeriFactu; huella con cuota IVA real y tipoFactura F1/R1)
 reminder7SentAt, reminder14SentAt
+// Numeración SIEMPRE vía modules/invoicing/domain/invoiceNumber.service.ts (allocateInvoiceNumber en transacción)
+// Merchant: invoiceSeriesYear (reset anual de contadores) + nextRectInvoiceNumber (serie R)
 ```
 
 ### Expense
@@ -230,7 +234,7 @@ GET/PUT /admin/merchant
 POST /admin/onboarding/complete
 GET/POST /admin/customers (+ /:id, /import, /:id/portal-url, /:id/detail)
 GET/POST /admin/quotes (+ /:id, /:id/send-whatsapp [gate plan], /:id/notes, /:id/accept, /:id/reject, /:id/invoice, /:id/approve [admin, ENT-2])
-GET/PUT  /admin/invoices (+ /:id, /:id/status, /:id/resend-whatsapp, /:id/send-reminder, /:id/regenerate-pdf)
+GET/PUT  /admin/invoices (+ /:id, /:id/status, /:id/resend-whatsapp, /:id/send-reminder, /:id/regenerate-pdf, /:id/pdf, /:id/rectify [emite R1])
 POST /admin/invoices/bulk-paid
 GET  /admin/products (autocomplete, export, import, + CRUD)
 GET  /admin/providers (+ CRUD)
@@ -240,8 +244,8 @@ POST /admin/billing/checkout, /portal
 GET  /admin/billing/plans
 GET/PUT /admin/team (+ /:id, /:id/resend)
 POST /admin/ai/suggest-quote, /quote-message
-GET  /admin/exports/invoices.csv, /expenses.csv, /quotes.csv
-GET  /admin/reports/pl
+GET  /admin/exports/invoices.csv, /expenses.csv, /quotes.csv, /verifactu.xml?year= (RRSIF, solo ES+NIF)
+GET  /admin/reports/pl, /admin/reports/vat?year=&quarter= (modelo 303)
 GET/POST/PUT/DELETE /admin/templates
 GET/PATCH /admin/quote-requests
 GET  /admin/search
@@ -263,6 +267,15 @@ GET  /admin/referral, POST /admin/referral/redeem (admin — canjea 1 mes gratis
 - ✅ Sprints 7-19 + AHORA-1/2 + UX-1 + LANDING + TUTORIAL + EMAIL + FRONT-1 + ANALYTICS + REFERRAL + ENTERPRISE (ver doc/YAQU_MASTER.md y la memoria del proyecto)
 
 ## 📌 ESTADO ACTUAL — leer primero al retomar (última sesión: 2026-06-10)
+
+### ✅ Completado en la sesión 2026-06-10 (cont.) — SPRINT SPAIN (detalle completo en doc/YAQU_MASTER.md §"SPRINT SPAIN")
+Todo commit→push a `main`, `npm test` en verde por item (28 tests), 2 db push aditivos aplicados a prod con autorización del usuario (ver `docs/MIGRATIONS_PENDING.md`):
+- **SPAIN-1 series anuales** (`1892d58`): numeración `2026-CF-001` centralizada en `src/modules/invoicing/domain/invoiceNumber.service.ts` (`allocateInvoiceNumber(tx, merchantId, {rectifying?})` dentro de la transacción del create; reset a 1 al cambiar de año). Los 4 puntos de creación migrados; eliminado el `nextInvoiceNumber()` aleatorio de utils. `Invoice.number` ahora es único POR MERCHANT (`@@unique([merchantId, number])`); `Merchant.invoiceSeriesYear`.
+- **SPAIN-2 rectificativa R1** (`9baf79e`): `POST /admin/invoices/:id/rectify` — líneas en negativo, serie propia `2026-CF-R-001` (`Merchant.nextRectInvoiceNumber`), vínculo `Invoice.rectifiesId` (self-relation `rectifies`/`rectifiedBy`), `Invoice.type` F1|R1. Nace `status:'paid'` (no cobrable; su negativo resta en P&L). VeriFactu firma `tipoFactura R1`; PDF rotula "FACTURA RECTIFICATIVA"+referencia. Front: badge, vínculos y botón "⎌ Rectificar" en invoiceDetailView; acciones de cobro ocultas en R1.
+- **SPAIN-3 modelo 303** (`fe40b93`): `GET /admin/reports/vat?year&quarter` — base+cuota por tipo de IVA desde las líneas de las facturas EMITIDAS en el trimestre (devengo=createdAt); R1 resta; sin líneas → excluida y avisada. Helper compartido `src/modules/invoicing/domain/vat.service.ts` (`calcVatBreakdown`/`calcVatCuotaTotal`). Card con selector 1T-4T en Informes (reportsView.js).
+- **SPAIN-4 VeriFactu** (`0784068`): la huella firma con la **cuota IVA real** (cierra el TODO '0.00'; la cadena no se rompe — usa vfPrevHash guardado). `GET /admin/exports/verifactu.xml?year=` — registro RRSIF del ejercicio (RegistroFacturacionAlta por factura: desglose, F1/R1+FacturasRectificadas, encadenamiento de huellas); 409 claro si no es ES/sin NIF; botón "⬇ VeriFactu XML" en Informes.
+- **⏸ Diferido del sprint:** envío telemático al SIF de la AEAT — requiere **certificado digital** (TAREA USUARIO). El XML del export es la base del RegistroAlta cuando exista.
+- **⚠ Verificación E2E pendiente en yaqu.app** (BD local sin datos ricos): crear factura → nº `2026-CF-00X`; rectificar → R1 negativa + PDF rotulado; cuadro 303 con facturas con IVA; descarga del XML en el merchant demo (ES+NIF).
 
 ### ✅ Completado en la sesión 2026-06-09/10 — SPRINT DE BUGS E2E (backlog `docs/BUGS.md`)
 Tras la prueba E2E del cliente (8 jun), se registró el backlog en **`docs/BUGS.md`** (fuente de verdad, con reglas de trabajo). Recorrido completo, uno a uno, commit+push cada item, causa raíz anotada en BUGS.md. **16 items cerrados por código** + 3 que dependen de acción del usuario en Meta.
@@ -371,6 +384,7 @@ Helpers reutilizables en `api.js`: `uiErrorState(container,msg,onRetry)`, `uiMar
 > El recorrido del bug se gobierna por **`docs/BUGS.md`** (mira sus `[x]` y las notas de causa raíz). Todo lo de código está cerrado; lo abierto es acción del usuario o explícitamente diferido.
 1. **Acciones del usuario en Meta** (cierran P3-1/P3-4/P3-3): poner el botón de plantilla como URL dinámica `…/pay/quote/{{1}}`; crear plantilla de confirmación con botón "Ver factura"; recrear plantillas como Utility. Cuando el usuario avise: en P3-4 añadir el builder en `whatsappTemplates.ts` + envío en el flujo de pago confirmado; en P3-1 (opcional) quitar el workaround `parseNumericId`.
 2. **Webhook entrante WhatsApp:** crear `WHATSAPP_VERIFY_TOKEN` en Railway + registrar webhook en Meta (tarea usuario; código WA-2 ya hecho).
+2bis. **Sprint SPAIN — remates:** verificar E2E en yaqu.app (factura nueva → `2026-CF-00X`; rectificar → R1; cuadro 303; descarga XML). Envío SIF: pedir/configurar **certificado digital** (tarea usuario). Siguiente sprint ejecutable sin input externo: **PWA**.
 3. **P4 cuando se decida lanzar:** `/security-review` (maneja pagos) + multi-tenant real (quitar `merchantId=1` hardcodeado). Hoy marcado "NO ahora" en BUGS.md.
 4. **Sin bloqueo / opcional:** `aria-live` en el 100% de vistas dinámicas, skeleton de Gastos, re-`critique` móvil (score >35), más tests.
 5. **Cuando lleguen creds R2:** Sprint PHOTOS.
@@ -384,8 +398,8 @@ Helpers reutilizables en `api.js`: `uiErrorState(container,msg,onRetry)`, `uiMar
 🔴 WhatsApp:  plantillas APROBADAS + loop E2E validado por el usuario. Falta: botón URL dinámica/Utility en Meta (P3-1/3) + factura por WA (P3-4) + webhook entrante (verify token)
 🟢 PHOTOS:    Fotos del trabajo — BLOQUEADO por credenciales Cloudflare R2
 ⚫ LATAM:     Pagos LATAM (OXXO, PSE, MP producción) — creds
-⚫ SPAIN:     VeriFactu XML, modelo 303, factura rectificativa
-⚫ PWA:       Push, offline, TWA Google Play
+✅ SPAIN:     COMPLETADO 2026-06-10 (series anuales, R1, modelo 303, XML RRSIF). Falta SOLO envío SIF (certificado digital, usuario)
+⚫ PWA:       Push, offline, TWA Google Play — SIGUIENTE ejecutable sin input externo
 ⚫ WA-BOT:    Bot conversacional WA (crear cotizaciones por WhatsApp)
 ⚫ SEO:       Blog + landing pages por oficio
 🛠 Sin bloqueo: aria-live en todas las vistas, skeleton de Gastos, re-critique móvil, más tests
