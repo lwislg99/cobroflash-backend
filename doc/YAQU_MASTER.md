@@ -1095,18 +1095,55 @@ El director necesita datos para su gestoría.
 
 ---
 
-## SPRINT SPAIN — España completo (5 días)
+## SPRINT SPAIN — España completo (5 días) — 🚀 EN CURSO (2026-06-10)
 
 **Objetivo:** Producto listo para el mercado español y la regulación VeriFactu obligatoria.
 
 ### Tareas:
-1. VeriFactu: completar el envío al SIF de la AEAT (actualmente solo genera el QR)
-2. Exportar RRSIF (formato XML para Hacienda)
-3. Resumen IVA trimestral: modelo 303 (desglose IVA repercutido)
-4. Factura rectificativa (tipo `R1`) para devoluciones
-5. Series de facturación por año (2026-CF-001, 2027-CF-001)
+1. VeriFactu: completar el envío al SIF de la AEAT — ⏸ DIFERIDO: requiere **certificado digital** del emisor (tarea usuario); el resto del sprint no depende de ello
+2. Exportar RRSIF (formato XML para Hacienda) — pendiente (SPAIN-4)
+3. Resumen IVA trimestral: modelo 303 (desglose IVA repercutido) — pendiente (SPAIN-3)
+4. Factura rectificativa (tipo `R1`) para devoluciones — pendiente (SPAIN-2)
+5. Series de facturación por año (2026-CF-001, 2027-CF-001) — ✅ HECHO (SPAIN-1, detalle abajo)
 
-**Commit:** `feat(spain): VeriFactu completo + exportación XML + resumen IVA 303`
+### ✅ SPAIN-1 · Series de facturación por año (2026-06-10)
+
+**Qué se construyó:** numeración de facturas en serie anual correlativa por merchant, formato
+`2026-CF-001` (año + `invoiceSeriesPrefix` del merchant + secuencia con padding 3 que crece sin
+truncar a partir de 999). Al cambiar el año natural, el contador vuelve a 1 (serie nueva, práctica
+estándar del Reglamento de Facturación). La asignación quedó **centralizada en un único servicio**:
+antes había 4 puntos de creación con 3 formatos distintos (`CF000007`, `CF-00005` y un
+`CF-INV-YYYYMM-XXXX` aleatorio que ni siquiera era correlativo).
+
+**Archivos:**
+- **Nuevo** `src/modules/invoicing/domain/invoiceNumber.service.ts` — único punto que asigna números:
+  - `formatInvoiceNumber(prefix, year, seq, rectifying?)` → `2026-CF-001` (con `rectifying`, `2026-CF-R-001` — lo usará SPAIN-2).
+  - `resolveSeriesSeq(merchant, year)` → continúa el contador si `invoiceSeriesYear === year`; si no, serie nueva desde 1.
+  - `allocateInvoiceNumber(tx, merchantId)` → reserva número y avanza el contador **dentro de la misma
+    transacción** que crea la factura (un fallo del create no deja huecos en la serie).
+- `prisma/schema.prisma`:
+  - `Merchant.invoiceSeriesYear Int?` (`invoice_series_year`) — año de la serie en curso.
+  - `Invoice.number`: de `@unique` **global** a `@@unique([merchantId, number])`. Razón: la serie es del
+    emisor; con el unique global, dos merchants con el prefijo por defecto `CF` colisionaban (y con el
+    reseteo anual la colisión era segura). Verificado por grep que nada consulta facturas por `number` solo.
+- Puntos de creación migrados al servicio (los 4): `src/modules/system/app/routes/quotesAdmin.routes.ts`
+  (POST /admin/quotes/:id/invoice), `src/modules/quotes/app/routes/quotes.routes.ts` (aceptación pública
+  POST /quote/:id/decision), `src/modules/system/quoteAdmin.ts` (createInvoiceFromQuoteAdmin) y
+  `src/lib/invoicing.ts` (ensureInvoiceForCharge paso 3 — el que usaba el número aleatorio).
+- `src/core/utils/utils.ts`: eliminado `nextInvoiceNumber()` (aleatorio) para que nadie lo reutilice.
+- Tests: **nuevo** `tests/invoiceNumber.test.mjs` (formato, padding, fallback de prefijo, serie R,
+  reseteo anual, merchant antiguo sin año → serie nueva); añadido al script `test` de package.json.
+
+**Decisiones:**
+- Los merchants existentes (números viejos tipo `CF000007`) arrancan `2026-CF-001` en su próxima
+  factura: es una serie nueva legal y no colisiona con los números antiguos (formato distinto).
+- Concurrencia: mismo nivel de garantía que antes (lectura+update en transacción); el unique compuesto
+  actúa de red de seguridad si dos transacciones simultáneas del mismo merchant compitieran.
+
+**Migración BD (aplicada a prod 2026-06-10, ver docs/MIGRATIONS_PENDING.md):** añadir columna nullable
+`merchants.invoice_series_year` + swap del índice único de `invoices.number` al compuesto. Sin pérdida de datos.
+
+**Commit:** `feat(spain): series de facturación por año (2026-CF-001) + numeración centralizada`
 
 ---
 

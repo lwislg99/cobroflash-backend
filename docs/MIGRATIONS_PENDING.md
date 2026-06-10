@@ -4,6 +4,19 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
+## SPAIN-1 · Serie anual de facturación — ✅ APLICADO en prod (2026-06-10)
+
+`prisma db push` aplicado contra `autorack.proxy.rlwy.net` (Railway), autorizado por el usuario.
+Diff previsualizado con `migrate diff` y confirmado seguro (3 operaciones, sin pérdida de datos):
+- `ALTER TABLE merchants ADD COLUMN invoice_series_year INTEGER` (nullable, aditivo)
+- `DROP INDEX invoices_number_key` (unique global de `number` — colisionaba entre merchants con el mismo prefijo)
+- `CREATE UNIQUE INDEX invoices_merchantId_number_key ON invoices(merchantId, number)` (la serie es del emisor)
+
+El create del índice compuesto no podía fallar: no existían duplicados `(merchantId, number)`
+(el unique global previo lo garantizaba). Nadie consulta facturas por `number` solo (verificado por grep).
+
+---
+
 ## ENT-3 · `CustomerEvent` (historial de comunicaciones) — ✅ APLICADO en prod (2026-06-05)
 
 `prisma db push` aplicado contra `autorack.proxy.rlwy.net` (Railway). Diff confirmado

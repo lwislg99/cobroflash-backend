@@ -21,14 +21,10 @@ export function normalizePhone(input?: string | null): string {
     return `CF-${ymd}-${rand}`;
   }
   
-  export function nextInvoiceNumber() {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const seq = Math.random().toString(36).slice(2, 6).toUpperCase();
-    return `CF-INV-${y}${m}-${seq}`;
-  }
-  
+  // nextInvoiceNumber() (aleatorio) eliminado en Sprint SPAIN: los números de
+  // factura los asigna SIEMPRE modules/invoicing/domain/invoiceNumber.service.ts
+  // (serie anual correlativa por merchant: 2026-CF-001).
+
   // Extrae el id numérico real de un parámetro de ruta, tolerando URLs "sucias".
   // El botón URL dinámica de WhatsApp puede dejar el placeholder sin sustituir
   // (p. ej. "{{1}}23" en vez de "23"); aquí quitamos primero cualquier "{{...}}"

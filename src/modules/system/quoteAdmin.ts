@@ -1,5 +1,6 @@
 // src/modules/system/quoteAdmin.ts
 import { prisma } from '../../core/db/prisma';
+import { allocateInvoiceNumber } from '../invoicing/domain/invoiceNumber.service';
 
 /**
  * Lista de presupuestos para el panel admin.
@@ -290,12 +291,9 @@ export async function createInvoiceFromQuoteAdmin(quoteId: number) {
 
   const merchant = quote.merchant;
 
-  const nextNumber = merchant.nextInvoiceNumber;
-  const prefix = merchant.invoiceSeriesPrefix || 'CF';
-  const formattedNumber = `${prefix}-${String(nextNumber).padStart(5, '0')}`;
-
   const invoice = await prisma.$transaction(async (tx) => {
-    const inv = await tx.invoice.create({
+    const formattedNumber = await allocateInvoiceNumber(tx, merchant.id);
+    return tx.invoice.create({
       data: {
         merchantId: merchant.id,
         customerId: quote.customerId,
@@ -308,15 +306,6 @@ export async function createInvoiceFromQuoteAdmin(quoteId: number) {
         registerId: null,        // 👈 opcional en tu schema
       },
     });
-
-    await tx.merchant.update({
-      where: { id: merchant.id },
-      data: {
-        nextInvoiceNumber: { increment: 1 },
-      },
-    });
-
-    return inv;
   });
 
   return invoice;

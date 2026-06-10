@@ -17,6 +17,7 @@ import { sendTechQuoteApprovedEmail } from '../../../messaging/domain/merchantNo
 import { normalizePhone } from '../../../../core/utils/utils';
 import { BASE_URL } from '../../../../core/config/env';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
+import { allocateInvoiceNumber } from '../../../invoicing/domain/invoiceNumber.service';
 
 import fetch from 'node-fetch';
 
@@ -150,9 +151,6 @@ router.post('/:id/invoice', async (req, res) => {
     const totalNumber = Number(quote.total);
     const invoiceAmount = totalNumber * stage.percentage;
     const merchant = quote.merchant;
-    const nextNumber = merchant.nextInvoiceNumber;
-    const padded = String(nextNumber).padStart(6, '0');
-    const invoiceNumber = `${merchant.invoiceSeriesPrefix}${padded}`;
 
     // Escalar las líneas de la cotización al porcentaje facturado (ej. 50% en FIFTY_FIFTY)
     const quoteLines = Array.isArray(quote.lines) ? quote.lines as any[] : [];
@@ -160,8 +158,9 @@ router.post('/:id/invoice', async (req, res) => {
       ? quoteLines.map((l: any) => ({ ...l, price: Number(l.price) * stage.percentage }))
       : quoteLines;
 
-    const [invoice] = await prisma.$transaction([
-      prisma.invoice.create({
+    const invoice = await prisma.$transaction(async (tx) => {
+      const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId);
+      return tx.invoice.create({
         data: {
           merchantId: quote.merchantId,
           customerId: quote.customerId,
@@ -174,12 +173,8 @@ router.post('/:id/invoice', async (req, res) => {
           qrData: 'PENDING_QR',
           registerId: null,
         },
-      }),
-      prisma.merchant.update({
-        where: { id: merchant.id },
-        data: { nextInvoiceNumber: { increment: 1 } },
-      }),
-    ]);
+      });
+    });
 
     // Aplicar VeriFactu para merchants españoles con NIF
     let vfApplied = false;

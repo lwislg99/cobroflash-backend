@@ -32,6 +32,7 @@ async function getCreatorTeamMemberId(req: any): Promise<number | null> {
 import { generateQuotePdf } from '../../../../lib/pdf';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
+import { allocateInvoiceNumber } from '../../../invoicing/domain/invoiceNumber.service';
 
 
 const router = Router();
@@ -455,13 +456,9 @@ router.post('/:id/decision', async (req, res) => {
         const totalNumber = Number(quote.total);
         const invoiceAmount = totalNumber * percentage;
 
-        const merchant = quote.merchant;
-        const nextNumber = merchant.nextInvoiceNumber;
-        const padded = String(nextNumber).padStart(6, '0');
-        const invoiceNumber = `${merchant.invoiceSeriesPrefix}${padded}`;
-
-        const [invoice] = await prisma.$transaction([
-          prisma.invoice.create({
+        const invoice = await prisma.$transaction(async (tx) => {
+          const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId);
+          return tx.invoice.create({
             data: {
               merchantId: quote.merchantId,
               customerId: quote.customerId,
@@ -473,14 +470,8 @@ router.post('/:id/decision', async (req, res) => {
               qrData: 'PENDING_QR',
               registerId: null,
             },
-          }),
-          prisma.merchant.update({
-            where: { id: merchant.id },
-            data: {
-              nextInvoiceNumber: { increment: 1 },
-            },
-          }),
-        ]);
+          });
+        });
 
         createdInvoice = invoice;
 

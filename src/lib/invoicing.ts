@@ -2,7 +2,7 @@
 import path from 'path';
 import fs from 'fs';
 import { PrismaClient } from '@prisma/client';
-import { nextInvoiceNumber } from '../core/utils/utils';
+import { allocateInvoiceNumber } from '../modules/invoicing/domain/invoiceNumber.service';
 import { generateInvoicePdf } from './pdf';
 import { BASE_URL } from '../core/config/env';
 import { invoicesDir } from '../core/storage/dirs';
@@ -183,8 +183,7 @@ export async function ensureInvoiceForCharge(
     if (existing) return ensurePdfAndEvent(existing, ch);
   }
 
-  // 3) Nueva factura desde el charge
-  const number = nextInvoiceNumber();
+  // 3) Nueva factura desde el charge — número de la serie anual del merchant
 
   // Líneas: desde el quote si existe; si no, línea única del charge
   const quoteLines = quote
@@ -194,18 +193,21 @@ export async function ensureInvoiceForCharge(
     ? (quoteLines.lines as any[])
     : [{ concept: ch.concept, qty: 1, price: Number(ch.amount), tax: 0 }];
 
-  const inv = await prisma.invoice.create({
-    data: {
-      merchantId: ch.merchantId,
-      customerId: ch.customerId ?? (() => { throw new Error('missing_customer_in_charge'); })(),
-      quoteId: quote?.id ?? null,
-      number,
-      total: ch.amount.toString(),
-      currency: ch.currency.toUpperCase(),
-      lines: invoiceLines,
-      pdfUrl: `${BASE_URL}/invoices/${number}.pdf`,
-      qrData: `INV:${number}|AMOUNT:${ch.amount.toString()}|CUR:${ch.currency}|REF:${ch.reference ?? ''}`,
-    },
+  const inv = await prisma.$transaction(async (tx) => {
+    const number = await allocateInvoiceNumber(tx, ch.merchantId);
+    return tx.invoice.create({
+      data: {
+        merchantId: ch.merchantId,
+        customerId: ch.customerId ?? (() => { throw new Error('missing_customer_in_charge'); })(),
+        quoteId: quote?.id ?? null,
+        number,
+        total: ch.amount.toString(),
+        currency: ch.currency.toUpperCase(),
+        lines: invoiceLines,
+        pdfUrl: `${BASE_URL}/invoices/${number}.pdf`,
+        qrData: `INV:${number}|AMOUNT:${ch.amount.toString()}|CUR:${ch.currency}|REF:${ch.reference ?? ''}`,
+      },
+    });
   });
 
   return ensurePdfAndEvent(inv, ch);

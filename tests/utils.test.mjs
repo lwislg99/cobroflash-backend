@@ -44,10 +44,6 @@ test('makeReference: formato CF-YYYYMMDD-XXXX y único', () => {
   assert.notEqual(r1, r2); // parte aleatoria distinta
 });
 
-test('nextInvoiceNumber: formato CF-INV-YYYYMM-XXXX', () => {
-  assert.match(U.nextInvoiceNumber(), /^CF-INV-\d{6}-[A-Z0-9]{1,4}$/);
-});
-
 test('parseNumericId: tolera URLs sucias del botón de WhatsApp', () => {
   assert.equal(U.parseNumericId('23'), 23);             // limpio
   assert.equal(U.parseNumericId('{{1}}23'), 23);        // placeholder sin sustituir (¡no 123!)
