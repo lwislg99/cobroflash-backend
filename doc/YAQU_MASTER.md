@@ -1101,10 +1101,42 @@ El director necesita datos para su gestoría.
 
 ### Tareas:
 1. VeriFactu: completar el envío al SIF de la AEAT — ⏸ DIFERIDO: requiere **certificado digital** del emisor (tarea usuario); el resto del sprint no depende de ello
-2. Exportar RRSIF (formato XML para Hacienda) — pendiente (SPAIN-4)
+2. Exportar RRSIF (formato XML para Hacienda) — ✅ HECHO (SPAIN-4, detalle abajo)
 3. Resumen IVA trimestral: modelo 303 (desglose IVA repercutido) — ✅ HECHO (SPAIN-3, detalle abajo)
 4. Factura rectificativa (tipo `R1`) para devoluciones — ✅ HECHO (SPAIN-2, detalle abajo)
 5. Series de facturación por año (2026-CF-001, 2027-CF-001) — ✅ HECHO (SPAIN-1, detalle abajo)
+
+### ✅ SPAIN-4 · Cuota IVA real en la huella VeriFactu + export XML RRSIF (2026-06-10)
+
+**Qué se construyó:**
+1. **Huella VeriFactu con cuota real**: `applyVeriFactu` ya no firma con `cuotaTotal: '0.00'` (era un
+   TODO); ahora lee las líneas de la factura y calcula la cuota total con `calcVatCuotaTotal()`
+   (vat.service de SPAIN-3). Solo afecta a huellas que se generen a partir de ahora — la cadena no se
+   rompe porque cada factura usa el `vfPrevHash` GUARDADO de la anterior, no lo recalcula.
+2. **Export XML RRSIF**: `GET /admin/exports/verifactu.xml?year=` — registro de facturación del año
+   (un `RegistroFacturacionAlta` por factura) con estructura inspirada en el XSD
+   `SuministroInformacion` de la AEAT: `IDFactura` (NIF + NumSerie + FechaExpedicion),
+   `TipoFactura` F1/R1, `FacturasRectificadas` (en las R1, con el nº y fecha de la original),
+   `Desglose` por tipo de IVA (`DetalleDesglose`: TipoImpositivo, BaseImponible, CuotaRepercutida),
+   `CuotaTotal`, `ImporteTotal`, `Encadenamiento` (huella del registro anterior o `PrimerRegistro=S`)
+   y `Huella` SHA-256. Es el registro que puede pedir el asesor/AEAT.
+
+**Archivos:**
+- `src/modules/invoicing/domain/verifactu.service.ts` — cuota real en `computeVeriFactuHash` input.
+- `src/modules/exports/app/routes/exports.routes.ts` — ruta `/verifactu.xml` (junto a los CSV);
+  escape XML propio (apos incluido), fechas DD-MM-YYYY como el resto de VeriFactu; facturas sin
+  líneas → desglose único a tipo 0 por el total (el XML no puede omitirlas: la cadena las incluye);
+  facturas sin `vfHash` (anteriores a VeriFactu) van sin bloque `Encadenamiento`/`Huella`.
+- **Front** `public/dashboard/js/reportsView.js`: botón "⬇ VeriFactu XML" junto a los exports CSV;
+  descarga vía fetch para poder mostrar el aviso si el negocio no es ES o no tiene NIF
+  (el endpoint devuelve `409 verifactu_not_applicable` con mensaje claro).
+
+**Decisiones / límites:**
+- Guard de aplicabilidad en el endpoint: solo `country='ES'` con `taxId`; resto → 409 con mensaje.
+- El **envío telemático al SIF de la AEAT** sigue pendiente: requiere certificado digital del emisor
+  (tarea usuario). Cuando exista, este mismo XML es la base del `RegistroAlta` a enviar.
+
+**Commit:** `feat(spain): cuota IVA real en huella VeriFactu + export XML RRSIF`
 
 ### ✅ SPAIN-3 · Resumen IVA trimestral — modelo 303 (2026-06-10)
 

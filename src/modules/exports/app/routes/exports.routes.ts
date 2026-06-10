@@ -1,6 +1,7 @@
 // src/modules/exports/app/routes/exports.routes.ts
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
+import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
 
 const router = Router();
 
@@ -71,6 +72,125 @@ router.get('/invoices.csv', async (req, res) => {
   } catch (err) {
     console.error('[exports/invoices.csv]', err);
     res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// ── GET /admin/exports/verifactu.xml ──────────────────────────────────────
+// Registro de facturación RRSIF (VeriFactu, RD 1007/2023) del año pedido.
+// Estructura inspirada en el XSD SuministroInformacion de la AEAT
+// (RegistroFacturacionAlta: IDFactura, Desglose por tipo, CuotaTotal,
+// Encadenamiento de huellas, Huella SHA-256). El ENVÍO telemático real al SIF
+// requiere certificado digital del emisor — pendiente (tarea usuario).
+router.get('/verifactu.xml', async (req, res) => {
+  try {
+    const year = Number(req.query.year) || new Date().getFullYear();
+
+    const merchant = await prisma.merchant.findUnique({ where: { id: req.merchantId } });
+    if (!merchant) return res.status(404).json({ error: 'merchant_not_found' });
+    if (merchant.country !== 'ES' || !merchant.taxId) {
+      return res.status(409).json({
+        error: 'verifactu_not_applicable',
+        message: 'VeriFactu solo aplica a negocios de España con NIF configurado (Ajustes → Datos fiscales).',
+      });
+    }
+
+    const invoices = await prisma.invoice.findMany({
+      where: {
+        merchantId: req.merchantId,
+        createdAt: {
+          gte: new Date(year, 0, 1),
+          lte: new Date(year, 11, 31, 23, 59, 59, 999),
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        customer:  { select: { name: true } },
+        rectifies: { select: { number: true, createdAt: true } },
+      },
+    });
+
+    const x = (v: unknown) =>
+      String(v ?? '').replace(/[&<>"']/g, (s) =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' } as any)[s]);
+    const fechaES = (d: Date) =>
+      `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+
+    const nombreEmisor = merchant.legalName || merchant.name;
+    const registros = invoices.map((inv) => {
+      const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
+      const vat = calcVatBreakdown(lines);
+      const desglose = vat.entries.map((e) => `
+      <DetalleDesglose>
+        <Impuesto>01</Impuesto>
+        <TipoImpositivo>${e.rate}</TipoImpositivo>
+        <BaseImponibleOimporteNoSujeto>${e.base.toFixed(2)}</BaseImponibleOimporteNoSujeto>
+        <CuotaRepercutida>${e.cuota.toFixed(2)}</CuotaRepercutida>
+      </DetalleDesglose>`).join('');
+
+      const rectificadas = inv.type === 'R1' && inv.rectifies ? `
+    <FacturasRectificadas>
+      <IDFacturaRectificada>
+        <IDEmisorFactura>${x(merchant.taxId)}</IDEmisorFactura>
+        <NumSerieFactura>${x(inv.rectifies.number)}</NumSerieFactura>
+        <FechaExpedicionFactura>${fechaES(inv.rectifies.createdAt)}</FechaExpedicionFactura>
+      </IDFacturaRectificada>
+    </FacturasRectificadas>` : '';
+
+      const encadenamiento = inv.vfHash ? `
+    <Encadenamiento>${inv.vfPrevHash && inv.vfPrevHash !== '0' ? `
+      <RegistroAnterior><Huella>${x(inv.vfPrevHash)}</Huella></RegistroAnterior>` : `
+      <PrimerRegistro>S</PrimerRegistro>`}
+    </Encadenamiento>
+    <TipoHuella>01</TipoHuella>
+    <Huella>${x(inv.vfHash)}</Huella>` : '';
+
+      return `
+  <RegistroFacturacionAlta>
+    <IDVersion>1.0</IDVersion>
+    <IDFactura>
+      <IDEmisorFactura>${x(merchant.taxId)}</IDEmisorFactura>
+      <NumSerieFactura>${x(inv.number)}</NumSerieFactura>
+      <FechaExpedicionFactura>${fechaES(inv.createdAt)}</FechaExpedicionFactura>
+    </IDFactura>
+    <NombreRazonEmisor>${x(nombreEmisor)}</NombreRazonEmisor>
+    <TipoFactura>${inv.type === 'R1' ? 'R1' : 'F1'}</TipoFactura>${rectificadas}
+    <DescripcionOperacion>${x(lines[0]?.concept || `Factura ${inv.number}`)}</DescripcionOperacion>
+    <Destinatarios>
+      <IDDestinatario><NombreRazon>${x(inv.customer?.name || 'Cliente')}</NombreRazon></IDDestinatario>
+    </Destinatarios>
+    <Desglose>${desglose || `
+      <DetalleDesglose>
+        <Impuesto>01</Impuesto>
+        <TipoImpositivo>0</TipoImpositivo>
+        <BaseImponibleOimporteNoSujeto>${Number(inv.total).toFixed(2)}</BaseImponibleOimporteNoSujeto>
+        <CuotaRepercutida>0.00</CuotaRepercutida>
+      </DetalleDesglose>`}
+    </Desglose>
+    <CuotaTotal>${vat.cuota.toFixed(2)}</CuotaTotal>
+    <ImporteTotal>${Number(inv.total).toFixed(2)}</ImporteTotal>${encadenamiento}
+    <SistemaInformatico><NombreSistemaInformatico>YaQu</NombreSistemaInformatico></SistemaInformatico>
+    <FechaHoraHusoGenRegistro>${inv.createdAt.toISOString()}</FechaHoraHusoGenRegistro>
+  </RegistroFacturacionAlta>`;
+    }).join('\n');
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<RegistrosFacturacion generadoPor="YaQu" ejercicio="${year}" fechaGeneracion="${new Date().toISOString()}">
+  <Cabecera>
+    <ObligadoEmision>
+      <NombreRazon>${x(nombreEmisor)}</NombreRazon>
+      <NIF>${x(merchant.taxId)}</NIF>
+    </ObligadoEmision>
+  </Cabecera>
+${registros}
+</RegistrosFacturacion>
+`;
+
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="verifactu_${year}.xml"`);
+    return res.send(xml);
+  } catch (err) {
+    console.error('[exports/verifactu.xml]', err);
+    return res.status(500).json({ error: 'internal_error' });
   }
 });
 

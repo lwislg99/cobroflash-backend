@@ -54,6 +54,36 @@ async function renderReportsView(container) {
   exportRow.appendChild(btnExp);
   exportRow.appendChild(btnQuot);
 
+  // VeriFactu XML (registro RRSIF) — solo aplica a negocios de España con NIF;
+  // se descarga vía fetch para poder mostrar el aviso del backend si no aplica.
+  const btnVf = document.createElement('button');
+  btnVf.className = 'btn-secondary btn-sm';
+  btnVf.innerHTML = '⬇ VeriFactu XML';
+  btnVf.title = 'Registro de facturación RRSIF del año (España, RD 1007/2023)';
+  btnVf.addEventListener('click', async () => {
+    const year = yearSelect.value;
+    btnVf.disabled = true;
+    try {
+      const r = await fetch(`/admin/exports/verifactu.xml?year=${year}`);
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        alert(d.message || 'No se pudo generar el XML VeriFactu.');
+        return;
+      }
+      const blob = await r.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `verifactu_${year}.xml`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      alert('Error de red al descargar el XML.');
+    } finally {
+      btnVf.disabled = false;
+    }
+  });
+  exportRow.appendChild(btnVf);
+
   const rightBlock = document.createElement('div');
   rightBlock.style.cssText = 'display:flex;flex-direction:column;gap:8px;align-items:flex-end';
   rightBlock.appendChild(yearRow);

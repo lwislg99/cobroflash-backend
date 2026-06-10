@@ -10,6 +10,7 @@
  */
 import crypto from 'crypto';
 import { prisma as defaultPrisma } from '../../../core/db/prisma';
+import { calcVatCuotaTotal } from './vat.service';
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
@@ -106,12 +107,21 @@ export async function applyVeriFactu(
   const timestamp = formatTimestampES(new Date());
   const importeTotal = Number(invoice.total.toString()).toFixed(2);
 
+  // Cuota total de IVA real desde las líneas de la factura (0.00 si no tiene líneas)
+  const full = await prismaClient.invoice.findUnique({
+    where: { id: invoice.id },
+    select: { lines: true },
+  });
+  const cuotaTotal = calcVatCuotaTotal(
+    Array.isArray(full?.lines) ? (full!.lines as any[]) : null,
+  ).toFixed(2);
+
   const vfHash = computeVeriFactuHash({
     nif: taxId,
     serie: invoice.number,
     fecha,
     tipoFactura: invoice.type === 'R1' ? 'R1' : 'F1',
-    cuotaTotal: '0.00', // TODO Sprint N: calcular cuota IVA real desde líneas
+    cuotaTotal,
     importeTotal,
     prevHash,
     timestamp,
