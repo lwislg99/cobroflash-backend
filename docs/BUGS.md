@@ -94,6 +94,11 @@
 - **Mejora:** el aviso "Presupuesto enviado por WhatsApp" es muy discreto. Tras enviar, redirigir al detalle del presupuesto (muestra SENT + timeline) o mostrar un toast claro con enlace "Ver presupuesto".
 - **CERRADO (9 jun):** commit `11ebdc6` — tras enviar desde la quick-quote, navega al **detalle** del presupuesto (estado SENT + timeline) con toast acorde al locale.
 
+### [x] P2-3 · Iconos PWA rotos: los .png eran SVG renombrados (A2HS no instalable)
+- **Síntoma:** `public/icons/icon-192.png` e `icon-512.png` contenían texto SVG con extensión .png (523 bytes); el manifest declara `image/png` → Chrome no cumple criterios de instalación y el icono A2HS sale roto. Detectado en el check Y1 de DOCS-F1.
+- **Causa raíz (11 jun):** los .png se crearon copiando los .svg con otra extensión. Además `icon-512.svg` tenía viewBox de 512 pero el dibujo a coordenadas de 192 (icono en la esquina superior izquierda).
+- **CERRADO (11 jun):** corregido `icon-512.svg` (dibujo a escala 512) y generados PNG reales (10 KB / 51 KB) renderizando los SVG con Edge headless a tamaño exacto. Verificado visualmente ambos.
+
 ---
 
 ## P3 — Técnico / raíz (registrar, abordar después de P1)
