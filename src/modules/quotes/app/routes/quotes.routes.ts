@@ -453,8 +453,16 @@ router.post('/:id/decision', async (req, res) => {
 
       if (stage) {
         const percentage = stage.percentage; // 1 → 100%, 0.5 → 50%
-        const totalNumber = Number(quote.total);
+        // updatedQuote (no quote): si el cliente eligió un tier, total y líneas ya son los del tier
+        const totalNumber = Number(updatedQuote.total);
         const invoiceAmount = totalNumber * percentage;
+
+        // Copiar las líneas a la factura (escaladas al % facturado, ej. 50% en FIFTY_FIFTY).
+        // Sin esto el PDF salía sin desglose y la huella VeriFactu con cuota IVA 0,00 (bug E2E V0-1).
+        const quoteLines = Array.isArray(updatedQuote.lines) ? (updatedQuote.lines as any[]) : [];
+        const scaledLines = percentage < 1
+          ? quoteLines.map((l: any) => ({ ...l, price: Number(l.price) * percentage }))
+          : quoteLines;
 
         const invoice = await prisma.$transaction(async (tx) => {
           const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId);
@@ -467,6 +475,7 @@ router.post('/:id/decision', async (req, res) => {
               type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
               total: invoiceAmount.toFixed(2),
               currency: quote.currency,
+              lines: scaledLines.length > 0 ? scaledLines : undefined,
               pdfUrl: 'PENDING_PDF',
               qrData: 'PENDING_QR',
               registerId: null,
