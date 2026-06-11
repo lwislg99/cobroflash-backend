@@ -40,6 +40,7 @@ export async function sendPendingReminders(): Promise<void> {
       // Reusa quote_decision_es como recordatorio (estructura en whatsappTemplates.ts)
       const result = await sendWhatsAppTemplate({
         to: phone,
+        merchantId: quote.merchantId, // J3: respeta waOptOut
         ...buildQuoteDecision({
           customerName,
           businessName: merchantName,

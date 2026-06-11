@@ -65,6 +65,7 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
   const businessName = invoice.merchant?.legalName || invoice.merchant?.name || 'Tu proveedor';
   const result = await sendWhatsAppTemplate({
     to,
+    merchantId: invoice.merchantId, // J3: respeta waOptOut
     ...buildPaymentRequest({
       customerName: invoice.customer.name || 'Cliente',
       businessName,

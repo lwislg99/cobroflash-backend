@@ -149,6 +149,8 @@ export const customerCreateSchema = z.object({
   phone: z.string().min(5).optional(),
   email: z.string().email().optional(),
   notes: z.string().max(1000).optional(),
+  // J3: baja de WhatsApp (manual desde la ficha hasta WA-0b/BOT-1)
+  waOptOut: z.boolean().optional(),
 });
 
 export const customerUpdateSchema = customerCreateSchema.partial();

@@ -16,6 +16,7 @@ export async function sendPaymentConfirmation(params: {
   amountWithCurrency: string;
   invoiceNumber: string;
   businessName?: string | null;
+  merchantId?: number; // J3: respeta waOptOut del número para ese merchant
 }): Promise<{ ok: boolean }> {
   const to = normalizePhone(params.toPhone || '');
   if (!to) return { ok: false };
@@ -23,6 +24,7 @@ export async function sendPaymentConfirmation(params: {
   try {
     const result = await sendWhatsAppTemplate({
       to,
+      merchantId: params.merchantId,
       ...buildPaymentConfirmation({
         customerName: params.customerName || 'Cliente',
         amountWithCurrency: params.amountWithCurrency,

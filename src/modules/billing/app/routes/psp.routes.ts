@@ -189,6 +189,7 @@ router.post('/', async (req, res) => {
         sendPaymentConfirmation({
           toPhone: updated.customer.phone,
           customerName: updated.customer.name,
+          merchantId: updated.merchantId, // J3: respeta waOptOut
           amountWithCurrency: `${amt} ${cur}`,
           // P1-6: nº de factura REAL (sin '#'; la plantilla ya antepone "#") — no el id del cobro.
           invoiceNumber: invConf?.number || paidInvoiceNumber || String(updated.id),

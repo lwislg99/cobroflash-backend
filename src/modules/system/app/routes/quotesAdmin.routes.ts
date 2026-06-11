@@ -244,6 +244,7 @@ router.post('/:id/send-whatsapp', async (req, res) => {
     const businessName = quote.merchant?.legalName || quote.merchant?.name || 'Tu proveedor';
     const result = await sendWhatsAppTemplate({
       to,
+      merchantId: quote.merchantId, // J3: respeta waOptOut
       ...buildQuoteDecision({
         customerName: quote.customer.name ?? 'Cliente',
         businessName,

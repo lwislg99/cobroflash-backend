@@ -137,6 +137,7 @@ router.post('/', async (req, res) => {
         sendPaymentConfirmation({
           toPhone: updated.customer.phone,
           customerName: updated.customer.name,
+          merchantId: updated.merchantId, // J3: respeta waOptOut
           amountWithCurrency: `${Number(updated.amount).toFixed(2)} ${updated.currency}`,
           invoiceNumber: invConf?.number || String(updated.id),   // P1-6: sin '#' (la plantilla ya lo antepone)
           businessName: merchant?.legalName || merchant?.name,     // P1-7

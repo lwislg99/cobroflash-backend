@@ -81,6 +81,7 @@ export async function sendInvoicePaymentReminders(): Promise<void> {
 async function sendReminderWA(
   inv: {
     id: number;
+    merchantId: number;
     number: string;
     total: { toString(): string };
     currency: string;
@@ -105,6 +106,7 @@ async function sendReminderWA(
       // Usar template aprobado con botón de pago (estructura en whatsappTemplates.ts)
       const result = await sendWhatsAppTemplate({
         to: phone,
+        merchantId: inv.merchantId, // J3: respeta waOptOut
         ...buildPaymentRequest({
           customerName,
           businessName: merchantName,

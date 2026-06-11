@@ -4,6 +4,21 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
+## J3 · `customers.wa_opt_out` (baja de WhatsApp) — ⏳ PENDIENTE de aplicar (2026-06-11)
+
+Diff previsualizado con `migrate diff` contra prod, **100% aditivo** (una sola operación):
+```sql
+ALTER TABLE "customers" ADD COLUMN "wa_opt_out" BOOLEAN NOT NULL DEFAULT false;
+```
+**ORDEN OBLIGATORIO:** aplicar el `db push` ANTES de pushear/deployar el commit de J3 —
+el código nuevo referencia la columna (`waOptOut`) y Prisma fallaría (P2022) en cualquier
+query de `Customer` si la columna no existe en prod.
+
+Verificación post-push: editar un cliente en yaqu.app marcando "Baja de WhatsApp" y
+comprobar que el envío de presupuesto a ese cliente devuelve `reason: wa_opt_out`.
+
+---
+
 ## SPAIN-2 · Factura rectificativa — ✅ APLICADO en prod (2026-06-10)
 
 `prisma db push` aplicado contra `autorack.proxy.rlwy.net` (Railway), autorizado por el usuario.

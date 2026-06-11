@@ -105,6 +105,9 @@ model Customer {
   email       String?
   notes       String?
   portalToken String? @unique @map("portal_token")
+  // J3: baja de WhatsApp ("BAJA"/"STOP" o manual desde la ficha) — bloquea TODA
+  // plantilla saliente a este número para este merchant. Flag ortogonal (Parte L).
+  waOptOut    Boolean @default(false) @map("wa_opt_out")
 
   merchant      Merchant       @relation(fields: [merchantId], references: [id])
   charges       Charge[]

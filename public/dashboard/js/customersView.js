@@ -118,6 +118,7 @@ function renderCustomersView(container) {
   let modalBackdrop = null;
   let modalForm = null;
   let fieldName, fieldPhone, fieldEmail, fieldNotes;
+  let fieldWaOptOut = null; // J3: baja manual de WhatsApp desde la ficha
   let modalTitleEl = null;
   let modalSaveBtn = null;
 
@@ -147,6 +148,16 @@ function renderCustomersView(container) {
     body.appendChild(fieldPhone.wrapper);
     body.appendChild(fieldEmail.wrapper);
     body.appendChild(fieldNotes.wrapper);
+
+    // J3: baja manual de WhatsApp (hasta WA-0b el "BAJA" entrante no se procesa solo)
+    const waWrapper = document.createElement("label");
+    waWrapper.style.cssText = "display:flex;align-items:center;gap:8px;margin-top:4px;cursor:pointer;font-size:13px;color:var(--muted)";
+    fieldWaOptOut = document.createElement("input");
+    fieldWaOptOut.type = "checkbox";
+    fieldWaOptOut.name = "waOptOut";
+    waWrapper.appendChild(fieldWaOptOut);
+    waWrapper.appendChild(document.createTextNode("Baja de WhatsApp: no enviarle más mensajes (el cliente lo pidió)"));
+    body.appendChild(waWrapper);
 
     modalForm.appendChild(body);
 
@@ -190,6 +201,7 @@ function renderCustomersView(container) {
       fieldPhone.input.value = editingCustomer.phone || "";
       fieldEmail.input.value = editingCustomer.email || "";
       fieldNotes.input.value = editingCustomer.notes || "";
+      fieldWaOptOut.checked = !!editingCustomer.waOptOut;
     }
 
     modalBackdrop.style.display = "flex";
@@ -212,6 +224,7 @@ function renderCustomersView(container) {
       phone: fieldPhone.input.value.trim(),
       email: fieldEmail.input.value.trim(),
       notes: fieldNotes.input.value.trim(),
+      waOptOut: !!(fieldWaOptOut && fieldWaOptOut.checked), // J3
     };
 
     if (!payload.name) {

@@ -228,6 +228,7 @@ router.post('/:id/send-reminder', async (req, res) => {
     if (payUrl) {
       const result = await sendWhatsAppTemplate({
         to: phone,
+        merchantId: invoice.merchantId, // J3: respeta waOptOut
         ...buildPaymentRequest({
           customerName,
           businessName: merchantName,
