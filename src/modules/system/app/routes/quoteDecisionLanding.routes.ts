@@ -418,7 +418,7 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
       <button type="button" class="btn-clear" id="sig-clear">Borrar</button>
       <label class="checkbox-fallback">
         <input type="checkbox" id="no-sig-check"/>
-        Acepto sin dibujar firma
+        Acepto sin firmar
       </label>
     </div>
     <button class="btn-accept" id="btn-accept">Firmar y aceptar ${locale.quoteVerb}</button>
@@ -429,7 +429,7 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
       </span>
     </div>
     <div id="sig-error" style="color:#dc2626;font-size:13px;margin-top:8px;display:none">
-      Dibuja tu firma o marca "Acepto sin dibujar firma".
+      Dibuja tu firma o marca "Acepto sin firmar".
     </div>
     <small>Si no solicitaste este ${locale.quoteVerb}, cierra esta página.</small>
     </div>
