@@ -4,7 +4,9 @@ import {
   buildQuoteDecision,
   buildPaymentRequest,
   buildPaymentConfirmation,
+  validateTemplateComponents,
   WA_TEMPLATES,
+  WA_TEMPLATE_SPECS,
 } from '../dist/integrations/whatsappTemplates.js';
 
 // Helpers de aserción de estructura (lo que Meta valida → #132000/#132001).
@@ -65,4 +67,48 @@ test('todas: cuerpo de exactamente 4 variables (lo que exige Meta)', () => {
   assert.equal(bodyTexts(qd).length, 4);
   assert.equal(bodyTexts(pr).length, 4);
   assert.equal(bodyTexts(pc).length, 4);
+});
+
+// --- Validación J7: expectedVarCount ANTES de llamar a Meta ---
+
+test('validación J7: lo que sale de los builders pasa la validación', () => {
+  const qd = buildQuoteDecision({ customerName: 'a', businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', quoteId: 1 });
+  const pr = buildPaymentRequest({ customerName: 'a', businessName: 'b', invoiceNumber: 'c', amountWithCurrency: 'd', chargeId: 1 });
+  const pc = buildPaymentConfirmation({ customerName: 'a', amountWithCurrency: 'b', invoiceNumber: 'c', businessName: 'd' });
+  assert.equal(validateTemplateComponents(qd.templateName, qd.components), null);
+  assert.equal(validateTemplateComponents(pr.templateName, pr.components), null);
+  assert.equal(validateTemplateComponents(pc.templateName, pc.components), null);
+});
+
+test('validación J7: nº de vars incorrecto se detecta (evita #132000)', () => {
+  const tresVars = [{ type: 'body', parameters: [
+    { type: 'text', text: 'a' }, { type: 'text', text: 'b' }, { type: 'text', text: 'c' },
+  ] }];
+  const err = validateTemplateComponents(WA_TEMPLATES.paymentConfirmation, tresVars);
+  assert.match(err, /3 variables.*espera 4/);
+});
+
+test('validación J7: variable vacía o "undefined" se detecta', () => {
+  const msg = buildQuoteDecision({ customerName: '', businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', quoteId: 1 });
+  assert.match(validateTemplateComponents(msg.templateName, msg.components), /variable 1.*vacía/);
+  const msg2 = buildQuoteDecision({ customerName: String(undefined), businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', quoteId: 1 });
+  assert.match(validateTemplateComponents(msg2.templateName, msg2.components), /variable 1/);
+});
+
+test('validación J7: botón obligatorio que falta / botón de más se detectan', () => {
+  const sinBoton = buildPaymentConfirmation({ customerName: 'a', amountWithCurrency: 'b', invoiceNumber: 'c', businessName: 'd' }).components;
+  assert.match(validateTemplateComponents(WA_TEMPLATES.quoteDecision, sinBoton), /botón/);
+  const conBoton = buildQuoteDecision({ customerName: 'a', businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', quoteId: 1 }).components;
+  assert.match(validateTemplateComponents(WA_TEMPLATES.paymentConfirmation, conBoton), /botón/);
+});
+
+test('validación J7: plantilla desconocida no se valida (futuras altas en Meta)', () => {
+  assert.equal(validateTemplateComponents('payment_confirmation_invoice_es', [{ type: 'body', parameters: [] }]), null);
+});
+
+test('specs J7: las 3 plantillas aprobadas están registradas con expectedVarCount', () => {
+  for (const name of Object.values(WA_TEMPLATES)) {
+    assert.ok(WA_TEMPLATE_SPECS[name], `falta spec de ${name}`);
+    assert.equal(WA_TEMPLATE_SPECS[name].expectedVarCount, 4);
+  }
 });

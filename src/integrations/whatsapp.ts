@@ -1,6 +1,7 @@
 // src/integrations/whatsapp.ts
 import axios from 'axios';
 import { config } from '../core/config/env';
+import { validateTemplateComponents } from './whatsappTemplates';
 
 const BASE_URL = 'https://graph.facebook.com/v21.0';
 
@@ -16,6 +17,13 @@ export async function sendWhatsAppTemplate(params: {
   if (!phoneNumberId || !token) {
     console.warn('[WhatsApp] Credenciales no configuradas, mensaje omitido');
     return { ok: false, reason: 'not_configured' };
+  }
+
+  // J7: validar contra la spec aprobada ANTES de llamar a Meta (evita #132000/#132001)
+  const invalid = validateTemplateComponents(params.templateName, params.components);
+  if (invalid) {
+    console.error('[WhatsApp] Plantilla inválida, envío abortado:', invalid);
+    return { ok: false, error: `template_invalid: ${invalid}` };
   }
 
   try {

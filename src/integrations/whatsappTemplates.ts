@@ -19,6 +19,45 @@ export interface WaTemplateMessage {
   components: any[];
 }
 
+// Estructura que Meta tiene aprobada para cada plantilla (J7): nº exacto de variables
+// del body y si lleva botón de URL dinámica. Desviarse = rechazo #132000/#132001.
+export const WA_TEMPLATE_SPECS: Record<string, { expectedVarCount: number; hasUrlButton: boolean }> = {
+  [WA_TEMPLATES.quoteDecision]: { expectedVarCount: 4, hasUrlButton: true },
+  [WA_TEMPLATES.paymentRequest]: { expectedVarCount: 4, hasUrlButton: true },
+  [WA_TEMPLATES.paymentConfirmation]: { expectedVarCount: 4, hasUrlButton: false },
+};
+
+// Valida los components contra la spec ANTES de llamar a Meta (J7). Plantilla
+// desconocida (p. ej. una nueva aún no registrada aquí) → null (no se valida).
+export function validateTemplateComponents(
+  templateName: string,
+  components: any[] | undefined,
+): string | null {
+  const spec = WA_TEMPLATE_SPECS[templateName];
+  if (!spec) return null;
+
+  const bodyComp = (components ?? []).find((c) => c?.type === 'body');
+  const vars: any[] = bodyComp?.parameters ?? [];
+  if (vars.length !== spec.expectedVarCount) {
+    return `${templateName}: body con ${vars.length} variables, Meta espera ${spec.expectedVarCount}`;
+  }
+  const emptyIdx = vars.findIndex(
+    (p) => p?.type !== 'text' || typeof p.text !== 'string' || p.text.trim() === '' || p.text === 'undefined' || p.text === 'null',
+  );
+  if (emptyIdx !== -1) {
+    return `${templateName}: variable ${emptyIdx + 1} del body vacía o inválida`;
+  }
+
+  const btn = (components ?? []).find((c) => c?.type === 'button');
+  if (spec.hasUrlButton && !(btn?.parameters?.[0]?.text ?? '').toString().trim()) {
+    return `${templateName}: falta el parámetro del botón de URL dinámica`;
+  }
+  if (!spec.hasUrlButton && btn) {
+    return `${templateName}: lleva botón pero la plantilla aprobada no tiene ninguno`;
+  }
+  return null;
+}
+
 // Componente "body" con N variables de texto en orden.
 function body(...texts: Array<string | number>): any {
   return {
