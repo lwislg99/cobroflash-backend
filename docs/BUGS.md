@@ -94,6 +94,23 @@
 - **Mejora:** el aviso "Presupuesto enviado por WhatsApp" es muy discreto. Tras enviar, redirigir al detalle del presupuesto (muestra SENT + timeline) o mostrar un toast claro con enlace "Ver presupuesto".
 - **CERRADO (9 jun):** commit `11ebdc6` — tras enviar desde la quick-quote, navega al **detalle** del presupuesto (estado SENT + timeline) con toast acorde al locale.
 
+### [x] P1-8 · Facturas desde aceptación pública nacían SIN líneas (sin desglose IVA, cuota VeriFactu 0,00)
+- **Síntoma (E2E V0-1, 11 jun):** el PDF de la factura 2026-CF-001 salía sin tabla de líneas ni desglose de IVA (solo el total), y la huella VeriFactu se calculaba con cuota 0,00.
+- **Causa raíz:** el `tx.invoice.create` del flujo público (`quotes.routes.ts /:id/decision`) no copiaba `lines` (el flujo admin sí); además usaba `quote.total` pre-actualización (con tiers habría facturado el total antiguo).
+- **CERRADO (11 jun):** commit `59ce535` — copia `updatedQuote.lines` escaladas al % facturado y usa `updatedQuote.total`. Verificado con segunda factura E2E.
+
+### [x] P1-9 · Presupuesto inexistente mostraba el formulario de firma VACÍO; 404 de cobro/recibo en texto plano
+- **Síntoma (E2E V0-1):** `/pay/quote/999999` → 200 con canvas de firma y botón "Firmar y aceptar" sin negocio/líneas/total; `/pay/invoice/999999` → "Cobro no encontrado" en texto crudo. Viola N3 (diseño digno SIEMPRE).
+- **CERRADO (11 jun):** commit `0408155` — `src/core/http/publicNotFound.ts` (página digna con el copy oficial N3) usada por la landing de decisión (aceptar y rechazar) y los 5 routes de cobro/recibo.
+- **PENDIENTE relacionado:** quote en estado `rejected` aún renderiza el formulario (N3 no define copy oficial para ese estado → propuesta de master al fundador).
+
+### [x] P2-4 · Microcopy fuera de N5: "Acepto sin dibujar firma"
+- **CERRADO (11 jun):** commit `e80a825` — alineado al oficial N5/regla 30: "Acepto sin firmar" (checkbox y mensaje de error).
+
+### [ ] P2-5 · Landing /pay/quote a 390px: columna Total recortada
+- **Síntoma (E2E V0-1, captura `docs/evidencias/v01-pay-quote-28-movil.png`):** en viewport 390px los importes de la tabla de líneas quedan cortados ("250…", "90.00 E…").
+- **Dónde encaja:** matriz de dispositivos del bug-bash **V0-5** (no arreglar de paso; spec N1/N4).
+
 ### [x] P2-3 · Iconos PWA rotos: los .png eran SVG renombrados (A2HS no instalable)
 - **Síntoma:** `public/icons/icon-192.png` e `icon-512.png` contenían texto SVG con extensión .png (523 bytes); el manifest declara `image/png` → Chrome no cumple criterios de instalación y el icono A2HS sale roto. Detectado en el check Y1 de DOCS-F1.
 - **Causa raíz (11 jun):** los .png se crearon copiando los .svg con otra extensión. Además `icon-512.svg` tenía viewBox de 512 pero el dibujo a coordenadas de 192 (icono en la esquina superior izquierda).
@@ -121,6 +138,16 @@
 ### [ ] P3-3 · Plantillas en categoría Marketing → Utility  🔒 ACCIÓN EN META (usuario)
 - **Mejora:** recrear `quote_decision_es`, `payment_request_es` y `payment_confirmation_es` como **Utility** (no Marketing) antes de escalar — mejor entregabilidad y coste. No urgente.
 - **Estado (10 jun):** acción de Meta (usuario), no hay nada que cambiar en el código (los nombres de plantilla no cambian).
+
+### [ ] P3-5 · WhatsApp Business en modo restringido: Meta #131030 "Recipient phone number not in allowed list"  🔒 ACCIÓN EN META (usuario)
+- **Síntoma (E2E V0-1, 11 jun):** TODO envío de plantilla a un número fuera de la lista de destinatarios de prueba falla con #131030 → **ningún cliente real recibiría WhatsApp hoy**.
+- **Causa:** la app de Meta sigue en modo desarrollo/prueba (lista de destinatarios autorizados).
+- **Arreglo (usuario, en Meta):** pasar la app a modo producción / completar la verificación del negocio, o mientras tanto añadir los números de prueba (el tuyo) a la lista de permitidos para el E2E móvil.
+- **Nota:** el manejo de error del código funciona (200 `ok:false` con motivo legible, P3-2 ✅); el presupuesto queda guardado en `draft`.
+
+### [ ] P3-6 · Merchant demo: email en prod es `luislaragranado@gmail.com`, la regla 8 dice `demo@yaqu.app`
+- **Síntoma (E2E V0-1):** `merchant.findUnique({ email: 'demo@yaqu.app' })` no encuentra al demo (id=1); su email real en prod es el histórico.
+- **Decisión del fundador:** actualizar el email del merchant 1 en prod a `demo@yaqu.app` (alinea con regla 8 y con `isDemoMerchant`, que ya contempla ambos: id=1 O email demo) o corregir la regla 8 en el master.
 
 ---
 
