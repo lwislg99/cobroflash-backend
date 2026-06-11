@@ -3,6 +3,7 @@ import fetch from 'node-fetch';
 import { prisma } from '../../../../core/db/prisma';
 import { esc, parseNumericId } from '../../../../core/utils/utils';
 import { getLocale } from '../../../../core/i18n/locales';
+import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 
 type DecisionApiError = { message?: string; error?: string };
 
@@ -390,6 +391,11 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
     }
   }
 
+  // N3: presupuesto inexistente → página digna, JAMÁS el formulario de firma vacío (bug E2E V0-1)
+  if (!loadedQuote) {
+    return res.status(404).setHeader('Content-Type', 'text/html; charset=utf-8').send(documentNotFoundHtml());
+  }
+
   const shareName = (loadedQuote?.merchant?.legalName || loadedQuote?.merchant?.name || 'el profesional');
   const shareTextEnc = encodeURIComponent(`✅ He aceptado mi ${locale.quoteVerb} con ${shareName}. ¡Gracias!`);
 
@@ -500,9 +506,11 @@ quoteDecisionLandingRouter.get('/quote/:id/reject', async (req: Request, res: Re
   let quoteDetail = '';
   let locale = getLocale('ES');
   let brandColor: string | null = null;
+  let rejectQuote: Awaited<ReturnType<typeof loadQuote>> | null = null;
 
   if (Number.isInteger(id)) {
     const quote = await loadQuote(id).catch(() => null);
+    rejectQuote = quote;
     if (quote) {
       locale = getLocale(quote.merchant?.country);
       brandColor = quote.merchant?.brandColor ?? null;
@@ -510,6 +518,11 @@ quoteDecisionLandingRouter.get('/quote/:id/reject', async (req: Request, res: Re
         quoteDetail = renderQuoteDetail(quote, quoteId);
       }
     }
+  }
+
+  // N3: presupuesto inexistente → página digna (bug E2E V0-1)
+  if (!rejectQuote) {
+    return res.status(404).setHeader('Content-Type', 'text/html; charset=utf-8').send(documentNotFoundHtml());
   }
 
   const html = renderPage(`Rechazar ${locale.quoteVerb}`, `

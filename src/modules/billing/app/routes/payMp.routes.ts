@@ -1,6 +1,7 @@
 // src/modules/billing/app/routes/payMp.routes.ts
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
+import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { config, BASE_URL } from '../../../../core/config/env';
 import { esc } from '../../../../core/utils/utils';
 import { createMpPreference } from '../../../../integrations/mercadopago';
@@ -20,7 +21,7 @@ router.get('/mp/:id', async (req, res) => {
     include: { customer: true, merchant: true },
   });
 
-  if (!charge)            return res.status(404).send('Cobro no encontrado');
+  if (!charge)            return res.status(404).send(documentNotFoundHtml());
   if (charge.status === 'paid')    return res.redirect(`${BASE_URL}/pay/mp/${id}/result?status=approved`);
   if (charge.status === 'expired') return res.redirect(`${BASE_URL}/pay/mp/${id}/result?status=expired`);
 

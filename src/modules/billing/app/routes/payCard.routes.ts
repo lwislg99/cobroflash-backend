@@ -1,6 +1,7 @@
 // srcNew/modules/billing/app/routes/payCard.routes.ts
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
+import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { stripe } from '../../../../integrations/stripe';
 import { BASE_URL } from '../../../../core/config/env';
 import { parseNumericId } from '../../../../core/utils/utils';
@@ -22,7 +23,7 @@ router.get('/card/:id', async (req, res) => {
       where: { id },
       include: { customer: true },
     });
-    if (!charge) return res.status(404).send('Cobro no encontrado');
+    if (!charge) return res.status(404).send(documentNotFoundHtml());
     if (charge.status !== 'pending') {
       return res.redirect(303, `/recibo/${id}`);
     }

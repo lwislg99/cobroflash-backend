@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import axios from 'axios';
 import { prisma } from '../../../../core/db/prisma';
+import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { esc } from '../../../../core/utils/utils';
 import { stripe } from '../../../../integrations/stripe';
 import { BASE_URL, config } from '../../../../core/config/env';
@@ -22,7 +23,7 @@ router.get('/:id', async (req, res) => {
     include: { customer: true, merchant: true, events: true, reconciliations: true },
   });
   if (!charge) {
-    res.status(404).send('Cobro no encontrado');
+    res.status(404).send(documentNotFoundHtml());
     return;
   }
 
@@ -63,7 +64,7 @@ router.get('/:id', async (req, res) => {
   }
 
   if (!charge) {
-    res.status(404).send('Cobro no encontrado');
+    res.status(404).send(documentNotFoundHtml());
     return;
   }
   const ch = charge;

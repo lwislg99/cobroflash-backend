@@ -1,6 +1,7 @@
 // src/modules/billing/app/routes/payBank.routes.ts
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
+import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { esc } from '../../../../core/utils/utils';
 import { BASE_URL } from '../../../../core/config/env';
 
@@ -18,7 +19,7 @@ router.get('/bank/:id', async (req, res) => {
     where: { id },
     include: { merchant: true },
   });
-  if (!charge) return res.status(404).send('Cobro no encontrado');
+  if (!charge) return res.status(404).send(documentNotFoundHtml());
 
   const merchant = charge.merchant as any;
   const country  = merchant?.country || 'ES';

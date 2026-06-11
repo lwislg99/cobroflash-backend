@@ -4,6 +4,7 @@
 // Diseño "Recibo de confianza" (Impeccable: Stripe/Wise, mobile-first).
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
+import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { esc, parseNumericId } from '../../../../core/utils/utils';
 
 const router = Router();
@@ -20,7 +21,7 @@ router.get('/invoice/:chargeId', async (req, res) => {
       merchant: { select: { name: true, legalName: true, logoUrl: true, iban: true, clabe: true } },
     },
   });
-  if (!charge) return res.status(404).send('Cobro no encontrado');
+  if (!charge) return res.status(404).send(documentNotFoundHtml());
 
   // Pagado o vencido → recibo
   if (charge.status === 'paid' || charge.status === 'expired') {
