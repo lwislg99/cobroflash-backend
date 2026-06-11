@@ -1,0 +1,2 @@
+# Los scripts de shell (hooks de Claude Code) deben mantener LF: con CRLF bash falla.
+*.sh text eol=lf
