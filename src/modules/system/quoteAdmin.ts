@@ -1,6 +1,6 @@
 // src/modules/system/quoteAdmin.ts
 import { prisma } from '../../core/db/prisma';
-import { allocateInvoiceNumber } from '../invoicing/domain/invoiceNumber.service';
+import { allocateInvoiceNumber, isReceiptNumber } from '../invoicing/domain/invoiceNumber.service';
 
 /**
  * Lista de presupuestos para el panel admin.
@@ -299,6 +299,7 @@ export async function createInvoiceFromQuoteAdmin(quoteId: number) {
         customerId: quote.customerId,
         quoteId: quote.id,
         number: formattedNumber,
+        type: isReceiptNumber(formattedNumber) ? 'JUST' : 'F1', // V0-0
         total: quote.total,
         currency: quote.currency,
         pdfUrl: 'PENDING',

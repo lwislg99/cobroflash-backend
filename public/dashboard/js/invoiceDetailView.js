@@ -38,6 +38,8 @@ async function fetchInvoiceDetail(id) {
     const left = document.createElement('div');
     left.innerHTML = '<h2>Factura</h2><p class="detail-sub">Detalle y acciones de la factura.</p>';
     header.appendChild(left);
+    const headTitle = left.querySelector('h2');
+    const headSub = left.querySelector('.detail-sub');
 
     const btnBack = document.createElement('button');
     btnBack.className = 'btn-secondary btn-sm';
@@ -74,6 +76,25 @@ async function fetchInvoiceDetail(id) {
     setStatus('', '');
     const st = String(invoice.status || '').toLowerCase();
 
+    // V0-0: justificante de cobro (merchant ES real sin facturación activa) — el copy no dice "factura"
+    const isReceipt = invoice.type === 'JUST' || String(invoice.number || '').startsWith('J-');
+    if (isReceipt) {
+      if (headTitle) headTitle.textContent = 'Justificante de cobro';
+      if (headSub) headSub.textContent = 'Detalle y acciones del justificante.';
+    }
+
+    // V0-0: marca de agua DEMO en pantalla (merchant demo)
+    if (invoice.demo) {
+      const wm = document.createElement('div');
+      wm.textContent = 'DEMO — no válida fiscalmente';
+      wm.style.cssText =
+        'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;' +
+        'transform:rotate(-18deg);font-size:34px;font-weight:800;color:rgba(220,38,38,.12);' +
+        'pointer-events:none;user-select:none;z-index:5;text-align:center';
+      page.style.position = 'relative';
+      page.appendChild(wm);
+    }
+
     // --- Sección: estado + total destacado ---
     const summarySec = document.createElement('div');
     summarySec.className = 'detail-section';
@@ -98,6 +119,12 @@ async function fetchInvoiceDetail(id) {
       const badge = document.createElement('span');
       badge.style.cssText = 'font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--red-50);color:var(--red-600);border:1px solid var(--red-600)';
       badge.textContent = 'RECTIFICATIVA';
+      numLine.appendChild(badge);
+    }
+    if (isReceipt) {
+      const badge = document.createElement('span');
+      badge.style.cssText = 'font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--neutral-100);color:var(--muted);border:1px solid var(--border)';
+      badge.textContent = 'JUSTIFICANTE';
       numLine.appendChild(badge);
     }
     stateBlock.appendChild(numLine);

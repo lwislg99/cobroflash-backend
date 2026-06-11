@@ -2,7 +2,8 @@
 import path from 'path';
 import fs from 'fs';
 import { PrismaClient } from '@prisma/client';
-import { allocateInvoiceNumber } from '../modules/invoicing/domain/invoiceNumber.service';
+import { allocateInvoiceNumber, isReceiptNumber } from '../modules/invoicing/domain/invoiceNumber.service';
+import { isDemoMerchant, DEMO_WATERMARK } from '../modules/invoicing/domain/emission.service';
 import { generateInvoicePdf } from './pdf';
 import { BASE_URL } from '../core/config/env';
 import { invoicesDir } from '../core/storage/dirs';
@@ -42,7 +43,8 @@ export async function ensureInvoicePdf(
         : `INV:${inv.number}|AMOUNT:${inv.total.toString()}|CUR:${inv.currency}`;
     let vfHash = inv.vfHash ?? null;
 
-    if (inv.merchant.country === 'ES' && inv.merchant.taxId && !vfHash) {
+    // V0-0: los justificantes (J-…) no llevan VeriFactu
+    if (inv.merchant.country === 'ES' && inv.merchant.taxId && !vfHash && !isReceiptNumber(inv.number)) {
       try {
         const vf = await applyVeriFactu(inv, inv.merchant.taxId, prisma);
         qrData = vf.qrUrl;
@@ -71,6 +73,7 @@ export async function ensureInvoicePdf(
       lines,
       type: inv.type,
       rectifiesNumber: inv.rectifies?.number ?? null,
+      watermark: isDemoMerchant(inv.merchant) ? DEMO_WATERMARK : null,
     });
     await prisma.invoice.update({ where: { id: invoiceId }, data: { pdfUrl: publicUrlPath, qrData } });
   }
@@ -106,7 +109,7 @@ export async function ensureInvoiceForCharge(
 
     const merchant = await prisma.merchant.findUnique({ where: { id: inv.merchantId } });
 
-    if (merchant?.country === 'ES' && merchant.taxId && !vfHash) {
+    if (merchant?.country === 'ES' && merchant.taxId && !vfHash && !isReceiptNumber(inv.number)) {
       try {
         const vf = await applyVeriFactu(inv, merchant.taxId, prisma);
         qrData  = vf.qrUrl;
@@ -146,6 +149,8 @@ export async function ensureInvoiceForCharge(
         vfHash,
         createdAt: inv.createdAt,
         lines: invLines,
+        type: inv.type,
+        watermark: merchant && isDemoMerchant(merchant) ? DEMO_WATERMARK : null,
       });
 
       updated = await prisma.invoice.update({
@@ -203,6 +208,7 @@ export async function ensureInvoiceForCharge(
         customerId: ch.customerId ?? (() => { throw new Error('missing_customer_in_charge'); })(),
         quoteId: quote?.id ?? null,
         number,
+        type: isReceiptNumber(number) ? 'JUST' : 'F1', // V0-0: justificante si ES real sin flag
         total: ch.amount.toString(),
         currency: ch.currency.toUpperCase(),
         lines: invoiceLines,

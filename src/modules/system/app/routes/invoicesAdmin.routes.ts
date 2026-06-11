@@ -11,7 +11,8 @@ import {
 import { BASE_URL } from '../../../../core/config/env';
 import { prisma } from '../../../../core/db/prisma';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
-import { allocateInvoiceNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { isDemoMerchant, DEMO_WATERMARK } from '../../../invoicing/domain/emission.service';
 import { recordCustomerEvent } from '../../customerEvents.service';
 import { generateInvoicePdf } from '../../../../lib/pdf';
 
@@ -58,7 +59,8 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'not_found' });
     }
 
-    res.json(invoice);
+    // V0-0: la pantalla del merchant demo muestra la marca de agua DEMO
+    res.json({ ...invoice, demo: isDemoMerchant({ id: req.merchantId }) });
   } catch (err) {
     console.error('[GET /admin/invoices/:id]', err);
     res.status(500).json({ error: 'internal_error' });
@@ -298,6 +300,12 @@ router.post('/:id/rectify', async (req, res) => {
       ? origLines.map((l: any) => ({ ...l, price: -(Number(l.price) || 0) }))
       : [{ concept: `Rectificación de la factura ${original.number}`, qty: 1, price: -Number(original.total), tax: 0 }];
 
+    // V0-0: los justificantes no se rectifican (no son facturas) y un merchant ES
+    // sin INVOICING_ES_ENABLED no puede emitir R1 (allocate lanzaría invoicing_es_disabled).
+    if (isReceiptNumber(original.number)) {
+      return res.status(409).json({ error: 'cannot_rectify_receipt' });
+    }
+
     const rect = await prisma.$transaction(async (tx) => {
       const number = await allocateInvoiceNumber(tx, req.merchantId, { rectifying: true });
       return tx.invoice.create({
@@ -378,8 +386,8 @@ router.post('/:id/regenerate-pdf', async (req, res) => {
     let qrData      = invoice.qrData;
     let vfHash      = invoice.vfHash ?? null;
 
-    // (Re)aplicar VeriFactu si es merchant español con NIF
-    if (merchant.country === 'ES' && merchant.taxId) {
+    // (Re)aplicar VeriFactu si es merchant español con NIF (V0-0: nunca a justificantes)
+    if (merchant.country === 'ES' && merchant.taxId && !isReceiptNumber(invoice.number)) {
       try {
         const vf = await applyVeriFactu(invoice, merchant.taxId, prisma);
         qrData = vf.qrUrl;
@@ -415,6 +423,7 @@ router.post('/:id/regenerate-pdf', async (req, res) => {
       lines: invLines,
       type: invoice.type,
       rectifiesNumber: invoice.rectifies?.number ?? null,
+      watermark: isDemoMerchant(merchant) ? DEMO_WATERMARK : null,
     });
 
     await prisma.invoice.update({

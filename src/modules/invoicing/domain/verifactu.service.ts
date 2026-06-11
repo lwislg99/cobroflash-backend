@@ -11,6 +11,7 @@
 import crypto from 'crypto';
 import { prisma as defaultPrisma } from '../../../core/db/prisma';
 import { calcVatCuotaTotal } from './vat.service';
+import { isReceiptNumber } from './invoiceNumber.service';
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
@@ -91,6 +92,12 @@ export async function applyVeriFactu(
   taxId: string,
   prismaClient = defaultPrisma,
 ): Promise<{ vfHash: string; vfPrevHash: string; qrUrl: string }> {
+  // V0-0: un justificante de cobro (J-…) no es una factura — jamás entra en la
+  // cadena de huellas VeriFactu. Los call-sites capturan y siguen sin QR.
+  if (isReceiptNumber(invoice.number)) {
+    throw new Error('receipt_document_not_invoiceable');
+  }
+
   // Última factura del merchant que ya tenga huella (excluye la actual)
   const prev = await prismaClient.invoice.findFirst({
     where: {

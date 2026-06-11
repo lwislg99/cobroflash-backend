@@ -36,7 +36,7 @@ const ES_ONLY_FLAGS: ReadonlySet<FlagName> = new Set<FlagName>([
 
 export interface FlagContext {
   merchant?: {
-    id?: number;
+    id?: number | null;
     country?: string | null;
     // Columna futura (aditiva) de overrides por merchant; hoy normalmente undefined.
     flags?: Record<string, unknown> | null;

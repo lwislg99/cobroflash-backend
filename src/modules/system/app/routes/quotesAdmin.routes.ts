@@ -17,7 +17,7 @@ import { sendTechQuoteApprovedEmail } from '../../../messaging/domain/merchantNo
 import { normalizePhone } from '../../../../core/utils/utils';
 import { BASE_URL } from '../../../../core/config/env';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
-import { allocateInvoiceNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 
 import fetch from 'node-fetch';
 
@@ -166,6 +166,7 @@ router.post('/:id/invoice', async (req, res) => {
           customerId: quote.customerId,
           quoteId: quote.id,
           number: invoiceNumber,
+          type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
           total: invoiceAmount.toFixed(2),
           currency: quote.currency,
           lines: scaledLines.length > 0 ? scaledLines : undefined,
@@ -176,9 +177,9 @@ router.post('/:id/invoice', async (req, res) => {
       });
     });
 
-    // Aplicar VeriFactu para merchants españoles con NIF
+    // Aplicar VeriFactu para merchants españoles con NIF (V0-0: nunca a justificantes)
     let vfApplied = false;
-    if (merchant.country === 'ES' && merchant.taxId) {
+    if (merchant.country === 'ES' && merchant.taxId && !isReceiptNumber(invoice.number)) {
       try {
         await applyVeriFactu(invoice, merchant.taxId, prisma);
         vfApplied = true;

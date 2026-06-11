@@ -32,7 +32,7 @@ async function getCreatorTeamMemberId(req: any): Promise<number | null> {
 import { generateQuotePdf } from '../../../../lib/pdf';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
-import { allocateInvoiceNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 
 
 const router = Router();
@@ -464,6 +464,7 @@ router.post('/:id/decision', async (req, res) => {
               customerId: quote.customerId,
               quoteId: quote.id,
               number: invoiceNumber,
+              type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
               total: invoiceAmount.toFixed(2),
               currency: quote.currency,
               pdfUrl: 'PENDING_PDF',

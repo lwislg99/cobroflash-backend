@@ -43,22 +43,42 @@ export async function generateInvoicePdf(params: {
   vfHash?: string | null;
   createdAt?: Date | null;
   lines?: Array<{ concept: string; qty: number; price: number; tax: number }> | null;
-  type?: string | null;            // 'F1' (default) | 'R1' rectificativa
+  type?: string | null;            // 'F1' (default) | 'R1' rectificativa | 'JUST' justificante (V0-0)
   rectifiesNumber?: string | null; // nº de la factura original (solo R1)
+  watermark?: string | null;       // texto diagonal en cada página (demo: "DEMO — no válida fiscalmente")
 }) {
   const fileName = `${params.number}.pdf`;
   const outPath  = path.join(invoicesDir, fileName);
   const isVF     = !!params.vfHash;
+  // V0-0: justificante de cobro — sin numeración de factura, sin QR, copy sin "factura"
+  const isReceipt = params.type === 'JUST';
   const hasLines = Array.isArray(params.lines) && params.lines.length > 0;
 
   const [qrBuf, logoBuf] = await Promise.all([
-    QRCode.toBuffer(params.qrData, { type: 'png', width: 200 }),
+    isReceipt ? Promise.resolve(null) : QRCode.toBuffer(params.qrData, { type: 'png', width: 200 }),
     loadLogoBuffer(params.merchant.logoUrl),
   ]);
 
   const doc    = new PDFDocument({ size: 'A4', margin: 50 });
   const stream = fs.createWriteStream(outPath);
   doc.pipe(stream);
+
+  // Marca de agua diagonal (V0-0: facturas del merchant demo) — bajo el contenido,
+  // en cada página del documento.
+  function drawWatermark() {
+    if (!params.watermark) return;
+    const px = doc.x, py = doc.y;
+    doc.save();
+    doc.rotate(-35, { origin: [doc.page.width / 2, doc.page.height / 2] });
+    doc.font('Helvetica-Bold').fontSize(42).fillColor('#dc2626').opacity(0.13)
+      .text(params.watermark, 0, doc.page.height / 2 - 24, { width: doc.page.width, align: 'center' });
+    doc.opacity(1);
+    doc.restore();
+    doc.fillColor('#000');
+    doc.x = px; doc.y = py;
+  }
+  drawWatermark();
+  doc.on('pageAdded', drawWatermark);
 
   const M   = 50;
   const W   = doc.page.width - M * 2;   // 495
@@ -89,12 +109,14 @@ export async function generateInvoicePdf(params: {
     } catch { /* logo inválido, ignorar */ }
   }
 
-  // Título "FACTURA" (o "FACTURA RECTIFICATIVA") + Nº + Fecha a la derecha
+  // Título "FACTURA" / "FACTURA RECTIFICATIVA" / "JUSTIFICANTE DE COBRO" + Nº/Ref + Fecha
   const isRect = params.type === 'R1';
-  doc.fontSize(isRect ? 17 : 22).font('Helvetica-Bold').fillColor(isRect ? '#b91c1c' : '#0f172a')
-    .text(isRect ? 'FACTURA RECTIFICATIVA' : 'FACTURA', M, headerY, { width: W, align: 'right' });
+  const docTitle = isReceipt ? 'JUSTIFICANTE DE COBRO' : isRect ? 'FACTURA RECTIFICATIVA' : 'FACTURA';
+  doc.fontSize(isRect || isReceipt ? 17 : 22).font('Helvetica-Bold')
+    .fillColor(isRect ? '#b91c1c' : '#0f172a')
+    .text(docTitle, M, headerY, { width: W, align: 'right' });
   doc.fontSize(10).font('Helvetica').fillColor('#64748b')
-    .text(`Nº ${params.number}`, { align: 'right' });
+    .text(isReceipt ? `Ref. ${params.number}` : `Nº ${params.number}`, { align: 'right' });
   doc.text(`Fecha: ${dateStr(params.createdAt)}`, { align: 'right' });
   if (isRect && params.rectifiesNumber) {
     doc.text(`Rectifica a la factura Nº ${params.rectifiesNumber}`, { align: 'right' });
@@ -255,40 +277,48 @@ export async function generateInvoicePdf(params: {
     doc.moveDown(1.5);
   }
 
-  // ── 5. VERIFACTU QR ────────────────────────────────────────────────────
-  if (doc.y + 120 > PB) doc.addPage();
+  // ── 5. VERIFACTU QR (nunca en justificantes — V0-0) ──────────────────────
+  if (!isReceipt && qrBuf) {
+    if (doc.y + 120 > PB) doc.addPage();
 
-  const qrY   = doc.y;
-  const qrSz  = 90;
+    const qrY   = doc.y;
+    const qrSz  = 90;
 
-  doc.image(qrBuf, M, qrY, { width: qrSz });
+    doc.image(qrBuf, M, qrY, { width: qrSz });
 
-  const txX = M + qrSz + 14;
-  const txW = W - qrSz - 14;
+    const txX = M + qrSz + 14;
+    const txW = W - qrSz - 14;
 
-  if (isVF) {
-    doc.fontSize(9).font('Helvetica-Bold').fillColor('#166534')
-      .text('Factura Verificable — VeriFactu', txX, qrY, { width: txW });
-    doc.font('Helvetica').fontSize(8).fillColor('#555')
-      .text('Escanea el QR para verificar en la sede electrónica de la AEAT (RD 1007/2023).', txX, doc.y, { width: txW });
-    const hashShort = params.vfHash!.slice(0, 32) + '…';
-    doc.fontSize(7).fillColor('#888')
-      .text(`Huella: ${hashShort}`, txX, doc.y + 2, { width: txW });
-  } else {
-    doc.fontSize(8).font('Helvetica').fillColor('#555')
-      .text('Escanea el QR para validar la factura.', txX, qrY + 6, { width: txW });
+    if (isVF) {
+      doc.fontSize(9).font('Helvetica-Bold').fillColor('#166534')
+        .text('Factura Verificable — VeriFactu', txX, qrY, { width: txW });
+      doc.font('Helvetica').fontSize(8).fillColor('#555')
+        .text('Escanea el QR para verificar en la sede electrónica de la AEAT (RD 1007/2023).', txX, doc.y, { width: txW });
+      const hashShort = params.vfHash!.slice(0, 32) + '…';
+      doc.fontSize(7).fillColor('#888')
+        .text(`Huella: ${hashShort}`, txX, doc.y + 2, { width: txW });
+    } else {
+      doc.fontSize(8).font('Helvetica').fillColor('#555')
+        .text('Escanea el QR para validar la factura.', txX, qrY + 6, { width: txW });
+    }
+
+    doc.y = Math.max(doc.y, qrY + qrSz + 8);
+    doc.fillColor('#000').moveDown(0.8);
   }
-
-  doc.y = Math.max(doc.y, qrY + qrSz + 8);
-  doc.fillColor('#000').moveDown(0.8);
 
   // ── 6. FOOTER ────────────────────────────────────────────────────────────
   hLine();
   doc.moveDown(0.4);
-  doc.fontSize(7.5).fillColor('#9ca3af')
-    .text('Factura generada automáticamente por YaQu.', { align: 'center' });
-  if (isVF) {
-    doc.text('Sistema de facturación verificable conforme al RD 1007/2023 (VeriFactu).', { align: 'center' });
+  if (isReceipt) {
+    doc.fontSize(7.5).fillColor('#9ca3af')
+      .text('Justificante de cobro generado automáticamente por YaQu.', { align: 'center' });
+    doc.text('Este documento acredita el cobro recibido y no constituye una factura.', { align: 'center' });
+  } else {
+    doc.fontSize(7.5).fillColor('#9ca3af')
+      .text('Factura generada automáticamente por YaQu.', { align: 'center' });
+    if (isVF) {
+      doc.text('Sistema de facturación verificable conforme al RD 1007/2023 (VeriFactu).', { align: 'center' });
+    }
   }
 
   doc.end();

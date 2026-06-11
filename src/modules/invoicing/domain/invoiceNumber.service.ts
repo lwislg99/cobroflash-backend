@@ -10,6 +10,24 @@
  * además colisionaban entre merchants al ser `number` único global.
  */
 import { Prisma } from '@prisma/client';
+import { getEmissionMode } from './emission.service';
+
+/**
+ * Justificantes de cobro (V0-0): los merchants ES reales con `INVOICING_ES_ENABLED`
+ * off NO consumen la serie fiscal — reciben una referencia `J-YYYYMMDD-XXXX` fuera
+ * de toda serie de facturación ("sin numeración de factura", Parte M).
+ */
+export const RECEIPT_NUMBER_PREFIX = 'J-';
+
+export function isReceiptNumber(number: string | null | undefined): boolean {
+  return typeof number === 'string' && number.startsWith(RECEIPT_NUMBER_PREFIX);
+}
+
+export function makeReceiptNumber(now = new Date()): string {
+  const ymd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `${RECEIPT_NUMBER_PREFIX}${ymd}-${rand}`;
+}
 
 /** Formatea un número de la serie. `rectifying` usa la serie propia de rectificativas (R). */
 export function formatInvoiceNumber(
@@ -49,6 +67,9 @@ export async function allocateInvoiceNumber(
   const m = await tx.merchant.findUnique({
     where: { id: merchantId },
     select: {
+      id: true,
+      email: true,
+      country: true,
       invoiceSeriesPrefix: true,
       nextInvoiceNumber: true,
       nextRectInvoiceNumber: true,
@@ -58,6 +79,14 @@ export async function allocateInvoiceNumber(
   if (!m) throw new Error('merchant_not_found');
 
   const rect = !!opts.rectifying;
+
+  // V0-0: merchant ES real sin INVOICING_ES_ENABLED → justificante, no factura.
+  // No avanza NINGÚN contador de la serie fiscal. Las rectificativas no existen
+  // para justificantes (solo rectifican facturas emitidas — regla 29).
+  if (getEmissionMode(m) === 'receipt') {
+    if (rect) throw new Error('invoicing_es_disabled');
+    return makeReceiptNumber(now);
+  }
   const sameYear = m.invoiceSeriesYear === year;
   const seq = rect
     ? (sameYear ? m.nextRectInvoiceNumber : 1)
