@@ -1,0 +1,156 @@
+# RUNBOOKS — YaQu
+
+> Derivado de `docs/YAQU_MASTER.md` Parte O (única fuente de verdad). Formato fijo:
+> **Síntoma → Dónde mirar → Acción → Qué decir al merchant → Prevención.**
+> Si un incidente no encaja en ningún runbook: registrarlo en `docs/BUGS.md` y proponer
+> el runbook nuevo como cambio de master.
+
+---
+
+## R1 · WhatsApp no llega
+
+- **Síntoma:** el merchant dice que su cliente no recibió el presupuesto/factura por WhatsApp.
+- **Dónde mirar:** logs de Railway (errores `[WhatsApp]`); en F2, `WhatsAppMessage.status`.
+- **Acción:** código `131026` → el destinatario no tiene WhatsApp: no reintentar.
+  `#132000`/`#132001` → bug de variables o de plantilla: **NO reintentar**, abrir issue en
+  `docs/BUGS.md` (el guard J7 debería haberlo impedido). Mientras tanto: botón **Copiar enlace**.
+- **Qué decir al merchant:** "Ese número no tiene WhatsApp (o el mensaje no salió). Copia el
+  enlace del presupuesto y mándaselo por SMS o llámale."
+- **Prevención:** validación J7 de variables antes de llamar a Meta; test
+  `tests/whatsappTemplates.test.mjs` en verde antes de cada deploy.
+
+## R2 · Plantilla rechazada o pausada por Meta
+
+- **Síntoma:** los envíos de una plantilla empiezan a fallar; Meta la marca rechazada/pausada.
+- **Dónde mirar:** WhatsApp Manager (estado de la plantilla) + logs de Railway.
+- **Acción:** activar el fallback manual: mensaje completo prearmado para que el pro lo envíe
+  desde su WhatsApp personal. Corregir y re-someter la plantilla en Meta (**acción del
+  usuario/fundador**, ver `docs/WHATSAPP_TEMPLATES.md`). **No tocar nombres de plantilla en código.**
+- **Qué decir al merchant:** "WhatsApp está revisando nuestra plantilla; mientras tanto te
+  preparamos el mensaje para que lo mandes tú con un toque."
+- **Prevención:** categoría Utility, cero marketing (J6); cambios de plantilla solo vía spec.
+
+## R3 · Pago cobrado pero webhook perdido
+
+- **Síntoma:** el cliente pagó con tarjeta pero el cobro sigue `pending` y la factura impagada.
+- **Dónde mirar:** Dashboard de Stripe → buscar la Checkout Session por importe + fecha.
+- **Acción:** si en Stripe está `paid`: marcar manualmente cobro + factura como pagados
+  (auditado, `paid_via='card'`, anotar el event id de Stripe en la nota).
+- **Qué decir al merchant:** "El pago está confirmado en la pasarela; ya lo hemos reflejado.
+  No se cobró dos veces."
+- **Prevención:** `scripts/reconcile-stripe.mjs` (F2) + idempotencia por `event.id`.
+
+## R4 · Stripe Connect en estado `restricted`
+
+- **Síntoma:** merchant con Connect activo deja de poder cobrar con tarjeta.
+- **Dónde mirar:** webhook `account.updated` / Dashboard Stripe del conectado (`connectStatus`).
+- **Acción:** banner "Stripe necesita un dato más" + link al onboarding de Connect; la opción
+  tarjeta se desactiva sola y la landing vuelve a transferencia/Bizum. Avisar al merchant.
+- **Qué decir al merchant:** "Stripe te pide un dato más para seguir procesando tarjetas
+  (2 min). Mientras, tus clientes pueden pagarte por Bizum o transferencia."
+- **Prevención:** monitorizar `account.updated`; checklist de readiness en Configuración.
+
+## R5 · Bizum confirmado por error
+
+- **Síntoma:** el pro confirmó "Bizum recibido" sin haberlo recibido.
+- **Dónde mirar:** charge (`paid_via='bizum_manual'`) y si la factura asociada fue remitida al SIF.
+- **Acción:** factura **NO remitida** al SIF → "Deshacer pago" (acción admin, auditada).
+  Factura **remitida** → rectificativa **R1** + nueva factura si procede. **Nunca editar la emitida.**
+- **Qué decir al merchant:** "Lo hemos deshecho/rectificado; la numeración queda correcta de
+  cara a Hacienda. Confirma solo cuando veas el Bizum en tu banco."
+- **Prevención:** doble confirmación en UI ("¿Has recibido X € de Y en tu Bizum?").
+
+## R6 · Transferencia que no llega
+
+- **Síntoma:** cobro por transferencia lleva días en `pending`.
+- **Dónde mirar:** nada que arreglar en sistema: `pending` es el estado correcto por diseño.
+- **Acción:** los recordatorios 7/14d actúan solos (J6). Botón para reenviar los datos
+  (IBAN + referencia) con un toque. **No marcar pagado "por confianza".**
+- **Qué decir al merchant:** "El cobro sigue pendiente; le hemos recordado al cliente los
+  datos. Márcalo pagado solo cuando lo veas en tu cuenta."
+- **Prevención:** referencia única por cobro (`CF-YYYYMMDD-XXXX`) para casarlo en el banco.
+
+## R7 · SIF (AEAT) rechaza registros
+
+- **Síntoma:** `VfSubmission` en `rejected`; la cola acumula intentos.
+- **Dónde mirar:** `VfSubmission.lastError` + logs del módulo `fiscal/verifactu`.
+- **Acción:** error de **dato de factura** → corregir vía R1 si está emitida. Error
+  **estructural** (XSD/firma) → `SIF_ENABLED=false` + avisar al asesor; la emisión local
+  sigue y la cola remite al reanudar. Documentar en `docs/VERIFACTU_EVIDENCIAS.md`.
+- **Qué decir al merchant:** "Tus facturas siguen emitiéndose con normalidad; la remisión a
+  la AEAT se reanuda en cuanto cerremos la incidencia técnica. No tienes que hacer nada."
+- **Prevención:** validación contra XSD antes de enviar; retry con backoff; `manual_review`
+  a partir de 5 intentos (Parte L).
+
+## R8 · "Abrir PDF" falla
+
+- **Síntoma:** el botón/enlace de PDF devuelve error o un documento vacío.
+- **Dónde mirar:** la ruta on-demand regenera el PDF; si re-falla → log de `pdf.service`.
+- **Acción:** reintentar por la ruta on-demand (regenera). Si persiste, issue con el id del
+  documento. **Nunca enlazar `pdfUrl` crudo** (siempre la ruta que regenera).
+- **Qué decir al merchant:** "Vuelve a abrirlo desde el botón del detalle; se regenera al
+  momento. Si sigue fallando ya lo tenemos localizado."
+- **Prevención:** QA de PDFs por release (quote firmado, factura, R1 negativa, watermark demo).
+
+## R9 · Email no llega
+
+- **Síntoma:** el cliente/merchant no recibe el email (PDF, confirmación...).
+- **Dónde mirar:** dashboard de Resend → estado del envío (bounce/spam/etc.).
+- **Acción:** bounce → verificar la dirección y reenviar. Problema de dominio → revisar DNS
+  de `yaqu.app` (SPF/DKIM).
+- **Qué decir al merchant:** "Revisa que el email del cliente esté bien escrito y mira su
+  carpeta de spam; te lo reenviamos ya."
+- **Prevención:** dominio verificado en Resend; emails transaccionales únicamente.
+
+## R10 · Anular o rectificar una factura
+
+- **Síntoma:** el merchant pide cambiar/borrar una factura emitida.
+- **Dónde mirar:** la factura y su estado de remisión al SIF.
+- **Acción:** importe/datos erróneos → **rectificativa R1** (serie propia). Duplicado total →
+  **anulación** (post-SIF, con su registro de anulación). **Flujo único, sin ediciones ni
+  borrados** (regla 29).
+- **Qué decir al merchant:** "Una factura emitida no se puede editar (es lo que exige la
+  normativa): hacemos una rectificativa que la corrige y queda todo trazado."
+- **Prevención:** UI no ofrece editar/borrar emitidas; solo "Rectificar" / "Anular".
+
+## R11 · El merchant pide sus datos o se da de baja
+
+- **Síntoma:** solicitud RGPD de export o baja.
+- **Dónde mirar:** módulo `exports`; Parte S4 del master (plazos y anonimización).
+- **Acción:** entregar export en CSVs (+ zip de PDFs en F2) + XML RRSIF (post-SIF). Baja:
+  clientes con facturas NO se borran → anonimizar según S4.
+- **Qué decir al merchant:** "Te llevas todos tus datos en formatos estándar. Las facturas
+  emitidas debemos conservarlas el plazo legal, anonimizando lo demás."
+- **Prevención:** exports siempre disponibles (RGPD, incluido en todos los planes).
+
+## R12 · Rollback de flags
+
+- **Síntoma:** una feature recién activada causa un incidente.
+- **Dónde mirar:** tabla de flags (Parte P) — cada flag tiene rollback seguro documentado.
+- **Acción:** orden fijo: **apagar flag → verificar flujo legacy → comunicar**.
+  `WHATSAPP_TEMPLATES_ENABLED` global solo se toca en incidente grave con Meta.
+- **Qué decir al merchant:** "Hemos desactivado temporalmente esa función; todo lo demás
+  sigue funcionando con normalidad."
+- **Prevención:** cambios de flag global = stop condition (OK del fundador) + auditados.
+
+## R13 · "Mi cliente tiene una inspección"
+
+- **Síntoma:** un merchant (o su gestoría) pide documentación para una inspección de Hacienda.
+- **Dónde mirar:** módulo exports (XML RRSIF) + facturas PDF + declaración responsable vigente.
+- **Acción:** entregar: export XML RRSIF + facturas en PDF + declaración responsable +
+  guía de 1 página del pack gestoría (S1-H).
+- **Qué decir al merchant:** "Aquí tienes el paquete completo que entiende cualquier gestoría:
+  registros oficiales, facturas y nuestra declaración responsable."
+- **Prevención:** pack gestoría preparado y versionado por release (S1-E/S1-H).
+
+## R14 · Disputa de tarjeta (chargeback)
+
+- **Síntoma:** webhook `charge.dispute.created` (Connect; los direct charges caen en la
+  cuenta del MERCHANT).
+- **Dónde mirar:** Dashboard Stripe de la cuenta conectada + el documento asociado al charge.
+- **Acción:** aviso al pro por WA/BO + **paquete de evidencia en 1 clic**: presupuesto firmado,
+  evidencia de aceptación (timestamp/IP/user-agent), factura y mensajes de entrega.
+- **Qué decir al merchant:** "Tienes la firma digital del cliente y toda la traza: adjuntamos
+  el paquete de evidencia a la disputa. Las firmas ganan disputas."
+- **Prevención:** firma/aceptación con evidencia SIEMPRE antes de cobrar — y úsese como
+  argumento de venta.
