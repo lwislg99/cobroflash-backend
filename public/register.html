@@ -60,6 +60,21 @@
   const refCode = (new URLSearchParams(location.search).get('ref') || '').trim();
   if (refCode) document.getElementById('ref-badge').style.display = 'block';
 
+  // V0-3: atribución de adquisición — UTM de la URL ("source/medium/campaign") o "ref:CODIGO".
+  // Persistida en sessionStorage para sobrevivir a la navegación landing → registro.
+  const qsP = new URLSearchParams(location.search);
+  const utmSrc = (qsP.get('utm_source') || '').trim();
+  let acquisitionSource = '';
+  if (utmSrc) {
+    acquisitionSource = [utmSrc, (qsP.get('utm_medium') || '').trim(), (qsP.get('utm_campaign') || '').trim()]
+      .filter(Boolean).join('/');
+    try { sessionStorage.setItem('yaqu_src', acquisitionSource); } catch (err) {}
+  } else if (refCode) {
+    acquisitionSource = 'ref:' + refCode;
+  } else {
+    try { acquisitionSource = sessionStorage.getItem('yaqu_src') || ''; } catch (err) {}
+  }
+
   document.getElementById('register-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const name    = document.getElementById('name').value.trim();
@@ -68,7 +83,7 @@
     const btn = document.getElementById('btn');
     btn.disabled = true; btn.textContent = 'Creando cuenta…';
     try {
-      const res = await fetch('/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, country, ref: refCode }) });
+      const res = await fetch('/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, country, ref: refCode, source: acquisitionSource || undefined }) });
       const data = await res.json();
       if (res.ok) {
         showAlert('✉️ ¡Cuenta creada! Revisa tu email y haz clic en el enlace para acceder.', 'ok');

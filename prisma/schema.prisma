@@ -39,6 +39,10 @@ model Merchant {
   clabe   String?
   status  String  @default("active")
 
+  // V0-3: atribución de adquisición capturada en el registro (UTM "source/medium/campaign"
+  // o "ref:CODIGO" del programa de referidos; null = orgánico/desconocido)
+  acquisitionSource String? @map("acquisition_source")
+
   // Preferencias de notificaciones por email
   notifyEmailOnPaid            Boolean @default(true)  @map("notify_email_on_paid")
   notifyEmailOnQuoteAccepted   Boolean @default(false) @map("notify_email_on_quote_accepted")
@@ -188,6 +192,8 @@ model Quote {
   lines        Json
   acceptedAt   DateTime?
   paymentTerms String?
+  // V0-3: telemetría quote_created_via ('text' | 'voice' con VOZ-1)
+  createdVia   String? @map("created_via")
   rejectedAt   DateTime?
   decisionChannel String?
   decisionComment String?

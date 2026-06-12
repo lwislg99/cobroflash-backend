@@ -28,6 +28,8 @@ export const CreateQuoteSchema = z.object({
   // Modo Good/Better/Best: exactamente 3 tiers
   tiers: z.array(QuoteTierSchema).length(3).optional(),
   paymentTerms: z.enum(['FULL_UPFRONT', 'FIFTY_FIFTY', 'MANUAL']).optional().nullable(),
+  // V0-3: telemetría quote_created_via (VOZ-1 enviará 'voice')
+  created_via: z.enum(['text', 'voice']).optional(),
 });
 
 export type QuoteTier = z.infer<typeof QuoteTierSchema>;

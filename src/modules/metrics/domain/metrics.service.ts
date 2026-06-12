@@ -273,6 +273,85 @@ export async function getServiceMetrics(merchantId: number) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
+// V0-3 — Funnel mínimo de PLATAFORMA (solo cuentas owner, vista BO)
+// registro → 1ª quote → enviada → aceptada → cobrada, con atribución
+// (acquisitionSource del registro), paid_via (charge.method al pagar) y
+// quote_created_via ('text' | 'voice').
+// ──────────────────────────────────────────────────────────────────────────
+
+export async function getPlatformFunnel() {
+  const [merchants, quoteAgg, sentAgg, acceptedAgg, paidCharges, viaAgg] = await Promise.all([
+    prisma.merchant.findMany({
+      select: { id: true, name: true, createdAt: true, acquisitionSource: true, plan: true },
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.quote.groupBy({ by: ['merchantId'], _count: { id: true } }),
+    prisma.quote.groupBy({
+      by: ['merchantId'],
+      where: { status: { in: ['sent', 'accepted', 'rejected'] } },
+      _count: { id: true },
+    }),
+    prisma.quote.groupBy({ by: ['merchantId'], where: { status: 'accepted' }, _count: { id: true } }),
+    prisma.charge.groupBy({
+      by: ['merchantId', 'method'],
+      where: { status: 'paid' },
+      _count: { id: true },
+      _sum: { amount: true },
+    }),
+    prisma.quote.groupBy({ by: ['createdVia'], _count: { id: true } }),
+  ]);
+
+  const toMap = (rows: Array<{ merchantId: number; _count: { id: number } }>) =>
+    new Map(rows.map((r) => [r.merchantId, r._count.id]));
+  const quotesBy = toMap(quoteAgg);
+  const sentBy = toMap(sentAgg);
+  const acceptedBy = toMap(acceptedAgg);
+
+  const collectedBy = new Map<number, { count: number; amount: number }>();
+  const paidViaTotals: Record<string, { count: number; amount: number }> = {};
+  for (const r of paidCharges) {
+    const cur = collectedBy.get(r.merchantId) ?? { count: 0, amount: 0 };
+    cur.count += r._count.id;
+    cur.amount += Number(r._sum.amount ?? 0);
+    collectedBy.set(r.merchantId, cur);
+    const via = String(r.method || 'desconocido');
+    if (!paidViaTotals[via]) paidViaTotals[via] = { count: 0, amount: 0 };
+    paidViaTotals[via].count += r._count.id;
+    paidViaTotals[via].amount += Number(r._sum.amount ?? 0);
+  }
+
+  const rows = merchants.map((m) => {
+    const collected = collectedBy.get(m.id);
+    return {
+      id: m.id,
+      name: m.name,
+      registeredAt: m.createdAt,
+      acquisitionSource: m.acquisitionSource ?? null,
+      plan: m.plan,
+      quotes: quotesBy.get(m.id) ?? 0,
+      sent: sentBy.get(m.id) ?? 0,
+      accepted: acceptedBy.get(m.id) ?? 0,
+      collectedCount: collected?.count ?? 0,
+      collectedAmount: Math.round((collected?.amount ?? 0) * 100) / 100,
+    };
+  });
+
+  const steps = {
+    registered: rows.length,
+    firstQuote: rows.filter((r) => r.quotes > 0).length,
+    sent: rows.filter((r) => r.sent > 0).length,
+    accepted: rows.filter((r) => r.accepted > 0).length,
+    collected: rows.filter((r) => r.collectedCount > 0).length,
+  };
+
+  const quoteCreatedVia = Object.fromEntries(
+    viaAgg.map((v) => [String(v.createdVia ?? 'sin_dato'), v._count.id]),
+  );
+
+  return { steps, paidVia: paidViaTotals, quoteCreatedVia, merchants: rows };
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 // ANALYTICS — Dashboard de equipo (ANA-3)
 // ──────────────────────────────────────────────────────────────────────────
 

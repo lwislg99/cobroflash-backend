@@ -4,6 +4,20 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
+## V0-3 · `merchants.acquisition_source` + `quotes.created_via` — ✅ APLICADO en prod (2026-06-12)
+
+`prisma db push` aplicado contra Railway, **autorizado por el usuario** (además pre-autorizó
+los db push 100% aditivos del resto del sprint VALIDA-0, siempre con preview verificado).
+Diff previsualizado, 2 operaciones aditivas nullable:
+```sql
+ALTER TABLE "merchants" ADD COLUMN "acquisition_source" TEXT;
+ALTER TABLE "quotes" ADD COLUMN "created_via" TEXT;
+```
+Post-push verificado: `migrate diff` → "empty migration" (BD en sync). Aplicado ANTES de
+pushear el código de V0-3.
+
+---
+
 ## J3 · `customers.wa_opt_out` (baja de WhatsApp) — ✅ APLICADO en prod (2026-06-11)
 
 `prisma db push` aplicado contra `autorack.proxy.rlwy.net` (Railway), **autorizado por el

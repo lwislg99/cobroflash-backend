@@ -26,12 +26,14 @@ router.post('/register', async (req, res) => {
   const email = String(req.body?.email || '').toLowerCase().trim();
   const country = String(req.body?.country || 'ES').trim();
   const ref = String(req.body?.ref || '').trim();
+  // V0-3: atribución de adquisición (UTM "source/medium/campaign" o "ref:CODIGO")
+  const source = String(req.body?.source || '').trim().slice(0, 200);
 
   if (!name)  return res.status(400).json({ error: 'name_required' });
   if (!email || !email.includes('@')) return res.status(400).json({ error: 'invalid_email' });
 
   try {
-    await registerMerchant({ name, email, country, ref: ref || undefined });
+    await registerMerchant({ name, email, country, ref: ref || undefined, source: source || undefined });
     return res.json({ ok: true, message: 'Cuenta creada. Revisa tu email para acceder.' });
   } catch (err) {
     console.error('[POST /auth/register]', err);

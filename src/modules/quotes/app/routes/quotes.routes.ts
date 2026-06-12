@@ -93,6 +93,7 @@ router.post('/create', async (req, res) => {
         tiers: tiersWithTotal as any ?? undefined,
         paymentTerms: body.paymentTerms ?? null,
         teamMemberId: creatorTeamMemberId,
+        createdVia: body.created_via ?? 'text', // V0-3: telemetría quote_created_via
       },
     });
 

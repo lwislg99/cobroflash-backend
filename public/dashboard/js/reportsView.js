@@ -121,6 +121,13 @@ async function renderReportsView(container) {
 
   loadAnalytics(funnelCard, servicesCard);
 
+  // V0-3: funnel de PLATAFORMA — solo se pinta para cuentas owner (el endpoint devuelve 403 al resto)
+  const platformCard = document.createElement('div');
+  platformCard.className = 'customers-card';
+  platformCard.style.display = 'none';
+  wrap.appendChild(platformCard);
+  loadPlatformFunnel(platformCard);
+
   async function load(year) {
     chartCard.innerHTML = '<p style="color:var(--neutral-400);font-size:13px;padding:8px 0">Cargando…</p>';
     summaryCard.innerHTML = '';
@@ -347,6 +354,85 @@ async function loadAnalytics(funnelCard, servicesCard) {
 
   renderFunnel(funnelCard, funnel);
   renderServices(servicesCard, services);
+}
+
+// ── V0-3: funnel de PLATAFORMA (solo owner; 403 para el resto → no se pinta) ──
+async function loadPlatformFunnel(card) {
+  let data;
+  try {
+    data = await apiRequest('/admin/metrics/platform-funnel');
+  } catch (err) {
+    return; // no-owner (403) o error: la sección simplemente no aparece
+  }
+  card.style.display = '';
+
+  const s = data.steps || {};
+  const stages = [
+    { label: 'Registrados',   value: s.registered || 0 },
+    { label: 'Con 1ª quote',  value: s.firstQuote || 0 },
+    { label: 'Han enviado',   value: s.sent || 0 },
+    { label: 'Con aceptada',  value: s.accepted || 0 },
+    { label: 'Han cobrado',   value: s.collected || 0 },
+  ];
+  const maxVal = Math.max(...stages.map((x) => x.value), 1);
+
+  card.innerHTML = `
+    <h3 style="margin:0 0 4px;font-size:13px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em">Funnel de plataforma · merchants (solo owner)</h3>
+    <p style="margin:0 0 16px;font-size:12px;color:var(--neutral-400)">registro → 1ª quote → enviada → aceptada → cobrada</p>
+  `;
+
+  const bars = document.createElement('div');
+  bars.style.cssText = 'display:flex;flex-direction:column;gap:10px;margin-bottom:16px';
+  stages.forEach((st) => {
+    const pct = Math.round((st.value / maxVal) * 100);
+    const row = document.createElement('div');
+    row.innerHTML = `
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px">
+        <span style="color:var(--neutral-600);font-weight:600">${st.label}</span>
+        <span style="color:var(--neutral-700)"><strong>${st.value}</strong></span>
+      </div>
+      <div style="background:var(--neutral-100);border-radius:6px;height:14px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:var(--green-600);border-radius:6px"></div>
+      </div>
+    `;
+    bars.appendChild(row);
+  });
+  card.appendChild(bars);
+
+  // Desgloses de atribución: cómo se cobra y cómo se crean las quotes
+  const fmtPairs = (obj, money) => Object.entries(obj || {})
+    .map(([k, v]) => `${k}: <strong>${money ? (v.count + ' · ' + v.amount.toLocaleString('es-ES', { minimumFractionDigits: 2 }) + ' €') : v}</strong>`)
+    .join(' · ') || '—';
+  const meta = document.createElement('p');
+  meta.style.cssText = 'margin:0 0 14px;font-size:12px;color:var(--muted)';
+  meta.innerHTML = `paid_via → ${fmtPairs(data.paidVia, true)}<br/>quote_created_via → ${fmtPairs(data.quoteCreatedVia, false)}`;
+  card.appendChild(meta);
+
+  // Tabla compacta por merchant (los 15 más recientes)
+  const rows = (data.merchants || []).slice(0, 15);
+  const table = document.createElement('div');
+  table.style.cssText = 'overflow-x:auto';
+  table.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+      <thead><tr style="text-align:left;color:var(--neutral-500)">
+        <th style="padding:4px 8px 4px 0">Merchant</th><th style="padding:4px 8px">Fuente</th>
+        <th style="padding:4px 8px">Plan</th><th style="padding:4px 8px;text-align:right">Quotes</th>
+        <th style="padding:4px 8px;text-align:right">Enviadas</th><th style="padding:4px 8px;text-align:right">Aceptadas</th>
+        <th style="padding:4px 8px;text-align:right">Cobrado</th>
+      </tr></thead>
+      <tbody>${rows.map((m) => `
+        <tr style="border-top:1px solid var(--border)">
+          <td style="padding:6px 8px 6px 0;color:var(--ink);font-weight:600">${m.name}</td>
+          <td style="padding:6px 8px;color:var(--muted)">${m.acquisitionSource || 'orgánico'}</td>
+          <td style="padding:6px 8px;color:var(--muted)">${m.plan}</td>
+          <td style="padding:6px 8px;text-align:right">${m.quotes}</td>
+          <td style="padding:6px 8px;text-align:right">${m.sent}</td>
+          <td style="padding:6px 8px;text-align:right">${m.accepted}</td>
+          <td style="padding:6px 8px;text-align:right" class="amount">${m.collectedAmount.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+  card.appendChild(table);
 }
 
 function renderFunnel(card, data) {

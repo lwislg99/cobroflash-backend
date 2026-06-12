@@ -164,6 +164,8 @@ export async function registerMerchant(params: {
   email: string;
   country?: string;
   ref?: string;
+  // V0-3: atribución de adquisición ("utm_source/medium/campaign" o "ref:CODIGO")
+  source?: string;
 }): Promise<void> {
   const existing = await prisma.merchant.findUnique({ where: { email: params.email } });
   if (existing) {
@@ -185,6 +187,7 @@ export async function registerMerchant(params: {
       planExpiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
       referralCode,
       referredBy: referredBy ?? null,
+      acquisitionSource: params.source ?? (params.ref ? `ref:${params.ref}` : null), // V0-3
     },
   });
 
