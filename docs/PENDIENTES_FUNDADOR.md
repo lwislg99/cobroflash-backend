@@ -40,6 +40,18 @@
   (Yo mientras puedo adelantar S1-0b: investigación de la spec técnica AEAT + librería
   de firma XAdES → `docs/SIF_SPEC_NOTES.md`.)
 
+## 🟡 SIF-1 — datos y decisiones nuevas (de S1-C, 12-jun)
+
+- [ ] **Datos del PRODUCTOR del SIF** (para el bloque `SistemaInformatico` de cada registro
+  y la declaración responsable S1-E): nombre/razón social y NIF de quien "produce" YaQu
+  (¿tú como autónomo? ¿una SL?). Hoy el código usa placeholders. Decisión con el asesor.
+- [ ] **NIF del cliente para facturas completas (F1):** el XSD exige identificar al
+  destinatario con NIF (u otro ID) en las F1; hoy NO capturamos NIF de clientes. Opciones
+  (asesor): (a) añadir campo NIF a la ficha de cliente (columna aditiva) y pedirlo al
+  facturar, o (b) emitir F2 simplificadas (límite legal 400 € — corto para oficios).
+- [ ] **Confirmar con el asesor `TipoRectificativa='I'` (incremental)** para nuestras R1
+  de líneas en negativo (la alternativa 'S' sustitutiva lleva `ImporteRectificacion`).
+
 ## 🔵 Decisiones que te esperan (no urgentes)
 
 - [ ] **P3-6 · Email del merchant demo:** en prod es `luislaragranado@gmail.com`; la regla 8

@@ -75,6 +75,29 @@ export function computeVeriFactuHash(params: {
 }
 
 /**
+ * Huella SHA-256 del registro de ANULACIÓN (S1-C). Cadena según el doc AEAT de
+ * especificaciones de huella **[VALIDAR contra el ejemplo oficial de anulación en
+ * el entorno de pruebas — S1-D]**:
+ *   IDEmisorFacturaAnulada=…&NumSerieFacturaAnulada=…&FechaExpedicionFacturaAnulada=…
+ *   &Huella=…&FechaHoraHusoGenRegistro=…
+ */
+export function computeVeriFactuHashAnulacion(params: {
+  nif: string;
+  serie: string;
+  fecha: string;     // DD-MM-YYYY de la factura anulada
+  prevHash: string;  // '' si primer registro de la cadena
+  timestamp: string; // ISO 8601 con huso
+}): string {
+  const input =
+    `IDEmisorFacturaAnulada=${params.nif.trim()}` +
+    `&NumSerieFacturaAnulada=${params.serie.trim()}` +
+    `&FechaExpedicionFacturaAnulada=${params.fecha.trim()}` +
+    `&Huella=${params.prevHash.trim()}` +
+    `&FechaHoraHusoGenRegistro=${params.timestamp.trim()}`;
+  return crypto.createHash('sha256').update(input, 'utf8').digest('hex').toUpperCase();
+}
+
+/**
  * Construye la URL que codifica el QR de verificación AEAT.
  * https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR
  */

@@ -142,3 +142,6 @@ vite.config.ts.timestamp-*
 
 # guard-dangerous: sentinel de autorizacion de db push (un solo uso, nunca commitear)
 .claude/allow-db-push
+
+# muestras generadas para validacion XSD (S1-C)
+tmp/
