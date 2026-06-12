@@ -290,10 +290,11 @@ export async function generateInvoicePdf(params: {
     const txW = W - qrSz - 14;
 
     if (isVF) {
+      // Leyenda EXACTA exigida por el RRSIF para sistemas VERI*FACTU (auditoría S1-A)
       doc.fontSize(9).font('Helvetica-Bold').fillColor('#166534')
-        .text('Factura Verificable — VeriFactu', txX, qrY, { width: txW });
+        .text('Factura verificable en la sede electrónica de la AEAT', txX, qrY, { width: txW });
       doc.font('Helvetica').fontSize(8).fillColor('#555')
-        .text('Escanea el QR para verificar en la sede electrónica de la AEAT (RD 1007/2023).', txX, doc.y, { width: txW });
+        .text('VERI*FACTU — escanea el QR para verificarla (RD 1007/2023).', txX, doc.y, { width: txW });
       const hashShort = params.vfHash!.slice(0, 32) + '…';
       doc.fontSize(7).fillColor('#888')
         .text(`Huella: ${hashShort}`, txX, doc.y + 2, { width: txW });
