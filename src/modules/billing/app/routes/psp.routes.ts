@@ -215,6 +215,7 @@ router.post('/', async (req, res) => {
           const merchantName = merchant.name || 'tu proveedor';
           sendWhatsAppText({
             to: reviewPhone,
+            merchantId: updated.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
             text: `¡Hola ${customerName}! Gracias por confiar en ${merchantName} 🙏\n\nSi estás satisfecho con el servicio, nos ayudaría mucho que dejaras una reseña en Google:\n${merchant.googleReviewUrl}`,
           }).catch((err) => console.error('[review] Error enviando reseña:', err?.message));
         }
@@ -228,6 +229,7 @@ router.post('/', async (req, res) => {
         const currency = body.currency ?? updated.currency;
         sendWhatsAppText({
           to: merchantPhone,
+          merchantId: updated.merchantId, // V0-2
           text: `💰 Pago recibido de ${customerName}: ${amount} ${currency}`,
         }).catch((err) => console.error('[psp] Error notificando al merchant:', err));
       }

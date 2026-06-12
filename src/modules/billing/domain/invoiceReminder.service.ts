@@ -125,6 +125,7 @@ async function sendReminderWA(
       const urgency = day === 14 ? 'Por favor, completa el pago a la mayor brevedad posible.' : '';
       await sendWhatsAppText({
         to: phone,
+        merchantId: inv.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
         text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago de la factura *${inv.number}* por *${total} ${inv.currency}* de parte de *${merchantName}*.\n\n${urgency}\nSi ya has realizado el pago, por favor ignora este mensaje. ¡Gracias!`,
       });
       console.log(`[invoiceReminder] ✓ texto ${day}d → inv #${inv.number} (${customerName})`);

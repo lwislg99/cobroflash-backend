@@ -4,6 +4,7 @@ import { config } from '../core/config/env';
 import { prisma } from '../core/db/prisma';
 import { normalizePhone } from '../core/utils/utils';
 import { validateTemplateComponents } from './whatsappTemplates';
+import { demoSendBlocked } from './whatsappPolicy';
 
 const BASE_URL = 'https://graph.facebook.com/v21.0';
 
@@ -39,6 +40,12 @@ export async function sendWhatsAppTemplate(params: {
   if (!phoneNumberId || !token) {
     console.warn('[WhatsApp] Credenciales no configuradas, mensaje omitido');
     return { ok: false, reason: 'not_configured' };
+  }
+
+  // V0-2: modo demo seguro — el demo solo envía a DEMO_SAFE_NUMBERS
+  if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
+    console.warn(`[WhatsApp] V0-2: envío desde el merchant demo a ${params.to} BLOQUEADO (no está en DEMO_SAFE_NUMBERS)`);
+    return { ok: false, reason: 'demo_safe_numbers' };
   }
 
   // J3: baja del canal — bloqueo de plantillas a ese número para ese merchant
@@ -86,6 +93,8 @@ export async function sendWhatsAppTemplate(params: {
 export async function sendWhatsAppText(params: {
   to: string;
   text: string;
+  // V0-2: si se indica, el merchant demo solo puede enviar a DEMO_SAFE_NUMBERS
+  merchantId?: number;
 }) {
   const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
   const token = config.WHATSAPP_ACCESS_TOKEN;
@@ -93,6 +102,12 @@ export async function sendWhatsAppText(params: {
   if (!phoneNumberId || !token) {
     console.warn('[WhatsApp] Credenciales no configuradas, mensaje omitido');
     return { ok: false, reason: 'not_configured' };
+  }
+
+  // V0-2: modo demo seguro (los textos libres además solo entregan en ventana 24h — J2)
+  if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
+    console.warn(`[WhatsApp] V0-2: texto desde el merchant demo a ${params.to} BLOQUEADO (no está en DEMO_SAFE_NUMBERS)`);
+    return { ok: false, reason: 'demo_safe_numbers' };
   }
 
   try {

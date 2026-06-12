@@ -159,6 +159,7 @@ router.post('/', async (req, res) => {
         if (phone) {
           sendWhatsAppText({
             to: phone,
+            merchantId: updated.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
             text: `¡Hola ${updated.customer.name || 'Cliente'}! Gracias por confiar en ${merchant.name} 🙏\n\nSi estás satisfecho, déjanos una reseña:\n${merchant.googleReviewUrl}`,
           }).catch(() => {});
         }
@@ -168,6 +169,7 @@ router.post('/', async (req, res) => {
       if (merchantPhone) {
         sendWhatsAppText({
           to: merchantPhone,
+          merchantId: updated.merchantId, // V0-2
           text: `💰 Pago recibido (Mercado Pago) de ${updated.customer?.name || 'un cliente'}: ${payment.amount} ${payment.currency}`,
         }).catch(() => {});
       }
