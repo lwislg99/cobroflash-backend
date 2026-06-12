@@ -234,6 +234,7 @@ Un plan público (Parte W): **Pro 29 €/mes (290 €/año) + 0,9 % solo tarjeta
 | `merchant_alert_es` | ⏳ alta en Meta (usuario) | Notificación al PRO con ventana cerrada | decisión/pago | sendWhatsAppText* | ~0,023 € |
 *Notificaciones al PRO viajan como service message si su ventana 24h está abierta (coste 0); si no, `merchant_alert_es`.
 **Acciones en Meta pendientes (usuario):** URL dinámica en `quote_decision_es` (P3-1, workaround vivo) · `payment_confirmation_invoice_es` · `merchant_alert_es` · categoría Utility en las 3 existentes.
+**Decisión fundador 12-jun-26 (tensión con Parte M/justificantes):** se ASUME el wording "factura" de `payment_request_es`/`payment_confirmation_es` hasta la sesión de Meta de P3-3; al recrearlas como Utility se usará copy neutro **"tu documento de cobro"** (válido para factura y justificante). Hasta entonces, merchants ES reales en modo justificante reciben el wording actual — riesgo asumido y acotado pre-SIF.
 
 ## J2. Template vs service message `F1-doc`
 Service (coste 0) SOLO dentro de la ventana 24h abierta por mensaje ENTRANTE. Template Utility para todo lo iniciado por negocio fuera de ventana. En código: comprobar `lastInboundAt > now-24h` antes de texto libre; si no, plantilla o nada.
@@ -304,7 +305,7 @@ Header: logo del negocio (fallback inicial sobre brand-tint) + nombre comercial/
 Selector según matriz W4/pagos: ≤500 € → **Bizum + Tarjeta** botones, transferencia enlace · 500-1.000 € → Tarjeta principal, Bizum secundario · >1.000 € → Tarjeta + transferencia (Bizum oculto). Nº de factura UNA vez. Transferencia: IBAN + referencia con Copiar. Bizum manual: móvil del pro + importe + concepto copiables + "El profesional confirmará tu pago".
 
 ## N3. Estados (diseño digno SIEMPRE, jamás JSON crudo)
-Pagado → recibo verde, cifra grande, "Descargar factura (PDF)" (o "justificante"), fecha/método. Aceptado ya → "Ya aceptaste este presupuesto el [fecha]" + siguiente paso. Caducado `F2` → "Este presupuesto caducó el [fecha]. Pide uno actualizado 👇" + botón WA. No encontrado → "Este enlace no corresponde a ningún documento activo..." Error de pago/genérico → mensaje claro + Reintentar + botón duda. Cero stacktraces.
+Pagado → recibo verde, cifra grande, "Descargar factura (PDF)" (o "justificante"), fecha/método. Aceptado ya → "Ya aceptaste este presupuesto el [fecha]" + siguiente paso. **Rechazado → "Rechazaste este presupuesto el [fecha]. ¿Has cambiado de opinión? Pídele uno nuevo a [Negocio] 👇" + botón WA** *(copy añadido por decisión del fundador 12-jun-26; implementado)*. Caducado `F2` → "Este presupuesto caducó el [fecha]. Pide uno actualizado 👇" + botón WA. No encontrado → "Este enlace no corresponde a ningún documento activo..." Error de pago/genérico → mensaje claro + Reintentar + botón duda. Cero stacktraces.
 
 ## N4. Performance
 <1,5 s en 4G · HTML servido del servidor (vanilla) · sin librerías pesadas · imágenes lazy · Lighthouse móvil ≥90 · matriz de dispositivos = V0-5.

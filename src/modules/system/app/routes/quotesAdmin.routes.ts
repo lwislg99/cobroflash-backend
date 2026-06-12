@@ -255,6 +255,21 @@ router.post('/:id/send-whatsapp', async (req, res) => {
     });
 
     if (!result.ok) {
+      // Bloqueos de POLÍTICA propios (no son errores de Meta) — mensaje específico (J5)
+      const reason = (result as any).reason as string | undefined;
+      if (reason === 'demo_safe_numbers') {
+        return res.status(200).json({
+          ok: false, sent: false, error: 'demo_safe_numbers',
+          message: 'Modo demo seguro: este número no está en DEMO_SAFE_NUMBERS, no se envía nada (V0-2).',
+        });
+      }
+      if (reason === 'wa_opt_out') {
+        return res.status(200).json({
+          ok: false, sent: false, error: 'wa_opt_out',
+          message: 'Este cliente se dio de baja de WhatsApp (no se le envían más mensajes).',
+        });
+      }
+
       console.error('[send-whatsapp] Error de Meta API:', result.error);
       // P3-2: NO devolver un 502 crudo. El presupuesto sigue guardado; informamos
       // con un mensaje claro (incluyendo el motivo de Meta si lo hay) y 200 ok:false.

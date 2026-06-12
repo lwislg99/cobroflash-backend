@@ -62,11 +62,17 @@ function renderPage(title: string, body: string, brandColor?: string | null): st
     .trust { margin-top: 14px; text-align: center; }
     .trust-main { display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; font-weight: 600; color: #3f4a45; }
     .trust .lock { width: 13px; height: 13px; vertical-align: -1px; }
-    .lines-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 12px; }
+    /* P2-5: table-layout fixed + anchos para que el Total nunca se recorte en 390px */
+    .lines-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 14px; margin-bottom: 12px; }
     .lines-table th { text-align: left; padding: 4px 6px; color: #6b756f; font-size: 12px;
       border-bottom: 1px solid #e7e9e5; }
     .lines-table td { padding: 6px 6px; border-bottom: 1px solid #f1f2ee; }
-    .lines-table td:last-child { text-align: right; }
+    .lines-table td:first-child { overflow-wrap: break-word; }
+    .lines-table th:nth-child(2), .lines-table td:nth-child(2) { width: 44px; text-align: right; }
+    .lines-table th:nth-child(3), .lines-table td:nth-child(3) { width: 100px; text-align: right;
+      white-space: nowrap; font-variant-numeric: tabular-nums; }
+    @media (max-width: 420px) { .lines-table { font-size: 13px; }
+      .lines-table th:nth-child(3), .lines-table td:nth-child(3) { width: 92px; } }
     .total-row { display: flex; justify-content: space-between; font-weight: 800; color: #0f1c17;
       font-size: 20px; margin: 12px 0 20px; padding-top: 10px; border-top: 2px solid #e7e9e5;
       font-variant-numeric: tabular-nums; }
@@ -146,7 +152,7 @@ async function loadQuote(id: number) {
   return prisma.quote.findUnique({
     where: { id },
     include: {
-      merchant: { select: { name: true, legalName: true, logoUrl: true, address: true, country: true, brandColor: true, brandAccentColor: true } },
+      merchant: { select: { name: true, legalName: true, logoUrl: true, address: true, country: true, brandColor: true, brandAccentColor: true, whatsappPhone: true } },
       customer: { select: { name: true } },
     },
   });
@@ -386,6 +392,26 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
       } else if (quote.status === 'accepted') {
         return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
           renderPage(`${locale.quote} ya aceptada`, `<div class="status-ok"><strong>Este ${locale.quoteVerb} ya fue aceptado.</strong><br/>Gracias por tu confianza.</div>`, brandColor)
+        );
+      } else if (quote.status === 'rejected') {
+        // N3 (copy oficial decidido por el fundador 12-jun): estado rechazado digno,
+        // nunca el formulario de firma.
+        const fechaRechazo = quote.rejectedAt
+          ? new Date(quote.rejectedAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+          : null;
+        const proPhone = (quote.merchant as any)?.whatsappPhone
+          ? String((quote.merchant as any).whatsappPhone).replace(/[^\d]/g, '')
+          : '';
+        const merchName = esc(quote.merchant?.legalName || quote.merchant?.name || 'el profesional');
+        const waBtn = proPhone
+          ? `<a href="https://wa.me/${proPhone}?text=${encodeURIComponent(`Hola, sobre el ${locale.quoteVerb} #${quoteId}: he cambiado de opinión, ¿me lo reenvías?`)}"
+               style="display:inline-block;margin-top:14px;background:#16a34a;color:#fff;font-weight:700;padding:12px 22px;border-radius:999px;text-decoration:none">Pedir uno nuevo por WhatsApp</a>`
+          : '';
+        return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
+          renderPage(`${locale.quote} rechazada`, `<div class="status-ok" style="text-align:center">
+            <strong>Rechazaste este ${locale.quoteVerb}${fechaRechazo ? ` el ${fechaRechazo}` : ''}.</strong><br/>
+            ¿Has cambiado de opinión? Pídele uno nuevo a ${merchName} 👇<br/>${waBtn}
+          </div>`, brandColor)
         );
       }
     }
