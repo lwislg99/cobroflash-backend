@@ -139,11 +139,10 @@
 - **Mejora:** recrear `quote_decision_es`, `payment_request_es` y `payment_confirmation_es` como **Utility** (no Marketing) antes de escalar — mejor entregabilidad y coste. No urgente.
 - **Estado (10 jun):** acción de Meta (usuario), no hay nada que cambiar en el código (los nombres de plantilla no cambian).
 
-### [ ] P3-5 · WhatsApp Business en modo restringido: Meta #131030 "Recipient phone number not in allowed list"  🔒 ACCIÓN EN META (usuario)
-- **Síntoma (E2E V0-1, 11 jun):** TODO envío de plantilla a un número fuera de la lista de destinatarios de prueba falla con #131030 → **ningún cliente real recibiría WhatsApp hoy**.
-- **Causa:** la app de Meta sigue en modo desarrollo/prueba (lista de destinatarios autorizados).
-- **Arreglo (usuario, en Meta):** pasar la app a modo producción / completar la verificación del negocio, o mientras tanto añadir los números de prueba (el tuyo) a la lista de permitidos para el E2E móvil.
-- **Nota:** el manejo de error del código funciona (200 `ok:false` con motivo legible, P3-2 ✅); el presupuesto queda guardado en `draft`.
+### [x] P3-5 · WhatsApp Business en modo restringido: Meta #131030 "Recipient phone number not in allowed list"
+- **Síntoma (E2E V0-1, 11 jun):** TODO envío de plantilla a un número fuera de la lista de destinatarios de prueba fallaba con #131030.
+- **CERRADO (11 jun, usuario en Meta):** la app de Meta está en modo **PRODUCCIÓN**; los mensajes llegan a números reales y los webhooks funcionan (verificado por el fundador en el E2E móvil de V0-1).
+- **Nota:** el manejo de error del código ya era correcto (200 `ok:false` con motivo legible, P3-2 ✅).
 
 ### [ ] P3-6 · Merchant demo: email en prod es `luislaragranado@gmail.com`, la regla 8 dice `demo@yaqu.app`
 - **Síntoma (E2E V0-1):** `merchant.findUnique({ email: 'demo@yaqu.app' })` no encuentra al demo (id=1); su email real en prod es el histórico.

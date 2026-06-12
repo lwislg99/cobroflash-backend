@@ -50,22 +50,27 @@
 - **Pendiente de copy oficial:** quote en estado `rejected` aún renderiza el formulario de
   aceptar (N3 no define ese estado → propuesta de master).
 
-## 5. Parte HUMANA pendiente (V0-1 no cierra sin esto)
+## 5. Parte HUMANA — ✅ COMPLETADA (confirmada por el fundador, 11 jun 2026)
 
-Guion para el screen-record desde el móvil (sin un solo fallo, según U1.1):
+Guion ejecutado desde el móvil:
 
-- [ ] **Prerrequisito:** tu número en la lista de permitidos de Meta (o app en producción) — P3-5.
-- [ ] Crear quote desde el móvil (Quick Quote <30 s) a un cliente con TU número.
-- [ ] WhatsApp llega con plantilla correcta (vars + botón "Ver presupuesto").
-- [ ] Abrir landing desde el WhatsApp → firmar (canvas) → aceptar.
-- [ ] WhatsApp `payment_request_es` llega con botón "Pagar ahora".
-- [ ] Pagar con **tarjeta TEST** (4242 4242 4242 4242) en Stripe Checkout.
-- [ ] BD: `charge.paid` + `invoice.paid` + `paidAt` + `paid_via='card'` (verificar en dashboard).
-- [ ] Email Resend con la factura PDF adjunta llega al email del cliente.
-- [ ] WhatsApp de confirmación con el **nº de factura real**.
-- [ ] "Abrir PDF" desde el detalle regenera y abre el PDF (con watermark si demo).
-- [ ] Capturas de cada paso + screen-record completo → añadir aquí.
+- [x] **Prerrequisito:** ✅ **P3-5 RESUELTO** — la app de Meta está en modo **PRODUCCIÓN**,
+      los mensajes llegan a números reales y los webhooks funcionan (fundador, 11 jun 2026).
+- [x] Crear quote desde el móvil (Quick Quote <30 s) a un cliente con el número del fundador.
+- [x] WhatsApp REAL llega con plantilla correcta (vars + botón "Ver presupuesto").
+- [x] Abrir landing desde el WhatsApp → firmar (canvas) → aceptar.
+- [x] WhatsApp `payment_request_es` llega con botón "Pagar ahora".
+- [x] Pago con **tarjeta TEST** (4242 4242 4242 4242) en Stripe Checkout.
+- [x] BD: `charge.paid` + `invoice.paid` + `paidAt` + `paid_via='card'` correctos.
+- [x] Email Resend con la factura PDF adjunta.
+- [x] WhatsApp de confirmación con el **nº de factura real**.
+- [x] "Abrir PDF" desde el detalle regenera y abre el PDF.
+- [x] Screen-record + capturas grabados (custodia del fundador; añadir enlace aquí al subirlos).
+
+**V0-1 = ✅ DONE** (parte automatizada §2, 11 jun + ciclo completo desde móvil confirmado por
+el fundador, 11 jun 2026 — quote → WA real → firma → pago test → estados BD → email+PDF →
+WA confirmación → Abrir PDF, sin fallos).
 
 ---
-*Generado durante la verificación automatizada del 11 jun 2026 (sesión demo revocada al
-terminar; cliente de prueba id=4 y facturas demo 2026-CF-001/002 quedan como datos demo).*
+*Verificación automatizada del 11 jun 2026 (sesión demo revocada al terminar; cliente de
+prueba id=4 y facturas demo 2026-CF-001/002 quedan como datos demo).*
