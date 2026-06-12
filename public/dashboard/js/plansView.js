@@ -29,9 +29,11 @@ async function renderPlansView(container) {
   render();
 }
 
-function buildPlansHtml({ currentPlan, planExpiresAt, plans }, annual) {
+function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual) {
   const plan = plans[0]; // plan único Pro
   if (!plan) return `<div class="empty-state"><div class="empty-state-title">Sin planes disponibles</div></div>`;
+  // V0-4: founding visible solo si quedan plazas y aún no tiene plan de pago
+  const showFounding = founding && founding.seatsLeft > 0 && currentPlan !== 'pro' && currentPlan !== 'founding';
 
   const isTrialExpired = currentPlan === 'trial' && planExpiresAt && new Date(planExpiresAt) < new Date();
   const trialDaysLeft  = planExpiresAt
@@ -61,7 +63,7 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans }, annual) {
     <div class="customers-card" style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       <div style="font-size:28px">✅</div>
       <div>
-        <div style="font-weight:700;font-size:15px;color:var(--neutral-900)">Plan activo: <strong>Pro</strong></div>
+        <div style="font-weight:700;font-size:15px;color:var(--neutral-900)">Plan activo: <strong>${currentPlan === 'founding' ? 'Founding (14,50 €/mes de por vida)' : 'Pro'}</strong></div>
         ${planExpiresAt ? `<div style="font-size:13px;color:var(--neutral-400);margin-top:2px">Próxima renovación: ${new Date(planExpiresAt).toLocaleDateString('es', { day: '2-digit', month: 'long', year: 'numeric' })}</div>` : ''}
       </div>
     </div>
@@ -69,21 +71,40 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans }, annual) {
 
   const price    = annual ? plan.priceAnnual : plan.price;
   const perLabel = annual ? '/año' : '/mes';
-  const saving   = annual ? `<div style="font-size:12px;color:var(--green-600);font-weight:600;margin-top:4px">= $${(plan.priceAnnual / 12).toFixed(2)}/mes · Ahorras 2 meses</div>` : '';
+  const saving   = annual ? `<div style="font-size:12px;color:var(--green-600);font-weight:600;margin-top:4px">= ${(plan.priceAnnual / 12).toFixed(2)} €/mes · Ahorras 2 meses</div>` : '';
 
   const features = [
-    'Cotizaciones ilimitadas',
-    'Envío por WhatsApp nativo',
-    'Firma digital del cliente',
-    'Facturación automática',
+    'Presupuestos ilimitados con firma digital',
+    'Envío por WhatsApp con un toque',
+    'Cobro integrado: el cliente paga desde el móvil',
+    'Recordatorios automáticos de cobro',
     'Gastos y margen por trabajo',
-    'Hasta 3 usuarios del equipo',
-    'Soporte por WhatsApp',
+    'Tus datos siempre exportables',
+    'Soporte por email y WhatsApp',
   ];
+
+  // V0-4 (W1): banner founding sobre Pro — 14,50 €/mes de por vida, contador REAL
+  const foundingHtml = showFounding ? `
+    <div class="customers-card" style="margin-bottom:14px;background:linear-gradient(135deg,var(--brand) 0%,var(--logo-cyan) 100%);border:none;color:var(--brand-ink)">
+      <div style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between">
+        <div style="font-size:14px;font-weight:700">
+          Oferta founding: <span style="text-decoration:line-through;opacity:.7">29 €</span>
+          <span style="font-size:18px"> 14,50 €/mes</span> de por vida
+        </div>
+        <span style="font-size:12px;font-weight:700;background:rgba(255,255,255,.35);border-radius:999px;padding:4px 12px;white-space:nowrap">
+          Quedan ${founding.seatsLeft} de ${founding.seatsTotal} plazas
+        </span>
+      </div>
+      <button class="plan-btn" data-plan="founding" style="margin-top:12px;width:100%;font-size:14px;font-weight:700;padding:11px;border:none;border-radius:999px;cursor:pointer;background:#fff;color:var(--brand-700)">
+        Quiero mi plaza founding — 14,50 €/mes
+      </button>
+    </div>
+  ` : '';
 
   return `
     <div style="max-width:440px">
       ${statusHtml}
+      ${foundingHtml}
 
       <div class="customers-card">
         <div style="display:flex;justify-content:center;margin-bottom:20px">
@@ -101,8 +122,9 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans }, annual) {
           ${isCurrent ? `<div style="display:inline-block;background:var(--green-500);color:#fff;font-size:10px;font-weight:700;padding:2px 10px;border-radius:var(--radius-full);margin-bottom:10px">Plan actual</div>` : ''}
           <div style="font-weight:700;font-size:18px;color:var(--neutral-800);margin-bottom:6px">Plan Pro</div>
           <div style="font-size:40px;font-weight:800;color:var(--neutral-900);letter-spacing:-.5px;line-height:1">
-            $${price}<span style="font-size:16px;font-weight:400;color:var(--neutral-400)">${perLabel}</span>
+            ${price} €<span style="font-size:16px;font-weight:400;color:var(--neutral-400)">${perLabel}</span>
           </div>
+          <div style="font-size:12.5px;color:var(--neutral-500);margin-top:8px">+ 0,9 % solo cuando cobras con tarjeta · Bizum y transferencia, gratis</div>
           ${saving}
           <div style="font-size:12px;color:var(--neutral-400);margin-top:8px">Todo incluido · Sin límites</div>
         </div>
@@ -117,7 +139,7 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans }, annual) {
 
         ${!isCurrent ? `
           <button class="btn-primary plan-btn" data-plan="${plan.id}" style="width:100%;font-size:15px;padding:12px">
-            Suscribirme — $${price}${perLabel}
+            Suscribirme — ${price} €${perLabel}
           </button>
           <p style="text-align:center;font-size:12px;color:var(--neutral-400);margin:10px 0 0">
             Sin permanencia · Cancela cuando quieras

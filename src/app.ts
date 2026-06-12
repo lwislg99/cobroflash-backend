@@ -88,6 +88,18 @@ app.use(express.static(publicDir));
 app.get('/privacidad', (_req, res) => res.sendFile(path.join(publicDir, 'privacidad.html')));
 app.get('/terminos', (_req, res) => res.sendFile(path.join(publicDir, 'terminos.html')));
 
+// V0-4: página de precios + contador REAL de plazas founding (público, sin auth)
+app.get('/precios', (_req, res) => res.sendFile(path.join(publicDir, 'precios.html')));
+app.get('/public/founding-status', async (_req, res) => {
+  try {
+    const { getFoundingStatus } = await import('./modules/billing/domain/founding');
+    return res.json(await getFoundingStatus());
+  } catch (err) {
+    console.error('[GET /public/founding-status]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 // Rutas públicas
 app.use('/health', healthRouter);
 app.use('/auth', authRouter);

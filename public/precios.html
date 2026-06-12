@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Precios — YaQu</title>
+  <meta name="description" content="YaQu Pro — 29 €/mes (o 290 €/año) + 0,9 % solo cuando cobras con tarjeta. Todo incluido."/>
+  <link rel="manifest" href="/manifest.json"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);
+         min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:24px 16px 48px}
+    a{color:var(--brand-700)}
+    .top{width:100%;max-width:560px;display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+    .logo{font-size:20px;font-weight:800;text-decoration:none;color:var(--ink)}
+    .logo span{color:var(--brand)}
+    h1{font-size:26px;margin:0 0 6px;text-align:center;letter-spacing:-.02em}
+    .sub{margin:0 0 24px;color:var(--body);font-size:15px;text-align:center;max-width:480px}
+
+    .founding{width:100%;max-width:560px;background:linear-gradient(135deg,var(--brand) 0%,var(--logo-cyan) 100%);
+              color:var(--brand-ink);border-radius:var(--r-lg);padding:16px 20px;margin-bottom:14px;
+              display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;justify-content:space-between;
+              box-shadow:var(--shadow-md)}
+    .founding strong{font-size:15px}
+    .founding .seats{font-size:13px;font-weight:700;background:rgba(255,255,255,.35);border-radius:var(--r-full);
+                     padding:4px 12px;white-space:nowrap}
+
+    .card{width:100%;max-width:560px;background:var(--surface);border:1px solid var(--border);
+          border-radius:var(--r-xl);box-shadow:var(--shadow-md);padding:32px 28px}
+    .plan-name{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px}
+    .price-line{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+    .price-old{font-size:22px;color:var(--muted);text-decoration:line-through;font-weight:600}
+    .price{font-size:44px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+    .per{font-size:15px;color:var(--muted)}
+    .annual{margin:6px 0 0;font-size:13.5px;color:var(--body)}
+    .fee{margin:14px 0 0;font-size:13.5px;color:var(--body);background:var(--brand-tint);color:var(--brand-tint-ink);
+         border-radius:var(--r-md);padding:10px 14px;font-weight:600}
+    ul{list-style:none;margin:22px 0;padding:0;display:flex;flex-direction:column;gap:11px}
+    li{display:flex;gap:10px;font-size:14.5px;color:var(--body)}
+    li::before{content:"✓";color:var(--brand);font-weight:800;flex:none}
+    .cta{display:block;width:100%;text-align:center;background:var(--brand);color:#fff;font-weight:700;
+         font-size:16px;padding:15px 18px;border-radius:var(--r-full);text-decoration:none;
+         box-shadow:var(--shadow-btn);transition:background .15s}
+    .cta:hover{background:var(--brand-700)}
+    .trial-note{margin:12px 0 0;text-align:center;font-size:12.5px;color:var(--muted)}
+    .legal{margin-top:26px;font-size:12px;color:var(--muted);text-align:center}
+    .legal a{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="top">
+    <a class="logo" href="/">Ya<span>Qu</span></a>
+    <a href="/register.html" style="font-size:13.5px;font-weight:600">Empezar gratis</a>
+  </div>
+
+  <h1>Un plan. Todo incluido.</h1>
+  <p class="sub">Presupuesta en 30 segundos, envíalo por WhatsApp y cobra antes de empezar.</p>
+
+  <div class="founding" id="founding-banner" style="display:none">
+    <div>
+      <strong>Oferta founding:</strong> 14,50 €/mes <u>de por vida</u> para los 20 primeros.
+    </div>
+    <span class="seats" id="founding-seats">…</span>
+  </div>
+
+  <div class="card">
+    <p class="plan-name">YaQu Pro</p>
+    <div class="price-line">
+      <span class="price-old" id="price-old" style="display:none">29 €</span>
+      <span class="price" id="price">29 €</span>
+      <span class="per">/mes</span>
+    </div>
+    <p class="annual">o <strong>290 €/año</strong> (2 meses gratis)</p>
+    <p class="fee">+ 0,9 % solo cuando cobras con tarjeta. Bizum y transferencia, gratis.</p>
+    <ul>
+      <li>Presupuestos ilimitados, con firma digital del cliente</li>
+      <li>Envío por WhatsApp con un toque (y recordatorios automáticos)</li>
+      <li>Cobro integrado: el cliente paga desde el móvil</li>
+      <li>Clientes, catálogo y gastos sin límites</li>
+      <li>Tus datos siempre exportables</li>
+      <li>Soporte por email y WhatsApp</li>
+    </ul>
+    <a class="cta" id="cta" href="/register.html">Empezar gratis 14 días</a>
+    <p class="trial-note">Sin tarjeta para empezar · Cancelas cuando quieras</p>
+  </div>
+
+  <p class="legal"><a href="/privacidad">Privacidad</a> · <a href="/terminos">Términos</a></p>
+
+  <script>
+    // Contador REAL de plazas founding (V0-4): si quedan, se muestra el banner y el 29 tachado.
+    fetch('/public/founding-status').then(function (r) { return r.json(); }).then(function (f) {
+      if (!f || typeof f.seatsLeft !== 'number' || f.seatsLeft <= 0) return;
+      document.getElementById('founding-banner').style.display = 'flex';
+      document.getElementById('founding-seats').textContent = 'Quedan ' + f.seatsLeft + ' de ' + f.seatsTotal + ' plazas';
+      document.getElementById('price-old').style.display = '';
+      document.getElementById('price').textContent = '14,50 €';
+      document.getElementById('cta').textContent = 'Quiero mi plaza founding';
+    }).catch(function () {});
+  </script>
+</body>
+</html>

@@ -2,43 +2,61 @@ import { Router } from 'express';
 import { stripe } from '../../../../integrations/stripe';
 import { prisma } from '../../../../core/db/prisma';
 import { config } from '../../../../core/config/env';
+import { resolvePriceId, type PriceKey } from '../../domain/stripePrices';
+import { FOUNDING_SEATS, getFoundingStatus } from '../../domain/founding';
 
 const router = Router();
 
+// W1: UN plan público — YaQu Pro 29 €/mes (o 290 €/año). Founding = banner sobre Pro
+// (14,50 €/mes de por vida, 20 plazas con contador real). EQUIPO existe en Stripe
+// pero NO se lista (oferta manual W1).
 const PLANS = [
   {
     id: 'pro',
     label: 'Pro',
-    price: 19,
-    priceAnnual: 179,
-    priceId: config.STRIPE_PRICE_ID_PRO,
-    priceAnnualId: config.STRIPE_PRICE_ID_PRO_ANNUAL,
+    price: 29,
+    priceAnnual: 290,
+    currency: 'EUR',
+    priceKey: 'pro_monthly' as PriceKey,
+    priceAnnualKey: 'pro_annual' as PriceKey,
   },
 ] as const;
 
 // GET /admin/billing/plans
 router.get('/plans', async (req, res) => {
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: req.merchantId },
-    select: { plan: true, planExpiresAt: true, stripeSubscriptionId: true },
-  });
+  const [merchant, founding] = await Promise.all([
+    prisma.merchant.findUnique({
+      where: { id: req.merchantId },
+      select: { plan: true, planExpiresAt: true, stripeSubscriptionId: true },
+    }),
+    getFoundingStatus(),
+  ]);
   return res.json({
     currentPlan: merchant?.plan ?? 'trial',
     planExpiresAt: merchant?.planExpiresAt ?? null,
-    plans: PLANS.map(({ priceId, priceAnnualId, ...rest }) => rest),
+    plans: PLANS.map(({ priceKey, priceAnnualKey, ...rest }) => rest),
+    founding, // { price, seatsTotal, seatsLeft }
   });
 });
 
-// POST /admin/billing/checkout  { plan: 'pro', annual?: boolean }
+// POST /admin/billing/checkout  { plan: 'pro' | 'founding', annual?: boolean }
 router.post('/checkout', async (req, res) => {
   if (!stripe) return res.status(501).json({ error: 'stripe_not_configured' });
 
   const planId = String(req.body?.plan || '');
   const annual  = req.body?.annual === true;
-  const plan = PLANS.find((p) => p.id === planId);
-  if (!plan) return res.status(400).json({ error: 'invalid_plan' });
 
-  const priceId = annual ? plan.priceAnnualId : plan.priceId;
+  let priceId: string | null = null;
+  if (planId === 'founding') {
+    // V0-4: contador real — sin plazas no hay checkout
+    const founding = await getFoundingStatus();
+    if (founding.seatsLeft <= 0) return res.status(409).json({ error: 'founding_sold_out' });
+    priceId = await resolvePriceId('founding_monthly');
+  } else {
+    const plan = PLANS.find((p) => p.id === planId);
+    if (!plan) return res.status(400).json({ error: 'invalid_plan' });
+    priceId = await resolvePriceId(annual ? plan.priceAnnualKey : plan.priceKey);
+  }
   if (!priceId) return res.status(501).json({ error: 'price_not_configured' });
 
   const merchant = await prisma.merchant.findUnique({
@@ -55,7 +73,7 @@ router.post('/checkout', async (req, res) => {
       await prisma.merchant.update({ where: { id: req.merchantId }, data: { stripeCustomerId: customerId } });
     }
 
-    const subMeta = { merchant_id: String(req.merchantId), plan: plan.id };
+    const subMeta = { merchant_id: String(req.merchantId), plan: planId };
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
