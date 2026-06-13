@@ -4,19 +4,21 @@
 > Lo voy acumulando aquí según avanzo (instrucción 12-jun: "guárdamelas en un documento").
 > Cuando hagas una, márcala `[x]` y dime — desbloqueo lo que dependa de ella.
 
-## 🔴 Urgente (bloquea funcionalidad ya desplegada)
+## ✅ Resuelto el 12-13 jun
 
-- [ ] **Railway · `DEMO_SAFE_NUMBERS`** — V0-2 ya está en prod: el merchant demo NO puede
-  enviar WhatsApp a NINGÚN número hasta que pongas esta variable. Pon tu(s) número(s)
-  separados por comas, con y sin prefijo para curarte en salud, p. ej.:
-  `DEMO_SAFE_NUMBERS=34629965893,629965893`
-- [ ] **Stripe · precios nuevos (W1)** — ejecuta `node scripts/setup-stripe-prices.mjs`
-  (lee STRIPE_SECRET_KEY de tu .env; es idempotente). Crea por `lookup_key`:
-  Pro 29 €/mes · Pro 290 €/año · Founding 14,50 €/mes · Equipo 59 €/mes (no listado).
-  El backend los resuelve solo por lookup_key (sin tocar Railway). **Hasta entonces:**
-  el botón founding devuelve `price_not_configured` y el checkout Pro cae al precio
-  ANTIGUO de la env ($19) aunque la UI ya diga 29 € — no dejes entrar a nadie a pagar
-  antes de correr el script. (Si prefieres, dame OK explícito y lo ejecuto yo.)
+- [x] **Railway · `DEMO_SAFE_NUMBERS`** — puesta (`34629965893,629965893`). Verificado en
+  prod: el demo solo enviaría WhatsApp a esos números (V0-2 operativo).
+- [x] **Stripe · precios nuevos (W1)** — ejecutado con tu OK (modo TEST). Los 4 `lookup_key`
+  creados y verificados: pro_monthly (29 €), pro_annual (290 €), founding_monthly (14,50 €),
+  equipo_monthly (59 €, no listado). ⚠️ Son de **TEST** — para cobrar de verdad hay que
+  re-ejecutar en LIVE (ver "Stripe en LIVE" abajo).
+- [x] **P3-6 · Email del merchant demo** — actualizado en prod a `demo@yaqu.app` (regla 8
+  se mantiene). `isDemoMerchant` ya casa por id=1 y por email.
+- [x] **Plantillas Meta vs justificante** — decidido opción (b): se asume el wording
+  actual hasta P3-3; al recrearlas como Utility → copy neutro "tu documento de cobro".
+  Anotado como cambio de master en J1. Nada que hacer ahora por tu parte salvo P3-3.
+- [x] **Copy del estado `rejected`** — decidido e implementado en la landing (cambio de
+  master en N3).
 
 ## 🟠 Sprint VALIDA-0 — tu parte
 
@@ -26,44 +28,25 @@
   Ya tienes uno apuntado para verificar: **P2-5** (columna Total recortada a 390px).
 - [ ] **V0-6 · Calle (TUYO):** lista 30 contactos · **10 discovery registradas (Apéndice B
   del master) — sin esto el sprint NO cierra** · vídeo 60 s (guion en U1.1) · 10 visitas
-  a tiendas · ≥3 founding cobrados con alcance por escrito. Para el alcance necesitas
-  `docs/legal/ALCANCE_BETA.md` — dime y te preparo el borrador con el wording del master
-  para que lo revises.
+  a tiendas · ≥3 founding cobrados con alcance por escrito. Borrador del alcance LISTO en
+  `docs/legal/ALCANCE_BETA.md` (pendiente visto bueno del asesor antes de usarlo).
 - [ ] **Stripe en LIVE** — para cobrar founding DE VERDAD (V0-6): cambiar
   `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET` de Railway a claves live y re-ejecutar
   el script de precios en live.
 
-## 🟡 SIF-1 (prioridad absoluta del master en cuanto esté esto)
+## 🟡 SIF-1 — TODO va a la cita con el asesor
 
-- [ ] **S1-0 · Certificado FNMT** + alta en el entorno de pruebas AEAT + cita con asesor
-  (bundle legal Y3). Es EL bloqueante de SIF-1; todo lo demás del sprint espera esto.
-  (Yo mientras puedo adelantar S1-0b: investigación de la spec técnica AEAT + librería
-  de firma XAdES → `docs/SIF_SPEC_NOTES.md`.)
+**One-pager con TODAS las preguntas listo en `docs/legal/PREGUNTAS_ASESOR.md`** (llévalo a
+la cita). Resumen de lo que hay que cerrar allí:
 
-## 🟡 SIF-1 — datos y decisiones nuevas (de S1-C, 12-jun)
-
-- [ ] **Datos del PRODUCTOR del SIF** (para el bloque `SistemaInformatico` de cada registro
-  y la declaración responsable S1-E): nombre/razón social y NIF de quien "produce" YaQu
-  (¿tú como autónomo? ¿una SL?). Hoy el código usa placeholders. Decisión con el asesor.
-- [ ] **NIF del cliente para facturas completas (F1):** el XSD exige identificar al
-  destinatario con NIF (u otro ID) en las F1; hoy NO capturamos NIF de clientes. Opciones
-  (asesor): (a) añadir campo NIF a la ficha de cliente (columna aditiva) y pedirlo al
-  facturar, o (b) emitir F2 simplificadas (límite legal 400 € — corto para oficios).
-- [ ] **Confirmar con el asesor `TipoRectificativa='I'` (incremental)** para nuestras R1
-  de líneas en negativo (la alternativa 'S' sustitutiva lleva `ImporteRectificacion`).
-
-## 🔵 Decisiones que te esperan (no urgentes)
-
-- [ ] **P3-6 · Email del merchant demo:** en prod es `luislaragranado@gmail.com`; la regla 8
-  del master dice `demo@yaqu.app`. ¿Actualizo el merchant 1 en prod o corrijo la regla 8?
-- [ ] **Plantillas Meta vs justificante (Parte M):** `payment_request_es` y
-  `payment_confirmation_es` dicen "factura" literal; para merchants ES reales (modo
-  justificante pre-SIF) el copy choca con "el copy NUNCA dice factura". Opciones:
-  (a) alta de variante genérica en Meta ("Tu documento de cobro está listo"), o
-  (b) asumir el wording hasta SIF-1. Es cambio de master.
-- [ ] **Copy oficial del estado `rejected`:** un presupuesto rechazado aún muestra el
-  formulario de aceptar en la landing (N3 no define ese estado). Propón el texto y lo
-  implemento (p. ej. "Este presupuesto fue rechazado. Pide uno nuevo 👇 [WhatsApp]").
+- [ ] **S1-0 · Certificado FNMT** + alta en el entorno de pruebas AEAT. Bloqueante físico.
+- [ ] **Decisión de representación (pregunta A del one-pager)** — bloquea S1-D (cómo se
+  autentica el envío). **S1-D está EN PAUSA hasta esto** (instrucción del fundador).
+- [ ] **Datos del PRODUCTOR del SIF** (pregunta B2): razón social + NIF (autónomo vs SL).
+- [ ] **NIF del cliente / F1 vs F2** (pregunta B3): límite 400 € de la simplificada.
+- [ ] **`TipoRectificativa='I'`** a confirmar (pregunta B4).
+- [ ] **Bundle Y3** (preguntas C5-C10): declaración responsable, ToS, anticipos/IVA,
+  privacidad/DPA, y visto bueno del **alcance Founding** (`docs/legal/ALCANCE_BETA.md`).
 
 ## 🟣 Meta (de sprints anteriores, siguen abiertas)
 
@@ -74,5 +57,7 @@
 - [ ] **P3-3:** recrear las 3 plantillas como categoría **Utility** (mejor coste/entrega).
 
 ---
-*Última actualización: 12 jun 2026 (cierre V0-1 → V0-4). Historial de qué hay hecho:
-`docs/EVIDENCIAS_E2E.md`, Parte U del master y BUGS.md.*
+*Última actualización: 13 jun 2026. Resueltos: DEMO_SAFE_NUMBERS, precios Stripe (test),
+P3-6, plantillas Meta (opción b), copy rejected. Pendientes vivos: V0-5/V0-6, Stripe LIVE,
+y todo SIF-1 → cita asesor (`docs/legal/PREGUNTAS_ASESOR.md`). Historial de hecho:
+`docs/EVIDENCIAS_E2E.md`, Parte U del master, BUGS.md.*
