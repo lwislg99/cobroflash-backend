@@ -33,8 +33,10 @@
 ## C. Bundle legal Y3 (lo que el master pide encargarte)
 
 5. **Declaración responsable** del SIF (art. 13 RRSIF): nombre del SIF, versión,
-   componentes, productor + NIF, fecha, conformidad. ¿La rediga el asesor o YaQu y la
-   revisas? Es la S1-E, **versionada por release**.
+   componentes, productor + NIF, fecha, conformidad. **Borrador ya redactado en
+   `docs/legal/DECLARACION_RESPONSABLE.md`** — solo falta validar la cláusula de
+   conformidad (C6), rellenar datos del productor (B2) y tu visto bueno. Es la S1-E,
+   **versionada por release**.
 6. **Términos del SaaS** con límites de responsabilidad: el merchant responde de la
    veracidad de los datos de sus facturas; YaQu, de la conformidad técnica del SIF.
 7. **Condiciones económicas en los ToS**: suscripción, take rate 0,9 % en tarjeta,

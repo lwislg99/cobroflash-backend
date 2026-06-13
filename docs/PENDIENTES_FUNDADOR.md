@@ -47,6 +47,9 @@ la cita). Resumen de lo que hay que cerrar allí:
 - [ ] **`TipoRectificativa='I'`** a confirmar (pregunta B4).
 - [ ] **Bundle Y3** (preguntas C5-C10): declaración responsable, ToS, anticipos/IVA,
   privacidad/DPA, y visto bueno del **alcance Founding** (`docs/legal/ALCANCE_BETA.md`).
+- [ ] **Declaración responsable (S1-E)** — borrador listo en
+  `docs/legal/DECLARACION_RESPONSABLE.md`. Te falta: datos del productor (B2), validar con
+  el asesor la cláusula de conformidad (C6) y firmarla. Publicarla en la UI es post-8/8.
 
 ## 🟣 Meta (de sprints anteriores, siguen abiertas)
 
