@@ -102,14 +102,14 @@
 ### [x] P1-9 · Presupuesto inexistente mostraba el formulario de firma VACÍO; 404 de cobro/recibo en texto plano
 - **Síntoma (E2E V0-1):** `/pay/quote/999999` → 200 con canvas de firma y botón "Firmar y aceptar" sin negocio/líneas/total; `/pay/invoice/999999` → "Cobro no encontrado" en texto crudo. Viola N3 (diseño digno SIEMPRE).
 - **CERRADO (11 jun):** commit `0408155` — `src/core/http/publicNotFound.ts` (página digna con el copy oficial N3) usada por la landing de decisión (aceptar y rechazar) y los 5 routes de cobro/recibo.
-- **PENDIENTE relacionado:** quote en estado `rejected` aún renderiza el formulario (N3 no define copy oficial para ese estado → propuesta de master al fundador).
+- **PENDIENTE relacionado — CERRADO (13 jun, `e57eed4`):** quote en estado `rejected` ya muestra página digna (copy oficial N3 decidido por el fundador: "Rechazaste este presupuesto el [fecha]. ¿Has cambiado de opinión? Pídele uno nuevo a [Negocio] 👇" + botón WhatsApp), nunca el formulario de firma.
 
 ### [x] P2-4 · Microcopy fuera de N5: "Acepto sin dibujar firma"
 - **CERRADO (11 jun):** commit `e80a825` — alineado al oficial N5/regla 30: "Acepto sin firmar" (checkbox y mensaje de error).
 
-### [ ] P2-5 · Landing /pay/quote a 390px: columna Total recortada
+### [x] P2-5 · Landing /pay/quote a 390px: columna Total recortada
 - **Síntoma (E2E V0-1, captura `docs/evidencias/v01-pay-quote-28-movil.png`):** en viewport 390px los importes de la tabla de líneas quedan cortados ("250…", "90.00 E…").
-- **Dónde encaja:** matriz de dispositivos del bug-bash **V0-5** (no arreglar de paso; spec N1/N4).
+- **CERRADO (13 jun, `e57eed4`):** `lines-table` con `table-layout:fixed` + anchos fijos para Cant. (44px) y Total (100px / 92px <420px), `white-space:nowrap` y tabular-nums en el importe, `overflow-wrap:break-word` en concepto. El total ya no se recorta. (Pendiente la verificación en dispositivos reales de V0-5.)
 
 ### [x] P2-3 · Iconos PWA rotos: los .png eran SVG renombrados (A2HS no instalable)
 - **Síntoma:** `public/icons/icon-192.png` e `icon-512.png` contenían texto SVG con extensión .png (523 bytes); el manifest declara `image/png` → Chrome no cumple criterios de instalación y el icono A2HS sale roto. Detectado en el check Y1 de DOCS-F1.
@@ -144,9 +144,9 @@
 - **CERRADO (11 jun, usuario en Meta):** la app de Meta está en modo **PRODUCCIÓN**; los mensajes llegan a números reales y los webhooks funcionan (verificado por el fundador en el E2E móvil de V0-1).
 - **Nota:** el manejo de error del código ya era correcto (200 `ok:false` con motivo legible, P3-2 ✅).
 
-### [ ] P3-6 · Merchant demo: email en prod es `luislaragranado@gmail.com`, la regla 8 dice `demo@yaqu.app`
-- **Síntoma (E2E V0-1):** `merchant.findUnique({ email: 'demo@yaqu.app' })` no encuentra al demo (id=1); su email real en prod es el histórico.
-- **Decisión del fundador:** actualizar el email del merchant 1 en prod a `demo@yaqu.app` (alinea con regla 8 y con `isDemoMerchant`, que ya contempla ambos: id=1 O email demo) o corregir la regla 8 en el master.
+### [x] P3-6 · Merchant demo: email en prod era `luislaragranado@gmail.com`, la regla 8 dice `demo@yaqu.app`
+- **Síntoma (E2E V0-1):** `merchant.findUnique({ email: 'demo@yaqu.app' })` no encontraba al demo (id=1); su email era el histórico.
+- **CERRADO (12 jun):** el fundador decidió alinear con la regla 8 → email del merchant 1 actualizado en prod a `demo@yaqu.app` (script efímero, verificado antes/después; sin conflicto de unicidad).
 
 ---
 
