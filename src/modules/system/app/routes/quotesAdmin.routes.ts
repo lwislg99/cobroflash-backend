@@ -245,6 +245,7 @@ router.post('/:id/send-whatsapp', async (req, res) => {
     const result = await sendWhatsAppTemplate({
       to,
       merchantId: quote.merchantId, // J3: respeta waOptOut
+      log: { customerId: quote.customerId, relatedType: 'quote', relatedId: quote.id }, // WA-0b
       ...buildQuoteDecision({
         customerName: quote.customer.name ?? 'Cliente',
         businessName,

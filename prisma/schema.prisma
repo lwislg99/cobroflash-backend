@@ -419,3 +419,33 @@ model CustomerEvent {
   @@index([merchantId])
   @@map("customer_events")
 }
+
+// WA-0b (master J4 · Parte L): log y estados de entrega de los mensajes de WhatsApp.
+// Tabla independiente (sin FKs) para mantenerla aditiva y tolerante: el código que la
+// escribe captura el error si aún no existe en prod (patrón ENT-3). El waMessageId mapea
+// los webhooks de estado (rama `statuses`) de vuelta al mensaje.
+model WhatsAppMessage {
+  id         Int    @id @default(autoincrement())
+  merchantId Int    @map("merchant_id")
+  customerId Int?   @map("customer_id")
+
+  type         String  // 'template' | 'service'
+  templateName String? @map("template_name")
+  waMessageId  String? @unique @map("wa_message_id") // id que devuelve Meta (wamid.*)
+
+  status String  @default("queued") // queued → sent → delivered → read | failed
+  error  String?
+
+  // Documento relacionado para el chip de entrega (quote | invoice | charge)
+  relatedType String? @map("related_type")
+  relatedId   Int?    @map("related_id")
+
+  costEstimate Decimal? @db.Decimal(8, 4) @map("cost_estimate") // € estimados (utility ES ~0,023)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
+
+  @@index([merchantId, createdAt])
+  @@index([relatedType, relatedId])
+  @@map("whatsapp_messages")
+}

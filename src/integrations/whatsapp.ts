@@ -5,8 +5,20 @@ import { prisma } from '../core/db/prisma';
 import { normalizePhone } from '../core/utils/utils';
 import { validateTemplateComponents } from './whatsappTemplates';
 import { demoSendBlocked } from './whatsappPolicy';
+import {
+  recordWaMessage,
+  extractWaMessageId,
+  type WaRelatedType,
+} from '../modules/messaging/domain/whatsappLog.service';
 
 const BASE_URL = 'https://graph.facebook.com/v21.0';
+
+// WA-0b: metadata opcional para el log de mensajes (chip de entrega). No afecta al envío.
+export interface WaLogMeta {
+  customerId?: number | null;
+  relatedType?: WaRelatedType | null;
+  relatedId?: number | null;
+}
 
 /**
  * J3: ¿el destinatario se dio de baja de WhatsApp para este merchant?
@@ -33,6 +45,8 @@ export async function sendWhatsAppTemplate(params: {
   components?: any[];
   // J3: si se indica, se respeta la baja (waOptOut) de ese número para ese merchant
   merchantId?: number;
+  // WA-0b: si se indica merchantId, se registra el mensaje en el log de entrega
+  log?: WaLogMeta;
 }) {
   const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
   const token = config.WHATSAPP_ACCESS_TOKEN;
@@ -82,6 +96,20 @@ export async function sendWhatsAppTemplate(params: {
         timeout: 10_000,
       },
     );
+
+    // WA-0b: registrar el envío con el waMessageId que devuelve Meta
+    if (params.merchantId) {
+      recordWaMessage({
+        merchantId: params.merchantId,
+        customerId: params.log?.customerId ?? null,
+        type: 'template',
+        templateName: params.templateName,
+        waMessageId: extractWaMessageId(response.data),
+        status: 'sent',
+        relatedType: params.log?.relatedType ?? null,
+        relatedId: params.log?.relatedId ?? null,
+      }).catch(() => {});
+    }
 
     return { ok: true, data: response.data };
   } catch (err: any) {

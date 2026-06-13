@@ -66,6 +66,7 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
   const result = await sendWhatsAppTemplate({
     to,
     merchantId: invoice.merchantId, // J3: respeta waOptOut
+    log: { customerId: invoice.customerId, relatedType: 'invoice', relatedId: invoice.id }, // WA-0b
     ...buildPaymentRequest({
       customerName: invoice.customer.name || 'Cliente',
       businessName,

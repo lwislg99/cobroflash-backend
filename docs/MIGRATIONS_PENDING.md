@@ -4,6 +4,23 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
+## WA-0b · tabla `whatsapp_messages` — ⏳ PENDIENTE (groundwork F2, requiere OK del fundador)
+
+Diff previsualizado, **100 % aditivo** (tabla nueva + 3 índices, sin ALTER/DROP):
+```sql
+CREATE TABLE "whatsapp_messages" (...);
+CREATE UNIQUE INDEX ... ON "whatsapp_messages"("wa_message_id");
+CREATE INDEX ... ON "whatsapp_messages"("merchant_id","created_at");
+CREATE INDEX ... ON "whatsapp_messages"("related_type","related_id");
+```
+**Es F2 (WA-0b), fuera de la pre-autorización de aditivos de VALIDA-0 → NO aplicado.**
+El código que la usa (`whatsappLog.service.ts`) es **tolerante**: si la tabla no existe,
+captura el error y la app sigue (patrón ENT-3). Por eso el código se puede desplegar ya;
+hasta aplicar el push, simplemente no se registran mensajes ni estados de entrega.
+Cuando el fundador dé OK: crear `.claude/allow-db-push` + `prisma db push`.
+
+---
+
 ## V0-3 · `merchants.acquisition_source` + `quotes.created_via` — ✅ APLICADO en prod (2026-06-12)
 
 `prisma db push` aplicado contra Railway, **autorizado por el usuario** (además pre-autorizó

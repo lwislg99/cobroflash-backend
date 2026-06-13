@@ -9,6 +9,7 @@ import { config } from '../../../../core/config/env';
 import { normalizePhone } from '../../../../core/utils/utils';
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/merchantNotifications';
+import { updateWaMessageStatus } from '../../../messaging/domain/whatsappLog.service';
 
 const router = Router();
 
@@ -57,6 +58,20 @@ router.post('/', async (req, res) => {
     const entries = req.body?.entry ?? [];
     for (const entry of entries) {
       for (const change of entry.changes ?? []) {
+        // WA-0b: estados de entrega (queued/sent/delivered/read/failed) de mensajes salientes
+        const statuses = change?.value?.statuses ?? [];
+        for (const st of statuses) {
+          const waMessageId = String(st.id || '');
+          const status = String(st.status || '');
+          if (!waMessageId || !status) continue;
+          const err = st.errors?.[0]
+            ? `${st.errors[0].code}: ${st.errors[0].title || st.errors[0].message || ''}`
+            : null;
+          updateWaMessageStatus(waMessageId, status, err).catch((e) =>
+            console.error('[WA status] update error:', e?.message),
+          );
+        }
+
         const messages = change?.value?.messages ?? [];
         for (const msg of messages) {
           if (msg.type !== 'text') continue;

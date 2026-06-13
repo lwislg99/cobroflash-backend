@@ -244,6 +244,7 @@ Opt-in: checkbox al crear cliente (texto legal; el merchant declara que el clien
 
 ## J4. Estados de mensaje y log — WA-0b `F2-spec (early; permitido en huecos de SIF-1)`
 Tabla `WhatsAppMessage {id, merchantId, customerId?, type:'template'|'service', templateName?, waMessageId, status, error?, relatedType?, relatedId?, costEstimate, createdAt}`. Estados: `queued → sent → delivered → read` | `→ failed(error)`; fuente: webhook `/webhooks/whatsapp` (rama `statuses`, activable antes que el bot). UI: chip de entrega en detalle de quote/factura.
+**🟡 GROUNDWORK 13-jun-26 (en hueco de SIF-1):** modelo `WhatsAppMessage` (schema), servicio TOLERANTE `messaging/domain/whatsappLog.service.ts` (record + updateStatus + getDeliveryStatus + `shouldApplyStatus` puro, no retrocede estado salvo failed), captura de `waMessageId` en `sendWhatsAppTemplate` (metadata `log`), rama `statuses` del webhook procesando delivered/read/failed, call-sites quote/invoice etiquetados, tests 5/5. **Pendiente:** db push de la tabla (aditivo, requiere OK del fundador — `docs/MIGRATIONS_PENDING.md`) + el **chip de entrega en UI** (build F2 cuando se cierre WA-0b; necesita la skill `yaqu-premium-ui`).
 
 ## J5. Fallback si WhatsApp falla `F1-doc` (parcial vía P3-2 ✅)
 Error Meta → 200 `ok:false` con motivo legible (hecho). Acciones SIEMPRE ofrecidas: **Copiar enlace** · **Enviar por email** · **Reintentar**. 131026 (sin WhatsApp) → "copia el enlace y mándaselo por SMS o llámale". Nunca fallo silencioso: cron que falla un envío lo registra y aparece en BO.
