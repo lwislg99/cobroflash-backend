@@ -136,6 +136,15 @@ async function fetchInvoiceDetail(id) {
     else if (st === 'expired') spanStatus.classList.add('status-pill-rejected');
     else spanStatus.classList.add('status-pill-pending');
     stateBlock.appendChild(spanStatus);
+
+    // WA-0b: chip de entrega del WhatsApp de la factura (J4)
+    const waChipHtml = window.waDeliveryChip && window.waDeliveryChip(invoice.waDelivery);
+    if (waChipHtml) {
+      const wrap = document.createElement('span');
+      wrap.style.cssText = 'margin-left:8px';
+      wrap.innerHTML = waChipHtml;
+      stateBlock.appendChild(wrap);
+    }
     summaryRow.appendChild(stateBlock);
 
     // Der: total destacado

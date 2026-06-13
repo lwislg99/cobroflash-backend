@@ -79,13 +79,6 @@ la cita). Resumen de lo que hay que cerrar allí:
   (one-pager para la gestoría de tus clientes). Falta: datos del productor, política F1/F2
   y visto bueno del asesor. Se distribuye solo tras SIF-1 8/8.
 
-## 🟢 db push aditivo pendiente (cuando quieras, bajo demanda)
-
-- [ ] **Tabla `whatsapp_messages` (WA-0b)** — groundwork ya en código (tolerante, desplegado
-  sin romper nada). Para activar el log de entrega de WhatsApp hace falta aplicar el db push
-  (100 % aditivo, tabla nueva). Dame OK y lo aplico (o dime y lo dejamos para cuando WA-0b
-  se construya del todo). Detalle en `docs/MIGRATIONS_PENDING.md`.
-
 ## 🟣 Meta (de sprints anteriores, siguen abiertas)
 
 - [ ] **P3-1:** botón URL dinámica en `quote_decision_es` (`…/pay/quote/{{1}}`) + re-aprobar

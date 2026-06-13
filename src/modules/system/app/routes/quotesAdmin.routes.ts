@@ -12,6 +12,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { getNextBillingStage } from '../../../quotes/domain/billingPlan';
 import { sendWhatsAppTemplate } from '../../../../integrations/whatsapp';
 import { buildQuoteDecision } from '../../../../integrations/whatsappTemplates';
+import { getDeliveryStatus } from '../../../messaging/domain/whatsappLog.service';
 import { recordCustomerEvent } from '../../customerEvents.service';
 import { sendTechQuoteApprovedEmail } from '../../../messaging/domain/merchantNotifications';
 import { normalizePhone } from '../../../../core/utils/utils';
@@ -398,7 +399,9 @@ router.get('/:id', async (req, res) => {
     }
 
     const detail = await getQuoteDetailAdmin(id);
-    return res.json(detail);
+    // WA-0b: estado de entrega del último WhatsApp de este presupuesto (chip)
+    const waDelivery = await getDeliveryStatus(req.merchantId, 'quote', id);
+    return res.json({ ...detail, waDelivery });
   } catch (err: any) {
     console.error('[GET /admin/quotes/:id]', err);
     if (err.message === 'quote_not_found') {

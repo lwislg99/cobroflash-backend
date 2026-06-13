@@ -13,6 +13,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { isDemoMerchant, DEMO_WATERMARK } from '../../../invoicing/domain/emission.service';
+import { getDeliveryStatus } from '../../../messaging/domain/whatsappLog.service';
 import { recordCustomerEvent } from '../../customerEvents.service';
 import { generateInvoicePdf } from '../../../../lib/pdf';
 
@@ -60,7 +61,9 @@ router.get('/:id', async (req, res) => {
     }
 
     // V0-0: la pantalla del merchant demo muestra la marca de agua DEMO
-    res.json({ ...invoice, demo: isDemoMerchant({ id: req.merchantId }) });
+    // WA-0b: estado de entrega del último WhatsApp de esta factura (chip)
+    const waDelivery = await getDeliveryStatus(req.merchantId, 'invoice', id);
+    res.json({ ...invoice, demo: isDemoMerchant({ id: req.merchantId }), waDelivery });
   } catch (err) {
     console.error('[GET /admin/invoices/:id]', err);
     res.status(500).json({ error: 'internal_error' });

@@ -89,6 +89,30 @@ function uiSkeletonRows(tbody, cols, rows = 6) {
 }
 window.uiSkeletonRows = uiSkeletonRows;
 
+// WA-0b · chip de entrega de WhatsApp (J4). Recibe `waDelivery` del detalle
+// ({status, templateName, at} | null) y devuelve el HTML del chip, o '' si no hay envío.
+// Estados de Meta: sent → delivered → read | failed. Microcopy clara para el merchant.
+function waDeliveryChip(waDelivery) {
+  if (!waDelivery || !waDelivery.status) return '';
+  const map = {
+    queued:    { cls: 'wa-chip-sent',      glyph: '🕓', label: 'En cola' },
+    sent:      { cls: 'wa-chip-sent',      glyph: '✓',  label: 'Enviado' },
+    delivered: { cls: 'wa-chip-delivered', glyph: '✓✓', label: 'Entregado' },
+    read:      { cls: 'wa-chip-read',      glyph: '✓✓', label: 'Leído' },
+    failed:    { cls: 'wa-chip-failed',    glyph: '⚠',  label: 'No entregado' },
+  };
+  const m = map[waDelivery.status] || map.sent;
+  let when = '';
+  if (waDelivery.at) {
+    const d = new Date(waDelivery.at);
+    if (!isNaN(d)) when = ' · ' + d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+  }
+  const title = 'WhatsApp' + (waDelivery.templateName ? ' (' + waDelivery.templateName + ')' : '');
+  return `<span class="wa-chip ${m.cls}" title="${title}">`
+    + `<span class="wa-chip-glyph">${m.glyph}</span> WhatsApp: ${m.label}${when}</span>`;
+}
+window.waDeliveryChip = waDeliveryChip;
+
 // -------- Admin – Merchant --------
 
 function getMerchantProfile() {

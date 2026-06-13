@@ -160,6 +160,15 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   else if (st === 'pending_approval') statusSpan.classList.add('status-pill-approval');
   else statusSpan.classList.add('status-pill-pending');
   stateBlock.appendChild(statusSpan);
+
+  // WA-0b: chip de entrega del WhatsApp del presupuesto (J4)
+  const waChipHtml = window.waDeliveryChip && window.waDeliveryChip(quote.waDelivery);
+  if (waChipHtml) {
+    const wrap = document.createElement('span');
+    wrap.style.cssText = 'margin-left:8px';
+    wrap.innerHTML = waChipHtml;
+    stateBlock.appendChild(wrap);
+  }
   summaryRow.appendChild(stateBlock);
 
   // Der: total destacado (Regla del Importe)
