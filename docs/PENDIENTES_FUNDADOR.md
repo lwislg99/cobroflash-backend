@@ -1,8 +1,33 @@
-# PENDIENTES DEL FUNDADOR
+# PENDIENTES DEL FUNDADOR — tu lista central de tareas
 
-> Acciones que SOLO puedes hacer tú (config externa, decisiones, parte humana de sprints).
-> Lo voy acumulando aquí según avanzo (instrucción 12-jun: "guárdamelas en un documento").
-> Cuando hagas una, márcala `[x]` y dime — desbloqueo lo que dependa de ella.
+> **Qué es este documento:** la lista ÚNICA de cosas que tienes que hacer TÚ por tu cuenta
+> (configuración externa, decisiones, gestiones, la parte "humana" de los sprints). Es tu
+> "rama principal" personal: aquí está todo lo que depende de ti, ordenado por prioridad.
+> Se actualiza en cada sesión.
+>
+> **Cómo usarlo con Claude (cualquier chat):** ábrele este archivo y dile *"guíame con mis
+> pendientes"*. Cada punto dice qué hacer y por qué; cuando termines uno, dímelo y marco
+> `[x]` y desbloqueo lo que dependía de él. Si un punto menciona código o sprints (V0-x,
+> S1-x), es solo contexto — lo construyo yo; aquí solo está TU parte.
+>
+> **Reparto de trabajo (para que un chat nuevo se oriente solo leyendo docs):**
+> - **Lo que hago YO (Claude):** las prioridades de construcción están en
+>   `docs/YAQU_MASTER.md` → **Parte U (Sprint Registry)**, con cada item marcado
+>   ✅/🟡/⏳ según avanza. El detalle técnico vive en los docs que cita el master.
+> - **Lo que haces TÚ:** este documento.
+> - **Historial de lo ya hecho:** Parte U del master + `docs/BUGS.md` +
+>   `docs/EVIDENCIAS_E2E.md` + `docs/MIGRATIONS_PENDING.md`.
+
+## 🔝 Ahora mismo, por orden (lo más importante primero)
+
+1. **Pedir cita con el asesor fiscal** y llevarle `docs/legal/PREGUNTAS_ASESOR.md` — es lo
+   que MÁS desbloquea (todo SIF-1: certificado, representación, datos del productor, F1/F2,
+   bundle legal). Sin esto, SIF-1 (la prioridad nº1 del proyecto) no avanza.
+2. **Certificado FNMT** + alta en el entorno de pruebas AEAT (puedes ir tramitándolo en paralelo).
+3. **V0-5 (bug-bash móvil)** y **V0-6 (calle: 10 discovery + vídeo + 3 founding)** — cierran VALIDA-0.
+4. **Stripe en LIVE** cuando vayas a cobrar founding de verdad.
+
+*(El detalle de cada uno, más abajo.)*
 
 ## ✅ Resuelto el 12-13 jun
 
@@ -50,6 +75,9 @@ la cita). Resumen de lo que hay que cerrar allí:
 - [ ] **Declaración responsable (S1-E)** — borrador listo en
   `docs/legal/DECLARACION_RESPONSABLE.md`. Te falta: datos del productor (B2), validar con
   el asesor la cláusula de conformidad (C6) y firmarla. Publicarla en la UI es post-8/8.
+- [ ] **Pack gestoría (S1-H)** — borrador listo en `docs/legal/PACK_GESTORIA.md`
+  (one-pager para la gestoría de tus clientes). Falta: datos del productor, política F1/F2
+  y visto bueno del asesor. Se distribuye solo tras SIF-1 8/8.
 
 ## 🟣 Meta (de sprints anteriores, siguen abiertas)
 
@@ -59,8 +87,18 @@ la cita). Resumen de lo que hay que cerrar allí:
   añado el builder y el envío.
 - [ ] **P3-3:** recrear las 3 plantillas como categoría **Utility** (mejor coste/entrega).
 
+## 📁 Mapa de documentos (para ti y para cualquier chat de Claude)
+
+- `docs/PENDIENTES_FUNDADOR.md` — **este**: tus tareas.
+- `docs/YAQU_MASTER.md` — fuente de verdad del proyecto; **Parte U** = qué construye Claude y en qué orden.
+- `docs/legal/PREGUNTAS_ASESOR.md` — one-pager para la cita con el asesor.
+- `docs/legal/ALCANCE_BETA.md` — alcance founding (para cobrar la beta con respaldo).
+- `docs/legal/DECLARACION_RESPONSABLE.md` — declaración responsable del SIF (S1-E, borrador).
+- `docs/legal/PACK_GESTORIA.md` — one-pager para la gestoría de tus clientes (S1-H, borrador).
+- `docs/EVIDENCIAS_E2E.md` · `docs/BUGS.md` · `docs/MIGRATIONS_PENDING.md` — historial/QA.
+
 ---
 *Última actualización: 13 jun 2026. Resueltos: DEMO_SAFE_NUMBERS, precios Stripe (test),
-P3-6, plantillas Meta (opción b), copy rejected. Pendientes vivos: V0-5/V0-6, Stripe LIVE,
-y todo SIF-1 → cita asesor (`docs/legal/PREGUNTAS_ASESOR.md`). Historial de hecho:
-`docs/EVIDENCIAS_E2E.md`, Parte U del master, BUGS.md.*
+P3-6, plantillas Meta (opción b), copy rejected. Borradores legales listos: alcance,
+preguntas asesor, declaración responsable, pack gestoría. Pendientes vivos: cita asesor
+(lo que más desbloquea), certificado FNMT, V0-5/V0-6, Stripe LIVE.*

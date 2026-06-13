@@ -447,7 +447,7 @@ J7 builders+test · `waOptOut` + check · `docs/RUNBOOKS.md` (O) · `docs/QA_MAS
 - **S1-E · Declaración responsable REAL** (art. 13 RRSIF: nombre del SIF, versión, componentes, productor y NIF, fecha, conformidad), **versionada por release**, publicada visible y entregable a cada merchant. **🟡 BORRADOR 13-jun-26:** plantilla con placeholders en `docs/legal/DECLARACION_RESPONSABLE.md` (fiel al art. 13, coherente con el bloque `SistemaInformatico` de los registros S1-C). Falta: datos reales del productor (B2 del one-pager), revisión del asesor (C5/C6) y publicación en UI (`yaqu.app/legal/declaracion-responsable` + descarga desde Configuración) — esto último solo tras 8/8.
 - **S1-F · Revisión fiscal externa** (300-600 €) de declaración + alcance + **anticipos/IVA (V3)**. Entregable: conformidad archivada.
 - **S1-G · Evidencias:** `docs/VERIFACTU_EVIDENCIAS.md` (capturas, IDs, fechas) + paso a PRODUCCIÓN AEAT con ≥1 factura real remitida y aceptada.
-- **S1-H · Pack gestoría:** one-pager técnico (modalidad, declaración, funcionamiento, qué pedirle al cliente).
+- **S1-H · Pack gestoría:** one-pager técnico (modalidad, declaración, funcionamiento, qué pedirle al cliente). **🟡 BORRADOR 13-jun-26:** `docs/legal/PACK_GESTORIA.md` (modalidad VERI*FACTU, conformidad, funcionamiento, datos a pedir, export R13, qué NO sustituye). Falta: datos del productor, política F1/F2 y revisión del asesor. Distribución solo tras 8/8.
 **Solo con 8/8 ✅:** claim VeriFactu + `INVOICING_ES_ENABLED` a reales + GTM-1 etapa 2.
 
 ### U1.4 · CONNECT-1
