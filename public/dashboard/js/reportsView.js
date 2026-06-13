@@ -121,6 +121,13 @@ async function renderReportsView(container) {
 
   loadAnalytics(funnelCard, servicesCard);
 
+  // J8: métricas de coste y entrega de WhatsApp (se oculta si aún no hay envíos)
+  const waCard = document.createElement('div');
+  waCard.className = 'customers-card';
+  waCard.style.display = 'none';
+  wrap.appendChild(waCard);
+  loadWhatsAppMetrics(waCard);
+
   // V0-3: funnel de PLATAFORMA — solo se pinta para cuentas owner (el endpoint devuelve 403 al resto)
   const platformCard = document.createElement('div');
   platformCard.className = 'customers-card';
@@ -354,6 +361,59 @@ async function loadAnalytics(funnelCard, servicesCard) {
 
   renderFunnel(funnelCard, funnel);
   renderServices(servicesCard, services);
+}
+
+// ── J8: métricas de coste y entrega de WhatsApp (mes en curso) ──────────────
+async function loadWhatsAppMetrics(card) {
+  let data;
+  try {
+    data = await apiRequest('/admin/metrics/whatsapp');
+  } catch (err) {
+    return; // error → no se pinta
+  }
+  const m = data && data.month;
+  if (!m || m.total === 0) return; // sin envíos este mes → no mostrar la tarjeta
+  card.style.display = '';
+
+  const fmtEur = (n) => Number(n || 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+
+  const alertHtml = data.alert && data.alert.active
+    ? `<div class="alert warning" style="display:block;margin:0 0 14px">⚠ Tasa de entrega de los últimos 7 días: <strong>${data.alert.deliveryRate7d}%</strong> (por debajo del 90%). Revisa el runbook R1/R2.</div>`
+    : '';
+
+  const kpis = [
+    { label: 'Enviados', value: m.sent },
+    { label: 'Entregados', value: m.delivered },
+    { label: 'Leídos', value: m.read },
+    { label: 'Fallidos', value: m.failed },
+  ];
+
+  card.innerHTML = `
+    <h3 style="margin:0 0 4px;font-size:13px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em">WhatsApp · este mes</h3>
+    <p style="margin:0 0 16px;font-size:12px;color:var(--neutral-400)">Coste estimado: <strong>${fmtEur(m.costEur)}</strong> · ${m.total} mensaje${m.total !== 1 ? 's' : ''}</p>
+    ${alertHtml}
+    <div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:16px">
+      ${kpis.map((k) => `<div><div style="font-size:22px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums">${k.value}</div><div style="font-size:12px;color:var(--muted)">${k.label}</div></div>`).join('')}
+    </div>
+  `;
+
+  if (data.byTemplate && data.byTemplate.length) {
+    const rows = data.byTemplate.map((t) => `
+      <tr style="border-top:1px solid var(--border)">
+        <td style="padding:6px 8px 6px 0;color:var(--ink)">${t.templateName}</td>
+        <td style="padding:6px 8px;text-align:right">${t.enviados}</td>
+        <td style="padding:6px 8px;text-align:right">${t.entregados}</td>
+        <td style="padding:6px 8px;text-align:right;font-weight:700">${t.deliveryRate === null ? '—' : t.deliveryRate + '%'}</td>
+      </tr>`).join('');
+    const tbl = document.createElement('div');
+    tbl.style.cssText = 'overflow-x:auto';
+    tbl.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12.5px">
+      <thead><tr style="text-align:left;color:var(--neutral-500)">
+        <th style="padding:4px 8px 4px 0">Plantilla</th><th style="padding:4px 8px;text-align:right">Enviados</th>
+        <th style="padding:4px 8px;text-align:right">Entregados</th><th style="padding:4px 8px;text-align:right">Tasa</th>
+      </tr></thead><tbody>${rows}</tbody></table>`;
+    card.appendChild(tbl);
+  }
 }
 
 // ── V0-3: funnel de PLATAFORMA (solo owner; 403 para el resto → no se pinta) ──

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   shouldApplyStatus,
   extractWaMessageId,
+  aggregateWaRows,
   WA_UTILITY_COST_ES,
 } from '../dist/modules/messaging/domain/whatsappLog.service.js';
 
@@ -39,4 +40,25 @@ test('extractWaMessageId: saca wamid.* de la respuesta de Meta', () => {
 
 test('coste utility ES coherente con el master (~0,023 €)', () => {
   assert.equal(WA_UTILITY_COST_ES, 0.023);
+});
+
+// J8: el funnel es derivado (read⊃delivered⊃sent) y el coste suma costEstimate
+test('aggregateWaRows: funnel derivado + coste + fallidos', () => {
+  const m = aggregateWaRows([
+    { status: 'read', costEstimate: 0.023 },
+    { status: 'delivered', costEstimate: 0.023 },
+    { status: 'sent', costEstimate: 0.023 },
+    { status: 'failed', costEstimate: 0.023 },
+  ]);
+  assert.equal(m.total, 4);
+  assert.equal(m.read, 1);
+  assert.equal(m.delivered, 2);  // read + delivered
+  assert.equal(m.sent, 3);       // read + delivered + sent (failed no cuenta como enviado)
+  assert.equal(m.failed, 1);
+  assert.equal(m.costEur, 0.092); // 4 × 0,023
+});
+
+test('aggregateWaRows: vacío → todo a cero', () => {
+  const m = aggregateWaRows([]);
+  assert.deepEqual(m, { sent: 0, delivered: 0, read: 0, failed: 0, total: 0, costEur: 0 });
 });

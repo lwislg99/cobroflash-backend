@@ -114,3 +114,88 @@ export async function getDeliveryStatus(
 export function extractWaMessageId(data: any): string | null {
   return data?.messages?.[0]?.id ?? null;
 }
+
+// ── J8 · Métricas de coste y entrega (F2-spec) ──────────────────────────────
+// Por merchant/mes: enviados/entregados/leídos/fallidos + coste €; por plantilla:
+// tasa de entrega; alerta si la tasa de entrega de los últimos 7 días < 90 %.
+// La tabla guarda el ÚLTIMO estado de cada mensaje; el funnel se deriva: read⊃delivered⊃sent.
+
+export interface WhatsAppMetrics {
+  month: { sent: number; delivered: number; read: number; failed: number; total: number; costEur: number };
+  byTemplate: Array<{ templateName: string; enviados: number; entregados: number; deliveryRate: number | null }>;
+  alert: { active: boolean; deliveryRate7d: number | null; sample: number };
+}
+
+export const DELIVERED_OR_MORE = new Set(['delivered', 'read']);
+export const SENT_OR_MORE = new Set(['sent', 'delivered', 'read']);
+
+/** Pura (testeable): funnel derivado + coste a partir de filas {status, costEstimate}.
+ *  `costEstimate` acepta number, Prisma Decimal o string (se normaliza con Number(String())). */
+export function aggregateWaRows(
+  rows: Array<{ status: string; costEstimate?: number | { toString(): string } | null }>,
+) {
+  const m = { sent: 0, delivered: 0, read: 0, failed: 0, total: rows.length, costEur: 0 };
+  for (const r of rows) {
+    if (r.status === 'failed') m.failed++;
+    if (r.status === 'read') m.read++;
+    if (DELIVERED_OR_MORE.has(r.status)) m.delivered++;
+    if (SENT_OR_MORE.has(r.status)) m.sent++;
+    m.costEur += Number(String(r.costEstimate ?? 0));
+  }
+  m.costEur = Math.round(m.costEur * 1000) / 1000;
+  return m;
+}
+
+export async function getWhatsAppMetrics(merchantId: number, now = new Date()): Promise<WhatsAppMetrics> {
+  const empty: WhatsAppMetrics = {
+    month: { sent: 0, delivered: 0, read: 0, failed: 0, total: 0, costEur: 0 },
+    byTemplate: [],
+    alert: { active: false, deliveryRate7d: null, sample: 0 },
+  };
+  try {
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const weekAgo = new Date(now.getTime() - 7 * 86_400_000);
+
+    const rows = await prisma.whatsAppMessage.findMany({
+      where: { merchantId, type: 'template', createdAt: { gte: monthStart } },
+      select: { status: true, templateName: true, costEstimate: true, createdAt: true },
+    });
+
+    const m = aggregateWaRows(rows); // funnel + coste del mes
+    const perTpl: Record<string, { enviados: number; entregados: number }> = {};
+    let week = { enviados: 0, entregados: 0 };
+
+    for (const r of rows) {
+      const s = r.status;
+      const tpl = r.templateName || '(desconocida)';
+      if (!perTpl[tpl]) perTpl[tpl] = { enviados: 0, entregados: 0 };
+      if (SENT_OR_MORE.has(s)) perTpl[tpl].enviados++;
+      if (DELIVERED_OR_MORE.has(s)) perTpl[tpl].entregados++;
+
+      if (r.createdAt >= weekAgo) {
+        if (SENT_OR_MORE.has(s)) week.enviados++;
+        if (DELIVERED_OR_MORE.has(s)) week.entregados++;
+      }
+    }
+
+    const byTemplate = Object.entries(perTpl).map(([templateName, t]) => ({
+      templateName,
+      enviados: t.enviados,
+      entregados: t.entregados,
+      deliveryRate: t.enviados > 0 ? Math.round((t.entregados / t.enviados) * 100) : null,
+    })).sort((a, b) => b.enviados - a.enviados);
+
+    const rate7d = week.enviados > 0 ? Math.round((week.entregados / week.enviados) * 100) : null;
+    // Alerta solo con muestra significativa (≥10 envíos en 7 días) para no avisar en vacío
+    const alert = {
+      active: rate7d !== null && week.enviados >= 10 && rate7d < 90,
+      deliveryRate7d: rate7d,
+      sample: week.enviados,
+    };
+
+    return { month: m, byTemplate, alert };
+  } catch (err: any) {
+    console.error('[WA-0b/J8] getWhatsAppMetrics omitido:', err?.message || err);
+    return empty;
+  }
+}

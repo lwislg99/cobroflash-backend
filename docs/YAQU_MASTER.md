@@ -257,6 +257,7 @@ Máx 1 recordatorio/presupuesto y 2/factura (7/14d) · mantenimientos solo con a
 
 ## J8. Métricas de coste y entrega `F2-spec`
 Por merchant/mes: enviados/entregados/leídos/fallidos + coste €; por plantilla: tasa de entrega; alerta runbook si <90 % en 7 días.
+**✅ DONE 13-jun-26 (sobre WA-0b):** `getWhatsAppMetrics` (funnel derivado read⊃delivered⊃sent + coste sumando `costEstimate` + tasa por plantilla + alerta 7d <90% con muestra ≥10), endpoint `GET /admin/metrics/whatsapp`, tarjeta en Informes (se oculta si 0 envíos este mes). Tests `aggregateWaRows` 72/72. Datos reales en cuanto haya tráfico WhatsApp.
 
 ---
 

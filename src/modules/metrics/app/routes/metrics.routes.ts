@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getHomeMetrics, getFunnelMetrics, getServiceMetrics, getTeamMetrics, getPlatformFunnel } from '../../domain/metrics.service';
+import { getWhatsAppMetrics } from '../../../messaging/domain/whatsappLog.service';
 import { prisma } from '../../../../core/db/prisma';
 import { isOwnerEmail } from '../../../../core/config/env';
 
@@ -47,6 +48,16 @@ router.get('/platform-funnel', async (req, res) => {
     return res.json(await getPlatformFunnel());
   } catch (err) {
     console.error('[GET /admin/metrics/platform-funnel]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// J8: métricas de coste y entrega de WhatsApp del merchant (mes en curso)
+router.get('/whatsapp', async (req, res) => {
+  try {
+    return res.json(await getWhatsAppMetrics(req.merchantId));
+  } catch (err) {
+    console.error('[GET /admin/metrics/whatsapp]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });
