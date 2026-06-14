@@ -233,8 +233,8 @@ Un plan público (Parte W): **Pro 29 €/mes (290 €/año) + 0,9 % solo tarjeta
 | `quote_decision_es` | ✅ | Envío de presupuesto + recordatorio 24h | manual + cron 1h | quotesAdmin / reminder.service | ~0,023 € |
 | `payment_request_es` | ✅ | Factura lista + recordatorios 7/14d | aceptación / resend / cron 10h | invoicesAdmin / invoiceReminder | ~0,023 € |
 | `payment_confirmation_es` | ✅ | Pago confirmado | webhook psp/mp | whatsappNotifications | ~0,023 € |
-| `payment_confirmation_invoice_es` | ⏳ alta en Meta (usuario) | Sustituirá a la anterior con botón "Ver factura" | webhook psp/mp | builder al aprobarse | ~0,023 € |
-| `merchant_alert_es` | ⏳ alta en Meta (usuario) | Notificación al PRO con ventana cerrada | decisión/pago | sendWhatsAppText* | ~0,023 € |
+| `payment_confirmation_invoice_es` | ⏳ alta en Meta (usuario) · **builder+spec listos 14-jun** | Sustituirá a la anterior con botón "Ver documento" (→ `/recibo/{{1}}`; copy neutro factura/justificante) | webhook psp/mp | builder al aprobarse | ~0,023 € |
+| `merchant_alert_es` | ⏳ alta en Meta (usuario) · **builder+spec listos 14-jun** | Notificación al PRO con ventana cerrada (decisión/pago) | decisión/pago | sendWhatsAppText* | ~0,023 € |
 *Notificaciones al PRO viajan como service message si su ventana 24h está abierta (coste 0); si no, `merchant_alert_es`.
 **Acciones en Meta pendientes (usuario):** URL dinámica en `quote_decision_es` (P3-1, workaround vivo) · `payment_confirmation_invoice_es` · `merchant_alert_es` · categoría Utility en las 3 existentes.
 **Decisión fundador 12-jun-26 (tensión con Parte M/justificantes):** se ASUME el wording "factura" de `payment_request_es`/`payment_confirmation_es` hasta la sesión de Meta de P3-3; al recrearlas como Utility se usará copy neutro **"tu documento de cobro"** (válido para factura y justificante). Hasta entonces, merchants ES reales en modo justificante reciben el wording actual — riesgo asumido y acotado pre-SIF.
@@ -418,6 +418,16 @@ Bases: ejecución de contrato (merchant); interés legítimo/relación precontra
 # PARTE U — SPRINT REGISTRY (cola única — regla 31)
 
 ## U1. F1 (orden estricto; ∥ = en huecos de espera del anterior)
+
+> ### 📌 ESTADO DE EJECUCIÓN (al 14-jun-2026 · lo mantiene Claude Code; detalle en `docs/EVIDENCIAS_E2E.md`, `docs/BUGS.md`, `docs/MIGRATIONS_PENDING.md`, `docs/PENDIENTES_FUNDADOR.md`)
+> **Leyenda:** ✅ hecho y verificado · 🟡 borrador/parcial · ⏸ en pausa por decisión · ⏳ pendiente (humano/externo).
+>
+> **VALIDA-0** (U1.1): V0-0 ✅ (`INVOICING_ES_ENABLED` off + justificante `J-` + watermark DEMO) · V0-1 ✅ DONE (E2E móvil completo confirmado por el fundador; `EVIDENCIAS_E2E.md`) · V0-2 ✅ (`DEMO_SAFE_NUMBERS`) · V0-3 ✅ (funnel: `acquisitionSource`/`paid_via`/`quote_created_via` + vista BO) · V0-4 🟡 (página `/precios` + founding con contador real; precios Stripe en **TEST**, falta LIVE) · V0-5 ⏳ HUMANO (bug-bash dispositivos) · V0-6 ⏳ HUMANO (calle: 10 discovery + vídeo + ≥3 founding).
+> **DOCS-F1** (U1.2): ✅ COMPLETO — skills (`/yaqu-sprint`, `/yaqu-release-check`, `yaqu-premium-ui`, `yaqu-verifactu-sif`), hook `guard-dangerous`, `frontend-design` instalada, J7 builders+test, `RUNBOOKS.md`, `QA_MASTER.md`, flags (`core/flags.ts`), J3 `waOptOut`, check manifest PWA (Y1).
+> **SIF-1** (U1.3): S1-0 ⏳ HUMANO (cert FNMT + asesor) · S1-0b ✅ (`SIF_SPEC_NOTES.md`: VERI*FACTU NO exige XAdES → 100% Node) · S1-A ✅ (`AUDITORIA_RRSIF.md`: huella regenerada a formato oficial, vector de prueba AEAT en verde) · S1-B ✅ (modalidad documentada) · S1-C ✅ (registros alta/R1/anulación validados contra XSD oficial) · S1-D ⏸ PAUSA (espera decisión de representación del asesor) · S1-E 🟡 (`docs/legal/DECLARACION_RESPONSABLE.md` borrador) · S1-F ⏳ (revisión asesor) · S1-G ⏳ (cert + producción AEAT) · S1-H 🟡 (`docs/legal/PACK_GESTORIA.md` borrador).
+> **Canal WhatsApp** (Parte J, en huecos de SIF-1): J3 ✅ · WA-0b (J4) ✅ (log + estados webhook + chip de entrega + tabla en prod) · J8 ✅ (métricas coste/entrega) · plantillas `payment_confirmation_invoice_es` y `merchant_alert_es` 🟡 (builder+spec listos; ⏳ alta en Meta por el fundador).
+> **CONNECT-1 · VOZ-1 · PRECIOS-1 · GTM-1**: ⏳ no iniciadas (van tras SIF-1; CONNECT-1 solo en huecos).
+
 | # | Sprint | Tipo | ¿Ahora? | Depende de | Flags | Done (resumen) | Rollback |
 |---|---|---|---|---|---|---|---|
 | 0 | **FUSION-0** | doc | ✅ resuelto por ESTE documento — queda: guardarlo en `docs/YAQU_MASTER.md` + archivar fuentes + commit | — | — | master único en repo | restaurar histórico |
