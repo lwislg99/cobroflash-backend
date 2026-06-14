@@ -91,12 +91,12 @@ la cita). Resumen de lo que hay que cerrar allí:
   (el workaround del código sigue vivo; al hacerlo se puede retirar).
 - [ ] **P3-3:** recrear las 3 plantillas originales como categoría **Utility** (mejor coste/entrega).
 
-## 🔵 Decisión pequeña que te dejo señalada
+## ✅ Resuelto 14-jun
 
-- [ ] **Copy del recibo `/recibo/:chargeId`** dice "Descargar factura (número)" SIEMPRE, también
-  cuando el documento es un **justificante** (pre-SIF) — choca con la decisión V0-0 (no decir
-  "factura" en modo justificante). ¿Lo dejo condicional ("factura" vs "justificante" según el
-  tipo)? Es un cambio de copy pequeño y seguro; dime y lo hago.
+- [x] **Copy del recibo `/recibo/:chargeId`** ahora es condicional: "Descargar factura (nº)"
+  para factura (post-SIF) y "Descargar justificante (nº)" para justificante (pre-SIF), según
+  el tipo de documento — coherente con V0-0/regla 7. Aplicado también al mensaje de estado y
+  al botón de email, con concordancia de género (commit `925925c`).
 
 ## 📁 Mapa de documentos (para ti y para cualquier chat de Claude)
 
