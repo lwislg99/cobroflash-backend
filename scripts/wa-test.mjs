@@ -50,11 +50,13 @@ const TEMPLATES = {
   quote_decision: 'quote_decision_es',
   payment_request: 'payment_request_es',
   payment_confirmation: 'payment_confirmation_es',
+  payment_confirmation_invoice: 'payment_confirmation_invoice_es',
+  merchant_alert: 'merchant_alert_es',
 };
 
 function fail(msg) {
   console.error('\n❌ ' + msg + '\n');
-  console.error('Uso: node scripts/wa-test.mjs <quote_decision|payment_request|payment_confirmation> <telefono> [--name= --biz= --num= --amount= --id= --lang=es --dry]');
+  console.error('Uso: node scripts/wa-test.mjs <quote_decision|payment_request|payment_confirmation|payment_confirmation_invoice|merchant_alert> <telefono> [--name= --biz= --num= --amount= --id= --action= --detail= --lang=es --dry]');
   process.exit(1);
 }
 
@@ -69,6 +71,8 @@ const biz = opts.biz || 'Fontanería García S.L.';
 const num = String(opts.num || '128');
 const amount = opts.amount || '350,00 EUR';
 const id = String(opts.id || opts.num || '128');
+const action = opts.action || 'te ha pagado';
+const detail = opts.detail || '350,00 € · Factura F-2026-014';
 const lang = opts.lang || 'es';
 const dry = !!opts.dry;
 
@@ -85,8 +89,12 @@ if (templateKey === 'quote_decision') {
   msg = builders.buildQuoteDecision({ customerName: name, businessName: biz, quoteNumber: num, totalWithCurrency: amount, quoteId: id });
 } else if (templateKey === 'payment_request') {
   msg = builders.buildPaymentRequest({ customerName: name, businessName: biz, invoiceNumber: num, amountWithCurrency: amount, chargeId: id });
-} else {
+} else if (templateKey === 'payment_confirmation') {
   msg = builders.buildPaymentConfirmation({ customerName: name, amountWithCurrency: amount, invoiceNumber: num, businessName: biz });
+} else if (templateKey === 'payment_confirmation_invoice') {
+  msg = builders.buildPaymentConfirmationInvoice({ customerName: name, amountWithCurrency: amount, documentNumber: num, businessName: biz, chargeId: id });
+} else {
+  msg = builders.buildMerchantAlert({ customerName: name, action, detail });
 }
 
 const templateName = msg.templateName;

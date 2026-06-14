@@ -4,6 +4,8 @@ import {
   buildQuoteDecision,
   buildPaymentRequest,
   buildPaymentConfirmation,
+  buildPaymentConfirmationInvoice,
+  buildMerchantAlert,
   validateTemplateComponents,
   WA_TEMPLATES,
   WA_TEMPLATE_SPECS,
@@ -103,12 +105,51 @@ test('validación J7: botón obligatorio que falta / botón de más se detectan'
 });
 
 test('validación J7: plantilla desconocida no se valida (futuras altas en Meta)', () => {
-  assert.equal(validateTemplateComponents('payment_confirmation_invoice_es', [{ type: 'body', parameters: [] }]), null);
+  assert.equal(validateTemplateComponents('plantilla_inexistente_xyz', [{ type: 'body', parameters: [] }]), null);
 });
 
-test('specs J7: las 3 plantillas aprobadas están registradas con expectedVarCount', () => {
+test('specs J7: todas las plantillas tienen spec registrada', () => {
   for (const name of Object.values(WA_TEMPLATES)) {
     assert.ok(WA_TEMPLATE_SPECS[name], `falta spec de ${name}`);
-    assert.equal(WA_TEMPLATE_SPECS[name].expectedVarCount, 4);
   }
+});
+
+// --- Nuevas plantillas (pendientes de alta en Meta) ---
+
+test('payment_confirmation_invoice_es: 4 vars + botón = chargeId (→ /recibo/{{1}})', () => {
+  const msg = buildPaymentConfirmationInvoice({
+    customerName: 'María', amountWithCurrency: '350.00 EUR',
+    documentNumber: '2026-CF-001', businessName: 'Fontanería García', chargeId: 42,
+  });
+  assert.equal(msg.templateName, 'payment_confirmation_invoice_es');
+  assert.equal(msg.languageCode, 'es');
+  assert.deepEqual(bodyTexts(msg), ['María', '350.00 EUR', '2026-CF-001', 'Fontanería García']);
+  assert.equal(urlButtonSuffix(msg), '42');
+  // pasa la validación J7
+  assert.equal(validateTemplateComponents(msg.templateName, msg.components), null);
+});
+
+test('payment_confirmation_invoice_es: copy neutro — el builder no impone la palabra "factura"', () => {
+  // el nº de documento puede ser un justificante J-… (no factura) y el builder lo acepta igual
+  const msg = buildPaymentConfirmationInvoice({
+    customerName: 'Ana', amountWithCurrency: '120,00 €',
+    documentNumber: 'J-20260611-AB3C', businessName: 'Reformas Sur', chargeId: 7,
+  });
+  assert.deepEqual(bodyTexts(msg), ['Ana', '120,00 €', 'J-20260611-AB3C', 'Reformas Sur']);
+});
+
+test('merchant_alert_es: 3 vars (cliente, acción, detalle), SIN botón', () => {
+  const msg = buildMerchantAlert({
+    customerName: 'María García', action: 'te ha pagado', detail: '450,00 € · Factura F-2026-014',
+  });
+  assert.equal(msg.templateName, 'merchant_alert_es');
+  assert.equal(msg.languageCode, 'es');
+  assert.deepEqual(bodyTexts(msg), ['María García', 'te ha pagado', '450,00 € · Factura F-2026-014']);
+  assert.equal(urlButtonSuffix(msg), null, 'el aviso al PRO no lleva botón dinámico');
+  assert.equal(validateTemplateComponents(msg.templateName, msg.components), null);
+});
+
+test('validación J7: merchant_alert con 2 vars (falta detalle) se detecta', () => {
+  const malformed = [{ type: 'body', parameters: [{ type: 'text', text: 'a' }, { type: 'text', text: 'b' }] }];
+  assert.match(validateTemplateComponents(WA_TEMPLATES.merchantAlert, malformed), /2 variables.*espera 3/);
 });

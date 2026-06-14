@@ -11,6 +11,10 @@ export const WA_TEMPLATES = {
   quoteDecision: 'quote_decision_es',
   paymentRequest: 'payment_request_es',
   paymentConfirmation: 'payment_confirmation_es',
+  // Pendientes de alta en Meta (Parte J1). Builders y validación listos; el envío NO se
+  // conecta hasta que estén Approved (docs/WHATSAPP_TEMPLATES.md §4 y §5).
+  paymentConfirmationInvoice: 'payment_confirmation_invoice_es',
+  merchantAlert: 'merchant_alert_es',
 } as const;
 
 export interface WaTemplateMessage {
@@ -25,6 +29,10 @@ export const WA_TEMPLATE_SPECS: Record<string, { expectedVarCount: number; hasUr
   [WA_TEMPLATES.quoteDecision]: { expectedVarCount: 4, hasUrlButton: true },
   [WA_TEMPLATES.paymentRequest]: { expectedVarCount: 4, hasUrlButton: true },
   [WA_TEMPLATES.paymentConfirmation]: { expectedVarCount: 4, hasUrlButton: false },
+  // Nuevas (Parte J1): confirmación con botón "Ver documento" (URL dinámica → /recibo/{{1}})
+  [WA_TEMPLATES.paymentConfirmationInvoice]: { expectedVarCount: 4, hasUrlButton: true },
+  // Aviso al PRO (ventana 24h cerrada): 3 vars, sin botón dinámico (botón estático opcional)
+  [WA_TEMPLATES.merchantAlert]: { expectedVarCount: 3, hasUrlButton: false },
 };
 
 // Valida los components contra la spec ANTES de llamar a Meta (J7). Plantilla
@@ -124,6 +132,46 @@ export function buildPaymentConfirmation(p: {
     languageCode: 'es',
     components: [
       body(p.customerName, p.amountWithCurrency, p.invoiceNumber, p.businessName),
+    ],
+  };
+}
+
+// 4. payment_confirmation_invoice_es — como payment_confirmation_es pero CON botón de URL
+// dinámica "Ver documento" → /recibo/{{1}} (chargeId). Copy NEUTRO: vale para factura y
+// para justificante de cobro (decisión 12-jun: no decir "factura" en modo justificante).
+// `documentNumber` es el nº del documento (factura 2026-CF-001 o justificante J-...).
+export function buildPaymentConfirmationInvoice(p: {
+  customerName: string;
+  amountWithCurrency: string;
+  documentNumber: string;
+  businessName: string;
+  chargeId: string | number;
+}): WaTemplateMessage {
+  return {
+    templateName: WA_TEMPLATES.paymentConfirmationInvoice,
+    languageCode: 'es',
+    components: [
+      body(p.customerName, p.amountWithCurrency, p.documentNumber, p.businessName),
+      urlButton(p.chargeId),
+    ],
+  };
+}
+
+// 5. merchant_alert_es — aviso al PROFESIONAL cuando su ventana de servicio 24h está
+// cerrada (no se le puede mandar texto libre). Genérico para los eventos PRO-facing:
+// decisión de presupuesto y pago recibido. SIN botón dinámico (botón estático "Abrir
+// YaQu" → https://yaqu.app/dashboard/ opcional en Meta, sin parámetro en runtime).
+//   {{1}} cliente · {{2}} qué ha pasado · {{3}} importe/referencia
+export function buildMerchantAlert(p: {
+  customerName: string;
+  action: string;   // "ha aceptado tu presupuesto" | "ha rechazado tu presupuesto" | "te ha pagado"
+  detail: string;   // "450,00 € · Presupuesto #128" | "450,00 € · Factura F-2026-014"
+}): WaTemplateMessage {
+  return {
+    templateName: WA_TEMPLATES.merchantAlert,
+    languageCode: 'es',
+    components: [
+      body(p.customerName, p.action, p.detail),
     ],
   };
 }

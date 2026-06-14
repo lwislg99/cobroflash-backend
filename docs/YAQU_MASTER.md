@@ -230,8 +230,8 @@ Un plan público (Parte W): **Pro 29 €/mes (290 €/año) + 0,9 % solo tarjeta
 | `quote_decision_es` | ✅ | Envío de presupuesto + recordatorio 24h | manual + cron 1h | quotesAdmin / reminder.service | ~0,023 € |
 | `payment_request_es` | ✅ | Factura lista + recordatorios 7/14d | aceptación / resend / cron 10h | invoicesAdmin / invoiceReminder | ~0,023 € |
 | `payment_confirmation_es` | ✅ | Pago confirmado | webhook psp/mp | whatsappNotifications | ~0,023 € |
-| `payment_confirmation_invoice_es` | ⏳ alta en Meta (usuario) | Sustituirá a la anterior con botón "Ver factura" | webhook psp/mp | builder al aprobarse | ~0,023 € |
-| `merchant_alert_es` | ⏳ alta en Meta (usuario) | Notificación al PRO con ventana cerrada | decisión/pago | sendWhatsAppText* | ~0,023 € |
+| `payment_confirmation_invoice_es` | ⏳ alta en Meta (usuario) · **builder+spec listos 14-jun** | Sustituirá a la anterior con botón "Ver documento" (→ `/recibo/{{1}}`) | webhook psp/mp | builder al aprobarse | ~0,023 € |
+| `merchant_alert_es` | ⏳ alta en Meta (usuario) · **builder+spec listos 14-jun** | Notificación al PRO con ventana cerrada (decisión/pago) | decisión/pago | sendWhatsAppText* | ~0,023 € |
 *Notificaciones al PRO viajan como service message si su ventana 24h está abierta (coste 0); si no, `merchant_alert_es`.
 **Acciones en Meta pendientes (usuario):** URL dinámica en `quote_decision_es` (P3-1, workaround vivo) · `payment_confirmation_invoice_es` · `merchant_alert_es` · categoría Utility en las 3 existentes.
 **Decisión fundador 12-jun-26 (tensión con Parte M/justificantes):** se ASUME el wording "factura" de `payment_request_es`/`payment_confirmation_es` hasta la sesión de Meta de P3-3; al recrearlas como Utility se usará copy neutro **"tu documento de cobro"** (válido para factura y justificante). Hasta entonces, merchants ES reales en modo justificante reciben el wording actual — riesgo asumido y acotado pre-SIF.
