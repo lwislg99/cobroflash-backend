@@ -140,6 +140,9 @@ export function buildPaymentConfirmation(p: {
 // dinámica "Ver documento" → /recibo/{{1}} (chargeId). Copy NEUTRO: vale para factura y
 // para justificante de cobro (decisión 12-jun: no decir "factura" en modo justificante).
 // `documentNumber` es el nº del documento (factura 2026-CF-001 o justificante J-...).
+// Body EXACTO aprobado en Meta (el texto fijo vive en Meta; aquí solo van las 4 vars + botón):
+//   "Hola {{1}} 👋\nHemos confirmado tu pago de {{2}} (documento de cobro {{3}}).\n
+//    ¡Gracias por confiar en {{4}}!\nPuedes ver tu recibo en el botón de abajo."
 export function buildPaymentConfirmationInvoice(p: {
   customerName: string;
   amountWithCurrency: string;
@@ -160,7 +163,9 @@ export function buildPaymentConfirmationInvoice(p: {
 // 5. merchant_alert_es — aviso al PROFESIONAL cuando su ventana de servicio 24h está
 // cerrada (no se le puede mandar texto libre). Genérico para los eventos PRO-facing:
 // decisión de presupuesto y pago recibido. SIN botón dinámico (botón estático "Abrir
-// YaQu" → https://yaqu.app/dashboard/ opcional en Meta, sin parámetro en runtime).
+// YaQu" → https://yaqu.app/dashboard/ en Meta, sin parámetro en runtime).
+// Body EXACTO aprobado en Meta (Meta rechaza variable al inicio/fin; aquí solo van las 3 vars):
+//   "Hola 👋 Tienes novedades de {{1}}: {{2}} {{3}}.\nEntra en tu panel de YaQu para gestionarlo."
 //   {{1}} cliente · {{2}} qué ha pasado · {{3}} importe/referencia
 export function buildMerchantAlert(p: {
   customerName: string;

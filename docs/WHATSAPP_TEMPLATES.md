@@ -94,7 +94,7 @@ Confirmación al cliente cuando se recibe el pago. **Sin botones.**
 
 ---
 
-## 4. `payment_confirmation_invoice_es`  ⏳ PENDIENTE DE ALTA EN META
+## 4. `payment_confirmation_invoice_es`  ⏳ creada en Meta (en revisión) · ESTRUCTURA EXACTA
 Igual que `payment_confirmation_es` (confirmación de pago al cliente) **pero CON un botón de
 URL dinámica "Ver documento"** que abre la página donde el cliente ve y descarga su documento
 de cobro. **Sustituirá** a `payment_confirmation_es` cuando esté aprobada.
@@ -103,6 +103,10 @@ de cobro. **Sustituirá** a `payment_confirmation_es` cuando esté aprobada.
 > (post-SIF) y para **justificante de cobro** (pre-SIF, merchant ES real con
 > `INVOICING_ES_ENABLED=off`). Por eso NO usa la palabra "factura": dice "documento de cobro"
 > y el botón es "Ver documento". Post-SIF se puede crear una variante con "factura" si se quiere.
+>
+> **Nota Meta (14-jun):** Meta rechaza variables al **principio o final** del cuerpo. El body
+> termina con texto fijo ("Puedes ver tu recibo en el botón de abajo.") tras `{{4}}`. La
+> estructura de abajo es la EXACTA dada de alta en Meta.
 
 - **Categoría:** UTILITY · **Idioma:** `es`
 - **Cuerpo — 4 variables (en orden):**
@@ -111,28 +115,33 @@ de cobro. **Sustituirá** a `payment_confirmation_es` cuando esté aprobada.
   3. `{{3}}` = nº del documento (factura `2026-CF-001` o justificante `J-20260611-AB3C`) — ej. `2026-CF-001`
   4. `{{4}}` = nombre del negocio — ej. `Fontanería García S.L.`
 - **Título (header):** `Pago confirmado`
-- **Texto sugerido (body):**
+- **Cuerpo (body) — EXACTO en Meta:**
   > Hola {{1}} 👋
   > Hemos confirmado tu pago de {{2}} (documento de cobro {{3}}).
   > ¡Gracias por confiar en {{4}}!
+  > Puedes ver tu recibo en el botón de abajo.
 - **Pie (footer):** `Recibo disponible · YaQu`
 - **Botones — 1 (URL dinámica):**
   - Texto: `Ver documento`
   - Tipo: URL **dinámica**
-  - URL base: `https://yaqu.app/recibo/{{1}}` → variable = **id del cobro (chargeId)**
-  - La página `/recibo/:chargeId` muestra el recibo y el enlace de descarga (factura o justificante).
+  - URL base: `https://yaqu.app/recibo/{{1}}` → variable = **id del cobro (chargeId)** (ej. `42`)
+  - La página `/recibo/:chargeId` (✅ existe, pública) muestra el recibo y el enlace de descarga.
 
-**Builder:** `buildPaymentConfirmationInvoice()` en `src/integrations/whatsappTemplates.ts`.
+**Builder:** `buildPaymentConfirmationInvoice()` en `src/integrations/whatsappTemplates.ts`
+(4 vars de cuerpo + sufijo del botón = chargeId; el texto fijo vive en Meta, no en el builder).
 **Disparadores (cuando se conecte):** pago confirmado — `psp.routes.ts` y `mpWebhook.routes.ts`,
 sustituyendo a `sendPaymentConfirmation()`. **Hasta que Meta la apruebe NO se envía** (el
 código sigue usando `payment_confirmation_es`).
 
 ---
 
-## 5. `merchant_alert_es`  ⏳ PENDIENTE DE ALTA EN META
+## 5. `merchant_alert_es`  ⏳ creada en Meta (en revisión) · ESTRUCTURA EXACTA
 Aviso al **PROFESIONAL** (no al cliente). Las notificaciones al PRO viajan como *service
 message* gratis si su ventana de 24 h está abierta; **cuando está cerrada** (no respondió en
 24 h) Meta no permite texto libre → se usa esta plantilla Utility como fallback.
+
+> **Nota Meta (14-jun):** el body NO puede empezar ni terminar en variable. Empieza con
+> "Hola 👋 Tienes novedades de " y termina con texto fijo. Estructura EXACTA dada de alta abajo.
 
 - **Categoría:** UTILITY · **Idioma:** `es`
 - **Disparadores:** los eventos PRO-facing que hoy van como texto libre y se perderían con la
@@ -142,17 +151,20 @@ message* gratis si su ventana de 24 h está abierta; **cuando está cerrada** (n
 - **Cuerpo — 3 variables (en orden):**
   1. `{{1}}` = nombre del cliente — ej. `María García`
   2. `{{2}}` = qué ha pasado — ej. `te ha pagado` · `ha aceptado tu presupuesto` · `ha rechazado tu presupuesto`
-  3. `{{3}}` = importe y/o referencia — ej. `450,00 € · Factura F-2026-014` · `· Presupuesto #128`
+  3. `{{3}}` = importe y/o referencia — ej. `450,00 € · Factura F-2026-014` · `Presupuesto #128`
 - **Título (header):** *(ninguno)*
-- **Texto sugerido (body):**
-  > Hola 👋 *{{1}}* {{2}}: {{3}}.
+- **Cuerpo (body) — EXACTO en Meta:**
+  > Hola 👋 Tienes novedades de {{1}}: {{2}} {{3}}.
   > Entra en tu panel de YaQu para gestionarlo.
+  >
+  > (ej.: "Hola 👋 Tienes novedades de María García: te ha pagado 450,00 € · Factura F-2026-014. Entra en tu panel de YaQu para gestionarlo.")
 - **Pie (footer):** `YaQu`
-- **Botones:** opcional **1 botón de URL ESTÁTICA** (no dinámica, sin variable):
+- **Botones:** **1 botón de URL ESTÁTICA** (no dinámica, sin variable):
   - Texto: `Abrir YaQu` · URL fija: `https://yaqu.app/dashboard/`
-  - (Al ser estática no lleva parámetro en runtime; el builder no envía componente de botón.)
+  - (Al ser estática no lleva parámetro en runtime; el builder NO envía componente de botón.)
 
-**Builder:** `buildMerchantAlert()` en `src/integrations/whatsappTemplates.ts`.
+**Builder:** `buildMerchantAlert()` en `src/integrations/whatsappTemplates.ts` (3 vars de
+cuerpo; el texto fijo y el botón estático viven en Meta, no en el builder).
 **Disparadores (cuando se conecte):** en `psp.routes.ts` / `mpWebhook.routes.ts` (pago) y
 `quotes.routes.ts` decisión (aceptado/rechazado), como fallback cuando
 `sendWhatsAppText()` al PRO falle por ventana cerrada. **Requiere** registrar `lastInboundAt`
