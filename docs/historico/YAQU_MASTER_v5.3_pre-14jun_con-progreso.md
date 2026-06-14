@@ -51,8 +51,7 @@ Profesional de servicios a domicilio (fontanero, electricista, reformista, pinto
 3. **Tolteck (competidor vertical líder) cerró España por VeriFactu** y derivó sus clientes a Billin: clientes huérfanos del nicho exacto.
 4. El fundador vive en Madrid: GTM presencial, red caliente, iLAB.
 5. LATAM bloqueado de inicio: en México la factura legal es CFDI vía PAC (el PDF no vale) y la informalidad en oficios llega al 95-99 %; en Colombia Alegra regala facturación DIAN (~4,5 USD/mes). LATAM = F3, quote-to-cash con socio, sin claim de factura.
-6. Competencia ES: **PresupuestAPP (9,99 €) es competidor de ciclo casi completo** (firma+cobro+VeriFactu+voz, ver Z3), PresuNow y Billin "gratis" Kit Digital NO cierran el círculo del dinero. **Moat de YaQu = WhatsApp API nativa con botones + firma + factura VeriFactu + cobro integrado con take rate + recordatorios + simplicidad radical, de punta a punta.** No competir en precio de presupuestos; ganar en profundidad de cobro.
-7. **El dolor económico nº1 del ICP es la MOROSIDAD, no la factura** (research 13-jun-2026, fuentes en Apéndice A): PMP medio España 80,5 días y **construcción 96,5 días** (el peor sector, justo el ICP) según el Observatorio de Morosidad de CEPYME (2º sem. 2025); la morosidad **afecta al ~44 % de los autónomos** (ATA, cierre 2025) y cuesta de media **5.350 €/año** a cada pequeña empresa (CEPYME, 2T 2025). Esto es la munición de venta real — más fuerte que VeriFactu, cuyo aplazamiento a 2027 ha enfriado el miedo fiscal (regla 26b).
+6. Competencia ES (PresuNow, PresupuestAPP 9,99 €, Billin "gratis" Kit Digital) NO cierra el círculo del dinero. **Moat de YaQu = WhatsApp API nativa con botones + firma + factura VeriFactu + cobro integrado + recordatorios, de punta a punta.**
 
 ## A5. Métricas norte
 | Fase | Fecha | Métrica de dinero | Métrica de uso |
@@ -197,17 +196,15 @@ Un plan público (Parte W): **Pro 29 €/mes (290 €/año) + 0,9 % solo tarjeta
 **S1:** 10 conversaciones discovery (Apéndice B; no vender: preguntar) + 10 visitas a tiendas (flyer QR al vídeo; trato verbal: "30 € por alta que pague"). **S2:** cerrar 3-5 founding de red caliente con onboarding white-glove (TÚ cargas catálogo y primera cotización en 30 min). **S3:** grupos de gremio + 2 referidos por founding ("1 mes gratis por compañero"). **S4:** 2 gestorías piloto + repaso de métricas y decisión.
 
 ## H5. Guiones
-> **Ángulo maestro (research 13-jun):** el gancho nº1 es **el dinero/la morosidad**, no VeriFactu. Datos de calle (Apéndice A): en construcción se tarda **96 días de media en cobrar**, la morosidad le cuesta **5.350 €/año** al pequeño negocio y afecta a **casi la mitad de los autónomos**. VeriFactu es el seguro de fondo ("ya cumples"), no el titular.
 - **WhatsApp (frío templado):** "Hola [Nombre], soy Tu, [conexión]. Estoy montando una herramienta para [gremio] que hace una cosa muy concreta: el cliente recibe tu presupuesto por WhatsApp, lo firma con el dedo y te paga la señal antes de que empieces. Te enseño en 60 segundos cómo funciona (vídeo). A los 20 primeros os lo dejo a mitad de precio de por vida. ¿Te lo mando?"
-- **Llamada (30 s):** "¿Te pillo en obra? Rápido: ¿cuánto dinero te deben ahora mismo de trabajos ya hechos? En este sector se tarda de media tres meses en cobrar. Eso arreglo: señal cobrada antes de empezar y recordatorios que persiguen al que no paga, solos. ¿Te paso un vídeo de 1 minuto?"
-- **Llamada (variante presupuestos):** "¿Cuántos presupuestos mandaste el mes pasado por WhatsApp? ¿Y cuántos se quedaron en visto? Presupuesto que se firma solo y señal cobrada antes de empezar. ¿Te paso el vídeo?"
+- **Llamada (30 s):** "¿Te pillo en obra? Rápido: ¿cuántos presupuestos mandaste el mes pasado por WhatsApp? ¿Y cuántos se quedaron en visto? Eso arreglo: presupuesto que se firma solo y señal cobrada antes de empezar. ¿Te paso un vídeo de 1 minuto?"
 - **Presencial:** demo en TU móvil en 90 s con cuenta demo (modo seguro): dicta → envía a tu número → firma → pago test. Cierre: "Los 20 primeros, 14,50 al mes para siempre y te lo dejo montado yo en media hora."
 
 ## H6. Objeciones → respuestas
-"Ya lo hago por WhatsApp gratis" → "Exacto, por eso esto ES WhatsApp. El tuyo no firma, no cobra la señal y no persigue al moroso solo." · "Mis clientes son mayores" → "Dos botones: Firmar y Pagar. Y si no, transferencia: tú llevas el control y el PDF." · "Yo no pido señal" → "¿Cuántas veces te han anulado con el material comprado? Pruébalo en UN trabajo grande." (si abunda: dato de discovery, apuntar) · "Mi gestor me lleva todo" → "Tu gestor te hace los impuestos; esto te consigue el SÍ y la señal. Y cuando llegue lo de Hacienda en 2027, ya estás dentro." · "Hay uno a 9,99" → "El de 9,99 te hace el papel. Este te trae el dinero: firma + señal + recordatorios que persiguen al moroso. ¿Cuánto te deben ahora mismo? Eso es lo que esto te ahorra." · "El Kit Digital me lo da gratis" → "Lo gratis te hace facturas. ¿Te cobra la señal por WhatsApp?" · "0,9 % es mucho" → "4,5 € en una señal de 500 € por tener el dinero esa noche. Bizum y transferencia, gratis." · "No tengo tiempo de aprender" → "Te lo monto yo en 30 minutos y la primera la hacemos juntos dictando." · "¿Y si cierras?" → "Tus datos se exportan en CSV cuando quieras y las facturas son tuyas. Sin permanencia." · "Ahora no" → "¿Te aviso cuando lo de Hacienda sea obligatorio? Quédate el vídeo."
+"Ya lo hago por WhatsApp gratis" → "Exacto, por eso esto ES WhatsApp. El tuyo no firma, no cobra la señal y no persigue al moroso solo." · "Mis clientes son mayores" → "Dos botones: Firmar y Pagar. Y si no, transferencia: tú llevas el control y el PDF." · "Yo no pido señal" → "¿Cuántas veces te han anulado con el material comprado? Pruébalo en UN trabajo grande." (si abunda: dato de discovery, apuntar) · "Mi gestor me lleva todo" → "Tu gestor te hace los impuestos; esto te consigue el SÍ y la señal. Y cuando llegue lo de Hacienda en 2027, ya estás dentro." · "Hay uno a 9,99" → "El de 9,99 te hace el papel. Este te trae el dinero: firma + señal + recordatorios." · "El Kit Digital me lo da gratis" → "Lo gratis te hace facturas. ¿Te cobra la señal por WhatsApp?" · "0,9 % es mucho" → "4,5 € en una señal de 500 € por tener el dinero esa noche. Bizum y transferencia, gratis." · "No tengo tiempo de aprender" → "Te lo monto yo en 30 minutos y la primera la hacemos juntos dictando." · "¿Y si cierras?" → "Tus datos se exportan en CSV cuando quieras y las facturas son tuyas. Sin permanencia." · "Ahora no" → "¿Te aviso cuando lo de Hacienda sea obligatorio? Quédate el vídeo."
 
 ## H7. Mensajes que funcionan
-"¿Cuántas señales has dejado de cobrar este mes?" · "¿Cuánto te deben ahora mismo de trabajos ya hechos?" · "En este sector se tarda 3 meses en cobrar. Tú, esa misma noche." · "Cobra la señal antes de descargar la furgoneta" · "El presupuesto que se firma solo" · (post-SIF) "Y cuando llegue VeriFactu, ya estás dentro".
+"¿Cuántas señales has dejado de cobrar este mes?" · "Cobra la señal antes de descargar la furgoneta" · "El presupuesto que se firma solo" · (post-SIF) "Y cuando llegue VeriFactu, ya estás dentro".
 
 ---
 
@@ -218,7 +215,7 @@ Un plan público (Parte W): **Pro 29 €/mes (290 €/año) + 0,9 % solo tarjeta
 **Estratégicas:** 13) Prohibido replanificar antes de 25 pagantes (dudas → `docs/DECISIONES_PENDIENTES.md`). 14) Marketing mono-país hasta F3; arquitectura country-aware desde ya. 15) Una feature nueva exige matar o posponer otra (WIP limit). 16) Cada sprint cerrado actualiza este documento (mover a ✅; nunca borrar, tachar con motivo).
 **Legales/claims:** 17) Ningún claim regulatorio sin su sprint legal cerrado (VeriFactu ⇒ SIF-1 + declaración). 18) Tarjeta para clientes reales SOLO con Connect activo en ese merchant; mientras, transferencia/Bizum manual. 19) VALIDA-0 no se cierra sin 10 discovery registradas y criterios de alarma evaluados. 20) Toda cifra del master lleva fuente o [VALIDAR]; lo [VALIDAR] no entra en argumentarios. 21) Partida real anual de asesoría fiscal/legal.
 **Pagos/UX:** 22) El selector de pago se ordena por probabilidad de cobro del MERCHANT, no por el fee de YaQu; `paid_via` se registra en el 100 % de los cobros (card/bizum_manual/transfer/cash). 23) Prohibido procesar pagos de clientes finales en la cuenta Stripe de plataforma: PSP = cuenta conectada del merchant o nada.
-**VeriFactu operativo:** 24) `INVOICING_ES_ENABLED=false` para merchants ES reales hasta SIF-1 v2 completo; facturas demo con marca de agua SIEMPRE. 25) Cobro a founding pre-SIF exige alcance por escrito (`docs/legal/ALCANCE_BETA.md`). 26) La pregunta "¿me vale para VeriFactu?" se responde SOLO con el guion H2. 26b) **El aplazamiento de VeriFactu a 2027 (RDL 15/2025) enfrió el miedo fiscal; el gancho comercial nº1 es la MOROSIDAD/el cobro, y VeriFactu es el pilar de confianza nº2 ("ya cumples, sin pensar"), nunca el titular.** El GTM no se apoya en la fecha (ya hubo un aplazamiento).
+**VeriFactu operativo:** 24) `INVOICING_ES_ENABLED=false` para merchants ES reales hasta SIF-1 v2 completo; facturas demo con marca de agua SIEMPRE. 25) Cobro a founding pre-SIF exige alcance por escrito (`docs/legal/ALCANCE_BETA.md`). 26) La pregunta "¿me vale para VeriFactu?" se responde SOLO con el guion H2.
 **Operativos:** 27) Estados/transiciones (L) y flags (P) son CERRADOS; necesidad nueva = cambio de master antes de codificar. 28) Anti-spam J6 es regla de canal: ningún sprint añade envíos automáticos sin pasar por su tabla. 29) Una factura emitida JAMÁS se edita ni borra; solo R1 o anulación con su registro. 30) Microcopy de landing (N5) y respuestas del bot (K1) son oficiales: cambios de texto = cambio de master.
 **v5.3:** 31) El Sprint Registry (U) es la cola única; Claude Code no reordena ni intercala sin cambio de master. 32) Tratamiento de anticipos (factura de anticipo/IVA) según dictamen del asesor ANTES de activar facturación de señales post-SIF. 33) Onboarding bloquea facturación ES a domicilios forales (PV/Navarra) con aviso digno; TicketBAI = cajón F3. 34) Entitlements solo vía plan→flags (W); prohibido hardcodear checks de plan en rutas. 35) `CLAUDE.md` y las skills de `.claude/` son DERIVADOS de este master; si divergen, gana `docs/YAQU_MASTER.md`. 36) Prohibido instalar plugins/skills/hooks de terceros en este repo (pagos + datos fiscales) sin revisión explícita del fundador.
 
@@ -233,8 +230,8 @@ Un plan público (Parte W): **Pro 29 €/mes (290 €/año) + 0,9 % solo tarjeta
 | `quote_decision_es` | ✅ | Envío de presupuesto + recordatorio 24h | manual + cron 1h | quotesAdmin / reminder.service | ~0,023 € |
 | `payment_request_es` | ✅ | Factura lista + recordatorios 7/14d | aceptación / resend / cron 10h | invoicesAdmin / invoiceReminder | ~0,023 € |
 | `payment_confirmation_es` | ✅ | Pago confirmado | webhook psp/mp | whatsappNotifications | ~0,023 € |
-| `payment_confirmation_invoice_es` | ⏳ alta en Meta (usuario) | Sustituirá a la anterior con botón "Ver factura" | webhook psp/mp | builder al aprobarse | ~0,023 € |
-| `merchant_alert_es` | ⏳ alta en Meta (usuario) | Notificación al PRO con ventana cerrada | decisión/pago | sendWhatsAppText* | ~0,023 € |
+| `payment_confirmation_invoice_es` | ⏳ alta en Meta (usuario) · **builder+spec listos 14-jun** | Sustituirá a la anterior con botón "Ver documento" (→ `/recibo/{{1}}`) | webhook psp/mp | builder al aprobarse | ~0,023 € |
+| `merchant_alert_es` | ⏳ alta en Meta (usuario) · **builder+spec listos 14-jun** | Notificación al PRO con ventana cerrada (decisión/pago) | decisión/pago | sendWhatsAppText* | ~0,023 € |
 *Notificaciones al PRO viajan como service message si su ventana 24h está abierta (coste 0); si no, `merchant_alert_es`.
 **Acciones en Meta pendientes (usuario):** URL dinámica en `quote_decision_es` (P3-1, workaround vivo) · `payment_confirmation_invoice_es` · `merchant_alert_es` · categoría Utility en las 3 existentes.
 **Decisión fundador 12-jun-26 (tensión con Parte M/justificantes):** se ASUME el wording "factura" de `payment_request_es`/`payment_confirmation_es` hasta la sesión de Meta de P3-3; al recrearlas como Utility se usará copy neutro **"tu documento de cobro"** (válido para factura y justificante). Hasta entonces, merchants ES reales en modo justificante reciben el wording actual — riesgo asumido y acotado pre-SIF.
@@ -557,27 +554,6 @@ F1: enlaces `yaqu.app/?ref=<slug>` → `acquisitionSource` · sheet de partners 
 | Google Calendar OAuth | Cajón F3 | ≥30 % lo piden / adopción Equipo |
 | Verticales fuera de hogar/oficios · React/reescritura front · n8n | ❌ nunca | — |
 
-## Z2. Banco de oportunidades (research 13-jun-2026; NO se construye antes de 25 pagantes — regla 13)
-Ideas validadas por el mercado, documentadas aquí para revisión a los 25 pagantes. Las que ya tienen sprint en el master se marcan; el resto son candidatas a re-priorizar U2.
-| Oportunidad | Encaje | Estado / dónde |
-|---|---|---|
-| **Reseñas Google automáticas al cobrar** (link por WA tras pago) | Alto: usa el momento de pago, canal WA, ROI de captación | **Candidata fuerte a U2** (alto valor/bajo coste; ya existe `googleReviewUrl` en onboarding) |
-| **IA voz/foto → presupuesto** | Ya es requisito de entrada del vertical, no diferenciador | Ya en master: VOZ-1 (F1) + MEDIA-1 (F2) |
-| **Recordatorios de cobro automáticos** | Núcleo anti-morosidad | Ya en master: J1 (24h/7d/14d) ✅ |
-| **Mantenimientos recurrentes RITE** (calderas/clima, ingreso recurrente) | Alto: ingreso + cobro recurrente | Ya en master: MANT-1 (F2) |
-| **Banco de precios por gremio/zona** ("cobran 23 % más") | Refuerza "no presupuestar de memoria" | Candidata U2 (parte de ONBOARD-2 catálogos por gremio) |
-| **Fotos antes/después** (anti-disputa + reseñas) | Fácil, barato | Ya en master: MEDIA-1 (F2) |
-| **Factoring/adelanto de cobro al merchant** | Fintech sobre el flujo; ataca la morosidad directamente | Cajón F3-F4 (capital + datos de impago; ya en Z1 "microfactoring") |
-| **BNPL al cliente final** (pago a plazos del trabajo) | Fintech; ServiceTitan/Housecall+Affirm lo hacen | Cajón F2 tardía (ya en Z1 "FIN-1", gate ticket ≥1.200 €) |
-| **Scoring de morosos compartido entre merchants** | Muy diferenciador + efecto red, pero **riesgo RGPD alto** | Cajón F4 con dictamen legal previo (datos de empresa, no particulares) |
-| **Cuenta/tarjeta para el merchant, cashback** | Embedded banking largo plazo | Cajón F4 (tras volumen de pagos) |
-
-## Z3. Competencia directa a vigilar (no construir; inteligencia de mercado)
-- **PresupuestAPP (presupuesta.eu) — el competidor MÁS directo y MÁS barato (9,99 €):** ya tiene firma, cobro por tramos vía Stripe, VeriFactu (hash+QR), voz, PWA offline y recordatorios. **Defensa de YaQu: NO competir en precio sino en profundidad de cobro (Connect + take rate + Bizum) + WhatsApp API nativa con botones + simplicidad radical + onboarding white-glove.** No vender "presupuestos" (ahí pierde por precio); vender "cobro y fin de la morosidad".
-- **STEL Order:** ya hace WhatsApp + tarjeta + VeriFactu certificado, pero empaquetado como ERP/SAT pesado por usuario (curva alta, config compleja). Defensa: precio único plano y simplicidad frente a su complejidad.
-- **Holded/Quipu:** VeriFactu anunciado pero (a feb-2026) no operativo en producción → ventana de ventaja si YaQu lo tiene operativo antes. Pero son gestión de escritorio, no cobro en obra.
-- **Presu.app / Motor de Presupuestos / Presux:** presupuesto+voz+IA baratos, sin cobro nativo ni firma con peso legal. El espacio "presupuesto rápido" se está comoditizando <10 € → **el foso de YaQu es el cobro, no el presupuesto** (reafirma A1).
-
 ---
 
 # PARTE AA — CLAUDE CODE OPERATING SYSTEM `F1-doc (canónico aquí; CLAUDE.md lo implementa — regla 35)`
@@ -649,19 +625,14 @@ Vanilla, sin React/Tailwind/build, sin dependencias pesadas, sin reescritura: **
 | Sanciones: usuario 50.000 €/ej · fabricante 150.000 €/ej y tipo · 1.000 €/sistema sin declaración | ✅ | Art. 201 bis LGT + FAQ AEAT |
 | Exclusiones: módulos, recargo equivalencia, forales, SII | ✅ | RD 1007/2023 |
 | ~426K autónomos construcción (12,4 % de 3,44 M) | ✅ sector / subset obligado **[VALIDAR: 150-300K]** | MITES/SegSoc oct-2025 |
-| **Morosidad: PMP construcción 96,5 días · España 80,5 días · afecta ~44 % autónomos · cuesta 5.350 €/año a la pequeña empresa** | ✅ (munición de venta nº1) | Observatorio Morosidad CEPYME 2º sem. 2025 (Informa D&B/CESCE) + ATA cierre 2025 |
-| **Adopción VeriFactu baja: 8 % implementado, 15 % en piloto** (el miedo fiscal no vende solo) | ✅ | Observatorio TeamSystem/Ipsos, 30-oct-2025 |
-| Tolteck cerró ES y deriva a Billin | **[VALIDAR: web .com sigue activa]** | tolteck.com/es-es |
-| **PresupuestAPP (presupuesta.eu): competidor MÁS directo — firma + cobro Stripe por tramos + VeriFactu + voz + PWA, a 9,99 €** | ✅ (research 13-jun) | presupuesta.eu — defensa: cobro+WA nativo+simplicidad, no precio |
-| **STEL Order: WhatsApp + tarjeta + VeriFactu certificado, pero ERP pesado por usuario (24-60 €)** | ✅ (research 13-jun) | stelorder.com — defensa: simplicidad + precio plano |
-| Holded/Quipu: VeriFactu anunciado, no operativo en prod (feb-2026) | **[VALIDAR estado actual]** | webs oficiales |
+| Tolteck cerró ES y deriva a Billin | ✅ | tolteck.com/es-es |
 | PresuNow sin cobro integrado / sin WA API nativa | **[VALIDAR con trial]** | su web (inferido) |
+| PresupuestAPP 9,99 €/15 presupuestos | **[VALIDAR]** | fuente secundaria única |
 | Stripe Bizum: Checkout/Links/refunds/disputas SÍ · **Connect NO** | ✅ (10-jun) | docs.stripe.com/payments/bizum → BIZUM-WATCH trimestral |
 | Límites Bizum: 500-1.000 €/op según banco · 2.000 €/día · 60 recepciones/mes | ✅ | Stripe/Openbank + bancos |
-| WhatsApp utility ES ~0,025 $/msg · servicio en ventana 24h gratis (Meta cobra por mensaje entregado desde jul-2025 — modelar margen recordatorios) | ✅ | tarifas Meta 2026 |
+| WhatsApp utility ES ~0,025 $/msg · servicio en ventana 24h gratis | ✅ | tarifas Meta 2026 |
 | Volumen vía plataforma 1.200 €/merchant/mes · adopción 40-60 % | **[SUPUESTO → discovery + telemetría]** | variable del modelo dual |
-| Gestorías como canal masivo (prescriptor crítico ante VeriFactu) | **[VALIDAR piloto 2-3]** | research 13-jun (TeamSystem/Softwariza3) |
-| Embedded finance multiplica ingresos 2-5x en vertical SaaS (umbral acelerar fintech: >40 % cobros con tarjeta) | ✅ (referencia fase 3) | a16z/BCG (research 13-jun) |
+| Gestorías como canal masivo | **[VALIDAR piloto 2-3]** | — |
 | CFDI/PAC, DIAN, informalidad oficios MX 95-99 % | ✅ | SAT/DataMéxico/Alegra (research 10-jun) |
 | ServiceTitan ~$9-10B cap · Jobber ~$150M ARR (prueba de categoría) | ✅ | NASDAQ/prensa 2024-25 |
 
@@ -675,4 +646,4 @@ Vanilla, sin React/Tailwind/build, sin dependencias pesadas, sin reescritura: **
 **Criterios de alarma (predefinidos):** ≥7/10 no cobran señal NI piensan pedirla → promesa primaria pasa a "que no te dejen en visto + recordatorios", señal = upsell · ≥7/10 delegan todo en gestoría y no les suena VeriFactu → canal gestorías sube, SEO de pánico baja · ≥5/10 dicen que sus clientes no firmarían en el móvil → reforzar "Acepto sin firmar" + aceptación por respuesta de WhatsApp.
 
 ---
-*YAQU_MASTER v5.3 UNIFICADO (rev. 13-jun-2026: research de mercado integrado — ángulo morosidad en GTM/H, banco de oportunidades Z2, competencia Z3, claims actualizados; sin cambio de estrategia ni de sprints, regla 13 intacta) — base 10 jun 2026. Sprint activo: VALIDA-0 (+ S1-0 humano día 1). Prioridad absoluta: SIF-1. Próxima revisión estratégica permitida: 25 pagantes (regla 13). Historial: v4 (may-26) → v5 + parche v5.1 + addendum v5.2 + delta v5.3 (10-jun-26) → rev. research (13-jun-26) → este documento.*
+*YAQU_MASTER v5.3 UNIFICADO (rev. pulida: Project Brief + Parte AB + auditoría de referencias) — 10 jun 2026. Sprint activo: VALIDA-0 (+ S1-0 humano día 1). Prioridad absoluta: SIF-1. Próxima revisión estratégica permitida: 25 pagantes (regla 13). Historial: v4 (may-26) → v5 + parche v5.1 + addendum v5.2 + delta v5.3 (10-jun-26) → este documento.*
