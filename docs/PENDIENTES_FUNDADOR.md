@@ -79,13 +79,24 @@ la cita). Resumen de lo que hay que cerrar allí:
   (one-pager para la gestoría de tus clientes). Falta: datos del productor, política F1/F2
   y visto bueno del asesor. Se distribuye solo tras SIF-1 8/8.
 
-## 🟣 Meta (de sprints anteriores, siguen abiertas)
+## 🟣 Meta (WhatsApp)
 
+- [ ] **2 plantillas nuevas EN REVISIÓN en Meta (14-jun):** `payment_confirmation_invoice_es`
+  y `merchant_alert_es`. Spec y builders ya cuadran EXACTO con lo que metiste (body con texto
+  fijo al final/inicio porque Meta rechaza variable en los extremos). **Avísame cuando estén
+  Approved** y conecto el envío (sustituir `payment_confirmation_es` por la nueva en los
+  webhooks de pago + fallback `merchant_alert_es` al PRO con ventana 24h cerrada). La ruta del
+  botón `/recibo/:chargeId` ya existe (verificado).
 - [ ] **P3-1:** botón URL dinámica en `quote_decision_es` (`…/pay/quote/{{1}}`) + re-aprobar
   (el workaround del código sigue vivo; al hacerlo se puede retirar).
-- [ ] **P3-4:** plantilla de confirmación con botón "Ver factura" → cuando esté aprobada,
-  añado el builder y el envío.
-- [ ] **P3-3:** recrear las 3 plantillas como categoría **Utility** (mejor coste/entrega).
+- [ ] **P3-3:** recrear las 3 plantillas originales como categoría **Utility** (mejor coste/entrega).
+
+## 🔵 Decisión pequeña que te dejo señalada
+
+- [ ] **Copy del recibo `/recibo/:chargeId`** dice "Descargar factura (número)" SIEMPRE, también
+  cuando el documento es un **justificante** (pre-SIF) — choca con la decisión V0-0 (no decir
+  "factura" en modo justificante). ¿Lo dejo condicional ("factura" vs "justificante" según el
+  tipo)? Es un cambio de copy pequeño y seguro; dime y lo hago.
 
 ## 📁 Mapa de documentos (para ti y para cualquier chat de Claude)
 
