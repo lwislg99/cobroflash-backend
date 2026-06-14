@@ -4,6 +4,7 @@ import axios from 'axios';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { esc } from '../../../../core/utils/utils';
+import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { stripe } from '../../../../integrations/stripe';
 import { BASE_URL, config } from '../../../../core/config/env';
 
@@ -81,6 +82,13 @@ router.get('/:id', async (req, res) => {
     if (invId) invoice = await prisma.invoice.findUnique({ where: { id: invId } });
   }
 
+  // V0-0: el documento es FACTURA (post-SIF) o JUSTIFICANTE (pre-SIF). El copy NUNCA dice
+  // "factura" para un justificante (regla 7 / Parte M). Tipo: invoice.type==='JUST' o nº J-…
+  const isJust = !!invoice && (invoice.type === 'JUST' || isReceiptNumber(invoice.number));
+  const docLabel = isJust ? 'justificante' : 'factura';
+  const docArticle = isJust ? 'El' : 'La'; // concordancia: El justificante / La factura
+  const docPron = isJust ? 'lo' : 'la';    // pronombre: lo (justificante) / la (factura)
+
   const title = `Recibo #${ch.id} — YaQu`;
 
   const statusBadge =
@@ -121,7 +129,7 @@ router.get('/:id', async (req, res) => {
     hasRealPdf && ch.customer?.email
       ? `<form method="post" action="${BASE_URL}/dev/email-invoice/${ch.id}" style="margin-top:.5rem">
            <button style="background:#16a34a;color:#fff;padding:.5rem 1rem;border-radius:999px;border:none;cursor:pointer;font-weight:600;font-family:inherit">
-             Enviar factura por email
+             Enviar ${docLabel} por email
            </button>
          </form>
          <small style="color:#6b756f">Se enviará a: ${esc(ch.customer!.email!)}</small>`
@@ -131,10 +139,10 @@ router.get('/:id', async (req, res) => {
     ch.status === 'paid'
       ? hasRealPdf
         ? `<p><a href="${invoice!.pdfUrl}" target="_blank">
-             📄 Descargar factura (${esc(invoice!.number)})
+             📄 Descargar ${docLabel} (${esc(invoice!.number)})
            </a></p>${emailBlock}`
         : `<small style="color:#6b756f">
-             La factura se emitirá y se enviará por WhatsApp y email automáticamente.
+             ${docArticle} ${docLabel} se emitirá y se enviará por WhatsApp y email automáticamente.
            </small>`
       : '';
 
@@ -146,10 +154,10 @@ router.get('/:id', async (req, res) => {
         : ch.status === 'paid'
         ? hasRealPdf
           ? `<div style="background:#dcfce7;border:1px solid #16a34a;color:#166534;padding:.6rem .8rem;border-radius:.6rem;margin:.75rem 0">
-               ✅ <b>Pago recibido correctamente.</b> Tu factura está disponible para descargar y la hemos enviado por WhatsApp. Si tenemos tu correo, también la recibirás por email.
+               ✅ <b>Pago recibido correctamente.</b> Tu ${docLabel} está disponible para descargar y ${docPron} hemos enviado por WhatsApp. Si tenemos tu correo, también ${docPron} recibirás por email.
              </div>`
           : `<div style="background:#dcfce7;border:1px solid #16a34a;color:#166534;padding:.6rem .8rem;border-radius:.6rem;margin:.75rem 0">
-               ✅ <b>Pago recibido correctamente.</b> Estamos generando tu factura; la recibirás en breve por WhatsApp y, si tenemos tu correo, también por email.
+               ✅ <b>Pago recibido correctamente.</b> Estamos generando tu ${docLabel}; ${docPron} recibirás en breve por WhatsApp y, si tenemos tu correo, también por email.
              </div>`
         : ch.status === 'failed'
         ? `<div style="background:#fee2e2;border:1px solid #ef4444;color:#991b1b;padding:.6rem .8rem;border-radius:.6rem;margin:.75rem 0">
