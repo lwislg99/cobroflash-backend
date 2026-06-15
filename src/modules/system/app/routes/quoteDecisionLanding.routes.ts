@@ -4,6 +4,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { esc, parseNumericId } from '../../../../core/utils/utils';
 import { getLocale } from '../../../../core/i18n/locales';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
+import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
 
 type DecisionApiError = { message?: string; error?: string };
 
@@ -76,6 +77,11 @@ function renderPage(title: string, body: string, brandColor?: string | null): st
     .total-row { display: flex; justify-content: space-between; font-weight: 800; color: #0f1c17;
       font-size: 20px; margin: 12px 0 20px; padding-top: 10px; border-top: 2px solid #e7e9e5;
       font-variant-numeric: tabular-nums; }
+    /* PC-B: desglose de IVA (base + cuota por tipo) coherente con el Total */
+    .totals-block { margin: 4px 0 0; }
+    .totals-row { display: flex; justify-content: space-between; align-items: baseline;
+      font-size: 14px; color: #6b756f; padding: 3px 6px; font-variant-numeric: tabular-nums; }
+    .totals-row span:last-child { color: #3f4a45; font-weight: 600; }
     .terms-badge { display: inline-block; font-size: 12px; padding: 3px 10px;
       border-radius: 999px; background: #eff6ff; color: #1d4ed8; margin-bottom: 16px; }
     .divider { border: none; border-top: 1px solid #e7e9e5; margin: 16px 0; }
@@ -172,10 +178,11 @@ function renderTierCards(tiers: any[], quoteId: string, locale: ReturnType<typeo
             ${(tier.lines || []).map((l: any) => `
               <div class="tier-line">
                 <span>${esc(l.concept)}</span>
-                <span>${(l.qty * l.price * (1 + (l.tax || 0))).toFixed(2)} ${esc(tier.currency || '')}</span>
+                <span>${(l.qty * l.price).toFixed(2)} ${esc(tier.currency || '')}</span>
               </div>`).join('')}
           </div>
           <div class="tier-total">${Number(tier.total).toFixed(2)} ${esc(tier.currency || '')}</div>
+          <div class="tier-vat-note">IVA incluido</div>
           <button class="btn-tier" onclick="selectTier('${esc(tier.id)}', '${esc(quoteId)}')">
             Elegir este plan
           </button>
@@ -201,7 +208,8 @@ const TIER_CSS = `
   .tier-desc { font-size: 13px; color: #6b756f; }
   .tier-lines { font-size: 13px; color: #333c37; margin-bottom: 10px; }
   .tier-line { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #f1f2ee; }
-  .tier-total { font-size: 22px; font-weight: 800; color: #0f1c17; margin: 10px 0 12px; }
+  .tier-total { font-size: 22px; font-weight: 800; color: #0f1c17; margin: 10px 0 0; }
+  .tier-vat-note { font-size: 11px; color: #6b756f; margin: 0 0 12px; }
   .btn-tier { width: 100%; padding: 12px; font-size: 15px; font-weight: 700; border: none;
     border-radius: 10px; cursor: pointer; background: #22c55e; color: #052e16; min-height: 48px; }
   .tier-recommended .btn-tier { background: #16a34a; color: #fff; }
@@ -242,18 +250,33 @@ function renderQuoteDetail(quote: Awaited<ReturnType<typeof loadQuote>>, quoteId
     : `<div class="merchant-avatar">${esc((merchantName || '?').charAt(0).toUpperCase())}</div>`;
   const customerName = esc(quote.customer?.name || 'Cliente');
   const lines: any[] = Array.isArray(quote.lines) ? quote.lines : [];
+  const cur = esc(quote.currency);
+  const money = (n: number) => `${Number(n).toFixed(2)} ${cur}`;
 
+  // PC-B: columna "Importe" = NET (qty*price), MISMA fórmula que en los tiers; el IVA va
+  // desglosado debajo. Así la suma de las líneas (= Base imponible) + IVA cuadra con el Total.
   const linesHtml = lines.length
     ? `<table class="lines-table">
-        <thead><tr><th>Concepto</th><th>Cant.</th><th>Total</th></tr></thead>
+        <thead><tr><th>Concepto</th><th>Cant.</th><th>Importe</th></tr></thead>
         <tbody>${lines.map((l: any) => `
           <tr>
             <td><span class="line-icon">${lineIcon(l.concept)}</span>${esc(l.concept)}</td>
             <td>${esc(l.qty)}</td>
-            <td>${Number(l.qty * l.price).toFixed(2)} ${esc(quote.currency)}</td>
+            <td>${money(l.qty * l.price)}</td>
           </tr>`).join('')}
         </tbody>
       </table>` : '';
+
+  // PC-B: desglose de IVA (España). Si no hay cuota (LATAM/exento) → Total plano sin desglose.
+  const vat = calcVatBreakdown(lines);
+  const hasVat = vat.cuota > 0;
+  const vatHtml = hasVat
+    ? `<div class="totals-block">
+        <div class="totals-row"><span>Base imponible</span><span>${money(vat.base)}</span></div>
+        ${vat.entries.filter((e) => e.rate > 0).map((e) => `
+        <div class="totals-row"><span>IVA (${e.rate}%)</span><span>${money(e.cuota)}</span></div>`).join('')}
+      </div>`
+    : '';
 
   const terms = (quote as any).paymentTerms ?? null;
 
@@ -275,9 +298,10 @@ function renderQuoteDetail(quote: Awaited<ReturnType<typeof loadQuote>>, quoteId
     <div class="quote-meta">Presupuesto #${esc(quoteId)}</div>
     ${validityHtml ? `<div style="text-align:center">${validityHtml}</div>` : ''}
     ${linesHtml}
+    ${vatHtml}
     <div class="amount-hero">
-      <div class="amount-hero-label">Total del presupuesto</div>
-      <div class="amount-hero-value">${Number(quote.total).toFixed(2)} ${esc(quote.currency)}</div>
+      <div class="amount-hero-label">${hasVat ? 'Total · IVA incluido' : 'Total del presupuesto'}</div>
+      <div class="amount-hero-value">${money(Number(quote.total))}</div>
     </div>
     ${terms ? `<div style="text-align:center;margin-bottom:4px"><span class="terms-badge">${esc(termsLabel(terms))}</span></div>` : ''}
   `;

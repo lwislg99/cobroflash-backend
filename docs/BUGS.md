@@ -118,6 +118,36 @@
 
 ---
 
+## P-PERCEPCIÓN — Code-review V0-5 de la landing (15-jun, contra Parte N)
+> Hallazgos de la revisión de código de `/pay/quote` y `/pay/invoice` ANTES del bug-bash en
+> dispositivos reales (V0-5). Regla 1: bug visible en la landing = P0 de percepción.
+
+### [x] PC-B · `/pay/quote`: IVA incoherente entre líneas y Total
+- **Síntoma:** las líneas normales mostraban el importe SIN IVA (`qty*price`) mientras las
+  líneas de tier lo mostraban CON IVA (`qty*price*(1+tax)`), y el "Total" (`quote.total`, con
+  IVA) no llevaba desglose ni etiqueta. El cliente que suma las líneas no llega al Total.
+- **CAUSA RAÍZ (16-jun):** dos fórmulas distintas para el importe de línea (net en la tabla,
+  bruto en los tiers) y un Total bruto sin desglose. Arreglado: ambas tablas muestran el
+  importe NET (`qty*price`, columna "Importe"); bajo las líneas, desglose Base imponible + IVA
+  por tipo vía `calcVatBreakdown` (helper canónico, mismo que factura/VeriFactu); Total con
+  etiqueta "Total · IVA incluido". Sin cuota (LATAM/exento) → Total plano. Tiers: línea NET +
+  nota "IVA incluido". 76 tests verdes.
+
+### [ ] PC-A · `/pay/quote`: falta el botón "💬 Tengo una duda"
+- **Síntoma:** N1 exige un botón al WhatsApp del PRO (`wa.me/<tel>?text=…sobre el presupuesto #N…`)
+  en la pantalla de aceptar (draft/sent). Solo existía en el estado `rejected`.
+- **Arreglo:** añadirlo en draft/sent con `merchant.whatsappPhone` (ya cargado en `loadQuote`).
+
+### [ ] PC-C · `/pay/quote` estado `accepted`: sin fecha ni siguiente paso (N3)
+- **Síntoma:** N3 pide "Ya aceptaste este presupuesto el [fecha] + siguiente paso"; mostraba
+  solo "ya fue aceptado" (el estado `rejected` sí lleva fecha → inconsistente). Pulido.
+
+### [ ] PC-D · `/pay/quote` confirmación de aceptación fuera de N5
+- **Síntoma:** N5 oficial: "¡Presupuesto aceptado y firmado! [Negocio] ya tiene tu confirmación."
+  El subtexto decía "El profesional te informará de los siguientes pasos." (regla 30). Pulido.
+
+---
+
 ## P3 — Técnico / raíz (registrar, abordar después de P1)
 
 ### [ ] P3-1 · Plantilla Meta `quote_decision_es`: `{{1}}` sin sustituir  🔒 ACCIÓN EN META (usuario) — código ya robusto
