@@ -134,6 +134,13 @@ function renderPage(title: string, body: string, brandColor?: string | null): st
     .btn-share { display: inline-flex; align-items: center; justify-content: center; gap: 8px;
       width: 100%; padding: 12px; font-size: 15px; font-weight: 700; background: #25D366; color: #fff;
       border: none; border-radius: 12px; cursor: pointer; text-decoration: none; margin-top: 10px; }
+    /* PC-A: "Tengo una duda" → WhatsApp del PRO. Secundario (no verde) para respetar la
+       Regla de Una Sola Voz: el unico CTA primario es "Firmar y aceptar". */
+    .btn-duda { display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; min-height: 48px; padding: 12px; margin-top: 14px; font-size: 14px;
+      font-weight: 600; color: #0f1c17; background: #fff; border: 1px solid #e7e9e5;
+      border-radius: 12px; text-decoration: none; }
+    .btn-duda:hover { background: #f6f7f5; }
     .success-check { width: 72px; height: 72px; border-radius: 50%; background: #16a34a; color: #fff;
       font-size: 40px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;
       animation: pop .4s cubic-bezier(.2,1.4,.4,1) both; }
@@ -449,6 +456,16 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
   const shareName = (loadedQuote?.merchant?.legalName || loadedQuote?.merchant?.name || 'el profesional');
   const shareTextEnc = encodeURIComponent(`✅ He aceptado mi ${locale.quoteVerb} con ${shareName}. ¡Gracias!`);
 
+  // PC-A (N1): botón "💬 Tengo una duda" → WhatsApp del PRO. Mismo patrón que el estado
+  // rejected. Si el negocio no tiene whatsappPhone, no se muestra (degradación digna).
+  const proPhone = (loadedQuote?.merchant as any)?.whatsappPhone
+    ? String((loadedQuote.merchant as any).whatsappPhone).replace(/[^\d]/g, '')
+    : '';
+  const dudaTextEnc = encodeURIComponent(`Hola, tengo una duda sobre el ${locale.quoteVerb} #${quoteId}`);
+  const dudaHtml = proPhone
+    ? `<a class="btn-duda" href="https://wa.me/${proPhone}?text=${dudaTextEnc}">💬 Tengo una duda</a>`
+    : '';
+
   // Concordancia de género del sustantivo (presupuesto=masc / cotización=fem)
   // para "aceptado/a y firmado/a" sin romper LATAM (P1-4).
   const qg = (locale.quote.endsWith('ón') || locale.quote.endsWith('a')) ? 'a' : 'o';
@@ -483,6 +500,7 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
     </div>
     <small>Si no solicitaste este ${locale.quoteVerb}, cierra esta página.</small>
     </div>
+    ${dudaHtml}
     <a href="/pay/quote/${quoteId}/reject" style="display:block;text-align:center;margin-top:16px;font-size:13.5px;color:#6b756f;text-decoration:underline">No me interesa · Rechazar ${locale.quoteVerb}</a>
     ${SIG_JS}
     <script>

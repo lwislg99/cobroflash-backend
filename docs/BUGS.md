@@ -133,10 +133,13 @@
   etiqueta "Total · IVA incluido". Sin cuota (LATAM/exento) → Total plano. Tiers: línea NET +
   nota "IVA incluido". 76 tests verdes.
 
-### [ ] PC-A · `/pay/quote`: falta el botón "💬 Tengo una duda"
+### [x] PC-A · `/pay/quote`: falta el botón "💬 Tengo una duda"
 - **Síntoma:** N1 exige un botón al WhatsApp del PRO (`wa.me/<tel>?text=…sobre el presupuesto #N…`)
   en la pantalla de aceptar (draft/sent). Solo existía en el estado `rejected`.
-- **Arreglo:** añadirlo en draft/sent con `merchant.whatsappPhone` (ya cargado en `loadQuote`).
+- **CAUSA RAÍZ (16-jun):** añadido en draft/sent reusando el patrón del estado rejected:
+  `wa.me/<whatsappPhone>?text=Hola, tengo una duda sobre el {presupuesto} #N`. Botón secundario
+  `.btn-duda` (no verde, respeta la Regla de Una Sola Voz). Sin whatsappPhone → no se muestra
+  (degradación digna). `whatsappPhone` ya venía en `loadQuote`.
 
 ### [ ] PC-C · `/pay/quote` estado `accepted`: sin fecha ni siguiente paso (N3)
 - **Síntoma:** N3 pide "Ya aceptaste este presupuesto el [fecha] + siguiente paso"; mostraba
