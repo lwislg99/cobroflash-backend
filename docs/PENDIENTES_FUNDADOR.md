@@ -49,8 +49,9 @@
 
 - [ ] **V0-5 · Bug-bash landing cliente (TUYO):** `/pay/quote` y `/pay/invoice` en 3
   dispositivos reales (Android gama media, iPhone, tablet) contra la spec N del master.
-  Resultado → `docs/BUG_BASH_LANDING.md`; fallos → BUGS.md como P0-percepción.
-  Ya tienes uno apuntado para verificar: **P2-5** (columna Total recortada a 390px).
+  **Checklist concreta lista en `docs/BUG_BASH_LANDING.md`** (15-jun): matriz de dispositivos,
+  P2-5 lo primero, cada pantalla mapeada a N1/N2/N3/N5 y tabla de resultados. Córrela en
+  yaqu.app; fallos → BUGS.md como P0-percepción.
 - [ ] **V0-6 · Calle (TUYO):** lista 30 contactos · **10 discovery registradas (Apéndice B
   del master) — sin esto el sprint NO cierra** · vídeo 60 s (guion en U1.1) · 10 visitas
   a tiendas · ≥3 founding cobrados con alcance por escrito. Borrador del alcance LISTO en
@@ -64,7 +65,8 @@
 **One-pager con TODAS las preguntas listo en `docs/legal/PREGUNTAS_ASESOR.md`** (llévalo a
 la cita). Resumen de lo que hay que cerrar allí:
 
-- [ ] **S1-0 · Certificado FNMT** + alta en el entorno de pruebas AEAT. Bloqueante físico.
+- [~] **S1-0 · Certificado FNMT** ✅ conseguido (15-jun, guardado con copia `.pfx`).
+  Falta: alta en el **entorno de pruebas AEAT**. Bloqueante físico parcialmente levantado.
 - [ ] **Decisión de representación (pregunta A del one-pager)** — bloquea S1-D (cómo se
   autentica el envío). **S1-D está EN PAUSA hasta esto** (instrucción del fundador).
 - [ ] **Datos del PRODUCTOR del SIF** (pregunta B2): razón social + NIF (autónomo vs SL).
@@ -81,12 +83,12 @@ la cita). Resumen de lo que hay que cerrar allí:
 
 ## 🟣 Meta (WhatsApp)
 
-- [ ] **2 plantillas nuevas EN REVISIÓN en Meta (14-jun):** `payment_confirmation_invoice_es`
-  y `merchant_alert_es`. Spec y builders ya cuadran EXACTO con lo que metiste (body con texto
-  fijo al final/inicio porque Meta rechaza variable en los extremos). **Avísame cuando estén
-  Approved** y conecto el envío (sustituir `payment_confirmation_es` por la nueva en los
-  webhooks de pago + fallback `merchant_alert_es` al PRO con ventana 24h cerrada). La ruta del
-  botón `/recibo/:chargeId` ya existe (verificado).
+- [x] **2 plantillas nuevas Approved (15-jun) y CONECTADAS:** `payment_confirmation_invoice_es`
+  sustituye a `payment_confirmation_es` en los webhooks de pago (psp + mp); `merchant_alert_es`
+  es el fallback del aviso al PRO con ventana 24h cerrada (opción 1: intento texto → caigo a
+  plantilla, sin schema). 76 tests en verde. ⚠️ **Quedaron en categoría Marketing** → P3-3 las
+  recategoriza a Utility (mejor coste/entrega). Falta el fallback en la decisión de presupuesto
+  (`quotes.routes.ts`) — follow-up apuntado.
 - [ ] **P3-1:** botón URL dinámica en `quote_decision_es` (`…/pay/quote/{{1}}`) + re-aprobar
   (el workaround del código sigue vivo; al hacerlo se puede retirar).
 - [ ] **P3-3:** recrear las 3 plantillas originales como categoría **Utility** (mejor coste/entrega).

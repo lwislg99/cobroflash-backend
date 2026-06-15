@@ -8,7 +8,7 @@ import { sendInvoiceEmail } from '../../../../lib/email';
 import { normalizePhone } from '../../../../core/utils/utils';
 import { config } from '../../../../core/config/env';
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
-import { sendPaymentConfirmation } from '../../../../integrations/whatsappNotifications';
+import { sendPaymentConfirmationInvoice, notifyMerchantPaid } from '../../../../integrations/whatsappNotifications';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { sendMerchantPaymentEmail } from '../../../messaging/domain/merchantNotifications';
 
@@ -179,22 +179,25 @@ router.post('/', async (req, res) => {
         select: { whatsappPhone: true, googleReviewUrl: true, name: true, legalName: true, email: true, notifyEmailOnPaid: true },
       });
 
-      // Confirmación de pago al cliente por WhatsApp (payment_confirmation_es, fire-and-forget)
+      // Confirmación de pago al cliente por WhatsApp (J1: payment_confirmation_invoice_es,
+      // con botón "Ver documento" → /recibo/:chargeId; copy neutro factura/justificante).
+      const amt = Number(body.amount ?? updated.amount).toFixed(2);
+      const cur = body.currency ?? updated.currency;
+      const invConf = invoiceId
+        ? await prisma.invoice.findUnique({ where: { id: invoiceId }, select: { number: true } }).catch(() => null)
+        : null;
+      // P1-6: nº de documento REAL (sin '#') — factura o justificante, no el id del cobro.
+      const documentNumber = invConf?.number || paidInvoiceNumber || String(updated.id);
       if (updated.customer?.phone) {
-        const invConf = invoiceId
-          ? await prisma.invoice.findUnique({ where: { id: invoiceId }, select: { number: true } }).catch(() => null)
-          : null;
-        const amt = Number(body.amount ?? updated.amount).toFixed(2);
-        const cur = body.currency ?? updated.currency;
-        sendPaymentConfirmation({
+        sendPaymentConfirmationInvoice({
           toPhone: updated.customer.phone,
           customerName: updated.customer.name,
           merchantId: updated.merchantId, // J3: respeta waOptOut
           amountWithCurrency: `${amt} ${cur}`,
-          // P1-6: nº de factura REAL (sin '#'; la plantilla ya antepone "#") — no el id del cobro.
-          invoiceNumber: invConf?.number || paidInvoiceNumber || String(updated.id),
+          documentNumber,
           // P1-7: nombre del negocio como en presupuesto/factura/landing (legalName||name).
           businessName: merchant?.legalName || merchant?.name,
+          chargeId: updated.id, // botón "Ver documento" → /recibo/:chargeId
         }).catch(() => {});
 
         // ENT-3: historial
@@ -221,16 +224,16 @@ router.post('/', async (req, res) => {
         }
       }
 
-      // Notificar al profesional por WhatsApp (fire-and-forget)
-      const merchantPhone = normalizePhone(merchant?.whatsappPhone);
-      if (merchantPhone) {
+      // Notificar al profesional por WhatsApp (J1: texto libre si la ventana 24 h está
+      // abierta; si no, fallback a la plantilla merchant_alert_es). Fire-and-forget.
+      {
         const customerName = updated.customer?.name || 'Un cliente';
-        const amount = body.amount ?? updated.amount.toString();
-        const currency = body.currency ?? updated.currency;
-        sendWhatsAppText({
-          to: merchantPhone,
-          merchantId: updated.merchantId, // V0-2
-          text: `💰 Pago recibido de ${customerName}: ${amount} ${currency}`,
+        notifyMerchantPaid({
+          merchantId: updated.merchantId, // V0-2 + J3 reaplicados dentro
+          merchantPhone: merchant?.whatsappPhone,
+          customerName,
+          freeText: `💰 Pago recibido de ${customerName}: ${amt} ${cur}`,
+          detail: `${amt} ${cur}${documentNumber ? ` · ${documentNumber}` : ''}`,
         }).catch((err) => console.error('[psp] Error notificando al merchant:', err));
       }
 

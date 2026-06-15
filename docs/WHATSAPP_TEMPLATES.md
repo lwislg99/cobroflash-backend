@@ -94,7 +94,11 @@ Confirmación al cliente cuando se recibe el pago. **Sin botones.**
 
 ---
 
-## 4. `payment_confirmation_invoice_es`  ⏳ creada en Meta (en revisión) · ESTRUCTURA EXACTA
+## 4. `payment_confirmation_invoice_es`  ✅ Approved en Meta (15-jun) · CONECTADA · ESTRUCTURA EXACTA
+> **Conectada el 15-jun (J1):** sustituye a `payment_confirmation_es` en los webhooks de pago
+> (`psp.routes.ts` y `mpWebhook.routes.ts`) vía `sendPaymentConfirmationInvoice()`. ⚠️ Quedó en
+> categoría **Marketing** en Meta; pendiente recategorizar a **Utility** (P3-3) por coste/entrega.
+
 Igual que `payment_confirmation_es` (confirmación de pago al cliente) **pero CON un botón de
 URL dinámica "Ver documento"** que abre la página donde el cliente ve y descarga su documento
 de cobro. **Sustituirá** a `payment_confirmation_es` cuando esté aprobada.
@@ -129,13 +133,19 @@ de cobro. **Sustituirá** a `payment_confirmation_es` cuando esté aprobada.
 
 **Builder:** `buildPaymentConfirmationInvoice()` en `src/integrations/whatsappTemplates.ts`
 (4 vars de cuerpo + sufijo del botón = chargeId; el texto fijo vive en Meta, no en el builder).
-**Disparadores (cuando se conecte):** pago confirmado — `psp.routes.ts` y `mpWebhook.routes.ts`,
-sustituyendo a `sendPaymentConfirmation()`. **Hasta que Meta la apruebe NO se envía** (el
-código sigue usando `payment_confirmation_es`).
+**Disparadores (CONECTADO 15-jun):** pago confirmado — `psp.routes.ts` y `mpWebhook.routes.ts`
+vía `sendPaymentConfirmationInvoice()`. `payment_confirmation_es` (§3) queda como builder de
+reserva (ya no se dispara desde los webhooks).
 
 ---
 
-## 5. `merchant_alert_es`  ⏳ creada en Meta (en revisión) · ESTRUCTURA EXACTA
+## 5. `merchant_alert_es`  ✅ Approved en Meta (15-jun) · CONECTADA · ESTRUCTURA EXACTA
+> **Conectada el 15-jun (J1):** fallback del aviso de pago al PRO en `psp.routes.ts` y
+> `mpWebhook.routes.ts` vía `notifyMerchantPaid()` (opción 1: se intenta texto libre; si
+> `sendWhatsAppText` devuelve `{ok:false}` por ventana 24 h cerrada, se envía esta plantilla).
+> Falta conectar el fallback en la **decisión de presupuesto** (`quotes.routes.ts`) — follow-up.
+> ⚠️ Quedó en categoría **Marketing** en Meta; recategorizar a **Utility** (P3-3).
+
 Aviso al **PROFESIONAL** (no al cliente). Las notificaciones al PRO viajan como *service
 message* gratis si su ventana de 24 h está abierta; **cuando está cerrada** (no respondió en
 24 h) Meta no permite texto libre → se usa esta plantilla Utility como fallback.
@@ -165,10 +175,10 @@ message* gratis si su ventana de 24 h está abierta; **cuando está cerrada** (n
 
 **Builder:** `buildMerchantAlert()` en `src/integrations/whatsappTemplates.ts` (3 vars de
 cuerpo; el texto fijo y el botón estático viven en Meta, no en el builder).
-**Disparadores (cuando se conecte):** en `psp.routes.ts` / `mpWebhook.routes.ts` (pago) y
-`quotes.routes.ts` decisión (aceptado/rechazado), como fallback cuando
-`sendWhatsAppText()` al PRO falle por ventana cerrada. **Requiere** registrar `lastInboundAt`
-del PRO o intentar el texto y caer a plantilla — se decide al conectar (post-aprobación).
+**Disparadores:** pago — `psp.routes.ts` / `mpWebhook.routes.ts` ✅ CONECTADO (15-jun).
+Decisión de presupuesto — `quotes.routes.ts` ⏳ follow-up. **Mecanismo elegido (opción 1, sin
+schema):** se intenta el texto libre y se cae a plantilla si falla; NO se registra
+`lastInboundAt` (no justificaba un cambio de schema).
 
 ---
 
@@ -203,7 +213,7 @@ aprobada; **#132001** = nombre/idioma de plantilla no encontrado.
 ## Notas
 - El envío real requiere que las plantillas estén **Approved** en Meta con esta
   estructura exacta y que los botones URL estén configurados con la base indicada.
-- **§4 y §5 están PENDIENTES de alta en Meta** (usuario). Builders, validación J7 y
-  `wa-test.mjs` ya las soportan; el envío real **no se conecta hasta que estén Approved**.
+- **§4 y §5 ✅ Approved y CONECTADAS (15-jun).** Quedaron en categoría **Marketing**;
+  recategorizar a **Utility** (P3-3). Falta el fallback de §5 en la decisión de presupuesto.
 - `quote_reminder_es` (si existe en Meta) **no se usa**: el recordatorio de
   presupuesto reutiliza `quote_decision_es`.

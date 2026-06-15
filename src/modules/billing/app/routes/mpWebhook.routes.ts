@@ -7,7 +7,7 @@ import { ensureInvoiceForCharge } from '../../../../lib/invoicing';
 import { sendInvoiceEmail } from '../../../../lib/email';
 import { normalizePhone } from '../../../../core/utils/utils';
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
-import { sendPaymentConfirmation } from '../../../../integrations/whatsappNotifications';
+import { sendPaymentConfirmationInvoice, notifyMerchantPaid } from '../../../../integrations/whatsappNotifications';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
 
 const router = Router();
@@ -128,19 +128,24 @@ router.post('/', async (req, res) => {
         }).catch(() => {});
       }
 
-      // Confirmación de pago al cliente (payment_confirmation_es, fire-and-forget)
+      // Confirmación de pago al cliente (J1: payment_confirmation_invoice_es, con botón
+      // "Ver documento" → /recibo/:chargeId; copy neutro factura/justificante).
       const merchant = updated.merchant as any;
+      const amt = Number(updated.amount).toFixed(2);
+      const cur = updated.currency;
+      const invConf = invoiceId
+        ? await prisma.invoice.findUnique({ where: { id: invoiceId }, select: { number: true } }).catch(() => null)
+        : null;
+      const documentNumber = invConf?.number || String(updated.id);   // P1-6: sin '#'
       if (updated.customer?.phone) {
-        const invConf = invoiceId
-          ? await prisma.invoice.findUnique({ where: { id: invoiceId }, select: { number: true } }).catch(() => null)
-          : null;
-        sendPaymentConfirmation({
+        sendPaymentConfirmationInvoice({
           toPhone: updated.customer.phone,
           customerName: updated.customer.name,
           merchantId: updated.merchantId, // J3: respeta waOptOut
-          amountWithCurrency: `${Number(updated.amount).toFixed(2)} ${updated.currency}`,
-          invoiceNumber: invConf?.number || String(updated.id),   // P1-6: sin '#' (la plantilla ya lo antepone)
+          amountWithCurrency: `${amt} ${cur}`,
+          documentNumber,
           businessName: merchant?.legalName || merchant?.name,     // P1-7
+          chargeId: updated.id, // botón "Ver documento" → /recibo/:chargeId
         }).catch(() => {});
 
         // ENT-3: historial
@@ -165,12 +170,15 @@ router.post('/', async (req, res) => {
         }
       }
 
-      const merchantPhone = normalizePhone(merchant?.whatsappPhone);
-      if (merchantPhone) {
-        sendWhatsAppText({
-          to: merchantPhone,
-          merchantId: updated.merchantId, // V0-2
-          text: `💰 Pago recibido (Mercado Pago) de ${updated.customer?.name || 'un cliente'}: ${payment.amount} ${payment.currency}`,
+      // Aviso al PRO (J1: texto libre con ventana 24 h abierta; si no, fallback merchant_alert_es).
+      {
+        const customerName = updated.customer?.name || 'Un cliente';
+        notifyMerchantPaid({
+          merchantId: updated.merchantId, // V0-2 + J3 reaplicados dentro
+          merchantPhone: merchant?.whatsappPhone,
+          customerName,
+          freeText: `💰 Pago recibido (Mercado Pago) de ${customerName}: ${payment.amount} ${payment.currency}`,
+          detail: `${amt} ${cur}${documentNumber ? ` · ${documentNumber}` : ''}`,
         }).catch(() => {});
       }
 
