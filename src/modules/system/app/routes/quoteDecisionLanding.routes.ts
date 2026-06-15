@@ -421,8 +421,15 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
           tierCards = renderTierCards(tiersWithCurrency, quoteId, locale);
         }
       } else if (quote.status === 'accepted') {
+        // PC-C (N3): estado aceptado digno con FECHA + siguiente paso (igual que rejected).
+        const fechaAcept = quote.acceptedAt
+          ? new Date(quote.acceptedAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+          : null;
         return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
-          renderPage(`${locale.quote} ya aceptada`, `<div class="status-ok"><strong>Este ${locale.quoteVerb} ya fue aceptado.</strong><br/>Gracias por tu confianza.</div>`, brandColor)
+          renderPage(`${locale.quote} ya aceptada`, `<div class="status-ok" style="text-align:center">
+            <strong>Ya aceptaste este ${locale.quoteVerb}${fechaAcept ? ` el ${fechaAcept}` : ''}.</strong><br/>
+            El profesional te informará de los siguientes pasos.
+          </div>`, brandColor)
         );
       } else if (quote.status === 'rejected') {
         // N3 (copy oficial decidido por el fundador 12-jun): estado rechazado digno,
@@ -545,7 +552,7 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
             '<div style="text-align:center;padding:12px 0">' +
               '<div class="success-check">✓</div>' +
               '<h1 style="font-size:20px;margin:0 0 6px">¡${locale.quote} aceptad${qg}' + (sigData ? ' y firmad${qg}' : '') + '!</h1>' +
-              '<p style="color:#6b756f;font-size:14px;margin:0 0 18px">Gracias por tu confianza. El profesional te informará de los siguientes pasos.</p>' +
+              '<p style="color:#6b756f;font-size:14px;margin:0 0 18px">${esc(shareName)} ya tiene tu confirmación.</p>' +
               '<a class="btn-share" target="_blank" rel="noopener" href="https://wa.me/?text=${shareTextEnc}">' +
                 '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M.06 24l1.69-6.16a11.87 11.87 0 01-1.59-5.95C.16 5.34 5.5 0 12.06 0a11.82 11.82 0 018.42 3.49 11.82 11.82 0 013.48 8.41c0 6.56-5.34 11.9-11.9 11.9a11.9 11.9 0 01-5.69-1.45L.06 24z"/></svg>' +
                 'Compartir por WhatsApp</a>' +

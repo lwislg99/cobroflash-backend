@@ -141,13 +141,17 @@
   `.btn-duda` (no verde, respeta la Regla de Una Sola Voz). Sin whatsappPhone → no se muestra
   (degradación digna). `whatsappPhone` ya venía en `loadQuote`.
 
-### [ ] PC-C · `/pay/quote` estado `accepted`: sin fecha ni siguiente paso (N3)
+### [x] PC-C · `/pay/quote` estado `accepted`: sin fecha ni siguiente paso (N3)
 - **Síntoma:** N3 pide "Ya aceptaste este presupuesto el [fecha] + siguiente paso"; mostraba
   solo "ya fue aceptado" (el estado `rejected` sí lleva fecha → inconsistente). Pulido.
+- **CAUSA RAÍZ (16-jun):** copy alineado a N3 con `quote.acceptedAt` formateado (es-ES):
+  "Ya aceptaste este {presupuesto} el [fecha]. El profesional te informará de los siguientes pasos."
 
-### [ ] PC-D · `/pay/quote` confirmación de aceptación fuera de N5
+### [x] PC-D · `/pay/quote` confirmación de aceptación fuera de N5
 - **Síntoma:** N5 oficial: "¡Presupuesto aceptado y firmado! [Negocio] ya tiene tu confirmación."
   El subtexto decía "El profesional te informará de los siguientes pasos." (regla 30). Pulido.
+- **CAUSA RAÍZ (16-jun):** subtexto de la pantalla de éxito alineado al oficial N5:
+  "{Negocio} ya tiene tu confirmación." (nombre escapado, JS-safe).
 
 ---
 
