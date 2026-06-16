@@ -57,8 +57,10 @@
   "Ver documento" → recibo) sustituye a `payment_confirmation_es`; `merchant_alert_es` es el
   fallback al PRO con ventana 24h cerrada, en pago y en la decisión de presupuesto. Nada por
   tu parte salvo P3-3 (Marketing → Utility).
-- [x] **Landing pre-arreglada para V0-6** — 7 remates de percepción (PC-A…G) contra la Parte N
-  y el checklist AB6. Solo falta tu pasada en dispositivos (V0-5).
+- [x] **Landing pre-arreglada para V0-6** — 11 remates de percepción (PC-A…K) contra la Parte N
+  y el checklist AB6, incluidas las 4 pantallas del cliente (`/pay/quote`, `/pay/invoice`,
+  `/pay/bank`, `/recibo`: fecha+método, 400 digno, foco, tokens). Solo falta tu pasada en
+  dispositivos (V0-5).
 
 ## 🟠 Sprint VALIDA-0 — tu parte
 
@@ -67,10 +69,11 @@
   **Checklist concreta lista en `docs/BUG_BASH_LANDING.md`** (15-jun): matriz de dispositivos,
   P2-5 lo primero, cada pantalla mapeada a N1/N2/N3/N5 y tabla de resultados. Córrela en
   yaqu.app; fallos → BUGS.md como P0-percepción.
-  **Ya pre-arreglado en code-review (PC-A…G en BUGS.md):** IVA coherente con el Total, botón
+  **Ya pre-arreglado en code-review (PC-A…K en BUGS.md):** IVA coherente con el Total, botón
   "💬 Tengo una duda", estados/microcopy N5, motion accesible (`prefers-reduced-motion`),
-  "Copiar IBAN/referencia" y política de señal. Tu pasada confirma **P2-5 a 390px** y lo que
-  solo se ve en móvil real; la landing ya está lista para grabar el vídeo de V0-6.
+  "Copiar IBAN/referencia", política de señal, y en `/recibo` fecha+método del pago, 400 digno,
+  anillo de foco y estilos a tokens. Tu pasada confirma **P2-5 a 390px** y lo que solo se ve en
+  móvil real; la landing ya está lista para grabar el vídeo de V0-6.
 - [ ] **V0-6 · Calle (TUYO):** lista 30 contactos · **10 discovery registradas (Apéndice B
   del master) — sin esto el sprint NO cierra** · vídeo 60 s (guion en U1.1) · 10 visitas
   a tiendas · ≥3 founding cobrados con alcance por escrito. Borrador del alcance LISTO en
@@ -131,7 +134,8 @@ la cita). Resumen de lo que hay que cerrar allí:
 
 ---
 *Última actualización: 16 jun 2026. Resuelto esta tanda: certificado FNMT conseguido, envío
-WhatsApp real conectado (2 plantillas nuevas), landing percepción A–G pre-arreglada para V0-6.
+WhatsApp real conectado (2 plantillas nuevas), landing percepción A–K pre-arreglada para V0-6
+(las 4 pantallas del cliente, /recibo incluido).
 Pendientes vivos (TU parte), por orden: **1)** cita asesor (lo que más desbloquea) · **2)** alta
 entorno pruebas AEAT · **3)** V0-5 (pasada en 3 dispositivos) + V0-6 (calle: 10 discovery +
 vídeo + ≥3 founding) · **4)** Stripe LIVE · **5)** Meta P3-1 (URL dinámica) y P3-3 (Marketing→Utility).*
