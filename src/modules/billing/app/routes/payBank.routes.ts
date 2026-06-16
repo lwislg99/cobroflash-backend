@@ -101,6 +101,8 @@ router.get('/bank/:id', async (req, res) => {
     .dev-sim{margin-top:1.5rem;padding-top:1.25rem;border-top:1px dashed var(--border)}
     .btn-sim{background:var(--ink);color:#fff;border:none;border-radius:999px;padding:.6rem 1.25rem;cursor:pointer;font-size:.9rem;font-weight:600;font-family:inherit}
     .footer{margin-top:1.5rem;text-align:center;font-size:.75rem;color:var(--muted)}
+    /* AB6: anillo de Foco accesible (DESIGN.md) en todo elemento enfocado por teclado */
+    :focus-visible{outline:none;box-shadow:0 0 0 3px rgba(34,197,94,.30)}
   </style>
 </head>
 <body>

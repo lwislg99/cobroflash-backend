@@ -276,6 +276,8 @@ router.get('/:id', async (req, res) => {
   .status-sub{font-size:.85rem;color:var(--muted);margin-top:.35rem}
   .status-meta{font-size:.82rem;color:var(--muted);font-weight:600;margin-top:.5rem;font-variant-numeric:tabular-nums}
   .pay-stack{display:flex;flex-direction:column;gap:.5rem;margin:1rem 0}
+  /* AB6: anillo de Foco accesible (DESIGN.md) en todo elemento enfocado por teclado */
+  :focus-visible{outline:none;box-shadow:0 0 0 3px rgba(34,197,94,.30)}
 </style>
 </head>
 <body>

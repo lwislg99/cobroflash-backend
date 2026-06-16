@@ -112,6 +112,8 @@ router.get('/invoice/:chargeId', async (req, res) => {
     .trust-main{display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem;font-weight:600;color:var(--body)}
     .trust-sub{font-size:.72rem;color:var(--muted);margin-top:.3rem}
     .lock{width:13px;height:13px;display:inline-block;vertical-align:-1px}
+    /* AB6: anillo de Foco accesible (DESIGN.md) en todo elemento enfocado por teclado */
+    :focus-visible{outline:none;box-shadow:0 0 0 3px rgba(34,197,94,.30)}
   </style>
 </head>
 <body>

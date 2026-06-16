@@ -181,6 +181,12 @@
 - **CAUSA RAÍZ (16-jun):** el 400 (id no numérico) ahora devuelve `documentNotFoundHtml()` en
   las tres rutas; eliminado el `statusBadge` muerto en `receipt.routes.ts`.
 
+### [x] PC-J · Barrido de Foco AB6 en el resto de pantallas del cliente
+- **Síntoma:** PC-E añadió el anillo de Foco solo a `/pay/quote`; `/recibo`, `/pay/invoice` y
+  `/pay/bank` no mostraban anillo de Foco accesible al navegar por teclado (checklist AB6).
+- **CAUSA RAÍZ (16-jun):** regla `:focus-visible` con el anillo Foco de DESIGN.md
+  (`0 0 0 3px rgba(34,197,94,.30)`) añadida a las tres pantallas.
+
 ### [x] PC-D · `/pay/quote` confirmación de aceptación fuera de N5
 - **Síntoma:** N5 oficial: "¡Presupuesto aceptado y firmado! [Negocio] ya tiene tu confirmación."
   El subtexto decía "El profesional te informará de los siguientes pasos." (regla 30). Pulido.
