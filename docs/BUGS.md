@@ -167,6 +167,13 @@
   por defecto "🔒 La señal no es reembolsable." bajo el badge de condiciones. El texto
   configurable por merchant queda para CONNECT-1 (V8).
 
+### [x] PC-H · `/recibo`: el recibo pagado no mostraba fecha ni método (N3)
+- **Síntoma:** N3 pide "Pagado → recibo verde, cifra grande, Descargar factura, **fecha/método**".
+  El recibo mostraba héroe + importe + descarga, pero NO la fecha del pago ni el método al cliente.
+- **CAUSA RAÍZ (16-jun):** añadida línea `.status-meta` en el héroe ("Pagado el [fecha] · [método]")
+  cuando `status==='paid'`: fecha del evento `paid` (es-ES) + método legible (Tarjeta/Bizum/
+  Mercado Pago/Transferencia) desde `charge.method`.
+
 ### [x] PC-D · `/pay/quote` confirmación de aceptación fuera de N5
 - **Síntoma:** N5 oficial: "¡Presupuesto aceptado y firmado! [Negocio] ya tiene tu confirmación."
   El subtexto decía "El profesional te informará de los siguientes pasos." (regla 30). Pulido.

@@ -204,6 +204,32 @@ router.get('/:id', async (req, res) => {
   };
   const sh = SH[ch.status] || SH.pending;
   const business = esc((ch as any).merchant?.legalName || (ch as any).merchant?.name || '');
+
+  // R-1 (N3): en el recibo PAGADO mostrar fecha + método del pago.
+  const paidEvent = (ch.events || [])
+    .filter((e) => e.type === 'paid')
+    .sort((a, b) => +new Date(b.ts) - +new Date(a.ts))[0];
+  const methodLabel = (m?: string | null): string => {
+    const s = String(m || '').toLowerCase();
+    if (!s) return '';
+    if (s.includes('card') || s.includes('stripe') || s.includes('tarjeta')) return 'Tarjeta';
+    if (s.includes('bizum')) return 'Bizum';
+    if (s.includes('mp') || s.includes('mercado')) return 'Mercado Pago';
+    if (s.includes('transfer') || s.includes('sct') || s.includes('bank')) return 'Transferencia';
+    return String(m);
+  };
+  const paidMeta =
+    ch.status === 'paid'
+      ? [
+          paidEvent
+            ? `Pagado el ${new Date(paidEvent.ts).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}`
+            : 'Pagado',
+          methodLabel(ch.method),
+        ]
+          .filter(Boolean)
+          .join(' · ')
+      : '';
+
   const statusHero = `
     ${business ? `<div class="biz">${business}</div>` : ''}
     <div class="status-hero">
@@ -211,6 +237,7 @@ router.get('/:id', async (req, res) => {
       <div class="status-title">${sh.title}</div>
       <div class="status-amount">${esc(Number(ch.amount).toFixed(2))} ${esc(ch.currency)}</div>
       ${ch.concept ? `<div class="status-sub">${esc(ch.concept)}</div>` : ''}
+      ${paidMeta ? `<div class="status-meta">${esc(paidMeta)}</div>` : ''}
     </div>`;
 
   // Detalles internos solo en desarrollo (no para el cliente)
@@ -255,6 +282,7 @@ router.get('/:id', async (req, res) => {
   .status-title{font-size:1.05rem;font-weight:700;color:var(--ink)}
   .status-amount{font-size:2rem;font-weight:800;color:var(--ink);letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:.35rem}
   .status-sub{font-size:.85rem;color:var(--muted);margin-top:.35rem}
+  .status-meta{font-size:.82rem;color:var(--muted);font-weight:600;margin-top:.5rem;font-variant-numeric:tabular-nums}
   .pay-stack{display:flex;flex-direction:column;gap:.5rem;margin:1rem 0}
 </style>
 </head>
