@@ -13,6 +13,7 @@ function calcTierTotal(lines: Array<{qty: number; price: number; tax?: number}>)
   return Math.round(lines.reduce((s, l) => s + l.qty * l.price * (1 + (l.tax ?? 0)), 0) * 100) / 100;
 }
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
+import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
 import { getNextBillingStage } from '../../domain/billingPlan';
 import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/merchantNotifications';
 import { getSession } from '../../../auth/domain/auth.service';
@@ -527,16 +528,22 @@ router.post('/:id/decision', async (req, res) => {
       });
     }
 
-    // Notificar al profesional por WhatsApp (fire-and-forget)
-    const merchantPhone = normalizePhone(quote.merchant?.whatsappPhone);
-    if (merchantPhone) {
+    // Notificar al profesional por WhatsApp (J1: texto libre si la ventana 24 h está abierta;
+    // si está cerrada, fallback a la plantilla merchant_alert_es). Fire-and-forget.
+    {
       const customerName = quote.customer?.name || 'El cliente';
-      const text = decision === 'accept'
-        ? `✅ ${customerName} aceptó tu cotización #${quoteId} por ${Number(quote.total).toFixed(2)} ${quote.currency}`
+      const amount = `${Number(quote.total).toFixed(2)} ${quote.currency}`;
+      const freeText = decision === 'accept'
+        ? `✅ ${customerName} aceptó tu cotización #${quoteId} por ${amount}`
         : `❌ ${customerName} rechazó la cotización #${quoteId}. Motivo: ${reason || comment || 'Sin especificar'}`;
-      sendWhatsAppText({ to: merchantPhone, merchantId: quote.merchantId, text }).catch((err) =>
-        console.error('[decision] Error notificando al merchant:', err)
-      );
+      notifyMerchantAlert({
+        merchantId: quote.merchantId,
+        merchantPhone: quote.merchant?.whatsappPhone,
+        customerName,
+        action: decision === 'accept' ? 'ha aceptado tu presupuesto' : 'ha rechazado tu presupuesto',
+        detail: decision === 'accept' ? `${amount} · Presupuesto #${quoteId}` : `Presupuesto #${quoteId}`,
+        freeText,
+      }).catch((err) => console.error('[decision] Error notificando al merchant:', err));
     }
 
     // Nota: usamos `quote` (el original con include) para merchant / customer

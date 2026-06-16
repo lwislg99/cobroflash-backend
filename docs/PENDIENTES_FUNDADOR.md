@@ -86,9 +86,9 @@ la cita). Resumen de lo que hay que cerrar allí:
 - [x] **2 plantillas nuevas Approved (15-jun) y CONECTADAS:** `payment_confirmation_invoice_es`
   sustituye a `payment_confirmation_es` en los webhooks de pago (psp + mp); `merchant_alert_es`
   es el fallback del aviso al PRO con ventana 24h cerrada (opción 1: intento texto → caigo a
-  plantilla, sin schema). 76 tests en verde. ⚠️ **Quedaron en categoría Marketing** → P3-3 las
-  recategoriza a Utility (mejor coste/entrega). Falta el fallback en la decisión de presupuesto
-  (`quotes.routes.ts`) — follow-up apuntado.
+  plantilla, sin schema) en pago (psp + mp) y en la **decisión de presupuesto**
+  (`quotes.routes.ts`, 16-jun) vía el helper genérico `notifyMerchantAlert`. 76 tests en verde.
+  ⚠️ **Quedaron en categoría Marketing** → P3-3 las recategoriza a Utility (mejor coste/entrega).
 - [ ] **P3-1:** botón URL dinámica en `quote_decision_es` (`…/pay/quote/{{1}}`) + re-aprobar
   (el workaround del código sigue vivo; al hacerlo se puede retirar).
 - [ ] **P3-3:** recrear las 3 plantillas originales como categoría **Utility** (mejor coste/entrega).

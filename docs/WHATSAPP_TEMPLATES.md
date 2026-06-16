@@ -140,10 +140,11 @@ reserva (ya no se dispara desde los webhooks).
 ---
 
 ## 5. `merchant_alert_es`  ✅ Approved en Meta (15-jun) · CONECTADA · ESTRUCTURA EXACTA
-> **Conectada el 15-jun (J1):** fallback del aviso de pago al PRO en `psp.routes.ts` y
-> `mpWebhook.routes.ts` vía `notifyMerchantPaid()` (opción 1: se intenta texto libre; si
-> `sendWhatsAppText` devuelve `{ok:false}` por ventana 24 h cerrada, se envía esta plantilla).
-> Falta conectar el fallback en la **decisión de presupuesto** (`quotes.routes.ts`) — follow-up.
+> **Conectada (J1):** fallback del aviso al PRO en `psp.routes.ts` / `mpWebhook.routes.ts`
+> (pago, 15-jun) y en `quotes.routes.ts` (decisión aceptado/rechazado, 16-jun), vía el helper
+> genérico `notifyMerchantAlert()` (opción 1: se intenta texto libre; si `sendWhatsAppText`
+> devuelve `{ok:false}` por ventana 24 h cerrada, se envía esta plantilla). `notifyMerchantPaid()`
+> queda como atajo (action "te ha pagado").
 > ⚠️ Quedó en categoría **Marketing** en Meta; recategorizar a **Utility** (P3-3).
 
 Aviso al **PROFESIONAL** (no al cliente). Las notificaciones al PRO viajan como *service
@@ -176,9 +177,9 @@ message* gratis si su ventana de 24 h está abierta; **cuando está cerrada** (n
 **Builder:** `buildMerchantAlert()` en `src/integrations/whatsappTemplates.ts` (3 vars de
 cuerpo; el texto fijo y el botón estático viven en Meta, no en el builder).
 **Disparadores:** pago — `psp.routes.ts` / `mpWebhook.routes.ts` ✅ CONECTADO (15-jun).
-Decisión de presupuesto — `quotes.routes.ts` ⏳ follow-up. **Mecanismo elegido (opción 1, sin
-schema):** se intenta el texto libre y se cae a plantilla si falla; NO se registra
-`lastInboundAt` (no justificaba un cambio de schema).
+Decisión de presupuesto (aceptado/rechazado) — `quotes.routes.ts` ✅ CONECTADO (16-jun) vía
+`notifyMerchantAlert()`. **Mecanismo (opción 1, sin schema):** se intenta el texto libre y se
+cae a plantilla si falla; NO se registra `lastInboundAt` (no justificaba un cambio de schema).
 
 ---
 
@@ -213,7 +214,7 @@ aprobada; **#132001** = nombre/idioma de plantilla no encontrado.
 ## Notas
 - El envío real requiere que las plantillas estén **Approved** en Meta con esta
   estructura exacta y que los botones URL estén configurados con la base indicada.
-- **§4 y §5 ✅ Approved y CONECTADAS (15-jun).** Quedaron en categoría **Marketing**;
-  recategorizar a **Utility** (P3-3). Falta el fallback de §5 en la decisión de presupuesto.
+- **§4 y §5 ✅ Approved y CONECTADAS** (pago 15-jun; decisión de presupuesto 16-jun).
+  Quedaron en categoría **Marketing**; recategorizar a **Utility** (P3-3).
 - `quote_reminder_es` (si existe en Meta) **no se usa**: el recordatorio de
   presupuesto reutiliza `quote_decision_es`.

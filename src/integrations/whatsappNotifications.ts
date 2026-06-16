@@ -83,7 +83,8 @@ export async function sendPaymentConfirmationInvoice(params: {
 }
 
 /**
- * Aviso al PROFESIONAL de un pago recibido, robusto a la ventana de 24 h.
+ * Aviso al PROFESIONAL robusto a la ventana de 24 h, genérico para los eventos PRO-facing
+ * (pago recibido y decisión de presupuesto aceptado/rechazado).
  * Estrategia decidida al conectar (J1, opción 1, sin schema): se INTENTA el texto libre
  * (gratis y rico si la ventana de servicio del PRO está abierta); si `sendWhatsAppText`
  * devuelve `{ok:false}` (ventana cerrada / error de entrega de Meta), se cae a la plantilla
@@ -91,11 +92,12 @@ export async function sendPaymentConfirmationInvoice(params: {
  * waOptOut (J3) se reaplican dentro de cada envío, así que el fallback nunca salta esas reglas.
  * Fire-and-forget: nunca lanza.
  */
-export async function notifyMerchantPaid(params: {
+export async function notifyMerchantAlert(params: {
   merchantId: number;
   merchantPhone: string | null | undefined;
   freeText: string;            // texto a intentar con la ventana abierta
   customerName?: string | null;
+  action: string;              // "te ha pagado" | "ha aceptado tu presupuesto" | "ha rechazado tu presupuesto"
   detail: string;              // "{importe con moneda} · {referencia}" para la plantilla
 }): Promise<{ ok: boolean; via: 'text' | 'template' | 'none' }> {
   const to = normalizePhone(params.merchantPhone || '');
@@ -116,7 +118,7 @@ export async function notifyMerchantPaid(params: {
       merchantId: params.merchantId,
       ...buildMerchantAlert({
         customerName: params.customerName || 'Un cliente',
-        action: 'te ha pagado',
+        action: params.action,
         detail: params.detail,
       }),
     });
@@ -125,4 +127,15 @@ export async function notifyMerchantPaid(params: {
     console.error('[merchant_alert] fallback error:', err?.message || err);
     return { ok: false, via: 'none' };
   }
+}
+
+/** Atajo de notifyMerchantAlert para el pago recibido (action fija "te ha pagado"). */
+export async function notifyMerchantPaid(params: {
+  merchantId: number;
+  merchantPhone: string | null | undefined;
+  freeText: string;
+  customerName?: string | null;
+  detail: string;
+}): Promise<{ ok: boolean; via: 'text' | 'template' | 'none' }> {
+  return notifyMerchantAlert({ ...params, action: 'te ha pagado' });
 }
