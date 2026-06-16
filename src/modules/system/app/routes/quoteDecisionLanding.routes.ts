@@ -148,6 +148,14 @@ function renderPage(title: string, body: string, brandColor?: string | null): st
     .confetti-piece { position: fixed; top: -12px; width: 9px; height: 9px; z-index: 9999;
       border-radius: 1px; animation: confetti-fall linear forwards; }
     @keyframes confetti-fall { to { transform: translateY(105vh) rotate(540deg); opacity: 1; } }
+    /* AB6: anillo de Foco accesible (DESIGN.md "Foco") en todo elemento enfocado por teclado */
+    :focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(34,197,94,.30); }
+    /* AB6: respetar prefers-reduced-motion — sin confeti, sin pop, sin transiciones */
+    @media (prefers-reduced-motion: reduce) {
+      .success-check { animation: none; }
+      .confetti-piece { display: none; animation: none; }
+      .btn-accept { transition: none; }
+    }
   </style>
   ${brandOverrideCss(brandColor)}
 </head>
@@ -512,6 +520,8 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
     ${SIG_JS}
     <script>
     function fireConfetti() {
+      // AB6: respetar prefers-reduced-motion — sin celebración con movimiento.
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       const colors = ['#22c55e','#16a34a','#22d3ee','#fbbf24','#f87171','#a78bfa'];
       for (let i = 0; i < 80; i++) {
         const p = document.createElement('div');

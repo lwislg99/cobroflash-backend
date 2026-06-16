@@ -147,6 +147,14 @@
 - **CAUSA RAÍZ (16-jun):** copy alineado a N3 con `quote.acceptedAt` formateado (es-ES):
   "Ya aceptaste este {presupuesto} el [fecha]. El profesional te informará de los siguientes pasos."
 
+### [x] PC-E · `/pay/quote`: animaciones sin `prefers-reduced-motion` + faltaba anillo de foco (AB6)
+- **Síntoma:** la celebración (confeti + pop del check + transición del CTA) se disparaba siempre,
+  ignorando `prefers-reduced-motion` (lo exige la skill yaqu-premium-ui / checklist AB6), y los
+  elementos enfocados por teclado no mostraban el anillo de Foco de DESIGN.md.
+- **CAUSA RAÍZ (16-jun):** añadido `@media (prefers-reduced-motion: reduce)` (sin confeti/pop/
+  transición) + guard en `fireConfetti()` (`matchMedia`), y regla `:focus-visible` con el anillo
+  Foco (`0 0 0 3px rgba(34,197,94,.30)`) para todo elemento enfocado por teclado.
+
 ### [x] PC-D · `/pay/quote` confirmación de aceptación fuera de N5
 - **Síntoma:** N5 oficial: "¡Presupuesto aceptado y firmado! [Negocio] ya tiene tu confirmación."
   El subtexto decía "El profesional te informará de los siguientes pasos." (regla 30). Pulido.
