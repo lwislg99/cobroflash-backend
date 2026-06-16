@@ -34,7 +34,7 @@ router.get('/bank/:id', async (req, res) => {
         <span class="account-label">CLABE interbancaria</span>
         <div class="account-value-row">
           <span class="account-value" id="account-num">${esc(clabe)}</span>
-          <button class="copy-btn" onclick="copyText('${esc(clabe)}', this)">Copiar</button>
+          <button class="copy-btn" data-label="Copiar CLABE" onclick="copyText('${esc(clabe)}', this)">Copiar CLABE</button>
         </div>
       </div>`;
   } else if (iban) {
@@ -43,7 +43,7 @@ router.get('/bank/:id', async (req, res) => {
         <span class="account-label">IBAN</span>
         <div class="account-value-row">
           <span class="account-value" id="account-num">${esc(iban)}</span>
-          <button class="copy-btn" onclick="copyText('${esc(iban)}', this)">Copiar</button>
+          <button class="copy-btn" data-label="Copiar IBAN" onclick="copyText('${esc(iban)}', this)">Copiar IBAN</button>
         </div>
       </div>`;
   } else {
@@ -123,7 +123,7 @@ router.get('/bank/:id', async (req, res) => {
         <div class="ref-label">Pon este concepto exacto en tu transferencia</div>
         <div class="ref-value-row">
           <span class="ref-value" id="ref-num">${esc(reference)}</span>
-          <button class="copy-btn" onclick="copyText('${esc(reference)}', this)">Copiar</button>
+          <button class="copy-btn" data-label="Copiar referencia" onclick="copyText('${esc(reference)}', this)">Copiar referencia</button>
         </div>
         <div class="warning">⚠️ Sin este concepto no podemos identificar tu pago.</div>
       </div>
@@ -155,7 +155,7 @@ router.get('/bank/:id', async (req, res) => {
       navigator.clipboard.writeText(text).then(() => {
         btn.textContent = '¡Copiado!';
         btn.classList.add('copied');
-        setTimeout(() => { btn.textContent = 'Copiar'; btn.classList.remove('copied'); }, 2000);
+        setTimeout(() => { btn.textContent = btn.dataset.label || 'Copiar'; btn.classList.remove('copied'); }, 2000);
       }).catch(() => {
         // fallback
         const el = document.createElement('textarea');
@@ -166,7 +166,7 @@ router.get('/bank/:id', async (req, res) => {
         document.body.removeChild(el);
         btn.textContent = '¡Copiado!';
         btn.classList.add('copied');
-        setTimeout(() => { btn.textContent = 'Copiar'; btn.classList.remove('copied'); }, 2000);
+        setTimeout(() => { btn.textContent = btn.dataset.label || 'Copiar'; btn.classList.remove('copied'); }, 2000);
       });
     }
   </script>

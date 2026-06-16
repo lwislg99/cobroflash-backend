@@ -155,6 +155,12 @@
   transición) + guard en `fireConfetti()` (`matchMedia`), y regla `:focus-visible` con el anillo
   Foco (`0 0 0 3px rgba(34,197,94,.30)`) para todo elemento enfocado por teclado.
 
+### [x] PC-F · `/pay/bank`: microcopy de copia fuera de N5
+- **Síntoma:** los botones decían "Copiar" genérico; N5 oficial: "Copiar IBAN" / "Copiar referencia".
+- **CAUSA RAÍZ (16-jun):** etiquetas alineadas a N5 ("Copiar IBAN" / "Copiar CLABE" en MX /
+  "Copiar referencia"); `copyText()` ahora restaura el texto de cada botón vía `data-label`
+  tras el "¡Copiado!" (antes reseteaba todos a "Copiar").
+
 ### [x] PC-D · `/pay/quote` confirmación de aceptación fuera de N5
 - **Síntoma:** N5 oficial: "¡Presupuesto aceptado y firmado! [Negocio] ya tiene tu confirmación."
   El subtexto decía "El profesional te informará de los siguientes pasos." (regla 30). Pulido.
