@@ -13,7 +13,8 @@ router.get('/invoice/:chargeId', async (req, res) => {
   res.set('Cache-Control', 'no-store, must-revalidate');
 
   const id = parseNumericId(req.params.chargeId);
-  if (!Number.isInteger(id)) return res.status(400).send('ID inválido');
+  // N3: estado digno también en el 400 (id no numérico), nunca texto plano.
+  if (!Number.isInteger(id)) return res.status(400).send(documentNotFoundHtml());
 
   const charge = await prisma.charge.findUnique({
     where: { id },

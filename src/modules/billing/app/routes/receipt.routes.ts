@@ -17,7 +17,8 @@ router.get('/:id', async (req, res) => {
   res.set('Expires', '0');
 
   const id = Number(req.params.id);
-  if (!Number.isInteger(id)) return res.status(400).send('ID inválido');
+  // N3: estado digno también en el 400 (id no numérico), nunca texto plano.
+  if (!Number.isInteger(id)) return res.status(400).send(documentNotFoundHtml());
 
   let charge = await prisma.charge.findUnique({
     where: { id },
@@ -90,15 +91,6 @@ router.get('/:id', async (req, res) => {
   const docPron = isJust ? 'lo' : 'la';    // pronombre: lo (justificante) / la (factura)
 
   const title = `Recibo #${ch.id} — YaQu`;
-
-  const statusBadge =
-    ch.status === 'paid'
-      ? `<span style="background:#16a34a;color:#fff;padding:.15rem .5rem;border-radius:.5rem;">PAGADO</span>`
-      : ch.status === 'failed'
-      ? `<span style="background:#dc2626;color:#fff;padding:.15rem .5rem;border-radius:.5rem;">FALLIDO</span>`
-      : ch.status === 'expired'
-      ? `<span style="background:#6b7280;color:#fff;padding:.15rem .5rem;border-radius:.5rem;">EXPIRADO</span>`
-      : `<span style="background:#f59e0b;color:#111;padding:.15rem .5rem;border-radius:.5rem;">PENDIENTE</span>`;
 
   const payBtns =
     ch.status === 'pending'

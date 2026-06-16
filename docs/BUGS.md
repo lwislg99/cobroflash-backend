@@ -174,6 +174,13 @@
   cuando `status==='paid'`: fecha del evento `paid` (es-ES) + método legible (Tarjeta/Bizum/
   Mercado Pago/Transferencia) desde `charge.method`.
 
+### [x] PC-I · 400 "ID inválido" en texto plano + código muerto (N3)
+- **Síntoma:** `/recibo/abc`, `/pay/invoice/abc` y `/pay/bank/abc` respondían `"ID inválido"`
+  en texto crudo (viola N3: diseño digno SIEMPRE; el 404 ya usaba `documentNotFoundHtml`).
+  Además `/recibo` calculaba un `statusBadge` que no se renderizaba nunca (código muerto).
+- **CAUSA RAÍZ (16-jun):** el 400 (id no numérico) ahora devuelve `documentNotFoundHtml()` en
+  las tres rutas; eliminado el `statusBadge` muerto en `receipt.routes.ts`.
+
 ### [x] PC-D · `/pay/quote` confirmación de aceptación fuera de N5
 - **Síntoma:** N5 oficial: "¡Presupuesto aceptado y firmado! [Negocio] ya tiene tu confirmación."
   El subtexto decía "El profesional te informará de los siguientes pasos." (regla 30). Pulido.
