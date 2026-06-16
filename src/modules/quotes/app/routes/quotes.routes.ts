@@ -105,7 +105,7 @@ router.post('/create', async (req, res) => {
         sendWhatsAppText({
           to: adminPhone,
           merchantId: quote.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
-          text: `📋 Nueva cotización #${quote.id} por ${totalNum.toFixed(2)} ${quote.currency} pendiente de tu aprobación antes de enviarla al cliente. Revísala en tu panel de YaQu.`,
+          text: `📋 Nuevo presupuesto #${quote.id} por ${totalNum.toFixed(2)} ${quote.currency} pendiente de tu aprobación antes de enviarlo al cliente. Revísalo en tu panel de YaQu.`,
         }).catch(() => {});
       }
     }
@@ -534,8 +534,8 @@ router.post('/:id/decision', async (req, res) => {
       const customerName = quote.customer?.name || 'El cliente';
       const amount = `${Number(quote.total).toFixed(2)} ${quote.currency}`;
       const freeText = decision === 'accept'
-        ? `✅ ${customerName} aceptó tu cotización #${quoteId} por ${amount}`
-        : `❌ ${customerName} rechazó la cotización #${quoteId}. Motivo: ${reason || comment || 'Sin especificar'}`;
+        ? `✅ ${customerName} aceptó tu presupuesto #${quoteId} por ${amount}`
+        : `❌ ${customerName} rechazó el presupuesto #${quoteId}. Motivo: ${reason || comment || 'Sin especificar'}`;
       notifyMerchantAlert({
         merchantId: quote.merchantId,
         merchantPhone: quote.merchant?.whatsappPhone,
