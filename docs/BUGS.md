@@ -161,6 +161,12 @@
   "Copiar referencia"); `copyText()` ahora restaura el texto de cada botón vía `data-label`
   tras el "¡Copiado!" (antes reseteaba todos a "Copiar").
 
+### [x] PC-G · `/pay/quote`: faltaba la política de señal (V8/N1)
+- **Síntoma:** N1 pide la política de señal junto a las condiciones de pago; no se mostraba.
+- **CAUSA RAÍZ (16-jun):** cuando el presupuesto es a señal (`FIFTY_FIFTY`), se muestra el texto
+  por defecto "🔒 La señal no es reembolsable." bajo el badge de condiciones. El texto
+  configurable por merchant queda para CONNECT-1 (V8).
+
 ### [x] PC-D · `/pay/quote` confirmación de aceptación fuera de N5
 - **Síntoma:** N5 oficial: "¡Presupuesto aceptado y firmado! [Negocio] ya tiene tu confirmación."
   El subtexto decía "El profesional te informará de los siguientes pasos." (regla 30). Pulido.

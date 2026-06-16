@@ -84,6 +84,8 @@ function renderPage(title: string, body: string, brandColor?: string | null): st
     .totals-row span:last-child { color: #3f4a45; font-weight: 600; }
     .terms-badge { display: inline-block; font-size: 12px; padding: 3px 10px;
       border-radius: 999px; background: #eff6ff; color: #1d4ed8; margin-bottom: 16px; }
+    /* V8/N1: política de señal junto a las condiciones (solo cuando hay señal 50/50) */
+    .senal-policy { text-align: center; font-size: 12px; color: #6b756f; margin: 0 0 12px; }
     .divider { border: none; border-top: 1px solid #e7e9e5; margin: 16px 0; }
     /* Firma */
     .sig-label { font-size: 13px; font-weight: 600; color: #333c37; margin-bottom: 6px; display: block; }
@@ -318,7 +320,7 @@ function renderQuoteDetail(quote: Awaited<ReturnType<typeof loadQuote>>, quoteId
       <div class="amount-hero-label">${hasVat ? 'Total · IVA incluido' : 'Total del presupuesto'}</div>
       <div class="amount-hero-value">${money(Number(quote.total))}</div>
     </div>
-    ${terms ? `<div style="text-align:center;margin-bottom:4px"><span class="terms-badge">${esc(termsLabel(terms))}</span></div>` : ''}
+    ${terms ? `<div style="text-align:center;margin-bottom:4px"><span class="terms-badge">${esc(termsLabel(terms))}</span></div>${terms === 'FIFTY_FIFTY' ? `<div class="senal-policy">🔒 La señal no es reembolsable.</div>` : ''}` : ''}
   `;
 }
 
