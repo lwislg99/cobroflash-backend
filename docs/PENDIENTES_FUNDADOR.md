@@ -21,11 +21,15 @@
 ## 🔝 Ahora mismo, por orden (lo más importante primero)
 
 1. **Pedir cita con el asesor fiscal** y llevarle `docs/legal/PREGUNTAS_ASESOR.md` — es lo
-   que MÁS desbloquea (todo SIF-1: certificado, representación, datos del productor, F1/F2,
-   bundle legal). Sin esto, SIF-1 (la prioridad nº1 del proyecto) no avanza.
-2. **Certificado FNMT** + alta en el entorno de pruebas AEAT (puedes ir tramitándolo en paralelo).
+   que MÁS desbloquea (todo SIF-1: representación, datos del productor, F1/F2, bundle legal).
+   Sin esto, SIF-1 (la prioridad nº1 del proyecto) no avanza.
+2. **Alta en el entorno de pruebas AEAT** (el certificado FNMT ✅ ya lo tienes, con copia `.pfx`).
 3. **V0-5 (bug-bash móvil)** y **V0-6 (calle: 10 discovery + vídeo + 3 founding)** — cierran VALIDA-0.
+   La landing ya está **pre-arreglada a nivel de código** (percepción A–G); solo falta tu pasada
+   en 3 dispositivos reales para poder grabar el vídeo de V0-6.
 4. **Stripe en LIVE** cuando vayas a cobrar founding de verdad.
+5. **Meta:** P3-1 (URL dinámica en `quote_decision_es`) y P3-3 (recrear las plantillas como
+   **Utility**, hoy en Marketing). No urgente, pero mejora coste/entrega.
 
 *(El detalle de cada uno, más abajo.)*
 
@@ -45,6 +49,17 @@
 - [x] **Copy del estado `rejected`** — decidido e implementado en la landing (cambio de
   master en N3).
 
+## ✅ Resuelto 15-16 jun
+
+- [x] **Certificado FNMT** conseguido (copia `.pfx`). Queda solo el alta en el entorno de
+  pruebas AEAT (sube al punto 2 de prioridades).
+- [x] **Envío real de WhatsApp conectado** — `payment_confirmation_invoice_es` (con botón
+  "Ver documento" → recibo) sustituye a `payment_confirmation_es`; `merchant_alert_es` es el
+  fallback al PRO con ventana 24h cerrada, en pago y en la decisión de presupuesto. Nada por
+  tu parte salvo P3-3 (Marketing → Utility).
+- [x] **Landing pre-arreglada para V0-6** — 7 remates de percepción (PC-A…G) contra la Parte N
+  y el checklist AB6. Solo falta tu pasada en dispositivos (V0-5).
+
 ## 🟠 Sprint VALIDA-0 — tu parte
 
 - [ ] **V0-5 · Bug-bash landing cliente (TUYO):** `/pay/quote` y `/pay/invoice` en 3
@@ -52,6 +67,10 @@
   **Checklist concreta lista en `docs/BUG_BASH_LANDING.md`** (15-jun): matriz de dispositivos,
   P2-5 lo primero, cada pantalla mapeada a N1/N2/N3/N5 y tabla de resultados. Córrela en
   yaqu.app; fallos → BUGS.md como P0-percepción.
+  **Ya pre-arreglado en code-review (PC-A…G en BUGS.md):** IVA coherente con el Total, botón
+  "💬 Tengo una duda", estados/microcopy N5, motion accesible (`prefers-reduced-motion`),
+  "Copiar IBAN/referencia" y política de señal. Tu pasada confirma **P2-5 a 390px** y lo que
+  solo se ve en móvil real; la landing ya está lista para grabar el vídeo de V0-6.
 - [ ] **V0-6 · Calle (TUYO):** lista 30 contactos · **10 discovery registradas (Apéndice B
   del master) — sin esto el sprint NO cierra** · vídeo 60 s (guion en U1.1) · 10 visitas
   a tiendas · ≥3 founding cobrados con alcance por escrito. Borrador del alcance LISTO en
@@ -111,7 +130,8 @@ la cita). Resumen de lo que hay que cerrar allí:
 - `docs/EVIDENCIAS_E2E.md` · `docs/BUGS.md` · `docs/MIGRATIONS_PENDING.md` — historial/QA.
 
 ---
-*Última actualización: 13 jun 2026. Resueltos: DEMO_SAFE_NUMBERS, precios Stripe (test),
-P3-6, plantillas Meta (opción b), copy rejected. Borradores legales listos: alcance,
-preguntas asesor, declaración responsable, pack gestoría. Pendientes vivos: cita asesor
-(lo que más desbloquea), certificado FNMT, V0-5/V0-6, Stripe LIVE.*
+*Última actualización: 16 jun 2026. Resuelto esta tanda: certificado FNMT conseguido, envío
+WhatsApp real conectado (2 plantillas nuevas), landing percepción A–G pre-arreglada para V0-6.
+Pendientes vivos (TU parte), por orden: **1)** cita asesor (lo que más desbloquea) · **2)** alta
+entorno pruebas AEAT · **3)** V0-5 (pasada en 3 dispositivos) + V0-6 (calle: 10 discovery +
+vídeo + ≥3 founding) · **4)** Stripe LIVE · **5)** Meta P3-1 (URL dinámica) y P3-3 (Marketing→Utility).*
