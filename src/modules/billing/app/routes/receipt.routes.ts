@@ -104,9 +104,9 @@ router.get('/:id', async (req, res) => {
     typeof (req.query as any).eml === 'string' ? (req.query as any).eml : undefined;
   const mailBanner =
     mailParam === 'sent'
-      ? `<div style="background:#dcfce7;border:1px solid #16a34a;color:#166534;padding:.5rem .75rem;border-radius:.5rem;margin:.75rem 0">📧 Email enviado correctamente.</div>`
+      ? `<div class="note note-ok">📧 Email enviado correctamente.</div>`
       : mailParam === 'saved'
-      ? `<div style="background:#e0f2fe;border:1px solid #0284c7;color:#075985;padding:.5rem .75rem;border-radius:.5rem;margin:.75rem 0">📧 Email generado en <a href="${esc(
+      ? `<div class="note note-info">📧 Email generado en <a href="${esc(
           emlParam || '',
         )}" target="_blank">.eml</a> (modo dev).</div>`
       : '';
@@ -119,44 +119,42 @@ router.get('/:id', async (req, res) => {
 
   const emailBlock =
     hasRealPdf && ch.customer?.email
-      ? `<form method="post" action="${BASE_URL}/dev/email-invoice/${ch.id}" style="margin-top:.5rem">
-           <button style="background:#16a34a;color:#fff;padding:.5rem 1rem;border-radius:999px;border:none;cursor:pointer;font-weight:600;font-family:inherit">
-             Enviar ${docLabel} por email
-           </button>
+      ? `<form method="post" action="${BASE_URL}/dev/email-invoice/${ch.id}" class="email-form">
+           <button class="btn-email">Enviar ${docLabel} por email</button>
          </form>
-         <small style="color:#6b756f">Se enviará a: ${esc(ch.customer!.email!)}</small>`
+         <small>Se enviará a: ${esc(ch.customer!.email!)}</small>`
       : '';
 
   const invBlock =
     ch.status === 'paid'
       ? hasRealPdf
-        ? `<p><a href="${invoice!.pdfUrl}" target="_blank">
+        ? `<p class="doc-link"><a href="${invoice!.pdfUrl}" target="_blank">
              📄 Descargar ${docLabel} (${esc(invoice!.number)})
            </a></p>${emailBlock}`
-        : `<small style="color:#6b756f">
+        : `<small>
              ${docArticle} ${docLabel} se emitirá y se enviará por WhatsApp y email automáticamente.
            </small>`
       : '';
 
       const statusMessage =
       ch.status === 'pending'
-        ? `<div style="background:#fef9c3;border:1px solid #facc15;color:#854d0e;padding:.6rem .8rem;border-radius:.6rem;margin:.75rem 0">
+        ? `<div class="note note-warn">
              Estamos esperando tu pago. Puedes completarlo usando los botones de <b>pago por banco</b> o <b>pago con tarjeta</b> que aparecen más arriba.
            </div>`
         : ch.status === 'paid'
         ? hasRealPdf
-          ? `<div style="background:#dcfce7;border:1px solid #16a34a;color:#166534;padding:.6rem .8rem;border-radius:.6rem;margin:.75rem 0">
+          ? `<div class="note note-ok">
                ✅ <b>Pago recibido correctamente.</b> Tu ${docLabel} está disponible para descargar y ${docPron} hemos enviado por WhatsApp. Si tenemos tu correo, también ${docPron} recibirás por email.
              </div>`
-          : `<div style="background:#dcfce7;border:1px solid #16a34a;color:#166534;padding:.6rem .8rem;border-radius:.6rem;margin:.75rem 0">
+          : `<div class="note note-ok">
                ✅ <b>Pago recibido correctamente.</b> Estamos generando tu ${docLabel}; ${docPron} recibirás en breve por WhatsApp y, si tenemos tu correo, también por email.
              </div>`
         : ch.status === 'failed'
-        ? `<div style="background:#fee2e2;border:1px solid #ef4444;color:#991b1b;padding:.6rem .8rem;border-radius:.6rem;margin:.75rem 0">
+        ? `<div class="note note-danger">
              ❌ No se ha podido completar el pago. Si lo deseas, ponte en contacto con tu proveedor para intentar de nuevo el cobro.
            </div>`
         : ch.status === 'expired'
-        ? `<div style="background:#e5e7eb;border:1px solid #9ca3af;color:#374151;padding:.6rem .8rem;border-radius:.6rem;margin:.75rem 0">
+        ? `<div class="note note-muted">
              ⏰ Este enlace de pago ha caducado. Pide a tu proveedor que te envíe un nuevo enlace si todavía quieres realizar el pago.
            </div>`
         : '';
@@ -251,7 +249,7 @@ router.get('/:id', async (req, res) => {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
-  :root{--brand:#16a34a;--ink:#0f1c17;--body:#3f4a45;--muted:#6b756f;--bg:#f6f7f5;--surface:#fff;--border:#e7e9e5;--slate-50:#f7f8f6}
+  :root{--brand:#16a34a;--brand-tint:#ecfdf5;--ink:#0f1c17;--body:#3f4a45;--muted:#6b756f;--bg:#f6f7f5;--surface:#fff;--border:#e7e9e5;--slate-50:#f7f8f6}
   body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-feature-settings:"cv11","ss01";margin:0;padding:2rem 1rem;background:var(--bg);color:var(--body);-webkit-font-smoothing:antialiased}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.5rem;max-width:720px;margin:0 auto;box-shadow:0 1px 2px rgba(16,24,40,.04),0 12px 32px -12px rgba(16,24,40,.10)}
   h2{color:var(--ink);letter-spacing:-.01em}
@@ -264,6 +262,18 @@ router.get('/:id', async (req, res) => {
   .pay-btn{display:inline-block;padding:.7rem 1.1rem;border-radius:12px;text-decoration:none;font-weight:700;font-size:.92rem;text-align:center}
   .pay-btn-primary{background:var(--brand);color:#fff}
   .pay-btn-secondary{background:var(--surface);color:var(--ink);border:1px solid var(--border)}
+  /* Banners de estado/aviso — tokens DESIGN.md (semánticos), sin hex inline sueltos */
+  .note{padding:.6rem .8rem;border-radius:12px;margin:.75rem 0;font-size:.9rem;line-height:1.45;border:1px solid}
+  .note b{font-weight:700}
+  .note-ok{background:var(--brand-tint);border-color:#bbf7d0;color:#166534}
+  .note-warn{background:#fff7ed;border-color:#fed7aa;color:#b45309}
+  .note-danger{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+  .note-muted{background:var(--slate-50);border-color:var(--border);color:var(--body)}
+  .note-info{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
+  .doc-link{margin:.5rem 0}
+  .email-form{margin-top:.5rem}
+  .btn-email{background:var(--brand);color:#fff;padding:.5rem 1rem;border-radius:999px;border:none;cursor:pointer;font-weight:600;font-family:inherit}
+  .btn-email:hover{background:#15803d}
   .biz{text-align:center;font-size:.88rem;font-weight:600;color:var(--ink);margin-bottom:.25rem}
   .status-hero{text-align:center;padding:.5rem 0 1.1rem;border-bottom:1px solid var(--border);margin-bottom:1rem}
   .status-icon{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;margin:.4rem auto .6rem}

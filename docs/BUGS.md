@@ -187,6 +187,15 @@
 - **CAUSA RAÍZ (16-jun):** regla `:focus-visible` con el anillo Foco de DESIGN.md
   (`0 0 0 3px rgba(34,197,94,.30)`) añadida a las tres pantallas.
 
+### [x] PC-K · `/recibo`: estilos inline con hex sueltos → clases/tokens (skill AB)
+- **Síntoma:** los banners de estado, el banner de email y el botón de email usaban `style="…"`
+  inline con hex sueltos (#fef9c3, #dcfce7, #fee2e2, #e5e7eb, #e0f2fe…), contra la regla de la
+  skill yaqu-premium-ui ("cero estilos inline aleatorios; clases/tokens compartidos").
+- **CAUSA RAÍZ (16-jun):** banners movidos a clases semánticas `.note` + `.note-ok/-warn/
+  -danger/-muted/-info` (tokens DESIGN.md, alineadas con los patrones de la landing de
+  presupuesto) y el botón de email a `.btn-email`. Los bloques **dev-only** (simulación,
+  "Ver JSON") se dejan como están (gated `NODE_ENV`, no los ve el cliente). 76 tests verdes.
+
 ### [x] PC-D · `/pay/quote` confirmación de aceptación fuera de N5
 - **Síntoma:** N5 oficial: "¡Presupuesto aceptado y firmado! [Negocio] ya tiene tu confirmación."
   El subtexto decía "El profesional te informará de los siguientes pasos." (regla 30). Pulido.
