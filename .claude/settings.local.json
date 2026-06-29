@@ -37,7 +37,19 @@
       "Bash(git commit -m 'docs: CLAUDE.md v2 + MASTER v2.1 — estado completo post Sprint 5 + Sprint 6 detallado *)",
       "Bash(powershell *)",
       "Bash(git commit *)",
-      "PowerShell(npm run *)"
+      "PowerShell(npm run *)",
+      "Bash(git *)",
+      "Bash(node .agents/skills/impeccable/scripts/context.mjs)",
+      "Bash(curl -s \"http://localhost:3000/pay/quote/12/accept\")",
+      "Read(//tmp/**)",
+      "Bash(claude mcp *)",
+      "PowerShell(npx prisma generate)",
+      "PowerShell(npm test *)",
+      "PowerShell(node -e \"const fs=require\\('fs'\\);const p='package.json';const j=fs.readFileSync\\(p,'utf8'\\);fs.writeFileSync\\(p,j.replace\\('tests/utils.test.mjs tests/locales.test.mjs','tests/utils.test.mjs tests/invoiceNumber.test.mjs tests/locales.test.mjs'\\)\\)\"; node --test tests/invoiceNumber.test.mjs tests/utils.test.mjs)",
+      "PowerShell(claude mcp *)",
+      "PowerShell(claude *)",
+      "PowerShell(cmd /c \"claude mcp add playwright -- npx -y @playwright/mcp@latest\")",
+      "PowerShell(git add *)"
     ]
   }
 }

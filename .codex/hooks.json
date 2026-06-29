@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash 'D:\\MILLONARIO\\cobroFlash\\cobroflash-backend\\.codex\\hooks\\guard-dangerous.sh'"
+          }
+        ]
+      }
+    ]
+  }
+}
