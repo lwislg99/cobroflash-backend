@@ -57,10 +57,13 @@ function renderQuotesView(container) {
 
 
     // ---------- MODAL PREVISUALIZACIÓN PRESUPUESTO ----------
-function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp }) {
+function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingApproval }) {
   // A1.2: quoteNumber = número visible por merchant; quoteId sigue siendo el
   // id global para las llamadas a la API.
   const displayNum = quoteNumber ?? quoteId;
+  // A1.3: pendiente de aprobación → no se ofrece el envío (el backend lo
+  // rechazaría con 409); se explica con un mensaje digno.
+  if (pendingApproval) allowWhatsapp = false;
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay";
 
@@ -110,7 +113,12 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp }) {
     mBody.appendChild(warn);
   }
 
-  if (!allowWhatsapp) {
+  if (pendingApproval) {
+    const info = document.createElement("p");
+    info.style.cssText = "font-size:13px;color:#b45309;margin:4px 0 0;font-weight:600";
+    info.textContent = '📋 Enviado a un administrador para aprobación. Podrás mandarlo al cliente cuando lo apruebe.';
+    mBody.appendChild(info);
+  } else if (!allowWhatsapp) {
     const info = document.createElement("p");
     info.style.cssText = "font-size:12px;color:#6b756f;margin:4px 0 0";
     info.textContent = 'Has desmarcado "Enviar por WhatsApp automáticamente", por eso no se muestra el botón de WhatsApp.';
@@ -144,8 +152,14 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp }) {
           body: JSON.stringify({}),
         });
         if (!res.ok) {
-          const bodyText = await res.text();
-          throw new Error("Error enviando por WhatsApp: " + res.status + " " + bodyText);
+          // A1.3: jamás JSON crudo — mapear los errores conocidos a copy humano
+          const errData = await res.json().catch(() => null);
+          const known = {
+            pending_approval: "📋 Enviado a un administrador para aprobación. Podrás mandarlo al cliente cuando lo apruebe.",
+            customer_missing_phone: "Este cliente no tiene teléfono; añádelo para enviar por WhatsApp.",
+            invalid_phone_format: "El teléfono del cliente no tiene un formato válido.",
+          };
+          throw new Error(known[errData && errData.error] || ("No se pudo enviar por WhatsApp (" + res.status + "). Inténtalo de nuevo."));
         }
         const body = await res.json();
         // P3-2: si Meta rechazó, el backend devuelve 200 ok:false con un mensaje claro.
@@ -2004,16 +2018,21 @@ payloadLines.push({
         console.warn("No se pudo obtener pdfUrl del presupuesto", e);
       }
 
-      // 3) Mostramos modal para ver PDF y (opcional) enviar por WhatsApp
+      // 3) Mostramos modal para ver PDF y (opcional) enviar por WhatsApp.
+      // A1.3: si nació pendiente de aprobación (técnico sobre su límite), el
+      // modal lo explica y no ofrece el envío.
+      const pendingApproval = quote.status === 'pending_approval';
       const allowWhatsapp = waCheck.checked;
-      openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp });
+      openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingApproval });
 
       // 4) Actualizamos cajita de estado a la derecha (de momento sin WhatsApp)
-      setAlert("success", "Presupuesto creado en borrador.");
+      setAlert("success", pendingApproval
+        ? "📋 Presupuesto enviado a un administrador para aprobación."
+        : "Presupuesto creado en borrador.");
       setResult({
         quote_id: quoteId,
         number: quoteNumber,
-        status: "DRAFT",
+        status: pendingApproval ? "Pendiente de aprobación" : "DRAFT",
         sent: false,
       });
       clearDraft(); // el presupuesto ya está creado, descartamos el borrador local

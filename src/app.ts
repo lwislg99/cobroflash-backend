@@ -175,8 +175,8 @@ app.use('/admin/billing',    requireRole('admin'), subscriptionsRouter);
 app.use('/admin/team',       requireRole('admin'), teamRouter);
 app.use('/admin/ai',         aiRouter);
 
-// Preview del digest semanal
-app.get('/admin/digest/preview', async (req, res) => {
+// Preview del digest semanal (A1.3: solo lo usa Configuración → solo admin)
+app.get('/admin/digest/preview', requireRole('admin'), async (req, res) => {
   try {
     const preview = await getDigestPreview(req.merchantId);
     return res.json(preview);
@@ -185,8 +185,8 @@ app.get('/admin/digest/preview', async (req, res) => {
   }
 });
 
-// Referidos — código, link y estadísticas
-app.get('/admin/referral', async (req, res) => {
+// Referidos — código, link y estadísticas (A1.3: vive en Configuración → solo admin)
+app.get('/admin/referral', requireRole('admin'), async (req, res) => {
   try {
     const stats = await getReferralStats(req.merchantId);
     return res.json(stats);
@@ -223,6 +223,13 @@ app.get('/admin/merchant', async (req, res, next) => {
   try {
     const merchant = await getMerchantProfile(req.merchantId);
     if (!merchant) return res.status(404).json({ error: 'merchant_not_found' });
+    // A1.3: rol técnico → perfil REDUCIDO. Las vistas comunes solo necesitan
+    // id/nombre/moneda/logo; lo fiscal y bancario (NIF, IBAN, CLABE, serie,
+    // umbral de aprobación, prefs de email, reseñas) es solo del admin.
+    if (req.userRole !== 'admin') {
+      const { id, name, legalName, trade, defaultCurrency, logoUrl, whatsappPhone, country, brandColor, brandAccentColor } = merchant;
+      return res.json({ id, name, legalName, trade, defaultCurrency, logoUrl, whatsappPhone, country, brandColor, brandAccentColor });
+    }
     return res.json(merchant);
   } catch (err) { return next(err); }
 });

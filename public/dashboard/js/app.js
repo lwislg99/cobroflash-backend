@@ -20,6 +20,9 @@ async function initApp() {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
+    // A1.3: Configuración es solo del admin (datos fiscales, IBAN, umbrales)
+    const settingsNav = document.querySelector('.nav-item[data-view="settings"]');
+    if (settingsNav) settingsNav.style.display = 'none';
   }
 
   // Badge de solicitudes pendientes
@@ -206,8 +209,15 @@ async function initApp() {
         }
         break;
       case 'settings':
-        viewTitle.textContent = 'Configuración';
-        renderSettingsView(viewContainer);
+        // A1.3: guard como en 'team' — un técnico no entra ni tecleando la vista
+        if (window.appUserRole !== 'admin') {
+          viewTitle.textContent = 'Inicio';
+          renderHomeView(viewContainer);
+          view = 'home';
+        } else {
+          viewTitle.textContent = 'Configuración';
+          renderSettingsView(viewContainer);
+        }
         break;
       default:
         viewTitle.textContent = 'Inicio';

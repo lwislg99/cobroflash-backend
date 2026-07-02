@@ -129,6 +129,9 @@ async function refreshSidebarBadges() {
 window.refreshSidebarBadges = refreshSidebarBadges;
 
 function renderSetupChecklist(merchant, data) {
+  // A1.3: la checklist es tarea del admin (logo, datos fiscales → Configuración);
+  // un técnico ni la ve (además su perfil reducido no trae taxId/address).
+  if (window.appUserRole && window.appUserRole !== 'admin') return;
   const steps = [
     { label: 'Añade tu logo',            done: !!merchant.logoUrl,       action: 'settings', hint: 'Aparecerá en PDFs' },
     { label: 'Completa datos fiscales',  done: !!(merchant.taxId && merchant.address), action: 'settings', hint: 'NIF y dirección para facturas legales' },
@@ -925,6 +928,18 @@ async function submitQuickQuote() {
       ...quotePayload,
     });
 
+    // A1.3: técnico por encima de su límite → el presupuesto nace pendiente de
+    // aprobación. NO se intenta enviar (daba "API 409: pending_approval" crudo);
+    // mensaje digno y al detalle.
+    if (quote.status === 'pending_approval') {
+      closeQuickQuote();
+      showToast('📋 Enviado a un administrador para aprobación');
+      setTimeout(() => {
+        if (window.renderAppView) renderAppView("quotes-detail", { quoteId: quote.id });
+      }, 400);
+      return;
+    }
+
     // 4. Enviar por WhatsApp
     const sendResult = await apiRequest(`/admin/quotes/${quote.id}/send-whatsapp`, {
       method: "POST",
@@ -949,7 +964,12 @@ async function submitQuickQuote() {
     }, 400);
 
   } catch (err) {
-    showQqAlert(err.message || "Error al crear la cotización.");
+    // A1.3: red de seguridad — si el 409 de aprobación llegara por otro camino,
+    // jamás enseñar "API 409: pending_approval" crudo.
+    const msg = (err && err.data && err.data.error === 'pending_approval')
+      ? '📋 Enviado a un administrador para aprobación'
+      : (err.message || "Error al crear la cotización.");
+    showQqAlert(msg);
     btn.disabled = false;
     btn.textContent = "Enviar por WhatsApp";
   }
