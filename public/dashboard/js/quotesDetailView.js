@@ -220,6 +220,77 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     summarySec.appendChild(sigBadge);
   }
 
+  // ── Sección: ACCIONES (A1.1 — desatascar el draft) ──────────
+  // Antes: la acción "Enviar por WhatsApp" solo existía al CREAR el presupuesto
+  // (quotesView/homeView) y solo si el checkbox de auto-envío estaba marcado. Un
+  // presupuesto en `draft` (creado sin auto-envío, o aprobado desde
+  // pending_approval) no tenía forma de enviarse al cliente → flujo muerto.
+  // La transición draft→sent ya vive en el backend (send-whatsapp); esto solo
+  // le da un punto de entrada en el detalle.
+  if (st === 'draft' || st === 'sent') {
+    const actionsSec = document.createElement('div');
+    actionsSec.className = 'detail-section';
+    actionsSec.innerHTML = '<h3 class="detail-section-title">Acciones</h3>';
+
+    const actions = document.createElement('div');
+    actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap';
+    actionsSec.appendChild(actions);
+
+    const isDraft = st === 'draft';
+    const btnSend = document.createElement('button');
+    // Regla de Una Sola Voz: para un draft, enviar es EL botón verde primario.
+    btnSend.className = isDraft ? 'btn-primary' : 'btn-secondary btn-sm';
+    btnSend.textContent = isDraft ? '📤 Enviar por WhatsApp' : '↻ Reenviar por WhatsApp';
+
+    const hasPhone = !!(quote.customer && quote.customer.phone);
+    if (!hasPhone) {
+      btnSend.disabled = true;
+      btnSend.title = 'El cliente no tiene teléfono de WhatsApp configurado.';
+    }
+
+    btnSend.addEventListener('click', async () => {
+      if (!hasPhone) return;
+      btnSend.disabled = true;
+      const original = btnSend.textContent;
+      btnSend.textContent = 'Enviando…';
+      try {
+        const res = await fetch(`/admin/quotes/${quote.id}/send-whatsapp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const map = {
+            customer_missing_phone: 'Este cliente no tiene teléfono; añádelo para enviar por WhatsApp.',
+            invalid_phone_format: 'El teléfono del cliente no tiene un formato válido.',
+            pending_approval: 'Este presupuesto está pendiente de aprobación; apruébalo antes de enviarlo.',
+          };
+          setStatus('error', map[data.error] || ('No se pudo enviar: ' + (data.error || 'desconocido')));
+          btnSend.disabled = false;
+          btnSend.textContent = original;
+          return;
+        }
+        // P3-2/J5: Meta puede rechazar con 200 ok:false + mensaje legible → reintentar.
+        if (data.ok) {
+          setStatus('success', 'Presupuesto enviado por WhatsApp.');
+          await renderQuoteDetailView(container, quote.id); // el estado pasa a `sent`
+        } else {
+          setStatus('error', data.message || 'No se pudo enviar por WhatsApp. Copia el enlace y mándaselo al cliente.');
+          btnSend.disabled = false;
+          btnSend.textContent = original;
+        }
+      } catch (err) {
+        setStatus('error', 'Error enviando por WhatsApp: ' + (err && err.message ? err.message : 'inténtalo de nuevo'));
+        btnSend.disabled = false;
+        btnSend.textContent = original;
+      }
+    });
+
+    actions.appendChild(btnSend);
+    page.appendChild(actionsSec);
+  }
+
   // ── Sección: CLIENTE ────────────────────────────────────────
   const c = quote.customer || {};
   const custSec = document.createElement('div');
@@ -533,7 +604,9 @@ function buildDecisionPanel(quote, d, container, setStatus) {
   const btnRow = document.createElement('div');
   btnRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap';
   const btnAccept = document.createElement('button');
-  btnAccept.className = 'btn-primary btn-sm';
+  // Secundario: registrar la decisión a mano es residual (lo normal es que el
+  // cliente decida por WhatsApp). El único verde en reposo es "Enviar" (A1.1).
+  btnAccept.className = 'btn-secondary btn-sm';
   btnAccept.textContent = 'Aceptar presupuesto';
   const btnReject = document.createElement('button');
   btnReject.className = 'btn-secondary btn-sm';
