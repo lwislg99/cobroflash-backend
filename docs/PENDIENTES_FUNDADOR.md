@@ -18,6 +18,15 @@
 > - **Historial de lo ya hecho:** Parte U del master + `docs/BUGS.md` +
 >   `docs/EVIDENCIAS_E2E.md` + `docs/MIGRATIONS_PENDING.md`.
 
+## 🆕 Sprint DEMO-READY (2-jul) — nuevas acciones tuyas
+
+- [ ] **Railway · `EMAIL_FROM`** (A1.4/PV-FIX-3): el nombre viejo en los correos NO está en el
+  código (repo limpio, default "YaQu") — está en la variable de Railway. Cámbiala a
+  `YaQu <no-reply@yaqu.app>` (o el remitente del dominio que tengas **verificado en Resend**;
+  si yaqu.app no está verificado en Resend, verifícalo primero o los emails dejarán de salir).
+- [ ] **Carril 0 del sprint doc:** SIM (0.1) · verificación negocio Meta (0.2) · Stripe LIVE
+  `setup-stripe-prices.mjs` (0.3) · cita asesor (0.4) · plantillas → Utility (0.5).
+
 ## 🔝 Ahora mismo, por orden (lo más importante primero)
 
 1. **Pedir cita con el asesor fiscal** y llevarle `docs/legal/PREGUNTAS_ASESOR.md` — es lo
