@@ -193,8 +193,9 @@ function renderQuotesListView(container) {
       const tr = document.createElement("tr");
       tr.style.cursor = "pointer";
 
+      // A1.2: número por merchant (q.number); el id global ya no se muestra
       const tdId = document.createElement("td");
-      tdId.innerHTML = `${q.id}${q.internalNotes ? ' <span title="Tiene notas internas" style="color:var(--neutral-400);font-size:11px">📝</span>' : ""}`;
+      tdId.innerHTML = `#${q.number ?? q.id}${q.internalNotes ? ' <span title="Tiene notas internas" style="color:var(--neutral-400);font-size:11px">📝</span>' : ""}`;
 
       const tdClient = document.createElement("td");
       tdClient.textContent =
@@ -224,7 +225,7 @@ function renderQuotesListView(container) {
 
       const openDetail = () => {
         const titleEl = document.getElementById("view-title");
-        if (titleEl) titleEl.textContent = `Presupuesto #${q.id}`;
+        if (titleEl) titleEl.textContent = `Presupuesto #${q.number ?? q.id}`;
         const containerEl = document.getElementById("view-container");
         if (typeof renderQuoteDetailView === "function") {
           renderQuoteDetailView(containerEl, q.id);

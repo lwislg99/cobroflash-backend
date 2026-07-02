@@ -312,7 +312,7 @@ function renderQuoteDetail(quote: Awaited<ReturnType<typeof loadQuote>>, quoteId
       ${quote.merchant?.address ? `<div class="merchant-sub">${esc(quote.merchant.address)}</div>` : ''}
     </div>
     <h1>Hola, ${customerName} 👋</h1>
-    <div class="quote-meta">Presupuesto #${esc(quoteId)}</div>
+    <div class="quote-meta">Presupuesto #${esc(String(quote.quoteNumber ?? quote.id))}</div>
     ${validityHtml ? `<div style="text-align:center">${validityHtml}</div>` : ''}
     ${linesHtml}
     ${vatHtml}
@@ -452,7 +452,7 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
           : '';
         const merchName = esc(quote.merchant?.legalName || quote.merchant?.name || 'el profesional');
         const waBtn = proPhone
-          ? `<a href="https://wa.me/${proPhone}?text=${encodeURIComponent(`Hola, sobre el ${locale.quoteVerb} #${quoteId}: he cambiado de opinión, ¿me lo reenvías?`)}"
+          ? `<a href="https://wa.me/${proPhone}?text=${encodeURIComponent(`Hola, sobre el ${locale.quoteVerb} #${quote.quoteNumber ?? quote.id}: he cambiado de opinión, ¿me lo reenvías?`)}"
                style="display:inline-block;margin-top:14px;background:#16a34a;color:#fff;font-weight:700;padding:12px 22px;border-radius:999px;text-decoration:none">Pedir uno nuevo por WhatsApp</a>`
           : '';
         return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
@@ -478,7 +478,7 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
   const proPhone = (loadedQuote?.merchant as any)?.whatsappPhone
     ? String((loadedQuote.merchant as any).whatsappPhone).replace(/[^\d]/g, '')
     : '';
-  const dudaTextEnc = encodeURIComponent(`Hola, tengo una duda sobre el ${locale.quoteVerb} #${quoteId}`);
+  const dudaTextEnc = encodeURIComponent(`Hola, tengo una duda sobre el ${locale.quoteVerb} #${loadedQuote.quoteNumber ?? loadedQuote.id}`);
   const dudaHtml = proPhone
     ? `<a class="btn-duda" href="https://wa.me/${proPhone}?text=${dudaTextEnc}">💬 Tengo una duda</a>`
     : '';

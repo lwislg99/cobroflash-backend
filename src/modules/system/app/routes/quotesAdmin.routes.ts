@@ -250,9 +250,9 @@ router.post('/:id/send-whatsapp', async (req, res) => {
       ...buildQuoteDecision({
         customerName: quote.customer.name ?? 'Cliente',
         businessName,
-        quoteNumber: quote.id,
+        quoteNumber: quote.quoteNumber ?? quote.id, // A1.2: número visible por merchant
         totalWithCurrency: `${Number(quote.total).toFixed(2)} ${quote.currency}`,
-        quoteId: quote.id,
+        quoteId: quote.id, // el botón URL sigue con el id global (/pay/quote/:id)
       }),
     });
 
@@ -301,7 +301,7 @@ router.post('/:id/send-whatsapp', async (req, res) => {
       merchantId: quote.merchantId,
       customerId: quote.customerId,
       type: 'quote_sent',
-      title: `Presupuesto #${quote.id} enviado por WhatsApp`,
+      title: `Presupuesto #${quote.quoteNumber ?? quote.id} enviado por WhatsApp`,
       detail: `${Number(quote.total).toFixed(2)} ${quote.currency}`,
     });
 
@@ -331,7 +331,7 @@ router.post('/:id/approve', async (req, res) => {
     const quote = await prisma.quote.findFirst({
       where: { id, merchantId: req.merchantId },
       select: {
-        id: true, status: true, total: true, currency: true, teamMemberId: true,
+        id: true, quoteNumber: true, status: true, total: true, currency: true, teamMemberId: true,
         customer: { select: { name: true } },
       },
     });
@@ -352,7 +352,7 @@ router.post('/:id/approve', async (req, res) => {
         sendTechQuoteApprovedEmail({
           techEmail: tech.email,
           techName: tech.name || '',
-          quoteId: quote.id,
+          quoteId: quote.quoteNumber ?? quote.id, // A1.2: solo display en el email
           customerName: quote.customer?.name || 'el cliente',
           total: Number(quote.total).toFixed(2),
           currency: quote.currency,

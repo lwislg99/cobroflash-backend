@@ -44,9 +44,9 @@ export async function sendPendingReminders(): Promise<void> {
         ...buildQuoteDecision({
           customerName,
           businessName: merchantName,
-          quoteNumber: quote.id,
+          quoteNumber: quote.quoteNumber ?? quote.id, // A1.2: número visible por merchant
           totalWithCurrency: `${total} ${quote.currency}`,
-          quoteId: quote.id,
+          quoteId: quote.id, // el botón URL sigue con el id global
         }),
       });
 

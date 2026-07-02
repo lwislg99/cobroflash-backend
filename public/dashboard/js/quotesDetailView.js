@@ -132,6 +132,16 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
 
   setStatus('', '');
 
+  // A1.2: número por merchant — el h2 se pintó con el id de la ruta antes del
+  // fetch; al cargar, se corrige al número visible (y el título de la vista).
+  const displayNum = quote.number ?? id;
+  const h2 = headLeft.querySelector('h2');
+  if (h2) h2.textContent = `Presupuesto #${displayNum}`;
+  const viewTitleEl = document.getElementById('view-title');
+  if (viewTitleEl && /^Presupuesto #/.test(viewTitleEl.textContent || '')) {
+    viewTitleEl.textContent = `Presupuesto #${displayNum}`;
+  }
+
   const st = String(quote.status || '').toLowerCase();
   const cur = quote.currency;
 
@@ -742,7 +752,7 @@ async function duplicateQuote(quoteId) {
     return;
   }
   var tpl = {
-    name: 'Copia de #' + quoteId,
+    name: 'Copia de #' + (detail.number ?? quoteId), // A1.2: número visible
     currency: detail.currency,
     lines: detail.lines || [],
     tiers: detail.tiers || null,

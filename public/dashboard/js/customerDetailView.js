@@ -210,7 +210,7 @@ async function renderCustomer360View(container, customerId) {
       quotes.forEach(q => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td style="font-weight:600">#${q.id}</td>
+          <td style="font-weight:600">#${q.quoteNumber ?? q.id}</td>
           <td style="color:var(--muted)">${new Date(q.createdAt).toLocaleDateString('es-ES')}</td>
           <td class="amount">${fmt(Number(q.total))} ${escC(q.currency)}</td>
           <td><span class="status-pill ${STATUS_CLASS[q.status]||'status-pill-draft'}">${STATUS_LABELS[q.status]||q.status}</span></td>

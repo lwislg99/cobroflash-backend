@@ -23,7 +23,9 @@ export async function listQuotesAdmin(
     const maybeId = Number(s);
 
     where.OR = [
-      ...(Number.isFinite(maybeId) ? [{ id: maybeId }] : []),
+      // A1.2: el usuario busca por el número que VE (por merchant); el id global
+      // se mantiene para no romper búsquedas antiguas.
+      ...(Number.isFinite(maybeId) ? [{ id: maybeId }, { quoteNumber: maybeId }] : []),
       { customer: { name:  { contains: s, mode: 'insensitive' } } },
       { customer: { phone: { contains: s, mode: 'insensitive' } } },
     ];
@@ -68,6 +70,7 @@ export async function listQuotesAdmin(
 
     return {
       id: q.id,
+      number: q.quoteNumber ?? q.id, // A1.2: número visible por merchant (fallback pre-backfill)
       customerName: q.customer?.name ?? '—',
       customerPhone: q.customer?.phone ?? null,
       createdAt: q.createdAt,
@@ -101,6 +104,7 @@ export async function getQuoteDetailAdmin(id: number) {
 
   return {
     id: quote.id,
+    number: quote.quoteNumber ?? quote.id, // A1.2: número visible por merchant
     status: quote.status,
     createdAt: quote.createdAt,
     updatedAt: quote.updatedAt,

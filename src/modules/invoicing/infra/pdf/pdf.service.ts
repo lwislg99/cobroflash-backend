@@ -338,6 +338,9 @@ export async function generateInvoicePdf(params: {
  */
 export async function generateQuotePdf(params: {
   quoteId: number;
+  // A1.2: número visible por merchant (el fichero sigue nombrándose con el id
+  // global para no romper pdfUrl existentes). Si falta, se muestra el id.
+  quoteNumber?: number | null;
   merchant: {
     name: string | null;
     legalName?: string | null;
@@ -389,7 +392,7 @@ export async function generateQuotePdf(params: {
   doc.fontSize(18).font('Helvetica-Bold').fillColor('#0f172a')
     .text(QUOTE_LABEL, M, hY, { width: W, align: 'right' });
   doc.fontSize(11).font('Helvetica').fillColor('#64748b')
-    .text(`${QUOTE_LABEL} #${params.quoteId}`, { align: 'right' });
+    .text(`${QUOTE_LABEL} #${params.quoteNumber ?? params.quoteId}`, { align: 'right' });
   doc.fillColor('#000');
 
   doc.y = Math.max(doc.y, hY + (logoBuf ? 46 : 0));

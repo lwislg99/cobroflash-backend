@@ -285,7 +285,7 @@ router.get('/:token', async (req, res) => {
             <div class="pf-card-body">
               <div class="pf-card-row">
                 <div>
-                  <div class="pf-card-title">Cotización #${q.id}</div>
+                  <div class="pf-card-title">Cotización #${q.quoteNumber ?? q.id}</div>
                   <div class="pf-card-meta">${dateShort(q.createdAt)}</div>
                 </div>
                 <div>

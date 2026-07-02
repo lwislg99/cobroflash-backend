@@ -4,6 +4,21 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
+## A1.2 · `quotes.quote_number` + `merchants.next_quote_number` — ✅ APLICADO en prod (2026-07-02)
+
+`prisma db push` aplicado contra Railway, **autorizado por el fundador** (sprint DEMO-READY,
+OK explícito tras preview). Aplicó SIN `--accept-data-loss` (Prisma no lo pidió = confirmación
+de que era 100 % aditivo). Diff previsualizado, 2 operaciones:
+```sql
+ALTER TABLE "merchants" ADD COLUMN "next_quote_number" INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE "quotes"    ADD COLUMN "quote_number"      INTEGER;
+```
+Numeración de presupuestos POR MERCHANT (el id global delataba el volumen de la plataforma:
+el primer presupuesto de un merchant nuevo salía "#47"). Aplicado ANTES de pushear el código.
+Post-deploy: backfill con `scripts/backfill-quote-numbers.mjs --apply` (dry-run primero).
+
+---
+
 ## WA-0b · tabla `whatsapp_messages` — ✅ APLICADO en prod (2026-06-13)
 
 `prisma db push` aplicado contra Railway, **autorizado por el fundador** ("dame OK para el

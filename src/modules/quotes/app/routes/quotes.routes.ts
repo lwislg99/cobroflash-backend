@@ -15,6 +15,7 @@ function calcTierTotal(lines: Array<{qty: number; price: number; tax?: number}>)
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
 import { getNextBillingStage } from '../../domain/billingPlan';
+import { allocateQuoteNumber, displayQuoteNumber } from '../../domain/quoteNumber.service';
 import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/merchantNotifications';
 import { getSession } from '../../../auth/domain/auth.service';
 
@@ -82,20 +83,25 @@ router.post('/create', async (req, res) => {
       creatorTeamMemberId != null && threshold != null && totalNum > threshold;
     const initialStatus = needsApproval ? 'pending_approval' : 'draft';
 
-    // 1) Crear el presupuesto
-    const quote = await prisma.quote.create({
-      data: {
-        merchantId: merchant_id,
-        customerId: customer_id,
-        status: initialStatus,
-        total: totalNum.toFixed(2),
-        currency: currency.toUpperCase(),
-        lines: canonicalLines,
-        tiers: tiersWithTotal as any ?? undefined,
-        paymentTerms: body.paymentTerms ?? null,
-        teamMemberId: creatorTeamMemberId,
-        createdVia: body.created_via ?? 'text', // V0-3: telemetría quote_created_via
-      },
+    // 1) Crear el presupuesto (A1.2: número por merchant asignado en la misma
+    // transacción, para que un fallo en el create no queme el contador)
+    const quote = await prisma.$transaction(async (tx) => {
+      const quoteNumber = await allocateQuoteNumber(tx, merchant_id);
+      return tx.quote.create({
+        data: {
+          merchantId: merchant_id,
+          customerId: customer_id,
+          quoteNumber,
+          status: initialStatus,
+          total: totalNum.toFixed(2),
+          currency: currency.toUpperCase(),
+          lines: canonicalLines,
+          tiers: tiersWithTotal as any ?? undefined,
+          paymentTerms: body.paymentTerms ?? null,
+          teamMemberId: creatorTeamMemberId,
+          createdVia: body.created_via ?? 'text', // V0-3: telemetría quote_created_via
+        },
+      });
     });
 
     // Avisar al admin/propietario por WhatsApp si requiere aprobación
@@ -105,7 +111,7 @@ router.post('/create', async (req, res) => {
         sendWhatsAppText({
           to: adminPhone,
           merchantId: quote.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
-          text: `📋 Nuevo presupuesto #${quote.id} por ${totalNum.toFixed(2)} ${quote.currency} pendiente de tu aprobación antes de enviarlo al cliente. Revísalo en tu panel de YaQu.`,
+          text: `📋 Nuevo presupuesto ${displayQuoteNumber(quote)} por ${totalNum.toFixed(2)} ${quote.currency} pendiente de tu aprobación antes de enviarlo al cliente. Revísalo en tu panel de YaQu.`,
         }).catch(() => {});
       }
     }
@@ -114,6 +120,7 @@ router.post('/create', async (req, res) => {
     try {
       const pdf = await generateQuotePdf({
         quoteId: quote.id,
+        quoteNumber: quote.quoteNumber, // A1.2
         merchant: {
           name: merchant.name, legalName: merchant.legalName,
           taxId: merchant.taxId, address: merchant.address,
@@ -138,6 +145,7 @@ router.post('/create', async (req, res) => {
 
     return res.status(201).json({
       id: quote.id,
+      number: quote.quoteNumber, // A1.2: número visible (por merchant); el id queda para links/API
       status: quote.status,
       total: quote.total.toString(),
       currency: quote.currency,
@@ -219,7 +227,7 @@ router.post('/:id/accept', async (req, res) => {
         merchantEmail: quote.merchant.email,
         merchantName:  quote.merchant.name || 'Tu negocio',
         customerName:  quote.customer?.name || 'Cliente',
-        quoteId,
+        quoteId: quote.quoteNumber ?? quoteId, // A1.2: solo display en el email
         total: Number(quote.total).toFixed(2),
         currency: quote.currency,
       }).catch(() => {});
@@ -411,7 +419,7 @@ router.post('/:id/decision', async (req, res) => {
         merchantId: quote.merchantId,
         customerId: quote.customerId,
         type: 'quote_accepted',
-        title: `Presupuesto #${quoteId} aceptado por el cliente`,
+        title: `Presupuesto ${displayQuoteNumber(quote)} aceptado por el cliente`,
         detail: signatureData ? 'Firmado digitalmente' : null,
       });
 
@@ -422,6 +430,7 @@ router.post('/:id/decision', async (req, res) => {
           const customer = quote.customer;
           const pdf = await generateQuotePdf({
             quoteId: quote.id,
+            quoteNumber: quote.quoteNumber, // A1.2
             merchant: {
               name: merchant.name, legalName: merchant.legalName,
               taxId: merchant.taxId, address: merchant.address,
@@ -523,7 +532,7 @@ router.post('/:id/decision', async (req, res) => {
         merchantId: quote.merchantId,
         customerId: quote.customerId,
         type: 'quote_rejected',
-        title: `Presupuesto #${quoteId} rechazado por el cliente`,
+        title: `Presupuesto ${displayQuoteNumber(quote)} rechazado por el cliente`,
         detail: reason || comment || null,
       });
     }
@@ -533,15 +542,16 @@ router.post('/:id/decision', async (req, res) => {
     {
       const customerName = quote.customer?.name || 'El cliente';
       const amount = `${Number(quote.total).toFixed(2)} ${quote.currency}`;
+      const qNum = displayQuoteNumber(quote); // A1.2: número por merchant, no el id global
       const freeText = decision === 'accept'
-        ? `✅ ${customerName} aceptó tu presupuesto #${quoteId} por ${amount}`
-        : `❌ ${customerName} rechazó el presupuesto #${quoteId}. Motivo: ${reason || comment || 'Sin especificar'}`;
+        ? `✅ ${customerName} aceptó tu presupuesto ${qNum} por ${amount}`
+        : `❌ ${customerName} rechazó el presupuesto ${qNum}. Motivo: ${reason || comment || 'Sin especificar'}`;
       notifyMerchantAlert({
         merchantId: quote.merchantId,
         merchantPhone: quote.merchant?.whatsappPhone,
         customerName,
         action: decision === 'accept' ? 'ha aceptado tu presupuesto' : 'ha rechazado tu presupuesto',
-        detail: decision === 'accept' ? `${amount} · Presupuesto #${quoteId}` : `Presupuesto #${quoteId}`,
+        detail: decision === 'accept' ? `${amount} · Presupuesto ${qNum}` : `Presupuesto ${qNum}`,
         freeText,
       }).catch((err) => console.error('[decision] Error notificando al merchant:', err));
     }

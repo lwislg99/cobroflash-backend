@@ -57,7 +57,10 @@ function renderQuotesView(container) {
 
 
     // ---------- MODAL PREVISUALIZACIÓN PRESUPUESTO ----------
-function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
+function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp }) {
+  // A1.2: quoteNumber = número visible por merchant; quoteId sigue siendo el
+  // id global para las llamadas a la API.
+  const displayNum = quoteNumber ?? quoteId;
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay";
 
@@ -69,7 +72,7 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
   mHeader.className = "modal-header";
   const mTitle = document.createElement("span");
   mTitle.className = "modal-title";
-  mTitle.textContent = `Presupuesto #${quoteId} generado`;
+  mTitle.textContent = `Presupuesto #${displayNum} generado`;
   mHeader.appendChild(mTitle);
   modal.appendChild(mHeader);
 
@@ -95,7 +98,7 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
     frameWrapper.style.cssText = "border:1px solid var(--neutral-200);border-radius:8px;overflow:hidden";
     const iframe = document.createElement("iframe");
     iframe.src = pdfUrl;
-    iframe.title = `PDF Presupuesto #${quoteId}`;
+    iframe.title = `PDF Presupuesto #${displayNum}`;
     iframe.loading = "lazy";
     iframe.style.cssText = "width:100%;height:55vh;border:none;display:block";
     frameWrapper.appendChild(iframe);
@@ -151,7 +154,7 @@ function openQuoteModal({ quoteId, pdfUrl, allowWhatsapp }) {
         } else {
           setAlert("error", body.message || "Presupuesto creado, pero no se pudo enviar por WhatsApp.");
         }
-        setResult({ quote_id: quoteId, status: "DRAFT", sent: !!body.ok });
+        setResult({ quote_id: quoteId, number: displayNum, status: "DRAFT", sent: !!body.ok });
         overlay.remove();
       } catch (err) {
         setAlert("error", err.message || "Error enviando por WhatsApp.");
@@ -455,6 +458,7 @@ blockClient.appendChild(descWrapper);
   
     // Normalizamos campos por si el backend cambia ligeramente
     const quoteId = data.quote_id || data.quoteId || data.id;
+    const displayNum = data.number ?? quoteId; // A1.2: número por merchant
     const status = (data.status || "draft").toUpperCase();
     const sent =
       typeof data.sent !== "undefined"
@@ -465,7 +469,7 @@ blockClient.appendChild(descWrapper);
     header.className = "quote-status-header";
   
     const idText = document.createElement("div");
-    idText.innerHTML = `<strong>Presupuesto #${quoteId}</strong>`;
+    idText.innerHTML = `<strong>Presupuesto #${displayNum}</strong>`;
     header.appendChild(idText);
   
     const statusPill = document.createElement("span");
@@ -1983,6 +1987,7 @@ payloadLines.push({
 
       const quote = await createQuote(quotePayload);
       const quoteId = quote.id || quote.quote_id || quote.quoteId;
+      const quoteNumber = quote.number ?? quoteId; // A1.2: número por merchant
       if (!quoteId) {
         throw new Error("Respuesta inesperada al crear presupuesto.");
       }
@@ -2001,12 +2006,13 @@ payloadLines.push({
 
       // 3) Mostramos modal para ver PDF y (opcional) enviar por WhatsApp
       const allowWhatsapp = waCheck.checked;
-      openQuoteModal({ quoteId, pdfUrl, allowWhatsapp });
+      openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp });
 
       // 4) Actualizamos cajita de estado a la derecha (de momento sin WhatsApp)
       setAlert("success", "Presupuesto creado en borrador.");
       setResult({
         quote_id: quoteId,
+        number: quoteNumber,
         status: "DRAFT",
         sent: false,
       });

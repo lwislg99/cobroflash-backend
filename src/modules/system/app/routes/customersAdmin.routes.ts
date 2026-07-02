@@ -141,7 +141,7 @@ router.get('/:id/detail', async (req, res) => {
         where: { customerId: id, merchantId: req.merchantId },
         orderBy: { createdAt: 'desc' },
         take: 20,
-        select: { id: true, status: true, total: true, currency: true, createdAt: true, acceptedAt: true },
+        select: { id: true, quoteNumber: true, status: true, total: true, currency: true, createdAt: true, acceptedAt: true },
       }),
       prisma.invoice.findMany({
         where: { customerId: id, merchantId: req.merchantId },
