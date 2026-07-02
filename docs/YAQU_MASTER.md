@@ -424,6 +424,7 @@ Bases: ejecución de contrato (merchant); interés legítimo/relación precontra
 >
 > **VALIDA-0** (U1.1): V0-0 ✅ (`INVOICING_ES_ENABLED` off + justificante `J-` + watermark DEMO) · V0-1 ✅ DONE (E2E móvil completo confirmado por el fundador; `EVIDENCIAS_E2E.md`) · V0-2 ✅ (`DEMO_SAFE_NUMBERS`) · V0-3 ✅ (funnel: `acquisitionSource`/`paid_via`/`quote_created_via` + vista BO) · V0-4 🟡 (página `/precios` + founding con contador real; precios Stripe en **TEST**, falta LIVE) · V0-5 ⏳ HUMANO (bug-bash dispositivos; checklist `docs/BUG_BASH_LANDING.md` lista 15-jun + percepción pre-arreglada en code-review: PC-B IVA, PC-A botón duda, PC-C/PC-D estados/microcopy, PC-E motion/AB6, PC-F N5 /pay/bank, PC-G política de señal V8, PC-H fecha/método en el recibo, PC-I 400 digno, PC-J foco AB6 en /recibo+/pay/invoice+/pay/bank, PC-K refactor estilos inline→tokens en /recibo) · V0-6 ⏳ HUMANO (calle: 10 discovery + vídeo + ≥3 founding).
 > **DOCS-F1** (U1.2): ✅ COMPLETO — skills (`/yaqu-sprint`, `/yaqu-release-check`, `yaqu-premium-ui`, `yaqu-verifactu-sif`), hook `guard-dangerous`, `frontend-design` instalada, J7 builders+test, `RUNBOOKS.md`, `QA_MASTER.md`, flags (`core/flags.ts`), J3 `waOptOut`, check manifest PWA (Y1).
+> **TOOLING-CODEX** (post-DOCS-F1, al 29-jun): espejo de la constitución y el tooling para el harness de Codex — `AGENTS.md` (equivalente a `CLAUDE.md`, derivado de este master, regla 35), `.codex/` (`config.toml` MCP Playwright + `hooks.json` + `hooks/guard-dangerous.sh` réplica del de `.claude/`), y skills espejo en `.agents/skills/` (`yaqu-*` + `impeccable`). ⚠️ **`impeccable` es skill de TERCEROS** (regla 36): presente en el repo; pendiente de que su permanencia quede ratificada por el fundador (ver nota en AA2).
 > **SIF-1** (U1.3): S1-0 🟡 HUMANO (cert FNMT ✅ conseguido 15-jun con copia `.pfx`; falta alta en el entorno de pruebas AEAT + cita asesor) · S1-0b ✅ (`SIF_SPEC_NOTES.md`: VERI*FACTU NO exige XAdES → 100% Node) · S1-A ✅ (`AUDITORIA_RRSIF.md`: huella regenerada a formato oficial, vector de prueba AEAT en verde) · S1-B ✅ (modalidad documentada) · S1-C ✅ (registros alta/R1/anulación validados contra XSD oficial) · S1-D ⏸ PAUSA (espera decisión de representación del asesor) · S1-E 🟡 (`docs/legal/DECLARACION_RESPONSABLE.md` borrador) · S1-F ⏳ (revisión asesor) · S1-G ⏳ (cert + producción AEAT) · S1-H 🟡 (`docs/legal/PACK_GESTORIA.md` borrador).
 > **Canal WhatsApp** (Parte J, en huecos de SIF-1): J3 ✅ · WA-0b (J4) ✅ (log + estados webhook + chip de entrega + tabla en prod) · J8 ✅ (métricas coste/entrega) · plantillas `payment_confirmation_invoice_es` y `merchant_alert_es` ✅ **Approved (15-jun) y CONECTADAS** (`e922495`, `b5fa810`): la 1ª sustituye a `payment_confirmation_es` en los webhooks de pago (botón "Ver documento" → `/recibo/:chargeId`); la 2ª es el fallback al PRO con ventana 24h cerrada vía `notifyMerchantAlert` en pago (psp+mp, 15-jun) y en decisión de presupuesto (`quotes.routes.ts`, 16-jun). ⚠️ quedaron en categoría **Marketing** → recategorizar a Utility (P3-3).
 > **CONNECT-1 · VOZ-1 · PRECIOS-1 · GTM-1**: ⏳ no iniciadas (van tras SIF-1; CONNECT-1 solo en huecos).
@@ -620,9 +621,18 @@ CLAUDE.md                          ← constitución (~100 líneas): puntero a e
     yaqu-premium-ui/SKILL.md       ← se crea en DOCS-F1 (UI-0): obliga a leer DESIGN.md +
                                       Parte AB antes de tocar UI; checklist visual AB6;
                                       una pantalla/componente por cambio, jamás rediseño total
+
+AGENTS.md                          ← espejo de CLAUDE.md para el harness de Codex (derivado
+                                      del master, regla 35): mismas 10 reglas, AA1, stop conditions
+.codex/                            ← tooling equivalente para Codex (TOOLING-CODEX)
+  config.toml                      ← MCP servers (Playwright)
+  hooks.json                       ← PreToolUse → guard-dangerous
+  hooks/guard-dangerous.sh         ← réplica del hook de `.claude/`
+.agents/skills/                    ← espejo de skills para Codex: yaqu-* + `impeccable` (terceros)
 ```
-Nota de plataforma: los slash commands personalizados están fusionados con las skills; `.claude/skills/` es la vía recomendada (una skill homónima tiene precedencia sobre un command).
-**Descartado con motivo:** skills "guardian"/"executor" autónomas (es protocolo → CLAUDE.md) · skill de WhatsApp (test J7 + RUNBOOKS, determinista) · skill de QA aparte (es `/yaqu-release-check`) · skill de Prisma (es un hook) · subagents (sin valor para trabajo secuencial de un founder; revisar F2) · plugins de terceros (regla 36).
+Nota de plataforma: los slash commands personalizados están fusionados con las skills; `.claude/skills/` es la vía recomendada (una skill homónima tiene precedencia sobre un command). El tooling se mantiene duplicado en `.claude/` (Claude Code) y `.codex/` + `.agents/` (Codex); al tocar uno, revisar el espejo.
+**Descartado con motivo:** skills "guardian"/"executor" autónomas (es protocolo → CLAUDE.md) · skill de WhatsApp (test J7 + RUNBOOKS, determinista) · skill de QA aparte (es `/yaqu-release-check`) · skill de Prisma (es un hook) · subagents (sin valor para trabajo secuencial de un founder; revisar F2).
+**Excepción a la regla 36 (plugins de terceros):** la skill `impeccable` (UI) está instalada en `.agents/skills/impeccable/`. Se documenta aquí por transparencia; su permanencia queda **pendiente de ratificación explícita del fundador** — si no se ratifica, retirar.
 
 ---
 
