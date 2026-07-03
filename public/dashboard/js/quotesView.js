@@ -1893,6 +1893,26 @@ if (Number.isFinite(n) && n >= 0) {
       currentMerchant = res[0];
       customersList = Array.isArray(res[1]) ? res[1] : [];
 
+      // Checkboxes de métodos HONESTOS: sin IBAN no hay transferencia — se
+      // desactiva con el motivo, en vez de dejar marcar algo que no saldrá.
+      // (El perfil reducido del técnico no trae iban: solo se aplica si el
+      // campo viene definido, para no desactivar por falta de dato.)
+      try {
+        if (pmChecks && pmChecks.transfer && currentMerchant && ('iban' in currentMerchant) && !currentMerchant.iban && !currentMerchant.clabe) {
+          pmChecks.transfer.checked = false;
+          pmChecks.transfer.disabled = true;
+          const lbl = pmChecks.transfer.closest('label');
+          if (lbl) {
+            lbl.style.opacity = '.55';
+            lbl.title = 'Añade tu IBAN en Configuración para ofrecer transferencia';
+            lbl.appendChild(Object.assign(document.createElement('span'), {
+              className: 'pay-methods-note',
+              textContent: '(añade tu IBAN en Configuración)',
+            }));
+          }
+        }
+      } catch (_e) {}
+
       // Info merchant en la cabecera
       var miText =
         (currentMerchant.name || currentMerchant.legalName || "Tu empresa") +

@@ -132,7 +132,7 @@ router.get('/:id/detail', async (req, res) => {
 
     const customer = await prisma.customer.findFirst({
       where: { id, merchantId: req.merchantId },
-      select: { id: true, name: true, phone: true, email: true, notes: true, portalToken: true, createdAt: true },
+      select: { id: true, name: true, phone: true, email: true, notes: true, portalToken: true, createdAt: true, waOptOut: true },
     });
     if (!customer) return res.status(404).json({ error: 'not_found' });
 

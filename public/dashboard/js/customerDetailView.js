@@ -72,6 +72,7 @@ async function renderCustomer360View(container, customerId) {
       </div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0">
+      <button class="btn-secondary btn-sm" id="btn-edit-360" title="Editar los datos del cliente">✎ Editar</button>
       ${customer.portalUrl ? `
         <button class="btn-secondary btn-sm" id="btn-copy-portal-360" title="Copiar enlace del portal del cliente">
           🔗 Portal
@@ -80,6 +81,11 @@ async function renderCustomer360View(container, customerId) {
     </div>
   `;
   wrap.appendChild(header);
+
+  // Editar cliente desde la ficha (antes solo se podía desde la lista)
+  header.querySelector('#btn-edit-360').onclick = () => {
+    openEdit360Modal(customer, id, container);
+  };
 
   if (customer.portalUrl) {
     header.querySelector('#btn-copy-portal-360').onclick = async () => {
@@ -269,4 +275,81 @@ async function renderCustomer360View(container, customerId) {
 function escC(str) {
   if (!str) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Modal de edición desde la ficha 360 ─────────────────────────────────────
+// Mismos campos que el modal de la lista (nombre/teléfono/email/notas/baja WA).
+function openEdit360Modal(customer, customerId, container) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.style.maxWidth = '440px';
+  modal.innerHTML = `
+    <div class="modal-header"><span class="modal-title">Editar cliente</span></div>
+    <div class="modal-body" style="flex-direction:column;gap:10px">
+      <div class="field"><label>Nombre</label><input type="text" id="e360-name"/></div>
+      <div class="field"><label>Teléfono (E.164 sin +)</label><input type="text" id="e360-phone"/></div>
+      <div class="field"><label>Email</label><input type="email" id="e360-email"/></div>
+      <div class="field"><label>Notas</label><textarea id="e360-notes" rows="3" style="resize:vertical"></textarea></div>
+      <label class="inline-checkbox" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--neutral-600)">
+        <input type="checkbox" id="e360-waoptout"/> Baja de WhatsApp: no enviarle más mensajes (el cliente lo pidió)
+      </label>
+      <div class="alert error" id="e360-alert" style="display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" id="e360-cancel">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="e360-save">Guardar cambios</button>
+    </div>
+  `;
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+  const $ = (sel) => modal.querySelector(sel);
+  $('#e360-name').value = customer.name || '';
+  $('#e360-phone').value = customer.phone || '';
+  $('#e360-email').value = customer.email || '';
+  $('#e360-notes').value = customer.notes || '';
+  $('#e360-waoptout').checked = !!customer.waOptOut;
+  $('#e360-cancel').onclick = () => overlay.remove();
+
+  function showErr(msg) {
+    const a = $('#e360-alert');
+    a.textContent = msg;
+    a.style.display = 'block';
+  }
+
+  $('#e360-save').onclick = async () => {
+    const name = $('#e360-name').value.trim();
+    if (!name) { showErr('El nombre es obligatorio.'); return; }
+    const phone = $('#e360-phone').value.trim();
+    const email = $('#e360-email').value.trim();
+    // El schema del backend valida formato: omitir vacíos en vez de mandar ""
+    const payload = {
+      name,
+      notes: $('#e360-notes').value.trim() || undefined,
+      waOptOut: $('#e360-waoptout').checked,
+    };
+    if (phone) payload.phone = phone;
+    if (email) payload.email = email;
+
+    const btn = $('#e360-save');
+    btn.disabled = true;
+    btn.textContent = 'Guardando…';
+    try {
+      await apiRequest(`/admin/customers/${customerId}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      });
+      overlay.remove();
+      // Recargar la ficha con los datos nuevos
+      renderCustomer360View(container, customerId);
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Guardar cambios';
+      showErr('No se pudo guardar: ' + (err && err.message ? err.message : 'inténtalo de nuevo'));
+    }
+  };
 }
