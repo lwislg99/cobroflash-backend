@@ -125,11 +125,23 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
     mBody.appendChild(info);
   }
 
+  // UX (feedback fundador): las acciones de envío viven en el CUERPO como
+  // grupo propio ("Enviar al cliente"), no amontonadas en el pie. El pie
+  // queda solo para cerrar — jerarquía clara: revisar → enviar → hecho.
+  const shareWrap = document.createElement("div");
+  const shareLabel = document.createElement("div");
+  shareLabel.className = "modal-share-label";
+  shareLabel.textContent = pendingApproval ? "Documento" : "Enviar al cliente";
+  const shareRow = document.createElement("div");
+  shareRow.className = "modal-share";
+  shareWrap.appendChild(shareLabel);
+  shareWrap.appendChild(shareRow);
+  mBody.appendChild(shareWrap);
+
   modal.appendChild(mBody);
 
   const mFooter = document.createElement("div");
   mFooter.className = "modal-footer";
-  mFooter.style.flexWrap = "wrap"; // A2.3: 4 acciones también en móvil
 
   // UX (feedback fundador): la modal NO se cierra al actuar — patrón "compartir"
   // (Drive/Stripe): cada acción confirma en su propio botón ("✓ Enviado") y se
@@ -167,7 +179,7 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
       closeBtn.classList.remove("btn-secondary");
       closeBtn.classList.add("btn-primary");
     });
-    mFooter.appendChild(dlBtn);
+    shareRow.appendChild(dlBtn);
   }
 
   // A2.3: Enviar por email (plantilla Resend con el link del presupuesto)
@@ -202,7 +214,7 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
         emailBtn.textContent = "✉ Enviar por email";
       }
     });
-    mFooter.appendChild(emailBtn);
+    shareRow.insertBefore(emailBtn, shareRow.firstChild); // tras WhatsApp, antes de PDF
   }
 
   if (allowWhatsapp) {
@@ -247,7 +259,7 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
         sendBtn.textContent = "Enviar por WhatsApp";
       }
     });
-    mFooter.appendChild(sendBtn);
+    shareRow.insertBefore(sendBtn, shareRow.firstChild); // WhatsApp primero (primario)
   }
 
   modal.appendChild(mFooter);

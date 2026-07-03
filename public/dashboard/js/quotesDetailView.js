@@ -74,6 +74,13 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   const headRight = document.createElement('div');
   headRight.style.cssText = 'display:flex;gap:8px';
 
+  // PDF bajo demanda (con la firma si el cliente firmó) — feedback fundador
+  const pdfBtn = document.createElement('button');
+  pdfBtn.className = 'btn-secondary btn-sm';
+  pdfBtn.innerHTML = '📄 PDF';
+  pdfBtn.title = 'Ver o descargar el PDF (incluye la firma si el cliente firmó)';
+  pdfBtn.addEventListener('click', () => window.open(`/admin/quotes/${id}/pdf`, '_blank'));
+
   const duplicateBtn = document.createElement('button');
   duplicateBtn.className = 'btn-secondary btn-sm';
   duplicateBtn.innerHTML = '⎘ Duplicar';
@@ -90,6 +97,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     else renderQuotesListView(container);
   });
 
+  headRight.appendChild(pdfBtn);
   headRight.appendChild(duplicateBtn);
   headRight.appendChild(backBtn);
   head.appendChild(headRight);
@@ -214,18 +222,19 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     summarySec.appendChild(tierBadge);
   }
 
-  // Firma digital
+  // Firma digital — compacta y en línea (la firma completa va en el PDF)
   if (quote.signatureUrl) {
     const sigBadge = document.createElement('div');
-    sigBadge.style.cssText = 'margin-top:14px;display:flex;flex-direction:column;gap:8px';
+    sigBadge.className = 'sig-row';
     sigBadge.innerHTML = `
-      <div style="display:inline-flex;align-items:center;gap:6px;background:var(--brand-tint);color:var(--green-700);
-        padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;width:fit-content">
+      <span style="display:inline-flex;align-items:center;gap:6px;background:var(--brand-tint);color:var(--green-700);
+        padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;flex-shrink:0">
         ✅ Firmado digitalmente
-      </div>
+      </span>
       <img src="${quote.signatureUrl}" alt="Firma del cliente"
-        style="max-width:200px;max-height:80px;border:1px solid var(--border);border-radius:8px;
-               background:var(--neutral-50);padding:4px;object-fit:contain"/>
+        style="max-width:120px;max-height:44px;border:1px solid var(--border);border-radius:8px;
+               background:var(--neutral-50);padding:3px;object-fit:contain"/>
+      <span style="font-size:12px;color:var(--muted)">La firma va incluida en el PDF.</span>
     `;
     summarySec.appendChild(sigBadge);
   }
@@ -242,9 +251,11 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   const pendingInvCta = invoicesForCta.find((i) => String(i.status).toLowerCase() === 'pending');
 
   if (st === 'draft' || st === 'sent' || st === 'accepted') {
+    // UX (feedback fundador): el CTA vive DENTRO de la tarjeta de resumen —
+    // estado → timeline → siguiente paso, sin secciones sueltas escalonadas.
     const actionsSec = document.createElement('div');
-    actionsSec.className = 'detail-section';
-    actionsSec.innerHTML = '<h3 class="detail-section-title">Siguiente paso</h3>';
+    actionsSec.className = 'detail-next';
+    actionsSec.innerHTML = '<div class="detail-next-label">Siguiente paso</div>';
 
     const actions = document.createElement('div');
     actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center';
@@ -280,7 +291,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
         });
         actions.appendChild(btnCollect);
       }
-      page.appendChild(actionsSec);
+      summarySec.appendChild(actionsSec);
     }
 
     if (st === 'draft' || st === 'sent') {
@@ -336,23 +347,51 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     });
 
     actions.appendChild(btnSend);
-    page.appendChild(actionsSec);
+    summarySec.appendChild(actionsSec);
     }
   }
 
-  // ── Sección: CLIENTE ────────────────────────────────────────
+  // ── Sección: CLIENTE + DECISIÓN (dos columnas, menos escalonado) ──
   const c = quote.customer || {};
-  const custSec = document.createElement('div');
-  custSec.className = 'detail-section';
-  custSec.innerHTML = '<h3 class="detail-section-title">Cliente</h3>';
+  const d = quote.decision || {};
+  const infoSec = document.createElement('div');
+  infoSec.className = 'detail-section';
+  const infoGrid = document.createElement('div');
+  infoGrid.className = 'detail-2col';
+  infoSec.appendChild(infoGrid);
+
+  const custCol = document.createElement('div');
+  custCol.innerHTML = '<h3 class="detail-section-title">Cliente</h3>';
   const custDl = document.createElement('dl');
   custDl.className = 'detail-dl';
   addDefRow(custDl, 'Nombre', c.name);
   addDefRow(custDl, 'Teléfono', c.phone);
   addDefRow(custDl, 'Email', c.email);
   if (!custDl.children.length) custDl.innerHTML = '<dd style="color:var(--muted)">Sin datos de cliente.</dd>';
-  custSec.appendChild(custDl);
-  page.appendChild(custSec);
+  custCol.appendChild(custDl);
+  infoGrid.appendChild(custCol);
+
+  const decCol = document.createElement('div');
+  decCol.innerHTML = '<h3 class="detail-section-title">Decisión</h3>';
+  const decDl = document.createElement('dl');
+  decDl.className = 'detail-dl';
+  addDefRow(decDl, 'Canal', d.decisionChannel);
+  addDefRow(decDl, 'Comentario', d.decisionComment);
+  addDefRow(decDl, 'Motivo de rechazo', d.rejectionReason);
+  addDefRow(decDl, 'Aceptado', d.acceptedAt ? new Date(d.acceptedAt).toLocaleString('es-ES') : null);
+  addDefRow(decDl, 'Rechazado', d.rejectedAt ? new Date(d.rejectedAt).toLocaleString('es-ES') : null);
+  addDefRow(decDl, 'Condiciones de pago', getPaymentTermsLabel(d.paymentTerms));
+  if (!decDl.children.length) {
+    decDl.innerHTML = '<dd style="color:var(--muted)">Aún sin decisión registrada.</dd>';
+  }
+  decCol.appendChild(decDl);
+  infoGrid.appendChild(decCol);
+
+  // Registrar decisión manual (residual) — bajo las dos columnas
+  if (st === 'draft' || st === 'pending' || st === 'sent') {
+    infoSec.appendChild(buildDecisionPanel(quote, d, container, setStatus, st));
+  }
+  page.appendChild(infoSec);
 
   // ── Sección: CONCEPTOS + TOTALES ────────────────────────────
   const concSec = document.createElement('div');
@@ -406,32 +445,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   `;
   concSec.appendChild(totalsWrap);
 
-  // ── Sección: DECISIÓN ───────────────────────────────────────
-  const decSec = document.createElement('div');
-  decSec.className = 'detail-section';
-  decSec.innerHTML = '<h3 class="detail-section-title">Decisión</h3>';
-  page.appendChild(decSec);
-
-  const d = quote.decision || {};
-  const decDl = document.createElement('dl');
-  decDl.className = 'detail-dl';
-  addDefRow(decDl, 'Canal', d.decisionChannel);
-  addDefRow(decDl, 'Comentario', d.decisionComment);
-  addDefRow(decDl, 'Motivo de rechazo', d.rejectionReason);
-  addDefRow(decDl, 'Aceptado', d.acceptedAt ? new Date(d.acceptedAt).toLocaleString('es-ES') : null);
-  addDefRow(decDl, 'Rechazado', d.rejectedAt ? new Date(d.rejectedAt).toLocaleString('es-ES') : null);
-  addDefRow(decDl, 'Condiciones de pago', getPaymentTermsLabel(d.paymentTerms));
-  if (!decDl.children.length) {
-    decDl.innerHTML = '<dd style="color:var(--muted)">Aún sin decisión registrada.</dd>';
-  }
-  decSec.appendChild(decDl);
-
-  // Acciones de back-office (flujo residual: panel inline, sin prompt/alert).
-  // A2.2: también en `sent` — "Marcar aceptado / rechazado" es el paso manual
-  // permitido cuando el cliente decide de palabra en vez de desde su móvil.
-  if (st === 'draft' || st === 'pending' || st === 'sent') {
-    decSec.appendChild(buildDecisionPanel(quote, d, container, setStatus, st));
-  }
+  // (La sección DECISIÓN vive ahora arriba, en 2 columnas junto a CLIENTE)
 
   // ── Sección: FACTURAS ───────────────────────────────────────
   const invSec = document.createElement('div');

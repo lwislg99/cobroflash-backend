@@ -318,6 +318,55 @@ router.post('/:id/send-whatsapp', async (req, res) => {
 });
 
 /**
+ * GET /admin/quotes/:id/pdf — sirve el PDF del presupuesto REGENERÁNDOLO
+ * bajo demanda (mismo patrón que /admin/invoices/:id/pdf, P0-2): el fs de
+ * Railway es efímero y el fichero de quote.pdfUrl muere en cada deploy.
+ * Si el cliente firmó (quote.signatureUrl), el PDF sale SIEMPRE con la firma
+ * y la fecha (feedback fundador: "la firma debería ir dentro").
+ */
+router.get('/:id/pdf', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+
+    const quote = await prisma.quote.findFirst({
+      where: { id, merchantId: req.merchantId }, // multi-tenant
+      include: { merchant: true, customer: true },
+    });
+    if (!quote) return res.status(404).json({ error: 'not_found' });
+
+    const { generateQuotePdf } = await import('../../../../lib/pdf');
+    const pdf = await generateQuotePdf({
+      quoteId: quote.id,
+      quoteNumber: quote.quoteNumber,
+      merchant: {
+        name: quote.merchant.name, legalName: quote.merchant.legalName,
+        taxId: quote.merchant.taxId, address: quote.merchant.address,
+        whatsappPhone: quote.merchant.whatsappPhone,
+        logoUrl: quote.merchant.logoUrl,
+      },
+      customer: { name: quote.customer.name, phone: quote.customer.phone, email: quote.customer.email },
+      currency: quote.currency,
+      total: quote.total.toString(),
+      lines: (Array.isArray(quote.lines) ? quote.lines : []) as any,
+      tiers: (quote.tiers as any) ?? undefined,
+      signatureData: quote.signatureUrl || undefined,
+      signedAt: quote.acceptedAt ?? undefined,
+      country: quote.merchant.country,
+    });
+
+    await prisma.quote.update({ where: { id }, data: { pdfUrl: pdf.publicUrlPath } }).catch(() => {});
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="presupuesto-${quote.quoteNumber ?? quote.id}.pdf"`);
+    return res.sendFile(pdf.outPath);
+  } catch (err) {
+    console.error('[GET /admin/quotes/:id/pdf]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
  * POST /admin/quotes/:id/send-email — A2.3: envía el presupuesto al cliente
  * por email (Resend, link a /pay/quote/:id). Mismo efecto de estado que el
  * envío por WhatsApp: draft → sent (máquina L: "envío").
