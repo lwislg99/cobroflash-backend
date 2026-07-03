@@ -35,7 +35,8 @@ async function loadLogoBuffer(logoUrl: string | null | undefined): Promise<Buffe
 
 export async function generateInvoicePdf(params: {
   number: string;
-  merchant: { name: string; legalName?: string | null; taxId?: string | null; address?: string | null; logoUrl?: string | null };
+  // A2.4: datos del emisor completos (teléfono/email opcionales)
+  merchant: { name: string; legalName?: string | null; taxId?: string | null; address?: string | null; logoUrl?: string | null; phone?: string | null; email?: string | null };
   customer: { name: string; email?: string | null; phone?: string | null };
   currency: string;
   total: string;
@@ -59,9 +60,30 @@ export async function generateInvoicePdf(params: {
     loadLogoBuffer(params.merchant.logoUrl),
   ]);
 
+  // A2.4: tokens de DESIGN.md adaptados a papel — neutros CÁLIDOS (nunca el
+  // gris azulado de oficina) y el verde de marca como acento escaso.
+  const INK    = '#0f1c17';
+  const BODY   = '#3f4a45';
+  const MUTED  = '#6b756f';
+  const BORDER = '#e7e9e5';
+  const BG     = '#f6f7f5';
+  const BRAND  = '#16a34a';
+
   const doc    = new PDFDocument({ size: 'A4', margin: 50 });
   const stream = fs.createWriteStream(outPath);
   doc.pipe(stream);
+
+  // A2.4: banda de marca fina arriba de cada página (membrete premium, sobrio)
+  function drawBrandBand() {
+    const px = doc.x, py = doc.y;
+    doc.save();
+    doc.rect(0, 0, doc.page.width, 5).fill(BRAND);
+    doc.restore();
+    doc.fillColor('#000');
+    doc.x = px; doc.y = py;
+  }
+  drawBrandBand();
+  doc.on('pageAdded', drawBrandBand);
 
   // Marca de agua diagonal (V0-0: facturas del merchant demo) — bajo el contenido,
   // en cada página del documento.
@@ -84,7 +106,7 @@ export async function generateInvoicePdf(params: {
   const W   = doc.page.width - M * 2;   // 495
   const PB  = doc.page.height - M;      // bottom boundary
 
-  function hLine(y?: number, color = '#e5e7eb') {
+  function hLine(y?: number, color = BORDER) {
     const yy = y ?? doc.y;
     doc.moveTo(M, yy).lineTo(M + W, yy).strokeColor(color).lineWidth(0.5).stroke();
     doc.strokeColor('#000').lineWidth(1);
@@ -113,9 +135,9 @@ export async function generateInvoicePdf(params: {
   const isRect = params.type === 'R1';
   const docTitle = isReceipt ? 'JUSTIFICANTE DE COBRO' : isRect ? 'FACTURA RECTIFICATIVA' : 'FACTURA';
   doc.fontSize(isRect || isReceipt ? 17 : 22).font('Helvetica-Bold')
-    .fillColor(isRect ? '#b91c1c' : '#0f172a')
+    .fillColor(isRect ? '#dc2626' : INK)
     .text(docTitle, M, headerY, { width: W, align: 'right' });
-  doc.fontSize(10).font('Helvetica').fillColor('#64748b')
+  doc.fontSize(10).font('Helvetica').fillColor(MUTED)
     .text(isReceipt ? `Ref. ${params.number}` : `Nº ${params.number}`, { align: 'right' });
   doc.text(`Fecha: ${dateStr(params.createdAt)}`, { align: 'right' });
   if (isRect && params.rectifiesNumber) {
@@ -135,21 +157,23 @@ export async function generateInvoicePdf(params: {
   const colW   = (W / 2) - 10;
   const col2X  = M + colW + 20;
 
-  // Columna izquierda: emisor
+  // Columna izquierda: emisor (A2.4: datos completos, con teléfono/email)
   const emisor = params.merchant.legalName || params.merchant.name;
-  doc.fontSize(8).font('Helvetica-Bold').fillColor('#64748b').text('EMISOR', M, colY);
+  doc.fontSize(8).font('Helvetica-Bold').fillColor(MUTED).text('EMISOR', M, colY);
   doc.moveDown(0.2);
-  doc.fontSize(10).font('Helvetica-Bold').fillColor('#0f172a').text(emisor, { width: colW });
-  doc.font('Helvetica').fontSize(9).fillColor('#374151');
+  doc.fontSize(10).font('Helvetica-Bold').fillColor(INK).text(emisor, { width: colW });
+  doc.font('Helvetica').fontSize(9).fillColor(BODY);
   if (params.merchant.taxId)  doc.text(`NIF/CIF: ${params.merchant.taxId}`, { width: colW });
   if (params.merchant.address) doc.text(params.merchant.address, { width: colW });
+  if (params.merchant.phone)  doc.text(params.merchant.phone, { width: colW });
+  if (params.merchant.email)  doc.text(params.merchant.email, { width: colW });
 
   // Columna derecha: cliente (posicionado desde colY)
   const clientY = colY;
-  doc.fontSize(8).font('Helvetica-Bold').fillColor('#64748b').text('CLIENTE', col2X, clientY, { width: colW });
+  doc.fontSize(8).font('Helvetica-Bold').fillColor(MUTED).text('CLIENTE', col2X, clientY, { width: colW });
   const clientTextY = clientY + 16;
-  doc.fontSize(10).font('Helvetica-Bold').fillColor('#0f172a').text(params.customer.name, col2X, clientTextY, { width: colW });
-  doc.font('Helvetica').fontSize(9).fillColor('#374151');
+  doc.fontSize(10).font('Helvetica-Bold').fillColor(INK).text(params.customer.name, col2X, clientTextY, { width: colW });
+  doc.font('Helvetica').fontSize(9).fillColor(BODY);
   let cy = clientTextY + 14;
   if (params.customer.email) { doc.text(params.customer.email, col2X, cy, { width: colW }); cy += 13; }
   if (params.customer.phone) { doc.text(params.customer.phone, col2X, cy, { width: colW }); }
@@ -172,17 +196,17 @@ export async function generateInvoicePdf(params: {
     const XT  = XIV+WIV+4; const WT = W - (XT - M); // total línea
 
     // Cabecera tabla
-    doc.rect(M, doc.y, W, 16).fill('#f1f5f9');
+    doc.rect(M, doc.y, W, 16).fill(BG);
     const thY = doc.y + 4;
-    doc.fontSize(8).font('Helvetica-Bold').fillColor('#475569');
+    doc.fontSize(8).font('Helvetica-Bold').fillColor(MUTED);
     doc.text('CONCEPTO',    XC,  thY, { width: WC });
     doc.text('CANT.',       XQ,  thY, { width: WQ,  align: 'right' });
     doc.text('PRECIO UNIT', XP,  thY, { width: WP,  align: 'right' });
     doc.text('IVA %',       XIV, thY, { width: WIV, align: 'right' });
     doc.text('TOTAL',       XT,  thY, { width: WT,  align: 'right' });
     doc.y += 16;
-    hLine(doc.y, '#cbd5e1');
-    doc.fillColor('#0f172a');
+    hLine(doc.y, BORDER);
+    doc.fillColor(INK);
 
     // Filas
     lines.forEach((l, i) => {
@@ -190,7 +214,7 @@ export async function generateInvoicePdf(params: {
       const price  = Number(l.price) || 0;
       const taxR   = Number(l.tax)   || 0;
       const lineTotal = qty * price * (1 + taxR);
-      const bg = i % 2 === 0 ? '#fff' : '#f8fafc';
+      const bg = i % 2 === 0 ? '#fff' : BG;
 
       // Calcular altura de fila
       doc.font('Helvetica').fontSize(9);
@@ -202,7 +226,7 @@ export async function generateInvoicePdf(params: {
 
       const rowY = doc.y;
       doc.rect(M, rowY, W, rowH).fill(bg);
-      doc.fillColor('#1e293b');
+      doc.fillColor(BODY);
 
       doc.font('Helvetica').fontSize(9);
       doc.text(l.concept || '—', XC, rowY + 4, { width: WC });
@@ -214,7 +238,7 @@ export async function generateInvoicePdf(params: {
       doc.font('Helvetica');
 
       doc.y = rowY + rowH;
-      hLine(doc.y, '#e2e8f0');
+      hLine(doc.y, BORDER);
     });
 
     doc.moveDown(0.4);
@@ -246,7 +270,7 @@ export async function generateInvoicePdf(params: {
 
     // Subtotal
     const ty0 = doc.y;
-    doc.fontSize(9).font('Helvetica').fillColor('#374151')
+    doc.fontSize(9).font('Helvetica').fillColor(BODY)
       .text('Base imponible:', totalsX, ty0, { width: totalsW * 0.6 })
       .text(fmt(subtotal) + ' ' + params.currency, totalsX + totalsW * 0.6, ty0, { width: totalsW * 0.4, align: 'right' });
     doc.moveDown(0.4);
@@ -260,12 +284,13 @@ export async function generateInvoicePdf(params: {
       doc.moveDown(0.4);
     });
 
-    // Total final
-    doc.rect(totalsX, doc.y, totalsW, 1).fill('#0f172a');
-    doc.moveDown(0.3);
+    // Total final — el momento del dinero (Regla del Importe: Tinta, grande,
+    // con el acento de marca en la regla superior; el verde nunca en la cifra)
+    doc.rect(totalsX, doc.y, totalsW, 2).fill(BRAND);
+    doc.moveDown(0.35);
     const tfY = doc.y;
-    doc.fontSize(12).font('Helvetica-Bold').fillColor('#0f172a')
-      .text('TOTAL:', totalsX, tfY, { width: totalsW * 0.6 })
+    doc.fontSize(13).font('Helvetica-Bold').fillColor(INK)
+      .text(isReceipt ? 'TOTAL COBRADO:' : 'TOTAL:', totalsX, tfY, { width: totalsW * 0.6 })
       .text(fmt(grandTotal) + ' ' + params.currency, totalsX + totalsW * 0.6, tfY, { width: totalsW * 0.4, align: 'right' });
     doc.fillColor('#000');
     doc.moveDown(1.5);
@@ -310,15 +335,18 @@ export async function generateInvoicePdf(params: {
   // ── 6. FOOTER ────────────────────────────────────────────────────────────
   hLine();
   doc.moveDown(0.4);
+  // x/width explícitos: los totales dejan el cursor en la media columna derecha
   if (isReceipt) {
-    doc.fontSize(7.5).fillColor('#9ca3af')
-      .text('Justificante de cobro generado automáticamente por YaQu.', { align: 'center' });
-    doc.text('Este documento acredita el cobro recibido y no constituye una factura.', { align: 'center' });
+    // A2.4: pie oficial del sprint doc — claro y con dignidad, jamás "factura"
+    doc.fontSize(8.5).font('Helvetica-Bold').fillColor(BODY)
+      .text('Justificante de cobro — este documento acredita el cobro recibido.', M, doc.y, { width: W, align: 'center' });
+    doc.fontSize(7.5).font('Helvetica').fillColor(MUTED)
+      .text('No constituye una factura. Generado con YaQu · yaqu.app', M, doc.y, { width: W, align: 'center' });
   } else {
-    doc.fontSize(7.5).fillColor('#9ca3af')
-      .text('Factura generada automáticamente por YaQu.', { align: 'center' });
+    doc.fontSize(7.5).font('Helvetica').fillColor(MUTED)
+      .text('Factura generada automáticamente por YaQu · yaqu.app', M, doc.y, { width: W, align: 'center' });
     if (isVF) {
-      doc.text('Sistema de facturación verificable conforme al RD 1007/2023 (VeriFactu).', { align: 'center' });
+      doc.text('Sistema de facturación verificable conforme al RD 1007/2023 (VeriFactu).', M, doc.y, { width: W, align: 'center' });
     }
   }
 

@@ -63,6 +63,8 @@ export async function ensureInvoicePdf(
         taxId: inv.merchant.taxId,
         address: inv.merchant.address,
         logoUrl: inv.merchant.logoUrl,
+        phone: inv.merchant.whatsappPhone, // A2.4: emisor completo
+        email: inv.merchant.email,
       },
       customer: { name: inv.customer.name, email: inv.customer.email, phone: inv.customer.phone },
       currency: inv.currency,
@@ -141,6 +143,8 @@ export async function ensureInvoiceForCharge(
           taxId: merchant.taxId,
           address: merchant.address,
           logoUrl: merchant.logoUrl,
+          phone: merchant.whatsappPhone, // A2.4: emisor completo
+          email: merchant.email,
         },
         customer: { name: customer.name, email: (customer as any).email, phone: (customer as any).phone },
         currency: inv.currency,
