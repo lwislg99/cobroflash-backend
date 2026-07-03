@@ -48,9 +48,19 @@ router.get('/', (req, res) => {
 
 // ── Mensajes entrantes ────────────────────────────────────────────────────
 router.post('/', async (req, res) => {
+  // Diagnóstico (J5, nunca fallo silencioso): dejar constancia de CUALQUIER
+  // POST de Meta antes de validar nada — permite distinguir "no llega" de
+  // "llega y se rechaza" mirando los logs.
+  try {
+    const fields = (req.body?.entry ?? [])
+      .flatMap((e: any) => (e.changes ?? []).map((c: any) => c.field))
+      .join(',');
+    console.log(`[WA webhook] POST recibido (fields: ${fields || 'desconocido'})`);
+  } catch { /* solo logging */ }
+
   // Validar firma de Meta antes de procesar (si hay App Secret configurado)
   if (!isValidSignature(req)) {
-    console.warn('[WA webhook] Invalid X-Hub-Signature-256 — rejected');
+    console.warn('[WA webhook] Invalid X-Hub-Signature-256 — rejected (revisa WHATSAPP_APP_SECRET en Railway: debe ser la "Clave secreta de la aplicación" de Meta, o borra la variable para no validar)');
     return res.status(401).send('invalid signature');
   }
 
