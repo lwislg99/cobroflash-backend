@@ -230,22 +230,60 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     summarySec.appendChild(sigBadge);
   }
 
-  // ── Sección: ACCIONES (A1.1 — desatascar el draft) ──────────
-  // Antes: la acción "Enviar por WhatsApp" solo existía al CREAR el presupuesto
-  // (quotesView/homeView) y solo si el checkbox de auto-envío estaba marcado. Un
-  // presupuesto en `draft` (creado sin auto-envío, o aprobado desde
-  // pending_approval) no tenía forma de enviarse al cliente → flujo muerto.
-  // La transición draft→sent ya vive en el backend (send-whatsapp); esto solo
-  // le da un punto de entrada en el detalle.
-  if (st === 'draft' || st === 'sent') {
+  // ── Sección: ACCIONES (A1.1 + A2.2 — UN CTA primario según estado) ──
+  // A1.1 desatascó el draft (enviar desde el detalle). A2.2 lo convierte en la
+  // guía de la pantalla: cada estado tiene SU siguiente paso obvio (WOW#2):
+  //   draft    → 📤 Enviar por WhatsApp (verde)
+  //   sent     → marcar decisión (panel) + ↻ Reenviar (secundario)
+  //   accepted → 💰 Cobrar (genera la factura según condiciones)
+  //   cobrado  → 🧾 Ver justificante
+  const invoicesForCta = Array.isArray(quote.invoices) ? quote.invoices : [];
+  const paidInvCta = invoicesForCta.find((i) => String(i.status).toLowerCase() === 'paid');
+  const pendingInvCta = invoicesForCta.find((i) => String(i.status).toLowerCase() === 'pending');
+
+  if (st === 'draft' || st === 'sent' || st === 'accepted') {
     const actionsSec = document.createElement('div');
     actionsSec.className = 'detail-section';
-    actionsSec.innerHTML = '<h3 class="detail-section-title">Acciones</h3>';
+    actionsSec.innerHTML = '<h3 class="detail-section-title">Siguiente paso</h3>';
 
     const actions = document.createElement('div');
-    actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap';
+    actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center';
     actionsSec.appendChild(actions);
 
+    // A2.2: CTA de cobro para presupuestos aceptados (delega en el botón de la
+    // sección Facturas, que ya sabe qué factura toca según paymentTerms).
+    if (st === 'accepted') {
+      if (paidInvCta && !pendingInvCta) {
+        const btnReceipt = document.createElement('button');
+        btnReceipt.className = 'btn-primary';
+        btnReceipt.textContent = '🧾 Ver justificante';
+        btnReceipt.addEventListener('click', () => {
+          if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: paidInvCta.id });
+        });
+        actions.appendChild(btnReceipt);
+      } else if (pendingInvCta) {
+        const btnPend = document.createElement('button');
+        btnPend.className = 'btn-primary';
+        btnPend.textContent = '💰 Ver cobro pendiente';
+        btnPend.addEventListener('click', () => {
+          if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: pendingInvCta.id });
+        });
+        actions.appendChild(btnPend);
+      } else {
+        const btnCollect = document.createElement('button');
+        btnCollect.className = 'btn-primary';
+        btnCollect.textContent = '💰 Cobrar ahora';
+        btnCollect.addEventListener('click', () => {
+          const gen = document.getElementById('btn-generate-invoice');
+          if (gen && !gen.disabled) { gen.scrollIntoView({ block: 'center' }); gen.click(); }
+          else if (gen) gen.scrollIntoView({ block: 'center' });
+        });
+        actions.appendChild(btnCollect);
+      }
+      page.appendChild(actionsSec);
+    }
+
+    if (st === 'draft' || st === 'sent') {
     const isDraft = st === 'draft';
     const btnSend = document.createElement('button');
     // Regla de Una Sola Voz: para un draft, enviar es EL botón verde primario.
@@ -299,6 +337,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
 
     actions.appendChild(btnSend);
     page.appendChild(actionsSec);
+    }
   }
 
   // ── Sección: CLIENTE ────────────────────────────────────────
@@ -387,9 +426,11 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   }
   decSec.appendChild(decDl);
 
-  // Acciones de back-office (flujo residual: panel inline, sin prompt/alert)
-  if (st === 'draft' || st === 'pending') {
-    decSec.appendChild(buildDecisionPanel(quote, d, container, setStatus));
+  // Acciones de back-office (flujo residual: panel inline, sin prompt/alert).
+  // A2.2: también en `sent` — "Marcar aceptado / rechazado" es el paso manual
+  // permitido cuando el cliente decide de palabra en vez de desde su móvil.
+  if (st === 'draft' || st === 'pending' || st === 'sent') {
+    decSec.appendChild(buildDecisionPanel(quote, d, container, setStatus, st));
   }
 
   // ── Sección: FACTURAS ───────────────────────────────────────
@@ -464,6 +505,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   const isFiftyFifty = pt === 'FIFTY_FIFTY';
 
   const btnInvoice = document.createElement('button');
+  btnInvoice.id = 'btn-generate-invoice'; // A2.2: el CTA "💰 Cobrar ahora" delega aquí
   btnInvoice.className = 'btn-primary';
   btnInvoice.style.marginTop = '12px';
   invSec.appendChild(btnInvoice);
@@ -601,22 +643,23 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
 }
 
 // ── Panel inline de decisión back-office (sustituye prompt/alert) ──────────
-function buildDecisionPanel(quote, d, container, setStatus) {
+function buildDecisionPanel(quote, d, container, setStatus, st) {
   const panel = document.createElement('div');
   panel.style.cssText =
     'margin-top:14px;padding-top:14px;border-top:1px dashed var(--border)';
 
   const hint = document.createElement('p');
   hint.style.cssText = 'font-size:12.5px;color:var(--muted);margin:0 0 10px';
-  hint.textContent = 'Registrar la decisión manualmente (lo habitual es que el cliente decida por WhatsApp).';
+  hint.textContent = 'Marcar aceptado / rechazado (esto normalmente lo hace tu cliente desde su móvil).';
   panel.appendChild(hint);
 
   const btnRow = document.createElement('div');
   btnRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap';
   const btnAccept = document.createElement('button');
-  // Secundario: registrar la decisión a mano es residual (lo normal es que el
-  // cliente decida por WhatsApp). El único verde en reposo es "Enviar" (A1.1).
-  btnAccept.className = 'btn-secondary btn-sm';
+  // Regla de Una Sola Voz: en `sent` el verde de la pantalla es marcar la
+  // decisión (el envío ya se hizo); en draft el verde es "Enviar" (A1.1) y
+  // este botón queda secundario.
+  btnAccept.className = st === 'sent' ? 'btn-primary btn-sm' : 'btn-secondary btn-sm';
   btnAccept.textContent = 'Aceptar presupuesto';
   const btnReject = document.createElement('button');
   btnReject.className = 'btn-secondary btn-sm';
