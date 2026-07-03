@@ -1483,7 +1483,9 @@ img { max-width: 100%; display: block; }
   color: var(--neutral-700, #334155);
   text-align: right;
 }
-.quote-vat-calc strong { color: #16a34a; font-size: 24px; }
+/* Regla del Importe (DESIGN.md): el dinero SIEMPRE en Tinta, jamás en verde
+   (el verde es de las acciones). Antes el total final salía verde. */
+.quote-vat-calc strong { color: var(--ink, #0f1c17); font-size: 24px; font-variant-numeric: tabular-nums; }
 .quote-drag-handle {
   cursor: grab;
   color: var(--neutral-300, #cbd5e1);
