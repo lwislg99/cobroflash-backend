@@ -17,8 +17,8 @@ Stop conditions (dinero/producción/AEAT/Meta) = las ejecuta o aprueba el fundad
 > **📌 ESTADO DE EJECUCIÓN (3-jul-2026 · lo mantiene Claude Code):**
 > **Ola 1 ✅ COMPLETA:** A1.1 `f50abd3` (verificado por el fundador) · A1.2 `6d037dc` + db push + backfill (verificado: #1..#3) · A1.3 `1afd010` · A1.4 `7ef3c5c` (repo limpio; queda `EMAIL_FROM` en Railway → PENDIENTES_FUNDADOR).
 > **Ola 2 ✅ COMPLETA (código):** A2.1 `24d5408` tras flags OFF (db push aditivo aplicado con OK; activación = PENDIENTES_FUNDADOR) · A2.2 `86533ec` · A2.3 `94f3566` · A2.4 `347427e` (PDF verificado visualmente) · A2.5 `07466f5` · A2.6 `e2cf9db`. Fixes post-verificación: `ba32f38` (displayNum + pulido crear), `00588bb` (Regla del Importe), `e5a4402` (totales una voz + empty state).
-> **Verificación del fundador:** EN CURSO (punto 2, modal post-crear); checklist en memoria de Claude.
-> **Ola 3 ⏳:** stretch sin decidir (solo con la demo de 90s ensayada).
+> **Verificación del fundador:** EN CURSO; hallazgos ya arreglados: `eec112a` (editar cliente en ficha + checkbox transferencia honesto), `25cf585` (copy legal "Factura J-…"→"Justificante"), `faa5c23` (selector uniforme + modal persistente + logo subible), `087138d` (PDF con firma bajo demanda + detalle 2col + modal share).
+> **Ola 3 ✅ COMPLETA (código):** A3.2 `e7d677d` (topes WA: WA_DAILY_TEMPLATE_CAP=100/merchant/día + J6 3/cliente/día + alerta interna) · A3.1 `061cb69` (BOT-1 K1 tras `BOT_INBOUND_ENABLED` OFF; db push de `bot_sessions` + zone/source APLICADO con OK). Activación del bot = PENDIENTES_FUNDADOR.
 
 ---
 

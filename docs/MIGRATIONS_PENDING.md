@@ -4,6 +4,16 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
+## A3.1 · BOT-1: `bot_sessions` + `quote_requests.zone/source` — ✅ APLICADO en prod (2026-07-03)
+
+`prisma db push` aplicado contra Railway, **autorizado por el fundador** (respuesta explícita
+"Sí, aplica el db push"). 100 % aditivo; post-push `migrate diff` → "empty migration":
+- `CREATE TABLE bot_sessions` (sesiones del bot K1: phone, merchant_id, state, data, expires_at +24h) + índice (phone, expires_at)
+- `ALTER TABLE quote_requests ADD COLUMN zone TEXT, ADD COLUMN source TEXT`
+El bot queda inerte hasta `BOT_INBOUND_ENABLED=true` (Railway, acción fundador).
+
+---
+
 ## A2.1 · Connect/Bizum/payMethods — ✅ APLICADO en prod (2026-07-03)
 
 `prisma db push` aplicado contra Railway, **autorizado por el fundador** (respuesta explícita

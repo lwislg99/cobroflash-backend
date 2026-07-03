@@ -39,6 +39,10 @@ flags OFF (nada cambia hasta que actives). Para encenderlo, EN ESTE ORDEN:
 - [ ] **Probar el ciclo Connect en TEST:** activa cobros desde Configuración con el
   merchant demo → KYC de prueba de Stripe → pago test → el dinero reparte al
   merchant y el fee a la plataforma.
+- [ ] **Railway · `BOT_INBOUND_ENABLED=true`** (cuando quieras estrenar el bot, Ola 3):
+  el cliente que escriba al número recibirá el menú (Ver presupuestos · Pagar
+  pendiente · Pedir presupuesto · Hablar contigo). La tabla ya está en prod; con el
+  flag OFF todo sigue como hoy. "BAJA"/"STOP" (J3) funciona SIEMPRE, con o sin bot.
 
 ## 🆕 Sprint DEMO-READY (2-jul) — nuevas acciones tuyas
 
