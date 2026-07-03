@@ -3,7 +3,7 @@ import { Router } from 'express';
 import axios from 'axios';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
-import { esc } from '../../../../core/utils/utils';
+import { esc, parseNumericId } from '../../../../core/utils/utils';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { stripe } from '../../../../integrations/stripe';
 import { BASE_URL, config } from '../../../../core/config/env';
@@ -16,7 +16,9 @@ router.get('/:id', async (req, res) => {
   res.set('Pragma', 'no-cache');
   res.set('Expires', '0');
 
-  const id = Number(req.params.id);
+  // parseNumericId tolera URLs sucias del botón de plantilla Meta ('{{1}}9' → 9),
+  // igual que /pay/quote (P3-1). Sin esto, "Ver documento" caía en not-found.
+  const id = parseNumericId(req.params.id);
   // N3: estado digno también en el 400 (id no numérico), nunca texto plano.
   if (!Number.isInteger(id)) return res.status(400).send(documentNotFoundHtml());
 
@@ -371,7 +373,7 @@ router.get('/:id', async (req, res) => {
 // Se guarda SIEMPRE en privado (Event del charge + timeline del cliente); la
 // reseña de Google es independiente (sin gating). Idempotente por cobro.
 router.post('/:id/feedback', async (req, res) => {
-  const id = Number(req.params.id);
+  const id = parseNumericId(req.params.id);
   if (!Number.isInteger(id)) return res.status(400).send(documentNotFoundHtml());
 
   const charge = await prisma.charge.findUnique({
