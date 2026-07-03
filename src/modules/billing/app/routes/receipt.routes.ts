@@ -230,6 +230,67 @@ router.get('/:id', async (req, res) => {
       ${paidMeta ? `<div class="status-meta">${esc(paidMeta)}</div>` : ''}
     </div>`;
 
+  // ── A2.5: valoración post-pago (versión LEGAL, sin review gating) ─────────
+  // El feedback (estrellas + comentario) se guarda SIEMPRE en privado para el
+  // merchant (Event del charge + timeline del cliente). El botón de reseña en
+  // Google se muestra A TODOS si el merchant tiene URL — PROHIBIDO condicionarlo
+  // a X estrellas (viola políticas de Google y normativa UE).
+  const existingFb = (ch.events || []).find((e) => e.type === 'customer_feedback');
+  const fbThanks = (req.query as any).fb === 'thanks' || !!existingFb;
+  const reviewUrl = (ch as any).merchant?.googleReviewUrl || null;
+  const googleBtn = reviewUrl
+    ? `<a class="pay-btn pay-btn-primary" href="${esc(reviewUrl)}" target="_blank" rel="noopener">⭐ Déjale una reseña en Google</a>`
+    : '';
+  const feedbackBlock =
+    ch.status === 'paid'
+      ? `
+  <style>
+    .fb{border-top:1px solid var(--border);margin-top:1.1rem;padding-top:1rem;text-align:center}
+    .fb-title{font-weight:700;color:var(--ink);font-size:.98rem;margin-bottom:.55rem}
+    .fb-stars{display:flex;justify-content:center;gap:.35rem;font-size:1.9rem;margin-bottom:.6rem}
+    .fb-stars button{background:none;border:none;cursor:pointer;font-size:inherit;line-height:1;filter:grayscale(1);opacity:.45;padding:.1rem .15rem;transition:filter .12s,opacity .12s,transform .12s}
+    .fb-stars button.on{filter:none;opacity:1;transform:scale(1.08)}
+    .fb textarea{width:100%;max-width:420px;border:1px solid var(--border);border-radius:12px;padding:.6rem .8rem;font:inherit;font-size:.88rem;color:var(--ink);resize:vertical;min-height:56px}
+    .fb-send{margin-top:.6rem;background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:999px;padding:.55rem 1.2rem;font:inherit;font-weight:600;cursor:pointer}
+    .fb-send:hover{background:var(--slate-50)}
+    .fb-google{margin-top:.9rem}
+    @media (prefers-reduced-motion: reduce){.fb-stars button{transition:none;transform:none}}
+  </style>
+  <div class="fb">
+    ${fbThanks
+      ? `<div class="fb-title">🙌 ¡Gracias por tu valoración!</div>
+         ${googleBtn ? `<div class="fb-google">${googleBtn}</div>` : ''}`
+      : `<div class="fb-title">¿Qué tal fue el trabajo?</div>
+         <form method="post" action="${BASE_URL}/recibo/${ch.id}/feedback" id="fb-form">
+           <input type="hidden" name="stars" id="fb-stars-input" value=""/>
+           <div class="fb-stars" role="radiogroup" aria-label="Valoración de 1 a 5 estrellas">
+             ${[1, 2, 3, 4, 5].map((n) => `<button type="button" data-star="${n}" aria-label="${n} estrella${n > 1 ? 's' : ''}">⭐</button>`).join('')}
+           </div>
+           <textarea name="comment" maxlength="500" placeholder="Cuéntale cómo fue (solo lo verá el profesional)"></textarea><br/>
+           <button type="submit" class="fb-send">Enviar valoración</button>
+         </form>
+         ${googleBtn ? `<div class="fb-google">${googleBtn}</div>` : ''}
+         <script>
+           (function(){
+             var btns = document.querySelectorAll('.fb-stars button');
+             var input = document.getElementById('fb-stars-input');
+             btns.forEach(function(b){
+               b.addEventListener('click', function(){
+                 var n = Number(b.getAttribute('data-star'));
+                 input.value = String(n);
+                 btns.forEach(function(x){
+                   x.classList.toggle('on', Number(x.getAttribute('data-star')) <= n);
+                 });
+               });
+             });
+             document.getElementById('fb-form').addEventListener('submit', function(ev){
+               if (!input.value) { ev.preventDefault(); btns[4].focus(); }
+             });
+           })();
+         </script>`}
+  </div>`
+      : '';
+
   // Detalles internos solo en desarrollo (no para el cliente)
   const devInternals =
     config.NODE_ENV !== 'production'
@@ -297,12 +358,57 @@ router.get('/:id', async (req, res) => {
   ${ch.status === 'pending' ? `<div class="pay-stack">${payBtns}</div>` : ''}
   ${invBlock}
   ${mailBanner}
+  ${feedbackBlock}
   <div style="margin-top:1rem;text-align:center"><small>Cobro #${ch.id} · Cliente: ${esc(ch.customer?.name ?? '—')}</small></div>
   ${simulateBlock}
   ${devInternals}
 </div>
 </body>
 </html>`);
+});
+
+// POST /recibo/:id/feedback — A2.5: valoración del cliente tras pagar.
+// Se guarda SIEMPRE en privado (Event del charge + timeline del cliente); la
+// reseña de Google es independiente (sin gating). Idempotente por cobro.
+router.post('/:id/feedback', async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) return res.status(400).send(documentNotFoundHtml());
+
+  const charge = await prisma.charge.findUnique({
+    where: { id },
+    include: { events: true, customer: { select: { id: true, name: true } } },
+  });
+  if (!charge) return res.status(404).send(documentNotFoundHtml());
+  if (charge.status !== 'paid') return res.redirect(303, `/recibo/${id}`);
+
+  const stars = Math.round(Number(req.body?.stars));
+  const comment = String(req.body?.comment || '').slice(0, 500).trim();
+  if (!Number.isInteger(stars) || stars < 1 || stars > 5) {
+    return res.redirect(303, `/recibo/${id}`);
+  }
+
+  const existing = (charge.events || []).find((e) => e.type === 'customer_feedback');
+  if (!existing) {
+    await prisma.event.create({
+      data: {
+        chargeId: id,
+        type: 'customer_feedback',
+        payload: { stars, comment: comment || null, ts: new Date().toISOString() } as any,
+      },
+    });
+    if (charge.customerId) {
+      const { recordCustomerEvent } = await import('../../../system/customerEvents.service');
+      recordCustomerEvent({
+        merchantId: charge.merchantId,
+        customerId: charge.customerId,
+        type: 'feedback',
+        title: `⭐ ${stars}/5 — valoración del cliente tras el cobro #${id}`,
+        detail: comment || null,
+      });
+    }
+  }
+
+  return res.redirect(303, `/recibo/${id}?fb=thanks`);
 });
 
 export default router;

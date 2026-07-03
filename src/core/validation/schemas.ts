@@ -135,7 +135,13 @@ export const merchantProfileUpdateSchema = z.object({
   whatsappPhone: z.string().min(6).max(20).optional(),
   // C1-4: móvil para Bizum manual (default en UI: whatsappPhone)
   bizumPhone: z.string().min(6).max(20).nullable().optional(),
-  googleReviewUrl: z.string().url().nullable().optional(),
+  // A2.5 (fix PV): el PRO pega "g.page/r/..." sin protocolo y el .url() tiraba
+  // TODO el guardado con 400 ("googleReviewUrl no se guarda"). Se tolera sin
+  // https:// anteponiéndolo antes de validar.
+  googleReviewUrl: z.preprocess(
+    (v) => (typeof v === 'string' && v.trim() && !/^https?:\/\//i.test(v.trim()) ? `https://${v.trim()}` : v),
+    z.string().url().nullable().optional(),
+  ),
   country: z.string().length(2).optional(),
   iban: z.string().min(10).max(34).nullable().optional(),
   clabe: z.string().length(18).nullable().optional(),

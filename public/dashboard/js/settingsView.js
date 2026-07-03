@@ -392,7 +392,13 @@ function renderSettingsView(container) {
         defaultCurrency: fDefaultCurrency.input.value.trim() || "EUR",
         invoiceSeriesPrefix: fInvoiceSeriesPrefix.input.value.trim(),
         logoUrl: fLogoUrl.input.value.trim() || null,
-        googleReviewUrl: fGoogleReviewUrl.input.value.trim() || null,
+        // A2.5: normalizar — si pegan "g.page/r/…" sin protocolo, anteponer https://
+        googleReviewUrl: (function () {
+          var v = fGoogleReviewUrl.input.value.trim();
+          if (!v) return null;
+          if (!/^https?:\/\//i.test(v)) v = 'https://' + v;
+          return v;
+        })(),
         country: fCountrySelect.value || undefined,
         iban:  fIban.input.value.trim().replace(/\s/g, '') || null,
         clabe: fClabe.input.value.trim() || null,
