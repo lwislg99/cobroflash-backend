@@ -532,19 +532,19 @@ blockClient.appendChild(descWrapper);
   statusTitle.style.marginTop = "16px";
   rightCard.appendChild(statusTitle);
 
-  const statusHelper = document.createElement("p");
-  statusHelper.textContent =
-    "Cuando generes un presupuesto, aquí verás el ID, el estado y si se ha enviado por WhatsApp.";
-  rightCard.appendChild(statusHelper);
-  
-
   const resultBox = document.createElement("div");
   resultBox.className = "quote-status-box";
   rightCard.appendChild(resultBox);
 
+  // Empty state DENTRO del panel (una sola voz: antes había un párrafo de
+  // ayuda encima Y la caja vacía tipo input, que quedaba pobre)
+  const STATUS_EMPTY_HTML =
+    '<div class="quote-status-empty">📄 Genera el presupuesto y aquí verás su número, el estado y si se ha enviado.</div>';
+  resultBox.innerHTML = STATUS_EMPTY_HTML;
+
   function setResult(data) {
     resultBox.innerHTML = "";
-    if (!data) return;
+    if (!data) { resultBox.innerHTML = STATUS_EMPTY_HTML; return; }
   
     // Normalizamos campos por si el backend cambia ligeramente
     const quoteId = data.quote_id || data.quoteId || data.id;
@@ -705,13 +705,13 @@ blockClient.appendChild(descWrapper);
     const cur = (currentMerchant && currentMerchant.defaultCurrency) || 'EUR';
     const sym = cur === 'MXN' || cur === 'USD' || cur === 'COP' ? '$' : '€';
 
+    // Premium: UNA sola representación de los totales (antes la lista y la tira
+    // "€X + IVA = €Y" decían lo mismo dos veces). Base + IVA como desglose y el
+    // TOTAL como única cifra grande (Regla del Importe: en Tinta).
     totalsBox.innerHTML = `
       <div><span>Base imponible:</span><strong>${base.toFixed(2)}</strong></div>
-      <div><span>IVA total:</span><strong>${vatTotal.toFixed(2)}</strong></div>
-      <div class="quote-total-final"><span>Total presupuesto:</span><strong>${total.toFixed(
-        2
-      )}</strong></div>
-      <div class="quote-vat-calc">${sym}${base.toFixed(2)} <span style="color:var(--neutral-400)">+ IVA ${effVat}%</span> = <strong>${sym}${total.toFixed(2)}</strong></div>
+      <div><span>IVA (${effVat}%):</span><strong>${vatTotal.toFixed(2)}</strong></div>
+      <div class="quote-vat-calc"><span>Total presupuesto</span><strong>${sym}${total.toFixed(2)}</strong></div>
     `;
 
     return { base, vatTotal, total };
