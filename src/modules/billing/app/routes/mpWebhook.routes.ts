@@ -9,6 +9,7 @@ import { normalizePhone } from '../../../../core/utils/utils';
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { sendPaymentConfirmationInvoice, notifyMerchantPaid } from '../../../../integrations/whatsappNotifications';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
+import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 
 const router = Router();
 
@@ -154,7 +155,7 @@ router.post('/', async (req, res) => {
           customerId: updated.customerId,
           type: 'payment_received',
           title: 'Pago recibido (Mercado Pago)',
-          detail: `${Number(updated.amount).toFixed(2)} ${updated.currency}${invConf?.number ? ` · Factura ${invConf.number}` : ''}`,
+          detail: `${Number(updated.amount).toFixed(2)} ${updated.currency}${invConf?.number ? ` · ${isReceiptNumber(invConf.number) ? 'Justificante' : 'Factura'} ${invConf.number}` : ''}`,
         });
       }
 

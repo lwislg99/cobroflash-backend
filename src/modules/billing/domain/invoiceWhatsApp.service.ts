@@ -11,6 +11,7 @@ import { normalizePhone } from '../../../core/utils/utils';
 import { sendWhatsAppTemplate } from '../../../integrations/whatsapp';
 import { buildPaymentRequest } from '../../../integrations/whatsappTemplates';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
+import { isReceiptNumber } from '../../invoicing/domain/invoiceNumber.service';
 
 export type SendInvoiceWAResult = {
   ok: boolean;
@@ -52,7 +53,8 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
         body: JSON.stringify({
           merchant_id: invoice.merchantId,
           customer_id: invoice.customerId, // cliente real de la factura (no duplicar)
-          concept: `Factura ${invoice.number}`,
+          // Regla 24/26: un J-… es JUSTIFICANTE — el copy jamás dice "factura"
+          concept: `${isReceiptNumber(invoice.number) ? 'Justificante' : 'Factura'} ${invoice.number}`,
           amount: Number(invoice.total),
           currency: invoice.currency || 'EUR',
           method_preference: 'card',

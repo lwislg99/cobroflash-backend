@@ -28,12 +28,15 @@ export async function sendInvoiceEmail(args: {
   const { diskPath, pdfUrl } = await ensureInvoicePdf(invoiceId, prisma);
   const pdfBase64 = fs.existsSync(diskPath) ? fs.readFileSync(diskPath).toString('base64') : null;
 
+  // Regla 24/26: J-… = justificante de cobro, el copy jamás dice "factura"
+  const isJust = inv.number.startsWith('J-');
+  const docLabel = isJust ? 'justificante de cobro' : 'factura';
   const from = config.EMAIL_FROM;
-  const subject = `Tu factura ${inv.number}`;
+  const subject = `Tu ${docLabel} ${inv.number}`;
   const html = `
     <p>Hola ${toName || ''},</p>
-    <p>Adjuntamos tu factura <b>${inv.number}</b> en PDF.</p>
-    <p>También puedes verla aquí: <a href="${BASE_URL}${pdfUrl}">${inv.number}.pdf</a></p>
+    <p>Adjuntamos tu ${docLabel} <b>${inv.number}</b> en PDF.</p>
+    <p>También puedes verlo aquí: <a href="${BASE_URL}${pdfUrl}">${inv.number}.pdf</a></p>
     <p>Gracias,<br/>YaQu</p>
   `.trim();
 

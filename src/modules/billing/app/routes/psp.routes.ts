@@ -10,6 +10,7 @@ import { config } from '../../../../core/config/env';
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { sendPaymentConfirmationInvoice, notifyMerchantPaid } from '../../../../integrations/whatsappNotifications';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
+import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { sendMerchantPaymentEmail } from '../../../messaging/domain/merchantNotifications';
 
 
@@ -206,7 +207,7 @@ router.post('/', async (req, res) => {
           customerId: updated.customerId,
           type: 'payment_received',
           title: 'Pago recibido',
-          detail: `${amt} ${cur}${invConf?.number ? ` · Factura ${invConf.number}` : ''}`,
+          detail: `${amt} ${cur}${invConf?.number ? ` · ${isReceiptNumber(invConf.number) ? 'Justificante' : 'Factura'} ${invConf.number}` : ''}`,
         });
       }
 

@@ -8,6 +8,7 @@ import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { esc, parseNumericId } from '../../../../core/utils/utils';
 import { isFlagEnabled } from '../../../../core/flags';
 import { isDemoMerchant } from '../../../invoicing/domain/emission.service';
+import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 
 const router = Router();
 
@@ -43,7 +44,8 @@ router.get('/invoice/:chargeId', async (req, res) => {
   );
   const concept = esc(charge.concept || '');
   const num = invoice?.number ? esc(invoice.number) : '';
-  const invRef = num ? `Factura ${num}` : '';
+  // Regla 24/26: J-… = justificante, jamás "factura"
+  const invRef = num ? `${isReceiptNumber(invoice!.number) ? 'Justificante' : 'Factura'} ${num}` : '';
   // P1-2: el concepto del cobro a veces YA es "Factura CFxxxx"; no duplicar la
   // referencia. Si el concepto ya incluye el nº de factura, mostramos solo invRef.
   const conceptIsInvoiceRef = !!num && concept.includes(num);
