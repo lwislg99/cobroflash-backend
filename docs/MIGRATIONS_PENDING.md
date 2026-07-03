@@ -4,6 +4,23 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
+## A2.1 · Connect/Bizum/payMethods — ✅ APLICADO en prod (2026-07-03)
+
+`prisma db push` aplicado contra Railway, **autorizado por el fundador** (respuesta explícita
+"Sí, aplica el db push" al diff mostrado). 100 % aditivo, 5 operaciones; post-push verificado
+`migrate diff` → "empty migration":
+```sql
+ALTER TABLE "merchants" ADD COLUMN "stripe_account_id" TEXT,
+                        ADD COLUMN "connect_status" TEXT NOT NULL DEFAULT 'none',
+                        ADD COLUMN "bizum_phone" TEXT;
+ALTER TABLE "quotes"    ADD COLUMN "pay_methods" JSONB;
+ALTER TABLE "charges"   ADD COLUMN "pay_methods" JSONB;
+```
+Soporta CONNECT-1 (C1-0..C1-2), Bizum manual (C1-4) y el selector de métodos por
+presupuesto/cobro. Aplicado ANTES de pushear el código (commits A2.1–A2.3).
+
+---
+
 ## A1.2 · `quotes.quote_number` + `merchants.next_quote_number` — ✅ APLICADO en prod (2026-07-02)
 
 `prisma db push` aplicado contra Railway, **autorizado por el fundador** (sprint DEMO-READY,
