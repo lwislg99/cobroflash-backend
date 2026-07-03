@@ -60,6 +60,12 @@ export const config = {
       .map((e) => e.trim().toLowerCase())
       .filter(Boolean),
 
+    // A3.2 (PV-WA-CAPS) · Topes anti-abuso del número compartido de WhatsApp:
+    // máximo de PLANTILLAS iniciadas por negocio al día por merchant, y tope
+    // duro J6 de mensajes-iniciados-por-negocio por cliente y día.
+    WA_DAILY_TEMPLATE_CAP: Number(process.env.WA_DAILY_TEMPLATE_CAP || 100),
+    WA_CUSTOMER_DAILY_CAP: Number(process.env.WA_CUSTOMER_DAILY_CAP || 3),
+
     // V0-2 · Modo demo seguro: números a los que el merchant demo SÍ puede enviar
     // WhatsApp (separados por comas; admite con y sin prefijo de país). Lista vacía
     // = el demo no puede enviar a NADIE (anti-spam duro).

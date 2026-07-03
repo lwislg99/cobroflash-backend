@@ -271,6 +271,19 @@ router.post('/:id/send-whatsapp', async (req, res) => {
           message: 'Este cliente se dio de baja de WhatsApp (no se le envían más mensajes).',
         });
       }
+      // A3.2: topes anti-abuso del canal (J6 / PV-WA-CAPS)
+      if (reason === 'daily_cap') {
+        return res.status(200).json({
+          ok: false, sent: false, error: 'daily_cap',
+          message: 'Has alcanzado el tope diario de mensajes de WhatsApp. Vuelve a intentarlo mañana o envíalo por email.',
+        });
+      }
+      if (reason === 'customer_daily_cap') {
+        return res.status(200).json({
+          ok: false, sent: false, error: 'customer_daily_cap',
+          message: 'Este cliente ya recibió varios mensajes hoy (límite anti-spam). Vuelve a intentarlo mañana o envíalo por email.',
+        });
+      }
 
       console.error('[send-whatsapp] Error de Meta API:', result.error);
       // P3-2: NO devolver un 502 crudo. El presupuesto sigue guardado; informamos

@@ -68,6 +68,45 @@ export async function sendWhatsAppTemplate(params: {
     return { ok: false, reason: 'wa_opt_out' };
   }
 
+  // A3.2 (PV-WA-CAPS): topes anti-abuso del número compartido, contados sobre
+  // el log WA-0b (WhatsAppMessage). Best-effort: si la BD falla, NO se bloquea.
+  if (params.merchantId) {
+    try {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+
+      // Tope por merchant/día (protege el número y el gasto)
+      const sentToday = await prisma.whatsAppMessage.count({
+        where: { merchantId: params.merchantId, type: 'template', createdAt: { gte: startOfDay } },
+      });
+      if (sentToday >= config.WA_DAILY_TEMPLATE_CAP) {
+        // Alerta interna de gasto/uso diario (visible en logs de Railway)
+        console.error(
+          `[WhatsApp][ALERTA] merchant ${params.merchantId} alcanzó el tope diario de plantillas ` +
+          `(${sentToday}/${config.WA_DAILY_TEMPLATE_CAP}); envío BLOQUEADO (A3.2)`,
+        );
+        return { ok: false, reason: 'daily_cap' };
+      }
+
+      // J6: tope duro de mensajes-iniciados-por-negocio por CLIENTE y día
+      const customerId = params.log?.customerId;
+      if (customerId) {
+        const toCustomerToday = await prisma.whatsAppMessage.count({
+          where: { merchantId: params.merchantId, customerId, type: 'template', createdAt: { gte: startOfDay } },
+        });
+        if (toCustomerToday >= config.WA_CUSTOMER_DAILY_CAP) {
+          console.warn(
+            `[WhatsApp] J6: cliente ${customerId} ya recibió ${toCustomerToday} plantillas hoy ` +
+            `del merchant ${params.merchantId}; envío BLOQUEADO`,
+          );
+          return { ok: false, reason: 'customer_daily_cap' };
+        }
+      }
+    } catch (err: any) {
+      console.error('[WhatsApp] Error comprobando topes A3.2 (no se bloquea):', err?.message || err);
+    }
+  }
+
   // J7: validar contra la spec aprobada ANTES de llamar a Meta (evita #132000/#132001)
   const invalid = validateTemplateComponents(params.templateName, params.components);
   if (invalid) {
