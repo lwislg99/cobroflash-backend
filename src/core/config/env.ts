@@ -10,6 +10,12 @@ export const config = {
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || '',
     STRIPE_PRICE_ID_PRO:        process.env.STRIPE_PRICE_ID_PRO        || '',
     STRIPE_PRICE_ID_PRO_ANNUAL: process.env.STRIPE_PRICE_ID_PRO_ANNUAL || '',
+
+    // CONNECT-1 (C1-0): webhook separado para eventos de cuentas conectadas
+    // (account.updated + checkout.session.completed de direct charges) y fee
+    // de plataforma en basis points (90 = 0,9 %, W1/D3 del master).
+    STRIPE_CONNECT_WEBHOOK_SECRET: process.env.STRIPE_CONNECT_WEBHOOK_SECRET || '',
+    APPLICATION_FEE_BPS: Number(process.env.APPLICATION_FEE_BPS || 90),
   
     SMTP_URL: process.env.SMTP_URL || '',
     EMAIL_FROM: process.env.EMAIL_FROM || 'YaQu <no-reply@yaqu.local>',

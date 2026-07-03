@@ -41,6 +41,8 @@ export async function getMerchantProfile(merchantId: number = DEFAULT_MERCHANT_I
       invoiceSeriesPrefix: true,
       logoUrl: true,
       whatsappPhone: true,
+      bizumPhone: true, // C1-4
+      connectStatus: true, // C1-1 (solo lectura; lo gobierna el webhook)
       googleReviewUrl: true,
       country: true,
       iban: true,

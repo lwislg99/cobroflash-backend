@@ -46,6 +46,7 @@ router.post('/', async (req, res) => {
         method,
         status: 'pending',
         expiresAt,
+        payMethods: body.pay_methods ?? undefined, // A2.1: selector al crear (heredado del quote)
         events: {
           create: {
             type: 'created',

@@ -3,8 +3,9 @@ import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { stripe } from '../../../../integrations/stripe';
-import { BASE_URL } from '../../../../core/config/env';
+import { BASE_URL, config } from '../../../../core/config/env';
 import { parseNumericId } from '../../../../core/utils/utils';
+import { isFlagEnabled } from '../../../../core/flags';
 
 const router = Router();
 
@@ -21,7 +22,7 @@ router.get('/card/:id', async (req, res) => {
   try {
     const charge = await prisma.charge.findUnique({
       where: { id },
-      include: { customer: true },
+      include: { customer: true, merchant: true },
     });
     if (!charge) return res.status(404).send(documentNotFoundHtml());
     if (charge.status !== 'pending') {
@@ -30,8 +31,19 @@ router.get('/card/:id', async (req, res) => {
 
     const amountCents = Math.round(Number(charge.amount) * 100);
 
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
+    // CONNECT-1 (C1-2): si el merchant tiene Connect activo → DIRECT CHARGE
+    // sobre SU cuenta conectada con el application fee de plataforma (0,9 %,
+    // APPLICATION_FEE_BPS). El merchant es merchant-of-record (D3/regla 23).
+    // Sin Connect activo (o flag off) → comportamiento actual de plataforma
+    // (demo/test, regla 18).
+    const merchant = charge.merchant;
+    const useConnect =
+      isFlagEnabled('PAYMENTS_CONNECT_ENABLED', { merchant }) &&
+      merchant?.connectStatus === 'active' &&
+      !!merchant?.stripeAccountId;
+
+    const sessionParams = {
+      mode: 'payment' as const,
       customer_email: charge.customer?.email || undefined,
       line_items: [
         {
@@ -46,13 +58,25 @@ router.get('/card/:id', async (req, res) => {
       success_url: `${BASE_URL}/recibo/${id}?card=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${BASE_URL}/recibo/${id}?card=cancel`,
       metadata: { charge_id: String(id) },
-    });
+      ...(useConnect
+        ? {
+            payment_intent_data: {
+              application_fee_amount: Math.round((amountCents * config.APPLICATION_FEE_BPS) / 10_000),
+              metadata: { charge_id: String(id) },
+            },
+          }
+        : {}),
+    };
+
+    const session = useConnect
+      ? await stripe.checkout.sessions.create(sessionParams, { stripeAccount: merchant!.stripeAccountId! })
+      : await stripe.checkout.sessions.create(sessionParams);
 
     await prisma.event.create({
       data: {
         chargeId: id,
         type: 'card_session_created',
-        payload: { session_id: session.id } as any,
+        payload: { session_id: session.id, connect: useConnect } as any,
       },
     });
 

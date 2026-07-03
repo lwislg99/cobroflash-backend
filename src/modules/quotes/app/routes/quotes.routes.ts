@@ -100,6 +100,7 @@ router.post('/create', async (req, res) => {
           paymentTerms: body.paymentTerms ?? null,
           teamMemberId: creatorTeamMemberId,
           createdVia: body.created_via ?? 'text', // V0-3: telemetría quote_created_via
+          payMethods: body.payMethods ?? undefined, // A2.1: selector al crear
         },
       });
     });

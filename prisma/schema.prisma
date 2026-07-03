@@ -27,6 +27,13 @@ model Merchant {
   whatsappPhone        String? @map("whatsapp_phone")
   googleReviewUrl      String? @map("google_review_url")
 
+  // CONNECT-1 (C1-0): cuenta Stripe Connect Express del merchant. El estado lo
+  // gobierna el webhook account.updated según charges_enabled (D3 del master).
+  stripeAccountId      String? @map("stripe_account_id")
+  connectStatus        String  @default("none") @map("connect_status") // none|pending|active|restricted
+  // C1-4: móvil para Bizum manual asistido (default en UI: whatsappPhone, editable)
+  bizumPhone           String? @map("bizum_phone")
+
   // Auth / plan
   onboardingCompleted  Boolean   @default(false)  @map("onboarding_completed")
   plan                 String    @default("trial")             // trial | basic | pro | empresa
@@ -140,6 +147,10 @@ model Charge {
   reference  String?   @map("referencia")
   intentId   String?   @map("intent_id")
 
+  // A2.1: métodos habilitados para este cobro (heredados del quote o fijados al
+  // crear). null = todos los que el merchant tenga activos. ["card","bizum","transfer"]
+  payMethods Json? @map("pay_methods")
+
   merchant        Merchant         @relation(fields: [merchantId], references: [id])
   customer        Customer?        @relation(fields: [customerId], references: [id])
   events          Event[]
@@ -192,6 +203,10 @@ model Quote {
   // plataforma (el primer presupuesto de un merchant nuevo salía "#47").
   // Nullable: quotes anteriores al backfill muestran el id como fallback.
   quoteNumber Int? @map("quote_number")
+
+  // A2.1: métodos de pago habilitados para ESTE presupuesto (selector al crear:
+  // ["card","bizum","transfer"]). null = todos los que el merchant tenga activos.
+  payMethods Json? @map("pay_methods")
 
   status       String  @default("draft")
   total        Decimal @db.Decimal(12, 2)

@@ -6,6 +6,8 @@ import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { esc, parseNumericId } from '../../../../core/utils/utils';
+import { isFlagEnabled } from '../../../../core/flags';
+import { isDemoMerchant } from '../../../invoicing/domain/emission.service';
 
 const router = Router();
 
@@ -18,9 +20,7 @@ router.get('/invoice/:chargeId', async (req, res) => {
 
   const charge = await prisma.charge.findUnique({
     where: { id },
-    include: {
-      merchant: { select: { name: true, legalName: true, logoUrl: true, iban: true, clabe: true } },
-    },
+    include: { merchant: true },
   });
   if (!charge) return res.status(404).send(documentNotFoundHtml());
 
@@ -50,7 +50,52 @@ router.get('/invoice/:chargeId', async (req, res) => {
   const subline = conceptIsInvoiceRef
     ? invRef
     : [concept, invRef].filter(Boolean).join(' · ');
+
+  // ── A2.1: métodos disponibles + orden por la matriz W4 (por importe) ──
+  const amountNum = Number(charge.amount);
   const hasTransfer = !!(m?.iban || m?.clabe);
+
+  // Tarjeta: con PAYMENTS_CONNECT_ENABLED, solo merchants con Connect activo
+  // (o el demo, regla 8/18). Con el flag OFF, comportamiento actual (plataforma
+  // = demo/test) sin cambios.
+  const connectFlag = isFlagEnabled('PAYMENTS_CONNECT_ENABLED', { merchant: m });
+  const hasCard = !connectFlag
+    ? true
+    : (m?.connectStatus === 'active' || (m ? isDemoMerchant(m) : false));
+
+  // Bizum manual: flag + móvil del PRO + límites bancarios del pagador (W4:
+  // >1.000 € se oculta).
+  const bizumPhone = m?.bizumPhone || m?.whatsappPhone || null;
+  const hasBizum =
+    isFlagEnabled('BIZUM_MANUAL_ENABLED', { merchant: m }) && !!bizumPhone && amountNum <= 1000;
+
+  // Selector al crear (quote/charge.payMethods): si el PRO limitó los métodos
+  // para ESTE cobro, se respeta (null = todos los disponibles).
+  const allowed = Array.isArray(charge.payMethods) ? (charge.payMethods as string[]) : null;
+  const permits = (key: string) => !allowed || allowed.includes(key);
+
+  type Method = { key: string; href: string; ico: string; title: string; sub: string };
+  const card: Method = { key: 'card', href: `/pay/card/${id}`, ico: '💳', title: 'Pagar con tarjeta', sub: 'Visa · Mastercard · al instante' };
+  const bizum: Method = { key: 'bizum', href: `/pay/bizum/${id}`, ico: '📲', title: 'Pagar por Bizum', sub: 'Desde la app de tu banco' };
+  const transfer: Method = { key: 'transfer', href: `/pay/bank/${id}`, ico: '🏦', title: 'Transferencia bancaria', sub: 'Con los datos y el concepto exacto' };
+
+  // Orden W4: ≤500 → Bizum + Tarjeta (transferencia detrás) · 500-1.000 →
+  // Tarjeta principal, Bizum secundario · >1.000 → Tarjeta + transferencia.
+  const ordered = (amountNum <= 500 ? [bizum, card, transfer] : [card, bizum, transfer])
+    .filter((mm) =>
+      (mm.key === 'card' && hasCard && permits('card')) ||
+      (mm.key === 'bizum' && hasBizum && permits('bizum')) ||
+      (mm.key === 'transfer' && hasTransfer && permits('transfer')));
+
+  const methodsHtml = ordered.map((mm, i) => `
+    <a class="method ${i === 0 ? 'method-primary' : 'method-secondary'}" href="${mm.href}">
+      <span class="method-ico">${mm.ico}</span>
+      <span class="method-txt">
+        <span class="method-title">${mm.title}</span>
+        <span class="method-sub">${mm.sub}</span>
+      </span>
+      <span class="chev">›</span>
+    </a>`).join('');
 
   const logoHtml = m?.logoUrl
     ? `<img class="logo-img" src="${esc(m.logoUrl)}" alt="${business}"/>`
@@ -130,24 +175,10 @@ router.get('/invoice/:chargeId', async (req, res) => {
     </div>
 
     <div class="methods-label">Elige cómo pagar</div>
-
-    <a class="method method-primary" href="/pay/card/${id}">
-      <span class="method-ico">💳</span>
-      <span class="method-txt">
-        <span class="method-title">Pagar con tarjeta</span>
-        <span class="method-sub">Visa · Mastercard · al instante</span>
-      </span>
-      <span class="chev">›</span>
-    </a>
-    ${hasTransfer ? `
-    <a class="method method-secondary" href="/pay/bank/${id}">
-      <span class="method-ico">🏦</span>
-      <span class="method-txt">
-        <span class="method-title">Transferencia bancaria</span>
-        <span class="method-sub">Con los datos y el concepto exacto</span>
-      </span>
-      <span class="chev">›</span>
-    </a>` : ''}
+    ${methodsHtml || `
+    <div style="text-align:center;font-size:.85rem;color:var(--muted);padding:.8rem 0;line-height:1.5">
+      El profesional te indicará cómo pagar.<br/>Contacta con él si tienes dudas.
+    </div>`}
 
     <div class="trust">
       <span class="trust-main">

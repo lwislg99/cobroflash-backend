@@ -302,6 +302,51 @@ async function fetchInvoiceDetail(id) {
   
     if (invoice.type !== 'R1') actions.appendChild(btnTogglePaid);
 
+    // C1-4: "Confirmar Bizum recibido" (N5) con DOBLE toque — el 1er clic pide
+    // confirmación explícita con el importe, el 2º ejecuta. Dispara la misma
+    // cadena post-pago que un PSP (paid_via='bizum_manual').
+    if (st === 'pending' && invoice.chargeId && invoice.type !== 'R1') {
+      const amountTxt = Number(invoice.total).toLocaleString('es-ES', { minimumFractionDigits: 2 }) + ' ' + (invoice.currency || 'EUR');
+      const custName = (invoice.customer && invoice.customer.name) || 'el cliente';
+      const btnBizum = document.createElement('button');
+      btnBizum.className = 'btn-secondary btn-sm';
+      btnBizum.textContent = '📲 Confirmar Bizum recibido';
+      let armed = false;
+      btnBizum.addEventListener('click', async () => {
+        if (!armed) {
+          armed = true;
+          btnBizum.className = 'btn-primary btn-sm';
+          btnBizum.textContent = `¿Has recibido ${amountTxt} de ${custName} en tu Bizum? Sí, confirmar`;
+          setTimeout(() => { // desarmar a los 6s si no confirma
+            if (armed) { armed = false; btnBizum.className = 'btn-secondary btn-sm'; btnBizum.textContent = '📲 Confirmar Bizum recibido'; }
+          }, 6000);
+          return;
+        }
+        btnBizum.disabled = true;
+        btnBizum.textContent = 'Confirmando…';
+        try {
+          const r = await fetch(`/admin/charges/${invoice.chargeId}/confirm-bizum`, { method: 'POST' });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            const msgs = {
+              bizum_disabled: 'Los cobros por Bizum no están activados todavía.',
+              charge_not_pending: 'Este cobro ya no está pendiente.',
+            };
+            throw new Error(msgs[d.error] || 'No se pudo confirmar. Inténtalo de nuevo.');
+          }
+          setStatus('success', '✓ Bizum confirmado: factura cobrada.');
+          if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: invoice.id });
+        } catch (e) {
+          setStatus('error', e.message || 'No se pudo confirmar el Bizum.');
+          btnBizum.disabled = false;
+          armed = false;
+          btnBizum.className = 'btn-secondary btn-sm';
+          btnBizum.textContent = '📲 Confirmar Bizum recibido';
+        }
+      });
+      actions.appendChild(btnBizum);
+    }
+
     // Botón Recordar pago (solo visible si la factura está pendiente y el cliente tiene teléfono)
     if (st === 'pending' && invoice.customer?.phone) {
       const btnReminder = document.createElement('button');

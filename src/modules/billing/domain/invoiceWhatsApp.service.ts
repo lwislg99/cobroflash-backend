@@ -38,6 +38,14 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
   let chargeId: number | null = invoice.chargeId ?? null;
   if (!chargeId) {
     try {
+      // A2.1: heredar los métodos de pago del presupuesto de origen (selector al crear)
+      const quotePayMethods = invoice.quoteId
+        ? await prisma.quote
+            .findUnique({ where: { id: invoice.quoteId }, select: { payMethods: true } })
+            .then((q) => (Array.isArray(q?.payMethods) ? q!.payMethods : null))
+            .catch(() => null)
+        : null;
+
       const chargeResp = await fetch(`${BASE_URL}/charges`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -48,6 +56,7 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
           amount: Number(invoice.total),
           currency: invoice.currency || 'EUR',
           method_preference: 'card',
+          ...(quotePayMethods ? { pay_methods: quotePayMethods } : {}),
           meta: { invoice_id: invoice.id, quote_id: invoice.quoteId },
         }),
       });

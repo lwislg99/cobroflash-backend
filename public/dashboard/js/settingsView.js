@@ -130,6 +130,60 @@ function renderSettingsView(container) {
     form.appendChild(fIban.wrapper);
     form.appendChild(fClabe.wrapper);
 
+    // C1-4: móvil de Bizum (default: el de WhatsApp, editable)
+    const fBizumPhone = createField("Móvil de Bizum (para cobros por Bizum)", "bizumPhone", "text", false);
+    fBizumPhone.input.placeholder = "+34 600 000 000";
+    fBizumPhone.wrapper.querySelector("label").insertAdjacentHTML(
+      "afterend",
+      '<p style="font-size:12px;color:var(--muted);margin:2px 0 4px">El cliente verá este móvil en la página "Pagar por Bizum". Si lo dejas vacío se usa tu número de WhatsApp.</p>'
+    );
+    form.appendChild(fBizumPhone.wrapper);
+
+    // C1-1: card "Cobros con tarjeta" (Stripe Connect Express) — solo si el
+    // flag PAYMENTS_CONNECT_ENABLED está activo (lo dice /admin/connect/status)
+    const connectBlock = document.createElement("div");
+    connectBlock.style.cssText = "border-top:1px solid var(--border);margin:12px 0 4px;padding-top:12px;display:none";
+    connectBlock.innerHTML =
+      '<p style="font-size:12px;color:var(--muted);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Cobros con tarjeta</p>' +
+      '<div id="connect-status-body" style="font-size:13px;color:var(--body)">Cargando…</div>';
+    form.appendChild(connectBlock);
+
+    (async function renderConnectCard() {
+      let st;
+      try { st = await apiRequest('/admin/connect/status'); } catch { return; }
+      if (!st || !st.enabled) return; // flag OFF → no se muestra nada
+      connectBlock.style.display = 'block';
+      const body = connectBlock.querySelector('#connect-status-body');
+      if (st.connectStatus === 'active') {
+        body.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;background:var(--brand-tint,#ecfdf5);color:#166534;padding:6px 12px;border-radius:999px;font-weight:600;font-size:12.5px">✓ Cobros con tarjeta activos</span>' +
+          '<p style="font-size:12px;color:var(--muted);margin:8px 0 0">Tus clientes pagan con tarjeta y el dinero llega a tu cuenta de Stripe. Comisión YaQu: 0,9&nbsp;% por cobro.</p>';
+        return;
+      }
+      const label = st.connectStatus === 'none'
+        ? 'Activar cobros con tarjeta'
+        : 'Continuar activación';
+      body.innerHTML =
+        '<p style="font-size:12.5px;color:var(--body);margin:0 0 10px">Actívalo en 2 minutos con tu DNI y tu IBAN. Tus clientes podrán pagar con tarjeta y el dinero va directo a tu cuenta (0,9&nbsp;% por cobro).</p>' +
+        (st.connectStatus === 'restricted'
+          ? '<p style="font-size:12px;color:#b45309;margin:0 0 10px">⚠ Stripe necesita algún dato más para activarte del todo.</p>' : '');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-primary';
+      btn.textContent = label + ' · 2 min';
+      btn.addEventListener('click', async () => {
+        btn.disabled = true; btn.textContent = 'Abriendo Stripe…';
+        try {
+          const r = await apiRequest('/admin/connect/onboard', { method: 'POST' });
+          if (r && r.url) { window.location.href = r.url; return; }
+          throw new Error('Sin URL de onboarding');
+        } catch (e) {
+          btn.disabled = false; btn.textContent = label + ' · 2 min';
+          alert('No se pudo abrir la activación de Stripe. Inténtalo de nuevo.');
+        }
+      });
+      body.appendChild(btn);
+    })();
+
     // Separador visual — Automatizaciones
     const sep = document.createElement("div");
     sep.style.cssText = "border-top:1px solid var(--border);margin:12px 0 4px;padding-top:12px";
@@ -305,6 +359,7 @@ function renderSettingsView(container) {
         fGoogleReviewUrl.input.value = merchant.googleReviewUrl || "";
         fIban.input.value  = merchant.iban  || "";
         fClabe.input.value = merchant.clabe || "";
+        fBizumPhone.input.value = merchant.bizumPhone || ""; // C1-4 (vacío = usa whatsappPhone)
         tNotifyPaid.chk.checked     = merchant.notifyEmailOnPaid     !== false;
         tNotifyAccepted.chk.checked = !!merchant.notifyEmailOnQuoteAccepted;
         tNotifyWeekly.chk.checked   = !!merchant.notifyEmailWeeklyDigest;
@@ -341,6 +396,8 @@ function renderSettingsView(container) {
         country: fCountrySelect.value || undefined,
         iban:  fIban.input.value.trim().replace(/\s/g, '') || null,
         clabe: fClabe.input.value.trim() || null,
+        bizumPhone: fBizumPhone.input.value.trim() || null, // C1-4
+
         notifyEmailOnPaid:          tNotifyPaid.chk.checked,
         notifyEmailOnQuoteAccepted: tNotifyAccepted.chk.checked,
         notifyEmailWeeklyDigest:    tNotifyWeekly.chk.checked,

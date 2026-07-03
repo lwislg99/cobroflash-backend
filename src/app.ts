@@ -21,6 +21,13 @@ import payBankRouter from './modules/billing/app/routes/payBank.routes';
 import payCardRouter from './modules/billing/app/routes/payCard.routes';
 import payMpRouter   from './modules/billing/app/routes/payMp.routes';
 import payInvoiceRouter from './modules/billing/app/routes/payInvoice.routes';
+import payBizumRouter from './modules/billing/app/routes/payBizum.routes'; // C1-4
+import chargesAdminRouter from './modules/billing/app/routes/chargesAdmin.routes'; // C1-4
+import connectRouter from './modules/payments/connect/connect.routes'; // C1-1
+import {
+  rawBody as stripeConnectRawBody,
+  router as stripeConnectWebhookRouter,
+} from './modules/payments/connect/connectWebhook.routes'; // C1-2
 import mpWebhookRouter from './modules/billing/app/routes/mpWebhook.routes';
 import whatsappIncomingRouter from './modules/whatsappBot/app/routes/whatsappIncoming.routes';
 
@@ -65,6 +72,9 @@ app.disable('etag');
 
 // Stripe webhook — raw body ANTES del JSON parser
 app.use('/webhooks/stripe', stripeRawBody, stripeWebhookRouter);
+// CONNECT-1 (C1-2): webhook SEPARADO para cuentas conectadas (account.updated
+// + direct charges), con su propio signing secret. También raw body.
+app.use('/webhooks/stripe-connect', stripeConnectRawBody, stripeConnectWebhookRouter);
 
 // Parsers — guardamos el raw body de los webhooks de WhatsApp para validar firma HMAC
 app.use(express.json({
@@ -114,6 +124,7 @@ app.use('/recibo', receiptRouter);
 app.use('/pay', payInvoiceRouter);
 app.use('/pay', payBankRouter);
 app.use('/pay', payCardRouter);
+app.use('/pay', payBizumRouter); // C1-4: Bizum manual asistido
 app.use('/pay', payMpRouter);
 app.use('/webhooks/mp', mpWebhookRouter);
 app.use('/webhooks/whatsapp', whatsappIncomingRouter);
@@ -173,6 +184,8 @@ app.use('/admin/expenses',   expensesRouter);
 // de lo contrario un trial caducado no podría llegar a suscribirse (callejón sin salida).
 app.use('/admin/billing',    requireRole('admin'), subscriptionsRouter);
 app.use('/admin/team',       requireRole('admin'), teamRouter);
+app.use('/admin/connect',    requireRole('admin'), connectRouter); // C1-1: onboarding Express
+app.use('/admin/charges',    chargesAdminRouter); // C1-4: confirmar Bizum (multi-tenant en la ruta)
 app.use('/admin/ai',         aiRouter);
 
 // Preview del digest semanal (A1.3: solo lo usa Configuración → solo admin)

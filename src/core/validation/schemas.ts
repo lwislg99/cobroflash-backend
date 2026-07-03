@@ -30,6 +30,9 @@ export const CreateQuoteSchema = z.object({
   paymentTerms: z.enum(['FULL_UPFRONT', 'FIFTY_FIFTY', 'MANUAL']).optional().nullable(),
   // V0-3: telemetría quote_created_via (VOZ-1 enviará 'voice')
   created_via: z.enum(['text', 'voice']).optional(),
+  // A2.1: métodos de pago habilitados para este presupuesto (selector al crear).
+  // Omitido = todos los que el merchant tenga disponibles.
+  payMethods: z.array(z.enum(['card', 'bizum', 'transfer'])).min(1).optional(),
 });
 
 export type QuoteTier = z.infer<typeof QuoteTierSchema>;
@@ -88,6 +91,9 @@ export const CreateChargeSchema = z.object({
   expires_at: z.string().optional(),
   method_preference: z.enum(['bank', 'card', 'mp']).optional().default('bank'),
   meta: z.record(z.string(), z.unknown()).optional(),
+  // A2.1: métodos habilitados para este cobro (heredados del quote al facturar;
+  // omitido = todos los que el merchant tenga disponibles)
+  pay_methods: z.array(z.enum(['card', 'bizum', 'transfer'])).min(1).optional(),
 });
 
 export const IssueInvoiceSchema = z.object({
@@ -127,6 +133,8 @@ export const merchantProfileUpdateSchema = z.object({
   invoiceSeriesPrefix: z.string().min(1).max(10).optional(),
   logoUrl: z.string().url().nullable().optional(),
   whatsappPhone: z.string().min(6).max(20).optional(),
+  // C1-4: móvil para Bizum manual (default en UI: whatsappPhone)
+  bizumPhone: z.string().min(6).max(20).nullable().optional(),
   googleReviewUrl: z.string().url().nullable().optional(),
   country: z.string().length(2).optional(),
   iban: z.string().min(10).max(34).nullable().optional(),

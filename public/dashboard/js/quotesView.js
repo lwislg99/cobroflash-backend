@@ -311,7 +311,47 @@ blockClient.appendChild(descWrapper);
     paymentSelect.value = "FULL_UPFRONT";
   
     blockClient.appendChild(fieldPaymentTerms.wrapper);
-  
+
+    // ---------- A2.1: MÉTODOS DE PAGO PARA ESTE PRESUPUESTO ----------
+    // ☐ Tarjeta ☐ Bizum ☐ Transferencia — todos marcados por defecto (= null
+    // en el payload: el cliente ve todos los que el merchant tenga activos).
+    const payMethodsWrapper = document.createElement("div");
+    payMethodsWrapper.className = "field";
+    payMethodsWrapper.innerHTML =
+      '<label style="display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px">Formas de pago que verá el cliente</label>';
+    const pmRow = document.createElement("div");
+    pmRow.style.cssText = "display:flex;gap:14px;flex-wrap:wrap;font-size:13px";
+    const pmDefs = [
+      { key: "card", label: "💳 Tarjeta" },
+      { key: "bizum", label: "📲 Bizum" },
+      { key: "transfer", label: "🏦 Transferencia" },
+    ];
+    const pmChecks = {};
+    pmDefs.forEach(function (def) {
+      const lbl = document.createElement("label");
+      lbl.style.cssText = "display:inline-flex;align-items:center;gap:6px;cursor:pointer;color:var(--body)";
+      const chk = document.createElement("input");
+      chk.type = "checkbox";
+      chk.checked = true;
+      pmChecks[def.key] = chk;
+      lbl.appendChild(chk);
+      lbl.appendChild(document.createTextNode(" " + def.label));
+      pmRow.appendChild(lbl);
+    });
+    payMethodsWrapper.appendChild(pmRow);
+    const pmNote = document.createElement("p");
+    pmNote.style.cssText = "font-size:11.5px;color:var(--muted);margin:4px 0 0";
+    pmNote.textContent = "Solo se muestran las que tengas configuradas (IBAN, Bizum o tarjeta).";
+    payMethodsWrapper.appendChild(pmNote);
+    blockClient.appendChild(payMethodsWrapper);
+
+    // Devuelve el array para el payload, o undefined si están todas (= sin límite)
+    function selectedPayMethods() {
+      const sel = pmDefs.filter(function (d) { return pmChecks[d.key].checked; }).map(function (d) { return d.key; });
+      if (sel.length === 0 || sel.length === pmDefs.length) return undefined;
+      return sel;
+    }
+
   // ---------- BLOQUE B: LÍNEAS DEL PRESUPUESTO ----------
   const blockLines = document.createElement("div");
   blockLines.className = "quote-block";
@@ -1997,6 +2037,7 @@ payloadLines.push({
         currency: currentMerchant.defaultCurrency || "EUR",
         lines: payloadLines,
         paymentTerms: paymentSelect.value || null,
+        payMethods: selectedPayMethods(), // A2.1: undefined = todas
       };
 
       const quote = await createQuote(quotePayload);
