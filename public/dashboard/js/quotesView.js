@@ -142,7 +142,8 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   if (pdfUrl) {
     const dlBtn = document.createElement("a");
     dlBtn.href = pdfUrl;
-    dlBtn.download = "presupuesto-" + displayNum.replace('#', '') + ".pdf";
+    // displayNum es un NÚMERO (quote.number); String() antes de limpiar el '#'
+    dlBtn.download = "presupuesto-" + String(displayNum).replace('#', '') + ".pdf";
     dlBtn.textContent = "⬇ Descargar PDF";
     dlBtn.className = "btn btn-secondary";
     mFooter.appendChild(dlBtn);
@@ -354,9 +355,9 @@ blockClient.appendChild(descWrapper);
     const payMethodsWrapper = document.createElement("div");
     payMethodsWrapper.className = "field";
     payMethodsWrapper.innerHTML =
-      '<label style="display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px">Formas de pago que verá el cliente</label>';
+      '<label class="pay-methods-title">Formas de pago que verá el cliente</label>';
     const pmRow = document.createElement("div");
-    pmRow.style.cssText = "display:flex;gap:14px;flex-wrap:wrap;font-size:13px";
+    pmRow.className = "pay-methods-row";
     const pmDefs = [
       { key: "card", label: "💳 Tarjeta" },
       { key: "bizum", label: "📲 Bizum" },
@@ -365,7 +366,6 @@ blockClient.appendChild(descWrapper);
     const pmChecks = {};
     pmDefs.forEach(function (def) {
       const lbl = document.createElement("label");
-      lbl.style.cssText = "display:inline-flex;align-items:center;gap:6px;cursor:pointer;color:var(--body)";
       const chk = document.createElement("input");
       chk.type = "checkbox";
       chk.checked = true;
@@ -376,7 +376,7 @@ blockClient.appendChild(descWrapper);
     });
     payMethodsWrapper.appendChild(pmRow);
     const pmNote = document.createElement("p");
-    pmNote.style.cssText = "font-size:11.5px;color:var(--muted);margin:4px 0 0";
+    pmNote.className = "pay-methods-note";
     pmNote.textContent = "Solo se muestran las que tengas configuradas (IBAN, Bizum o tarjeta).";
     payMethodsWrapper.appendChild(pmNote);
     blockClient.appendChild(payMethodsWrapper);
@@ -670,10 +670,14 @@ blockClient.appendChild(descWrapper);
             const p = Number.isFinite(price) ? price : 0;
             let effectivePrice = p * (1 + safeMarkup / 100);
       
-            // hint visual (precio final)
+            // hint visual (precio final) — solo cuando el markup CAMBIA el precio;
+            // sin markup el hint era ruido ("Final: 45.00" bajo un precio de 45)
+            // y además desalineaba la celda respecto al resto de la fila.
             try {
               if (line.priceHint) {
-                line.priceHint.textContent = `Final: ${effectivePrice.toFixed(2)}`;
+                line.priceHint.textContent = safeMarkup > 0 && Number.isFinite(price)
+                  ? `Final: ${effectivePrice.toFixed(2)}`
+                  : '';
               }
             } catch (_e) {}
       
@@ -1482,12 +1486,10 @@ conceptInput.dataset.pfProductId = ""; // vacío = "manual"
     priceTd.appendChild(priceInput);
     priceInput.dataset.pfBasePrice = ""; // precio catálogo o base antes de markup
 
-    // Hint: precio final con markup (solo visual)
+    // Hint: precio final con markup (solo visual; vacío si no hay markup)
 const priceHint = document.createElement("div");
-priceHint.style.fontSize = "12px";
-priceHint.style.color = "#6b756f";
-priceHint.style.marginTop = "4px";
-priceHint.textContent = "Final: —";
+priceHint.className = "price-final-hint";
+priceHint.textContent = "";
 priceTd.appendChild(priceHint);
 
 
@@ -1641,7 +1643,7 @@ if (Number.isFinite(n) && n >= 0) {
         priceInput.dataset.pfBasePrice = "";
 
         if (priceHint) {
-          priceHint.textContent = "Final: —";
+          priceHint.textContent = "";
         }
 
         recalcTotals();
