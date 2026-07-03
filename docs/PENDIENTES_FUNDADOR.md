@@ -18,6 +18,28 @@
 > - **Historial de lo ya hecho:** Parte U del master + `docs/BUGS.md` +
 >   `docs/EVIDENCIAS_E2E.md` + `docs/MIGRATIONS_PENDING.md`.
 
+## 🆕 Sprint DEMO-READY (3-jul) — activar los WOW construidos (Olas 1 y 2 desplegadas)
+
+El código de CONNECT-1 + Bizum manual + selector de métodos está EN PROD tras
+flags OFF (nada cambia hasta que actives). Para encenderlo, EN ESTE ORDEN:
+
+- [ ] **Stripe · webhook Connect:** en el Dashboard de Stripe (modo test primero) →
+  Developers → Webhooks → "Add endpoint" de tipo **Connect** apuntando a
+  `https://yaqu.app/webhooks/stripe-connect` con eventos `account.updated`,
+  `checkout.session.completed` y `payment_intent.payment_failed`. Copia el signing
+  secret a Railway como `STRIPE_CONNECT_WEBHOOK_SECRET`.
+- [ ] **Railway · `PAYMENTS_CONNECT_ENABLED=true`** — enciende la card "Cobros con
+  tarjeta" en Configuración (onboarding Express "2 min, DNI e IBAN") y los direct
+  charges con fee 0,9 % (`APPLICATION_FEE_BPS=90` por defecto, no hace falta ponerla).
+  ⚠ Con el flag ON, la tarjeta SOLO se ofrece a merchants con Connect activo (o al
+  demo) — regla 18.
+- [ ] **Railway · `BIZUM_MANUAL_ENABLED=true`** — enciende "Pagar por Bizum" en la
+  página de cobro (usa `bizumPhone` de Configuración o tu número de WhatsApp).
+  Pruébalo con un Bizum real entre dos móviles tuyos (C1-4).
+- [ ] **Probar el ciclo Connect en TEST:** activa cobros desde Configuración con el
+  merchant demo → KYC de prueba de Stripe → pago test → el dinero reparte al
+  merchant y el fee a la plataforma.
+
 ## 🆕 Sprint DEMO-READY (2-jul) — nuevas acciones tuyas
 
 - [ ] **Railway · `EMAIL_FROM`** (A1.4/PV-FIX-3): el nombre viejo en los correos NO está en el
