@@ -129,6 +129,7 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
 
   const mFooter = document.createElement("div");
   mFooter.className = "modal-footer";
+  mFooter.style.flexWrap = "wrap"; // A2.3: 4 acciones también en móvil
 
   const closeBtn = document.createElement("button");
   closeBtn.type = "button";
@@ -136,6 +137,51 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   closeBtn.className = "btn btn-secondary";
   closeBtn.addEventListener("click", function() { overlay.remove(); });
   mFooter.appendChild(closeBtn);
+
+  // A2.3: Descargar PDF (el PDF ya está generado)
+  if (pdfUrl) {
+    const dlBtn = document.createElement("a");
+    dlBtn.href = pdfUrl;
+    dlBtn.download = "presupuesto-" + displayNum.replace('#', '') + ".pdf";
+    dlBtn.textContent = "⬇ Descargar PDF";
+    dlBtn.className = "btn btn-secondary";
+    mFooter.appendChild(dlBtn);
+  }
+
+  // A2.3: Enviar por email (plantilla Resend con el link del presupuesto)
+  if (!pendingApproval) {
+    const emailBtn = document.createElement("button");
+    emailBtn.type = "button";
+    emailBtn.textContent = "✉ Enviar por email";
+    emailBtn.className = "btn btn-secondary";
+    emailBtn.addEventListener("click", async function() {
+      emailBtn.disabled = true;
+      emailBtn.textContent = "Enviando…";
+      try {
+        const res = await fetch(`/admin/quotes/${quoteId}/send-email`, { method: "POST" });
+        const body = await res.json().catch(function() { return {}; });
+        if (!res.ok) {
+          const known = {
+            customer_missing_email: "Este cliente no tiene email; añádelo en su ficha.",
+            pending_approval: "Pendiente de aprobación: no se puede enviar todavía.",
+          };
+          throw new Error(known[body.error] || "No se pudo enviar el email. Inténtalo de nuevo.");
+        }
+        if (body.ok) {
+          setAlert("success", "Presupuesto enviado por email.");
+          setResult({ quote_id: quoteId, number: displayNum, status: "SENT", sent: true });
+          overlay.remove();
+        } else {
+          throw new Error(body.message || "No se pudo enviar el email.");
+        }
+      } catch (err) {
+        setAlert("error", err.message || "Error enviando el email.");
+        emailBtn.disabled = false;
+        emailBtn.textContent = "✉ Enviar por email";
+      }
+    });
+    mFooter.appendChild(emailBtn);
+  }
 
   if (allowWhatsapp) {
     const sendBtn = document.createElement("button");
@@ -245,19 +291,9 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   clientFormRow.appendChild(fieldVatDefault.wrapper);
 
     // Checkbox WhatsApp
-    const waWrapper = document.createElement("div");
-    waWrapper.className = "field inline-checkbox";
-    const waLabel = document.createElement("label");
-    const waCheck = document.createElement("input");
-    waCheck.type = "checkbox";
-    waCheck.name = "send_whatsapp";
-    waCheck.checked = true;
-    waLabel.appendChild(waCheck);
-    waLabel.appendChild(
-      document.createTextNode(" Enviar por WhatsApp automáticamente al aceptar")
-    );
-    waWrapper.appendChild(waLabel);
-    blockClient.appendChild(waWrapper);
+    // A2.3: el checkbox "Enviar por WhatsApp automáticamente" desaparece — al
+    // crear, el modal de previsualización ofrece SIEMPRE elegir: WhatsApp,
+    // email, descargar PDF o seguir editando.
 
     // Checkbox: incluir descripción en PDF (MVP: solo afecta a la vista previa por ahora)
 const descWrapper = document.createElement("div");
@@ -1653,7 +1689,6 @@ if (Number.isFinite(n) && n >= 0) {
   resetBtn.addEventListener("click", function () {
     fieldCustomer.select.value = "";
     fieldVatDefault.input.value = "21";
-    waCheck.checked = true;
     paymentSelect.value = "FULL_UPFRONT";
 
     tbody.innerHTML = "";
@@ -2061,10 +2096,10 @@ payloadLines.push({
 
       // 3) Mostramos modal para ver PDF y (opcional) enviar por WhatsApp.
       // A1.3: si nació pendiente de aprobación (técnico sobre su límite), el
-      // modal lo explica y no ofrece el envío.
+      // modal lo explica y no ofrece el envío. A2.3: sin checkbox — el modal
+      // siempre ofrece WhatsApp/email/PDF/seguir editando.
       const pendingApproval = quote.status === 'pending_approval';
-      const allowWhatsapp = waCheck.checked;
-      openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingApproval });
+      openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp: true, pendingApproval });
 
       // 4) Actualizamos cajita de estado a la derecha (de momento sin WhatsApp)
       setAlert("success", pendingApproval

@@ -318,6 +318,52 @@ router.post('/:id/send-whatsapp', async (req, res) => {
 });
 
 /**
+ * POST /admin/quotes/:id/send-email — A2.3: envía el presupuesto al cliente
+ * por email (Resend, link a /pay/quote/:id). Mismo efecto de estado que el
+ * envío por WhatsApp: draft → sent (máquina L: "envío").
+ */
+router.post('/:id/send-email', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+
+    const quote = await prisma.quote.findFirst({
+      where: { id, merchantId: req.merchantId },
+      select: { id: true, quoteNumber: true, status: true, total: true, currency: true, merchantId: true, customerId: true, customer: { select: { email: true } } },
+    });
+    if (!quote) return res.status(404).json({ error: 'not_found' });
+    if (quote.status === 'pending_approval') return res.status(409).json({ error: 'pending_approval' });
+    if (!quote.customer?.email) return res.status(400).json({ error: 'customer_missing_email' });
+
+    const { sendQuoteEmail } = await import('../../../messaging/domain/email.service');
+    await sendQuoteEmail({ quoteId: id, prisma });
+
+    if (quote.status === 'draft') {
+      await prisma.quote.update({ where: { id }, data: { status: 'sent' } });
+    }
+
+    recordCustomerEvent({
+      merchantId: quote.merchantId,
+      customerId: quote.customerId,
+      type: 'quote_sent',
+      title: `Presupuesto #${quote.quoteNumber ?? quote.id} enviado por email`,
+      detail: `${Number(quote.total).toFixed(2)} ${quote.currency}`,
+    });
+
+    return res.json({ ok: true, sent: true });
+  } catch (err: any) {
+    if (err?.message === 'customer_missing_email') {
+      return res.status(400).json({ error: 'customer_missing_email' });
+    }
+    console.error('[POST /admin/quotes/:id/send-email]', err?.message || err);
+    return res.status(200).json({
+      ok: false, sent: false, error: 'email_send_failed',
+      message: 'No se pudo enviar el email. El presupuesto quedó guardado; puedes reintentarlo.',
+    });
+  }
+});
+
+/**
  * POST /admin/quotes/:id/approve — aprueba una cotización pendiente (ENT-2). Solo admin.
  */
 router.post('/:id/approve', async (req, res) => {
