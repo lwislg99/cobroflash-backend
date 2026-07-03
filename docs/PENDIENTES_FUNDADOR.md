@@ -39,6 +39,41 @@ flags OFF (nada cambia hasta que actives). Para encenderlo, EN ESTE ORDEN:
 - [ ] **Probar el ciclo Connect en TEST:** activa cobros desde Configuración con el
   merchant demo → KYC de prueba de Stripe → pago test → el dinero reparte al
   merchant y el fee a la plataforma.
+### 📲 Runbook: webhook de Meta + paso a WABA de producción (3-jul, UI nueva "experiencia guiada")
+
+**FASE A — Webhook (AHORA, 3 min; desbloquea bot + chips de entrega + Acepto/No):**
+1. App FlashClient → **WhatsApp → Paso 2. Configuración de producción** → expandir **"Configurar Webhooks"**
+   (aunque tenga check verde: el formulario está vacío — el check es solo de la guía).
+2. URL de devolución de llamada: `https://yaqu.app/webhooks/whatsapp` · Identificador de verificación:
+   el valor de `WHATSAPP_VERIFY_TOKEN` en Railway (si no existe: créala con un valor inventado, espera el
+   redeploy ~1 min, y usa ese valor). → **Verificar y guardar** (debe poner ✓).
+3. En la misma sección, **gestionar campos** → suscribir **`messages`**. (Alternativa: página "Webhooks"
+   → desplegable de producto → "WhatsApp Business Account" → mismo formulario.)
+4. Probar: "hola" al número de test → en logs de Railway debe salir `[WA in] …` y llegarte el menú del bot
+   (con `BOT_INBOUND_ENABLED=true`). El panel "Comprobar webhooks de prueba" del Paso 1 ya muestra los
+   eventos `messages` — solo les falta destino.
+
+**FASE B — Número real / WABA de producción (cuando tengas la SIM, Carril 0.1):**
+1. **Paso 2 → "Registrar tu número de teléfono"**: el número de la SIM nueva (JAMÁS usado en la app normal
+   de WhatsApp), verificación por SMS, display name "YaQu" (Meta lo revisa).
+2. **Paso 2 → "Añade un método de pago"**: tarjeta para las conversaciones de plantilla (sin esto el número
+   real no envía plantillas).
+3. **Paso 2 → "Probar tu número registrado"**.
+4. **Railway — actualizar credenciales** (¡o seguirá enviando por el número de test!):
+   `WHATSAPP_PHONE_NUMBER_ID` (el nuevo Phone Number ID) · `WHATSAPP_BUSINESS_ACCOUNT_ID` (el de TU WABA
+   real, no la de prueba) · `WHATSAPP_ACCESS_TOKEN` (token PERMANENTE de usuario del sistema — el flujo
+   guiado lo crea en el Paso 2; el de prueba caduca).
+5. **Plantillas ⚠️:** las 5 aprobadas viven en la WABA de PRUEBA. Si el número real queda en una WABA nueva,
+   NO se transfieren → recrearlas allí. Momento perfecto para hacerlo BIEN de una vez (mata P3-1 y P3-3):
+   categoría **Utility**, copy neutro "tu documento de cobro", y botones como **"URL dinámica"**
+   (`https://yaqu.app/pay/quote/{{1}}`, `/pay/invoice/{{1}}`, `/recibo/{{1}}`). Mismos nombres → cero
+   cambios de código. Aprobación: minutos-48h.
+6. **Paso 3 → Verificación de empresa** (2-10 días, en paralelo): documentos del negocio (alta de autónomo/
+   escritura, factura de suministro, extracto bancario — con el nombre legal). Sin verificar: límite ~250
+   conversaciones/día (de sobra para founding); verificada: sube solo.
+7. El webhook de la FASE A es de la APP → sigue valiendo para la WABA real (si algo no llega: WhatsApp
+   Manager → tu WABA → apps suscritas → suscribir FlashClient).
+
 - [ ] **Railway · `BOT_INBOUND_ENABLED=true`** (cuando quieras estrenar el bot, Ola 3):
   el cliente que escriba al número recibirá el menú (Ver presupuestos · Pagar
   pendiente · Pedir presupuesto · Hablar contigo). La tabla ya está en prod; con el
