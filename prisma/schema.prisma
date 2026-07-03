@@ -373,6 +373,10 @@ model QuoteRequest {
   description String @db.Text
   status      String @default("pending") // pending | read | done
 
+  // BOT-1 (K1): zona aproximada y origen de la solicitud ('whatsapp_bot')
+  zone   String? @map("zone")
+  source String? @map("source")
+
   createdAt DateTime @default(now()) @map("created_at")
 
   merchant Merchant @relation(fields: [merchantId], references: [id])
@@ -381,6 +385,24 @@ model QuoteRequest {
   @@index([merchantId, status])
   @@index([customerId])
   @@map("quote_requests")
+}
+
+// BOT-1 (K1): sesión del bot entrante — el número es COMPARTIDO entre
+// merchants; la sesión fija el contexto y el estado del flujo (regla 27:
+// estados de K1). Expira a las 24h (ventana de servicio de Meta).
+model BotSession {
+  id         Int      @id @default(autoincrement())
+  phone      String   // normalizado (normalizePhone)
+  merchantId Int?     @map("merchant_id")
+  state      String   @default("menu") // menu|choosing_merchant|asking_description|asking_zone|done|handoff (K1)
+  data       Json?
+  expiresAt  DateTime @map("expires_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
+
+  @@index([phone, expiresAt])
+  @@map("bot_sessions")
 }
 
 model QuoteTemplate {

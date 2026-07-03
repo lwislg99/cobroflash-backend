@@ -201,3 +201,63 @@ export async function sendWhatsAppText(params: {
     return { ok: false, error: err?.response?.data || err?.message };
   }
 }
+
+/**
+ * BOT-1 (K1): mensaje interactivo de LISTA (service message — solo llega con
+ * la ventana 24h abierta, que es exactamente el caso del bot: SIEMPRE responde
+ * a un entrante → coste 0). Máx 10 filas por sección (límite de Meta).
+ */
+export async function sendWhatsAppList(params: {
+  to: string;
+  bodyText: string;
+  buttonText: string; // texto del botón que despliega la lista (máx 20 chars)
+  rows: Array<{ id: string; title: string; description?: string }>;
+  merchantId?: number; // V0-2: demo solo a DEMO_SAFE_NUMBERS
+}) {
+  const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
+  const token = config.WHATSAPP_ACCESS_TOKEN;
+
+  if (!phoneNumberId || !token) {
+    console.warn('[WhatsApp] Credenciales no configuradas, lista omitida');
+    return { ok: false, reason: 'not_configured' };
+  }
+  if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
+    console.warn(`[WhatsApp] V0-2: lista desde el merchant demo a ${params.to} BLOQUEADA`);
+    return { ok: false, reason: 'demo_safe_numbers' };
+  }
+
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/${phoneNumberId}/messages`,
+      {
+        messaging_product: 'whatsapp',
+        to: params.to,
+        type: 'interactive',
+        interactive: {
+          type: 'list',
+          body: { text: params.bodyText },
+          action: {
+            button: params.buttonText.slice(0, 20),
+            sections: [
+              {
+                rows: params.rows.slice(0, 10).map((r) => ({
+                  id: r.id,
+                  title: r.title.slice(0, 24), // límites de Meta
+                  ...(r.description ? { description: r.description.slice(0, 72) } : {}),
+                })),
+              },
+            ],
+          },
+        },
+      },
+      {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        timeout: 10_000,
+      },
+    );
+    return { ok: true, data: response.data };
+  } catch (err: any) {
+    console.error('[WhatsApp] Error enviando lista:', err?.response?.data || err?.message);
+    return { ok: false, error: err?.response?.data || err?.message };
+  }
+}

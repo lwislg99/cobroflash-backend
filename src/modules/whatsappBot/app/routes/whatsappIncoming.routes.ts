@@ -10,6 +10,9 @@ import { normalizePhone } from '../../../../core/utils/utils';
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/merchantNotifications';
 import { updateWaMessageStatus } from '../../../messaging/domain/whatsappLog.service';
+import { isFlagEnabled } from '../../../../core/flags';
+import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
+import { handleBotMessage, type BotInput } from '../../domain/botFlow.service';
 
 const router = Router();
 
@@ -74,13 +77,29 @@ router.post('/', async (req, res) => {
 
         const messages = change?.value?.messages ?? [];
         for (const msg of messages) {
-          if (msg.type !== 'text') continue;
           const from = String(msg.from || '');
-          const text = String(msg.text?.body || '').trim();
-          if (!from || !text) continue;
-          handleIncomingText(from, text).catch((e) =>
-            console.error('[WA in] handler error:', e?.message),
-          );
+          if (!from) continue;
+
+          if (msg.type === 'text') {
+            const text = String(msg.text?.body || '').trim();
+            if (!text) continue;
+            routeIncoming(from, { text }).catch((e) =>
+              console.error('[WA in] handler error:', e?.message),
+            );
+          } else if (msg.type === 'interactive') {
+            // BOT-1: respuesta de lista/botón interactivo
+            const listReplyId = String(
+              msg.interactive?.list_reply?.id || msg.interactive?.button_reply?.id || '',
+            );
+            if (!listReplyId) continue;
+            routeIncoming(from, { listReplyId }).catch((e) =>
+              console.error('[WA in] handler error:', e?.message),
+            );
+          } else if (msg.type === 'audio' && isFlagEnabled('BOT_INBOUND_ENABLED')) {
+            // BOT-1 mínimo: el audio→texto es F2 (MEDIA-1) — respuesta digna
+            sendWhatsAppText({ to: from, text: 'De momento solo puedo leer texto 🙏 ¿Me lo escribes?' })
+              .catch(() => {});
+          }
         }
       }
     }
@@ -88,6 +107,89 @@ router.post('/', async (req, res) => {
     console.error('[WA webhook] Parse error:', err?.message);
   }
 });
+
+// ── Router de entrantes ───────────────────────────────────────────────────
+// Orden: J3 (BAJA/STOP, ley del canal, con o sin bot) → decisión Acepto/No
+// sobre plantilla (si hay exactamente 1 presupuesto enviado) → BOT-1 (flag).
+async function routeIncoming(from: string, input: BotInput): Promise<void> {
+  const phone = normalizePhone(from);
+  if (!phone) return;
+  const text = (input.text || '').trim();
+
+  console.log(`[WA in] from=${phone} ${input.listReplyId ? `list=${input.listReplyId}` : `text="${text.slice(0, 80)}"`}`);
+
+  // J3: baja del canal — "BAJA"/"STOP" → waOptOut + confirmación + aviso al pro
+  if (/^(baja|stop)[.!]?$/i.test(text)) {
+    await handleOptOutRequest(phone, from);
+    return;
+  }
+
+  if (isFlagEnabled('BOT_INBOUND_ENABLED')) {
+    // La decisión sobre plantilla sigue mandando: "Acepto"/"No" con UN solo
+    // presupuesto enviado es la respuesta a quote_decision_es, no chat del bot.
+    if (text && parseDecision(text) !== 'unknown') {
+      const handled = await tryLegacyDecision(phone, from, text);
+      if (handled) return;
+    }
+    const done = await handleBotMessage(from, input);
+    if (done) return;
+  }
+
+  // Flag OFF (o bot no aplica) → comportamiento clásico
+  if (text) await handleIncomingText(from, text);
+}
+
+// J3 (F1-build): procesar la baja del canal para TODOS los merchants que
+// tengan este número como cliente. Bloqueo real en sendWhatsAppTemplate.
+async function handleOptOutRequest(phone: string, from: string): Promise<void> {
+  const customers = await prisma.customer.findMany({
+    where: { phone },
+    select: { id: true, merchantId: true, name: true },
+  });
+  if (!customers.length) {
+    await sendWhatsAppText({ to: from, text: 'Este número no tiene mensajes activos. No te enviaremos nada. 👋' });
+    return;
+  }
+  await prisma.customer.updateMany({ where: { phone }, data: { waOptOut: true } });
+  await sendWhatsAppText({
+    to: from,
+    text: 'Hecho ✅ No te enviaremos más mensajes por WhatsApp. Si cambias de opinión, díselo a tu profesional.',
+  });
+  // Aviso a cada pro afectado (texto libre → fallback plantilla)
+  const merchants = await prisma.merchant.findMany({
+    where: { id: { in: [...new Set(customers.map((c) => c.merchantId))] } },
+    select: { id: true, whatsappPhone: true },
+  });
+  for (const m of merchants) {
+    const cust = customers.find((c) => c.merchantId === m.id);
+    notifyMerchantAlert({
+      merchantId: m.id,
+      merchantPhone: m.whatsappPhone,
+      customerName: cust?.name || 'Un cliente',
+      action: 'se ha dado de baja de WhatsApp',
+      detail: 'Escribió BAJA — no recibirá más mensajes',
+      freeText: `🔕 *${cust?.name || 'Un cliente'}* se ha dado de baja de WhatsApp (escribió BAJA). No le llegarán más mensajes; puedes reactivarlo desde su ficha.`,
+    }).catch(() => {});
+  }
+}
+
+// Decisión Acepto/No con exactamente UN presupuesto enviado (para el gate del
+// bot). Devuelve true si la aplicó; false → que decida el menú del bot.
+async function tryLegacyDecision(phone: string, from: string, text: string): Promise<boolean> {
+  const customers = await prisma.customer.findMany({
+    where: { phone },
+    select: { id: true },
+  });
+  if (!customers.length) return false;
+  const pending = await prisma.quote.findMany({
+    where: { customerId: { in: customers.map((c) => c.id) }, status: 'sent' },
+    orderBy: { createdAt: 'desc' },
+    take: 2,
+  });
+  if (pending.length !== 1) return false;
+  await handleIncomingText(from, text); // reutiliza el flujo clásico completo
+  return true;
+}
 
 // ── Lógica de decisión ────────────────────────────────────────────────────
 type Decision = 'accept' | 'reject' | 'unknown';
