@@ -174,23 +174,50 @@ function renderSetupChecklist(merchant, data) {
 }
 
 function renderHero(data) {
+  // A2.6 (Parte E): el héroe es TU DINERO EN JUEGO = pendiente de cobrar
+  // (facturas) + esperando el sí (presupuestos vivos). Cifra única en Tinta.
   const el = document.getElementById("home-hero");
   if (!el) return;
   const count = data.pendingCount || 0;
-  el.innerHTML = `
-    <div class="home-hero-card">
-      <div>
-        <div class="home-hero-label">Pendiente de cobro</div>
-        <div class="home-hero-amount">${fmtMoney(data.pendingAmount)}</div>
-        <div class="home-hero-sub">${count} factura${count !== 1 ? "s" : ""} por cobrar</div>
+  const awaiting = data.quotesAwaiting || 0;
+  const pendingAmt = Number(data.pendingAmount || 0);
+  const awaitingAmt = Number(data.awaitingAmount || 0);
+  const inPlay = pendingAmt + awaitingAmt;
+
+  const parts = [];
+  if (pendingAmt > 0) parts.push(`${fmtMoney(pendingAmt)} por cobrar (${count} factura${count !== 1 ? "s" : ""})`);
+  if (awaitingAmt > 0) parts.push(`${fmtMoney(awaitingAmt)} esperando el sí (${awaiting} presupuesto${awaiting !== 1 ? "s" : ""})`);
+
+  if (inPlay > 0) {
+    el.innerHTML = `
+      <div class="home-hero-card">
+        <div>
+          <div class="home-hero-label">💶 Tienes en juego</div>
+          <div class="home-hero-amount">${fmtMoney(inPlay)}</div>
+          <div class="home-hero-sub">${parts.join(" · ")}</div>
+        </div>
+        ${count > 0
+          ? `<button class="btn btn-secondary btn-sm" id="hero-go-invoices">Ver facturas →</button>`
+          : `<button class="btn btn-secondary btn-sm" id="hero-go-quotes">Ver presupuestos →</button>`}
       </div>
-      ${count > 0
-        ? `<button class="btn btn-secondary btn-sm" id="hero-go-invoices">Ver facturas →</button>`
-        : `<span class="home-hero-ok">Todo cobrado 🎉</span>`}
-    </div>
-  `;
+    `;
+  } else {
+    // Empty state digno: nada pendiente → invitar a crear el siguiente
+    el.innerHTML = `
+      <div class="home-hero-card">
+        <div>
+          <div class="home-hero-label">💶 Dinero en juego</div>
+          <div class="home-hero-amount">0,00 €</div>
+          <div class="home-hero-sub">Nada pendiente 🎉 Crea un presupuesto y pon dinero en juego.</div>
+        </div>
+        <span class="home-hero-ok">Todo cobrado</span>
+      </div>
+    `;
+  }
   const go = el.querySelector('#hero-go-invoices');
   if (go) go.addEventListener('click', () => window.renderAppView && renderAppView('invoices'));
+  const goQ = el.querySelector('#hero-go-quotes');
+  if (goQ) goQ.addEventListener('click', () => window.renderAppView && renderAppView('quotes-list'));
 }
 
 function renderKpis(data) {

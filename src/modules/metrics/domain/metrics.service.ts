@@ -10,8 +10,12 @@ export async function getHomeMetrics(merchantId: number) {
       _sum: { total: true },
       _count: { id: true },
     }),
-    prisma.quote.count({
+    // A2.6 (Parte E): también el IMPORTE de los presupuestos vivos — el héroe
+    // del Home es "dinero en juego" = pendiente de cobrar + esperando el sí.
+    prisma.quote.aggregate({
       where: { merchantId, status: 'sent' },
+      _sum: { total: true },
+      _count: { id: true },
     }),
     prisma.invoice.aggregate({
       where: { merchantId, status: 'paid', paidAt: { gte: startOfMonth } },
@@ -120,7 +124,8 @@ export async function getHomeMetrics(merchantId: number) {
     avgResponseHours,
     pendingAmount: Number(pendingInvoices._sum.total ?? 0),
     pendingCount: pendingInvoices._count.id,
-    quotesAwaiting: sentQuotes,
+    quotesAwaiting: sentQuotes._count.id,
+    awaitingAmount: Number(sentQuotes._sum.total ?? 0), // A2.6: € en presupuestos vivos
     collectedThisMonth: Number(paidThisMonth._sum.total ?? 0),
     recentActivity: recentQuotes.map((q) => ({
       type: 'quote' as const,
