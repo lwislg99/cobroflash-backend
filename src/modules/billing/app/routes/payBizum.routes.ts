@@ -152,8 +152,9 @@ router.get('/bizum/:chargeId', async (req, res) => {
 
   const business = esc(m?.legalName || m?.name || 'Tu proveedor');
   const initial = esc((m?.name || m?.legalName || 'Y').trim().charAt(0).toUpperCase());
+  // Si el logo no carga (URL rota, file://…), se oculta y no rompe la landing
   const logoHtml = m?.logoUrl
-    ? `<img class="logo-img" src="${esc(m.logoUrl)}" alt="${business}"/>`
+    ? `<img class="logo-img" src="${esc(m.logoUrl)}" alt="${business}" onerror="this.style.display='none'"/>`
     : `<div class="logo-mark">${initial}</div>`;
   const amount = esc(
     Number(charge.amount).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +

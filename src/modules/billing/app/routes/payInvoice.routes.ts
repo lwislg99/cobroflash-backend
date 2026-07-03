@@ -90,17 +90,19 @@ router.get('/invoice/:chargeId', async (req, res) => {
       (mm.key === 'transfer' && hasTransfer && permits('transfer')));
 
   const methodsHtml = ordered.map((mm, i) => `
-    <a class="method ${i === 0 ? 'method-primary' : 'method-secondary'}" href="${mm.href}">
+    <a class="method" href="${mm.href}">
       <span class="method-ico">${mm.ico}</span>
       <span class="method-txt">
         <span class="method-title">${mm.title}</span>
         <span class="method-sub">${mm.sub}</span>
       </span>
+      ${i === 0 && ordered.length > 1 ? '<span class="method-chip">Recomendado</span>' : ''}
       <span class="chev">›</span>
     </a>`).join('');
 
+  // Si el logo no carga (URL rota, file://…), se oculta y no rompe la landing
   const logoHtml = m?.logoUrl
-    ? `<img class="logo-img" src="${esc(m.logoUrl)}" alt="${business}"/>`
+    ? `<img class="logo-img" src="${esc(m.logoUrl)}" alt="${business}" onerror="this.style.display='none'"/>`
     : `<div class="logo-mark">${initial}</div>`;
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -139,20 +141,23 @@ router.get('/invoice/:chargeId', async (req, res) => {
     .amount{font-size:2.3rem;font-weight:800;color:var(--ink);letter-spacing:-.025em;line-height:1;font-variant-numeric:tabular-nums}
     .subline{font-size:.83rem;color:var(--muted);margin-top:.5rem;line-height:1.4}
 
-    /* Métodos */
+    /* Métodos — tarjetas IGUALES (patrón Stripe Checkout): el énfasis lo da
+       el orden + chip "Recomendado", no un botón macizo. Hover con borde de
+       marca y elevación suave; active hunde 1px. */
     .methods-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:1.25rem 0 .7rem}
     .method{display:flex;align-items:center;gap:.85rem;width:100%;padding:.95rem 1rem;border-radius:14px;
-      text-decoration:none;margin-bottom:.6rem;min-height:64px;transition:background .15s,border-color .15s,box-shadow .15s}
-    .method-primary{background:var(--brand);color:#fff;box-shadow:0 4px 14px -4px rgba(22,163,74,.45)}
-    .method-primary:hover{background:#15803d}
-    .method-primary:active{transform:translateY(1px)}
-    .method-secondary{background:var(--surface);color:var(--ink);border:1px solid var(--border)}
-    .method-secondary:hover{background:var(--slate-50);border-color:#cdd2cb}
+      text-decoration:none;margin-bottom:.6rem;min-height:64px;background:var(--surface);color:var(--ink);
+      border:1px solid var(--border);transition:border-color .15s,box-shadow .15s,transform .1s}
+    .method:hover{border-color:var(--brand);box-shadow:0 4px 12px -2px rgba(16,24,40,.08),0 2px 6px -2px rgba(16,24,40,.05)}
+    .method:active{transform:translateY(1px)}
     .method-ico{font-size:1.45rem;flex-shrink:0;width:30px;text-align:center}
     .method-txt{flex:1;min-width:0}
     .method-title{font-weight:700;font-size:.98rem;line-height:1.2}
-    .method-sub{font-size:.76rem;opacity:.82;margin-top:.12rem}
+    .method-sub{font-size:.76rem;color:var(--muted);margin-top:.12rem}
+    .method-chip{flex-shrink:0;font-size:.66rem;font-weight:700;letter-spacing:.03em;color:#166534;
+      background:var(--brand-tint);border:1px solid #bbf7d0;border-radius:999px;padding:.18rem .55rem;text-transform:uppercase}
     .chev{font-size:1.25rem;opacity:.55;flex-shrink:0}
+    @media (prefers-reduced-motion: reduce){.method{transition:none}.method:active{transform:none}}
 
     /* Confianza */
     .trust{margin-top:1.4rem;text-align:center}

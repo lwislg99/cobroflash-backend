@@ -131,6 +131,21 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   mFooter.className = "modal-footer";
   mFooter.style.flexWrap = "wrap"; // A2.3: 4 acciones también en móvil
 
+  // UX (feedback fundador): la modal NO se cierra al actuar — patrón "compartir"
+  // (Drive/Stripe): cada acción confirma en su propio botón ("✓ Enviado") y se
+  // pueden encadenar (WhatsApp + email + PDF). El cierre pasa a "Hecho ✓".
+  let didSomething = false;
+  function markDone(btn, label) {
+    didSomething = true;
+    btn.disabled = true;
+    btn.classList.remove("btn-primary", "btn-secondary");
+    btn.classList.add("btn-done");
+    btn.textContent = label;
+    closeBtn.textContent = "Hecho ✓";
+    closeBtn.classList.remove("btn-secondary");
+    closeBtn.classList.add("btn-primary");
+  }
+
   const closeBtn = document.createElement("button");
   closeBtn.type = "button";
   closeBtn.textContent = "Seguir editando";
@@ -138,7 +153,7 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   closeBtn.addEventListener("click", function() { overlay.remove(); });
   mFooter.appendChild(closeBtn);
 
-  // A2.3: Descargar PDF (el PDF ya está generado)
+  // A2.3: Descargar PDF (el PDF ya está generado; no cierra la modal)
   if (pdfUrl) {
     const dlBtn = document.createElement("a");
     dlBtn.href = pdfUrl;
@@ -146,6 +161,12 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
     dlBtn.download = "presupuesto-" + String(displayNum).replace('#', '') + ".pdf";
     dlBtn.textContent = "⬇ Descargar PDF";
     dlBtn.className = "btn btn-secondary";
+    dlBtn.addEventListener("click", function() {
+      didSomething = true;
+      closeBtn.textContent = "Hecho ✓";
+      closeBtn.classList.remove("btn-secondary");
+      closeBtn.classList.add("btn-primary");
+    });
     mFooter.appendChild(dlBtn);
   }
 
@@ -171,7 +192,7 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
         if (body.ok) {
           setAlert("success", "Presupuesto enviado por email.");
           setResult({ quote_id: quoteId, number: displayNum, status: "SENT", sent: true });
-          overlay.remove();
+          markDone(emailBtn, "✓ Enviado por email"); // la modal sigue abierta
         } else {
           throw new Error(body.message || "No se pudo enviar el email.");
         }
@@ -212,11 +233,14 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
         // P3-2: si Meta rechazó, el backend devuelve 200 ok:false con un mensaje claro.
         if (body.ok) {
           setAlert("success", "Presupuesto enviado por WhatsApp.");
+          setResult({ quote_id: quoteId, number: displayNum, status: "SENT", sent: true });
+          markDone(sendBtn, "✓ Enviado por WhatsApp"); // la modal sigue abierta
         } else {
           setAlert("error", body.message || "Presupuesto creado, pero no se pudo enviar por WhatsApp.");
+          setResult({ quote_id: quoteId, number: displayNum, status: "DRAFT", sent: false });
+          sendBtn.disabled = false;
+          sendBtn.textContent = "Enviar por WhatsApp";
         }
-        setResult({ quote_id: quoteId, number: displayNum, status: "DRAFT", sent: !!body.ok });
-        overlay.remove();
       } catch (err) {
         setAlert("error", err.message || "Error enviando por WhatsApp.");
         sendBtn.disabled = false;

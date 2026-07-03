@@ -1475,6 +1475,8 @@ img { max-width: 100%; display: block; }
 
 /* ── Formulario de cotización (FRONT1-4) ─────────────────────── */
 .quote-status-empty { font-size: 12.5px; color: var(--muted); padding: 10px 2px; line-height: 1.5; }
+/* Acción completada dentro de una modal persistente ("✓ Enviado…") */
+.btn-done { background: var(--brand-tint, #ecfdf5) !important; color: #166534 !important; border: 1px solid #bbf7d0 !important; cursor: default; }
 .quote-vat-calc {
   display: flex;
   justify-content: space-between;

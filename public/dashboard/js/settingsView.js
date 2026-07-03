@@ -115,6 +115,85 @@ function renderSettingsView(container) {
     form.appendChild(fInvoiceSeriesPrefix.wrapper);
     form.appendChild(fLogoUrl.wrapper);
 
+    // ── Logo: SUBIR imagen en vez de pegar una URL (feedback fundador) ──
+    // El input de texto pasa a ser el contenedor oculto del valor (URL antigua
+    // o data-URI nuevo); el usuario ve preview + "Subir logo" + "Quitar".
+    // La imagen se redimensiona en cliente a ≤512px (canvas) → data-URI ligero
+    // que viaja por el PUT normal y funciona en PDFs y landings sin storage.
+    fLogoUrl.input.type = "hidden";
+    fLogoUrl.wrapper.querySelector("label").textContent = "Logo de tu negocio";
+    const logoRow = document.createElement("div");
+    logoRow.style.cssText = "display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:4px";
+    const logoPreview = document.createElement("img");
+    logoPreview.alt = "Logo";
+    logoPreview.style.cssText = "max-height:44px;max-width:130px;object-fit:contain;border:1px solid var(--border);border-radius:8px;padding:4px;background:#fff;display:none";
+    const logoFile = document.createElement("input");
+    logoFile.type = "file";
+    logoFile.accept = "image/png,image/jpeg,image/webp";
+    logoFile.style.display = "none";
+    const logoBtn = document.createElement("button");
+    logoBtn.type = "button";
+    logoBtn.className = "btn btn-secondary btn-sm";
+    logoBtn.textContent = "⬆ Subir logo";
+    const logoClear = document.createElement("button");
+    logoClear.type = "button";
+    logoClear.className = "btn-ghost btn-sm";
+    logoClear.textContent = "Quitar";
+    logoClear.style.display = "none";
+    const logoHint = document.createElement("p");
+    logoHint.style.cssText = "font-size:12px;color:var(--muted);margin:4px 0 0;width:100%";
+    logoHint.textContent = "PNG, JPG o WebP. Se ajusta solo (máx. 512px). Saldrá en tus PDFs y en la página que ve tu cliente.";
+    logoRow.appendChild(logoPreview);
+    logoRow.appendChild(logoBtn);
+    logoRow.appendChild(logoClear);
+    logoRow.appendChild(logoFile);
+    logoRow.appendChild(logoHint);
+    fLogoUrl.wrapper.appendChild(logoRow);
+
+    function refreshLogoUI() {
+      const v = fLogoUrl.input.value;
+      if (v) {
+        logoPreview.src = v;
+        logoPreview.style.display = "block";
+        logoClear.style.display = "inline-block";
+        logoBtn.textContent = "⬆ Cambiar logo";
+      } else {
+        logoPreview.style.display = "none";
+        logoClear.style.display = "none";
+        logoBtn.textContent = "⬆ Subir logo";
+      }
+    }
+    logoPreview.onerror = () => { logoPreview.style.display = "none"; };
+    logoBtn.addEventListener("click", () => logoFile.click());
+    logoClear.addEventListener("click", () => { fLogoUrl.input.value = ""; refreshLogoUI(); });
+    logoFile.addEventListener("change", () => {
+      const file = logoFile.files && logoFile.files[0];
+      if (!file) return;
+      if (!/^image\/(png|jpe?g|webp)$/.test(file.type)) { setAlert("error", "El logo debe ser PNG, JPG o WebP."); return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX = 512;
+          const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(img.width * scale));
+          canvas.height = Math.max(1, Math.round(img.height * scale));
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          // PNG conserva transparencia; JPEG/WebP → JPEG comprimido
+          const dataUrl = file.type === "image/png"
+            ? canvas.toDataURL("image/png")
+            : canvas.toDataURL("image/jpeg", 0.85);
+          fLogoUrl.input.value = dataUrl;
+          refreshLogoUI();
+          setAlert(null, "");
+        };
+        img.onerror = () => setAlert("error", "No se pudo leer la imagen.");
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
     // Separador — Pagos por transferencia
     const sepBank = document.createElement("div");
     sepBank.style.cssText = "border-top:1px solid var(--border);margin:12px 0 4px;padding-top:12px";
@@ -356,6 +435,7 @@ function renderSettingsView(container) {
         fDefaultCurrency.input.value = merchant.defaultCurrency || "EUR";
         fInvoiceSeriesPrefix.input.value = merchant.invoiceSeriesPrefix || "";
         fLogoUrl.input.value = merchant.logoUrl || "";
+        refreshLogoUI(); // preview del logo actual (URL antigua o data-URI)
         fGoogleReviewUrl.input.value = merchant.googleReviewUrl || "";
         fIban.input.value  = merchant.iban  || "";
         fClabe.input.value = merchant.clabe || "";

@@ -131,7 +131,12 @@ export const merchantProfileUpdateSchema = z.object({
     .length(3)
     .optional(), // "EUR", "MXN", "BRL", etc.
   invoiceSeriesPrefix: z.string().min(1).max(10).optional(),
-  logoUrl: z.string().url().nullable().optional(),
+  // Logo: URL http(s) o data-URI de imagen (subida desde Configuración,
+  // redimensionada a ≤512px en cliente; cap 1,5M chars ≈ 1 MB decodificado)
+  logoUrl: z.union([
+    z.string().url(),
+    z.string().regex(/^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/).max(1_500_000),
+  ]).nullable().optional(),
   whatsappPhone: z.string().min(6).max(20).optional(),
   // C1-4: móvil para Bizum manual (default en UI: whatsappPhone)
   bizumPhone: z.string().min(6).max(20).nullable().optional(),

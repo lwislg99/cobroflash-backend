@@ -76,8 +76,11 @@ app.use('/webhooks/stripe', stripeRawBody, stripeWebhookRouter);
 // + direct charges), con su propio signing secret. También raw body.
 app.use('/webhooks/stripe-connect', stripeConnectRawBody, stripeConnectWebhookRouter);
 
-// Parsers — guardamos el raw body de los webhooks de WhatsApp para validar firma HMAC
+// Parsers — guardamos el raw body de los webhooks de WhatsApp para validar firma HMAC.
+// limit 2mb: el logo del merchant viaja como data-URI (~150 KB tras el resize
+// client-side a 512px) en el PUT /admin/merchant; el default de 100 KB lo cortaba.
 app.use(express.json({
+  limit: '2mb',
   verify: (req, _res, buf) => {
     if ((req.url || '').startsWith('/webhooks/whatsapp')) {
       (req as any).rawBody = buf;
