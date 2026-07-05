@@ -1,0 +1,7 @@
+quote tiers creada: 90 (#13)
+shot 1 (Desde X, firma oculta) ok
+estado tras elegir: {"wrapperVisible":true,"hero":"460,00 €","heroLabel":"Total · Estándar · IVA incluido","btn":"Firmar y aceptar — Estándar (460,00 €)","chosen":"Estándar · 460,00 €"}
+shot 3 (éxito) ok
+BD tras aceptar: {"status":"accepted","selectedTierId":"better","total":"460"}
+✅ E2E GBB COMPLETO: elegir → firmar → accepted con total y líneas del tier
+limpieza hecha (quote de test borrada, contador restaurado)
