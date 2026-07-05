@@ -17,9 +17,15 @@ Flags nuevas arrancan OFF; activación = fundador (PENDIENTES_FUNDADOR).
 > disparan handoff · identidad tolera teléfonos con "+" · recibo tolera URLs sucias de plantilla (`456b98c`).
 > Lado fundador pendiente (PENDIENTES_FUNDADOR): rotar `WHATSAPP_ACCESS_TOKEN` (expuesto en chat) · FASE B
 > WABA producción (SIM) · webhook Connect + flags · EMAIL_FROM · Carril 0.
-> **Extensión (Olas 4-6):** A6.1 🟡 EN CURSO (seed demo) · A4.7 ⏳ guion propuesto al fundador (esperando OK
-> de escenas+capturas ANTES de construir) · resto ⏳ en el orden: A6.1 → Ola 4 (A4.7 al final) → Ola 5 →
-> A6.2-A6.5 → A6.7 si sobra → A6.6 cierre.
+> **Extensión (Olas 4-6):** A6.1 ✅ (`d1d5262`: seed "Fontanería García" — 7 clientes/8 productos/12
+> presupuestos/5 facturas/5 cobros; reset con `node scripts/seed-demo.mjs`) · **A4.7 guion v2 APROBADO
+> (fundador, 5-jul): "dos actos"** — Acto 1 = 4 escenas guiadas del dinero (<30s, auto-play: Home dinero
+> en juego → crear 450 € → cliente firma en móvil → cobro+toast); Acto 2 = chips de exploración (bot WA
+> con "pagar pendiente", clientes 360, catálogo, gastos y margen, informes, solicitudes, proveedores) —
+> cada chip 1 captura real + micro-animación; "informes personalizados" se enseña como Informes reales
+> (honestidad: la maqueta = el producto). Capturas del dashboard (390px) las aporta el fundador al llegar
+> a A4.7; las públicas las hace Claude con Edge headless. · Resto ⏳ en el orden: Ola 4 (A4.1→A4.6, A4.7
+> al final) → Ola 5 → A6.2-A6.5 → A6.7 si sobra → A6.6 cierre.
 
 ---
 
