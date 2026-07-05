@@ -44,6 +44,17 @@
 > coste 0, SIN plantilla nueva; limpia sus filas). Evidencia: `docs/evidencias/ext2/a55-test.txt`.
 > El gate de la Ola 5 ("un ciclo de demo gasta 1 plantilla") pasa a CERO plantillas cuando el
 > cliente inicia por el bot.
+> **A8.2 ✅ (`4e0754d`):** dedupe por wamid (LRU 500 — los reintentos de Meta no duplican
+> respuestas) · doble tap del mismo botón <90 s idempotente en silencio · botón de menú viejo/
+> incoherente → "Ese menú ya caducó" + menú fresco (antes caía al camino del handoff) · media no
+> soportada AMPLIADA (imagen/vídeo/documento/sticker/ubicación/contactos, antes solo audio) con
+> menú si no hay flujo a medias y mudo en handoff · expiración ya era limpia por TTL (verificado) ·
+> lista multi-presupuesto ya cumplía. Copys #15-17 de la tabla v2.1.
+> **A8.3 ✅ (5-jul):** handoff premium completo — expectativa al cliente (v2) + aviso al pro CON
+> contexto y "silencio 24 h" (A8.1) + **registro en BO**: `GET /admin/bot/handoffs` (sesiones
+> handoff vivas, merchant-scoped) → tarjeta "🔔 Te esperan en WhatsApp" encima del héroe de la
+> Home (nombre · hace X min · contexto · botón wa.me "Responder →") + evento permanente `handoff`
+> en el timeline del cliente (las sesiones caducan a 24 h, el timeline no).
 
 **Criterio de esta extensión (importante):** NO se abre backlog U2 (gate 25 pagantes,
 regla 13). Todo lo de aquí es (a) trabajo F1 legítimo de la cola U1 que aún no se había

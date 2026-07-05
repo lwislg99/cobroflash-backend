@@ -96,6 +96,9 @@ async function renderHomeView(container) {
     // Setup checklist para usuarios nuevos
     if (merchant) renderSetupChecklist(merchant, data);
 
+    // A8.3: handoffs del bot pendientes — un cliente ESPERA que le escribas
+    renderBotHandoffs();
+
     // A6.7: preferencias de bloques desde BD (null = todo visible)
     if (merchant && merchant.homePrefs !== undefined) {
       window.appHomePrefs = merchant.homePrefs || {};
@@ -146,6 +149,48 @@ async function refreshSidebarBadges() {
   } catch { /* silencioso */ }
 }
 window.refreshSidebarBadges = refreshSidebarBadges;
+
+// A8.3: tarjeta "Te esperan en WhatsApp" — sesiones del bot en handoff (el bot
+// está mudo 24 h y el cliente espera respuesta del pro). Máxima prioridad
+// visual: va justo encima del héroe. Si no hay ninguno, no se pinta nada.
+async function renderBotHandoffs() {
+  let items = [];
+  try { items = await apiRequest('/admin/bot/handoffs'); } catch { return; }
+  if (!Array.isArray(items) || items.length === 0) return;
+
+  const hero = document.getElementById('home-hero');
+  if (!hero || document.getElementById('bot-handoffs-card')) return;
+
+  const CONTEXT_LABEL = {
+    quotes: 'estaba viendo sus presupuestos',
+    pay: 'estaba mirando sus pagos pendientes',
+    request: 'estaba pidiendo un presupuesto',
+  };
+  const ago = (d) => {
+    const mins = Math.max(1, Math.round((Date.now() - new Date(d).getTime()) / 60000));
+    if (mins < 60) return `hace ${mins} min`;
+    const h = Math.round(mins / 60);
+    return `hace ${h} h`;
+  };
+
+  const card = document.createElement('div');
+  card.id = 'bot-handoffs-card';
+  card.style.cssText = 'background:#fffbeb;border:1px solid #fde68a;border-left:4px solid #f59e0b;border-radius:14px;padding:14px 16px;margin-bottom:16px';
+  card.innerHTML = `
+    <div style="font-weight:700;font-size:14px;color:#92400e;margin-bottom:8px">🔔 Te esperan en WhatsApp</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${items.map((h) => `
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13.5px;color:var(--ink)">
+          <span style="flex:1;min-width:0"><strong>${esc(h.name || '+' + h.phone)}</strong>
+            <span style="color:var(--muted)"> · ${ago(h.since)} · ${CONTEXT_LABEL[h.context] || 'estaba en el menú'}</span></span>
+          <a class="btn-primary btn-sm" style="text-decoration:none;flex-shrink:0" target="_blank" rel="noopener"
+             href="https://wa.me/${esc(h.phone)}">Responder →</a>
+        </div>`).join('')}
+    </div>
+    <div style="font-size:12px;color:#92400e;margin-top:8px">El asistente está en silencio con ellos hasta que les escribas (24 h).</div>
+  `;
+  hero.parentNode.insertBefore(card, hero);
+}
 
 function renderSetupChecklist(merchant, data) {
   // A1.3: la checklist es tarea del admin (logo, datos fiscales → Configuración);

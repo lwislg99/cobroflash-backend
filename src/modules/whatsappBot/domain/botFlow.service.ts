@@ -341,7 +341,15 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
       to: from,
       text: `✅ Hecho, le he avisado. ${businessName} te escribirá en cuanto pueda desde su número personal.`,
     });
-    await setSession(phone, { merchantId, state: 'handoff', data: {} }, session);
+    // A8.3: registro permanente en el timeline del cliente (las sesiones caducan a 24 h)
+    recordCustomerEvent({
+      merchantId,
+      customerId: customer.id,
+      type: 'handoff',
+      title: '💬 Pidió hablar contigo por WhatsApp (bot)',
+      detail: `Contexto: ${context}`,
+    });
+    await setSession(phone, { merchantId, state: 'handoff', data: { lastAction: session?.data?.lastAction } }, session);
     return true;
   }
 
@@ -383,7 +391,15 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
       to: from,
       text: `✅ Te paso con ${businessName}: le he avisado y te escribirá en cuanto pueda desde su número personal.`,
     });
-    await setSession(phone, { merchantId, state: 'handoff', data: {} }, session);
+    // A8.3: registro permanente en el timeline del cliente
+    recordCustomerEvent({
+      merchantId,
+      customerId: customer.id,
+      type: 'handoff',
+      title: '💬 Te escribió por WhatsApp y pasó a humano (bot)',
+      detail: `"${text.slice(0, 120)}"`,
+    });
+    await setSession(phone, { merchantId, state: 'handoff', data: { lastAction: session?.data?.lastAction } }, session);
     return true;
   }
 
