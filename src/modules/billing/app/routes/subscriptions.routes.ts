@@ -4,6 +4,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { config } from '../../../../core/config/env';
 import { resolvePriceId, type PriceKey } from '../../domain/stripePrices';
 import { FOUNDING_SEATS, getFoundingStatus } from '../../domain/founding';
+import { readLegalDoc } from '../../../system/app/routes/legalPages.routes';
 
 const router = Router();
 
@@ -39,6 +40,31 @@ router.get('/plans', async (req, res) => {
   });
 });
 
+// A10.1 (regla 25): aceptación del ALCANCE BETA antes del checkout founding.
+// La versión es el hash del texto servido en /legal/alcance-beta: si el asesor
+// cambia el texto, hay que re-aceptar. Evidencia: userId (teamMember si aplica),
+// ts, IP, user-agent y versión, en legal_acceptances.
+router.post('/accept-alcance', async (req, res) => {
+  const doc = readLegalDoc('ALCANCE_BETA.md');
+  if (!doc) return res.status(500).json({ error: 'legal_doc_missing' });
+  try {
+    await prisma.legalAcceptance.create({
+      data: {
+        merchantId: req.merchantId,
+        teamMemberId: (req as any).teamMemberId ?? null,
+        docKey: 'alcance-beta',
+        version: doc.version,
+        ip: String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '').split(',')[0].trim() || null,
+        userAgent: String(req.headers['user-agent'] || '').slice(0, 300) || null,
+      },
+    });
+    return res.json({ ok: true, version: doc.version });
+  } catch (err: any) {
+    console.error('[POST /admin/billing/accept-alcance]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 // POST /admin/billing/checkout  { plan: 'pro' | 'founding', annual?: boolean }
 router.post('/checkout', async (req, res) => {
   if (!stripe) return res.status(501).json({ error: 'stripe_not_configured' });
@@ -51,6 +77,23 @@ router.post('/checkout', async (req, res) => {
     // V0-4: contador real — sin plazas no hay checkout
     const founding = await getFoundingStatus();
     if (founding.seatsLeft <= 0) return res.status(409).json({ error: 'founding_sold_out' });
+
+    // A10.1 (regla 25): sin aceptación VIGENTE del alcance beta no hay checkout
+    const doc = readLegalDoc('ALCANCE_BETA.md');
+    if (!doc) return res.status(500).json({ error: 'legal_doc_missing' });
+    const accepted = await prisma.legalAcceptance.findFirst({
+      where: { merchantId: req.merchantId, docKey: 'alcance-beta', version: doc.version },
+      select: { id: true },
+    });
+    if (!accepted) {
+      return res.status(412).json({
+        error: 'alcance_not_accepted',
+        message: 'Lee y acepta el alcance de la beta para continuar.',
+        url: '/legal/alcance-beta',
+        version: doc.version,
+      });
+    }
+
     priceId = await resolvePriceId('founding_monthly');
   } else {
     const plan = PLANS.find((p) => p.id === planId);

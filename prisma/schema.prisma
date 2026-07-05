@@ -495,3 +495,20 @@ model WhatsAppMessage {
   @@index([relatedType, relatedId])
   @@map("whatsapp_messages")
 }
+
+// A10.1 (EXT3): evidencia de aceptación de documentos legales (p. ej. alcance
+// beta founding, regla 25). La versión es el hash del texto servido: si el
+// asesor cambia el documento, la aceptación antigua deja de valer para checkout.
+model LegalAcceptance {
+  id           Int      @id @default(autoincrement())
+  merchantId   Int      @map("merchant_id")
+  teamMemberId Int?     @map("team_member_id")
+  docKey       String   @map("doc_key") // 'alcance-beta'
+  version      String // hash sha256 (12 hex) del texto mostrado
+  ip           String?
+  userAgent    String?  @map("user_agent")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([merchantId, docKey])
+  @@map("legal_acceptances")
+}

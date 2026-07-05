@@ -161,6 +161,12 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
 }
 
 async function selectPlan(planId, annual) {
+  // A10.1 (regla 25): founding exige leer y aceptar el ALCANCE BETA antes del
+  // checkout. El backend además lo bloquea (412) si no hay aceptación vigente.
+  if (planId === 'founding') {
+    const accepted = await openAlcanceModal();
+    if (!accepted) return; // canceló — sin aceptación no hay checkout
+  }
   try {
     const res = await apiRequest('/admin/billing/checkout', {
       method: 'POST',
@@ -168,8 +174,63 @@ async function selectPlan(planId, annual) {
     });
     if (res.checkoutUrl) window.location.href = res.checkoutUrl;
   } catch (err) {
-    showToast('No se pudo iniciar el pago: ' + err.message, 'error');
+    const msg = err?.data?.error === 'alcance_not_accepted'
+      ? 'Lee y acepta el alcance de la beta para continuar.'
+      : 'No se pudo iniciar el pago: ' + err.message;
+    showToast(msg, 'error');
   }
+}
+
+// A10.1: modal de aceptación del alcance — el texto completo se lee en su
+// página (/legal/alcance-beta, iframe); checkbox obligatorio → POST accept.
+function openAlcanceModal() {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal" style="max-width:560px">
+        <div class="modal-header">
+          <h3 class="modal-title">Alcance de la oferta Founding</h3>
+          <button class="modal-close" id="alc-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <iframe src="/legal/alcance-beta" title="Alcance de la beta"
+            style="width:100%;height:320px;border:1px solid var(--neutral-200);border-radius:10px;background:#fff"></iframe>
+          <p style="margin:10px 0 0;font-size:12.5px;color:var(--muted)">
+            También puedes <a href="/legal/alcance-beta" target="_blank" rel="noopener">abrirlo en una pestaña</a>.
+          </p>
+          <label style="display:flex;align-items:flex-start;gap:10px;margin-top:14px;cursor:pointer;font-size:14px;color:var(--ink)">
+            <input type="checkbox" id="alc-check" style="width:18px;height:18px;margin-top:1px;accent-color:#16a34a;flex-shrink:0"/>
+            <span>He leído y acepto el alcance de la beta</span>
+          </label>
+          <button class="btn-primary" id="alc-continue" disabled style="width:100%;margin-top:14px;opacity:.5">
+            Aceptar y continuar al pago
+          </button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const done = (val) => { overlay.remove(); resolve(val); };
+    overlay.querySelector('#alc-close').addEventListener('click', () => done(false));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) done(false); });
+
+    const check = overlay.querySelector('#alc-check');
+    const btn = overlay.querySelector('#alc-continue');
+    check.addEventListener('change', () => {
+      btn.disabled = !check.checked;
+      btn.style.opacity = check.checked ? '1' : '.5';
+    });
+    btn.addEventListener('click', async () => {
+      btn.disabled = true; btn.textContent = 'Registrando…';
+      try {
+        await apiRequest('/admin/billing/accept-alcance', { method: 'POST' });
+        done(true);
+      } catch (err) {
+        btn.disabled = false; btn.textContent = 'Aceptar y continuar al pago';
+        showToast('No se pudo registrar la aceptación: ' + err.message, 'error');
+      }
+    });
+  });
 }
 
 async function openPortal() {

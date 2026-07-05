@@ -33,6 +33,7 @@ import {
 import mpWebhookRouter from './modules/billing/app/routes/mpWebhook.routes';
 import whatsappIncomingRouter from './modules/whatsappBot/app/routes/whatsappIncoming.routes';
 import botAdminRouter from './modules/whatsappBot/app/routes/botAdmin.routes';
+import legalPagesRouter from './modules/system/app/routes/legalPages.routes';
 
 import quotesRouter from './modules/quotes/app/routes/quotes.routes';
 import invoiceRouter from './modules/invoicing/app/routes/invoice.routes';
@@ -134,6 +135,7 @@ app.use('/pay', payBizumRouter); // C1-4: Bizum manual asistido
 app.use('/pay', payMpRouter);
 app.use('/webhooks/mp', mpWebhookRouter);
 app.use('/webhooks/whatsapp', whatsappIncomingRouter);
+app.use('/legal', legalPagesRouter); // A10.1: páginas legales públicas (alcance beta)
 app.use('/dev', devRouter);
 
 // ===========================

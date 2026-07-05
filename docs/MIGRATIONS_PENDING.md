@@ -160,3 +160,20 @@ ALTER TABLE "merchants" ADD COLUMN "home_prefs" JSONB;
 ### Verificación post-push
 - Home → botón "Personalizar" → desmarcar un bloque → Guardar → recargar: el bloque
   sigue oculto (persistencia en BD, no en el navegador).
+
+---
+
+## 5-jul-2026 — A10.1 evidencia legal (APLICADA ✅)
+
+```sql
+CREATE TABLE "legal_acceptances" (id, merchant_id, team_member_id NULL, doc_key, version, ip NULL, user_agent NULL, created_at);
+CREATE INDEX ON legal_acceptances(merchant_id, doc_key);
+```
+
+- Aditiva; aprobada por el fundador en sesión (AskUserQuestion, EXT3 A10.1).
+- Evidencia de aceptación del ALCANCE BETA (regla 25): version = hash del texto
+  servido en /legal/alcance-beta → texto nuevo del asesor invalida aceptaciones.
+
+### Verificación post-push
+- Planes → "Quiero mi plaza founding" → modal con iframe del alcance + checkbox
+  → aceptar → fila en legal_acceptances → checkout continúa. Sin aceptar: 412.
