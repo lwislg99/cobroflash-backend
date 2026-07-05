@@ -38,6 +38,8 @@ function tutMarkShown(key) {
 }
 
 function maybeShowSectionTip(view) {
+  // QA/headless (Playwright, Edge --headless): sin tooltips — capturas limpias
+  if (navigator.webdriver) return;
   const tip = TUTORIAL_TIPS[view];
   if (!tip) return;
   if (tutShownTips()[view]) return;

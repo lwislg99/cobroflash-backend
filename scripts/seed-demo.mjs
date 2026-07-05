@@ -186,14 +186,16 @@ async function seed() {
 
   // ── 12 presupuestos, estados repartidos, importes 180–2.400 € ──────────
   // 4 ACEPTADOS + COBRADOS (métodos variados)
+  // Fechas de cobro: 2 del mes pasado (historial) + 2 de ESTE mes, para que
+  // "Cobrado este mes" de la Home nunca salga a 0 en demo.
   const q1 = await quote({ customer: maria,     createdDaysAgo: 20, status: 'accepted', extra: { acceptedAt: daysAgo(19), decisionChannel: 'whatsapp', decisionComment: 'Aceptado con firma digital' }, lines: [L('Sustitución de grifo monomando (cocina)', 1, 65), L('Reparación de fuga bajo fregadero', 1, 75), L('Mano de obra adicional', 1, 35)] });
   await paidJob(q1, maria, 'card', 18);
   const q2 = await quote({ customer: bar,       createdDaysAgo: 16, status: 'accepted', extra: { acceptedAt: daysAgo(15), decisionChannel: 'whatsapp' }, lines: [L('Desatasco de tubería principal', 1, 90), L('Revisión general de fontanería', 1, 45), L('Mano de obra (hora)', 2, 35)] });
   await paidJob(q2, bar, 'bizum_manual', 14);
-  const q3 = await quote({ customer: comunidad, createdDaysAgo: 12, status: 'accepted', extra: { acceptedAt: daysAgo(11), decisionChannel: 'whatsapp', decisionComment: 'Aprobado en junta' }, lines: [L('Instalación de termo eléctrico 100L', 2, 240), L('Sustitución de llaves de corte', 4, 28), L('Mano de obra (hora)', 6, 35)] });
-  await paidJob(q3, comunidad, 'transfer', 9);
-  const q4 = await quote({ customer: antonio,   createdDaysAgo: 8,  status: 'accepted', extra: { acceptedAt: daysAgo(7), decisionChannel: 'whatsapp' }, lines: [L('Instalación de lavabo con grifería', 1, 160), L('Cambio de cisterna completa', 1, 85)] });
-  await paidJob(q4, antonio, 'card', 6);
+  const q3 = await quote({ customer: comunidad, createdDaysAgo: 6, status: 'accepted', extra: { acceptedAt: daysAgo(5), decisionChannel: 'whatsapp', decisionComment: 'Aprobado en junta' }, lines: [L('Instalación de termo eléctrico 100L', 2, 240), L('Sustitución de llaves de corte', 4, 28), L('Mano de obra (hora)', 6, 35)] });
+  await paidJob(q3, comunidad, 'transfer', Math.min(4, now.getDate() - 1));
+  const q4 = await quote({ customer: antonio,   createdDaysAgo: 5,  status: 'accepted', extra: { acceptedAt: daysAgo(4), decisionChannel: 'whatsapp' }, lines: [L('Instalación de lavabo con grifería', 1, 160), L('Cambio de cisterna completa', 1, 85)] });
+  await paidJob(q4, antonio, 'card', Math.min(2, Math.max(0, now.getDate() - 2)));
 
   // 1 ACEPTADO con COBRO PENDIENTE (el "dinero en juego" nº1)
   const q5 = await quote({ customer: lucia, createdDaysAgo: 4, status: 'accepted', extra: { acceptedAt: daysAgo(3), decisionChannel: 'whatsapp', decisionComment: 'Firmado desde el móvil' }, lines: [L('Reforma de baño: fontanería completa', 1, 1650), L('Instalación de plato de ducha', 1, 320)] });
