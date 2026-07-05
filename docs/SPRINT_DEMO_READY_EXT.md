@@ -29,7 +29,17 @@ Flags nuevas arrancan OFF; activación = fundador (PENDIENTES_FUNDADOR).
 > en la FAQ) · 3 pasos zigzag con capturas reales + reveal IO · #demo con carrusel real y hueco de vídeo
 > (DEMO_VIDEO_URL) · precios 29/290 + founding contador real (/public/founding-status) + copy 0,9 % ·
 > FAQ 9 objeciones H6 (VeriFactu = H2 literal) + footer serio · OG 1200×630 real (img/og.png) +
-> favicon + preload LCP. **A4.7 ⏸ bloqueada SOLO en las capturas del fundador** (lista pedida). ·
+> favicon + preload LCP. · **A4.7 ✅ COMPLETA (5-jul, `915d11d`+`bacd28f`):** el bloqueo de capturas se
+> resolvió SIN fundador — pipeline headless propio (magic link `type:'magic_link'` minteado en BD → Edge
+> `--headless` con perfil persistente → deep-links `/dashboard/#vista`; tutorial.js se auto-silencia en
+> headless `915d11d`). Capturas 390px limpias en `public/img/landing/` + `docs/evidencias/demo-caps/`.
+> Demo publicada: `public/js/landing-demo.js` (vanilla, sin líbs) — Acto 1 = 4 escenas (<30s, auto 7s,
+> hotspot clicable, dots+pausa, arranque perezoso IO, reduced-motion sin auto-play); Acto 2 = 5 chips
+> (bot WA con pagar-pendiente recreado, clientes, catálogo, informes, solicitudes; SIN gastos/proveedores
+> — el seed no tiene gastos y la maqueta solo enseña lo real). Carrusel A4.3 retirado; DEMO_VIDEO_URL
+> sigue teniendo prioridad si algún día hay vídeo. Cero "factura"/fiscal en la maqueta (regla 26). ·
+> **Fix móvil dashboard (5-jul, `9b5a5c1`):** scroll lateral a 390px eliminado (`min-width:0` en
+> .main/.view-container + `overflow-x:clip`), reportado por el fundador con DevTools. ·
 > Resto ⏳: Ola 5 → A6.2-A6.5 → A6.7 si sobra → A6.6 cierre.
 
 ---
@@ -73,7 +83,7 @@ Lighthouse móvil ≥90 (spec W1): imágenes comprimidas (webp), lazy-load, cero
 Favicon + meta OG/Twitter (título, descripción, imagen) para que el link de yaqu.app se vea
 premium al compartirse POR WHATSAPP — es literalmente cómo va a llegar a los prospectos.
 
-**A4.7 `[CC]` — Demo interactiva embebida (patrón Holded).**
+**A4.7 `[CC]` — Demo interactiva embebida (patrón Holded).** ✅ HECHA (5-jul, `bacd28f` — "dos actos" v2: 4 escenas + 5 chips, capturas propias vía Edge headless; detalle en ESTADO).
 Bloque central de la landing: un frame que SIMULA el producto y el visitante puede clicar.
 - **Alcance acotado (no es el BO real, es una maqueta guiada):** 3-4 "escenas" clicables:
   (1) Home con dinero en juego → clic en "Nueva cotización" → (2) crear presupuesto (líneas
