@@ -68,6 +68,12 @@ flags OFF (nada cambia hasta que actives). Para encenderlo, EN ESTE ORDEN:
    categoría **Utility**, copy neutro "tu documento de cobro", y botones como **"URL dinámica"**
    (`https://yaqu.app/pay/quote/{{1}}`, `/pay/invoice/{{1}}`, `/recibo/{{1}}`). Mismos nombres → cero
    cambios de código. Aprobación: minutos-48h.
+   **➕ Ola 5 (A5.1/A5.2, tu descubrimiento de los quick replies):** al recrearlas añade además un botón
+   **quick reply** a `quote_decision_es` (p. ej. «👍 Lo miro ahora») y otro a `payment_request_es`
+   (p. ej. «✅ Voy a pagarlo»). Un botón URL NO abre la ventana de 24 h; un quick reply SÍ — y el código
+   ya está preparado (5-jul): cada tap se registra y los siguientes envíos del ciclo (cobro, recordatorios,
+   confirmación+recibo) viajan como texto GRATIS en vez de plantilla. Con esto el ciclo entero cuesta
+   ~0,023 € (solo la primera plantilla). La tabla completa: `docs/WHATSAPP_TEMPLATES.md` § A5.1.
 6. **Paso 3 → Verificación de empresa** (2-10 días, en paralelo): documentos del negocio (alta de autónomo/
    escritura, factura de suministro, extracto bancario — con el nombre legal). Sin verificar: límite ~250
    conversaciones/día (de sobra para founding); verificada: sube solo.

@@ -40,7 +40,16 @@ Flags nuevas arrancan OFF; activación = fundador (PENDIENTES_FUNDADOR).
 > sigue teniendo prioridad si algún día hay vídeo. Cero "factura"/fiscal en la maqueta (regla 26). ·
 > **Fix móvil dashboard (5-jul, `9b5a5c1`):** scroll lateral a 390px eliminado (`min-width:0` en
 > .main/.view-container + `overflow-x:clip`), reportado por el fundador con DevTools. ·
-> Resto ⏳: Ola 5 → A6.2-A6.5 → A6.7 si sobra → A6.6 cierre.
+> **Ola 5 ✅ COMPLETA (5-jul):** A5.1 `57d2983` (tabla de coste por ciclo en WHATSAPP_TEMPLATES.md:
+> hoy ~0,11–0,23 €/ciclo → ventana-first ~0,023 €) · A5.2+A5.3 `8076118` (entrantes como `type:'inbound'`
+> en el log WA-0b — una fila por merchant con ese teléfono; `isServiceWindowOpen` 23,5 h;
+> `sendWhatsAppWindowFirst()` texto 0 € + fallback plantilla, waOptOut respetado; aplicado a
+> payment_request, recordatorios 7/14 d y payment_confirmation_invoice/recibo-reseña; copy de ventana
+> cumple regla 24/26 — "justificante" para J-…; quote_decision queda como ÚNICA plantilla del ciclo;
+> SIN cambios de schema) · A5.4 `972b795` (J8: bloque `channel` plantilla-vs-ventana + ahorro € en la
+> tarjeta de Informes). **Los quick replies que abren ventana en cada paso = acción del fundador en Meta**
+> (al recrear plantillas en FASE B; ya documentado con ejemplos en PENDIENTES_FUNDADOR §FASE B.5). ·
+> Resto ⏳: A6.2-A6.5 → A6.7 si sobra → A6.6 cierre.
 
 ---
 
