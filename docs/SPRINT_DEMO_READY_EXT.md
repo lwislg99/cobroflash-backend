@@ -49,7 +49,36 @@ Flags nuevas arrancan OFF; activación = fundador (PENDIENTES_FUNDADOR).
 > SIN cambios de schema) · A5.4 `972b795` (J8: bloque `channel` plantilla-vs-ventana + ahorro € en la
 > tarjeta de Informes). **Los quick replies que abren ventana en cada paso = acción del fundador en Meta**
 > (al recrear plantillas en FASE B; ya documentado con ejemplos en PENDIENTES_FUNDADOR §FASE B.5). ·
-> Resto ⏳: A6.2-A6.5 → A6.7 si sobra → A6.6 cierre.
+> **Ola 6 (5-jul):** A6.2 ✅ `8db5e70` (showToast global en api.js con variantes ok/warn/error, cero
+> alert() en el BO, uiSkeletonCards para Gastos/Solicitudes, /recibo con check celebratorio animado al
+> llegar recién pagado `?card=success`/`?celebrate=1`; la firma ya celebraba) · A6.3 ✅ `f153609`
+> (checklist de Home con progreso X/Y y los pasos que venden: logo, IBAN/Bizum, WhatsApp, reseñas
+> Google, NIF, primer presupuesto; el wizard de 5 pasos ya cumplía el resto de la spec) · A6.4 ✅
+> `d154adc` (emailLayout.ts compartido email-safe: magic link, invitación, presupuesto con importe en
+> tinta, justificante/factura; escEmail en nombres) · A6.5 ✅ `bdaad11` (empty states dignos en
+> Facturas/Proveedores/Equipo + 404 global con marca para navegadores, JSON para API) · A6.7 ✅
+> `36b8425` (merchants.home_prefs JSONB aditiva — diff previsualizado y **aprobado explícitamente por
+> el fundador en sesión** — botón Personalizar solo-admin + panel de checkboxes de 6 bloques,
+> persistencia en BD, default todo visible; registrada en MIGRATIONS_PENDING.md). ·
+> **A6.6 (cierre) ✅ COMPLETA (5-jul, `bd5b0a3`→`da7bf9e`):** barrido de las 18 pantallas del guion a
+> **390×844@2x REAL** → `docs/evidencias/demo-final/` (BO completo + firma/pago/recibo/404 del cliente).
+> **Hallazgo de tooling:** `msedge --headless --screenshot` clampa la ventana a ~500px — TODAS las
+> capturas "390" anteriores eran layout de 492px recortado (sus "overflows" eran artefactos). Pipeline
+> nuevo: `scripts/capture-demo.mjs` (puppeteer-core sobre el Edge instalado, viewport real, purga del
+> service worker del PWA + reload; perfil autenticado vía magic link). **P1 reales encontrados y
+> ARREGLADOS:** (1) dinero client-facing en formato anglo ("326.70 EUR") → `formatMoneyEs()` es-ES
+> ("326,70 €") en firma/pay/recibo `bd5b0a3`; (2) Crear presupuesto medía 650px en un móvil de 390 —
+> raíz: pistas `1fr` crecen al min-content de la tabla de líneas → `minmax(0,1fr)` en
+> quotes-layout/form-rows `af957e6` + tabla en carril propio `.quote-lines-scroll` `9019b24`;
+> (3) TODAS las tablas del BO recortaban columnas (estado/acciones) en móvil → carril con scroll
+> propio a ≤768px `483b160`. P2/P3 anotados (no bloquean demo): botón "Pagar con tarjeta" envuelve
+> apretado con el chip RECOMENDADO a 390 · banner del recibo dice "estamos generando tu factura"
+> cuando ya existe · totales del BO interno en formato punto (merchant-facing).
+>
+> **🏁 SPRINT EXT COMPLETO (Olas 4, 5 y 6 — 5-jul-2026).** Todo verificado en yaqu.app. Queda del
+> lado del fundador: rotar `WHATSAPP_ACCESS_TOKEN`, FASE B WABA producción (con quick replies §B.5),
+> P3-3 Utility, webhook Connect + flags, EMAIL_FROM, vídeo 60s (`DEMO_VIDEO_URL`) y ensayar el guion
+> de 90s 3 veces sobre la cuenta demo (gate humano de la Ola 6).
 
 ---
 
