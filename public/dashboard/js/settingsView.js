@@ -650,11 +650,25 @@ async function renderPublicProfileCard(container) {
       }
     });
 
-    // A14.2 añade aquí el botón de QR (furgoneta/tarjeta)
-    if (typeof renderProfileQrButton === 'function') renderProfileQrButton(card, m, enabled);
+    renderProfileQrButton(card, m); // A14.2: QR furgoneta/tarjeta
   }
 
   paint();
+}
+
+// ── A14.2 · QR de la página pública (PNG 1024px → /p/:slug?src=qr) ─────────
+// Para imprimir en la furgoneta o la tarjeta: quien lo escanea ve la página y,
+// si acaba registrándose en YaQu, queda atribuido (acquisitionSource='qr').
+function renderProfileQrButton(card, m) {
+  const slot = card.querySelector('#pp-qr-slot');
+  if (!slot) return;
+  if (!m.slug) { slot.innerHTML = ''; return; }
+  slot.innerHTML = `
+    <a class="btn btn-secondary btn-sm" href="/admin/merchant/public-profile-qr"
+       download="yaqu-qr-${escSettings(m.slug)}.png"
+       title="PNG en alta resolución para imprimir — apunta a tu página con atribución">
+      ⬇ QR para la furgoneta
+    </a>`;
 }
 
 // ── Tarjeta de Referidos (Sprint REFERRAL) ────────────────────────────────

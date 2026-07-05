@@ -71,6 +71,9 @@
   if (utmSrc) {
     acquisitionSource = [utmSrc, (qsP.get('utm_medium') || '').trim(), (qsP.get('utm_campaign') || '').trim()]
       .filter(Boolean).join('/');
+  } else if (qsP.get('src') === 'profile' || qsP.get('src') === 'qr') {
+    // A14.2 (PERFIL-1): registro directo desde el perfil público / QR de furgoneta
+    acquisitionSource = qsP.get('src');
   } else {
     try { acquisitionSource = localStorage.getItem('yaqu_src') || sessionStorage.getItem('yaqu_src') || ''; } catch (err) {}
   }

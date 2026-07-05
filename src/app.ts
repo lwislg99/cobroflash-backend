@@ -60,6 +60,8 @@ import searchRouter        from './modules/search/app/routes/search.routes';
 
 import { merchantProfileUpdateSchema } from './core/validation/schemas';
 import { getMerchantProfile, updateMerchantProfile, SlugError } from './modules/system/merchantAdmin';
+import QRCode from 'qrcode'; // A14.2: QR del perfil público (PNG alta res para furgoneta/tarjeta)
+import { BASE_URL } from './core/config/env';
 import { getDigestPreview } from './modules/messaging/domain/weeklyDigest.service';
 import { getReferralStats, redeemFreeMonth } from './modules/auth/domain/referral.service';
 import { getSession } from './modules/auth/domain/auth.service';
@@ -295,6 +297,26 @@ app.put('/admin/merchant', requireRole('admin'), async (req, res, next) => {
     }
     return next(err);
   }
+});
+
+// A14.2 (PERFIL-1): QR del perfil público en PNG alta resolución (1024px) para
+// imprimir en furgoneta/tarjeta. Apunta a /p/:slug?src=qr → el registro que nazca
+// de ese QR queda atribuido (acquisitionSource='qr', loop V0-3).
+app.get('/admin/merchant/public-profile-qr', requireRole('admin'), async (req, res, next) => {
+  try {
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: req.merchantId },
+      select: { slug: true },
+    });
+    if (!merchant?.slug) {
+      return res.status(400).json({ error: 'no_slug', message: 'Primero elige la dirección de tu página.' });
+    }
+    const png = await QRCode.toBuffer(`${BASE_URL}/p/${merchant.slug}?src=qr`, {
+      type: 'png', width: 1024, margin: 2, errorCorrectionLevel: 'M',
+    });
+    res.setHeader('Content-Disposition', `attachment; filename="yaqu-qr-${merchant.slug}.png"`);
+    return res.type('png').send(png);
+  } catch (err) { return next(err); }
 });
 
 // Onboarding completo — solo propietario (admin)

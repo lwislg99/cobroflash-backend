@@ -103,6 +103,9 @@
         if (src) {
           attribution = [src, (q.get('utm_medium') || '').trim(), (q.get('utm_campaign') || '').trim()]
             .filter(Boolean).join('/');
+        } else if (q.get('src') === 'profile' || q.get('src') === 'qr') {
+          // A14.2 (PERFIL-1): loop del perfil público / QR de furgoneta
+          attribution = q.get('src');
         } else if (document.referrer) {
           var host = new URL(document.referrer).hostname.replace(/^www\./, '');
           if (host && host !== location.hostname) attribution = 'referrer:' + host;
