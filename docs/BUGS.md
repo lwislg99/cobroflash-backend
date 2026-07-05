@@ -236,6 +236,27 @@
 
 ---
 
+## P-A66 — Hallazgos del barrido visual final A6.6 (5-jul, capturas 390 REALES)
+
+> Contexto: `msedge --headless --screenshot` clampa la ventana a ~500px; el barrido con
+> viewport móvil real (`scripts/capture-demo.mjs`) destapó P1 (arreglados en el sprint:
+> dinero es-ES `bd5b0a3`, grid blowout `af957e6`/`9019b24`, tablas móvil `483b160`) y estos P2/P3.
+
+### [x] P-A66-1 · /pay/invoice: título y subtítulo del método fluían juntos a 390px
+- **Síntoma:** "Pagar con tarjeta Visa · Mastercard · al instante" envolvía a mitad de frase con el chip RECOMENDADO apretando.
+- **Causa:** `.method-title`/`.method-sub` eran spans inline (el `margin-top` del sub estaba muerto).
+- **CERRADO (5-jul):** display:block en ambos — título en su línea, subtítulo debajo en muted.
+
+### [x] P-A66-2 · /recibo pagado sin PDF aún: mensaje duplicado
+- **Síntoma:** el banner verde decía "Estamos generando tu factura; la recibirás…" y justo debajo un <small> repetía "La factura se emitirá y se enviará por WhatsApp y email automáticamente".
+- **CERRADO (5-jul):** eliminado el <small> (el banner ya lo dice todo).
+
+### [ ] P3 · P-A66-3 · Formato de dinero en el BO interno sin unificar
+- **Síntoma:** el BO merchant-facing mezcla "0.00 EUR", "€0.00" y "1.266,87 €" (p. ej. totales del creador y de la vista previa usan punto decimal).
+- **Arreglo propuesto:** helper compartido en `api.js` (espejo de `formatMoneyEs`) y pasada vista a vista (una pantalla por commit, Parte AB). No bloquea demo: el CLIENTE ya ve siempre es-ES.
+
+---
+
 ## P4 — Pre-lanzamiento (registrar, NO ahora)
 - [ ] Correr `/security-review` antes de exponer a clientes reales (el producto maneja pagos).
 - [ ] Autenticación + multi-tenant real (quitar `merchantId=1` hardcodeado).

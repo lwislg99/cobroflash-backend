@@ -149,8 +149,10 @@ router.get('/invoice/:chargeId', async (req, res) => {
     .method:active{transform:translateY(1px)}
     .method-ico{font-size:1.45rem;flex-shrink:0;width:30px;text-align:center}
     .method-txt{flex:1;min-width:0}
-    .method-title{font-weight:700;font-size:.98rem;line-height:1.2}
-    .method-sub{font-size:.76rem;color:var(--muted);margin-top:.12rem}
+    /* A6.6 P2: block — como spans inline el título y el subtítulo fluían juntos
+       y a 390px envolvían a mitad de frase ("Pagar con tarjeta Visa · …") */
+    .method-title{display:block;font-weight:700;font-size:.98rem;line-height:1.2}
+    .method-sub{display:block;font-size:.76rem;color:var(--muted);margin-top:.12rem}
     .method-chip{flex-shrink:0;font-size:.66rem;font-weight:700;letter-spacing:.03em;color:#166534;
       background:var(--brand-tint);border:1px solid #bbf7d0;border-radius:999px;padding:.18rem .55rem;text-transform:uppercase}
     .chev{font-size:1.25rem;opacity:.55;flex-shrink:0}

@@ -89,8 +89,7 @@ router.get('/:id', async (req, res) => {
   // "factura" para un justificante (regla 7 / Parte M). Tipo: invoice.type==='JUST' o nº J-…
   const isJust = !!invoice && (invoice.type === 'JUST' || isReceiptNumber(invoice.number));
   const docLabel = isJust ? 'justificante' : 'factura';
-  const docArticle = isJust ? 'El' : 'La'; // concordancia: El justificante / La factura
-  const docPron = isJust ? 'lo' : 'la';    // pronombre: lo (justificante) / la (factura)
+  const docPron = isJust ? 'lo' : 'la'; // pronombre: lo (justificante) / la (factura)
 
   const title = `Recibo #${ch.id} — YaQu`;
 
@@ -133,9 +132,7 @@ router.get('/:id', async (req, res) => {
         ? `<p class="doc-link"><a href="${invoice!.pdfUrl}" target="_blank">
              📄 Descargar ${docLabel} (${esc(invoice!.number)})
            </a></p>${emailBlock}`
-        : `<small>
-             ${docArticle} ${docLabel} se emitirá y se enviará por WhatsApp y email automáticamente.
-           </small>`
+        : '' /* A6.6 P2: el banner "Estamos generando tu ${docLabel}…" ya lo dice — duplicaba mensaje */
       : '';
 
       const statusMessage =
