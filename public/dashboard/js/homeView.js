@@ -656,7 +656,8 @@ function openQuickQuoteModal(prefill) {
     dictBtn.textContent = '🎤 Dictar el trabajo';
     addLineBtn.insertAdjacentElement('afterend', dictBtn);
     dictBtn.addEventListener('click', () => {
-      openAiSuggestModal((suggested) => {
+      openAiSuggestModal((suggested, meta) => {
+        if (meta && meta.voiceUsed) qqState.createdVia = 'voice'; // VZ-3
         suggested.forEach((l) => {
           qqState.products.push({ concept: l.concept, qty: l.qty || 1, price: String(l.price ?? '') });
         });
@@ -1005,6 +1006,7 @@ async function submitQuickQuote() {
       customer_id: customerId,
       currency: (window.appLocale?.currency || "EUR"),
       paymentTerms: qqState.paymentTerms,
+      created_via: qqState.createdVia === 'voice' ? 'voice' : 'text', // VZ-3
       ...quotePayload,
     });
 

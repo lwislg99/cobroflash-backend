@@ -120,7 +120,8 @@ function openAiSuggestModal(addLinesFn) {
       const checked = [...list.querySelectorAll('input[type=checkbox]:checked')];
       const selected = checked.map(cb => lines[Number(cb.dataset.idx)]);
       if (selected.length === 0) { setAlert('error', 'Selecciona al menos una línea.'); return; }
-      addLinesFn(selected);
+      // VZ-3: si la descripción entró por VOZ, el consumidor lo sabe (telemetría)
+      addLinesFn(selected, { voiceUsed: ta.dataset.voiceUsed === '1' });
       closeModal();
     };
   };

@@ -87,6 +87,11 @@ flags OFF (nada cambia hasta que actives). Para encenderlo, EN ESTE ORDEN:
 
 ## 🆕 Sprint EXT2 (5-jul) — VOZ-1
 
+- [ ] **Railway · `ANTHROPIC_API_KEY`** ⚠️ BLOQUEA la Ola 7: el endpoint /admin/ai/suggest-quote
+  responde 503 ai_not_configured en prod (la IA de sugerencias nunca ha estado activa). Sin la key
+  no se puede correr el eval VZ-2 (gate ≥8/10) ni activar la voz. En cuanto la pongas, aviso y corro
+  el eval en el momento (`EVAL_REMOTE=1` contra prod).
+
 - [ ] **Railway · `VOICE_QUOTE_ENABLED=true`** (cuando A7.2 pase su eval ≥8/10): enciende el
   micro de dictado en Cotización rápida y en "Sugerir con IA". OFF = todo como hoy (rollback
   sin deploy). Requiere `ANTHROPIC_API_KEY` ya configurada (la IA de sugerencias es la misma).

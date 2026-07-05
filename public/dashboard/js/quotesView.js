@@ -1,7 +1,12 @@
 // public/dashboard/js/quotesView.js
 
+// VZ-3: si la descripción del presupuesto entró por VOZ (modal Sugerir con IA),
+// el create lleva created_via='voice' (telemetría V0-3). Se resetea por render.
+let quoteFormCreatedVia = 'text';
+
 function renderQuotesView(container) {
   container.innerHTML = "";
+  quoteFormCreatedVia = 'text';
 
   // ---------- LAYOUT PRINCIPAL (responsive) ----------
   const layout = document.createElement("div");
@@ -1711,7 +1716,8 @@ if (Number.isFinite(n) && n >= 0) {
   // Botón IA — añade las líneas sugeridas por Claude
   aiBtn.addEventListener("click", function () {
     if (typeof openAiSuggestModal === 'function') {
-      openAiSuggestModal(function (suggestedLines) {
+      openAiSuggestModal(function (suggestedLines, meta) {
+        if (meta && meta.voiceUsed) quoteFormCreatedVia = 'voice'; // VZ-3
         // Limpiar la fila vacía si es la única y no tiene datos
         const existingRows = tbody.querySelectorAll('tr');
         if (existingRows.length === 1) {
@@ -2135,6 +2141,7 @@ payloadLines.push({
         lines: payloadLines,
         paymentTerms: paymentSelect.value || null,
         payMethods: selectedPayMethods(), // A2.1: undefined = todas
+        created_via: quoteFormCreatedVia, // VZ-3: 'voice' si hubo dictado
       };
 
       const quote = await createQuote(quotePayload);
