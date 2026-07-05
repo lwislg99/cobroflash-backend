@@ -3,6 +3,7 @@ import path from 'path';
 
 import { invoicesDir, outboxDir } from './core/storage/dirs';
 import { jsonError } from './core/http/jsonError';
+import { notFoundPageHtml } from './core/http/publicNotFound';
 import { requireAuth, requireActivePlan, requireRole } from './core/http/authMiddleware';
 import { isOwnerEmail } from './core/config/env';
 
@@ -270,4 +271,10 @@ app.post('/admin/onboarding/complete', requireRole('admin'), async (req, res) =>
   return res.json({ ok: true });
 });
 
-app.use((_req, res) => res.status(404).json({ error: 'not_found' }));
+// A6.5: 404 con marca para navegadores (GET que acepta HTML); JSON para la API.
+app.use((req, res) => {
+  if (req.method === 'GET' && req.accepts(['json', 'html']) === 'html') {
+    return res.status(404).type('html').send(notFoundPageHtml());
+  }
+  return res.status(404).json({ error: 'not_found' });
+});

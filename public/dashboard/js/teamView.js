@@ -63,7 +63,11 @@ async function renderTeamView(container) {
     }
 
     if (!members.length) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--neutral-400);padding:32px">Aún no hay miembros en el equipo.</td></tr>`;
+      // A6.5: estado vacío digno (mismo patrón que el resto de listas)
+      tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-state-icon">👷</div>
+        <div class="empty-state-title">Trabaja en equipo</div>
+        <div class="empty-state-desc">Invita a tus técnicos: podrán crear presupuestos desde la obra y tú apruebas los que pasen de tu umbral.</div>
+      </div></td></tr>`;
       return;
     }
 

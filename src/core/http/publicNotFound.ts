@@ -30,3 +30,39 @@ export function documentNotFoundHtml(): string {
 </body>
 </html>`;
 }
+
+// A6.5 — 404 GENÉRICO con marca para cualquier ruta desconocida visitada desde
+// un navegador (el fallthrough de la API sigue devolviendo JSON a los clientes
+// programáticos; ver app.ts). Nada de JSON crudo delante de una persona.
+export function notFoundPageHtml(): string {
+  return `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="robots" content="noindex"/>
+  <title>Página no encontrada — YaQu</title>
+  <style>
+    body{margin:0;font-family:Inter,system-ui,-apple-system,sans-serif;background:#f6f7f5;color:#0f1c17;
+         min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .card{background:#fff;border:1px solid #e7e9e5;border-radius:16px;max-width:420px;width:100%;
+          padding:36px 28px;text-align:center;box-shadow:0 4px 12px -2px rgba(16,24,40,.08)}
+    .logo{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:17px;margin-bottom:18px}
+    .logo span{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#22d3ee);
+          display:inline-flex;align-items:center;justify-content:center;color:#052e16;font-size:12px}
+    h1{font-size:18px;margin:0 0 8px}
+    p{font-size:14px;color:#6b756f;margin:0 0 20px;line-height:1.5}
+    a.btn{display:inline-block;background:#16a34a;color:#fff;font-weight:700;font-size:14px;
+          padding:11px 24px;border-radius:999px;text-decoration:none}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo"><span>YQ</span>YaQu</div>
+    <h1>Esta página no existe</h1>
+    <p>Puede que el enlace esté mal escrito o que la página se haya movido.</p>
+    <a class="btn" href="/">Ir al inicio</a>
+  </div>
+</body>
+</html>`;
+}

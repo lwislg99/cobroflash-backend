@@ -209,15 +209,23 @@ async function fetchInvoices(options = {}) {
         updateBulkBar();
 
         if (!invoices || invoices.length === 0) {
+          // A6.5: estado vacío digno (mismo patrón que Productos/Clientes)
+          const filtering = currentSearch || currentStatus !== 'all' || currentDateFrom || currentDateTo;
           const tr = document.createElement('tr');
           const td = document.createElement('td');
           td.colSpan = 6;
-          td.style.cssText = 'text-align:center;color:var(--muted);padding:24px';
-          td.textContent = currentSearch || currentStatus !== 'all' || currentDateFrom || currentDateTo
-            ? 'No hay facturas para estos filtros.'
-            : 'Aún no has emitido facturas. Se generan al cobrar un presupuesto aceptado.';
+          td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🧾</div>'
+            + '<div class="empty-state-title">' + (filtering ? 'Nada con estos filtros' : 'Aquí verás tus cobros') + '</div>'
+            + '<div class="empty-state-desc">' + (filtering
+              ? 'Prueba con otra búsqueda o limpia los filtros.'
+              : 'Cuando un cliente acepte un presupuesto, el documento de cobro se genera solo y aparece aquí.') + '</div>'
+            + (filtering ? '' : '<button id="inv-empty-cta" class="btn-primary btn-sm" style="margin-top:14px">Crear un presupuesto</button>')
+            + '</div>';
           tr.appendChild(td);
           tbody.appendChild(tr);
+          td.querySelector('#inv-empty-cta')?.addEventListener('click', () => {
+            if (window.renderAppView) renderAppView('quotes-new');
+          });
           setCount('0 facturas');
           return;
         }

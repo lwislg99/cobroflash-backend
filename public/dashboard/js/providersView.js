@@ -240,10 +240,14 @@ function renderProvidersView(container) {
       tbody.innerHTML = "";
   
       if (!items || items.length === 0) {
+        // A6.5: estado vacío digno (mismo patrón que Productos/Clientes)
         const tr = document.createElement("tr");
         const td = document.createElement("td");
         td.colSpan = 6;
-        td.textContent = "No hay proveedores todavía.";
+        td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🚚</div>'
+          + '<div class="empty-state-title">Tus proveedores, a mano</div>'
+          + '<div class="empty-state-desc">Guarda a quién le compras material: podrás asociarles gastos y ver cuánto te cuesta cada uno.</div>'
+          + '</div>';
         tr.appendChild(td);
         tbody.appendChild(tr);
         return;
