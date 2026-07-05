@@ -25,14 +25,9 @@ function getPaymentTermsLabel(code) {
 }
 
 // Formato de dinero coherente con la moneda de la cotización (LATAM/ES)
+// P-A66-3: delega en el formateador es-ES compartido (api.js)
 function fmtQuoteMoney(amount, currency) {
-  const cur = currency || (window.appLocale && window.appLocale.currency) || 'EUR';
-  return (
-    Number(amount || 0).toLocaleString('es-ES', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }) + ' ' + cur
-  );
+  return fmtMoneyEs(amount, currency || (window.appLocale && window.appLocale.currency) || 'EUR');
 }
 
 // Helper: añade una fila a una <dl> solo si hay valor

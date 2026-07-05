@@ -137,14 +137,9 @@ function renderQuotesListView(container) {
     });
   }
 
+  // P-A66-3: delega en el formateador es-ES compartido (api.js)
   function formatMoney(amount, currency) {
-    const cur = currency || (window.appLocale && window.appLocale.currency) || "EUR";
-    return (
-      Number(amount || 0).toLocaleString("es-ES", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }) + " " + cur
-    );
+    return fmtMoneyEs(amount, currency || (window.appLocale && window.appLocale.currency) || "EUR");
   }
 
   function buildStatusPill(status) {
