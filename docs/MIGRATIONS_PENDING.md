@@ -177,3 +177,17 @@ CREATE INDEX ON legal_acceptances(merchant_id, doc_key);
 ### Verificación post-push
 - Planes → "Quiero mi plaza founding" → modal con iframe del alcance + checkbox
   → aceptar → fila en legal_acceptances → checkout continúa. Sin aceptar: 412.
+
+---
+
+## 5-jul-2026 — LOTE EXT3 completo (APLICADO ✅, una aprobación)
+
+```sql
+ALTER TABLE merchants ADD subscription_status, slug (+unique), slug_changed_at, profile_zones, profile_years;
+ALTER TABLE quotes    ADD origin, valid_until, doc_fields;
+ALTER TABLE customers ADD legal_name, tax_id;
+CREATE TABLE jobs (A13) · maintenance_plans (A15) · audit_log (A11.1) · attachments (Ola 19) + índices;
+```
+
+- 0 DROPs, todo aditivo; aprobado por el fundador en sesión (AskUserQuestion, EXT3).
+- Todo nace INERTE: cada ola cablea su pieza; attachments espera credenciales R2.

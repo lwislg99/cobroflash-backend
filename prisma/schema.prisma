@@ -33,6 +33,16 @@ model Merchant {
   connectStatus        String  @default("none") @map("connect_status") // none|pending|active|restricted
   // C1-4: móvil para Bizum manual asistido (default en UI: whatsappPhone, editable)
   bizumPhone           String? @map("bizum_phone")
+  // A10.2 (EXT3, Parte L): estado de la suscripción de Stripe — ok|past_due|canceled.
+  // plan conserva QUÉ plan es; esto conserva CÓMO está (banner past_due + portal).
+  subscriptionStatus   String? @map("subscription_status")
+
+  // A14 (EXT3, PERFIL-1): perfil público /p/:slug · flag PUBLIC_PROFILE_ENABLED (OFF)
+  slug            String?   @unique
+  slugChangedAt   DateTime? @map("slug_changed_at") // editable 1 vez/30d
+  profileZones    Json?     @map("profile_zones")   // chips de zonas
+  profileYears    Int?      @map("profile_years")   // años de experiencia (opc.)
+
   // A6.7: preferencias de la Home (bloques visibles) — {hero,quick,kpis,week,activity,tops}: bool
   homePrefs            Json?   @map("home_prefs")
 
@@ -112,6 +122,11 @@ model AuthSession {
 }
 
 model Customer {
+  // A20.4 (EXT3): cliente empresa — razón social y NIF (el NIF además es
+  // requisito del F1 VeriFactu futuro, hallazgo S1-C)
+  legalName String? @map("legal_name")
+  taxId     String? @map("tax_id")
+
   id         Int  @id @default(autoincrement())
   merchantId  Int     @default(1) @map("merchant_id")
   name        String
@@ -196,6 +211,12 @@ model Reconciliation {
 }
 
 model Quote {
+  // EXT3: origin (A15: maintenance) · validUntil (A16.2: caducidad, default 30d en código)
+  // · docFields (A20.4: qué datos del cliente muestra el documento)
+  origin     String?   // null|manual … | maintenance
+  validUntil DateTime? @map("valid_until")
+  docFields  Json?     @map("doc_fields") // {name,phone,taxId,email}: bool
+
   id         Int @id @default(autoincrement())
   merchantId Int
   customerId Int
@@ -511,4 +532,76 @@ model LegalAcceptance {
 
   @@index([merchantId, docKey])
   @@map("legal_acceptances")
+}
+
+// A13 (EXT3, JOB-1): Trabajo mínimo — feature de DINERO (V2: el resto jamás se
+// cobra solo). FSM Parte L: pendiente_agendar→agendado→en_curso→terminado→cerrado.
+model Job {
+  id             Int       @id @default(autoincrement())
+  merchantId     Int       @map("merchant_id")
+  customerId     Int       @map("customer_id")
+  quoteId        Int?      @unique @map("quote_id")
+  status         String    @default("pendiente_agendar")
+  scheduledAt    DateTime? @map("scheduled_at")
+  assignedUserId Int?      @map("assigned_user_id") // teamMember (Equipo)
+  notes          String?
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt      @map("updated_at")
+
+  @@index([merchantId, status])
+  @@index([merchantId, scheduledAt])
+  @@map("jobs")
+}
+
+// A15 (EXT3, MANT-1): mantenimientos recurrentes · flag MAINTENANCE_ENABLED (OFF)
+model MaintenancePlan {
+  id             Int       @id @default(autoincrement())
+  merchantId     Int       @map("merchant_id")
+  customerId     Int       @map("customer_id")
+  quoteId        Int?      @map("quote_id")
+  title          String
+  intervalMonths Int       @map("interval_months")
+  nextDueAt      DateTime  @map("next_due_at")
+  active         Boolean   @default(true)
+  // Anti-spam de la spec: 1 propuesta/cliente/90d · 2 rechazos seguidos → pausa
+  lastProposedAt DateTime? @map("last_proposed_at")
+  rejectedStreak Int       @default(0) @map("rejected_streak")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt      @map("updated_at")
+
+  @@index([merchantId, active, nextDueAt])
+  @@map("maintenance_plans")
+}
+
+// A11.1 (EXT3, S2 F1-mínimo): auditoría — SOLO se escriben 4 acciones en F1
+// (marcar_pagado_manual, deshacer_pago, anular_factura, cambio_flag); la forma
+// es la del S2-F2 para no migrar después. La tabla events exige chargeId.
+model AuditLog {
+  id           Int      @id @default(autoincrement())
+  merchantId   Int      @map("merchant_id")
+  teamMemberId Int?     @map("team_member_id") // null = owner/admin
+  action       String
+  entityType   String?  @map("entity_type")
+  entityId     Int?     @map("entity_id")
+  meta         Json?
+  ip           String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([merchantId, action, createdAt])
+  @@map("audit_log")
+}
+
+// Ola 19 (EXT3, MEDIA-1 parcial · GATE: credenciales R2 del fundador): adjuntos.
+// La tabla nace ya (aditiva e inocua); el USO espera al bucket.
+model Attachment {
+  id         Int      @id @default(autoincrement())
+  merchantId Int      @map("merchant_id")
+  entityType String   @map("entity_type") // quote_request | job
+  entityId   Int      @map("entity_id")
+  url        String
+  kind       String   @default("photo") // photo | audio (audio = F2, no F1)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([merchantId, entityType, entityId])
+  @@map("attachments")
 }
