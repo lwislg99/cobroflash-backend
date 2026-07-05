@@ -24,8 +24,13 @@ Flags nuevas arrancan OFF; activación = fundador (PENDIENTES_FUNDADOR).
 > con "pagar pendiente", clientes 360, catálogo, gastos y margen, informes, solicitudes, proveedores) —
 > cada chip 1 captura real + micro-animación; "informes personalizados" se enseña como Informes reales
 > (honestidad: la maqueta = el producto). Capturas del dashboard (390px) las aporta el fundador al llegar
-> a A4.7; las públicas las hace Claude con Edge headless. · Resto ⏳ en el orden: Ola 4 (A4.1→A4.6, A4.7
-> al final) → Ola 5 → A6.2-A6.5 → A6.7 si sobra → A6.6 cierre.
+> a A4.7; las públicas las hace Claude con Edge headless. · **Ola 4 A4.1–A4.6 ✅ COMPLETA (5-jul,
+> `08cb3f4`→`e4b8c3a`):** hero morosidad + mockup real + PURGA fiscal (grep=solo los 2 hits del guion H2
+> en la FAQ) · 3 pasos zigzag con capturas reales + reveal IO · #demo con carrusel real y hueco de vídeo
+> (DEMO_VIDEO_URL) · precios 29/290 + founding contador real (/public/founding-status) + copy 0,9 % ·
+> FAQ 9 objeciones H6 (VeriFactu = H2 literal) + footer serio · OG 1200×630 real (img/og.png) +
+> favicon + preload LCP. **A4.7 ⏸ bloqueada SOLO en las capturas del fundador** (lista pedida). ·
+> Resto ⏳: Ola 5 → A6.2-A6.5 → A6.7 si sobra → A6.6 cierre.
 
 ---
 
