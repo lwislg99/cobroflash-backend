@@ -490,6 +490,7 @@ J7 builders+test · `waOptOut` + check · `docs/RUNBOOKS.md` (O) · `docs/QA_MAS
 - **VZ-3 · Telemetría:** evento `quote_created_via='voice'|'text'`. Rollback: dictado sirve como texto aunque la IA se apague (flag).
 
 ### U1.6 · PRECIOS-1 (reducido, ver W3) · U1.7 · GTM-1 etapa 2
+> **PRECIOS-1 avance (EXT3 Ola 10, 5-jul-2026):** estados de suscripción L completos en el webhook único (past_due conserva plan + banner/portal; canceled→trial; idempotencia event.id) ✅ · entitlement usuarios W3 vía `core/entitlements.ts` (regla 34, 409 digno con oferta Equipo) ✅ · fair-use visible ya estaba (A9.3) ✅ · contratación founding con ALCANCE BETA aceptado y evidenciado (legal_acceptances, versión=hash; regla 25) ✅. Falta SOLO fundador: precios Stripe LIVE + texto del alcance validado por asesor.
 PRECIOS-1: activar facturación a founding (post-SIF) + límite usuarios + contador fair-use WA + verificación upgrade/downgrade. GTM-1: landing yaqu.app v2 (héroe promesa de cobro, vídeo, 3 pasos, precios, FAQ 10 reales, CTA; Lighthouse móvil ≥90) + claim VeriFactu YA legal + declaración descargable + pack gestoría circulando + UTM/atribución en registro. SEO programático y calculadora de sanción → F2 (SEO-2, contenido para gestorías).
 
 ## U2. F2 (backlog ordenado por defecto; gate global 25 pagantes)

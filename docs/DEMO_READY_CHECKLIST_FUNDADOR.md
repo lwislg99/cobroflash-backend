@@ -67,6 +67,23 @@ Runbook completo paso a paso en `PENDIENTES_FUNDADOR.md` §FASE B. Lo esencial:
 - [ ] Verificación de empresa (2-10 días, en paralelo) y, si algo no llega,
       suscribir FlashClient en WhatsApp Manager → apps suscritas (ya documentado).
 
+## 🟣 5b. Nuevos de EXT3 (Olas 10-23 en marcha)
+
+- [ ] **Texto del ALCANCE BETA al asesor** (A10.1): la maquinaria de aceptación ya está EN PROD
+      (página /legal/alcance-beta + checkbox + evidencia con versión). El texto sigue siendo el
+      borrador con placeholders [NIF]/[Nombre] — cuando el asesor lo valide, actualizas
+      `docs/legal/ALCANCE_BETA.md` (o me lo pasas) y las aceptaciones antiguas se invalidan solas.
+- [ ] **Destino del backup cifrado (A11.3, S4)**: dime DÓNDE guardar el dump semanal fuera de
+      Railway (S3/R2/Backblaze/Drive…) + credenciales en Railway. Sin esto el script queda listo
+      pero sin destino. Es requisito ANTES de 25 pagantes.
+- [ ] **Credenciales R2 (Ola 19, fotos)**: bucket Cloudflare R2 + keys en Railway. Sin esto la
+      ola de fotos NO empieza (la tabla attachments ya espera).
+- [ ] **Validar precios de los catálogos (A17.2)**: cuando estén los borradores por gremio,
+      2-3 profesionales reales por gremio confirman los precios orientativos ANTES del seed a
+      merchants reales (encaja con tus 10 discovery).
+- [ ] **OK opcionales Ola 23**: banner "añadir a pantalla de inicio" (PWA) y preparación del
+      gate foral (PV/Navarra). Solo se construyen si dices que sí.
+
 ## 🔵 6. Lo estratégico que sigue su curso (no bloquea la demo)
 
 - [ ] **Asesor fiscal**: decisión de representación (desbloquea S1-D, el envío a pruebas
