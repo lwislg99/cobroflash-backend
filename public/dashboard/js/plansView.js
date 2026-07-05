@@ -71,7 +71,7 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
 
   const price    = annual ? plan.priceAnnual : plan.price;
   const perLabel = annual ? '/año' : '/mes';
-  const saving   = annual ? `<div style="font-size:12px;color:var(--green-600);font-weight:600;margin-top:4px">= ${(plan.priceAnnual / 12).toFixed(2)} €/mes · Ahorras 2 meses</div>` : '';
+  const saving   = annual ? `<div style="font-size:12px;color:var(--green-600);font-weight:600;margin-top:4px">= ${fmtMoneyEs(plan.priceAnnual / 12)}/mes · Ahorras 2 meses</div>` : '';
 
   const features = [
     'Presupuestos ilimitados con firma digital',
