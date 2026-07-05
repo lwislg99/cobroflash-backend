@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
+import { config, isOwnerEmail } from '../../../../core/config/env';
 
 const router = Router();
 
@@ -71,6 +72,75 @@ router.get('/invoices.csv', async (req, res) => {
     sendCsv(res, `facturas_${new Date().toISOString().slice(0,10)}.csv`, header, rows);
   } catch (err) {
     console.error('[exports/invoices.csv]', err);
+    res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// ── GET /admin/exports/fees.csv ────────────────────────────────────────────
+// C1-3 (CONNECT-1): contabilidad PROPIA de la plataforma — application fees
+// (0,9 %, APPLICATION_FEE_BPS) de los cobros con tarjeta procesados vía
+// Stripe Connect. SOLO cuentas owner (OWNER_EMAILS); el resto recibe 403.
+// ?from=YYYY-MM-DD&to=YYYY-MM-DD (default: mes en curso)
+router.get('/fees.csv', async (req, res) => {
+  try {
+    const me = await prisma.merchant.findUnique({
+      where: { id: req.merchantId },
+      select: { email: true },
+    });
+    if (!me || !isOwnerEmail(me.email)) return res.status(403).json({ error: 'forbidden' });
+
+    let { from, to } = parseDateFilter(req.query as any);
+    if (!from && !to) {
+      const now = new Date();
+      from = new Date(now.getFullYear(), now.getMonth(), 1);
+      to = now;
+    }
+
+    // Cobros de TODA la plataforma pagados con tarjeta en la ventana; el marcador
+    // de Connect es el evento card_session_created con payload.connect=true (C1-2).
+    const charges = await prisma.charge.findMany({
+      where: {
+        status: 'paid',
+        method: { contains: 'card' },
+        updatedAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) },
+      },
+      orderBy: { updatedAt: 'asc' },
+      include: {
+        merchant: { select: { name: true, legalName: true } },
+        events: { where: { type: { in: ['card_session_created', 'paid'] } } },
+      },
+    });
+
+    const feeOf = (amount: number) =>
+      Math.round(Math.round(amount * 100) * config.APPLICATION_FEE_BPS / 10_000) / 100;
+
+    const header = ['Fecha pago', 'Cobro #', 'Merchant', 'Concepto', 'Importe', 'Moneda', `Fee (${(config.APPLICATION_FEE_BPS / 100).toFixed(2).replace('.', ',')} %)`];
+    let totalFees = 0;
+    const rows: string[] = [];
+    for (const ch of charges) {
+      const viaConnect = (ch.events || []).some(
+        (e) => e.type === 'card_session_created' && (e as any).payload?.connect === true,
+      );
+      if (!viaConnect) continue; // pagos en la cuenta de plataforma (demo/test): sin fee
+      const paidEv = (ch.events || []).find((e) => e.type === 'paid');
+      const amount = Number(ch.amount);
+      const fee = feeOf(amount);
+      totalFees += fee;
+      rows.push(csvRow([
+        (paidEv ? new Date((paidEv as any).ts ?? ch.updatedAt) : ch.updatedAt).toISOString().slice(0, 10),
+        ch.id,
+        ch.merchant?.legalName || ch.merchant?.name || ch.merchantId,
+        ch.concept,
+        amount.toFixed(2),
+        ch.currency,
+        fee.toFixed(2),
+      ]));
+    }
+    rows.push(csvRow(['TOTAL', '', '', '', '', '', totalFees.toFixed(2)]));
+
+    sendCsv(res, `fees_${new Date().toISOString().slice(0, 10)}.csv`, header, rows);
+  } catch (err) {
+    console.error('[exports/fees.csv]', err);
     res.status(500).json({ error: 'internal_error' });
   }
 });
