@@ -85,6 +85,15 @@ flags OFF (nada cambia hasta que actives). Para encenderlo, EN ESTE ORDEN:
   pendiente · Pedir presupuesto · Hablar contigo). La tabla ya está en prod; con el
   flag OFF todo sigue como hoy. "BAJA"/"STOP" (J3) funciona SIEMPRE, con o sin bot.
 
+## 🆕 Sprint EXT2 (5-jul) — VOZ-1
+
+- [ ] **Railway · `VOICE_QUOTE_ENABLED=true`** (cuando A7.2 pase su eval ≥8/10): enciende el
+  micro de dictado en Cotización rápida y en "Sugerir con IA". OFF = todo como hoy (rollback
+  sin deploy). Requiere `ANTHROPIC_API_KEY` ya configurada (la IA de sugerencias es la misma).
+- [ ] **Matriz de voz en tus 3 móviles reales** (`docs/VOZ_MATRIX.md`, guion de 2 min por
+  dispositivo al final del doc): Chrome Android ×2 y Safari iOS. El camino de degradación ya
+  está verificado; falta el camino feliz con micrófono físico.
+
 ## 🆕 Sprint DEMO-READY (2-jul) — nuevas acciones tuyas
 
 - [ ] **Railway · `EMAIL_FROM`** (A1.4/PV-FIX-3): el nombre viejo en los correos NO está en el

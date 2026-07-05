@@ -4,6 +4,7 @@ import path from 'path';
 import { invoicesDir, outboxDir } from './core/storage/dirs';
 import { jsonError } from './core/http/jsonError';
 import { notFoundPageHtml } from './core/http/publicNotFound';
+import { isFlagEnabled } from './core/flags';
 import { requireAuth, requireActivePlan, requireRole } from './core/http/authMiddleware';
 import { isOwnerEmail } from './core/config/env';
 
@@ -170,6 +171,10 @@ app.get('/admin/me', async (req, res) => {
     userRole,
     teamMemberId: session.teamMemberId ?? null,
     isOwner: !session.teamMemberId,
+    // VZ-1 (VOZ-1): el micro de dictado solo se pinta con el flag activo
+    voiceEnabled: isFlagEnabled('VOICE_QUOTE_ENABLED', {
+      merchant: { id: session.merchantId, country: merchantFull?.country },
+    }),
   });
 });
 

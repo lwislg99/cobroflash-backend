@@ -643,6 +643,35 @@ function openQuickQuoteModal(prefill) {
   document.getElementById("qq-send").addEventListener("click", submitQuickQuote);
   document.getElementById("qq-add-line").addEventListener("click", addQqLine);
 
+  // VZ-1 (VOZ-1): "Dictar el trabajo" en la cotización rápida — abre el modal
+  // de descripción (con micro) y vuelca las líneas sugeridas aquí. Solo se
+  // pinta si la voz está disponible (flag + soporte real del navegador).
+  if (typeof voiceSupportProbe === 'function' && voiceSupportProbe()
+      && typeof openAiSuggestModal === 'function') {
+    const addLineBtn = document.getElementById("qq-add-line");
+    const dictBtn = document.createElement('button');
+    dictBtn.type = 'button';
+    dictBtn.id = 'qq-dictate';
+    dictBtn.className = 'btn-ghost btn-sm';
+    dictBtn.textContent = '🎤 Dictar el trabajo';
+    addLineBtn.insertAdjacentElement('afterend', dictBtn);
+    dictBtn.addEventListener('click', () => {
+      openAiSuggestModal((suggested) => {
+        suggested.forEach((l) => {
+          qqState.products.push({ concept: l.concept, qty: l.qty || 1, price: String(l.price ?? '') });
+        });
+        // Si solo estaba la línea vacía inicial, fuera (las dictadas la sustituyen)
+        if (qqState.products.length > suggested.length) {
+          qqState.products = qqState.products.filter(
+            (p, i) => i >= qqState.products.length - suggested.length || String(p.concept || '').trim() !== ''
+          );
+        }
+        renderQqLines();
+        updateQqTotal();
+      });
+    });
+  }
+
   // Payment terms toggle
   document.querySelectorAll(".qq-terms input[type=radio]").forEach((radio) => {
     radio.addEventListener("change", () => {

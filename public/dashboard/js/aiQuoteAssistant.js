@@ -125,6 +125,10 @@ function openAiSuggestModal(addLinesFn) {
     };
   };
 
+  // VZ-1 (VOZ-1): dictado por voz hacia el textarea (solo se pinta con flag
+  // VOICE_QUOTE_ENABLED + soporte real del navegador; degradación silenciosa)
+  if (typeof attachVoiceInput === 'function') attachVoiceInput(ta);
+
   // Auto-focus el textarea
   setTimeout(() => ta.focus(), 100);
 }
