@@ -18,6 +18,16 @@
 > mapa plan→límites W3: 1/5 usuarios + fair-use; 409 user_limit digno con oferta Equipo; regla 34).
 > Evidencias: `docs/evidencias/ext3/a10*` (legal 390+1280, modal, planes, trial expirado — estado
 > forzado en demo y RESTAURADO). Gate E2E del checkout real espera precios Stripe (fundador).
+> **OLA 13 ✅ COMPLETA (5-jul, `cc39cd7`):** A13.1 modelo jobs + FSM L estricta + ensureJobForQuote
+> idempotente en los TRES caminos de accept (público/BO/WhatsApp legacy) · A13.2 vista Trabajos
+> (LISTA por fecha — sin calendario grid: En curso/Esta semana/Sin agendar/Más adelante/Terminados/
+> Cerrados; agendar datetime, empezar, terminar, cerrar, .ics 2h, notas blur-save) · A13.3 el
+> momento de dinero: terminado+tramo pendiente → "💰 Cobrar el resto" → collect-rest con la MISMA
+> maquinaria del accept + payment_request ventana-first. Jobs de demo sembrados para los aceptados
+> del seed (agendado/en curso/terminado con resto de 586,85 €). Evidencias: `ext3/a13-trabajos-*`.
+> **OLA 20 parcial:** A20.2 ✅ "Margen %"+tooltip (i) accesible · A20.3 ✅ rol "Operario" en toda la
+> UI (valor interno intacto) `c4f74ca`. Quedan A20.1 (GBB), A20.4 (cliente empresa+docFields),
+> A20.5 (fallback J5 completo).
 > **CHOQUES Olas 1-9 señalados al fundador (resolución al llegar):** A22.3 búsqueda global ya
 > existe → completar contra spec · A17 load-catalog ya existe → migrar contenido a data/catalogs
 > con schema master · A16.1 → añadir SOLO métricas X2 faltantes. **Decisiones fundador recibidas:**
