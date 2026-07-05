@@ -335,11 +335,21 @@ img { max-width: 100%; display: block; }
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  /* FIX móvil (feedback fundador): sin esto, cualquier hijo ancho (tabla,
+     grid de formulario) expande el flex item más allá del viewport y toda
+     la app scrollea lateralmente a 390px. */
+  min-width: 0;
 }
 .view-container {
   padding: 24px;
   flex: 1;
+  min-width: 0;
+  max-width: 100%;
 }
+/* Red de seguridad móvil-first: la PÁGINA jamás scrollea en horizontal; lo
+   ancho scrollea dentro de su .table-scroll (patrón del design system). */
+html, body { overflow-x: clip; }
+.view-container img { max-width: 100%; height: auto; }
 
 /* ── Cards ──────────────────────────────────────────────────── */
 .card {

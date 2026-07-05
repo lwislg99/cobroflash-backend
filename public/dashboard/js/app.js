@@ -230,6 +230,24 @@ async function initApp() {
 
   window.renderAppView = renderView;
 
+  // Deep-links por hash: /dashboard/#products abre Productos directamente.
+  // Útil para compartir/QA (y para las capturas de la maqueta A4.7).
+  const HASH_VIEWS = ['home','quotes-list','quotes-new','customers','products','providers',
+    'invoices','expenses','reports','templates','quote-requests','plans','team','settings'];
+  function viewFromHash() {
+    const h = (window.location.hash || '').replace('#', '');
+    return HASH_VIEWS.includes(h) ? h : null;
+  }
+  const _origRender = renderView;
+  window.renderAppView = function (view, opts) {
+    try { history.replaceState(null, '', '#' + view); } catch (_e) {}
+    return _origRender(view, opts);
+  };
+  window.addEventListener('hashchange', () => {
+    const v = viewFromHash();
+    if (v) _origRender(v);
+  });
+
   // Botón flotante de ayuda (guía de inicio)
   if (typeof ensureHelpButton === 'function') ensureHelpButton();
 
