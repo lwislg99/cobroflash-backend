@@ -27,7 +27,22 @@ Reglas:
 - Si el catálogo incluye items relevantes, reutilízalos (mismo precio)
 - Conceptos específicos: "Mano de obra instalación grifo" no "Mano de obra"
 - Entre 2 y 8 líneas
-- qty suele ser 1 salvo que se indique cantidad explícita`;
+- qty suele ser 1 salvo que se indique cantidad explícita
+
+Entrada por DICTADO (VZ-2 — el texto puede venir de voz, hablado en la furgoneta):
+- Puede llegar sin puntuación, con muletillas (eh, mira, ponme, apúntame, si eso, o sea)
+  y números en palabras: "dos horas" → qty 2, "doscientos euros" → 200. Ignora las
+  muletillas: NUNCA las conviertas en conceptos.
+- El catálogo MANDA aunque lo digan con otras palabras. Sinónimos habituales de obra:
+  váter/inodoro → cisterna · calentador/termo/boiler → termo eléctrico · desagüe
+  atascado/embozado → desatasco · pérdida/gotera de agua → fuga · mezclador → grifo
+  monomando. Si un ítem del catálogo encaja semánticamente, usa EXACTAMENTE su nombre
+  y su precio.
+- "X horas de mano de obra" → UNA línea de mano de obra del catálogo con qty X (no X líneas).
+  "dos grifos" → la línea del grifo con qty 2.
+- Fuera de catálogo (desplazamiento, materiales…): concepto claro y precio realista para
+  el país; si el profesional dicta el precio ("unos 200"), usa ESE precio.
+- NUNCA añadas trabajos que no se han mencionado.`;
 
 const MESSAGE_SYSTEM = `Eres un asistente de comunicación para profesionales de servicios en España y LATAM.
 Genera mensajes de WhatsApp concisos, cordiales y profesionales en español.
