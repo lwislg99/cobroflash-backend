@@ -16,6 +16,7 @@ import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
 import { getNextBillingStage } from '../../domain/billingPlan';
 import { allocateQuoteNumber, displayQuoteNumber } from '../../domain/quoteNumber.service';
+import { isQuoteExpired } from '../../domain/expire.service';
 import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/merchantNotifications';
 import { getSession } from '../../../auth/domain/auth.service';
 
@@ -100,6 +101,8 @@ router.post('/create', async (req, res) => {
           tiers: tiersWithTotal as any ?? undefined,
           paymentTerms: body.paymentTerms ?? null,
           docFields: body.docFields ?? undefined, // A20.4: qué datos del cliente muestra el documento
+          // A16.2: caducidad — default 30 días, editable al crear
+          validUntil: body.validUntil ?? new Date(Date.now() + 30 * 86_400_000),
           teamMemberId: creatorTeamMemberId,
           createdVia: body.created_via ?? 'text', // V0-3: telemetría quote_created_via
           payMethods: body.payMethods ?? undefined, // A2.1: selector al crear
@@ -381,6 +384,14 @@ router.post('/:id/decision', async (req, res) => {
     }
     if (decision === 'reject' && quote.status === 'rejected') {
       return res.json({ ok: true, status: 'already_rejected' });
+    }
+    // A16.2: un presupuesto caducado no se decide (la landing ya muestra el
+    // copy oficial N3; esto cubre carreras entre pasadas del cron)
+    if (isQuoteExpired(quote)) {
+      return res.status(410).json({
+        error: 'quote_expired',
+        message: 'Este presupuesto caducó. Pide uno actualizado al profesional.',
+      });
     }
 
     let updatedQuote: any = quote;

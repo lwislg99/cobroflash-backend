@@ -568,6 +568,14 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 | Agenda standalone / Google Calendar OAuth | ❌ / cajón F3 | — | JOB-1 (lista semanal + .ics) cubre; OAuth si ≥30 % lo piden |
 
 ## X2. ANALYTICS-1 `F2-spec` (F1 intocable: 3 KPIs + % plataforma + funnel)
+> **✅ CONSTRUIDO (EXT3 Ola 16, 6-jul-2026, autorización A10.0):** la lista F2 está completa
+> en Informes — tasa de aceptación/tiempo a decisión/top servicios ya vivían en el funnel;
+> € mantenimiento (A15.3, KPI si >0); NUEVO /admin/reports/x2: cobros por método
+> (charge.method, sin charge = marcado a mano), € ≤72h tras recordatorio y pendiente por
+> antigüedad (0-7/8-30/31-60/60+, copy neutro). Ni cohortes ni BI. También A16.2:
+> quotes.validUntil (default 30d editable al crear) + cron horario sent→expired + landing
+> N3 "Este presupuesto caducó el [fecha]. Pide uno actualizado 👇" + decisión 410 + pill
+> CADUCADO en BO.
 F2: tasa de aceptación · tiempo medio hasta decisión · cobros por método (paid_via) · **€ generados por recordatorios** (atribución: pago ≤72h tras recordatorio) · € por mantenimiento (origin) · top servicios · "facturas antiguas pendientes" (por antigüedad; NO se llama "morosos"). F3: comparativas por zona. Sobran: gráficas complejas, cohortes, BI.
 
 ---

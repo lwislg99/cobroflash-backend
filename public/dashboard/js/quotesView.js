@@ -387,8 +387,27 @@ blockClient.appendChild(descWrapper);
   
     // Valor por defecto para el MVP
     paymentSelect.value = "FULL_UPFRONT";
-  
+
     blockClient.appendChild(fieldPaymentTerms.wrapper);
+
+    // ---------- A16.2: CADUCIDAD (validUntil, default 30 días) ----------
+    const validWrapper = document.createElement("div");
+    validWrapper.className = "field";
+    const validLabel = document.createElement("label");
+    validLabel.textContent = "Válido hasta";
+    const validInput = document.createElement("input");
+    validInput.type = "date";
+    validInput.id = "quote-valid-until";
+    const defUntil = new Date(Date.now() + 30 * 86400000);
+    validInput.value = defUntil.toISOString().slice(0, 10);
+    validInput.min = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    const validNote = document.createElement("p");
+    validNote.style.cssText = "font-size:12px;color:var(--muted);margin:4px 0 0";
+    validNote.textContent = "Pasada esta fecha el presupuesto caduca solo y el cliente verá \"pide uno actualizado\".";
+    validWrapper.appendChild(validLabel);
+    validWrapper.appendChild(validInput);
+    validWrapper.appendChild(validNote);
+    blockClient.appendChild(validWrapper);
 
     // ---------- A2.1: MÉTODOS DE PAGO PARA ESTE PRESUPUESTO ----------
     // ☐ Tarjeta ☐ Bizum ☐ Transferencia — todos marcados por defecto (= null
@@ -2189,6 +2208,8 @@ payloadLines.push({
         payMethods: selectedPayMethods(), // A2.1: undefined = todas
         docFields: selectedDocFields(),   // A20.4: undefined = todos
         created_via: quoteFormCreatedVia, // VZ-3: 'voice' si hubo dictado
+        // A16.2: caducidad elegida (fin del día local); omitida = 30d en server
+        validUntil: validInput.value ? new Date(validInput.value + "T23:59:59").toISOString() : undefined,
       };
 
       const quote = await createQuote(quotePayload);

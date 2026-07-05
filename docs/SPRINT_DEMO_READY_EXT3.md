@@ -72,6 +72,19 @@
 > pausa→número ajeno ignorado → `a15-e2e.txt`. Flag MAINTENANCE_ENABLED ON solo demo.
 > Evidencias BO: `a151-toggle-1280`, `a151-plan-1280/390`. Copys al pro pendientes de veto
 > (regla 30, en checklist).
+> **OLA 16 ✅ COMPLETA (6-jul):** A16.1 (choque resuelto como se avisó: SOLO las X2 que
+> faltaban — /admin/reports/x2 con cobros por método [charge.method; sin charge = marcado a
+> mano], € cobrados ≤72h tras recordatorio ["dinero que el sistema fue a buscar solo"] y
+> pendiente por antigüedad 0-7/8-30/31-60/60+ con copy neutro [jamás "morosos"]; tarjeta en
+> Informes que se oculta sin datos; verificado con datos reales del demo: transfer 970,42 €,
+> card 508,20 €, bizum_manual 248,05 €, pendiente 2.383,70 €) · A16.2 (quotes.validUntil
+> default 30d + campo "Válido hasta" en el creador; cron HORARIO sent→expired [antes de los
+> recordatorios, así un caducado jamás se recuerda] + evento 360; landing N3 copy OFICIAL
+> "Este presupuesto caducó el [fecha]. Pide uno actualizado 👇" + botón WA [label y prefill
+> derivados — veto regla 30 pendiente]; decisión sobre caducado → 410; reject redirige;
+> badge de validez usa la columna real [fallback legacy creación+30]; pill CADUCADO en
+> lista/detalle). E2E `a162-e2e.txt`: sent caducado → cron expira → 410 → landing con copy
+> y wa.me correctos. Evidencias: `a161-x2-1280.png`, `a162-caducado-390.png`.
 > **CHOQUES Olas 1-9 señalados al fundador (resolución al llegar):** A22.3 búsqueda global ya
 > existe → completar contra spec · A17 load-catalog ya existe → migrar contenido a data/catalogs
 > con schema master · A16.1 → añadir SOLO métricas X2 faltantes. **Decisiones fundador recibidas:**

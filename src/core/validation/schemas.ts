@@ -35,6 +35,8 @@ export const CreateQuoteSchema = z.object({
   payMethods: z.array(z.enum(['card', 'bizum', 'transfer'])).min(1).optional(),
   // A20.4: qué datos del cliente muestra el DOCUMENTO (null = todos los presentes)
   docFields: z.object({ name: z.boolean(), phone: z.boolean(), taxId: z.boolean(), email: z.boolean() }).partial().nullable().optional(),
+  // A16.2: caducidad del presupuesto (default 30 días en el server; editable al crear)
+  validUntil: z.coerce.date().optional(),
 });
 
 export type QuoteTier = z.infer<typeof QuoteTierSchema>;

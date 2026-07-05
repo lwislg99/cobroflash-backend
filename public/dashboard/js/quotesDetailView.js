@@ -180,10 +180,11 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
 
   const statusSpan = document.createElement('span');
   statusSpan.className = 'status-pill';
-  statusSpan.textContent = st === 'pending_approval' ? 'PENDIENTE APROBACIÓN' : st.toUpperCase();
+  statusSpan.textContent = st === 'pending_approval' ? 'PENDIENTE APROBACIÓN'
+    : st === 'expired' ? 'CADUCADO' : st.toUpperCase(); // A16.2
   if (st === 'accepted') statusSpan.classList.add('status-pill-accepted');
   else if (st === 'rejected') statusSpan.classList.add('status-pill-rejected');
-  else if (st === 'draft') statusSpan.classList.add('status-pill-draft');
+  else if (st === 'draft' || st === 'expired') statusSpan.classList.add('status-pill-draft');
   else if (st === 'pending_approval') statusSpan.classList.add('status-pill-approval');
   else statusSpan.classList.add('status-pill-pending');
   stateBlock.appendChild(statusSpan);

@@ -4,11 +4,17 @@ import { sendInvoicePaymentReminders }  from '../../modules/billing/domain/invoi
 import { sendWeeklyDigests }            from '../../modules/messaging/domain/weeklyDigest.service';
 import { runLifecycleEmails }           from '../../modules/messaging/domain/lifecycle.service';
 import { runMaintenanceProposals }      from '../../modules/maintenance/domain/maintenance.service';
+import { expireQuotes }                 from '../../modules/quotes/domain/expire.service';
 
 export function startCronJobs(): void {
-  // Cada hora en punto: cotizaciones sin respuesta >24h
+  // Cada hora en punto: cotizaciones sin respuesta >24h + caducidad A16.2
   cron.schedule('0 * * * *', async () => {
     console.log('[cron] Ejecutando recordatorios de cotizaciones…');
+    try {
+      await expireQuotes(); // A16.2: sent+validUntil pasado → expired (antes de recordar)
+    } catch (err: any) {
+      console.error('[cron] Error en expireQuotes:', err?.message);
+    }
     try {
       await sendPendingReminders();
     } catch (err: any) {

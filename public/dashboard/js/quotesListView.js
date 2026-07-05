@@ -153,10 +153,10 @@ function renderQuotesListView(container) {
       return pill;
     }
 
-    pill.textContent = st.toUpperCase();
+    pill.textContent = st === "expired" ? "CADUCADO" : st.toUpperCase(); // A16.2
     if (st === "accepted") pill.classList.add("status-pill-accepted");
     else if (st === "rejected") pill.classList.add("status-pill-rejected");
-    else if (st === "draft") pill.classList.add("status-pill-draft");
+    else if (st === "draft" || st === "expired") pill.classList.add("status-pill-draft");
     else pill.classList.add("status-pill-pending");
 
     return pill;

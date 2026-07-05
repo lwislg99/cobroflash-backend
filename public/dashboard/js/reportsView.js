@@ -121,6 +121,12 @@ async function renderReportsView(container) {
 
   loadAnalytics(funnelCard, servicesCard);
 
+  // A16.1 (X2): cobros por método + € por recordatorios + pendiente por antigüedad
+  const x2Card = document.createElement('div');
+  x2Card.className = 'customers-card';
+  x2Card.style.display = 'none';
+  wrap.appendChild(x2Card);
+
   // J8: métricas de coste y entrega de WhatsApp (se oculta si aún no hay envíos)
   const waCard = document.createElement('div');
   waCard.className = 'customers-card';
@@ -344,9 +350,55 @@ async function renderReportsView(container) {
     }
   }
 
-  yearSelect.addEventListener('change', () => { load(yearSelect.value); loadVat(yearSelect.value); });
+  yearSelect.addEventListener('change', () => { load(yearSelect.value); loadVat(yearSelect.value); loadX2(x2Card, yearSelect.value); });
   load(currentYear);
   loadVat(currentYear);
+  loadX2(x2Card, currentYear); // A16.1
+}
+
+// ── A16.1 (X2): cómo te pagan + € por recordatorios + pendiente por antigüedad ──
+async function loadX2(card, year) {
+  let d;
+  try { d = await apiRequest(`/admin/reports/x2?year=${year}`); } catch { return; }
+  const hasAny = (d.byMethod && d.byMethod.length) || d.pendingTotal > 0 || d.reminderEur > 0;
+  if (!hasAny) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+
+  const METHOD_LABELS = {
+    card: '💳 Tarjeta', bizum: '📲 Bizum', transfer: '🏦 Transferencia',
+    bank: '🏦 Transferencia', manual: '✍️ Marcado a mano', cash: '💶 Efectivo',
+    mercadopago: '🌎 Mercado Pago',
+  };
+  const maxEur = Math.max(1, ...(d.byMethod || []).map((m) => m.eur));
+  const methodRows = (d.byMethod || []).map((m) => `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <span style="width:150px;flex:none;font-size:13px;color:var(--body)">${METHOD_LABELS[m.method] || m.method}</span>
+      <div style="flex:1;background:var(--neutral-100);border-radius:6px;height:10px;overflow:hidden">
+        <div style="width:${Math.round((m.eur / maxEur) * 100)}%;height:100%;background:var(--green-600);border-radius:6px"></div>
+      </div>
+      <span style="width:130px;flex:none;text-align:right;font-size:13px;font-variant-numeric:tabular-nums">${fmtMoneyEs(m.eur)} <span style="color:var(--muted)">(${m.count})</span></span>
+    </div>`).join('');
+
+  const agingRows = (d.aging || []).map((b) => `
+    <div class="kpi-card" style="text-align:center">
+      <div class="kpi-label">${b.label}</div>
+      <div class="kpi-value" style="font-size:17px;${b.bucket === '60+' && b.count ? 'color:var(--red-600)' : ''}">${fmtMoneyEs(b.eur)}</div>
+      <div style="font-size:11.5px;color:var(--muted)">${b.count} ${b.count === 1 ? 'cobro' : 'cobros'}</div>
+    </div>`).join('');
+
+  card.innerHTML = `
+    <h3 style="margin:0 0 4px;font-size:13px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em">Cómo te pagan · ${year}</h3>
+    <p style="margin:0 0 14px;font-size:12.5px;color:var(--muted)">Cobros completados por método de pago.</p>
+    ${methodRows || '<p style="font-size:13px;color:var(--muted)">Aún no hay cobros este año.</p>'}
+    ${d.reminderEur > 0 ? `
+      <div style="margin-top:12px;background:var(--brand-tint);border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;font-size:13px;color:var(--ink)">
+        ⏰ <strong>${fmtMoneyEs(d.reminderEur)}</strong> cobrados en las 72 h siguientes a un recordatorio automático — dinero que el sistema fue a buscar solo.
+      </div>` : ''}
+    ${d.pendingTotal > 0 ? `
+      <h3 style="margin:20px 0 4px;font-size:13px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em">Pendiente de cobro por antigüedad</h3>
+      <p style="margin:0 0 12px;font-size:12.5px;color:var(--muted)">Foto de hoy: ${fmtMoneyEs(d.pendingTotal)} aún sin cobrar.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">${agingRows}</div>` : ''}
+  `;
 }
 
 // ── Analytics: funnel de conversión + rentabilidad por servicio ──────────

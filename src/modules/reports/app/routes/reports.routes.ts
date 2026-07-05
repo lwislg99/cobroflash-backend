@@ -110,6 +110,78 @@ router.get('/pl', async (req, res) => {
 });
 
 /**
+ * GET /admin/reports/x2?year=YYYY — A16.1: las métricas X2 que FALTABAN
+ * (tasa de aceptación, tiempo a decisión y top servicios ya viven en el funnel;
+ * € de mantenimiento en /pl). Aquí: cobros por método · € generados por
+ * recordatorios (pago ≤72h tras el recordatorio) · pendiente por antigüedad
+ * (copy SIEMPRE neutro — prohibido "morosos", X2).
+ */
+router.get('/x2', async (req, res) => {
+  try {
+    const year = Number(req.query.year) || new Date().getFullYear();
+    const merchantId = req.merchantId;
+    const yearStart = new Date(year, 0, 1);
+    const yearEnd = new Date(year, 11, 31, 23, 59, 59, 999);
+
+    const paid = await prisma.invoice.findMany({
+      where: { merchantId, status: 'paid', paidAt: { gte: yearStart, lte: yearEnd } },
+      select: {
+        total: true, paidAt: true,
+        reminder7SentAt: true, reminder14SentAt: true,
+        charge: { select: { method: true } },
+      },
+    });
+
+    // Cobros por método (paid_via): charge.method; sin charge = marcado a mano
+    const byMethodMap = new Map<string, { eur: number; count: number }>();
+    let reminderEur = 0;
+    const H72 = 72 * 3600 * 1000;
+    for (const inv of paid) {
+      const method = inv.charge?.method || 'manual';
+      const cur = byMethodMap.get(method) ?? { eur: 0, count: 0 };
+      cur.eur += Number(inv.total); cur.count += 1;
+      byMethodMap.set(method, cur);
+      // € por recordatorios: pagó ≤72h después de CUALQUIERA de los dos avisos
+      const paidTs = inv.paidAt ? new Date(inv.paidAt).getTime() : 0;
+      const after = (d: Date | null) => !!d && paidTs >= new Date(d).getTime() && paidTs - new Date(d).getTime() <= H72;
+      if (after(inv.reminder7SentAt) || after(inv.reminder14SentAt)) reminderEur += Number(inv.total);
+    }
+    const byMethod = [...byMethodMap.entries()]
+      .map(([method, v]) => ({ method, eur: Math.round(v.eur * 100) / 100, count: v.count }))
+      .sort((a, b) => b.eur - a.eur);
+
+    // Pendiente por antigüedad (foto de HOY, no del año)
+    const pending = await prisma.invoice.findMany({
+      where: { merchantId, status: 'pending' },
+      select: { total: true, createdAt: true },
+    });
+    const buckets = [
+      { bucket: '0-7', label: 'Menos de 7 días', maxDays: 7, count: 0, eur: 0 },
+      { bucket: '8-30', label: '8-30 días', maxDays: 30, count: 0, eur: 0 },
+      { bucket: '31-60', label: '31-60 días', maxDays: 60, count: 0, eur: 0 },
+      { bucket: '60+', label: 'Más de 60 días', maxDays: Infinity, count: 0, eur: 0 },
+    ];
+    const now = Date.now();
+    for (const inv of pending) {
+      const days = (now - new Date(inv.createdAt).getTime()) / 86_400_000;
+      const b = buckets.find((x) => days <= x.maxDays)!;
+      b.count += 1; b.eur += Number(inv.total);
+    }
+
+    return res.json({
+      year,
+      byMethod,
+      reminderEur: Math.round(reminderEur * 100) / 100,
+      aging: buckets.map(({ bucket, label, count, eur }) => ({ bucket, label, count, eur: Math.round(eur * 100) / 100 })),
+      pendingTotal: Math.round(pending.reduce((a, i) => a + Number(i.total), 0) * 100) / 100,
+    });
+  } catch (err) {
+    console.error('[GET /admin/reports/x2]', err);
+    res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
  * GET /admin/reports/vat?year=2026&quarter=2
  * Resumen de IVA REPERCUTIDO del trimestre (los datos que el profesional copia
  * en el modelo 303): base imponible y cuota por tipo de IVA, desde las líneas

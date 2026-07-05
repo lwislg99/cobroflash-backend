@@ -4,6 +4,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { esc, parseNumericId, formatMoneyEs } from '../../../../core/utils/utils';
 import { getLocale } from '../../../../core/i18n/locales';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
+import { isQuoteExpired } from '../../../quotes/domain/expire.service';
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
 
 type DecisionApiError = { message?: string; error?: string };
@@ -317,11 +318,13 @@ function renderQuoteDetail(
 
   const terms = (quote as any).paymentTerms ?? null;
 
-  // Validez: 30 días desde la creación
+  // A16.2: validez REAL de la columna validUntil (fallback legacy: creación+30d)
   let validityHtml = '';
-  if ((quote as any).createdAt) {
-    const until = new Date(new Date((quote as any).createdAt).getTime() + 30 * 86_400_000);
-    const untilStr = until.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+  const untilRaw = (quote as any).validUntil
+    ? new Date((quote as any).validUntil)
+    : ((quote as any).createdAt ? new Date(new Date((quote as any).createdAt).getTime() + 30 * 86_400_000) : null);
+  if (untilRaw) {
+    const untilStr = untilRaw.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
     validityHtml = `<div class="validity-badge">⏳ Válido hasta el ${untilStr}</div>`;
   }
 
@@ -441,6 +444,26 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
     if (quote) {
       locale = getLocale(quote.merchant?.country);
       brandColor = quote.merchant?.brandColor ?? null;
+      // A16.2 (N3): caducado — copy OFICIAL + reconversión por WhatsApp. Cubre
+      // también sent con validUntil pasado (el cron horario aún no barrió).
+      if (isQuoteExpired(quote as any)) {
+        const fechaCad = (quote as any).validUntil
+          ? new Date((quote as any).validUntil).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+          : null;
+        const proPhoneExp = (quote.merchant as any)?.whatsappPhone
+          ? String((quote.merchant as any).whatsappPhone).replace(/[^\d]/g, '')
+          : '';
+        const waBtnExp = proPhoneExp
+          ? `<a href="https://wa.me/${proPhoneExp}?text=${encodeURIComponent(`Hola, el ${locale.quoteVerb} #${quote.quoteNumber ?? quote.id} caducó, ¿me pasas uno actualizado?`)}"
+               style="display:inline-block;margin-top:14px;background:#16a34a;color:#fff;font-weight:700;padding:12px 22px;border-radius:999px;text-decoration:none">Pedir uno actualizado por WhatsApp</a>`
+          : '';
+        return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
+          renderPage(`${locale.quote} caducada`, `<div class="status-ok" style="text-align:center">
+            <strong>Este ${locale.quoteVerb} caducó${fechaCad ? ` el ${fechaCad}` : ''}.</strong><br/>
+            Pide uno actualizado 👇<br/>${waBtnExp}
+          </div>`, brandColor)
+        );
+      }
       if (quote.status === 'draft' || quote.status === 'sent') {
         const tiers = (quote as any).tiers as any[] | null;
         if (tiers && tiers.length > 0) {
@@ -625,6 +648,10 @@ quoteDecisionLandingRouter.get('/quote/:id/reject', async (req: Request, res: Re
     if (quote) {
       locale = getLocale(quote.merchant?.country);
       brandColor = quote.merchant?.brandColor ?? null;
+      // A16.2: caducado → la landing principal ya cuenta la verdad
+      if (isQuoteExpired(quote as any)) {
+        return res.redirect(`/pay/quote/${quoteId}`);
+      }
       if (quote.status === 'draft' || quote.status === 'sent') {
         quoteDetail = renderQuoteDetail(quote, quoteId);
       }
