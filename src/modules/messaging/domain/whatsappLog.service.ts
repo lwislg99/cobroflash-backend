@@ -181,6 +181,8 @@ export interface WhatsAppMetrics {
   month: { sent: number; delivered: number; read: number; failed: number; total: number; costEur: number };
   byTemplate: Array<{ templateName: string; enviados: number; entregados: number; deliveryRate: number | null }>;
   alert: { active: boolean; deliveryRate7d: number | null; sample: number };
+  // A5.4: plantilla (pagada) vs ventana (0 €) — el ahorro es argumento de venta interno
+  channel: { templateToday: number; windowToday: number; windowMonth: number; savedEurMonth: number };
 }
 
 export const DELIVERED_OR_MORE = new Set(['delivered', 'read']);
@@ -208,15 +210,31 @@ export async function getWhatsAppMetrics(merchantId: number, now = new Date()): 
     month: { sent: 0, delivered: 0, read: 0, failed: 0, total: 0, costEur: 0 },
     byTemplate: [],
     alert: { active: false, deliveryRate7d: null, sample: 0 },
+    channel: { templateToday: 0, windowToday: 0, windowMonth: 0, savedEurMonth: 0 },
   };
   try {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const weekAgo = new Date(now.getTime() - 7 * 86_400_000);
+    const dayStart = new Date(now);
+    dayStart.setHours(0, 0, 0, 0);
 
     const rows = await prisma.whatsAppMessage.findMany({
       where: { merchantId, type: 'template', createdAt: { gte: monthStart } },
       select: { status: true, templateName: true, costEstimate: true, createdAt: true },
     });
+
+    // A5.4: envíos por ventana (type:'service', 0 €) del mes — cada uno es una
+    // plantilla que NO se pagó (ventana-first A5.2/A5.3)
+    const windowRows = await prisma.whatsAppMessage.findMany({
+      where: { merchantId, type: 'service', createdAt: { gte: monthStart } },
+      select: { createdAt: true },
+    });
+    const channel = {
+      templateToday: rows.filter((r) => r.createdAt >= dayStart).length,
+      windowToday: windowRows.filter((r) => r.createdAt >= dayStart).length,
+      windowMonth: windowRows.length,
+      savedEurMonth: Math.round(windowRows.length * WA_UTILITY_COST_ES * 1000) / 1000,
+    };
 
     const m = aggregateWaRows(rows); // funnel + coste del mes
     const perTpl: Record<string, { enviados: number; entregados: number }> = {};
@@ -250,7 +268,7 @@ export async function getWhatsAppMetrics(merchantId: number, now = new Date()): 
       sample: week.enviados,
     };
 
-    return { month: m, byTemplate, alert };
+    return { month: m, byTemplate, alert, channel };
   } catch (err: any) {
     console.error('[WA-0b/J8] getWhatsAppMetrics omitido:', err?.message || err);
     return empty;

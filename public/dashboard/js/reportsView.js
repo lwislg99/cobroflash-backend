@@ -372,7 +372,9 @@ async function loadWhatsAppMetrics(card) {
     return; // error → no se pinta
   }
   const m = data && data.month;
-  if (!m || m.total === 0) return; // sin envíos este mes → no mostrar la tarjeta
+  const ch = (data && data.channel) || { templateToday: 0, windowToday: 0, windowMonth: 0, savedEurMonth: 0 };
+  // A5.4: la tarjeta también aparece si TODO viajó gratis por ventana este mes
+  if (!m || (m.total === 0 && ch.windowMonth === 0)) return;
   card.style.display = '';
 
   const fmtEur = (n) => Number(n || 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
@@ -381,16 +383,22 @@ async function loadWhatsAppMetrics(card) {
     ? `<div class="alert warning" style="display:block;margin:0 0 14px">⚠ Tasa de entrega de los últimos 7 días: <strong>${data.alert.deliveryRate7d}%</strong> (por debajo del 90%). Revisa el runbook R1/R2.</div>`
     : '';
 
+  // A5.4: plantilla (pagada) vs ventana (gratis) — el ahorro se enseña
+  const savedHtml = ch.windowMonth > 0
+    ? ` · <strong>${ch.windowMonth}</strong> por ventana (0 €) — ahorro ~<strong>${fmtEur(ch.savedEurMonth)}</strong>`
+    : '';
+
   const kpis = [
     { label: 'Enviados', value: m.sent },
     { label: 'Entregados', value: m.delivered },
     { label: 'Leídos', value: m.read },
     { label: 'Fallidos', value: m.failed },
+    { label: 'Por ventana (0 €)', value: ch.windowMonth },
   ];
 
   card.innerHTML = `
     <h3 style="margin:0 0 4px;font-size:13px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em">WhatsApp · este mes</h3>
-    <p style="margin:0 0 16px;font-size:12px;color:var(--neutral-400)">Coste estimado: <strong>${fmtEur(m.costEur)}</strong> · ${m.total} mensaje${m.total !== 1 ? 's' : ''}</p>
+    <p style="margin:0 0 16px;font-size:12px;color:var(--neutral-400)">Coste estimado: <strong>${fmtEur(m.costEur)}</strong> · ${m.total} plantilla${m.total !== 1 ? 's' : ''}${savedHtml}<br/>Hoy: ${ch.templateToday} plantilla${ch.templateToday !== 1 ? 's' : ''} · ${ch.windowToday} por ventana</p>
     ${alertHtml}
     <div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:16px">
       ${kpis.map((k) => `<div><div style="font-size:22px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums">${k.value}</div><div style="font-size:12px;color:var(--muted)">${k.label}</div></div>`).join('')}
