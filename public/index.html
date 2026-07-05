@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>YaQu — Cotiza por WhatsApp, firma digital y cobra antes de empezar</title>
-  <meta name="description" content="YaQu ayuda a fontaneros, electricistas y reformistas a crear cotizaciones en 30 segundos, enviarlas por WhatsApp, que el cliente firme con el dedo y cobrar antes de empezar el trabajo."/>
+  <title>YaQu — Cobra la señal antes de empezar. Presupuestos por WhatsApp</title>
+  <meta name="description" content="Para fontaneros, electricistas y reformistas en España: presupuesto en 30 segundos, tu cliente lo firma desde su móvil y cobras la señal antes de empezar. Todo por WhatsApp."/>
   <meta name="theme-color" content="#16a34a"/>
   <link rel="manifest" href="/manifest.json"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -14,13 +14,13 @@
   <meta property="og:type" content="website"/>
   <meta property="og:site_name" content="YaQu"/>
   <meta property="og:locale" content="es_ES"/>
-  <meta property="og:title" content="YaQu — Cotiza por WhatsApp y cobra antes de empezar"/>
-  <meta property="og:description" content="Cotizaciones en 30 segundos, firma digital del cliente y cobro integrado. Para profesionales de servicios en LATAM y España."/>
+  <meta property="og:title" content="YaQu — Cobra la señal antes de empezar"/>
+  <meta property="og:description" content="Presupuesto en 30 segundos → tu cliente firma desde el móvil → señal cobrada. Todo por WhatsApp. Para los oficios en España."/>
   <meta property="og:url" content="https://yaqu.app"/>
   <meta property="og:image" content="https://yaqu.app/icons/icon-512.png"/>
   <meta name="twitter:card" content="summary"/>
-  <meta name="twitter:title" content="YaQu — Cotiza por WhatsApp y cobra antes de empezar"/>
-  <meta name="twitter:description" content="Cotizaciones en 30 segundos, firma digital del cliente y cobro integrado."/>
+  <meta name="twitter:title" content="YaQu — Cobra la señal antes de empezar"/>
+  <meta name="twitter:description" content="Presupuesto en 30 segundos, firma desde el móvil y señal cobrada. Todo por WhatsApp."/>
   <meta name="twitter:image" content="https://yaqu.app/icons/icon-512.png"/>
   <link rel="canonical" href="https://yaqu.app/"/>
   <script type="application/ld+json">
@@ -31,12 +31,12 @@
     "applicationCategory": "BusinessApplication",
     "operatingSystem": "Web, iOS, Android",
     "url": "https://yaqu.app",
-    "description": "SaaS WhatsApp-first para profesionales de servicios (fontaneros, electricistas, reformistas) en LATAM y España: cotización, firma digital del cliente, factura y cobro integrado.",
+    "description": "Herramienta WhatsApp-first para los oficios en España (fontaneros, electricistas, reformistas): presupuesto en 30 segundos, firma digital del cliente y cobro de la señal antes de empezar.",
     "offers": {
       "@type": "Offer",
-      "price": "19",
-      "priceCurrency": "USD",
-      "description": "Plan Pro mensual. 14 días de prueba gratis, sin tarjeta."
+      "price": "29",
+      "priceCurrency": "EUR",
+      "description": "YaQu Pro mensual. 14 días de prueba gratis, sin tarjeta."
     },
     "publisher": {
       "@type": "Organization",
@@ -73,13 +73,23 @@
     .nav-links a.text { padding:8px 12px; color:var(--muted); font-weight:600; font-size:14px; }
     .nav-links a.text:hover { color:var(--ink); }
 
-    /* Hero */
-    .hero { background:linear-gradient(180deg,#f0fdf4 0%, var(--bg) 100%); padding:84px 0 64px; text-align:center; }
-    .hero h1 { font-size:clamp(2.2rem, 5.2vw, 3.4rem); font-weight:800; line-height:1.06; margin:0 0 18px; letter-spacing:-.03em; }
+    /* Hero — A4.1: dos columnas (promesa de cobro + mockup real), apilado en móvil */
+    .hero { background:linear-gradient(180deg,#f0fdf4 0%, var(--bg) 100%); padding:64px 0 56px; overflow:hidden; }
+    .hero-grid { display:grid; grid-template-columns:1.15fr .85fr; gap:36px; align-items:center; }
+    .hero h1 { font-size:clamp(2.1rem, 4.6vw, 3.2rem); font-weight:800; line-height:1.07; margin:0 0 18px; letter-spacing:-.03em; }
     .hero h1 .hl { color:var(--brand); }
-    .hero p.sub { font-size:19px; color:var(--muted); max-width:620px; margin:0 auto 28px; }
-    .hero .cta-row { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+    .hero p.sub { font-size:18.5px; color:var(--muted); max-width:560px; margin:0 0 26px; }
+    .hero .cta-row { display:flex; gap:12px; flex-wrap:wrap; }
     .hero .note { margin-top:14px; font-size:13px; color:var(--body); }
+    /* Mockup de móvil con captura REAL (la landing de firma del cliente) */
+    .phone { width:min(300px, 78vw); margin:0 auto; border-radius:38px; background:#0f1c17; padding:10px;
+      box-shadow:0 24px 60px -18px rgba(16,24,40,.35), 0 4px 14px -6px rgba(16,24,40,.2); position:relative; }
+    .phone::before { content:""; position:absolute; top:10px; left:50%; transform:translateX(-50%);
+      width:96px; height:22px; background:#0f1c17; border-radius:0 0 14px 14px; z-index:2; }
+    .phone img { display:block; width:100%; border-radius:29px; }
+    .phone-caption { text-align:center; font-size:12.5px; color:var(--muted); margin-top:12px; }
+    @media (max-width:840px){ .hero-grid { grid-template-columns:1fr; text-align:center; }
+      .hero p.sub { margin:0 auto 26px; } .hero .cta-row { justify-content:center; } }
 
     /* Steps */
     section { padding:64px 0; }
@@ -137,16 +147,24 @@
     </div>
   </header>
 
-  <!-- HERO -->
+  <!-- HERO — A4.1: la promesa de cobro (gancho morosidad, master H5/H7) -->
   <section class="hero">
-    <div class="container">
-      <h1>Cotiza por WhatsApp.<br/>Firma digital. <span class="hl">Cobra antes de empezar.</span></h1>
-      <p class="sub">YaQu es la herramienta para fontaneros, electricistas y reformistas que quieren cerrar más trabajos sin papeleo. Cotización profesional en 30 segundos, directa al WhatsApp del cliente.</p>
-      <div class="cta-row">
-        <a href="/register.html" class="btn btn-primary">Empezar gratis</a>
-        <a href="#como-funciona" class="btn btn-ghost">Ver cómo funciona</a>
+    <div class="container hero-grid">
+      <div>
+        <h1>¿Cuántas señales has dejado de cobrar este mes?<br/><span class="hl">Cobra antes de empezar.</span></h1>
+        <p class="sub">Presupuesto en 30 segundos → tu cliente lo firma desde su móvil → señal cobrada. Todo por WhatsApp, sin papeleo y sin perseguir a nadie.</p>
+        <div class="cta-row">
+          <a href="/register.html" class="btn btn-primary">Empieza gratis</a>
+          <a href="#como-funciona" class="btn btn-ghost">Ver cómo funciona</a>
+        </div>
+        <p class="note">14 días gratis · Sin tarjeta · Listo en 5 minutos</p>
       </div>
-      <p class="note">Sin tarjeta de crédito · Configúralo en 5 minutos</p>
+      <div>
+        <div class="phone">
+          <img src="/img/landing/firma-390.png" width="390" height="800" alt="Tu cliente firma el presupuesto desde su móvil" loading="eager" fetchpriority="high"/>
+        </div>
+        <p class="phone-caption">Esto es lo que ve tu cliente: lo abre, lo firma y te paga la señal.</p>
+      </div>
     </div>
   </section>
 
@@ -173,8 +191,8 @@
         </div>
         <div class="card">
           <div class="step-num">4</div>
-          <h3>Cobra y factura</h3>
-          <p>Cobro integrado con tarjeta o transferencia y factura generada automáticamente.</p>
+          <h3>Cobra la señal</h3>
+          <p>Tarjeta, Bizum o transferencia — antes de descargar la furgoneta. Con su justificante de cobro al momento.</p>
         </div>
       </div>
     </div>
@@ -199,12 +217,12 @@
         <div class="card">
           <div class="ico">💳</div>
           <h3>Cobro integrado</h3>
-          <p>Tarjeta, transferencia o Mercado Pago. Cobra antes de empezar el trabajo.</p>
+          <p>Tarjeta, Bizum o transferencia. Cobra la señal antes de empezar el trabajo.</p>
         </div>
         <div class="card">
-          <div class="ico">🧾</div>
-          <h3>Facturas automáticas</h3>
-          <p>Se generan solas al cobrar, con tu logo y numeración correcta.</p>
+          <div class="ico">🔔</div>
+          <h3>Recordatorios que persiguen solos</h3>
+          <p>Presupuestos sin respuesta y cobros pendientes se reclaman automáticamente. Tú, a lo tuyo.</p>
         </div>
         <div class="card">
           <div class="ico">🤖</div>
@@ -229,7 +247,7 @@
         <span class="tag">YaQu Pro</span>
         <div class="amount">$19<span> /mes</span></div>
         <ul>
-          <li>Cotizaciones y facturas ilimitadas</li>
+          <li>Presupuestos y clientes ilimitados</li>
           <li>Envío por WhatsApp + firma digital</li>
           <li>Cobro con tarjeta y transferencia</li>
           <li>Catálogos por oficio y asistente de IA</li>
