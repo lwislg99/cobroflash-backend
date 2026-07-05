@@ -251,10 +251,10 @@
 - **Síntoma:** el banner verde decía "Estamos generando tu factura; la recibirás…" y justo debajo un <small> repetía "La factura se emitirá y se enviará por WhatsApp y email automáticamente".
 - **CERRADO (5-jul):** eliminado el <small> (el banner ya lo dice todo).
 
-### [ ] P3 · P-A66-3 · Formato de dinero en el BO interno sin unificar
-- **Síntoma:** el BO merchant-facing mezcla "0.00 EUR", "€0.00" y "1.266,87 €" (p. ej. totales del creador y de la vista previa usan punto decimal).
-- **Arreglo:** helper `fmtMoneyEs` global en `api.js` (espejo del servidor) y pasada vista a vista (una pantalla por commit, Parte AB). No bloquea demo: el CLIENTE ya ve siempre es-ES.
-- **Progreso:** helper creado + **pantalla 1/N: creador** (totales, total/línea, hint markup, picker, vista previa) ✅ 5-jul (`43b52c3`). Quedan: listas (importe ya es-ES vía toLocaleString en varias), detalle, Home KPIs, informes — revisar una a una.
+### [x] P-A66-3 · Formato de dinero en el BO interno sin unificar
+- **Síntoma:** el BO merchant-facing mezclaba "0.00 EUR", "€0.00", "665,50 EUR" y "1.266,87 €".
+- **Arreglo:** helper `fmtMoneyEs` global en `api.js` (espejo del servidor) y pasada pantalla a pantalla (Parte AB).
+- **CERRADO (5-jul, `43b52c3`→`9c43b51`), 12 pantallas:** creador (totales/línea/hint/picker/preview) · Home (héroe, KPIs, semana, actividad, tops, dropdown QQ) · presupuestos lista+detalle · facturas lista+detalle (incl. doble toque Bizum) · cliente 360 · búsqueda global · gastos · asistente IA · informes (KPIs con símbolo, cuadro IVA, servicios; la tabla P&L queda en números desnudos a propósito) · catálogo · resumen semanal (Configuración) · planes. Sin dinero: proveedores, equipo, plantillas, solicitudes, onboarding. Los inputs numéricos NO se tocaron (siguen siendo números planos).
 
 ---
 
