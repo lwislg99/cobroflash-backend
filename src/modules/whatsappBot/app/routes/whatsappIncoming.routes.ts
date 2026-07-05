@@ -9,7 +9,7 @@ import { config } from '../../../../core/config/env';
 import { normalizePhone } from '../../../../core/utils/utils';
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/merchantNotifications';
-import { updateWaMessageStatus } from '../../../messaging/domain/whatsappLog.service';
+import { updateWaMessageStatus, recordInboundWaMessage } from '../../../messaging/domain/whatsappLog.service';
 import { isFlagEnabled } from '../../../../core/flags';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
 import { handleBotMessage, type BotInput } from '../../domain/botFlow.service';
@@ -89,6 +89,11 @@ router.post('/', async (req, res) => {
         for (const msg of messages) {
           const from = String(msg.from || '');
           if (!from) continue;
+
+          // A5.2: CUALQUIER entrante (texto, tap de botón/lista, audio…) abre o
+          // renueva la ventana de servicio de 24 h → se registra para que los
+          // envíos ventana-first sepan cuándo el texto libre viaja gratis.
+          recordInboundWaMessage(from).catch(() => {});
 
           if (msg.type === 'text') {
             const text = String(msg.text?.body || '').trim();

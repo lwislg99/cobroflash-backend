@@ -10,10 +10,11 @@
  * actúan como candados para garantizar idempotencia.
  */
 import { prisma } from '../../../core/db/prisma';
-import { sendWhatsAppTemplate, sendWhatsAppText } from '../../../integrations/whatsapp';
+import { sendWhatsAppWindowFirst, sendWhatsAppText } from '../../../integrations/whatsapp';
 import { buildPaymentRequest } from '../../../integrations/whatsappTemplates';
 import { normalizePhone } from '../../../core/utils/utils';
 import { BASE_URL } from '../../../core/config/env';
+import { isReceiptNumber } from '../../invoicing/domain/invoiceNumber.service';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -82,6 +83,7 @@ async function sendReminderWA(
   inv: {
     id: number;
     merchantId: number;
+    customerId: number;
     number: string;
     total: { toString(): string };
     currency: string;
@@ -99,34 +101,45 @@ async function sendReminderWA(
   const merchantName  = inv.merchant?.name  || 'tu proveedor';
   const total         = Number(inv.total.toString()).toFixed(2);
   const chargeId      = inv.chargeId ?? inv.charge?.id ?? null;
-  const payUrl        = chargeId ? `${BASE_URL}/pay/card/${chargeId}` : null;
+  // Regla 24/26: un J-… es un JUSTIFICANTE — el copy propio nunca dice "factura" pre-SIF
+  const docLabel      = isReceiptNumber(inv.number) ? 'justificante' : 'factura';
+  const urgency       = day === 14 ? '\nPor favor, complétalo a la mayor brevedad posible.' : '';
 
   try {
-    if (payUrl) {
-      // Usar template aprobado con botón de pago (estructura en whatsappTemplates.ts)
-      const result = await sendWhatsAppTemplate({
+    if (chargeId) {
+      // A5.2 ventana-first: si el cliente interactuó hace <24 h el recordatorio
+      // viaja como texto gratis; si no, plantilla payment_request_es (botón de pago).
+      const result = await sendWhatsAppWindowFirst({
         to: phone,
         merchantId: inv.merchantId, // J3: respeta waOptOut
-        ...buildPaymentRequest({
+        customerId: inv.customerId,
+        windowText:
+          `Hola ${customerName} 👋\n` +
+          `Te recordamos que tienes pendiente el pago del ${docLabel} ${inv.number} ` +
+          `por ${total} ${inv.currency} de parte de ${merchantName}.${urgency}\n` +
+          `Paga de forma segura desde aquí 👇\n` +
+          `${BASE_URL}/pay/invoice/${chargeId}\n` +
+          `Si ya lo has pagado, ignora este mensaje. ¡Gracias!`,
+        template: buildPaymentRequest({
           customerName,
           businessName: merchantName,
           invoiceNumber: inv.number,
           amountWithCurrency: `${total} ${inv.currency}`,
-          chargeId: chargeId as number,
+          chargeId,
         }),
+        log: { customerId: inv.customerId, relatedType: 'invoice', relatedId: inv.id },
       });
       if (result.ok) {
-        console.log(`[invoiceReminder] ✓ ${day}d → inv #${inv.number} (${customerName})`);
+        console.log(`[invoiceReminder] ✓ ${day}d vía ${result.via} → inv #${inv.number} (${customerName})`);
       } else {
-        console.error(`[invoiceReminder] WA error ${day}d → inv #${inv.number}:`, result.error);
+        console.error(`[invoiceReminder] WA error ${day}d → inv #${inv.number}:`, result.error || result.reason);
       }
     } else {
-      // Sin charge → texto libre (funciona dentro de ventana 24h)
-      const urgency = day === 14 ? 'Por favor, completa el pago a la mayor brevedad posible.' : '';
+      // Sin charge → texto libre (solo entrega dentro de ventana 24h)
       await sendWhatsAppText({
         to: phone,
         merchantId: inv.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
-        text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago de la factura *${inv.number}* por *${total} ${inv.currency}* de parte de *${merchantName}*.\n\n${urgency}\nSi ya has realizado el pago, por favor ignora este mensaje. ¡Gracias!`,
+        text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago del ${docLabel} *${inv.number}* por *${total} ${inv.currency}* de parte de *${merchantName}*.\n${urgency}\nSi ya has realizado el pago, por favor ignora este mensaje. ¡Gracias!`,
       });
       console.log(`[invoiceReminder] ✓ texto ${day}d → inv #${inv.number} (${customerName})`);
     }

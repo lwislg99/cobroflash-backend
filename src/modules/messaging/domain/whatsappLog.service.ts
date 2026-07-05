@@ -3,12 +3,15 @@
 // cada función captura el error y la app sigue funcionando (patrón ENT-3). Así el código
 // se puede desplegar ANTES de aplicar la migración, sin romper el envío de mensajes.
 import { prisma } from '../../../core/db/prisma';
+import { normalizePhone } from '../../../core/utils/utils';
 
 // Coste estimado por plantilla Utility en España (tarifas Meta 2026, master J1 ~0,023 €).
 // Los service messages (dentro de ventana 24h) son gratis.
 export const WA_UTILITY_COST_ES = 0.023;
 
-export type WaMsgType = 'template' | 'service';
+// 'template' = plantilla pagada · 'service' = texto/interactivo en ventana (0 €) ·
+// 'inbound' = mensaje ENTRANTE del cliente (A5.2: abre/renueva la ventana de 24 h)
+export type WaMsgType = 'template' | 'service' | 'inbound';
 export type WaRelatedType = 'quote' | 'invoice' | 'charge';
 
 export interface RecordWaMessageInput {
@@ -46,6 +49,60 @@ export async function recordWaMessage(input: RecordWaMessageInput): Promise<void
   } catch (err: any) {
     // Tabla aún no migrada en prod, u otro fallo: no romper el flujo de envío
     console.error('[WA-0b] recordWaMessage omitido:', err?.message || err);
+  }
+}
+
+// ── A5.2 · Ventana de servicio de 24 h (estrategia de coste ~0, Ola 5) ──────
+// Cada mensaje ENTRANTE (texto, tap de quick reply/lista, audio…) abre o renueva la
+// ventana de 24 h de ese número. Se registra una fila `type:'inbound'` por CADA
+// merchant que tenga ese teléfono como cliente: el número de WhatsApp es compartido,
+// así que la ventana es del PAR número↔cliente, no de un merchant concreto.
+
+/** Margen de seguridad: tratamos la ventana como abierta solo hasta 23,5 h (no 24)
+ *  para no intentar textos al filo del cierre; si aun así falla, hay fallback a plantilla. */
+export const WA_WINDOW_SAFETY_MS = 23.5 * 3600 * 1000;
+
+/** Registra un entrante del cliente (fire-and-forget: nunca lanza). */
+export async function recordInboundWaMessage(rawPhone: string): Promise<void> {
+  try {
+    const phone = normalizePhone(rawPhone);
+    if (!phone) return;
+    // Mismo patrón de variantes que la identidad del bot (BD puede guardar con "+")
+    const customers = await prisma.customer.findMany({
+      where: { phone: { in: [phone, `+${phone}`] } },
+      select: { id: true, merchantId: true },
+    });
+    if (!customers.length) return; // número sin cliente asociado: nada que abrir
+    await prisma.whatsAppMessage.createMany({
+      data: customers.map((c) => ({
+        merchantId: c.merchantId,
+        customerId: c.id,
+        type: 'inbound',
+        status: 'received',
+        costEstimate: 0,
+      })),
+    });
+  } catch (err: any) {
+    console.error('[A5.2] recordInboundWaMessage omitido:', err?.message || err);
+  }
+}
+
+/** ¿Está abierta la ventana de servicio con este cliente? (último inbound < 23,5 h) */
+export async function isServiceWindowOpen(
+  merchantId: number,
+  customerId: number,
+  now = new Date(),
+): Promise<boolean> {
+  try {
+    const since = new Date(now.getTime() - WA_WINDOW_SAFETY_MS);
+    const last = await prisma.whatsAppMessage.findFirst({
+      where: { merchantId, customerId, type: 'inbound', createdAt: { gte: since } },
+      select: { id: true },
+    });
+    return !!last;
+  } catch (err: any) {
+    console.error('[A5.2] isServiceWindowOpen omitido:', err?.message || err);
+    return false; // ante la duda: plantilla (la entrega manda sobre el ahorro)
   }
 }
 

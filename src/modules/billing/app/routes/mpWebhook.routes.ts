@@ -143,6 +143,7 @@ router.post('/', async (req, res) => {
           toPhone: updated.customer.phone,
           customerName: updated.customer.name,
           merchantId: updated.merchantId, // J3: respeta waOptOut
+          customerId: updated.customerId ?? undefined, // A5.3: vía ventana (0 €) si hay entrante <24 h
           amountWithCurrency: `${amt} ${cur}`,
           documentNumber,
           businessName: merchant?.legalName || merchant?.name,     // P1-7

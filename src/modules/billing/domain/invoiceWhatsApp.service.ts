@@ -8,7 +8,7 @@ import fetch from 'node-fetch';
 import { prisma } from '../../../core/db/prisma';
 import { BASE_URL } from '../../../core/config/env';
 import { normalizePhone } from '../../../core/utils/utils';
-import { sendWhatsAppTemplate } from '../../../integrations/whatsapp';
+import { sendWhatsAppWindowFirst } from '../../../integrations/whatsapp';
 import { buildPaymentRequest } from '../../../integrations/whatsappTemplates';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
 import { isReceiptNumber } from '../../invoicing/domain/invoiceNumber.service';
@@ -74,17 +74,29 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
   }
 
   const businessName = invoice.merchant?.legalName || invoice.merchant?.name || 'Tu proveedor';
-  const result = await sendWhatsAppTemplate({
+  const amountWithCurrency = `${Number(invoice.total).toFixed(2)} ${invoice.currency}`;
+  // Regla 24/26: en el texto de ventana (copy nuestro, no de Meta) un J-… es "justificante"
+  const docLabel = isReceiptNumber(invoice.number) ? 'justificante' : 'factura';
+  // A5.2: ventana-first — si el cliente interactuó hace <24 h, el enlace de pago
+  // viaja como texto gratis; si no, plantilla payment_request_es como siempre.
+  const result = await sendWhatsAppWindowFirst({
     to,
     merchantId: invoice.merchantId, // J3: respeta waOptOut
-    log: { customerId: invoice.customerId, relatedType: 'invoice', relatedId: invoice.id }, // WA-0b
-    ...buildPaymentRequest({
+    customerId: invoice.customerId,
+    windowText:
+      `Hola ${invoice.customer.name || 'Cliente'} 👋\n` +
+      `${businessName} te envía el ${docLabel} ${invoice.number}.\n` +
+      `A pagar: ${amountWithCurrency}\n` +
+      `Paga de forma segura desde aquí 👇\n` +
+      `https://yaqu.app/pay/invoice/${chargeId}`,
+    template: buildPaymentRequest({
       customerName: invoice.customer.name || 'Cliente',
       businessName,
       invoiceNumber: invoice.number,
-      amountWithCurrency: `${Number(invoice.total).toFixed(2)} ${invoice.currency}`,
+      amountWithCurrency,
       chargeId: chargeId as number,
     }),
+    log: { customerId: invoice.customerId, relatedType: 'invoice', relatedId: invoice.id }, // WA-0b
   });
 
   if (!result.ok) return { ok: false, reason: 'whatsapp_send_failed', chargeId: chargeId ?? undefined, to };

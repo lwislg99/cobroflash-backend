@@ -8,6 +8,7 @@ import { demoSendBlocked } from './whatsappPolicy';
 import {
   recordWaMessage,
   extractWaMessageId,
+  isServiceWindowOpen,
   type WaRelatedType,
 } from '../modules/messaging/domain/whatsappLog.service';
 
@@ -155,6 +156,65 @@ export async function sendWhatsAppTemplate(params: {
     console.error('[WhatsApp] Error enviando mensaje:', err?.response?.data || err?.message);
     return { ok: false, error: err?.response?.data || err?.message };
   }
+}
+
+/**
+ * A5.2 — Envío VENTANA-FIRST (Ola 5, estrategia de coste ~0):
+ * si la ventana de servicio de 24 h del cliente está abierta (hubo un entrante
+ * hace <23,5 h), envía `windowText` como texto libre (0 €) y lo registra como
+ * `type:'service'` guardando en `templateName` la plantilla que se AHORRÓ (métrica
+ * A5.4). Si la ventana está cerrada, o el texto falla pese a todo, cae a la
+ * plantilla pagada de siempre. Guards: waOptOut (J3) se comprueba aquí para el
+ * texto; V0-2 (demo) y los topes A3.2 se reaplican dentro de cada sender de base.
+ */
+export async function sendWhatsAppWindowFirst(params: {
+  to: string;
+  merchantId: number;
+  customerId?: number | null;
+  windowText: string;
+  template: { templateName: string; languageCode?: string; components?: any[] };
+  log?: WaLogMeta;
+}): Promise<{ ok: boolean; via: 'window' | 'template' | 'none'; reason?: string; error?: any; data?: any }> {
+  // J3: la baja del canal manda también sobre los textos de ventana
+  if (await isWaOptedOut(params.merchantId, params.to)) {
+    console.warn(`[WhatsApp] ${params.to} dado de baja (waOptOut) para merchant ${params.merchantId}; ventana-first bloqueado`);
+    return { ok: false, via: 'none', reason: 'wa_opt_out' };
+  }
+
+  const customerId = params.customerId ?? params.log?.customerId ?? null;
+  if (customerId && (await isServiceWindowOpen(params.merchantId, customerId))) {
+    const text = await sendWhatsAppText({
+      to: params.to,
+      merchantId: params.merchantId,
+      text: params.windowText,
+    }).catch(() => ({ ok: false as const, data: undefined as any }));
+
+    if (text.ok) {
+      recordWaMessage({
+        merchantId: params.merchantId,
+        customerId,
+        type: 'service',
+        templateName: params.template.templateName, // la plantilla que NO se pagó
+        waMessageId: extractWaMessageId((text as any).data),
+        status: 'sent',
+        relatedType: params.log?.relatedType ?? null,
+        relatedId: params.log?.relatedId ?? null,
+        costEstimate: 0,
+      }).catch(() => {});
+      return { ok: true, via: 'window' };
+    }
+    console.warn('[WhatsApp] A5.2: ventana abierta pero el texto falló; fallback a plantilla');
+  }
+
+  const result = await sendWhatsAppTemplate({
+    to: params.to,
+    merchantId: params.merchantId,
+    log: { ...(params.log ?? {}), customerId },
+    templateName: params.template.templateName,
+    languageCode: params.template.languageCode,
+    components: params.template.components,
+  });
+  return { ...result, via: 'template' };
 }
 
 export async function sendWhatsAppText(params: {
