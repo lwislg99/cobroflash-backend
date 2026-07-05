@@ -68,18 +68,18 @@ function merchantDisplayName(m: { legalName?: string | null; name?: string | nul
   return m.legalName || m.name || 'el negocio';
 }
 
-/** Menú oficial K1 (lista): Ver presupuestos · Pagar pendiente · Pedir presupuesto · Hablar con [Negocio]. */
+/** Menú oficial K1 (lista) — copy v2 aprobado por el fundador (5-jul-2026). */
 async function sendMenu(to: string, merchantId: number, businessName: string) {
   await sendWhatsAppList({
     to,
     merchantId,
-    bodyText: `Hola 👋 Soy el asistente de ${businessName}. ¿Qué necesitas?`,
+    bodyText: `Hola 👋 Soy el asistente de ${businessName}. Dime qué necesitas:`,
     buttonText: 'Ver opciones',
     rows: [
-      { id: 'bot_quotes', title: '📄 Ver mis presupuestos' },
-      { id: 'bot_pay', title: '💳 Pagar pendiente' },
-      { id: 'bot_request', title: '🛠 Pedir presupuesto' },
-      { id: 'bot_human', title: `💬 Hablar con ${businessName}`.slice(0, 24) },
+      { id: 'bot_quotes', title: '📄 Mis presupuestos', description: 'Pendientes de ver o firmar' },
+      { id: 'bot_pay', title: '💳 Pagar pendiente', description: 'Tus cobros abiertos, con enlace seguro' },
+      { id: 'bot_request', title: '🛠 Pedir presupuesto', description: 'Te lo pido en 2 preguntas' },
+      { id: 'bot_human', title: `💬 Hablar con ${businessName}`.slice(0, 24), description: 'Te escribirá personalmente' },
     ],
   });
 }
@@ -114,7 +114,7 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
     if (session?.state === 'done') return true;
     await sendWhatsAppText({
       to: from,
-      text: 'Este número envía presupuestos y facturas de negocios que usan YaQu. Si esperas un presupuesto, pídele a tu profesional que te lo envíe por aquí. 👋',
+      text: '👋 Este número lo usan profesionales que trabajan con YaQu para enviar presupuestos y cobros a sus clientes. Si esperas un presupuesto, pídele a tu profesional que te lo mande por aquí.',
     });
     await setSession(phone, { state: 'done' }, session);
     return true;
@@ -134,13 +134,21 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
     if (!merchantId) {
       const merchants = await prisma.merchant.findMany({
         where: { id: { in: merchantIds } },
-        select: { id: true, name: true, legalName: true },
+        select: { id: true, name: true, legalName: true, trade: true },
       });
+      const TRADE_LABEL: Record<string, string> = {
+        electricista: 'Electricista', fontanero: 'Fontanero', reformista: 'Reformas',
+        pintor: 'Pintor', cerrajero: 'Cerrajero', climatizacion: 'Climatización',
+      };
       await sendWhatsAppList({
         to: from,
-        bodyText: '¿Con qué negocio quieres hablar?',
+        bodyText: '👋 Este número atiende a varios negocios. ¿Con cuál quieres hablar?',
         buttonText: 'Elegir negocio',
-        rows: merchants.map((m) => ({ id: `bot_m_${m.id}`, title: merchantDisplayName(m).slice(0, 24) })),
+        rows: merchants.map((m) => ({
+          id: `bot_m_${m.id}`,
+          title: merchantDisplayName(m).slice(0, 24),
+          ...(m.trade && TRADE_LABEL[m.trade] ? { description: TRADE_LABEL[m.trade] } : {}),
+        })),
       });
       await setSession(phone, { state: 'choosing_merchant' }, session);
       return true;
@@ -162,7 +170,7 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
       state: 'asking_zone',
       data: { ...(session.data || {}), description: text.slice(0, 1000) },
     }, session);
-    await sendWhatsAppText({ to: from, text: '¿Zona aproximada? (barrio o municipio)' });
+    await sendWhatsAppText({ to: from, text: '📍 ¿En qué zona está el trabajo? (barrio o municipio)' });
     return true;
   }
 
@@ -200,7 +208,7 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
 
     await sendWhatsAppText({
       to: from,
-      text: `✅ ¡Pedido! ${businessName} ha recibido tu solicitud y te responderá con el presupuesto.`,
+      text: `✅ ¡Listo! ${businessName} ya tiene tu solicitud y te responderá pronto con el presupuesto por aquí.`,
     });
     await setSession(phone, { merchantId, state: 'done', data: {} }, session);
     return true;
@@ -217,16 +225,16 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
     if (!quotes.length) {
       await sendWhatsAppText({
         to: from,
-        text: 'No tienes presupuestos pendientes ahora mismo. Si necesitas uno nuevo, elige "🛠 Pedir presupuesto" en el menú.',
+        text: `No tienes presupuestos pendientes con ${businessName}. Si necesitas uno nuevo, toca "🛠 Pedir presupuesto" en el menú 👇`,
       });
       await sendMenu(from, merchantId, businessName);
     } else {
       const lines = quotes.map((q) =>
-        `📄 Presupuesto #${q.quoteNumber ?? q.id} · ${Number(q.total).toFixed(2)} ${q.currency}\n${BASE_URL}/pay/quote/${q.id}`,
+        `📄 *Presupuesto #${q.quoteNumber ?? q.id}* · ${Number(q.total).toFixed(2)} ${q.currency}\n👉 Ver y firmar: ${BASE_URL}/pay/quote/${q.id}`,
       );
       await sendWhatsAppText({
         to: from,
-        text: `Tus presupuestos pendientes:\n\n${lines.join('\n\n')}\n\nÁbrelos para verlos y firmarlos.`,
+        text: `Esto es lo que tienes pendiente de decidir con ${businessName}:\n\n${lines.join('\n\n')}`,
       });
     }
     await setSession(phone, { merchantId, state: 'menu', data: {} }, session);
@@ -241,12 +249,15 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
       select: { id: true, amount: true, currency: true, concept: true },
     });
     if (!charges.length) {
-      await sendWhatsAppText({ to: from, text: '🎉 No tienes pagos pendientes con este negocio.' });
+      await sendWhatsAppText({ to: from, text: `🎉 ¡Estás al día! No tienes ningún pago pendiente con ${businessName}.` });
     } else {
       const lines = charges.map((c) =>
-        `💳 ${Number(c.amount).toFixed(2)} ${c.currency}${c.concept ? ` · ${c.concept}` : ''}\n${BASE_URL}/pay/invoice/${c.id}`,
+        `💳 *${Number(c.amount).toFixed(2)} ${c.currency}*${c.concept ? ` · ${c.concept}` : ''}\n👉 Pagar seguro: ${BASE_URL}/pay/invoice/${c.id}`,
       );
-      await sendWhatsAppText({ to: from, text: `Tus pagos pendientes:\n\n${lines.join('\n\n')}` });
+      await sendWhatsAppText({
+        to: from,
+        text: `Esto es lo que tienes pendiente con ${businessName}:\n\n${lines.join('\n\n')}\n\nPuedes pagar con tarjeta, Bizum o transferencia desde el enlace.`,
+      });
     }
     await setSession(phone, { merchantId, state: 'menu', data: {} }, session);
     return true;
@@ -254,8 +265,11 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
 
   if (listId === 'bot_request') {
     await setSession(phone, { merchantId, state: 'asking_description', data: {} }, session);
-    // Copy oficial K1
-    await sendWhatsAppText({ to: from, text: '¿Qué necesitas? Puedes mandar audio.' });
+    // Copy v2 (fundador 5-jul): sin invitar al audio hasta MEDIA-1, con ejemplo
+    await sendWhatsAppText({
+      to: from,
+      text: '📝 Cuéntame qué necesitas — cuanto más detalle, mejor.\n\nPor ejemplo: "cambiar 3 enchufes y poner un foco en la cocina".',
+    });
     return true;
   }
 
@@ -268,10 +282,9 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
       detail: `Su número: +${phone}`,
       freeText: `💬 *${customer.name || 'Un cliente'}* (+${phone}) quiere hablar contigo. Escríbele desde tu número personal.`,
     }).catch((e) => console.error('[bot] handoff aviso:', e?.message || e));
-    // Copy oficial K1
     await sendWhatsAppText({
       to: from,
-      text: `✅ Avisado. ${businessName} te escribirá desde su número personal.`,
+      text: `✅ Hecho, le he avisado. ${businessName} te escribirá en cuanto pueda desde su número personal.`,
     });
     await setSession(phone, { merchantId, state: 'handoff', data: {} }, session);
     return true;
@@ -299,12 +312,17 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
     }).catch((e) => console.error('[bot] handoff 2ª vez:', e?.message || e));
     await sendWhatsAppText({
       to: from,
-      text: `✅ Avisado. ${businessName} te escribirá desde su número personal.`,
+      text: `✅ Te paso con ${businessName}: le he avisado y te escribirá en cuanto pueda desde su número personal.`,
     });
     await setSession(phone, { merchantId, state: 'handoff', data: {} }, session);
     return true;
   }
 
+  // 1ª vez: explicar con honestidad qué sabe hacer (sin precios/plazos, K1)
+  await sendWhatsAppText({
+    to: from,
+    text: `🙈 Eso no lo sé responder — soy un asistente sencillo (los precios y los plazos te los da ${businessName}). Esto sí puedo hacerlo:`,
+  });
   await sendMenu(from, merchantId, businessName);
   await setSession(phone, { merchantId, state: 'menu', data: { offMenuCount: offMenuCount + 1 } }, session);
   return true;

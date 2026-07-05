@@ -107,7 +107,7 @@ router.post('/', async (req, res) => {
             );
           } else if (msg.type === 'audio' && isFlagEnabled('BOT_INBOUND_ENABLED')) {
             // BOT-1 mínimo: el audio→texto es F2 (MEDIA-1) — respuesta digna
-            sendWhatsAppText({ to: from, text: 'De momento solo puedo leer texto 🙏 ¿Me lo escribes?' })
+            sendWhatsAppText({ to: from, text: '🙏 De momento solo entiendo texto. ¿Me lo escribes en un mensaje?' })
               .catch(() => {});
           }
         }
