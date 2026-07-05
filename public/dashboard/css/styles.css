@@ -996,7 +996,9 @@ html, body { overflow-x: clip; }
   gap: 18px;
   align-items: flex-start;
 }
-@media (max-width: 1100px) { .quotes-layout { grid-template-columns: 1fr; } }
+/* A6.6: minmax(0,…) — con `1fr` a secas la pista crecía al min-content del
+   hijo más ancho (la tabla de líneas) y la tarjeta media 650px en un móvil. */
+@media (max-width: 1100px) { .quotes-layout { grid-template-columns: minmax(0, 1fr); } }
 
 .quote-block { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--neutral-100); }
 .quote-block-title { font-size: 13px; font-weight: 700; color: var(--neutral-700); margin-bottom: 10px; }
@@ -1165,8 +1167,9 @@ html, body { overflow-x: clip; }
   .table th, .table td { white-space: nowrap; }
   .table td .empty-state { white-space: normal; } /* los estados vacíos siguen envolviendo */
 
-  .customer-form, .quote-form-row { grid-template-columns: 1fr; }
-  .quotes-layout { grid-template-columns: 1fr; }
+  /* minmax(0,…): que ningún hijo ancho (tablas) infle la pista (A6.6) */
+  .customer-form, .quote-form-row { grid-template-columns: minmax(0, 1fr); }
+  .quotes-layout { grid-template-columns: minmax(0, 1fr); }
 
   .btn { min-height: 44px; }
 }
