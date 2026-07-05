@@ -34,6 +34,7 @@ function renderCustomersView(container) {
   container.innerHTML = "";
 
   let editingCustomer = null;
+  let fieldLegalName, fieldTaxId; // A20.4
 
   // Card principal
   const outerCard = createElement("div", "data-card");
@@ -142,11 +143,16 @@ function renderCustomersView(container) {
     fieldName = createField("Nombre", "name", "text", true);
     fieldPhone = createField("Teléfono (E.164 sin +)", "phone", "text");
     fieldEmail = createField("Email", "email", "email");
+    // A20.4: cliente empresa (opcional) — el NIF además lo exigirá VeriFactu
+    fieldLegalName = createField("Razón social (empresa, opcional)", "legalName", "text");
+    fieldTaxId = createField("NIF/CIF (opcional)", "taxId", "text");
     fieldNotes = createField("Notas", "notes", null, false, true);
 
     body.appendChild(fieldName.wrapper);
     body.appendChild(fieldPhone.wrapper);
     body.appendChild(fieldEmail.wrapper);
+    body.appendChild(fieldLegalName.wrapper);
+    body.appendChild(fieldTaxId.wrapper);
     body.appendChild(fieldNotes.wrapper);
 
     // J3: baja manual de WhatsApp (hasta WA-0b el "BAJA" entrante no se procesa solo)
@@ -201,6 +207,8 @@ function renderCustomersView(container) {
       fieldPhone.input.value = editingCustomer.phone || "";
       fieldEmail.input.value = editingCustomer.email || "";
       fieldNotes.input.value = editingCustomer.notes || "";
+      fieldLegalName.input.value = editingCustomer.legalName || ""; // A20.4
+      fieldTaxId.input.value = editingCustomer.taxId || "";
       fieldWaOptOut.checked = !!editingCustomer.waOptOut;
     }
 
@@ -224,6 +232,8 @@ function renderCustomersView(container) {
       phone: fieldPhone.input.value.trim(),
       email: fieldEmail.input.value.trim(),
       notes: fieldNotes.input.value.trim(),
+      legalName: fieldLegalName.input.value.trim() || null, // A20.4
+      taxId: fieldTaxId.input.value.trim() || null,
       waOptOut: !!(fieldWaOptOut && fieldWaOptOut.checked), // J3
     };
 

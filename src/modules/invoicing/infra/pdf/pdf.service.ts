@@ -381,7 +381,12 @@ export async function generateQuotePdf(params: {
     name: string | null;
     phone?: string | null;
     email?: string | null;
+    // A20.4: cliente empresa
+    legalName?: string | null;
+    taxId?: string | null;
   };
+  // A20.4: qué datos del cliente se muestran (null/undefined = todos los presentes)
+  docFields?: { name?: boolean; phone?: boolean; taxId?: boolean; email?: boolean } | null;
   currency: string;
   total: string;
   lines: Array<{
@@ -436,9 +441,16 @@ export async function generateQuotePdf(params: {
     doc.text(`WhatsApp ${params.merchant.whatsappPhone}`);
   doc.moveDown();
 
-  doc.text(`Cliente: ${params.customer.name || '—'}`);
-  if (params.customer.phone) doc.text(`Tel: ${params.customer.phone}`);
-  if (params.customer.email) doc.text(`Email: ${params.customer.email}`);
+  // A20.4: el pro elige qué datos del cliente van en el documento (docFields;
+  // null = todos los presentes, comportamiento de siempre). Cliente empresa:
+  // razón social manda sobre el nombre, y el NIF sale si se pide.
+  const show = (k: 'name' | 'phone' | 'taxId' | 'email') =>
+    !params.docFields || params.docFields[k] !== false;
+  const clientDisplay = params.customer.legalName || params.customer.name || '—';
+  if (show('name')) doc.text(`Cliente: ${clientDisplay}`);
+  if (show('taxId') && params.customer.taxId) doc.text(`NIF: ${params.customer.taxId}`);
+  if (show('phone') && params.customer.phone) doc.text(`Tel: ${params.customer.phone}`);
+  if (show('email') && params.customer.email) doc.text(`Email: ${params.customer.email}`);
   doc.moveDown();
 
   // ===== MODO TIERS: Good/Better/Best =====

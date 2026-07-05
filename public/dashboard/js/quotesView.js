@@ -429,6 +429,47 @@ blockClient.appendChild(descWrapper);
       return sel;
     }
 
+    // A20.4 (PV-FIX-CAMPOS): qué datos del cliente se MUESTRAN en el documento.
+    // Default: todos marcados (comportamiento de siempre; solo salen si existen).
+    const docFieldsWrapper = document.createElement("div");
+    docFieldsWrapper.className = "field";
+    docFieldsWrapper.innerHTML =
+      '<label class="pay-methods-title">Datos del cliente en el documento</label>';
+    const dfRow = document.createElement("div");
+    dfRow.className = "pay-methods-row";
+    const dfDefs = [
+      { key: "name", label: "Nombre" },
+      { key: "phone", label: "Teléfono" },
+      { key: "taxId", label: "NIF" },
+      { key: "email", label: "Email" },
+    ];
+    const dfChecks = {};
+    dfDefs.forEach(function (def) {
+      const lbl = document.createElement("label");
+      const chk = document.createElement("input");
+      chk.type = "checkbox";
+      chk.checked = true;
+      dfChecks[def.key] = chk;
+      lbl.appendChild(chk);
+      lbl.appendChild(document.createTextNode(" " + def.label));
+      dfRow.appendChild(lbl);
+    });
+    docFieldsWrapper.appendChild(dfRow);
+    const dfNote = document.createElement("p");
+    dfNote.className = "pay-methods-note";
+    dfNote.textContent = "Solo aparecen los que el cliente tenga rellenos (la razón social sustituye al nombre si existe).";
+    docFieldsWrapper.appendChild(dfNote);
+    blockClient.appendChild(docFieldsWrapper);
+
+    // null = todos (default); objeto solo si el pro desmarca algo
+    function selectedDocFields() {
+      const all = dfDefs.every(function (d) { return dfChecks[d.key].checked; });
+      if (all) return undefined;
+      const out = {};
+      dfDefs.forEach(function (d) { out[d.key] = dfChecks[d.key].checked; });
+      return out;
+    }
+
   // ---------- BLOQUE B: LÍNEAS DEL PRESUPUESTO ----------
   const blockLines = document.createElement("div");
   blockLines.className = "quote-block";
@@ -2146,6 +2187,7 @@ payloadLines.push({
         lines: payloadLines,
         paymentTerms: paymentSelect.value || null,
         payMethods: selectedPayMethods(), // A2.1: undefined = todas
+        docFields: selectedDocFields(),   // A20.4: undefined = todos
         created_via: quoteFormCreatedVia, // VZ-3: 'voice' si hubo dictado
       };
 

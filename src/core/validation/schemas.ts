@@ -33,6 +33,8 @@ export const CreateQuoteSchema = z.object({
   // A2.1: métodos de pago habilitados para este presupuesto (selector al crear).
   // Omitido = todos los que el merchant tenga disponibles.
   payMethods: z.array(z.enum(['card', 'bizum', 'transfer'])).min(1).optional(),
+  // A20.4: qué datos del cliente muestra el DOCUMENTO (null = todos los presentes)
+  docFields: z.object({ name: z.boolean(), phone: z.boolean(), taxId: z.boolean(), email: z.boolean() }).partial().nullable().optional(),
 });
 
 export type QuoteTier = z.infer<typeof QuoteTierSchema>;
@@ -174,6 +176,10 @@ export const customerCreateSchema = z.object({
   notes: z.string().max(1000).optional(),
   // J3: baja de WhatsApp (manual desde la ficha hasta WA-0b/BOT-1)
   waOptOut: z.boolean().optional(),
+  // A20.4 (EXT3): cliente empresa — el NIF además es requisito del VeriFactu
+  // futuro (hallazgo S1-C: F1 exige NIF del destinatario)
+  legalName: z.string().max(200).nullable().optional(),
+  taxId: z.string().max(20).nullable().optional(),
 });
 
 export const customerUpdateSchema = customerCreateSchema.partial();

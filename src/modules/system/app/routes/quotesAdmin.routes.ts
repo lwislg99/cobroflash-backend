@@ -373,7 +373,8 @@ router.get('/:id/pdf', async (req, res) => {
         whatsappPhone: quote.merchant.whatsappPhone,
         logoUrl: quote.merchant.logoUrl,
       },
-      customer: { name: quote.customer.name, phone: quote.customer.phone, email: quote.customer.email },
+      customer: { name: quote.customer.name, phone: quote.customer.phone, email: quote.customer.email, legalName: (quote.customer as any).legalName, taxId: (quote.customer as any).taxId }, // A20.4
+      docFields: ((quote as any).docFields as any) ?? null, // A20.4
       currency: quote.currency,
       total: quote.total.toString(),
       lines: (Array.isArray(quote.lines) ? quote.lines : []) as any,

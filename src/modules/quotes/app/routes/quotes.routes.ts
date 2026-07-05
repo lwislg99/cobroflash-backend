@@ -99,6 +99,7 @@ router.post('/create', async (req, res) => {
           lines: canonicalLines,
           tiers: tiersWithTotal as any ?? undefined,
           paymentTerms: body.paymentTerms ?? null,
+          docFields: body.docFields ?? undefined, // A20.4: qué datos del cliente muestra el documento
           teamMemberId: creatorTeamMemberId,
           createdVia: body.created_via ?? 'text', // V0-3: telemetría quote_created_via
           payMethods: body.payMethods ?? undefined, // A2.1: selector al crear
@@ -129,7 +130,8 @@ router.post('/create', async (req, res) => {
           whatsappPhone: merchant.whatsappPhone,
           logoUrl: merchant.logoUrl,
         },
-        customer: { name: customer.name, phone: customer.phone, email: customer.email },
+        customer: { name: customer.name, phone: customer.phone, email: customer.email, legalName: (customer as any).legalName, taxId: (customer as any).taxId }, // A20.4
+        docFields: ((quote as any).docFields as any) ?? null, // A20.4
         currency: quote.currency,
         total: quote.total.toString(),
         lines: canonicalLines as any,
@@ -439,7 +441,8 @@ router.post('/:id/decision', async (req, res) => {
               whatsappPhone: merchant.whatsappPhone,
               logoUrl: merchant.logoUrl,
             },
-            customer: { name: customer.name, phone: customer.phone, email: customer.email },
+            customer: { name: customer.name, phone: customer.phone, email: customer.email, legalName: (customer as any).legalName, taxId: (customer as any).taxId }, // A20.4
+        docFields: ((quote as any).docFields as any) ?? null, // A20.4
             currency: quote.currency,
             total: quote.total.toString(),
             lines: quote.lines as any,
