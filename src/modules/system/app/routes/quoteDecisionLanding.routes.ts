@@ -242,10 +242,24 @@ function selectTier(tierId, qId) {
   const card = document.querySelector('[data-tier-id="' + tierId + '"]');
   if (card) card.classList.add('selected');
   const label = card ? card.querySelector('.tier-label').textContent : tierId;
-  document.getElementById('chosen-tier-label').textContent = label;
+  const totalTxt = card ? card.querySelector('.tier-total').textContent : '';
+  document.getElementById('chosen-tier-label').textContent = label + (totalTxt ? ' · ' + totalTxt : '');
   document.getElementById('tier-confirm').style.display = 'block';
-  document.getElementById('btn-accept').style.display = 'block';
-  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  // A20.1 FIX: mostrar el BLOQUE ENTERO de firma (canvas + checkbox + botón).
+  // Antes solo se "mostraba" el botón, que vive dentro de un wrapper oculto →
+  // no aparecía nada y el GBB parecía roto.
+  const wrap = document.getElementById('btn-accept-wrapper');
+  if (wrap) wrap.style.display = 'block';
+  // A20.1: el total del héroe y el botón REFLEJAN la elección (antes el héroe
+  // enseñaba el total del tier recomendado sin explicar de dónde salía)
+  const heroVal = document.querySelector('.amount-hero-value');
+  if (heroVal && totalTxt) heroVal.textContent = totalTxt;
+  const heroLabel = document.querySelector('.amount-hero-label');
+  if (heroLabel) heroLabel.textContent = 'Total · ' + label + ' · IVA incluido';
+  const btn = document.getElementById('btn-accept');
+  if (btn && totalTxt) btn.textContent = 'Firmar y aceptar — ' + label + ' (' + totalTxt + ')';
+  // Llevar al cliente a la FIRMA (lo que toca hacer ahora), no a la tarjeta
+  document.getElementById('tier-confirm').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 </script>`;
 
@@ -258,7 +272,13 @@ function lineIcon(concept: string): string {
   return '•';
 }
 
-function renderQuoteDetail(quote: Awaited<ReturnType<typeof loadQuote>>, quoteId: string): string {
+function renderQuoteDetail(
+  quote: Awaited<ReturnType<typeof loadQuote>>,
+  quoteId: string,
+  // A20.1: con tiers, el héroe no puede enseñar el total del "recomendado" sin
+  // contexto (números que no cuadran con las tarjetas) → "Desde X €" + guía.
+  tiersInfo?: { min: number } | null,
+): string {
   if (!quote) return `<h1>Cotización #${esc(quoteId)}</h1>`;
 
   const merchantName = esc(quote.merchant?.legalName || quote.merchant?.name || '');
@@ -317,8 +337,8 @@ function renderQuoteDetail(quote: Awaited<ReturnType<typeof loadQuote>>, quoteId
     ${linesHtml}
     ${vatHtml}
     <div class="amount-hero">
-      <div class="amount-hero-label">${hasVat ? 'Total · IVA incluido' : 'Total del presupuesto'}</div>
-      <div class="amount-hero-value">${money(Number(quote.total))}</div>
+      <div class="amount-hero-label">${tiersInfo ? 'Elige tu opción abajo 👇' : (hasVat ? 'Total · IVA incluido' : 'Total del presupuesto')}</div>
+      <div class="amount-hero-value">${tiersInfo ? `Desde ${money(tiersInfo.min)}` : money(Number(quote.total))}</div>
     </div>
     ${terms ? `<div style="text-align:center;margin-bottom:4px"><span class="terms-badge">${esc(termsLabel(terms))}</span></div>${terms === 'FIFTY_FIFTY' ? `<div class="senal-policy">🔒 La señal no es reembolsable.</div>` : ''}` : ''}
   `;
@@ -422,13 +442,17 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
       locale = getLocale(quote.merchant?.country);
       brandColor = quote.merchant?.brandColor ?? null;
       if (quote.status === 'draft' || quote.status === 'sent') {
-        quoteDetail = renderQuoteDetail(quote, quoteId);
         const tiers = (quote as any).tiers as any[] | null;
         if (tiers && tiers.length > 0) {
           hasTiers = true;
           // Añadir currency a cada tier para el render
           const tiersWithCurrency = tiers.map((t: any) => ({ ...t, currency: quote.currency }));
           tierCards = renderTierCards(tiersWithCurrency, quoteId, locale);
+          // A20.1: héroe honesto — "Desde {mínimo}" hasta que el cliente elija
+          const minTotal = Math.min(...tiers.map((t: any) => Number(t.total) || 0));
+          quoteDetail = renderQuoteDetail(quote, quoteId, { min: minTotal });
+        } else {
+          quoteDetail = renderQuoteDetail(quote, quoteId);
         }
       } else if (quote.status === 'accepted') {
         // PC-C (N3): estado aceptado digno con FECHA + siguiente paso (igual que rejected).
