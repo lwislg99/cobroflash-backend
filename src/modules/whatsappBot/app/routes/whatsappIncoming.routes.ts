@@ -12,9 +12,26 @@ import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/mercha
 import { updateWaMessageStatus, recordInboundWaMessage } from '../../../messaging/domain/whatsappLog.service';
 import { isFlagEnabled } from '../../../../core/flags';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
-import { handleBotMessage, type BotInput } from '../../domain/botFlow.service';
+import { handleBotMessage, handleUnsupportedMedia, type BotInput } from '../../domain/botFlow.service';
 
 const router = Router();
+
+// A8.2: Meta REINTENTA webhooks (y puede entregar dos veces) — dedupe por
+// wamid con LRU en memoria para que dos entregas del mismo mensaje no
+// dupliquen la respuesta del bot. 500 ids ≈ sobra para el volumen F1.
+const seenWamids = new Set<string>();
+const seenOrder: string[] = [];
+function isDuplicateWamid(id: string): boolean {
+  if (!id) return false;
+  if (seenWamids.has(id)) return true;
+  seenWamids.add(id);
+  seenOrder.push(id);
+  if (seenOrder.length > 500) seenWamids.delete(seenOrder.shift() as string);
+  return false;
+}
+
+// A8.2 (#15): tipos de mensaje que el bot no entiende — respuesta amable + menú
+const UNSUPPORTED_TYPES = new Set(['audio', 'image', 'video', 'document', 'sticker', 'location', 'contacts']);
 
 // Valida la firma X-Hub-Signature-256 de Meta usando el App Secret.
 // Si no hay WHATSAPP_APP_SECRET configurado, no validamos (devuelve true).
@@ -90,6 +107,9 @@ router.post('/', async (req, res) => {
           const from = String(msg.from || '');
           if (!from) continue;
 
+          // A8.2: entrega duplicada del mismo mensaje (reintento de Meta) → fuera
+          if (isDuplicateWamid(String(msg.id || ''))) continue;
+
           // A5.2: CUALQUIER entrante (texto, tap de botón/lista, audio…) abre o
           // renueva la ventana de servicio de 24 h → se registra para que los
           // envíos ventana-first sepan cuándo el texto libre viaja gratis.
@@ -110,10 +130,11 @@ router.post('/', async (req, res) => {
             routeIncoming(from, { listReplyId }).catch((e) =>
               console.error('[WA in] handler error:', e?.message),
             );
-          } else if (msg.type === 'audio' && isFlagEnabled('BOT_INBOUND_ENABLED')) {
-            // BOT-1 mínimo: el audio→texto es F2 (MEDIA-1) — respuesta digna
-            sendWhatsAppText({ to: from, text: '🙏 De momento solo entiendo texto. ¿Me lo escribes en un mensaje?' })
-              .catch(() => {});
+          } else if (UNSUPPORTED_TYPES.has(String(msg.type || '')) && isFlagEnabled('BOT_INBOUND_ENABLED')) {
+            // A8.2 (#15): audio/imagen/vídeo/documento/sticker/ubicación →
+            // respuesta amable + menú si no hay flujo a medias (el audio→texto
+            // real es F2, MEDIA-1). Nunca crashea.
+            handleUnsupportedMedia(from).catch(() => {});
           }
         }
       }

@@ -85,6 +85,38 @@ async function sendMenu(to: string, merchantId: number, businessName: string) {
 }
 
 /**
+ * A8.2 (#15): mensaje NO soportado (audio, imagen, vídeo, documento, sticker,
+ * ubicación…) → respuesta amable + menú si no hay un flujo a medias. El copy
+ * es el oficial v2.1 (master K1). Nunca crashea: cualquier error se traga.
+ */
+export async function handleUnsupportedMedia(from: string): Promise<void> {
+  try {
+    const phone = normalizePhone(from);
+    if (!phone) return;
+    const session = await getSession(phone);
+    if (session?.state === 'handoff') return; // mudo 24h también para media
+
+    await sendWhatsAppText({
+      to: from,
+      text: '🙏 De momento solo entiendo texto. ¿Me lo escribes en un mensaje?',
+    });
+
+    // Menú solo si NO hay flujo a medias (en mitad de "pedir presupuesto" el
+    // menú despistaría) y si sabemos con qué negocio habla.
+    const midFlow = session?.state === 'asking_description' || session?.state === 'asking_zone';
+    if (!midFlow && session?.merchantId) {
+      const merchant = await prisma.merchant.findUnique({
+        where: { id: session.merchantId },
+        select: { id: true, name: true, legalName: true },
+      });
+      if (merchant) await sendMenu(from, merchant.id, merchantDisplayName(merchant));
+    }
+  } catch (err: any) {
+    console.error('[bot] handleUnsupportedMedia:', err?.message || err);
+  }
+}
+
+/**
  * Punto de entrada del bot. Devuelve true si el bot GESTIONÓ el mensaje
  * (el caller no debe hacer nada más); false si el bot no aplica.
  */
@@ -99,6 +131,14 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
 
   // K1: handoff = bot MUDO 24h (el pro responde desde su número personal)
   if (session?.state === 'handoff') return true;
+
+  // A8.2: doble tap del MISMO botón en <90 s → idempotente (se ignora en
+  // silencio; la primera respuesta ya está en su chat). Un re-tap tardío
+  // (minutos después) vuelve a responder con normalidad.
+  if (listId && session?.data?.lastListId === listId) {
+    const lastAt = Number(session.data?.lastListAt || 0);
+    if (Date.now() - lastAt < 90_000) return true;
+  }
 
   // ── Identidad (número COMPARTIDO entre merchants) ──────────────────────
   // Las fichas guardan el teléfono con o sin '+' según cómo se creó el
@@ -238,7 +278,7 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
         text: `Esto es lo que tienes pendiente de decidir con ${businessName}:\n\n${lines.join('\n\n')}`,
       });
     }
-    await setSession(phone, { merchantId, state: 'menu', data: { lastAction: 'quotes' } }, session);
+    await setSession(phone, { merchantId, state: 'menu', data: { lastAction: 'quotes', lastListId: listId, lastListAt: Date.now() } }, session);
     return true;
   }
 
@@ -264,12 +304,12 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
         text: `Esto es lo que tienes pendiente con ${businessName}:\n\n${lines.join('\n\n')}\n\nPagas desde el enlace, con pago seguro y cifrado.`,
       });
     }
-    await setSession(phone, { merchantId, state: 'menu', data: { lastAction: 'pay' } }, session);
+    await setSession(phone, { merchantId, state: 'menu', data: { lastAction: 'pay', lastListId: listId, lastListAt: Date.now() } }, session);
     return true;
   }
 
   if (listId === 'bot_request') {
-    await setSession(phone, { merchantId, state: 'asking_description', data: { lastAction: 'request' } }, session);
+    await setSession(phone, { merchantId, state: 'asking_description', data: { lastAction: 'request', lastListId: listId, lastListAt: Date.now() } }, session);
     // Copy v2 (fundador 5-jul): sin invitar al audio hasta MEDIA-1, con ejemplo
     await sendWhatsAppText({
       to: from,
@@ -302,6 +342,20 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
       text: `✅ Hecho, le he avisado. ${businessName} te escribirá en cuanto pueda desde su número personal.`,
     });
     await setSession(phone, { merchantId, state: 'handoff', data: {} }, session);
+    return true;
+  }
+
+  // ── A8.2 (#16/17): botón de un menú VIEJO o incoherente con el estado
+  // (p. ej. un bot_m_* con negocio ya fijado, o un id que ya no existe) →
+  // respuesta idempotente digna: menú fresco, sin contar como texto libre.
+  if (listId) {
+    await sendWhatsAppText({ to: from, text: 'Ese menú ya caducó — te dejo el de ahora 👇' });
+    await sendMenu(from, merchantId, businessName);
+    await setSession(phone, {
+      merchantId,
+      state: 'menu',
+      data: { offMenuCount: Number(session?.data?.offMenuCount || 0), lastListId: listId, lastListAt: Date.now() },
+    }, session);
     return true;
   }
 
