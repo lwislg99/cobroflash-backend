@@ -143,19 +143,63 @@
     .card p { margin:0; color:var(--muted); font-size:14px; }
     .step-num { display:inline-flex; width:30px; height:30px; border-radius:50%; background:var(--brand-bright); color:var(--brand-ink); font-weight:800; align-items:center; justify-content:center; margin-bottom:12px; }
 
-    /* Demo (A4.3): vídeo cuando exista; carrusel de capturas mientras tanto */
-    .demo-wrap { max-width:760px; margin:0 auto; }
+    /* Demo (A4.3): vídeo cuando exista; demo interactiva A4.7 mientras tanto */
+    .demo-wrap { max-width:900px; margin:0 auto; }
     .demo-video { width:100%; border-radius:var(--r-xl); border:1px solid var(--border); box-shadow:var(--shadow-lg); display:block; }
-    .carousel { position:relative; overflow:hidden; border-radius:var(--r-xl); border:1px solid var(--border);
-      background:var(--surface); box-shadow:var(--shadow-lg); }
-    .car-track { display:flex; transition:transform .45s ease; }
-    .car-slide { min-width:100%; display:flex; flex-direction:column; align-items:center; padding:26px 18px 18px; }
-    .car-slide img { width:min(260px, 70vw); border-radius:18px; border:1px solid var(--border); box-shadow:var(--shadow-md); }
-    .car-slide .cap { margin-top:14px; font-size:14px; font-weight:600; color:var(--ink); text-align:center; }
-    .car-dots { display:flex; gap:8px; justify-content:center; padding:0 0 18px; }
-    .car-dot { width:8px; height:8px; border-radius:50%; background:var(--border); border:none; padding:0; cursor:pointer; transition:background .2s, transform .2s; }
-    .car-dot.on { background:var(--brand); transform:scale(1.25); }
-    @media (prefers-reduced-motion: reduce){ .car-track { transition:none; } }
+    /* A4.7 — Demo interactiva "dos actos" */
+    .idemo-stage { display:grid; grid-template-columns:auto 1fr; gap:34px; align-items:center;
+      background:var(--surface); border:1px solid var(--border); border-radius:var(--r-xl);
+      padding:28px; box-shadow:var(--shadow-lg); }
+    .idemo-phone { position:relative; width:min(270px, 72vw); border-radius:34px; background:#0f1c17; padding:9px;
+      box-shadow:0 20px 50px -16px rgba(16,24,40,.35); margin:0 auto; }
+    .idemo-screen { position:relative; border-radius:26px; overflow:hidden; aspect-ratio:390/800; background:var(--bg); }
+    .idemo-screen img { display:block; width:100%; }
+    .idemo-hotspot { position:absolute; transform:translate(-50%,-50%); background:var(--brand); color:#fff;
+      border:none; border-radius:var(--r-full); padding:10px 16px; font:inherit; font-weight:700; font-size:13px;
+      cursor:pointer; box-shadow:var(--shadow-btn); display:flex; align-items:center; gap:8px; white-space:nowrap; z-index:3; }
+    .idemo-pulse { width:9px; height:9px; border-radius:50%; background:#fff; position:relative; flex-shrink:0; }
+    .idemo-pulse::after { content:""; position:absolute; inset:-6px; border-radius:50%; border:2px solid rgba(255,255,255,.8);
+      animation:ipulse 1.6s ease-out infinite; }
+    @keyframes ipulse { 0%{transform:scale(.6);opacity:1} 100%{transform:scale(1.6);opacity:0} }
+    .idemo-caption { font-size:17px; font-weight:700; color:var(--ink); min-height:52px; }
+    .idemo-progress { display:flex; align-items:center; gap:8px; margin:14px 0 22px; }
+    .idemo-dot { width:26px; height:6px; border-radius:var(--r-full); background:var(--border); border:none; cursor:pointer; padding:0; transition:background .2s; }
+    .idemo-dot.on { background:var(--brand); }
+    .idemo-pause { margin-left:6px; border:1px solid var(--border); background:var(--surface); border-radius:50%;
+      width:28px; height:28px; cursor:pointer; font-size:12px; line-height:1; }
+    .idemo-explore-label { font-size:11.5px; font-weight:800; letter-spacing:.06em; color:var(--muted); text-transform:uppercase; margin-bottom:10px; }
+    .idemo-chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; }
+    .idemo-chipbtn { border:1px solid var(--border); background:var(--surface); border-radius:var(--r-full);
+      padding:8px 14px; font:inherit; font-size:13.5px; font-weight:600; color:var(--ink); cursor:pointer; transition:border-color .15s, background .15s; }
+    .idemo-chipbtn:hover { border-color:var(--brand); }
+    .idemo-chipbtn.on { background:var(--brand-tint); border-color:var(--brand); color:var(--brand-tint-ink, #065f46); }
+    .idemo-cta { width:100%; }
+    /* Contenidos recreados dentro del móvil */
+    .idemo-chip-money { position:absolute; top:16%; left:50%; transform:translateX(-50%); background:var(--brand-ink,#052e16);
+      color:#a7f3d0; font-size:12.5px; font-weight:700; border-radius:var(--r-full); padding:7px 13px; box-shadow:var(--shadow-md); }
+    .idemo-mock { padding:46px 12px 0; }
+    .idemo-mock-card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:13px; }
+    .idemo-mock-title { font-size:12px; font-weight:800; color:var(--ink); margin-bottom:8px; }
+    .idemo-mock-line { display:flex; justify-content:space-between; font-size:11px; color:var(--body); padding:6px 2px; border-bottom:1px solid var(--border); }
+    .idemo-mock-line strong { color:var(--ink); font-variant-numeric:tabular-nums; }
+    .idemo-mock-total { display:flex; justify-content:space-between; padding-top:9px; font-size:13px; font-weight:800; color:var(--ink); }
+    .idemo-mock-btn { margin:12px 2px 0; background:var(--brand); color:#fff; text-align:center; font-weight:700; font-size:12.5px; border-radius:999px; padding:10px; }
+    .idemo-wa { background:#e5ddd5; min-height:100%; padding:40px 10px 14px; display:flex; flex-direction:column; gap:8px; }
+    .idemo-wa-head { position:absolute; top:0; left:0; right:0; background:#075e54; color:#fff; font-size:12.5px; font-weight:700; padding:12px 14px 8px; }
+    .idemo-wa-bubble { background:#fff; border-radius:10px; padding:9px 11px; font-size:11.5px; color:#111; max-width:88%;
+      box-shadow:0 1px 1px rgba(0,0,0,.08); line-height:1.45; }
+    .idemo-wa-out { background:#dcf8c6; align-self:flex-end; }
+    .idemo-wa-btn { margin-top:8px; border-top:1px solid #eee; padding-top:7px; color:#00a884; font-weight:700; text-align:center; font-size:11.5px; }
+    .idemo-wa-shot { width:74%; margin:6px auto 0; border-radius:10px; border:1px solid var(--border); }
+    .idemo-paid { position:absolute; inset:0; background:rgba(15,28,23,.55); display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:14px; z-index:2; }
+    .idemo-paid-check { width:74px; height:74px; border-radius:50%; background:var(--brand); color:#fff; font-size:38px;
+      font-weight:800; display:flex; align-items:center; justify-content:center; animation:ipop .45s ease; }
+    @keyframes ipop { 0%{transform:scale(.3);opacity:0} 70%{transform:scale(1.12)} 100%{transform:scale(1);opacity:1} }
+    .idemo-paid-toast { background:#fff; border-radius:var(--r-full); padding:10px 16px; font-size:13.5px; font-weight:700; color:var(--ink); box-shadow:var(--shadow-lg); }
+    @media (max-width:840px){ .idemo-stage { grid-template-columns:1fr; padding:20px 16px; } .idemo-caption { min-height:0; text-align:center; }
+      .idemo-progress { justify-content:center; } .idemo-chips { justify-content:center; } }
+    @media (prefers-reduced-motion: reduce){ .idemo-pulse::after, .idemo-paid-check { animation:none; } }
 
     /* Pricing */
     .pricing { background:var(--bg); }
@@ -444,6 +488,7 @@
     </div>
   </footer>
 
+  <script src="/js/landing-demo.js"></script>
   <script>
     // A4.3: hueco del vídeo de 60s — cuando exista, poner la URL aquí y listo.
     var DEMO_VIDEO_URL = ''; // p. ej. '/img/landing/demo-60s.mp4'
@@ -455,39 +500,8 @@
         slot.innerHTML = '<video class="demo-video" src="' + DEMO_VIDEO_URL + '" controls playsinline preload="metadata" poster="/img/landing/firma-390.png"></video>';
         return;
       }
-      // Mientras no hay vídeo: carrusel de capturas reales del flujo
-      var slides = [
-        { src: '/img/landing/firma-390.png',  cap: '1 · Tu cliente firma el presupuesto con el dedo' },
-        { src: '/img/landing/pago-390.png',   cap: '2 · Elige cómo pagar la señal, con enlace seguro' },
-        { src: '/img/landing/recibo-390.png', cap: '3 · Pago confirmado y justificante al momento' },
-      ];
-      var html = '<div class="carousel" aria-label="Capturas del flujo de YaQu"><div class="car-track">';
-      slides.forEach(function (s) {
-        html += '<div class="car-slide"><img src="' + s.src + '" width="390" height="800" loading="lazy" alt="' + s.cap + '"/><div class="cap">' + s.cap + '</div></div>';
-      });
-      html += '</div><div class="car-dots">';
-      slides.forEach(function (_s, i) { html += '<button class="car-dot' + (i === 0 ? ' on' : '') + '" aria-label="Ir a la captura ' + (i + 1) + '"></button>'; });
-      html += '</div></div>';
-      slot.innerHTML = html;
-
-      var track = slot.querySelector('.car-track');
-      var dots = Array.prototype.slice.call(slot.querySelectorAll('.car-dot'));
-      var idx = 0, timer = null;
-      function go(i) {
-        idx = (i + slides.length) % slides.length;
-        track.style.transform = 'translateX(-' + (idx * 100) + '%)';
-        dots.forEach(function (d, j) { d.classList.toggle('on', j === idx); });
-      }
-      dots.forEach(function (d, i) {
-        d.addEventListener('click', function () { go(i); restart(); });
-      });
-      var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      function restart() {
-        if (reduced) return; // sin auto-avance si el usuario pide menos movimiento
-        if (timer) clearInterval(timer);
-        timer = setInterval(function () { go(idx + 1); }, 4000);
-      }
-      restart();
+      // A4.7: sin vídeo → demo INTERACTIVA "dos actos" (js/landing-demo.js)
+      if (window.buildInteractiveDemo) window.buildInteractiveDemo(slot);
     })();
 
     // A4.4: banner founding con contador REAL (nunca fake — si el endpoint
