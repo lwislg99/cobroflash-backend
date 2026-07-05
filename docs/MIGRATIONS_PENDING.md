@@ -194,3 +194,18 @@ CREATE TABLE jobs (A13) · maintenance_plans (A15) · audit_log (A11.1) · attac
   14 aditivas): `db push` exigía --accept-data-loss por el falso positivo del UNIQUE sobre
   la columna slug recién creada (todo NULL — sin duplicados posibles) y ese flag está vetado.
 - Todo nace INERTE: cada ola cablea su pieza; attachments espera credenciales R2.
+
+---
+
+## 6-jul-2026 — merchants.flags (APLICADO ✅)
+
+```sql
+ALTER TABLE "merchants" ADD COLUMN "flags" JSONB;
+```
+
+- Aditiva, 0 DROPs; aprobada por el fundador (AskUserQuestion, A14.3) — la aprobación
+  del lote EXT3 no la cubría y el clasificador exigió (con razón) un OK fresco.
+- Mecanismo Parte P de overrides POR merchant ({FLAG_NAME: bool}); lo lee core/flags.ts
+  (precedencia merchant > país > env > default). Escritura solo manual/fundador.
+- Primer uso: PUBLIC_PROFILE_ENABLED=true SOLO en demo (id=1). Ningún otro merchant
+  tiene flags (verificado count=0).

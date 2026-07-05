@@ -4,9 +4,8 @@
 // aquí que no estén en la tabla (regla 5): necesidad nueva = propuesta de cambio de master.
 //
 // Precedencia (Parte P): merchant > país > env (y env > default de la tabla).
-// - merchant: override por merchant. Aún no hay columna en BD (se añadirá de forma aditiva
-//   cuando un sprint la necesite — p. ej. activación por merchant tras SIF-1 8/8); mientras,
-//   se lee defensivamente de `merchant.flags` (JSON) si existe.
+// - merchant: override por merchant vía columna `merchants.flags` (JSONB, A14.3
+//   EXT3 — {FLAG_NAME: bool}). Escritura SOLO manual/fundador por ahora.
 // - país: los flags con scope de país solo aplican a merchants de ese país
 //   (INVOICING_ES_ENABLED y SIF_ENABLED son ES-only).
 // - env: variable de entorno homónima ('true'/'1' → ON, 'false'/'0' → OFF).
@@ -38,8 +37,9 @@ export interface FlagContext {
   merchant?: {
     id?: number | null;
     country?: string | null;
-    // Columna futura (aditiva) de overrides por merchant; hoy normalmente undefined.
-    flags?: Record<string, unknown> | null;
+    // merchants.flags (JSONB, A14.3) — se acepta el JsonValue crudo de Prisma
+    // y se normaliza dentro de isFlagEnabled (solo objetos planos cuentan).
+    flags?: unknown;
   } | null;
 }
 
@@ -61,8 +61,12 @@ export function isFlagEnabled(flag: FlagName, ctx?: FlagContext): boolean {
     if (country && country !== 'ES') return false;
   }
 
-  // Merchant: override explícito por merchant (cuando exista la columna).
-  const merchantOverride = merchant?.flags?.[flag];
+  // Merchant: override explícito por merchant (columna merchants.flags).
+  const rawFlags = merchant?.flags;
+  const merchantOverride =
+    rawFlags && typeof rawFlags === 'object' && !Array.isArray(rawFlags)
+      ? (rawFlags as Record<string, unknown>)[flag]
+      : undefined;
   if (typeof merchantOverride === 'boolean') return merchantOverride;
 
   // Env: override de entorno explícito.

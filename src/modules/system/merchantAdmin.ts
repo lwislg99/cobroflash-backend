@@ -81,6 +81,9 @@ export async function getMerchantProfile(merchantId: number = DEFAULT_MERCHANT_I
       slugChangedAt: true,
       profileZones: true,
       profileYears: true,
+      // A14.3: overrides de flags por merchant (Parte P) — /admin/me y el estado
+      // efectivo de publicProfileEnabled los calculan con esto
+      flags: true,
     },
   });
 

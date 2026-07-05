@@ -19,7 +19,8 @@ export interface MerchantLike {
   id?: number | null;
   email?: string | null;
   country?: string | null;
-  flags?: Record<string, unknown> | null;
+  // JsonValue crudo de merchants.flags — lo normaliza isFlagEnabled
+  flags?: unknown;
 }
 
 export function isDemoMerchant(m: MerchantLike): boolean {

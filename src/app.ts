@@ -270,7 +270,7 @@ app.get('/admin/merchant', async (req, res, next) => {
       merchant: {
         id: merchant.id,
         country: merchant.country,
-        flags: ((merchant as Record<string, unknown>).flags as Record<string, unknown> | undefined) ?? null,
+        flags: (merchant.flags as Record<string, unknown> | null) ?? null,
       },
     });
     return res.json({ ...merchant, publicProfileEnabled });

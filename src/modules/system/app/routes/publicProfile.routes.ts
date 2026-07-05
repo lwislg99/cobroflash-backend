@@ -39,14 +39,12 @@ publicProfileRouter.get('/:slug', async (req: Request, res: Response) => {
         select: {
           id: true, name: true, logoUrl: true, trade: true, profileZones: true,
           profileYears: true, whatsappPhone: true, googleReviewUrl: true,
-          country: true, brandColor: true, status: true,
+          country: true, brandColor: true, status: true, flags: true,
         },
-        // (A14.3 añadirá flags:true cuando exista la columna merchants.flags)
       })
     : null;
 
-  const flagsJson =
-    ((merchant as Record<string, unknown> | null)?.flags as Record<string, unknown> | undefined) ?? null;
+  const flagsJson = (merchant?.flags as Record<string, unknown> | null | undefined) ?? null;
   const visible =
     !!merchant &&
     merchant.status === 'active' &&

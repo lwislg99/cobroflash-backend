@@ -388,6 +388,13 @@ Ciclo: cron diario 10h → vencidos → quote `draft` desde líneas del plan (`o
 Métrica: € cobrados con `origin='maintenance'`/mes (KPI Home). Anti-spam: 1 propuesta/cliente/90d · respeta `waOptOut` · horas tranquilas · 2 rechazos seguidos → plan se pausa solo.
 
 ## PERFIL-1 · Perfil público · flag `PUBLIC_PROFILE_ENABLED`
+> **✅ CONSTRUIDO (EXT3 Ola 14, 6-jul-2026, autorización A10.0):** /p/:slug con todo lo público
+> de la spec y 404 digno con flag OFF; reglas de slug en servidor (reservados+único+1/30d);
+> tarjeta "Tu página pública" en Configuración; QR PNG 1024 (`/admin/merchant/public-profile-qr`,
+> lib `qrcode`); atribución `?src=profile|qr` cableada en landing/precios/register (first-touch
+> V0-3). Flag por-merchant vía columna `merchants.flags` (Parte P) — ON solo en demo. Prefill del
+> wa.me: "Hola, quiero pedir un presupuesto" (derivado del label oficial; veto del fundador
+> pendiente, regla 30).
 `/p/:slug` (slug único minúsculas-guiones; lista reservada admin/api/pay/p/login…; editable 1 vez/30d). **Público:** nombre comercial, logo, gremio(s), zonas (chips), años de experiencia (opc.), botón "Pedir presupuesto por WhatsApp" (wa.me del PRO prefilled; si BOT activo, alternativa al número YaQu), link reseñas Google si `googleReviewUrl` (reseñas propias = F3), footer "Hecho con YaQu" → `?src=profile`. **NUNCA público:** precios, clientes, volumen, email, NIF, dirección exacta. **QR:** generador en BO (PNG alta res para furgoneta/tarjeta) → `/p/:slug?src=qr`. Loop medido: registros con `acquisitionSource∈{profile,qr}`.
 
 ## ONBOARD-2 · Catálogos por gremio

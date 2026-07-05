@@ -43,6 +43,10 @@ model Merchant {
   profileZones    Json?     @map("profile_zones")   // chips de zonas
   profileYears    Int?      @map("profile_years")   // años de experiencia (opc.)
 
+  // Parte P: overrides de flags POR MERCHANT (precedencia merchant > país > env).
+  // La lee core/flags.ts; nace para los opt-in PERFIL-1/MANT-1. {FLAG_NAME: bool}
+  flags           Json?     @map("flags")
+
   // A6.7: preferencias de la Home (bloques visibles) — {hero,quick,kpis,week,activity,tops}: bool
   homePrefs            Json?   @map("home_prefs")
 
