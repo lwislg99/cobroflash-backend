@@ -30,7 +30,6 @@
         '    <div class="idemo-mock-line"><span>IVA (21%)</span><strong>81,90 €</strong></div>' +
         '    <div class="idemo-mock-total"><span>Total</span><strong>471,90 €</strong></div>' +
         '  </div>' +
-        '  <div class="idemo-mock-btn">Enviar por WhatsApp</div>' +
         '</div>',
     },
     {

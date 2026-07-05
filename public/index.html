@@ -175,15 +175,15 @@
     .idemo-chipbtn.on { background:var(--brand-tint); border-color:var(--brand); color:var(--brand-tint-ink, #065f46); }
     .idemo-cta { width:100%; }
     /* Contenidos recreados dentro del móvil */
-    .idemo-chip-money { position:absolute; top:16%; left:50%; transform:translateX(-50%); background:var(--brand-ink,#052e16);
-      color:#a7f3d0; font-size:12.5px; font-weight:700; border-radius:var(--r-full); padding:7px 13px; box-shadow:var(--shadow-md); }
+    /* Regla del Importe: el dinero en tinta, nunca en verde */
+    .idemo-chip-money { position:absolute; top:16%; left:50%; transform:translateX(-50%); background:var(--surface);
+      color:var(--ink); border:1px solid var(--border); font-size:12.5px; font-weight:700; border-radius:var(--r-full); padding:7px 13px; box-shadow:var(--shadow-md); }
     .idemo-mock { padding:46px 12px 0; }
     .idemo-mock-card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:13px; }
     .idemo-mock-title { font-size:12px; font-weight:800; color:var(--ink); margin-bottom:8px; }
     .idemo-mock-line { display:flex; justify-content:space-between; font-size:11px; color:var(--body); padding:6px 2px; border-bottom:1px solid var(--border); }
     .idemo-mock-line strong { color:var(--ink); font-variant-numeric:tabular-nums; }
     .idemo-mock-total { display:flex; justify-content:space-between; padding-top:9px; font-size:13px; font-weight:800; color:var(--ink); }
-    .idemo-mock-btn { margin:12px 2px 0; background:var(--brand); color:#fff; text-align:center; font-weight:700; font-size:12.5px; border-radius:999px; padding:10px; }
     .idemo-wa { background:#e5ddd5; min-height:100%; padding:40px 10px 14px; display:flex; flex-direction:column; gap:8px; }
     .idemo-wa-head { position:absolute; top:0; left:0; right:0; background:#075e54; color:#fff; font-size:12.5px; font-weight:700; padding:12px 14px 8px; }
     .idemo-wa-bubble { background:#fff; border-radius:10px; padding:9px 11px; font-size:11.5px; color:#111; max-width:88%;
