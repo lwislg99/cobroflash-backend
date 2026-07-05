@@ -22,8 +22,9 @@
     return `<span style="display:inline-block;padding:1px 7px;border-radius:999px;font-size:10.5px;font-weight:700;background:${bg};color:${color};text-transform:uppercase;letter-spacing:.02em">${label}</span>`;
   }
 
-  function fmt(n) {
-    return Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // P-A66-3: es-ES compartido (api.js)
+  function fmt(n, cur) {
+    return fmtMoneyEs(n, cur || (window.appLocale && window.appLocale.currency) || 'EUR');
   }
 
   function esc(s) {
@@ -181,7 +182,7 @@
                 <span style="font-size:12.5px;color:var(--neutral-500);margin-left:6px">${highlight(q2.customer?.name, q)}</span>
               </div>
               <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-                <span style="font-size:12.5px;font-weight:600">${fmt(Number(q2.total))} ${esc(q2.currency)}</span>
+                <span style="font-size:12.5px;font-weight:600">${fmt(Number(q2.total), q2.currency)}</span>
                 ${pill(q2.status)}
               </div>
             </div>`,
@@ -195,7 +196,7 @@
                 <span style="font-size:12.5px;color:var(--neutral-500);margin-left:6px">${highlight(inv.customer?.name, q)}</span>
               </div>
               <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-                <span style="font-size:12.5px;font-weight:600">${fmt(Number(inv.total))} ${esc(inv.currency)}</span>
+                <span style="font-size:12.5px;font-weight:600">${fmt(Number(inv.total), inv.currency)}</span>
                 ${pill(inv.status)}
               </div>
             </div>`,

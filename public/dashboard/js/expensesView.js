@@ -322,9 +322,9 @@ function fileToBase64(file) {
   });
 }
 
+// P-A66-3: delega en el formateador es-ES compartido (api.js)
 function fmtEuro(amount) {
-  const sym = (window.appLocale?.currency === 'MXN' || window.appLocale?.currency === 'COP') ? '$' : '€';
-  return `${sym}${Number(amount).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return fmtMoneyEs(amount, (window.appLocale && window.appLocale.currency) || 'EUR');
 }
 
 function escHtml(str) {

@@ -48,7 +48,7 @@ async function renderCustomer360View(container, customerId) {
   alertEl.textContent = '';
 
   const { customer, quotes, invoices, stats, events } = data;
-  const fmt = (n) => Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmt = (n, cur) => fmtMoneyEs(n, cur || currency); // P-A66-3: es-ES compartido
   const currency = invoices[0]?.currency || quotes[0]?.currency || 'EUR';
   const L = window.appLocale || {};
 
@@ -106,9 +106,9 @@ async function renderCustomer360View(container, customerId) {
   const kpis = [
     { label: `${L.quotePlural || 'Presupuestos'}`, value: stats.totalQuotes, sub: `${stats.acceptedQuotes} aceptados` },
     { label: 'Facturas',  value: invoices.length, sub: `${invoices.filter(i=>i.status==='paid').length} pagadas` },
-    { label: 'Facturado', value: fmt(stats.totalBilled) + ' ' + currency, sub: '' },
-    { label: 'Cobrado',   value: fmt(stats.totalPaid)   + ' ' + currency, sub: '', color: 'var(--green-600)' },
-    { label: 'Beneficio', value: fmt(stats.profit)      + ' ' + currency, sub: '', color: stats.profit >= 0 ? 'var(--green-600)' : 'var(--red-600)' },
+    { label: 'Facturado', value: fmt(stats.totalBilled), sub: '' },
+    { label: 'Cobrado',   value: fmt(stats.totalPaid), sub: '', color: 'var(--green-600)' },
+    { label: 'Beneficio', value: fmt(stats.profit), sub: '', color: stats.profit >= 0 ? 'var(--green-600)' : 'var(--red-600)' },
   ];
 
   kpis.forEach(({ label, value, sub, color }) => {
@@ -218,7 +218,7 @@ async function renderCustomer360View(container, customerId) {
         tr.innerHTML = `
           <td style="font-weight:600">#${q.quoteNumber ?? q.id}</td>
           <td style="color:var(--muted)">${new Date(q.createdAt).toLocaleDateString('es-ES')}</td>
-          <td class="amount">${fmt(Number(q.total))} ${escC(q.currency)}</td>
+          <td class="amount">${fmt(Number(q.total), q.currency)}</td>
           <td><span class="status-pill ${STATUS_CLASS[q.status]||'status-pill-draft'}">${STATUS_LABELS[q.status]||q.status}</span></td>
           <td><button class="btn-ghost btn-sm">Ver →</button></td>
         `;
@@ -245,7 +245,7 @@ async function renderCustomer360View(container, customerId) {
         tr.innerHTML = `
           <td style="font-weight:600">${escC(inv.number)}</td>
           <td style="color:var(--muted)">${new Date(inv.createdAt).toLocaleDateString('es-ES')}</td>
-          <td class="amount">${fmt(Number(inv.total))} ${escC(inv.currency)}</td>
+          <td class="amount">${fmt(Number(inv.total), inv.currency)}</td>
           <td><span class="status-pill ${STATUS_CLASS[inv.status]||'status-pill-draft'}">${STATUS_LABELS[inv.status]||inv.status}</span></td>
           <td>
             <div style="display:flex;gap:6px;align-items:center">

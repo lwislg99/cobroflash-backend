@@ -101,7 +101,7 @@ function openAiSuggestModal(addLinesFn) {
         <div>
           <div style="font-weight:600;color:var(--neutral-900)">${escHtml(line.concept)}</div>
           <div style="color:var(--neutral-500)">
-            Cantidad: ${line.qty} · Precio: ${Number(line.price).toFixed(2)} · IVA: ${(line.tax * 100).toFixed(0)}%
+            Cantidad: ${line.qty} · Precio: ${fmtMoneyEs(line.price, (window.appLocale && window.appLocale.currency) || 'EUR')} · IVA: ${(line.tax * 100).toFixed(0)}%
           </div>
         </div>
       `;
