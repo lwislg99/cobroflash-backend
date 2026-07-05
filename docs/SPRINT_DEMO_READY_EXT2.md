@@ -32,9 +32,18 @@
 > `sendWhatsAppTemplate` directo, sin check de ventana (decisión de alcance de A5.2: quote_decision
 > era "la única plantilla del ciclo"). No existe texto de sesión equivalente a la plantilla.
 > `sentVia` se mediría solo (nuestro log: `type:'service'` ≡ ventana, con `templateName` de la
-> plantilla ahorrada) si se enruta por `sendWhatsAppWindowFirst`. Fix propuesto al fundador
-> (texto de sesión = cambio de master + swap del call-site + `WHATSAPP_DRY_RUN` para el test);
-> a la espera de OK antes de implementar.
+> plantilla ahorrada) si se enruta por `sendWhatsAppWindowFirst`.
+> **A5.5 ✅ CERRADA (5-jul, OK del fundador a las 3 piezas):** texto de sesión OFICIAL en master K1
+> (espejo de `quote_decision_es`) · `quotesAdmin` POST /:id/send-whatsapp enruta por
+> `sendWhatsAppWindowFirst` (ventana abierta → sesión 0 €; cerrada → plantilla; recordatorio 24 h
+> queda en plantilla a propósito) · `WHATSAPP_DRY_RUN=1` (solo tests/CI: guards V0-2/J3/J6/J7
+> activos, Meta no se toca, wamid simulado, log igual — base de la suite A8.4) · test gateado
+> `tests/a55-window-quote.test.mjs` (skip en npm test normal; con
+> `A55_DB_TEST=1 WHATSAPP_DRY_RUN=1 DEMO_SAFE_NUMBERS=…` prueba los DOS caminos: sin inbound →
+> template; con inbound → via 'window', fila `service` con `templateName:'quote_decision_es'` y
+> coste 0, SIN plantilla nueva; limpia sus filas). Evidencia: `docs/evidencias/ext2/a55-test.txt`.
+> El gate de la Ola 5 ("un ciclo de demo gasta 1 plantilla") pasa a CERO plantillas cuando el
+> cliente inicia por el bot.
 
 **Criterio de esta extensión (importante):** NO se abre backlog U2 (gate 25 pagantes,
 regla 13). Todo lo de aquí es (a) trabajo F1 legítimo de la cola U1 que aún no se había

@@ -14,6 +14,13 @@ import {
 
 const BASE_URL = 'https://graph.facebook.com/v21.0';
 
+// A5.5/A8.4 — MODO DRY-RUN (SOLO tests/CI, no es flag de producto): con
+// WHATSAPP_DRY_RUN=1 los senders pasan TODOS los guards (optOut, demo, topes,
+// validación J7) pero NO llaman a Meta: devuelven un wamid simulado y registran
+// el log WA-0b igual. Permite probar flujos completos sin gastar mensajes.
+const isDryRun = () => process.env.WHATSAPP_DRY_RUN === '1';
+const dryRunData = () => ({ messages: [{ id: `wamid.dryrun.${Date.now()}.${Math.random().toString(36).slice(2, 8)}` }] });
+
 // WA-0b: metadata opcional para el log de mensajes (chip de entrega). No afecta al envío.
 export interface WaLogMeta {
   customerId?: number | null;
@@ -52,7 +59,7 @@ export async function sendWhatsAppTemplate(params: {
   const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
   const token = config.WHATSAPP_ACCESS_TOKEN;
 
-  if (!phoneNumberId || !token) {
+  if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, mensaje omitido');
     return { ok: false, reason: 'not_configured' };
   }
@@ -113,6 +120,24 @@ export async function sendWhatsAppTemplate(params: {
   if (invalid) {
     console.error('[WhatsApp] Plantilla inválida, envío abortado:', invalid);
     return { ok: false, error: `template_invalid: ${invalid}` };
+  }
+
+  // A5.5/A8.4: dry-run — guards pasados, Meta no se toca, log igual
+  if (isDryRun()) {
+    const data = dryRunData();
+    if (params.merchantId) {
+      recordWaMessage({
+        merchantId: params.merchantId,
+        customerId: params.log?.customerId ?? null,
+        type: 'template',
+        templateName: params.templateName,
+        waMessageId: extractWaMessageId(data),
+        status: 'sent',
+        relatedType: params.log?.relatedType ?? null,
+        relatedId: params.log?.relatedId ?? null,
+      }).catch(() => {});
+    }
+    return { ok: true, data, dryRun: true } as any;
   }
 
   try {
@@ -226,7 +251,7 @@ export async function sendWhatsAppText(params: {
   const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
   const token = config.WHATSAPP_ACCESS_TOKEN;
 
-  if (!phoneNumberId || !token) {
+  if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, mensaje omitido');
     return { ok: false, reason: 'not_configured' };
   }
@@ -236,6 +261,9 @@ export async function sendWhatsAppText(params: {
     console.warn(`[WhatsApp] V0-2: texto desde el merchant demo a ${params.to} BLOQUEADO (no está en DEMO_SAFE_NUMBERS)`);
     return { ok: false, reason: 'demo_safe_numbers' };
   }
+
+  // A5.5/A8.4: dry-run — Meta no se toca (quien registre el log usa este wamid)
+  if (isDryRun()) return { ok: true, data: dryRunData(), dryRun: true } as any;
 
   try {
     const response = await axios.post(
@@ -277,7 +305,7 @@ export async function sendWhatsAppList(params: {
   const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
   const token = config.WHATSAPP_ACCESS_TOKEN;
 
-  if (!phoneNumberId || !token) {
+  if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, lista omitida');
     return { ok: false, reason: 'not_configured' };
   }
@@ -285,6 +313,9 @@ export async function sendWhatsAppList(params: {
     console.warn(`[WhatsApp] V0-2: lista desde el merchant demo a ${params.to} BLOQUEADA`);
     return { ok: false, reason: 'demo_safe_numbers' };
   }
+
+  // A5.5/A8.4: dry-run — Meta no se toca
+  if (isDryRun()) return { ok: true, data: dryRunData(), dryRun: true } as any;
 
   try {
     const response = await axios.post(

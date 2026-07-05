@@ -1,0 +1,9 @@
+✔ A5.5: ventana abierta → envío de presupuesto por SESIÓN (service), no plantilla (7521.1224ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7581.9777

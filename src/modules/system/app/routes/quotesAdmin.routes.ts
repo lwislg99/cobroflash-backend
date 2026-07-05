@@ -10,12 +10,12 @@ import {
 
 import { prisma } from '../../../../core/db/prisma';
 import { getNextBillingStage } from '../../../quotes/domain/billingPlan';
-import { sendWhatsAppTemplate } from '../../../../integrations/whatsapp';
+import { sendWhatsAppWindowFirst } from '../../../../integrations/whatsapp';
 import { buildQuoteDecision } from '../../../../integrations/whatsappTemplates';
 import { getDeliveryStatus } from '../../../messaging/domain/whatsappLog.service';
 import { recordCustomerEvent } from '../../customerEvents.service';
 import { sendTechQuoteApprovedEmail } from '../../../messaging/domain/merchantNotifications';
-import { normalizePhone } from '../../../../core/utils/utils';
+import { normalizePhone, formatMoneyEs } from '../../../../core/utils/utils';
 import { BASE_URL } from '../../../../core/config/env';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
@@ -241,19 +241,30 @@ router.post('/:id/send-whatsapp', async (req, res) => {
       return res.status(400).json({ error: 'invalid_phone_format' });
     }
 
-    // Plantilla quote_decision_es (estructura en src/integrations/whatsappTemplates.ts)
+    // A5.5 (ciclo cero-plantillas): si la ventana de 24 h está abierta (p. ej.
+    // presupuesto nacido de una solicitud del bot — el cliente ACABA de
+    // escribirnos), el envío sale como TEXTO de sesión (0 €, texto oficial del
+    // master K1); si no, plantilla quote_decision_es como siempre.
     const businessName = quote.merchant?.legalName || quote.merchant?.name || 'Tu proveedor';
-    const result = await sendWhatsAppTemplate({
+    const displayNum = quote.quoteNumber ?? quote.id; // A1.2: número visible por merchant
+    const result = await sendWhatsAppWindowFirst({
       to,
       merchantId: quote.merchantId, // J3: respeta waOptOut
-      log: { customerId: quote.customerId, relatedType: 'quote', relatedId: quote.id }, // WA-0b
-      ...buildQuoteDecision({
+      customerId: quote.customerId,
+      windowText:
+        `Hola ${quote.customer.name ?? 'Cliente'} 👋\n` +
+        `${businessName} te ha preparado tu presupuesto:\n` +
+        `📄 *Presupuesto #${displayNum}* · *${formatMoneyEs(quote.total, quote.currency)}*\n` +
+        `Ábrelo, revísalo y fírmalo desde aquí 👇\n` +
+        `${BASE_URL}/pay/quote/${quote.id}`,
+      template: buildQuoteDecision({
         customerName: quote.customer.name ?? 'Cliente',
         businessName,
-        quoteNumber: quote.quoteNumber ?? quote.id, // A1.2: número visible por merchant
+        quoteNumber: displayNum,
         totalWithCurrency: `${Number(quote.total).toFixed(2)} ${quote.currency}`,
         quoteId: quote.id, // el botón URL sigue con el id global (/pay/quote/:id)
       }),
+      log: { customerId: quote.customerId, relatedType: 'quote', relatedId: quote.id }, // WA-0b
     });
 
     if (!result.ok) {

@@ -84,8 +84,12 @@ Envío de un presupuesto al cliente para que lo vea, acepte o rechace.
   - La página `/pay/quote/:id` muestra el detalle y permite Aceptar/Rechazar.
 
 **Código que lo envía:**
-- `src/modules/system/app/routes/quotesAdmin.routes.ts` (POST `/:id/send-whatsapp`)
-- `src/modules/quotes/domain/reminder.service.ts` (recordatorio 24h, reusa la misma)
+- `src/modules/system/app/routes/quotesAdmin.routes.ts` (POST `/:id/send-whatsapp`) — **A5.5:
+  ventana-first**: si la ventana de 24 h está abierta (p. ej. presupuesto nacido de una solicitud
+  del bot), sale como TEXTO de sesión (0 €, texto oficial en master K1) con esta plantilla de
+  fallback; se registra `type:'service'` + `templateName:'quote_decision_es'` (métrica A5.4).
+- `src/modules/quotes/domain/reminder.service.ts` (recordatorio 24h, reusa la misma — plantilla
+  directa a propósito: a las 24 h la ventana está al filo)
 
 ---
 
