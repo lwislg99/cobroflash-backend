@@ -62,8 +62,22 @@ const browser = await puppeteer.launch({
 fs.mkdirSync(OUT, { recursive: true });
 const page = await browser.newPage();
 await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
+await page.setCacheEnabled(false); // el perfil persistente cachea CSS/JS viejos
 
 if (PROFILE) {
+  // El dashboard es PWA: su service worker sirve assets VIEJOS aunque el HTTP
+  // cache esté apagado → desregistrarlo y vaciar sus caches antes del barrido.
+  await page.goto(`${BASE}/dashboard/`, { waitUntil: 'networkidle2', timeout: 45000 }).catch(() => {});
+  await page.evaluate(async () => {
+    try {
+      const regs = (await navigator.serviceWorker?.getRegistrations?.()) || [];
+      for (const r of regs) await r.unregister();
+      if (window.caches) for (const k of await caches.keys()) await caches.delete(k);
+    } catch {}
+  }).catch(() => {});
+  // Documento FRESCO tras el purge (las navegaciones por hash no recargan)
+  await page.reload({ waitUntil: 'networkidle2' }).catch(() => {});
+
   for (const [name, url] of AUTH_VIEWS) await shoot(page, name, url);
 
   // Extras interactivos de la Home: modal de cotización rápida y panel A6.7
