@@ -7,51 +7,60 @@ async function renderHomeView(container) {
   const greet = hour < 6 ? 'Buenas noches' : hour < 13 ? 'Buenos días' : hour < 20 ? 'Buenas tardes' : 'Buenas noches';
   container.innerHTML = `
     <div>
-      <!-- Saludo (foco + calidez) -->
-      <header class="home-greeting">
-        <h1>${greet}${firstName ? ', ' + esc(firstName) : ''} 👋</h1>
-        <p>Esto es lo que pasa hoy en tu negocio.</p>
+      <!-- Saludo (foco + calidez) + A6.7 Personalizar -->
+      <header class="home-greeting" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div>
+          <h1>${greet}${firstName ? ', ' + esc(firstName) : ''} 👋</h1>
+          <p>Esto es lo que pasa hoy en tu negocio.</p>
+        </div>
+        ${window.appUserRole === 'admin' ? '<button class="btn-ghost btn-sm" id="btn-home-prefs" title="Elige qué bloques ves en tu Home">⚙ Personalizar</button>' : ''}
       </header>
 
       <!-- Número héroe: lo que te deben (foco principal) -->
-      <div id="home-hero"></div>
+      <div id="home-hero" data-home-block="hero"></div>
 
       <!-- Acciones rápidas (FRONT1-1) -->
-      <div class="home-section-label">Acciones rápidas</div>
-      <div class="home-quick-actions">
-        <button class="home-action home-cta" id="btn-quick-quote">
-          <span class="home-action-ico">⚡</span>
-          <span><span class="home-action-title">${qLabel}</span><span class="home-action-sub">en 30 segundos · tecla <kbd>N</kbd></span></span>
-        </button>
-        <button class="home-action" id="btn-add-customer">
-          <span class="home-action-ico">👤</span>
-          <span><span class="home-action-title">Añadir cliente</span><span class="home-action-sub">guárdalo una vez</span></span>
-        </button>
-        <button class="home-action" id="btn-view-pending">
-          <span class="home-action-ico">💰</span>
-          <span><span class="home-action-title">Pendientes de cobro</span><span class="home-action-sub">facturas abiertas</span></span>
-        </button>
+      <div data-home-block="quick">
+        <div class="home-section-label">Acciones rápidas</div>
+        <div class="home-quick-actions">
+          <button class="home-action home-cta" id="btn-quick-quote">
+            <span class="home-action-ico">⚡</span>
+            <span><span class="home-action-title">${qLabel}</span><span class="home-action-sub">en 30 segundos · tecla <kbd>N</kbd></span></span>
+          </button>
+          <button class="home-action" id="btn-add-customer">
+            <span class="home-action-ico">👤</span>
+            <span><span class="home-action-title">Añadir cliente</span><span class="home-action-sub">guárdalo una vez</span></span>
+          </button>
+          <button class="home-action" id="btn-view-pending">
+            <span class="home-action-ico">💰</span>
+            <span><span class="home-action-title">Pendientes de cobro</span><span class="home-action-sub">facturas abiertas</span></span>
+          </button>
+        </div>
       </div>
 
-      <div class="home-section-label">Resumen</div>
-      <div class="kpi-grid" id="kpi-grid">
-        <div class="kpi-card"><div class="kpi-label skeleton" style="height:14px;width:60%">&nbsp;</div></div>
-        <div class="kpi-card"><div class="kpi-label skeleton" style="height:14px;width:60%">&nbsp;</div></div>
-        <div class="kpi-card"><div class="kpi-label skeleton" style="height:14px;width:60%">&nbsp;</div></div>
+      <div data-home-block="kpis">
+        <div class="home-section-label">Resumen</div>
+        <div class="kpi-grid" id="kpi-grid">
+          <div class="kpi-card"><div class="kpi-label skeleton" style="height:14px;width:60%">&nbsp;</div></div>
+          <div class="kpi-card"><div class="kpi-label skeleton" style="height:14px;width:60%">&nbsp;</div></div>
+          <div class="kpi-card"><div class="kpi-label skeleton" style="height:14px;width:60%">&nbsp;</div></div>
+        </div>
       </div>
 
       <!-- Resumen de la semana (sparkline + tendencias) -->
-      <div id="week-summary"></div>
+      <div id="week-summary" data-home-block="week"></div>
 
-      <div style="font-size:13px;font-weight:600;color:#6b756f;margin:8px 0 8px;text-transform:uppercase;letter-spacing:.04em">
-        Actividad reciente
-      </div>
-      <div class="activity-feed" id="activity-feed">
-        <div class="activity-item"><div style="display:flex;align-items:center;gap:10px;width:100%"><span class="skeleton" style="width:32px;height:32px;border-radius:50%"></span><span class="skeleton" style="height:12px;width:40%"></span></div></div>
-        <div class="activity-item"><div style="display:flex;align-items:center;gap:10px;width:100%"><span class="skeleton" style="width:32px;height:32px;border-radius:50%"></span><span class="skeleton" style="height:12px;width:55%"></span></div></div>
+      <div data-home-block="activity">
+        <div style="font-size:13px;font-weight:600;color:#6b756f;margin:8px 0 8px;text-transform:uppercase;letter-spacing:.04em">
+          Actividad reciente
+        </div>
+        <div class="activity-feed" id="activity-feed">
+          <div class="activity-item"><div style="display:flex;align-items:center;gap:10px;width:100%"><span class="skeleton" style="width:32px;height:32px;border-radius:50%"></span><span class="skeleton" style="height:12px;width:40%"></span></div></div>
+          <div class="activity-item"><div style="display:flex;align-items:center;gap:10px;width:100%"><span class="skeleton" style="width:32px;height:32px;border-radius:50%"></span><span class="skeleton" style="height:12px;width:55%"></span></div></div>
+        </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:24px" id="top-grids">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:24px" id="top-grids" data-home-block="tops">
         <div class="top-widget-card">
           <div class="top-widget-title">Top clientes</div>
           <div id="top-customers"><div style="color:var(--neutral-500);font-size:13px">Sin datos aún</div></div>
@@ -67,6 +76,10 @@ async function renderHomeView(container) {
   document.getElementById("btn-quick-quote").addEventListener("click", openQuickQuoteModal);
   document.getElementById("btn-add-customer").addEventListener("click", () => window.renderAppView && renderAppView('customers'));
   document.getElementById("btn-view-pending").addEventListener("click", () => window.renderAppView && renderAppView('invoices'));
+  document.getElementById("btn-home-prefs")?.addEventListener("click", openHomePrefsPanel);
+
+  // A6.7: aplicar preferencias cacheadas al instante (sin flash en re-renders)
+  if (window.appHomePrefs) applyHomePrefs(window.appHomePrefs);
 
   try {
     const [data, merchant] = await Promise.all([
@@ -82,6 +95,12 @@ async function renderHomeView(container) {
 
     // Setup checklist para usuarios nuevos
     if (merchant) renderSetupChecklist(merchant, data);
+
+    // A6.7: preferencias de bloques desde BD (null = todo visible)
+    if (merchant && merchant.homePrefs !== undefined) {
+      window.appHomePrefs = merchant.homePrefs || {};
+      applyHomePrefs(window.appHomePrefs);
+    }
 
     // Badges del sidebar (FRONT1-2)
     updateSidebarBadges(data);
@@ -1015,3 +1034,67 @@ function showQqAlert(msg) {
 }
 
 // A6.2: showToast ahora es compartido y vive en api.js (window.showToast).
+
+// ── A6.7: Home personalizable (versión ligera — checkboxes, sin drag&drop) ──
+const HOME_BLOCKS = [
+  ['hero',     '💶 Dinero en juego'],
+  ['quick',    '⚡ Acciones rápidas'],
+  ['kpis',     '📊 Resumen (KPIs)'],
+  ['week',     '📈 Resumen de la semana'],
+  ['activity', '🕑 Actividad reciente'],
+  ['tops',     '🏆 Top clientes y servicios'],
+];
+
+// Muestra/oculta cada bloque según prefs ({clave:false} = oculto; default visible)
+function applyHomePrefs(prefs) {
+  document.querySelectorAll('[data-home-block]').forEach((el) => {
+    const k = el.getAttribute('data-home-block');
+    el.style.display = prefs && prefs[k] === false ? 'none' : '';
+  });
+}
+
+function openHomePrefsPanel() {
+  if (document.getElementById('home-prefs-backdrop')) return;
+  const prefs = window.appHomePrefs || {};
+
+  const backdrop = document.createElement('div');
+  backdrop.id = 'home-prefs-backdrop';
+  backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(15,28,23,.45);display:flex;align-items:center;justify-content:center;z-index:320;padding:16px';
+  backdrop.innerHTML = `
+    <div style="background:#fff;border-radius:16px;padding:22px 20px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.2)" role="dialog" aria-label="Personalizar Home">
+      <h2 style="margin:0 0 4px;font-size:16px;color:var(--ink)">Tu Home, a tu gusto</h2>
+      <p style="margin:0 0 14px;font-size:13px;color:var(--muted)">Elige qué bloques quieres ver. Se guarda en tu cuenta.</p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${HOME_BLOCKS.map(([k, label]) => `
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;border:1px solid var(--border,#e7e9e5);border-radius:10px;padding:9px 12px;font-size:14px;color:var(--ink)">
+            <input type="checkbox" data-pref="${k}" ${prefs[k] === false ? '' : 'checked'} style="width:17px;height:17px;accent-color:#16a34a;flex-shrink:0"/>
+            <span>${label}</span>
+          </label>`).join('')}
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button id="hp-cancel" class="btn-ghost btn-sm" style="flex:1">Cancelar</button>
+        <button id="hp-save" class="btn-primary btn-sm" style="flex:2">Guardar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(backdrop);
+
+  const close = () => backdrop.remove();
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
+  backdrop.querySelector('#hp-cancel').addEventListener('click', close);
+  backdrop.querySelector('#hp-save').addEventListener('click', async () => {
+    const next = {};
+    backdrop.querySelectorAll('input[data-pref]').forEach((cb) => { next[cb.dataset.pref] = cb.checked; });
+    const btn = backdrop.querySelector('#hp-save');
+    btn.disabled = true; btn.textContent = 'Guardando…';
+    try {
+      await updateMerchantProfile({ homePrefs: next });
+      window.appHomePrefs = next;
+      applyHomePrefs(next);
+      close();
+      showToast('✓ Home actualizada');
+    } catch (err) {
+      btn.disabled = false; btn.textContent = 'Guardar';
+      showToast('No se pudo guardar: ' + (err && err.message ? err.message : 'inténtalo de nuevo'), 'error');
+    }
+  });
+}

@@ -144,3 +144,19 @@ npx prisma generate
 - En el dashboard, abrir la ficha 360 de un cliente con actividad (envía un presupuesto,
   acéptalo, etc.) → debe aparecer la sección "Actividad reciente".
 - `GET /admin/customers/:id/detail` debe devolver `events: [...]`.
+
+---
+
+## 5-jul-2026 — A6.7 Home personalizable (APLICADA ✅)
+
+```sql
+ALTER TABLE "merchants" ADD COLUMN "home_prefs" JSONB;
+```
+
+- Aditiva y anulable; aprobada por el fundador en sesión (AskUserQuestion) y aplicada
+  con `npx prisma db push` tras preview del diff. Default lógico: todo visible
+  (null = sin preferencias).
+
+### Verificación post-push
+- Home → botón "Personalizar" → desmarcar un bloque → Guardar → recargar: el bloque
+  sigue oculto (persistencia en BD, no en el navegador).

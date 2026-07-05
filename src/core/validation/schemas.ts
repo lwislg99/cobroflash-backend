@@ -150,6 +150,8 @@ export const merchantProfileUpdateSchema = z.object({
   country: z.string().length(2).optional(),
   iban: z.string().min(10).max(34).nullable().optional(),
   clabe: z.string().length(18).nullable().optional(),
+  // A6.7: bloques visibles de la Home — {hero,quick,kpis,week,activity,tops}: bool
+  homePrefs: z.record(z.string(), z.boolean()).nullable().optional(),
   notifyEmailOnPaid:          z.boolean().optional(),
   notifyEmailOnQuoteAccepted: z.boolean().optional(),
   notifyEmailWeeklyDigest:    z.boolean().optional(),

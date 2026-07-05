@@ -33,6 +33,8 @@ model Merchant {
   connectStatus        String  @default("none") @map("connect_status") // none|pending|active|restricted
   // C1-4: móvil para Bizum manual asistido (default en UI: whatsappPhone, editable)
   bizumPhone           String? @map("bizum_phone")
+  // A6.7: preferencias de la Home (bloques visibles) — {hero,quick,kpis,week,activity,tops}: bool
+  homePrefs            Json?   @map("home_prefs")
 
   // Auth / plan
   onboardingCompleted  Boolean   @default(false)  @map("onboarding_completed")
