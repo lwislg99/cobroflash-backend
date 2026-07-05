@@ -216,7 +216,10 @@ function showInviteModal(onSuccess, setAlert, prefill = null) {
       setAlert('success', `Invitación enviada a ${email}`);
       await onSuccess();
     } catch (err) {
-      const msg = err?.data?.error === 'email_is_owner'
+      // A10.3 (W3): al tope de usuarios, mensaje digno con la oferta Equipo
+      const msg = err?.data?.error === 'user_limit'
+        ? (err.data.message || 'Has llegado al límite de usuarios de tu plan.')
+        : err?.data?.error === 'email_is_owner'
         ? 'Ese email es el del propietario de la cuenta.'
         : 'Error al enviar la invitación.';
       alertEl.textContent = msg;

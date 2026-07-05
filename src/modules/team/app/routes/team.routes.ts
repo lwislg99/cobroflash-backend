@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireRole } from '../../../../core/http/authMiddleware';
 import { prisma } from '../../../../core/db/prisma';
+import { getEntitlements } from '../../../../core/entitlements';
 import {
   listTeamMembers,
   createTeamMember,
@@ -42,7 +43,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST /admin/team  — invitar nuevo miembro
+// POST /admin/team  — invitar nuevo miembro (límite W3 vía entitlements, regla 34)
 router.post('/', async (req, res) => {
   try {
     const name  = String(req.body?.name  || '').trim();
@@ -54,8 +55,25 @@ router.post('/', async (req, res) => {
 
     const merchant = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
-      select: { name: true },
+      select: { name: true, plan: true },
     });
+
+    // A10.3 (W3, regla 34): límite de usuarios por plan — 1 Pro/Founding, 5
+    // Equipo. Cuenta = owner (1) + miembros no suspendidos. Al tope: mensaje
+    // digno con la oferta Equipo (W1: oferta manual, no autoservicio).
+    const { maxUsers } = getEntitlements(merchant?.plan);
+    const activeMembers = await prisma.teamMember.count({
+      where: { merchantId: req.merchantId, status: { not: 'suspended' } },
+    });
+    if (1 + activeMembers >= maxUsers) {
+      return res.status(409).json({
+        error: 'user_limit',
+        maxUsers,
+        message: maxUsers === 1
+          ? 'Tu plan incluye 1 usuario. ¿Trabajáis varios? El plan Equipo añade hasta 5 usuarios con aprobaciones y asignación — escríbenos y te lo activamos.'
+          : `Has llegado al límite de ${maxUsers} usuarios de tu plan Equipo.`,
+      });
+    }
 
     const member = await createTeamMember({
       merchantId: req.merchantId,
