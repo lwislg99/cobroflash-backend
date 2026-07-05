@@ -72,6 +72,24 @@ function uiMarkFieldError(el, scope) {
 }
 window.uiMarkFieldError = uiMarkFieldError;
 
+// P-A66-3: dinero SIEMPRE en formato español también dentro del BO — espejo
+// del formatMoneyEs del servidor (core/utils). "2.383,70 €", nunca "2383.70 EUR".
+function fmtMoneyEs(n, currency = 'EUR') {
+  const v = Number(n);
+  const safe = Number.isFinite(v) ? v : 0;
+  try {
+    return new Intl.NumberFormat('es-ES', {
+      style: 'currency',
+      currency: currency || 'EUR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(safe);
+  } catch {
+    return safe.toFixed(2) + ' ' + currency;
+  }
+}
+window.fmtMoneyEs = fmtMoneyEs;
+
 // A6.2: toast compartido de TODO el BO (una sola voz para el feedback de acción).
 // kind: 'ok' (verde marca) · 'warn' (ámbar) · 'error' (rojo). Sustituye a los
 // alert() del navegador. Uno cada vez; aria-live para lectores de pantalla.

@@ -682,17 +682,15 @@ blockClient.appendChild(descWrapper);
     } catch (_e) { return false; }
   }
 
-  // Helper formato dinero simple
+  // Helper formato dinero — P-A66-3: delega en el formateador es-ES compartido
   function formatMoney(amount, currency) {
-    const num = Number(amount) || 0;
-    const cur = currency || "EUR";
-    // Representación simple sin liarla con Intl en todos los navegadores
-    return `${num.toFixed(2)} ${cur}`;
+    return fmtMoneyEs(amount, currency || "EUR");
   }
 
   function recalcTotals() {
     let base = 0;
     let vatTotal = 0;
+    const cur = (currentMerchant && currentMerchant.defaultCurrency) || 'EUR';
 
     lines.forEach((line) => {
       const qty = parseFloat(
@@ -717,7 +715,7 @@ blockClient.appendChild(descWrapper);
             try {
               if (line.priceHint) {
                 line.priceHint.textContent = safeMarkup > 0 && Number.isFinite(price)
-                  ? `Final: ${effectivePrice.toFixed(2)}`
+                  ? `Final: ${fmtMoneyEs(effectivePrice, cur)}`
                   : '';
               }
             } catch (_e) {}
@@ -735,7 +733,7 @@ blockClient.appendChild(descWrapper);
       const lineBase = safeQty * safePrice;
       const lineVat = lineBase * (safeVat / 100);
 
-      line.totalCell.textContent = (lineBase + lineVat).toFixed(2);
+      line.totalCell.textContent = fmtMoneyEs(lineBase + lineVat, cur);
 
       base += lineBase;
       vatTotal += lineVat;
@@ -743,16 +741,15 @@ blockClient.appendChild(descWrapper);
 
     const total = base + vatTotal;
     const effVat = base > 0 ? Math.round((vatTotal / base) * 100) : 0;
-    const cur = (currentMerchant && currentMerchant.defaultCurrency) || 'EUR';
-    const sym = cur === 'MXN' || cur === 'USD' || cur === 'COP' ? '$' : '€';
 
     // Premium: UNA sola representación de los totales (antes la lista y la tira
     // "€X + IVA = €Y" decían lo mismo dos veces). Base + IVA como desglose y el
     // TOTAL como única cifra grande (Regla del Importe: en Tinta).
+    // P-A66-3: formato es-ES compartido (adiós al hack del símbolo por moneda).
     totalsBox.innerHTML = `
-      <div><span>Base imponible:</span><strong>${base.toFixed(2)}</strong></div>
-      <div><span>IVA (${effVat}%):</span><strong>${vatTotal.toFixed(2)}</strong></div>
-      <div class="quote-vat-calc"><span>Total presupuesto</span><strong>${sym}${total.toFixed(2)}</strong></div>
+      <div><span>Base imponible:</span><strong>${fmtMoneyEs(base, cur)}</strong></div>
+      <div><span>IVA (${effVat}%):</span><strong>${fmtMoneyEs(vatTotal, cur)}</strong></div>
+      <div class="quote-vat-calc"><span>Total presupuesto</span><strong>${fmtMoneyEs(total, cur)}</strong></div>
     `;
 
     return { base, vatTotal, total };
@@ -1233,7 +1230,9 @@ const right = document.createElement("div");
 right.style.flexShrink = "0";
 right.style.fontWeight = "600";
 const price = Number(it.price || 0);
-right.textContent = Number.isFinite(price) ? price.toFixed(2) : "";
+right.textContent = Number.isFinite(price)
+  ? fmtMoneyEs(price, (currentMerchant && currentMerchant.defaultCurrency) || 'EUR')
+  : "";
 
 row.appendChild(leftWrap);
 row.appendChild(right);
