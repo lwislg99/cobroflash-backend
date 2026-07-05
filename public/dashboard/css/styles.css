@@ -1159,6 +1159,11 @@ html, body { overflow-x: clip; }
 
   .table { font-size: 13px; }
   .table th, .table td { padding: 10px 10px; }
+  /* A6.6 (P1): en móvil las tablas scrollean en su propio carril — antes el
+     clip de html/body recortaba las últimas columnas (estado, acciones). */
+  .table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table th, .table td { white-space: nowrap; }
+  .table td .empty-state { white-space: normal; } /* los estados vacíos siguen envolviendo */
 
   .customer-form, .quote-form-row { grid-template-columns: 1fr; }
   .quotes-layout { grid-template-columns: 1fr; }
