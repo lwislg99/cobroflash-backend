@@ -20,6 +20,10 @@ const BASE_URL = 'https://graph.facebook.com/v21.0';
 // el log WA-0b igual. Permite probar flujos completos sin gastar mensajes.
 const isDryRun = () => process.env.WHATSAPP_DRY_RUN === '1';
 const dryRunData = () => ({ messages: [{ id: `wamid.dryrun.${Date.now()}.${Math.random().toString(36).slice(2, 8)}` }] });
+// Buzón de salida SOLO para tests (A8.4): si la suite define
+// globalThis.__waDryRunOutbox (array), cada envío dry-run se apunta ahí para
+// poder asertar QUÉ respondió el bot sin tocar Meta. En prod no existe y no hace nada.
+const dryRunRecord = (entry: any) => { try { (globalThis as any).__waDryRunOutbox?.push(entry); } catch { /* test-only */ } };
 
 // WA-0b: metadata opcional para el log de mensajes (chip de entrega). No afecta al envío.
 export interface WaLogMeta {
@@ -125,6 +129,7 @@ export async function sendWhatsAppTemplate(params: {
   // A5.5/A8.4: dry-run — guards pasados, Meta no se toca, log igual
   if (isDryRun()) {
     const data = dryRunData();
+    dryRunRecord({ kind: 'template', to: params.to, templateName: params.templateName });
     if (params.merchantId) {
       recordWaMessage({
         merchantId: params.merchantId,
@@ -263,7 +268,7 @@ export async function sendWhatsAppText(params: {
   }
 
   // A5.5/A8.4: dry-run — Meta no se toca (quien registre el log usa este wamid)
-  if (isDryRun()) return { ok: true, data: dryRunData(), dryRun: true } as any;
+  if (isDryRun()) { dryRunRecord({ kind: 'text', to: params.to, text: params.text }); return { ok: true, data: dryRunData(), dryRun: true } as any; }
 
   try {
     const response = await axios.post(
@@ -315,7 +320,7 @@ export async function sendWhatsAppList(params: {
   }
 
   // A5.5/A8.4: dry-run — Meta no se toca
-  if (isDryRun()) return { ok: true, data: dryRunData(), dryRun: true } as any;
+  if (isDryRun()) { dryRunRecord({ kind: 'list', to: params.to, bodyText: params.bodyText, rows: params.rows.map((r) => r.id) }); return { ok: true, data: dryRunData(), dryRun: true } as any; }
 
   try {
     const response = await axios.post(

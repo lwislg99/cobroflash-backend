@@ -1,0 +1,48 @@
+[WA webhook] POST recibido (fields: messages)
+[WA in] from=34611000002 text="hola"
+✔ 1 saludo → menú
+[WA webhook] POST recibido (fields: messages)
+[WA in] from=34611000002 list=bot_quotes
+✔ 2 ver presupuestos
+[WA webhook] POST recibido (fields: messages)
+[WA in] from=34611000002 list=bot_pay
+✔ 3 pagar pendiente
+[WA webhook] POST recibido (fields: messages)
+[WA in] from=34611000002 list=bot_pay
+✔ 4 doble tap idempotente
+[WA webhook] POST recibido (fields: messages)
+[WA in] from=34611000002 text="hola"
+[WA webhook] POST recibido (fields: messages)
+✔ 5 dedupe wamid
+[WA webhook] POST recibido (fields: messages)
+[WA in] from=34611000002 list=bot_m_99999
+✔ 6 menú caducado
+[WA webhook] POST recibido (fields: messages)
+✔ 7 media no soportada
+[WA webhook] POST recibido (fields: messages)
+[WA in] from=34611000002 list=bot_request
+[WA webhook] POST recibido (fields: messages)
+[WA in] from=34611000002 text="(suite A8.4) fuga en la cocina de prueba"
+[WA webhook] POST recibido (fields: messages)
+[WA in] from=34611000002 text="Centro (suite)"
+✔ 8 pedir presupuesto → QuoteRequest + aviso al pro
+[WA webhook] POST recibido (fields: messages)
+[WA in] from=34611000002 list=bot_human
+✔ 9 handoff + registro
+[WA webhook] POST recibido (fields: messages)
+[WA in] from=34611000002 text="¿sigues ahí?"
+✔ 10 mudo post-handoff
+[WA webhook] POST recibido (fields: messages)
+[WA in] from=34611000002 text="BAJA"
+✔ 11 BAJA (J3)
+
+SUITE OK — 17 mensajes simulados, 0 llamadas a Meta.
+✔ A8.4: suite completa del bot (webhook + dry-run) (30225.042ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 30301.0484
