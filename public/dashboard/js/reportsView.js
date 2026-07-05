@@ -476,6 +476,32 @@ async function loadPlatformFunnel(card) {
   meta.innerHTML = `paid_via → ${fmtPairs(data.paidVia, true)}<br/>quote_created_via → ${fmtPairs(data.quoteCreatedVia, false)}`;
   card.appendChild(meta);
 
+  // A9.2: POR FUENTE — registros → activados (1er presupuesto) → con 1er cobro.
+  // El cuadro de mando de la campaña de demos: qué canal trae altas que cobran.
+  if (Array.isArray(data.bySource) && data.bySource.length) {
+    const src = document.createElement('div');
+    src.style.cssText = 'overflow-x:auto;margin-bottom:16px';
+    src.innerHTML = `
+      <div style="font-size:12px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Por fuente de adquisición</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+        <thead><tr style="text-align:left;color:var(--neutral-500)">
+          <th style="padding:4px 8px 4px 0">Fuente</th>
+          <th style="padding:4px 8px;text-align:right">Registros</th>
+          <th style="padding:4px 8px;text-align:right">Activados (1ª quote)</th>
+          <th style="padding:4px 8px;text-align:right">Con 1er cobro</th>
+        </tr></thead>
+        <tbody>${data.bySource.map((r) => `
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:6px 8px 6px 0;color:var(--ink);font-weight:600">${r.source}</td>
+            <td style="padding:6px 8px;text-align:right">${r.registered}</td>
+            <td style="padding:6px 8px;text-align:right">${r.activated}</td>
+            <td style="padding:6px 8px;text-align:right;font-weight:700;color:var(--green-700)">${r.collected}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+    card.appendChild(src);
+  }
+
   // Tabla compacta por merchant (los 15 más recientes)
   const rows = (data.merchants || []).slice(0, 15);
   const table = document.createElement('div');

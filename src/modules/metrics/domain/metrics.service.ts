@@ -353,7 +353,23 @@ export async function getPlatformFunnel() {
     viaAgg.map((v) => [String(v.createdVia ?? 'sin_dato'), v._count.id]),
   );
 
-  return { steps, paidVia: paidViaTotals, quoteCreatedVia, merchants: rows };
+  // A9.2 (GTM-1): el cuadro de mando de la campaña — POR FUENTE de adquisición:
+  // registros → activados (≥1 presupuesto) → con 1er cobro. Con 20 demos en
+  // marcha responde "¿qué canal trae altas que ACABAN cobrando?".
+  const bySourceMap = new Map<string, { registered: number; activated: number; collected: number }>();
+  for (const r of rows) {
+    const key = r.acquisitionSource || 'directo/sin dato';
+    const agg = bySourceMap.get(key) ?? { registered: 0, activated: 0, collected: 0 };
+    agg.registered += 1;
+    if (r.quotes > 0) agg.activated += 1;
+    if (r.collectedCount > 0) agg.collected += 1;
+    bySourceMap.set(key, agg);
+  }
+  const bySource = [...bySourceMap.entries()]
+    .map(([source, v]) => ({ source, ...v }))
+    .sort((a, b) => b.registered - a.registered);
+
+  return { steps, paidVia: paidViaTotals, quoteCreatedVia, bySource, merchants: rows };
 }
 
 // ──────────────────────────────────────────────────────────────────────────
