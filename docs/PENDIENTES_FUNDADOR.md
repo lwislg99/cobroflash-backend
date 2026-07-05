@@ -1,5 +1,8 @@
 # PENDIENTES DEL FUNDADOR — tu lista central de tareas
 
+> 🎯 **Vista rápida para la demo:** `docs/DEMO_READY_CHECKLIST_FUNDADOR.md` — el resumen
+> ordenado de SOLO lo que queda de los tres sprints DEMO-READY (este doc sigue siendo la lista maestra).
+
 > **Qué es este documento:** la lista ÚNICA de cosas que tienes que hacer TÚ por tu cuenta
 > (configuración externa, decisiones, gestiones, la parte "humana" de los sprints). Es tu
 > "rama principal" personal: aquí está todo lo que depende de ti, ordenado por prioridad.
