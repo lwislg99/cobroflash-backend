@@ -21,10 +21,9 @@ async function fetchInvoiceDetail(id) {
       return;
     }
   
-    const fmtInvMoney = (amount, currency) => {
-      const cur = currency || (window.appLocale && window.appLocale.currency) || 'EUR';
-      return Number(amount || 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + cur;
-    };
+    // P-A66-3: delega en el formateador es-ES compartido (api.js)
+    const fmtInvMoney = (amount, currency) =>
+      fmtMoneyEs(amount, currency || (window.appLocale && window.appLocale.currency) || 'EUR');
 
     const page = document.createElement('div');
     page.className = 'detail-page';
@@ -306,7 +305,7 @@ async function fetchInvoiceDetail(id) {
     // confirmación explícita con el importe, el 2º ejecuta. Dispara la misma
     // cadena post-pago que un PSP (paid_via='bizum_manual').
     if (st === 'pending' && invoice.chargeId && invoice.type !== 'R1') {
-      const amountTxt = Number(invoice.total).toLocaleString('es-ES', { minimumFractionDigits: 2 }) + ' ' + (invoice.currency || 'EUR');
+      const amountTxt = fmtMoneyEs(invoice.total, invoice.currency || 'EUR');
       const custName = (invoice.customer && invoice.customer.name) || 'el cliente';
       const btnBizum = document.createElement('button');
       btnBizum.className = 'btn-secondary btn-sm';

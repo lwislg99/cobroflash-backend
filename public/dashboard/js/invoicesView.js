@@ -134,9 +134,9 @@ async function fetchInvoices(options = {}) {
     let currentDateTo   = '';
     let selectedIds = new Set();
 
+    // P-A66-3: delega en el formateador es-ES compartido (api.js)
     function fmtInvMoney(amount, currency) {
-      const cur = currency || (window.appLocale && window.appLocale.currency) || 'EUR';
-      return Number(amount || 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + cur;
+      return fmtMoneyEs(amount, currency || (window.appLocale && window.appLocale.currency) || 'EUR');
     }
 
     function updateBulkBar() {
