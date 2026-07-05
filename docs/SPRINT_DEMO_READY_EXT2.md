@@ -13,8 +13,28 @@
 > micro en modal y QQ). Con el flag OFF producción queda EXACTAMENTE igual que antes.
 > **A7.2 🟡 parte 1 (`d77778f`):** prompt de dictado (muletillas/sinónimos de obra/qty habladas/
 > precio dictado/anti-invención) + `scripts/voice-eval.mjs` (10 transcripciones aprobadas, gate
-> ≥8/10 con ≥80 % líneas o exit 1; modo remoto contra el endpoint desplegado — la API key vive solo
-> en Railway). Falta: correr el eval contra prod y commitear resultados (parte 2).
+> ≥8/10 con ≥80 % líneas o exit 1; modo remoto contra el endpoint desplegado).
+> **⛔ Parte 2 BLOQUEADA (fundador):** `ANTHROPIC_API_KEY` NO está en Railway — el endpoint
+> responde 503 `ai_not_configured` (la IA de sugerencias nunca ha estado activa en prod). Sin key
+> no hay eval → sin eval no hay A7.4 (la voz no entra en maqueta/guion, gate del master). Registrado
+> en PENDIENTES_FUNDADOR; al ponerla corro el eval al momento y cierro la ola.
+> **A7.3 ✅ (`820d231`):** telemetría `created_via='voice'` — el modal Sugerir con IA devuelve
+> `meta.voiceUsed`; QQ y formulario lo mandan en el create (backend lo aceptaba de V0-3). Rollback
+> VZ-3 verificado por diseño: IA apagada = el dictado queda como texto plano.
+> **A7.4 ⏸** a la espera del eval (regla: la maqueta solo enseña lo real).
+> **A8.1 ✅ (5-jul, `6e8d109`):** tabla de copys v2.1 aprobada por el fundador e implementada —
+> dinero es-ES en todo el bot, nº de presupuesto visible (también flujo clásico Acepto/No), cierre
+> honesto en "Pagar pendiente", menú tras "estás al día", handoff al pro con CONTEXTO
+> (`data.lastAction`) + "el asistente queda en silencio 24 h". Master K1 actualizado a v2.1
+> (regla 30). Los bordes aprobados #15-17 (menú caducado, media ampliada) se implementan en A8.2.
+> **A5.5 🔍 AUDITADA (5-jul):** el ciclo cero-plantillas HOY NO se cumple — los dos call-sites del
+> envío de presupuesto (`quotesAdmin` POST /:id/send-whatsapp y el recordatorio 24 h) usan
+> `sendWhatsAppTemplate` directo, sin check de ventana (decisión de alcance de A5.2: quote_decision
+> era "la única plantilla del ciclo"). No existe texto de sesión equivalente a la plantilla.
+> `sentVia` se mediría solo (nuestro log: `type:'service'` ≡ ventana, con `templateName` de la
+> plantilla ahorrada) si se enruta por `sendWhatsAppWindowFirst`. Fix propuesto al fundador
+> (texto de sesión = cambio de master + swap del call-site + `WHATSAPP_DRY_RUN` para el test);
+> a la espera de OK antes de implementar.
 
 **Criterio de esta extensión (importante):** NO se abre backlog U2 (gate 25 pagantes,
 regla 13). Todo lo de aquí es (a) trabajo F1 legítimo de la cola U1 que aún no se había
