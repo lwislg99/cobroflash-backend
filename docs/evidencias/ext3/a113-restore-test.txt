@@ -1,0 +1,2 @@
+Restore-test de D:\MILLONARIO\cobroFlash\cobroflash-backend\backups\yaqu-20260705.logical.gz.enc
+✓ backup ÍNTEGRO y legible · 20 tablas coinciden con la BD viva, 0 con deriva posterior

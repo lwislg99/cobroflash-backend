@@ -145,3 +145,6 @@ vite.config.ts.timestamp-*
 
 # muestras generadas para validacion XSD (S1-C)
 tmp/
+
+# A11.3: dumps cifrados locales (datos de prod — JAMÁS al repo)
+backups/

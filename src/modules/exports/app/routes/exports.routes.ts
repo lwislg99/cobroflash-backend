@@ -35,6 +35,32 @@ function sendCsv(res: any, filename: string, header: string[], rows: string[]) {
   res.send(bom + body);
 }
 
+// ── GET /admin/exports/customers.csv ──────────────────────────────────────
+// A11.4 (RGPD/R11): "tus datos son tuyos" — clientes completos del merchant.
+router.get('/customers.csv', async (req, res) => {
+  try {
+    const customers = await prisma.customer.findMany({
+      where: { merchantId: req.merchantId },
+      orderBy: { createdAt: 'asc' },
+    });
+    const header = ['Nombre', 'Razón social', 'NIF/CIF', 'Teléfono', 'Email', 'Notas', 'Baja WhatsApp', 'Alta'];
+    const rows = customers.map((c) => csvRow([
+      c.name,
+      (c as any).legalName ?? '',
+      (c as any).taxId ?? '',
+      c.phone ?? '',
+      c.email ?? '',
+      c.notes ?? '',
+      c.waOptOut ? 'Sí' : 'No',
+      c.createdAt.toISOString().slice(0, 10),
+    ]));
+    sendCsv(res, `clientes_${new Date().toISOString().slice(0, 10)}.csv`, header, rows);
+  } catch (err) {
+    console.error('[exports/customers.csv]', err);
+    res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 // ── GET /admin/exports/invoices.csv ───────────────────────────────────────
 // ?from=YYYY-MM-DD&to=YYYY-MM-DD&status=all|pending|paid|expired
 router.get('/invoices.csv', async (req, res) => {

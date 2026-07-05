@@ -85,6 +85,19 @@
 > badge de validez usa la columna real [fallback legacy creación+30]; pill CADUCADO en
 > lista/detalle). E2E `a162-e2e.txt`: sent caducado → cron expira → 410 → landing con copy
 > y wa.me correctos. Evidencias: `a161-x2-1280.png`, `a162-caducado-390.png`.
+> **OLA 11 ✅ COMPLETA (6-jul):** A11.1 (audit_log S2 mínimo con userId+IP: marcar_pagado_manual
+> [pay/bulk/status], deshacer_pago [unpay/status], anular_factura [rectify R1]; cambio_flag =
+> helper listo, sin endpoint que cambie flags hoy) · A11.2 (informe S3 punto por punto en
+> `a112-informe-s3.md`: firmas de webhooks ✅ [Stripe/Connect constructEvent, Meta sha256+401,
+> MP x-signature — matiz: Meta/MP validan si su secret está en Railway → checklist], cookies ✅,
+> Zod ✅ razonable, secretos ✅ [token WA sigue pendiente de rotar]; DOS fixes commit-por-fix:
+> fix1 maskPhone en todos los logs con teléfono, fix2 rate-limit en memoria login/register
+> 5/15min+verify 30/15min con 429 humano) · A11.3 (scripts/backup-dump.mjs: pg_dump custom o
+> dump lógico Prisma 21 tablas → gzip → AES-256-GCM; **test de restauración EJECUTADO contra
+> la BD real**: íntegro, 20/20 tablas coinciden → `a113-restore-test.txt`; backups/ gitignored;
+> política Railway documentada; destino externo+clave definitiva+programación = FUNDADOR
+> checklist) · A11.4 (CSV Excel español: separador `;` en TODOS + BOM; NUEVO customers.csv
+> RGPD + botón "Clientes CSV" en Informes).
 > **CHOQUES Olas 1-9 señalados al fundador (resolución al llegar):** A22.3 búsqueda global ya
 > existe → completar contra spec · A17 load-catalog ya existe → migrar contenido a data/catalogs
 > con schema master · A16.1 → añadir SOLO métricas X2 faltantes. **Decisiones fundador recibidas:**

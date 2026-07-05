@@ -50,9 +50,11 @@ async function renderReportsView(container) {
   const btnInv  = makeExportBtn('Facturas CSV',     '/admin/exports/invoices.csv');
   const btnExp  = makeExportBtn('Gastos CSV',        '/admin/exports/expenses.csv');
   const btnQuot = makeExportBtn('Presupuestos CSV',  '/admin/exports/quotes.csv');
+  const btnCust = makeExportBtn('Clientes CSV',      '/admin/exports/customers.csv'); // A11.4 (RGPD)
   exportRow.appendChild(btnInv);
   exportRow.appendChild(btnExp);
   exportRow.appendChild(btnQuot);
+  exportRow.appendChild(btnCust);
 
   // VeriFactu XML (registro RRSIF) — solo aplica a negocios de España con NIF;
   // se descarga vía fetch para poder mostrar el aviso del backend si no aplica.
