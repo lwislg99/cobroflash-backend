@@ -170,7 +170,7 @@ async function renderReportsView(container) {
       kpi.className = 'kpi-card';
       kpi.innerHTML = `
         <div class="kpi-label">${label}</div>
-        <div class="kpi-value" style="color:${color};font-size:22px">${fmt(value)} <span style="font-size:12px;font-weight:400;color:var(--neutral-400)">${currency}</span></div>
+        <div class="kpi-value" style="color:${color};font-size:22px">${fmt(value)} <span style="font-size:12px;font-weight:400;color:var(--neutral-400)">${currency === 'EUR' ? '€' : currency}</span></div>
         ${pct !== null ? `<div class="kpi-sub" style="color:${pctColor}">${sign} ${Math.abs(pct)}% vs ${year - 1}</div>` : ''}
       `;
       kpiWrap.appendChild(kpi);
@@ -313,8 +313,8 @@ async function renderReportsView(container) {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td style="font-weight:600">${r.rate}%</td>
-        <td style="text-align:right">${fmt(r.base)} ${data.currency}</td>
-        <td style="text-align:right;font-weight:600">${fmt(r.cuota)} ${data.currency}</td>
+        <td style="text-align:right">${fmtMoneyEs(r.base, data.currency)}</td>
+        <td style="text-align:right;font-weight:600">${fmtMoneyEs(r.cuota, data.currency)}</td>
       `;
       tbody.appendChild(tr);
     });
@@ -322,8 +322,8 @@ async function renderReportsView(container) {
     trTotal.style.cssText = 'background:var(--neutral-50);font-weight:700;border-top:2px solid var(--neutral-200)';
     trTotal.innerHTML = `
       <td>TOTAL ${vatQuarter}T ${data.year}</td>
-      <td style="text-align:right">${fmt(data.totals.base)} ${data.currency}</td>
-      <td style="text-align:right;color:var(--green-700)">${fmt(data.totals.cuota)} ${data.currency}</td>
+      <td style="text-align:right">${fmtMoneyEs(data.totals.base, data.currency)}</td>
+      <td style="text-align:right;color:var(--green-700)">${fmtMoneyEs(data.totals.cuota, data.currency)}</td>
     `;
     tbody.appendChild(trTotal);
     table.appendChild(tbody);
@@ -333,7 +333,7 @@ async function renderReportsView(container) {
     if (data.excluded.count > 0) {
       const note = document.createElement('p');
       note.style.cssText = 'margin:10px 0 0;font-size:12px;color:var(--neutral-500)';
-      note.textContent = `⚠ ${data.excluded.count} factura(s) sin desglose de líneas (total ${fmt(data.excluded.total)} ${data.currency}) no incluidas en el cuadro — revísalas a mano.`;
+      note.textContent = `⚠ ${data.excluded.count} factura(s) sin desglose de líneas (total ${fmtMoneyEs(data.excluded.total, data.currency)}) no incluidas en el cuadro — revísalas a mano.`;
       vatCard.appendChild(note);
     }
   }
@@ -609,8 +609,8 @@ function renderServices(card, data) {
       <td style="font-weight:600">${escReport(s.name)}</td>
       <td style="text-align:right">${s.quoted}</td>
       <td style="text-align:right;color:${accColor};font-weight:600">${s.acceptanceRate}%</td>
-      <td style="text-align:right;color:var(--neutral-500)">${fmt(s.avgPrice)}</td>
-      <td style="text-align:right;color:var(--green-700);font-weight:600">${fmt(s.revenue)}</td>
+      <td style="text-align:right;color:var(--neutral-500)">${fmtMoneyEs(s.avgPrice, (window.appLocale && window.appLocale.currency) || 'EUR')}</td>
+      <td style="text-align:right;color:var(--green-700);font-weight:600">${fmtMoneyEs(s.revenue, (window.appLocale && window.appLocale.currency) || 'EUR')}</td>
     `;
     tbody.appendChild(tr);
   });
