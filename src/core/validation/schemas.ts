@@ -161,6 +161,14 @@ export const merchantProfileUpdateSchema = z.object({
   brandColor:        z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(),
   brandAccentColor:  z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(),
   approvalThreshold: z.number().min(0).nullable().optional(),
+  // A14.1 (PERFIL-1): página pública /p/:slug — minúsculas-guiones 3-40, sin guion
+  // en los extremos; reservados y cooldown 30d se validan en merchantAdmin.
+  slug: z.preprocess(
+    (v) => (typeof v === 'string' ? v.trim().toLowerCase() : v),
+    z.string().regex(/^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/).nullable().optional(),
+  ),
+  profileZones: z.array(z.string().trim().min(1).max(40)).max(12).nullable().optional(),
+  profileYears: z.number().int().min(0).max(80).nullable().optional(),
 });
 
 export type MerchantProfileUpdateInput = z.infer<

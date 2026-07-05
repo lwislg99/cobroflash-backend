@@ -10,6 +10,7 @@ function renderSettingsView(container) {
     // Tarjeta de Referidos (se rellena de forma asíncrona)
     renderReferralCard(container);
     renderWaFairUseCard(container); // A9.3: fair use W2 visible
+    renderPublicProfileCard(container); // A14.1 (PERFIL-1): página pública + QR
 
     const title = document.createElement("h2");
     title.textContent = "Datos de la empresa";
@@ -548,6 +549,112 @@ async function renderWaFairUseCard(container) {
     </p>
   `;
   container.appendChild(card);
+}
+
+// ── A14.1 · PERFIL-1: tu página pública /p/:slug (master Parte R) ──────────
+// Solo muestra lo PÚBLICO (nombre, gremio, zonas, años, botón de WhatsApp);
+// jamás precios/clientes/email/NIF. El flag lo activa YaQu (merchant opt-in F2).
+async function renderPublicProfileCard(container) {
+  let m;
+  try { m = await apiRequest('/admin/merchant'); } catch { return; }
+  if (m.slug === undefined) return; // rol sin acceso (el perfil reducido no trae slug)
+
+  const card = document.createElement('div');
+  card.className = 'customers-card';
+  card.style.marginTop = '16px';
+  container.appendChild(card);
+
+  const COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
+  const enabled = !!m.publicProfileEnabled;
+
+  function nextChangeDate(slugChangedAt) {
+    if (!slugChangedAt) return null;
+    const next = new Date(new Date(slugChangedAt).getTime() + COOLDOWN_MS);
+    return next.getTime() > Date.now() ? next : null;
+  }
+
+  function paint() {
+    const locked = nextChangeDate(m.slugChangedAt);
+    const zonesText = Array.isArray(m.profileZones) ? m.profileZones.join(', ') : '';
+    card.innerHTML = `
+      <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Tu página pública</h2>
+      <p style="margin:0 0 14px;font-size:13px;color:var(--neutral-400)">
+        La página que ve quien escanea tu QR o abre tu enlace: tu nombre, tu gremio, tus zonas
+        y un botón para pedirte presupuesto por WhatsApp. Nada de precios ni datos de clientes.
+      </p>
+      ${enabled
+        ? (m.slug
+          ? `<div class="alert success" style="display:block;margin:0 0 14px;font-size:13px">Tu página está <strong>activa</strong>: <a href="/p/${escSettings(m.slug)}" target="_blank" rel="noopener">yaqu.app/p/${escSettings(m.slug)} ↗</a></div>`
+          : `<div class="alert warning" style="display:block;margin:0 0 14px;font-size:13px">Elige una dirección para estrenar tu página.</div>`)
+        : `<div class="alert" style="display:block;margin:0 0 14px;font-size:13px;background:var(--neutral-50);border:1px solid var(--border);color:var(--neutral-600)">Aún no está activada — déjala lista y la encendemos contigo.</div>`}
+      <div class="field" style="margin-bottom:12px">
+        <label>Dirección de tu página</label>
+        <div style="display:flex;align-items:center;gap:0">
+          <span style="padding:11px 10px;border:1px solid var(--border);border-right:none;border-radius:10px 0 0 10px;background:var(--neutral-50);font-size:13px;color:var(--muted);white-space:nowrap">yaqu.app/p/</span>
+          <input id="pp-slug" type="text" value="${escSettings(m.slug || '')}" ${locked ? 'disabled' : ''}
+            placeholder="fontaneria-garcia" autocapitalize="none" autocorrect="off" spellcheck="false"
+            style="flex:1;min-width:0;border-radius:0 10px 10px 0;border:1px solid var(--border);padding:11px 13px;font-size:14px"/>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin:4px 0 0">
+          ${locked
+            ? 'Podrás cambiarla de nuevo el ' + locked.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) + '.'
+            : 'Solo minúsculas, números y guiones (3-40). Se puede cambiar una vez cada 30 días.'}
+        </p>
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>Zonas donde trabajas</label>
+        <input id="pp-zones" type="text" value="${escSettings(zonesText)}" placeholder="Chamberí, Tetuán, Centro"/>
+        <p style="font-size:12px;color:var(--muted);margin:4px 0 0">Separa las zonas con comas (máx. 12).</p>
+      </div>
+      <div class="field" style="margin-bottom:14px;max-width:220px">
+        <label>Años de experiencia (opcional)</label>
+        <input id="pp-years" type="number" min="0" max="80" value="${m.profileYears != null ? m.profileYears : ''}"/>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button id="pp-save" class="btn btn-primary btn-sm">Guardar página</button>
+        <span id="pp-qr-slot"></span>
+        <span id="pp-msg" style="font-size:12.5px;color:var(--muted)"></span>
+      </div>
+    `;
+
+    const msg = card.querySelector('#pp-msg');
+    card.querySelector('#pp-save').addEventListener('click', async (ev) => {
+      const btn = ev.currentTarget;
+      const slugVal = card.querySelector('#pp-slug').value.trim().toLowerCase();
+      const zones = card.querySelector('#pp-zones').value.split(',').map((z) => z.trim()).filter(Boolean).slice(0, 12);
+      const yearsRaw = card.querySelector('#pp-years').value.trim();
+      if (slugVal && !/^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/.test(slugVal)) {
+        msg.style.color = 'var(--red-600)';
+        msg.textContent = 'La dirección solo puede llevar minúsculas, números y guiones (3-40).';
+        return;
+      }
+      btn.disabled = true; btn.textContent = 'Guardando…';
+      try {
+        const updated = await updateMerchantProfile({
+          slug: slugVal || null,
+          profileZones: zones,
+          profileYears: yearsRaw === '' ? null : Number(yearsRaw),
+        });
+        m = Object.assign({}, m, {
+          slug: updated.slug, slugChangedAt: updated.slugChangedAt,
+          profileZones: updated.profileZones, profileYears: updated.profileYears,
+        });
+        paint();
+        const okMsg = card.querySelector('#pp-msg');
+        okMsg.style.color = 'var(--green-700)';
+        okMsg.textContent = '✓ Guardado.';
+      } catch (e) {
+        btn.disabled = false; btn.textContent = 'Guardar página';
+        msg.style.color = 'var(--red-600)';
+        msg.textContent = (e && e.data && e.data.message) || 'No se pudo guardar. Inténtalo de nuevo.';
+      }
+    });
+
+    // A14.2 añade aquí el botón de QR (furgoneta/tarjeta)
+    if (typeof renderProfileQrButton === 'function') renderProfileQrButton(card, m, enabled);
+  }
+
+  paint();
 }
 
 // ── Tarjeta de Referidos (Sprint REFERRAL) ────────────────────────────────

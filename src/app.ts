@@ -34,6 +34,7 @@ import mpWebhookRouter from './modules/billing/app/routes/mpWebhook.routes';
 import whatsappIncomingRouter from './modules/whatsappBot/app/routes/whatsappIncoming.routes';
 import botAdminRouter from './modules/whatsappBot/app/routes/botAdmin.routes';
 import legalPagesRouter from './modules/system/app/routes/legalPages.routes';
+import publicProfileRouter from './modules/system/app/routes/publicProfile.routes';
 import jobsRouter from './modules/jobs/app/routes/jobs.routes';
 
 import quotesRouter from './modules/quotes/app/routes/quotes.routes';
@@ -58,7 +59,7 @@ import quoteRequestsRouter from './modules/quoteRequests/app/routes/quoteRequest
 import searchRouter        from './modules/search/app/routes/search.routes';
 
 import { merchantProfileUpdateSchema } from './core/validation/schemas';
-import { getMerchantProfile, updateMerchantProfile } from './modules/system/merchantAdmin';
+import { getMerchantProfile, updateMerchantProfile, SlugError } from './modules/system/merchantAdmin';
 import { getDigestPreview } from './modules/messaging/domain/weeklyDigest.service';
 import { getReferralStats, redeemFreeMonth } from './modules/auth/domain/referral.service';
 import { getSession } from './modules/auth/domain/auth.service';
@@ -137,6 +138,7 @@ app.use('/pay', payMpRouter);
 app.use('/webhooks/mp', mpWebhookRouter);
 app.use('/webhooks/whatsapp', whatsappIncomingRouter);
 app.use('/legal', legalPagesRouter); // A10.1: páginas legales públicas (alcance beta)
+app.use('/p', publicProfileRouter);  // A14.1 (PERFIL-1): perfil público /p/:slug — flag OFF → 404 digno
 app.use('/dev', devRouter);
 
 // ===========================
@@ -260,7 +262,16 @@ app.get('/admin/merchant', async (req, res, next) => {
       const { id, name, legalName, trade, defaultCurrency, logoUrl, whatsappPhone, country, brandColor, brandAccentColor } = merchant;
       return res.json({ id, name, legalName, trade, defaultCurrency, logoUrl, whatsappPhone, country, brandColor, brandAccentColor });
     }
-    return res.json(merchant);
+    // A14.1: estado EFECTIVO del flag del perfil público (merchant > env > default)
+    // para que Configuración pinte "activa/aún no activa" sin duplicar la lógica.
+    const publicProfileEnabled = isFlagEnabled('PUBLIC_PROFILE_ENABLED', {
+      merchant: {
+        id: merchant.id,
+        country: merchant.country,
+        flags: ((merchant as Record<string, unknown>).flags as Record<string, unknown> | undefined) ?? null,
+      },
+    });
+    return res.json({ ...merchant, publicProfileEnabled });
   } catch (err) { return next(err); }
 });
 
@@ -272,7 +283,18 @@ app.put('/admin/merchant', requireRole('admin'), async (req, res, next) => {
     }
     const updated = await updateMerchantProfile(req.merchantId, parsed.data);
     return res.json(updated);
-  } catch (err) { return next(err); }
+  } catch (err) {
+    // A14.1: reglas del slug del perfil público → error humano, no 500
+    if (err instanceof SlugError) {
+      const status = err.code === 'slug_taken' ? 409 : err.code === 'slug_cooldown' ? 429 : 400;
+      return res.status(status).json({
+        error: err.code,
+        message: err.message,
+        ...(err.nextChangeAt ? { next_change_at: err.nextChangeAt.toISOString() } : {}),
+      });
+    }
+    return next(err);
+  }
 });
 
 // Onboarding completo — solo propietario (admin)
