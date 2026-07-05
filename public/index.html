@@ -162,6 +162,10 @@
     .price-card li { padding:7px 0 7px 28px; position:relative; font-size:15px; }
     .price-card li::before { content:"✓"; position:absolute; left:0; color:var(--brand); font-weight:800; }
     .price-card .yearly { font-size:13px; color:var(--muted); margin-top:12px; }
+    .price-card .founding { background:#fff7ed; border:1px solid #fed7aa; color:#b45309; font-size:13.5px;
+      border-radius:var(--r-md); padding:10px 12px; margin-bottom:16px; }
+    .price-card .fee-note { font-size:13px; color:var(--body); background:var(--bg); border-radius:var(--r-md);
+      padding:9px 12px; margin:0 0 18px; }
 
     /* CTA band */
     .cta-band { background:linear-gradient(120deg,var(--brand-ink),#065f46); color:#fff; text-align:center; }
@@ -325,24 +329,29 @@
     </div>
   </section>
 
-  <!-- PRECIOS -->
+  <!-- PRECIOS — A4.4: plan único W1 + founding con contador REAL -->
   <section id="precios" class="pricing">
     <div class="container">
       <h2 class="section-title">Un solo plan. Todo incluido.</h2>
-      <p class="section-sub">Empieza gratis. Cuando veas el valor, pasa a Pro.</p>
+      <p class="section-sub">14 días gratis, sin tarjeta. Y sin letra pequeña.</p>
       <div class="price-card">
+        <div id="founding-banner" class="founding" hidden>
+          🔥 Oferta de lanzamiento: <strong>14,50 €/mes para siempre</strong> — quedan <strong id="founding-left">–</strong> de 20 plazas
+        </div>
         <span class="tag">YaQu Pro</span>
-        <div class="amount">$19<span> /mes</span></div>
+        <div class="amount">29 €<span> /mes</span></div>
         <ul>
           <li>Presupuestos y clientes ilimitados</li>
           <li>Envío por WhatsApp + firma digital</li>
-          <li>Cobro con tarjeta y transferencia</li>
-          <li>Catálogos por oficio y asistente de IA</li>
+          <li>Cobro con tarjeta, Bizum y transferencia</li>
+          <li>Recordatorios automáticos que persiguen solos</li>
+          <li>Catálogo por oficio y asistente de IA</li>
           <li>Equipo con roles (admin / técnico)</li>
           <li>Soporte por WhatsApp</li>
         </ul>
-        <a href="/register.html" class="btn btn-primary" style="width:100%">Empezar gratis</a>
-        <p class="yearly">o $179/año (ahorra 2 meses)</p>
+        <p class="fee-note">Solo si cobras con tarjeta: 0,9&nbsp;%. Bizum y transferencia: <strong>0&nbsp;€</strong>.</p>
+        <a href="/register.html" class="btn btn-primary" style="width:100%">Empieza gratis</a>
+        <p class="yearly">o 290 €/año (2 meses gratis)</p>
       </div>
     </div>
   </section>
@@ -413,6 +422,19 @@
         timer = setInterval(function () { go(idx + 1); }, 4000);
       }
       restart();
+    })();
+
+    // A4.4: banner founding con contador REAL (nunca fake — si el endpoint
+    // falla o no quedan plazas, el banner simplemente no se muestra).
+    (function () {
+      var banner = document.getElementById('founding-banner');
+      if (!banner || !window.fetch) return;
+      fetch('/public/founding-status').then(function (r) { return r.json(); }).then(function (s) {
+        if (s && typeof s.seatsLeft === 'number' && s.seatsLeft > 0) {
+          document.getElementById('founding-left').textContent = s.seatsLeft;
+          banner.hidden = false;
+        }
+      }).catch(function () {});
     })();
 
     // A4.2: reveal al hacer scroll — IntersectionObserver mínimo, sin librerías.
