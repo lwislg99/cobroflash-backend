@@ -101,8 +101,11 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
   if (session?.state === 'handoff') return true;
 
   // ── Identidad (número COMPARTIDO entre merchants) ──────────────────────
+  // Las fichas guardan el teléfono con o sin '+' según cómo se creó el
+  // cliente; buscamos ambas variantes para no perder merchants (K1: si hay
+  // varios, se pregunta con lista).
   const customers = await prisma.customer.findMany({
-    where: { phone },
+    where: { phone: { in: [phone, `+${phone}`] } },
     select: { id: true, merchantId: true, name: true },
   });
 

@@ -153,14 +153,14 @@ async function routeIncoming(from: string, input: BotInput): Promise<void> {
 // tengan este número como cliente. Bloqueo real en sendWhatsAppTemplate.
 async function handleOptOutRequest(phone: string, from: string): Promise<void> {
   const customers = await prisma.customer.findMany({
-    where: { phone },
+    where: { phone: { in: [phone, `+${phone}`] } },
     select: { id: true, merchantId: true, name: true },
   });
   if (!customers.length) {
     await sendWhatsAppText({ to: from, text: 'Este número no tiene mensajes activos. No te enviaremos nada. 👋' });
     return;
   }
-  await prisma.customer.updateMany({ where: { phone }, data: { waOptOut: true } });
+  await prisma.customer.updateMany({ where: { phone: { in: [phone, `+${phone}`] } }, data: { waOptOut: true } });
   await sendWhatsAppText({
     to: from,
     text: 'Hecho ✅ No te enviaremos más mensajes por WhatsApp. Si cambias de opinión, díselo a tu profesional.',
@@ -187,7 +187,7 @@ async function handleOptOutRequest(phone: string, from: string): Promise<void> {
 // bot). Devuelve true si la aplicó; false → que decida el menú del bot.
 async function tryLegacyDecision(phone: string, from: string, text: string): Promise<boolean> {
   const customers = await prisma.customer.findMany({
-    where: { phone },
+    where: { phone: { in: [phone, `+${phone}`] } },
     select: { id: true },
   });
   if (!customers.length) return false;
@@ -220,7 +220,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
 
   // Buscar todos los customers con este número (cross-merchant)
   const customers = await prisma.customer.findMany({
-    where: { phone },
+    where: { phone: { in: [phone, `+${phone}`] } },
     select: { id: true, merchantId: true, name: true },
   });
 
