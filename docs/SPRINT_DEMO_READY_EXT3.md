@@ -28,6 +28,14 @@
 > **OLA 20 parcial:** A20.2 ✅ "Margen %"+tooltip (i) accesible · A20.3 ✅ rol "Operario" en toda la
 > UI (valor interno intacto) `c4f74ca`. Quedan A20.1 (GBB), A20.4 (cliente empresa+docFields),
 > A20.5 (fallback J5 completo).
+> **OLA 20 🟡 (solo falta A20.1):** A20.2 ✅ + A20.3 ✅ `c4f74ca` · A20.4 ✅ `31391ff` (cliente
+> empresa: razón social+NIF en alta/edición/zod — el NIF lo exigirá VeriFactu S1-C; bloque "Datos
+> del cliente en el documento" en el creador → quotes.doc_fields; el PDF respeta docFields y la
+> razón social sustituye al nombre) · A20.5 ✅ `6dac367` (waFallbackBar compartida: Copiar enlace/
+> Email/Reintentar SIEMPRE en fallo — detalle de presupuesto 3 caminos, detalle de factura con
+> mensaje humano J5 del server + charge_id, NUEVO /admin/invoices/:id/send-email, crons registran
+> wa_send_failed visible en la ficha 360; 131026 → "cópialo y mándaselo por SMS o llámale").
+> **A20.1 (GBB) pendiente** — abre el próximo empujón con investigación E2E propia.
 > **CHOQUES Olas 1-9 señalados al fundador (resolución al llegar):** A22.3 búsqueda global ya
 > existe → completar contra spec · A17 load-catalog ya existe → migrar contenido a data/catalogs
 > con schema master · A16.1 → añadir SOLO métricas X2 faltantes. **Decisiones fundador recibidas:**
