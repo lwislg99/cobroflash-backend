@@ -68,7 +68,7 @@ async function initApp() {
   // 2. Inyectar usuario en sidebar
   const initials = (me.name || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   const planLabels = { trial: 'Trial gratuito', basic: 'Plan Básico', pro: 'Plan Pro', empresa: 'Plan Empresa' };
-  const roleLabels = { admin: 'Admin', tecnico: 'Técnico' };
+  const roleLabels = { admin: 'Admin', tecnico: 'Operario' }; // A20.3: etiqueta 'Operario' (fundador); el valor interno no se migra
 
   const sidebarSubtitle = me.isOwner
     ? (planLabels[me.plan] || me.plan)

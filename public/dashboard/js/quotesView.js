@@ -474,10 +474,15 @@ blockClient.appendChild(descWrapper);
   table.className = "table quote-lines-table";
   const thead = document.createElement("thead");
   const trHead = document.createElement("tr");
-  ["Concepto", "Cantidad", "Precio", "Markup %", "IVA %", "Total línea", ""].forEach(
+  // A20.2 (PV-FIX-1): "Markup" → "Margen" + tooltip de una frase (i)
+  ["Concepto", "Cantidad", "Precio", "Margen %", "IVA %", "Total línea", ""].forEach(
     (h) => {
       const th = document.createElement("th");
-      th.textContent = h;
+      if (h === "Margen %") {
+        th.innerHTML = 'Margen % <span title="Porcentaje que añades sobre tu precio de coste — tu beneficio en esta línea." style="cursor:help;display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:var(--neutral-200);color:var(--neutral-600);font-size:10px;font-weight:700" tabindex="0" role="img" aria-label="Qué es el margen">i</span>';
+      } else {
+        th.textContent = h;
+      }
       trHead.appendChild(th);
     }
   );

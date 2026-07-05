@@ -14,7 +14,7 @@ async function renderTeamView(container) {
   header.innerHTML = `
     <div>
       <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Miembros del equipo</h2>
-      <p style="margin:0;font-size:13px;color:var(--neutral-400)">Invita colaboradores a tu cuenta. Los técnicos pueden crear presupuestos pero no modificar la configuración.</p>
+      <p style="margin:0;font-size:13px;color:var(--neutral-400)">Invita colaboradores a tu cuenta. Los operarios pueden crear presupuestos pero no tocar la configuración.</p>
     </div>
     <button class="btn-primary btn-sm" id="btn-invite-member">+ Invitar miembro</button>
   `;
@@ -66,7 +66,7 @@ async function renderTeamView(container) {
       // A6.5: estado vacío digno (mismo patrón que el resto de listas)
       tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-state-icon">👷</div>
         <div class="empty-state-title">Trabaja en equipo</div>
-        <div class="empty-state-desc">Invita a tus técnicos: podrán crear presupuestos desde la obra y tú apruebas los que pasen de tu umbral.</div>
+        <div class="empty-state-desc">Invita a tus operarios: podrán crear presupuestos desde la obra y tú apruebas los que pasen de tu umbral.</div>
       </div></td></tr>`;
       return;
     }
@@ -74,7 +74,7 @@ async function renderTeamView(container) {
     members.forEach((m) => {
       const tr = document.createElement('tr');
 
-      const roleLabel  = m.role === 'admin' ? 'Admin' : 'Técnico';
+      const roleLabel  = m.role === 'admin' ? 'Admin' : 'Operario'; // A20.3
       const roleClass  = m.role === 'admin' ? 'status-pill-accepted' : 'status-pill-pending';
       const statusLabel = { active: 'Activo', invited: 'Invitado', suspended: 'Suspendido' }[m.status] || m.status;
       const statusClass = { active: 'status-pill-accepted', invited: 'status-pill-pending', suspended: 'status-pill-rejected' }[m.status] || '';
@@ -180,7 +180,7 @@ function showInviteModal(onSuccess, setAlert, prefill = null) {
           <div class="field">
             <label>Rol</label>
             <select name="role">
-              <option value="tecnico" ${!prefill || prefill.role === 'tecnico' ? 'selected' : ''}>Técnico — puede crear presupuestos</option>
+              <option value="tecnico" ${!prefill || prefill.role === 'tecnico' ? 'selected' : ''}>Operario — puede crear presupuestos</option>
               <option value="admin" ${prefill && prefill.role === 'admin' ? 'selected' : ''}>Admin — acceso completo</option>
             </select>
           </div>
@@ -249,7 +249,7 @@ function showEditModal(member, onSuccess, setAlert) {
           <div class="field">
             <label>Rol</label>
             <select name="role">
-              <option value="tecnico" ${member.role === 'tecnico' ? 'selected' : ''}>Técnico</option>
+              <option value="tecnico" ${member.role === 'tecnico' ? 'selected' : ''}>Operario</option>
               <option value="admin"   ${member.role === 'admin'   ? 'selected' : ''}>Admin</option>
             </select>
           </div>

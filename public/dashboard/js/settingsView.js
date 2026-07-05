@@ -408,7 +408,7 @@ function renderSettingsView(container) {
     fApproval.input.placeholder = "Ej: 1000 (vacío = sin aprobación)";
     fApproval.wrapper.querySelector("label").insertAdjacentHTML(
       "afterend",
-      '<p style="font-size:12px;color:var(--muted);margin:2px 0 4px">Las cotizaciones de un técnico por encima de este importe quedarán "pendientes de aprobación" hasta que un admin las apruebe.</p>'
+      '<p style="font-size:12px;color:var(--muted);margin:2px 0 4px">Las cotizaciones de un operario por encima de este importe quedarán "pendientes de aprobación" hasta que un admin las apruebe.</p>'
     );
     form.appendChild(fApproval.wrapper);
 
