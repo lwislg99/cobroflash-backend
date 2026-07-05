@@ -1,6 +1,7 @@
 import { prisma } from '../../../core/db/prisma';
 import { sendWhatsAppTemplate } from '../../../integrations/whatsapp';
 import { buildQuoteDecision } from '../../../integrations/whatsappTemplates';
+import { recordCustomerEvent } from '../../system/customerEvents.service';
 import { normalizePhone } from '../../../core/utils/utils';
 
 const REMINDER_AFTER_MS = 24 * 60 * 60 * 1000; // 24 horas
@@ -54,6 +55,14 @@ export async function sendPendingReminders(): Promise<void> {
         console.log(`[reminder] OK → quote #${quote.id} (${customerName})`);
       } else {
         console.error(`[reminder] WA error → quote #${quote.id}:`, result.error);
+        // A20.5 (J5): el fallo del cron queda REGISTRADO y visible en el BO (360)
+        recordCustomerEvent({
+          merchantId: quote.merchantId,
+          customerId: quote.customerId,
+          type: 'wa_send_failed',
+          title: '⚠️ Recordatorio de presupuesto no entregado por WhatsApp',
+          detail: `Presupuesto #${quote.quoteNumber ?? quote.id} · el enlace sigue activo — envíaselo por email o SMS desde el detalle`,
+        });
       }
     } catch (err: any) {
       console.error(`[reminder] excepción → quote #${quote.id}:`, err?.message);

@@ -103,6 +103,20 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   statusBox.style.cssText = 'margin:14px 22px 0;display:none';
   page.appendChild(statusBox);
 
+  // A20.5 (J5): en fallo de WhatsApp, SIEMPRE ofrecer las 3 salidas
+  function showWaFallback(quote, retryFn) {
+    statusBox.querySelectorAll(".wa-fallback-bar").forEach((b) => b.remove());
+    const bar = waFallbackBar({
+      link: location.origin + "/pay/quote/" + quote.id,
+      onEmail: quote.customer && quote.customer.email
+        ? () => apiRequest("/admin/quotes/" + quote.id + "/send-email", { method: "POST" })
+        : null,
+      emailDisabledReason: quote.customer && quote.customer.email ? null : "Este cliente no tiene email guardado",
+      onRetry: retryFn,
+    });
+    statusBox.appendChild(bar);
+  }
+
   function setStatus(type, msg) {
     statusBox.textContent = msg || '';
     statusBox.className = 'alert';
@@ -321,6 +335,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
             pending_approval: 'Este presupuesto está pendiente de aprobación; apruébalo antes de enviarlo.',
           };
           setStatus('error', map[data.error] || ('No se pudo enviar: ' + (data.error || 'desconocido')));
+          showWaFallback(quote, () => btnSend.click()); // A20.5
           btnSend.disabled = false;
           btnSend.textContent = original;
           return;
@@ -330,12 +345,14 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
           setStatus('success', 'Presupuesto enviado por WhatsApp.');
           await renderQuoteDetailView(container, quote.id); // el estado pasa a `sent`
         } else {
-          setStatus('error', data.message || 'No se pudo enviar por WhatsApp. Copia el enlace y mándaselo al cliente.');
+          setStatus('error', data.message || 'No se pudo enviar por WhatsApp — copia el enlace y mándaselo por SMS o llámale.');
+          showWaFallback(quote, () => btnSend.click()); // A20.5 (incl. 131026: número sin WhatsApp)
           btnSend.disabled = false;
           btnSend.textContent = original;
         }
       } catch (err) {
         setStatus('error', 'Error enviando por WhatsApp: ' + (err && err.message ? err.message : 'inténtalo de nuevo'));
+        showWaFallback(quote, () => btnSend.click()); // A20.5
         btnSend.disabled = false;
         btnSend.textContent = original;
       }

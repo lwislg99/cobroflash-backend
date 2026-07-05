@@ -179,10 +179,25 @@ router.post('/:id/resend-whatsapp', async (req, res) => {
     // Lógica compartida (asegura cobro + envía payment_request_es)
     const r = await sendInvoicePaymentRequest(id);
     if (!r.ok) {
+      // A20.5 (J5): mensaje HUMANO por motivo + charge_id para que la UI pueda
+      // ofrecer SIEMPRE "Copiar enlace" aunque WhatsApp falle.
+      const J5_MESSAGES: Record<string, string> = {
+        customer_without_phone: 'Este cliente no tiene teléfono guardado — añádelo o envíale el enlace por email.',
+        invalid_phone_format: 'El teléfono del cliente no tiene un formato válido.',
+        wa_opt_out: 'Este cliente se dio de baja de WhatsApp — envíale el enlace por email o SMS.',
+        daily_cap: 'Has llegado al tope diario de envíos — copia el enlace y mándaselo tú.',
+        customer_daily_cap: 'Este cliente ya recibió varios mensajes hoy (anti-spam) — copia el enlace.',
+        demo_safe_numbers: 'Modo demo seguro: este número no está en la lista de pruebas.',
+      };
       const code = r.reason === 'invoice_not_found' ? 404
         : r.reason === 'customer_without_phone' || r.reason === 'invalid_phone_format' ? 400
         : 502;
-      return res.status(code).json({ ok: false, error: r.reason || 'whatsapp_send_failed' });
+      return res.status(code).json({
+        ok: false,
+        error: r.reason || 'whatsapp_send_failed',
+        message: J5_MESSAGES[String(r.reason)] || 'No se pudo enviar por WhatsApp — copia el enlace y mándaselo por SMS o llámale.',
+        charge_id: r.chargeId ?? null,
+      });
     }
 
     return res.json({
@@ -194,6 +209,33 @@ router.post('/:id/resend-whatsapp', async (req, res) => {
     });
   } catch (err) {
     console.error('[POST /admin/invoices/:id/resend-whatsapp]', err);
+    return res.status(500).json({ ok: false, error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/invoices/:id/send-email — A20.5 (J5): el fallback por email del
+ * documento de cobro, disponible SIEMPRE que el WhatsApp falle (o a demanda).
+ */
+router.post('/:id/send-email', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
+
+    const invoice = await prisma.invoice.findFirst({
+      where: { id, merchantId: req.merchantId },
+      include: { customer: { select: { email: true, name: true } } },
+    });
+    if (!invoice) return res.status(404).json({ ok: false, error: 'not_found' });
+    if (!invoice.customer?.email) {
+      return res.status(400).json({ ok: false, error: 'customer_without_email', message: 'Este cliente no tiene email guardado.' });
+    }
+
+    const { sendInvoiceEmail } = await import('../../../messaging/domain/email.service');
+    await sendInvoiceEmail({ invoiceId: id, toEmail: invoice.customer.email, toName: invoice.customer.name || undefined, prisma });
+    return res.json({ ok: true, to: invoice.customer.email });
+  } catch (err: any) {
+    console.error('[POST /admin/invoices/:id/send-email]', err?.message || err);
     return res.status(500).json({ ok: false, error: 'internal_error' });
   }
 });

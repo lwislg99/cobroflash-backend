@@ -131,6 +131,58 @@ function uiSkeletonRows(tbody, cols, rows = 6) {
 }
 window.uiSkeletonRows = uiSkeletonRows;
 
+// A20.5 (J5): acciones de FALLBACK cuando un envío de WhatsApp falla — SIEMPRE
+// se ofrecen las tres salidas: Copiar enlace · Enviar por email · Reintentar.
+// Devuelve el elemento para insertarlo junto al mensaje de error de la vista.
+function waFallbackBar({ link, onEmail, onRetry, emailDisabledReason }) {
+  const bar = document.createElement('div');
+  bar.className = 'wa-fallback-bar';
+  bar.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px';
+
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'btn-secondary btn-sm';
+  copyBtn.textContent = '📋 Copiar enlace';
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(link);
+      showToast('✓ Enlace copiado — mándaselo por SMS o desde tu WhatsApp');
+    } catch {
+      window.prompt('Copia el enlace:', link);
+    }
+  });
+  bar.appendChild(copyBtn);
+
+  const emailBtn = document.createElement('button');
+  emailBtn.className = 'btn-secondary btn-sm';
+  emailBtn.textContent = '✉️ Enviar por email';
+  if (emailDisabledReason) {
+    emailBtn.disabled = true;
+    emailBtn.title = emailDisabledReason;
+    emailBtn.style.opacity = '.55';
+  } else if (onEmail) {
+    emailBtn.addEventListener('click', async () => {
+      emailBtn.disabled = true;
+      emailBtn.textContent = 'Enviando…';
+      try { await onEmail(); showToast('✓ Enviado por email'); emailBtn.textContent = '✉️ Enviado'; }
+      catch (e) {
+        showToast('Email falló: ' + (e?.data?.message || e.message), 'error');
+        emailBtn.disabled = false; emailBtn.textContent = '✉️ Enviar por email';
+      }
+    });
+  }
+  bar.appendChild(emailBtn);
+
+  if (onRetry) {
+    const retryBtn = document.createElement('button');
+    retryBtn.className = 'btn-ghost btn-sm';
+    retryBtn.textContent = '↻ Reintentar WhatsApp';
+    retryBtn.addEventListener('click', () => { bar.remove(); onRetry(); });
+    bar.appendChild(retryBtn);
+  }
+  return bar;
+}
+window.waFallbackBar = waFallbackBar;
+
 // A6.2: esqueleto para listas de TARJETAS (solicitudes, gastos…): mismas
 // proporciones que una fila-card real para que la carga no "salte".
 function uiSkeletonCards(container, cards = 4) {

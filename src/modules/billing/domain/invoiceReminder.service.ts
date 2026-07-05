@@ -15,6 +15,7 @@ import { buildPaymentRequest } from '../../../integrations/whatsappTemplates';
 import { normalizePhone } from '../../../core/utils/utils';
 import { BASE_URL } from '../../../core/config/env';
 import { isReceiptNumber } from '../../invoicing/domain/invoiceNumber.service';
+import { recordCustomerEvent } from '../../system/customerEvents.service';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -133,6 +134,14 @@ async function sendReminderWA(
         console.log(`[invoiceReminder] ✓ ${day}d vía ${result.via} → inv #${inv.number} (${customerName})`);
       } else {
         console.error(`[invoiceReminder] WA error ${day}d → inv #${inv.number}:`, result.error || result.reason);
+        // A20.5 (J5): el fallo del cron queda REGISTRADO y visible en el BO (360)
+        recordCustomerEvent({
+          merchantId: inv.merchantId,
+          customerId: inv.customerId,
+          type: 'wa_send_failed',
+          title: `⚠️ Recordatorio de cobro (${day} días) no entregado por WhatsApp`,
+          detail: `${docLabel} ${inv.number} · el enlace sigue activo — envíaselo por email o SMS desde el detalle`,
+        });
       }
     } else {
       // Sin charge → texto libre (solo entrega dentro de ventana 24h)
