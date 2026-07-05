@@ -1,3 +1,12 @@
+// A11.2 (S3): teléfonos SIEMPRE enmascarados en logs — prefijo + últimos 3.
+// "34629965893" → "34•••••893". Nunca usar el número completo en console.*.
+export function maskPhone(input?: string | null): string {
+  const p = String(input ?? '').replace(/\D/g, '');
+  if (!p) return '—';
+  if (p.length <= 5) return `•••${p.slice(-2)}`;
+  return `${p.slice(0, 2)}${'•'.repeat(Math.max(3, p.length - 5))}${p.slice(-3)}`;
+}
+
 export function normalizePhone(input?: string | null): string {
     if (!input) return '';
     let p = String(input).trim();

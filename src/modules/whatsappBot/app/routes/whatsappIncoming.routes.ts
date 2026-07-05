@@ -6,7 +6,7 @@ import { Router } from 'express';
 import crypto from 'crypto';
 import { prisma } from '../../../../core/db/prisma';
 import { config } from '../../../../core/config/env';
-import { normalizePhone, formatMoneyEs } from '../../../../core/utils/utils';
+import { maskPhone, normalizePhone, formatMoneyEs } from '../../../../core/utils/utils';
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/merchantNotifications';
 import { updateWaMessageStatus, recordInboundWaMessage } from '../../../messaging/domain/whatsappLog.service';
@@ -154,7 +154,7 @@ async function routeIncoming(from: string, input: BotInput): Promise<void> {
   if (!phone) return;
   const text = (input.text || '').trim();
 
-  console.log(`[WA in] from=${phone} ${input.listReplyId ? `list=${input.listReplyId}` : `text="${text.slice(0, 80)}"`}`);
+  console.log(`[WA in] from=${maskPhone(phone)} ${input.listReplyId ? `list=${input.listReplyId}` : `text="${text.slice(0, 80)}"`}`);
 
   // A15.2 (MANT-1): botones de la propuesta de mantenimiento — vienen DEL PRO
   // (el servicio verifica que el emisor es el whatsappPhone del merchant dueño).
@@ -254,7 +254,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
   const phone = normalizePhone(from);
   if (!phone) return;
 
-  console.log(`[WA in] from=${phone} text="${text.slice(0, 80)}"`);
+  console.log(`[WA in] from=${maskPhone(phone)} text="${text.slice(0, 80)}"`);
 
   // Buscar todos los customers con este número (cross-merchant)
   const customers = await prisma.customer.findMany({

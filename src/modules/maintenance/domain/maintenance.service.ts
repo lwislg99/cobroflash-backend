@@ -13,7 +13,7 @@ import { isFlagEnabled } from '../../../core/flags';
 import { sendWhatsAppButtons, sendWhatsAppText } from '../../../integrations/whatsapp';
 import { sendQuoteWhatsAppToCustomer } from '../../quotes/domain/sendQuote.service';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
-import { normalizePhone, formatMoneyEs } from '../../../core/utils/utils';
+import { normalizePhone, formatMoneyEs, maskPhone } from '../../../core/utils/utils';
 import { allocateQuoteNumber } from '../../quotes/domain/quoteNumber.service';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -228,7 +228,7 @@ export async function handleMaintenanceButton(
   if (!merchant) return false;
   const proPhone = normalizePhone(merchant.whatsappPhone);
   if (!proPhone || normalizePhone(fromPhone) !== proPhone) {
-    console.warn(`[maintenance] botón de ${fromPhone} ignorado: no es el pro del plan ${planId}`);
+    console.warn(`[maintenance] botón de ${maskPhone(fromPhone)} ignorado: no es el pro del plan ${planId}`);
     return false;
   }
   if (!isFlagEnabled('MAINTENANCE_ENABLED', { merchant })) return false;

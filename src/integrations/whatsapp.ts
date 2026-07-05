@@ -1,5 +1,6 @@
 // src/integrations/whatsapp.ts
 import axios from 'axios';
+import { maskPhone } from '../core/utils/utils'; // A11.2 (S3): PII fuera de logs
 import { config } from '../core/config/env';
 import { prisma } from '../core/db/prisma';
 import { normalizePhone } from '../core/utils/utils';
@@ -70,13 +71,13 @@ export async function sendWhatsAppTemplate(params: {
 
   // V0-2: modo demo seguro — el demo solo envía a DEMO_SAFE_NUMBERS
   if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
-    console.warn(`[WhatsApp] V0-2: envío desde el merchant demo a ${params.to} BLOQUEADO (no está en DEMO_SAFE_NUMBERS)`);
+    console.warn(`[WhatsApp] V0-2: envío desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO (no está en DEMO_SAFE_NUMBERS)`);
     return { ok: false, reason: 'demo_safe_numbers' };
   }
 
   // J3: baja del canal — bloqueo de plantillas a ese número para ese merchant
   if (params.merchantId && (await isWaOptedOut(params.merchantId, params.to))) {
-    console.warn(`[WhatsApp] ${params.to} dado de baja (waOptOut) para merchant ${params.merchantId}; envío bloqueado`);
+    console.warn(`[WhatsApp] ${maskPhone(params.to)} dado de baja (waOptOut) para merchant ${params.merchantId}; envío bloqueado`);
     return { ok: false, reason: 'wa_opt_out' };
   }
 
@@ -207,7 +208,7 @@ export async function sendWhatsAppWindowFirst(params: {
 }): Promise<{ ok: boolean; via: 'window' | 'template' | 'none'; reason?: string; error?: any; data?: any }> {
   // J3: la baja del canal manda también sobre los textos de ventana
   if (await isWaOptedOut(params.merchantId, params.to)) {
-    console.warn(`[WhatsApp] ${params.to} dado de baja (waOptOut) para merchant ${params.merchantId}; ventana-first bloqueado`);
+    console.warn(`[WhatsApp] ${maskPhone(params.to)} dado de baja (waOptOut) para merchant ${params.merchantId}; ventana-first bloqueado`);
     return { ok: false, via: 'none', reason: 'wa_opt_out' };
   }
 
@@ -263,7 +264,7 @@ export async function sendWhatsAppText(params: {
 
   // V0-2: modo demo seguro (los textos libres además solo entregan en ventana 24h — J2)
   if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
-    console.warn(`[WhatsApp] V0-2: texto desde el merchant demo a ${params.to} BLOQUEADO (no está en DEMO_SAFE_NUMBERS)`);
+    console.warn(`[WhatsApp] V0-2: texto desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO (no está en DEMO_SAFE_NUMBERS)`);
     return { ok: false, reason: 'demo_safe_numbers' };
   }
 
@@ -316,7 +317,7 @@ export async function sendWhatsAppButtons(params: {
     return { ok: false, reason: 'not_configured' };
   }
   if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
-    console.warn(`[WhatsApp] V0-2: botones desde el merchant demo a ${params.to} BLOQUEADOS`);
+    console.warn(`[WhatsApp] V0-2: botones desde el merchant demo a ${maskPhone(params.to)} BLOQUEADOS`);
     return { ok: false, reason: 'demo_safe_numbers' };
   }
 
@@ -373,7 +374,7 @@ export async function sendWhatsAppList(params: {
     return { ok: false, reason: 'not_configured' };
   }
   if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
-    console.warn(`[WhatsApp] V0-2: lista desde el merchant demo a ${params.to} BLOQUEADA`);
+    console.warn(`[WhatsApp] V0-2: lista desde el merchant demo a ${maskPhone(params.to)} BLOQUEADA`);
     return { ok: false, reason: 'demo_safe_numbers' };
   }
 

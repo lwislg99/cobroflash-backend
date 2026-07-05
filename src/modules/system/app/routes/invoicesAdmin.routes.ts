@@ -1,5 +1,6 @@
 // src/modules/system/app/routes/invoicesAdmin.routes.ts
 import { Router } from 'express';
+import { recordAudit, requestIp } from '../../audit.service'; // A11.1 (S2)
 import {
   listInvoicesAdmin,
   getInvoiceDetailAdmin,
@@ -90,6 +91,13 @@ router.post('/bulk-paid', async (req, res) => {
       data: { status: 'paid', paidAt: new Date() },
     });
 
+    // A11.1 (S2): marcar pagado a mano queda auditado (quién, desde dónde, qué)
+    recordAudit({
+      merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
+      action: 'marcar_pagado_manual', entityType: 'invoice',
+      meta: { ids, updated: result.count, via: 'bulk' }, ip: requestIp(req),
+    });
+
     return res.json({ ok: true, updated: result.count });
   } catch (err) {
     console.error('[POST /admin/invoices/bulk-paid]', err);
@@ -118,6 +126,16 @@ router.put('/:id/status', async (req, res) => {
       return res.status(404).json({ error: 'not_found' });
     }
 
+    // A11.1 (S2): pagado a mano / deshacer pago auditados con userId+IP
+    if (status === 'paid' || status === 'pending') {
+      recordAudit({
+        merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
+        action: status === 'paid' ? 'marcar_pagado_manual' : 'deshacer_pago',
+        entityType: 'invoice', entityId: id,
+        meta: { via: 'status', number: (updated as any).number ?? null }, ip: requestIp(req),
+      });
+    }
+
     res.json(updated);
   } catch (err) {
     console.error('[PUT /admin/invoices/:id/status]', err);
@@ -137,6 +155,11 @@ router.post('/:id/pay', async (req, res) => {
 
     const updated = await markInvoicePaidAdmin(id);
     if (!updated) return res.status(404).json({ error: 'not_found' });
+    recordAudit({ // A11.1 (S2)
+      merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
+      action: 'marcar_pagado_manual', entityType: 'invoice', entityId: id,
+      meta: { via: 'pay' }, ip: requestIp(req),
+    });
     res.json(updated);
   } catch (err) {
     console.error('[POST /admin/invoices/:id/pay]', err);
@@ -153,6 +176,11 @@ router.post('/:id/unpay', async (req, res) => {
 
     const updated = await markInvoicePendingAdmin(id);
     if (!updated) return res.status(404).json({ error: 'not_found' });
+    recordAudit({ // A11.1 (S2)
+      merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
+      action: 'deshacer_pago', entityType: 'invoice', entityId: id,
+      meta: { via: 'unpay' }, ip: requestIp(req),
+    });
     res.json(updated);
   } catch (err) {
     console.error('[POST /admin/invoices/:id/unpay]', err);
@@ -392,6 +420,14 @@ router.post('/:id/rectify', async (req, res) => {
       type: 'invoice_rectified',
       title: `Factura ${original.number} rectificada (${rect.number})`,
       meta: { invoiceId: original.id, rectificationId: rect.id },
+    });
+
+    // A11.1 (S2): anular vía R1 es la única anulación permitida (regla 29) — auditada
+    recordAudit({
+      merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
+      action: 'anular_factura', entityType: 'invoice', entityId: original.id,
+      meta: { number: original.number, rectification: rect.number, rectificationId: rect.id },
+      ip: requestIp(req),
     });
 
     return res.status(201).json({
