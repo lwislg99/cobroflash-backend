@@ -277,6 +277,15 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
     return true;
   }
 
+  // ── Saludos: son una petición explícita de menú, NO "texto fuera de
+  // flujo" (los clientes dicen "hola" siempre; sin esto, dos holas seguidos
+  // disparaban el handoff K1 y el bot enmudecía 24h). Resetea el contador.
+  if (/^(hola|buenas|buenos d[ií]as|buenas tardes|buenas noches|men[uú]|opciones|hey|hi|hello|empezar|inicio)[\s!.👋🙂🙋]*$/iu.test(text)) {
+    await sendMenu(from, merchantId, businessName);
+    await setSession(phone, { merchantId, state: 'menu', data: { offMenuCount: 0 } }, session);
+    return true;
+  }
+
   // ── Texto fuera de flujo (K1): reenseñar menú; 2ª vez → handoff ────────
   const offMenuCount = Number(session?.data?.offMenuCount || 0);
   if (offMenuCount >= 1) {
