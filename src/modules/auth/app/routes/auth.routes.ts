@@ -1,11 +1,18 @@
 import { Router } from 'express';
 import { requestMagicLink, verifyMagicLink, registerMerchant, revokeSession } from '../../domain/auth.service';
 import { setCookie, clearCookie } from '../../../../core/http/authMiddleware';
+import { rateLimit } from '../../../../core/http/rateLimit'; // A11.2 (S3)
 
 const router = Router();
 
+// A11.2 (S3): rate-limit del magic link — 5 envíos/15min por IP+email y
+// 30 verificaciones/15min por IP (el token en sí ya es aleatorio y de un solo uso).
+const loginLimiter    = rateLimit({ scope: 'login',    max: 5,  windowMs: 15 * 60_000, withEmail: true });
+const registerLimiter = rateLimit({ scope: 'register', max: 5,  windowMs: 15 * 60_000, withEmail: true });
+const verifyLimiter   = rateLimit({ scope: 'verify',   max: 30, windowMs: 15 * 60_000 });
+
 // POST /auth/login  { email }
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   const email = String(req.body?.email || '').toLowerCase().trim();
   if (!email || !email.includes('@')) {
     return res.status(400).json({ error: 'invalid_email' });
@@ -21,7 +28,7 @@ router.post('/login', async (req, res) => {
 });
 
 // POST /auth/register  { name, email, country? }
-router.post('/register', async (req, res) => {
+router.post('/register', registerLimiter, async (req, res) => {
   const name  = String(req.body?.name  || '').trim();
   const email = String(req.body?.email || '').toLowerCase().trim();
   const country = String(req.body?.country || 'ES').trim();
@@ -42,7 +49,7 @@ router.post('/register', async (req, res) => {
 });
 
 // GET /auth/verify?token=xxx
-router.get('/verify', async (req, res) => {
+router.get('/verify', verifyLimiter, async (req, res) => {
   const token = String(req.query.token || '');
   if (!token) return res.redirect('/login.html?error=invalid_token');
 
