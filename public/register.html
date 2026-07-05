@@ -57,23 +57,24 @@
 </div>
 <script>
   // Código de referido desde la URL (?ref=CODIGO)
-  const refCode = (new URLSearchParams(location.search).get('ref') || '').trim();
+  // A9.1: el ?ref de la URL manda; si no, el guardado al aterrizar en la landing
+  let refCode = (new URLSearchParams(location.search).get('ref') || '').trim();
+  if (!refCode) { try { refCode = (localStorage.getItem('yaqu_ref') || '').trim(); } catch (err) {} }
   if (refCode) document.getElementById('ref-badge').style.display = 'block';
 
-  // V0-3: atribución de adquisición — UTM de la URL ("source/medium/campaign") o "ref:CODIGO".
-  // Persistida en sessionStorage para sobrevivir a la navegación landing → registro.
+  // V0-3 + A9.1: atribución — UTM de ESTA URL → guardada al aterrizar en la
+  // landing (localStorage, first-touch, sobrevive días) → sessionStorage
+  // (legacy) → "ref:CODIGO". El registro escribe merchants.acquisition_source.
   const qsP = new URLSearchParams(location.search);
   const utmSrc = (qsP.get('utm_source') || '').trim();
   let acquisitionSource = '';
   if (utmSrc) {
     acquisitionSource = [utmSrc, (qsP.get('utm_medium') || '').trim(), (qsP.get('utm_campaign') || '').trim()]
       .filter(Boolean).join('/');
-    try { sessionStorage.setItem('yaqu_src', acquisitionSource); } catch (err) {}
-  } else if (refCode) {
-    acquisitionSource = 'ref:' + refCode;
   } else {
-    try { acquisitionSource = sessionStorage.getItem('yaqu_src') || ''; } catch (err) {}
+    try { acquisitionSource = localStorage.getItem('yaqu_src') || sessionStorage.getItem('yaqu_src') || ''; } catch (err) {}
   }
+  if (!acquisitionSource && refCode) acquisitionSource = 'ref:' + refCode;
 
   document.getElementById('register-form').addEventListener('submit', async (e) => {
     e.preventDefault();
