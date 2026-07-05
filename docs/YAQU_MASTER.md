@@ -496,6 +496,13 @@ PRECIOS-1: activar facturación a founding (post-SIF) + límite usuarios + conta
 WA-0b → BOT-1 → MANT-1 → JOB-1 → MEDIA-1 → ONBOARD-2 → ANALYTICS-1 (X2) → **DASH-PREMIUM-1** (pulido del dashboard pantalla a pantalla según Parte AB; nunca rediseño total) → PERFIL-1 → PARTNERS-1 (gate Y2) → SEO-2 → SEC-2 (audit completo + `backup-dump` + `reconcile-stripe` + export-zip) → validUntil/expired → APP-1 (gate >100 pagantes) → FIN-1 (gate Z) → BOT-2 (gates K2). BIZUM-WATCH = recurrente trimestral (sep-26, dic-26, mar-27: si Stripe Bizum gana Connect support → activar + test fee).
 **Nota:** U2 NO es compromiso: al alcanzar 25 pagantes se re-prioriza con los datos de F1 (regla 13) antes de abrir el primer sprint F2.
 
+> **Decisión fundador 5-jul-2026 (A10.0, SPRINT_DEMO_READY_EXT3):** se adelanta la CONSTRUCCIÓN
+> tras flag de JOB-1, PERFIL-1, MANT-1, ANALYTICS-1, validUntil/expired, ONBOARD-2 (maquinaria),
+> DASH-PREMIUM-1 (pulido) y R14/V (blindaje money-flows) durante la ventana pre-demo;
+> re-priorización comercial a 25 pagantes intacta (regla 13). Condiciones: specs SOLO del master,
+> flags de Parte P nacen y quedan OFF (activar = fundador), GTM/prioridades de venta intactos.
+> Nada más de U2/Z se desbloquea. (Nota añadida, nunca borrada — regla 16.)
+
 ## U3. F3 / F4
 F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantillas por locale re-aprobadas) · CFDI-1 (PAC add-on) · DIAN-1 · Chile · IA precios por zona (gate ≥10K líneas) · reseñas en plataforma · Google Calendar OAuth · API pública (gate Z) · TicketBAI (gate Z). F4: Parte Z.
 
