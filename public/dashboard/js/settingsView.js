@@ -337,7 +337,7 @@ function renderSettingsView(container) {
       try {
         const res = await apiRequest("/admin/digest/preview");
         const s = res.stats || {};
-        const fmt = (a, c) => Number(a || 0).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " " + (c || "");
+        const fmt = (a, c) => fmtMoneyEs(a, c || (window.appLocale && window.appLocale.currency) || "EUR"); // P-A66-3
         const rows = [
           ["💰 Cobrado", fmt(s.cobrado?.amount, s.cobrado?.currency) + " · " + (s.cobrado?.count || 0) + " factura/s"],
           ["🧾 Facturas emitidas", String(s.facturasEmitidas || 0)],

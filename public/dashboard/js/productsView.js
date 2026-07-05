@@ -360,7 +360,8 @@ function renderProductsView(container) {
       if (v === null || typeof v === "undefined") return "—";
       const n = Number(v);
       if (!Number.isFinite(n)) return String(v);
-      return n.toFixed(2);
+      // P-A66-3: es-ES compartido — "60,00 €" en vez de "60.00"
+      return fmtMoneyEs(n, (window.appLocale && window.appLocale.currency) || "EUR");
     }
   
     function renderRows(items, merchantId) {
