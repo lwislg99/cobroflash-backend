@@ -91,8 +91,43 @@
     @media (max-width:840px){ .hero-grid { grid-template-columns:1fr; text-align:center; }
       .hero p.sub { margin:0 auto 26px; } .hero .cta-row { justify-content:center; } }
 
-    /* Steps */
+    /* Steps — A4.2: 3 pasos zigzag con visual real por paso */
     section { padding:64px 0; }
+    .steps-flow { display:flex; flex-direction:column; gap:56px; margin-top:44px; }
+    .step-row { display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:center; }
+    .step-row.rev .step-visual { order:-1; }
+    .step-copy .step-num { margin-bottom:14px; }
+    .step-copy h3 { font-size:24px; margin:0 0 10px; }
+    .step-copy p { color:var(--muted); font-size:16px; margin:0; max-width:420px; }
+    .phone--sm { width:min(250px, 70vw); border-radius:30px; padding:8px; }
+    .phone--sm::before { width:74px; height:16px; }
+    .phone--sm img, .phone--sm .mock { border-radius:23px; }
+    /* Reveal al hacer scroll (IntersectionObserver mínimo; sin librerías) */
+    .reveal { opacity:0; transform:translateY(22px); transition:opacity .5s ease, transform .5s ease; }
+    .reveal.in { opacity:1; transform:none; }
+    @media (prefers-reduced-motion: reduce){ .reveal { opacity:1; transform:none; } }
+    @media (max-width:840px){
+      .step-row, .step-row.rev { grid-template-columns:1fr; text-align:center; gap:22px; }
+      .step-row.rev .step-visual { order:0; }
+      .step-copy p { margin:0 auto; }
+    }
+    /* Mock del creador (paso 1) — recreación fiel con datos del demo */
+    .mock { background:var(--bg); display:block; width:100%; aspect-ratio:390/800; overflow:hidden; position:relative; }
+    .mock-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; margin:52px 14px 0; padding:14px; text-align:left; }
+    .mock-title { font-size:13px; font-weight:800; color:var(--ink); margin-bottom:10px; }
+    .mock-line { display:flex; justify-content:space-between; font-size:11.5px; color:var(--body);
+      padding:7px 2px; border-bottom:1px solid var(--border); opacity:0; }
+    .mock-line strong { color:var(--ink); font-variant-numeric:tabular-nums; }
+    .in .mock-line { animation:mockline .35s ease forwards; }
+    .in .mock-line:nth-child(2){ animation-delay:.25s } .in .mock-line:nth-child(3){ animation-delay:.7s }
+    .in .mock-line:nth-child(4){ animation-delay:1.15s }
+    @keyframes mockline { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+    .mock-total { display:flex; justify-content:space-between; padding-top:10px; font-size:13px; font-weight:800; color:var(--ink); }
+    .mock-total strong { font-size:16px; font-variant-numeric:tabular-nums; }
+    .mock-btn { margin:12px 14px 0; background:var(--brand); color:#fff; text-align:center; font-weight:700;
+      font-size:13px; border-radius:999px; padding:11px; opacity:0; }
+    .in .mock-btn { animation:mockline .4s ease 1.55s forwards; }
+    @media (prefers-reduced-motion: reduce){ .mock-line, .mock-btn { opacity:1 !important; animation:none !important; } }
     h2.section-title { font-size:30px; text-align:center; margin:0 0 8px; letter-spacing:-.5px; }
     p.section-sub { text-align:center; color:var(--muted); max-width:560px; margin:0 auto 40px; }
     .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px; }
@@ -168,32 +203,61 @@
     </div>
   </section>
 
-  <!-- CÓMO FUNCIONA -->
+  <!-- CÓMO FUNCIONA — A4.2: 3 pasos con visual real por paso -->
   <section id="como-funciona">
     <div class="container">
-      <h2 class="section-title">Del presupuesto al cobro, sin salir de WhatsApp</h2>
-      <p class="section-sub">Cuatro pasos. Cero fricción. Tus clientes lo entienden a la primera.</p>
-      <div class="grid">
-        <div class="card">
-          <div class="step-num">1</div>
-          <h3>Crea la cotización</h3>
-          <p>Elige servicios de tu catálogo y el total se calcula solo. La IA puede sugerirte las líneas.</p>
+      <h2 class="section-title">De presupuesto a señal cobrada, sin salir de WhatsApp</h2>
+      <p class="section-sub">Tres pasos. Cero fricción. Tus clientes lo entienden a la primera.</p>
+      <div class="steps-flow">
+
+        <div class="step-row reveal">
+          <div class="step-copy">
+            <span class="step-num">1</span>
+            <h3>Crea el presupuesto en 30 segundos</h3>
+            <p>Elige del catálogo de tu oficio, ajusta cantidades y el total se calcula solo. También puedes dictarle a la IA qué necesita el cliente.</p>
+          </div>
+          <div class="step-visual">
+            <div class="phone phone--sm">
+              <div class="mock" aria-label="Creando un presupuesto en YaQu">
+                <div class="mock-card">
+                  <div class="mock-title">Nuevo presupuesto · José Luis Martín</div>
+                  <div class="mock-line"><span>Instalación de descalcificador</span><strong>690,00 €</strong></div>
+                  <div class="mock-line"><span>Mano de obra (3 h)</span><strong>105,00 €</strong></div>
+                  <div class="mock-line"><span>IVA (21%)</span><strong>166,95 €</strong></div>
+                  <div class="mock-total"><span>Total</span><strong>961,95 €</strong></div>
+                </div>
+                <div class="mock-btn">Enviar por WhatsApp</div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="card">
-          <div class="step-num">2</div>
-          <h3>Envía por WhatsApp</h3>
-          <p>El cliente recibe un mensaje profesional con el PDF y un enlace para revisarla al instante.</p>
+
+        <div class="step-row rev reveal">
+          <div class="step-copy">
+            <span class="step-num">2</span>
+            <h3>Tu cliente lo firma desde su móvil</h3>
+            <p>Le llega por WhatsApp con un botón. Lo abre, lo revisa y firma con el dedo. Tú recibes el aviso al momento — con evidencia de quién aceptó y cuándo.</p>
+          </div>
+          <div class="step-visual">
+            <div class="phone phone--sm">
+              <img src="/img/landing/firma-390.png" width="390" height="800" alt="El cliente firma el presupuesto desde su móvil" loading="lazy"/>
+            </div>
+          </div>
         </div>
-        <div class="card">
-          <div class="step-num">3</div>
-          <h3>El cliente firma</h3>
-          <p>Acepta y firma con el dedo desde el móvil. Tú recibes un aviso por WhatsApp al momento.</p>
+
+        <div class="step-row reveal">
+          <div class="step-copy">
+            <span class="step-num">3</span>
+            <h3>Cobra la señal antes de empezar</h3>
+            <p>Tarjeta, Bizum o transferencia — él elige, tú cobras antes de descargar la furgoneta. Y los pendientes se reclaman solos.</p>
+          </div>
+          <div class="step-visual">
+            <div class="phone phone--sm">
+              <img src="/img/landing/pago-390.png" width="390" height="800" alt="El cliente elige cómo pagar la señal" loading="lazy"/>
+            </div>
+          </div>
         </div>
-        <div class="card">
-          <div class="step-num">4</div>
-          <h3>Cobra la señal</h3>
-          <p>Tarjeta, Bizum o transferencia — antes de descargar la furgoneta. Con su justificante de cobro al momento.</p>
-        </div>
+
       </div>
     </div>
   </section>
@@ -281,5 +345,19 @@
       </div>
     </div>
   </footer>
+
+  <script>
+    // A4.2: reveal al hacer scroll — IntersectionObserver mínimo, sin librerías.
+    (function () {
+      var els = document.querySelectorAll('.reveal');
+      if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+        });
+      }, { threshold: 0.25 });
+      els.forEach(function (e) { io.observe(e); });
+    })();
+  </script>
 </body>
 </html>
