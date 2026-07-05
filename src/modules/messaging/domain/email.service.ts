@@ -7,6 +7,7 @@ import { PrismaClient } from '@prisma/client';
 import { outboxDir, invoicesDir } from '../../../core/storage/dirs';
 import { config, BASE_URL } from '../../../core/config/env';
 import { ensureInvoicePdf } from '../../../lib/invoicing';
+import { renderEmailLayout, escEmail } from './emailLayout';
 
 /**
  * Envía la factura al cliente con el PDF adjunto.
@@ -33,12 +34,15 @@ export async function sendInvoiceEmail(args: {
   const docLabel = isJust ? 'justificante de cobro' : 'factura';
   const from = config.EMAIL_FROM;
   const subject = `Tu ${docLabel} ${inv.number}`;
-  const html = `
-    <p>Hola ${toName || ''},</p>
-    <p>Adjuntamos tu ${docLabel} <b>${inv.number}</b> en PDF.</p>
-    <p>También puedes verlo aquí: <a href="${BASE_URL}${pdfUrl}">${inv.number}.pdf</a></p>
-    <p>Gracias,<br/>YaQu</p>
-  `.trim();
+  // A6.4: layout de marca compartido (emailLayout.ts)
+  const html = renderEmailLayout({
+    heading: `Tu ${docLabel} está listo`,
+    bodyHtml: `<p style="margin:0 0 8px">Hola${toName ? ` <strong>${escEmail(toName)}</strong>` : ''},</p>
+<p style="margin:0">Te adjuntamos tu ${docLabel} <strong>${escEmail(inv.number)}</strong> en PDF. También puedes verlo desde el botón.</p>`,
+    ctaLabel: 'Ver documento',
+    ctaUrl: `${BASE_URL}${pdfUrl}`,
+    footnote: 'Guárdalo para tus registros. Si tienes cualquier duda, responde a este correo.',
+  });
 
   // ── Producción: Resend (HTTP API) con adjunto base64 ──────────────────────
   if (config.RESEND_API_KEY) {
@@ -122,15 +126,17 @@ export async function sendQuoteEmail(args: { quoteId: number; prisma: PrismaClie
   } catch { /* sin adjunto */ }
 
   const subject = `Tu presupuesto ${displayNum} de ${business}`;
-  const html = `
-    <p>Hola ${quote.customer?.name || ''},</p>
-    <p><b>${business}</b> te ha enviado el presupuesto <b>${displayNum}</b> por <b>${total}</b>.</p>
-    <p style="margin:24px 0">
-      <a href="${payUrl}" style="background:#16a34a;color:#fff;font-weight:700;padding:12px 22px;border-radius:999px;text-decoration:none">Ver y firmar presupuesto</a>
-    </p>
-    <p>Si el botón no funciona, copia este enlace: <a href="${payUrl}">${payUrl}</a></p>
-    <p style="color:#6b756f;font-size:13px">Enviado con YaQu</p>
-  `.trim();
+  // A6.4: layout de marca compartido (emailLayout.ts). El importe va en tinta
+  // (Regla del Importe), nunca en verde.
+  const html = renderEmailLayout({
+    heading: 'Tu presupuesto está listo',
+    bodyHtml: `<p style="margin:0 0 8px">Hola${quote.customer?.name ? ` <strong>${escEmail(quote.customer.name)}</strong>` : ''},</p>
+<p style="margin:0 0 14px"><strong>${escEmail(business)}</strong> te ha preparado el presupuesto <strong>${escEmail(displayNum)}</strong>.</p>
+<p style="margin:0;text-align:center;font-size:26px;font-weight:800;color:#0f1c17;letter-spacing:-.02em">${escEmail(total)}</p>`,
+    ctaLabel: 'Ver y firmar presupuesto',
+    ctaUrl: payUrl,
+    footnote: 'Podrás revisarlo, firmarlo con el dedo desde el móvil o hacer preguntas.',
+  });
 
   if (config.RESEND_API_KEY) {
     await axios.post(

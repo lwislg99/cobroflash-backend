@@ -4,6 +4,7 @@ import { prisma } from '../../../core/db/prisma';
 import { createMailer } from '../../../integrations/mailer';
 import { config } from '../../../core/config/env';
 import { sendWelcomeEmail } from '../../messaging/domain/lifecycle.service';
+import { renderEmailLayout, escEmail } from '../../messaging/domain/emailLayout';
 import { generateUniqueReferralCode, resolveReferrer } from './referral.service';
 
 const MAGIC_LINK_TTL_MS = 15 * 60 * 1000;
@@ -44,14 +45,15 @@ export async function requestMagicLink(email: string): Promise<void> {
     await sendEmail({
       to: email,
       subject: 'Tu enlace de acceso a YaQu',
-      html: `<p>Hola <strong>${merchant.name}</strong>,</p>
-<p>Haz clic en el botón para acceder a tu cuenta de YaQu:</p>
-<p style="margin:24px 0">
-  <a href="${link}" style="background:#22c55e;color:#052e16;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">
-    Entrar a YaQu
-  </a>
-</p>
-<p style="color:#6b7280;font-size:13px">Este enlace es de un solo uso y caduca en 15 minutos.<br/>Si no lo solicitaste, puedes ignorar este correo.</p>`,
+      // A6.4: layout de marca compartido (emailLayout.ts)
+      html: renderEmailLayout({
+        heading: 'Tu acceso a YaQu',
+        bodyHtml: `<p style="margin:0 0 8px">Hola <strong>${escEmail(merchant.name)}</strong>,</p>
+<p style="margin:0">Toca el botón y entras directo a tu cuenta. Sin contraseñas.</p>`,
+        ctaLabel: 'Entrar en YaQu',
+        ctaUrl: link,
+        footnote: 'Este enlace es de un solo uso y caduca en 15 minutos. Si no lo solicitaste, puedes ignorar este correo.',
+      }),
     });
     console.log(`[magic-link] email enviado OK a ${email}`);
   } catch (emailErr: any) {
@@ -87,14 +89,15 @@ export async function inviteTeamMember(params: {
     await sendEmail({
       to: params.memberEmail,
       subject: `Te han invitado a YaQu — ${params.merchantName}`,
-      html: `<p>Hola <strong>${params.memberName}</strong>,</p>
-<p><strong>${params.merchantName}</strong> te ha invitado a colaborar en su cuenta de YaQu.</p>
-<p style="margin:24px 0">
-  <a href="${link}" style="background:#22c55e;color:#052e16;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">
-    Aceptar invitación
-  </a>
-</p>
-<p style="color:#6b7280;font-size:13px">Este enlace caduca en 7 días.<br/>Si no esperabas esta invitación, puedes ignorar este correo.</p>`,
+      // A6.4: layout de marca compartido (emailLayout.ts)
+      html: renderEmailLayout({
+        heading: `${escEmail(params.merchantName)} te invita a su equipo`,
+        bodyHtml: `<p style="margin:0 0 8px">Hola <strong>${escEmail(params.memberName)}</strong>,</p>
+<p style="margin:0"><strong>${escEmail(params.merchantName)}</strong> te ha invitado a colaborar en su cuenta de YaQu.</p>`,
+        ctaLabel: 'Aceptar invitación',
+        ctaUrl: link,
+        footnote: 'Este enlace caduca en 7 días. Si no esperabas esta invitación, puedes ignorar este correo.',
+      }),
     });
     console.log(`[invite] email enviado OK a ${params.memberEmail}`);
   } catch (emailErr: any) {
