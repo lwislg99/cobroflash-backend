@@ -167,6 +167,19 @@
     .price-card .fee-note { font-size:13px; color:var(--body); background:var(--bg); border-radius:var(--r-md);
       padding:9px 12px; margin:0 0 18px; }
 
+    /* FAQ (A4.5) */
+    .faq { max-width:720px; margin:0 auto; }
+    .faq details { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg);
+      padding:0; margin-bottom:10px; box-shadow:var(--shadow-sm); overflow:hidden; }
+    .faq summary { list-style:none; cursor:pointer; padding:16px 48px 16px 18px; font-weight:700; color:var(--ink);
+      font-size:15.5px; position:relative; }
+    .faq summary::-webkit-details-marker { display:none; }
+    .faq summary::after { content:"+"; position:absolute; right:18px; top:50%; transform:translateY(-50%);
+      font-size:20px; color:var(--brand); font-weight:800; transition:transform .2s; }
+    .faq details[open] summary::after { transform:translateY(-50%) rotate(45deg); }
+    .faq .a { padding:0 18px 16px; color:var(--muted); font-size:14.5px; line-height:1.65; }
+    .faq summary:focus-visible { outline:none; box-shadow:var(--ring); border-radius:var(--r-lg); }
+
     /* CTA band */
     .cta-band { background:linear-gradient(120deg,var(--brand-ink),#065f46); color:#fff; text-align:center; }
     .cta-band h2 { color:#fff; }
@@ -356,6 +369,52 @@
     </div>
   </section>
 
+  <!-- FAQ — A4.5: objeciones reales (H6 del master) -->
+  <section id="faq">
+    <div class="container">
+      <h2 class="section-title">Preguntas de compañeros de oficio</h2>
+      <p class="section-sub">Las que nos hacen de verdad.</p>
+      <div class="faq">
+        <details>
+          <summary>Ya mando presupuestos por WhatsApp gratis. ¿Para qué esto?</summary>
+          <div class="a">Exacto — por eso esto ES WhatsApp. La diferencia: el tuyo no firma, no cobra la señal y no persigue al que no contesta. YaQu hace las tres cosas solas.</div>
+        </details>
+        <details>
+          <summary>¿Mis clientes tienen que instalar algo? Muchos son mayores.</summary>
+          <div class="a">Nada. Les llega un WhatsApp normal con un enlace: lo abren, ven el presupuesto y tienen dos botones — Firmar y Pagar. Y si prefieren transferencia de toda la vida, también vale: tú llevas el control igual.</div>
+        </details>
+        <details>
+          <summary>Yo nunca pido señal…</summary>
+          <div class="a">¿Cuántas veces te han anulado un trabajo con el material ya comprado? Pruébalo solo en UN trabajo grande y decides. La señal cobrada antes de empezar cambia el negocio.</div>
+        </details>
+        <details>
+          <summary>¿El 0,9 % de la tarjeta no es mucho?</summary>
+          <div class="a">Son 4,50 € en una señal de 500 € — por tener el dinero esa misma noche, sin perseguir a nadie. Y si tu cliente paga por Bizum o transferencia: 0 €.</div>
+        </details>
+        <details>
+          <summary>Hay una app de presupuestos por 9,99 €…</summary>
+          <div class="a">La de 9,99 te hace el papel. Esta te trae el dinero: firma, señal cobrada y recordatorios que persiguen solos. ¿Cuánto te deben ahora mismo de trabajos ya hechos? Eso es lo que esto te ahorra.</div>
+        </details>
+        <details>
+          <summary>El Kit Digital me da un programa gratis…</summary>
+          <div class="a">Lo gratis te hace papeles. ¿Te consigue el SÍ del cliente y te cobra la señal por WhatsApp antes de empezar? Eso es lo que hace YaQu.</div>
+        </details>
+        <details>
+          <summary>¿Me vale para VeriFactu?</summary>
+          <div class="a">Te contestamos como fabricante: la facturación VeriFactu está construida y en certificación — con declaración responsable del productor, que es lo que tu gestor te pedirá. Por ley no podemos activarla hasta cerrarla; por eso la beta es de presupuestos y cobros. Los primeros usuarios la estrenarán al cerrarse, sin cambio de precio. Si quieres, le pasamos a tu gestor el detalle técnico cuando lo publiquemos.</div>
+        </details>
+        <details>
+          <summary>No tengo tiempo de aprender otro programa.</summary>
+          <div class="a">Está hecho para usarse con dos dedos desde la furgoneta. El primer presupuesto lo haces en 30 segundos eligiendo del catálogo de tu oficio — y si te atascas, te ayudamos por WhatsApp.</div>
+        </details>
+        <details>
+          <summary>¿Y si un día lo dejo?</summary>
+          <div class="a">Sin permanencia. Tus datos son tuyos: clientes, presupuestos y documentos se exportan en CSV cuando quieras.</div>
+        </details>
+      </div>
+    </div>
+  </section>
+
   <!-- CTA FINAL -->
   <section class="cta-band">
     <div class="container">
@@ -365,13 +424,15 @@
     </div>
   </section>
 
-  <!-- FOOTER -->
+  <!-- FOOTER — A4.5: serio y con lo legal a mano -->
   <footer>
     <div class="container foot-inner">
-      <div class="foot-copy">© 2026 YaQu · <a href="https://yaqu.app" style="color:inherit">yaqu.app</a></div>
+      <div class="foot-copy">© 2026 YaQu · Hecho en Madrid para los oficios 🇪🇸</div>
       <div class="foot-links">
+        <a href="#como-funciona">Cómo funciona</a>
+        <a href="#precios">Precios</a>
+        <a href="#faq">FAQ</a>
         <a href="/login.html">Entrar</a>
-        <a href="/register.html">Crear cuenta</a>
         <a href="/privacidad">Privacidad</a>
         <a href="/terminos">Términos</a>
       </div>
