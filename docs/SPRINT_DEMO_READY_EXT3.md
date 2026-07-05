@@ -40,6 +40,20 @@
 > [Plan] · IVA incluido" y botón "Firmar y aceptar — [Plan] (importe)"; el backend de tiers
 > estaba bien y no se tocó). E2E real contra yaqu.app: crear→elegir Estándar→firmar→BD
 > `accepted/selectedTierId=better/total 460` + limpieza total. Evidencias: `ext3/a201-gbb-*`.
+> **OLA 14 ✅ COMPLETA (6-jul):** A14.1 `625ddcc` (/p/:slug con TODO lo público de la spec y nada
+> más; 404 digno con flag OFF/slug malo/merchant no activo; reglas de slug en servidor: reservados,
+> único, minúsculas-guiones 3-40, 1 cambio/30d con SlugError→400/409/429 humano; tarjeta "Tu página
+> pública" en Configuración con estado honesto del flag y cooldown con fecha) · A14.2 `4b0a64a`
+> (QR PNG 1024 vía lib `qrcode` [dep nueva MIT] en /admin/merchant/public-profile-qr → botón
+> "QR para la furgoneta"; atribución ?src=profile|qr capturada first-touch en landing/precios/
+> register → acquisitionSource; el perfil arrastra el src del QR hasta el footer) · A14.3
+> `282f9a4`+`(fix wa.me)` (columna merchants.flags JSONB — OK del fundador con diff previo,
+> mecanismo Parte P por-merchant; PUBLIC_PROFILE_ENABLED=true SOLO en demo; VERIFICADO EN PROD:
+> yaqu.app/p/fontaneria-garcia vivo con logo/gremio/zonas/años/CTA/reseñas, otros slugs 404;
+> defensa wa.me: móvil ES de 9 dígitos gana el 34; dato del demo corregido 629965893→34629965893
+> [hallazgo: misma carencia en "Tengo una duda" de la landing de decisión → registrado como P3-6
+> en BUGS.md, sin arreglo de paso]). ⚠️ Copy nuevo pendiente de veto (regla 30): prefill del
+> wa.me "Hola, quiero pedir un presupuesto". Evidencias: `ext3/a141-*`, `a142-*`, `a143-prod-*`.
 > **CHOQUES Olas 1-9 señalados al fundador (resolución al llegar):** A22.3 búsqueda global ya
 > existe → completar contra spec · A17 load-catalog ya existe → migrar contenido a data/catalogs
 > con schema master · A16.1 → añadir SOLO métricas X2 faltantes. **Decisiones fundador recibidas:**

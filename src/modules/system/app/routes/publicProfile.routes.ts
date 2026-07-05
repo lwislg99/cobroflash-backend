@@ -64,7 +64,13 @@ publicProfileRouter.get('/:slug', async (req: Request, res: Response) => {
   const zones = zonesOf(merchant.profileZones);
   const years = typeof merchant.profileYears === 'number' && merchant.profileYears > 0
     ? merchant.profileYears : null;
-  const waDigits = (merchant.whatsappPhone || '').replace(/\D/g, '');
+  let waDigits = (merchant.whatsappPhone || '').replace(/\D/g, '');
+  // wa.me exige formato internacional: un móvil español guardado "a pelo"
+  // (9 dígitos, 6/7) gana el 34 delante en vez de generar un enlace roto.
+  if (waDigits.length === 9 && /^[67]/.test(waDigits) &&
+      (merchant.country || 'ES').toUpperCase() === 'ES') {
+    waDigits = `34${waDigits}`;
+  }
   // Prefill mínimo derivado del propio label oficial del botón (pendiente de veto
   // del fundador, regla 30)
   const waHref = waDigits

@@ -206,6 +206,18 @@
 
 ## P3 — Técnico / raíz (registrar, abordar después de P1)
 
+### [ ] P3-6 · wa.me sin prefijo de país en la landing de decisión (hallazgo A14.3, 6-jul)
+- **Síntoma:** "💬 Tengo una duda" y el botón de rejected construyen `wa.me/${whatsappPhone}` con el
+  dato crudo del merchant. Si el pro guardó su móvil ES sin `34` (p. ej. `629965893`), el enlace no
+  resuelve al chat correcto (wa.me exige internacional). El demo lo tenía así; su DATO ya está
+  corregido a `34629965893`, así que en demo funciona — pero cualquier merchant nuevo puede repetirlo.
+- **Arreglo propuesto:** misma defensa que el perfil público A14.3 (9 dígitos que empiezan por 6/7 +
+  country ES → anteponer `34`), idealmente como helper compartido `waMeDigits(phone, country)` en
+  core/utils usado por decisionLanding + customerPortal + perfil. Alternativa de raíz: normalizar al
+  GUARDAR whatsappPhone en Configuración/onboarding.
+- **Done cuando:** un merchant ES con móvil de 9 dígitos genera enlaces wa.me válidos en todas las
+  superficies públicas.
+
 ### [ ] P3-1 · Plantilla Meta `quote_decision_es`: `{{1}}` sin sustituir  🔒 ACCIÓN EN META (usuario) — código ya robusto
 - **Síntoma:** el botón genera `/pay/quote/{{1}}23` (el `{{1}}` no se sustituye). Ya hay un workaround en el backend que hace funcionar el flujo.
 - **Arreglo de raíz:** en WhatsApp Manager, el botón de URL debe ser **"Tipo de URL: Dinámico"**, base `https://yaqu.app/pay/quote/{{1}}`, muestra `https://yaqu.app/pay/quote/abc123`. Revisar también `payment_request_es` por el mismo problema. (Requiere re-aprobación de Meta.)
