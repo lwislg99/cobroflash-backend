@@ -121,7 +121,7 @@ async function loadExpenses() {
   const cat   = document.getElementById('exp-filter-cat')?.value   || '';
   const el = document.getElementById('exp-list');
   if (!el) return;
-  el.innerHTML = '<div style="color:var(--muted);font-size:14px">Cargando…</div>';
+  uiSkeletonCards(el, 4); // A6.2: esqueleto en vez de "Cargando…"
   try {
     const qs = new URLSearchParams({ month });
     if (cat) qs.set('category', cat);
@@ -184,7 +184,7 @@ async function deleteExpenseItem(id) {
     await apiRequest(`/admin/expenses/${id}`, { method: 'DELETE' });
     await Promise.all([loadSummary(), loadExpenses()]);
   } catch (err) {
-    alert('Error al eliminar: ' + err.message);
+    showToast('No se pudo eliminar: ' + err.message, 'error');
   }
 }
 

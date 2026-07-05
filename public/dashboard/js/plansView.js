@@ -168,7 +168,7 @@ async function selectPlan(planId, annual) {
     });
     if (res.checkoutUrl) window.location.href = res.checkoutUrl;
   } catch (err) {
-    alert('Error al iniciar el pago: ' + err.message);
+    showToast('No se pudo iniciar el pago: ' + err.message, 'error');
   }
 }
 
@@ -177,6 +177,6 @@ async function openPortal() {
     const res = await apiRequest('/admin/billing/portal', { method: 'POST' });
     if (res.portalUrl) window.location.href = res.portalUrl;
   } catch (err) {
-    alert('Error: ' + err.message);
+    showToast('No se pudo abrir el portal: ' + err.message, 'error');
   }
 }

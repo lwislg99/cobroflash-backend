@@ -132,7 +132,7 @@ function openImportCsvModal() {
       closeModal();
       var msg = '✅ Importación completada:\n• ' + data.created + ' clientes nuevos\n• ' +
         data.skipped + ' ya existían\n• ' + data.errors + ' errores';
-      alert(msg);
+      showToast('✅ Importación: ' + data.created + ' nuevos · ' + data.skipped + ' ya existían · ' + data.errors + ' errores');
       if (window.renderAppView) renderAppView('customers');
     } catch(err) {
       setAlert('error', 'Error durante la importación. Inténtalo de nuevo.');

@@ -49,7 +49,7 @@ async function renderQuoteRequestsView(container) {
 
   async function loadRequests() {
     const status = filterSel.value;
-    listWrap.innerHTML = '<p style="color:var(--neutral-400);font-size:13px;padding:8px 0">Cargando…</p>';
+    uiSkeletonCards(listWrap, 3); // A6.2: esqueleto en vez de "Cargando…"
 
     let requests;
     try {

@@ -257,7 +257,7 @@ function renderSettingsView(container) {
           throw new Error('Sin URL de onboarding');
         } catch (e) {
           btn.disabled = false; btn.textContent = label + ' · 2 min';
-          alert('No se pudo abrir la activación de Stripe. Inténtalo de nuevo.');
+          showToast('No se pudo abrir la activación de Stripe. Inténtalo de nuevo.', 'error');
         }
       });
       body.appendChild(btn);

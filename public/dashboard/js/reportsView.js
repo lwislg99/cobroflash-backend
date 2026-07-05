@@ -67,7 +67,7 @@ async function renderReportsView(container) {
       const r = await fetch(`/admin/exports/verifactu.xml?year=${year}`);
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
-        alert(d.message || 'No se pudo generar el XML VeriFactu.');
+        showToast(d.message || 'No se pudo generar el XML VeriFactu.', 'error');
         return;
       }
       const blob = await r.blob();
@@ -77,7 +77,7 @@ async function renderReportsView(container) {
       a.click();
       URL.revokeObjectURL(a.href);
     } catch {
-      alert('Error de red al descargar el XML.');
+      showToast('Error de red al descargar el XML.', 'error');
     } finally {
       btnVf.disabled = false;
     }

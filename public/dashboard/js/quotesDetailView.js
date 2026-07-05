@@ -805,7 +805,7 @@ async function duplicateQuote(quoteId) {
   try {
     detail = await apiRequest('/admin/quotes/' + quoteId);
   } catch (e) {
-    alert('Error al cargar el presupuesto para duplicar.');
+    showToast('No se pudo cargar el presupuesto para duplicar.', 'error');
     return;
   }
   var tpl = {

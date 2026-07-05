@@ -197,6 +197,13 @@ router.get('/:id', async (req, res) => {
   const sh = SH[ch.status] || SH.pending;
   const business = esc((ch as any).merchant?.legalName || (ch as any).merchant?.name || '');
 
+  // A6.2: llegada RECIÉN pagado (retorno de Stripe `?card=success` o `?celebrate=1`
+  // tras Bizum/transferencia) → check celebratorio animado (CSS puro, reduced-motion ok).
+  // En visitas posteriores el recibo queda sobrio: la celebración es del momento.
+  const celebrate =
+    ch.status === 'paid' &&
+    ((req.query as any).card === 'success' || (req.query as any).celebrate === '1');
+
   // R-1 (N3): en el recibo PAGADO mostrar fecha + método del pago.
   const paidEvent = (ch.events || [])
     .filter((e) => e.type === 'paid')
@@ -225,8 +232,8 @@ router.get('/:id', async (req, res) => {
   const statusHero = `
     ${business ? `<div class="biz">${business}</div>` : ''}
     <div class="status-hero">
-      <div class="status-icon ${sh.cls}">${sh.icon}</div>
-      <div class="status-title">${sh.title}</div>
+      <div class="status-icon ${sh.cls}${celebrate ? ' celebrate' : ''}">${sh.icon}</div>
+      <div class="status-title">${celebrate ? '¡Pago completado!' : sh.title}</div>
       <div class="status-amount">${esc(Number(ch.amount).toFixed(2))} ${esc(ch.currency)}</div>
       ${ch.concept ? `<div class="status-sub">${esc(ch.concept)}</div>` : ''}
       ${paidMeta ? `<div class="status-meta">${esc(paidMeta)}</div>` : ''}
@@ -341,6 +348,13 @@ router.get('/:id', async (req, res) => {
   .status-hero{text-align:center;padding:.5rem 0 1.1rem;border-bottom:1px solid var(--border);margin-bottom:1rem}
   .status-icon{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;margin:.4rem auto .6rem}
   .status-icon.paid{background:#ecfdf5;color:#15803d}
+  /* A6.2: celebración post-pago — check que "aterriza" + onda expansiva, CSS puro */
+  .status-icon.celebrate{position:relative;animation:rcheck .5s cubic-bezier(.34,1.56,.64,1) both}
+  .status-icon.celebrate::after{content:"";position:absolute;inset:-4px;border-radius:50%;
+    border:2px solid #22c55e;opacity:0;animation:rring .9s ease-out .25s}
+  @keyframes rcheck{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+  @keyframes rring{0%{transform:scale(.8);opacity:.8}100%{transform:scale(1.9);opacity:0}}
+  @media (prefers-reduced-motion: reduce){.status-icon.celebrate{animation:none}.status-icon.celebrate::after{display:none}}
   .status-icon.pending{background:#fffbeb;color:#b45309}
   .status-icon.failed{background:#fef2f2;color:#dc2626}
   .status-icon.expired{background:var(--slate-50);color:var(--muted)}

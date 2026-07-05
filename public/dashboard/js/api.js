@@ -72,6 +72,30 @@ function uiMarkFieldError(el, scope) {
 }
 window.uiMarkFieldError = uiMarkFieldError;
 
+// A6.2: toast compartido de TODO el BO (una sola voz para el feedback de acción).
+// kind: 'ok' (verde marca) · 'warn' (ámbar) · 'error' (rojo). Sustituye a los
+// alert() del navegador. Uno cada vez; aria-live para lectores de pantalla.
+function showToast(msg, kind = 'ok') {
+  document.getElementById('yaqu-toast')?.remove();
+  // Compat: llamadas antiguas showToast(msg, true) = warn
+  if (kind === true) kind = 'warn';
+  const colors = { ok: 'var(--brand, #16a34a)', warn: '#b45309', error: '#b91c1c' };
+  const toast = document.createElement('div');
+  toast.id = 'yaqu-toast';
+  toast.setAttribute('role', 'status');
+  toast.setAttribute('aria-live', kind === 'error' ? 'assertive' : 'polite');
+  toast.style.cssText = `
+    position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
+    background:${colors[kind] || colors.ok}; color:#fff; max-width:min(92vw,480px);
+    padding:10px 20px; border-radius:999px; font-size:14px; font-weight:600;
+    z-index:400; box-shadow:0 4px 12px rgba(0,0,0,0.2);
+  `;
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), kind === 'error' ? 5000 : 3000);
+}
+window.showToast = showToast;
+
 // Rellena un <tbody> con filas-esqueleto mientras carga una lista. Se sustituyen
 // al pintar los datos (tbody.innerHTML = ''). cols = nº de columnas de la tabla.
 function uiSkeletonRows(tbody, cols, rows = 6) {
@@ -88,6 +112,23 @@ function uiSkeletonRows(tbody, cols, rows = 6) {
   tbody.innerHTML = html;
 }
 window.uiSkeletonRows = uiSkeletonRows;
+
+// A6.2: esqueleto para listas de TARJETAS (solicitudes, gastos…): mismas
+// proporciones que una fila-card real para que la carga no "salte".
+function uiSkeletonCards(container, cards = 4) {
+  if (!container) return;
+  let html = '';
+  for (let i = 0; i < cards; i++) {
+    const w = 40 + (i % 3) * 18;
+    html += `
+      <div class="customers-card" aria-hidden="true" style="display:flex;flex-direction:column;gap:10px">
+        <span class="skeleton" style="display:block;height:14px;width:${w}%"></span>
+        <span class="skeleton" style="display:block;height:11px;width:${Math.min(w + 32, 92)}%"></span>
+      </div>`;
+  }
+  container.innerHTML = html;
+}
+window.uiSkeletonCards = uiSkeletonCards;
 
 // WA-0b · chip de entrega de WhatsApp (J4). Recibe `waDelivery` del detalle
 // ({status, templateName, at} | null) y devuelve el HTML del chip, o '' si no hay envío.

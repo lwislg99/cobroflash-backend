@@ -1010,17 +1010,4 @@ function showQqAlert(msg) {
   el.style.display = "block";
 }
 
-function showToast(msg, warn = false) {
-  const toast = document.createElement("div");
-  toast.setAttribute("role", "status");
-  toast.setAttribute("aria-live", "polite");
-  toast.style.cssText = `
-    position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
-    background:${warn ? "#f59e0b" : "#16a34a"}; color:#fff;
-    padding:10px 20px; border-radius:999px; font-size:14px; font-weight:600;
-    z-index:200; box-shadow:0 4px 12px rgba(0,0,0,0.2); white-space:nowrap;
-  `;
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
-}
+// A6.2: showToast ahora es compartido y vive en api.js (window.showToast).
