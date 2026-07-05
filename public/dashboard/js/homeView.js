@@ -132,10 +132,14 @@ function renderSetupChecklist(merchant, data) {
   // A1.3: la checklist es tarea del admin (logo, datos fiscales → Configuración);
   // un técnico ni la ve (además su perfil reducido no trae taxId/address).
   if (window.appUserRole && window.appUserRole !== 'admin') return;
+  // A6.3: los pasos que hacen que la demo/alta se sienta completa — logo,
+  // cómo cobras (IBAN/Bizum), WhatsApp, reseñas y el primer presupuesto.
   const steps = [
-    { label: 'Añade tu logo',            done: !!merchant.logoUrl,       action: 'settings', hint: 'Aparecerá en PDFs' },
-    { label: 'Completa datos fiscales',  done: !!(merchant.taxId && merchant.address), action: 'settings', hint: 'NIF y dirección para facturas legales' },
-    { label: 'Conecta WhatsApp',         done: !!merchant.whatsappPhone,  action: 'settings', hint: 'Recibe notificaciones de pagos' },
+    { label: 'Añade tu logo',              done: !!merchant.logoUrl,       action: 'settings', hint: 'Aparecerá en tus presupuestos' },
+    { label: 'Configura cómo cobras',      done: !!(merchant.iban || merchant.bizumPhone), action: 'settings', hint: 'IBAN para transferencia o Bizum' },
+    { label: 'Conecta tu WhatsApp',        done: !!merchant.whatsappPhone,  action: 'settings', hint: 'Te avisamos cuando acepten o paguen' },
+    { label: 'Enlace de reseñas de Google', done: !!merchant.googleReviewUrl, action: 'settings', hint: 'Se lo pedimos al cliente tras pagar' },
+    { label: 'Completa NIF y dirección',   done: !!(merchant.taxId && merchant.address), action: 'settings', hint: 'Salen en tus PDF' },
     { label: 'Crea tu primer presupuesto', done: data.recentActivity && data.recentActivity.length > 0, action: 'quotes-new', hint: null },
   ];
 
