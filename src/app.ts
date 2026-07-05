@@ -34,6 +34,7 @@ import mpWebhookRouter from './modules/billing/app/routes/mpWebhook.routes';
 import whatsappIncomingRouter from './modules/whatsappBot/app/routes/whatsappIncoming.routes';
 import botAdminRouter from './modules/whatsappBot/app/routes/botAdmin.routes';
 import legalPagesRouter from './modules/system/app/routes/legalPages.routes';
+import jobsRouter from './modules/jobs/app/routes/jobs.routes';
 
 import quotesRouter from './modules/quotes/app/routes/quotes.routes';
 import invoiceRouter from './modules/invoicing/app/routes/invoice.routes';
@@ -193,6 +194,7 @@ app.use('/admin/providers',  providersAdminRouter);
 app.use('/admin/metrics',    metricsRouter);
 app.use('/admin/expenses',   expensesRouter);
 app.use('/admin/bot',        botAdminRouter); // A8.3: handoffs pendientes del bot
+app.use('/admin/jobs',       jobsRouter);    // A13 (JOB-1): trabajos
 
 // Rutas solo para admin
 // Billing SIEMPRE accesible (es donde se paga): no exigir prueba activa aquí,

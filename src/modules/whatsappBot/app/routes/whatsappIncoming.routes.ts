@@ -13,6 +13,7 @@ import { updateWaMessageStatus, recordInboundWaMessage } from '../../../messagin
 import { isFlagEnabled } from '../../../../core/flags';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
 import { handleBotMessage, handleUnsupportedMedia, type BotInput } from '../../domain/botFlow.service';
+import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 
 const router = Router();
 
@@ -305,6 +306,9 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
         decisionChannel: 'whatsapp_text',
       },
     });
+
+    // A13.1 (JOB-1): auto-creación del Trabajo al aceptar (idempotente)
+    ensureJobForQuote(quote.id).catch(() => {});
 
     await sendWhatsAppText({
       to: from,

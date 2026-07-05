@@ -191,6 +191,10 @@ async function initApp() {
         viewTitle.textContent = 'Solicitudes';
         if (typeof renderQuoteRequestsView === 'function') renderQuoteRequestsView(viewContainer);
         break;
+      case 'jobs':
+        viewTitle.textContent = 'Trabajos';
+        if (typeof renderJobsView === 'function') renderJobsView(viewContainer);
+        break;
       case 'customer-360':
         viewTitle.textContent = 'Cliente';
         if (typeof renderCustomer360View === 'function') renderCustomer360View(viewContainer, state.customerId360);
@@ -255,7 +259,7 @@ async function initApp() {
   // Deep-links por hash: /dashboard/#products abre Productos directamente.
   // Útil para compartir/QA (y para las capturas de la maqueta A4.7).
   const HASH_VIEWS = ['home','quotes-list','quotes-new','customers','products','providers',
-    'invoices','expenses','reports','templates','quote-requests','plans','team','settings'];
+    'invoices','expenses','reports','templates','quote-requests','jobs','plans','team','settings'];
   function viewFromHash() {
     const h = (window.location.hash || '').replace('#', '');
     return HASH_VIEWS.includes(h) ? h : null;

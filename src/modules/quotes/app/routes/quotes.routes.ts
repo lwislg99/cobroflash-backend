@@ -35,6 +35,7 @@ import { generateQuotePdf } from '../../../../lib/pdf';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 
 
 const router = Router();
@@ -451,6 +452,9 @@ router.post('/:id/decision', async (req, res) => {
           console.error('[decision] Error regenerando PDF con firma:', e);
         }
       }
+
+      // A13.1 (JOB-1): auto-creación del Trabajo al aceptar (idempotente, nunca rompe)
+      ensureJobForQuote(quote.id).catch(() => {});
 
       // 2) Según paymentTerms, generamos la siguiente factura
       const existingInvoices = quote.Invoice || [];

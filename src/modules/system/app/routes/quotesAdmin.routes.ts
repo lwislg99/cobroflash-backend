@@ -16,6 +16,7 @@ import { getDeliveryStatus } from '../../../messaging/domain/whatsappLog.service
 import { recordCustomerEvent } from '../../customerEvents.service';
 import { sendTechQuoteApprovedEmail } from '../../../messaging/domain/merchantNotifications';
 import { normalizePhone, formatMoneyEs } from '../../../../core/utils/utils';
+import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 import { BASE_URL } from '../../../../core/config/env';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
@@ -59,6 +60,9 @@ router.post('/:id/accept', async (req, res) => {
       paymentTerms,
       evidence,
     });
+
+    // A13.1 (JOB-1): auto-creación del Trabajo al aceptar (idempotente)
+    ensureJobForQuote(id).catch(() => {});
 
     return res.json({
       id: updated.id,
