@@ -50,11 +50,29 @@
 > soportada AMPLIADA (imagen/vídeo/documento/sticker/ubicación/contactos, antes solo audio) con
 > menú si no hay flujo a medias y mudo en handoff · expiración ya era limpia por TTL (verificado) ·
 > lista multi-presupuesto ya cumplía. Copys #15-17 de la tabla v2.1.
-> **A8.3 ✅ (5-jul):** handoff premium completo — expectativa al cliente (v2) + aviso al pro CON
-> contexto y "silencio 24 h" (A8.1) + **registro en BO**: `GET /admin/bot/handoffs` (sesiones
-> handoff vivas, merchant-scoped) → tarjeta "🔔 Te esperan en WhatsApp" encima del héroe de la
-> Home (nombre · hace X min · contexto · botón wa.me "Responder →") + evento permanente `handoff`
-> en el timeline del cliente (las sesiones caducan a 24 h, el timeline no).
+> **A8.3 ✅ (5-jul, `2228c0a`):** handoff premium completo — expectativa al cliente (v2) + aviso al
+> pro CON contexto y "silencio 24 h" (A8.1) + **registro en BO**: `GET /admin/bot/handoffs` →
+> tarjeta "🔔 Te esperan en WhatsApp" encima del héroe (nombre · hace X min · contexto · botón
+> wa.me "Responder →") + evento permanente `handoff` en el timeline del cliente. Evidencia:
+> `pre-demo/a83-home-handoffs-390.png`.
+> **A8.4 ✅ (`69e8fa8`):** suite del bot contra el webhook real con payloads Meta simulados y
+> `WHATSAPP_DRY_RUN` — 11 pasos en verde (menú, presupuestos, pagos, doble tap, dedupe wamid,
+> menú caducado, media, solicitud+aviso, handoff+registro, mudo, BAJA), 17 mensajes simulados,
+> 0 llamadas a Meta, limpieza total. Gateada (`BOT_SUITE_TEST=1`); evidencia `ext2/a84-suite.txt`.
+> **🏁 OLA 8 COMPLETA** (gate humano pendiente: un tercero usa el bot sin instrucciones — fundador).
+> **OLA 9:** A9.1 ✅ (`ed42718` — UTM/referrer first-touch en landing+precios → localStorage →
+> registro; sobrevive días; el back ya escribía `acquisition_source`) · A9.2 ✅ (`4f4f230` — funnel
+> owner con tabla POR FUENTE: registros → activados 1ª quote → con 1er cobro) · A9.3 ✅ (`08a88ef` —
+> fair-use W2 visible en Configuración: N/300 plantillas, aviso al 80 %, "nunca cortamos", + cuántos
+> viajaron gratis por ventana) · A9.4 ✅ (`68bcebc` — AB6 cliente: enlaces del recibo a verde 700
+> por contraste AA, estrellas de reseña a target 44 px; foco/reduced-motion/errores ya cumplían) ·
+> **A9.5 ✅ (5-jul):** QA total — barrido 390@2x completo → `docs/evidencias/pre-demo/` (INDEX.md
+> fechado), 0 P0/P1 nuevos, QA_MASTER.md actualizado, npm test 81 (79+2 skip gateados).
+>
+> **🏁 SPRINT EXT2: TODO el código HECHO salvo Ola 7 parcial** — A7.2-parte-2 (eval) y A7.4 (voz en
+> maqueta) **bloqueadas ÚNICAMENTE por `ANTHROPIC_API_KEY` en Railway** (fundador; PENDIENTES). Al
+> ponerla: eval → si ≥8/10, A7.4 y flag `VOICE_QUOTE_ENABLED`. Gates humanos restantes: tercero
+> prueba el bot (Ola 8) · matriz voz 3 móviles · ensayo 90 s ×3.
 
 **Criterio de esta extensión (importante):** NO se abre backlog U2 (gate 25 pagantes,
 regla 13). Todo lo de aquí es (a) trabajo F1 legítimo de la cola U1 que aún no se había

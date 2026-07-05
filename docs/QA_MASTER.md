@@ -4,6 +4,15 @@
 > cada sprint que cierra añade aquí sus checks nuevos (`/yaqu-release-check`, paso 3).
 > La verificación manual se hace en **yaqu.app** (no localhost), idealmente desde móvil.
 
+> **📌 Último QA total (A9.5, 5-jul-2026):** barrido completo con viewport móvil REAL
+> (390×844@2x, `scripts/capture-demo.mjs`) → `docs/evidencias/pre-demo/` (BO completo +
+> flujo cliente + landing) · bot verificado por suite automática `tests/bot-suite.test.mjs`
+> (11/11, payloads Meta simulados, 0 mensajes reales; `BOT_SUITE_TEST=1`) · ciclo
+> cero-plantillas fijado por `tests/a55-window-quote.test.mjs` (`A55_DB_TEST=1`) ·
+> `npm test`: 81 tests (79 pass + 2 skip gateados) · **0 P0 / 0 P1 abiertos.**
+> Pendiente HUMANO: gate Ola 8 (un tercero usa el bot sin instrucciones), matriz de voz en
+> 3 móviles (VOZ_MATRIX), bug-bash V0-5, ensayo 90 s ×3.
+
 ## Cómo usar este documento
 
 - Antes de cerrar un sprint: pasar los bloques que toquen lo cambiado + el E2E crítico.
