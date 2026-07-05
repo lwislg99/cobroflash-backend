@@ -8,6 +8,25 @@ export function normalizePhone(input?: string | null): string {
     return p;
   }
   
+  // A6.6 (P1 visual): dinero CLIENT-FACING siempre en formato español —
+  // "2.383,70 €" (o "1.500,00 MXN" fuera del euro), nunca "2383.70 EUR".
+  export function formatMoneyEs(
+    n: number | string | { toString(): string }, // acepta Prisma Decimal
+    currency = 'EUR',
+  ): string {
+    const v = Number(String(n));
+    try {
+      return new Intl.NumberFormat('es-ES', {
+        style: 'currency',
+        currency: currency || 'EUR',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(v);
+    } catch {
+      return `${v.toFixed(2)} ${currency}`;
+    }
+  }
+
   export type QuoteLine = { concept: string; qty: number; price: number; tax?: number };
   
   export function calcTotal(lines: QuoteLine[]): number {

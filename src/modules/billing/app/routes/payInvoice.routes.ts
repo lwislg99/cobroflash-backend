@@ -5,7 +5,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
-import { esc, parseNumericId } from '../../../../core/utils/utils';
+import { esc, parseNumericId, formatMoneyEs } from '../../../../core/utils/utils';
 import { isFlagEnabled } from '../../../../core/flags';
 import { isDemoMerchant } from '../../../invoicing/domain/emission.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
@@ -38,10 +38,7 @@ router.get('/invoice/:chargeId', async (req, res) => {
   const m = charge.merchant;
   const business = esc(m?.legalName || m?.name || 'Tu proveedor');
   const initial = esc((m?.name || m?.legalName || 'Y').trim().charAt(0).toUpperCase());
-  const amount = esc(
-    Number(charge.amount).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
-      ' ' + charge.currency,
-  );
+  const amount = esc(formatMoneyEs(charge.amount, charge.currency)); // A6.6: 2.383,70 €
   const concept = esc(charge.concept || '');
   const num = invoice?.number ? esc(invoice.number) : '';
   // Regla 24/26: J-… = justificante, jamás "factura"

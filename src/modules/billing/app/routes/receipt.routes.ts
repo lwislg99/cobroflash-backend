@@ -3,7 +3,7 @@ import { Router } from 'express';
 import axios from 'axios';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
-import { esc, parseNumericId } from '../../../../core/utils/utils';
+import { esc, parseNumericId, formatMoneyEs } from '../../../../core/utils/utils';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { stripe } from '../../../../integrations/stripe';
 import { BASE_URL, config } from '../../../../core/config/env';
@@ -234,7 +234,7 @@ router.get('/:id', async (req, res) => {
     <div class="status-hero">
       <div class="status-icon ${sh.cls}${celebrate ? ' celebrate' : ''}">${sh.icon}</div>
       <div class="status-title">${celebrate ? '¡Pago completado!' : sh.title}</div>
-      <div class="status-amount">${esc(Number(ch.amount).toFixed(2))} ${esc(ch.currency)}</div>
+      <div class="status-amount">${esc(formatMoneyEs(ch.amount, ch.currency))}</div>
       ${ch.concept ? `<div class="status-sub">${esc(ch.concept)}</div>` : ''}
       ${paidMeta ? `<div class="status-meta">${esc(paidMeta)}</div>` : ''}
     </div>`;

@@ -1,7 +1,7 @@
 import express, { Router, Request, Response } from 'express';
 import fetch from 'node-fetch';
 import { prisma } from '../../../../core/db/prisma';
-import { esc, parseNumericId } from '../../../../core/utils/utils';
+import { esc, parseNumericId, formatMoneyEs } from '../../../../core/utils/utils';
 import { getLocale } from '../../../../core/i18n/locales';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
@@ -195,10 +195,10 @@ function renderTierCards(tiers: any[], quoteId: string, locale: ReturnType<typeo
             ${(tier.lines || []).map((l: any) => `
               <div class="tier-line">
                 <span>${esc(l.concept)}</span>
-                <span>${(l.qty * l.price).toFixed(2)} ${esc(tier.currency || '')}</span>
+                <span>${formatMoneyEs(l.qty * l.price, tier.currency)}</span>
               </div>`).join('')}
           </div>
-          <div class="tier-total">${Number(tier.total).toFixed(2)} ${esc(tier.currency || '')}</div>
+          <div class="tier-total">${formatMoneyEs(tier.total, tier.currency)}</div>
           <div class="tier-vat-note">IVA incluido</div>
           <button class="btn-tier" onclick="selectTier('${esc(tier.id)}', '${esc(quoteId)}')">
             Elegir este plan
@@ -268,7 +268,7 @@ function renderQuoteDetail(quote: Awaited<ReturnType<typeof loadQuote>>, quoteId
   const customerName = esc(quote.customer?.name || 'Cliente');
   const lines: any[] = Array.isArray(quote.lines) ? quote.lines : [];
   const cur = esc(quote.currency);
-  const money = (n: number) => `${Number(n).toFixed(2)} ${cur}`;
+  const money = (n: number) => formatMoneyEs(n, quote.currency); // A6.6: 2.383,70 €
 
   // PC-B: columna "Importe" = NET (qty*price), MISMA fórmula que en los tiers; el IVA va
   // desglosado debajo. Así la suma de las líneas (= Base imponible) + IVA cuadra con el Total.
