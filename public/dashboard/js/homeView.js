@@ -464,9 +464,10 @@ async function renderTeamPerformance(container) {
   container.appendChild(section);
 }
 
+// P-A66-3: delega en el formateador es-ES compartido (api.js) — "6.576,35 €",
+// nunca "€6576,35" (símbolo delante era un hack local que rompía la coherencia).
 function fmtMoney(amount, currency) {
-  const sym = currency === "USD" ? "$" : currency === "MXN" ? "$" : "€";
-  return `${sym}${Number(amount).toLocaleString("es", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return fmtMoneyEs(amount, currency || (window.appLocale && window.appLocale.currency) || "EUR");
 }
 
 function esc(str) {
@@ -824,7 +825,7 @@ async function searchProducts(query, lineIdx) {
       dd.innerHTML = items.map((p) => `
         <div class="qq-dropdown-item" data-name="${esc(p.name)}" data-price="${p.price}" data-idx="${lineIdx}">
           <span>${esc(p.name)}</span>
-          <span class="qq-dropdown-item-sub">${Number(p.price).toFixed(2)}</span>
+          <span class="qq-dropdown-item-sub">${fmtMoneyEs(p.price, (window.appLocale && window.appLocale.currency) || 'EUR')}</span>
         </div>
       `).join("");
       dd.style.display = "block";
