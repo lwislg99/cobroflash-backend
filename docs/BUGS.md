@@ -253,7 +253,8 @@
 
 ### [ ] P3 · P-A66-3 · Formato de dinero en el BO interno sin unificar
 - **Síntoma:** el BO merchant-facing mezcla "0.00 EUR", "€0.00" y "1.266,87 €" (p. ej. totales del creador y de la vista previa usan punto decimal).
-- **Arreglo propuesto:** helper compartido en `api.js` (espejo de `formatMoneyEs`) y pasada vista a vista (una pantalla por commit, Parte AB). No bloquea demo: el CLIENTE ya ve siempre es-ES.
+- **Arreglo:** helper `fmtMoneyEs` global en `api.js` (espejo del servidor) y pasada vista a vista (una pantalla por commit, Parte AB). No bloquea demo: el CLIENTE ya ve siempre es-ES.
+- **Progreso:** helper creado + **pantalla 1/N: creador** (totales, total/línea, hint markup, picker, vista previa) ✅ 5-jul (`43b52c3`). Quedan: listas (importe ya es-ES vía toLocaleString en varias), detalle, Home KPIs, informes — revisar una a una.
 
 ---
 
