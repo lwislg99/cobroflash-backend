@@ -301,6 +301,11 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
         actions.appendChild(btnCollect);
       }
       summarySec.appendChild(actionsSec);
+
+      // A15.1 (MANT-1, tras flag): recordatorio de mantenimiento — solo si el
+      // server lo ofrece (flag ON + línea mantenible del gremio o plan ya creado).
+      const mantBlock = buildMaintenanceBlock(quote, container);
+      if (mantBlock) summarySec.appendChild(mantBlock);
     }
 
     if (st === 'draft' || st === 'sent') {
@@ -900,4 +905,84 @@ function buildStatusTimeline(quote) {
 
   wrap.appendChild(row);
   return wrap;
+}
+
+// ── A15.1 · MANT-1: recordatorio de mantenimiento en el presupuesto aceptado ──
+// El server solo manda `quote.maintenance` con el flag MAINTENANCE_ENABLED del
+// merchant encendido. Si hay plan → estado + Cancelar; si hay sugerencia →
+// toggle "Crear recordatorio" con intervalo prefijado EDITABLE (spec master).
+function buildMaintenanceBlock(quote, container) {
+  const m = quote.maintenance;
+  if (!m || !m.enabled || (!m.plan && !m.suggestion)) return null;
+
+  const box = document.createElement('div');
+  box.style.cssText = 'margin-top:12px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--neutral-50)';
+
+  if (m.plan) {
+    const next = m.plan.nextDueAt ? new Date(m.plan.nextDueAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : '—';
+    box.innerHTML = `
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+        <div style="font-size:13.5px;color:var(--ink)">
+          🔧 <strong>Mantenimiento programado:</strong> ${escapeHtmlMant(m.plan.title)}
+          · cada ${m.plan.intervalMonths} meses · próxima propuesta el ${next}
+        </div>
+        <button type="button" class="btn-ghost btn-sm" id="mant-cancel">Cancelar</button>
+      </div>`;
+    box.querySelector('#mant-cancel').addEventListener('click', async (ev) => {
+      const btn = ev.currentTarget;
+      btn.disabled = true;
+      try {
+        await apiRequest('/admin/maintenance/' + m.plan.id, { method: 'DELETE' });
+        if (typeof showToast === 'function') showToast('Plan de mantenimiento cancelado');
+        await renderQuoteDetailView(container, quote.id);
+      } catch (e) {
+        btn.disabled = false;
+        if (typeof showToast === 'function') showToast('No se pudo cancelar. Inténtalo de nuevo.', 'error');
+      }
+    });
+    return box;
+  }
+
+  const s = m.suggestion;
+  box.innerHTML = `
+    <div style="font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:4px">🔧 Crear recordatorio de mantenimiento</div>
+    <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">
+      "${escapeHtmlMant(s.matchedConcept)}" suele necesitar revisión. Te avisaremos cuando toque
+      — tú decides si se envía el presupuesto (nunca sale solo).
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <label style="font-size:13px;color:var(--body)">Cada
+        <select id="mant-interval" style="margin:0 4px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+          ${[6, 12, 24, 36].map((n) => `<option value="${n}" ${n === s.intervalMonths ? 'selected' : ''}>${n} meses</option>`).join('')}
+        </select>
+      </label>
+      <button type="button" class="btn btn-secondary btn-sm" id="mant-create">Crear recordatorio</button>
+    </div>`;
+  box.querySelector('#mant-create').addEventListener('click', async (ev) => {
+    const btn = ev.currentTarget;
+    btn.disabled = true; btn.textContent = 'Creando…';
+    try {
+      await apiRequest('/admin/maintenance', {
+        method: 'POST',
+        body: JSON.stringify({
+          customerId: quote.customer && quote.customer.id ? quote.customer.id : quote.customerId,
+          quoteId: quote.id,
+          title: s.title,
+          intervalMonths: Number(box.querySelector('#mant-interval').value),
+        }),
+      });
+      if (typeof showToast === 'function') showToast('Recordatorio creado — te avisaremos cuando toque');
+      await renderQuoteDetailView(container, quote.id);
+    } catch (e) {
+      btn.disabled = false; btn.textContent = 'Crear recordatorio';
+      if (typeof showToast === 'function') showToast('No se pudo crear el recordatorio.', 'error');
+    }
+  });
+  return box;
+}
+
+function escapeHtmlMant(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }

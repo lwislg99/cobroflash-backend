@@ -382,6 +382,17 @@ Gates que NO son flags: venta fuerte/claims ⇐ SIF-1 · tarjeta real ⇐ Connec
 > Specs identificadas por NOMBRE de sprint. Los códigos R1-R14 son EXCLUSIVOS de los runbooks (Parte O) — no confundir.
 
 ## MANT-1 · Mantenimientos recurrentes
+> **✅ CONSTRUIDO (EXT3 Ola 15, 6-jul-2026, autorización A10.0):** semillas por gremio +
+> toggle en el presupuesto aceptado (intervalo editable) + cron diario 10h → quote draft
+> `origin='maintenance'` → WhatsApp AL PRO con botones de sesión [Aprobar y enviar]
+> [Posponer 30d] [Cancelar plan] (webhook verifica que responde el whatsappPhone del
+> merchant; "Aprobar" reutiliza EXACTAMENTE el envío normal K1 extraído a
+> sendQuote.service). Anti-spam literal: 1 propuesta/cliente/90d · waOptOut · horas
+> tranquilas (9-21 Madrid) · 2 aplazamientos seguidos → pausa sola. Métrica € por
+> origin en Informes (KPI "De mantenimientos" si >0). Flag MAINTENANCE_ENABLED por
+> merchant — ON solo demo. Fuera de ventana 24h el aviso al pro degrada con dignidad
+> (draft visible en BO + evento 360); plantilla opcional `maintenance_proposal_es`
+> especificada en WHATSAPP_TEMPLATES §6 (alta en Meta = fundador; J6 intacto).
 Casos semilla por gremio (el pro siempre edita): clima → revisión A/A pre-verano (12m), caldera pre-invierno (12m) · fontanería → termo/calentador (12m), descalcificador (6m) · electricidad → revisión cuadro (24m) · cerrajería → engrase (24m, opc.) · pintura → repaso comunidades (36m) · reformas → visita post-obra garantía (12m).
 Proponer: en quote→accepted (o invoice→paid), si una línea matchea categoría mantenible del gremio → toggle "Crear recordatorio de mantenimiento" con intervalo prefijado editable. Modelo: `MaintenancePlan {merchantId, customerId, quoteId?, title, intervalMonths, nextDueAt, active}`.
 Ciclo: cron diario 10h → vencidos → quote `draft` desde líneas del plan (`origin='maintenance'`) → **WA al PRO** (nunca directo al cliente): "🔧 Toca revisión de [X] de [Cliente]. ¿Enviar presupuesto de [importe]? [Aprobar y enviar] [Posponer 30d] [Cancelar plan]" → aprobar = flujo normal.

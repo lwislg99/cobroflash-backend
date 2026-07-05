@@ -54,6 +54,24 @@
 > [hallazgo: misma carencia en "Tengo una duda" de la landing de decisión → registrado como P3-6
 > en BUGS.md, sin arreglo de paso]). ⚠️ Copy nuevo pendiente de veto (regla 30): prefill del
 > wa.me "Hola, quiero pedir un presupuesto". Evidencias: `ext3/a141-*`, `a142-*`, `a143-prod-*`.
+> **OLA 15 ✅ COMPLETA (6-jul):** A15.1 (semillas mantenibles por gremio LITERALES del master;
+> el detalle del presupuesto ACEPTADO ofrece —solo con flag— "Crear recordatorio de
+> mantenimiento" con intervalo prefijado editable; POST/DELETE /admin/maintenance con 404 sin
+> flag; estado del plan visible con próxima fecha + Cancelar) · A15.2 (cron diario 10h →
+> vencidos → quote DRAFT origin='maintenance' → WhatsApp AL PRO con botones de sesión
+> [Aprobar y enviar][Posponer 30d][Cancelar plan]; sendWhatsAppButtons NUEVO en la integración
+> oficial con guards V0-2/dry-run; el webhook enruta mant_ok|later|cancel_{plan}_{draft} y
+> verifica que responde el whatsappPhone del merchant; "Aprobar" = sendQuote.service extraído
+> del POST send-whatsapp (texto K1 y guards J3/J5/J6 EXACTOS, la ruta admin mapea reasons
+> idénticos); anti-spam LITERAL: 1/cliente/90d [checkpoint nextDueAt], waOptOut, horas
+> tranquilas 9-21 Madrid, 2 aplazamientos→pausa; fuera de ventana degrada digno: draft en BO
+> + evento 360; plantilla opcional §6 WHATSAPP_TEMPLATES = fundador) · A15.3 (Informes /pl:
+> months[].maintenance + totals.maintenance; KPI "🔧 De mantenimientos" solo si >0).
+> E2E simulado (DRY_RUN, cero WhatsApp reales): sugerencia→plan→cron propone (botones al pro
+> + draft #14)→90d no re-propone→Aprobar (cliente recibe, draft→sent, próxima +12m)→posponer×2
+> pausa→número ajeno ignorado → `a15-e2e.txt`. Flag MAINTENANCE_ENABLED ON solo demo.
+> Evidencias BO: `a151-toggle-1280`, `a151-plan-1280/390`. Copys al pro pendientes de veto
+> (regla 30, en checklist).
 > **CHOQUES Olas 1-9 señalados al fundador (resolución al llegar):** A22.3 búsqueda global ya
 > existe → completar contra spec · A17 load-catalog ya existe → migrar contenido a data/catalogs
 > con schema master · A16.1 → añadir SOLO métricas X2 faltantes. **Decisiones fundador recibidas:**

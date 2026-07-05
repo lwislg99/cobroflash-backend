@@ -1,0 +1,12 @@
+sugerencia: {"title":"Revisión de termo/calentador","m":12}
+[maintenance] plan 2 → draft #14 (WA al pro enviado)
+cron: {"due":1,"proposed":1,"skipped":[]}
+botones al pro: ["mant_ok_2_94","mant_later_2_94","mant_cancel_2_94"] | body: 🔧 Toca revisión de termo/calentador de María García. · ¿Enviar presupuesto de 390,00 €?
+anti-spam 90d ok (skips: [] )
+draft tras aprobar: sent
+aprobar ok: cliente recibió, pro confirmado, próxima en 2027-07-05
+tras 2 posponer: streak= 2 active= false
+[maintenance] botón de 34699999999 ignorado: no es el pro del plan 2
+seguridad ok: número ajeno ignorado
+✅ E2E MANT-1 COMPLETO
+limpieza hecha (src + 1 draft(s), contador restaurado)

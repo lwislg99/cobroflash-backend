@@ -83,6 +83,15 @@ Runbook completo paso a paso en `PENDIENTES_FUNDADOR.md` §FASE B. Lo esencial:
       merchants reales (encaja con tus 10 discovery).
 - [ ] **OK opcionales Ola 23**: banner "añadir a pantalla de inicio" (PWA) y preparación del
       gate foral (PV/Navarra). Solo se construyen si dices que sí.
+- [ ] **Plantilla `maintenance_proposal_es` en Meta (Ola 15, OPCIONAL)**: la propuesta de
+      mantenimiento al PRO sale como botones de sesión (solo entrega con tu ventana 24h
+      abierta — para la demo basta con escribir tú al número antes). Si quieres cobertura
+      fuera de ventana, dala de alta con la spec §6 de `docs/WHATSAPP_TEMPLATES.md` y me
+      avisas para conectar el fallback.
+- [ ] **Veto de copys nuevos (regla 30, Ola 14/15)**: (a) prefill del wa.me del perfil
+      público: "Hola, quiero pedir un presupuesto"; (b) textos del ciclo de mantenimiento
+      al pro ("🔧 Toca … ¿Enviar presupuesto de …?", confirmaciones ✅/⏸/✔️). Si los quieres
+      distintos, dímelo y los cambio en un commit.
 
 ## 🔵 6. Lo estratégico que sigue su curso (no bloquea la demo)
 

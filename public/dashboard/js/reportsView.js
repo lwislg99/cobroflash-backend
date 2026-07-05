@@ -161,9 +161,15 @@ async function renderReportsView(container) {
       { label: 'Gastos totales',   value: totals.expenses, prev: prevYear.expenses, color: 'var(--red-600)' },
       { label: 'Beneficio neto',   value: totals.profit,   prev: prevYear.profit,   color: totals.profit >= 0 ? 'var(--green-600)' : 'var(--red-600)' },
     ];
+    // A15.3 (MANT-1): € que nacieron del ciclo de mantenimientos — solo si existe
+    if (Number(totals.maintenance) > 0) {
+      kpiWrap.style.gridTemplateColumns = 'repeat(4,1fr)';
+      kpis.push({ label: '🔧 De mantenimientos', value: totals.maintenance, prev: null, color: 'var(--green-600)' });
+    }
 
     kpis.forEach(({ label, value, prev, color }) => {
-      const pct = prev !== 0 ? Math.round((value - prev) / Math.abs(prev) * 100) : null;
+      const pct = (prev !== null && prev !== undefined && prev !== 0)
+        ? Math.round((value - prev) / Math.abs(prev) * 100) : null;
       const sign = pct === null ? '' : pct >= 0 ? '▲' : '▼';
       const pctColor = pct === null ? 'var(--neutral-400)' : pct >= 0 ? 'var(--green-600)' : 'var(--red-600)';
       const kpi = document.createElement('div');

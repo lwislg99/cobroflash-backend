@@ -296,6 +296,64 @@ export async function sendWhatsAppText(params: {
 }
 
 /**
+ * A15.2 (MANT-1): mensaje interactivo de BOTONES de respuesta (máx 3, límite
+ * de Meta). Service message: solo entrega con la ventana 24h abierta — se usa
+ * para la propuesta de mantenimiento AL PRO ([Aprobar y enviar] [Posponer 30d]
+ * [Cancelar plan]); fuera de ventana el ciclo degrada con dignidad (el draft
+ * queda visible en el BO y el fallo se registra).
+ */
+export async function sendWhatsAppButtons(params: {
+  to: string;
+  bodyText: string;
+  buttons: Array<{ id: string; title: string }>; // title máx 20 chars (Meta)
+  merchantId?: number; // V0-2: demo solo a DEMO_SAFE_NUMBERS
+}) {
+  const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
+  const token = config.WHATSAPP_ACCESS_TOKEN;
+
+  if ((!phoneNumberId || !token) && !isDryRun()) {
+    console.warn('[WhatsApp] Credenciales no configuradas, botones omitidos');
+    return { ok: false, reason: 'not_configured' };
+  }
+  if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
+    console.warn(`[WhatsApp] V0-2: botones desde el merchant demo a ${params.to} BLOQUEADOS`);
+    return { ok: false, reason: 'demo_safe_numbers' };
+  }
+
+  // A5.5/A8.4: dry-run — Meta no se toca
+  if (isDryRun()) { dryRunRecord({ kind: 'buttons', to: params.to, bodyText: params.bodyText, buttons: params.buttons.map((b) => b.id) }); return { ok: true, data: dryRunData(), dryRun: true } as any; }
+
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/${phoneNumberId}/messages`,
+      {
+        messaging_product: 'whatsapp',
+        to: params.to,
+        type: 'interactive',
+        interactive: {
+          type: 'button',
+          body: { text: params.bodyText },
+          action: {
+            buttons: params.buttons.slice(0, 3).map((b) => ({
+              type: 'reply',
+              reply: { id: b.id, title: b.title.slice(0, 20) },
+            })),
+          },
+        },
+      },
+      {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        timeout: 10_000,
+      },
+    );
+    return { ok: true, data: response.data };
+  } catch (err: any) {
+    console.error('[WhatsApp] Error enviando botones:', err?.response?.data || err?.message);
+    return { ok: false, error: err?.response?.data || err?.message };
+  }
+}
+
+/**
  * BOT-1 (K1): mensaje interactivo de LISTA (service message — solo llega con
  * la ventana 24h abierta, que es exactamente el caso del bot: SIEMPRE responde
  * a un entrante → coste 0). Máx 10 filas por sección (límite de Meta).

@@ -10,14 +10,13 @@ import {
 
 import { prisma } from '../../../../core/db/prisma';
 import { getNextBillingStage } from '../../../quotes/domain/billingPlan';
-import { sendWhatsAppWindowFirst } from '../../../../integrations/whatsapp';
-import { buildQuoteDecision } from '../../../../integrations/whatsappTemplates';
+import { sendQuoteWhatsAppToCustomer } from '../../../quotes/domain/sendQuote.service';
+import { suggestMaintenance } from '../../../maintenance/domain/maintenance.service';
+import { isFlagEnabled } from '../../../../core/flags';
 import { getDeliveryStatus } from '../../../messaging/domain/whatsappLog.service';
 import { recordCustomerEvent } from '../../customerEvents.service';
 import { sendTechQuoteApprovedEmail } from '../../../messaging/domain/merchantNotifications';
-import { normalizePhone, formatMoneyEs } from '../../../../core/utils/utils';
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
-import { BASE_URL } from '../../../../core/config/env';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 
@@ -220,124 +219,66 @@ router.post('/:id/send-whatsapp', async (req, res) => {
       return res.status(400).json({ error: 'invalid_id' });
     }
 
-    const quote = await prisma.quote.findUnique({
-      where: { id },
-      include: {
-        merchant: true,
-        customer: true,
-      },
-    });
-
-    if (!quote) {
-      return res.status(404).json({ error: 'not_found' });
-    }
-
-    if (!quote.customer?.phone) {
-      return res.status(400).json({ error: 'customer_missing_phone' });
-    }
-
-    if (quote.status === 'pending_approval') {
-      return res.status(409).json({ error: 'pending_approval' });
-    }
-
-    const to = normalizePhone(quote.customer.phone);
-    if (!to) {
-      return res.status(400).json({ error: 'invalid_phone_format' });
-    }
-
-    // A5.5 (ciclo cero-plantillas): si la ventana de 24 h está abierta (p. ej.
-    // presupuesto nacido de una solicitud del bot — el cliente ACABA de
-    // escribirnos), el envío sale como TEXTO de sesión (0 €, texto oficial del
-    // master K1); si no, plantilla quote_decision_es como siempre.
-    const businessName = quote.merchant?.legalName || quote.merchant?.name || 'Tu proveedor';
-    const displayNum = quote.quoteNumber ?? quote.id; // A1.2: número visible por merchant
-    const result = await sendWhatsAppWindowFirst({
-      to,
-      merchantId: quote.merchantId, // J3: respeta waOptOut
-      customerId: quote.customerId,
-      windowText:
-        `Hola ${quote.customer.name ?? 'Cliente'} 👋\n` +
-        `${businessName} te ha preparado tu presupuesto:\n` +
-        `📄 *Presupuesto #${displayNum}* · *${formatMoneyEs(quote.total, quote.currency)}*\n` +
-        `Ábrelo, revísalo y fírmalo desde aquí 👇\n` +
-        `${BASE_URL}/pay/quote/${quote.id}`,
-      template: buildQuoteDecision({
-        customerName: quote.customer.name ?? 'Cliente',
-        businessName,
-        quoteNumber: displayNum,
-        totalWithCurrency: `${Number(quote.total).toFixed(2)} ${quote.currency}`,
-        quoteId: quote.id, // el botón URL sigue con el id global (/pay/quote/:id)
-      }),
-      log: { customerId: quote.customerId, relatedType: 'quote', relatedId: quote.id }, // WA-0b
-    });
+    // A15.2: la lógica vive en sendQuoteWhatsAppToCustomer (texto K1 + guards
+    // intactos) para que "Aprobar y enviar" del ciclo de mantenimientos sea
+    // EXACTAMENTE el flujo normal. Aquí solo se mapean reasons → HTTP de siempre.
+    const result = await sendQuoteWhatsAppToCustomer(id, req.merchantId);
 
     if (!result.ok) {
-      // Bloqueos de POLÍTICA propios (no son errores de Meta) — mensaje específico (J5)
-      const reason = (result as any).reason as string | undefined;
-      if (reason === 'demo_safe_numbers') {
-        return res.status(200).json({
-          ok: false, sent: false, error: 'demo_safe_numbers',
-          message: 'Modo demo seguro: este número no está en DEMO_SAFE_NUMBERS, no se envía nada (V0-2).',
-        });
+      switch (result.reason) {
+        case 'not_found':
+          return res.status(404).json({ error: 'not_found' });
+        case 'customer_missing_phone':
+          return res.status(400).json({ error: 'customer_missing_phone' });
+        case 'invalid_phone_format':
+          return res.status(400).json({ error: 'invalid_phone_format' });
+        case 'pending_approval':
+          return res.status(409).json({ error: 'pending_approval' });
+        // Bloqueos de POLÍTICA propios (no son errores de Meta) — mensaje específico (J5)
+        case 'demo_safe_numbers':
+          return res.status(200).json({
+            ok: false, sent: false, error: 'demo_safe_numbers',
+            message: 'Modo demo seguro: este número no está en DEMO_SAFE_NUMBERS, no se envía nada (V0-2).',
+          });
+        case 'wa_opt_out':
+          return res.status(200).json({
+            ok: false, sent: false, error: 'wa_opt_out',
+            message: 'Este cliente se dio de baja de WhatsApp (no se le envían más mensajes).',
+          });
+        // A3.2: topes anti-abuso del canal (J6 / PV-WA-CAPS)
+        case 'daily_cap':
+          return res.status(200).json({
+            ok: false, sent: false, error: 'daily_cap',
+            message: 'Has alcanzado el tope diario de mensajes de WhatsApp. Vuelve a intentarlo mañana o envíalo por email.',
+          });
+        case 'customer_daily_cap':
+          return res.status(200).json({
+            ok: false, sent: false, error: 'customer_daily_cap',
+            message: 'Este cliente ya recibió varios mensajes hoy (límite anti-spam). Vuelve a intentarlo mañana o envíalo por email.',
+          });
+        default: {
+          // P3-2: NO devolver un 502 crudo. El presupuesto sigue guardado; informamos
+          // con un mensaje claro (incluyendo el motivo de Meta si lo hay) y 200 ok:false.
+          const metaMsg =
+            (result.error as any)?.error?.message ||
+            (typeof result.error === 'string' ? result.error : '') ||
+            'WhatsApp rechazó el envío';
+          return res.status(200).json({
+            ok: false,
+            sent: false,
+            error: 'whatsapp_send_failed',
+            message: `No se pudo enviar por WhatsApp: ${metaMsg}. El presupuesto quedó guardado; puedes reintentarlo.`,
+            detail: result.error,
+          });
+        }
       }
-      if (reason === 'wa_opt_out') {
-        return res.status(200).json({
-          ok: false, sent: false, error: 'wa_opt_out',
-          message: 'Este cliente se dio de baja de WhatsApp (no se le envían más mensajes).',
-        });
-      }
-      // A3.2: topes anti-abuso del canal (J6 / PV-WA-CAPS)
-      if (reason === 'daily_cap') {
-        return res.status(200).json({
-          ok: false, sent: false, error: 'daily_cap',
-          message: 'Has alcanzado el tope diario de mensajes de WhatsApp. Vuelve a intentarlo mañana o envíalo por email.',
-        });
-      }
-      if (reason === 'customer_daily_cap') {
-        return res.status(200).json({
-          ok: false, sent: false, error: 'customer_daily_cap',
-          message: 'Este cliente ya recibió varios mensajes hoy (límite anti-spam). Vuelve a intentarlo mañana o envíalo por email.',
-        });
-      }
-
-      console.error('[send-whatsapp] Error de Meta API:', result.error);
-      // P3-2: NO devolver un 502 crudo. El presupuesto sigue guardado; informamos
-      // con un mensaje claro (incluyendo el motivo de Meta si lo hay) y 200 ok:false.
-      const metaMsg =
-        (result.error as any)?.error?.message ||
-        (typeof result.error === 'string' ? result.error : '') ||
-        'WhatsApp rechazó el envío';
-      return res.status(200).json({
-        ok: false,
-        sent: false,
-        error: 'whatsapp_send_failed',
-        message: `No se pudo enviar por WhatsApp: ${metaMsg}. El presupuesto quedó guardado; puedes reintentarlo.`,
-        detail: result.error,
-      });
     }
-
-    // Marcar como enviado si estaba en draft
-    if (quote.status === 'draft') {
-      await prisma.quote.update({
-        where: { id: quote.id },
-        data: { status: 'sent' },
-      });
-    }
-
-    // ENT-3: historial
-    recordCustomerEvent({
-      merchantId: quote.merchantId,
-      customerId: quote.customerId,
-      type: 'quote_sent',
-      title: `Presupuesto #${quote.quoteNumber ?? quote.id} enviado por WhatsApp`,
-      detail: `${Number(quote.total).toFixed(2)} ${quote.currency}`,
-    });
 
     return res.json({
       ok: true,
       sent: true,
-      quote_id: quote.id,
-      to,
+      quote_id: result.quoteId,
+      to: result.to,
     });
   } catch (err) {
     console.error('[POST /admin/quotes/:id/send-whatsapp]', err);
@@ -525,7 +466,37 @@ router.get('/:id', async (req, res) => {
     const detail = await getQuoteDetailAdmin(id);
     // WA-0b: estado de entrega del último WhatsApp de este presupuesto (chip)
     const waDelivery = await getDeliveryStatus(req.merchantId, 'quote', id);
-    return res.json({ ...detail, waDelivery });
+
+    // A15.1 (MANT-1, tras flag): en un presupuesto ACEPTADO cuya línea matchea
+    // una categoría mantenible del gremio, el detalle ofrece el toggle "Crear
+    // recordatorio de mantenimiento"; si ya hay plan, se muestra su estado.
+    let maintenance: unknown;
+    try {
+      const merchant = await prisma.merchant.findUnique({
+        where: { id: req.merchantId },
+        select: { id: true, country: true, flags: true, trade: true },
+      });
+      if (merchant && isFlagEnabled('MAINTENANCE_ENABLED', { merchant })) {
+        const plan = await prisma.maintenancePlan.findFirst({
+          where: { merchantId: req.merchantId, quoteId: id, active: true },
+          select: { id: true, title: true, intervalMonths: true, nextDueAt: true },
+        });
+        const suggestion = (detail as any)?.status === 'accepted' && !plan
+          ? suggestMaintenance(merchant.trade, (detail as any)?.lines)
+          : null;
+        maintenance = {
+          enabled: true,
+          plan: plan ?? null,
+          suggestion: suggestion
+            ? { title: suggestion.title, intervalMonths: suggestion.intervalMonths, matchedConcept: suggestion.matchedConcept }
+            : null,
+        };
+      }
+    } catch (e) {
+      console.error('[GET /admin/quotes/:id] maintenance enrich:', (e as Error)?.message);
+    }
+
+    return res.json({ ...detail, waDelivery, ...(maintenance ? { maintenance } : {}) });
   } catch (err: any) {
     console.error('[GET /admin/quotes/:id]', err);
     if (err.message === 'quote_not_found') {

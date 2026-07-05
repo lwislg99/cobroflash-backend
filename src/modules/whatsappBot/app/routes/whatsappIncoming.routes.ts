@@ -14,6 +14,7 @@ import { isFlagEnabled } from '../../../../core/flags';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
 import { handleBotMessage, handleUnsupportedMedia, type BotInput } from '../../domain/botFlow.service';
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
+import { handleMaintenanceButton } from '../../../maintenance/domain/maintenance.service';
 
 const router = Router();
 
@@ -154,6 +155,16 @@ async function routeIncoming(from: string, input: BotInput): Promise<void> {
   const text = (input.text || '').trim();
 
   console.log(`[WA in] from=${phone} ${input.listReplyId ? `list=${input.listReplyId}` : `text="${text.slice(0, 80)}"`}`);
+
+  // A15.2 (MANT-1): botones de la propuesta de mantenimiento — vienen DEL PRO
+  // (el servicio verifica que el emisor es el whatsappPhone del merchant dueño).
+  const mant = /^mant_(ok|later|cancel)_(\d+)_(\d+)$/.exec(input.listReplyId || '');
+  if (mant) {
+    const handled = await handleMaintenanceButton(
+      phone, mant[1] as 'ok' | 'later' | 'cancel', Number(mant[2]), Number(mant[3]),
+    ).catch((e) => { console.error('[maintenance] botón error:', e?.message); return true; });
+    if (handled) return;
+  }
 
   // J3: baja del canal — "BAJA"/"STOP" → waOptOut + confirmación + aviso al pro
   if (/^(baja|stop)[.!]?$/i.test(text)) {

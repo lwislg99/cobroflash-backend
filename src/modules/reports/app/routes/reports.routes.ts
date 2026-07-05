@@ -30,7 +30,9 @@ router.get('/pl', async (req, res) => {
         status: 'paid',
         paidAt: { gte: yearStart, lte: yearEnd },
       },
-      select: { paidAt: true, total: true, currency: true },
+      select: { paidAt: true, total: true, currency: true,
+        // A15.3 (MANT-1): € cobrados que nacieron del ciclo de mantenimientos
+        quote: { select: { origin: true } } },
     });
 
     // Gastos del año
@@ -55,11 +57,13 @@ router.get('/pl', async (req, res) => {
     // Agrupar por mes (0-11)
     const monthlyRevenue = Array(12).fill(0);
     const monthlyExpenses = Array(12).fill(0);
+    const monthlyMaintenance = Array(12).fill(0); // A15.3
     let currency = 'EUR';
 
     for (const inv of paidInvoices) {
       const m = new Date(inv.paidAt!).getMonth();
       monthlyRevenue[m] += Number(inv.total);
+      if (inv.quote?.origin === 'maintenance') monthlyMaintenance[m] += Number(inv.total);
       if (inv.currency) currency = inv.currency;
     }
     for (const exp of expenses) {
@@ -73,6 +77,7 @@ router.get('/pl', async (req, res) => {
       revenue:  Math.round(monthlyRevenue[i]  * 100) / 100,
       expenses: Math.round(monthlyExpenses[i] * 100) / 100,
       profit:   Math.round((monthlyRevenue[i] - monthlyExpenses[i]) * 100) / 100,
+      maintenance: Math.round(monthlyMaintenance[i] * 100) / 100, // A15.3
     }));
 
     const totalRevenue  = monthlyRevenue.reduce((a, b) => a + b, 0);
@@ -90,6 +95,7 @@ router.get('/pl', async (req, res) => {
         revenue:  Math.round(totalRevenue  * 100) / 100,
         expenses: Math.round(totalExpenses * 100) / 100,
         profit:   Math.round(totalProfit   * 100) / 100,
+        maintenance: Math.round(monthlyMaintenance.reduce((a, b) => a + b, 0) * 100) / 100, // A15.3
       },
       prevYear: {
         revenue:  Math.round(prevRev * 100) / 100,

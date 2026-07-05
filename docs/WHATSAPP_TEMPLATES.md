@@ -268,3 +268,19 @@ aprobada; **#132001** = nombre/idioma de plantilla no encontrado.
   Quedaron en categoría **Marketing**; recategorizar a **Utility** (P3-3).
 - `quote_reminder_es` (si existe en Meta) **no se usa**: el recordatorio de
   presupuesto reutiliza `quote_decision_es`.
+
+## §6 · maintenance_proposal_es (OPCIONAL — MANT-1, Ola 15 EXT3) 🔒 alta en Meta pendiente
+La propuesta de mantenimiento AL PRO sale hoy como **mensaje interactivo de sesión**
+(3 botones de respuesta: Aprobar y enviar · Posponer 30d · Cancelar plan). Los mensajes
+de sesión solo entregan con la ventana 24h del PRO abierta; si el pro no ha escrito al
+número en 24h, el envío falla CON DIGNIDAD (el borrador queda en Presupuestos y la
+ficha 360 registra el evento). Para cubrir también fuera de ventana:
+
+- **Nombre:** `maintenance_proposal_es` · **Idioma:** es · **Categoría:** Utility
+- **Body:** `🔧 Toca {{1}} de {{2}}. ¿Enviar presupuesto de {{3}}? Entra en tu panel para aprobarlo o posponerlo.`
+  ({{1}} título p. ej. "revisión de caldera" · {{2}} nombre del cliente · {{3}} importe "120,00 €")
+- **Botones:** Quick Reply ×3 — "Aprobar y enviar" · "Posponer 30d" · "Cancelar plan"
+  (los quick replies devuelven payload; el webhook ya enruta `mant_ok|later|cancel_{plan}_{draft}`)
+- Al aprobarla en Meta: añadir el builder en `whatsappTemplates.ts` y usarla como
+  fallback en `runMaintenanceProposals` (patrón ventana-first A5.2). Hasta entonces
+  NO hay envío de plantilla: cero riesgo de spam (regla 28 — J6 intacto).
