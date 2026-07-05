@@ -254,7 +254,7 @@ router.get('/:id', async (req, res) => {
     .fb{border-top:1px solid var(--border);margin-top:1.1rem;padding-top:1rem;text-align:center}
     .fb-title{font-weight:700;color:var(--ink);font-size:.98rem;margin-bottom:.55rem}
     .fb-stars{display:flex;justify-content:center;gap:.35rem;font-size:1.9rem;margin-bottom:.6rem}
-    .fb-stars button{background:none;border:none;cursor:pointer;font-size:inherit;line-height:1;filter:grayscale(1);opacity:.45;padding:.1rem .15rem;transition:filter .12s,opacity .12s,transform .12s}
+    .fb-stars button{background:none;border:none;cursor:pointer;font-size:inherit;line-height:1;filter:grayscale(1);opacity:.45;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:0;transition:filter .12s,opacity .12s,transform .12s} /* A9.4 AB6: target 44px */
     .fb-stars button.on{filter:none;opacity:1;transform:scale(1.08)}
     .fb textarea{width:100%;max-width:420px;border:1px solid var(--border);border-radius:12px;padding:.6rem .8rem;font:inherit;font-size:.88rem;color:var(--ink);resize:vertical;min-height:56px}
     .fb-send{margin-top:.6rem;background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:999px;padding:.55rem 1.2rem;font:inherit;font-weight:600;cursor:pointer}
@@ -325,7 +325,7 @@ router.get('/:id', async (req, res) => {
   .row b{color:var(--ink);font-variant-numeric:tabular-nums}
   small{color:var(--muted)}
   ul{padding-left:1.1rem;color:var(--body)}
-  a{color:var(--brand)}
+  a{color:#15803d} /* A9.4 AB6: 4,55:1 — var(--brand) fallaba AA en texto normal */
   .pay-btn{display:inline-block;padding:.7rem 1.1rem;border-radius:12px;text-decoration:none;font-weight:700;font-size:.92rem;text-align:center}
   .pay-btn-primary{background:var(--brand);color:#fff}
   .pay-btn-secondary{background:var(--surface);color:var(--ink);border:1px solid var(--border)}
