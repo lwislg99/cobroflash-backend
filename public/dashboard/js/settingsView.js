@@ -9,6 +9,7 @@ function renderSettingsView(container) {
 
     // Tarjeta de Referidos (se rellena de forma asíncrona)
     renderReferralCard(container);
+    renderWaFairUseCard(container); // A9.3: fair use W2 visible
 
     const title = document.createElement("h2");
     title.textContent = "Datos de la empresa";
@@ -513,6 +514,42 @@ function renderSettingsView(container) {
     });
   }
   
+// ── A9.3 · Fair use de WhatsApp visible (política W2 del master) ───────────
+// "300 plantillas/mes de uso razonable — aviso, NUNCA corte". El contador sale
+// del log J8 (solo cuentan las PLANTILLAS; lo que viaja por ventana es gratis
+// y no computa). Transparencia: en demo responde a "¿y si mando muchos?".
+async function renderWaFairUseCard(container) {
+  const FAIR_USE = 300; // W2: soft, aviso, nunca corte
+  let data;
+  try { data = await apiRequest('/admin/metrics/whatsapp'); } catch { return; }
+  const used = data?.month?.total ?? 0;
+  const windowFree = data?.channel?.windowMonth ?? 0;
+  const pct = Math.min(100, Math.round((used / FAIR_USE) * 100));
+  const nearLimit = used >= FAIR_USE * 0.8;
+
+  const card = document.createElement('div');
+  card.className = 'customers-card';
+  card.style.marginTop = '16px';
+  card.innerHTML = `
+    <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">WhatsApp este mes</h2>
+    <p style="margin:0 0 14px;font-size:13px;color:var(--neutral-400)">
+      Tu plan incluye <strong>${FAIR_USE} plantillas/mes</strong> de uso razonable — si te acercas te avisamos, <strong>nunca cortamos</strong>.
+    </p>
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px">
+      <span style="color:var(--neutral-600);font-weight:600">${used} de ${FAIR_USE} plantillas</span>
+      <span style="color:var(--muted)">${pct}%</span>
+    </div>
+    <div style="background:var(--neutral-100);border-radius:6px;height:12px;overflow:hidden;margin-bottom:10px">
+      <div style="width:${pct}%;height:100%;border-radius:6px;background:${nearLimit ? '#f59e0b' : 'var(--green-600)'}"></div>
+    </div>
+    ${nearLimit ? `<div class="alert warning" style="display:block;margin:0 0 10px;font-size:13px">Estás cerca del uso razonable de tu plan. No se corta nada — si tu volumen crece, hablamos.</div>` : ''}
+    <p style="margin:0;font-size:12.5px;color:var(--muted)">
+      Además, <strong>${windowFree}</strong> mensaje${windowFree === 1 ? '' : 's'} de este mes ${windowFree === 1 ? 'ha viajado' : 'han viajado'} por la ventana de 24 h — gratis y sin computar aquí.
+    </p>
+  `;
+  container.appendChild(card);
+}
+
 // ── Tarjeta de Referidos (Sprint REFERRAL) ────────────────────────────────
 async function renderReferralCard(container) {
   const card = document.createElement("div");
