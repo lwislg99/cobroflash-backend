@@ -10,6 +10,20 @@ import { sendFirstPaymentEmail } from '../../../messaging/domain/lifecycle.servi
 export const rawBody = express.raw({ type: 'application/json' });
 export const router = express.Router();
 
+// A10.4: idempotencia — Stripe reintenta y puede entregar el mismo evento dos
+// veces; un event.id ya procesado no vuelve a aplicar cambios de plan. LRU en
+// memoria (500) suficiente para F1; A12.2 lo cubre con test.
+const seenStripeEvents = new Set<string>();
+const seenOrder: string[] = [];
+function isDuplicateStripeEvent(id: string): boolean {
+  if (!id) return false;
+  if (seenStripeEvents.has(id)) return true;
+  seenStripeEvents.add(id);
+  seenOrder.push(id);
+  if (seenOrder.length > 500) seenStripeEvents.delete(seenOrder.shift() as string);
+  return false;
+}
+
 router.post('/', async (req, res) => {
   try {
     if (!stripe) return res.status(501).send('Stripe no está configurado');
@@ -19,6 +33,12 @@ router.post('/', async (req, res) => {
     if (!secret) return res.status(500).send('Missing STRIPE_WEBHOOK_SECRET');
 
     const event = stripe.webhooks.constructEvent(req.body as Buffer, sig, secret);
+
+    // A10.4: evento duplicado → ACK sin re-aplicar
+    if (isDuplicateStripeEvent(event.id)) {
+      console.log(`[stripe] evento duplicado ignorado: ${event.id} (${event.type})`);
+      return res.json({ received: true, duplicate: true });
+    }
 
     if (event.type === 'checkout.session.completed') {
       const s = event.data.object as StripeLib.Checkout.Session;
@@ -42,7 +62,7 @@ router.post('/', async (req, res) => {
         if (Number.isInteger(merchantId) && planId && s.customer) {
           await prisma.merchant.update({
             where: { id: merchantId },
-            data: { stripeCustomerId: String(s.customer), plan: planId },
+            data: { stripeCustomerId: String(s.customer), plan: planId, subscriptionStatus: 'active' }, // A10.2 (L)
           });
           // Recompensa de referido (mes gratis al referidor) — idempotente
           await rewardReferralOnFirstPayment(merchantId).catch((e) =>
@@ -74,15 +94,34 @@ router.post('/', async (req, res) => {
       const merchantId = Number(sub.metadata?.merchant_id);
       const planId = String(sub.metadata?.plan || '');
       if (Number.isInteger(merchantId) && planId) {
-        const isActive = sub.status === 'active' || sub.status === 'trialing';
-        await prisma.merchant.update({
-          where: { id: merchantId },
-          data: {
-            plan: isActive ? planId : 'trial',
-            stripeSubscriptionId: sub.id,
-            planExpiresAt: isActive ? new Date((sub as any).current_period_end * 1000) : null,
-          },
-        });
+        // A10.2 — FSM de la Parte L (fuente única: ESTE webhook):
+        //   active/trialing → active(plan) · past_due/unpaid → past_due (el plan
+        //   SE CONSERVA: gracia con banner + portal, no se degrada a trial) ·
+        //   canceled/incomplete_expired → canceled → plan trial.
+        const st = String(sub.status);
+        if (st === 'active' || st === 'trialing') {
+          await prisma.merchant.update({
+            where: { id: merchantId },
+            data: {
+              plan: planId,
+              subscriptionStatus: 'active',
+              stripeSubscriptionId: sub.id,
+              planExpiresAt: new Date((sub as any).current_period_end * 1000),
+            },
+          });
+        } else if (st === 'past_due' || st === 'unpaid') {
+          await prisma.merchant.update({
+            where: { id: merchantId },
+            data: { plan: planId, subscriptionStatus: 'past_due', stripeSubscriptionId: sub.id },
+          });
+        } else if (st === 'canceled' || st === 'incomplete_expired') {
+          await prisma.merchant.update({
+            where: { id: merchantId },
+            data: { plan: 'trial', subscriptionStatus: 'canceled', stripeSubscriptionId: null, planExpiresAt: null },
+          });
+        } else {
+          console.log(`[stripe] estado de suscripción sin mapeo directo: ${st} (merchant ${merchantId})`);
+        }
       }
 
     } else if (event.type === 'customer.subscription.deleted') {
@@ -91,7 +130,7 @@ router.post('/', async (req, res) => {
       if (Number.isInteger(merchantId)) {
         await prisma.merchant.update({
           where: { id: merchantId },
-          data: { plan: 'trial', stripeSubscriptionId: null, planExpiresAt: null },
+          data: { plan: 'trial', subscriptionStatus: 'canceled', stripeSubscriptionId: null, planExpiresAt: null }, // A10.2 (L)
         });
       }
 

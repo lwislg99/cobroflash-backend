@@ -10,6 +10,27 @@ async function initApp() {
   window.appUserRole   = me.userRole || 'admin';
   window.appUserName   = me.name || '';
   window.appVoiceEnabled = me.voiceEnabled === true; // VZ-1: flag VOICE_QUOTE_ENABLED
+
+  // A10.2 (Parte L): past_due → banner global "Hay un problema con tu pago"
+  // + portal de Stripe. La cuenta sigue funcionando (gracia); solo avisa.
+  if (me.subscriptionStatus === 'past_due' && !document.getElementById('pastdue-banner')) {
+    const banner = document.createElement('div');
+    banner.id = 'pastdue-banner';
+    banner.setAttribute('role', 'alert');
+    banner.style.cssText = 'background:#fef2f2;border-bottom:1px solid #fecaca;color:#991b1b;padding:10px 16px;display:flex;align-items:center;justify-content:center;gap:12px;font-size:13.5px;font-weight:600;flex-wrap:wrap';
+    banner.innerHTML = `
+      <span>⚠️ Hay un problema con tu pago — tu cuenta sigue activa, pero revísalo cuanto antes.</span>
+      <button id="pastdue-portal" class="btn-sm" style="border:1px solid #fecaca;background:#fff;color:#991b1b;border-radius:999px;padding:6px 14px;font-weight:700;cursor:pointer">Revisar pago</button>`;
+    document.body.prepend(banner);
+    document.getElementById('pastdue-portal').addEventListener('click', async () => {
+      try {
+        const r = await apiRequest('/admin/billing/portal', { method: 'POST' });
+        if (r.portalUrl) window.location.href = r.portalUrl;
+      } catch (e) {
+        showToast('No se pudo abrir el portal: ' + e.message, 'error');
+      }
+    });
+  }
   window.appLocale = me.locale || {
     quote: 'Presupuesto', quotePlural: 'Presupuestos', quoteNew: 'Nuevo presupuesto',
     quoteVerb: 'presupuesto', currency: 'EUR', defaultVat: 0.21, vatName: 'IVA',

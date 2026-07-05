@@ -47,6 +47,12 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
       <div>
         <div style="font-weight:700;font-size:15px;color:var(--ink)">Tu prueba ha terminado, elige un plan para seguir</div>
         <div style="font-size:13px;color:var(--body);margin-top:2px">Puedes ver tus datos, pero para crear y enviar presupuestos necesitas una suscripción activa.</div>
+        <div style="font-size:12.5px;color:var(--muted);margin-top:6px">
+          Tus datos son tuyos y NUNCA se borran — exporta cuando quieras:
+          <a href="/admin/exports/quotes.csv" style="color:#15803d">presupuestos</a> ·
+          <a href="/admin/exports/invoices.csv" style="color:#15803d">cobros</a> ·
+          <a href="/admin/exports/expenses.csv" style="color:#15803d">gastos</a>
+        </div>
       </div>
     </div>
   ` : currentPlan === 'trial' ? `

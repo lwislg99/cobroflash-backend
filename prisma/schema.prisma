@@ -35,7 +35,7 @@ model Merchant {
   bizumPhone           String? @map("bizum_phone")
   // A10.2 (EXT3, Parte L): estado de la suscripción de Stripe — ok|past_due|canceled.
   // plan conserva QUÉ plan es; esto conserva CÓMO está (banner past_due + portal).
-  subscriptionStatus   String? @map("subscription_status")
+  subscriptionStatus   String? @map("subscription_status") // active | past_due | canceled
 
   // A14 (EXT3, PERFIL-1): perfil público /p/:slug · flag PUBLIC_PROFILE_ENABLED (OFF)
   slug            String?   @unique

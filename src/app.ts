@@ -178,6 +178,8 @@ app.get('/admin/me', async (req, res) => {
     voiceEnabled: isFlagEnabled('VOICE_QUOTE_ENABLED', {
       merchant: { id: session.merchantId, country: merchantFull?.country },
     }),
+    // A10.2 (Parte L): estado de la suscripción para el banner past_due
+    subscriptionStatus: owner ? 'active' : ((session.merchant as any).subscriptionStatus ?? null),
   });
 });
 
