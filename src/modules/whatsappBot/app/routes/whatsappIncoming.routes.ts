@@ -6,7 +6,7 @@ import { Router } from 'express';
 import crypto from 'crypto';
 import { prisma } from '../../../../core/db/prisma';
 import { config } from '../../../../core/config/env';
-import { normalizePhone } from '../../../../core/utils/utils';
+import { normalizePhone, formatMoneyEs } from '../../../../core/utils/utils';
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/merchantNotifications';
 import { updateWaMessageStatus, recordInboundWaMessage } from '../../../messaging/domain/whatsappLog.service';
@@ -269,7 +269,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
   if (decision === 'unknown') {
     await sendWhatsAppText({
       to: from,
-      text: `Para responder al presupuesto #${quote.id}, escribe *Acepto* o *No*. También puedes firmarlo desde el enlace que te enviamos.`,
+      text: `Para responder al presupuesto #${(quote as any).quoteNumber ?? quote.id}, escribe *Acepto* o *No*. También puedes firmarlo desde el enlace que te enviamos.`,
     });
     return;
   }
@@ -287,7 +287,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
 
     await sendWhatsAppText({
       to: from,
-      text: `✅ ¡Perfecto! Hemos registrado tu aceptación del presupuesto #${quote.id}. Te avisaremos con los siguientes pasos.`,
+      text: `✅ ¡Perfecto! Hemos registrado tu aceptación del presupuesto #${(quote as any).quoteNumber ?? quote.id}. Te avisaremos con los siguientes pasos.`,
     });
 
     // Email al merchant si tiene la notificación activa
@@ -316,7 +316,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
     if (mPhone) {
       sendWhatsAppText({
         to: mPhone,
-        text: `✅ *${customer?.name || 'Cliente'}* aceptó el presupuesto #${quote.id} (${Number(quote.total).toFixed(2)} ${quote.currency}) por WhatsApp.`,
+        text: `✅ *${customer?.name || 'Cliente'}* aceptó el presupuesto #${(quote as any).quoteNumber ?? quote.id} (${formatMoneyEs(quote.total, quote.currency)}) por WhatsApp.`,
       }).catch(() => {});
     }
     return;
@@ -334,7 +334,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
 
     await sendWhatsAppText({
       to: from,
-      text: `Hemos registrado tu rechazo del presupuesto #${quote.id}. Gracias por avisar.`,
+      text: `Hemos registrado tu rechazo del presupuesto #${(quote as any).quoteNumber ?? quote.id}. Gracias por avisar.`,
     });
 
     const merchant = await prisma.merchant.findUnique({
@@ -349,7 +349,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
     if (mPhone) {
       sendWhatsAppText({
         to: mPhone,
-        text: `❌ *${customer?.name || 'Cliente'}* rechazó el presupuesto #${quote.id} por WhatsApp.`,
+        text: `❌ *${customer?.name || 'Cliente'}* rechazó el presupuesto #${(quote as any).quoteNumber ?? quote.id} por WhatsApp.`,
       }).catch(() => {});
     }
   }

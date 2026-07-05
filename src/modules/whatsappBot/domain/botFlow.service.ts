@@ -11,7 +11,7 @@
 // asking_zone|done|handoff (regla 27).
 import { prisma } from '../../../core/db/prisma';
 import { BASE_URL } from '../../../core/config/env';
-import { normalizePhone } from '../../../core/utils/utils';
+import { normalizePhone, formatMoneyEs } from '../../../core/utils/utils';
 import { sendWhatsAppText, sendWhatsAppList } from '../../../integrations/whatsapp';
 import { notifyMerchantAlert } from '../../../integrations/whatsappNotifications';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
@@ -229,15 +229,16 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
       });
       await sendMenu(from, merchantId, businessName);
     } else {
+      // A8.1: dinero SIEMPRE en formato es-ES ("2.383,70 €"), nunca "2383.70 EUR"
       const lines = quotes.map((q) =>
-        `📄 *Presupuesto #${q.quoteNumber ?? q.id}* · ${Number(q.total).toFixed(2)} ${q.currency}\n👉 Ver y firmar: ${BASE_URL}/pay/quote/${q.id}`,
+        `📄 *Presupuesto #${q.quoteNumber ?? q.id}* · ${formatMoneyEs(q.total, q.currency)}\n👉 Ver y firmar: ${BASE_URL}/pay/quote/${q.id}`,
       );
       await sendWhatsAppText({
         to: from,
         text: `Esto es lo que tienes pendiente de decidir con ${businessName}:\n\n${lines.join('\n\n')}`,
       });
     }
-    await setSession(phone, { merchantId, state: 'menu', data: {} }, session);
+    await setSession(phone, { merchantId, state: 'menu', data: { lastAction: 'quotes' } }, session);
     return true;
   }
 
@@ -249,22 +250,26 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
       select: { id: true, amount: true, currency: true, concept: true },
     });
     if (!charges.length) {
+      // A8.1: tras "estás al día", el menú — que la conversación nunca muera
       await sendWhatsAppText({ to: from, text: `🎉 ¡Estás al día! No tienes ningún pago pendiente con ${businessName}.` });
+      await sendMenu(from, merchantId, businessName);
     } else {
+      // A8.1: dinero es-ES + cierre honesto (los métodos concretos los decide
+      // su página de pago — no prometer tarjeta si el merchant no la tiene)
       const lines = charges.map((c) =>
-        `💳 *${Number(c.amount).toFixed(2)} ${c.currency}*${c.concept ? ` · ${c.concept}` : ''}\n👉 Pagar seguro: ${BASE_URL}/pay/invoice/${c.id}`,
+        `💳 *${formatMoneyEs(c.amount, c.currency)}*${c.concept ? ` · ${c.concept}` : ''}\n👉 Pagar seguro: ${BASE_URL}/pay/invoice/${c.id}`,
       );
       await sendWhatsAppText({
         to: from,
-        text: `Esto es lo que tienes pendiente con ${businessName}:\n\n${lines.join('\n\n')}\n\nPuedes pagar con tarjeta, Bizum o transferencia desde el enlace.`,
+        text: `Esto es lo que tienes pendiente con ${businessName}:\n\n${lines.join('\n\n')}\n\nPagas desde el enlace, con pago seguro y cifrado.`,
       });
     }
-    await setSession(phone, { merchantId, state: 'menu', data: {} }, session);
+    await setSession(phone, { merchantId, state: 'menu', data: { lastAction: 'pay' } }, session);
     return true;
   }
 
   if (listId === 'bot_request') {
-    await setSession(phone, { merchantId, state: 'asking_description', data: {} }, session);
+    await setSession(phone, { merchantId, state: 'asking_description', data: { lastAction: 'request' } }, session);
     // Copy v2 (fundador 5-jul): sin invitar al audio hasta MEDIA-1, con ejemplo
     await sendWhatsAppText({
       to: from,
@@ -274,13 +279,23 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
   }
 
   if (listId === 'bot_human') {
+    // A8.3/A8.1: CONTEXTO para el pro — en qué estaba el cliente al pedir humano
+    const CONTEXT_LABEL: Record<string, string> = {
+      quotes: 'estaba viendo sus presupuestos',
+      pay: 'estaba mirando sus pagos pendientes',
+      request: 'estaba pidiendo un presupuesto',
+    };
+    const context = CONTEXT_LABEL[String(session?.data?.lastAction || '')] || 'estaba en el menú';
     notifyMerchantAlert({
       merchantId,
       merchantPhone: merchant.whatsappPhone,
       customerName: customer.name || 'Un cliente',
       action: 'quiere hablar contigo por WhatsApp',
       detail: `Su número: +${phone}`,
-      freeText: `💬 *${customer.name || 'Un cliente'}* (+${phone}) quiere hablar contigo. Escríbele desde tu número personal.`,
+      freeText:
+        `💬 *${customer.name || 'Un cliente'}* (+${phone}) quiere hablar contigo.\n` +
+        `Contexto: ${context}.\n` +
+        `Escríbele desde tu número personal — el asistente queda en silencio 24 h.`,
     }).catch((e) => console.error('[bot] handoff aviso:', e?.message || e));
     await sendWhatsAppText({
       to: from,
@@ -308,7 +323,7 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
       customerName: customer.name || 'Un cliente',
       action: 'te ha escrito por WhatsApp',
       detail: `"${text.slice(0, 80)}" · Su número: +${phone}`,
-      freeText: `💬 *${customer.name || 'Un cliente'}* (+${phone}) te ha escrito: "${text.slice(0, 300)}". Respóndele desde tu número personal.`,
+      freeText: `💬 *${customer.name || 'Un cliente'}* (+${phone}) te ha escrito: "${text.slice(0, 300)}".\nRespóndele desde tu número personal — el asistente queda en silencio 24 h.`,
     }).catch((e) => console.error('[bot] handoff 2ª vez:', e?.message || e));
     await sendWhatsAppText({
       to: from,
