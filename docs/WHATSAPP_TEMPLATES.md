@@ -17,6 +17,52 @@ los dos sitios.
 
 ---
 
+## A5.1 — Auditoría de coste por ciclo (estrategia de ventana, Ola 5)
+
+**La regla del dinero:** una plantilla se paga SIEMPRE; un mensaje dentro de la
+**ventana de servicio de 24 h** (abierta por CUALQUIER mensaje entrante del cliente,
+incluido el tap a un botón *quick reply*) cuesta **0 €**. Un botón de **URL no abre
+ventana** (el cliente no envía nada); un **quick reply sí**.
+
+Costes usados (España, constante J1 del código `WA_UTILITY_COST_ES`): plantilla
+**Utility ~0,023 €** · plantilla **Marketing ~0,06 €** (donde §4/§5 siguen atascadas
+hasta P3-3) · mensaje en ventana **0 €**. Verificar el rate card vigente en Meta al
+recategorizar.
+
+### El ciclo completo, mensaje a mensaje
+
+| # | Momento | Mensaje | HOY (canal → coste) | CON VENTANA-FIRST (A5.2/A5.3) |
+|---|---------|---------|---------------------|-------------------------------|
+| 1 | Envío del presupuesto | `quote_decision_es` (§1) | Plantilla Utility → **0,023 €** | Igual: **la ÚNICA plantilla del ciclo** (es la que abre la conversación) → 0,023 € |
+| 2 | Recordatorio 24 h sin respuesta | `quote_decision_es` (§1, reuso) | Plantilla Utility → 0,023 € | Ventana si el cliente escribió/tocó botón (<24 h) → **0 €**; si no, plantilla |
+| 3 | Aviso al PRO (aceptado/rechazado) | `merchant_alert_es` (§5) | Texto si ventana PRO abierta, si no plantilla Marketing → 0–0,06 € | Igual (ya es ventana-first desde J1); el PRO que usa el bot casi siempre tiene ventana → **~0 €** |
+| 4 | Cobro (enlace de pago) | `payment_request_es` (§2) | Plantilla Utility → 0,023 € | **Ventana-first**: texto con enlace si ventana abierta → **0 €**; plantilla solo si expiró |
+| 5 | Recordatorios de cobro 7/14 d | `payment_request_es` (§2, reuso) | Plantilla Utility → 0,023 €/ud | Ventana-first (rara vez abierta a 7 días) → normalmente plantilla |
+| 6 | Pago confirmado + recibo/reseña | `payment_confirmation_invoice_es` (§4) | Plantilla **Marketing** → **0,06 €** | **Ventana-first SIEMPRE** (A5.3): el pago llega minutos después de una interacción → texto con enlace `/recibo/:id` → **0 €** |
+| 7 | Aviso al PRO (te ha pagado) | `merchant_alert_es` (§5) | Texto o plantilla Marketing → 0–0,06 € | Igual que #3 → **~0 €** |
+| — | Bot entrante (menú, pagar pendiente, solicitud) | listas/textos interactivos | Ventana SIEMPRE (responde a un entrante) → **0 €** | Igual → 0 € |
+
+### Total por ciclo feliz (sin recordatorios)
+
+| Escenario | Plantillas pagadas | Coste |
+|-----------|--------------------|-------|
+| **HOY** (§4/§5 aún Marketing) | #1 + #4 + #6 (+ #3/#7 si ventana PRO cerrada) | **~0,11–0,23 €** |
+| **HOY con P3-3 hecho** (todo Utility) | #1 + #4 + #6 | ~0,07 € |
+| **VENTANA-FIRST (gate Ola 5)** | Solo #1 | **~0,023 €** |
+
+### Qué hace falta para cerrarlo
+
+1. **Código (Claude, A5.2/A5.3/A5.4):** registrar entrantes (`type:'inbound'` en el log
+   WA-0b) → helper "¿ventana abierta?" → envíos #4/#5/#6 prueban ventana antes de gastar
+   plantilla, registrando `type:'service'` (0 €) para medir el ahorro.
+2. **Meta (fundador, con la WABA de producción — FASE B):** al recrear las plantillas,
+   añadir **botones quick reply** a `quote_decision_es` (p. ej. «👍 Lo miro ahora») y a
+   `payment_request_es` (p. ej. «✅ Voy a pagarlo»): cada tap abre ventana y convierte el
+   resto del ciclo en gratis. ⚠️ Cambio de plantillas = acción del fundador (regla AA1).
+3. **Meta (fundador, P3-3):** recategorizar §4/§5 de Marketing → Utility.
+
+---
+
 ## 1. `quote_decision_es`
 Envío de un presupuesto al cliente para que lo vea, acepte o rechace.
 
