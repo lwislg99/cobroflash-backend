@@ -480,7 +480,12 @@ blockClient.appendChild(descWrapper);
   table.appendChild(thead);
   const tbody = document.createElement("tbody");
   table.appendChild(tbody);
-  blockLines.appendChild(table);
+  // A6.6 (P1 móvil): la tabla de líneas es más ancha que un móvil de 390px;
+  // scrollea DENTRO de su contenedor y no arrastra toda la vista (overflow-x).
+  const tableWrap = document.createElement("div");
+  tableWrap.className = "quote-lines-scroll";
+  tableWrap.appendChild(table);
+  blockLines.appendChild(tableWrap);
 
   // ---------- DRAG & DROP para reordenar líneas (FRONT1-4) ----------
   let draggedTr = null;
