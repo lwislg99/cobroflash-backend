@@ -13,6 +13,7 @@ import type StripeLib from 'stripe';
 import { stripe } from '../../../integrations/stripe';
 import { config, BASE_URL } from '../../../core/config/env';
 import { prisma } from '../../../core/db/prisma';
+import { handleStripeDispute } from '../disputes.service'; // A21.1 (R14)
 
 export const rawBody = express.raw({ type: 'application/json' });
 export const router = express.Router();
@@ -56,6 +57,10 @@ router.post('/', async (req, res) => {
           }, { timeout: 10_000 });
         }
       }
+
+    } else if (event.type === 'charge.dispute.created') {
+      // A21.1 (R14): disputa → aviso WA/BO + paquete de evidencia en la factura
+      await handleStripeDispute(event.data.object as StripeLib.Dispute);
 
     } else if (event.type === 'payment_intent.payment_failed') {
       const pi = event.data.object as StripeLib.PaymentIntent;

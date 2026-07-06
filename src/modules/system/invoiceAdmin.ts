@@ -42,9 +42,10 @@ export async function listInvoicesAdmin(
 }
 
 // Detalle de una factura
-export async function getInvoiceDetailAdmin(id: number) {
-  return prisma.invoice.findUnique({
-    where: { id },
+export async function getInvoiceDetailAdmin(id: number, merchantId?: number) {
+  // A21.3: scoping multi-tenant también en la LECTURA (regla 2)
+  return prisma.invoice.findFirst({
+    where: { id, ...(merchantId != null ? { merchantId } : {}) },
     include: {
       merchant: true,
       customer: true,
@@ -55,13 +56,32 @@ export async function getInvoiceDetailAdmin(id: number) {
   });
 }
 
-// Cambiar estado (pending/paid/expired) manteniendo paidAt coherente
+// Cambiar estado (pending/paid/expired) manteniendo paidAt coherente.
+// A21.3: SIEMPRE con merchantId (regla 2 multi-tenant — un id ajeno = null) y
+// "deshacer pago" (→pending) SOLO pre-SIF: justificantes (J-…) o tipo JUST;
+// una factura F1 real jamás se des-paga a mano — para eso está la R1 (regla 29).
+export class UnpayNotAllowedError extends Error {}
 export async function updateInvoiceStatusAdmin(
   id: number,
   status: string,
+  merchantId?: number,
 ) {
-  const existing = await prisma.invoice.findUnique({ where: { id } });
+  const existing = await prisma.invoice.findFirst({
+    where: { id, ...(merchantId != null ? { merchantId } : {}) },
+  });
   if (!existing) return null;
+
+  if (status === 'pending' && existing.status === 'paid') {
+    const isReceipt = existing.type === 'JUST' || /^J-/i.test(existing.number || '');
+    if (!isReceipt) {
+      throw new UnpayNotAllowedError(
+        'Una factura emitida no se des-paga: emite una rectificativa (R1).',
+      );
+    }
+  }
+
+  // Idempotencia: si ya está en ese estado, devolver sin tocar (ni re-auditar)
+  if (existing.status === status) return { ...existing, __unchanged: true } as any;
 
   let paidAt = existing.paidAt;
 
@@ -82,10 +102,10 @@ export async function updateInvoiceStatusAdmin(
 }
 
 // Helpers específicos (por si quieres seguir usándolos)
-export async function markInvoicePaidAdmin(id: number) {
-  return updateInvoiceStatusAdmin(id, 'paid');
+export async function markInvoicePaidAdmin(id: number, merchantId?: number) {
+  return updateInvoiceStatusAdmin(id, 'paid', merchantId);
 }
 
-export async function markInvoicePendingAdmin(id: number) {
-  return updateInvoiceStatusAdmin(id, 'pending');
+export async function markInvoicePendingAdmin(id: number, merchantId?: number) {
+  return updateInvoiceStatusAdmin(id, 'pending', merchantId);
 }

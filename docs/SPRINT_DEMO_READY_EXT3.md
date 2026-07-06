@@ -98,6 +98,22 @@
 > política Railway documentada; destino externo+clave definitiva+programación = FUNDADOR
 > checklist) · A11.4 (CSV Excel español: separador `;` en TODOS + BOM; NUEVO customers.csv
 > RGPD + botón "Clientes CSV" en Informes).
+> **OLA 21 ✅ COMPLETA (6-jul):** A21.1 (R14: handleStripeDispute COMPARTIDO entre el webhook
+> Connect [spec] y el de plataforma [las tarjetas de HOY]: charge por payment_intent → evento
+> 360 "⚠️ Disputa abierta" + WA al pro ventana-first; GET /admin/invoices/:id/dispute-package
+> [admin]: HTML imprimible→PDF con las 4 secciones — aceptación con ts/IP/UA y firma,
+> documento, referencia del procesador, registro WhatsApp con estados de entrega; botón "📎
+> Paquete de disputa" en el detalle con charge) · A21.2 (V4/V5 NADA automático: al marcar
+> PAGADA el BO pregunta el importe REAL; distinto → POST payment-anomaly anota parcial/
+> sobrepago en la 360 y la factura SIGUE pendiente; runbook R15 nuevo con los pasos manuales;
+> prompt nativo por ahora — pulido visual en Ola 18/22 si toca) · A21.3 (verificación R5 con
+> TRES fixes de fondo: mutaciones de factura ahora requireRole('admin') [pay/unpay/bulk/
+> status/rectify/resend/send-email/send-reminder — S1 decía Técnico ❌ y no se aplicaba],
+> updateInvoiceStatusAdmin y getInvoiceDetailAdmin con scoping multi-tenant [regla 2 — un id
+> ajeno era leíble/mutable], unpay SOLO justificantes pre-SIF [F1 real → 409 "emite R1",
+> UnpayNotAllowedError] e idempotente [doble click sin cambio → sin audit duplicado]).
+> Gate simulado en verde `a21-e2e.txt`: disputa→evento+WA+paquete 200 completo
+> (`a211-dispute-package.html`), V4 parcial sigue pending, unpay F1 real 409.
 > **CHOQUES Olas 1-9 señalados al fundador (resolución al llegar):** A22.3 búsqueda global ya
 > existe → completar contra spec · A17 load-catalog ya existe → migrar contenido a data/catalogs
 > con schema master · A16.1 → añadir SOLO métricas X2 faltantes. **Decisiones fundador recibidas:**

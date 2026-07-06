@@ -286,22 +286,54 @@ async function fetchInvoiceDetail(id) {
   
     btnTogglePaid.addEventListener('click', async () => {
       const targetStatus = st === 'paid' ? 'pending' : 'paid';
-  
+
+      // A21.2 (V4/V5): al marcar PAGADA se pregunta el importe REAL recibido.
+      // Si no coincide, NADA automático: la factura sigue pendiente y queda
+      // anotado en la ficha 360 para la decisión manual (runbook O).
+      if (targetStatus === 'paid') {
+        const totalNum = Number(invoice.total);
+        const raw = window.prompt(
+          '¿Qué importe has recibido? (€)\nSi coincide con el total, confirma tal cual.',
+          totalNum.toFixed(2)
+        );
+        if (raw === null) return; // cancelado
+        const received = Number(String(raw).replace(',', '.'));
+        if (!Number.isFinite(received) || received < 0) {
+          setStatus('error', 'Importe no válido.');
+          return;
+        }
+        if (Math.abs(received - totalNum) > 0.009) {
+          btnTogglePaid.disabled = true;
+          try {
+            const r = await apiRequest(`/admin/invoices/${invoice.id}/payment-anomaly`, {
+              method: 'POST',
+              body: JSON.stringify({ amount: received }),
+            });
+            setStatus('error', '⚠️ ' + (r.message || 'Importe distinto anotado. La factura sigue pendiente.'));
+          } catch (e) {
+            setStatus('error', 'No se pudo anotar el importe. Inténtalo de nuevo.');
+          } finally {
+            btnTogglePaid.disabled = false;
+          }
+          return; // JAMÁS se marca pagada con un importe distinto
+        }
+      }
+
       btnTogglePaid.disabled = true;
       const originalText = btnTogglePaid.textContent;
       btnTogglePaid.textContent = 'Actualizando…';
-  
+
       try {
         const res = await fetch(`/admin/invoices/${invoice.id}/status`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: targetStatus }),
         });
-  
+
         const data = await res.json();
-  
+
         if (!res.ok) {
-          const msg = data.error || 'desconocido';
+          const msg = data.message || data.error || 'desconocido';
           throw new Error(msg);
         }
   
@@ -320,6 +352,19 @@ async function fetchInvoiceDetail(id) {
     });
   
     if (invoice.type !== 'R1') actions.appendChild(btnTogglePaid);
+
+    // A21.1 (R14): paquete de evidencia de disputa en 1 clic — con cobro de
+    // tarjeta (charge) siempre disponible; la firma digital gana disputas.
+    if (invoice.chargeId) {
+      const btnDispute = document.createElement('button');
+      btnDispute.className = 'btn-secondary btn-sm';
+      btnDispute.textContent = '📎 Paquete de disputa';
+      btnDispute.title = 'Presupuesto firmado + evidencia de aceptación + justificante + registro de mensajes, listo para responder al banco';
+      btnDispute.addEventListener('click', () => {
+        window.open(`/admin/invoices/${invoice.id}/dispute-package`, '_blank');
+      });
+      actions.appendChild(btnDispute);
+    }
 
     // C1-4: "Confirmar Bizum recibido" (N5) con DOBLE toque — el 1er clic pide
     // confirmación explícita con el importe, el 2º ejecuta. Dispara la misma

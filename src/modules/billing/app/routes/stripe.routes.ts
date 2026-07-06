@@ -4,6 +4,7 @@ import type StripeLib from 'stripe';
 import { stripe } from '../../../../integrations/stripe';
 import { config, BASE_URL } from '../../../../core/config/env';
 import { prisma } from '../../../../core/db/prisma';
+import { handleStripeDispute } from '../../../payments/disputes.service'; // A21.1 (R14)
 import { rewardReferralOnFirstPayment } from '../../../auth/domain/referral.service';
 import { sendFirstPaymentEmail } from '../../../messaging/domain/lifecycle.service';
 
@@ -38,6 +39,12 @@ router.post('/', async (req, res) => {
     if (isDuplicateStripeEvent(event.id)) {
       console.log(`[stripe] evento duplicado ignorado: ${event.id} (${event.type})`);
       return res.json({ received: true, duplicate: true });
+    }
+
+    if (event.type === 'charge.dispute.created') {
+      // A21.1 (R14): tarjetas de HOY (cuenta plataforma) — mismo tratamiento
+      await handleStripeDispute(event.data.object as any);
+      return res.json({ received: true });
     }
 
     if (event.type === 'checkout.session.completed') {

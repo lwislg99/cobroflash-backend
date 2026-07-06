@@ -1,0 +1,9 @@
+factura: 2026-FG-005 | intent: pi_test_a21_1783296007360 (inyectado)
+[dispute] registrado para charge 23 (2383,70 €)
+evento 360: ⚠️ Disputa abierta por el banco de Lucía Fernández
+avisos WA (dry): 1
+paquete: {"status":200,"aceptacion":true,"evidencia":true,"cobro":true,"mensajes":true}
+anomalía V4: parcial | sigue: pending
+unpay F1 real → 409 (esperado 409)
+✅ A21 GATE COMPLETO
+limpieza hecha (evento+anomalía borrados, intent restaurado)

@@ -1,6 +1,8 @@
 // src/modules/system/app/routes/invoicesAdmin.routes.ts
 import { Router } from 'express';
 import { recordAudit, requestIp } from '../../audit.service'; // A11.1 (S2)
+import { requireRole } from '../../../../core/http/authMiddleware'; // A21.3 (S1)
+import { UnpayNotAllowedError } from '../../invoiceAdmin';
 import {
   listInvoicesAdmin,
   getInvoiceDetailAdmin,
@@ -56,7 +58,7 @@ router.get('/:id', async (req, res) => {
       return res.status(400).json({ error: 'invalid_id' });
     }
 
-    const invoice = await getInvoiceDetailAdmin(id);
+    const invoice = await getInvoiceDetailAdmin(id, req.merchantId); // A21.3: scoped
     if (!invoice) {
       return res.status(404).json({ error: 'not_found' });
     }
@@ -72,11 +74,155 @@ router.get('/:id', async (req, res) => {
 });
 
 /**
+ * POST /admin/invoices/:id/payment-anomaly — A21.2 (V4/V5)
+ * F1 = NADA automático: si llegó un importe DISTINTO, la factura sigue pending
+ * y aquí solo se ANOTA (ficha 360) para la decisión manual del pro (runbook O).
+ */
+router.post('/:id/payment-anomaly', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const amount = Number(req.body?.amount);
+    if (!Number.isInteger(id) || !Number.isFinite(amount) || amount < 0) {
+      return res.status(400).json({ error: 'invalid_input' });
+    }
+    const invoice = await prisma.invoice.findFirst({
+      where: { id, merchantId: req.merchantId },
+      select: { id: true, number: true, total: true, currency: true, customerId: true },
+    });
+    if (!invoice) return res.status(404).json({ error: 'not_found' });
+
+    const total = Number(invoice.total);
+    const diff = Math.round((amount - total) * 100) / 100;
+    const kind = diff < 0 ? 'parcial' : 'sobrepago';
+    const detail = diff < 0
+      ? `Recibidos ${amount.toFixed(2)} de ${total.toFixed(2)} ${invoice.currency} (faltan ${Math.abs(diff).toFixed(2)}). La factura SIGUE pendiente — decide: esperar el resto o ajustar con el cliente (runbook V4).`
+      : `Recibidos ${amount.toFixed(2)} ${invoice.currency} (sobran ${diff.toFixed(2)}). Anota la devolución manual de la diferencia antes de marcarla pagada (runbook V5).`;
+
+    recordCustomerEvent({
+      merchantId: req.merchantId,
+      customerId: invoice.customerId,
+      type: 'payment_anomaly',
+      title: `⚠️ Importe distinto en ${invoice.number} (${kind})`,
+      detail,
+    });
+    return res.json({ ok: true, kind, message: detail });
+  } catch (err) {
+    console.error('[POST /admin/invoices/:id/payment-anomaly]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * GET /admin/invoices/:id/dispute-package — A21.1 (R14)
+ * Paquete de evidencia de disputa en 1 clic: HTML imprimible (→ PDF con el
+ * navegador) con TODO lo que el banco pide: presupuesto firmado + evidencia de
+ * aceptación (ts/IP/UA) + justificante/factura + registro de mensajes WhatsApp.
+ */
+router.get('/:id/dispute-package', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+
+    const invoice = await prisma.invoice.findFirst({
+      where: { id, merchantId: req.merchantId },
+      include: {
+        merchant: { select: { name: true, legalName: true, taxId: true, address: true } },
+        customer: { select: { id: true, name: true, phone: true, email: true } },
+        quote: true,
+        charge: { select: { id: true, method: true, intentId: true, reference: true, status: true } },
+      },
+    });
+    if (!invoice) return res.status(404).json({ error: 'not_found' });
+
+    const quote = invoice.quote as any;
+    const messages = await prisma.whatsAppMessage.findMany({
+      where: {
+        merchantId: req.merchantId,
+        OR: [
+          ...(invoice.quoteId ? [{ relatedType: 'quote', relatedId: invoice.quoteId }] : []),
+          { relatedType: 'invoice', relatedId: invoice.id },
+          ...(invoice.chargeId ? [{ relatedType: 'charge', relatedId: invoice.chargeId }] : []),
+        ],
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 100,
+    });
+
+    const esc = (v: unknown) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const fD = (d: Date | string | null | undefined) => d ? new Date(d).toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' }) : '—';
+    const money = (n: unknown, cur?: string) => `${Number(n ?? 0).toFixed(2)} ${cur || invoice.currency}`;
+    const ev = (quote?.evidence ?? {}) as Record<string, unknown>;
+
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"/>
+<title>Paquete de disputa · ${esc(invoice.number)}</title>
+<style>
+  body{font-family:Inter,system-ui,sans-serif;color:#0f1c17;margin:0;padding:32px;max-width:820px;margin:0 auto}
+  h1{font-size:22px;margin:0 0 2px} .sub{color:#6b756f;font-size:13px;margin:0 0 22px}
+  h2{font-size:15px;border-bottom:2px solid #e7e9e5;padding-bottom:6px;margin:26px 0 10px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  td,th{padding:6px 8px;border-bottom:1px solid #f1f2ee;text-align:left;vertical-align:top}
+  th{color:#6b756f;font-weight:600;width:220px}
+  .sig{max-width:340px;border:1px solid #e7e9e5;border-radius:8px;padding:8px;background:#fff}
+  .badge{display:inline-block;background:#ecfdf5;color:#166534;font-weight:700;border-radius:999px;padding:3px 12px;font-size:12px}
+  .print{position:fixed;top:16px;right:16px;background:#16a34a;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-weight:700;cursor:pointer}
+  @media print{.print{display:none} body{padding:0}}
+</style></head><body>
+<button class="print" onclick="window.print()">🖨 Imprimir / PDF</button>
+<h1>Paquete de evidencia de disputa</h1>
+<p class="sub">${esc(invoice.merchant?.legalName || invoice.merchant?.name)} · generado el ${fD(new Date())} · documento ${esc(invoice.number)}</p>
+
+<h2>1 · Aceptación del presupuesto (firma y evidencia)</h2>
+<table>
+  <tr><th>Presupuesto</th><td>#${esc(quote?.quoteNumber ?? quote?.id ?? '—')} · ${quote ? money(quote.total, quote.currency) : '—'}</td></tr>
+  <tr><th>Aceptado el</th><td>${fD(quote?.acceptedAt)}</td></tr>
+  <tr><th>Canal de aceptación</th><td>${esc(quote?.decisionChannel ?? '—')}</td></tr>
+  <tr><th>Evidencia técnica</th><td>${['ts','ip','ua','method','typedName'].filter(k => ev[k]).map(k => `<strong>${k.toUpperCase()}</strong>: ${esc(ev[k])}`).join('<br/>') || '—'}</td></tr>
+  <tr><th>Firma del cliente</th><td>${quote?.signatureUrl ? `<img class="sig" src="${esc(quote.signatureUrl)}" alt="firma"/>` : (ev.method === 'checkbox' || ev.typedName ? 'Aceptación expresa sin trazo ("Acepto sin firmar") — ver evidencia técnica' : '—')}</td></tr>
+  <tr><th>Comentario del cliente</th><td>${esc(quote?.decisionComment ?? '—')}</td></tr>
+</table>
+
+<h2>2 · Documento de cobro</h2>
+<table>
+  <tr><th>Número</th><td>${esc(invoice.number)} <span class="badge">${esc(invoice.status.toUpperCase())}</span></td></tr>
+  <tr><th>Emitido</th><td>${fD(invoice.createdAt)}</td></tr>
+  <tr><th>Importe</th><td>${money(invoice.total)}</td></tr>
+  <tr><th>Pagado el</th><td>${fD(invoice.paidAt)}</td></tr>
+  <tr><th>Cliente</th><td>${esc(invoice.customer?.name)} · ${esc(invoice.customer?.phone ?? '')} ${esc(invoice.customer?.email ?? '')}</td></tr>
+</table>
+
+<h2>3 · Cobro y referencia del procesador</h2>
+<table>
+  <tr><th>Método</th><td>${esc(invoice.charge?.method ?? 'manual')}</td></tr>
+  <tr><th>Referencia (payment intent)</th><td>${esc(invoice.charge?.intentId ?? invoice.charge?.reference ?? '—')}</td></tr>
+  <tr><th>Estado del cobro</th><td>${esc(invoice.charge?.status ?? '—')}</td></tr>
+</table>
+
+<h2>4 · Registro de mensajes WhatsApp (entrega y lectura)</h2>
+<table>
+  <tr><th style="width:170px">Fecha</th><th style="width:110px">Tipo</th><th>Plantilla / doc</th><th style="width:110px">Estado</th></tr>
+  ${messages.length ? messages.map((m) => `<tr>
+    <td>${fD(m.createdAt)}</td><td>${esc(m.type)}</td>
+    <td>${esc(m.templateName ?? '—')} · ${esc(m.relatedType ?? '')} ${esc(m.relatedId ?? '')}</td>
+    <td><strong>${esc(m.status)}</strong></td></tr>`).join('') : '<tr><td colspan="4">Sin mensajes registrados</td></tr>'}
+</table>
+
+<p class="sub" style="margin-top:26px">La aceptación queda registrada con marca de tiempo, IP y dispositivo en el momento de la firma.
+PDF del presupuesto firmado y del justificante: disponibles desde el panel (se adjuntan a la respuesta de la disputa).</p>
+</body></html>`;
+
+    return res.status(200).type('html').send(html);
+  } catch (err) {
+    console.error('[GET /admin/invoices/:id/dispute-package]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
  * POST /admin/invoices/bulk-paid
  * Marca múltiples facturas como pagadas en una sola operación.
  * Body: { ids: number[] }
  */
-router.post('/bulk-paid', async (req, res) => {
+router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
   try {
     const ids: number[] = Array.isArray(req.body?.ids) ? req.body.ids.map(Number).filter(Number.isInteger) : [];
     if (ids.length === 0) return res.status(400).json({ error: 'no_ids' });
@@ -109,7 +255,7 @@ router.post('/bulk-paid', async (req, res) => {
  * PUT /admin/invoices/:id/status
  * Cambia el estado (pending / paid / expired) – lo usa el botón del BO.
  */
-router.put('/:id/status', async (req, res) => {
+router.put('/:id/status', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
@@ -121,13 +267,14 @@ router.put('/:id/status', async (req, res) => {
       return res.status(400).json({ error: 'invalid_status' });
     }
 
-    const updated = await updateInvoiceStatusAdmin(id, status);
+    const updated = await updateInvoiceStatusAdmin(id, status, req.merchantId);
     if (!updated) {
       return res.status(404).json({ error: 'not_found' });
     }
 
     // A11.1 (S2): pagado a mano / deshacer pago auditados con userId+IP
-    if (status === 'paid' || status === 'pending') {
+    // (doble click = sin cambio → sin audit duplicado, A21.3)
+    if (!(updated as any).__unchanged && (status === 'paid' || status === 'pending')) {
       recordAudit({
         merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
         action: status === 'paid' ? 'marcar_pagado_manual' : 'deshacer_pago',
@@ -138,6 +285,9 @@ router.put('/:id/status', async (req, res) => {
 
     res.json(updated);
   } catch (err) {
+    if (err instanceof UnpayNotAllowedError) {
+      return res.status(409).json({ error: 'unpay_not_allowed', message: err.message });
+    }
     console.error('[PUT /admin/invoices/:id/status]', err);
     res.status(500).json({ error: 'internal_error' });
   }
@@ -146,16 +296,16 @@ router.put('/:id/status', async (req, res) => {
 /**
  * (Opcional) Endpoints legacy pay/unpay si quieres mantenerlos
  */
-router.post('/:id/pay', async (req, res) => {
+router.post('/:id/pay', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       return res.status(400).json({ error: 'invalid_id' });
     }
 
-    const updated = await markInvoicePaidAdmin(id);
+    const updated = await markInvoicePaidAdmin(id, req.merchantId);
     if (!updated) return res.status(404).json({ error: 'not_found' });
-    recordAudit({ // A11.1 (S2)
+    if (!(updated as any).__unchanged) recordAudit({ // A11.1 (S2)
       merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
       action: 'marcar_pagado_manual', entityType: 'invoice', entityId: id,
       meta: { via: 'pay' }, ip: requestIp(req),
@@ -167,22 +317,25 @@ router.post('/:id/pay', async (req, res) => {
   }
 });
 
-router.post('/:id/unpay', async (req, res) => {
+router.post('/:id/unpay', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       return res.status(400).json({ error: 'invalid_id' });
     }
 
-    const updated = await markInvoicePendingAdmin(id);
+    const updated = await markInvoicePendingAdmin(id, req.merchantId);
     if (!updated) return res.status(404).json({ error: 'not_found' });
-    recordAudit({ // A11.1 (S2)
+    if (!(updated as any).__unchanged) recordAudit({ // A11.1 (S2)
       merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
       action: 'deshacer_pago', entityType: 'invoice', entityId: id,
       meta: { via: 'unpay' }, ip: requestIp(req),
     });
     res.json(updated);
   } catch (err) {
+    if (err instanceof UnpayNotAllowedError) {
+      return res.status(409).json({ error: 'unpay_not_allowed', message: err.message });
+    }
     console.error('[POST /admin/invoices/:id/unpay]', err);
     res.status(500).json({ error: 'internal_error' });
   }
@@ -197,7 +350,7 @@ router.post('/:id/unpay', async (req, res) => {
  * Envía la factura por WhatsApp directamente via API de Meta.
  * Ya NO usa n8n.
  */
-router.post('/:id/resend-whatsapp', async (req, res) => {
+router.post('/:id/resend-whatsapp', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
@@ -245,7 +398,7 @@ router.post('/:id/resend-whatsapp', async (req, res) => {
  * POST /admin/invoices/:id/send-email — A20.5 (J5): el fallback por email del
  * documento de cobro, disponible SIEMPRE que el WhatsApp falle (o a demanda).
  */
-router.post('/:id/send-email', async (req, res) => {
+router.post('/:id/send-email', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
@@ -274,7 +427,7 @@ router.post('/:id/send-email', async (req, res) => {
  * Usa payment_request_es si la factura tiene charge; texto libre si no.
  * Actualiza el campo reminder7SentAt o reminder14SentAt según corresponda.
  */
-router.post('/:id/send-reminder', async (req, res) => {
+router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
@@ -347,7 +500,7 @@ router.post('/:id/send-reminder', async (req, res) => {
  * referencia a la original. La rectificativa nace 'paid' (no es cobrable: no
  * debe recibir recordatorios y su total negativo resta en el P&L al emitirse).
  */
-router.post('/:id/rectify', async (req, res) => {
+router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });

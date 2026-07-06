@@ -154,3 +154,18 @@
   el paquete de evidencia a la disputa. Las firmas ganan disputas."
 - **Prevención:** firma/aceptación con evidencia SIEMPRE antes de cobrar — y úsese como
   argumento de venta.
+
+## R15 · Pago parcial o sobrepago (V4/V5 — A21.2, nada automático en F1)
+**Señal:** al marcar una factura como pagada, el importe recibido NO coincide con el total
+(el BO lo pregunta siempre); o el banco muestra un abono distinto al esperado.
+1. NO la marques pagada. Al meter el importe real, el BO la deja **pendiente** y anota el
+   evento en la ficha del cliente (⚠️ importe distinto — parcial o sobrepago).
+2. **Parcial (V4):** habla con el cliente — o llega el resto (la factura sigue pendiente y
+   los recordatorios siguen su curso) o pactáis ajustar: rectificativa R1 + factura nueva
+   por el importe real (R10). JAMÁS "pagada" sin estar completa: el justificante miente.
+3. **Sobrepago (V5):** devuelve la diferencia por el MISMO canal por el que llegó
+   (transferencia/Bizum), guarda el resguardo, anota la devolución en las notas del
+   cliente y ENTONCES márcala pagada con el importe exacto del total.
+4. Entidad Refund automática = F2: no existe a propósito. Todo movimiento de vuelta es
+   manual y con resguardo.
+
