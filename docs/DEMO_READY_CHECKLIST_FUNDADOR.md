@@ -99,6 +99,9 @@ Runbook completo paso a paso en `PENDIENTES_FUNDADOR.md` §FASE B. Lo esencial:
       (página /legal/alcance-beta + checkbox + evidencia con versión). El texto sigue siendo el
       borrador con placeholders [NIF]/[Nombre] — cuando el asesor lo valide, actualizas
       `docs/legal/ALCANCE_BETA.md` (o me lo pasas) y las aceptaciones antiguas se invalidan solas.
+      **PREPARADO (6-jul):** email listo para copiar-pegar en `docs/legal/EMAIL_ASESOR.md` +
+      borrador `ALCANCE_BETA.md` + 12 preguntas `PREGUNTAS_ASESOR.md`. **Solo falta que lo
+      ENVÍES al asesor** y vuelvas con sus respuestas (bloquea cobrar founding de verdad).
 - [ ] **Destino del backup cifrado (A11.3, S4)**: dime DÓNDE guardar el dump semanal fuera de
       Railway (S3/R2/Backblaze/Drive…) + credenciales en Railway. Sin esto el script queda listo
       pero sin destino. Es requisito ANTES de 25 pagantes.
