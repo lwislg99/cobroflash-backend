@@ -96,11 +96,11 @@ function jobCard(j, container) {
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;color:var(--ink);font-size:15px">${esc(j.customer?.name || 'Cliente')}</div>
         <div style="font-size:12.5px;color:var(--muted)">
-          ${j.quote ? `Presupuesto #${j.quote.number} · ${fmtMoneyEs(j.quote.total, j.quote.currency)}` : 'Sin presupuesto'}
+          ${j.quote ? `Presupuesto #${j.quote.number} · <span style="color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums">${fmtMoneyEs(j.quote.total, j.quote.currency)}</span>` : 'Sin presupuesto'}
           ${fecha ? ` · 📅 ${fecha}` : ''}
         </div>
       </div>
-      <span style="flex-shrink:0;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;${meta.pill}">${meta.label}</span>
+      <span style="flex:none;white-space:nowrap;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;${meta.pill}">${meta.label}</span>
     </div>
     <div class="job-actions" style="display:flex;gap:8px;flex-wrap:wrap"></div>
   `;
