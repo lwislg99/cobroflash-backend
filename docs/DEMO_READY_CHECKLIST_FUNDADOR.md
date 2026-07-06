@@ -43,8 +43,13 @@
 | `BOT_INBOUND_ENABLED=true` | El bot del WhatsApp | Cuando quieras probarlo/enseñarlo |
 | `DEMO_SAFE_NUMBERS` | Números a los que el demo puede enviar (V0-2: vacío = bloquea todo) | Antes de ensayar con tu móvil real |
 | `EMAIL_FROM` = `YaQu <no-reply@yaqu.app>` | Remitente correcto en los emails (dominio verificado en Resend primero) | Antes de demos con email real |
-| `WHATSAPP_ACCESS_TOKEN` | ⚠️ **ROTARLO/REVOCARLO** — quedó expuesto en el chat (4-jul) | Cuanto antes (seguridad) |
+| `WHATSAPP_ACCESS_TOKEN` | ⚠️ Quedó expuesto (4-jul). **Decisión fundador (6-jul): se rehará entero en FASE B con la SIM nueva** — el token viejo se sustituye ahí. Riesgo residual asumido hasta entonces (opcional: revocarlo ya en Meta, 1 min). | FASE B |
 | `ANTHROPIC_API_KEY` | (ya NO se usa — sustituida por Gemini) | — |
+
+> **📦 Agrupado:** TODO el bloque de WhatsApp (rotar token, `DEMO_SAFE_NUMBERS`,
+> `BOT_INBOUND_ENABLED`, recrear las 5 plantillas, verificación de empresa) se hace de
+> una sentada en la **sesión de FASE B** (§5), ahora que el fundador ya tiene la SIM.
+> No tiene sentido tocarlo suelto antes.
 
 ## 🟠 4. Stripe (cobros reales con tarjeta + founding cobrable)
 
