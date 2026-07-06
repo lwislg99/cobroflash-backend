@@ -114,10 +114,10 @@ Runbook completo paso a paso en `PENDIENTES_FUNDADOR.md` §FASE B. Lo esencial:
       abierta — para la demo basta con escribir tú al número antes). Si quieres cobertura
       fuera de ventana, dala de alta con la spec §6 de `docs/WHATSAPP_TEMPLATES.md` y me
       avisas para conectar el fallback.
-- [ ] **Veto de copys nuevos (regla 30, Ola 14/15)**: (a) prefill del wa.me del perfil
-      público: "Hola, quiero pedir un presupuesto"; (b) textos del ciclo de mantenimiento
-      al pro ("🔧 Toca … ¿Enviar presupuesto de …?", confirmaciones ✅/⏸/✔️). Si los quieres
-      distintos, dímelo y los cambio en un commit.
+- [x] **Veto de copys nuevos (regla 30, Ola 14/15) — APROBADOS por el fundador (6-jul).**
+      (a) prefill del wa.me del perfil público "Hola, quiero pedir un presupuesto"; (b) textos
+      del ciclo de mantenimiento al pro (mensaje con botones + confirmaciones ✅/⏸/✔️).
+      Quedan fijados como oficiales.
 
 ## 🔵 6. Lo estratégico que sigue su curso (no bloquea la demo)
 
