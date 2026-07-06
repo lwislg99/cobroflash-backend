@@ -140,6 +140,16 @@
 > guardados, 27 productos) `72a481a` · A18.7 trabajos (importe de la card a Tinta 700; pill
 > sin cortes en 390) `945b745` · A18.8 mantenimientos (targets 44 en el bloque del detalle)
 > `a43a2a2`. Evidencias a181-a187 antes/después + a186-e2e.txt.
+> **OLA 22 ✅ COMPLETA (6-jul):** A22.1 `9fb44f2` (portal del cliente: idioma del país vía
+> getLocale [merchant ES → "Presupuesto", no "Cotización"], importes formatMoneyEs
+> ["326,70 €" y no "326,70 EUR"], footer oficial "Hecho con YaQu"; el resto ya estaba al
+> nivel de /pay) · A22.2 verificado con evidencias (a222-*: /precios ya al nivel de la
+> landing con W1+founding; login premium con "revisa tu bandeja"; legales branded de A10.1
+> — cero gaps que tocar) · A22.3 choque resuelto como se avisó: la búsqueda global YA
+> cumplía la spec entera (clientes+presupuestos+cobros agrupados, ↑↓/Enter/Esc, hint) —
+> verificado contra código, sin tocar · A22.4 `4c222bb` (document.title por vista, favicon
+> del dashboard que FALTABA, transición de vista 160ms con reduced-motion; kpi-value ya
+> tabular).
 > **CHOQUES Olas 1-9 señalados al fundador (resolución al llegar):** A22.3 búsqueda global ya
 > existe → completar contra spec · A17 load-catalog ya existe → migrar contenido a data/catalogs
 > con schema master · A16.1 → añadir SOLO métricas X2 faltantes. **Decisiones fundador recibidas:**

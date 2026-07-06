@@ -58,7 +58,7 @@ router.post('/:id/accept', async (req, res) => {
       comment,
       paymentTerms,
       evidence,
-    });
+    }, req.merchantId); // A12.1: scoped
 
     // A13.1 (JOB-1): auto-creación del Trabajo al aceptar (idempotente)
     ensureJobForQuote(id).catch(() => {});
@@ -97,7 +97,7 @@ router.post('/:id/reject', async (req, res) => {
       reason,
       comment,
       evidence,
-    });
+    }, req.merchantId); // A12.1: scoped
 
     return res.json({
       id: updated.id,
@@ -127,8 +127,8 @@ router.post('/:id/invoice', async (req, res) => {
       return res.status(400).json({ error: 'invalid_quote_id' });
     }
 
-    const quote = await prisma.quote.findUnique({
-      where: { id: quoteId },
+    const quote = await prisma.quote.findFirst({
+      where: { id: quoteId, merchantId: req.merchantId }, // A12.1: scoped (regla 2)
       include: {
         merchant: true,
         customer: true,
@@ -463,7 +463,7 @@ router.get('/:id', async (req, res) => {
       return res.status(400).json({ error: 'invalid_id' });
     }
 
-    const detail = await getQuoteDetailAdmin(id);
+    const detail = await getQuoteDetailAdmin(id, req.merchantId); // A12.1: scoped
     // WA-0b: estado de entrega del último WhatsApp de este presupuesto (chip)
     const waDelivery = await getDeliveryStatus(req.merchantId, 'quote', id);
 

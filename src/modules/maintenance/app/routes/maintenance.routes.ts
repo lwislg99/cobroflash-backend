@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { prisma } from '../../../../core/db/prisma';
 import { isFlagEnabled } from '../../../../core/flags';
 import { addMonths } from '../../domain/maintenance.service';
+import { requireRole } from '../../../../core/http/authMiddleware'; // A12.4 (S1: default admin-only)
 
 const router = Router();
 
@@ -25,7 +26,7 @@ const createSchema = z.object({
 });
 
 // POST /admin/maintenance — crear el recordatorio (toggle al aceptar)
-router.post('/', async (req, res) => {
+router.post('/', requireRole('admin'), async (req, res) => {
   try {
     if (!(await maintenanceEnabled(req.merchantId))) {
       return res.status(404).json({ error: 'not_found' });
@@ -72,7 +73,7 @@ router.post('/', async (req, res) => {
 });
 
 // DELETE /admin/maintenance/:id — cancelar (active=false; nunca borrado físico)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     if (!(await maintenanceEnabled(req.merchantId))) {
       return res.status(404).json({ error: 'not_found' });

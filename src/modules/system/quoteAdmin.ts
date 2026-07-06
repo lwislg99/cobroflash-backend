@@ -87,9 +87,10 @@ export async function listQuotesAdmin(
 /**
  * Detalle completo de un presupuesto para el panel admin.
  */
-export async function getQuoteDetailAdmin(id: number) {
-  const quote = await prisma.quote.findUnique({
-    where: { id },
+export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
+  // A12.1: scoping multi-tenant (regla 2) — un id ajeno = not found
+  const quote = await prisma.quote.findFirst({
+    where: { id, ...(merchantId != null ? { merchantId } : {}) },
     include: {
       merchant: true,
       customer: true,
@@ -180,10 +181,11 @@ export async function acceptQuoteAdmin(
     comment?: string;
     paymentTerms?: string;
     evidence?: any;
-  } = {}
+  } = {},
+  merchantId?: number, // A12.1: scoping multi-tenant (regla 2)
 ) {
-  const quote = await prisma.quote.findUnique({
-    where: { id: quoteId },
+  const quote = await prisma.quote.findFirst({
+    where: { id: quoteId, ...(merchantId != null ? { merchantId } : {}) },
   });
 
   if (!quote) {
@@ -226,10 +228,11 @@ export async function rejectQuoteAdmin(
     reason?: string;
     comment?: string;
     evidence?: any;
-  } = {}
+  } = {},
+  merchantId?: number, // A12.1: scoping multi-tenant (regla 2)
 ) {
-  const quote = await prisma.quote.findUnique({
-    where: { id: quoteId },
+  const quote = await prisma.quote.findFirst({
+    where: { id: quoteId, ...(merchantId != null ? { merchantId } : {}) },
   });
 
   if (!quote) {
@@ -267,9 +270,10 @@ export async function rejectQuoteAdmin(
  * - Solo si status = accepted.
  * - Idempotente: si ya tiene factura, devuelve la existente.
  */
-export async function createInvoiceFromQuoteAdmin(quoteId: number) {
-  const quote = await prisma.quote.findUnique({
-    where: { id: quoteId },
+export async function createInvoiceFromQuoteAdmin(quoteId: number, merchantId?: number) {
+  // A12.1: scoping multi-tenant (regla 2)
+  const quote = await prisma.quote.findFirst({
+    where: { id: quoteId, ...(merchantId != null ? { merchantId } : {}) },
     include: {
       merchant: true,
       customer: true,
