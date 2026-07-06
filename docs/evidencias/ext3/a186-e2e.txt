@@ -1,0 +1,6 @@
+pasos (dots): 3
+paso 2 ok: Tu catálogo en 1 clic
+paso 3 ok: {"cliente":true,"h2":"¡Envía tu primera cotización ahora! 🚀"}
+final: {"onboardingCompleted":true,"whatsappPhone":"34611222333","trade":"electricista"} | productos: 27
+✅ A18.6 E2E COMPLETO (3 pasos, datos guardados, catálogo cargado)
+limpieza hecha

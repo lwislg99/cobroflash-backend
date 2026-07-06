@@ -1,5 +1,5 @@
 // public/dashboard/js/onboardingView.js
-// Wizard de 5 pasos que se muestra la primera vez que el merchant entra.
+// Wizard de 3 PASOS VISUALES (AB4, A18.6): negocio+WhatsApp → catálogo 1 clic → primera cotización WOW.
 // Objetivo: que el usuario envíe su primera cotización en los primeros minutos (momento WOW).
 
 const OB_TRADES = [
@@ -99,6 +99,11 @@ function showOnboardingWizard(onComplete) {
               ${OB_COUNTRIES.map((c) => `<option value="${c.value}" ${state.country === c.value ? 'selected' : ''}>${c.label}</option>`).join('')}
             </select>
           </div>
+          <div>
+            <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Tu WhatsApp <span style="font-weight:400;color:#6b756f">(te avisamos ahí cuando te acepten o paguen)</span></label>
+            <input id="ob-phone" type="tel" placeholder="Ej: 34XXXXXXXXX (con código de país)" value="${esc(state.phone)}"
+              style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
+          </div>
         </div>
       `,
       validate: () => document.getElementById('ob-name')?.value.trim(),
@@ -106,36 +111,13 @@ function showOnboardingWizard(onComplete) {
         state.name    = document.getElementById('ob-name')?.value.trim() || state.name;
         state.trade   = document.getElementById('ob-trade')?.value || '';
         state.country = document.getElementById('ob-country')?.value || state.country;
+        state.phone   = document.getElementById('ob-phone')?.value.trim() || '';
+        if (state.phone) await updateMerchantProfile({ whatsappPhone: state.phone }).catch(() => {});
         await updateMerchantProfile({
           name: state.name,
           trade: state.trade || null,
           country: state.country,
         }).catch(() => {});
-      },
-    },
-
-    // ── Paso 2 ──────────────────────────────────────────────
-    {
-      title: '¿Dónde te avisamos cuando cobras?',
-      render: () => `
-        <p style="font-size:14px;color:#6b756f;margin:0 0 16px">
-          Cuando un cliente acepte o pague, te mandamos un WhatsApp al instante.
-        </p>
-        <div>
-          <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Tu número de WhatsApp</label>
-          <input id="ob-phone" type="tel" placeholder="Ej: 521XXXXXXXXXX (con código de país)" value="${esc(state.phone)}"
-            style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
-          <p style="font-size:12px;color:#6b756f;margin:6px 0 0">Sin espacios ni guiones. Incluye el código de país.</p>
-        </div>
-        <div style="margin-top:14px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:12px 14px">
-          <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#047857">Así te avisaremos:</p>
-          <p style="margin:0;font-size:13px;color:#065f46">✅ <strong>Carlos</strong> aceptó tu ${(window.appLocale && window.appLocale.quoteVerb) || 'cotización'} #1024 (150,00 ${(window.appLocale && window.appLocale.currency) || 'EUR'})</p>
-        </div>
-      `,
-      validate: () => true,
-      save: async () => {
-        state.phone = document.getElementById('ob-phone')?.value.trim() || '';
-        if (state.phone) await updateMerchantProfile({ whatsappPhone: state.phone }).catch(() => {});
       },
     },
 
@@ -185,52 +167,34 @@ function showOnboardingWizard(onComplete) {
       },
     },
 
-    // ── Paso 4 ──────────────────────────────────────────────
-    {
-      title: 'Tu primer cliente',
-      render: () => `
-        <p style="font-size:14px;color:#6b756f;margin:0 0 16px">
-          ¿A quién le envías cotizaciones habitualmente? Lo usaremos para tu primera cotización.
-        </p>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div>
-            <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Nombre del cliente</label>
-            <input id="ob-cust-name" type="text" placeholder="Ej: María López" value="${esc(state.customerName)}"
-              style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
-          </div>
-          <div>
-            <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Su WhatsApp</label>
-            <input id="ob-cust-phone" type="tel" placeholder="Ej: 521XXXXXXXXXX" value="${esc(state.customerPhone)}"
-              style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
-            <p style="font-size:12px;color:#6b756f;margin:6px 0 0">Con código de país, sin espacios.</p>
-          </div>
-        </div>
-      `,
-      validate: () => true,
-      save: async () => {
-        state.customerName  = document.getElementById('ob-cust-name')?.value.trim() || '';
-        state.customerPhone = document.getElementById('ob-cust-phone')?.value.trim() || '';
-      },
-    },
-
     // ── Paso 5 (WOW) ────────────────────────────────────────
     {
       title: '¡Envía tu primera cotización ahora! 🚀',
       custom: true,
       render: () => {
-        const canQuote = !!state.customerName;
         const productLine = state.firstProduct
           ? `<p style="margin:0;font-size:13px;color:#065f46">Incluiremos <strong>${esc(state.firstProduct.name)}</strong> como primera línea — podrás ajustarla.</p>`
           : '';
         return `
-          <p style="font-size:14px;color:#6b756f;margin:0 0 16px">
-            Todo listo${state.customerName ? `, vamos a enviarle una cotización a <strong>${esc(state.customerName)}</strong>` : ''}. El cliente la recibe por WhatsApp y puede firmarla con el dedo en segundos.
+          <p style="font-size:14px;color:#6b756f;margin:0 0 14px">
+            Dinos a quién y te lo dejamos prerrellenado — el cliente la recibe por WhatsApp y la firma con el dedo en segundos.
           </p>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+            <div>
+              <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Nombre del cliente <span style="font-weight:400;color:#6b756f">(opcional)</span></label>
+              <input id="ob-cust-name" type="text" placeholder="Ej: María López" value="${esc(state.customerName)}"
+                style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
+            </div>
+            <div>
+              <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Su WhatsApp <span style="font-weight:400;color:#6b756f">(con código de país)</span></label>
+              <input id="ob-cust-phone" type="tel" placeholder="Ej: 34XXXXXXXXX" value="${esc(state.customerPhone)}"
+                style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
+            </div>
+          </div>
           <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:14px 16px;margin-bottom:8px">
             <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#047857">El momento que lo cambia todo</p>
             ${productLine}
           </div>
-          ${canQuote ? '' : '<p style="font-size:12px;color:#6b756f;margin:8px 0 0">Consejo: añade un cliente en el paso anterior para prerrellenar la cotización.</p>'}
         `;
       },
       renderFooter: (footer) => {
@@ -244,6 +208,8 @@ function showOnboardingWizard(onComplete) {
           </button>
         `;
         footer.querySelector('#ob-wow').addEventListener('click', async () => {
+          state.customerName  = document.getElementById('ob-cust-name')?.value.trim() || '';
+          state.customerPhone = document.getElementById('ob-cust-phone')?.value.trim() || '';
           await complete();
           if (typeof openQuickQuoteModal === 'function') {
             openQuickQuoteModal({
