@@ -8,13 +8,16 @@
 
 ---
 
-## 🔴 1. EL BLOQUEO ACTIVO — 2 minutos y desbloqueas la Ola 7
+## ✅ 1. IA + VOZ — RESUELTO (6-jul-2026)
 
-- [ ] **Railway → variable `ANTHROPIC_API_KEY`** (tu key de console.anthropic.com).
-  - Sin ella: "Sugerir con IA" da error en prod (siempre lo ha dado) y el **eval de voz
-    no puede correr** → la voz no entra en la demo.
-  - **En cuanto la pongas, avísame**: corro el eval (10 transcripciones, gate ≥8/10),
-    commiteo resultados y, si pasa, meto la voz en la maqueta (A7.4). Todo eso es mío.
+- [x] **Voz = dictado gratis del navegador.** No usa ninguna IA de pago: el micro
+  transcribe en el propio móvil del cliente. Se enciende con `VOICE_QUOTE_ENABLED=true`
+  en Railway (variable, sin coste por uso).
+- [x] **"Sugerir con IA" movido de Claude (de pago) a Gemini (tier gratis).** Decisión
+  del fundador: no gastar saldo de pago. Clave `GEMINI_API_KEY` (Google AI Studio, gratis)
+  en Railway. El código prueba varios modelos gratis en orden y fuerza JSON estructurado.
+  **Verificado funcionando en prod por el fundador.** Tope de 40 usos/hora por merchant
+  para que nadie dispare la cuota. Ya NO se necesita `ANTHROPIC_API_KEY`.
 
 ## 🟠 2. Los GATES HUMANOS de los sprints (nadie puede hacerlos por ti)
 
@@ -35,12 +38,13 @@
 
 | Variable | Qué enciende | Cuándo |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | IA de sugerencias + eval de voz | **YA (punto 1)** |
-| `VOICE_QUOTE_ENABLED=true` | El micro de dictado | Tras pasar el eval (te aviso yo) |
+| `GEMINI_API_KEY` | IA de "Sugerir con IA" (gratis, Google AI Studio) | ✅ **HECHO** |
+| `VOICE_QUOTE_ENABLED=true` | El micro de dictado (gratis, navegador) | ✅ **HECHO / cuando quieras** |
 | `BOT_INBOUND_ENABLED=true` | El bot del WhatsApp | Cuando quieras probarlo/enseñarlo |
 | `DEMO_SAFE_NUMBERS` | Números a los que el demo puede enviar (V0-2: vacío = bloquea todo) | Antes de ensayar con tu móvil real |
 | `EMAIL_FROM` = `YaQu <no-reply@yaqu.app>` | Remitente correcto en los emails (dominio verificado en Resend primero) | Antes de demos con email real |
-| `WHATSAPP_ACCESS_TOKEN` | ⚠️ **ROTARLO** — quedó expuesto en el chat (4-jul) | Cuanto antes (seguridad) |
+| `WHATSAPP_ACCESS_TOKEN` | ⚠️ **ROTARLO/REVOCARLO** — quedó expuesto en el chat (4-jul) | Cuanto antes (seguridad) |
+| `ANTHROPIC_API_KEY` | (ya NO se usa — sustituida por Gemini) | — |
 
 ## 🟠 4. Stripe (cobros reales con tarjeta + founding cobrable)
 
