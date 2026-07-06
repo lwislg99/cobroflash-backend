@@ -126,6 +126,20 @@
 > profesionales reales por gremio = checklist fundador §5b ya existente). Gate E2E real
 > `a17-e2e.txt`: merchant ES efímero trade=fontanero → load-catalog → 28 productos con
 > etiqueta + 4 plantillas con precios del catálogo → segundo load 0 duplicados → limpieza.
+> **OLA 18 ✅ COMPLETA (6-jul, un commit por pantalla como manda):** A18.1 lista presupuestos
+> (cards reales en móvil ≤640 con Regla del Importe + pill + targets 44; filtro Caducado)
+> `4ce0ccd` · A18.2 facturas (PENDIENTE primero con la más vieja arriba, "hace N días"
+> ámbar>7/rojo>30; BONUS de fondo: fmtMoneyEs/formatMoneyEs con useGrouping always — es-ES
+> no ponía punto de miles en 4 cifras y AB6 exige "9.999,99 €") `c2b6e9e` · A18.3 clientes
+> (KPI "Pendiente de cobro" PRIMERO, rojo con nº sin cobrar / "al día ✓") `bc7092e` · A18.4
+> catálogo (empty state ofrece "📚 Cargar el catálogo de mi gremio" conectando A17 + fix
+> nombres largos) `9caec2f` · A18.5 configuración (checklist readiness Parte M con copys
+> LITERALES: WhatsApp/IBAN-Bizum/tarjeta-Connect con estado/datos fiscales→justificante;
+> filas que enfocan su campo) `010ebf5` · A18.6 onboarding (5→3 PASOS visuales: negocio+WA →
+> catálogo 1 clic → WOW con mini-cliente inline; E2E real merchant efímero: dots=3, datos
+> guardados, 27 productos) `72a481a` · A18.7 trabajos (importe de la card a Tinta 700; pill
+> sin cortes en 390) `945b745` · A18.8 mantenimientos (targets 44 en el bloque del detalle)
+> `a43a2a2`. Evidencias a181-a187 antes/después + a186-e2e.txt.
 > **CHOQUES Olas 1-9 señalados al fundador (resolución al llegar):** A22.3 búsqueda global ya
 > existe → completar contra spec · A17 load-catalog ya existe → migrar contenido a data/catalogs
 > con schema master · A16.1 → añadir SOLO métricas X2 faltantes. **Decisiones fundador recibidas:**
