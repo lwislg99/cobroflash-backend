@@ -1,6 +1,8 @@
 // src/modules/system/app/routes/customerPortal.routes.ts
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
+import { formatMoneyEs } from '../../../../core/utils/utils'; // A22.1: dinero es-ES con símbolo
+import { getLocale } from '../../../../core/i18n/locales';
 import { esc } from '../../../../core/utils/utils';
 import { BASE_URL } from '../../../../core/config/env';
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
@@ -153,7 +155,7 @@ function page(title: string, body: string) {
 </head>
 <body>
 ${body}
-<p class="pf-footer">Powered by YaQu</p>
+<p class="pf-footer">Hecho con <a href="https://yaqu.app" style="color:inherit;font-weight:700;text-decoration:none">YaQu</a></p>
 <script>
   // Expandir líneas de factura
   document.querySelectorAll('.pf-lines-toggle').forEach(btn => {
@@ -221,7 +223,7 @@ router.get('/:token', async (req, res) => {
     where: { portalToken: token },
     include: {
       merchant: {
-        select: { id: true, name: true, legalName: true, logoUrl: true, whatsappPhone: true },
+        select: { id: true, name: true, legalName: true, logoUrl: true, whatsappPhone: true, country: true },
       },
     },
   });
@@ -255,6 +257,9 @@ router.get('/:token', async (req, res) => {
     ? `<img class="pf-logo" src="${esc(m.logoUrl)}" alt="logo"/>`
     : `<div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#22c55e,#22d3ee);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#052e16">${initial}</div>`;
 
+  // A22.1: el portal habla el idioma del documento del país (ES → "Presupuesto")
+  const locale = getLocale((customer.merchant as any)?.country);
+
   // ── Cotizaciones ────────────────────────────────────────────────────────
   const quotesHtml = quotes.length
     ? quotes.map((q) => {
@@ -269,7 +274,7 @@ router.get('/:token', async (req, res) => {
                   const total = Number(l.qty||1) * Number(l.price||0) * (1 + Number(l.tax||0));
                   return `<div class="pf-line-row">
                     <span class="pf-line-concept">${esc(l.concept||'')}</span>
-                    <span class="pf-line-amount">${fmt(total)} ${esc(q.currency)}</span>
+                    <span class="pf-line-amount">${formatMoneyEs(total, q.currency)}</span>
                   </div>`;
                 }).join('')}
               </div>
@@ -285,11 +290,11 @@ router.get('/:token', async (req, res) => {
             <div class="pf-card-body">
               <div class="pf-card-row">
                 <div>
-                  <div class="pf-card-title">Cotización #${q.quoteNumber ?? q.id}</div>
+                  <div class="pf-card-title">${locale.quote} #${q.quoteNumber ?? q.id}</div>
                   <div class="pf-card-meta">${dateShort(q.createdAt)}</div>
                 </div>
                 <div>
-                  <div class="pf-card-amount">${fmt(Number(q.total))} ${esc(q.currency)}</div>
+                  <div class="pf-card-amount">${formatMoneyEs(Number(q.total), q.currency)}</div>
                   ${pill(q.status)}
                 </div>
               </div>
@@ -298,7 +303,7 @@ router.get('/:token', async (req, res) => {
             ${linesHtml}
           </div>`;
       }).join('')
-    : '<p class="pf-empty">No hay cotizaciones aún.</p>';
+    : `<p class="pf-empty">No hay ${locale.quotePlural.toLowerCase()} aún.</p>`;
 
   // ── Facturas ─────────────────────────────────────────────────────────────
   const invoicesHtml = invoices.length
@@ -314,7 +319,7 @@ router.get('/:token', async (req, res) => {
                   const total = Number(l.qty||1) * Number(l.price||0) * (1 + Number(l.tax||0));
                   return `<div class="pf-line-row">
                     <span class="pf-line-concept">${esc(l.concept||'')}</span>
-                    <span class="pf-line-amount">${fmt(total)} ${esc(inv.currency)}</span>
+                    <span class="pf-line-amount">${formatMoneyEs(total, inv.currency)}</span>
                   </div>`;
                 }).join('')}
               </div>
@@ -336,7 +341,7 @@ router.get('/:token', async (req, res) => {
                   <div class="pf-card-meta">${dateShort(inv.createdAt)}${inv.paidAt ? ' · Pagada ' + dateShort(inv.paidAt) : ''}</div>
                 </div>
                 <div>
-                  <div class="pf-card-amount">${fmt(Number(inv.total))} ${esc(inv.currency)}</div>
+                  <div class="pf-card-amount">${formatMoneyEs(Number(inv.total), inv.currency)}</div>
                   ${pill(inv.status)}
                 </div>
               </div>
@@ -373,7 +378,7 @@ router.get('/:token', async (req, res) => {
     </div>
     <div class="pf-main">
       <div class="pf-greeting">Hola, ${esc(customer.name)} 👋</div>
-      <div class="pf-greeting-sub">Aquí tienes tus cotizaciones, facturas y pagos.</div>
+      <div class="pf-greeting-sub">Aquí tienes tus ${locale.quotePlural.toLowerCase()}, facturas y pagos.</div>
 
       <!-- Solicitar presupuesto -->
       <div class="pf-section">
@@ -393,7 +398,7 @@ router.get('/:token', async (req, res) => {
       ${contactHtml}
 
       <div class="pf-section">
-        <div class="pf-section-title">Cotizaciones</div>
+        <div class="pf-section-title">${locale.quotePlural}</div>
         ${quotesHtml}
       </div>
 
