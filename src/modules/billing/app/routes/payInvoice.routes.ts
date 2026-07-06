@@ -92,8 +92,8 @@ router.get('/invoice/:chargeId', async (req, res) => {
       <span class="method-txt">
         <span class="method-title">${mm.title}</span>
         <span class="method-sub">${mm.sub}</span>
+        ${i === 0 && ordered.length > 1 ? '<span class="method-chip">Recomendado</span>' : ''}
       </span>
-      ${i === 0 && ordered.length > 1 ? '<span class="method-chip">Recomendado</span>' : ''}
       <span class="chev">›</span>
     </a>`).join('');
 
@@ -153,7 +153,10 @@ router.get('/invoice/:chargeId', async (req, res) => {
        y a 390px envolvían a mitad de frase ("Pagar con tarjeta Visa · …") */
     .method-title{display:block;font-weight:700;font-size:.98rem;line-height:1.2}
     .method-sub{display:block;font-size:.76rem;color:var(--muted);margin-top:.12rem}
-    .method-chip{flex-shrink:0;font-size:.66rem;font-weight:700;letter-spacing:.03em;color:#166534;
+    /* El chip va DEBAJO del texto (dentro de .method-txt): así el título nunca
+       se estruja en móviles estrechos (a 360px "Pagar con tarjeta" salía en 3
+       líneas cuando el chip competía por el ancho a la derecha). */
+    .method-chip{display:inline-block;margin-top:.35rem;font-size:.66rem;font-weight:700;letter-spacing:.03em;color:#166534;
       background:var(--brand-tint);border:1px solid #bbf7d0;border-radius:999px;padding:.18rem .55rem;text-transform:uppercase}
     .chev{font-size:1.25rem;opacity:.55;flex-shrink:0}
     @media (prefers-reduced-motion: reduce){.method{transition:none}.method:active{transform:none}}
