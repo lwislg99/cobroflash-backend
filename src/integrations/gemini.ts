@@ -11,19 +11,17 @@ export function isGeminiConfigured(): boolean {
   return !!config.GEMINI_API_KEY;
 }
 
-/**
- * Una llamada de texto: instrucción de sistema + entrada del usuario → texto.
- * Lanza Error('gemini_*') en fallo para que la capa superior lo traduzca.
- */
-export async function geminiComplete(params: {
-  system: string;
-  user: string;
-  maxTokens?: number;
-  temperature?: number;
-}): Promise<string> {
-  if (!config.GEMINI_API_KEY) throw new Error('gemini_not_configured');
+// Error con el MOTIVO exacto que devuelve Google, para diagnosticar sin adivinar.
+export class GeminiError extends Error {
+  constructor(public code: string, public providerDetail?: string, public httpStatus?: number) {
+    super(code);
+  }
+}
 
-  const model = config.GEMINI_MODEL || 'gemini-2.0-flash';
+// Una sola llamada a un modelo concreto.
+async function callGeminiModel(model: string, params: {
+  system: string; user: string; maxTokens?: number; temperature?: number;
+}): Promise<string> {
   const url = `${BASE}/${model}:generateContent?key=${encodeURIComponent(config.GEMINI_API_KEY)}`;
 
   let response: Response;
@@ -39,33 +37,60 @@ export async function geminiComplete(params: {
           temperature: params.temperature ?? 0.4,
         },
       }),
-      // El SDK de Node 18+ trae fetch; timeout defensivo con AbortSignal
       signal: AbortSignal.timeout(20_000),
     });
   } catch (err: any) {
-    console.error('[gemini] red/timeout:', err?.message || err);
-    throw new Error('gemini_unreachable');
+    console.error(`[gemini:${model}] red/timeout:`, err?.message || err);
+    throw new GeminiError('gemini_unreachable');
   }
 
   if (!response.ok) {
-    const body = await response.text().catch(() => '');
-    console.error(`[gemini] HTTP ${response.status}:`, body.slice(0, 300));
-    // 429 = te pasaste del tope gratis del día → mensaje específico aguas arriba
-    if (response.status === 429) throw new Error('gemini_rate_limited');
-    throw new Error('gemini_http_error');
+    const bodyText = await response.text().catch(() => '');
+    let detail = bodyText.slice(0, 300);
+    try { detail = JSON.parse(bodyText)?.error?.message || detail; } catch { /* texto plano */ }
+    console.error(`[gemini:${model}] HTTP ${response.status}: ${detail}`);
+    // 429 (cuota) y 404 (modelo no disponible) son RECUPERABLES con otro modelo.
+    if (response.status === 429) throw new GeminiError('gemini_rate_limited', detail, 429);
+    if (response.status === 404) throw new GeminiError('gemini_model_unavailable', detail, 404);
+    if (response.status === 400 && /API key/i.test(detail)) throw new GeminiError('gemini_bad_key', detail, 400);
+    throw new GeminiError('gemini_http_error', detail, response.status);
   }
 
   const data: any = await response.json().catch(() => null);
-  const text = data?.candidates?.[0]?.content?.parts
-    ?.map((p: any) => p?.text || '')
-    .join('')
-    .trim();
-
+  const text = data?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text || '').join('').trim();
   if (!text) {
-    // Puede venir bloqueado por safety o vacío
     const reason = data?.candidates?.[0]?.finishReason || data?.promptFeedback?.blockReason;
-    console.error('[gemini] respuesta vacía, finishReason:', reason);
-    throw new Error('gemini_empty');
+    console.error(`[gemini:${model}] respuesta vacía, finishReason:`, reason);
+    throw new GeminiError('gemini_empty', `finishReason: ${reason || 'desconocido'}`);
   }
   return text;
+}
+
+/**
+ * Instrucción de sistema + entrada del usuario → texto. Prueba los modelos de
+ * GEMINI_MODEL (lista separada por comas) EN ORDEN: si el primero da cuota
+ * agotada o no existe, pasa al siguiente. Así una clave nueva funciona aunque
+ * un modelo concreto tenga la cuota gratis a 0.
+ */
+export async function geminiComplete(params: {
+  system: string; user: string; maxTokens?: number; temperature?: number;
+}): Promise<string> {
+  if (!config.GEMINI_API_KEY) throw new GeminiError('gemini_not_configured');
+
+  const models = (config.GEMINI_MODEL || 'gemini-2.5-flash,gemini-2.0-flash,gemini-flash-latest')
+    .split(',').map((m) => m.trim()).filter(Boolean);
+
+  let lastErr: GeminiError | undefined;
+  for (const model of models) {
+    try {
+      return await callGeminiModel(model, params);
+    } catch (err) {
+      const e = err as GeminiError;
+      lastErr = e;
+      // Solo probamos otro modelo si el fallo es "cuota agotada" o "no existe".
+      if (e.code === 'gemini_rate_limited' || e.code === 'gemini_model_unavailable') continue;
+      throw e; // red, key inválida, etc. → no tiene sentido reintentar
+    }
+  }
+  throw lastErr ?? new GeminiError('gemini_http_error');
 }

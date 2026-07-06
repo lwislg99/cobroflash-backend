@@ -53,7 +53,9 @@ export const config = {
     // > Claude (fallback). Si ninguna está configurada, el asistente responde 503.
     ANTHROPIC_API_KEY:  process.env.ANTHROPIC_API_KEY  || '',
     GEMINI_API_KEY:     process.env.GEMINI_API_KEY     || '',
-    GEMINI_MODEL:       process.env.GEMINI_MODEL       || 'gemini-2.0-flash',
+    // Lista de modelos a probar EN ORDEN (coma). Si el 1º tiene cuota gratis a 0
+    // o no existe, se pasa al siguiente. Override con GEMINI_MODEL en Railway.
+    GEMINI_MODEL:       process.env.GEMINI_MODEL       || 'gemini-2.5-flash,gemini-2.0-flash,gemini-flash-latest',
 
     // Cuentas "owner" exentas del límite de prueba: se tratan como Pro activo y
     // sin caducidad (no afecta a los demás merchants). Lista de emails separada

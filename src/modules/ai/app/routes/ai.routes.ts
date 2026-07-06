@@ -16,9 +16,17 @@ function aiCapExceeded(merchantId: number): boolean {
 }
 
 function aiErrorResponse(res: any, err: any) {
-  const msg = err?.message || '';
+  const msg = err?.message || err?.code || '';
+  // `detail` = el motivo EXACTO que devolvió Google (diagnóstico, sin secretos)
+  const detail = err?.providerDetail || undefined;
   if (msg === 'gemini_rate_limited') {
-    return res.status(429).json({ error: 'ai_rate_limited', message: 'La IA gratuita alcanzó su límite diario. Prueba de nuevo más tarde o rellena las líneas a mano.' });
+    return res.status(429).json({ error: 'ai_rate_limited', message: 'La IA gratuita alcanzó su límite diario. Prueba de nuevo más tarde o rellena las líneas a mano.', detail });
+  }
+  if (msg === 'gemini_bad_key') {
+    return res.status(503).json({ error: 'ai_bad_key', message: 'La clave de IA (GEMINI_API_KEY) no es válida. Revísala en Railway.', detail });
+  }
+  if (msg === 'gemini_model_unavailable' || msg === 'gemini_http_error' || msg === 'gemini_unreachable' || msg === 'gemini_empty') {
+    return res.status(502).json({ error: 'ai_provider_error', message: 'La IA no respondió bien. Inténtalo de nuevo en un momento.', detail });
   }
   if (msg === 'ai_invalid_json' || msg === 'ai_invalid_format') {
     return res.status(422).json({ error: 'ai_could_not_parse', message: 'La IA no devolvió un formato válido. Inténtalo de nuevo.' });
