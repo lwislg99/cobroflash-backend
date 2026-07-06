@@ -125,7 +125,9 @@ router.post('/checkout', async (req, res) => {
       success_url: `${config.PUBLIC_BASE_URL}/dashboard/#plans?success=1`,
       cancel_url:  `${config.PUBLIC_BASE_URL}/dashboard/#plans?cancelled=1`,
       metadata: subMeta,
-      subscription_data: { trial_period_days: 0, metadata: subMeta },
+      // Sin periodo de prueba: se OMITE trial_period_days (Stripe rechaza el 0 —
+      // "The minimum number of trial period days is 1"). No poner el campo = sin trial.
+      subscription_data: { metadata: subMeta },
     });
 
     return res.json({ ok: true, checkoutUrl: session.url });
