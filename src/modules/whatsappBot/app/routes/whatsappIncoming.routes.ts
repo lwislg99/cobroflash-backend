@@ -23,7 +23,7 @@ const router = Router();
 // dupliquen la respuesta del bot. 500 ids ≈ sobra para el volumen F1.
 const seenWamids = new Set<string>();
 const seenOrder: string[] = [];
-function isDuplicateWamid(id: string): boolean {
+export function isDuplicateWamid(id: string): boolean { // A12.2: exportada para la suite
   if (!id) return false;
   if (seenWamids.has(id)) return true;
   seenWamids.add(id);

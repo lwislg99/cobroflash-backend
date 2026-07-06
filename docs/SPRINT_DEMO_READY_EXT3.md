@@ -150,6 +150,25 @@
 > verificado contra código, sin tocar · A22.4 `4c222bb` (document.title por vista, favicon
 > del dashboard que FALTABA, transición de vista 160ms con reduced-motion; kpi-value ya
 > tabular).
+> **OLA 12 ✅ COMPLETA (6-jul — la última, como manda el doc):** A12.1+A12.4 (suite
+> tests/tenancy-permisos: sesión de merchant B contra 14 rutas con IDs de A → 403/404 SIEMPRE
+> y sin datos de A; sesión Operario recorre ADMIN_ONLY_ROUTES [core/http/adminOnlyRoutes, 20
+> rutas, lista ÚNICA: ruta sensible nueva se añade ahí] → 403; la suite CAZÓ 6 agujeros
+> reales, cerrados: quoteAdmin get/accept/reject/createInvoice sin merchantId, POST :id/invoice
+> sin scoping, mutaciones de mantenimiento sin rol) · A12.2 (suite webhooks-idempotencia:
+> dedupe event.id Stripe/Connect + wamid Meta exportados y testeados; integración REAL:
+> payment.confirmed duplicado en /webhooks/psp NO re-paga y queda marcado duplicate) · A12.3
+> (`npm run e2e:critico` — scripts/e2e-critico.mjs, motor puppeteer-core sobre Edge [mismo
+> Chromium que Playwright, sin dep nueva]: merchant EFÍMERO recorre registro→onboarding 3
+> pasos→catálogo 28→presupuesto→landing→firma→justificante J→pago test [/webhooks/psp, la
+> misma cadena post-pago; Checkout real cuando haya claves test]→estados BD→PDFs on-demand —
+> 12 pasos 🟢 con limpieza total, `a123-e2e-critico.txt`) · A12.5 (suite pdfs: firmado≠sin
+> firmar, justificante J sin QR, watermark DEMO, regeneración R8 ×2). `npm test`: 89 tests
+> (84 pass + 5 skip gateados). Estándar de cierre documentado en QA_MASTER (⭐).
+>
+> **🏁 EXT3 DOCUMENTO COMPLETO (6-jul-2026):** Olas 10-18 + 20-22 + 12 ✅ TODAS. Quedan solo
+> las CONDICIONALES: Ola 19 (espera credenciales R2), Ola 23 (espera OK explícito) y el gate
+> Ola 7/EXT2 (espera ANTHROPIC_API_KEY). Todo lo del fundador: checklist §5b.
 > **CHOQUES Olas 1-9 señalados al fundador (resolución al llegar):** A22.3 búsqueda global ya
 > existe → completar contra spec · A17 load-catalog ya existe → migrar contenido a data/catalogs
 > con schema master · A16.1 → añadir SOLO métricas X2 faltantes. **Decisiones fundador recibidas:**

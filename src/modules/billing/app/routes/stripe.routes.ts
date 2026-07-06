@@ -16,7 +16,7 @@ export const router = express.Router();
 // memoria (500) suficiente para F1; A12.2 lo cubre con test.
 const seenStripeEvents = new Set<string>();
 const seenOrder: string[] = [];
-function isDuplicateStripeEvent(id: string): boolean {
+export function isDuplicateStripeEvent(id: string): boolean { // A12.2: exportada para la suite
   if (!id) return false;
   if (seenStripeEvents.has(id)) return true;
   seenStripeEvents.add(id);

@@ -19,6 +19,33 @@
 - `npm test` SIEMPRE en verde antes de cada commit (compila + suite contra `dist/`).
 - Fallos encontrados → `docs/BUGS.md` con su formato; el sprint no cierra con P0/P1 abiertos.
 
+## ⭐ ESTÁNDAR DE CIERRE (Ola 12 EXT3 — vale para CUALQUIER tarea futura)
+
+```bash
+npm test                                   # unit + gateadas en skip (81+)
+QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm test   # + tenancy, permisos Operario,
+                                           #   idempotencia de webhooks y PDFs
+                                           #   (filas efímeras propias en la BD
+                                           #   del .env; limpieza total)
+npm run e2e:critico                        # LA cadena de dinero entera con un
+                                           # merchant efímero: registro →
+                                           # onboarding → catálogo → presupuesto
+                                           # → firma → justificante J → pago test
+                                           # → estados BD → PDFs. "¿Despliego
+                                           # tranquilo?" = esto en 🟢.
+```
+
+- `tests/tenancy-permisos.test.mjs` (A12.1+A12.4): sesión de un merchant B contra
+  IDs del A → 403/404 SIEMPRE; sesión técnico recorre `ADMIN_ONLY_ROUTES`
+  (`src/core/http/adminOnlyRoutes.ts` — ruta sensible nueva = AÑADIRLA AHÍ) → 403.
+- `tests/webhooks-idempotencia.test.mjs` (A12.2): event.id de Stripe/Connect y wamid
+  de Meta deduplicados; `payment.confirmed` duplicado en /webhooks/psp NO re-paga
+  (queda registrado como duplicate).
+- `tests/pdfs.test.mjs` (A12.5): quote firmado vs sin firmar, justificante serie J
+  sin QR, watermark DEMO, regeneración on-demand ×2 (R8).
+- El pago con Checkout REAL de Stripe test queda pendiente de claves del fundador;
+  hasta entonces "pago test" = /webhooks/psp (la misma cadena post-pago).
+
 ---
 
 ## 1. E2E crítico (RELEASE BLOCKER — se pasa entero en cada cierre de sprint)

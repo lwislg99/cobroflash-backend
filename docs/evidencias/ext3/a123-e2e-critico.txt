@@ -1,0 +1,20 @@
+e2e:critico contra http://127.0.0.1:3457
+
+[lifecycle] (sin RESEND) email a e2e-1783325572594@test.local: ¡Bienvenido a YaQu! 🎉
+[magic-link] to=e2e-1783325572594@test.local link=http://127.0.0.1:3457/auth/verify?token=e042d8b794094fe75cb1094e7b9e3e371b979d399166798792a3af35f8715137
+[magic-link] email enviado OK a e2e-1783325572594@test.local
+  ✅ 01 registro → merchant 16
+  ✅ 02 onboarding paso 1 → negocio+WhatsApp guardados
+  ✅ 03 onboarding completo (3 pasos)
+  ✅ 04 catálogo del gremio cargado (28 productos)
+  ✅ 05 presupuesto #1 creado (FULL_UPFRONT)
+  ✅ 06 landing pública renderiza (firma + total + validez)
+  ✅ 07 cliente acepta y firma (evidencia ts/IP/UA)
+  ✅ 08 estados BD: accepted + justificante J-20260706-ZZV2 + job pendiente_agendar
+  ✅ 09 pago test confirmado → charge paid + justificante paid (misma cadena que Stripe)
+  ✅ 10 confirmaciones en dry-run registradas (3 mensajes simulados)
+  ✅ 11 PDF presupuesto firmado regenerado on-demand (2 KB)
+  ✅ 12 PDF justificante regenerado on-demand (2 KB)
+
+🟢 e2e:critico COMPLETO — despliega tranquilo.
+limpieza: merchant efímero borrado
