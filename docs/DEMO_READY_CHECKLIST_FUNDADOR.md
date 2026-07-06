@@ -29,8 +29,12 @@
 - [ ] **Matriz de voz en tus 3 móviles** (tras el punto 1 + `VOICE_QUOTE_ENABLED=true`):
       Chrome Android ×2 y Safari iOS, guion de 2 min por dispositivo al final de
       `docs/VOZ_MATRIX.md`. La degradación ya está verificada; falta el camino feliz.
-- [ ] **Bug-bash V0-5**: /pay/quote y /pay/invoice en 3 dispositivos reales
-      (checklist en `docs/BUG_BASH_LANDING.md`). Fallos → me los pasas y los arreglo.
+- [~] **Bug-bash V0-5**: /pay/quote y /pay/invoice en 3 dispositivos reales
+      (checklist en `docs/BUG_BASH_LANDING.md`). **PRE-REVISADO por Claude (6-jul) a 360 y
+      390 px** (`docs/evidencias/ext3/bugbash/`): quote impecable (importes 4 cifras, tiers,
+      sin fuga de coste/margen); invoice tenía el título "Pagar con tarjeta" partido en móvil
+      estrecho → **arreglado** (chip Recomendado bajo el texto). **Te queda solo la pasada
+      final en tus 3 móviles reales** (Android/iPhone/tablet) — más ligera ya.
 - [ ] **Vídeo de 60 s** (guion en V0-6 del master) → me pasas la URL y la pongo en
       `DEMO_VIDEO_URL`. *Opcional para la demo: la maqueta interactiva A4.7 ya cubre el hueco.*
 
