@@ -7,6 +7,9 @@ function renderSettingsView(container) {
     card.className = "customers-card";
     container.appendChild(card);
 
+    // A18.5 (AB4 · Parte M): checklist de readiness ARRIBA — qué te falta para cobrar
+    renderReadinessCard(container, card);
+
     // Tarjeta de Referidos (se rellena de forma asíncrona)
     renderReferralCard(container);
     renderWaFairUseCard(container); // A9.3: fair use W2 visible
@@ -549,6 +552,95 @@ async function renderWaFairUseCard(container) {
     </p>
   `;
   container.appendChild(card);
+}
+
+// ── A18.5 · Checklist de readiness (Parte M, AB4 Configuración) ─────────────
+// Estados CLAROS de lo que desbloquea cada cosa: WhatsApp, cobro (IBAN/Bizum),
+// tarjeta (Connect) y datos fiscales. Copys del master M — jamás "factura" sin
+// datos fiscales: el documento es un justificante de cobro.
+async function renderReadinessCard(container, mainFormCard) {
+  let m;
+  try { m = await apiRequest('/admin/merchant'); } catch { return; }
+  if (m.slug === undefined) return; // perfil reducido (Operario) → sin checklist
+
+  const card = document.createElement('div');
+  card.className = 'customers-card';
+  card.style.marginTop = '0';
+  container.insertBefore(card, container.firstChild);
+
+  const chargeReady = !!(m.iban || m.bizumPhone);
+  const fiscalReady = !!(m.legalName && m.taxId && m.address);
+  const connect = String(m.connectStatus || 'none');
+
+  const rows = [
+    {
+      ok: !!m.whatsappPhone,
+      label: 'Presupuestos por WhatsApp',
+      okText: 'Listo — tus presupuestos salen por WhatsApp',
+      koText: 'Añade tu teléfono de WhatsApp para enviar presupuestos',
+      focus: 'whatsappPhone',
+    },
+    {
+      ok: chargeReady,
+      label: 'Cobro por transferencia o Bizum',
+      okText: m.iban && m.bizumPhone ? 'IBAN y Bizum configurados' : (m.iban ? 'IBAN configurado' : 'Bizum configurado'),
+      koText: 'Añade tu IBAN o tu Bizum para que te puedan pagar',
+      focus: 'iban',
+    },
+    {
+      ok: connect === 'active',
+      warn: connect === 'pending' || connect === 'restricted',
+      label: 'Cobros con tarjeta',
+      okText: 'Stripe activo — tus clientes pueden pagar con tarjeta',
+      warnText: connect === 'pending' ? 'Verificación en curso en Stripe' : 'Cuenta restringida — revisa Stripe',
+      koText: 'Activar cobros con tarjeta · 2 min, DNI e IBAN',
+      scrollConnect: true,
+    },
+    {
+      ok: fiscalReady,
+      label: 'Datos fiscales',
+      okText: 'Completos — listos para facturar cuando toque',
+      koText: 'Sin ellos, el documento tras el pago es un justificante de cobro',
+      focus: 'taxId',
+    },
+  ];
+
+  const done = rows.filter((r) => r.ok).length;
+  card.innerHTML = `
+    <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Tu cuenta, lista para cobrar</h2>
+    <p style="margin:0 0 14px;font-size:13px;color:var(--neutral-400)">${done} de ${rows.length} en verde. Cada punto te dice qué desbloquea.</p>
+    <div id="readiness-rows" style="display:flex;flex-direction:column;gap:8px"></div>
+  `;
+  const box = card.querySelector('#readiness-rows');
+  rows.forEach((r) => {
+    const state = r.ok ? 'ok' : r.warn ? 'warn' : 'ko';
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:11px 14px;min-height:44px;'
+      + 'border:1px solid var(--border);border-radius:10px;background:'
+      + (state === 'ok' ? 'var(--brand-tint,#ecfdf5)' : '#fff')
+      + ';cursor:pointer;text-align:left;font:inherit;width:100%';
+    row.innerHTML = `
+      <span style="flex:none;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:800;color:#fff;background:${state === 'ok' ? 'var(--green-600,#16a34a)' : state === 'warn' ? '#f59e0b' : 'var(--neutral-300,#cdd2cb)'}">${state === 'ok' ? '✓' : state === 'warn' ? '…' : '·'}</span>
+      <span style="min-width:0">
+        <span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink)">${r.label}</span>
+        <span style="display:block;font-size:12.5px;color:${state === 'ko' ? 'var(--neutral-600)' : 'var(--muted)'}">${r.ok ? r.okText : r.warn ? r.warnText : r.koText}</span>
+      </span>
+      ${r.ok ? '' : '<span style="margin-left:auto;flex:none;font-size:12.5px;font-weight:600;color:var(--green-700,#15803d)">Completar →</span>'}
+    `;
+    row.addEventListener('click', () => {
+      if (r.scrollConnect) {
+        const h2s = [...document.querySelectorAll('h2')];
+        const c = h2s.find((h) => /tarjeta|Stripe|Connect/i.test(h.textContent));
+        (c ? c.closest('.customers-card') || c : mainFormCard).scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      const input = mainFormCard.querySelector(`[name="${r.focus}"]`);
+      if (input) { input.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => input.focus(), 350); }
+      else mainFormCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    box.appendChild(row);
+  });
 }
 
 // ── A14.1 · PERFIL-1: tu página pública /p/:slug (master Parte R) ──────────
