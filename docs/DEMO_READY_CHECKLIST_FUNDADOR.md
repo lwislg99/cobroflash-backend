@@ -53,6 +53,19 @@
 
 ## 🟠 4. Stripe (cobros reales con tarjeta + founding cobrable)
 
+> **✅ COBRO DEL FOUNDING VALIDADO EN TEST (6-jul-2026).** Probado de punta a punta por el
+> fundador: checkout → pago con tarjeta de prueba → webhook → plan activado solo. La clave
+> de Stripe, los 4 precios (resueltos por lookup_key) y el webhook (`/webhooks/stripe`) ya
+> están en prod. Dos bugs cazados y arreglados en la prueba: (a) `trial_period_days:0` que
+> Stripe rechazaba → omitido; (b) el botón "Suscribirme 29€" mudo (querySelector cogía solo
+> el 1er plan-btn) → querySelectorAll.
+> **Falta para cobrar DE VERDAD:** pasar a LIVE (claves live + webhook live + `setup-stripe-prices.mjs`
+> con la key live) — requiere la cuenta Stripe verificada para pagos en vivo. Y el texto del
+> alcance-beta completo (§5b) antes de vender founding a clientes reales.
+
+- [ ] **Pasar a LIVE:** claves `sk_live`/`pk_live` en Railway + crear el webhook en modo live
+      (`whsec_` live a `STRIPE_WEBHOOK_SECRET`) + `node scripts/setup-stripe-prices.mjs` con la
+      key live. Requiere la cuenta Stripe verificada (datos del negocio + banco).
 - [ ] **Webhook Connect** (Dashboard → Developers → Webhooks → tipo Connect →
       `https://yaqu.app/webhooks/stripe-connect`, eventos `account.updated`,
       `checkout.session.completed`, `payment_intent.payment_failed`) → copiar el signing
