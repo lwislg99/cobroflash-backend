@@ -1,0 +1,70 @@
+{
+  "gremio": "fontaneria",
+  "status": "draft_pendiente_validacion",
+  "version": "2026-07-06",
+  "_nota": "BORRADOR (A17.2). Precios ORIENTATIVOS de mercado ES 2026, sin validar: 2-3 fontaneros reales deben confirmarlos ANTES del seed a merchants reales (checklist fundador). El import usa el punto medio y etiqueta 'orientativo'.",
+  "items": [
+    { "nombre": "Salida urgente + diagnóstico de avería", "unidad": "servicio", "precioOrientativo": { "min": 50, "max": 90 }, "categoria": "Averías" },
+    { "nombre": "Reparación de fuga de agua vista", "unidad": "servicio", "precioOrientativo": { "min": 70, "max": 120 }, "categoria": "Averías" },
+    { "nombre": "Localización de fuga oculta (detector)", "unidad": "servicio", "precioOrientativo": { "min": 120, "max": 250 }, "categoria": "Averías" },
+    { "nombre": "Desatasco de fregadero o lavabo", "unidad": "servicio", "precioOrientativo": { "min": 80, "max": 140 }, "categoria": "Desatascos" },
+    { "nombre": "Desatasco de WC", "unidad": "servicio", "precioOrientativo": { "min": 90, "max": 160 }, "categoria": "Desatascos" },
+    { "nombre": "Desatasco con máquina (bajante)", "unidad": "servicio", "precioOrientativo": { "min": 150, "max": 300 }, "categoria": "Desatascos" },
+    { "nombre": "Sustitución de grifo monomando", "unidad": "ud", "precioOrientativo": { "min": 55, "max": 95 }, "categoria": "Grifería" },
+    { "nombre": "Sustitución de grifo termostático de ducha", "unidad": "ud", "precioOrientativo": { "min": 90, "max": 160 }, "categoria": "Grifería" },
+    { "nombre": "Instalación de grifo de cocina extraíble", "unidad": "ud", "precioOrientativo": { "min": 70, "max": 120 }, "categoria": "Grifería" },
+    { "nombre": "Reparación de cisterna (mecanismo completo)", "unidad": "ud", "precioOrientativo": { "min": 45, "max": 85 }, "categoria": "Sanitarios" },
+    { "nombre": "Instalación de inodoro", "unidad": "ud", "precioOrientativo": { "min": 110, "max": 180 }, "categoria": "Sanitarios" },
+    { "nombre": "Instalación de lavabo con pedestal", "unidad": "ud", "precioOrientativo": { "min": 100, "max": 170 }, "categoria": "Sanitarios" },
+    { "nombre": "Instalación de plato de ducha", "unidad": "ud", "precioOrientativo": { "min": 250, "max": 450 }, "categoria": "Sanitarios" },
+    { "nombre": "Sustitución de bañera por plato de ducha", "unidad": "servicio", "precioOrientativo": { "min": 1500, "max": 2800 }, "categoria": "Baño" },
+    { "nombre": "Sellado de silicona de bañera/ducha", "unidad": "servicio", "precioOrientativo": { "min": 40, "max": 80 }, "categoria": "Baño" },
+    { "nombre": "Cambio de termo eléctrico 50-80L", "unidad": "ud", "precioOrientativo": { "min": 220, "max": 380 }, "categoria": "Agua caliente", "mantenible": 12 },
+    { "nombre": "Cambio de termo eléctrico 100-150L", "unidad": "ud", "precioOrientativo": { "min": 300, "max": 520 }, "categoria": "Agua caliente", "mantenible": 12 },
+    { "nombre": "Revisión de termo/calentador", "unidad": "servicio", "precioOrientativo": { "min": 60, "max": 110 }, "categoria": "Agua caliente", "mantenible": 12 },
+    { "nombre": "Instalación de calentador de gas estanco", "unidad": "ud", "precioOrientativo": { "min": 280, "max": 480 }, "categoria": "Agua caliente", "mantenible": 12 },
+    { "nombre": "Instalación de descalcificador", "unidad": "ud", "precioOrientativo": { "min": 350, "max": 700 }, "categoria": "Tratamiento de agua", "mantenible": 6 },
+    { "nombre": "Mantenimiento de descalcificador (sal+revisión)", "unidad": "servicio", "precioOrientativo": { "min": 60, "max": 110 }, "categoria": "Tratamiento de agua", "mantenible": 6 },
+    { "nombre": "Instalación de ósmosis inversa", "unidad": "ud", "precioOrientativo": { "min": 180, "max": 350 }, "categoria": "Tratamiento de agua", "mantenible": 12 },
+    { "nombre": "Conexión de lavadora o lavavajillas", "unidad": "ud", "precioOrientativo": { "min": 60, "max": 100 }, "categoria": "Electrodomésticos" },
+    { "nombre": "Sustitución de llave de paso general", "unidad": "ud", "precioOrientativo": { "min": 80, "max": 150 }, "categoria": "Tuberías" },
+    { "nombre": "Sustitución de tramo de tubería (hasta 2 m)", "unidad": "servicio", "precioOrientativo": { "min": 120, "max": 250 }, "categoria": "Tuberías" },
+    { "nombre": "Instalación de válvula antirretorno", "unidad": "ud", "precioOrientativo": { "min": 70, "max": 130 }, "categoria": "Tuberías" },
+    { "nombre": "Sustitución de sifón o desagüe", "unidad": "ud", "precioOrientativo": { "min": 45, "max": 85 }, "categoria": "Tuberías" },
+    { "nombre": "Mano de obra fontanería (hora)", "unidad": "h", "precioOrientativo": { "min": 35, "max": 55 }, "categoria": "General" }
+  ],
+  "plantillas": [
+    {
+      "nombre": "Cambio de termo eléctrico",
+      "paymentTerms": "FIFTY_FIFTY",
+      "lines": [
+        { "concept": "Cambio de termo eléctrico 50-80L", "qty": 1, "priceFrom": "Cambio de termo eléctrico 50-80L" },
+        { "concept": "Sustitución de llave de paso general", "qty": 1, "priceFrom": "Sustitución de llave de paso general" }
+      ]
+    },
+    {
+      "nombre": "Reforma de grifería de baño",
+      "paymentTerms": "FULL_UPFRONT",
+      "lines": [
+        { "concept": "Sustitución de grifo monomando", "qty": 1, "priceFrom": "Sustitución de grifo monomando" },
+        { "concept": "Sustitución de grifo termostático de ducha", "qty": 1, "priceFrom": "Sustitución de grifo termostático de ducha" },
+        { "concept": "Sellado de silicona de bañera/ducha", "qty": 1, "priceFrom": "Sellado de silicona de bañera/ducha" }
+      ]
+    },
+    {
+      "nombre": "Desatasco urgente",
+      "paymentTerms": "FULL_UPFRONT",
+      "lines": [
+        { "concept": "Salida urgente + diagnóstico de avería", "qty": 1, "priceFrom": "Salida urgente + diagnóstico de avería" },
+        { "concept": "Desatasco de WC", "qty": 1, "priceFrom": "Desatasco de WC" }
+      ]
+    },
+    {
+      "nombre": "Bañera por plato de ducha",
+      "paymentTerms": "FIFTY_FIFTY",
+      "lines": [
+        { "concept": "Sustitución de bañera por plato de ducha", "qty": 1, "priceFrom": "Sustitución de bañera por plato de ducha" }
+      ]
+    }
+  ]
+}

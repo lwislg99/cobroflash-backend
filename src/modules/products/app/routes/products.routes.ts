@@ -5,6 +5,7 @@ import {
 } from '../../domain/products.service';
 import { prisma } from '../../../../core/db/prisma';
 import { getTradeCatalog } from '../../../../core/data/tradeCatalogs';
+import { getCatalogFile, midPrice, orientativoLabel } from '../../../../core/data/catalogLoader';
 import { getLocale } from '../../../../core/i18n/locales';
 
 const router = Router();
@@ -13,6 +14,9 @@ router.get('/ping', (_req, res) => res.json({ ok: true, module: 'products' }));
 
 // Precargar catálogo de servicios típicos por oficio (onboarding).
 // Idempotente: solo carga si el merchant tiene menos de 2 productos.
+// A17.1 (ONBOARD-2): para España manda data/catalogs/{gremio}.json (schema del
+// master, precios ORIENTATIVOS etiquetados, borrador hasta validación) y además
+// siembra las plantillas frecuentes del gremio; LATAM sigue con el catálogo TS.
 router.post('/load-catalog', async (req, res) => {
   try {
     const merchant = await prisma.merchant.findUnique({
@@ -29,13 +33,68 @@ router.post('/load-catalog', async (req, res) => {
       return res.json({ ok: true, inserted: 0, skipped: 'already_has_products' });
     }
 
+    const vat = getLocale(merchant.country).defaultVat;
+    const country = (merchant.country || 'ES').toUpperCase();
+    const file = country === 'ES' ? getCatalogFile(trade) : null;
+    let inserted = 0;
+    let templates = 0;
+
+    if (file) {
+      const priceOf = new Map<string, number>();
+      for (const item of file.items) {
+        const price = midPrice(item);
+        priceOf.set(item.nombre, price);
+        try {
+          await createProduct(req.merchantId, {
+            name: item.nombre,
+            description: orientativoLabel(item), // etiqueta VISIBLE (spec)
+            price,
+            vat,
+          });
+          inserted++;
+        } catch (e: any) {
+          if (e?.code !== 'P2002') throw e; // duplicado → idempotente
+        }
+      }
+
+      // Plantillas frecuentes del gremio (3-5) sobre el sistema existente —
+      // solo si el merchant aún no tiene ninguna (mismo espíritu idempotente).
+      const existingTpl = await prisma.quoteTemplate.count({ where: { merchantId: req.merchantId } });
+      if (existingTpl === 0 && Array.isArray(file.plantillas)) {
+        for (const tpl of file.plantillas) {
+          const lines = tpl.lines
+            .map((l) => ({
+              concept: l.concept,
+              qty: l.qty,
+              price: priceOf.get(l.priceFrom) ?? 0,
+              tax: vat,
+            }))
+            .filter((l) => l.price > 0);
+          if (!lines.length) continue;
+          await prisma.quoteTemplate.create({
+            data: {
+              merchantId: req.merchantId,
+              name: tpl.nombre,
+              currency: 'EUR',
+              lines: lines as any,
+              paymentTerms: tpl.paymentTerms ?? null,
+            },
+          });
+          templates++;
+        }
+      }
+
+      return res.json({
+        ok: true, inserted, templates,
+        source: 'data/catalogs', status: file.status, // borrador visible aguas arriba
+      });
+    }
+
+    // Fallback (LATAM o gremio sin fichero): catálogo TS clásico
     const items = getTradeCatalog(trade, merchant.country);
     if (!items.length) {
       return res.json({ ok: true, inserted: 0, skipped: 'no_catalog_for_trade' });
     }
-
-    const vat = getLocale(merchant.country).defaultVat;
-    let inserted = 0;
     for (const item of items) {
       try {
         await createProduct(req.merchantId, {
@@ -46,12 +105,11 @@ router.post('/load-catalog', async (req, res) => {
         });
         inserted++;
       } catch (e: any) {
-        // Ignorar duplicados (P2002) — endpoint idempotente
         if (e?.code !== 'P2002') throw e;
       }
     }
 
-    return res.json({ ok: true, inserted });
+    return res.json({ ok: true, inserted, source: 'legacy' });
   } catch (err) {
     console.error('[POST /admin/products/load-catalog]', err);
     return res.status(500).json({ ok: false, error: 'internal_error' });

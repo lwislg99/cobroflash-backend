@@ -1,0 +1,290 @@
+{
+  "gremio": "pintura",
+  "status": "draft_pendiente_validacion",
+  "version": "2026-07-06",
+  "_nota": "BORRADOR (A17.2). Precios ORIENTATIVOS ES 2026 sin validar — 2-3 pintores reales antes del seed (checklist fundador).",
+  "items": [
+    {
+      "nombre": "Pintura plástica lisa interior (m², 2 manos)",
+      "unidad": "m²",
+      "precioOrientativo": {
+        "min": 8,
+        "max": 14
+      },
+      "categoria": "Interior"
+    },
+    {
+      "nombre": "Pintura de techo (m²)",
+      "unidad": "m²",
+      "precioOrientativo": {
+        "min": 9,
+        "max": 15
+      },
+      "categoria": "Interior"
+    },
+    {
+      "nombre": "Pintura de habitación completa (12-15 m²)",
+      "unidad": "servicio",
+      "precioOrientativo": {
+        "min": 250,
+        "max": 450
+      },
+      "categoria": "Interior"
+    },
+    {
+      "nombre": "Pintura de piso 70-90 m² (paredes+techos)",
+      "unidad": "servicio",
+      "precioOrientativo": {
+        "min": 1200,
+        "max": 2200
+      },
+      "categoria": "Interior"
+    },
+    {
+      "nombre": "Alisado de gotelé (m²)",
+      "unidad": "m²",
+      "precioOrientativo": {
+        "min": 12,
+        "max": 22
+      },
+      "categoria": "Preparación"
+    },
+    {
+      "nombre": "Quitar papel pintado (m²)",
+      "unidad": "m²",
+      "precioOrientativo": {
+        "min": 6,
+        "max": 12
+      },
+      "categoria": "Preparación"
+    },
+    {
+      "nombre": "Reparación de grietas y desconchones (estancia)",
+      "unidad": "servicio",
+      "precioOrientativo": {
+        "min": 80,
+        "max": 180
+      },
+      "categoria": "Preparación"
+    },
+    {
+      "nombre": "Tratamiento antihumedad/antimoho (m²)",
+      "unidad": "m²",
+      "precioOrientativo": {
+        "min": 15,
+        "max": 30
+      },
+      "categoria": "Tratamientos"
+    },
+    {
+      "nombre": "Imprimación selladora (m²)",
+      "unidad": "m²",
+      "precioOrientativo": {
+        "min": 4,
+        "max": 8
+      },
+      "categoria": "Tratamientos"
+    },
+    {
+      "nombre": "Esmaltado de puerta (unidad, 2 caras)",
+      "unidad": "ud",
+      "precioOrientativo": {
+        "min": 60,
+        "max": 110
+      },
+      "categoria": "Carpintería"
+    },
+    {
+      "nombre": "Lacado de puerta en blanco (unidad)",
+      "unidad": "ud",
+      "precioOrientativo": {
+        "min": 110,
+        "max": 200
+      },
+      "categoria": "Carpintería"
+    },
+    {
+      "nombre": "Esmaltado de radiador",
+      "unidad": "ud",
+      "precioOrientativo": {
+        "min": 45,
+        "max": 85
+      },
+      "categoria": "Carpintería"
+    },
+    {
+      "nombre": "Barnizado de puerta o ventana de madera",
+      "unidad": "ud",
+      "precioOrientativo": {
+        "min": 70,
+        "max": 130
+      },
+      "categoria": "Carpintería"
+    },
+    {
+      "nombre": "Pintura de reja o barandilla (m)",
+      "unidad": "m",
+      "precioOrientativo": {
+        "min": 12,
+        "max": 22
+      },
+      "categoria": "Metal"
+    },
+    {
+      "nombre": "Pintura de fachada (m², con medios simples)",
+      "unidad": "m²",
+      "precioOrientativo": {
+        "min": 15,
+        "max": 28
+      },
+      "categoria": "Exterior"
+    },
+    {
+      "nombre": "Impermeabilización de terraza (m²)",
+      "unidad": "m²",
+      "precioOrientativo": {
+        "min": 25,
+        "max": 45
+      },
+      "categoria": "Exterior"
+    },
+    {
+      "nombre": "Pintura de garaje/trastero (m²)",
+      "unidad": "m²",
+      "precioOrientativo": {
+        "min": 6,
+        "max": 11
+      },
+      "categoria": "Exterior"
+    },
+    {
+      "nombre": "Repaso de pintura de comunidad (portal+escalera)",
+      "unidad": "servicio",
+      "precioOrientativo": {
+        "min": 900,
+        "max": 2000
+      },
+      "categoria": "Comunidades",
+      "mantenible": 36
+    },
+    {
+      "nombre": "Pintura decorativa/efecto (m²)",
+      "unidad": "m²",
+      "precioOrientativo": {
+        "min": 18,
+        "max": 35
+      },
+      "categoria": "Decorativa"
+    },
+    {
+      "nombre": "Papel pintado: suministro y colocación (m²)",
+      "unidad": "m²",
+      "precioOrientativo": {
+        "min": 20,
+        "max": 40
+      },
+      "categoria": "Decorativa"
+    },
+    {
+      "nombre": "Pintura de mueble de cocina (módulo)",
+      "unidad": "ud",
+      "precioOrientativo": {
+        "min": 45,
+        "max": 90
+      },
+      "categoria": "Decorativa"
+    },
+    {
+      "nombre": "Señalización de suelo de garaje/nave (m²)",
+      "unidad": "m²",
+      "precioOrientativo": {
+        "min": 8,
+        "max": 16
+      },
+      "categoria": "Industrial"
+    },
+    {
+      "nombre": "Pintura epoxi de suelo (m²)",
+      "unidad": "m²",
+      "precioOrientativo": {
+        "min": 18,
+        "max": 32
+      },
+      "categoria": "Industrial"
+    },
+    {
+      "nombre": "Pintura de puerta de garaje/metálica",
+      "unidad": "ud",
+      "precioOrientativo": {
+        "min": 90,
+        "max": 170
+      },
+      "categoria": "Metal"
+    },
+    {
+      "nombre": "Mano de obra pintura (hora)",
+      "unidad": "h",
+      "precioOrientativo": {
+        "min": 28,
+        "max": 45
+      },
+      "categoria": "General"
+    }
+  ],
+  "plantillas": [
+    {
+      "nombre": "Pintar piso 80 m²",
+      "paymentTerms": "FIFTY_FIFTY",
+      "lines": [
+        {
+          "concept": "Pintura de piso 70-90 m² (paredes+techos)",
+          "qty": 1,
+          "priceFrom": "Pintura de piso 70-90 m² (paredes+techos)"
+        }
+      ]
+    },
+    {
+      "nombre": "Habitación completa",
+      "paymentTerms": "FULL_UPFRONT",
+      "lines": [
+        {
+          "concept": "Pintura de habitación completa (12-15 m²)",
+          "qty": 1,
+          "priceFrom": "Pintura de habitación completa (12-15 m²)"
+        },
+        {
+          "concept": "Reparación de grietas y desconchones (estancia)",
+          "qty": 1,
+          "priceFrom": "Reparación de grietas y desconchones (estancia)"
+        }
+      ]
+    },
+    {
+      "nombre": "Quitar gotelé y alisar (por m²)",
+      "paymentTerms": "FIFTY_FIFTY",
+      "lines": [
+        {
+          "concept": "Alisado de gotelé (m²)",
+          "qty": 40,
+          "priceFrom": "Alisado de gotelé (m²)"
+        },
+        {
+          "concept": "Pintura plástica lisa interior (m², 2 manos)",
+          "qty": 40,
+          "priceFrom": "Pintura plástica lisa interior (m², 2 manos)"
+        }
+      ]
+    },
+    {
+      "nombre": "Lacado de puertas (x5)",
+      "paymentTerms": "FIFTY_FIFTY",
+      "lines": [
+        {
+          "concept": "Lacado de puerta en blanco (unidad)",
+          "qty": 5,
+          "priceFrom": "Lacado de puerta en blanco (unidad)"
+        }
+      ]
+    }
+  ]
+}

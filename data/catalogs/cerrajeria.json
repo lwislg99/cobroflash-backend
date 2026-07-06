@@ -1,0 +1,58 @@
+{
+  "gremio": "cerrajeria",
+  "status": "draft_pendiente_validacion",
+  "version": "2026-07-06",
+  "_nota": "BORRADOR (A17.2). Precios ORIENTATIVOS ES 2026 sin validar — 2-3 cerrajeros reales antes del seed (checklist fundador).",
+  "items": [
+    { "nombre": "Apertura de puerta sin daños (día laborable)", "unidad": "servicio", "precioOrientativo": { "min": 60, "max": 120 }, "categoria": "Aperturas" },
+    { "nombre": "Apertura de puerta nocturna/festivo", "unidad": "servicio", "precioOrientativo": { "min": 100, "max": 200 }, "categoria": "Aperturas" },
+    { "nombre": "Apertura de puerta blindada/acorazada", "unidad": "servicio", "precioOrientativo": { "min": 120, "max": 250 }, "categoria": "Aperturas" },
+    { "nombre": "Apertura de coche", "unidad": "servicio", "precioOrientativo": { "min": 80, "max": 160 }, "categoria": "Aperturas" },
+    { "nombre": "Sustitución de bombín estándar", "unidad": "ud", "precioOrientativo": { "min": 60, "max": 110 }, "categoria": "Cerraduras", "mantenible": 24 },
+    { "nombre": "Sustitución de bombín antibumping", "unidad": "ud", "precioOrientativo": { "min": 110, "max": 200 }, "categoria": "Cerraduras" },
+    { "nombre": "Cerradura de seguridad multipunto (instalación)", "unidad": "ud", "precioOrientativo": { "min": 250, "max": 450 }, "categoria": "Cerraduras", "mantenible": 24 },
+    { "nombre": "Cerradura invisible (instalación)", "unidad": "ud", "precioOrientativo": { "min": 300, "max": 500 }, "categoria": "Cerraduras" },
+    { "nombre": "Engrase y ajuste de cerradura", "unidad": "servicio", "precioOrientativo": { "min": 40, "max": 75 }, "categoria": "Cerraduras", "mantenible": 24 },
+    { "nombre": "Cerradura electrónica con código/huella", "unidad": "ud", "precioOrientativo": { "min": 250, "max": 480 }, "categoria": "Control de acceso" },
+    { "nombre": "Amaestramiento de llaves (por bombín)", "unidad": "ud", "precioOrientativo": { "min": 40, "max": 80 }, "categoria": "Control de acceso" },
+    { "nombre": "Instalación de cierrapuertas", "unidad": "ud", "precioOrientativo": { "min": 90, "max": 160 }, "categoria": "Puertas" },
+    { "nombre": "Instalación de mirilla digital", "unidad": "ud", "precioOrientativo": { "min": 80, "max": 150 }, "categoria": "Puertas" },
+    { "nombre": "Ajuste de puerta descolgada", "unidad": "servicio", "precioOrientativo": { "min": 50, "max": 95 }, "categoria": "Puertas" },
+    { "nombre": "Cambio de manivela/escudo de seguridad", "unidad": "ud", "precioOrientativo": { "min": 60, "max": 120 }, "categoria": "Puertas" },
+    { "nombre": "Instalación de puerta acorazada", "unidad": "ud", "precioOrientativo": { "min": 1200, "max": 2400 }, "categoria": "Puertas" },
+    { "nombre": "Motor de persiana (instalación)", "unidad": "ud", "precioOrientativo": { "min": 150, "max": 280 }, "categoria": "Persianas" },
+    { "nombre": "Cambio de lamas de persiana (juego)", "unidad": "servicio", "precioOrientativo": { "min": 90, "max": 170 }, "categoria": "Persianas" },
+    { "nombre": "Cambio de cinta/eje de persiana", "unidad": "servicio", "precioOrientativo": { "min": 45, "max": 85 }, "categoria": "Persianas" },
+    { "nombre": "Cerradura de buzón", "unidad": "ud", "precioOrientativo": { "min": 25, "max": 50 }, "categoria": "Comunidades" },
+    { "nombre": "Cerradura de portal (comunidad)", "unidad": "ud", "precioOrientativo": { "min": 120, "max": 220 }, "categoria": "Comunidades" },
+    { "nombre": "Muelle de puerta de portal", "unidad": "ud", "precioOrientativo": { "min": 100, "max": 190 }, "categoria": "Comunidades" },
+    { "nombre": "Candado de alta seguridad + instalación de portacandados", "unidad": "ud", "precioOrientativo": { "min": 60, "max": 120 }, "categoria": "Locales" },
+    { "nombre": "Cierre metálico de local: reparación", "unidad": "servicio", "precioOrientativo": { "min": 120, "max": 260 }, "categoria": "Locales" },
+    { "nombre": "Mano de obra cerrajería (hora)", "unidad": "h", "precioOrientativo": { "min": 38, "max": 60 }, "categoria": "General" }
+  ],
+  "plantillas": [
+    {
+      "nombre": "Apertura + cambio de bombín",
+      "paymentTerms": "FULL_UPFRONT",
+      "lines": [
+        { "concept": "Apertura de puerta sin daños (día laborable)", "qty": 1, "priceFrom": "Apertura de puerta sin daños (día laborable)" },
+        { "concept": "Sustitución de bombín antibumping", "qty": 1, "priceFrom": "Sustitución de bombín antibumping" }
+      ]
+    },
+    {
+      "nombre": "Seguridad de puerta principal",
+      "paymentTerms": "FIFTY_FIFTY",
+      "lines": [
+        { "concept": "Cerradura de seguridad multipunto (instalación)", "qty": 1, "priceFrom": "Cerradura de seguridad multipunto (instalación)" },
+        { "concept": "Cambio de manivela/escudo de seguridad", "qty": 1, "priceFrom": "Cambio de manivela/escudo de seguridad" }
+      ]
+    },
+    {
+      "nombre": "Arreglo de persiana",
+      "paymentTerms": "FULL_UPFRONT",
+      "lines": [
+        { "concept": "Cambio de cinta/eje de persiana", "qty": 1, "priceFrom": "Cambio de cinta/eje de persiana" }
+      ]
+    }
+  ]
+}

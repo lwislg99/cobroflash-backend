@@ -1,0 +1,66 @@
+{
+  "gremio": "climatizacion",
+  "status": "draft_pendiente_validacion",
+  "version": "2026-07-06",
+  "_nota": "BORRADOR (A17.2). Precios ORIENTATIVOS ES 2026 sin validar — 2-3 instaladores reales antes del seed (checklist fundador).",
+  "items": [
+    { "nombre": "Instalación de split 1x1 (hasta 3 m de línea)", "unidad": "ud", "precioOrientativo": { "min": 250, "max": 420 }, "categoria": "Aire acondicionado", "mantenible": 12 },
+    { "nombre": "Instalación de multisplit 2x1", "unidad": "ud", "precioOrientativo": { "min": 450, "max": 750 }, "categoria": "Aire acondicionado", "mantenible": 12 },
+    { "nombre": "Metro adicional de línea frigorífica", "unidad": "m", "precioOrientativo": { "min": 35, "max": 60 }, "categoria": "Aire acondicionado" },
+    { "nombre": "Desmontaje de equipo antiguo", "unidad": "ud", "precioOrientativo": { "min": 60, "max": 120 }, "categoria": "Aire acondicionado" },
+    { "nombre": "Revisión de A/A pre-verano (limpieza+gas)", "unidad": "servicio", "precioOrientativo": { "min": 70, "max": 130 }, "categoria": "Mantenimiento", "mantenible": 12 },
+    { "nombre": "Limpieza y desinfección de splits (unidad)", "unidad": "ud", "precioOrientativo": { "min": 50, "max": 90 }, "categoria": "Mantenimiento", "mantenible": 12 },
+    { "nombre": "Recarga de gas refrigerante R32", "unidad": "servicio", "precioOrientativo": { "min": 120, "max": 220 }, "categoria": "Mantenimiento" },
+    { "nombre": "Reparación de fuga en circuito frigorífico", "unidad": "servicio", "precioOrientativo": { "min": 150, "max": 300 }, "categoria": "Averías" },
+    { "nombre": "Diagnóstico de avería de A/A", "unidad": "servicio", "precioOrientativo": { "min": 50, "max": 90 }, "categoria": "Averías" },
+    { "nombre": "Sustitución de placa electrónica de split", "unidad": "ud", "precioOrientativo": { "min": 180, "max": 350 }, "categoria": "Averías" },
+    { "nombre": "Instalación de caldera de condensación", "unidad": "ud", "precioOrientativo": { "min": 1500, "max": 2500 }, "categoria": "Calefacción", "mantenible": 12 },
+    { "nombre": "Revisión de caldera pre-invierno", "unidad": "servicio", "precioOrientativo": { "min": 80, "max": 140 }, "categoria": "Calefacción", "mantenible": 12 },
+    { "nombre": "Certificado RITE de mantenimiento", "unidad": "servicio", "precioOrientativo": { "min": 60, "max": 120 }, "categoria": "Calefacción" },
+    { "nombre": "Sustitución de radiador de aluminio", "unidad": "ud", "precioOrientativo": { "min": 150, "max": 280 }, "categoria": "Calefacción" },
+    { "nombre": "Purga y equilibrado de radiadores (vivienda)", "unidad": "servicio", "precioOrientativo": { "min": 60, "max": 110 }, "categoria": "Calefacción", "mantenible": 12 },
+    { "nombre": "Instalación de termostato inteligente", "unidad": "ud", "precioOrientativo": { "min": 80, "max": 150 }, "categoria": "Calefacción" },
+    { "nombre": "Instalación de aerotermia (vivienda tipo)", "unidad": "servicio", "precioOrientativo": { "min": 6000, "max": 11000 }, "categoria": "Aerotermia", "mantenible": 12 },
+    { "nombre": "Revisión anual de aerotermia", "unidad": "servicio", "precioOrientativo": { "min": 120, "max": 220 }, "categoria": "Aerotermia", "mantenible": 12 },
+    { "nombre": "Instalación de suelo radiante (m²)", "unidad": "m²", "precioOrientativo": { "min": 45, "max": 80 }, "categoria": "Aerotermia" },
+    { "nombre": "Conductos de A/A por falso techo (vivienda)", "unidad": "servicio", "precioOrientativo": { "min": 2200, "max": 4000 }, "categoria": "Conductos", "mantenible": 12 },
+    { "nombre": "Rejilla de impulsión/retorno adicional", "unidad": "ud", "precioOrientativo": { "min": 60, "max": 110 }, "categoria": "Conductos" },
+    { "nombre": "Limpieza de conductos de ventilación", "unidad": "servicio", "precioOrientativo": { "min": 200, "max": 400 }, "categoria": "Ventilación", "mantenible": 24 },
+    { "nombre": "Instalación de extractor de baño", "unidad": "ud", "precioOrientativo": { "min": 70, "max": 130 }, "categoria": "Ventilación" },
+    { "nombre": "Instalación de VMC de vivienda", "unidad": "servicio", "precioOrientativo": { "min": 800, "max": 1600 }, "categoria": "Ventilación", "mantenible": 12 },
+    { "nombre": "Mano de obra climatización (hora)", "unidad": "h", "precioOrientativo": { "min": 38, "max": 60 }, "categoria": "General" }
+  ],
+  "plantillas": [
+    {
+      "nombre": "Split 1x1 instalado",
+      "paymentTerms": "FIFTY_FIFTY",
+      "lines": [
+        { "concept": "Instalación de split 1x1 (hasta 3 m de línea)", "qty": 1, "priceFrom": "Instalación de split 1x1 (hasta 3 m de línea)" },
+        { "concept": "Desmontaje de equipo antiguo", "qty": 1, "priceFrom": "Desmontaje de equipo antiguo" }
+      ]
+    },
+    {
+      "nombre": "Revisión A/A pre-verano",
+      "paymentTerms": "FULL_UPFRONT",
+      "lines": [
+        { "concept": "Revisión de A/A pre-verano (limpieza+gas)", "qty": 1, "priceFrom": "Revisión de A/A pre-verano (limpieza+gas)" }
+      ]
+    },
+    {
+      "nombre": "Caldera de condensación instalada",
+      "paymentTerms": "FIFTY_FIFTY",
+      "lines": [
+        { "concept": "Instalación de caldera de condensación", "qty": 1, "priceFrom": "Instalación de caldera de condensación" },
+        { "concept": "Instalación de termostato inteligente", "qty": 1, "priceFrom": "Instalación de termostato inteligente" }
+      ]
+    },
+    {
+      "nombre": "Revisión de caldera",
+      "paymentTerms": "FULL_UPFRONT",
+      "lines": [
+        { "concept": "Revisión de caldera pre-invierno", "qty": 1, "priceFrom": "Revisión de caldera pre-invierno" },
+        { "concept": "Purga y equilibrado de radiadores (vivienda)", "qty": 1, "priceFrom": "Purga y equilibrado de radiadores (vivienda)" }
+      ]
+    }
+  ]
+}

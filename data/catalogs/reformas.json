@@ -1,0 +1,65 @@
+{
+  "gremio": "reformas",
+  "status": "draft_pendiente_validacion",
+  "version": "2026-07-06",
+  "_nota": "BORRADOR (A17.2). Precios ORIENTATIVOS ES 2026 sin validar — 2-3 reformistas reales antes del seed (checklist fundador).",
+  "items": [
+    { "nombre": "Reforma integral de baño (3-4 m²)", "unidad": "servicio", "precioOrientativo": { "min": 3500, "max": 6500 }, "categoria": "Baños", "mantenible": 12 },
+    { "nombre": "Cambio de bañera por plato de ducha", "unidad": "servicio", "precioOrientativo": { "min": 1500, "max": 2800 }, "categoria": "Baños" },
+    { "nombre": "Alicatado de baño (m²)", "unidad": "m²", "precioOrientativo": { "min": 30, "max": 50 }, "categoria": "Baños" },
+    { "nombre": "Mampara de ducha (suministro+instalación)", "unidad": "ud", "precioOrientativo": { "min": 250, "max": 500 }, "categoria": "Baños" },
+    { "nombre": "Reforma integral de cocina (8-10 m²)", "unidad": "servicio", "precioOrientativo": { "min": 5000, "max": 9500 }, "categoria": "Cocinas", "mantenible": 12 },
+    { "nombre": "Montaje de muebles de cocina (ml)", "unidad": "m", "precioOrientativo": { "min": 90, "max": 160 }, "categoria": "Cocinas" },
+    { "nombre": "Encimera de cuarzo/compacto (ml, instalada)", "unidad": "m", "precioOrientativo": { "min": 220, "max": 420 }, "categoria": "Cocinas" },
+    { "nombre": "Solado porcelánico (m²)", "unidad": "m²", "precioOrientativo": { "min": 28, "max": 48 }, "categoria": "Suelos" },
+    { "nombre": "Tarima flotante/laminada (m²)", "unidad": "m²", "precioOrientativo": { "min": 22, "max": 38 }, "categoria": "Suelos" },
+    { "nombre": "Rodapié (ml, suministro+colocación)", "unidad": "m", "precioOrientativo": { "min": 6, "max": 12 }, "categoria": "Suelos" },
+    { "nombre": "Nivelación de suelo con pasta (m²)", "unidad": "m²", "precioOrientativo": { "min": 10, "max": 18 }, "categoria": "Suelos" },
+    { "nombre": "Tabique de pladur (m²)", "unidad": "m²", "precioOrientativo": { "min": 38, "max": 60 }, "categoria": "Albañilería" },
+    { "nombre": "Falso techo de pladur (m²)", "unidad": "m²", "precioOrientativo": { "min": 32, "max": 52 }, "categoria": "Albañilería" },
+    { "nombre": "Derribo de tabique + retirada de escombro", "unidad": "servicio", "precioOrientativo": { "min": 250, "max": 500 }, "categoria": "Albañilería" },
+    { "nombre": "Apertura de hueco en muro (con premarco)", "unidad": "servicio", "precioOrientativo": { "min": 300, "max": 650 }, "categoria": "Albañilería" },
+    { "nombre": "Enfoscado/maestreado de pared (m²)", "unidad": "m²", "precioOrientativo": { "min": 14, "max": 26 }, "categoria": "Albañilería" },
+    { "nombre": "Cambio de puerta interior (unidad, block)", "unidad": "ud", "precioOrientativo": { "min": 220, "max": 380 }, "categoria": "Carpintería" },
+    { "nombre": "Armario empotrado a medida (frente, ml)", "unidad": "m", "precioOrientativo": { "min": 450, "max": 850 }, "categoria": "Carpintería" },
+    { "nombre": "Ventana de PVC con clima (unidad estándar)", "unidad": "ud", "precioOrientativo": { "min": 380, "max": 700 }, "categoria": "Ventanas" },
+    { "nombre": "Reforma integral de vivienda (m²)", "unidad": "m²", "precioOrientativo": { "min": 550, "max": 950 }, "categoria": "Integral", "mantenible": 12 },
+    { "nombre": "Proyecto y licencia de obra menor (gestión)", "unidad": "servicio", "precioOrientativo": { "min": 300, "max": 700 }, "categoria": "Gestión" },
+    { "nombre": "Alquiler de contenedor de escombros", "unidad": "ud", "precioOrientativo": { "min": 180, "max": 320 }, "categoria": "Gestión" },
+    { "nombre": "Visita post-obra de garantía", "unidad": "servicio", "precioOrientativo": { "min": 0, "max": 60 }, "categoria": "Postventa", "mantenible": 12 },
+    { "nombre": "Ayudas de albañilería a otros gremios (jornada)", "unidad": "servicio", "precioOrientativo": { "min": 180, "max": 300 }, "categoria": "General" },
+    { "nombre": "Mano de obra reformas (hora)", "unidad": "h", "precioOrientativo": { "min": 32, "max": 50 }, "categoria": "General" }
+  ],
+  "plantillas": [
+    {
+      "nombre": "Baño completo llave en mano",
+      "paymentTerms": "FIFTY_FIFTY",
+      "lines": [
+        { "concept": "Reforma integral de baño (3-4 m²)", "qty": 1, "priceFrom": "Reforma integral de baño (3-4 m²)" },
+        { "concept": "Mampara de ducha (suministro+instalación)", "qty": 1, "priceFrom": "Mampara de ducha (suministro+instalación)" }
+      ]
+    },
+    {
+      "nombre": "Cocina llave en mano",
+      "paymentTerms": "FIFTY_FIFTY",
+      "lines": [
+        { "concept": "Reforma integral de cocina (8-10 m²)", "qty": 1, "priceFrom": "Reforma integral de cocina (8-10 m²)" }
+      ]
+    },
+    {
+      "nombre": "Cambio de suelo (60 m²)",
+      "paymentTerms": "FIFTY_FIFTY",
+      "lines": [
+        { "concept": "Tarima flotante/laminada (m²)", "qty": 60, "priceFrom": "Tarima flotante/laminada (m²)" },
+        { "concept": "Rodapié (ml, suministro+colocación)", "qty": 40, "priceFrom": "Rodapié (ml, suministro+colocación)" }
+      ]
+    },
+    {
+      "nombre": "Puertas interiores (x6)",
+      "paymentTerms": "FIFTY_FIFTY",
+      "lines": [
+        { "concept": "Cambio de puerta interior (unidad, block)", "qty": 6, "priceFrom": "Cambio de puerta interior (unidad, block)" }
+      ]
+    }
+  ]
+}

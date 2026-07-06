@@ -114,6 +114,18 @@
 > UnpayNotAllowedError] e idempotente [doble click sin cambio → sin audit duplicado]).
 > Gate simulado en verde `a21-e2e.txt`: disputa→evento+WA+paquete 200 completo
 > (`a211-dispute-package.html`), V4 parcial sigue pending, unpay F1 real 409.
+> **OLA 17 ✅ COMPLETA (6-jul):** A17.1 (choque resuelto como se avisó: load-catalog EXISTENTE
+> migrado — para ES manda data/catalogs/{gremio}.json vía core/data/catalogLoader [schema
+> master literal, cache, mapa oficio→fichero fontanero→fontaneria…]; precio de import = punto
+> medio del rango; etiqueta VISIBLE "Precio orientativo (min–max €) — ajústalo a tu zona" en la
+> descripción; siembra además las plantillas del gremio sobre QuoteTemplate si el merchant no
+> tiene ninguna; LATAM sigue con el catálogo TS legacy; idempotente como siempre) · A17.2
+> (contenido BORRADOR: 6 gremios × 25-28 ítems con categorías y `mantenible` alineado con las
+> semillas MANT-1 + 3-5 plantillas/gremio con priceFrom validado sin refs rotas; TODO en
+> status draft_pendiente_validacion y _nota de borrador en cada fichero; validación con 2-3
+> profesionales reales por gremio = checklist fundador §5b ya existente). Gate E2E real
+> `a17-e2e.txt`: merchant ES efímero trade=fontanero → load-catalog → 28 productos con
+> etiqueta + 4 plantillas con precios del catálogo → segundo load 0 duplicados → limpieza.
 > **CHOQUES Olas 1-9 señalados al fundador (resolución al llegar):** A22.3 búsqueda global ya
 > existe → completar contra spec · A17 load-catalog ya existe → migrar contenido a data/catalogs
 > con schema master · A16.1 → añadir SOLO métricas X2 faltantes. **Decisiones fundador recibidas:**

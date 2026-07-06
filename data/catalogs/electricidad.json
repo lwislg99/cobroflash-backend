@@ -1,0 +1,74 @@
+{
+  "gremio": "electricidad",
+  "status": "draft_pendiente_validacion",
+  "version": "2026-07-06",
+  "_nota": "BORRADOR (A17.2). Precios ORIENTATIVOS ES 2026 sin validar — 2-3 electricistas reales antes del seed (checklist fundador).",
+  "items": [
+    { "nombre": "Salida urgente + diagnóstico de avería eléctrica", "unidad": "servicio", "precioOrientativo": { "min": 50, "max": 90 }, "categoria": "Averías" },
+    { "nombre": "Localización y reparación de cortocircuito", "unidad": "servicio", "precioOrientativo": { "min": 80, "max": 160 }, "categoria": "Averías" },
+    { "nombre": "Reparación de salto de diferencial", "unidad": "servicio", "precioOrientativo": { "min": 70, "max": 140 }, "categoria": "Averías" },
+    { "nombre": "Instalación de punto de luz", "unidad": "punto", "precioOrientativo": { "min": 40, "max": 70 }, "categoria": "Puntos e interruptores" },
+    { "nombre": "Instalación de enchufe nuevo", "unidad": "punto", "precioOrientativo": { "min": 35, "max": 65 }, "categoria": "Puntos e interruptores" },
+    { "nombre": "Sustitución de interruptor o enchufe", "unidad": "ud", "precioOrientativo": { "min": 20, "max": 40 }, "categoria": "Puntos e interruptores" },
+    { "nombre": "Instalación de conmutada (dos puntos)", "unidad": "servicio", "precioOrientativo": { "min": 60, "max": 110 }, "categoria": "Puntos e interruptores" },
+    { "nombre": "Instalación de luminaria o lámpara de techo", "unidad": "ud", "precioOrientativo": { "min": 35, "max": 65 }, "categoria": "Iluminación" },
+    { "nombre": "Sustitución a downlights LED (unidad)", "unidad": "ud", "precioOrientativo": { "min": 30, "max": 55 }, "categoria": "Iluminación" },
+    { "nombre": "Instalación de tira LED con transformador", "unidad": "m", "precioOrientativo": { "min": 25, "max": 45 }, "categoria": "Iluminación" },
+    { "nombre": "Iluminación exterior/jardín (punto estanco)", "unidad": "punto", "precioOrientativo": { "min": 55, "max": 95 }, "categoria": "Iluminación" },
+    { "nombre": "Sustitución de cuadro eléctrico completo", "unidad": "ud", "precioOrientativo": { "min": 300, "max": 550 }, "categoria": "Cuadro eléctrico", "mantenible": 24 },
+    { "nombre": "Revisión del cuadro eléctrico", "unidad": "servicio", "precioOrientativo": { "min": 60, "max": 110 }, "categoria": "Cuadro eléctrico", "mantenible": 24 },
+    { "nombre": "Instalación de diferencial superinmunizado", "unidad": "ud", "precioOrientativo": { "min": 90, "max": 160 }, "categoria": "Cuadro eléctrico" },
+    { "nombre": "Instalación de magnetotérmico adicional", "unidad": "ud", "precioOrientativo": { "min": 55, "max": 95 }, "categoria": "Cuadro eléctrico" },
+    { "nombre": "Protector contra sobretensiones", "unidad": "ud", "precioOrientativo": { "min": 120, "max": 220 }, "categoria": "Cuadro eléctrico" },
+    { "nombre": "Boletín eléctrico (CIE) con tramitación", "unidad": "servicio", "precioOrientativo": { "min": 120, "max": 250 }, "categoria": "Certificados" },
+    { "nombre": "Adecuación de instalación para boletín", "unidad": "servicio", "precioOrientativo": { "min": 200, "max": 500 }, "categoria": "Certificados" },
+    { "nombre": "Cableado nuevo de estancia (por estancia)", "unidad": "servicio", "precioOrientativo": { "min": 150, "max": 280 }, "categoria": "Instalación" },
+    { "nombre": "Instalación eléctrica completa de vivienda (m²)", "unidad": "m²", "precioOrientativo": { "min": 45, "max": 75 }, "categoria": "Instalación" },
+    { "nombre": "Línea dedicada para horno/vitro (hasta 10 m)", "unidad": "servicio", "precioOrientativo": { "min": 90, "max": 170 }, "categoria": "Instalación" },
+    { "nombre": "Instalación de videoportero", "unidad": "ud", "precioOrientativo": { "min": 180, "max": 350 }, "categoria": "Domótica y comunicaciones" },
+    { "nombre": "Punto de red RJ45", "unidad": "punto", "precioOrientativo": { "min": 60, "max": 110 }, "categoria": "Domótica y comunicaciones" },
+    { "nombre": "Instalación de termostato inteligente", "unidad": "ud", "precioOrientativo": { "min": 80, "max": 150 }, "categoria": "Domótica y comunicaciones" },
+    { "nombre": "Punto de recarga de vehículo eléctrico (pared)", "unidad": "ud", "precioOrientativo": { "min": 500, "max": 950 }, "categoria": "Vehículo eléctrico" },
+    { "nombre": "Ventilador de techo (instalación)", "unidad": "ud", "precioOrientativo": { "min": 60, "max": 110 }, "categoria": "Climatización ligera" },
+    { "nombre": "Mano de obra electricidad (hora)", "unidad": "h", "precioOrientativo": { "min": 35, "max": 55 }, "categoria": "General" }
+  ],
+  "plantillas": [
+    {
+      "nombre": "Punto de luz nuevo",
+      "paymentTerms": "FULL_UPFRONT",
+      "lines": [
+        { "concept": "Instalación de punto de luz", "qty": 1, "priceFrom": "Instalación de punto de luz" }
+      ]
+    },
+    {
+      "nombre": "Cambio de cuadro eléctrico",
+      "paymentTerms": "FIFTY_FIFTY",
+      "lines": [
+        { "concept": "Sustitución de cuadro eléctrico completo", "qty": 1, "priceFrom": "Sustitución de cuadro eléctrico completo" },
+        { "concept": "Protector contra sobretensiones", "qty": 1, "priceFrom": "Protector contra sobretensiones" }
+      ]
+    },
+    {
+      "nombre": "Boletín eléctrico (CIE)",
+      "paymentTerms": "FULL_UPFRONT",
+      "lines": [
+        { "concept": "Boletín eléctrico (CIE) con tramitación", "qty": 1, "priceFrom": "Boletín eléctrico (CIE) con tramitación" }
+      ]
+    },
+    {
+      "nombre": "Iluminación LED de salón",
+      "paymentTerms": "FULL_UPFRONT",
+      "lines": [
+        { "concept": "Sustitución a downlights LED (unidad)", "qty": 6, "priceFrom": "Sustitución a downlights LED (unidad)" },
+        { "concept": "Instalación de tira LED con transformador", "qty": 4, "priceFrom": "Instalación de tira LED con transformador" }
+      ]
+    },
+    {
+      "nombre": "Punto de recarga coche eléctrico",
+      "paymentTerms": "FIFTY_FIFTY",
+      "lines": [
+        { "concept": "Punto de recarga de vehículo eléctrico (pared)", "qty": 1, "priceFrom": "Punto de recarga de vehículo eléctrico (pared)" }
+      ]
+    }
+  ]
+}

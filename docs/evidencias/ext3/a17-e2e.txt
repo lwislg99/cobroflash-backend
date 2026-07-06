@@ -1,0 +1,6 @@
+load-catalog: {"ok":true,"inserted":28,"templates":4,"source":"data/catalogs","status":"draft_pendiente_validacion"}
+producto: Cambio de termo eléctrico 50-80L | precio: 300 | desc: Precio orientativo (220–380 € por ud) — ajústalo a tu zona
+plantilla: Cambio de termo eléctrico | líneas: [{"qty":1,"tax":0.21,"price":300,"concept":"Cambio de termo eléctrico 50-80L"},{"qty":1,"tax":0.21,"price":115,"concept":"Sustitución de llave de paso general"}]
+segundo load: {"ok":true,"inserted":0,"skipped":"already_has_products"}
+✅ A17 GATE COMPLETO
+limpieza hecha (merchant de test borrado)

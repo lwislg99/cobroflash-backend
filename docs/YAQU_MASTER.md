@@ -409,6 +409,13 @@ Métrica: € cobrados con `origin='maintenance'`/mes (KPI Home). Anti-spam: 1 p
 `/p/:slug` (slug único minúsculas-guiones; lista reservada admin/api/pay/p/login…; editable 1 vez/30d). **Público:** nombre comercial, logo, gremio(s), zonas (chips), años de experiencia (opc.), botón "Pedir presupuesto por WhatsApp" (wa.me del PRO prefilled; si BOT activo, alternativa al número YaQu), link reseñas Google si `googleReviewUrl` (reseñas propias = F3), footer "Hecho con YaQu" → `?src=profile`. **NUNCA público:** precios, clientes, volumen, email, NIF, dirección exacta. **QR:** generador en BO (PNG alta res para furgoneta/tarjeta) → `/p/:slug?src=qr`. Loop medido: registros con `acquisitionSource∈{profile,qr}`.
 
 ## ONBOARD-2 · Catálogos por gremio
+> **✅ CONSTRUIDO (EXT3 Ola 17, 6-jul-2026, autorización A10.0):** data/catalogs/{gremio}.json
+> con el schema literal (nombre/unidad/precioOrientativo{min,max}/categoria/mantenible) — 25-28
+> ítems/gremio + 3-5 plantillas/gremio; TODO en `status:'draft_pendiente_validacion'` (regla de
+> contenido: 2-3 profesionales reales por gremio validan ANTES del seed a merchants reales —
+> checklist fundador). load-catalog: ES usa el fichero (precio=punto medio, descripción con
+> etiqueta "Precio orientativo (min–max) — ajústalo a tu zona", siembra plantillas si no hay),
+> LATAM mantiene el catálogo TS clásico; idempotente. CSV sigue como vía avanzada.
 `data/catalogs/{fontaneria|electricidad|climatizacion|cerrajeria|pintura|reformas}.json` — 25-40 ítems/gremio: `{nombre, unidad, precioOrientativo:{min,max}, categoria, mantenible?:intervalo}`. **Regla de contenido:** precios ORIENTATIVOS etiquetados; el contenido se redacta EN EL SPRINT y se valida con 2-3 profesionales reales por gremio antes del seed — el master define estructura, no inventa 200 precios. Carga: selector de gremio → import con margen default aplicado → todo editable. Duplicar producto sí; catálogo entre merchants no. Plantillas de presupuesto frecuentes (3-5/gremio: "Cambio de termo", "Punto de luz", "Pintura piso 80 m²") → sistema de plantillas existente, seed por gremio. CSV se mantiene como vía avanzada (tarifas de distribuidor).
 
 ## JOB-1 · Trabajo mínimo — feature de DINERO, no de organización
