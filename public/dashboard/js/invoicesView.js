@@ -93,14 +93,14 @@ async function fetchInvoices(options = {}) {
     tableScroll.className = 'table-scroll';
     wrapper.appendChild(tableScroll);
     const table = document.createElement('table');
-    table.className = 'table';
+    table.className = 'table table--cards-mobile'; // feedback fundador 6-jul: cards en móvil
     tableScroll.appendChild(table);
   
     // Checkbox "seleccionar todo" en cabecera
     const thead = document.createElement('thead');
     thead.innerHTML = `
       <tr>
-        <th style="width:36px"><input type="checkbox" id="inv-check-all" title="Seleccionar todas"/></th>
+        <th style="width:36px" class="col-hide-mobile"><input type="checkbox" id="inv-check-all" title="Seleccionar todas"/></th>
         <th>Nº factura</th>
         <th>Cliente</th>
         <th style="text-align:right">Total</th>
@@ -248,6 +248,7 @@ async function fetchInvoices(options = {}) {
 
           // Checkbox
           const tdCheck = document.createElement('td');
+          tdCheck.className = 'col-hide-mobile'; // bulk = flujo de escritorio
           tdCheck.style.cssText = 'width:36px;padding:12px 8px';
           const cb = document.createElement('input');
           cb.type = 'checkbox';
@@ -263,6 +264,7 @@ async function fetchInvoices(options = {}) {
           tr.appendChild(tdCheck);
 
           const tdNumber = document.createElement('td');
+          tdNumber.className = 'cell-id';
           tdNumber.style.fontWeight = '600';
           tdNumber.textContent = inv.number;
           // A18.2: antigüedad VISIBLE en pendientes (también en móvil) —
@@ -278,16 +280,18 @@ async function fetchInvoices(options = {}) {
           tr.appendChild(tdNumber);
 
           const tdCustomer = document.createElement('td');
+          tdCustomer.className = 'cell-client';
           tdCustomer.textContent = (inv.customer && inv.customer.name) || '—';
           tr.appendChild(tdCustomer);
 
           const tdTotal = document.createElement('td');
-          tdTotal.className = 'amount';
+          tdTotal.className = 'amount cell-amount';
           tdTotal.style.textAlign = 'right';
           tdTotal.textContent = fmtInvMoney(inv.total, inv.currency);
           tr.appendChild(tdTotal);
 
           const tdStatus = document.createElement('td');
+          tdStatus.className = 'cell-status';
           const span = document.createElement('span');
           span.className = 'status-pill' +
             (st === 'paid' ? ' status-pill-accepted' : st === 'expired' ? ' status-pill-rejected' : ' status-pill-pending');

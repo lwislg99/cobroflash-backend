@@ -793,7 +793,7 @@ async function renderReferralCard(container) {
       <button id="ref-copy" class="btn btn-primary btn-sm" style="white-space:nowrap">Copiar link</button>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px">
       <div class="kpi-card"><div class="kpi-label">Tu código</div><div class="kpi-value" style="font-size:18px">${escSettings(data.code)}</div></div>
       <div class="kpi-card"><div class="kpi-label">Referidos</div><div class="kpi-value" style="font-size:20px">${data.referredCount} <span style="font-size:12px;color:var(--muted)">(${data.payingCount} pagando)</span></div></div>
       <div class="kpi-card"><div class="kpi-label">Meses gratis ganados</div><div class="kpi-value" style="font-size:20px;color:var(--green-600)">${data.freeMonthsEarned}</div></div>

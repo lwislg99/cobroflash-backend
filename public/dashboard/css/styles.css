@@ -1704,3 +1704,36 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .view-enter { animation: viewFade .16s ease-out; }
 @keyframes viewFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .view-enter { animation: none; } }
+
+/* ── Feedback fundador 6-jul: tablas SIMPLES (sin dinero) como cards en móvil ──
+   Clientes, Proveedores, Plantillas, Equipo: cada fila = card apilada, sin
+   overflow horizontal. cell-title = destacado arriba; cell-actions = ancho
+   completo abajo con targets ≥44px. El resto de celdas fluyen como chips. */
+@media (max-width: 640px) {
+  .table--stack-mobile thead { display: none; }
+  .table--stack-mobile, .table--stack-mobile tbody { display: block; width: 100%; }
+  .table-scroll .table--stack-mobile { min-width: 0; }
+  .table--stack-mobile td.col-hide-mobile { display: none; }
+  .table--stack-mobile tbody tr {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 10px;
+    padding: 12px 14px; margin: 10px 12px;
+    background: var(--surface, #fff); border: 1px solid var(--border);
+    border-radius: var(--radius-md, 12px);
+  }
+  .table--stack-mobile tbody tr:hover { background: var(--neutral-50); }
+  .table--stack-mobile td { display: block; padding: 0; border: 0; font-size: 13px; color: var(--muted); }
+  .table--stack-mobile td:empty { display: none; }
+  .table--stack-mobile td.cell-title { width: 100%; font-size: 15px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+  .table--stack-mobile td.cell-actions { width: 100%; margin-top: 10px; }
+  .table--stack-mobile td.cell-actions > div { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-start !important; }
+  .table--stack-mobile td.cell-actions button,
+  .table--stack-mobile td.cell-actions a { min-height: 44px; }
+  /* la fila vacía del empty-state ocupa el ancho, sin borde de card */
+  .table--stack-mobile tbody tr:has(.empty-state) { display: block; border: none; background: transparent; margin: 0; padding: 0; }
+}
+
+/* ── Feedback fundador 6-jul: el botón flotante "?" no debe pisar las modales ──
+   El help/tutorial vive en z-index 350; las modales en 200. Cuando hay una
+   modal abierta, ocultamos el "?" (y subimos la modal por encima del FAB). */
+.modal-overlay { z-index: 500; }
+body:has(.modal-overlay) #tut-help-btn { display: none !important; }

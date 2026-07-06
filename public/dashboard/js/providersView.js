@@ -170,7 +170,7 @@ function renderProvidersView(container) {
     wrap.appendChild(tableWrap);
   
     const table = document.createElement("table");
-    table.className = "table";
+    table.className = "table table--stack-mobile"; // feedback fundador 6-jul
     table.innerHTML = `
     <thead>
       <tr>
@@ -256,12 +256,12 @@ function renderProvidersView(container) {
       items.forEach((it) => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${it.id}</td>
-          <td>${it.name || ""}</td>
-          <td>${it.phone || "—"}</td>
-          <td>${it.email || "—"}</td>
-          <td>${it.isActive ? "Sí" : "No"}</td>
-          <td></td>
+          <td>#${it.id}</td>
+          <td class="cell-title">${it.name || ""}</td>
+          <td>${it.phone || "sin teléfono"}</td>
+          <td class="col-hide-mobile">${it.email || "—"}</td>
+          <td>${it.isActive ? "🟢 Activo" : "⚪ Inactivo"}</td>
+          <td class="cell-actions"></td>
         `;
   
         const actionsTd = tr.lastElementChild;

@@ -77,7 +77,7 @@ function renderCustomersView(container) {
   // Tabla edge-to-edge dentro del data-card
   const tableScroll = createElement("div", "table-scroll");
   outerCard.appendChild(tableScroll);
-  const table = createElement("table", "table");
+  const table = createElement("table", "table table--stack-mobile"); // feedback fundador 6-jul
   tableScroll.appendChild(table);
   const thead = document.createElement("thead");
   const trHead = document.createElement("tr");
@@ -302,9 +302,9 @@ function renderCustomersView(container) {
         tr.style.cursor = "pointer";
         tr.addEventListener("click", () => openCustomer360(c));
 
-        addCell(tr, c.id);
-        addCell(tr, c.name || "");
-        addCell(tr, c.phone || "");
+        addCell(tr, "#" + c.id);
+        addCell(tr, c.name || "Cliente sin nombre", "cell-title");
+        addCell(tr, c.phone || "sin teléfono", "cell-date");
         addCell(tr, c.email || "", "col-hide-mobile");
         const notesCell = addCell(tr, c.notes || "", "col-hide-mobile");
         notesCell.style.cssText += "max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)";
@@ -313,6 +313,7 @@ function renderCustomersView(container) {
         altaCell.style.color = "var(--muted)";
 
         const tdActions = document.createElement("td");
+        tdActions.className = "cell-actions";
         const actionsDiv = document.createElement("div");
         actionsDiv.style.cssText = "display:flex;gap:6px;align-items:center";
 

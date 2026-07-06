@@ -44,7 +44,7 @@ async function renderTeamView(container) {
   tableCard.appendChild(tableScroll);
 
   const table = document.createElement('table');
-  table.className = 'table';
+  table.className = 'table table--stack-mobile'; // feedback fundador 6-jul
   tableScroll.appendChild(table);
 
   async function loadMembers() {
@@ -80,11 +80,11 @@ async function renderTeamView(container) {
       const statusClass = { active: 'status-pill-accepted', invited: 'status-pill-pending', suspended: 'status-pill-rejected' }[m.status] || '';
 
       tr.innerHTML = `
-        <td style="font-weight:500">${esc(m.name)}${m.isOwner ? ' <span style="font-size:11px;color:var(--neutral-400)">(propietario)</span>' : ''}</td>
-        <td style="color:var(--neutral-500)">${esc(m.email)}</td>
+        <td class="cell-title">${esc(m.name)}${m.isOwner ? ' <span style="font-size:11px;color:var(--neutral-400);font-weight:400">(propietario)</span>' : ''}</td>
+        <td class="col-hide-mobile" style="color:var(--neutral-500)">${esc(m.email)}</td>
         <td><span class="status-pill ${roleClass}">${roleLabel}</span></td>
         <td><span class="status-pill ${statusClass}">${statusLabel}</span></td>
-        <td></td>
+        <td class="cell-actions"></td>
       `;
 
       const actionsCell = tr.querySelector('td:last-child');

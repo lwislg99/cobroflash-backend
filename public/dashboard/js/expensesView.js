@@ -23,7 +23,7 @@ async function renderExpensesView(container) {
       </div>
 
       <!-- Resumen mensual -->
-      <div id="exp-summary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+      <div id="exp-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px">
         <div class="kpi-card"><div class="kpi-label">Cargando…</div></div>
         <div class="kpi-card"><div class="kpi-label"></div></div>
         <div class="kpi-card"><div class="kpi-label"></div></div>

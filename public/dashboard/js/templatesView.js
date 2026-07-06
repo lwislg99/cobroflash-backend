@@ -44,7 +44,7 @@ async function renderTemplatesView(container) {
   tableCard.appendChild(tableScroll);
 
   const table = document.createElement('table');
-  table.className = 'table';
+  table.className = 'table table--stack-mobile'; // feedback fundador 6-jul
   tableScroll.appendChild(table);
 
   async function loadTemplates() {
@@ -87,14 +87,14 @@ async function renderTemplatesView(container) {
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>
-          <span style="font-weight:600;color:var(--neutral-900)">${escTpl(tpl.name)}</span>
-          ${lineCount > 0 ? `<div style="font-size:11.5px;color:var(--neutral-400);margin-top:2px">${(tpl.lines).slice(0,3).map(l=>escTpl(l.concept||'')).join(' · ')}${lineCount>3?'…':''}</div>` : ''}
+        <td class="cell-title">
+          <span>${escTpl(tpl.name)}</span>
+          ${lineCount > 0 ? `<div style="font-size:11.5px;color:var(--neutral-400);margin-top:2px;font-weight:400">${(tpl.lines).slice(0,3).map(l=>escTpl(l.concept||'')).join(' · ')}${lineCount>3?'…':''}</div>` : ''}
         </td>
         <td><span class="status-pill status-pill-draft">${lineCount} línea${lineCount!==1?'s':''}</span></td>
-        <td style="color:var(--neutral-500)">${escTpl(tpl.currency)}</td>
+        <td class="col-hide-mobile" style="color:var(--neutral-500)">${escTpl(tpl.currency)}</td>
         <td style="color:var(--neutral-400);font-size:12.5px">${updated}</td>
-        <td></td>
+        <td class="cell-actions"></td>
       `;
 
       const actionsCell = tr.querySelector('td:last-child');

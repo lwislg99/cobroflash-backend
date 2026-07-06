@@ -160,7 +160,7 @@ async function renderReportsView(container) {
 
     // ── Tarjetas KPI ─────────────────────────────────────────────────────
     const kpiWrap = document.createElement('div');
-    kpiWrap.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px';
+    kpiWrap.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:20px';
     chartCard.innerHTML = '';
     chartCard.appendChild(kpiWrap);
 
@@ -171,7 +171,7 @@ async function renderReportsView(container) {
     ];
     // A15.3 (MANT-1): € que nacieron del ciclo de mantenimientos — solo si existe
     if (Number(totals.maintenance) > 0) {
-      kpiWrap.style.gridTemplateColumns = 'repeat(4,1fr)';
+      kpiWrap.style.gridTemplateColumns = 'repeat(auto-fit,minmax(140px,1fr))';
       kpis.push({ label: '🔧 De mantenimientos', value: totals.maintenance, prev: null, color: 'var(--green-600)' });
     }
 
@@ -632,7 +632,7 @@ function renderFunnel(card, data) {
 
   // KPIs: tasa de aceptación + tiempo de respuesta + pendientes
   const kpis = document.createElement('div');
-  kpis.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px';
+  kpis.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:18px';
   const accRate = data.acceptanceRate != null ? data.acceptanceRate + '%' : '—';
   const respTime = c.avgResponseHours != null ? c.avgResponseHours + ' h' : '—';
   kpis.innerHTML = `
