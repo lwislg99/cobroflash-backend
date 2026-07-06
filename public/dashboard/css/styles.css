@@ -1699,3 +1699,8 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
   /* la card ya no necesita el scroll horizontal de tabla */
   .table--cards-mobile tbody tr td:empty { display: none; }
 }
+
+/* ── A22.4: transición de vista sobria (AB6: ≤200ms + reduced-motion) ── */
+.view-enter { animation: viewFade .16s ease-out; }
+@keyframes viewFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .view-enter { animation: none; } }

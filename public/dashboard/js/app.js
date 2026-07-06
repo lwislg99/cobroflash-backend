@@ -157,6 +157,11 @@ async function initApp() {
 
     const L = window.appLocale;
 
+    // A22.4: transición de vista sobria (≤200ms; el CSS respeta reduced-motion)
+    viewContainer.classList.remove('view-enter');
+    void viewContainer.offsetWidth; // reinicia la animación
+    viewContainer.classList.add('view-enter');
+
     switch (view) {
       case 'home':
         viewTitle.textContent = 'Inicio';
@@ -250,6 +255,8 @@ async function initApp() {
         renderHomeView(viewContainer);
         view = 'home';
     }
+    // A22.4: título de pestaña por vista
+    document.title = (viewTitle.textContent ? viewTitle.textContent + ' · ' : '') + 'YaQu';
     setActiveMenu(view);
     if (typeof maybeShowSectionTip === 'function') maybeShowSectionTip(view);
   }
