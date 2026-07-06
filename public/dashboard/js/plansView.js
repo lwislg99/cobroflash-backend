@@ -18,12 +18,16 @@ async function renderPlansView(container) {
     container.querySelector('#toggle-monthly')?.addEventListener('click', () => { annual = false; render(); });
     container.querySelector('#toggle-annual')?.addEventListener('click',  () => { annual = true;  render(); });
 
-    container.querySelector('.plan-btn')?.addEventListener('click', (e) => {
-      const planId = e.currentTarget.dataset.plan;
-      selectPlan(planId, annual);
+    // Hay VARIOS .plan-btn (founding + Pro): querySelectorAll, no querySelector
+    // (que solo enganchaba el primero → el botón "Suscribirme 29€" quedaba mudo).
+    container.querySelectorAll('.plan-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const planId = e.currentTarget.dataset.plan;
+        selectPlan(planId, annual);
+      });
     });
 
-    container.querySelector('#portal-btn')?.addEventListener('click', openPortal);
+    container.querySelectorAll('#portal-btn').forEach((b) => b.addEventListener('click', openPortal));
   }
 
   render();
