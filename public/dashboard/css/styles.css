@@ -1660,3 +1660,42 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 @keyframes voicepulse { 0% { transform: scale(.6); opacity: 1 } 100% { transform: scale(1.5); opacity: 0 } }
 .voice-interim { min-height: 0; font-size: 13px; color: var(--muted, #6b756f); font-style: italic; margin-top: 4px; }
 @media (prefers-reduced-motion: reduce) { .voice-dot::after { animation: none; } }
+
+/* ── A18.1 (DASH-PREMIUM · AB4): lista de presupuestos como CARDS en móvil ──
+   La tabla se recompone en tarjetas apiladas ≤640px: cliente arriba, importe
+   en Tinta ≥700 a la derecha (Regla del Importe), pill de estado y acciones
+   con targets ≥44px. Solo aplica a tablas marcadas .table--cards-mobile. */
+@media (max-width: 640px) {
+  .table--cards-mobile thead { display: none; }
+  .table--cards-mobile, .table--cards-mobile tbody { display: block; width: 100%; }
+  .table-scroll .table--cards-mobile { min-width: 0; } /* sin scroll lateral: es una pila de cards */
+  .table--cards-mobile td.col-hide-mobile { display: none; }
+  .table--cards-mobile tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "id     amount"
+      "client amount"
+      "date   status"
+      "actions actions";
+    gap: 2px 12px;
+    padding: 12px 14px;
+    margin: 10px 12px;
+    background: var(--surface, #fff);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 12px);
+  }
+  .table--cards-mobile tbody tr:hover { background: var(--neutral-50); }
+  .table--cards-mobile td { display: block; padding: 0; border: 0; }
+  .table--cards-mobile td.cell-id { grid-area: id; font-size: 12px; color: var(--muted); }
+  .table--cards-mobile td.cell-client { grid-area: client; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+  .table--cards-mobile td.cell-date { grid-area: date; font-size: 12px; align-self: center; }
+  .table--cards-mobile td.cell-amount { grid-area: amount; align-self: start; font-size: 16.5px; text-align: right; }
+  .table--cards-mobile td.cell-status { grid-area: status; justify-self: end; }
+  .table--cards-mobile td.cell-actions { grid-area: actions; margin-top: 8px; }
+  .table--cards-mobile td.cell-actions > div { justify-content: flex-start !important; }
+  .table--cards-mobile td.cell-actions button,
+  .table--cards-mobile td.cell-actions a { min-height: 44px; }
+  /* la card ya no necesita el scroll horizontal de tabla */
+  .table--cards-mobile tbody tr td:empty { display: none; }
+}

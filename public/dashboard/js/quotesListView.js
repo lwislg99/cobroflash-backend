@@ -64,6 +64,7 @@ function renderQuotesListView(container) {
     <option value="sent">Enviado</option>
     <option value="accepted">Aceptado</option>
     <option value="rejected">Rechazado</option>
+    <option value="expired">Caducado</option>
   `;
 
   const qFromInput = document.createElement("input");
@@ -89,7 +90,7 @@ function renderQuotesListView(container) {
   card.appendChild(tableScroll);
 
   const table = document.createElement("table");
-  table.className = "table";
+  table.className = "table table--cards-mobile"; // A18.1: cards en móvil (AB4)
   tableScroll.appendChild(table);
 
   const thead = document.createElement("thead");
@@ -190,22 +191,26 @@ function renderQuotesListView(container) {
 
       // A1.2: número por merchant (q.number); el id global ya no se muestra
       const tdId = document.createElement("td");
+      tdId.className = "cell-id";
       tdId.innerHTML = `#${q.number ?? q.id}${q.internalNotes ? ' <span title="Tiene notas internas" style="color:var(--neutral-400);font-size:11px">📝</span>' : ""}`;
 
       const tdClient = document.createElement("td");
+      tdClient.className = "cell-client";
       tdClient.textContent =
         q.customerName || (q.customerPhone ? `(${q.customerPhone})` : "Cliente sin nombre");
 
       const tdDate = document.createElement("td");
+      tdDate.className = "cell-date";
       tdDate.textContent = formatDate(q.createdAt);
       tdDate.style.color = "var(--muted)";
 
       const tdAmount = document.createElement("td");
-      tdAmount.className = "amount";
+      tdAmount.className = "amount cell-amount";
       tdAmount.style.textAlign = "right";
       tdAmount.textContent = formatMoney(q.totalAmount, q.currency);
 
       const tdStatus = document.createElement("td");
+      tdStatus.className = "cell-status";
       tdStatus.appendChild(buildStatusPill(q.status));
 
       const tdMethod = document.createElement("td");
@@ -215,6 +220,7 @@ function renderQuotesListView(container) {
         q.method === "bank" ? "Pay-by-bank" : q.method === "card" ? "Tarjeta" : "—";
 
       const tdActions = document.createElement("td");
+      tdActions.className = "cell-actions";
       const tdActionsDiv = document.createElement("div");
       tdActionsDiv.style.cssText = "display:flex;gap:6px;align-items:center";
 
