@@ -274,7 +274,7 @@ function renderProductsView(container) {
     <thead>
     <tr>
       <th style="width:60px">ID</th>
-      <th>Nombre</th>
+      <th style="min-width:220px">Nombre</th> <!-- A18.4: los nombres largos del catálogo no se estrujan -->
       <th style="width:160px" class="col-hide-mobile">Proveedor</th>
       <th style="width:140px;text-align:right">Precio</th>
       <th style="width:90px" class="col-hide-mobile">IVA</th>
@@ -375,13 +375,34 @@ function renderProductsView(container) {
         td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📦</div>'
           + '<div class="empty-state-title">' + (searching ? 'Sin productos para este filtro' : 'Crea tu catálogo de servicios') + '</div>'
           + '<div class="empty-state-desc">' + (searching ? 'Prueba con otra búsqueda o desactiva el filtro.' : 'Con tus servicios y precios guardados, montar una cotización es cuestión de segundos gracias al autocompletado.') + '</div>'
-          + (searching ? '' : '<button id="products-empty-cta" class="btn-primary btn-sm" style="margin-top:14px">+ Añadir mi primer servicio</button>') + '</div>';
+          + (searching ? '' : '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px">'
+            + '<button id="products-empty-catalog" class="btn-primary btn-sm">📚 Cargar el catálogo de mi gremio</button>'
+            + '<button id="products-empty-cta" class="btn-secondary btn-sm">+ Añadir un servicio a mano</button>'
+            + '</div><div style="font-size:12px;color:var(--muted);margin-top:8px">25-30 servicios típicos con precios orientativos — todo editable después.</div>') + '</div>';
         tr.appendChild(td);
         tbody.appendChild(tr);
         const cta = td.querySelector('#products-empty-cta');
         if (cta) cta.addEventListener('click', () => {
           const nameInput = document.querySelector('input[name="name"]');
           if (nameInput) { nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); nameInput.focus(); }
+        });
+        // A18.4 (AB4 "importar") × A17: catálogo del gremio en un clic
+        const catBtn = td.querySelector('#products-empty-catalog');
+        if (catBtn) catBtn.addEventListener('click', async () => {
+          catBtn.disabled = true; catBtn.textContent = 'Cargando catálogo…';
+          try {
+            const r = await apiRequest('/admin/products/load-catalog', { method: 'POST', body: JSON.stringify({}) });
+            if (r.inserted > 0) {
+              if (typeof showToast === 'function') showToast('✓ ' + r.inserted + ' servicios cargados' + (r.templates ? ' + ' + r.templates + ' plantillas' : '') + ' — precios orientativos, edítalos a tu gusto');
+              await refresh();
+            } else {
+              catBtn.disabled = false; catBtn.textContent = '📚 Cargar el catálogo de mi gremio';
+              if (typeof showToast === 'function') showToast(r.skipped === 'no_catalog_for_trade' ? 'Tu gremio aún no tiene catálogo predefinido — añade servicios a mano o importa un CSV.' : 'No se pudo cargar el catálogo.', 'error');
+            }
+          } catch (e) {
+            catBtn.disabled = false; catBtn.textContent = '📚 Cargar el catálogo de mi gremio';
+            if (typeof showToast === 'function') showToast('No se pudo cargar el catálogo. Inténtalo de nuevo.', 'error');
+          }
         });
         setCount(searching ? "0 resultados" : "0 productos");
         return;
