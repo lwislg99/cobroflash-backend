@@ -24,9 +24,10 @@ async function aiComplete(params: {
   system: string;
   user: string;
   maxTokens: number;
+  jsonSchema?: unknown; // fuerza JSON válido en Gemini (líneas de presupuesto)
 }): Promise<string> {
   if (isGeminiConfigured()) {
-    return geminiComplete({ system: params.system, user: params.user, maxTokens: params.maxTokens });
+    return geminiComplete({ system: params.system, user: params.user, maxTokens: params.maxTokens, jsonSchema: params.jsonSchema });
   }
   if (config.ANTHROPIC_API_KEY) {
     const response = await anthropic.messages.create({
@@ -110,7 +111,22 @@ export async function suggestQuoteLines(params: {
 Descripción del trabajo:
 ${params.description}`;
 
-  const raw = (await aiComplete({ system: SUGGEST_SYSTEM, user: userContent, maxTokens: 1024 })).trim();
+  // Esquema de salida: array de líneas. En Gemini fuerza JSON válido; da margen
+  // de tokens porque los modelos 2.5 "piensan" antes de responder.
+  const LINES_SCHEMA = {
+    type: 'ARRAY',
+    items: {
+      type: 'OBJECT',
+      properties: {
+        concept: { type: 'STRING' },
+        qty: { type: 'NUMBER' },
+        price: { type: 'NUMBER' },
+        tax: { type: 'NUMBER' },
+      },
+      required: ['concept', 'qty', 'price', 'tax'],
+    },
+  };
+  const raw = (await aiComplete({ system: SUGGEST_SYSTEM, user: userContent, maxTokens: 4096, jsonSchema: LINES_SCHEMA })).trim();
 
   // Extraer el JSON array del texto (robusto ante texto rodeando el JSON)
   const jsonMatch = raw.match(/\[[\s\S]*\]/);

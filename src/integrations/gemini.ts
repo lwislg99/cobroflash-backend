@@ -18,11 +18,25 @@ export class GeminiError extends Error {
   }
 }
 
-// Una sola llamada a un modelo concreto.
-async function callGeminiModel(model: string, params: {
+export type GeminiParams = {
   system: string; user: string; maxTokens?: number; temperature?: number;
-}): Promise<string> {
+  // Si se pasa un esquema, Gemini DEVUELVE JSON válido garantizado (structured
+  // output): nada de markdown ni texto alrededor. Se usa para las líneas.
+  jsonSchema?: unknown;
+};
+
+// Una sola llamada a un modelo concreto.
+async function callGeminiModel(model: string, params: GeminiParams): Promise<string> {
   const url = `${BASE}/${model}:generateContent?key=${encodeURIComponent(config.GEMINI_API_KEY)}`;
+
+  const generationConfig: Record<string, unknown> = {
+    maxOutputTokens: params.maxTokens ?? 1024,
+    temperature: params.temperature ?? 0.4,
+  };
+  if (params.jsonSchema) {
+    generationConfig.responseMimeType = 'application/json';
+    generationConfig.responseSchema = params.jsonSchema;
+  }
 
   let response: Response;
   try {
@@ -32,10 +46,7 @@ async function callGeminiModel(model: string, params: {
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: params.system }] },
         contents: [{ role: 'user', parts: [{ text: params.user }] }],
-        generationConfig: {
-          maxOutputTokens: params.maxTokens ?? 1024,
-          temperature: params.temperature ?? 0.4,
-        },
+        generationConfig,
       }),
       signal: AbortSignal.timeout(20_000),
     });
@@ -72,9 +83,7 @@ async function callGeminiModel(model: string, params: {
  * agotada o no existe, pasa al siguiente. Así una clave nueva funciona aunque
  * un modelo concreto tenga la cuota gratis a 0.
  */
-export async function geminiComplete(params: {
-  system: string; user: string; maxTokens?: number; temperature?: number;
-}): Promise<string> {
+export async function geminiComplete(params: GeminiParams): Promise<string> {
   if (!config.GEMINI_API_KEY) throw new GeminiError('gemini_not_configured');
 
   const models = (config.GEMINI_MODEL || 'gemini-2.5-flash,gemini-2.0-flash,gemini-flash-latest')
@@ -87,8 +96,9 @@ export async function geminiComplete(params: {
     } catch (err) {
       const e = err as GeminiError;
       lastErr = e;
-      // Solo probamos otro modelo si el fallo es "cuota agotada" o "no existe".
-      if (e.code === 'gemini_rate_limited' || e.code === 'gemini_model_unavailable') continue;
+      // Probamos otro modelo si: cuota agotada, no existe, o respuesta vacía
+      // (p. ej. un modelo que "piensa" agotó el margen de tokens).
+      if (e.code === 'gemini_rate_limited' || e.code === 'gemini_model_unavailable' || e.code === 'gemini_empty') continue;
       throw e; // red, key inválida, etc. → no tiene sentido reintentar
     }
   }
