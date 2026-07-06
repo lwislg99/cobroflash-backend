@@ -77,15 +77,19 @@ window.uiMarkFieldError = uiMarkFieldError;
 function fmtMoneyEs(n, currency = 'EUR') {
   const v = Number(n);
   const safe = Number.isFinite(v) ? v : 0;
+  const opts = {
+    style: 'currency',
+    currency: currency || 'EUR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  };
+  // A18.2 (AB6 "9.999,99 €"): es-ES por defecto NO agrupa los miles de 4 cifras
+  // (CLDR); useGrouping 'always' fuerza el punto SIEMPRE. Fallback en cascada.
   try {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: currency || 'EUR',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(safe);
+    return new Intl.NumberFormat('es-ES', { ...opts, useGrouping: 'always' }).format(safe);
   } catch {
-    return safe.toFixed(2) + ' ' + currency;
+    try { return new Intl.NumberFormat('es-ES', opts).format(safe); }
+    catch { return safe.toFixed(2) + ' ' + currency; }
   }
 }
 window.fmtMoneyEs = fmtMoneyEs;

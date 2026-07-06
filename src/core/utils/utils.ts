@@ -27,6 +27,8 @@ export function normalizePhone(input?: string | null): string {
     try {
       return new Intl.NumberFormat('es-ES', {
         style: 'currency',
+        // A18.2 (AB6): punto de miles SIEMPRE ("2.383,70 €", no "2383,70 €")
+        useGrouping: 'always' as unknown as boolean,
         currency: currency || 'EUR',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,

@@ -232,7 +232,17 @@ async function fetchInvoices(options = {}) {
 
         setCount(invoices.length + ' factura' + (invoices.length !== 1 ? 's' : ''));
 
-        invoices.forEach((inv) => {
+        // A18.2 (AB4): lo PENDIENTE de cobrar primero — y dentro de pendiente,
+        // lo más antiguo arriba (es lo que hay que perseguir hoy).
+        const sorted = [...invoices].sort((a, b) => {
+          const ap = String(a.status).toLowerCase() === 'pending' ? 0 : 1;
+          const bp = String(b.status).toLowerCase() === 'pending' ? 0 : 1;
+          if (ap !== bp) return ap - bp;
+          const ad = new Date(a.createdAt).getTime(), bd = new Date(b.createdAt).getTime();
+          return ap === 0 ? ad - bd : bd - ad;
+        });
+
+        sorted.forEach((inv) => {
           const tr = document.createElement('tr');
           const st = String(inv.status || '').toLowerCase();
 
@@ -255,6 +265,16 @@ async function fetchInvoices(options = {}) {
           const tdNumber = document.createElement('td');
           tdNumber.style.fontWeight = '600';
           tdNumber.textContent = inv.number;
+          // A18.2: antigüedad VISIBLE en pendientes (también en móvil) —
+          // ámbar >7 días, rojo >30 (mismo lenguaje que el aging de Informes)
+          if (st === 'pending' && inv.createdAt) {
+            const days = Math.floor((Date.now() - new Date(inv.createdAt).getTime()) / 86400000);
+            const age = document.createElement('div');
+            age.style.cssText = 'font-size:11.5px;font-weight:600;margin-top:2px;color:' +
+              (days > 30 ? 'var(--red-600)' : days > 7 ? '#b45309' : 'var(--muted)');
+            age.textContent = days <= 0 ? 'hoy' : 'hace ' + days + ' día' + (days === 1 ? '' : 's');
+            tdNumber.appendChild(age);
+          }
           tr.appendChild(tdNumber);
 
           const tdCustomer = document.createElement('td');
