@@ -927,7 +927,7 @@ function buildMaintenanceBlock(quote, container) {
           🔧 <strong>Mantenimiento programado:</strong> ${escapeHtmlMant(m.plan.title)}
           · cada ${m.plan.intervalMonths} meses · próxima propuesta el ${next}
         </div>
-        <button type="button" class="btn-ghost btn-sm" id="mant-cancel">Cancelar</button>
+        <button type="button" class="btn-ghost" id="mant-cancel" style="min-height:44px">Cancelar</button>
       </div>`;
     box.querySelector('#mant-cancel').addEventListener('click', async (ev) => {
       const btn = ev.currentTarget;
@@ -953,11 +953,11 @@ function buildMaintenanceBlock(quote, container) {
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <label style="font-size:13px;color:var(--body)">Cada
-        <select id="mant-interval" style="margin:0 4px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+        <select id="mant-interval" style="margin:0 4px;padding:10px 12px;min-height:44px;border:1px solid var(--border);border-radius:8px;font-size:13px">
           ${[6, 12, 24, 36].map((n) => `<option value="${n}" ${n === s.intervalMonths ? 'selected' : ''}>${n} meses</option>`).join('')}
         </select>
       </label>
-      <button type="button" class="btn btn-secondary btn-sm" id="mant-create">Crear recordatorio</button>
+      <button type="button" class="btn btn-secondary" id="mant-create" style="min-height:44px">Crear recordatorio</button>
     </div>`;
   box.querySelector('#mant-create').addEventListener('click', async (ev) => {
     const btn = ev.currentTarget;
