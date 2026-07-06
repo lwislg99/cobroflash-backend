@@ -71,7 +71,7 @@ function openAiSuggestModal(addLinesFn) {
       lines = data.lines;
     } catch (err) {
       const msg = err?.data?.error === 'ai_not_configured'
-        ? 'La IA no está configurada. Añade ANTHROPIC_API_KEY en Railway.'
+        ? 'La IA no está configurada. Añade GEMINI_API_KEY (gratis) en Railway.'
         : 'Error al generar sugerencias. Inténtalo de nuevo.';
       setAlert('error', msg);
       btn.disabled = false;
@@ -202,7 +202,7 @@ function openAiMessageModal({ customerName, concept, total, currency, onCopy }) 
       resultEl.style.display = 'block';
     } catch (err) {
       const msg = err?.data?.error === 'ai_not_configured'
-        ? 'La IA no está configurada. Añade ANTHROPIC_API_KEY en Railway.'
+        ? 'La IA no está configurada. Añade GEMINI_API_KEY (gratis) en Railway.'
         : 'Error al generar el mensaje.';
       setAlert('error', msg);
     }

@@ -1,12 +1,30 @@
 import { Router } from 'express';
-import { config } from '../../../../core/config/env';
 import { prisma } from '../../../../core/db/prisma';
-import { suggestQuoteLines, generateQuoteMessage } from '../../domain/ai.service';
+import { suggestQuoteLines, generateQuoteMessage, isAiConfigured } from '../../domain/ai.service';
+import { hitRateLimit } from '../../../../core/http/rateLimit';
 
 const router = Router();
 
 function aiUnavailable(res: any) {
-  return res.status(503).json({ error: 'ai_not_configured', message: 'Configura ANTHROPIC_API_KEY en Railway para activar el asistente IA.' });
+  return res.status(503).json({ error: 'ai_not_configured', message: 'El asistente de IA no está configurado. Añade GEMINI_API_KEY (gratis) en Railway.' });
+}
+
+// Tope de uso por merchant para que nadie dispare el gasto/cuota de IA:
+// 40 sugerencias / hora / merchant (holgado para uso normal, corta el abuso).
+function aiCapExceeded(merchantId: number): boolean {
+  return hitRateLimit(`ai:${merchantId}`, 40, 60 * 60_000);
+}
+
+function aiErrorResponse(res: any, err: any) {
+  const msg = err?.message || '';
+  if (msg === 'gemini_rate_limited') {
+    return res.status(429).json({ error: 'ai_rate_limited', message: 'La IA gratuita alcanzó su límite diario. Prueba de nuevo más tarde o rellena las líneas a mano.' });
+  }
+  if (msg === 'ai_invalid_json' || msg === 'ai_invalid_format') {
+    return res.status(422).json({ error: 'ai_could_not_parse', message: 'La IA no devolvió un formato válido. Inténtalo de nuevo.' });
+  }
+  if (msg === 'ai_not_configured') return aiUnavailable(res);
+  return res.status(500).json({ error: 'internal_error' });
 }
 
 /**
@@ -15,7 +33,10 @@ function aiUnavailable(res: any) {
  * Devuelve: { lines: [{concept, qty, price, tax}] }
  */
 router.post('/suggest-quote', async (req, res) => {
-  if (!config.ANTHROPIC_API_KEY) return aiUnavailable(res);
+  if (!isAiConfigured()) return aiUnavailable(res);
+  if (aiCapExceeded(req.merchantId)) {
+    return res.status(429).json({ error: 'ai_cap', message: 'Has usado el asistente muchas veces seguidas. Espera un poco o rellena las líneas a mano.' });
+  }
 
   const description = String(req.body?.description || '').trim();
   if (!description) return res.status(400).json({ error: 'description_required' });
@@ -37,10 +58,7 @@ router.post('/suggest-quote', async (req, res) => {
     return res.json({ lines });
   } catch (err: any) {
     console.error('[POST /admin/ai/suggest-quote]', err?.message || err);
-    if (err?.message === 'ai_invalid_json' || err?.message === 'ai_invalid_format') {
-      return res.status(422).json({ error: 'ai_could_not_parse', message: 'La IA no devolvió un formato válido. Inténtalo de nuevo.' });
-    }
-    return res.status(500).json({ error: 'internal_error' });
+    return aiErrorResponse(res, err);
   }
 });
 
@@ -50,7 +68,10 @@ router.post('/suggest-quote', async (req, res) => {
  * Devuelve: { message: string }
  */
 router.post('/quote-message', async (req, res) => {
-  if (!config.ANTHROPIC_API_KEY) return aiUnavailable(res);
+  if (!isAiConfigured()) return aiUnavailable(res);
+  if (aiCapExceeded(req.merchantId)) {
+    return res.status(429).json({ error: 'ai_cap', message: 'Has usado el asistente muchas veces seguidas. Espera un poco.' });
+  }
 
   try {
     const quoteId = req.body?.quoteId ? Number(req.body.quoteId) : null;
@@ -94,7 +115,7 @@ router.post('/quote-message', async (req, res) => {
     return res.json({ message });
   } catch (err: any) {
     console.error('[POST /admin/ai/quote-message]', err?.message || err);
-    return res.status(500).json({ error: 'internal_error' });
+    return aiErrorResponse(res, err);
   }
 });
 

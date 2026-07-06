@@ -1,15 +1,46 @@
 /**
- * AI Quote Assistant — Sprint 9
- * Usa Claude claude-opus-4-7 con prompt caching en el system prompt.
+ * AI Quote Assistant.
+ * Proveedor: Gemini (tier gratuito) por defecto; Claude como fallback solo si
+ * Gemini no está configurado pero sí ANTHROPIC_API_KEY. Decisión del fundador
+ * (6-jul-2026): la voz es dictado gratis del navegador; "Sugerir con IA" pasa a
+ * una IA gratis para no gastar saldo de pago.
  *
  * suggestQuoteLines: dado un texto descriptivo del trabajo y el catálogo del
  * merchant, devuelve líneas de presupuesto listas para rellenar el formulario.
- *
- * generateQuoteMessage: genera el mensaje de WhatsApp que acompañará al link
- * del presupuesto.
+ * generateQuoteMessage: genera el mensaje de WhatsApp del link del presupuesto.
  */
 import { anthropic } from '../../../integrations/claude';
+import { geminiComplete, isGeminiConfigured } from '../../../integrations/gemini';
+import { config } from '../../../core/config/env';
 import { prisma } from '../../../core/db/prisma';
+
+// ¿Hay algún proveedor de IA disponible? (lo usa la ruta para el 503 digno)
+export function isAiConfigured(): boolean {
+  return isGeminiConfigured() || !!config.ANTHROPIC_API_KEY;
+}
+
+// Capa única: Gemini si hay key; si no, Claude; si ninguna, error claro.
+async function aiComplete(params: {
+  system: string;
+  user: string;
+  maxTokens: number;
+}): Promise<string> {
+  if (isGeminiConfigured()) {
+    return geminiComplete({ system: params.system, user: params.user, maxTokens: params.maxTokens });
+  }
+  if (config.ANTHROPIC_API_KEY) {
+    const response = await anthropic.messages.create({
+      model: 'claude-opus-4-7',
+      max_tokens: params.maxTokens,
+      system: [{ type: 'text', text: params.system, cache_control: { type: 'ephemeral' } }] as any,
+      messages: [{ role: 'user', content: params.user }],
+    });
+    const textBlock = response.content.find((b) => b.type === 'text');
+    if (!textBlock || textBlock.type !== 'text') throw new Error('ai_no_response');
+    return textBlock.text.trim();
+  }
+  throw new Error('ai_not_configured');
+}
 
 // ─── System prompts (estables → se cachean) ───────────────────────────────
 
@@ -79,25 +110,9 @@ export async function suggestQuoteLines(params: {
 Descripción del trabajo:
 ${params.description}`;
 
-  const response = await anthropic.messages.create({
-    model: 'claude-opus-4-7',
-    max_tokens: 1024,
-    thinking: { type: 'adaptive' },
-    system: [
-      {
-        type: 'text',
-        text: SUGGEST_SYSTEM,
-        cache_control: { type: 'ephemeral' },
-      },
-    ] as any,
-    messages: [{ role: 'user', content: userContent }],
-  });
-
-  const textBlock = response.content.find((b) => b.type === 'text');
-  if (!textBlock || textBlock.type !== 'text') throw new Error('ai_no_response');
+  const raw = (await aiComplete({ system: SUGGEST_SYSTEM, user: userContent, maxTokens: 1024 })).trim();
 
   // Extraer el JSON array del texto (robusto ante texto rodeando el JSON)
-  const raw = textBlock.text.trim();
   const jsonMatch = raw.match(/\[[\s\S]*\]/);
   if (!jsonMatch) throw new Error('ai_invalid_json');
 
@@ -121,28 +136,10 @@ export async function generateQuoteMessage(params: {
   total: string;
   currency: string;
 }): Promise<string> {
-  const response = await anthropic.messages.create({
-    model: 'claude-opus-4-7',
-    max_tokens: 256,
-    system: [
-      {
-        type: 'text',
-        text: MESSAGE_SYSTEM,
-        cache_control: { type: 'ephemeral' },
-      },
-    ] as any,
-    messages: [
-      {
-        role: 'user',
-        content: `Cliente: ${params.customerName}
+  const user = `Cliente: ${params.customerName}
 Profesional: ${params.merchantName}
 Trabajo: ${params.concept}
-Total: ${params.total} ${params.currency}`,
-      },
-    ],
-  });
+Total: ${params.total} ${params.currency}`;
 
-  const textBlock = response.content.find((b) => b.type === 'text');
-  if (!textBlock || textBlock.type !== 'text') throw new Error('ai_no_response');
-  return textBlock.text.trim();
+  return (await aiComplete({ system: MESSAGE_SYSTEM, user, maxTokens: 256 })).trim();
 }

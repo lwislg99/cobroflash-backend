@@ -49,8 +49,11 @@ export const config = {
     MP_ACCESS_TOKEN:    process.env.MP_ACCESS_TOKEN    || '',
     MP_WEBHOOK_SECRET:  process.env.MP_WEBHOOK_SECRET  || '',
 
-    // Anthropic / Claude AI
+    // Asistente IA (sugerir líneas + mensaje). Preferencia: Gemini (tier gratis)
+    // > Claude (fallback). Si ninguna está configurada, el asistente responde 503.
     ANTHROPIC_API_KEY:  process.env.ANTHROPIC_API_KEY  || '',
+    GEMINI_API_KEY:     process.env.GEMINI_API_KEY     || '',
+    GEMINI_MODEL:       process.env.GEMINI_MODEL       || 'gemini-2.0-flash',
 
     // Cuentas "owner" exentas del límite de prueba: se tratan como Pro activo y
     // sin caducidad (no afecta a los demás merchants). Lista de emails separada
