@@ -135,26 +135,74 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED }, asy
     assert.ok(/solo entiendo texto/i.test(media?.text || ''), 'respuesta amable a media');
     log('7 media no soportada', true);
 
-    // ── 8. Pedir presupuesto (2 preguntas) → QuoteRequest ──────────────────
+    // ── 8. Pedir presupuesto: validación + confirmación (A18) → QuoteRequest ─
     await settle(); // el paso 7 remata con menú — que no pise el last() de aquí
+    await prisma.quoteRequest.deleteMany({ where: { merchantId: MERCHANT_ID, description: MARKER } });
     len = outbox.length;
     await post(listMsg('bot_request'));
     await waitOutbox(len + 1);
-    assert.ok(/Cuéntame qué necesitas/i.test(last()?.text || ''), 'pregunta 1');
+    assert.ok(/Cuéntame qué necesitas/i.test(last()?.text || ''), 'pregunta 1 (descripción)');
+
+    // 8a. descripción BASURA "vale" → re-pregunta y B1: NO la trata como "Acepto"
+    len = outbox.length;
+    await post(textMsg('vale'));
+    await waitOutbox(len + 1);
+    assert.ok(/cuentas un poco más/i.test(last()?.text || ''), '8a desc basura → re-pregunta');
+    assert.ok(!/aceptaci[oó]n|Perfecto|registrado tu/i.test(last()?.text || ''), '8a B1: "vale" mid-intake NO acepta presupuesto');
+
+    // 8b. descripción válida → pregunta zona
     len = outbox.length;
     await post(textMsg(MARKER));
     await waitOutbox(len + 1);
-    assert.ok(/¿En qué zona/i.test(last()?.text || ''), 'pregunta 2 (zona)');
+    assert.ok(/¿En qué zona/i.test(last()?.text || ''), '8b pregunta 2 (zona)');
+
+    // 8c. zona BASURA "ok" → re-pregunta zona (no avanza)
+    len = outbox.length;
+    await post(textMsg('ok'));
+    await waitOutbox(len + 1);
+    assert.ok(/Dime la zona/i.test(last()?.text || ''), '8c zona basura → re-pregunta');
+
+    // 8d. zona válida → CONFIRMACIÓN con botones (aún NO crea la solicitud)
     len = outbox.length;
     await post(textMsg('Centro (suite)'));
     await waitOutbox(len + 1);
+    assert.equal(last()?.kind, 'buttons', '8d muestra confirmación con botones');
+    assert.ok(last().buttons.includes('bot_confirm_send') && last().buttons.includes('bot_confirm_edit'), '8d botones Enviar/Reescribir');
+    assert.ok((last().bodyText || '').includes(MARKER.slice(0, 15)), '8d resumen incluye la descripción');
+    assert.ok(!(await prisma.quoteRequest.findFirst({ where: { merchantId: MERCHANT_ID, description: MARKER } })), '8d aún NO creada (falta confirmar)');
+
+    // 8e. Reescribir → reinicia; re-metemos descripción + zona → confirmación de nuevo
+    len = outbox.length;
+    await post(listMsg('bot_confirm_edit'));
+    await waitOutbox(len + 1);
+    assert.ok(/de nuevo|Cuéntame/i.test(last()?.text || ''), '8e reescribir → reinicia descripción');
+    len = outbox.length; await post(textMsg(MARKER)); await waitOutbox(len + 1);
+    len = outbox.length; await post(textMsg('Centro (suite)')); await waitOutbox(len + 1);
+    assert.equal(last()?.kind, 'buttons', '8e vuelve a la confirmación');
+
+    // 8f. Enviar → crea la solicitud + avisa al pro
+    len = outbox.length;
+    await post(listMsg('bot_confirm_send'));
+    await waitOutbox(len + 1);
     const done = outbox.slice(len).find((m) => /¡Listo!/i.test(m.text || ''));
-    assert.ok(done, 'confirmación de solicitud');
+    assert.ok(done, '8f confirmación → ¡Listo!');
     const qr = await prisma.quoteRequest.findFirst({ where: { merchantId: MERCHANT_ID, description: MARKER } });
-    assert.ok(qr, 'QuoteRequest creado');
+    assert.ok(qr, '8f QuoteRequest creado');
     assert.equal(qr.source, 'whatsapp_bot');
-    assert.ok(outbox.slice(len).some((m) => m.to !== TEST_PHONE), 'aviso al PRO enviado');
-    log('8 pedir presupuesto → QuoteRequest + aviso al pro', true);
+    assert.ok(outbox.slice(len).some((m) => m.to !== TEST_PHONE), '8f aviso al PRO enviado');
+    log('8 pedir presupuesto (validación + confirmación) → QuoteRequest', true);
+
+    // ── 8g. Cancelar a mitad de captación → vuelve al menú, no crea nada ─────
+    await settle();
+    len = outbox.length;
+    await post(listMsg('bot_request'));
+    await waitOutbox(len + 1);
+    len = outbox.length;
+    await post(textMsg('cancelar'));
+    await waitOutbox(len + 1);
+    assert.ok(outbox.slice(len).some((m) => /lo dejamos/i.test(m.text || '')), '8g cancelar → salida');
+    assert.ok(outbox.slice(len).some((m) => m.kind === 'list'), '8g vuelve al menú');
+    log('8g cancelar a mitad de captación', true);
 
     // ── 9. Handoff (botón) + registro A8.3 ──────────────────────────────────
     await settle(); // la solicitud remata avisando al pro

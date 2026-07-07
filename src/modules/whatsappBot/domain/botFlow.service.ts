@@ -8,11 +8,16 @@
 // acepta/rechaza presupuestos · responde dudas fiscales/legales · pide datos de
 // pago · conversación libre (texto fuera de flujo → reenseñar menú; 2ª vez →
 // handoff). Estados CERRADOS: menu|choosing_merchant|asking_description|
-// asking_zone|done|handoff (regla 27).
+// asking_zone|confirming_request|done|handoff (regla 27).
+//
+// A18 (7-jul, cambio de master K1 aprobado por el fundador): la captación de
+// "pedir presupuesto" ahora (1) VALIDA cada respuesta (no guarda saludos ni
+// basura tipo "Zona: Hola"), (2) CONFIRMA con botones [✅ Enviar]/[✏️ Reescribir]
+// antes de crear la solicitud, y (3) admite "cancelar" en cualquier paso.
 import { prisma } from '../../../core/db/prisma';
 import { BASE_URL } from '../../../core/config/env';
 import { normalizePhone, formatMoneyEs } from '../../../core/utils/utils';
-import { sendWhatsAppText, sendWhatsAppList } from '../../../integrations/whatsapp';
+import { sendWhatsAppText, sendWhatsAppList, sendWhatsAppButtons } from '../../../integrations/whatsapp';
 import { notifyMerchantAlert } from '../../../integrations/whatsappNotifications';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
 
@@ -67,6 +72,51 @@ async function setSession(
 function merchantDisplayName(m: { legalName?: string | null; name?: string | null }): string {
   return m.legalName || m.name || 'el negocio';
 }
+
+// ── A18: validación mínima de la captación (sin IA, solo descartar basura) ──
+// Saludos/cortesías sueltas que NO son ni una descripción ni una zona.
+const GREETING_ONLY_RE = /^(hola|buenas|buenos d[ií]as|buenas tardes|buenas noches|men[uú]|opciones|hey|hi|hello|holi|gracias|ok|okay|okey|vale|s[ií]|no|👋)[\s!.,👋🙂🙋‍♂️🙋‍♀️]*$/iu;
+// Petición explícita de abandonar el flujo.
+const CANCEL_RE = /^(cancelar|cancela|salir|s[aá]lir|d[eé]jalo|dejarlo|olv[ií]dalo|olvida|nada|volver|atr[aá]s|men[uú])[\s!.]*$/iu;
+// Respuestas de zona "sin zona concreta" que SÍ son válidas.
+const NO_ZONE_RE = /^(no lo s[eé]|no s[eé]|a domicilio|domicilio|cualquiera|donde sea|indiferente)\b/i;
+
+/** Nº de caracteres "útiles" (letras/números Unicode); ignora espacios/emojis/signos. */
+function usefulLen(text: string): number {
+  const m = (text || '').match(/[\p{L}\p{N}]/gu);
+  return m ? m.length : 0;
+}
+function isGreetingOnly(text: string): boolean { return GREETING_ONLY_RE.test((text || '').trim()); }
+function isCancel(text: string): boolean { return CANCEL_RE.test((text || '').trim()); }
+/** Descripción válida = no es un saludo suelto y tiene algo de sustancia. */
+function isValidDescription(text: string): boolean {
+  return !isGreetingOnly(text) && usefulLen(text) >= 4;
+}
+/** Zona válida = "no lo sé"/"a domicilio", o algo que no sea un saludo suelto. */
+function isValidZone(text: string): boolean {
+  const t = (text || '').trim();
+  if (NO_ZONE_RE.test(t)) return true;
+  return !isGreetingOnly(text) && usefulLen(text) >= 2;
+}
+
+/**
+ * B1 (7-jul): ¿el número está a mitad de la captación de presupuesto? El router
+ * de entrantes lo usa para NO dejar que "vale/ok/no" dentro del flujo se
+ * interprete como Acepto/No sobre un presupuesto enviado (secuestro de decisión).
+ */
+export async function isMidIntake(phone: string): Promise<boolean> {
+  const p = normalizePhone(phone);
+  if (!p) return false;
+  const session = await getSession(p);
+  const s = session?.state;
+  return s === 'asking_description' || s === 'asking_zone' || s === 'confirming_request';
+}
+
+/** Botones de la confirmación (A18). Reutilizados al re-mostrar. */
+const CONFIRM_BUTTONS = [
+  { id: 'bot_confirm_send', title: '✅ Enviar' },
+  { id: 'bot_confirm_edit', title: '✏️ Reescribir' },
+];
 
 /** Menú oficial K1 (lista) — copy v2 aprobado por el fundador (5-jul-2026). */
 async function sendMenu(to: string, merchantId: number, businessName: string) {
@@ -203,54 +253,130 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
   const businessName = merchantDisplayName(merchant);
   const customer = customers.find((c) => c.merchantId === merchantId) || customers[0];
 
-  // ── Flujo "pedir presupuesto": 2 preguntas, una a una (K1) ─────────────
+  // ── Flujo "pedir presupuesto": describir → zona → CONFIRMAR (A18, K1) ───
+  // Cancelar en cualquier paso vuelve al menú sin crear nada.
+  const inIntake = session?.state === 'asking_description'
+    || session?.state === 'asking_zone'
+    || session?.state === 'confirming_request';
+  if (inIntake && text && isCancel(text)) {
+    await sendWhatsAppText({ to: from, text: 'Sin problema, lo dejamos 👍' });
+    await sendMenu(from, merchantId, businessName);
+    await setSession(phone, { merchantId, state: 'menu', data: { offMenuCount: 0 } }, session);
+    return true;
+  }
+
+  // Paso 1: descripción — se VALIDA (no guardar saludos ni basura).
   if (session?.state === 'asking_description' && text) {
+    if (!isValidDescription(text)) {
+      await sendWhatsAppText({
+        to: from,
+        text: '🙂 ¿Me cuentas un poco más? Por ejemplo: "se me ha roto un grifo en la cocina y pierde agua".\n\n(o escribe *cancelar* para salir)',
+      });
+      return true; // seguimos en asking_description
+    }
     await setSession(phone, {
       merchantId,
       state: 'asking_zone',
       data: { ...(session.data || {}), description: text.slice(0, 1000) },
     }, session);
-    await sendWhatsAppText({ to: from, text: '📍 ¿En qué zona está el trabajo? (barrio o municipio)' });
+    await sendWhatsAppText({
+      to: from,
+      text: '📍 ¿En qué zona está el trabajo? (barrio o municipio). Si no aplica, escribe "a domicilio".',
+    });
     return true;
   }
 
+  // Paso 2: zona — se VALIDA y se pasa a CONFIRMAR (no se crea aún).
   if (session?.state === 'asking_zone' && text) {
+    if (!isValidZone(text)) {
+      await sendWhatsAppText({
+        to: from,
+        text: '📍 Dime la zona (barrio o municipio), por ejemplo "Chamberí". Si no aplica, escribe "a domicilio".\n\n(o *cancelar*)',
+      });
+      return true; // seguimos en asking_zone
+    }
     const description = String(session.data?.description || '').trim() || '(sin descripción)';
     const zone = text.slice(0, 120);
-    const request = await prisma.quoteRequest.create({
-      data: {
+    await setSession(phone, {
+      merchantId,
+      state: 'confirming_request',
+      data: { ...(session.data || {}), description, zone, lastListId: undefined, lastListAt: undefined },
+    }, session);
+    await sendWhatsAppButtons({
+      to: from,
+      merchantId,
+      bodyText: `📋 Voy a enviar esto a ${businessName}:\n\n• Necesito: "${description}"\n• Zona: ${zone}\n\n¿Lo envío?`,
+      buttons: CONFIRM_BUTTONS,
+    });
+    return true;
+  }
+
+  // Paso 3: confirmación — [✅ Enviar] crea la solicitud; [✏️ Reescribir] reinicia.
+  if (session?.state === 'confirming_request') {
+    const t = (text || '').trim().toLowerCase();
+    const wantsSend = listId === 'bot_confirm_send'
+      || /^(s[ií]|env[ií]a(?:r|lo|la)?|vale|ok(?:ay|ey)?|correcto|confirmo?|adelante|dale|perfecto)\b/.test(t);
+    const wantsEdit = listId === 'bot_confirm_edit'
+      || /^(no|edita(?:r|lo)?|reescrib|cambia(?:r|lo)?|corrige|corregir)\b/.test(t);
+
+    if (wantsEdit) {
+      await setSession(phone, {
+        merchantId,
+        state: 'asking_description',
+        data: { ...(session.data || {}), description: undefined, zone: undefined, lastAction: 'request' },
+      }, session);
+      await sendWhatsAppText({ to: from, text: '✏️ Vale, empezamos de nuevo. Cuéntame qué necesitas.' });
+      return true;
+    }
+
+    if (wantsSend) {
+      const description = String(session.data?.description || '').trim() || '(sin descripción)';
+      const zone = String(session.data?.zone || '').trim() || '(sin zona)';
+      const request = await prisma.quoteRequest.create({
+        data: {
+          merchantId,
+          customerId: customer.id,
+          description,
+          zone,
+          source: 'whatsapp_bot', // K1
+          status: 'pending',
+        },
+      });
+      recordCustomerEvent({
         merchantId,
         customerId: customer.id,
-        description,
-        zone,
-        source: 'whatsapp_bot', // K1
-        status: 'pending',
-      },
-    });
-    recordCustomerEvent({
-      merchantId,
-      customerId: customer.id,
-      type: 'quote_requested',
-      title: `Solicitud de presupuesto por WhatsApp (bot) #${request.id}`,
-      detail: `${description.slice(0, 120)} · Zona: ${zone}`,
-    });
-    // Aviso al PRO con resumen + link al BO (texto libre → fallback plantilla)
-    notifyMerchantAlert({
-      merchantId,
-      merchantPhone: merchant.whatsappPhone,
-      customerName: customer.name || 'Un cliente',
-      action: 'te ha pedido un presupuesto por WhatsApp',
-      detail: `${description.slice(0, 80)} · Zona: ${zone}`,
-      freeText:
-        `🛠 *${customer.name || 'Un cliente'}* te ha pedido un presupuesto por WhatsApp:\n` +
-        `"${description.slice(0, 300)}"\nZona: ${zone}\n\nRevísalo en Solicitudes: ${BASE_URL}/dashboard/`,
-    }).catch((e) => console.error('[bot] aviso solicitud:', e?.message || e));
+        type: 'quote_requested',
+        title: `Solicitud de presupuesto por WhatsApp (bot) #${request.id}`,
+        detail: `${description.slice(0, 120)} · Zona: ${zone}`,
+      });
+      // Aviso al PRO con resumen + link al BO (texto libre → fallback plantilla)
+      notifyMerchantAlert({
+        merchantId,
+        merchantPhone: merchant.whatsappPhone,
+        customerName: customer.name || 'Un cliente',
+        action: 'te ha pedido un presupuesto por WhatsApp',
+        detail: `${description.slice(0, 80)} · Zona: ${zone}`,
+        freeText:
+          `🛠 *${customer.name || 'Un cliente'}* te ha pedido un presupuesto por WhatsApp:\n` +
+          `"${description.slice(0, 300)}"\nZona: ${zone}\n\nRevísalo en Solicitudes: ${BASE_URL}/dashboard/`,
+      }).catch((e) => console.error('[bot] aviso solicitud:', e?.message || e));
 
-    await sendWhatsAppText({
+      await sendWhatsAppText({
+        to: from,
+        text: `✅ ¡Listo! ${businessName} ya tiene tu solicitud y te responderá pronto con el presupuesto por aquí.`,
+      });
+      // lastListId marca el envío para que un re-tap inmediato sea idempotente (A8.2)
+      await setSession(phone, { merchantId, state: 'done', data: { lastListId: 'bot_confirm_send', lastListAt: Date.now() } }, session);
+      return true;
+    }
+
+    // Ni enviar ni reescribir ni cancelar → recordar los botones (sin crear nada).
+    await sendWhatsAppButtons({
       to: from,
-      text: `✅ ¡Listo! ${businessName} ya tiene tu solicitud y te responderá pronto con el presupuesto por aquí.`,
+      merchantId,
+      bodyText: 'Cuando quieras, elige una opción para tu solicitud 👇',
+      buttons: CONFIRM_BUTTONS,
     });
-    await setSession(phone, { merchantId, state: 'done', data: {} }, session);
     return true;
   }
 

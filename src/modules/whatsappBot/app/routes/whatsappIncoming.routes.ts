@@ -12,7 +12,7 @@ import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/mercha
 import { updateWaMessageStatus, recordInboundWaMessage } from '../../../messaging/domain/whatsappLog.service';
 import { isFlagEnabled } from '../../../../core/flags';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
-import { handleBotMessage, handleUnsupportedMedia, type BotInput } from '../../domain/botFlow.service';
+import { handleBotMessage, handleUnsupportedMedia, isMidIntake, type BotInput } from '../../domain/botFlow.service';
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 import { handleMaintenanceButton } from '../../../maintenance/domain/maintenance.service';
 
@@ -175,7 +175,10 @@ async function routeIncoming(from: string, input: BotInput): Promise<void> {
   if (isFlagEnabled('BOT_INBOUND_ENABLED')) {
     // La decisión sobre plantilla sigue mandando: "Acepto"/"No" con UN solo
     // presupuesto enviado es la respuesta a quote_decision_es, no chat del bot.
-    if (text && parseDecision(text) !== 'unknown') {
+    // B1 (7-jul): PERO no si el cliente está a mitad de la captación de un
+    // presupuesto nuevo — ahí "vale/ok/no" es su respuesta al bot, no una
+    // decisión sobre el presupuesto viejo (evita aceptarlo/rechazarlo por error).
+    if (text && parseDecision(text) !== 'unknown' && !(await isMidIntake(phone))) {
       const handled = await tryLegacyDecision(phone, from, text);
       if (handled) return;
     }
