@@ -261,13 +261,20 @@ router.get('/:id', async (req, res) => {
     .fb-send{margin-top:.6rem;background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:999px;padding:.55rem 1.2rem;font:inherit;font-weight:600;cursor:pointer}
     .fb-send:hover{background:var(--slate-50)}
     .fb-google{margin-top:.9rem}
+    .fb-hint{font-size:.82rem;color:var(--muted);margin-top:.5rem}
+    .fb-or{font-size:.82rem;color:var(--muted);margin:1.15rem 0 .55rem;border-top:1px solid var(--border);padding-top:.9rem}
     @media (prefers-reduced-motion: reduce){.fb-stars button{transition:none;transform:none}}
   </style>
   <div class="fb">
     ${fbThanks
       ? `<div class="fb-title">🙌 ¡Gracias por tu valoración!</div>
          ${googleBtn ? `<div class="fb-google">${googleBtn}</div>` : ''}`
-      : `<div class="fb-title">¿Qué tal fue el trabajo?</div>
+      : `${googleBtn
+           ? `<div class="fb-title">¿Contento con el trabajo? 🙌</div>
+              <div class="fb-google">${googleBtn}</div>
+              <div class="fb-hint">Solo te lleva 10 segundos y nos ayuda un montón ⭐</div>
+              <div class="fb-or">O valóralo en privado para el profesional:</div>`
+           : `<div class="fb-title">¿Qué tal fue el trabajo?</div>`}
          <form method="post" action="${BASE_URL}/recibo/${ch.id}/feedback" id="fb-form">
            <input type="hidden" name="stars" id="fb-stars-input" value=""/>
            <div class="fb-stars" role="radiogroup" aria-label="Valoración de 1 a 5 estrellas">
@@ -276,7 +283,6 @@ router.get('/:id', async (req, res) => {
            <textarea name="comment" maxlength="500" placeholder="Cuéntale cómo fue (solo lo verá el profesional)"></textarea><br/>
            <button type="submit" class="fb-send">Enviar valoración</button>
          </form>
-         ${googleBtn ? `<div class="fb-google">${googleBtn}</div>` : ''}
          <script>
            (function(){
              var btns = document.querySelectorAll('.fb-stars button');

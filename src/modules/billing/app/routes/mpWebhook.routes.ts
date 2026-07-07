@@ -6,7 +6,7 @@ import { verifyMpWebhookSignature, getMpPayment } from '../../../../integrations
 import { ensureInvoiceForCharge } from '../../../../lib/invoicing';
 import { sendInvoiceEmail } from '../../../../lib/email';
 import { normalizePhone } from '../../../../core/utils/utils';
-import { sendWhatsAppText } from '../../../../integrations/whatsapp';
+import { sendWhatsAppCtaUrl } from '../../../../integrations/whatsapp';
 import { sendPaymentConfirmationInvoice, notifyMerchantPaid } from '../../../../integrations/whatsappNotifications';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
@@ -164,10 +164,12 @@ router.post('/', async (req, res) => {
       if (merchant?.googleReviewUrl && updated.customer?.phone) {
         const phone = normalizePhone(updated.customer.phone);
         if (phone) {
-          sendWhatsAppText({
+          sendWhatsAppCtaUrl({
             to: phone,
             merchantId: updated.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
-            text: `¡Hola ${updated.customer.name || 'Cliente'}! Gracias por confiar en ${merchant.name} 🙏\n\nSi estás satisfecho, déjanos una reseña:\n${merchant.googleReviewUrl}`,
+            bodyText: `¡Gracias por confiar en *${merchant.name}*, ${updated.customer.name || 'Cliente'}! 🙏\n¿Nos dejas una reseña en Google? Solo te lleva 10 segundos y nos ayuda muchísimo ⭐`,
+            buttonText: '⭐ Dejar reseña',
+            url: merchant.googleReviewUrl,
           }).catch(() => {});
         }
       }

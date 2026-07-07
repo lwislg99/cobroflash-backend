@@ -7,7 +7,7 @@ import { ensureInvoiceForCharge } from '../../../../lib/invoicing';
 import { sendInvoiceEmail } from '../../../../lib/email';
 import { normalizePhone } from '../../../../core/utils/utils';
 import { config } from '../../../../core/config/env';
-import { sendWhatsAppText } from '../../../../integrations/whatsapp';
+import { sendWhatsAppCtaUrl } from '../../../../integrations/whatsapp';
 import { sendPaymentConfirmationInvoice, notifyMerchantPaid } from '../../../../integrations/whatsappNotifications';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
@@ -212,16 +212,19 @@ router.post('/', async (req, res) => {
         });
       }
 
-      // Solicitud de reseña Google al cliente (fire-and-forget)
+      // Solicitud de reseña Google al cliente — A23: BOTÓN-ENLACE (fire-and-forget; solo
+      // en ventana, que está abierta porque el cliente acaba de pagar por el enlace).
       if (merchant?.googleReviewUrl && updated.customer?.phone) {
         const reviewPhone = normalizePhone(updated.customer.phone);
         if (reviewPhone) {
           const customerName = updated.customer.name || 'Cliente';
           const merchantName = merchant.name || 'tu proveedor';
-          sendWhatsAppText({
+          sendWhatsAppCtaUrl({
             to: reviewPhone,
             merchantId: updated.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
-            text: `¡Hola ${customerName}! Gracias por confiar en ${merchantName} 🙏\n\nSi estás satisfecho con el servicio, nos ayudaría mucho que dejaras una reseña en Google:\n${merchant.googleReviewUrl}`,
+            bodyText: `¡Gracias por confiar en *${merchantName}*, ${customerName}! 🙏\n¿Nos dejas una reseña en Google? Solo te lleva 10 segundos y nos ayuda muchísimo ⭐`,
+            buttonText: '⭐ Dejar reseña',
+            url: merchant.googleReviewUrl,
           }).catch((err) => console.error('[review] Error enviando reseña:', err?.message));
         }
       }
