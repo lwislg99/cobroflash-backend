@@ -7,6 +7,7 @@
 import fetch from 'node-fetch';
 import { prisma } from '../../../core/db/prisma';
 import { BASE_URL } from '../../../core/config/env';
+import { internalHeaders } from '../../../core/http/internalAuth';
 import { normalizePhone } from '../../../core/utils/utils';
 import { sendWhatsAppWindowFirst } from '../../../integrations/whatsapp';
 import { buildPaymentRequest } from '../../../integrations/whatsappTemplates';
@@ -49,7 +50,7 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
 
       const chargeResp = await fetch(`${BASE_URL}/charges`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...internalHeaders() },
         body: JSON.stringify({
           merchant_id: invoice.merchantId,
           customer_id: invoice.customerId, // cliente real de la factura (no duplicar)

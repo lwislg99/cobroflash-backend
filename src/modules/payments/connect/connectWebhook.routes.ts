@@ -12,6 +12,7 @@ import axios from 'axios';
 import type StripeLib from 'stripe';
 import { stripe } from '../../../integrations/stripe';
 import { config, BASE_URL } from '../../../core/config/env';
+import { internalHeaders } from '../../../core/http/internalAuth';
 import { prisma } from '../../../core/db/prisma';
 import { handleStripeDispute } from '../disputes.service'; // A21.1 (R14)
 
@@ -54,7 +55,7 @@ router.post('/', async (req, res) => {
             amount: (s.amount_total ?? 0) / 100,
             currency: (s.currency || 'eur').toUpperCase(),
             ts: new Date().toISOString(),
-          }, { timeout: 10_000 });
+          }, { timeout: 10_000, headers: internalHeaders() });
         }
       }
 
@@ -70,7 +71,7 @@ router.post('/', async (req, res) => {
           event: 'payment.failed', charge_id: chargeId,
           method: 'card', bank_ref: pi.id,
           ts: new Date().toISOString(),
-        }, { timeout: 10_000 });
+        }, { timeout: 10_000, headers: internalHeaders() });
       }
     }
 

@@ -3,6 +3,7 @@ import { Router } from 'express';
 import axios from 'axios';
 import { prisma } from '../../../../core/db/prisma';
 import { BASE_URL } from '../../../../core/config/env';
+import { internalHeaders } from '../../../../core/http/internalAuth';
 
 // ⚠️ Igual que en billing/psp: de momento seguimos usando lib/*
 // Asegúrate de tener copiados:
@@ -26,7 +27,7 @@ router.post('/sim/pay/:id', async (req, res) => {
         bank_ref: 'E2EID-DEV',
         currency: 'EUR',
       },
-      { timeout: 10_000 },
+      { timeout: 10_000, headers: internalHeaders() },
     );
     res.redirect(303, `/recibo/${id}?r=${Date.now()}`);
   } catch (e: any) {
@@ -40,7 +41,7 @@ router.post('/sim/fail/:id', async (req, res) => {
   await axios.post(`${BASE_URL}/webhooks/psp`, {
     event: 'payment.failed',
     charge_id: id,
-  });
+  }, { headers: internalHeaders() });
   res.redirect(303, `/recibo/${id}?r=${Date.now()}`);
 });
 
@@ -49,7 +50,7 @@ router.post('/sim/expire/:id', async (req, res) => {
   await axios.post(`${BASE_URL}/webhooks/psp`, {
     event: 'payment.expired',
     charge_id: id,
-  });
+  }, { headers: internalHeaders() });
   res.redirect(303, `/recibo/${id}?r=${Date.now()}`);
 });
 

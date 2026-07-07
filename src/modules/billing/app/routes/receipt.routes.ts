@@ -7,6 +7,7 @@ import { esc, parseNumericId, formatMoneyEs } from '../../../../core/utils/utils
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { stripe } from '../../../../integrations/stripe';
 import { BASE_URL, config } from '../../../../core/config/env';
+import { internalHeaders } from '../../../../core/http/internalAuth';
 
 const router = Router();
 
@@ -55,7 +56,7 @@ router.get('/:id', async (req, res) => {
             currency: (s.currency || 'eur').toUpperCase(),
             ts: new Date().toISOString(),
           },
-          { timeout: 10_000 },
+          { timeout: 10_000, headers: internalHeaders() },
         );
         charge = await prisma.charge.findUnique({
           where: { id },

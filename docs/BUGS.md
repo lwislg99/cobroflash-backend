@@ -12,6 +12,56 @@
 
 ## P0 — CRÍTICO: bloquea cobrar y entregar factura
 
+> **🔒 Auditoría de seguridad (7-jul-2026, Claude).** Tres routers legacy `srcNew/` estaban
+> montados en el BLOQUE PÚBLICO de `app.ts` (antes de `requireAuth`) y se saltaban el modelo
+> multi-tenant + de integridad de pagos.
+>
+> **✅ ARREGLADO 7-jul (OK del fundador).** Nuevo guard `requireInternalSecret`
+> (`core/http/internalAuth.ts`, secreto aleatorio por-proceso; override `INTERNAL_API_SECRET`
+> si hay >1 réplica) en `/webhooks/psp` y `/charges` → el exterior recibe 404; `/dev` solo se
+> monta si `NODE_ENV!=='production'`. Los 6 llamadores internos (webhooks Stripe/MP/Connect,
+> confirm-bizum, receipt, dev) añaden `internalHeaders()`. **Re-auditado en runtime:** externo
+> → 404 en los 3; con secreto → el pago real sigue atravesando (charge_not_found). Build + 84
+> tests verdes.
+
+### [x] P0-SEC-1 · `/webhooks/psp` marca cualquier cobro como PAGADO sin firma ni auth
+- **Exploit:** `POST https://yaqu.app/webhooks/psp` con `{"event":"payment.confirmed","charge_id":N}`
+  marca el cobro N como **pagado** (emite factura/justificante, notifica al pro "te ha pagado",
+  email al cliente) SIN pago real y SIN autenticación. Los `charge_id` son enteros secuenciales
+  → enumerables. Atajo aún más fácil: `POST /dev/sim/pay/:id` (también público).
+- **Causa raíz:** `psp.routes.ts` (`POST /`) NO valida firma (solo Stripe/Stripe-Connect/WhatsApp
+  la validan) y `app.ts:128` lo monta público. Es el MISMO handler del pago real (el webhook de
+  Stripe le reenvía por HTTP internamente — ver P0-3).
+- **Arreglo:** que `/webhooks/psp` no sea alcanzable desde fuera. Correcto: extraer "confirmar
+  pago" a un servicio de dominio y llamarlo DIRECTO desde los webhooks Stripe/MP (sin self-HTTP),
+  y quitar el mount público. Mitigación rápida: exigir un secreto compartido que solo conozcan
+  los llamadores internos.
+- **Done cuando:** un `POST /webhooks/psp` externo sin secreto → 401/404; el pago real (Stripe/MP)
+  sigue marcando pagado en yaqu.app.
+
+### [x] P0-SEC-2 · `/dev/*` público en producción (simular pagos, emitir/emailar facturas)
+- **Exploit:** `dev.routes.ts` montado público (`app.ts:145`): `POST /dev/sim/pay|fail|expire/:id`
+  (fuerza estados de pago), `POST /dev/issue-invoice/:chargeId` (emite factura de cualquier cobro),
+  `POST /dev/email-invoice/:chargeId` (emite + EMAILEA la factura al cliente de cualquier cobro).
+  Todo sin auth.
+- **Causa raíz:** router de simulación `srcNew/` en el bloque público, sin gate de entorno.
+- **Arreglo:** quitar `/dev` en producción (gate `NODE_ENV!=='production'` o flag
+  `DEV_ROUTES_ENABLED` default OFF). No tiene uso legítimo en prod.
+- **Done cuando:** `/dev/*` → 404 en yaqu.app.
+
+### [x] P0-SEC-3 · `/charges` público → fuga cross-tenant + creación/envío de cobros
+- **Exploit:** `charges.routes.ts` público (`app.ts:129`): `GET /charges` (últimos 20 cobros de
+  TODOS los merchants: importe, referencia, moneda, fecha), `GET /charges/:id` (cualquier cobro:
+  importe, merchant_id, customer_id, referencias bancarias de reconciliations), `POST /charges`
+  (crear cobro para cualquier merchant_id + crear cliente), `POST /charges/:id/send` (disparar
+  envío con teléfono destino a elección). Sin auth ni filtro por merchant.
+- **Causa raíz:** router legacy `srcNew/` (usa n8n, prohibido por regla 1) en el bloque público.
+  La funcionalidad real multi-tenant vive en `/admin/charges` (chargesAdmin, con `requireAuth`).
+- **Arreglo:** refactorizar el ÚNICO llamador legítimo (`invoiceWhatsApp.service.ts:50` hace
+  `POST /charges` por HTTP) para crear el cobro con una función de dominio directa, y quitar el
+  mount público de `/charges`.
+- **Done cuando:** `/charges*` → 404 público; el envío de factura por WhatsApp sigue creando el cobro.
+
 ### [x] P0-1 · Pago con tarjeta devuelve 401 Unauthorized
 - **Síntoma:** al pulsar "Pagar con tarjeta" en `/pay/invoice/:id` navega a `/pay/card/:id` y devuelve 401 (body "Unauthorized"). El cliente no puede pagar.
 - **Causa probable:** la ruta `/pay/card/:id` tiene middleware de autenticación (la usa el cliente NO logueado), o `STRIPE_SECRET_KEY` mal configurada / falla la creación de la Checkout Session.

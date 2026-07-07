@@ -6,7 +6,8 @@ import { jsonError } from './core/http/jsonError';
 import { notFoundPageHtml } from './core/http/publicNotFound';
 import { isFlagEnabled } from './core/flags';
 import { requireAuth, requireActivePlan, requireRole } from './core/http/authMiddleware';
-import { isOwnerEmail } from './core/config/env';
+import { requireInternalSecret } from './core/http/internalAuth';
+import { isOwnerEmail, config } from './core/config/env';
 
 // Routers
 import healthRouter from './modules/system/app/routes/health.routes';
@@ -125,8 +126,11 @@ app.get('/public/founding-status', async (_req, res) => {
 // Rutas públicas
 app.use('/health', healthRouter);
 app.use('/auth', authRouter);
-app.use('/webhooks/psp', pspWebhookRouter);
-app.use('/charges', chargesRouter);
+// P0-SEC-1/3: estos dos son endpoints INTERNOS (self-call desde los webhooks de pago y
+// desde invoiceWhatsApp). El guard exige el secreto interno → el exterior recibe 404.
+// Antes eran públicos: permitían marcar cobros como pagados y leer cobros de otros merchants.
+app.use('/webhooks/psp', requireInternalSecret, pspWebhookRouter);
+app.use('/charges', requireInternalSecret, chargesRouter);
 // Crear presupuesto requiere prueba activa (bloqueo suave tras fin de trial).
 // El resto de /quote (accept/reject del cliente) sigue abierto.
 app.post('/quote/create', requireActivePlan);
@@ -142,7 +146,8 @@ app.use('/webhooks/mp', mpWebhookRouter);
 app.use('/webhooks/whatsapp', whatsappIncomingRouter);
 app.use('/legal', legalPagesRouter); // A10.1: páginas legales públicas (alcance beta)
 app.use('/p', publicProfileRouter);  // A14.1 (PERFIL-1): perfil público /p/:slug — flag OFF → 404 digno
-app.use('/dev', devRouter);
+// P0-SEC-2: el router /dev SOLO simula pagos/facturas — jamás en producción.
+if (config.NODE_ENV !== 'production') app.use('/dev', devRouter);
 
 // ===========================
 // Rutas admin — requieren auth

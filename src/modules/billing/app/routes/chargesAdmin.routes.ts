@@ -7,6 +7,7 @@ import { Router } from 'express';
 import axios from 'axios';
 import { prisma } from '../../../../core/db/prisma';
 import { BASE_URL } from '../../../../core/config/env';
+import { internalHeaders } from '../../../../core/http/internalAuth';
 import { isFlagEnabled } from '../../../../core/flags';
 
 const router = Router();
@@ -38,7 +39,7 @@ router.post('/:id/confirm-bizum', async (req, res) => {
       amount: Number(charge.amount),
       currency: charge.currency,
       ts: new Date().toISOString(),
-    }, { timeout: 10_000 });
+    }, { timeout: 10_000, headers: internalHeaders() });
 
     return res.json({ ok: true, status: 'paid', paid_via: 'bizum_manual' });
   } catch (err: any) {
