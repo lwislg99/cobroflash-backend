@@ -430,6 +430,8 @@ Auto-creación al accepted. Estados: ver L. Campos: `scheduledAt?`, `assignedUse
 ## MEDIA-1 · Foto y audio
 Alcance: (a) foto de la avería adjunta a QuoteRequest (desde bot y portal); (b) audio del cliente por WhatsApp → STT → `description` del QuoteRequest [VALIDAR proveedor: Whisper/Deepgram, ~0,01 €/min]; (c) fotos antes/después ancladas a Job. Modelo: `Attachment {entityType, entityId, url, kind:'photo'|'audio', createdAt}`. Gates: credenciales R2 + `BOT_INBOUND_ENABLED` (para b). Privacidad: fotos solo de la avería/trabajo (no personas); audio se borra ≤30 días tras transcribir; retención fotos 12 meses salvo Job activo.
 
+**FASE 3 — (a) foto→QuoteRequest ✅ IMPLEMENTADO (7-jul-2026).** Sin R2: se guarda el binario en Postgres (`Attachment.data` BYTEA + `mime`, columnas aditivas; `Attachment` abstrae el backend → migrar a R2 luego = plug-in). Pipeline: entrante `type:'image'` en `whatsappIncoming.routes` → `handleIncomingPhoto` (botFlow) → `downloadWhatsAppMedia(media_id)` (whatsapp.ts: GET /{id}→url temporal→bytes con token) → `saveQuoteRequestPhoto` (attachment.service) adjunta a la solicitud <48 h del cliente (prioriza el merchant de la sesión) → confirma con copy K1 nueva: *"📎 ¡Foto recibida! La he añadido a tu solicitud para que {negocio} la vea al preparar el presupuesto."* (sin solicitud reciente → cae al amable de handleUnsupportedMedia). BO: galería de miniaturas en la tarjeta de Solicitudes; servido con tenancy en `GET /admin/attachments/:id`. Solo mensajes de servicio (ventana abierta → 0 €). Suite del bot: paso 8.2. Pendiente aún (b) audio→STT y (c) antes/después (Job) + migración opcional a R2.
+
 ---
 
 # PARTE S — SEGURIDAD, PERMISOS, AUDITORÍA Y RGPD

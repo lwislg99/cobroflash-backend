@@ -51,6 +51,40 @@ async function isWaOptedOut(merchantId: number, to: string): Promise<boolean> {
   }
 }
 
+/**
+ * MEDIA-1 (FASE 3): descarga un adjunto entrante de WhatsApp por su media_id.
+ * Dos pasos (Cloud API): GET /{media_id} → { url, mime_type } (url temporal,
+ * ~5 min) y luego GET de esa url con el token → bytes. Devuelve null ante
+ * cualquier fallo (el bot cae al comportamiento amable). En dry-run (tests)
+ * devuelve un buffer simbólico para poder asertar el flujo sin tocar Meta.
+ */
+export async function downloadWhatsAppMedia(
+  mediaId: string,
+): Promise<{ buffer: Buffer; mime: string } | null> {
+  if (isDryRun()) return { buffer: Buffer.from(`dryrun-media-${mediaId}`), mime: 'image/jpeg' };
+  const token = config.WHATSAPP_ACCESS_TOKEN;
+  if (!token || !mediaId) return null;
+  try {
+    const meta = await axios.get(`${BASE_URL}/${mediaId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: 15000,
+    });
+    const mediaUrl = meta.data?.url;
+    const mime = String(meta.data?.mime_type || 'application/octet-stream');
+    if (!mediaUrl) return null;
+    const bin = await axios.get(mediaUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: 'arraybuffer',
+      timeout: 20000,
+      maxContentLength: 12 * 1024 * 1024, // 12 MB de guarda
+    });
+    return { buffer: Buffer.from(bin.data), mime };
+  } catch (err: any) {
+    console.error('[WhatsApp] downloadWhatsAppMedia error:', err?.response?.status, err?.message);
+    return null;
+  }
+}
+
 export async function sendWhatsAppTemplate(params: {
   to: string;
   templateName: string;

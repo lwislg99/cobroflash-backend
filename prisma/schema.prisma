@@ -595,8 +595,9 @@ model AuditLog {
   @@map("audit_log")
 }
 
-// Ola 19 (EXT3, MEDIA-1 parcial · GATE: credenciales R2 del fundador): adjuntos.
-// La tabla nace ya (aditiva e inocua); el USO espera al bucket.
+// Ola 19 (EXT3, MEDIA-1 parcial): adjuntos. FASE 3 (7-jul-2026): activado con
+// almacenamiento en Postgres (columnas `data`/`mime` aditivas) al no haber R2;
+// el modelo abstrae el backend, así que migrar a R2 luego es un plug-in.
 model Attachment {
   id         Int      @id @default(autoincrement())
   merchantId Int      @map("merchant_id")
@@ -604,6 +605,8 @@ model Attachment {
   entityId   Int      @map("entity_id")
   url        String
   kind       String   @default("photo") // photo | audio (audio = F2, no F1)
+  data       Bytes?   // MEDIA-1: bytes del fichero en Postgres (bytea) — fallback persistente sin R2
+  mime       String?  // MEDIA-1: content-type (image/jpeg, image/png…)
   createdAt  DateTime @default(now()) @map("created_at")
 
   @@index([merchantId, entityType, entityId])

@@ -58,6 +58,7 @@ import exportsRouter   from './modules/exports/app/routes/exports.routes';
 import reportsRouter   from './modules/reports/app/routes/reports.routes';
 import templatesRouter     from './modules/templates/app/routes/templates.routes';
 import quoteRequestsRouter from './modules/quoteRequests/app/routes/quoteRequests.routes';
+import attachmentsRouter   from './modules/quoteRequests/app/routes/attachments.routes';
 import searchRouter        from './modules/search/app/routes/search.routes';
 
 import { merchantProfileUpdateSchema } from './core/validation/schemas';
@@ -257,6 +258,7 @@ app.use('/admin/exports',    exportsRouter);
 app.use('/admin/reports',    reportsRouter);
 app.use('/admin/templates',     templatesRouter);
 app.use('/admin/quote-requests', quoteRequestsRouter);
+app.use('/admin/attachments',    attachmentsRouter); // MEDIA-1 (FASE 3): servir fotos adjuntas
 app.use('/admin/search',         searchRouter);
 
 // Admin – Perfil de merchant (lectura libre, escritura solo admin)

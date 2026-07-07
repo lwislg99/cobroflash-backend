@@ -75,6 +75,23 @@ async function renderQuoteRequestsView(container) {
       const statusLabels = { pending: 'Pendiente', read: 'Vista', done: 'Gestionada' };
       const statusColors = { pending: 'status-pill-pending', read: 'status-pill-draft', done: 'status-pill-accepted' };
 
+      // MEDIA-1 (FASE 3): fotos que el cliente mandó por WhatsApp, adjuntas a la
+      // solicitud. Miniaturas que abren la imagen completa (servida con tenancy).
+      const photos = Array.isArray(req.attachments) ? req.attachments.filter(function (a) { return a.kind === 'photo'; }) : [];
+      const galleryHtml = photos.length ? (
+        '<div style="margin-bottom:12px">' +
+          '<div style="font-size:11.5px;color:var(--neutral-400);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">📎 Fotos del cliente</div>' +
+          '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+            photos.map(function (p) {
+              return '<a href="' + p.url + '" target="_blank" rel="noopener" title="Abrir foto" ' +
+                'style="display:block;width:74px;height:74px;border-radius:8px;overflow:hidden;border:1px solid var(--neutral-200);background:var(--neutral-50)">' +
+                '<img src="' + p.url + '" alt="Foto adjunta a la solicitud" loading="lazy" ' +
+                'style="width:100%;height:100%;object-fit:cover;display:block"/></a>';
+            }).join('') +
+          '</div>' +
+        '</div>'
+      ) : '';
+
       const card = document.createElement('div');
       card.className = 'customers-card';
       card.style.cursor = 'default';
@@ -91,6 +108,7 @@ async function renderQuoteRequestsView(container) {
           </div>
         </div>
         <div style="background:var(--neutral-50);border-radius:8px;padding:12px;font-size:13.5px;color:var(--neutral-700);border:1px solid var(--neutral-100);white-space:pre-wrap;word-break:break-word;margin-bottom:12px">${escReq(req.description)}</div>
+        ${galleryHtml}
         <div style="display:flex;gap:8px;flex-wrap:wrap" id="req-actions-${req.id}"></div>
       `;
 

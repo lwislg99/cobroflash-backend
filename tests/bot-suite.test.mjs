@@ -75,6 +75,15 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED }, asy
 
   const MARKER = '(suite A8.4) fuga en la cocina de prueba';
   try {
+    // FASE 3: purga de solicitudes MARKER (y sus adjuntos) de una ejecución previa
+    // que hubiera crasheado, para que el paso 7 (imagen SIN solicitud → amable) sea
+    // determinista (el cliente seed solo recibe solicitudes MARKER de esta suite).
+    {
+      const leftover = await prisma.quoteRequest.findMany({ where: { merchantId: MERCHANT_ID, description: MARKER }, select: { id: true } }).catch(() => []);
+      if (leftover.length) await prisma.attachment.deleteMany({ where: { merchantId: MERCHANT_ID, entityType: 'quote_request', entityId: { in: leftover.map((r) => r.id) } } }).catch(() => {});
+      await prisma.quoteRequest.deleteMany({ where: { merchantId: MERCHANT_ID, description: MARKER } }).catch(() => {});
+    }
+
     // ── 1. "hola" → menú (lista con las 4 opciones) ─────────────────────────
     await post(textMsg('hola'));
     await waitOutbox(1);
@@ -193,6 +202,20 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED }, asy
     assert.ok(outbox.slice(len).some((m) => m.to !== TEST_PHONE), '8f aviso al PRO enviado');
     log('8 pedir presupuesto (validación + confirmación) → QuoteRequest', true);
 
+    // ── 8.2 (FASE 3 · MEDIA-1): foto entrante → se adjunta a la solicitud recién
+    // creada y el bot confirma. En dry-run la descarga devuelve un buffer image/jpeg
+    // simbólico; el Attachment se guarda de verdad en la BD (y se limpia al final).
+    await settle();
+    len = outbox.length;
+    await post(mediaMsg('image'));
+    await waitOutbox(len + 1);
+    await settle();
+    assert.ok(outbox.slice(len).some((m) => /Foto recibida/i.test(m.text || '')), '8.2 foto → "Foto recibida"');
+    const att = await prisma.attachment.findFirst({ where: { merchantId: MERCHANT_ID, entityType: 'quote_request', entityId: qr.id, kind: 'photo' } });
+    assert.ok(att, '8.2 Attachment (foto) creado y ligado a la solicitud');
+    assert.ok(String(att.url).includes('/admin/attachments/'), '8.2 url de servido correcta');
+    log('8.2 foto adjunta a la solicitud (FASE 3)', true);
+
     // ── 8g. Cancelar a mitad de captación → vuelve al menú, no crea nada ─────
     await settle();
     len = outbox.length;
@@ -248,6 +271,11 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED }, asy
     // ── Limpieza: SOLO lo creado por la suite ────────────────────────────────
     for (const c of optOutBefore) {
       await prisma.customer.update({ where: { id: c.id }, data: { waOptOut: c.waOptOut } }).catch(() => {});
+    }
+    // FASE 3: adjuntos (fotos) de las solicitudes MARKER creadas por la suite
+    const markerReqs = await prisma.quoteRequest.findMany({ where: { merchantId: MERCHANT_ID, description: MARKER }, select: { id: true } }).catch(() => []);
+    if (markerReqs.length) {
+      await prisma.attachment.deleteMany({ where: { merchantId: MERCHANT_ID, entityType: 'quote_request', entityId: { in: markerReqs.map((r) => r.id) } } }).catch(() => {});
     }
     await prisma.quoteRequest.deleteMany({ where: { merchantId: MERCHANT_ID, description: MARKER } }).catch(() => {});
     await prisma.botSession.deleteMany({ where: { phone: TEST_PHONE } }).catch(() => {});

@@ -4,6 +4,21 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
+## FASE 3 · MEDIA-1: `attachments.data/mime` — ✅ APLICADO en prod (2026-07-07)
+
+`prisma db push` aplicado contra Railway, **autorizado por el fundador** (eligió backend
+"Postgres ahora" para las fotos del bot). 100 % aditivo, 2 columnas nullable; preview con
+`migrate diff` mostró exactamente:
+```sql
+ALTER TABLE "attachments" ADD COLUMN "data" BYTEA,
+                          ADD COLUMN "mime" TEXT;
+```
+Almacenamiento de fotos entrantes de WhatsApp en Postgres (bytea) al no haber R2; el modelo
+`Attachment` abstrae el backend (migrar a R2 luego = plug-in). Aplicado ANTES de pushear el
+código de FASE 3. `db push` → "Your database is now in sync" en 6,68 s.
+
+---
+
 ## A3.1 · BOT-1: `bot_sessions` + `quote_requests.zone/source` — ✅ APLICADO en prod (2026-07-03)
 
 `prisma db push` aplicado contra Railway, **autorizado por el fundador** (respuesta explícita

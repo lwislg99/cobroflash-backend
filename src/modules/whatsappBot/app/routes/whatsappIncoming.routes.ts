@@ -12,7 +12,7 @@ import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/mercha
 import { updateWaMessageStatus, recordInboundWaMessage } from '../../../messaging/domain/whatsappLog.service';
 import { isFlagEnabled } from '../../../../core/flags';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
-import { handleBotMessage, handleUnsupportedMedia, isMidIntake, type BotInput } from '../../domain/botFlow.service';
+import { handleBotMessage, handleUnsupportedMedia, handleIncomingPhoto, isMidIntake, type BotInput } from '../../domain/botFlow.service';
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 import { handleMaintenanceButton } from '../../../maintenance/domain/maintenance.service';
 
@@ -32,8 +32,9 @@ export function isDuplicateWamid(id: string): boolean { // A12.2: exportada para
   return false;
 }
 
-// A8.2 (#15): tipos de mensaje que el bot no entiende — respuesta amable + menú
-const UNSUPPORTED_TYPES = new Set(['audio', 'image', 'video', 'document', 'sticker', 'contacts']);
+// A8.2 (#15): tipos de mensaje que el bot no entiende — respuesta amable + menú.
+// MEDIA-1 (FASE 3): 'image' se gestiona aparte (handleIncomingPhoto) → ya no aquí.
+const UNSUPPORTED_TYPES = new Set(['audio', 'video', 'document', 'sticker', 'contacts']);
 
 // Valida la firma X-Hub-Signature-256 de Meta usando el App Secret.
 // Si no hay WHATSAPP_APP_SECRET configurado, no validamos (devuelve true).
@@ -142,8 +143,20 @@ router.post('/', async (req, res) => {
             if (zoneText) routeIncoming(from, { text: zoneText }).catch((e) =>
               console.error('[WA in] handler error:', e?.message),
             );
+          } else if (msg.type === 'image' && isFlagEnabled('BOT_INBOUND_ENABLED')) {
+            // MEDIA-1 (FASE 3): foto entrante → adjuntarla a la solicitud reciente
+            // del cliente (si la hay). handleIncomingPhoto cae al mensaje amable si
+            // no hay solicitud o falla la descarga. Nunca crashea.
+            const mediaId = String(msg.image?.id || '');
+            if (mediaId) {
+              handleIncomingPhoto(from, mediaId).catch((e) =>
+                console.error('[WA in] photo error:', e?.message),
+              );
+            } else {
+              handleUnsupportedMedia(from).catch(() => {});
+            }
           } else if (UNSUPPORTED_TYPES.has(String(msg.type || '')) && isFlagEnabled('BOT_INBOUND_ENABLED')) {
-            // A8.2 (#15): audio/imagen/vídeo/documento/sticker/ubicación →
+            // A8.2 (#15): audio/vídeo/documento/sticker/contactos →
             // respuesta amable + menú si no hay flujo a medias (el audio→texto
             // real es F2, MEDIA-1). Nunca crashea.
             handleUnsupportedMedia(from).catch(() => {});

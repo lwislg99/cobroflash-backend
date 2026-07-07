@@ -17,9 +17,10 @@
 import { prisma } from '../../../core/db/prisma';
 import { BASE_URL } from '../../../core/config/env';
 import { normalizePhone, formatMoneyEs } from '../../../core/utils/utils';
-import { sendWhatsAppText, sendWhatsAppList, sendWhatsAppButtons, sendWhatsAppCtaUrl, sendWhatsAppLocationRequest } from '../../../integrations/whatsapp';
+import { sendWhatsAppText, sendWhatsAppList, sendWhatsAppButtons, sendWhatsAppCtaUrl, sendWhatsAppLocationRequest, downloadWhatsAppMedia } from '../../../integrations/whatsapp';
 import { notifyMerchantAlert } from '../../../integrations/whatsappNotifications';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
+import { saveQuoteRequestPhoto } from '../../quoteRequests/domain/attachment.service';
 
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // K1: expiresAt = +24h
 
@@ -163,6 +164,64 @@ export async function handleUnsupportedMedia(from: string): Promise<void> {
     }
   } catch (err: any) {
     console.error('[bot] handleUnsupportedMedia:', err?.message || err);
+  }
+}
+
+/**
+ * MEDIA-1 (FASE 3): foto entrante → se adjunta a la solicitud de presupuesto
+ * más reciente (<48 h) de ese cliente y se confirma. Si no hay solicitud
+ * reciente (o falla la descarga), cae al mensaje amable de handleUnsupportedMedia.
+ * Solo mensajes de servicio (responde a un entrante → ventana abierta → 0 €).
+ */
+export async function handleIncomingPhoto(from: string, mediaId: string): Promise<void> {
+  try {
+    const phone = normalizePhone(from);
+    if (!phone || !mediaId) return;
+
+    const session = await getSession(phone);
+    if (session?.state === 'handoff') return; // mudo 24 h también para fotos
+
+    // Clientes con este número (cross-merchant); si la sesión fija merchant, se prioriza.
+    const customers = await prisma.customer.findMany({
+      where: { phone: { in: [phone, `+${phone}`] } },
+      select: { id: true },
+    });
+    if (!customers.length) { await handleUnsupportedMedia(from); return; }
+
+    const since = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    const request = await prisma.quoteRequest.findFirst({
+      where: {
+        customerId: { in: customers.map((c) => c.id) },
+        createdAt: { gte: since },
+        ...(session?.merchantId ? { merchantId: session.merchantId } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, merchantId: true },
+    });
+    if (!request) { await handleUnsupportedMedia(from); return; }
+
+    const media = await downloadWhatsAppMedia(mediaId);
+    if (!media || !String(media.mime).startsWith('image/')) { await handleUnsupportedMedia(from); return; }
+
+    await saveQuoteRequestPhoto({
+      merchantId: request.merchantId,
+      quoteRequestId: request.id,
+      buffer: media.buffer,
+      mime: media.mime,
+    });
+
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: request.merchantId },
+      select: { name: true, legalName: true },
+    });
+    const businessName = merchant ? merchantDisplayName(merchant) : 'tu profesional';
+    await sendWhatsAppText({
+      to: from,
+      text: `📎 ¡Foto recibida! La he añadido a tu solicitud para que *${businessName}* la vea al preparar el presupuesto.`,
+    });
+  } catch (err: any) {
+    console.error('[bot] handleIncomingPhoto:', err?.message || err);
+    try { await handleUnsupportedMedia(from); } catch { /* best-effort */ }
   }
 }
 

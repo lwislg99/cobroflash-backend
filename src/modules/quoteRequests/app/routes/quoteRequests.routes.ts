@@ -18,7 +18,25 @@ router.get('/', async (req, res) => {
       take: 50,
     });
 
-    return res.json(requests);
+    // MEDIA-1 (FASE 3): adjuntar las fotos (metadatos, sin bytes) de cada solicitud.
+    // Attachment no es una relación FK (entityType/entityId genéricos) → fetch aparte.
+    const ids = requests.map((r) => r.id);
+    const atts = ids.length
+      ? await prisma.attachment.findMany({
+          where: { merchantId: req.merchantId, entityType: 'quote_request', entityId: { in: ids } },
+          orderBy: { createdAt: 'asc' },
+          select: { id: true, entityId: true, url: true, kind: true, mime: true },
+        })
+      : [];
+    const byRequest = new Map<number, Array<{ id: number; url: string; kind: string; mime: string | null }>>();
+    for (const a of atts) {
+      const arr = byRequest.get(a.entityId) || [];
+      arr.push({ id: a.id, url: a.url, kind: a.kind, mime: a.mime });
+      byRequest.set(a.entityId, arr);
+    }
+
+    const withAttachments = requests.map((r) => ({ ...r, attachments: byRequest.get(r.id) || [] }));
+    return res.json(withAttachments);
   } catch (err) {
     console.error('[GET /admin/quote-requests]', err);
     return res.status(500).json({ error: 'internal_error' });
