@@ -1,5 +1,6 @@
 // srcNew/modules/billing/app/routes/receipt.routes.ts
 import { Router } from 'express';
+import fs from 'fs';
 import axios from 'axios';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
@@ -8,6 +9,7 @@ import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service
 import { stripe } from '../../../../integrations/stripe';
 import { BASE_URL, config } from '../../../../core/config/env';
 import { internalHeaders } from '../../../../core/http/internalAuth';
+import { ensureInvoicePdf } from '../../../../lib/invoicing';
 
 const router = Router();
 
@@ -128,12 +130,10 @@ router.get('/:id', async (req, res) => {
       : '';
 
   const invBlock =
-    ch.status === 'paid'
-      ? hasRealPdf
-        ? `<p class="doc-link"><a href="${invoice!.pdfUrl}" target="_blank">
-             📄 Descargar ${docLabel} (${esc(invoice!.number)})
-           </a></p>${emailBlock}`
-        : '' /* A6.6 P2: el banner "Estamos generando tu ${docLabel}…" ya lo dice — duplicaba mensaje */
+    ch.status === 'paid' && invoice
+      ? `<p class="doc-link"><a href="${BASE_URL}/recibo/${ch.id}/pdf" target="_blank" rel="noopener">
+           📄 Descargar ${docLabel} en PDF (${esc(invoice.number)})
+         </a></p>${emailBlock}`
       : '';
 
       const statusMessage =
@@ -142,7 +142,7 @@ router.get('/:id', async (req, res) => {
              Estamos esperando tu pago. Puedes completarlo usando los botones de <b>pago por banco</b> o <b>pago con tarjeta</b> que aparecen más arriba.
            </div>`
         : ch.status === 'paid'
-        ? hasRealPdf
+        ? invoice
           ? `<div class="note note-ok">
                ✅ <b>Pago recibido correctamente.</b> Tu ${docLabel} está disponible para descargar y ${docPron} hemos enviado por WhatsApp. Si tenemos tu correo, también ${docPron} recibirás por email.
              </div>`
@@ -385,6 +385,37 @@ router.get('/:id', async (req, res) => {
 </div>
 </body>
 </html>`);
+});
+
+// GET /recibo/:id/pdf — descarga PÚBLICA del justificante/factura del cliente. Genera el PDF
+// BAJO DEMANDA (mismo helper que el BO, ensureInvoicePdf) y lo sirve; así el cliente siempre
+// puede descargarlo desde el recibo aunque no se hubiera generado antes. Público por chargeId,
+// igual que GET /recibo/:id (el cliente lo abre desde WhatsApp, sin login).
+router.get('/:id/pdf', async (req, res) => {
+  const id = parseNumericId(req.params.id);
+  if (!Number.isInteger(id)) return res.status(400).send(documentNotFoundHtml());
+  try {
+    const ch = await prisma.charge.findUnique({ where: { id }, include: { events: true } });
+    if (!ch || ch.status !== 'paid') return res.status(404).send(documentNotFoundHtml());
+    // Localizar la factura ligada (por quote o evento 'invoiced'), igual que en GET /:id.
+    const quote = await prisma.quote.findFirst({ where: { chargeId: ch.id } });
+    let invoice: any = null;
+    if (quote) invoice = await prisma.invoice.findFirst({ where: { quoteId: quote.id } });
+    if (!invoice) {
+      const invEv = [...(ch.events || [])].reverse().find((e) => e.type === 'invoiced' && (e as any).payload?.invoice_id);
+      const invId = (invEv as any)?.payload?.invoice_id as number | undefined;
+      if (invId) invoice = await prisma.invoice.findUnique({ where: { id: invId } });
+    }
+    if (!invoice) return res.status(404).send(documentNotFoundHtml());
+    const { diskPath, number } = await ensureInvoicePdf(invoice.id, prisma);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${number}.pdf"`);
+    res.setHeader('Cache-Control', 'no-store');
+    return fs.createReadStream(diskPath).pipe(res);
+  } catch (err) {
+    console.error('[GET /recibo/:id/pdf]', (err as any)?.message || err);
+    return res.status(500).send(documentNotFoundHtml());
+  }
 });
 
 // POST /recibo/:id/feedback — A2.5: valoración del cliente tras pagar.
