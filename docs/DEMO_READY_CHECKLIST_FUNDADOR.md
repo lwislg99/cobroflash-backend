@@ -47,7 +47,7 @@
 | `BOT_INBOUND_ENABLED=true` | El bot del WhatsApp | Cuando quieras probarlo/enseñarlo |
 | `DEMO_SAFE_NUMBERS` | Números a los que el demo puede enviar (V0-2: vacío = bloquea todo) | Antes de ensayar con tu móvil real |
 | `EMAIL_FROM` = `YaQu <no-reply@yaqu.app>` | Remitente correcto en los emails (dominio verificado en Resend primero) | Antes de demos con email real |
-| `WHATSAPP_ACCESS_TOKEN` | ⚠️ Quedó expuesto (4-jul). **Decisión fundador (6-jul): se rehará entero en FASE B con la SIM nueva** — el token viejo se sustituye ahí. Riesgo residual asumido hasta entonces (opcional: revocarlo ya en Meta, 1 min). | FASE B |
+| `WHATSAPP_ACCESS_TOKEN` | ✅ **HECHO (7-jul):** token nuevo (permanente, Usuario del sistema) puesto en Railway en FASE B — sustituye al que quedó expuesto el 4-jul. Riesgo cerrado. | ✅ FASE B |
 | `ANTHROPIC_API_KEY` | (ya NO se usa — sustituida por Gemini) | — |
 
 > **📦 Agrupado:** TODO el bloque de WhatsApp (rotar token, `DEMO_SAFE_NUMBERS`,
@@ -81,17 +81,30 @@
 - [ ] **Precios LIVE** (V0-4): ejecutar `scripts/setup-stripe-prices.mjs` con la key LIVE
       → el founding de 14,50 € se puede cobrar de verdad.
 
-## 🟠 5. Meta / WABA de producción (FASE B — cuando tengas la SIM)
+## 🟢 5. Meta / WABA de producción (FASE B) — CASI COMPLETA (7-jul-2026)
 
-Runbook completo paso a paso en `PENDIENTES_FUNDADOR.md` §FASE B. Lo esencial:
-- [ ] Registrar el número real + método de pago + credenciales nuevas en Railway
-      (`WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_BUSINESS_ACCOUNT_ID`, token permanente).
-- [ ] **Recrear las 5 plantillas BIEN**: categoría Utility (mata P3-3), URL dinámica
-      (mata P3-1) **y botones quick reply** («👍 Lo miro ahora» / «✅ Voy a pagarlo») —
-      con eso el ciclo entero cuesta ~0,023 € o CERO si el cliente inicia (el código
-      ventana-first ya está desplegado esperándolo).
-- [ ] Verificación de empresa (2-10 días, en paralelo) y, si algo no llega,
-      suscribir FlashClient en WhatsApp Manager → apps suscritas (ya documentado).
+Runbook completo paso a paso en `PENDIENTES_FUNDADOR.md` §FASE B. Estado:
+- [x] **Número real registrado + método de pago + probado** (envía/recibe, "Integration
+      Test" OK): WABA **"YaQu"** (ID `856548487239404`), número **+34 621 32 04 05**,
+      Phone Number ID `1116961488178247`. Token permanente generado (vía Usuario del
+      sistema, tras verificar el email de la cuenta `luisdragonball@gmail.com`).
+- [x] **Credenciales nuevas en Railway**: `WHATSAPP_ACCESS_TOKEN` (token nuevo, sustituye
+      al expuesto el 4-jul), `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_BUSINESS_ACCOUNT_ID`.
+- [x] **5 plantillas recreadas en categoría Utility ("Servicio")** y EN REVISIÓN en Meta
+      (7-jul): `quote_decision_es`, `payment_request_es`, `payment_confirmation_es`,
+      `payment_confirmation_invoice_es`, `merchant_alert_es`. Estructura EXACTA del código
+      (`whatsappTemplates.ts`): nº de variables y botones cuadrados; muestras en EUR; bug
+      "HelloHola" de `merchant_alert_es` corregido a "Hola". **Nota:** al final NO se
+      añadieron los quick reply («👍 Lo miro ahora» / «✅ Voy a pagarlo») para no arriesgar
+      el índice del botón URL (el código manda el id en el índice 0) — se pueden añadir
+      después con un envío de prueba. Optimización de coste pendiente, no bloqueante.
+- [ ] **Esperar aprobación de Meta** (En revisión → Aprobada). Si alguna la reclasifican a
+      Marketing o la rechazan → ajustar/apelar.
+- [ ] **Prueba final real**: envío desde la app a un móvil real cuando estén aprobadas
+      (valida token Railway + número + estructura de plantillas de una sentada).
+- [ ] Verificación de empresa (2-10 días, en paralelo; "Sin verificar" hoy) y, si algo no
+      llega, suscribir la app en WhatsApp Manager → apps suscritas (ya documentado).
+      ⚠️ Corregir antes el país del delegado de datos: está en "United States", debe ser España.
 
 ## 🟣 5b. Nuevos de EXT3 (Olas 10-23 en marcha)
 

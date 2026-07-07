@@ -21,6 +21,7 @@ firma del cliente → cobro de señal/total → (post SIF-1) factura VeriFactu. 
    - claims fiscales/VeriFactu (en UI, marketing o copy)
    - dinero real o flujo de cobro en producción
    - plantillas o categoría de Meta (WhatsApp)
+   - copy del bot o textos oficiales (K1/N5) y estados/flags cerrados (L/P) → cambio de master
    - cambios de schema **no aditivos**
    - datos de clientes (export/borrado)
    - flags de la Parte P a nivel **global**
@@ -31,6 +32,9 @@ firma del cliente → cobro de señal/total → (post SIF-1) factura VeriFactu. 
    y actualizar el master (✅ con motivo; nunca borrar).
 8. Producción: deploy = push a `main`. Nada destructivo contra la BD de prod sin preview
    del diff (`prisma migrate diff`) y confirmación (hook `guard-dangerous`).
+9. **Secretos NUNCA en el chat.** Tokens (`EAA…`), claves de API (`GEMINI_API_KEY`, Stripe
+   `sk_`/`whsec_`) y `WHATSAPP_ACCESS_TOKEN` los pega el fundador DIRECTO en Railway, jamás en
+   la conversación. Si un secreto aparece en el chat: revocarlo y regenerarlo.
 
 ## 10 reglas duras (resumen de la Parte I; el detalle manda)
 
@@ -81,4 +85,8 @@ npx prisma generate      # en Windows: matar node antes si el DLL queda bloquead
 - `/yaqu-release-check` — cierre de sprint (AA1.7)
 - `yaqu-premium-ui` — obligatoria antes de tocar UI (DESIGN.md + Parte AB; checklist AB6).
   Jerarquía: DESIGN.md + Parte AB > yaqu-premium-ui > `frontend-design` oficial de Anthropic.
+- `/yaqu-wa-templates` — estructura EXACTA de las plantillas de WhatsApp (Utility, vars en
+  orden, botón, muestras EUR); usar al recrearlas en Meta o depurar #132000/#132001.
+- `/yaqu-fase-b` — runbook de la WABA de producción (token por Usuario del sistema, 3 vars
+  de Railway, 5 plantillas, verificación de empresa, nombre para mostrar).
 - `yaqu-verifactu-sif` (se crea en S1-0b) · `yaqu-payments` (se crea en CONNECT-1)
