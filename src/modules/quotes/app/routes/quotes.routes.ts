@@ -50,6 +50,15 @@ router.post('/create', async (req, res) => {
     const body = CreateQuoteSchema.parse(req.body);
     const { merchant_id, customer_id, currency } = body;
 
+    // P1-SEC-5: este endpoint estaba montado SOLO con requireActivePlan, que NO
+    // autentica (sin sesión hace next()) y confiaba en el merchant_id del BODY →
+    // permitía crear presupuestos SIN login y en la cuenta de OTRO merchant (con
+    // aviso WhatsApp e incremento de numeración ajenos). Ahora exige requireAuth
+    // (req.merchantId) y se fuerza que el merchant del body sea el de la sesión.
+    if (req.merchantId == null || merchant_id !== req.merchantId) {
+      return res.status(403).json({ error: 'forbidden' });
+    }
+
     // Validar: se necesita lines O tiers (no los dos, no ninguno)
     if (!body.lines && !body.tiers) {
       return res.status(400).json({ error: 'validation_error', details: 'lines or tiers required' });
@@ -58,7 +67,8 @@ router.post('/create', async (req, res) => {
     const merchant = await prisma.merchant.findUnique({ where: { id: merchant_id } });
     if (!merchant) return res.status(404).json({ error: 'merchant_not_found' });
 
-    const customer = await prisma.customer.findUnique({ where: { id: customer_id } });
+    // Cliente SIEMPRE dentro del merchant autenticado (no adjuntar el cliente de otro).
+    const customer = await prisma.customer.findFirst({ where: { id: customer_id, merchantId: req.merchantId } });
     if (!customer) return res.status(404).json({ error: 'customer_not_found' });
 
     // Calcular total: si hay tiers, usamos el "better" (o el de en medio)

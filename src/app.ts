@@ -134,9 +134,12 @@ app.use('/webhooks/psp', requireInternalSecret, pspWebhookRouter);
 app.use('/charges', requireInternalSecret, chargesRouter);
 // Crear presupuesto requiere prueba activa (bloqueo suave tras fin de trial).
 // El resto de /quote (accept/reject del cliente) sigue abierto.
-app.post('/quote/create', requireActivePlan);
+app.post('/quote/create', requireAuth, requireActivePlan); // P1-SEC-5: exige login + tenancy
 app.use('/quote', quotesRouter);
-app.use('/invoice', invoiceRouter);
+// P0-SEC-4: el router /invoice (legacy n8n: /issue + /:id/paid-webhook) MUTABA
+// facturas (marcar PAGADA) sin auth, firma ni tenancy. Sin llamadas internas →
+// se cierra tras el secreto interno (externo → 404), igual que /charges y /webhooks/psp.
+app.use('/invoice', requireInternalSecret, invoiceRouter);
 app.use('/recibo', receiptRouter);
 app.use('/pay', payInvoiceRouter);
 app.use('/pay', payBankRouter);

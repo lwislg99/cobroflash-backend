@@ -62,6 +62,33 @@
   mount público de `/charges`.
 - **Done cuando:** `/charges*` → 404 público; el envío de factura por WhatsApp sigue creando el cobro.
 
+### [x] P0-SEC-4 · `/invoice/:id/paid-webhook` marca cualquier factura como PAGADA sin auth (auditoría 2ª pasada, 7-jul)
+- **Exploit:** `POST https://yaqu.app/invoice/<id>/paid-webhook` marca la factura `<id>` como
+  **pagada** (`status:'paid'`, `paidAt`) SIN pago real, firma ni auth; devuelve además datos del
+  merchant/cliente (nombre, taxId, dirección, teléfono, email) → fuga cross-tenant. Hermano:
+  `POST /invoice/issue` emite factura de cualquier `charge_id`. Ids enteros secuenciales → enumerables.
+- **Causa raíz:** `invoice.routes.ts` (router legacy de la época **n8n**, comentario "pensada para
+  n8n / WhatsApp") montado público en `app.ts` (`/invoice`) fuera de `/admin`, sin ningún guard.
+  Se me pasó al cerrar P0-SEC-1/2/3. NINGÚN llamador interno (grep: solo la definición y el mount;
+  los `/pay/invoice/` son otro router).
+- **Arreglo:** `app.use('/invoice', requireInternalSecret, invoiceRouter)` — mismo candado que
+  `/charges` y `/webhooks/psp` (externo sin secreto → 404), sin romper nada (no hay llamadas internas).
+- **Done cuando:** `POST /invoice/*` externo → 404 en yaqu.app. ✅ (build limpio; sin regresiones en tests).
+
+### [x] P1-SEC-5 · `/quote/create` sin login + confía en el `merchant_id` del body → creación cross-tenant (auditoría 2ª pasada, 7-jul)
+- **Exploit:** `POST /quote/create` estaba montado SOLO con `requireActivePlan`, que **no autentica**
+  (sin cookie `pf_session` hace `next()`). El handler tomaba `merchant_id`/`customer_id` del **body**
+  sin atarlos a la sesión → cualquiera podía crear presupuestos **sin login** y en la cuenta de **otro
+  merchant** (dispara aviso WhatsApp al pro, genera PDF e **incrementa la numeración** del merchant víctima).
+- **Causa raíz:** `authMiddleware.ts` `requireActivePlan` solo mira el vencimiento del plan; no fija
+  `req.merchantId`. El endpoint (usado por el BO: `homeView.js`/`quotesView.js`, que ya mandan su
+  propio `merchant_id`) nunca comprobó pertenencia.
+- **Arreglo:** `app.post('/quote/create', requireAuth, requireActivePlan)` + en el handler
+  `if (req.merchantId == null || merchant_id !== req.merchantId) → 403` y el cliente se busca
+  `findFirst({ id, merchantId: req.merchantId })`. Transparente para el BO (va autenticado).
+- **Done cuando:** `POST /quote/create` sin sesión → 401; con sesión y `merchant_id` ajeno → 403;
+  el BO sigue creando presupuestos igual. ✅ (build limpio; tests sin regresiones).
+
 ### [x] P0-1 · Pago con tarjeta devuelve 401 Unauthorized
 - **Síntoma:** al pulsar "Pagar con tarjeta" en `/pay/invoice/:id` navega a `/pay/card/:id` y devuelve 401 (body "Unauthorized"). El cliente no puede pagar.
 - **Causa probable:** la ruta `/pay/card/:id` tiene middleware de autenticación (la usa el cliente NO logueado), o `STRIPE_SECRET_KEY` mal configurada / falla la creación de la Checkout Session.
