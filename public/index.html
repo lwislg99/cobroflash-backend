@@ -112,7 +112,8 @@
   .beat-label .pulse{width:7px;height:7px;border-radius:50%;background:var(--brand);position:relative;flex-shrink:0}
   .beat-label .pulse::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:2px solid rgba(22,163,74,.5);animation:pulse 1.7s ease-out infinite}
   @keyframes pulse{0%{transform:scale(.5);opacity:1}100%{transform:scale(1.7);opacity:0}}
-  .lbls{position:relative;min-width:172px;height:18px}
+  .lbls{position:relative;min-width:216px;height:18px}
+  .beat-label{max-width:100%}
   .lbls span{position:absolute;left:0;top:0;white-space:nowrap;opacity:0} .lbls span:nth-child(1){opacity:1}
   .win{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--sh-xl);overflow:hidden;margin-top:24px}
   .win-bar{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border);background:#fcfdfc}
