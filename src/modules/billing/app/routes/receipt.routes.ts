@@ -248,6 +248,13 @@ router.get('/:id', async (req, res) => {
   const googleBtn = reviewUrl
     ? `<a class="pay-btn pay-btn-primary" href="${esc(reviewUrl)}" target="_blank" rel="noopener">⭐ Déjale una reseña en Google</a>`
     : '';
+  // A2.5: ESTRELLAS que abren directamente la reseña de Google. Sin gating por nota
+  // (cualquier estrella lleva al MISMO formulario de Google) → cumple políticas Google/UE.
+  const googleStars = reviewUrl
+    ? `<div class="fb-gstars" role="group" aria-label="Dejar reseña en Google">${[1, 2, 3, 4, 5]
+        .map(() => `<a href="${esc(reviewUrl)}" target="_blank" rel="noopener" aria-label="Dejar reseña en Google">★</a>`)
+        .join('')}</div>`
+    : '';
   const feedbackBlock =
     ch.status === 'paid'
       ? `
@@ -263,16 +270,19 @@ router.get('/:id', async (req, res) => {
     .fb-google{margin-top:.9rem}
     .fb-hint{font-size:.82rem;color:var(--muted);margin-top:.5rem}
     .fb-or{font-size:.82rem;color:var(--muted);margin:1.15rem 0 .55rem;border-top:1px solid var(--border);padding-top:.9rem}
+    .fb-gstars{display:flex;justify-content:center;gap:.15rem;margin:.5rem 0 .35rem}
+    .fb-gstars a{font-size:2.35rem;line-height:1;text-decoration:none;color:#f5b301;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;transition:transform .12s,color .12s}
+    .fb-gstars a:hover,.fb-gstars a:focus{transform:scale(1.18);color:#e0a800;outline:none}
     @media (prefers-reduced-motion: reduce){.fb-stars button{transition:none;transform:none}}
   </style>
   <div class="fb">
     ${fbThanks
       ? `<div class="fb-title">🙌 ¡Gracias por tu valoración!</div>
          ${googleBtn ? `<div class="fb-google">${googleBtn}</div>` : ''}`
-      : `${googleBtn
+      : `${reviewUrl
            ? `<div class="fb-title">¿Contento con el trabajo? 🙌</div>
-              <div class="fb-google">${googleBtn}</div>
-              <div class="fb-hint">Solo te lleva 10 segundos y nos ayuda un montón ⭐</div>
+              ${googleStars}
+              <div class="fb-hint">Toca una estrella para dejar tu reseña en Google · solo 10 segundos ⭐</div>
               <div class="fb-or">O valóralo en privado para el profesional:</div>`
            : `<div class="fb-title">¿Qué tal fue el trabajo?</div>`}
          <form method="post" action="${BASE_URL}/recibo/${ch.id}/feedback" id="fb-form">
