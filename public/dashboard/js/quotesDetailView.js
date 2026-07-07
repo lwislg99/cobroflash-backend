@@ -365,6 +365,50 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     });
 
     actions.appendChild(btnSend);
+
+    // Enviar por correo (feedback fundador): junto al de WhatsApp. Reutiliza el
+    // endpoint /send-email (Resend, link a /pay/quote/:id, draft → sent).
+    const hasEmail = !!(quote.customer && quote.customer.email);
+    const btnEmail = document.createElement('button');
+    btnEmail.className = 'btn-secondary btn-sm';
+    btnEmail.textContent = isDraft ? '✉️ Enviar por correo' : '↻ Reenviar por correo';
+    if (!hasEmail) {
+      btnEmail.disabled = true;
+      btnEmail.title = 'El cliente no tiene email configurado.';
+    }
+    btnEmail.addEventListener('click', async () => {
+      if (!hasEmail) return;
+      btnEmail.disabled = true;
+      const original = btnEmail.textContent;
+      btnEmail.textContent = 'Enviando…';
+      try {
+        const res = await fetch(`/admin/quotes/${quote.id}/send-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.ok) {
+          setStatus('success', 'Presupuesto enviado por correo.');
+          await renderQuoteDetailView(container, quote.id); // draft → sent
+        } else {
+          const map = {
+            customer_missing_email: 'Este cliente no tiene email; añádelo para enviar por correo.',
+            pending_approval: 'Este presupuesto está pendiente de aprobación; apruébalo antes de enviarlo.',
+            not_found: 'No se encontró el presupuesto.',
+          };
+          setStatus('error', data.message || map[data.error] || 'No se pudo enviar por correo — inténtalo de nuevo.');
+          btnEmail.disabled = false;
+          btnEmail.textContent = original;
+        }
+      } catch (err) {
+        setStatus('error', 'Error enviando por correo: ' + (err && err.message ? err.message : 'inténtalo de nuevo'));
+        btnEmail.disabled = false;
+        btnEmail.textContent = original;
+      }
+    });
+    actions.appendChild(btnEmail);
+
     summarySec.appendChild(actionsSec);
     }
   }
