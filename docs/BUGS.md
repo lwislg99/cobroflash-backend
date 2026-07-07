@@ -89,6 +89,25 @@
 - **Done cuando:** `POST /quote/create` sin sesión → 401; con sesión y `merchant_id` ajeno → 403;
   el BO sigue creando presupuestos igual. ✅ (build limpio; tests sin regresiones).
 
+### [~] P1-SEC-6 · `/quote/:id/accept` y `/reject` — IDOR: aceptar/rechazar presupuestos ajenos por id (auditoría 3ª pasada, 7-jul)
+- **Exploit:** las decisiones públicas del cliente (`POST /quote/<id>/accept` y `/reject`) usan
+  SOLO el `id` (autoincrement **global** de toda la plataforma, el de `/pay/quote/:id`) — sin token,
+  firma ni auth. Enumerable → un atacante puede `reject` en masa TODOS los presupuestos de todos los
+  merchants (sabotaje: ventas perdidas) o `accept` presupuestos ajenos (incluso en `draft` sin enviar
+  → dispara creación de Trabajo + email al pro). No había rate limit en estos endpoints.
+- **Causa raíz:** el modelo `Quote` no tiene token/slug no adivinable; el enlace es el id secuencial.
+  El `rateLimit` existía pero solo en login/registro/verify/IA, no en las decisiones del cliente.
+- **Arreglo (2 capas):**
+  - **(a) Mitigación DESPLEGADA:** `rateLimit` por IP (20/min) en `/:id/accept` y `/:id/reject`
+    (defensa en profundidad contra abuso masivo desde una fuente). Build limpio.
+  - **(b) Fix COMPLETO — PENDIENTE de decisión del fundador (STOP):** añadir un token no adivinable
+    por presupuesto y exigirlo en accept/reject. Toca la **estructura del enlace embebida en las
+    plantillas de Meta aprobadas** (`quote_decision_es` → botón `/pay/quote/{{id}}`) → re-aprobar
+    plantillas = STOP condition. Requiere: columna `Quote.accessToken`, generarlo, y cambiar los
+    enlaces (plantillas + landing + bot). Alternativa sin token: exigir estado `sent` para decidir
+    (reduce, no cierra) — pero eso toca la máquina de estados L (también cerrada).
+- **Done cuando:** decisión del fundador sobre la capa (b). La mitigación (a) ya limita el abuso.
+
 ### [x] P0-1 · Pago con tarjeta devuelve 401 Unauthorized
 - **Síntoma:** al pulsar "Pagar con tarjeta" en `/pay/invoice/:id` navega a `/pay/card/:id` y devuelve 401 (body "Unauthorized"). El cliente no puede pagar.
 - **Causa probable:** la ruta `/pay/card/:id` tiene middleware de autenticación (la usa el cliente NO logueado), o `STRIPE_SECRET_KEY` mal configurada / falla la creación de la Checkout Session.

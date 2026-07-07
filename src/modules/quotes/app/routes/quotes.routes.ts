@@ -8,6 +8,7 @@ import {
   type QuoteTier,
 } from '../../../../core/validation/schemas';
 import { calcTotal, normalizePhone, parseNumericId } from '../../../../core/utils/utils';
+import { rateLimit } from '../../../../core/http/rateLimit';
 
 function calcTierTotal(lines: Array<{qty: number; price: number; tax?: number}>): number {
   return Math.round(lines.reduce((s, l) => s + l.qty * l.price * (1 + (l.tax ?? 0)), 0) * 100) / 100;
@@ -40,6 +41,12 @@ import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 
 
 const router = Router();
+
+// P1-SEC-6 (mitigación): las decisiones públicas del cliente (accept/reject) usan
+// el id secuencial global sin token → enumerables. Rate limit por IP como defensa
+// en profundidad contra el abuso masivo (rechazar/aceptar en masa). El fix COMPLETO
+// (token no adivinable en el enlace) toca plantillas Meta → decisión del fundador.
+const decisionLimiter = rateLimit({ scope: 'quote_decision', max: 20, windowMs: 60_000 });
 
 /**
  * POST /quote/create
@@ -185,7 +192,7 @@ router.post('/create', async (req, res) => {
  * Decisión del CLIENTE: acepta el presupuesto.
  * No crea cobros ni facturas, solo marca la decisión.
  */
-router.post('/:id/accept', async (req, res) => {
+router.post('/:id/accept', decisionLimiter, async (req, res) => {
   try {
     const quoteId = parseNumericId(req.params.id);
     if (!Number.isInteger(quoteId)) {
@@ -272,7 +279,7 @@ router.post('/:id/accept', async (req, res) => {
  * POST /quote/:id/reject
  * Decisión del CLIENTE: rechaza el presupuesto.
  */
-router.post('/:id/reject', async (req, res) => {
+router.post('/:id/reject', decisionLimiter, async (req, res) => {
   try {
     const quoteId = parseNumericId(req.params.id);
     if (!Number.isInteger(quoteId)) {
