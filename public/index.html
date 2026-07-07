@@ -3,30 +3,28 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>YaQu — Cobra la señal antes de empezar. Presupuestos por WhatsApp</title>
-  <meta name="description" content="Para fontaneros, electricistas y reformistas en España: presupuesto en 30 segundos, tu cliente lo firma desde su móvil y cobras la señal antes de empezar. Todo por WhatsApp."/>
+  <title>YaQu — Del presupuesto al cobro, sin salir de WhatsApp</title>
+  <meta name="description" content="El ERP por WhatsApp para los oficios en España: crea presupuestos en 30 segundos, tu cliente los firma desde el móvil y te paga con tarjeta, Bizum o transferencia. Clientes, gastos, facturas y bot — todo en un sitio."/>
   <meta name="theme-color" content="#16a34a"/>
   <link rel="manifest" href="/manifest.json"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <!-- Open Graph -->
   <meta property="og:type" content="website"/>
   <meta property="og:site_name" content="YaQu"/>
   <meta property="og:locale" content="es_ES"/>
-  <meta property="og:title" content="YaQu — Cobra la señal antes de empezar"/>
-  <meta property="og:description" content="Presupuesto en 30 segundos → tu cliente firma desde el móvil → señal cobrada. Todo por WhatsApp. Para los oficios en España."/>
+  <meta property="og:title" content="YaQu — Del presupuesto al cobro, sin salir de WhatsApp"/>
+  <meta property="og:description" content="El ERP por WhatsApp para los oficios: presupuesto en 30 s, firma desde el móvil y cobro con tarjeta, Bizum o transferencia. Clientes, gastos y facturas en el mismo sitio."/>
   <meta property="og:url" content="https://yaqu.app"/>
   <meta property="og:image" content="https://yaqu.app/img/og.png"/>
   <meta property="og:image:width" content="1200"/>
   <meta property="og:image:height" content="630"/>
   <meta name="twitter:card" content="summary_large_image"/>
-  <meta name="twitter:title" content="YaQu — Cobra la señal antes de empezar"/>
-  <meta name="twitter:description" content="Presupuesto en 30 segundos, firma desde el móvil y señal cobrada. Todo por WhatsApp."/>
+  <meta name="twitter:title" content="YaQu — Del presupuesto al cobro, sin salir de WhatsApp"/>
+  <meta name="twitter:description" content="El ERP por WhatsApp para los oficios: presupuesto, firma y cobro desde el móvil. Y toda la gestión en un sitio."/>
   <meta name="twitter:image" content="https://yaqu.app/img/og.png"/>
   <link rel="icon" href="/icons/icon-192.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/icons/icon-192.png"/>
-  <link rel="preload" as="image" href="/img/landing/firma-390.png" fetchpriority="high"/>
   <link rel="canonical" href="https://yaqu.app/"/>
   <script type="application/ld+json">
   {
@@ -36,7 +34,7 @@
     "applicationCategory": "BusinessApplication",
     "operatingSystem": "Web, iOS, Android",
     "url": "https://yaqu.app",
-    "description": "Herramienta WhatsApp-first para los oficios en España (fontaneros, electricistas, reformistas): presupuesto en 30 segundos, firma digital del cliente y cobro de la señal antes de empezar.",
+    "description": "El ERP por WhatsApp para los oficios en España (fontaneros, electricistas, reformistas): presupuestos en 30 segundos, firma digital del cliente, cobro con tarjeta/Bizum/transferencia y gestión de clientes, gastos y facturas.",
     "offers": {
       "@type": "Offer",
       "price": "29",
@@ -53,506 +51,531 @@
   </script>
   <link rel="stylesheet" href="/tokens.css"/>
   <style>
-    /* Tokens (color, radio, sombra, foco) en /tokens.css — fuente compartida. */
-    *, *::before, *::after { box-sizing: border-box; }
-    body { margin:0; font-family:'Inter', system-ui, -apple-system, "Segoe UI", sans-serif; color:var(--body); line-height:1.6;
-      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; font-feature-settings:"cv11","ss01"; }
-    h1, h2, h3 { color:var(--ink); letter-spacing:-.02em; }
-    a { text-decoration:none; color:inherit; }
-    a:focus-visible, .btn:focus-visible { outline:none; box-shadow:var(--ring); }
-    .container { max-width:1080px; margin:0 auto; padding:0 20px; }
-    .btn { display:inline-flex; align-items:center; justify-content:center; padding:13px 24px; border-radius:var(--r-full); font-weight:700; font-size:15px; cursor:pointer; border:none; transition:transform .08s ease, background .15s, box-shadow .15s; }
-    .btn:active { transform:translateY(1px); }
-    .btn-primary { background:var(--brand); color:#fff; box-shadow:var(--shadow-btn); }
-    .btn-primary:hover { background:var(--brand-700); box-shadow:var(--shadow-md); }
-    .btn-ghost { background:var(--surface); color:var(--ink); border:1px solid var(--border); }
-    .btn-ghost:hover { background:var(--bg); border-color:var(--input-border); }
-    @media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+  /* Extras de la landing sobre los tokens de /tokens.css (no redefinir los canónicos). */
+  :root{
+    --tint:var(--brand-tint); --cyan:var(--logo-cyan); --tintbg:#eaf6ee; --amber:#b45309;
+    --sh-sm:var(--shadow-sm); --sh-md:var(--shadow-md); --sh-lg:var(--shadow-lg);
+    --sh-xl:0 40px 80px -24px rgba(16,24,40,.28);
+    --font:'Inter','Inter var',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--body);font-family:var(--font);line-height:1.6;
+    -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-feature-settings:"cv11","ss01";overflow-x:hidden}
+  h1,h2,h3,h4{color:var(--ink);letter-spacing:-.02em;text-wrap:balance;margin:0}
+  p{margin:0} a{text-decoration:none;color:inherit}
+  .tnum{font-variant-numeric:tabular-nums} .nowrap{white-space:nowrap}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+  .eyebrow{font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--brand);display:inline-flex;align-items:center;gap:8px}
+  .eyebrow::before{content:"";width:16px;height:2px;background:var(--brand);border-radius:2px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 22px;border-radius:var(--r-full);
+    font-weight:700;font-size:15px;font-family:inherit;cursor:pointer;border:1px solid transparent;
+    transition:transform .08s ease,background .16s,box-shadow .16s,border-color .16s;text-align:center}
+  .btn:active{transform:translateY(1px)} .btn:focus-visible{outline:none;box-shadow:var(--ring)}
+  .btn-primary{background:var(--brand);color:#fff;box-shadow:0 6px 16px -6px rgba(22,163,74,.55)}
+  .btn-primary:hover{background:var(--brand-700);box-shadow:0 10px 22px -8px rgba(22,163,74,.6);transform:translateY(-1px)}
+  .btn-ghost{background:var(--surface);color:var(--ink);border-color:var(--border)}
+  .btn-ghost:hover{background:var(--bg);border-color:#d7dbd5} .btn-lg{padding:15px 26px;font-size:16px}
 
-    /* Nav */
-    header.nav { position:sticky; top:0; z-index:10; background:rgba(255,255,255,.85); backdrop-filter:saturate(180%) blur(10px); border-bottom:1px solid var(--border); }
-    .nav-inner { display:flex; align-items:center; justify-content:space-between; height:64px; }
-    .logo { display:flex; align-items:center; gap:9px; font-weight:800; font-size:20px; }
-    .logo-mark { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--brand-bright),var(--logo-cyan)); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; color:var(--brand-ink); }
-    .nav-links { display:flex; align-items:center; gap:10px; }
-    .nav-links a.text { padding:8px 12px; color:var(--muted); font-weight:600; font-size:14px; }
-    .nav-links a.text:hover { color:var(--ink); }
+  .announce{background:#0b3d2e;color:#e8f2ee;font-size:13.5px}
+  .announce-in{display:flex;align-items:center;justify-content:center;gap:8px 18px;flex-wrap:wrap;padding:10px 22px;text-align:center}
+  .announce b{color:#bff0d0;font-weight:700} .announce .sep{opacity:.35}
+  .announce a{color:#fff;font-weight:700;border-bottom:1px solid rgba(255,255,255,.45);padding-bottom:1px}
+  .announce a:hover{border-color:#fff}
+  @media(max-width:600px){.announce .sep,.announce .hide-sm{display:none}.announce-in{gap:4px 12px}}
 
-    /* Hero — A4.1: dos columnas (promesa de cobro + mockup real), apilado en móvil */
-    .hero { background:linear-gradient(180deg,#f0fdf4 0%, var(--bg) 100%); padding:64px 0 56px; overflow:hidden; }
-    .hero-grid { display:grid; grid-template-columns:1.15fr .85fr; gap:36px; align-items:center; }
-    .hero h1 { font-size:clamp(2.1rem, 4.6vw, 3.2rem); font-weight:800; line-height:1.07; margin:0 0 18px; letter-spacing:-.03em; }
-    .hero h1 .hl { color:var(--brand); }
-    .hero p.sub { font-size:18.5px; color:var(--muted); max-width:560px; margin:0 0 26px; }
-    .hero .cta-row { display:flex; gap:12px; flex-wrap:wrap; }
-    .hero .note { margin-top:14px; font-size:13px; color:var(--body); }
-    /* Mockup de móvil con captura REAL (la landing de firma del cliente) */
-    .phone { width:min(300px, 78vw); margin:0 auto; border-radius:38px; background:#0f1c17; padding:10px;
-      box-shadow:0 24px 60px -18px rgba(16,24,40,.35), 0 4px 14px -6px rgba(16,24,40,.2); position:relative; }
-    .phone::before { content:""; position:absolute; top:10px; left:50%; transform:translateX(-50%);
-      width:96px; height:22px; background:#0f1c17; border-radius:0 0 14px 14px; z-index:2; }
-    .phone img { display:block; width:100%; border-radius:29px; }
-    .phone-caption { text-align:center; font-size:12.5px; color:var(--muted); margin-top:12px; }
-    @media (max-width:840px){ .hero-grid { grid-template-columns:1fr; text-align:center; }
-      .hero p.sub { margin:0 auto 26px; } .hero .cta-row { justify-content:center; } }
+  .nav{position:sticky;top:0;z-index:40;background:rgba(246,247,245,.85);backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--border)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;color:var(--ink);letter-spacing:-.02em}
+  .logo-mark{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,var(--brand-bright),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#04231a;box-shadow:0 4px 12px -3px rgba(34,211,238,.5)}
+  .nav-links{display:flex;align-items:center;gap:6px}
+  .nav-links a.t{padding:9px 13px;color:var(--muted);font-weight:600;font-size:14px;border-radius:var(--r-full)}
+  .nav-links a.t:hover{color:var(--ink);background:rgba(15,28,23,.04)}
+  @media(max-width:820px){.nav-links a.t{display:none}} @media(max-width:420px){.nav-links .btn-ghost{display:none}}
 
-    /* Steps — A4.2: 3 pasos zigzag con visual real por paso */
-    section { padding:64px 0; }
-    .steps-flow { display:flex; flex-direction:column; gap:56px; margin-top:44px; }
-    .step-row { display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:center; }
-    .step-row.rev .step-visual { order:-1; }
-    .step-copy .step-num { margin-bottom:14px; }
-    .step-copy h3 { font-size:24px; margin:0 0 10px; }
-    .step-copy p { color:var(--muted); font-size:16px; margin:0; max-width:420px; }
-    .phone--sm { width:min(250px, 70vw); border-radius:30px; padding:8px; }
-    .phone--sm::before { width:74px; height:16px; }
-    .phone--sm img, .phone--sm .mock { border-radius:23px; }
-    /* Reveal al hacer scroll (IntersectionObserver mínimo; sin librerías) */
-    .reveal { opacity:0; transform:translateY(22px); transition:opacity .5s ease, transform .5s ease; }
-    .reveal.in { opacity:1; transform:none; }
-    @media (prefers-reduced-motion: reduce){ .reveal { opacity:1; transform:none; } }
-    @media (max-width:840px){
-      .step-row, .step-row.rev { grid-template-columns:1fr; text-align:center; gap:22px; }
-      .step-row.rev .step-visual { order:0; }
-      .step-copy p { margin:0 auto; }
-    }
-    /* Mock del creador (paso 1) — recreación fiel con datos del demo */
-    .mock { background:var(--bg); display:block; width:100%; aspect-ratio:390/800; overflow:hidden; position:relative; }
-    .mock-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; margin:52px 14px 0; padding:14px; text-align:left; }
-    .mock-title { font-size:13px; font-weight:800; color:var(--ink); margin-bottom:10px; }
-    .mock-line { display:flex; justify-content:space-between; font-size:11.5px; color:var(--body);
-      padding:7px 2px; border-bottom:1px solid var(--border); opacity:0; }
-    .mock-line strong { color:var(--ink); font-variant-numeric:tabular-nums; }
-    .in .mock-line { animation:mockline .35s ease forwards; }
-    .in .mock-line:nth-child(2){ animation-delay:.25s } .in .mock-line:nth-child(3){ animation-delay:.7s }
-    .in .mock-line:nth-child(4){ animation-delay:1.15s }
-    @keyframes mockline { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
-    .mock-total { display:flex; justify-content:space-between; padding-top:10px; font-size:13px; font-weight:800; color:var(--ink); }
-    .mock-total strong { font-size:16px; font-variant-numeric:tabular-nums; }
-    .mock-btn { margin:12px 14px 0; background:var(--brand); color:#fff; text-align:center; font-weight:700;
-      font-size:13px; border-radius:999px; padding:11px; opacity:0; }
-    .in .mock-btn { animation:mockline .4s ease 1.55s forwards; }
-    @media (prefers-reduced-motion: reduce){ .mock-line, .mock-btn { opacity:1 !important; animation:none !important; } }
-    h2.section-title { font-size:30px; text-align:center; margin:0 0 8px; letter-spacing:-.5px; }
-    p.section-sub { text-align:center; color:var(--muted); max-width:560px; margin:0 auto 40px; }
-    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px; }
-    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:26px 22px; box-shadow:var(--shadow-sm); transition:transform .18s ease, box-shadow .18s ease; }
-    .card:hover { transform:translateY(-3px); box-shadow:var(--shadow-md); }
-    .card .ico { width:48px; height:48px; border-radius:var(--r-md); background:var(--brand-tint); display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:14px; }
-    .card h3 { margin:0 0 6px; font-size:18px; }
-    .card p { margin:0; color:var(--muted); font-size:14px; }
-    .step-num { display:inline-flex; width:30px; height:30px; border-radius:50%; background:var(--brand-bright); color:var(--brand-ink); font-weight:800; align-items:center; justify-content:center; margin-bottom:12px; }
+  .hero{position:relative;padding:54px 0 46px;overflow:hidden}
+  .hero::before{content:"";position:absolute;inset:0;z-index:-1;
+    background:radial-gradient(58% 48% at 86% 4%, rgba(34,211,238,.12), transparent 70%),
+      radial-gradient(52% 44% at 8% 0%, rgba(34,197,94,.14), transparent 66%),
+      linear-gradient(180deg,#e9f9ef 0%, var(--bg) 52%)}
+  .hero-grid{display:grid;grid-template-columns:.92fr 1.08fr;gap:40px;align-items:center}
+  .hero h1{font-size:clamp(2.1rem,4.3vw,3.05rem);font-weight:800;line-height:1.06;letter-spacing:-.035em;margin:18px 0 16px}
+  .hero h1 .hl{background:linear-gradient(120deg,var(--brand),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .sub{font-size:18px;color:var(--body);max-width:520px;margin-bottom:24px}
+  .cta-row{display:flex;gap:12px;flex-wrap:wrap}
+  .note{margin-top:15px;font-size:13.5px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .note b{color:var(--body);font-weight:700} .dot{width:4px;height:4px;border-radius:50%;background:#cfd4cd}
+  @media(max-width:900px){.hero-grid{grid-template-columns:1fr;gap:26px}.hero .sub{max-width:none}}
 
-    /* Demo (A4.3): vídeo cuando exista; demo interactiva A4.7 mientras tanto */
-    .demo-wrap { max-width:900px; margin:0 auto; }
-    .demo-video { width:100%; border-radius:var(--r-xl); border:1px solid var(--border); box-shadow:var(--shadow-lg); display:block; }
-    /* A4.7 — Demo interactiva "dos actos" */
-    .idemo-stage { display:grid; grid-template-columns:auto 1fr; gap:34px; align-items:center;
-      background:var(--surface); border:1px solid var(--border); border-radius:var(--r-xl);
-      padding:28px; box-shadow:var(--shadow-lg); }
-    .idemo-phone { position:relative; width:min(270px, 72vw); border-radius:34px; background:#0f1c17; padding:9px;
-      box-shadow:0 20px 50px -16px rgba(16,24,40,.35); margin:0 auto; }
-    .idemo-screen { position:relative; border-radius:26px; overflow:hidden; aspect-ratio:390/800; background:var(--bg); }
-    .idemo-screen img { display:block; width:100%; }
-    .idemo-hotspot { position:absolute; transform:translate(-50%,-50%); background:var(--brand); color:#fff;
-      border:none; border-radius:var(--r-full); padding:10px 16px; font:inherit; font-weight:700; font-size:13px;
-      cursor:pointer; box-shadow:var(--shadow-btn); display:flex; align-items:center; gap:8px; white-space:nowrap; z-index:3; }
-    .idemo-pulse { width:9px; height:9px; border-radius:50%; background:#fff; position:relative; flex-shrink:0; }
-    .idemo-pulse::after { content:""; position:absolute; inset:-6px; border-radius:50%; border:2px solid rgba(255,255,255,.8);
-      animation:ipulse 1.6s ease-out infinite; }
-    @keyframes ipulse { 0%{transform:scale(.6);opacity:1} 100%{transform:scale(1.6);opacity:0} }
-    .idemo-caption { font-size:17px; font-weight:700; color:var(--ink); min-height:52px; }
-    .idemo-progress { display:flex; align-items:center; gap:8px; margin:14px 0 22px; }
-    .idemo-dot { width:26px; height:6px; border-radius:var(--r-full); background:var(--border); border:none; cursor:pointer; padding:0; transition:background .2s; }
-    .idemo-dot.on { background:var(--brand); }
-    .idemo-pause { margin-left:6px; border:1px solid var(--border); background:var(--surface); border-radius:50%;
-      width:28px; height:28px; cursor:pointer; font-size:12px; line-height:1; }
-    .idemo-explore-label { font-size:11.5px; font-weight:800; letter-spacing:.06em; color:var(--muted); text-transform:uppercase; margin-bottom:10px; }
-    .idemo-chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; }
-    .idemo-chipbtn { border:1px solid var(--border); background:var(--surface); border-radius:var(--r-full);
-      padding:8px 14px; font:inherit; font-size:13.5px; font-weight:600; color:var(--ink); cursor:pointer; transition:border-color .15s, background .15s; }
-    .idemo-chipbtn:hover { border-color:var(--brand); }
-    .idemo-chipbtn.on { background:var(--brand-tint); border-color:var(--brand); color:var(--brand-tint-ink, #065f46); }
-    .idemo-cta { width:100%; }
-    /* Contenidos recreados dentro del móvil */
-    /* Regla del Importe: el dinero en tinta, nunca en verde */
-    .idemo-chip-money { position:absolute; top:16%; left:50%; transform:translateX(-50%); background:var(--surface);
-      color:var(--ink); border:1px solid var(--border); font-size:12.5px; font-weight:700; border-radius:var(--r-full); padding:7px 13px; box-shadow:var(--shadow-md); }
-    .idemo-mock { padding:46px 12px 0; }
-    .idemo-mock-card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:13px; }
-    .idemo-mock-title { font-size:12px; font-weight:800; color:var(--ink); margin-bottom:8px; }
-    .idemo-mock-line { display:flex; justify-content:space-between; font-size:11px; color:var(--body); padding:6px 2px; border-bottom:1px solid var(--border); }
-    .idemo-mock-line strong { color:var(--ink); font-variant-numeric:tabular-nums; }
-    .idemo-mock-total { display:flex; justify-content:space-between; padding-top:9px; font-size:13px; font-weight:800; color:var(--ink); }
-    .idemo-wa { background:#e5ddd5; min-height:100%; padding:40px 10px 14px; display:flex; flex-direction:column; gap:8px; }
-    .idemo-wa-head { position:absolute; top:0; left:0; right:0; background:#075e54; color:#fff; font-size:12.5px; font-weight:700; padding:12px 14px 8px; }
-    .idemo-wa-bubble { background:#fff; border-radius:10px; padding:9px 11px; font-size:11.5px; color:#111; max-width:88%;
-      box-shadow:0 1px 1px rgba(0,0,0,.08); line-height:1.45; }
-    .idemo-wa-out { background:#dcf8c6; align-self:flex-end; }
-    .idemo-wa-btn { margin-top:8px; border-top:1px solid #eee; padding-top:7px; color:#00a884; font-weight:700; text-align:center; font-size:11.5px; }
-    .idemo-wa-shot { width:74%; margin:6px auto 0; border-radius:10px; border:1px solid var(--border); }
-    .idemo-paid { position:absolute; inset:0; background:rgba(15,28,23,.55); display:flex; flex-direction:column;
-      align-items:center; justify-content:center; gap:14px; z-index:2; }
-    .idemo-paid-check { width:74px; height:74px; border-radius:50%; background:var(--brand); color:#fff; font-size:38px;
-      font-weight:800; display:flex; align-items:center; justify-content:center; animation:ipop .45s ease; }
-    @keyframes ipop { 0%{transform:scale(.3);opacity:0} 70%{transform:scale(1.12)} 100%{transform:scale(1);opacity:1} }
-    .idemo-paid-toast { background:#fff; border-radius:var(--r-full); padding:10px 16px; font-size:13.5px; font-weight:700; color:var(--ink); box-shadow:var(--shadow-lg); }
-    @media (max-width:840px){ .idemo-stage { grid-template-columns:1fr; padding:20px 16px; } .idemo-caption { min-height:0; text-align:center; }
-      .idemo-progress { justify-content:center; } .idemo-chips { justify-content:center; } }
-    @media (prefers-reduced-motion: reduce){ .idemo-pulse::after, .idemo-paid-check { animation:none; } }
+  .stage{position:relative;min-height:440px}
+  .beat-label{position:absolute;top:-4px;left:4px;z-index:6;display:flex;align-items:center;gap:9px;background:var(--surface);
+    border:1px solid var(--border);border-radius:var(--r-full);padding:8px 15px 8px 11px;box-shadow:var(--sh-md);font-size:13px;font-weight:700;color:var(--ink)}
+  .beat-label .pulse{width:7px;height:7px;border-radius:50%;background:var(--brand);position:relative;flex-shrink:0}
+  .beat-label .pulse::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:2px solid rgba(22,163,74,.5);animation:pulse 1.7s ease-out infinite}
+  @keyframes pulse{0%{transform:scale(.5);opacity:1}100%{transform:scale(1.7);opacity:0}}
+  .lbls{position:relative;min-width:172px;height:18px}
+  .lbls span{position:absolute;left:0;top:0;white-space:nowrap;opacity:0} .lbls span:nth-child(1){opacity:1}
+  .win{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--sh-xl);overflow:hidden;margin-top:24px}
+  .win-bar{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border);background:#fcfdfc}
+  .traffic{display:flex;gap:6px;flex-shrink:0} .traffic i{width:11px;height:11px;border-radius:50%;display:block}
+  .traffic i:nth-child(1){background:#f6685e}.traffic i:nth-child(2){background:#f9bd4e}.traffic i:nth-child(3){background:#61c454}
+  .urlbar{flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-full);font-size:11.5px;color:var(--muted);padding:5px 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .win-body{display:grid;grid-template-columns:52px 1fr;min-height:330px}
+  .side{background:#0f1c17;display:flex;flex-direction:column;align-items:center;gap:15px;padding:15px 0}
+  .side .s-logo{width:24px;height:24px;border-radius:8px;background:linear-gradient(135deg,var(--brand-bright),var(--cyan))}
+  .side i{width:19px;height:19px;border-radius:6px;background:rgba(255,255,255,.14)} .side i.on{background:rgba(34,197,94,.9)}
+  .panel{padding:18px 20px;position:relative;min-width:0}
+  .panel-h{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .panel-h .ttl{font-size:15px;font-weight:800;color:var(--ink)} .panel-h .who{font-size:12px;color:var(--muted)}
+  .doc{margin-top:13px;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .doc-row{display:grid;grid-template-columns:1fr auto;gap:12px;padding:11px 14px;font-size:13px;color:var(--body);border-bottom:1px solid var(--border)}
+  .doc-row .m{color:var(--ink);font-weight:700} .doc-row.tax{background:#fbfcfb;color:var(--muted);font-size:12px}
+  .doc-total{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;background:#fbfcfb}
+  .doc-total span{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .doc-total b{font-size:20px;font-weight:800;color:var(--ink)}
+  .panel-cta{margin-top:15px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .send-btn{display:inline-flex;align-items:center;gap:8px;background:var(--brand);color:#fff;font-weight:700;font-size:13px;border-radius:var(--r-full);padding:10px 16px;box-shadow:0 6px 14px -6px rgba(22,163,74,.55)}
+  .rev-badge{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--brand-700);background:var(--tint);border:1px solid #bbf7d0;border-radius:var(--r-full);padding:6px 12px;opacity:0}
+  .phone{position:absolute;right:-4px;bottom:-14px;width:214px;z-index:5;border-radius:34px;background:#0f1c17;padding:8px;box-shadow:var(--sh-xl);transform:translateY(10px) rotate(1.5deg)}
+  .phone::before{content:"";position:absolute;top:8px;left:50%;transform:translateX(-50%);width:76px;height:18px;background:#0f1c17;border-radius:0 0 12px 12px;z-index:3}
+  .screen{position:relative;border-radius:27px;overflow:hidden;background:#e6ded7;height:392px}
+  .scr-idle{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#8a9a92;background:#eae3dc}
+  .scr-idle .rm{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--brand-bright),var(--cyan));opacity:.5} .scr-idle span{font-size:11px;font-weight:700}
+  .wa{position:absolute;inset:0;display:flex;flex-direction:column;background:#e6ded7;opacity:0}
+  .wa-top{background:#0b7d6e;color:#fff;padding:32px 12px 10px;display:flex;align-items:center;gap:9px}
+  .wa-av{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+  .wa-top .n{font-size:12.5px;font-weight:700}.wa-top .st{font-size:10px;opacity:.8}
+  .wa-body{flex:1;padding:14px 11px;display:flex;flex-direction:column;gap:9px;justify-content:flex-end}
+  .bubble{background:#fff;border-radius:12px;padding:10px 12px;font-size:11.5px;color:#1f2a25;line-height:1.5;box-shadow:0 1px 1px rgba(0,0,0,.08);max-width:92%}
+  .bubble .b-t{font-weight:700;color:var(--ink)} .bubble .b-money{font-weight:800;color:var(--ink);font-size:13px}
+  .bubble-btn{margin-top:9px;border-top:1px solid #eef0ee;padding-top:8px;text-align:center;color:#0b7d6e;font-weight:800;font-size:11.5px}
+  .sign{position:absolute;inset:0;background:#fff;opacity:0;display:flex;flex-direction:column}
+  .sign-h{padding:16px 14px 8px} .sign-h .k{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .sign-h .v{font-size:14px;font-weight:800;color:var(--ink);margin-top:3px}
+  .sign-pad{margin:8px 14px;flex:1;border:1.5px dashed #d7dbd5;border-radius:14px;position:relative;background:#fcfdfc}
+  .sign-pad svg{position:absolute;inset:0;width:100%;height:100%}
+  .sign-path{fill:none;stroke:#0f1c17;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:520;stroke-dashoffset:520}
+  .sign-ok{margin:0 14px 16px;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--tint);border:1px solid #bbf7d0;color:var(--brand-700);font-weight:800;font-size:12px;border-radius:var(--r-full);padding:9px;opacity:0}
+  .paid{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:linear-gradient(160deg,rgba(4,35,26,.74),rgba(6,95,70,.8));opacity:0}
+  .paid-check{width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,var(--brand-bright),var(--cyan));color:#fff;font-size:38px;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 30px -8px rgba(34,211,238,.6)}
+  .paid-toast{background:#fff;border-radius:var(--r-full);padding:10px 16px;font-size:13px;font-weight:800;color:var(--ink);box-shadow:var(--sh-lg)} .paid-toast .amt{color:var(--brand-700)}
+  @media(prefers-reduced-motion:no-preference){
+    .doc-row{animation:hRow 11s infinite} .send-btn{animation:hSend 11s infinite} .rev-badge{animation:hRev 11s infinite}
+    .scr-idle{animation:hIdle 11s infinite} .wa{animation:hWa 11s infinite} .sign{animation:hSign 11s infinite}
+    .sign-path{animation:hPath 11s infinite} .sign-ok{animation:hOk 11s infinite} .paid{animation:hPaid 11s infinite} .paid-check{animation:hPop 11s infinite}
+    .lbls span:nth-child(1){animation:hL1 11s infinite} .lbls span:nth-child(2){animation:hL2 11s infinite}
+    .lbls span:nth-child(3){animation:hL3 11s infinite} .lbls span:nth-child(4){animation:hL4 11s infinite}
+  }
+  @keyframes hRow{0%,2%{opacity:0;transform:translateY(6px)}5%,93%{opacity:1;transform:none}97%,100%{opacity:0}}
+  @keyframes hSend{0%,15%{background:var(--brand)}17%,100%{background:var(--brand-700)}}
+  @keyframes hRev{0%,55%{opacity:0}59%,100%{opacity:1}}
+  @keyframes hIdle{0%,12%{opacity:1}15%,100%{opacity:0}}
+  @keyframes hWa{0%,13%{opacity:0}16%,40%{opacity:1}44%,100%{opacity:0}}
+  @keyframes hSign{0%,40%{opacity:0}44%,66%{opacity:1}70%,100%{opacity:0}}
+  @keyframes hPath{0%,46%{stroke-dashoffset:520}57%,66%{stroke-dashoffset:0}70%,100%{stroke-dashoffset:520}}
+  @keyframes hOk{0%,58%{opacity:0}62%,66%{opacity:1}70%,100%{opacity:0}}
+  @keyframes hPaid{0%,66%{opacity:0}71%,92%{opacity:1}96%,100%{opacity:0}}
+  @keyframes hPop{0%,68%{transform:scale(.3);opacity:0}74%{transform:scale(1.12);opacity:1}78%,92%{transform:scale(1);opacity:1}96%,100%{opacity:0}}
+  @keyframes hL1{0%,13%{opacity:1}16%,100%{opacity:0}}
+  @keyframes hL2{0%,14%{opacity:0}17%,40%{opacity:1}43%,100%{opacity:0}}
+  @keyframes hL3{0%,42%{opacity:0}45%,64%{opacity:1}67%,100%{opacity:0}}
+  @keyframes hL4{0%,66%{opacity:0}69%,100%{opacity:1}}
+  @media(max-width:900px){.phone{right:6px;bottom:-8px;width:186px}.screen{height:334px}}
+  @media(max-width:560px){.win-body{grid-template-columns:44px 1fr}.phone{position:relative;right:auto;bottom:auto;margin:16px auto 0;transform:none;width:210px}.stage{min-height:0}.beat-label{position:static;margin-bottom:2px;display:inline-flex}}
 
-    /* Pricing */
-    .pricing { background:var(--bg); }
-    .price-card { max-width:380px; margin:0 auto; background:var(--surface); border:2px solid var(--brand); border-radius:var(--r-xl); padding:32px 28px; text-align:center; box-shadow:var(--shadow-lg); }
-    .price-card .tag { display:inline-block; background:var(--brand-tint); color:var(--brand-tint-ink); font-weight:700; font-size:12px; padding:5px 12px; border-radius:var(--r-full); margin-bottom:14px; }
-    .price-card .amount { font-size:46px; font-weight:800; letter-spacing:-1px; }
-    .price-card .amount span { font-size:16px; color:var(--muted); font-weight:600; }
-    .price-card ul { list-style:none; padding:0; margin:20px 0 24px; text-align:left; }
-    .price-card li { padding:7px 0 7px 28px; position:relative; font-size:15px; }
-    .price-card li::before { content:"✓"; position:absolute; left:0; color:var(--brand); font-weight:800; }
-    .price-card .yearly { font-size:13px; color:var(--muted); margin-top:12px; }
-    .price-card .founding { background:#fff7ed; border:1px solid #fed7aa; color:#b45309; font-size:13.5px;
-      border-radius:var(--r-md); padding:10px 12px; margin-bottom:16px; }
-    .price-card .fee-note { font-size:13px; color:var(--body); background:var(--bg); border-radius:var(--r-md);
-      padding:9px 12px; margin:0 0 18px; }
+  .trust{border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--surface)}
+  .trust-in{display:flex;flex-wrap:wrap;gap:14px 30px;align-items:center;justify-content:center;padding:18px 0}
+  .trust-item{display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--body);font-weight:600} .trust-item b{color:var(--ink);font-weight:800}
 
-    /* FAQ (A4.5) */
-    .faq { max-width:720px; margin:0 auto; }
-    .faq details { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg);
-      padding:0; margin-bottom:10px; box-shadow:var(--shadow-sm); overflow:hidden; }
-    .faq summary { list-style:none; cursor:pointer; padding:16px 48px 16px 18px; font-weight:700; color:var(--ink);
-      font-size:15.5px; position:relative; }
-    .faq summary::-webkit-details-marker { display:none; }
-    .faq summary::after { content:"+"; position:absolute; right:18px; top:50%; transform:translateY(-50%);
-      font-size:20px; color:var(--brand); font-weight:800; transition:transform .2s; }
-    .faq details[open] summary::after { transform:translateY(-50%) rotate(45deg); }
-    .faq .a { padding:0 18px 16px; color:var(--muted); font-size:14.5px; line-height:1.65; }
-    .faq summary:focus-visible { outline:none; box-shadow:var(--ring); border-radius:var(--r-lg); }
+  section{padding:74px 0}
+  .sec-head{text-align:center;max-width:640px;margin:0 auto 46px}
+  .sec-head h2{font-size:clamp(1.7rem,3.1vw,2.3rem);font-weight:800;letter-spacing:-.025em;margin:14px 0 12px}
+  .sec-head p{font-size:17px;color:var(--muted)} .sec-head .eyebrow{justify-content:center}
+  .sec-tint{background:var(--tintbg);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+  .sec-white{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 
-    /* CTA band */
-    .cta-band { background:linear-gradient(120deg,var(--brand-ink),#065f46); color:#fff; text-align:center; }
-    .cta-band h2 { color:#fff; }
-    .cta-band p { color:#a7f3d0; max-width:520px; margin:0 auto 26px; }
+  .try-stage{display:grid;grid-template-columns:1fr 300px;gap:40px;align-items:center;max-width:900px;margin:0 auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:34px;box-shadow:var(--sh-lg)}
+  .try-steps{display:flex;flex-direction:column;gap:4px}
+  .try-step{display:flex;align-items:flex-start;gap:13px;padding:12px;border-radius:14px;transition:background .2s} .try-step.on{background:var(--tint)}
+  .try-step .tnum-b{width:26px;height:26px;border-radius:50%;background:var(--surface);border:1.5px solid var(--border);color:var(--muted);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.2s}
+  .try-step.on .tnum-b{background:var(--brand);border-color:var(--brand);color:#fff} .try-step.done .tnum-b{background:var(--brand-700);border-color:var(--brand-700);color:#fff}
+  .try-step .tt{font-size:14.5px;font-weight:700;color:var(--ink)} .try-step .ts{font-size:12.5px;color:var(--muted)} .try-step.on .ts{color:var(--body)}
+  .try-reset{margin-top:10px;background:none;border:none;color:var(--brand-700);font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;padding:6px 0;display:inline-flex;align-items:center;gap:6px}
+  .iphone{position:relative;width:min(280px,calc(100vw - 78px));justify-self:center;border-radius:40px;background:#0f1c17;padding:9px;box-shadow:var(--sh-xl)}
+  .iphone::before{content:"";position:absolute;top:9px;left:50%;transform:translateX(-50%);width:92px;height:22px;background:#0f1c17;border-radius:0 0 14px 14px;z-index:5}
+  .iscreen{position:relative;border-radius:31px;overflow:hidden;background:var(--bg);height:540px}
+  .iscr{position:absolute;inset:0;opacity:0;visibility:hidden;transform:translateX(14px);transition:opacity .35s,transform .35s;display:flex;flex-direction:column} .iscr.on{opacity:1;visibility:visible;transform:none}
+  .iscr-pad{padding:32px 14px 16px;display:flex;flex-direction:column;gap:12px;height:100%;overflow:hidden}
+  .isbar{font-size:10.5px;color:var(--muted);text-align:center}
+  .card-lite{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--sh-sm)}
+  .cl-h{padding:11px 14px;border-bottom:1px solid var(--border);font-weight:800;font-size:13px;color:var(--ink);display:flex;justify-content:space-between;gap:8px}
+  .cl-r{display:flex;justify-content:space-between;gap:10px;padding:9px 14px;font-size:12px;color:var(--body);border-bottom:1px solid var(--border)} .cl-r b{color:var(--ink)}
+  .cl-r.anim{opacity:0;transform:translateY(6px)} .cl-r.anim.show{opacity:1;transform:none;transition:opacity .35s,transform .35s}
+  .cl-t{display:flex;justify-content:space-between;padding:11px 14px;background:#fbfcfb;font-weight:800;color:var(--ink)}
+  .ibtn{margin-top:6px;background:var(--brand);color:#fff;border:none;font-family:inherit;font-weight:800;font-size:15px;border-radius:14px;padding:15px;cursor:pointer;box-shadow:0 8px 18px -8px rgba(22,163,74,.6);display:flex;align-items:center;justify-content:center;gap:9px;transition:background .15s,transform .08s;animation:cta-pulse 1.8s ease-in-out infinite}
+  .ibtn:hover{background:var(--brand-700)} .ibtn:active{transform:translateY(1px)} .ibtn:focus-visible{outline:none;box-shadow:var(--ring)}
+  .ibtn--wa{background:#0b7d6e} .ibtn--wa:hover{background:#0a6b5e}
+  .iwa-top .n{font-size:12.5px;font-weight:700} .iwa-top .st{font-size:10px;opacity:.85}
+  @keyframes cta-pulse{0%,100%{box-shadow:0 8px 18px -8px rgba(22,163,74,.6),0 0 0 0 rgba(34,197,94,.5)}50%{box-shadow:0 8px 18px -8px rgba(22,163,74,.6),0 0 0 7px rgba(34,197,94,0)}}
+  .tap-hint{margin-top:2px;display:flex;align-items:center;justify-content:center;gap:6px;text-align:center;font-size:11.5px;font-weight:700;color:var(--brand-700)}
+  .tap-hint .chev{animation:chev 1.4s ease-in-out infinite} @keyframes chev{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+  .iwa{background:#e6ded7;flex:1;display:flex;flex-direction:column;margin:-32px -14px 0}
+  .iwa-top{background:#0b7d6e;color:#fff;padding:30px 12px 10px;display:flex;align-items:center;gap:9px}
+  .iwa-body{flex:1;padding:14px 11px;display:flex;flex-direction:column;gap:9px;justify-content:flex-end}
+  .ib{background:#fff;border-radius:12px;padding:10px 12px;font-size:12px;color:#1f2a25;line-height:1.5;box-shadow:0 1px 1px rgba(0,0,0,.08);max-width:92%}
+  .ib.out{align-self:flex-end;background:#dcf8c6} .ib .bt{font-weight:800;color:var(--ink)} .ib .bm{font-weight:800;color:var(--ink)}
+  .ipad-sign{margin:2px 0;height:118px;border:1.5px dashed #d7dbd5;border-radius:14px;position:relative;background:#fcfdfc}
+  .ipad-sign svg{position:absolute;inset:0;width:100%;height:100%}
+  .ipath{fill:none;stroke:#0f1c17;stroke-width:3.5;stroke-linecap:round;stroke-dasharray:560;stroke-dashoffset:560}
+  .ipad-sign.draw .ipath{animation:idraw 1.1s ease forwards} @keyframes idraw{to{stroke-dashoffset:0}}
+  .pm{display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid var(--border);border-radius:13px;padding:11px 13px;cursor:pointer;transition:.15s} .pm.sel{border-color:var(--brand);box-shadow:0 0 0 3px rgba(34,197,94,.16)}
+  .pm .pi{width:32px;height:32px;border-radius:9px;background:var(--tint);display:flex;align-items:center;justify-content:center;color:var(--brand-700);flex-shrink:0}
+  .pm .pt{font-weight:700;color:var(--ink);font-size:13.5px} .pm .psu{font-size:11px;color:var(--muted)}
+  .pm .pr{margin-left:auto;width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0} .pm.sel .pr{border-color:var(--brand);background:var(--brand);box-shadow:inset 0 0 0 3px #fff}
+  .idone{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:20px;margin:-32px -14px -16px;background:linear-gradient(165deg,#04231a,#0b7d6e);color:#fff}
+  .idone .ck{width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,var(--brand-bright),var(--cyan));color:#fff;font-size:44px;display:flex;align-items:center;justify-content:center;box-shadow:0 14px 34px -8px rgba(34,211,238,.6);animation:dpop .5s cubic-bezier(.2,.8,.3,1.3)}
+  @keyframes dpop{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+  .idone h4{color:#fff;font-size:19px} .idone p{color:#a7f3d0;font-size:13px}
+  .idone .toast{background:#fff;color:var(--ink);border-radius:var(--r-full);padding:9px 15px;font-weight:800;font-size:13px} .idone .toast .amt{color:var(--brand-700)}
+  @media(max-width:820px){.try-stage{grid-template-columns:1fr;gap:22px;padding:22px 16px}.try-steps{order:2}.iphone{order:1}}
+  @media(prefers-reduced-motion:reduce){.iscr{transition:none}.ibtn{animation:none}.cl-r.anim{opacity:1;transform:none}.tap-hint .chev{animation:none}}
 
-    /* Footer */
-    footer { padding:40px 0; border-top:1px solid var(--border); }
-    .foot-inner { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; }
-    .foot-links a { color:var(--muted); font-size:14px; margin-left:18px; }
-    .foot-links a:hover { color:var(--ink); }
-    .foot-copy { color:var(--muted); font-size:13px; }
+  .prods{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .prod{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:26px 24px;box-shadow:var(--sh-sm);overflow:hidden;transition:transform .24s cubic-bezier(.2,.7,.3,1),box-shadow .24s,border-color .24s}
+  .prod:hover{transform:translateY(-8px) scale(1.015);box-shadow:var(--sh-lg);border-color:#c9e9d3}
+  .prod .p-bg{position:absolute;right:-22px;bottom:-26px;width:150px;height:150px;color:var(--brand);opacity:.05;pointer-events:none;transition:opacity .28s,transform .35s cubic-bezier(.2,.7,.3,1)}
+  .prod:hover .p-bg{opacity:.12;transform:translate(-6px,-8px) rotate(-6deg) scale(1.06)}
+  .prod::after{content:"";position:absolute;inset:0;border-radius:inherit;background:radial-gradient(120% 90% at 100% 0,rgba(34,197,94,.12),transparent 55%);opacity:0;transition:opacity .28s;pointer-events:none} .prod:hover::after{opacity:1}
+  .prod .p-in{position:relative;z-index:1}
+  .prod .p-ic{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#e7f9ee,#d6f2e1);display:flex;align-items:center;justify-content:center;color:var(--brand-700);margin-bottom:16px;transition:transform .24s} .prod:hover .p-ic{transform:scale(1.08) rotate(-3deg)}
+  .prod h3{font-size:17px;font-weight:800;margin-bottom:8px} .prod p{font-size:14px;color:var(--muted);margin-bottom:14px}
+  .prod .p-link{font-size:13.5px;font-weight:800;color:var(--brand-700);display:inline-flex;align-items:center;gap:6px}
+  .prod .p-link .ar{transition:transform .2s} .prod:hover .p-link .ar{transform:translateX(4px)}
+  @media(max-width:860px){.prods{grid-template-columns:repeat(2,1fr)}} @media(max-width:560px){.prods{grid-template-columns:1fr}}
 
-    @media (max-width:640px){
-      .hero h1 { font-size:34px; }
-      .hero p.sub { font-size:17px; }
-      .nav-links a.text { display:none; }
-      h2.section-title { font-size:25px; }
-    }
+  .price-card{max-width:420px;margin:0 auto;background:var(--surface);border:1.5px solid var(--brand);border-radius:var(--r-xl);padding:34px 30px;box-shadow:var(--sh-lg);position:relative}
+  .founding{background:#fff7ed;border:1px solid #fed7aa;color:var(--amber);font-size:13px;font-weight:600;border-radius:var(--r-md);padding:11px 13px;margin-bottom:16px;text-align:center}
+  .price-tag{display:inline-block;background:var(--tint);color:var(--brand-700);font-weight:800;font-size:12px;padding:5px 13px;border-radius:var(--r-full);text-transform:uppercase;letter-spacing:.04em}
+  .price-amt{font-size:50px;font-weight:800;letter-spacing:-.03em;color:var(--ink);margin-top:12px} .price-amt span{font-size:16px;color:var(--muted);font-weight:600}
+  .price-card ul{list-style:none;padding:0;margin:20px 0 22px;display:flex;flex-direction:column;gap:11px}
+  .price-card li{padding-left:28px;position:relative;font-size:15px;color:var(--body)} .price-card li::before{content:"✓";position:absolute;left:0;top:-1px;color:var(--brand);font-weight:800}
+  .fee-note{font-size:13px;color:var(--body);background:var(--bg);border-radius:var(--r-md);padding:11px 13px;margin-bottom:18px;line-height:1.7} .fee-note b{color:var(--ink)}
+  .yearly{text-align:center;font-size:13px;color:var(--muted);margin-top:13px}
+
+  .faq{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+  details{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-sm);overflow:hidden}
+  summary{list-style:none;cursor:pointer;padding:17px 50px 17px 20px;font-weight:700;color:var(--ink);font-size:15.5px;position:relative}
+  summary::-webkit-details-marker{display:none} summary:focus-visible{outline:none;box-shadow:var(--ring)}
+  summary::after{content:"+";position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:21px;color:var(--brand);font-weight:800;transition:transform .2s}
+  details[open] summary::after{transform:translateY(-50%) rotate(45deg)}
+  .faq .a{padding:0 20px 18px;color:var(--muted);font-size:14.5px;line-height:1.65}
+
+  .cta-band{background:linear-gradient(125deg,#04231a 0%,#065f46 55%,#0b7d6e 100%);color:#fff;text-align:center;position:relative;overflow:hidden}
+  .cta-band::after{content:"";position:absolute;top:-40%;right:-10%;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(34,197,94,.4),transparent 65%)}
+  .cta-band h2{color:#fff;position:relative;font-size:clamp(1.7rem,3.1vw,2.3rem);letter-spacing:-.025em}
+  .cta-band p{color:#a7f3d0;max-width:520px;margin:14px auto 26px;position:relative}
+  .cta-band .btn-primary{background:#fff;color:var(--brand-ink);position:relative} .cta-band .btn-primary:hover{background:#ecfdf5}
+  footer{padding:34px 0;border-top:1px solid var(--border);background:var(--bg)}
+  .foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px}
+  .foot .c{color:var(--muted);font-size:13px} .foot .l a{color:var(--muted);font-size:14px;margin-left:18px} .foot .l a:hover{color:var(--ink)}
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease} .reveal.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none}}
+  @media(max-width:640px){
+    section{padding:50px 0} .sec-head{margin-bottom:32px} .sec-head h2{font-size:1.55rem} .sec-head p{font-size:15.5px}
+    .hero{padding:38px 0 34px} .hero .sub{font-size:16.5px}
+    .try-stage{padding:20px 14px} .iscreen{height:520px}
+    .prod{padding:22px 20px} .trust-in{gap:12px 22px;padding:16px 0} .trust-item{font-size:12.5px}
+  }
+  @media(max-width:380px){.iscreen{height:490px}}
   </style>
 </head>
 <body>
-  <header class="nav">
-    <div class="container nav-inner">
-      <a href="/" class="logo"><span class="logo-mark">YQ</span> YaQu</a>
-      <nav class="nav-links">
-        <a href="#como-funciona" class="text">Cómo funciona</a>
-        <a href="#precios" class="text">Precios</a>
-        <a href="/login.html" class="btn btn-ghost">Entrar</a>
-        <a href="/register.html" class="btn btn-ghost">Empezar gratis</a>
-      </nav>
+
+<div class="announce" id="announce" hidden>
+  <div class="wrap announce-in">
+    <span>Oferta de lanzamiento: <b>14,50&nbsp;€/mes para siempre</b> <span class="hide-sm">para los primeros profesionales</span></span>
+    <span class="sep">·</span><span>quedan <b id="ann-left">–</b> plazas</span><span class="sep">·</span><a href="#precios">Ver planes →</a>
+  </div>
+</div>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a href="/" class="logo"><span class="logo-mark">YQ</span> YaQu</a>
+    <nav class="nav-links">
+      <a href="#como" class="t">Cómo funciona</a><a href="#todo" class="t">Todo en uno</a><a href="#precios" class="t">Precios</a>
+      <a href="/login.html" class="btn btn-ghost">Entrar</a><a href="/register.html" class="btn btn-primary">Empieza gratis</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">El ERP por WhatsApp para los oficios</span>
+      <h1>Del presupuesto al cobro, <span class="hl">sin salir de WhatsApp.</span></h1>
+      <p class="sub">Crea el presupuesto en 30 segundos, tu cliente lo firma desde el móvil y te paga — con tarjeta, Bizum o transferencia. Y llevas clientes, gastos y facturas en el mismo sitio.</p>
+      <div class="cta-row"><a href="/register.html" class="btn btn-primary btn-lg">Empieza gratis</a><a href="#probar" class="btn btn-ghost btn-lg">Probar la demo</a></div>
+      <p class="note"><b>14 días gratis</b><span class="dot"></span>Sin tarjeta<span class="dot"></span>Listo en 5 minutos</p>
     </div>
-  </header>
 
-  <!-- HERO — A4.1: la promesa de cobro (gancho morosidad, master H5/H7) -->
-  <section class="hero">
-    <div class="container hero-grid">
-      <div>
-        <h1>¿Cuántas señales has dejado de cobrar este mes?<br/><span class="hl">Cobra antes de empezar.</span></h1>
-        <p class="sub">Presupuesto en 30 segundos → tu cliente lo firma desde su móvil → señal cobrada. Todo por WhatsApp, sin papeleo y sin perseguir a nadie.</p>
-        <div class="cta-row">
-          <a href="/register.html" class="btn btn-primary">Empieza gratis</a>
-          <a href="#demo" class="btn btn-ghost">Ver la demo de 60 s</a>
-        </div>
-        <p class="note">14 días gratis · Sin tarjeta · Listo en 5 minutos</p>
-      </div>
-      <div>
-        <div class="phone">
-          <img src="/img/landing/firma-390.png" width="390" height="800" alt="Tu cliente firma el presupuesto desde su móvil" loading="eager" fetchpriority="high"/>
-        </div>
-        <p class="phone-caption">Esto es lo que ve tu cliente: lo abre, lo firma y te paga la señal.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- DEMO — A4.3: vídeo de 60s cuando exista (V0-6); carrusel real mientras -->
-  <section id="demo" style="background:var(--bg); padding-top:56px; padding-bottom:56px">
-    <div class="container">
-      <h2 class="section-title">Míralo funcionando</h2>
-      <p class="section-sub">El flujo completo, con datos reales del producto.</p>
-      <div class="demo-wrap" id="demo-slot"></div>
-    </div>
-  </section>
-
-  <!-- CÓMO FUNCIONA — A4.2: 3 pasos con visual real por paso -->
-  <section id="como-funciona">
-    <div class="container">
-      <h2 class="section-title">De presupuesto a señal cobrada, sin salir de WhatsApp</h2>
-      <p class="section-sub">Tres pasos. Cero fricción. Tus clientes lo entienden a la primera.</p>
-      <div class="steps-flow">
-
-        <div class="step-row reveal">
-          <div class="step-copy">
-            <span class="step-num">1</span>
-            <h3>Crea el presupuesto en 30 segundos</h3>
-            <p>Elige del catálogo de tu oficio, ajusta cantidades y el total se calcula solo. También puedes dictarle a la IA qué necesita el cliente.</p>
+    <div class="stage" aria-label="Demostración: de presupuesto a cobro">
+      <div class="beat-label"><span class="pulse"></span><span class="lbls"><span>Presupuesto en 30 segundos</span><span>Enviado por WhatsApp</span><span>Tu cliente firma</span><span>Cobrado, sin perseguir a nadie</span></span></div>
+      <div class="win">
+        <div class="win-bar"><div class="traffic"><i></i><i></i><i></i></div><div class="urlbar">🔒 app.yaqu.app/presupuesto/nuevo</div></div>
+        <div class="win-body">
+          <div class="side"><div class="s-logo"></div><i class="on"></i><i></i><i></i><i></i><i></i></div>
+          <div class="panel">
+            <div class="panel-h"><div class="ttl">Nuevo presupuesto</div><div class="who">Cliente · José Luis Martín</div></div>
+            <div class="doc">
+              <div class="doc-row"><span>Instalación de descalcificador</span><span class="m tnum">690,00 €</span></div>
+              <div class="doc-row"><span>Mano de obra (3 h)</span><span class="m tnum">105,00 €</span></div>
+              <div class="doc-row tax"><span>IVA (21%)</span><span class="tnum">166,95 €</span></div>
+              <div class="doc-total"><span>Total</span><b class="tnum">961,95 €</b></div>
+            </div>
+            <div class="panel-cta">
+              <span class="send-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Enviar por WhatsApp</span>
+              <span class="rev-badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="#15803d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Firmado por el cliente</span>
+            </div>
           </div>
-          <div class="step-visual">
-            <div class="phone phone--sm">
-              <div class="mock" aria-label="Creando un presupuesto en YaQu">
-                <div class="mock-card">
-                  <div class="mock-title">Nuevo presupuesto · José Luis Martín</div>
-                  <div class="mock-line"><span>Instalación de descalcificador</span><strong>690,00 €</strong></div>
-                  <div class="mock-line"><span>Mano de obra (3 h)</span><strong>105,00 €</strong></div>
-                  <div class="mock-line"><span>IVA (21%)</span><strong>166,95 €</strong></div>
-                  <div class="mock-total"><span>Total</span><strong>961,95 €</strong></div>
-                </div>
-                <div class="mock-btn">Enviar por WhatsApp</div>
+        </div>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="scr-idle"><div class="rm"></div><span>YaQu</span></div>
+          <div class="wa">
+            <div class="wa-top"><span class="wa-av">JL</span><span><span class="n">José Luis Martín</span><br><span class="st">en línea</span></span></div>
+            <div class="wa-body"><div class="bubble"><span class="b-t">Fontanería López</span><br>Te he preparado tu presupuesto:<br><span class="b-money tnum">Presupuesto #128 · 961,95 €</span><div class="bubble-btn">Ver y firmar</div></div></div>
+          </div>
+          <div class="sign">
+            <div class="sign-h"><div class="k">Presupuesto #128</div><div class="v tnum">Total 961,95 €</div></div>
+            <div class="sign-pad"><svg viewBox="0 0 220 150" preserveAspectRatio="none"><path class="sign-path" d="M18 104 C40 60 52 128 74 96 S104 44 120 92 S150 118 176 66 196 84 204 72"/></svg></div>
+            <div class="sign-ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="#15803d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Firmado · Acepto</div>
+          </div>
+          <div class="paid"><div class="paid-check">✓</div><div class="paid-toast">Cobrado · <span class="amt tnum">961,95 €</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="trust">
+  <div class="wrap trust-in">
+    <div class="trust-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#16a34a" stroke-width="1.8"/><path d="m9 12 2 2 4-4" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg> Firma con <b>evidencia de quién aceptó y cuándo</b></div>
+    <div class="trust-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10V6l-8-4Z" stroke="#16a34a" stroke-width="1.8" stroke-linejoin="round"/></svg> Facturación <b>VeriFactu en certificación</b></div>
+    <div class="trust-item">🇪🇸 <b>Hecho en Madrid</b> para los oficios</div>
+    <div class="trust-item">Sin permanencia · <b>tus datos son tuyos</b></div>
+  </div>
+</div>
+
+<section id="probar" class="sec-tint">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">Pruébalo tú</span><h2>Haz el recorrido completo, paso a paso</h2><p>Pulsa el botón verde dentro del móvil y avanza — del presupuesto al pago, como lo viven tú y tu cliente.</p></div>
+    <div class="try-stage">
+      <div>
+        <div class="try-steps" id="trySteps">
+          <div class="try-step on" data-s="0"><span class="tnum-b">1</span><span><span class="tt">Creas el presupuesto</span><br><span class="ts">Del catálogo, en 30 segundos.</span></span></div>
+          <div class="try-step" data-s="1"><span class="tnum-b">2</span><span><span class="tt">Le llega por WhatsApp</span><br><span class="ts">Como un mensaje normal.</span></span></div>
+          <div class="try-step" data-s="2"><span class="tnum-b">3</span><span><span class="tt">Lo firma desde el móvil</span><br><span class="ts">Con el dedo. Queda registrado.</span></span></div>
+          <div class="try-step" data-s="3"><span class="tnum-b">4</span><span><span class="tt">Recibe la factura</span><br><span class="ts">Otro WhatsApp con el botón de pagar.</span></span></div>
+          <div class="try-step" data-s="4"><span class="tnum-b">5</span><span><span class="tt">Paga como quiera</span><br><span class="ts">Tarjeta, Bizum o transferencia.</span></span></div>
+        </div>
+        <button class="try-reset" id="tryReset" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v3h3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Volver a empezar</button>
+      </div>
+      <div class="iphone">
+        <div class="iscreen" id="iscreen">
+          <div class="iscr on" data-scr="0">
+            <div class="iscr-pad">
+              <div class="isbar">app.yaqu.app · Nuevo presupuesto</div>
+              <div class="card-lite">
+                <div class="cl-h"><span>Presupuesto #128</span><span class="tnum" id="miniTotal">—</span></div>
+                <div class="cl-r anim"><span>Instalación de descalcificador</span><b class="tnum">690,00 €</b></div>
+                <div class="cl-r anim"><span>Mano de obra (3 h)</span><b class="tnum">105,00 €</b></div>
+                <div class="cl-r anim"><span>IVA (21%)</span><b class="tnum">166,95 €</b></div>
+                <div class="cl-t"><span>Total</span><span class="tnum">961,95 €</span></div>
               </div>
+              <div class="tap-hint">Tu turno · pulsa el botón <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="m6 9 6 6 6-6" stroke="#15803d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <button class="ibtn ibtn--wa" type="button" data-go="1"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Enviar por WhatsApp</button>
             </div>
           </div>
-        </div>
-
-        <div class="step-row rev reveal">
-          <div class="step-copy">
-            <span class="step-num">2</span>
-            <h3>Tu cliente lo firma desde su móvil</h3>
-            <p>Le llega por WhatsApp con un botón. Lo abre, lo revisa y firma con el dedo. Tú recibes el aviso al momento — con evidencia de quién aceptó y cuándo.</p>
-          </div>
-          <div class="step-visual">
-            <div class="phone phone--sm">
-              <img src="/img/landing/firma-390.png" width="390" height="800" alt="El cliente firma el presupuesto desde su móvil" loading="lazy"/>
+          <div class="iscr" data-scr="1">
+            <div class="iscr-pad">
+              <div class="iwa">
+                <div class="iwa-top"><span class="wa-av">FL</span><span><span class="n">Fontanería López</span><br><span class="st">cuenta de empresa</span></span></div>
+                <div class="iwa-body"><div class="ib"><span class="bt">Fontanería López</span><br>Hola José Luis. Te he preparado tu presupuesto:<br><span class="bm tnum">Presupuesto #128 · 961,95 €</span></div></div>
+              </div>
+              <button class="ibtn" type="button" data-go="2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 5h16v11H8l-4 4V5Z" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"/></svg> Abrir y firmar</button>
+              <div class="tap-hint">Esto es lo que hace tu cliente <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="m6 9 6 6 6-6" stroke="#15803d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
             </div>
           </div>
-        </div>
-
-        <div class="step-row reveal">
-          <div class="step-copy">
-            <span class="step-num">3</span>
-            <h3>Cobra la señal antes de empezar</h3>
-            <p>Tarjeta, Bizum o transferencia — él elige, tú cobras antes de descargar la furgoneta. Y los pendientes se reclaman solos.</p>
-          </div>
-          <div class="step-visual">
-            <div class="phone phone--sm">
-              <img src="/img/landing/pago-390.png" width="390" height="800" alt="El cliente elige cómo pagar la señal" loading="lazy"/>
+          <div class="iscr" data-scr="2">
+            <div class="iscr-pad">
+              <div class="isbar">Presupuesto #128 · Fontanería López</div>
+              <div class="card-lite"><div class="cl-h"><span>Total a aceptar</span><span class="tnum">961,95 €</span></div><div class="cl-r"><span>Instalación + mano de obra</span><b class="tnum">795,00 €</b></div><div class="cl-r"><span>IVA (21%)</span><b class="tnum">166,95 €</b></div></div>
+              <div style="font-size:12px;color:var(--muted);font-weight:700;margin-top:2px">Firma para aceptar</div>
+              <div class="ipad-sign" id="ipadSign"><svg viewBox="0 0 250 120" preserveAspectRatio="none"><path class="ipath" d="M20 82 C44 40 58 104 82 74 S116 34 134 78 S168 100 196 54 220 70 232 58"/></svg></div>
+              <button class="ibtn" type="button" id="signBtn" data-sign="1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 20 20 4M14 4h6v6" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg> Firmar y aceptar</button>
             </div>
           </div>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- BENEFICIOS -->
-  <section style="background:var(--bg)">
-    <div class="container">
-      <h2 class="section-title">Hecho para quien trabaja con las manos</h2>
-      <p class="section-sub">Menos administración, más trabajos cerrados.</p>
-      <div class="grid">
-        <div class="card">
-          <div class="ico">⚡</div>
-          <h3>Cotizaciones en 30 segundos</h3>
-          <p>Catálogo por oficio precargado. Selecciona, ajusta y envía.</p>
-        </div>
-        <div class="card">
-          <div class="ico">✍️</div>
-          <h3>Firma digital legal</h3>
-          <p>El cliente firma desde el móvil. Queda registrado quién aceptó y cuándo.</p>
-        </div>
-        <div class="card">
-          <div class="ico">💳</div>
-          <h3>Cobro integrado</h3>
-          <p>Tarjeta, Bizum o transferencia. Cobra la señal antes de empezar el trabajo.</p>
-        </div>
-        <div class="card">
-          <div class="ico">🔔</div>
-          <h3>Recordatorios que persiguen solos</h3>
-          <p>Presupuestos sin respuesta y cobros pendientes se reclaman automáticamente. Tú, a lo tuyo.</p>
-        </div>
-        <div class="card">
-          <div class="ico">🤖</div>
-          <h3>IA que cotiza por ti</h3>
-          <p>Describe el trabajo y YaQu te propone las líneas y el mensaje.</p>
-        </div>
-        <div class="card">
-          <div class="ico">📊</div>
-          <h3>Sabes cuánto ganas</h3>
-          <p>Gastos, márgenes por cotización y resumen semanal de tu negocio.</p>
+          <div class="iscr" data-scr="3">
+            <div class="iscr-pad">
+              <div class="iwa">
+                <div class="iwa-top"><span class="wa-av">FL</span><span><span class="n">Fontanería López</span><br><span class="st">cuenta de empresa</span></span></div>
+                <div class="iwa-body"><div class="ib out"><span class="bt">Tú</span><br>¡Acepto!</div><div class="ib"><span class="bt">Fontanería López</span><br>¡Genial! Aquí tienes tu factura. Págala cuando quieras:<br><span class="bm tnum">A pagar · 961,95 €</span></div></div>
+              </div>
+              <button class="ibtn" type="button" data-go="4"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="2.5" y="5" width="19" height="14" rx="2.5" stroke="#fff" stroke-width="1.8"/><path d="M2.5 9.5h19" stroke="#fff" stroke-width="1.8"/></svg> Pagar 961,95 €</button>
+              <div class="tap-hint">Tu cliente paga desde el chat <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="m6 9 6 6 6-6" stroke="#15803d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+          </div>
+          <div class="iscr" data-scr="4">
+            <div class="iscr-pad">
+              <div class="isbar">Pago seguro · Fontanería López</div>
+              <div class="card-lite"><div class="cl-h"><span>Factura #F-128</span></div><div class="cl-t"><span>A pagar</span><span class="tnum">961,95 €</span></div></div>
+              <div style="display:flex;flex-direction:column;gap:9px">
+                <div class="pm sel" data-pm><span class="pi"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="2.5" y="5" width="19" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 9.5h19" stroke="currentColor" stroke-width="1.8"/></svg></span><span><span class="pt">Tarjeta</span><br><span class="psu">Al instante</span></span><span class="pr"></span></div>
+                <div class="pm" data-pm><span class="pi"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="6" y="2.5" width="12" height="19" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M10.5 18.5h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><span><span class="pt">Bizum</span><br><span class="psu">Sin comisión</span></span><span class="pr"></span></div>
+                <div class="pm" data-pm><span class="pi"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M3 9 12 4l9 5M4 9v9h16V9M4 21h16" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><span><span class="pt">Transferencia</span><br><span class="psu">De toda la vida</span></span><span class="pr"></span></div>
+              </div>
+              <button class="ibtn" type="button" data-go="5">Pagar 961,95 €</button>
+            </div>
+          </div>
+          <div class="iscr" data-scr="5">
+            <div class="iscr-pad"><div class="idone"><div class="ck">✓</div><div><h4>¡Cobrado!</h4><p>Ya tienes tu dinero — sin perseguir a nadie.</p></div><div class="toast">Recibido · <span class="amt tnum">961,95 €</span></div></div></div>
+          </div>
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- PRECIOS — A4.4: plan único W1 + founding con contador REAL -->
-  <section id="precios" class="pricing">
-    <div class="container">
-      <h2 class="section-title">Un solo plan. Todo incluido.</h2>
-      <p class="section-sub">14 días gratis, sin tarjeta. Y sin letra pequeña.</p>
-      <div class="price-card">
-        <div id="founding-banner" class="founding" hidden>
-          🔥 Oferta de lanzamiento: <strong>14,50 €/mes para siempre</strong> — quedan <strong id="founding-left">–</strong> de 20 plazas
-        </div>
-        <span class="tag">YaQu Pro</span>
-        <div class="amount">29 €<span> /mes</span></div>
-        <ul>
-          <li>Presupuestos y clientes ilimitados</li>
-          <li>Envío por WhatsApp + firma digital</li>
-          <li>Cobro con tarjeta, Bizum y transferencia</li>
-          <li>Recordatorios automáticos que persiguen solos</li>
-          <li>Catálogo por oficio y asistente de IA</li>
-          <li>Equipo con roles (admin / técnico)</li>
-          <li>Soporte por WhatsApp</li>
-        </ul>
-        <p class="fee-note">Solo si cobras con tarjeta: 0,9&nbsp;%. Bizum y transferencia: <strong>0&nbsp;€</strong>.</p>
-        <a href="/register.html" class="btn btn-primary" style="width:100%">Empieza gratis</a>
-        <p class="yearly">o 290 €/año (2 meses gratis)</p>
-      </div>
+<section id="como" class="sec-white">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">Cómo funciona</span><h2>Tres pasos. Cero fricción.</h2><p>Tus clientes lo entienden a la primera — no tienen que instalar nada.</p></div>
+    <div class="prods">
+      <div class="prod reveal"><div class="p-in"><div class="p-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></div><h3>1 · Crea el presupuesto</h3><p>Del catálogo de tu oficio, ajustas cantidades y el total se calcula solo. O se lo dictas a la IA.</p></div></div>
+      <div class="prod reveal"><div class="p-in"><div class="p-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 5h16v11H8l-4 4V5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 10h8M8 13h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div><h3>2 · Firma por WhatsApp</h3><p>Le llega como un mensaje normal con un botón. Lo abre, lo revisa y firma con el dedo.</p></div></div>
+      <div class="prod reveal"><div class="p-in"><div class="p-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="2.5" y="5" width="19" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 9.5h19" stroke="currentColor" stroke-width="1.8"/></svg></div><h3>3 · Cobra</h3><p>Tarjeta, Bizum o transferencia — él elige, tú cobras. Los pendientes se reclaman solos.</p></div></div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- FAQ — A4.5: objeciones reales (H6 del master) -->
-  <section id="faq">
-    <div class="container">
-      <h2 class="section-title">Preguntas de compañeros de oficio</h2>
-      <p class="section-sub">Las que nos hacen de verdad.</p>
-      <div class="faq">
-        <details>
-          <summary>Ya mando presupuestos por WhatsApp gratis. ¿Para qué esto?</summary>
-          <div class="a">Exacto — por eso esto ES WhatsApp. La diferencia: el tuyo no firma, no cobra la señal y no persigue al que no contesta. YaQu hace las tres cosas solas.</div>
-        </details>
-        <details>
-          <summary>¿Mis clientes tienen que instalar algo? Muchos son mayores.</summary>
-          <div class="a">Nada. Les llega un WhatsApp normal con un enlace: lo abren, ven el presupuesto y tienen dos botones — Firmar y Pagar. Y si prefieren transferencia de toda la vida, también vale: tú llevas el control igual.</div>
-        </details>
-        <details>
-          <summary>Yo nunca pido señal…</summary>
-          <div class="a">¿Cuántas veces te han anulado un trabajo con el material ya comprado? Pruébalo solo en UN trabajo grande y decides. La señal cobrada antes de empezar cambia el negocio.</div>
-        </details>
-        <details>
-          <summary>¿El 0,9 % de la tarjeta no es mucho?</summary>
-          <div class="a">Son 4,50 € en una señal de 500 € — por tener el dinero esa misma noche, sin perseguir a nadie. Y si tu cliente paga por Bizum o transferencia: 0 €.</div>
-        </details>
-        <details>
-          <summary>Hay una app de presupuestos por 9,99 €…</summary>
-          <div class="a">La de 9,99 te hace el papel. Esta te trae el dinero: firma, señal cobrada y recordatorios que persiguen solos. ¿Cuánto te deben ahora mismo de trabajos ya hechos? Eso es lo que esto te ahorra.</div>
-        </details>
-        <details>
-          <summary>El Kit Digital me da un programa gratis…</summary>
-          <div class="a">Lo gratis te hace papeles. ¿Te consigue el SÍ del cliente y te cobra la señal por WhatsApp antes de empezar? Eso es lo que hace YaQu.</div>
-        </details>
-        <details>
-          <summary>¿Me vale para VeriFactu?</summary>
-          <div class="a">Te contestamos como fabricante: la facturación VeriFactu está construida y en certificación — con declaración responsable del productor, que es lo que tu gestor te pedirá. Por ley no podemos activarla hasta cerrarla; por eso la beta es de presupuestos y cobros. Los primeros usuarios la estrenarán al cerrarse, sin cambio de precio. Si quieres, le pasamos a tu gestor el detalle técnico cuando lo publiquemos.</div>
-        </details>
-        <details>
-          <summary>No tengo tiempo de aprender otro programa.</summary>
-          <div class="a">Está hecho para usarse con dos dedos desde la furgoneta. El primer presupuesto lo haces en 30 segundos eligiendo del catálogo de tu oficio — y si te atascas, te ayudamos por WhatsApp.</div>
-        </details>
-        <details>
-          <summary>¿Y si un día lo dejo?</summary>
-          <div class="a">Sin permanencia. Tus datos son tuyos: clientes, presupuestos y documentos se exportan en CSV cuando quieras.</div>
-        </details>
-      </div>
+<section id="todo" class="sec-tint">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">Todo en uno</span><h2>Seis herramientas. Una sola app.</h2><p>Desde tu primer presupuesto hasta llevar todo el negocio — sin saltar entre programas.</p></div>
+    <div class="prods">
+      <div class="prod reveal"><svg class="p-bg" viewBox="0 0 24 24" fill="none"><path d="M6 3h9l4 4v14H6V3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M14 3v5h5M9 13h6M9 16h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><div class="p-in"><div class="p-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6 3h9l4 4v14H6V3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 3v5h5M9 13h6M9 16h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div><h3>Presupuestos y firma</h3><p>Créalos en 30 s del catálogo de tu oficio, con IA, y fírmalos por WhatsApp con validez legal.</p><span class="p-link">Ver más <span class="ar">→</span></span></div></div>
+      <div class="prod reveal"><svg class="p-bg" viewBox="0 0 24 24" fill="none"><rect x="2.5" y="5" width="19" height="14" rx="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 9.5h19" stroke="currentColor" stroke-width="1.4"/></svg><div class="p-in"><div class="p-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="2.5" y="5" width="19" height="14" rx="2.5" stroke="currentColor" stroke-width="1.7"/><path d="M2.5 9.5h19" stroke="currentColor" stroke-width="1.7"/></svg></div><h3>Cobros</h3><p>Tarjeta, Bizum o transferencia. Cobra trabajos completos o por adelantado, con recordatorios que persiguen solos.</p><span class="p-link">Ver más <span class="ar">→</span></span></div></div>
+      <div class="prod reveal"><svg class="p-bg" viewBox="0 0 24 24" fill="none"><path d="M20 12a8 8 0 1 1-3-6.24" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M8 12h4V8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="p-in"><div class="p-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 12a8 8 0 1 1-3-6.24" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M8 12h4V8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h3>WhatsApp y bot</h3><p>Envía, recuerda y deja que el bot atienda a tus clientes y recoja solicitudes de presupuesto solo.</p><span class="p-link">Ver más <span class="ar">→</span></span></div></div>
+      <div class="prod reveal"><svg class="p-bg" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.4"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 6.5a3 3 0 0 1 0 5.5M18.5 19a4.6 4.6 0 0 0-3-4.3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><div class="p-in"><div class="p-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 6.5a3 3 0 0 1 0 5.5M18.5 19a4.6 4.6 0 0 0-3-4.3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div><h3>Clientes y proveedores</h3><p>Fichas, historial y contactos de todos, siempre a mano y ligados a sus documentos.</p><span class="p-link">Ver más <span class="ar">→</span></span></div></div>
+      <div class="prod reveal"><svg class="p-bg" viewBox="0 0 24 24" fill="none"><path d="m12 2 8 4.5v9L12 20l-8-4.5v-9L12 2Zm-8 4.5 8 4.5 8-4.5M12 20v-9" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg><div class="p-in"><div class="p-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="m12 2 8 4.5v9L12 20l-8-4.5v-9L12 2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m4 6.5 8 4.5 8-4.5M12 20v-9" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></div><h3>Productos y catálogo</h3><p>Tus precios y servicios listos para reutilizar en cada presupuesto — sin volver a teclearlos.</p><span class="p-link">Ver más <span class="ar">→</span></span></div></div>
+      <div class="prod reveal"><svg class="p-bg" viewBox="0 0 24 24" fill="none"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><div class="p-in"><div class="p-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div><h3>Gastos, informes y equipo</h3><p>Márgenes por trabajo, gastos y resumen semanal. Y tu equipo con roles (admin / técnico).</p><span class="p-link">Ver más <span class="ar">→</span></span></div></div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- CTA FINAL -->
-  <section class="cta-band">
-    <div class="container">
-      <h2 class="section-title">Tu próxima cotización, lista en 30 segundos</h2>
-      <p>Únete a los profesionales que cierran más trabajos cobrando por adelantado, sin perseguir pagos.</p>
-      <a href="/register.html" class="btn btn-primary">Empezar gratis</a>
+<section id="precios" class="sec-white">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">Precios</span><h2>Un solo plan. Todo incluido.</h2><p>14 días gratis, sin tarjeta. Y sin letra pequeña.</p></div>
+    <div class="price-card">
+      <div class="founding" id="founding-banner" hidden>Oferta fundadores: <b>14,50 €/mes para siempre</b> — quedan <b id="founding-left">–</b> plazas</div>
+      <span class="price-tag">YaQu Pro</span>
+      <div class="price-amt tnum">29 €<span> /mes</span></div>
+      <ul><li>Presupuestos y clientes ilimitados</li><li>Envío por WhatsApp + firma digital</li><li>Cobro con tarjeta, Bizum y transferencia</li><li>Bot de WhatsApp y solicitudes entrantes</li><li>Clientes, proveedores, productos y gastos</li><li>Informes, márgenes y equipo con roles</li></ul>
+      <p class="fee-note">Solo si cobras con tarjeta: <b>0,9 %</b>.<br>Bizum y transferencia: <b class="nowrap">0 €</b>.</p>
+      <a href="/register.html" class="btn btn-primary" style="width:100%">Empieza gratis</a>
+      <p class="yearly">o 290 €/año (2 meses gratis)</p>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- FOOTER — A4.5: serio y con lo legal a mano -->
-  <footer>
-    <div class="container foot-inner">
-      <div class="foot-copy">© 2026 YaQu · Hecho en Madrid para los oficios 🇪🇸</div>
-      <div class="foot-links">
-        <a href="#como-funciona">Cómo funciona</a>
-        <a href="#precios">Precios</a>
-        <a href="#faq">FAQ</a>
-        <a href="/login.html">Entrar</a>
-        <a href="/privacidad">Privacidad</a>
-        <a href="/terminos">Términos</a>
-      </div>
+<section id="faq" class="sec-tint">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">Preguntas</span><h2>Preguntas de compañeros de oficio</h2><p>Las que nos hacen de verdad.</p></div>
+    <div class="faq">
+      <details open><summary>Ya mando presupuestos por WhatsApp gratis. ¿Para qué esto?</summary><div class="a">Exacto — por eso esto ES WhatsApp. La diferencia: el tuyo no firma, no cobra y no persigue al que no contesta. Y aquí además llevas clientes, gastos y facturas en el mismo sitio.</div></details>
+      <details><summary>¿Mis clientes tienen que instalar algo? Muchos son mayores.</summary><div class="a">Nada. Les llega un WhatsApp normal con un enlace: lo abren, ven el presupuesto y tienen dos botones — Firmar y Pagar. Y si prefieren transferencia de toda la vida, también vale.</div></details>
+      <details><summary>¿Sirve para llevar todo mi negocio o solo presupuestos?</summary><div class="a">Todo: presupuestos, firma y cobro, más clientes, proveedores, productos, gastos, informes y equipo. Es tu herramienta de gestión completa, no solo para cotizar.</div></details>
+      <details><summary>¿Me vale para VeriFactu?</summary><div class="a">Te contestamos como fabricante: la facturación VeriFactu está construida y en certificación — con declaración responsable del productor, que es lo que tu gestor te pedirá. Los primeros usuarios la estrenarán al cerrarse, sin cambio de precio.</div></details>
+      <details><summary>¿Y si un día lo dejo?</summary><div class="a">Sin permanencia. Tus datos son tuyos: clientes, presupuestos y documentos se exportan en CSV cuando quieras.</div></details>
     </div>
-  </footer>
+  </div>
+</section>
 
-  <script src="/js/landing-demo.js"></script>
-  <script>
-    // A4.3: hueco del vídeo de 60s — cuando exista, poner la URL aquí y listo.
-    var DEMO_VIDEO_URL = ''; // p. ej. '/img/landing/demo-60s.mp4'
+<section class="cta-band"><div class="wrap"><h2>Tu próxima cotización, lista en 30 segundos</h2><p>Únete a los profesionales que cierran más trabajos y cobran sin perseguir pagos.</p><a href="/register.html" class="btn btn-primary btn-lg">Empezar gratis</a></div></section>
 
-    (function () {
-      var slot = document.getElementById('demo-slot');
-      if (!slot) return;
-      if (DEMO_VIDEO_URL) {
-        slot.innerHTML = '<video class="demo-video" src="' + DEMO_VIDEO_URL + '" controls playsinline preload="metadata" poster="/img/landing/firma-390.png"></video>';
-        return;
+<footer><div class="wrap foot"><div class="c">© 2026 YaQu · Hecho en Madrid para los oficios 🇪🇸</div><div class="l"><a href="#como">Cómo funciona</a><a href="#todo">Todo en uno</a><a href="#precios">Precios</a><a href="/privacidad">Privacidad</a><a href="/terminos">Términos</a></div></div></footer>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Reveal on scroll
+  var rev = document.querySelectorAll('.reveal');
+  if('IntersectionObserver' in window && !reduce){
+    var io = new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.15});
+    rev.forEach(function(e){io.observe(e);});
+  } else { rev.forEach(function(e){e.classList.add('in');}); }
+
+  // Interactive playable demo
+  (function(){
+    var screen=document.getElementById('iscreen'); if(!screen)return;
+    var scrs=screen.querySelectorAll('.iscr'), steps=document.querySelectorAll('#trySteps .try-step');
+    var miniRows=screen.querySelectorAll('[data-scr="0"] .cl-r.anim'), miniTotal=document.getElementById('miniTotal');
+    function buildQuote(){
+      if(reduce){miniRows.forEach(function(r){r.classList.add('show');});if(miniTotal)miniTotal.textContent='961,95 €';return;}
+      if(miniTotal)miniTotal.textContent='—';
+      miniRows.forEach(function(r,i){r.classList.remove('show');setTimeout(function(){r.classList.add('show');if(i===miniRows.length-1&&miniTotal)miniTotal.textContent='961,95 €';},300+i*350);});
+    }
+    function show(n){
+      scrs.forEach(function(s){s.classList.toggle('on', +s.dataset.scr===n);});
+      var active=Math.min(n,4);
+      steps.forEach(function(st){var s=+st.dataset.s;st.classList.toggle('on',s===active);st.classList.toggle('done',s<active);});
+      if(n===0) buildQuote();
+    }
+    screen.addEventListener('click',function(e){
+      var go=e.target.closest('[data-go]'); if(go){show(+go.dataset.go);return;}
+      var sg=e.target.closest('[data-sign]');
+      if(sg){var pad=document.getElementById('ipadSign');pad&&pad.classList.add('draw');
+        sg.innerHTML='Firmado — ver cómo paga';sg.setAttribute('data-go','3');sg.removeAttribute('data-sign');return;}
+      var pm=e.target.closest('[data-pm]');
+      if(pm){pm.parentNode.querySelectorAll('[data-pm]').forEach(function(x){x.classList.remove('sel');});pm.classList.add('sel');return;}
+    });
+    var reset=document.getElementById('tryReset');
+    reset&&reset.addEventListener('click',function(){
+      var pad=document.getElementById('ipadSign');pad&&pad.classList.remove('draw');
+      var sb=document.getElementById('signBtn');if(sb){sb.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 20 20 4M14 4h6v6" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg> Firmar y aceptar';sb.setAttribute('data-sign','1');sb.removeAttribute('data-go');}
+      show(0);
+    });
+    buildQuote();
+  })();
+
+  // Founding: contador REAL de plazas (si el endpoint falla o no quedan, no se muestra nada falso).
+  (function(){
+    if(!window.fetch)return;
+    fetch('/public/founding-status').then(function(r){return r.json();}).then(function(s){
+      if(s && typeof s.seatsLeft==='number' && s.seatsLeft>0){
+        var a=document.getElementById('ann-left'), f=document.getElementById('founding-left');
+        if(a)a.textContent=s.seatsLeft; if(f)f.textContent=s.seatsLeft;
+        var ab=document.getElementById('announce'), fb=document.getElementById('founding-banner');
+        if(ab)ab.hidden=false; if(fb)fb.hidden=false;
       }
-      // A4.7: sin vídeo → demo INTERACTIVA "dos actos" (js/landing-demo.js)
-      if (window.buildInteractiveDemo) window.buildInteractiveDemo(slot);
-    })();
+    }).catch(function(){});
+  })();
 
-    // A4.4: banner founding con contador REAL (nunca fake — si el endpoint
-    // falla o no quedan plazas, el banner simplemente no se muestra).
-    (function () {
-      var banner = document.getElementById('founding-banner');
-      if (!banner || !window.fetch) return;
-      fetch('/public/founding-status').then(function (r) { return r.json(); }).then(function (s) {
-        if (s && typeof s.seatsLeft === 'number' && s.seatsLeft > 0) {
-          document.getElementById('founding-left').textContent = s.seatsLeft;
-          banner.hidden = false;
-        }
-      }).catch(function () {});
-    })();
-
-    // A9.1 (GTM-1): atribución — capturar UTM (+referrer) AL ATERRIZAR y
-    // persistirla en localStorage (sobrevive días y pestañas; primera visita
-    // gana). register.html la lee si su propia URL no trae UTM.
-    (function () {
-      try {
-        var q = new URLSearchParams(location.search);
-        var ref = (q.get('ref') || '').trim();
-        if (ref && !localStorage.getItem('yaqu_ref')) localStorage.setItem('yaqu_ref', ref);
-        if (localStorage.getItem('yaqu_src')) return; // first-touch: no sobrescribir
-        var src = (q.get('utm_source') || '').trim();
-        var attribution = '';
-        if (src) {
-          attribution = [src, (q.get('utm_medium') || '').trim(), (q.get('utm_campaign') || '').trim()]
-            .filter(Boolean).join('/');
-        } else if (q.get('src') === 'profile' || q.get('src') === 'qr') {
-          // A14.2 (PERFIL-1): loop del perfil público / QR de furgoneta → registro atribuido
-          attribution = q.get('src');
-        } else if (document.referrer) {
-          var host = new URL(document.referrer).hostname.replace(/^www\./, '');
-          if (host && host !== location.hostname) attribution = 'referrer:' + host;
-        }
-        if (attribution) localStorage.setItem('yaqu_src', attribution);
-      } catch (e) { /* atribución best-effort, jamás romper la landing */ }
-    })();
-
-    // A4.2: reveal al hacer scroll — IntersectionObserver mínimo, sin librerías.
-    (function () {
-      var els = document.querySelectorAll('.reveal');
-      if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (en) {
-          if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
-        });
-      }, { threshold: 0.25 });
-      els.forEach(function (e) { io.observe(e); });
-    })();
-  </script>
+  // A9.1 (GTM-1): atribución — capturar UTM (+referrer) al aterrizar, persistir en localStorage.
+  (function(){
+    try{
+      var q=new URLSearchParams(location.search);
+      var ref=(q.get('ref')||'').trim();
+      if(ref && !localStorage.getItem('yaqu_ref')) localStorage.setItem('yaqu_ref',ref);
+      if(localStorage.getItem('yaqu_src')) return;
+      var src=(q.get('utm_source')||'').trim();
+      var attribution='';
+      if(src){ attribution=[src,(q.get('utm_medium')||'').trim(),(q.get('utm_campaign')||'').trim()].filter(Boolean).join('/'); }
+      else if(q.get('src')==='profile' || q.get('src')==='qr'){ attribution=q.get('src'); }
+      else if(document.referrer){ var host=new URL(document.referrer).hostname.replace(/^www\./,''); if(host && host!==location.hostname) attribution='referrer:'+host; }
+      if(attribution) localStorage.setItem('yaqu_src',attribution);
+    }catch(e){}
+  })();
+})();
+</script>
 </body>
 </html>
