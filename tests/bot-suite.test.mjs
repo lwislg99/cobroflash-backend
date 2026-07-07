@@ -25,6 +25,7 @@ const wamid = () => `wamid.suite.${Date.now()}.${++wamidSeq}`;
 const textMsg = (body, id = wamid()) => ({ from: TEST_PHONE, id, type: 'text', text: { body } });
 const listMsg = (rowId, id = wamid()) => ({ from: TEST_PHONE, id, type: 'interactive', interactive: { type: 'list_reply', list_reply: { id: rowId, title: 'x' } } });
 const mediaMsg = (type = 'image', id = wamid()) => ({ from: TEST_PHONE, id, type, [type]: { id: 'fake' } });
+const locMsg = (id = wamid()) => ({ from: TEST_PHONE, id, type: 'location', location: { latitude: 40.4319, longitude: -3.7036, name: 'Chamberí, Madrid' } });
 const metaEnvelope = (msg) => ({ object: 'whatsapp_business_account', entry: [{ id: '0', changes: [{ field: 'messages', value: { messaging_product: 'whatsapp', messages: [msg] } }] }] });
 
 test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED }, async () => {
@@ -85,17 +86,16 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED }, asy
     let len = outbox.length;
     await post(listMsg('bot_quotes'));
     await waitOutbox(len + 1);
-    assert.equal(last()?.kind === 'text' || last()?.kind === 'list', true);
-    const quotesReply = outbox.slice(len).find((m) => m.kind === 'text');
-    assert.ok(/presupuesto/i.test(quotesReply?.text || ''), 'respuesta de presupuestos');
+    await settle();
+    assert.ok(outbox.slice(len).some((m) => (m.text && /pendiente|presupuesto/i.test(m.text)) || m.kind === 'cta_url'), 'respuesta de presupuestos (texto o botón-enlace)');
     log('2 ver presupuestos', true);
 
     // ── 3. Pagar pendiente ─────────────────────────────────────────────────
     len = outbox.length;
     await post(listMsg('bot_pay'));
     await waitOutbox(len + 1);
-    const payReply = outbox.slice(len).find((m) => m.kind === 'text');
-    assert.ok(/(al día|pendiente)/i.test(payReply?.text || ''), 'respuesta de pagos');
+    await settle();
+    assert.ok(outbox.slice(len).some((m) => (m.text && /(al día|pendiente)/i.test(m.text)) || (m.kind === 'cta_url' && /Pagar/i.test(m.buttonText || ''))), 'respuesta de pagos (texto o botón Pagar)');
     log('3 pagar pendiente', true);
 
     // ── 4. Doble tap del MISMO botón (<90 s) → idempotente en silencio ─────
@@ -150,11 +150,12 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED }, asy
     assert.ok(/cuentas un poco más/i.test(last()?.text || ''), '8a desc basura → re-pregunta');
     assert.ok(!/aceptaci[oó]n|Perfecto|registrado tu/i.test(last()?.text || ''), '8a B1: "vale" mid-intake NO acepta presupuesto');
 
-    // 8b. descripción válida → pregunta zona
+    // 8b. descripción válida → pregunta zona (A23: location_request con botón de ubicación)
     len = outbox.length;
     await post(textMsg(MARKER));
     await waitOutbox(len + 1);
-    assert.ok(/¿En qué zona/i.test(last()?.text || ''), '8b pregunta 2 (zona)');
+    assert.equal(last()?.kind, 'location_request', '8b prompt de zona (botón ubicación)');
+    assert.ok(/En qué zona/i.test(last()?.bodyText || ''), '8b pregunta 2 (zona)');
 
     // 8c. zona BASURA "ok" → re-pregunta zona (no avanza)
     len = outbox.length;
@@ -203,6 +204,16 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED }, asy
     assert.ok(outbox.slice(len).some((m) => /lo dejamos/i.test(m.text || '')), '8g cancelar → salida');
     assert.ok(outbox.slice(len).some((m) => m.kind === 'list'), '8g vuelve al menú');
     log('8g cancelar a mitad de captación', true);
+
+    // ── 8h. Compartir UBICACIÓN como zona (A23) → confirmación ──────────────
+    await settle();
+    len = outbox.length; await post(listMsg('bot_request')); await waitOutbox(len + 1);
+    len = outbox.length; await post(textMsg('reparación urgente (suite loc)')); await waitOutbox(len + 1);
+    assert.equal(last()?.kind, 'location_request', '8h prompt de zona con botón ubicación');
+    len = outbox.length; await post(locMsg()); await waitOutbox(len + 1);
+    assert.equal(last()?.kind, 'buttons', '8h ubicación compartida → confirmación');
+    await post(textMsg('cancelar')); await settle(); // volver al menú, sin crear nada
+    log('8h ubicación como zona', true);
 
     // ── 9. Handoff (botón) + registro A8.3 ──────────────────────────────────
     await settle(); // la solicitud remata avisando al pro

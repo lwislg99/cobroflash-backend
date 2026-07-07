@@ -7,7 +7,7 @@ import crypto from 'crypto';
 import { prisma } from '../../../../core/db/prisma';
 import { config } from '../../../../core/config/env';
 import { maskPhone, normalizePhone, formatMoneyEs } from '../../../../core/utils/utils';
-import { sendWhatsAppText } from '../../../../integrations/whatsapp';
+import { sendWhatsAppText, markInboundRead } from '../../../../integrations/whatsapp';
 import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/merchantNotifications';
 import { updateWaMessageStatus, recordInboundWaMessage } from '../../../messaging/domain/whatsappLog.service';
 import { isFlagEnabled } from '../../../../core/flags';
@@ -33,7 +33,7 @@ export function isDuplicateWamid(id: string): boolean { // A12.2: exportada para
 }
 
 // A8.2 (#15): tipos de mensaje que el bot no entiende — respuesta amable + menú
-const UNSUPPORTED_TYPES = new Set(['audio', 'image', 'video', 'document', 'sticker', 'location', 'contacts']);
+const UNSUPPORTED_TYPES = new Set(['audio', 'image', 'video', 'document', 'sticker', 'contacts']);
 
 // Valida la firma X-Hub-Signature-256 de Meta usando el App Secret.
 // Si no hay WHATSAPP_APP_SECRET configurado, no validamos (devuelve true).
@@ -117,6 +117,9 @@ router.post('/', async (req, res) => {
           // envíos ventana-first sepan cuándo el texto libre viaja gratis.
           recordInboundWaMessage(from).catch(() => {});
 
+          // A23: marca el entrante como leído + "escribiendo…" (best-effort) si el bot va a responder.
+          if (isFlagEnabled('BOT_INBOUND_ENABLED')) markInboundRead(String(msg.id || '')).catch(() => {});
+
           if (msg.type === 'text') {
             const text = String(msg.text?.body || '').trim();
             if (!text) continue;
@@ -130,6 +133,13 @@ router.post('/', async (req, res) => {
             );
             if (!listReplyId) continue;
             routeIncoming(from, { listReplyId }).catch((e) =>
+              console.error('[WA in] handler error:', e?.message),
+            );
+          } else if (msg.type === 'location') {
+            // A23: ubicación compartida por el cliente → se usa como "zona" del flujo del bot.
+            const loc: any = msg.location || {};
+            const zoneText = String(loc.name || loc.address || (loc.latitude != null ? `📍 ${loc.latitude}, ${loc.longitude}` : '')).trim();
+            if (zoneText) routeIncoming(from, { text: zoneText }).catch((e) =>
               console.error('[WA in] handler error:', e?.message),
             );
           } else if (UNSUPPORTED_TYPES.has(String(msg.type || '')) && isFlagEnabled('BOT_INBOUND_ENABLED')) {

@@ -2,7 +2,7 @@
 // Helpers de alto nivel para envíos de plantillas concretas.
 // La spec canónica de las plantillas vive en docs/WHATSAPP_TEMPLATES.md.
 import { normalizePhone } from '../core/utils/utils';
-import { sendWhatsAppTemplate, sendWhatsAppText, sendWhatsAppWindowFirst } from './whatsapp';
+import { sendWhatsAppTemplate, sendWhatsAppText, sendWhatsAppWindowFirst, sendWhatsAppCtaUrl } from './whatsapp';
 import {
   buildPaymentConfirmation,
   buildPaymentConfirmationInvoice,
@@ -130,17 +130,16 @@ export async function notifyMerchantAlert(params: {
   customerName?: string | null;
   action: string;              // "te ha pagado" | "ha aceptado tu presupuesto" | "ha rechazado tu presupuesto"
   detail: string;              // "{importe con moneda} · {referencia}" para la plantilla
+  cta?: { text: string; url: string }; // A23: si se pasa, el intento en-ventana usa BOTÓN-ENLACE (sin URL cruda)
 }): Promise<{ ok: boolean; via: 'text' | 'template' | 'none' }> {
   const to = normalizePhone(params.merchantPhone || '');
   if (!to) return { ok: false, via: 'none' };
 
-  // 1) Ventana 24 h abierta → texto libre.
-  const text = await sendWhatsAppText({
-    to,
-    merchantId: params.merchantId,
-    text: params.freeText,
-  }).catch(() => ({ ok: false as const }));
-  if (text.ok) return { ok: true, via: 'text' };
+  // 1) Ventana 24 h abierta → botón-enlace (si hay cta) o texto libre.
+  const windowResult = params.cta
+    ? await sendWhatsAppCtaUrl({ to, merchantId: params.merchantId, bodyText: params.freeText, buttonText: params.cta.text, url: params.cta.url }).catch(() => ({ ok: false as const }))
+    : await sendWhatsAppText({ to, merchantId: params.merchantId, text: params.freeText }).catch(() => ({ ok: false as const }));
+  if (windowResult.ok) return { ok: true, via: 'text' };
 
   // 2) Ventana cerrada / error → fallback a plantilla.
   try {

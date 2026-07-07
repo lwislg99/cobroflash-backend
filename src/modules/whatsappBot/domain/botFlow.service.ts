@@ -17,7 +17,7 @@
 import { prisma } from '../../../core/db/prisma';
 import { BASE_URL } from '../../../core/config/env';
 import { normalizePhone, formatMoneyEs } from '../../../core/utils/utils';
-import { sendWhatsAppText, sendWhatsAppList, sendWhatsAppButtons } from '../../../integrations/whatsapp';
+import { sendWhatsAppText, sendWhatsAppList, sendWhatsAppButtons, sendWhatsAppCtaUrl, sendWhatsAppLocationRequest } from '../../../integrations/whatsapp';
 import { notifyMerchantAlert } from '../../../integrations/whatsappNotifications';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
 
@@ -279,10 +279,19 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
       state: 'asking_zone',
       data: { ...(session.data || {}), description: text.slice(0, 1000) },
     }, session);
-    await sendWhatsAppText({
+    // A23: ofrecer compartir ubicación (botón) o escribir la zona. Si el interactivo
+    // falla por lo que sea, cae a texto para no dejar al cliente sin pregunta.
+    const locReq = await sendWhatsAppLocationRequest({
       to: from,
-      text: '📍 ¿En qué zona está el trabajo? (barrio o municipio). Si no aplica, escribe "a domicilio".',
+      merchantId,
+      bodyText: '📍 ¿En qué zona está el trabajo? Comparte tu ubicación con el botón, o escribe el barrio o municipio (si no aplica, escribe "a domicilio").',
     });
+    if (!locReq.ok) {
+      await sendWhatsAppText({
+        to: from,
+        text: '📍 ¿En qué zona está el trabajo? (barrio o municipio). Si no aplica, escribe "a domicilio".',
+      });
+    }
     return true;
   }
 
@@ -358,7 +367,8 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
         detail: `${description.slice(0, 80)} · Zona: ${zone}`,
         freeText:
           `🛠 *${customer.name || 'Un cliente'}* te ha pedido un presupuesto por WhatsApp:\n` +
-          `"${description.slice(0, 300)}"\nZona: ${zone}\n\nRevísalo en Solicitudes: ${BASE_URL}/dashboard/`,
+          `"${description.slice(0, 300)}"\nZona: ${zone}`,
+        cta: { text: 'Abrir en YaQu', url: `${BASE_URL}/dashboard/` },
       }).catch((e) => console.error('[bot] aviso solicitud:', e?.message || e));
 
       await sendWhatsAppText({
@@ -395,14 +405,22 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
       });
       await sendMenu(from, merchantId, businessName);
     } else {
-      // A8.1: dinero SIEMPRE en formato es-ES ("2.383,70 €"), nunca "2383.70 EUR"
-      const lines = quotes.map((q) =>
-        `📄 *Presupuesto #${q.quoteNumber ?? q.id}* · ${formatMoneyEs(q.total, q.currency)}\n👉 Ver y firmar: ${BASE_URL}/pay/quote/${q.id}`,
-      );
+      // A23: un botón-enlace "Ver y firmar" por presupuesto (sin URL cruda). Dinero es-ES.
       await sendWhatsAppText({
         to: from,
-        text: `Esto es lo que tienes pendiente de decidir con ${businessName}:\n\n${lines.join('\n\n')}`,
+        text: quotes.length === 1
+          ? `Esto tienes pendiente de decidir con *${businessName}* 👇`
+          : `Tienes *${quotes.length}* presupuestos pendientes con *${businessName}* 👇`,
       });
+      for (const q of quotes) {
+        await sendWhatsAppCtaUrl({
+          to: from,
+          merchantId,
+          bodyText: `📄 *Presupuesto #${q.quoteNumber ?? q.id}*\nTotal: *${formatMoneyEs(q.total, q.currency)}*`,
+          buttonText: 'Ver y firmar',
+          url: `${BASE_URL}/pay/quote/${q.id}`,
+        });
+      }
     }
     await setSession(phone, { merchantId, state: 'menu', data: { lastAction: 'quotes', lastListId: listId, lastListAt: Date.now() } }, session);
     return true;
@@ -420,15 +438,23 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
       await sendWhatsAppText({ to: from, text: `🎉 ¡Estás al día! No tienes ningún pago pendiente con ${businessName}.` });
       await sendMenu(from, merchantId, businessName);
     } else {
-      // A8.1: dinero es-ES + cierre honesto (los métodos concretos los decide
-      // su página de pago — no prometer tarjeta si el merchant no la tiene)
-      const lines = charges.map((c) =>
-        `💳 *${formatMoneyEs(c.amount, c.currency)}*${c.concept ? ` · ${c.concept}` : ''}\n👉 Pagar seguro: ${BASE_URL}/pay/invoice/${c.id}`,
-      );
+      // A23: un botón-enlace "Pagar [importe]" por cobro (pago seguro y cifrado en la página).
       await sendWhatsAppText({
         to: from,
-        text: `Esto es lo que tienes pendiente con ${businessName}:\n\n${lines.join('\n\n')}\n\nPagas desde el enlace, con pago seguro y cifrado.`,
+        text: charges.length === 1
+          ? `Esto tienes pendiente de pago con *${businessName}* 👇`
+          : `Tienes *${charges.length}* pagos pendientes con *${businessName}* 👇`,
       });
+      for (const c of charges) {
+        const amount = formatMoneyEs(c.amount, c.currency);
+        await sendWhatsAppCtaUrl({
+          to: from,
+          merchantId,
+          bodyText: `💳 *${amount}*${c.concept ? `\n${c.concept}` : ''}`,
+          buttonText: `Pagar ${amount}`,
+          url: `${BASE_URL}/pay/invoice/${c.id}`,
+        });
+      }
     }
     await setSession(phone, { merchantId, state: 'menu', data: { lastAction: 'pay', lastListId: listId, lastListAt: Date.now() } }, session);
     return true;

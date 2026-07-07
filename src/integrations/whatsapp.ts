@@ -416,3 +416,152 @@ export async function sendWhatsAppList(params: {
     return { ok: false, error: err?.response?.data || err?.message };
   }
 }
+
+/**
+ * A23 (K1): mensaje interactivo con BOTÓN DE ENLACE (`cta_url`). Muestra un botón que
+ * ABRE la URL — sin enseñar el enlace crudo. Service message: solo entrega con la ventana
+ * 24 h abierta (Meta rechaza fuera de ventana → ok:false, ideal para el patrón ventana-first).
+ */
+export async function sendWhatsAppCtaUrl(params: {
+  to: string;
+  bodyText: string;
+  buttonText: string;   // display_text (máx 30 chars — límite de Meta)
+  url: string;
+  header?: string;      // texto de cabecera (máx 60)
+  footer?: string;      // texto de pie (máx 60)
+  merchantId?: number;  // V0-2: demo solo a DEMO_SAFE_NUMBERS
+}) {
+  const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
+  const token = config.WHATSAPP_ACCESS_TOKEN;
+  if ((!phoneNumberId || !token) && !isDryRun()) {
+    console.warn('[WhatsApp] Credenciales no configuradas, cta_url omitido');
+    return { ok: false, reason: 'not_configured' };
+  }
+  if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
+    console.warn(`[WhatsApp] V0-2: cta_url desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO`);
+    return { ok: false, reason: 'demo_safe_numbers' };
+  }
+  if (isDryRun()) {
+    dryRunRecord({ kind: 'cta_url', to: params.to, bodyText: params.bodyText, buttonText: params.buttonText, url: params.url });
+    return { ok: true, data: dryRunData(), dryRun: true } as any;
+  }
+  try {
+    const interactive: any = {
+      type: 'cta_url',
+      body: { text: params.bodyText },
+      action: { name: 'cta_url', parameters: { display_text: params.buttonText.slice(0, 30), url: params.url } },
+    };
+    if (params.header) interactive.header = { type: 'text', text: params.header.slice(0, 60) };
+    if (params.footer) interactive.footer = { text: params.footer.slice(0, 60) };
+    const response = await axios.post(
+      `${BASE_URL}/${phoneNumberId}/messages`,
+      { messaging_product: 'whatsapp', to: params.to, type: 'interactive', interactive },
+      { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, timeout: 10_000 },
+    );
+    return { ok: true, data: response.data };
+  } catch (err: any) {
+    console.error('[WhatsApp] Error enviando cta_url:', err?.response?.data || err?.message);
+    return { ok: false, error: err?.response?.data || err?.message };
+  }
+}
+
+/**
+ * A23 (K1): enviar un DOCUMENTO (p. ej. el PDF del recibo/factura) en el chat. `link` debe
+ * ser una URL pública que Meta pueda descargar. Service message (solo en ventana 24 h).
+ */
+export async function sendWhatsAppDocument(params: {
+  to: string;
+  link: string;
+  filename?: string;
+  caption?: string;
+  merchantId?: number;
+}) {
+  const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
+  const token = config.WHATSAPP_ACCESS_TOKEN;
+  if ((!phoneNumberId || !token) && !isDryRun()) {
+    console.warn('[WhatsApp] Credenciales no configuradas, documento omitido');
+    return { ok: false, reason: 'not_configured' };
+  }
+  if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
+    console.warn(`[WhatsApp] V0-2: documento desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO`);
+    return { ok: false, reason: 'demo_safe_numbers' };
+  }
+  if (isDryRun()) {
+    dryRunRecord({ kind: 'document', to: params.to, link: params.link, filename: params.filename });
+    return { ok: true, data: dryRunData(), dryRun: true } as any;
+  }
+  try {
+    const document: any = { link: params.link };
+    if (params.filename) document.filename = params.filename;
+    if (params.caption) document.caption = params.caption;
+    const response = await axios.post(
+      `${BASE_URL}/${phoneNumberId}/messages`,
+      { messaging_product: 'whatsapp', to: params.to, type: 'document', document },
+      { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, timeout: 10_000 },
+    );
+    return { ok: true, data: response.data };
+  } catch (err: any) {
+    console.error('[WhatsApp] Error enviando documento:', err?.response?.data || err?.message);
+    return { ok: false, error: err?.response?.data || err?.message };
+  }
+}
+
+/**
+ * A23 (K1): pedir la UBICACIÓN al cliente (interactive `location_request_message`). Muestra
+ * un botón "Enviar ubicación"; el cliente puede tocarlo o escribir la zona. Service message.
+ */
+export async function sendWhatsAppLocationRequest(params: {
+  to: string;
+  bodyText: string;
+  merchantId?: number;
+}) {
+  const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
+  const token = config.WHATSAPP_ACCESS_TOKEN;
+  if ((!phoneNumberId || !token) && !isDryRun()) {
+    console.warn('[WhatsApp] Credenciales no configuradas, location_request omitido');
+    return { ok: false, reason: 'not_configured' };
+  }
+  if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
+    console.warn(`[WhatsApp] V0-2: location_request desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO`);
+    return { ok: false, reason: 'demo_safe_numbers' };
+  }
+  if (isDryRun()) {
+    dryRunRecord({ kind: 'location_request', to: params.to, bodyText: params.bodyText });
+    return { ok: true, data: dryRunData(), dryRun: true } as any;
+  }
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/${phoneNumberId}/messages`,
+      {
+        messaging_product: 'whatsapp',
+        to: params.to,
+        type: 'interactive',
+        interactive: { type: 'location_request_message', body: { text: params.bodyText }, action: { name: 'send_location' } },
+      },
+      { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, timeout: 10_000 },
+    );
+    return { ok: true, data: response.data };
+  } catch (err: any) {
+    console.error('[WhatsApp] Error enviando location_request:', err?.response?.data || err?.message);
+    return { ok: false, error: err?.response?.data || err?.message };
+  }
+}
+
+/**
+ * A23: marcar el ENTRANTE como leído (doble check azul) y mostrar "escribiendo…" al cliente
+ * antes de responder — hace que el bot se sienta instantáneo y humano. Best-effort total:
+ * el bot funciona igual sin esto. Si el campo `typing_indicator` no está soportado, reintenta
+ * solo el "read".
+ */
+export async function markInboundRead(messageId: string): Promise<void> {
+  const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
+  const token = config.WHATSAPP_ACCESS_TOKEN;
+  if (!phoneNumberId || !token || isDryRun() || !messageId) return;
+  const url = `${BASE_URL}/${phoneNumberId}/messages`;
+  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  try {
+    await axios.post(url, { messaging_product: 'whatsapp', status: 'read', message_id: messageId, typing_indicator: { type: 'text' } }, { headers, timeout: 8_000 });
+  } catch {
+    try { await axios.post(url, { messaging_product: 'whatsapp', status: 'read', message_id: messageId }, { headers, timeout: 8_000 }); } catch { /* best-effort */ }
+  }
+}
