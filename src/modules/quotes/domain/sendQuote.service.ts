@@ -56,6 +56,15 @@ export async function sendQuoteWhatsAppToCustomer(
       `📄 *Presupuesto #${displayNum}* · *${formatMoneyEs(quote.total, quote.currency)}*\n` +
       `Ábrelo, revísalo y fírmalo desde aquí 👇\n` +
       `${BASE_URL}/pay/quote/${quote.id}`,
+    // A23: en ventana → botón-enlace "Ver y firmar" (sin URL cruda)
+    windowCta: {
+      bodyText:
+        `Hola ${quote.customer.name ?? 'Cliente'} 👋\n` +
+        `*${businessName}* te ha preparado tu presupuesto:\n` +
+        `📄 *Presupuesto #${displayNum}* · *${formatMoneyEs(quote.total, quote.currency)}*`,
+      buttonText: 'Ver y firmar',
+      url: `${BASE_URL}/pay/quote/${quote.id}`,
+    },
     template: buildQuoteDecision({
       customerName: quote.customer.name ?? 'Cliente',
       businessName,

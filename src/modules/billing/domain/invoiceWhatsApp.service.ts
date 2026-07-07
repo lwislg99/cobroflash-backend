@@ -8,7 +8,7 @@ import fetch from 'node-fetch';
 import { prisma } from '../../../core/db/prisma';
 import { BASE_URL } from '../../../core/config/env';
 import { internalHeaders } from '../../../core/http/internalAuth';
-import { normalizePhone } from '../../../core/utils/utils';
+import { normalizePhone, formatMoneyEs } from '../../../core/utils/utils';
 import { sendWhatsAppWindowFirst } from '../../../integrations/whatsapp';
 import { buildPaymentRequest } from '../../../integrations/whatsappTemplates';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
@@ -90,6 +90,15 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
       `A pagar: ${amountWithCurrency}\n` +
       `Paga de forma segura desde aquí 👇\n` +
       `https://yaqu.app/pay/invoice/${chargeId}`,
+    // A23: en ventana → botón-enlace "Pagar" (sin URL cruda, dinero es-ES)
+    windowCta: {
+      bodyText:
+        `Hola ${invoice.customer.name || 'Cliente'} 👋\n` +
+        `*${businessName}* te envía el ${docLabel} ${invoice.number}.\n` +
+        `A pagar: *${formatMoneyEs(invoice.total, invoice.currency)}*`,
+      buttonText: `Pagar ${formatMoneyEs(invoice.total, invoice.currency)}`,
+      url: `https://yaqu.app/pay/invoice/${chargeId}`,
+    },
     template: buildPaymentRequest({
       customerName: invoice.customer.name || 'Cliente',
       businessName,

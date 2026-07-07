@@ -12,7 +12,7 @@
 import { prisma } from '../../../core/db/prisma';
 import { sendWhatsAppWindowFirst, sendWhatsAppText } from '../../../integrations/whatsapp';
 import { buildPaymentRequest } from '../../../integrations/whatsappTemplates';
-import { normalizePhone } from '../../../core/utils/utils';
+import { normalizePhone, formatMoneyEs } from '../../../core/utils/utils';
 import { BASE_URL } from '../../../core/config/env';
 import { isReceiptNumber } from '../../invoicing/domain/invoiceNumber.service';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
@@ -121,6 +121,15 @@ async function sendReminderWA(
           `Paga de forma segura desde aquí 👇\n` +
           `${BASE_URL}/pay/invoice/${chargeId}\n` +
           `Si ya lo has pagado, ignora este mensaje. ¡Gracias!`,
+        // A23: en ventana → botón-enlace "Pagar ahora" (sin URL cruda, dinero es-ES)
+        windowCta: {
+          bodyText:
+            `Hola ${customerName} 👋\n` +
+            `Te recordamos el pago pendiente del ${docLabel} ${inv.number} por *${formatMoneyEs(inv.total, inv.currency)}* de parte de *${merchantName}*.${urgency}\n` +
+            `Si ya lo has pagado, ignora este mensaje. ¡Gracias!`,
+          buttonText: 'Pagar ahora',
+          url: `${BASE_URL}/pay/invoice/${chargeId}`,
+        },
         template: buildPaymentRequest({
           customerName,
           businessName: merchantName,

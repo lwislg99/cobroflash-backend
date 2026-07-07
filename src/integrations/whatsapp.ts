@@ -203,6 +203,7 @@ export async function sendWhatsAppWindowFirst(params: {
   merchantId: number;
   customerId?: number | null;
   windowText: string;
+  windowCta?: { bodyText: string; buttonText: string; url: string }; // A23: si se pasa, la vía ventana usa botón-enlace (sin URL cruda)
   template: { templateName: string; languageCode?: string; components?: any[] };
   log?: WaLogMeta;
 }): Promise<{ ok: boolean; via: 'window' | 'template' | 'none'; reason?: string; error?: any; data?: any }> {
@@ -214,11 +215,21 @@ export async function sendWhatsAppWindowFirst(params: {
 
   const customerId = params.customerId ?? params.log?.customerId ?? null;
   if (customerId && (await isServiceWindowOpen(params.merchantId, customerId))) {
-    const text = await sendWhatsAppText({
-      to: params.to,
-      merchantId: params.merchantId,
-      text: params.windowText,
-    }).catch(() => ({ ok: false as const, data: undefined as any }));
+    // A23: si el llamador da windowCta, la ventana viaja como BOTÓN-ENLACE (sin URL cruda);
+    // si no, texto libre como siempre. En ambos casos = service message (0 €).
+    const text = params.windowCta
+      ? await sendWhatsAppCtaUrl({
+          to: params.to,
+          merchantId: params.merchantId,
+          bodyText: params.windowCta.bodyText,
+          buttonText: params.windowCta.buttonText,
+          url: params.windowCta.url,
+        }).catch(() => ({ ok: false as const, data: undefined as any }))
+      : await sendWhatsAppText({
+          to: params.to,
+          merchantId: params.merchantId,
+          text: params.windowText,
+        }).catch(() => ({ ok: false as const, data: undefined as any }));
 
     if (text.ok) {
       recordWaMessage({

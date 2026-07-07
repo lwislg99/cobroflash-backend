@@ -83,6 +83,15 @@ export async function sendPaymentConfirmationInvoice(params: {
           `¡Gracias por confiar en ${businessName}!\n` +
           `Tu recibo, aquí 👇\n` +
           `https://yaqu.app/recibo/${params.chargeId}`,
+        // A23: en ventana → botón-enlace "Ver recibo" (sin URL cruda)
+        windowCta: {
+          bodyText:
+            `Hola ${customerName} 👋\n` +
+            `Hemos confirmado tu pago de *${params.amountWithCurrency}* (documento ${params.documentNumber}).\n` +
+            `¡Gracias por confiar en *${businessName}*!`,
+          buttonText: 'Ver recibo',
+          url: `https://yaqu.app/recibo/${params.chargeId}`,
+        },
         template: buildPaymentConfirmationInvoice({
           customerName,
           amountWithCurrency: params.amountWithCurrency,
