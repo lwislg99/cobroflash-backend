@@ -327,6 +327,8 @@ img { max-width: 100%; display: block; }
   font-weight: 700; font-size: 9px; color: var(--green-900);
 }
 .topbar-merchant-name { font-size: 13px; font-weight: 600; color: var(--neutral-700); }
+/* Logo del negocio (si lo ha subido) en el topbar — banner horizontal contenido */
+.topbar-merchant-logo { height: 26px; max-width: 150px; object-fit: contain; display: block; border-radius: 6px; }
 
 /* ── Main content ───────────────────────────────────────────── */
 .main {

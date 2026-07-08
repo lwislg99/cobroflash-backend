@@ -95,11 +95,20 @@ async function initApp() {
     const roleChip = !me.isOwner
       ? `<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--neutral-100);color:var(--neutral-500);margin-right:8px">${roleLabels[me.userRole] || me.userRole}</span>`
       : '';
+    // Feedback fundador: si el negocio ha subido logo, lo mostramos arriba (marca
+    // propia). Con logo + dueño, el logo ya identifica → no repetimos el nombre.
+    const merchantLogo = me.logoUrl || null;
+    const brandBit = merchantLogo
+      ? `<img class="topbar-merchant-logo" src="${merchantLogo}" alt="${me.merchantName || 'Mi negocio'}"/>`
+      : `<div class="topbar-merchant-avatar">${initials}</div>`;
+    const nameBit = (merchantLogo && me.isOwner)
+      ? ''
+      : `<span class="topbar-merchant-name">${me.name || 'Mi negocio'}</span>`;
     topbarRight.innerHTML = `
       <div class="topbar-merchant">
         ${roleChip}
-        <div class="topbar-merchant-avatar">${initials}</div>
-        <span class="topbar-merchant-name">${me.name || 'Mi negocio'}</span>
+        ${brandBit}
+        ${nameBit}
       </div>
     `;
   }

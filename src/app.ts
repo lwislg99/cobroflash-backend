@@ -168,7 +168,7 @@ app.get('/admin/me', async (req, res) => {
 
   const merchantFull = await prisma.merchant.findUnique({
     where: { id: session.merchantId },
-    select: { country: true },
+    select: { country: true, logoUrl: true },
   });
 
   const userRole = session.teamMember ? session.teamMember.role : 'admin';
@@ -182,6 +182,7 @@ app.get('/admin/me', async (req, res) => {
     merchantId: session.merchantId,
     name: userName,
     merchantName: session.merchant.name,
+    logoUrl: merchantFull?.logoUrl ?? null, // para pintar el logo del negocio en el topbar
     plan: owner ? 'pro' : session.merchant.plan,
     planExpiresAt: owner ? null : session.merchant.planExpiresAt,
     onboardingCompleted: session.merchant.onboardingCompleted,
