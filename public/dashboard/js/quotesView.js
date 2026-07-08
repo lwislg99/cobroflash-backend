@@ -439,6 +439,12 @@ blockClient.appendChild(descWrapper);
     pmNote.className = "pay-methods-note";
     pmNote.textContent = "Solo se muestran las que tengas configuradas (IBAN, Bizum o tarjeta).";
     payMethodsWrapper.appendChild(pmNote);
+    // Bug fundador (8-jul): mostrar la comisión de tarjeta (0,9 %, APPLICATION_FEE_BPS).
+    // Mismo copy que Planes/Configuración: Bizum y transferencia son gratis.
+    const pmFee = document.createElement("p");
+    pmFee.className = "pay-methods-note";
+    pmFee.innerHTML = "💳 La tarjeta lleva una comisión del <strong>0,9 %</strong> por cobro. Bizum y transferencia, gratis.";
+    payMethodsWrapper.appendChild(pmFee);
     blockClient.appendChild(payMethodsWrapper);
 
     // Devuelve el array para el payload, o undefined si están todas (= sin límite)
