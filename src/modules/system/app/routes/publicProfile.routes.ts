@@ -10,7 +10,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { esc } from '../../../../core/utils/utils';
 import { isFlagEnabled } from '../../../../core/flags';
 import { notFoundPageHtml } from '../../../../core/http/publicNotFound';
-import { BASE_URL } from '../../../../core/config/env';
+import { BASE_URL, config } from '../../../../core/config/env';
 
 const publicProfileRouter = Router();
 
@@ -71,11 +71,16 @@ publicProfileRouter.get('/:slug', async (req: Request, res: Response) => {
       (merchant.country || 'ES').toUpperCase() === 'ES') {
     waDigits = `34${waDigits}`;
   }
-  // Prefill mínimo derivado del propio label oficial del botón (pendiente de veto
-  // del fundador, regla 30)
-  const waHref = waDigits
-    ? `https://wa.me/${waDigits}?text=${encodeURIComponent('Hola, quiero pedir un presupuesto')}`
-    : null;
+  // Feature (fundador): el botón abre el BOT de YaQu (número compartido) con el
+  // merchant en el texto (via su slug) → el bot crea el cliente en ESE merchant y
+  // arranca la solicitud. Si no hay WHATSAPP_BOT_PHONE configurado, cae al WhatsApp
+  // del pro (comportamiento anterior).
+  const botDigits = config.WHATSAPP_BOT_PHONE;
+  const waHref = botDigits
+    ? `https://wa.me/${botDigits}?text=${encodeURIComponent(`Hola, quiero pedir un presupuesto a ${name}. yaqu.app/p/${slug}`)}`
+    : (waDigits
+        ? `https://wa.me/${waDigits}?text=${encodeURIComponent('Hola, quiero pedir un presupuesto')}`
+        : null);
   const reviewUrl = merchant.googleReviewUrl || null;
   const initial = name.trim().charAt(0).toUpperCase() || 'Y';
   const brand = merchant.brandColor && /^#[0-9a-fA-F]{6}$/.test(merchant.brandColor)

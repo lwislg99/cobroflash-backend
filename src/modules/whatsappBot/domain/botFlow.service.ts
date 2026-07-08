@@ -21,6 +21,7 @@ import { sendWhatsAppText, sendWhatsAppList, sendWhatsAppButtons, sendWhatsAppCt
 import { notifyMerchantAlert } from '../../../integrations/whatsappNotifications';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
 import { saveQuoteRequestPhoto } from '../../quoteRequests/domain/attachment.service';
+import { isFlagEnabled } from '../../../core/flags';
 
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // K1: expiresAt = +24h
 
@@ -225,6 +226,46 @@ export async function handleIncomingPhoto(from: string, mediaId: string): Promis
   }
 }
 
+/** Extrae el slug del merchant del texto del QR (URL /p/<slug> o "ref:<slug>"). */
+function qrSlugFromText(text: string): string | null {
+  const m = /(?:\/p\/|ref:\s*)([a-z0-9][a-z0-9-]{1,40})/i.exec(String(text || ''));
+  return m ? m[1].toLowerCase() : null;
+}
+
+/**
+ * Entrada por QR del perfil público (feature fundador): un mensaje con el slug del
+ * merchant (prerelleno del botón del perfil, /p/<slug>) asocia al remitente con ESE
+ * merchant, crea su ficha si no existe y arranca la solicitud (estado asking_description).
+ * Solo negocios con el perfil público ACTIVO (flag PUBLIC_PROFILE_ENABLED). Devuelve
+ * false si el slug no resuelve (para caer al flujo normal). Esta es la ÚNICA captación
+ * de desconocidos permitida en K1, y solo ocurre con un QR/enlace explícito del negocio.
+ */
+async function handleQrEntry(from: string, phone: string, slug: string, session: SessionRow | null): Promise<boolean> {
+  const merchant = await prisma.merchant.findUnique({
+    where: { slug },
+    select: { id: true, name: true, legalName: true, status: true, country: true, flags: true },
+  });
+  if (!merchant || merchant.status !== 'active') return false;
+  if (!isFlagEnabled('PUBLIC_PROFILE_ENABLED', { merchant: { id: merchant.id, country: merchant.country, flags: merchant.flags } })) {
+    return false; // solo negocios con su perfil público encendido
+  }
+  // Crear/asociar el cliente en ESTE merchant (sin duplicar por teléfono).
+  const existing = await prisma.customer.findFirst({
+    where: { merchantId: merchant.id, phone: { in: [phone, `+${phone}`] } },
+    select: { id: true },
+  });
+  if (!existing) {
+    await prisma.customer.create({ data: { merchantId: merchant.id, phone, name: 'Cliente nuevo' } });
+  }
+  const businessName = merchantDisplayName(merchant);
+  await setSession(phone, { merchantId: merchant.id, state: 'asking_description', data: { lastAction: 'request', via: 'qr' } }, session);
+  await sendWhatsAppText({
+    to: from,
+    text: `👋 ¡Hola! Te paso con *${businessName}*. Cuéntame en una frase qué necesitas y les envío tu solicitud de presupuesto.`,
+  });
+  return true;
+}
+
 /**
  * Punto de entrada del bot. Devuelve true si el bot GESTIONÓ el mensaje
  * (el caller no debe hacer nada más); false si el bot no aplica.
@@ -237,6 +278,15 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
   const listId = (input.listReplyId || '').trim();
 
   const session = await getSession(phone);
+
+  // Entrada por QR del perfil público: si el mensaje trae el slug del merchant
+  // (/p/<slug> del prefill), lo asociamos a ESE merchant y arrancamos la solicitud,
+  // aunque sea un número desconocido (feature fundador). Solo con QR/enlace explícito.
+  const qrSlug = text ? qrSlugFromText(text) : null;
+  if (qrSlug) {
+    const handled = await handleQrEntry(from, phone, qrSlug, session);
+    if (handled) return true;
+  }
 
   // K1: handoff = bot MUDO 24h (el pro responde desde su número personal)
   if (session?.state === 'handoff') return true;

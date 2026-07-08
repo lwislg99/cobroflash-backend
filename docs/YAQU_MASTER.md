@@ -410,6 +410,15 @@ Métrica: € cobrados con `origin='maintenance'`/mes (KPI Home). Anti-spam: 1 p
 > V0-3). Flag por-merchant vía columna `merchants.flags` (Parte P) — ON solo en demo. Prefill del
 > wa.me: "Hola, quiero pedir un presupuesto" (derivado del label oficial; veto del fundador
 > pendiente, regla 30).
+> **✅ QR→BOT (8-jul-2026, feature fundador):** el botón del perfil abre el BOT de YaQu (config
+> `WHATSAPP_BOT_PHONE`, número compartido) con el merchant en el texto (via su slug `/p/<slug>`),
+> NO el WhatsApp del pro. El bot (`handleQrEntry` en botFlow) resuelve el merchant por slug (solo
+> perfil público ACTIVO), CREA/asocia el cliente con su teléfono (name provisional "Cliente nuevo")
+> y arranca la solicitud A18 — **única captación de desconocidos permitida en K1, y solo con un QR/
+> enlace explícito del negocio**. Copy K1 nueva del saludo QR: *"👋 ¡Hola! Te paso con *{negocio}*.
+> Cuéntame en una frase qué necesitas y les envío tu solicitud de presupuesto."* Sin `WHATSAPP_BOT_PHONE`
+> configurado → el botón cae al wa.me del pro (comportamiento anterior). Mejora pendiente: usar el
+> nombre de perfil de WhatsApp del remitente en vez de "Cliente nuevo".
 `/p/:slug` (slug único minúsculas-guiones; lista reservada admin/api/pay/p/login…; editable 1 vez/30d). **Público:** nombre comercial, logo, gremio(s), zonas (chips), años de experiencia (opc.), botón "Pedir presupuesto por WhatsApp" (wa.me del PRO prefilled; si BOT activo, alternativa al número YaQu), link reseñas Google si `googleReviewUrl` (reseñas propias = F3), footer "Hecho con YaQu" → `?src=profile`. **NUNCA público:** precios, clientes, volumen, email, NIF, dirección exacta. **QR:** generador en BO (PNG alta res para furgoneta/tarjeta) → `/p/:slug?src=qr`. Loop medido: registros con `acquisitionSource∈{profile,qr}`.
 
 ## ONBOARD-2 · Catálogos por gremio

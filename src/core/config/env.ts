@@ -39,6 +39,10 @@ export const config = {
 
 
     WHATSAPP_PHONE_NUMBER_ID: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
+    // Número REAL del bot de YaQu en formato internacional sin '+' (ej. 34XXXXXXXXX),
+    // para los enlaces wa.me del perfil público (QR → bot con el merchant en el texto).
+    // No es secreto (es el número al que escriben los clientes). Vacío → cae al WhatsApp del pro.
+    WHATSAPP_BOT_PHONE: (process.env.WHATSAPP_BOT_PHONE || '').replace(/\D/g, ''),
     WHATSAPP_BUSINESS_ACCOUNT_ID: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || '',
     WHATSAPP_ACCESS_TOKEN: process.env.WHATSAPP_ACCESS_TOKEN || '',
     WHATSAPP_VERIFY_TOKEN: process.env.WHATSAPP_VERIFY_TOKEN || '',
