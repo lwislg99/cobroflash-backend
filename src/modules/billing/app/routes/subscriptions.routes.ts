@@ -8,15 +8,15 @@ import { readLegalDoc } from '../../../system/app/routes/legalPages.routes';
 
 const router = Router();
 
-// W1: UN plan público — YaQu Pro 29 €/mes (o 290 €/año). Founding = banner sobre Pro
-// (14,50 €/mes de por vida, 20 plazas con contador real). EQUIPO existe en Stripe
+// W1: UN plan público — YaQu Pro 19,90 €/mes (o 199 €/año). Founding = banner sobre Pro
+// (9,90 €/mes de por vida, 20 plazas con contador real). EQUIPO existe en Stripe
 // pero NO se lista (oferta manual W1).
 const PLANS = [
   {
     id: 'pro',
     label: 'Pro',
-    price: 29,
-    priceAnnual: 290,
+    price: 19.9,
+    priceAnnual: 199,
     currency: 'EUR',
     priceKey: 'pro_monthly' as PriceKey,
     priceAnnualKey: 'pro_annual' as PriceKey,

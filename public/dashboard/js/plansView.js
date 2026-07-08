@@ -73,15 +73,18 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
     <div class="customers-card" style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       <div style="font-size:28px">✅</div>
       <div>
-        <div style="font-weight:700;font-size:15px;color:var(--neutral-900)">Plan activo: <strong>${currentPlan === 'founding' ? 'Founding (14,50 €/mes de por vida)' : 'Pro'}</strong></div>
+        <div style="font-weight:700;font-size:15px;color:var(--neutral-900)">Plan activo: <strong>${currentPlan === 'founding' ? 'Founding (9,90 €/mes de por vida)' : 'Pro'}</strong></div>
         ${planExpiresAt ? `<div style="font-size:13px;color:var(--neutral-400);margin-top:2px">Próxima renovación: ${new Date(planExpiresAt).toLocaleDateString('es', { day: '2-digit', month: 'long', year: 'numeric' })}</div>` : ''}
       </div>
     </div>
   `;
 
-  const price    = annual ? plan.priceAnnual : plan.price;
-  const perLabel = annual ? '/año' : '/mes';
-  const saving   = annual ? `<div style="font-size:12px;color:var(--green-600);font-weight:600;margin-top:4px">= ${fmtMoneyEs(plan.priceAnnual / 12)}/mes · Ahorras 2 meses</div>` : '';
+  // Anual: el número grande es el equivalente MENSUAL (engancha más que el total del
+  // año); el total anual real va en la nota de ahorro y en el botón (lo que se cobra).
+  const heroAmount = annual ? fmtMoneyEs(plan.priceAnnual / 12) : fmtMoneyEs(plan.price);
+  const perLabel   = '/mes';
+  const ctaPrice   = annual ? `${plan.priceAnnual} €/año` : `${fmtMoneyEs(plan.price)}/mes`;
+  const saving     = annual ? `<div style="font-size:12px;color:var(--green-600);font-weight:600;margin-top:4px">${plan.priceAnnual} €/año facturado una vez · Ahorras 2 meses</div>` : '';
 
   const features = [
     'Presupuestos ilimitados con firma digital',
@@ -93,20 +96,20 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
     'Soporte por email y WhatsApp',
   ];
 
-  // V0-4 (W1): banner founding sobre Pro — 14,50 €/mes de por vida, contador REAL
+  // V0-4 (W1): banner founding sobre Pro — 9,90 €/mes de por vida, contador REAL
   const foundingHtml = showFounding ? `
     <div class="customers-card" style="margin-bottom:14px;background:linear-gradient(135deg,var(--brand) 0%,var(--logo-cyan) 100%);border:none;color:var(--brand-ink)">
       <div style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between">
         <div style="font-size:14px;font-weight:700">
-          Oferta founding: <span style="text-decoration:line-through;opacity:.7">29 €</span>
-          <span style="font-size:18px"> 14,50 €/mes</span> de por vida
+          Oferta founding: <span style="text-decoration:line-through;opacity:.7">19,90 €</span>
+          <span style="font-size:18px"> 9,90 €/mes</span> de por vida
         </div>
         <span style="font-size:12px;font-weight:700;background:rgba(255,255,255,.35);border-radius:999px;padding:4px 12px;white-space:nowrap">
           Quedan ${founding.seatsLeft} de ${founding.seatsTotal} plazas
         </span>
       </div>
       <button class="plan-btn" data-plan="founding" style="margin-top:12px;width:100%;font-size:14px;font-weight:700;padding:11px;border:none;border-radius:999px;cursor:pointer;background:#fff;color:var(--brand-700)">
-        Quiero mi plaza founding — 14,50 €/mes
+        Quiero mi plaza founding — 9,90 €/mes
       </button>
     </div>
   ` : '';
@@ -123,7 +126,7 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
               Mensual
             </button>
             <button id="toggle-annual" style="padding:6px 16px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;${annual ? 'background:#fff;color:var(--neutral-900);box-shadow:0 1px 3px rgba(0,0,0,.08)' : 'background:transparent;color:var(--neutral-400)'}">
-              Anual <span style="color:var(--green-600);font-size:11px">-21%</span>
+              Anual <span style="color:var(--green-600);font-size:11px">-17%</span>
             </button>
           </div>
         </div>
@@ -132,7 +135,7 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
           ${isCurrent ? `<div style="display:inline-block;background:var(--green-500);color:#fff;font-size:10px;font-weight:700;padding:2px 10px;border-radius:var(--radius-full);margin-bottom:10px">Plan actual</div>` : ''}
           <div style="font-weight:700;font-size:18px;color:var(--neutral-800);margin-bottom:6px">Plan Pro</div>
           <div style="font-size:40px;font-weight:800;color:var(--neutral-900);letter-spacing:-.5px;line-height:1">
-            ${price} €<span style="font-size:16px;font-weight:400;color:var(--neutral-400)">${perLabel}</span>
+            ${heroAmount}<span style="font-size:16px;font-weight:400;color:var(--neutral-400)">${perLabel}</span>
           </div>
           <div style="font-size:12.5px;color:var(--neutral-500);margin-top:8px">+ 0,9 % solo cuando cobras con tarjeta · Bizum y transferencia, gratis</div>
           ${saving}
@@ -149,7 +152,7 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
 
         ${!isCurrent ? `
           <button class="btn-primary plan-btn" data-plan="${plan.id}" style="width:100%;font-size:15px;padding:12px">
-            Suscribirme — ${price} €${perLabel}
+            Suscribirme — ${ctaPrice}
           </button>
           <p style="text-align:center;font-size:12px;color:var(--neutral-400);margin:10px 0 0">
             Sin permanencia · Cancela cuando quieras

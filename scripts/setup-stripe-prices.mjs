@@ -1,7 +1,7 @@
 // V0-4 — Crea (idempotente) los productos/precios de suscripción en Stripe (W1):
-//   yaqu_pro_monthly      → YaQu Pro 29 €/mes
-//   yaqu_pro_annual       → YaQu Pro 290 €/año
-//   yaqu_founding_monthly → YaQu Pro · Founding 14,50 €/mes (20 plazas, de por vida)
+//   yaqu_pro_monthly      → YaQu Pro 19,90 €/mes
+//   yaqu_pro_annual       → YaQu Pro 199 €/año
+//   yaqu_founding_monthly → YaQu Pro · Founding 9,90 €/mes (20 plazas, de por vida)
 //   yaqu_equipo_monthly   → YaQu Equipo 59 €/mes (NO se lista en ninguna página)
 // Uso: node scripts/setup-stripe-prices.mjs   (lee STRIPE_SECRET_KEY de .env / env)
 import fs from 'node:fs';
@@ -20,9 +20,9 @@ const stripe = new Stripe(key);
 console.log(`Modo: ${key.startsWith('sk_test') ? 'TEST' : 'LIVE'}`);
 
 const SPECS = [
-  { lookup: 'yaqu_pro_monthly',      product: 'YaQu Pro',            amount: 2900,  interval: 'month' },
-  { lookup: 'yaqu_pro_annual',       product: 'YaQu Pro',            amount: 29000, interval: 'year'  },
-  { lookup: 'yaqu_founding_monthly', product: 'YaQu Pro · Founding', amount: 1450,  interval: 'month' },
+  { lookup: 'yaqu_pro_monthly',      product: 'YaQu Pro',            amount: 1990,  interval: 'month' },
+  { lookup: 'yaqu_pro_annual',       product: 'YaQu Pro',            amount: 19900, interval: 'year'  },
+  { lookup: 'yaqu_founding_monthly', product: 'YaQu Pro · Founding', amount: 990,   interval: 'month' },
   { lookup: 'yaqu_equipo_monthly',   product: 'YaQu Equipo',         amount: 5900,  interval: 'month' },
 ];
 

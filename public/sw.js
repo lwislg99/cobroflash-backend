@@ -1,5 +1,5 @@
 // Service Worker — YaQu PWA
-const CACHE_NAME = 'yaqu-v1';
+const CACHE_NAME = 'yaqu-v2'; // bump: precios 19,90/199/9,90 (8-jul-26) — re-cachea plansView.js
 
 // Recursos estáticos del dashboard (shell de la app)
 const SHELL = [

@@ -35,7 +35,7 @@ Entre **[Nombre/Razón social del titular de YaQu]**, NIF **[NIF]** ("YaQu") y
 
 ## 3. Precio Founding
 
-**14,50 €/mes DE POR VIDA** (50 % del precio de lista, 29 €/mes), mientras mantengas la
+**9,90 €/mes DE POR VIDA** (mitad del precio de lista, 19,90 €/mes), mientras mantengas la
 suscripción activa. Sin permanencia: cancelas cuando quieras y no se te cobra el mes
 siguiente. **[REVISAR ASESOR: condiciones de la promoción]**
 

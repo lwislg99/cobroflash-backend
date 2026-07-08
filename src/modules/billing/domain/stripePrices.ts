@@ -9,9 +9,9 @@ import { stripe } from '../../../integrations/stripe';
 import { config } from '../../../core/config/env';
 
 export const PRICE_LOOKUP_KEYS = {
-  pro_monthly: 'yaqu_pro_monthly',          // 29 €/mes
-  pro_annual: 'yaqu_pro_annual',            // 290 €/año
-  founding_monthly: 'yaqu_founding_monthly',// 14,50 €/mes de por vida (20 plazas)
+  pro_monthly: 'yaqu_pro_monthly',          // 19,90 €/mes
+  pro_annual: 'yaqu_pro_annual',            // 199 €/año
+  founding_monthly: 'yaqu_founding_monthly',// 9,90 €/mes de por vida (20 plazas)
   equipo_monthly: 'yaqu_equipo_monthly',    // 59 €/mes — NO listado
 } as const;
 

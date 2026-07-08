@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Precios — YaQu</title>
-  <meta name="description" content="YaQu Pro — 29 €/mes (o 290 €/año) + 0,9 % solo cuando cobras con tarjeta. Todo incluido."/>
+  <meta name="description" content="YaQu Pro — 19,90 €/mes (o 199 €/año, sale a 16,58 €/mes) + 0,9 % solo cuando cobras con tarjeta. Todo incluido."/>
   <link rel="manifest" href="/manifest.json"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -62,7 +62,7 @@
 
   <div class="founding" id="founding-banner" style="display:none">
     <div>
-      <strong>Oferta founding:</strong> 14,50 €/mes <u>de por vida</u> para los 20 primeros.
+      <strong>Oferta founding:</strong> 9,90 €/mes <u>de por vida</u> para los 20 primeros.
     </div>
     <span class="seats" id="founding-seats">…</span>
   </div>
@@ -70,11 +70,11 @@
   <div class="card">
     <p class="plan-name">YaQu Pro</p>
     <div class="price-line">
-      <span class="price-old" id="price-old" style="display:none">29 €</span>
-      <span class="price" id="price">29 €</span>
+      <span class="price-old" id="price-old" style="display:none">19,90 €</span>
+      <span class="price" id="price">19,90 €</span>
       <span class="per">/mes</span>
     </div>
-    <p class="annual">o <strong>290 €/año</strong> (2 meses gratis)</p>
+    <p class="annual">o <strong>16,58 €/mes</strong> pagando el año (199 € · 2 meses gratis)</p>
     <p class="fee">+ 0,9 % solo cuando cobras con tarjeta. Bizum y transferencia, gratis.</p>
     <ul>
       <li>Presupuestos ilimitados, con firma digital del cliente</li>
@@ -120,7 +120,7 @@
       document.getElementById('founding-banner').style.display = 'flex';
       document.getElementById('founding-seats').textContent = 'Quedan ' + f.seatsLeft + ' de ' + f.seatsTotal + ' plazas';
       document.getElementById('price-old').style.display = '';
-      document.getElementById('price').textContent = '14,50 €';
+      document.getElementById('price').textContent = '9,90 €';
       document.getElementById('cta').textContent = 'Quiero mi plaza founding';
     }).catch(function () {});
   </script>
