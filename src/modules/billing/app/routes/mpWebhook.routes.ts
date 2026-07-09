@@ -10,6 +10,7 @@ import { sendWhatsAppCtaUrl } from '../../../../integrations/whatsapp';
 import { sendPaymentConfirmationInvoice, notifyMerchantPaid } from '../../../../integrations/whatsappNotifications';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { recalcJobCobradoForCharge } from '../../../jobs/domain/job.service'; // SCRUM-13
 
 const router = Router();
 
@@ -187,6 +188,10 @@ router.post('/', async (req, res) => {
       }
 
       console.log(`[mpWebhook] Charge ${chargeId} marcado como pagado (MP ${mpPaymentId})`);
+
+      // SCRUM-13 (COBROS-1): igual que en /webhooks/psp — recálculo del Job.totalCobrado
+      // (suma desde cero) AÑADIDO al final, fire-and-forget; la cadena de arriba NO se toca.
+      recalcJobCobradoForCharge(updated.id).catch((e) => console.error('[mpWebhook] SCRUM-13 recalc totalCobrado:', e?.message || e));
     } else if (['rejected', 'cancelled'].includes(mpStatus) && charge.status === 'pending') {
       await prisma.charge.update({
         where: { id: chargeId },

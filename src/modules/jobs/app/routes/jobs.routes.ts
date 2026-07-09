@@ -3,7 +3,7 @@
 // resto JAMÁS se cobra solo — SIEMPRE acción del pro). Merchant-scoped (regla 2).
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
-import { canTransition } from '../../domain/job.service';
+import { canTransition, estadoCobroFor } from '../../domain/job.service';
 import { getBillingPlan } from '../../../quotes/domain/billingPlan';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
@@ -55,6 +55,12 @@ async function serializeJob(job: any) {
     direccion: job.direccion ?? null,
     totalAceptado: job.totalAceptado != null ? Number(job.totalAceptado) : (quote ? Number(quote.total) : null),
     totalCobrado: Number(job.totalCobrado ?? 0),
+    // SCRUM-13: semáforo de cobro derivado (SCRUM-11 lo pinta; aquí NO se hace UI).
+    // totalCobrado lo materializa recalcJobCobradoForCharge en los webhooks de pago.
+    estadoCobro: estadoCobroFor(
+      Number(job.totalCobrado ?? 0),
+      job.totalAceptado != null ? Number(job.totalAceptado) : (quote ? Number(quote.total) : 0),
+    ),
     customer,
     quote: quote
       ? { id: quote.id, number: quote.quoteNumber ?? quote.id, total: Number(quote.total), currency: quote.currency, paymentTerms: quote.paymentTerms }

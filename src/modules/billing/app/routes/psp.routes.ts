@@ -12,6 +12,7 @@ import { sendPaymentConfirmationInvoice, notifyMerchantPaid } from '../../../../
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { sendMerchantPaymentEmail } from '../../../messaging/domain/merchantNotifications';
+import { recalcJobCobradoForCharge } from '../../../jobs/domain/job.service'; // SCRUM-13
 
 
 const router = Router();
@@ -254,6 +255,11 @@ router.post('/', async (req, res) => {
           invoiceNumber: inv?.number ?? null,
         }).catch(() => {});
       }
+
+      // SCRUM-13 (COBROS-1): recalcular Job.totalCobrado (suma desde cero de los Charge
+      // paid del Job). AÑADIDO al final, fire-and-forget: un fallo aquí NUNCA rompe la
+      // confirmación del pago; la cadena de arriba NO se toca.
+      recalcJobCobradoForCharge(updated.id).catch((e) => console.error('[psp] SCRUM-13 recalc totalCobrado:', e?.message || e));
 
       return res.json({ ok: true, status: 'paid' });
     }

@@ -59,3 +59,56 @@ export async function ensureJobForQuote(quoteId: number): Promise<void> {
     console.error('[jobs] ensureJobForQuote omitido:', err?.message || err);
   }
 }
+
+/**
+ * SCRUM-13 (COBROS-1): materializa `Job.totalCobrado` = SUMA DESDE CERO de los
+ * importes de los `Charge` en estado 'paid' del Quote de ese Job (todos sus tramos:
+ * vía las Invoices del Quote + el charge principal, distintos). Idempotente por
+ * diseño: recalcula el total ENTERO cada vez, así un webhook duplicado por el mismo
+ * pago NO cuenta dos veces. Best-effort: nunca lanza (no debe romper el pago).
+ */
+export async function recalcJobCobradoForCharge(chargeId: number): Promise<void> {
+  try {
+    if (!Number.isInteger(chargeId)) return;
+    // Charge → Quote: por la factura del tramo (Invoice.chargeId) o por el charge
+    // principal del Quote (Quote.chargeId).
+    const inv = await prisma.invoice.findFirst({ where: { chargeId }, select: { quoteId: true } });
+    let quoteId = inv?.quoteId ?? null;
+    if (!quoteId) {
+      const q = await prisma.quote.findFirst({ where: { chargeId }, select: { id: true } });
+      quoteId = q?.id ?? null;
+    }
+    if (!quoteId) return; // charge sin Quote (p. ej. suscripción) → nada que recalcular
+    const job = await prisma.job.findUnique({ where: { quoteId }, select: { id: true } });
+    if (!job) return; // el Quote no tiene Job
+    // Todos los charges del Quote (tramos): sus Invoices + el charge principal. Distinct.
+    const quote = await prisma.quote.findUnique({
+      where: { id: quoteId },
+      select: { chargeId: true, Invoice: { select: { chargeId: true } } },
+    });
+    const chargeIds = [...new Set(
+      [quote?.chargeId, ...(quote?.Invoice ?? []).map((i) => i.chargeId)]
+        .filter((x): x is number => typeof x === 'number'),
+    )];
+    const agg = chargeIds.length
+      ? await prisma.charge.aggregate({ where: { id: { in: chargeIds }, status: 'paid' }, _sum: { amount: true } })
+      : { _sum: { amount: null } };
+    await prisma.job.update({ where: { id: job.id }, data: { totalCobrado: agg._sum.amount ?? 0 } });
+  } catch (err: any) {
+    console.error('[jobs] recalcJobCobradoForCharge:', err?.message || err);
+  }
+}
+
+/**
+ * SCRUM-13: semáforo de cobro derivado (lo pinta SCRUM-11). Regla del brief:
+ *   cobrado <= 0                      → 'Pendiente'
+ *   0 < cobrado < aceptado            → 'Parcial'
+ *   cobrado >= aceptado (aceptado>0)  → 'Pagado'
+ */
+export function estadoCobroFor(cobrado: number, aceptado: number): 'Pagado' | 'Parcial' | 'Pendiente' {
+  const c = Number(cobrado) || 0;
+  const a = Number(aceptado) || 0;
+  if (a > 0 && c >= a) return 'Pagado';
+  if (c > 0) return 'Parcial';
+  return 'Pendiente';
+}
