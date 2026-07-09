@@ -484,6 +484,16 @@ html, body { overflow-x: clip; }
 .status-pill-pending   { background: var(--amber-50);  color: #92400e; }
 .status-pill-draft     { background: var(--neutral-100); color: var(--neutral-500); }
 
+/* Progress — barra de avance (SCRUM-11, inventario AB3). Componente compartido:
+   track neutro + fill con color de estado (verde = avance/Pagado, ámbar = Parcial).
+   El ancho es DATO → va inline (style="width:X%"). Motion sobrio con reduce-motion.
+   Uso: <div class="progress" role="progressbar" aria-valuenow=.. aria-valuemin=0
+        aria-valuemax=100 aria-label=".."><div class="progress-fill" style="width:X%"></div></div> */
+.progress { height: 8px; background: var(--neutral-100); border-radius: var(--r-full); overflow: hidden; }
+.progress-fill { height: 100%; border-radius: inherit; background: var(--green-600); transition: width .2s ease; }
+.progress-fill--partial { background: var(--amber-500); }
+@media (prefers-reduced-motion: reduce) { .progress-fill { transition: none; } }
+
 /* WA-0b · chip de entrega de WhatsApp (J4, inventario AB3). Mismo lenguaje que las
    status-pill pero en minúscula y con glifo; estados mapeados a tokens existentes. */
 .wa-chip {

@@ -10,6 +10,14 @@ const JOB_STATE_META = {
   cerrado:           { label: 'Cerrado',     pill: 'background:var(--neutral-100);color:var(--neutral-500)' },
 };
 
+// SCRUM-11: semáforo de COBRO (distinto del estado FSM de arriba) → .status-pill
+// canónico, mismo mapeo que invoicesView: Pagado→accepted (verde), Parcial→pending
+// (ámbar), Pendiente→draft (neutro). El dato es job.estadoCobro (backend SCRUM-13/28).
+const COBRO_PILL_CLASS = { Pagado: 'status-pill-accepted', Parcial: 'status-pill-pending', Pendiente: 'status-pill-draft' };
+
+// SCRUM-11: filtro de cobro persistente entre re-renders (una acción FSM recarga la vista).
+let jobsCobroFilter = 'all';
+
 async function renderJobsView(container) {
   container.innerHTML = `
     <div style="max-width:860px">
@@ -17,10 +25,12 @@ async function renderJobsView(container) {
         <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Trabajos</h2>
         <p style="margin:0;font-size:13px;color:var(--muted)">Cada presupuesto aceptado se convierte en un trabajo. Agéndalo, márcalo terminado y cobra el resto con un toque.</p>
       </div>
+      <div id="jobs-filter" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
       <div id="jobs-list" style="display:flex;flex-direction:column;gap:12px"></div>
     </div>
   `;
   const list = document.getElementById('jobs-list');
+  const filterBar = document.getElementById('jobs-filter');
   uiSkeletonCards(list, 4);
 
   let jobs;
@@ -39,7 +49,37 @@ async function renderJobsView(container) {
     return;
   }
 
-  // Grupos de LISTA (spec: lista simple por fecha)
+  // SCRUM-11: filtro por estado de cobro (segmentado; reutiliza botones del inventario,
+  // NO crea componente nuevo). Filtra el array ANTES del agrupado → no rompe los grupos.
+  const paint = () => {
+    const counts = { all: jobs.length, Pendiente: 0, Parcial: 0, Pagado: 0 };
+    for (const j of jobs) if (counts[j.estadoCobro] != null) counts[j.estadoCobro]++;
+
+    filterBar.innerHTML = '';
+    [['all', 'Todos'], ['Pendiente', 'Pendiente'], ['Parcial', 'Parcial'], ['Pagado', 'Pagado']].forEach(([key, label]) => {
+      const b = document.createElement('button');
+      b.className = 'btn-sm ' + (jobsCobroFilter === key ? 'btn-secondary' : 'btn-ghost');
+      b.textContent = `${label} · ${key === 'all' ? counts.all : counts[key]}`;
+      b.setAttribute('aria-pressed', jobsCobroFilter === key ? 'true' : 'false');
+      b.addEventListener('click', () => { jobsCobroFilter = key; paint(); });
+      filterBar.appendChild(b);
+    });
+
+    const shown = jobsCobroFilter === 'all' ? jobs : jobs.filter((j) => j.estadoCobro === jobsCobroFilter);
+    renderJobGroups(list, shown, container);
+  };
+  paint();
+}
+
+// Agrupado de LISTA (spec: lista simple por fecha). Extraído (SCRUM-11) para reutilizarlo
+// con el filtro de cobro; el agrupado y su lógica NO cambian.
+function renderJobGroups(list, jobs, container) {
+  list.innerHTML = '';
+  if (!jobs.length) {
+    list.innerHTML = `<div class="customers-card" style="text-align:center;color:var(--muted);font-size:13px;padding:18px">No hay trabajos con ese estado de cobro.</div>`;
+    return;
+  }
+
   const now = Date.now();
   const in7d = now + 7 * 86400000;
   const groups = [
@@ -60,7 +100,6 @@ async function renderJobsView(container) {
     else groups[3].items.push(j);
   }
 
-  list.innerHTML = '';
   for (const g of groups) {
     if (!g.items.length) continue;
     const sec = document.createElement('div');
@@ -91,17 +130,36 @@ function jobCard(j, container) {
     ? new Date(j.scheduledAt).toLocaleString('es-ES', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
     : null;
 
+  // SCRUM-11: semáforo de cobro + barra de % (dato de SCRUM-13/28). Se pinta cuando hay
+  // un total aceptado contra el que cobrar (Jobs sin presupuesto/total → sin barra).
+  const aceptado = Number(j.totalAceptado || 0);
+  const cobrado = Number(j.totalCobrado || 0);
+  const cur = j.quote?.currency || 'EUR';
+  const showCobro = aceptado > 0;
+  const pct = showCobro ? Math.min(100, Math.round((cobrado / aceptado) * 100)) : 0;
+  const cobroCls = COBRO_PILL_CLASS[j.estadoCobro] || 'status-pill-draft';
+
   card.innerHTML = `
     <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;color:var(--ink);font-size:15px">${esc(j.customer?.name || 'Cliente')}</div>
         <div style="font-size:12.5px;color:var(--muted)">
-          ${j.quote ? `Presupuesto #${j.quote.number} · <span style="color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums">${fmtMoneyEs(j.quote.total, j.quote.currency)}</span>` : 'Sin presupuesto'}
+          ${j.quote ? `Presupuesto #${j.quote.number} · <span style="color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums">${fmtMoneyEs(j.quote.total, j.quote.currency)}</span>${showCobro ? ` <span class="status-pill ${cobroCls}" style="vertical-align:middle">${esc(j.estadoCobro)}</span>` : ''}` : 'Sin presupuesto'}
           ${fecha ? ` · 📅 ${fecha}` : ''}
         </div>
       </div>
       <span style="flex:none;white-space:nowrap;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;${meta.pill}">${meta.label}</span>
     </div>
+    ${showCobro ? `
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:12px;margin-bottom:5px">
+        <span style="color:var(--muted)">Cobrado <b style="color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums">${fmtMoneyEs(cobrado, cur)}</b> de <b style="color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums">${fmtMoneyEs(aceptado, cur)}</b></span>
+        <span style="color:var(--muted);font-variant-numeric:tabular-nums">${pct}%</span>
+      </div>
+      <div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Cobrado ${pct}% de ${fmtMoneyEs(aceptado, cur)}">
+        <div class="progress-fill${j.estadoCobro === 'Parcial' ? ' progress-fill--partial' : ''}" style="width:${pct}%"></div>
+      </div>
+    </div>` : ''}
     <div class="job-actions" style="display:flex;gap:8px;flex-wrap:wrap"></div>
   `;
 
