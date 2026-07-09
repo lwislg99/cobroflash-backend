@@ -1,6 +1,7 @@
 // src/modules/system/invoiceAdmin.ts
 import { prisma } from '../../core/db/prisma';
 import { Prisma } from '@prisma/client';
+import { recalcJobCobradoForInvoice } from '../jobs/domain/job.service'; // SCRUM-28
 
 // Listado para el BO (con filtros)
 export async function listInvoicesAdmin(
@@ -92,13 +93,21 @@ export async function updateInvoiceStatusAdmin(
   }
   // para 'expired' dejamos paidAt como esté
 
-  return prisma.invoice.update({
+  const updated = await prisma.invoice.update({
     where: { id },
     data: {
       status,
       paidAt,
     },
   });
+  // SCRUM-28 (COBROS-2): el cobro MANUAL (Bizum/transferencia) también materializa
+  // Job.totalCobrado. Reutiliza el núcleo de SCRUM-13 (suma Invoices paid, idempotente).
+  // Fire-and-forget: un fallo aquí JAMÁS rompe el marcar-pagado (marca paid, permisos y
+  // audit quedan intactos). Sin await, con .catch() como en los webhooks.
+  recalcJobCobradoForInvoice(existing.id).catch((e) =>
+    console.error('[invoiceAdmin] SCRUM-28 recalc totalCobrado:', e?.message || e),
+  );
+  return updated;
 }
 
 // Helpers específicos (por si quieres seguir usándolos)

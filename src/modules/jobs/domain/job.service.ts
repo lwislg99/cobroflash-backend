@@ -61,41 +61,52 @@ export async function ensureJobForQuote(quoteId: number): Promise<void> {
 }
 
 /**
- * SCRUM-13 (COBROS-1): materializa `Job.totalCobrado` = SUMA DESDE CERO de los
- * importes de los `Charge` en estado 'paid' del Quote de ese Job (todos sus tramos:
- * vía las Invoices del Quote + el charge principal, distintos). Idempotente por
- * diseño: recalcula el total ENTERO cada vez, así un webhook duplicado por el mismo
- * pago NO cuenta dos veces. Best-effort: nunca lanza (no debe romper el pago).
+ * NÚCLEO (SCRUM-13 · madurado en SCRUM-28): materializa `Job.totalCobrado` = SUMA
+ * DESDE CERO del `total` de las **Invoices en estado 'paid'** del Quote de ese Job.
+ * La Invoice pagada es el denominador común de "cobrado" de TODOS los métodos:
+ *   - tarjeta / Mercado Pago → el webhook marca la Invoice `paid` (`ensureInvoiceForCharge`)
+ *   - Bizum / transferencia manual → `updateInvoiceStatusAdmin` marca la Invoice `paid`
+ * 1 tramo = 1 Invoice → sin doble conteo. Idempotente por diseño (recalcula el total
+ * ENTERO cada vez → un evento duplicado no cuenta dos veces). Best-effort: nunca lanza.
  */
+export async function recalcJobCobradoForQuote(quoteId: number): Promise<void> {
+  try {
+    if (!Number.isInteger(quoteId)) return;
+    const job = await prisma.job.findUnique({ where: { quoteId }, select: { id: true } });
+    if (!job) return; // el Quote no tiene Job
+    const agg = await prisma.invoice.aggregate({ where: { quoteId, status: 'paid' }, _sum: { total: true } });
+    await prisma.job.update({ where: { id: job.id }, data: { totalCobrado: agg._sum.total ?? 0 } });
+  } catch (err: any) {
+    console.error('[jobs] recalcJobCobradoForQuote:', err?.message || err);
+  }
+}
+
+/** Wrapper para los webhooks de pago (SCRUM-13): resuelve el Quote desde el Charge (por
+ * su Invoice o el charge principal) y llama al núcleo. NO duplica el cálculo. */
 export async function recalcJobCobradoForCharge(chargeId: number): Promise<void> {
   try {
     if (!Number.isInteger(chargeId)) return;
-    // Charge → Quote: por la factura del tramo (Invoice.chargeId) o por el charge
-    // principal del Quote (Quote.chargeId).
     const inv = await prisma.invoice.findFirst({ where: { chargeId }, select: { quoteId: true } });
     let quoteId = inv?.quoteId ?? null;
     if (!quoteId) {
       const q = await prisma.quote.findFirst({ where: { chargeId }, select: { id: true } });
       quoteId = q?.id ?? null;
     }
-    if (!quoteId) return; // charge sin Quote (p. ej. suscripción) → nada que recalcular
-    const job = await prisma.job.findUnique({ where: { quoteId }, select: { id: true } });
-    if (!job) return; // el Quote no tiene Job
-    // Todos los charges del Quote (tramos): sus Invoices + el charge principal. Distinct.
-    const quote = await prisma.quote.findUnique({
-      where: { id: quoteId },
-      select: { chargeId: true, Invoice: { select: { chargeId: true } } },
-    });
-    const chargeIds = [...new Set(
-      [quote?.chargeId, ...(quote?.Invoice ?? []).map((i) => i.chargeId)]
-        .filter((x): x is number => typeof x === 'number'),
-    )];
-    const agg = chargeIds.length
-      ? await prisma.charge.aggregate({ where: { id: { in: chargeIds }, status: 'paid' }, _sum: { amount: true } })
-      : { _sum: { amount: null } };
-    await prisma.job.update({ where: { id: job.id }, data: { totalCobrado: agg._sum.amount ?? 0 } });
+    if (quoteId) await recalcJobCobradoForQuote(quoteId);
   } catch (err: any) {
     console.error('[jobs] recalcJobCobradoForCharge:', err?.message || err);
+  }
+}
+
+/** Wrapper para el cobro MANUAL (SCRUM-28, Bizum/transferencia): resuelve el Quote desde
+ * la Invoice marcada `paid` y llama al mismo núcleo. NO duplica el cálculo. */
+export async function recalcJobCobradoForInvoice(invoiceId: number): Promise<void> {
+  try {
+    if (!Number.isInteger(invoiceId)) return;
+    const inv = await prisma.invoice.findUnique({ where: { id: invoiceId }, select: { quoteId: true } });
+    if (inv?.quoteId) await recalcJobCobradoForQuote(inv.quoteId);
+  } catch (err: any) {
+    console.error('[jobs] recalcJobCobradoForInvoice:', err?.message || err);
   }
 }
 
