@@ -187,6 +187,9 @@ Sistema **estratificado pero suave**: las superficies descansan planas con un bo
 ### Signature: KPI / cifra de cobro
 - Card con Label arriba (MAYÚSCULAS, Apagado) y cifra Display (Tinta, 800, tabular) debajo. Tendencia con flecha ▲▼ en Positivo/Peligro. Es el corazón del Home: debe leerse de un vistazo.
 
+### Progress / barra de avance
+- Componente compartido (`.progress` > `.progress-fill`) para **% cobrado** de un Trabajo y **% de uso** (plan/cuota). Track: Neutro claro (`--neutral-100`), pastilla (`--r-full`), alto ~8 px. Fill: **Verde Confianza** (`--green-600`) para avance/completo; **ámbar** (`--amber-500`) para estado parcial (o cerca de un límite en barras de uso). El ancho es DATO → único valor inline (`width:X%`); el resto son tokens. Motion sobria `width .2s`, anulada con `prefers-reduced-motion`. Accesible: `role="progressbar"` + `aria-valuenow/min/max`. Acompañar SIEMPRE de la cifra/porcentaje en texto (el color no es el único canal). El % cobrado se empareja con el status pill de cobro (Pagado/Parcial/Pendiente).
+
 ## 6. Do's and Don'ts
 
 ### Do:
