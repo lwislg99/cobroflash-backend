@@ -49,6 +49,12 @@ async function serializeJob(job: any) {
     assignedUserId: job.assignedUserId,
     notes: job.notes,
     createdAt: job.createdAt,
+    // SCRUM-10: campos del contenedor "Trabajo". Fallback a derivado para Jobs
+    // anteriores (titulo/totalAceptado null) → sin cambiar el comportamiento visible.
+    titulo: job.titulo ?? `Presupuesto #${quote ? (quote.quoteNumber ?? quote.id) : job.id}${customer?.name ? ` · ${customer.name}` : ''}`,
+    direccion: job.direccion ?? null,
+    totalAceptado: job.totalAceptado != null ? Number(job.totalAceptado) : (quote ? Number(quote.total) : null),
+    totalCobrado: Number(job.totalCobrado ?? 0),
     customer,
     quote: quote
       ? { id: quote.id, number: quote.quoteNumber ?? quote.id, total: Number(quote.total), currency: quote.currency, paymentTerms: quote.paymentTerms }

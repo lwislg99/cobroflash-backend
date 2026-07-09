@@ -30,17 +30,29 @@ export async function ensureJobForQuote(quoteId: number): Promise<void> {
   try {
     const quote = await prisma.quote.findUnique({
       where: { id: quoteId },
-      select: { id: true, merchantId: true, customerId: true, status: true },
+      // SCRUM-10: además del contexto, el total (para congelarlo) y el nº + cliente (para el título).
+      select: {
+        id: true, merchantId: true, customerId: true, status: true,
+        total: true, quoteNumber: true,
+        customer: { select: { name: true } },
+      },
     });
     if (!quote || quote.status !== 'accepted') return;
+    // SCRUM-10: título propio con el criterio actual (nº de presupuesto + cliente).
+    const num = quote.quoteNumber ?? quote.id;
+    const titulo = `Presupuesto #${num}${quote.customer?.name ? ` · ${quote.customer.name}` : ''}`;
     await prisma.job.upsert({
       where: { quoteId: quote.id },
-      update: {}, // ya existe: no tocar su estado
+      update: {}, // ya existe: no tocar (idempotencia, SCRUM-10 §3.7)
       create: {
         merchantId: quote.merchantId,
         customerId: quote.customerId,
         quoteId: quote.id,
         status: 'pendiente_agendar',
+        // SCRUM-10: campos del contenedor "Trabajo". direccion sin fuente hoy → null.
+        titulo,
+        totalAceptado: quote.total, // Decimal(12,2): total del Quote congelado en el accept
+        // totalCobrado = 0 por default (materializado; su lógica de sumar cobros = SCRUM-13)
       },
     });
   } catch (err: any) {
