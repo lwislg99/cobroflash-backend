@@ -144,3 +144,52 @@ export function getStageAmount(
   const amounts = distributeStageAmounts(total, getBillingPlan(paymentTerms));
   return amounts[stageIndex] ?? 0;
 }
+
+/**
+ * SCRUM-27: plan de facturación EFECTIVO de un Quote.
+ * - Si el Quote tiene `customBillingPlan` (array no vacío de `{percentage, label}`),
+ *   lo mapea a `BillingStage[]` (index = orden, percentage la fracción guardada, label la etiqueta).
+ * - Si no, cae a los presets `getBillingPlan(paymentTerms)` — que NO se tocan.
+ * El reparto exacto del importe lo hace `distributeStageAmounts` (SCRUM-32) sobre cualquiera de los dos.
+ */
+export function resolveBillingPlan(
+  quote: { customBillingPlan?: unknown; paymentTerms?: string | null } | null | undefined
+): BillingStage[] {
+  const custom = quote && (quote as any).customBillingPlan;
+  if (Array.isArray(custom) && custom.length > 0) {
+    return custom.map((s: any, i: number) => ({
+      index: i,
+      percentage: Number(s?.percentage) || 0,
+      label: typeof s?.label === 'string' ? s.label : '',
+    }));
+  }
+  return getBillingPlan((quote?.paymentTerms ?? null) as PaymentTermsCode);
+}
+
+/**
+ * SCRUM-27: valida un plan de tramos personalizado (lo que llega del editor).
+ * Reglas: array con ≥1 tramo, cada `label` no vacío, cada `percentage > 0`, y la suma
+ * de porcentajes == 100% EXACTA (comparada en enteros: `Σ round(percentage*100) === 100`).
+ * Devuelve `{ ok: true }` o `{ ok: false, error }` con mensaje es-ES digno (sin stacktrace).
+ */
+export function validateCustomBillingPlan(
+  plan: unknown
+): { ok: true } | { ok: false; error: string } {
+  if (!Array.isArray(plan) || plan.length === 0) {
+    return { ok: false, error: 'El plan de cobro debe tener al menos un tramo.' };
+  }
+  let sumCents = 0;
+  for (const s of plan as any[]) {
+    const label = typeof s?.label === 'string' ? s.label.trim() : '';
+    if (!label) return { ok: false, error: 'Cada tramo necesita una etiqueta (p. ej. "Anticipo").' };
+    const pct = Number(s?.percentage);
+    if (!Number.isFinite(pct) || pct <= 0) {
+      return { ok: false, error: `El tramo "${label}" debe tener un porcentaje mayor que 0.` };
+    }
+    sumCents += Math.round(pct * 100);
+  }
+  if (sumCents !== 100) {
+    return { ok: false, error: 'Los tramos deben sumar exactamente el 100 %.' };
+  }
+  return { ok: true };
+}

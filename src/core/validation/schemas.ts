@@ -37,6 +37,9 @@ export const CreateQuoteSchema = z.object({
   docFields: z.object({ name: z.boolean(), phone: z.boolean(), taxId: z.boolean(), email: z.boolean() }).partial().nullable().optional(),
   // A16.2: caducidad del presupuesto (default 30 días en el server; editable al crear)
   validUntil: z.coerce.date().optional(),
+  // SCRUM-27: plan de cobro personalizado (N tramos). Presente = ignora paymentTerms.
+  // La suma-100% / etiqueta no vacía / % > 0 se valida en la ruta (validateCustomBillingPlan) con mensaje es-ES.
+  customBillingPlan: z.array(z.object({ percentage: z.number(), label: z.string() })).optional(),
 });
 
 export type QuoteTier = z.infer<typeof QuoteTierSchema>;

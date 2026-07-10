@@ -241,6 +241,7 @@ model Quote {
   lines        Json
   acceptedAt   DateTime?
   paymentTerms String?
+  customBillingPlan Json? @map("custom_billing_plan") // SCRUM-27: [{percentage, label}] plan de tramos personalizado (fracción 0-1; índice = orden)
   // V0-3: telemetría quote_created_via ('text' | 'voice' con VOZ-1)
   createdVia   String? @map("created_via")
   rejectedAt   DateTime?
@@ -286,6 +287,7 @@ model Invoice {
   status        String    @default("pending") @map("status")
   paidAt        DateTime? @map("paid_at")
   clientComment String?   @map("client_comment")
+  stageLabel    String?   @map("stage_label") // SCRUM-27: etiqueta del tramo, congelada al crear la factura
 
   // Líneas de detalle (copiadas del Quote o del Charge al crear la factura)
   lines Json?

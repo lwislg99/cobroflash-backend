@@ -384,11 +384,114 @@ blockClient.appendChild(descWrapper);
     optManual.value = "MANUAL";
     optManual.textContent = "Solo presupuesto (facturación manual)";
     paymentSelect.appendChild(optManual);
+
+    // SCRUM-27: plan de cobro personalizado por tramos. Valor "CUSTOM" es marcador de front:
+    // el payload manda paymentTerms:null + customBillingPlan con los tramos.
+    const optCustom = document.createElement("option");
+    optCustom.value = "CUSTOM";
+    optCustom.textContent = "Plan personalizado (por tramos)";
+    paymentSelect.appendChild(optCustom);
   
     // Valor por defecto para el MVP
     paymentSelect.value = "FULL_UPFRONT";
 
     blockClient.appendChild(fieldPaymentTerms.wrapper);
+
+    // ---------- SCRUM-27: EDITOR DE TRAMOS PERSONALIZADOS (oculto salvo "Personalizado") ----------
+    // Clona el patrón addLine/lines[]: filas {etiqueta, %}, añadir/quitar, recolectar a un array,
+    // suma en vivo con aviso "deben sumar 100 %". Reutiliza .input/.btn/.btn-icon (sin CSS nueva).
+    const stagesWrapper = document.createElement("div");
+    stagesWrapper.style.cssText = "display:none;margin-top:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2)";
+    const stagesHeader = document.createElement("div");
+    stagesHeader.style.cssText = "display:flex;justify-content:space-between;align-items:center;margin-bottom:8px";
+    stagesHeader.innerHTML = '<span style="font-size:13px;font-weight:700;color:var(--ink)">Tramos de cobro</span>';
+    const addStageBtn = document.createElement("button");
+    addStageBtn.type = "button";
+    addStageBtn.className = "btn btn-secondary btn-sm";
+    addStageBtn.textContent = "+ Añadir tramo";
+    stagesHeader.appendChild(addStageBtn);
+    stagesWrapper.appendChild(stagesHeader);
+    const stagesRows = document.createElement("div");
+    stagesRows.style.cssText = "display:flex;flex-direction:column;gap:8px";
+    stagesWrapper.appendChild(stagesRows);
+    const stagesSum = document.createElement("div");
+    stagesSum.style.cssText = "margin-top:8px;font-size:12.5px;font-weight:600";
+    stagesWrapper.appendChild(stagesSum);
+
+    const stages = []; // { row, labelInput, pctInput }
+
+    function recalcStagesSum() {
+      const total = stages.reduce((s, st) => s + (parseFloat(String(st.pctInput.value).replace(",", ".")) || 0), 0);
+      const ok = Math.round(total * 100) === 10000; // 100,00 exacto en enteros
+      stagesSum.textContent = ok
+        ? `Suman ${Math.round(total * 100) / 100} % ✓`
+        : `Suman ${Math.round(total * 100) / 100} % — deben sumar 100 %`;
+      stagesSum.style.color = ok ? "var(--green-600)" : "var(--danger)";
+    }
+
+    function addStage(initial) {
+      const row = document.createElement("div");
+      row.style.cssText = "display:flex;gap:8px;align-items:center";
+      const labelInput = document.createElement("input");
+      labelInput.type = "text";
+      labelInput.className = "input";
+      labelInput.placeholder = "Etiqueta (p. ej. Anticipo)";
+      labelInput.style.cssText = "flex:1;min-width:0";
+      labelInput.value = (initial && initial.label) || "";
+      const pctInput = document.createElement("input");
+      pctInput.type = "number";
+      pctInput.min = "0";
+      pctInput.step = "1";
+      pctInput.className = "input";
+      pctInput.placeholder = "%";
+      pctInput.style.cssText = "width:84px";
+      pctInput.value = (initial && initial.pct != null) ? initial.pct : "";
+      const rmBtn = document.createElement("button");
+      rmBtn.type = "button";
+      rmBtn.className = "btn-icon";
+      rmBtn.title = "Eliminar tramo";
+      rmBtn.textContent = "🗑️";
+      row.appendChild(labelInput);
+      row.appendChild(pctInput);
+      row.appendChild(rmBtn);
+      stagesRows.appendChild(row);
+      const stageObj = { row, labelInput, pctInput };
+      stages.push(stageObj);
+      const onInput = () => { recalcStagesSum(); scheduleDraftSave(); };
+      labelInput.addEventListener("input", onInput);
+      pctInput.addEventListener("input", onInput);
+      rmBtn.addEventListener("click", () => {
+        const i = stages.indexOf(stageObj);
+        if (i >= 0) stages.splice(i, 1);
+        row.remove();
+        recalcStagesSum();
+        scheduleDraftSave();
+      });
+      recalcStagesSum();
+    }
+
+    // Recolecta los tramos como el backend los espera: percentage en FRACCIÓN 0-1 (como los
+    // presets [0.5,0.5]) + etiqueta trim. La suma-100% / etiqueta / %>0 se revalida en el server.
+    function collectCustomStages() {
+      return stages.map((s) => ({
+        percentage: (parseFloat(String(s.pctInput.value).replace(",", ".")) || 0) / 100,
+        label: (s.labelInput.value || "").trim(),
+      }));
+    }
+    function customStagesValid() {
+      if (!stages.length) return false;
+      let sumCents = 0;
+      for (const s of stages) {
+        const label = (s.labelInput.value || "").trim();
+        const pct = parseFloat(String(s.pctInput.value).replace(",", "."));
+        if (!label || !Number.isFinite(pct) || pct <= 0) return false;
+        sumCents += Math.round(pct * 100);
+      }
+      return sumCents === 10000;
+    }
+
+    addStageBtn.addEventListener("click", () => addStage());
+    blockClient.appendChild(stagesWrapper);
 
     // ---------- A16.2: CADUCIDAD (validUntil, default 30 días) ----------
     const validWrapper = document.createElement("div");
@@ -715,6 +818,10 @@ blockClient.appendChild(descWrapper);
     const snapshot = {
       customerId: fieldCustomer.select.value || "",
       paymentTerms: paymentSelect.value || "",
+      // SCRUM-27: tramos personalizados (valores crudos del editor) para restaurar el borrador
+      customStages: paymentSelect.value === "CUSTOM"
+        ? stages.map((s) => ({ label: s.labelInput.value || "", pct: s.pctInput.value || "" }))
+        : undefined,
       vatDefault: fieldVatDefault.input.value || "21",
       lines: lines.map((l) => ({
         concept: l.conceptInput.value || "",
@@ -753,6 +860,14 @@ blockClient.appendChild(descWrapper);
       d.lines.forEach((l) => addLine(l));
       if (d.vatDefault) fieldVatDefault.input.value = d.vatDefault;
       if (d.paymentTerms) paymentSelect.value = d.paymentTerms;
+      // SCRUM-27: restaurar el editor de tramos si el borrador era "Personalizado".
+      if (d.paymentTerms === "CUSTOM" && Array.isArray(d.customStages)) {
+        stages.length = 0;
+        stagesRows.innerHTML = "";
+        d.customStages.forEach((s) => addStage({ label: s.label, pct: s.pct }));
+        stagesWrapper.style.display = "block";
+        recalcStagesSum();
+      }
       // customerId se aplica tras cargar la lista de clientes (en loadInitialData)
       return d.customerId || true;
     } catch (_e) { return false; }
@@ -999,6 +1114,11 @@ blockClient.appendChild(descWrapper);
               break;
             case "MANUAL":
               label = "Solo presupuesto, facturación manual.";
+              break;
+            case "CUSTOM": // SCRUM-27: muestra los tramos del editor en la vista previa
+              label = stages.length
+                ? stages.map((s) => `${(s.labelInput.value || "").trim() || "Tramo"} ${s.pctInput.value || 0}%`).join(" · ")
+                : "Plan personalizado por tramos.";
               break;
             default:
               label = "";
@@ -2089,6 +2209,10 @@ if (Number.isFinite(n) && n >= 0) {
   });
   descCheck.addEventListener("change", renderPreview);
   paymentSelect.addEventListener("change", function () {
+    // SCRUM-27: el editor de tramos solo se ve en "Personalizado"; arranca con 1 fila.
+    const custom = paymentSelect.value === "CUSTOM";
+    stagesWrapper.style.display = custom ? "block" : "none";
+    if (custom && stages.length === 0) addStage();
     renderPreview();
     scheduleDraftSave();
   });
@@ -2200,6 +2324,12 @@ payloadLines.push({
       return;
     }
 
+    // SCRUM-27: plan personalizado → bloquear guardar si no cuadra (≥1 tramo, etiqueta, %>0, suman 100%).
+    if (paymentSelect.value === "CUSTOM" && !customStagesValid()) {
+      setAlert("error", "Revisa los tramos: cada uno necesita etiqueta y porcentaje, y deben sumar 100 %.");
+      return;
+    }
+
     try {
       submitBtn.disabled = true;
       submitBtn.textContent = "Generando…";
@@ -2210,7 +2340,8 @@ payloadLines.push({
         customer_id: Number(customerId),
         currency: currentMerchant.defaultCurrency || "EUR",
         lines: payloadLines,
-        paymentTerms: paymentSelect.value || null,
+        paymentTerms: paymentSelect.value === "CUSTOM" ? null : (paymentSelect.value || null),
+        customBillingPlan: paymentSelect.value === "CUSTOM" ? collectCustomStages() : undefined, // SCRUM-27
         payMethods: selectedPayMethods(), // A2.1: undefined = todas
         docFields: selectedDocFields(),   // A20.4: undefined = todos
         created_via: quoteFormCreatedVia, // VZ-3: 'voice' si hubo dictado
