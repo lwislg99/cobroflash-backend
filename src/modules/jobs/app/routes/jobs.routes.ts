@@ -69,6 +69,62 @@ async function serializeJob(job: any) {
   };
 }
 
+// SCRUM-12: serializer del DETALLE (aditivo, solo lectura). Reutiliza serializeJob(job)
+// para la base y AÑADE invoices[] + charge anidados, espejando la forma de
+// getQuoteDetailAdmin (quoteAdmin.ts:141-160) con su PROPIO fetch (Job 1:1 Quote vía
+// Job.quoteId; NO acopla a getQuoteDetailAdmin). GAP CERRADO: cada invoice expone
+// status/paidAt/chargeId (semáforo por tramo + link /pay/invoice/:chargeId).
+async function serializeJobDetail(job: any) {
+  const base = await serializeJob(job);
+  // SCRUM-12 (decisión 2): el detalle expone customer.email (fallback de correo del
+  // "Reenviar por WhatsApp"). Aditivo, solo lectura; Customer.email ya existe (no es schema).
+  let customer: any = base.customer;
+  if (customer && job.customerId) {
+    const c = await prisma.customer.findUnique({ where: { id: job.customerId }, select: { email: true } });
+    customer = { ...customer, email: c?.email ?? null };
+  }
+  if (!job.quoteId) return { ...base, customer, invoices: [], charge: null };
+
+  const quote = await prisma.quote.findUnique({
+    where: { id: job.quoteId },
+    select: {
+      charge: { select: { id: true, status: true, method: true, amount: true, currency: true } },
+      Invoice: {
+        select: {
+          id: true, number: true, total: true, currency: true, createdAt: true,
+          pdfUrl: true, type: true, status: true, paidAt: true, chargeId: true,
+        },
+        orderBy: { createdAt: 'asc' },
+      },
+    },
+  });
+
+  const invoices = (quote?.Invoice ?? []).map((inv) => ({
+    id: inv.id,
+    number: inv.number,               // número visible de la factura/justificante
+    total: Number(inv.total),         // Decimal(12,2) → Number (como serializeJob)
+    currency: inv.currency,
+    createdAt: inv.createdAt,
+    pdfUrl: inv.pdfUrl,
+    type: inv.type,                   // F1 | JUST | R1 (para el copy del timeline)
+    status: inv.status,               // ← GAP CERRADO (semáforo por tramo)
+    paidAt: inv.paidAt,               // ← GAP CERRADO
+    chargeId: inv.chargeId,           // ← GAP CERRADO (link /pay/invoice/:chargeId)
+  }));
+
+  const charge = quote?.charge
+    ? {
+        id: quote.charge.id,
+        status: quote.charge.status,
+        method: quote.charge.method,
+        amount: Number(quote.charge.amount),
+        currency: quote.charge.currency,
+      }
+    : null;
+
+  return { ...base, customer, invoices, charge };
+}
+
 // GET /admin/jobs — lista para la vista "Esta semana" (simple, por fecha)
 router.get('/', async (req, res) => {
   try {
@@ -82,6 +138,21 @@ router.get('/', async (req, res) => {
     return res.json(out);
   } catch (err: any) {
     console.error('[GET /admin/jobs]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// GET /admin/jobs/:id — DETALLE del Trabajo (SCRUM-12, solo lectura, aditivo).
+// Tenancy idéntica al resto de handlers :id (findFirst { id, merchantId } → 404).
+router.get('/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
+    if (!job) return res.status(404).json({ error: 'not_found' });
+    return res.json(await serializeJobDetail(job));
+  } catch (err: any) {
+    console.error('[GET /admin/jobs/:id]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });

@@ -124,7 +124,7 @@ function jobCard(j, container) {
   const meta = JOB_STATE_META[j.status] || JOB_STATE_META.pendiente_agendar;
   const card = document.createElement('div');
   card.className = 'customers-card';
-  card.style.cssText = 'display:flex;flex-direction:column;gap:10px';
+  card.style.cssText = 'display:flex;flex-direction:column;gap:10px;cursor:pointer';
 
   const fecha = j.scheduledAt
     ? new Date(j.scheduledAt).toLocaleString('es-ES', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -150,16 +150,7 @@ function jobCard(j, container) {
       </div>
       <span style="flex:none;white-space:nowrap;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;${meta.pill}">${meta.label}</span>
     </div>
-    ${showCobro ? `
-    <div>
-      <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:12px;margin-bottom:5px">
-        <span style="color:var(--muted)">Cobrado <b style="color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums">${fmtMoneyEs(cobrado, cur)}</b> de <b style="color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums">${fmtMoneyEs(aceptado, cur)}</b></span>
-        <span style="color:var(--muted);font-variant-numeric:tabular-nums">${pct}%</span>
-      </div>
-      <div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Cobrado ${pct}% de ${fmtMoneyEs(aceptado, cur)}">
-        <div class="progress-fill${j.estadoCobro === 'Parcial' ? ' progress-fill--partial' : ''}" style="width:${pct}%"></div>
-      </div>
-    </div>` : ''}
+    ${showCobro ? progressBar(pct, j.estadoCobro, { cobrado, aceptado, currency: cur }) : ''}
     <div class="job-actions" style="display:flex;gap:8px;flex-wrap:wrap"></div>
   `;
 
@@ -248,6 +239,13 @@ function jobCard(j, container) {
     }
   });
   card.appendChild(notes);
+
+  // SCRUM-12: la tarjeta abre el detalle del Trabajo; los controles internos (botones,
+  // enlace .ics, datetime de agendar, notas) NO disparan la navegación (guard por target).
+  card.addEventListener('click', (e) => {
+    if (e.target.closest('button, a, input, textarea, select, label')) return;
+    if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: j.id });
+  });
 
   return card;
 }

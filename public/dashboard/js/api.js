@@ -204,6 +204,25 @@ function uiSkeletonCards(container, cards = 4) {
 }
 window.uiSkeletonCards = uiSkeletonCards;
 
+// progressBar(pct, estado, {cobrado, aceptado, currency}) — barra de % cobrado COMPARTIDA
+// (SCRUM-11 → extraída en SCRUM-12). Devuelve label "Cobrado X de Y · %" + barra .progress.
+// estado 'Parcial' pinta ámbar; ancho = dato (inline). Tokens de styles.css:487-495.
+function progressBar(pct, estado, { cobrado = 0, aceptado = 0, currency = 'EUR' } = {}) {
+  const p = Math.max(0, Math.min(100, Math.round(Number(pct) || 0)));
+  const partial = estado === 'Parcial' ? ' progress-fill--partial' : '';
+  return `
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:12px;margin-bottom:5px">
+        <span style="color:var(--muted)">Cobrado <b style="color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums">${fmtMoneyEs(cobrado, currency)}</b> de <b style="color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums">${fmtMoneyEs(aceptado, currency)}</b></span>
+        <span style="color:var(--muted);font-variant-numeric:tabular-nums">${p}%</span>
+      </div>
+      <div class="progress" role="progressbar" aria-valuenow="${p}" aria-valuemin="0" aria-valuemax="100" aria-label="Cobrado ${p}% de ${fmtMoneyEs(aceptado, currency)}">
+        <div class="progress-fill${partial}" style="width:${p}%"></div>
+      </div>
+    </div>`;
+}
+window.progressBar = progressBar;
+
 // WA-0b · chip de entrega de WhatsApp (J4). Recibe `waDelivery` del detalle
 // ({status, templateName, at} | null) y devuelve el HTML del chip, o '' si no hay envío.
 // Estados de Meta: sent → delivered → read | failed. Microcopy clara para el merchant.

@@ -122,7 +122,7 @@ async function initApp() {
   const viewContainer = document.getElementById('view-container');
   const viewTitle     = document.getElementById('view-title');
 
-  if (!window.appState) window.appState = { view: 'home', quoteId: null, invoiceId: null };
+  if (!window.appState) window.appState = { view: 'home', quoteId: null, invoiceId: null, jobId: null };
 
   // 5. Hamburger menu (móvil)
   const overlay = document.createElement('div');
@@ -143,7 +143,8 @@ async function initApp() {
   // 6. Menú activo
   function setActiveMenu(view) {
     const menuView = view === 'quotes-detail' ? 'quotes-list'
-      : view === 'invoice-detail' ? 'invoices' : view;
+      : view === 'invoice-detail' ? 'invoices'
+      : view === 'jobs-detail' ? 'jobs' : view;
 
     document.querySelectorAll('.nav-item[data-view]').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.view === menuView);
@@ -161,6 +162,7 @@ async function initApp() {
     state.view = view;
     if (options.quoteId   !== undefined) state.quoteId   = options.quoteId;
     if (options.invoiceId !== undefined) state.invoiceId = options.invoiceId;
+    if (options.jobId     !== undefined) state.jobId     = options.jobId;
 
     closeSidebar();
 
@@ -208,6 +210,11 @@ async function initApp() {
       case 'jobs':
         viewTitle.textContent = 'Trabajos';
         if (typeof renderJobsView === 'function') renderJobsView(viewContainer);
+        break;
+      case 'jobs-detail':
+        viewTitle.textContent = 'Trabajo';
+        if (state.jobId != null && typeof renderJobDetailView === 'function') renderJobDetailView(viewContainer, state.jobId);
+        else viewContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔧</div><div class="empty-state-title">Sin trabajo seleccionado</div></div>`;
         break;
       case 'customer-360':
         viewTitle.textContent = 'Cliente';
