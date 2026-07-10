@@ -9,7 +9,7 @@ import {
 } from '../../quoteAdmin';
 
 import { prisma } from '../../../../core/db/prisma';
-import { getNextBillingStage, getStageAmount } from '../../../quotes/domain/billingPlan';
+import { resolveBillingPlan, distributeStageAmounts } from '../../../quotes/domain/billingPlan';
 import { sendQuoteWhatsAppToCustomer } from '../../../quotes/domain/sendQuote.service';
 import { suggestMaintenance } from '../../../maintenance/domain/maintenance.service';
 import { isFlagEnabled } from '../../../../core/flags';
@@ -145,15 +145,17 @@ router.post('/:id/invoice', async (req, res) => {
     }
 
     const existingInvoices = quote.Invoice || [];
-    const paymentTerms = (quote as any).paymentTerms ?? null;
-    const stage = getNextBillingStage(paymentTerms, existingInvoices.length);
+    // SCRUM-27: plan efectivo (custom o preset); selección por conteo igual que antes.
+    const plan = resolveBillingPlan(quote);
+    const stage = plan[existingInvoices.length] ?? null;
 
     if (!stage) {
       return res.status(409).json({ error: 'no_more_invoices_for_payment_terms' });
     }
 
-    // SCRUM-32: importe del tramo desde el reparto centralizado (último = resto, céntimos enteros).
-    const invoiceAmount = getStageAmount(quote.total, paymentTerms, stage.index);
+    // SCRUM-27+32: importe del tramo del plan resuelto, reparto exacto (último = resto, céntimos enteros).
+    const invoiceAmount = distributeStageAmounts(quote.total, plan)[stage.index];
+    const isCustomPlan = Array.isArray((quote as any).customBillingPlan) && (quote as any).customBillingPlan.length > 0;
     const merchant = quote.merchant;
 
     // Escalar las líneas de la cotización al porcentaje facturado (ej. 50% en FIFTY_FIFTY)
@@ -173,6 +175,7 @@ router.post('/:id/invoice', async (req, res) => {
           number: invoiceNumber,
           type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
           total: invoiceAmount.toFixed(2),
+          stageLabel: isCustomPlan ? stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
           currency: quote.currency,
           lines: scaledLines.length > 0 ? scaledLines : undefined,
           pdfUrl: 'PENDING_PDF',

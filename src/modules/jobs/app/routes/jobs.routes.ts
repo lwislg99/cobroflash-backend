@@ -4,7 +4,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { canTransition, estadoCobroFor } from '../../domain/job.service';
-import { getBillingPlan, getStageAmount } from '../../../quotes/domain/billingPlan';
+import { resolveBillingPlan, distributeStageAmounts } from '../../../quotes/domain/billingPlan';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 
@@ -21,7 +21,7 @@ async function serializeJob(job: any) {
         where: { id: job.quoteId },
         select: {
           id: true, quoteNumber: true, total: true, currency: true,
-          paymentTerms: true,
+          paymentTerms: true, customBillingPlan: true, // SCRUM-27: para resolver el plan efectivo
           Invoice: { select: { id: true, status: true, total: true } },
         },
       })
@@ -34,7 +34,7 @@ async function serializeJob(job: any) {
   // A13.3: ¿queda tramo pendiente? (plan según paymentTerms vs facturas emitidas)
   let remaining: { amount: number; currency: string } | null = null;
   if (quote) {
-    const plan = getBillingPlan(quote.paymentTerms as any);
+    const plan = resolveBillingPlan(quote); // SCRUM-27: custom o preset (Pendiente/semáforo cuadran con el plan real)
     const emitted = (quote.Invoice || []).length;
     if (emitted < plan.length) {
       const pct = plan.slice(emitted).reduce((a, s) => a + s.percentage, 0);
@@ -92,7 +92,7 @@ async function serializeJobDetail(job: any) {
       Invoice: {
         select: {
           id: true, number: true, total: true, currency: true, createdAt: true,
-          pdfUrl: true, type: true, status: true, paidAt: true, chargeId: true,
+          pdfUrl: true, type: true, status: true, paidAt: true, chargeId: true, stageLabel: true, // SCRUM-27
         },
         orderBy: { createdAt: 'asc' },
       },
@@ -110,6 +110,7 @@ async function serializeJobDetail(job: any) {
     status: inv.status,               // ← GAP CERRADO (semáforo por tramo)
     paidAt: inv.paidAt,               // ← GAP CERRADO
     chargeId: inv.chargeId,           // ← GAP CERRADO (link /pay/invoice/:chargeId)
+    stageLabel: inv.stageLabel,       // SCRUM-27: etiqueta del tramo (custom); null en presets
   }));
 
   const charge = quote?.charge
@@ -260,14 +261,15 @@ router.post('/:id/collect-rest', async (req, res) => {
     });
     if (!quote) return res.status(404).json({ error: 'quote_not_found' });
 
-    const plan = getBillingPlan(quote.paymentTerms as any);
+    const plan = resolveBillingPlan(quote); // SCRUM-27: custom o preset
     const emitted = (quote.Invoice || []).length;
     if (emitted >= plan.length) {
       return res.status(409).json({ error: 'nothing_pending', message: 'No queda ningún tramo por cobrar de este presupuesto.' });
     }
     const stage = plan[emitted];
-    // SCRUM-32: importe del tramo desde el reparto centralizado (último = resto, céntimos enteros).
-    const amount = getStageAmount(quote.total, quote.paymentTerms as any, stage.index);
+    // SCRUM-27+32: importe del tramo del plan resuelto, reparto exacto (último = resto, céntimos enteros).
+    const amount = distributeStageAmounts(quote.total, plan)[stage.index];
+    const isCustomPlan = Array.isArray((quote as any).customBillingPlan) && (quote as any).customBillingPlan.length > 0;
     // TODO(SCRUM-16/17): reparto fino línea-a-línea del último tramo (≤1 cént. vs Invoice.total de SCRUM-32).
     const quoteLines = Array.isArray(quote.lines) ? (quote.lines as any[]) : [];
     const scaledLines = stage.percentage < 1
@@ -284,6 +286,7 @@ router.post('/:id/collect-rest', async (req, res) => {
           number: invoiceNumber,
           type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0 (regla 26)
           total: amount.toFixed(2),
+          stageLabel: isCustomPlan ? stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
           currency: quote.currency,
           lines: scaledLines.length > 0 ? scaledLines : undefined,
           pdfUrl: 'PENDING_PDF',

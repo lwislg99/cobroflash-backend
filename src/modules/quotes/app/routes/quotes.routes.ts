@@ -15,7 +15,7 @@ function calcTierTotal(lines: Array<{qty: number; price: number; tax?: number}>)
 }
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
-import { getNextBillingStage, getStageAmount } from '../../domain/billingPlan';
+import { resolveBillingPlan, distributeStageAmounts, validateCustomBillingPlan } from '../../domain/billingPlan';
 import { allocateQuoteNumber, displayQuoteNumber } from '../../domain/quoteNumber.service';
 import { isQuoteExpired } from '../../domain/expire.service';
 import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/merchantNotifications';
@@ -71,6 +71,15 @@ router.post('/create', async (req, res) => {
       return res.status(400).json({ error: 'validation_error', details: 'lines or tiers required' });
     }
 
+    // SCRUM-27: si viene un plan de cobro personalizado, debe cuadrar (≥1 tramo,
+    // etiquetas no vacías, % > 0, y suman 100% exacto). Mensaje es-ES digno.
+    if (body.customBillingPlan != null) {
+      const planCheck = validateCustomBillingPlan(body.customBillingPlan);
+      if (!planCheck.ok) {
+        return res.status(400).json({ error: 'invalid_billing_plan', message: planCheck.error });
+      }
+    }
+
     const merchant = await prisma.merchant.findUnique({ where: { id: merchant_id } });
     if (!merchant) return res.status(404).json({ error: 'merchant_not_found' });
 
@@ -117,6 +126,7 @@ router.post('/create', async (req, res) => {
           lines: canonicalLines,
           tiers: tiersWithTotal as any ?? undefined,
           paymentTerms: body.paymentTerms ?? null,
+          customBillingPlan: body.customBillingPlan ?? undefined, // SCRUM-27: plan de tramos personalizado
           docFields: body.docFields ?? undefined, // A20.4: qué datos del cliente muestra el documento
           // A16.2: caducidad — default 30 días, editable al crear
           validUntil: body.validUntil ?? new Date(Date.now() + 30 * 86_400_000),
@@ -497,14 +507,18 @@ router.post('/:id/decision', async (req, res) => {
         paymentTerms = 'FULL_UPFRONT';
       }
 
-      const stage = getNextBillingStage(paymentTerms, existingInvoices.length);
+      // SCRUM-27: plan efectivo del Quote (custom si lo tiene, si no el preset); selección por
+      // conteo igual que antes (misma semántica que getNextBillingStage).
+      const plan = resolveBillingPlan(updatedQuote);
+      const stage = plan[existingInvoices.length] ?? null;
 
       if (stage) {
-        const percentage = stage.percentage; // 1 → 100%, 0.5 → 50%
-        // updatedQuote (no quote): si el cliente eligió un tier, total y líneas ya son los del tier
-        // SCRUM-32: el importe del tramo sale del reparto centralizado (último tramo = resto,
-        // céntimos enteros) → la suma de tramos cuadra EXACTA con el total (no +1 cént.).
-        const invoiceAmount = getStageAmount(updatedQuote.total, paymentTerms, stage.index);
+        const percentage = stage.percentage; // 1 → 100%, 0.5 → 50% (para escalar las líneas)
+        // updatedQuote (no quote): si el cliente eligió un tier, total y líneas ya son los del tier.
+        // SCRUM-27+32: importe del tramo del plan resuelto, reparto exacto (último tramo = resto,
+        // céntimos enteros) → la suma de tramos cuadra EXACTA con el total.
+        const invoiceAmount = distributeStageAmounts(updatedQuote.total, plan)[stage.index];
+        const isCustomPlan = Array.isArray((updatedQuote as any).customBillingPlan) && (updatedQuote as any).customBillingPlan.length > 0;
 
         // Copiar las líneas a la factura (escaladas al % facturado, ej. 50% en FIFTY_FIFTY).
         // Sin esto el PDF salía sin desglose y la huella VeriFactu con cuota IVA 0,00 (bug E2E V0-1).
@@ -525,6 +539,7 @@ router.post('/:id/decision', async (req, res) => {
               number: invoiceNumber,
               type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
               total: invoiceAmount.toFixed(2),
+              stageLabel: isCustomPlan ? stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
               currency: quote.currency,
               lines: scaledLines.length > 0 ? scaledLines : undefined,
               pdfUrl: 'PENDING_PDF',

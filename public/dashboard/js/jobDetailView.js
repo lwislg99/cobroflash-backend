@@ -148,7 +148,7 @@ async function renderJobDetailView(container, jobId) {
     events.push({
       icon: paid ? '💰' : '🧾',
       when: paid ? (inv.paidAt || inv.createdAt) : inv.createdAt,
-      title: `${jobDetDocLabel(inv)} ${esc(inv.number)}`,
+      title: inv.stageLabel ? esc(inv.stageLabel) : `${jobDetDocLabel(inv)} ${esc(inv.number)}`, // SCRUM-27: etiqueta del tramo si es plan custom
       detail: `${jobDetInvEstado(inv.status)} · ${fmtMoneyEs(inv.total, inv.currency || cur)}`,
     });
   });
@@ -237,7 +237,7 @@ async function renderJobDetailView(container, jobId) {
       const when = paid ? inv.paidAt : inv.createdAt;
       item.innerHTML =
         `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">` +
-        `<div><strong>${jobDetDocLabel(inv)} ${esc(inv.number)}</strong> · <span class="amount-muted">${fmtMoneyEs(inv.total, inv.currency || cur)}</span>` +
+        `<div><strong>${inv.stageLabel ? esc(inv.stageLabel) + ' · ' : ''}${jobDetDocLabel(inv)} ${esc(inv.number)}</strong> · <span class="amount-muted">${fmtMoneyEs(inv.total, inv.currency || cur)}</span>` +
         `${when ? `<br><span style="font-size:12px;color:var(--muted)">${new Date(when).toLocaleDateString('es-ES')}</span>` : ''}</div>` +
         `<span class="status-pill ${jobDetInvPill(inv.status)}">${jobDetInvEstado(inv.status)}</span>` +
         `</div><div class="jobdet-inv-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div>`;
