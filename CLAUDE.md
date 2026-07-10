@@ -12,9 +12,11 @@ firma del cliente → cobro de señal/total → (post SIF-1) factura VeriFactu. 
 
 ## Protocolo de sesión (AA1 — obligatorio)
 
+> **Flujo Git completo (ramas + PR + trabajo en equipo): `docs/FLUJO_DE_TRABAJO.md`.**
+
 1. Leer este archivo → abrir `docs/YAQU_MASTER.md` → localizar el **sprint activo en la Parte U**.
    Duda → preguntar, nunca asumir.
-2. **Una tarea → un commit → push.** Plan de archivos ANTES de tocar código (skill `/yaqu-sprint`).
+2. **Una tarea → una RAMA (`scrum-<n>-<slug>`) → commit de feature (+ commit del máster aparte, misma rama) → PR a `main`.** `main` protegida: push directo BLOQUEADO. El merge del PR lo hace un HUMANO, nunca Claude. `git pull` de `main` antes de empezar cada tarea. Plan de archivos ANTES de tocar código (skill `/yaqu-sprint`).
 3. Tests relevantes en verde antes de commit (`npm test`); verificación en **yaqu.app**
    (no localhost) antes de cerrar la tarea.
 4. **STOP CONDITIONS — parar y pedir OK del fundador si la tarea toca:**
@@ -30,7 +32,8 @@ firma del cliente → cobro de señal/total → (post SIF-1) factura VeriFactu. 
 6. Bugs → `docs/BUGS.md` con su formato; nada de arreglos "de paso" sin registrar.
 7. Cierre de sprint: `/yaqu-release-check` (QA del sprint + docs + done/evidencias en U)
    y actualizar el master (✅ con motivo; nunca borrar).
-8. Producción: deploy = push a `main`. Nada destructivo contra la BD de prod sin preview
+8. Producción: deploy = MERGE del PR a `main` (Railway auto-deploy desde `main`; push directo
+   bloqueado por protección de rama). Nada destructivo contra la BD de prod sin preview
    del diff (`prisma migrate diff`) y confirmación (hook `guard-dangerous`).
 9. **Secretos NUNCA en el chat.** Tokens (`EAA…`), claves de API (`GEMINI_API_KEY`, Stripe
    `sk_`/`whsec_`) y `WHATSAPP_ACCESS_TOKEN` los pega el fundador DIRECTO en Railway, jamás en

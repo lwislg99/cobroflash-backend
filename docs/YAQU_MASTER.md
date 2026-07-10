@@ -668,13 +668,13 @@ Ideas validadas por el mercado, documentadas aquí para revisión a los 25 pagan
 
 ## AA1. Protocolo de sesión (obligatorio)
 1. Leer `CLAUDE.md` (auto) → abrir `docs/YAQU_MASTER.md` → localizar el **sprint activo en U**. Duda → preguntar, nunca asumir.
-2. Una tarea → un commit → push. Plan de archivos ANTES de tocar código (skill `/yaqu-sprint`).
+2. Una tarea → una RAMA (`scrum-<n>-<slug>`) → commit de feature (+ commit del máster aparte, misma rama) → PR a `main`. `main` protegida: push directo BLOQUEADO. El merge del PR lo hace un HUMANO, nunca Claude. `git pull` de `main` antes de empezar cada tarea. Plan de archivos ANTES de tocar código (`/yaqu-sprint`).
 3. Tests relevantes en verde antes de commit; verificación en **yaqu.app** (no localhost) antes de cerrar tarea.
 4. **Stop conditions — parar y pedir OK del fundador si la tarea toca:** claims fiscales/VeriFactu · dinero real o flujo de cobro en producción · plantillas/categoría de Meta · cambios de schema no aditivos · datos de clientes (export/borrado) · flags de P a nivel global.
 5. Prohibido inventar estados, transiciones, flags o textos de landing/bot (L, P, N5, K1; reglas 27 y 30). Necesidad nueva = propuesta de cambio de master.
 6. Bugs → `docs/BUGS.md` con el formato existente; nada de arreglos "de paso" sin registrar.
 7. Cierre de sprint: `/yaqu-release-check` (QA del sprint + docs actualizados + done/evidencias en U) y actualizar el master (✅, nunca borrar).
-8. Producción: deploy = push a main. Nada destructivo contra la BD de prod sin preview del diff y confirmación (hook AA2).
+8. Producción: deploy = MERGE del PR a `main` (Railway auto-deploy desde `main`; push directo bloqueado por protección de rama). Nada destructivo contra la BD de prod sin preview del diff y confirmación (hook AA2).
 
 ## AA2. Artefactos de tooling (se crean en DOCS-F1)
 ```
