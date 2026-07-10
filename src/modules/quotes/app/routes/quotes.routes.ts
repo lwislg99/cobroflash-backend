@@ -15,7 +15,7 @@ function calcTierTotal(lines: Array<{qty: number; price: number; tax?: number}>)
 }
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
-import { getNextBillingStage } from '../../domain/billingPlan';
+import { getNextBillingStage, getStageAmount } from '../../domain/billingPlan';
 import { allocateQuoteNumber, displayQuoteNumber } from '../../domain/quoteNumber.service';
 import { isQuoteExpired } from '../../domain/expire.service';
 import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/merchantNotifications';
@@ -502,11 +502,14 @@ router.post('/:id/decision', async (req, res) => {
       if (stage) {
         const percentage = stage.percentage; // 1 → 100%, 0.5 → 50%
         // updatedQuote (no quote): si el cliente eligió un tier, total y líneas ya son los del tier
-        const totalNumber = Number(updatedQuote.total);
-        const invoiceAmount = totalNumber * percentage;
+        // SCRUM-32: el importe del tramo sale del reparto centralizado (último tramo = resto,
+        // céntimos enteros) → la suma de tramos cuadra EXACTA con el total (no +1 cént.).
+        const invoiceAmount = getStageAmount(updatedQuote.total, paymentTerms, stage.index);
 
         // Copiar las líneas a la factura (escaladas al % facturado, ej. 50% en FIFTY_FIFTY).
         // Sin esto el PDF salía sin desglose y la huella VeriFactu con cuota IVA 0,00 (bug E2E V0-1).
+        // TODO(SCRUM-16/17): el reparto fino línea-a-línea del ÚLTIMO tramo (que puede diferir ≤1 cént.
+        // del Invoice.total exacto de SCRUM-32) se cuadra al entrar las facturas de anticipo/final.
         const quoteLines = Array.isArray(updatedQuote.lines) ? (updatedQuote.lines as any[]) : [];
         const scaledLines = percentage < 1
           ? quoteLines.map((l: any) => ({ ...l, price: Number(l.price) * percentage }))

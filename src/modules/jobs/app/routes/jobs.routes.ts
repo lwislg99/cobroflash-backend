@@ -4,7 +4,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { canTransition, estadoCobroFor } from '../../domain/job.service';
-import { getBillingPlan } from '../../../quotes/domain/billingPlan';
+import { getBillingPlan, getStageAmount } from '../../../quotes/domain/billingPlan';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 
@@ -266,7 +266,9 @@ router.post('/:id/collect-rest', async (req, res) => {
       return res.status(409).json({ error: 'nothing_pending', message: 'No queda ningún tramo por cobrar de este presupuesto.' });
     }
     const stage = plan[emitted];
-    const amount = Number(quote.total) * stage.percentage;
+    // SCRUM-32: importe del tramo desde el reparto centralizado (último = resto, céntimos enteros).
+    const amount = getStageAmount(quote.total, quote.paymentTerms as any, stage.index);
+    // TODO(SCRUM-16/17): reparto fino línea-a-línea del último tramo (≤1 cént. vs Invoice.total de SCRUM-32).
     const quoteLines = Array.isArray(quote.lines) ? (quote.lines as any[]) : [];
     const scaledLines = stage.percentage < 1
       ? quoteLines.map((l: any) => ({ ...l, price: Number(l.price) * stage.percentage }))

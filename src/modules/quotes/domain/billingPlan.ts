@@ -108,3 +108,39 @@ export function getNextBillingStage(
 
   return plan[existingInvoicesCount];
 }
+
+/**
+ * SCRUM-32: reparto EXACTO de un total entre los tramos de un plan.
+ * Invariante (dinero): se trabaja en CÉNTIMOS ENTEROS; los tramos 0..n-2 se redondean
+ * por su %, y el ÚLTIMO tramo absorbe el resto (`totalCents − Σ anteriores`). Así la
+ * suma de tramos == total, EXACTA, en totales par e impar. Puro y determinista por índice
+ * (NO consulta BD). Devuelve euros a 2 decimales (mismo formato que se guarda hoy).
+ * Base para planes personalizados de más de 2 tramos (SCRUM-27).
+ */
+export function distributeStageAmounts(total: number | string | { toString(): string }, plan: BillingStage[]): number[] {
+  const n = plan.length;
+  if (n === 0) return [];
+  const totalCents = Math.round(Number(total) * 100);
+  const cents: number[] = [];
+  let acc = 0;
+  for (let i = 0; i < n - 1; i++) {
+    const c = Math.round(totalCents * plan[i].percentage);
+    cents.push(c);
+    acc += c;
+  }
+  cents.push(totalCents - acc); // el último tramo = el resto exacto
+  return cents.map((c) => c / 100);
+}
+
+/**
+ * SCRUM-32: importe EXACTO del tramo `stageIndex` para unas paymentTerms + total.
+ * Construye el plan (mismos % que `getBillingPlan`) y delega en `distributeStageAmounts`.
+ */
+export function getStageAmount(
+  total: number | string | { toString(): string }, // acepta Prisma.Decimal (se convierte con Number)
+  paymentTerms: PaymentTermsCode,
+  stageIndex: number
+): number {
+  const amounts = distributeStageAmounts(total, getBillingPlan(paymentTerms));
+  return amounts[stageIndex] ?? 0;
+}

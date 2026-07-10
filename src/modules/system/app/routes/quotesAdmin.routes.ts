@@ -9,7 +9,7 @@ import {
 } from '../../quoteAdmin';
 
 import { prisma } from '../../../../core/db/prisma';
-import { getNextBillingStage } from '../../../quotes/domain/billingPlan';
+import { getNextBillingStage, getStageAmount } from '../../../quotes/domain/billingPlan';
 import { sendQuoteWhatsAppToCustomer } from '../../../quotes/domain/sendQuote.service';
 import { suggestMaintenance } from '../../../maintenance/domain/maintenance.service';
 import { isFlagEnabled } from '../../../../core/flags';
@@ -152,11 +152,12 @@ router.post('/:id/invoice', async (req, res) => {
       return res.status(409).json({ error: 'no_more_invoices_for_payment_terms' });
     }
 
-    const totalNumber = Number(quote.total);
-    const invoiceAmount = totalNumber * stage.percentage;
+    // SCRUM-32: importe del tramo desde el reparto centralizado (último = resto, céntimos enteros).
+    const invoiceAmount = getStageAmount(quote.total, paymentTerms, stage.index);
     const merchant = quote.merchant;
 
     // Escalar las líneas de la cotización al porcentaje facturado (ej. 50% en FIFTY_FIFTY)
+    // TODO(SCRUM-16/17): reparto fino línea-a-línea del último tramo (≤1 cént. vs Invoice.total de SCRUM-32).
     const quoteLines = Array.isArray(quote.lines) ? quote.lines as any[] : [];
     const scaledLines = stage.percentage < 1
       ? quoteLines.map((l: any) => ({ ...l, price: Number(l.price) * stage.percentage }))
