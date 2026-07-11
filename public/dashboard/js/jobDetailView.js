@@ -203,7 +203,17 @@ async function renderJobDetailView(container, jobId) {
 
   // CTA primario "Cobrar el resto" (terminado + remaining>0) → POST /admin/jobs/:id/collect-rest.
   if (job.status === 'terminado' && job.remaining && job.remaining.amount > 0) {
-    const ctaLabel = `💰 Cobrar el resto (${fmtMoneyEs(job.remaining.amount, job.remaining.currency)})`;
+    // SCRUM-34: label honesto — collect-rest emite SOLO el siguiente tramo.
+    // Con 2+ tramos pendientes de un plan CUSTOM: se nombra el tramo (label + importe del tramo).
+    // Con el ÚLTIMO tramo: texto de hoy, pero el IMPORTE sale de nextStage.amount (exacto por
+    // distributeStageAmounts; remaining es float y con céntimo impar mentiría 1 cént.).
+    // Sin esc(): el label va a textContent.
+    const restAmount = (job.pendingStagesCount === 1 && job.nextStage)
+      ? fmtMoneyEs(job.nextStage.amount, job.nextStage.currency)
+      : fmtMoneyEs(job.remaining.amount, job.remaining.currency); // fallback y presets con 2+ pendientes, como hoy
+    const ctaLabel = (job.hasCustomPlan && job.pendingStagesCount >= 2 && job.nextStage)
+      ? `🪙 Cobrar siguiente tramo: ${job.nextStage.label} (${fmtMoneyEs(job.nextStage.amount, job.nextStage.currency)})`
+      : `💰 Cobrar el resto (${restAmount})`;
     const cta = document.createElement('button');
     cta.className = 'btn-primary';
     cta.style.marginBottom = '14px';

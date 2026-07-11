@@ -5,6 +5,7 @@ import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { canTransition, estadoCobroFor } from '../../domain/job.service';
 import { resolveBillingPlan, distributeStageAmounts } from '../../../quotes/domain/billingPlan';
+import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; // SCRUM-34
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 
@@ -33,6 +34,7 @@ async function serializeJob(job: any) {
 
   // A13.3: ¿queda tramo pendiente? (plan según paymentTerms vs facturas emitidas)
   let remaining: { amount: number; currency: string } | null = null;
+  let planView: ReturnType<typeof buildBillingPlanView> | null = null; // SCRUM-34
   if (quote) {
     const plan = resolveBillingPlan(quote); // SCRUM-27: custom o preset (Pendiente/semáforo cuadran con el plan real)
     const emitted = (quote.Invoice || []).length;
@@ -40,6 +42,8 @@ async function serializeJob(job: any) {
       const pct = plan.slice(emitted).reduce((a, s) => a + s.percentage, 0);
       remaining = { amount: Math.round(Number(quote.total) * pct * 100) / 100, currency: quote.currency };
     }
+    // SCRUM-34: siguiente tramo + pendientes por el MISMO conteo que collect-rest (plan[emitted]).
+    planView = buildBillingPlanView(quote, emitted);
   }
 
   return {
@@ -66,6 +70,12 @@ async function serializeJob(job: any) {
       ? { id: quote.id, number: quote.quoteNumber ?? quote.id, total: Number(quote.total), currency: quote.currency, paymentTerms: quote.paymentTerms }
       : null,
     remaining, // null = nada pendiente de facturar
+    // SCRUM-34: para el label honesto del CTA (siguiente tramo vs resto). remaining NO cambia.
+    nextStage: planView?.nextStage
+      ? { label: planView.nextStage.label, amount: planView.nextStage.amount, currency: planView.nextStage.currency }
+      : null,
+    pendingStagesCount: planView?.pendingStagesCount ?? 0,
+    hasCustomPlan: planView?.hasCustomPlan ?? false,
   };
 }
 

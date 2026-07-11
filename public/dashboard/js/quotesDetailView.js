@@ -442,7 +442,12 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   addDefRow(decDl, 'Motivo de rechazo', d.rejectionReason);
   addDefRow(decDl, 'Aceptado', d.acceptedAt ? new Date(d.acceptedAt).toLocaleString('es-ES') : null);
   addDefRow(decDl, 'Rechazado', d.rejectedAt ? new Date(d.rejectedAt).toLocaleString('es-ES') : null);
-  addDefRow(decDl, 'Condiciones de pago', getPaymentTermsLabel(d.paymentTerms));
+  // SCRUM-34: plan personalizado visible ("{label} {pct}% · …"); presets y "sin
+  // condiciones", como hoy. addDefRow usa textContent → label crudo, sin escapes.
+  const planText = (quote.hasCustomPlan && Array.isArray(quote.billingPlan) && quote.billingPlan.length)
+    ? quote.billingPlan.map((s) => `${s.label} ${Math.round(s.percent * 100)}%`).join(' · ')
+    : getPaymentTermsLabel(d.paymentTerms);
+  addDefRow(decDl, 'Condiciones de pago', planText);
   if (!decDl.children.length) {
     decDl.innerHTML = '<dd style="color:var(--muted)">Aún sin decisión registrada.</dd>';
   }
@@ -587,7 +592,23 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   invSec.appendChild(btnInvoice);
 
   let canGenerateInvoice = false;
-  if (!isAccepted) {
+  if (quote.hasCustomPlan) {
+    // SCRUM-34 (SOLO planes custom): puerta al SIGUIENTE tramo sin exigir trabajo
+    // terminado (POST /admin/quotes/:id/invoice no lo exige; emite por conteo vía
+    // resolveBillingPlan). Los presets siguen por la cadena de siempre, intacta.
+    // btnInvoice.textContent → label crudo (textContent escapa solo).
+    const next = quote.nextStage || null;
+    if (!isAccepted) {
+      btnInvoice.textContent = 'No disponible para estas condiciones de pago';
+      btnInvoice.disabled = true;
+    } else if (next) {
+      btnInvoice.textContent = `Generar siguiente tramo: ${next.label} (${fmtQuoteMoney(next.amount, next.currency || cur)})`;
+      canGenerateInvoice = true;
+    } else {
+      btnInvoice.textContent = 'Plan de facturación completado';
+      btnInvoice.disabled = true;
+    }
+  } else if (!isAccepted) {
     btnInvoice.textContent = 'Solo disponible tras aceptar el presupuesto';
     btnInvoice.disabled = true;
   } else if (isFullUpfront) {

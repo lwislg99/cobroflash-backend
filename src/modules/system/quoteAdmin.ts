@@ -1,6 +1,7 @@
 // src/modules/system/quoteAdmin.ts
 import { prisma } from '../../core/db/prisma';
 import { allocateInvoiceNumber, isReceiptNumber } from '../invoicing/domain/invoiceNumber.service';
+import { buildBillingPlanView } from '../quotes/domain/billingPlanView'; // SCRUM-34
 
 /**
  * Lista de presupuestos para el panel admin.
@@ -103,6 +104,11 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
     throw new Error('quote_not_found');
   }
 
+  // SCRUM-34: plan RESUELTO + siguiente tramo por CONTEO — la MISMA regla que usa
+  // POST /admin/quotes/:id/invoice (plan[existingInvoices.length]) para que el label
+  // de la UI nunca prometa un tramo distinto del que emitiría el endpoint.
+  const planView = buildBillingPlanView(quote as any, (quote.Invoice || []).length);
+
   return {
     id: quote.id,
     number: quote.quoteNumber ?? quote.id, // A1.2: número visible por merchant
@@ -157,6 +163,8 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
       currency: inv.currency,
       pdfUrl: inv.pdfUrl,
       createdAt: inv.createdAt,
+      status: inv.status,         // SCRUM-34: el front ya lo consumía sin viajar (CTAs viejos = SCRUM-35)
+      stageLabel: inv.stageLabel, // SCRUM-34: etiqueta del tramo (custom); null en presets
     })),
 
     decision: {
@@ -168,6 +176,13 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
       paymentTerms: quote.paymentTerms,
       evidence: quote.evidence,
     },
+
+    // SCRUM-34: plan de cobro resuelto para la UI (labels + % + importes exactos por
+    // distributeStageAmounts) y siguiente tramo por conteo. hasCustomPlan distingue un
+    // plan personalizado del default FULL_UPFRONT que resolveBillingPlan aplica a null.
+    billingPlan: planView.billingPlan,
+    nextStage: planView.nextStage,
+    hasCustomPlan: planView.hasCustomPlan,
   };
 }
 
