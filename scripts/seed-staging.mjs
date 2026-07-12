@@ -144,6 +144,31 @@ async function main() {
     await prisma.merchant.update({ where: { id: merchant.id }, data: { nextQuoteNumber: nextNumber } });
   }
 
+  // 4) SCRUM-14: Trabajos para las quotes aceptadas. El seed acepta por Prisma directo
+  //    (sin pasar por /decision → ensureJobForQuote no corre), así que la suite de
+  //    albaranes (v1.3) necesita que los Jobs existan. Idempotente: Job.quoteId es único.
+  const seededQuotes = await prisma.quote.findMany({
+    where: { merchantId: merchant.id, internalNotes: { startsWith: MARK } },
+  });
+  for (const q of seededQuotes) {
+    const existingJob = await prisma.job.findUnique({ where: { quoteId: q.id } });
+    if (existingJob) {
+      console.log(`= job del quote #${q.quoteNumber ?? q.id} ya existe (#${existingJob.id}) — sin cambios`);
+      continue;
+    }
+    const job = await prisma.job.create({
+      data: {
+        merchantId: merchant.id,
+        customerId: q.customerId,
+        quoteId: q.id,
+        status: 'pendiente_agendar',
+        titulo: `Presupuesto #${q.quoteNumber ?? q.id} · Cliente QA`,
+        totalAceptado: q.total,
+      },
+    });
+    console.log(`✓ job #${job.id} creado para el quote #${q.quoteNumber ?? q.id}`);
+  }
+
   console.log('DONE — seed staging idempotente completado.');
 }
 

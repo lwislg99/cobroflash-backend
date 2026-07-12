@@ -1,4 +1,4 @@
-# SUITE DE REGRESIÓN E2E — v1.1 (SCRUM-38 · fixes SCRUM-42/36)
+# SUITE DE REGRESIÓN E2E — v1.3 (SCRUM-38 · fixes SCRUM-42/36 · albaranes SCRUM-14)
 
 > Guion que Claude Code ejecuta con el **Playwright MCP** contra **STAGING** tras cada
 > merge+deploy. Cubre la regresión de PAGOS-FLEX (SCRUM-27/32/34) y los CTAs de invoice
@@ -62,6 +62,32 @@
     y NINGUNA llamada a `graph.facebook.com`; sin `RESEND_API_KEY` los emails van a
     buffer/outbox/console. ✅ ASSERT: ni un mensaje real de WhatsApp ni email real.
 17. (Si accesible) `/outbox` o log WA-0b como evidencia adjunta al reporte.
+
+## 5 · Albaranes (v1.3, SCRUM-14 — documento NO fiscal)
+
+> Prerequisito: seed con Jobs (el seed crea un Trabajo por quote aceptada desde v1.3).
+
+18. Ir a Trabajos → abrir el Trabajo de "Obra QA por hitos (30/40/30)" → sección **Albaranes**.
+19. Click **"+ Nuevo albarán"** → ✅ ASSERT: aparece con número **`ALB-<año>-001`**, estado
+    **Borrador**, `v1`. Crear un segundo → ✅ ASSERT `ALB-<año>-002` (correlativo, serie propia
+    del merchant, independiente de la serie de facturas/justificantes).
+20. **Editar borrador**: "Editar líneas" → añadir línea (concepto/cantidad/unidad, SIN precio)
+    → Guardar → ✅ ASSERT **v2** visible. Línea inválida (concepto vacío o cantidad 0) →
+    ✅ ASSERT error 400 claro y NO se guarda.
+21. **Emitir** → ✅ ASSERT estado **Emitido**; botones ahora [PDF] [Firmar] [Editar líneas].
+22. **PDF** → ✅ ASSERT: título "ALBARÁN / PARTE DE TRABAJO"; SIN la palabra "factura" como
+    título, SIN QR, SIN serie J-, **SIN importes/precios** (solo concepto·cantidad·unidad);
+    pie: "Documento no fiscal — no constituye factura…".
+23. **Firmar** (canvas en el móvil del pro) → ✅ ASSERT estado **Firmado** + el PDF regenerado
+    incluye el bloque "Conformidad del cliente" con la firma.
+24. **Congelado**: en un albarán Firmado → ✅ ASSERT no hay botones de edición en la UI y el
+    `PATCH /admin/albaranes/:id` responde **409 `albaran_locked`**.
+25. **Foto**: "📷 Añadir foto" en un albarán no firmado → ✅ ASSERT miniatura visible tras
+    subir (límites: jpeg/png/webp, ≤5 MB, máx. 10).
+26. **Tenancy**: con sesión de OTRO merchant (si la allowlist E2E lo permite),
+    `GET /admin/albaranes/:id` del albarán anterior → ✅ ASSERT 404. (Si no hay segundo
+    merchant en staging, queda cubierto por `tests/albaran.test.mjs`.)
+27. Cero envíos: los albaranes NO envían WhatsApp ni email en V1 → el log WA-0b no crece.
 
 ## Resultado
 
