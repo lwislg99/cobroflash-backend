@@ -28,8 +28,49 @@ const CUSTOM_PLAN = [
 ];
 
 async function main() {
-  // 1) Merchant QA (upsert por email único). planExpiresAt lejano: el paywall de trial
-  //    no debe interferir con el QA (no se toca OWNER_EMAILS).
+  // 0) SCRUM-42: "quemar" el id 1 — la regla 8 del máster trata merchant.id===1 como
+  //    cuenta DEMO (serie fiscal en vez de J-, watermark, lock de envíos V0-2). Un
+  //    placeholder INERTE ocupa el id 1 para que el merchant QA caiga en id>=2 con
+  //    semántica de merchant REAL. Idempotente; convierte el caso heredado (QA ya
+  //    sembrado en id 1) limpiando sus datos primero.
+  const RESERVED_EMAIL = 'demo-reserved@staging.yaqu';
+  const id1 = await prisma.merchant.findUnique({ where: { id: 1 } });
+  if (!id1) {
+    await prisma.merchant.create({
+      data: { id: 1, name: 'demo-reserved', email: RESERVED_EMAIL, country: 'ES', status: 'suspended' },
+    });
+    console.log('✓ id 1 quemado con placeholder inerte');
+  } else if (id1.email === QA_EMAIL) {
+    // Caso heredado: el QA cayó en id 1 → limpiar sus datos y convertirlo en el placeholder
+    const wipes = [
+      ['events', () => prisma.event.deleteMany({ where: { charge: { merchantId: 1 } } })],
+      ['invoices', () => prisma.invoice.deleteMany({ where: { merchantId: 1 } })],
+      ['jobs', () => prisma.job.deleteMany({ where: { merchantId: 1 } })],
+      ['charges', () => prisma.charge.deleteMany({ where: { merchantId: 1 } })],
+      ['quotes', () => prisma.quote.deleteMany({ where: { merchantId: 1 } })],
+      ['customers', () => prisma.customer.deleteMany({ where: { merchantId: 1 } })],
+      ['authSessions', () => prisma.authSession.deleteMany({ where: { merchantId: 1 } })],
+    ];
+    for (const [name, del] of wipes) {
+      try { const r = await del(); if (r.count) console.log(`  - limpiado ${name}: ${r.count}`); }
+      catch (e) { console.log(`  ! ${name}: ${e?.code || e?.message}`); }
+    }
+    await prisma.merchant.update({
+      where: { id: 1 },
+      data: { name: 'demo-reserved', email: RESERVED_EMAIL, status: 'suspended', nextQuoteNumber: 1 },
+    });
+    console.log('✓ QA heredado en id 1 convertido a placeholder (datos limpiados)');
+  } else {
+    console.log('= id 1 ya ocupado (placeholder u otro) — sin cambios');
+  }
+  // El create con id explícito NO avanza la secuencia de Postgres → alinearla a MAX(id)
+  // para que el siguiente autoincrement no choque con el 1.
+  await prisma.$executeRawUnsafe(
+    "SELECT setval(pg_get_serial_sequence('merchants','id'), (SELECT GREATEST(MAX(id),1) FROM merchants))"
+  );
+
+  // 1) Merchant QA (upsert por email único; cae en id>=2 = semántica de merchant real).
+  //    planExpiresAt lejano: el paywall de trial no debe interferir con el QA (no se toca OWNER_EMAILS).
   const merchant = await prisma.merchant.upsert({
     where: { email: QA_EMAIL },
     update: { status: 'active' },
