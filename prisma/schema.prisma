@@ -23,6 +23,10 @@ model Merchant {
   invoiceSeriesYear    Int?    @map("invoice_series_year") // año de la serie en curso; al cambiar de año el contador vuelve a 1 (serie anual: 2026-CF-001)
   nextRectInvoiceNumber Int    @default(1) @map("next_rect_invoice_number") // contador de la serie de rectificativas (2026-CF-R-001), también se resetea por año
   nextQuoteNumber       Int    @default(1) @map("next_quote_number") // A1.2: contador de presupuestos por merchant (sin serie anual: no es doc fiscal)
+  // SCRUM-14: serie NO fiscal de albaranes (ALB-YYYY-NNN), independiente de la de
+  // facturas; reset anual (mismo patrón que invoiceSeriesYear).
+  nextAlbaranNumber  Int  @default(1) @map("next_albaran_number")
+  albaranSeriesYear  Int? @map("albaran_series_year")
   logoUrl              String? @map("logo_url")
   whatsappPhone        String? @map("whatsapp_phone")
   googleReviewUrl      String? @map("google_review_url")
@@ -622,4 +626,31 @@ model Attachment {
 
   @@index([merchantId, entityType, entityId])
   @@map("attachments")
+}
+
+// SCRUM-14 (ALBARAN-1, 13-jul-2026): albarán / parte de trabajo — documento NO FISCAL
+// (regla 24: jamás VeriFactu, serie fiscal, QR ni la palabra "factura"). Cuelga del Job
+// (jobId Int sin relación Prisma declarada — mismo estilo que Job→Quote). SIN precios
+// (decisión fundador: lineas = concepto/cantidad/unidad). Editable hasta 'firmado'
+// (version++ con traza en AuditLog); firmado = congelado. Fotos vía Attachment
+// entityType:'albaran'. Estados Parte L: borrador | emitido | firmado.
+model Albaran {
+  id           Int       @id @default(autoincrement())
+  merchantId   Int       @map("merchant_id")
+  jobId        Int       @map("job_id")
+  numero       String    // ALB-YYYY-NNN, serie propia por merchant (no fiscal)
+  fecha        DateTime  @default(now()) // fecha de la visita/entrega (editable en borrador)
+  lineas       Json      // [{concepto: string, cantidad: number, unidad: string}]
+  estado       String    @default("borrador") // borrador | emitido | firmado (Parte L)
+  version      Int       @default(1)
+  signatureUrl String?   @db.Text @map("signature_url") // data-URI (patrón Quote.signatureUrl)
+  firmadoAt    DateTime? @map("firmado_at")
+  notas        String?   @db.Text
+  pdfUrl       String?   @map("pdf_url")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt      @map("updated_at")
+
+  @@unique([merchantId, numero])
+  @@index([merchantId, jobId])
+  @@map("albaranes")
 }
