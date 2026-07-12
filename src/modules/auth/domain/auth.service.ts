@@ -27,6 +27,18 @@ function generateToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
+// SCRUM-39: los magic links (credenciales temporales: 15 min login / 7 días invitación)
+// SOLO se loguean si el email está realmente deshabilitado (fallback dev/staging sin
+// RESEND_API_KEY ni SMTP_URL — ahí el log es la única forma de entrar) o con
+// LOG_MAGIC_LINKS=true explícito, env var que NO existe en producción. En prod
+// (Resend configurado) el token jamás toca los logs de Railway.
+function logMagicLink(tag: string, to: string, link: string) {
+  const emailDisabled = !config.RESEND_API_KEY && !config.SMTP_URL;
+  if (emailDisabled || process.env.LOG_MAGIC_LINKS === 'true') {
+    console.log(`[${tag}] to=${to} link=${link}`);
+  }
+}
+
 export async function requestMagicLink(email: string): Promise<void> {
   const merchant = await prisma.merchant.findUnique({ where: { email } });
   if (!merchant) return; // silent
@@ -39,7 +51,7 @@ export async function requestMagicLink(email: string): Promise<void> {
   });
 
   const link = `${config.PUBLIC_BASE_URL}/auth/verify?token=${token}`;
-  console.log(`[magic-link] to=${email} link=${link}`);
+  logMagicLink('magic-link', email, link); // SCRUM-39: gateado — en prod no se loguea
 
   try {
     await sendEmail({
@@ -83,7 +95,7 @@ export async function inviteTeamMember(params: {
   });
 
   const link = `${config.PUBLIC_BASE_URL}/auth/verify?token=${token}`;
-  console.log(`[invite] to=${params.memberEmail} link=${link}`);
+  logMagicLink('invite', params.memberEmail, link); // SCRUM-39 (a): mismo gate — link válido 7 días
 
   try {
     await sendEmail({
