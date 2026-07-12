@@ -1,4 +1,4 @@
-# SUITE DE REGRESIÓN E2E — v1 (SCRUM-38)
+# SUITE DE REGRESIÓN E2E — v1.1 (SCRUM-38 · fixes SCRUM-42/36)
 
 > Guion que Claude Code ejecuta con el **Playwright MCP** contra **STAGING** tras cada
 > merge+deploy. Cubre la regresión de PAGOS-FLEX (SCRUM-27/32/34) y los CTAs de invoice
@@ -17,6 +17,9 @@
    (vía `page.request` o formulario; la cookie `pf_session` queda en el contexto).
    - ✅ ASSERT: respuesta `{ ok: true }` y cookie de sesión presente.
 2. Navegar a `{BASE}/dashboard/` → ✅ ASSERT: carga el Home (no redirige a `/login.html`).
+3. **(v1.1, SCRUM-36)** Si aparece el modal de onboarding ("Bienvenido a YaQu" — merchant
+   recién sembrado), **descartarlo** ("Saltar por ahora" / cerrar) ANTES de capturar
+   pantallas. Los asserts DOM no lo necesitan, pero las capturas de evidencia sí.
 
 ## 1 · Plan custom 30/40/30 de 100,01 € (SCRUM-27/32/34)
 
@@ -30,6 +33,9 @@
    d. ✅ ASSERT botón = `Plan de facturación completado` (deshabilitado).
 6. ✅ ASSERT: la sección Facturas lista 3 justificantes con importes **30,00 + 40,00 + 30,01**
    (suma EXACTA 100,01 — SCRUM-32) y estado Pendiente.
+   **(v1.1, SCRUM-42)** ✅ ASSERT: los números de documento empiezan por **`J-`** (serie de
+   justificante de merchant REAL — el seed quema el id 1; si sale `2026-…` el merchant QA ha
+   caído en semántica demo) y **sin watermark "DEMO"** en pantalla.
 7. CTAs de invoice (SCRUM-35): en el primer tramo → click **"Marcar como pagada"** (confirmar
    el importe tal cual en el prompt) → ✅ ASSERT el CTA de cabecera pasa a **"Ver justificante"**
    (o el tramo se muestra pagado tras recargar el detalle).
@@ -37,7 +43,8 @@
 ## 2 · Preset 50/50 — regresión BYTE A BYTE (deuda del E2E de SCRUM-34)
 
 8. Abrir el presupuesto "Trabajo QA 50/50" (200,00 €).
-9. ✅ ASSERT "Condiciones de pago" = `50% al aceptar, 50% al finalizar el trabajo.` (texto preset).
+9. ✅ ASSERT "Condiciones de pago" = `50% al aceptar, 50% al finalizar` (texto REAL de
+   `getPaymentTermsLabel` en el detalle — v1.1: el v1 traía por error el texto de la preview).
 10. ✅ ASSERT botón = `Generar 1ª factura (50%)` → click.
 11. ✅ ASSERT botón = `Generar 2ª factura (50% restante)` → click.
 12. ✅ ASSERT botón = `Plan de facturación completado` (deshabilitado) y 2 justificantes de 100,00 €.
@@ -45,7 +52,7 @@
 ## 3 · Preset 100% — sin regresión
 
 13. Abrir "Trabajo QA 100%" (150,00 €).
-14. ✅ ASSERT "Condiciones de pago" = `Pago 100% al aceptar el presupuesto.`
+14. ✅ ASSERT "Condiciones de pago" = `Pago 100% al aceptar` (texto REAL del detalle — v1.1).
 15. ✅ ASSERT botón = `Generar factura (100%)` → click → ✅ ASSERT `Factura ya generada`
     (deshabilitado) y 1 justificante de 150,00 €.
 
