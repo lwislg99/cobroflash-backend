@@ -8,6 +8,8 @@ import { resolveBillingPlan, distributeStageAmounts } from '../../../quotes/doma
 import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; // SCRUM-34
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { allocateAlbaranNumber } from '../../domain/albaranNumber.service';
+import { serializeAlbaran, validarLineas } from '../../domain/albaran.service';
 
 const router = Router();
 
@@ -133,7 +135,16 @@ async function serializeJobDetail(job: any) {
       }
     : null;
 
-  return { ...base, customer, invoices, charge };
+  // SCRUM-14 (ADITIVO): albaranes del Trabajo para la sección "Albaranes" y el
+  // timeline de Documentos del detalle. Documento NO fiscal — nada de importes.
+  const albaranes = (
+    await prisma.albaran.findMany({
+      where: { merchantId: job.merchantId, jobId: job.id },
+      orderBy: { createdAt: 'asc' },
+    })
+  ).map(serializeAlbaran);
+
+  return { ...base, customer, invoices, charge, albaranes };
 }
 
 // GET /admin/jobs — lista para la vista "Esta semana" (simple, por fecha)
@@ -246,6 +257,44 @@ router.get('/:id/ics', async (req, res) => {
     return res.send(ics);
   } catch (err: any) {
     console.error('[GET /admin/jobs/:id/ics]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// POST /admin/jobs/:id/albaranes — SCRUM-14: crea un albarán en borrador colgando
+// del Trabajo (un albarán por visita/entrega; el Trabajo acumula N). El número
+// ALB-YYYY-NNN se reserva DENTRO de la transacción del create (sin huecos).
+router.post('/:id/albaranes', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
+    if (!job) return res.status(404).json({ error: 'not_found' });
+
+    // Líneas iniciales opcionales; si llegan, se validan (condición 4 del OK)
+    let lineas: any[] = [];
+    if (req.body?.lineas !== undefined) {
+      const v = validarLineas(req.body.lineas);
+      if (!v.ok) return res.status(400).json({ error: 'lineas_invalidas', message: v.error });
+      lineas = v.lineas;
+    }
+    const notas = req.body?.notas !== undefined ? String(req.body.notas || '').slice(0, 2000) || null : null;
+
+    const albaran = await prisma.$transaction(async (tx) => {
+      const numero = await allocateAlbaranNumber(tx, req.merchantId!);
+      return tx.albaran.create({
+        data: {
+          merchantId: req.merchantId!,
+          jobId: job.id,
+          numero,
+          lineas,
+          notas,
+        },
+      });
+    });
+    return res.status(201).json(serializeAlbaran(albaran));
+  } catch (err: any) {
+    console.error('[POST /admin/jobs/:id/albaranes]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });

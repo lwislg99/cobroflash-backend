@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'path';
 
-import { invoicesDir, outboxDir } from './core/storage/dirs';
+import { invoicesDir, outboxDir, albaranesDir } from './core/storage/dirs';
 import { jsonError } from './core/http/jsonError';
 import { notFoundPageHtml } from './core/http/publicNotFound';
 import { isFlagEnabled } from './core/flags';
@@ -37,6 +37,7 @@ import botAdminRouter from './modules/whatsappBot/app/routes/botAdmin.routes';
 import legalPagesRouter from './modules/system/app/routes/legalPages.routes';
 import publicProfileRouter from './modules/system/app/routes/publicProfile.routes';
 import jobsRouter from './modules/jobs/app/routes/jobs.routes';
+import albaranesRouter from './modules/jobs/app/routes/albaranes.routes'; // SCRUM-14 (ALBARAN-1)
 import maintenanceRouter from './modules/maintenance/app/routes/maintenance.routes';
 
 import quotesRouter from './modules/quotes/app/routes/quotes.routes';
@@ -87,6 +88,12 @@ app.use('/webhooks/stripe', stripeRawBody, stripeWebhookRouter);
 // + direct charges), con su propio signing secret. También raw body.
 app.use('/webhooks/stripe-connect', stripeConnectRawBody, stripeConnectWebhookRouter);
 
+// SCRUM-14: las fotos de albarán viajan en base64 (~5 MB → ~6,8 MB de JSON) y el
+// límite global de 2 MB las cortaría. Parser propio SOLO para /admin/albaranes,
+// registrado ANTES del global (body-parser marca req._body y el global lo salta).
+// La auth sigue siendo la de /admin (requireAuth se monta después, antes de las rutas).
+app.use('/admin/albaranes', express.json({ limit: '8mb' }));
+
 // Parsers — guardamos el raw body de los webhooks de WhatsApp para validar firma HMAC.
 // limit 2mb: el logo del merchant viaja como data-URI (~150 KB tras el resize
 // client-side a 512px) en el PUT /admin/merchant; el default de 100 KB lo cortaba.
@@ -104,6 +111,7 @@ app.use(jsonError);
 // Static
 app.use('/invoices', express.static(invoicesDir));
 app.use('/outbox', express.static(outboxDir));
+app.use('/albaranes', express.static(albaranesDir)); // SCRUM-14: PDFs de albarán (NO fiscales), separados de /invoices
 
 const publicDir = path.join(__dirname, '../public');
 app.use(express.static(publicDir));
@@ -210,6 +218,7 @@ app.use('/admin/metrics',    metricsRouter);
 app.use('/admin/expenses',   expensesRouter);
 app.use('/admin/bot',        botAdminRouter); // A8.3: handoffs pendientes del bot
 app.use('/admin/jobs',       jobsRouter);    // A13 (JOB-1): trabajos
+app.use('/admin/albaranes',  albaranesRouter); // SCRUM-14 (ALBARAN-1): partes de trabajo NO fiscales
 app.use('/admin/maintenance', maintenanceRouter); // A15 (MANT-1): tras flag, 404 sin él
 
 // Rutas solo para admin

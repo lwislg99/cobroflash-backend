@@ -9,7 +9,10 @@ export type AuditAction =
   | 'marcar_pagado_manual'
   | 'deshacer_pago'
   | 'anular_factura'
-  | 'cambio_flag';
+  | 'cambio_flag'
+  // SCRUM-14 (Parte L): traza del versionado del albarán — cada edición de un
+  // albarán no firmado deja version++ y su registro aquí (decisión fundador 13-jul).
+  | 'albaran_editado';
 
 export function requestIp(req: Request): string | null {
   const fwd = req.headers['x-forwarded-for'];
