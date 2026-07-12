@@ -64,6 +64,31 @@
 
 ---
 
+## E2E AUTOMATIZADO EN STAGING (SCRUM-38 — nuevo paso del bucle)
+
+- **Staging exprés en Railway:** servicio duplicado sobre el MISMO `main` (nada de rama
+  staging), con BD PostgreSQL propia y env vars de aislamiento: `WHATSAPP_DRY_RUN=1` y SIN
+  `WHATSAPP_ACCESS_TOKEN` (el quality rating de Meta es un activo de producción), SIN
+  `RESEND_API_KEY`/`SMTP_URL` (emails a buffer/outbox), Stripe TEST con su propio webhook,
+  `DISABLE_CRONS=true`.
+- **Nuevo paso tras el merge (amplía el paso 9 del bucle):** después del merge y del deploy,
+  Claude Code corre la **suite de regresión** (`docs/QA/SUITE_REGRESION.md`) contra staging
+  con el **Playwright MCP** (config en `.mcp.json`) y reporta el resultado. Cualquier fallo
+  = HALLAZGO → ticket aparte (nunca se arregla "de paso"). El primer E2E de una feature de
+  zona de dinero lo sigue verificando un humano en yaqu.app.
+- **Login de test (SOLO staging):** `POST /auth/test-login` con tres cerraduras fail-closed
+  (`E2E_TEST_LOGIN_ENABLED` + `E2E_TEST_LOGIN_SECRET` + `E2E_TEST_LOGIN_EMAILS`). Esas env
+  vars **JAMÁS se añaden en producción** — allí la ruta cae al 404 estándar de la app. La
+  seguridad del magic link real no se toca.
+- **Seed reproducible:** `scripts/seed-staging.mjs` (idempotente; merchant QA + cliente + 3
+  presupuestos: 50/50, 100 %, custom 30/40/30 de 100,01 €). Guard anti-prod integrado.
+- **Schema de staging:** con `npx prisma db push` (MISMO mecanismo que prod). ⚠️ NO usar
+  `migrate deploy`: `prisma/migrations` está congelada desde mar-2026 y dejaría el schema viejo.
+- **Los briefs de tarea incluyen sección "E2E AUTOMATIZADO"** con el guion que Claude Code
+  ejecuta en staging tras el merge de esa tarea.
+
+---
+
 ## TRABAJANDO DOS (O MÁS) A LA VEZ (repo compartido)
 - **`git pull` de `main` antes de empezar CADA tarea.** Partir de lo último evita conflictos.
 - **Cada persona, su propia rama y sus propios tickets de Jira.** No trabajéis el mismo ticket
