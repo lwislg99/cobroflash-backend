@@ -1,7 +1,9 @@
 import { Router } from 'express';
+import crypto from 'crypto';
 import { requestMagicLink, verifyMagicLink, registerMerchant, revokeSession } from '../../domain/auth.service';
 import { setCookie, clearCookie } from '../../../../core/http/authMiddleware';
 import { rateLimit } from '../../../../core/http/rateLimit'; // A11.2 (S3)
+import { prisma } from '../../../../core/db/prisma';
 
 const router = Router();
 
@@ -62,6 +64,54 @@ router.get('/verify', verifyLimiter, async (req, res) => {
   } catch (err) {
     console.error('[GET /auth/verify]', err);
     return res.redirect('/login.html?error=internal_error');
+  }
+});
+
+// SCRUM-38: login de TEST para el QA autónomo en STAGING (Playwright MCP).
+// TRES CERRADURAS fail-closed — NINGUNA de estas env vars existe en producción:
+//   (1) E2E_TEST_LOGIN_ENABLED !== 'true'  → cae al 404 estándar ANTES de leer el body
+//   (2) E2E_TEST_LOGIN_SECRET ausente/vacía → ídem (jamás "sin secret = sin comprobación")
+//   (3) email fuera de la allowlist E2E_TEST_LOGIN_EMAILS → ídem
+// INDISTINGUIBILIDAD: los fallos NO responden aquí — `next('route')`/`next()` dejan caer la
+// petición al manejador 404 final de la app (app.ts), byte-idéntico a una ruta inexistente.
+// El gate va DELANTE del rate-limiter: con el flag OFF el limiter ni se ejecuta (un 429
+// delataría que la ruta existe). El flujo real del magic link queda INTACTO. Ni el secret
+// ni el token de sesión se escriben en logs ni en el body de la respuesta.
+const testLoginLimiter = rateLimit({ scope: 'test_login', max: 30, windowMs: 15 * 60_000 });
+const testLoginGate = (req: any, res: any, next: any) => {
+  if (process.env.E2E_TEST_LOGIN_ENABLED !== 'true') return next('route'); // cerradura 1
+  if (!process.env.E2E_TEST_LOGIN_SECRET) return next('route');            // cerradura 2 (fail-closed)
+  return next();
+};
+router.post('/test-login', testLoginGate, testLoginLimiter, async (req, res, next) => {
+  try {
+    const expected = process.env.E2E_TEST_LOGIN_SECRET || '';
+    const email = String(req.body?.email || '').toLowerCase().trim();
+    const secret = String(req.body?.secret || '');
+
+    // Comparación en TIEMPO CONSTANTE: hashes SHA-256 (longitud fija) + timingSafeEqual.
+    const a = crypto.createHash('sha256').update(secret).digest();
+    const b = crypto.createHash('sha256').update(expected).digest();
+    if (!crypto.timingSafeEqual(a, b)) return next(); // → 404 estándar
+
+    const allow = (process.env.E2E_TEST_LOGIN_EMAILS || '')
+      .split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
+    if (!email || !allow.includes(email)) return next(); // cerradura 3 → 404 estándar
+
+    const merchant = await prisma.merchant.findUnique({ where: { email } });
+    if (!merchant) return next(); // la cuenta la crea el seed → 404 estándar
+
+    // Sesión real reutilizando las primitivas existentes (mismo type='session' + cookie
+    // pf_session de authMiddleware). TTL corto de QA: 24 h (no los 30 días del flujo real).
+    const token = crypto.randomBytes(32).toString('hex');
+    await prisma.authSession.create({
+      data: { merchantId: merchant.id, token, type: 'session', expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
+    });
+    setCookie(res, token);
+    return res.json({ ok: true }); // el token viaja SOLO en la cookie HttpOnly
+  } catch (err) {
+    console.error('[POST /auth/test-login] internal_error'); // sin body/secret/token en el log
+    return res.status(500).json({ error: 'internal_error' });
   }
 });
 
