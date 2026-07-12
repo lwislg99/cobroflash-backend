@@ -22,6 +22,11 @@ function jobDetDocLabel(inv) {
   if (inv.type === 'JUST' || String(inv.number || '').startsWith('J-')) return 'Justificante';
   return 'Factura';
 }
+// SCRUM-14: estado del albarán → copy canónico (brief; regla 30) + pill del inventario AB3.
+const JOBDET_ALB_PILL = { borrador: 'status-pill-draft', emitido: 'status-pill-pending', firmado: 'status-pill-accepted' };
+function jobDetAlbEstado(e) {
+  return e === 'firmado' ? 'Firmado' : e === 'emitido' ? 'Emitido' : 'Borrador';
+}
 // Fila de <dl> inlineada (autocontenida; NO depende de addDefRow de quotesDetailView).
 function jdAddRow(dl, term, value) {
   if (value === undefined || value === null || value === '' || value === '—') return;
@@ -152,6 +157,16 @@ async function renderJobDetailView(container, jobId) {
       detail: `${jobDetInvEstado(inv.status)} · ${fmtMoneyEs(inv.total, inv.currency || cur)}`,
     });
   });
+  // SCRUM-14: los albaranes también son documentos del Trabajo (evento 📋, sin importes)
+  const albaranes = Array.isArray(job.albaranes) ? job.albaranes : [];
+  albaranes.forEach((alb) => {
+    events.push({
+      icon: '📋',
+      when: alb.estado === 'firmado' ? (alb.firmadoAt || alb.createdAt) : alb.createdAt,
+      title: `Albarán ${esc(alb.numero)}`,
+      detail: `${jobDetAlbEstado(alb.estado)} · v${alb.version}`,
+    });
+  });
   events.sort((a, b) => new Date(a.when || 0) - new Date(b.when || 0));
   if (!events.length) {
     tlSec.innerHTML += '<p style="margin:0;color:var(--muted);font-size:13px">Aún no hay documentos.</p>';
@@ -200,6 +215,209 @@ async function renderJobDetailView(container, jobId) {
       onRetry,
     }));
   };
+
+  // ── SCRUM-14 · Sección "Albaranes" (entre Documentos y Cobros; insertBefore) ──
+  // Botones canónicos del brief: borrador → [Editar líneas][Emitir] · emitido →
+  // [PDF][Firmar][Editar líneas] · firmado → [PDF] (congelado). Re-fetch tras acción.
+  const albSec = document.createElement('div');
+  albSec.className = 'detail-section';
+  albSec.innerHTML = '<h3 class="detail-section-title">Albaranes</h3>';
+  body.insertBefore(albSec, cobSec);
+
+  const newAlbBtn = document.createElement('button');
+  newAlbBtn.className = 'btn-secondary btn-sm';
+  newAlbBtn.textContent = '+ Nuevo albarán';
+  newAlbBtn.addEventListener('click', async () => {
+    newAlbBtn.disabled = true;
+    try {
+      await apiRequest(`/admin/jobs/${job.id}/albaranes`, { method: 'POST', body: JSON.stringify({}) });
+      showToast('✓ Albarán creado (borrador).');
+      refresh();
+    } catch (e) {
+      setStatus('error', 'No se pudo crear el albarán: ' + (e?.data?.message || e.message));
+      newAlbBtn.disabled = false;
+    }
+  });
+  albSec.appendChild(newAlbBtn);
+
+  if (!albaranes.length) {
+    const pEmpty = document.createElement('p');
+    pEmpty.style.cssText = 'margin:10px 0 0;color:var(--muted);font-size:13px';
+    pEmpty.textContent = 'Aún no hay albaranes. Crea uno por cada visita o entrega.';
+    albSec.appendChild(pEmpty);
+  }
+
+  // Editor inline de líneas/notas (borrador/emitido). PATCH → version++ en el backend.
+  // Inputs creados por DOM (.value directo): sin interpolar valores en HTML.
+  function buildAlbEditor(box, alb) {
+    box.innerHTML = '';
+    const rows = document.createElement('div');
+    const mkRow = (l) => {
+      const r = document.createElement('div');
+      r.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;align-items:center';
+      const c = document.createElement('input');
+      c.className = 'input'; c.placeholder = 'Concepto'; c.style.cssText = 'flex:3;min-width:0';
+      c.value = l.concepto || '';
+      const q = document.createElement('input');
+      q.className = 'input'; q.placeholder = 'Cant.'; q.type = 'number'; q.min = '0'; q.step = 'any';
+      q.style.cssText = 'flex:1;min-width:64px';
+      if (l.cantidad !== undefined && l.cantidad !== null) q.value = l.cantidad;
+      const u = document.createElement('input');
+      u.className = 'input'; u.placeholder = 'Unidad (ud, m, h…)'; u.style.cssText = 'flex:1;min-width:80px';
+      u.value = l.unidad || '';
+      const del = document.createElement('button');
+      del.className = 'btn-ghost btn-sm';
+      del.textContent = '✕';
+      del.setAttribute('aria-label', 'Quitar línea');
+      del.addEventListener('click', () => r.remove());
+      r.appendChild(c); r.appendChild(q); r.appendChild(u); r.appendChild(del);
+      return r;
+    };
+    const lineas = Array.isArray(alb.lineas) ? alb.lineas : [];
+    lineas.forEach((l) => rows.appendChild(mkRow(l)));
+    if (!lineas.length) rows.appendChild(mkRow({}));
+    box.appendChild(rows);
+
+    const addRow = document.createElement('button');
+    addRow.className = 'btn-ghost btn-sm';
+    addRow.textContent = '+ Añadir línea';
+    addRow.addEventListener('click', () => rows.appendChild(mkRow({})));
+    box.appendChild(addRow);
+
+    const notas = document.createElement('textarea');
+    notas.className = 'input';
+    notas.placeholder = 'Notas del albarán (opcional)';
+    notas.style.cssText = 'width:100%;margin-top:8px;min-height:56px';
+    notas.value = alb.notas || '';
+    box.appendChild(notas);
+
+    const saveRow = document.createElement('div');
+    saveRow.style.cssText = 'display:flex;gap:8px;margin-top:8px';
+    const save = document.createElement('button');
+    save.className = 'btn-primary btn-sm';
+    save.textContent = 'Guardar cambios';
+    save.addEventListener('click', async () => {
+      const out = [];
+      for (const r of rows.children) {
+        const inputs = r.querySelectorAll('input');
+        const c = inputs[0].value.trim(), qv = inputs[1].value, u = inputs[2].value.trim();
+        if (!c && !qv && !u) continue; // fila totalmente vacía se ignora
+        out.push({ concepto: c, cantidad: Number(String(qv).replace(',', '.')), unidad: u });
+      }
+      save.disabled = true;
+      try {
+        await apiRequest(`/admin/albaranes/${alb.id}`, { method: 'PATCH', body: JSON.stringify({ lineas: out, notas: notas.value }) });
+        showToast('✓ Albarán actualizado (nueva versión).');
+        refresh();
+      } catch (e) {
+        setStatus('error', e?.data?.message || 'No se pudo guardar el albarán.');
+        save.disabled = false;
+      }
+    });
+    saveRow.appendChild(save);
+    const cancelEd = document.createElement('button');
+    cancelEd.className = 'btn-secondary btn-sm';
+    cancelEd.textContent = 'Cancelar';
+    cancelEd.addEventListener('click', () => { box.style.display = 'none'; });
+    saveRow.appendChild(cancelEd);
+    box.appendChild(saveRow);
+  }
+
+  albaranes.forEach((alb) => {
+    const item = document.createElement('div');
+    item.className = 'invoice-item';
+    item.style.marginTop = '8px';
+    item.innerHTML =
+      `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">` +
+      `<div><strong>Albarán ${esc(alb.numero)}</strong> · <span style="font-size:12px;color:var(--muted)">${new Date(alb.fecha).toLocaleDateString('es-ES')} · v${alb.version}</span></div>` +
+      `<span class="status-pill ${JOBDET_ALB_PILL[alb.estado] || 'status-pill-draft'}">${jobDetAlbEstado(alb.estado)}</span>` +
+      `</div>` +
+      `<div class="jobdet-alb-fotos" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>` +
+      `<div class="jobdet-alb-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div>` +
+      `<div class="jobdet-alb-editor" style="display:none;margin-top:10px"></div>`;
+    albSec.appendChild(item);
+    const acts = item.querySelector('.jobdet-alb-actions');
+    const fotosBox = item.querySelector('.jobdet-alb-fotos');
+    const editorBox = item.querySelector('.jobdet-alb-editor');
+
+    // Miniaturas de fotos (GET tenancy-safe; la cookie de sesión viaja en el <img>)
+    apiRequest(`/admin/albaranes/${alb.id}/fotos`).then((fotos) => {
+      (fotos || []).forEach((f) => {
+        const img = document.createElement('img');
+        img.src = `/admin/attachments/${f.id}`;
+        img.alt = 'Foto del albarán';
+        img.loading = 'lazy';
+        img.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--border)';
+        fotosBox.appendChild(img);
+      });
+    }).catch(() => {});
+
+    const pdfBtn = () => mkBtn('PDF', () => { window.open(`/admin/albaranes/${alb.id}/pdf`, '_blank'); });
+    const editBtn = () => mkBtn('Editar líneas', () => {
+      const open = editorBox.style.display !== 'none';
+      editorBox.style.display = open ? 'none' : 'block';
+      if (!open) buildAlbEditor(editorBox, alb);
+    });
+    const fotoBtn = () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/jpeg,image/png,image/webp';
+      input.style.display = 'none';
+      item.appendChild(input);
+      const b = mkBtn('📷 Añadir foto', () => input.click());
+      input.addEventListener('change', () => {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) { setStatus('error', 'Cada foto puede ocupar como máximo 5 MB.'); input.value = ''; return; }
+        const rd = new FileReader();
+        rd.onload = async () => {
+          try {
+            await apiRequest(`/admin/albaranes/${alb.id}/fotos`, { method: 'POST', body: JSON.stringify({ data: rd.result, mime: file.type }) });
+            showToast('✓ Foto añadida.');
+            refresh();
+          } catch (e) { setStatus('error', e?.data?.message || 'No se pudo subir la foto.'); }
+        };
+        rd.readAsDataURL(file);
+      });
+      return b;
+    };
+
+    if (alb.estado === 'borrador') {
+      acts.appendChild(editBtn());
+      const em = mkBtn('Emitir', async () => {
+        em.disabled = true;
+        try {
+          await apiRequest(`/admin/albaranes/${alb.id}/emitir`, { method: 'POST' });
+          showToast('✓ Albarán emitido.');
+          refresh();
+        } catch (e) { setStatus('error', 'No se pudo emitir: ' + (e?.data?.message || e.message)); em.disabled = false; }
+      });
+      em.className = 'btn-primary btn-sm';
+      acts.appendChild(em);
+      acts.appendChild(fotoBtn());
+    } else if (alb.estado === 'emitido') {
+      acts.appendChild(pdfBtn());
+      const fs = mkBtn('Firmar', () => {
+        if (!window.openSignaturePad) { setStatus('error', 'El componente de firma no está cargado.'); return; }
+        window.openSignaturePad({
+          title: 'Firma del cliente',
+          onConfirm: async (dataUri) => {
+            try {
+              await apiRequest(`/admin/albaranes/${alb.id}/firmar`, { method: 'POST', body: JSON.stringify({ signatureData: dataUri }) });
+              showToast('✓ Albarán firmado.');
+              refresh();
+            } catch (e) { setStatus('error', 'No se pudo firmar: ' + (e?.data?.message || e.message)); }
+          },
+        });
+      });
+      fs.className = 'btn-primary btn-sm';
+      acts.appendChild(fs);
+      acts.appendChild(editBtn());
+      acts.appendChild(fotoBtn());
+    } else {
+      acts.appendChild(pdfBtn()); // firmado = congelado: solo PDF
+    }
+  });
 
   // CTA primario "Cobrar el resto" (terminado + remaining>0) → POST /admin/jobs/:id/collect-rest.
   if (job.status === 'terminado' && job.remaining && job.remaining.amount > 0) {
