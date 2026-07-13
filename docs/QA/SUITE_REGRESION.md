@@ -1,4 +1,4 @@
-# SUITE DE REGRESIÓN E2E — v1.3 (SCRUM-38 · fixes SCRUM-42/36 · albaranes SCRUM-14)
+# SUITE DE REGRESIÓN E2E — v1.4 (SCRUM-38 · fixes SCRUM-42/36 · albaranes SCRUM-14 · alineación UI real SCRUM-43/44)
 
 > Guion que Claude Code ejecuta con el **Playwright MCP** contra **STAGING** tras cada
 > merge+deploy. Cubre la regresión de PAGOS-FLEX (SCRUM-27/32/34) y los CTAs de invoice
@@ -32,13 +32,20 @@
    c. ✅ ASSERT botón = `Generar siguiente tramo: Hito 2 (30,01 €)` → click.  ← céntimo impar
    d. ✅ ASSERT botón = `Plan de facturación completado` (deshabilitado).
 6. ✅ ASSERT: la sección Facturas lista 3 justificantes con importes **30,00 + 40,00 + 30,01**
-   (suma EXACTA 100,01 — SCRUM-32) y estado Pendiente.
+   (suma EXACTA 100,01 — SCRUM-32). **(v1.4, SCRUM-44)** El estado pendiente NO aparece como
+   literal "Pendiente" en esta lista: se infiere de que cada tramo sin cobrar muestra el botón
+   **"Marcar como pagada"** — el assert comprueba que los 3 tramos tienen ese botón visible.
    **(v1.1, SCRUM-42)** ✅ ASSERT: los números de documento empiezan por **`J-`** (serie de
    justificante de merchant REAL — el seed quema el id 1; si sale `2026-…` el merchant QA ha
    caído en semántica demo) y **sin watermark "DEMO"** en pantalla.
-7. CTAs de invoice (SCRUM-35): en el primer tramo → click **"Marcar como pagada"** (confirmar
-   el importe tal cual en el prompt) → ✅ ASSERT el CTA de cabecera pasa a **"Ver justificante"**
-   (o el tramo se muestra pagado tras recargar el detalle).
+7. CTAs de invoice (SCRUM-35): en el primer tramo → click **"Marcar como pagada"**.
+   **(v1.4, SCRUM-43)** ✅ ASSERT: aparece la confirmación nativa
+   `¿Marcar como pagada la factura {número} de {importe}?` con el número del justificante y su
+   importe correctos → aceptarla (con el Playwright MCP: `browser_handle_dialog` accept; si se
+   cancela, la factura NO cambia de estado).
+   **(v1.4, SCRUM-44)** ✅ ASSERT: tras confirmar, el CTA de cabecera pasa a
+   **"Ver cobro pendiente"** (quedan tramos sin cobrar; el texto "Ver justificante" del v1.1
+   no era el real) — o el tramo se muestra pagado tras recargar el detalle.
 
 ## 2 · Preset 50/50 — regresión BYTE A BYTE (deuda del E2E de SCRUM-34)
 

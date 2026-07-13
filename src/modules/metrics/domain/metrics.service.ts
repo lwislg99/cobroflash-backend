@@ -130,6 +130,7 @@ export async function getHomeMetrics(merchantId: number) {
     recentActivity: recentQuotes.map((q) => ({
       type: 'quote' as const,
       id: q.id,
+      quoteNumber: q.quoteNumber, // SCRUM-43: número por merchant (A1.2); el id global queda solo para navegar
       status: q.status,
       customer: q.customer?.name ?? '—',
       total: Number(q.total),

@@ -549,6 +549,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
         btnPaid.textContent = 'Marcar como pagada';
         btnPaid.addEventListener('click', async (ev) => {
           ev.stopPropagation();
+          // SCRUM-43 (decisión fundador: opción a): confirmación ligera
+          // antes de tocar Invoice.status
+          if (!window.confirm(`¿Marcar como pagada la factura ${inv.number} de ${fmtQuoteMoney(inv.total, inv.currency || cur)}?`)) return;
           btnPaid.disabled = true;
           const original = btnPaid.textContent;
           btnPaid.textContent = 'Guardando…';

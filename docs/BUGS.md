@@ -302,6 +302,16 @@
 
 ## P3 — Técnico / raíz (registrar, abordar después de P1)
 
+### [x] P3-7 · `tests/albaran.test.mjs` (SCRUM-14) no corre en `npm test` (13-jul, hallazgo en rebase de SCRUM-43/44)
+- **Síntoma:** el script `test` de `package.json` lista los archivos de test EXPLÍCITAMENTE y el
+  PR #8 (SCRUM-14) creó `tests/albaran.test.mjs` (10 tests: numeración ALB-, congelado, tenancy)
+  sin añadirlo a la lista → `npm test` daba verde sin ejecutarlos (103 tests antes y después del
+  merge de albaranes).
+- **Causa raíz / qué se cambió:** lista explícita de archivos en vez de glob (deuda: valorar
+  `node --test tests/` en una tarea propia). Fix de una línea: añadido `tests/albaran.test.mjs`
+  al script `test` — registrado aquí y aplicado en la rama `scrum-43-ui-numeracion-confirmacion`
+  (regla 6: nada de arreglos de paso sin registrar). Con él, `npm test` = 113 tests.
+
 ### [ ] P3-6 · wa.me sin prefijo de país en la landing de decisión (hallazgo A14.3, 6-jul)
 - **Síntoma:** "💬 Tengo una duda" y el botón de rejected construyen `wa.me/${whatsappPhone}` con el
   dato crudo del merchant. Si el pro guardó su móvil ES sin `34` (p. ej. `629965893`), el enlace no
