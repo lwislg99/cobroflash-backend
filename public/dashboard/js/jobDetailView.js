@@ -474,6 +474,9 @@ async function renderJobDetailView(container, jobId) {
         // Marcar como PAGADA → PUT /admin/invoices/:id/status. Verificación de importe A21.2:
         // si el importe recibido no cuadra → payment-anomaly y la factura NO se marca pagada.
         acts.appendChild(mkBtn('Marcar como PAGADA', async () => {
+          // SCRUM-43: confirmación ligera ANTES del flujo A21.2
+          // (el prompt de importe recibido sigue intacto tras ella)
+          if (!window.confirm(`¿Marcar como pagada la factura ${inv.number} de ${fmtMoneyEs(inv.total, inv.currency || cur)}?`)) return;
           const totalNum = Number(inv.total);
           const raw = window.prompt('¿Qué importe has recibido? (€)\nSi coincide con el total, confirma tal cual.', totalNum.toFixed(2));
           if (raw === null) return;

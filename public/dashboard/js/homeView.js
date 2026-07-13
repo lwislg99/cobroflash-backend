@@ -401,12 +401,12 @@ function renderActivity(items) {
     return `
       <div class="activity-item" style="cursor:pointer" role="button" tabindex="0"
         data-quote-id="${item.id}"
-        aria-label="Cotización ${item.id} de ${esc(item.customer)}, ${statusLabel}, ${fmtMoney(item.total, item.currency)}">
+        aria-label="Cotización ${item.quoteNumber ?? item.id} de ${esc(item.customer)}, ${statusLabel}, ${fmtMoney(item.total, item.currency)}">
         <div style="display:flex;align-items:center;gap:10px">
           <span style="width:32px;height:32px;border-radius:50%;background:${statusColor}1a;color:${statusColor};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">${esc(initial)}</span>
           <div>
             <div class="activity-customer">${esc(item.customer)}</div>
-            <div class="activity-meta">Cotización #${item.id} · ${date}</div>
+            <div class="activity-meta">Cotización #${item.quoteNumber ?? item.id} · ${date}</div>
           </div>
         </div>
         <div style="text-align:right">
