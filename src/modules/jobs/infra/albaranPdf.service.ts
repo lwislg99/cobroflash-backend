@@ -139,6 +139,9 @@ export async function generateAlbaranPdf(params: {
     doc.moveTo(M, doc.y - rowPad / 2).lineTo(M + W, doc.y - rowPad / 2).strokeColor(BORDER).lineWidth(0.5).stroke();
     doc.strokeColor('#000').lineWidth(1);
   }
+  // Las celdas dejan doc.x en la última columna → sin este reset, Notas y el bloque
+  // de firma salían alineados a la derecha y truncados (hallazgo suite v1.3, 13-jul).
+  doc.x = M;
   doc.moveDown(1);
 
   // ── Notas ────────────────────────────────────────────────────────────────

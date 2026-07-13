@@ -4,18 +4,20 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
-## SCRUM-14 · ALBARAN-1: tabla `albaranes` + contadores en `merchants` — ⏳ PENDIENTE en prod (staging ✅ 2026-07-13)
+## SCRUM-14 · ALBARAN-1: tabla `albaranes` + contadores en `merchants` — ✅ APLICADO en prod (2026-07-13)
 
-`prisma db push` aplicado a **STAGING** el 13-jul-2026, **autorizado por el fundador** (OK
-explícito en chat: "aplícalo con db push a STAGING tras el commit; prod tras mi merge").
-100 % aditivo; preview con `migrate diff` mostró exactamente:
+`prisma db push` aplicado a **STAGING** el 13-jul-2026 y a **PRODUCCIÓN** el 13-jul-2026
+tras el merge del PR #8, ambos **autorizados por el fundador** (preview `migrate diff`
+enseñado en cada caso; el de prod se ejecutó SIN `--accept-data-loss` por orden expresa —
+con diff aditivo no hace falta, y si Prisma pidiera confirmación sería señal de diff
+inesperado → abortar). Verificación post-push en prod: `migrate diff` → **empty migration**.
+100 % aditivo; el preview mostró exactamente:
 ```sql
 ALTER TABLE "merchants" ADD COLUMN "albaran_series_year" INTEGER,
                         ADD COLUMN "next_albaran_number" INTEGER NOT NULL DEFAULT 1;
 CREATE TABLE "albaranes" (…);  -- + índices (merchant_id,job_id) y UNIQUE (merchant_id,numero)
 ```
-**PROD: aplicar el mismo push (con preview + sentinel) tras el merge del PR y ANTES de que
-el código desplegado use la tabla.** Documento NO fiscal (regla 24): fuera de VeriFactu.
+Documento NO fiscal (regla 24): fuera de VeriFactu.
 
 ---
 
