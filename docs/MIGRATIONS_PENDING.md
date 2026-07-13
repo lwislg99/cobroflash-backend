@@ -4,6 +4,21 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
+## SCRUM-14 · ALBARAN-1: tabla `albaranes` + contadores en `merchants` — ⏳ PENDIENTE en prod (staging ✅ 2026-07-13)
+
+`prisma db push` aplicado a **STAGING** el 13-jul-2026, **autorizado por el fundador** (OK
+explícito en chat: "aplícalo con db push a STAGING tras el commit; prod tras mi merge").
+100 % aditivo; preview con `migrate diff` mostró exactamente:
+```sql
+ALTER TABLE "merchants" ADD COLUMN "albaran_series_year" INTEGER,
+                        ADD COLUMN "next_albaran_number" INTEGER NOT NULL DEFAULT 1;
+CREATE TABLE "albaranes" (…);  -- + índices (merchant_id,job_id) y UNIQUE (merchant_id,numero)
+```
+**PROD: aplicar el mismo push (con preview + sentinel) tras el merge del PR y ANTES de que
+el código desplegado use la tabla.** Documento NO fiscal (regla 24): fuera de VeriFactu.
+
+---
+
 ## FASE 3 · MEDIA-1: `attachments.data/mime` — ✅ APLICADO en prod (2026-07-07)
 
 `prisma db push` aplicado contra Railway, **autorizado por el fundador** (eligió backend

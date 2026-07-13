@@ -9,8 +9,9 @@ import { getLocale } from '../../../../core/i18n/locales';
 
 /** Descarga el logo del merchant como Buffer para PDFKit.
  *  Acepta URL http/https o data URIs base64.
- *  Devuelve null si falla (no aborta la generación del PDF). */
-async function loadLogoBuffer(logoUrl: string | null | undefined): Promise<Buffer | null> {
+ *  Devuelve null si falla (no aborta la generación del PDF).
+ *  Exportada (SCRUM-14): la reutiliza el PDF del albarán (albaranPdf.service). */
+export async function loadLogoBuffer(logoUrl: string | null | undefined): Promise<Buffer | null> {
   if (!logoUrl) return null;
   try {
     if (logoUrl.startsWith('data:')) {
