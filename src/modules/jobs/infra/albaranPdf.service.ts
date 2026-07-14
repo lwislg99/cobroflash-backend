@@ -11,6 +11,7 @@ import { loadLogoBuffer } from '../../invoicing/infra/pdf/pdf.service';
 import type { AlbaranLinea } from '../domain/albaran.service';
 
 export async function generateAlbaranPdf(params: {
+  merchantId: number; // SCRUM-48: prefija el nombre de archivo (mata la colisión entre merchants)
   numero: string;
   fecha: Date;
   version: number;
@@ -28,8 +29,10 @@ export async function generateAlbaranPdf(params: {
   notas?: string | null;
   signatureData?: string | null; // data-URI (solo si estado firmado)
   firmadoAt?: Date | null;
-}): Promise<{ outPath: string; publicUrlPath: string }> {
-  const fileName = `${params.numero}.pdf`;
+}): Promise<{ outPath: string }> {
+  // SCRUM-48: la serie ALB- solo es única POR merchant (@@unique([merchantId, numero]));
+  // sin el prefijo, dos merchants con ALB-2026-001 se pisaban el PDF en disco.
+  const fileName = `${params.merchantId}-${params.numero}.pdf`;
   const outPath = path.join(albaranesDir, fileName);
 
   // Tokens de DESIGN.md adaptados a papel (mismos del PDF de factura)
@@ -193,5 +196,5 @@ export async function generateAlbaranPdf(params: {
     stream.on('error', reject);
   });
 
-  return { outPath, publicUrlPath: `/albaranes/${fileName}` };
+  return { outPath };
 }
