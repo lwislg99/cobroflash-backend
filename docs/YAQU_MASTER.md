@@ -670,6 +670,34 @@ Ideas validadas por el mercado, documentadas aquí para revisión a los 25 pagan
 
 ---
 
+# VISIÓN NORTE — Paridad total por packs `decisión del fundador, 14-jul-2026`
+
+> Declaración de dirección a largo plazo. **NO es un plan de construcción ni modifica nada
+> de este master** (ver punto 3): es el norte contra el que se capturan ideas y se juzgará
+> la revisión de la Parte Z cuando toque.
+
+1. **Meta a largo plazo.** YaQu alcanzará **paridad funcional total** con los softwares de
+   facturación/gestión del sector (referencia: el doc de investigación del proyecto —
+   research del 13-jun-2026 integrado en Z2/Z3 y reconciliado en
+   `docs/historico/RECONCILIACION_master_14jun.md`) y los **superará en completitud e
+   intuitividad**. La comercialización será por **PACKS/módulos** (p. ej. Cobros, Fiscal,
+   Equipo, Documentos, Contabilidad): el pro compone su YaQu con los packs que su negocio
+   necesita, sin pagar ni sufrir la complejidad de los que no.
+2. **Regla operativa: NADA se descarta jamás.** Toda pieza de la competencia (Z3) y toda
+   idea del fundador se **captura como ticket en Jira** con su fase y su gate — aunque hoy
+   viva en el cajón F4 o en "❌ nunca" de Z1. El descarte definitivo no existe; existe el
+   gate que aún no se ha alcanzado. (Los "❌ nunca" de Z1 conservan su significado operativo
+   actual: no se construyen bajo el régimen vigente; su reconsideración pertenece a la
+   enmienda del punto 3.)
+3. **EXPLÍCITO — qué NO cambia:** esta visión **NO modifica la Parte Z ni la regla 13**.
+   La secuencia de construcción antes de 25 pagantes sigue gobernada por este master tal
+   cual está (cola única U, prioridad SIF-1, gates de Z). La revisión de la Parte Z a la
+   luz de esta visión (qué entra en qué pack, qué gates se ajustan) se hará como
+   **enmienda formal del master AL alcanzar 25 pagantes**, junto con la re-priorización
+   comercial que la regla 13 ya prevé.
+
+---
+
 # PARTE AA — CLAUDE CODE OPERATING SYSTEM `F1-doc (canónico aquí; CLAUDE.md lo implementa — regla 35)`
 
 ## AA1. Protocolo de sesión (obligatorio)
