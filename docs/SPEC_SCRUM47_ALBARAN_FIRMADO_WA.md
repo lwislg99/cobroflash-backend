@@ -53,12 +53,10 @@ albarán (**SCRUM-49**; la plantilla puede aprobarse ANTES de que exista la pág
   1. `{{1}}` = nombre del cliente
   2. `{{2}}` = nombre del negocio (merchant)
   3. `{{3}}` = nº de albarán (p. ej. `ALB-2026-001`)
-- **Texto ENVIADO a revisión de Meta (14-jul-2026):**
-  > Hola {{1}} 👋
-  > {{2}} te ha preparado el parte de trabajo {{3}} para que lo revises y lo firmes.
-  > Tócalo en el botón de abajo para verlo y firmarlo desde tu móvil.
-  ⚠️ Verificar BYTE A BYTE contra lo que quede Approved en el Manager antes de escribir el
-  builder (si Meta pidió retoques en la revisión, ESTE doc se actualiza al texto aprobado).
+- **Texto ENVIADO a revisión de Meta (14-jul-2026, literal):**
+  > Hola {{1}} 👋 {{2}} te envía el parte de trabajo {{3}} para que lo revises y lo firmes. Puedes hacerlo desde el botón de aquí abajo, te llevará un momento. ¡Gracias!
+  Verificar contra el texto Approved final de Meta antes de escribir el builder (si Meta pidió
+  retoques en la revisión, ESTE doc se actualiza al texto aprobado).
 - **Pie:** `Enviado con YaQu`
 - **Botones — 1 (URL dinámica):**
   - Texto: `Ver y firmar`
