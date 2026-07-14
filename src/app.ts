@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'path';
 
-import { invoicesDir, outboxDir, albaranesDir } from './core/storage/dirs';
+import { invoicesDir, outboxDir } from './core/storage/dirs';
 import { jsonError } from './core/http/jsonError';
 import { notFoundPageHtml } from './core/http/publicNotFound';
 import { isFlagEnabled } from './core/flags';
@@ -111,7 +111,9 @@ app.use(jsonError);
 // Static
 app.use('/invoices', express.static(invoicesDir));
 app.use('/outbox', express.static(outboxDir));
-app.use('/albaranes', express.static(albaranesDir)); // SCRUM-14: PDFs de albarán (NO fiscales), separados de /invoices
+// SCRUM-48: los PDFs de albarán NO se sirven como estático público (llevan nombre del
+// cliente, dirección de la obra y firma manuscrita = datos personales, y ALB-YYYY-NNN es
+// enumerable). Se sirven SIEMPRE por GET /admin/albaranes/:id/pdf (auth + tenancy).
 
 const publicDir = path.join(__dirname, '../public');
 app.use(express.static(publicDir));

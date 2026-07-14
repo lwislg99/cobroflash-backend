@@ -78,12 +78,14 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
   const albaran = await prisma.albaran.findUnique({ where: { id: albaranId } });
   if (!albaran) throw new Error('albaran_not_found');
 
-  const fileName = `${albaran.numero}.pdf`;
+  // SCRUM-48: nombre prefijado con merchantId (mata la colisión entre merchants) y pdfUrl
+  // apuntando al endpoint AUTENTICADO (ya no hay estático público /albaranes).
+  const fileName = `${albaran.merchantId}-${albaran.numero}.pdf`;
   const diskPath = path.join(albaranesDir, fileName);
-  const publicUrlPath = `/albaranes/${fileName}`;
+  const pdfUrl = `/admin/albaranes/${albaran.id}/pdf`;
 
-  if (!force && albaran.pdfUrl && fs.existsSync(diskPath)) {
-    return { diskPath, pdfUrl: albaran.pdfUrl, numero: albaran.numero };
+  if (!force && albaran.pdfUrl === pdfUrl && fs.existsSync(diskPath)) {
+    return { diskPath, pdfUrl, numero: albaran.numero };
   }
 
   const [merchant, job] = await Promise.all([
@@ -98,6 +100,7 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
     : null;
 
   await generateAlbaranPdf({
+    merchantId: albaran.merchantId,
     numero: albaran.numero,
     fecha: albaran.fecha,
     version: albaran.version,
@@ -110,8 +113,8 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
     firmadoAt: albaran.firmadoAt,
   });
 
-  if (albaran.pdfUrl !== publicUrlPath) {
-    await prisma.albaran.update({ where: { id: albaranId }, data: { pdfUrl: publicUrlPath } });
+  if (albaran.pdfUrl !== pdfUrl) {
+    await prisma.albaran.update({ where: { id: albaranId }, data: { pdfUrl } });
   }
-  return { diskPath, pdfUrl: publicUrlPath, numero: albaran.numero };
+  return { diskPath, pdfUrl, numero: albaran.numero };
 }

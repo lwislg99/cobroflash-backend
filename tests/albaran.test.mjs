@@ -4,6 +4,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   formatAlbaranNumber,
   resolveAlbaranSeq,
@@ -173,9 +175,37 @@ test('SCRUM-14: tenancy del albarán + lock de firmado end-to-end', { skip: !ENA
     assert.equal((await jsonReq(`/admin/albaranes/${alb1.id}/emitir`, cookieA, 'POST')).status, 200);
     const rSign = await jsonReq(`/admin/albaranes/${alb1.id}/firmar`, cookieA, 'POST', { signatureData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' });
     assert.equal(rSign.status, 200);
+    const albSigned = await rSign.json(); // serializado con pdfUrl al endpoint auth
     const rLocked = await jsonReq(`/admin/albaranes/${alb1.id}`, cookieA, 'PATCH', { notas: 'tarde' });
     assert.equal(rLocked.status, 409);
     assert.equal((await rLocked.json()).error, 'albaran_locked');
+
+    // ── SCRUM-48: seguridad del PDF ──────────────────────────────────────────
+    const { albaranesDir } = await import('../dist/core/storage/dirs.js');
+
+    // pdfUrl serializado apunta al endpoint AUTH, no al viejo estático.
+    assert.equal(albSigned.pdfUrl, `/admin/albaranes/${alb1.id}/pdf`);
+
+    // Nombre en disco: prefijar con merchantId mata la colisión entre merchants.
+    // Partimos de disco LIMPIO (borramos artefactos de corridas previas, incluido el
+    // nombre viejo sin prefijo) para probar SOLO lo que escribe el código actual: el
+    // GET /pdf regenera bajo demanda (ensureAlbaranPdf) con el nombre nuevo.
+    const oldName = path.join(albaranesDir, `${alb1.numero}.pdf`);
+    const newName = path.join(albaranesDir, `${merchantA.id}-${alb1.numero}.pdf`);
+    fs.rmSync(oldName, { force: true });
+    fs.rmSync(newName, { force: true });
+    const rPdf = await jsonReq(`/admin/albaranes/${alb1.id}/pdf`, cookieA, 'GET');
+    assert.equal(rPdf.status, 200);
+    assert.match(rPdf.headers.get('content-type') || '', /application\/pdf/);
+    assert.ok(fs.existsSync(newName), 'el PDF debe regenerarse como <merchantId>-ALB-....pdf');
+    assert.ok(!fs.existsSync(oldName), 'el código actual NO debe escribir el nombre viejo sin merchantId');
+
+    // Acceso PÚBLICO al estático eliminado (nombre nuevo y viejo) → 404, JAMÁS un PDF.
+    for (const p of [`/albaranes/${merchantA.id}-${alb1.numero}.pdf`, `/albaranes/${alb1.numero}.pdf`]) {
+      const rPub = await fetch(`${base}${p}`); // sin cookie: superficie pública
+      assert.equal(rPub.status, 404, `${p} público debería ser 404 y fue ${rPub.status}`);
+      assert.doesNotMatch(rPub.headers.get('content-type') || '', /application\/pdf/, `${p} no debe servir un PDF`);
+    }
   } finally {
     // Limpieza efímera (orden: hijos → padres)
     await prisma.albaran.deleteMany({ where: { merchantId: merchantA.id } });

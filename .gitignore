@@ -151,3 +151,6 @@ backups/
 
 # PDFs generados (regenerables on-demand, R8 — el fs de Railway es efímero)
 public/invoices/*.pdf
+# SCRUM-48: PDFs de albarán fuera de public/ (privados, se sirven por endpoint auth).
+# Anclado a la raíz (/) para NO ignorar src/core/storage/ ni otros "storage" del árbol.
+/storage/

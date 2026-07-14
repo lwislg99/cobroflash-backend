@@ -134,7 +134,7 @@ router.post('/:id/firmar', async (req, res) => {
     await ensureAlbaranPdf(albaran.id, true).catch((e) =>
       console.error('[albaranes] PDF tras firmar:', e?.message || e),
     );
-    return res.json(serializeAlbaran({ ...updated, pdfUrl: `/albaranes/${updated.numero}.pdf` }));
+    return res.json(serializeAlbaran({ ...updated, pdfUrl: `/admin/albaranes/${updated.id}/pdf` }));
   } catch (err: any) {
     console.error('[POST /admin/albaranes/:id/firmar]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
