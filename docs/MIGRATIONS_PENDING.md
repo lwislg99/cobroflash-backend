@@ -4,6 +4,25 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
+## SCRUM-52 · `jobs.operario_id` + índice (base de SCRUM-22) — ⏳ APLICADO en STAGING, PENDIENTE en prod
+
+`prisma db push` aplicado a **STAGING** (`acela.proxy.rlwy.net`) el **2026-07-15**, con
+host-check (guard anti-`autorack`) + preview `migrate diff`, **SIN `--accept-data-loss`**
+(100 % aditivo). Test gateado `tests/scrum52-operario.test.mjs` verde contra staging
+(poblado operarioId + audit `operario_asignado` + índice presente en `pg_indexes`).
+Preview exacto:
+```sql
+ALTER TABLE "jobs" ADD COLUMN "operario_id" INTEGER;
+CREATE INDEX "jobs_merchant_id_operario_id_idx" ON "jobs"("merchant_id", "operario_id");
+```
+**PROD: PENDIENTE** — aplicar tras el merge del PR de SCRUM-52 y **ANTES/AL** desplegar el
+código (referencia `operarioId`; en orden inverso Prisma daría P2022 en prod). Mismo wrapper
+de host-check contra `autorack.proxy.rlwy.net`, **autorización fresca del fundador** (hook
+guard-dangerous), SIN `--accept-data-loss`. Columna nullable (null = propietario) + índice
+compuesto `(merchant_id, operario_id)`; documento NO fiscal (regla 24).
+
+---
+
 ## SCRUM-14 · ALBARAN-1: tabla `albaranes` + contadores en `merchants` — ✅ APLICADO en prod (2026-07-13)
 
 `prisma db push` aplicado a **STAGING** el 13-jul-2026 y a **PRODUCCIÓN** el 13-jul-2026

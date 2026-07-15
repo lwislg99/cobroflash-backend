@@ -4,6 +4,7 @@
 // FSM (Parte L, regla 27 — estados CERRADOS):
 //   pendiente_agendar → agendado(scheduledAt) → en_curso → terminado → cerrado
 import { prisma } from '../../../core/db/prisma';
+import { recordAudit } from '../../system/audit.service';
 
 export const JOB_STATES = ['pendiente_agendar', 'agendado', 'en_curso', 'terminado', 'cerrado'] as const;
 export type JobState = (typeof JOB_STATES)[number];
@@ -31,20 +32,24 @@ export async function ensureJobForQuote(quoteId: number): Promise<void> {
     const quote = await prisma.quote.findUnique({
       where: { id: quoteId },
       // SCRUM-10: además del contexto, el total (para congelarlo) y el nº + cliente (para el título).
+      // SCRUM-52: teamMemberId = creador del presupuesto → autoría del operario en el Job.
       select: {
         id: true, merchantId: true, customerId: true, status: true,
-        total: true, quoteNumber: true,
+        total: true, quoteNumber: true, teamMemberId: true,
         customer: { select: { name: true } },
       },
     });
     if (!quote || quote.status !== 'accepted') return;
+    // SCRUM-52: idempotencia explícita — si el Job ya existe NO se re-crea ni se re-audita.
+    // (antes: upsert con update {}; ahora guard + create para auditar solo en la creación
+    // real). La constraint UNIQUE de quote_id + este try/catch cubren la carrera.
+    const existing = await prisma.job.findUnique({ where: { quoteId: quote.id }, select: { id: true } });
+    if (existing) return;
     // SCRUM-10: título propio con el criterio actual (nº de presupuesto + cliente).
     const num = quote.quoteNumber ?? quote.id;
     const titulo = `Presupuesto #${num}${quote.customer?.name ? ` · ${quote.customer.name}` : ''}`;
-    await prisma.job.upsert({
-      where: { quoteId: quote.id },
-      update: {}, // ya existe: no tocar (idempotencia, SCRUM-10 §3.7)
-      create: {
+    const job = await prisma.job.create({
+      data: {
         merchantId: quote.merchantId,
         customerId: quote.customerId,
         quoteId: quote.id,
@@ -53,7 +58,19 @@ export async function ensureJobForQuote(quoteId: number): Promise<void> {
         titulo,
         totalAceptado: quote.total, // Decimal(12,2): total del Quote congelado en el accept
         // totalCobrado = 0 por default (materializado; su lógica de sumar cobros = SCRUM-13)
+        // SCRUM-52: autoría = creador del presupuesto (quote.teamMemberId), NO quien acepta
+        // (suele ser admin). null (owner) → operarioId null.
+        operarioId: quote.teamMemberId,
       },
+    });
+    // SCRUM-52: traza de autoría del operario en la creación del Trabajo (fire-and-forget,
+    // como el resto de recordAudit). teamMemberId = operarioId (null = propietario).
+    recordAudit({
+      merchantId: quote.merchantId,
+      teamMemberId: quote.teamMemberId,
+      action: 'operario_asignado',
+      entityType: 'job',
+      entityId: job.id,
     });
   } catch (err: any) {
     console.error('[jobs] ensureJobForQuote omitido:', err?.message || err);

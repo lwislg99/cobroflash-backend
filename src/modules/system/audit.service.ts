@@ -12,7 +12,10 @@ export type AuditAction =
   | 'cambio_flag'
   // SCRUM-14 (Parte L): traza del versionado del albarán — cada edición de un
   // albarán no firmado deja version++ y su registro aquí (decisión fundador 13-jul).
-  | 'albaran_editado';
+  | 'albaran_editado'
+  // SCRUM-52 (carril A): autoría del operario congelada al crear el Trabajo desde el
+  // accept (teamMemberId = creador del presupuesto; null = propietario).
+  | 'operario_asignado';
 
 export function requestIp(req: Request): string | null {
   const fwd = req.headers['x-forwarded-for'];
