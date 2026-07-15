@@ -31,4 +31,6 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   // Mantenimientos (A15): tocar planes = dinero futuro → admin
   { method: 'POST', path: '/admin/maintenance', body: { customerId: 1, title: 'x', intervalMonths: 12 } },
   { method: 'DELETE', path: '/admin/maintenance/:planId' },
+  // Trabajos: cobrar el resto emite la factura del 2º tramo + lanza el cobro (SCRUM-54, S1: Técnico ❌)
+  { method: 'POST', path: '/admin/jobs/:id/collect-rest' },
 ];

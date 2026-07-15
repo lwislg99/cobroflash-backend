@@ -93,7 +93,7 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
 
     // A12.4 — el técnico SIEMPRE 403 en la lista admin-only
     for (const r of ADMIN_ONLY_ROUTES) {
-      const path = r.path.replace(':invoiceId', '999999').replace(':planId', '999999');
+      const path = r.path.replace(':invoiceId', '999999').replace(':planId', '999999').replace(':id', '999999');
       const res = await fetch(base + path, {
         method: r.method,
         headers: { cookie: cookieTecnicoB, 'Content-Type': 'application/json' },

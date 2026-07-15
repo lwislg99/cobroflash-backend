@@ -2,6 +2,7 @@
 // Lista "Esta semana" + FSM + .ics por trabajo + "Cobrar el resto" (V2: el
 // resto JAMÁS se cobra solo — SIEMPRE acción del pro). Merchant-scoped (regla 2).
 import { Router } from 'express';
+import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-54 (S1): collect-rest = dinero → admin
 import { prisma } from '../../../../core/db/prisma';
 import { canTransition, estadoCobroFor } from '../../domain/job.service';
 import { resolveBillingPlan, distributeStageAmounts } from '../../../quotes/domain/billingPlan';
@@ -303,7 +304,10 @@ router.post('/:id/albaranes', async (req, res) => {
 // terminado + tramo pendiente → genera la factura del resto (misma maquinaria
 // getNextBillingStage del accept) y envía payment_request. V2: SIEMPRE acción
 // del pro; jamás automático.
-router.post('/:id/collect-rest', async (req, res) => {
+// SCRUM-54 (S1): emite factura + dispara cobro → SOLO admin, coherente con el resto
+// de mutaciones de dinero (R5/A21.3, invoicesAdmin pay/unpay/status/rectify…). El
+// Técnico ❌ en emitir factura / marcar pagado (tabla S1). Ruta en ADMIN_ONLY_ROUTES.
+router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
