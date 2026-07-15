@@ -14,9 +14,8 @@
 //   2) export SEED_VIDEO_CONFIRM=<hostname EXACTO de esa BD>   (te lo dice el script si falta)
 //   3) node scripts/seed-video.mjs
 //
-// PLACEHOLDER OBLIGATORIO: el móvil de "María García" (segundo teléfono del rodaje) es
-// el literal +34XXXXXXXXX. El fundador lo sustituye AQUÍ ABAJO por el número real ANTES
-// de ejecutar. Si al ejecutar sigue con 'X', el script aborta y lo pide.
+// TODOS los clientes son INVENTADOS con teléfono estructuralmente inválido (346000000NN)
+// → cero riesgo de envío accidental. (María García es uno más; el seed no envía nada.)
 
 import { PrismaClient } from '@prisma/client';
 import { allocateQuoteNumber } from '../dist/modules/quotes/domain/quoteNumber.service.js';
@@ -28,8 +27,8 @@ import { resolveBillingPlan, distributeStageAmounts } from '../dist/modules/quot
 // CONFIGURACIÓN EDITABLE POR EL FUNDADOR
 // ─────────────────────────────────────────────────────────────────────────────
 const OWNER_EMAIL = 'lwislg99@gmail.com';           // magic link normal
-// ⚠️ SUSTITUIR por el segundo móvil real del rodaje (formato 34XXXXXXXXX, sin '+').
-const MARIA_PHONE = '+34XXXXXXXXX';
+// María García: cliente INVENTADO como el resto (teléfono estructuralmente inválido).
+const MARIA_PHONE = '34600000001';
 
 const prisma = new PrismaClient();
 
@@ -66,12 +65,6 @@ async function preflight() {
       `Confirma la BD de forma EXPLÍCITA. La DATABASE_URL apunta al host:\n\n    ${host}\n\n` +
       `Si es la BD correcta, re-ejecuta con:\n\n    SEED_VIDEO_CONFIRM=${host} node scripts/seed-video.mjs\n`,
     );
-  }
-
-  // Placeholder del móvil de María sin sustituir → parar y pedirlo.
-  if (MARIA_PHONE.includes('X')) {
-    abort('El teléfono de "María García" sigue siendo el placeholder +34XXXXXXXXX. ' +
-      'Sustitúyelo en scripts/seed-video.mjs (const MARIA_PHONE) por el móvil real del rodaje antes de ejecutar.');
   }
 
   // Entorno reconocible: debe existir el merchant demo (regla 8) y haber merchants.
@@ -135,7 +128,7 @@ const CATALOG = [
   { name: 'Mantenimiento anual de caldera', price: 85, cost: 0, vat: 0.21 },
 ];
 
-// 15 clientes. Todos con teléfono estructuralmente inválido 346000000NN salvo María (placeholder→real).
+// 15 clientes INVENTADOS. Todos con teléfono estructuralmente inválido 346000000NN.
 // 4 con email (@example.com = RFC-2606, NUNCA se entrega → cero riesgo). El resto sin email (realista).
 const CLIENTS = [
   { name: 'María García', city: 'Alcorcón', address: 'C/ Mayor 12, 28921 Alcorcón (Madrid)', phone: MARIA_PHONE, email: 'maria.garcia@example.com' },
