@@ -6,6 +6,7 @@ import {
   buildPaymentConfirmation,
   buildPaymentConfirmationInvoice,
   buildMerchantAlert,
+  buildAlbaranFirmado,
   validateTemplateComponents,
   WA_TEMPLATES,
   WA_TEMPLATE_SPECS,
@@ -152,4 +153,49 @@ test('merchant_alert_es: 3 vars (cliente, acción, detalle), SIN botón', () => 
 test('validación J7: merchant_alert con 2 vars (falta detalle) se detecta', () => {
   const malformed = [{ type: 'body', parameters: [{ type: 'text', text: 'a' }, { type: 'text', text: 'b' }] }];
   assert.match(validateTemplateComponents(WA_TEMPLATES.merchantAlert, malformed), /2 variables.*espera 3/);
+});
+
+// ── SCRUM-47: albaran_firmado_es (cabecera de documento) ─────────────────────
+function docHeaderMediaId(msg) {
+  const h = msg.components.find((c) => c.type === 'header');
+  assert.ok(h, 'falta el componente header');
+  const p0 = h.parameters[0];
+  assert.equal(p0.type, 'document');
+  return p0.document?.id;
+}
+
+test('albaran_firmado_es: header de documento (media_id) + 3 vars en orden, sin botón', () => {
+  const msg = buildAlbaranFirmado({
+    customerName: 'María García', albaranNumber: 'ALB-2026-001', obra: 'C/ Mayor 12',
+    mediaId: 'MEDIA123', filename: 'ALB-2026-001.pdf',
+  });
+  assert.equal(msg.templateName, 'albaran_firmado_es');
+  assert.equal(msg.languageCode, 'es');
+  assert.deepEqual(bodyTexts(msg), ['María García', 'ALB-2026-001', 'C/ Mayor 12']);
+  assert.equal(docHeaderMediaId(msg), 'MEDIA123', 'el PDF viaja por media_id en la cabecera');
+  assert.equal(msg.components[0].parameters[0].document.filename, 'ALB-2026-001.pdf');
+  assert.equal(urlButtonSuffix(msg), null, 'el albarán firmado no lleva botón dinámico (quick-reply estático)');
+  assert.equal(validateTemplateComponents(msg.templateName, msg.components), null, 'pasa J7');
+});
+
+test('validación J7 (SCRUM-59): albaran_firmado exige la cabecera de documento', () => {
+  const soloBody = [{ type: 'body', parameters: [
+    { type: 'text', text: 'María' }, { type: 'text', text: 'ALB-2026-001' }, { type: 'text', text: 'obra' },
+  ] }];
+  // sin header → error (un media_id vacío solo fallaría en Meta con #132012)
+  assert.match(validateTemplateComponents(WA_TEMPLATES.albaranFirmado, soloBody), /cabecera de documento/);
+  // media_id vacío también se detecta
+  const headerVacio = [
+    { type: 'header', parameters: [{ type: 'document', document: { id: '', filename: 'x.pdf' } }] },
+    ...soloBody,
+  ];
+  assert.match(validateTemplateComponents(WA_TEMPLATES.albaranFirmado, headerVacio), /cabecera de documento/);
+});
+
+test('specs J7: albaran_firmado_es registrada con hasDocumentHeader', () => {
+  const spec = WA_TEMPLATE_SPECS[WA_TEMPLATES.albaranFirmado];
+  assert.ok(spec, 'la spec debe estar registrada para que J7 muerda');
+  assert.equal(spec.expectedVarCount, 3);
+  assert.equal(spec.hasUrlButton, false);
+  assert.equal(spec.hasDocumentHeader, true);
 });

@@ -1,0 +1,120 @@
+// SCRUM-47 (ALBARAN-2): POST /admin/albaranes/:id/enviar-whatsapp envía la copia FIRMADA
+// del albarán al WhatsApp del cliente (plantilla albaran_firmado_es con el PDF en cabecera
+// de documento). S1: "enviar WA" es capacidad de técnico → requireActivePlan SIN requireRole.
+// Verifica: técnico 200 (firmado, dry-run) · 409 no-firmado · 409 sin-teléfono · tenancy 404
+// · y que el envío pasó por la cadena (WA-0b registra relatedType:'albaran').
+//
+// ⚠️ GATEADO (crea/BORRA merchants efímeros; genera el PDF real en disco; levanta la app):
+//   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm test
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
+
+const ENABLED = process.env.QA_DB_TEST === '1';
+const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+
+async function waitForWaLog(prisma, merchantId, albaranId, timeoutMs = 3000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const row = await prisma.whatsAppMessage
+      .findFirst({ where: { merchantId, relatedType: 'albaran', relatedId: albaranId }, select: { id: true } })
+      .catch(() => null);
+    if (row) return row;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return null;
+}
+
+test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-teléfono, tenancy 404', { skip: !ENABLED }, async () => {
+  const { prisma } = await import('../dist/core/db/prisma.js');
+  const { app } = await import('../dist/app.js');
+  const server = app.listen(0);
+  await new Promise((r) => server.once('listening', r));
+  const base = `http://127.0.0.1:${server.address().port}`;
+
+  const stamp = Date.now();
+  const mkMerchant = (tag) =>
+    prisma.merchant.create({
+      data: {
+        name: `QA S47 ${tag}`, country: 'ES', email: `qa-s47-${tag}-${stamp}@test.local`,
+        onboardingCompleted: true, planExpiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000), // pasa requireActivePlan
+      },
+    });
+  const merchantA = await mkMerchant('A');
+  const merchantB = await mkMerchant('B');
+  const tecnico = await prisma.teamMember.create({
+    data: { merchantId: merchantA.id, name: 'QA Téc 47', email: `qa-tec47-${stamp}@test.local`, role: 'tecnico', status: 'active' },
+  });
+  const customer = await prisma.customer.create({
+    data: { merchantId: merchantA.id, name: 'Cliente 47', phone: `34600${stamp % 1000000}` },
+  });
+  const customerSinTel = await prisma.customer.create({
+    data: { merchantId: merchantA.id, name: 'Sin teléfono', phone: null },
+  });
+  const job = await prisma.job.create({
+    data: { merchantId: merchantA.id, customerId: customer.id, status: 'terminado', titulo: 'C/ Mayor 12' },
+  });
+  const jobSinTel = await prisma.job.create({
+    data: { merchantId: merchantA.id, customerId: customerSinTel.id, status: 'terminado', titulo: 'Sin tel' },
+  });
+  const mkAlb = (jobId, numero, estado, firmado) =>
+    prisma.albaran.create({
+      data: {
+        merchantId: merchantA.id, jobId, numero,
+        lineas: [{ concepto: 'Mano de obra', cantidad: 1, unidad: 'h' }],
+        estado, ...(firmado ? { signatureUrl: SIG, firmadoAt: new Date() } : {}),
+      },
+    });
+  const albFirmado = await mkAlb(job.id, `ALB-QA47-F-${stamp}`, 'firmado', true);
+  const albEmitido = await mkAlb(job.id, `ALB-QA47-E-${stamp}`, 'emitido', false);
+  const albSinTel = await mkAlb(jobSinTel.id, `ALB-QA47-N-${stamp}`, 'firmado', true);
+
+  const mkCookie = async (merchantId, teamMemberId = null) => {
+    const token = 'qa47-' + crypto.randomBytes(12).toString('hex');
+    await prisma.authSession.create({ data: { merchantId, teamMemberId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) } });
+    const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+    const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
+    assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
+    return cookie;
+  };
+  const post = (albId, cookie) =>
+    fetch(`${base}/admin/albaranes/${albId}/enviar-whatsapp`, { method: 'POST', headers: { cookie, 'content-type': 'application/json' } });
+
+  try {
+    const cookieTecnico = await mkCookie(merchantA.id, tecnico.id); // rol técnico (S1: enviar WA ✅)
+    const cookieB = await mkCookie(merchantB.id, null);
+
+    // ── TÉCNICO permitido (S1) + happy path dry-run → 200 ok:true ──
+    const rOk = await post(albFirmado.id, cookieTecnico);
+    assert.equal(rOk.status, 200, `técnico debe poder enviar (S1) y fue ${rOk.status}`);
+    assert.equal((await rOk.json()).ok, true, 'envío ok en dry-run');
+    // WA-0b: el envío pasó por la cadena y se registró con relatedType 'albaran'
+    assert.ok(await waitForWaLog(prisma, merchantA.id, albFirmado.id), 'debe registrarse WhatsAppMessage relatedType=albaran');
+
+    // ── No firmado → 409 albaran_no_firmado (no se envía) ──
+    const rEmit = await post(albEmitido.id, cookieTecnico);
+    assert.equal(rEmit.status, 409, `emitido debe ser 409 y fue ${rEmit.status}`);
+    assert.equal((await rEmit.json()).error, 'albaran_no_firmado');
+
+    // ── Cliente sin teléfono → 409 sin_telefono ──
+    const rNoTel = await post(albSinTel.id, cookieTecnico);
+    assert.equal(rNoTel.status, 409);
+    assert.equal((await rNoTel.json()).error, 'sin_telefono');
+
+    // ── Tenancy (regla 2): B no ve el albarán de A → 404 ──
+    const rB = await post(albFirmado.id, cookieB);
+    assert.equal(rB.status, 404, 'merchant B no accede al albarán de A');
+
+    console.log('✔ SCRUM-47: técnico 200 (firmado, dry-run), 409 no-firmado/sin-tel, tenancy 404, WA-0b albaran ✓');
+  } finally {
+    await prisma.whatsAppMessage.deleteMany({ where: { merchantId: { in: [merchantA.id, merchantB.id] } } });
+    await prisma.albaran.deleteMany({ where: { merchantId: merchantA.id } });
+    await prisma.job.deleteMany({ where: { merchantId: merchantA.id } });
+    await prisma.customer.deleteMany({ where: { merchantId: merchantA.id } });
+    await prisma.teamMember.deleteMany({ where: { merchantId: merchantA.id } });
+    await prisma.authSession.deleteMany({ where: { merchantId: { in: [merchantA.id, merchantB.id] } } });
+    await prisma.merchant.deleteMany({ where: { id: { in: [merchantA.id, merchantB.id] } } });
+    server.close();
+    await prisma.$disconnect();
+  }
+});

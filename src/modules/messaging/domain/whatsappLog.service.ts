@@ -12,7 +12,7 @@ export const WA_UTILITY_COST_ES = 0.023;
 // 'template' = plantilla pagada · 'service' = texto/interactivo en ventana (0 €) ·
 // 'inbound' = mensaje ENTRANTE del cliente (A5.2: abre/renueva la ventana de 24 h)
 export type WaMsgType = 'template' | 'service' | 'inbound';
-export type WaRelatedType = 'quote' | 'invoice' | 'charge';
+export type WaRelatedType = 'quote' | 'invoice' | 'charge' | 'albaran'; // SCRUM-47: envío del albarán firmado
 
 export interface RecordWaMessageInput {
   merchantId: number;

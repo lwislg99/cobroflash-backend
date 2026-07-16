@@ -3,8 +3,13 @@
 // Documento NO FISCAL (regla 24): nada de facturación/VeriFactu aquí. Tenancy SIEMPRE
 // findFirst { id, merchantId } → 404 (regla 2). Editable hasta 'firmado' (409 albaran_locked).
 import { Router } from 'express';
+import fs from 'fs';
 import { prisma } from '../../../../core/db/prisma';
 import { recordAudit, requestIp } from '../../../system/audit.service';
+import { requireActivePlan } from '../../../../core/http/authMiddleware'; // SCRUM-47 (S1: enviar WA ✅ técnico, sin requireRole)
+import { normalizePhone } from '../../../../core/utils/utils';
+import { sendWhatsAppTemplate, uploadWhatsAppMedia } from '../../../../integrations/whatsapp';
+import { buildAlbaranFirmado } from '../../../../integrations/whatsappTemplates';
 import {
   canTransitionAlbaran,
   ensureAlbaranPdf,
@@ -228,6 +233,84 @@ router.get('/:id/fotos', async (req, res) => {
     return res.json(fotos);
   } catch (err: any) {
     console.error('[GET /admin/albaranes/:id/fotos]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// POST /admin/albaranes/:id/enviar-whatsapp — SCRUM-47: envía la copia FIRMADA al WhatsApp
+// del cliente (plantilla `albaran_firmado_es` con el PDF en la cabecera de documento).
+// MANUAL (decisión del fundador). S1: "enviar WA" es capacidad de técnico → requireActivePlan,
+// SIN requireRole (coherente con /admin/quotes/:id/send-whatsapp). Solo desde 'firmado'.
+// Guards completos (V0-2/J3/A3.2/J6/J7/dry-run/WA-0b): los aplica sendWhatsAppTemplate al
+// recibir merchantId + log{customerId, relatedType:'albaran', relatedId}. Sin ventana 24h (SCRUM-50).
+router.post('/:id/enviar-whatsapp', requireActivePlan, async (req, res) => {
+  try {
+    const found = await findAlbaran(req);
+    if (!found.ok) return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
+    const { albaran } = found;
+    if (albaran.estado !== 'firmado') {
+      return res.status(409).json({ error: 'albaran_no_firmado', message: 'Solo se puede enviar un albarán firmado.' });
+    }
+    if (!albaran.jobId) return res.status(409).json({ error: 'albaran_sin_trabajo' });
+
+    // Cliente vía el Trabajo (tenancy en ambos findFirst, regla 2)
+    const job = await prisma.job.findFirst({
+      where: { id: albaran.jobId, merchantId: req.merchantId },
+      select: { id: true, customerId: true, titulo: true },
+    });
+    if (!job) return res.status(404).json({ error: 'not_found' });
+    const customer = await prisma.customer.findFirst({
+      where: { id: job.customerId, merchantId: req.merchantId },
+      select: { id: true, name: true, phone: true },
+    });
+    const to = normalizePhone(customer?.phone || '');
+    if (!to) {
+      return res.status(409).json({ error: 'sin_telefono', message: 'Este cliente no tiene WhatsApp guardado.' });
+    }
+
+    // PDF firmado → bytes → media_id. Con la 48 el PDF es auth-only, por eso media_id y no link.
+    const { diskPath, numero } = await ensureAlbaranPdf(albaran.id);
+    const buffer = await fs.promises.readFile(diskPath);
+    const mediaId = await uploadWhatsAppMedia({ buffer, filename: `${numero}.pdf`, mime: 'application/pdf' });
+    if (!mediaId) {
+      return res.status(502).json({ ok: false, error: 'media_upload_failed', message: 'No se pudo preparar el PDF para WhatsApp. Inténtalo de nuevo.' });
+    }
+
+    const obra = (job.titulo || '').trim() || 'tu trabajo'; // {{3}} = Job.titulo (fallback no vacío: J7 rechaza var vacía)
+    const msg = buildAlbaranFirmado({
+      customerName: (customer?.name || '').trim() || 'cliente',
+      albaranNumber: numero,
+      obra,
+      mediaId,
+      filename: `${numero}.pdf`,
+    });
+    const result: any = await sendWhatsAppTemplate({
+      to,
+      merchantId: req.merchantId,
+      templateName: msg.templateName,
+      languageCode: msg.languageCode,
+      components: msg.components,
+      log: { customerId: customer?.id ?? null, relatedType: 'albaran', relatedId: albaran.id },
+    });
+
+    if (!result?.ok) {
+      // Guard/Meta rechazó: 200 + ok:false con mensaje legible (patrón del resend de invoices).
+      const legible: Record<string, string> = {
+        wa_opt_out: 'El cliente se dio de baja de WhatsApp.',
+        demo_safe_numbers: 'En modo demo solo se envía a números autorizados.',
+        daily_cap: 'Se alcanzó el tope diario de mensajes de WhatsApp.',
+        customer_daily_cap: 'Este cliente ya recibió el máximo de mensajes por hoy.',
+        not_configured: 'WhatsApp no está configurado.',
+      };
+      return res.status(200).json({
+        ok: false,
+        error: result?.reason || 'send_failed',
+        message: legible[result?.reason] || 'No se pudo enviar por WhatsApp.',
+      });
+    }
+    return res.json({ ok: true });
+  } catch (err: any) {
+    console.error('[POST /admin/albaranes/:id/enviar-whatsapp]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });
