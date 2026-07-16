@@ -84,6 +84,21 @@ async function renderJobDetailView(container, jobId) {
 
   if (job.titulo) headLeft.querySelector('h2').textContent = job.titulo;
 
+  // SCRUM-57: "Responsable" en la cabecera = autoría del operario (job.operario, ya en el
+  // serializer tras SCRUM-22). Si el Trabajo es del propietario (operario null), el nombre del
+  // NEGOCIO — que se trae de /admin/merchant (window.appUserName NO vale: es el usuario logueado).
+  let responsableName = job.operario?.name || null;
+  if (!responsableName) {
+    try {
+      const m = await apiRequest('/admin/merchant');
+      responsableName = m?.name || m?.legalName || 'Propietario';
+    } catch { responsableName = 'Propietario'; }
+  }
+  const responsableEl = document.createElement('div');
+  responsableEl.style.cssText = 'margin-top:6px;font-size:13px;color:var(--muted)';
+  responsableEl.innerHTML = `👷 Responsable: <strong style="color:var(--ink)">${esc(responsableName)}</strong>`;
+  headLeft.appendChild(responsableEl);
+
   const cur = job.quote?.currency || 'EUR';
   const aceptado = Number(job.totalAceptado || 0);
   const cobrado = Number(job.totalCobrado || 0);

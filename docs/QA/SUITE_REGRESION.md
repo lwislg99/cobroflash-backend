@@ -142,8 +142,10 @@
 32. Propagación a documentos (SCRUM-22 DONE): en `GET {BASE}/admin/jobs/:id` → ✅ ASSERT cada
     entrada de `albaranes[]` y el objeto `charge` exponen `operario` (misma autoría del Trabajo,
     `{id,name}` o `null`).
-33. Render visible (`Operario: {nombre}` en el detalle + timeline): **pendiente del carril A**
-    sobre `SPEC_RENDER_operario_SCRUM-22.md` (jobDetailView). Cuando entre, este paso pasa a UI.
+33. **(SCRUM-57) Render visible en el detalle:** abrir un Trabajo → ✅ ASSERT en la cabecera un chip
+    **"👷 Responsable: {nombre}"** = el nombre del operario si `job.operario` no es null, o el nombre
+    del NEGOCIO (vía `/admin/merchant`) si el Trabajo es del propietario (`operario` null). `window.appUserName`
+    NO sirve (es el usuario logueado). `jobDetailView.js` NO está en el SHELL del SW → sin bump de `CACHE_NAME`.
 
 ## Resultado
 
