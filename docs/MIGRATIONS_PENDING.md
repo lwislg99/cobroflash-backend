@@ -4,22 +4,22 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
-## SCRUM-52 · `jobs.operario_id` + índice (base de SCRUM-22) — ⏳ APLICADO en STAGING, PENDIENTE en prod
+## SCRUM-52 · `jobs.operario_id` + índice (base de SCRUM-22) — ✅ APLICADO en prod (2026-07-15)
 
-`prisma db push` aplicado a **STAGING** (`acela.proxy.rlwy.net`) el **2026-07-15**, con
-host-check (guard anti-`autorack`) + preview `migrate diff`, **SIN `--accept-data-loss`**
-(100 % aditivo). Test gateado `tests/scrum52-operario.test.mjs` verde contra staging
-(poblado operarioId + audit `operario_asignado` + índice presente en `pg_indexes`).
-Preview exacto:
+`prisma db push` aplicado a **STAGING** (`acela.proxy.rlwy.net`) y a **PRODUCCIÓN**
+(`autorack.proxy.rlwy.net:40654`) el **2026-07-15**, ambos con host-check + preview
+`migrate diff` mostrado al fundador, **SIN `--accept-data-loss`** (100 % aditivo; Prisma
+no lo pidió = confirmación de que no había pérdida de datos). El de prod, **autorizado por
+el fundador** (GO explícito tras el preview) vía el sentinel de un solo uso del hook
+`guard-dangerous` (`.claude/allow-db-push`). Test gateado `tests/scrum52-operario.test.mjs`
+verde contra staging (poblado operarioId + audit `operario_asignado` + índice en `pg_indexes`).
+Verificación post-push en prod: `migrate diff` → **"empty migration"** (BD en sync). Preview exacto:
 ```sql
 ALTER TABLE "jobs" ADD COLUMN "operario_id" INTEGER;
 CREATE INDEX "jobs_merchant_id_operario_id_idx" ON "jobs"("merchant_id", "operario_id");
 ```
-**PROD: PENDIENTE** — aplicar tras el merge del PR de SCRUM-52 y **ANTES/AL** desplegar el
-código (referencia `operarioId`; en orden inverso Prisma daría P2022 en prod). Mismo wrapper
-de host-check contra `autorack.proxy.rlwy.net`, **autorización fresca del fundador** (hook
-guard-dangerous), SIN `--accept-data-loss`. Columna nullable (null = propietario) + índice
-compuesto `(merchant_id, operario_id)`; documento NO fiscal (regla 24).
+Columna nullable (null = propietario) + índice compuesto `(merchant_id, operario_id)`;
+documento NO fiscal (regla 24).
 
 ---
 
