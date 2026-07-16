@@ -136,6 +136,15 @@ router.post('/', async (req, res) => {
             routeIncoming(from, { listReplyId }).catch((e) =>
               console.error('[WA in] handler error:', e?.message),
             );
+          } else if (msg.type === 'button') {
+            // SCRUM-50: quick-reply de PLANTILLA (p. ej. «👍 Recibido» de albaran_firmado_es).
+            // Meta lo entrega como type:'button' con button.text/payload (DISTINTO de 'interactive',
+            // que es de los interactivos del bot). Acuse digno, JAMÁS el menú genérico. La ventana
+            // 24h ya se abrió arriba (recordInboundWaMessage) → el acuse viaja como sesión (0 €).
+            const btnText = String(msg.button?.text || msg.button?.payload || '');
+            handleTemplateButtonReply(from, btnText).catch((e) =>
+              console.error('[WA in] button error:', e?.message),
+            );
           } else if (msg.type === 'location') {
             // A23: ubicación compartida por el cliente → se usa como "zona" del flujo del bot.
             const loc: any = msg.location || {};
@@ -247,6 +256,15 @@ async function handleOptOutRequest(phone: string, from: string): Promise<void> {
   }
 }
 
+// SCRUM-50 (PIEZA 2): acuse de un quick-reply de PLANTILLA. Hoy el único es «👍 Recibido»
+// (albaran_firmado_es): confirmamos con un gracias breve en la ventana ya abierta (0 €), sin
+// menú genérico. Otros button-replies de plantilla se ignoran con elegancia hasta tener su copy.
+async function handleTemplateButtonReply(from: string, btnText: string): Promise<void> {
+  if (/recibido/i.test(btnText)) {
+    await sendWhatsAppText({ to: from, text: '¡Gracias por confirmar! 🙌 Tu profesional ya lo sabe.' });
+  }
+}
+
 // Decisión Acepto/No con exactamente UN presupuesto enviado (para el gate del
 // bot). Devuelve true si la aplicó; false → que decida el menú del bot.
 async function tryLegacyDecision(phone: string, from: string, text: string): Promise<boolean> {
@@ -307,6 +325,44 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
   });
 
   if (pending.length === 0) {
+    // SCRUM-50 (PIEZA 3): si el cliente RECIBIÓ un albarán por WhatsApp hace poco y no tiene
+    // presupuesto pendiente, este texto es su respuesta SOBRE el albarán → avisar al pro
+    // (notifyMerchantAlert: window-first + guards completos) + acuse digno. JAMÁS el "no tienes
+    // presupuestos" (respuesta errónea para quien pregunta por su albarán).
+    const albaranMsg = await prisma.whatsAppMessage.findFirst({
+      where: {
+        customerId: { in: customers.map((c) => c.id) },
+        relatedType: 'albaran',
+        type: 'template',
+        createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { merchantId: true, customerId: true },
+    }).catch(() => null);
+
+    if (albaranMsg) {
+      const cust = customers.find((c) => c.id === albaranMsg.customerId) || customers[0];
+      const merchant = await prisma.merchant.findUnique({
+        where: { id: albaranMsg.merchantId },
+        select: { whatsappPhone: true },
+      });
+      const snippet = text.replace(/\s+/g, ' ').slice(0, 60); // {{3}} de la plantilla: sin saltos de línea
+      notifyMerchantAlert({
+        merchantId: albaranMsg.merchantId,
+        merchantPhone: merchant?.whatsappPhone,
+        customerName: cust?.name || 'Un cliente',
+        action: 'te ha escrito sobre un albarán',
+        detail: snippet,
+        freeText: `💬 *${cust?.name || 'Un cliente'}* te ha escrito sobre un albarán: "${text.slice(0, 200)}". Respóndele desde tu WhatsApp o el panel.`,
+      }).catch(() => {});
+      await sendWhatsAppText({
+        to: from,
+        merchantId: albaranMsg.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
+        text: 'Gracias por tu mensaje 🙌 Se lo hemos pasado a tu profesional, que te responderá en breve.',
+      });
+      return;
+    }
+
     await sendWhatsAppText({
       to: from,
       text: 'Hola 👋 No tienes presupuestos pendientes en este momento.',
