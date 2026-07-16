@@ -72,6 +72,7 @@ import { getSession } from './modules/auth/domain/auth.service';
 import { getLocaleJson } from './core/i18n/locales';
 import { quoteDecisionLandingRouter } from './modules/system/app/routes/quoteDecisionLanding.routes';
 import customerPortalRouter from './modules/system/app/routes/customerPortal.routes';
+import albaranPublicRouter from './modules/jobs/app/routes/albaranPublic.routes'; // SCRUM-49: firma remota
 import { prisma } from './core/db/prisma';
 
 export const app = express();
@@ -79,6 +80,9 @@ export const app = express();
 // Landings públicas (antes del JSON parser)
 app.use('/pay', quoteDecisionLandingRouter);
 app.use('/cliente', customerPortalRouter);
+// SCRUM-49: firma remota del albarán. Parser propio (la firma es un data-URI ~KB) ANTES del
+// global. Autorizado por el token opaco (no auth). Superficie pública, rate-limit en el POST.
+app.use('/albaran', express.json({ limit: '2mb' }), albaranPublicRouter);
 
 app.disable('etag');
 

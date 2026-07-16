@@ -7,6 +7,7 @@ import {
   buildPaymentConfirmationInvoice,
   buildMerchantAlert,
   buildAlbaranFirmado,
+  buildAlbaranParaFirmar,
   validateTemplateComponents,
   WA_TEMPLATES,
   WA_TEMPLATE_SPECS,
@@ -198,4 +199,24 @@ test('specs J7: albaran_firmado_es registrada con hasDocumentHeader', () => {
   assert.equal(spec.expectedVarCount, 3);
   assert.equal(spec.hasUrlButton, false);
   assert.equal(spec.hasDocumentHeader, true);
+});
+
+// ── SCRUM-49: albaran_para_firmar_es (link para firmar a distancia) ──────────
+test('albaran_para_firmar_es: 3 vars en orden + botón URL = token opaco', () => {
+  const msg = buildAlbaranParaFirmar({
+    customerName: 'María García', businessName: 'Fontanería López', albaranNumber: 'ALB-2026-001', token: 'a1b2c3d4e5f6',
+  });
+  assert.equal(msg.templateName, 'albaran_para_firmar_es');
+  assert.equal(msg.languageCode, 'es');
+  assert.deepEqual(bodyTexts(msg), ['María García', 'Fontanería López', 'ALB-2026-001']);
+  assert.equal(urlButtonSuffix(msg), 'a1b2c3d4e5f6', 'el botón lleva el token opaco (→ /albaran/{{token}})');
+  assert.equal(validateTemplateComponents(msg.templateName, msg.components), null, 'pasa J7');
+});
+
+test('specs J7: albaran_para_firmar_es registrada (3 vars + botón URL, sin header)', () => {
+  const spec = WA_TEMPLATE_SPECS[WA_TEMPLATES.albaranParaFirmar];
+  assert.ok(spec);
+  assert.equal(spec.expectedVarCount, 3);
+  assert.equal(spec.hasUrlButton, true);
+  assert.ok(!spec.hasDocumentHeader);
 });
