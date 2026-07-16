@@ -73,12 +73,16 @@ async function main() {
   //    planExpiresAt lejano: el paywall de trial no debe interferir con el QA (no se toca OWNER_EMAILS).
   const merchant = await prisma.merchant.upsert({
     where: { email: QA_EMAIL },
-    update: { status: 'active' },
+    // SCRUM-61: onboarding completado también en el update (merchant QA preexistente sin wipe).
+    update: { status: 'active', onboardingCompleted: true },
     create: {
       name: 'QA Staging',
       email: QA_EMAIL,
       country: 'ES',
       status: 'active',
+      // SCRUM-61 (DX del QA): sin wizard de onboarding → el #onboarding-backdrop no intercepta
+      // los clicks del suite Playwright (antes había que quitarlo por JS en cada ejecución).
+      onboardingCompleted: true,
       legalName: 'QA Staging S.L.',
       address: 'C/ Staging 1, 28000 Madrid',
       defaultCurrency: 'EUR',
