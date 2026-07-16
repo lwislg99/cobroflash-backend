@@ -108,7 +108,21 @@ async function serializeJobDetail(job: any) {
     const c = await prisma.customer.findUnique({ where: { id: job.customerId }, select: { email: true } });
     customer = { ...customer, email: c?.email ?? null };
   }
-  if (!job.quoteId) return { ...base, customer, invoices: [], charge: null };
+  // SCRUM-14 (ADITIVO): albaranes del Trabajo para la sección "Albaranes" y el timeline de
+  // Documentos. Documento NO fiscal — nada de importes. SCRUM-22: la autoría del Trabajo se
+  // propaga a sus documentos (albarán), derivada de Job.operarioId ya resuelto en base.
+  // SCRUM-51: los albaranes son del Trabajo (Job-owned vía jobId), INDEPENDIENTES del quote →
+  // se cargan SIEMPRE, también para un Job manual sin quoteId (antes el early-return del quote
+  // los dejaba invisibles en el detalle — bug latente de datos "desaparecidos").
+  const albaranes = (
+    await prisma.albaran.findMany({
+      where: { merchantId: job.merchantId, jobId: job.id },
+      orderBy: { createdAt: 'asc' },
+    })
+  ).map((a) => ({ ...serializeAlbaran(a), operario: base.operario }));
+
+  // invoices[] y charge SÍ dependen del quote (tramos/cobro): un Job sin quote no tiene → []/null.
+  if (!job.quoteId) return { ...base, customer, invoices: [], charge: null, albaranes };
 
   const quote = await prisma.quote.findUnique({
     where: { id: job.quoteId },
@@ -148,17 +162,6 @@ async function serializeJobDetail(job: any) {
         operario: base.operario, // SCRUM-22: autoría del Trabajo propagada al cobro (regla 2, vía base)
       }
     : null;
-
-  // SCRUM-14 (ADITIVO): albaranes del Trabajo para la sección "Albaranes" y el
-  // timeline de Documentos del detalle. Documento NO fiscal — nada de importes.
-  // SCRUM-22 (aditivo): la autoría del Trabajo se propaga a sus documentos
-  // (albarán/cobro), derivada de Job.operarioId ya resuelto (y scopeado al merchant) en base.
-  const albaranes = (
-    await prisma.albaran.findMany({
-      where: { merchantId: job.merchantId, jobId: job.id },
-      orderBy: { createdAt: 'asc' },
-    })
-  ).map((a) => ({ ...serializeAlbaran(a), operario: base.operario }));
 
   return { ...base, customer, invoices, charge, albaranes };
 }
