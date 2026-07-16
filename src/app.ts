@@ -139,6 +139,13 @@ app.get('/public/founding-status', async (_req, res) => {
 });
 
 // Rutas públicas
+// SCRUM-45 (C): versión del build corriendo — la sondea el dashboard para avisar
+// "hay versión nueva" en pestañas abiertas durante un deploy. Sin caché: la gracia
+// es detectar el cambio (el SW también la deja pasar sin cachear).
+app.get('/version', (_req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json({ version: config.BUILD_ID });
+});
 app.use('/health', healthRouter);
 app.use('/auth', authRouter);
 // P0-SEC-1/3: estos dos son endpoints INTERNOS (self-call desde los webhooks de pago y

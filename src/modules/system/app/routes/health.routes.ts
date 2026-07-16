@@ -1,6 +1,7 @@
 // srcNew/modules/system/app/routes/health.routes.ts
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
+import { config } from '../../../../core/config/env';
 
 const router = Router();
 
@@ -10,7 +11,8 @@ router.get('/', async (_req, res) => {
     res.json({
       ok: true,
       service: 'yaqu-backend',
-      version: '0.1.0',
+      // SCRUM-45: mismo BUILD_ID que GET /version (antes: '0.1.0' hardcodeada y desincronizada)
+      version: config.BUILD_ID,
       db: 'up',
     });
   } catch {

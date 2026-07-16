@@ -350,4 +350,61 @@ async function logout() {
   window.location.href = '/login.html';
 }
 
-document.addEventListener('DOMContentLoaded', initApp);
+// ── SCRUM-45 (C) · Aviso de versión nueva ─────────────────────────────────
+// Una pestaña abierta durante un deploy se queda con el JS viejo en memoria;
+// ni el SW network-first ni la revalidación HTTP la arreglan. Poll suave a
+// GET /version (BUILD_ID por deploy) + toast persistente con botón Recargar.
+// No se fuerza la recarga: se respeta lo que el usuario esté haciendo.
+const VERSION_POLL_MS = 90_000;
+let appBuildId = null;
+let versionToastShown = false;
+
+async function checkAppVersion() {
+  if (versionToastShown) return;
+  let v;
+  try {
+    const r = await fetch('/version', { cache: 'no-store' });
+    if (!r.ok) return;
+    v = (await r.json()).version;
+  } catch { return; } // sin red / deploy en curso: se reintenta en el siguiente poll
+  if (!v) return;
+  if (appBuildId === null) { appBuildId = v; return; } // primera lectura = versión de arranque
+  if (v === appBuildId) return;
+
+  versionToastShown = true;
+  document.getElementById('yaqu-version-toast')?.remove();
+  const toast = document.createElement('div');
+  toast.id = 'yaqu-version-toast';
+  toast.setAttribute('role', 'status');
+  toast.setAttribute('aria-live', 'polite');
+  // Mismo lenguaje visual que el toast de api.js, pero persistente y con acción
+  toast.style.cssText = `
+    position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
+    background:var(--ink, #0f1c17); color:#fff; max-width:min(92vw,480px);
+    padding:10px 12px 10px 20px; border-radius:999px; font-size:14px; font-weight:600;
+    z-index:400; box-shadow:0 4px 12px rgba(0,0,0,0.2);
+    display:flex; align-items:center; gap:12px;
+  `;
+  const txt = document.createElement('span');
+  txt.textContent = 'Hay una versión nueva de YaQu. Recarga para actualizar.';
+  const btn = document.createElement('button');
+  btn.textContent = 'Recargar';
+  btn.style.cssText = `
+    border:0; background:var(--brand, #16a34a); color:#fff; border-radius:999px;
+    padding:8px 16px; font-size:14px; font-weight:700; cursor:pointer; flex-shrink:0;
+  `;
+  btn.addEventListener('click', () => window.location.reload());
+  toast.append(txt, btn);
+  document.body.appendChild(toast);
+}
+
+function startVersionWatch() {
+  checkAppVersion(); // fija appBuildId al arrancar
+  setInterval(checkAppVersion, VERSION_POLL_MS);
+  // Al volver a la pestaña (el caso típico: la dejó abierta y hubo deploy)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') checkAppVersion();
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => { initApp(); startVersionWatch(); });
