@@ -85,6 +85,47 @@ export async function downloadWhatsAppMedia(
   }
 }
 
+/**
+ * SCRUM-47: sube un documento (PDF de albarán) a Meta y devuelve su `media_id` para
+ * usarlo en la cabecera de documento de una plantilla. `POST /{PHONE_NUMBER_ID}/media`
+ * (multipart: messaging_product + type + file). El id vale ~30 días; se sube EN EL
+ * MOMENTO del envío (no se cachea). Espejo de downloadWhatsAppMedia, con dry-run. Usa
+ * fetch+FormData globales (Node 18+) para el multipart sin dependencias nuevas. Con la 48
+ * el PDF es auth-only → media_id es la ÚNICA vía (un `link` sería inaccesible para Meta).
+ * Devuelve null ante cualquier fallo (el call-site responde 502 y no gasta plantilla).
+ */
+export async function uploadWhatsAppMedia(params: {
+  buffer: Buffer;
+  filename: string;
+  mime?: string;
+}): Promise<string | null> {
+  if (isDryRun()) return `dryrun-media-${Date.now()}`;
+  const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
+  const token = config.WHATSAPP_ACCESS_TOKEN;
+  if (!phoneNumberId || !token) return null;
+  try {
+    const mime = params.mime || 'application/pdf';
+    const form = new FormData();
+    form.append('messaging_product', 'whatsapp');
+    form.append('type', mime);
+    form.append('file', new Blob([new Uint8Array(params.buffer)], { type: mime }), params.filename);
+    const res = await fetch(`${BASE_URL}/${phoneNumberId}/media`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    });
+    if (!res.ok) {
+      console.error('[WhatsApp] uploadWhatsAppMedia error:', res.status, await res.text().catch(() => ''));
+      return null;
+    }
+    const data: any = await res.json();
+    return data?.id ? String(data.id) : null;
+  } catch (err: any) {
+    console.error('[WhatsApp] uploadWhatsAppMedia error:', err?.message);
+    return null;
+  }
+}
+
 export async function sendWhatsAppTemplate(params: {
   to: string;
   templateName: string;

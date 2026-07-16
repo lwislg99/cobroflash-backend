@@ -416,6 +416,25 @@ async function renderJobDetailView(container, jobId) {
       acts.appendChild(fotoBtn());
     } else {
       acts.appendChild(pdfBtn()); // firmado = congelado: solo PDF
+      // SCRUM-47: enviar la copia FIRMADA al WhatsApp del cliente (plantilla albaran_firmado_es).
+      const waBtn = mkBtn('Enviar por WhatsApp', async () => {
+        waBtn.disabled = true;
+        const orig = waBtn.textContent;
+        waBtn.textContent = 'Enviando…';
+        try {
+          const d = await apiRequest(`/admin/albaranes/${alb.id}/enviar-whatsapp`, { method: 'POST' });
+          if (d && d.ok === false) {
+            setStatus('error', d.message || 'No se pudo enviar por WhatsApp.');
+          } else {
+            showToast('✓ Albarán enviado por WhatsApp.');
+          }
+        } catch (e) {
+          setStatus('error', e?.data?.message || 'No se pudo enviar por WhatsApp.');
+        }
+        waBtn.disabled = false;
+        waBtn.textContent = orig;
+      });
+      acts.appendChild(waBtn);
     }
   });
 

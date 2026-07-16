@@ -15,6 +15,8 @@ export const WA_TEMPLATES = {
   // conecta hasta que estén Approved (docs/WHATSAPP_TEMPLATES.md §4 y §5).
   paymentConfirmationInvoice: 'payment_confirmation_invoice_es',
   merchantAlert: 'merchant_alert_es',
+  // SCRUM-47: copia FIRMADA del albarán al cliente (cabecera de documento = PDF).
+  albaranFirmado: 'albaran_firmado_es',
 } as const;
 
 export interface WaTemplateMessage {
@@ -25,7 +27,13 @@ export interface WaTemplateMessage {
 
 // Estructura que Meta tiene aprobada para cada plantilla (J7): nº exacto de variables
 // del body y si lleva botón de URL dinámica. Desviarse = rechazo #132000/#132001.
-export const WA_TEMPLATE_SPECS: Record<string, { expectedVarCount: number; hasUrlButton: boolean }> = {
+// SCRUM-59 (J7): `hasDocumentHeader` marca las plantillas con cabecera de documento (PDF)
+// para que el validador exija su media_id ANTES de llamar a Meta (si no, un media_id vacío
+// solo fallaría en Meta con #132012).
+export const WA_TEMPLATE_SPECS: Record<
+  string,
+  { expectedVarCount: number; hasUrlButton: boolean; hasDocumentHeader?: boolean }
+> = {
   [WA_TEMPLATES.quoteDecision]: { expectedVarCount: 4, hasUrlButton: true },
   [WA_TEMPLATES.paymentRequest]: { expectedVarCount: 4, hasUrlButton: true },
   [WA_TEMPLATES.paymentConfirmation]: { expectedVarCount: 4, hasUrlButton: false },
@@ -33,6 +41,9 @@ export const WA_TEMPLATE_SPECS: Record<string, { expectedVarCount: number; hasUr
   [WA_TEMPLATES.paymentConfirmationInvoice]: { expectedVarCount: 4, hasUrlButton: true },
   // Aviso al PRO (ventana 24h cerrada): 3 vars, sin botón dinámico (botón estático opcional)
   [WA_TEMPLATES.merchantAlert]: { expectedVarCount: 3, hasUrlButton: false },
+  // SCRUM-47: albarán firmado — 3 vars, cabecera de DOCUMENTO (PDF), sin botón dinámico
+  // (el quick-reply «👍 Recibido» es estático, no viaja como componente en el envío).
+  [WA_TEMPLATES.albaranFirmado]: { expectedVarCount: 3, hasUrlButton: false, hasDocumentHeader: true },
 };
 
 // Valida los components contra la spec ANTES de llamar a Meta (J7). Plantilla
@@ -63,6 +74,17 @@ export function validateTemplateComponents(
   if (!spec.hasUrlButton && btn) {
     return `${templateName}: lleva botón pero la plantilla aprobada no tiene ninguno`;
   }
+
+  // SCRUM-59 (J7): plantillas con cabecera de documento exigen su media_id (o link).
+  if (spec.hasDocumentHeader) {
+    const header = (components ?? []).find((c) => c?.type === 'header');
+    const p0 = header?.parameters?.[0];
+    const doc = p0?.type === 'document' ? p0.document : null;
+    const hasMedia = !!(doc && (String(doc.id ?? '').trim() || String(doc.link ?? '').trim()));
+    if (!hasMedia) {
+      return `${templateName}: falta la cabecera de documento (media_id) requerida`;
+    }
+  }
   return null;
 }
 
@@ -71,6 +93,15 @@ function body(...texts: Array<string | number>): any {
   return {
     type: 'body',
     parameters: texts.map((t) => ({ type: 'text', text: String(t) })),
+  };
+}
+
+// SCRUM-47: cabecera de DOCUMENTO (PDF). El PDF viaja por media_id (subido antes con
+// uploadWhatsAppMedia); `filename` es lo que el cliente ve al recibirlo.
+function documentHeader(mediaId: string, filename: string): any {
+  return {
+    type: 'header',
+    parameters: [{ type: 'document', document: { id: String(mediaId), filename } }],
   };
 }
 
@@ -177,6 +208,30 @@ export function buildMerchantAlert(p: {
     languageCode: 'es',
     components: [
       body(p.customerName, p.action, p.detail),
+    ],
+  };
+}
+
+// 6. albaran_firmado_es (SCRUM-47) — copia FIRMADA del albarán. Cabecera de DOCUMENTO
+// (PDF del albarán firmado, vía media_id) + cuerpo de 3 vars. SIN botón dinámico: el
+// quick-reply «👍 Recibido» es estático (no viaja como componente en el envío).
+// Body EXACTO aprobado en Meta (14-jul; el texto fijo vive en Meta, aquí solo las 3 vars):
+//   "Hola {{1}} 👋 Aquí tienes tu parte de trabajo {{2}} ya firmado, correspondiente a {{3}}.
+//    Guárdalo para tu archivo. ¡Gracias por confiar en nosotros!"
+//   {{1}} nombre del cliente · {{2}} nº de albarán (ALB-…) · {{3}} obra (Job.titulo)
+export function buildAlbaranFirmado(p: {
+  customerName: string;
+  albaranNumber: string;
+  obra: string;
+  mediaId: string;
+  filename: string;
+}): WaTemplateMessage {
+  return {
+    templateName: WA_TEMPLATES.albaranFirmado,
+    languageCode: 'es',
+    components: [
+      documentHeader(p.mediaId, p.filename),
+      body(p.customerName, p.albaranNumber, p.obra),
     ],
   };
 }
