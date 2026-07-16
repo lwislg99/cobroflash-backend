@@ -145,17 +145,20 @@ async function serializeJobDetail(job: any) {
         method: quote.charge.method,
         amount: Number(quote.charge.amount),
         currency: quote.charge.currency,
+        operario: base.operario, // SCRUM-22: autoría del Trabajo propagada al cobro (regla 2, vía base)
       }
     : null;
 
   // SCRUM-14 (ADITIVO): albaranes del Trabajo para la sección "Albaranes" y el
   // timeline de Documentos del detalle. Documento NO fiscal — nada de importes.
+  // SCRUM-22 (aditivo): la autoría del Trabajo se propaga a sus documentos
+  // (albarán/cobro), derivada de Job.operarioId ya resuelto (y scopeado al merchant) en base.
   const albaranes = (
     await prisma.albaran.findMany({
       where: { merchantId: job.merchantId, jobId: job.id },
       orderBy: { createdAt: 'asc' },
     })
-  ).map(serializeAlbaran);
+  ).map((a) => ({ ...serializeAlbaran(a), operario: base.operario }));
 
   return { ...base, customer, invoices, charge, albaranes };
 }

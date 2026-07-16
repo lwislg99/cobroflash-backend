@@ -1,4 +1,4 @@
-# SUITE DE REGRESIÓN E2E — v1.5 (SCRUM-38 · fixes SCRUM-42/36 · albaranes SCRUM-14 · alineación UI real SCRUM-43/44 · seguridad PDF SCRUM-48)
+# SUITE DE REGRESIÓN E2E — v1.6 (SCRUM-38 · fixes SCRUM-42/36 · albaranes SCRUM-14 · alineación UI real SCRUM-43/44 · seguridad PDF SCRUM-48 · autoría operario SCRUM-22)
 
 > Guion que Claude Code ejecuta con el **Playwright MCP** contra **STAGING** tras cada
 > merge+deploy. Cubre la regresión de PAGOS-FLEX (SCRUM-27/32/34) y los CTAs de invoice
@@ -100,6 +100,21 @@
     `GET /admin/albaranes/:id` del albarán anterior → ✅ ASSERT 404. (Si no hay segundo
     merchant en staging, queda cubierto por `tests/albaran.test.mjs`.)
 27. Cero envíos: los albaranes NO envían WhatsApp ni email en V1 → el log WA-0b no crece.
+
+## 6 · Operarios — autoría en el Trabajo (SCRUM-22)
+
+> Cobertura del read-path de autoría. La verificación automática vive en
+> `tests/scrum52-operario.test.mjs` (write-path: operarioId poblado + audit + índice) y
+> `tests/scrum22-operario-readpath.test.mjs` (serializer operario:{id,name} + owner null + tenancy),
+> ambos en `npm test` (gate `QA_DB_TEST=1`).
+
+28. Contrato en staging (JSON, sin UI): `GET {BASE}/admin/jobs` y `GET {BASE}/admin/jobs/:id`
+    → ✅ ASSERT cada Job trae `operarioId` y `operario` (`{id,name}` o `null` para el propietario).
+29. Propagación a documentos (SCRUM-22 DONE): en `GET {BASE}/admin/jobs/:id` → ✅ ASSERT cada
+    entrada de `albaranes[]` y el objeto `charge` exponen `operario` (misma autoría del Trabajo,
+    `{id,name}` o `null`).
+30. Render visible (`Operario: {nombre}` en el detalle + timeline): **pendiente del carril A**
+    sobre `SPEC_RENDER_operario_SCRUM-22.md` (jobDetailView). Cuando entre, este paso pasa a UI.
 
 ## Resultado
 
