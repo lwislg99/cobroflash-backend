@@ -130,19 +130,19 @@
     → 404. Desde la UI el botón solo existe en Firmado, así que el 409 no-firmado no es alcanzable
     con el botón.
 
-## 6 · Operarios — autoría en el Trabajo (SCRUM-22)
+## 7 · Operarios — autoría en el Trabajo (SCRUM-22)
 
 > Cobertura del read-path de autoría. La verificación automática vive en
 > `tests/scrum52-operario.test.mjs` (write-path: operarioId poblado + audit + índice) y
 > `tests/scrum22-operario-readpath.test.mjs` (serializer operario:{id,name} + owner null + tenancy),
 > ambos en `npm test` (gate `QA_DB_TEST=1`).
 
-28. Contrato en staging (JSON, sin UI): `GET {BASE}/admin/jobs` y `GET {BASE}/admin/jobs/:id`
+31. Contrato en staging (JSON, sin UI): `GET {BASE}/admin/jobs` y `GET {BASE}/admin/jobs/:id`
     → ✅ ASSERT cada Job trae `operarioId` y `operario` (`{id,name}` o `null` para el propietario).
-29. Propagación a documentos (SCRUM-22 DONE): en `GET {BASE}/admin/jobs/:id` → ✅ ASSERT cada
+32. Propagación a documentos (SCRUM-22 DONE): en `GET {BASE}/admin/jobs/:id` → ✅ ASSERT cada
     entrada de `albaranes[]` y el objeto `charge` exponen `operario` (misma autoría del Trabajo,
     `{id,name}` o `null`).
-30. Render visible (`Operario: {nombre}` en el detalle + timeline): **pendiente del carril A**
+33. Render visible (`Operario: {nombre}` en el detalle + timeline): **pendiente del carril A**
     sobre `SPEC_RENDER_operario_SCRUM-22.md` (jobDetailView). Cuando entre, este paso pasa a UI.
 
 ## Resultado
