@@ -33,6 +33,14 @@ async function serializeJob(job: any) {
     where: { id: job.customerId },
     select: { id: true, name: true, phone: true },
   });
+  // SCRUM-22 (read-path): autoría del operario. Resuelve el TeamMember de la Parte S1
+  // por operarioId, SCOPEADO al merchant del Job (regla 2, tenancy). null = propietario.
+  const operario = job.operarioId
+    ? await prisma.teamMember.findFirst({
+        where: { id: job.operarioId, merchantId: job.merchantId },
+        select: { id: true, name: true },
+      })
+    : null;
 
   // A13.3: ¿queda tramo pendiente? (plan según paymentTerms vs facturas emitidas)
   let remaining: { amount: number; currency: string } | null = null;
@@ -68,6 +76,11 @@ async function serializeJob(job: any) {
       job.totalAceptado != null ? Number(job.totalAceptado) : (quote ? Number(quote.total) : 0),
     ),
     customer,
+    // SCRUM-22: autoría del operario (creador del presupuesto, congelada en SCRUM-52).
+    // operarioId crudo (paridad con assignedUserId) + operario resuelto para pintar el nombre.
+    // La UI del detalle/timeline la consume aparte (jobDetailView.js, carril de Javier).
+    operarioId: job.operarioId ?? null,
+    operario: operario ? { id: operario.id, name: operario.name } : null,
     quote: quote
       ? { id: quote.id, number: quote.quoteNumber ?? quote.id, total: Number(quote.total), currency: quote.currency, paymentTerms: quote.paymentTerms }
       : null,
