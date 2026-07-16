@@ -652,6 +652,12 @@ model Albaran {
   version      Int       @default(1)
   signatureUrl String?   @db.Text @map("signature_url") // data-URI (patrón Quote.signatureUrl)
   firmadoAt    DateTime? @map("firmado_at")
+  // SCRUM-49: firma REMOTA. `firmaToken` = token OPACO de la página pública /albaran/:token
+  // (patrón Customer.portalToken, crypto.randomBytes(16).hex; null hasta enviar "para firmar";
+  // @unique para el lookup findUnique). FSM SIN cambios (opción A): "esperando firma" se deriva
+  // de `enviadoParaFirmaAt != null && estado === 'emitido'`, no es un estado nuevo (Parte L intacta).
+  firmaToken   String?   @unique @map("firma_token")
+  enviadoParaFirmaAt DateTime? @map("enviado_para_firma_at")
   notas        String?   @db.Text
   pdfUrl       String?   @map("pdf_url")
   createdAt    DateTime  @default(now()) @map("created_at")

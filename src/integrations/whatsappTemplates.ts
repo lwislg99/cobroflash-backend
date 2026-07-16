@@ -17,6 +17,8 @@ export const WA_TEMPLATES = {
   merchantAlert: 'merchant_alert_es',
   // SCRUM-47: copia FIRMADA del albarán al cliente (cabecera de documento = PDF).
   albaranFirmado: 'albaran_firmado_es',
+  // SCRUM-49: link "para firmar" a distancia (botón URL → /albaran/{{token}}).
+  albaranParaFirmar: 'albaran_para_firmar_es',
 } as const;
 
 export interface WaTemplateMessage {
@@ -44,6 +46,8 @@ export const WA_TEMPLATE_SPECS: Record<
   // SCRUM-47: albarán firmado — 3 vars, cabecera de DOCUMENTO (PDF), sin botón dinámico
   // (el quick-reply «👍 Recibido» es estático, no viaja como componente en el envío).
   [WA_TEMPLATES.albaranFirmado]: { expectedVarCount: 3, hasUrlButton: false, hasDocumentHeader: true },
+  // SCRUM-49: "para firmar" — 3 vars + botón URL (token → /albaran/{{token}}). Sin cabecera.
+  [WA_TEMPLATES.albaranParaFirmar]: { expectedVarCount: 3, hasUrlButton: true },
 };
 
 // Valida los components contra la spec ANTES de llamar a Meta (J7). Plantilla
@@ -232,6 +236,29 @@ export function buildAlbaranFirmado(p: {
     components: [
       documentHeader(p.mediaId, p.filename),
       body(p.customerName, p.albaranNumber, p.obra),
+    ],
+  };
+}
+
+// 7. albaran_para_firmar_es (SCRUM-49) — link para FIRMAR a distancia. 3 vars + botón URL
+// (token OPACO → https://yaqu.app/albaran/{{token}}). SIN cabecera de documento (el albarán se
+// ve en la página del botón). El texto fijo vive en Meta; aquí solo van las 3 vars + el token.
+// Copy EXACTO aprobado en Meta (confirmado por el fundador 16-jul; las 3 vars en orden):
+//   "Hola {{1}} 👋 {{2}} te envía el parte de trabajo {{3}} para que lo revises y lo firmes.
+//    Puedes hacerlo desde el botón de aquí abajo, te llevará un momento. ¡Gracias!"
+//   {{1}} nombre del cliente · {{2}} nombre del negocio (merchant) · {{3}} nº de albarán (ALB-…)
+export function buildAlbaranParaFirmar(p: {
+  customerName: string;
+  businessName: string;
+  albaranNumber: string;
+  token: string;
+}): WaTemplateMessage {
+  return {
+    templateName: WA_TEMPLATES.albaranParaFirmar,
+    languageCode: 'es',
+    components: [
+      body(p.customerName, p.businessName, p.albaranNumber),
+      urlButton(p.token),
     ],
   };
 }

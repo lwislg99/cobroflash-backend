@@ -4,6 +4,29 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
+## SCRUM-49 · `albaranes.firma_token` + `enviado_para_firma_at` (firma remota) — ⏳ APLICADO en STAGING, PENDIENTE en prod
+
+`prisma db execute` (NO `db push`) aplicado a **STAGING** (`acela.proxy.rlwy.net`) el **2026-07-16**,
+con host-check + preview `migrate diff`, **SIN `--accept-data-loss`**. Verificación post: `migrate
+diff` → **"empty migration"** (BD en sync). 100 % aditivo:
+```sql
+ALTER TABLE "albaranes" ADD COLUMN "enviado_para_firma_at" TIMESTAMP(3),
+                        ADD COLUMN "firma_token" TEXT;
+CREATE UNIQUE INDEX "albaranes_firma_token_key" ON "albaranes"("firma_token");
+```
+**Por qué `db execute` y no `db push`:** `db push` exigía `--accept-data-loss` por el **falso
+positivo del UNIQUE sobre columna nueva** — Prisma no puede verificar en tiempo de diff que no haya
+duplicados en `firma_token`, aunque la columna nace toda `NULL` (0 duplicados posibles). El flag está
+vetado (regla 3/AA2), así que se aplica el SQL auditado vía `db execute` (**mismo patrón que el
+`@unique` de `merchants.slug` en el lote EXT3**, ver abajo). El SQL es idéntico al del preview.
+
+**PROD: PENDIENTE** — aplicar tras el merge del PR de SCRUM-49 y **ANTES/AL** desplegar el código
+(que referencia `firmaToken`/`enviadoParaFirmaAt`; en orden inverso da P2022). Mismo `prisma db
+execute --file` con el SQL de arriba, host-check contra `autorack.proxy.rlwy.net`, **autorización
+fresca del fundador**. Token opaco (128 bits) para la página pública `/albaran/:token`.
+
+---
+
 ## SCRUM-52 · `jobs.operario_id` + índice (base de SCRUM-22) — ✅ APLICADO en prod (2026-07-15)
 
 `prisma db push` aplicado a **STAGING** (`acela.proxy.rlwy.net`) y a **PRODUCCIÓN**

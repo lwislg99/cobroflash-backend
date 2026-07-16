@@ -414,6 +414,25 @@ async function renderJobDetailView(container, jobId) {
       acts.appendChild(fs);
       acts.appendChild(editBtn());
       acts.appendChild(fotoBtn());
+      // SCRUM-49: enviar al cliente el link para FIRMAR a distancia (plantilla albaran_para_firmar_es).
+      const firmarWaBtn = mkBtn('Enviar para firmar', async () => {
+        firmarWaBtn.disabled = true;
+        const orig = firmarWaBtn.textContent;
+        firmarWaBtn.textContent = 'Enviando…';
+        try {
+          const d = await apiRequest(`/admin/albaranes/${alb.id}/enviar-para-firmar`, { method: 'POST' });
+          if (d && d.ok === false) {
+            setStatus('error', d.message || 'No se pudo enviar por WhatsApp.');
+          } else {
+            showToast('✓ Enviado al cliente para firmar.');
+          }
+        } catch (e) {
+          setStatus('error', e?.data?.message || 'No se pudo enviar por WhatsApp.');
+        }
+        firmarWaBtn.disabled = false;
+        firmarWaBtn.textContent = orig;
+      });
+      acts.appendChild(firmarWaBtn);
     } else {
       acts.appendChild(pdfBtn()); // firmado = congelado: solo PDF
       // SCRUM-47: enviar la copia FIRMADA al WhatsApp del cliente (plantilla albaran_firmado_es).
