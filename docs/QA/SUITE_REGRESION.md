@@ -1,4 +1,4 @@
-# SUITE DE REGRESIÓN E2E — v1.6 (SCRUM-38 · fixes SCRUM-42/36 · albaranes SCRUM-14 · alineación UI real SCRUM-43/44 · seguridad PDF SCRUM-48 · autoría operario SCRUM-22)
+# SUITE DE REGRESIÓN E2E — v1.6 (SCRUM-38 · fixes SCRUM-42/36 · albaranes SCRUM-14 · alineación UI real SCRUM-43/44 · seguridad PDF SCRUM-48 · autoría operario SCRUM-22 · albarán-WA SCRUM-47)
 
 > Guion que Claude Code ejecuta con el **Playwright MCP** contra **STAGING** tras cada
 > merge+deploy. Cubre la regresión de PAGOS-FLEX (SCRUM-27/32/34) y los CTAs de invoice
@@ -100,6 +100,35 @@
     `GET /admin/albaranes/:id` del albarán anterior → ✅ ASSERT 404. (Si no hay segundo
     merchant en staging, queda cubierto por `tests/albaran.test.mjs`.)
 27. Cero envíos: los albaranes NO envían WhatsApp ni email en V1 → el log WA-0b no crece.
+    **(v1.6, SCRUM-47)** OBSOLETO para el albarán FIRMADO: ahora sí se envía por WhatsApp a mano
+    desde el §6 (los albaranes borrador/emitido siguen sin enviar nada).
+
+## 6 · Enviar el albarán FIRMADO por WhatsApp (v1.6, SCRUM-47)
+
+> **Precondiciones del paso (hallazgos v1.6):**
+> - **El seed NO crea albaranes** → este paso necesita un albarán en estado **Firmado**.
+>   Reutiliza el del §5.23, o créalo por API en la misma sesión autenticada:
+>   `POST /admin/jobs/:id/albaranes` → `POST /admin/albaranes/:id/emitir` →
+>   `POST /admin/albaranes/:id/firmar` (`{ signatureData: <data-URI PNG> }`).
+> - **Onboarding wizard tras el reseed:** el merchant QA queda con onboarding incompleto, así
+>   que `#onboarding-backdrop` **intercepta los clicks**. Descártalo (§0.3) o elimínalo por JS
+>   ANTES de pulsar el botón, o el click del Playwright MCP hará **timeout**.
+
+28. En el detalle del Trabajo, sobre el albarán **Firmado** → ✅ ASSERT las acciones son
+    **[PDF] [Enviar por WhatsApp]**. El botón nuevo aparece **SOLO en Firmado** (en Borrador/Emitido
+    no). `jobDetailView.js` NO está en el SHELL del SW → llega fresco, sin bump de `CACHE_NAME`.
+29. Click **"Enviar por WhatsApp"** → ✅ ASSERT `POST /admin/albaranes/:id/enviar-whatsapp`
+    responde **200 `{ ok: true }`** (toast "✓ Albarán enviado por WhatsApp." — efímero; la verdad
+    autoritativa es el body + el log WA-0b del paso 30).
+30. ✅ ASSERT log WA-0b: fila `type:'template'`, `templateName:'albaran_firmado_es'`,
+    `relatedType:'albaran'`, `relatedId:<id>`, `status:'sent'`. **staging corre `WHATSAPP_DRY_RUN=1`**
+    → `waMessageId` = `wamid.dryrun.*` y CERO llamada a `graph.facebook.com` (coherente con §4). El
+    E2E valida wiring + guards (V0-2/J3/A3.2/J6/J7) + log + UI, **NO** la aceptación real de la
+    plantilla por Meta (depende de `albaran_firmado_es` Approved en la WABA de PROD).
+31. **Negativos (cubiertos por `tests/scrum47-enviar-albaran-wa.test.mjs`, gateado):** no-firmado
+    → 409 `albaran_no_firmado`; cliente sin teléfono → 409 `sin_telefono`; tenancy (merchant ajeno)
+    → 404. Desde la UI el botón solo existe en Firmado, así que el 409 no-firmado no es alcanzable
+    con el botón.
 
 ## 6 · Operarios — autoría en el Trabajo (SCRUM-22)
 
