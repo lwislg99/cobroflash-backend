@@ -3,6 +3,10 @@ export const config = {
     PORT: Number(process.env.PORT || 3000),
     PUBLIC_BASE_URL: process.env.PUBLIC_BASE_URL || `http://localhost:${process.env.PORT || 3000}`,
 
+    // SCRUM-45: identificador de build para el aviso de versión nueva (/version y /health).
+    // Railway inyecta RAILWAY_GIT_COMMIT_SHA en cada deploy; fallback (dev/local) = arranque del proceso.
+    BUILD_ID: process.env.RAILWAY_GIT_COMMIT_SHA || String(Date.now()),
+
     SESSION_SECRET: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
     RESEND_API_KEY: process.env.RESEND_API_KEY || '',
 
