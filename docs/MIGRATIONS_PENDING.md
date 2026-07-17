@@ -4,11 +4,13 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
-## SCRUM-49 · `albaranes.firma_token` + `enviado_para_firma_at` (firma remota) — ⏳ APLICADO en STAGING, PENDIENTE en prod
+## SCRUM-49 · `albaranes.firma_token` + `enviado_para_firma_at` (firma remota) — ✅ APLICADO en prod (2026-07-16)
 
-`prisma db execute` (NO `db push`) aplicado a **STAGING** (`acela.proxy.rlwy.net`) el **2026-07-16**,
-con host-check + preview `migrate diff`, **SIN `--accept-data-loss`**. Verificación post: `migrate
-diff` → **"empty migration"** (BD en sync). 100 % aditivo:
+`prisma db execute` (NO `db push`) aplicado a **STAGING** (`acela.proxy.rlwy.net`) y a **PRODUCCIÓN**
+(`autorack.proxy.rlwy.net`) el **2026-07-16**, con host-check + preview `migrate diff`, **SIN
+`--accept-data-loss`**. Verificación post en ambos: `migrate diff` → **"empty migration"** (BD en
+sync). El de prod, **autorizado por el fundador** (GO explícito tras el preview), aplicado justo tras
+el merge para cerrar la ventana de P2022 del auto-deploy. 100 % aditivo:
 ```sql
 ALTER TABLE "albaranes" ADD COLUMN "enviado_para_firma_at" TIMESTAMP(3),
                         ADD COLUMN "firma_token" TEXT;
@@ -20,10 +22,10 @@ duplicados en `firma_token`, aunque la columna nace toda `NULL` (0 duplicados po
 vetado (regla 3/AA2), así que se aplica el SQL auditado vía `db execute` (**mismo patrón que el
 `@unique` de `merchants.slug` en el lote EXT3**, ver abajo). El SQL es idéntico al del preview.
 
-**PROD: PENDIENTE** — aplicar tras el merge del PR de SCRUM-49 y **ANTES/AL** desplegar el código
-(que referencia `firmaToken`/`enviadoParaFirmaAt`; en orden inverso da P2022). Mismo `prisma db
-execute --file` con el SQL de arriba, host-check contra `autorack.proxy.rlwy.net`, **autorización
-fresca del fundador**. Token opaco (128 bits) para la página pública `/albaran/:token`.
+**PROD: ✅ APLICADO** (2026-07-16, justo tras el merge). El código referencia `firmaToken`/
+`enviadoParaFirmaAt` (los handlers de albarán hacen `findFirst`/`findUnique` sin `select` → `RETURNING`
+todas las columnas), así que se aplicó de inmediato para cerrar la ventana de P2022 del auto-deploy.
+Token opaco (128 bits) para la página pública `/albaran/:token`.
 
 ---
 
