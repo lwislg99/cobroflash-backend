@@ -114,3 +114,80 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-23 (OPERARIO-2): visibilidad ROW-LEVEL dentro del MISMO merchant — el técnico solo
+// ve/accede los Trabajos que originó (operarioId), el admin/owner ve todos. Dimensión que
+// A12.1 (cross-merchant) y A12.4 (rutas admin-only) NO cubren.
+// Datos EFÍMEROS propios (nada del seed demo — lección de SCRUM-63) y limpieza en el finally.
+test('SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo merchant)', { skip: !ENABLED }, async (t) => {
+  const { prisma } = await import('../dist/core/db/prisma.js');
+  const { app } = await import('../dist/app.js');
+
+  const server = app.listen(0);
+  await new Promise((r) => server.once('listening', r));
+  const base = `http://127.0.0.1:${server.address().port}`;
+
+  const stamp = Date.now();
+  const merchant = await prisma.merchant.create({
+    data: { name: 'QA S23', country: 'ES', email: `qa-s23-${stamp}@test.local`, onboardingCompleted: true },
+  });
+  const mkTecnico = (tag) =>
+    prisma.teamMember.create({
+      data: {
+        merchantId: merchant.id, name: `QA Tec ${tag}`,
+        email: `qa-s23-${tag}-${stamp}@test.local`, role: 'tecnico', status: 'active',
+      },
+    });
+  const tecA = await mkTecnico('A');
+  const tecB = await mkTecnico('B');
+  const customer = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente S23' } });
+  const mkJob = (operarioId, titulo) =>
+    prisma.job.create({
+      data: { merchantId: merchant.id, customerId: customer.id, status: 'pendiente_agendar', titulo, operarioId },
+    });
+  const jobA = await mkJob(tecA.id, 'Trabajo de A');
+  const jobB = await mkJob(tecB.id, 'Trabajo de B');
+
+  const mkCookie = async (teamMemberId = null) => {
+    const token = 'qa23-' + crypto.randomBytes(12).toString('hex');
+    await prisma.authSession.create({
+      data: { merchantId: merchant.id, teamMemberId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
+    });
+    const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+    const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
+    assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
+    return cookie;
+  };
+
+  try {
+    const cookieTecA = await mkCookie(tecA.id);
+    const cookieAdmin = await mkCookie(null); // owner = admin implícito
+    const get = (path, cookie) => fetch(`${base}${path}`, { headers: { cookie } });
+
+    // (a) la LISTA del técnico A solo trae los suyos
+    const listA = await (await get('/admin/jobs', cookieTecA)).json();
+    const idsA = listA.map((j) => j.id);
+    assert.ok(idsA.includes(jobA.id), 'el técnico debe ver SU Trabajo en la lista');
+    assert.ok(!idsA.includes(jobB.id), 'FUGA: el técnico ve en la lista el Trabajo de otro técnico');
+
+    // (b) DETALLE por URL directa de un Trabajo ajeno (mismo merchant) → 404
+    const cross = await get(`/admin/jobs/${jobB.id}`, cookieTecA);
+    assert.equal(cross.status, 404, 'el técnico no debe acceder al Trabajo de otro (esperado 404)');
+
+    // (c) el ADMIN/owner ve ambos y accede al detalle de cualquiera
+    const listAdmin = await (await get('/admin/jobs', cookieAdmin)).json();
+    const idsAdmin = listAdmin.map((j) => j.id);
+    assert.ok(idsAdmin.includes(jobA.id) && idsAdmin.includes(jobB.id), 'el admin debe ver TODOS los Trabajos');
+    assert.equal((await get(`/admin/jobs/${jobB.id}`, cookieAdmin)).status, 200, 'el admin accede al detalle de cualquier Trabajo');
+
+    t.diagnostic('row-level: técnico solo sus Trabajos · 404 en el ajeno · admin ve todos ✓');
+  } finally {
+    await prisma.authSession.deleteMany({ where: { merchantId: merchant.id } });
+    await prisma.job.deleteMany({ where: { merchantId: merchant.id } });
+    await prisma.customer.deleteMany({ where: { merchantId: merchant.id } });
+    await prisma.teamMember.deleteMany({ where: { merchantId: merchant.id } });
+    await prisma.merchant.delete({ where: { id: merchant.id } });
+    server.close();
+    await prisma.$disconnect();
+  }
+});

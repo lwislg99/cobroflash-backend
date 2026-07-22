@@ -147,6 +147,17 @@
     del NEGOCIO (vía `/admin/merchant`) si el Trabajo es del propietario (`operario` null). `window.appUserName`
     NO sirve (es el usuario logueado). `jobDetailView.js` NO está en el SHELL del SW → sin bump de `CACHE_NAME`.
 
+> **(SCRUM-23) Visibilidad por rol.** Cubierta automáticamente por el caso row-level de
+> `tests/tenancy-permisos.test.mjs` (crea su merchant + 2 técnicos + 2 Jobs efímeros; no depende
+> del seed). Filtrado SIEMPRE en backend (S3).
+
+34. Con sesión de **técnico**: `GET {BASE}/admin/jobs` → ✅ ASSERT la lista trae SOLO los Trabajos
+    con `operarioId` = ese técnico; ninguno de otro operario (fuga = fallo de seguridad).
+35. Con sesión de **técnico**: `GET {BASE}/admin/jobs/:id` de un Trabajo de OTRO técnico del mismo
+    merchant → ✅ ASSERT **404** (no 403: mismo patrón que la tenancy, no filtra existencia).
+36. Con sesión de **admin/owner**: la lista trae los Trabajos de todos los operarios y el detalle
+    de cualquiera responde **200** (sin cambio respecto a antes de SCRUM-23).
+
 ## Resultado
 
 - Reportar por paso: ✅/❌ + captura del MCP donde aporte.
