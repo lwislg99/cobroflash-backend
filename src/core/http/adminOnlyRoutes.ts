@@ -35,4 +35,12 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'DELETE', path: '/admin/maintenance/:planId' },
   // SCRUM-73: exportar el registro fiscal RRSIF/VeriFactu no es acción de Técnico
   { method: 'GET', path: '/admin/exports/verifactu.xml' },
+  // SCRUM-25 (S1): TODO el export es admin — se lleva datos personales de los clientes
+  // finales (teléfonos y emails en clientes.csv), importes y documentos del negocio.
+  { method: 'GET', path: '/admin/exports/customers.csv' },
+  { method: 'GET', path: '/admin/exports/invoices.csv' },
+  { method: 'GET', path: '/admin/exports/quotes.csv' },
+  { method: 'GET', path: '/admin/exports/expenses.csv' },
+  { method: 'GET', path: '/admin/exports/charges.csv' },
+  { method: 'GET', path: '/admin/exports/jobs.csv' },
 ];
