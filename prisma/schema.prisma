@@ -176,6 +176,12 @@ model Charge {
   // crear). null = todos los que el merchant tenga activos. ["card","bizum","transfer"]
   payMethods Json? @map("pay_methods")
 
+  // SCRUM-74: token OPACO del recibo público (patrón Albaran.firmaToken, SCRUM-49;
+  // Charge.id es autoincremental y NO debe usarse como identificador público — IDOR/RGPD).
+  // Generado perezosamente (crypto.randomBytes(16).hex) la primera vez que se necesita
+  // un enlace; @unique para el lookup findUnique por token en /recibo/:token[/pdf|/feedback].
+  receiptToken String? @unique @map("receipt_token")
+
   merchant        Merchant         @relation(fields: [merchantId], references: [id])
   customer        Customer?        @relation(fields: [customerId], references: [id])
   events          Event[]

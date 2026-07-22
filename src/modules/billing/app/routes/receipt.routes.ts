@@ -4,7 +4,7 @@ import fs from 'fs';
 import axios from 'axios';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
-import { esc, parseNumericId, formatMoneyEs } from '../../../../core/utils/utils';
+import { esc, formatMoneyEs } from '../../../../core/utils/utils';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { stripe } from '../../../../integrations/stripe';
 import { BASE_URL, config } from '../../../../core/config/env';
@@ -13,26 +13,25 @@ import { ensureInvoicePdf } from '../../../../lib/invoicing';
 
 const router = Router();
 
-// GET /recibo/:id
-router.get('/:id', async (req, res) => {
+// GET /recibo/:token — SCRUM-74: público por diseño (el cliente final no tiene login),
+// pero identificado por el token OPACO de Charge.receiptToken, NUNCA por el id
+// autoincremental (IDOR/RGPD — Charge.id era enumerable: /recibo/1, /recibo/2…).
+router.get('/:token', async (req, res) => {
   res.set('Cache-Control', 'no-store, must-revalidate');
   res.set('Pragma', 'no-cache');
   res.set('Expires', '0');
 
-  // parseNumericId tolera URLs sucias del botón de plantilla Meta ('{{1}}9' → 9),
-  // igual que /pay/quote (P3-1). Sin esto, "Ver documento" caía en not-found.
-  const id = parseNumericId(req.params.id);
-  // N3: estado digno también en el 400 (id no numérico), nunca texto plano.
-  if (!Number.isInteger(id)) return res.status(400).send(documentNotFoundHtml());
+  const token = req.params.token;
 
   let charge = await prisma.charge.findUnique({
-    where: { id },
+    where: { receiptToken: token },
     include: { customer: true, merchant: true, events: true, reconciliations: true },
   });
   if (!charge) {
     res.status(404).send(documentNotFoundHtml());
     return;
   }
+  const id = charge.id;
 
   // Fallback Stripe sin webhooks (si se vuelve de success_url)
   try {
@@ -61,7 +60,7 @@ router.get('/:id', async (req, res) => {
           { timeout: 10_000, headers: internalHeaders() },
         );
         charge = await prisma.charge.findUnique({
-          where: { id },
+          where: { receiptToken: token },
           include: { customer: true, merchant: true, events: true, reconciliations: true },
         });
       }
@@ -131,7 +130,7 @@ router.get('/:id', async (req, res) => {
 
   const invBlock =
     ch.status === 'paid' && invoice
-      ? `<p class="doc-link"><a href="${BASE_URL}/recibo/${ch.id}/pdf" target="_blank" rel="noopener">
+      ? `<p class="doc-link"><a href="${BASE_URL}/recibo/${token}/pdf" target="_blank" rel="noopener">
            📄 Descargar ${docLabel} en PDF (${esc(invoice.number)})
          </a></p>${emailBlock}`
       : '';
@@ -285,7 +284,7 @@ router.get('/:id', async (req, res) => {
               <div class="fb-hint">Toca una estrella para dejar tu reseña en Google · solo 10 segundos ⭐</div>
               <div class="fb-or">O valóralo en privado para el profesional:</div>`
            : `<div class="fb-title">¿Qué tal fue el trabajo?</div>`}
-         <form method="post" action="${BASE_URL}/recibo/${ch.id}/feedback" id="fb-form">
+         <form method="post" action="${BASE_URL}/recibo/${token}/feedback" id="fb-form">
            <input type="hidden" name="stars" id="fb-stars-input" value=""/>
            <div class="fb-stars" role="radiogroup" aria-label="Valoración de 1 a 5 estrellas">
              ${[1, 2, 3, 4, 5].map((n) => `<button type="button" data-star="${n}" aria-label="${n} estrella${n > 1 ? 's' : ''}">⭐</button>`).join('')}
@@ -397,17 +396,15 @@ router.get('/:id', async (req, res) => {
 </html>`);
 });
 
-// GET /recibo/:id/pdf — descarga PÚBLICA del justificante/factura del cliente. Genera el PDF
+// GET /recibo/:token/pdf — descarga PÚBLICA del justificante/factura del cliente. Genera el PDF
 // BAJO DEMANDA (mismo helper que el BO, ensureInvoicePdf) y lo sirve; así el cliente siempre
-// puede descargarlo desde el recibo aunque no se hubiera generado antes. Público por chargeId,
-// igual que GET /recibo/:id (el cliente lo abre desde WhatsApp, sin login).
-router.get('/:id/pdf', async (req, res) => {
-  const id = parseNumericId(req.params.id);
-  if (!Number.isInteger(id)) return res.status(400).send(documentNotFoundHtml());
+// puede descargarlo desde el recibo aunque no se hubiera generado antes. Público por token
+// OPACO (SCRUM-74), igual que GET /recibo/:token (el cliente lo abre desde WhatsApp, sin login).
+router.get('/:token/pdf', async (req, res) => {
   try {
-    const ch = await prisma.charge.findUnique({ where: { id }, include: { events: true } });
+    const ch = await prisma.charge.findUnique({ where: { receiptToken: req.params.token }, include: { events: true } });
     if (!ch || ch.status !== 'paid') return res.status(404).send(documentNotFoundHtml());
-    // Localizar la factura ligada (por quote o evento 'invoiced'), igual que en GET /:id.
+    // Localizar la factura ligada (por quote o evento 'invoiced'), igual que en GET /:token.
     const quote = await prisma.quote.findFirst({ where: { chargeId: ch.id } });
     let invoice: any = null;
     if (quote) invoice = await prisma.invoice.findFirst({ where: { quoteId: quote.id } });
@@ -423,36 +420,35 @@ router.get('/:id/pdf', async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
     return fs.createReadStream(diskPath).pipe(res);
   } catch (err) {
-    console.error('[GET /recibo/:id/pdf]', (err as any)?.message || err);
+    console.error('[GET /recibo/:token/pdf]', (err as any)?.message || err);
     return res.status(500).send(documentNotFoundHtml());
   }
 });
 
-// POST /recibo/:id/feedback — A2.5: valoración del cliente tras pagar.
+// POST /recibo/:token/feedback — A2.5: valoración del cliente tras pagar.
 // Se guarda SIEMPRE en privado (Event del charge + timeline del cliente); la
 // reseña de Google es independiente (sin gating). Idempotente por cobro.
-router.post('/:id/feedback', async (req, res) => {
-  const id = parseNumericId(req.params.id);
-  if (!Number.isInteger(id)) return res.status(400).send(documentNotFoundHtml());
+router.post('/:token/feedback', async (req, res) => {
+  const token = req.params.token;
 
   const charge = await prisma.charge.findUnique({
-    where: { id },
+    where: { receiptToken: token },
     include: { events: true, customer: { select: { id: true, name: true } } },
   });
   if (!charge) return res.status(404).send(documentNotFoundHtml());
-  if (charge.status !== 'paid') return res.redirect(303, `/recibo/${id}`);
+  if (charge.status !== 'paid') return res.redirect(303, `/recibo/${token}`);
 
   const stars = Math.round(Number(req.body?.stars));
   const comment = String(req.body?.comment || '').slice(0, 500).trim();
   if (!Number.isInteger(stars) || stars < 1 || stars > 5) {
-    return res.redirect(303, `/recibo/${id}`);
+    return res.redirect(303, `/recibo/${token}`);
   }
 
   const existing = (charge.events || []).find((e) => e.type === 'customer_feedback');
   if (!existing) {
     await prisma.event.create({
       data: {
-        chargeId: id,
+        chargeId: charge.id,
         type: 'customer_feedback',
         payload: { stars, comment: comment || null, ts: new Date().toISOString() } as any,
       },
@@ -463,13 +459,13 @@ router.post('/:id/feedback', async (req, res) => {
         merchantId: charge.merchantId,
         customerId: charge.customerId,
         type: 'feedback',
-        title: `⭐ ${stars}/5 — valoración del cliente tras el cobro #${id}`,
+        title: `⭐ ${stars}/5 — valoración del cliente tras el cobro #${charge.id}`,
         detail: comment || null,
       });
     }
   }
 
-  return res.redirect(303, `/recibo/${id}?fb=thanks`);
+  return res.redirect(303, `/recibo/${token}?fb=thanks`);
 });
 
 export default router;

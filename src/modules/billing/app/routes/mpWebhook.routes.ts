@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { config } from '../../../../core/config/env';
 import { verifyMpWebhookSignature, getMpPayment } from '../../../../integrations/mercadopago';
-import { ensureInvoiceForCharge } from '../../../../lib/invoicing';
+import { ensureInvoiceForCharge, ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { sendInvoiceEmail } from '../../../../lib/email';
 import { normalizePhone } from '../../../../core/utils/utils';
 import { sendWhatsAppCtaUrl } from '../../../../integrations/whatsapp';
@@ -131,7 +131,7 @@ router.post('/', async (req, res) => {
       }
 
       // Confirmación de pago al cliente (J1: payment_confirmation_invoice_es, con botón
-      // "Ver documento" → /recibo/:chargeId; copy neutro factura/justificante).
+      // "Ver documento" → /recibo/:token; copy neutro factura/justificante).
       const merchant = updated.merchant as any;
       const amt = Number(updated.amount).toFixed(2);
       const cur = updated.currency;
@@ -140,6 +140,8 @@ router.post('/', async (req, res) => {
         : null;
       const documentNumber = invConf?.number || String(updated.id);   // P1-6: sin '#'
       if (updated.customer?.phone) {
+        // SCRUM-74: token OPACO del recibo público, NUNCA el chargeId (IDOR/RGPD).
+        const receiptToken = await ensureChargeReceiptToken(updated.id, prisma);
         sendPaymentConfirmationInvoice({
           toPhone: updated.customer.phone,
           customerName: updated.customer.name,
@@ -148,7 +150,8 @@ router.post('/', async (req, res) => {
           amountWithCurrency: `${amt} ${cur}`,
           documentNumber,
           businessName: merchant?.legalName || merchant?.name,     // P1-7
-          chargeId: updated.id, // botón "Ver documento" → /recibo/:chargeId
+          chargeId: updated.id, // log interno (WhatsAppMessage.relatedId), NO la URL pública
+          receiptToken, // botón "Ver documento" → /recibo/:token
         }).catch(() => {});
 
         // ENT-3: historial

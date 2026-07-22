@@ -9,6 +9,7 @@ import { esc, parseNumericId, formatMoneyEs } from '../../../../core/utils/utils
 import { isFlagEnabled } from '../../../../core/flags';
 import { isDemoMerchant } from '../../../invoicing/domain/emission.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 
 const router = Router();
 
@@ -27,7 +28,8 @@ router.get('/invoice/:chargeId', async (req, res) => {
 
   // Pagado o vencido → recibo
   if (charge.status === 'paid' || charge.status === 'expired') {
-    return res.redirect(303, `/recibo/${id}`);
+    const receiptToken = await ensureChargeReceiptToken(id, prisma);
+    return res.redirect(303, `/recibo/${receiptToken}`);
   }
 
   // Nº de factura asociada (si existe), para dar contexto

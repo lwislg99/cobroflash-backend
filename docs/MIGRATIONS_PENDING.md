@@ -4,6 +4,32 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
+## SCRUM-74 · `charges.receipt_token` (fuga RGPD `/recibo/:chargeId` enumerable) — STAGING aplicado (22-jul-2026), PROD pendiente
+
+`prisma db execute` (NO `db push`) aplicado a **STAGING** (`acela.proxy.rlwy.net:40802`) el
+**2026-07-22**, con host-check + preview `migrate diff`, **SIN `--accept-data-loss`**, **GO
+explícito del fundador** tras el preview. Verificación post: consulta directa a
+`information_schema.columns`/`pg_indexes` en staging confirma la columna y el índice creados
+(la lectura holística de `migrate diff` da ruido en este momento por los cambios de SCRUM-17,
+`albaranes.invoice_id`/`invoices.albaran_refs`, aplicados a staging pero aún sin mergear a
+`main` — ver coordinación en el PR; NO relacionado con este cambio). 100 % aditivo:
+```sql
+ALTER TABLE "charges" ADD COLUMN "receipt_token" TEXT;
+CREATE UNIQUE INDEX "charges_receipt_token_key" ON "charges"("receipt_token");
+```
+**Por qué `db execute` y no `db push`:** mismo falso positivo del `@unique` sobre columna nueva
+que `albaranes.firma_token` (SCRUM-49) y `merchants.slug` (EXT3) — Prisma no puede verificar en
+tiempo de diff que no haya duplicados en `receipt_token`, aunque nace toda `NULL` (0 duplicados
+posibles). `--accept-data-loss` vetado (regla 3/AA2) → SQL auditado vía `db execute`, idéntico
+al del preview.
+
+`Charge.receiptToken` — token OPACO (128 bits, patrón `Albaran.firmaToken`) para el recibo
+público `/recibo/:token[/pdf|/feedback]`, sustituyendo el `Charge.id` autoincremental y
+adivinable (IDOR/RGPD: NIF del emisor, nombre/email/teléfono del cliente final, importes).
+Generado perezosamente la primera vez que se construye un enlace.
+
+**PROD: ⏳ PENDIENTE** — aplicar tras el merge del PR de SCRUM-74, antes de que el código nuevo
+llegue a producción (misma ventana P2022 de siempre).
 ## SCRUM-17 · `albaranes.invoice_id` + `invoices.albaran_refs` (factura recapitulativa) — ✅ APLICADO en prod (2026-07-22)
 
 `prisma db push` aplicado a **STAGING** (`acela.proxy.rlwy.net`) y a **PRODUCCIÓN**

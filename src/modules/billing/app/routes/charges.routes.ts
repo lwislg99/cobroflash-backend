@@ -5,6 +5,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { CreateChargeSchema } from '../../../../core/validation/schemas';
 import { normalizePhone, makeReference } from '../../../../core/utils/utils';
 import { config, BASE_URL } from '../../../../core/config/env';
+import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 
 const router = Router();
 
@@ -156,6 +157,8 @@ router.post('/:id/send', async (req, res) => {
     const to = normalizePhone(overrideRaw) || normalizePhone(charge.customer?.phone || '');
     if (!to) return res.status(400).json({ error: 'missing_customer_phone' });
 
+    // SCRUM-74: token OPACO del recibo público, NUNCA el chargeId (IDOR/RGPD).
+    const receiptToken = await ensureChargeReceiptToken(charge.id, prisma);
     const payload = {
       kind: 'charge_request',
       charge_id: charge.id,
@@ -166,7 +169,7 @@ router.post('/:id/send', async (req, res) => {
       concept: charge.concept,
       reference: charge.reference,
       // URL única que mandaremos por WhatsApp
-      receipt_url: `${BASE_URL}/recibo/${charge.id}`,
+      receipt_url: `${BASE_URL}/recibo/${receiptToken}`,
       // Campos opcionales para futuro
       paybank_url: `${BASE_URL}/pay/bank/${charge.id}`,
       paycard_url: `${BASE_URL}/pay/card/${charge.id}`,

@@ -44,12 +44,16 @@ export async function sendPaymentConfirmation(params: {
 }
 
 /**
- * Confirmación de pago al cliente CON botón "Ver documento" → /recibo/{{chargeId}}
+ * Confirmación de pago al cliente CON botón "Ver documento" → /recibo/{{receiptToken}}
  * (plantilla payment_confirmation_invoice_es). Copy NEUTRO: vale para factura (post-SIF)
  * y para justificante (pre-SIF) — por eso `documentNumber` (no "invoiceNumber").
  * Sustituye a sendPaymentConfirmation() en los webhooks de pago (J1, plantillas Approved).
- * Cuerpo: {{1}} nombre · {{2}} importe con moneda · {{3}} nº documento · {{4}} negocio · botón = chargeId
+ * Cuerpo: {{1}} nombre · {{2}} importe con moneda · {{3}} nº documento · {{4}} negocio · botón = receiptToken
  * Fire-and-forget: nunca lanza; devuelve {ok}.
+ *
+ * SCRUM-74: el enlace público usa el token OPACO (`Charge.receiptToken`, `ensureChargeReceiptToken`),
+ * NUNCA `chargeId` (IDOR/RGPD — el id es autoincremental y enumerable). `chargeId` se conserva
+ * solo para el log interno (`WhatsAppMessage.relatedId`), que no es público.
  */
 export async function sendPaymentConfirmationInvoice(params: {
   toPhone: string | null | undefined;
@@ -58,6 +62,7 @@ export async function sendPaymentConfirmationInvoice(params: {
   documentNumber: string;
   businessName?: string | null;
   chargeId: number;
+  receiptToken: string;
   merchantId?: number;  // J3: respeta waOptOut del número para ese merchant
   customerId?: number;  // A5.3: habilita la vía ventana (0 €) si hay entrante <24 h
 }): Promise<{ ok: boolean }> {
@@ -82,7 +87,7 @@ export async function sendPaymentConfirmationInvoice(params: {
           `Hemos confirmado tu pago de ${params.amountWithCurrency} (documento de cobro ${params.documentNumber}).\n` +
           `¡Gracias por confiar en ${businessName}!\n` +
           `Tu recibo, aquí 👇\n` +
-          `https://yaqu.app/recibo/${params.chargeId}`,
+          `https://yaqu.app/recibo/${params.receiptToken}`,
         // A23: en ventana → botón-enlace "Ver recibo" (sin URL cruda)
         windowCta: {
           bodyText:
@@ -90,14 +95,14 @@ export async function sendPaymentConfirmationInvoice(params: {
             `Hemos confirmado tu pago de *${params.amountWithCurrency}* (documento ${params.documentNumber}).\n` +
             `¡Gracias por confiar en *${businessName}*!`,
           buttonText: 'Ver recibo',
-          url: `https://yaqu.app/recibo/${params.chargeId}`,
+          url: `https://yaqu.app/recibo/${params.receiptToken}`,
         },
         template: buildPaymentConfirmationInvoice({
           customerName,
           amountWithCurrency: params.amountWithCurrency,
           documentNumber: params.documentNumber,
           businessName,
-          chargeId: params.chargeId,
+          urlToken: params.receiptToken,
         }),
         log: { customerId: params.customerId ?? null, relatedType: 'charge', relatedId: params.chargeId },
       });
@@ -112,7 +117,7 @@ export async function sendPaymentConfirmationInvoice(params: {
         amountWithCurrency: params.amountWithCurrency,
         documentNumber: params.documentNumber,
         businessName,
-        chargeId: params.chargeId,
+        urlToken: params.receiptToken,
       }),
     });
     return { ok: !!result.ok };
