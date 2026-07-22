@@ -77,8 +77,8 @@ router.get('/invoice/:token', async (req, res) => {
   type Method = { key: string; href: string; ico: string; title: string; sub: string };
   const card: Method = { key: 'card', href: `/pay/card/${token}`, ico: '💳', title: 'Pagar con tarjeta', sub: 'Visa · Mastercard · al instante' };
   const bizum: Method = { key: 'bizum', href: `/pay/bizum/${token}`, ico: '📲', title: 'Pagar por Bizum', sub: 'Desde la app de tu banco' };
-  // /pay/bank NO tokenizado (P1-SEC-9, fuera del alcance de SCRUM-85): sigue en chargeId.
-  const transfer: Method = { key: 'transfer', href: `/pay/bank/${id}`, ico: '🏦', title: 'Transferencia bancaria', sub: 'Con los datos y el concepto exacto' };
+  // SCRUM-90: /pay/bank tokenizado (mismo Charge.receiptToken).
+  const transfer: Method = { key: 'transfer', href: `/pay/bank/${token}`, ico: '🏦', title: 'Transferencia bancaria', sub: 'Con los datos y el concepto exacto' };
 
   // Orden W4: ≤500 → Bizum + Tarjeta (transferencia detrás) · 500-1.000 →
   // Tarjeta principal, Bizum secundario · >1.000 → Tarjeta + transferencia.

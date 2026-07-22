@@ -61,12 +61,11 @@ router.post('/', async (req, res) => {
       include: { customer: true, merchant: true },
     });
 
-    // SCRUM-85: /pay/card tokenizado (Charge.receiptToken); /pay/bank y /pay/mp
-    // siguen en chargeId a propósito (P1-SEC-9, fuera de alcance).
+    // SCRUM-85/90: /pay/card, /pay/bank y /pay/mp tokenizados (mismo Charge.receiptToken).
     const payToken = await ensureChargeReceiptToken(charge.id, prisma);
-    const paybank_url = `${BASE_URL}/pay/bank/${charge.id}`;
+    const paybank_url = `${BASE_URL}/pay/bank/${payToken}`;
     const paycard_url = `${BASE_URL}/pay/card/${payToken}`;
-    const paymp_url   = `${BASE_URL}/pay/mp/${charge.id}`;
+    const paymp_url   = `${BASE_URL}/pay/mp/${payToken}`;
 
     return res.status(201).json({
       id: charge.id,
@@ -173,8 +172,8 @@ router.post('/:id/send', async (req, res) => {
       reference: charge.reference,
       // URL única que mandaremos por WhatsApp
       receipt_url: `${BASE_URL}/recibo/${receiptToken}`,
-      // Campos opcionales para futuro. /pay/bank sigue en chargeId (P1-SEC-9, fuera de alcance).
-      paybank_url: `${BASE_URL}/pay/bank/${charge.id}`,
+      // Campos opcionales para futuro. SCRUM-90: /pay/bank también tokenizado.
+      paybank_url: `${BASE_URL}/pay/bank/${receiptToken}`,
       paycard_url: `${BASE_URL}/pay/card/${receiptToken}`,
     };
 

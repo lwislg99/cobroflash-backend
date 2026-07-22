@@ -13,7 +13,8 @@ export interface MpPreferenceResult {
 }
 
 export async function createMpPreference(params: {
-  chargeId: number;
+  chargeId: number; // interno: SOLO para external_reference (reconciliación del webhook)
+  payToken: string; // SCRUM-90: público — usado en las back_urls, NUNCA el chargeId
   title: string;
   amount: number;
   currency: string;
@@ -36,9 +37,9 @@ export async function createMpPreference(params: {
       ? { name: params.customerName ?? '', email: params.customerEmail }
       : undefined,
     back_urls: {
-      success: `${params.backBaseUrl}/pay/mp/${params.chargeId}/result?status=approved`,
-      failure: `${params.backBaseUrl}/pay/mp/${params.chargeId}/result?status=rejected`,
-      pending: `${params.backBaseUrl}/pay/mp/${params.chargeId}/result?status=pending`,
+      success: `${params.backBaseUrl}/pay/mp/${params.payToken}/result?status=approved`,
+      failure: `${params.backBaseUrl}/pay/mp/${params.payToken}/result?status=rejected`,
+      pending: `${params.backBaseUrl}/pay/mp/${params.payToken}/result?status=pending`,
     },
     auto_return: 'approved',
     notification_url: params.notificationUrl,
