@@ -4,7 +4,7 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
-## SCRUM-68 · `albaranes.evidencia_firma` (evidencias probatorias de la firma) — ⏳ PENDIENTE en prod
+## SCRUM-68 · `albaranes.evidencia_firma` (evidencias probatorias de la firma) — ✅ APLICADO en prod (2026-07-22)
 
 `prisma db push` aplicado a **STAGING** (`acela.proxy.rlwy.net`) el **2026-07-22**, con host-check +
 preview `migrate diff`, **SIN `--accept-data-loss`**. Post-push staging: `migrate diff` → **"empty
@@ -18,10 +18,13 @@ firmar. El `contentHash` es SHA-256 del **contenido canónico** del albarán (no
 son datos personales → viven SOLO en esta columna; NUNCA se exponen (serializer, PDF y HTML público
 los omiten — cubierto por test).
 
-**PROD: ⏳ PENDIENTE.** Aplicar **justo tras el merge del PR de la 68** (con preview + GO del fundador),
-para cerrar la ventana de P2022: los handlers de firma escriben `evidenciaFirma` en cada firma. Hasta
-entonces el código nuevo NO debe estar en prod (o la firma fallaría). El código es tolerante en lectura
-(el serializer nunca lee la columna), pero la **escritura** al firmar exige la columna.
+**PROD: ✅ APLICADO** (2026-07-22, justo tras el merge del **PR #38**). `prisma db push` contra
+`autorack.proxy.rlwy.net:40654` con host-check + preview `migrate diff` (una sola sentencia
+`ADD COLUMN evidencia_firma JSONB`) y **GO explícito del fundador** vía el sentinel de un solo uso del
+hook `guard-dangerous` (`.claude/allow-db-push`), **SIN `--accept-data-loss`** (Prisma no lo pidió =
+confirmación de que era 100 % aditivo). Resultado: *"Your database is now in sync"* en 6,68 s.
+Verificación post-push: `migrate diff` → **"empty migration"** (BD en sync). Se aplicó de inmediato tras
+el merge para cerrar la ventana de P2022: los handlers de firma escriben `evidenciaFirma` en cada firma.
 
 ---
 
