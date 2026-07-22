@@ -117,17 +117,18 @@ test('SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, t
   const base = `http://127.0.0.1:${server.address().port}`;
 
   const stamp = Date.now();
-  // Modo de emisión CONSISTENTE con allocateInvoiceNumber (que resuelve getEmissionMode sin ver
-  // merchant.flags): país no-ES → 'fiscal'; país ES sin flag → 'receipt'. (El override por flag
-  // NO llega a allocateInvoiceNumber — inconsistencia pre-existente reportada en el PR.)
+  // SCRUM-81: tras alinear allocateInvoiceNumber con merchant.flags, el modo fiscal se obtiene con
+  // el caso REAL —un merchant ES + override INVOICING_ES_ENABLED (Parte P)— en vez del apaño de
+  // país no-ES. El gate del endpoint y la numeración ahora coinciden. ES sin flag → 'receipt'.
   const mkMerchant = (tag, fiscal) =>
     prisma.merchant.create({
       data: {
-        name: `QA S17 ${tag}`, country: fiscal ? 'PT' : 'ES', email: `qa-s17-${tag}-${stamp}@test.local`,
+        name: `QA S17 ${tag}`, country: 'ES', email: `qa-s17-${tag}-${stamp}@test.local`,
         onboardingCompleted: true, planExpiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000),
+        ...(fiscal ? { flags: { INVOICING_ES_ENABLED: true } } : {}),
       },
     });
-  const mA = await mkMerchant('A', true);   // fiscal (no-ES)
+  const mA = await mkMerchant('A', true);   // fiscal (ES + override de flag)
   const mR = await mkMerchant('R', false);  // receipt (ES sin flag)
   const mB = await mkMerchant('B', true);   // otro merchant (tenancy)
 
