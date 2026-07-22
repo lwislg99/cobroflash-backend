@@ -544,6 +544,23 @@ J7 builders+test · `waOptOut` + check · `docs/RUNBOOKS.md` (O) · `docs/QA_MAS
 > fix, es no-determinista bajo concurrencia contra staging (archivos que siempre pasan sueltos
 > fallan al azar en el conjunto) — no bloquea este PR (sin schema, sin tocar staging) pero el
 > exit code de la suite gateada completa no es hoy un gate de CI fiable.
+> **✅ SCRUM-78 (22-jul-2026):** cierra los dos hallazgos colaterales de SCRUM-75. **P3-10**
+> (no-determinismo bajo concurrencia): evaluadas 3 opciones (serie / aislamiento de datos por
+> test / separar comandos), el fundador eligió separar `npm test` (rápido, sin cambios) de un
+> `npm run test:staging` nuevo (gateado, `--test-concurrency=1`, EN SERIE) — se descartó aislar
+> datos porque la mayoría de archivos YA usan merchant efímero y el síntoma (columna que "no
+> existe" de forma transitoria) encajaba con contención del pool de Postgres, no con colisión de
+> datos. Verificado: 2 ejecuciones seguidas de `QA_DB_TEST=1 npm run test:staging` dan el
+> **mismo resultado exacto** (144 · 141 pass · 1 fail determinista · 2 skip) — cero ruido de
+> concurrencia. **P3-9** (tests atados al merchant `id=1`, quemado por SCRUM-42): corregidos los
+> 2 pedidos — `tenancy-permisos.test.mjs` y `webhooks-idempotencia.test.mjs` ahora crean su
+> propio merchant/customer/quote/invoice efímero (patrón ya usado en `scrum23`/`scrum73`/etc.).
+> Al arreglar el segundo apareció un bug latente enmascarado por el crash del `id=1`: el POST a
+> `/webhooks/psp` no llevaba `x-internal-secret` (P0-SEC-1) → 404 silencioso; corregido con
+> `internalHeaders()`. Al verificar `test:staging` en serie aparecieron 3 archivos MÁS con el
+> mismo root cause (`pdfs.test.mjs` A12.5d, `a55-window-quote.test.mjs`, `bot-suite.test.mjs`) —
+> fuera del alcance pedido (2 archivos exactos), documentados en BUGS.md P3-9 y anotados con
+> `⚠️ P3-9` en cada archivo para que no se pierdan; candidatos a una tarea propia. Sin schema.
 
 ### U1.3 · SIF-1 v2 — "VeriFactu cerrado al 100 %" = las 8 obligatorias
 - **S1-0 (HUMANO):** certificado FNMT + alta entorno pruebas AEAT + cita asesor (bundle Y3).

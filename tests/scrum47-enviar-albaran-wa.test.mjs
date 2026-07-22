@@ -5,7 +5,7 @@
 // · y que el envío pasó por la cadena (WA-0b registra relatedType:'albaran').
 //
 // ⚠️ GATEADO (crea/BORRA merchants efímeros; genera el PDF real en disco; levanta la app):
-//   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm test
+//   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm run test:staging
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';

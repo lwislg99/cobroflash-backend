@@ -3,7 +3,7 @@
 // entró en main (jobs.routes.ts:148/161) pero que no tenía test gateado. Owner (operario null) → null.
 //
 // ⚠️ GATEADO (crea/BORRA un merchant efímero; levanta la app):
-//   QA_DB_TEST=1 npm test
+//   QA_DB_TEST=1 npm run test:staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
