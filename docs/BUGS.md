@@ -356,11 +356,17 @@
 - **Done cuando:** un merchant ES con móvil de 9 dígitos genera enlaces wa.me válidos en todas las
   superficies públicas.
 
-### [ ] P3-1 · Plantilla Meta `quote_decision_es`: `{{1}}` sin sustituir  🔒 ACCIÓN EN META (usuario) — código ya robusto
+### [ ] P3-1 · Plantillas Meta `quote_decision_es` **y `payment_request_es`**: `{{1}}` sin sustituir  🔒 ACCIÓN EN META (usuario) — código ya robusto
 - **Síntoma:** el botón genera `/pay/quote/{{1}}23` (el `{{1}}` no se sustituye). Ya hay un workaround en el backend que hace funcionar el flujo.
 - **Arreglo de raíz:** en WhatsApp Manager, el botón de URL debe ser **"Tipo de URL: Dinámico"**, base `https://yaqu.app/pay/quote/{{1}}`, muestra `https://yaqu.app/pay/quote/abc123`. Revisar también `payment_request_es` por el mismo problema. (Requiere re-aprobación de Meta.)
 - **Done cuando:** la URL del botón llega limpia (`/pay/quote/23`) sin depender del workaround.
 - **Estado (10 jun):** lado código YA resuelto (workaround robusto `parseNumericId`, commit `a25a1ce`). **Lo único pendiente es la acción en Meta** (tipo de URL dinámica) + re-aprobación — no se puede hacer desde el código. Una vez hecho, opcionalmente quitar el workaround.
+- **⚠️ CONFIRMADO TAMBIÉN EN `payment_request_es` (22-jul-2026):** ya no es una sospecha ("revisar también"), está **verificado en producción**. El fundador llegó a `yaqu.app/pay/invoice/%7B%7B1%7D%7D0` → decodificado `/pay/invoice/{{1}}0`, desde el botón de un justificante reenviado por WhatsApp. **No es una previsualización del dashboard**: el front solo construye enlaces limpios (`/pay/invoice/<chargeId>`) y únicamente en la barra de fallback cuando el envío falla (`invoiceDetailView.js:249,265`) → el `{{1}}` solo puede venir del mensaje real de Meta.
+  - **El código de envío es correcto** (auditado 22-jul): `buildPaymentRequest` → `urlButton(chargeId)` manda **solo el sufijo** como parámetro del botón (`whatsappTemplates.ts:113-120`), que es el contrato de Meta para URL dinámica. El `chargeId` que se pasa es el real (`invoiceWhatsApp.service.ts:107`). **El defecto está en la configuración del botón en WhatsApp Manager**, que es una URL estática con el literal `{{1}}` y Meta le concatena detrás el parámetro.
+  - **El cliente SÍ puede pagar**: la landing usa el mismo workaround (`payInvoice.routes.ts:18` → `parseNumericId`, que elimina `{{...}}` y se queda con los dígitos).
+  - **El log NO sirve para auditar esto:** `WhatsAppMessage` (`schema.prisma:504-528`) guarda `templateName`/`status`/`waMessageId`, **no el cuerpo ni la URL**.
+  - **Duda abierta:** en ese caso el sufijo resuelto era `0` (`{{1}}0` → `parseNumericId` → `0`) y **no existe ningún `Charge` con id 0** (autoincrement empieza en 1) → ese enlace concreto no abriría. Falta confirmar si fue **truncamiento al copiar la URL** (lo más probable) o un `chargeId` inválido colándose en algún call-site. Si fuese lo segundo, es bug aparte.
+  - **Seguimiento:** **SCRUM-77**.
 
 ### [x] P3-2 · Manejo de error en el envío de WhatsApp
 - **Mejora:** que `/admin/quotes/:id/send-whatsapp` devuelva un mensaje claro cuando Meta rechaza, nunca un 502. (Verificar si ya está resuelto; el error de Meta ya se loguea.)
