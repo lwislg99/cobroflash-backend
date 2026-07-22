@@ -87,6 +87,10 @@ test('A12.5c: watermark de DEMO presente en el PDF', async () => {
   fs.rmSync(outPath, { force: true }); fs.rmSync(outPath2, { force: true });
 });
 
+// ⚠️ P3-9 (SCRUM-78, 22-jul): este test depende de un quote del merchant demo id=1 que
+// SCRUM-42 quemó (0 filas) — hoy falla en staging (TypeError sobre quote null en la línea
+// ~106). Root cause CONOCIDO, NO corregido en SCRUM-78 (fuera de los 2 archivos pedidos;
+// mismo arreglo candidato: merchant/quote efímero propio). Ver docs/BUGS.md P3-9.
 test('A12.5d: regeneración on-demand (R8) — /admin/quotes/:id/pdf responde PDF SIEMPRE', { skip: !DB }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
