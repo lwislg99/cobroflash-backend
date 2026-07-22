@@ -33,4 +33,6 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   // Mantenimientos (A15): tocar planes = dinero futuro → admin
   { method: 'POST', path: '/admin/maintenance', body: { customerId: 1, title: 'x', intervalMonths: 12 } },
   { method: 'DELETE', path: '/admin/maintenance/:planId' },
+  // SCRUM-73: exportar el registro fiscal RRSIF/VeriFactu no es acción de Técnico
+  { method: 'GET', path: '/admin/exports/verifactu.xml' },
 ];

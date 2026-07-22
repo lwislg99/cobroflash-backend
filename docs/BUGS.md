@@ -302,6 +302,38 @@
 
 ## P3 — Técnico / raíz (registrar, abordar después de P1)
 
+### [ ] P3-9 · `tests/tenancy-permisos.test.mjs` roto en staging desde SCRUM-42 (22-jul, hallazgo en SCRUM-73, NO causado por SCRUM-73)
+- **Síntoma:** el test gateado `A12.1+A12.4: tenancy (B vs datos de A)...` falla en staging con
+  `AssertionError: faltan datos seed del demo` (línea 59, `assert.ok(quoteA && invoiceA &&
+  customerA)`). Espera que el merchant `id=1` tenga quotes/invoices/customers reales ("demo").
+- **Causa raíz:** SCRUM-42 (12-jul-2026) cambió la semántica de `id=1` en staging — ahora es un
+  placeholder INERTE `demo-reserved@staging.yaqu`, `status:'suspended'`, **0 filas** en
+  quotes/invoices/customers (verificado en staging: `acela.proxy.rlwy.net`, 22-jul). Este test es
+  ANTERIOR a ese cambio y nunca se actualizó a la nueva semántica de `id=1`.
+- **Confirmado NO relacionado con SCRUM-73:** verificado por separado, sin tocar nada de mi PR —
+  el fallo es 100% del estado de staging + código de este test, independiente del gate de
+  `verifactu.xml`. El resto de `ADMIN_ONLY_ROUTES` (incluida la ruta nueva de SCRUM-73) se
+  recorre en la MISMA función tras esa aserción — el `assert.ok` de la línea 59 aborta el test
+  ANTES de llegar a esa parte, así que esa cobertura genérica queda sin ejecutar en staging hoy
+  (el test específico `scrum73-verifactu-gate.test.mjs`, con su propio merchant efímero, SÍ pasa).
+- **Alcance:** NO corregido en este PR (fuera del gate de `verifactu.xml`). Arreglo candidato:
+  actualizar el test para usar un merchant efímero propio (patrón ya usado por
+  `scrum23`/`scrum73`) en vez de depender del `id=1` compartido, o re-sembrar un merchant "demo
+  con datos" en otro id fijo si se necesita mantener ese caso de prueba.
+
+### [ ] P3-8 · 4 archivos de test gateados NO corren en `npm test` (22-jul, hallazgo en SCRUM-73)
+- **Síntoma:** mismo patrón que P3-7 (lista explícita de archivos en `package.json`): existen
+  `tests/scrum47-enviar-albaran-wa.test.mjs`, `tests/scrum49-firma-remota.test.mjs`,
+  `tests/scrum50-bot-albaranes.test.mjs` y `tests/scrum57-operario-propagacion.test.mjs` en el
+  repo (con tests reales, gateados `QA_DB_TEST=1`) pero NINGUNO está en la lista del script
+  `test` → `npm test` los omite en silencio. Solo `tests/scrum52-operario.test.mjs` (entre esa
+  tanda) sí quedó registrado.
+- **Alcance:** NO corregido en este PR (SCRUM-73 es solo el gate de `verifactu.xml` — regla de
+  "una tarea, un cambio"; tocar 4 archivos ajenos aquí sería arreglo de paso sin revisar cada
+  uno). Se registra para una tarea propia (candidata a resolver también la deuda de fondo que
+  ya apuntaba P3-7: pasar de lista explícita a `node --test tests/*.test.mjs` con un glob que
+  no pueda volver a omitir un archivo nuevo).
+
 ### [x] P3-7 · `tests/albaran.test.mjs` (SCRUM-14) no corre en `npm test` (13-jul, hallazgo en rebase de SCRUM-43/44)
 - **Síntoma:** el script `test` de `package.json` lista los archivos de test EXPLÍCITAMENTE y el
   PR #8 (SCRUM-14) creó `tests/albaran.test.mjs` (10 tests: numeración ALB-, congelado, tenancy)

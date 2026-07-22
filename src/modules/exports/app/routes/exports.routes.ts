@@ -3,6 +3,8 @@ import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
 import { config, isOwnerEmail } from '../../../../core/config/env';
+import { isFlagEnabled } from '../../../../core/flags';
+import { requireRole } from '../../../../core/http/authMiddleware';
 
 const router = Router();
 
@@ -177,12 +179,21 @@ router.get('/fees.csv', async (req, res) => {
 // (RegistroFacturacionAlta: IDFactura, Desglose por tipo, CuotaTotal,
 // Encadenamiento de huellas, Huella SHA-256). El ENVÍO telemático real al SIF
 // requiere certificado digital del emisor — pendiente (tarea usuario).
-router.get('/verifactu.xml', async (req, res) => {
+// SCRUM-73: gateado a INVOICING_ES_ENABLED (regla 24/26) — con el flag OFF (hoy,
+// pre-SIF-1) los merchants ES reales emiten justificantes (J-), no facturas
+// fiscales; un XML VeriFactu construido sobre ese estado no representa registros
+// válidos. 404 NEUTRO (no revela el motivo) y CERO registros generados — el
+// gate va ANTES de tocar la BD de facturas. requireRole('admin'): exportar el
+// registro fiscal no es acción de Técnico (S1, patrón SCRUM-54).
+router.get('/verifactu.xml', requireRole('admin'), async (req, res) => {
   try {
     const year = Number(req.query.year) || new Date().getFullYear();
 
     const merchant = await prisma.merchant.findUnique({ where: { id: req.merchantId } });
-    if (!merchant) return res.status(404).json({ error: 'merchant_not_found' });
+    if (!merchant) return res.status(404).json({ error: 'not_found' });
+    if (!isFlagEnabled('INVOICING_ES_ENABLED', { merchant })) {
+      return res.status(404).json({ error: 'not_found' });
+    }
     if (merchant.country !== 'ES' || !merchant.taxId) {
       return res.status(409).json({
         error: 'verifactu_not_applicable',
