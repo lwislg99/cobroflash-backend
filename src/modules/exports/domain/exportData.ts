@@ -12,16 +12,40 @@ import { estadoCobroFor } from '../../jobs/domain/job.service';
 export interface Rango { from: Date | null; to: Date | null }
 export interface CsvData { header: string[]; rows: string[] }
 
+// ── Formato CSV (SCRUM-86) — OPTIMIZADO PARA ESPAÑA, no universal ─────────
+// Excel usa el "separador de lista" del sistema, no una coma fija: con configuración
+// regional ES espera `;`, así que un CSV separado por comas se abría ENTERO en la
+// columna A. Y con `100.00` tampoco reconocía los importes como número.
+//
+// ⚠️ NO es un formato universal. De los 6 países del máster (locales.ts) esto encaja en
+// ES, CO, AR, PE y CL (coma decimal), pero NO en MÉXICO, que usa punto decimal como
+// EE. UU. — allí el formato correcto sería justo el anterior. Hoy no hay merchants MX
+// (LATAM es F3), así que se opta por lo que sirve al mercado real. Si algún día entra
+// MX, esto pasa a depender del locale del merchant.
+export const CSV_SEPARADOR = ';';
+
 export function csvEscape(v: unknown): string {
   const s = v == null ? '' : String(v);
-  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+  // OJO: ya NO se entrecomilla por coma. Con decimal español la coma aparece en TODOS
+  // los importes, y entrecomillarlos ("1234,50") hace que Excel los lea como TEXTO.
+  if (s.includes(CSV_SEPARADOR) || s.includes('"') || s.includes('\n')) {
     return `"${s.replace(/"/g, '""')}"`;
   }
   return s;
 }
 
 export function csvRow(fields: unknown[]): string {
-  return fields.map(csvEscape).join(',');
+  return fields.map(csvEscape).join(CSV_SEPARADOR);
+}
+
+/**
+ * Importe para CSV: coma decimal y SIN punto de miles (`1234,50`).
+ * No se usa `formatMoneyEs`: mete símbolo de moneda y separador de miles, y el punto de
+ * miles es la causa nº 1 de que Excel vuelva a interpretar el importe como texto.
+ */
+export function csvNum(n: unknown): string {
+  const v = Number(n ?? 0);
+  return (Number.isFinite(v) ? v : 0).toFixed(2).replace('.', ',');
 }
 
 /** Cuerpo completo del CSV: BOM UTF-8 (para que Excel no rompa los acentos) + CRLF. */
@@ -83,9 +107,9 @@ export async function buildFacturas(merchantId: number, rango: Rango, status = '
         dia(inv.createdAt),
         inv.customer?.name ?? '',
         inv.customer?.email ?? '',
-        (vat ? vat.base : total).toFixed(2),
-        (vat ? vat.cuota : 0).toFixed(2),
-        total.toFixed(2),
+        csvNum(vat ? vat.base : total),
+        csvNum(vat ? vat.cuota : 0),
+        csvNum(total),
         inv.currency,
         inv.status,
         inv.paidAt ? dia(inv.paidAt) : '',
@@ -110,7 +134,7 @@ export async function buildCobros(merchantId: number, rango: Rango, status = 'al
       dia(ch.createdAt),
       ch.customer?.name ?? '',
       ch.concept,
-      Number(ch.amount).toFixed(2),
+      csvNum(ch.amount),
       ch.currency,
       ch.method,
       ch.status,
@@ -149,9 +173,9 @@ export async function buildTrabajos(merchantId: number, rango: Rango, status = '
         // operarioId null = propietario (SCRUM-22): se deja vacío, no se inventa nombre
         j.operarioId != null ? (operarioName.get(j.operarioId) ?? '') : '',
         j.scheduledAt ? dia(j.scheduledAt) : '',
-        aceptado.toFixed(2),
-        cobrado.toFixed(2),
-        (Math.round((aceptado - cobrado) * 100) / 100).toFixed(2),
+        csvNum(aceptado),
+        csvNum(cobrado),
+        csvNum(Math.round((aceptado - cobrado) * 100) / 100),
         estadoCobroFor(cobrado, aceptado),   // mismo semáforo que la app
         dia(j.createdAt),
       ]);
@@ -174,7 +198,7 @@ export async function buildPresupuestos(merchantId: number, rango: Rango, status
       q.customer?.name ?? '',
       q.customer?.email ?? '',
       q.customer?.phone ?? '',
-      Number(q.total).toFixed(2),
+      csvNum(q.total),
       q.currency,
       q.status,
       q.acceptedAt ? dia(q.acceptedAt) : '',
@@ -188,21 +212,35 @@ export async function buildPresupuestos(merchantId: number, rango: Rango, status
 /**
  * Tope de facturas por paquete. ⚠️ PROVISIONAL — ajustarlo aquí y solo aquí.
  *
- * NO se deriva del timeout de la plataforma: Railway permite **15 minutos** por petición
- * (confirmado por su equipo; no es configurable), así que el proxy no es el límite.
+ * ⚠️ ANTES DE SUBIRLO, LEE ESTO: acota TRES cosas a la vez, no solo el tiempo. Es fácil
+ * razonar "Railway da 15 minutos, el proxy no es el límite" y subirlo… engordando la
+ * memoria del navegador sin darse cuenta.
  *
- * Se deriva de la MEDICIÓN de SCRUM-25 §7 y de la UX. Caso malo (ningún PDF en disco,
- * como tras cada deploy por el fs efímero), medido contra staging por WAN:
- *   · 774 ms por factura de media (p95 1,5 s) — el 99,8 % es `ensureInvoicePdf`,
- *     la compresión fue 24 ms de 15.500.
- *   · 100 facturas ≈ 77 s · 300 ≈ 232 s **sin enviar un solo byte** (el paquete solo
- *     puede empezar a transmitirse cuando sabe si está completo, para poder nombrarse).
- * Esa medición es un TECHO: se tomó con la BD remota y ~2 s de latencia por consulta;
- * en producción, app y BD comparten región y el coste debería caer bastante.
+ * 1) TIEMPO (time-to-first-byte). Medido en SCRUM-25 §7, caso malo (ningún PDF en disco,
+ *    como tras cada deploy por el fs efímero), contra staging por WAN:
+ *      · 774 ms por factura de media (p95 1,5 s) — el 99,8 % es `ensureInvoicePdf`;
+ *        la compresión fueron 24 ms de 15.500.
+ *      · 100 facturas ≈ 77 s · 300 ≈ 232 s **sin enviar un solo byte** (el paquete solo
+ *        puede transmitirse cuando ya sabe si está completo, para poder nombrarse).
+ *    Es un TECHO: medido con la BD remota y ~2 s de latencia por consulta; en producción
+ *    app y BD comparten región y debería caer bastante.
  *
- * 100 mantiene la espera en el entorno del minuto en el peor caso. El arreglo de verdad
- * (asíncrono) es SCRUM-83; su escalera: ajustar tope → paralelizar render → asíncrono.
- * Cuando se mida en producción, este número se sube o se retira.
+ * 2) MEMORIA DEL NAVEGADOR. La card descarga con `fetch` + blob (para poder avisar de que
+ *    el paquete salió incompleto), así que el ZIP entero pasa por RAM antes de guardarse.
+ *    El peso lo domina el LOGO del merchant: `loadLogoBuffer` lo incrusta tal cual en CADA
+ *    PDF (`doc.image` no recomprime; el `fit` es geometría), y el logo pesa ~150 KB.
+ *      · sin logo: PDF ~5 KB → 100 facturas ≈ 0,5 MB (medido: 20 facturas = 79 KB)
+ *      · con logo: PDF ~155 KB → 100 facturas ≈ 15 MB, con pico ~30 MB (respuesta + blob)
+ *    A 500 facturas serían ~77 MB: ahí un Android de gama media (matriz del máster) sí
+ *    sufre. El ZIP no ayuda — PNG/JPEG ya vienen comprimidos.
+ *
+ * 3) UX. Con 15 min de plataforma el riesgo no es fallar, es PARECER roto. La card avisa
+ *    del tope antes de pulsar (GET /datos.zip/info) y bloquea el botón mientras genera.
+ *
+ * 100 mantiene la espera en el entorno del minuto y la memoria en ~15 MB en el peor caso.
+ * El arreglo de verdad (asíncrono) es SCRUM-83; su escalera: ajustar tope → paralelizar
+ * render → asíncrono. Cuando se mida en producción, este número se sube o se retira —
+ * pero recalculando también (2), no solo (1).
  */
 export const MAX_FACTURAS_ZIP = 100;
 
