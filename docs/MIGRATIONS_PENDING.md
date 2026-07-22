@@ -4,6 +4,25 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
+## SCRUM-66 · `jobs.tipo_operacion` (varias sueltas vs trabajo único) — ✅ APLICADO en prod (2026-07-22)
+
+`prisma db push` aplicado a **STAGING** (`acela.proxy.rlwy.net`) y a **PRODUCCIÓN**
+(`autorack.proxy.rlwy.net:40654`) el **2026-07-22**, ambos con host-check + preview `migrate diff`,
+**SIN `--accept-data-loss`** (Prisma no lo pidió = confirmación de que no había pérdida de datos).
+El de prod, **autorizado por el fundador** (GO explícito tras el preview) vía el sentinel de un solo
+uso del hook `guard-dangerous` (`.claude/allow-db-push`), aplicado tras el merge del **PR #43**.
+Verificación post-push en ambos: `migrate diff` → **"empty migration"** (BD en sync). 100 % aditivo,
+una sola columna **NOT NULL con default** → los Jobs existentes quedan en `TRABAJO_UNICO` sin backfill:
+```sql
+ALTER TABLE "jobs" ADD COLUMN "tipo_operacion" TEXT NOT NULL DEFAULT 'TRABAJO_UNICO';
+```
+`Job.tipoOperacion` (`OPERACIONES_SUELTAS|TRABAJO_UNICO`): distingue varias operaciones sueltas
+(recapitulativa mensual, art. 13) de un trabajo único (factura al concluir). El código lo lee/escribe
+en `PATCH /admin/jobs/:id` y lo expone en `serializeJob` → aplicado tras el merge para cerrar la
+ventana de P2022 del auto-deploy. El motor que RESPETA la bandera es SCRUM-17 (aún no construido).
+
+---
+
 ## SCRUM-68 · `albaranes.evidencia_firma` (evidencias probatorias de la firma) — ✅ APLICADO en prod (2026-07-22)
 
 `prisma db push` aplicado a **STAGING** (`acela.proxy.rlwy.net`) el **2026-07-22**, con host-check +
