@@ -13,11 +13,13 @@ import { sendWhatsAppWindowFirst } from '../../../integrations/whatsapp';
 import { buildPaymentRequest } from '../../../integrations/whatsappTemplates';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
 import { isReceiptNumber } from '../../invoicing/domain/invoiceNumber.service';
+import { ensureChargeReceiptToken } from '../../../lib/invoicing';
 
 export type SendInvoiceWAResult = {
   ok: boolean;
   reason?: string;
   chargeId?: number;
+  payToken?: string; // SCRUM-85: token opaco para /pay/invoice — el que debe usar cualquier link público
   to?: string;
 };
 
@@ -78,6 +80,8 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
   const amountWithCurrency = `${Number(invoice.total).toFixed(2)} ${invoice.currency}`;
   // Regla 24/26: en el texto de ventana (copy nuestro, no de Meta) un J-… es "justificante"
   const docLabel = isReceiptNumber(invoice.number) ? 'justificante' : 'factura';
+  // SCRUM-85: token OPACO del cobro (Charge.receiptToken) — NUNCA el chargeId en la URL pública.
+  const payToken = await ensureChargeReceiptToken(chargeId, prisma);
   // A5.2: ventana-first — si el cliente interactuó hace <24 h, el enlace de pago
   // viaja como texto gratis; si no, plantilla payment_request_es como siempre.
   const result = await sendWhatsAppWindowFirst({
@@ -89,7 +93,7 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
       `${businessName} te envía el ${docLabel} ${invoice.number}.\n` +
       `A pagar: ${amountWithCurrency}\n` +
       `Paga de forma segura desde aquí 👇\n` +
-      `https://yaqu.app/pay/invoice/${chargeId}`,
+      `https://yaqu.app/pay/invoice/${payToken}`,
     // A23: en ventana → botón-enlace "Pagar" (sin URL cruda, dinero es-ES)
     windowCta: {
       bodyText:
@@ -97,19 +101,19 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
         `*${businessName}* te envía el ${docLabel} ${invoice.number}.\n` +
         `A pagar: *${formatMoneyEs(invoice.total, invoice.currency)}*`,
       buttonText: `Pagar ${formatMoneyEs(invoice.total, invoice.currency)}`,
-      url: `https://yaqu.app/pay/invoice/${chargeId}`,
+      url: `https://yaqu.app/pay/invoice/${payToken}`,
     },
     template: buildPaymentRequest({
       customerName: invoice.customer.name || 'Cliente',
       businessName,
       invoiceNumber: invoice.number,
       amountWithCurrency,
-      chargeId: chargeId as number,
+      urlToken: payToken,
     }),
     log: { customerId: invoice.customerId, relatedType: 'invoice', relatedId: invoice.id }, // WA-0b
   });
 
-  if (!result.ok) return { ok: false, reason: 'whatsapp_send_failed', chargeId: chargeId ?? undefined, to };
+  if (!result.ok) return { ok: false, reason: 'whatsapp_send_failed', chargeId: chargeId ?? undefined, payToken, to };
 
   // ENT-3: historial
   recordCustomerEvent({
@@ -120,5 +124,5 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
     detail: `${Number(invoice.total).toFixed(2)} ${invoice.currency}`,
   });
 
-  return { ok: true, chargeId: chargeId ?? undefined, to };
+  return { ok: true, chargeId: chargeId ?? undefined, payToken, to };
 }

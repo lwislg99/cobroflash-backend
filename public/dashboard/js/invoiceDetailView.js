@@ -243,10 +243,11 @@ async function fetchInvoiceDetail(id) {
         if (!res.ok || data.ok === false) {
           // A20.5 (J5): mensaje humano del server + SIEMPRE las 3 salidas
           setStatus('error', data.message || ('No se pudo enviar por WhatsApp: ' + (data.error || 'desconocido')));
-          const chargeId = data.charge_id || invoice.chargeId;
+          // SCRUM-85: payToken (Charge.receiptToken), NUNCA el chargeId — /pay/invoice ya no acepta el id.
+          const payToken = data.pay_token || invoice.payToken;
           statusBox.querySelectorAll('.wa-fallback-bar').forEach((b) => b.remove());
           statusBox.appendChild(waFallbackBar({
-            link: chargeId ? location.origin + '/pay/invoice/' + chargeId : location.origin,
+            link: payToken ? location.origin + '/pay/invoice/' + payToken : location.origin,
             onEmail: invoice.customer && invoice.customer.email
               ? () => apiRequest('/admin/invoices/' + invoice.id + '/send-email', { method: 'POST' })
               : null,
@@ -262,7 +263,7 @@ async function fetchInvoiceDetail(id) {
         setStatus('error', 'Error enviando por WhatsApp: ' + msg);
         statusBox.querySelectorAll('.wa-fallback-bar').forEach((b) => b.remove());
         statusBox.appendChild(waFallbackBar({ // A20.5: también en fallo de red
-          link: invoice.chargeId ? location.origin + '/pay/invoice/' + invoice.chargeId : location.origin,
+          link: invoice.payToken ? location.origin + '/pay/invoice/' + invoice.payToken : location.origin,
           onEmail: invoice.customer && invoice.customer.email
             ? () => apiRequest('/admin/invoices/' + invoice.id + '/send-email', { method: 'POST' })
             : null,

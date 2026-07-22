@@ -277,11 +277,12 @@ async function renderJobDetailView(container, jobId) {
     b.addEventListener('click', fn);
     return b;
   };
-  const invWaFallback = (inv, chargeId, onRetry) => {
-    const cid = chargeId || inv.chargeId;
+  // SCRUM-85: payToken (Charge.receiptToken), NUNCA el chargeId — /pay/invoice ya no acepta el id.
+  const invWaFallback = (inv, payToken, onRetry) => {
+    const token = payToken || inv.payToken;
     statusBox.querySelectorAll('.wa-fallback-bar').forEach((b) => b.remove());
     statusBox.appendChild(waFallbackBar({
-      link: cid ? location.origin + '/pay/invoice/' + cid : location.origin,
+      link: token ? location.origin + '/pay/invoice/' + token : location.origin,
       onEmail: job.customer?.email ? () => apiRequest(`/admin/invoices/${inv.id}/send-email`, { method: 'POST' }) : null,
       emailDisabledReason: job.customer?.email ? null : 'Este cliente no tiene email guardado',
       onRetry,
@@ -895,7 +896,7 @@ async function renderJobDetailView(container, jobId) {
             const d = await apiRequest(`/admin/invoices/${inv.id}/resend-whatsapp`, { method: 'POST' });
             if (d && d.ok === false) { // Meta puede rechazar con 200 ok:false + mensaje legible
               setStatus('error', d.message || 'No se pudo enviar por WhatsApp.');
-              invWaFallback(inv, d.charge_id, () => wa.click());
+              invWaFallback(inv, d.pay_token, () => wa.click());
               wa.disabled = false; wa.textContent = orig;
             } else {
               showToast('✓ Factura reenviada por WhatsApp.');
@@ -903,18 +904,18 @@ async function renderJobDetailView(container, jobId) {
             }
           } catch (e) {
             setStatus('error', e?.data?.message || ('No se pudo enviar por WhatsApp: ' + (e?.data?.error || 'desconocido')));
-            invWaFallback(inv, e?.data?.charge_id, () => wa.click());
+            invWaFallback(inv, e?.data?.pay_token, () => wa.click());
             wa.disabled = false; wa.textContent = orig;
           }
         });
         acts.appendChild(wa);
 
-        // Enlace de pago público (ya existía; NO es acción de cobro).
-        if (inv.chargeId) {
+        // Enlace de pago público (ya existía; NO es acción de cobro). SCRUM-85: payToken, no chargeId.
+        if (inv.payToken) {
           const pay = document.createElement('a');
           pay.className = 'btn-ghost btn-sm';
           pay.style.textDecoration = 'none';
-          pay.href = `/pay/invoice/${inv.chargeId}`;
+          pay.href = `/pay/invoice/${inv.payToken}`;
           pay.target = '_blank';
           pay.textContent = 'Enlace de pago';
           acts.appendChild(pay);

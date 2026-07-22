@@ -21,6 +21,7 @@ import {
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-17
 import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-17: gate fiscal
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-17: total con desglose IVA
+import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 
 const router = Router();
 
@@ -112,7 +113,7 @@ async function serializeJob(job: any) {
 // para la base y AÑADE invoices[] + charge anidados, espejando la forma de
 // getQuoteDetailAdmin (quoteAdmin.ts:141-160) con su PROPIO fetch (Job 1:1 Quote vía
 // Job.quoteId; NO acopla a getQuoteDetailAdmin). GAP CERRADO: cada invoice expone
-// status/paidAt/chargeId (semáforo por tramo + link /pay/invoice/:chargeId).
+// status/paidAt/payToken (semáforo por tramo + link /pay/invoice/:token, SCRUM-85).
 async function serializeJobDetail(job: any) {
   const base = await serializeJob(job);
   // SCRUM-12 (decisión 2): el detalle expone customer.email (fallback de correo del
@@ -138,7 +139,10 @@ async function serializeJobDetail(job: any) {
     },
   });
 
-  const invoices = (quote?.Invoice ?? []).map((inv) => ({
+  // SCRUM-85: payToken (Charge.receiptToken) AÑADIDO para el link público /pay/invoice/:token
+  // (IDOR/RGPD — ya no acepta el id numérico). chargeId se CONSERVA: lo sigue usando la
+  // acción autenticada /admin/charges/:chargeId/confirm-bizum (no es superficie pública).
+  const invoices = await Promise.all((quote?.Invoice ?? []).map(async (inv) => ({
     id: inv.id,
     number: inv.number,               // número visible de la factura/justificante
     total: Number(inv.total),         // Decimal(12,2) → Number (como serializeJob)
@@ -148,9 +152,10 @@ async function serializeJobDetail(job: any) {
     type: inv.type,                   // F1 | JUST | R1 (para el copy del timeline)
     status: inv.status,               // ← GAP CERRADO (semáforo por tramo)
     paidAt: inv.paidAt,               // ← GAP CERRADO
-    chargeId: inv.chargeId,           // ← GAP CERRADO (link /pay/invoice/:chargeId)
+    chargeId: inv.chargeId,           // acción admin confirm-bizum (autenticada, NO es link público)
+    payToken: inv.chargeId ? await ensureChargeReceiptToken(inv.chargeId, prisma) : null, // ← GAP CERRADO (link /pay/invoice/:token)
     stageLabel: inv.stageLabel,       // SCRUM-27: etiqueta del tramo (custom); null en presets
-  }));
+  })));
 
   const charge = quote?.charge
     ? {

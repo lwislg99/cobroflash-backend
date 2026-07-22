@@ -137,20 +137,22 @@ export function buildQuoteDecision(p: {
   };
 }
 
-// 2. payment_request_es — cuerpo 4 vars + 1 botón (chargeId → /pay/invoice/{{1}})
+// 2. payment_request_es — cuerpo 4 vars + 1 botón (SCRUM-85: token opaco de
+// Charge.receiptToken → /pay/invoice/{{1}}, NUNCA el chargeId — IDOR/RGPD, mismo
+// mecanismo que payment_confirmation_invoice_es en SCRUM-74)
 export function buildPaymentRequest(p: {
   customerName: string;
   businessName: string;
   invoiceNumber: string;
   amountWithCurrency: string;
-  chargeId: string | number;
+  urlToken: string;
 }): WaTemplateMessage {
   return {
     templateName: WA_TEMPLATES.paymentRequest,
     languageCode: 'es',
     components: [
       body(p.customerName, p.businessName, p.invoiceNumber, p.amountWithCurrency),
-      urlButton(p.chargeId),
+      urlButton(p.urlToken),
     ],
   };
 }

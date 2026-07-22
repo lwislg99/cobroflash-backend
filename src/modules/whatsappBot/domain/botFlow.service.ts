@@ -22,6 +22,7 @@ import { notifyMerchantAlert } from '../../../integrations/whatsappNotifications
 import { recordCustomerEvent } from '../../system/customerEvents.service';
 import { saveQuoteRequestPhoto } from '../../quoteRequests/domain/attachment.service';
 import { isFlagEnabled } from '../../../core/flags';
+import { ensureChargeReceiptToken } from '../../../lib/invoicing';
 
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // K1: expiresAt = +24h
 
@@ -556,12 +557,14 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
       });
       for (const c of charges) {
         const amount = formatMoneyEs(c.amount, c.currency);
+        // SCRUM-85: token OPACO del cobro — NUNCA el chargeId en la URL pública.
+        const payToken = await ensureChargeReceiptToken(c.id, prisma);
         await sendWhatsAppCtaUrl({
           to: from,
           merchantId,
           bodyText: `💳 *${amount}*${c.concept ? `\n${c.concept}` : ''}`,
           buttonText: `Pagar ${amount}`,
-          url: `${BASE_URL}/pay/invoice/${c.id}`,
+          url: `${BASE_URL}/pay/invoice/${payToken}`,
         });
       }
     }

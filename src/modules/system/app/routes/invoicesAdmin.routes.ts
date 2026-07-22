@@ -25,7 +25,7 @@ import { buildPaymentRequest } from '../../../../integrations/whatsappTemplates'
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { normalizePhone } from '../../../../core/utils/utils';
 import fs from 'fs';
-import { ensureInvoicePdf } from '../../../../lib/invoicing';
+import { ensureInvoicePdf, ensureChargeReceiptToken } from '../../../../lib/invoicing';
 
 
 const router = Router();
@@ -66,7 +66,9 @@ router.get('/:id', async (req, res) => {
     // V0-0: la pantalla del merchant demo muestra la marca de agua DEMO
     // WA-0b: estado de entrega del último WhatsApp de esta factura (chip)
     const waDelivery = await getDeliveryStatus(req.merchantId, 'invoice', id);
-    res.json({ ...invoice, demo: isDemoMerchant({ id: req.merchantId }), waDelivery });
+    // SCRUM-85: token OPACO para que el frontend construya /pay/invoice sin usar chargeId.
+    const payToken = invoice.chargeId ? await ensureChargeReceiptToken(invoice.chargeId, prisma) : null;
+    res.json({ ...invoice, demo: isDemoMerchant({ id: req.merchantId }), waDelivery, payToken });
   } catch (err) {
     console.error('[GET /admin/invoices/:id]', err);
     res.status(500).json({ error: 'internal_error' });
@@ -378,6 +380,7 @@ router.post('/:id/resend-whatsapp', requireRole('admin'), async (req, res) => {
         error: r.reason || 'whatsapp_send_failed',
         message: J5_MESSAGES[String(r.reason)] || 'No se pudo enviar por WhatsApp — copia el enlace y mándaselo por SMS o llámale.',
         charge_id: r.chargeId ?? null,
+        pay_token: r.payToken ?? null, // SCRUM-85: el frontend debe construir /pay/invoice con ESTO, no charge_id
       });
     }
 
@@ -386,6 +389,7 @@ router.post('/:id/resend-whatsapp', requireRole('admin'), async (req, res) => {
       sent: true,
       invoice_id: id,
       charge_id: r.chargeId,
+      pay_token: r.payToken ?? null,
       to: r.to,
     });
   } catch (err) {
@@ -447,7 +451,10 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
     const merchantName = invoice.merchant?.name || 'tu proveedor';
     const total        = Number(invoice.total).toFixed(2);
     const chargeId     = invoice.chargeId;
-    const payUrl       = chargeId ? `${BASE_URL}/pay/card/${chargeId}` : null;
+    // SCRUM-85: token OPACO — NUNCA el chargeId en la URL pública (el botón real de
+    // payment_request_es apunta a /pay/invoice/{{1}}, ver WHATSAPP_TEMPLATES.md §2).
+    const payToken     = chargeId ? await ensureChargeReceiptToken(chargeId, prisma) : null;
+    const payUrl       = payToken ? `${BASE_URL}/pay/invoice/${payToken}` : null;
 
     let sent = false;
 
@@ -460,7 +467,7 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
           businessName: merchantName,
           invoiceNumber: invoice.number,
           amountWithCurrency: `${total} ${invoice.currency}`,
-          chargeId: chargeId as number,
+          urlToken: payToken as string,
         }),
       });
       sent = result.ok;

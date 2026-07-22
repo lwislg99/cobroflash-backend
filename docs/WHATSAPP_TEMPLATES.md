@@ -111,12 +111,21 @@ Envío de la factura con enlace de pago.
 - **Pie:** `Pago seguro · Yaqu`
 - **Botones — 1 (URL dinámica):**
   - Texto: `Pagar ahora`
-  - URL base: `https://yaqu.app/pay/invoice/{{1}}`  → variable = **id del cobro (chargeId)**
-  - La página `/pay/invoice/:chargeId` muestra los métodos (tarjeta + transferencia).
+  - URL base: `https://yaqu.app/pay/invoice/{{1}}` (SIN CAMBIOS — la BASE aprobada en Meta es
+    la misma) → variable = **token OPACO del cobro** (`Charge.receiptToken`, SCRUM-85; antes
+    era el `chargeId`, cambiado por IDOR/RGPD — misma fuga y mismo fix que
+    `payment_confirmation_invoice_es` en SCRUM-74, ver §4). Meta aprueba la URL BASE fija + la
+    POSICIÓN del sufijo dinámico, no el formato del valor sustituido en runtime — por eso este
+    cambio tampoco requiere re-aprobación de la plantilla.
+  - La página `/pay/invoice/:token` (mismo token que `/recibo`, `/pay/card` y `/pay/bizum`)
+    muestra los métodos (tarjeta + transferencia; **transferencia** — `/pay/bank/:chargeId` —
+    sigue en el id, P1-SEC-9, fuera de alcance de SCRUM-85).
 
 **Código que lo envía:**
 - `src/modules/system/app/routes/invoicesAdmin.routes.ts` (resend-whatsapp y send-reminder)
+- `src/modules/billing/domain/invoiceWhatsApp.service.ts` (envío inicial de la factura)
 - `src/modules/billing/domain/invoiceReminder.service.ts` (recordatorios 7/14 días)
+- `src/modules/whatsappBot/domain/botFlow.service.ts` (bot — "pagos pendientes")
 
 ---
 
