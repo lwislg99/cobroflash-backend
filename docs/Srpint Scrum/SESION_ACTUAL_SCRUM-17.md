@@ -1,87 +1,109 @@
-# SCRUM-17 · FISCAL-2 — Factura recapitulativa (consolidar albaranes del mismo mes natural)
+# TAREA ACTIVA — SCRUM-17 · FISCAL-2: factura recapitulativa con motor de rotura por mes natural
 
-> **Estado: RECON hecho (17-jul-2026, contra `main` c24e5d5) + AGENDA FISCAL P6-P10 pendiente de dictamen.**
-> Gobierna: `docs/YAQU_MASTER.md` (reglas 24/27/29) + ticket SCRUM-17 + este doc. Compañero de
-> `SESION_ACTUAL_SCRUM-16.md` (FISCAL-1: anticipos; mismo modelo Invoice, misma agenda de asesor).
-> Fase F3, POST-SIF: **nada se activa a merchants reales sin SIF-1 8/8 + dictamen archivado**.
-> Todo el alcance V1 nace LATENTE tras `INVOICING_ES_ENABLED=OFF`.
-> Base legal: art. 13 RD 1619/2012 — la recapitulativa solo agrupa operaciones del **MISMO MES
-> NATURAL** (límite legal duro, no preferencia). Un trabajo de 3 meses se cierra con
-> anticipos/certificaciones + final (FISCAL-1), no con una recapitulativa gigante.
+> Gobierna: `docs/YAQU_MASTER.md` + ticket **SCRUM-17** (y sus DOS comentarios: recon 16-jul y actualización de diseño 17-jul) + `docs/legal/INVESTIGACION_ALBARANES.md` (§4.3 y §4.3.1) + este brief.
+> Flujo: `git checkout main && git pull` → rama `scrum-17-recapitulativa` → PR (lo crea Luis, NO uses `gh`) → merge → suite QA.
+> 🚨 ZONA SENSIBLE: **fiscal** (emisión de facturas) + **schema** + toca `jobDetailView.js`. Todo LATENTE tras el flag: **nada se activa a merchants reales** (regla 24).
+
+## LA TAREA EN UNA FRASE
+El pro selecciona varios partes de trabajo firmados y YaQu genera la factura que los agrupa — **y si la selección cruza meses, genera automáticamente una factura por mes**, porque la ley solo permite agrupar operaciones del mismo mes natural (art. 13 RD 1619/2012). **Ningún competidor hace esto**: todos dejan la responsabilidad legal al usuario.
+
+## DECISIONES DEL FUNDADOR (22-jul, aplicadas — NO reabrir)
+1. **IVA: desglose multi-IVA, NO rotura por IVA.** Si un albarán VALORADO ya mezcla tipos por línea, exigir homogeneidad entre albaranes es incoherente. Una factura legal admite desglose por tipo y el builder ya lo calcula desde `lines`. → **`tipoIva` NO entra en la clave de rotura.**
+2. **Rotura por mes: automática en V1.** Cruzar meses NO rechaza: genera N facturas (una por mes). Es el diferenciador entero.
+3. **`emitInvoice()` compartido: se crea AQUÍ**, con la forma que sirva también a SCRUM-16 (que está bloqueada esperando dictamen fiscal, así que la 17 llega primero). **Unifica la política de VeriFactu/PDF a la variante LAZY** (`PENDING_PDF`/`PENDING_QR` y rellenar después, como hace `collect-rest`). Confirma que no rompe expectativas de los otros call-sites ANTES de migrarlos; si rompe, repórtalo y migra solo lo seguro.
+4. **Alcance cliente: 1 Job en V1.** Consolidar entre varios Jobs del mismo cliente → ticket aparte si alguien lo pide.
+5. **Mecánica sí, activación no.** Se construye todo detrás del flag. El dictamen fiscal (P6-P10) bloquea el interruptor, no el código.
+6. **REGLA NUEVA (descubierta con SCRUM-65): consolidar exige `VALORADO`.** Un albarán `SIN_VALORAR` no tiene importes → se rechaza con mensaje claro: *"Este parte no lleva precios. Edítalo para añadirlos o quítalo de la selección."*
+
+## 0. CONTEXTO REAL (del recon 22-jul — confírmalo, no lo re-descubras)
+- `invoicing.service.ts` sigue **VACÍO** → sitio del `emitInvoice()` compartido.
+- Patrón transaccional canónico (`jobs.routes.ts:410-428`): `$transaction(allocateInvoiceNumber(tx) → invoice.create{type: isReceiptNumber ? 'JUST':'F1', lines, pdfUrl:'PENDING_PDF', qrData:'PENDING_QR'})`. **Duplicado en 4 call-sites** (jobs.routes, quotesAdmin.routes, quoteAdmin.ts, lib/invoicing.ts).
+- `Invoice.lines Json?` acepta la concatenación de líneas de N albaranes. `Invoice` NO tiene `albaranRefs` → añadir.
+- `calcAlbaranTotales` (de SCRUM-65) ya suma base/cuota/total en **céntimos enteros** → reutilizar.
+- `Albaran.fecha` **YA está congelada de facto** (editable solo en borrador; la consolidación toca firmados) → NO hace falta trabajo extra, solo confirmar que el PATCH lo bloquea (`albaran_locked`).
+- `Job.tipoOperacion` (SCRUM-66) ya viaja en `serializeJob`.
+- `getEmissionMode(merchant)` (`emission.service.ts:36`) es el resolvedor canónico: `fiscal | demo | receipt`.
+- VeriFactu es genérico (F1, sin tipo "recapitulativa"); `applyVeriFactu` salta los J-.
+
+## 1. ALCANCE EXACTO
+
+### 1.1 Schema (aditivo) — 🚨 STOP, enséñame el diff
+```
+// Albaran
+invoiceId  Int?  @map("invoice_id")
+@@index([merchantId, invoiceId])
+
+// Invoice
+albaranRefs Json?  @map("albaran_refs")   // [{albaranId, numero, fecha}]
+```
+Nada más (`Invoice.periodo` se descarta: se deriva de `albaranRefs[].fecha`). Preview + host-check, sin `--accept-data-loss`.
+
+### 1.2 Dominio puro (testeable sin BD, patrón `validarLineas`/`billingPlan`)
+- **`validarConsolidacion(albaranes, job)`** → `{ok:true}` o `{ok:false, error:'codigo_snake', message:'humano con el albarán exacto'}`. Rechaza:
+  - `job.tipoOperacion === 'TRABAJO_UNICO'` → `consolidacion_no_aplica`
+  - algún albarán `SIN_VALORAR` → `albaran_sin_precios` (decisión 6)
+  - algún albarán no `firmado` → `albaran_no_firmado`
+  - algún albarán con `invoiceId != null` → `albaran_ya_facturado`
+  - clientes distintos → `cliente_mixto` (hoy trivial: 1 Job = 1 cliente, pero deja el guard)
+  - selección vacía → `seleccion_vacia`
+  - **NO rechaza por meses distintos** (eso es rotura, no error).
+- **`groupByRotura(albaranes)`** → agrupa por clave **`(customerId, YYYY-MM de fecha, serie)`**. **SIN `tipoIva`** (decisión 1). Devuelve los grupos ordenados por mes, cada uno con sus albaranes y su etiqueta legible ("marzo 2026").
+
+### 1.3 `emitInvoice()` compartido (`invoicing.service.ts`)
+Firma orientativa: `emitInvoice(tx, {merchantId, customerId, type, lines, albaranRefs?, quoteId?, jobId?})`. Hace: `allocateInvoiceNumber(tx)` + `invoice.create` con política **lazy** de PDF/QR + `applyVeriFactu` (no-op en J-). Diseñado para que SCRUM-16 lo use tal cual (tipo `ANT` + `deductsIds`).
+Migrar los 4 call-sites duplicados **solo si es seguro**; si alguno espera VeriFactu inline y romperlo tiene riesgo, **repórtalo y déjalo** (regla 9), no lo fuerces.
+
+### 1.4 Endpoint `POST /admin/jobs/:id/consolidar-albaranes`
+- Tenancy. Rol: **admin** (emitir factura es acción de dinero — coherente con SCRUM-54; confírmalo contra S1).
+- **Gate por `getEmissionMode(merchant)`**: si `receipt` → **409 `consolidacion_no_disponible`** y la UI ni ofrece el botón (la recapitulativa es documento fiscal puro; **no hay variante justificante J-**). En `demo` → se ofrece con watermark. En `fiscal` → real.
+- Valida `tipoOperacion` + `validarConsolidacion` → 400/409 con mensaje claro.
+- **UNA transacción** para todos los grupos: por cada grupo de `groupByRotura` → `emitInvoice()` + `updateMany({where:{id:{in:[...]}, invoiceId:null}, data:{invoiceId}})` con **guard de concurrencia**: si `count < seleccionados` → throw → **rollback de TODO** (nadie consolidó a medias).
+- Respuesta: lista de facturas creadas con su mes y número, para que la UI lo muestre.
+
+### 1.5 UI (`jobDetailView.js`)
+- Botón **"Consolidar en factura"** a nivel de sección Albaranes (junto a "+ Nuevo albarán"), **solo visible** si `job.tipoOperacion === 'OPERACIONES_SUELTAS'` y el modo lo permite.
+- **Modo selección**: checkbox en las tarjetas de albaranes elegibles (`firmado` + `VALORADO` + `invoiceId == null`), agrupadas visualmente por mes.
+- **Modal de confirmación con el desglose de rotura** — el usuario SIEMPRE ve qué se va a crear antes de emitir (queja documentada de usuarios de Odoo con agrupaciones automáticas):
+  > **"Has seleccionado 7 partes de 2 meses distintos."**
+  > *"La ley solo permite agrupar partes del mismo mes en una factura, así que se crearán 2 facturas:"*
+  > · **Marzo 2026** — 4 partes · 1.240,00 €
+  > · **Abril 2026** — 3 partes · 890,00 €
+  > [Cancelar] [Crear 2 facturas]
+- **Badge "Facturado"** en las tarjetas, **derivado** de `invoiceId != null` (nunca flag manual — queja nº1 documentada de usuarios de DELSOL). Expón `facturado` (y opcionalmente `invoiceNumero`) en `serializeAlbaran`.
+
+## 2. LO QUE NO INCLUYE
+- Activación a merchants reales (post-SIF + dictamen P6-P10). El flag manda.
+- Facturación parcial por cantidad servida → **SCRUM-70**.
+- Bandeja de pendientes + semáforo de plazo → **SCRUM-69**.
+- Consolidar entre varios Jobs → fuera de V1.
+- Comportamiento ante R1 (¿se liberan los albaranes?) → residual de asesor (P10). En V1 **no se implementa liberación**; si se anula una recapitulativa, los albaranes quedan ligados y se reporta como pendiente.
+- Facturas de anticipo → SCRUM-16.
+
+## 3. 🚨 STOP CONDITIONS
+- **Diff del schema** antes del db push.
+- **Diff del endpoint + `emitInvoice()`** antes de cerrar — es emisión de facturas, zona de dinero.
+- Si migrar un call-site a `emitInvoice()` pudiera cambiar comportamiento → PARA y repórtalo.
+- Si algo empuja a activar a reales, tocar el flag, o saltarse `getEmissionMode` → PARA.
+
+## 4. TESTS
+- **Puros**: `groupByRotura` (2 meses → 2 grupos; 1 mes → 1; orden correcto), `validarConsolidacion` (cada código de error), aritmética de totales en céntimos con IVA mixto.
+- **Gateado**: 2 albaranes de meses distintos → **2 facturas** con sus números y `albaranRefs` correctos; IVA mixto → una factura con desglose; doble consolidación concurrente → **una gana, la otra 409, sin estado a medias**; `TRABAJO_UNICO` → 409; `SIN_VALORAR` → 400; modo `receipt` → 409 no disponible; tenancy 404.
+- Suite → siguiente versión con el paso de consolidación.
+
+## 5. DEFINICIÓN DE HECHO
+- Schema aplicado (staging → mi OK → prod, orden correcto). Dominio puro + `emitInvoice()` + endpoint + UI con modal de rotura + badge derivado.
+- build + test verdes; suite verde vía MCP.
+- **Actualiza `docs/COMO_FUNCIONA_YAQU.md`**: la sección "En camino" pierde la línea de la recapitulativa y gana su párrafo en el cuerpo — **pero solo describiendo lo que el usuario puede hacer hoy** (con el flag OFF, un merchant real NO ve esto; redáctalo con honestidad).
+- PR con descripción; SCRUM-17 a "En revisión". NO transicionar a Finalizada.
+
+## 6. JIRA
+Al abrir PR: SCRUM-17 → "En revisión" con diffs, tests, suite, y nota explícita de que **nada está activo a reales** y de lo que queda para el dictamen (P6-P10).
 
 ---
 
-## 1 · Estado del terreno (recon, rutas:líneas verificadas)
+## AGENDA FISCAL PENDIENTE (no bloquea construir, bloquea activar)
 
-### Albaranes hoy
-- Modelo `Albaran` (`prisma/schema.prisma:644-669`): `merchantId`, `jobId`, `numero`
-  (`ALB-YYYY-NNN`, serie no fiscal por merchant), **`fecha`** (visita/entrega, `default(now)`,
-  **EDITABLE en borrador**), `lineas Json`, `estado borrador|emitido|firmado` (FSM
-  `albaran.service.ts:17-21`; firmado = terminal/congelado), `firmadoAt`, `firmaToken`/
-  `enviadoParaFirmaAt` (SCRUM-49), `pdfUrl`.
-- **NO hay campo "facturado"/"consolidado"** → hay que añadirlo (aditivo, §3).
-- **Mes natural**: la candidata es `Albaran.fecha` (fecha de la operación); `firmadoAt` es la
-  firma, no la operación. `fecha` editable en borrador → hay que congelarla (P7).
-- **Cliente**: el albarán NO tiene `customerId` — llega vía `Job.customerId`.
-- **🚨 IVA/precios: NO existen** — `lineas = {concepto, cantidad, unidad}` SIN precio ni IVA,
-  deliberado en SCRUM-14 (documento NO fiscal; el PDF presume "sin importes"). Es EL hueco del
-  ticket: la recapitulativa necesita base+IVA por línea (P8).
-
-### Generación de factura desde varios albaranes
-- `Invoice.lines Json?` acepta cualquier array → recapitulativa = `invoice.create` con las líneas
-  de N albaranes concatenadas (concepto prefijado `Albarán ALB-… (fecha)`), en el patrón
-  transaccional canónico `allocateInvoiceNumber` + create + `applyVeriFactu`, HOY duplicado en 4
-  call-sites: `quotesAdmin.routes.ts:168-197`, `jobs.routes.ts:354-372`, `quoteAdmin.ts:317`,
-  `lib/invoicing.ts:207`.
-- **`invoicing.service.ts` existe VACÍO (0 líneas)** = sitio natural del `emitInvoice(...)`
-  compartido con FISCAL-1 (ver "Relación con la 16").
-
-### Validación dura (patrón de la casa a seguir)
-- `validarLineas` (`albaran.service.ts:34-52`): función PURA → `{ok:false, error: 'mensaje humano
-  con la línea exacta'}` → ruta responde `400 {error:'codigo_snake', message}`; y el patrón 409
-  con mensaje (`albaran_locked`, `albaranes.routes.ts:169`).
-- Propuesta: `validarConsolidacion(albaranes[])` pura en el mismo service — códigos
-  `mes_natural_mixto` (año+mes de `fecha`), `iva_mixto`, `cliente_mixto`,
-  `albaran_ya_facturado`, `albaran_no_firmado`. Pura = testeable sin BD (patrón billingPlan).
-
-### Anti doble facturación
-- Aditivo **`Albaran.invoiceId Int?`** (+ `@@index([merchantId, invoiceId])`), fijado DENTRO de
-  la transacción de la recapitulativa con guard de concurrencia (`updateMany where invoiceId:null`;
-  si `count` < seleccionados → rollback). Re-consolidar → 409 `albaran_ya_facturado`.
-- El badge "Facturado" en UI se DERIVA de `invoiceId != null` (patrón "esperando firma" de
-  SCRUM-49, `schema.prisma:655-658`) → **la FSM de la Parte L no se toca** (regla 27).
-
-### Frontend (jobDetailView.js)
-- Sección Albaranes: `public/dashboard/js/jobDetailView.js:234-353`. Botón **"Consolidar en
-  factura"** a nivel de sección junto a "+ Nuevo albarán" (`:256`) → modo selección con checkbox
-  en tarjetas de albaranes firmados y no facturados, agrupados por mes; confirmación en
-  modal/drawer del inventario AB3 (mes, nº de albaranes, total). Las tarjetas ya renderizan
-  acciones por estado (`:236`, firmado → PDF `:452` + envío WA SCRUM-47 `:453`) — encaja sin
-  rediseño (una pantalla).
-
-### Relación con SCRUM-16 (FISCAL-1)
-- Comparten el tramo final de emisión completo: serie + create + VeriFactu + PDF + **refs a
-  documentos origen** (anticipos descontados / albaranes agrupados — mismo shape
-  `{id, numero, fecha, importe}`). Propuesta: `invoicing.service.ts` nace con UN
-  `emitInvoice({merchantId, customerId, type, lines, refs, quoteId?, jobId?})` que usan ambas
-  y al que migran gradualmente los 4 call-sites duplicados.
-
-### Sorpresas del recon
-1. **Albaranes sin precios ni IVA** (deliberado, SCRUM-14) → decisión previa a todo (P8):
-   (a) precios/IVA opcionales en la línea del albarán (¿sigue siendo "no fiscal" si no se
-   imprimen?) o (b) valorar las líneas EN el paso de consolidación (editor al agrupar).
-2. **"Clientes distintos" es casi trivial hoy**: un Job = un cliente; solo muerde si se amplía
-   a consolidar entre varios Jobs del mismo cliente (decisión de alcance).
-3. **`Albaran.fecha` editable en borrador** → el mes natural se puede maquillar; congelarla
-   al emitir o firmar (P7).
-4. **VeriFactu no tiene TipoFactura "recapitulativa"**: `registro.builder.ts:131` es genérico;
-   seguiría siendo F1 con el periodo/operaciones referenciados (¿DescripcionOperacion?). Ni
-   `SIF_SPEC_NOTES.md` ni el máster mencionan "recapitulativa" hoy → cerrar en la spec SIF (P9).
-5. Regla 29 abre pregunta nueva: R1 de una recapitulativa → ¿albaranes liberados o ligados? (P10).
-
----
-
-## 2 · AGENDA FISCAL — dictamen del asesor P6-P10 (checklist; se suman a P1-P5 de SCRUM-16)
+> Conservada del recon 17-jul (SCRUM-17). Dictamen del asesor P6-P10 (checklist; se suman a P1-P5 de SCRUM-16).
 
 - [ ] **P6 · Plazo y destinatario:** ¿fecha límite de expedición de la recapitulativa (¿antes
       del día 16 del mes siguiente al de las operaciones?) y ¿exige NIF completo del
@@ -90,7 +112,8 @@
       (visita/entrega)? ¿Congelada en qué momento (al emitir / al firmar)? ¿O `firmadoAt`?
 - [ ] **P8 · Valoración de los albaranes:** ¿puede el albarán llevar precios/IVA internos y
       seguir siendo documento no fiscal (sin imprimirlos), o los importes deben nacer SOLO en
-      la factura (valorar al consolidar)?
+      la factura (valorar al consolidar)? *(NOTA: resuelto por SCRUM-65 en la práctica — el
+      albarán VALORADO lleva precios y sigue sin validez fiscal; queda confirmar el criterio con el asesor.)*
 - [ ] **P9 · VeriFactu:** TipoFactura de la recapitulativa (¿F1 con el periodo y las
       operaciones en `DescripcionOperacion`?) y forma exacta de referenciar las operaciones
       agrupadas en el registro de alta.
@@ -100,22 +123,3 @@
 **Salida esperada:** dictamen escrito archivado en `docs/legal/` ANTES de activar nada a reales
 (mismo expediente que P1-P5 de FISCAL-1). Sin dictamen no se codifica la política, solo la
 mecánica latente.
-
-## 3 · Alcance V1 previsto (LATENTE tras `INVOICING_ES_ENABLED=OFF`; ajustar al dictamen)
-
-1. **Schema (aditivo):** `Albaran.invoiceId Int?` + índice · `Invoice.albaranRefs Json?`
-   (`[{albaranId, numero, fecha}]` — paralelo al `deductsIds` de FISCAL-1) · lo que salga de P8
-   (precios en línea de albarán o tabla de valoración al consolidar).
-2. **Dominio:** `validarConsolidacion()` pura (mes natural, IVA homogéneo, cliente único, solo
-   firmados no facturados) + `emitInvoice(...)` compartido en `invoicing.service.ts` (sirve a
-   FISCAL-1 y FISCAL-2).
-3. **Endpoint:** `POST /admin/jobs/:id/consolidar-albaranes` — tenancy, validación → 400/409 con
-   mensaje claro, transacción (número + create + `updateMany` con guard `invoiceId:null`),
-   VeriFactu solo en modo `fiscal`. **En modo `receipt` la acción NI SE OFRECE** (la
-   recapitulativa es documento fiscal puro: sin flag no existe variante justificante).
-4. **UI** detrás del flag (visible solo en demo/watermark): botón + selector por mes + badge
-   "Facturado" derivado.
-5. **Tests:** caso límite del ticket (2 albaranes de meses distintos → RECHAZA), IVA mixto →
-   rechaza, doble consolidación concurrente → solo una gana, caso feliz con referencias.
-6. **Fuera de V1:** activación a reales (post-SIF + dictamen), consolidar entre varios Jobs,
-   cambios en R1.

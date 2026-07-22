@@ -295,6 +295,9 @@ model Invoice {
 
   // Líneas de detalle (copiadas del Quote o del Charge al crear la factura)
   lines Json?
+  // SCRUM-17 (FISCAL-2): operaciones agrupadas en una recapitulativa — [{albaranId, numero, fecha}].
+  // La factura debe identificar los albaranes origen (art. 6 Reglamento + advertencia TEAC).
+  albaranRefs Json? @map("albaran_refs")
 
   // Tipo de factura (RD 1619/2012 / VeriFactu): F1 = completa estándar | R1 = rectificativa
   type        String @default("F1")
@@ -677,8 +680,12 @@ model Albaran {
   pdfUrl       String?   @map("pdf_url")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt      @map("updated_at")
+  // SCRUM-17 (FISCAL-2): factura recapitulativa que consolidó este albarán (null = no facturado).
+  // El badge "Facturado" se DERIVA de invoiceId != null (sin flag manual; FSM Parte L intacta, regla 27).
+  invoiceId    Int?      @map("invoice_id")
 
   @@unique([merchantId, numero])
   @@index([merchantId, jobId])
+  @@index([merchantId, invoiceId])
   @@map("albaranes")
 }
