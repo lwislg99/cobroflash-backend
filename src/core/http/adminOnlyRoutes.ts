@@ -37,6 +37,9 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'GET', path: '/admin/exports/verifactu.xml' },
   // SCRUM-25 (S1): TODO el export es admin — se lleva datos personales de los clientes
   // finales (teléfonos y emails en clientes.csv), importes y documentos del negocio.
+  // SCRUM-25 (B): el paquete completo — CSVs + PDFs de factura del merchant
+  { method: 'GET', path: '/admin/exports/datos.zip' },
+  { method: 'GET', path: '/admin/exports/datos.zip/info' },
   { method: 'GET', path: '/admin/exports/customers.csv' },
   { method: 'GET', path: '/admin/exports/invoices.csv' },
   { method: 'GET', path: '/admin/exports/quotes.csv' },
