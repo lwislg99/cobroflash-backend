@@ -302,7 +302,7 @@
 
 ## P3 — Técnico / raíz (registrar, abordar después de P1)
 
-### [ ] P3-9 · `tests/tenancy-permisos.test.mjs` roto en staging desde SCRUM-42 (22-jul, hallazgo en SCRUM-73, NO causado por SCRUM-73)
+### [ ] P3-9 · `tests/tenancy-permisos.test.mjs` roto en staging desde SCRUM-42 (22-jul, hallazgo en SCRUM-73, NO causado por SCRUM-73; alcance ampliado en SCRUM-75)
 - **Síntoma:** el test gateado `A12.1+A12.4: tenancy (B vs datos de A)...` falla en staging con
   `AssertionError: faltan datos seed del demo` (línea 59, `assert.ok(quoteA && invoiceA &&
   customerA)`). Espera que el merchant `id=1` tenga quotes/invoices/customers reales ("demo").
@@ -316,23 +316,68 @@
   recorre en la MISMA función tras esa aserción — el `assert.ok` de la línea 59 aborta el test
   ANTES de llegar a esa parte, así que esa cobertura genérica queda sin ejecutar en staging hoy
   (el test específico `scrum73-verifactu-gate.test.mjs`, con su propio merchant efímero, SÍ pasa).
-- **Alcance:** NO corregido en este PR (fuera del gate de `verifactu.xml`). Arreglo candidato:
-  actualizar el test para usar un merchant efímero propio (patrón ya usado por
-  `scrum23`/`scrum73`) en vez de depender del `id=1` compartido, o re-sembrar un merchant "demo
-  con datos" en otro id fijo si se necesita mantener ese caso de prueba.
+- **Alcance ampliado (SCRUM-75):** al ejecutar por primera vez la suite gateada COMPLETA junta
+  (ver P3-10, ahora posible gracias al glob) se confirmó que el mismo root cause (merchant `id=1`
+  sin customers/quotes/invoices en staging) rompe TAMBIÉN `tests/webhooks-idempotencia.test.mjs`
+  (`A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga`, línea 43-46):
+  `prisma.customer.findFirst({ where: { merchantId: 1 } })` devuelve `null` →
+  `TypeError: Cannot read properties of null (reading 'id')` al construir el charge efímero.
+  Reproducido en 3/3 ejecuciones gateadas independientes (determinista, no es el ruido de P3-10).
+- **Alcance:** NO corregido (ninguna de las dos tareas tocaba datos de staging). Arreglo
+  candidato: actualizar ambos tests para usar un merchant efímero propio (patrón ya usado por
+  `scrum23`/`scrum73`/`scrum47`/`scrum49`/`scrum57`) en vez de depender del `id=1` compartido, o
+  re-sembrar un merchant "demo con datos" en otro id fijo si se necesita mantener ese caso de
+  prueba.
 
-### [ ] P3-8 · 4 archivos de test gateados NO corren en `npm test` (22-jul, hallazgo en SCRUM-73)
-- **Síntoma:** mismo patrón que P3-7 (lista explícita de archivos en `package.json`): existen
+### [x] P3-8 · 4 archivos de test gateados NO corren en `npm test` (22-jul, hallazgo en SCRUM-73; corregido en SCRUM-75)
+- **Síntoma:** mismo patrón que P3-7 (lista explícita de archivos en `package.json`): existían
   `tests/scrum47-enviar-albaran-wa.test.mjs`, `tests/scrum49-firma-remota.test.mjs`,
   `tests/scrum50-bot-albaranes.test.mjs` y `tests/scrum57-operario-propagacion.test.mjs` en el
-  repo (con tests reales, gateados `QA_DB_TEST=1`) pero NINGUNO está en la lista del script
-  `test` → `npm test` los omite en silencio. Solo `tests/scrum52-operario.test.mjs` (entre esa
-  tanda) sí quedó registrado.
-- **Alcance:** NO corregido en este PR (SCRUM-73 es solo el gate de `verifactu.xml` — regla de
-  "una tarea, un cambio"; tocar 4 archivos ajenos aquí sería arreglo de paso sin revisar cada
-  uno). Se registra para una tarea propia (candidata a resolver también la deuda de fondo que
-  ya apuntaba P3-7: pasar de lista explícita a `node --test tests/*.test.mjs` con un glob que
-  no pueda volver a omitir un archivo nuevo).
+  repo (con tests reales, gateados `QA_DB_TEST=1`) pero NINGUNO estaba en la lista del script
+  `test` → `npm test` los omitía en silencio. Solo `tests/scrum52-operario.test.mjs` (entre esa
+  tanda) sí había quedado registrado. Al investigar en SCRUM-75 apareció un QUINTO huérfano no
+  detectado en el hallazgo original: `tests/scrum68-evidencias-firma.test.mjs` (mergeado después
+  de que se registrara este bug), mismo patrón exacto.
+- **Corregido en SCRUM-75:** los 4 (+1) archivos se ejecutaron primero de forma aislada,
+  gateados contra staging — los 4 originales pasan 100% en solitario (scrum47/49/50/57, 1/1 cada
+  uno). Root fix aplicado: el script `test` de `package.json` pasó de listar archivos
+  explícitamente a `node --test --test-force-exit tests/*.test.mjs` — Node 24 expande el glob
+  internamente (confirmado: recoge exactamente los `*.test.mjs` de `tests/`, ignora
+  `tests/_staging-db.mjs` por no matchear el sufijo, y NO se sale de `tests/` como sí hace el
+  auto-discovery implícito de `node --test` sin argumentos, que además arrastra
+  `scripts/wa-test.mjs` por su nombre). Un archivo nuevo en `tests/*.test.mjs` queda cubierto por
+  `npm test` sin tocar `package.json` nunca más.
+- **Hallazgo colateral (NO corregido, ver P3-10):** correr por primera vez TODA la suite gateada
+  junta (antes imposible: cada archivo se ejecutaba suelto en su propia tarea) expuso una
+  inestabilidad de concurrencia contra staging, ajena a estos 4 archivos.
+
+### [ ] P3-10 · Suite gateada COMPLETA (`QA_DB_TEST=1 npm test`) es inestable por concurrencia contra staging (22-jul, hallazgo en SCRUM-75)
+- **Síntoma:** con los ~19 archivos de test gateados corriendo TODOS a la vez (comportamiento por
+  defecto de `node --test` con múltiples archivos: paraleliza por worker), el resultado NO es
+  determinista. Tres ejecuciones seguidas de la MISMA suite, mismo código, misma staging:
+  - Ejecución 1: 14 fallos (incluye `PrismaClientKnownRequestError: The column tipo_operacion
+    does not exist in the current database` en varios `prisma.job.create()` de archivos que
+    SIEMPRE pasan en solitario — la columna existe, es un error transitorio).
+  - Ejecución 2: 3 fallos, ninguno relacionado con `tipo_operacion`; distinto archivo afectado
+    cada vez (`scrum57` falló aquí y no en la 1; otros archivos de la 1 pasaron limpio aquí).
+  - Cada uno de los archivos, ejecutado EN SOLITARIO (`node --test --test-force-exit
+    tests/<archivo>.test.mjs`), pasa siempre — incluidos los 4 nuevos de P3-8.
+- **Causa raíz:** no confirmada. Candidato más probable: contención en el pool de conexiones de
+  Postgres de staging (`acela.proxy.rlwy.net`) cuando ~19 `PrismaClient` + servidores HTTP
+  efímeros arrancan a la vez (cada archivo de test es un proceso/worker propio de `node --test`);
+  el error `tipo_operacion does not exist` es compatible con un problema conocido de Prisma +
+  pooling tipo PgBouncer (prepared statements servidos con un plan/caché de esquema obsoleto bajo
+  carga concurrente), no con una migración real ausente.
+- **Dos fallos SÍ deterministas** dentro del ruido (se repiten en las 3 ejecuciones,
+  independientemente de qué más corra a la vez): `tenancy-permisos.test.mjs` y
+  `webhooks-idempotencia.test.mjs` — ambos son P3-9 (mismo root cause, merchant `id=1` sin
+  datos), no forman parte de este hallazgo.
+- **Alcance:** NO corregido — fuera del pedido de SCRUM-75 (registrar 4 archivos + fix de raíz
+  del "no registrado", no tocar la fiabilidad de staging bajo concurrencia). Importante antes de
+  usar `QA_DB_TEST=1 npm test` como gate de CI: hoy el código de salida de la suite gateada
+  completa NO es fiable (puede fallar en rojo por ruido de concurrencia, no por una regresión
+  real). Arreglo candidato: `--test-concurrency=1` para la tanda gateada (serializa, más lento
+  pero determinista) o investigar el pool/`?pgbouncer=true` en `DATABASE_URL_STAGING`.
 
 ### [x] P3-7 · `tests/albaran.test.mjs` (SCRUM-14) no corre en `npm test` (13-jul, hallazgo en rebase de SCRUM-43/44)
 - **Síntoma:** el script `test` de `package.json` lista los archivos de test EXPLÍCITAMENTE y el
