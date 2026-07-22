@@ -1,4 +1,5 @@
 import { prisma } from '../../../core/db/prisma';
+import { estadoCobroFor } from '../../jobs/domain/job.service'; // SCRUM-24: mismo semáforo que la lista de Trabajos
 
 export async function getHomeMetrics(merchantId: number) {
   const now = new Date();
@@ -454,4 +455,86 @@ export async function getTeamMetrics(merchantId: number) {
 
   const tecnicoCount = members.filter((m) => m.role === 'tecnico').length;
   return { hasTeam: tecnicoCount > 0, members: list, inactive };
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// SCRUM-24 (OPERARIO-3): resumen de supervisión POR OPERARIO para el admin.
+// Agrega los Trabajos por `Job.operarioId` (AUTOR, congelado en SCRUM-52 — si el admin
+// reasigna un Trabajo, el resumen lo sigue atribuyendo a quien lo originó). Aprovecha
+// el índice (merchant_id, operario_id). Clona la estructura de getTeamMetrics (mapa de
+// agregados + fila del propietario), pero aquí la fuente son los Jobs, no los Quotes.
+// Solo Admin: el gate vive en la ruta (requireRole) — regla S3, nunca solo en el front.
+// ──────────────────────────────────────────────────────────────────────────
+
+export async function getOperariosMetrics(merchantId: number) {
+  const [totales, abiertos, members, merchant] = await Promise.all([
+    prisma.job.groupBy({
+      by: ['operarioId'],
+      where: { merchantId },
+      _sum: { totalAceptado: true, totalCobrado: true },
+      _count: { id: true },
+    }),
+    prisma.job.groupBy({
+      by: ['operarioId'],
+      where: { merchantId, status: { not: 'cerrado' } },
+      _count: { id: true },
+    }),
+    prisma.teamMember.findMany({
+      where: { merchantId },
+      select: { id: true, name: true, role: true, status: true },
+      orderBy: { createdAt: 'asc' },
+    }),
+    prisma.merchant.findUnique({ where: { id: merchantId }, select: { name: true, defaultCurrency: true } }),
+  ]);
+
+  // clave 0 = propietario (operarioId null), mismo convenio que getTeamMetrics
+  const key = (id: number | null) => id ?? 0;
+  const totalesBy = new Map<number, { aceptado: number; cobrado: number; total: number }>();
+  for (const r of totales) {
+    totalesBy.set(key(r.operarioId), {
+      aceptado: Number(r._sum.totalAceptado ?? 0),
+      cobrado: Number(r._sum.totalCobrado ?? 0),
+      total: r._count.id,
+    });
+  }
+  const abiertosBy = new Map<number, number>();
+  for (const r of abiertos) abiertosBy.set(key(r.operarioId), r._count.id);
+
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const currency = merchant?.defaultCurrency ?? 'EUR';
+
+  const row = (id: number | null, nombre: string, role: string, status: string) => {
+    const t = totalesBy.get(key(id)) ?? { aceptado: 0, cobrado: 0, total: 0 };
+    const totalAceptado = round2(t.aceptado);
+    const totalCobrado = round2(t.cobrado);
+    return {
+      operarioId: id,
+      nombre,
+      role,
+      status,
+      trabajos: t.total,
+      abiertos: abiertosBy.get(key(id)) ?? 0,
+      totalAceptado,
+      totalCobrado,
+      pendiente: round2(totalAceptado - totalCobrado),
+      // mismo % que pinta la lista de Trabajos (jobsView) y mismo semáforo (job.service)
+      progreso: totalAceptado > 0 ? Math.min(100, Math.round((totalCobrado / totalAceptado) * 100)) : 0,
+      estadoCobro: estadoCobroFor(totalCobrado, totalAceptado),
+    };
+  };
+
+  const list = [
+    // fila del propietario (operarioId null): su nombre visible es el del NEGOCIO
+    row(null, merchant?.name ?? 'Propietario', 'owner', 'active'),
+    ...members.map((m) => row(m.id, m.name, m.role, m.status)),
+  ];
+
+  // Supervisión = dinero primero: el que más dinero tiene pendiente, arriba.
+  list.sort((a, b) => b.pendiente - a.pendiente);
+
+  return {
+    currency,
+    hasOperarios: members.length > 0,
+    operarios: list,
+  };
 }

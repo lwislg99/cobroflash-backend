@@ -28,6 +28,8 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'GET', path: '/admin/billing/summary' },
   { method: 'GET', path: '/admin/team' },
   { method: 'POST', path: '/admin/connect/onboard' },
+  // Supervisión por operario (SCRUM-24): S1 → equipo/supervisión es Admin
+  { method: 'GET', path: '/admin/metrics/operarios' },
   // Mantenimientos (A15): tocar planes = dinero futuro → admin
   { method: 'POST', path: '/admin/maintenance', body: { customerId: 1, title: 'x', intervalMonths: 12 } },
   { method: 'DELETE', path: '/admin/maintenance/:planId' },
