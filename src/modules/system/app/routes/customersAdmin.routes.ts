@@ -4,6 +4,7 @@ import { config } from '../../../../core/config/env';
 import { customerCreateSchema, customerUpdateSchema } from '../../../../core/validation/schemas';
 import { prisma } from '../../../../core/db/prisma';
 import { listCustomerEvents } from '../../customerEvents.service';
+import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (D2: borrado = admin)
 
 const router = Router();
 
@@ -182,7 +183,10 @@ router.get('/:id/detail', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+// SCRUM-55 (D2 del fundador): borrado DURO (`customer.deleteMany`) e irreversible,
+// que además arrastra el historial del cliente → admin. AA1.4 lo lista como stop
+// condition ("datos de clientes: export/borrado").
+router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });

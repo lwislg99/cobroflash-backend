@@ -25,7 +25,12 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'GET', path: '/admin/referral' },
   { method: 'GET', path: '/admin/digest/preview' },
   // Billing / equipo / Connect (montados con requireRole a nivel de router)
-  { method: 'GET', path: '/admin/billing/summary' },
+  // SCRUM-55: '/admin/billing/summary' vivía aquí y NO existe (subscriptions.routes.ts
+  // solo tiene /plans, /accept-alcance, /checkout, /portal). Pasaba el test igualmente:
+  // el requireRole del MONTAJE devuelve 403 antes de que Express llegue al 404, así que
+  // una entrada muerta era indistinguible de una viva. Ahora la caza el segundo assert
+  // de scrum55-admin-fail-closed.test.mjs.
+  { method: 'GET', path: '/admin/billing/plans' },
   { method: 'GET', path: '/admin/team' },
   { method: 'POST', path: '/admin/connect/onboard' },
   // Supervisión por operario (SCRUM-24): S1 → equipo/supervisión es Admin
@@ -46,4 +51,31 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'GET', path: '/admin/exports/expenses.csv' },
   { method: 'GET', path: '/admin/exports/charges.csv' },
   { method: 'GET', path: '/admin/exports/jobs.csv' },
+
+  // ── SCRUM-55 (absorbe SCRUM-54): Nivel 1 — dinero y fiscal ──────────────────
+  // Los ids van LITERALES (999999) porque requireRole corta antes de mirar la BD:
+  // el 403 no depende de que el recurso exista.
+  // Dinero: confirmar un Bizum marca el cobro como pagado (S1: "marcar pagado ❌").
+  { method: 'POST', path: '/admin/charges/999999/confirm-bizum' },
+  // Emitir factura desde presupuesto (S1: "facturas emitir ❌", D2 del fundador).
+  { method: 'POST', path: '/admin/quotes/999999/invoice' },
+  // La factura del resto + payment_request. ERA EL OBJETIVO ORIGINAL DE SCRUM-54,
+  // que se cerró sobre consolidar-albaranes y dejó esta abierta: aquí su evidencia.
+  { method: 'POST', path: '/admin/jobs/999999/collect-rest' },
+  // Reescribe el PDF de una factura emitida (regla 29).
+  { method: 'POST', path: '/admin/invoices/:invoiceId/regenerate-pdf' },
+  // Informes del negocio: /vat es "datos fiscales" ❌ explícito en S1; /pl y /x2 son
+  // ingresos, beneficio y cobros. Gate en el MONTAJE de /admin/reports.
+  { method: 'GET', path: '/admin/reports/vat' },
+  { method: 'GET', path: '/admin/reports/pl' },
+  { method: 'GET', path: '/admin/reports/x2' },
+  // Borrado DURO del cliente y su historial (D2 del fundador; AA1.4 stop condition).
+  { method: 'DELETE', path: '/admin/customers/999999' },
+
+  // ── SCRUM-55: gates que eran INLINE y ahora son requireRole ─────────────────
+  // Protegían igual, pero ningún enumerador podía verlos. Con requireRole entran en
+  // la red Y quedan cubiertos por el 403 de comportamiento de A12.4.
+  { method: 'POST', path: '/admin/referral/redeem' },
+  { method: 'POST', path: '/admin/quotes/999999/approve' },
+  { method: 'POST', path: '/admin/jobs/999999/consolidar-albaranes' },
 ];

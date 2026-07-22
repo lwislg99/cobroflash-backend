@@ -32,13 +32,23 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   next();
 }
 
-export function requireRole(role: 'admin' | 'tecnico') {
-  return (req: Request, res: Response, next: NextFunction) => {
+// SCRUM-55: el middleware que devuelve requireRole va MARCADO (`__requiredRole`).
+// Sin la marca es una arrow anónima indistinguible de cualquier otro middleware, y
+// la red fail-closed (tests/scrum55-admin-fail-closed.test.mjs) no puede saber qué
+// rutas declaran rol. La marca es el contrato: quitarla deja ciega a la red.
+export interface RoleGate {
+  (req: Request, res: Response, next: NextFunction): void;
+  __requiredRole: 'admin' | 'tecnico';
+}
+
+export function requireRole(role: 'admin' | 'tecnico'): RoleGate {
+  const gate = (req: Request, res: Response, next: NextFunction) => {
     if (req.userRole !== role) {
       return res.status(403).json({ error: 'forbidden', required_role: role });
     }
     next();
   };
+  return Object.assign(gate, { __requiredRole: role } as const);
 }
 
 // Bloqueo suave tras fin de trial — solo para operaciones de escritura

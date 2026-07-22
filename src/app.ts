@@ -6,6 +6,7 @@ import { jsonError } from './core/http/jsonError';
 import { notFoundPageHtml } from './core/http/publicNotFound';
 import { isFlagEnabled } from './core/flags';
 import { requireAuth, requireActivePlan, requireRole } from './core/http/authMiddleware';
+import { mountAdmin } from './core/http/adminMounts'; // SCRUM-55: red fail-closed de /admin
 import { requireInternalSecret } from './core/http/internalAuth';
 import { isOwnerEmail, config } from './core/config/env';
 
@@ -222,28 +223,34 @@ app.get('/admin/me', async (req, res) => {
   });
 });
 
-app.use('/admin/customers',  customersAdminRouter);
+// SCRUM-55: TODO router bajo /admin se monta con mountAdmin (no con app.use). El
+// helper monta y registra a la vez para que la red fail-closed pueda enumerar las
+// rutas — Express 5 no conserva el prefijo del montaje. Ver core/http/adminMounts.ts.
+mountAdmin(app, '/admin/customers',  customersAdminRouter);
 // Enviar presupuesto por WhatsApp requiere prueba activa; ver/editar sigue abierto.
 app.post('/admin/quotes/:id/send-whatsapp', requireActivePlan);
-app.use('/admin/quotes',     quotesAdminRouter);
-app.use('/admin/invoices',   invoicesAdminRouter);
-app.use('/admin/products',   productsAdminRouter);
-app.use('/admin/providers',  providersAdminRouter);
-app.use('/admin/metrics',    metricsRouter);
-app.use('/admin/expenses',   expensesRouter);
-app.use('/admin/bot',        botAdminRouter); // A8.3: handoffs pendientes del bot
-app.use('/admin/jobs',       jobsRouter);    // A13 (JOB-1): trabajos
-app.use('/admin/albaranes',  albaranesRouter); // SCRUM-14 (ALBARAN-1): partes de trabajo NO fiscales
-app.use('/admin/maintenance', maintenanceRouter); // A15 (MANT-1): tras flag, 404 sin él
+mountAdmin(app, '/admin/quotes',     quotesAdminRouter);
+mountAdmin(app, '/admin/invoices',   invoicesAdminRouter);
+mountAdmin(app, '/admin/products',   productsAdminRouter);
+mountAdmin(app, '/admin/providers',  providersAdminRouter);
+mountAdmin(app, '/admin/metrics',    metricsRouter);
+mountAdmin(app, '/admin/expenses',   expensesRouter);
+mountAdmin(app, '/admin/bot',        botAdminRouter); // A8.3: handoffs pendientes del bot
+mountAdmin(app, '/admin/jobs',       jobsRouter);    // A13 (JOB-1): trabajos
+mountAdmin(app, '/admin/albaranes',  albaranesRouter); // SCRUM-14 (ALBARAN-1): partes de trabajo NO fiscales
+mountAdmin(app, '/admin/maintenance', maintenanceRouter); // A15 (MANT-1): tras flag, 404 sin él
 
 // Rutas solo para admin
 // Billing SIEMPRE accesible (es donde se paga): no exigir prueba activa aquí,
 // de lo contrario un trial caducado no podría llegar a suscribirse (callejón sin salida).
-app.use('/admin/billing',    requireRole('admin'), subscriptionsRouter);
-app.use('/admin/team',       requireRole('admin'), teamRouter);
-app.use('/admin/connect',    requireRole('admin'), connectRouter); // C1-1: onboarding Express
-app.use('/admin/charges',    chargesAdminRouter); // C1-4: confirmar Bizum (multi-tenant en la ruta)
-app.use('/admin/ai',         aiRouter);
+mountAdmin(app, '/admin/billing',    requireRole('admin'), subscriptionsRouter);
+mountAdmin(app, '/admin/team',       requireRole('admin'), teamRouter);
+mountAdmin(app, '/admin/connect',    requireRole('admin'), connectRouter); // C1-1: onboarding Express
+// SCRUM-55: el gate de rol va AQUÍ, en el montaje. Antes el comentario decía
+// "multi-tenant en la ruta" — eso es TENANCY, no ROL: confirmar un Bizum marca un
+// cobro como pagado y dispara la cadena post-pago, y S1 dice "marcar pagado ❌ Técnico".
+mountAdmin(app, '/admin/charges',    requireRole('admin'), chargesAdminRouter); // C1-4
+mountAdmin(app, '/admin/ai',         aiRouter);
 
 // Preview del digest semanal (A1.3: solo lo usa Configuración → solo admin)
 app.get('/admin/digest/preview', requireRole('admin'), async (req, res) => {
@@ -267,11 +274,11 @@ app.get('/admin/referral', requireRole('admin'), async (req, res) => {
 });
 
 // Canje manual de un mes gratis ganado por referidos (solo admin)
-app.post('/admin/referral/redeem', async (req, res) => {
+// SCRUM-55: el gate era `if (req.userRole !== 'admin')` inline. Protegía igual, pero
+// era INVISIBLE para cualquier enumeración: la red no puede ver un if dentro de un
+// handler. Mismo comportamiento, ahora declarado.
+app.post('/admin/referral/redeem', requireRole('admin'), async (req, res) => {
   try {
-    if (req.userRole !== 'admin') {
-      return res.status(403).json({ error: 'forbidden', required_role: 'admin' });
-    }
     const result = await redeemFreeMonth(req.merchantId);
     if (!result.ok) {
       return res.status(result.reason === 'no_credit' ? 409 : 400).json({ error: result.reason || 'redeem_failed' });
@@ -285,12 +292,18 @@ app.post('/admin/referral/redeem', async (req, res) => {
 // SCRUM-25 (S1): exportar es acción de ADMIN — el Técnico no se lleva la base de datos
 // del negocio. El gate va aquí, en el router entero (antes cada ruta iba suelta y los
 // CSVs de clientes/facturas/presupuestos/gastos quedaban abiertos al Operario).
-app.use('/admin/exports',    requireRole('admin'), exportsRouter);
-app.use('/admin/reports',    reportsRouter);
-app.use('/admin/templates',     templatesRouter);
-app.use('/admin/quote-requests', quoteRequestsRouter);
-app.use('/admin/attachments',    attachmentsRouter); // MEDIA-1 (FASE 3): servir fotos adjuntas
-app.use('/admin/search',         searchRouter);
+mountAdmin(app, '/admin/exports',    requireRole('admin'), exportsRouter);
+// SCRUM-55: /admin/reports entero es Admin — los tres informes son economía del
+// negocio, no trabajo de campo: /pl (ingresos·gastos·beneficio), /x2 (cobros por
+// método y pendiente por antigüedad) y /vat (IVA trimestral = "datos fiscales",
+// ❌ explícito en S1). Gate en el MONTAJE, no ruta a ruta: el dato del recon es que
+// los 4 routers gateados en el montaje tenían 0 agujeros, y los que gatean ruta a
+// ruta los tenían justo en las rutas añadidas después.
+mountAdmin(app, '/admin/reports',    requireRole('admin'), reportsRouter);
+mountAdmin(app, '/admin/templates',     templatesRouter);
+mountAdmin(app, '/admin/quote-requests', quoteRequestsRouter);
+mountAdmin(app, '/admin/attachments',    attachmentsRouter); // MEDIA-1 (FASE 3): servir fotos adjuntas
+mountAdmin(app, '/admin/search',         searchRouter);
 
 // Admin – Perfil de merchant (lectura libre, escritura solo admin)
 app.get('/admin/merchant', async (req, res, next) => {
