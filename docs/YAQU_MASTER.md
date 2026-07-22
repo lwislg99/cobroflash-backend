@@ -561,6 +561,17 @@ J7 builders+test · `waOptOut` + check · `docs/RUNBOOKS.md` (O) · `docs/QA_MAS
 > mismo root cause (`pdfs.test.mjs` A12.5d, `a55-window-quote.test.mjs`, `bot-suite.test.mjs`) —
 > fuera del alcance pedido (2 archivos exactos), documentados en BUGS.md P3-9 y anotados con
 > `⚠️ P3-9` en cada archivo para que no se pierdan; candidatos a una tarea propia. Sin schema.
+> **✅ SCRUM-80 (22-jul-2026, parcial):** el más barato de los 3 restantes de P3-9 —
+> `tests/pdfs.test.mjs` (`A12.5d`) — corregido con el mismo patrón (merchant+customer+quote
+> efímero), verificado 4/4 en solitario. `a55-window-quote.test.mjs` y `bot-suite.test.mjs`
+> quedan SIN tocar a propósito: dependen de `DEMO_SAFE_NUMBERS`/semántica de merchant demo real,
+> no de un simple id ancla, y migrarlos es más laborioso — candidatos a tarea propia. **No se
+> pudo cerrar la verificación de `npm run test:staging` 100 % verde** en esta tarea: tras el fix
+> salieron 10 fallos nuevos sin relación (`albaranes.invoice_id` no existía momentáneamente),
+> causados por DOS sesiones concurrentes tocando staging a la vez (SCRUM-17 con un `db push` en
+> curso, SCRUM-79 limpiando merchants huérfanos) — confirmado con el fundador, no es regresión de
+> este PR. `pdfs.test.mjs` se verificó siempre aislado de ese ruido. Pendiente: re-correr
+> `test:staging` completo cuando staging esté quieta. Sin schema.
 
 ### U1.3 · SIF-1 v2 — "VeriFactu cerrado al 100 %" = las 8 obligatorias
 - **S1-0 (HUMANO):** certificado FNMT + alta entorno pruebas AEAT + cita asesor (bundle Y3).
