@@ -239,13 +239,32 @@ async function renderJobDetailView(container, jobId) {
   albSec.innerHTML = '<h3 class="detail-section-title">Albaranes</h3>';
   body.insertBefore(albSec, cobSec);
 
+  const newAlbRow = document.createElement('div');
+  newAlbRow.style.cssText = 'display:flex;align-items:center;gap:10px;flex-wrap:wrap';
   const newAlbBtn = document.createElement('button');
   newAlbBtn.className = 'btn-secondary btn-sm';
   newAlbBtn.textContent = '+ Nuevo albarán';
+  newAlbRow.appendChild(newAlbBtn);
+  // SCRUM-65: elegir el modo ANTES de crear (congelado desde 'emitido'; se puede
+  // ajustar también mientras el albarán siga en borrador, ver buildAlbEditor).
+  const valoradoLabel = document.createElement('label');
+  valoradoLabel.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer';
+  const valoradoCheck = document.createElement('input');
+  valoradoCheck.type = 'checkbox';
+  valoradoLabel.appendChild(valoradoCheck);
+  valoradoLabel.appendChild(document.createTextNode('Incluir precios en el parte'));
+  newAlbRow.appendChild(valoradoLabel);
+  albSec.appendChild(newAlbRow);
+  const valoradoHint = document.createElement('p');
+  valoradoHint.style.cssText = 'margin:4px 0 0;color:var(--muted);font-size:12px';
+  valoradoHint.textContent = 'El parte sigue sin ser una factura.';
+  albSec.appendChild(valoradoHint);
+
   newAlbBtn.addEventListener('click', async () => {
     newAlbBtn.disabled = true;
+    const modoValoracion = valoradoCheck.checked ? 'VALORADO' : 'SIN_VALORAR';
     try {
-      await apiRequest(`/admin/jobs/${job.id}/albaranes`, { method: 'POST', body: JSON.stringify({}) });
+      await apiRequest(`/admin/jobs/${job.id}/albaranes`, { method: 'POST', body: JSON.stringify({ modoValoracion }) });
       showToast('✓ Albarán creado (borrador).');
       refresh();
     } catch (e) {
@@ -253,7 +272,6 @@ async function renderJobDetailView(container, jobId) {
       newAlbBtn.disabled = false;
     }
   });
-  albSec.appendChild(newAlbBtn);
 
   if (!albaranes.length) {
     const pEmpty = document.createElement('p');
@@ -262,14 +280,65 @@ async function renderJobDetailView(container, jobId) {
     albSec.appendChild(pEmpty);
   }
 
-  // Editor inline de líneas/notas (borrador/emitido). PATCH → version++ en el backend.
-  // Inputs creados por DOM (.value directo): sin interpolar valores en HTML.
+  // SCRUM-65: totales orientativos en vivo — MISMA regla de céntimos enteros que el
+  // backend (calcAlbaranTotales), para que lo que ve el pro al teclear no desentone
+  // ni un céntimo con lo que sale luego en el PDF.
+  function albTotalesJS(lineas) {
+    let baseCents = 0, cuotaCents = 0;
+    for (const l of lineas) {
+      if (l.precioUnitario === undefined || l.precioUnitario === null || !Number.isFinite(l.precioUnitario)) continue;
+      const lineaBaseCents = Math.round(l.precioUnitario * (Number(l.cantidad) || 0) * 100);
+      const lineaCuotaCents = Math.round(lineaBaseCents * ((Number(l.tipoIva) || 0) / 100));
+      baseCents += lineaBaseCents; cuotaCents += lineaCuotaCents;
+    }
+    return { base: baseCents / 100, total: (baseCents + cuotaCents) / 100 };
+  }
+
+  // Editor inline de líneas/notas/modo (borrador/emitido). PATCH → version++ en el
+  // backend. Inputs creados por DOM (.value directo): sin interpolar valores en HTML.
   function buildAlbEditor(box, alb) {
     box.innerHTML = '';
+    // SCRUM-65: el modo solo se puede TOCAR en 'borrador' (congelado desde 'emitido' —
+    // el backend devolvería 409 albaran_locked si se intentase cambiar después).
+    const modoEditable = alb.estado === 'borrador';
+    let modo = alb.modoValoracion === 'VALORADO' ? 'VALORADO' : 'SIN_VALORAR';
+
+    const modoRow = document.createElement('div');
+    modoRow.style.cssText = 'margin-bottom:10px';
+    if (modoEditable) {
+      const lbl = document.createElement('label');
+      lbl.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);cursor:pointer';
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.checked = modo === 'VALORADO';
+      chk.addEventListener('change', () => {
+        modo = chk.checked ? 'VALORADO' : 'SIN_VALORAR';
+        [...rows.children].forEach(syncRowToModo);
+        updateTotales();
+      });
+      lbl.appendChild(chk);
+      lbl.appendChild(document.createTextNode('Incluir precios en el parte'));
+      modoRow.appendChild(lbl);
+      const hint = document.createElement('p');
+      hint.style.cssText = 'margin:2px 0 0;color:var(--muted);font-size:12px';
+      hint.textContent = 'El parte sigue sin ser una factura.';
+      modoRow.appendChild(hint);
+    } else {
+      const p = document.createElement('p');
+      p.style.cssText = 'margin:0;font-size:12px;color:var(--muted)';
+      p.textContent = modo === 'VALORADO' ? 'Con precios (modo congelado tras emitir).' : 'Sin precios (modo congelado tras emitir).';
+      modoRow.appendChild(p);
+    }
+    box.appendChild(modoRow);
+
     const rows = document.createElement('div');
+    // Muestra/oculta las columnas precio+IVA de una fila según el modo actual.
+    function syncRowToModo(r) {
+      r.querySelectorAll('.alb-precio-field').forEach((el) => { el.style.display = modo === 'VALORADO' ? '' : 'none'; });
+    }
     const mkRow = (l) => {
       const r = document.createElement('div');
-      r.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;align-items:center';
+      r.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;align-items:center;flex-wrap:wrap';
       const c = document.createElement('input');
       c.className = 'input'; c.placeholder = 'Concepto'; c.style.cssText = 'flex:3;min-width:0';
       c.value = l.concepto || '';
@@ -280,12 +349,23 @@ async function renderJobDetailView(container, jobId) {
       const u = document.createElement('input');
       u.className = 'input'; u.placeholder = 'Unidad (ud, m, h…)'; u.style.cssText = 'flex:1;min-width:80px';
       u.value = l.unidad || '';
+      // SCRUM-65: precio unitario + IVA%, solo visibles/exigidos en modo VALORADO.
+      const p = document.createElement('input');
+      p.className = 'input alb-precio-field'; p.placeholder = 'Precio ud.'; p.type = 'number'; p.min = '0'; p.step = 'any';
+      p.style.cssText = 'flex:1;min-width:80px';
+      if (l.precioUnitario !== undefined && l.precioUnitario !== null) p.value = l.precioUnitario;
+      const iv = document.createElement('input');
+      iv.className = 'input alb-precio-field'; iv.placeholder = 'IVA %'; iv.type = 'number'; iv.min = '0'; iv.max = '100'; iv.step = 'any';
+      iv.style.cssText = 'flex:1;min-width:64px';
+      iv.value = (l.tipoIva !== undefined && l.tipoIva !== null) ? l.tipoIva : 21;
+      [q, p, iv].forEach((inp) => inp.addEventListener('input', updateTotales));
       const del = document.createElement('button');
       del.className = 'btn-ghost btn-sm';
       del.textContent = '✕';
       del.setAttribute('aria-label', 'Quitar línea');
-      del.addEventListener('click', () => r.remove());
-      r.appendChild(c); r.appendChild(q); r.appendChild(u); r.appendChild(del);
+      del.addEventListener('click', () => { r.remove(); updateTotales(); });
+      r.appendChild(c); r.appendChild(q); r.appendChild(u); r.appendChild(p); r.appendChild(iv); r.appendChild(del);
+      syncRowToModo(r);
       return r;
     };
     const lineas = Array.isArray(alb.lineas) ? alb.lineas : [];
@@ -296,8 +376,29 @@ async function renderJobDetailView(container, jobId) {
     const addRow = document.createElement('button');
     addRow.className = 'btn-ghost btn-sm';
     addRow.textContent = '+ Añadir línea';
-    addRow.addEventListener('click', () => rows.appendChild(mkRow({})));
+    addRow.addEventListener('click', () => { rows.appendChild(mkRow({})); updateTotales(); });
     box.appendChild(addRow);
+
+    // Total orientativo (base + total, SIN desglose de cuota — igual que PDF/backend).
+    const totalesBox = document.createElement('p');
+    totalesBox.style.cssText = 'margin:8px 0 0;font-size:13px;color:var(--ink);font-weight:600;text-align:right';
+    box.appendChild(totalesBox);
+    function readRowsForTotales() {
+      return [...rows.children].map((r) => {
+        const inputs = r.querySelectorAll('input');
+        return {
+          cantidad: Number(String(inputs[1].value).replace(',', '.')),
+          precioUnitario: modo === 'VALORADO' && inputs[3].value !== '' ? Number(String(inputs[3].value).replace(',', '.')) : null,
+          tipoIva: modo === 'VALORADO' ? Number(String(inputs[4].value).replace(',', '.')) : null,
+        };
+      });
+    }
+    function updateTotales() {
+      if (modo !== 'VALORADO') { totalesBox.textContent = ''; return; }
+      const t = albTotalesJS(readRowsForTotales());
+      totalesBox.textContent = `Base: ${fmtMoneyEs(t.base, cur)} · Total orientativo: ${fmtMoneyEs(t.total, cur)}`;
+    }
+    updateTotales();
 
     const notas = document.createElement('textarea');
     notas.className = 'input';
@@ -316,12 +417,22 @@ async function renderJobDetailView(container, jobId) {
       for (const r of rows.children) {
         const inputs = r.querySelectorAll('input');
         const c = inputs[0].value.trim(), qv = inputs[1].value, u = inputs[2].value.trim();
+        const pv = inputs[3].value, ivv = inputs[4].value;
         if (!c && !qv && !u) continue; // fila totalmente vacía se ignora
-        out.push({ concepto: c, cantidad: Number(String(qv).replace(',', '.')), unidad: u });
+        const linea = { concepto: c, cantidad: Number(String(qv).replace(',', '.')), unidad: u };
+        if (modo === 'VALORADO') {
+          linea.precioUnitario = Number(String(pv).replace(',', '.'));
+          linea.tipoIva = Number(String(ivv).replace(',', '.'));
+        }
+        out.push(linea);
       }
+      const body = { lineas: out, notas: notas.value };
+      // Solo se manda modoValoracion cuando es EDITABLE (borrador); en 'emitido' el
+      // backend lo rechaza con 409 aunque el valor no cambie — mejor ni ofrecerlo.
+      if (modoEditable) body.modoValoracion = modo;
       save.disabled = true;
       try {
-        await apiRequest(`/admin/albaranes/${alb.id}`, { method: 'PATCH', body: JSON.stringify({ lineas: out, notas: notas.value }) });
+        await apiRequest(`/admin/albaranes/${alb.id}`, { method: 'PATCH', body: JSON.stringify(body) });
         showToast('✓ Albarán actualizado (nueva versión).');
         refresh();
       } catch (e) {
@@ -342,9 +453,17 @@ async function renderJobDetailView(container, jobId) {
     const item = document.createElement('div');
     item.className = 'invoice-item';
     item.style.marginTop = '8px';
+    // SCRUM-65: indicador de modo + total orientativo (solo si valorado; el propio
+    // serializeAlbaran ya trae `totales` calculado en céntimos, nada que recalcular aquí).
+    const albValorado = alb.modoValoracion === 'VALORADO';
+    const albMetaBits = [
+      new Date(alb.fecha).toLocaleDateString('es-ES'),
+      `v${alb.version}`,
+      albValorado ? `Con precios · Total orientativo ${fmtMoneyEs(alb.totales?.total ?? 0, cur)}` : 'Sin precios',
+    ].join(' · ');
     item.innerHTML =
       `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">` +
-      `<div><strong>Albarán ${esc(alb.numero)}</strong> · <span style="font-size:12px;color:var(--muted)">${new Date(alb.fecha).toLocaleDateString('es-ES')} · v${alb.version}</span></div>` +
+      `<div><strong>Albarán ${esc(alb.numero)}</strong> · <span style="font-size:12px;color:var(--muted)">${esc(albMetaBits)}</span></div>` +
       `<span class="status-pill ${JOBDET_ALB_PILL[alb.estado] || 'status-pill-draft'}">${jobDetAlbEstado(alb.estado)}</span>` +
       `</div>` +
       `<div class="jobdet-alb-fotos" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>` +

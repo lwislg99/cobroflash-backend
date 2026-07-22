@@ -1,20 +1,25 @@
-// src/modules/jobs/infra/albaranPdf.service.ts — SCRUM-14 (ALBARAN-1)
+// src/modules/jobs/infra/albaranPdf.service.ts — SCRUM-14 (ALBARAN-1) + SCRUM-65/67
 // PDF del albarán / parte de trabajo. ARCHIVO SEPARADO del PDF fiscal a propósito
-// (regla 24): aquí JAMÁS hay QR, serie fiscal, importes ni la palabra "factura"
-// (solo el pie legal "no constituye factura" definido en el brief). Clona el
-// patrón visual de generateQuotePdf (pdfkit, A4, tokens cálidos de DESIGN.md).
+// (regla 24): aquí JAMÁS hay QR, serie fiscal ni la palabra "factura" en el título
+// (solo la leyenda legal que la nombra para descartarla). Clona el patrón visual
+// de generateQuotePdf (pdfkit, A4, tokens cálidos de DESIGN.md).
+// SCRUM-65 (albarán VALORADO): puede llevar precios — sigue SIN validez fiscal
+// (docs/legal/INVESTIGACION_ALBARANES.md §1.3). SCRUM-67: rotulación legal reforzada
+// en AMBOS modos (fechas de emisión Y entrega, receptor, referencia al Trabajo).
 import path from 'path';
 import fs from 'fs';
 import PDFDocument from 'pdfkit';
 import { albaranesDir } from '../../../core/storage/dirs';
 import { loadLogoBuffer } from '../../invoicing/infra/pdf/pdf.service';
-import type { AlbaranLinea } from '../domain/albaran.service';
+import type { AlbaranLinea, AlbaranModoValoracion } from '../domain/albaran.service';
 
 export async function generateAlbaranPdf(params: {
   merchantId: number; // SCRUM-48: prefija el nombre de archivo (mata la colisión entre merchants)
   numero: string;
-  fecha: Date;
+  fecha: Date;              // fecha de entrega/ejecución (cuenta para el mes natural, SCRUM-17)
+  emisionAt: Date;          // SCRUM-67: fecha de emisión del documento (Albaran.createdAt)
   version: number;
+  modoValoracion: AlbaranModoValoracion;
   merchant: {
     name: string | null;
     legalName?: string | null;
@@ -23,9 +28,11 @@ export async function generateAlbaranPdf(params: {
     logoUrl?: string | null;
     whatsappPhone?: string | null;
   };
-  customerName: string | null;
-  obra: string | null; // Job.direccion || Job.titulo
+  customer: { name: string | null; legalName?: string | null; taxId?: string | null };
+  obra: string | null;              // Job.direccion (dirección física de la obra, si existe)
+  referenciaTrabajo: string | null; // SCRUM-67: Job.titulo (referencia al Trabajo/presupuesto origen)
   lineas: AlbaranLinea[];
+  totales: { base: number; cuota: number; total: number } | null; // solo en modo VALORADO
   notas?: string | null;
   signatureData?: string | null; // data-URI (solo si estado firmado)
   firmadoAt?: Date | null;
@@ -70,6 +77,10 @@ export async function generateAlbaranPdf(params: {
   function fmtQty(v: number) {
     return v.toLocaleString('es-ES', { maximumFractionDigits: 2 });
   }
+  function fmtMoney(v: number) {
+    return v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+  }
+  const valorado = params.modoValoracion === 'VALORADO';
 
   // ── Cabecera: logo izquierda, título derecha ─────────────────────────────
   const hY = doc.y;
@@ -79,13 +90,15 @@ export async function generateAlbaranPdf(params: {
   doc.fontSize(16).font('Helvetica-Bold').fillColor(INK)
     .text('ALBARÁN / PARTE DE TRABAJO', M, hY, { width: W, align: 'right' });
   doc.fontSize(11).font('Helvetica').fillColor(MUTED)
-    .text(`Albarán ${params.numero}`, { width: W, align: 'right' })
-    .text(`Fecha: ${fmtDate(params.fecha)} · Versión ${params.version}`, { width: W, align: 'right' });
+    .text(`Albarán ${params.numero} · Versión ${params.version}`, { width: W, align: 'right' })
+    // SCRUM-67: fecha de EMISIÓN del documento y fecha de ENTREGA/EJECUCIÓN por separado
+    // (esta última es la que cuenta para el mes natural de la recapitulativa, SCRUM-17).
+    .text(`Emitido: ${fmtDate(params.emisionAt)} · Entrega/ejecución: ${fmtDate(params.fecha)}`, { width: W, align: 'right' });
   doc.fillColor('#000');
   doc.y = Math.max(doc.y, hY + (logoBuf ? 46 : 0));
   doc.moveDown(1);
 
-  // ── Emisor / Cliente / Obra ──────────────────────────────────────────────
+  // ── Emisor / Receptor / Obra / Referencia ────────────────────────────────
   const merchantName = params.merchant.legalName || params.merchant.name || '—';
   doc.fontSize(11).font('Helvetica-Bold').fillColor(INK).text(`Emisor: `, { continued: true })
     .font('Helvetica').fillColor(BODY).text(merchantName);
@@ -93,19 +106,32 @@ export async function generateAlbaranPdf(params: {
   if (params.merchant.address) doc.fillColor(BODY).text(params.merchant.address);
   if (params.merchant.whatsappPhone) doc.fillColor(BODY).text(`WhatsApp ${params.merchant.whatsappPhone}`);
   doc.moveDown(0.5);
-  doc.font('Helvetica-Bold').fillColor(INK).text('Cliente: ', { continued: true })
-    .font('Helvetica').fillColor(BODY).text(params.customerName || '—');
+  // SCRUM-67: receptor "ídem" (snapshot) — nombre + NIF si el cliente lo tiene registrado
+  // (Customer.legalName/taxId, A20.4). No hay domicilio de cliente en el modelo hoy (el
+  // propio PDF de factura fiscal tampoco lo imprime); se añade cuando exista la fuente.
+  doc.font('Helvetica-Bold').fillColor(INK).text('Receptor: ', { continued: true })
+    .font('Helvetica').fillColor(BODY).text(params.customer.legalName || params.customer.name || '—');
+  if (params.customer.taxId) doc.fillColor(BODY).text(`NIF: ${params.customer.taxId}`);
   if (params.obra) {
     doc.font('Helvetica-Bold').fillColor(INK).text('Obra: ', { continued: true })
       .font('Helvetica').fillColor(BODY).text(params.obra);
   }
+  if (params.referenciaTrabajo) {
+    doc.font('Helvetica-Bold').fillColor(INK).text('Referencia: ', { continued: true })
+      .font('Helvetica').fillColor(BODY).text(params.referenciaTrabajo);
+  }
   doc.fillColor('#000');
   doc.moveDown(1);
 
-  // ── Tabla de líneas (concepto · cantidad · unidad — SIN precios) ────────
-  const colConceptoW = W * 0.62;
-  const colCantW = W * 0.18;
-  const colUnidadW = W * 0.20;
+  // ── Tabla de líneas ───────────────────────────────────────────────────────
+  // SIN_VALORAR: concepto · cantidad · unidad (sin precios, como siempre).
+  // VALORADO (SCRUM-65): + precio unitario e importe por línea. SIN desglose de
+  // cuota de IVA por tipo (a propósito: no debe leerse como una factura).
+  const colConceptoW = valorado ? W * 0.36 : W * 0.62;
+  const colCantW = valorado ? W * 0.12 : W * 0.18;
+  const colUnidadW = valorado ? W * 0.12 : W * 0.20;
+  const colPrecioW = W * 0.18;
+  const colImporteW = W * 0.22;
   const rowPad = 6;
 
   function tableHeader() {
@@ -117,6 +143,10 @@ export async function generateAlbaranPdf(params: {
     doc.text('CONCEPTO', M + rowPad, y + 6, { width: colConceptoW - rowPad * 2 });
     doc.text('CANTIDAD', M + colConceptoW, y + 6, { width: colCantW - rowPad, align: 'right' });
     doc.text('UNIDAD', M + colConceptoW + colCantW + rowPad, y + 6, { width: colUnidadW - rowPad * 2 });
+    if (valorado) {
+      doc.text('PRECIO UD.', M + colConceptoW + colCantW + colUnidadW, y + 6, { width: colPrecioW - rowPad, align: 'right' });
+      doc.text('IMPORTE', M + colConceptoW + colCantW + colUnidadW + colPrecioW, y + 6, { width: colImporteW - rowPad, align: 'right' });
+    }
     doc.y = y + 24;
     doc.fillColor('#000').font('Helvetica');
   }
@@ -138,6 +168,11 @@ export async function generateAlbaranPdf(params: {
     const rowH = Math.max(doc.y - y, 14);
     doc.text(fmtQty(l.cantidad), M + colConceptoW, y, { width: colCantW - rowPad, align: 'right' });
     doc.text(l.unidad || '—', M + colConceptoW + colCantW + rowPad, y, { width: colUnidadW - rowPad * 2 });
+    if (valorado && l.precioUnitario !== undefined && l.precioUnitario !== null) {
+      const importe = Number(l.precioUnitario) * Number(l.cantidad);
+      doc.text(fmtMoney(l.precioUnitario), M + colConceptoW + colCantW + colUnidadW, y, { width: colPrecioW - rowPad, align: 'right' });
+      doc.text(fmtMoney(importe), M + colConceptoW + colCantW + colUnidadW + colPrecioW, y, { width: colImporteW - rowPad, align: 'right' });
+    }
     doc.y = y + rowH + rowPad;
     doc.moveTo(M, doc.y - rowPad / 2).lineTo(M + W, doc.y - rowPad / 2).strokeColor(BORDER).lineWidth(0.5).stroke();
     doc.strokeColor('#000').lineWidth(1);
@@ -146,6 +181,18 @@ export async function generateAlbaranPdf(params: {
   // de firma salían alineados a la derecha y truncados (hallazgo suite v1.3, 13-jul).
   doc.x = M;
   doc.moveDown(1);
+
+  // ── Totales orientativos (solo VALORADO) — base + total, SIN desglose de cuota ──
+  if (valorado && params.totales) {
+    doc.font('Helvetica').fontSize(10).fillColor(BODY)
+      .text(`Base: ${fmtMoney(params.totales.base)}`, M, doc.y, { width: W, align: 'right' });
+    doc.font('Helvetica-Bold').fontSize(12).fillColor(INK)
+      .text(`Total: ${fmtMoney(params.totales.total)}`, M, doc.y, { width: W, align: 'right' });
+    doc.fillColor('#000').font('Helvetica').fontSize(9).fillColor(MUTED)
+      .text('Importes orientativos; el IVA y la factura se emitirán conforme a la normativa vigente.', M, doc.y, { width: W, align: 'right' });
+    doc.fillColor('#000');
+    doc.moveDown(1);
+  }
 
   // ── Notas ────────────────────────────────────────────────────────────────
   if (params.notas) {
@@ -180,14 +227,16 @@ export async function generateAlbaranPdf(params: {
     }
   }
 
-  // ── Pie legal (texto EXACTO del brief §1.4) ──────────────────────────────
+  // ── Pie legal (SCRUM-67 · texto EXACTO del brief, en AMBOS modos) ─────────
   if (doc.y + 50 > doc.page.height - doc.page.margins.bottom) doc.addPage();
   doc.moveDown(1);
-  doc.fontSize(9).fillColor(MUTED).text(
-    'Documento no fiscal — no constituye factura. Generado con YaQu · yaqu.app',
-    M,
-    doc.y,
-    { width: W, align: 'center' },
+  doc.fontSize(9).font('Helvetica-Bold').fillColor(MUTED).text(
+    'Documento sin validez fiscal. No es una factura.',
+    M, doc.y, { width: W, align: 'center' },
+  );
+  doc.fontSize(8).font('Helvetica').fillColor(MUTED).text(
+    'Generado con YaQu · yaqu.app',
+    M, doc.y, { width: W, align: 'center' },
   );
 
   doc.end();

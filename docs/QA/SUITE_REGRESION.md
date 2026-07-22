@@ -1,4 +1,4 @@
-# SUITE DE REGRESIÓN E2E — v1.6 (SCRUM-38 · fixes SCRUM-42/36 · albaranes SCRUM-14 · alineación UI real SCRUM-43/44 · seguridad PDF SCRUM-48 · autoría operario SCRUM-22 · albarán-WA SCRUM-47)
+# SUITE DE REGRESIÓN E2E — v1.7 (SCRUM-38 · fixes SCRUM-42/36 · albaranes SCRUM-14 · alineación UI real SCRUM-43/44 · seguridad PDF SCRUM-48 · autoría operario SCRUM-22 · albarán-WA SCRUM-47 · albarán valorado + PDF legal SCRUM-65/67)
 
 > Guion que Claude Code ejecuta con el **Playwright MCP** contra **STAGING** tras cada
 > merge+deploy. Cubre la regresión de PAGOS-FLEX (SCRUM-27/32/34) y los CTAs de invoice
@@ -82,14 +82,32 @@
     → Guardar → ✅ ASSERT **v2** visible. Línea inválida (concepto vacío o cantidad 0) →
     ✅ ASSERT error 400 claro y NO se guarda.
 21. **Emitir** → ✅ ASSERT estado **Emitido**; botones ahora [PDF] [Firmar] [Editar líneas].
-22. **PDF** → se abre por el endpoint **auth** `GET /admin/albaranes/:id/pdf` (el botón "PDF"
-    de la UI ya apunta ahí). ✅ ASSERT: título "ALBARÁN / PARTE DE TRABAJO"; SIN la palabra
-    "factura" como título, SIN QR, SIN serie J-, **SIN importes/precios** (solo
-    concepto·cantidad·unidad); pie: "Documento no fiscal — no constituye factura…".
+22. **PDF (SIN_VALORAR, comportamiento por defecto)** → se abre por el endpoint **auth**
+    `GET /admin/albaranes/:id/pdf` (el botón "PDF" de la UI ya apunta ahí). ✅ ASSERT: título
+    "ALBARÁN / PARTE DE TRABAJO"; SIN la palabra "factura" como título, SIN QR, SIN serie J-,
+    **SIN importes/precios** (solo concepto·cantidad·unidad). **(v1.7, SCRUM-67)** Leyenda legal
+    EXACTA: **"Documento sin validez fiscal. No es una factura."** (reemplaza el pie de v1.3-v1.6);
+    ✅ ASSERT también: **fecha de emisión** y **fecha de entrega/ejecución** por separado
+    (`Emitido: … · Entrega/ejecución: …`), bloque **Emisor** (nombre/NIF/domicilio, sin cambios)
+    y bloque **Receptor** (nombre del cliente, +NIF si el cliente lo tiene registrado).
 22b. **(v1.5, SCRUM-48) Seguridad del PDF:** `GET {BASE}/albaranes/<archivo>.pdf` SIN cookie
     (tanto `ALB-<año>-001.pdf` como `<merchantId>-ALB-<año>-001.pdf`) → ✅ ASSERT **404** y
     content-type ≠ `application/pdf` (el estático público se eliminó; los PDF llevan firma y
     datos personales). El PDF SOLO sale por el endpoint auth del paso 22.
+22c. **(v1.7, SCRUM-65) Albarán VALORADO:** en la sección Albaranes, marcar el toggle
+    **"Incluir precios en el parte"** (subtexto "El parte sigue sin ser una factura") ANTES de
+    **"+ Nuevo albarán"** → ✅ ASSERT: el nuevo albarán trae columnas **Precio ud. / IVA %** en
+    "Editar líneas". Añadir una línea (p. ej. 2 h a 45 € con IVA 21%) → ✅ ASSERT **total
+    orientativo en vivo** = `Base: 90,00 € · Total orientativo: 108,90 €` bajo las líneas. Guardar
+    sin precio/IVA en modo VALORADO → ✅ ASSERT error 400 claro (`lineas_invalidas`) y NO se guarda.
+22d. **PDF valorado** → tras emitir, ✅ ASSERT columnas **PRECIO UD. / IMPORTE** por línea +
+    bloque de totales (**Base** y **Total**, SIN desglose de cuota de IVA por tipo) + leyenda
+    **"Importes orientativos; el IVA y la factura se emitirán conforme a la normativa vigente."**
+    Además de las dos fechas/Receptor del paso 22 (comunes a ambos modos).
+22e. **Candado del modo:** con el albarán VALORADO recién emitido, `PATCH /admin/albaranes/:id`
+    con `{modoValoracion:'SIN_VALORAR'}` → ✅ ASSERT **409 `albaran_locked`** (el modo solo se
+    cambia en borrador). Un albarán **legacy/SIN_VALORAR** (creado sin el toggle) sigue
+    funcionando exactamente como en v1.3-v1.6 (sin cambios de comportamiento).
 23. **Firmar** (canvas en el móvil del pro) → ✅ ASSERT estado **Firmado** + el PDF regenerado
     incluye el bloque "Conformidad del cliente" con la firma.
 24. **Congelado**: en un albarán Firmado → ✅ ASSERT no hay botones de edición en la UI y el

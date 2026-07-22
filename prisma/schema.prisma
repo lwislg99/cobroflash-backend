@@ -647,7 +647,11 @@ model Albaran {
   jobId        Int       @map("job_id")
   numero       String    // ALB-YYYY-NNN, serie propia por merchant (no fiscal)
   fecha        DateTime  @default(now()) // fecha de la visita/entrega (editable en borrador)
-  lineas       Json      // [{concepto: string, cantidad: number, unidad: string}]
+  // SCRUM-65: SIN_VALORAR (hoy, sin precios) | VALORADO (líneas con precioUnitario+tipoIva
+  // opcionales). Aditivo, default SIN_VALORAR = comportamiento actual intacto. Editable solo
+  // en 'borrador' (mismo candado que lineas/notas/fecha); congelado desde 'emitido'.
+  modoValoracion String  @default("SIN_VALORAR") @map("modo_valoracion")
+  lineas       Json      // [{concepto, cantidad, unidad, precioUnitario?, tipoIva?}] (SCRUM-65)
   estado       String    @default("borrador") // borrador | emitido | firmado (Parte L)
   version      Int       @default(1)
   signatureUrl String?   @db.Text @map("signature_url") // data-URI (patrón Quote.signatureUrl)
