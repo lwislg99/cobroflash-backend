@@ -1,13 +1,18 @@
 // A12.1 + A12.4 (EXT3 Ola 12) — Tenancy y permisos del rol técnico ("Operario").
 //
 // A12.1: una sesión ADMIN del merchant B contra rutas con IDs del merchant A
-//        (demo) → SIEMPRE 403/404, jamás datos de A.
+//        (efímero propio, ver P3-9) → SIEMPRE 403/404, jamás datos de A.
 // A12.4: una sesión TÉCNICO recorre ADMIN_ONLY_ROUTES (lista única exportada,
 //        S1) → 403 SIEMPRE. Ruta sensible nueva = añadirla a esa lista.
 //
-// ⚠️ Toca la BD del .env (crea y BORRA su merchant B efímero + técnico) y
+// P3-9 (SCRUM-78, 22-jul): antes "A" era el merchant demo id=1 — SCRUM-42 lo
+// quemó como placeholder inerte (0 filas) y rompió este test. Datos EFÍMEROS
+// propios (mismo patrón que SCRUM-23 más abajo en este archivo): nada depende
+// ya del estado del demo.
+//
+// ⚠️ Toca la BD del .env (crea y BORRA sus merchants A+B efímeros + técnico) y
 // levanta la app in-process en un puerto efímero. Gateado:
-//   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm test
+//   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm run test:staging
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -24,13 +29,38 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
   await new Promise((r) => server.once('listening', r));
   const base = `http://127.0.0.1:${server.address().port}`;
 
-  // ── merchant B efímero + técnico ────────────────────────────────────────
+  // ── merchant B (atacante) efímero + técnico ─────────────────────────────
   const stamp = Date.now();
   const merchantB = await prisma.merchant.create({
     data: { name: 'QA Tenancy B', country: 'ES', email: `qa-b-${stamp}@test.local`, onboardingCompleted: true },
   });
   const tecnico = await prisma.teamMember.create({
     data: { merchantId: merchantB.id, name: 'QA Técnico', email: `qa-tec-${stamp}@test.local`, role: 'tecnico', status: 'active' },
+  });
+
+  // ── merchant A (víctima) efímero propio — P3-9: ya no depende del demo id=1 ──
+  const merchantA = await prisma.merchant.create({
+    data: { name: 'QA Tenancy A (víctima)', country: 'ES', email: `qa-a-${stamp}@test.local`, onboardingCompleted: true },
+  });
+  const customerA = await prisma.customer.create({
+    data: { merchantId: merchantA.id, name: `Cliente Secreto QA-A ${stamp}`, phone: `34601${stamp % 1000000}` },
+  });
+  const quoteA = await prisma.quote.create({
+    data: {
+      merchantId: merchantA.id, customerId: customerA.id, total: '100.00', currency: 'EUR',
+      lines: [{ concept: 'Servicio QA tenancy', qty: 1, price: 100 }], status: 'accepted',
+    },
+  });
+  const invoiceA = await prisma.invoice.create({
+    data: {
+      merchantId: merchantA.id, customerId: customerA.id, number: `2026-QA-TEN-${stamp % 1000}`,
+      total: '100.00', currency: 'EUR', type: 'F1', status: 'paid',
+      lines: [{ concept: 'Servicio QA tenancy', qty: 1, price: 100 }],
+      pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
+    },
+  });
+  const jobA = await prisma.job.create({
+    data: { merchantId: merchantA.id, customerId: customerA.id, status: 'pendiente_agendar', titulo: 'Trabajo QA tenancy A' },
   });
 
   const mkCookie = async (teamMemberId = null) => {
@@ -47,16 +77,6 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
   try {
     const cookieAdminB = await mkCookie(null);
     const cookieTecnicoB = await mkCookie(tecnico.id);
-
-    // ── IDs REALES del merchant A (demo id=1) ─────────────────────────────
-    const A = 1;
-    const [quoteA, invoiceA, customerA, jobA] = await Promise.all([
-      prisma.quote.findFirst({ where: { merchantId: A }, select: { id: true } }),
-      prisma.invoice.findFirst({ where: { merchantId: A }, select: { id: true } }),
-      prisma.customer.findFirst({ where: { merchantId: A }, select: { id: true, name: true } }),
-      prisma.job.findFirst({ where: { merchantId: A }, select: { id: true } }),
-    ]);
-    assert.ok(quoteA && invoiceA && customerA, 'faltan datos seed del demo');
 
     // A12.1 — cada ruta con un id de A y sesión de B debe negar (403/404)
     const tenancyTargets = [
@@ -107,9 +127,13 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
     }
     t.diagnostic(`permisos: ${ADMIN_ONLY_ROUTES.length} rutas admin-only → 403 para técnico ✓`);
   } finally {
-    await prisma.authSession.deleteMany({ where: { merchantId: merchantB.id } });
+    await prisma.authSession.deleteMany({ where: { merchantId: { in: [merchantA.id, merchantB.id] } } });
     await prisma.teamMember.deleteMany({ where: { merchantId: merchantB.id } });
-    await prisma.merchant.delete({ where: { id: merchantB.id } });
+    await prisma.job.deleteMany({ where: { merchantId: merchantA.id } });
+    await prisma.invoice.deleteMany({ where: { merchantId: merchantA.id } });
+    await prisma.quote.deleteMany({ where: { merchantId: merchantA.id } });
+    await prisma.customer.deleteMany({ where: { merchantId: merchantA.id } });
+    await prisma.merchant.deleteMany({ where: { id: { in: [merchantA.id, merchantB.id] } } });
     server.close();
     await prisma.$disconnect();
   }

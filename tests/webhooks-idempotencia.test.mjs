@@ -34,16 +34,25 @@ test('A12.2b: dedupe por wamid de Meta (reintentos del webhook entrante)', async
 test('A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integración)', { skip: !DB }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
+  const { internalHeaders } = await import('../dist/core/http/internalAuth.js'); // P0-SEC-1: /webhooks/psp exige el secreto interno
   const server = app.listen(0);
   await new Promise((r) => server.once('listening', r));
   const base = `http://127.0.0.1:${server.address().port}`;
 
-  // charge efímero PENDIENTE del demo (sin invoice ligada: probamos la
-  // idempotencia del charge, no la cadena de facturación completa)
-  const customer = await prisma.customer.findFirst({ where: { merchantId: 1 }, select: { id: true } });
+  // merchant + charge efímeros PROPIOS (P3-9, SCRUM-78: antes usaba el merchant
+  // demo id=1 — SCRUM-42 lo quemó como placeholder inerte sin customers, esto
+  // rompía el test con "Cannot read properties of null"). Sin invoice ligada:
+  // probamos la idempotencia del charge, no la cadena de facturación completa.
+  const stamp = Date.now();
+  const merchant = await prisma.merchant.create({
+    data: { name: 'QA Webhook Idempotencia', country: 'ES', email: `qa-a12-2c-${stamp}@test.local`, onboardingCompleted: true },
+  });
+  const customer = await prisma.customer.create({
+    data: { merchantId: merchant.id, name: 'Cliente QA A12.2c', phone: `34603${stamp % 1000000}` },
+  });
   const charge = await prisma.charge.create({
     data: {
-      merchantId: 1, customerId: customer.id, concept: 'QA idempotencia',
+      merchantId: merchant.id, customerId: customer.id, concept: 'QA idempotencia',
       amount: '10.00', currency: 'EUR', method: 'card', status: 'pending',
     },
   });
@@ -54,7 +63,7 @@ test('A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integrac
       bank_ref: 'pi_qa_' + Date.now(), amount: 10, currency: 'EUR', ts: new Date().toISOString(),
     };
     const post = () => fetch(`${base}/webhooks/psp`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...internalHeaders() }, body: JSON.stringify(payload),
     });
 
     const r1 = await post();
@@ -78,8 +87,13 @@ test('A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integrac
   } finally {
     await prisma.event.deleteMany({ where: { chargeId: charge.id } });
     await prisma.reconciliation.deleteMany({ where: { chargeId: charge.id } }).catch(() => {});
-    await prisma.invoice.deleteMany({ where: { chargeId: charge.id } });
+    // por merchantId (no solo chargeId): ensureInvoiceForCharge puede dejar la factura
+    // enlazada de formas que no siempre matchean chargeId, y bloquearía el borrado del customer (FK RESTRICT).
+    await prisma.invoice.deleteMany({ where: { merchantId: merchant.id } });
+    await prisma.customerEvent.deleteMany({ where: { merchantId: merchant.id } }); // recordCustomerEvent (payment_received)
     await prisma.charge.delete({ where: { id: charge.id } });
+    await prisma.customer.deleteMany({ where: { merchantId: merchant.id } });
+    await prisma.merchant.delete({ where: { id: merchant.id } });
     server.close();
     await prisma.$disconnect();
   }

@@ -4,11 +4,16 @@
 //
 // ⚠️ Este test toca la BD del .env (crea y BORRA sus propias filas de
 // whatsapp_messages del merchant demo) y por eso está GATEADO: solo corre con
-//   A55_DB_TEST=1 WHATSAPP_DRY_RUN=1 DEMO_SAFE_NUMBERS=34611000001 npm test
+//   A55_DB_TEST=1 WHATSAPP_DRY_RUN=1 DEMO_SAFE_NUMBERS=34611000001 npm run test:staging
 // (WHATSAPP_DRY_RUN evita cualquier llamada real a Meta; DEMO_SAFE_NUMBERS es
 // necesario porque el merchant 1 es el demo y V0-2 bloquea destinos fuera de
 // la lista — ese guard se mantiene activo A PROPÓSITO también en dry-run.)
 // En `npm test` normal aparece como SKIP y no toca nada.
+// ⚠️ P3-9 (SCRUM-78, 22-jul): igual que tenancy-permisos/webhooks-idempotencia, este
+// test depende de un cliente seed en el merchant demo id=1 que SCRUM-42 quemó — hoy
+// falla en staging ("cliente seed no encontrado"), NO corregido en SCRUM-78 (fuera de
+// los 2 archivos pedidos; requiere decidir si migra a datos efímeros o a un fixture
+// DEMO_SAFE_NUMBERS propio). Ver docs/BUGS.md P3-9.
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando A55_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
