@@ -602,8 +602,10 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
  * POST /admin/invoices/:id/regenerate-pdf
  * Regenera el PDF de una factura aplicando VeriFactu si corresponde.
  * Útil para facturas creadas antes del sprint VeriFactu.
+ * SCRUM-55: reescribe el PDF de una factura EMITIDA (regla 29) → admin. Era la única
+ * mutación sin gate entre 12 hermanas todas gateadas: se añadió después que ellas.
  */
-router.post('/:id/regenerate-pdf', async (req, res) => {
+router.post('/:id/regenerate-pdf', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });

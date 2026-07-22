@@ -19,6 +19,7 @@ import { sendTechQuoteApprovedEmail } from '../../../messaging/domain/merchantNo
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: emitir factura = admin)
 
 import fetch from 'node-fetch';
 
@@ -119,8 +120,12 @@ router.post('/:id/reject', async (req, res) => {
 
 /**
  * POST /admin/quotes/:id/invoice
+ * SCRUM-55 (D2 del fundador): EMITE FACTURA → dinero. S1: "Facturas: emitir ❌ Técnico".
+ * Estaba abierta mientras POST /admin/jobs/:id/consolidar-albaranes —que emite igual—
+ * sí la citaba en un comentario. La regla estaba escrita al lado; faltaba aplicarla.
+ * Si un flujo real de técnico la necesitara, se escala al admin; no se baja el permiso.
  */
-router.post('/:id/invoice', async (req, res) => {
+router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
   try {
     const quoteId = Number(req.params.id);
     if (!Number.isInteger(quoteId)) {
@@ -389,11 +394,10 @@ router.post('/:id/send-email', async (req, res) => {
 /**
  * POST /admin/quotes/:id/approve — aprueba una cotización pendiente (ENT-2). Solo admin.
  */
-router.post('/:id/approve', async (req, res) => {
+// SCRUM-55: gate inline (`if req.userRole !== 'admin'`) → requireRole. Mismo
+// comportamiento; ahora la red fail-closed lo ve.
+router.post('/:id/approve', requireRole('admin'), async (req, res) => {
   try {
-    if (req.userRole !== 'admin') {
-      return res.status(403).json({ error: 'forbidden', required_role: 'admin' });
-    }
     const id = Number(req.params.id);
     if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
 

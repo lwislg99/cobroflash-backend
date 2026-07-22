@@ -3,6 +3,7 @@
 // resto JAMÁS se cobra solo — SIEMPRE acción del pro). Merchant-scoped (regla 2).
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
+import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: dinero = admin)
 import { canTransition, estadoCobroFor, JOB_TIPOS_OPERACION } from '../../domain/job.service';
 import { recordAudit } from '../../../system/audit.service'; // SCRUM-66: traza de tipo_operacion_elegido
 import { resolveBillingPlan, distributeStageAmounts } from '../../../quotes/domain/billingPlan';
@@ -380,7 +381,10 @@ router.post('/:id/albaranes', async (req, res) => {
 // terminado + tramo pendiente → genera la factura del resto (misma maquinaria
 // getNextBillingStage del accept) y envía payment_request. V2: SIEMPRE acción
 // del pro; jamás automático.
-router.post('/:id/collect-rest', async (req, res) => {
+// SCRUM-55 (absorbe SCRUM-54, D2): emitir factura + payment_request es dinero →
+// admin. Era el objetivo ORIGINAL de SCRUM-54, cuyo fix acabó por error solo en
+// consolidar-albaranes; esta se quedó abierta. Aquí se cierra con evidencia.
+router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
@@ -457,12 +461,12 @@ router.post('/:id/collect-rest', async (req, res) => {
 // no facturados de ESTE Job → N facturas (una por mes). ZONA DE DINERO: admin only + gate por
 // getEmissionMode (sin variante justificante) + transacción atómica con guard anti-doble-consolidación.
 // NADA se activa a merchants reales (latente tras INVOICING_ES_ENABLED; regla 24).
-router.post('/:id/consolidar-albaranes', async (req, res) => {
+// Rol: emitir factura es acción de dinero → solo admin/propietario, nunca el técnico (S1).
+// SCRUM-55: era `if (req.userRole === 'tecnico')` inline — DENYLIST, y por tanto
+// fail-OPEN: cualquier rol futuro que no fuera 'tecnico' habría pasado. requireRole
+// es allowlist (exige === 'admin') y además la red fail-closed puede verlo.
+router.post('/:id/consolidar-albaranes', requireRole('admin'), async (req, res) => {
   try {
-    // Rol: emitir factura es acción de dinero → solo admin/propietario, nunca el técnico (S1/SCRUM-54).
-    if (req.userRole === 'tecnico') {
-      return res.status(403).json({ error: 'forbidden', message: 'Solo el administrador puede emitir facturas.' });
-    }
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });

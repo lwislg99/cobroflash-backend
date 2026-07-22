@@ -467,7 +467,24 @@ Alcance: (a) foto de la avería adjunta a QuoteRequest (desde bot y portal); (b)
 | Facturas: emitir/anular/R1 | ✅ | ❌ (ver sí) |
 | Marcar pagado / deshacer | ✅ | ❌ |
 | Configuración, datos fiscales, Connect, flags · billing/plan · equipo · exports | ✅ | ❌ |
-Ruta nueva = declara rol mínimo; default Admin-only.
+Ruta nueva = declara rol mínimo; default Admin-only. **Lo hace cumplir un test, no la disciplina** (SCRUM-55).
+> **✅ SCRUM-55 (22-jul-2026, absorbe SCRUM-54):** hasta hoy esta regla no la hacía cumplir NADA — 124 rutas
+> bajo `/admin`, 79 llegaban a un Operario sin declaración de rol, y la 125 iba a nacer abierta igual. Ahora
+> un test de enumeración recorre TODAS las rutas montadas bajo `/admin` y **falla si alguna no declara rol**:
+> o lleva `requireRole(...)` (en el montaje, en un `router.use` o en la propia ruta), o está en la lista de
+> visibles para Técnico **con motivo** (`src/core/http/adminRouteDeclarations.ts`). Ni lo uno ni lo otro =
+> build roja nombrando método y path. **Corre en `npm test` NORMAL, sin gate** (`tests/scrum55-admin-fail-closed.test.mjs`):
+> no toca BD ni levanta servidor. El "sin gate" es deliberado — A12.4 solo corría en `test:staging` y se cayó
+> ENTERA sin que nadie se enterara: una red que solo funciona en staging no es una red. El test caza además
+> dos fallos que antes eran invisibles: **entradas muertas** (declaraciones que apuntan a rutas inexistentes —
+> así vivió `GET /admin/billing/summary`, que pasaba el test porque el `requireRole` del montaje devolvía 403
+> antes del 404) y el **salto del helper `mountAdmin`** (Express 5 no conserva el prefijo del montaje, así que
+> un `app.use` suelto dejaría sus rutas fuera de la auditoría). **Complementa a A12.4, no lo sustituye:** aquel
+> comprueba el 403 de COMPORTAMIENTO con sesión de técnico; este garantiza que su lista esté COMPLETA. Corolario
+> operativo: los gates de rol van con `requireRole` (marcado con `__requiredRole`), **nunca con un `if` inline**
+> dentro del handler — protege igual pero es invisible para la red; y donde el router entero sea Admin, el gate
+> va en el MONTAJE (los 4 routers así montados tenían 0 agujeros; los que gateaban ruta a ruta los tenían justo
+> en las añadidas después). Estado de la auditoría y rutas aún sin clasificar: U2.
 > **✅ SCRUM-73 (22-jul-2026):** `GET /admin/exports/verifactu.xml` NO cumplía esta tabla — generaba
 > registros RRSIF (huellas + encadenamiento) sin consultar `INVOICING_ES_ENABLED` y era accesible a
 > Técnico. Con SIF-1 sin cerrar y el flag OFF, los merchants ES reales emiten justificantes (J-), no
@@ -636,6 +653,14 @@ WA-0b → BOT-1 → MANT-1 → JOB-1 → MEDIA-1 → ONBOARD-2 → ANALYTICS-1 (
 > re-priorización comercial a 25 pagantes intacta (regla 13). Condiciones: specs SOLO del master,
 > flags de Parte P nacen y quedan OFF (activar = fundador), GTM/prioridades de venta intactos.
 > Nada más de U2/Z se desbloquea. (Nota añadida, nunca borrada — regla 16.)
+
+> **✅ SCRUM-55 (22-jul-2026, carril B · absorbe SCRUM-54 · adelanto de SEC-2):** auditoría completa de
+> rutas `/admin` — **124 rutas auditadas**, Nivel 1 (dinero/fiscal) cerrado y red fail-closed corriendo en
+> `npm test` (doctrina y mecanismo en **S1**). Quedan **25 rutas sin clasificar**, en tandas 2-3, con **plazo
+> 30-sep-2026**: pasado ese plazo el test falla. La lista de cuáles son vive SOLO en
+> `src/core/http/adminRouteDeclarations.ts` y cambia en cada tanda — **no se duplica aquí a propósito**
+> (una lista copiada en docs se queda obsoleta y luego alguien la cita). El máster dice que existen y dónde
+> mirar; el código dice cuáles.
 
 ## U3. F3 / F4
 F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantillas por locale re-aprobadas) · CFDI-1 (PAC add-on) · DIAN-1 · Chile · IA precios por zona (gate ≥10K líneas) · reseñas en plataforma · Google Calendar OAuth · API pública (gate Z) · TicketBAI (gate Z). F4: Parte Z.
