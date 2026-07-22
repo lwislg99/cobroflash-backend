@@ -5,8 +5,13 @@
 // (con registro A8.3) → mudo 24 h → opt-out "BAJA" (J3).
 //
 // ⚠️ GATEADO (toca la BD del .env con datos del merchant demo y LIMPIA lo suyo):
-//   BOT_SUITE_TEST=1 npm test   (el resto de envs las fija este archivo)
+//   BOT_SUITE_TEST=1 npm run test:staging   (el resto de envs las fija este archivo)
 // En `npm test` normal aparece como SKIP y no toca nada.
+// ⚠️ P3-9 (SCRUM-78, 22-jul): igual que tenancy-permisos/webhooks-idempotencia, este
+// test depende de un cliente seed en el merchant demo id=1 que SCRUM-42 quemó — hoy
+// falla en staging ("cliente seed no encontrado"), NO corregido en SCRUM-78 (fuera de
+// los 2 archivos pedidos; requiere decidir si migra a datos efímeros o a un fixture
+// DEMO_SAFE_NUMBERS propio). Ver docs/BUGS.md P3-9.
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando BOT_SUITE_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';

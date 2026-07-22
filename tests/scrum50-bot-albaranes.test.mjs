@@ -4,7 +4,7 @@
 //   (3) texto de un cliente CON albarán reciente (WA-0b) → aviso al pro + acuse digno, NO el clásico.
 //
 // ⚠️ GATEADO (crea/BORRA un merchant efímero; levanta la app; dry-run):
-//   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm test
+//   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm run test:staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 

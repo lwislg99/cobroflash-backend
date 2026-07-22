@@ -87,20 +87,37 @@ test('A12.5c: watermark de DEMO presente en el PDF', async () => {
   fs.rmSync(outPath, { force: true }); fs.rmSync(outPath2, { force: true });
 });
 
+// P3-9 (SCRUM-80, 22-jul): antes usaba el merchant demo id=1 — SCRUM-42 lo quemó (0 filas)
+// y el test revienta (TypeError sobre quote null). Datos EFÍMEROS propios (mismo patrón
+// que SCRUM-78 en tenancy-permisos/webhooks-idempotencia): nada depende ya del demo.
 test('A12.5d: regeneración on-demand (R8) — /admin/quotes/:id/pdf responde PDF SIEMPRE', { skip: !DB }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);
   await new Promise((r) => server.once('listening', r));
   const base = `http://127.0.0.1:${server.address().port}`;
+
+  const stamp = Date.now();
+  const merchant = await prisma.merchant.create({
+    data: { name: 'QA PDFs A12.5d', country: 'ES', email: `qa-a125d-${stamp}@test.local`, onboardingCompleted: true },
+  });
+  const customer = await prisma.customer.create({
+    data: { merchantId: merchant.id, name: 'Cliente QA A12.5d', phone: `34604${stamp % 1000000}` },
+  });
+  const quote = await prisma.quote.create({
+    data: {
+      merchantId: merchant.id, customerId: customer.id, total: '100.00', currency: 'EUR',
+      lines: [{ concept: 'Servicio QA A12.5d', qty: 1, price: 100 }], status: 'draft',
+    },
+  });
+
   try {
     const token = 'qa125-' + crypto.randomBytes(10).toString('hex');
     await prisma.authSession.create({
-      data: { merchantId: 1, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
+      data: { merchantId: merchant.id, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
     });
     const v = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
     const cookie = (v.headers.get('set-cookie') || '').split(';')[0];
-    const quote = await prisma.quote.findFirst({ where: { merchantId: 1 }, select: { id: true } });
 
     for (let i = 1; i <= 2; i++) { // dos veces: el fs de Railway es efímero (R8)
       const res = await fetch(`${base}/admin/quotes/${quote.id}/pdf`, { headers: { cookie } });
@@ -109,6 +126,10 @@ test('A12.5d: regeneración on-demand (R8) — /admin/quotes/:id/pdf responde PD
       assert.ok(buf.subarray(0, 5).toString() === '%PDF-', `intento ${i}: no devolvió PDF`);
     }
   } finally {
+    await prisma.authSession.deleteMany({ where: { merchantId: merchant.id } });
+    await prisma.quote.deleteMany({ where: { merchantId: merchant.id } });
+    await prisma.customer.deleteMany({ where: { merchantId: merchant.id } });
+    await prisma.merchant.delete({ where: { id: merchant.id } });
     server.close();
     await prisma.$disconnect();
   }
