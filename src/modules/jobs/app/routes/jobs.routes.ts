@@ -9,7 +9,12 @@ import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; /
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { allocateAlbaranNumber } from '../../domain/albaranNumber.service';
-import { serializeAlbaran, validarLineas } from '../../domain/albaran.service';
+import {
+  ALBARAN_MODOS_VALORACION,
+  serializeAlbaran,
+  validarLineas,
+  type AlbaranModoValoracion,
+} from '../../domain/albaran.service';
 
 const router = Router();
 
@@ -297,10 +302,20 @@ router.post('/:id/albaranes', async (req, res) => {
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!job) return res.status(404).json({ error: 'not_found' });
 
-    // Líneas iniciales opcionales; si llegan, se validan (condición 4 del OK)
+    // SCRUM-65: modo de valoración al crear (default SIN_VALORAR = comportamiento de siempre).
+    let modoValoracion: AlbaranModoValoracion = 'SIN_VALORAR';
+    if (req.body?.modoValoracion !== undefined) {
+      const m = String(req.body.modoValoracion);
+      if (!ALBARAN_MODOS_VALORACION.includes(m as AlbaranModoValoracion)) {
+        return res.status(400).json({ error: 'modo_valoracion_invalido' });
+      }
+      modoValoracion = m as AlbaranModoValoracion;
+    }
+
+    // Líneas iniciales opcionales; si llegan, se validan contra el modo (condición 4 del OK + SCRUM-65)
     let lineas: any[] = [];
     if (req.body?.lineas !== undefined) {
-      const v = validarLineas(req.body.lineas);
+      const v = validarLineas(req.body.lineas, modoValoracion);
       if (!v.ok) return res.status(400).json({ error: 'lineas_invalidas', message: v.error });
       lineas = v.lineas;
     }
@@ -313,6 +328,7 @@ router.post('/:id/albaranes', async (req, res) => {
           merchantId: req.merchantId!,
           jobId: job.id,
           numero,
+          modoValoracion,
           lineas,
           notas,
         },

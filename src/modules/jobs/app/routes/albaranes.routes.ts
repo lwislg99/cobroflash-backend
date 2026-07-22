@@ -8,10 +8,12 @@ import { recordAudit, requestIp } from '../../../system/audit.service';
 import { requireActivePlan } from '../../../../core/http/authMiddleware'; // SCRUM-47 (S1: enviar WA ✅ técnico, sin requireRole)
 import { sendAlbaranFirmadoWhatsApp, sendAlbaranParaFirmarWhatsApp } from '../../domain/albaranWhatsApp.service'; // SCRUM-47/49
 import {
+  ALBARAN_MODOS_VALORACION,
   canTransitionAlbaran,
   ensureAlbaranPdf,
   serializeAlbaran,
   validarLineas,
+  type AlbaranModoValoracion,
 } from '../../domain/albaran.service';
 
 const router = Router();
@@ -48,11 +50,42 @@ router.patch('/:id', async (req, res) => {
 
     const data: any = {};
     const cambios: string[] = [];
+
+    // SCRUM-65: el modo de valoración se puede cambiar SOLO en 'borrador' (congelado
+    // desde 'emitido', mismo espíritu que el resto del documento).
+    let modoEfectivo: AlbaranModoValoracion =
+      albaran.modoValoracion === 'VALORADO' ? 'VALORADO' : 'SIN_VALORAR';
+    if (req.body?.modoValoracion !== undefined) {
+      if (albaran.estado !== 'borrador') {
+        return res.status(409).json({
+          error: 'albaran_locked',
+          message: 'El modo de valoración solo se puede cambiar mientras el albarán está en borrador.',
+        });
+      }
+      const m = String(req.body.modoValoracion);
+      if (!ALBARAN_MODOS_VALORACION.includes(m as AlbaranModoValoracion)) {
+        return res.status(400).json({ error: 'modo_valoracion_invalido' });
+      }
+      modoEfectivo = m as AlbaranModoValoracion;
+      data.modoValoracion = modoEfectivo;
+      cambios.push('modoValoracion');
+    }
+
     if (req.body?.lineas !== undefined) {
-      const v = validarLineas(req.body.lineas);
+      const v = validarLineas(req.body.lineas, modoEfectivo);
       if (!v.ok) return res.status(400).json({ error: 'lineas_invalidas', message: v.error });
       data.lineas = v.lineas;
       cambios.push('lineas');
+    } else if (data.modoValoracion !== undefined) {
+      // Cambia el modo sin mandar líneas nuevas: revalidar las EXISTENTES contra el
+      // modo nuevo (evita dejar un VALORADO con líneas sin precio, o viceversa).
+      const v = validarLineas(albaran.lineas, modoEfectivo);
+      if (!v.ok) {
+        return res.status(400).json({
+          error: 'lineas_invalidas',
+          message: `Las líneas actuales no encajan con el nuevo modo: ${v.error}`,
+        });
+      }
     }
     if (req.body?.notas !== undefined) {
       data.notas = String(req.body.notas || '').slice(0, 2000) || null;
