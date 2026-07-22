@@ -29,32 +29,51 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
   await new Promise((r) => server.once('listening', r));
   const base = `http://127.0.0.1:${server.address().port}`;
 
-  // ── merchant B (atacante) efímero + técnico ─────────────────────────────
+  // ── merchants A (víctima) y B (atacante), ambos EFÍMEROS ────────────────
+  // P3-9 (SCRUM-78) + SCRUM-79, mismo arreglo desde dos lados: antes "A" era el
+  // merchant DEMO (id=1), que SCRUM-42 dejó como placeholder inerte (0 filas) → el
+  // test abortaba en "faltan datos seed del demo". Y ese assert iba ANTES del bucle
+  // de A12.4, así que la red de seguridad de S1 dejaba de comprobarse ENTERA sin que
+  // nadie se enterara. Datos efímeros propios (misma lección que SCRUM-63): nada
+  // depende ya del estado del demo.
   const stamp = Date.now();
-  const merchantB = await prisma.merchant.create({
-    data: { name: 'QA Tenancy B', country: 'ES', email: `qa-b-${stamp}@test.local`, onboardingCompleted: true },
-  });
+  const mkMerchant = (tag, name) =>
+    prisma.merchant.create({
+      data: { name, country: 'ES', email: `qa-${tag}-${stamp}@test.local`, onboardingCompleted: true },
+    });
+  const merchantA = await mkMerchant('a', 'QA Tenancy A (víctima)');
+  const merchantB = await mkMerchant('b', 'QA Tenancy B');
   const tecnico = await prisma.teamMember.create({
     data: { merchantId: merchantB.id, name: 'QA Técnico', email: `qa-tec-${stamp}@test.local`, role: 'tecnico', status: 'active' },
   });
 
-  // ── merchant A (víctima) efímero propio — P3-9: ya no depende del demo id=1 ──
-  const merchantA = await prisma.merchant.create({
-    data: { name: 'QA Tenancy A (víctima)', country: 'ES', email: `qa-a-${stamp}@test.local`, onboardingCompleted: true },
-  });
+  // Datos de A que B intentará tocar. El nombre del cliente es un CANARIO: si
+  // asomara en CUALQUIER respuesta a B, es fuga de datos entre merchants.
+  const CANARIO_A = `FUGA-A-${stamp}`;
   const customerA = await prisma.customer.create({
-    data: { merchantId: merchantA.id, name: `Cliente Secreto QA-A ${stamp}`, phone: `34601${stamp % 1000000}` },
+    data: { merchantId: merchantA.id, name: CANARIO_A, phone: `34601${stamp % 1000000}`, email: `qa-cli-${stamp}@test.local` },
   });
+  // status 'accepted' + lines (vienen de SCRUM-78). Verificado: NO son obligatorios —
+  // ni por schema (Quote.status tiene default 'draft') ni por comportamiento actual, ya
+  // que POST /admin/quotes/:id/invoice hace findFirst({id, merchantId}) ANTES de mirar
+  // el estado, así que la tenancy corta primero igualmente. Se mantienen como fixture
+  // REALISTA: si algún día se reordenan las comprobaciones y la regla de negocio pasa
+  // delante, un 400/409 enmascararía el assert de tenancy sin que nadie lo note.
   const quoteA = await prisma.quote.create({
     data: {
-      merchantId: merchantA.id, customerId: customerA.id, total: '100.00', currency: 'EUR',
-      lines: [{ concept: 'Servicio QA tenancy', qty: 1, price: 100 }], status: 'accepted',
+      merchantId: merchantA.id, customerId: customerA.id, status: 'accepted',
+      total: '100.00', currency: 'EUR', lines: [{ concept: 'Servicio QA tenancy', qty: 1, price: 100 }],
     },
   });
   const invoiceA = await prisma.invoice.create({
     data: {
-      merchantId: merchantA.id, customerId: customerA.id, number: `2026-QA-TEN-${stamp % 1000}`,
-      total: '100.00', currency: 'EUR', type: 'F1', status: 'paid',
+      merchantId: merchantA.id, customerId: customerA.id, quoteId: quoteA.id,
+      number: `QA-TEN-${stamp}`, total: '100.00', currency: 'EUR', type: 'F1',
+      // status 'paid' + lines (de SCRUM-78): mismo caso que el quote. Ni schema
+      // (Invoice.status default 'pending', lines opcional) ni comportamiento actual los
+      // exigen — dispute-package también filtra por merchantId primero. Fixture realista
+      // por la misma razón defensiva.
+      status: 'paid',
       lines: [{ concept: 'Servicio QA tenancy', qty: 1, price: 100 }],
       pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
     },
@@ -92,7 +111,8 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
       ['POST', `/admin/invoices/${invoiceA.id}/payment-anomaly`, { amount: 1 }],
       ['GET', `/admin/customers/${customerA.id}`],
       ['GET', `/admin/customers/${customerA.id}/detail`],
-      ...(jobA ? [['PATCH', `/admin/jobs/${jobA.id}`, { status: 'en_curso' }]] : []),
+      ['PATCH', `/admin/jobs/${jobA.id}`, { status: 'en_curso' }],
+      ['GET', `/admin/jobs/${jobA.id}`],
       ['DELETE', `/admin/maintenance/999999`],
     ];
 
@@ -106,9 +126,9 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
         res.status === 403 || res.status === 404,
         `TENANCY ROTA: ${method} ${path} devolvió ${res.status} a un merchant ajeno`,
       );
-      // jamás datos de A en el cuerpo
+      // jamás datos de A en el cuerpo (canario)
       const text = await res.text();
-      assert.ok(!text.includes(customerA.name), `TENANCY ROTA: ${method} ${path} filtra datos de A`);
+      assert.ok(!text.includes(CANARIO_A), `TENANCY ROTA: ${method} ${path} filtra datos de A`);
     }
     t.diagnostic(`tenancy: ${tenancyTargets.length} rutas con id ajeno → 403/404 ✓`);
 
@@ -127,13 +147,19 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
     }
     t.diagnostic(`permisos: ${ADMIN_ONLY_ROUTES.length} rutas admin-only → 403 para técnico ✓`);
   } finally {
-    await prisma.authSession.deleteMany({ where: { merchantId: { in: [merchantA.id, merchantB.id] } } });
-    await prisma.teamMember.deleteMany({ where: { merchantId: merchantB.id } });
-    await prisma.job.deleteMany({ where: { merchantId: merchantA.id } });
-    await prisma.invoice.deleteMany({ where: { merchantId: merchantA.id } });
-    await prisma.quote.deleteMany({ where: { merchantId: merchantA.id } });
-    await prisma.customer.deleteMany({ where: { merchantId: merchantA.id } });
-    await prisma.merchant.deleteMany({ where: { id: { in: [merchantA.id, merchantB.id] } } });
+    // Limpieza de AMBOS merchants efímeros, hijos antes que padres. Cada borrado con
+    // su .catch(): si uno falla (tabla ausente, FK inesperada) no debe abortar el resto
+    // ni enmascarar el resultado del test — dejar huérfanos es justo lo que ensucia
+    // staging (SCRUM-79).
+    for (const m of [merchantA, merchantB]) {
+      await prisma.authSession.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
+      await prisma.invoice.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
+      await prisma.job.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
+      await prisma.quote.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
+      await prisma.customer.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
+      await prisma.teamMember.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
+    }
+    await prisma.merchant.deleteMany({ where: { id: { in: [merchantA.id, merchantB.id] } } }).catch(() => {});
     server.close();
     await prisma.$disconnect();
   }
