@@ -188,21 +188,35 @@ export async function buildPresupuestos(merchantId: number, rango: Rango, status
 /**
  * Tope de facturas por paquete. ⚠️ PROVISIONAL — ajustarlo aquí y solo aquí.
  *
- * NO se deriva del timeout de la plataforma: Railway permite **15 minutos** por petición
- * (confirmado por su equipo; no es configurable), así que el proxy no es el límite.
+ * ⚠️ ANTES DE SUBIRLO, LEE ESTO: acota TRES cosas a la vez, no solo el tiempo. Es fácil
+ * razonar "Railway da 15 minutos, el proxy no es el límite" y subirlo… engordando la
+ * memoria del navegador sin darse cuenta.
  *
- * Se deriva de la MEDICIÓN de SCRUM-25 §7 y de la UX. Caso malo (ningún PDF en disco,
- * como tras cada deploy por el fs efímero), medido contra staging por WAN:
- *   · 774 ms por factura de media (p95 1,5 s) — el 99,8 % es `ensureInvoicePdf`,
- *     la compresión fue 24 ms de 15.500.
- *   · 100 facturas ≈ 77 s · 300 ≈ 232 s **sin enviar un solo byte** (el paquete solo
- *     puede empezar a transmitirse cuando sabe si está completo, para poder nombrarse).
- * Esa medición es un TECHO: se tomó con la BD remota y ~2 s de latencia por consulta;
- * en producción, app y BD comparten región y el coste debería caer bastante.
+ * 1) TIEMPO (time-to-first-byte). Medido en SCRUM-25 §7, caso malo (ningún PDF en disco,
+ *    como tras cada deploy por el fs efímero), contra staging por WAN:
+ *      · 774 ms por factura de media (p95 1,5 s) — el 99,8 % es `ensureInvoicePdf`;
+ *        la compresión fueron 24 ms de 15.500.
+ *      · 100 facturas ≈ 77 s · 300 ≈ 232 s **sin enviar un solo byte** (el paquete solo
+ *        puede transmitirse cuando ya sabe si está completo, para poder nombrarse).
+ *    Es un TECHO: medido con la BD remota y ~2 s de latencia por consulta; en producción
+ *    app y BD comparten región y debería caer bastante.
  *
- * 100 mantiene la espera en el entorno del minuto en el peor caso. El arreglo de verdad
- * (asíncrono) es SCRUM-83; su escalera: ajustar tope → paralelizar render → asíncrono.
- * Cuando se mida en producción, este número se sube o se retira.
+ * 2) MEMORIA DEL NAVEGADOR. La card descarga con `fetch` + blob (para poder avisar de que
+ *    el paquete salió incompleto), así que el ZIP entero pasa por RAM antes de guardarse.
+ *    El peso lo domina el LOGO del merchant: `loadLogoBuffer` lo incrusta tal cual en CADA
+ *    PDF (`doc.image` no recomprime; el `fit` es geometría), y el logo pesa ~150 KB.
+ *      · sin logo: PDF ~5 KB → 100 facturas ≈ 0,5 MB (medido: 20 facturas = 79 KB)
+ *      · con logo: PDF ~155 KB → 100 facturas ≈ 15 MB, con pico ~30 MB (respuesta + blob)
+ *    A 500 facturas serían ~77 MB: ahí un Android de gama media (matriz del máster) sí
+ *    sufre. El ZIP no ayuda — PNG/JPEG ya vienen comprimidos.
+ *
+ * 3) UX. Con 15 min de plataforma el riesgo no es fallar, es PARECER roto. La card avisa
+ *    del tope antes de pulsar (GET /datos.zip/info) y bloquea el botón mientras genera.
+ *
+ * 100 mantiene la espera en el entorno del minuto y la memoria en ~15 MB en el peor caso.
+ * El arreglo de verdad (asíncrono) es SCRUM-83; su escalera: ajustar tope → paralelizar
+ * render → asíncrono. Cuando se mida en producción, este número se sube o se retira —
+ * pero recalculando también (2), no solo (1).
  */
 export const MAX_FACTURAS_ZIP = 100;
 
