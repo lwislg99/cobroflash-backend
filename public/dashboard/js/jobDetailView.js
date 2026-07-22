@@ -317,6 +317,106 @@ async function renderJobDetailView(container, jobId) {
   valoradoHint.textContent = 'El parte sigue sin ser una factura.';
   albSec.appendChild(valoradoHint);
 
+  // ── SCRUM-17 (FISCAL-2): consolidar albaranes en factura recapitulativa ──────
+  // Botón visible solo si el Trabajo agrupa operaciones sueltas (SCRUM-66) y hay partes
+  // elegibles (firmado + con precios + no facturado). El backend re-valida y hace la ROTURA
+  // real por mes natural; el modal muestra el preview honesto de cuántas facturas se crearán.
+  // (En modo receipt el backend responde 409; ver nota del PR sobre exponer el modo — SCRUM-81.)
+  const consolidaEligibles = albaranes.filter((a) => a.estado === 'firmado' && a.modoValoracion === 'VALORADO' && !a.facturado);
+  const consolidaEnabled = job.tipoOperacion === 'OPERACIONES_SUELTAS' && consolidaEligibles.length > 0;
+  const consolidaSelected = new Set();
+  const consolidaCheckboxes = [];
+  const CONSOLIDA_MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+  const consolidarBtn = document.createElement('button');
+  consolidarBtn.className = 'btn-secondary btn-sm';
+  consolidarBtn.textContent = '🧾 Consolidar en factura';
+  consolidarBtn.style.display = consolidaEnabled ? '' : 'none';
+  newAlbRow.appendChild(consolidarBtn);
+
+  const consolidaBar = document.createElement('div');
+  consolidaBar.style.cssText = 'display:none;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap';
+  const consolidaConfirm = document.createElement('button');
+  consolidaConfirm.className = 'btn-primary btn-sm';
+  consolidaConfirm.textContent = 'Consolidar seleccionados';
+  const consolidaCancel = document.createElement('button');
+  consolidaCancel.className = 'btn-secondary btn-sm';
+  consolidaCancel.textContent = 'Cancelar';
+  const consolidaCount = document.createElement('span');
+  consolidaCount.style.cssText = 'font-size:13px;color:var(--muted)';
+  consolidaBar.append(consolidaConfirm, consolidaCancel, consolidaCount);
+  albSec.appendChild(consolidaBar);
+
+  function updateConsolidaCount() {
+    consolidaCount.textContent = `${consolidaSelected.size} parte(s) seleccionado(s)`;
+    consolidaConfirm.disabled = consolidaSelected.size === 0;
+  }
+  function setConsolidaMode(on) {
+    consolidaSelected.clear();
+    consolidaCheckboxes.forEach((c) => { c.wrap.style.display = on ? 'flex' : 'none'; c.checkbox.checked = false; });
+    consolidaBar.style.display = on ? 'flex' : 'none';
+    consolidarBtn.style.display = on ? 'none' : (consolidaEnabled ? '' : 'none');
+    updateConsolidaCount();
+  }
+  consolidarBtn.addEventListener('click', () => setConsolidaMode(true));
+  consolidaCancel.addEventListener('click', () => setConsolidaMode(false));
+  consolidaConfirm.addEventListener('click', () => {
+    const sel = consolidaCheckboxes.filter((c) => consolidaSelected.has(c.alb.id)).map((c) => c.alb);
+    if (!sel.length) return;
+    // Preview de rotura por mes en cliente (el backend hace la rotura real y autoritativa).
+    const byMonth = new Map();
+    for (const a of sel) {
+      const d = new Date(a.fecha);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!byMonth.has(key)) byMonth.set(key, []);
+      byMonth.get(key).push(a);
+    }
+    const grupos = [...byMonth.keys()].sort().map((k) => {
+      const [y, m] = k.split('-').map(Number);
+      const arr = byMonth.get(k);
+      return { label: `${CONSOLIDA_MESES[m - 1]} ${y}`, count: arr.length, total: arr.reduce((s, a) => s + Number(a.totales?.total || 0), 0) };
+    });
+    const nF = grupos.length;
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,28,23,.45);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px';
+    const card = document.createElement('div');
+    card.style.cssText = 'background:#fff;border-radius:16px;max-width:420px;width:100%;padding:22px;box-shadow:0 18px 40px -16px rgba(16,24,40,.3)';
+    card.innerHTML =
+      `<h3 style="margin:0 0 6px;font-size:17px;color:var(--ink)">Consolidar en factura</h3>` +
+      `<p style="margin:0 0 4px;font-size:14px;color:var(--body,#3f4a45)">Has seleccionado ${sel.length} parte(s) de ${nF} mes(es) distinto(s).</p>` +
+      `<p style="margin:0 0 12px;font-size:13px;color:var(--muted)">La ley solo permite agrupar partes del mismo mes en una factura, así que se crearán <strong>${nF} factura${nF > 1 ? 's' : ''}</strong>:</p>` +
+      `<ul style="margin:0 0 16px;padding-left:18px;font-size:14px;color:var(--ink)">` +
+      grupos.map((g) => `<li><strong>${esc(g.label)}</strong> — ${g.count} parte(s) · ${esc(fmtMoneyEs(g.total, cur))}</li>`).join('') +
+      `</ul>`;
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:10px;justify-content:flex-end';
+    const cancelM = document.createElement('button');
+    cancelM.className = 'btn-secondary btn-sm';
+    cancelM.textContent = 'Cancelar';
+    const goM = document.createElement('button');
+    goM.className = 'btn-primary btn-sm';
+    goM.textContent = `Crear ${nF} factura${nF > 1 ? 's' : ''}`;
+    cancelM.addEventListener('click', () => overlay.remove());
+    goM.addEventListener('click', async () => {
+      goM.disabled = true;
+      try {
+        const res = await apiRequest(`/admin/jobs/${job.id}/consolidar-albaranes`, { method: 'POST', body: JSON.stringify({ albaranIds: sel.map((a) => a.id) }) });
+        overlay.remove();
+        showToast(`✓ ${res.facturas.length} factura(s) creada(s).`);
+        refresh();
+      } catch (e) {
+        goM.disabled = false;
+        setStatus('error', e?.data?.message || 'No se pudo consolidar.');
+      }
+    });
+    btnRow.append(cancelM, goM);
+    card.appendChild(btnRow);
+    overlay.appendChild(card);
+    overlay.addEventListener('click', (ev) => { if (ev.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+  });
+
   newAlbBtn.addEventListener('click', async () => {
     newAlbBtn.disabled = true;
     const modoValoracion = valoradoCheck.checked ? 'VALORADO' : 'SIN_VALORAR';
@@ -521,12 +621,30 @@ async function renderJobDetailView(container, jobId) {
     item.innerHTML =
       `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">` +
       `<div><strong>Albarán ${esc(alb.numero)}</strong> · <span style="font-size:12px;color:var(--muted)">${esc(albMetaBits)}</span></div>` +
+      `<span>` +
       `<span class="status-pill ${JOBDET_ALB_PILL[alb.estado] || 'status-pill-draft'}">${jobDetAlbEstado(alb.estado)}</span>` +
+      // SCRUM-17: badge "Facturado" derivado (alb.facturado = invoiceId != null en el serializer)
+      (alb.facturado ? `<span style="margin-left:6px;font-size:11px;font-weight:700;color:#166534;background:#ecfdf5;border-radius:999px;padding:2px 8px">Facturado</span>` : '') +
+      `</span>` +
       `</div>` +
       `<div class="jobdet-alb-fotos" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>` +
       `<div class="jobdet-alb-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div>` +
       `<div class="jobdet-alb-editor" style="display:none;margin-top:10px"></div>`;
     albSec.appendChild(item);
+    // SCRUM-17: checkbox de selección (modo consolidación) en albaranes elegibles.
+    if (alb.estado === 'firmado' && alb.modoValoracion === 'VALORADO' && !alb.facturado) {
+      const wrap = document.createElement('label');
+      wrap.style.cssText = 'display:none;align-items:center;gap:6px;margin-top:6px;font-size:13px;color:var(--ink);cursor:pointer';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.addEventListener('change', () => {
+        if (cb.checked) consolidaSelected.add(alb.id); else consolidaSelected.delete(alb.id);
+        updateConsolidaCount();
+      });
+      wrap.append(cb, document.createTextNode('Incluir en la factura'));
+      item.insertBefore(wrap, item.firstChild);
+      consolidaCheckboxes.push({ alb, checkbox: cb, wrap });
+    }
     const acts = item.querySelector('.jobdet-alb-actions');
     const fotosBox = item.querySelector('.jobdet-alb-fotos');
     const editorBox = item.querySelector('.jobdet-alb-editor');

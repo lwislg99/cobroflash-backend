@@ -14,8 +14,13 @@ import {
   ALBARAN_MODOS_VALORACION,
   serializeAlbaran,
   validarLineas,
+  validarConsolidacion,
+  groupByRotura,
   type AlbaranModoValoracion,
 } from '../../domain/albaran.service';
+import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-17
+import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-17: gate fiscal
+import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-17: total con desglose IVA
 
 const router = Router();
 
@@ -443,6 +448,113 @@ router.post('/:id/collect-rest', async (req, res) => {
     });
   } catch (err: any) {
     console.error('[POST /admin/jobs/:id/collect-rest]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// POST /admin/jobs/:id/consolidar-albaranes — SCRUM-17 (FISCAL-2): factura recapitulativa con
+// ROTURA por mes natural (art. 13 RD 1619/2012). Selección de albaranes firmados + VALORADO +
+// no facturados de ESTE Job → N facturas (una por mes). ZONA DE DINERO: admin only + gate por
+// getEmissionMode (sin variante justificante) + transacción atómica con guard anti-doble-consolidación.
+// NADA se activa a merchants reales (latente tras INVOICING_ES_ENABLED; regla 24).
+router.post('/:id/consolidar-albaranes', async (req, res) => {
+  try {
+    // Rol: emitir factura es acción de dinero → solo admin/propietario, nunca el técnico (S1/SCRUM-54).
+    if (req.userRole === 'tecnico') {
+      return res.status(403).json({ error: 'forbidden', message: 'Solo el administrador puede emitir facturas.' });
+    }
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
+    if (!job) return res.status(404).json({ error: 'not_found' });
+
+    // Gate de modo: la recapitulativa es documento FISCAL puro — NO hay variante justificante J-.
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: req.merchantId },
+      // getEmissionMode necesita id/email/country/flags (Parte P); defaultCurrency para la factura.
+      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true },
+    });
+    if (!merchant) return res.status(404).json({ error: 'not_found' });
+    if (getEmissionMode(merchant) === 'receipt') {
+      return res.status(409).json({ error: 'consolidacion_no_disponible', message: 'La factura recapitulativa no está disponible en este modo.' });
+    }
+
+    // Selección del body, SCOPEADA a este Job (V1: 1 Job = 1 cliente; regla 2 tenancy).
+    const rawIds: any[] = Array.isArray(req.body?.albaranIds) ? req.body.albaranIds : [];
+    const ids: number[] = Array.from(new Set<number>(rawIds.map((x) => Number(x)).filter((n) => Number.isInteger(n))));
+    if (ids.length === 0) return res.status(400).json({ error: 'seleccion_vacia', message: 'Selecciona al menos un parte de trabajo firmado.' });
+
+    const albaranes = await prisma.albaran.findMany({ where: { id: { in: ids }, merchantId: req.merchantId, jobId: id } });
+    if (albaranes.length !== ids.length) {
+      return res.status(404).json({ error: 'albaran_no_encontrado', message: 'Alguno de los partes seleccionados no existe en este Trabajo.' });
+    }
+
+    // Forma que consume el dominio puro (customerId del Job — 1 Job = 1 cliente).
+    const consolidables = albaranes.map((a) => ({
+      id: a.id, numero: a.numero, fecha: a.fecha, estado: a.estado,
+      modoValoracion: a.modoValoracion, invoiceId: a.invoiceId, customerId: job.customerId,
+    }));
+    const val = validarConsolidacion(consolidables, { tipoOperacion: job.tipoOperacion, customerId: job.customerId });
+    if (!val.ok) {
+      const status = (val.error === 'albaran_ya_facturado' || val.error === 'consolidacion_no_aplica') ? 409 : 400;
+      return res.status(status).json({ error: val.error, message: val.message });
+    }
+
+    const grupos = groupByRotura(consolidables);
+    const currency = merchant.defaultCurrency || 'EUR';
+
+    // UNA transacción para TODOS los grupos: si algo falla o el guard de concurrencia salta,
+    // rollback TOTAL (nadie consolida a medias).
+    const created = await prisma.$transaction(async (tx) => {
+      const out: Array<{ id: number; number: string; mesLabel: string; total: string }> = [];
+      for (const g of grupos) {
+        // Líneas VALORADO de cada albarán → líneas de factura {concept, qty, price, tax(fracción)}.
+        const lines = g.albaranes.flatMap((a) => {
+          const full = albaranes.find((x) => x.id === a.id)!;
+          const ls = Array.isArray(full.lineas) ? (full.lineas as any[]) : [];
+          const fechaTxt = new Date(a.fecha).toLocaleDateString('es-ES');
+          return ls.map((l) => ({
+            concept: `Albarán ${a.numero} (${fechaTxt}): ${l.concepto}`,
+            qty: Number(l.cantidad) || 0,
+            price: Number(l.precioUnitario) || 0,
+            tax: (Number(l.tipoIva) || 0) / 100,
+          }));
+        });
+        const bd = calcVatBreakdown(lines);
+        const total = (bd.base + bd.cuota).toFixed(2);
+        const albaranRefs = g.albaranes.map((a) => ({ albaranId: a.id, numero: a.numero, fecha: a.fecha }));
+
+        const invoice = await emitInvoice(tx, {
+          merchantId: req.merchantId, customerId: job.customerId, total, currency,
+          type: 'F1', lines, albaranRefs, quoteId: null,
+        });
+        // Robustez fiscal: una recapitulativa JAMÁS puede salir como justificante J-. Si
+        // allocateInvoiceNumber devolviera serie receipt (getEmissionMode discrepa del gate
+        // por no ver merchant.flags), abortamos TODO en vez de emitir un documento inválido.
+        if (isReceiptNumber(invoice.number)) throw new Error('consolidacion_no_disponible');
+
+        // Guard anti-doble-consolidación: solo marca los que SIGUEN invoiceId:null.
+        const groupIds = g.albaranes.map((a) => a.id);
+        const upd = await tx.albaran.updateMany({
+          where: { id: { in: groupIds }, merchantId: req.merchantId, invoiceId: null },
+          data: { invoiceId: invoice.id },
+        });
+        if (upd.count !== groupIds.length) throw new Error('consolidacion_concurrente'); // → rollback TOTAL
+
+        out.push({ id: invoice.id, number: invoice.number, mesLabel: g.mesLabel, total });
+      }
+      return out;
+    });
+
+    return res.status(201).json({ ok: true, facturas: created });
+  } catch (err: any) {
+    if (err?.message === 'consolidacion_concurrente') {
+      return res.status(409).json({ error: 'consolidacion_concurrente', message: 'Alguno de los partes se facturó a la vez desde otra sesión. Vuelve a intentarlo.' });
+    }
+    if (err?.message === 'consolidacion_no_disponible') {
+      return res.status(409).json({ error: 'consolidacion_no_disponible', message: 'La factura recapitulativa no está disponible en este modo.' });
+    }
+    console.error('[POST /admin/jobs/:id/consolidar-albaranes]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });
