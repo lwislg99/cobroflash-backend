@@ -18,7 +18,11 @@ export type AuditAction =
   | 'operario_asignado'
   // SCRUM-66 (TRABAJO-4): el pro fija el tipo de operación del Trabajo (varias sueltas vs
   // trabajo único) → traza de que la decisión es del usuario/su asesor (caveat fiscal).
-  | 'tipo_operacion_elegido';
+  | 'tipo_operacion_elegido'
+  // SCRUM-25 (S2/S4): el merchant se descarga sus datos (CSV o paquete completo).
+  // Queda traza de QUÉ fichero y con qué rango: es material que sale de la plataforma
+  // con datos personales de los clientes finales.
+  | 'datos_exportados';
 
 export function requestIp(req: Request): string | null {
   const fwd = req.headers['x-forwarded-for'];

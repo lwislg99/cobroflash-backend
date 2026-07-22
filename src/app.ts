@@ -282,7 +282,10 @@ app.post('/admin/referral/redeem', async (req, res) => {
     return res.status(500).json({ error: 'internal_error' });
   }
 });
-app.use('/admin/exports',    exportsRouter);
+// SCRUM-25 (S1): exportar es acción de ADMIN — el Técnico no se lleva la base de datos
+// del negocio. El gate va aquí, en el router entero (antes cada ruta iba suelta y los
+// CSVs de clientes/facturas/presupuestos/gastos quedaban abiertos al Operario).
+app.use('/admin/exports',    requireRole('admin'), exportsRouter);
 app.use('/admin/reports',    reportsRouter);
 app.use('/admin/templates',     templatesRouter);
 app.use('/admin/quote-requests', quoteRequestsRouter);

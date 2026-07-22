@@ -5,8 +5,28 @@ import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
 import { config, isOwnerEmail } from '../../../../core/config/env';
 import { isFlagEnabled } from '../../../../core/flags';
 import { requireRole } from '../../../../core/http/authMiddleware';
+import { recordAudit, requestIp } from '../../../system/audit.service';
+import { estadoCobroFor } from '../../../jobs/domain/job.service';
 
 const router = Router();
+
+// SCRUM-25 (S2/S4): deja traza de cada descarga de datos. Fire-safe (recordAudit
+// nunca tumba la petición). `rango` documenta el filtro aplicado, para saber qué
+// se llevó exactamente quien exportó.
+function auditExport(req: any, fichero: string, rango: { from: Date | null; to: Date | null }) {
+  recordAudit({
+    merchantId: req.merchantId,
+    teamMemberId: req.teamMemberId ?? null,
+    action: 'datos_exportados',
+    entityType: 'export',
+    meta: {
+      fichero,
+      from: rango.from ? rango.from.toISOString().slice(0, 10) : null,
+      to: rango.to ? rango.to.toISOString().slice(0, 10) : null,
+    },
+    ip: requestIp(req),
+  });
+}
 
 // ── helpers ───────────────────────────────────────────────────────────────
 
@@ -41,10 +61,19 @@ function sendCsv(res: any, filename: string, header: string[], rows: string[]) {
 // A11.4 (RGPD/R11): "tus datos son tuyos" — clientes completos del merchant.
 router.get('/customers.csv', async (req, res) => {
   try {
+    // SCRUM-25: acepta el mismo rango que el resto de exports (antes no filtraba).
+    const { from, to } = parseDateFilter(req.query as any);
+    const where: any = { merchantId: req.merchantId };
+    if (from || to) {
+      where.createdAt = {};
+      if (from) where.createdAt.gte = from;
+      if (to)   where.createdAt.lte = to;
+    }
     const customers = await prisma.customer.findMany({
-      where: { merchantId: req.merchantId },
+      where,
       orderBy: { createdAt: 'asc' },
     });
+    auditExport(req, 'clientes.csv', { from, to });
     const header = ['Nombre', 'Razón social', 'NIF/CIF', 'Teléfono', 'Email', 'Notas', 'Baja WhatsApp', 'Alta'];
     const rows = customers.map((c) => csvRow([
       c.name,
@@ -84,18 +113,29 @@ router.get('/invoices.csv', async (req, res) => {
       include: { customer: { select: { name: true, email: true } } },
     });
 
-    const header = ['Número', 'Fecha', 'Cliente', 'Email cliente', 'Total', 'Moneda', 'Estado', 'Pagada en', 'VeriFactu'];
-    const rows = invoices.map((inv) => csvRow([
-      inv.number,
-      inv.createdAt.toISOString().slice(0, 10),
-      inv.customer?.name ?? '',
-      inv.customer?.email ?? '',
-      Number(inv.total).toFixed(2),
-      inv.currency,
-      inv.status,
-      inv.paidAt ? inv.paidAt.toISOString().slice(0, 10) : '',
-      inv.vfHash ? 'Sí' : 'No',
-    ]));
+    // SCRUM-25: el DONE pide base e IVA desglosados (lo que necesita el asesor para
+    // la contabilidad). Se reutiliza calcVatBreakdown sobre las líneas congeladas de
+    // la factura; si no las tuviera, base = total e IVA = 0 (no se inventa un tipo).
+    const header = ['Número', 'Fecha', 'Cliente', 'Email cliente', 'Base', 'IVA', 'Total', 'Moneda', 'Estado', 'Pagada en', 'VeriFactu'];
+    const rows = invoices.map((inv) => {
+      const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
+      const vat = lines.length ? calcVatBreakdown(lines) : null;
+      const total = Number(inv.total);
+      return csvRow([
+        inv.number,
+        inv.createdAt.toISOString().slice(0, 10),
+        inv.customer?.name ?? '',
+        inv.customer?.email ?? '',
+        (vat ? vat.base : total).toFixed(2),
+        (vat ? vat.cuota : 0).toFixed(2),
+        total.toFixed(2),
+        inv.currency,
+        inv.status,
+        inv.paidAt ? inv.paidAt.toISOString().slice(0, 10) : '',
+        inv.vfHash ? 'Sí' : 'No',
+      ]);
+    });
+    auditExport(req, 'facturas.csv', { from, to });
 
     sendCsv(res, `facturas_${new Date().toISOString().slice(0,10)}.csv`, header, rows);
   } catch (err) {
@@ -301,6 +341,107 @@ ${registros}
   }
 });
 
+// ── GET /admin/exports/charges.csv ────────────────────────────────────────
+// SCRUM-25: "cobros.csv" del paquete — con `paid_via` (= charge.method, regla 22),
+// fecha y método. Es lo que el asesor cruza con el banco.
+// ?from=YYYY-MM-DD&to=YYYY-MM-DD&status=all|pending|paid|expired
+router.get('/charges.csv', async (req, res) => {
+  try {
+    const { from, to } = parseDateFilter(req.query as any);
+    const status = String(req.query.status || 'all');
+
+    const where: any = { merchantId: req.merchantId };
+    if (status !== 'all') where.status = status;
+    if (from || to) {
+      where.createdAt = {};
+      if (from) where.createdAt.gte = from;
+      if (to)   where.createdAt.lte = to;
+    }
+
+    const charges = await prisma.charge.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: { customer: { select: { name: true } } },
+    });
+    auditExport(req, 'cobros.csv', { from, to });
+
+    const header = ['Cobro #', 'Fecha', 'Cliente', 'Concepto', 'Importe', 'Moneda', 'Método (paid_via)', 'Estado', 'Cobrado en', 'Referencia'];
+    const rows = charges.map((ch) => csvRow([
+      ch.id,
+      ch.createdAt.toISOString().slice(0, 10),
+      ch.customer?.name ?? '',
+      ch.concept,
+      Number(ch.amount).toFixed(2),
+      ch.currency,
+      ch.method,                       // regla 22: paid_via
+      ch.status,
+      // El cobro no guarda paidAt: cuando está pagado, updatedAt es el momento del cobro.
+      ch.status === 'paid' ? ch.updatedAt.toISOString().slice(0, 10) : '',
+      ch.reference ?? '',
+    ]));
+
+    sendCsv(res, `cobros_${new Date().toISOString().slice(0,10)}.csv`, header, rows);
+  } catch (err) {
+    console.error('[exports/charges.csv]', err);
+    res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// ── GET /admin/exports/jobs.csv ───────────────────────────────────────────
+// SCRUM-25: "trabajos.csv" del paquete. Job no declara relaciones en Prisma, así que
+// cliente y operario se resuelven a mano (mismo patrón que jobs.routes/serializeJob).
+// ?from=YYYY-MM-DD&to=YYYY-MM-DD&status=all|<estado FSM>
+router.get('/jobs.csv', async (req, res) => {
+  try {
+    const { from, to } = parseDateFilter(req.query as any);
+    const status = String(req.query.status || 'all');
+
+    const where: any = { merchantId: req.merchantId };
+    if (status !== 'all') where.status = status;
+    if (from || to) {
+      where.createdAt = {};
+      if (from) where.createdAt.gte = from;
+      if (to)   where.createdAt.lte = to;
+    }
+
+    const jobs = await prisma.job.findMany({ where, orderBy: { createdAt: 'desc' } });
+    auditExport(req, 'trabajos.csv', { from, to });
+
+    // Nombres en 2 consultas (no una por fila): clientes y operarios del merchant.
+    const [customers, members] = await Promise.all([
+      prisma.customer.findMany({ where: { merchantId: req.merchantId }, select: { id: true, name: true } }),
+      prisma.teamMember.findMany({ where: { merchantId: req.merchantId }, select: { id: true, name: true } }),
+    ]);
+    const customerName = new Map(customers.map((c) => [c.id, c.name]));
+    const operarioName = new Map(members.map((m) => [m.id, m.name]));
+
+    const header = ['Trabajo #', 'Título', 'Estado', 'Cliente', 'Operario', 'Fecha prevista', 'Total aceptado', 'Total cobrado', 'Pendiente', 'Estado de cobro', 'Alta'];
+    const rows = jobs.map((j) => {
+      const aceptado = j.totalAceptado != null ? Number(j.totalAceptado) : 0;
+      const cobrado = Number(j.totalCobrado ?? 0);
+      return csvRow([
+        j.id,
+        j.titulo ?? '',
+        j.status,
+        customerName.get(j.customerId) ?? '',
+        // operarioId null = propietario (SCRUM-22): se deja vacío, no se inventa nombre
+        j.operarioId != null ? (operarioName.get(j.operarioId) ?? '') : '',
+        j.scheduledAt ? j.scheduledAt.toISOString().slice(0, 10) : '',
+        aceptado.toFixed(2),
+        cobrado.toFixed(2),
+        (Math.round((aceptado - cobrado) * 100) / 100).toFixed(2),
+        estadoCobroFor(cobrado, aceptado),   // mismo semáforo que la app
+        j.createdAt.toISOString().slice(0, 10),
+      ]);
+    });
+
+    sendCsv(res, `trabajos_${new Date().toISOString().slice(0,10)}.csv`, header, rows);
+  } catch (err) {
+    console.error('[exports/jobs.csv]', err);
+    res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 // ── GET /admin/exports/expenses.csv ──────────────────────────────────────
 // ?from=YYYY-MM-DD&to=YYYY-MM-DD&category=all|materiales|...
 router.get('/expenses.csv', async (req, res) => {
@@ -324,6 +465,8 @@ router.get('/expenses.csv', async (req, res) => {
         provider: { select: { name: true } },
       },
     });
+
+    auditExport(req, 'gastos.csv', { from, to });
 
     const header = ['Fecha', 'Concepto', 'Categoría', 'Importe', 'Moneda', 'Proveedor', 'Presupuesto ID', 'Notas'];
     const rows = expenses.map((e) => csvRow([
@@ -364,6 +507,8 @@ router.get('/quotes.csv', async (req, res) => {
       orderBy: { createdAt: 'desc' },
       include: { customer: { select: { name: true, email: true, phone: true } } },
     });
+
+    auditExport(req, 'presupuestos.csv', { from, to });
 
     const header = ['ID', 'Fecha', 'Cliente', 'Email', 'Teléfono', 'Total', 'Moneda', 'Estado', 'Aceptada en', 'Condiciones de pago'];
     const rows = quotes.map((q) => csvRow([
