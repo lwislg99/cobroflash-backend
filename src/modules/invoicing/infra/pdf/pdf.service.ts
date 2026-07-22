@@ -36,6 +36,11 @@ export async function loadLogoBuffer(logoUrl: string | null | undefined): Promis
 
 export async function generateInvoicePdf(params: {
   number: string;
+  // SCRUM-72: id para la URL del endpoint auth y merchantId para el nombre de fichero
+  // (la serie es única POR merchant → sin el prefijo, dos merchants con "2026-CF-001"
+  // se pisaban el PDF en disco).
+  invoiceId: number;
+  merchantId: number;
   // A2.4: datos del emisor completos (teléfono/email opcionales)
   merchant: { name: string; legalName?: string | null; taxId?: string | null; address?: string | null; logoUrl?: string | null; phone?: string | null; email?: string | null };
   customer: { name: string; email?: string | null; phone?: string | null };
@@ -49,7 +54,7 @@ export async function generateInvoicePdf(params: {
   rectifiesNumber?: string | null; // nº de la factura original (solo R1)
   watermark?: string | null;       // texto diagonal en cada página (demo: "DEMO — no válida fiscalmente")
 }) {
-  const fileName = `${params.number}.pdf`;
+  const fileName = `${params.merchantId}-${params.number}.pdf`; // SCRUM-72
   const outPath  = path.join(invoicesDir, fileName);
   const isVF     = !!params.vfHash;
   // V0-0: justificante de cobro — sin numeración de factura, sin QR, copy sin "factura"
@@ -358,7 +363,9 @@ export async function generateInvoicePdf(params: {
     stream.on('error', reject);
   });
 
-  return { outPath, publicUrlPath: `/invoices/${fileName}` };
+  // SCRUM-72: ya no es una URL pública. Se persiste en Invoice.pdfUrl la ruta del
+  // endpoint AUTENTICADO, que es la que enlaza el dashboard (cookie de sesión).
+  return { outPath, publicUrlPath: `/admin/invoices/${params.invoiceId}/pdf` };
 }
 
 /**
@@ -401,8 +408,10 @@ export async function generateQuotePdf(params: {
   country?: string | null;
   tiers?: Array<{ id: string; label: string; description?: string; lines: any[]; total: number; recommended?: boolean }> | null;
 }) {
+  // SCRUM-72: quoteId es el id GLOBAL (autoincrement) → ya único entre merchants, no hace
+  // falta prefijo. El fichero vive en storage/invoices (fuera de public/), como la factura.
   const fileName = `QUOTE-${params.quoteId}.pdf`;
-  const outPath = path.join(invoicesDir, fileName); // usamos la misma carpeta /invoices
+  const outPath = path.join(invoicesDir, fileName);
 
   const locale = getLocale(params.country);
   const QUOTE_LABEL = locale.quote; // "Presupuesto" o "Cotización"
@@ -680,5 +689,7 @@ doc
     stream.on('error', reject);
   });
 
-  return { outPath, publicUrlPath: `/invoices/${fileName}` };
+  // SCRUM-72: ídem factura — Quote.pdfUrl guarda la ruta del endpoint AUTENTICADO
+  // GET /admin/quotes/:id/pdf, no una ruta estática pública.
+  return { outPath, publicUrlPath: `/admin/quotes/${params.quoteId}/pdf` };
 }

@@ -639,6 +639,8 @@ router.post('/:id/regenerate-pdf', async (req, res) => {
 
     const pdf = await generateInvoicePdf({
       number: invoice.number,
+      invoiceId: invoice.id,          // SCRUM-72
+      merchantId: invoice.merchantId, // SCRUM-72
       merchant: {
         name: merchant.name,
         legalName: merchant.legalName,
