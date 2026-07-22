@@ -149,8 +149,11 @@ tmp/
 # A11.3: dumps cifrados locales (datos de prod — JAMÁS al repo)
 backups/
 
-# PDFs generados (regenerables on-demand, R8 — el fs de Railway es efímero)
-public/invoices/*.pdf
+# SCRUM-87 (🔴 RGPD): NINGÚN documento bajo public/invoices/ — express.static sirve public/ sin
+# auth, así que un PDF ahí queda descargable por enumeración. Los PDFs se regeneran on-demand a
+# storage/ (privado, endpoint auth). Se ignora el DIRECTORIO ENTERO (antes solo *.pdf, y los ~100
+# viejos habían quedado trackeados de antes). Test fail-closed: tests/scrum87-no-public-invoices.
+public/invoices/
 # SCRUM-48: PDFs de albarán fuera de public/ (privados, se sirven por endpoint auth).
 # Anclado a la raíz (/) para NO ignorar src/core/storage/ ni otros "storage" del árbol.
 /storage/
