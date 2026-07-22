@@ -1,0 +1,88 @@
+// SCRUM-73 — GET /admin/exports/verifactu.xml: gate a INVOICING_ES_ENABLED (reglas 24/26)
+// + requireRole('admin') (S1, patrón SCRUM-54). El técnico→403 general ya lo cubre el
+// recorrido de ADMIN_ONLY_ROUTES en tests/tenancy-permisos.test.mjs; aquí se blinda el
+// caso ESPECÍFICO del ticket: con el flag OFF, CERO registros salen aunque existan
+// facturas reales del merchant (regresión a prueba de reverts silenciosos).
+import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
+
+const ENABLED = process.env.QA_DB_TEST === '1';
+
+test('SCRUM-73: verifactu.xml — técnico 403, flag OFF sin registros, flag ON genera', { skip: !ENABLED }, async (t) => {
+  const { prisma } = await import('../dist/core/db/prisma.js');
+  const { app } = await import('../dist/app.js');
+  const server = app.listen(0);
+  await new Promise((r) => server.once('listening', r));
+  const base = `http://127.0.0.1:${server.address().port}`;
+
+  const stamp = Date.now();
+  const merchant = await prisma.merchant.create({
+    data: {
+      name: 'QA VeriFactu Gate', country: 'ES', taxId: `B${String(stamp).slice(-8)}`,
+      email: `qa-vf-gate-${stamp}@test.local`, onboardingCompleted: true,
+    },
+  });
+  const tecnico = await prisma.teamMember.create({
+    data: { merchantId: merchant.id, name: 'QA Técnico', email: `qa-vf-tec-${stamp}@test.local`, role: 'tecnico', status: 'active' },
+  });
+  const customer = await prisma.customer.create({
+    data: { merchantId: merchant.id, name: 'Cliente QA VF', phone: `34602${stamp % 1000000}` },
+  });
+  // Factura F1 REAL con huella — si el gate se rompiera, esto es justo lo que se filtraría.
+  const invoice = await prisma.invoice.create({
+    data: {
+      merchantId: merchant.id, customerId: customer.id, number: `2026-QA-${stamp % 1000}`,
+      total: '121.00', currency: 'EUR', type: 'F1', status: 'paid',
+      lines: [{ concept: 'Servicio QA', qty: 1, price: 100, tax: 0.21 }],
+      vfHash: 'HASH_QA_TEST', vfPrevHash: '',
+      pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
+    },
+  });
+
+  const mkCookie = async (teamMemberId = null) => {
+    const token = 'qa73-' + crypto.randomBytes(12).toString('hex');
+    await prisma.authSession.create({
+      data: { merchantId: merchant.id, teamMemberId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
+    });
+    const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+    const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
+    assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
+    return cookie;
+  };
+
+  try {
+    const cookieAdmin = await mkCookie(null);
+    const cookieTecnico = await mkCookie(tecnico.id);
+    const url = `${base}/admin/exports/verifactu.xml`;
+
+    // 1) Técnico → 403 (requireRole('admin') corre ANTES de mirar el flag)
+    const rTec = await fetch(url, { headers: { cookie: cookieTecnico } });
+    assert.equal(rTec.status, 403, `técnico debería ser 403 y fue ${rTec.status}`);
+
+    // 2) Admin, flag OFF (default hoy) → 404 neutro, CERO registros, aunque exista la factura F1 real.
+    const rOff = await fetch(url, { headers: { cookie: cookieAdmin } });
+    assert.equal(rOff.status, 404, `admin con flag OFF debería ser 404 y fue ${rOff.status}`);
+    const bodyOff = await rOff.text();
+    assert.doesNotMatch(bodyOff, /RegistroFacturacionAlta/, 'con el flag OFF NO debe generarse ningún registro');
+    assert.doesNotMatch(bodyOff, new RegExp(invoice.number), 'con el flag OFF la factura real no debe filtrarse en ningún body');
+
+    // 3) Admin, flag ON (override por merchant — no toca el env global) → genera el XML real.
+    await prisma.merchant.update({ where: { id: merchant.id }, data: { flags: { INVOICING_ES_ENABLED: true } } });
+    const rOn = await fetch(url, { headers: { cookie: cookieAdmin } });
+    assert.equal(rOn.status, 200, `admin con flag ON debería ser 200 y fue ${rOn.status}`);
+    assert.match(rOn.headers.get('content-type') || '', /application\/xml/);
+    const bodyOn = await rOn.text();
+    assert.match(bodyOn, /RegistroFacturacionAlta/);
+    assert.match(bodyOn, new RegExp(invoice.number), 'la factura real SÍ debe aparecer con el flag ON');
+  } finally {
+    await prisma.invoice.deleteMany({ where: { merchantId: merchant.id } });
+    await prisma.customer.deleteMany({ where: { merchantId: merchant.id } });
+    await prisma.authSession.deleteMany({ where: { merchantId: merchant.id } });
+    await prisma.teamMember.deleteMany({ where: { merchantId: merchant.id } });
+    await prisma.merchant.delete({ where: { id: merchant.id } });
+    server.close();
+    await prisma.$disconnect();
+  }
+});
