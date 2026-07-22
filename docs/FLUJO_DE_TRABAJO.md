@@ -82,8 +82,10 @@
   seguridad del magic link real no se toca.
 - **Seed reproducible:** `scripts/seed-staging.mjs` (idempotente; merchant QA + cliente + 3
   presupuestos: 50/50, 100 %, custom 30/40/30 de 100,01 €). Guard anti-prod integrado.
-- **Schema de staging:** con `npx prisma db push` (MISMO mecanismo que prod). ⚠️ NO usar
-  `migrate deploy`: `prisma/migrations` está congelada desde mar-2026 y dejaría el schema viejo.
+- **Schema de staging:** con `DATABASE_URL=<staging> bash scripts/db-push-prod` (MISMO
+  mecanismo que prod). ⚠️ NO usar `migrate deploy`/`dev`: `prisma/migrations` se archivó en
+  `docs/historico/prisma-migrations-frozen-2026-03/` (congelada mar-2026; aplicaría schema viejo
+  en un entorno nuevo o propondría reset). Procedimiento canónico: `docs/MIGRATIONS_PENDING.md` (SCRUM-40).
 - **Los briefs de tarea incluyen sección "E2E AUTOMATIZADO"** con el guion que Claude Code
   ejecuta en staging tras el merge de esa tarea.
 

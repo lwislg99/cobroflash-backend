@@ -3,6 +3,13 @@
 > El deploy de Railway **NO** aplica el schema automáticamente (start = `node dist/index.js`).
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
+>
+> **Procedimiento canónico (SCRUM-40):** `bash scripts/db-push-prod` (= `npm run db:push`) —
+> host-check → preview `migrate diff` → **GO explícito del operador** → `db push` sin
+> `--accept-data-loss` → verificación vacía → documentar aquí. La carpeta `prisma/migrations`
+> se ARCHIVÓ en `docs/historico/prisma-migrations-frozen-2026-03/` (congelada mar-2026):
+> **NO uses `migrate deploy`/`migrate dev`** — aplicaría un schema viejo (entorno nuevo) o
+> propondría un reset. `db push` es el ÚNICO mecanismo. (Volver a migrate = SCRUM-40 opción A.)
 
 ## SCRUM-74 · `charges.receipt_token` (fuga RGPD `/recibo/:chargeId` enumerable) — ✅ APLICADO en prod (2026-07-22)
 

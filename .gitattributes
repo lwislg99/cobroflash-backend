@@ -1,2 +1,4 @@
 # Los scripts de shell (hooks de Claude Code) deben mantener LF: con CRLF bash falla.
 *.sh text eol=lf
+# SCRUM-40: helper de db push sin extensión .sh → misma regla (LF, o bash falla con \r).
+scripts/db-push-prod text eol=lf
