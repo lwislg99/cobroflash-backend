@@ -549,6 +549,24 @@ Bases: ejecución de contrato (merchant); interés legítimo/relación precontra
 > fundador antes de cerrar (AskUserQuestion). Sin schema. **Hallazgo colateral NO corregido**
 > (`docs/BUGS.md` P1-SEC-9): `/pay/bank/:id` y `/pay/mp/:id[/result]` comparten el mismo
 > patrón — `/pay/bank` es el más sensible de los cinco (expone IBAN/CLABE del merchant).
+> **✅ SCRUM-90 (22-jul-2026, 🔴 seguridad/RGPD, la QUINTA y ÚLTIMA puerta de la misma
+> fuga — SCRUM-72 → SCRUM-74 → SCRUM-85 → esta):** cierra P1-SEC-9. `/pay/bank` y `/pay/mp`
+> reutilizan `Charge.receiptToken` (SIN schema nuevo). `/pay/bank` era el más sensible de
+> los cinco: exponía el **IBAN/CLABE del PROFESIONAL** (no del cliente final) — enumerable
+> habilitaba recolectar cuentas bancarias de TODOS los merchants, riesgo de fraude por
+> suplantación ("cambio de cuenta" en factura falsa). Alcance MUCHO más pequeño que SCRUM-85
+> (6 archivos, no 16): `payBank.routes.ts`, `payMp.routes.ts` (2 endpoints), `mercadopago.ts`
+> (`createMpPreference`: nuevo param `payToken` para los `back_urls`; `chargeId` se conserva
+> SOLO para `external_reference`, reconciliación interna del webhook de MP, no pública), y
+> los 3 generadores ya señalados con breadcrumbs `P1-SEC-9` en SCRUM-85
+> (`payInvoice.routes.ts`'s `transfer.href`, `receipt.routes.ts`'s `payBtns`,
+> `charges.routes.ts`'s `paybank_url`/`paymp_url` legacy). Sin frontend afectado esta vez
+> (ni `/pay/bank` ni `/pay/mp` se enlazan desde el dashboard) y ningún botón de plantilla
+> Meta apunta a estas rutas → sin re-aprobación que verificar. STOP de rutas + aviso previo
+> a tocar staging, ambos confirmados por el fundador antes de cerrar. Sin schema.
+> **Con esto quedan cerradas las CINCO puertas de la misma fuga**
+> (SCRUM-72 estático público → SCRUM-74 `/recibo` → SCRUM-85 `/pay/card`+`/pay/bizum`+
+> `/pay/invoice` → SCRUM-90 `/pay/bank`+`/pay/mp`).
 
 ---
 
