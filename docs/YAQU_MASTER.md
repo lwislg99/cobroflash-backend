@@ -528,6 +528,21 @@ Bases: ejecución de contrato (merchant); interés legítimo/relación precontra
 
 ### U1.2 · DOCS-F1
 J7 builders+test · `waOptOut` + check · `docs/RUNBOOKS.md` (O) · `docs/QA_MASTER.md` (Q) · lectura de flags (P) · **CLAUDE.md + skills `/yaqu-sprint`, `/yaqu-release-check` y `yaqu-premium-ui` + hook anti-comandos-peligrosos (AA2)** · **UI-0:** instalar skill oficial `frontend-design` de Anthropic con revisión del fundador (AB7) · check manifest PWA (Y1). Todo aditivo; una tarea-un commit.
+> **✅ SCRUM-75 (22-jul-2026):** el script `test` de `package.json` listaba los archivos de test
+> EXPLÍCITAMENTE (deuda ya apuntada en P3-7/BUGS.md) — 5 archivos gateados reales
+> (`scrum47-enviar-albaran-wa`, `scrum49-firma-remota`, `scrum50-bot-albaranes`,
+> `scrum57-operario-propagacion`, y un 5º descubierto en esta misma tarea,
+> `scrum68-evidencias-firma`) nunca se habían dado de alta → `npm test` los omitía en silencio
+> (falsa cobertura). Verificados uno a uno, gateados contra staging: los 4 originales pasan
+> 100 % en solitario. Root fix: `test` pasó a `node --test --test-force-exit tests/*.test.mjs` —
+> Node 24 expande el glob él mismo (confirmado que NO recoge `tests/_staging-db.mjs` ni nada
+> fuera de `tests/`, a diferencia del auto-discovery implícito de `node --test` sin argumentos,
+> que sí se sale del directorio). Un test nuevo en `tests/` queda cubierto sin tocar
+> `package.json` nunca más. Hallazgo colateral (NO corregido, registrado en BUGS.md P3-10): la
+> suite gateada COMPLETA (`QA_DB_TEST=1 npm test`), corrida junta por primera vez gracias a este
+> fix, es no-determinista bajo concurrencia contra staging (archivos que siempre pasan sueltos
+> fallan al azar en el conjunto) — no bloquea este PR (sin schema, sin tocar staging) pero el
+> exit code de la suite gateada completa no es hoy un gate de CI fiable.
 
 ### U1.3 · SIF-1 v2 — "VeriFactu cerrado al 100 %" = las 8 obligatorias
 - **S1-0 (HUMANO):** certificado FNMT + alta entorno pruebas AEAT + cita asesor (bundle Y3).
