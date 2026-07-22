@@ -3,7 +3,8 @@
 // resto JAMÁS se cobra solo — SIEMPRE acción del pro). Merchant-scoped (regla 2).
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
-import { canTransition, estadoCobroFor } from '../../domain/job.service';
+import { canTransition, estadoCobroFor, JOB_TIPOS_OPERACION } from '../../domain/job.service';
+import { recordAudit } from '../../../system/audit.service'; // SCRUM-66: traza de tipo_operacion_elegido
 import { resolveBillingPlan, distributeStageAmounts } from '../../../quotes/domain/billingPlan';
 import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; // SCRUM-34
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
@@ -86,6 +87,9 @@ async function serializeJob(job: any) {
     // La UI del detalle/timeline la consume aparte (jobDetailView.js, carril de Javier).
     operarioId: job.operarioId ?? null,
     operario: operario ? { id: operario.id, name: operario.name } : null,
+    // SCRUM-66 (TRABAJO-4): tipo de operación fiscal (default para Jobs previos al campo).
+    // El motor que lo respeta es SCRUM-17; aquí solo se lee/edita en el detalle.
+    tipoOperacion: job.tipoOperacion ?? 'TRABAJO_UNICO',
     quote: quote
       ? { id: quote.id, number: quote.quoteNumber ?? quote.id, total: Number(quote.total), currency: quote.currency, paymentTerms: quote.paymentTerms }
       : null,
@@ -245,8 +249,34 @@ router.patch('/:id', async (req, res) => {
       }
       data.assignedUserId = uid;
     }
+    // SCRUM-66 (TRABAJO-4): tipo de operación fiscal. Enum CERRADO (validación estricta);
+    // editable siempre mientras el Job esté abierto (el candado real es SCRUM-17). Solo se
+    // audita el CAMBIO real (no un PATCH que reenvía el mismo valor).
+    let tipoOperacionElegido: string | null = null;
+    if (req.body?.tipoOperacion !== undefined) {
+      const t = String(req.body.tipoOperacion);
+      if (!(JOB_TIPOS_OPERACION as readonly string[]).includes(t)) {
+        return res.status(400).json({ error: 'invalid_tipo_operacion' });
+      }
+      if (t !== job.tipoOperacion) {
+        data.tipoOperacion = t;
+        tipoOperacionElegido = t;
+      }
+    }
 
     const updated = await prisma.job.update({ where: { id }, data });
+    // SCRUM-66: traza de que la decisión fiscal la tomó el usuario (caveat del ticket).
+    // teamMemberId = quien edita (null = propietario/admin). Fire-and-forget como el resto.
+    if (tipoOperacionElegido) {
+      recordAudit({
+        merchantId: req.merchantId,
+        teamMemberId: req.teamMemberId ?? null,
+        action: 'tipo_operacion_elegido',
+        entityType: 'job',
+        entityId: id,
+        meta: { tipoOperacion: tipoOperacionElegido },
+      });
+    }
     return res.json(await serializeJob(updated));
   } catch (err: any) {
     console.error('[PATCH /admin/jobs/:id]', err?.message || err);

@@ -15,7 +15,10 @@ export type AuditAction =
   | 'albaran_editado'
   // SCRUM-52 (carril A): autoría del operario congelada al crear el Trabajo desde el
   // accept (teamMemberId = creador del presupuesto; null = propietario).
-  | 'operario_asignado';
+  | 'operario_asignado'
+  // SCRUM-66 (TRABAJO-4): el pro fija el tipo de operación del Trabajo (varias sueltas vs
+  // trabajo único) → traza de que la decisión es del usuario/su asesor (caveat fiscal).
+  | 'tipo_operacion_elegido';
 
 export function requestIp(req: Request): string | null {
   const fwd = req.headers['x-forwarded-for'];

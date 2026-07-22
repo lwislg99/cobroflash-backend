@@ -9,6 +9,14 @@ import { recordAudit } from '../../system/audit.service';
 export const JOB_STATES = ['pendiente_agendar', 'agendado', 'en_curso', 'terminado', 'cerrado'] as const;
 export type JobState = (typeof JOB_STATES)[number];
 
+// SCRUM-66 (TRABAJO-4): tipo de operación fiscal del Trabajo (enum CERRADO, patrón de
+// ALBARAN_MODOS_VALORACION). OPERACIONES_SUELTAS = varias visitas al mismo cliente →
+// recapitulativa mensual (art. 13 RD 1619/2012); TRABAJO_UNICO = una sola prestación →
+// factura al concluir. Default TRABAJO_UNICO (el caso actual de YaQu). El motor de
+// facturación que LO RESPETA es SCRUM-17; aquí solo se persiste la elección del pro.
+export const JOB_TIPOS_OPERACION = ['OPERACIONES_SUELTAS', 'TRABAJO_UNICO'] as const;
+export type JobTipoOperacion = (typeof JOB_TIPOS_OPERACION)[number];
+
 // Transiciones permitidas (L es lineal; agendado puede re-agendarse a sí mismo
 // cambiando la fecha, y volver a pendiente_agendar si se des-programa).
 const TRANSITIONS: Record<JobState, JobState[]> = {
