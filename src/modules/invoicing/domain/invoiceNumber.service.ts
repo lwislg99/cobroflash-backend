@@ -70,6 +70,13 @@ export async function allocateInvoiceNumber(
       id: true,
       email: true,
       country: true,
+      // SCRUM-81: `flags` es OBLIGATORIO para que getEmissionMode aquí resuelva el modo con la
+      // MISMA información que el gate del endpoint (Parte P: override de INVOICING_ES_ENABLED por
+      // merchant, precedencia merchant > país > env > default). Sin él, un merchant con el override
+      // ON habría emitido un J- de justificante mientras el gate lo trataba como fiscal → factura
+      // fiscal con numeración de justificante, fuera de serie. Para merchants sin override (todos
+      // hoy, flags null) el comportamiento es IDÉNTICO al previo.
+      flags: true,
       invoiceSeriesPrefix: true,
       nextInvoiceNumber: true,
       nextRectInvoiceNumber: true,
