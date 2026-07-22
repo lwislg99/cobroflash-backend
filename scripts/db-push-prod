@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# scripts/db-push-prod — SCRUM-40: aplicación GUIADA de schema con `prisma db push`.
+#
+# Automatiza los PASOS del patrón manual que hoy hacemos a mano, SIN automatizar la DECISIÓN:
+#   host-check → preview (migrate diff) → [GO EXPLÍCITO del operador] → db push → verificación
+#   → recordatorio de documentar en docs/MIGRATIONS_PENDING.md.
+#
+# Fuente de verdad: prisma/schema.prisma. Aplica a la BD de DATABASE_URL (.env = PROD).
+#   Prod:     bash scripts/db-push-prod
+#   Staging:  DATABASE_URL="postgresql://…acela…" bash scripts/db-push-prod
+#
+# NUNCA usa --accept-data-loss (regla 3/AA2). Si Prisma pidiera confirmación de pérdida de datos,
+# db push aborta solo → señal de diff INESPERADO → PARAR y revisar.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+# ── 1) Resolver DATABASE_URL efectivo + host-check (sin imprimir credenciales) ──
+URL="${DATABASE_URL:-}"
+if [ -z "$URL" ] && [ -f .env ]; then
+  URL="$(grep -E '^DATABASE_URL=' .env | head -1 | sed -E 's|^DATABASE_URL=||' | tr -d '\r')"
+fi
+if [ -z "$URL" ]; then echo "❌ No pude resolver DATABASE_URL (ni env ni .env). Aborto."; exit 1; fi
+export DATABASE_URL="$URL"
+HOST="$(printf '%s' "$URL" | sed -E 's|.*@([^:/?]+).*|\1|')"
+case "$HOST" in
+  autorack.proxy.rlwy.net) LABEL="🔴 PRODUCCIÓN (autorack)";;
+  acela.proxy.rlwy.net)    LABEL="🟠 STAGING (acela)";;
+  *)                       LABEL="⚠️  host DESCONOCIDO ($HOST)";;
+esac
+echo "🎯 Destino del db push: $LABEL"
+echo ""
+
+# ── 2) Preview (read-only): qué aplicaría el db push ──
+echo "── PREVIEW · prisma migrate diff (BD → schema) ─────────────────────────"
+DIFF="$(npx prisma migrate diff \
+  --from-schema-datasource prisma/schema.prisma \
+  --to-schema-datamodel prisma/schema.prisma --script 2>/dev/null)"
+printf '%s\n' "$DIFF"
+echo "────────────────────────────────────────────────────────────────────────"
+if printf '%s' "$DIFF" | grep -qiE 'empty migration'; then
+  echo "✅ Nada que aplicar: la BD ya está en sync con el schema. Salgo."
+  exit 0
+fi
+
+# ── 3) GO EXPLÍCITO — la DECISIÓN es humana, NO se automatiza ──
+echo ""
+printf 'Revisa el diff. Para APLICARLO a %s escribe exactamente GO (cualquier otra cosa aborta): ' "$LABEL"
+read -r REPLY
+if [ "$REPLY" != "GO" ]; then echo "🚫 Abortado (no escribiste GO). No se aplicó NADA."; exit 1; fi
+
+# ── 4) Sentinel del hook guard-dangerous (un solo uso) + db push SIN --accept-data-loss ──
+mkdir -p .claude && touch .claude/allow-db-push
+echo ""
+echo "── db push · $LABEL (sin --accept-data-loss) ──────────────────────────"
+npx prisma db push --skip-generate
+rm -f .claude/allow-db-push   # limpieza si se corrió en manual (sin hook que lo consuma)
+
+# ── 5) Verificación: el diff debe quedar vacío ──
+echo ""
+echo "── VERIFICACIÓN · migrate diff (debe estar vacío) ─────────────────────"
+npx prisma migrate diff \
+  --from-schema-datasource prisma/schema.prisma \
+  --to-schema-datamodel prisma/schema.prisma --script
+
+# ── 6) Recordatorio de documentar ──
+echo ""
+echo "✅ Aplicado a $LABEL."
+echo "📝 AHORA documenta en docs/MIGRATIONS_PENDING.md (arriba del todo):"
+echo "   ## <TICKET> · <tabla.columna> — ✅ APLICADO en prod ($(date +%Y-%m-%d))"
+echo "   Incluye: el SQL del preview, host-check, el GO del fundador y la verificación vacía."
