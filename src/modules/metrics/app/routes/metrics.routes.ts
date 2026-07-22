@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { getHomeMetrics, getFunnelMetrics, getServiceMetrics, getTeamMetrics, getPlatformFunnel } from '../../domain/metrics.service';
+import { getHomeMetrics, getFunnelMetrics, getServiceMetrics, getTeamMetrics, getPlatformFunnel, getOperariosMetrics } from '../../domain/metrics.service';
+import { requireRole } from '../../../../core/http/authMiddleware';
 import { getWhatsAppMetrics } from '../../../messaging/domain/whatsappLog.service';
 import { prisma } from '../../../../core/db/prisma';
 import { isOwnerEmail } from '../../../../core/config/env';
@@ -68,6 +69,18 @@ router.get('/team', async (req, res) => {
     return res.json(metrics);
   } catch (err) {
     console.error('[GET /admin/metrics/team]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// SCRUM-24 (OPERARIO-3): resumen de supervisión por operario. SOLO Admin — el gate va
+// aquí, en el BACKEND (regla S3), además de estar en ADMIN_ONLY_ROUTES para que la suite
+// A12.4 exija 403 al técnico. Ocultar el nav en el front es UX, no seguridad.
+router.get('/operarios', requireRole('admin'), async (req, res) => {
+  try {
+    return res.json(await getOperariosMetrics(req.merchantId));
+  } catch (err) {
+    console.error('[GET /admin/metrics/operarios]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });

@@ -158,6 +158,21 @@
 36. Con sesión de **admin/owner**: la lista trae los Trabajos de todos los operarios y el detalle
     de cualquiera responde **200** (sin cambio respecto a antes de SCRUM-23).
 
+> **(SCRUM-24) Supervisión por operario.** Cubierta automáticamente por
+> `tests/scrum24-operarios-metrics.test.mjs` (sumas por operario + fila del propietario +
+> técnico 403 + tenancy, con datos efímeros propios). El gate real es de backend.
+
+37. Con sesión de **admin**: en el sidebar aparece **Operarios** → abrir la vista → ✅ ASSERT
+    tarjeta de cabecera **"Pendiente de cobrar"** con el importe total y el nº de trabajos
+    abiertos, y una tarjeta por operario con su barra de % cobrado y su pill de estado.
+38. Selector por operario: click en el nombre de un operario → ✅ ASSERT la lista muestra solo
+    su tarjeta; "Todos" restaura el listado completo.
+39. Con sesión de **técnico**: ✅ ASSERT el ítem **Operarios** NO aparece en el sidebar; navegar
+    a la vista a mano redirige a Inicio; y `GET {BASE}/admin/metrics/operarios` responde **403**
+    (el gate es de backend — regla S3, no basta con ocultar el nav).
+40. Digno 390/1280: ✅ ASSERT una columna en móvil, importes en tinta y tabulares, sin scroll
+    horizontal.
+
 ## Resultado
 
 - Reportar por paso: ✅/❌ + captura del MCP donde aporte.

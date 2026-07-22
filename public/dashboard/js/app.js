@@ -38,7 +38,9 @@ async function initApp() {
 
   // Ocultar elementos de navegación para técnicos
   if (window.appUserRole !== 'admin') {
-    ['nav-plans', 'nav-team'].forEach((id) => {
+    // SCRUM-24: la supervisión por operario es solo del admin (S1). Ocultar el nav es
+    // UX; la seguridad real la da el 403 de GET /admin/metrics/operarios (backend, S3).
+    ['nav-plans', 'nav-team', 'nav-operarios'].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
@@ -253,6 +255,17 @@ async function initApp() {
         } else {
           viewTitle.textContent = 'Equipo';
           renderTeamView(viewContainer);
+        }
+        break;
+      case 'operarios':
+        // SCRUM-24: mismo guard que 'team' — un técnico no entra ni tecleando la vista
+        if (window.appUserRole !== 'admin') {
+          viewTitle.textContent = 'Inicio';
+          renderHomeView(viewContainer);
+          view = 'home';
+        } else {
+          viewTitle.textContent = 'Operarios';
+          if (typeof renderOperariosView === 'function') renderOperariosView(viewContainer);
         }
         break;
       case 'settings':
