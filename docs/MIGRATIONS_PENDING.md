@@ -4,6 +4,27 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
+## SCRUM-68 · `albaranes.evidencia_firma` (evidencias probatorias de la firma) — ⏳ PENDIENTE en prod
+
+`prisma db push` aplicado a **STAGING** (`acela.proxy.rlwy.net`) el **2026-07-22**, con host-check +
+preview `migrate diff`, **SIN `--accept-data-loss`**. Post-push staging: `migrate diff` → **"empty
+migration"**. 100 % aditivo, una sola columna **nullable sin default** (no hay UNIQUE → `db push`
+NO pide `--accept-data-loss`):
+```sql
+ALTER TABLE "albaranes" ADD COLUMN "evidencia_firma" JSONB;
+```
+Guarda `{ v, canal(remoto|in_situ), firmadoAt, ip, ua, tokenId, firmante, hashAlg, contentHash }` al
+firmar. El `contentHash` es SHA-256 del **contenido canónico** del albarán (no del PDF). ⚠️ `ip`/`ua`
+son datos personales → viven SOLO en esta columna; NUNCA se exponen (serializer, PDF y HTML público
+los omiten — cubierto por test).
+
+**PROD: ⏳ PENDIENTE.** Aplicar **justo tras el merge del PR de la 68** (con preview + GO del fundador),
+para cerrar la ventana de P2022: los handlers de firma escriben `evidenciaFirma` en cada firma. Hasta
+entonces el código nuevo NO debe estar en prod (o la firma fallaría). El código es tolerante en lectura
+(el serializer nunca lee la columna), pero la **escritura** al firmar exige la columna.
+
+---
+
 ## SCRUM-49 · `albaranes.firma_token` + `enviado_para_firma_at` (firma remota) — ✅ APLICADO en prod (2026-07-16)
 
 `prisma db execute` (NO `db push`) aplicado a **STAGING** (`acela.proxy.rlwy.net`) y a **PRODUCCIÓN**

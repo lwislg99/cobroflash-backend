@@ -11,7 +11,7 @@ import fs from 'fs';
 import PDFDocument from 'pdfkit';
 import { albaranesDir } from '../../../core/storage/dirs';
 import { loadLogoBuffer } from '../../invoicing/infra/pdf/pdf.service';
-import type { AlbaranLinea, AlbaranModoValoracion } from '../domain/albaran.service';
+import type { AlbaranLinea, AlbaranModoValoracion, FirmaEvidencia } from '../domain/albaran.service';
 
 export async function generateAlbaranPdf(params: {
   merchantId: number; // SCRUM-48: prefija el nombre de archivo (mata la colisión entre merchants)
@@ -36,6 +36,9 @@ export async function generateAlbaranPdf(params: {
   notas?: string | null;
   signatureData?: string | null; // data-URI (solo si estado firmado)
   firmadoAt?: Date | null;
+  // SCRUM-68: evidencias de firma para el certificado. ⚠️ ip/ua vienen en el objeto pero
+  // NO se pintan (solo hash/firmante/canal/sello temporal). Ver bloque "Certificado".
+  evidencia?: FirmaEvidencia | null;
 }): Promise<{ outPath: string }> {
   // SCRUM-48: la serie ALB- solo es única POR merchant (@@unique([merchantId, numero]));
   // sin el prefijo, dos merchants con ALB-2026-001 se pisaban el PDF en disco.
@@ -225,6 +228,45 @@ export async function generateAlbaranPdf(params: {
     } catch {
       // Si la imagen de firma falla, el PDF sale sin el bloque (no aborta)
     }
+  }
+
+  // ── Certificado de evidencias (SCRUM-68 · solo si hay firma sellada) ──────
+  // Prueba QUIÉN firmó, CUÁNDO (reloj del servidor), por qué CANAL y sobre qué CONTENIDO
+  // (hash SHA-256 canónico, no del PDF). ⚠️ NUNCA se imprime ip/ua (dato personal): quedan
+  // solo en la BD para requerimiento legal. La fuerza probatoria final la valora el juez.
+  if (params.evidencia && params.evidencia.contentHash) {
+    const ev = params.evidencia;
+    if (doc.y + 120 > doc.page.height - doc.page.margins.bottom) doc.addPage();
+    doc.moveDown(0.8);
+    const boxY = doc.y;
+    const sello = new Date(ev.firmadoAt).toLocaleString('es-ES', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    });
+    const canalTxt = ev.canal === 'remoto' ? 'Firma remota (enlace por WhatsApp)' : 'Firma presencial (in situ)';
+    const rows: Array<[string, string]> = [
+      ['Firmante', ev.firmante || 'Cliente'],
+      ['Sello temporal', `${sello} (hora del servidor)`],
+      ['Canal', canalTxt],
+      ['Integridad', `SHA-256: ${ev.contentHash}`],
+    ];
+    doc.fontSize(9).font('Helvetica-Bold').fillColor(INK).text('Certificado de evidencias de la firma', M, boxY);
+    doc.moveDown(0.3);
+    for (const [k, v] of rows) {
+      const y = doc.y;
+      doc.fontSize(7.5).font('Helvetica-Bold').fillColor(MUTED).text(k, M, y, { width: 90 });
+      doc.fontSize(7.5).font('Helvetica').fillColor(BODY).text(v, M + 92, y, { width: W - 92 });
+      doc.moveDown(0.15);
+    }
+    doc.moveDown(0.2);
+    doc.fontSize(6.5).font('Helvetica-Oblique').fillColor(MUTED).text(
+      'El hash certifica la integridad del contenido firmado (no del archivo PDF). YaQu conserva ' +
+      'evidencias técnicas adicionales asociadas a esta firma, disponibles a requerimiento legal. ' +
+      'La valoración de su fuerza probatoria corresponde a la autoridad competente.',
+      M, doc.y, { width: W },
+    );
+    doc.fillColor('#000');
+    doc.moveDown(0.5);
   }
 
   // ── Pie legal (SCRUM-67 · texto EXACTO del brief, en AMBOS modos) ─────────

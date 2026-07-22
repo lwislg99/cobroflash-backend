@@ -9,6 +9,7 @@ import { requireActivePlan } from '../../../../core/http/authMiddleware'; // SCR
 import { sendAlbaranFirmadoWhatsApp, sendAlbaranParaFirmarWhatsApp } from '../../domain/albaranWhatsApp.service'; // SCRUM-47/49
 import {
   ALBARAN_MODOS_VALORACION,
+  buildFirmaEvidencia,
   canTransitionAlbaran,
   ensureAlbaranPdf,
   serializeAlbaran,
@@ -160,9 +161,19 @@ router.post('/:id/firmar', async (req, res) => {
     }
 
     const firmadoAt = new Date();
+    // SCRUM-68: sella evidencias (canal in situ, sin token). ip/ua se guardan pero NUNCA
+    // se exponen (serializeAlbaran no los saca; el PDF solo pinta hash/firmante/canal).
+    const evidencia = await buildFirmaEvidencia({
+      albaran,
+      canal: 'in_situ',
+      ip: requestIp(req),
+      ua: (req.headers['user-agent'] as string) || null,
+      tokenId: null,
+      firmadoAt,
+    });
     const updated = await prisma.albaran.update({
       where: { id: albaran.id },
-      data: { estado: 'firmado', signatureUrl: signatureData, firmadoAt },
+      data: { estado: 'firmado', signatureUrl: signatureData, firmadoAt, evidenciaFirma: evidencia as any },
     });
     // Regenerar el PDF YA con el bloque de firma (force). Si el PDF falla, la firma
     // queda registrada igualmente (el GET /pdf lo regenerará bajo demanda).
