@@ -465,6 +465,18 @@ Alcance: (a) foto de la avería adjunta a QuoteRequest (desde bot y portal); (b)
 | Marcar pagado / deshacer | ✅ | ❌ |
 | Configuración, datos fiscales, Connect, flags · billing/plan · equipo · exports | ✅ | ❌ |
 Ruta nueva = declara rol mínimo; default Admin-only.
+> **✅ SCRUM-73 (22-jul-2026):** `GET /admin/exports/verifactu.xml` NO cumplía esta tabla — generaba
+> registros RRSIF (huellas + encadenamiento) sin consultar `INVOICING_ES_ENABLED` y era accesible a
+> Técnico. Con SIF-1 sin cerrar y el flag OFF, los merchants ES reales emiten justificantes (J-), no
+> facturas fiscales — un XML VeriFactu sobre ese estado no representa registros válidos (reglas
+> 24/26: riesgo de que un merchant lo presente como "ya cumplo VeriFactu"). Fix: gate a
+> `INVOICING_ES_ENABLED` (confirmado como el flag canónico — Parte P: gobierna "factura fiscal ES a
+> reales", que es justo lo que exporta este XML; `SIF_ENABLED` gobierna la remisión a AEAT, un paso
+> posterior e independiente) → **404 neutro y CERO registros generados** con el flag OFF, gate ANTES
+> de tocar la BD de facturas; `requireRole('admin')` + alta en `ADMIN_ONLY_ROUTES` (patrón SCRUM-54).
+> Sin tocar la lógica de generación del XML ni el encadenamiento de huellas. Test end-to-end contra
+> staging con una factura F1 real con huella: técnico→403, flag OFF→404 sin fuga (ni el número de
+> factura aparece en ningún body), flag ON (override por merchant)→200 con el registro correcto.
 
 ## S2. Audit `F1-build mínimo + F2 completo`
 F1: registrar en la tabla de eventos existente `marcar_pagado_manual`, `deshacer_pago`, `anular_factura`, `cambio_flag` (con userId+ip). F2: `AuditLog{merchantId,userId,action,entityType,entityId,meta,ip,createdAt}` para login, datos fiscales, Connect onboard, export, archivado cliente, cambios de plan; vista Admin.
