@@ -117,9 +117,9 @@ Envío de la factura con enlace de pago.
     `payment_confirmation_invoice_es` en SCRUM-74, ver §4). Meta aprueba la URL BASE fija + la
     POSICIÓN del sufijo dinámico, no el formato del valor sustituido en runtime — por eso este
     cambio tampoco requiere re-aprobación de la plantilla.
-  - La página `/pay/invoice/:token` (mismo token que `/recibo`, `/pay/card` y `/pay/bizum`)
-    muestra los métodos (tarjeta + transferencia; **transferencia** — `/pay/bank/:chargeId` —
-    sigue en el id, P1-SEC-9, fuera de alcance de SCRUM-85).
+  - La página `/pay/invoice/:token` (mismo token que `/recibo`, `/pay/card`, `/pay/bizum`,
+    `/pay/bank` y `/pay/mp` — SCRUM-90 cierra la quinta y última puerta) muestra los métodos
+    (tarjeta + transferencia + Mercado Pago), todos ya tokenizados.
 
 **Código que lo envía:**
 - `src/modules/system/app/routes/invoicesAdmin.routes.ts` (resend-whatsapp y send-reminder)

@@ -95,11 +95,10 @@ router.get('/:token', async (req, res) => {
 
   const title = `Recibo #${ch.id} — YaQu`;
 
-  // SCRUM-85: /pay/card tokenizado (mismo Charge.receiptToken); /pay/bank sigue en
-  // chargeId a propósito (P1-SEC-9, fuera de alcance).
+  // SCRUM-85/90: /pay/card y /pay/bank tokenizados (mismo Charge.receiptToken).
   const payBtns =
     ch.status === 'pending'
-      ? `<a href="${BASE_URL}/pay/bank/${ch.id}" class="pay-btn pay-btn-primary">Pagar por transferencia</a>
+      ? `<a href="${BASE_URL}/pay/bank/${token}" class="pay-btn pay-btn-primary">Pagar por transferencia</a>
        <a href="${BASE_URL}/pay/card/${token}" class="pay-btn pay-btn-secondary">Pagar con tarjeta</a>`
       : '';
 

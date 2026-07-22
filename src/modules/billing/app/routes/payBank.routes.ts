@@ -1,4 +1,9 @@
 // src/modules/billing/app/routes/payBank.routes.ts
+// SCRUM-90: identificado por Charge.receiptToken (patrón SCRUM-74/85), NO por el
+// chargeId autoincremental — mismo token compartido con /recibo, /pay/card, /pay/bizum
+// y /pay/invoice. Esta ruta es la MÁS sensible de las cinco: expone el IBAN/CLABE del
+// PROFESIONAL (no solo datos del cliente final) — enumerable habilitaba recolectar
+// cuentas bancarias de todos los merchants (riesgo de fraude por "cambio de cuenta").
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
@@ -7,20 +12,19 @@ import { BASE_URL } from '../../../../core/config/env';
 
 const router = Router();
 
-router.get('/bank/:id', async (req, res) => {
+router.get('/bank/:token', async (req, res) => {
   res.set('Cache-Control', 'no-store, must-revalidate');
   res.set('Pragma', 'no-cache');
   res.set('Expires', '0');
 
-  const id = Number(req.params.id);
-  // N3: estado digno también en el 400 (id no numérico), nunca texto plano.
-  if (!Number.isInteger(id)) return res.status(400).send(documentNotFoundHtml());
+  const token = req.params.token;
 
   const charge = await prisma.charge.findUnique({
-    where: { id },
+    where: { receiptToken: token },
     include: { merchant: true },
   });
   if (!charge) return res.status(404).send(documentNotFoundHtml());
+  const id = charge.id;
 
   const merchant = charge.merchant as any;
   const country  = merchant?.country || 'ES';

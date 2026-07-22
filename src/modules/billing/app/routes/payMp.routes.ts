@@ -1,4 +1,6 @@
 // src/modules/billing/app/routes/payMp.routes.ts
+// SCRUM-90: identificado por Charge.receiptToken (patrón SCRUM-74/85), NO por el
+// chargeId autoincremental.
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
@@ -9,21 +11,20 @@ import { createMpPreference } from '../../../../integrations/mercadopago';
 const router = Router();
 
 /**
- * GET /pay/mp/:id
+ * GET /pay/mp/:token
  * Crea (o reutiliza) una preferencia de Mercado Pago y redirige al checkout.
  */
-router.get('/mp/:id', async (req, res) => {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id)) return res.status(400).send('ID inválido');
+router.get('/mp/:token', async (req, res) => {
+  const token = req.params.token;
 
   const charge = await prisma.charge.findUnique({
-    where: { id },
+    where: { receiptToken: token },
     include: { customer: true, merchant: true },
   });
 
   if (!charge)            return res.status(404).send(documentNotFoundHtml());
-  if (charge.status === 'paid')    return res.redirect(`${BASE_URL}/pay/mp/${id}/result?status=approved`);
-  if (charge.status === 'expired') return res.redirect(`${BASE_URL}/pay/mp/${id}/result?status=expired`);
+  if (charge.status === 'paid')    return res.redirect(`${BASE_URL}/pay/mp/${token}/result?status=approved`);
+  if (charge.status === 'expired') return res.redirect(`${BASE_URL}/pay/mp/${token}/result?status=expired`);
 
   const accessToken = (charge.merchant as any)?.mpAccessToken || config.MP_ACCESS_TOKEN;
   if (!accessToken) {
@@ -43,7 +44,8 @@ router.get('/mp/:id', async (req, res) => {
         : `https://sandbox.mercadopago.com/checkout/v1/redirect?pref_id=${prefId}`;
     } else {
       const pref = await createMpPreference({
-        chargeId: charge.id,
+        chargeId: charge.id, // interno: external_reference de MP, NUNCA en una URL pública
+        payToken: token,     // público: back_urls (/pay/mp/:token/result)
         title: charge.concept,
         amount: Number(charge.amount),
         currency: charge.currency,
@@ -71,16 +73,15 @@ router.get('/mp/:id', async (req, res) => {
 });
 
 /**
- * GET /pay/mp/:id/result?status=approved|rejected|pending|expired
+ * GET /pay/mp/:token/result?status=approved|rejected|pending|expired
  * Página de resultado que Mercado Pago muestra tras el pago.
  */
-router.get('/mp/:id/result', async (req, res) => {
-  const id = Number(req.params.id);
+router.get('/mp/:token/result', async (req, res) => {
   const status = String(req.query.status || 'pending');
 
   let concept = '', amount = '', currency = '';
   try {
-    const charge = await prisma.charge.findUnique({ where: { id } });
+    const charge = await prisma.charge.findUnique({ where: { receiptToken: req.params.token } });
     if (charge) {
       concept  = charge.concept;
       amount   = Number(charge.amount).toFixed(2);
