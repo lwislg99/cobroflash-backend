@@ -166,8 +166,13 @@ async function serializeJobDetail(job: any) {
 // GET /admin/jobs — lista para la vista "Esta semana" (simple, por fecha)
 router.get('/', async (req, res) => {
   try {
+    // SCRUM-23 (S1 roles · S3 filtrar en BACKEND): el técnico solo ve los Trabajos que
+    // originó (operarioId = él; autoría inmutable de SCRUM-22). Admin/owner: sin cambio.
+    // El filtro va en la QUERY, jamás ocultando en front datos ya enviados.
+    const where: { merchantId: number; operarioId?: number | null } = { merchantId: req.merchantId };
+    if (req.userRole === 'tecnico') where.operarioId = req.teamMemberId;
     const jobs = await prisma.job.findMany({
-      where: { merchantId: req.merchantId },
+      where,
       orderBy: [{ scheduledAt: 'asc' }, { id: 'desc' }],
       take: 200,
     });
@@ -188,6 +193,11 @@ router.get('/:id', async (req, res) => {
     if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!job) return res.status(404).json({ error: 'not_found' });
+    // SCRUM-23: row-level por operario dentro del MISMO merchant. Un técnico no abre por
+    // URL el Trabajo de otro → 404 (mismo patrón que la tenancy: no filtra existencia).
+    if (req.userRole === 'tecnico' && job.operarioId !== req.teamMemberId) {
+      return res.status(404).json({ error: 'not_found' });
+    }
     return res.json(await serializeJobDetail(job));
   } catch (err: any) {
     console.error('[GET /admin/jobs/:id]', err?.message || err);
