@@ -511,6 +511,27 @@ Bases: ejecución de contrato (merchant); interés legítimo/relación precontra
 > **Hallazgo colateral NO corregido** (`docs/BUGS.md` P1-SEC-8): `/pay/card/:id`,
 > `/pay/bizum/:chargeId`, `/pay/invoice/:chargeId` comparten el mismo patrón de `chargeId`
 > enumerable en la RUTA (no solo en el destino de un redirect) — fuera del alcance pedido.
+> **✅ SCRUM-85 (22-jul-2026, 🔴 seguridad/RGPD, la TERCERA puerta de la misma fuga —
+> SCRUM-72 → SCRUM-74 → esta):** cierra P1-SEC-8. `/pay/card`, `/pay/bizum` y `/pay/invoice`
+> reutilizan `Charge.receiptToken` (ya existía desde SCRUM-74 — **sin schema nuevo**), mismo
+> patrón `findUnique` por token. Alcance real MUCHO mayor que "3 rutas": 13 generadores de
+> enlace tuvieron que seguir para no dejar el flujo roto o con enlaces viejos conviviendo con
+> los nuevos — `whatsappTemplates.ts` (`buildPaymentRequest`), `invoiceWhatsApp.service.ts`,
+> `invoiceReminder.service.ts` (recordatorios 7/14d), `botFlow.service.ts` (bot),
+> `invoicesAdmin.routes.ts`, `customerPortal.routes.ts` (portal `/cliente/:token`),
+> `charges.routes.ts` (legacy, ya gateado), `jobs.routes.ts`, y `receipt.routes.ts` (su propio
+> botón "Pagar con tarjeta", que se quedó en `chargeId` en SCRUM-74 porque `/pay/card` aún no
+> estaba tokenizado). **Y el FRONTEND del dashboard** (`invoiceDetailView.js`,
+> `jobDetailView.js`): construían `/pay/invoice/${chargeId}` client-side para el botón real
+> "Enlace de pago" y la barra de fallback de WhatsApp fallido — sin arreglarlos habría sido una
+> regresión funcional real (404), no solo un hueco de seguridad; se detectó y corrigió como
+> parte del mismo cierre (backend ahora expone `payToken` junto a `chargeId`, que se conserva
+> para la acción admin `/admin/charges/:chargeId/confirm-bizum`, no pública). El botón dinámico
+> de `payment_request_es` tampoco requirió re-aprobación en Meta (mismo razonamiento que
+> SCRUM-74 §4) — `docs/WHATSAPP_TEMPLATES.md` §2 actualizado. STOP de alcance confirmado por el
+> fundador antes de cerrar (AskUserQuestion). Sin schema. **Hallazgo colateral NO corregido**
+> (`docs/BUGS.md` P1-SEC-9): `/pay/bank/:id` y `/pay/mp/:id[/result]` comparten el mismo
+> patrón — `/pay/bank` es el más sensible de los cinco (expone IBAN/CLABE del merchant).
 
 ---
 
