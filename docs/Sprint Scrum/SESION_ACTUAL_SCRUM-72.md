@@ -1,3 +1,5 @@
+> ⚠️ Escrito bajo el protocolo anterior. Las reglas de proceso vigentes están en `docs/ASESOR.md`, que manda sobre lo que diga este documento.
+
 # SESION_ACTUAL_SCRUM-72.md — Brief
 **SCRUM-72 · 🔴 SEGURIDAD/RGPD · PDFs de factura Y presupuesto públicos y enumerables**
 Carril B (Javier, delegado por Luis) · Prioridad **Highest** · Bloquea a SCRUM-25 · Nace del recon de SCRUM-25.

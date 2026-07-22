@@ -1,3 +1,5 @@
+> ⚠️ Escrito bajo el protocolo anterior. Las reglas de proceso vigentes están en `docs/ASESOR.md`, que manda sobre lo que diga este documento.
+
 # SPEC de render — nombre del operario en el Trabajo (SCRUM-22 §7)
 Para el carril A (Luis), sobre `jobDetailView.js`. La escribe el asesor/carril B; la ejecuta Luis.
 Aditivo, front-only, sin schema. Reglas 4 (vanilla), 30 (textos canónicos), DESIGN.md + skill yaqu-premium-ui.

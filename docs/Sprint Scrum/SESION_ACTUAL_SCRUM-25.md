@@ -1,3 +1,5 @@
+> ⚠️ Escrito bajo el protocolo anterior. Las reglas de proceso vigentes están en `docs/ASESOR.md`, que manda sobre lo que diga este documento.
+
 # SESION_ACTUAL_SCRUM-25.md — Brief
 **SCRUM-25 · EXPORT-1 · Base de datos descargable (ZIP: facturas PDF+XML + CSVs)**
 Carril B (Javier) · labels `dev2`, `export`, `legal`, `datos` · Fase F2 · Última de la cola del carril B.

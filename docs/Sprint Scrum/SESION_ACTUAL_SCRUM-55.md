@@ -1,3 +1,5 @@
+> ⚠️ Escrito bajo el protocolo anterior. Las reglas de proceso vigentes están en `docs/ASESOR.md`, que manda sobre lo que diga este documento.
+
 # SESION_ACTUAL_SCRUM-55.md — Brief
 **SCRUM-55 · SEGURIDAD · Auditoría completa de rutas `/admin` + red fail-closed**
 Carril B (Javier) · Fase F2 · **Absorbe SCRUM-54** (decisión del fundador).
