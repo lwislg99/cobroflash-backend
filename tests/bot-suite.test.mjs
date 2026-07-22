@@ -7,6 +7,7 @@
 // ⚠️ GATEADO (toca la BD del .env con datos del merchant demo y LIMPIA lo suyo):
 //   BOT_SUITE_TEST=1 npm test   (el resto de envs las fija este archivo)
 // En `npm test` normal aparece como SKIP y no toca nada.
+import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando BOT_SUITE_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
