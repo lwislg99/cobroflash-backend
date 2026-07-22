@@ -28,6 +28,11 @@ export async function sendInvoiceEmail(args: {
   // Asegura el PDF en disco (genera si está PENDING o se perdió) y lo lee.
   const { diskPath, pdfUrl } = await ensureInvoicePdf(invoiceId, prisma);
   const pdfBase64 = fs.existsSync(diskPath) ? fs.readFileSync(diskPath).toString('base64') : null;
+  // SCRUM-76: tras SCRUM-72 (D3) se quitó el botón "Ver documento" → el ADJUNTO es la ÚNICA vía de
+  // entrega del documento fiscal al cliente. Si no hay PDF, NO enviamos una factura mutilada en
+  // silencio: fallamos RUIDOSAMENTE para que el caller (webhook/admin) lo registre y se pueda
+  // reenviar tras arreglar la causa. Vale para TODAS las ramas (Resend y fallback SMTP/outbox).
+  if (!pdfBase64) throw new Error('invoice_pdf_unavailable');
 
   // Regla 24/26: J-… = justificante de cobro, el copy jamás dice "factura"
   const isJust = inv.number.startsWith('J-');
@@ -54,7 +59,8 @@ export async function sendInvoiceEmail(args: {
         to: [toEmail],
         subject,
         html,
-        attachments: pdfBase64 ? [{ filename: `${inv.number}.pdf`, content: pdfBase64 }] : undefined,
+        // pdfBase64 garantizado no-null por el guard de arriba → el adjunto SIEMPRE viaja.
+        attachments: [{ filename: `${inv.number}.pdf`, content: pdfBase64 }],
       },
       { headers: { Authorization: `Bearer ${config.RESEND_API_KEY}`, 'Content-Type': 'application/json' }, timeout: 15_000 },
     );
@@ -70,23 +76,16 @@ export async function sendInvoiceEmail(args: {
     from,
     to: toEmail,
     subject,
+    // pdfBase64 garantizado no-null → el adjunto SIEMPRE viaja también en el fallback SMTP/outbox.
+    attachments: [{ filename: `${inv.number}.pdf`, content: Buffer.from(pdfBase64, 'base64'), contentType: 'application/pdf' }],
     html,
-    attachments: pdfBase64
-      ? [{ filename: `${inv.number}.pdf`, content: Buffer.from(pdfBase64, 'base64'), contentType: 'application/pdf' }]
-      : [],
   });
 
-  // @ts-ignore — streamTransport: guardar .eml para inspección en dev
-  if (mail?.message?.createReadStream) {
-    // @ts-ignore
-    const stream = mail.message.createReadStream();
+  // SCRUM-76: streamTransport + buffer:true devuelve `message` como Buffer → el `createReadStream`
+  // de antes NUNCA se ejecutaba (outbox muerto). Se escribe el Buffer directamente al .eml.
+  if (Buffer.isBuffer((mail as any)?.message)) {
     const file = path.join(outboxDir, `invoice-${inv.number}.eml`);
-    await new Promise<void>((resolve, reject) => {
-      const ws = fs.createWriteStream(file);
-      stream.pipe(ws);
-      ws.on('finish', () => resolve());
-      ws.on('error', reject);
-    });
+    fs.writeFileSync(file, (mail as any).message);
     return { ok: true, eml: `/outbox/invoice-${inv.number}.eml`, smtp: false };
   }
 
@@ -159,18 +158,22 @@ export async function sendQuoteEmail(args: { quoteId: number; prisma: PrismaClie
   const transporter: nodemailer.Transporter = config.SMTP_URL
     ? nodemailer.createTransport(config.SMTP_URL)
     : nodemailer.createTransport({ streamTransport: true, newline: 'unix', buffer: true });
-  const mail = await transporter.sendMail({ from: config.EMAIL_FROM, to: toEmail, subject, html });
-  // @ts-ignore — streamTransport: guardar .eml para inspección en dev
-  if (mail?.message?.createReadStream) {
-    // @ts-ignore
-    const stream = mail.message.createReadStream();
+  const mail = await transporter.sendMail({
+    from: config.EMAIL_FROM,
+    to: toEmail,
+    subject,
+    html,
+    // SCRUM-76 (defecto 2): el fallback también adjunta el PDF si está en disco — antes salía SIN
+    // adjunto, incoherente con el path Resend. En el presupuesto el adjunto es best-effort: el CTA
+    // al enlace /pay/quote es la vía fiable de entrega, así que aquí NO se falla si el PDF no está.
+    attachments: pdfBase64
+      ? [{ filename: `presupuesto-${(quote as any).quoteNumber ?? quote.id}.pdf`, content: Buffer.from(pdfBase64, 'base64'), contentType: 'application/pdf' }]
+      : [],
+  });
+  // SCRUM-76: Buffer directo al .eml (mismo fix que sendInvoiceEmail; el createReadStream estaba muerto).
+  if (Buffer.isBuffer((mail as any)?.message)) {
     const file = path.join(outboxDir, `quote-${quote.id}.eml`);
-    await new Promise<void>((resolve, reject) => {
-      const ws = fs.createWriteStream(file);
-      stream.pipe(ws);
-      ws.on('finish', () => resolve());
-      ws.on('error', reject);
-    });
+    fs.writeFileSync(file, (mail as any).message);
     return { ok: true, eml: `/outbox/quote-${quote.id}.eml`, smtp: false };
   }
   return { ok: true, smtp: true };

@@ -141,12 +141,11 @@ test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto
     // Se quitó el botón "Ver documento" PORQUE el PDF viaja adjunto. Si el adjunto se
     // rompiera, el cliente se quedaría sin botón Y sin documento: peor que el problema
     // original. Aquí se construye el email de VERDAD y se comprueba el adjunto.
-    // Nota de alcance: el .eml de outbox NO se materializa en este entorno (nodemailer con
-    // streamTransport+buffer devuelve `message` como Buffer, así que el `createReadStream`
-    // del servicio nunca entra — defecto preexistente, reportado aparte). Por eso se verifica
-    // el ADJUNTO por su FUENTE REAL: `ensureInvoicePdf`, que es exactamente lo que
-    // sendInvoiceEmail lee y adjunta (email.service.ts:29-30). Si el movimiento de directorio
-    // hubiera roto el adjunto, esto falla.
+    // Nota de alcance: el outbox .eml y el adjunto del fallback los ARREGLÓ SCRUM-76 (con test
+    // propio en tests/scrum76-email-adjunto.test.mjs). Este test conserva la verificación del
+    // ADJUNTO por su FUENTE REAL: `ensureInvoicePdf`, que es exactamente lo que sendInvoiceEmail
+    // lee y adjunta (email.service.ts:29-30). Si el movimiento de directorio hubiera roto el
+    // adjunto, esto falla.
     const { ensureInvoicePdf } = await import('../dist/lib/invoicing.js');
     const attach = await ensureInvoicePdf(invoiceA.id, prisma);
     assert.ok(fs.existsSync(attach.diskPath), `ADJUNTO ROTO: no hay PDF en ${attach.diskPath}`);
@@ -161,9 +160,9 @@ test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto
     assert.ok(sent?.ok, 'el email de factura debe enviarse sin error tras el cambio de directorio');
 
     // ── 9) PRESUPUESTO: la ruta del adjunto que lee sendQuoteEmail es la canónica ──
-    // El fallback .eml de sendQuoteEmail NO adjunta (preexistente, reportado aparte), así
-    // que se verifica el contrato del que depende: el generador deja el fichero EXACTAMENTE
-    // donde sendQuoteEmail lo busca (invoicesDir + QUOTE-<id>.pdf).
+    // (El fallback de sendQuoteEmail ya adjunta el PDF tras SCRUM-76.) Se verifica además el
+    // contrato del que depende: el generador deja el fichero EXACTAMENTE donde sendQuoteEmail
+    // lo busca (invoicesDir + QUOTE-<id>.pdf).
     const { generateQuotePdf } = await import('../dist/modules/invoicing/infra/pdf/pdf.service.js');
     const qpdf = await generateQuotePdf({
       quoteId: quoteA.id,
