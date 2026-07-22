@@ -1,18 +1,17 @@
 // srcNew/modules/billing/app/routes/payCard.routes.ts
+// SCRUM-85: identificado por Charge.receiptToken (patrón SCRUM-74), NO por el
+// chargeId autoincremental — mismo token compartido con /recibo, /pay/invoice y /pay/bizum.
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { stripe } from '../../../../integrations/stripe';
 import { BASE_URL, config } from '../../../../core/config/env';
-import { parseNumericId } from '../../../../core/utils/utils';
 import { isFlagEnabled } from '../../../../core/flags';
-import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 
 const router = Router();
 
-router.get('/card/:id', async (req, res) => {
-  const id = parseNumericId(req.params.id);   // tolera URLs sucias, igual que el resto de /pay
-  if (!Number.isInteger(id)) return res.status(400).send('ID inválido');
+router.get('/card/:token', async (req, res) => {
+  const token = req.params.token;
 
   if (!stripe) {
     return res
@@ -22,13 +21,13 @@ router.get('/card/:id', async (req, res) => {
 
   try {
     const charge = await prisma.charge.findUnique({
-      where: { id },
+      where: { receiptToken: token },
       include: { customer: true, merchant: true },
     });
     if (!charge) return res.status(404).send(documentNotFoundHtml());
+    const id = charge.id;
     if (charge.status !== 'pending') {
-      const receiptToken = await ensureChargeReceiptToken(id, prisma);
-      return res.redirect(303, `/recibo/${receiptToken}`);
+      return res.redirect(303, `/recibo/${token}`);
     }
 
     const amountCents = Math.round(Number(charge.amount) * 100);
@@ -44,7 +43,6 @@ router.get('/card/:id', async (req, res) => {
       merchant?.connectStatus === 'active' &&
       !!merchant?.stripeAccountId;
 
-    const receiptToken = await ensureChargeReceiptToken(id, prisma);
     const sessionParams = {
       mode: 'payment' as const,
       customer_email: charge.customer?.email || undefined,
@@ -58,8 +56,8 @@ router.get('/card/:id', async (req, res) => {
           quantity: 1,
         },
       ],
-      success_url: `${BASE_URL}/recibo/${receiptToken}?card=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${BASE_URL}/recibo/${receiptToken}?card=cancel`,
+      success_url: `${BASE_URL}/recibo/${token}?card=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${BASE_URL}/recibo/${token}?card=cancel`,
       metadata: { charge_id: String(id) },
       ...(useConnect
         ? {
@@ -99,7 +97,7 @@ router.get('/card/:id', async (req, res) => {
         `<body style="font-family:system-ui,-apple-system,sans-serif;max-width:420px;margin:48px auto;padding:0 20px;text-align:center;color:#0f1c17">` +
         `<h1 style="font-size:20px;margin:0 0 8px">No se pudo iniciar el pago</h1>` +
         `<p style="color:#6b756f;font-size:14px;line-height:1.5;margin:0 0 16px">Ha habido un problema al abrir el pago con tarjeta. Vuelve a intentarlo en unos minutos o contacta con el negocio que te envió el cobro.</p>` +
-        `<a href="/pay/invoice/${id}" style="display:inline-block;color:#15803d;font-weight:600;text-decoration:none">← Volver</a>` +
+        `<a href="/pay/invoice/${token}" style="display:inline-block;color:#15803d;font-weight:600;text-decoration:none">← Volver</a>` +
         `</body></html>`,
       );
   }

@@ -8,6 +8,7 @@ import { BASE_URL } from '../../../../core/config/env';
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { normalizePhone } from '../../../../core/utils/utils';
 import { recordCustomerEvent } from '../../customerEvents.service';
+import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 
 const router = Router();
 
@@ -250,6 +251,14 @@ router.get('/:token', async (req, res) => {
     }),
   ]);
 
+  // SCRUM-85: token OPACO por cobro pendiente — NUNCA el chargeId en el botón "Pagar ahora".
+  const payTokens = new Map<number, string>();
+  for (const inv of invoices) {
+    if (inv.status === 'pending' && inv.charge?.id && !payTokens.has(inv.charge.id)) {
+      payTokens.set(inv.charge.id, await ensureChargeReceiptToken(inv.charge.id, prisma));
+    }
+  }
+
   const m          = customer.merchant!;
   const mName      = esc(m.legalName || m.name || 'Tu proveedor');
   const initial    = esc((m.name || m.legalName || 'Y').trim().charAt(0).toUpperCase());
@@ -328,8 +337,9 @@ router.get('/:token', async (req, res) => {
           ? (inv.pdfUrl.startsWith('http') ? inv.pdfUrl : BASE_URL + inv.pdfUrl)
           : null;
         const btnPdf  = pdfUrl ? `<a class="pf-btn pf-btn-pdf" href="${esc(pdfUrl)}" target="_blank">📄 Descargar factura</a>` : '';
-        const btnPay  = inv.status === 'pending' && inv.charge?.id
-          ? `<a class="pf-btn pf-btn-pay" href="/pay/card/${inv.charge.id}">💳 Pagar ahora</a>`
+        const payToken = inv.charge?.id ? payTokens.get(inv.charge.id) : undefined;
+        const btnPay  = inv.status === 'pending' && payToken
+          ? `<a class="pf-btn pf-btn-pay" href="/pay/card/${payToken}">💳 Pagar ahora</a>`
           : '';
         const hasActions = btnPay || btnPdf;
         return `

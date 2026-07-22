@@ -16,6 +16,7 @@ import { normalizePhone, formatMoneyEs } from '../../../core/utils/utils';
 import { BASE_URL } from '../../../core/config/env';
 import { isReceiptNumber } from '../../invoicing/domain/invoiceNumber.service';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
+import { ensureChargeReceiptToken } from '../../../lib/invoicing';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -108,6 +109,8 @@ async function sendReminderWA(
 
   try {
     if (chargeId) {
+      // SCRUM-85: token OPACO del cobro (Charge.receiptToken) — NUNCA el chargeId en la URL pública.
+      const payToken = await ensureChargeReceiptToken(chargeId, prisma);
       // A5.2 ventana-first: si el cliente interactuó hace <24 h el recordatorio
       // viaja como texto gratis; si no, plantilla payment_request_es (botón de pago).
       const result = await sendWhatsAppWindowFirst({
@@ -119,7 +122,7 @@ async function sendReminderWA(
           `Te recordamos que tienes pendiente el pago del ${docLabel} ${inv.number} ` +
           `por ${total} ${inv.currency} de parte de ${merchantName}.${urgency}\n` +
           `Paga de forma segura desde aquí 👇\n` +
-          `${BASE_URL}/pay/invoice/${chargeId}\n` +
+          `${BASE_URL}/pay/invoice/${payToken}\n` +
           `Si ya lo has pagado, ignora este mensaje. ¡Gracias!`,
         // A23: en ventana → botón-enlace "Pagar ahora" (sin URL cruda, dinero es-ES)
         windowCta: {
@@ -128,14 +131,14 @@ async function sendReminderWA(
             `Te recordamos el pago pendiente del ${docLabel} ${inv.number} por *${formatMoneyEs(inv.total, inv.currency)}* de parte de *${merchantName}*.${urgency}\n` +
             `Si ya lo has pagado, ignora este mensaje. ¡Gracias!`,
           buttonText: 'Pagar ahora',
-          url: `${BASE_URL}/pay/invoice/${chargeId}`,
+          url: `${BASE_URL}/pay/invoice/${payToken}`,
         },
         template: buildPaymentRequest({
           customerName,
           businessName: merchantName,
           invoiceNumber: inv.number,
           amountWithCurrency: `${total} ${inv.currency}`,
-          chargeId,
+          urlToken: payToken,
         }),
         log: { customerId: inv.customerId, relatedType: 'invoice', relatedId: inv.id },
       });

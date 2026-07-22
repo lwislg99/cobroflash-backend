@@ -41,15 +41,15 @@ test('quote_decision_es: nombre, idioma, 4 vars en orden y botón = id presupues
   assert.equal(urlButtonSuffix(msg), '128'); // sufijo → /pay/quote/{{1}}
 });
 
-test('payment_request_es: 4 vars en orden y botón = chargeId', () => {
+test('payment_request_es: 4 vars en orden y botón = urlToken (SCRUM-85: token opaco, no el id)', () => {
   const msg = buildPaymentRequest({
     customerName: 'María', businessName: 'Fontanería García',
-    invoiceNumber: 'F-2025-014', amountWithCurrency: '350.00 EUR', chargeId: 42,
+    invoiceNumber: 'F-2025-014', amountWithCurrency: '350.00 EUR', urlToken: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4',
   });
   assert.equal(msg.templateName, 'payment_request_es');
   assert.equal(msg.languageCode, 'es');
   assert.deepEqual(bodyTexts(msg), ['María', 'Fontanería García', 'F-2025-014', '350.00 EUR']);
-  assert.equal(urlButtonSuffix(msg), '42'); // sufijo → /pay/invoice/{{1}}
+  assert.equal(urlButtonSuffix(msg), 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4'); // sufijo → /pay/invoice/{{1}}
 });
 
 test('payment_confirmation_es: 4 vars (orden distinto) y SIN botones', () => {
@@ -66,7 +66,7 @@ test('payment_confirmation_es: 4 vars (orden distinto) y SIN botones', () => {
 
 test('todas: cuerpo de exactamente 4 variables (lo que exige Meta)', () => {
   const qd = buildQuoteDecision({ customerName: 'a', businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', quoteId: 1 });
-  const pr = buildPaymentRequest({ customerName: 'a', businessName: 'b', invoiceNumber: 'c', amountWithCurrency: 'd', chargeId: 1 });
+  const pr = buildPaymentRequest({ customerName: 'a', businessName: 'b', invoiceNumber: 'c', amountWithCurrency: 'd', urlToken: 'deadbeefdeadbeefdeadbeefdeadbeef' });
   const pc = buildPaymentConfirmation({ customerName: 'a', amountWithCurrency: 'b', invoiceNumber: 'c', businessName: 'd' });
   assert.equal(bodyTexts(qd).length, 4);
   assert.equal(bodyTexts(pr).length, 4);
@@ -77,7 +77,7 @@ test('todas: cuerpo de exactamente 4 variables (lo que exige Meta)', () => {
 
 test('validación J7: lo que sale de los builders pasa la validación', () => {
   const qd = buildQuoteDecision({ customerName: 'a', businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', quoteId: 1 });
-  const pr = buildPaymentRequest({ customerName: 'a', businessName: 'b', invoiceNumber: 'c', amountWithCurrency: 'd', chargeId: 1 });
+  const pr = buildPaymentRequest({ customerName: 'a', businessName: 'b', invoiceNumber: 'c', amountWithCurrency: 'd', urlToken: 'deadbeefdeadbeefdeadbeefdeadbeef' });
   const pc = buildPaymentConfirmation({ customerName: 'a', amountWithCurrency: 'b', invoiceNumber: 'c', businessName: 'd' });
   assert.equal(validateTemplateComponents(qd.templateName, qd.components), null);
   assert.equal(validateTemplateComponents(pr.templateName, pr.components), null);

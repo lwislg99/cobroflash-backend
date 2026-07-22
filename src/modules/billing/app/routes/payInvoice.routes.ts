@@ -1,35 +1,34 @@
 // src/modules/billing/app/routes/payInvoice.routes.ts
 // Selector de método de pago (tarjeta vía Stripe + transferencia vía PayByBank).
-// Landing del botón de payment_request_es: /pay/invoice/:chargeId
+// Landing del botón de payment_request_es: /pay/invoice/:token
 // Diseño "Recibo de confianza" (Impeccable: Stripe/Wise, mobile-first).
+// SCRUM-85: identificado por Charge.receiptToken (patrón SCRUM-74), NO por el
+// chargeId autoincremental — mismo token compartido con /recibo, /pay/card y /pay/bizum.
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
-import { esc, parseNumericId, formatMoneyEs } from '../../../../core/utils/utils';
+import { esc, formatMoneyEs } from '../../../../core/utils/utils';
 import { isFlagEnabled } from '../../../../core/flags';
 import { isDemoMerchant } from '../../../invoicing/domain/emission.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
-import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 
 const router = Router();
 
-router.get('/invoice/:chargeId', async (req, res) => {
+router.get('/invoice/:token', async (req, res) => {
   res.set('Cache-Control', 'no-store, must-revalidate');
 
-  const id = parseNumericId(req.params.chargeId);
-  // N3: estado digno también en el 400 (id no numérico), nunca texto plano.
-  if (!Number.isInteger(id)) return res.status(400).send(documentNotFoundHtml());
+  const token = req.params.token;
 
   const charge = await prisma.charge.findUnique({
-    where: { id },
+    where: { receiptToken: token },
     include: { merchant: true },
   });
   if (!charge) return res.status(404).send(documentNotFoundHtml());
+  const id = charge.id;
 
   // Pagado o vencido → recibo
   if (charge.status === 'paid' || charge.status === 'expired') {
-    const receiptToken = await ensureChargeReceiptToken(id, prisma);
-    return res.redirect(303, `/recibo/${receiptToken}`);
+    return res.redirect(303, `/recibo/${token}`);
   }
 
   // Nº de factura asociada (si existe), para dar contexto
@@ -76,8 +75,9 @@ router.get('/invoice/:chargeId', async (req, res) => {
   const permits = (key: string) => !allowed || allowed.includes(key);
 
   type Method = { key: string; href: string; ico: string; title: string; sub: string };
-  const card: Method = { key: 'card', href: `/pay/card/${id}`, ico: '💳', title: 'Pagar con tarjeta', sub: 'Visa · Mastercard · al instante' };
-  const bizum: Method = { key: 'bizum', href: `/pay/bizum/${id}`, ico: '📲', title: 'Pagar por Bizum', sub: 'Desde la app de tu banco' };
+  const card: Method = { key: 'card', href: `/pay/card/${token}`, ico: '💳', title: 'Pagar con tarjeta', sub: 'Visa · Mastercard · al instante' };
+  const bizum: Method = { key: 'bizum', href: `/pay/bizum/${token}`, ico: '📲', title: 'Pagar por Bizum', sub: 'Desde la app de tu banco' };
+  // /pay/bank NO tokenizado (P1-SEC-9, fuera del alcance de SCRUM-85): sigue en chargeId.
   const transfer: Method = { key: 'transfer', href: `/pay/bank/${id}`, ico: '🏦', title: 'Transferencia bancaria', sub: 'Con los datos y el concepto exacto' };
 
   // Orden W4: ≤500 → Bizum + Tarjeta (transferencia detrás) · 500-1.000 →

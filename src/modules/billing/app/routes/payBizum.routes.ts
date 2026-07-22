@@ -5,13 +5,14 @@
 // → charge.paid con paid_via='bizum_manual' por la MISMA cadena post-pago.
 // Master D3: Stripe Bizum no soporta Connect → manual asistido. Flag:
 // BIZUM_MANUAL_ENABLED. Riesgo asumido: confirmación declarativa (como efectivo).
+// SCRUM-85: identificado por Charge.receiptToken (patrón SCRUM-74), NO por el
+// chargeId autoincremental — mismo token compartido con /recibo, /pay/card y /pay/invoice.
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
-import { esc, parseNumericId } from '../../../../core/utils/utils';
+import { esc } from '../../../../core/utils/utils';
 import { isFlagEnabled } from '../../../../core/flags';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
-import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 
 const router = Router();
 
@@ -21,10 +22,10 @@ function bizumPage(opts: {
   amount: string;
   concept: string;
   phone: string;
-  chargeId: number;
+  token: string;
   claimed: boolean;
 }): string {
-  const { business, logoHtml, amount, concept, phone, chargeId, claimed } = opts;
+  const { business, logoHtml, amount, concept, phone, token, claimed } = opts;
   return `<!doctype html>
 <html lang="es">
 <head>
@@ -97,12 +98,12 @@ function bizumPage(opts: {
       <li>Envía <strong>${amount}</strong> al móvil de arriba.</li>
       <li>Vuelve aquí y pulsa el botón para avisar al profesional.</li>
     </ol>
-    <form method="POST" action="/pay/bizum/${chargeId}/claimed">
+    <form method="POST" action="/pay/bizum/${token}/claimed">
       <button class="cta" type="submit">He pagado por Bizum</button>
     </form>
     <div class="note">El profesional confirmará tu pago.</div>`}
 
-    <a class="back" href="/pay/invoice/${chargeId}">← Otras formas de pago</a>
+    <a class="back" href="/pay/invoice/${token}">← Otras formas de pago</a>
   </div>
   <script>
     document.querySelectorAll('.copy-btn').forEach(function(btn){
@@ -118,9 +119,9 @@ function bizumPage(opts: {
 </html>`;
 }
 
-async function loadBizumCharge(id: number) {
+async function loadBizumCharge(token: string) {
   return prisma.charge.findUnique({
-    where: { id },
+    where: { receiptToken: token },
     include: {
       customer: { select: { name: true } },
       merchant: true,
@@ -128,23 +129,22 @@ async function loadBizumCharge(id: number) {
   });
 }
 
-router.get('/bizum/:chargeId', async (req, res) => {
+router.get('/bizum/:token', async (req, res) => {
   res.set('Cache-Control', 'no-store, must-revalidate');
-  const id = parseNumericId(req.params.chargeId);
-  if (!Number.isInteger(id)) return res.status(400).send(documentNotFoundHtml());
+  const token = req.params.token;
 
-  const charge = await loadBizumCharge(id);
+  const charge = await loadBizumCharge(token);
   if (!charge) return res.status(404).send(documentNotFoundHtml());
+  const id = charge.id;
   if (charge.status === 'paid' || charge.status === 'expired') {
-    const receiptToken = await ensureChargeReceiptToken(id, prisma);
-    return res.redirect(303, `/recibo/${receiptToken}`);
+    return res.redirect(303, `/recibo/${token}`);
   }
 
   const m = charge.merchant;
   const phone = m?.bizumPhone || m?.whatsappPhone;
   if (!isFlagEnabled('BIZUM_MANUAL_ENABLED', { merchant: m }) || !phone) {
     // Bizum no disponible para este cobro → de vuelta al selector
-    return res.redirect(303, `/pay/invoice/${id}`);
+    return res.redirect(303, `/pay/invoice/${token}`);
   }
 
   const claimed = await prisma.event
@@ -170,21 +170,20 @@ router.get('/bizum/:chargeId', async (req, res) => {
     amount,
     concept: esc(charge.concept || ''),
     phone,
-    chargeId: id,
+    token,
     claimed,
   }));
 });
 
 /** El cliente declara que ya envió el Bizum → evento + aviso al PRO (doble toque queda del lado del PRO). */
-router.post('/bizum/:chargeId/claimed', async (req, res) => {
-  const id = parseNumericId(req.params.chargeId);
-  if (!Number.isInteger(id)) return res.status(400).send(documentNotFoundHtml());
+router.post('/bizum/:token/claimed', async (req, res) => {
+  const token = req.params.token;
 
-  const charge = await loadBizumCharge(id);
+  const charge = await loadBizumCharge(token);
   if (!charge) return res.status(404).send(documentNotFoundHtml());
+  const id = charge.id;
   if (charge.status !== 'pending') {
-    const receiptToken = await ensureChargeReceiptToken(id, prisma);
-    return res.redirect(303, `/recibo/${receiptToken}`);
+    return res.redirect(303, `/recibo/${token}`);
   }
 
   const already = await prisma.event
@@ -207,7 +206,7 @@ router.post('/bizum/:chargeId/claimed', async (req, res) => {
     }).catch((err) => console.error('[bizum/claimed] Error avisando al merchant:', err));
   }
 
-  return res.redirect(303, `/pay/bizum/${id}`);
+  return res.redirect(303, `/pay/bizum/${token}`);
 });
 
 export default router;

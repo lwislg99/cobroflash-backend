@@ -143,20 +143,45 @@
   `/recibo/:token` (los 3 endpoints) sirve solo el cobro dueño de ESE token. Test:
   `tests/scrum74-recibo-token.test.mjs` (gateado).
 
-### [ ] P1-SEC-8 · `/pay/card/:id`, `/pay/bizum/:chargeId`, `/pay/invoice/:chargeId` — MISMO patrón enumerable, NO corregido (hallazgo en SCRUM-74, 22-jul)
+### [x] P1-SEC-8 · `/pay/card/:id`, `/pay/bizum/:chargeId`, `/pay/invoice/:chargeId` — MISMO patrón enumerable (hallazgo en SCRUM-74, 22-jul; corregido en SCRUM-85)
 - **Síntoma:** al arreglar `/recibo/:chargeId` (P0-SEC-7) se confirmó que el selector de pago
   (`payInvoice.routes.ts`, `GET /pay/invoice/:chargeId`) y los métodos concretos
   (`payCard.routes.ts` `GET /pay/card/:id`, `payBizum.routes.ts` `GET /pay/bizum/:chargeId` y
-  `POST /pay/bizum/:chargeId/claimed`) siguen usando el `Charge.id` autoincremental como
-  identificador de RUTA (no solo como destino de redirect, que sí se corrigió). Exponen importe,
-  concepto, nombre/logo del merchant y (en Bizum) su móvil — menos sensible que NIF/email del
-  cliente (P0-SEC-7) pero mismo patrón IDOR de fondo.
-- **Alcance:** NO corregido — fuera del pedido explícito de SCRUM-74 (el ticket nombraba
-  `/recibo`; ampliar a estas 3-4 rutas más habría sido un cambio bastante mayor: tocar la ruta
-  misma, no solo dónde se genera el enlace, y afecta el flujo de selección de método de pago
-  ANTES de que el cobro esté pagado). Candidato a tarea propia si se decide cerrar del todo esta
-  clase de fuga (mismo patrón `receiptToken` aplicaría, o un token único compartido para todo el
-  flujo de pago de un cobro).
+  `POST /pay/bizum/:chargeId/claimed`) seguían usando el `Charge.id` autoincremental como
+  identificador de RUTA (no solo como destino de redirect, que ya se había corregido en SCRUM-74).
+  Exponían importe, concepto, nombre/logo del merchant y (en Bizum) su móvil — menos sensible que
+  NIF/email del cliente (P0-SEC-7) pero mismo patrón IDOR de fondo. Era la TERCERA puerta de la
+  misma fuga (SCRUM-72 → SCRUM-74 → esta).
+- **Corregido en SCRUM-85:** reutiliza `Charge.receiptToken` (ya existía desde SCRUM-74, SIN
+  schema nuevo) en los 3 endpoints. Alcance real MUCHO más amplio que "3 archivos de ruta" — todo
+  generador de estos enlaces tuvo que actualizarse para no romper el flujo: `whatsappTemplates.ts`
+  (`buildPaymentRequest`), `invoiceWhatsApp.service.ts` (envío inicial), `invoiceReminder.service.ts`
+  (recordatorios 7/14d), `botFlow.service.ts` (bot "pagos pendientes"), `invoicesAdmin.routes.ts`
+  (resend-whatsapp + send-reminder), `customerPortal.routes.ts` (botón "Pagar ahora" del portal
+  `/cliente/:token`), `charges.routes.ts` (legacy n8n, ya gateado), `jobs.routes.ts` (API del
+  detalle de Trabajo) — y el **frontend del dashboard** (`invoiceDetailView.js`,
+  `jobDetailView.js`): el botón "Enlace de pago" y la barra de fallback de WhatsApp fallido
+  construían `/pay/invoice/${chargeId}` client-side; sin arreglarlos habrían quedado rotos
+  (404) tras tokenizar la ruta — no una fuga, pero sí una regresión funcional real que se
+  detectó y corrigió como parte del mismo cierre. El botón dinámico de `payment_request_es`
+  tampoco requirió re-aprobación en Meta (mismo razonamiento que SCRUM-74 §4) —
+  `docs/WHATSAPP_TEMPLATES.md` §2 actualizado.
+- **NO corregido — ver P1-SEC-9:** `/pay/bank/:id` y `/pay/mp/:id[/result]` comparten el mismo
+  patrón y NO se tocaron (fuera del alcance de "card, bizum, invoice" pedido explícitamente).
+
+### [ ] P1-SEC-9 · `/pay/bank/:id` y `/pay/mp/:id[/result]` — MISMO patrón enumerable, NO corregido (hallazgo en SCRUM-85, 22-jul)
+- **Síntoma:** al cerrar P1-SEC-8 (tokenizar `/pay/card`, `/pay/bizum`, `/pay/invoice`) se
+  confirmó que `payBank.routes.ts` (`GET /pay/bank/:id`) y `payMp.routes.ts` (`GET /pay/mp/:id`,
+  `GET /pay/mp/:id/result`) comparten EXACTAMENTE el mismo patrón: `Charge.id` autoincremental
+  sin token en la ruta. `/pay/bank` es potencialmente el MÁS sensible de los cinco: expone el
+  **IBAN o CLABE bancaria del merchant** (no solo importe/concepto/logo) además de la referencia
+  de pago exacta.
+- **Alcance:** NO corregido — fuera del pedido explícito de SCRUM-85 ("mismo patrón que
+  SCRUM-74 — /pay/card, /pay/bizum y /pay/invoice"). Arreglo candidato: mismo patrón
+  `Charge.receiptToken` (ya existe, sin schema nuevo) aplicado a estas 2 rutas + sus generadores
+  de enlace (a confirmar: `/pay/bank` se enlaza hoy desde `payInvoice.routes.ts`'s `transfer.href`,
+  `receipt.routes.ts`'s `payBtns`, y `charges.routes.ts`'s `paybank_url`/`paymp_url` legacy — todos
+  quedaron deliberadamente en `chargeId` en SCRUM-85 a la espera de esta tarea).
 
 ### [x] P0-1 · Pago con tarjeta devuelve 401 Unauthorized
 - **Síntoma:** al pulsar "Pagar con tarjeta" en `/pay/invoice/:id` navega a `/pay/card/:id` y devuelve 401 (body "Unauthorized"). El cliente no puede pagar.

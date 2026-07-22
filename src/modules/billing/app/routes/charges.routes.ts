@@ -61,8 +61,11 @@ router.post('/', async (req, res) => {
       include: { customer: true, merchant: true },
     });
 
+    // SCRUM-85: /pay/card tokenizado (Charge.receiptToken); /pay/bank y /pay/mp
+    // siguen en chargeId a propósito (P1-SEC-9, fuera de alcance).
+    const payToken = await ensureChargeReceiptToken(charge.id, prisma);
     const paybank_url = `${BASE_URL}/pay/bank/${charge.id}`;
-    const paycard_url = `${BASE_URL}/pay/card/${charge.id}`;
+    const paycard_url = `${BASE_URL}/pay/card/${payToken}`;
     const paymp_url   = `${BASE_URL}/pay/mp/${charge.id}`;
 
     return res.status(201).json({
@@ -170,9 +173,9 @@ router.post('/:id/send', async (req, res) => {
       reference: charge.reference,
       // URL única que mandaremos por WhatsApp
       receipt_url: `${BASE_URL}/recibo/${receiptToken}`,
-      // Campos opcionales para futuro
+      // Campos opcionales para futuro. /pay/bank sigue en chargeId (P1-SEC-9, fuera de alcance).
       paybank_url: `${BASE_URL}/pay/bank/${charge.id}`,
-      paycard_url: `${BASE_URL}/pay/card/${charge.id}`,
+      paycard_url: `${BASE_URL}/pay/card/${receiptToken}`,
     };
 
     const url = config.N8N_ONSEND_URL;
