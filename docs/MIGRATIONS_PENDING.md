@@ -4,7 +4,7 @@
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
 
-## SCRUM-74 · `charges.receipt_token` (fuga RGPD `/recibo/:chargeId` enumerable) — STAGING aplicado (22-jul-2026), PROD pendiente
+## SCRUM-74 · `charges.receipt_token` (fuga RGPD `/recibo/:chargeId` enumerable) — ✅ APLICADO en prod (2026-07-22)
 
 `prisma db execute` (NO `db push`) aplicado a **STAGING** (`acela.proxy.rlwy.net:40802`) el
 **2026-07-22**, con host-check + preview `migrate diff`, **SIN `--accept-data-loss`**, **GO
@@ -28,8 +28,14 @@ público `/recibo/:token[/pdf|/feedback]`, sustituyendo el `Charge.id` autoincre
 adivinable (IDOR/RGPD: NIF del emisor, nombre/email/teléfono del cliente final, importes).
 Generado perezosamente la primera vez que se construye un enlace.
 
-**PROD: ⏳ PENDIENTE** — aplicar tras el merge del PR de SCRUM-74, antes de que el código nuevo
-llegue a producción (misma ventana P2022 de siempre).
+**PROD: ✅ APLICADO** (2026-07-22, justo tras el merge del PR de SCRUM-74). `prisma db execute`
+contra `autorack.proxy.rlwy.net:40654` con host-check + preview `migrate diff` (idéntico al de
+staging, sin ruido esta vez — SCRUM-17 ya estaba aplicado en prod) y **GO explícito del
+fundador**, **SIN `--accept-data-loss`**. Verificación post: `migrate diff` → **"No difference
+detected"** (exit 0, BD en sync).
+
+---
+
 ## SCRUM-17 · `albaranes.invoice_id` + `invoices.albaran_refs` (factura recapitulativa) — ✅ APLICADO en prod (2026-07-22)
 
 `prisma db push` aplicado a **STAGING** (`acela.proxy.rlwy.net`) y a **PRODUCCIÓN**
