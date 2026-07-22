@@ -191,6 +191,29 @@
 40. Digno 390/1280: ✅ ASSERT una columna en móvil, importes en tinta y tabulares, sin scroll
     horizontal.
 
+## 8 · PDFs de factura y presupuesto privados (SCRUM-72 · seguridad/RGPD)
+
+> Los PDFs vivían en `public/invoices` servidos por estático con nombres **enumerables**
+> (`2026-CF-001`, `-002`…): se descargaban documentos ajenos sin login. Ahora viven en
+> `storage/invoices` y solo salen por endpoint auth. Cobertura automática:
+> `tests/scrum72-pdfs-privados.test.mjs` (incluye el **assert de regresión** que falla si
+> alguien devuelve el directorio a `public/`).
+>
+> ⚠️ **SCRUM-72 NO cierra la fuga del todo:** `GET /recibo/:chargeId/pdf` sigue sirviendo los
+> mismos PDFs de forma **anónima y enumerable** (`Charge.id` es autoincremental) hasta que se
+> resuelva **SCRUM-74**. No dar esto por "PDFs privados ✅".
+
+41. **Estático muerto:** `GET {BASE}/invoices/<numero-real>.pdf` **sin cookie** → ✅ ASSERT **404**
+    y content-type ≠ `application/pdf`. Ídem con el nombre nuevo `<merchantId>-<numero>.pdf`
+    y con `QUOTE-<quoteId>.pdf` (presupuesto).
+42. **Descarga del admin:** en el dashboard, botón **PDF** de una factura y de un presupuesto
+    (Clientes → ficha, y modal de presupuesto) → ✅ ASSERT abre el PDF correctamente
+    (van por `/admin/invoices/:id/pdf` y `/admin/quotes/:id/pdf`).
+43. **Email de factura:** enviar factura por email → ✅ ASSERT llega **con el PDF adjunto** y
+    **sin botón "Ver documento"** (se retiró en SCRUM-72; el adjunto es el que sostiene el acceso).
+44. **Recibo público (NO es fuga, por diseño):** `GET {BASE}/recibo/:chargeId/pdf` de un cobro
+    pagado → ✅ ASSERT sigue respondiendo **200** (el cliente lo abre desde WhatsApp sin login).
+
 ## Resultado
 
 - Reportar por paso: ✅/❌ + captura del MCP donde aporte.

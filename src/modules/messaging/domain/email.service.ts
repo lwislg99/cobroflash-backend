@@ -38,9 +38,10 @@ export async function sendInvoiceEmail(args: {
   const html = renderEmailLayout({
     heading: `Tu ${docLabel} está listo`,
     bodyHtml: `<p style="margin:0 0 8px">Hola${toName ? ` <strong>${escEmail(toName)}</strong>` : ''},</p>
-<p style="margin:0">Te adjuntamos tu ${docLabel} <strong>${escEmail(inv.number)}</strong> en PDF. También puedes verlo desde el botón.</p>`,
-    ctaLabel: 'Ver documento',
-    ctaUrl: `${BASE_URL}${pdfUrl}`,
+<p style="margin:0">Te adjuntamos tu ${docLabel} <strong>${escEmail(inv.number)}</strong> en PDF.</p>`,
+    // SCRUM-72 (D3): se quita el botón "Ver documento". Enlazaba al estático público
+    // /invoices/*.pdf, que exponía facturas ajenas por nombre enumerable. El PDF sigue
+    // viajando ADJUNTO (abajo), así que el cliente conserva su documento.
     footnote: 'Guárdalo para tus registros. Si tienes cualquier duda, responde a este correo.',
   });
 
@@ -116,13 +117,14 @@ export async function sendQuoteEmail(args: { quoteId: number; prisma: PrismaClie
   const total = `${Number(quote.total).toFixed(2)} ${quote.currency}`;
   const payUrl = `${BASE_URL}/pay/quote/${quote.id}`;
 
-  // PDF adjunto solo si sigue en disco (QUOTE-<id>.pdf en /invoices)
+  // PDF adjunto solo si sigue en disco. SCRUM-72: la ruta se deriva de la constante
+  // `invoicesDir` + el nombre CANÓNICO del generador (QUOTE-<id>.pdf), NO del string de
+  // `quote.pdfUrl` — que ahora apunta al endpoint auth y antes al estático. Derivarlo del
+  // string rompía el adjunto en silencio al cambiar el esquema.
   let pdfBase64: string | null = null;
   try {
-    if (quote.pdfUrl && quote.pdfUrl.startsWith('/invoices/')) {
-      const disk = path.join(invoicesDir, path.basename(quote.pdfUrl));
-      if (fs.existsSync(disk)) pdfBase64 = fs.readFileSync(disk).toString('base64');
-    }
+    const disk = path.join(invoicesDir, `QUOTE-${quote.id}.pdf`);
+    if (fs.existsSync(disk)) pdfBase64 = fs.readFileSync(disk).toString('base64');
   } catch { /* sin adjunto */ }
 
   const subject = `Tu presupuesto ${displayNum} de ${business}`;

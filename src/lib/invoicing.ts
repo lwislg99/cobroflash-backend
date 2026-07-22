@@ -5,7 +5,6 @@ import { PrismaClient } from '@prisma/client';
 import { allocateInvoiceNumber, isReceiptNumber } from '../modules/invoicing/domain/invoiceNumber.service';
 import { isDemoMerchant, DEMO_WATERMARK } from '../modules/invoicing/domain/emission.service';
 import { generateInvoicePdf } from './pdf';
-import { BASE_URL } from '../core/config/env';
 import { invoicesDir } from '../core/storage/dirs';
 import { applyVeriFactu } from '../modules/invoicing/domain/verifactu.service';
 
@@ -26,14 +25,20 @@ export async function ensureInvoicePdf(
   if (!inv) throw new Error('invoice_not_found');
   if (!inv.merchant || !inv.customer) throw new Error('missing_relations');
 
-  const fileName = `${inv.number}.pdf`;
+  // SCRUM-72: fichero en storage/invoices con prefijo de merchant (la serie es única POR
+  // merchant: sin prefijo, dos merchants con "2026-CF-001" se pisaban el PDF) y `pdfUrl`
+  // apuntando al endpoint AUTENTICADO, no a un estático público.
+  const fileName = `${inv.merchantId}-${inv.number}.pdf`;
   const diskPath = path.join(invoicesDir, fileName);
-  const publicUrlPath = `/invoices/${fileName}`;
+  const publicUrlPath = `/admin/invoices/${inv.id}/pdf`;
 
   const needs =
     !inv.pdfUrl ||
     inv.pdfUrl === 'PENDING_PDF' ||
     String(inv.pdfUrl).startsWith('PENDING') ||
+    // D4: `pdfUrl` legacy (estático `/invoices/...` o URL absoluta con BASE_URL) NO se
+    // considera válido — se regenera con el esquema nuevo en vez de confiar en el valor.
+    inv.pdfUrl !== publicUrlPath ||
     !fs.existsSync(diskPath);
 
   if (needs) {
@@ -57,6 +62,8 @@ export async function ensureInvoicePdf(
     const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
     await generateInvoicePdf({
       number: inv.number,
+      invoiceId: inv.id,          // SCRUM-72
+      merchantId: inv.merchantId, // SCRUM-72
       merchant: {
         name: inv.merchant.name,
         legalName: inv.merchant.legalName,
@@ -137,6 +144,8 @@ export async function ensureInvoiceForCharge(
 
       const pdf = await generateInvoicePdf({
         number: inv.number,
+        invoiceId: inv.id,          // SCRUM-72
+        merchantId: inv.merchantId, // SCRUM-72
         merchant: {
           name: merchant.name,
           legalName: merchant.legalName,
@@ -216,7 +225,9 @@ export async function ensureInvoiceForCharge(
         total: ch.amount.toString(),
         currency: ch.currency.toUpperCase(),
         lines: invoiceLines,
-        pdfUrl: `${BASE_URL}/invoices/${number}.pdf`,
+        // SCRUM-72: ya no se persiste una URL pública absoluta al crear. Nace PENDING y
+        // `ensurePdfAndEvent` la fija al endpoint auth cuando genera el PDF.
+        pdfUrl: 'PENDING_PDF',
         qrData: `INV:${number}|AMOUNT:${ch.amount.toString()}|CUR:${ch.currency}|REF:${ch.reference ?? ''}`,
       },
     });

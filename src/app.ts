@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'path';
 
-import { invoicesDir, outboxDir } from './core/storage/dirs';
+import { outboxDir } from './core/storage/dirs'; // SCRUM-72: invoicesDir ya no se sirve como estático
 import { jsonError } from './core/http/jsonError';
 import { notFoundPageHtml } from './core/http/publicNotFound';
 import { isFlagEnabled } from './core/flags';
@@ -113,7 +113,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(jsonError);
 
 // Static
-app.use('/invoices', express.static(invoicesDir));
+// SCRUM-72: el estático de /invoices se ELIMINA (exponía facturas y presupuestos sin auth,
+// con nombres enumerables). Los PDFs viven ahora en storage/invoices, fuera de `public/`,
+// y solo salen por GET /admin/invoices/:id/pdf y GET /admin/quotes/:id/pdf.
 app.use('/outbox', express.static(outboxDir));
 // SCRUM-48: los PDFs de albarán NO se sirven como estático público (llevan nombre del
 // cliente, dirección de la obra y firma manuscrita = datos personales, y ALB-YYYY-NNN es
