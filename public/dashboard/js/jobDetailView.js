@@ -154,6 +154,63 @@ async function renderJobDetailView(container, jobId) {
   }
   body.appendChild(infoSec);
 
+  // ── Tipo de trabajo (SCRUM-66 · TRABAJO-4): selector de 2 tarjetas, editable ──
+  // Guarda Job.tipoOperacion vía PATCH. El motor de facturación que RESPETA la bandera es
+  // SCRUM-17; aquí solo se persiste la elección del pro (siempre editable mientras esté abierto).
+  const tipoSec = document.createElement('div');
+  tipoSec.className = 'detail-section';
+  tipoSec.innerHTML = '<h3 class="detail-section-title">Tipo de trabajo</h3>';
+  let tipoActual = job.tipoOperacion === 'OPERACIONES_SUELTAS' ? 'OPERACIONES_SUELTAS' : 'TRABAJO_UNICO';
+  const TIPO_CARDS = [
+    { value: 'OPERACIONES_SUELTAS', icon: '🔧', title: 'Varios avisos o visitas sueltas', desc: 'Cada visita es un trabajo independiente para este cliente.' },
+    { value: 'TRABAJO_UNICO', icon: '🏗️', title: 'Una obra o reforma de varios días', desc: 'Es un solo trabajo que se factura al concluir.' },
+  ];
+  const tipoRow = document.createElement('div');
+  tipoRow.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap';
+  const tipoCardEls = {};
+  function paintTipoCards() {
+    for (const c of TIPO_CARDS) {
+      const sel = c.value === tipoActual;
+      tipoCardEls[c.value].style.cssText =
+        'flex:1 1 200px;text-align:left;padding:12px 14px;border-radius:12px;cursor:pointer;transition:border-color .15s,background .15s;' +
+        (sel ? 'border:2px solid var(--brand,#16a34a);background:#f0fdf4;' : 'border:2px solid var(--border,#e7e9e5);background:#fff;');
+    }
+  }
+  for (const c of TIPO_CARDS) {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.setAttribute('aria-pressed', String(c.value === tipoActual));
+    card.innerHTML =
+      `<div style="font-size:20px;line-height:1">${c.icon}</div>` +
+      `<div style="font-weight:700;color:var(--ink);font-size:14px;margin-top:6px">${esc(c.title)}</div>` +
+      `<div style="color:var(--muted);font-size:12px;margin-top:2px">${esc(c.desc)}</div>`;
+    card.addEventListener('click', async () => {
+      if (c.value === tipoActual) return;
+      const prev = tipoActual;
+      tipoActual = c.value;
+      paintTipoCards();
+      TIPO_CARDS.forEach((x) => tipoCardEls[x.value].setAttribute('aria-pressed', String(x.value === tipoActual)));
+      try {
+        await apiRequest(`/admin/jobs/${job.id}`, { method: 'PATCH', body: JSON.stringify({ tipoOperacion: c.value }) });
+        showToast('✓ Tipo de trabajo actualizado.');
+      } catch (e) {
+        tipoActual = prev;
+        paintTipoCards();
+        TIPO_CARDS.forEach((x) => tipoCardEls[x.value].setAttribute('aria-pressed', String(x.value === tipoActual)));
+        setStatus('error', 'No se pudo guardar el tipo de trabajo: ' + (e?.data?.message || e.message));
+      }
+    });
+    tipoCardEls[c.value] = card;
+    tipoRow.appendChild(card);
+  }
+  paintTipoCards();
+  tipoSec.appendChild(tipoRow);
+  const tipoHint = document.createElement('p');
+  tipoHint.style.cssText = 'margin:8px 0 0;color:var(--muted);font-size:12px';
+  tipoHint.textContent = 'Nos ayuda a preparar tus facturas correctamente. Si tienes dudas, confírmalo con tu asesor.';
+  tipoSec.appendChild(tipoHint);
+  body.appendChild(tipoSec);
+
   // ── Timeline de documentos (lista de actividad cronológica) ──
   const tlSec = document.createElement('div');
   tlSec.className = 'detail-section';

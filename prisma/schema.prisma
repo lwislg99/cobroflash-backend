@@ -570,6 +570,12 @@ model Job {
   // convención que Quote.teamMemberId. NO se expone en serializer/UI aquí (eso es
   // SCRUM-22, carril B).
   operarioId     Int?      @map("operario_id")
+  // SCRUM-66 (TRABAJO-4): tipo de operación fiscal del Trabajo — OPERACIONES_SUELTAS (varias
+  // visitas → recapitulativa mensual, art. 13) | TRABAJO_UNICO (una prestación → factura al
+  // concluir). Aditivo, NOT NULL default TRABAJO_UNICO = el caso ACTUAL de YaQu (1 presupuesto
+  // aceptado = 1 trabajo) → los Jobs existentes quedan bien sin backfill. El MOTOR que respeta
+  // la bandera es SCRUM-17; aquí solo se guarda la elección del pro (editable mientras esté abierto).
+  tipoOperacion  String    @default("TRABAJO_UNICO") @map("tipo_operacion")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt      @map("updated_at")
 
