@@ -302,7 +302,7 @@
 
 ## P3 — Técnico / raíz (registrar, abordar después de P1)
 
-### [~] P3-9 · Tests que dependen del merchant `id=1` quemado por SCRUM-42 (22-jul, hallazgo en SCRUM-73; 2/5 corregidos en SCRUM-78)
+### [~] P3-9 · Tests que dependen del merchant `id=1` quemado por SCRUM-42 (22-jul, hallazgo en SCRUM-73; 3/5 corregidos en SCRUM-78+SCRUM-80)
 - **Síntoma:** varios tests gateados asumen que el merchant `id=1` (demo) tiene
   quotes/invoices/customers reales — SCRUM-42 (12-jul-2026) lo quemó como placeholder INERTE
   `demo-reserved@staging.yaqu`, `status:'suspended'`, **0 filas** en quotes/invoices/customers
@@ -321,20 +321,29 @@
     internos). Limpieza en el `finally` ampliada: la factura auto-generada
     (`ensureInvoiceForCharge`, `AUTO_INVOICE_ON_PAID`) y el `customer_events` que crea
     `recordCustomerEvent` bloqueaban el `customer.deleteMany` por FK RESTRICT.
-- **NO corregidos en SCRUM-78 — mismo root cause, 3 archivos más, descubiertos al verificar que
-  el fix de P3-10 (`test:staging` en serie) dejaba la suite gateada limpia:**
-  - `tests/pdfs.test.mjs` (`A12.5d: regeneración on-demand (R8)`, línea 103): `quote.findFirst({
-    where: { merchantId: 1 } })` → `null` → `TypeError` en `quote.id`. Reproducido 2/2 en
-    `test:staging` (determinista, no es ruido de concurrencia).
+- **Corregido en SCRUM-80 (22-jul), el más barato de los 3 restantes:**
+  - `tests/pdfs.test.mjs` (`A12.5d: regeneración on-demand (R8)`): `quote.findFirst({ where: {
+    merchantId: 1 } })` → `null` → `TypeError` en `quote.id`. Mismo patrón que los dos de
+    SCRUM-78: merchant+customer+quote efímeros propios. Verificado 4/4 en solitario
+    (`node --test tests/pdfs.test.mjs`), reproducido antes y confirmado arreglado después.
+- **NO corregidos — `DEMO_SAFE_NUMBERS`/semántica de merchant demo real, más laborioso que un
+  simple id ancla; candidatos a tarea propia (ver comentario `⚠️ P3-9` en cada archivo):**
   - `tests/a55-window-quote.test.mjs` (`A5.5`, gateado tras `A55_DB_TEST=1`): `AssertionError:
-    cliente seed 34611000001 no encontrado`. Reproducido en solitario.
+    cliente seed 34611000001 no encontrado`.
   - `tests/bot-suite.test.mjs` (`A8.4`, gateado tras `BOT_SUITE_TEST=1`): `AssertionError: cliente
-    seed no encontrado`. Reproducido en solitario.
-  - Ambos usan `DEMO_SAFE_NUMBERS`/semántica de merchant demo real (no solo un id ancla), así que
-    migrarlos a datos efímeros es más laborioso que los 2 ya corregidos — candidato a tarea propia.
-- **Alcance:** 2/5 corregidos (los pedidos). Los 3 restantes documentados y anotados en el propio
-  archivo de test (comentario `⚠️ P3-9`) para que no se olviden. Arreglo candidato para los 3:
-  mismo patrón de datos efímeros, o re-sembrar un merchant "demo con datos" en otro id fijo.
+    seed no encontrado`.
+- **Verificación de la suite COMPLETA (`npm run test:staging`) NO cerrada en SCRUM-80:** al
+  correrla tras el fix de `pdfs.test.mjs` salieron 10 fallos nuevos, sin relación con este
+  cambio (`The column albaranes.invoice_id does not exist`, entre otros) — confirmado con el
+  fundador que staging estaba EN CALIENTE por dos sesiones concurrentes (SCRUM-17 aplicando un
+  `db push` que añade `albaranes.invoice_id`, SCRUM-79 limpiando merchants huérfanos). No es una
+  regresión de este PR: `pdfs.test.mjs` se verificó siempre EN SOLITARIO, aislado de ese ruido.
+  Queda pendiente re-correr `test:staging` completo cuando staging esté quieta para confirmar
+  0 fallos con los 3/5 ya corregidos.
+- **Alcance:** 3/5 corregidos. Los 2 restantes documentados y anotados en el propio archivo de
+  test (comentario `⚠️ P3-9`) para que no se olviden. Arreglo candidato: mismo patrón de datos
+  efímeros tras entender qué asumen de `DEMO_SAFE_NUMBERS`, o re-sembrar un merchant "demo con
+  datos" en otro id fijo.
 
 ### [x] P3-8 · 4 archivos de test gateados NO corren en `npm test` (22-jul, hallazgo en SCRUM-73; corregido en SCRUM-75)
 - **Síntoma:** mismo patrón que P3-7 (lista explícita de archivos en `package.json`): existían
