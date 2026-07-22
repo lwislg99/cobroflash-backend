@@ -1,4 +1,4 @@
-# SUITE DE REGRESIÓN E2E — v1.8 (SCRUM-38 · fixes SCRUM-42/36 · albaranes SCRUM-14 · alineación UI real SCRUM-43/44 · seguridad PDF SCRUM-48 · autoría operario SCRUM-22 · albarán-WA SCRUM-47 · albarán valorado + PDF legal SCRUM-65/67 · runbook de ejecución SCRUM-79)
+# SUITE DE REGRESIÓN E2E — v1.8 (SCRUM-38 · fixes SCRUM-42/36 · albaranes SCRUM-14 · alineación UI real SCRUM-43/44 · seguridad PDF SCRUM-48 · autoría operario SCRUM-22 · albarán-WA SCRUM-47 · albarán valorado + PDF legal SCRUM-65/67 · runbook de ejecución SCRUM-79 · `.env` del carril B SCRUM-55/60)
 
 > Guion que Claude Code ejecuta con el **Playwright MCP** contra **STAGING** tras cada
 > merge+deploy. Cubre la regresión de PAGOS-FLEX (SCRUM-27/32/34) y los CTAs de invoice
@@ -7,8 +7,9 @@
 
 ## Runbook de ejecución de los tests gateados (SCRUM-79)
 
-Tres trampas que ya nos han costado tiempo. Las tres fallan **en silencio**: el test
-pasa o el número parece plausible, y nadie lo cuestiona.
+Cuatro trampas que ya nos han costado tiempo. Las tres primeras fallan **en silencio**:
+el test pasa o el número parece plausible, y nadie lo cuestiona. La cuarta no falla —
+te hace perder el rato creyendo que tu entorno está roto.
 
 1. **Reconstruye antes de aislar un test.** Los tests importan de `dist/`, que **no está
    en git y NO cambia al cambiar de rama**. Si compilas en una rama y luego te vas a otra,
@@ -30,6 +31,17 @@ pasa o el número parece plausible, y nadie lo cuestiona.
    → `node scripts/clean-staging-tests.mjs` (**dry-run**, solo lista) y luego
    `node scripts/clean-staging-tests.mjs --apply`. Tiene doble guard anti-producción y solo
    toca emails `@test.local`.
+
+4. **El `.env` del carril B lleva SOLO `DATABASE_URL_STAGING`, a propósito. NO está
+   incompleto.** Se creó así en SCRUM-60: **sin `DATABASE_URL`**, para que desde el portátil
+   del carril B sea imposible tocar producción ni queriendo — el mismo fail-closed que
+   `tests/_staging-db.mjs`. El resto de variables (Stripe, WhatsApp, Gemini…) viven solo en
+   Railway, porque en carril B no se levanta la app en local: solo se corren tests.
+   → El `CLAUDE.md` describe la máquina del **carril A**, que despliega y sí necesita prod.
+   No es una contradicción: son dos máquinas con permisos distintos por diseño.
+   → Si al abrir un worktree ves `Environment variable not found: DATABASE_URL`, es esto,
+   y es lo esperado. Los tests **no gateados** (entre ellos la red fail-closed de SCRUM-55)
+   no tocan BD y corren igual sin `.env`; solo los de `QA_DB_TEST=1` necesitan el fichero.
 
 > **Coordinación (regla del canal):** la suite y el seed **resetean la BD del merchant QA**.
 > Avisa por el canal antes de lanzarla — solo uno a la vez. `tests/` es **zona compartida**:
