@@ -5,6 +5,7 @@
 // de Railway es efímero — mismo patrón que ensureInvoicePdf).
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import { prisma } from '../../../core/db/prisma';
 import { albaranesDir } from '../../../core/storage/dirs';
 import { generateAlbaranPdf } from '../infra/albaranPdf.service';
@@ -122,6 +123,112 @@ export function calcAlbaranTotales(lineas: AlbaranLinea[] | null | undefined): {
   };
 }
 
+// ─── SCRUM-68 (ALBARAN-6): evidencias probatorias de la firma ───────────────────────
+// Al firmar (remoto o in situ) sellamos QUIÉN, CUÁNDO, DESDE DÓNDE y sobre QUÉ contenido.
+// ⚠️ PRIVACIDAD: `ip`/`ua` son datos personales → viven SOLO en Albaran.evidenciaFirma.
+// NUNCA se exponen: ni en serializeAlbaran, ni en el PDF, ni en el HTML público, ni en la API.
+export interface FirmaEvidencia {
+  v: number;
+  canal: 'remoto' | 'in_situ';
+  firmadoAt: string;          // ISO 8601, reloj del servidor (no del cliente)
+  ip: string | null;          // ⚠️ NO exponer
+  ua: string | null;          // ⚠️ NO exponer (user-agent, truncado)
+  tokenId: string | null;     // firmaToken usado (canal remoto); null in situ
+  firmante: string;           // nombre declarado del firmante (= cliente del albarán)
+  hashAlg: 'sha256';
+  contentHash: string;        // SHA-256 del CONTENIDO canónico (NO del PDF, §1.3 del brief)
+}
+
+/**
+ * SHA-256 del CONTENIDO canónico del albarán — NO del binario del PDF (§1.3): lo que se
+ * firma es el contenido (número, fecha, líneas, partes, notas), no una representación.
+ * Serialización determinista (claves fijas, `null` explícito) → el mismo contenido produce
+ * SIEMPRE el mismo hash y cualquier alteración posterior lo cambia (prueba de integridad).
+ */
+export function computeAlbaranContentHash(params: {
+  numero: string;
+  fecha: Date | string;
+  modoValoracion: string;
+  lineas: AlbaranLinea[];
+  notas: string | null;
+  obra: string | null;
+  referenciaTrabajo: string | null;
+  cliente: string | null;
+  emisor: string | null;
+  emisorNif: string | null;
+}): string {
+  const canonical = {
+    v: 1,
+    numero: params.numero,
+    fecha: params.fecha instanceof Date ? params.fecha.toISOString() : String(params.fecha),
+    modoValoracion: params.modoValoracion,
+    obra: params.obra ?? null,
+    referenciaTrabajo: params.referenciaTrabajo ?? null,
+    cliente: params.cliente ?? null,
+    emisor: params.emisor ?? null,
+    emisorNif: params.emisorNif ?? null,
+    notas: params.notas ?? null,
+    lineas: (Array.isArray(params.lineas) ? params.lineas : []).map((l) => ({
+      concepto: l.concepto,
+      cantidad: l.cantidad,
+      unidad: l.unidad ?? null,
+      precioUnitario: l.precioUnitario ?? null,
+      tipoIva: l.tipoIva ?? null,
+    })),
+  };
+  return crypto.createHash('sha256').update(JSON.stringify(canonical), 'utf8').digest('hex');
+}
+
+/**
+ * Construye y sella las evidencias en el momento de firmar. Resuelve el contenido real
+ * (job→customer→merchant) para calcular el hash y el nombre del firmante. Se guarda tal cual
+ * en Albaran.evidenciaFirma (aditivo, Json). El llamador aporta ip/ua/tokenId del request.
+ */
+export async function buildFirmaEvidencia(params: {
+  albaran: { id: number; numero: string; fecha: Date; modoValoracion: string; lineas: unknown; notas: string | null; jobId: number; merchantId: number };
+  canal: 'remoto' | 'in_situ';
+  ip: string | null;
+  ua: string | null;
+  tokenId: string | null;
+  firmadoAt: Date;
+}): Promise<FirmaEvidencia> {
+  const a = params.albaran;
+  const job = await prisma.job.findUnique({
+    where: { id: a.jobId },
+    select: { customerId: true, titulo: true, direccion: true },
+  });
+  const [customer, merchant] = await Promise.all([
+    job
+      ? prisma.customer.findUnique({ where: { id: job.customerId }, select: { name: true, legalName: true } })
+      : Promise.resolve(null),
+    prisma.merchant.findUnique({ where: { id: a.merchantId }, select: { name: true, legalName: true, taxId: true } }),
+  ]);
+  const cliente = customer?.legalName || customer?.name || null;
+  const contentHash = computeAlbaranContentHash({
+    numero: a.numero,
+    fecha: a.fecha,
+    modoValoracion: a.modoValoracion,
+    lineas: (Array.isArray(a.lineas) ? a.lineas : []) as unknown as AlbaranLinea[],
+    notas: a.notas ?? null,
+    obra: job?.direccion || null,
+    referenciaTrabajo: job?.titulo || null,
+    cliente,
+    emisor: merchant?.legalName || merchant?.name || null,
+    emisorNif: merchant?.taxId || null,
+  });
+  return {
+    v: 1,
+    canal: params.canal,
+    firmadoAt: params.firmadoAt.toISOString(),
+    ip: params.ip || null,
+    ua: params.ua ? String(params.ua).slice(0, 500) : null,
+    tokenId: params.tokenId || null,
+    firmante: cliente || 'Cliente',
+    hashAlg: 'sha256',
+    contentHash,
+  };
+}
+
 /** Forma que viaja al front (lista en el detalle del Trabajo y respuestas de las rutas). */
 export function serializeAlbaran(a: any) {
   const lineas = Array.isArray(a.lineas) ? a.lineas : [];
@@ -197,6 +304,8 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
     notas: albaran.notas,
     signatureData: albaran.signatureUrl,
     firmadoAt: albaran.firmadoAt,
+    // SCRUM-68: certificado de evidencias (solo hash/firmante/canal — NUNCA ip/ua).
+    evidencia: (albaran.evidenciaFirma as unknown as FirmaEvidencia | null) ?? null,
   });
 
   if (albaran.pdfUrl !== pdfUrl) {

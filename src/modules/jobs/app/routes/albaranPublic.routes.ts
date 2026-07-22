@@ -9,8 +9,9 @@ import { prisma } from '../../../../core/db/prisma';
 import { esc } from '../../../../core/utils/utils';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { rateLimit } from '../../../../core/http/rateLimit';
-import { canTransitionAlbaran, ensureAlbaranPdf } from '../../domain/albaran.service';
+import { buildFirmaEvidencia, canTransitionAlbaran, ensureAlbaranPdf } from '../../domain/albaran.service';
 import { sendAlbaranFirmadoWhatsApp } from '../../domain/albaranWhatsApp.service';
+import { requestIp } from '../../../system/audit.service';
 
 const router = Router();
 // Superficie pública → rate-limit (patrón decisionLimiter del presupuesto).
@@ -196,10 +197,21 @@ router.post('/:token/firmar', firmaLimiter, async (req: Request, res: Response) 
       return res.status(413).json({ error: 'firma_demasiado_grande', message: 'La firma es demasiado grande.' });
     }
 
-    // Firma remota: MISMA evidencia que en obra (ts + canvas) → estado firmado, congelado.
+    // Firma remota: sella evidencias (SCRUM-68) → estado firmado, congelado. Canal 'remoto'
+    // y tokenId = firmaToken usado. ⚠️ ip/ua se guardan SOLO en evidenciaFirma y NUNCA se
+    // exponen aquí: esta página pública jamás los devuelve (ni en el HTML ni en el JSON).
+    const firmadoAt = new Date();
+    const evidencia = await buildFirmaEvidencia({
+      albaran,
+      canal: 'remoto',
+      ip: requestIp(req),
+      ua: (req.headers['user-agent'] as string) || null,
+      tokenId: albaran.firmaToken,
+      firmadoAt,
+    });
     await prisma.albaran.update({
       where: { id: albaran.id },
-      data: { estado: 'firmado', signatureUrl: signatureData, firmadoAt: new Date() },
+      data: { estado: 'firmado', signatureUrl: signatureData, firmadoAt, evidenciaFirma: evidencia as any },
     });
     await ensureAlbaranPdf(albaran.id, true).catch((e) => console.error('[albaranPublic] PDF tras firmar:', e?.message || e));
 

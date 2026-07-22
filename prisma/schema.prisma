@@ -662,6 +662,11 @@ model Albaran {
   // de `enviadoParaFirmaAt != null && estado === 'emitido'`, no es un estado nuevo (Parte L intacta).
   firmaToken   String?   @unique @map("firma_token")
   enviadoParaFirmaAt DateTime? @map("enviado_para_firma_at")
+  // SCRUM-68: evidencias probatorias de la firma — { v, canal(remoto|in_situ), firmadoAt, ip, ua,
+  // tokenId, firmante, hashAlg, contentHash }. El hash es del CONTENIDO canónico (no del PDF, §1.3).
+  // ⚠️ IP y UA son datos personales → viven SOLO aquí; NUNCA se exponen (ni PDF, ni HTML público,
+  // ni serializer/API del cliente). Aditivo, Json nullable.
+  evidenciaFirma Json?   @map("evidencia_firma")
   notas        String?   @db.Text
   pdfUrl       String?   @map("pdf_url")
   createdAt    DateTime  @default(now()) @map("created_at")
