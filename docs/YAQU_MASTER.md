@@ -488,6 +488,28 @@ Cookies httpOnly+Secure+SameSite=Lax · rate-limit en magic link/login · Zod en
 
 ## S4. RGPD y datos `F1-doc + acciones`
 Bases: ejecución de contrato (merchant); interés legítimo/relación precontractual (cliente final, SOLO transaccional). Subencargados a publicar: Railway, Stripe, Meta, Resend, Anthropic, Mercado Pago (+R2 al llegar). Privacidad + DPA antes del primer pagante (B2.4). **Retención:** facturas y registros de facturación = plazos legales mercantiles/fiscales **[confirmar con asesor]**; NO se borran ni al cancelar cuenta. **Supresión cliente final:** anonimizar (nombre→"Cliente eliminado", phone/email→null) preservando facturas; prohibido borrado físico con facturas. **Cancelación merchant:** soft 30 días (solo lectura + export) → anonimizar lo no fiscal → conservar lo fiscal. Export = CSVs + zip PDFs + XML RRSIF (post-SIF). **Backups:** verificar política Railway **[VALIDAR]** + dump cifrado semanal fuera de Railway ANTES de 25 pagantes (`scripts/backup-dump.mjs` `F2-early`).
+> **✅ SCRUM-74 (22-jul-2026, 🔴 seguridad/RGPD, la otra puerta de SCRUM-72 D5):**
+> `GET /recibo/:chargeId[/pdf]` y `POST /recibo/:chargeId/feedback` eran públicos por diseño
+> (cliente final sin login) pero identificados por `Charge.id` — entero autoincremental
+> ENUMERABLE, sin ningún secreto: cualquiera podía recorrer `/recibo/1`, `/recibo/2`… y ver/
+> descargar NIF del emisor, nombre/email/teléfono del cliente final e importes de OTROS
+> merchants. Fix (decisión del fundador, opción 1 — clona `Albaran.firmaToken` de SCRUM-49):
+> `Charge.receiptToken` opaco (`crypto.randomBytes(16).hex`, `@unique`, perezoso vía
+> `ensureChargeReceiptToken()`). Los 3 endpoints del router pasan a `findUnique` por token — el
+> id numérico ya no resuelve nada. Alcance ampliado a los 3 (no solo `/pdf`, que era lo único
+> nombrado en el ticket) tras un STOP explícito: la página HTML es el enlace real que llega por
+> WhatsApp y necesita el token para enlazar al PDF protegido — dejarla en `chargeId` habría
+> dejado la fuga abierta por la puerta principal. Generadores de enlace actualizados (WhatsApp,
+> Stripe success/cancel, redirects post-pago, `/dev/*`, `receipt_url` legacy de `charges.routes.ts`).
+> El botón dinámico de `payment_confirmation_invoice_es` **NO requirió re-aprobación en Meta**:
+> la URL base aprobada no cambia, solo el valor runtime del sufijo (mismo mecanismo ya probado
+> por `albaran_para_firmar_es`) — `docs/WHATSAPP_TEMPLATES.md` §4 actualizado. Schema vía
+> `db execute` (falso positivo del `@unique`, patrón EXT3/SCRUM-49) aplicado a STAGING con
+> host-check + GO del fundador; PROD pendiente del merge (`docs/MIGRATIONS_PENDING.md`).
+> Enlaces `/recibo/:chargeId` ya enviados dejan de funcionar (asumido, sin clientes reales aún).
+> **Hallazgo colateral NO corregido** (`docs/BUGS.md` P1-SEC-8): `/pay/card/:id`,
+> `/pay/bizum/:chargeId`, `/pay/invoice/:chargeId` comparten el mismo patrón de `chargeId`
+> enumerable en la RUTA (no solo en el destino de un redirect) — fuera del alcance pedido.
 
 ---
 
@@ -502,7 +524,7 @@ Bases: ejecución de contrato (merchant); interés legítimo/relación precontra
 > **DOCS-F1** (U1.2): ✅ COMPLETO — skills (`/yaqu-sprint`, `/yaqu-release-check`, `yaqu-premium-ui`, `yaqu-verifactu-sif`), hook `guard-dangerous`, `frontend-design` instalada, J7 builders+test, `RUNBOOKS.md`, `QA_MASTER.md`, flags (`core/flags.ts`), J3 `waOptOut`, check manifest PWA (Y1).
 > **TOOLING-CODEX** (post-DOCS-F1, al 29-jun): espejo de la constitución y el tooling para el harness de Codex — `AGENTS.md` (equivalente a `CLAUDE.md`, derivado de este master, regla 35), `.codex/` (`config.toml` MCP Playwright + `hooks.json` + `hooks/guard-dangerous.sh` réplica del de `.claude/`), y skills espejo en `.agents/skills/` (`yaqu-*` + `impeccable`). ⚠️ **`impeccable` es skill de TERCEROS** (regla 36): presente en el repo; pendiente de que su permanencia quede ratificada por el fundador (ver nota en AA2).
 > **SIF-1** (U1.3): S1-0 🟡 HUMANO (cert FNMT ✅ conseguido 15-jun con copia `.pfx`; falta alta en el entorno de pruebas AEAT + cita asesor) · S1-0b ✅ (`SIF_SPEC_NOTES.md`: VERI*FACTU NO exige XAdES → 100% Node) · S1-A ✅ (`AUDITORIA_RRSIF.md`: huella regenerada a formato oficial, vector de prueba AEAT en verde) · S1-B ✅ (modalidad documentada) · S1-C ✅ (registros alta/R1/anulación validados contra XSD oficial) · S1-D ⏸ PAUSA (espera decisión de representación del asesor) · S1-E 🟡 (`docs/legal/DECLARACION_RESPONSABLE.md` borrador) · S1-F ⏳ (revisión asesor) · S1-G ⏳ (cert + producción AEAT) · S1-H 🟡 (`docs/legal/PACK_GESTORIA.md` borrador).
-> **Canal WhatsApp** (Parte J, en huecos de SIF-1): J3 ✅ · WA-0b (J4) ✅ (log + estados webhook + chip de entrega + tabla en prod) · J8 ✅ (métricas coste/entrega) · plantillas `payment_confirmation_invoice_es` y `merchant_alert_es` ✅ **Approved (15-jun) y CONECTADAS** (`e922495`, `b5fa810`): la 1ª sustituye a `payment_confirmation_es` en los webhooks de pago (botón "Ver documento" → `/recibo/:chargeId`); la 2ª es el fallback al PRO con ventana 24h cerrada vía `notifyMerchantAlert` en pago (psp+mp, 15-jun) y en decisión de presupuesto (`quotes.routes.ts`, 16-jun). ⚠️ quedaron en categoría **Marketing** → recategorizar a Utility (P3-3).
+> **Canal WhatsApp** (Parte J, en huecos de SIF-1): J3 ✅ · WA-0b (J4) ✅ (log + estados webhook + chip de entrega + tabla en prod) · J8 ✅ (métricas coste/entrega) · plantillas `payment_confirmation_invoice_es` y `merchant_alert_es` ✅ **Approved (15-jun) y CONECTADAS** (`e922495`, `b5fa810`): la 1ª sustituye a `payment_confirmation_es` en los webhooks de pago (botón "Ver documento" → `/recibo/:token`, token opaco desde SCRUM-74); la 2ª es el fallback al PRO con ventana 24h cerrada vía `notifyMerchantAlert` en pago (psp+mp, 15-jun) y en decisión de presupuesto (`quotes.routes.ts`, 16-jun). ⚠️ quedaron en categoría **Marketing** → recategorizar a Utility (P3-3).
 > **CONNECT-1** (U1.4, avanzada "en huecos" durante DEMO-READY/EXT, jun-jul): C1-0 ✅ (flags+columnas `stripeAccountId`/`connectStatus`/`bizumPhone` en prod) · C1-1 ✅ (onboarding Express `connect.routes.ts` + webhook separado `connectWebhook.routes.ts` + card en Configuración) · C1-2 ✅ código (DIRECT charge con `application_fee_amount` en `payCard.routes.ts`; falta pago test real + refund documentado → RUNBOOK_PAGOS, acción fundador con Stripe) · C1-3 ✅ (copy 0,9 % en precios/Configuración + export owner `GET /admin/exports/fees.csv`, 5-jul) · C1-4 ✅ (Bizum manual asistido E2E visto por el fundador 4-jul) · C1-5 ✅ (selector W4 verificado en el barrido A6.6 a 390 real). **Activación = fundador:** webhook Connect en Stripe + `STRIPE_CONNECT_WEBHOOK_SECRET` + flags (PENDIENTES_FUNDADOR).
 > **VOZ-1 · PRECIOS-1 · GTM-1**: ⏳ no iniciadas (van tras SIF-1).
 
