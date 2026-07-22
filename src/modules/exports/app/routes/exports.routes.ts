@@ -15,7 +15,7 @@ import { ZipArchive } from 'archiver';
 import fs from 'fs';
 import { ensureInvoicePdf } from '../../../../lib/invoicing';
 import {
-  CSV_PAQUETE, csvBody, MAX_FACTURAS_ZIP, resolverEntregaZip,
+  CSV_PAQUETE, csvBody, csvRow, csvNum, MAX_FACTURAS_ZIP, resolverEntregaZip,
   buildClientes, buildFacturas, buildCobros, buildTrabajos, buildPresupuestos,
 } from '../../domain/exportData';
 
@@ -48,17 +48,8 @@ function auditExport(
 
 // ── helpers ───────────────────────────────────────────────────────────────
 
-function csvEscape(v: unknown): string {
-  const s = v == null ? '' : String(v);
-  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
-    return `"${s.replace(/"/g, '""')}"`;
-  }
-  return s;
-}
-
-function csvRow(fields: unknown[]): string {
-  return fields.map(csvEscape).join(',');
-}
+// SCRUM-86: el formato del CSV (separador `;`, coma decimal, escapado) vive en
+// domain/exportData — una sola definición para las rutas sueltas y para el ZIP.
 
 function parseDateFilter(q: Record<string, unknown>) {
   const from = q.from ? new Date(String(q.from)) : null;
@@ -68,7 +59,10 @@ function parseDateFilter(q: Record<string, unknown>) {
 }
 
 function sendCsv(res: any, filename: string, header: string[], rows: string[]) {
-  const bom  = '﻿'; // UTF-8 BOM para que Excel lo abra bien
+  // El BOM va SOLO aquí para la descarga suelta; el del paquete lo pone `csvBody`.
+  // Son dos caminos distintos, nunca encadenados: dos BOM harían que Excel enseñara
+  // basura en la primera celda de la cabecera.
+  const bom  = '﻿'; // UTF-8 BOM para que Excel no rompa los acentos
   const body = [csvRow(header), ...rows].join('\r\n');
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -224,7 +218,9 @@ router.get('/datos.zip', async (req, res) => {
         `Generado: ${new Date().toISOString()}`,
         `Rango: ${from ? from.toISOString().slice(0, 10) : 'desde el principio'} → ${to ? to.toISOString().slice(0, 10) : 'hoy'}`,
         '',
-        'csv/       clientes, facturas, cobros, trabajos y presupuestos (UTF-8 con BOM, separador coma)',
+        'csv/       clientes, facturas, cobros, trabajos y presupuestos',
+        '           Formato: UTF-8 con BOM · separador ";" · decimales con coma (1234,50) · fechas AAAA-MM-DD.',
+        '           Preparado para abrirse con doble clic en Excel con configuración regional española.',
         `facturas/  ${pdfsOk} de ${invoices.length} PDF de factura/justificante`,
         conXml ? '' : 'Nota: este paquete no incluye el XML de registros de facturación.',
       ].filter(Boolean).join('\n'),
@@ -327,12 +323,12 @@ router.get('/fees.csv', async (req, res) => {
         ch.id,
         ch.merchant?.legalName || ch.merchant?.name || ch.merchantId,
         ch.concept,
-        amount.toFixed(2),
+        csvNum(amount),
         ch.currency,
-        fee.toFixed(2),
+        csvNum(fee),
       ]));
     }
-    rows.push(csvRow(['TOTAL', '', '', '', '', '', totalFees.toFixed(2)]));
+    rows.push(csvRow(['TOTAL', '', '', '', '', '', csvNum(totalFees)]));
 
     sendCsv(res, `fees_${new Date().toISOString().slice(0, 10)}.csv`, header, rows);
   } catch (err) {
@@ -391,6 +387,11 @@ router.get('/verifactu.xml', requireRole('admin'), async (req, res) => {
       `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
 
     const nombreEmisor = merchant.legalName || merchant.name;
+    // ⚠️ NO UNIFICAR con el formato de los CSV (SCRUM-86). Aquí los importes van con
+    // PUNTO decimal (`121.00`) porque lo exige el esquema de la AEAT: el tipo es un
+    // decimal XSD, y el separador decimal de XSD es el punto, no depende del locale.
+    // Este fichero no lo abre Excel — lo lee Hacienda. Cambiarlo a coma para que
+    // "cuadre con los CSV" invalidaría el registro de facturación.
     const registros = invoices.map((inv) => {
       const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
       const vat = calcVatBreakdown(lines);
@@ -552,7 +553,7 @@ router.get('/expenses.csv', async (req, res) => {
       new Date(e.date).toISOString().slice(0, 10),
       e.concept,
       e.category,
-      Number(e.amount).toFixed(2),
+      csvNum(e.amount),
       e.currency,
       e.provider?.name ?? '',
       e.quote?.id ?? '',

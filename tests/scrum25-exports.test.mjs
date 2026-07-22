@@ -123,7 +123,9 @@ test('SCRUM-25: exports admin-only, CSVs nuevos, base+IVA, rango y audit', { ski
     assert.ok(headerLine.includes('Base') && headerLine.includes('IVA'), 'facturas.csv debe traer columnas Base e IVA');
     const facturaRow = facturas.split('\r\n').find((l) => l.includes(numero));
     assert.ok(facturaRow, 'la factura de QA debe aparecer');
-    assert.ok(facturaRow.includes('100.00') && facturaRow.includes('21.00') && facturaRow.includes('121.00'),
+    // SCRUM-86: los importes salen con COMA decimal (formato ES). Ver el contrato
+    // completo en scrum86-csv-formato.test.mjs.
+    assert.ok(facturaRow.includes('100,00') && facturaRow.includes('21,00') && facturaRow.includes('121,00'),
       `base/IVA/total mal desglosados: ${facturaRow}`);
 
     // ── (C) cobros.csv con paid_via ────────────────────────────────────────
@@ -137,12 +139,16 @@ test('SCRUM-25: exports admin-only, CSVs nuevos, base+IVA, rango y audit', { ski
     const jobRow = trabajos.split('\r\n').find((l) => l.includes('Trabajo QA S25'));
     assert.ok(jobRow, 'el trabajo de QA debe aparecer');
     assert.ok(jobRow.includes('QA Tec S25'), 'trabajos.csv debe traer el nombre del operario');
-    assert.ok(jobRow.includes('750.00'), 'pendiente = 1000 - 250');
+    assert.ok(jobRow.includes('750,00'), 'pendiente = 1000 - 250'); // SCRUM-86: coma decimal
     assert.ok(jobRow.includes('Parcial'), 'estado de cobro derivado (mismo semáforo que la app)');
 
     // ── TENANCY (regla 2): nada del merchant vecino ────────────────────────
+    // ⚠️ El canario del importe se comprueba en LAS DOS grafías a propósito: al pasar a
+    // coma decimal (SCRUM-86), un canario clavado en '9999.00' dejaría de coincidir nunca
+    // y la comprobación de tenancy pasaría en vacío sin que nadie se enterase.
     for (const [f, body] of [['clientes', clientes], ['cobros', cobros], ['trabajos', trabajos]]) {
-      assert.ok(!body.includes('VECINO NO DEBE SALIR') && !body.includes('COBRO VECINO') && !body.includes('9999.00'),
+      assert.ok(!body.includes('VECINO NO DEBE SALIR') && !body.includes('COBRO VECINO')
+        && !body.includes('9999,00') && !body.includes('9999.00'),
         `TENANCY ROTA: ${f}.csv incluye datos de otro merchant`);
     }
 

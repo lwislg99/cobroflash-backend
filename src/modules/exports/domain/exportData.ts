@@ -12,16 +12,40 @@ import { estadoCobroFor } from '../../jobs/domain/job.service';
 export interface Rango { from: Date | null; to: Date | null }
 export interface CsvData { header: string[]; rows: string[] }
 
+// ── Formato CSV (SCRUM-86) — OPTIMIZADO PARA ESPAÑA, no universal ─────────
+// Excel usa el "separador de lista" del sistema, no una coma fija: con configuración
+// regional ES espera `;`, así que un CSV separado por comas se abría ENTERO en la
+// columna A. Y con `100.00` tampoco reconocía los importes como número.
+//
+// ⚠️ NO es un formato universal. De los 6 países del máster (locales.ts) esto encaja en
+// ES, CO, AR, PE y CL (coma decimal), pero NO en MÉXICO, que usa punto decimal como
+// EE. UU. — allí el formato correcto sería justo el anterior. Hoy no hay merchants MX
+// (LATAM es F3), así que se opta por lo que sirve al mercado real. Si algún día entra
+// MX, esto pasa a depender del locale del merchant.
+export const CSV_SEPARADOR = ';';
+
 export function csvEscape(v: unknown): string {
   const s = v == null ? '' : String(v);
-  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+  // OJO: ya NO se entrecomilla por coma. Con decimal español la coma aparece en TODOS
+  // los importes, y entrecomillarlos ("1234,50") hace que Excel los lea como TEXTO.
+  if (s.includes(CSV_SEPARADOR) || s.includes('"') || s.includes('\n')) {
     return `"${s.replace(/"/g, '""')}"`;
   }
   return s;
 }
 
 export function csvRow(fields: unknown[]): string {
-  return fields.map(csvEscape).join(',');
+  return fields.map(csvEscape).join(CSV_SEPARADOR);
+}
+
+/**
+ * Importe para CSV: coma decimal y SIN punto de miles (`1234,50`).
+ * No se usa `formatMoneyEs`: mete símbolo de moneda y separador de miles, y el punto de
+ * miles es la causa nº 1 de que Excel vuelva a interpretar el importe como texto.
+ */
+export function csvNum(n: unknown): string {
+  const v = Number(n ?? 0);
+  return (Number.isFinite(v) ? v : 0).toFixed(2).replace('.', ',');
 }
 
 /** Cuerpo completo del CSV: BOM UTF-8 (para que Excel no rompa los acentos) + CRLF. */
@@ -83,9 +107,9 @@ export async function buildFacturas(merchantId: number, rango: Rango, status = '
         dia(inv.createdAt),
         inv.customer?.name ?? '',
         inv.customer?.email ?? '',
-        (vat ? vat.base : total).toFixed(2),
-        (vat ? vat.cuota : 0).toFixed(2),
-        total.toFixed(2),
+        csvNum(vat ? vat.base : total),
+        csvNum(vat ? vat.cuota : 0),
+        csvNum(total),
         inv.currency,
         inv.status,
         inv.paidAt ? dia(inv.paidAt) : '',
@@ -110,7 +134,7 @@ export async function buildCobros(merchantId: number, rango: Rango, status = 'al
       dia(ch.createdAt),
       ch.customer?.name ?? '',
       ch.concept,
-      Number(ch.amount).toFixed(2),
+      csvNum(ch.amount),
       ch.currency,
       ch.method,
       ch.status,
@@ -149,9 +173,9 @@ export async function buildTrabajos(merchantId: number, rango: Rango, status = '
         // operarioId null = propietario (SCRUM-22): se deja vacío, no se inventa nombre
         j.operarioId != null ? (operarioName.get(j.operarioId) ?? '') : '',
         j.scheduledAt ? dia(j.scheduledAt) : '',
-        aceptado.toFixed(2),
-        cobrado.toFixed(2),
-        (Math.round((aceptado - cobrado) * 100) / 100).toFixed(2),
+        csvNum(aceptado),
+        csvNum(cobrado),
+        csvNum(Math.round((aceptado - cobrado) * 100) / 100),
         estadoCobroFor(cobrado, aceptado),   // mismo semáforo que la app
         dia(j.createdAt),
       ]);
@@ -174,7 +198,7 @@ export async function buildPresupuestos(merchantId: number, rango: Rango, status
       q.customer?.name ?? '',
       q.customer?.email ?? '',
       q.customer?.phone ?? '',
-      Number(q.total).toFixed(2),
+      csvNum(q.total),
       q.currency,
       q.status,
       q.acceptedAt ? dia(q.acceptedAt) : '',
