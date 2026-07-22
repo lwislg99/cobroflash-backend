@@ -5,6 +5,7 @@
 //
 // ⚠️ GATEADO (crea/BORRA un merchant efímero; levanta la app; dry-run):
 //   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm run test:staging
+import './_staging-db.mjs'; // SCRUM-60/64: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
