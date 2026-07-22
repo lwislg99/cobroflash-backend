@@ -1,7 +1,7 @@
 # SESION_ACTUAL_SCRUM-22.md — Brief
 **SCRUM-22 · OPERARIO-1 · Autoría del operario en el Trabajo (registro de nombre en todo el flujo)**
 Carril Javier · label `dev2` · Fase F2 · Epic padre SCRUM-21 · Depende de SCRUM-10 (contenedor Trabajo, ya existe) y reutiliza Equipo S1.
-Estado del brief: **v1.1 — FINAL.** Las dos decisiones abiertas las tomó el asesor por delegación expresa de Luis (14-jul); ver §2. Listo para ejecución tras: (1) merge del PR aditivo del carril A, (2) publicación del comentario de schema en el ticket.
+Estado del brief: **v1.2 — FINAL.** Las dos decisiones abiertas las tomó el asesor por delegación expresa de Luis (14-jul); ver §2. El carril A ya es su propio ticket: **SCRUM-52** (asignado a Luis, bloquea a este). Listo para ejecución del carril B en cuanto SCRUM-52 esté mergeado en `main`.
 
 ---
 
@@ -12,7 +12,7 @@ Estado del brief: **v1.1 — FINAL.** Las dos decisiones abiertas las tomó el a
 **Flujo:** `git checkout main && git pull` → rama `scrum-22-operario-autoria` → commit de feature (uno) → **PR lo crea Luis** con descripción pegada antes → Luis mergea (merge commit si 2+ commits). Ticket a **"En revisión"** al abrir PR; **"Finalizada" (transición id 51) la pone SOLO el asesor** tras verificación.
 
 **🚨 ZONAS SENSIBLES:**
-- 🚨 **`prisma/schema.prisma` — NO se toca en este carril.** `Job.operarioId` lo sirve **Luis en el PR aditivo del carril A** (regla 3, AA1.4). Ver §4 y "Comentario carril A".
+- 🚨 **`prisma/schema.prisma` — NO se toca en este carril.** `Job.operarioId` lo sirve **Luis en el PR aditivo del carril A → ticket SCRUM-52** (regla 3, AA1.4). Ver §4 y "Contenido del carril A (SCRUM-52)".
 - 🚨 **`jobDetailView.js` / `homeView.js` — NO se tocan** (carril Luis, Fases 1-2). El render del nombre del operario en detalle + timeline lo **ejecuta el carril A sobre la spec de §7**.
 - 🚨 **`jobs.routes.ts` (serializers) — zona roja compartida:** el carril B solo **añade** campos al JSON (aditivo); nunca modifica los existentes. Anunciar en el ticket antes de tocar. **Es el único archivo compartido que toca Javier en esta tarea.**
 - Write-path (schema + `ensureJobForQuote` + audit) va en el PR del carril A → Javier NO edita `job.service.ts`, `quotesAdmin.routes.ts` ni `audit.service.ts`.
@@ -57,7 +57,7 @@ Luis delegó ambas decisiones en el asesor (14-jul). Quedan tomadas así:
 2. **Poblado — `job.service.ts` (`ensureJobForQuote`, :29-61):** al crear el Job en el accept, `operarioId = quote.teamMemberId`. Fuente = **creador del presupuesto**, **NO** `req.teamMemberId` del que acepta (suele ser admin). `quote.teamMemberId === null` (owner) → `operarioId = null`.
 3. **Audit — `audit.service.ts` (system):** añadir literal `operario_asignado` al union `AuditAction`; emitir `recordAudit({ merchantId, teamMemberId: operarioId, action: 'operario_asignado', entityType: 'job', entityId })` en la creación del Job (junto al poblado, mismo write-path).
 
-> Todo 4.A es aditivo (regla 3), reutiliza `TeamMember` (regla 27), sin `--accept-data-loss`. Ver "Comentario carril A" para pegar en el ticket.
+> Todo 4.A es aditivo (regla 3), reutiliza `TeamMember` (regla 27), sin `--accept-data-loss`. Este 4.A es el contenido de **SCRUM-52** (ver bloque al final).
 
 ### 4.B — PR del carril B (Javier, `dev2`), sobre el campo ya poblado.
 1. **Serializer — `jobs.routes.ts` (`serializeJob` / `serializeJobDetail`) — [zona roja, solo añadir]:** exponer `operarioId` y `operarioNombre`. `operarioNombre` = `TeamMember.name` si `operarioId` no es null; **fallback al nombre del merchant si es null** (mismo criterio que `GET /admin/team` para el owner).
@@ -122,9 +122,9 @@ Luis delegó ambas decisiones en el asesor (14-jul). Quedan tomadas así:
 
 ---
 
-## Comentario carril A — para pegar en SCRUM-22 (petición a Luis, PR aditivo previo)
+## Contenido del carril A (SCRUM-52) — PR aditivo previo de Luis
 
-> **PR aditivo del carril A para SCRUM-22 (previo al carril B).** Todo aditivo (regla 3, sin `--accept-data-loss`), reutiliza `TeamMember` (regla 27). Convención `Int?` con `null = propietario`, idéntica a `Quote.teamMemberId` / `AuditLog.teamMemberId`.
+> Ya creado como **SCRUM-52** (asignado a Luis, *blocks* SCRUM-22). **PR aditivo del carril A para SCRUM-22 (previo al carril B).** Todo aditivo (regla 3, sin `--accept-data-loss`), reutiliza `TeamMember` (regla 27). Convención `Int?` con `null = propietario`, idéntica a `Quote.teamMemberId` / `AuditLog.teamMemberId`.
 >
 > **1) Schema:**
 > ```prisma
