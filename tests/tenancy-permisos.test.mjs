@@ -8,6 +8,7 @@
 // ⚠️ Toca la BD del .env (crea y BORRA su merchant B efímero + técnico) y
 // levanta la app in-process en un puerto efímero. Gateado:
 //   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm test
+import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';

@@ -9,6 +9,7 @@
 // necesario porque el merchant 1 es el demo y V0-2 bloquea destinos fuera de
 // la lista — ese guard se mantiene activo A PROPÓSITO también en dry-run.)
 // En `npm test` normal aparece como SKIP y no toca nada.
+import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando A55_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
 

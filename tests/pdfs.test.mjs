@@ -2,6 +2,7 @@
 // (serie J, sin QR), watermark de demo y regeneración on-demand (R8).
 // Sin factura fiscal: eso vive tras INVOICING_ES_ENABLED (no se toca).
 // Los unit generan ficheros reales en /invoices y los BORRAN al acabar.
+import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

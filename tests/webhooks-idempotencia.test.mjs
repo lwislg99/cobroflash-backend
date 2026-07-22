@@ -7,6 +7,7 @@
 //  · Cadena de dinero (/webhooks/psp, adonde reenvía Connect): un
 //    payment.confirmed duplicado NO re-paga — paidAt no cambia y el evento
 //    queda registrado como duplicate (integración real, gateada).
+import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
