@@ -11,6 +11,7 @@ import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { esc, parseNumericId } from '../../../../core/utils/utils';
 import { isFlagEnabled } from '../../../../core/flags';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
+import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 
 const router = Router();
 
@@ -135,7 +136,8 @@ router.get('/bizum/:chargeId', async (req, res) => {
   const charge = await loadBizumCharge(id);
   if (!charge) return res.status(404).send(documentNotFoundHtml());
   if (charge.status === 'paid' || charge.status === 'expired') {
-    return res.redirect(303, `/recibo/${id}`);
+    const receiptToken = await ensureChargeReceiptToken(id, prisma);
+    return res.redirect(303, `/recibo/${receiptToken}`);
   }
 
   const m = charge.merchant;
@@ -180,7 +182,10 @@ router.post('/bizum/:chargeId/claimed', async (req, res) => {
 
   const charge = await loadBizumCharge(id);
   if (!charge) return res.status(404).send(documentNotFoundHtml());
-  if (charge.status !== 'pending') return res.redirect(303, `/recibo/${id}`);
+  if (charge.status !== 'pending') {
+    const receiptToken = await ensureChargeReceiptToken(id, prisma);
+    return res.redirect(303, `/recibo/${receiptToken}`);
+  }
 
   const already = await prisma.event
     .findFirst({ where: { chargeId: id, type: 'bizum_claimed' }, select: { id: true } })

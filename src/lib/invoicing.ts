@@ -1,6 +1,7 @@
 // src/lib/invoicing.ts
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import { PrismaClient } from '@prisma/client';
 import { allocateInvoiceNumber, isReceiptNumber } from '../modules/invoicing/domain/invoiceNumber.service';
 import { isDemoMerchant, DEMO_WATERMARK } from '../modules/invoicing/domain/emission.service';
@@ -88,6 +89,29 @@ export async function ensureInvoicePdf(
   }
 
   return { diskPath, pdfUrl: publicUrlPath, number: inv.number };
+}
+
+/**
+ * SCRUM-74: token OPACO del recibo público (patrón `Albaran.firmaToken`, SCRUM-49).
+ * `Charge.id` es autoincremental y NO debe usarse como identificador público
+ * (IDOR/RGPD: cualquiera podía recorrer /recibo/1, /recibo/2… sin login). Generado
+ * perezosamente la primera vez que se necesita un enlace (WhatsApp, email, redirect
+ * de pago); estable en llamadas siguientes (mismo cobro → mismo token).
+ */
+export async function ensureChargeReceiptToken(
+  chargeId: number,
+  prisma: PrismaClient,
+): Promise<string> {
+  const charge = await prisma.charge.findUnique({
+    where: { id: chargeId },
+    select: { receiptToken: true },
+  });
+  if (!charge) throw new Error('charge_not_found');
+  if (charge.receiptToken) return charge.receiptToken;
+
+  const token = crypto.randomBytes(16).toString('hex');
+  await prisma.charge.update({ where: { id: chargeId }, data: { receiptToken: token } });
+  return token;
 }
 
 export async function ensureInvoiceForCharge(

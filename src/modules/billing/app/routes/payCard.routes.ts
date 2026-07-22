@@ -6,6 +6,7 @@ import { stripe } from '../../../../integrations/stripe';
 import { BASE_URL, config } from '../../../../core/config/env';
 import { parseNumericId } from '../../../../core/utils/utils';
 import { isFlagEnabled } from '../../../../core/flags';
+import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 
 const router = Router();
 
@@ -26,7 +27,8 @@ router.get('/card/:id', async (req, res) => {
     });
     if (!charge) return res.status(404).send(documentNotFoundHtml());
     if (charge.status !== 'pending') {
-      return res.redirect(303, `/recibo/${id}`);
+      const receiptToken = await ensureChargeReceiptToken(id, prisma);
+      return res.redirect(303, `/recibo/${receiptToken}`);
     }
 
     const amountCents = Math.round(Number(charge.amount) * 100);
@@ -42,6 +44,7 @@ router.get('/card/:id', async (req, res) => {
       merchant?.connectStatus === 'active' &&
       !!merchant?.stripeAccountId;
 
+    const receiptToken = await ensureChargeReceiptToken(id, prisma);
     const sessionParams = {
       mode: 'payment' as const,
       customer_email: charge.customer?.email || undefined,
@@ -55,8 +58,8 @@ router.get('/card/:id', async (req, res) => {
           quantity: 1,
         },
       ],
-      success_url: `${BASE_URL}/recibo/${id}?card=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${BASE_URL}/recibo/${id}?card=cancel`,
+      success_url: `${BASE_URL}/recibo/${receiptToken}?card=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${BASE_URL}/recibo/${receiptToken}?card=cancel`,
       metadata: { charge_id: String(id) },
       ...(useConnect
         ? {

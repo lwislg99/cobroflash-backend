@@ -108,6 +108,56 @@
     (reduce, no cierra) — pero eso toca la máquina de estados L (también cerrada).
 - **Done cuando:** decisión del fundador sobre la capa (b). La mitigación (a) ya limita el abuso.
 
+### [x] P0-SEC-7 · `/recibo/:chargeId[/pdf]` enumerable → facturas/recibos ajenos sin login (SCRUM-74, 22-jul, nace de SCRUM-72 D5)
+- **Exploit:** `GET /recibo/:chargeId/pdf` (y también `GET /recibo/:chargeId` — la página HTML, que
+  es el enlace que REALMENTE se manda por WhatsApp — y `POST /recibo/:chargeId/feedback`) eran
+  públicas por diseño (el cliente final no tiene login) pero identificadas por `Charge.id`, **entero
+  autoincremental**. Cualquiera, sin login, podía recorrer `/recibo/1`, `/recibo/2`… y ver/descargar
+  el NIF del emisor, nombre/email/teléfono del cliente final, importes y el QR VeriFactu de OTROS
+  merchants. Misma clase de fuga que SCRUM-72 (PDFs enumerables), otra puerta — SCRUM-72 (decisión
+  D5) la dejó explícitamente fuera para abrirla aparte.
+- **Causa raíz:** `Charge.id` sin ningún secreto/token asociado; el único gate era `status==='paid'`.
+- **Arreglo (decisión del fundador — opción 1, clona el patrón de `Albaran.firmaToken` de
+  SCRUM-49):** `Charge.receiptToken` (token opaco, `crypto.randomBytes(16).hex`, `@unique`,
+  generado perezosamente por `ensureChargeReceiptToken()`). Los 3 endpoints del router
+  (`GET /:token`, `GET /:token/pdf`, `POST /:token/feedback`) pasan a `findUnique({ where:
+  { receiptToken } })` — el id numérico ya no resuelve NADA. Alcance ampliado a los 3 endpoints
+  (no solo `/pdf` como decía el ticket literal) tras un STOP explícito: la página HTML es el
+  enlace real que llega por WhatsApp y necesita conocer el token para enlazar al PDF protegido;
+  dejarla en `chargeId` habría dejado la fuga abierta por la puerta principal.
+  Generadores de enlace actualizados para usar el token (no el id): `whatsappNotifications.ts`
+  (confirmación de pago), Stripe `success_url`/`cancel_url` (`payCard.routes.ts`), redirects
+  post-pago (`payInvoice.routes.ts`, `payBizum.routes.ts`), rutas `/dev/*` (no-producción) y el
+  `receipt_url` legacy de `charges.routes.ts` (router n8n-era, ya gateado por
+  `requireInternalSecret`/P0-SEC-1). El botón dinámico de la plantilla Meta
+  `payment_confirmation_invoice_es` **NO requirió re-aprobación**: la URL BASE aprobada
+  (`https://yaqu.app/recibo/{{1}}`) no cambia, solo el valor que sustituye `{{1}}` en runtime
+  (mismo mecanismo ya probado por el token de `albaran_para_firmar_es`, SCRUM-49) —
+  ver `docs/WHATSAPP_TEMPLATES.md` §4.
+- **Schema:** `db execute` (no `db push`, falso positivo del `@unique` sobre columna nueva) aplicado
+  a STAGING con host-check + GO del fundador — ver `docs/MIGRATIONS_PENDING.md`. PROD pendiente
+  del merge.
+- **Compatibilidad:** los enlaces `/recibo/:chargeId` ya enviados dejan de funcionar (asumido —
+  no hay clientes reales todavía, igual que SCRUM-72).
+- **Done cuando:** `GET/POST /recibo/<id numérico>` → 404 sin fuga de datos en el body (probado);
+  `/recibo/:token` (los 3 endpoints) sirve solo el cobro dueño de ESE token. Test:
+  `tests/scrum74-recibo-token.test.mjs` (gateado).
+
+### [ ] P1-SEC-8 · `/pay/card/:id`, `/pay/bizum/:chargeId`, `/pay/invoice/:chargeId` — MISMO patrón enumerable, NO corregido (hallazgo en SCRUM-74, 22-jul)
+- **Síntoma:** al arreglar `/recibo/:chargeId` (P0-SEC-7) se confirmó que el selector de pago
+  (`payInvoice.routes.ts`, `GET /pay/invoice/:chargeId`) y los métodos concretos
+  (`payCard.routes.ts` `GET /pay/card/:id`, `payBizum.routes.ts` `GET /pay/bizum/:chargeId` y
+  `POST /pay/bizum/:chargeId/claimed`) siguen usando el `Charge.id` autoincremental como
+  identificador de RUTA (no solo como destino de redirect, que sí se corrigió). Exponen importe,
+  concepto, nombre/logo del merchant y (en Bizum) su móvil — menos sensible que NIF/email del
+  cliente (P0-SEC-7) pero mismo patrón IDOR de fondo.
+- **Alcance:** NO corregido — fuera del pedido explícito de SCRUM-74 (el ticket nombraba
+  `/recibo`; ampliar a estas 3-4 rutas más habría sido un cambio bastante mayor: tocar la ruta
+  misma, no solo dónde se genera el enlace, y afecta el flujo de selección de método de pago
+  ANTES de que el cobro esté pagado). Candidato a tarea propia si se decide cerrar del todo esta
+  clase de fuga (mismo patrón `receiptToken` aplicaría, o un token único compartido para todo el
+  flujo de pago de un cobro).
+
 ### [x] P0-1 · Pago con tarjeta devuelve 401 Unauthorized
 - **Síntoma:** al pulsar "Pagar con tarjeta" en `/pay/invoice/:id` navega a `/pay/card/:id` y devuelve 401 (body "Unauthorized"). El cliente no puede pagar.
 - **Causa probable:** la ruta `/pay/card/:id` tiene middleware de autenticación (la usa el cliente NO logueado), o `STRIPE_SECRET_KEY` mal configurada / falla la creación de la Checkout Session.

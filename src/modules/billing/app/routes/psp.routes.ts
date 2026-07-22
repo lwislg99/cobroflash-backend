@@ -3,7 +3,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { PSPWebhookSchema } from '../../../../core/validation/schemas';
-import { ensureInvoiceForCharge } from '../../../../lib/invoicing';
+import { ensureInvoiceForCharge, ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { sendInvoiceEmail } from '../../../../lib/email';
 import { normalizePhone } from '../../../../core/utils/utils';
 import { config } from '../../../../core/config/env';
@@ -182,7 +182,7 @@ router.post('/', async (req, res) => {
       });
 
       // Confirmación de pago al cliente por WhatsApp (J1: payment_confirmation_invoice_es,
-      // con botón "Ver documento" → /recibo/:chargeId; copy neutro factura/justificante).
+      // con botón "Ver documento" → /recibo/:token; copy neutro factura/justificante).
       const amt = Number(body.amount ?? updated.amount).toFixed(2);
       const cur = body.currency ?? updated.currency;
       const invConf = invoiceId
@@ -191,6 +191,8 @@ router.post('/', async (req, res) => {
       // P1-6: nº de documento REAL (sin '#') — factura o justificante, no el id del cobro.
       const documentNumber = invConf?.number || paidInvoiceNumber || String(updated.id);
       if (updated.customer?.phone) {
+        // SCRUM-74: token OPACO del recibo público, NUNCA el chargeId (IDOR/RGPD).
+        const receiptToken = await ensureChargeReceiptToken(updated.id, prisma);
         sendPaymentConfirmationInvoice({
           toPhone: updated.customer.phone,
           customerName: updated.customer.name,
@@ -200,7 +202,8 @@ router.post('/', async (req, res) => {
           documentNumber,
           // P1-7: nombre del negocio como en presupuesto/factura/landing (legalName||name).
           businessName: merchant?.legalName || merchant?.name,
-          chargeId: updated.id, // botón "Ver documento" → /recibo/:chargeId
+          chargeId: updated.id, // log interno (WhatsAppMessage.relatedId), NO la URL pública
+          receiptToken, // botón "Ver documento" → /recibo/:token
         }).catch(() => {});
 
         // ENT-3: historial

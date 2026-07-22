@@ -178,11 +178,17 @@ de cobro. **Sustituirá** a `payment_confirmation_es` cuando esté aprobada.
 - **Botones — 1 (URL dinámica):**
   - Texto: `Ver documento`
   - Tipo: URL **dinámica**
-  - URL base: `https://yaqu.app/recibo/{{1}}` → variable = **id del cobro (chargeId)** (ej. `42`)
-  - La página `/recibo/:chargeId` (✅ existe, pública) muestra el recibo y el enlace de descarga.
+  - URL base: `https://yaqu.app/recibo/{{1}}` (SIN CAMBIOS — la BASE aprobada en Meta es la
+    misma) → variable = **token OPACO del recibo** (`Charge.receiptToken`, SCRUM-74; antes era
+    el `chargeId`, ej. `42` — cambiado por IDOR/RGPD: el id era enumerable). Mismo mecanismo que
+    el botón de `albaran_para_firmar_es` (§ abajo, SCRUM-49): Meta aprueba la URL BASE fija + la
+    POSICIÓN del sufijo dinámico, no el formato del valor que se sustituye en runtime — por eso
+    este cambio NO requiere re-aprobación de la plantilla en Meta.
+  - La página `/recibo/:token` (✅ existe, pública) muestra el recibo y el enlace de descarga.
 
 **Builder:** `buildPaymentConfirmationInvoice()` en `src/integrations/whatsappTemplates.ts`
-(4 vars de cuerpo + sufijo del botón = chargeId; el texto fijo vive en Meta, no en el builder).
+(4 vars de cuerpo + sufijo del botón = `urlToken`, el token opaco; el texto fijo vive en Meta,
+no en el builder).
 **Disparadores (CONECTADO 15-jun):** pago confirmado — `psp.routes.ts` y `mpWebhook.routes.ts`
 vía `sendPaymentConfirmationInvoice()`. `payment_confirmation_es` (§3) queda como builder de
 reserva (ya no se dispara desde los webhooks).

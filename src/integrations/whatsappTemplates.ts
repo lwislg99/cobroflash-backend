@@ -172,8 +172,9 @@ export function buildPaymentConfirmation(p: {
 }
 
 // 4. payment_confirmation_invoice_es — como payment_confirmation_es pero CON botón de URL
-// dinámica "Ver documento" → /recibo/{{1}} (chargeId). Copy NEUTRO: vale para factura y
-// para justificante de cobro (decisión 12-jun: no decir "factura" en modo justificante).
+// dinámica "Ver documento" → /recibo/{{1}} (token OPACO de Charge.receiptToken, SCRUM-74 —
+// NUNCA el chargeId, que es autoincremental y enumerable/IDOR). Copy NEUTRO: vale para
+// factura y para justificante de cobro (decisión 12-jun: no decir "factura" en modo justificante).
 // `documentNumber` es el nº del documento (factura 2026-CF-001 o justificante J-...).
 // Body EXACTO aprobado en Meta (el texto fijo vive en Meta; aquí solo van las 4 vars + botón):
 //   "Hola {{1}} 👋\nHemos confirmado tu pago de {{2}} (documento de cobro {{3}}).\n
@@ -183,14 +184,14 @@ export function buildPaymentConfirmationInvoice(p: {
   amountWithCurrency: string;
   documentNumber: string;
   businessName: string;
-  chargeId: string | number;
+  urlToken: string;
 }): WaTemplateMessage {
   return {
     templateName: WA_TEMPLATES.paymentConfirmationInvoice,
     languageCode: 'es',
     components: [
       body(p.customerName, p.amountWithCurrency, p.documentNumber, p.businessName),
-      urlButton(p.chargeId),
+      urlButton(p.urlToken),
     ],
   };
 }

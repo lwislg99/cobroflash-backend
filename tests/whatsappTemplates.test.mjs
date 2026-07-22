@@ -118,15 +118,15 @@ test('specs J7: todas las plantillas tienen spec registrada', () => {
 
 // --- Nuevas plantillas (pendientes de alta en Meta) ---
 
-test('payment_confirmation_invoice_es: 4 vars + botón = chargeId (→ /recibo/{{1}})', () => {
+test('payment_confirmation_invoice_es: 4 vars + botón = urlToken (→ /recibo/{{1}}, SCRUM-74: token opaco, no el id)', () => {
   const msg = buildPaymentConfirmationInvoice({
     customerName: 'María', amountWithCurrency: '350.00 EUR',
-    documentNumber: '2026-CF-001', businessName: 'Fontanería García', chargeId: 42,
+    documentNumber: '2026-CF-001', businessName: 'Fontanería García', urlToken: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4',
   });
   assert.equal(msg.templateName, 'payment_confirmation_invoice_es');
   assert.equal(msg.languageCode, 'es');
   assert.deepEqual(bodyTexts(msg), ['María', '350.00 EUR', '2026-CF-001', 'Fontanería García']);
-  assert.equal(urlButtonSuffix(msg), '42');
+  assert.equal(urlButtonSuffix(msg), 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4');
   // pasa la validación J7
   assert.equal(validateTemplateComponents(msg.templateName, msg.components), null);
 });
@@ -135,7 +135,7 @@ test('payment_confirmation_invoice_es: copy neutro — el builder no impone la p
   // el nº de documento puede ser un justificante J-… (no factura) y el builder lo acepta igual
   const msg = buildPaymentConfirmationInvoice({
     customerName: 'Ana', amountWithCurrency: '120,00 €',
-    documentNumber: 'J-20260611-AB3C', businessName: 'Reformas Sur', chargeId: 7,
+    documentNumber: 'J-20260611-AB3C', businessName: 'Reformas Sur', urlToken: 'deadbeefdeadbeefdeadbeefdeadbeef',
   });
   assert.deepEqual(bodyTexts(msg), ['Ana', '120,00 €', 'J-20260611-AB3C', 'Reformas Sur']);
 });

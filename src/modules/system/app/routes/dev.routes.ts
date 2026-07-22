@@ -9,7 +9,7 @@ import { internalHeaders } from '../../../../core/http/internalAuth';
 // Asegúrate de tener copiados:
 //   src/lib/invoicing.ts → srcNew/lib/invoicing.ts
 //   src/lib/email.ts     → srcNew/lib/email.ts
-import { ensureInvoiceForCharge } from '../../../../lib/invoicing';
+import { ensureInvoiceForCharge, ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { sendInvoiceEmail } from '../../../../lib/email';
 
 const router = Router();
@@ -29,7 +29,8 @@ router.post('/sim/pay/:id', async (req, res) => {
       },
       { timeout: 10_000, headers: internalHeaders() },
     );
-    res.redirect(303, `/recibo/${id}?r=${Date.now()}`);
+    const receiptToken = await ensureChargeReceiptToken(id, prisma);
+    res.redirect(303, `/recibo/${receiptToken}?r=${Date.now()}`);
   } catch (e: any) {
     console.error('dev/sim/pay error', e?.response?.data || e);
     res.status(500).send('Error simulando pago');
@@ -42,7 +43,8 @@ router.post('/sim/fail/:id', async (req, res) => {
     event: 'payment.failed',
     charge_id: id,
   }, { headers: internalHeaders() });
-  res.redirect(303, `/recibo/${id}?r=${Date.now()}`);
+  const receiptToken = await ensureChargeReceiptToken(id, prisma);
+  res.redirect(303, `/recibo/${receiptToken}?r=${Date.now()}`);
 });
 
 router.post('/sim/expire/:id', async (req, res) => {
@@ -51,7 +53,8 @@ router.post('/sim/expire/:id', async (req, res) => {
     event: 'payment.expired',
     charge_id: id,
   }, { headers: internalHeaders() });
-  res.redirect(303, `/recibo/${id}?r=${Date.now()}`);
+  const receiptToken = await ensureChargeReceiptToken(id, prisma);
+  res.redirect(303, `/recibo/${receiptToken}?r=${Date.now()}`);
 });
 
 router.post('/issue-invoice/:chargeId', async (req, res) => {
@@ -59,7 +62,8 @@ router.post('/issue-invoice/:chargeId', async (req, res) => {
   if (!Number.isInteger(chargeId)) return res.status(400).send('ID inválido');
 
   await ensureInvoiceForCharge(chargeId, prisma);
-  res.redirect(303, `/recibo/${chargeId}?r=${Date.now()}`);
+  const receiptToken = await ensureChargeReceiptToken(chargeId, prisma);
+  res.redirect(303, `/recibo/${receiptToken}?r=${Date.now()}`);
 });
 
 router.post('/email-invoice/:chargeId', async (req, res) => {
@@ -94,7 +98,8 @@ router.post('/email-invoice/:chargeId', async (req, res) => {
   const qs = result.smtp
     ? `mail=sent`
     : `mail=saved&eml=${encodeURIComponent(result.eml!)}`;
-  res.redirect(303, `/recibo/${chargeId}?${qs}&r=${Date.now()}`);
+  const receiptToken = await ensureChargeReceiptToken(chargeId, prisma);
+  res.redirect(303, `/recibo/${receiptToken}?${qs}&r=${Date.now()}`);
 });
 
 export default router;
