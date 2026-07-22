@@ -30,6 +30,24 @@ Generado perezosamente la primera vez que se construye un enlace.
 
 **PROD: ⏳ PENDIENTE** — aplicar tras el merge del PR de SCRUM-74, antes de que el código nuevo
 llegue a producción (misma ventana P2022 de siempre).
+## SCRUM-17 · `albaranes.invoice_id` + `invoices.albaran_refs` (factura recapitulativa) — ✅ APLICADO en prod (2026-07-22)
+
+`prisma db push` aplicado a **STAGING** (`acela.proxy.rlwy.net`) y a **PRODUCCIÓN**
+(`autorack.proxy.rlwy.net:40654`) el **2026-07-22**, ambos con host-check + preview `migrate diff`,
+**SIN `--accept-data-loss`** (Prisma no lo pidió = 100 % aditivo). El de prod, **autorizado por el
+fundador** (GO explícito tras el preview) vía el sentinel de un solo uso del hook `guard-dangerous`
+(`.claude/allow-db-push`), aplicado tras el merge del **PR #52**. Verificación post-push en ambos:
+`migrate diff` → **"empty migration"** (BD en sync). 3 operaciones aditivas (2 columnas nullable + 1 índice):
+```sql
+ALTER TABLE "albaranes" ADD COLUMN "invoice_id" INTEGER;
+ALTER TABLE "invoices"  ADD COLUMN "albaran_refs" JSONB;
+CREATE INDEX "albaranes_merchant_id_invoice_id_idx" ON "albaranes"("merchant_id","invoice_id");
+```
+`Albaran.invoiceId` (recapitulativa que consolidó el albarán; badge "Facturado" derivado) +
+`Invoice.albaranRefs` (`[{albaranId, numero, fecha}]`, operaciones agrupadas). La feature es LATENTE
+tras `INVOICING_ES_ENABLED=OFF` (nada activo a reales), pero las columnas se aplican para que el código
+(que lee `invoiceId`/escribe `albaranRefs` al consolidar en demo) no dé P2022. El endpoint hace
+`findMany`/`updateMany` sobre `invoice_id` → se aplicó de inmediato tras el merge.
 
 ---
 

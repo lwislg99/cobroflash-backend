@@ -108,6 +108,8 @@ Hoy YaQu emite **justificantes de cobro**: documentos con su numeración propia 
 
 > **Nota importante y honesta:** la emisión de **facturas fiscales españolas** está construida pero **desactivada**, a la espera de completar la certificación del sistema de facturación (VeriFactu, obligatorio en 2027). Cuando esté certificada, se activa. YaQu no dice que cumple algo que aún no cumple.
 
+Cuando esa facturación esté activa, el profesional podrá **agrupar varios partes valorados del mismo mes en una única factura** (factura recapitulativa). Y si selecciona partes de meses distintos, YaQu **crea automáticamente una factura por mes** —lo exige la ley, que solo permite agrupar operaciones del mismo mes natural— avisando antes de emitir de cuántas facturas se van a crear y por qué. Hoy esto se puede ver en la demo; para los profesionales reales llega con la certificación fiscal.
+
 ---
 
 ## 6. Equipo y operarios
@@ -148,7 +150,6 @@ Todo lo que el cliente recibe llega por WhatsApp, con el número de YaQu. El cli
 Se listan aquí para no confundirlos con lo que ya funciona:
 
 - **Factura de anticipo** con su IVA y descuento automático en la factura final.
-- **Factura que agrupa varios partes** de un mismo mes (factura recapitulativa), con aviso automático si se intentan mezclar meses distintos.
 - **Distinción "varios avisos sueltos" vs "una obra larga"**, para que YaQu sepa solo cómo hay que facturar cada caso.
 - **Bandeja de partes pendientes de facturar** con aviso del plazo legal.
 - **Recibo domiciliado (SEPA)** para los tramos posteriores.

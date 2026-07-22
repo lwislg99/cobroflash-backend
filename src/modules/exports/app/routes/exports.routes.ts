@@ -5,22 +5,51 @@ import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
 import { config, isOwnerEmail } from '../../../../core/config/env';
 import { isFlagEnabled } from '../../../../core/flags';
 import { requireRole } from '../../../../core/http/authMiddleware';
+import { recordAudit, requestIp } from '../../../system/audit.service';
+import { estadoCobroFor } from '../../../jobs/domain/job.service';
+// SCRUM-25 (B): paquete ZIP. `archiver` hace streaming real (.pipe + backpressure);
+// jszip se descartó porque carga todo en memoria.
+// ⚠️ archiver 8 cambió la API: ya NO exporta la función `archiver('zip', opts)` de v5/v6,
+// sino clases (`ZipArchive extends stream.Transform`). Se instancia con `new`.
+import { ZipArchive } from 'archiver';
+import fs from 'fs';
+import { ensureInvoicePdf } from '../../../../lib/invoicing';
+import {
+  CSV_PAQUETE, csvBody, csvRow, csvNum, MAX_FACTURAS_ZIP, resolverEntregaZip,
+  buildClientes, buildFacturas, buildCobros, buildTrabajos, buildPresupuestos,
+} from '../../domain/exportData';
 
 const router = Router();
 
+// SCRUM-25 (S2/S4): deja traza de cada descarga de datos. Fire-safe (recordAudit
+// nunca tumba la petición). `rango` documenta el filtro aplicado, para saber qué
+// se llevó exactamente quien exportó.
+function auditExport(
+  req: any,
+  fichero: string,
+  rango: { from: Date | null; to: Date | null },
+  extra: Record<string, unknown> = {},
+) {
+  recordAudit({
+    merchantId: req.merchantId,
+    teamMemberId: req.teamMemberId ?? null,
+    action: 'datos_exportados',
+    entityType: 'export',
+    meta: {
+      fichero,
+      from: rango.from ? rango.from.toISOString().slice(0, 10) : null,
+      to: rango.to ? rango.to.toISOString().slice(0, 10) : null,
+      // El ZIP añade aquí si salió completo o parcial (SCRUM-25 B).
+      ...extra,
+    },
+    ip: requestIp(req),
+  });
+}
+
 // ── helpers ───────────────────────────────────────────────────────────────
 
-function csvEscape(v: unknown): string {
-  const s = v == null ? '' : String(v);
-  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
-    return `"${s.replace(/"/g, '""')}"`;
-  }
-  return s;
-}
-
-function csvRow(fields: unknown[]): string {
-  return fields.map(csvEscape).join(',');
-}
+// SCRUM-86: el formato del CSV (separador `;`, coma decimal, escapado) vive en
+// domain/exportData — una sola definición para las rutas sueltas y para el ZIP.
 
 function parseDateFilter(q: Record<string, unknown>) {
   const from = q.from ? new Date(String(q.from)) : null;
@@ -30,32 +59,192 @@ function parseDateFilter(q: Record<string, unknown>) {
 }
 
 function sendCsv(res: any, filename: string, header: string[], rows: string[]) {
-  const bom  = '﻿'; // UTF-8 BOM para que Excel lo abra bien
+  // El BOM va SOLO aquí para la descarga suelta; el del paquete lo pone `csvBody`.
+  // Son dos caminos distintos, nunca encadenados: dos BOM harían que Excel enseñara
+  // basura en la primera celda de la cabecera.
+  const bom  = '﻿'; // UTF-8 BOM para que Excel no rompa los acentos
   const body = [csvRow(header), ...rows].join('\r\n');
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   res.send(bom + body);
 }
 
+// ── GET /admin/exports/datos.zip/info ─────────────────────────────────────
+// SCRUM-25 (E): cuántas facturas caen en el rango y cuál es el tope. La card de
+// Configuración lo consulta ANTES de que el usuario pulse, para avisar de entrada en
+// vez de soltarle un 409 después. El tope viaja desde aquí para que MAX_FACTURAS_ZIP
+// siga siendo la ÚNICA fuente del número (no se duplica en el front).
+router.get('/datos.zip/info', async (req, res) => {
+  try {
+    const { from, to } = parseDateFilter(req.query as any);
+    const facturas = await prisma.invoice.count({
+      where: {
+        merchantId: req.merchantId,
+        ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } } : {}),
+      },
+    });
+    return res.json({ facturas, maximo: MAX_FACTURAS_ZIP, excede: facturas > MAX_FACTURAS_ZIP });
+  } catch (err) {
+    console.error('[exports/datos.zip/info]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// ── GET /admin/exports/datos.zip ──────────────────────────────────────────
+// SCRUM-25 (S4): "la base de datos descargable" — el paquete que el merchant entrega
+// a su asesor o a una inspección. Contiene /csv (5 tablas) y /facturas (los PDF).
+// ?from=YYYY-MM-DD&to=YYYY-MM-DD
+//
+// STREAMING OBLIGATORIO: `archive.pipe(res)` y cada PDF con `createReadStream` sobre el
+// diskPath que devuelve ensureInvoicePdf, UNO A UNO. Jamás readFileSync ni acumular en
+// un buffer: un merchant con cientos de facturas tumbaría el proceso.
+//
+// ⚠️ El XML VeriFactu solo entra si INVOICING_ES_ENABLED (regla 24/26), reutilizando el
+// gate de SCRUM-73. Con el flag OFF se omite EN SILENCIO: el ZIP se genera igual y sin
+// error — un XML construido sobre justificantes (J-) no serían registros válidos.
+router.get('/datos.zip', async (req, res) => {
+  const { from, to } = parseDateFilter(req.query as any);
+  try {
+    const merchant = await prisma.merchant.findUnique({ where: { id: req.merchantId } });
+    if (!merchant) return res.status(404).json({ error: 'not_found' });
+
+    // Facturas del rango: solo ids + número (el PDF se genera después, de una en una).
+    const invoices = await prisma.invoice.findMany({
+      where: {
+        merchantId: req.merchantId,
+        ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } } : {}),
+      },
+      select: { id: true, number: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // Tope provisional (MAX_FACTURAS_ZIP, medición §7): por encima, la espera sin recibir
+    // un solo byte se dispara. Se corta ANTES de renderizar nada y se explica qué hacer.
+    if (invoices.length > MAX_FACTURAS_ZIP) {
+      return res.status(409).json({
+        error: 'demasiadas_facturas',
+        facturas: invoices.length,
+        maximo: MAX_FACTURAS_ZIP,
+        message: `Tu rango incluye ${invoices.length} facturas y el máximo por descarga es ${MAX_FACTURAS_ZIP}. Acota el rango de fechas y descarga por partes.`,
+      });
+    }
+
+    // ── FASE 1: resolver los PDF ANTES de escribir una sola cabecera ────────
+    // Esto es un entregable para una INSPECCIÓN: un paquete al que le faltan facturas
+    // pero parece correcto es PEOR que uno que falla. El nombre del fichero tiene que
+    // poder decir la verdad, y `Content-Disposition` se envía antes que el cuerpo →
+    // hay que saber si el paquete está completo ANTES de empezar a transmitir.
+    // No añade trabajo: `ensureInvoicePdf` solo renderiza si el fichero falta; lo único
+    // que cambia es el ORDEN (todo el render ocurre antes del primer byte).
+    const listos: Array<{ numero: string; diskPath: string }> = [];
+    const fallidos: string[] = [];
+    for (const inv of invoices) {
+      try {
+        const { diskPath } = await ensureInvoicePdf(inv.id, prisma);
+        if (!fs.existsSync(diskPath)) { fallidos.push(inv.number); continue; }
+        listos.push({ numero: inv.number, diskPath });
+      } catch (e: any) {
+        // Un PDF que falla NO tumba el paquete, pero SÍ lo marca como incompleto.
+        console.error(`[exports/datos.zip] PDF ${inv.number}:`, e?.message || e);
+        fallidos.push(inv.number);
+      }
+    }
+    const pdfsOk = listos.length;
+    // Decisión de entrega (pura, testeada aparte): nombre del fichero + avisos.
+    const entrega = resolverEntregaZip({
+      total: invoices.length,
+      fallidos,
+      fecha: new Date().toISOString().slice(0, 10),
+    });
+    const completo = entrega.completo;
+
+    // AUDIT (S2/S4): la descarga más sensible de todas — se lleva TODO el negocio.
+    // Se registra tras la fase 1 para poder dejar constancia de si salió completo.
+    auditExport(req, 'datos.zip', { from, to }, {
+      facturas: invoices.length,
+      pdfs_incluidos: pdfsOk,
+      pdfs_fallidos: fallidos.length,
+      completo,
+    });
+
+    // ── FASE 2: cabeceras (ya con el nombre honesto) y streaming ────────────
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${entrega.nombreZip}"`);
+    res.setHeader('Cache-Control', 'no-store');
+
+    const archive = new ZipArchive({ zlib: { level: 9 } });
+    // Si el cliente corta la descarga, no dejamos la petición colgada.
+    archive.on('warning', (err: any) => console.error('[exports/datos.zip] warning:', err?.message || err));
+    archive.on('error', (err: any) => {
+      console.error('[exports/datos.zip] error:', err?.message || err);
+      res.destroy(err);
+    });
+    res.on('close', () => archive.destroy());
+
+    archive.pipe(res);
+
+    // Segunda señal, dentro del paquete: un fichero que salta a la vista al abrirlo.
+    if (entrega.avisoTxt) {
+      archive.append(entrega.avisoTxt, { name: 'AVISO-PAQUETE-INCOMPLETO.txt' });
+    }
+
+    // 1) CSVs — mismos builders que las rutas sueltas: los datos cuadran entre sí.
+    for (const t of CSV_PAQUETE) {
+      const data = await t.build(req.merchantId, { from, to });
+      archive.append(csvBody(data), { name: `csv/${t.nombre}` });
+    }
+
+    // 2) PDFs ya resueltos, UNO A UNO desde disco (streaming, nunca readFileSync).
+    for (const p of listos) {
+      archive.append(fs.createReadStream(p.diskPath), { name: `facturas/${p.numero}.pdf` });
+    }
+
+    // 3) XML VeriFactu — gate de SCRUM-73 (regla 24/26): solo aplicaría con el flag ON.
+    //    Hoy INVOICING_ES_ENABLED está OFF para todos los merchants ES, así que el XML
+    //    NO entra en el paquete y se omite EN SILENCIO, sin error, como pide el brief.
+    //    ⚠️ El camino ON queda pendiente a propósito: generarlo aquí obligaría a extraer
+    //    el constructor RRSIF de GET /verifactu.xml, y tocar el generador fiscal es STOP
+    //    en este ticket. Cuando se encienda el flag hay que decidir cómo compartirlo.
+    const conXml = isFlagEnabled('INVOICING_ES_ENABLED', { merchant })
+      && merchant.country === 'ES' && !!merchant.taxId;
+
+    // 4) LEEME.txt — qué lleva el paquete y qué NO (que nadie lo lea como algo fiscal
+    //    que no es). Sin claims: describe el contenido, no promete cumplimiento.
+    archive.append(
+      [
+        // El aviso va PRIMERO: si el paquete está incompleto es lo primero que se lee.
+        ...entrega.cabeceraLeeme,
+        `Paquete de datos de ${merchant.legalName || merchant.name}`,
+        `Generado: ${new Date().toISOString()}`,
+        `Rango: ${from ? from.toISOString().slice(0, 10) : 'desde el principio'} → ${to ? to.toISOString().slice(0, 10) : 'hoy'}`,
+        '',
+        'csv/       clientes, facturas, cobros, trabajos y presupuestos',
+        '           Formato: UTF-8 con BOM · separador ";" · decimales con coma (1234,50) · fechas AAAA-MM-DD.',
+        '           Preparado para abrirse con doble clic en Excel con configuración regional española.',
+        `facturas/  ${pdfsOk} de ${invoices.length} PDF de factura/justificante`,
+        conXml ? '' : 'Nota: este paquete no incluye el XML de registros de facturación.',
+      ].filter(Boolean).join('\n'),
+      { name: 'LEEME.txt' },
+    );
+
+    await archive.finalize();
+  } catch (err) {
+    console.error('[exports/datos.zip]', err);
+    // Si aún no se ha escrito nada en la respuesta, se puede devolver un JSON de error.
+    if (!res.headersSent) return res.status(500).json({ error: 'internal_error' });
+    res.destroy();
+  }
+});
+
 // ── GET /admin/exports/customers.csv ──────────────────────────────────────
 // A11.4 (RGPD/R11): "tus datos son tuyos" — clientes completos del merchant.
 router.get('/customers.csv', async (req, res) => {
   try {
-    const customers = await prisma.customer.findMany({
-      where: { merchantId: req.merchantId },
-      orderBy: { createdAt: 'asc' },
-    });
-    const header = ['Nombre', 'Razón social', 'NIF/CIF', 'Teléfono', 'Email', 'Notas', 'Baja WhatsApp', 'Alta'];
-    const rows = customers.map((c) => csvRow([
-      c.name,
-      (c as any).legalName ?? '',
-      (c as any).taxId ?? '',
-      c.phone ?? '',
-      c.email ?? '',
-      c.notes ?? '',
-      c.waOptOut ? 'Sí' : 'No',
-      c.createdAt.toISOString().slice(0, 10),
-    ]));
+    // SCRUM-25: acepta el mismo rango que el resto de exports (antes no filtraba).
+    // El contenido lo construye el builder compartido con el ZIP (domain/exportData).
+    const { from, to } = parseDateFilter(req.query as any);
+    auditExport(req, 'clientes.csv', { from, to });
+    const { header, rows } = await buildClientes(req.merchantId, { from, to });
     sendCsv(res, `clientes_${new Date().toISOString().slice(0, 10)}.csv`, header, rows);
   } catch (err) {
     console.error('[exports/customers.csv]', err);
@@ -69,34 +258,9 @@ router.get('/invoices.csv', async (req, res) => {
   try {
     const { from, to } = parseDateFilter(req.query as any);
     const status = String(req.query.status || 'all');
-
-    const where: any = { merchantId: req.merchantId };
-    if (status !== 'all') where.status = status;
-    if (from || to) {
-      where.createdAt = {};
-      if (from) where.createdAt.gte = from;
-      if (to)   where.createdAt.lte = to;
-    }
-
-    const invoices = await prisma.invoice.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      include: { customer: { select: { name: true, email: true } } },
-    });
-
-    const header = ['Número', 'Fecha', 'Cliente', 'Email cliente', 'Total', 'Moneda', 'Estado', 'Pagada en', 'VeriFactu'];
-    const rows = invoices.map((inv) => csvRow([
-      inv.number,
-      inv.createdAt.toISOString().slice(0, 10),
-      inv.customer?.name ?? '',
-      inv.customer?.email ?? '',
-      Number(inv.total).toFixed(2),
-      inv.currency,
-      inv.status,
-      inv.paidAt ? inv.paidAt.toISOString().slice(0, 10) : '',
-      inv.vfHash ? 'Sí' : 'No',
-    ]));
-
+    auditExport(req, 'facturas.csv', { from, to });
+    // Base e IVA desglosados (DONE de SCRUM-25) los resuelve el builder compartido.
+    const { header, rows } = await buildFacturas(req.merchantId, { from, to }, status);
     sendCsv(res, `facturas_${new Date().toISOString().slice(0,10)}.csv`, header, rows);
   } catch (err) {
     console.error('[exports/invoices.csv]', err);
@@ -159,12 +323,12 @@ router.get('/fees.csv', async (req, res) => {
         ch.id,
         ch.merchant?.legalName || ch.merchant?.name || ch.merchantId,
         ch.concept,
-        amount.toFixed(2),
+        csvNum(amount),
         ch.currency,
-        fee.toFixed(2),
+        csvNum(fee),
       ]));
     }
-    rows.push(csvRow(['TOTAL', '', '', '', '', '', totalFees.toFixed(2)]));
+    rows.push(csvRow(['TOTAL', '', '', '', '', '', csvNum(totalFees)]));
 
     sendCsv(res, `fees_${new Date().toISOString().slice(0, 10)}.csv`, header, rows);
   } catch (err) {
@@ -223,6 +387,11 @@ router.get('/verifactu.xml', requireRole('admin'), async (req, res) => {
       `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
 
     const nombreEmisor = merchant.legalName || merchant.name;
+    // ⚠️ NO UNIFICAR con el formato de los CSV (SCRUM-86). Aquí los importes van con
+    // PUNTO decimal (`121.00`) porque lo exige el esquema de la AEAT: el tipo es un
+    // decimal XSD, y el separador decimal de XSD es el punto, no depende del locale.
+    // Este fichero no lo abre Excel — lo lee Hacienda. Cambiarlo a coma para que
+    // "cuadre con los CSV" invalidaría el registro de facturación.
     const registros = invoices.map((inv) => {
       const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
       const vat = calcVatBreakdown(lines);
@@ -301,6 +470,58 @@ ${registros}
   }
 });
 
+// ── GET /admin/exports/charges.csv ────────────────────────────────────────
+// SCRUM-25: "cobros.csv" del paquete — con `paid_via` (= charge.method, regla 22),
+// fecha y método. Es lo que el asesor cruza con el banco.
+// ?from=YYYY-MM-DD&to=YYYY-MM-DD&status=all|pending|paid|expired
+router.get('/charges.csv', async (req, res) => {
+  try {
+    const { from, to } = parseDateFilter(req.query as any);
+    const status = String(req.query.status || 'all');
+
+    const where: any = { merchantId: req.merchantId };
+    if (status !== 'all') where.status = status;
+    if (from || to) {
+      where.createdAt = {};
+      if (from) where.createdAt.gte = from;
+      if (to)   where.createdAt.lte = to;
+    }
+
+    auditExport(req, 'cobros.csv', { from, to });
+    const { header, rows } = await buildCobros(req.merchantId, { from, to }, status);
+    sendCsv(res, `cobros_${new Date().toISOString().slice(0,10)}.csv`, header, rows);
+  } catch (err) {
+    console.error('[exports/charges.csv]', err);
+    res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// ── GET /admin/exports/jobs.csv ───────────────────────────────────────────
+// SCRUM-25: "trabajos.csv" del paquete. Job no declara relaciones en Prisma, así que
+// cliente y operario se resuelven a mano (mismo patrón que jobs.routes/serializeJob).
+// ?from=YYYY-MM-DD&to=YYYY-MM-DD&status=all|<estado FSM>
+router.get('/jobs.csv', async (req, res) => {
+  try {
+    const { from, to } = parseDateFilter(req.query as any);
+    const status = String(req.query.status || 'all');
+
+    const where: any = { merchantId: req.merchantId };
+    if (status !== 'all') where.status = status;
+    if (from || to) {
+      where.createdAt = {};
+      if (from) where.createdAt.gte = from;
+      if (to)   where.createdAt.lte = to;
+    }
+
+    auditExport(req, 'trabajos.csv', { from, to });
+    const { header, rows } = await buildTrabajos(req.merchantId, { from, to }, status);
+    sendCsv(res, `trabajos_${new Date().toISOString().slice(0,10)}.csv`, header, rows);
+  } catch (err) {
+    console.error('[exports/jobs.csv]', err);
+    res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 // ── GET /admin/exports/expenses.csv ──────────────────────────────────────
 // ?from=YYYY-MM-DD&to=YYYY-MM-DD&category=all|materiales|...
 router.get('/expenses.csv', async (req, res) => {
@@ -325,12 +546,14 @@ router.get('/expenses.csv', async (req, res) => {
       },
     });
 
+    auditExport(req, 'gastos.csv', { from, to });
+
     const header = ['Fecha', 'Concepto', 'Categoría', 'Importe', 'Moneda', 'Proveedor', 'Presupuesto ID', 'Notas'];
     const rows = expenses.map((e) => csvRow([
       new Date(e.date).toISOString().slice(0, 10),
       e.concept,
       e.category,
-      Number(e.amount).toFixed(2),
+      csvNum(e.amount),
       e.currency,
       e.provider?.name ?? '',
       e.quote?.id ?? '',
@@ -359,26 +582,8 @@ router.get('/quotes.csv', async (req, res) => {
       if (to)   where.createdAt.lte = to;
     }
 
-    const quotes = await prisma.quote.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      include: { customer: { select: { name: true, email: true, phone: true } } },
-    });
-
-    const header = ['ID', 'Fecha', 'Cliente', 'Email', 'Teléfono', 'Total', 'Moneda', 'Estado', 'Aceptada en', 'Condiciones de pago'];
-    const rows = quotes.map((q) => csvRow([
-      q.id,
-      q.createdAt.toISOString().slice(0, 10),
-      q.customer?.name ?? '',
-      q.customer?.email ?? '',
-      q.customer?.phone ?? '',
-      Number(q.total).toFixed(2),
-      q.currency,
-      q.status,
-      q.acceptedAt ? q.acceptedAt.toISOString().slice(0, 10) : '',
-      (q as any).paymentTerms ?? '',
-    ]));
-
+    auditExport(req, 'presupuestos.csv', { from, to });
+    const { header, rows } = await buildPresupuestos(req.merchantId, { from, to }, status);
     sendCsv(res, `presupuestos_${new Date().toISOString().slice(0,10)}.csv`, header, rows);
   } catch (err) {
     console.error('[exports/quotes.csv]', err);

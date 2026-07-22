@@ -123,6 +123,93 @@ export function calcAlbaranTotales(lineas: AlbaranLinea[] | null | undefined): {
   };
 }
 
+// ─── SCRUM-17 (FISCAL-2): consolidación en factura recapitulativa (motor de rotura) ─────
+// Art. 13 RD 1619/2012: la recapitulativa solo agrupa operaciones del MISMO mes natural. La
+// selección que cruza meses NO se rechaza → se parte en N grupos (una factura por mes). Puro y
+// testeable sin BD (patrón validarLineas/billingPlan). `tipoIva` NO entra en la clave de rotura
+// (decisión fundador 22-jul: una factura admite desglose multi-IVA y el builder lo calcula de lines).
+
+// Shape mínimo que necesitan las funciones puras (el llamador resuelve customerId vía Job.customerId).
+export interface AlbaranConsolidable {
+  id: number;
+  numero: string;
+  fecha: Date | string;
+  estado: string;
+  modoValoracion: string;
+  invoiceId: number | null;
+  customerId: number;
+}
+
+/**
+ * Valida que una selección de albaranes puede consolidarse. NO valida el mes natural (eso es
+ * rotura, no error). Mensaje humano con el albarán exacto (patrón validarLineas). `job` aporta
+ * tipoOperacion (SCRUM-66): un TRABAJO_UNICO nunca ofrece recapitulativa.
+ */
+export function validarConsolidacion(
+  albaranes: AlbaranConsolidable[],
+  job: { tipoOperacion?: string | null; customerId: number },
+): { ok: true } | { ok: false; error: string; message: string } {
+  if (!Array.isArray(albaranes) || albaranes.length === 0) {
+    return { ok: false, error: 'seleccion_vacia', message: 'Selecciona al menos un parte de trabajo firmado.' };
+  }
+  if (job.tipoOperacion === 'TRABAJO_UNICO') {
+    return { ok: false, error: 'consolidacion_no_aplica', message: 'Este Trabajo es una obra única: se factura al concluir, no se agrupan partes por mes.' };
+  }
+  for (const a of albaranes) {
+    if (a.estado !== 'firmado') {
+      return { ok: false, error: 'albaran_no_firmado', message: `El parte ${a.numero} no está firmado. Solo se consolidan partes firmados.` };
+    }
+    if (a.modoValoracion !== 'VALORADO') {
+      return { ok: false, error: 'albaran_sin_precios', message: `El parte ${a.numero} no lleva precios. Edítalo para añadirlos o quítalo de la selección.` };
+    }
+    if (a.invoiceId != null) {
+      return { ok: false, error: 'albaran_ya_facturado', message: `El parte ${a.numero} ya está facturado.` };
+    }
+    if (a.customerId !== job.customerId) {
+      return { ok: false, error: 'cliente_mixto', message: `El parte ${a.numero} es de otro cliente.` };
+    }
+  }
+  return { ok: true };
+}
+
+/** Clave de mes natural (YYYY-MM) de una fecha — la rotura del art. 13. */
+export function mesNaturalKey(fecha: Date | string): string {
+  const d = fecha instanceof Date ? fecha : new Date(fecha);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+const MESES_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+/** Etiqueta legible del mes natural ("marzo 2026") para el modal de confirmación. */
+export function mesNaturalLabel(key: string): string {
+  const [y, m] = key.split('-').map(Number);
+  return `${MESES_ES[(m || 1) - 1]} ${y}`;
+}
+
+export interface RoturaGrupo {
+  mesKey: string;   // "2026-03"
+  mesLabel: string; // "marzo 2026"
+  albaranes: AlbaranConsolidable[];
+}
+
+/**
+ * Motor de ROTURA: agrupa por mes natural de `fecha` (cliente y serie ya son únicos por
+ * validación/diseño: 1 Job = 1 cliente, serie ALB única por merchant). Grupos ORDENADOS por
+ * mes ascendente → 1 mes = 1 factura, N meses = N facturas. tipoIva NO rompe (decisión 22-jul).
+ */
+export function groupByRotura(albaranes: AlbaranConsolidable[]): RoturaGrupo[] {
+  const map = new Map<string, AlbaranConsolidable[]>();
+  for (const a of albaranes) {
+    const key = mesNaturalKey(a.fecha);
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(a);
+  }
+  return [...map.keys()].sort().map((mesKey) => ({
+    mesKey,
+    mesLabel: mesNaturalLabel(mesKey),
+    albaranes: map.get(mesKey)!,
+  }));
+}
+
 // ─── SCRUM-68 (ALBARAN-6): evidencias probatorias de la firma ───────────────────────
 // Al firmar (remoto o in situ) sellamos QUIÉN, CUÁNDO, DESDE DÓNDE y sobre QUÉ contenido.
 // ⚠️ PRIVACIDAD: `ip`/`ua` son datos personales → viven SOLO en Albaran.evidenciaFirma.
@@ -248,6 +335,8 @@ export function serializeAlbaran(a: any) {
     firmadoAt: a.firmadoAt,
     notas: a.notas,
     pdfUrl: a.pdfUrl,
+    // SCRUM-17: badge "Facturado" DERIVADO (invoiceId != null) — nunca flag manual (regla 27).
+    facturado: a.invoiceId != null,
     createdAt: a.createdAt,
     updatedAt: a.updatedAt,
   };

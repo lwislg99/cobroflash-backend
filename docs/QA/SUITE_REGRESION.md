@@ -1,9 +1,40 @@
-# SUITE DE REGRESIÓN E2E — v1.7 (SCRUM-38 · fixes SCRUM-42/36 · albaranes SCRUM-14 · alineación UI real SCRUM-43/44 · seguridad PDF SCRUM-48 · autoría operario SCRUM-22 · albarán-WA SCRUM-47 · albarán valorado + PDF legal SCRUM-65/67)
+# SUITE DE REGRESIÓN E2E — v1.8 (SCRUM-38 · fixes SCRUM-42/36 · albaranes SCRUM-14 · alineación UI real SCRUM-43/44 · seguridad PDF SCRUM-48 · autoría operario SCRUM-22 · albarán-WA SCRUM-47 · albarán valorado + PDF legal SCRUM-65/67 · runbook de ejecución SCRUM-79)
 
 > Guion que Claude Code ejecuta con el **Playwright MCP** contra **STAGING** tras cada
 > merge+deploy. Cubre la regresión de PAGOS-FLEX (SCRUM-27/32/34) y los CTAs de invoice
 > (SCRUM-35). Los hallazgos se REPORTAN (regla 9), no se arreglan sobre la marcha.
 > Prerequisito: seed corrido (`scripts/seed-staging.mjs`) y las 3 env vars `E2E_*` en staging.
+
+## Runbook de ejecución de los tests gateados (SCRUM-79)
+
+Tres trampas que ya nos han costado tiempo. Las tres fallan **en silencio**: el test
+pasa o el número parece plausible, y nadie lo cuestiona.
+
+1. **Reconstruye antes de aislar un test.** Los tests importan de `dist/`, que **no está
+   en git y NO cambia al cambiar de rama**. Si compilas en una rama y luego te vas a otra,
+   `node --test <fichero>` leerá el `dist` de la rama anterior. Pasó de verdad: una medición
+   de A12.4 reportó 28 rutas admin-only cuando en esa rama eran 22 — el `dist` traía las 6
+   rutas de otra rama sin mergear.
+   → Usa **`npm run test:staging`** (compila primero) o, si aíslas a mano,
+   **`npm run build && node --test <fichero>`**. Nunca `node --test` a secas tras un
+   `git checkout`.
+
+2. **Corre siempre con `--test-force-exit`.** Sin él, un fichero que falla puede dejar el
+   proceso colgado indefinidamente (nos comió >400 s creyendo que era la BD lenta, cuando
+   era un test que reventaba en 940 ms y no cerraba). `npm test` y `npm run test:staging`
+   ya lo llevan.
+
+3. **Limpia staging antes de una tanda.** Cuando un test gateado falla a medias, su `finally`
+   no llega a correr y deja el merchant efímero huérfano. Llegamos a **26 de 28 merchants**
+   siendo basura de test.
+   → `node scripts/clean-staging-tests.mjs` (**dry-run**, solo lista) y luego
+   `node scripts/clean-staging-tests.mjs --apply`. Tiene doble guard anti-producción y solo
+   toca emails `@test.local`.
+
+> **Coordinación (regla del canal):** la suite y el seed **resetean la BD del merchant QA**.
+> Avisa por el canal antes de lanzarla — solo uno a la vez. `tests/` es **zona compartida**:
+> avisar antes de tocarlo (SCRUM-78 y SCRUM-79 arreglaron el mismo fichero el mismo día sin
+> saberlo, y chocaron en un merge).
 
 ## Variables
 
