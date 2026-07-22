@@ -6,7 +6,7 @@
 // Datos EFÍMEROS propios con limpieza en el finally — NUNCA el seed demo (lección de SCRUM-63).
 //
 // ⚠️ GATEADO (crea y BORRA merchants efímeros; levanta la app in-process):
-//   QA_DB_TEST=1 npm test
+//   QA_DB_TEST=1 npm run test:staging
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';

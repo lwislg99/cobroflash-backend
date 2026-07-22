@@ -1,13 +1,18 @@
 // A12.1 + A12.4 (EXT3 Ola 12) — Tenancy y permisos del rol técnico ("Operario").
 //
 // A12.1: una sesión ADMIN del merchant B contra rutas con IDs del merchant A
-//        (demo) → SIEMPRE 403/404, jamás datos de A.
+//        (efímero propio, ver P3-9) → SIEMPRE 403/404, jamás datos de A.
 // A12.4: una sesión TÉCNICO recorre ADMIN_ONLY_ROUTES (lista única exportada,
 //        S1) → 403 SIEMPRE. Ruta sensible nueva = añadirla a esa lista.
 //
-// ⚠️ Toca la BD del .env (crea y BORRA su merchant B efímero + técnico) y
+// P3-9 (SCRUM-78, 22-jul): antes "A" era el merchant demo id=1 — SCRUM-42 lo
+// quemó como placeholder inerte (0 filas) y rompió este test. Datos EFÍMEROS
+// propios (mismo patrón que SCRUM-23 más abajo en este archivo): nada depende
+// ya del estado del demo.
+//
+// ⚠️ Toca la BD del .env (crea y BORRA sus merchants A+B efímeros + técnico) y
 // levanta la app in-process en un puerto efímero. Gateado:
-//   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm test
+//   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm run test:staging
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -24,12 +29,13 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
   await new Promise((r) => server.once('listening', r));
   const base = `http://127.0.0.1:${server.address().port}`;
 
-  // ── SCRUM-79: merchants A y B EFÍMEROS ──────────────────────────────────
-  // Antes, la "víctima" (A) era el merchant DEMO (id=1) y el test abortaba con
-  // "faltan datos seed del demo" en cuanto la BD no lo tenía sembrado... y como ese
-  // assert va ANTES del bucle de A12.4, la red de seguridad de S1 dejaba de
-  // comprobarse ENTERA sin que nadie se enterara. Ahora A se crea aquí con sus
-  // propios datos (misma lección que SCRUM-63): el test es autónomo y reproducible.
+  // ── merchants A (víctima) y B (atacante), ambos EFÍMEROS ────────────────
+  // P3-9 (SCRUM-78) + SCRUM-79, mismo arreglo desde dos lados: antes "A" era el
+  // merchant DEMO (id=1), que SCRUM-42 dejó como placeholder inerte (0 filas) → el
+  // test abortaba en "faltan datos seed del demo". Y ese assert iba ANTES del bucle
+  // de A12.4, así que la red de seguridad de S1 dejaba de comprobarse ENTERA sin que
+  // nadie se enterara. Datos efímeros propios (misma lección que SCRUM-63): nada
+  // depende ya del estado del demo.
   const stamp = Date.now();
   const mkMerchant = (tag, name) =>
     prisma.merchant.create({
@@ -41,27 +47,39 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
     data: { merchantId: merchantB.id, name: 'QA Técnico', email: `qa-tec-${stamp}@test.local`, role: 'tecnico', status: 'active' },
   });
 
-  // Datos de A que B intentará tocar. El nombre del cliente es un canario: si
+  // Datos de A que B intentará tocar. El nombre del cliente es un CANARIO: si
   // asomara en CUALQUIER respuesta a B, es fuga de datos entre merchants.
   const CANARIO_A = `FUGA-A-${stamp}`;
   const customerA = await prisma.customer.create({
-    data: { merchantId: merchantA.id, name: CANARIO_A, phone: `34600${stamp % 1000000}`, email: `qa-cli-${stamp}@test.local` },
+    data: { merchantId: merchantA.id, name: CANARIO_A, phone: `34601${stamp % 1000000}`, email: `qa-cli-${stamp}@test.local` },
   });
+  // status 'accepted' + lines (vienen de SCRUM-78). Verificado: NO son obligatorios —
+  // ni por schema (Quote.status tiene default 'draft') ni por comportamiento actual, ya
+  // que POST /admin/quotes/:id/invoice hace findFirst({id, merchantId}) ANTES de mirar
+  // el estado, así que la tenancy corta primero igualmente. Se mantienen como fixture
+  // REALISTA: si algún día se reordenan las comprobaciones y la regla de negocio pasa
+  // delante, un 400/409 enmascararía el assert de tenancy sin que nadie lo note.
   const quoteA = await prisma.quote.create({
     data: {
-      merchantId: merchantA.id, customerId: customerA.id, status: 'sent',
-      total: '100.00', currency: 'EUR', lines: [{ concept: 'QA tenancy', qty: 1, price: 100, tax: 0 }],
+      merchantId: merchantA.id, customerId: customerA.id, status: 'accepted',
+      total: '100.00', currency: 'EUR', lines: [{ concept: 'Servicio QA tenancy', qty: 1, price: 100 }],
     },
   });
   const invoiceA = await prisma.invoice.create({
     data: {
       merchantId: merchantA.id, customerId: customerA.id, quoteId: quoteA.id,
       number: `QA-TEN-${stamp}`, total: '100.00', currency: 'EUR', type: 'F1',
+      // status 'paid' + lines (de SCRUM-78): mismo caso que el quote. Ni schema
+      // (Invoice.status default 'pending', lines opcional) ni comportamiento actual los
+      // exigen — dispute-package también filtra por merchantId primero. Fixture realista
+      // por la misma razón defensiva.
+      status: 'paid',
+      lines: [{ concept: 'Servicio QA tenancy', qty: 1, price: 100 }],
       pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
     },
   });
   const jobA = await prisma.job.create({
-    data: { merchantId: merchantA.id, customerId: customerA.id, status: 'pendiente_agendar', titulo: 'Trabajo de A' },
+    data: { merchantId: merchantA.id, customerId: customerA.id, status: 'pendiente_agendar', titulo: 'Trabajo QA tenancy A' },
   });
 
   const mkCookie = async (teamMemberId = null) => {
@@ -129,7 +147,10 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
     }
     t.diagnostic(`permisos: ${ADMIN_ONLY_ROUTES.length} rutas admin-only → 403 para técnico ✓`);
   } finally {
-    // Limpieza de AMBOS merchants efímeros, hijos antes que padres.
+    // Limpieza de AMBOS merchants efímeros, hijos antes que padres. Cada borrado con
+    // su .catch(): si uno falla (tabla ausente, FK inesperada) no debe abortar el resto
+    // ni enmascarar el resultado del test — dejar huérfanos es justo lo que ensucia
+    // staging (SCRUM-79).
     for (const m of [merchantA, merchantB]) {
       await prisma.authSession.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
       await prisma.invoice.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
