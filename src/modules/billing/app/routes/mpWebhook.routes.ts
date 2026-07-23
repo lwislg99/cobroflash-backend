@@ -36,18 +36,22 @@ router.post('/', async (req, res) => {
     const xSignature  = String(req.headers['x-signature'] || '');
     const xRequestId  = String(req.headers['x-request-id'] || '');
 
-    // Verificar firma (si hay secret configurado)
-    if (config.MP_WEBHOOK_SECRET) {
-      const valid = verifyMpWebhookSignature({
-        xSignature,
-        xRequestId,
-        dataId: mpPaymentId,
-        secret: config.MP_WEBHOOK_SECRET,
-      });
-      if (!valid) {
-        console.error('[mpWebhook] Firma inválida — payload ignorado');
-        return;
-      }
+    // SCRUM-99: FAIL-CLOSED — el secreto es obligatorio, mismo patrón que /webhooks/stripe.
+    // Antes: sin MP_WEBHOOK_SECRET, se procesaba el payload SIN verificar (fail-open) —
+    // cualquiera podía marcar un cobro como pagado sin haber pagado.
+    if (!config.MP_WEBHOOK_SECRET) {
+      console.error('🚨 [mpWebhook] MP_WEBHOOK_SECRET no configurado — payload RECHAZADO (fail-closed). Configúralo en Railway.');
+      return;
+    }
+    const valid = verifyMpWebhookSignature({
+      xSignature,
+      xRequestId,
+      dataId: mpPaymentId,
+      secret: config.MP_WEBHOOK_SECRET,
+    });
+    if (!valid) {
+      console.error('[mpWebhook] Firma inválida — payload ignorado');
+      return;
     }
 
     // Obtener detalles del pago desde la API de MP

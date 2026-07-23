@@ -94,5 +94,26 @@ export const config = {
     return config.OWNER_EMAILS.includes(email.trim().toLowerCase());
   }
 
+  // SCRUM-99: aviso de arranque en producción si falta algún secreto de webhook. Los
+  // handlers ya son fail-closed (rechazan sin el secreto) — esto es para descubrirlo en
+  // los logs de despliegue, no cuando llega la primera petición falsificada o el primer
+  // webhook legítimo empieza a fallar.
+  export function warnMissingWebhookSecrets(): void {
+    if (config.NODE_ENV !== 'production') return;
+    const required: Array<[string, string]> = [
+      ['STRIPE_WEBHOOK_SECRET', config.STRIPE_WEBHOOK_SECRET],
+      ['STRIPE_CONNECT_WEBHOOK_SECRET', config.STRIPE_CONNECT_WEBHOOK_SECRET],
+      ['MP_WEBHOOK_SECRET', config.MP_WEBHOOK_SECRET],
+      ['WHATSAPP_APP_SECRET', config.WHATSAPP_APP_SECRET],
+    ];
+    const missing = required.filter(([, value]) => !value).map(([name]) => name);
+    if (missing.length) {
+      console.error(
+        `🚨 [webhooks] FALTAN secretos en producción: ${missing.join(', ')} — esos webhooks ` +
+        `RECHAZARÁN todas las peticiones (fail-closed) hasta que se configuren en Railway.`,
+      );
+    }
+  }
+
   export const BASE_URL = config.PUBLIC_BASE_URL;
   
