@@ -110,7 +110,8 @@ export const CENSO_MIN = 25;
  * fichero, quien migra es el único que puede cumplirla.
  */
 export const MIGRACION_PENDIENTE = [
-  'albaran.test.mjs',
+  // tanda 7: albaran (DOS bloques test(), un merchant cada uno — la migración es por
+  //          bloque, no por fichero)
   'scrum17-recapitulativa.test.mjs',
   // MIGRADOS — tanda 1: scrum24-operarios-metrics · tanda 2: scrum22-operario-readpath
   // tanda 3 (exports): scrum104-clientes-referenciados, scrum25-exports, scrum25-export-zip
@@ -134,7 +135,7 @@ export const MIGRACION_PENDIENTE = [
  * para que alguien aparque un fichero nuevo sin que nadie se entere. Es la lección literal
  * de SCRUM-103 (el ratchet de rutas se dejó en 25 con 24 entradas).
  */
-// 24 → 23 (t1) → 22 (t2) → 19 (t3) → 13 (t4 + scrum94 sesión 1) → 11 (t5) → 9 (t7)
+// 24 → 23 (t1) → 22 (t2) → 19 (t3) → 13 (t4 + scrum94 sesión 1) → 11 (t5) → 8 (t7)
 //
 // El número salió de CONTAR la lista fusionada, no de elegir rama. Este rebase trajo tres
 // conflictos seguidos en esta línea (16 de la sesión 1 sacando scrum94, contra 15 y 14 del
@@ -142,7 +143,7 @@ export const MIGRACION_PENDIENTE = [
 // una de las dos ramas. Es el escenario exacto que el assert de IGUALDAD EXACTA vino a
 // hacer ruidoso: con `<=` cualquiera de esos números habría pasado en verde, dejando
 // huecos libres.
-export const MIGRACION_MAX = 9;
+export const MIGRACION_MAX = 8;
 
 /**
  * Fecha límite. Pasada, el test falla mientras queden pendientes.
