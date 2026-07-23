@@ -76,6 +76,42 @@ function whereRango(merchantId: number, { from, to }: Rango, campo = 'createdAt'
 
 const dia = (d: Date) => d.toISOString().slice(0, 10);
 
+// ── Qué es "la fecha" de un trabajo (SCRUM-106) ───────────────────────────
+// Decisión del fundador, opción C: la fecha de EJECUCIÓN prevista (`scheduledAt`), no la
+// de alta. Un trabajo presupuestado en junio y ejecutado en julio pertenece al paquete de
+// julio, que es donde está su factura — y es además lo que ya hacía TODO el resto del
+// producto (lista, orden del backend, .ics). El export era el único que usaba `createdAt`,
+// y no por decisión: heredaba el default de `whereRango`.
+//
+// LOS NULOS QUEDAN FUERA SOLOS, sin código extra: en SQL `scheduled_at >= X` es NULL para
+// una fila sin fecha, y NULL no es true, así que no entra en el rango. No es un efecto
+// colateral que convenga "arreglar" — es la opción C.
+//
+// Y no se pierde nada ejecutado: la máquina de estados (job.service.ts) IMPIDE llegar a
+// `en_curso` sin pasar por `agendado`, y `agendado` EXIGE `scheduledAt` (jobs.routes.ts).
+// Un trabajo sin fecha es, necesariamente, uno que nunca se empezó.
+//
+// ⚠️ ESTA CONSTANTE ES LA ÚNICA FUENTE: la usan `buildTrabajos` (el filtro) y
+// `construirLeeme` (lo que el paquete DICE que hace). Cambiar el criterio cambia el texto
+// automáticamente, así que el LEEME no puede mentir sobre esto. Antes dependía de que
+// quien tocara el filtro se acordara de la línea, y el test solo miraba el texto: cambiar
+// el filtro sin tocar la línea pasaba en verde (SCRUM-108).
+export const CAMPO_FECHA_TRABAJOS = 'scheduledAt' as const;
+
+/**
+ * Cómo se describe ese criterio en el LEEME. Derivado, nunca escrito a mano en dos sitios.
+ *
+ * ⚠️ `acotado` importa: la coletilla de los no agendados SOLO es cierta cuando hay rango.
+ * Sin rango no se filtra por fecha, así que los de `scheduledAt` null SÍ salen. Decirlo
+ * igual en los dos casos sería otra vez un paquete mintiendo sobre sí mismo.
+ */
+const CRITERIO_TRABAJOS: Record<typeof CAMPO_FECHA_TRABAJOS | 'createdAt', (p: string, acotado: boolean) => string> = {
+  scheduledAt: (p, acotado) => acotado
+    ? `Trabajos con fecha de ejecución prevista en ${p} (los que aún no se han agendado no salen).`
+    : `Todos tus trabajos, con o sin fecha de ejecución prevista.`,
+  createdAt: (p) => `Trabajos dados de alta en ${p} (por fecha de alta, no de ejecución).`,
+};
+
 /**
  * `customerId` de unas filas ya cargadas, sin nulos ni repetidos (SCRUM-104).
  * ⚠️ `Charge.customerId` es `Int?` (en Quote/Invoice/Job es obligatorio): sin filtrar,
@@ -221,8 +257,10 @@ export async function buildCobros(merchantId: number, rango: Rango, status = 'al
 export async function buildTrabajos(merchantId: number, rango: Rango, status = 'all'): Promise<CsvData> {
   const [jobs, customers, members] = await Promise.all([
     prisma.job.findMany({
-      where: whereRango(merchantId, rango, 'createdAt', status !== 'all' ? { status } : {}),
-      orderBy: { createdAt: 'desc' },
+      // SCRUM-106: por FECHA DE EJECUCIÓN prevista, no por fecha de alta. El criterio y su
+      // declaración en el LEEME salen de la MISMA constante — ver CAMPO_FECHA_TRABAJOS.
+      where: whereRango(merchantId, rango, CAMPO_FECHA_TRABAJOS, status !== 'all' ? { status } : {}),
+      orderBy: { [CAMPO_FECHA_TRABAJOS]: 'desc' },
     }),
     prisma.customer.findMany({ where: { merchantId }, select: { id: true, name: true } }),
     prisma.teamMember.findMany({ where: { merchantId }, select: { id: true, name: true } }),
@@ -393,7 +431,9 @@ export function construirLeeme(p: {
       : '  clientes.csv       Todos los clientes con algún documento en tu histórico.',
     `  facturas.csv       Facturas emitidas en ${periodo}.`,
     `  cobros.csv         Cobros registrados en ${periodo}.`,
-    `  trabajos.csv       Trabajos creados en ${periodo} (por fecha de alta, no de ejecución).`,
+    // SCRUM-106: el texto SALE del criterio real (CAMPO_FECHA_TRABAJOS). No se puede
+    // cambiar uno sin cambiar el otro, que es lo que antes había que recordar a mano.
+    `  trabajos.csv       ${CRITERIO_TRABAJOS[CAMPO_FECHA_TRABAJOS](periodo, acotado)}`,
     `  presupuestos.csv   Presupuestos creados en ${periodo}.`,
     `  facturas/          El PDF de cada factura de csv/facturas.csv.`,
   ];

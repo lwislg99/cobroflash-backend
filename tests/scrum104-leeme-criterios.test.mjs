@@ -61,10 +61,21 @@ test('SCRUM-104: SIN rango no se explica nada — no hay divergencia que explica
   assert.ok(!t.includes('el periodo seleccionado'), 'no debe hablar de un periodo que no existe');
 });
 
-test('SCRUM-104: trabajos.csv declara que filtra por fecha de ALTA, no de ejecución', () => {
-  // Hallazgo del recon: un trabajo creado en junio y ejecutado en julio NO sale en el
-  // paquete de julio. Mientras esa decisión no se revise, al menos queda declarada.
-  assert.match(conRango(), /trabajos\.csv.*no de ejecución/s);
+test('SCRUM-106: trabajos.csv declara que filtra por fecha de EJECUCIÓN prevista', () => {
+  // Antes filtraba por fecha de alta (SCRUM-104 lo declaraba); SCRUM-106 lo cambió a
+  // scheduledAt. Este assert ya no es solo cosmético: el texto SALE de la constante
+  // CAMPO_FECHA_TRABAJOS, la misma que usa el filtro, así que cambiar el criterio cambia
+  // el texto y hace caer este test. Antes miraba solo el texto y un cambio de criterio
+  // sin tocar la línea pasaba en verde — el recordatorio no recordaba nada (SCRUM-108).
+  assert.match(conRango(), /trabajos\.csv\s+Trabajos con fecha de ejecución prevista/);
+  // Y dice qué se queda fuera, que es lo que el asesor necesita para interpretarlo.
+  assert.match(conRango(), /los que aún no se han agendado no salen/);
+
+  // ⚠️ SIN rango NO se filtra por fecha, así que los no agendados SÍ salen: repetir ahí la
+  // coletilla sería el paquete mintiendo sobre sí mismo, que es lo que este fichero vigila.
+  assert.ok(!sinRango().includes('no se han agendado no salen'),
+    'sin rango esa advertencia sería falsa: no hay filtro de fechas que los excluya');
+  assert.match(sinRango(), /trabajos\.csv\s+Todos tus trabajos, con o sin fecha/);
 });
 
 test('SCRUM-104: el aviso de paquete INCOMPLETO sigue yendo el primero', () => {
