@@ -62,6 +62,13 @@ const CONOCIDOS_AL_MEDIR = [
   'scrum90-pay-bank-mp-token.test.mjs', 'scrum92-login-operario.test.mjs',
   'scrum94-register-teammember.test.mjs', 'tenancy-permisos.test.mjs',
   'webhooks-idempotencia.test.mjs',
+  // ALTA POSTERIOR AL RECON. scrum106 no existía al medir: nació con el patrón viejo y lo
+  // cazó este ratchet el día que se mergeó. Migrado ya, entra en el censo porque éste
+  // protege a TODO fichero que se sepa que crea merchants, no solo a los 24 originales.
+  // Sin esto quedaría fuera del guard: si mañana se reescribe de una forma que el detector
+  // no reconozca, nadie se enteraría. Añadirlo NO toca el ratchet (no es un pendiente);
+  // solo amplía la cobertura de la calibración.
+  'scrum106-trabajos-fecha.test.mjs',
 ];
 
 /**
@@ -69,12 +76,12 @@ const CONOCIDOS_AL_MEDIR = [
  * Sacar uno → bajar MIGRACION_MAX EN EL MISMO COMMIT (ver la nota del tope).
  */
 export const MIGRACION_PENDIENTE = [
-  'albaran.test.mjs', 'pdfs.test.mjs', 'scrum104-clientes-referenciados.test.mjs',
+  'albaran.test.mjs', 'pdfs.test.mjs',
   'scrum17-recapitulativa.test.mjs',
-  // scrum22-operario-readpath.test.mjs   — MIGRADO (tanda 2)
-  // scrum24-operarios-metrics.test.mjs   — MIGRADO (tanda 1)
-  'scrum25-export-zip.test.mjs',
-  'scrum25-exports.test.mjs', 'scrum47-enviar-albaran-wa.test.mjs',
+  // MIGRADOS — tanda 1: scrum24-operarios-metrics · tanda 2: scrum22-operario-readpath
+  // tanda 3 (exports, tras salir la sesión 1 de esa zona): scrum104-clientes-referenciados,
+  // scrum25-exports, scrum25-export-zip.
+  'scrum47-enviar-albaran-wa.test.mjs',
   'scrum49-firma-remota.test.mjs', 'scrum50-bot-albaranes.test.mjs',
   'scrum57-operario-propagacion.test.mjs', 'scrum66-tipo-operacion.test.mjs',
   'scrum68-evidencias-firma.test.mjs', 'scrum72-pdfs-privados.test.mjs',
@@ -91,7 +98,8 @@ export const MIGRACION_PENDIENTE = [
  * para que alguien aparque un fichero nuevo sin que nadie se entere. Es la lección literal
  * de SCRUM-103 (el ratchet de rutas se dejó en 25 con 24 entradas).
  */
-export const MIGRACION_MAX = 22; // 24 → 23 (tanda 1: scrum24) → 22 (tanda 2: scrum22)
+// 24 → 23 (tanda 1) → 22 (tanda 2) → 19 (tanda 3: los tres de exports)
+export const MIGRACION_MAX = 19;
 
 /**
  * Fecha límite. Pasada, el test falla mientras queden pendientes.
