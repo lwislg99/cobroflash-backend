@@ -12,6 +12,7 @@
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -41,6 +42,13 @@ test('SCRUM-94: /auth/register rechaza el email de un operario (sin merchant fan
     const bA = await rA.json();
     assert.equal(bA.error, 'email_belongs_to_team', 'código de error esperado');
     assert.ok(bA.message && bA.message.length > 0, 'debe traer un mensaje claro');
+
+    // 1b · FORMA FIJA (SCRUM-108, vía 1): el 409 no lleva NADA más que estas dos claves.
+    // Cubre lo que una búsqueda de literales no puede ver: una clave nueva que alguien
+    // añada al error el día de mañana (`merchantId`, `teamMemberId`, un `debug`) y que
+    // arrastre datos sin que ningún assert de texto se entere.
+    assert.deepEqual(Object.keys(bA).sort(), ['error', 'message'],
+      'el 409 debe traer SOLO error y message: cualquier clave de más es una fuga potencial');
     assert.equal(await prisma.merchant.findUnique({ where: { email: activo.email } }), null, 'NO debe crearse un Merchant con el email del operario');
 
     // 2 · operario INVITADO → también 409 (también quedaría ensombrecido al volver).
@@ -48,8 +56,38 @@ test('SCRUM-94: /auth/register rechaza el email de un operario (sin merchant fan
     assert.equal(rI.status, 409, 'un operario INVITED también debe rechazarse');
     assert.equal(await prisma.merchant.findUnique({ where: { email: invitado.email } }), null, 'sin merchant fantasma para el invited');
 
-    // 3 · ANTI-FUGA: el mensaje NO revela la empresa del operario.
-    assert.ok(!bA.message.includes('SECRETA') && !bA.message.includes(merchant.name), 'el mensaje NO debe revelar el nombre de la empresa (anti-enumeración de datos)');
+    // 3 · ANTI-FUGA por INVARIANCIA (SCRUM-108, vía 2).
+    //
+    // ⚠️ ESTE SEGUNDO MERCHANT **NO SOBRA**. Si lo quitas, este assert deja de probar nada.
+    //
+    // Lo que hay que garantizar NO es «no aparece el nombre de la empresa» — eso es un
+    // SÍNTOMA — sino la propiedad de verdad: **la respuesta NO DEPENDE del merchant**. Es
+    // el objetivo anti-enumeración: que un atacante no pueda distinguir una empresa de otra
+    // por lo que devuelve el endpoint. Y una propiedad así solo se comprueba CONTRASTANDO
+    // dos respuestas de empresas distintas: si difieren en algo, ese algo viene del
+    // merchant. Con un solo merchant no hay nada con qué contrastar.
+    //
+    // Antes esto se comprobaba buscando el literal 'SECRETA' (del nombre de la fixture) y
+    // `merchant.name`. Dos problemas: renombrar la fixture dejaba medio assert ciego sin que
+    // nada lo dijera, y solo cubría los nombres que alguien previó. La invariancia cubre
+    // TODOS —los previstos y los que no— además de ids o tokens interpolados por accidente.
+    await withMerchant(
+      prisma,
+      { name: 'QA S94 Otra Empresa Distinta', email: `qa-s94-owner-b-${stamp}@test.local` },
+      async (merchantB) => {
+        const activoB = await prisma.teamMember.create({
+          data: { merchantId: merchantB.id, name: 'QA S94 Activo B', email: `qa-s94-activo-b-${stamp}@test.local`, role: 'tecnico', status: 'active' },
+        });
+        const rB = await reg(activoB.email);
+        assert.equal(rB.status, 409, 'el operario de la otra empresa también debe dar 409');
+        const bB = await rB.json();
+
+        assert.deepEqual(bA, bB,
+          'FUGA: el 409 debe ser IDÉNTICO sea cual sea la empresa del operario. Si difiere, ' +
+          'algo del merchant se está filtrando en la respuesta y el endpoint permite ' +
+          'distinguir unas empresas de otras (anti-enumeración, SCRUM-108).');
+      },
+    );
 
     // 4 · operario SUSPENDIDO → NO se rechaza (ya no puede entrar; registrar su propio negocio es legítimo).
     const rS = await reg(suspendido.email);
