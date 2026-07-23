@@ -143,7 +143,7 @@ async function sendReminderWA(
         log: { customerId: inv.customerId, relatedType: 'invoice', relatedId: inv.id },
       });
       if (result.ok) {
-        console.log(`[invoiceReminder] ✓ ${day}d vía ${result.via} → inv #${inv.number} (${customerName})`);
+        console.log(`[invoiceReminder] ✓ ${day}d vía ${result.via} → inv #${inv.number}`); // SCRUM-101: sin nombre del cliente
       } else {
         console.error(`[invoiceReminder] WA error ${day}d → inv #${inv.number}:`, result.error || result.reason);
         // A20.5 (J5): el fallo del cron queda REGISTRADO y visible en el BO (360)
@@ -162,7 +162,7 @@ async function sendReminderWA(
         merchantId: inv.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
         text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago del ${docLabel} *${inv.number}* por *${total} ${inv.currency}* de parte de *${merchantName}*.\n${urgency}\nSi ya has realizado el pago, por favor ignora este mensaje. ¡Gracias!`,
       });
-      console.log(`[invoiceReminder] ✓ texto ${day}d → inv #${inv.number} (${customerName})`);
+      console.log(`[invoiceReminder] ✓ texto ${day}d → inv #${inv.number}`); // SCRUM-101: sin nombre del cliente
     }
   } catch (err: any) {
     console.error(`[invoiceReminder] excepción ${day}d → inv #${inv.number}:`, err?.message);

@@ -6,6 +6,7 @@ import { config } from '../../../core/config/env';
 import { sendWelcomeEmail } from '../../messaging/domain/lifecycle.service';
 import { renderEmailLayout, escEmail } from '../../messaging/domain/emailLayout';
 import { generateUniqueReferralCode, resolveReferrer } from './referral.service';
+import { maskEmail } from '../../../core/utils/utils';
 
 const MAGIC_LINK_TTL_MS = 15 * 60 * 1000;
 const SESSION_TTL_MS    = 30 * 24 * 60 * 60 * 1000; // 30 días
@@ -81,9 +82,9 @@ async function issueLoginLink(params: {
         footnote: 'Este enlace es de un solo uso y caduca en 15 minutos. Si no lo solicitaste, puedes ignorar este correo.',
       }),
     });
-    console.log(`[magic-link] email enviado OK a ${params.email}`);
+    console.log(`[magic-link] email enviado OK a ${maskEmail(params.email)}`); // SCRUM-101
   } catch (emailErr: any) {
-    console.error(`[magic-link] ERROR enviando email a ${params.email}:`, emailErr?.message || emailErr);
+    console.error(`[magic-link] ERROR enviando email a ${maskEmail(params.email)}:`, emailErr?.message || emailErr); // SCRUM-101
   }
 }
 
@@ -106,12 +107,14 @@ export async function requestMagicLink(email: string): Promise<void> {
   if (!teamMember) {
     // Requisito del ticket: NUNCA revelar al usuario si el email existe (mismo 200
     // genérico de siempre) — pero SÍ dejar traza en servidor para poder depurarlo.
-    console.log(`[magic-link] intento de login con email no registrado: ${email}`);
+    // SCRUM-101: el email en SÍ es el dato que este log no debe guardar en claro — la
+    // respuesta HTTP ya no lo revela al usuario; el log de Railway tampoco debe hacerlo.
+    console.log(`[magic-link] intento de login con email no registrado: ${maskEmail(email)}`);
     return;
   }
   if (teamMember.status === 'suspended') {
     // Mismo trato que "no existe": jamás confirmar el estado de una cuenta ajena.
-    console.log(`[magic-link] intento de login de TeamMember SUSPENDIDO: ${email} (id=${teamMember.id}, merchantId=${teamMember.merchantId})`);
+    console.log(`[magic-link] intento de login de TeamMember SUSPENDIDO: ${maskEmail(email)} (id=${teamMember.id}, merchantId=${teamMember.merchantId})`); // SCRUM-101
     return;
   }
   // status 'invited' se deja pasar a propósito: verifyMagicLink ya activa cualquier
@@ -169,9 +172,9 @@ export async function inviteTeamMember(params: {
         footnote: 'Este enlace caduca en 7 días. Si no esperabas esta invitación, puedes ignorar este correo.',
       }),
     });
-    console.log(`[invite] email enviado OK a ${params.memberEmail}`);
+    console.log(`[invite] email enviado OK a ${maskEmail(params.memberEmail)}`); // SCRUM-101
   } catch (emailErr: any) {
-    console.error(`[invite] ERROR enviando email a ${params.memberEmail}:`, emailErr?.message || emailErr);
+    console.error(`[invite] ERROR enviando email a ${maskEmail(params.memberEmail)}:`, emailErr?.message || emailErr); // SCRUM-101
   }
 }
 

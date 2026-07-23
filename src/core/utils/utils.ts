@@ -1,3 +1,5 @@
+import crypto from 'crypto';
+
 // A11.2 (S3): teléfonos SIEMPRE enmascarados en logs — prefijo + últimos 3.
 // "34629965893" → "34•••••893". Nunca usar el número completo en console.*.
 export function maskPhone(input?: string | null): string {
@@ -5,6 +7,22 @@ export function maskPhone(input?: string | null): string {
   if (!p) return '—';
   if (p.length <= 5) return `•••${p.slice(-2)}`;
   return `${p.slice(0, 2)}${'•'.repeat(Math.max(3, p.length - 5))}${p.slice(-3)}`;
+}
+
+// SCRUM-101: emails SIEMPRE enmascarados en logs — mismo espíritu que maskPhone, pero
+// por HASH en vez de caracteres parciales: un email es más fácil de re-identificar a
+// partir de solo 2-3 caracteres visibles que un teléfono (el local-part suele ser un
+// nombre). Conserva el dominio (útil para depurar patrones de bounce/typo por proveedor)
+// y un hash corto NO reversible (útil para correlacionar "es el mismo email" entre
+// líneas de log sin guardar el dato — RGPD: minimización). Nunca interpolar el email
+// crudo en console.*.
+export function maskEmail(input?: string | null): string {
+  const e = String(input ?? '').trim().toLowerCase();
+  const at = e.indexOf('@');
+  if (!e || at <= 0) return '—';
+  const domain = e.slice(at + 1);
+  const hash = crypto.createHash('sha256').update(e).digest('hex').slice(0, 8);
+  return `${hash}@${domain}`;
 }
 
 export function normalizePhone(input?: string | null): string {

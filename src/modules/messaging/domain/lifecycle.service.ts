@@ -7,13 +7,14 @@
 import axios from 'axios';
 import { prisma } from '../../../core/db/prisma';
 import { config } from '../../../core/config/env';
+import { maskEmail } from '../../../core/utils/utils';
 
 const DASHBOARD_URL = `${config.PUBLIC_BASE_URL || 'https://yaqu.app'}/dashboard/`;
 
 async function sendEmail(to: string, subject: string, html: string): Promise<void> {
   if (!to || !to.includes('@')) return;
   if (!config.RESEND_API_KEY) {
-    console.log(`[lifecycle] (sin RESEND) email a ${to}: ${subject}`);
+    console.log(`[lifecycle] (sin RESEND) email a ${maskEmail(to)}: ${subject}`); // SCRUM-101
     return;
   }
   await axios.post(
