@@ -103,7 +103,8 @@ export const MIGRACION_PENDIENTE = [
   'scrum68-evidencias-firma.test.mjs', 'scrum72-pdfs-privados.test.mjs',
   'scrum74-recibo-token.test.mjs',
   'scrum85-pay-routes-token.test.mjs',
-  'scrum90-pay-bank-mp-token.test.mjs', 'scrum92-login-operario.test.mjs',
+  'scrum90-pay-bank-mp-token.test.mjs',
+  // tanda 4 (cont.): scrum92-login-operario · scrum94-register-teammember (sesión 1)
   'tenancy-permisos.test.mjs',
   'webhooks-idempotencia.test.mjs',
 ];
@@ -114,13 +115,15 @@ export const MIGRACION_PENDIENTE = [
  * para que alguien aparque un fichero nuevo sin que nadie se entere. Es la lección literal
  * de SCRUM-103 (el ratchet de rutas se dejó en 25 con 24 entradas).
  */
-// 24 → 23 (t1) → 22 (t2) → 19 (t3: exports) → 17 → 14 (t4 + scrum94 de la sesión 1)
+// 24 → 23 (t1) → 22 (t2) → 19 (t3: exports) → 13 (t4: grupo A + scrum94 de la sesión 1)
 //
-// El 14 salió de CONTAR la lista fusionada, no de elegir rama: este merge trajo 16 (la
-// sesión 1 sacando scrum94) contra 15 (el carril B sacando scrum73 y scrum76), y el
-// correcto no era ninguno de los dos. Es el escenario exacto que el assert de igualdad
-// exacta vino a hacer ruidoso.
-export const MIGRACION_MAX = 14;
+// El número salió de CONTAR la lista fusionada, no de elegir rama. Este rebase trajo tres
+// conflictos seguidos en esta línea (16 de la sesión 1 sacando scrum94, contra 15 y 14 del
+// carril B sacando scrum73/scrum76 y scrum92), y en ninguno el valor correcto era el de
+// una de las dos ramas. Es el escenario exacto que el assert de IGUALDAD EXACTA vino a
+// hacer ruidoso: con `<=` cualquiera de esos números habría pasado en verde, dejando
+// huecos libres.
+export const MIGRACION_MAX = 13;
 
 /**
  * Fecha límite. Pasada, el test falla mientras queden pendientes.
