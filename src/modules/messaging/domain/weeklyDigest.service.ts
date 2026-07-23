@@ -4,6 +4,7 @@ import axios from 'axios';
 import { prisma } from '../../../core/db/prisma';
 import { createMailer } from '../../../integrations/mailer';
 import { config } from '../../../core/config/env';
+import { maskEmail } from '../../../core/utils/utils';
 
 async function sendEmail(to: string, subject: string, html: string): Promise<void> {
   if (!to || !to.includes('@')) return;
@@ -138,7 +139,7 @@ async function sendDigestForMerchant(
 </div>`;
 
   await sendEmail(merchant.email, subject, html);
-  console.log(`[weeklyDigest] ✓ enviado a ${merchant.email}`);
+  console.log(`[weeklyDigest] ✓ enviado a ${maskEmail(merchant.email)}`); // SCRUM-101
 }
 
 // Generar preview del digest para un merchant (sin enviar)

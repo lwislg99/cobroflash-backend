@@ -52,7 +52,7 @@ export async function sendPendingReminders(): Promise<void> {
       });
 
       if (result.ok) {
-        console.log(`[reminder] OK → quote #${quote.id} (${customerName})`);
+        console.log(`[reminder] OK → quote #${quote.id}`); // SCRUM-101: sin nombre del cliente en el log; el id ya identifica el registro
       } else {
         console.error(`[reminder] WA error → quote #${quote.id}:`, result.error);
         // A20.5 (J5): el fallo del cron queda REGISTRADO y visible en el BO (360)
