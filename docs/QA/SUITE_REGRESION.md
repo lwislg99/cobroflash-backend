@@ -7,9 +7,13 @@
 
 ## Runbook de ejecución de los tests gateados (SCRUM-79)
 
-Cinco trampas que ya nos han costado tiempo. Las tres primeras y la quinta fallan **en
-silencio**: el test pasa o el número parece plausible, y nadie lo cuestiona. La cuarta no
-falla — te hace perder el rato creyendo que tu entorno está roto.
+Siete trampas que ya nos han costado tiempo, y no fallan igual:
+
+* **En silencio** (1, 2, 3, 5): el test pasa o el número parece plausible, y nadie lo cuestiona.
+* **A gritos, pero mintiendo sobre la causa** (4, 7): el rojo es real y te manda a buscar donde
+  no es — un entorno mal configurado que parece un fallo de código.
+* **Ni una cosa ni la otra** (6): no hay señal ninguna, porque el trabajo que te han asignado no
+  aparece en tu contexto.
 
 1. **Reconstruye antes de aislar un test.** Los tests importan de `dist/`, que **no está
    en git y NO cambia al cambiar de rama**. Si compilas en una rama y luego te vas a otra,
@@ -88,6 +92,37 @@ falla — te hace perder el rato creyendo que tu entorno está roto.
    minutos (varios PR por hora). Una comprobación hecha al abrir la tarea **no sirve** para
    afirmar nada al cerrarla — ver la regla 2 de la sección siguiente, que es el mismo fallo
    aplicado al estado en vez de a los tests.
+
+7. **`scrum49-firma-remota` NECESITA `WHATSAPP_DRY_RUN=1`. Sin él da un rojo que parece de
+   código y es de entorno.** (Hallazgo de la **sesión 2**, 23-jul-2026; escrito aquí por el
+   carril B para que no espere turno.)
+
+   El test aborta en `assert.equal((await rSend.json()).ok, true)` con `false !== true`:
+   `POST /admin/albaranes/:id/enviar-para-firmar` devuelve **200 con `ok:false`** porque el
+   envío de WhatsApp falla de verdad. Con el flag, `ok:true` y el fichero pasa entero.
+
+   ```bash
+   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 node --test --test-force-exit tests/scrum49-firma-remota.test.mjs
+   ```
+
+   **Lo caro no fue el rojo: fue el ticket que abrió.** El carril B se lo encontró, comprobó
+   que fallaba **igual en `main` sin su cambio** —extrayendo la versión de `main` y
+   corriéndola con el mismo `dist` y la misma BD— y lo reportó como fallo ajeno (SCRUM-114).
+   La comprobación era correcta y **la conclusión, incompleta**:
+
+   > **Demostrar «no soy yo» basta para defenderte; no basta para abrir un ticket a otro.**
+   >
+   > Un rojo verificado a medias desinforma igual que un verde falso, solo que en la otra
+   > dirección: el verde falso dice que algo funciona sin comprobarlo; el rojo a medias dice
+   > que algo está roto sin haber llegado a la causa. Los dos generan trabajo mal dirigido.
+
+   → Antes de abrir un ticket a otro carril por un rojo, **llega hasta la causa** o dilo
+   explícitamente: «no es mío, causa sin determinar». Descartar la autoría es el primer
+   paso, no el informe.
+
+   *(Del 114 sí queda algo real e independiente de esto: que un fallo de envío responda 200
+   lo hace invisible para cualquier monitorización por status — nadie mira el cuerpo de un
+   200. Eso se sigue en su ticket.)*
 
 ## Escribir verificaciones: un verde falso no lo mira nadie (SCRUM-103)
 
