@@ -216,7 +216,8 @@ export async function getSession(token: string) {
     where: { token },
     include: {
       merchant: {
-        select: { id: true, name: true, email: true, plan: true, planExpiresAt: true, onboardingCompleted: true },
+        // SCRUM-102: isPlatformOwner viaja con la sesión para isVerifiedPlatformOwner()
+        select: { id: true, name: true, email: true, plan: true, planExpiresAt: true, onboardingCompleted: true, isPlatformOwner: true },
       },
       teamMember: {
         select: { id: true, name: true, role: true, status: true },

@@ -138,7 +138,7 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
   { method: 'GET', path: '/admin/metrics/services', tanda: 2, duda: 'Servicios más vendidos → probable admin' },
   { method: 'GET', path: '/admin/metrics/whatsapp', tanda: 2, duda: 'Coste y entrega de WA del merchant → probable admin' },
   { method: 'GET', path: '/admin/metrics/team', tanda: 2, duda: 'S1 dice "equipo ❌ Técnico" EXPLÍCITO → admin; confirmado 200 en prod' },
-  { method: 'GET', path: '/admin/metrics/platform-funnel', tanda: 2, duda: 'Ya tiene gate propio por isOwnerEmail (más estricto que admin) pero INLINE: hacerlo visible' },
+  { method: 'GET', path: '/admin/metrics/platform-funnel', tanda: 2, duda: 'Ya tiene gate propio por isVerifiedPlatformOwner (SCRUM-102, más estricto que admin) pero INLINE: hacerlo visible' },
 
   // TANDA 3 — configuración y datos en bloque. Ninguna es flujo de campo evidente;
   // se aparcan por volumen y porque tocarlas mueve el nav del dashboard.

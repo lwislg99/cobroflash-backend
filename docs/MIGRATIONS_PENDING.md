@@ -11,6 +11,43 @@
 > **NO uses `migrate deploy`/`migrate dev`** — aplicaría un schema viejo (entorno nuevo) o
 > propondría un reset. `db push` es el ÚNICO mecanismo. (Volver a migrate = SCRUM-40 opción A.)
 
+## SCRUM-102 · `merchants.is_platform_owner` (segundo factor del gate owner) — ✅ APLICADO en prod (2026-07-23)
+
+`bash scripts/db-push-prod` (SCRUM-40, procedimiento canónico) aplicado primero a **STAGING**
+(`acela.proxy.rlwy.net:40802`) y luego a **PRODUCCIÓN** (`autorack.proxy.rlwy.net:40654`), ambos
+con host-check + preview `migrate diff` + **GO explícito del fundador**, **SIN
+`--accept-data-loss`**. 100 % aditivo, sin el falso positivo del `@unique` (esta columna no lo
+lleva):
+```sql
+ALTER TABLE "merchants" ADD COLUMN "is_platform_owner" BOOLEAN NOT NULL DEFAULT false;
+```
+Verificación post-push: `migrate diff` vacío en ambos entornos.
+
+**Orden deliberado (decisión del fundador, para evitar la ventana de auto-bloqueo):** schema a
+staging → tests gateados → schema a PROD (columna nace en `false` para los 13 merchants, inofensivo
+mientras el código viejo — que no la lee — sigue desplegado) → **UPDATE marcando los owners en
+PROD** → recién entonces se mergea el PR que despliega el código nuevo. Con el orden inverso habría
+una ventana entre el deploy y el UPDATE en la que el propio fundador perdería su acceso a
+`fees.csv`/`platform-funnel`/paywall.
+
+UPDATE aplicado en prod inmediatamente después del `db push`, vía `prisma.merchant.updateMany`
+(mismo host, misma sesión, sin exponer el email en el historial de shell más de lo necesario):
+```sql
+UPDATE merchants SET is_platform_owner = true WHERE email = 'luislaragranado@gmail.com';
+-- 1 row affected (verificado: SELECT tras el UPDATE devuelve exactamente esa fila con true;
+-- y un segundo SELECT confirma que es la ÚNICA fila con isPlatformOwner=true de los 13
+-- merchants totales en prod)
+```
+
+**Por qué:** `GET /admin/exports/fees.csv` (facturación de TODA la plataforma) y
+`/admin/metrics/platform-funnel` dependían SOLO de `isOwnerEmail()` — comparación contra la env
+var `OWNER_EMAILS`. Precedente SCRUM-99: un secreto de webhook faltó en producción sin que nadie
+lo supiera; las env vars se caen o se escriben mal. `isVerifiedPlatformOwner()` (`env.ts`) ahora
+exige AMBOS factores — email en `OWNER_EMAILS` Y `Merchant.isPlatformOwner=true` en BD — para los
+4 usos reales del gate owner (fees.csv, platform-funnel, perk "Pro sin caducidad" en
+`GET /admin/me`, exención de paywall en `requireActivePlan`). Ver SCRUM-102 y
+`docs/AUDITORIA_SUPERFICIE_PUBLICA.md` (hallazgo MEDIO #10 de SCRUM-88).
+
 ## SCRUM-74 · `charges.receipt_token` (fuga RGPD `/recibo/:chargeId` enumerable) — ✅ APLICADO en prod (2026-07-22)
 
 `prisma db execute` (NO `db push`) aplicado a **STAGING** (`acela.proxy.rlwy.net:40802`) el

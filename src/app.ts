@@ -8,7 +8,7 @@ import { isFlagEnabled } from './core/flags';
 import { requireAuth, requireActivePlan, requireRole } from './core/http/authMiddleware';
 import { mountAdmin } from './core/http/adminMounts'; // SCRUM-55: red fail-closed de /admin
 import { requireInternalSecret } from './core/http/internalAuth';
-import { isOwnerEmail, config } from './core/config/env';
+import { isVerifiedPlatformOwner, config } from './core/config/env';
 
 // Routers
 import healthRouter from './modules/system/app/routes/health.routes';
@@ -202,9 +202,10 @@ app.get('/admin/me', async (req, res) => {
   const userRole = session.teamMember ? session.teamMember.role : 'admin';
   const userName = session.teamMember ? session.teamMember.name : session.merchant.name;
 
-  // Cuentas owner (OWNER_EMAILS): se presentan como Pro activo y sin caducidad
-  // para que el front no muestre el paywall ni redirija a #plans.
-  const owner = isOwnerEmail(session.merchant.email);
+  // Cuentas owner: se presentan como Pro activo y sin caducidad para que el front
+  // no muestre el paywall ni redirija a #plans. SCRUM-102: dos factores (email en
+  // OWNER_EMAILS + Merchant.isPlatformOwner en BD), no solo la env var.
+  const owner = isVerifiedPlatformOwner(session.merchant);
 
   return res.json({
     merchantId: session.merchantId,

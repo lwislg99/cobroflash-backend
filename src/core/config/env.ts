@@ -94,6 +94,16 @@ export const config = {
     return config.OWNER_EMAILS.includes(email.trim().toLowerCase());
   }
 
+  // SCRUM-102: gate REAL de "cuenta owner" para todo lo sensible (fees.csv = facturación
+  // de TODA la plataforma, platform-funnel, paywall/plan). Dos factores independientes:
+  // email en OWNER_EMAILS (env var, se puede escribir mal o vaciar sin que nadie se
+  // entere — precedente SCRUM-99) Y Merchant.isPlatformOwner en BD (default false,
+  // requiere un UPDATE explícito, no se activa "por accidente"). AMBOS, no uno u otro.
+  export function isVerifiedPlatformOwner(merchant?: { email?: string | null; isPlatformOwner?: boolean | null } | null): boolean {
+    if (!merchant) return false;
+    return isOwnerEmail(merchant.email) && merchant.isPlatformOwner === true;
+  }
+
   // SCRUM-99: aviso de arranque en producción si falta algún secreto de webhook. Los
   // handlers ya son fail-closed (rechazan sin el secreto) — esto es para descubrirlo en
   // los logs de despliegue, no cuando llega la primera petición falsificada o el primer
@@ -111,6 +121,22 @@ export const config = {
       console.error(
         `🚨 [webhooks] FALTAN secretos en producción: ${missing.join(', ')} — esos webhooks ` +
         `RECHAZARÁN todas las peticiones (fail-closed) hasta que se configuren en Railway.`,
+      );
+    }
+  }
+
+  // SCRUM-102: mismo patrón que warnMissingWebhookSecrets — aviso ruidoso al arrancar en
+  // producción si OWNER_EMAILS está vacía. isVerifiedPlatformOwner() ya es fail-closed
+  // (sin email en la lista, nadie pasa), pero eso también significa que las cuentas owner
+  // reales (fees.csv, paywall, platform-funnel) dejarían de funcionar en SILENCIO — mejor
+  // descubrirlo en el log de arranque que cuando el fundador no puede ver su propia
+  // facturación.
+  export function warnEmptyOwnerEmails(): void {
+    if (config.NODE_ENV !== 'production') return;
+    if (config.OWNER_EMAILS.length === 0) {
+      console.error(
+        `🚨 [owner] OWNER_EMAILS está vacía en producción — ninguna cuenta pasará ` +
+        `isVerifiedPlatformOwner() (paywall/fees.csv/platform-funnel) hasta que se configure en Railway.`,
       );
     }
   }

@@ -54,6 +54,14 @@ model Merchant {
   // A6.7: preferencias de la Home (bloques visibles) — {hero,quick,kpis,week,activity,tops}: bool
   homePrefs            Json?   @map("home_prefs")
 
+  // SCRUM-102: segundo factor para el gate "owner" (isVerifiedPlatformOwner, env.ts) —
+  // dato multi-tenant sensible (fees.csv, platform-funnel) no puede depender SOLO de
+  // que OWNER_EMAILS esté bien escrita en Railway (precedente: SCRUM-99, un secreto de
+  // webhook faltó en prod sin que nadie lo supiera). default false: requiere UPDATE
+  // manual explícito en el merchant del fundador tras el db push — deliberado, un
+  // flag de BD no se activa "por accidente" como sí puede pasar con una env var.
+  isPlatformOwner      Boolean   @default(false)  @map("is_platform_owner")
+
   // Auth / plan
   onboardingCompleted  Boolean   @default(false)  @map("onboarding_completed")
   plan                 String    @default("trial")             // trial | basic | pro | empresa

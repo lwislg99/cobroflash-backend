@@ -3,7 +3,7 @@ import { getHomeMetrics, getFunnelMetrics, getServiceMetrics, getTeamMetrics, ge
 import { requireRole } from '../../../../core/http/authMiddleware';
 import { getWhatsAppMetrics } from '../../../messaging/domain/whatsappLog.service';
 import { prisma } from '../../../../core/db/prisma';
-import { isOwnerEmail } from '../../../../core/config/env';
+import { isVerifiedPlatformOwner } from '../../../../core/config/env';
 
 const router = Router();
 
@@ -37,14 +37,15 @@ router.get('/services', async (req, res) => {
   }
 });
 
-// V0-3: funnel de plataforma — SOLO cuentas owner (OWNER_EMAILS); el resto recibe 403.
+// V0-3: funnel de plataforma — SOLO cuentas owner; el resto recibe 403.
+// SCRUM-102: dos factores (email en OWNER_EMAILS + Merchant.isPlatformOwner en BD).
 router.get('/platform-funnel', async (req, res) => {
   try {
     const m = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
-      select: { email: true },
+      select: { email: true, isPlatformOwner: true },
     });
-    if (!m || !isOwnerEmail(m.email)) return res.status(403).json({ error: 'forbidden' });
+    if (!isVerifiedPlatformOwner(m)) return res.status(403).json({ error: 'forbidden' });
 
     return res.json(await getPlatformFunnel());
   } catch (err) {
