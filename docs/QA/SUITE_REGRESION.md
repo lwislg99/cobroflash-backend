@@ -272,6 +272,39 @@ fichero cruzó una frontera.
 Al calibrar un detector, cuenta esto junto con la regla 4: el falso positivo por patrón es barato
 —se migra el fichero— y el falso negativo se paga en producción.
 
+### Migraciones: media migración no es media protección
+
+Vale para cualquier campaña de migración, no solo la de `withMerchant`.
+
+> **Una migración parcial no es media protección: es PROTECCIÓN APARENTE.**
+>
+> Sin migrar, el fichero está en la lista de pendientes y alguien vendrá a por él. Migrado, está
+> cubierto. **En medio, el import dice «hecho» mientras el defecto sigue** — y eso lo saca del
+> radar humano sin sacarlo del riesgo.
+
+**Caso propio (`scrum94-register-teammember`, 23-jul-2026).** Al reescribir su assert anti-fuga hizo
+falta un segundo merchant. Se creó con `withMerchant` —para no introducir el patrón que el detector
+persigue— y se dejó **a propósito** el primero como estaba, creado a mano fuera del `try`, para no
+meterse en la campaña de migración ajena.
+
+El razonamiento de fondo era correcto: no invadir el trabajo de otro carril. Lo que no se vio es que
+el fichero quedaba **en un estado peor que cualquiera de los dos extremos**: aparentaba migrado por
+el import y conservaba intacta su ventana sin red — cuatro `teamMember.create` entre el `create` del
+merchant y el `try`, que **sí pueden lanzar**. Y no fue un descuido: la decisión se tomó viendo el
+código. **El estado intermedio es invisible desde dentro**; quien lo crea está mirando lo que añade,
+no lo que deja.
+
+Dos consecuencias operativas:
+
+1. **Migra un fichero entero o no lo empieces.** Medio migrado es el peor estado posible: pierde la
+   protección de estar en la lista y no gana la del helper.
+2. **Para quien construya el detector: que el criterio de «pendiente» GANE sobre el de «migrado».**
+   Lo fácil es dar por hecho todo fichero que importe el helper — y ese criterio habría sacado
+   `scrum94` de la lista con el defecto intacto. El clasificador de SCRUM-113 marca `manual` y
+   `helper` a la vez y **manda `manual`**: no canta victoria por ver un import, comprueba que no
+   quede ningún `create` a mano. Es la diferencia entre comprobar el síntoma cómodo (*¿hay import?*)
+   y la propiedad (*¿queda algo sin cubrir?*) — ver la regla 5.
+
 > **Coordinación (regla del canal):** la suite y el seed **resetean la BD del merchant QA**.
 > Avisa por el canal antes de lanzarla — solo uno a la vez. `tests/` es **zona compartida**:
 > avisar antes de tocarlo (SCRUM-78 y SCRUM-79 arreglaron el mismo fichero el mismo día sin
