@@ -62,6 +62,13 @@ const CONOCIDOS_AL_MEDIR = [
   'scrum90-pay-bank-mp-token.test.mjs', 'scrum92-login-operario.test.mjs',
   'scrum94-register-teammember.test.mjs', 'tenancy-permisos.test.mjs',
   'webhooks-idempotencia.test.mjs',
+  // ALTA POSTERIOR AL RECON. scrum106 no existía al medir: nació con el patrón viejo y lo
+  // cazó este ratchet el día que se mergeó. Migrado ya, entra en el censo porque éste
+  // protege a TODO fichero que se sepa que crea merchants, no solo a los 24 originales.
+  // Sin esto quedaría fuera del guard: si mañana se reescribe de una forma que el detector
+  // no reconozca, nadie se enteraría. Añadirlo NO toca el ratchet (no es un pendiente);
+  // solo amplía la cobertura de la calibración.
+  'scrum106-trabajos-fecha.test.mjs',
 ];
 
 /**
