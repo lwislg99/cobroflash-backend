@@ -486,7 +486,7 @@
   junta (antes imposible: cada archivo se ejecutaba suelto en su propia tarea) expuso una
   inestabilidad de concurrencia contra staging, ajena a estos 4 archivos.
 
-### [ ] P3-11 · `tests/scrum50-bot-albaranes.test.mjs` roto por el fail-closed de SCRUM-99 (23-jul, hallazgo en SCRUM-69)
+### [ ] P3-11 · `tests/scrum50-bot-albaranes.test.mjs` roto por el fail-closed de SCRUM-99 (23-jul, hallazgo en SCRUM-69; ticket SCRUM-122)
 - **Síntoma:** al correr la suite gateada completa en staging para SCRUM-69 (`QA_DB_TEST=1
   WHATSAPP_DRY_RUN=1 npm run test:staging`), `scrum50-bot-albaranes.test.mjs` falla en el primer
   `assert` («acuse del «Recibido»»). `scrum47-enviar-albaran-wa` y `scrum49-firma-remota` también
