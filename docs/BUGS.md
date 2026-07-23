@@ -227,6 +227,16 @@
   es Merchant → **409 `email_belongs_to_team`** con mensaje claro pero genérico (sin revelar la
   empresa), sin crear merchant fantasma. Ver la entrada de SCRUM-94 en `YAQU_MASTER.md`.
 
+### [ ] P1-ROL-1 · `PATCH /admin/jobs/:id` no gatea por rol: un OPERARIO puede alterar el tratamiento FISCAL (hallazgo SCRUM-89, 24-jul; para ticket de BACKEND propio)
+- **Síntoma:** `router.patch('/:id')` en `jobs.routes.ts` NO lleva `requireRole('admin')`. Un Técnico (operario) puede enviar `{ tipoOperacion }` y cambiar la bandera que decide CÓMO SE FACTURA el Trabajo (`OPERACIONES_SUELTAS` = recapitulativa mensual · `TRABAJO_UNICO` = factura al concluir). Un operario cambiándola por error altera el tratamiento fiscal (mes natural de la recapitulativa, SCRUM-17).
+- **Descubierto:** durante SCRUM-89 (botones muertos por rol). SCRUM-89 solo cubre el FRONT (deshabilitar los botones de dinero de jobDetailView/jobsView con explicación); este es un gap de BACKEND, fuera de su alcance → de ahí este ticket aparte.
+- **No es escalada de privilegios de datos** (el operario solo toca SUS Trabajos, SCRUM-23); es un problema de INTEGRIDAD FISCAL y de coherencia de permisos.
+- **Análisis — qué campos del PATCH gatear** (el handler mezcla campos de técnico y de admin, así que un `requireRole` a nivel de RUTA rompería lo legítimo del operario; hace falta gate POR CAMPO en el handler):
+  - **Técnico ✅ (trabajo de campo):** `status` (agendar/empezar/terminar — su día a día), `scheduledAt` (agendar), `notes`.
+  - **Admin-only ❌ (a gatear):** `tipoOperacion` (bandera FISCAL — el motivo del hallazgo); `assignedUserId` (reasignar el Trabajo a otro operario = supervisión/gestión de equipo, coherente con S1 "equipo = admin").
+  - **A decidir (producto):** `status: 'cerrado'` ("Cerrar trabajo") — ¿del operario (cierra lo que terminó) o del admin (cierre administrativo)? Hoy es del operario; no toca dinero.
+- **Fix propuesto:** en el handler, si viene `tipoOperacion`/`assignedUserId` y el rol no es admin → 403 (o ignorar esos campos). Añadir la evidencia al test de permisos A12.4 (`adminOnlyRoutes` es a nivel de ruta; esto es a nivel de campo → assert propio: PATCH `{tipoOperacion}` como técnico → 403). Sin schema.
+
 ### [x] P0-1 · Pago con tarjeta devuelve 401 Unauthorized
 - **Síntoma:** al pulsar "Pagar con tarjeta" en `/pay/invoice/:id` navega a `/pay/card/:id` y devuelve 401 (body "Unauthorized"). El cliente no puede pagar.
 - **Causa probable:** la ruta `/pay/card/:id` tiene middleware de autenticación (la usa el cliente NO logueado), o `STRIPE_SECRET_KEY` mal configurada / falla la creación de la Checkout Session.
