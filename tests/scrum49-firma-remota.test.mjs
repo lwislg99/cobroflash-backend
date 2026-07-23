@@ -16,6 +16,15 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
+// SCRUM-114: causa raíz de "enviar-para-firmar devuelve 200 con ok:false" en `main` — este
+// test depende de dry-run, pero solo lo DOCUMENTABA en el comentario de arriba, sin
+// fijarlo. Si quien lo invoca olvida el flag, sendWhatsAppTemplate cae en su guard
+// not_configured (WhatsApp no configurado en staging — hipótesis 1 del ticket, confirmada
+// reproduciendo el fallo exacto sin el flag) y el envío falla LEGÍTIMAMENTE — no es un bug
+// del endpoint, es una precondición del test que no se auto-imponía. ANTES de importar
+// dist (config se congela al cargar), igual que ya hacen scrum50-bot-albaranes y bot-suite.
+process.env.WHATSAPP_DRY_RUN = '1';
+
 const ENABLED = process.env.QA_DB_TEST === '1';
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 

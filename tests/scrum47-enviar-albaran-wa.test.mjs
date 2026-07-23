@@ -12,6 +12,13 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
+// SCRUM-114: este test depende de dry-run (el envío real a Meta no debe dispararse), pero
+// solo lo DOCUMENTABA en el comentario de arriba — si quien lo invoca olvida el flag, el
+// guard not_configured de sendWhatsAppTemplate devuelve `ok:false` y el test falla con un
+// mensaje que no dice nada del motivo real. ANTES de importar dist (config se congela al
+// cargar), igual que ya hacen scrum50-bot-albaranes y bot-suite.
+process.env.WHATSAPP_DRY_RUN = '1';
+
 const ENABLED = process.env.QA_DB_TEST === '1';
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
