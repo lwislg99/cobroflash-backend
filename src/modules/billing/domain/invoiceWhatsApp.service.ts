@@ -57,7 +57,9 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
           merchant_id: invoice.merchantId,
           customer_id: invoice.customerId, // cliente real de la factura (no duplicar)
           // Regla 24/26: un J-… es JUSTIFICANTE — el copy jamás dice "factura"
-          concept: `${isReceiptNumber(invoice.number) ? 'Justificante' : 'Factura'} ${invoice.number}`,
+          // SCRUM-33: etiqueta del tramo (SCRUM-27) tras el número — el cliente ve QUÉ
+          // tramo es este cobro (Anticipo/Hito 1/…). null en presets → se omite.
+          concept: `${isReceiptNumber(invoice.number) ? 'Justificante' : 'Factura'} ${invoice.number}${invoice.stageLabel ? ` — ${invoice.stageLabel}` : ''}`,
           amount: Number(invoice.total),
           currency: invoice.currency || 'EUR',
           method_preference: 'card',
