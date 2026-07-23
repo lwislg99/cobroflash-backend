@@ -424,10 +424,30 @@ Dos consecuencias operativas:
    quede ningún `create` a mano. Es la diferencia entre comprobar el síntoma cómodo (*¿hay import?*)
    y la propiedad (*¿queda algo sin cubrir?*) — ver la regla 5.
 
-> **Coordinación (regla del canal):** la suite y el seed **resetean la BD del merchant QA**.
-> Avisa por el canal antes de lanzarla — solo uno a la vez. `tests/` es **zona compartida**:
-> avisar antes de tocarlo (SCRUM-78 y SCRUM-79 arreglaron el mismo fichero el mismo día sin
-> saberlo, y chocaron en un merge).
+> **Coordinación (regla del canal) — ACTUALIZADA por SCRUM-84 (23-jul-2026).**
+>
+> **Ya NO hay que pedir ventana para correr los gateados.** Cada carril tiene su propia base
+> dentro del mismo Postgres de staging (`acela.proxy.rlwy.net:40802`):
+> **Sesión 1 → `yaqu_dev_javier`** · **Sesión 2 → `railway`**. Cada uno la apunta en
+> `DATABASE_URL_STAGING` de su `.env` local (nunca en el repo). La suite resetea la BD del
+> merchant QA **de tu base**, no de la del otro.
+>
+> **Lo que SÍ sigue necesitando aviso por el canal:**
+> - **El `db push` de SCHEMA.** Es serial por naturaleza: el carril A sirve el campo y luego
+>   cada carril lo aplica a SU base. Dos manos en `prisma/schema.prisma` siguen prohibidas.
+> - **Tocar `tests/`**, que sigue siendo **zona compartida** (SCRUM-78 y SCRUM-79 arreglaron
+>   el mismo fichero el mismo día sin saberlo, y chocaron en un merge). Un fichero **nuevo**
+>   no colisiona: si solo añades, no hace falta esperar turno.
+>
+> ⚠️ **El seed no es opcional en una base nueva.** `scripts/seed-staging.mjs` crea el merchant
+> demo `id=1` que exigen `a55-window-quote`, `bot-suite`, `scrum13-cobrado` y
+> `scrum52-operario` (`const MERCHANT_ID = 1`), y realinea la secuencia de Postgres. Sin él,
+> esos cuatro fallan **solo en un carril** — un rojo que no se reproduce en el otro, justo el
+> síntoma que SCRUM-84 vino a eliminar.
+>
+> `scripts/clean-staging-tests.mjs` lee `DATABASE_URL_STAGING`, así que **cada carril limpia
+> la suya**. Los 4 huérfanos `qa-s74-*` (#339, #340, #381, #383) viven en `railway` (Sesión 2);
+> medidos inocuos en SCRUM-79.
 
 ## Variables
 

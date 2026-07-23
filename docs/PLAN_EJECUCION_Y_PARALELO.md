@@ -79,7 +79,33 @@ Cada carril es DUEÑO de sus módulos. El dueño puede tocarlos sin preguntar; e
 5. **El segundo reconcilia:** si dos PRs tocan lo mismo, el que mergea segundo resuelve conflictos rebasando sobre main (patrón del PR #10). Los merges los hace Luis con "Create a merge commit" si hay 2+ commits.
 6. **Cero refactors oportunistas** (regla 9 del máster): hallazgo → ticket, no arreglo. Un refactor sorpresa en zona compartida es una granada de conflictos.
 7. **Jira:** Javier usa label `dev2` en sus tickets. Estados: En curso → En revisión (con PR) → **Finalizada SOLO la pone el asesor** tras verificación.
-8. **Una suite a la vez:** la suite de staging RESETEA la BD del merchant QA. Antes de lanzarla, avisar por el canal Luis↔Javier ("suite corriendo, staging ocupado ~10 min"). Si esto duele a menudo → ticket para segundo entorno staging.
+8. **~~Una suite a la vez~~ → UNA BD POR CARRIL (SCRUM-84, 23-jul-2026).** Ya no hay que
+   pedir ventana para correr tests gateados: cada carril tiene su propia base de datos
+   **dentro del mismo servicio Postgres de staging** (`postgres-staging`, host
+   `acela.proxy.rlwy.net:40802`). Coste cero — un servidor Postgres aloja N bases.
+
+   | Carril | Base de datos |
+   | --- | --- |
+   | **Sesión 1 (Javier / carril B)** | `yaqu_dev_javier` |
+   | **Sesión 2** | `railway` (la original) |
+
+   Cada uno la apunta en `DATABASE_URL_STAGING` de **su `.env` local** — nunca en el repo.
+   Las dos están sembradas con `scripts/seed-staging.mjs`, que es **obligatorio**: crea el
+   merchant demo `id=1` que exigen `a55-window-quote`, `bot-suite`, `scrum13-cobrado` y
+   `scrum52-operario`. Sin él, esos cuatro fallan **solo en un carril** — el rojo ambiguo
+   que este cambio vino a eliminar.
+
+   **`scripts/clean-staging-tests.mjs` pasa a ser por carril:** lee `DATABASE_URL_STAGING`,
+   así que cada uno limpia la suya. Ya no es una herramienta compartida.
+
+   > **Los 4 merchants huérfanos `qa-s74-*` (#339, #340, #381, #383) viven en `railway`**, o
+   > sea en el carril de la Sesión 2. Medidos **inocuos** en SCRUM-79 (limpiar de 12 a 2
+   > merchants movió la mediana de `SELECT 1` ocho milisegundos: ruido). Sin ticket; se
+   > anotan solo para que no desaparezcan del radar al cambiar de dueño.
+
+   **LO QUE SIGUE SIENDO SERIAL, y sí necesita aviso por el canal: el `db push` de schema.**
+   El carril A sirve el campo nuevo y **después cada carril lo aplica a SU base**. Dos manos
+   en `prisma/schema.prisma` siguen prohibidas (§3.3).
 
 ### 3.3 Zona roja: protocolo por archivo
 - **`prisma/schema.prisma` — SOLO carril Luis.** Es dominio del fundador (AA1.4). Si Javier necesita campos/tablas: los pide en su ticket (comentario con el modelo propuesto) → el carril de Luis los entrega en un PR aditivo previo → Javier construye encima. Nunca dos manos en el schema.
