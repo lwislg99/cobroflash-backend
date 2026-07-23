@@ -117,7 +117,11 @@ app.use(jsonError);
 // SCRUM-72: el estático de /invoices se ELIMINA (exponía facturas y presupuestos sin auth,
 // con nombres enumerables). Los PDFs viven ahora en storage/invoices, fuera de `public/`,
 // y solo salen por GET /admin/invoices/:id/pdf y GET /admin/quotes/:id/pdf.
-app.use('/outbox', express.static(outboxDir));
+// SCRUM-96: outboxDir ya vive fuera de `public/` (storage/outbox), pero el propio MOUNT debe
+// dejar de ser público en despliegues reales — igual que /dev, solo sirve para inspeccionar el
+// .eml de fallback en desarrollo (el enlace "Ver .eml" de /dev/email-invoice sigue funcionando
+// en local, donde NODE_ENV no es 'production'; en producción/staging desplegadas, 404 digno).
+if (config.NODE_ENV !== 'production') app.use('/outbox', express.static(outboxDir));
 // SCRUM-48: los PDFs de albarán NO se sirven como estático público (llevan nombre del
 // cliente, dirección de la obra y firma manuscrita = datos personales, y ALB-YYYY-NNN es
 // enumerable). Se sirven SIEMPRE por GET /admin/albaranes/:id/pdf (auth + tenancy).

@@ -8,7 +8,11 @@ import path from 'path';
 // Llevan NIF del emisor, datos del cliente e importes. Se sirven SOLO por los endpoints
 // autenticados GET /admin/invoices/:id/pdf y GET /admin/quotes/:id/pdf (auth + tenancy).
 export const invoicesDir = path.join(process.cwd(), 'storage', 'invoices');
-export const outboxDir = path.join(process.cwd(), 'public', 'outbox');
+// SCRUM-96 (seguridad/RGPD): outboxDir vivía DENTRO de `public/` — los .eml de fallback
+// (email completo + PDF adjunto en base64, nombre enumerable: quote-1.eml, invoice-2026-CF-
+// 001.eml) quedaban servidos sin auth por express.static(public/). Mismo patrón que SCRUM-72
+// (invoices) y SCRUM-48 (albaranes): fuera de `public/`, el mount HTTP se gatea aparte (app.ts).
+export const outboxDir = path.join(process.cwd(), 'storage', 'outbox');
 // SCRUM-48: los PDFs de albarán viven FUERA de `public/` (llevan nombre del cliente,
 // dirección de la obra y firma manuscrita = datos personales). Bajo `public/` los servía
 // el estático general (app.ts) aunque no hubiera un mount /albaranes dedicado. Se sirven
