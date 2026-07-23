@@ -320,6 +320,35 @@ Las tres reglas que salen de ahí, para cualquier test, assert o check nuevo:
    edición como única diferencia. Cuesta una ejecución y convierte «no creo que sea mío» en
    «no es mío, y aquí está la prueba».
 
+7. **Que un mecanismo pille algo por casualidad NO demuestra que cubra esa clase — puede
+   estar ocultando que no la cubre. (SCRUM-113)**
+
+   Es el modo que faltaba en la cadena. No es un verde falso: es **un ROJO que da falsa
+   confianza**. El mecanismo salta, tú arreglas el fallo, y te vas convencido de que esa
+   familia de errores está vigilada. Nadie vuelve a mirar si el hueco existe, precisamente
+   *porque* saltó.
+
+   **El caso real.** Un `replace` mal dirigido sacó un fichero del CENSO del ratchet de
+   SCRUM-113 (25 → 24). Saltó un assert y se arregló. Parecía cobertura. Al comprobarlo
+   —quitando una entrada del censo a propósito y corriendo el fichero— resultó que
+   **el censo no estaba vigilado por nada**: los tres asserts pasaban en verde con él
+   mutilado. Lo que había saltado era el assert del **tope**, por un descuadre *distinto*
+   que el mismo replace causó de paso. Si la edición hubiera acertado donde pretendía, el
+   daño al censo habría pasado inadvertido.
+
+   → Cuando un mecanismo cace algo, pregúntate **qué assert concreto lo cazó y si ese assert
+   cubre la clase del fallo, o solo un síntoma que coincidió**. La comprobación es barata:
+   provoca el fallo *puro*, sin el efecto colateral, y mira si sigue saltando.
+
+   **Corolario, y el hallazgo más incómodo del ticket:** el guard del censo ya decía en su
+   mensaje *«NO los quites del censo para poner esto en verde»*. Una prohibición **escrita**,
+   sin mecanismo detrás, dentro del fichero que existe para no repetir ese patrón. Se cerró
+   con un suelo (`CENSO_MIN`).
+
+   → De ahí el criterio general: **toda prohibición que escribas en un mensaje necesita un
+   assert que la respalde.** Si la única cosa que impide el atajo es la frase que lo prohíbe,
+   no lo impide — solo lo documenta.
+
 ### La conclusión de las seis reglas: mueve la garantía de la disciplina al mecanismo
 
 Las reglas de arriba son útiles, pero el 23-jul-2026 falló **una regla que estaba bien escrita y
