@@ -231,6 +231,23 @@ function cobroPillClass(estadoCobro) {
 }
 window.cobroPillClass = cobroPillClass;
 
+// SCRUM-31 (F1): estado del TRABAJO (FSM Parte L) → etiqueta + clase de status-pill CANÓNICA.
+// Antes hand-styled en JOB_STATE_META (jobsView, deuda SCRUM-11). El color codifica la
+// disponibilidad de cobro (verde=terminado→cobrar · ámbar=en curso · neutro=aún no / cerrado);
+// la ETIQUETA distingue el estado exacto (el color no es el único canal, DESIGN.md). Sin azul:
+// el sistema canónico solo tiene accepted/pending/draft/rejected.
+function jobStatusMeta(status) {
+  const M = {
+    pendiente_agendar: { label: 'Sin agendar', pillClass: 'status-pill-draft' },
+    agendado:          { label: 'Agendado',    pillClass: 'status-pill-draft' },
+    en_curso:          { label: 'En curso',    pillClass: 'status-pill-pending' },
+    terminado:         { label: 'Terminado',   pillClass: 'status-pill-accepted' },
+    cerrado:           { label: 'Cerrado',     pillClass: 'status-pill-draft' },
+  };
+  return M[status] || M.pendiente_agendar;
+}
+window.jobStatusMeta = jobStatusMeta;
+
 // WA-0b · chip de entrega de WhatsApp (J4). Recibe `waDelivery` del detalle
 // ({status, templateName, at} | null) y devuelve el HTML del chip, o '' si no hay envío.
 // Estados de Meta: sent → delivered → read | failed. Microcopy clara para el merchant.
