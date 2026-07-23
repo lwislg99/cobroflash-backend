@@ -516,6 +516,31 @@ Ruta nueva = declara rol mínimo; default Admin-only. **Lo hace cumplir un test,
 > Sin tocar la lógica de generación del XML ni el encadenamiento de huellas. Test end-to-end contra
 > staging con una factura F1 real con huella: técnico→403, flag OFF→404 sin fuga (ni el número de
 > factura aparece en ningún body), flag ON (override por merchant)→200 con el registro correcto.
+> **✅ SCRUM-98 · Guard A (23-jul-2026):** nace de la auditoría SCRUM-88 (`docs/AUDITORIA_SUPERFICIE_PUBLICA.md`),
+> que encontró SEIS puertas de la misma fuga (SCRUM-72/74/85/87/90/95) descubiertas por tropiezo, cada fix
+> destapando la siguiente — nadie se preguntaba de forma sistemática "¿esta ruta PÚBLICA resuelve su recurso
+> por un id adivinable o por algo verificado?". Mismo mecanismo que SCRUM-55 pero en el otro extremo: un test
+> de enumeración (`tests/scrum98-public-access-fail-closed.test.mjs`) recorre TODA la superficie pública
+> (todo lo montado antes de `requireAuth`, o gateado solo por `requireInternalSecret`/firma) y **falla si
+> alguna ruta no declara categoría de acceso** — `token` (campo opaco único), `internal`, `signed-webhook`
+> (firma fail-closed), `session-gated` (`requireAuth` real) o `no-sensitive-resource` — en
+> `src/core/http/publicAccessDeclarations.ts`. **Sin marcador en middleware** (a diferencia de `requireRole`
+> con `__requiredRole`): no hay una comprobación de runtime compartida que "token" pueda aprovechar, cada
+> handler hace su propio `findFirst`/`findUnique` — un marcador ahí sería teatro, no protección; la
+> declaración vive solo en el archivo y un humano la revisa en el diff (mismo patrón que `TECNICO_ALLOWED`).
+> `PUBLIC_PREFIXES` se extrajo a este archivo como fuente única, compartida con
+> `tests/scrum55-admin-fail-closed.test.mjs` (antes vivía duplicada ahí); `/dev` sigue en la lista para que
+> SCRUM-55 no lo marque huérfano, pero Guard A lo excluye de su propia exigencia (`GUARD_A_EXCLUDED_PREFIXES`)
+> porque solo se monta fuera de producción. **Estado al clasificar: 40 rutas públicas → 31 declaradas + 3
+> prefijos declarados en bloque (`/webhooks/psp`, `/charges`, `/invoice` — confían en que `requireInternalSecret`
+> siga puesto en el montaje de `app.ts`; limitación conocida, documentada, sin test que la cruce todavía) + 9
+> aparcadas con ratchet (`PUBLIC_ACCESS_PENDING_MAX=9`, solo mengua) y plazo 30-sep-2026: las 7 de la familia
+> `Quote` (nunca migró a token opaco, a diferencia de `Charge`/`Albaran` — `/pay/quote/:id[/accept|reject]`,
+> `POST /quote/:id/accept|reject|decision`; esta última es SCRUM-95) y las 2 de webhooks fail-open
+> (`/webhooks/mp`, `/webhooks/whatsapp` — SCRUM-99). **Límite honesto** (mismo que SCRUM-55 con la lógica de
+> rol): no verifica que un handler declarado `token` valide bien el token, solo que alguien lo afirmó y lo
+> revisó — el complemento natural sería un test de comportamiento, mismo papel que `tenancy-permisos.test.mjs`.
+> `npm test`: 192 · 164 pass · 0 fail · 28 skip (gateados), sin regresión en SCRUM-55.
 
 ## S2. Audit `F1-build mínimo + F2 completo`
 F1: registrar en la tabla de eventos existente `marcar_pagado_manual`, `deshacer_pago`, `anular_factura`, `cambio_flag` (con userId+ip). F2: `AuditLog{merchantId,userId,action,entityType,entityId,meta,ip,createdAt}` para login, datos fiscales, Connect onboard, export, archivado cliente, cambios de plan; vista Admin.
