@@ -64,7 +64,11 @@ router.get('/whatsapp', async (req, res) => {
   }
 });
 
-router.get('/team', async (req, res) => {
+// SCRUM-55: métricas por miembro del equipo. SOLO Admin — S1 marca "equipo" como ❌ para
+// Técnico, igual que /operarios de aquí abajo; no era una duda de producto, estaba decidido.
+// Esta es LA ruta que dio nombre al ticket y aun así acabó aparcada en la lista de las 25:
+// verificada en PRODUCCIÓN con sesión de Operario real devolvía 200 con los gates ya puestos.
+router.get('/team', requireRole('admin'), async (req, res) => {
   try {
     const metrics = await getTeamMetrics(req.merchantId);
     return res.json(metrics);

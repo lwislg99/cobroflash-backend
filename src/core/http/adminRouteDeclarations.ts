@@ -138,7 +138,6 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
   { method: 'GET', path: '/admin/metrics/funnel', tanda: 2, duda: 'Embudo comercial → probable admin' },
   { method: 'GET', path: '/admin/metrics/services', tanda: 2, duda: 'Servicios más vendidos → probable admin' },
   { method: 'GET', path: '/admin/metrics/whatsapp', tanda: 2, duda: 'Coste y entrega de WA del merchant → probable admin' },
-  { method: 'GET', path: '/admin/metrics/team', tanda: 2, duda: 'S1 dice "equipo ❌ Técnico" EXPLÍCITO → admin; confirmado 200 en prod' },
   { method: 'GET', path: '/admin/metrics/platform-funnel', tanda: 2, duda: 'Ya tiene gate propio por isVerifiedPlatformOwner (SCRUM-102, más estricto que admin) pero INLINE: hacerlo visible' },
 
   // TANDA 3 — configuración y datos en bloque. Ninguna es flujo de campo evidente;
@@ -157,8 +156,20 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
   { method: 'DELETE', path: '/admin/templates/:id', tanda: 3, duda: 'Ídem' },
 ];
 
-/** Tope del ratchet: la lista puede menguar, JAMÁS crecer. Bajarlo al vaciar cada tanda. */
-export const PENDIENTE_MAX = 25;
+/**
+ * Tope del ratchet: la lista puede menguar, JAMÁS crecer. Bajarlo al vaciar cada tanda.
+ *
+ * 25 → 24 (SCRUM-55): sale /admin/metrics/team, cerrada con requireRole tras verla en 200
+ * contra PRODUCCIÓN con sesión de Operario.
+ *
+ * BAJAR EL TOPE VA EN EL MISMO COMMIT QUE SACA LA ENTRADA, siempre. La lista estaba en
+ * 25/25 — en el límite exacto, sin holgura — que es lo que hace que el ratchet muerda.
+ * Dejarlo en 25 con 24 entradas NO pone el test en rojo: lo deja en verde con un hueco
+ * libre para aparcar la siguiente sin que nadie se entere. El ratchet no protege por
+ * existir, protege por ir apretado; un tope con holgura es el descuadre silencioso que
+ * este fichero existe para evitar (ver SCRUM-103 sobre qué más no valida).
+ */
+export const PENDIENTE_MAX = 24;
 
 /**
  * Fecha límite. Pasada esta fecha el test FALLA mientras queden pendientes.

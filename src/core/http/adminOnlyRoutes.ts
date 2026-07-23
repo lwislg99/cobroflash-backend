@@ -35,6 +35,10 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'POST', path: '/admin/connect/onboard' },
   // Supervisión por operario (SCRUM-24): S1 → equipo/supervisión es Admin
   { method: 'GET', path: '/admin/metrics/operarios' },
+  // SCRUM-55: su hermana /team salía 200 a un Operario en PRODUCCIÓN. Mismo criterio de S1
+  // ("equipo ❌ Técnico") y mismo router; estaba aparcada como "Nivel 2" por descuido, no
+  // por duda. Aquí queda su 403 exigido.
+  { method: 'GET', path: '/admin/metrics/team' },
   // Mantenimientos (A15): tocar planes = dinero futuro → admin
   { method: 'POST', path: '/admin/maintenance', body: { customerId: 1, title: 'x', intervalMonths: 12 } },
   { method: 'DELETE', path: '/admin/maintenance/:planId' },
