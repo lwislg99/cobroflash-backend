@@ -486,6 +486,31 @@
   junta (antes imposible: cada archivo se ejecutaba suelto en su propia tarea) expuso una
   inestabilidad de concurrencia contra staging, ajena a estos 4 archivos.
 
+### [ ] P3-11 · `tests/scrum50-bot-albaranes.test.mjs` roto por el fail-closed de SCRUM-99 (23-jul, hallazgo en SCRUM-69)
+- **Síntoma:** al correr la suite gateada completa en staging para SCRUM-69 (`QA_DB_TEST=1
+  WHATSAPP_DRY_RUN=1 npm run test:staging`), `scrum50-bot-albaranes.test.mjs` falla en el primer
+  `assert` («acuse del «Recibido»»). `scrum47-enviar-albaran-wa` y `scrum49-firma-remota` también
+  fallaron en el primer intento, pero por un error MÍO de invocación (olvidé `WHATSAPP_DRY_RUN=1`
+  en el comando) — al repetir con el flag correcto, esos dos pasan limpio. `scrum50` sigue
+  fallando incluso con el flag puesto.
+- **Causa raíz:** el test hace `fetch(base + '/webhooks/whatsapp', { method: 'POST', headers: {
+  'Content-Type': 'application/json' }, body: ... })` — **sin cabecera `X-Hub-Signature-256`**.
+  Nunca la llevó. Hasta SCRUM-99 (esta misma sesión, posterior al 22-jul) el webhook era
+  fail-open: sin `WHATSAPP_APP_SECRET` configurado, aceptaba igual. SCRUM-99 invirtió eso a
+  fail-closed (`isValidSignature`, `whatsappIncoming.routes.ts`) — correcto y deseado, es el fix
+  de seguridad — pero nadie volvió a `scrum50` para firmarle el payload de prueba. El log de la
+  ejecución lo confirma explícito: `🚨 [WA webhook] WHATSAPP_APP_SECRET no configurado — payload
+  RECHAZADO (fail-closed)`.
+- **No es un bug de producción** — el webhook real hace exactamente lo que debe (rechazar sin
+  firma válida). Es deuda de test: `scrum50` quedó desincronizado del propio fix de seguridad que
+  se supone que debe seguir cubriendo.
+- **Arreglo pendiente:** firmar el payload en el test con HMAC-SHA256 (mismo algoritmo que
+  `isValidSignature`) usando un `WHATSAPP_APP_SECRET` de prueba fijado en el propio test (o vía
+  `_staging-db.mjs`), igual que ya hace SCRUM-99/100 para sus propios tests del webhook.
+- **No bloquea SCRUM-69**: ninguno de los archivos que toca (`pendientesFacturar.service.ts`,
+  `customerAdmin.ts`, `albaranes.routes.ts`, schema `Customer.tipoDestinatario`, frontend) tiene
+  relación con el webhook entrante de WhatsApp.
+
 ### [x] P3-10 · Suite gateada COMPLETA (`QA_DB_TEST=1 npm test`) era inestable por concurrencia contra staging (22-jul, hallazgo en SCRUM-75; corregido en SCRUM-78)
 - **Síntoma:** con los ~19 archivos de test gateados corriendo TODOS a la vez (comportamiento por
   defecto de `node --test` con múltiples archivos: paraleliza por worker), el resultado NO era
