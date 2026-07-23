@@ -15,7 +15,7 @@ import { ZipArchive } from 'archiver';
 import fs from 'fs';
 import { ensureInvoicePdf } from '../../../../lib/invoicing';
 import {
-  CSV_PAQUETE, csvBody, csvRow, csvNum, MAX_FACTURAS_ZIP, resolverEntregaZip,
+  CSV_PAQUETE, csvBody, csvRow, csvNum, MAX_FACTURAS_ZIP, resolverEntregaZip, construirLeeme,
   buildClientes, buildFacturas, buildCobros, buildTrabajos, buildPresupuestos,
 } from '../../domain/exportData';
 
@@ -211,19 +211,15 @@ router.get('/datos.zip', async (req, res) => {
     // 4) LEEME.txt — qué lleva el paquete y qué NO (que nadie lo lea como algo fiscal
     //    que no es). Sin claims: describe el contenido, no promete cumplimiento.
     archive.append(
-      [
-        // El aviso va PRIMERO: si el paquete está incompleto es lo primero que se lee.
-        ...entrega.cabeceraLeeme,
-        `Paquete de datos de ${merchant.legalName || merchant.name}`,
-        `Generado: ${new Date().toISOString()}`,
-        `Rango: ${from ? from.toISOString().slice(0, 10) : 'desde el principio'} → ${to ? to.toISOString().slice(0, 10) : 'hoy'}`,
-        '',
-        'csv/       clientes, facturas, cobros, trabajos y presupuestos',
-        '           Formato: UTF-8 con BOM · separador ";" · decimales con coma (1234,50) · fechas AAAA-MM-DD.',
-        '           Preparado para abrirse con doble clic en Excel con configuración regional española.',
-        `facturas/  ${pdfsOk} de ${invoices.length} PDF de factura/justificante`,
-        conXml ? '' : 'Nota: este paquete no incluye el XML de registros de facturación.',
-      ].filter(Boolean).join('\n'),
+      construirLeeme({
+        nombre: merchant.legalName || merchant.name,
+        generado: new Date().toISOString(),
+        from, to,
+        pdfsOk,
+        pdfsTotal: invoices.length,
+        conXml,
+        cabecera: entrega.cabeceraLeeme,
+      }),
       { name: 'LEEME.txt' },
     );
 

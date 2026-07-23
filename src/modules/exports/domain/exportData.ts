@@ -286,6 +286,77 @@ export function resolverEntregaZip(p: { total: number; fallidos: string[]; fecha
   };
 }
 
+/**
+ * Contenido de LEEME.txt. Puro a propósito (mismo motivo que `resolverEntregaZip`):
+ * lo que este fichero DICE es parte del entregable — quien lo lee es un asesor o un
+ * inspector, no un desarrollador — así que se testea directo, sin BD ni gate.
+ *
+ * SCRUM-104: antes solo describía el FORMATO (separador, decimales) y no el CRITERIO de
+ * cada fichero. Sin eso, un asesor no puede interpretar lo que ve: si pide "julio" y una
+ * factura apunta a un cliente que no está en clientes.csv, no sabe si falta un dato o si
+ * el fichero sigue otra regla. Aquí se explica cada uno, en su idioma, no en el nuestro.
+ */
+export function construirLeeme(p: {
+  nombre: string;
+  generado: string;
+  from: Date | null;
+  to: Date | null;
+  pdfsOk: number;
+  pdfsTotal: number;
+  conXml: boolean;
+  cabecera: string[];
+}): string {
+  const { nombre, generado, from, to, pdfsOk, pdfsTotal, conXml, cabecera } = p;
+  const acotado = !!(from || to);
+  const periodo = acotado ? 'el periodo seleccionado' : 'todo tu histórico';
+
+  // El criterio de CADA fichero, en una línea. Los de EVENTOS (factura, cobro, trabajo,
+  // presupuesto) tienen fecha propia y filtrar por ella es correcto. `clientes` es una
+  // ENTIDAD: su fecha es la de ALTA, que no dice nada de cuándo se le facturó.
+  const criterios = [
+    `  clientes.csv       Clientes dados de ALTA en ${periodo}.`,
+    `  facturas.csv       Facturas emitidas en ${periodo}.`,
+    `  cobros.csv         Cobros registrados en ${periodo}.`,
+    `  trabajos.csv       Trabajos creados en ${periodo} (por fecha de alta, no de ejecución).`,
+    `  presupuestos.csv   Presupuestos creados en ${periodo}.`,
+    `  facturas/          El PDF de cada factura de csv/facturas.csv.`,
+  ];
+
+  // ⚠️ Solo se avisa si HAY rango: sin él no se filtra nada y no puede faltar ningún
+  // cliente, así que meter la advertencia sería alarmar sin motivo.
+  const avisoCartera = acotado
+    ? [
+        '',
+        'IMPORTANTE — por qué puede faltarte un cliente:',
+        '  clientes.csv lista las ALTAS del periodo, no toda tu cartera. Si facturaste a un',
+        '  cliente que diste de alta ANTES, su factura sí aparece en facturas.csv pero él no',
+        '  aparece en clientes.csv. No es un dato perdido: sigue en tu cuenta. Para verlos',
+        '  todos, descarga el paquete sin acotar fechas.',
+      ]
+    : [];
+
+  return [
+    // El aviso de paquete incompleto va PRIMERO: si falta algo, es lo primero que se lee.
+    ...cabecera,
+    `Paquete de datos de ${nombre}`,
+    `Generado: ${generado}`,
+    `Rango: ${from ? dia(from) : 'desde el principio'} → ${to ? dia(to) : 'hoy'}`,
+    '',
+    'QUÉ LLEVA CADA FICHERO',
+    ...criterios,
+    ...avisoCartera,
+    '',
+    'FORMATO DE LOS CSV',
+    '  UTF-8 con BOM · separador ";" · decimales con coma (1234,50) · fechas AAAA-MM-DD.',
+    '  Preparado para abrirse con doble clic en Excel con configuración regional española.',
+    '',
+    `facturas/  ${pdfsOk} de ${pdfsTotal} PDF de factura/justificante`,
+    // La nota del XML solo aparece con el flag OFF; los '' de arriba son separación
+    // deliberada, así que NO se filtran vacíos en bloque.
+    ...(conXml ? [] : ['Nota: este paquete no incluye el XML de registros de facturación.']),
+  ].join('\n');
+}
+
 /** Las 5 tablas del paquete S4 (el ticket no incluye gastos ni fees). */
 export const CSV_PAQUETE = [
   { nombre: 'clientes.csv', build: buildClientes },
