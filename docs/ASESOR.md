@@ -98,3 +98,4 @@ Español, directo, honesto. Opciones con recomendación, no decidir el negocio p
 2. Confirma la fase (`PLAN_EJECUCION_Y_PARALELO.md`).
 3. Filtro "¿acerca a clientes pagando?" para el orden.
 4. Autonomía por defecto; frenos solo los del §8. No reabras tickets ajenos. No toques schema de prod fuera del carril A.
+5. Lee `docs/ERRORES_ASESOR.md` — las reglas R1-R6 son de aplicación obligatoria.
