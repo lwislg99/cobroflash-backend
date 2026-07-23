@@ -117,6 +117,22 @@ export async function limpiarMerchant(prisma, merchantId, { intentos = 3 } = {})
  *     });
  *
  * El error del test se propaga TAL CUAL: la limpieza no lo sustituye ni lo enmascara.
+ *
+ * Defaults: SOLO `country: 'ES'` y `onboardingCompleted: true`. `planExpiresAt` NO es
+ * default a propósito (SCRUM-123) — decisión, no descuido. `planExpiresAt: null` (lo que
+ * sale sin fijarlo) ya deja pasar cualquier request: `requireActivePlan` solo bloquea con
+ * `plan === 'trial' && planExpiresAt && planExpiresAt < new Date()`, así que `null`
+ * cortocircuita esa condición a falso. Solo hace falta fijarlo (a una fecha FUTURA) si tu
+ * test llama a una de estas cuatro rutas, las ÚNICAS con `requireActivePlan`:
+ *   POST /admin/albaranes/:id/enviar-whatsapp
+ *   POST /admin/albaranes/:id/enviar-para-firmar
+ *   POST /admin/quotes/:id/send-whatsapp
+ *   POST /quote/create
+ * Si tu test NO llama a ninguna, no lo pongas — un default lo haría invisible en vez de
+ * evitarlo: SCRUM-123 encontró DOS ficheros (scrum66, scrum68) que lo arrastraban sin
+ * necesitarlo, uno de ellos con un comentario que JUSTIFICABA (mal) por qué hacía falta.
+ * Copiar el fixture de un test hermano sin mirar esta lista es exactamente el error que
+ * un default habría hecho imposible de detectar.
  */
 // SCRUM-113 (verificación post-cierre): `registrarBarridoFinal` estaba escrita, documentada
 // como la garantía nº3, y CERO ficheros la llamaban — la propia red de última instancia

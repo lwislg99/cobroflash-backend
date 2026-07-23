@@ -78,17 +78,14 @@ test('SCRUM-68: sella evidencias (remoto + in situ) y NUNCA expone ip/ua/hash', 
   // SCRUM-113: el merchant y TODO su montaje dentro de withMerchant; antes nacían fuera del
   // try. `legalName`/`taxId` se conservan (el PDF del albarán los usa).
   //
-  // ⚠️ `planExpiresAt` se arrastra TAL CUAL del fixture original, pero este test NO llama a
-  // ninguna de las cuatro rutas con requireActivePlan (enviar-whatsapp, enviar-para-firmar,
-  // send-whatsapp, quote/create): usa /albaran/:token/firmar, que es pública. O sea que el
-  // campo probablemente sobra aquí — copiado de un test hermano. No se quita en esta
-  // migración porque cambiar un fixture cuya necesidad no se ha trazado del todo es otro
-  // alcance; queda anotado como dato para la decisión de los defaults del helper (SCRUM-113).
+  // SCRUM-123: `planExpiresAt` SÍ sobraba — confirmado y retirado. Este test usa
+  // /albaran/:token/firmar (pública, sin requireActivePlan), no ninguna de las cuatro rutas
+  // gateadas (ver el docstring de withMerchant). Decisión ya tomada: no default en el
+  // helper, así que no hay motivo para conservarlo "por si acaso".
   try {
     await withMerchant(prisma, {
       name: 'QA S68', legalName: 'QA S68 SL', taxId: 'B68000000',
       email: `qa-s68-${stamp}@test.local`,
-      planExpiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000),
     }, async (merchant) => {
   const customer = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente 68', phone: `34602${stamp % 1000000}`, email: `cli-s68-${stamp}@test.local` } });
   const job = await prisma.job.create({ data: { merchantId: merchant.id, customerId: customer.id, status: 'terminado', titulo: 'C/ Sol 3', direccion: 'C/ Sol 3' } });
