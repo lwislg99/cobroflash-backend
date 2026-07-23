@@ -541,6 +541,24 @@ Ruta nueva = declara rol mínimo; default Admin-only. **Lo hace cumplir un test,
 > rol): no verifica que un handler declarado `token` valide bien el token, solo que alguien lo afirmó y lo
 > revisó — el complemento natural sería un test de comportamiento, mismo papel que `tenancy-permisos.test.mjs`.
 > `npm test`: 192 · 164 pass · 0 fail · 28 skip (gateados), sin regresión en SCRUM-55.
+> **✅ SCRUM-102 (23-jul-2026):** hallazgo MEDIO de SCRUM-88 — `fees.csv` (facturación de TODA la
+> plataforma) y `platform-funnel` dependían SOLO de `isOwnerEmail()` (comparación contra la env var
+> `OWNER_EMAILS`); verificado que hoy está bien puesta en prod, así que era endurecimiento, no
+> incidente. Precedente SCRUM-99 (un secreto de webhook faltó en prod sin que nadie lo supiera): la
+> seguridad de un dato multi-tenant no depende solo de una env var bien escrita. Fix: columna
+> aditiva `Merchant.isPlatformOwner` (`Boolean @default(false)`) + `isVerifiedPlatformOwner()`
+> (`env.ts`), que exige AMBOS factores (email en `OWNER_EMAILS` Y el flag en BD). Amplío a los 4
+> usos reales de `isOwnerEmail` (fees.csv, platform-funnel, perk "Pro sin caducidad" de
+> `GET /admin/me`, exención de paywall en `requireActivePlan`), no solo los dos con dato
+> multi-tenant — mismo concepto en los cuatro sitios, aprobado por el fundador. `warnEmptyOwnerEmails()`
+> (mismo patrón que `warnMissingWebhookSecrets` de SCRUM-99) avisa al arrancar en producción si
+> `OWNER_EMAILS` queda vacía. **Orden de despliegue deliberado** (decisión del fundador, evita la
+> ventana de auto-bloqueo): schema a staging → tests gateados → schema a PROD (columna en `false`,
+> inofensivo mientras el código viejo no la lee) → UPDATE marcando el owner real en PROD → recién
+> entonces se mergea el PR que despliega el código nuevo. Detalle del push (host-check, preview,
+> verificación, UPDATE) en `docs/MIGRATIONS_PENDING.md`. Hallazgo colateral (NO corregido aquí, fuera
+> de alcance): el cleanup de `tests/scrum74-recibo-token.test.mjs` falla por orden de borrado FK
+> (`customer.deleteMany()` antes que `customer_events`) — a capturar como ticket aparte.
 
 ## S2. Audit `F1-build mínimo + F2 completo`
 F1: registrar en la tabla de eventos existente `marcar_pagado_manual`, `deshacer_pago`, `anular_factura`, `cambio_flag` (con userId+ip). F2: `AuditLog{merchantId,userId,action,entityType,entityId,meta,ip,createdAt}` para login, datos fiscales, Connect onboard, export, archivado cliente, cambios de plan; vista Admin.
