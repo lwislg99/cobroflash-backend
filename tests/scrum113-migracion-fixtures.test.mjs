@@ -94,13 +94,14 @@ export const MIGRACION_PENDIENTE = [
   'scrum17-recapitulativa.test.mjs',
   // MIGRADOS — tanda 1: scrum24-operarios-metrics · tanda 2: scrum22-operario-readpath
   // tanda 3 (exports): scrum104-clientes-referenciados, scrum25-exports, scrum25-export-zip
-  // tanda 4 (grupo A, en curso): pdfs, scrum50-bot-albaranes
+  // tanda 4 (grupo A): pdfs, scrum50-bot-albaranes, scrum73-verifactu-gate,
+  //                    scrum76-email-adjunto
   'scrum47-enviar-albaran-wa.test.mjs',
   'scrum49-firma-remota.test.mjs',
   'scrum57-operario-propagacion.test.mjs', 'scrum66-tipo-operacion.test.mjs',
   'scrum68-evidencias-firma.test.mjs', 'scrum72-pdfs-privados.test.mjs',
-  'scrum73-verifactu-gate.test.mjs', 'scrum74-recibo-token.test.mjs',
-  'scrum76-email-adjunto.test.mjs', 'scrum85-pay-routes-token.test.mjs',
+  'scrum74-recibo-token.test.mjs',
+  'scrum85-pay-routes-token.test.mjs',
   'scrum90-pay-bank-mp-token.test.mjs', 'scrum92-login-operario.test.mjs',
   'tenancy-permisos.test.mjs',
   'webhooks-idempotencia.test.mjs',
@@ -112,8 +113,13 @@ export const MIGRACION_PENDIENTE = [
  * para que alguien aparque un fichero nuevo sin que nadie se entere. Es la lección literal
  * de SCRUM-103 (el ratchet de rutas se dejó en 25 con 24 entradas).
  */
-// 24 → 23 (tanda 1) → 22 (tanda 2) → 19 (tanda 3: los tres de exports)
-export const MIGRACION_MAX = 16;
+// 24 → 23 (t1) → 22 (t2) → 19 (t3: exports) → 17 → 14 (t4 + scrum94 de la sesión 1)
+//
+// El 14 salió de CONTAR la lista fusionada, no de elegir rama: este merge trajo 16 (la
+// sesión 1 sacando scrum94) contra 15 (el carril B sacando scrum73 y scrum76), y el
+// correcto no era ninguno de los dos. Es el escenario exacto que el assert de igualdad
+// exacta vino a hacer ruidoso.
+export const MIGRACION_MAX = 14;
 
 /**
  * Fecha límite. Pasada, el test falla mientras queden pendientes.

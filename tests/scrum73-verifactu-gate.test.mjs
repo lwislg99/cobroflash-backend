@@ -7,6 +7,7 @@ import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TE
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -18,12 +19,13 @@ test('SCRUM-73: verifactu.xml — técnico 403, flag OFF sin registros, flag ON 
   const base = `http://127.0.0.1:${server.address().port}`;
 
   const stamp = Date.now();
-  const merchant = await prisma.merchant.create({
-    data: {
-      name: 'QA VeriFactu Gate', country: 'ES', taxId: `B${String(stamp).slice(-8)}`,
-      email: `qa-vf-gate-${stamp}@test.local`, onboardingCompleted: true,
-    },
-  });
+
+  // SCRUM-113: el merchant y su montaje dentro de withMerchant; antes nacían fuera del try.
+  try {
+    await withMerchant(prisma, {
+      name: 'QA VeriFactu Gate', taxId: `B${String(stamp).slice(-8)}`,
+      email: `qa-vf-gate-${stamp}@test.local`,
+    }, async (merchant) => {
   const tecnico = await prisma.teamMember.create({
     data: { merchantId: merchant.id, name: 'QA Técnico', email: `qa-vf-tec-${stamp}@test.local`, role: 'tecnico', status: 'active' },
   });
@@ -52,7 +54,6 @@ test('SCRUM-73: verifactu.xml — técnico 403, flag OFF sin registros, flag ON 
     return cookie;
   };
 
-  try {
     const cookieAdmin = await mkCookie(null);
     const cookieTecnico = await mkCookie(tecnico.id);
     const url = `${base}/admin/exports/verifactu.xml`;
@@ -76,12 +77,9 @@ test('SCRUM-73: verifactu.xml — técnico 403, flag OFF sin registros, flag ON 
     const bodyOn = await rOn.text();
     assert.match(bodyOn, /RegistroFacturacionAlta/);
     assert.match(bodyOn, new RegExp(invoice.number), 'la factura real SÍ debe aparecer con el flag ON');
+    });
   } finally {
-    await prisma.invoice.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.customer.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.authSession.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.teamMember.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.merchant.delete({ where: { id: merchant.id } });
+    // Solo lo que NO es del merchant: el borrado de datos lo garantiza withMerchant.
     server.close();
     await prisma.$disconnect();
   }
