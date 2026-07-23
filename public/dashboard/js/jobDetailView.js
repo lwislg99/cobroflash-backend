@@ -363,6 +363,13 @@ async function renderJobDetailView(container, jobId) {
     b.addEventListener('click', fn);
     return b;
   };
+  // SCRUM-31 (F3): agrupa las acciones SECUNDARIAS en un «⋯» (overflowMenu) si hay ≥2;
+  // con 1 se deja visible (un kebab para una sola acción es peor). Ignora nulos.
+  const addSecondary = (acts, els) => {
+    const list = els.filter(Boolean);
+    if (list.length >= 2) acts.appendChild(overflowMenu(list));
+    else list.forEach((el) => acts.appendChild(el));
+  };
   // SCRUM-85: payToken (Charge.receiptToken), NUNCA el chargeId — /pay/invoice ya no acepta el id.
   const invWaFallback = (inv, payToken, onRetry) => {
     const token = payToken || inv.payToken;
@@ -829,7 +836,6 @@ async function renderJobDetailView(container, jobId) {
     };
 
     if (alb.estado === 'borrador') {
-      acts.appendChild(editBtn());
       const em = mkBtn('Emitir', async () => {
         em.disabled = true;
         try {
@@ -839,8 +845,8 @@ async function renderJobDetailView(container, jobId) {
         } catch (e) { setStatus('error', 'No se pudo emitir: ' + (e?.data?.message || e.message)); em.disabled = false; }
       });
       em.className = 'btn-primary btn-sm';
-      acts.appendChild(em);
-      acts.appendChild(fotoBtn());
+      acts.appendChild(em); // primaria visible
+      addSecondary(acts, [editBtn(), fotoBtn()]); // «⋯» Editar líneas · Añadir foto
     } else if (alb.estado === 'emitido') {
       acts.appendChild(pdfBtn());
       const fs = mkBtn('Firmar', () => {
@@ -857,9 +863,7 @@ async function renderJobDetailView(container, jobId) {
         });
       });
       fs.className = 'btn-primary btn-sm';
-      acts.appendChild(fs);
-      acts.appendChild(editBtn());
-      acts.appendChild(fotoBtn());
+      acts.appendChild(fs); // primaria visible (PDF ya está visible arriba)
       // SCRUM-49: enviar al cliente el link para FIRMAR a distancia (plantilla albaran_para_firmar_es).
       const firmarWaBtn = mkBtn('Enviar para firmar', async () => {
         firmarWaBtn.disabled = true;
@@ -878,7 +882,8 @@ async function renderJobDetailView(container, jobId) {
         firmarWaBtn.disabled = false;
         firmarWaBtn.textContent = orig;
       });
-      acts.appendChild(firmarWaBtn);
+      // SCRUM-31 (F3): secundarias del emitido → «⋯» (Editar líneas · Añadir foto · Enviar para firmar).
+      addSecondary(acts, [editBtn(), fotoBtn(), firmarWaBtn]);
     } else {
       acts.appendChild(pdfBtn()); // firmado = congelado: solo PDF
       // SCRUM-47: enviar la copia FIRMADA al WhatsApp del cliente (plantilla albaran_firmado_es).
@@ -978,15 +983,13 @@ async function renderJobDetailView(container, jobId) {
         }
 
         // Recordar pago → POST /admin/invoices/:id/send-reminder (solo si el cliente tiene teléfono).
-        if (job.customer?.phone) {
-          acts.appendChild(mkBtn('Recordar pago', async () => {
-            try {
-              await apiRequest(`/admin/invoices/${inv.id}/send-reminder`, { method: 'POST' });
-              showToast('✓ Recordatorio enviado por WhatsApp.');
-              refresh();
-            } catch { setStatus('error', 'Error al enviar el recordatorio.'); }
-          }));
-        }
+        const recordarBtn = job.customer?.phone ? mkBtn('Recordar pago', async () => {
+          try {
+            await apiRequest(`/admin/invoices/${inv.id}/send-reminder`, { method: 'POST' });
+            showToast('✓ Recordatorio enviado por WhatsApp.');
+            refresh();
+          } catch { setStatus('error', 'Error al enviar el recordatorio.'); }
+        }) : null;
 
         // Reenviar por WhatsApp → POST /admin/invoices/:id/resend-whatsapp (+ waFallbackBar en fallo).
         const wa = mkBtn('Reenviar por WhatsApp', async () => {
@@ -1009,18 +1012,19 @@ async function renderJobDetailView(container, jobId) {
             wa.disabled = false; wa.textContent = orig;
           }
         });
-        acts.appendChild(wa);
-
         // Enlace de pago público (ya existía; NO es acción de cobro). SCRUM-85: payToken, no chargeId.
+        let payLink = null;
         if (inv.payToken) {
-          const pay = document.createElement('a');
-          pay.className = 'btn-ghost btn-sm';
-          pay.style.textDecoration = 'none';
-          pay.href = `/pay/invoice/${inv.payToken}`;
-          pay.target = '_blank';
-          pay.textContent = 'Enlace de pago';
-          acts.appendChild(pay);
+          payLink = document.createElement('a');
+          payLink.className = 'btn-ghost btn-sm';
+          payLink.style.textDecoration = 'none';
+          payLink.href = `/pay/invoice/${inv.payToken}`;
+          payLink.target = '_blank';
+          payLink.textContent = 'Enlace de pago';
         }
+        // SCRUM-31 (F3): secundarias de la factura → «⋯» (Recordar · Reenviar · Enlace). Marcar como
+        // PAGADA y Confirmar Bizum se quedan VISIBLES (el momento del dinero, AB3 decisión c).
+        addSecondary(acts, [recordarBtn, wa, payLink]);
       }
       cobSec.appendChild(item);
     });
