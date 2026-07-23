@@ -538,6 +538,65 @@ combate — por eso, con la campaña cerrada, se documentó en vez de recontar: 
 > con un STOP de schema abierto** en el canal (AA1.4: los cambios de schema paran y piden OK). Si ambos
 > están limpios, no hay schema en vuelo por mucho diff que haya colgando en ramas o worktrees.
 
+### 🔑 Toda BD de staging necesita el MARCADOR (SCRUM-118)
+
+Desde SCRUM-118, `tests/_staging-db.mjs` **no** decide si una BD es staging mirando el texto
+de la URL. Se lo pregunta a la propia BD: tiene que llevar
+
+```sql
+COMMENT ON DATABASE <la base> IS 'YAQU_STAGING'
+```
+
+**Una BD sin marcar hace abort en cualquier test gateado.** Es fail-closed y es lo correcto:
+si no se puede *verificar* que es staging, no se corre — los gateados crean y **borran**
+merchants.
+
+**Cómo marcar una BD:**
+
+| Situación | Qué hacer |
+| --- | --- |
+| BD **nueva** | `node scripts/seed-staging.mjs` — ya la marca al sembrar |
+| BD **ya sembrada y en uso** | `DATABASE_URL="<su url>" node scripts/marcar-staging.mjs` |
+
+⚠️ **No re-siembres una BD en uso solo para marcarla:** el seed hace
+`merchant.update({ nextQuoteNumber })` sobre el merchant QA y **retrocedería su contador de
+numeración**. `marcar-staging.mjs` existe justo para eso: pone el comentario y **no toca ni
+una fila**.
+
+El marcador es **inerte** hasta que el guard lo lee, así que se puede poner con antelación
+sin cambiar ningún comportamiento — que es lo que permite marcar primero y desplegar después,
+sin ventana de abort.
+
+**Por qué un marcador y no una lista de hosts.** Hay las dos cosas, y no son lo mismo:
+
+* La **allowlist de host** (`scripts/_db-guard.mjs`, `assertSafeStagingUrl`) es una barrera
+  **barata y previa**, fail-closed: evita conectar a lo desconocido. **No verifica nada por sí
+  sola.** Añadir un host ahí **no** convierte esa BD en staging — seguirá siendo rechazada
+  hasta que lleve su comentario.
+* El **marcador** es la garantía, porque es una propiedad que **producción no puede tener por
+  accidente**: no viaja en `schema.prisma`, y prod se aprovisiona con el mismo `db push` que
+  staging, o sea que recibe el schema y nada más.
+
+Es la **regla 5** de la sección anterior aplicada a la salvaguarda más cara del repo:
+comprobar la propiedad («esta BD es staging») en vez del síntoma («el texto no dice
+`autorack`»). El guard anterior no protegía porque fuera estricto — protegía porque nadie
+había tenido a mano una URL de producción con otro host.
+
+⚠️ **Los scripts que ESCRIBEN** (`seed-staging`, `marcar-staging`) llevan la allowlist de host
+**incondicional**, fuera de todo gate: escriben pase lo que pase, así que se protegen pase lo
+que pase. `marcar-staging` en particular es **el único tool capaz de convertir producción en
+falso-staging** — si le pusiera el marcador a prod, el guard la aceptaría. Su protección no
+puede ser el marcador (él lo pone) ni la subcadena vieja: es la allowlist, y por eso no se
+desactiva. Ojo al llamarla: `assertSafeStagingUrl` **devuelve `{safe, reason}`, no aborta**.
+Un valor de retorno se puede ignorar; en un script que escribe va envuelto en un
+`process.exit(1)` explícito y en el cuerpo del módulo, no dentro de una función que alguien
+pueda no llamar.
+
+> **Nota de historia:** SCRUM-118 se resolvió en **dos PR en paralelo** (#125 de carril A y el
+> de carril B) y se reconciliaron a mano, porque atacaban mitades distintas: uno la
+> **pertenencia de la URL**, el otro la **propiedad de la BD**. No competían. Si vuelves a ver
+> dos guards, no sobra ninguno — el orden es allowlist → conectar → marcador.
+
 ## Variables
 
 - `BASE` = URL de staging (p.ej. `https://<staging>.up.railway.app`)
