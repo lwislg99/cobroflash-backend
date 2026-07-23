@@ -107,6 +107,29 @@ Las tres reglas que salen de ahí, para cualquier test, assert o check nuevo:
    agujero de permisos vivo en producción (`GET /admin/products/export`, el tarifario completo
    descargable por un Técnico), no un falso positivo.
 
+5. **Verifica el EFECTO de un comando, no que lo lanzaste — y con `git worktree`, verifica la BASE
+   de la rama antes de trabajar.** Este repo se usa con dos worktrees (carril A y carril B). Con
+   `main` abierto en el otro, `git checkout main` **falla**: `fatal: 'main' is already used by
+   worktree at …`, exit **128**. Correcto y ruidoso.
+
+   Pero escrito así — que es como pasó de verdad en SCRUM-103 —:
+
+   ```bash
+   git checkout main 2>&1 | tail -1 && git checkout -b mi-rama    # ⚠️ NO
+   ```
+
+   la tubería devuelve el exit de `tail` (**0**), el `&&` continúa, y la rama nueva sale **de donde
+   estuvieras**. Salió de una rama sin mergear y siete commits por detrás de `main` — incluido el
+   commit que añadía esta misma sección. No se detectó al hacer el checkout: se detectó al buscar
+   un texto del runbook y no encontrarlo.
+
+   **Es la trampa 5 otra vez**, no una clase nueva: git hizo su trabajo, la tubería se comió la
+   señal. Dos capas de defensa:
+   - No canalizar comandos cuyo éxito importa (trampa 5).
+   - Y aun así, **confirmar la base antes de empezar**: `git merge-base --is-ancestor origin/main HEAD`
+     — o al menos `git log --oneline -1` y comprobar que cuelga de donde crees. Cuesta un segundo y
+     evita rebasar a destiempo con el trabajo ya hecho encima.
+
 > **Coordinación (regla del canal):** la suite y el seed **resetean la BD del merchant QA**.
 > Avisa por el canal antes de lanzarla — solo uno a la vez. `tests/` es **zona compartida**:
 > avisar antes de tocarlo (SCRUM-78 y SCRUM-79 arreglaron el mismo fichero el mismo día sin
