@@ -12,7 +12,7 @@ import { normalizePhone, formatMoneyEs } from '../../../core/utils/utils';
 import { sendWhatsAppWindowFirst } from '../../../integrations/whatsapp';
 import { buildPaymentRequest } from '../../../integrations/whatsappTemplates';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
-import { isReceiptNumber } from '../../invoicing/domain/invoiceNumber.service';
+import { isReceiptNumber, appendStageLabel } from '../../invoicing/domain/invoiceNumber.service';
 import { ensureChargeReceiptToken } from '../../../lib/invoicing';
 
 export type SendInvoiceWAResult = {
@@ -59,7 +59,7 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
           // Regla 24/26: un J-… es JUSTIFICANTE — el copy jamás dice "factura"
           // SCRUM-33: etiqueta del tramo (SCRUM-27) tras el número — el cliente ve QUÉ
           // tramo es este cobro (Anticipo/Hito 1/…). null en presets → se omite.
-          concept: `${isReceiptNumber(invoice.number) ? 'Justificante' : 'Factura'} ${invoice.number}${invoice.stageLabel ? ` — ${invoice.stageLabel}` : ''}`,
+          concept: `${isReceiptNumber(invoice.number) ? 'Justificante' : 'Factura'} ${appendStageLabel(invoice.number, invoice.stageLabel)}`,
           amount: Number(invoice.total),
           currency: invoice.currency || 'EUR',
           method_preference: 'card',
@@ -92,7 +92,7 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
     customerId: invoice.customerId,
     windowText:
       `Hola ${invoice.customer.name || 'Cliente'} 👋\n` +
-      `${businessName} te envía el ${docLabel} ${invoice.number}.\n` +
+      `${businessName} te envía el ${docLabel} ${appendStageLabel(invoice.number, invoice.stageLabel)}.\n` +
       `A pagar: ${amountWithCurrency}\n` +
       `Paga de forma segura desde aquí 👇\n` +
       `https://yaqu.app/pay/invoice/${payToken}`,
@@ -100,15 +100,17 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
     windowCta: {
       bodyText:
         `Hola ${invoice.customer.name || 'Cliente'} 👋\n` +
-        `*${businessName}* te envía el ${docLabel} ${invoice.number}.\n` +
+        `*${businessName}* te envía el ${docLabel} ${appendStageLabel(invoice.number, invoice.stageLabel)}.\n` +
         `A pagar: *${formatMoneyEs(invoice.total, invoice.currency)}*`,
       buttonText: `Pagar ${formatMoneyEs(invoice.total, invoice.currency)}`,
       url: `https://yaqu.app/pay/invoice/${payToken}`,
     },
+    // SCRUM-33: sin variable nueva en la plantilla Meta (ya aprobada) — el label del
+    // tramo viaja DENTRO del valor de "invoiceNumber", que ya es una variable propia.
     template: buildPaymentRequest({
       customerName: invoice.customer.name || 'Cliente',
       businessName,
-      invoiceNumber: invoice.number,
+      invoiceNumber: appendStageLabel(invoice.number, invoice.stageLabel),
       amountWithCurrency,
       urlToken: payToken,
     }),
