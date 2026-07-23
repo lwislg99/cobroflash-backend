@@ -1,7 +1,6 @@
 // src/modules/exports/app/routes/exports.routes.ts
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
-import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
 import { config, isVerifiedPlatformOwner } from '../../../../core/config/env';
 import { isFlagEnabled } from '../../../../core/flags';
 import { requireRole } from '../../../../core/http/authMiddleware';
@@ -14,6 +13,7 @@ import { estadoCobroFor } from '../../../jobs/domain/job.service';
 import { ZipArchive } from 'archiver';
 import fs from 'fs';
 import { ensureInvoicePdf } from '../../../../lib/invoicing';
+import { buildVerifactuRegistrosXml } from '../../../invoicing/domain/verifactu.service'; // SCRUM-82
 import {
   construirCsvsDelPaquete, csvBody, csvRow, csvNum, MAX_FACTURAS_ZIP, resolverEntregaZip, construirLeeme,
   buildClientes, buildFacturas, buildCobros, buildTrabajos, buildPresupuestos,
@@ -109,12 +109,14 @@ router.get('/datos.zip', async (req, res) => {
     if (!merchant) return res.status(404).json({ error: 'not_found' });
 
     // Facturas del rango: solo ids + número (el PDF se genera después, de una en una).
+    // createdAt: SCRUM-82 la necesita para saber qué AÑOS naturales toca el rango (el XML
+    // VeriFactu se genera por ejercicio, no por el rango pedido — ver más abajo).
     const invoices = await prisma.invoice.findMany({
       where: {
         merchantId: req.merchantId,
         ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } } : {}),
       },
-      select: { id: true, number: true },
+      select: { id: true, number: true, createdAt: true },
       orderBy: { createdAt: 'asc' },
     });
 
@@ -150,6 +152,38 @@ router.get('/datos.zip', async (req, res) => {
       }
     }
     const pdfsOk = listos.length;
+
+    // ── FASE 1b: VeriFactu — gate de SCRUM-73 (INVOICING_ES_ENABLED), reutilizado tal
+    // cual. Un XML por AÑO NATURAL que toque el rango pedido, no por el rango en sí: el
+    // registro RRSIF se organiza por ejercicio y la cadena de huellas es anual — recortar
+    // por meses rompería el encadenamiento, y mezclar años no representaría un registro
+    // válido (decisión del fundador, SCRUM-82).
+    //
+    // ⚠️ ASIMETRÍA DELIBERADA con los PDFs de arriba: un PDF que falla se anota en
+    // `fallidos` y el paquete sigue (aviso, no error). Un XML VeriFactu que falla ABORTA
+    // el ZIP entero, ANTES de la primera cabecera — nunca "el LEEME dice que incluye
+    // VeriFactu" sobre un paquete al que realmente le falta. Mejor un error explícito que
+    // un entregable de inspección que miente sobre su propio contenido.
+    const conXml = isFlagEnabled('INVOICING_ES_ENABLED', { merchant })
+      && merchant.country === 'ES' && !!merchant.taxId;
+
+    const xmlPorAnio: Array<{ year: number; xml: string }> = [];
+    if (conXml) {
+      const anios = [...new Set(invoices.map((inv) => inv.createdAt.getFullYear()))].sort();
+      try {
+        for (const year of anios) {
+          const { xml } = await buildVerifactuRegistrosXml({ merchantId: req.merchantId, year });
+          xmlPorAnio.push({ year, xml });
+        }
+      } catch (e: any) {
+        console.error('[exports/datos.zip] VeriFactu XML error:', e?.message || e);
+        return res.status(500).json({
+          error: 'verifactu_xml_failed',
+          message: 'No se pudo generar el registro VeriFactu del paquete. No se ha entregado ningún archivo — mejor un error que un paquete incompleto sin avisar.',
+        });
+      }
+    }
+
     // Decisión de entrega (pura, testeada aparte): nombre del fichero + avisos.
     const entrega = resolverEntregaZip({
       total: invoices.length,
@@ -165,6 +199,7 @@ router.get('/datos.zip', async (req, res) => {
       pdfs_incluidos: pdfsOk,
       pdfs_fallidos: fallidos.length,
       completo,
+      verifactu_anios: xmlPorAnio.map((x) => x.year), // SCRUM-82
     });
 
     // ── FASE 2: cabeceras (ya con el nombre honesto) y streaming ────────────
@@ -203,17 +238,16 @@ router.get('/datos.zip', async (req, res) => {
       archive.append(fs.createReadStream(p.diskPath), { name: `facturas/${p.numero}.pdf` });
     }
 
-    // 3) XML VeriFactu — gate de SCRUM-73 (regla 24/26): solo aplicaría con el flag ON.
-    //    Hoy INVOICING_ES_ENABLED está OFF para todos los merchants ES, así que el XML
-    //    NO entra en el paquete y se omite EN SILENCIO, sin error, como pide el brief.
-    //    ⚠️ El camino ON queda pendiente a propósito: generarlo aquí obligaría a extraer
-    //    el constructor RRSIF de GET /verifactu.xml, y tocar el generador fiscal es STOP
-    //    en este ticket. Cuando se encienda el flag hay que decidir cómo compartirlo.
-    const conXml = isFlagEnabled('INVOICING_ES_ENABLED', { merchant })
-      && merchant.country === 'ES' && !!merchant.taxId;
+    // 3) XML VeriFactu — ya generado y verificado en la FASE 1b (arriba). Si conXml es
+    //    true, xmlPorAnio SIEMPRE tiene contenido (si hubiera fallado, ya habríamos
+    //    devuelto el error antes de llegar aquí) — un archivo por año natural.
+    for (const { year, xml } of xmlPorAnio) {
+      archive.append(xml, { name: `facturas/verifactu_${year}.xml` });
+    }
 
     // 4) LEEME.txt — qué lleva el paquete y qué NO (que nadie lo lea como algo fiscal
-    //    que no es). Sin claims: describe el contenido, no promete cumplimiento.
+    //    que no es). Sin claims: describe el contenido REAL, nunca "conXml" como booleano
+    //    (SCRUM-82: un LEEME que dice más de lo que hay es peor que uno que dice menos).
     archive.append(
       construirLeeme({
         nombre: merchant.legalName || merchant.name,
@@ -221,7 +255,7 @@ router.get('/datos.zip', async (req, res) => {
         from, to,
         pdfsOk,
         pdfsTotal: invoices.length,
-        conXml,
+        xmlAnios: xmlPorAnio.map((x) => x.year),
         cabecera: entrega.cabeceraLeeme,
       }),
       { name: 'LEEME.txt' },
@@ -367,101 +401,9 @@ router.get('/verifactu.xml', requireRole('admin'), async (req, res) => {
       });
     }
 
-    const invoices = await prisma.invoice.findMany({
-      where: {
-        merchantId: req.merchantId,
-        createdAt: {
-          gte: new Date(year, 0, 1),
-          lte: new Date(year, 11, 31, 23, 59, 59, 999),
-        },
-      },
-      orderBy: { createdAt: 'asc' },
-      include: {
-        customer:  { select: { name: true } },
-        rectifies: { select: { number: true, createdAt: true } },
-      },
-    });
-
-    const x = (v: unknown) =>
-      String(v ?? '').replace(/[&<>"']/g, (s) =>
-        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' } as any)[s]);
-    const fechaES = (d: Date) =>
-      `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
-
-    const nombreEmisor = merchant.legalName || merchant.name;
-    // ⚠️ NO UNIFICAR con el formato de los CSV (SCRUM-86). Aquí los importes van con
-    // PUNTO decimal (`121.00`) porque lo exige el esquema de la AEAT: el tipo es un
-    // decimal XSD, y el separador decimal de XSD es el punto, no depende del locale.
-    // Este fichero no lo abre Excel — lo lee Hacienda. Cambiarlo a coma para que
-    // "cuadre con los CSV" invalidaría el registro de facturación.
-    const registros = invoices.map((inv) => {
-      const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
-      const vat = calcVatBreakdown(lines);
-      const desglose = vat.entries.map((e) => `
-      <DetalleDesglose>
-        <Impuesto>01</Impuesto>
-        <TipoImpositivo>${e.rate}</TipoImpositivo>
-        <BaseImponibleOimporteNoSujeto>${e.base.toFixed(2)}</BaseImponibleOimporteNoSujeto>
-        <CuotaRepercutida>${e.cuota.toFixed(2)}</CuotaRepercutida>
-      </DetalleDesglose>`).join('');
-
-      const rectificadas = inv.type === 'R1' && inv.rectifies ? `
-    <FacturasRectificadas>
-      <IDFacturaRectificada>
-        <IDEmisorFactura>${x(merchant.taxId)}</IDEmisorFactura>
-        <NumSerieFactura>${x(inv.rectifies.number)}</NumSerieFactura>
-        <FechaExpedicionFactura>${fechaES(inv.rectifies.createdAt)}</FechaExpedicionFactura>
-      </IDFacturaRectificada>
-    </FacturasRectificadas>` : '';
-
-      const encadenamiento = inv.vfHash ? `
-    <Encadenamiento>${inv.vfPrevHash && inv.vfPrevHash !== '0' ? `
-      <RegistroAnterior><Huella>${x(inv.vfPrevHash)}</Huella></RegistroAnterior>` : `
-      <PrimerRegistro>S</PrimerRegistro>`}
-    </Encadenamiento>
-    <TipoHuella>01</TipoHuella>
-    <Huella>${x(inv.vfHash)}</Huella>` : '';
-
-      return `
-  <RegistroFacturacionAlta>
-    <IDVersion>1.0</IDVersion>
-    <IDFactura>
-      <IDEmisorFactura>${x(merchant.taxId)}</IDEmisorFactura>
-      <NumSerieFactura>${x(inv.number)}</NumSerieFactura>
-      <FechaExpedicionFactura>${fechaES(inv.createdAt)}</FechaExpedicionFactura>
-    </IDFactura>
-    <NombreRazonEmisor>${x(nombreEmisor)}</NombreRazonEmisor>
-    <TipoFactura>${inv.type === 'R1' ? 'R1' : 'F1'}</TipoFactura>${rectificadas}
-    <DescripcionOperacion>${x(lines[0]?.concept || `Factura ${inv.number}`)}</DescripcionOperacion>
-    <Destinatarios>
-      <IDDestinatario><NombreRazon>${x(inv.customer?.name || 'Cliente')}</NombreRazon></IDDestinatario>
-    </Destinatarios>
-    <Desglose>${desglose || `
-      <DetalleDesglose>
-        <Impuesto>01</Impuesto>
-        <TipoImpositivo>0</TipoImpositivo>
-        <BaseImponibleOimporteNoSujeto>${Number(inv.total).toFixed(2)}</BaseImponibleOimporteNoSujeto>
-        <CuotaRepercutida>0.00</CuotaRepercutida>
-      </DetalleDesglose>`}
-    </Desglose>
-    <CuotaTotal>${vat.cuota.toFixed(2)}</CuotaTotal>
-    <ImporteTotal>${Number(inv.total).toFixed(2)}</ImporteTotal>${encadenamiento}
-    <SistemaInformatico><NombreSistemaInformatico>YaQu</NombreSistemaInformatico></SistemaInformatico>
-    <FechaHoraHusoGenRegistro>${inv.createdAt.toISOString()}</FechaHoraHusoGenRegistro>
-  </RegistroFacturacionAlta>`;
-    }).join('\n');
-
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<RegistrosFacturacion generadoPor="YaQu" ejercicio="${year}" fechaGeneracion="${new Date().toISOString()}">
-  <Cabecera>
-    <ObligadoEmision>
-      <NombreRazon>${x(nombreEmisor)}</NombreRazon>
-      <NIF>${x(merchant.taxId)}</NIF>
-    </ObligadoEmision>
-  </Cabecera>
-${registros}
-</RegistrosFacturacion>
-`;
+    // SCRUM-82: constructor RRSIF compartido con GET /datos.zip — misma fuente, sin
+    // divergencia posible entre el endpoint suelto y el que va dentro del paquete.
+    const { xml } = await buildVerifactuRegistrosXml({ merchantId: req.merchantId, year });
 
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="verifactu_${year}.xml"`);
