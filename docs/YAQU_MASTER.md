@@ -485,6 +485,25 @@ Ruta nueva = declara rol mínimo; default Admin-only. **Lo hace cumplir un test,
 > dentro del handler — protege igual pero es invisible para la red; y donde el router entero sea Admin, el gate
 > va en el MONTAJE (los 4 routers así montados tenían 0 agujeros; los que gateaban ruta a ruta los tenían justo
 > en las añadidas después). Estado de la auditoría y rutas aún sin clasificar: U2.
+> **✅ SCRUM-92 (22-jul-2026, AUTH):** `/auth/login` (`requestMagicLink`) solo buscaba la cuenta
+> en `Merchant` — un Operario (`TeamMember`) salía por un `return` silencioso: sin token, sin
+> email, con la pantalla mintiéndole ("recibirás el enlace en breve", que nunca llegaba).
+> Afectaba a TODOS los operarios desde el **segundo** acceso (el primero funciona vía
+> `inviteTeamMember`, otro camino) — cerrar sesión, cambiar de móvil o que caduque la cookie los
+> dejaba fuera para siempre, sin más salida que el Admin reenviando la invitación (que nadie
+> sabía que hacía falta). Bloqueaba el plan Equipo. Fix: `requestMagicLink` también busca en
+> `TeamMember` y emite el MISMO `AuthSession {merchantId, teamMemberId, type:'magic_link'}` que
+> ya crea `inviteTeamMember` — `verifyMagicLink`/`getSession`/`authMiddleware.ts` **no se
+> tocan**, así que el rol/tenancy de la sesión resultante no es lógica nueva (verificado
+> end-to-end en el test: token real → verify real → cookie real → 403 real en ruta admin-only
+> con la sesión del operario). `suspended` = mismo trato que "no existe" (logueado en servidor,
+> nunca revelado al usuario); `invited` se deja pasar a propósito (se activa al canjear, como
+> la invitación). Preguntas abiertas del ticket resueltas contra el schema: multi-merchant
+> imposible (`TeamMember.email` `@unique` global); colisión Merchant/TeamMember con el mismo
+> email — rara pero posible — gana el Merchant. Respuesta 200 genérica de `/auth/login` intacta
+> (anti-enumeración). Único archivo tocado: `auth.service.ts`. Sin schema. Hallazgo colateral NO
+> corregido (`docs/BUGS.md` P0-AUTH-1): `registerMerchant` (`/auth/register`) no comprueba
+> `TeamMember.email`, mismo tipo de colisión pero auto-inducida — fuera de alcance.
 > **✅ SCRUM-73 (22-jul-2026):** `GET /admin/exports/verifactu.xml` NO cumplía esta tabla — generaba
 > registros RRSIF (huellas + encadenamiento) sin consultar `INVOICING_ES_ENABLED` y era accesible a
 > Técnico. Con SIF-1 sin cerrar y el flag OFF, los merchants ES reales emiten justificantes (J-), no
