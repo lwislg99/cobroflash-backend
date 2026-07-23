@@ -14,6 +14,21 @@ import { recalcJobCobradoForCharge } from '../../../jobs/domain/job.service'; //
 
 const router = Router();
 
+// SCRUM-99/100: FAIL-CLOSED — el secreto es obligatorio, mismo patrón que /webhooks/stripe.
+// Extraída (SCRUM-100) para poder testear el guard sin BD: /webhooks/mp responde 200 a MP
+// SIEMPRE de inmediato (para evitar reintentos, antes de validar nada — ver el handler), así
+// que el status HTTP nunca distingue "rechazado" de "procesado"; esta función sí lo hace.
+export function checkMpWebhookAuth(params: {
+  xSignature: string;
+  xRequestId: string;
+  dataId: string;
+  secret: string;
+}): 'no-secret' | 'invalid' | 'ok' {
+  if (!params.secret) return 'no-secret';
+  const valid = verifyMpWebhookSignature(params);
+  return valid ? 'ok' : 'invalid';
+}
+
 /**
  * POST /webhooks/mp
  * IPN de Mercado Pago: recibe notificaciones de pagos.
@@ -36,20 +51,14 @@ router.post('/', async (req, res) => {
     const xSignature  = String(req.headers['x-signature'] || '');
     const xRequestId  = String(req.headers['x-request-id'] || '');
 
-    // SCRUM-99: FAIL-CLOSED — el secreto es obligatorio, mismo patrón que /webhooks/stripe.
-    // Antes: sin MP_WEBHOOK_SECRET, se procesaba el payload SIN verificar (fail-open) —
-    // cualquiera podía marcar un cobro como pagado sin haber pagado.
-    if (!config.MP_WEBHOOK_SECRET) {
+    // Antes de SCRUM-99: sin MP_WEBHOOK_SECRET, se procesaba el payload SIN verificar
+    // (fail-open) — cualquiera podía marcar un cobro como pagado sin haber pagado.
+    const authResult = checkMpWebhookAuth({ xSignature, xRequestId, dataId: mpPaymentId, secret: config.MP_WEBHOOK_SECRET });
+    if (authResult === 'no-secret') {
       console.error('🚨 [mpWebhook] MP_WEBHOOK_SECRET no configurado — payload RECHAZADO (fail-closed). Configúralo en Railway.');
       return;
     }
-    const valid = verifyMpWebhookSignature({
-      xSignature,
-      xRequestId,
-      dataId: mpPaymentId,
-      secret: config.MP_WEBHOOK_SECRET,
-    });
-    if (!valid) {
+    if (authResult === 'invalid') {
       console.error('[mpWebhook] Firma inválida — payload ignorado');
       return;
     }
