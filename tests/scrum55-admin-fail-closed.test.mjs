@@ -262,6 +262,12 @@ test('SCRUM-55: la lista de pendientes mengua (ratchet + caducidad)', (t) => {
   );
 
   // El ratchet impide que crezca; la caducidad impide que se quede quieta.
+  //
+  // ── SCRUM-124 · CONVENCIÓN ACEPTADA ───────────────────────────────────────────────────
+  // El mensaje de abajo dice «mueve REVISAR_ANTES_DE con el OK del fundador». Nada lo hace
+  // cumplir, y no puede: un test no sabe si hubo OK. Se acepta porque mover la fecha es una
+  // línea en el diff de un PR, con fecha y autor en el blame — deliberado y revisable.
+  // Lo que sí tiene mecanismo es que la fecha NO se pueda ignorar: pasada, esto sale rojo.
   const hoy = new Date().toISOString().slice(0, 10);
   if (PENDIENTE_CLASIFICAR.length > 0) {
     assert.ok(
@@ -311,6 +317,13 @@ test('SCRUM-55: la lista de pendientes mengua (ratchet + caducidad)', (t) => {
 // falso NEGATIVO (se cuela una duda floja) a un falso POSITIVO (rojo con trabajo
 // legítimo aparcado): lo segundo hace que alguien relaje el test para seguir, y un
 // test relajado para seguir es cómo empezó todo esto.
+//
+// ── SCRUM-124 · CONVENCIÓN ACEPTADA, Y AQUÍ PARA LA REGRESIÓN ────────────────────
+// Esta prohibición va dirigida a quien EDITE el test, no a quien lo ejecute, y por eso
+// no puede tener mecanismo: sería un test que vigila cómo se escriben los tests, y ese
+// necesitaría otro. La cadena termina aquí a propósito.
+// El criterio se sostiene igual: endurecer estas heurísticas exige tocar estas líneas,
+// sale en el diff y alguien lo revisa. Es el atajo caro y visible — convención.
 
 /** Abreviatura de referencia a la entrada anterior. Legal SI tiene referente. */
 const REF_A_LA_ANTERIOR = /^(í|i)dem\.?$/i;
