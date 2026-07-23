@@ -219,9 +219,16 @@ async function renderJobDetailView(container, jobId) {
             : 'Cobro creado — el WhatsApp falló, reenvíalo desde Cobros', r.whatsapp === 'sent' ? 'ok' : 'warn');
           refresh();
         } else if (nextAct.kind === 'recordar') {
-          await apiRequest(`/admin/invoices/${nextAct.invoiceId}/send-reminder`, { method: 'POST' });
-          showToast('✓ Recordatorio enviado por WhatsApp.');
-          refresh();
+          const d = await apiRequest(`/admin/invoices/${nextAct.invoiceId}/send-reminder`, { method: 'POST' });
+          // SCRUM-115: el endpoint responde 200+ok:true incluso si el envío falló — el
+          // resultado real vive en `sent`, no en que la petición haya llegado.
+          if (d && d.sent === false) {
+            showToast('El WhatsApp del recordatorio falló — reinténtalo desde la factura', 'warn');
+            cta.disabled = false; cta.textContent = orig;
+          } else {
+            showToast('✓ Recordatorio enviado por WhatsApp.');
+            refresh();
+          }
         } else if (nextAct.kind === 'firmar') {
           const d = await apiRequest(`/admin/albaranes/${nextAct.albaranId}/enviar-para-firmar`, { method: 'POST' });
           if (d && d.ok === false) setStatus('error', d.message || 'No se pudo enviar por WhatsApp.');
