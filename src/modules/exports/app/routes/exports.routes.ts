@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
-import { config, isOwnerEmail } from '../../../../core/config/env';
+import { config, isVerifiedPlatformOwner } from '../../../../core/config/env';
 import { isFlagEnabled } from '../../../../core/flags';
 import { requireRole } from '../../../../core/http/authMiddleware';
 import { recordAudit, requestIp } from '../../../system/audit.service';
@@ -271,15 +271,17 @@ router.get('/invoices.csv', async (req, res) => {
 // ── GET /admin/exports/fees.csv ────────────────────────────────────────────
 // C1-3 (CONNECT-1): contabilidad PROPIA de la plataforma — application fees
 // (0,9 %, APPLICATION_FEE_BPS) de los cobros con tarjeta procesados vía
-// Stripe Connect. SOLO cuentas owner (OWNER_EMAILS); el resto recibe 403.
+// Stripe Connect. SOLO cuentas owner; el resto recibe 403.
+// SCRUM-102: dos factores (email en OWNER_EMAILS + Merchant.isPlatformOwner en BD) — un
+// dato multi-tenant de TODA la plataforma no depende solo de una env var bien escrita.
 // ?from=YYYY-MM-DD&to=YYYY-MM-DD (default: mes en curso)
 router.get('/fees.csv', async (req, res) => {
   try {
     const me = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
-      select: { email: true },
+      select: { email: true, isPlatformOwner: true },
     });
-    if (!me || !isOwnerEmail(me.email)) return res.status(403).json({ error: 'forbidden' });
+    if (!isVerifiedPlatformOwner(me)) return res.status(403).json({ error: 'forbidden' });
 
     let { from, to } = parseDateFilter(req.query as any);
     if (!from && !to) {
