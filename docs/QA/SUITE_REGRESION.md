@@ -174,6 +174,30 @@ Las tres reglas que salen de ahí, para cualquier test, assert o check nuevo:
    estás mirando el sitio correcto: descomprimido, decodificado y en el mismo formato en que
    se emite.
 
+6. **Al verificar un cambio, confirma los asserts nuevos UNO A UNO — no el total. Y ante un
+   test en rojo, pregunta también qué quedó POR DETRÁS sin evaluar. (SCRUM-108)**
+
+   Un verde global no prueba que tus asserts se ejecutaran; un rojo global no dice cuáles
+   quedaron sin ejecutar. **En `node --test`, el primer assert que falla mata todos los
+   posteriores del mismo `test()`**: un fichero con 30 asserts que revienta en el tercero
+   reporta **un** fallo, y los 27 restantes quedan sin evaluar sin que nada lo indique.
+
+   Le pasó al propio SCRUM-108 el día que se escribió esta regla. Se añadieron **cuatro**
+   guardas nuevas y la tanda salió «4 pass, 1 fail». Confirmadas una a una: tres se habían
+   ejecutado y **la cuarta no llegó a correr nunca** — su fichero (`scrum49`) abortaba doce
+   líneas antes, por un fallo ajeno (SCRUM-114). Se mergeó **sin estrenar**, y el recuento no
+   lo distinguía de las otras tres.
+
+   → Cuando un test falle por una causa que no es tuya, **no te quedes en «no es mío»**:
+   localiza qué asserts propios vivían por detrás y **dilo explícitamente**, en el PR y en el
+   ticket. Un assert mergeado que no se ha ejecutado ni una vez no está verificado, y es
+   justo el estado en el que nadie vuelve a mirarlo.
+
+   → Y para decidir si un fallo es tuyo, **demuéstralo en vez de defenderte**: extrae la
+   versión de `main` del fichero y córrela con el **mismo `dist` y la misma BD**, dejando tu
+   edición como única diferencia. Cuesta una ejecución y convierte «no creo que sea mío» en
+   «no es mío, y aquí está la prueba».
+
 > **Coordinación (regla del canal):** la suite y el seed **resetean la BD del merchant QA**.
 > Avisa por el canal antes de lanzarla — solo uno a la vez. `tests/` es **zona compartida**:
 > avisar antes de tocarlo (SCRUM-78 y SCRUM-79 arreglaron el mismo fichero el mismo día sin
