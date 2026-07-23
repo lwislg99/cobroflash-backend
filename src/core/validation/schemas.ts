@@ -193,6 +193,9 @@ export const customerCreateSchema = z.object({
   // futuro (hallazgo S1-C: F1 exige NIF del destinatario)
   legalName: z.string().max(200).nullable().optional(),
   taxId: z.string().max(20).nullable().optional(),
+  // SCRUM-69 (FACT-1): determina el plazo legal de la recapitulativa (art. 13 RD 1619/2012).
+  // null = sin clasificar (se trata como PARTICULAR en el cálculo, ver resolveTipoDestinatario).
+  tipoDestinatario: z.enum(['PARTICULAR', 'EMPRESARIO']).nullable().optional(),
 });
 
 export const customerUpdateSchema = customerCreateSchema.partial();

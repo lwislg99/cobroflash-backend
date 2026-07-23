@@ -120,6 +120,7 @@ function renderCustomersView(container) {
   let modalForm = null;
   let fieldName, fieldPhone, fieldEmail, fieldNotes;
   let fieldWaOptOut = null; // J3: baja manual de WhatsApp desde la ficha
+  let fieldTipoDestinatario = null; // SCRUM-69: plazo legal de la recapitulativa (art. 13 RD 1619/2012)
   let modalTitleEl = null;
   let modalSaveBtn = null;
 
@@ -148,11 +149,29 @@ function renderCustomersView(container) {
     fieldTaxId = createField("NIF/CIF (opcional)", "taxId", "text");
     fieldNotes = createField("Notas", "notes", null, false, true);
 
+    // SCRUM-69 (FACT-1): sin banner ni prompt forzado (decisión fundador 23-jul) — solo aquí,
+    // en la ficha. "Sin clasificar" = null (se trata como Particular al calcular el plazo,
+    // el criterio más seguro, pero sin escribirlo en la BD hasta que el usuario lo confirme).
+    const tipoWrapper = createElement("div", "field");
+    const tipoLabel = document.createElement("label");
+    tipoLabel.textContent = "Tipo de cliente";
+    fieldTipoDestinatario = document.createElement("select");
+    fieldTipoDestinatario.name = "tipoDestinatario";
+    fieldTipoDestinatario.className = "input";
+    fieldTipoDestinatario.innerHTML = `
+      <option value="">Sin clasificar</option>
+      <option value="PARTICULAR">Particular</option>
+      <option value="EMPRESARIO">Empresa / profesional</option>
+    `;
+    tipoWrapper.appendChild(tipoLabel);
+    tipoWrapper.appendChild(fieldTipoDestinatario);
+
     body.appendChild(fieldName.wrapper);
     body.appendChild(fieldPhone.wrapper);
     body.appendChild(fieldEmail.wrapper);
     body.appendChild(fieldLegalName.wrapper);
     body.appendChild(fieldTaxId.wrapper);
+    body.appendChild(tipoWrapper);
     body.appendChild(fieldNotes.wrapper);
 
     // J3: baja manual de WhatsApp (hasta WA-0b el "BAJA" entrante no se procesa solo)
@@ -210,6 +229,7 @@ function renderCustomersView(container) {
       fieldLegalName.input.value = editingCustomer.legalName || ""; // A20.4
       fieldTaxId.input.value = editingCustomer.taxId || "";
       fieldWaOptOut.checked = !!editingCustomer.waOptOut;
+      fieldTipoDestinatario.value = editingCustomer.tipoDestinatario || ""; // SCRUM-69
     }
 
     modalBackdrop.style.display = "flex";
@@ -235,6 +255,7 @@ function renderCustomersView(container) {
       legalName: fieldLegalName.input.value.trim() || null, // A20.4
       taxId: fieldTaxId.input.value.trim() || null,
       waOptOut: !!(fieldWaOptOut && fieldWaOptOut.checked), // J3
+      tipoDestinatario: fieldTipoDestinatario.value || null, // SCRUM-69
     };
 
     if (!payload.name) {

@@ -13,10 +13,38 @@ async function fetchInvoices(options = {}) {
     if (!res.ok) throw new Error('Error cargando facturas');
     return res.json();
   }
-  
+
+  // SCRUM-69 (FACT-1): bandeja "pendientes de facturar" — albaranes firmados y valorados sin
+  // facturar, agrupados por cliente→mes, con semáforo de plazo legal (art. 13 RD 1619/2012).
+  async function fetchPendientesFacturar() {
+    const res = await fetch('/admin/albaranes/pendientes-facturar', { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error('Error cargando pendientes de facturar');
+    const data = await res.json();
+    return data.clientes || [];
+  }
+
+  function fmtFechaEs(isoDate) {
+    if (!isoDate) return '—';
+    const [y, m, d] = isoDate.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  const SEMAFORO_META = {
+    verde: { pillClass: 'status-pill-accepted', label: 'AL DÍA' },
+    ambar: { pillClass: 'status-pill-pending',  label: 'PLAZO PRÓXIMO' },
+    rojo:  { pillClass: 'status-pill-rejected', label: 'PLAZO VENCIDO' },
+  };
+
+  // Copy aprobado por el fundador (23-jul, docs/Sprint Scrum/SESION_ACTUAL_SCRUM-69.md) — NO reformular.
+  function copyRojo(mesLabel) {
+    return `El plazo de este mes venció — ya no se puede agrupar en una recapitulativa de `
+      + `${mesLabel}. Puedes facturar estos partes igualmente (factura individual o `
+      + `recapitulativa del mes en curso); si tienes dudas, consúltalo con tu asesor.`;
+  }
+
   async function renderInvoicesView(container) {
     container.innerHTML = '';
-  
+
     // Card principal
     const wrapper = document.createElement('div');
     wrapper.className = 'data-card';
@@ -45,10 +73,44 @@ async function fetchInvoices(options = {}) {
     exportBtn.href = '/admin/exports/invoices.csv';
     header.appendChild(exportBtn);
 
+    // SCRUM-69: pestañas "Emitidas" (default, contenido existente intacto) / "Pendientes"
+    // (nueva). Componente NUEVO — no hay tabs hoy en el inventario AB3; se propone al máster.
+    const tabs = document.createElement('div');
+    tabs.className = 'data-card-tabs';
+    tabs.innerHTML = `
+      <button type="button" class="data-card-tab active" data-tab="emitidas">Emitidas</button>
+      <button type="button" class="data-card-tab" data-tab="pendientes">Pendientes<span class="badge badge-amber" id="pend-badge" hidden></span></button>
+    `;
+    wrapper.appendChild(tabs);
+    const tabEmitidas = tabs.querySelector('[data-tab="emitidas"]');
+    const tabPendientes = tabs.querySelector('[data-tab="pendientes"]');
+    const pendBadge = tabs.querySelector('#pend-badge');
+
+    // Panel "Emitidas": todo el contenido existente, sin cambios de comportamiento.
+    const panelEmitidas = document.createElement('div');
+    wrapper.appendChild(panelEmitidas);
+
+    // Panel "Pendientes": nuevo, oculto por defecto.
+    const panelPendientes = document.createElement('div');
+    panelPendientes.style.display = 'none';
+    wrapper.appendChild(panelPendientes);
+
+    function activateTab(name) {
+      const isEmitidas = name === 'emitidas';
+      tabEmitidas.classList.toggle('active', isEmitidas);
+      tabPendientes.classList.toggle('active', !isEmitidas);
+      panelEmitidas.style.display = isEmitidas ? '' : 'none';
+      panelPendientes.style.display = isEmitidas ? 'none' : '';
+      exportBtn.style.display = isEmitidas ? '' : 'none'; // CSV solo aplica a Emitidas
+      if (!isEmitidas && !pendientesLoaded) reloadPendientes();
+    }
+    tabEmitidas.addEventListener('click', () => activateTab('emitidas'));
+    tabPendientes.addEventListener('click', () => activateTab('pendientes'));
+
     // Toolbar: filtros
     const toolbar = document.createElement('div');
     toolbar.className = 'data-card-toolbar';
-    wrapper.appendChild(toolbar);
+    panelEmitidas.appendChild(toolbar);
 
     const inputSearch = document.createElement('input');
     inputSearch.className = 'input';
@@ -85,17 +147,17 @@ async function fetchInvoices(options = {}) {
     const statusBox = document.createElement('div');
     statusBox.className = 'alert';
     statusBox.style.cssText = 'margin:12px 16px 0;display:none';
-    wrapper.appendChild(statusBox);
+    panelEmitidas.appendChild(statusBox);
 
     function setCount(text) { subtitle.textContent = text; }
 
     const tableScroll = document.createElement('div');
     tableScroll.className = 'table-scroll';
-    wrapper.appendChild(tableScroll);
+    panelEmitidas.appendChild(tableScroll);
     const table = document.createElement('table');
     table.className = 'table table--cards-mobile'; // feedback fundador 6-jul: cards en móvil
     tableScroll.appendChild(table);
-  
+
     // Checkbox "seleccionar todo" en cabecera
     const thead = document.createElement('thead');
     thead.innerHTML = `
@@ -126,13 +188,14 @@ async function fetchInvoices(options = {}) {
       <button id="bulk-paid-btn" class="btn-primary btn-sm">✓ Marcar como pagadas</button>
       <button id="bulk-cancel-btn" class="btn-ghost btn-sm" style="color:rgba(255,255,255,.7)">Cancelar</button>
     `;
-    wrapper.appendChild(bulkBar);
+    panelEmitidas.appendChild(bulkBar);
 
     let currentStatus = 'all';
     let currentSearch = '';
     let currentDateFrom = '';
     let currentDateTo   = '';
     let selectedIds = new Set();
+    let pendientesLoaded = false;
 
     // P-A66-3: delega en el formateador es-ES compartido (api.js)
     function fmtInvMoney(amount, currency) {
@@ -322,7 +385,128 @@ async function fetchInvoices(options = {}) {
         statusBox.style.display = 'block';
       }
     }
-  
+
+    // ── Panel "Pendientes" (SCRUM-69) ──────────────────────────────────────
+    const pendStatusBox = document.createElement('div');
+    pendStatusBox.className = 'alert';
+    pendStatusBox.style.cssText = 'margin:16px 20px 0;display:none';
+    panelPendientes.appendChild(pendStatusBox);
+
+    const pendBody = document.createElement('div');
+    pendBody.className = 'data-card-body';
+    panelPendientes.appendChild(pendBody);
+
+    function renderGrupoCard(customer, grupo) {
+      const meta = SEMAFORO_META[grupo.semaforo] || SEMAFORO_META.verde;
+      const card = document.createElement('div');
+      card.style.cssText = 'border:1px solid var(--neutral-200);border-radius:var(--radius-lg);'
+        + 'padding:16px;margin-bottom:12px;background:#fff';
+
+      const rowTop = document.createElement('div');
+      rowTop.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap';
+
+      const leftCol = document.createElement('div');
+      const custName = document.createElement('div');
+      custName.style.cssText = 'font-weight:700;font-size:14.5px;color:var(--neutral-900)';
+      custName.textContent = customer.customerName;
+      leftCol.appendChild(custName);
+      const mesLine = document.createElement('div');
+      mesLine.style.cssText = 'font-size:13px;color:var(--neutral-500);margin-top:2px;text-transform:capitalize';
+      mesLine.textContent = grupo.mesLabel + ' · ' + grupo.albaranes.length + ' parte' + (grupo.albaranes.length !== 1 ? 's' : '');
+      leftCol.appendChild(mesLine);
+      rowTop.appendChild(leftCol);
+
+      const rightCol = document.createElement('div');
+      rightCol.style.cssText = 'display:flex;flex-direction:column;align-items:flex-end;gap:4px';
+      const pill = document.createElement('span');
+      pill.className = 'status-pill ' + meta.pillClass;
+      pill.textContent = meta.label;
+      rightCol.appendChild(pill);
+      const fechaLine = document.createElement('div');
+      fechaLine.style.cssText = 'font-size:12px;color:var(--neutral-500)';
+      fechaLine.textContent = 'Plazo: ' + fmtFechaEs(grupo.fechaLimite);
+      rightCol.appendChild(fechaLine);
+      rowTop.appendChild(rightCol);
+
+      card.appendChild(rowTop);
+
+      const importeLine = document.createElement('div');
+      importeLine.style.cssText = 'margin-top:10px;font-size:13.5px;color:var(--neutral-700)';
+      importeLine.innerHTML = '<strong>' + fmtMoneyEs(grupo.importePotencial.total, (window.appLocale && window.appLocale.currency) || 'EUR')
+        + '</strong> pendiente de facturar';
+      card.appendChild(importeLine);
+
+      if (grupo.semaforo === 'rojo') {
+        const warnBox = document.createElement('div');
+        warnBox.style.cssText = 'margin-top:10px;padding:10px 12px;border-radius:var(--radius-md);'
+          + 'background:var(--red-50);color:var(--red-600);font-size:12.5px;line-height:1.5';
+        warnBox.textContent = copyRojo(grupo.mesLabel);
+        card.appendChild(warnBox);
+      }
+
+      const actions = document.createElement('div');
+      actions.style.cssText = 'margin-top:12px';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn-secondary btn-sm';
+      btn.textContent = 'Consolidar en factura →';
+      btn.addEventListener('click', () => {
+        if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: grupo.jobId });
+      });
+      actions.appendChild(btn);
+      card.appendChild(actions);
+
+      return card;
+    }
+
+    async function reloadPendientes() {
+      pendBody.innerHTML = '';
+      pendStatusBox.style.display = 'none';
+      const loading = document.createElement('p');
+      loading.style.cssText = 'color:var(--muted);font-size:13.5px';
+      loading.textContent = 'Cargando…';
+      pendBody.appendChild(loading);
+
+      try {
+        const clientes = await fetchPendientesFacturar();
+        pendientesLoaded = true;
+        pendBody.innerHTML = '';
+
+        let ambarRojoCount = 0;
+        clientes.forEach((c) => c.grupos.forEach((g) => { if (g.semaforo !== 'verde') ambarRojoCount++; }));
+        if (ambarRojoCount > 0) {
+          pendBadge.hidden = false;
+          pendBadge.textContent = String(ambarRojoCount);
+        } else {
+          pendBadge.hidden = true;
+        }
+
+        const totalGrupos = clientes.reduce((n, c) => n + c.grupos.length, 0);
+        if (totalGrupos === 0) {
+          pendBody.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🧾</div>'
+            + '<div class="empty-state-title">Nada pendiente de facturar</div>'
+            + '<div class="empty-state-desc">Cuando firmes partes de trabajo sin facturar, aparecerán aquí agrupados por cliente y mes.</div>'
+            + '</div>';
+          return;
+        }
+
+        // Rojo primero, luego ámbar, luego verde — lo urgente arriba (mismo criterio A18.2).
+        const orden = { rojo: 0, ambar: 1, verde: 2 };
+        clientes.forEach((customer) => {
+          const gruposOrdenados = [...customer.grupos].sort((a, b) => orden[a.semaforo] - orden[b.semaforo]);
+          gruposOrdenados.forEach((grupo) => {
+            pendBody.appendChild(renderGrupoCard(customer, grupo));
+          });
+        });
+      } catch (err) {
+        console.error('[renderInvoicesView] pendientes error', err);
+        pendBody.innerHTML = '';
+        pendStatusBox.textContent = 'Error cargando pendientes de facturar.';
+        pendStatusBox.className = 'alert error';
+        pendStatusBox.style.display = 'block';
+      }
+    }
+
     // Listeners de filtros
     function updateExportHref() {
       const params = new URLSearchParams();
@@ -340,17 +524,20 @@ async function fetchInvoices(options = {}) {
 
     inputFrom.addEventListener('change', () => { currentDateFrom = inputFrom.value; updateExportHref(); reload(); });
     inputTo.addEventListener('change',   () => { currentDateTo   = inputTo.value;   updateExportHref(); reload(); });
-  
+
     let searchTimer = null;
     inputSearch.addEventListener('input', () => {
       currentSearch = inputSearch.value.trim();
       if (searchTimer) clearTimeout(searchTimer);
       searchTimer = setTimeout(reload, 300);
     });
-  
+
     // Primera carga
     reload();
+    // Badge de "Pendientes" visible desde el primer render, sin esperar a que el usuario
+    // pulse la pestaña (decisión fundador: la urgencia se ve sin rehacer la expectativa).
+    reloadPendientes();
   }
-  
+
   // Hacemos la función accesible desde otros scripts
 window.renderInvoicesView = renderInvoicesView;

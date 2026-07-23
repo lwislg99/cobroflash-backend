@@ -302,6 +302,13 @@ function openEdit360Modal(customer, customerId, container) {
       <div class="field"><label>Email</label><input type="email" id="e360-email"/></div>
       <div class="field"><label>Razón social (empresa, opcional)</label><input type="text" id="e360-legalname"/></div>
       <div class="field"><label>NIF/CIF (opcional)</label><input type="text" id="e360-taxid"/></div>
+      <div class="field"><label>Tipo de cliente</label>
+        <select id="e360-tipodestinatario" class="input">
+          <option value="">Sin clasificar</option>
+          <option value="PARTICULAR">Particular</option>
+          <option value="EMPRESARIO">Empresa / profesional</option>
+        </select>
+      </div>
       <div class="field"><label>Notas</label><textarea id="e360-notes" rows="3" style="resize:vertical"></textarea></div>
       <label class="inline-checkbox" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--neutral-600)">
         <input type="checkbox" id="e360-waoptout"/> Baja de WhatsApp: no enviarle más mensajes (el cliente lo pidió)
@@ -324,6 +331,7 @@ function openEdit360Modal(customer, customerId, container) {
   $('#e360-notes').value = customer.notes || '';
   $('#e360-legalname').value = customer.legalName || ''; // A20.4
   $('#e360-taxid').value = customer.taxId || '';
+  $('#e360-tipodestinatario').value = customer.tipoDestinatario || ''; // SCRUM-69
   $('#e360-waoptout').checked = !!customer.waOptOut;
   $('#e360-cancel').onclick = () => overlay.remove();
 
@@ -344,6 +352,7 @@ function openEdit360Modal(customer, customerId, container) {
       notes: $('#e360-notes').value.trim() || undefined,
       legalName: $('#e360-legalname').value.trim() || null, // A20.4
       taxId: $('#e360-taxid').value.trim() || null,
+      tipoDestinatario: $('#e360-tipodestinatario').value || null, // SCRUM-69
       waOptOut: $('#e360-waoptout').checked,
     };
     if (phone) payload.phone = phone;
