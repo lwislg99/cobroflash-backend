@@ -32,7 +32,7 @@ router.post('/sim/pay/:id', async (req, res) => {
     const receiptToken = await ensureChargeReceiptToken(id, prisma);
     res.redirect(303, `/recibo/${receiptToken}?r=${Date.now()}`);
   } catch (e: any) {
-    console.error('dev/sim/pay error', e?.response?.data || e);
+    console.error('dev/sim/pay error', e?.response?.data || e?.message || 'error desconocido'); // SCRUM-105
     res.status(500).send('Error simulando pago');
   }
 });

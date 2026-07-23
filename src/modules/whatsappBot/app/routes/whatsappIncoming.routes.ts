@@ -62,11 +62,21 @@ router.get('/', (req, res) => {
   const token     = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
 
-  if (mode === 'subscribe' && token && token === config.WHATSAPP_VERIFY_TOKEN) {
+  // SCRUM-105: comparación en tiempo constante, igual que el resto de secretos del
+  // código (requireInternalSecret) — el handshake es de configuración única con Meta,
+  // pero no hay motivo para que sea la única comparación de secreto sin timingSafeEqual.
+  const expected = config.WHATSAPP_VERIFY_TOKEN;
+  const tokenMatches =
+    typeof token === 'string' &&
+    !!expected &&
+    token.length === expected.length &&
+    crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expected));
+
+  if (mode === 'subscribe' && tokenMatches) {
     console.log('[WA webhook] Verified by Meta');
     return res.status(200).send(String(challenge ?? ''));
   }
-  console.warn('[WA webhook] Verification failed', { mode, tokenMatches: token === config.WHATSAPP_VERIFY_TOKEN });
+  console.warn('[WA webhook] Verification failed', { mode, tokenMatches });
   return res.status(403).send('Forbidden');
 });
 

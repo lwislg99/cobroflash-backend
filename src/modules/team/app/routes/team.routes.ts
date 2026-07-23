@@ -85,7 +85,7 @@ router.post('/', async (req, res) => {
 
     return res.status(201).json(member);
   } catch (err: any) {
-    console.error('[POST /admin/team]', err);
+    console.error('[POST /admin/team]', err?.message || 'error desconocido'); // SCRUM-105
     if (err.message === 'email_is_owner') {
       return res.status(409).json({ error: 'email_is_owner' });
     }

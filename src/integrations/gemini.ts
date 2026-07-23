@@ -51,7 +51,9 @@ async function callGeminiModel(model: string, params: GeminiParams): Promise<str
       signal: AbortSignal.timeout(20_000),
     });
   } catch (err: any) {
-    console.error(`[gemini:${model}] red/timeout:`, err?.message || err);
+    // SCRUM-105: nunca el objeto err crudo — la API key de Gemini viaja en la URL (línea
+    // 30) y un error de fetch/axios puede arrastrar la request (headers/URL) completa.
+    console.error(`[gemini:${model}] red/timeout:`, err?.message || 'error desconocido');
     throw new GeminiError('gemini_unreachable');
   }
 

@@ -7,7 +7,6 @@ export const config = {
     // Railway inyecta RAILWAY_GIT_COMMIT_SHA en cada deploy; fallback (dev/local) = arranque del proceso.
     BUILD_ID: process.env.RAILWAY_GIT_COMMIT_SHA || String(Date.now()),
 
-    SESSION_SECRET: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
     RESEND_API_KEY: process.env.RESEND_API_KEY || '',
 
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',

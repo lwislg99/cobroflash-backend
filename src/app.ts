@@ -78,6 +78,15 @@ import { prisma } from './core/db/prisma';
 
 export const app = express();
 
+// SCRUM-105: defensa en profundidad barata — las páginas públicas con token en el path
+// (/recibo, /cliente, /albaran, /p/:slug) cargan Google Fonts como único recurso externo;
+// el default de navegadores modernos ya no debería filtrar el path completo en ese caso,
+// pero la app no lo garantizaba por sí misma. Global, antes de cualquier ruta.
+app.use((_req, res, next) => {
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
 // Landings públicas (antes del JSON parser)
 app.use('/pay', quoteDecisionLandingRouter);
 app.use('/cliente', customerPortalRouter);
