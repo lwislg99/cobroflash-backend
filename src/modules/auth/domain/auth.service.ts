@@ -39,38 +39,96 @@ function logMagicLink(tag: string, to: string, link: string) {
   }
 }
 
-export async function requestMagicLink(email: string): Promise<void> {
-  const merchant = await prisma.merchant.findUnique({ where: { email } });
-  if (!merchant) return; // silent
-
+// SCRUM-92: emite el magic link de LOGIN (15 min) y lo envía por email. Compartido
+// por la cuenta Merchant (owner, teamMemberId null) y por un TeamMember (operario,
+// teamMemberId set) — mismo AuthSession { merchantId, teamMemberId, type:'magic_link' }
+// que ya crea inviteTeamMember, así que verifyMagicLink/getSession/requireAuth (que
+// derivan req.merchantId/req.userRole de esa fila) quedan INTACTOS: no hay lógica de
+// rol/tenancy nueva que pueda equivocarse, solo un segundo punto de entrada que crea
+// la fila con la forma ya probada.
+async function issueLoginLink(params: {
+  merchantId: number;
+  teamMemberId: number | null;
+  email: string;
+  recipientName: string;
+  businessName?: string | null;
+}): Promise<void> {
   const token = generateToken();
   const expiresAt = new Date(Date.now() + MAGIC_LINK_TTL_MS);
 
   await prisma.authSession.create({
-    data: { merchantId: merchant.id, token, type: 'magic_link', expiresAt },
+    data: { merchantId: params.merchantId, teamMemberId: params.teamMemberId, token, type: 'magic_link', expiresAt },
   });
 
   const link = `${config.PUBLIC_BASE_URL}/auth/verify?token=${token}`;
-  logMagicLink('magic-link', email, link); // SCRUM-39: gateado — en prod no se loguea
+  logMagicLink('magic-link', params.email, link); // SCRUM-39: gateado — en prod no se loguea
+
+  const intro = params.businessName
+    ? `Toca el botón y entras directo a tu cuenta de <strong>${escEmail(params.businessName)}</strong>. Sin contraseñas.`
+    : 'Toca el botón y entras directo a tu cuenta. Sin contraseñas.';
 
   try {
     await sendEmail({
-      to: email,
+      to: params.email,
       subject: 'Tu enlace de acceso a YaQu',
       // A6.4: layout de marca compartido (emailLayout.ts)
       html: renderEmailLayout({
         heading: 'Tu acceso a YaQu',
-        bodyHtml: `<p style="margin:0 0 8px">Hola <strong>${escEmail(merchant.name)}</strong>,</p>
-<p style="margin:0">Toca el botón y entras directo a tu cuenta. Sin contraseñas.</p>`,
+        bodyHtml: `<p style="margin:0 0 8px">Hola <strong>${escEmail(params.recipientName)}</strong>,</p>
+<p style="margin:0">${intro}</p>`,
         ctaLabel: 'Entrar en YaQu',
         ctaUrl: link,
         footnote: 'Este enlace es de un solo uso y caduca en 15 minutos. Si no lo solicitaste, puedes ignorar este correo.',
       }),
     });
-    console.log(`[magic-link] email enviado OK a ${email}`);
+    console.log(`[magic-link] email enviado OK a ${params.email}`);
   } catch (emailErr: any) {
-    console.error(`[magic-link] ERROR enviando email a ${email}:`, emailErr?.message || emailErr);
+    console.error(`[magic-link] ERROR enviando email a ${params.email}:`, emailErr?.message || emailErr);
   }
+}
+
+export async function requestMagicLink(email: string): Promise<void> {
+  const merchant = await prisma.merchant.findUnique({ where: { email } });
+  if (merchant) {
+    await issueLoginLink({ merchantId: merchant.id, teamMemberId: null, email, recipientName: merchant.name });
+    return;
+  }
+
+  // SCRUM-92: si el email no es un Merchant, probar TeamMember (operario). Sin esto,
+  // un operario que necesita VOLVER a entrar (cierra sesión, cambia de móvil, le
+  // caduca la cookie) se queda fuera para siempre — el 1er acceso funciona por
+  // inviteTeamMember, pero no había vía de vuelta. Precedencia: si el email coincide
+  // con AMBAS tablas (raro: alguien es owner de un merchant Y operario de otro con el
+  // mismo email — TeamMember.email es @unique global, así que nunca hay ambigüedad
+  // DENTRO de TeamMember), gana el Merchant (ya resuelto arriba) — el operario sigue
+  // pudiendo entrar a esa cuenta vía la invitación original o que se la reenvíen.
+  const teamMember = await prisma.teamMember.findUnique({ where: { email } });
+  if (!teamMember) {
+    // Requisito del ticket: NUNCA revelar al usuario si el email existe (mismo 200
+    // genérico de siempre) — pero SÍ dejar traza en servidor para poder depurarlo.
+    console.log(`[magic-link] intento de login con email no registrado: ${email}`);
+    return;
+  }
+  if (teamMember.status === 'suspended') {
+    // Mismo trato que "no existe": jamás confirmar el estado de una cuenta ajena.
+    console.log(`[magic-link] intento de login de TeamMember SUSPENDIDO: ${email} (id=${teamMember.id}, merchantId=${teamMember.merchantId})`);
+    return;
+  }
+  // status 'invited' se deja pasar a propósito: verifyMagicLink ya activa cualquier
+  // AuthSession con teamMemberId al canjearla (mismo camino que aceptar la invitación
+  // original), y getSession solo bloquea 'suspended' — no hace falta lógica nueva.
+
+  const merchantOfMember = await prisma.merchant.findUnique({
+    where: { id: teamMember.merchantId },
+    select: { name: true },
+  });
+  await issueLoginLink({
+    merchantId: teamMember.merchantId,
+    teamMemberId: teamMember.id,
+    email,
+    recipientName: teamMember.name,
+    businessName: merchantOfMember?.name,
+  });
 }
 
 // Invita a un miembro del equipo: crea AuthSession magic_link vinculada al teamMemberId

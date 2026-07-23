@@ -192,6 +192,39 @@
   SCRUM-74 `/recibo` → SCRUM-85 `/pay/card`+`/pay/bizum`+`/pay/invoice` → SCRUM-90
   `/pay/bank`+`/pay/mp`).
 
+### [x] P0-AUTH-1 · Un operario no puede volver a entrar: `/auth/login` solo buscaba en `Merchant` (hallazgo 22-jul; corregido en SCRUM-92)
+- **Síntoma:** `requestMagicLink` (`auth.service.ts`) resolvía la cuenta con
+  `prisma.merchant.findUnique({ where: { email } })` y salía por un `return` silencioso si no
+  encontraba nada — un Operario es un `TeamMember`, no un `Merchant`, así que nunca se creaba
+  token ni se enviaba email. `POST /auth/login` respondía igual el 200 genérico ("recibirás el
+  enlace en breve") mintiendo: no había nada que esperar.
+- **Alcance:** afectaba a TODOS los operarios a partir del **segundo** acceso. El primer acceso
+  funciona (va por `inviteTeamMember`, otro camino) — el fallo aparece al volver: cerrar sesión,
+  cambiar de móvil, que caduque la cookie. Sin arreglo, el único camino era que el Admin
+  reenviara la invitación desde Configuración → Equipo, y nadie sabía que hacía falta.
+  Bloqueaba el plan Equipo (su valor depende de que el operario pueda volver a entrar solo).
+- **Corregido en SCRUM-92:** `requestMagicLink` ahora también busca en `TeamMember` si no
+  encuentra `Merchant`, y emite el mismo `AuthSession {merchantId, teamMemberId,
+  type:'magic_link'}` que ya crea `inviteTeamMember` — `verifyMagicLink`/`getSession`/
+  `authMiddleware.ts` quedan **intactos** (ningún archivo de auth aparte de `auth.service.ts`
+  se tocó), así que el rol/tenancy de la sesión resultante no es lógica nueva. Verificado
+  end-to-end en el test gateado: token real → `GET /auth/verify` real → cookie real →
+  `getSession` con `merchantId`/`teamMemberId`/`role` correctos → **403 real** en una ruta
+  admin-only con esa sesión (el operario NO puede colarse como admin por este camino nuevo).
+  `suspended` recibe el mismo trato que "no existe" (sin token, sin email, pero SÍ logueado en
+  servidor); `invited` se deja pasar a propósito (se activa al canjear el link, igual que
+  aceptar la invitación — comportamiento ya existente de `verifyMagicLink`, sin cambios). La
+  respuesta 200 genérica de `/auth/login` no cambia (regla anti-enumeración intacta).
+- **Decisiones de las preguntas abiertas del ticket, resueltas contra el schema real:**
+  multi-merchant es estructuralmente imposible (`TeamMember.email` es `@unique` GLOBAL);
+  colisión Merchant/TeamMember con el mismo email es posible pero rara (gana el Merchant, se
+  comprueba primero); rate-limit (`loginLimiter`) ya cubre la rama nueva sin cambios (envuelve
+  toda la ruta `/auth/login`, antes de llamar a `requestMagicLink`).
+- **Hallazgo colateral NO corregido:** `registerMerchant` (`/auth/register`) solo comprueba
+  `Merchant.email`, nunca `TeamMember.email` — un operario podría "registrarse" con su propio
+  email de operario y crear un Merchant nuevo bajo el mismo email (la misma colisión, pero
+  auto-inducida). Fuera del alcance pedido (el ticket y la tarea eran sobre `/auth/login`).
+
 ### [x] P0-1 · Pago con tarjeta devuelve 401 Unauthorized
 - **Síntoma:** al pulsar "Pagar con tarjeta" en `/pay/invoice/:id` navega a `/pay/card/:id` y devuelve 401 (body "Unauthorized"). El cliente no puede pagar.
 - **Causa probable:** la ruta `/pay/card/:id` tiene middleware de autenticación (la usa el cliente NO logueado), o `STRIPE_SECRET_KEY` mal configurada / falla la creación de la Checkout Session.
