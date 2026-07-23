@@ -206,7 +206,9 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
           };
           throw new Error(known[body.error] || "No se pudo enviar el email. Inténtalo de nuevo.");
         }
-        if (body.ok) {
+        // SCRUM-126: hallado en el barrido — este botón (distinto del de la línea ~280)
+        // miraba body.ok, que ya no es la señal del envío. waSendFailed mira sent.
+        if (!waSendFailed(body)) {
           setAlert("success", "Presupuesto enviado por email.");
           setResult({ quote_id: quoteId, number: displayNum, status: "SENT", sent: true });
           markDone(emailBtn, "✓ Enviado por email"); // la modal sigue abierta
@@ -247,8 +249,8 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
           throw new Error(known[errData && errData.error] || ("No se pudo enviar por WhatsApp (" + res.status + "). Inténtalo de nuevo."));
         }
         const body = await res.json();
-        // P3-2: si Meta rechazó, el backend devuelve 200 ok:false con un mensaje claro.
-        if (body.ok) {
+        // P3-2: si Meta rechazó, el backend devuelve 200 + sent:false con un mensaje claro.
+        if (!waSendFailed(body)) {
           setAlert("success", "Presupuesto enviado por WhatsApp.");
           setResult({ quote_id: quoteId, number: displayNum, status: "SENT", sent: true });
           markDone(sendBtn, "✓ Enviado por WhatsApp"); // la modal sigue abierta
