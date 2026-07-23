@@ -80,6 +80,15 @@ test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, a
     assert.equal(rPage.status, 200, 'la página pública responde 200 con token válido');
     const html = await rPage.text();
     assert.ok(html.includes(albaran.numero), 'la página muestra el nº de albarán');
+    // SCRUM-108 — guarda: el assert de arriba (`albaran.numero`) prueba que la página
+    // RENDERIZA, pero no que `phone`/`email` serían encontrables si se filtraran. Se
+    // comprueba contra la ficha AUTENTICADA del cliente, donde sí deben salir: si ahí
+    // tampoco aparecen, el canario está roto y estos dos asserts pasan en vacío.
+    const fichaCliente = await (await fetch(`${base}/admin/customers/${customer.id}`, { headers: { cookie: cookieA } })).text();
+    assert.ok(fichaCliente.includes(phone) && fichaCliente.includes(email),
+      `🔴 CANARIO ROTO (no es un pase): ni el teléfono ni el email del cliente aparecen en la\n` +
+      `vista autenticada, así que comprobar su AUSENCIA en la pública no verifica nada.\n` +
+      `Arregla el canario antes de fiarte de los dos asserts siguientes. (SCRUM-108)`);
     assert.ok(!html.includes(phone), 'la página pública NO incluye el teléfono del cliente');
     assert.ok(!html.includes(email), 'la página pública NO incluye el email del cliente');
 
