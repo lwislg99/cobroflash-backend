@@ -249,6 +249,19 @@ export async function registerMerchant(params: {
     return;
   }
 
+  // SCRUM-94: si el email pertenece a un OPERARIO (TeamMember no suspendido) y NO es un Merchant,
+  // NO crear una cuenta nueva: le robaría el acceso como operario — el magic link daría precedencia
+  // al Merchant recién creado (ver requestMagicLink) y perdería la vía de vuelta a su equipo, sin que
+  // el admin pueda arreglarlo. Se rechaza con un error TIPADO que la ruta traduce a un mensaje claro
+  // pero GENÉRICO (sin revelar la empresa). 'suspended' NO se rechaza: ya no puede entrar (no se le
+  // quita nada) y registrar su propio negocio es legítimo. TeamMember.email es @unique global.
+  const teamMember = await prisma.teamMember.findUnique({ where: { email: params.email } });
+  if (teamMember && teamMember.status !== 'suspended') {
+    const err = new Error('email_belongs_to_team') as Error & { code?: string };
+    err.code = 'email_belongs_to_team';
+    throw err;
+  }
+
   // Atribución de referido (si llega un código válido y no es autorreferencia)
   const referredBy = params.ref ? await resolveReferrer(params.ref) : null;
   const referralCode = await generateUniqueReferralCode(params.name);

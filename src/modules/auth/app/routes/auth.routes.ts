@@ -45,6 +45,15 @@ router.post('/register', registerLimiter, async (req, res) => {
     await registerMerchant({ name, email, country, ref: ref || undefined, source: source || undefined });
     return res.json({ ok: true, message: 'Cuenta creada. Revisa tu email para acceder.' });
   } catch (err) {
+    // SCRUM-94: el email ya es de un operario (TeamMember activo/invitado). Mensaje CLARO pero
+    // genérico — no revela la empresa ni confirma datos concretos. (Nota: esto hace que un email de
+    // operario sea distinguible de uno nuevo; es el coste de la "opción 1: rechazar" del ticket.)
+    if ((err as { code?: string })?.code === 'email_belongs_to_team') {
+      return res.status(409).json({
+        error: 'email_belongs_to_team',
+        message: 'No podemos crear una cuenta con este email. Si trabajas con una empresa que ya usa YaQu, pide a quien la gestiona que te dé acceso a ti.',
+      });
+    }
     console.error('[POST /auth/register]', err);
     return res.status(500).json({ error: 'internal_error' });
   }

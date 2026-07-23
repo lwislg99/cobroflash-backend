@@ -504,6 +504,19 @@ Ruta nueva = declara rol mínimo; default Admin-only. **Lo hace cumplir un test,
 > (anti-enumeración). Único archivo tocado: `auth.service.ts`. Sin schema. Hallazgo colateral NO
 > corregido (`docs/BUGS.md` P0-AUTH-1): `registerMerchant` (`/auth/register`) no comprueba
 > `TeamMember.email`, mismo tipo de colisión pero auto-inducida — fuera de alcance.
+> **✅ SCRUM-94 (23-jul-2026, AUTH):** cierra ese hallazgo colateral de SCRUM-92. `registerMerchant`
+> (`/auth/register`) solo comprobaba `Merchant.email`; un operario podía registrarse con SU email y
+> crear un Merchant nuevo, y desde entonces su magic link daba precedencia a ese Merchant (SCRUM-92)
+> → perdía el acceso como operario, sin que el Admin pudiera arreglarlo. Fix (opción 1): si el email
+> es un `TeamMember` **no suspendido** (active O invited — el invited también quedaría ensombrecido) y
+> no es Merchant, se RECHAZA el alta con **409 `email_belongs_to_team`** y mensaje claro pero GENÉRICO
+> (no revela la empresa), sin crear merchant fantasma. `suspended` sí puede registrar su negocio (ya
+> no entra como operario, es legítimo). Coste asumido a conciencia por el fundador: el 409 hace un
+> email de operario distinguible de uno nuevo (`/register` deja de ser 200-para-todo) — se filtra
+> "este email es de algún equipo", sin empresa; valor bajo para un atacante, frente a la variante
+> silenciosa, que metería a alguien que quería CREAR su negocio en la cuenta de su jefe sin
+> explicación (peor: usuario legítimo perdido). Archivos: `auth.service.ts`, `auth.routes.ts`,
+> `register.html` (ahora muestra `message`). Test gateado nuevo. Sin schema.
 > **✅ SCRUM-73 (22-jul-2026):** `GET /admin/exports/verifactu.xml` NO cumplía esta tabla — generaba
 > registros RRSIF (huellas + encadenamiento) sin consultar `INVOICING_ES_ENABLED` y era accesible a
 > Técnico. Con SIF-1 sin cerrar y el flag OFF, los merchants ES reales emiten justificantes (J-), no
