@@ -64,7 +64,7 @@ router.post('/', async (req, res) => {
             }
           }
         } catch (e) {
-          console.error('auto-invoice/error duplicate', e);
+          console.error('auto-invoice/error duplicate', (e as any)?.message || 'error desconocido'); // SCRUM-105
         }
       }
     
@@ -122,7 +122,7 @@ router.post('/', async (req, res) => {
           });
         }
       } catch (e) {
-        console.error('[psp] P0-3 marcar factura pagada (robusto) error', e);
+        console.error('[psp] P0-3 marcar factura pagada (robusto) error', (e as any)?.message || 'error desconocido'); // SCRUM-105
       }
 
       // 👇 NUEVO: intentamos emitir / asegurar la factura
@@ -147,11 +147,11 @@ router.post('/', async (req, res) => {
             prisma,
           });
         } catch (e) {
-          console.error('auto-email error', e);
+          console.error('auto-email error', (e as any)?.message || 'error desconocido'); // SCRUM-105
         }
       }
     } catch (e) {
-      console.error('auto-invoice error', e);
+      console.error('auto-invoice error', (e as any)?.message || 'error desconocido'); // SCRUM-105
     }
   }
 
@@ -168,7 +168,7 @@ router.post('/', async (req, res) => {
               },
             });
           } catch (e) {
-            console.error('auto-mark invoice paid error', e);
+            console.error('auto-mark invoice paid error', (e as any)?.message || 'error desconocido'); // SCRUM-105
           }
         }
   
@@ -298,7 +298,7 @@ router.post('/', async (req, res) => {
         details: err.errors,
       });
     }
-    console.error('POST /webhooks/psp error', err);
+    console.error('POST /webhooks/psp error', err?.message || 'error desconocido'); // SCRUM-105
     return res.status(500).json({ error: 'internal_error' });
   }
 });

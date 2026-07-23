@@ -177,7 +177,7 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
     reason: 'Quote.decisionToken + decisionLimiter — antes sin ninguno de los dos (la sexta puerta)',
   },
 
-  // ── Webhooks firmados, fail-closed si falta el secreto (500, nunca "sin validar") ──
+  // ── Webhooks firmados, fail-closed si falta el secreto (nunca "sin validar") ──
   {
     method: 'POST',
     path: '/webhooks/stripe',
@@ -189,6 +189,20 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
     path: '/webhooks/stripe-connect',
     kind: 'signed-webhook',
     reason: 'firma propia obligatoria; sin STRIPE_CONNECT_WEBHOOK_SECRET → 500',
+  },
+  // SCRUM-105: reclasificadas desde PENDING — SCRUM-99 (mergeado) las pasó a fail-closed,
+  // mismo patrón que Stripe. Antes aparcadas apuntando a un ticket que ya cerró.
+  {
+    method: 'POST',
+    path: '/webhooks/mp',
+    kind: 'signed-webhook',
+    reason: 'MP_WEBHOOK_SECRET obligatorio (SCRUM-99); sin él, el payload se rechaza sin procesar',
+  },
+  {
+    method: 'POST',
+    path: '/webhooks/whatsapp',
+    kind: 'signed-webhook',
+    reason: 'isValidSignature() rechaza (401) sin WHATSAPP_APP_SECRET (SCRUM-99; antes fail-open)',
   },
 ];
 
@@ -223,19 +237,14 @@ export interface PublicAccessPending {
   ticket: string;
 }
 
-export const PUBLIC_ACCESS_PENDING: ReadonlyArray<PublicAccessPending> = [
-  // SCRUM-95 cerró la familia Quote (7 rutas, ver PUBLIC_ACCESS_DECLARED) — movida de
-  // aquí a declarada con Quote.decisionToken.
-  //
-  // ⚠️ Quedan estas 2 con ticket YA CERRADO (SCRUM-99, mergeado) sin mover a declarada
-  // todavía — hallazgo colateral de SCRUM-95, no se toca aquí (fuera de su alcance):
-  // Webhooks fail-open si falta el secreto de firma (a diferencia de Stripe, fail-closed).
-  { method: 'POST', path: '/webhooks/mp', duda: 'fail-open: sin MP_WEBHOOK_SECRET no se valida ninguna firma', ticket: 'SCRUM-99' },
-  { method: 'POST', path: '/webhooks/whatsapp', duda: 'fail-open: sin WHATSAPP_APP_SECRET acepta cualquier payload sin firma', ticket: 'SCRUM-99' },
-];
+// SCRUM-95 cerró la familia Quote (7 rutas, ver PUBLIC_ACCESS_DECLARED) y SCRUM-105
+// reclasificó los 2 webhooks MP/WhatsApp (SCRUM-99, mergeado) — sin pendientes hoy. El
+// ratchet sigue siendo la fuente de verdad: si algo nuevo se aparca, entra aquí con su
+// ticket, nunca sin dueño.
+export const PUBLIC_ACCESS_PENDING: ReadonlyArray<PublicAccessPending> = [];
 
 /** Tope del ratchet: la lista puede menguar, JAMÁS crecer. Bajarlo al cerrar cada ticket. */
-export const PUBLIC_ACCESS_PENDING_MAX = 2; // SCRUM-95: bajado de 9 a 2 (las 7 de Quote ya declaradas)
+export const PUBLIC_ACCESS_PENDING_MAX = 0; // SCRUM-105: bajado de 2 a 0 (los 2 de MP/WhatsApp ya declarados)
 
 /**
  * Fecha límite. Pasada esta fecha el test FALLA mientras queden aparcadas.

@@ -221,7 +221,7 @@ router.post('/', async (req, res) => {
       console.log(`[mpWebhook] Estado MP '${mpStatus}' para charge ${chargeId} (ya en '${charge.status}') — sin cambios`);
     }
   } catch (err) {
-    console.error('[mpWebhook] Error inesperado:', err);
+    console.error('[mpWebhook] Error inesperado:', (err as any)?.message || 'error desconocido'); // SCRUM-105
   }
 });
 

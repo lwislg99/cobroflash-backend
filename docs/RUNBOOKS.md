@@ -143,6 +143,25 @@
   registros oficiales, facturas y nuestra declaración responsable."
 - **Prevención:** pack gestoría preparado y versionado por release (S1-E/S1-H).
 
+## R16 · Fijar `INTERNAL_API_SECRET` a mano (más de una réplica)
+
+- **Síntoma:** hay más de una réplica de la API detrás del balanceador — un self-call
+  interno (webhooks de pago → `/webhooks/psp`, `invoiceWhatsApp` → `/charges`) podría
+  aterrizar en una réplica con un secreto aleatorio distinto (`internalAuth.ts`
+  genera uno **por proceso** si la env var no está puesta) y fallar con 404.
+- **Dónde mirar:** `src/core/http/internalAuth.ts` — el guard solo exige
+  `.length >= 16` **caracteres** si se fija a mano, no entropía real. El fallback
+  automático sin la env var sí genera 256 bits reales (`crypto.randomBytes(32)`).
+- **Acción:** fijar `INTERNAL_API_SECRET` en Railway (mismo valor en TODAS las
+  réplicas) generándolo así, nunca a mano con una frase:
+  ```bash
+  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  ```
+  Una frase legible de 16-20 caracteres pasa el check de longitud pero tiene
+  muchísima menos entropía que el fallback automático — no la uses.
+- **Prevención:** mientras haya una sola réplica, no fijar esta variable — el
+  fallback aleatorio por-proceso ya es más fuerte que cualquier valor manual.
+
 ## R14 · Disputa de tarjeta (chargeback)
 
 - **Síntoma:** webhook `charge.dispute.created` (Connect; los direct charges caen en la

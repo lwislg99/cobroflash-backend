@@ -572,6 +572,30 @@ Ruta nueva = declara rol mínimo; default Admin-only. **Lo hace cumplir un test,
 > verificación, UPDATE) en `docs/MIGRATIONS_PENDING.md`. Hallazgo colateral (NO corregido aquí, fuera
 > de alcance): el cleanup de `tests/scrum74-recibo-token.test.mjs` falla por orden de borrado FK
 > (`customer.deleteMany()` antes que `customer_events`) — a capturar como ticket aparte.
+> **✅ SCRUM-105 (23-jul-2026) — CIERRE de la auditoría SCRUM-88:** agrupa los hallazgos BAJOS e
+> INFORMATIVOS más los dos residuos que quedaron abiertos. `SESSION_SECRET` (fallback hardcodeado,
+> código muerto confirmado — no se usaba en ningún sitio) eliminado. `INTERNAL_API_SECRET`
+> documentado en `docs/RUNBOOKS.md` (R16): debe fijarse con `crypto.randomBytes(32)`, nunca a mano.
+> `Referrer-Policy: strict-origin-when-cross-origin` global en `app.ts`. `console.error(tag, err)`
+> con objeto crudo → `err?.message || 'error desconocido'` en los 10 sitios nombrados por la
+> auditoría (`gemini.ts:54` con prioridad — la API key de Gemini ya viaja en la URL de la línea 30
+> del mismo archivo — más `psp.routes.ts` ×6, `mpWebhook.routes.ts`, `team.routes.ts`,
+> `dev.routes.ts`). **Los 3 informativos, criterio aplicado caso a caso:** el verify-token del
+> handshake de WhatsApp pasa a `crypto.timingSafeEqual` (mismo patrón que el resto de secretos del
+> código, coste cero); `Merchant.referralCode` (sufijo `Math.random()`) y el `Cobro #id` cosmético
+> de `receipt.routes.ts` quedan ACEPTADOS sin cambio — ninguno protege un dato sensible ni añade
+> riesgo real, y tocarlos sería consistencia cosmética sin beneficio (el código de referido es
+> deliberadamente compartible/adivinable por diseño; el id de recibo solo aparece como texto ya
+> detrás del `receiptToken`). **Residuo SCRUM-99:** `/webhooks/mp` y `/webhooks/whatsapp`
+> reclasificados de `PUBLIC_ACCESS_PENDING` a `PUBLIC_ACCESS_DECLARED` (`kind: 'signed-webhook'`) —
+> Guard A queda con **0 rutas aparcadas** de las 40 públicas, la auditoría completa clasificada.
+> **Residuo SCRUM-102:** el fallo de `scrum74-recibo-token.test.mjs` no era orden de borrado (ya
+> borraba `customerEvent` antes que `customer`) sino una RACE — `recordCustomerEvent` en
+> `receipt.routes.ts` (POST feedback) es fire-and-forget y el 303 puede volver antes de que el
+> INSERT aterrice; el cleanup ahora reintenta el par `customerEvent`+`customer` (hasta 5 veces,
+> 100ms de espera) en vez de asumir que un solo borrado ordenado basta. Verificado 3/3 pases limpios
+> contra staging real. **Con este ticket, SCRUM-88 queda completa: 18 hallazgos, todos con ticket
+> propio o descartados a conciencia (SCRUM-95/96/97/98/99/101/102/105).**
 
 ## S2. Audit `F1-build mínimo + F2 completo`
 F1: registrar en la tabla de eventos existente `marcar_pagado_manual`, `deshacer_pago`, `anular_factura`, `cambio_flag` (con userId+ip). F2: `AuditLog{merchantId,userId,action,entityType,entityId,meta,ip,createdAt}` para login, datos fiscales, Connect onboard, export, archivado cliente, cambios de plan; vista Admin.

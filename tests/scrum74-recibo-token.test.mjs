@@ -114,10 +114,25 @@ test('SCRUM-74: /recibo/:token cierra el IDOR — numérico 404 sin fuga, token 
   } finally {
     for (const fx of [A, B]) {
       await prisma.event.deleteMany({ where: { chargeId: fx.charge.id } });
-      await prisma.customerEvent.deleteMany({ where: { merchantId: fx.merchant.id } }); // recordCustomerEvent (feedback)
       await prisma.invoice.deleteMany({ where: { merchantId: fx.merchant.id } });
       await prisma.charge.deleteMany({ where: { merchantId: fx.merchant.id } });
-      await prisma.customer.deleteMany({ where: { merchantId: fx.merchant.id } });
+      // SCRUM-105: recordCustomerEvent (receipt.routes.ts, POST /feedback) es
+      // fire-and-forget — el 303 al test puede volver ANTES de que el INSERT en
+      // customer_events aterrice. Borrar customerEvent una sola vez antes de customer
+      // (orden correcto pero no basta: la escritura tardía puede colarse en el hueco de
+      // los deletes anteriores). Reintenta el par customerEvent+customer hasta que la FK
+      // deje de bloquear — mismo espíritu que SCRUM-78 (orden de borrado), un paso más
+      // porque aquí la causa es una escritura ASÍNCRONA, no solo el orden.
+      for (let attempt = 1; ; attempt++) {
+        await prisma.customerEvent.deleteMany({ where: { merchantId: fx.merchant.id } });
+        try {
+          await prisma.customer.deleteMany({ where: { merchantId: fx.merchant.id } });
+          break;
+        } catch (err) {
+          if (attempt >= 5) throw err;
+          await new Promise((r) => setTimeout(r, 100));
+        }
+      }
       await prisma.merchant.delete({ where: { id: fx.merchant.id } });
     }
     server.close();
