@@ -100,7 +100,8 @@ export const MIGRACION_PENDIENTE = [
   'scrum47-enviar-albaran-wa.test.mjs',
   // tanda 5: scrum49-firma-remota (migrado; sigue ROJO por SCRUM-114, causa ajena)
   'scrum57-operario-propagacion.test.mjs', 'scrum66-tipo-operacion.test.mjs',
-  'scrum68-evidencias-firma.test.mjs', 'scrum72-pdfs-privados.test.mjs',
+  'scrum68-evidencias-firma.test.mjs',
+  // tanda 5: scrum49-firma-remota · scrum72-pdfs-privados
   'scrum74-recibo-token.test.mjs',
   'scrum85-pay-routes-token.test.mjs',
   'scrum90-pay-bank-mp-token.test.mjs',
@@ -123,7 +124,7 @@ export const MIGRACION_PENDIENTE = [
 // una de las dos ramas. Es el escenario exacto que el assert de IGUALDAD EXACTA vino a
 // hacer ruidoso: con `<=` cualquiera de esos números habría pasado en verde, dejando
 // huecos libres.
-export const MIGRACION_MAX = 12;
+export const MIGRACION_MAX = 11;
 
 /**
  * Fecha límite. Pasada, el test falla mientras queden pendientes.

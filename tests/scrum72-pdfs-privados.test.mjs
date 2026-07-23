@@ -13,6 +13,7 @@
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -38,15 +39,15 @@ test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto
   assert.ok(normalized.includes('/storage/'), `invoicesDir debe vivir en storage/ (actual: ${invoicesDir})`);
 
   const stamp = Date.now();
-  const mkMerchant = (tag) =>
-    prisma.merchant.create({
-      data: {
-        name: `QA S72 ${tag}`, country: 'ES', email: `qa-s72-${tag}-${stamp}@test.local`,
-        onboardingCompleted: true, invoiceSeriesPrefix: 'CF',
-      },
-    });
-  const merchantA = await mkMerchant('A');
-  const merchantB = await mkMerchant('B');
+  // SCRUM-113: `invoiceSeriesPrefix` se conserva — los asserts buscan números `…-CF-…`.
+  const datosMerchant = (tag) => ({
+    name: `QA S72 ${tag}`, email: `qa-s72-${tag}-${stamp}@test.local`, invoiceSeriesPrefix: 'CF',
+  });
+
+  // Los merchants y TODO su montaje dentro de withMerchant; antes nacían fuera del try.
+  try {
+    await withMerchant(prisma, datosMerchant('A'), (merchantA) =>
+      withMerchant(prisma, datosMerchant('B'), async (merchantB) => {
 
   const custA = await prisma.customer.create({ data: { merchantId: merchantA.id, name: 'Cliente S72' } });
 
@@ -82,7 +83,6 @@ test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto
 
   const isPdf = (res) => (res.headers.get('content-type') || '').includes('application/pdf');
 
-  try {
     const cookieA = await mkCookie(merchantA.id);
     const cookieB = await mkCookie(merchantB.id);
 
@@ -183,15 +183,9 @@ test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto
       'Quote.pdfUrl debe apuntar al endpoint auth, no al estático');
 
     t.diagnostic('estático muerto con fichero en disco ✓ · adjunto de factura real ✓ · ruta de adjunto de presupuesto ✓ · legacy resuelto ✓ · tenancy ✓');
-  } finally {
-    for (const m of [merchantA, merchantB]) {
-      await prisma.authSession.deleteMany({ where: { merchantId: m.id } });
-      await prisma.invoice.deleteMany({ where: { merchantId: m.id } });
-      await prisma.quote.deleteMany({ where: { merchantId: m.id } });
-      await prisma.customer.deleteMany({ where: { merchantId: m.id } });
-    }
-    await prisma.merchant.deleteMany({ where: { id: { in: [merchantA.id, merchantB.id] } } });
-    // ficheros generados por el test (PDFs + .eml del outbox)
+
+    // Los FICHEROS de disco no son del merchant y necesitan merchantA.id / quoteA.id, así
+    // que se limpian aquí dentro. De la BD se encarga withMerchant (mismo caso que scrum76).
     const { outboxDir: ob } = await import('../dist/core/storage/dirs.js');
     for (const f of [
       path.join(invoicesDir, `${merchantA.id}-${numero}.pdf`),
@@ -200,6 +194,9 @@ test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto
     ]) {
       try { fs.unlinkSync(f); } catch { /* ya no está */ }
     }
+      }));
+  } finally {
+    // Solo lo que NO es del merchant: el borrado de datos lo garantiza withMerchant.
     server.close();
     await prisma.$disconnect();
   }
