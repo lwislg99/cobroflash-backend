@@ -7,6 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
+import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 const DB = process.env.QA_DB_TEST === '1';
 
@@ -98,20 +99,20 @@ test('A12.5d: regeneración on-demand (R8) — /admin/quotes/:id/pdf responde PD
   const base = `http://127.0.0.1:${server.address().port}`;
 
   const stamp = Date.now();
-  const merchant = await prisma.merchant.create({
-    data: { name: 'QA PDFs A12.5d', country: 'ES', email: `qa-a125d-${stamp}@test.local`, onboardingCompleted: true },
-  });
-  const customer = await prisma.customer.create({
-    data: { merchantId: merchant.id, name: 'Cliente QA A12.5d', phone: `34604${stamp % 1000000}` },
-  });
-  const quote = await prisma.quote.create({
-    data: {
-      merchantId: merchant.id, customerId: customer.id, total: '100.00', currency: 'EUR',
-      lines: [{ concept: 'Servicio QA A12.5d', qty: 1, price: 100 }], status: 'draft',
-    },
-  });
 
+  // SCRUM-113: el merchant y su montaje dentro de withMerchant; antes nacían fuera del try.
   try {
+    await withMerchant(prisma, { name: 'QA PDFs A12.5d', email: `qa-a125d-${stamp}@test.local` }, async (merchant) => {
+    const customer = await prisma.customer.create({
+      data: { merchantId: merchant.id, name: 'Cliente QA A12.5d', phone: `34604${stamp % 1000000}` },
+    });
+    const quote = await prisma.quote.create({
+      data: {
+        merchantId: merchant.id, customerId: customer.id, total: '100.00', currency: 'EUR',
+        lines: [{ concept: 'Servicio QA A12.5d', qty: 1, price: 100 }], status: 'draft',
+      },
+    });
+
     const token = 'qa125-' + crypto.randomBytes(10).toString('hex');
     await prisma.authSession.create({
       data: { merchantId: merchant.id, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
@@ -125,11 +126,9 @@ test('A12.5d: regeneración on-demand (R8) — /admin/quotes/:id/pdf responde PD
       const buf = Buffer.from(await res.arrayBuffer());
       assert.ok(buf.subarray(0, 5).toString() === '%PDF-', `intento ${i}: no devolvió PDF`);
     }
+    });
   } finally {
-    await prisma.authSession.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.quote.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.customer.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.merchant.delete({ where: { id: merchant.id } });
+    // Solo lo que NO es del merchant: el borrado de datos lo garantiza withMerchant.
     server.close();
     await prisma.$disconnect();
   }

@@ -8,6 +8,7 @@
 import './_staging-db.mjs'; // SCRUM-60/64: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 // ANTES de importar dist (config se congela al cargar). El fallback handleIncomingText
 // (donde vive la PIEZA 3) corre directo con el bot OFF.
@@ -28,11 +29,6 @@ test('SCRUM-50: webhook — Recibido→acuse sin menú · texto sobre albarán�
   const stamp = Date.now();
   const phone = `34600${stamp % 1000000}`;
   const proPhone = '34600111222';
-  const merchant = await prisma.merchant.create({
-    data: { name: 'QA S50', country: 'ES', email: `qa-s50-${stamp}@test.local`, onboardingCompleted: true, whatsappPhone: proPhone },
-  });
-  const customer = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente 50', phone } });
-
   let seq = 0;
   const wamid = () => `wamid.s50.${stamp}.${++seq}`;
   const envelope = (msg) => ({ object: 'whatsapp_business_account', entry: [{ id: '0', changes: [{ field: 'messages', value: { messaging_product: 'whatsapp', messages: [msg] } }] }] });
@@ -41,7 +37,13 @@ test('SCRUM-50: webhook — Recibido→acuse sin menú · texto sobre albarán�
   const settle = () => new Promise((r) => setTimeout(r, 900));
   const textTo = (to) => outbox.filter((e) => e.kind === 'text' && e.to === to).map((e) => e.text);
 
+  // SCRUM-113: el merchant y su cliente dentro de withMerchant; antes nacían fuera del try.
   try {
+    await withMerchant(prisma, {
+      name: 'QA S50', email: `qa-s50-${stamp}@test.local`, whatsappPhone: proPhone,
+    }, async (merchant) => {
+    const customer = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente 50', phone } });
+
     // (1) «👍 Recibido» (type button) → acuse, SIN menú genérico
     outbox.length = 0;
     await post({ from: phone, id: wamid(), type: 'button', button: { text: '👍 Recibido' } });
@@ -67,10 +69,9 @@ test('SCRUM-50: webhook — Recibido→acuse sin menú · texto sobre albarán�
     assert.ok(!textTo(phone).some((t) => /no tienes presupuestos pendientes/i.test(t)), 'NO el mensaje clásico cuando hay albarán');
 
     console.log('✔ SCRUM-50: Recibido→acuse sin menú · sin-albarán→clásico · texto sobre albarán→aviso al pro + acuse.');
+    });
   } finally {
-    await prisma.whatsAppMessage.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.customer.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.merchant.delete({ where: { id: merchant.id } });
+    // Solo lo que NO es del merchant: el borrado de datos lo garantiza withMerchant.
     server.close();
     delete globalThis.__waDryRunOutbox;
     await prisma.$disconnect();

@@ -66,6 +66,12 @@ async function main() {
   // Hijos antes que padres. `.catch` por si alguna tabla no existe en este entorno:
   // limpiar es best-effort, nunca debe dejar el proceso a medias por una tabla.
   const pasos = [
+    // SCRUM-113: `event` VA EL PRIMERO y no tiene merchantId propio — cuelga de charge, con
+    // FK RESTRICT. Sin este paso, `charge` no se puede borrar, y sin charge tampoco el
+    // merchant: el script fallaba justo con los huérfanos de scrum74 (que crean un event
+    // 'invoiced'), o sea con LOS ÚNICOS que había que limpiar. La herramienta de limpieza
+    // no podía limpiar los huérfanos que motivaron SCRUM-79.
+    ['event', () => prisma.event.deleteMany({ where: { charge: { merchantId: { in: ids } } } })],
     ['authSession', () => prisma.authSession.deleteMany({ where })],
     ['auditLog', () => prisma.auditLog.deleteMany({ where })],
     ['albaran', () => prisma.albaran.deleteMany({ where })],
@@ -92,7 +98,15 @@ async function main() {
     if (r && r.count) console.log(`  ${tabla}: ${r.count} borrados`);
   }
 
-  const del = await prisma.merchant.deleteMany({ where: { id: { in: ids } } });
+  // SCRUM-113: este borrado iba SIN .catch, así que una FK viva reventaba el script y lo
+  // dejaba a medias — hijos borrados, merchants en pie y un stack trace por toda respuesta.
+  // Mismo defecto que el `finally` de scrum74 (SCRUM-79): la limpieza que falla a mitad es
+  // peor que la que no corre, porque deja el estado a medio camino y sin diagnóstico.
+  const del = await prisma.merchant.deleteMany({ where: { id: { in: ids } } }).catch((e) => {
+    console.log(`  ⚠️  merchant: ${e.message.split('\n')[0]}`);
+    console.log('     Queda alguna FK viva: mira qué tabla la nombra y añádela a `pasos`.');
+    return { count: 0 };
+  });
   console.log(`  merchant: ${del.count} borrados`);
 
   const t1 = Date.now();
