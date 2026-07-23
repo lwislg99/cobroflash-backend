@@ -513,6 +513,21 @@ Dos consecuencias operativas:
 > la suya**. Los 4 huérfanos `qa-s74-*` (#339, #340, #381, #383) viven en `railway` (Sesión 2);
 > medidos inocuos en SCRUM-79.
 
+> **Cómo saber si hay «schema en vuelo» — NO por el diff (23-jul-2026).** Buscar ramas o worktrees
+> con cambios en `prisma/schema.prisma` **no es fiable**: da falsos positivos en las dos direcciones.
+> - Una **rama mergeada sin borrar** conserva su diff de `schema.prisma` frente a un `main` viejo:
+>   parece «en vuelo» y ya está aplicada. (El barrido de ramas del 23-jul encontró decenas así;
+>   `scrum-27-pagos-flex` fue el falso positivo que disparó la sospecha.)
+> - Un **worktree con WIP** (schema tocado, sin commitear) enseña el diff aunque ESE trabajo ya se
+>   haya `db push`-eado a prod — es su estado normal a media tarea. (`wt-scrum-109` el 23-jul: schema
+>   modificado en el worktree, pero ya aplicado a producción por su propia sesión.)
+>
+> La pregunta correcta no es «¿alguien tocó el schema?» (síntoma) sino **«¿queda algún `db push`
+> pendiente de aplicar?»** (propiedad, regla 5). Se responde en dos sitios, no en el diff:
+> **1)** `docs/MIGRATIONS_PENDING.md` — el log de `db push` a prod; y **2)** si hay **alguna sesión
+> con un STOP de schema abierto** en el canal (AA1.4: los cambios de schema paran y piden OK). Si ambos
+> están limpios, no hay schema en vuelo por mucho diff que haya colgando en ramas o worktrees.
+
 ## Variables
 
 - `BASE` = URL de staging (p.ej. `https://<staging>.up.railway.app`)
