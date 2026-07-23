@@ -1,4 +1,4 @@
-# SUITE DE REGRESIÓN E2E — v1.8 (SCRUM-38 · fixes SCRUM-42/36 · albaranes SCRUM-14 · alineación UI real SCRUM-43/44 · seguridad PDF SCRUM-48 · autoría operario SCRUM-22 · albarán-WA SCRUM-47 · albarán valorado + PDF legal SCRUM-65/67 · runbook de ejecución SCRUM-79 · `.env` del carril B SCRUM-55/60 · cómo se escribe una verificación SCRUM-103)
+# SUITE DE REGRESIÓN E2E — v1.8 (SCRUM-38 · fixes SCRUM-42/36 · albaranes SCRUM-14 · alineación UI real SCRUM-43/44 · seguridad PDF SCRUM-48 · autoría operario SCRUM-22 · albarán-WA SCRUM-47 · albarán valorado + PDF legal SCRUM-65/67 · runbook de ejecución SCRUM-79 · `.env` del carril B SCRUM-55/60 · cómo se escribe una verificación SCRUM-103 · dónde parar y patrones copiados SCRUM-124)
 
 > Guion que Claude Code ejecuta con el **Playwright MCP** contra **STAGING** tras cada
 > merge+deploy. Cubre la regresión de PAGOS-FLEX (SCRUM-27/32/34) y los CTAs de invoice
@@ -370,7 +370,50 @@ Las tres reglas que salen de ahí, para cualquier test, assert o check nuevo:
    assert que la respalde.** Si la única cosa que impide el atajo es la frase que lo prohíbe,
    no lo impide — solo lo documenta.
 
-### La conclusión de las seis reglas: mueve la garantía de la disciplina al mecanismo
+8. **Dónde PARAR: no es «¿tiene mecanismo?», es «¿cuánto cuesta el atajo y quién lo vería?»
+   (SCRUM-124)**
+
+   La regla 7 llevada al pie de la letra no termina nunca: el censo necesita un suelo, el
+   suelo necesita quien lo vigile, y ese otro. **En algún punto la última capa es una
+   convención, y hay que aceptarlo** — lo contrario es gastar el presupuesto de atención en
+   capas que nadie mira.
+
+   El mismo ejemplo sirve para los dos lados:
+
+   | | ¿deja rastro? | veredicto |
+   |---|---|---|
+   | Olvidarse de una entrada del censo | **no**, ningún diff, ningún assert | → **mecanismo** (`CENSO_MIN`) |
+   | Bajar `CENSO_MIN` a propósito | **sí**, una línea en el diff de un PR | → **convención**, anotada |
+
+   → Protege con assert lo que puede romperse **sin dejar rastro visible**; deja en convención
+   lo que **exige un cambio deliberado y revisable**. Y **anota cuál es cuál junto a la frase**:
+   una prohibición que se queda en convención a sabiendas no es deuda; una que se queda por
+   descuido, sí. Esa nota es la diferencia entre las dos.
+
+   **Corolario para los suelos y canarios:** un suelo flojo miente en la dirección peor. El
+   canario del enumerador de SCRUM-55 era `routes.length > 100` con **125 rutas montadas**:
+   una avería que se llevara las 11 rutas que no figuran en ninguna lista pasaba **entera en
+   verde**. Un suelo que protege contra una caída *invisible* va al recuento real; solo los
+   que se bajan a mano pueden ir holgados.
+
+9. **Al corregir un patrón copiado, busca las hermanas: propaga la corrección o anótala.
+   (SCRUM-124)**
+
+   El 23-jul-2026 el mismo patrón apareció **tres veces en un día**: los fixtures de
+   `scrum74`/`85`/`90` con la misma estructura, la guarda de presencia que solo estaba en una
+   de las rutas de pago, y un ratchet con `===` mientras su hermano seguía con `<=`. En los
+   tres casos, **el patrón se copió y la corrección no**.
+
+   El caso más claro: la lección del tope apretado se aprendió **en** `scrum55` (se dejó en 25
+   con 24 entradas, SCRUM-103). El ratchet de SCRUM-113 nació con `===` **citando ese caso por
+   su nombre**, y `scrum55` se quedó con el `<=` cuatro meses. Quien escribió la corrección
+   tenía el original delante.
+
+   → Al arreglar algo que huele a plantilla, **busca sus hermanas antes de cerrar** (`grep` del
+   patrón, no de memoria). Si no toca propagarlo, escribe por qué no — un «aquí no aplica
+   porque…» de una línea evita que el siguiente lo mire desde cero.
+
+### La conclusión de estas reglas: mueve la garantía de la disciplina al mecanismo
 
 Las reglas de arriba son útiles, pero el 23-jul-2026 falló **una regla que estaba bien escrita y
 que se cumplió**. Merece la pena entender por qué, porque decide cómo se escribe la siguiente
