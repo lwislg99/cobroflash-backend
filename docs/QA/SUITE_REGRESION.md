@@ -128,6 +128,40 @@ Las tres reglas que salen de ahí, para cualquier test, assert o check nuevo:
    borrado en su lugar — además de saltarse todo lo que venga detrás en el mismo bloque
    (`server.close()`, `$disconnect()`). Avisa por consola y sigue.
 
+   ### Y mientras lo miras en rojo, escribe el MENSAJE: anticipa el error de quien lo vea
+
+   Verlo fallar es el único momento en que lees tu propio mensaje como lo va a leer otro. Es
+   ahí donde se escribe, no antes. Y la pregunta que hay que hacerse es siempre la misma:
+
+   > **¿Cuál es el atajo que pondría esto en verde sin arreglar nada?**
+
+   Ese atajo va **nombrado y prohibido dentro del mensaje**. Porque los nueve casos de
+   SCRUM-103 tienen algo en común: en todos, alguien **aflojó un mecanismo para poder
+   seguir** — y ninguno lo hizo por dejadez. Lo hizo porque el camino de menor resistencia
+   estaba disponible y **nada le dijo que era el equivocado**. El mensaje es donde se cierra
+   esa puerta.
+
+   Un mensaje mínimo (*"hay holgura, arregla el número"*) deja al que lo encuentra buscando
+   el arreglo, y ahí es donde aparecen los que ponen el verde sin resolver nada: relajar el
+   assert, subir el tope, quitar una entrada del censo. Compáralo con los tres que sí lo
+   hacen:
+
+   * `DETECTOR CIEGO` → *"NO los quites del censo para poner esto en verde"*.
+   * `un test nuevo NO se aparca` → impide estrenar el ratchet subiendo el tope, que es lo
+     que lo habría matado en su primer uso.
+   * `HOLGURA` → *"el número NO es el de ninguna de las dos ramas, es el largo real de la
+     lista ya fusionada. Haz la cuenta, no elijas un lado."*
+
+   El tercero se ganó el sitio el mismo día: al fusionar dos tandas de migración simultáneas
+   hubo **tres conflictos seguidos** en la línea del tope y **en ninguno el número correcto
+   era el de una de las dos ramas**. El mensaje decía exactamente qué hacer.
+
+   Un buen mensaje da tres cosas que el mínimo no: **el valor correcto ya calculado**, **por
+   qué importa**, y **la trampa nombrada**. Si al escribirlo no se te ocurre ningún atajo que
+   prohibir, probablemente aún no has entendido contra qué protege tu mecanismo.
+
+   > **Es la diferencia entre un test que bloquea y uno que además impide el atajo.**
+
 2. **Toda comprobación por AUSENCIA necesita antes un assert de que lo buscado existe cuando
    debe existir.** El canario de tenancy buscaba que la cadena `'9999.00'` no apareciera en el
    export de otro merchant; al cambiar el formato a coma decimal, esa cadena dejó de existir en
