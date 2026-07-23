@@ -94,9 +94,54 @@ function enumerateAdminRoutes() {
   return [...byKey.values()];
 }
 
+/**
+ * SUELO DEL ENUMERADOR — al recuento REAL, sin margen. Medido: 125 rutas /admin (23-jul-2026).
+ *
+ * Antes era `routes.length > 100` con 125 montadas: **25 rutas de margen ciego**. El walker
+ * podía dejar de ver veinticuatro y el canario seguía cantando. Un canario con 25 % de holgura
+ * no avisa de nada — y esta es la enumeración de la que dependen los OTROS tres asserts del
+ * fichero: si enumera de menos, «toda ruta declara rol» pasa en verde sobre las que sí vio.
+ *
+ * ⚠️ NO es el mismo caso que CENSO_MIN, aunque los dos sean suelos:
+ *
+ *   · CENSO_MIN protege una lista que se edita A MANO. Bajarlo es un cambio DELIBERADO que
+ *     aparece en el diff de un PR y alguien lo revisa → holgado es aceptable, es convención.
+ *   · Esto protege contra una caída INVISIBLE: Express cambia de versión, `app.router.stack`
+ *     deja de exponer algo, y la enumeración encoge sin que nadie toque una línea. Nadie va a
+ *     revisar un diff, porque no hay diff. Por eso tiene que ir APRETADO.
+ *
+ * La pregunta no es «¿tiene mecanismo?» sino «¿cuánto cuesta el atajo y quién lo vería?».
+ * Aquí no hay atajo que revisar: hay un fallo que nadie ve. (SCRUM-124)
+ *
+ * MEDIDO, no supuesto. De las 125 rutas, 114 figuran en alguna de las tres listas y 11 no
+ * figuran en ninguna (billing/checkout, team, connect, exports/fees.csv). Se inyectó una
+ * avería que se lleva EXACTAMENTE esas 11 — las que se pueden perder sin dejar rastro:
+ *
+ *   suelo viejo (>100):  114 rutas · TODO VERDE, exit=0 · el diagnóstico imprime «114 rutas»
+ *   suelo nuevo (>=125): 114 rutas · ROJO, exit=1
+ *
+ * El primer intento de demostrarlo recortó rutas al azar y salió rojo con el suelo viejo —
+ * pero lo cazó el assert de «entrada muerta», no el suelo, y solo porque el recorte pilló
+ * rutas declaradas. Cazar por casualidad no es cubrir esa clase (regla 7 del runbook): había
+ * que buscar la avería que NO deja rastro, y esa pasaba entera.
+ *
+ * Al añadir rutas SUBE (el assert no molesta: 126 >= 125 pasa). Si se BORRA una ruta de
+ * verdad, esto sale rojo y se baja a propósito, en el mismo commit y con el motivo.
+ */
+const RUTAS_MIN = 125;
+
 test('SCRUM-55: toda ruta /admin declara rol (fail-closed)', (t) => {
   const routes = enumerateAdminRoutes();
-  assert.ok(routes.length > 100, `enumeración sospechosamente corta (${routes.length}): ¿se rompió el walker?`);
+  assert.ok(
+    routes.length >= RUTAS_MIN,
+    `\n\n🔴 LA ENUMERACIÓN HA ENCOGIDO: ${routes.length} rutas /admin, el suelo es ${RUTAS_MIN}.\n\n` +
+      `Los otros asserts de este fichero solo miran lo que ESTA función devuelve. Si enumera\n` +
+      `de menos, «toda ruta declara rol» pasa en verde sobre las rutas que sí vio, y las que\n` +
+      `se perdieron quedan fuera de la auditoría sin que nada lo diga.\n\n` +
+      `Antes de bajar el suelo, descarta lo invisible: ¿cambió la versión de Express, o la\n` +
+      `forma de montar un router? Esa es la avería que este número existe para cazar.\n` +
+      `Solo si de verdad se BORRÓ una ruta, baja RUTAS_MIN a ${routes.length} aquí mismo, con el motivo.\n`,
+  );
 
   const declared = new Set(TECNICO_ALLOWED.map((r) => key(r.method, normalize(r.path))));
   const pending = new Set(PENDIENTE_CLASIFICAR.map((r) => key(r.method, normalize(r.path))));
