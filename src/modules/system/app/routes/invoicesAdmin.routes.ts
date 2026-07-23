@@ -475,22 +475,29 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
         console.error('[send-reminder] WA template error:', result.error);
       }
     } else {
-      await sendWhatsAppText({
+      // SCRUM-116: antes ponía `sent = true` SIN mirar el retorno, así que ni el `sent:false`
+      // del cuerpo llegaba a aparecer: el backend afirmaba haber enviado.
+      const result = await sendWhatsAppText({
         to: phone,
         merchantId: invoice.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
         text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago de la factura *${invoice.number}* por *${total} ${invoice.currency}* de parte de *${merchantName}*.\n\n¡Gracias!`,
       });
-      sent = true;
+      sent = !!result?.ok;
+      if (!sent) console.error('[send-reminder] WA texto NO entregado:', (result as any)?.error || (result as any)?.reason);
     }
 
-    // Actualizar el campo de recordatorio correspondiente según antigüedad
-    const daysSinceCreation = (Date.now() - new Date(invoice.createdAt).getTime()) / (24 * 60 * 60 * 1000);
-    const updateData: any = {};
-    if (!invoice.reminder7SentAt)  updateData.reminder7SentAt  = new Date();
-    else if (!invoice.reminder14SentAt) updateData.reminder14SentAt = new Date();
+    // SCRUM-116: la fecha se marca SOLO si el envío salió. Antes se escribía siempre, y como
+    // el cron filtra por `reminderXSentAt: null`, un fallo sacaba la factura de su `where`
+    // PARA SIEMPRE: nadie volvía a reclamarla. El registro decía «recordado» y el usuario leía
+    // «✓ enviado». Ahora, si falla, la factura sigue viva para la pasada de mañana.
+    if (sent) {
+      const updateData: any = {};
+      if (!invoice.reminder7SentAt)  updateData.reminder7SentAt  = new Date();
+      else if (!invoice.reminder14SentAt) updateData.reminder14SentAt = new Date();
 
-    if (Object.keys(updateData).length > 0) {
-      await prisma.invoice.update({ where: { id }, data: updateData });
+      if (Object.keys(updateData).length > 0) {
+        await prisma.invoice.update({ where: { id }, data: updateData });
+      }
     }
 
     return res.json({ ok: true, sent, via: payUrl ? 'template' : 'text', phone });

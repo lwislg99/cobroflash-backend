@@ -6,8 +6,18 @@
  *
  * Se usa la plantilla payment_request_es (ya aprobada en Meta) cuando la
  * factura tiene un charge con URL de pago. Si no, se envía un texto libre.
- * El cron ejecuta esto cada hora; los campos reminder7SentAt / reminder14SentAt
- * actúan como candados para garantizar idempotencia.
+ *
+ * ⚠️ CORREGIDO (SCRUM-116): este comentario decía «el cron ejecuta esto cada hora». Es
+ * FALSO — corre UNA VEZ AL DÍA a las 10:00 (`cron.schedule('0 10 * * *')`, core/cron/cron.ts).
+ * No es una errata inocente: sobre esa cifra se diseñó mal la política de reintentos de este
+ * mismo ticket, hasta que se leyó el cron. Un comentario que afirma un hecho sobre el
+ * comportamiento del sistema no se ejecuta nunca, así que nada lo desmiente: verifícalo
+ * contra el código antes de diseñar sobre él.
+ *
+ * `reminder7SentAt` / `reminder14SentAt` son los candados de idempotencia. Desde SCRUM-116
+ * significan **«se envió»**, no «se intentó»: si el envío falla NO se marcan, y el cron
+ * vuelve a intentarlo en la pasada del día siguiente. Esa cadencia diaria ES el backoff —
+ * no hace falta contador ni espaciado.
  */
 import { prisma } from '../../../core/db/prisma';
 import { sendWhatsAppWindowFirst, sendWhatsAppText } from '../../../integrations/whatsapp';
@@ -31,7 +41,11 @@ export async function sendInvoicePaymentReminders(): Promise<void> {
       status: 'pending',
       createdAt: { lte: cut7 },
       reminder7SentAt: null,
-      customer: { phone: { not: null } },
+      // SCRUM-116: el opt-out se filtra AQUÍ, no se trata como un fallo de envío. Enviar a
+      // quien se dio de baja no es «reintentar de más»: es un problema legal (J3). Además,
+      // resolverlo en la consulta mantiene honesto el candado — `reminderXSentAt` sigue
+      // significando «se envió» y no hay que marcarlo en falso para evitar el reintento.
+      customer: { phone: { not: null }, waOptOut: false },
     },
     include: {
       customer: true,
@@ -48,7 +62,7 @@ export async function sendInvoicePaymentReminders(): Promise<void> {
       createdAt: { lte: cut14 },
       reminder14SentAt: null,
       // reminder7SentAt puede ser null si el cliente no tiene WA → no bloquear el de 14d
-      customer: { phone: { not: null } },
+      customer: { phone: { not: null }, waOptOut: false }, // SCRUM-116 (J3), ver arriba
     },
     include: {
       customer: true,
@@ -64,8 +78,11 @@ export async function sendInvoicePaymentReminders(): Promise<void> {
 
   console.log(`[invoiceReminder] ${total7} recordatorio(s) 7d, ${total14} recordatorio(s) 14d`);
 
+  // SCRUM-116: el candado se cierra SOLO si el envío salió. Si falla, la factura sigue con
+  // su `reminderXSentAt` a null y vuelve a entrar mañana. Antes se marcaba siempre, así que
+  // un fallo la sacaba de este `where` PARA SIEMPRE y esa factura no se reclamaba nunca más.
   for (const inv of toRemind7) {
-    await sendReminderWA(inv, 7);
+    if (!(await sendReminderWA(inv, 7))) continue;
     await prisma.invoice.update({
       where: { id: inv.id },
       data: { reminder7SentAt: new Date() },
@@ -73,7 +90,7 @@ export async function sendInvoicePaymentReminders(): Promise<void> {
   }
 
   for (const inv of toRemind14) {
-    await sendReminderWA(inv, 14);
+    if (!(await sendReminderWA(inv, 14))) continue;
     await prisma.invoice.update({
       where: { id: inv.id },
       data: { reminder14SentAt: new Date() },
@@ -81,6 +98,15 @@ export async function sendInvoicePaymentReminders(): Promise<void> {
   }
 }
 
+/**
+ * Envía un recordatorio y dice SI SALIÓ.
+ *
+ * ⚠️ Antes devolvía `void`: sabía el resultado (`result.ok`), lo logueaba… y lo tiraba. El
+ * bucle que llama no tenía con qué decidir, así que marcaba el candado siempre. Devolver el
+ * desenlace es la mitad estructural del arreglo de SCRUM-116 — sin esto no hay `if` posible.
+ *
+ * @returns `true` solo si el mensaje salió de verdad.
+ */
 async function sendReminderWA(
   inv: {
     id: number;
@@ -95,9 +121,9 @@ async function sendReminderWA(
     merchant: { name: string } | null;
   },
   day: 7 | 14,
-): Promise<void> {
+): Promise<boolean> {
   const phone = normalizePhone(inv.customer?.phone);
-  if (!phone) return;
+  if (!phone) return false; // sin teléfono no hay envío: no se marca (SCRUM-116)
 
   const customerName  = inv.customer?.name  || 'Cliente';
   const merchantName  = inv.merchant?.name  || 'tu proveedor';
@@ -144,6 +170,7 @@ async function sendReminderWA(
       });
       if (result.ok) {
         console.log(`[invoiceReminder] ✓ ${day}d vía ${result.via} → inv #${inv.number}`); // SCRUM-101: sin nombre del cliente
+        return true;
       } else {
         console.error(`[invoiceReminder] WA error ${day}d → inv #${inv.number}:`, result.error || result.reason);
         // A20.5 (J5): el fallo del cron queda REGISTRADO y visible en el BO (360)
@@ -154,17 +181,34 @@ async function sendReminderWA(
           title: `⚠️ Recordatorio de cobro (${day} días) no entregado por WhatsApp`,
           detail: `${docLabel} ${inv.number} · el enlace sigue activo — envíaselo por email o SMS desde el detalle`,
         });
+        return false; // SCRUM-116: NO se marca el candado → mañana se reintenta
       }
     } else {
       // Sin charge → texto libre (solo entrega dentro de ventana 24h)
-      await sendWhatsAppText({
+      // SCRUM-116: esta rama loguéaba «✓ texto» SIN MIRAR el retorno, y no registraba el
+      // fallo — la misma función tenía una rama honesta (plantilla) y otra que se felicitaba.
+      const result = await sendWhatsAppText({
         to: phone,
         merchantId: inv.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
         text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago del ${docLabel} *${inv.number}* por *${total} ${inv.currency}* de parte de *${merchantName}*.\n${urgency}\nSi ya has realizado el pago, por favor ignora este mensaje. ¡Gracias!`,
       });
-      console.log(`[invoiceReminder] ✓ texto ${day}d → inv #${inv.number}`); // SCRUM-101: sin nombre del cliente
+      if (result?.ok) {
+        console.log(`[invoiceReminder] ✓ texto ${day}d → inv #${inv.number}`); // SCRUM-101: sin nombre del cliente
+        return true;
+      }
+      console.error(`[invoiceReminder] texto ${day}d NO entregado → inv #${inv.number}:`, (result as any)?.error || (result as any)?.reason);
+      // Mismo rastro que la rama de plantilla: el fallo se ve en el 360 del cliente (A20.5/J5).
+      recordCustomerEvent({
+        merchantId: inv.merchantId,
+        customerId: inv.customerId,
+        type: 'wa_send_failed',
+        title: `⚠️ Recordatorio de cobro (${day} días) no entregado por WhatsApp`,
+        detail: `${docLabel} ${inv.number} · el enlace sigue activo — envíaselo por email o SMS desde el detalle`,
+      });
+      return false;
     }
   } catch (err: any) {
     console.error(`[invoiceReminder] excepción ${day}d → inv #${inv.number}:`, err?.message);
+    return false; // SCRUM-116: una excepción NO es un envío — no se marca el candado
   }
 }
