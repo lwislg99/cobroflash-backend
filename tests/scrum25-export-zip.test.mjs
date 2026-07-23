@@ -18,6 +18,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
+import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 import { assertAusenteConMecanismoVivo } from './_ausencia.mjs'; // SCRUM-108
 
 const ENABLED = process.env.QA_DB_TEST === '1';
@@ -91,64 +92,64 @@ test('SCRUM-25 (B): datos.zip — técnico 403, entradas, PDFs, tenancy, rango, 
   const base = `http://127.0.0.1:${server.address().port}`;
 
   const stamp = Date.now();
-  const mkMerchant = (tag) =>
-    prisma.merchant.create({
+  const datosMerchant = (tag) => ({
+    name: `QA S25B ${tag}`, email: `qa-s25b-${tag}-${stamp}@test.local`, invoiceSeriesPrefix: 'CF',
+  });
+
+  // SCRUM-113: los merchants y TODO su montaje viven dentro de withMerchant. Antes se
+  // creaban aquí, fuera del try: si reventaba el alta del técnico, de un cliente o de una
+  // factura, el finally ni se planteaba y quedaban huérfanos en staging.
+  try {
+    await withMerchant(prisma, datosMerchant('A'), (merchantA) =>
+      // vecino: nada suyo puede salir en el ZIP de A
+      withMerchant(prisma, datosMerchant('B'), async (merchantB) => {
+    const tecnicoA = await prisma.teamMember.create({
       data: {
-        name: `QA S25B ${tag}`, country: 'ES', email: `qa-s25b-${tag}-${stamp}@test.local`,
-        onboardingCompleted: true, invoiceSeriesPrefix: 'CF',
+        merchantId: merchantA.id, name: 'QA Tec S25B',
+        email: `qa-s25b-tec-${stamp}@test.local`, role: 'tecnico', status: 'active',
       },
     });
-  const merchantA = await mkMerchant('A');
-  const merchantB = await mkMerchant('B'); // vecino: nada suyo puede salir en el ZIP de A
 
-  const tecnicoA = await prisma.teamMember.create({
-    data: {
-      merchantId: merchantA.id, name: 'QA Tec S25B',
-      email: `qa-s25b-tec-${stamp}@test.local`, role: 'tecnico', status: 'active',
-    },
-  });
-
-  const CANARIO_B = `VECINO-NO-DEBE-SALIR-${stamp}`;
-  const custA = await prisma.customer.create({
-    data: { merchantId: merchantA.id, name: `Cliente S25B ${stamp}`, phone: '34600000255' },
-  });
-  await prisma.customer.create({ data: { merchantId: merchantB.id, name: CANARIO_B } });
-
-  // Factura de A: 100 € + 21 % → base 100,00 · IVA 21,00 · total 121,00
-  const numero = `${new Date().getFullYear()}-CF-${String(600 + (stamp % 90)).padStart(3, '0')}`;
-  const invoiceA = await prisma.invoice.create({
-    data: {
-      merchantId: merchantA.id, customerId: custA.id, number: numero,
-      total: '121.00', currency: 'EUR', type: 'F1',
-      pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
-      lines: [{ concept: 'Obra QA S25B', qty: 1, price: 100, tax: 0.21 }],
-    },
-  });
-  await prisma.job.create({
-    data: {
-      merchantId: merchantA.id, customerId: custA.id, status: 'en_curso',
-      titulo: 'Trabajo S25B', totalAceptado: '1000.00', totalCobrado: '250.00',
-    },
-  });
-  await prisma.charge.create({
-    data: {
-      merchantId: merchantA.id, customerId: custA.id, concept: 'Cobro S25B',
-      amount: '121.00', currency: 'EUR', method: 'bizum_manual', status: 'paid',
-    },
-  });
-
-  const mkCookie = async (merchantId, teamMemberId = null) => {
-    const token = 'qa25b-' + crypto.randomBytes(12).toString('hex');
-    await prisma.authSession.create({
-      data: { merchantId, teamMemberId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
+    const CANARIO_B = `VECINO-NO-DEBE-SALIR-${stamp}`;
+    const custA = await prisma.customer.create({
+      data: { merchantId: merchantA.id, name: `Cliente S25B ${stamp}`, phone: '34600000255' },
     });
-    const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
-    const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
-    assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
-    return cookie;
-  };
+    await prisma.customer.create({ data: { merchantId: merchantB.id, name: CANARIO_B } });
 
-  try {
+    // Factura de A: 100 € + 21 % → base 100,00 · IVA 21,00 · total 121,00
+    const numero = `${new Date().getFullYear()}-CF-${String(600 + (stamp % 90)).padStart(3, '0')}`;
+    const invoiceA = await prisma.invoice.create({
+      data: {
+        merchantId: merchantA.id, customerId: custA.id, number: numero,
+        total: '121.00', currency: 'EUR', type: 'F1',
+        pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
+        lines: [{ concept: 'Obra QA S25B', qty: 1, price: 100, tax: 0.21 }],
+      },
+    });
+    await prisma.job.create({
+      data: {
+        merchantId: merchantA.id, customerId: custA.id, status: 'en_curso',
+        titulo: 'Trabajo S25B', totalAceptado: '1000.00', totalCobrado: '250.00',
+      },
+    });
+    await prisma.charge.create({
+      data: {
+        merchantId: merchantA.id, customerId: custA.id, concept: 'Cobro S25B',
+        amount: '121.00', currency: 'EUR', method: 'bizum_manual', status: 'paid',
+      },
+    });
+
+    const mkCookie = async (merchantId, teamMemberId = null) => {
+      const token = 'qa25b-' + crypto.randomBytes(12).toString('hex');
+      await prisma.authSession.create({
+        data: { merchantId, teamMemberId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
+      });
+      const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+      const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
+      assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
+      return cookie;
+    };
+
     const cookieAdmin = await mkCookie(merchantA.id, null);
     const cookieTecnico = await mkCookie(merchantA.id, tecnicoA.id);
     const get = (path, cookie) => fetch(`${base}${path}`, { headers: { cookie } });
@@ -235,19 +236,10 @@ test('SCRUM-25 (B): datos.zip — técnico 403, entradas, PDFs, tenancy, rango, 
       assert.ok(entradas.includes('AVISO-PAQUETE-INCOMPLETO.txt'), 'y llevar dentro el fichero de aviso');
     }
 
-    t.diagnostic(`zip: ${entradas.length} entradas · técnico 403 ✓ · PDF dentro ✓ · sin XML (flag OFF) ✓ · tenancy ✓ · rango ✓ · audit ✓`);
+        t.diagnostic(`zip: ${entradas.length} entradas · técnico 403 ✓ · PDF dentro ✓ · sin XML (flag OFF) ✓ · tenancy ✓ · rango ✓ · audit ✓`);
+      }));
   } finally {
-    for (const m of [merchantA, merchantB]) {
-      await prisma.auditLog.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
-      await prisma.authSession.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
-      await prisma.invoice.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
-      await prisma.job.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
-      await prisma.charge.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
-      await prisma.quote.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
-      await prisma.customer.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
-      await prisma.teamMember.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
-    }
-    await prisma.merchant.deleteMany({ where: { id: { in: [merchantA.id, merchantB.id] } } }).catch(() => {});
+    // Solo lo que NO es del merchant: el borrado de datos lo garantiza withMerchant.
     server.close();
     await prisma.$disconnect();
   }
