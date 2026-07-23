@@ -45,7 +45,13 @@
    **factura de anticipo con IVA**? ¿la factura final descuenta el anticipo? (Define el
    comportamiento fiscal de los cobros parciales.)
 9. **Privacidad + DPA + cookies**: ¿el modelo actual (solo cookies técnicas first-party,
-   banner mínimo) es suficiente? + plazos de conservación de datos (S4).
+   banner mínimo) es suficiente? + plazos de conservación de datos (S4). **Análisis detallado
+   y 6 preguntas concretas ya en `docs/legal/RGPD_TRATAMIENTO_DATOS.md`** (reparto
+   responsable/encargado YaQu↔profesional, base jurídica por tratamiento, DPA con cada
+   profesional, aviso de firma para el cliente final, y si hace falta Registro de
+   Actividades de Tratamiento — sí, según ese análisis). **Urgente:** la política publicada
+   hoy en `yaqu.app/privacidad` no cubre IBAN/NIF/teléfono del profesional, dirección del
+   cliente final, ni la evidencia de firma — nunca fue validada por ti pese a estar live.
 10. **Alcance Founding** (`docs/legal/ALCANCE_BETA.md`): revisa el borrador, sobre todo la
     cláusula de "VERI*FACTU se activa al cerrar la certificación, sin cambio de precio" y
     que cobrar la beta antes de tener facturación fiscal sea correcto.
