@@ -1,4 +1,4 @@
-# SUITE DE REGRESIÓN E2E — v1.8 (SCRUM-38 · fixes SCRUM-42/36 · albaranes SCRUM-14 · alineación UI real SCRUM-43/44 · seguridad PDF SCRUM-48 · autoría operario SCRUM-22 · albarán-WA SCRUM-47 · albarán valorado + PDF legal SCRUM-65/67 · runbook de ejecución SCRUM-79 · `.env` del carril B SCRUM-55/60)
+# SUITE DE REGRESIÓN E2E — v1.8 (SCRUM-38 · fixes SCRUM-42/36 · albaranes SCRUM-14 · alineación UI real SCRUM-43/44 · seguridad PDF SCRUM-48 · autoría operario SCRUM-22 · albarán-WA SCRUM-47 · albarán valorado + PDF legal SCRUM-65/67 · runbook de ejecución SCRUM-79 · `.env` del carril B SCRUM-55/60 · cómo se escribe una verificación SCRUM-103)
 
 > Guion que Claude Code ejecuta con el **Playwright MCP** contra **STAGING** tras cada
 > merge+deploy. Cubre la regresión de PAGOS-FLEX (SCRUM-27/32/34) y los CTAs de invoice
@@ -7,9 +7,9 @@
 
 ## Runbook de ejecución de los tests gateados (SCRUM-79)
 
-Cuatro trampas que ya nos han costado tiempo. Las tres primeras fallan **en silencio**:
-el test pasa o el número parece plausible, y nadie lo cuestiona. La cuarta no falla —
-te hace perder el rato creyendo que tu entorno está roto.
+Cinco trampas que ya nos han costado tiempo. Las tres primeras y la quinta fallan **en
+silencio**: el test pasa o el número parece plausible, y nadie lo cuestiona. La cuarta no
+falla — te hace perder el rato creyendo que tu entorno está roto.
 
 1. **Reconstruye antes de aislar un test.** Los tests importan de `dist/`, que **no está
    en git y NO cambia al cambiar de rama**. Si compilas en una rama y luego te vas a otra,
@@ -42,6 +42,54 @@ te hace perder el rato creyendo que tu entorno está roto.
    → Si al abrir un worktree ves `Environment variable not found: DATABASE_URL`, es esto,
    y es lo esperado. Los tests **no gateados** (entre ellos la red fail-closed de SCRUM-55)
    no tocan BD y corren igual sin `.env`; solo los de `QA_DB_TEST=1` necesitan el fichero.
+
+5. **Nunca leas el resultado de una herramienta a través de una tubería. (SCRUM-103)** En una
+   pipeline, el código de salida que ves es el del **último** comando, no el del primero.
+   `npm run build | tail -5 && echo "BUILD OK"` imprimió **BUILD OK con el build fallando**:
+   el exit code leído era el de `tail`, que siempre sale 0. **12 errores de TypeScript
+   reportados como verde.**
+   → Ejecuta la herramienta **sola** y mira su salida, o usa `set -o pipefail` / `${PIPESTATUS[0]}`
+   si de verdad necesitas la tubería. Nada de `| tail`, `| head` ni `&&` entre una herramienta
+   y su código de salida. Esto aplica igual a `npm test`, `tsc` y `prisma`.
+
+## Escribir verificaciones: un verde falso no lo mira nadie (SCRUM-103)
+
+Entre el 22 y el 23-jul-2026 aparecieron **seis** mecanismos que pasaban sin comprobar lo que
+decían comprobar (catálogo completo en SCRUM-103): una suite que solo corría tras `QA_DB_TEST=1`
+y se había caído entera; dos tickets cerrados con la ruta de su propio título abierta en
+producción; un ratchet que contaba entradas sin validar su contenido; un canario de tenancy
+clavado en `'9999.00'` que dejó de poder coincidir al pasar a coma decimal; y la trampa 5 de
+aquí arriba.
+
+En ninguno falló el criterio — el criterio estaba bien escrito en los seis. Lo que falló es que
+existía un estado **verde alcanzable sin que la comprobación llegara a ocurrir**. Y sobreviven
+por un motivo asimétrico que conviene tener presente al escribir un test:
+
+> **Un rojo se investiga; un verde falso no lo mira nadie.**
+
+Un fallo ruidoso se arregla el mismo día. Un verde que no significa nada puede durar meses, y
+encima *consume* la atención que habría ido a comprobarlo a mano: es peor que no tener la
+verificación, porque genera confianza sin respaldarla.
+
+Las tres reglas que salen de ahí, para cualquier test, assert o check nuevo:
+
+1. **Pruébalo en rojo, modo por modo, y déjalo escrito en el commit.** Una regla que no has
+   visto fallar no sabes si funciona. La red fail-closed de SCRUM-55 se probó en sus 5 modos
+   (gate quitado · `app.use` en vez de `mountAdmin` · entrada muerta · plazo caducado · lista
+   creciendo) antes de darla por buena.
+
+2. **Toda comprobación por AUSENCIA necesita antes un assert de que lo buscado existe cuando
+   debe existir.** El canario de tenancy buscaba que la cadena `'9999.00'` no apareciera en el
+   export de otro merchant; al cambiar el formato a coma decimal, esa cadena dejó de existir en
+   ninguna parte y el assert siguió en verde **sin comprobar nada**. "No aparece" era su
+   condición de éxito, así que su propia rotura era indistinguible del éxito. Guarda previa
+   obligatoria: afirmar primero que el valor SÍ está donde tiene que estar.
+
+3. **Que la garantía estructural corra en `npm test` normal, sin gate.** A12.4 vive tras
+   `QA_DB_TEST=1`, solo contra staging, y se cayó entera sin que nadie se enterara. Los 403 de
+   comportamiento necesitan BD y seguirán ahí; pero lo que se pueda comprobar sin BD ni servidor
+   (que toda ruta declare rol, que una lista no crezca) va en la suite normal. Una red que solo
+   funciona cuando alguien se acuerda de levantarla no es una red.
 
 > **Coordinación (regla del canal):** la suite y el seed **resetean la BD del merchant QA**.
 > Avisa por el canal antes de lanzarla — solo uno a la vez. `tests/` es **zona compartida**:
