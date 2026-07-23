@@ -23,11 +23,11 @@ test('SCRUM-66: tipoOperacion — default, edición, validación, audit del camb
   const base = `http://127.0.0.1:${server.address().port}`;
 
   const stamp = Date.now();
-  // SCRUM-113: `planExpiresAt` se conserva — sin él requireActivePlan corta el PATCH con el
-  // paywall y el test fallaría por un motivo que no es el suyo.
+  // SCRUM-123: este test solo llama a GET/PATCH /admin/jobs/:id, que NO lleva
+  // requireActivePlan — planExpiresAt no hace falta aquí (lo llevaba de un test hermano,
+  // con un comentario que justificaba mal por qué; ver el docstring de withMerchant).
   const datosMerchant = (tag) => ({
     name: `QA S66 ${tag}`, email: `qa-s66-${tag}-${stamp}@test.local`,
-    planExpiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000),
   });
 
   // Los merchants y TODO su montaje dentro de withMerchant; antes nacían fuera del try.
