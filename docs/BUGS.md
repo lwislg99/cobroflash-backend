@@ -496,7 +496,7 @@
   junta (antes imposible: cada archivo se ejecutaba suelto en su propia tarea) expuso una
   inestabilidad de concurrencia contra staging, ajena a estos 4 archivos.
 
-### [ ] P3-11 · `tests/scrum50-bot-albaranes.test.mjs` roto por el fail-closed de SCRUM-99 (23-jul, hallazgo en SCRUM-69; ticket SCRUM-122)
+### [x] P3-11 · `tests/scrum50-bot-albaranes.test.mjs` roto por el fail-closed de SCRUM-99 (23-jul, hallazgo en SCRUM-69; ticket SCRUM-122; corregido en SCRUM-122)
 - **Síntoma:** al correr la suite gateada completa en staging para SCRUM-69 (`QA_DB_TEST=1
   WHATSAPP_DRY_RUN=1 npm run test:staging`), `scrum50-bot-albaranes.test.mjs` falla en el primer
   `assert` («acuse del «Recibido»»). `scrum47-enviar-albaran-wa` y `scrum49-firma-remota` también
@@ -520,6 +520,37 @@
 - **No bloquea SCRUM-69**: ninguno de los archivos que toca (`pendientesFacturar.service.ts`,
   `customerAdmin.ts`, `albaranes.routes.ts`, schema `Customer.tipoDestinatario`, frontend) tiene
   relación con el webhook entrante de WhatsApp.
+- **Corregido en SCRUM-122:** `scrum50-bot-albaranes.test.mjs` fija `WHATSAPP_APP_SECRET` de
+  prueba y firma cada POST con HMAC-SHA256 (mismo algoritmo que `isValidSignature`) antes de
+  enviarlo. Verde en staging.
+- **Hallazgo colateral (barrido pedido por el fundador):** `tests/bot-suite.test.mjs` (A8.4,
+  gateado por `BOT_SUITE_TEST=1`, distinto de `QA_DB_TEST`) tenía el MISMO patrón — POST sin
+  firmar a `/webhooks/whatsapp`. Corregido con el mismo fix. Sigue sin poder pasar en verde de
+  punta a punta, pero por una razón DISTINTA y ya registrada: **P3-9** (cliente seed quemado por
+  SCRUM-42 en el merchant demo id=1) — confirmado al correrlo: ahora falla en «cliente seed no
+  encontrado», no en la firma. `webhooks-idempotencia.test.mjs` (A12.2c) usa `/webhooks/psp` con
+  `internalHeaders()` (P0-SEC-1, secreto interno propio) — NO afectado por el fail-closed de
+  SCRUM-99, no necesita cambios.
+
+### [ ] P3-12 · `scrum116-recordatorio-candado.test.mjs` requiere `WHATSAPP_DRY_RUN` SIN poner — conflicto con los tests que sí lo necesitan (23-jul, hallazgo colateral en SCRUM-122)
+- **NO es un bug — es una nota de higiene de invocación**, registrada para que nadie la lea como
+  regresión: al correr `QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm run test:staging` (necesario para
+  scrum47/49/50/bot-suite), `scrum116-recordatorio-candado.test.mjs` falla con el mismo mensaje
+  que describe («FUGA DE DINERO»). Parece grave — no lo es: en solitario, SIN
+  `WHATSAPP_DRY_RUN=1` (solo `QA_DB_TEST=1`), pasa limpio.
+- **Causa:** `whatsapp.ts:142` — `if ((!phoneNumberId || !token) && !isDryRun())`. El modo
+  dry-run se diseñó a propósito para saltarse ESTE guard (comentario en el propio archivo:
+  «WHATSAPP_DRY_RUN=1 los senders pasan TODOS los guards»), y `scrum116` depende exactamente de
+  ese guard (`not_configured`) para simular un envío fallido sin credenciales reales. Su propio
+  comentario lo explica pero no protege el env var: no fija `WHATSAPP_DRY_RUN` a `''`/`'0'` como
+  sí hacen scrum50/bot-suite con LOS SUYOS.
+- **La lógica de SCRUM-116 está bien** — se verificó leyendo `invoiceReminder.service.ts`
+  completo: el candado (`reminderXSentAt`) solo se escribe si `sendReminderWA` devuelve `true`.
+  Confirmado además por la propia ejecución aislada en verde.
+- **No arreglado aquí** (fuera del alcance pedido — "el mismo problema" era la firma del
+  webhook, esto es otra cosa): si se quiere un fix, el candidato obvio es que `scrum116` fije
+  `process.env.WHATSAPP_DRY_RUN = ''` al principio del archivo, igual que ya hacen otros tests
+  con sus propios flags.
 
 ### [x] P3-10 · Suite gateada COMPLETA (`QA_DB_TEST=1 npm test`) era inestable por concurrencia contra staging (22-jul, hallazgo en SCRUM-75; corregido en SCRUM-78)
 - **Síntoma:** con los ~19 archivos de test gateados corriendo TODOS a la vez (comportamiento por
