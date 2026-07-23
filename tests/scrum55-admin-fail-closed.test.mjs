@@ -25,11 +25,10 @@ const { TECNICO_ALLOWED, PENDIENTE_CLASIFICAR, PENDIENTE_MAX, REVISAR_ANTES_DE }
 // Prefijos públicos (NO /admin) montados en app.ts. Sirven para demostrar que todo
 // router del stack está identificado: si aparece uno que no es /admin registrado ni
 // de esta lista, es un montaje que la red no vigila → falla.
-const PUBLIC_PREFIXES = [
-  '/pay', '/cliente', '/albaran', '/webhooks/stripe', '/webhooks/stripe-connect',
-  '/health', '/auth', '/webhooks/psp', '/charges', '/quote', '/invoice', '/recibo',
-  '/webhooks/mp', '/webhooks/whatsapp', '/legal', '/p', '/dev',
-];
+// SCRUM-98: ÚNICA fuente de verdad, movida a publicAccessDeclarations.ts (Guard A la
+// reutiliza tal cual para su propia enumeración, con /dev excluido de SU exigencia
+// porque no es superficie de producción — ver GUARD_A_EXCLUDED_PREFIXES ahí).
+const { PUBLIC_PREFIXES } = await import('../dist/core/http/publicAccessDeclarations.js');
 
 const roleOf = (handle) => (handle && handle.__requiredRole) || null;
 const key = (method, path) => `${method.toUpperCase()} ${path}`;
