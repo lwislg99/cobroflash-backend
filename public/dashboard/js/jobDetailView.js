@@ -207,11 +207,12 @@ async function renderJobDetailView(container, jobId) {
     qBtn.addEventListener('click', () => { if (window.renderAppView) window.renderAppView('quotes-detail', { quoteId: job.quote.id }); });
     infoSec.appendChild(qBtn);
   }
-  body.appendChild(infoSec);
+  // SCRUM-31 (F6): "Datos" pasa a SEGUNDO PLANO — se appendea más abajo, tras Cobros
+  // (el cliente ya está en el héroe con tap-to-call; aquí queda como referencia completa).
 
-  // ── Tipo de trabajo (SCRUM-66 · TRABAJO-4): selector de 2 tarjetas, editable ──
-  // Guarda Job.tipoOperacion vía PATCH. El motor de facturación que RESPETA la bandera es
-  // SCRUM-17; aquí solo se persiste la elección del pro (siempre editable mientras esté abierto).
+  // ── Tipo de trabajo (SCRUM-66 · TRABAJO-4) — SCRUM-31 (F6): PLEGADO a una línea editable.
+  // Es config que se toca una vez: se muestra el valor actual + "Cambiar", y expande al selector
+  // de 2 tarjetas a demanda. La lógica de PATCH y las tarjetas NO cambian (solo el envoltorio).
   const tipoSec = document.createElement('div');
   tipoSec.className = 'detail-section';
   tipoSec.innerHTML = '<h3 class="detail-section-title">Tipo de trabajo</h3>';
@@ -220,6 +221,22 @@ async function renderJobDetailView(container, jobId) {
     { value: 'OPERACIONES_SUELTAS', icon: '🔧', title: 'Varios avisos o visitas sueltas', desc: 'Cada visita es un trabajo independiente para este cliente.' },
     { value: 'TRABAJO_UNICO', icon: '🏗️', title: 'Una obra o reforma de varios días', desc: 'Es un solo trabajo que se factura al concluir.' },
   ];
+  const tipoCardOf = (v) => TIPO_CARDS.find((c) => c.value === v) || TIPO_CARDS[1];
+
+  // Vista COLAPSADA: valor actual + "Cambiar".
+  const tipoCollapsed = document.createElement('div');
+  tipoCollapsed.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap';
+  const tipoCollapsedLabel = document.createElement('div');
+  tipoCollapsedLabel.style.cssText = 'font-size:14px;color:var(--ink)';
+  const tipoChangeBtn = document.createElement('button');
+  tipoChangeBtn.className = 'btn-ghost btn-sm';
+  tipoChangeBtn.textContent = 'Cambiar';
+  tipoCollapsed.append(tipoCollapsedLabel, tipoChangeBtn);
+  tipoSec.appendChild(tipoCollapsed);
+
+  // Vista EXPANDIDA (oculta por defecto): las 2 tarjetas + hint (idénticas a antes).
+  const tipoExpanded = document.createElement('div');
+  tipoExpanded.style.display = 'none';
   const tipoRow = document.createElement('div');
   tipoRow.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap';
   const tipoCardEls = {};
@@ -231,6 +248,14 @@ async function renderJobDetailView(container, jobId) {
         (sel ? 'border:2px solid var(--brand,#16a34a);background:#f0fdf4;' : 'border:2px solid var(--border,#e7e9e5);background:#fff;');
     }
   }
+  function syncTipoCollapsed() {
+    const c = tipoCardOf(tipoActual);
+    tipoCollapsedLabel.innerHTML = `<span style="font-size:16px" aria-hidden="true">${c.icon}</span> <strong style="color:var(--ink)">${esc(c.title)}</strong>`;
+  }
+  const tipoCollapse = () => { tipoExpanded.style.display = 'none'; tipoCollapsed.style.display = 'flex'; };
+  const tipoExpand = () => { tipoCollapsed.style.display = 'none'; tipoExpanded.style.display = 'block'; };
+  tipoChangeBtn.addEventListener('click', tipoExpand);
+
   for (const c of TIPO_CARDS) {
     const card = document.createElement('button');
     card.type = 'button';
@@ -240,7 +265,7 @@ async function renderJobDetailView(container, jobId) {
       `<div style="font-weight:700;color:var(--ink);font-size:14px;margin-top:6px">${esc(c.title)}</div>` +
       `<div style="color:var(--muted);font-size:12px;margin-top:2px">${esc(c.desc)}</div>`;
     card.addEventListener('click', async () => {
-      if (c.value === tipoActual) return;
+      if (c.value === tipoActual) { tipoCollapse(); return; } // re-elegir el mismo = solo cerrar
       const prev = tipoActual;
       tipoActual = c.value;
       paintTipoCards();
@@ -248,6 +273,8 @@ async function renderJobDetailView(container, jobId) {
       try {
         await apiRequest(`/admin/jobs/${job.id}`, { method: 'PATCH', body: JSON.stringify({ tipoOperacion: c.value }) });
         showToast('✓ Tipo de trabajo actualizado.');
+        syncTipoCollapsed();
+        tipoCollapse(); // SCRUM-31 (F6): reflejar el nuevo valor y volver a plegar
       } catch (e) {
         tipoActual = prev;
         paintTipoCards();
@@ -259,11 +286,14 @@ async function renderJobDetailView(container, jobId) {
     tipoRow.appendChild(card);
   }
   paintTipoCards();
-  tipoSec.appendChild(tipoRow);
+  tipoExpanded.appendChild(tipoRow);
   const tipoHint = document.createElement('p');
   tipoHint.style.cssText = 'margin:8px 0 0;color:var(--muted);font-size:12px';
   tipoHint.textContent = 'Nos ayuda a preparar tus facturas correctamente. Si tienes dudas, confírmalo con tu asesor.';
-  tipoSec.appendChild(tipoHint);
+  tipoExpanded.appendChild(tipoHint);
+  tipoSec.appendChild(tipoExpanded);
+
+  syncTipoCollapsed();
   body.appendChild(tipoSec);
 
   // ── Timeline de documentos (lista de actividad cronológica) ──
@@ -319,6 +349,7 @@ async function renderJobDetailView(container, jobId) {
   cobSec.className = 'detail-section';
   cobSec.innerHTML = '<h3 class="detail-section-title">Cobros</h3>';
   body.appendChild(cobSec);
+  body.appendChild(infoSec); // SCRUM-31 (F6): "Datos" a segundo plano, bajo lo operativo.
 
   // SCRUM-12 paso 3: acciones de cobro. Tras cada acción de estado, re-fetch del
   // GET /admin/jobs/:id → semáforo/barra/timeline/tramos al día. Solo INVOCA endpoints
