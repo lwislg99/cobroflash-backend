@@ -13,6 +13,7 @@
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -26,10 +27,13 @@ test('SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numéric
   const base = `http://127.0.0.1:${server.address().port}`;
 
   const stamp = Date.now();
-  const mkFixture = async (tag) => {
-    const merchant = await prisma.merchant.create({
-      data: { name: `QA S85 ${tag}`, country: 'ES', email: `qa-s85-${tag}-${stamp}@test.local`, onboardingCompleted: true },
-    });
+
+  // SCRUM-113: este fichero tenía la MISMA forma que scrum74 — un mkFixture que creaba el
+  // merchant y sus hijos, invocado dos veces ANTES del try. Es el patrón que produjo los 4
+  // huérfanos de SCRUM-79: si el segundo mkFixture reventaba, el primero ya estaba en la BD
+  // y el finally no llegaba a plantearse. Ahora el merchant lo crea withMerchant y mkFixture
+  // solo monta lo que cuelga de él, ya dentro de la red.
+  const mkFixture = async (merchant, tag) => {
     const customer = await prisma.customer.create({
       data: { merchantId: merchant.id, name: `Cliente Secreto QA-S85-${tag} ${stamp}`, phone: `3461${tag === 'A' ? 0 : 1}${stamp % 1000000}` },
     });
@@ -39,10 +43,12 @@ test('SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numéric
     return { merchant, customer, charge };
   };
 
-  const A = await mkFixture('A');
-  const B = await mkFixture('B');
-
   try {
+    await withMerchant(prisma, { name: 'QA S85 A', email: `qa-s85-A-${stamp}@test.local` }, (mA) =>
+      withMerchant(prisma, { name: 'QA S85 B', email: `qa-s85-B-${stamp}@test.local` }, async (mB) => {
+    const A = await mkFixture(mA, 'A');
+    const B = await mkFixture(mB, 'B');
+
     const tokenA = await ensureChargeReceiptToken(A.charge.id, prisma);
     const tokenB = await ensureChargeReceiptToken(B.charge.id, prisma);
     assert.notEqual(tokenA, tokenB, 'cobros distintos → tokens distintos');
@@ -89,13 +95,10 @@ test('SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numéric
     assert.ok(!invoiceBodyB.includes(A.merchant.name), 'FUGA: el token de B no debe mostrar nada del merchant de A');
 
     t.diagnostic('SCRUM-85: /pay/invoice, /pay/card y /pay/bizum — numérico 404 sin fuga, token propio 200/redirect correcto, sin cruce entre cobros ✓');
+      }));
   } finally {
-    for (const fx of [A, B]) {
-      await prisma.event.deleteMany({ where: { chargeId: fx.charge.id } });
-      await prisma.charge.deleteMany({ where: { merchantId: fx.merchant.id } });
-      await prisma.customer.deleteMany({ where: { merchantId: fx.merchant.id } });
-      await prisma.merchant.delete({ where: { id: fx.merchant.id } });
-    }
+    // Solo lo que NO es del merchant: el borrado de datos lo garantiza withMerchant, que
+    // además borra los `event` (cuelgan de charge, no de merchant) antes que los charges.
     server.close();
     await prisma.$disconnect();
   }

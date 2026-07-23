@@ -122,8 +122,8 @@ export const MIGRACION_PENDIENTE = [
   // tanda 7: scrum57-operario-propagacion · scrum66-tipo-operacion ·
   //          scrum68-evidencias-firma
   'scrum74-recibo-token.test.mjs',
-  'scrum85-pay-routes-token.test.mjs',
-  'scrum90-pay-bank-mp-token.test.mjs',
+  // tanda 7: scrum85-pay-routes-token · scrum90-pay-bank-mp-token (los dos tenían la forma
+  //          mkFixture-antes-del-try de scrum74, la que produjo los 4 huérfanos)
   // tanda 4 (cont.): scrum92-login-operario · scrum94-register-teammember (sesión 1)
   'tenancy-permisos.test.mjs',
   'webhooks-idempotencia.test.mjs',
@@ -135,7 +135,7 @@ export const MIGRACION_PENDIENTE = [
  * para que alguien aparque un fichero nuevo sin que nadie se entere. Es la lección literal
  * de SCRUM-103 (el ratchet de rutas se dejó en 25 con 24 entradas).
  */
-// 24 → 23 (t1) → 22 (t2) → 19 (t3) → 13 (t4 + scrum94 sesión 1) → 11 (t5) → 7 (t7)
+// 24 → 23 (t1) → 22 (t2) → 19 (t3) → 13 (t4 + scrum94 sesión 1) → 11 (t5) → 5 (t7)
 //
 // El número salió de CONTAR la lista fusionada, no de elegir rama. Este rebase trajo tres
 // conflictos seguidos en esta línea (16 de la sesión 1 sacando scrum94, contra 15 y 14 del
@@ -143,7 +143,7 @@ export const MIGRACION_PENDIENTE = [
 // una de las dos ramas. Es el escenario exacto que el assert de IGUALDAD EXACTA vino a
 // hacer ruidoso: con `<=` cualquiera de esos números habría pasado en verde, dejando
 // huecos libres.
-export const MIGRACION_MAX = 7;
+export const MIGRACION_MAX = 5;
 
 /**
  * Fecha límite. Pasada, el test falla mientras queden pendientes.
