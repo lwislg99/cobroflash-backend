@@ -425,6 +425,14 @@ async function fetchInvoiceDetail(id) {
           const r = await fetch(`/admin/invoices/${invoice.id}/send-reminder`, { method: 'POST' });
           const d = await r.json().catch(() => ({}));
           if (!r.ok) throw new Error(d.error || 'error');
+          // SCRUM-115: 200+ok:true no significa enviado — el resultado real es `sent`.
+          // Antes esto miraba r.ok (siempre true aquí) y marcaba el badge pasara lo que pasara.
+          if (d.sent === false) {
+            setStatus('error', 'El WhatsApp del recordatorio falló. Puedes reintentarlo.');
+            btnReminder.disabled = false;
+            btnReminder.textContent = '💬 Recordar pago';
+            return;
+          }
           setStatus('success', '✓ Recordatorio enviado por WhatsApp.');
           // Actualizar badges sin recargar
           if (!invoice.reminder7SentAt)  invoice.reminder7SentAt  = new Date().toISOString();

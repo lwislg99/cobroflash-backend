@@ -481,6 +481,8 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
         to: phone,
         merchantId: invoice.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
         text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago de la factura *${invoice.number}* por *${total} ${invoice.currency}* de parte de *${merchantName}*.\n\n¡Gracias!`,
+        // SCRUM-115: si falla, que la fila de WA-0b quede enlazada a ESTA factura/cliente.
+        log: { customerId: invoice.customerId, relatedType: 'invoice', relatedId: id },
       });
       sent = !!result?.ok;
       if (!sent) console.error('[send-reminder] WA texto NO entregado:', (result as any)?.error || (result as any)?.reason);

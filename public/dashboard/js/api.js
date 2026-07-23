@@ -167,8 +167,14 @@ function waFallbackBar({ link, onEmail, onRetry, emailDisabledReason }) {
     emailBtn.addEventListener('click', async () => {
       emailBtn.disabled = true;
       emailBtn.textContent = 'Enviando…';
-      try { await onEmail(); showToast('✓ Enviado por email'); emailBtn.textContent = '✉️ Enviado'; }
-      catch (e) {
+      try {
+        const result = await onEmail();
+        // SCRUM-115: apiRequest() solo rechaza en HTTP≠2xx. Los 4 endpoints /send-email
+        // responden 200+ok:false+message cuando el envío falla — sin este chequeo, esta
+        // barra (compartida por facturas, presupuestos y trabajos) siempre decía "✓ Enviado".
+        if (result && result.ok === false) throw { data: result, message: result.message };
+        showToast('✓ Enviado por email'); emailBtn.textContent = '✉️ Enviado';
+      } catch (e) {
         showToast('Email falló: ' + (e?.data?.message || e.message), 'error');
         emailBtn.disabled = false; emailBtn.textContent = '✉️ Enviar por email';
       }
