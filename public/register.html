@@ -96,7 +96,8 @@
         setTimeout(() => window.location.href = '/login.html', 4000);
       } else {
         const msgs = { invalid_email: 'Email inválido.', name_required: 'Escribe el nombre de tu negocio.' };
-        showAlert(msgs[data.error] || data.error || 'Error al crear la cuenta.', 'error');
+        // SCRUM-94: si el backend manda un mensaje claro (p.ej. email ya usado por un operario), mostrarlo tal cual.
+        showAlert(data.message || msgs[data.error] || data.error || 'Error al crear la cuenta.', 'error');
         btn.disabled = false; btn.textContent = 'Crear cuenta y acceder';
       }
     } catch { showAlert('Error de conexión.', 'error'); btn.disabled = false; btn.textContent = 'Crear cuenta y acceder'; }
