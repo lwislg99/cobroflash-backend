@@ -252,14 +252,8 @@ async function renderJobDetailView(container, jobId) {
   jdAddRow(dl, 'Dirección', job.direccion);
   if (!dl.children.length) dl.innerHTML = '<dd style="color:var(--muted)">Sin datos.</dd>';
   infoSec.appendChild(dl);
-  if (job.quote) {
-    const qBtn = document.createElement('button');
-    qBtn.className = 'btn-secondary btn-sm';
-    qBtn.style.marginTop = '10px';
-    qBtn.textContent = `Ver presupuesto #${job.quote.number}`;
-    qBtn.addEventListener('click', () => { if (window.renderAppView) window.renderAppView('quotes-detail', { quoteId: job.quote.id }); });
-    infoSec.appendChild(qBtn);
-  }
+  // SCRUM-31 (F5): "Ver presupuesto" se mueve a la FILA de presupuesto de la lista 'Documentos'
+  // (antes también estaba aquí; se quita para no duplicar).
   // SCRUM-31 (F6): "Datos" pasa a SEGUNDO PLANO — se appendea más abajo, tras Cobros
   // (el cliente ya está en el héroe con tap-to-call; aquí queda como referencia completa).
 
@@ -349,60 +343,23 @@ async function renderJobDetailView(container, jobId) {
   syncTipoCollapsed();
   body.appendChild(tipoSec);
 
-  // ── Timeline de documentos (lista de actividad cronológica) ──
-  const tlSec = document.createElement('div');
-  tlSec.className = 'detail-section';
-  tlSec.innerHTML = '<h3 class="detail-section-title">Documentos</h3>';
+  // ── Documentos (SCRUM-31 F5): UNA lista cronológica que FUSIONA presupuesto + albaranes +
+  // facturas. Cada fila es un .job-doc-row (icono + qué es + estado/fecha/importe + acciones).
+  // Mata el timeline read-only + la triple duplicación (Documentos/Albaranes/Cobros) de antes.
   const invoices = Array.isArray(job.invoices) ? job.invoices : [];
-  const events = [];
-  if (job.quote) {
-    events.push({ icon: '📝', when: job.createdAt, title: `Presupuesto #${job.quote.number}`, detail: fmtMoneyEs(job.quote.total, cur) });
-  }
-  invoices.forEach((inv) => {
-    const paid = String(inv.status).toLowerCase() === 'paid';
-    events.push({
-      icon: paid ? '💰' : '🧾',
-      when: paid ? (inv.paidAt || inv.createdAt) : inv.createdAt,
-      title: inv.stageLabel ? esc(inv.stageLabel) : `${jobDetDocLabel(inv)} ${esc(inv.number)}`, // SCRUM-27: etiqueta del tramo si es plan custom
-      detail: `${jobDetInvEstado(inv.status)} · ${fmtMoneyEs(inv.total, inv.currency || cur)}`,
-    });
-  });
-  // SCRUM-14: los albaranes también son documentos del Trabajo (evento 📋, sin importes)
   const albaranes = Array.isArray(job.albaranes) ? job.albaranes : [];
-  albaranes.forEach((alb) => {
-    events.push({
-      icon: '📋',
-      when: alb.estado === 'firmado' ? (alb.firmadoAt || alb.createdAt) : alb.createdAt,
-      title: `Albarán ${esc(alb.numero)}`,
-      detail: `${jobDetAlbEstado(alb.estado)} · v${alb.version}`,
-    });
-  });
-  events.sort((a, b) => new Date(a.when || 0) - new Date(b.when || 0));
-  if (!events.length) {
-    tlSec.innerHTML += '<p style="margin:0;color:var(--muted);font-size:13px">Aún no hay documentos.</p>';
-  } else {
-    const list = document.createElement('div');
-    list.style.cssText = 'display:flex;flex-direction:column;gap:0';
-    events.forEach((ev, i) => {
-      const when = ev.when ? new Date(ev.when).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
-      const row = document.createElement('div');
-      row.style.cssText = 'display:flex;gap:12px;align-items:flex-start;padding:10px 0' + (i < events.length - 1 ? ';border-bottom:1px solid var(--neutral-100)' : '');
-      row.innerHTML =
-        `<div style="flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--neutral-50);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px">${ev.icon}</div>` +
-        `<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:var(--ink)">${ev.title}</div><div style="font-size:12.5px;color:var(--muted);margin-top:1px">${ev.detail}</div></div>` +
-        `<div style="flex-shrink:0;font-size:11.5px;color:var(--muted);white-space:nowrap">${when}</div>`;
-      list.appendChild(row);
-    });
-    tlSec.appendChild(list);
-  }
-  body.appendChild(tlSec);
-
-  // ── Bloque de cobros (tramos) — botones RENDERIZADOS, SIN cablear (paso 3, STOP AA1.4) ──
-  const cobSec = document.createElement('div');
-  cobSec.className = 'detail-section';
-  cobSec.innerHTML = '<h3 class="detail-section-title">Cobros</h3>';
-  body.appendChild(cobSec);
+  const docsSec = document.createElement('div');
+  docsSec.className = 'detail-section';
+  docsSec.innerHTML = '<h3 class="detail-section-title">Documentos</h3>';
+  body.appendChild(docsSec);
   body.appendChild(infoSec); // SCRUM-31 (F6): "Datos" a segundo plano, bajo lo operativo.
+  const docs = []; // { when, el } — se ordena ascendente y se vuelca al final en la lista.
+  // Formato de fecha ÚNICO de la lista: día + mes + año + hora. Conserva la HORA (que solo tenía el
+  // timeline) y el AÑO (que tenían las secciones) → cero pérdida al fusionar (auditoría F5).
+  const docDate = (w) => w ? new Date(w).toLocaleString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+
+  // ── SCRUM-31 (F5): "Cobros" y "Albaranes" dejan de ser secciones propias — sus filas van a la
+  // lista fusionada 'Documentos'. (docsSec + Datos ya se han montado arriba.)
 
   // SCRUM-12 paso 3: acciones de cobro. Tras cada acción de estado, re-fetch del
   // GET /admin/jobs/:id → semáforo/barra/timeline/tramos al día. Solo INVOCA endpoints
@@ -435,16 +392,13 @@ async function renderJobDetailView(container, jobId) {
     }));
   };
 
-  // ── SCRUM-14 · Sección "Albaranes" (entre Documentos y Cobros; insertBefore) ──
-  // Botones canónicos del brief: borrador → [Editar líneas][Emitir] · emitido →
-  // [PDF][Firmar][Editar líneas] · firmado → [PDF] (congelado). Re-fetch tras acción.
-  const albSec = document.createElement('div');
-  albSec.className = 'detail-section';
-  albSec.innerHTML = '<h3 class="detail-section-title">Albaranes</h3>';
-  body.insertBefore(albSec, cobSec);
-
+  // ── SCRUM-31 (F5): la antigua sección "Albaranes" es ahora la TOOLBAR de la lista 'Documentos'.
+  // `albSec = docsSec` (alias): el resto del código de consolidación/albaranes que referencia
+  // `albSec` sigue montándose dentro de 'Documentos' sin cambios. Botones (por estado): borrador →
+  // [Emitir]+«⋯» · emitido → [PDF][Firmar]+«⋯» · firmado → [PDF][Enviar por WhatsApp].
+  const albSec = docsSec;
   const newAlbRow = document.createElement('div');
-  newAlbRow.style.cssText = 'display:flex;align-items:center;gap:10px;flex-wrap:wrap';
+  newAlbRow.className = 'job-doc-toolbar';
   const newAlbBtn = document.createElement('button');
   newAlbBtn.className = 'btn-secondary btn-sm';
   newAlbBtn.textContent = '+ Nuevo albarán';
@@ -458,11 +412,11 @@ async function renderJobDetailView(container, jobId) {
   valoradoLabel.appendChild(valoradoCheck);
   valoradoLabel.appendChild(document.createTextNode('Incluir precios en el parte'));
   newAlbRow.appendChild(valoradoLabel);
-  albSec.appendChild(newAlbRow);
+  docsSec.appendChild(newAlbRow);
   const valoradoHint = document.createElement('p');
-  valoradoHint.style.cssText = 'margin:4px 0 0;color:var(--muted);font-size:12px';
+  valoradoHint.style.cssText = 'margin:4px 0 10px;color:var(--muted);font-size:12px';
   valoradoHint.textContent = 'El parte sigue sin ser una factura.';
-  albSec.appendChild(valoradoHint);
+  docsSec.appendChild(valoradoHint);
 
   // ── SCRUM-17 (FISCAL-2): consolidar albaranes en factura recapitulativa ──────
   // Botón visible solo si el Trabajo agrupa operaciones sueltas (SCRUM-66) y hay partes
@@ -577,12 +531,7 @@ async function renderJobDetailView(container, jobId) {
     }
   });
 
-  if (!albaranes.length) {
-    const pEmpty = document.createElement('p');
-    pEmpty.style.cssText = 'margin:10px 0 0;color:var(--muted);font-size:13px';
-    pEmpty.textContent = 'Aún no hay albaranes. Crea uno por cada visita o entrega.';
-    albSec.appendChild(pEmpty);
-  }
+  // SCRUM-31 (F5): el estado vacío ahora es de la LISTA COMPLETA (no solo albaranes) — al final.
 
   // SCRUM-65: totales orientativos en vivo — MISMA regla de céntimos enteros que el
   // backend (calcAlbaranTotales), para que lo que ve el pro al teclear no desentone
@@ -810,33 +759,30 @@ async function renderJobDetailView(container, jobId) {
   }
 
   albaranes.forEach((alb) => {
-    const item = document.createElement('div');
-    item.className = 'invoice-item';
-    item.style.marginTop = '8px';
-    // SCRUM-65: indicador de modo + total orientativo (solo si valorado; el propio
-    // serializeAlbaran ya trae `totales` calculado en céntimos, nada que recalcular aquí).
+    // SCRUM-65: indicador de modo + total orientativo (serializeAlbaran ya trae `totales`).
     const albValorado = alb.modoValoracion === 'VALORADO';
-    const albMetaBits = [
-      new Date(alb.fecha).toLocaleDateString('es-ES'),
-      `v${alb.version}`,
-      albValorado ? `Con precios · Total orientativo ${fmtMoneyEs(alb.totales?.total ?? 0, cur)}` : 'Sin precios',
-    ].join(' · ');
+    const item = document.createElement('div');
+    item.className = 'job-doc-row';
     item.innerHTML =
-      `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">` +
-      `<div><strong>Albarán ${esc(alb.numero)}</strong> · <span style="font-size:12px;color:var(--muted)">${esc(albMetaBits)}</span></div>` +
-      `<span>` +
-      `<span class="status-pill ${JOBDET_ALB_PILL[alb.estado] || 'status-pill-draft'}">${jobDetAlbEstado(alb.estado)}</span>` +
-      // SCRUM-17: badge "Facturado" derivado (alb.facturado = invoiceId != null en el serializer)
-      (alb.facturado ? `<span style="margin-left:6px;font-size:11px;font-weight:700;color:#166534;background:#ecfdf5;border-radius:999px;padding:2px 8px">Facturado</span>` : '') +
-      `</span>` +
-      `</div>` +
-      `<div class="jobdet-alb-fotos" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>` +
-      `<div class="jobdet-alb-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div>`;
-    albSec.appendChild(item);
+      `<div class="job-doc-row__icon" aria-hidden="true">📋</div>` +
+      `<div class="job-doc-row__body">` +
+        `<div class="job-doc-row__title">Albarán ${esc(alb.numero)}</div>` +
+        `<div class="job-doc-row__meta">` +
+          `<span class="status-pill ${JOBDET_ALB_PILL[alb.estado] || 'status-pill-draft'}">${jobDetAlbEstado(alb.estado)}</span>` +
+          // SCRUM-17: badge "Facturado" derivado (alb.facturado = invoiceId != null en el serializer)
+          (alb.facturado ? `<span class="job-doc-row__badge">Facturado</span>` : '') +
+          `<span>${esc(docDate(alb.fecha))}</span>` +
+          `<span>v${alb.version}</span>` +
+          (albValorado ? `<span>Con precios · Total orientativo <span class="job-doc-row__amount">${fmtMoneyEs(alb.totales?.total ?? 0, cur)}</span></span>` : `<span>Sin precios</span>`) +
+        `</div>` +
+        `<div class="jobdet-alb-fotos job-doc-row__fotos"></div>` +
+        `<div class="jobdet-alb-actions job-doc-row__actions"></div>` +
+      `</div>`;
+    const albBody = item.querySelector('.job-doc-row__body');
     // SCRUM-17: checkbox de selección (modo consolidación) en albaranes elegibles.
     if (alb.estado === 'firmado' && alb.modoValoracion === 'VALORADO' && !alb.facturado) {
       const wrap = document.createElement('label');
-      wrap.style.cssText = 'display:none;align-items:center;gap:6px;margin-top:6px;font-size:13px;color:var(--ink);cursor:pointer';
+      wrap.style.cssText = 'display:none;align-items:center;gap:6px;margin:0 0 6px;font-size:13px;color:var(--ink);cursor:pointer';
       const cb = document.createElement('input');
       cb.type = 'checkbox';
       cb.addEventListener('change', () => {
@@ -844,9 +790,10 @@ async function renderJobDetailView(container, jobId) {
         updateConsolidaCount();
       });
       wrap.append(cb, document.createTextNode('Incluir en la factura'));
-      item.insertBefore(wrap, item.firstChild);
+      albBody.insertBefore(wrap, albBody.firstChild);
       consolidaCheckboxes.push({ alb, checkbox: cb, wrap });
     }
+    docs.push({ when: alb.estado === 'firmado' ? (alb.firmadoAt || alb.createdAt) : alb.createdAt, el: item });
     const acts = item.querySelector('.jobdet-alb-actions');
     const fotosBox = item.querySelector('.jobdet-alb-fotos');
 
@@ -961,21 +908,24 @@ async function renderJobDetailView(container, jobId) {
     }
   });
 
-  if (!invoices.length) {
-    cobSec.innerHTML += '<p style="margin:0;color:var(--muted);font-size:13px">Aún no hay cobros generados.</p>';
-  } else {
-    invoices.forEach((inv) => {
+  // SCRUM-31 (F5): cada factura es una fila .job-doc-row de la lista fusionada (no una sección aparte).
+  invoices.forEach((inv) => {
       const paid = String(inv.status).toLowerCase() === 'paid';
       const item = document.createElement('div');
-      item.className = 'invoice-item';
-      item.style.marginTop = '8px';
-      const when = paid ? inv.paidAt : inv.createdAt;
+      item.className = 'job-doc-row';
+      const when = paid ? (inv.paidAt || inv.createdAt) : inv.createdAt;
       item.innerHTML =
-        `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">` +
-        `<div><strong>${inv.stageLabel ? esc(inv.stageLabel) + ' · ' : ''}${jobDetDocLabel(inv)} ${esc(inv.number)}</strong> · <span class="amount-muted">${fmtMoneyEs(inv.total, inv.currency || cur)}</span>` +
-        `${when ? `<br><span style="font-size:12px;color:var(--muted)">${new Date(when).toLocaleDateString('es-ES')}</span>` : ''}</div>` +
-        `<span class="status-pill ${jobDetInvPill(inv.status)}">${jobDetInvEstado(inv.status)}</span>` +
-        `</div><div class="jobdet-inv-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div>`;
+        `<div class="job-doc-row__icon" aria-hidden="true">${paid ? '💰' : '🧾'}</div>` +
+        `<div class="job-doc-row__body">` +
+          `<div class="job-doc-row__title">${inv.stageLabel ? esc(inv.stageLabel) + ' · ' : ''}${jobDetDocLabel(inv)} ${esc(inv.number)}</div>` +
+          `<div class="job-doc-row__meta">` +
+            `<span class="status-pill ${jobDetInvPill(inv.status)}">${jobDetInvEstado(inv.status)}</span>` +
+            `<span>${esc(docDate(when))}</span>` +
+            `<span class="job-doc-row__amount">${fmtMoneyEs(inv.total, inv.currency || cur)}</span>` +
+          `</div>` +
+          `<div class="jobdet-inv-actions job-doc-row__actions"></div>` +
+        `</div>`;
+      docs.push({ when, el: item });
       const acts = item.querySelector('.jobdet-inv-actions');
       if (!paid) {
         // Marcar como PAGADA → PUT /admin/invoices/:id/status. Verificación de importe A21.2:
@@ -1079,8 +1029,37 @@ async function renderJobDetailView(container, jobId) {
         // PAGADA y Confirmar Bizum se quedan VISIBLES (el momento del dinero, AB3 decisión c).
         addSecondary(acts, [recordarBtn, wa, payLink]);
       }
-      cobSec.appendChild(item);
-    });
+  });
+
+  // ── SCRUM-31 (F5): fila del PRESUPUESTO (📝). Solo aparecía en el timeline como documento; se
+  // preserva aquí. Única acción: "Ver presupuesto" (SOLO el botón es clicable, no la fila — F5 dec.3).
+  if (job.quote) {
+    const item = document.createElement('div');
+    item.className = 'job-doc-row';
+    item.innerHTML =
+      `<div class="job-doc-row__icon" aria-hidden="true">📝</div>` +
+      `<div class="job-doc-row__body">` +
+        `<div class="job-doc-row__title">Presupuesto #${esc(job.quote.number)}</div>` +
+        `<div class="job-doc-row__meta"><span>${esc(docDate(job.createdAt))}</span><span class="job-doc-row__amount">${fmtMoneyEs(job.quote.total, cur)}</span></div>` +
+        `<div class="job-doc-row__actions"></div>` +
+      `</div>`;
+    const qBtn = mkBtn('Ver presupuesto', () => { if (window.renderAppView) window.renderAppView('quotes-detail', { quoteId: job.quote.id }); });
+    item.querySelector('.job-doc-row__actions').appendChild(qBtn);
+    docs.push({ when: job.createdAt, el: item });
+  }
+
+  // ── Volcado CRONOLÓGICO ASCENDENTE de la lista fusionada (o estado vacío de toda la lista) ──
+  docs.sort((a, b) => new Date(a.when || 0) - new Date(b.when || 0));
+  if (!docs.length) {
+    const empty = document.createElement('p');
+    empty.style.cssText = 'margin:6px 0 0;color:var(--muted);font-size:13px';
+    empty.textContent = 'Aún no hay documentos. Crea un albarán por cada visita o entrega.';
+    docsSec.appendChild(empty);
+  } else {
+    const docList = document.createElement('div');
+    docList.className = 'job-doc-list';
+    docs.forEach((d) => docList.appendChild(d.el));
+    docsSec.appendChild(docList);
   }
 }
 window.renderJobDetailView = renderJobDetailView;

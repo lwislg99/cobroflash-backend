@@ -1780,3 +1780,33 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 .overflow-item:focus-visible { outline: none; background: var(--bg, #f6f7f5); box-shadow: inset 0 0 0 2px rgba(34,197,94,.45); }
 .overflow-item[disabled] { opacity: .5; cursor: not-allowed; }
 .overflow-sheet .overflow-item { padding: 14px 16px; font-size: 15px; }
+
+/* ── SCRUM-31 (F5, AB3 acotada): .job-doc-row — fila de la lista fusionada del detalle de Trabajo
+   (presupuesto + albaranes + facturas en UNA lista cronológica). icono + cuerpo (título + meta +
+   fotos + acciones). Importe en Tinta ≥700 (Regla del Importe). */
+.job-doc-list { display: flex; flex-direction: column; }
+.job-doc-row {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 14px 0; border-top: 1px solid var(--neutral-100, #eef1ee);
+}
+.job-doc-row:first-child { border-top: none; padding-top: 4px; }
+.job-doc-row__icon {
+  flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%;
+  background: var(--neutral-50, #f6f7f5); border: 1px solid var(--border, #e7e9e5);
+  display: flex; align-items: center; justify-content: center; font-size: 15px;
+}
+.job-doc-row__body { flex: 1; min-width: 0; }
+.job-doc-row__title { font-size: 14px; font-weight: 700; color: var(--ink, #0f1c17); }
+.job-doc-row__meta {
+  font-size: 12.5px; color: var(--muted, #6b756f); margin-top: 3px;
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+}
+.job-doc-row__amount { color: var(--ink, #0f1c17); font-weight: 700; font-variant-numeric: tabular-nums; }
+.job-doc-row__badge {
+  font-size: 11px; font-weight: 700; color: #166534;
+  background: #ecfdf5; border-radius: 999px; padding: 2px 8px;
+}
+.job-doc-row__fotos { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.job-doc-row__actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+/* Toolbar de la lista (Nuevo albarán / Consolidar) */
+.job-doc-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
