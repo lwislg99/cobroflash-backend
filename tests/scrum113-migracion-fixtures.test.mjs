@@ -72,6 +72,25 @@ const CONOCIDOS_AL_MEDIR = [
 ];
 
 /**
+ * SUELO DEL CENSO — el censo SOLO CRECE. Se sube al añadir un fichero, nunca se baja.
+ *
+ * El censo protege al detector de quedarse ciego, pero hasta ahora NADIE LO PROTEGÍA A ÉL:
+ * quitarle una entrada dejaba los tres asserts en verde y reducía la cobertura en silencio.
+ * Su propio mensaje de error dice «NO los quites del censo para poner esto en verde» — y no
+ * había nada que lo hiciera cumplir. Una prohibición escrita sin mecanismo detrás es
+ * exactamente lo que este fichero existe para no repetir.
+ *
+ * Se descubrió rompiéndolo sin querer: un replace mal dirigido sacó `scrum72` del censo
+ * (25 → 24) y ningún assert se quejó. Lo que saltó fue el del tope, por un descuadre
+ * distinto; si aquel replace hubiera acertado en la lista, el daño al censo habría pasado
+ * inadvertido.
+ *
+ * Si un fichero se BORRA del repo de verdad, se baja este suelo A PROPÓSITO y en el mismo
+ * commit, con el motivo escrito — igual que MIGRACION_MAX.
+ */
+export const CENSO_MIN = 25;
+
+/**
  * PENDIENTES DE MIGRAR a withMerchant. Solo mengua.
  *
  * ⚠️ SI MIGRAS UN FICHERO, SÁCALO DE AQUÍ Y BAJA `MIGRACION_MAX` TÚ, EN TU MISMO COMMIT.
@@ -141,6 +160,20 @@ const clasificar = (f) => {
 };
 
 test('SCRUM-113: el detector NO está ciego (guarda de calibración)', (t) => {
+  // El censo solo crece. Sin esto, quitarle entradas reduce la cobertura EN SILENCIO —
+  // los otros asserts siguen verdes porque solo recorren lo que quede en la lista.
+  assert.ok(
+    CONOCIDOS_AL_MEDIR.length >= CENSO_MIN,
+    `\n\n🔴 EL CENSO HA MENGUADO: ${CONOCIDOS_AL_MEDIR.length} entradas, el suelo es ${CENSO_MIN}.\n\n` +
+      `El censo es lo que impide que el detector se quede ciego, así que quitarle entradas\n` +
+      `no pone nada en rojo: reduce la cobertura sin que se note. Por eso solo puede crecer.\n\n` +
+      `Si has llegado aquí tras un replace o un merge, es casi seguro que la edición cayó en\n` +
+      `el sitio equivocado: los nombres de fichero aparecen DOS veces en este fichero (aquí y\n` +
+      `en MIGRACION_PENDIENTE), y una sustitución de texto golpea la PRIMERA. Repón la entrada\n` +
+      `y edita con precisión — NO bajes CENSO_MIN para que esto pase.\n\n` +
+      `Solo se baja si un fichero se BORRÓ del repo de verdad, a propósito y con el motivo.\n`,
+  );
+
   const invisibles = CONOCIDOS_AL_MEDIR
     .filter((f) => fs.existsSync(path.join(DIR, f)))
     .filter((f) => {
