@@ -138,6 +138,7 @@ function jobCard(j, container) {
   const showCobro = aceptado > 0;
   const pct = showCobro ? Math.min(100, Math.round((cobrado / aceptado) * 100)) : 0;
   const cobroCls = cobroPillClass(j.estadoCobro);
+  const isTecnico = window.appUserRole === 'tecnico'; // SCRUM-89: "Cobrar el resto" es admin-only (403)
 
   card.innerHTML = `
     <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
@@ -207,7 +208,7 @@ function jobCard(j, container) {
   if (j.status === 'terminado') {
     if (j.remaining && j.remaining.amount > 0) {
       // A13.3: EL momento de dinero (V2: siempre acción del pro)
-      addBtn(`💰 Cobrar el resto (${fmtMoneyEs(j.remaining.amount, j.remaining.currency)})`, 'btn-primary btn-sm', async (ev) => {
+      const cobrarBtn = addBtn(`💰 Cobrar el resto (${fmtMoneyEs(j.remaining.amount, j.remaining.currency)})`, 'btn-primary btn-sm', async (ev) => {
         const b = ev.currentTarget;
         b.disabled = true; b.textContent = 'Enviando…';
         try {
@@ -221,6 +222,8 @@ function jobCard(j, container) {
           b.disabled = false;
         }
       });
+      // SCRUM-89: "Cobrar el resto" es admin-only (403). Técnico → deshabilitado con explicación.
+      if (isTecnico) { lockActionForRole(cobrarBtn); actions.appendChild(roleLockedNote()); }
     }
     addBtn('Cerrar trabajo', 'btn-ghost btn-sm', () => patch({ status: 'cerrado' }, '🔒 Trabajo cerrado'));
   }

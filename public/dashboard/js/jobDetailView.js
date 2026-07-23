@@ -43,9 +43,12 @@ function jdAddRow(dl, term, value) {
 // si hay factura sin pagar ≥7 días (y hay teléfono) · (3) Enviar para firmar un albarán emitido ·
 // (4) Emitir un albarán en borrador · (5) Nuevo albarán si no hay ninguno · (6) nada (null).
 // Entre albaranes gana el MÁS AVANZADO: emitido pesa más que borrador.
-function jobNextAction(job) {
+function jobNextAction(job, isAdmin = true) {
+  // SCRUM-89: los niveles de DINERO (1 cobrar, 2 recordar) son admin-only (403 para técnico) — un
+  // técnico los SALTA y el héroe solo le sugiere lo que SÍ puede (firmar/emitir/nuevo) o nada (nivel 6),
+  // nunca un CTA muerto. El dinero queda deshabilitado en su sitio (la fila de factura), no en el héroe.
   // 1 · terminado con saldo → Cobrar el resto (label honesto SCRUM-34).
-  if (job.status === 'terminado' && job.remaining && job.remaining.amount > 0) {
+  if (isAdmin && job.status === 'terminado' && job.remaining && job.remaining.amount > 0) {
     const restAmount = (job.pendingStagesCount === 1 && job.nextStage)
       ? fmtMoneyEs(job.nextStage.amount, job.nextStage.currency)
       : fmtMoneyEs(job.remaining.amount, job.remaining.currency);
@@ -57,7 +60,7 @@ function jobNextAction(job) {
   // 2 · factura sin pagar ≥7 días (y con teléfono para poder recordar) → Recordar pago.
   // Condicionado a propósito: no sugerir insistir a un cliente al que se facturó ayer.
   const invoices = Array.isArray(job.invoices) ? job.invoices : [];
-  if (job.customer?.phone) {
+  if (isAdmin && job.customer?.phone) {
     const vieja = invoices.find((inv) => {
       if (String(inv.status).toLowerCase() === 'paid') return false;
       const created = inv.createdAt ? new Date(inv.createdAt) : null;
@@ -150,6 +153,7 @@ async function renderJobDetailView(container, jobId) {
   const pct = aceptado > 0 ? Math.min(100, Math.round((cobrado / aceptado) * 100)) : 0;
   const cobroCls = cobroPillClass(job.estadoCobro);
   const jobMeta = jobStatusMeta(job.status); // SCRUM-31 (F1): estado del Trabajo, hoy invisible en el detalle
+  const isTecnico = window.appUserRole === 'tecnico'; // SCRUM-89: veta de acciones de dinero (admin-only, 403 backend)
 
   // ── Resumen: estado de cobro + total + barra + cobrado/pendiente ──
   const sumSec = document.createElement('div');
@@ -197,7 +201,7 @@ async function renderJobDetailView(container, jobId) {
   // ── CTA primario del HÉROE — la SIGUIENTE acción del Trabajo (SCRUM-31 F4). jobNextAction
   // decide CUÁL por la escalera aprobada; aquí SOLO se ejecuta, reutilizando endpoints existentes
   // (collect-rest / send-reminder / enviar-para-firmar / emitir / nuevo albarán). Cero lógica nueva.
-  const nextAct = jobNextAction(job);
+  const nextAct = jobNextAction(job, !isTecnico);
   if (nextAct) {
     const cta = document.createElement('button');
     cta.className = 'btn-primary';
@@ -434,6 +438,13 @@ async function renderJobDetailView(container, jobId) {
   consolidarBtn.textContent = '🧾 Consolidar en factura';
   consolidarBtn.style.display = consolidaEnabled ? '' : 'none';
   newAlbRow.appendChild(consolidarBtn);
+  // SCRUM-89: consolidar = emitir factura recapitulativa (admin-only, 403). Técnico → deshabilitado
+  // con explicación (no ocultar), solo cuando de verdad aplica (hay partes elegibles). El listener de
+  // setConsolidaMode no dispara con el botón disabled.
+  if (isTecnico && consolidaEnabled) {
+    lockActionForRole(consolidarBtn);
+    newAlbRow.appendChild(roleLockedNote());
+  }
 
   const consolidaBar = document.createElement('div');
   consolidaBar.style.cssText = 'display:none;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap';
@@ -930,7 +941,7 @@ async function renderJobDetailView(container, jobId) {
       if (!paid) {
         // Marcar como PAGADA → PUT /admin/invoices/:id/status. Verificación de importe A21.2:
         // si el importe recibido no cuadra → payment-anomaly y la factura NO se marca pagada.
-        acts.appendChild(mkBtn('Marcar como PAGADA', async () => {
+        const marcarBtn = mkBtn('Marcar como PAGADA', async () => {
           // SCRUM-43: confirmación ligera ANTES del flujo A21.2
           // (el prompt de importe recibido sigue intacto tras ella)
           if (!window.confirm(`¿Marcar como pagada la factura ${inv.number} de ${fmtMoneyEs(inv.total, inv.currency || cur)}?`)) return;
@@ -952,9 +963,10 @@ async function renderJobDetailView(container, jobId) {
           } catch (e) {
             setStatus('error', 'Error actualizando estado: ' + (e?.data?.message || e?.data?.error || e.message));
           }
-        }));
+        });
 
         // Confirmar Bizum → POST /admin/charges/:chargeId/confirm-bizum (doble toque). Solo con chargeId.
+        let bizumBtn = null;
         if (inv.chargeId) {
           const amountTxt = fmtMoneyEs(inv.total, inv.currency || cur);
           const custName = job.customer?.name || 'el cliente';
@@ -982,7 +994,7 @@ async function renderJobDetailView(container, jobId) {
               bz.disabled = false; armed = false; bz.className = 'btn-secondary btn-sm'; bz.textContent = '📲 Confirmar Bizum recibido';
             }
           });
-          acts.appendChild(bz);
+          bizumBtn = bz;
         }
 
         // Recordar pago → POST /admin/invoices/:id/send-reminder (solo si el cliente tiene teléfono).
@@ -1025,9 +1037,18 @@ async function renderJobDetailView(container, jobId) {
           payLink.target = '_blank';
           payLink.textContent = 'Enlace de pago';
         }
-        // SCRUM-31 (F3): secundarias de la factura → «⋯» (Recordar · Reenviar · Enlace). Marcar como
-        // PAGADA y Confirmar Bizum se quedan VISIBLES (el momento del dinero, AB3 decisión c).
-        addSecondary(acts, [recordarBtn, wa, payLink]);
+        // SCRUM-89: reparto por ROL. Admin = layout F3 (Marcar + Bizum visibles + «⋯»(Recordar·Reenviar·
+        // Enlace)). Técnico = TODAS las de dinero VISIBLES pero DESHABILITADAS + UNA explicación por grupo
+        // (no ocultar: que aprenda que el cobro es del admin); el "Enlace de pago" (no es dinero) sí es suyo.
+        if (isTecnico) {
+          [marcarBtn, bizumBtn, recordarBtn, wa].filter(Boolean).forEach((b) => acts.appendChild(lockActionForRole(b)));
+          acts.appendChild(roleLockedNote());
+          if (payLink) acts.appendChild(payLink);
+        } else {
+          acts.appendChild(marcarBtn);
+          if (bizumBtn) acts.appendChild(bizumBtn);
+          addSecondary(acts, [recordarBtn, wa, payLink]);
+        }
       }
   });
 
