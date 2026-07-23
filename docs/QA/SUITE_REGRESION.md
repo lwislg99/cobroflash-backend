@@ -50,7 +50,26 @@ falla — te hace perder el rato creyendo que tu entorno está roto.
    reportados como verde.**
    → Ejecuta la herramienta **sola** y mira su salida, o usa `set -o pipefail` / `${PIPESTATUS[0]}`
    si de verdad necesitas la tubería. Nada de `| tail`, `| head` ni `&&` entre una herramienta
-   y su código de salida. Esto aplica igual a `npm test`, `tsc` y `prisma`.
+   y su código de salida. Esto aplica igual a `npm test`, `tsc`, `prisma` **y `git`**.
+
+   **Segundo caso, el mismo día y con `git` (SCRUM-103).** Este repo se usa con dos worktrees
+   (carril A y carril B). Con `main` abierto en el otro, `git checkout main` **falla y grita**:
+   `fatal: 'main' is already used by worktree at …`, exit **128**. Pero escrito así:
+
+   ```bash
+   git checkout main 2>&1 | tail -1 && git checkout -b mi-rama    # ⚠️ NO
+   ```
+
+   la tubería devuelve el exit de `tail` (**0**), el `&&` continúa, y la rama nueva sale **de
+   donde estuvieras**: salió de una rama sin mergear, siete commits por detrás de `main`, e
+   incluía el commit que añadía esta misma sección. No se detectó al hacer el checkout — se
+   detectó al buscar un texto del runbook y no encontrarlo.
+
+   La lección **no** es "desconfía de `git checkout`": git hizo su trabajo. Es esta misma regla,
+   mordiendo en la misma sesión en que se escribió. Que la doctrina recién redactada no evitara
+   su propio caso es el motivo de la segunda capa: **confirma la base antes de empezar** con
+   `git merge-base --is-ancestor origin/main HEAD`, o al menos un `git log --oneline -1`. Cuesta
+   un segundo y evita rebasar a destiempo con el trabajo ya hecho encima.
 
 6. **Al empezar y al terminar una tanda, consulta tus tickets asignados con JQL.** El otro
    carril puede haberte asignado trabajo, y **el contexto de sesión nunca lo refleja**.
