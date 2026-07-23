@@ -248,6 +248,108 @@ function jobStatusMeta(status) {
 }
 window.jobStatusMeta = jobStatusMeta;
 
+// SCRUM-31 (F3, AB3 aprobado): menú de acciones secundarias (kebab «⋯»). Agrupa elementos de
+// acción YA creados (botones/enlaces con sus handlers intactos): 1 primaria visible + el resto
+// aquí. Desktop = popover anclado con flip; ≤640px = hoja inferior (reutiliza .modal-overlay/.modal
+// como F2). Teclado (↑↓/Home/End/Enter/Esc/Tab), foco al abrir→1.er ítem y al cerrar→trigger,
+// cierre por clic-fuera/scroll, uno abierto a la vez. Nunca esconde primaria / Marcar PAGADA / PDF.
+let overflowOpenClose = null; // el que esté abierto; se cierra al abrir otro
+function overflowMenu(actionEls, { label = 'Más acciones' } = {}) {
+  const items = (actionEls || []).filter(Boolean);
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'overflow-trigger btn-ghost btn-sm';
+  trigger.setAttribute('aria-haspopup', 'menu');
+  trigger.setAttribute('aria-expanded', 'false');
+  trigger.setAttribute('aria-label', label);
+  trigger.textContent = '⋯';
+
+  let panel = null, overlay = null;
+  // preventScroll: enfocar un ítem NO debe desplazar la página (si lo hace, dispararía onScroll
+  // y el popover se cerraría solo al abrir). El popover ya está posicionado junto al trigger.
+  function focusItem(i) { const n = items.length; if (n) items[((i % n) + n) % n].focus({ preventScroll: true }); }
+  const onDocPointer = (e) => {
+    if ((panel && panel.contains(e.target)) || trigger.contains(e.target)) return;
+    close(false);
+  };
+  const onKey = (e) => {
+    if (!panel) return;
+    const i = items.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown') { e.preventDefault(); focusItem(i + 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); focusItem(i - 1); }
+    else if (e.key === 'Home') { e.preventDefault(); focusItem(0); }
+    else if (e.key === 'End') { e.preventDefault(); focusItem(items.length - 1); }
+    else if (e.key === 'Escape') { e.preventDefault(); close(true); }
+    else if (e.key === 'Tab') { close(false); }
+  };
+  const onScroll = () => close(false);
+  function close(restoreFocus) {
+    if (!panel && !overlay) return;
+    if (overlay) overlay.remove(); else if (panel) panel.remove();
+    panel = overlay = null;
+    trigger.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('pointerdown', onDocPointer, true);
+    document.removeEventListener('keydown', onKey, true);
+    window.removeEventListener('scroll', onScroll, true);
+    window.removeEventListener('resize', onScroll, true);
+    overflowOpenClose = null;
+    if (restoreFocus) trigger.focus({ preventScroll: true });
+  }
+  function open() {
+    if (overflowOpenClose) overflowOpenClose();
+    const mobile = window.innerWidth <= 640;
+    if (mobile) {
+      overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      panel = document.createElement('div');
+      panel.className = 'modal overflow-sheet';
+      overlay.appendChild(panel);
+      document.body.appendChild(overlay);
+    } else {
+      panel = document.createElement('div');
+      panel.className = 'overflow-menu';
+      document.body.appendChild(panel);
+    }
+    panel.setAttribute('role', 'menu');
+    panel.setAttribute('aria-label', label);
+    items.forEach((el) => panel.appendChild(el));
+    if (!mobile) {
+      const r = trigger.getBoundingClientRect();
+      panel.style.minWidth = Math.max(180, Math.round(r.width)) + 'px';
+      const pw = panel.offsetWidth, ph = panel.offsetHeight;
+      const left = Math.max(8, Math.min(r.right - pw, window.innerWidth - pw - 8));
+      let top = r.bottom + 6;
+      if (top + ph > window.innerHeight - 8) top = Math.max(8, r.top - ph - 6); // flip arriba
+      panel.style.left = left + 'px';
+      panel.style.top = top + 'px';
+    }
+    trigger.setAttribute('aria-expanded', 'true');
+    overflowOpenClose = () => close(false);
+    document.addEventListener('pointerdown', onDocPointer, true);
+    document.addEventListener('keydown', onKey, true);
+    if (!mobile) { window.addEventListener('scroll', onScroll, true); window.addEventListener('resize', onScroll, true); }
+    focusItem(0);
+  }
+
+  items.forEach((el) => {
+    el.setAttribute('role', 'menuitem');
+    el.tabIndex = -1;
+    el.classList.remove('btn-secondary', 'btn-ghost', 'btn-primary', 'btn-sm');
+    el.classList.add('overflow-item');
+    el.addEventListener('click', () => close(false)); // activar un ítem cierra el menú
+  });
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (trigger.getAttribute('aria-expanded') === 'true') close(true); else open();
+  });
+  trigger.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') { e.preventDefault(); open(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); open(); focusItem(items.length - 1); }
+  });
+  return trigger;
+}
+window.overflowMenu = overflowMenu;
+
 // WA-0b · chip de entrega de WhatsApp (J4). Recibe `waDelivery` del detalle
 // ({status, templateName, at} | null) y devuelve el HTML del chip, o '' si no hay envío.
 // Estados de Meta: sent → delivered → read | failed. Microcopy clara para el merchant.
