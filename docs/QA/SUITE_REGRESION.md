@@ -115,6 +115,27 @@ Las tres reglas que salen de ahí, para cualquier test, assert o check nuevo:
    (gate quitado · `app.use` en vez de `mountAdmin` · entrada muerta · plazo caducado · lista
    creciendo) antes de darla por buena.
 
+   **INYECTA el fallo, no esperes a que llegue: probar en rojo incluye elegir DÓNDE rompe.**
+   Un fallo real te da un punto de la superficie —el que le tocó— y encima cuando él quiere.
+   Uno inyectado te da todos los que necesites, y sobre todo te deja llegar a los caminos que
+   nunca se ejercitan solos. El caso típico es la limpieza: **un `finally` solo se ejercita
+   de verdad cuando algo revienta antes**, así que sin inyectar un fallo nunca sabrás si
+   limpia.
+
+   Ejemplo real (SCRUM-113, `scrum49` contra staging). Se esperaba que fallase por una causa
+   ajena y **pasó entero**, así que el fallo se provocó a mano en los dos puntos que
+   importaban:
+
+   | Dónde se inyecta | Qué prueba | Resultado |
+   |---|---|---|
+   | Ejecución normal | el camino feliz | pasa · 0 huérfanos |
+   | Dentro del `try`, con los fixtures montados | que el `finally` limpia bajo un fallo | falla · **0 huérfanos** |
+   | En medio del MONTAJE de fixtures | el caso que la migración arregla | falla · **0 huérfanos** |
+
+   El tercero es el que no se alcanza esperando: exige que el fallo caiga entre la creación
+   del merchant y la del último fixture, que es una ventana de milisegundos. Inyectándolo,
+   es una línea.
+
    **Esto incluye la LIMPIEZA, que es la parte que nadie prueba.** Un `finally` que borra
    fixtures es código como cualquier otro y falla igual, solo que su fallo no sale por
    ningún sitio: el test pasa y la basura se acumula en staging hasta que alguien la cuenta.
