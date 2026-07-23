@@ -793,7 +793,11 @@ async function renderJobDetailView(container, jobId) {
       albBody.insertBefore(wrap, albBody.firstChild);
       consolidaCheckboxes.push({ alb, checkbox: cb, wrap });
     }
-    docs.push({ when: alb.estado === 'firmado' ? (alb.firmadoAt || alb.createdAt) : alb.createdAt, el: item });
+    // SCRUM-31 (fix fechas): ordenar por la fecha de OPERACIÓN `alb.fecha` — la MISMA que se muestra
+    // en la fila y la legalmente relevante (determina el mes natural de la recapitulativa, SCRUM-17).
+    // Antes ordenaba por firmadoAt (cuándo se firmó el papel, no cuándo se hizo el trabajo) → la fila
+    // mostraba una fecha y se colocaba por otra, rompiendo el orden ascendente visible.
+    docs.push({ when: alb.fecha, el: item });
     const acts = item.querySelector('.jobdet-alb-actions');
     const fotosBox = item.querySelector('.jobdet-alb-fotos');
 
@@ -846,7 +850,8 @@ async function renderJobDetailView(container, jobId) {
       });
       em.className = 'btn-primary btn-sm';
       acts.appendChild(em); // primaria visible
-      addSecondary(acts, [editBtn(), fotoBtn()]); // «⋯» Editar líneas · Añadir foto
+      acts.appendChild(editBtn()); // SCRUM-31 (descubribilidad): "Editar líneas" VISIBLE (nunca escondida, AB3).
+      addSecondary(acts, [fotoBtn()]); // «⋯» → solo Añadir foto (1 ítem = inline; sin muro)
     } else if (alb.estado === 'emitido') {
       acts.appendChild(pdfBtn());
       const fs = mkBtn('Firmar', () => {
@@ -864,6 +869,7 @@ async function renderJobDetailView(container, jobId) {
       });
       fs.className = 'btn-primary btn-sm';
       acts.appendChild(fs); // primaria visible (PDF ya está visible arriba)
+      acts.appendChild(editBtn()); // SCRUM-31 (descubribilidad): "Editar líneas" VISIBLE (nunca escondida, AB3).
       // SCRUM-49: enviar al cliente el link para FIRMAR a distancia (plantilla albaran_para_firmar_es).
       const firmarWaBtn = mkBtn('Enviar para firmar', async () => {
         firmarWaBtn.disabled = true;
@@ -882,8 +888,9 @@ async function renderJobDetailView(container, jobId) {
         firmarWaBtn.disabled = false;
         firmarWaBtn.textContent = orig;
       });
-      // SCRUM-31 (F3): secundarias del emitido → «⋯» (Editar líneas · Añadir foto · Enviar para firmar).
-      addSecondary(acts, [editBtn(), fotoBtn(), firmarWaBtn]);
+      // SCRUM-31: visibles = [PDF][Firmar][Editar líneas] (3 nunca-ocultas); «⋯» = Añadir foto ·
+      // Enviar para firmar (las menos frecuentes). Emitido: 3 visibles + «⋯»(2), lejos del muro de 5.
+      addSecondary(acts, [fotoBtn(), firmarWaBtn]);
     } else {
       acts.appendChild(pdfBtn()); // firmado = congelado: solo PDF
       // SCRUM-47: enviar la copia FIRMADA al WhatsApp del cliente (plantilla albaran_firmado_es).
