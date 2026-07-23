@@ -74,6 +74,20 @@ const CONOCIDOS_AL_MEDIR = [
 /**
  * PENDIENTES DE MIGRAR a withMerchant. Solo mengua.
  * Sacar uno → bajar MIGRACION_MAX EN EL MISMO COMMIT (ver la nota del tope).
+ *
+ * ⚠️ QUIÉN EDITA ESTA LISTA: **quien migra el fichero**, en su propio commit — aunque la
+ * campaña de migración sea de otro carril. Sacarlo de aquí y bajar el tope NO es «tocar
+ * trabajo ajeno»: es **la otra mitad de la migración**. Un fichero migrado que sigue
+ * contado como pendiente es otra forma del estado «a medias» —el que parece hecho y no lo
+ * está— y además deja holgura en el ratchet, que es justo lo que el tope evita.
+ *
+ * ESTAS DOS LÍNEAS (sacar el fichero + bajar `MIGRACION_MAX`) son la ÚNICA excepción: del
+ * resto del ratchet sigue siendo dueño quien lo escribió.
+ *
+ * Origen: al migrar `scrum94` (23-jul-2026) el reparto por fichero chocó con la
+ * atomicidad que este ratchet exige — el que migraba no era el dueño de la lista, así que
+ * `main` quedaba en rojo entre los dos commits. Se resolvió a favor de la atomicidad: la
+ * regla del ratchet no se relaja.
  */
 export const MIGRACION_PENDIENTE = [
   'albaran.test.mjs',
@@ -88,7 +102,7 @@ export const MIGRACION_PENDIENTE = [
   'scrum73-verifactu-gate.test.mjs', 'scrum74-recibo-token.test.mjs',
   'scrum76-email-adjunto.test.mjs', 'scrum85-pay-routes-token.test.mjs',
   'scrum90-pay-bank-mp-token.test.mjs', 'scrum92-login-operario.test.mjs',
-  'scrum94-register-teammember.test.mjs', 'tenancy-permisos.test.mjs',
+  'tenancy-permisos.test.mjs',
   'webhooks-idempotencia.test.mjs',
 ];
 
@@ -99,7 +113,7 @@ export const MIGRACION_PENDIENTE = [
  * de SCRUM-103 (el ratchet de rutas se dejó en 25 con 24 entradas).
  */
 // 24 → 23 (tanda 1) → 22 (tanda 2) → 19 (tanda 3: los tres de exports)
-export const MIGRACION_MAX = 17;
+export const MIGRACION_MAX = 16;
 
 /**
  * Fecha límite. Pasada, el test falla mientras queden pendientes.
