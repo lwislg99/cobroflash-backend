@@ -37,6 +37,47 @@ function jdAddRow(dl, term, value) {
   dl.appendChild(dd);
 }
 
+// SCRUM-31 (F4): resolver de la SIGUIENTE acción del héroe (escalera aprobada por el fundador).
+// PURO: decide CUÁL acción mostrar a partir de `job`; NO ejecuta nada (el héroe reutiliza los
+// endpoints existentes). Prioridad: (1) Cobrar el resto si terminado con saldo · (2) Recordar pago
+// si hay factura sin pagar ≥7 días (y hay teléfono) · (3) Enviar para firmar un albarán emitido ·
+// (4) Emitir un albarán en borrador · (5) Nuevo albarán si no hay ninguno · (6) nada (null).
+// Entre albaranes gana el MÁS AVANZADO: emitido pesa más que borrador.
+function jobNextAction(job) {
+  // 1 · terminado con saldo → Cobrar el resto (label honesto SCRUM-34).
+  if (job.status === 'terminado' && job.remaining && job.remaining.amount > 0) {
+    const restAmount = (job.pendingStagesCount === 1 && job.nextStage)
+      ? fmtMoneyEs(job.nextStage.amount, job.nextStage.currency)
+      : fmtMoneyEs(job.remaining.amount, job.remaining.currency);
+    const label = (job.hasCustomPlan && job.pendingStagesCount >= 2 && job.nextStage)
+      ? `🪙 Cobrar siguiente tramo: ${job.nextStage.label} (${fmtMoneyEs(job.nextStage.amount, job.nextStage.currency)})`
+      : `💰 Cobrar el resto (${restAmount})`;
+    return { level: 1, kind: 'cobrar', label };
+  }
+  // 2 · factura sin pagar ≥7 días (y con teléfono para poder recordar) → Recordar pago.
+  // Condicionado a propósito: no sugerir insistir a un cliente al que se facturó ayer.
+  const invoices = Array.isArray(job.invoices) ? job.invoices : [];
+  if (job.customer?.phone) {
+    const vieja = invoices.find((inv) => {
+      if (String(inv.status).toLowerCase() === 'paid') return false;
+      const created = inv.createdAt ? new Date(inv.createdAt) : null;
+      if (!created || isNaN(created.getTime())) return false;
+      return (Date.now() - created.getTime()) >= 7 * 86400000;
+    });
+    if (vieja) return { level: 2, kind: 'recordar', label: 'Recordar pago', invoiceId: vieja.id };
+  }
+  // 3/4 · albaranes: gana el MÁS AVANZADO (emitido → firmar; si no, borrador → emitir).
+  const albaranes = Array.isArray(job.albaranes) ? job.albaranes : [];
+  const emitido = albaranes.find((a) => a.estado === 'emitido');
+  if (emitido) return { level: 3, kind: 'firmar', label: 'Enviar para firmar', albaranId: emitido.id };
+  const borrador = albaranes.find((a) => a.estado === 'borrador');
+  if (borrador) return { level: 4, kind: 'emitir', label: 'Emitir albarán', albaranId: borrador.id };
+  // 5 · sin ningún albarán → crear el primero. (Con albaranes todos firmados y nada pendiente → null.)
+  if (!albaranes.length) return { level: 5, kind: 'nuevo', label: '+ Nuevo albarán' };
+  // 6 · nada que sugerir.
+  return null;
+}
+
 async function renderJobDetailView(container, jobId) {
   container.innerHTML = '';
   const id = Number(jobId);
@@ -153,36 +194,48 @@ async function renderJobDetailView(container, jobId) {
     `<div><div class="detail-total-label">Pendiente</div><div style="font-weight:700;color:var(--ink);font-size:16px;font-variant-numeric:tabular-nums">${fmtMoneyEs(pendiente, cur)}</div></div>`;
   sumSec.appendChild(twoTotals);
 
-  // ── CTA primario del HÉROE — "Cobrar el resto" (SCRUM-31 F1: reubicado desde 'Cobros').
-  // PURA REUBICACIÓN: misma condición (terminado && remaining>0), mismo endpoint
-  // (/collect-rest), misma lógica de label. Solo cambia DÓNDE se pinta.
-  // SCRUM-34: label honesto — collect-rest emite SOLO el siguiente tramo. Con 2+ tramos
-  // pendientes de un plan CUSTOM se nombra el tramo; con el ÚLTIMO el importe sale de
-  // nextStage.amount (exacto; remaining es float y con céntimo impar mentiría 1 cént.).
-  if (job.status === 'terminado' && job.remaining && job.remaining.amount > 0) {
-    const restAmount = (job.pendingStagesCount === 1 && job.nextStage)
-      ? fmtMoneyEs(job.nextStage.amount, job.nextStage.currency)
-      : fmtMoneyEs(job.remaining.amount, job.remaining.currency);
-    const ctaLabel = (job.hasCustomPlan && job.pendingStagesCount >= 2 && job.nextStage)
-      ? `🪙 Cobrar siguiente tramo: ${job.nextStage.label} (${fmtMoneyEs(job.nextStage.amount, job.nextStage.currency)})`
-      : `💰 Cobrar el resto (${restAmount})`;
+  // ── CTA primario del HÉROE — la SIGUIENTE acción del Trabajo (SCRUM-31 F4). jobNextAction
+  // decide CUÁL por la escalera aprobada; aquí SOLO se ejecuta, reutilizando endpoints existentes
+  // (collect-rest / send-reminder / enviar-para-firmar / emitir / nuevo albarán). Cero lógica nueva.
+  const nextAct = jobNextAction(job);
+  if (nextAct) {
     const cta = document.createElement('button');
     cta.className = 'btn-primary';
     cta.style.marginTop = '16px';
-    cta.textContent = ctaLabel;
+    cta.textContent = nextAct.label;
     cta.addEventListener('click', async () => {
       cta.disabled = true;
+      const orig = cta.textContent;
       cta.textContent = 'Enviando…';
       try {
-        const r = await apiRequest(`/admin/jobs/${job.id}/collect-rest`, { method: 'POST' });
-        showToast(r.whatsapp === 'sent'
-          ? `💰 Enlace de cobro enviado (${fmtMoneyEs(r.amount, r.currency)})`
-          : 'Cobro creado — el WhatsApp falló, reenvíalo desde Cobros', r.whatsapp === 'sent' ? 'ok' : 'warn');
-        refresh();
+        if (nextAct.kind === 'cobrar') {
+          const r = await apiRequest(`/admin/jobs/${job.id}/collect-rest`, { method: 'POST' });
+          showToast(r.whatsapp === 'sent'
+            ? `💰 Enlace de cobro enviado (${fmtMoneyEs(r.amount, r.currency)})`
+            : 'Cobro creado — el WhatsApp falló, reenvíalo desde Cobros', r.whatsapp === 'sent' ? 'ok' : 'warn');
+          refresh();
+        } else if (nextAct.kind === 'recordar') {
+          await apiRequest(`/admin/invoices/${nextAct.invoiceId}/send-reminder`, { method: 'POST' });
+          showToast('✓ Recordatorio enviado por WhatsApp.');
+          refresh();
+        } else if (nextAct.kind === 'firmar') {
+          const d = await apiRequest(`/admin/albaranes/${nextAct.albaranId}/enviar-para-firmar`, { method: 'POST' });
+          if (d && d.ok === false) setStatus('error', d.message || 'No se pudo enviar por WhatsApp.');
+          else showToast('✓ Enviado al cliente para firmar.');
+          cta.disabled = false; cta.textContent = orig; // el albarán sigue emitido: no se refresca
+        } else if (nextAct.kind === 'emitir') {
+          await apiRequest(`/admin/albaranes/${nextAct.albaranId}/emitir`, { method: 'POST' });
+          showToast('✓ Albarán emitido.');
+          refresh();
+        } else if (nextAct.kind === 'nuevo') {
+          await apiRequest(`/admin/jobs/${job.id}/albaranes`, { method: 'POST', body: JSON.stringify({ modoValoracion: 'SIN_VALORAR' }) });
+          showToast('✓ Albarán creado (borrador).');
+          refresh();
+        }
       } catch (err) {
-        setStatus('error', 'No se pudo generar el cobro: ' + (err?.data?.message || err.message));
+        setStatus('error', 'No se pudo completar la acción: ' + (err?.data?.message || err.message));
         cta.disabled = false;
-        cta.textContent = ctaLabel;
+        cta.textContent = orig;
       }
     });
     sumSec.appendChild(cta);
