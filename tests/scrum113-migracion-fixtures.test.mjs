@@ -76,13 +76,13 @@ const CONOCIDOS_AL_MEDIR = [
  * Sacar uno → bajar MIGRACION_MAX EN EL MISMO COMMIT (ver la nota del tope).
  */
 export const MIGRACION_PENDIENTE = [
-  'albaran.test.mjs', 'pdfs.test.mjs',
+  'albaran.test.mjs',
   'scrum17-recapitulativa.test.mjs',
   // MIGRADOS — tanda 1: scrum24-operarios-metrics · tanda 2: scrum22-operario-readpath
-  // tanda 3 (exports, tras salir la sesión 1 de esa zona): scrum104-clientes-referenciados,
-  // scrum25-exports, scrum25-export-zip.
+  // tanda 3 (exports): scrum104-clientes-referenciados, scrum25-exports, scrum25-export-zip
+  // tanda 4 (grupo A, en curso): pdfs, scrum50-bot-albaranes
   'scrum47-enviar-albaran-wa.test.mjs',
-  'scrum49-firma-remota.test.mjs', 'scrum50-bot-albaranes.test.mjs',
+  'scrum49-firma-remota.test.mjs',
   'scrum57-operario-propagacion.test.mjs', 'scrum66-tipo-operacion.test.mjs',
   'scrum68-evidencias-firma.test.mjs', 'scrum72-pdfs-privados.test.mjs',
   'scrum73-verifactu-gate.test.mjs', 'scrum74-recibo-token.test.mjs',
@@ -99,7 +99,7 @@ export const MIGRACION_PENDIENTE = [
  * de SCRUM-103 (el ratchet de rutas se dejó en 25 con 24 entradas).
  */
 // 24 → 23 (tanda 1) → 22 (tanda 2) → 19 (tanda 3: los tres de exports)
-export const MIGRACION_MAX = 19;
+export const MIGRACION_MAX = 17;
 
 /**
  * Fecha límite. Pasada, el test falla mientras queden pendientes.
