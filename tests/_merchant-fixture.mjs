@@ -18,6 +18,9 @@
 //   2. Cada operación de borrado va AISLADA: un fallo no cancela las siguientes.
 //   3. Un after() global barre lo que quede vivo al terminar el fichero, como red de
 //      última instancia — incluso si alguien no usó el helper y registró el id a mano.
+//      AUTOMÁTICA: withMerchant la activa sola en su primer uso por fichero, nadie tiene
+//      que acordarse de tenderla aparte (si tuviera que hacerlo, sería la misma brecha que
+//      este fichero existe para cerrar, solo que un nivel más abajo).
 //
 // NUNCA LANZA DESDE LA LIMPIEZA. Un `throw` dentro de un `finally` SUSTITUYE a la
 // excepción original: el error de verdad del test desaparece y se lee un fallo de borrado
@@ -115,7 +118,30 @@ export async function limpiarMerchant(prisma, merchantId, { intentos = 3 } = {})
  *
  * El error del test se propaga TAL CUAL: la limpieza no lo sustituye ni lo enmascara.
  */
-export async function withMerchant(prisma, data, fn) {
+// SCRUM-113 (verificación post-cierre): `registrarBarridoFinal` estaba escrita, documentada
+// como la garantía nº3, y CERO ficheros la llamaban — la propia red de última instancia
+// dependía de que cada autor se acordara de tender OTRA red aparte. Es la misma brecha que
+// el ticket entero existe para cerrar, reabierta en su propia pieza de repuesto. Ahora
+// `withMerchant` la activa sola en su primer uso por fichero: nadie tiene que acordarse.
+let barridoRegistradoEnEsteFichero = false;
+
+/**
+ * SOLO PARA TESTS de este propio fichero (merchant-fixture.test.mjs): el flag de "ya
+ * registrado" es de módulo, así que un test que quiera comprobar el PRIMER uso de
+ * withMerchant en aislamiento necesita poder rebobinarlo — si no, hereda el registro que
+ * ya hizo el test anterior del mismo fichero y el suyo pasaría en falso (o fallaría en
+ * falso). No se usa nunca en un fichero de test real: ahí el "primer uso" es de verdad.
+ */
+export function _resetBarridoParaTests() {
+  barridoRegistradoEnEsteFichero = false;
+}
+
+export async function withMerchant(prisma, data, fn, { after: afterFn = after } = {}) {
+  if (!barridoRegistradoEnEsteFichero) {
+    barridoRegistradoEnEsteFichero = true;
+    registrarBarridoFinal(prisma, { after: afterFn });
+  }
+
   const merchant = await prisma.merchant.create({
     data: { country: 'ES', onboardingCompleted: true, ...data },
   });
@@ -131,21 +157,32 @@ export async function withMerchant(prisma, data, fn) {
 }
 
 /**
- * Red de última instancia. Corre al terminar el fichero de test (node --test lanza un
- * proceso por fichero, así que el alcance es el correcto).
+ * La barrida en sí, separada de CUÁNDO se dispara (`registrarBarridoFinal`) para poder
+ * probarla directamente — sin esperar a que un proceso de verdad termine.
  *
  * No debería tener nada que barrer si todo usó withMerchant. Que encuentre algo es señal
  * de un camino sin cubrir, y por eso AVISA en vez de limpiar en silencio: una red que
  * limpia calladamente esconde justo el fallo que hay que arreglar.
  */
-export function registrarBarridoFinal(prisma) {
-  after(async () => {
-    if (merchantsVivos.size === 0) return;
-    const pendientes = [...merchantsVivos];
-    console.warn(
-      `⚠️  SCRUM-113: ${pendientes.length} merchant(s) seguían vivos al acabar el fichero ` +
-        `(${pendientes.join(', ')}). Algún camino no pasó por withMerchant — bárrelo, pero mira por qué.`,
-    );
-    for (const id of pendientes) await limpiarMerchant(prisma, id);
-  });
+export async function barridoFinal(prisma) {
+  if (merchantsVivos.size === 0) return;
+  const pendientes = [...merchantsVivos];
+  console.warn(
+    `⚠️  SCRUM-113: ${pendientes.length} merchant(s) seguían vivos al acabar el fichero ` +
+      `(${pendientes.join(', ')}). Algún camino no pasó por withMerchant — bárrelo, pero mira por qué.`,
+  );
+  for (const id of pendientes) await limpiarMerchant(prisma, id);
+}
+
+/**
+ * Red de última instancia. Corre al terminar el fichero de test (node --test lanza un
+ * proceso por fichero, así que el alcance es el correcto). `withMerchant` la activa sola;
+ * llamarla aparte solo hace falta si se crean merchants a mano sin pasar por el helper.
+ *
+ * `after` va por parámetro con default al real de `node:test` (mismo patrón que `prisma`
+ * arriba): así un test puede inyectar un doble y comprobar que el REGISTRO ocurre, sin
+ * depender del cierre real del proceso.
+ */
+export function registrarBarridoFinal(prisma, { after: afterFn = after } = {}) {
+  afterFn(() => barridoFinal(prisma));
 }
