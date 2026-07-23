@@ -13,6 +13,9 @@ export interface CreateExpenseInput {
   date?: Date;
   notes?: string | null;
   receiptData?: string | null;
+  // SCRUM-109: autoría — el técnico que registró el gasto (null = propietario). Inmutable:
+  // no forma parte de updateExpense a propósito, mismo convenio que Job.operarioId (SCRUM-22).
+  teamMemberId?: number | null;
 }
 
 export async function listExpenses(
@@ -44,15 +47,16 @@ export async function createExpense(merchantId: number, data: CreateExpenseInput
   return prisma.expense.create({
     data: {
       merchantId,
-      quoteId:     data.quoteId    ?? null,
-      providerId:  data.providerId ?? null,
-      concept:     data.concept,
-      amount:      data.amount,
-      currency:    data.currency   ?? 'EUR',
-      category:    data.category   ?? 'otros',
-      date:        data.date       ?? new Date(),
-      notes:       data.notes      ?? null,
-      receiptData: data.receiptData ?? null,
+      quoteId:      data.quoteId     ?? null,
+      providerId:   data.providerId  ?? null,
+      concept:      data.concept,
+      amount:       data.amount,
+      currency:     data.currency    ?? 'EUR',
+      category:     data.category    ?? 'otros',
+      date:         data.date        ?? new Date(),
+      notes:        data.notes       ?? null,
+      receiptData:  data.receiptData ?? null,
+      teamMemberId: data.teamMemberId ?? null,
     },
   });
 }

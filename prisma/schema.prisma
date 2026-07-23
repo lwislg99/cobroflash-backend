@@ -372,6 +372,13 @@ model Expense {
   notes       String?
   receiptData String?  @db.Text @map("receipt_data")
 
+  // SCRUM-109 (carril A, bloqueante de SCRUM-107 V2): autoría del gasto — el técnico que lo
+  // registró desde la furgoneta. Int? con null = propietario, misma convención que
+  // Quote.teamMemberId / Job.operarioId (SCRUM-52): sin relación Prisma declarada a propósito
+  // (ese es el patrón ya asentado). Se rellena en createExpense con el teamMemberId de la
+  // sesión. NO se usa aún para filtrar/mostrar — eso es la V2 de SCRUM-107, carril B (Javier).
+  teamMemberId Int?     @map("team_member_id")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt      @map("updated_at")
 
@@ -382,6 +389,7 @@ model Expense {
   @@index([merchantId])
   @@index([merchantId, quoteId])
   @@index([merchantId, date])
+  @@index([merchantId, teamMemberId])
   @@map("expenses")
 }
 
