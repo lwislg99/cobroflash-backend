@@ -187,11 +187,33 @@ test('SCRUM-55: todo router montado está identificado (nadie se salta mountAdmi
 });
 
 test('SCRUM-55: la lista de pendientes mengua (ratchet + caducidad)', (t) => {
-  assert.ok(
-    PENDIENTE_CLASIFICAR.length <= PENDIENTE_MAX,
-    `\n\n🔴 La lista de PENDIENTE_CLASIFICAR ha CRECIDO: ${PENDIENTE_CLASIFICAR.length} > ${PENDIENTE_MAX}.\n` +
-      `Esa lista solo puede menguar. Una ruta NUEVA se declara (requireRole o TECNICO_ALLOWED);\n` +
-      `no se aparca. Si vacías una tanda, baja PENDIENTE_MAX en el mismo commit.\n`,
+  // SCRUM-124: IGUALDAD EXACTA, no `<=`.
+  //
+  // Este assert decía `<=` y su propio mensaje pedía «si vacías una tanda, baja
+  // PENDIENTE_MAX en el mismo commit» — sin nada que lo hiciera cumplir. Vaciar cinco
+  // entradas y dejar el tope quieto pasaba en VERDE, con cinco huecos libres para aparcar
+  // rutas nuevas sin que el test dijera ni pío. La prohibición estaba escrita; el
+  // mecanismo, no.
+  //
+  // Lo grave no es el `<=`: es que la lección se aprendió AQUÍ. El ratchet de rutas se
+  // dejó una vez en 25 con 24 entradas (SCRUM-103) y de ahí salió la regla. Al escribir
+  // el ratchet de SCRUM-113 se aplicó `===` desde el primer día, citando este caso por su
+  // nombre — y este fichero, el original, se quedó con el `<=`. **La corrección se escribió
+  // y no se propagó a la hermana.** Tercera vez que aparece ese patrón el mismo día.
+  //
+  // Al cambiarlo: 16 entradas con PENDIENTE_MAX = 16. No-op hoy, red mañana.
+  assert.equal(
+    PENDIENTE_CLASIFICAR.length, PENDIENTE_MAX,
+    PENDIENTE_CLASIFICAR.length > PENDIENTE_MAX
+      ? `\n\n🔴 La lista de PENDIENTE_CLASIFICAR ha CRECIDO: ${PENDIENTE_CLASIFICAR.length} > ${PENDIENTE_MAX}.\n` +
+        `Esa lista solo puede menguar. Una ruta NUEVA se declara (requireRole o TECNICO_ALLOWED);\n` +
+        `no se aparca — y subir PENDIENTE_MAX para que quepa es exactamente el atajo que este\n` +
+        `assert existe para impedir.\n`
+      : `\n\n🔴 HOLGURA en el ratchet: ${PENDIENTE_CLASIFICAR.length} pendientes con el tope en ${PENDIENTE_MAX}.\n` +
+        `Sobran ${PENDIENTE_MAX - PENDIENTE_CLASIFICAR.length} hueco(s), y un hueco libre es sitio donde aparcar una ruta\n` +
+        `nueva sin que nadie se entere: el contador no sube, así que no salta nada.\n\n` +
+        `Has clasificado rutas y no has bajado el tope. Baja PENDIENTE_MAX a ${PENDIENTE_CLASIFICAR.length} en\n` +
+        `ESTE MISMO commit — es la otra mitad del trabajo, no una tarea aparte.\n`,
   );
 
   // El ratchet impide que crezca; la caducidad impide que se quede quieta.
