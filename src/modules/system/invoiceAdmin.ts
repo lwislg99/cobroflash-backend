@@ -45,7 +45,7 @@ export async function listInvoicesAdmin(
 // Detalle de una factura
 export async function getInvoiceDetailAdmin(id: number, merchantId?: number) {
   // A21.3: scoping multi-tenant también en la LECTURA (regla 2)
-  return prisma.invoice.findFirst({
+  const invoice = await prisma.invoice.findFirst({
     where: { id, ...(merchantId != null ? { merchantId } : {}) },
     include: {
       merchant: true,
@@ -55,6 +55,34 @@ export async function getInvoiceDetailAdmin(id: number, merchantId?: number) {
       rectifiedBy: { select: { id: true, number: true } }, // rectificativa emitida (si existe)
     },
   });
+  if (!invoice) return null;
+
+  // SCRUM-97: el objeto Merchant/Customer completo se colaba entero en la respuesta —
+  // IBAN/CLABE, ids de Stripe, estado de suscripción, flags internos del merchant; el
+  // portalToken del customer (la llave de SU portal público) — a CUALQUIER rol, incluido
+  // Técnico (esta ruta no lleva requireRole). Mismo recorte que ya usa
+  // getQuoteDetailAdmin (quoteAdmin.ts): allowlist explícita, nunca el objeto Prisma
+  // crudo. Ningún consumidor actual (frontend/route) leía los campos recortados.
+  return {
+    ...invoice,
+    merchant: {
+      id: invoice.merchant.id,
+      name: invoice.merchant.name,
+      legalName: invoice.merchant.legalName,
+      taxId: invoice.merchant.taxId,
+      address: invoice.merchant.address,
+      whatsappPhone: invoice.merchant.whatsappPhone,
+      defaultCurrency: invoice.merchant.defaultCurrency,
+      logoUrl: invoice.merchant.logoUrl,
+    },
+    customer: {
+      id: invoice.customer.id,
+      name: invoice.customer.name,
+      phone: invoice.customer.phone,
+      email: invoice.customer.email,
+      notes: invoice.customer.notes,
+    },
+  };
 }
 
 // Cambiar estado (pending/paid/expired) manteniendo paidAt coherente.

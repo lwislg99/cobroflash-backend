@@ -7,6 +7,17 @@ function generatePortalToken() {
   return crypto.randomBytes(16).toString('hex');
 }
 
+// SCRUM-97: listado/detalle/alta genéricos de cliente NUNCA devuelven portalToken — es
+// la llave del portal público de autoservicio (/cliente/:token, historial completo de
+// documentos, sin más control) y no hace falta aquí: el flujo legítimo para obtenerlo ya
+// existe aparte, GET /admin/customers/:id/portal-url (ensurePortalToken más abajo), que
+// sí lo selecciona a propósito. Todo lo demás del modelo se mantiene (nada lo necesitaba
+// recortado; solo el token).
+const CUSTOMER_SELECT_NO_TOKEN = {
+  id: true, merchantId: true, name: true, phone: true, email: true, notes: true,
+  legalName: true, taxId: true, waOptOut: true, createdAt: true, updatedAt: true,
+} as const;
+
 export async function listCustomers(merchantId: number, search?: string) {
   const where: Prisma.CustomerWhereInput = { merchantId };
 
@@ -20,16 +31,17 @@ export async function listCustomers(merchantId: number, search?: string) {
     }];
   }
 
-  return prisma.customer.findMany({ where, orderBy: { createdAt: 'desc' } });
+  return prisma.customer.findMany({ where, orderBy: { createdAt: 'desc' }, select: CUSTOMER_SELECT_NO_TOKEN });
 }
 
 export async function getCustomer(merchantId: number, id: number) {
-  return prisma.customer.findFirst({ where: { id, merchantId } });
+  return prisma.customer.findFirst({ where: { id, merchantId }, select: CUSTOMER_SELECT_NO_TOKEN });
 }
 
 export async function createCustomer(merchantId: number, data: CustomerCreateInput) {
   return prisma.customer.create({
     data: { ...data, merchantId, portalToken: generatePortalToken() },
+    select: CUSTOMER_SELECT_NO_TOKEN,
   });
 }
 
