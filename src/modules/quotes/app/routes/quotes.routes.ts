@@ -7,7 +7,7 @@ import {
   RejectQuoteSchema,
   type QuoteTier,
 } from '../../../../core/validation/schemas';
-import { calcTotal, normalizePhone, parseNumericId } from '../../../../core/utils/utils';
+import { calcTotal, normalizePhone, parseToken } from '../../../../core/utils/utils';
 import { rateLimit } from '../../../../core/http/rateLimit';
 
 function calcTierTotal(lines: Array<{qty: number; price: number; tax?: number}>): number {
@@ -42,10 +42,11 @@ import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 
 const router = Router();
 
-// P1-SEC-6 (mitigación): las decisiones públicas del cliente (accept/reject) usan
-// el id secuencial global sin token → enumerables. Rate limit por IP como defensa
-// en profundidad contra el abuso masivo (rechazar/aceptar en masa). El fix COMPLETO
-// (token no adivinable en el enlace) toca plantillas Meta → decisión del fundador.
+// SCRUM-95: rate limit por IP como defensa EN PROFUNDIDAD además del token opaco
+// (Quote.decisionToken) — el token ya cierra el IDOR; esto acota además la velocidad
+// de fuerza bruta/abuso masivo. P1-SEC-6 lo introdujo cuando accept/reject aún
+// resolvían por id crudo; ahora las tres rutas de decisión (accept/reject/decision)
+// lo comparten.
 const decisionLimiter = rateLimit({ scope: 'quote_decision', max: 20, windowMs: 60_000 });
 
 /**
@@ -202,22 +203,23 @@ router.post('/create', async (req, res) => {
  * Decisión del CLIENTE: acepta el presupuesto.
  * No crea cobros ni facturas, solo marca la decisión.
  */
-router.post('/:id/accept', decisionLimiter, async (req, res) => {
+router.post('/:token/accept', decisionLimiter, async (req, res) => {
   try {
-    const quoteId = parseNumericId(req.params.id);
-    if (!Number.isInteger(quoteId)) {
-      return res.status(400).json({ error: 'invalid_quote_id' });
-    }
+    // SCRUM-95: token opaco (Quote.decisionToken), NUNCA el id autoincremental —
+    // era la sexta puerta de la misma fuga (SCRUM-72/74/85/87/90). Token
+    // ausente/malformado y token válido pero inexistente responden IGUAL (404
+    // quote_not_found) para no distinguir "formato malo" de "no existe".
+    const token = parseToken(req.params.token);
 
     const body = AcceptQuoteSchema.parse(req.body);
 
-    const quote = await prisma.quote.findUnique({
-      where: { id: quoteId },
+    const quote = token ? await prisma.quote.findUnique({
+      where: { decisionToken: token },
       include: {
         merchant: { select: { id: true, email: true, name: true, notifyEmailOnQuoteAccepted: true } },
         customer: { select: { name: true } },
       },
-    });
+    }) : null;
 
     if (!quote) {
       return res.status(404).json({ error: 'quote_not_found' });
@@ -243,7 +245,7 @@ router.post('/:id/accept', decisionLimiter, async (req, res) => {
     const now = new Date();
 
     const updated = await prisma.quote.update({
-      where: { id: quoteId },
+      where: { id: quote.id },
       data: {
         status: 'accepted',
         acceptedAt: now,
@@ -261,7 +263,7 @@ router.post('/:id/accept', decisionLimiter, async (req, res) => {
         merchantEmail: quote.merchant.email,
         merchantName:  quote.merchant.name || 'Tu negocio',
         customerName:  quote.customer?.name || 'Cliente',
-        quoteId: quote.quoteNumber ?? quoteId, // A1.2: solo display en el email
+        quoteId: quote.quoteNumber ?? quote.id, // A1.2: solo display en el email
         total: Number(quote.total).toFixed(2),
         currency: quote.currency,
       }).catch(() => {});
@@ -286,21 +288,19 @@ router.post('/:id/accept', decisionLimiter, async (req, res) => {
 });
 
 /**
- * POST /quote/:id/reject
+ * POST /quote/:token/reject
  * Decisión del CLIENTE: rechaza el presupuesto.
  */
-router.post('/:id/reject', decisionLimiter, async (req, res) => {
+router.post('/:token/reject', decisionLimiter, async (req, res) => {
   try {
-    const quoteId = parseNumericId(req.params.id);
-    if (!Number.isInteger(quoteId)) {
-      return res.status(400).json({ error: 'invalid_quote_id' });
-    }
+    // SCRUM-95: token opaco — ver nota en /:token/accept.
+    const token = parseToken(req.params.token);
 
     const body = RejectQuoteSchema.parse(req.body);
 
-    const quote = await prisma.quote.findUnique({
-      where: { id: quoteId },
-    });
+    const quote = token ? await prisma.quote.findUnique({
+      where: { decisionToken: token },
+    }) : null;
 
     if (!quote) {
       return res.status(404).json({ error: 'quote_not_found' });
@@ -326,7 +326,7 @@ router.post('/:id/reject', decisionLimiter, async (req, res) => {
     const now = new Date();
 
     const updated = await prisma.quote.update({
-      where: { id: quoteId },
+      where: { id: quote.id },
       data: {
         status: 'rejected',
         rejectedAt: now,
@@ -351,7 +351,7 @@ router.post('/:id/reject', decisionLimiter, async (req, res) => {
         details: err.errors,
       });
     }
-    console.error('POST /quote/:id/reject error', err);
+    console.error('POST /quote/:token/reject error', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });
@@ -359,7 +359,7 @@ router.post('/:id/reject', decisionLimiter, async (req, res) => {
 
 
 /**
- * POST /quote/:id/decision
+ * POST /quote/:token/decision
  * Endpoint pensado para WhatsApp / n8n.
  *
  * Body:
@@ -373,13 +373,17 @@ router.post('/:id/reject', decisionLimiter, async (req, res) => {
  *  - Actualiza el presupuesto con status, fechas y canal = 'whatsapp'
  *  - Si decision = accept → marca ACCEPTED y genera la siguiente factura
  *    según paymentTerms (FULL_UPFRONT o FIFTY_FIFTY).
+ *
+ * SCRUM-95 (🔴 la sexta puerta, la peor): esta ruta era pública, SIN auth y SIN
+ * rate-limit, resolvía por Quote.id autoincremental (enumerable) y MUTABA estado
+ * (aceptar/rechazar presupuestos ajenos) además de devolver NIF/dirección/teléfono
+ * del profesional en el JSON. Ahora: token opaco (decisionLimiter compartido con
+ * accept/reject) igual que las otras dos rutas de decisión.
  */
-router.post('/:id/decision', async (req, res) => {
+router.post('/:token/decision', decisionLimiter, async (req, res) => {
   try {
-    const quoteId = parseNumericId(req.params.id);
-    if (!Number.isInteger(quoteId)) {
-      return res.status(400).json({ error: 'invalid_quote_id' });
-    }
+    // SCRUM-95: token opaco — ver nota en /:token/accept.
+    const token = parseToken(req.params.token);
 
     const decision = String(req.body?.decision || '').toLowerCase();
     const comment = req.body?.comment ? String(req.body.comment) : undefined;
@@ -392,14 +396,14 @@ router.post('/:id/decision', async (req, res) => {
     }
 
     // Cargamos el presupuesto con merchant, customer e invoices existentes
-    const quote = await prisma.quote.findUnique({
-      where: { id: quoteId },
+    const quote = token ? await prisma.quote.findUnique({
+      where: { decisionToken: token },
       include: {
         merchant: true,
         customer: true,
         Invoice: true,
       },
-    });
+    }) : null;
 
     if (!quote) {
       return res.status(404).json({ error: 'quote_not_found' });
@@ -441,7 +445,7 @@ router.post('/:id/decision', async (req, res) => {
       }
 
       updatedQuote = await prisma.quote.update({
-        where: { id: quoteId },
+        where: { id: quote.id },
         data: {
           status: 'accepted',
           acceptedAt: now,
@@ -488,7 +492,7 @@ router.post('/:id/decision', async (req, res) => {
             signedAt: now,
             country: merchant.country,
           });
-          await prisma.quote.update({ where: { id: quoteId }, data: { pdfUrl: pdf.publicUrlPath } });
+          await prisma.quote.update({ where: { id: quote.id }, data: { pdfUrl: pdf.publicUrlPath } });
         } catch (e) {
           console.error('[decision] Error regenerando PDF con firma:', e);
         }
@@ -570,7 +574,7 @@ router.post('/:id/decision', async (req, res) => {
     } else {
       // decision === 'reject'
       updatedQuote = await prisma.quote.update({
-        where: { id: quoteId },
+        where: { id: quote.id },
         data: {
           status: 'rejected',
           rejectedAt: new Date(),
@@ -661,7 +665,7 @@ router.post('/:id/decision', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[POST /quote/:id/decision] error', err);
+    console.error('[POST /quote/:token/decision] error', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });

@@ -136,8 +136,7 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
   { method: 'GET', path: '/recibo/:token/pdf', kind: 'token', reason: 'Charge.receiptToken' },
   { method: 'POST', path: '/recibo/:token/feedback', kind: 'token', reason: 'Charge.receiptToken' },
 
-  // ── /pay — cobro (SCRUM-74/85/90), todos por Charge.receiptToken. OJO: el router
-  // quoteDecisionLandingRouter TAMBIÉN cuelga de /pay pero es Quote.id crudo — ver PENDING.
+  // ── /pay — cobro (SCRUM-74/85/90), todos por Charge.receiptToken.
   { method: 'GET', path: '/pay/invoice/:token', kind: 'token', reason: 'Charge.receiptToken' },
   {
     method: 'GET',
@@ -150,6 +149,33 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
   { method: 'POST', path: '/pay/bizum/:token/claimed', kind: 'token', reason: 'Charge.receiptToken' },
   { method: 'GET', path: '/pay/mp/:token', kind: 'token', reason: 'Charge.receiptToken' },
   { method: 'GET', path: '/pay/mp/:token/result', kind: 'token', reason: 'Charge.receiptToken' },
+
+  // ── /pay/quote y /quote — decisión del cliente (SCRUM-95). Quote.decisionToken,
+  // mismo patrón que Charge.receiptToken/Albaran.firmaToken. Antes Quote.id crudo —
+  // la sexta puerta de la misma fuga (SCRUM-72/74/85/87/90), la peor: sin auth, sin
+  // rate-limit en /decision, y mutaba estado (aceptar/rechazar presupuestos ajenos).
+  { method: 'GET', path: '/pay/quote/:token', kind: 'token', reason: 'Quote.decisionToken' },
+  { method: 'GET', path: '/pay/quote/:token/accept', kind: 'token', reason: 'Quote.decisionToken (alias de la ruta anterior)' },
+  { method: 'GET', path: '/pay/quote/:token/reject', kind: 'token', reason: 'Quote.decisionToken' },
+  { method: 'POST', path: '/pay/quote/:token/reject', kind: 'token', reason: 'Quote.decisionToken (reenvía a /quote/:token/decision)' },
+  {
+    method: 'POST',
+    path: '/quote/:token/accept',
+    kind: 'token',
+    reason: 'Quote.decisionToken + decisionLimiter (defensa en profundidad, no la categoría segura en sí)',
+  },
+  {
+    method: 'POST',
+    path: '/quote/:token/reject',
+    kind: 'token',
+    reason: 'Quote.decisionToken + decisionLimiter',
+  },
+  {
+    method: 'POST',
+    path: '/quote/:token/decision',
+    kind: 'token',
+    reason: 'Quote.decisionToken + decisionLimiter — antes sin ninguno de los dos (la sexta puerta)',
+  },
 
   // ── Webhooks firmados, fail-closed si falta el secreto (500, nunca "sin validar") ──
   {
@@ -198,25 +224,18 @@ export interface PublicAccessPending {
 }
 
 export const PUBLIC_ACCESS_PENDING: ReadonlyArray<PublicAccessPending> = [
-  // Familia Quote: nunca migró a un token opaco (a diferencia de Charge/Albaran) — seis
-  // generadores de enlace y estas cuatro rutas de lectura/decisión siguen resolviendo por
-  // Quote.id autoincremental. Rate-limit (decisionLimiter en accept/reject) NO cuenta como
-  // categoría segura: acota la velocidad, no cierra el IDOR.
-  { method: 'GET', path: '/pay/quote/:id', duda: 'Quote.id crudo, sin token opaco — scraping público sin rate-limit', ticket: 'SCRUM-88 §9 (Quote.decisionToken, sin ticket propio aún)' },
-  { method: 'GET', path: '/pay/quote/:id/accept', duda: 'mismo motivo (alias de la ruta anterior)', ticket: 'SCRUM-88 §9 (Quote.decisionToken, sin ticket propio aún)' },
-  { method: 'GET', path: '/pay/quote/:id/reject', duda: 'mismo motivo', ticket: 'SCRUM-88 §9 (Quote.decisionToken, sin ticket propio aún)' },
-  { method: 'POST', path: '/pay/quote/:id/reject', duda: 'mismo motivo (reenvía a /quote/:id/decision)', ticket: 'SCRUM-88 §9 (Quote.decisionToken, sin ticket propio aún)' },
-  { method: 'POST', path: '/quote/:id/accept', duda: 'Quote.id crudo; solo mitigado por decisionLimiter (rate-limit no es categoría segura)', ticket: 'SCRUM-88 §9 (Quote.decisionToken, sin ticket propio aún)' },
-  { method: 'POST', path: '/quote/:id/reject', duda: 'mismo motivo', ticket: 'SCRUM-88 §9 (Quote.decisionToken, sin ticket propio aún)' },
-  { method: 'POST', path: '/quote/:id/decision', duda: 'Quote.id crudo, SIN rate-limit ni auth — lee PII y muta estado (la sexta puerta)', ticket: 'SCRUM-95' },
-
+  // SCRUM-95 cerró la familia Quote (7 rutas, ver PUBLIC_ACCESS_DECLARED) — movida de
+  // aquí a declarada con Quote.decisionToken.
+  //
+  // ⚠️ Quedan estas 2 con ticket YA CERRADO (SCRUM-99, mergeado) sin mover a declarada
+  // todavía — hallazgo colateral de SCRUM-95, no se toca aquí (fuera de su alcance):
   // Webhooks fail-open si falta el secreto de firma (a diferencia de Stripe, fail-closed).
   { method: 'POST', path: '/webhooks/mp', duda: 'fail-open: sin MP_WEBHOOK_SECRET no se valida ninguna firma', ticket: 'SCRUM-99' },
   { method: 'POST', path: '/webhooks/whatsapp', duda: 'fail-open: sin WHATSAPP_APP_SECRET acepta cualquier payload sin firma', ticket: 'SCRUM-99' },
 ];
 
 /** Tope del ratchet: la lista puede menguar, JAMÁS crecer. Bajarlo al cerrar cada ticket. */
-export const PUBLIC_ACCESS_PENDING_MAX = 9;
+export const PUBLIC_ACCESS_PENDING_MAX = 2; // SCRUM-95: bajado de 9 a 2 (las 7 de Quote ya declaradas)
 
 /**
  * Fecha límite. Pasada esta fecha el test FALLA mientras queden aparcadas.

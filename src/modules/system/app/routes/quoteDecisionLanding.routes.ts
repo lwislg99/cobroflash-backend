@@ -1,7 +1,7 @@
 import express, { Router, Request, Response } from 'express';
 import fetch from 'node-fetch';
 import { prisma } from '../../../../core/db/prisma';
-import { esc, parseNumericId, formatMoneyEs } from '../../../../core/utils/utils';
+import { esc, parseToken, formatMoneyEs } from '../../../../core/utils/utils';
 import { getLocale } from '../../../../core/i18n/locales';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { isQuoteExpired } from '../../../quotes/domain/expire.service';
@@ -172,9 +172,9 @@ function termsLabel(terms: string | null): string {
   return terms ?? 'Pago completo';
 }
 
-async function loadQuote(id: number) {
+async function loadQuote(token: string) {
   return prisma.quote.findUnique({
-    where: { id },
+    where: { decisionToken: token },
     include: {
       merchant: { select: { name: true, legalName: true, logoUrl: true, address: true, country: true, brandColor: true, brandAccentColor: true, whatsappPhone: true } },
       customer: { select: { name: true } },
@@ -182,7 +182,7 @@ async function loadQuote(id: number) {
   });
 }
 
-function renderTierCards(tiers: any[], quoteId: string, locale: ReturnType<typeof getLocale>): string {
+function renderTierCards(tiers: any[], token: string, locale: ReturnType<typeof getLocale>): string {
   return `
     <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px" id="tier-cards">
       ${tiers.map((tier) => `
@@ -201,7 +201,7 @@ function renderTierCards(tiers: any[], quoteId: string, locale: ReturnType<typeo
           </div>
           <div class="tier-total">${formatMoneyEs(tier.total, tier.currency)}</div>
           <div class="tier-vat-note">IVA incluido</div>
-          <button class="btn-tier" onclick="selectTier('${esc(tier.id)}', '${esc(quoteId)}')">
+          <button class="btn-tier" onclick="selectTier('${esc(tier.id)}', '${esc(token)}')">
             Elegir este plan
           </button>
         </div>
@@ -234,7 +234,7 @@ const TIER_CSS = `
   .tier-card.selected { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.2); }
 `;
 
-const TIER_JS = (quoteId: string) => `
+const TIER_JS = (token: string) => `
 <script>
 let selectedTierId = null;
 function selectTier(tierId, qId) {
@@ -275,12 +275,12 @@ function lineIcon(concept: string): string {
 
 function renderQuoteDetail(
   quote: Awaited<ReturnType<typeof loadQuote>>,
-  quoteId: string,
+  token: string,
   // A20.1: con tiers, el héroe no puede enseñar el total del "recomendado" sin
   // contexto (números que no cuadran con las tarjetas) → "Desde X €" + guía.
   tiersInfo?: { min: number } | null,
 ): string {
-  if (!quote) return `<h1>Cotización #${esc(quoteId)}</h1>`;
+  if (!quote) return `<h1>Cotización #${esc(token)}</h1>`;
 
   const merchantName = esc(quote.merchant?.legalName || quote.merchant?.name || '');
   const hero = quote.merchant?.logoUrl
@@ -425,11 +425,12 @@ const SIG_JS = `
 })();
 </script>`;
 
-// GET /pay/quote/:id  (landing del botón "Ver presupuesto") y alias /quote/:id/accept
+// GET /pay/quote/:token  (landing del botón "Ver presupuesto") y alias /quote/:token/accept
 // Muestra el detalle + firma/aceptar + enlace para rechazar.
-quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: Request, res: Response) => {
-  const id = parseNumericId(req.params.id);            // tolera URLs sucias ('{{1}}23' → 23)
-  const quoteId = Number.isInteger(id) ? String(id) : '';  // id limpio para enlaces/forms del HTML
+// SCRUM-95: token opaco (Quote.decisionToken) — antes Quote.id crudo, enumerable, la
+// sexta puerta de la misma fuga (SCRUM-72/74/85/87/90).
+quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async (req: Request, res: Response) => {
+  const token = parseToken(req.params.token); // tolera URLs sucias ('{{1}}abc...' → 'abc...')
 
   let quoteDetail = '';
   let locale = getLocale('ES');
@@ -438,8 +439,8 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
   let loadedQuote: Awaited<ReturnType<typeof loadQuote>> | null = null;
   let brandColor: string | null = null;
 
-  if (Number.isInteger(id)) {
-    const quote = await loadQuote(id).catch(() => null);
+  if (token) {
+    const quote = await loadQuote(token).catch(() => null);
     loadedQuote = quote;
     if (quote) {
       locale = getLocale(quote.merchant?.country);
@@ -470,12 +471,12 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
           hasTiers = true;
           // Añadir currency a cada tier para el render
           const tiersWithCurrency = tiers.map((t: any) => ({ ...t, currency: quote.currency }));
-          tierCards = renderTierCards(tiersWithCurrency, quoteId, locale);
+          tierCards = renderTierCards(tiersWithCurrency, token, locale);
           // A20.1: héroe honesto — "Desde {mínimo}" hasta que el cliente elija
           const minTotal = Math.min(...tiers.map((t: any) => Number(t.total) || 0));
-          quoteDetail = renderQuoteDetail(quote, quoteId, { min: minTotal });
+          quoteDetail = renderQuoteDetail(quote, token, { min: minTotal });
         } else {
-          quoteDetail = renderQuoteDetail(quote, quoteId);
+          quoteDetail = renderQuoteDetail(quote, token);
         }
       } else if (quote.status === 'accepted') {
         // PC-C (N3): estado aceptado digno con FECHA + siguiente paso (igual que rejected).
@@ -537,7 +538,7 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
   const html = renderPage(`Aceptar ${locale.quoteVerb}`, `<style>${TIER_CSS}</style>
     ${quoteDetail}
     ${hasTiers ? tierCards : ''}
-    ${TIER_JS(quoteId)}
+    ${TIER_JS(token)}
     <div id="btn-accept-wrapper" style="${hasTiers ? 'display:none' : ''}">
     <label class="sig-label">Tu firma</label>
     <p class="sig-sub">Dibuja tu firma con el dedo o el ratón</p>
@@ -565,7 +566,7 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
     <small>Si no solicitaste este ${locale.quoteVerb}, cierra esta página.</small>
     </div>
     ${dudaHtml}
-    <a href="/pay/quote/${quoteId}/reject" style="display:block;text-align:center;margin-top:16px;font-size:13.5px;color:#6b756f;text-decoration:underline">No me interesa · Rechazar ${locale.quoteVerb}</a>
+    <a href="/pay/quote/${token}/reject" style="display:block;text-align:center;margin-top:16px;font-size:13.5px;color:#6b756f;text-decoration:underline">No me interesa · Rechazar ${locale.quoteVerb}</a>
     ${SIG_JS}
     <script>
     function fireConfetti() {
@@ -594,7 +595,7 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
       const btn = document.getElementById('btn-accept');
       btn.disabled = true; btn.textContent = 'Enviando…';
       try {
-        const res = await fetch('/quote/${quoteId}/decision', {
+        const res = await fetch('/quote/${token}/decision', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -632,28 +633,27 @@ quoteDecisionLandingRouter.get(['/quote/:id', '/quote/:id/accept'], async (req: 
   res.setHeader('Content-Type', 'text/html; charset=utf-8').send(html);
 });
 
-// GET /pay/quote/:id/reject
-quoteDecisionLandingRouter.get('/quote/:id/reject', async (req: Request, res: Response) => {
-  const id = parseNumericId(req.params.id);                 // tolera URLs sucias
-  const quoteId = Number.isInteger(id) ? String(id) : '';   // id limpio para el HTML
+// GET /pay/quote/:token/reject
+quoteDecisionLandingRouter.get('/quote/:token/reject', async (req: Request, res: Response) => {
+  const token = parseToken(req.params.token); // tolera URLs sucias
 
   let quoteDetail = '';
   let locale = getLocale('ES');
   let brandColor: string | null = null;
   let rejectQuote: Awaited<ReturnType<typeof loadQuote>> | null = null;
 
-  if (Number.isInteger(id)) {
-    const quote = await loadQuote(id).catch(() => null);
+  if (token) {
+    const quote = await loadQuote(token).catch(() => null);
     rejectQuote = quote;
     if (quote) {
       locale = getLocale(quote.merchant?.country);
       brandColor = quote.merchant?.brandColor ?? null;
       // A16.2: caducado → la landing principal ya cuenta la verdad
       if (isQuoteExpired(quote as any)) {
-        return res.redirect(`/pay/quote/${quoteId}`);
+        return res.redirect(`/pay/quote/${token}`);
       }
       if (quote.status === 'draft' || quote.status === 'sent') {
-        quoteDetail = renderQuoteDetail(quote, quoteId);
+        quoteDetail = renderQuoteDetail(quote, token);
       }
     }
   }
@@ -682,18 +682,18 @@ quoteDecisionLandingRouter.get('/quote/:id/reject', async (req: Request, res: Re
       </div>
       <button class="btn-reject" type="submit">Enviar rechazo</button>
     </form>
-    <a href="/pay/quote/${esc(quoteId)}" style="display:block;text-align:center;margin-top:16px;font-size:13.5px;color:#15803d;font-weight:600;text-decoration:none">← Volver y aceptar</a>
+    <a href="/pay/quote/${esc(token)}" style="display:block;text-align:center;margin-top:16px;font-size:13.5px;color:#15803d;font-weight:600;text-decoration:none">← Volver y aceptar</a>
     <small>Si no solicitaste este ${locale.quoteVerb}, cierra esta página.</small>
   `, brandColor);
   res.setHeader('Content-Type', 'text/html; charset=utf-8').send(html);
 });
 
-// POST /pay/quote/:id/reject
+// POST /pay/quote/:token/reject
 // El router /pay se monta ANTES del express.urlencoded global (app.ts), así que
 // parseamos el form aquí mismo; sin esto req.body venía vacío y el motivo/comentario
 // del cliente se perdían (caía al texto genérico) — P1-3.
-quoteDecisionLandingRouter.post('/quote/:id/reject', express.urlencoded({ extended: true }), async (req: Request, res: Response) => {
-  const quoteId = parseNumericId(req.params.id);   // tolera URLs sucias ('{{1}}23' → 23)
+quoteDecisionLandingRouter.post('/quote/:token/reject', express.urlencoded({ extended: true }), async (req: Request, res: Response) => {
+  const token = parseToken(req.params.token); // tolera URLs sucias ('{{1}}abc...' → 'abc...')
   const { reason, comment } = req.body || {};
   // Mapear el código del dropdown a su etiqueta legible (P1-3).
   const REASON_LABELS: Record<string, string> = {
@@ -705,16 +705,22 @@ quoteDecisionLandingRouter.post('/quote/:id/reject', express.urlencoded({ extend
   const reasonLabel = reason ? (REASON_LABELS[String(reason)] || String(reason)) : '';
   const commentText = comment ? String(comment).trim() : '';
 
-  // Locale del merchant para usar su término (presupuesto/cotización) — P1-5.
-  const q = Number.isInteger(quoteId)
-    ? await prisma.quote.findUnique({ where: { id: quoteId }, select: { merchant: { select: { country: true } } } }).catch(() => null)
+  // Locale del merchant para usar su término (presupuesto/cotización) — P1-5. También
+  // el número visible por merchant (A1.2) para el mensaje de confirmación — SCRUM-95:
+  // el token no es apto para mostrárselo al cliente (no es un "número de presupuesto").
+  const q = token
+    ? await prisma.quote.findUnique({
+        where: { decisionToken: token },
+        select: { id: true, quoteNumber: true, merchant: { select: { country: true } } },
+      }).catch(() => null)
     : null;
   const locale = getLocale(q?.merchant?.country);
   const delDeLa = (locale.quote.endsWith('ón') || locale.quote.endsWith('a')) ? 'de la' : 'del';
+  const displayNum = q ? (q.quoteNumber ?? q.id) : '';
 
   try {
     const apiResponse = await fetch(
-      `${BASE_API_URL}/quote/${encodeURIComponent(quoteId)}/decision`,
+      `${BASE_API_URL}/quote/${encodeURIComponent(token)}/decision`,
       { method: 'POST', headers: { 'Content-Type': 'application/json' },
         // P1-3: reenviar el motivo (etiqueta) y el comentario REALES por separado,
         // sin texto genérico. Si vienen vacíos, se guarda vacío.
@@ -727,7 +733,7 @@ quoteDecisionLandingRouter.post('/quote/:id/reject', express.urlencoded({ extend
       );
     }
     res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
-      renderPage('Rechazo registrado', `<div class="status-ok"><strong>Gracias por tu respuesta.</strong><br/>Hemos registrado el rechazo ${delDeLa} ${esc(locale.quoteVerb)} <strong>#${esc(quoteId)}</strong>.</div>`)
+      renderPage('Rechazo registrado', `<div class="status-ok"><strong>Gracias por tu respuesta.</strong><br/>Hemos registrado el rechazo ${delDeLa} ${esc(locale.quoteVerb)} <strong>#${esc(displayNum)}</strong>.</div>`)
     );
   } catch {
     res.status(500).setHeader('Content-Type', 'text/html; charset=utf-8').send(

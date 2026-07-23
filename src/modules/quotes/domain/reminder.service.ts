@@ -3,6 +3,7 @@ import { sendWhatsAppTemplate } from '../../../integrations/whatsapp';
 import { buildQuoteDecision } from '../../../integrations/whatsappTemplates';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
 import { normalizePhone } from '../../../core/utils/utils';
+import { ensureQuoteDecisionToken } from './quoteToken.service'; // SCRUM-95
 
 const REMINDER_AFTER_MS = 24 * 60 * 60 * 1000; // 24 horas
 
@@ -39,6 +40,9 @@ export async function sendPendingReminders(): Promise<void> {
 
     try {
       // Reusa quote_decision_es como recordatorio (estructura en whatsappTemplates.ts)
+      // SCRUM-95: token opaco — el envío inicial ya debería haberlo creado, pero
+      // ensureQuoteDecisionToken es idempotente/perezosa: lo genera si por lo que sea no existe.
+      const decisionToken = await ensureQuoteDecisionToken(quote.id, prisma);
       const result = await sendWhatsAppTemplate({
         to: phone,
         merchantId: quote.merchantId, // J3: respeta waOptOut
@@ -47,7 +51,7 @@ export async function sendPendingReminders(): Promise<void> {
           businessName: merchantName,
           quoteNumber: quote.quoteNumber ?? quote.id, // A1.2: número visible por merchant
           totalWithCurrency: `${total} ${quote.currency}`,
-          quoteId: quote.id, // el botón URL sigue con el id global
+          decisionToken, // SCRUM-95: token opaco, no el id global
         }),
       });
 

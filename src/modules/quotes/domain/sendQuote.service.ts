@@ -10,6 +10,7 @@ import { buildQuoteDecision } from '../../../integrations/whatsappTemplates';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
 import { normalizePhone, formatMoneyEs } from '../../../core/utils/utils';
 import { BASE_URL } from '../../../core/config/env';
+import { ensureQuoteDecisionToken } from './quoteToken.service'; // SCRUM-95
 
 export type SendQuoteResult =
   | { ok: true; sent: true; to: string; quoteId: number }
@@ -46,6 +47,10 @@ export async function sendQuoteWhatsAppToCustomer(
   // oficial del master K1); si no, plantilla quote_decision_es como siempre.
   const businessName = quote.merchant?.legalName || quote.merchant?.name || 'Tu proveedor';
   const displayNum = quote.quoteNumber ?? quote.id;
+  // SCRUM-95: token opaco (Quote.decisionToken), NUNCA el id — sexta puerta de la
+  // misma fuga (SCRUM-72/74/85/87/90). Generado perezosamente aquí, en el primer
+  // envío real del presupuesto.
+  const decisionToken = await ensureQuoteDecisionToken(quote.id, prisma);
   const result = await sendWhatsAppWindowFirst({
     to,
     merchantId: quote.merchantId, // J3: respeta waOptOut
@@ -55,7 +60,7 @@ export async function sendQuoteWhatsAppToCustomer(
       `${businessName} te ha preparado tu presupuesto:\n` +
       `📄 *Presupuesto #${displayNum}* · *${formatMoneyEs(quote.total, quote.currency)}*\n` +
       `Ábrelo, revísalo y fírmalo desde aquí 👇\n` +
-      `${BASE_URL}/pay/quote/${quote.id}`,
+      `${BASE_URL}/pay/quote/${decisionToken}`,
     // A23: en ventana → botón-enlace "Ver y firmar" (sin URL cruda)
     windowCta: {
       bodyText:
@@ -63,14 +68,14 @@ export async function sendQuoteWhatsAppToCustomer(
         `*${businessName}* te ha preparado tu presupuesto:\n` +
         `📄 *Presupuesto #${displayNum}* · *${formatMoneyEs(quote.total, quote.currency)}*`,
       buttonText: 'Ver y firmar',
-      url: `${BASE_URL}/pay/quote/${quote.id}`,
+      url: `${BASE_URL}/pay/quote/${decisionToken}`,
     },
     template: buildQuoteDecision({
       customerName: quote.customer.name ?? 'Cliente',
       businessName,
       quoteNumber: displayNum,
       totalWithCurrency: `${Number(quote.total).toFixed(2)} ${quote.currency}`,
-      quoteId: quote.id, // el botón URL sigue con el id global (/pay/quote/:id)
+      decisionToken, // SCRUM-95: token opaco, no el id global
     }),
     log: { customerId: quote.customerId, relatedType: 'quote', relatedId: quote.id }, // WA-0b
   });

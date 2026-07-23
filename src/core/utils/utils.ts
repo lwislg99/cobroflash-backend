@@ -85,6 +85,17 @@ export function normalizePhone(input?: string | null): string {
     return digits ? Number(digits) : NaN;
   }
 
+  // SCRUM-95: mismo saneo que parseNumericId, pero para tokens opacos hexadecimales
+  // (crypto.randomBytes(16).toString('hex'), 32 caracteres) en vez de ids numéricos —
+  // quita primero cualquier placeholder "{{...}}" sin sustituir y se queda solo con
+  // hex. Cadena vacía si no queda nada válido (findUnique con '' nunca matchea).
+  export function parseToken(raw: unknown): string {
+    return String(raw ?? '')
+      .replace(/\{\{.*?\}\}/g, '')
+      .replace(/[^0-9a-fA-F]/g, '')
+      .toLowerCase();
+  }
+
   // HTML escape
   export function esc(v?: string | number | null) {
     return String(v ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'} as any)[s]);

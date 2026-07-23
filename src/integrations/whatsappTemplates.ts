@@ -119,20 +119,22 @@ function urlButton(suffix: string | number): any {
   };
 }
 
-// 1. quote_decision_es — cuerpo 4 vars + 1 botón (id presupuesto → /pay/quote/{{1}})
+// 1. quote_decision_es — cuerpo 4 vars + 1 botón (SCRUM-95: token opaco de
+// Quote.decisionToken → /pay/quote/{{1}}, NUNCA el quoteId — IDOR/RGPD, mismo
+// mecanismo que payment_request_es/payment_confirmation_invoice_es)
 export function buildQuoteDecision(p: {
   customerName: string;
   businessName: string;
   quoteNumber: string | number;
   totalWithCurrency: string;
-  quoteId: string | number;
+  decisionToken: string;
 }): WaTemplateMessage {
   return {
     templateName: WA_TEMPLATES.quoteDecision,
     languageCode: 'es',
     components: [
       body(p.customerName, p.businessName, p.quoteNumber, p.totalWithCurrency),
-      urlButton(p.quoteId),
+      urlButton(p.decisionToken),
     ],
   };
 }

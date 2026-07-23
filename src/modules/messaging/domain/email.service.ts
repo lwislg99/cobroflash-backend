@@ -7,6 +7,7 @@ import { PrismaClient } from '@prisma/client';
 import { outboxDir, invoicesDir } from '../../../core/storage/dirs';
 import { config, BASE_URL } from '../../../core/config/env';
 import { ensureInvoicePdf } from '../../../lib/invoicing';
+import { ensureQuoteDecisionToken } from '../../quotes/domain/quoteToken.service'; // SCRUM-95
 import { renderEmailLayout, escEmail } from './emailLayout';
 
 /**
@@ -94,7 +95,7 @@ export async function sendInvoiceEmail(args: {
 
 /**
  * A2.3 — Envía el PRESUPUESTO al cliente por email (Resend): asunto con el
- * número por merchant (A1.2), botón al enlace público /pay/quote/:id (donde
+ * número por merchant (A1.2), botón al enlace público /pay/quote/:token (donde
  * firma/acepta) y el PDF adjunto si está en disco (fs de Railway es efímero:
  * el link es lo fiable, el adjunto es bonus).
  */
@@ -114,7 +115,10 @@ export async function sendQuoteEmail(args: { quoteId: number; prisma: PrismaClie
   const business = quote.merchant?.legalName || quote.merchant?.name || 'Tu proveedor';
   const displayNum = `#${(quote as any).quoteNumber ?? quote.id}`;
   const total = `${Number(quote.total).toFixed(2)} ${quote.currency}`;
-  const payUrl = `${BASE_URL}/pay/quote/${quote.id}`;
+  // SCRUM-95: token opaco (Quote.decisionToken), NUNCA el id — sexta puerta de la
+  // misma fuga (SCRUM-72/74/85/87/90).
+  const decisionToken = await ensureQuoteDecisionToken(quoteId, prisma);
+  const payUrl = `${BASE_URL}/pay/quote/${decisionToken}`;
 
   // PDF adjunto solo si sigue en disco. SCRUM-72: la ruta se deriva de la constante
   // `invoicesDir` + el nombre CANÓNICO del generador (QUOTE-<id>.pdf), NO del string de

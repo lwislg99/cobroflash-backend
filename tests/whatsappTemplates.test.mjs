@@ -29,16 +29,16 @@ function urlButtonSuffix(msg) {
   return btn.parameters[0].text;
 }
 
-test('quote_decision_es: nombre, idioma, 4 vars en orden y botón = id presupuesto', () => {
+test('quote_decision_es: nombre, idioma, 4 vars en orden y botón = decisionToken (SCRUM-95: token opaco, no el id)', () => {
   const msg = buildQuoteDecision({
     customerName: 'María', businessName: 'Fontanería García',
-    quoteNumber: 128, totalWithCurrency: '350.00 EUR', quoteId: 128,
+    quoteNumber: 128, totalWithCurrency: '350.00 EUR', decisionToken: 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5',
   });
   assert.equal(msg.templateName, WA_TEMPLATES.quoteDecision);
   assert.equal(msg.templateName, 'quote_decision_es');
   assert.equal(msg.languageCode, 'es');
   assert.deepEqual(bodyTexts(msg), ['María', 'Fontanería García', '128', '350.00 EUR']);
-  assert.equal(urlButtonSuffix(msg), '128'); // sufijo → /pay/quote/{{1}}
+  assert.equal(urlButtonSuffix(msg), 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5'); // sufijo → /pay/quote/{{1}}
 });
 
 test('payment_request_es: 4 vars en orden y botón = urlToken (SCRUM-85: token opaco, no el id)', () => {
@@ -65,7 +65,7 @@ test('payment_confirmation_es: 4 vars (orden distinto) y SIN botones', () => {
 });
 
 test('todas: cuerpo de exactamente 4 variables (lo que exige Meta)', () => {
-  const qd = buildQuoteDecision({ customerName: 'a', businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', quoteId: 1 });
+  const qd = buildQuoteDecision({ customerName: 'a', businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', decisionToken: 'aa11bb22cc33dd44ee55ff66aa11bb22' });
   const pr = buildPaymentRequest({ customerName: 'a', businessName: 'b', invoiceNumber: 'c', amountWithCurrency: 'd', urlToken: 'deadbeefdeadbeefdeadbeefdeadbeef' });
   const pc = buildPaymentConfirmation({ customerName: 'a', amountWithCurrency: 'b', invoiceNumber: 'c', businessName: 'd' });
   assert.equal(bodyTexts(qd).length, 4);
@@ -76,7 +76,7 @@ test('todas: cuerpo de exactamente 4 variables (lo que exige Meta)', () => {
 // --- Validación J7: expectedVarCount ANTES de llamar a Meta ---
 
 test('validación J7: lo que sale de los builders pasa la validación', () => {
-  const qd = buildQuoteDecision({ customerName: 'a', businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', quoteId: 1 });
+  const qd = buildQuoteDecision({ customerName: 'a', businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', decisionToken: 'aa11bb22cc33dd44ee55ff66aa11bb22' });
   const pr = buildPaymentRequest({ customerName: 'a', businessName: 'b', invoiceNumber: 'c', amountWithCurrency: 'd', urlToken: 'deadbeefdeadbeefdeadbeefdeadbeef' });
   const pc = buildPaymentConfirmation({ customerName: 'a', amountWithCurrency: 'b', invoiceNumber: 'c', businessName: 'd' });
   assert.equal(validateTemplateComponents(qd.templateName, qd.components), null);
@@ -93,16 +93,16 @@ test('validación J7: nº de vars incorrecto se detecta (evita #132000)', () => 
 });
 
 test('validación J7: variable vacía o "undefined" se detecta', () => {
-  const msg = buildQuoteDecision({ customerName: '', businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', quoteId: 1 });
+  const msg = buildQuoteDecision({ customerName: '', businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', decisionToken: 'aa11bb22cc33dd44ee55ff66aa11bb22' });
   assert.match(validateTemplateComponents(msg.templateName, msg.components), /variable 1.*vacía/);
-  const msg2 = buildQuoteDecision({ customerName: String(undefined), businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', quoteId: 1 });
+  const msg2 = buildQuoteDecision({ customerName: String(undefined), businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', decisionToken: 'aa11bb22cc33dd44ee55ff66aa11bb22' });
   assert.match(validateTemplateComponents(msg2.templateName, msg2.components), /variable 1/);
 });
 
 test('validación J7: botón obligatorio que falta / botón de más se detectan', () => {
   const sinBoton = buildPaymentConfirmation({ customerName: 'a', amountWithCurrency: 'b', invoiceNumber: 'c', businessName: 'd' }).components;
   assert.match(validateTemplateComponents(WA_TEMPLATES.quoteDecision, sinBoton), /botón/);
-  const conBoton = buildQuoteDecision({ customerName: 'a', businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', quoteId: 1 }).components;
+  const conBoton = buildQuoteDecision({ customerName: 'a', businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', decisionToken: 'aa11bb22cc33dd44ee55ff66aa11bb22' }).components;
   assert.match(validateTemplateComponents(WA_TEMPLATES.paymentConfirmation, conBoton), /botón/);
 });
 

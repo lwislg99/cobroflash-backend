@@ -23,6 +23,7 @@ import { recordCustomerEvent } from '../../system/customerEvents.service';
 import { saveQuoteRequestPhoto } from '../../quoteRequests/domain/attachment.service';
 import { isFlagEnabled } from '../../../core/flags';
 import { ensureChargeReceiptToken } from '../../../lib/invoicing';
+import { ensureQuoteDecisionToken } from '../../quotes/domain/quoteToken.service'; // SCRUM-95
 
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // K1: expiresAt = +24h
 
@@ -523,12 +524,15 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
           : `Tienes *${quotes.length}* presupuestos pendientes con *${businessName}* 👇`,
       });
       for (const q of quotes) {
+        // SCRUM-95: token opaco (Quote.decisionToken), NUNCA el id — sexta puerta
+        // de la misma fuga (SCRUM-72/74/85/87/90).
+        const decisionToken = await ensureQuoteDecisionToken(q.id, prisma);
         await sendWhatsAppCtaUrl({
           to: from,
           merchantId,
           bodyText: `📄 *Presupuesto #${q.quoteNumber ?? q.id}*\nTotal: *${formatMoneyEs(q.total, q.currency)}*`,
           buttonText: 'Ver y firmar',
-          url: `${BASE_URL}/pay/quote/${q.id}`,
+          url: `${BASE_URL}/pay/quote/${decisionToken}`,
         });
       }
     }
