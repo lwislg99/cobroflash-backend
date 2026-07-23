@@ -65,6 +65,8 @@ function renderPage(title: string, body: string): string {
   .success-check{width:72px;height:72px;border-radius:50%;background:#16a34a;color:#fff;font-size:40px;
     display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
   small{font-size:12px;color:#6b756f;display:block;text-align:center;margin-top:12px}
+  .privacy-note{font-size:11px;color:#8b948e;text-align:left;line-height:1.5;margin-top:10px}
+  .privacy-note a{color:#8b948e;text-decoration:underline}
   :focus-visible{outline:none;box-shadow:0 0 0 3px rgba(34,197,94,.30)}
 </style></head>
 <body><div class="card">${body}</div></body></html>`;
@@ -77,6 +79,22 @@ function merchantHero(merchant: { name: string | null; legalName: string | null;
     ? `<img class="merchant-logo" src="${esc(merchant.logoUrl)}" alt="logo"/>`
     : `<div class="merchant-avatar">${esc((name || '?').charAt(0).toUpperCase())}</div>`;
   return `<div class="merchant-hero">${hero}<div class="merchant-name">${name}</div></div>`;
+}
+
+// SCRUM-93b: aviso RGPD breve para el cliente final que firma (capa 1, RGPD_TRATAMIENTO_DATOS.md
+// §5). PASIVO a propósito — sin casilla, sin registro de aceptación: la base de IP/UA de la
+// firma es ejecución del contrato + interés legítimo (eIDAS/Ley 6/2020), no consentimiento, que
+// es revocable y no serviría para "des-probar" una firma ya prestada. ⚠️ Este bloque NUNCA debe
+// incluir ip/ua (regla SCRUM-68): solo texto informativo + nombre/contacto del profesional.
+function avisoPrivacidad(merchant: { name: string | null; legalName: string | null; email: string | null } | null): string {
+  const nombre = esc(merchant?.legalName || merchant?.name || 'El profesional');
+  const contacto = merchant?.email ? ` escribiendo a ${esc(merchant.email)}` : '';
+  return `<p class="privacy-note">Al firmar, <strong>${nombre}</strong> tratará tus datos (nombre, contacto y
+    dirección del servicio) para gestionar este parte de trabajo y su cobro. También registramos
+    la fecha, hora, IP y navegador de esta firma para poder acreditarla si fuera necesario.
+    ${nombre} es responsable de tus datos; YaQu los trata en su nombre como proveedor
+    tecnológico. Puedes ejercer tus derechos${contacto} — más información en la
+    <a href="/privacidad">política de privacidad</a>.</p>`;
 }
 
 // Canvas de firma (adaptado de quoteDecisionLanding SIG_JS): expone getSignatureData().
@@ -106,7 +124,7 @@ async function loadContext(token: string) {
   const albaran = await prisma.albaran.findUnique({ where: { firmaToken: token } });
   if (!albaran) return null;
   const [merchant, job] = await Promise.all([
-    prisma.merchant.findUnique({ where: { id: albaran.merchantId }, select: { name: true, legalName: true, logoUrl: true } }),
+    prisma.merchant.findUnique({ where: { id: albaran.merchantId }, select: { name: true, legalName: true, logoUrl: true, email: true } }),
     prisma.job.findUnique({ where: { id: albaran.jobId }, select: { customerId: true, titulo: true, direccion: true } }),
   ]);
   const customer = job ? await prisma.customer.findUnique({ where: { id: job.customerId }, select: { name: true } }) : null;
@@ -154,6 +172,7 @@ router.get('/:token', async (req: Request, res: Response) => {
     <button class="btn-accept" id="btn-sign">Firmar el parte de trabajo</button>
     <div id="sig-error" style="color:#dc2626;font-size:13px;margin-top:8px;display:none">Dibuja tu firma para continuar.</div>
     <small>Documento no fiscal — no constituye factura. Si no esperabas esto, cierra esta página.</small>
+    ${avisoPrivacidad(merchant)}
     ${SIG_JS}
     <script>
       document.getElementById('btn-sign').addEventListener('click', async function(){
