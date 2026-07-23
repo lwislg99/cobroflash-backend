@@ -525,6 +525,23 @@ Cookies httpOnly+Secure+SameSite=Lax · rate-limit en magic link/login · Zod en
 
 ## S4. RGPD y datos `F1-doc + acciones`
 Bases: ejecución de contrato (merchant); interés legítimo/relación precontractual (cliente final, SOLO transaccional). Subencargados a publicar: Railway, Stripe, Meta, Resend, Anthropic, Mercado Pago (+R2 al llegar). Privacidad + DPA antes del primer pagante (B2.4). **Retención:** facturas y registros de facturación = plazos legales mercantiles/fiscales **[confirmar con asesor]**; NO se borran ni al cancelar cuenta. **Supresión cliente final:** anonimizar (nombre→"Cliente eliminado", phone/email→null) preservando facturas; prohibido borrado físico con facturas. **Cancelación merchant:** soft 30 días (solo lectura + export) → anonimizar lo no fiscal → conservar lo fiscal. Export = CSVs + zip PDFs + XML RRSIF (post-SIF). **Backups:** verificar política Railway **[VALIDAR]** + dump cifrado semanal fuera de Railway ANTES de 25 pagantes (`scripts/backup-dump.mjs` `F2-early`).
+> **✅ SCRUM-93 (23-jul-2026, RGPD/Y3):** análisis completo de bases jurídicas por
+> tratamiento + encargados necesarios en `docs/legal/RGPD_TRATAMIENTO_DATOS.md` (deriva de
+> este mismo S4 y de `PACK_GESTORIA.md`/`PREGUNTAS_ASESOR.md`). Hallazgo: YaQu es
+> **responsable** para los datos del profesional pero **encargado (art. 28)** para los datos
+> del cliente final — confirma y detalla la línea "interés legítimo/relación precontractual
+> (cliente final, SOLO transaccional)" de arriba. **Política de privacidad
+> (`public/privacidad.html`) reescrita y publicada** (decisión del fundador: la versión
+> anterior, vigente desde 3-jun-2026, no cubría IBAN/NIF/teléfono del profesional, dirección
+> del cliente final ni la evidencia de firma — publicar la versión completa mientras se
+> espera validación del asesor protege más que mantener la incompleta). **Aviso de firma para
+> el cliente final: decidido PASIVO** (no casilla, no `LegalAcceptance`) — la base de
+> IP/user-agent es ejecución del contrato + interés legítimo (eIDAS/Ley 6/2020), no
+> consentimiento, que es revocable y no debe usarse para evidencia ya prestada; falta
+> implementarlo en la página pública de firma (tarea de producto aparte). Confirma que hace
+> falta Registro de Actividades de Tratamiento (art. 30 RGPD) — la excepción de <250
+> empleados no aplica (tratamiento no ocasional). 6 preguntas nuevas para el asesor en
+> `PREGUNTAS_ASESOR.md` punto 9.
 > **✅ SCRUM-74 (22-jul-2026, 🔴 seguridad/RGPD, la otra puerta de SCRUM-72 D5):**
 > `GET /recibo/:chargeId[/pdf]` y `POST /recibo/:chargeId/feedback` eran públicos por diseño
 > (cliente final sin login) pero identificados por `Charge.id` — entero autoincremental

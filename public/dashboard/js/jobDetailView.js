@@ -81,6 +81,10 @@ async function renderJobDetailView(container, jobId) {
   }
   body.innerHTML = '';
 
+  // SCRUM-31 (F1): refresh se define arriba porque el CTA de cobro se pinta ahora en el
+  // HÉROE (antes vivía al fondo, en 'Cobros'). Lo reutilizan también las acciones de albarán/factura.
+  const refresh = () => renderJobDetailView(container, job.id);
+
   if (job.titulo) headLeft.querySelector('h2').textContent = job.titulo;
 
   // SCRUM-57: "Responsable" en la cabecera = autoría del operario (job.operario, ya en el
@@ -104,16 +108,33 @@ async function renderJobDetailView(container, jobId) {
   const pendiente = Math.max(0, aceptado - cobrado);
   const pct = aceptado > 0 ? Math.min(100, Math.round((cobrado / aceptado) * 100)) : 0;
   const cobroCls = cobroPillClass(job.estadoCobro);
+  const jobMeta = jobStatusMeta(job.status); // SCRUM-31 (F1): estado del Trabajo, hoy invisible en el detalle
 
   // ── Resumen: estado de cobro + total + barra + cobrado/pendiente ──
   const sumSec = document.createElement('div');
   sumSec.className = 'detail-section';
   body.appendChild(sumSec);
+  // SCRUM-31 (F1): cliente en una línea con tap-to-call (el detalle completo sigue en 'Datos').
+  if (job.customer?.name || job.customer?.phone) {
+    const cliLine = document.createElement('div');
+    cliLine.style.cssText = 'margin-bottom:12px;font-size:13px;color:var(--body)';
+    const tel = job.customer?.phone ? String(job.customer.phone).replace(/\s+/g, '') : '';
+    cliLine.innerHTML =
+      `👤 <strong style="color:var(--ink)">${esc(job.customer?.name || 'Cliente')}</strong>` +
+      (job.customer?.phone
+        ? ` · <a href="tel:${esc(tel)}" style="color:var(--brand,#16a34a);font-weight:600;text-decoration:none">📞 ${esc(job.customer.phone)}</a>`
+        : '');
+    sumSec.appendChild(cliLine);
+  }
   const sumRow = document.createElement('div');
   sumRow.className = 'detail-summary';
   sumSec.appendChild(sumRow);
+  // SCRUM-31 (F1): estado del TRABAJO + estado de cobro JUNTOS (antes solo se veía el de cobro).
   const stBlock = document.createElement('div');
-  stBlock.innerHTML = `<div class="detail-total-label">Estado de cobro</div><span class="status-pill ${cobroCls}">${esc(job.estadoCobro)}</span>`;
+  stBlock.innerHTML =
+    `<div class="detail-total-label">Estado</div>` +
+    `<span class="status-pill ${jobMeta.pillClass}">${esc(jobMeta.label)}</span> ` +
+    `<span class="status-pill ${cobroCls}">${esc(job.estadoCobro)}</span>`;
   sumRow.appendChild(stBlock);
   const totBlock = document.createElement('div');
   totBlock.style.textAlign = 'right';
@@ -131,6 +152,41 @@ async function renderJobDetailView(container, jobId) {
     `<div><div class="detail-total-label">Cobrado</div><div style="font-weight:700;color:var(--ink);font-size:16px;font-variant-numeric:tabular-nums">${fmtMoneyEs(cobrado, cur)}</div></div>` +
     `<div><div class="detail-total-label">Pendiente</div><div style="font-weight:700;color:var(--ink);font-size:16px;font-variant-numeric:tabular-nums">${fmtMoneyEs(pendiente, cur)}</div></div>`;
   sumSec.appendChild(twoTotals);
+
+  // ── CTA primario del HÉROE — "Cobrar el resto" (SCRUM-31 F1: reubicado desde 'Cobros').
+  // PURA REUBICACIÓN: misma condición (terminado && remaining>0), mismo endpoint
+  // (/collect-rest), misma lógica de label. Solo cambia DÓNDE se pinta.
+  // SCRUM-34: label honesto — collect-rest emite SOLO el siguiente tramo. Con 2+ tramos
+  // pendientes de un plan CUSTOM se nombra el tramo; con el ÚLTIMO el importe sale de
+  // nextStage.amount (exacto; remaining es float y con céntimo impar mentiría 1 cént.).
+  if (job.status === 'terminado' && job.remaining && job.remaining.amount > 0) {
+    const restAmount = (job.pendingStagesCount === 1 && job.nextStage)
+      ? fmtMoneyEs(job.nextStage.amount, job.nextStage.currency)
+      : fmtMoneyEs(job.remaining.amount, job.remaining.currency);
+    const ctaLabel = (job.hasCustomPlan && job.pendingStagesCount >= 2 && job.nextStage)
+      ? `🪙 Cobrar siguiente tramo: ${job.nextStage.label} (${fmtMoneyEs(job.nextStage.amount, job.nextStage.currency)})`
+      : `💰 Cobrar el resto (${restAmount})`;
+    const cta = document.createElement('button');
+    cta.className = 'btn-primary';
+    cta.style.marginTop = '16px';
+    cta.textContent = ctaLabel;
+    cta.addEventListener('click', async () => {
+      cta.disabled = true;
+      cta.textContent = 'Enviando…';
+      try {
+        const r = await apiRequest(`/admin/jobs/${job.id}/collect-rest`, { method: 'POST' });
+        showToast(r.whatsapp === 'sent'
+          ? `💰 Enlace de cobro enviado (${fmtMoneyEs(r.amount, r.currency)})`
+          : 'Cobro creado — el WhatsApp falló, reenvíalo desde Cobros', r.whatsapp === 'sent' ? 'ok' : 'warn');
+        refresh();
+      } catch (err) {
+        setStatus('error', 'No se pudo generar el cobro: ' + (err?.data?.message || err.message));
+        cta.disabled = false;
+        cta.textContent = ctaLabel;
+      }
+    });
+    sumSec.appendChild(cta);
+  }
 
   // ── Datos: cliente, dirección, presupuesto origen (link por quoteNumber) ──
   const infoSec = document.createElement('div');
@@ -268,7 +324,7 @@ async function renderJobDetailView(container, jobId) {
   // GET /admin/jobs/:id → semáforo/barra/timeline/tramos al día. Solo INVOCA endpoints
   // existentes (collect-rest, invoice status, payment-anomaly, confirm-bizum, send-reminder,
   // resend-whatsapp, send-email); no toca su lógica, ni webhooks, ni la cadena de pago.
-  const refresh = () => renderJobDetailView(container, job.id);
+  // (refresh se define arriba, junto al fetch — SCRUM-31 F1: el CTA del héroe lo necesita antes.)
   const mkBtn = (label, fn) => {
     const b = document.createElement('button');
     b.className = 'btn-secondary btn-sm';
@@ -765,41 +821,6 @@ async function renderJobDetailView(container, jobId) {
       acts.appendChild(waBtn);
     }
   });
-
-  // CTA primario "Cobrar el resto" (terminado + remaining>0) → POST /admin/jobs/:id/collect-rest.
-  if (job.status === 'terminado' && job.remaining && job.remaining.amount > 0) {
-    // SCRUM-34: label honesto — collect-rest emite SOLO el siguiente tramo.
-    // Con 2+ tramos pendientes de un plan CUSTOM: se nombra el tramo (label + importe del tramo).
-    // Con el ÚLTIMO tramo: texto de hoy, pero el IMPORTE sale de nextStage.amount (exacto por
-    // distributeStageAmounts; remaining es float y con céntimo impar mentiría 1 cént.).
-    // Sin esc(): el label va a textContent.
-    const restAmount = (job.pendingStagesCount === 1 && job.nextStage)
-      ? fmtMoneyEs(job.nextStage.amount, job.nextStage.currency)
-      : fmtMoneyEs(job.remaining.amount, job.remaining.currency); // fallback y presets con 2+ pendientes, como hoy
-    const ctaLabel = (job.hasCustomPlan && job.pendingStagesCount >= 2 && job.nextStage)
-      ? `🪙 Cobrar siguiente tramo: ${job.nextStage.label} (${fmtMoneyEs(job.nextStage.amount, job.nextStage.currency)})`
-      : `💰 Cobrar el resto (${restAmount})`;
-    const cta = document.createElement('button');
-    cta.className = 'btn-primary';
-    cta.style.marginBottom = '14px';
-    cta.textContent = ctaLabel;
-    cta.addEventListener('click', async () => {
-      cta.disabled = true;
-      cta.textContent = 'Enviando…';
-      try {
-        const r = await apiRequest(`/admin/jobs/${job.id}/collect-rest`, { method: 'POST' });
-        showToast(r.whatsapp === 'sent'
-          ? `💰 Enlace de cobro enviado (${fmtMoneyEs(r.amount, r.currency)})`
-          : 'Cobro creado — el WhatsApp falló, reenvíalo desde Cobros', r.whatsapp === 'sent' ? 'ok' : 'warn');
-        refresh();
-      } catch (err) {
-        setStatus('error', 'No se pudo generar el cobro: ' + (err?.data?.message || err.message));
-        cta.disabled = false;
-        cta.textContent = ctaLabel;
-      }
-    });
-    cobSec.appendChild(cta);
-  }
 
   if (!invoices.length) {
     cobSec.innerHTML += '<p style="margin:0;color:var(--muted);font-size:13px">Aún no hay cobros generados.</p>';
