@@ -9,6 +9,7 @@ import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TE
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -20,69 +21,66 @@ test('SCRUM-22: serializer expone operario:{id,name} en lista+detalle (null prop
   const base = `http://127.0.0.1:${server.address().port}`;
 
   const stamp = Date.now();
-  const mkMerchant = (tag) =>
-    prisma.merchant.create({
-      data: { name: `QA S22 ${tag}`, country: 'ES', email: `qa-s22-${tag}-${stamp}@test.local`, onboardingCompleted: true },
-    });
-  const merchantA = await mkMerchant('A');
-  const merchantB = await mkMerchant('B');
-  const operario = await prisma.teamMember.create({
-    data: { merchantId: merchantA.id, name: 'María García', email: `qa-s22-op-${stamp}@test.local`, role: 'tecnico', status: 'active' },
-  });
-  const customerA = await prisma.customer.create({
-    data: { merchantId: merchantA.id, name: 'Cliente S22', phone: `34600${stamp % 1000000}` },
-  });
-  // Job CON operario (autoría) y Job SIN operario (propietario → null).
-  const jobWith = await prisma.job.create({
-    data: { merchantId: merchantA.id, customerId: customerA.id, status: 'pendiente_agendar', titulo: 'Con operario', operarioId: operario.id },
-  });
-  const jobOwner = await prisma.job.create({
-    data: { merchantId: merchantA.id, customerId: customerA.id, status: 'pendiente_agendar', titulo: 'Sin operario', operarioId: null },
-  });
 
-  const mkCookie = async (merchantId) => {
-    const token = 'qa22-' + crypto.randomBytes(12).toString('hex');
-    await prisma.authSession.create({
-      data: { merchantId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
-    });
-    const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
-    const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
-    assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
-    return cookie;
-  };
-  const getJson = (url, cookie) => fetch(`${base}${url}`, { headers: { cookie } });
-
+  // SCRUM-113: los merchants y TODO su montaje viven dentro de withMerchant. Antes se
+  // creaban aquí, fuera del try: si reventaba el alta del operario, del cliente o de un
+  // job, el finally ni se planteaba y quedaban huérfanos en staging.
   try {
-    const cookieA = await mkCookie(merchantA.id);
-    const cookieB = await mkCookie(merchantB.id);
+    await withMerchant(prisma, { name: 'QA S22 A', email: `qa-s22-A-${stamp}@test.local` }, (merchantA) =>
+      withMerchant(prisma, { name: 'QA S22 B', email: `qa-s22-B-${stamp}@test.local` }, async (merchantB) => {
+        const operario = await prisma.teamMember.create({
+          data: { merchantId: merchantA.id, name: 'María García', email: `qa-s22-op-${stamp}@test.local`, role: 'tecnico', status: 'active' },
+        });
+        const customerA = await prisma.customer.create({
+          data: { merchantId: merchantA.id, name: 'Cliente S22', phone: `34600${stamp % 1000000}` },
+        });
+        // Job CON operario (autoría) y Job SIN operario (propietario → null).
+        const jobWith = await prisma.job.create({
+          data: { merchantId: merchantA.id, customerId: customerA.id, status: 'pendiente_agendar', titulo: 'Con operario', operarioId: operario.id },
+        });
+        const jobOwner = await prisma.job.create({
+          data: { merchantId: merchantA.id, customerId: customerA.id, status: 'pendiente_agendar', titulo: 'Sin operario', operarioId: null },
+        });
 
-    // ── LISTA: operario resuelto en el job con autoría; null en el del propietario ──
-    const list = await (await getJson('/admin/jobs', cookieA)).json();
-    const rowWith = list.find((j) => j.id === jobWith.id);
-    const rowOwner = list.find((j) => j.id === jobOwner.id);
-    assert.ok(rowWith && rowOwner, 'la lista debe traer ambos jobs de A');
-    assert.deepEqual(rowWith.operario, { id: operario.id, name: 'María García' }, 'operario resuelto {id,name}');
-    assert.equal(rowWith.operarioId, operario.id, 'operarioId crudo expuesto (paridad con assignedUserId)');
-    assert.equal(rowOwner.operario, null, 'sin operarioId → operario null (propietario)');
-    assert.equal(rowOwner.operarioId, null);
+        const mkCookie = async (merchantId) => {
+          const token = 'qa22-' + crypto.randomBytes(12).toString('hex');
+          await prisma.authSession.create({
+            data: { merchantId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
+          });
+          const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+          const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
+          assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
+          return cookie;
+        };
+        const getJson = (url, cookie) => fetch(`${base}${url}`, { headers: { cookie } });
 
-    // ── DETALLE: hereda operario de serializeJob ──
-    const detail = await (await getJson(`/admin/jobs/${jobWith.id}`, cookieA)).json();
-    assert.deepEqual(detail.operario, { id: operario.id, name: 'María García' }, 'el detalle hereda operario');
+        const cookieA = await mkCookie(merchantA.id);
+        const cookieB = await mkCookie(merchantB.id);
 
-    // ── TENANCY (regla 2): B no ve el job de A (404) ni su lista lo incluye ──
-    const bDetail = await getJson(`/admin/jobs/${jobWith.id}`, cookieB);
-    assert.equal(bDetail.status, 404, 'B no accede al job de A');
-    const bList = await (await getJson('/admin/jobs', cookieB)).json();
-    assert.ok(!bList.some((j) => j.id === jobWith.id), 'la lista de B no incluye el job de A');
+        // ── LISTA: operario resuelto en el job con autoría; null en el del propietario ──
+        const list = await (await getJson('/admin/jobs', cookieA)).json();
+        const rowWith = list.find((j) => j.id === jobWith.id);
+        const rowOwner = list.find((j) => j.id === jobOwner.id);
+        assert.ok(rowWith && rowOwner, 'la lista debe traer ambos jobs de A');
+        assert.deepEqual(rowWith.operario, { id: operario.id, name: 'María García' }, 'operario resuelto {id,name}');
+        assert.equal(rowWith.operarioId, operario.id, 'operarioId crudo expuesto (paridad con assignedUserId)');
+        assert.equal(rowOwner.operario, null, 'sin operarioId → operario null (propietario)');
+        assert.equal(rowOwner.operarioId, null);
 
-    console.log('✔ SCRUM-22: operario:{id,name} en lista y detalle, null para propietario, tenancy OK.');
+        // ── DETALLE: hereda operario de serializeJob ──
+        const detail = await (await getJson(`/admin/jobs/${jobWith.id}`, cookieA)).json();
+        assert.deepEqual(detail.operario, { id: operario.id, name: 'María García' }, 'el detalle hereda operario');
+
+        // ── TENANCY (regla 2): B no ve el job de A (404) ni su lista lo incluye ──
+        const bDetail = await getJson(`/admin/jobs/${jobWith.id}`, cookieB);
+        assert.equal(bDetail.status, 404, 'B no accede al job de A');
+        const bList = await (await getJson('/admin/jobs', cookieB)).json();
+        assert.ok(!bList.some((j) => j.id === jobWith.id), 'la lista de B no incluye el job de A');
+
+        console.log('✔ SCRUM-22: operario:{id,name} en lista y detalle, null para propietario, tenancy OK.');
+      }));
   } finally {
-    await prisma.job.deleteMany({ where: { merchantId: merchantA.id } });
-    await prisma.customer.deleteMany({ where: { merchantId: merchantA.id } });
-    await prisma.teamMember.deleteMany({ where: { merchantId: merchantA.id } });
-    await prisma.authSession.deleteMany({ where: { merchantId: { in: [merchantA.id, merchantB.id] } } });
-    await prisma.merchant.deleteMany({ where: { id: { in: [merchantA.id, merchantB.id] } } });
+    // Solo lo que NO es del merchant: el borrado de datos lo garantiza withMerchant.
     server.close();
     await prisma.$disconnect();
   }

@@ -11,6 +11,7 @@ import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TE
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import { withMerchant } from './_merchant-fixture.mjs';
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -23,58 +24,59 @@ test('SCRUM-24: /admin/metrics/operarios — sumas por operario, 403 del técnic
   const base = `http://127.0.0.1:${server.address().port}`;
 
   const stamp = Date.now();
-  const mkMerchant = (tag) =>
-    prisma.merchant.create({
-      data: { name: `QA S24 ${tag}`, country: 'ES', email: `qa-s24-${tag}-${stamp}@test.local`, onboardingCompleted: true },
-    });
-  const merchantA = await mkMerchant('A');
-  const merchantB = await mkMerchant('B'); // vecino: su dinero NO puede aparecer en A
 
-  const mkTecnico = (merchantId, tag) =>
-    prisma.teamMember.create({
-      data: {
-        merchantId, name: `QA Tec ${tag}`,
-        email: `qa-s24-tec-${tag}-${stamp}@test.local`, role: 'tecnico', status: 'active',
-      },
-    });
-  const tecA1 = await mkTecnico(merchantA.id, 'A1');
-  const tecA2 = await mkTecnico(merchantA.id, 'A2');
-  const tecB1 = await mkTecnico(merchantB.id, 'B1');
-
-  const custA = await prisma.customer.create({ data: { merchantId: merchantA.id, name: 'Cliente S24 A' } });
-  const custB = await prisma.customer.create({ data: { merchantId: merchantB.id, name: 'Cliente S24 B' } });
-
-  const mkJob = (merchantId, customerId, operarioId, aceptado, cobrado, status = 'en_curso') =>
-    prisma.job.create({
-      data: {
-        merchantId, customerId, operarioId, status,
-        titulo: `QA S24 ${aceptado}/${cobrado}`,
-        totalAceptado: aceptado, totalCobrado: cobrado,
-      },
-    });
-
-  // tecA1: 1000 aceptado / 250 cobrado (abierto) + 500/500 CERRADO → abiertos=1, trabajos=2
-  await mkJob(merchantA.id, custA.id, tecA1.id, '1000.00', '250.00', 'en_curso');
-  await mkJob(merchantA.id, custA.id, tecA1.id, '500.00', '500.00', 'cerrado');
-  // tecA2: 200 aceptado / 0 cobrado (abierto)
-  await mkJob(merchantA.id, custA.id, tecA2.id, '200.00', '0.00', 'en_curso');
-  // propietario de A (operarioId null): 100 / 100
-  await mkJob(merchantA.id, custA.id, null, '100.00', '100.00', 'en_curso');
-  // ruido del merchant vecino — jamás debe aparecer en el resumen de A
-  await mkJob(merchantB.id, custB.id, tecB1.id, '9999.00', '0.00', 'en_curso');
-
-  const mkCookie = async (merchantId, teamMemberId = null) => {
-    const token = 'qa24-' + crypto.randomBytes(12).toString('hex');
-    await prisma.authSession.create({
-      data: { merchantId, teamMemberId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
-    });
-    const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
-    const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
-    assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
-    return cookie;
-  };
-
+  // SCRUM-113: los merchants y TODO su montaje viven dentro de withMerchant. Antes se
+  // creaban aquí arriba, fuera del try: si el montaje reventaba a medias — un teamMember,
+  // un job — el finally ni se planteaba y quedaban huérfanos en staging. Ahora el borrado
+  // está garantizado desde que el merchant existe, y va aislado por operación.
   try {
+    await withMerchant(prisma, { name: 'QA S24 A', email: `qa-s24-A-${stamp}@test.local` }, (merchantA) =>
+      // vecino: su dinero NO puede aparecer en A
+      withMerchant(prisma, { name: 'QA S24 B', email: `qa-s24-B-${stamp}@test.local` }, async (merchantB) => {
+    const mkTecnico = (merchantId, tag) =>
+      prisma.teamMember.create({
+        data: {
+          merchantId, name: `QA Tec ${tag}`,
+          email: `qa-s24-tec-${tag}-${stamp}@test.local`, role: 'tecnico', status: 'active',
+        },
+      });
+    const tecA1 = await mkTecnico(merchantA.id, 'A1');
+    const tecA2 = await mkTecnico(merchantA.id, 'A2');
+    const tecB1 = await mkTecnico(merchantB.id, 'B1');
+
+    const custA = await prisma.customer.create({ data: { merchantId: merchantA.id, name: 'Cliente S24 A' } });
+    const custB = await prisma.customer.create({ data: { merchantId: merchantB.id, name: 'Cliente S24 B' } });
+
+    const mkJob = (merchantId, customerId, operarioId, aceptado, cobrado, status = 'en_curso') =>
+      prisma.job.create({
+        data: {
+          merchantId, customerId, operarioId, status,
+          titulo: `QA S24 ${aceptado}/${cobrado}`,
+          totalAceptado: aceptado, totalCobrado: cobrado,
+        },
+      });
+
+    // tecA1: 1000 aceptado / 250 cobrado (abierto) + 500/500 CERRADO → abiertos=1, trabajos=2
+    await mkJob(merchantA.id, custA.id, tecA1.id, '1000.00', '250.00', 'en_curso');
+    await mkJob(merchantA.id, custA.id, tecA1.id, '500.00', '500.00', 'cerrado');
+    // tecA2: 200 aceptado / 0 cobrado (abierto)
+    await mkJob(merchantA.id, custA.id, tecA2.id, '200.00', '0.00', 'en_curso');
+    // propietario de A (operarioId null): 100 / 100
+    await mkJob(merchantA.id, custA.id, null, '100.00', '100.00', 'en_curso');
+    // ruido del merchant vecino — jamás debe aparecer en el resumen de A
+    await mkJob(merchantB.id, custB.id, tecB1.id, '9999.00', '0.00', 'en_curso');
+
+    const mkCookie = async (merchantId, teamMemberId = null) => {
+      const token = 'qa24-' + crypto.randomBytes(12).toString('hex');
+      await prisma.authSession.create({
+        data: { merchantId, teamMemberId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
+      });
+      const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+      const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
+      assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
+      return cookie;
+    };
+
     const cookieAdminA = await mkCookie(merchantA.id, null);
     const cookieTecA1 = await mkCookie(merchantA.id, tecA1.id);
     const get = (path, cookie) => fetch(`${base}${path}`, { headers: { cookie } });
@@ -121,14 +123,9 @@ test('SCRUM-24: /admin/metrics/operarios — sumas por operario, 403 del técnic
     assert.equal(totalAceptadoA, 1800, 'TENANCY: solo el dinero de A (1500+200+100), sin los 9999 de B');
 
     t.diagnostic('operarios: sumas + abiertos + propietario ✓ · técnico 403 ✓ · tenancy ✓');
+      }));
   } finally {
-    for (const m of [merchantA, merchantB]) {
-      await prisma.authSession.deleteMany({ where: { merchantId: m.id } });
-      await prisma.job.deleteMany({ where: { merchantId: m.id } });
-      await prisma.customer.deleteMany({ where: { merchantId: m.id } });
-      await prisma.teamMember.deleteMany({ where: { merchantId: m.id } });
-    }
-    await prisma.merchant.deleteMany({ where: { id: { in: [merchantA.id, merchantB.id] } } });
+    // Solo queda lo que NO es del merchant: el borrado de datos lo garantiza withMerchant.
     server.close();
     await prisma.$disconnect();
   }
