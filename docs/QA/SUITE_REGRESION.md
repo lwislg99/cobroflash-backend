@@ -115,6 +115,19 @@ Las tres reglas que salen de ahí, para cualquier test, assert o check nuevo:
    (gate quitado · `app.use` en vez de `mountAdmin` · entrada muerta · plazo caducado · lista
    creciendo) antes de darla por buena.
 
+   **Esto incluye la LIMPIEZA, que es la parte que nadie prueba.** Un `finally` que borra
+   fixtures es código como cualquier otro y falla igual, solo que su fallo no sale por
+   ningún sitio: el test pasa y la basura se acumula en staging hasta que alguien la cuenta.
+   *Un test de limpieza que no has visto fallar no sabes si limpia.* Los dos modos mínimos:
+   revienta el **montaje** de fixtures y comprueba que no queda nada; revienta la **primera**
+   operación de borrado y comprueba que las siguientes se ejecutan igual (SCRUM-113 los
+   prueba así, contra un doble de `prisma`, sin BD ni gate).
+
+   Y **nunca lances desde un `finally` de limpieza**: un `throw` ahí *sustituye* a la
+   excepción original, así que el error de verdad del test desaparece y se lee un fallo de
+   borrado en su lugar — además de saltarse todo lo que venga detrás en el mismo bloque
+   (`server.close()`, `$disconnect()`). Avisa por consola y sigue.
+
 2. **Toda comprobación por AUSENCIA necesita antes un assert de que lo buscado existe cuando
    debe existir.** El canario de tenancy buscaba que la cadena `'9999.00'` no apareciera en el
    export de otro merchant; al cambiar el formato a coma decimal, esa cadena dejó de existir en
