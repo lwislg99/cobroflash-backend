@@ -10,7 +10,7 @@
  */
 import crypto from 'crypto';
 import { prisma as defaultPrisma } from '../../../core/db/prisma';
-import { calcVatCuotaTotal } from './vat.service';
+import { calcVatBreakdown, calcVatCuotaTotal } from './vat.service';
 import { isReceiptNumber } from './invoiceNumber.service';
 
 function pad2(n: number): string {
@@ -188,4 +188,126 @@ export async function applyVeriFactu(
 
   console.log(`[verifactu] invoice=${invoice.number} hash=${vfHash.slice(0, 16)}…`);
   return { vfHash, vfPrevHash: prevHash, qrUrl };
+}
+
+function xmlEscape(v: unknown): string {
+  return String(v ?? '').replace(/[&<>"']/g, (s) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' } as any)[s]);
+}
+
+/**
+ * SCRUM-82: registro RRSIF (RegistrosFacturacion) de un merchant para UN año natural.
+ * Extraído de GET /admin/exports/verifactu.xml (SCRUM-73) para que GET /admin/exports/datos.zip
+ * (SCRUM-25) pueda incluir el MISMO XML sin duplicar el constructor — misma fuente, sin
+ * divergencia posible entre el endpoint suelto y el paquete completo.
+ *
+ * Estructura inspirada en el XSD SuministroInformacion de la AEAT (RegistroFacturacionAlta:
+ * IDFactura, Desglose por tipo, CuotaTotal, Encadenamiento de huellas, Huella SHA-256). El
+ * ENVÍO telemático real al SIF requiere certificado digital del emisor — pendiente (tarea
+ * usuario), esto es el registro, no la remisión.
+ *
+ * NO comprueba el flag INVOICING_ES_ENABLED — es responsabilidad del CALLER (mismo patrón que
+ * applyVeriFactu, que tampoco mira flags). Lanza si el merchant no existe o no tiene NIF:
+ * un XML sin emisor identificable no es un registro válido, y el caller decide cómo tratarlo
+ * (404/409 en la ruta suelta, abortar el ZIP entero en datos.zip — nunca un XML a medias).
+ */
+export async function buildVerifactuRegistrosXml(
+  params: { merchantId: number; year: number },
+  prismaClient = defaultPrisma,
+): Promise<{ xml: string; count: number }> {
+  const merchant = await prismaClient.merchant.findUnique({ where: { id: params.merchantId } });
+  if (!merchant) throw new Error('merchant_not_found');
+  if (merchant.country !== 'ES' || !merchant.taxId) throw new Error('verifactu_not_applicable');
+
+  const invoices = await prismaClient.invoice.findMany({
+    where: {
+      merchantId: params.merchantId,
+      createdAt: {
+        gte: new Date(params.year, 0, 1),
+        lte: new Date(params.year, 11, 31, 23, 59, 59, 999),
+      },
+    },
+    orderBy: { createdAt: 'asc' },
+    include: {
+      customer:  { select: { name: true } },
+      rectifies: { select: { number: true, createdAt: true } },
+    },
+  });
+
+  const nombreEmisor = merchant.legalName || merchant.name;
+  // ⚠️ NO UNIFICAR con el formato de los CSV (SCRUM-86). Aquí los importes van con PUNTO
+  // decimal (`121.00`) porque lo exige el esquema de la AEAT: el tipo es un decimal XSD, y
+  // el separador decimal de XSD es el punto, no depende del locale. Este fichero no lo abre
+  // Excel — lo lee Hacienda. Cambiarlo a coma para que "cuadre con los CSV" invalidaría el
+  // registro de facturación.
+  const registros = invoices.map((inv) => {
+    const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
+    const vat = calcVatBreakdown(lines);
+    const desglose = vat.entries.map((e) => `
+      <DetalleDesglose>
+        <Impuesto>01</Impuesto>
+        <TipoImpositivo>${e.rate}</TipoImpositivo>
+        <BaseImponibleOimporteNoSujeto>${e.base.toFixed(2)}</BaseImponibleOimporteNoSujeto>
+        <CuotaRepercutida>${e.cuota.toFixed(2)}</CuotaRepercutida>
+      </DetalleDesglose>`).join('');
+
+    const rectificadas = inv.type === 'R1' && inv.rectifies ? `
+    <FacturasRectificadas>
+      <IDFacturaRectificada>
+        <IDEmisorFactura>${xmlEscape(merchant.taxId)}</IDEmisorFactura>
+        <NumSerieFactura>${xmlEscape(inv.rectifies.number)}</NumSerieFactura>
+        <FechaExpedicionFactura>${formatDateES(inv.rectifies.createdAt)}</FechaExpedicionFactura>
+      </IDFacturaRectificada>
+    </FacturasRectificadas>` : '';
+
+    const encadenamiento = inv.vfHash ? `
+    <Encadenamiento>${inv.vfPrevHash && inv.vfPrevHash !== '0' ? `
+      <RegistroAnterior><Huella>${xmlEscape(inv.vfPrevHash)}</Huella></RegistroAnterior>` : `
+      <PrimerRegistro>S</PrimerRegistro>`}
+    </Encadenamiento>
+    <TipoHuella>01</TipoHuella>
+    <Huella>${xmlEscape(inv.vfHash)}</Huella>` : '';
+
+    return `
+  <RegistroFacturacionAlta>
+    <IDVersion>1.0</IDVersion>
+    <IDFactura>
+      <IDEmisorFactura>${xmlEscape(merchant.taxId)}</IDEmisorFactura>
+      <NumSerieFactura>${xmlEscape(inv.number)}</NumSerieFactura>
+      <FechaExpedicionFactura>${formatDateES(inv.createdAt)}</FechaExpedicionFactura>
+    </IDFactura>
+    <NombreRazonEmisor>${xmlEscape(nombreEmisor)}</NombreRazonEmisor>
+    <TipoFactura>${inv.type === 'R1' ? 'R1' : 'F1'}</TipoFactura>${rectificadas}
+    <DescripcionOperacion>${xmlEscape(lines[0]?.concept || `Factura ${inv.number}`)}</DescripcionOperacion>
+    <Destinatarios>
+      <IDDestinatario><NombreRazon>${xmlEscape(inv.customer?.name || 'Cliente')}</NombreRazon></IDDestinatario>
+    </Destinatarios>
+    <Desglose>${desglose || `
+      <DetalleDesglose>
+        <Impuesto>01</Impuesto>
+        <TipoImpositivo>0</TipoImpositivo>
+        <BaseImponibleOimporteNoSujeto>${Number(inv.total).toFixed(2)}</BaseImponibleOimporteNoSujeto>
+        <CuotaRepercutida>0.00</CuotaRepercutida>
+      </DetalleDesglose>`}
+    </Desglose>
+    <CuotaTotal>${vat.cuota.toFixed(2)}</CuotaTotal>
+    <ImporteTotal>${Number(inv.total).toFixed(2)}</ImporteTotal>${encadenamiento}
+    <SistemaInformatico><NombreSistemaInformatico>YaQu</NombreSistemaInformatico></SistemaInformatico>
+    <FechaHoraHusoGenRegistro>${inv.createdAt.toISOString()}</FechaHoraHusoGenRegistro>
+  </RegistroFacturacionAlta>`;
+  }).join('\n');
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<RegistrosFacturacion generadoPor="YaQu" ejercicio="${params.year}" fechaGeneracion="${new Date().toISOString()}">
+  <Cabecera>
+    <ObligadoEmision>
+      <NombreRazon>${xmlEscape(nombreEmisor)}</NombreRazon>
+      <NIF>${xmlEscape(merchant.taxId)}</NIF>
+    </ObligadoEmision>
+  </Cabecera>
+${registros}
+</RegistrosFacturacion>
+`;
+
+  return { xml, count: invoices.length };
 }

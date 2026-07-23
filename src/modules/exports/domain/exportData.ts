@@ -413,10 +413,13 @@ export function construirLeeme(p: {
   to: Date | null;
   pdfsOk: number;
   pdfsTotal: number;
-  conXml: boolean;
+  // SCRUM-82: lista de AÑOS realmente incluidos, no un booleano — el LEEME describe el
+  // contenido real (facturas/verifactu_AAAA.xml por cada uno), nunca "sí/no" genérico.
+  // [] = sin XML (flag OFF, o no aplica a este merchant).
+  xmlAnios: number[];
   cabecera: string[];
 }): string {
-  const { nombre, generado, from, to, pdfsOk, pdfsTotal, conXml, cabecera } = p;
+  const { nombre, generado, from, to, pdfsOk, pdfsTotal, xmlAnios, cabecera } = p;
   const acotado = !!(from || to);
   const periodo = acotado ? 'el periodo seleccionado' : 'todo tu histórico';
 
@@ -436,6 +439,11 @@ export function construirLeeme(p: {
     `  trabajos.csv       ${CRITERIO_TRABAJOS[CAMPO_FECHA_TRABAJOS](periodo, acotado)}`,
     `  presupuestos.csv   Presupuestos creados en ${periodo}.`,
     `  facturas/          El PDF de cada factura de csv/facturas.csv.`,
+    // SCRUM-82: solo aparece si de verdad hay XML en el paquete — un año natural por
+    // archivo (el registro RRSIF es por ejercicio, nunca "por el rango pedido").
+    ...(xmlAnios.length > 0
+      ? [`  facturas/          Registro VeriFactu (RRSIF), un XML por ejercicio: ${xmlAnios.map((y) => `verifactu_${y}.xml`).join(', ')}.`]
+      : []),
   ];
 
   // SCRUM-104 (D4): que nadie lea la divergencia como un bug. El aviso de la fase 1
@@ -469,9 +477,11 @@ export function construirLeeme(p: {
     '  Preparado para abrirse con doble clic en Excel con configuración regional española.',
     '',
     `facturas/  ${pdfsOk} de ${pdfsTotal} PDF de factura/justificante`,
-    // La nota del XML solo aparece con el flag OFF; los '' de arriba son separación
-    // deliberada, así que NO se filtran vacíos en bloque.
-    ...(conXml ? [] : ['Nota: este paquete no incluye el XML de registros de facturación.']),
+    // SCRUM-82: describe lo que HAY, nunca solo lo que falta. Los '' de arriba son
+    // separación deliberada, así que NO se filtran vacíos en bloque.
+    ...(xmlAnios.length > 0
+      ? [`facturas/  Registro VeriFactu (RRSIF) incluido — ejercicio${xmlAnios.length > 1 ? 's' : ''} ${xmlAnios.join(', ')}.`]
+      : ['Nota: este paquete no incluye el XML de registros de facturación.']),
   ].join('\n');
 }
 

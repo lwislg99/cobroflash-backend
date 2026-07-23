@@ -529,6 +529,27 @@ Ruta nueva = declara rol mínimo; default Admin-only. **Lo hace cumplir un test,
 > Sin tocar la lógica de generación del XML ni el encadenamiento de huellas. Test end-to-end contra
 > staging con una factura F1 real con huella: técnico→403, flag OFF→404 sin fuga (ni el número de
 > factura aparece en ningún body), flag ON (override por merchant)→200 con el registro correcto.
+> **✅ SCRUM-82 (23-jul-2026):** completa el hueco que dejó SCRUM-25 a propósito — el ZIP
+> (`GET /admin/exports/datos.zip`) ya tenía el gate `INVOICING_ES_ENABLED` (reutilizado de SCRUM-73)
+> y la omisión limpia con el flag OFF, pero la rama ON no hacía NADA: el XML seguía sin entrar, EN
+> SILENCIO. Peor aún — confirmado leyendo el código, no solo descrito en el ticket —: con el flag ON
+> el `LEEME.txt` dejaba de avisar "no incluye el XML" sin que el XML llegara a incluirse de verdad:
+> un aviso que se apaga solo cuando lo que anuncia sigue sin ser cierto, justo el día que nadie
+> volvería a mirar el LEEME. Fix: constructor RRSIF extraído de `GET /verifactu.xml` a
+> `buildVerifactuRegistrosXml()` (`verifactu.service.ts`) — MISMA fuente para el endpoint suelto y el
+> ZIP, cero divergencia posible; `GET /verifactu.xml` pasa a ser gate + llamada al servicio, mismo
+> comportamiento exacto. **Decisión del fundador — un XML por AÑO NATURAL que toque el rango pedido**
+> (no por el rango en sí): el registro RRSIF se organiza por ejercicio y la cadena de huellas es
+> anual — recortar por meses rompería el encadenamiento, mezclar años no representaría un registro
+> válido. **Fail-closed deliberado** (asimetría con los PDF del mismo ZIP, que sí toleran fallos
+> parciales con aviso): si la generación del XML falla, el ZIP entero se aborta ANTES de la primera
+> cabecera — "mejor un error que un paquete que dice de más" (cita literal del fundador). El LEEME
+> nombra cada archivo real (`verifactu_AAAA.xml`) en vez de un booleano genérico. Verificado con el
+> flag ON en staging real, 2 años cruzando el rango: el XML de cada ejercicio dentro del ZIP es
+> idéntico al de `GET /verifactu.xml?year=N` suelto salvo `fechaGeneracion` (timestamp de la llamada,
+> no un dato de la factura — normalizado antes de comparar). Confirmado en Railway: OWNER_EMAILS
+> aparte, ningún merchant real tenía el override activado — la fuga del LEEME era teórica hoy y
+> se habría vuelto real el día que se encendiera el flag. Sin schema.
 > **✅ SCRUM-98 · Guard A (23-jul-2026):** nace de la auditoría SCRUM-88 (`docs/AUDITORIA_SUPERFICIE_PUBLICA.md`),
 > que encontró SEIS puertas de la misma fuga (SCRUM-72/74/85/87/90/95) descubiertas por tropiezo, cada fix
 > destapando la siguiente — nadie se preguntaba de forma sistemática "¿esta ruta PÚBLICA resuelve su recurso
