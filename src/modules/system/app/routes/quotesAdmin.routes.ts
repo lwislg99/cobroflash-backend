@@ -22,6 +22,7 @@ import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domai
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: emitir factura = admin)
 
 import fetch from 'node-fetch';
+import { sendSuccessBody, sendFailureBody } from '../../../../lib/sendOutcome'; // SCRUM-126
 
 const router = Router();
 
@@ -225,7 +226,7 @@ router.post('/:id/send-whatsapp', async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
-      return res.status(400).json({ error: 'invalid_id' });
+      return res.status(400).json({ ok: false, error: 'invalid_id' });
     }
 
     // A15.2: la lógica vive en sendQuoteWhatsAppToCustomer (texto K1 + guards
@@ -235,63 +236,44 @@ router.post('/:id/send-whatsapp', async (req, res) => {
 
     if (!result.ok) {
       switch (result.reason) {
+        // Precondición real: nunca se intentó el envío — sin `sent`.
         case 'not_found':
-          return res.status(404).json({ error: 'not_found' });
+          return res.status(404).json({ ok: false, error: 'not_found' });
         case 'customer_missing_phone':
-          return res.status(400).json({ error: 'customer_missing_phone' });
+          return res.status(400).json({ ok: false, error: 'customer_missing_phone' });
         case 'invalid_phone_format':
-          return res.status(400).json({ error: 'invalid_phone_format' });
+          return res.status(400).json({ ok: false, error: 'invalid_phone_format' });
         case 'pending_approval':
-          return res.status(409).json({ error: 'pending_approval' });
-        // Bloqueos de POLÍTICA propios (no son errores de Meta) — mensaje específico (J5)
+          return res.status(409).json({ ok: false, error: 'pending_approval' });
+        // SCRUM-126: envío intentado, no salió — SIEMPRE 200, vocabulario compartido
+        // (src/lib/sendOutcome.ts). Antes cada motivo repetía su mensaje aquí a mano.
         case 'demo_safe_numbers':
-          return res.status(200).json({
-            ok: false, sent: false, error: 'demo_safe_numbers',
-            message: 'Modo demo seguro: este número no está en DEMO_SAFE_NUMBERS, no se envía nada (V0-2).',
-          });
         case 'wa_opt_out':
-          return res.status(200).json({
-            ok: false, sent: false, error: 'wa_opt_out',
-            message: 'Este cliente se dio de baja de WhatsApp (no se le envían más mensajes).',
-          });
-        // A3.2: topes anti-abuso del canal (J6 / PV-WA-CAPS)
         case 'daily_cap':
-          return res.status(200).json({
-            ok: false, sent: false, error: 'daily_cap',
-            message: 'Has alcanzado el tope diario de mensajes de WhatsApp. Vuelve a intentarlo mañana o envíalo por email.',
-          });
         case 'customer_daily_cap':
-          return res.status(200).json({
-            ok: false, sent: false, error: 'customer_daily_cap',
-            message: 'Este cliente ya recibió varios mensajes hoy (límite anti-spam). Vuelve a intentarlo mañana o envíalo por email.',
-          });
+          return res.status(200).json(sendFailureBody(result.reason));
         default: {
           // P3-2: NO devolver un 502 crudo. El presupuesto sigue guardado; informamos
-          // con un mensaje claro (incluyendo el motivo de Meta si lo hay) y 200 ok:false.
+          // con un mensaje claro (incluyendo el motivo de Meta si lo hay).
           const metaMsg =
             (result.error as any)?.error?.message ||
             (typeof result.error === 'string' ? result.error : '') ||
             'WhatsApp rechazó el envío';
-          return res.status(200).json({
-            ok: false,
-            sent: false,
-            error: 'whatsapp_send_failed',
+          return res.status(200).json(sendFailureBody('whatsapp_send_failed', {
             message: `No se pudo enviar por WhatsApp: ${metaMsg}. El presupuesto quedó guardado; puedes reintentarlo.`,
             detail: result.error,
-          });
+          }));
         }
       }
     }
 
-    return res.json({
-      ok: true,
-      sent: true,
+    return res.json(sendSuccessBody({
       quote_id: result.quoteId,
       to: result.to,
-    });
+    }));
   } catch (err) {
     console.error('[POST /admin/quotes/:id/send-whatsapp]', err);
-    return res.status(500).json({ error: 'internal_error' });
+    return res.status(500).json({ ok: false, error: 'internal_error' });
   }
 });
 
@@ -359,9 +341,9 @@ router.post('/:id/send-email', async (req, res) => {
       where: { id, merchantId: req.merchantId },
       select: { id: true, quoteNumber: true, status: true, total: true, currency: true, merchantId: true, customerId: true, customer: { select: { email: true } } },
     });
-    if (!quote) return res.status(404).json({ error: 'not_found' });
-    if (quote.status === 'pending_approval') return res.status(409).json({ error: 'pending_approval' });
-    if (!quote.customer?.email) return res.status(400).json({ error: 'customer_missing_email' });
+    if (!quote) return res.status(404).json({ ok: false, error: 'not_found' });
+    if (quote.status === 'pending_approval') return res.status(409).json({ ok: false, error: 'pending_approval' });
+    if (!quote.customer?.email) return res.status(400).json({ ok: false, error: 'customer_missing_email' });
 
     const { sendQuoteEmail } = await import('../../../messaging/domain/email.service');
     await sendQuoteEmail({ quoteId: id, prisma });
@@ -378,16 +360,15 @@ router.post('/:id/send-email', async (req, res) => {
       detail: `${Number(quote.total).toFixed(2)} ${quote.currency}`,
     });
 
-    return res.json({ ok: true, sent: true });
+    return res.json(sendSuccessBody());
   } catch (err: any) {
     if (err?.message === 'customer_missing_email') {
-      return res.status(400).json({ error: 'customer_missing_email' });
+      return res.status(400).json({ ok: false, error: 'customer_missing_email' });
     }
     console.error('[POST /admin/quotes/:id/send-email]', err?.message || err);
-    return res.status(200).json({
-      ok: false, sent: false, error: 'email_send_failed',
+    return res.status(200).json(sendFailureBody('email_send_failed', {
       message: 'No se pudo enviar el email. El presupuesto quedó guardado; puedes reintentarlo.',
-    });
+    }));
   }
 });
 

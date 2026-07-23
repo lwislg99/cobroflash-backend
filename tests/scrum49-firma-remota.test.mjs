@@ -16,6 +16,12 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
+// SCRUM-114 (reaplicado en SCRUM-126: el fix original no llegó a mergear — solo su
+// documentación en SUITE_REGRESION.md, "trampa 7"; el código se perdió en el camino).
+// Este test depende de dry-run, pero solo lo DOCUMENTABA en el comentario de arriba, sin
+// fijarlo. ANTES de importar dist (config se congela al cargar).
+process.env.WHATSAPP_DRY_RUN = '1';
+
 const ENABLED = process.env.QA_DB_TEST === '1';
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
@@ -73,7 +79,9 @@ test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, a
     // (a) enviar-para-firmar (emitido) → 200 + token generado
     const rSend = await fetch(`${base}/admin/albaranes/${albaran.id}/enviar-para-firmar`, { method: 'POST', headers: { cookie: cookieA, 'content-type': 'application/json' } });
     assert.equal(rSend.status, 200, `enviar-para-firmar debe ser 200 y fue ${rSend.status}`);
-    assert.equal((await rSend.json()).ok, true);
+    const sendBody = await rSend.json();
+    assert.equal(sendBody.ok, true);
+    assert.equal(sendBody.sent, true, 'SCRUM-126: sent es la verdad del envío, no solo ok');
     let row = await prisma.albaran.findUnique({ where: { id: albaran.id }, select: { firmaToken: true, enviadoParaFirmaAt: true } });
     assert.ok(row.firmaToken && row.firmaToken.length >= 24, 'firmaToken opaco generado');
     assert.ok(row.enviadoParaFirmaAt, 'enviadoParaFirmaAt marcado');

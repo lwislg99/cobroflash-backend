@@ -23,6 +23,7 @@ import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SC
 import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-17: gate fiscal
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-17: total con desglose IVA
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
+import { SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 
 const router = Router();
 
@@ -444,16 +445,24 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     // Enviar el enlace de cobro (payment_request / ventana-first A5.5)
     const sent = await sendInvoicePaymentRequest(invoice.id).catch((e) => {
       console.error('[jobs] collect-rest send:', e?.message || e);
-      return { ok: false as const, reason: 'send_failed' };
+      return { ok: false as const, reason: 'whatsapp_send_failed' as const };
     });
 
+    // SCRUM-126: la factura SÍ se creó (ok:true siempre) — el envío es un efecto
+    // secundario con su propio resultado, en un subobjeto con el mismo vocabulario que
+    // el resto de los 9 endpoints (antes era un string 'sent'/'failed' sin explicar por
+    // qué había fallado si fallaba).
+    const waReason: SendFailureReason =
+      sent.reason && sent.reason in SEND_FAILURE_MESSAGES ? (sent.reason as SendFailureReason) : 'whatsapp_send_failed';
     return res.json({
       ok: true,
       invoiceId: invoice.id,
       number: invoice.number,
       amount: Number(invoice.total),
       currency: invoice.currency,
-      whatsapp: sent.ok ? 'sent' : 'failed',
+      whatsapp: sent.ok
+        ? { sent: true }
+        : { sent: false, error: waReason, message: SEND_FAILURE_MESSAGES[waReason] },
     });
   } catch (err: any) {
     console.error('[POST /admin/jobs/:id/collect-rest]', err?.message || err);

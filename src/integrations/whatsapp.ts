@@ -310,13 +310,27 @@ export async function sendWhatsAppWindowFirst(params: {
   template: { templateName: string; languageCode?: string; components?: any[] };
   log?: WaLogMeta;
 }): Promise<{ ok: boolean; via: 'window' | 'template' | 'none'; reason?: string; error?: any; data?: any }> {
+  const customerId = params.customerId ?? params.log?.customerId ?? null;
+
   // J3: la baja del canal manda también sobre los textos de ventana
   if (await isWaOptedOut(params.merchantId, params.to)) {
     console.warn(`[WhatsApp] ${maskPhone(params.to)} dado de baja (waOptOut) para merchant ${params.merchantId}; ventana-first bloqueado`);
+    // SCRUM-126: este early-return no registraba nada en WA-0b (a diferencia del fallback
+    // a sendWhatsAppTemplate, que sí lo hace desde SCRUM-115). El único llamador fire-and-
+    // forget de esta función (el auto-envío tras decisión de presupuesto, quotes.routes.ts)
+    // no tiene NINGÚN otro sitio donde ver este fallo si no queda aquí.
+    recordWaMessage({
+      merchantId: params.merchantId,
+      customerId,
+      type: 'service',
+      templateName: params.template.templateName,
+      status: 'failed',
+      error: 'wa_opt_out',
+      relatedType: params.log?.relatedType ?? null,
+      relatedId: params.log?.relatedId ?? null,
+    }).catch(() => {});
     return { ok: false, via: 'none', reason: 'wa_opt_out' };
   }
-
-  const customerId = params.customerId ?? params.log?.customerId ?? null;
   if (customerId && (await isServiceWindowOpen(params.merchantId, customerId))) {
     // A23: si el llamador da windowCta, la ventana viaja como BOTÓN-ENLACE (sin URL cruda);
     // si no, texto libre como siempre. En ambos casos = service message (0 €).

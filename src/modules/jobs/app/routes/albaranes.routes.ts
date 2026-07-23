@@ -6,7 +6,8 @@ import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { recordAudit, requestIp } from '../../../system/audit.service';
 import { requireActivePlan } from '../../../../core/http/authMiddleware'; // SCRUM-47 (S1: enviar WA ✅ técnico, sin requireRole)
-import { sendAlbaranFirmadoWhatsApp, sendAlbaranParaFirmarWhatsApp } from '../../domain/albaranWhatsApp.service'; // SCRUM-47/49
+import { sendAlbaranFirmadoWhatsApp, sendAlbaranParaFirmarWhatsApp, type AlbaranFirmadoSendResult } from '../../domain/albaranWhatsApp.service'; // SCRUM-47/49
+import { sendSuccessBody, sendFailureBody, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 import {
   ALBARAN_MODOS_VALORACION,
   buildFirmaEvidencia,
@@ -294,6 +295,17 @@ router.get('/:id/fotos', async (req, res) => {
   }
 });
 
+// SCRUM-126: traduce el resultado interno del servicio (ok/status) al contrato de cable
+// (ok/sent) — ver src/lib/sendOutcome.ts para los 4 niveles. `status` distingue
+// PRECONDICIÓN (404/409, nunca se intentó, sin `sent`) de ENVÍO INTENTADO (siempre 200).
+function sendResultJson(res: import('express').Response, r: AlbaranFirmadoSendResult) {
+  if (r.ok) return res.json(sendSuccessBody());
+  if (r.status === 200) {
+    return res.status(200).json(sendFailureBody(r.reason as SendFailureReason, { message: r.message }));
+  }
+  return res.status(r.status).json({ ok: false, error: r.reason, message: r.message });
+}
+
 // POST /admin/albaranes/:id/enviar-whatsapp — SCRUM-47: envía la copia FIRMADA al WhatsApp
 // del cliente (plantilla `albaran_firmado_es` con el PDF en la cabecera de documento).
 // MANUAL (decisión del fundador). S1: "enviar WA" es capacidad de técnico → requireActivePlan,
@@ -307,8 +319,7 @@ router.post('/:id/enviar-whatsapp', requireActivePlan, async (req, res) => {
     if (!found.ok) return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
     // La lógica de envío vive en el servicio (reutilizada por el auto-envío de la firma remota, SCRUM-49).
     const r = await sendAlbaranFirmadoWhatsApp(found.albaran.id);
-    if (r.ok) return res.json({ ok: true });
-    return res.status(r.status).json({ ok: false, error: r.reason, message: r.message });
+    return sendResultJson(res, r);
   } catch (err: any) {
     console.error('[POST /admin/albaranes/:id/enviar-whatsapp]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
@@ -323,8 +334,7 @@ router.post('/:id/enviar-para-firmar', requireActivePlan, async (req, res) => {
     const found = await findAlbaran(req); // tenancy (regla 2)
     if (!found.ok) return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
     const r = await sendAlbaranParaFirmarWhatsApp(found.albaran.id);
-    if (r.ok) return res.json({ ok: true });
-    return res.status(r.status).json({ ok: false, error: r.reason, message: r.message });
+    return sendResultJson(res, r);
   } catch (err: any) {
     console.error('[POST /admin/albaranes/:id/enviar-para-firmar]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });

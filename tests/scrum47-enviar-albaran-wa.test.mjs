@@ -12,6 +12,15 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
+// SCRUM-114 (reaplicado en SCRUM-126: el fix original no llegó a mergear — solo su
+// documentación en SUITE_REGRESION.md, "trampa 7"; el código se perdió en el camino).
+// Este test depende de dry-run (el envío real a Meta no debe dispararse), pero solo lo
+// DOCUMENTABA en el comentario de arriba — si quien lo invoca olvida el flag, el guard
+// not_configured de sendWhatsAppTemplate devuelve `ok:false` y el test falla con un
+// mensaje que no dice nada del motivo real. ANTES de importar dist (config se congela
+// al cargar).
+process.env.WHATSAPP_DRY_RUN = '1';
+
 const ENABLED = process.env.QA_DB_TEST === '1';
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
@@ -92,7 +101,9 @@ test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-t
     // ── TÉCNICO permitido (S1) + happy path dry-run → 200 ok:true ──
     const rOk = await post(albFirmado.id, cookieTecnico);
     assert.equal(rOk.status, 200, `técnico debe poder enviar (S1) y fue ${rOk.status}`);
-    assert.equal((await rOk.json()).ok, true, 'envío ok en dry-run');
+    const okBody = await rOk.json();
+    assert.equal(okBody.ok, true, 'envío ok en dry-run');
+    assert.equal(okBody.sent, true, 'SCRUM-126: sent es la verdad del envío, no solo ok');
     // WA-0b: el envío pasó por la cadena y se registró con relatedType 'albaran'
     assert.ok(await waitForWaLog(prisma, merchantA.id, albFirmado.id), 'debe registrarse WhatsAppMessage relatedType=albaran');
 
@@ -101,10 +112,10 @@ test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-t
     assert.equal(rEmit.status, 409, `emitido debe ser 409 y fue ${rEmit.status}`);
     assert.equal((await rEmit.json()).error, 'albaran_no_firmado');
 
-    // ── Cliente sin teléfono → 409 sin_telefono ──
+    // ── Cliente sin teléfono → 409 customer_missing_phone (SCRUM-126: antes "sin_telefono") ──
     const rNoTel = await post(albSinTel.id, cookieTecnico);
     assert.equal(rNoTel.status, 409);
-    assert.equal((await rNoTel.json()).error, 'sin_telefono');
+    assert.equal((await rNoTel.json()).error, 'customer_missing_phone');
 
     // ── Tenancy (regla 2): B no ve el albarán de A → 404 ──
     const rB = await post(albFirmado.id, cookieB);
