@@ -24,7 +24,7 @@ import { sendWhatsAppWindowFirst, sendWhatsAppText } from '../../../integrations
 import { buildPaymentRequest } from '../../../integrations/whatsappTemplates';
 import { normalizePhone, formatMoneyEs } from '../../../core/utils/utils';
 import { BASE_URL } from '../../../core/config/env';
-import { isReceiptNumber } from '../../invoicing/domain/invoiceNumber.service';
+import { isReceiptNumber, appendStageLabel } from '../../invoicing/domain/invoiceNumber.service';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
 import { ensureChargeReceiptToken } from '../../../lib/invoicing';
 
@@ -119,6 +119,7 @@ async function sendReminderWA(
     charge: { id: number } | null;
     customer: { name: string; phone: string | null } | null;
     merchant: { name: string } | null;
+    stageLabel: string | null; // SCRUM-33
   },
   day: 7 | 14,
 ): Promise<boolean> {
@@ -145,7 +146,7 @@ async function sendReminderWA(
         customerId: inv.customerId,
         windowText:
           `Hola ${customerName} 👋\n` +
-          `Te recordamos que tienes pendiente el pago del ${docLabel} ${inv.number} ` +
+          `Te recordamos que tienes pendiente el pago del ${docLabel} ${appendStageLabel(inv.number, inv.stageLabel)} ` +
           `por ${total} ${inv.currency} de parte de ${merchantName}.${urgency}\n` +
           `Paga de forma segura desde aquí 👇\n` +
           `${BASE_URL}/pay/invoice/${payToken}\n` +
@@ -154,15 +155,17 @@ async function sendReminderWA(
         windowCta: {
           bodyText:
             `Hola ${customerName} 👋\n` +
-            `Te recordamos el pago pendiente del ${docLabel} ${inv.number} por *${formatMoneyEs(inv.total, inv.currency)}* de parte de *${merchantName}*.${urgency}\n` +
+            `Te recordamos el pago pendiente del ${docLabel} ${appendStageLabel(inv.number, inv.stageLabel)} por *${formatMoneyEs(inv.total, inv.currency)}* de parte de *${merchantName}*.${urgency}\n` +
             `Si ya lo has pagado, ignora este mensaje. ¡Gracias!`,
           buttonText: 'Pagar ahora',
           url: `${BASE_URL}/pay/invoice/${payToken}`,
         },
+        // SCRUM-33: sin variable nueva en la plantilla Meta — el label viaja dentro
+        // del valor de invoiceNumber (ya es una variable propia de la plantilla).
         template: buildPaymentRequest({
           customerName,
           businessName: merchantName,
-          invoiceNumber: inv.number,
+          invoiceNumber: appendStageLabel(inv.number, inv.stageLabel),
           amountWithCurrency: `${total} ${inv.currency}`,
           urlToken: payToken,
         }),

@@ -40,6 +40,19 @@ export function formatInvoiceNumber(
   return `${year}-${p}${rectifying ? '-R' : ''}-${String(seq).padStart(3, '0')}`;
 }
 
+/**
+ * SCRUM-33: número + etiqueta del tramo (SCRUM-27), para todo lo que el CLIENTE ve
+ * (concepto del cobro, plantilla WhatsApp) — nunca cambia la numeración fiscal en sí,
+ * solo el texto de display. null en presets (sin plan personalizado) → se omite,
+ * mismo patrón condicional que ya usa el PDF (nunca un placeholder inventado).
+ * Deliberadamente NO se añade una variable nueva a la plantilla de WhatsApp
+ * (Meta no acepta variables vacías, y los presets no tienen etiqueta): el label
+ * viaja DENTRO del valor de la variable "número de documento" que ya existe.
+ */
+export function appendStageLabel(number: string, stageLabel?: string | null): string {
+  return stageLabel ? `${number} — ${stageLabel}` : number;
+}
+
 /** Secuencia que toca emitir: si la serie guardada no es la del año en curso, empieza serie nueva en 1. */
 export function resolveSeriesSeq(
   m: { invoiceSeriesYear: number | null; nextInvoiceNumber: number },

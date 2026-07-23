@@ -53,6 +53,7 @@ export async function generateInvoicePdf(params: {
   type?: string | null;            // 'F1' (default) | 'R1' rectificativa | 'JUST' justificante (V0-0)
   rectifiesNumber?: string | null; // nº de la factura original (solo R1)
   watermark?: string | null;       // texto diagonal en cada página (demo: "DEMO — no válida fiscalmente")
+  stageLabel?: string | null;      // SCRUM-33: etiqueta del tramo (SCRUM-27), null en presets — se omite si no hay
 }) {
   const fileName = `${params.merchantId}-${params.number}.pdf`; // SCRUM-72
   const outPath  = path.join(invoicesDir, fileName);
@@ -148,6 +149,10 @@ export async function generateInvoicePdf(params: {
   doc.text(`Fecha: ${dateStr(params.createdAt)}`, { align: 'right' });
   if (isRect && params.rectifiesNumber) {
     doc.text(`Rectifica a la factura Nº ${params.rectifiesNumber}`, { align: 'right' });
+  }
+  // SCRUM-33: etiqueta del tramo (Anticipo/Hito 1/…), solo si existe (null en presets).
+  if (params.stageLabel) {
+    doc.text(params.stageLabel, { align: 'right' });
   }
   doc.fillColor('#000');
 
