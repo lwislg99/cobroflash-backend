@@ -15,6 +15,7 @@
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando BOT_SUITE_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 
 const ENABLED = process.env.BOT_SUITE_TEST === '1';
 const MERCHANT_ID = 1;                 // demo (regla 8)
@@ -25,6 +26,10 @@ const PRO_PHONE = '629965893';         // whatsappPhone del merchant demo
 process.env.WHATSAPP_DRY_RUN = '1';
 process.env.BOT_INBOUND_ENABLED = 'true';
 process.env.DEMO_SAFE_NUMBERS = `${TEST_PHONE},${PRO_PHONE},34${PRO_PHONE}`;
+// SCRUM-122: mismo hallazgo que scrum50-bot-albaranes — el fail-closed de SCRUM-99 rechaza
+// cualquier POST a /webhooks/whatsapp sin X-Hub-Signature-256 válida. Firmamos con un
+// secreto de prueba (HMAC-SHA256, mismo algoritmo que isValidSignature).
+process.env.WHATSAPP_APP_SECRET = 'wa-test-secret-scrum122';
 
 let wamidSeq = 0;
 const wamid = () => `wamid.suite.${Date.now()}.${++wamidSeq}`;
@@ -43,9 +48,13 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED }, asy
 
   const server = await new Promise((resolve) => { const s = app.listen(0, () => resolve(s)); });
   const base = `http://127.0.0.1:${server.address().port}`;
-  const post = (msg) => fetch(`${base}/webhooks/whatsapp`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(metaEnvelope(msg)),
-  });
+  const sign = (bodyStr) => 'sha256=' + crypto.createHmac('sha256', process.env.WHATSAPP_APP_SECRET).update(bodyStr).digest('hex');
+  const post = (msg) => {
+    const body = JSON.stringify(metaEnvelope(msg));
+    return fetch(`${base}/webhooks/whatsapp`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Hub-Signature-256': sign(body) }, body,
+    });
+  };
 
   // El webhook ACKea y procesa en background → esperar a que el buzón crezca
   const waitOutbox = async (minLen, ms = 6000) => {

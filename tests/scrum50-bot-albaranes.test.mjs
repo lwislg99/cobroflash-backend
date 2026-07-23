@@ -8,12 +8,18 @@
 import './_staging-db.mjs'; // SCRUM-60/64: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 // ANTES de importar dist (config se congela al cargar). El fallback handleIncomingText
 // (donde vive la PIEZA 3) corre directo con el bot OFF.
 process.env.WHATSAPP_DRY_RUN = '1';
 process.env.BOT_INBOUND_ENABLED = 'false';
+// SCRUM-122: SCRUM-99 puso el webhook en fail-closed (rechaza sin X-Hub-Signature-256 válida);
+// este test posteaba sin firmar y colaba solo porque, sin secreto configurado, el webhook
+// ANTES aceptaba cualquier payload. Fijamos un secreto de prueba y firmamos cada POST (mismo
+// HMAC-SHA256 que isValidSignature, ver whatsappIncoming.routes.ts).
+process.env.WHATSAPP_APP_SECRET = 'wa-test-secret-scrum122';
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -32,7 +38,17 @@ test('SCRUM-50: webhook — Recibido→acuse sin menú · texto sobre albarán�
   let seq = 0;
   const wamid = () => `wamid.s50.${stamp}.${++seq}`;
   const envelope = (msg) => ({ object: 'whatsapp_business_account', entry: [{ id: '0', changes: [{ field: 'messages', value: { messaging_product: 'whatsapp', messages: [msg] } }] }] });
-  const post = (msg) => fetch(`${base}/webhooks/whatsapp`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(envelope(msg)) });
+  // SCRUM-122: firma HMAC-SHA256 del body EXACTO que viaja (mismo criterio que isValidSignature,
+  // que valida contra req.rawBody — los bytes tal cual del body, no un re-stringify).
+  const sign = (bodyStr) => 'sha256=' + crypto.createHmac('sha256', process.env.WHATSAPP_APP_SECRET).update(bodyStr).digest('hex');
+  const post = (msg) => {
+    const body = JSON.stringify(envelope(msg));
+    return fetch(`${base}/webhooks/whatsapp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Hub-Signature-256': sign(body) },
+      body,
+    });
+  };
   const waitOutbox = async (minLen, ms = 6000) => { const t = Date.now(); while (outbox.length < minLen && Date.now() - t < ms) await new Promise((r) => setTimeout(r, 100)); };
   const settle = () => new Promise((r) => setTimeout(r, 900));
   const textTo = (to) => outbox.filter((e) => e.kind === 'text' && e.to === to).map((e) => e.text);
