@@ -94,9 +94,54 @@ function enumerateAdminRoutes() {
   return [...byKey.values()];
 }
 
+/**
+ * SUELO DEL ENUMERADOR — al recuento REAL, sin margen. Medido: 125 rutas /admin (23-jul-2026).
+ *
+ * Antes era `routes.length > 100` con 125 montadas: **25 rutas de margen ciego**. El walker
+ * podía dejar de ver veinticuatro y el canario seguía cantando. Un canario con 25 % de holgura
+ * no avisa de nada — y esta es la enumeración de la que dependen los OTROS tres asserts del
+ * fichero: si enumera de menos, «toda ruta declara rol» pasa en verde sobre las que sí vio.
+ *
+ * ⚠️ NO es el mismo caso que CENSO_MIN, aunque los dos sean suelos:
+ *
+ *   · CENSO_MIN protege una lista que se edita A MANO. Bajarlo es un cambio DELIBERADO que
+ *     aparece en el diff de un PR y alguien lo revisa → holgado es aceptable, es convención.
+ *   · Esto protege contra una caída INVISIBLE: Express cambia de versión, `app.router.stack`
+ *     deja de exponer algo, y la enumeración encoge sin que nadie toque una línea. Nadie va a
+ *     revisar un diff, porque no hay diff. Por eso tiene que ir APRETADO.
+ *
+ * La pregunta no es «¿tiene mecanismo?» sino «¿cuánto cuesta el atajo y quién lo vería?».
+ * Aquí no hay atajo que revisar: hay un fallo que nadie ve. (SCRUM-124)
+ *
+ * MEDIDO, no supuesto. De las 125 rutas, 114 figuran en alguna de las tres listas y 11 no
+ * figuran en ninguna (billing/checkout, team, connect, exports/fees.csv). Se inyectó una
+ * avería que se lleva EXACTAMENTE esas 11 — las que se pueden perder sin dejar rastro:
+ *
+ *   suelo viejo (>100):  114 rutas · TODO VERDE, exit=0 · el diagnóstico imprime «114 rutas»
+ *   suelo nuevo (>=125): 114 rutas · ROJO, exit=1
+ *
+ * El primer intento de demostrarlo recortó rutas al azar y salió rojo con el suelo viejo —
+ * pero lo cazó el assert de «entrada muerta», no el suelo, y solo porque el recorte pilló
+ * rutas declaradas. Cazar por casualidad no es cubrir esa clase (regla 7 del runbook): había
+ * que buscar la avería que NO deja rastro, y esa pasaba entera.
+ *
+ * Al añadir rutas SUBE (el assert no molesta: 126 >= 125 pasa). Si se BORRA una ruta de
+ * verdad, esto sale rojo y se baja a propósito, en el mismo commit y con el motivo.
+ */
+const RUTAS_MIN = 125;
+
 test('SCRUM-55: toda ruta /admin declara rol (fail-closed)', (t) => {
   const routes = enumerateAdminRoutes();
-  assert.ok(routes.length > 100, `enumeración sospechosamente corta (${routes.length}): ¿se rompió el walker?`);
+  assert.ok(
+    routes.length >= RUTAS_MIN,
+    `\n\n🔴 LA ENUMERACIÓN HA ENCOGIDO: ${routes.length} rutas /admin, el suelo es ${RUTAS_MIN}.\n\n` +
+      `Los otros asserts de este fichero solo miran lo que ESTA función devuelve. Si enumera\n` +
+      `de menos, «toda ruta declara rol» pasa en verde sobre las rutas que sí vio, y las que\n` +
+      `se perdieron quedan fuera de la auditoría sin que nada lo diga.\n\n` +
+      `Antes de bajar el suelo, descarta lo invisible: ¿cambió la versión de Express, o la\n` +
+      `forma de montar un router? Esa es la avería que este número existe para cazar.\n` +
+      `Solo si de verdad se BORRÓ una ruta, baja RUTAS_MIN a ${routes.length} aquí mismo, con el motivo.\n`,
+  );
 
   const declared = new Set(TECNICO_ALLOWED.map((r) => key(r.method, normalize(r.path))));
   const pending = new Set(PENDIENTE_CLASIFICAR.map((r) => key(r.method, normalize(r.path))));
@@ -187,14 +232,42 @@ test('SCRUM-55: todo router montado está identificado (nadie se salta mountAdmi
 });
 
 test('SCRUM-55: la lista de pendientes mengua (ratchet + caducidad)', (t) => {
-  assert.ok(
-    PENDIENTE_CLASIFICAR.length <= PENDIENTE_MAX,
-    `\n\n🔴 La lista de PENDIENTE_CLASIFICAR ha CRECIDO: ${PENDIENTE_CLASIFICAR.length} > ${PENDIENTE_MAX}.\n` +
-      `Esa lista solo puede menguar. Una ruta NUEVA se declara (requireRole o TECNICO_ALLOWED);\n` +
-      `no se aparca. Si vacías una tanda, baja PENDIENTE_MAX en el mismo commit.\n`,
+  // SCRUM-124: IGUALDAD EXACTA, no `<=`.
+  //
+  // Este assert decía `<=` y su propio mensaje pedía «si vacías una tanda, baja
+  // PENDIENTE_MAX en el mismo commit» — sin nada que lo hiciera cumplir. Vaciar cinco
+  // entradas y dejar el tope quieto pasaba en VERDE, con cinco huecos libres para aparcar
+  // rutas nuevas sin que el test dijera ni pío. La prohibición estaba escrita; el
+  // mecanismo, no.
+  //
+  // Lo grave no es el `<=`: es que la lección se aprendió AQUÍ. El ratchet de rutas se
+  // dejó una vez en 25 con 24 entradas (SCRUM-103) y de ahí salió la regla. Al escribir
+  // el ratchet de SCRUM-113 se aplicó `===` desde el primer día, citando este caso por su
+  // nombre — y este fichero, el original, se quedó con el `<=`. **La corrección se escribió
+  // y no se propagó a la hermana.** Tercera vez que aparece ese patrón el mismo día.
+  //
+  // Al cambiarlo: 16 entradas con PENDIENTE_MAX = 16. No-op hoy, red mañana.
+  assert.equal(
+    PENDIENTE_CLASIFICAR.length, PENDIENTE_MAX,
+    PENDIENTE_CLASIFICAR.length > PENDIENTE_MAX
+      ? `\n\n🔴 La lista de PENDIENTE_CLASIFICAR ha CRECIDO: ${PENDIENTE_CLASIFICAR.length} > ${PENDIENTE_MAX}.\n` +
+        `Esa lista solo puede menguar. Una ruta NUEVA se declara (requireRole o TECNICO_ALLOWED);\n` +
+        `no se aparca — y subir PENDIENTE_MAX para que quepa es exactamente el atajo que este\n` +
+        `assert existe para impedir.\n`
+      : `\n\n🔴 HOLGURA en el ratchet: ${PENDIENTE_CLASIFICAR.length} pendientes con el tope en ${PENDIENTE_MAX}.\n` +
+        `Sobran ${PENDIENTE_MAX - PENDIENTE_CLASIFICAR.length} hueco(s), y un hueco libre es sitio donde aparcar una ruta\n` +
+        `nueva sin que nadie se entere: el contador no sube, así que no salta nada.\n\n` +
+        `Has clasificado rutas y no has bajado el tope. Baja PENDIENTE_MAX a ${PENDIENTE_CLASIFICAR.length} en\n` +
+        `ESTE MISMO commit — es la otra mitad del trabajo, no una tarea aparte.\n`,
   );
 
   // El ratchet impide que crezca; la caducidad impide que se quede quieta.
+  //
+  // ── SCRUM-124 · CONVENCIÓN ACEPTADA ───────────────────────────────────────────────────
+  // El mensaje de abajo dice «mueve REVISAR_ANTES_DE con el OK del fundador». Nada lo hace
+  // cumplir, y no puede: un test no sabe si hubo OK. Se acepta porque mover la fecha es una
+  // línea en el diff de un PR, con fecha y autor en el blame — deliberado y revisable.
+  // Lo que sí tiene mecanismo es que la fecha NO se pueda ignorar: pasada, esto sale rojo.
   const hoy = new Date().toISOString().slice(0, 10);
   if (PENDIENTE_CLASIFICAR.length > 0) {
     assert.ok(
@@ -244,6 +317,13 @@ test('SCRUM-55: la lista de pendientes mengua (ratchet + caducidad)', (t) => {
 // falso NEGATIVO (se cuela una duda floja) a un falso POSITIVO (rojo con trabajo
 // legítimo aparcado): lo segundo hace que alguien relaje el test para seguir, y un
 // test relajado para seguir es cómo empezó todo esto.
+//
+// ── SCRUM-124 · CONVENCIÓN ACEPTADA, Y AQUÍ PARA LA REGRESIÓN ────────────────────
+// Esta prohibición va dirigida a quien EDITE el test, no a quien lo ejecute, y por eso
+// no puede tener mecanismo: sería un test que vigila cómo se escriben los tests, y ese
+// necesitaría otro. La cadena termina aquí a propósito.
+// El criterio se sostiene igual: endurecer estas heurísticas exige tocar estas líneas,
+// sale en el diff y alguien lo revisa. Es el atajo caro y visible — convención.
 
 /** Abreviatura de referencia a la entrada anterior. Legal SI tiene referente. */
 const REF_A_LA_ANTERIOR = /^(í|i)dem\.?$/i;

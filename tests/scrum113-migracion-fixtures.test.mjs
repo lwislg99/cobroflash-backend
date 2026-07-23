@@ -87,6 +87,15 @@ const CONOCIDOS_AL_MEDIR = [
  *
  * Si un fichero se BORRA del repo de verdad, se baja este suelo A PROPÓSITO y en el mismo
  * commit, con el motivo escrito — igual que MIGRACION_MAX.
+ *
+ * ── SCRUM-124 · CONVENCIÓN ACEPTADA ─────────────────────────────────────────────────────
+ * El mensaje del guard dice «NO bajes CENSO_MIN para que esto pase» y NADA lo hace cumplir.
+ * Es deliberado, no un descuido: bajar esta línea aparece en el diff de un PR y alguien lo
+ * revisa. La regresión es infinita —el suelo del suelo del suelo— y aquí es donde para.
+ *
+ * El criterio no es «¿tiene mecanismo?» sino «¿cuánto cuesta el atajo y quién lo vería?»:
+ * olvidarse de una entrada del censo no aparece en ningún sitio (→ mecanismo, este suelo);
+ * bajar el suelo a propósito sí aparece (→ convención, esta nota).
  */
 export const CENSO_MIN = 25;
 
@@ -103,6 +112,12 @@ export const CENSO_MIN = 25;
  *
  * ESTAS DOS LÍNEAS son la ÚNICA excepción: censo, asserts y fecha los sigue tocando quien
  * escribió el ratchet (carril B, SCRUM-113).
+ *
+ * ── SCRUM-124 · CONVENCIÓN ACEPTADA ─────────────────────────────────────────────────────
+ * Ese reparto de propiedad no tiene mecanismo, y no puede tenerlo: un test no sabe quién
+ * edita. Se acepta porque tocar el censo o un assert aparece en el diff, y porque el coste
+ * de saltárselo es bajo y reversible. Lo que sí tiene mecanismo es el EFECTO de saltárselo
+ * mal — sacar un fichero de la lista sin bajar el tope lo caza la igualdad exacta de abajo.
  *
  * Origen: al migrar `scrum94` (23-jul-2026) el reparto por FICHERO chocó con la atomicidad
  * que este ratchet exige — quien migraba no era dueño de la lista. Se resolvió a favor de
@@ -218,8 +233,12 @@ test('SCRUM-113: la lista de pendientes solo mengua (ratchet + caducidad)', (t) 
   assert.equal(
     MIGRACION_PENDIENTE.length, MIGRACION_MAX,
     MIGRACION_PENDIENTE.length > MIGRACION_MAX
+      // SCRUM-124: decía «una ruta nueva se declara, no se aparca» — frase traída tal cual
+      // del ratchet de rutas de SCRUM-55. Aquí no hay rutas: hay ficheros de test. Copiar
+      // la plantilla trajo también su vocabulario, y un mensaje que habla de otra cosa manda
+      // a quien lo lee a buscar donde no es.
       ? `\n\n🔴 La lista de pendientes ha CRECIDO: ${MIGRACION_PENDIENTE.length} > ${MIGRACION_MAX}.\n` +
-        `Solo puede menguar. Una ruta nueva se declara, no se aparca.\n`
+        `Solo puede menguar. Un test nuevo se escribe con withMerchant, no se aparca aquí.\n`
       : `\n\n🔴 HOLGURA en el ratchet: ${MIGRACION_PENDIENTE.length} pendientes con el tope en ${MIGRACION_MAX}.\n` +
         `Sobran ${MIGRACION_MAX - MIGRACION_PENDIENTE.length} hueco(s), y un hueco libre es sitio para aparcar\n` +
         `un fichero nuevo sin que el test se queje. Baja MIGRACION_MAX a ${MIGRACION_PENDIENTE.length}.\n\n` +
