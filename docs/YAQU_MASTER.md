@@ -894,6 +894,21 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 > (frontera 23-jul + resultado del count) para que nadie lea `reminderEur` creyéndolo limpio; si algún
 > día abarca un periodo con volumen real pre-116, se reabre con un suelo **de lectura** (`>= fecha`),
 > nunca tocando el histórico. Solo la lectura; sin schema, sin write, sin cron, sin test.
+>
+> **✅ SCRUM-119 · verificación REAL del cierre de IDOR en `/pay/card` (23-jul-2026, pagos):**
+> el cierre del IDOR de `/pay/card` (SCRUM-85, cadena SCRUM-72→74→85→90) NO estaba VERIFICADO: el
+> handler hacía `if (!stripe) return 501` ANTES del `findUnique` del token, así que sin
+> `STRIPE_SECRET_KEY` el token válido y el id numérico daban la MISMA respuesta (501) — ningún assert
+> distinguía «IDOR cerrado» de «Stripe ausente». Era la única de las 4 rutas de pago que miraba su
+> integración antes de resolver el recurso. Peor: `node:test` aborta el bloque en el primer assert que
+> falla (`scrum85:71`, `501 !== 404`), enterrando lo de debajo — incluido el **assert de aislamiento
+> entre inquilinos** (cruce A/B, líneas 90-95). **Fix de RAÍZ:** mover `if (!stripe)` debajo del
+> `findUnique`+404+redirect → el id inexistente da 404 esté Stripe o no, el bloque deja de abortar y se
+> desbloquean bizum + el cruce A/B; alinea `/pay/card` con `/pay/mp`, `/pay/bank`, `/pay/bizum`.
+> **Honestidad (criterio SCRUM-121):** el test ya aceptaba `[303, 501]` en el token; se añade un
+> `t.diagnostic` EN VOZ ALTA cuando es 501 (Stripe ausente → el redirect real a Checkout NO se ejerce;
+> el IDOR sí queda verificado, numérico 404 ≠ token 501). Ni verde fingido ni skip mudo. Verificado en
+> staging sin Stripe: scrum85 pasa entero, el cruce A/B corre. `npm test` 242 · 209 pass · 0 fail. Sin schema.
 
 **V2. Trigger del segundo tramo:** **✅ VERIFICADO (SCRUM-10/13, 9-jul-2026): el resto NUNCA se cobra solo** (confirmado en código: `/admin/jobs/:id/collect-rest` vía `getNextBillingStage`, siempre acción del pro). Regla: el resto NUNCA se cobra solo; trigger = acción del pro ("Trabajo terminado → Cobrar resto"; con JOB-1: estado `terminado`) → cobro/factura del resto + payment_request.
 **V3. Anticipos [VALIDAR asesor en S1-F]:** señal con factura = **factura de anticipo con IVA**; la final descuenta el anticipo. Pre-SIF: señal con recibo no fiscal (coherente con flag). Post-SIF: implementar el dictamen (regla 32).
