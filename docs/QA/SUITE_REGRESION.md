@@ -174,6 +174,38 @@ Las tres reglas que salen de ahí, para cualquier test, assert o check nuevo:
    estás mirando el sitio correcto: descomprimido, decodificado y en el mismo formato en que
    se emite.
 
+   **Si un assert por ausencia NO admite guarda, casi siempre es que estás comprobando un
+   SÍNTOMA en vez de la PROPIEDAD.** Cuando no encuentres «dónde sí debería estar», la
+   pregunta no es *«¿qué testigo le pongo?»* — es *«¿estoy comprobando la propiedad, o una
+   consecuencia visible de ella?»*. **Un síntoma no se puede guardar**: por eso la búsqueda
+   de un testigo no llevaba a ninguna parte.
+
+   El caso que mejor lo enseña (`tests/scrum94-register-teammember`): el 409 de
+   `/auth/register` para el email de un operario no debe revelar la empresa. El assert era
+
+   ```js
+   assert.ok(!body.message.includes('SECRETA') && !body.message.includes(merchant.name));
+   ```
+
+   `'SECRETA'` salía del nombre de una fixture: renómbrala y el assert queda ciego. Y no hay
+   «sitio donde sí» — el nombre del merchant no debe salir en **ninguna** parte de ese error.
+   Parecía un residual sin arreglo posible… pero es que **la propiedad no es «no aparece esa
+   cadena», es «la respuesta no depende del merchant»**. Escrita así, se comprueba sola:
+
+   ```js
+   // Dos operarios de DOS empresas con nombres distintos.
+   assert.deepEqual(await r1.json(), await r2.json(),
+     'el 409 debe ser IDÉNTICO sea cual sea la empresa: si difiere, algo del merchant se filtra');
+   assert.deepEqual(Object.keys(body).sort(), ['error', 'message']); // ni una clave de más
+   ```
+
+   Cubre los nombres que nadie previó, las claves nuevas que alguien añada al error, y
+   cualquier id o token interpolado por accidente — **sin buscar ni una cadena**, y por tanto
+   sin poder quedarse ciego por un cambio de fixture. Comprueba además lo que de verdad se
+   quería garantizar: que **un atacante no pueda distinguir un merchant de otro** por la
+   respuesta, que es el objetivo anti-enumeración; buscar literales solo tapaba un síntoma
+   concreto de ese problema.
+
 6. **Al verificar un cambio, confirma los asserts nuevos UNO A UNO — no el total. Y ante un
    test en rojo, pregunta también qué quedó POR DETRÁS sin evaluar. (SCRUM-108)**
 
