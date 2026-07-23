@@ -233,6 +233,23 @@ router.patch('/:id', async (req, res) => {
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!job) return res.status(404).json({ error: 'not_found' });
 
+    // SCRUM-120: gate por CAMPO (no por ruta — status/scheduledAt/notes del día a día son del operario).
+    // Admin-only por afectar a FACTURACIÓN/DINERO: `tipoOperacion` (bandera fiscal: recapitulativa mensual
+    // vs. al concluir), `assignedUserId` (reparto del equipo, S1) y cerrar el Trabajo (`status:'cerrado'`:
+    // única transición IRREVERSIBLE de la FSM y mata la vía de "Cobrar el resto"). FAIL-CLOSED: si un técnico
+    // manda CUALQUIERA (aunque venga mezclado con campos legítimos), se rechaza ENTERO — nada de aplicar
+    // parcial en zona fiscal. (La UI ya deshabilita estos controles para el técnico; esto es el candado real.)
+    if (req.userRole !== 'admin') {
+      const adminOnlyField =
+        req.body?.tipoOperacion !== undefined ? 'tipoOperacion' :
+        req.body?.assignedUserId !== undefined ? 'assignedUserId' :
+        (req.body?.status !== undefined && String(req.body.status) === 'cerrado') ? 'status:cerrado' :
+        null;
+      if (adminOnlyField) {
+        return res.status(403).json({ error: 'forbidden', required_role: 'admin', field: adminOnlyField });
+      }
+    }
+
     const data: any = {};
     if (req.body?.status !== undefined) {
       const to = String(req.body.status);
