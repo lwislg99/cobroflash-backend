@@ -125,6 +125,23 @@ Las tres reglas que salen de ahí, para cualquier test, assert o check nuevo:
    agujero de permisos vivo en producción (`GET /admin/products/export`, el tarifario completo
    descargable por un Técnico), no un falso positivo.
 
+5. **Si puedes comprobarlo por ESTRUCTURA en vez de por texto, hazlo. (SCRUM-108/111)** Buscar
+   una cadena en una salida es frágil por naturaleza: depende del formato, del serializador,
+   del nombre del campo y de que la fixture siga sembrando ese valor. Comprobar una propiedad
+   estructural —un status, un content-type, la ausencia de una clave en un objeto, el tipo de
+   los bytes— **es inmune a todo eso por diseño**.
+
+   `tests/scrum72-pdfs-privados` no busca cadenas: comprueba `status === 404` y `!isPdf(res)`.
+   Ningún cambio de formato puede dejarlo pasando en vacío. Comparado con el canario del ZIP
+   —que buscaba una cadena en bytes **comprimidos** y por eso no podía fallar nunca
+   (SCRUM-111)—, es la misma intención con una implementación que sí sostiene la garantía.
+
+   Esta regla evita de golpe los dos modos de fallo: el canario que **se rompe** con un cambio
+   de formato (regla 2) y el que **nace roto** porque el texto no está donde se busca. Cuando
+   no haya alternativa a buscar por texto, aplica la regla 2 sin excepción — y comprueba que
+   estás mirando el sitio correcto: descomprimido, decodificado y en el mismo formato en que
+   se emite.
+
 > **Coordinación (regla del canal):** la suite y el seed **resetean la BD del merchant QA**.
 > Avisa por el canal antes de lanzarla — solo uno a la vez. `tests/` es **zona compartida**:
 > avisar antes de tocarlo (SCRUM-78 y SCRUM-79 arreglaron el mismo fichero el mismo día sin

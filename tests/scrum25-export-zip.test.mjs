@@ -17,12 +17,55 @@ import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TE
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import zlib from 'node:zlib';
+import { assertAusenteConMecanismoVivo } from './_ausencia.mjs'; // SCRUM-108
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
 /**
+ * SCRUM-111: extrae el CONTENIDO de las entradas del ZIP, descomprimiéndolas.
+ *
+ * ⚠️ POR QUÉ EXISTE ESTO. El canario de tenancy hacía `buf.includes(CANARIO_B)` sobre los
+ * bytes CRUDOS del ZIP. El paquete se genera con `zlib: { level: 9 }`, así que el
+ * contenido va DEFLATADO: una cadena filtrada dentro de un CSV **no aparece en crudo**.
+ * Ese assert no se rompió con el tiempo — nunca pudo fallar. Comprobado construyendo un
+ * ZIP con el canario dentro: `buf.includes(canario)` daba `false` con la fuga presente.
+ *
+ * Se lee el CENTRAL DIRECTORY y no las cabeceras locales porque archiver genera el ZIP en
+ * streaming: con data descriptors, los tamaños del local header vienen a 0 y no se puede
+ * saber dónde acaba cada bloque de datos.
+ */
+function contenidoEntradasZip(buf) {
+  const out = {};
+  const SIG_CD = 0x02014b50; // PK\x01\x02 — central directory header
+  for (let i = 0; i + 46 <= buf.length; i++) {
+    if (buf.readUInt32LE(i) !== SIG_CD) continue;
+    const metodo    = buf.readUInt16LE(i + 10); // 0 = almacenado, 8 = deflate
+    const compSize  = buf.readUInt32LE(i + 20);
+    const nameLen   = buf.readUInt16LE(i + 28);
+    const extraLen  = buf.readUInt16LE(i + 30);
+    const cmtLen    = buf.readUInt16LE(i + 32);
+    const lho       = buf.readUInt32LE(i + 42); // offset del local header
+    const nombre    = buf.toString('utf8', i + 46, i + 46 + nameLen);
+    // El local header tiene SUS propios nameLen/extraLen: es donde empiezan los datos.
+    const lNameLen  = buf.readUInt16LE(lho + 26);
+    const lExtraLen = buf.readUInt16LE(lho + 28);
+    const ini = lho + 30 + lNameLen + lExtraLen;
+    const datos = buf.subarray(ini, ini + compSize);
+    try {
+      out[nombre] = metodo === 0 ? datos.toString('utf8') : zlib.inflateRawSync(datos).toString('utf8');
+    } catch {
+      out[nombre] = ''; // binario que no inflamos (PDF): no aporta al canario de texto
+    }
+    i += 45 + nameLen + extraLen + cmtLen;
+  }
+  return out;
+}
+
+/**
  * Lista los nombres de entrada de un ZIP leyendo las cabeceras locales (PK\x03\x04).
  * No descomprime: solo necesitamos saber QUÉ hay dentro y que el paquete es un ZIP real.
+ * (Los NOMBRES sí van en claro, por eso para ellos basta con esto.)
  */
 function listarEntradasZip(buf) {
   const nombres = [];
@@ -144,7 +187,17 @@ test('SCRUM-25 (B): datos.zip — técnico 403, entradas, PDFs, tenancy, rango, 
     }
 
     // ── TENANCY: ni rastro del merchant vecino ──────────────────────────────
-    assert.ok(!buf.includes(CANARIO_B), 'TENANCY ROTA: el ZIP incluye datos de otro merchant');
+    // SCRUM-111: se inspecciona el contenido DESCOMPRIMIDO, no los bytes del ZIP. Buscar
+    // en crudo no detectaba nada: el paquete va deflatado (`zlib: { level: 9 }`).
+    // Y con guarda: el nombre del cliente PROPIO tiene que aparecer por la misma vía; si
+    // no, el canario no puede detectar una fuga y hay que arreglarlo antes (SCRUM-108).
+    const textoZip = Object.values(contenidoEntradasZip(buf)).join('\n');
+    assertAusenteConMecanismoVivo(
+      textoZip,
+      CANARIO_B,
+      custA.name,
+      'TENANCY ROTA: el ZIP incluye datos de otro merchant',
+    );
 
     // ── RANGO: una ventana pasada deja los CSV sin filas de datos ───────────
     const resViejo = await get('/admin/exports/datos.zip?from=2000-01-01&to=2000-12-31', cookieAdmin);

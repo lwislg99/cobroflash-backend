@@ -146,6 +146,16 @@ test('SCRUM-25: exports admin-only, CSVs nuevos, base+IVA, rango y audit', { ski
     // ⚠️ El canario del importe se comprueba en LAS DOS grafías a propósito: al pasar a
     // coma decimal (SCRUM-86), un canario clavado en '9999.00' dejaría de coincidir nunca
     // y la comprobación de tenancy pasaría en vacío sin que nadie se enterase.
+    // SCRUM-108 — GUARDA: antes de afirmar que los datos del vecino NO salen, hay que
+    // probar que datos EQUIVALENTES del merchant propio SÍ salen por la misma vía. Si el
+    // export dejara de emitir nombres de cliente o conceptos de cobro, estos asserts
+    // pasarían en vacío y una fuga real no la vería nadie.
+    assert.ok(clientes.includes('Cliente S25 A'),
+      '🔴 CANARIO ROTO: clientes.csv no trae ni el nombre del cliente propio — la\n' +
+      'comprobación de tenancy de abajo no verificaría nada. (SCRUM-108)');
+    assert.ok(cobros.includes('Cobro QA S25'),
+      '🔴 CANARIO ROTO: cobros.csv no trae el concepto del cobro propio. (SCRUM-108)');
+
     for (const [f, body] of [['clientes', clientes], ['cobros', cobros], ['trabajos', trabajos]]) {
       assert.ok(!body.includes('VECINO NO DEBE SALIR') && !body.includes('COBRO VECINO')
         && !body.includes('9999,00') && !body.includes('9999.00'),

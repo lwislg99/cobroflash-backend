@@ -97,6 +97,26 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
     const cookieAdminB = await mkCookie(null);
     const cookieTecnicoB = await mkCookie(tecnico.id);
 
+    // ── GUARDA DEL CANARIO (SCRUM-108) ──────────────────────────────────────
+    // Antes de afirmar que CANARIO_A no sale en ninguna respuesta a B, hay que probar que
+    // SÍ sale cuando el dueño lo pide. Si el serializador dejara de emitir el nombre del
+    // cliente —o la fixture fallara— el bucle de abajo pasaría EN VACÍO: "no aparece" se
+    // cumple igual con el sistema bien que con el canario roto, y una fuga real entre
+    // merchants no la vería nadie. Es el fallo que costó el canario '9999.00'.
+    const tokenA = 'qa12a-' + crypto.randomBytes(12).toString('hex');
+    await prisma.authSession.create({
+      data: { merchantId: merchantA.id, token: tokenA, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
+    });
+    const cookieAdminA = ((await fetch(`${base}/auth/verify?token=${tokenA}`, { redirect: 'manual' }))
+      .headers.get('set-cookie') || '').split(';')[0];
+    const propioTxt = await (await fetch(`${base}/admin/quotes/${quoteA.id}`, { headers: { cookie: cookieAdminA } })).text();
+    assert.ok(
+      propioTxt.includes(CANARIO_A),
+      `🔴 CANARIO ROTO (no es un pase): "${CANARIO_A}" no aparece ni cuando lo pide su propio\n` +
+      `merchant. Mientras siga así, la comprobación de tenancy de abajo no verifica NADA.\n` +
+      `Arregla el canario antes de fiarte de este test. (SCRUM-108)`,
+    );
+
     // A12.1 — cada ruta con un id de A y sesión de B debe negar (403/404)
     const tenancyTargets = [
       ['GET', `/admin/quotes/${quoteA.id}`],
@@ -128,6 +148,8 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
       );
       // jamás datos de A en el cuerpo (canario)
       const text = await res.text();
+      // Guardado arriba: sabemos que CANARIO_A SÍ es visible para su dueño, así que si no
+      // aparece aquí es porque la tenancy funciona, no porque el canario dejara de existir.
       assert.ok(!text.includes(CANARIO_A), `TENANCY ROTA: ${method} ${path} filtra datos de A`);
     }
     t.diagnostic(`tenancy: ${tenancyTargets.length} rutas con id ajeno → 403/404 ✓`);
