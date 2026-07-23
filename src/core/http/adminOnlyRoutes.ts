@@ -39,6 +39,13 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   // ("equipo ❌ Técnico") y mismo router; estaba aparcada como "Nivel 2" por descuido, no
   // por duda. Aquí queda su 403 exigido.
   { method: 'GET', path: '/admin/metrics/team' },
+  // SCRUM-107: las 5 de /admin/expenses que NO son campo. POST y /categories quedan
+  // abiertos a propósito (crear el gasto desde la furgoneta) y por eso no están aquí.
+  { method: 'GET',    path: '/admin/expenses' },
+  { method: 'GET',    path: '/admin/expenses/summary' },
+  { method: 'GET',    path: '/admin/expenses/margin/999999' },
+  { method: 'PUT',    path: '/admin/expenses/999999', body: { concept: 'x', amount: 1 } },
+  { method: 'DELETE', path: '/admin/expenses/999999' },
   // Mantenimientos (A15): tocar planes = dinero futuro → admin
   { method: 'POST', path: '/admin/maintenance', body: { customerId: 1, title: 'x', intervalMonths: 12 } },
   { method: 'DELETE', path: '/admin/maintenance/:planId' },
