@@ -17,6 +17,7 @@ import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TE
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -37,12 +38,17 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
   // nadie se enterara. Datos efímeros propios (misma lección que SCRUM-63): nada
   // depende ya del estado del demo.
   const stamp = Date.now();
-  const mkMerchant = (tag, name) =>
-    prisma.merchant.create({
-      data: { name, country: 'ES', email: `qa-${tag}-${stamp}@test.local`, onboardingCompleted: true },
-    });
-  const merchantA = await mkMerchant('a', 'QA Tenancy A (víctima)');
-  const merchantB = await mkMerchant('b', 'QA Tenancy B');
+
+  // SCRUM-113: A y B, y TODO lo que cuelga de ellos, dentro de withMerchant. Antes nacían
+  // fuera del try: el canario, la quote, la factura y el job de A se montaban sin red, y un
+  // fallo a media construcción dejaba dos merchants huérfanos.
+  //
+  // El `.catch()` por operación que tenía el finally NO se pierde: limpiarMerchant aísla
+  // igual cada borrado, y además quita los `event` (que cuelgan de charge, no de merchant)
+  // antes que los charges — que es el paso que le faltaba a clean-staging-tests.mjs.
+  try {
+    await withMerchant(prisma, { name: 'QA Tenancy A (víctima)', email: `qa-a-${stamp}@test.local` }, (merchantA) =>
+      withMerchant(prisma, { name: 'QA Tenancy B', email: `qa-b-${stamp}@test.local` }, async (merchantB) => {
   const tecnico = await prisma.teamMember.create({
     data: { merchantId: merchantB.id, name: 'QA Técnico', email: `qa-tec-${stamp}@test.local`, role: 'tecnico', status: 'active' },
   });
@@ -93,7 +99,6 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
     return cookie;
   };
 
-  try {
     const cookieAdminB = await mkCookie(null);
     const cookieTecnicoB = await mkCookie(tecnico.id);
 
@@ -168,20 +173,10 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
       );
     }
     t.diagnostic(`permisos: ${ADMIN_ONLY_ROUTES.length} rutas admin-only → 403 para técnico ✓`);
+      }));
   } finally {
-    // Limpieza de AMBOS merchants efímeros, hijos antes que padres. Cada borrado con
-    // su .catch(): si uno falla (tabla ausente, FK inesperada) no debe abortar el resto
-    // ni enmascarar el resultado del test — dejar huérfanos es justo lo que ensucia
-    // staging (SCRUM-79).
-    for (const m of [merchantA, merchantB]) {
-      await prisma.authSession.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
-      await prisma.invoice.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
-      await prisma.job.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
-      await prisma.quote.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
-      await prisma.customer.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
-      await prisma.teamMember.deleteMany({ where: { merchantId: m.id } }).catch(() => {});
-    }
-    await prisma.merchant.deleteMany({ where: { id: { in: [merchantA.id, merchantB.id] } } }).catch(() => {});
+    // Solo lo que NO es del merchant: el borrado de datos lo garantiza withMerchant, que
+    // aísla cada operación igual que hacía el .catch() de aquí (SCRUM-113).
     server.close();
     await prisma.$disconnect();
   }
@@ -200,9 +195,11 @@ test('SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo mercha
   const base = `http://127.0.0.1:${server.address().port}`;
 
   const stamp = Date.now();
-  const merchant = await prisma.merchant.create({
-    data: { name: 'QA S23', country: 'ES', email: `qa-s23-${stamp}@test.local`, onboardingCompleted: true },
-  });
+
+  // SCRUM-113: SEGUNDO bloque test() de este fichero, con su propio merchant. La migración
+  // es por bloque, no por fichero (mismo caso que albaran.test.mjs).
+  try {
+    await withMerchant(prisma, { name: 'QA S23', email: `qa-s23-${stamp}@test.local` }, async (merchant) => {
   const mkTecnico = (tag) =>
     prisma.teamMember.create({
       data: {
@@ -231,7 +228,6 @@ test('SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo mercha
     return cookie;
   };
 
-  try {
     const cookieTecA = await mkCookie(tecA.id);
     const cookieAdmin = await mkCookie(null); // owner = admin implícito
     const get = (path, cookie) => fetch(`${base}${path}`, { headers: { cookie } });
@@ -253,12 +249,9 @@ test('SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo mercha
     assert.equal((await get(`/admin/jobs/${jobB.id}`, cookieAdmin)).status, 200, 'el admin accede al detalle de cualquier Trabajo');
 
     t.diagnostic('row-level: técnico solo sus Trabajos · 404 en el ajeno · admin ve todos ✓');
+    });
   } finally {
-    await prisma.authSession.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.job.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.customer.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.teamMember.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.merchant.delete({ where: { id: merchant.id } });
+    // Solo lo que NO es del merchant: el borrado de datos lo garantiza withMerchant.
     server.close();
     await prisma.$disconnect();
   }

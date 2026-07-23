@@ -109,24 +109,21 @@ export const CENSO_MIN = 25;
  * la atomicidad: la regla NO se relaja, lo que cambia es quién la cumple. Con reparto por
  * fichero, quien migra es el único que puede cumplirla.
  */
+// MIGRADOS hasta hoy (23-jul-2026) — 22 de 25. Por tandas:
+//   t1 scrum24 · t2 scrum22 · t3 scrum104, scrum25-exports, scrum25-export-zip, scrum106
+//   t4 pdfs, scrum50, scrum73, scrum76, scrum92 · (scrum94 lo migró la sesión 1)
+//   t5 scrum49, scrum72
+//   t7 scrum57, scrum66, albaran, scrum68, scrum85, scrum90, tenancy-permisos, scrum47
+//
+// `albaran` y `tenancy-permisos` tenían DOS bloques test() cada uno: la migración es por
+// BLOQUE, no por fichero (ver SCRUM-113).
 export const MIGRACION_PENDIENTE = [
-  // tanda 7: albaran (DOS bloques test(), un merchant cada uno — la migración es por
-  //          bloque, no por fichero)
-  'scrum17-recapitulativa.test.mjs',
-  // MIGRADOS — tanda 1: scrum24-operarios-metrics · tanda 2: scrum22-operario-readpath
-  // tanda 3 (exports): scrum104-clientes-referenciados, scrum25-exports, scrum25-export-zip
-  // tanda 4 (grupo A): pdfs, scrum50-bot-albaranes, scrum73-verifactu-gate,
-  //                    scrum76-email-adjunto
-  'scrum47-enviar-albaran-wa.test.mjs',
-  // tanda 5: scrum49-firma-remota · scrum72-pdfs-privados
-  // tanda 7: scrum57-operario-propagacion · scrum66-tipo-operacion ·
-  //          scrum68-evidencias-firma
-  'scrum74-recibo-token.test.mjs',
-  // tanda 7: scrum85-pay-routes-token · scrum90-pay-bank-mp-token (los dos tenían la forma
-  //          mkFixture-antes-del-try de scrum74, la que produjo los 4 huérfanos)
-  // tanda 4 (cont.): scrum92-login-operario · scrum94-register-teammember (sesión 1)
-  'tenancy-permisos.test.mjs',
-  'webhooks-idempotencia.test.mjs',
+  // Los tres que quedan NO son del carril B:
+  'scrum17-recapitulativa.test.mjs',   // consolidación fiscal — con su dueño
+  'scrum74-recibo-token.test.mjs',     // carril A: su throw en el finally es la evidencia
+                                       // que sostiene la hipótesis de SCRUM-79. Migrarlo
+                                       // haría desaparecer el síntoma sin arreglar la causa.
+  'webhooks-idempotencia.test.mjs',    // depende del seed demo (SCRUM-63), sin resolver
 ];
 
 /**
@@ -135,7 +132,7 @@ export const MIGRACION_PENDIENTE = [
  * para que alguien aparque un fichero nuevo sin que nadie se entere. Es la lección literal
  * de SCRUM-103 (el ratchet de rutas se dejó en 25 con 24 entradas).
  */
-// 24 → 23 (t1) → 22 (t2) → 19 (t3) → 13 (t4 + scrum94 sesión 1) → 11 (t5) → 5 (t7)
+// 24 → 23 (t1) → 22 (t2) → 19 (t3) → 13 (t4 + scrum94 sesión 1) → 11 (t5) → 3 (t7)
 //
 // El número salió de CONTAR la lista fusionada, no de elegir rama. Este rebase trajo tres
 // conflictos seguidos en esta línea (16 de la sesión 1 sacando scrum94, contra 15 y 14 del
@@ -143,7 +140,7 @@ export const MIGRACION_PENDIENTE = [
 // una de las dos ramas. Es el escenario exacto que el assert de IGUALDAD EXACTA vino a
 // hacer ruidoso: con `<=` cualquiera de esos números habría pasado en verde, dejando
 // huecos libres.
-export const MIGRACION_MAX = 5;
+export const MIGRACION_MAX = 3;
 
 /**
  * Fecha límite. Pasada, el test falla mientras queden pendientes.
