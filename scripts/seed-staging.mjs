@@ -8,13 +8,16 @@
 //   (email del merchant QA configurable con E2E_QA_EMAIL; default qa@staging.yaqu)
 // ⚠️ SIN datos personales (regla del brief): emails sintéticos del dominio staging.yaqu.
 import { PrismaClient } from '@prisma/client';
+import { assertSafeStagingUrl } from './_db-guard.mjs';
 
 const prisma = new PrismaClient();
 
-// GUARD anti-producción: este seed JAMÁS corre contra la BD de prod.
+// GUARD anti-producción (SCRUM-118: por pertenencia — ver scripts/_db-guard.mjs):
+// este seed JAMÁS corre contra la BD de prod.
 const dbUrl = process.env.DATABASE_URL || '';
-if (dbUrl.includes('autorack.proxy.rlwy.net')) {
-  console.error('❌ DATABASE_URL apunta a PRODUCCIÓN — abortado. Usa la DATABASE_URL de staging.');
+const dbCheck = assertSafeStagingUrl(dbUrl);
+if (!dbCheck.safe) {
+  console.error(`❌ DATABASE_URL no es una URL de staging segura (${dbCheck.reason}) — abortado. Usa la DATABASE_URL de staging.`);
   process.exit(1);
 }
 
