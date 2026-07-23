@@ -488,6 +488,16 @@ Dos consecuencias operativas:
    quede ningún `create` a mano. Es la diferencia entre comprobar el síntoma cómodo (*¿hay import?*)
    y la propiedad (*¿queda algo sin cubrir?*) — ver la regla 5.
 
+**Lección de campaña (SCRUM-125): elige la UNIDAD del contador ANTES de fijar el plazo.** Este
+ratchet cuenta **ficheros**, pero el trabajo real es el **sitio de creación** de merchant
+(`prisma.merchant.create`): un fichero puede tener varios (`albaran` y `tenancy-permisos` tenían 2
+cada uno → ~12% de desvío en el pico, 8 ficheros = 9 sitios). No invalidó el plazo del 31-oct, pero
+por suerte, no por diseño — y se supo tarde, migrando `albaran`. La unidad es una **decisión de
+diseño, no un detalle de implementación**: la próxima campaña con ratchet la fija al abrir, no a
+mitad. (Y que no sea "bloque `test()`": `scrum17` tiene 12 bloques y 1 solo sitio; contar bloques
+sería aún más inexacto. Contar sitios, a su vez, reintroduce la ceguera del detector que SCRUM-103
+combate — por eso, con la campaña cerrada, se documentó en vez de recontar: SCRUM-125.)
+
 > **Coordinación (regla del canal) — ACTUALIZADA por SCRUM-84 (23-jul-2026).**
 >
 > **Ya NO hay que pedir ventana para correr los gateados.** Cada carril tiene su propia base
