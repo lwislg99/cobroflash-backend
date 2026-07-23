@@ -95,6 +95,11 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // pago: si algún día hay que limitarlo, es una cuota, no un permiso de rol.
   { method: 'POST', path: '/admin/ai/suggest-quote', why: 'Ayuda a montar el presupuesto (su trabajo)' },
   { method: 'POST', path: '/admin/ai/quote-message', why: 'Ayuda a redactar el mensaje del presupuesto' },
+
+  // Gastos — SCRUM-107. El fundador partió el router POR VERBO: CREAR es campo, LEER el
+  // conjunto no. Solo estas dos quedan abiertas; las otras cinco llevan requireRole.
+  { method: 'POST', path: '/admin/expenses', why: 'SCRUM-107: compra material en el almacén y lo registra desde la furgoneta' },
+  { method: 'GET',  path: '/admin/expenses/categories', why: 'SCRUM-107: lista estática que necesita el formulario de alta; sin datos del negocio' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -122,16 +127,10 @@ export interface PendingDeclaration {
 }
 
 export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
-  // TANDA 2 — economía del negocio. Aquí está la ÚNICA duda de producto real:
-  // ¿un Operario registra gastos de material desde la furgoneta? Si sí, /admin/expenses
-  // es flujo de campo y no se puede cerrar sin más. Decisión del fundador, no mía.
-  { method: 'GET',    path: '/admin/expenses', tanda: 2, duda: '¿el operario registra gastos de material en obra? Si no, admin' },
-  { method: 'POST',   path: '/admin/expenses', tanda: 2, duda: 'Ídem: alta de gasto desde la furgoneta' },
-  { method: 'PUT',    path: '/admin/expenses/:id', tanda: 2, duda: 'Ídem' },
-  { method: 'DELETE', path: '/admin/expenses/:id', tanda: 2, duda: 'Ídem, pero borrar gasto huele más a admin' },
-  { method: 'GET',    path: '/admin/expenses/summary', tanda: 2, duda: 'Totales de gasto del mes: economía del negocio → probable admin' },
-  { method: 'GET',    path: '/admin/expenses/categories', tanda: 2, duda: 'Lista estática de categorías; inofensiva, pero va con su router' },
-  { method: 'GET',    path: '/admin/expenses/margin/:quoteId', tanda: 2, duda: 'MARGEN DE BENEFICIO por presupuesto → casi seguro admin' },
+  // TANDA 2 — economía del negocio.
+  // /admin/expenses SALIÓ de aquí en SCRUM-107: era la única duda de producto real y la
+  // resolvió el fundador partiendo el router POR VERBO (crear ✅ / leer 🔒), no en bloque.
+  // Las 7 rutas están ahora declaradas: 2 abajo en TECNICO_ALLOWED, 5 con requireRole.
 
   { method: 'GET', path: '/admin/metrics/home', tanda: 2, duda: 'KPIs de ingresos del negocio → probable admin' },
   { method: 'GET', path: '/admin/metrics/funnel', tanda: 2, duda: 'Embudo comercial → probable admin' },
@@ -161,14 +160,16 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
  * 25 → 24 (SCRUM-55): sale /admin/metrics/team, cerrada con requireRole tras verla en 200
  * contra PRODUCCIÓN con sesión de Operario.
  *
- * BAJAR EL TOPE VA EN EL MISMO COMMIT QUE SACA LA ENTRADA, siempre. La lista estaba en
- * 25/25 — en el límite exacto, sin holgura — que es lo que hace que el ratchet muerda.
- * Dejarlo en 25 con 24 entradas NO pone el test en rojo: lo deja en verde con un hueco
- * libre para aparcar la siguiente sin que nadie se entere. El ratchet no protege por
- * existir, protege por ir apretado; un tope con holgura es el descuadre silencioso que
- * este fichero existe para evitar (ver SCRUM-103 sobre qué más no valida).
+ * 24 → 17 (SCRUM-107): salen las 7 de /admin/expenses, clasificadas por verbo.
+ *
+ * BAJAR EL TOPE VA EN EL MISMO COMMIT QUE SACA LAS ENTRADAS, siempre. La lista va
+ * SIEMPRE al límite exacto, sin holgura — es eso lo que hace que el ratchet muerda.
+ * Dejarlo en 24 con 17 entradas NO pone el test en rojo: lo deja en verde con SIETE
+ * huecos libres para aparcar sin que nadie se entere. El ratchet no protege por existir,
+ * protege por ir apretado; un tope con holgura es el descuadre silencioso que este
+ * fichero existe para evitar (ver SCRUM-103 sobre qué más no valida).
  */
-export const PENDIENTE_MAX = 24;
+export const PENDIENTE_MAX = 17;
 
 /**
  * Fecha límite. Pasada esta fecha el test FALLA mientras queden pendientes.

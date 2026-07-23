@@ -3,11 +3,27 @@ import {
   listExpenses, createExpense, updateExpense, deleteExpense,
   getExpenseSummary, getQuoteMargin, EXPENSE_CATEGORIES,
 } from '../../domain/expenses.service';
+import { requireRole } from '../../../../core/http/authMiddleware';
 
 const router = Router();
 
+// SCRUM-107 (D del fundador): este router se PARTE POR VERBO, no se cierra en bloque.
+// Crear un gasto es trabajo de campo (compra un codo de 12 € en el almacén y lo registra
+// desde la furgoneta; cerrarlo le obliga a llamar al jefe). Leer el conjunto NO lo es:
+// la lista completa, los totales del mes y el margen por presupuesto son economía del
+// negocio. De ahí que POST y /categories queden abiertos y las cinco de lectura/escritura
+// sobre gasto ajeno vayan a admin.
+//
+// PUT y DELETE son admin en V1 por una limitación de datos, no por criterio: Expense NO
+// tiene campo de autoría (ni teamMemberId ni operarioId), así que no hay forma de
+// distinguir "su gasto" del de un compañero. Abrirlos dejaría a cualquier técnico editar
+// o borrar el gasto de otro. INCOHERENCIA ASUMIDA Y REPORTADA: puede crear el gasto pero
+// no corregir el importe que tecleó mal — la fricción se traslada del alta a la
+// corrección. Se levanta cuando exista el campo (ver el ticket de Expense.teamMemberId,
+// bloqueante de la V2 con patrón row-level tipo SCRUM-23).
+
 // GET /admin/expenses?month=2026-05&category=materiales&quoteId=5
-router.get('/', async (req, res) => {
+router.get('/', requireRole('admin'), async (req, res) => {
   try {
     const { month, category, quoteId } = req.query;
     const items = await listExpenses(req.merchantId, {
@@ -23,7 +39,7 @@ router.get('/', async (req, res) => {
 });
 
 // GET /admin/expenses/summary?month=2026-05
-router.get('/summary', async (req, res) => {
+router.get('/summary', requireRole('admin'), async (req, res) => {
   try {
     const month = req.query.month ? String(req.query.month) : undefined;
     const summary = await getExpenseSummary(req.merchantId, month);
@@ -40,7 +56,7 @@ router.get('/categories', (_req, res) => {
 });
 
 // GET /admin/expenses/margin/:quoteId
-router.get('/margin/:quoteId', async (req, res) => {
+router.get('/margin/:quoteId', requireRole('admin'), async (req, res) => {
   try {
     const quoteId = Number(req.params.quoteId);
     if (!Number.isFinite(quoteId)) return res.status(400).json({ error: 'invalid_id' });
@@ -80,7 +96,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /admin/expenses/:id
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ error: 'invalid_id' });
@@ -106,7 +122,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /admin/expenses/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ error: 'invalid_id' });

@@ -47,6 +47,13 @@ async function initApp() {
     // A1.3: Configuración es solo del admin (datos fiscales, IBAN, umbrales)
     const settingsNav = document.querySelector('.nav-item[data-view="settings"]');
     if (settingsNav) settingsNav.style.display = 'none';
+    // SCRUM-107: Gastos se oculta porque la PANTALLA no es para el técnico — lista
+    // completa, totales del mes y margen son economía del negocio, y sus 403 dejarían
+    // la vista medio rota (loadSummary traga el error en un catch vacío). Crear un gasto
+    // SÍ es suyo: POST /admin/expenses sigue abierto y el endpoint queda listo para el
+    // alta rápida, que no se construye hasta que exista Expense.teamMemberId.
+    const expensesNav = document.querySelector('.nav-item[data-view="expenses"]');
+    if (expensesNav) expensesNav.style.display = 'none';
   }
 
   // Badge de solicitudes pendientes
