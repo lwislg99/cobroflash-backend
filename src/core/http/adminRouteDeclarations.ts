@@ -140,7 +140,6 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
 
   // TANDA 3 — configuración y datos en bloque. Ninguna es flujo de campo evidente;
   // se aparcan por volumen y porque tocarlas mueve el nav del dashboard.
-  { method: 'GET',    path: '/admin/products/export', tanda: 3, duda: 'Es un EXPORT del tarifario; S1 dice exports ❌ → admin' },
   { method: 'POST',   path: '/admin/products/import', tanda: 3, duda: 'Reescribe el tarifario en bloque → admin' },
   { method: 'POST',   path: '/admin/products/load-catalog', tanda: 3, duda: 'Ídem, carga catálogo entero' },
   { method: 'POST',   path: '/admin/customers/import', tanda: 3, duda: 'Alta masiva de clientes → probable admin' },
@@ -161,6 +160,8 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
  * contra PRODUCCIÓN con sesión de Operario.
  *
  * 24 → 17 (SCRUM-107): salen las 7 de /admin/expenses, clasificadas por verbo.
+ * 17 → 16 (SCRUM-103): sale /admin/products/export. No la sacó una revisión humana:
+ * la cazó el assert nuevo, porque su propia "duda" decía que S1 ya lo había decidido.
  *
  * BAJAR EL TOPE VA EN EL MISMO COMMIT QUE SACA LAS ENTRADAS, siempre. La lista va
  * SIEMPRE al límite exacto, sin holgura — es eso lo que hace que el ratchet muerda.
@@ -169,7 +170,7 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
  * protege por ir apretado; un tope con holgura es el descuadre silencioso que este
  * fichero existe para evitar (ver SCRUM-103 sobre qué más no valida).
  */
-export const PENDIENTE_MAX = 17;
+export const PENDIENTE_MAX = 16;
 
 /**
  * Fecha límite. Pasada esta fecha el test FALLA mientras queden pendientes.
