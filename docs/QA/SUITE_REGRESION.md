@@ -230,6 +230,48 @@ Las tres reglas que salen de ahí, para cualquier test, assert o check nuevo:
    edición como única diferencia. Cuesta una ejecución y convierte «no creo que sea mío» en
    «no es mío, y aquí está la prueba».
 
+### La conclusión de las seis reglas: mueve la garantía de la disciplina al mecanismo
+
+Las reglas de arriba son útiles, pero el 23-jul-2026 falló **una regla que estaba bien escrita y
+que se cumplió**. Merece la pena entender por qué, porque decide cómo se escribe la siguiente
+salvaguarda.
+
+**Tres formas del mismo problema, en un solo día:**
+
+* **El recordatorio del LEEME** — la salvaguarda **existía y apuntaba mal**. Comprobaba el texto,
+  no el criterio: cambiar el filtro y olvidar la descripción pasaba en verde. Disparaba solo
+  cuando ya habías hecho lo correcto (SCRUM-106/108).
+* **El canario del ZIP** — **nació incapaz de fallar**. Buscaba una cadena en bytes comprimidos;
+  con la fuga dentro daba verde igual (SCRUM-111).
+* **`scrum106-trabajos-fecha`** — **la regla estaba bien escrita, se cumplió, y no cubría el
+  caso**. El runbook pedía limpiar en `finally` con `.catch()` por operación, y así se hizo. Lo
+  que la regla no podía decir es **dónde crear el merchant**: eso no era una regla, era una
+  **forma**. Entre el `create` y el `try` quedó una ventana sin red.
+
+**En las tres, lo que aguantó fue mover la garantía de la disciplina al mecanismo:** una constante
+única de la que derivan filtro y texto, para que no puedan divergir; leer el contenido
+descomprimido, para que el canario pueda ver lo que vigila; un helper `withMerchant` que mete el
+montaje dentro de la red por construcción.
+
+> **Una regla protege desde que la lees; un mecanismo protege también hacia atrás.**
+
+El ratchet de SCRUM-113 cazó un fichero escrito **antes de que el helper existiera**. Ninguna regla
+puede hacer eso: quien escribió aquel test no tenía nada que leer. Por eso, cuando una salvaguarda
+se pueda expresar como mecanismo —una constante compartida, un helper que envuelve, un tipo que no
+compila mal— **prefiérelo a documentarla aquí**. Este runbook es la red de lo que todavía no se ha
+podido convertir en mecanismo, no el sitio donde se resuelven las cosas.
+
+**Corolario para los detectores:** el ratchet marcó ese fichero aunque su fuga **no fuera
+alcanzable** —entre el `create` y el `try` solo había cuatro `const` de fechas, que no lanzan—.
+Está bien así: cazó el **patrón**, no un escape vivo. Esas cuatro líneas inertes son exactamente
+donde alguien mete mañana un `customer.create`, y ese día sí hay fuga sin que nadie note que el
+fichero cruzó una frontera.
+
+> **Un detector que solo saltara con exposición demostrable llegaría siempre tarde.**
+
+Al calibrar un detector, cuenta esto junto con la regla 4: el falso positivo por patrón es barato
+—se migra el fichero— y el falso negativo se paga en producción.
+
 > **Coordinación (regla del canal):** la suite y el seed **resetean la BD del merchant QA**.
 > Avisa por el canal antes de lanzarla — solo uno a la vez. `tests/` es **zona compartida**:
 > avisar antes de tocarlo (SCRUM-78 y SCRUM-79 arreglaron el mismo fichero el mismo día sin
