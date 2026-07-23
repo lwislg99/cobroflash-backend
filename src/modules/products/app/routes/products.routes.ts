@@ -7,6 +7,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { getTradeCatalog } from '../../../../core/data/tradeCatalogs';
 import { getCatalogFile, midPrice, orientativoLabel } from '../../../../core/data/catalogLoader';
 import { getLocale } from '../../../../core/i18n/locales';
+import { requireRole } from '../../../../core/http/authMiddleware';
 
 const router = Router();
 
@@ -128,7 +129,12 @@ router.get('/autocomplete', async (req, res) => {
   }
 });
 
-router.get('/export', async (req, res) => {
+// SCRUM-103: EXPORT del tarifario completo. S1 marca los exports como ❌ para Técnico
+// y el resto ya estaban cerrados (/admin/exports/*.csv); esta se quedó fuera y siguió
+// aparcada en PENDIENTE_CLASIFICAR con una "duda" que decía, ella misma, que S1 ya lo
+// había decidido. La cazó el assert 2 de SCRUM-103 sobre datos reales — segundo caso
+// del patrón de metrics/team, no un sabotaje de prueba.
+router.get('/export', requireRole('admin'), async (req, res) => {
   try {
     const csv = await exportProductsCsv(req.merchantId);
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');

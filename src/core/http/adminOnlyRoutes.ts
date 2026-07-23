@@ -49,6 +49,9 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   // Mantenimientos (A15): tocar planes = dinero futuro → admin
   { method: 'POST', path: '/admin/maintenance', body: { customerId: 1, title: 'x', intervalMonths: 12 } },
   { method: 'DELETE', path: '/admin/maintenance/:planId' },
+  // SCRUM-103: export del TARIFARIO. S1 marca exports ❌; los demás ya estaban aquí y
+  // esta se quedó fuera, aparcada con una "duda" que citaba S1 como decidido.
+  { method: 'GET', path: '/admin/products/export' },
   // SCRUM-73: exportar el registro fiscal RRSIF/VeriFactu no es acción de Técnico
   { method: 'GET', path: '/admin/exports/verifactu.xml' },
   // SCRUM-25 (S1): TODO el export es admin — se lleva datos personales de los clientes

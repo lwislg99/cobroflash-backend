@@ -91,6 +91,22 @@ Las tres reglas que salen de ahí, para cualquier test, assert o check nuevo:
    (que toda ruta declare rol, que una lista no crezca) va en la suite normal. Una red que solo
    funciona cuando alguien se acuerda de levantarla no es una red.
 
+4. **Calíbralo contra los datos REALES antes de darlo por bueno, y ante la duda prefiere el
+   falso negativo.** Un assert nuevo se prueba contra todo lo que ya hay en el repo, no solo
+   contra el caso que lo motivó. En SCRUM-103 el assert propuesto en el ticket exigía que cada
+   entrada aparcada formulase una pregunta: **0 de las 17 entradas reales llevaban signo de
+   interrogación**. Habría puesto la build en rojo con todo el trabajo legítimo ya aparcado.
+
+   Y ese es el fallo peor de los dos. Un **falso negativo** (se cuela algo flojo) cuesta un caso
+   sin detectar. Un **falso positivo** — rojo con trabajo legítimo — hace que alguien **relaje el
+   test para poder seguir**, y a partir de ahí no detecta nada nunca más. Un test relajado para
+   seguir es exactamente cómo empezó esta lista de seis casos.
+
+   Corolario: si al calibrar contra los datos reales una entrada falla, **antes de tocar el assert
+   hay que mirar si el dato es el que está mal**. En SCRUM-103, la única de 17 que falló era un
+   agujero de permisos vivo en producción (`GET /admin/products/export`, el tarifario completo
+   descargable por un Técnico), no un falso positivo.
+
 > **Coordinación (regla del canal):** la suite y el seed **resetean la BD del merchant QA**.
 > Avisa por el canal antes de lanzarla — solo uno a la vez. `tests/` es **zona compartida**:
 > avisar antes de tocarlo (SCRUM-78 y SCRUM-79 arreglaron el mismo fichero el mismo día sin

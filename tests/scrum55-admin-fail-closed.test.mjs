@@ -217,3 +217,101 @@ test('SCRUM-55: la lista de pendientes mengua (ratchet + caducidad)', (t) => {
     t.diagnostic(`pendientes: ${PENDIENTE_CLASIFICAR.length} (tanda 2: ${t2} · tanda 3: ${t3}) · plazo ${REVISAR_ANTES_DE}`);
   }
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCRUM-103 — el ratchet CONTABA, pero no miraba lo que contaba.
+//
+// El ratchet y la caducidad tratan la lista como un número: cuántas hay y desde
+// cuándo. Ninguno leía el campo `duda`, que es lo ÚNICO que justifica que una ruta
+// esté aparcada en vez de decidida. Así se coló GET /admin/metrics/team con este
+// texto literal:
+//
+//   duda: 'S1 dice "equipo ❌ Técnico" EXPLÍCITO → admin; confirmado 200 en prod'
+//
+// Una entrada de la lista de "sin clasificar" que afirmaba, ella misma, que NO había
+// nada que clasificar Y que la ruta estaba abierta en producción. 25 ≤ 25, verde,
+// y siguió sirviendo 200 a un Operario hasta el día siguiente.
+//
+// ⚠️ ESTAS HEURÍSTICAS SON BURLABLES A PROPÓSITO. Se saltan escribiendo una duda
+// falsa que suene bien, y eso ESTÁ ACEPTADO: el objetivo NO es frenar a quien quiera
+// engañar al test — eso es imposible con texto libre y quien lo intente abandonará.
+// El objetivo es que aparcar una ruta CUESTE REDACTAR POR QUÉ, que es exactamente el
+// paso que no se dio con metrics/team. Quien escriba una justificación falsa está
+// mintiendo por escrito y con su nombre en el blame; quien no encuentra qué escribir
+// descubre que no tenía una duda, tenía una tarea sin hacer.
+//
+// NO endurecer esto buscando infalibilidad. Si un día hay que elegir, prefiérase un
+// falso NEGATIVO (se cuela una duda floja) a un falso POSITIVO (rojo con trabajo
+// legítimo aparcado): lo segundo hace que alguien relaje el test para seguir, y un
+// test relajado para seguir es cómo empezó todo esto.
+
+/** Abreviatura de referencia a la entrada anterior. Legal SI tiene referente. */
+const REF_A_LA_ANTERIOR = /^(í|i)dem\.?$/i;
+
+/**
+ * Cita el máster como YA DECIDIDO. Si S1 lo decidió, no es una duda: es una ruta
+ * pendiente de gatear. Deliberadamente estrecho ("S1 dice/marca/dispone", "EXPLÍCITO")
+ * para no pillar hedges legítimos del tipo "S1 no dice nada de esto".
+ */
+const CITA_S1_COMO_DECIDIDO = /S1\s+(dice|marca|dispone)|EXPL[IÍ]CITO/i;
+
+/** Afirma que la ruta ya se vio abierta en producción. Eso es un incidente. */
+const CONFIRMADA_ABIERTA_EN_PROD = /confirmad[oa][^.;]*prod|200 en prod|abiert[ao] en producci/i;
+
+/**
+ * Suelo de sustancia. La duda real más corta de la lista tiene 27 caracteres; 20 deja
+ * margen holgado a las legítimas y rechaza los rellenos tipo "admin", "TODO", "luego".
+ */
+const MIN_DUDA = 20;
+
+test('SCRUM-103: cada pendiente justifica por qué sigue sin decidir', () => {
+  PENDIENTE_CLASIFICAR.forEach((r, i) => {
+    const duda = String(r.duda || '').trim();
+    const donde = `${r.method} ${r.path} (tanda ${r.tanda})`;
+
+    // 1 · SUSTANCIA — aparcar cuesta redactar por qué.
+    if (REF_A_LA_ANTERIOR.test(duda)) {
+      // "Ídem" es legal: ahorra repetir el mismo motivo en un bloque contiguo. Pero
+      // necesita REFERENTE — un "Ídem" sin nada delante no dice nada, y es lo que
+      // queda cuando alguien reordena la lista o saca la entrada a la que apuntaba.
+      const referente = PENDIENTE_CLASIFICAR.slice(0, i)
+        .reverse()
+        .find((p) => !REF_A_LA_ANTERIOR.test(String(p.duda || '').trim()));
+      assert.ok(
+        referente,
+        `\n\n🔴 "${duda}" sin referente: ${donde}\n` +
+          `   Es la primera entrada de la lista o todas las anteriores son también "Ídem",\n` +
+          `   así que no remite a ningún motivo. Escribe el motivo entero aquí.\n`,
+      );
+    } else {
+      assert.ok(
+        duda.length >= MIN_DUDA,
+        `\n\n🔴 Duda demasiado corta para justificar nada: ${donde}\n` +
+          `   duda: "${duda}" (${duda.length} < ${MIN_DUDA} caracteres)\n\n` +
+          `Aparcar una ruta CUESTA redactar por qué sigue sin decidir. Si no encuentras\n` +
+          `qué escribir, no tienes una duda: tienes una tarea sin hacer. Decláralas\n` +
+          `(requireRole o TECNICO_ALLOWED) en vez de aparcarla.\n`,
+      );
+    }
+
+    // 2 · LO QUE EL MÁSTER YA DECIDIÓ NO SE APARCA.
+    assert.ok(
+      !CITA_S1_COMO_DECIDIDO.test(duda),
+      `\n\n🔴 Esta "duda" dice que S1 ya lo decidió — entonces no es una duda: ${donde}\n` +
+        `   duda: "${duda}"\n\n` +
+        `Si el máster la clasificó, la ruta va a requireRole (o a TECNICO_ALLOWED con su\n` +
+        `motivo), NO a la lista de sin clasificar. Este es el fallo exacto de\n` +
+        `GET /admin/metrics/team: se aparcó una entrada que citaba S1 como explícito y\n` +
+        `siguió abierta en producción un día más (SCRUM-55 → SCRUM-103).\n`,
+    );
+
+    // 3 · LO CONFIRMADO ABIERTO EN PRODUCCIÓN ES UN INCIDENTE, NO UN PENDIENTE.
+    assert.ok(
+      !CONFIRMADA_ABIERTA_EN_PROD.test(duda),
+      `\n\n🔴 Esta "duda" dice que la ruta ya se vio ABIERTA EN PRODUCCIÓN: ${donde}\n` +
+        `   duda: "${duda}"\n\n` +
+        `Eso no es algo pendiente de clasificar: es un agujero confirmado, y aparcarlo lo\n` +
+        `deja servido. Ciérralo con requireRole y verifica el 403 en producción.\n`,
+    );
+  });
+});
