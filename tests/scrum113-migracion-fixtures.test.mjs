@@ -130,8 +130,24 @@ export const CENSO_MIN = 25;
 //   t5 scrum49, scrum72
 //   t7 scrum57, scrum66, albaran, scrum68, scrum85, scrum90, tenancy-permisos, scrum47
 //
-// `albaran` y `tenancy-permisos` tenían DOS bloques test() cada uno: la migración es por
-// BLOQUE, no por fichero (ver SCRUM-113).
+// ── SCRUM-125 · LA UNIDAD DEL CONTADOR: FICHEROS, NO SITIOS DE CREACIÓN ──────────────────
+// `MIGRACION_PENDIENTE.length` (y `MIGRACION_MAX`) cuentan FICHEROS. La unidad REAL de trabajo es
+// el SITIO de creación manual de merchant (los `create`/`createMany`/`upsert` que caza el regex
+// `CREA_A_MANO`; NO se escribe aquí junto, o este mismo fichero se auto-clasificaría `manual` — el
+// detector lee TODOS los `tests/*.test.mjs`, incluido éste). Un fichero puede tener varios:
+// `albaran` y `tenancy-permisos` tenían 2 cada uno → en el pico, 8 ficheros pendientes eran
+// 9 sitios (~12% de desvío). HOY el desvío es 0: los 3 pendientes tienen 1 sitio cada uno (medido,
+// no estimado — ojo: scrum17 tiene 12 bloques `test()` pero UN solo sitio, así que "contar bloques"
+// sería aún MÁS inexacto que contar ficheros).
+//
+// POR QUÉ SE APROXIMA A PROPÓSITO — no lo "arregles" contando sitios:
+//  · La CONTENCIÓN (un fichero nuevo con el patrón viejo sale rojo el primer día) y el DETECTOR
+//    (un fichero a medias sigue marcando `manual` y NO puede salir de la lista) trabajan POR
+//    FICHERO — les da igual la unidad. Solo la lectura humana de «cuánto queda» se resiente, y solo
+//    durante una campaña VIVA. Ésta está cerrada (22/25, quedan 3, todos de 1 sitio).
+//  · Contar sitios obliga a pasar el detector de booleano a contador de matches, y `createMany`
+//    (1 llamada / N merchants), los bucles y las factories NO casan → reintroduce la CEGUERA que
+//    este fichero existe para evitar (SCRUM-103). Campaña cerrada: payoff cero, downside real.
 export const MIGRACION_PENDIENTE = [
   // Los tres que quedan NO son del carril B:
   'scrum17-recapitulativa.test.mjs',   // consolidación fiscal — con su dueño
