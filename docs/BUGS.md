@@ -220,10 +220,12 @@
   colisión Merchant/TeamMember con el mismo email es posible pero rara (gana el Merchant, se
   comprueba primero); rate-limit (`loginLimiter`) ya cubre la rama nueva sin cambios (envuelve
   toda la ruta `/auth/login`, antes de llamar a `requestMagicLink`).
-- **Hallazgo colateral NO corregido:** `registerMerchant` (`/auth/register`) solo comprueba
-  `Merchant.email`, nunca `TeamMember.email` — un operario podría "registrarse" con su propio
-  email de operario y crear un Merchant nuevo bajo el mismo email (la misma colisión, pero
-  auto-inducida). Fuera del alcance pedido (el ticket y la tarea eran sobre `/auth/login`).
+- **Hallazgo colateral — CORREGIDO en SCRUM-94 (23-jul-2026):** `registerMerchant` (`/auth/register`)
+  solo comprobaba `Merchant.email`, nunca `TeamMember.email` — un operario podía "registrarse" con su
+  propio email y crear un Merchant nuevo bajo el mismo email (la misma colisión, pero auto-inducida),
+  perdiendo su acceso como operario. Fix (opción 1): si el email es un `TeamMember` no suspendido y no
+  es Merchant → **409 `email_belongs_to_team`** con mensaje claro pero genérico (sin revelar la
+  empresa), sin crear merchant fantasma. Ver la entrada de SCRUM-94 en `YAQU_MASTER.md`.
 
 ### [x] P0-1 · Pago con tarjeta devuelve 401 Unauthorized
 - **Síntoma:** al pulsar "Pagar con tarjeta" en `/pay/invoice/:id` navega a `/pay/card/:id` y devuelve 401 (body "Unauthorized"). El cliente no puede pagar.
