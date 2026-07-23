@@ -10,7 +10,17 @@ import { calcVatBreakdown } from '../../invoicing/domain/vat.service';
 import { estadoCobroFor } from '../../jobs/domain/job.service';
 
 export interface Rango { from: Date | null; to: Date | null }
-export interface CsvData { header: string[]; rows: string[] }
+export interface CsvData {
+  header: string[];
+  rows: string[];
+  /**
+   * SCRUM-104 (fase 2): los `customerId` de las filas que este builder acaba de cargar.
+   * Solo lo rellenan los builders de EVENTOS (facturas, cobros, trabajos, presupuestos);
+   * sirve para que el paquete sepa a QUÉ clientes apuntan sus documentos SIN una consulta
+   * extra — los ids ya venían en las filas, solo hacía falta no tirarlos.
+   */
+  customerIds?: number[];
+}
 
 // ── Formato CSV (SCRUM-86) — OPTIMIZADO PARA ESPAÑA, no universal ─────────
 // Excel usa el "separador de lista" del sistema, no una coma fija: con configuración
@@ -66,25 +76,83 @@ function whereRango(merchantId: number, { from, to }: Rango, campo = 'createdAt'
 
 const dia = (d: Date) => d.toISOString().slice(0, 10);
 
+/**
+ * `customerId` de unas filas ya cargadas, sin nulos ni repetidos (SCRUM-104).
+ * ⚠️ `Charge.customerId` es `Int?` (en Quote/Invoice/Job es obligatorio): sin filtrar,
+ * un cobro sin cliente metería `null` en el `in` de la consulta.
+ */
+const idsDe = (filas: Array<{ customerId?: number | null }>): number[] =>
+  [...new Set(filas.map((f) => f.customerId).filter((id): id is number => typeof id === 'number'))];
+
 // ── clientes.csv ──────────────────────────────────────────────────────────
+// ⚠️ HAY DOS CRITERIOS A PROPÓSITO, y no es una inconsistencia pendiente de unificar
+// (SCRUM-104, decisión del fundador). Los dos ficheros se llaman igual y responden a
+// preguntas distintas:
+//
+//   · `buildClientes`  → GET /admin/exports/customers.csv (SUELTO). "Tus datos son
+//     tuyos" (R11): es TU cartera, y filtrarla por fecha de alta tiene sentido.
+//
+//   · `buildClientesReferenciados` → el clientes.csv DEL PAQUETE ZIP. Responde a
+//     "estos son mis documentos del periodo y a quién corresponden". Filtrar por alta
+//     aquí deja facturas huérfanas: el asesor ve el importe y no sabe de quién es.
+//
+// Si vienes a "arreglar" esta divergencia: no lo hagas sin releer SCRUM-104. Unificarlas
+// rompe uno de los dos usos, y cuál se rompe depende de por cuál unifiques.
+const CLIENTES_HEADER = [
+  'Nombre', 'Razón social', 'NIF/CIF', 'Teléfono', 'Email', 'Notas', 'Baja WhatsApp',
+  // SCRUM-104 (D3): la fecha de alta es DATO, no interpretación. En un paquete de julio
+  // de 2026, un `2020-03-14` se explica solo: el asesor entiende que ese cliente entró
+  // por sus documentos, no por haberse dado de alta en el periodo. Un flag "por
+  // referencia" habría que explicarlo, y mantener esa explicación al día.
+  'Fecha de alta',
+];
+
+const clienteRow = (c: any) => csvRow([
+  c.name,
+  c.legalName ?? '',
+  c.taxId ?? '',
+  c.phone ?? '',
+  c.email ?? '',
+  c.notes ?? '',
+  c.waOptOut ? 'Sí' : 'No',
+  dia(c.createdAt),
+]);
+
+/** SUELTO (R11): la cartera del merchant, acotada por FECHA DE ALTA. Ver el bloque de arriba. */
 export async function buildClientes(merchantId: number, rango: Rango): Promise<CsvData> {
   const customers = await prisma.customer.findMany({
     where: whereRango(merchantId, rango),
     orderBy: { createdAt: 'asc' },
   });
-  return {
-    header: ['Nombre', 'Razón social', 'NIF/CIF', 'Teléfono', 'Email', 'Notas', 'Baja WhatsApp', 'Alta'],
-    rows: customers.map((c) => csvRow([
-      c.name,
-      (c as any).legalName ?? '',
-      (c as any).taxId ?? '',
-      c.phone ?? '',
-      c.email ?? '',
-      c.notes ?? '',
-      c.waOptOut ? 'Sí' : 'No',
-      dia(c.createdAt),
-    ])),
-  };
+  return { header: CLIENTES_HEADER, rows: customers.map(clienteRow) };
+}
+
+/**
+ * DEL PAQUETE (SCRUM-104 fase 2): exactamente los clientes a los que apuntan los
+ * documentos del rango — ni uno más, ni uno menos.
+ *
+ * · Ni uno MENOS: sin esto, una factura de un cliente dado de alta antes del rango
+ *   quedaba huérfana en el paquete.
+ * · Ni uno MÁS: meter toda la cartera exportaría datos personales de clientes AJENOS
+ *   al periodo solicitado, que es justo lo que S4/RGPD no quiere.
+ *
+ * `ids` sale de los `customerId` que los builders de eventos ya traían cargados, así que
+ * esto NO añade consultas: sustituye la de `buildClientes`, no se suma a ella.
+ */
+export async function buildClientesReferenciados(merchantId: number, ids: number[]): Promise<CsvData> {
+  // Sin documentos en el rango no hay a quién referenciar: se devuelve el CSV con su
+  // cabecera y sin filas. NO se consulta con `in: []` (devolvería vacío igual, pero
+  // gastando una ida y vuelta para preguntar por nada).
+  if (ids.length === 0) return { header: CLIENTES_HEADER, rows: [] };
+
+  const customers = await prisma.customer.findMany({
+    // `merchantId` NO es redundante con el `in` (regla 2): los ids vienen de documentos
+    // ya acotados al merchant, pero el filtro se repite aquí para que la tenencia no
+    // dependa de que quien llame lo haya hecho bien.
+    where: { merchantId, id: { in: ids } },
+    orderBy: { createdAt: 'asc' },
+  });
+  return { header: CLIENTES_HEADER, rows: customers.map(clienteRow) };
 }
 
 // ── facturas.csv ──────────────────────────────────────────────────────────
@@ -97,6 +165,7 @@ export async function buildFacturas(merchantId: number, rango: Rango, status = '
     include: { customer: { select: { name: true, email: true } } },
   });
   return {
+    customerIds: idsDe(invoices), // SCRUM-104: ya venían en las filas
     header: ['Número', 'Fecha', 'Cliente', 'Email cliente', 'Base', 'IVA', 'Total', 'Moneda', 'Estado', 'Pagada en', 'VeriFactu'],
     rows: invoices.map((inv) => {
       const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
@@ -128,6 +197,7 @@ export async function buildCobros(merchantId: number, rango: Rango, status = 'al
     include: { customer: { select: { name: true } } },
   });
   return {
+    customerIds: idsDe(charges), // SCRUM-104: OJO, Charge.customerId es nullable
     header: ['Cobro #', 'Fecha', 'Cliente', 'Concepto', 'Importe', 'Moneda', 'Método (paid_via)', 'Estado', 'Cobrado en', 'Referencia'],
     rows: charges.map((ch) => csvRow([
       ch.id,
@@ -161,6 +231,7 @@ export async function buildTrabajos(merchantId: number, rango: Rango, status = '
   const operarioName = new Map(members.map((m) => [m.id, m.name]));
 
   return {
+    customerIds: idsDe(jobs), // SCRUM-104
     header: ['Trabajo #', 'Título', 'Estado', 'Cliente', 'Operario', 'Fecha prevista', 'Total aceptado', 'Total cobrado', 'Pendiente', 'Estado de cobro', 'Alta'],
     rows: jobs.map((j) => {
       const aceptado = j.totalAceptado != null ? Number(j.totalAceptado) : 0;
@@ -191,6 +262,7 @@ export async function buildPresupuestos(merchantId: number, rango: Rango, status
     include: { customer: { select: { name: true, email: true, phone: true } } },
   });
   return {
+    customerIds: idsDe(quotes), // SCRUM-104
     header: ['ID', 'Fecha', 'Cliente', 'Email', 'Teléfono', 'Total', 'Moneda', 'Estado', 'Aceptada en', 'Condiciones de pago'],
     rows: quotes.map((q) => csvRow([
       q.id,
@@ -314,7 +386,11 @@ export function construirLeeme(p: {
   // presupuesto) tienen fecha propia y filtrar por ella es correcto. `clientes` es una
   // ENTIDAD: su fecha es la de ALTA, que no dice nada de cuándo se le facturó.
   const criterios = [
-    `  clientes.csv       Clientes dados de ALTA en ${periodo}.`,
+    // OJO al "de + el": esta línea es la única que necesita la preposición delante del
+    // periodo, así que se escribe entera en cada caso en vez de concatenar (y salir "de el").
+    acotado
+      ? '  clientes.csv       Los clientes a los que corresponden los documentos del periodo.'
+      : '  clientes.csv       Todos los clientes con algún documento en tu histórico.',
     `  facturas.csv       Facturas emitidas en ${periodo}.`,
     `  cobros.csv         Cobros registrados en ${periodo}.`,
     `  trabajos.csv       Trabajos creados en ${periodo} (por fecha de alta, no de ejecución).`,
@@ -322,16 +398,18 @@ export function construirLeeme(p: {
     `  facturas/          El PDF de cada factura de csv/facturas.csv.`,
   ];
 
-  // ⚠️ Solo se avisa si HAY rango: sin él no se filtra nada y no puede faltar ningún
-  // cliente, así que meter la advertencia sería alarmar sin motivo.
+  // SCRUM-104 (D4): que nadie lea la divergencia como un bug. El aviso de la fase 1
+  // («puede faltarte un cliente») ya no aplica: en la fase 2 no falta ninguno. Lo que sí
+  // hay que explicar es por qué este fichero NO coincide con la descarga suelta.
   const avisoCartera = acotado
     ? [
         '',
-        'IMPORTANTE — por qué puede faltarte un cliente:',
-        '  clientes.csv lista las ALTAS del periodo, no toda tu cartera. Si facturaste a un',
-        '  cliente que diste de alta ANTES, su factura sí aparece en facturas.csv pero él no',
-        '  aparece en clientes.csv. No es un dato perdido: sigue en tu cuenta. Para verlos',
-        '  todos, descarga el paquete sin acotar fechas.',
+        'SOBRE clientes.csv — por qué no es tu lista de clientes completa:',
+        '  Aquí van los clientes a los que corresponden los documentos de este paquete,',
+        '  aunque los dieras de alta hace años. Así ninguna factura queda sin saber de',
+        '  quién es. Por eso NO coincide con el "clientes.csv" que descargas suelto desde',
+        '  Configuración, que sí lista tu cartera por fecha de alta: son dos preguntas',
+        '  distintas, no un error. La columna "Fecha de alta" te dice cuándo entró cada uno.',
       ]
     : [];
 
@@ -357,11 +435,48 @@ export function construirLeeme(p: {
   ].join('\n');
 }
 
-/** Las 5 tablas del paquete S4 (el ticket no incluye gastos ni fees). */
-export const CSV_PAQUETE = [
-  { nombre: 'clientes.csv', build: buildClientes },
-  { nombre: 'facturas.csv', build: buildFacturas },
-  { nombre: 'cobros.csv', build: buildCobros },
-  { nombre: 'trabajos.csv', build: buildTrabajos },
-  { nombre: 'presupuestos.csv', build: buildPresupuestos },
-] as const;
+/**
+ * Las 5 tablas del paquete S4 (el ticket no incluye gastos ni fees).
+ *
+ * ⚠️ ESTO ERA UNA LISTA (`CSV_PAQUETE`) y ahora es una FUNCIÓN, a propósito (SCRUM-104
+ * fase 2). Una lista de builders dice "cinco cosas independientes, en cualquier orden";
+ * desde que `clientes.csv` lleva los clientes REFERENCIADOS, eso dejó de ser verdad:
+ * depende del resultado de los otros cuatro.
+ *
+ * Se podía haber dejado la lista ordenando clientes al final y compartiendo un Set entre
+ * iteraciones, pero esa dependencia sería INVISIBLE: se rompería en silencio el día que
+ * alguien reordenase la lista o metiera un `Promise.all` — dos cambios que parecen
+ * inocuos sobre una lista. Como función, el orden no se puede equivocar.
+ *
+ * Los cuatro de EVENTOS sí van en paralelo entre sí; solo `clientes` espera.
+ */
+export async function construirCsvsDelPaquete(
+  merchantId: number,
+  rango: Rango,
+): Promise<Array<{ nombre: string; data: CsvData }>> {
+  const [facturas, cobros, trabajos, presupuestos] = await Promise.all([
+    buildFacturas(merchantId, rango),
+    buildCobros(merchantId, rango),
+    buildTrabajos(merchantId, rango),
+    buildPresupuestos(merchantId, rango),
+  ]);
+
+  // A quién apuntan los documentos del rango. Sin consultas: los ids venían en las filas.
+  const referenciados = [...new Set([
+    ...(facturas.customerIds ?? []),
+    ...(cobros.customerIds ?? []),
+    ...(trabajos.customerIds ?? []),
+    ...(presupuestos.customerIds ?? []),
+  ])];
+
+  const clientes = await buildClientesReferenciados(merchantId, referenciados);
+
+  // El orden de las entradas es el del paquete de siempre: clientes primero.
+  return [
+    { nombre: 'clientes.csv', data: clientes },
+    { nombre: 'facturas.csv', data: facturas },
+    { nombre: 'cobros.csv', data: cobros },
+    { nombre: 'trabajos.csv', data: trabajos },
+    { nombre: 'presupuestos.csv', data: presupuestos },
+  ];
+}

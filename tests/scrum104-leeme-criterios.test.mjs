@@ -30,28 +30,33 @@ test('SCRUM-104: cada fichero del paquete declara su criterio, no solo el format
     assert.ok(t.includes(f), `el LEEME debe nombrar ${f}`);
   }
   // El criterio, no solo el nombre: lo que distingue "qué lleva" de "qué hay".
-  assert.match(t, /clientes\.csv\s+Clientes dados de ALTA/, 'clientes.csv debe decir que lista ALTAS');
+  // FASE 2: ya no lista "altas del periodo" sino los REFERENCIADOS por los documentos.
+  assert.match(t, /clientes\.csv\s+Los clientes a los que corresponden/,
+    'clientes.csv debe decir que lista los clientes de los documentos del paquete');
   assert.match(t, /facturas\.csv\s+Facturas emitidas/);
   assert.match(t, /cobros\.csv\s+Cobros registrados/);
   assert.match(t, /presupuestos\.csv\s+Presupuestos creados/);
 });
 
-test('SCRUM-104: con rango, AVISA de que puede faltar un cliente y por qué', () => {
+test('SCRUM-104 (D4): con rango, EXPLICA por qué no coincide con el CSV suelto', () => {
   const t = conRango();
 
-  assert.match(t, /IMPORTANTE/, 'el aviso no puede ir enterrado como una nota más');
-  assert.ok(t.includes('no toda tu cartera'), 'debe decir que clientes.csv no es la cartera completa');
-  // Lo esencial: que el asesor entienda que NO es un dato perdido.
-  assert.ok(t.includes('No es un dato perdido'), 'debe descartar explícitamente la pérdida de datos');
-  assert.ok(t.includes('sin acotar fechas'), 'y decir cómo obtener la cartera completa');
+  // Fase 2: ya no falta ningún cliente, así que el aviso ya no es "puede faltarte uno".
+  // Lo que hay que explicar es la DIVERGENCIA, para que nadie la lea como un bug.
+  assert.ok(t.includes('SOBRE clientes.csv'), 'la explicación no puede ir enterrada');
+  assert.ok(t.includes('aunque los dieras de alta hace años'),
+    'debe decir que incluye clientes antiguos si tienen documentos en el rango');
+  assert.ok(t.includes('descargas suelto'), 'debe nombrar el otro fichero con el que no coincide');
+  assert.ok(t.includes('no un error'), 'y decir explícitamente que la diferencia NO es un fallo');
+  assert.ok(t.includes('Fecha de alta'), 'debe remitir a la columna que lo explica (D3)');
 });
 
-test('SCRUM-104: SIN rango no se avisa de nada — no hay nada de qué avisar', () => {
+test('SCRUM-104: SIN rango no se explica nada — no hay divergencia que explicar', () => {
   const t = sinRango();
 
-  // Sin filtro no puede faltar ningún cliente: el aviso sería alarmar sin motivo, y un
-  // aviso que sale siempre deja de leerse.
-  assert.ok(!t.includes('IMPORTANTE'), 'sin rango no debe aparecer el aviso de cartera');
+  // Sin filtro, "referenciados" y "todos" coinciden: el aviso sería ruido, y un aviso
+  // que sale siempre deja de leerse.
+  assert.ok(!t.includes('SOBRE clientes.csv'), 'sin rango no debe aparecer la explicación');
   assert.ok(t.includes('todo tu histórico'), 'y el criterio debe decir que va todo');
   assert.ok(!t.includes('el periodo seleccionado'), 'no debe hablar de un periodo que no existe');
 });

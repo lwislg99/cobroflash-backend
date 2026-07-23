@@ -15,7 +15,7 @@ import { ZipArchive } from 'archiver';
 import fs from 'fs';
 import { ensureInvoicePdf } from '../../../../lib/invoicing';
 import {
-  CSV_PAQUETE, csvBody, csvRow, csvNum, MAX_FACTURAS_ZIP, resolverEntregaZip, construirLeeme,
+  construirCsvsDelPaquete, csvBody, csvRow, csvNum, MAX_FACTURAS_ZIP, resolverEntregaZip, construirLeeme,
   buildClientes, buildFacturas, buildCobros, buildTrabajos, buildPresupuestos,
 } from '../../domain/exportData';
 
@@ -188,10 +188,14 @@ router.get('/datos.zip', async (req, res) => {
       archive.append(entrega.avisoTxt, { name: 'AVISO-PAQUETE-INCOMPLETO.txt' });
     }
 
-    // 1) CSVs — mismos builders que las rutas sueltas: los datos cuadran entre sí.
-    for (const t of CSV_PAQUETE) {
-      const data = await t.build(req.merchantId, { from, to });
-      archive.append(csvBody(data), { name: `csv/${t.nombre}` });
+    // 1) CSVs. Mismos builders que las rutas sueltas para facturas/cobros/trabajos/
+    //    presupuestos: esos datos cuadran entre sí.
+    //    ⚠️ `clientes.csv` es la EXCEPCIÓN DELIBERADA (SCRUM-104): aquí lleva los clientes
+    //    REFERENCIADOS por los documentos del rango, no los dados de alta en él. El CSV
+    //    suelto (/customers.csv, más abajo) sigue con el criterio de alta a propósito —
+    //    responden a preguntas distintas. Ver el bloque de `buildClientes` en el dominio.
+    for (const t of await construirCsvsDelPaquete(req.merchantId, { from, to })) {
+      archive.append(csvBody(t.data), { name: `csv/${t.nombre}` });
     }
 
     // 2) PDFs ya resueltos, UNO A UNO desde disco (streaming, nunca readFileSync).
