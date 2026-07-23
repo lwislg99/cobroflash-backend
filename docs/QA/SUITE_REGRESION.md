@@ -52,6 +52,24 @@ falla — te hace perder el rato creyendo que tu entorno está roto.
    si de verdad necesitas la tubería. Nada de `| tail`, `| head` ni `&&` entre una herramienta
    y su código de salida. Esto aplica igual a `npm test`, `tsc` y `prisma`.
 
+6. **Al empezar y al terminar una tanda, consulta tus tickets asignados con JQL.** El otro
+   carril puede haberte asignado trabajo, y **el contexto de sesión nunca lo refleja**.
+
+   ```
+   project = SCRUM AND assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC
+   ```
+
+   No es disciplina personal, es **estructural**: con dos carriles abriéndose tickets el uno al
+   otro y el fundador cerrando en paralelo, no hay forma de que una sesión sepa qué le han puesto
+   en la cola desde que empezó. El 23-jul-2026 el carril B descubrió así **dos tickets propios
+   (SCRUM-103 y SCRUM-108) de cuya existencia no tenía ni idea** — y SCRUM-108 nacía de un
+   hallazgo suyo.
+
+   **Al TERMINAR también**, no solo al empezar: el estado de `main` y de los tickets caduca en
+   minutos (varios PR por hora). Una comprobación hecha al abrir la tarea **no sirve** para
+   afirmar nada al cerrarla — ver la regla 2 de la sección siguiente, que es el mismo fallo
+   aplicado al estado en vez de a los tests.
+
 ## Escribir verificaciones: un verde falso no lo mira nadie (SCRUM-103)
 
 Entre el 22 y el 23-jul-2026 aparecieron **seis** mecanismos que pasaban sin comprobar lo que
