@@ -1240,6 +1240,34 @@ html, body { overflow-x: clip; }
 }
 .data-card .table-scroll { /* hereda, sin márgenes extra */ }
 .data-card .table { border-radius: 0; }
+
+/* Pestañas de data-card (SCRUM-69, componente NUEVO — propuesto a AB3). Mismo lenguaje que
+   .status-pill/.badge: sin sombras/colores nuevos, solo el verde de marca ya usado en
+   .nav-subitem.active. Altura del botón ≥44px (AB6, targets táctiles). */
+.data-card-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--neutral-100);
+}
+.data-card-tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 15px 6px;
+  margin-bottom: -1px;
+  border: none;
+  background: none;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--neutral-500);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color .12s, border-color .12s;
+}
+.data-card-tab:hover { color: var(--neutral-700); }
+.data-card-tab.active { color: var(--green-700); border-bottom-color: var(--green-600); }
+@media (prefers-reduced-motion: reduce) { .data-card-tab { transition: none; } }
 /* Área con padding para forms/alerts dentro de data-card */
 .data-card-body {
   padding: 16px 20px;

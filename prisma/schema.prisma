@@ -154,6 +154,14 @@ model Customer {
   // plantilla saliente a este número para este merchant. Flag ortogonal (Parte L).
   waOptOut    Boolean @default(false) @map("wa_opt_out")
 
+  // SCRUM-69 (FACT-1): PARTICULAR | EMPRESARIO — determina el plazo legal de la factura
+  // recapitulativa (art. 13 RD 1619/2012): fin de mes natural si particular, día 16 del mes
+  // siguiente si empresario. SIN @default en la BD a propósito: null = "nunca clasificado",
+  // distinto de "clasificado como particular" — el criterio seguro (tratar null como
+  // PARTICULAR, el plazo MÁS CORTO) se aplica en código (resolveTipoDestinatario), nunca se
+  // escribe de vuelta a la BD. Editable en la ficha del cliente, sin banner ni prompt forzado.
+  tipoDestinatario String? @map("tipo_destinatario")
+
   merchant      Merchant       @relation(fields: [merchantId], references: [id])
   charges       Charge[]
   createdAt     DateTime       @default(now()) @map("created_at")

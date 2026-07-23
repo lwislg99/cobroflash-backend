@@ -16,8 +16,24 @@ import {
   validarLineas,
   type AlbaranModoValoracion,
 } from '../../domain/albaran.service';
+import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
 
 const router = Router();
+
+// GET /admin/albaranes/pendientes-facturar — SCRUM-69 (FACT-1): bandeja "pendientes de
+// facturar" agrupada por cliente y mes natural, con semáforo de plazo legal (art. 13 RD
+// 1619/2012). Solo lectura, mismo nivel de acceso que ver facturas (TECNICO_ALLOWED).
+// Colección (no :id) — registrada antes de las rutas de un albarán suelto a propósito,
+// aunque hoy no colisiona con ninguna (no hay GET '/:id' de un solo segmento en este router).
+router.get('/pendientes-facturar', async (req, res) => {
+  try {
+    const clientes = await getPendientesFacturar(req.merchantId!, prisma);
+    res.json({ clientes });
+  } catch (err: any) {
+    console.error('[GET /admin/albaranes/pendientes-facturar]', err?.message || err);
+    res.status(500).json({ error: 'internal_error' });
+  }
+});
 
 // Condición 1 del OK (fotos): límites duros con 4xx claros.
 const FOTO_MIME_ALLOWLIST = ['image/jpeg', 'image/png', 'image/webp'];
