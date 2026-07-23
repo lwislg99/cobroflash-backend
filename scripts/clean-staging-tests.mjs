@@ -11,14 +11,15 @@
 //   node scripts/clean-staging-tests.mjs           → DRY RUN (solo lista, no borra)
 //   node scripts/clean-staging-tests.mjs --apply   → borra de verdad
 //
-// ⚠️ GUARD ANTI-PRODUCCIÓN (mismo patrón que scripts/seed-staging.mjs): aborta si la URL
-// apunta al host de prod. Además exige DATABASE_URL_STAGING explícita: no se hereda la
-// DATABASE_URL del .env "por si acaso".
+// ⚠️ GUARD ANTI-PRODUCCIÓN (SCRUM-118: por pertenencia — ver scripts/_db-guard.mjs, mismo
+// patrón que scripts/seed-staging.mjs y tests/_staging-db.mjs): aborta si la URL no
+// pertenece al host de staging. Además exige DATABASE_URL_STAGING explícita: no se hereda
+// la DATABASE_URL del .env "por si acaso".
 import { PrismaClient } from '@prisma/client';
 import 'dotenv/config';
+import { assertSafeStagingUrl } from './_db-guard.mjs';
 
 const TEST_EMAIL_DOMAIN = '@test.local';
-const PROD_HOST = 'autorack.proxy.rlwy.net';
 const APPLY = process.argv.includes('--apply');
 
 const url = process.env.DATABASE_URL_STAGING;
@@ -26,8 +27,9 @@ if (!url) {
   console.error('❌ Falta DATABASE_URL_STAGING. Este script NO usa DATABASE_URL (podría ser prod).');
   process.exit(1);
 }
-if (url.includes(PROD_HOST)) {
-  console.error('❌ DATABASE_URL_STAGING apunta a PRODUCCIÓN — abortado.');
+const urlCheck = assertSafeStagingUrl(url, process.env.DATABASE_URL);
+if (!urlCheck.safe) {
+  console.error(`❌ DATABASE_URL_STAGING no es una URL de staging segura (${urlCheck.reason}) — abortado.`);
   process.exit(1);
 }
 process.env.DATABASE_URL = url;
