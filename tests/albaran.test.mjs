@@ -5,6 +5,7 @@ import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TE
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 import fs from 'node:fs';
 import path from 'node:path';
 import {
@@ -169,13 +170,17 @@ test('SCRUM-14: tenancy del albarán + lock de firmado end-to-end', { skip: !ENA
   const base = `http://127.0.0.1:${server.address().port}`;
 
   const stamp = Date.now();
-  const mkMerchant = (tag) =>
-    prisma.merchant.create({
-      data: { name: `QA Alb ${tag}`, country: 'ES', email: `qa-alb-${tag}-${stamp}@test.local`, onboardingCompleted: true },
-    });
+  // SCRUM-113: sin `planExpiresAt` a propósito — este test NO llama a ninguna de las cuatro
+  // rutas con requireActivePlan (emitir NO está gateada; enviar-whatsapp y
+  // enviar-para-firmar sí, y aquí no se usan).
+  const datosMerchant = (tag) => ({
+    name: `QA Alb ${tag}`, email: `qa-alb-${tag}-${stamp}@test.local`,
+  });
 
-  const merchantA = await mkMerchant('A');
-  const merchantB = await mkMerchant('B');
+  // Los merchants y TODO su montaje dentro de withMerchant; antes nacían fuera del try.
+  try {
+    await withMerchant(prisma, datosMerchant('A'), (merchantA) =>
+      withMerchant(prisma, datosMerchant('B'), async (merchantB) => {
   const customerA = await prisma.customer.create({
     data: { merchantId: merchantA.id, name: 'Cliente Alb A', phone: `34600${stamp % 1000000}` },
   });
@@ -194,7 +199,6 @@ test('SCRUM-14: tenancy del albarán + lock de firmado end-to-end', { skip: !ENA
     return cookie;
   };
 
-  try {
     const cookieA = await mkCookie(merchantA.id);
     const cookieB = await mkCookie(merchantB.id);
     const jsonReq = (url, cookie, method = 'GET', body) =>
@@ -272,13 +276,9 @@ test('SCRUM-14: tenancy del albarán + lock de firmado end-to-end', { skip: !ENA
       assert.equal(rPub.status, 404, `${p} público debería ser 404 y fue ${rPub.status}`);
       assert.doesNotMatch(rPub.headers.get('content-type') || '', /application\/pdf/, `${p} no debe servir un PDF`);
     }
+      }));
   } finally {
-    // Limpieza efímera (orden: hijos → padres)
-    await prisma.albaran.deleteMany({ where: { merchantId: merchantA.id } });
-    await prisma.job.deleteMany({ where: { merchantId: merchantA.id } });
-    await prisma.customer.deleteMany({ where: { merchantId: merchantA.id } });
-    await prisma.authSession.deleteMany({ where: { merchantId: { in: [merchantA.id, merchantB.id] } } });
-    await prisma.merchant.deleteMany({ where: { id: { in: [merchantA.id, merchantB.id] } } });
+    // Solo lo que NO es del merchant: el borrado de datos lo garantiza withMerchant.
     server.close();
   }
 });
@@ -296,9 +296,14 @@ test('SCRUM-65: albarán VALORADO — validación, candado de modo y PDF en ambo
   const base = `http://127.0.0.1:${server.address().port}`;
 
   const stamp = Date.now();
-  const merchant = await prisma.merchant.create({
-    data: { name: 'QA Alb Valorado', country: 'ES', email: `qa-alb-val-${stamp}@test.local`, onboardingCompleted: true },
-  });
+
+  // SCRUM-113: SEGUNDO merchant de este fichero — cada test gateado monta el suyo, así que
+  // la migración es por BLOQUE `test()`, no por fichero. Igual que arriba, va dentro de
+  // withMerchant; antes nacía fuera del try.
+  try {
+    await withMerchant(prisma, {
+      name: 'QA Alb Valorado', email: `qa-alb-val-${stamp}@test.local`,
+    }, async (merchant) => {
   const customer = await prisma.customer.create({
     data: { merchantId: merchant.id, name: 'Cliente Alb Valorado', phone: `34601${stamp % 1000000}` },
   });
@@ -306,7 +311,6 @@ test('SCRUM-65: albarán VALORADO — validación, candado de modo y PDF en ambo
     data: { merchantId: merchant.id, customerId: customer.id, status: 'pendiente_agendar', titulo: 'Trabajo QA Alb Valorado' },
   });
 
-  try {
     const token = 'qa65-' + crypto.randomBytes(12).toString('hex');
     await prisma.authSession.create({
       data: { merchantId: merchant.id, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
@@ -361,12 +365,9 @@ test('SCRUM-65: albarán VALORADO — validación, candado de modo y PDF en ambo
       assert.equal(rPdf.status, 200);
       assert.match(rPdf.headers.get('content-type') || '', /application\/pdf/);
     }
+    });
   } finally {
-    await prisma.albaran.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.job.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.customer.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.authSession.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.merchant.deleteMany({ where: { id: merchant.id } });
+    // Solo lo que NO es del merchant: el borrado de datos lo garantiza withMerchant.
     server.close();
   }
 });
