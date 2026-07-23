@@ -350,6 +350,26 @@ function overflowMenu(actionEls, { label = 'Más acciones' } = {}) {
 }
 window.overflowMenu = overflowMenu;
 
+// SCRUM-89: acción vetada por ROL (técnico/operario) — DESHABILITAR CON EXPLICACIÓN, no ocultar
+// (que aprenda que el cobro lo hace el admin). El botón queda visible pero disabled; la explicación
+// se pone UNA vez por grupo (roleLockedNote), no por botón. La seguridad real la da el 403 del backend.
+function lockActionForRole(btn) {
+  if (!btn) return btn;
+  btn.disabled = true;
+  btn.classList.add('role-locked');
+  btn.setAttribute('aria-disabled', 'true');
+  btn.title = 'Solo para administradores';
+  return btn;
+}
+function roleLockedNote() {
+  const p = document.createElement('p');
+  p.className = 'role-locked-note';
+  p.textContent = 'Esta acción es solo para administradores. Pídeselo a quien gestiona la cuenta.';
+  return p;
+}
+window.lockActionForRole = lockActionForRole;
+window.roleLockedNote = roleLockedNote;
+
 // WA-0b · chip de entrega de WhatsApp (J4). Recibe `waDelivery` del detalle
 // ({status, templateName, at} | null) y devuelve el HTML del chip, o '' si no hay envío.
 // Estados de Meta: sent → delivered → read | failed. Microcopy clara para el merchant.
