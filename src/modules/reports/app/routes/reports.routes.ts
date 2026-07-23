@@ -141,7 +141,16 @@ router.get('/x2', async (req, res) => {
       const cur = byMethodMap.get(method) ?? { eur: 0, count: 0 };
       cur.eur += Number(inv.total); cur.count += 1;
       byMethodMap.set(method, cur);
-      // € por recordatorios: pagó ≤72h después de CUALQUIERA de los dos avisos
+      // € por recordatorios: pagó ≤72h después de CUALQUIERA de los dos avisos.
+      // ⚠️ SCRUM-117: `reminderXSentAt` solo significa «se envió» DESDE SCRUM-116 (deploy
+      // 2026-07-23 15:22 UTC). Antes se marcaba aunque el WhatsApp fallara, así que una fecha
+      // ANTERIOR a esa podría ser un recordatorio que nunca salió — y NO hay dato guardado para
+      // distinguirlo (el fallo pre-116 no dejó rastro: ni WhatsAppMessage ni customerEvent). Se
+      // evaluó un SUELO de fiabilidad en la lectura (contar solo `reminderXSentAt >= 2026-07-23`),
+      // pero un COUNT read-only contra prod el 23-jul dio 0 filas pre-fix sumando aquí (0 €):
+      // montar el suelo infra-reportaría PARA SIEMPRE una era vacía. Decisión (fundador):
+      // documentar, sin suelo. Si algún día esta métrica abarca un periodo con volumen real
+      // pre-116, reabrir SCRUM-117 (nulear el histórico NO es opción: es el candado del cron).
       const paidTs = inv.paidAt ? new Date(inv.paidAt).getTime() : 0;
       const after = (d: Date | null) => !!d && paidTs >= new Date(d).getTime() && paidTs - new Date(d).getTime() <= H72;
       if (after(inv.reminder7SentAt) || after(inv.reminder14SentAt)) reminderEur += Number(inv.total);
