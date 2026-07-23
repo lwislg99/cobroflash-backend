@@ -39,7 +39,7 @@ const UNSUPPORTED_TYPES = new Set(['audio', 'video', 'document', 'sticker', 'con
 // Valida la firma X-Hub-Signature-256 de Meta usando el App Secret.
 // SCRUM-99: FAIL-CLOSED — sin WHATSAPP_APP_SECRET, la firma se considera SIEMPRE
 // inválida (antes: sin secreto, se aceptaba cualquier payload sin verificar).
-function isValidSignature(req: any): boolean {
+export function isValidSignature(req: any): boolean { // SCRUM-100: exportada para el test del guard
   const secret = config.WHATSAPP_APP_SECRET;
   if (!secret) {
     console.error('🚨 [WA webhook] WHATSAPP_APP_SECRET no configurado — payload RECHAZADO (fail-closed). Configúralo en Railway.');

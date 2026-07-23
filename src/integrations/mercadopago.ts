@@ -96,7 +96,11 @@ export function verifyMpWebhookSignature(params: {
   dataId: string;
   secret: string;
 }): boolean {
-  if (!params.secret) return true; // sin secret configurado → aceptar (dev)
+  // SCRUM-100: FAIL-CLOSED en profundidad. El caller (mpWebhook.routes.ts,
+  // checkMpWebhookAuth) ya rechaza ANTES de llegar aquí si falta el secreto — pero esta
+  // función es exportada y no debe depender de eso para ser segura por sí misma (antes
+  // devolvía `true`, "aceptar sin verificar", el mismo fail-open que motivó SCRUM-99).
+  if (!params.secret) return false;
 
   const parts = Object.fromEntries(
     params.xSignature.split(';').map((p) => p.split('=')),
@@ -112,5 +116,13 @@ export function verifyMpWebhookSignature(params: {
     .update(message)
     .digest('hex');
 
-  return crypto.timingSafeEqual(Buffer.from(v1, 'hex'), Buffer.from(expected, 'hex'));
+  // SCRUM-100: timingSafeEqual LANZA (no devuelve false) si los buffers no miden lo mismo —
+  // un v1 atacante de longitud distinta a la esperada no debe poder tirar una excepción sin
+  // capturar fuera de esta función; se trata como firma inválida (mismo patrón que
+  // whatsappIncoming.routes.ts:isValidSignature, que ya envuelve su propio timingSafeEqual).
+  try {
+    return crypto.timingSafeEqual(Buffer.from(v1, 'hex'), Buffer.from(expected, 'hex'));
+  } catch {
+    return false;
+  }
 }
