@@ -43,7 +43,12 @@
    relación con Stripe Connect, figura de merchant-of-record del profesional.
 8. **Anticipos / IVA (V3 del master)**: ¿la señal cobrada antes de empezar es
    **factura de anticipo con IVA**? ¿la factura final descuenta el anticipo? (Define el
-   comportamiento fiscal de los cobros parciales.)
+   comportamiento fiscal de los cobros parciales.) **Expediente completo (10 preguntas P1-P10,
+   anticipos + factura recapitulativa, con articulado y consultas DGT localizadas) en
+   `docs/legal/EXPEDIENTE_FISCAL_ANTICIPOS_RECAPITULATIVA.md`** — la de mayor impacto es P6:
+   si el vertical de oficios a domicilio de YaQu encaja en el umbral de factura simplificada
+   de 3.000 € (art. 4.1 RD 1619/2012) en vez del general de 400 €, cambia mucho la fricción
+   de pedir NIF al cliente final.
 9. **Privacidad + DPA + cookies**: ¿el modelo actual (solo cookies técnicas first-party,
    banner mínimo) es suficiente? + plazos de conservación de datos (S4). **Análisis detallado
    y 6 preguntas concretas ya en `docs/legal/RGPD_TRATAMIENTO_DATOS.md`** (reparto
