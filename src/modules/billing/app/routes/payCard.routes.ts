@@ -13,12 +13,6 @@ const router = Router();
 router.get('/card/:token', async (req, res) => {
   const token = req.params.token;
 
-  if (!stripe) {
-    return res
-      .status(501)
-      .send('Stripe no está configurado. Define STRIPE_SECRET_KEY y STRIPE_WEBHOOK_SECRET.');
-  }
-
   try {
     const charge = await prisma.charge.findUnique({
       where: { receiptToken: token },
@@ -28,6 +22,18 @@ router.get('/card/:token', async (req, res) => {
     const id = charge.id;
     if (charge.status !== 'pending') {
       return res.redirect(303, `/recibo/${token}`);
+    }
+
+    // SCRUM-119: la comprobación de Stripe va DEBAJO de resolver el token. Un identificador
+    // inexistente debe dar 404 (respuesta sobre el RECURSO) esté Stripe configurado o no; el 501
+    // (estado del SERVIDOR) no debe adelantarse, porque uniformaba token-válido e id-numérico y
+    // hacía indistinguible «IDOR cerrado» de «Stripe ausente» — y de paso enterraba el resto del
+    // bloque de scrum85 (bizum + el cruce A/B de tenancy). Alinea /pay/card con /pay/mp, /pay/bank
+    // y /pay/bizum, que resuelven el recurso ANTES de mirar su integración/flag.
+    if (!stripe) {
+      return res
+        .status(501)
+        .send('Stripe no está configurado. Define STRIPE_SECRET_KEY y STRIPE_WEBHOOK_SECRET.');
     }
 
     const amountCents = Math.round(Number(charge.amount) * 100);

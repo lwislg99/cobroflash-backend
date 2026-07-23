@@ -192,6 +192,15 @@
   SCRUM-74 `/recibo` → SCRUM-85 `/pay/card`+`/pay/bizum`+`/pay/invoice` → SCRUM-90
   `/pay/bank`+`/pay/mp`).
 
+### [x] P2-SEC-10 · `/pay/card` miraba Stripe ANTES de resolver el token: el 501 tapaba el 404 y enterraba el assert de tenancy de scrum85 (hallazgo en la suite gateada de SCRUM-113, 23-jul; corregido en SCRUM-119)
+- **Encuadre:** NO es «el IDOR está abierto» — no hay fuga probada. Es «el aislamiento NO estaba VERIFICADO»: una comprobación que no se ejercía y otras dos que ni corrían.
+- **Raíz (en el HANDLER, no en el test):** `payCard.routes.ts` hacía `if (!stripe) return 501` ANTES del `findUnique` del token. Sin `STRIPE_SECRET_KEY`, un token válido y un id numérico recibían la MISMA respuesta (501) → ningún assert podía distinguir _IDOR cerrado_ de _Stripe ausente_. Era la única de las 4 rutas de pago que miraba su integración antes de resolver el recurso (`/pay/mp`, `/pay/bank`, `/pay/bizum` resuelven primero → su 404 sigue siendo informativo aunque falte la integración). Evidencia directa: el numérico devolvía **501, no 404**.
+- **Impacto colateral (peor que el síntoma):** `node:test` aborta el bloque en el primer assert que falla. El de `/pay/card` numérico (`scrum85:71`, `501 !== 404`) tumbaba TODO lo de debajo: `/pay/card` por token, `/pay/bizum`, y **el cruce A/B de tenancy (líneas 90-95)** — el assert de aislamiento entre inquilinos del fichero. Una ruta caída se llevaba por delante la comprobación de fuga.
+- **Fix (raíz, no parche):** SCRUM-119 mueve `if (!stripe)` DEBAJO del `findUnique`+404+redirect. Un identificador inexistente da 404 (recurso) esté Stripe configurado o no; el 501 (estado del servidor) deja de adelantarse. Alinea `/pay/card` con sus tres hermanas y el bloque deja de abortar → bizum y el cruce A/B vuelven a ejecutarse. **Bonus correcto:** un cobro ya PAGADO sin Stripe ahora redirige a `/recibo` en vez de 501.
+- **Honestidad (criterio SCRUM-121):** el lado del token ya aceptaba `[303, 501]`; se añade un `t.diagnostic` EN VOZ ALTA cuando es 501 — sin `STRIPE_SECRET_KEY` el redirect real a Stripe Checkout NO se ejerce; el cierre del IDOR SÍ (numérico 404 ≠ token 501, testigo de «mecanismo vivo»). Ni verde fingido ni skip mudo.
+- **Verificado** en el entorno donde se reprodujo (staging sin Stripe): `scrum85` pasa ENTERO (antes abortaba en :71), el diagnóstico se oye y el cruce A/B corre. `npm test` 242 · 209 pass · 0 fail. Sin schema.
+- **Lo que NO tocó:** `/pay/bank` y `/pay/mp` (scrum90, verde, ya con guarda de presencia) y `/recibo` (scrum74, aserciones de contenido) — la falsa garantía vivía en el ORDEN del handler de card, no en la estructura del test copiada.
+
 ### [x] P0-AUTH-1 · Un operario no puede volver a entrar: `/auth/login` solo buscaba en `Merchant` (hallazgo 22-jul; corregido en SCRUM-92)
 - **Síntoma:** `requestMagicLink` (`auth.service.ts`) resolvía la cuenta con
   `prisma.merchant.findUnique({ where: { email } })` y salía por un `return` silencioso si no

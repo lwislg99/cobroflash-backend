@@ -71,9 +71,18 @@ test('SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numéric
     assert.equal(rNumCard.status, 404, `GET /pay/card/<id numérico> debe ser 404 y fue ${rNumCard.status}`);
 
     const rCard = await fetch(`${base}/pay/card/${tokenA}`, { redirect: 'manual' });
+    // El token DEBE resolver el cobro (algo != 404): 303 si Stripe redirige, 501 si Stripe falta.
+    // Junto al 404 del id numérico de arriba, ESA es la prueba del cierre del IDOR — que 303 y 501
+    // sean ambos != 404 hace de testigo de «mecanismo vivo» (el token resuelve, el numérico no).
+    // Se sostiene SIN Stripe desde SCRUM-119: antes el 501 se adelantaba al 404 y no discriminaba.
     assert.ok([303, 501].includes(rCard.status), `GET /pay/card/:token debe resolver el cobro (303 a Stripe o 501 sin Stripe) y fue ${rCard.status}`);
     if (rCard.status === 303) {
       assert.match(rCard.headers.get('location') || '', /^https:\/\/checkout\.stripe\.com\//, 'debe redirigir a Stripe Checkout real');
+    } else {
+      // SCRUM-119 (criterio SCRUM-121): sin STRIPE_SECRET_KEY el redirect real a Stripe Checkout
+      // (303) NO se ejerce. El cierre del IDOR SÍ queda verificado (numérico 404 ≠ token 501); esta
+      // pata concreta no. Se dice EN VOZ ALTA — ni verde fingido ni skip mudo.
+      t.diagnostic('⚠️ SCRUM-119: Stripe ausente — IDOR de /pay/card verificado (numérico 404 ≠ token 501), pero el redirect a Stripe Checkout (303) NO se ejerció aquí. Configura STRIPE_SECRET_KEY para cubrir esa pata.');
     }
 
     // ── /pay/bizum: numérico 404; token resuelve (200 con el flag activo, o redirect a /pay/invoice/:token si no) ──
