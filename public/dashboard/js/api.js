@@ -223,6 +223,14 @@ function progressBar(pct, estado, { cobrado = 0, aceptado = 0, currency = 'EUR' 
 }
 window.progressBar = progressBar;
 
+// SCRUM-30: mapeo ÚNICO del estado de cobro → clase de status-pill. Antes DUPLICADO inline en
+// jobsView/jobDetailView/operariosView (mismos umbrales/colores): Pagado→accepted (verde),
+// Parcial→pending (ámbar), Pendiente→draft (neutro). Default draft (defensivo). Regla AB/AB3.
+function cobroPillClass(estadoCobro) {
+  return { Pagado: 'status-pill-accepted', Parcial: 'status-pill-pending', Pendiente: 'status-pill-draft' }[estadoCobro] || 'status-pill-draft';
+}
+window.cobroPillClass = cobroPillClass;
+
 // WA-0b · chip de entrega de WhatsApp (J4). Recibe `waDelivery` del detalle
 // ({status, templateName, at} | null) y devuelve el HTML del chip, o '' si no hay envío.
 // Estados de Meta: sent → delivered → read | failed. Microcopy clara para el merchant.
