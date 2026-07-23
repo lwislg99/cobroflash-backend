@@ -14,6 +14,7 @@ import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TE
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
@@ -40,12 +41,17 @@ test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, a
   const stamp = Date.now();
   const phone = `34600${stamp % 1000000}`;
   const email = `cliente-s49-${stamp}@test.local`;
-  const mkMerchant = (tag) =>
-    prisma.merchant.create({
-      data: { name: `QA S49 ${tag}`, country: 'ES', email: `qa-s49-${tag}-${stamp}@test.local`, onboardingCompleted: true, planExpiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000) },
-    });
-  const merchantA = await mkMerchant('A');
-  const merchantB = await mkMerchant('B');
+  // SCRUM-113: los merchants y TODO su montaje dentro de withMerchant. `planExpiresAt` se
+  // conserva a propósito: sin él, requireActivePlan corta enviar-para-firmar con el paywall
+  // y el test fallaría por un motivo que no es el suyo.
+  const datosMerchant = (tag) => ({
+    name: `QA S49 ${tag}`, email: `qa-s49-${tag}-${stamp}@test.local`,
+    planExpiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000),
+  });
+
+  try {
+    await withMerchant(prisma, datosMerchant('A'), (merchantA) =>
+      withMerchant(prisma, datosMerchant('B'), async (merchantB) => {
   const customer = await prisma.customer.create({ data: { merchantId: merchantA.id, name: 'Cliente 49', phone, email } });
   const job = await prisma.job.create({ data: { merchantId: merchantA.id, customerId: customer.id, status: 'terminado', titulo: 'C/ Mayor 12' } });
   const albaran = await prisma.albaran.create({
@@ -61,7 +67,6 @@ test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, a
     return cookie;
   };
 
-  try {
     const cookieA = await mkCookie(merchantA.id);
     const cookieB = await mkCookie(merchantB.id);
 
@@ -115,13 +120,9 @@ test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, a
     assert.equal(rB.status, 404, 'merchant B no accede al albarán de A');
 
     console.log('✔ SCRUM-49: enviar-para-firmar → página pública (sin contacto) → firma remota → auto-envío → 409 no-emitido → tenancy 404.');
+      }));
   } finally {
-    await prisma.whatsAppMessage.deleteMany({ where: { merchantId: { in: [merchantA.id, merchantB.id] } } });
-    await prisma.albaran.deleteMany({ where: { merchantId: merchantA.id } });
-    await prisma.job.deleteMany({ where: { merchantId: merchantA.id } });
-    await prisma.customer.deleteMany({ where: { merchantId: merchantA.id } });
-    await prisma.authSession.deleteMany({ where: { merchantId: { in: [merchantA.id, merchantB.id] } } });
-    await prisma.merchant.deleteMany({ where: { id: { in: [merchantA.id, merchantB.id] } } });
+    // Solo lo que NO es del merchant: el borrado de datos lo garantiza withMerchant.
     server.close();
     await prisma.$disconnect();
   }
