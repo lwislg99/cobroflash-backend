@@ -13,7 +13,7 @@ const JOB_STATE_META = {
 // SCRUM-11: semáforo de COBRO (distinto del estado FSM de arriba) → .status-pill
 // canónico, mismo mapeo que invoicesView: Pagado→accepted (verde), Parcial→pending
 // (ámbar), Pendiente→draft (neutro). El dato es job.estadoCobro (backend SCRUM-13/28).
-const COBRO_PILL_CLASS = { Pagado: 'status-pill-accepted', Parcial: 'status-pill-pending', Pendiente: 'status-pill-draft' };
+// SCRUM-30: el mapeo vive en el helper compartido cobroPillClass (api.js); antes duplicado aquí.
 
 // SCRUM-11: filtro de cobro persistente entre re-renders (una acción FSM recarga la vista).
 let jobsCobroFilter = 'all';
@@ -137,7 +137,7 @@ function jobCard(j, container) {
   const cur = j.quote?.currency || 'EUR';
   const showCobro = aceptado > 0;
   const pct = showCobro ? Math.min(100, Math.round((cobrado / aceptado) * 100)) : 0;
-  const cobroCls = COBRO_PILL_CLASS[j.estadoCobro] || 'status-pill-draft';
+  const cobroCls = cobroPillClass(j.estadoCobro);
 
   card.innerHTML = `
     <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">

@@ -4,8 +4,7 @@
 // canónico .detail-page. Endpoint solo-lectura GET /admin/jobs/:id.
 // ⚠️ Las ACCIONES DE COBRO se renderizan pero se CABLEAN en el paso 3 (STOP AA1.4).
 
-// SCRUM-12: pill de cobro DUPLICADO a propósito (centralizar = SCRUM-30). Igual que jobsView.
-const JOBDET_COBRO_PILL = { Pagado: 'status-pill-accepted', Parcial: 'status-pill-pending', Pendiente: 'status-pill-draft' };
+// SCRUM-30: el pill de cobro usa el helper compartido cobroPillClass (api.js); antes duplicado aquí.
 
 // Estado de factura → status-pill (mismo mapeo que invoicesView.js:296-297).
 function jobDetInvPill(st) {
@@ -104,7 +103,7 @@ async function renderJobDetailView(container, jobId) {
   const cobrado = Number(job.totalCobrado || 0);
   const pendiente = Math.max(0, aceptado - cobrado);
   const pct = aceptado > 0 ? Math.min(100, Math.round((cobrado / aceptado) * 100)) : 0;
-  const cobroCls = JOBDET_COBRO_PILL[job.estadoCobro] || 'status-pill-draft';
+  const cobroCls = cobroPillClass(job.estadoCobro);
 
   // ── Resumen: estado de cobro + total + barra + cobrado/pendiente ──
   const sumSec = document.createElement('div');

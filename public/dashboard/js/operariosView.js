@@ -7,12 +7,7 @@
 // Agrupa por operarioId = AUTOR del Trabajo (SCRUM-22): si el admin reasigna un trabajo,
 // el resumen lo sigue atribuyendo a quien lo originó.
 
-// Semáforo de cobro: mismo mapeo que jobsView.js (Pagado/Parcial/Pendiente)
-const OPERARIO_COBRO_PILL = {
-  Pagado: 'status-pill-accepted',
-  Parcial: 'status-pill-pending',
-  Pendiente: 'status-pill-draft',
-};
+// SCRUM-30: semáforo de cobro vía el helper compartido cobroPillClass (api.js); antes duplicado aquí.
 
 // Filtro por operario, persistente entre re-renders (patrón de jobsCobroFilter)
 let operariosFilter = 'all';
@@ -101,7 +96,7 @@ function operarioCard(o, currency) {
   const esOwner = o.operarioId == null;
   const roleLabel = esOwner ? 'Propietario' : (o.role === 'admin' ? 'Admin' : 'Operario'); // A20.3
   const roleClass = o.role === 'tecnico' ? 'status-pill-pending' : 'status-pill-accepted';
-  const cobroCls = OPERARIO_COBRO_PILL[o.estadoCobro] || 'status-pill-draft';
+  const cobroCls = cobroPillClass(o.estadoCobro);
   const aceptado = Number(o.totalAceptado || 0);
   const cobrado = Number(o.totalCobrado || 0);
   const suspendido = o.status === 'suspended';
