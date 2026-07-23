@@ -37,10 +37,14 @@ export function isDuplicateWamid(id: string): boolean { // A12.2: exportada para
 const UNSUPPORTED_TYPES = new Set(['audio', 'video', 'document', 'sticker', 'contacts']);
 
 // Valida la firma X-Hub-Signature-256 de Meta usando el App Secret.
-// Si no hay WHATSAPP_APP_SECRET configurado, no validamos (devuelve true).
+// SCRUM-99: FAIL-CLOSED — sin WHATSAPP_APP_SECRET, la firma se considera SIEMPRE
+// inválida (antes: sin secreto, se aceptaba cualquier payload sin verificar).
 function isValidSignature(req: any): boolean {
   const secret = config.WHATSAPP_APP_SECRET;
-  if (!secret) return true; // validación opcional hasta configurar el secret
+  if (!secret) {
+    console.error('🚨 [WA webhook] WHATSAPP_APP_SECRET no configurado — payload RECHAZADO (fail-closed). Configúralo en Railway.');
+    return false;
+  }
   const header = String(req.headers['x-hub-signature-256'] || '');
   const raw: Buffer | undefined = req.rawBody;
   if (!header.startsWith('sha256=') || !raw) return false;
@@ -78,9 +82,9 @@ router.post('/', async (req, res) => {
     console.log(`[WA webhook] POST recibido (fields: ${fields || 'desconocido'})`);
   } catch { /* solo logging */ }
 
-  // Validar firma de Meta antes de procesar (si hay App Secret configurado)
+  // Validar firma de Meta antes de procesar (SCRUM-99: obligatoria, fail-closed)
   if (!isValidSignature(req)) {
-    console.warn('[WA webhook] Invalid X-Hub-Signature-256 — rejected (revisa WHATSAPP_APP_SECRET en Railway: debe ser la "Clave secreta de la aplicación" de Meta, o borra la variable para no validar)');
+    console.warn('[WA webhook] Invalid X-Hub-Signature-256 — rejected (revisa que WHATSAPP_APP_SECRET en Railway sea la "Clave secreta de la aplicación" de Meta)');
     return res.status(401).send('invalid signature');
   }
 
