@@ -11,6 +11,22 @@
 > **NO uses `migrate deploy`/`migrate dev`** — aplicaría un schema viejo (entorno nuevo) o
 > propondría un reset. `db push` es el ÚNICO mecanismo. (Volver a migrate = SCRUM-40 opción A.)
 
+## SCRUM-109 · `expenses.team_member_id` — ✅ APLICADO en prod (2026-07-23)
+
+```sql
+ALTER TABLE "expenses" ADD COLUMN     "team_member_id" INTEGER;
+CREATE INDEX "expenses_merchant_id_team_member_id_idx" ON "expenses"("merchant_id", "team_member_id");
+```
+
+100 % aditivo (columna nullable, sin backfill, 0 DROPs) — mismo patrón que `Job.operarioId`
+(SCRUM-52): autoría del gasto (`null` = propietario), sin relación Prisma declarada a
+propósito. Aplicado con `scripts/db-push-prod`, host-check + preview `migrate diff` +
+verificación post vacía, en el orden de SCRUM-102: **STAGING** (`acela.proxy.rlwy.net:40802`)
+primero → **GO explícito del fundador** → **PRODUCCIÓN** (`autorack.proxy.rlwy.net:40654`),
+ambas con diff idéntico y verificación vacía. `createExpense` ya la rellena con
+`req.teamMemberId` en el `POST /admin/expenses` (abierto a técnico desde SCRUM-107 V1); el
+filtrado row-level (GET/PUT/DELETE por autor) es la V2 de SCRUM-107, carril B (Javier).
+
 ## SCRUM-102 · `merchants.is_platform_owner` (segundo factor del gate owner) — ✅ APLICADO en prod (2026-07-23)
 
 `bash scripts/db-push-prod` (SCRUM-40, procedimiento canónico) aplicado primero a **STAGING**

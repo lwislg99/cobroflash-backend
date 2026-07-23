@@ -87,6 +87,9 @@ router.post('/', async (req, res) => {
       date:       date     ? new Date(date) : undefined,
       notes:      notes    ? String(notes) : null,
       receiptData: receiptData ? String(receiptData) : null,
+      // SCRUM-109: autoría — quien registra el gasto AHORA, no heredada de nada (a
+      // diferencia de Job.operarioId, que se congela desde el presupuesto en el accept).
+      teamMemberId: req.teamMemberId ?? null,
     });
     return res.status(201).json({ ok: true, item: expense });
   } catch (err) {

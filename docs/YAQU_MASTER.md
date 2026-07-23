@@ -109,6 +109,8 @@ Profesional de servicios a domicilio (fontanero, electricista, reformista, pinto
 | Catálogo + import CSV + IA sugiere líneas + IA mensaje WA | ✅ |
 | Equipo/roles/aprobaciones; gastos y margen; exports | ✅ |
 
+> **✅ SCRUM-109 (23-jul-2026) — `Expense.teamMemberId` (carril A, bloqueante de SCRUM-107 V2):** nace de SCRUM-107, que abrió `POST /admin/expenses` al técnico (compra material en el almacén, lo registra desde la furgoneta) pero tuvo que dejar GET/PUT/DELETE en admin **por falta de dato**: sin autoría no hay forma de distinguir "su gasto" del de un compañero. Campo aditivo/nullable, mismo patrón que `Job.operarioId` (SCRUM-52): `null` = propietario, sin relación Prisma declarada a propósito (así se hace en este proyecto para estos campos de autoría — `Quote.teamMemberId` tampoco la tiene). `createExpense` lo rellena con `req.teamMemberId` de la sesión; **inmutable** — no forma parte de `updateExpense`, mismo criterio que la autoría congelada de `Job` (SCRUM-22). Schema aplicado STAGING → GO del fundador → PROD (ver `docs/MIGRATIONS_PENDING.md`). **Desbloquea, no implementa:** el filtrado row-level (GET del técnico ve solo los suyos, 404 en el ajeno, patrón SCRUM-23) y retirar el ocultamiento del nav son la V2 de SCRUM-107, carril B (Javier) — esta tarea solo sirve el campo.
+
 ## C2. Premium / diferenciales (orden por impacto en dinero)
 1. **Take rate vía Connect** (CONNECT-1) — modelo de negocio + requisito legal de flujo de fondos.
 2. **Mantenimientos recurrentes** (Parte R · MANT-1) — anti-churn del merchant y de YaQu.
