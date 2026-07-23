@@ -75,6 +75,27 @@ Siete trampas que ya nos han costado tiempo, y no fallan igual:
    `git merge-base --is-ancestor origin/main HEAD`, o al menos un `git log --oneline -1`. Cuesta
    un segundo y evita rebasar a destiempo con el trabajo ya hecho encima.
 
+   **Cuarto caso, con la suite gateada (SCRUM-113).** `npm run test:staging 2>&1 | tail -30`
+   reportó **exit 0 con 2 tests fallando**, y además cortó el log a 30 líneas: uno de los dos
+   fallos llegó **truncado**, sin el assert que lo identificaba. Se estuvieron tratando como dos
+   problemas distintos —"el runner no propaga el exit" y "el log se pierde"— cuando eran **un
+   solo error con dos síntomas**. Comprobado después: `node --test --test-force-exit` devuelve
+   **1** correctamente. El runner no tiene ningún fallo; lo tragó la tubería. Por eso esto **no**
+   es un ticket de equipo: es esta regla, incumplida por cuarta vez.
+
+   **La forma correcta, para copiar y pegar** — una suite de 10 minutos no se relanza por haber
+   perdido su salida:
+
+   ```bash
+   npm run test:staging > /tmp/suite.log 2>&1; echo "exit=$?"   # ✅ log entero + exit real
+   tail -60 /tmp/suite.log                                       # y el log se lee DESPUÉS
+   ```
+
+   El punto y coma es deliberado: con `&&` el `echo` no se ejecutaría justo cuando más falta hace.
+   Que esto haya reincidido cuatro veces teniendo su propia sección desde la primera es el dato
+   que importa: **una regla escrita no es un mecanismo.** El mecanismo aquí es el patrón de arriba,
+   copiado literal, no la intención de recordarla.
+
 6. **Al empezar y al terminar una tanda, consulta tus tickets asignados con JQL.** El otro
    carril puede haberte asignado trabajo, y **el contexto de sesión nunca lo refleja**.
 

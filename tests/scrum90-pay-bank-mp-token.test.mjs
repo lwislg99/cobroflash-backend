@@ -14,6 +14,7 @@
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -27,10 +28,15 @@ test('SCRUM-90: /pay/bank y /pay/mp cierran el IDOR — numérico 404 sin fuga d
   const base = `http://127.0.0.1:${server.address().port}`;
 
   const stamp = Date.now();
-  const mkFixture = async (tag, iban) => {
-    const merchant = await prisma.merchant.create({
-      data: { name: `QA S90 ${tag}`, country: 'ES', email: `qa-s90-${tag}-${stamp}@test.local`, onboardingCompleted: true, iban },
-    });
+
+  // SCRUM-113: misma forma que scrum74/scrum85 — mkFixture creaba el merchant y sus hijos
+  // dos veces ANTES del try. El merchant lo crea ahora withMerchant; mkFixture solo monta
+  // lo que cuelga de él, ya dentro de la red.
+  //
+  // ⚠️ `iban` es CRÍTICO aquí y va por merchant: la guarda de presencia de SCRUM-108
+  // comprueba que el IBAN de A SÍ aparece en su propia página antes de afirmar que NO
+  // aparece en la de B. Sin el campo, esa guarda cae — que es justo lo que debe hacer.
+  const mkFixture = async (merchant, tag) => {
     const customer = await prisma.customer.create({
       data: { merchantId: merchant.id, name: `Cliente QA-S90-${tag} ${stamp}`, phone: `3462${tag === 'A' ? 0 : 1}${stamp % 1000000}` },
     });
@@ -40,10 +46,16 @@ test('SCRUM-90: /pay/bank y /pay/mp cierran el IDOR — numérico 404 sin fuga d
     return { merchant, customer, charge };
   };
 
-  const A = await mkFixture('A', 'ES9121000418450200051332');
-  const B = await mkFixture('B', 'ES7620770024003102575766');
+  const datosMerchant = (tag, iban) => ({
+    name: `QA S90 ${tag}`, email: `qa-s90-${tag}-${stamp}@test.local`, iban,
+  });
 
   try {
+    await withMerchant(prisma, datosMerchant('A', 'ES9121000418450200051332'), (mA) =>
+      withMerchant(prisma, datosMerchant('B', 'ES7620770024003102575766'), async (mB) => {
+    const A = await mkFixture(mA, 'A');
+    const B = await mkFixture(mB, 'B');
+
     const tokenA = await ensureChargeReceiptToken(A.charge.id, prisma);
     const tokenB = await ensureChargeReceiptToken(B.charge.id, prisma);
 
@@ -79,13 +91,10 @@ test('SCRUM-90: /pay/bank y /pay/mp cierran el IDOR — numérico 404 sin fuga d
     assert.ok(resultBody.includes('30.00') || resultBody.includes('30,00'), 'la página de resultado debe mostrar el importe del cobro correcto');
 
     t.diagnostic('SCRUM-90: /pay/bank y /pay/mp — numérico 404 sin fuga de IBAN, token propio 200/resuelve correctamente, sin cruce entre cobros ✓');
+      }));
   } finally {
-    for (const fx of [A, B]) {
-      await prisma.event.deleteMany({ where: { chargeId: fx.charge.id } });
-      await prisma.charge.deleteMany({ where: { merchantId: fx.merchant.id } });
-      await prisma.customer.deleteMany({ where: { merchantId: fx.merchant.id } });
-      await prisma.merchant.delete({ where: { id: fx.merchant.id } });
-    }
+    // Solo lo que NO es del merchant: el borrado de datos lo garantiza withMerchant, que
+    // además borra los `event` (cuelgan de charge) antes que los charges.
     server.close();
     await prisma.$disconnect();
   }
