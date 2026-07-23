@@ -80,8 +80,11 @@ Envío de un presupuesto al cliente para que lo vea, acepte o rechace.
 - **Pie:** `Enviado con Yaqu`
 - **Botones — 1 (URL dinámica):**
   - Texto: `Ver presupuesto`
-  - URL base: `https://yaqu.app/pay/quote/{{1}}`  → variable = **id del presupuesto**
-  - La página `/pay/quote/:id` muestra el detalle y permite Aceptar/Rechazar.
+  - URL base: `https://yaqu.app/pay/quote/{{1}}` → variable = **Quote.decisionToken**
+    (SCRUM-95: token opaco, antes el id — mismo patrón que `payment_request_es` §2. La
+    URL base aprobada por Meta NO cambia, solo el valor que se sustituye en `{{1}}`;
+    no requirió re-aprobación, igual que en 74/85/90).
+  - La página `/pay/quote/:token` muestra el detalle y permite Aceptar/Rechazar.
 
 **Código que lo envía:**
 - `src/modules/system/app/routes/quotesAdmin.routes.ts` (POST `/:id/send-whatsapp`) — **A5.5:

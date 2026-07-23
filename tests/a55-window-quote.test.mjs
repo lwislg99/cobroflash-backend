@@ -60,7 +60,7 @@ test('A5.5: ventana abierta → envío de presupuesto por SESIÓN (service), no 
       businessName: 'Fontanería García S.L.',
       quoteNumber: 999,
       totalWithCurrency: '100.00 EUR',
-      quoteId: 0,
+      decisionToken: 'ff00ee11dd22cc33bb44aa55ff00ee11',
     });
     const windowText = 'Hola 👋 (texto de sesión A5.5 — test)';
 

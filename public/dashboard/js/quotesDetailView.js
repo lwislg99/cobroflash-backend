@@ -107,7 +107,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   function showWaFallback(quote, retryFn) {
     statusBox.querySelectorAll(".wa-fallback-bar").forEach((b) => b.remove());
     const bar = waFallbackBar({
-      link: location.origin + "/pay/quote/" + quote.id,
+      // SCRUM-95: token opaco (quote.payToken), NUNCA el id — sexta puerta de la
+      // misma fuga (SCRUM-72/74/85/87/90).
+      link: location.origin + "/pay/quote/" + quote.payToken,
       onEmail: quote.customer && quote.customer.email
         ? () => apiRequest("/admin/quotes/" + quote.id + "/send-email", { method: "POST" })
         : null,
@@ -367,7 +369,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     actions.appendChild(btnSend);
 
     // Enviar por correo (feedback fundador): junto al de WhatsApp. Reutiliza el
-    // endpoint /send-email (Resend, link a /pay/quote/:id, draft → sent).
+    // endpoint /send-email (Resend, link a /pay/quote/:token, draft → sent).
     const hasEmail = !!(quote.customer && quote.customer.email);
     const btnEmail = document.createElement('button');
     btnEmail.className = 'btn-secondary btn-sm';

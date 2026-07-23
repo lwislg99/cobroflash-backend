@@ -9,6 +9,7 @@ import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { normalizePhone } from '../../../../core/utils/utils';
 import { recordCustomerEvent } from '../../customerEvents.service';
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
+import { ensureQuoteDecisionToken } from '../../../quotes/domain/quoteToken.service'; // SCRUM-95
 
 const router = Router();
 
@@ -259,6 +260,15 @@ router.get('/:token', async (req, res) => {
     }
   }
 
+  // SCRUM-95: token OPACO por presupuesto enviado — NUNCA el quote.id en el botón
+  // "Ver y responder" (mismo motivo que payTokens arriba: sexta puerta de la misma fuga).
+  const quoteTokens = new Map<number, string>();
+  for (const q of quotes) {
+    if (q.status === 'sent') {
+      quoteTokens.set(q.id, await ensureQuoteDecisionToken(q.id, prisma));
+    }
+  }
+
   const m          = customer.merchant!;
   const mName      = esc(m.legalName || m.name || 'Tu proveedor');
   const initial    = esc((m.name || m.legalName || 'Y').trim().charAt(0).toUpperCase());
@@ -292,7 +302,7 @@ router.get('/:token', async (req, res) => {
           ? (q.pdfUrl.startsWith('http') ? q.pdfUrl : BASE_URL + q.pdfUrl)
           : null;
         const btnPdf    = pdfUrl ? `<a class="pf-btn pf-btn-pdf" href="${esc(pdfUrl)}" target="_blank">📄 Ver PDF</a>` : '';
-        const btnAccept = q.status === 'sent' ? `<a class="pf-btn pf-btn-pay" href="/pay/quote/${q.id}/accept">✅ Ver y responder</a>` : '';
+        const btnAccept = q.status === 'sent' ? `<a class="pf-btn pf-btn-pay" href="/pay/quote/${quoteTokens.get(q.id)}/accept">✅ Ver y responder</a>` : '';
         const hasActions = btnAccept || btnPdf;
         return `
           <div class="pf-card">

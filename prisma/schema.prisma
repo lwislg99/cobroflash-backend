@@ -268,6 +268,15 @@ model Quote {
   reminderSentAt  DateTime?
   teamMemberId    Int?      @map("team_member_id") // técnico que creó la cotización (null = propietario)
 
+  // SCRUM-95: token OPACO para las páginas/acciones públicas del cliente (patrón
+  // Charge.receiptToken SCRUM-74, Albaran.firmaToken SCRUM-49). Quote.id es autoincremental
+  // y NUNCA debe usarse como identificador público — era la sexta puerta de la misma fuga
+  // (SCRUM-72/74/85/87/90), la peor: sin auth, sin rate-limit en /decision, y MUTABA estado
+  // (aceptar/rechazar presupuestos ajenos), además de filtrar NIF/dirección/teléfono del
+  // profesional. Generado perezosamente (crypto.randomBytes(16).hex) la primera vez que se
+  // necesita un enlace; @unique para el lookup findUnique por token.
+  decisionToken String? @unique @map("decision_token")
+
   merchant Merchant @relation(fields: [merchantId], references: [id])
   customer Customer @relation(fields: [customerId], references: [id])
   charge   Charge?  @relation(fields: [chargeId], references: [id])

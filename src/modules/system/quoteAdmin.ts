@@ -2,6 +2,7 @@
 import { prisma } from '../../core/db/prisma';
 import { allocateInvoiceNumber, isReceiptNumber } from '../invoicing/domain/invoiceNumber.service';
 import { buildBillingPlanView } from '../quotes/domain/billingPlanView'; // SCRUM-34
+import { ensureQuoteDecisionToken } from '../quotes/domain/quoteToken.service'; // SCRUM-95
 
 /**
  * Lista de presupuestos para el panel admin.
@@ -112,6 +113,9 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
   return {
     id: quote.id,
     number: quote.quoteNumber ?? quote.id, // A1.2: número visible por merchant
+    // SCRUM-95: token opaco del enlace público (patrón payToken de Charge.receiptToken,
+    // jobs.routes.ts:157) — lo consume la vista admin para el enlace "copiar" de fallback.
+    payToken: await ensureQuoteDecisionToken(quote.id, prisma),
     status: quote.status,
     createdAt: quote.createdAt,
     updatedAt: quote.updatedAt,
