@@ -1,3 +1,5 @@
+> ⚠️ Escrito bajo el protocolo anterior. Las reglas de proceso vigentes están en `docs/ASESOR.md`, que manda sobre lo que diga este documento.
+
 # SESION_ACTUAL_SCRUM-22.md — Brief
 **SCRUM-22 · OPERARIO-1 · Autoría del operario en el Trabajo (registro de nombre en todo el flujo)**
 Carril Javier · label `dev2` · Fase F2 · Epic padre SCRUM-21 · Depende de SCRUM-10 (contenedor Trabajo, ya existe) y reutiliza Equipo S1.

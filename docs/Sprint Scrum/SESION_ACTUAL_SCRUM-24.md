@@ -1,3 +1,5 @@
+> ⚠️ Escrito bajo el protocolo anterior. Las reglas de proceso vigentes están en `docs/ASESOR.md`, que manda sobre lo que diga este documento.
+
 # SESION_ACTUAL_SCRUM-24.md — Brief
 **SCRUM-24 · OPERARIO-3 · Vista de admin: supervisar trabajos y progreso por operario**
 Carril B (Javier) · label `dev2`, `ui` · Fase F2 · Epic SCRUM-21 · Depende de SCRUM-22 ✅ + SCRUM-23 ✅ + SCRUM-11.

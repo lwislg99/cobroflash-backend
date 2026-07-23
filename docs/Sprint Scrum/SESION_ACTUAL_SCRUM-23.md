@@ -1,3 +1,5 @@
+> ⚠️ Escrito bajo el protocolo anterior. Las reglas de proceso vigentes están en `docs/ASESOR.md`, que manda sobre lo que diga este documento.
+
 # SESION_ACTUAL_SCRUM-23.md — Brief
 **SCRUM-23 · OPERARIO-2 · El operario ve solo sus trabajos (visibilidad por rol)**
 Carril Javier · label `dev2` · Fase F2 · Epic padre SCRUM-21 · Depende de SCRUM-22 (`operarioId`) + SCRUM-11 (lista de Trabajos).
