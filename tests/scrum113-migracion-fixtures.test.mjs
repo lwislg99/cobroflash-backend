@@ -73,35 +73,38 @@ const CONOCIDOS_AL_MEDIR = [
 
 /**
  * PENDIENTES DE MIGRAR a withMerchant. Solo mengua.
- * Sacar uno → bajar MIGRACION_MAX EN EL MISMO COMMIT (ver la nota del tope).
  *
- * ⚠️ QUIÉN EDITA ESTA LISTA: **quien migra el fichero**, en su propio commit — aunque la
- * campaña de migración sea de otro carril. Sacarlo de aquí y bajar el tope NO es «tocar
- * trabajo ajeno»: es **la otra mitad de la migración**. Un fichero migrado que sigue
- * contado como pendiente es otra forma del estado «a medias» —el que parece hecho y no lo
- * está— y además deja holgura en el ratchet, que es justo lo que el tope evita.
+ * ⚠️ SI MIGRAS UN FICHERO, SÁCALO DE AQUÍ Y BAJA `MIGRACION_MAX` TÚ, EN TU MISMO COMMIT.
  *
- * ESTAS DOS LÍNEAS (sacar el fichero + bajar `MIGRACION_MAX`) son la ÚNICA excepción: del
- * resto del ratchet sigue siendo dueño quien lo escribió.
+ * Aunque la campaña de migración sea de otro carril: **estas dos líneas son la otra mitad
+ * de la migración**, no el trabajo de nadie. Un fichero migrado que sigue contado como
+ * pendiente es otra forma del estado «a medias» —el que parece hecho y no lo está— y
+ * además deja holgura en el ratchet, que es justo lo que el tope evita. Si esperas a que
+ * otro actualice la lista, `main` se queda ROJO entre tu commit y el suyo.
  *
- * Origen: al migrar `scrum94` (23-jul-2026) el reparto por fichero chocó con la
- * atomicidad que este ratchet exige — el que migraba no era el dueño de la lista, así que
- * `main` quedaba en rojo entre los dos commits. Se resolvió a favor de la atomicidad: la
- * regla del ratchet no se relaja.
+ * ESTAS DOS LÍNEAS son la ÚNICA excepción: censo, asserts y fecha los sigue tocando quien
+ * escribió el ratchet (carril B, SCRUM-113).
+ *
+ * Origen: al migrar `scrum94` (23-jul-2026) el reparto por FICHERO chocó con la atomicidad
+ * que este ratchet exige — quien migraba no era dueño de la lista. Se resolvió a favor de
+ * la atomicidad: la regla NO se relaja, lo que cambia es quién la cumple. Con reparto por
+ * fichero, quien migra es el único que puede cumplirla.
  */
 export const MIGRACION_PENDIENTE = [
   'albaran.test.mjs',
   'scrum17-recapitulativa.test.mjs',
   // MIGRADOS — tanda 1: scrum24-operarios-metrics · tanda 2: scrum22-operario-readpath
   // tanda 3 (exports): scrum104-clientes-referenciados, scrum25-exports, scrum25-export-zip
-  // tanda 4 (grupo A, en curso): pdfs, scrum50-bot-albaranes
+  // tanda 4 (grupo A): pdfs, scrum50-bot-albaranes, scrum73-verifactu-gate,
+  //                    scrum76-email-adjunto
   'scrum47-enviar-albaran-wa.test.mjs',
   'scrum49-firma-remota.test.mjs',
   'scrum57-operario-propagacion.test.mjs', 'scrum66-tipo-operacion.test.mjs',
   'scrum68-evidencias-firma.test.mjs', 'scrum72-pdfs-privados.test.mjs',
-  'scrum73-verifactu-gate.test.mjs', 'scrum74-recibo-token.test.mjs',
-  'scrum76-email-adjunto.test.mjs', 'scrum85-pay-routes-token.test.mjs',
-  'scrum90-pay-bank-mp-token.test.mjs', 'scrum92-login-operario.test.mjs',
+  'scrum74-recibo-token.test.mjs',
+  'scrum85-pay-routes-token.test.mjs',
+  'scrum90-pay-bank-mp-token.test.mjs',
+  // tanda 4 (cont.): scrum92-login-operario · scrum94-register-teammember (sesión 1)
   'tenancy-permisos.test.mjs',
   'webhooks-idempotencia.test.mjs',
 ];
@@ -112,8 +115,15 @@ export const MIGRACION_PENDIENTE = [
  * para que alguien aparque un fichero nuevo sin que nadie se entere. Es la lección literal
  * de SCRUM-103 (el ratchet de rutas se dejó en 25 con 24 entradas).
  */
-// 24 → 23 (tanda 1) → 22 (tanda 2) → 19 (tanda 3: los tres de exports)
-export const MIGRACION_MAX = 16;
+// 24 → 23 (t1) → 22 (t2) → 19 (t3: exports) → 13 (t4: grupo A + scrum94 de la sesión 1)
+//
+// El número salió de CONTAR la lista fusionada, no de elegir rama. Este rebase trajo tres
+// conflictos seguidos en esta línea (16 de la sesión 1 sacando scrum94, contra 15 y 14 del
+// carril B sacando scrum73/scrum76 y scrum92), y en ninguno el valor correcto era el de
+// una de las dos ramas. Es el escenario exacto que el assert de IGUALDAD EXACTA vino a
+// hacer ruidoso: con `<=` cualquiera de esos números habría pasado en verde, dejando
+// huecos libres.
+export const MIGRACION_MAX = 13;
 
 /**
  * Fecha límite. Pasada, el test falla mientras queden pendientes.
@@ -168,10 +178,22 @@ test('SCRUM-113: ningún fichero NUEVO nace con el patrón viejo', () => {
 });
 
 test('SCRUM-113: la lista de pendientes solo mengua (ratchet + caducidad)', (t) => {
-  assert.ok(
-    MIGRACION_PENDIENTE.length <= MIGRACION_MAX,
-    `\n\n🔴 La lista de pendientes ha CRECIDO: ${MIGRACION_PENDIENTE.length} > ${MIGRACION_MAX}.\n` +
-      `Solo puede menguar. Si migras una tanda, baja MIGRACION_MAX en el MISMO commit.\n`,
+  // IGUALDAD EXACTA, no `<=`. Con `<=`, una lista de 14 con el tope en 16 pasa en verde y
+  // deja DOS huecos libres para aparcar sin que nadie lo vea — la holgura silenciosa de
+  // SCRUM-103, que aquí llegaría por la puerta de atrás: al mergear dos ramas que migran a
+  // la vez, la línea del tope da conflicto (17→15 vs 17→16) y quien lo resuelva puede
+  // quedarse con cualquiera de los dos números mientras la lista ya tiene 14. Con `===`
+  // ese merge sale ROJO y hay que hacer la cuenta; con `<=` habría salido verde y flojo.
+  assert.equal(
+    MIGRACION_PENDIENTE.length, MIGRACION_MAX,
+    MIGRACION_PENDIENTE.length > MIGRACION_MAX
+      ? `\n\n🔴 La lista de pendientes ha CRECIDO: ${MIGRACION_PENDIENTE.length} > ${MIGRACION_MAX}.\n` +
+        `Solo puede menguar. Una ruta nueva se declara, no se aparca.\n`
+      : `\n\n🔴 HOLGURA en el ratchet: ${MIGRACION_PENDIENTE.length} pendientes con el tope en ${MIGRACION_MAX}.\n` +
+        `Sobran ${MIGRACION_MAX - MIGRACION_PENDIENTE.length} hueco(s), y un hueco libre es sitio para aparcar\n` +
+        `un fichero nuevo sin que el test se queje. Baja MIGRACION_MAX a ${MIGRACION_PENDIENTE.length}.\n\n` +
+        `Si vienes de resolver un merge entre dos tandas: el número NO es el de ninguna de las\n` +
+        `dos ramas, es el largo real de la lista ya fusionada. Haz la cuenta, no elijas un lado.\n`,
   );
 
   // Entrada muerta: sigue listada pero ya no crea a mano. Hay que sacarla Y bajar el tope;

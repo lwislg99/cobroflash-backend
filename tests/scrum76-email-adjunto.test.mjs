@@ -11,6 +11,7 @@
 //   QA_DB_TEST=1 npm run test:staging
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
+import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -28,9 +29,12 @@ test('SCRUM-76: el email adjunta el PDF en TODAS las ramas (outbox .eml material
   const { outboxDir, invoicesDir } = await import('../dist/core/storage/dirs.js');
 
   const stamp = Date.now();
-  const merchant = await prisma.merchant.create({
-    data: { name: 'QA S76', country: 'ES', email: `qa-s76-${stamp}@test.local`, onboardingCompleted: true, invoiceSeriesPrefix: 'CF' },
-  });
+
+  // SCRUM-113: el merchant y su montaje dentro de withMerchant; antes nacían fuera del try.
+  try {
+    await withMerchant(prisma, {
+      name: 'QA S76', email: `qa-s76-${stamp}@test.local`, invoiceSeriesPrefix: 'CF',
+    }, async (merchant) => {
   const customer = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente 76', email: `cli-s76-${stamp}@test.local` } });
   const numero = `${new Date().getFullYear()}-CF-${String(800 + (stamp % 90)).padStart(3, '0')}`;
   const invoice = await prisma.invoice.create({
@@ -47,7 +51,6 @@ test('SCRUM-76: el email adjunta el PDF en TODAS las ramas (outbox .eml material
 
   const invEml = path.join(outboxDir, `invoice-${numero}.eml`);
   const quoteEml = path.join(outboxDir, `quote-${quote.id}.eml`);
-  try {
     // ── (1) FACTURA: el .eml se materializa (fix rama muerta) y CONTIENE el adjunto ──
     const rInv = await sendInvoiceEmail({ invoiceId: invoice.id, toEmail: customer.email, prisma });
     assert.ok(rInv?.ok, 'el envío de factura devuelve ok');
@@ -73,14 +76,13 @@ test('SCRUM-76: el email adjunta el PDF en TODAS las ramas (outbox .eml material
     assert.match(quoteContent, /Content-Type: application\/pdf/i, 'el .eml de PRESUPUESTO CONTIENE el PDF adjunto en el fallback (defecto 2 arreglado)');
 
     t.diagnostic('factura: outbox materializado + adjunto ✓ · presupuesto: adjunto en el fallback ✓');
-  } finally {
-    await prisma.invoice.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.quote.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.customer.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.merchant.deleteMany({ where: { id: merchant.id } });
+    // Los ficheros de disco NO son del merchant: se limpian aquí, dentro del callback,
+    // porque necesitan merchant.id y quote.id. Lo de BD lo garantiza withMerchant.
     for (const f of [invEml, quoteEml, path.join(invoicesDir, `${merchant.id}-${numero}.pdf`), path.join(invoicesDir, `QUOTE-${quote.id}.pdf`)]) {
       try { fs.unlinkSync(f); } catch { /* ya no está */ }
     }
+    });
+  } finally {
     await prisma.$disconnect();
   }
 });

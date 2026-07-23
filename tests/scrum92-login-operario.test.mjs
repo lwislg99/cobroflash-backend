@@ -17,6 +17,7 @@
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -30,9 +31,13 @@ test('SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy
   const base = `http://127.0.0.1:${server.address().port}`;
 
   const stamp = Date.now();
-  const merchant = await prisma.merchant.create({
-    data: { name: `QA S92 Merchant`, country: 'ES', email: `qa-s92-merchant-${stamp}@test.local`, onboardingCompleted: true },
-  });
+
+  // SCRUM-113: el merchant y sus tres teamMembers dentro de withMerchant; antes nacían
+  // fuera del try, así que un fallo montando el tercero dejaba el merchant huérfano.
+  try {
+    await withMerchant(prisma, {
+      name: 'QA S92 Merchant', email: `qa-s92-merchant-${stamp}@test.local`,
+    }, async (merchant) => {
   const tecnico = await prisma.teamMember.create({
     data: { merchantId: merchant.id, name: 'QA Operario S92', email: `qa-s92-tecnico-${stamp}@test.local`, role: 'tecnico', status: 'active' },
   });
@@ -43,7 +48,6 @@ test('SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy
     data: { merchantId: merchant.id, name: 'QA Suspendido S92', email: `qa-s92-suspended-${stamp}@test.local`, role: 'tecnico', status: 'suspended' },
   });
 
-  try {
     // ── Caso 1 (el bug): operario ACTIVO pide magic link → token creado, rol/tenancy correctos ──
     const beforeCount = await prisma.authSession.count({ where: { teamMemberId: tecnico.id, type: 'magic_link' } });
     await requestMagicLink(tecnico.email);
@@ -108,10 +112,10 @@ test('SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy
     assert.deepEqual(bodyGhost, bodyReal, 'el body de /auth/login debe ser IDÉNTICO exista o no el email (sin enumeración)');
 
     t.diagnostic('SCRUM-92: operario activo → token+sesión con rol/tenancy correctos y 403 en admin-only; invited → también; suspended/inexistente → sin token; merchant sin cambios; /auth/login sin enumeración ✓');
+    });
   } finally {
-    await prisma.authSession.deleteMany({ where: { OR: [{ merchantId: merchant.id }, { teamMemberId: { in: [tecnico.id, invitedMember.id, suspendedMember.id] } }] } });
-    await prisma.teamMember.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.merchant.delete({ where: { id: merchant.id } });
+    // Solo lo que NO es del merchant: el borrado de datos lo garantiza withMerchant.
+    // (Las authSession de estos teamMembers llevan merchantId, así que entran en su barrido.)
     server.close();
     await prisma.$disconnect();
   }
