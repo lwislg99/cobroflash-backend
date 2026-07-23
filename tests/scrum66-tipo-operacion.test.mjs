@@ -6,6 +6,7 @@ import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TE
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 import { JOB_TIPOS_OPERACION } from '../dist/modules/jobs/domain/job.service.js';
 
 test('JOB_TIPOS_OPERACION: enum cerrado de 2 valores', () => {
@@ -22,12 +23,17 @@ test('SCRUM-66: tipoOperacion — default, edición, validación, audit del camb
   const base = `http://127.0.0.1:${server.address().port}`;
 
   const stamp = Date.now();
-  const mkMerchant = (tag) =>
-    prisma.merchant.create({
-      data: { name: `QA S66 ${tag}`, country: 'ES', email: `qa-s66-${tag}-${stamp}@test.local`, onboardingCompleted: true, planExpiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000) },
-    });
-  const merchantA = await mkMerchant('A');
-  const merchantB = await mkMerchant('B');
+  // SCRUM-113: `planExpiresAt` se conserva — sin él requireActivePlan corta el PATCH con el
+  // paywall y el test fallaría por un motivo que no es el suyo.
+  const datosMerchant = (tag) => ({
+    name: `QA S66 ${tag}`, email: `qa-s66-${tag}-${stamp}@test.local`,
+    planExpiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000),
+  });
+
+  // Los merchants y TODO su montaje dentro de withMerchant; antes nacían fuera del try.
+  try {
+    await withMerchant(prisma, datosMerchant('A'), (merchantA) =>
+      withMerchant(prisma, datosMerchant('B'), async (merchantB) => {
   const customer = await prisma.customer.create({ data: { merchantId: merchantA.id, name: 'Cliente 66', phone: `34603${stamp % 1000000}` } });
   const job = await prisma.job.create({ data: { merchantId: merchantA.id, customerId: customer.id, status: 'pendiente_agendar', titulo: 'Trabajo QA 66' } });
 
@@ -41,7 +47,6 @@ test('SCRUM-66: tipoOperacion — default, edición, validación, audit del camb
   const countAudit = () =>
     prisma.auditLog.count({ where: { merchantId: merchantA.id, action: 'tipo_operacion_elegido', entityType: 'job', entityId: job.id } });
 
-  try {
     const cookieA = await mkCookie(merchantA.id);
     const cookieB = await mkCookie(merchantB.id);
     const jsonReq = (url, cookie, method = 'GET', body) =>
@@ -94,12 +99,9 @@ test('SCRUM-66: tipoOperacion — default, edición, validación, audit del camb
     );
 
     console.log('✔ SCRUM-66: default TRABAJO_UNICO · PATCH valida enum · audit del cambio real · idempotente · tenancy 404.');
+      }));
   } finally {
-    await prisma.auditLog.deleteMany({ where: { merchantId: { in: [merchantA.id, merchantB.id] } } });
-    await prisma.job.deleteMany({ where: { merchantId: merchantA.id } });
-    await prisma.customer.deleteMany({ where: { merchantId: merchantA.id } });
-    await prisma.authSession.deleteMany({ where: { merchantId: { in: [merchantA.id, merchantB.id] } } });
-    await prisma.merchant.deleteMany({ where: { id: { in: [merchantA.id, merchantB.id] } } });
+    // Solo lo que NO es del merchant: el borrado de datos lo garantiza withMerchant.
     server.close();
     await prisma.$disconnect();
   }
