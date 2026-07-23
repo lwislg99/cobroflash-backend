@@ -532,6 +532,14 @@
   `internalHeaders()` (P0-SEC-1, secreto interno propio) — NO afectado por el fail-closed de
   SCRUM-99, no necesita cambios.
 
+### [x] P2-MET-1 · `reminderEur` (reports x2) contaba como recuperado dinero de recordatorios que FALLARON — histórico sin arreglo limpio (SCRUM-117, 23-jul)
+- **Síntoma:** `reports.routes.ts:147` calcula el «€ recuperado por recordatorios» a partir de `reminderXSentAt`, fechas que ANTES de SCRUM-116 se escribían aunque el envío de WhatsApp fallara. La métrica que mide si los recordatorios funcionan contaba los que NO se enviaron — y el sesgo va en la PEOR dirección (los hace parecer más eficaces: un merchant con el WA mal configurado vería dinero «recuperado» que es mentira).
+- **Origen ya arreglado:** SCRUM-116 (deploy 2026-07-23 15:22 UTC) — desde ahí `reminderXSentAt` significa «se envió»; un fallo NO lo marca. Los registros nuevos son fiables.
+- **Sin arreglo retroactivo limpio:** el dato para distinguir un recordatorio real de uno marcado en falso NUNCA se guardó, y no hay sustituto (los fallos pre-116 no dejaron fila en `WhatsAppMessage` ni `customerEvent`). Nulear las fechas pre-fix está DESCARTADO: `reminderXSentAt` es el candado de idempotencia del cron → nulearlo reenviaría recordatorios de facturas viejas ya pagadas.
+- **Medido antes de decidir (COUNT read-only contra prod, 23-jul):** de 3 facturas pagadas con fecha de recordatorio (las 3 pre-fix), **0 contribuyen a `reminderEur`** (ninguna se pagó ≤72h de un aviso) → inflación histórica real = **0 filas / 0,00 €**.
+- **Decisión (fundador): opción 1 — documentar, sin cambio funcional.** Montar un suelo de fiabilidad en la lectura para proteger 0 datos infra-reportaría PARA SIEMPRE una era vacía. Queda un comentario en `reports.routes.ts:144` (con la frontera y el resultado del count) para que nadie lea `reminderEur` creyéndolo limpio de un periodo con volumen pre-116. Si algún día lo hay, reabrir con un suelo de LECTURA (`reminderXSentAt >= fecha`), nunca tocando el histórico.
+- **Alcance:** solo la lectura de la métrica. Sin schema, sin write, sin cron, sin test (cero cambio de comportamiento).
+
 ### [ ] P3-12 · `scrum116-recordatorio-candado.test.mjs` requiere `WHATSAPP_DRY_RUN` SIN poner — conflicto con los tests que sí lo necesitan (23-jul, hallazgo colateral en SCRUM-122)
 - **NO es un bug — es una nota de higiene de invocación**, registrada para que nadie la lea como
   regresión: al correr `QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm run test:staging` (necesario para

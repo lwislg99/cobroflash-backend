@@ -877,6 +877,23 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 > completo renderizado con y sin `stageLabel`, ambos pasan `validateTemplateComponents` (J7).
 >
 > `npm test`: 207 · 178 pass · 0 fail · 29 skip. Sin schema, sin tocar Meta.
+>
+> **✅ SCRUM-117 · métrica honesta de recordatorios (23-jul-2026, tercera cara del cluster 115/116/117):**
+> `reminderEur` (reports x2, `reports.routes.ts:147`) contaba como «€ recuperado por recordatorios»
+> facturas cuya `reminderXSentAt` se escribió aunque el WhatsApp FALLARA — la métrica que mide si los
+> recordatorios funcionan contaba los que no salieron, y en la peor dirección (parecen más eficaces).
+> El **origen** ya lo cerró SCRUM-116 (deploy 23-jul 15:22 UTC): desde ahí `reminderXSentAt` = «se envió».
+> Lo que este ticket resuelve es el **histórico + la presentación**: el dato para distinguir un
+> recordatorio real de uno marcado en falso NUNCA se guardó (los fallos pre-116 no dejaron rastro), así
+> que **no hay recálculo retroactivo posible**; y nulear las fechas pre-fix está descartado (son el
+> **candado de idempotencia del cron** — nulearlas reenviaría recordatorios de facturas ya pagadas).
+> **Medido antes de decidir** (COUNT read-only contra prod): de 3 facturas pagadas con fecha de
+> recordatorio (las 3 pre-fix), **0 suman a `reminderEur`** → inflación real **0 filas / 0,00 €**.
+> **Decisión (fundador): documentar, sin cambio funcional** — montar un suelo de fiabilidad para
+> proteger 0 datos infra-reportaría para siempre una era vacía. Queda un comentario en la propia métrica
+> (frontera 23-jul + resultado del count) para que nadie lea `reminderEur` creyéndolo limpio; si algún
+> día abarca un periodo con volumen real pre-116, se reabre con un suelo **de lectura** (`>= fecha`),
+> nunca tocando el histórico. Solo la lectura; sin schema, sin write, sin cron, sin test.
 
 **V2. Trigger del segundo tramo:** **✅ VERIFICADO (SCRUM-10/13, 9-jul-2026): el resto NUNCA se cobra solo** (confirmado en código: `/admin/jobs/:id/collect-rest` vía `getNextBillingStage`, siempre acción del pro). Regla: el resto NUNCA se cobra solo; trigger = acción del pro ("Trabajo terminado → Cobrar resto"; con JOB-1: estado `terminado`) → cobro/factura del resto + payment_request.
 **V3. Anticipos [VALIDAR asesor en S1-F]:** señal con factura = **factura de anticipo con IVA**; la final descuenta el anticipo. Pre-SIF: señal con recibo no fiscal (coherente con flag). Post-SIF: implementar el dictamen (regla 32).
