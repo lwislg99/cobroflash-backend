@@ -507,9 +507,13 @@ async function renderJobDetailView(container, jobId) {
     return { base: baseCents / 100, total: (baseCents + cuotaCents) / 100 };
   }
 
-  // Editor inline de líneas/notas/modo (borrador/emitido). PATCH → version++ en el
-  // backend. Inputs creados por DOM (.value directo): sin interpolar valores en HTML.
-  function buildAlbEditor(box, alb) {
+  // Editor de líneas/notas/modo (borrador/emitido). PATCH → version++ en el backend.
+  // Inputs creados por DOM (.value directo): sin interpolar valores en HTML.
+  // SCRUM-31 (F2): se monta en un BOTTOM-SHEET (openAlbEditorSheet), no inline. La lógica
+  // interna (campos, totales, PATCH) NO cambia; solo se parametrizan el CIERRE (onClose) y el
+  // DESTINO del error (onError), porque el statusBox de la página queda DETRÁS del overlay.
+  // Sin opts → comportamiento inline de antes intacto.
+  function buildAlbEditor(box, alb, { onClose, onError } = {}) {
     box.innerHTML = '';
     // SCRUM-65: el modo solo se puede TOCAR en 'borrador' (congelado desde 'emitido' —
     // el backend devolvería 409 albaran_locked si se intentase cambiar después).
@@ -647,9 +651,11 @@ async function renderJobDetailView(container, jobId) {
       try {
         await apiRequest(`/admin/albaranes/${alb.id}`, { method: 'PATCH', body: JSON.stringify(body) });
         showToast('✓ Albarán actualizado (nueva versión).');
+        if (onClose) onClose(); // cierra el sheet antes de re-renderizar
         refresh();
       } catch (e) {
-        setStatus('error', e?.data?.message || 'No se pudo guardar el albarán.');
+        const msg = e?.data?.message || 'No se pudo guardar el albarán.';
+        if (onError) onError(msg); else setStatus('error', msg); // el error se ve DENTRO del sheet
         save.disabled = false;
       }
     });
@@ -657,9 +663,59 @@ async function renderJobDetailView(container, jobId) {
     const cancelEd = document.createElement('button');
     cancelEd.className = 'btn-secondary btn-sm';
     cancelEd.textContent = 'Cancelar';
-    cancelEd.addEventListener('click', () => { box.style.display = 'none'; });
+    cancelEd.addEventListener('click', () => { if (onClose) onClose(); else box.style.display = 'none'; });
     saveRow.appendChild(cancelEd);
     box.appendChild(saveRow);
+  }
+
+  // SCRUM-31 (F2): abre el editor de líneas en un BOTTOM-SHEET. Reutiliza .modal-overlay/.modal,
+  // que en <640px ya es hoja inferior full-width con scroll y slide-from-bottom (styles.css, como
+  // customersView). Cada albarán abre su propio sheet. Se monta en document.body para que el
+  // position:fixed no dependa de ningún stacking-context de la vista.
+  function openAlbEditorSheet(alb) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', `Editar albarán ${alb.numero}`);
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    const header = document.createElement('div');
+    header.className = 'modal-header';
+    const title = document.createElement('div');
+    title.className = 'modal-title';
+    title.textContent = `Editar albarán ${alb.numero}`;
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'modal-close';
+    closeBtn.type = 'button';
+    closeBtn.textContent = '×';
+    closeBtn.setAttribute('aria-label', 'Cerrar');
+    header.append(title, closeBtn);
+    // Banner de error PROPIO del sheet (el statusBox de la página queda detrás del overlay).
+    const errEl = document.createElement('div');
+    errEl.className = 'alert error';
+    errEl.style.cssText = 'display:none;margin:12px 24px 0';
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'modal-body';
+    modal.append(header, errEl, bodyEl);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    function close() {
+      overlay.remove();
+      document.removeEventListener('keydown', onKey);
+    }
+    closeBtn.addEventListener('click', close);
+    document.addEventListener('keydown', onKey);
+    // NO se cierra al pulsar el fondo: evita perder líneas sin querer (usa ×, Cancelar o Esc).
+
+    buildAlbEditor(bodyEl, alb, {
+      onClose: close,
+      onError: (msg) => { errEl.textContent = msg; errEl.style.display = 'block'; },
+    });
+    // Foco al primer campo (Concepto) para teclear directo; si no hay, al botón de cerrar.
+    (bodyEl.querySelector('.input') || closeBtn).focus();
   }
 
   albaranes.forEach((alb) => {
@@ -684,8 +740,7 @@ async function renderJobDetailView(container, jobId) {
       `</span>` +
       `</div>` +
       `<div class="jobdet-alb-fotos" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>` +
-      `<div class="jobdet-alb-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div>` +
-      `<div class="jobdet-alb-editor" style="display:none;margin-top:10px"></div>`;
+      `<div class="jobdet-alb-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div>`;
     albSec.appendChild(item);
     // SCRUM-17: checkbox de selección (modo consolidación) en albaranes elegibles.
     if (alb.estado === 'firmado' && alb.modoValoracion === 'VALORADO' && !alb.facturado) {
@@ -703,7 +758,6 @@ async function renderJobDetailView(container, jobId) {
     }
     const acts = item.querySelector('.jobdet-alb-actions');
     const fotosBox = item.querySelector('.jobdet-alb-fotos');
-    const editorBox = item.querySelector('.jobdet-alb-editor');
 
     // Miniaturas de fotos (GET tenancy-safe; la cookie de sesión viaja en el <img>)
     apiRequest(`/admin/albaranes/${alb.id}/fotos`).then((fotos) => {
@@ -718,11 +772,7 @@ async function renderJobDetailView(container, jobId) {
     }).catch(() => {});
 
     const pdfBtn = () => mkBtn('PDF', () => { window.open(`/admin/albaranes/${alb.id}/pdf`, '_blank'); });
-    const editBtn = () => mkBtn('Editar líneas', () => {
-      const open = editorBox.style.display !== 'none';
-      editorBox.style.display = open ? 'none' : 'block';
-      if (!open) buildAlbEditor(editorBox, alb);
-    });
+    const editBtn = () => mkBtn('Editar líneas', () => openAlbEditorSheet(alb));
     const fotoBtn = () => {
       const input = document.createElement('input');
       input.type = 'file';
