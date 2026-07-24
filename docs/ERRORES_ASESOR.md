@@ -10,7 +10,7 @@
 
 **R1 · Verifica en la fuente antes de afirmar.** No deducir el estado de algo por su síntoma. Si es configuración externa (Meta, Resend, Railway, DNS), mirar EN la herramienta. Si es código, leer EL código. Si es un archivo, comprobar que existe.
 
-**R2 · No cerrar un ticket sin evidencia de que el fix está donde debe.** "Claude Code dice que está hecho" no es evidencia; el diff o el test que lo prueba, sí.
+**R2 · No cerrar un ticket sin evidencia de que el fix está donde debe.** "Claude Code dice que está hecho" no es evidencia; el diff o el test que lo prueba, sí. **Método concreto:** `git merge-base --is-ancestor <commit> origin/main` (o el "This branch has been merged" de GitHub) — nunca el estado de Jira ni el resumen en prosa del ejecutor. Si el comando no confirma que el commit es antepasado de `main`, el fix no está ahí, aunque el ticket diga "Cerrada" y el reporte diga "hecho".
 
 **R3 · Orden de diagnóstico para "algo no llega/no funciona":** ① ¿se generó? ② ¿se envió/ejecutó? ③ ¿llegó? ④ ¿lo filtró/bloqueó alguien? Empezar por ①, no por ④.
 
@@ -65,6 +65,13 @@
 **Quién lo detectó:** las sesiones, al encontrarse el árbol cambiado.
 **Coste:** una hora de reconstrucción manual, y una columna aplicada a producción antes que su código.
 **Regla derivada:** R6.
+
+### 2026-07-23 · #7 — Cerré SCRUM-114 fiándome de un reporte, sin verificar que el código estaba en main
+**Qué pasó:** cerré el ticket SCRUM-114 (scrum47/scrum49 debían autoimponerse `WHATSAPP_DRY_RUN=1` en vez de depender de que quien invocara el test no lo olvidara) dando el fix por mergeado. La rama con el código real (`scrum-114-enviar-para-firmar-ok-false`) nunca llegó a `main`: lo único que aterrizó fue un PR ajeno de otro carril (#112, `scrum-114-runbook-falso-rojo`) que documentaba el mismo hallazgo en `docs/QA/SUITE_REGRESION.md` ("trampa 7") sin tocar una línea de código. Jira decía "Cerrada"; el repositorio decía otra cosa.
+**Por qué:** di el ticket por bueno porque el relato del cierre coincidía con lo esperado (la misma causa raíz que el propio reporte ya había distinguido con detalle), sin el paso mínimo de comprobar que el commit era antepasado de `main`. Es el MISMO fallo que el incidente #1 (SCRUM-54): confiar en el reporte en vez de en el repositorio.
+**Quién lo detectó:** la siguiente tarea (SCRUM-126), al tocar los mismos ficheros para unificar el shape de los endpoints de envío y encontrar que `WHATSAPP_DRY_RUN` seguía sin autoimponerse — unas 6 horas después de cerrada la 114.
+**Coste:** dos tests gateados (scrum47, scrum49) quedaron frágiles frente a quien los invocara durante esas 6 horas sin que nadie lo supiera; el fix tuvo que reaplicarse dentro de SCRUM-126 en vez de tener su propio PR revisable.
+**Regla derivada:** R2 (reforzada arriba con el método exacto de verificación).
 
 ---
 
