@@ -926,6 +926,18 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 > Sin schema. **INERTE en producción HOY** (ningún merchant real tiene Stripe LIVE aún, **SCRUM-41
 > abierta**): es defensa PREVENTIVA — el día que se active Stripe, impide que el primer cobro con tarjeta
 > de un merchant sin Connect caiga en la cuenta de plataforma. La protección que se agradece tarde.
+>
+> **✅ SCRUM-129 · retirado n8n VIVO de `/charges/:id/send` + guard de la regla nº1 (24-jul-2026):**
+> hallazgo de otra sesión (lineage del recon SCRUM-124). `charges.routes.ts` tenía `POST /:id/send` con
+> n8n vivo (`axios.post` a una URL de webhook de n8n) en una ruta de COBROS — viola la regla 1 (WhatsApp
+> = Meta Cloud API directa, jamás n8n). Y MENTÍA: sin la URL configurada (lo esperable, n8n prohibido)
+> se saltaba el envío pero creaba el `Event type:'sent'` y respondía `{ok:true}`; además esquivaba todos
+> los guards de `whatsapp.ts` (topes J6, opt-out J3, dry-run, WA-0b). Verificado SIN callers → RETIRAR,
+> no migrar. Todo el n8n del repo era muerto: se retiró el endpoint + `src/integrations/n8n.ts`
+> (`emitToN8n`, nunca llamado) + las env vars de n8n. **Guard estructural** (`scrum129-n8n-guard`,
+> `npm test` normal): ningún fichero de código cablea n8n; calca el guard de r28 (SCRUM-124) — walk de
+> todo el repo, self-exclusión (SCRUM-125), sin allowlist. Vigila el mecanismo (la config), no la prosa
+> histórica ("ya NO usa n8n" debe poder escribirse). Sin schema.
 
 **V2. Trigger del segundo tramo:** **✅ VERIFICADO (SCRUM-10/13, 9-jul-2026): el resto NUNCA se cobra solo** (confirmado en código: `/admin/jobs/:id/collect-rest` vía `getNextBillingStage`, siempre acción del pro). Regla: el resto NUNCA se cobra solo; trigger = acción del pro ("Trabajo terminado → Cobrar resto"; con JOB-1: estado `terminado`) → cobro/factura del resto + payment_request.
 **V3. Anticipos [VALIDAR asesor en S1-F]:** señal con factura = **factura de anticipo con IVA**; la final descuenta el anticipo. Pre-SIF: señal con recibo no fiscal (coherente con flag). Post-SIF: implementar el dictamen (regla 32).
