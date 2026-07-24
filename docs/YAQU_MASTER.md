@@ -579,6 +579,33 @@ Ruta nueva = declara rol mínimo; default Admin-only. **Lo hace cumplir un test,
 > rol): no verifica que un handler declarado `token` valide bien el token, solo que alguien lo afirmó y lo
 > revisó — el complemento natural sería un test de comportamiento, mismo papel que `tenancy-permisos.test.mjs`.
 > `npm test`: 192 · 164 pass · 0 fail · 28 skip (gateados), sin regresión en SCRUM-55.
+> **✅ SCRUM-128 · paso b (24-jul-2026, solo backend — frontend queda como propuesta, ver abajo):**
+> SCRUM-126 unificó el vocabulario "¿salió el envío?" en 8 endpoints `/admin` con contrato de cuerpo
+> (`src/lib/sendOutcome.ts`: `sent` en la raíz, o anidado en `collect-rest`) + 1 fire-and-forget sin
+> contrato HTTP (`quotes.routes.ts:568`, solo WA-0b lo registra). Este ticket lo blinda con el MISMO
+> mecanismo que Guard A/S1: `src/core/http/sendEndpointDeclarations.ts` + test de enumeración
+> (`tests/scrum128-send-endpoints-fail-closed.test.mjs`) que recorre `/admin` vía `getAdminMounts()`
+> (registro real, no reflection sobre Express) y falla si una ruta que **huele a envío** (heurística
+> `enviar|send|resend` en el path) no está declarada — con dónde vive `sent` — o aparcada con ticket.
+> **Límite honesto, documentado en el propio archivo**: (1) no verifica que el handler use
+> `sendFailureBody`/`sendSuccessBody` de verdad, solo que alguien lo declaró; (2) la heurística tiene
+> un punto ciego CONOCIDO y ya materializado — `collect-rest` es uno de los 8 y su path no contiene
+> ninguna de las tres palabras, así que está declarado A MANO; un futuro endpoint con nombre igual de
+> opaco que envíe algo como efecto secundario tampoco se detectaría solo; (3) no verifica que el FRONT
+> mire el campo (esa es la capa 2, frontend, sin implementar). **Dos hallazgos colaterales del propio
+> recon, fuera de alcance de este PR y abiertos como tickets propios:** `POST /charges/:id/send` envía
+> por **n8n** (`N8N_ONSEND_URL`) — regla dura 1 violada — y encima de forma CONDICIONAL: sin la URL
+> configurada (lo esperable, al estar prohibido), el bloque se salta entero y aun así responde
+> `{ok:true, status:'sent'}`; verificado sin ningún caller vivo en el repo → **SCRUM-129**, recomendación
+> retirar, no migrar. `POST /admin/team/:id/resend` (reenviar invitación) traga el error de `sendEmail`
+> en un `catch` que solo hace `console.error` y responde `{ok:true}` siempre — misma clase de bug que
+> el cluster 114→127, en invitaciones de equipo → **SCRUM-131**, aparcado en `SEND_ENDPOINTS_PENDING`
+> (ratchet `MAX=1`, plazo 30-sep-2026) en vez de con una declaración falsa. Probado en rojo (undeclared
+> + declaración muerta, ambos confirmados). `npm test`: 260 · 222 pass · 0 fail · 38 skip, sin regresión.
+> **Frontend (propuesta, NO implementada):** dos capas del ticket original — (a) ratchet barato tipo
+> censo SCRUM-113 sobre `public/dashboard/js/*.js` (detecta el patrón exacto del botón roto, ciego a
+> indirección real) y (b) Playwright con soft-fail forzado por endpoint, la única capa con verdad real
+> pero cara de mantener — quedan para que el fundador valore si compensan hoy antes de construirlas.
 > **✅ SCRUM-102 (23-jul-2026):** hallazgo MEDIO de SCRUM-88 — `fees.csv` (facturación de TODA la
 > plataforma) y `platform-funnel` dependían SOLO de `isOwnerEmail()` (comparación contra la env var
 > `OWNER_EMAILS`); verificado que hoy está bien puesta en prod, así que era endurecimiento, no
