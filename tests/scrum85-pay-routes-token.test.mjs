@@ -66,23 +66,28 @@ test('SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numéric
     assert.ok(invoiceBody.includes(`/pay/card/${tokenA}`), 'el link a /pay/card debe llevar el TOKEN');
     assert.ok(!invoiceBody.includes(`/pay/card/${A.charge.id}`), 'el link a /pay/card NO debe llevar el id numérico');
 
-    // ── /pay/card: numérico 404, token resuelve el cobro (redirect a Stripe o 501 si no configurado) ──
+    // ── /pay/card: numérico 404, token resuelve el cobro (303 Stripe / 501 sin Stripe / 409 r23) ──
     const rNumCard = await fetch(`${base}/pay/card/${A.charge.id}`, { redirect: 'manual' });
     assert.equal(rNumCard.status, 404, `GET /pay/card/<id numérico> debe ser 404 y fue ${rNumCard.status}`);
 
     const rCard = await fetch(`${base}/pay/card/${tokenA}`, { redirect: 'manual' });
-    // El token DEBE resolver el cobro (algo != 404): 303 si Stripe redirige, 501 si Stripe falta.
-    // Junto al 404 del id numérico de arriba, ESA es la prueba del cierre del IDOR — que 303 y 501
-    // sean ambos != 404 hace de testigo de «mecanismo vivo» (el token resuelve, el numérico no).
-    // Se sostiene SIN Stripe desde SCRUM-119: antes el 501 se adelantaba al 404 y no discriminaba.
-    assert.ok([303, 501].includes(rCard.status), `GET /pay/card/:token debe resolver el cobro (303 a Stripe o 501 sin Stripe) y fue ${rCard.status}`);
+    // El token DEBE resolver el cobro (algo != 404). Statuses posibles: 303 (Stripe → Checkout),
+    // 501 (Stripe ausente), o 409 (r23: merchant real SIN Connect → tarjeta = «cuenta conectada o
+    // nada»; este fixture ES un merchant real sin Connect). Junto al 404 del id numérico, ESA es la
+    // prueba del IDOR: el token resuelve (≠404, testigo de «mecanismo vivo»), el numérico no.
+    assert.notEqual(rCard.status, 404, 'el token válido NO debe dar 404 (mecanismo vivo del IDOR)');
+    assert.ok([303, 501, 409].includes(rCard.status), `GET /pay/card/:token: 303/501/409 y fue ${rCard.status}`);
     if (rCard.status === 303) {
       assert.match(rCard.headers.get('location') || '', /^https:\/\/checkout\.stripe\.com\//, 'debe redirigir a Stripe Checkout real');
+    } else if (rCard.status === 409) {
+      // SCRUM-130 (r23): merchant real sin Connect → NO cae a la cuenta de plataforma. El IDOR queda
+      // verificado igual (numérico 404 ≠ token 409); lo que NO se ejerce aquí es el redirect a Stripe.
+      t.diagnostic('ℹ️ SCRUM-130 (r23): /pay/card token → 409 (merchant real sin Connect: tarjeta = cuenta conectada o nada). IDOR verificado (numérico 404 ≠ token 409).');
     } else {
-      // SCRUM-119 (criterio SCRUM-121): sin STRIPE_SECRET_KEY el redirect real a Stripe Checkout
-      // (303) NO se ejerce. El cierre del IDOR SÍ queda verificado (numérico 404 ≠ token 501); esta
-      // pata concreta no. Se dice EN VOZ ALTA — ni verde fingido ni skip mudo.
-      t.diagnostic('⚠️ SCRUM-119: Stripe ausente — IDOR de /pay/card verificado (numérico 404 ≠ token 501), pero el redirect a Stripe Checkout (303) NO se ejerció aquí. Configura STRIPE_SECRET_KEY para cubrir esa pata.');
+      // SCRUM-119 (criterio SCRUM-121): sin STRIPE_SECRET_KEY el redirect real (303) NO se ejerce.
+      // El IDOR SÍ queda verificado (numérico 404 ≠ token 501). Se dice EN VOZ ALTA — ni verde
+      // fingido ni skip mudo.
+      t.diagnostic('⚠️ SCRUM-119: Stripe ausente — IDOR de /pay/card verificado (numérico 404 ≠ token 501); el redirect a Stripe Checkout (303) NO se ejerció aquí.');
     }
 
     // ── /pay/bizum: numérico 404; token resuelve (200 con el flag activo, o redirect a /pay/invoice/:token si no) ──
