@@ -913,6 +913,19 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 > `t.diagnostic` EN VOZ ALTA cuando es 501 (Stripe ausente → el redirect real a Checkout NO se ejerce;
 > el IDOR sí queda verificado, numérico 404 ≠ token 501). Ni verde fingido ni skip mudo. Verificado en
 > staging sin Stripe: scrum85 pasa entero, el cruce A/B corre. `npm test` 242 · 209 pass · 0 fail. Sin schema.
+>
+> **✅ SCRUM-130 · guard r23: la tarjeta va a la cuenta CONECTADA del merchant, o NADA (24-jul-2026, pagos):**
+> hallazgo del recon SCRUM-124 (prohibiciones sin mecanismo). La regla 23 y C1-2 ya especificaban
+> «tarjeta deshabilitada para reales salvo demo», pero el backend NO lo verificaba: sin Connect,
+> `payCard.routes.ts` creaba la Checkout Session en la cuenta de PLATAFORMA para CUALQUIER merchant —
+> solo lo tapaba el selector de la UI. Dinero de clientes finales en la cuenta equivocada = regulatorio
+> (el merchant es merchant-of-record). **Guard:** función PURA `cardChargeDecision({useConnect, isDemo})`
+> → `connect` / `demo_platform` (regla 18) / `refuse` (real sin Connect → **409**, no cae a plataforma).
+> DEBAJO del `if (!stripe) 501` → solo muerde con Stripe (prod); staging y scrum85 sin cambio de
+> comportamiento hoy. Test PURO (`scrum130-card-charge-connect`) + `scrum85` actualizado (`[303,501,409]`).
+> Sin schema. **INERTE en producción HOY** (ningún merchant real tiene Stripe LIVE aún, **SCRUM-41
+> abierta**): es defensa PREVENTIVA — el día que se active Stripe, impide que el primer cobro con tarjeta
+> de un merchant sin Connect caiga en la cuenta de plataforma. La protección que se agradece tarde.
 
 **V2. Trigger del segundo tramo:** **✅ VERIFICADO (SCRUM-10/13, 9-jul-2026): el resto NUNCA se cobra solo** (confirmado en código: `/admin/jobs/:id/collect-rest` vía `getNextBillingStage`, siempre acción del pro). Regla: el resto NUNCA se cobra solo; trigger = acción del pro ("Trabajo terminado → Cobrar resto"; con JOB-1: estado `terminado`) → cobro/factura del resto + payment_request.
 **V3. Anticipos [VALIDAR asesor en S1-F]:** señal con factura = **factura de anticipo con IVA**; la final descuenta el anticipo. Pre-SIF: señal con recibo no fiscal (coherente con flag). Post-SIF: implementar el dictamen (regla 32).
