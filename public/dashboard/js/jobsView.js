@@ -213,9 +213,12 @@ function jobCard(j, container) {
         b.disabled = true; b.textContent = 'Enviando…';
         try {
           const r = await apiRequest(`/admin/jobs/${j.id}/collect-rest`, { method: 'POST' });
-          showToast(r.whatsapp === 'sent'
+          // SCRUM-126: la factura se crea siempre; el envío es un efecto secundario con su
+          // propio resultado en r.whatsapp.sent (ver api.js: waCollectRestSent).
+          const waSent = waCollectRestSent(r.whatsapp);
+          showToast(waSent
             ? `💰 Enlace de cobro enviado (${fmtMoneyEs(r.amount, r.currency)})`
-            : 'Cobro creado — el WhatsApp falló, reenvíalo desde Cobros', r.whatsapp === 'sent' ? 'ok' : 'warn');
+            : 'Cobro creado — el WhatsApp falló, reenvíalo desde Cobros', waSent ? 'ok' : 'warn');
           refresh();
         } catch (err) {
           showToast('No se pudo generar el cobro: ' + (err?.data?.message || err.message), 'error');

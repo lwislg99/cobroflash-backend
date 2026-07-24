@@ -214,9 +214,12 @@ async function renderJobDetailView(container, jobId) {
       try {
         if (nextAct.kind === 'cobrar') {
           const r = await apiRequest(`/admin/jobs/${job.id}/collect-rest`, { method: 'POST' });
-          showToast(r.whatsapp === 'sent'
+          // SCRUM-126: la factura se crea siempre; el envío es un efecto secundario con su
+          // propio resultado en r.whatsapp.sent (ver api.js: waCollectRestSent).
+          const waSent = waCollectRestSent(r.whatsapp);
+          showToast(waSent
             ? `💰 Enlace de cobro enviado (${fmtMoneyEs(r.amount, r.currency)})`
-            : 'Cobro creado — el WhatsApp falló, reenvíalo desde Cobros', r.whatsapp === 'sent' ? 'ok' : 'warn');
+            : 'Cobro creado — el WhatsApp falló, reenvíalo desde Cobros', waSent ? 'ok' : 'warn');
           refresh();
         } else if (nextAct.kind === 'recordar') {
           const d = await apiRequest(`/admin/invoices/${nextAct.invoiceId}/send-reminder`, { method: 'POST' });
@@ -231,7 +234,7 @@ async function renderJobDetailView(container, jobId) {
           }
         } else if (nextAct.kind === 'firmar') {
           const d = await apiRequest(`/admin/albaranes/${nextAct.albaranId}/enviar-para-firmar`, { method: 'POST' });
-          if (d && d.ok === false) setStatus('error', d.message || 'No se pudo enviar por WhatsApp.');
+          if (waSendFailed(d)) setStatus('error', d.message || 'No se pudo enviar por WhatsApp.');
           else showToast('✓ Enviado al cliente para firmar.');
           cta.disabled = false; cta.textContent = orig; // el albarán sigue emitido: no se refresca
         } else if (nextAct.kind === 'emitir') {
@@ -895,7 +898,7 @@ async function renderJobDetailView(container, jobId) {
         firmarWaBtn.textContent = 'Enviando…';
         try {
           const d = await apiRequest(`/admin/albaranes/${alb.id}/enviar-para-firmar`, { method: 'POST' });
-          if (d && d.ok === false) {
+          if (waSendFailed(d)) {
             setStatus('error', d.message || 'No se pudo enviar por WhatsApp.');
           } else {
             showToast('✓ Enviado al cliente para firmar.');
@@ -918,7 +921,7 @@ async function renderJobDetailView(container, jobId) {
         waBtn.textContent = 'Enviando…';
         try {
           const d = await apiRequest(`/admin/albaranes/${alb.id}/enviar-whatsapp`, { method: 'POST' });
-          if (d && d.ok === false) {
+          if (waSendFailed(d)) {
             setStatus('error', d.message || 'No se pudo enviar por WhatsApp.');
           } else {
             showToast('✓ Albarán enviado por WhatsApp.');
@@ -1012,11 +1015,18 @@ async function renderJobDetailView(container, jobId) {
         }
 
         // Recordar pago → POST /admin/invoices/:id/send-reminder (solo si el cliente tiene teléfono).
+        // SCRUM-126: este botón (distinto del de la CTA del héroe, arriba) nunca miró el
+        // resultado del envío — mostraba "✓ Recordatorio enviado" aunque hubiera fallado.
+        // Mismo bug que SCRUM-115 arregló en otro sitio del mismo fichero; este quedó fuera.
         const recordarBtn = job.customer?.phone ? mkBtn('Recordar pago', async () => {
           try {
-            await apiRequest(`/admin/invoices/${inv.id}/send-reminder`, { method: 'POST' });
-            showToast('✓ Recordatorio enviado por WhatsApp.');
-            refresh();
+            const d = await apiRequest(`/admin/invoices/${inv.id}/send-reminder`, { method: 'POST' });
+            if (waSendFailed(d)) {
+              setStatus('error', 'El WhatsApp del recordatorio falló — reinténtalo desde la factura.');
+            } else {
+              showToast('✓ Recordatorio enviado por WhatsApp.');
+              refresh();
+            }
           } catch { setStatus('error', 'Error al enviar el recordatorio.'); }
         }) : null;
 
@@ -1027,7 +1037,7 @@ async function renderJobDetailView(container, jobId) {
           wa.textContent = 'Enviando…';
           try {
             const d = await apiRequest(`/admin/invoices/${inv.id}/resend-whatsapp`, { method: 'POST' });
-            if (d && d.ok === false) { // Meta puede rechazar con 200 ok:false + mensaje legible
+            if (waSendFailed(d)) { // Meta puede rechazar: 200 + sent:false + mensaje legible
               setStatus('error', d.message || 'No se pudo enviar por WhatsApp.');
               invWaFallback(inv, d.pay_token, () => wa.click());
               wa.disabled = false; wa.textContent = orig;

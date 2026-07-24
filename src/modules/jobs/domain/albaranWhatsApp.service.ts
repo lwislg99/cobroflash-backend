@@ -14,19 +14,14 @@ import { normalizePhone } from '../../../core/utils/utils';
 import { sendWhatsAppTemplate, uploadWhatsAppMedia } from '../../../integrations/whatsapp';
 import { buildAlbaranFirmado, buildAlbaranParaFirmar } from '../../../integrations/whatsappTemplates';
 import { ensureAlbaranPdf } from './albaran.service';
+import { SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../lib/sendOutcome';
 
+// SCRUM-126: `status` distingue PRECONDICIÓN (nunca se intentó el envío — 404/409, el
+// caller no debe leer `sent`) de ENVÍO INTENTADO que no salió (siempre 200 — el caller
+// traduce esto a `sent:false`). El caller (albaranes.routes.ts) hace esa traducción.
 export type AlbaranFirmadoSendResult =
   | { ok: true }
   | { ok: false; reason: string; message: string; status: number };
-
-// Mensajes legibles por motivo (mismos que devolvía el endpoint de la 47).
-const LEGIBLE: Record<string, string> = {
-  wa_opt_out: 'El cliente se dio de baja de WhatsApp.',
-  demo_safe_numbers: 'En modo demo solo se envía a números autorizados.',
-  daily_cap: 'Se alcanzó el tope diario de mensajes de WhatsApp.',
-  customer_daily_cap: 'Este cliente ya recibió el máximo de mensajes por hoy.',
-  not_configured: 'WhatsApp no está configurado.',
-};
 
 /**
  * Envía la copia firmada del albarán `albaranId` al WhatsApp de su cliente. Idempotente en el
@@ -57,14 +52,18 @@ export async function sendAlbaranFirmadoWhatsApp(albaranId: number): Promise<Alb
     select: { id: true, name: true, phone: true },
   });
   const to = normalizePhone(customer?.phone || '');
-  if (!to) return { ok: false, reason: 'sin_telefono', message: 'Este cliente no tiene WhatsApp guardado.', status: 409 };
+  // SCRUM-126: "customer_missing_phone" (no "sin_telefono") — mismo código que usan
+  // invoiceWhatsApp.service.ts y sendQuote.service.ts para la misma condición.
+  if (!to) return { ok: false, reason: 'customer_missing_phone', message: 'Este cliente no tiene WhatsApp guardado.', status: 409 };
 
   // PDF firmado → bytes → media_id. Con la 48 el PDF es auth-only, por eso media_id y no link.
   const { diskPath, numero } = await ensureAlbaranPdf(albaran.id);
   const buffer = await fs.promises.readFile(diskPath);
   const mediaId = await uploadWhatsAppMedia({ buffer, filename: `${numero}.pdf`, mime: 'application/pdf' });
   if (!mediaId) {
-    return { ok: false, reason: 'media_upload_failed', message: 'No se pudo preparar el PDF para WhatsApp. Inténtalo de nuevo.', status: 502 };
+    // SCRUM-126: 200, no 502 — no se pudo preparar el adjunto, pero es "el envío no
+    // salió" desde la perspectiva del merchant, igual que un opt-out o un tope.
+    return { ok: false, reason: 'media_upload_failed', message: SEND_FAILURE_MESSAGES.media_upload_failed, status: 200 };
   }
 
   const obra = (job.titulo || '').trim() || 'tu trabajo'; // {{3}} = Job.titulo (fallback no vacío: J7 rechaza var vacía)
@@ -85,10 +84,14 @@ export async function sendAlbaranFirmadoWhatsApp(albaranId: number): Promise<Alb
   });
 
   if (!result?.ok) {
-    const reason = result?.reason || 'send_failed';
-    // Guard/Meta rechazó: el endpoint manual devuelve 200 + ok:false con mensaje legible
-    // (patrón del resend de invoices). El auto-envío (SCRUM-49) lo trata como best-effort.
-    return { ok: false, reason, message: LEGIBLE[reason] || 'No se pudo enviar por WhatsApp.', status: 200 };
+    // SCRUM-126: reason conocido (opt-out/tope/etc.) → su mensaje canónico. Cualquier otra
+    // cosa (Meta rechazó con texto libre, excepción) → whatsapp_send_failed genérico.
+    // Guard/Meta rechazó: el endpoint manual devuelve 200 (sent:false) con mensaje legible
+    // (mismo vocabulario que el resto de los 9 endpoints de envío). El auto-envío (SCRUM-49)
+    // lo trata como best-effort.
+    const reason: SendFailureReason =
+      result?.reason && result.reason in SEND_FAILURE_MESSAGES ? result.reason : 'whatsapp_send_failed';
+    return { ok: false, reason, message: SEND_FAILURE_MESSAGES[reason], status: 200 };
   }
   return { ok: true };
 }
@@ -120,7 +123,9 @@ export async function sendAlbaranParaFirmarWhatsApp(albaranId: number): Promise<
     select: { id: true, name: true, phone: true },
   });
   const to = normalizePhone(customer?.phone || '');
-  if (!to) return { ok: false, reason: 'sin_telefono', message: 'Este cliente no tiene WhatsApp guardado.', status: 409 };
+  // SCRUM-126: "customer_missing_phone" (no "sin_telefono") — mismo código que usan
+  // invoiceWhatsApp.service.ts y sendQuote.service.ts para la misma condición.
+  if (!to) return { ok: false, reason: 'customer_missing_phone', message: 'Este cliente no tiene WhatsApp guardado.', status: 409 };
 
   // Token OPACO (128 bits) perezoso: si ya existe se reutiliza (link estable). Marca de envío.
   const token = albaran.firmaToken || crypto.randomBytes(16).toString('hex');
@@ -142,8 +147,9 @@ export async function sendAlbaranParaFirmarWhatsApp(albaranId: number): Promise<
     log: { customerId: customer?.id ?? null, relatedType: 'albaran', relatedId: albaran.id },
   });
   if (!result?.ok) {
-    const reason = result?.reason || 'send_failed';
-    return { ok: false, reason, message: LEGIBLE[reason] || 'No se pudo enviar por WhatsApp.', status: 200 };
+    const reason: SendFailureReason =
+      result?.reason && result.reason in SEND_FAILURE_MESSAGES ? result.reason : 'whatsapp_send_failed';
+    return { ok: false, reason, message: SEND_FAILURE_MESSAGES[reason], status: 200 };
   }
   return { ok: true };
 }

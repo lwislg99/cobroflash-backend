@@ -240,7 +240,9 @@ async function fetchInvoiceDetail(id) {
   
         const data = await res.json().catch(() => ({}));
 
-        if (!res.ok || data.ok === false) {
+        // SCRUM-126: !res.ok cubre las precondiciones reales (400/404). waSendFailed cubre
+        // el motivo blando (opt-out/tope/etc.), siempre 200 + sent:false.
+        if (!res.ok || waSendFailed(data)) {
           // A20.5 (J5): mensaje humano del server + SIEMPRE las 3 salidas
           setStatus('error', data.message || ('No se pudo enviar por WhatsApp: ' + (data.error || 'desconocido')));
           // SCRUM-85: payToken (Charge.receiptToken), NUNCA el chargeId — /pay/invoice ya no acepta el id.

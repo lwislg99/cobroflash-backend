@@ -26,6 +26,7 @@ import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsA
 import { normalizePhone } from '../../../../core/utils/utils';
 import fs from 'fs';
 import { ensureInvoicePdf, ensureChargeReceiptToken } from '../../../../lib/invoicing';
+import { sendSuccessBody, sendFailureBody, SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 
 
 const router = Router();
@@ -362,36 +363,37 @@ router.post('/:id/resend-whatsapp', requireRole('admin'), async (req, res) => {
     // Lógica compartida (asegura cobro + envía payment_request_es)
     const r = await sendInvoicePaymentRequest(id);
     if (!r.ok) {
-      // A20.5 (J5): mensaje HUMANO por motivo + charge_id para que la UI pueda
-      // ofrecer SIEMPRE "Copiar enlace" aunque WhatsApp falle.
-      const J5_MESSAGES: Record<string, string> = {
-        customer_without_phone: 'Este cliente no tiene teléfono guardado — añádelo o envíale el enlace por email.',
-        invalid_phone_format: 'El teléfono del cliente no tiene un formato válido.',
-        wa_opt_out: 'Este cliente se dio de baja de WhatsApp — envíale el enlace por email o SMS.',
-        daily_cap: 'Has llegado al tope diario de envíos — copia el enlace y mándaselo tú.',
-        customer_daily_cap: 'Este cliente ya recibió varios mensajes hoy (anti-spam) — copia el enlace.',
-        demo_safe_numbers: 'Modo demo seguro: este número no está en la lista de pruebas.',
-      };
-      const code = r.reason === 'invoice_not_found' ? 404
-        : r.reason === 'customer_without_phone' || r.reason === 'invalid_phone_format' ? 400
-        : 502;
-      return res.status(code).json({
-        ok: false,
-        error: r.reason || 'whatsapp_send_failed',
-        message: J5_MESSAGES[String(r.reason)] || 'No se pudo enviar por WhatsApp — copia el enlace y mándaselo por SMS o llámale.',
+      // SCRUM-126: precondición real (nunca se intentó el envío) → status real, sin `sent`.
+      // Este era el ÚNICO de los 9 endpoints de envío que trataba una política de envío
+      // (opt-out/tope/demo) como error de servidor (502) — el resto ya usaba 200+soft-fail.
+      // Se alinea: cualquier motivo que NO sea precondición pasa a 200 (ok:true, sent:false).
+      if (r.reason === 'invoice_not_found') {
+        return res.status(404).json({ ok: false, error: r.reason, message: 'Factura no encontrada.' });
+      }
+      if (r.reason === 'customer_missing_phone' || r.reason === 'invalid_phone_format') {
+        const PRECONDITION_MESSAGES: Record<string, string> = {
+          customer_missing_phone: 'Este cliente no tiene teléfono guardado — añádelo o envíale el enlace por email.',
+          invalid_phone_format: 'El teléfono del cliente no tiene un formato válido.',
+        };
+        return res.status(400).json({ ok: false, error: r.reason, message: PRECONDITION_MESSAGES[r.reason] });
+      }
+      // Envío intentado, no salió (wa_opt_out/daily_cap/customer_daily_cap/demo_safe_numbers/
+      // charge_creation_*/whatsapp_send_failed) — A20.5 (J5): charge_id/pay_token SIEMPRE
+      // presentes para que la UI pueda ofrecer "Copiar enlace" aunque WhatsApp falle.
+      const reason: SendFailureReason =
+        r.reason && r.reason in SEND_FAILURE_MESSAGES ? (r.reason as SendFailureReason) : 'whatsapp_send_failed';
+      return res.status(200).json(sendFailureBody(reason, {
         charge_id: r.chargeId ?? null,
         pay_token: r.payToken ?? null, // SCRUM-85: el frontend debe construir /pay/invoice con ESTO, no charge_id
-      });
+      }));
     }
 
-    return res.json({
-      ok: true,
-      sent: true,
+    return res.json(sendSuccessBody({
       invoice_id: id,
       charge_id: r.chargeId,
       pay_token: r.payToken ?? null,
       to: r.to,
-    });
+    }));
   } catch (err) {
     console.error('[POST /admin/invoices/:id/resend-whatsapp]', err);
     return res.status(500).json({ ok: false, error: 'internal_error' });
@@ -412,16 +414,23 @@ router.post('/:id/send-email', requireRole('admin'), async (req, res) => {
       include: { customer: { select: { email: true, name: true } } },
     });
     if (!invoice) return res.status(404).json({ ok: false, error: 'not_found' });
+    // SCRUM-126: "customer_missing_email" (no "customer_without_email") — mismo código
+    // que usa quotesAdmin.routes.ts para la misma condición en /admin/quotes/:id/send-email.
     if (!invoice.customer?.email) {
-      return res.status(400).json({ ok: false, error: 'customer_without_email', message: 'Este cliente no tiene email guardado.' });
+      return res.status(400).json({ ok: false, error: 'customer_missing_email', message: 'Este cliente no tiene email guardado.' });
     }
 
     const { sendInvoiceEmail } = await import('../../../messaging/domain/email.service');
     await sendInvoiceEmail({ invoiceId: id, toEmail: invoice.customer.email, toName: invoice.customer.name || undefined, prisma });
-    return res.json({ ok: true, to: invoice.customer.email });
+    return res.json(sendSuccessBody({ to: invoice.customer.email }));
   } catch (err: any) {
     console.error('[POST /admin/invoices/:id/send-email]', err?.message || err);
-    return res.status(500).json({ ok: false, error: 'internal_error' });
+    // SCRUM-126: antes CUALQUIER fallo (incluido un simple error de Resend) devolvía 500
+    // genérico — el único de los 9 endpoints sin rama de soft-fail. Se alinea con el
+    // hermano de presupuestos (quotesAdmin.routes.ts): 200 + sent:false, salvo que sea
+    // realmente la factura la que no existe (defensivo: el caller ya la comprobó arriba).
+    if (err?.message === 'invoice_not_found') return res.status(404).json({ ok: false, error: 'not_found' });
+    return res.status(200).json(sendFailureBody('email_send_failed'));
   }
 });
 
@@ -441,11 +450,13 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
       include: { customer: true, merchant: true },
     });
 
-    if (!invoice) return res.status(404).json({ error: 'not_found' });
-    if (invoice.status === 'paid') return res.status(409).json({ error: 'invoice_already_paid' });
+    // SCRUM-126: precondición real (nunca se intentó el envío) — ok:false explícito,
+    // antes iba bare {error} sin `ok` (inconsistente con el resto de los 9 endpoints).
+    if (!invoice) return res.status(404).json({ ok: false, error: 'not_found' });
+    if (invoice.status === 'paid') return res.status(409).json({ ok: false, error: 'invoice_already_paid' });
 
     const phone = normalizePhone(invoice.customer?.phone);
-    if (!phone) return res.status(400).json({ error: 'customer_missing_phone' });
+    if (!phone) return res.status(400).json({ ok: false, error: 'customer_missing_phone' });
 
     const customerName = invoice.customer?.name || 'Cliente';
     const merchantName = invoice.merchant?.name || 'tu proveedor';
@@ -457,6 +468,9 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
     const payUrl       = payToken ? `${BASE_URL}/pay/invoice/${payToken}` : null;
 
     let sent = false;
+    // SCRUM-126: antes `sent:false` viajaba SIN explicar por qué — el único de los 9
+    // endpoints que no decía nada del motivo. failReason lo captura para el cuerpo final.
+    let failReason: SendFailureReason = 'whatsapp_send_failed';
 
     if (payUrl) {
       const result = await sendWhatsAppTemplate({
@@ -473,6 +487,7 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
       sent = result.ok;
       if (!result.ok) {
         console.error('[send-reminder] WA template error:', result.error);
+        if ((result as any)?.reason && (result as any).reason in SEND_FAILURE_MESSAGES) failReason = (result as any).reason;
       }
     } else {
       // SCRUM-116: antes ponía `sent = true` SIN mirar el retorno, así que ni el `sent:false`
@@ -485,7 +500,10 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
         log: { customerId: invoice.customerId, relatedType: 'invoice', relatedId: id },
       });
       sent = !!result?.ok;
-      if (!sent) console.error('[send-reminder] WA texto NO entregado:', (result as any)?.error || (result as any)?.reason);
+      if (!sent) {
+        console.error('[send-reminder] WA texto NO entregado:', (result as any)?.error || (result as any)?.reason);
+        if ((result as any)?.reason && (result as any).reason in SEND_FAILURE_MESSAGES) failReason = (result as any).reason;
+      }
     }
 
     // SCRUM-116: la fecha se marca SOLO si el envío salió. Antes se escribía siempre, y como
@@ -502,10 +520,11 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
       }
     }
 
-    return res.json({ ok: true, sent, via: payUrl ? 'template' : 'text', phone });
+    const extra = { via: payUrl ? 'template' : 'text', phone };
+    return res.json(sent ? sendSuccessBody(extra) : sendFailureBody(failReason, extra));
   } catch (err) {
     console.error('[POST /admin/invoices/:id/send-reminder]', err);
-    return res.status(500).json({ error: 'internal_error' });
+    return res.status(500).json({ ok: false, error: 'internal_error' });
   }
 });
 

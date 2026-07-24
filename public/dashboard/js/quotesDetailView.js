@@ -348,8 +348,8 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
           btnSend.textContent = original;
           return;
         }
-        // P3-2/J5: Meta puede rechazar con 200 ok:false + mensaje legible → reintentar.
-        if (data.ok) {
+        // P3-2/J5: Meta puede rechazar con 200 + sent:false + mensaje legible → reintentar.
+        if (!waSendFailed(data)) {
           setStatus('success', 'Presupuesto enviado por WhatsApp.');
           await renderQuoteDetailView(container, quote.id); // el estado pasa a `sent`
         } else {
@@ -390,7 +390,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
           body: JSON.stringify({}),
         });
         const data = await res.json().catch(() => ({}));
-        if (res.ok && data.ok) {
+        // SCRUM-126: res.ok cubre las precondiciones (400/404). waSendFailed cubre el
+        // soft-fail (siempre 200 + sent:false).
+        if (res.ok && !waSendFailed(data)) {
           setStatus('success', 'Presupuesto enviado por correo.');
           await renderQuoteDetailView(container, quote.id); // draft → sent
         } else {
