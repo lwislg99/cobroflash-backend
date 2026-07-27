@@ -11,6 +11,7 @@ import { resolveBillingPlan, distributeStageAmounts } from '../../../quotes/doma
 import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; // SCRUM-34
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-173
 import { allocateAlbaranNumber } from '../../domain/albaranNumber.service';
 import {
   ALBARAN_MODOS_VALORACION,
@@ -595,8 +596,9 @@ router.post('/:id/consolidar-albaranes', requireRole('admin'), async (req, res) 
     // Gate de modo: la recapitulativa es documento FISCAL puro — NO hay variante justificante J-.
     const merchant = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
-      // getEmissionMode necesita id/email/country/flags (Parte P); defaultCurrency para la factura.
-      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true },
+      // getEmissionMode necesita id/email/country/flags (Parte P); defaultCurrency para la
+      // factura; taxId para el sellado VeriFactu de SCRUM-173 (entra en la huella).
+      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true },
     });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
     if (getEmissionMode(merchant) === 'receipt') {
@@ -670,7 +672,41 @@ router.post('/:id/consolidar-albaranes', requireRole('admin'), async (req, res) 
       return out;
     });
 
-    return res.status(201).json({ ok: true, facturas: created });
+    // ── SCRUM-173: sellar la cadena VeriFactu, DESPUÉS del commit y una a una ──────────────
+    // La recapitulativa se emitía SIN registro VeriFactu: `emitInvoice` asigna número y crea
+    // la fila, pero no llama a `applyVeriFactu` — y este camino tampoco lo hacía, a diferencia
+    // de los otros cinco de emisión. Con el flag ON habría salido una factura fiscal sin
+    // huella, sin encadenar y sin QR: un agujero en la cadena, no una función que faltase.
+    // Estaba tapado solo porque INVOICING_ES_ENABLED lleva OFF.
+    //
+    // FUERA de la `$transaction` de arriba y EN SERIE, nunca en paralelo: sellar dentro de la
+    // tx haría que las N facturas del lote no se vieran entre sí y todas encadenaran al mismo
+    // registro anterior. `applyVeriFactu` ya lo impide por su cuenta (lanza si recibe un
+    // cliente de transacción), pero el orden correcto es este.
+    //
+    // Un fallo aquí NO revierte la consolidación: las facturas existen y los albaranes quedan
+    // marcados. Es deliberado — deshacer una factura emitida va contra la regla 29. Se avisa
+    // en la respuesta para que quede constancia y se pueda reintentar el sellado.
+    const sinSellar: string[] = [];
+    for (const f of created) {
+      try {
+        const inv = await prisma.invoice.findUnique({ where: { id: f.id } });
+        if (inv) await applyVeriFactu(inv, merchant?.taxId ?? '', prisma);
+      } catch (e: any) {
+        console.error(`[consolidar-albaranes] sellado VeriFactu falló en ${f.number}:`, e?.message || e);
+        sinSellar.push(f.number);
+      }
+    }
+
+    return res.status(201).json({
+      ok: true,
+      facturas: created,
+      // Solo aparece si algo falló: callar un sellado incompleto es peor que decirlo (mismo
+      // criterio que el paquete incompleto de SCRUM-25).
+      ...(sinSellar.length
+        ? { sinSellar, message: 'Se emitieron las facturas, pero falló el registro VeriFactu de alguna. Revísalo antes de entregarlas.' }
+        : {}),
+    });
   } catch (err: any) {
     if (err?.message === 'consolidacion_concurrente') {
       return res.status(409).json({ error: 'consolidacion_concurrente', message: 'Alguno de los partes se facturó a la vez desde otra sesión. Vuelve a intentarlo.' });

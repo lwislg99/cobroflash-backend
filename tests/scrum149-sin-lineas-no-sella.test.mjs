@@ -18,15 +18,31 @@ import assert from 'node:assert/strict';
 
 const { applyVeriFactu } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
 
-/** Doble mínimo de Prisma: `lines` es lo único que decide el caso. */
+/**
+ * Doble mínimo de Prisma: `lines` es lo único que decide el caso.
+ *
+ * SCRUM-173: ahora expone además `$transaction` y `$executeRaw`, porque `applyVeriFactu`
+ * sella la cadena DENTRO de una transacción con cerrojo por merchant
+ * (`pg_advisory_xact_lock`). No es adorno: la función distingue el cliente global del de una
+ * transacción por la presencia de `$transaction` y **rechaza el segundo** — sellar dentro de
+ * otra tx haría que las facturas de un mismo lote no se vieran entre sí y todas encadenaran
+ * al mismo registro anterior. Un doble sin `$transaction` se parecía a un cliente de
+ * transacción y saltaba ese guard.
+ *
+ * `$transaction` ejecuta el callback con el MISMO doble: aquí no hay aislamiento que emular,
+ * solo la forma. `$executeRaw` traga el cerrojo sin hacer nada — no hay Postgres detrás.
+ */
 function fakePrisma({ lines }) {
-  return {
+  const client = {
     invoice: {
       findUnique: async () => ({ lines }),
       findFirst: async () => null,          // no hay huella anterior (primer registro)
       update: async ({ data }) => ({ ...data }),
     },
+    $executeRaw: async () => 1,
+    $transaction: async (fn) => fn(client),
   };
+  return client;
 }
 
 const facturaBase = {
