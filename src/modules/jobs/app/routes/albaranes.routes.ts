@@ -18,6 +18,12 @@ import {
   type AlbaranModoValoracion,
 } from '../../domain/albaran.service';
 import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
+import {
+  agruparPorMes,
+  seleccionarConsolidablesDeCliente,
+  type AlbaranCandidato,
+} from '../../domain/consolidacionCliente.service'; // SCRUM-70
+import { calcAlbaranTotales, mesNaturalLabel, type AlbaranLinea } from '../../domain/albaran.service'; // SCRUM-70
 
 const router = Router();
 
@@ -33,6 +39,97 @@ router.get('/pendientes-facturar', async (req, res) => {
   } catch (err: any) {
     console.error('[GET /admin/albaranes/pendientes-facturar]', err?.message || err);
     res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * GET /admin/albaranes/consolidables — SCRUM-70 (FACT-2).
+ *
+ * VISTA PREVIA de lo que entraría en la recapitulativa de UN cliente, a ámbito CLIENTE + MES
+ * NATURAL (cruzando Trabajos), con los filtros de rango de fechas y de números.
+ *
+ * SOLO LECTURA, y es deliberado: el propio ticket lo pide («el usuario debe SIEMPRE ver y
+ * confirmar qué se va a agrupar antes de emitir», queja documentada de usuarios de Odoo con
+ * agrupaciones automáticas no controladas). A ámbito de cliente eso pasa de recomendable a
+ * imprescindible: la selección ya no la hace él parte a parte, la hace el sistema.
+ *
+ * ⚠️ NO EMITE. La emisión de la recapitulativa está en manos de SCRUM-173 (agujero de
+ * VeriFactu: `consolidar-albaranes` crea facturas sin `applyVeriFactu`) y se cablea a este
+ * ámbito cuando ese ticket cierre. Ver el comentario de SCRUM-70 para el porqué del orden.
+ *
+ * Filtros: ?customerId= (obligatorio) · ?desde= ?hasta= (ruta 1) · ?numeroDesde= ?numeroHasta=
+ * (ruta 2) · ?mes=YYYY-MM.
+ */
+router.get('/consolidables', async (req, res) => {
+  try {
+    const customerId = Number(req.query.customerId);
+    if (!Number.isInteger(customerId)) {
+      return res.status(400).json({ error: 'customer_requerido', message: 'Indica el cliente.' });
+    }
+    // Tenancy (regla 2): el cliente tiene que ser de este merchant o no existe.
+    const customer = await prisma.customer.findFirst({
+      where: { id: customerId, merchantId: req.merchantId! },
+      select: { id: true, name: true },
+    });
+    if (!customer) return res.status(404).json({ error: 'not_found' });
+
+    // `Albaran.jobId` es un Int plano (sin relación Prisma declarada), igual que en la bandeja
+    // de SCRUM-69: los Trabajos del cliente primero, sus albaranes después.
+    const jobs = await prisma.job.findMany({
+      where: { merchantId: req.merchantId!, customerId },
+      select: { id: true, tipoOperacion: true },
+    });
+    if (!jobs.length) return res.json({ customer, grupos: [], descartados: [] });
+
+    const jobById = new Map(jobs.map((j) => [j.id, j]));
+    const albaranes = await prisma.albaran.findMany({
+      where: { merchantId: req.merchantId!, jobId: { in: [...jobById.keys()] } },
+      select: {
+        id: true, numero: true, fecha: true, estado: true, modoValoracion: true,
+        invoiceId: true, lineas: true, jobId: true,
+      },
+      orderBy: { fecha: 'asc' },
+    });
+
+    const candidatos: AlbaranCandidato[] = albaranes.map((a) => ({
+      id: a.id, numero: a.numero, fecha: a.fecha, estado: a.estado,
+      modoValoracion: a.modoValoracion, invoiceId: a.invoiceId,
+      customerId, jobId: a.jobId,
+      tipoOperacion: jobById.get(a.jobId)?.tipoOperacion ?? null,
+    }));
+
+    const { elegibles, descartados } = seleccionarConsolidablesDeCliente(candidatos, customerId, {
+      desde: typeof req.query.desde === 'string' ? req.query.desde : null,
+      hasta: typeof req.query.hasta === 'string' ? req.query.hasta : null,
+      numeroDesde: typeof req.query.numeroDesde === 'string' ? req.query.numeroDesde : null,
+      numeroHasta: typeof req.query.numeroHasta === 'string' ? req.query.numeroHasta : null,
+      mes: typeof req.query.mes === 'string' ? req.query.mes : null,
+    });
+
+    const lineasById = new Map(albaranes.map((a) => [a.id, a.lineas]));
+    const grupos = agruparPorMes(elegibles).map((g) => {
+      let base = 0;
+      let cuota = 0;
+      for (const a of g.albaranes) {
+        const t = calcAlbaranTotales(lineasById.get(a.id) as AlbaranLinea[] | null);
+        base += t.base;
+        cuota += t.cuota;
+      }
+      return {
+        mesKey: g.mesKey,
+        mesLabel: mesNaturalLabel(g.mesKey),
+        jobIds: g.jobIds,
+        albaranes: g.albaranes.map((a) => ({ id: a.id, numero: a.numero, fecha: a.fecha, jobId: a.jobId })),
+        base: base.toFixed(2),
+        cuota: cuota.toFixed(2),
+        total: (base + cuota).toFixed(2),
+      };
+    });
+
+    return res.json({ customer, grupos, descartados });
+  } catch (err: any) {
+    console.error('[GET /admin/albaranes/consolidables]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
   }
 });
 
