@@ -430,6 +430,18 @@ async function fetchInvoices(options = {}) {
 
       card.appendChild(rowTop);
 
+      // SCRUM-171b: aviso de que TOCA facturar. Solo se pinta cuando el motivo es la
+      // PERIODICIDAD pactada: si el motivo es el plazo legal, el semáforo y la fecha límite de
+      // arriba ya lo están diciendo, y repetirlo con otras palabras sería ruido.
+      if (grupo.avisar && grupo.motivoAviso === 'periodicidad') {
+        const avisoLine = document.createElement('div');
+        avisoLine.style.cssText = 'margin-top:8px;font-size:13px;color:var(--neutral-700)';
+        avisoLine.textContent = customer.billingPeriodicity === 'QUINCENAL'
+          ? '🗓️ Toca facturarle: lo tienes pactado cada quince días.'
+          : '🗓️ Toca facturarle: lo tienes pactado mensual.';
+        card.appendChild(avisoLine);
+      }
+
       const importeLine = document.createElement('div');
       importeLine.style.cssText = 'margin-top:10px;font-size:13.5px;color:var(--neutral-700)';
       importeLine.innerHTML = '<strong>' + fmtMoneyEs(grupo.importePotencial.total, (window.appLocale && window.appLocale.currency) || 'EUR')

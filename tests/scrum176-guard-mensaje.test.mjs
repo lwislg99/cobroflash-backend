@@ -137,6 +137,35 @@ test('SCRUM-176 · tool_input sin command: fail-closed', () => {
 
 // ── 4. El sentinel de un solo uso sigue funcionando ───────────────────────────────────────
 
+// Una autorización de un solo uso se gasta cuando algo se EJECUTA, no cuando se mira. La
+// primera versión la consumía en cuanto detectaba `db push`, antes de comprobar las reglas
+// siguientes: con el sentinel puesto, `db push --force-reset` salía bloqueado por `--force`
+// **y con el sentinel ya borrado**. El fundador había dado un OK que no ejecutó nada y tenía
+// que volver a darlo — o creerse que lo había gastado. Fallo preexistente (venía del bash con
+// el mismo orden) que la portación conservó; lo encontró la sesión 1 comparando las dos.
+test('SCRUM-176 · el sentinel NO se quema si otra regla bloquea el comando', () => {
+  const sentinel = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-176b-')), 'allow-db-push');
+  fs.writeFileSync(sentinel, '');
+
+  const { bloqueado, motivo } = evaluar(llamada('npx prisma db push --force-reset'), sentinel);
+  assert.equal(bloqueado, true, 'el comando lleva --force: tiene que seguir bloqueado');
+  assert.match(motivo, /--force/);
+  assert.equal(
+    fs.existsSync(sentinel),
+    true,
+    '🔴 AUTORIZACIÓN QUEMADA SIN EJECUTAR NADA: el comando salió bloqueado y aun así se gastó ' +
+      'el permiso de un solo uso. El fundador tendría que volver a darlo, o daría por usado uno ' +
+      'que no llegó a aplicar ningún cambio.',
+  );
+});
+
+test('SCRUM-176 · sin sentinel y con otra regla, gana el mensaje de db push (orden intacto)', () => {
+  const inexistente = path.join(os.tmpdir(), 'yaqu-176b-no-existe');
+  const { bloqueado, motivo } = evaluar(llamada('npx prisma db push --force-reset'), inexistente);
+  assert.equal(bloqueado, true);
+  assert.match(motivo, /db push/, 'la prioridad de mensajes no debe cambiar al mover el consumo');
+});
+
 test('SCRUM-176 · el sentinel autoriza UN db push y se consume', () => {
   const sentinel = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-176-')), 'allow-db-push');
   fs.writeFileSync(sentinel, '');

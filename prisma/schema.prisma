@@ -162,6 +162,22 @@ model Customer {
   // escribe de vuelta a la BD. Editable en la ficha del cliente, sin banner ni prompt forzado.
   tipoDestinatario String? @map("tipo_destinatario")
 
+  /// SCRUM-171b (FACT-2d): periodicidad PACTADA de facturación — `NINGUNA | QUINCENAL | MENSUAL`.
+  ///
+  /// SIRVE PARA AVISAR, NO PARA FACTURAR SOLO. Decisión del fundador (27-jul-2026): un cron que
+  /// factura por su cuenta es exactamente lo que un profesional NO quiere la primera vez que usa
+  /// esto; que le avise y decida él es mejor producto. Además, un envío automático nuevo tendría
+  /// que pasar por la tabla J6 del máster (regla 28) — avisando, esa regla no se toca.
+  ///
+  /// El plazo legal manda por encima: la bandeja de SCRUM-69 ya calcula la fecha límite del
+  /// art. 13.2 RD 1619/2012 según `tipoDestinatario`, y una periodicidad genérica NUNCA puede
+  /// saltárselo. La periodicidad dice CADA CUÁNTO tocaría; el plazo dice cuándo es tarde.
+  ///
+  /// `NINGUNA` por defecto = el comportamiento de hoy, intacto (sin aviso). String y no enum,
+  /// igual que `tipoDestinatario` y `modoValoracion`: la lista vive en el código con su
+  /// validación, y añadir un valor no obliga a migrar un tipo de Postgres.
+  billingPeriodicity String @default("NINGUNA") @map("billing_periodicity")
+
   merchant      Merchant       @relation(fields: [merchantId], references: [id])
   charges       Charge[]
   createdAt     DateTime       @default(now()) @map("created_at")

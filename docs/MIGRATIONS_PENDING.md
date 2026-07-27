@@ -484,6 +484,25 @@ CREATE TABLE jobs (A13) · maintenance_plans (A15) · audit_log (A11.1) · attac
 
 ---
 
+## 27-jul-2026 — customers.billing_periodicity (SCRUM-171b) — APLICADO ✅ (staging + prod)
+
+```sql
+ALTER TABLE "customers" ADD COLUMN "billing_periodicity" TEXT NOT NULL DEFAULT 'NINGUNA';
+```
+
+- **Aditiva con DEFAULT**: con 44 filas en prod el ALTER es instantáneo y no reescribe la tabla
+  (Postgres ≥ 11 guarda el default en el catálogo). Cero DROP, cero cambios sobre lo existente.
+- `NINGUNA` de default = el comportamiento de hoy, intacto: ningún cliente empieza a avisar.
+  Verificado tras aplicar: los 44 quedaron en `NINGUNA`.
+- **Por qué DEFAULT aquí y `null` en `tipo_destinatario`** (su vecino de SCRUM-69): allí había
+  ambigüedad que preservar —«nunca clasificado» ≠ «clasificado como particular», y el plazo legal
+  depende de eso—. Aquí no: «sin pactar» y «sin periodicidad» son lo mismo.
+- Sirve para AVISAR, nunca para facturar sola: un envío automático nuevo exigiría su entrada en
+  la tabla J6 del máster (regla 28) y este ticket no la toca.
+- Orden seguido en las dos BD: preview enseñado → host verificado contra la allowlist → staging
+  sin otras sesiones → sentinel de un solo uso → `db push` → **verificado por
+  `information_schema`** (`text`, `default='NINGUNA'::text`, `nullable=NO`) → `prisma generate`.
+
 ## 27-jul-2026 — albaran_lineas_facturadas (SCRUM-170) — APLICADO ✅ (staging + prod)
 
 ```sql
