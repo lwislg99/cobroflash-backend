@@ -1415,9 +1415,10 @@ CLAUDE.md                          ← constitución (~100 líneas): puntero a e
                                       10 reglas duras, protocolo AA1, stop conditions
 .claude/
   settings.json                    ← hooks
-  hooks/guard-dangerous.sh         ← PreToolUse: bloquea `prisma migrate dev`,
-                                      `db push` sin preview confirmado, `--force`,
-                                      `rm -rf` fuera del workspace
+  hooks/guard-dangerous.sh         ← PreToolUse (envoltorio fino): comprueba node y delega
+  hooks/guard-dangerous.mjs        ← LÓGICA ÚNICA del guard (SCRUM-176): bloquea
+                                      `prisma migrate dev`, `db push` sin preview confirmado,
+                                      `--force`, `rm -rf` fuera del workspace
   skills/
     yaqu-sprint/SKILL.md           ← /yaqu-sprint: registry → sprint activo → plan →
                                       OK → UNA tarea → done/rollback
@@ -1433,10 +1434,13 @@ AGENTS.md                          ← espejo de CLAUDE.md para el harness de Co
 .codex/                            ← tooling equivalente para Codex (TOOLING-CODEX)
   config.toml                      ← MCP servers (Playwright)
   hooks.json                       ← PreToolUse → guard-dangerous
-  hooks/guard-dangerous.sh         ← réplica del hook de `.claude/`
+  hooks/guard-dangerous.sh         ← envoltorio que DELEGA en `.claude/hooks/guard-dangerous.mjs`
+                                      (SCRUM-176: ya no es una réplica con su propia copia)
 .agents/skills/                    ← espejo de skills para Codex: yaqu-* + `impeccable` (terceros)
 ```
-Nota de plataforma: los slash commands personalizados están fusionados con las skills; `.claude/skills/` es la vía recomendada (una skill homónima tiene precedencia sobre un command). El tooling se mantiene duplicado en `.claude/` (Claude Code) y `.codex/` + `.agents/` (Codex); al tocar uno, revisar el espejo.
+Nota de plataforma: los slash commands personalizados están fusionados con las skills; `.claude/skills/` es la vía recomendada (una skill homónima tiene precedencia sobre un command). El tooling se mantiene duplicado en `.claude/` (Claude Code) y `.codex/` + `.agents/` (Codex); al tocar uno, revisar el espejo. **Excepción, y el camino a seguir con el resto: el guard `guard-dangerous` ya NO está duplicado** (SCRUM-176) — una sola implementación (`.claude/hooks/guard-dangerous.mjs`) y dos envoltorios finos, con un test que impide que el espejo vuelva a llevar su propia copia. "Revisar el espejo" es una prohibición sin mecanismo, y ya había fallado: las dos copias eran idénticas pero la de Codex buscaba el sentinel en `.codex/allow-db-push` mientras su propio mensaje mandaba crear `.claude/allow-db-push`.
+
+**SCRUM-176 — el guard mira LA ACCIÓN, no el TEXTO (27-jul-2026).** La versión original hacía `grep` sobre el JSON entero del tool call, así que bloqueaba por el literal apareciera donde apareciera. Dos falsos positivos reproducidos: un `git commit -m "…nunca se ejecuta prisma db push a mano"` (bloqueado por el mensaje; reescribiéndolo, el mismo commit pasaba) y un `git log` inocente cuyo campo `description` mencionaba `--force` — prosa que se muestra en la UI y **no se ejecuta jamás**. La propiedad a corregir no eran los dos casos sino esto: *un guard que inspecciona texto falla justo en los documentos que describen la acción peligrosa; cuanto mejor documentas la regla, más te bloquea el guard que la defiende.* Y el coste no es el minuto perdido: un guard ruidoso empuja a `--no-verify`, que no apaga el falso positivo sino **el guard entero**. Criterio nuevo: se lee solo `tool_input.command` y de ahí se descuentan las regiones que son carga de texto (cuerpos de heredoc, here-strings de PowerShell, el argumento de `-m`/`--message`). Todo lo demás se sigue mirando — `bash -c "npx prisma db push"` va entre comillas y **sigue bloqueado**, porque `-c` no es un flag de mensaje; una sustitución de comando dentro del `-m` tampoco se descuenta. Verificado EN ROJO por las dos mitades: los falsos positivos con el guard viejo, y los verdaderos positivos rompiendo el saneado a propósito (descontar todo lo entrecomillado) — caen exactamente esos dos casos. Huecos que se aceptan a sabiendas, escritos en el propio fichero: ofuscación (variables, `eval`, base64 — nunca estuvo cubierta), un shell alimentado por heredoc, y el mensaje pasado por fichero (`git commit -F fichero`). Tests: `tests/scrum176-guard-mensaje.test.mjs` (sin gate). Efecto secundario buscado: la lógica en `.mjs` es ejecutable desde un test **en cualquier plataforma** — `bash` no está en el PATH de la máquina Windows del fundador, así que el guard en bash no se podía verificar ahí.
 **Descartado con motivo:** skills "guardian"/"executor" autónomas (es protocolo → CLAUDE.md) · skill de WhatsApp (test J7 + RUNBOOKS, determinista) · skill de QA aparte (es `/yaqu-release-check`) · skill de Prisma (es un hook) · subagents (sin valor para trabajo secuencial de un founder; revisar F2).
 **Excepción a la regla 36 (plugins de terceros):** la skill `impeccable` (UI) está instalada en `.agents/skills/impeccable/`. Se documenta aquí por transparencia; su permanencia queda **pendiente de ratificación explícita del fundador** — si no se ratifica, retirar.
 
