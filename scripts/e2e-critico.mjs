@@ -24,6 +24,7 @@ process.env.PUBLIC_BASE_URL = `http://127.0.0.1:${E2E_PORT}`;
 globalThis.__waDryRunOutbox = [];
 
 import puppeteer from 'puppeteer-core';
+import { resumirErroresConsola } from './_console-guard.mjs'; // SCRUM-183
 import crypto from 'node:crypto';
 
 const EDGE = process.env.EDGE_PATH || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
@@ -65,6 +66,19 @@ try {
 
   browser = await puppeteer.launch({ executablePath: EDGE, headless: true, args: ['--disable-gpu', '--hide-scrollbars'] });
   const page = await browser.newPage();
+
+  // SCRUM-183 · LA OREJA. Este recorrido ya abría las pantallas de verdad, pero NADIE escuchaba
+  // la consola del navegador: un `ReferenceError` en la página aborta el render sin que ninguna
+  // petición falle, así que el E2E pasaba por delante tan contento. Así llegó SCRUM-139 F6 a
+  // producción con su TDZ (`plantillasRotulo` leída ~1.700 líneas antes de declararse): la fila
+  // de plantillas no se pintaba y el listener de "Usar plantilla" no se enganchaba.
+  const erroresConsola = [];
+  page.on('pageerror', (err) => {
+    erroresConsola.push({ tipo: 'error', texto: String(err?.message || err), donde: page.url() });
+  });
+  page.on('console', (m) => {
+    if (m.type() === 'error') erroresConsola.push({ tipo: 'error', texto: m.text(), donde: page.url() });
+  });
   await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
   const waitFor = async (fn, ms = 30000) => {
     const t0 = Date.now();
@@ -183,6 +197,12 @@ try {
     if (buf.subarray(0, 5).toString() !== '%PDF-') fail(`PDF ${label}: contenido no-PDF`);
     ok(`PDF ${label} regenerado on-demand (${(buf.length / 1024).toFixed(0)} KB)`);
   }
+
+  // SCRUM-183: se comprueba AL FINAL, no al vuelo, para que el informe salga entero de una vez y
+  // no aborte el recorrido a la primera — interesa saber TODO lo que se rompió, no lo primero.
+  const consola = resumirErroresConsola(erroresConsola);
+  if (!consola.ok) fail(consola.informe);
+
 
   console.log('\n🟢 e2e:critico COMPLETO — despliega tranquilo.');
 } catch (e) {

@@ -599,6 +599,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   invSec.appendChild(btnInvoice);
 
   let canGenerateInvoice = false;
+  // SCRUM-178: a qué ruta va el botón. Por defecto la de TRAMOS; la emisión manual (un solo
+  // documento por el total, condiciones MANUAL/SIN_CONDICIONES) tiene la suya y se elige abajo.
+  let invoiceEndpoint = 'invoice';
   if (quote.hasCustomPlan) {
     // SCRUM-34 (SOLO planes custom): puerta al SIGUIENTE tramo sin exigir trabajo
     // terminado (POST /admin/quotes/:id/invoice no lo exige; emite por conteo vía
@@ -629,14 +632,26 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     if (invoices.length === 0) { btnInvoice.textContent = 'Generar 1ª factura (50%)'; canGenerateInvoice = true; }
     else if (invoices.length === 1) { btnInvoice.textContent = 'Generar 2ª factura (50% restante)'; canGenerateInvoice = true; }
     else { btnInvoice.textContent = 'Plan de facturación completado'; btnInvoice.disabled = true; }
+  } else if (invoices.length === 0) {
+    // SCRUM-178 · MANUAL/SIN_CONDICIONES ya SÍ se pueden facturar: un documento por el total.
+    //
+    // LAS DOS FRASES SON VERDAD Y SE QUEDAN LAS DOS. Hasta hoy el botón llevaba el texto que el
+    // fundador aprobó en SCRUM-151 —"Estas condiciones no generan tramos automáticos"— porque la
+    // vía de emisión no existía. Ahora existe, pero seguir sin tramos SIGUE siendo cierto y es
+    // justo lo que el pro necesita saber para no buscar un plan que no va a aparecer. Así que esa
+    // frase NO se retira (es N5 aprobada, regla 30, y su guard la vigila): baja del botón a la
+    // nota que lo acompaña, y el botón pasa a llevar la acción — con el MISMO texto que ya usa
+    // el 100 % unas ramas más arriba, que es exactamente lo que se emite aquí.
+    btnInvoice.textContent = 'Generar factura (100%)';
+    canGenerateInvoice = true;
+    invoiceEndpoint = 'invoice-manual'; // ruta propia: la de tramos sigue rechazando esto
+
+    const notaSinTramos = document.createElement('div');
+    notaSinTramos.style.cssText = 'font-size:13px;color:var(--muted);margin-top:6px';
+    notaSinTramos.textContent = 'Estas condiciones no generan tramos automáticos';
+    invSec.appendChild(notaSinTramos);
   } else {
-    // SCRUM-151 · texto aprobado por el fundador (cambio de N5, regla 30). El anterior —"No
-    // disponible para estas condiciones de pago"— decía el QUÉ y no el PORQUÉ, y sobre todo
-    // sonaba a "con estas condiciones aquí no se factura", que es justo la lectura que el
-    // fundador descartó: MANUAL significa "yo pacto CUÁNDO cobro", no "yo facturo fuera de la
-    // app". Este dice la verdad de hoy —no hay TRAMOS— sin prometer la vía de emisión manual,
-    // que todavía no existe (sigue en SCRUM-151, zona fiscal).
-    btnInvoice.textContent = 'Estas condiciones no generan tramos automáticos';
+    btnInvoice.textContent = 'Factura ya generada';
     btnInvoice.disabled = true;
   }
 
@@ -646,7 +661,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       const original = btnInvoice.textContent;
       btnInvoice.textContent = 'Generando…';
       try {
-        const res = await fetch(`/admin/quotes/${quote.id}/invoice`, {
+        const res = await fetch(`/admin/quotes/${quote.id}/${invoiceEndpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
         });
