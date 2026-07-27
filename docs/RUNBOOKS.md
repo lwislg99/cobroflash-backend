@@ -251,3 +251,40 @@ lo que ya está desplegado sigue funcionando.
   avísalo al mergearlo — o esas ramas se enterarán al aterrizar, que es tarde.
 - Un bypass repetido por la misma causa **no es un bypass: es un CI mal montado**. Dos veces
   seguidas por lo mismo → ticket para arreglarlo, no una tercera.
+
+## R18 · Un cambio de schema no está aplicado hasta estar en las TRES BD (SCRUM-169)
+
+**Síntoma:** tests gateados o `npm run dev` en rojo, o `P2022`, tras un cambio de schema que
+"ya se aplicó". Costó 16 tests rojos y un lote entero de diagnóstico para acabar en "faltaba
+un `db push`".
+
+**Regla:** una columna nueva / `ALTER` NO está aplicada hasta estar en las TRES bases. El mapa
+REAL, medido (no inferido — `acela` es un SERVIDOR con VARIAS bases, no una base):
+
+```
+acela.proxy.rlwy.net     ├─ yaqu_dev_javier   (marcada YAQU_STAGING)
+                         └─ railway            (marcada YAQU_STAGING)
+autorack.proxy.rlwy.net  └─ producción
+```
+
+Dos sesiones distintas del carril B usan **bases distintas del mismo servidor** (una `railway`,
+otra `yaqu_dev_javier`). Hosts en `scripts/_db-guard.mjs` (`STAGING_HOST`/`PROD_HOST`), único
+sitio que los define (SCRUM-118).
+
+**Qué garantizan las salvaguardas — y qué NO.** Las dos barreras verifican «no es producción»,
+NO «es la base que crees»:
+- **Barrera 1** (`_db-guard.mjs`) valida el **HOSTNAME**, no la base → acepta las DOS bases de
+  `acela` por igual.
+- **Barrera 2** (el marcador `YAQU_STAGING`, un `COMMENT ON DATABASE`) está en **LAS DOS** →
+  tampoco las distingue.
+
+Correcto para su trabajo (impedir un borrado irreversible contra prod), pero **no te dice en
+cuál de las dos bases de `acela` estás escribiendo**. Esa es la explicación EXACTA de los 16
+rojos de SCRUM-160: un push a UNA de las dos bases deja la otra atrás, y ningún guard lo ve. De
+ahí la regla — el schema no está aplicado hasta estar en las tres.
+
+**Prevención:** cada entrada de `docs/MIGRATIONS_PENDING.md` lleva las tres como checkbox; una
+sin marcar = migración NO aplicada.
+
+> ⚠️ **TODO SCRUM-169 (nomenclatura SIN resolver):** SCRUM-84 llama a la tercera BD "segunda
+> BD de staging"; Luis la llama "BD de desarrollo" que no necesita su GO. No se resuelve aquí.

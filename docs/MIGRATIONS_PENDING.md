@@ -10,6 +10,19 @@
 > se ARCHIVÓ en `docs/historico/prisma-migrations-frozen-2026-03/` (congelada mar-2026):
 > **NO uses `migrate deploy`/`migrate dev`** — aplicaría un schema viejo (entorno nuevo) o
 > propondría un reset. `db push` es el ÚNICO mecanismo. (Volver a migrate = SCRUM-40 opción A.)
+>
+> **REGLA DE LAS TRES BD (SCRUM-169):** un cambio de schema NO está aplicado hasta estarlo en
+> las TRES — staging (`acela.proxy.rlwy.net`), **`yaqu_dev_javier`** (dev local, carril B) y
+> prod (`autorack.proxy.rlwy.net`). Faltar la de dev costó 16 tests rojos y un lote de
+> diagnóstico para acabar en «faltaba un push». Detalle y por qué el guard no la cubre:
+> `docs/RUNBOOKS.md` R18.
+
+<!-- ─── LÍNEA DE CORTE · SCRUM-169 (2026-07-27) ─────────────────────────────────────────
+     A partir de esta línea HACIA ARRIBA, cada entrada NUEVA lleva los tres checkboxes:
+       - [ ] staging (acela)   - [ ] yaqu_dev_javier   - [ ] prod (autorack)
+     Una entrada por ENCIMA sin las tres = migración NO aplicada (fallo detectable).
+     Lo de DEBAJO es historia previa a la regla: NO retrofitada a propósito — marcar 25 entradas
+     por suposición serían checkboxes que parecen evidencia y no lo son. ──────────────────── -->
 
 ## SCRUM-145d · `invoices.vf_anul_prev_hash` (eslabon de la anulacion) — APLICADO en staging y prod (2026-07-24)
 
