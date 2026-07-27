@@ -40,7 +40,7 @@ async function initApp() {
   if (window.appUserRole !== 'admin') {
     // SCRUM-24/136: la gestión y supervisión del equipo es solo del admin (S1). Ocultar el
     // nav es UX; la seguridad real la da el requireRole('admin') de /admin/team (backend, S3).
-    ['nav-plans', 'nav-team'].forEach((id) => {
+    ['nav-plans', 'nav-team', 'nav-export'].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
@@ -255,6 +255,19 @@ async function initApp() {
         viewTitle.textContent = 'Gastos';
         renderExpensesView(viewContainer);
         break;
+      // SCRUM-138: mismo guard que 'settings'/'team' — el export se lleva TODO el negocio,
+      // datos de cliente incluidos (S4/RGPD), así que un técnico no entra ni tecleando la
+      // vista. La seguridad real la da el requireRole('admin') del router /admin/exports.
+      case 'export':
+        if (window.appUserRole !== 'admin') {
+          viewTitle.textContent = 'Inicio';
+          renderHomeView(viewContainer);
+          view = 'home';
+        } else {
+          viewTitle.textContent = 'Descargar datos';
+          renderExportView(viewContainer);
+        }
+        break;
       case 'plans':
         viewTitle.textContent = 'Planes';
         renderPlansView(viewContainer);
@@ -302,7 +315,7 @@ async function initApp() {
   // Deep-links por hash: /dashboard/#products abre Productos directamente.
   // Útil para compartir/QA (y para las capturas de la maqueta A4.7).
   const HASH_VIEWS = ['home','quotes-list','quotes-new','customers','products','providers',
-    'invoices','expenses','reports','templates','quote-requests','jobs','plans','team','settings'];
+    'invoices','expenses','export','reports','templates','quote-requests','jobs','plans','team','settings'];
   function viewFromHash() {
     const h = (window.location.hash || '').replace('#', '');
     return HASH_VIEWS.includes(h) ? h : null;
