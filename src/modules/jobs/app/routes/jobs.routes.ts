@@ -33,29 +33,82 @@ const jobInclude = {
   // quote via relation? Job no tiene relación Prisma declarada — se resuelve a mano
 } as const;
 
-async function serializeJob(job: any) {
+// SCRUM-58: selects EXACTOS que ya usaba serializeJob por fila — se extraen para que la
+// versión por lote y la de una sola fila no puedan divergir (mismos campos, misma forma).
+const QUOTE_SELECT = {
+  id: true, quoteNumber: true, total: true, currency: true,
+  paymentTerms: true, customBillingPlan: true, // SCRUM-27: para resolver el plan efectivo
+  lines: true, // SCRUM-141: el importe de cada tramo se deriva de las líneas (= lo que se emitirá)
+  Invoice: { select: { id: true, status: true, total: true } },
+} as const;
+const CUSTOMER_SELECT = { id: true, name: true, phone: true } as const;
+
+/**
+ * SCRUM-58: resuelve quote + customer + operario de TODOS los jobs de una lista en 3
+ * consultas, en vez de 3 por fila (N+1 de SCRUM-22). El detalle (1 job) no lo necesita y
+ * sigue por el camino de siempre.
+ *
+ * La clave del operario incluye el merchantId a propósito: la consulta por fila iba
+ * SCOPEADA al merchant del Job (regla 2, tenancy) y el lote tiene que conservar esa
+ * semántica exacta — un `id in (...)` a secas resolvería operarios de otro merchant si dos
+ * filas trajeran el mismo id.
+ */
+type JobRefs = {
+  quotes: Map<number, any>;
+  customers: Map<number, any>;
+  operarios: Map<string, { id: number; name: string }>;
+};
+const operarioKey = (merchantId: number, operarioId: number) => `${merchantId}:${operarioId}`;
+
+async function loadJobRefs(jobs: any[]): Promise<JobRefs> {
+  const quoteIds = [...new Set(jobs.map((j) => j.quoteId).filter((v): v is number => v != null))];
+  const customerIds = [...new Set(jobs.map((j) => j.customerId).filter((v): v is number => v != null))];
+  const conOperario = jobs.filter((j) => j.operarioId != null);
+  const operarioIds = [...new Set(conOperario.map((j) => j.operarioId as number))];
+  const merchantIds = [...new Set(conOperario.map((j) => j.merchantId as number))];
+
+  const [quotes, customers, operarios] = await Promise.all([
+    quoteIds.length
+      ? prisma.quote.findMany({ where: { id: { in: quoteIds } }, select: QUOTE_SELECT })
+      : Promise.resolve([]),
+    customerIds.length
+      ? prisma.customer.findMany({ where: { id: { in: customerIds } }, select: CUSTOMER_SELECT })
+      : Promise.resolve([]),
+    operarioIds.length
+      ? prisma.teamMember.findMany({
+          where: { id: { in: operarioIds }, merchantId: { in: merchantIds } },
+          select: { id: true, name: true, merchantId: true },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  return {
+    quotes: new Map(quotes.map((q: any) => [q.id, q])),
+    customers: new Map(customers.map((c: any) => [c.id, c])),
+    operarios: new Map(operarios.map((o: any) => [operarioKey(o.merchantId, o.id), { id: o.id, name: o.name }])),
+  };
+}
+
+async function serializeJob(job: any, refs?: JobRefs) {
+  // SCRUM-58: con `refs` (lista) se lee del lote; sin él (detalle, update) se consulta como
+  // siempre. Mismos selects en ambas ramas — ver QUOTE_SELECT/CUSTOMER_SELECT.
   const quote = job.quoteId
-    ? await prisma.quote.findUnique({
-        where: { id: job.quoteId },
-        select: {
-          id: true, quoteNumber: true, total: true, currency: true,
-          paymentTerms: true, customBillingPlan: true, // SCRUM-27: para resolver el plan efectivo
-          lines: true, // SCRUM-141: el importe de cada tramo se deriva de las líneas (= lo que se emitirá)
-          Invoice: { select: { id: true, status: true, total: true } },
-        },
-      })
+    ? refs
+      ? refs.quotes.get(job.quoteId) ?? null
+      : await prisma.quote.findUnique({ where: { id: job.quoteId }, select: QUOTE_SELECT })
     : null;
-  const customer = await prisma.customer.findUnique({
-    where: { id: job.customerId },
-    select: { id: true, name: true, phone: true },
-  });
+  const customer = refs
+    ? refs.customers.get(job.customerId) ?? null
+    : await prisma.customer.findUnique({ where: { id: job.customerId }, select: CUSTOMER_SELECT });
   // SCRUM-22 (read-path): autoría del operario. Resuelve el TeamMember de la Parte S1
   // por operarioId, SCOPEADO al merchant del Job (regla 2, tenancy). null = propietario.
   const operario = job.operarioId
-    ? await prisma.teamMember.findFirst({
-        where: { id: job.operarioId, merchantId: job.merchantId },
-        select: { id: true, name: true },
-      })
+    ? refs
+      ? refs.operarios.get(operarioKey(job.merchantId, job.operarioId)) ?? null
+      : await prisma.teamMember.findFirst({
+          where: { id: job.operarioId, merchantId: job.merchantId },
+          select: { id: true, name: true },
+        })
     : null;
 
   // A13.3: ¿queda tramo pendiente? (plan según paymentTerms vs facturas emitidas)
@@ -199,8 +252,10 @@ router.get('/', async (req, res) => {
       orderBy: [{ scheduledAt: 'asc' }, { id: 'desc' }],
       take: 200,
     });
+    // SCRUM-58: un solo lote para toda la lista → 3 consultas fijas en vez de 3 por fila.
+    const refs = await loadJobRefs(jobs);
     const out = [];
-    for (const j of jobs) out.push(await serializeJob(j));
+    for (const j of jobs) out.push(await serializeJob(j, refs));
     return res.json(out);
   } catch (err: any) {
     console.error('[GET /admin/jobs]', err?.message || err);
