@@ -145,16 +145,16 @@ Siete trampas que ya nos han costado tiempo, y no fallan igual:
    lo hace invisible para cualquier monitorización por status — nadie mira el cuerpo de un
    200. Eso se sigue en su ticket.)*
 
-### La tanda gateada COMPLETA: `npm run test:staging:gated` (SCRUM-157)
+### La tanda gateada COMPLETA: `npm run test:staging` (SCRUM-157, unificado en SCRUM-166)
 
-Los 51 tests gateados NO los cubre un solo comando. `QA_DB_TEST=1 npm run test:staging`
-exporta **solo** `QA_DB_TEST`, así que `a55-window-quote` (`A55_DB_TEST`) y `bot-suite`
+Los 51 tests gateados NO los cubría un solo comando. La tanda de rutina se tecleaba como
+`QA_DB_TEST=1 npm run test:staging` y exportaba **solo** `QA_DB_TEST`, así que `a55-window-quote` (`A55_DB_TEST`) y `bot-suite`
 (`BOT_SUITE_TEST`) quedaban fuera: contaban como cobertura y **no se ejecutaban nunca** —
 su gate solo vivía en un doc, no en un comando. El mecanismo es el comando que la gente
 ejecuta, no la intención de acordarse de dos variables sueltas.
 
 ```bash
-npm run test:staging:gated > /tmp/gated.log 2>&1; echo "exit=$?"   # ✅ los 51, exit real
+npm run test:staging > /tmp/gated.log 2>&1; echo "exit=$?"   # ✅ los 51, exit real
 ```
 
 Lo lanza `scripts/test-staging-gated.mjs`, que corre **tres procesos** y agrega sus cuatro
@@ -165,6 +165,14 @@ sus envs en un mismo `node --test` las cruzaría). El runner devuelve ≠0 si cu
 falla y **nombra cuál**; lee `res.status` directo, sin tubería (la trampa 5, dentro del
 mecanismo). Contraprueba de esa propagación: `node scripts/test-staging-gated.mjs <fichero>`
 apunta los tres hijos a un fichero trivial y debe dar exit 0.
+
+> **SCRUM-166 · UN NOMBRE POR COSA.** Hasta hoy convivían `test:staging` (la tanda vieja, que
+> NO gateaba) y `test:staging:gated` (el runner de SCRUM-157). Dos comandos parecidos para lo
+> mismo es cómo se teclea el que no toca: el que suena a "la tanda de staging" era justo el
+> que dejaba fuera `a55` y `bot-suite`. Ahora **`test:staging` ES el runner gateado** y
+> `test:staging:gated` **ya no existe**. Las variables las exporta el runner desde JS, no el
+> shell: `npm` lanza los scripts con `cmd.exe` en Windows, así que un `VAR=1 node ...` inline
+> se habría roto en la máquina del carril B — **variables en JS ganan a variables en shell**.
 
 ⚠️ **Hoy la tanda sale ROJA en 2** (`a55` y `bot-suite`): bitrot del seed demo, «cliente seed
 no encontrado» — **SCRUM-159** (P3-9). Es lo correcto: un test que se ejecuta y falla grita;
