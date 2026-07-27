@@ -196,6 +196,10 @@ export const customerCreateSchema = z.object({
   // SCRUM-69 (FACT-1): determina el plazo legal de la recapitulativa (art. 13 RD 1619/2012).
   // null = sin clasificar (se trata como PARTICULAR en el cálculo, ver resolveTipoDestinatario).
   tipoDestinatario: z.enum(['PARTICULAR', 'EMPRESARIO']).nullable().optional(),
+  // SCRUM-171b (FACT-2d): periodicidad PACTADA. Sirve para AVISAR de que toca facturar, nunca
+  // para facturar sola (regla 28: un envío automático nuevo exigiría su entrada en la tabla J6).
+  // Lista cerrada aquí; el default de la BD es 'NINGUNA' = sin aviso, que es lo de hoy.
+  billingPeriodicity: z.enum(['NINGUNA', 'QUINCENAL', 'MENSUAL']).optional(),
 });
 
 export const customerUpdateSchema = customerCreateSchema.partial();
