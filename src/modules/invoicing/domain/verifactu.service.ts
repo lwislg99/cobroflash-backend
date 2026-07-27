@@ -231,19 +231,30 @@ export async function applyVeriFactu(
     // otro advisory lock de la aplicación.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(${VERIFACTU_LOCK_NS}::int, ${invoice.merchantId}::int)`;
 
-    // Última factura del merchant que ya tenga huella (excluye la actual). `id desc` — ver ②.
-    const prev = await tx.invoice.findFirst({
-      where: {
-        merchantId: invoice.merchantId,
-        vfHash: { not: null },
-        id: { not: invoice.id },
-      },
-      orderBy: { id: 'desc' },
-      select: { vfHash: true },
-    });
-
-    // S1-A: el PRIMER registro del emisor lleva huella anterior VACÍA (no '0')
-    const prevHash: string = prev?.vfHash ?? '';
+    // ── SCRUM-177 · UNA SOLA CADENA: el alta también encadena a las anulaciones ────────────
+    //
+    // Antes esta consulta miraba SOLO altas (`vfHash not null`), mientras que la anulación
+    // usaba `ultimaHuellaDeLaCadena`, que mira altas Y anulaciones. Eran DOS definiciones de
+    // "la cadena" conviviendo en el mismo sistema: emitida una anulación, la siguiente alta la
+    // saltaba y encadenaba al alta anterior → dos registros apuntando al mismo eslabón. Una
+    // secuencia bifurcada es justo lo que la AEAT lee como manipulación.
+    //
+    // VERIFICADO CONTRA EL XSD OFICIAL (`SuministroInformacion.xsd`), no deducido:
+    //  · `RegistroFacturacionAltaType` y `RegistroFacturacionAnulacionType` declaran el MISMO
+    //    `Encadenamiento`, con el mismo `EncadenamientoFacturaAnteriorType`.
+    //  · Su documentación habla de "el REGISTRO DE FACTURACIÓN anterior" — y una anulación es
+    //    un registro de facturación (así se llama su propio tipo).
+    //  · `EncadenamientoFacturaAnteriorType` NO tiene ningún campo que discrimine el tipo del
+    //    registro anterior. Con dos cadenas, apuntar a un eslabón sin decir a cuál pertenece
+    //    sería irreconstruible. **Es la evidencia definitiva.**
+    //  · `PrimerRegistroCadenaType` — LA cadena, en singular.
+    //
+    // ⚠️ `excluirId` NO es una simetría estética: es la única diferencia real entre los dos
+    // caminos. Al sellar un ALTA hay que excluir la propia factura, porque un resellado la
+    // encontraría a sí misma y se encadenaría a su propia huella. La ANULACIÓN no la excluye:
+    // tiene que encadenar precisamente al alta de esa misma factura (fijado por test en
+    // SCRUM-173b). Unificar sin este parámetro rompe ese verde.
+    const prevHash = await ultimaHuellaDeLaCadena(invoice.merchantId, tx, invoice.id);
     // El instante se toma DENTRO del cerrojo: es el que entra en la huella y tiene que ser
     // posterior al del registro anterior de la cadena.
     const timestamp = formatFechaHoraHuso(new Date());
@@ -363,10 +374,26 @@ export async function applyVeriFactuAnulacion(
  * ya usaba `applyVeriFactu` (la última factura con huella), así que no altera ninguna cadena
  * persistida; solo deja de romperse el día que exista la primera anulación.
  */
-async function ultimaHuellaDeLaCadena(merchantId: number, prismaClient: any): Promise<string> {
+async function ultimaHuellaDeLaCadena(
+  merchantId: number,
+  prismaClient: any,
+  // SCRUM-177: id a EXCLUIR del lado de las altas. Lo pasa `applyVeriFactu` con la factura que
+  // está sellando: sin esto, un resellado la encontraría a sí misma y se encadenaría a su
+  // propia huella. `applyVeriFactuAnulacion` NO lo pasa a propósito — la anulación tiene que
+  // encadenar precisamente al alta de esa misma factura.
+  //
+  // Solo afecta a las ALTAS: una factura nunca se anula a sí misma, así que excluirla del lado
+  // de las anulaciones no tendría sentido y además rompería el caso de dos anulaciones
+  // seguidas de la misma factura.
+  excluirId?: number,
+): Promise<string> {
   const [ultimaAlta, ultimaAnul] = await Promise.all([
     prismaClient.invoice.findFirst({
-      where: { merchantId, vfHash: { not: null } },
+      where: {
+        merchantId,
+        vfHash: { not: null },
+        ...(excluirId != null ? { id: { not: excluirId } } : {}),
+      },
       orderBy: { id: 'desc' },
       select: { vfHash: true, vfTimestamp: true, createdAt: true },
     }),
