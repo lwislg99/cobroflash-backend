@@ -18,6 +18,11 @@ export const FLAG_DEFAULTS = {
   PAYMENTS_CONNECT_ENABLED: false,   // global · OFF hasta CONNECT-1
   BIZUM_MANUAL_ENABLED: false,       // global/merchant · OFF hasta C1-4
   VOICE_QUOTE_ENABLED: false,        // global · OFF hasta eval VZ-2 (≥8/10)
+  // VOZ-ALB (SCRUM-71) · global · OFF. Flag PROPIO y no reutilización de VOICE_QUOTE_ENABLED,
+  // por decisión del fundador (27-jul-2026): el dictado en albarán tiene un riesgo distinto
+  // —el documento lo FIRMA el cliente y desde 'emitido' se congela (Parte L)— y hay que poder
+  // apagarlo sin apagar el del presupuesto, que no tiene esa consecuencia.
+  VOICE_ALBARAN_ENABLED: false,
   BOT_INBOUND_ENABLED: false,        // global → merchant · OFF (F2)
   BOT_AI_ENABLED: false,             // merchant · OFF (F2 tardía, gates K2)
   PUBLIC_PROFILE_ENABLED: false,     // merchant opt-in · OFF (F2, PERFIL-1)
