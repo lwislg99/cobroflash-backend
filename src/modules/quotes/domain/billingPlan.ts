@@ -193,3 +193,22 @@ export function validateCustomBillingPlan(
   }
   return { ok: true };
 }
+
+/**
+ * SCRUM-151 — POR QUÉ no hay tramo que emitir.
+ *
+ * Las dos rutas que emiten factura (`POST /admin/quotes/:id/invoice` y el cobro del resto
+ * desde el Trabajo) caen en el MISMO 409 por dos motivos que no se parecen en nada:
+ *   · el plan se agotó → ya se emitió todo lo pactado;
+ *   · el plan está VACÍO → MANUAL / SIN_CONDICIONES nunca generan facturas automáticas
+ *     (`getBillingPlan` devuelve [] a propósito), así que no es que "ya no quede": es que
+ *     nunca hubo tramos.
+ * Decir "no queda ningún tramo por cobrar" en el segundo caso es mentirle al pro sobre un
+ * plan que no existió. Cada código de error se queda como está (los clientes y los logs
+ * los distinguen); lo que se corrige es el texto humano que acompaña al rechazo.
+ */
+export function motivoSinTramo(plan: unknown[]): string {
+  return plan.length === 0
+    ? 'No disponible para estas condiciones de pago: no generan tramos de factura.'
+    : 'No queda ningún tramo por cobrar de este presupuesto.';
+}
