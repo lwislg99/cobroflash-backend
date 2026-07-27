@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireRole } from '../../../../core/http/authMiddleware';
+import { isSupportedRole, SUPPORTED_ROLES } from '../../../../core/http/roleCapabilities'; // SCRUM-147
 import { prisma } from '../../../../core/db/prisma';
 import { getEntitlements } from '../../../../core/entitlements';
 import {
@@ -48,7 +49,15 @@ router.post('/', async (req, res) => {
   try {
     const name  = String(req.body?.name  || '').trim();
     const email = String(req.body?.email || '').toLowerCase().trim();
-    const role  = req.body?.role === 'admin' ? 'admin' : 'tecnico';
+    // SCRUM-147: se VALIDA, ya no se coacciona. Antes, cualquier valor distinto de 'admin' se
+    // reescribía a 'tecnico' EN SILENCIO: pedir role:'comercial' creaba un técnico sin avisar, y
+    // quien lo pidiera creía tener un rol que no existe. Omitirlo sigue siendo válido (default
+    // 'tecnico'); mandar uno no soportado ahora es un 400.
+    const roleRaw = req.body?.role == null ? 'tecnico' : req.body.role;
+    if (!isSupportedRole(roleRaw)) {
+      return res.status(400).json({ error: 'invalid_role', message: `Rol no soportado. Válidos: ${SUPPORTED_ROLES.join(', ')}.` });
+    }
+    const role = roleRaw;
 
     if (!name)  return res.status(400).json({ error: 'name_required' });
     if (!email || !email.includes('@')) return res.status(400).json({ error: 'invalid_email' });
@@ -100,7 +109,13 @@ router.put('/:id', async (req, res) => {
     if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const name = req.body?.name ? String(req.body.name).trim() : undefined;
-    const role = req.body?.role === 'admin' ? 'admin' : req.body?.role === 'tecnico' ? 'tecnico' : undefined;
+    // SCRUM-147: `undefined` = "no se cambia el rol" (sigue siendo válido). Pero un rol PRESENTE
+    // y no soportado ya no se ignora en silencio — se rechaza, en vez de guardar el cambio de
+    // nombre y descartar el de rol sin decir nada.
+    if (req.body?.role != null && !isSupportedRole(req.body.role)) {
+      return res.status(400).json({ error: 'invalid_role', message: `Rol no soportado. Válidos: ${SUPPORTED_ROLES.join(', ')}.` });
+    }
+    const role = req.body?.role == null ? undefined : (req.body.role as 'admin' | 'tecnico');
 
     const updated = await updateTeamMember({ id, merchantId: req.merchantId, name, role });
     return res.json(updated);
