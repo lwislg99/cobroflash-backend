@@ -572,6 +572,19 @@
 - **Decisión (fundador): opción 1 — documentar, sin cambio funcional.** Montar un suelo de fiabilidad en la lectura para proteger 0 datos infra-reportaría PARA SIEMPRE una era vacía. Queda un comentario en `reports.routes.ts:144` (con la frontera y el resultado del count) para que nadie lea `reminderEur` creyéndolo limpio de un periodo con volumen pre-116. Si algún día lo hay, reabrir con un suelo de LECTURA (`reminderXSentAt >= fecha`), nunca tocando el histórico.
 - **Alcance:** solo la lectura de la métrica. Sin schema, sin write, sin cron, sin test (cero cambio de comportamiento).
 
+### [ ] P3-13 · Editor de presupuesto ≥768 px: el campo PRECIO se descuadra cuando hay margen (27-jul, hallazgo de la QA visual de SCRUM-139 F2)
+- **Síntoma:** en la rejilla de escritorio, una línea con margen > 0 muestra el aviso "Final: X €"
+  bajo el precio; ese aviso hace la celda más alta y, con `align-items: end` en `.quote-line`,
+  el `input` de PRECIO sube ~15 px respecto a CANTIDAD / MARGEN / IVA. Se ve en la captura de
+  escritorio de F2 (línea "Mano de obra", margen 15 %).
+- **Alcance:** puramente estético, solo con margen > 0 y solo ≥768 px. No afecta a móvil (la
+  tarjeta apila), ni a los importes, ni al payload.
+- **Viene de SCRUM-139 F1** (la línea pasó de `<tr>` a tarjeta en rejilla); no es una regresión
+  de F2 — F2 es la fase que lo ha DESTAPADO al hacer por fin la QA renderizada.
+- **NO se arregla aquí a propósito:** SCRUM-139 **F4** mueve margen % e IVA a una hoja inferior
+  y rehace justo esa zona de la línea, incluido dónde vive el aviso "Final:". Arreglar la
+  alineación ahora es trabajo que F4 tira. Si F4 se cayera del plan, este bug se arregla solo.
+
 ### [ ] P3-12 · `scrum116-recordatorio-candado.test.mjs` requiere `WHATSAPP_DRY_RUN` SIN poner — conflicto con los tests que sí lo necesitan (23-jul, hallazgo colateral en SCRUM-122)
 - **NO es un bug — es una nota de higiene de invocación**, registrada para que nadie la lea como
   regresión: al correr `QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm run test:staging` (necesario para
