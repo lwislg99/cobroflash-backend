@@ -69,6 +69,14 @@ const CONOCIDOS_AL_MEDIR = [
   // no reconozca, nadie se enteraría. Añadirlo NO toca el ratchet (no es un pendiente);
   // solo amplía la cobertura de la calibración.
   'scrum106-trabajos-fecha.test.mjs',
+  // ÍDEM, y conviene dejar escrito POR QUÉ, porque volverá a pasar: `scrum51` se ESCRIBIÓ el
+  // 16-jul, SIETE DÍAS ANTES de que existiera este ratchet (23-jul), y se MERGEÓ a main el
+  // 27-jul. Desde el punto de vista de main nació con el patrón viejo, así que el guard hizo
+  // exactamente su trabajo — pero saltó DESPUÉS del merge, dejando main en rojo, porque no
+  // hay CI que corra `npm test` sobre el PR. No es un fallo del ratchet ni del detector: una
+  // rama larga anterior a una regla nueva solo choca con ella al aterrizar. Migrado al
+  // detectarlo; entra en el censo para que el detector lo siga cubriendo.
+  'scrum51-job-sin-quote.test.mjs',
 ];
 
 /**
@@ -97,7 +105,7 @@ const CONOCIDOS_AL_MEDIR = [
  * olvidarse de una entrada del censo no aparece en ningún sitio (→ mecanismo, este suelo);
  * bajar el suelo a propósito sí aparece (→ convención, esta nota).
  */
-export const CENSO_MIN = 25;
+export const CENSO_MIN = 26; // 25 -> 26 al entrar scrum51 en el censo (migrado, no aparcado)
 
 /**
  * PENDIENTES DE MIGRAR a withMerchant. Solo mengua.
