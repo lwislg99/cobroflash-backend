@@ -532,11 +532,23 @@ combate — por eso, con la campaña cerrada, se documentó en vez de recontar: 
 > 2. Comprobar que **nadie está dentro** de staging — con datos, no por suposición:
 >    `pg_stat_activity` (conexiones y consultas activas) + fixtures QA recién creadas.
 > 3. Preview (`prisma migrate diff`) y enseñarlo. Cero DROPs y cero ALTER de columnas ajenas.
-> 4. `db push` **con `--skip-generate`**. ⚠️ **Al extraer la URL del `.env`**: el fichero es
->    CRLF y el valor va **entre comillas simples**, así que un `cut -d= -f2-` a secas produce
->    una URL con `` y comillas → Prisma corta con **`P1013` "The scheme is not recognized"**,
->    que parece un problema de credenciales y no lo es. Sanea: `| tr -d '' | sed -E "s/^'//; s/'$//"`.
->    (Perdido un rato con esto en el push de SCRUM-145 a prod, 24-jul.)
+> 4. `db push` **con `--skip-generate`**.
+>
+>    ⚠️ **Falso positivo nº1 — `P1013` al extraer la URL del `.env`.** El fichero es CRLF y el
+>    valor va **entre comillas simples**, así que un `cut -d= -f2-` a secas deja un retorno de
+>    carro y las comillas dentro de la URL → Prisma corta con **`P1013` "The scheme is not
+>    recognized"**, que parece un problema de credenciales y no lo es. Sanear con
+>    `tr -d` del retorno de carro + quitar las comillas con `sed`.
+>
+>    ⚠️ **Falso positivo nº2 — usa el binario LOCAL, no `npx prisma`.** Si el worktree no tiene
+>    el junction de `node_modules`, `npx` se baja **Prisma 7** del registro, y ahí `--from-url`
+>    **ya no existe** (`"was removed"`). Parece que el comando de este runbook está obsoleto y
+>    **no lo está**: es el binario equivocado. Crea el junction y usa
+>    `node node_modules/prisma/build/index.js`.
+>
+>    (Los dos costaron tiempo en los pushes de SCRUM-145, 24-jul. Nota: la primera versión de
+>    este apunte se escribió con un script que interpretó el retorno de carro y partió el
+>    párrafo en `main`; reparado aquí.)
 > 5. **Regenerar el cliente DESPUÉS del push, nunca antes.** `node_modules` está compartido por
 >    junction entre worktrees: un cliente con columnas que la BD todavía no tiene rompe **cualquier
 >    lectura** de esa tabla (`SELECT` de columna inexistente) — incluidos los tests gateados de las

@@ -173,6 +173,7 @@ test('SCRUM-145: una factura anulada emite su RegistroAnulacion DETRAS del alta,
     number: '2026-CF-002', vfHash: 'E'.repeat(64), vfPrevHash: 'D'.repeat(64),
     vfTimestamp: new Date('2026-03-16T10:00:00Z'),
     vfAnulHash: 'F'.repeat(64), vfAnulTimestamp: new Date('2026-03-17T10:00:00Z'),
+    vfAnulPrevHash: 'E'.repeat(64), // SCRUM-145d: el eslabon va PERSISTIDO, ya no se infiere por sello
   });
   const xml = await build([alta, anulada]);
 
@@ -185,4 +186,32 @@ test('SCRUM-145: una factura anulada emite su RegistroAnulacion DETRAS del alta,
   const bloque = xml.slice(xml.indexOf('<sum1:RegistroAnulacion>'));
   assert.ok(bloque.includes('<sum1:RegistroAnterior>'), 'la anulacion encadena, no abre cadena');
   assert.ok(bloque.includes('E'.repeat(64)), 'debe encadenar con la huella del registro anterior por sello');
+});
+
+test('SCRUM-145d: la anulacion encadena por la huella PERSISTIDA, no por el orden temporal', async () => {
+  // Sellos INVERTIDOS a proposito: la anulacion lleva un sello ANTERIOR al del alta con la que
+  // encadena. Con la resolucion por sello esto daba el eslabon equivocado (o ninguno); con la
+  // huella persistida da el correcto, que es justo lo que se hasheo.
+  const a1 = mkInvoice({ number: '2026-CF-010', vfHash: '1'.repeat(64), vfTimestamp: new Date('2026-05-02T10:00:00Z') });
+  const anul = mkInvoice({
+    number: '2026-CF-011', vfHash: '2'.repeat(64), vfPrevHash: '1'.repeat(64),
+    vfTimestamp: new Date('2026-05-03T10:00:00Z'),
+    vfAnulHash: '3'.repeat(64), vfAnulTimestamp: new Date('2026-05-01T10:00:00Z'), // sello ANTERIOR
+    vfAnulPrevHash: '2'.repeat(64), // pero encadena con su propia alta
+  });
+  const xml = await build([a1, anul]);
+  const bloque = xml.slice(xml.indexOf('<sum1:RegistroAnulacion>'));
+  assert.ok(bloque.includes('2'.repeat(64)), 'debe encadenar con la huella GUARDADA, no con la que sugiere el sello');
+  assert.ok(bloque.includes('2026-CF-011'), 'y debe identificar el registro correcto');
+});
+
+test('SCRUM-145d: una anulacion sin eslabon guardado abre cadena (PrimerRegistro), sin inventar', async () => {
+  const solo = mkInvoice({
+    number: '2026-CF-020', vfHash: '9'.repeat(64), vfTimestamp: new Date('2026-06-01T10:00:00Z'),
+    vfAnulHash: '8'.repeat(64), vfAnulTimestamp: new Date('2026-06-02T10:00:00Z'), vfAnulPrevHash: null,
+  });
+  const xml = await build([solo]);
+  const bloque = xml.slice(xml.indexOf('<sum1:RegistroAnulacion>'));
+  assert.ok(bloque.includes('<sum1:PrimerRegistro>S</sum1:PrimerRegistro>'), 'sin eslabon guardado = primer registro');
+  assert.ok(!bloque.includes('<sum1:RegistroAnterior>'), 'y NO se inventa un anterior');
 });
