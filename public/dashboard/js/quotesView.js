@@ -668,6 +668,19 @@ blockClient.appendChild(descWrapper);
   tableWrap.appendChild(table);
   blockLines.appendChild(tableWrap);
 
+  // SCRUM-133: segundo "+ Añadir línea", AQUÍ ABAJO — pegado a la última fila, que es
+  // donde está la mano tras teclear. El de la cabecera SE QUEDA (no lo sustituye): con
+  // una lista larga las dos puntas son útiles —arriba al volver de una plantilla, abajo
+  // al encadenar líneas— y es el control de la acción más repetida del editor. Mismo
+  // patrón que el editor de albarán (jobDetailView, SCRUM-31 F2): ghost + "+ Añadir línea".
+  // `type=button` es obligatorio: sin él, dentro del <form>, el clic ENVIARÍA el presupuesto.
+  const addLineBtnBottom = document.createElement("button");
+  addLineBtnBottom.type = "button";
+  addLineBtnBottom.className = "btn-ghost quote-add-line";
+  addLineBtnBottom.textContent = "+ Añadir línea";
+  addLineBtnBottom.title = "Añade una línea al final de la lista";
+  blockLines.appendChild(addLineBtnBottom);
+
   // ---------- DRAG & DROP para reordenar líneas (FRONT1-4) ----------
   let draggedTr = null;
   tbody.addEventListener("dragover", function (e) {
@@ -1906,9 +1919,22 @@ if (Number.isFinite(n) && n >= 0) {
 
   addLine();
 
-  addLineBtn.addEventListener("click", function () {
+  // SCRUM-133: añadir + dejar el cursor DENTRO del concepto de la línea nueva, para poder
+  // seguir tecleando sin tocar el ratón. `preventScroll` + `scrollIntoView({block:'nearest'})`:
+  // el foco no da el salto brusco del scroll automático y, si la fila ya se ve, no se mueve
+  // nada (sin animación → nada que gatear con prefers-reduced-motion).
+  function addLineAndFocus() {
     addLine();
-  });
+    const nueva = tbody.lastElementChild;
+    if (!nueva) return;
+    const concepto = nueva.querySelector("input");
+    if (!concepto) return;
+    concepto.focus({ preventScroll: true });
+    nueva.scrollIntoView({ block: "nearest" });
+  }
+
+  addLineBtn.addEventListener("click", addLineAndFocus);
+  addLineBtnBottom.addEventListener("click", addLineAndFocus);
 
   // Botón IA — añade las líneas sugeridas por Claude
   aiBtn.addEventListener("click", function () {

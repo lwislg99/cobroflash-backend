@@ -1030,6 +1030,20 @@ html, body { overflow-x: clip; }
 .quote-lines-table th { font-size: 13px; vertical-align: middle; padding: 6px 4px; }
 .quote-lines-table td { font-size: 13px; vertical-align: top; padding: 6px 4px; }
 .price-final-hint { font-size: 12px; color: var(--muted); margin-top: 4px; min-height: 0; }
+/* SCRUM-133: "+ Añadir línea" DEBAJO de la última fila — añadir es la acción más
+   repetida del editor y obligaba a volver arriba tras rellenar cada línea. Mismo
+   lenguaje que "Sugerir con IA"/"Usar plantilla" de esta pantalla (ghost + borde
+   discontinuo, tokens neutral) para que se lea como "añadir/poblar" y no compita con
+   la primaria. Ancho completo y min-height 44px: target al pulgar de DESIGN.md (el
+   .btn-ghost base se queda en 36px, insuficiente para la acción más repetida). */
+.quote-add-line {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 8px;
+  border: 1px dashed var(--neutral-300);
+  color: var(--neutral-600);
+}
+.quote-add-line:hover:not(:disabled) { background: var(--neutral-100); color: var(--neutral-700); }
 .quote-lines-table input {
   width: 100%; padding: 7px 8px;
   border-radius: var(--radius); border: 1.5px solid var(--neutral-200);
