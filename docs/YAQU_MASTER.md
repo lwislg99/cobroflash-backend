@@ -220,7 +220,7 @@ Un plan público (Parte W): **Pro 19,90 €/mes (199 €/año) + 0,9 % solo tarj
 
 **Técnicas heredadas:** 1) NUNCA n8n — WhatsApp solo vía `src/integrations/whatsapp.ts` (Meta Cloud API directa). 2) Multi-tenant: toda query filtra por `req.merchantId`. 3) Prisma sin TTY: `db push` (procedimiento canónico `scripts/db-push-prod` — host-check→preview→GO→push→documentar, SCRUM-40), nunca `migrate dev`; `prisma/migrations` archivada en `docs/historico/prisma-migrations-frozen-2026-03/` (congelada mar-2026; volver a migrate = SCRUM-40 opción A). Preview del diff antes de tocar prod. 4) Frontend vanilla, sin frameworks ni build. 5) Emails por Resend. 6) Crons in-process. 7) Rutas `/admin/*` con `pf_session`. 8) Demo merchant `demo@yaqu.app` id=1 (watermark, DEMO_SAFE_NUMBERS, fuera de métricas).
 **Técnicas v5+:** 9) Código nuevo lee `getCountryConfig()` — nada hardcodeado por país (capa mínima en F1). 10) Todo cobro con tarjeta pasa por Connect cuando el merchant lo tenga activo. 11) Artefactos nuevos a R2 desde F2 (no fs local). 12) Ningún claim fiscal en UI/marketing que el motor del país no cumpla (LATAM sin PAC: "nota/recibo").
-**Estratégicas:** 13) Prohibido replanificar antes de 25 pagantes (dudas → `docs/DECISIONES_PENDIENTES.md`). 14) Marketing mono-país hasta F3; arquitectura country-aware desde ya. 15) Una feature nueva exige matar o posponer otra (WIP limit). 16) Cada sprint cerrado actualiza este documento (mover a ✅; nunca borrar, tachar con motivo).
+**Estratégicas:** 13) **El producto se construye COMPLETO antes de la captación.** *(Redacción del fundador, 27-jul-2026 — sustituye a "prohibido replanificar antes de 25 pagantes".)* **Motivo:** en el sector de oficios un producto a medias QUEMA al prospecto, y el boca a boca del gremio no da segunda oportunidad. El feedback de usuarios se incorpora **DESPUÉS** de tener el producto construido —para añadir o quitar sobre algo terminado, no para decidir qué construir—. **Consecuencia operativa:** todo gate de tipo *"cuando haya clientes / cuando duela / post-tracción / a los 25 pagantes"* **DEJA DE BLOQUEAR la construcción**; lo que quede de esos gates es orden de cola, no permiso. **NO cambian** los gates **fiscales** (regla 24, dictamen del asesor) ni los de **seguridad**: esos no son de tracción y siguen bloqueando igual. Las dudas siguen yendo a `docs/DECISIONES_PENDIENTES.md`. 14) Marketing mono-país hasta F3; arquitectura country-aware desde ya. 15) Una feature nueva exige matar o posponer otra (WIP limit). 16) Cada sprint cerrado actualiza este documento (mover a ✅; nunca borrar, tachar con motivo).
 **Legales/claims:** 17) Ningún claim regulatorio sin su sprint legal cerrado (VeriFactu ⇒ SIF-1 + declaración). 18) Tarjeta para clientes reales SOLO con Connect activo en ese merchant; mientras, transferencia/Bizum manual. 19) VALIDA-0 no se cierra sin 10 discovery registradas y criterios de alarma evaluados. 20) Toda cifra del master lleva fuente o [VALIDAR]; lo [VALIDAR] no entra en argumentarios. 21) Partida real anual de asesoría fiscal/legal.
 **Pagos/UX:** 22) El selector de pago se ordena por probabilidad de cobro del MERCHANT, no por el fee de YaQu; `paid_via` se registra en el 100 % de los cobros (card/bizum_manual/transfer/cash). 23) Prohibido procesar pagos de clientes finales en la cuenta Stripe de plataforma: PSP = cuenta conectada del merchant o nada.
 **VeriFactu operativo:** 24) `INVOICING_ES_ENABLED=false` para merchants ES reales hasta SIF-1 v2 completo; facturas demo con marca de agua SIEMPRE. 25) Cobro a founding pre-SIF exige alcance por escrito (`docs/legal/ALCANCE_BETA.md`). 26) La pregunta "¿me vale para VeriFactu?" se responde SOLO con el guion H2. 26b) **El aplazamiento de VeriFactu a 2027 (RDL 15/2025) enfrió el miedo fiscal; el gancho comercial nº1 es la MOROSIDAD/el cobro, y VeriFactu es el pilar de confianza nº2 ("ya cumples, sin pensar"), nunca el titular.** El GTM no se apoya en la fecha (ya hubo un aplazamiento).
@@ -372,7 +372,7 @@ Botones: "Firmar y aceptar" · "Acepto sin firmar" · "No me interesa" · "Pagar
 | `BOT_AI_ENABLED` | merchant | OFF | admin F2 tardía | IA del bot (K2) | gates K2 | kill-switch: vuelve a botones |
 | `PUBLIC_PROFILE_ENABLED` | merchant | OFF | merchant opt-in F2 | /p/:slug | PERFIL-1 | 404 digno |
 | `MAINTENANCE_ENABLED` | merchant | OFF | merchant opt-in F2 | planes + cron | MANT-1 | cron ignora |
-Gates que NO son flags: venta fuerte/claims ⇐ SIF-1 · tarjeta real ⇐ Connect del merchant · F2 ⇐ 25 pagantes.
+Gates que NO son flags: venta fuerte/claims ⇐ SIF-1 · tarjeta real ⇐ Connect del merchant · ~~F2 ⇐ 25 pagantes~~ **(retirado 27-jul-2026, regla 13 nueva: los 25 pagantes ordenan la cola, no dan permiso para construir). Los otros dos SIGUEN vigentes: SIF-1 es fiscal y Connect es de dinero real.**
 
 ---
 
@@ -867,14 +867,14 @@ J7 builders+test · `waOptOut` + check · `docs/RUNBOOKS.md` (O) · `docs/QA_MAS
 > **PRECIOS-1 avance (EXT3 Ola 10, 5-jul-2026):** estados de suscripción L completos en el webhook único (past_due conserva plan + banner/portal; canceled→trial; idempotencia event.id) ✅ · entitlement usuarios W3 vía `core/entitlements.ts` (regla 34, 409 digno con oferta Equipo) ✅ · fair-use visible ya estaba (A9.3) ✅ · contratación founding con ALCANCE BETA aceptado y evidenciado (legal_acceptances, versión=hash; regla 25) ✅. Falta SOLO fundador: precios Stripe LIVE + texto del alcance validado por asesor.
 PRECIOS-1: activar facturación a founding (post-SIF) + límite usuarios + contador fair-use WA + verificación upgrade/downgrade. GTM-1: landing yaqu.app v2 (héroe promesa de cobro, vídeo, 3 pasos, precios, FAQ 10 reales, CTA; Lighthouse móvil ≥90) + claim VeriFactu YA legal + declaración descargable + pack gestoría circulando + UTM/atribución en registro. SEO programático y calculadora de sanción → F2 (SEO-2, contenido para gestorías).
 
-## U2. F2 (backlog ordenado por defecto; gate global 25 pagantes)
-WA-0b → BOT-1 → MANT-1 → JOB-1 → MEDIA-1 → ONBOARD-2 → ANALYTICS-1 (X2) → **DASH-PREMIUM-1** (pulido del dashboard pantalla a pantalla según Parte AB; nunca rediseño total) → PERFIL-1 → PARTNERS-1 (gate Y2) → SEO-2 → SEC-2 (audit completo + `backup-dump` + `reconcile-stripe` + export-zip) → validUntil/expired → APP-1 (gate >100 pagantes) → FIN-1 (gate Z) → BOT-2 (gates K2). BIZUM-WATCH = recurrente trimestral (sep-26, dic-26, mar-27: si Stripe Bizum gana Connect support → activar + test fee).
-**Nota:** U2 NO es compromiso: al alcanzar 25 pagantes se re-prioriza con los datos de F1 (regla 13) antes de abrir el primer sprint F2.
+## U2. F2 (backlog ordenado por defecto; ~~gate global 25 pagantes~~ → **orden de cola, no permiso**)
+WA-0b → BOT-1 → MANT-1 → JOB-1 → MEDIA-1 → ONBOARD-2 → ANALYTICS-1 (X2) → **DASH-PREMIUM-1** (pulido del dashboard pantalla a pantalla según Parte AB; nunca rediseño total) → PERFIL-1 → PARTNERS-1 (gate Y2) → SEO-2 → SEC-2 (audit completo + `backup-dump` + `reconcile-stripe` + export-zip) → validUntil/expired → APP-1 (~~gate >100 pagantes~~ — retirado 27-jul-2026 por la regla 13 nueva: era de tracción) → FIN-1 (gate Z) → BOT-2 (gates K2). BIZUM-WATCH = recurrente trimestral (sep-26, dic-26, mar-27: si Stripe Bizum gana Connect support → activar + test fee).
+**Nota (reescrita 27-jul-2026, regla 13 nueva):** U2 NO es compromiso, y **su gate global de 25 pagantes YA NO BLOQUEA la construcción**: se construye completo antes de la captación. Lo que sigue en pie es la **re-priorización** con los datos de F1 al alcanzar 25 pagantes — reordenar la cola, no autorizar a empezar. Los gates INTERNOS de esta lista que NO son de tracción siguen intactos: PARTNERS-1 (Y2), FIN-1 (Z) y BOT-2 (K2). **APP-1 llevaba «gate >100 pagantes», que SÍ es de tracción: retirado como bloqueo.**
 
 > **Decisión fundador 5-jul-2026 (A10.0, SPRINT_DEMO_READY_EXT3):** se adelanta la CONSTRUCCIÓN
 > tras flag de JOB-1, PERFIL-1, MANT-1, ANALYTICS-1, validUntil/expired, ONBOARD-2 (maquinaria),
 > DASH-PREMIUM-1 (pulido) y R14/V (blindaje money-flows) durante la ventana pre-demo;
-> re-priorización comercial a 25 pagantes intacta (regla 13). Condiciones: specs SOLO del master,
+> re-priorización comercial a 25 pagantes intacta *(sigue siendo cierto tras la regla 13 nueva del 27-jul-2026: re-priorizar la cola no es lo mismo que dar permiso para construir — el permiso ya no hace falta)*. Condiciones: specs SOLO del master,
 > flags de Parte P nacen y quedan OFF (activar = fundador), GTM/prioridades de venta intactos.
 > Nada más de U2/Z se desbloquea. (Nota añadida, nunca borrada — regla 16.)
 
@@ -1256,7 +1256,7 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 | Foto avería → QuoteRequest |  ✅ (Parte R · MEDIA-1) | F2 | R2 |
 | Audio cliente → STT → QuoteRequest | ✅ (Parte R · MEDIA-1; en España se mandan audios) | F2 | BOT + STT [VALIDAR] |
 | Fotos antes/después | ✅ (Parte R · MEDIA-1, ancla Job) | F2 | R2 |
-| Foto → sugerir líneas (visión) | ⏸ cajón | F3 | VOZ >40 % de quotes + 100 pagantes |
+| Foto → sugerir líneas (visión) | ⏸ cajón | F3 | ~~VOZ >40 % de quotes + 100 pagantes~~ → **la parte de "100 pagantes" se retira (regla 13 nueva, 27-jul-2026); queda la condición de PRODUCTO: que la voz se use de verdad (>40 % de quotes), que no es tracción sino señal de que el patrón funciona** |
 | OCR ticket gasto | ⏸ cajón | F4 | ≥30 % usan gastos manual |
 | IA precios por zona | ⏸ | F3 | ≥10K líneas propias |
 | IA "detecta" mantenimientos | ❌ DESCARTADA | — | MANT-1 ya lo hace con reglas |
@@ -1291,7 +1291,7 @@ F1: enlaces `yaqu.app/?ref=<slug>` → `acquisitionSource` · sheet de partners 
 # PARTE Z — NO CONSTRUIR (con gate de revisión)
 | Item | Estado | Se revisa cuando… |
 |---|---|---|
-| App nativa completa | ❌ horizonte actual | APP-1 wrapper cubre (gate 100 pagantes) |
+| App nativa completa | ❌ horizonte actual | APP-1 wrapper cubre (~~gate 100 pagantes~~ retirado 27-jul-2026, regla 13 nueva; el "❌ horizonte actual" NO es de tracción y sigue en pie) |
 | Marketplace / derivación entre gremios | Cajón F4 | ≥2.000 merchants activos |
 | Contabilidad completa (libros, 303/130 presentación) | ❌ nunca | exports al gestor; jamás competir con gestorías (son canal) |
 | OCR de gastos | Cajón F4 | ≥30 % usan gastos manual |
@@ -1308,8 +1308,8 @@ F1: enlaces `yaqu.app/?ref=<slug>` → `acquisitionSource` · sheet de partners 
 | Google Calendar OAuth | Cajón F3 | ≥30 % lo piden / adopción Equipo |
 | Verticales fuera de hogar/oficios · React/reescritura front · n8n | ❌ nunca | — |
 
-## Z2. Banco de oportunidades (research 13-jun-2026; NO se construye antes de 25 pagantes — regla 13)
-Ideas validadas por el mercado, documentadas aquí para revisión a los 25 pagantes. Las que ya tienen sprint en el master se marcan; el resto son candidatas a re-priorizar U2.
+## Z2. Banco de oportunidades (research 13-jun-2026; ~~NO se construye antes de 25 pagantes~~ — **el bloqueo se retira el 27-jul-2026 con la regla 13 nueva**)
+Ideas validadas por el mercado. **Ya no esperan a los 25 pagantes para poder construirse** (regla 13 nueva, 27-jul-2026); lo que sigue decidiendo es la cola única de la Parte U y la regla 15 (una feature nueva exige matar o posponer otra), no un permiso de tracción. Las que ya tienen sprint en el master se marcan; el resto son candidatas a re-priorizar U2.
 | Oportunidad | Encaje | Estado / dónde |
 |---|---|---|
 | **Reseñas Google automáticas al cobrar** (link por WA tras pago) | Alto: usa el momento de pago, canal WA, ROI de captación | **Candidata fuerte a U2** (alto valor/bajo coste; ya existe `googleReviewUrl` en onboarding) |
@@ -1350,12 +1350,14 @@ Ideas validadas por el mercado, documentadas aquí para revisión a los 25 pagan
    gate que aún no se ha alcanzado. (Los "❌ nunca" de Z1 conservan su significado operativo
    actual: no se construyen bajo el régimen vigente; su reconsideración pertenece a la
    enmienda del punto 3.)
-3. **EXPLÍCITO — qué NO cambia:** esta visión **NO modifica la Parte Z ni la regla 13**.
-   La secuencia de construcción antes de 25 pagantes sigue gobernada por este master tal
-   cual está (cola única U, prioridad SIF-1, gates de Z). La revisión de la Parte Z a la
-   luz de esta visión (qué entra en qué pack, qué gates se ajustan) se hará como
-   **enmienda formal del master AL alcanzar 25 pagantes**, junto con la re-priorización
-   comercial que la regla 13 ya prevé.
+3. **EXPLÍCITO — qué NO cambia:** esta visión **NO modifica la Parte Z**.
+   La secuencia de construcción sigue gobernada por este master tal cual está (cola única U,
+   prioridad SIF-1, gates de Z que no sean de tracción).
+   **ACTUALIZADO 27-jul-2026 (regla 13 nueva):** este punto decía que la revisión de la Parte Z
+   se haría "AL alcanzar 25 pagantes". Ese aplazamiento **era un gate de tracción y queda retirado**:
+   la revisión de Z puede hacerse cuando toque en la cola. Lo que sigue siendo cierto es que
+   cambiar la Parte Z exige **enmienda formal del master** (regla 27) — el freno es de proceso,
+   no de tracción.
 
 ---
 
@@ -1464,4 +1466,4 @@ Vanilla, sin React/Tailwind/build, sin dependencias pesadas, sin reescritura: **
 **Criterios de alarma (predefinidos):** ≥7/10 no cobran señal NI piensan pedirla → promesa primaria pasa a "que no te dejen en visto + recordatorios", señal = upsell · ≥7/10 delegan todo en gestoría y no les suena VeriFactu → canal gestorías sube, SEO de pánico baja · ≥5/10 dicen que sus clientes no firmarían en el móvil → reforzar "Acepto sin firmar" + aceptación por respuesta de WhatsApp.
 
 ---
-*YAQU_MASTER v5.3 UNIFICADO (rev. 13-jun-2026: research de mercado integrado — ángulo morosidad en GTM/H, banco de oportunidades Z2, competencia Z3, claims actualizados; sin cambio de estrategia ni de sprints, regla 13 intacta) — base 10 jun 2026. Sprint activo: VALIDA-0 (+ S1-0 humano día 1). Prioridad absoluta: SIF-1. Próxima revisión estratégica permitida: 25 pagantes (regla 13). Historial: v4 (may-26) → v5 + parche v5.1 + addendum v5.2 + delta v5.3 (10-jun-26) → rev. research (13-jun-26) → este documento.*
+*YAQU_MASTER v5.3 UNIFICADO (rev. 13-jun-2026: research de mercado integrado — ángulo morosidad en GTM/H, banco de oportunidades Z2, competencia Z3, claims actualizados; sin cambio de estrategia ni de sprints, regla 13 intacta) — base 10 jun 2026. Sprint activo: VALIDA-0 (+ S1-0 humano día 1). Prioridad absoluta: SIF-1. ~~Próxima revisión estratégica permitida: 25 pagantes (regla 13).~~ **27-jul-2026: la regla 13 cambia —el producto se construye completo antes de la captación— y este freno desaparece; la revisión estratégica se hace cuando toque, siempre por enmienda de master (regla 27).** Historial: v4 (may-26) → v5 + parche v5.1 + addendum v5.2 + delta v5.3 (10-jun-26) → rev. research (13-jun-26) → este documento.*
