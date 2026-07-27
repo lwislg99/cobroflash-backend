@@ -1,0 +1,128 @@
+# .github/workflows/zona-roja.yml — SCRUM-168
+#
+# POR QUÉ EXISTE: no hay gate de «Require review from Code Owners» y no va a haberlo
+# (decisión del fundador). Este aviso es la ÚNICA señal que existe sobre la zona roja, para
+# los dos carriles. Comenta en el PR qué ficheros de la lista toca y por qué son rojos.
+#
+# ─────────────────────────────────────────────────────────────────────────────────────────
+# ESTE JOB SALE VERDE SIEMPRE. SIEMPRE.
+#
+# La primera versión salió ROJA en su propio PR y eso lo invalidaba entero: un check rojo es
+# un gate de facto, y como `tests/`, `package.json` y `.github/` son zona roja por definición,
+# habría un rojo casi permanente — justo lo que se evitó con el CI y la tanda gateada. Si sale
+# rojo, no es un aviso.
+#
+# Dos errores, uno de bug y otro de concepto, los dos corregidos aquí:
+#
+#   1. BUG: `git fetch --depth=0` no es válido (`fatal: depth 0 is not a positive number`,
+#      exit 128). El paso moría ANTES de ejecutar el script — el job nunca llegó a mirar si
+#      había zona roja. Son los ~7 s que se veían. Con `fetch-depth: 0` en el checkout el
+#      histórico ya está: ese fetch sobraba además de estar mal escrito.
+#
+#   2. CONCEPTO: `continue-on-error: true` a nivel de job NO evita el rojo. Evita que el
+#      WORKFLOW falle; el job sigue apareciendo con su aspa roja en la lista de checks del PR.
+#      Servía para lo que no hacía falta y no servía para lo que hacía falta.
+#
+# El criterio que sustituye a los dos: NINGÚN paso puede terminar en fallo. Sin `set -e`, con
+# los fallos capturados a mano y `exit 0` al final. Y —esto es lo que impide que degenere en un
+# job mudo— **si algo se rompe, se dice**: va al resumen del job y al comentario del PR. Un
+# aviso que se cae en silencio es peor que no tenerlo, porque se lee como «no hay zona roja».
+# ─────────────────────────────────────────────────────────────────────────────────────────
+name: Zona roja
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: zona-roja-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  avisar:
+    name: ¿este PR toca la zona roja?
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # SIN `continue-on-error`: no evitaba el rojo (ver cabecera). Lo que garantiza el verde es
+    # que el único paso con lógica termina en `exit 0` pase lo que pase.
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # El histórico completo: `git diff base...HEAD` necesita algo contra lo que comparar.
+          # Con esto la base ya está en local y NO hace falta ningún fetch extra.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Avisar de zona roja
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          BASE: ${{ github.base_ref }}
+        run: |
+          # `set -u` y `pipefail` sí; `set -e` NO: aquí ningún fallo puede tumbar el job.
+          set -uo pipefail
+
+          resumen() { echo "$1" >> "$GITHUB_STEP_SUMMARY"; }
+          problema=""
+
+          # ── 1. Qué ficheros aporta el PR ────────────────────────────────────────────────
+          # Tres puntos (base...HEAD): lo que el PR APORTA, sin contar lo que main avanzó por
+          # su cuenta. Con dos puntos, una rama con unos días encima parece tocar media casa.
+          if ! git diff --name-only "origin/$BASE...HEAD" > cambiados.txt 2> diff.err; then
+            problema="no pude calcular el diff contra origin/$BASE: $(cat diff.err)"
+            : > cambiados.txt
+          fi
+          echo "── ficheros del PR ──"; cat cambiados.txt
+
+          # ── 2. ¿Toca zona roja? ─────────────────────────────────────────────────────────
+          if ! node scripts/zona-roja.mjs cambiados.txt > informe.md 2> script.err; then
+            problema="${problema:+$problema · }el detector falló: $(cat script.err)"
+            : > informe.md
+          fi
+
+          # ── 3. Si el propio aviso se ha roto, se DICE. En verde, pero se dice. ───────────
+          if [ -n "$problema" ]; then
+            resumen "## ⚠️ El aviso de zona roja no pudo evaluarse"
+            resumen ""
+            resumen "$problema"
+            resumen ""
+            resumen "El job sale verde a propósito (no es un gate), pero **este PR no ha sido"
+            resumen "comprobado**: no lo leas como «no toca zona roja»."
+            printf '%s\n### ⚠️ El aviso de zona roja no pudo evaluarse\n\n%s\n\nEste PR **no ha sido comprobado** — no lo leas como «no toca zona roja». El job sale verde porque no es un gate.\n' \
+              "<!-- yaqu:zona-roja -->" "$problema" > informe.md
+          elif [ ! -s informe.md ]; then
+            resumen "## ✅ Este PR no toca la zona roja"
+            echo "No toca zona roja: no se comenta nada."
+          else
+            resumen "## 🔴 Este PR toca la zona roja"
+            resumen ""
+            cat informe.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          # ── 4. Comentario: uno por PR, actualizado. Nunca uno por push. ─────────────────
+          if [ -s informe.md ] && [ -n "${PR:-}" ]; then
+            ID=$(gh api "repos/$REPO/issues/$PR/comments" --paginate \
+                   --jq '.[] | select(.body | contains("<!-- yaqu:zona-roja -->")) | .id' \
+                 2>/dev/null | head -1)
+            if [ -n "$ID" ]; then
+              gh api -X PATCH "repos/$REPO/issues/comments/$ID" -F body=@informe.md > /dev/null \
+                && echo "Comentario actualizado ($ID)." \
+                || resumen "_(no pude actualizar el comentario; el aviso está aquí arriba)_"
+            else
+              gh api -X POST "repos/$REPO/issues/$PR/comments" -F body=@informe.md > /dev/null \
+                && echo "Comentario creado." \
+                || resumen "_(no pude crear el comentario; el aviso está aquí arriba)_"
+            fi
+          fi
+
+          # Pase lo que pase: verde. Si sale rojo, no es un aviso.
+          exit 0
