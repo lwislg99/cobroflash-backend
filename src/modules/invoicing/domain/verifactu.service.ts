@@ -151,6 +151,29 @@ export async function applyVeriFactu(
     throw new Error('receipt_document_not_invoiceable');
   }
 
+  // SCRUM-149: FAIL-CLOSED — una factura SIN LÍNEAS no se sella.
+  //
+  // `cuotaTotal` sale de `calcVatCuotaTotal(lines)`: sin líneas da 0,00, así que la huella
+  // declararía CERO IVA repercutido sobre un importe que sí lo lleva. Y la huella es inmutable
+  // y encadenada (`vfPrevHash`, regla 29): eso solo se corrige emitiendo una R1.
+  //
+  // Antes bastaba con que un call-site olvidara copiar las líneas — que es exactamente lo que
+  // hacía `createInvoiceFromQuoteAdmin` (retirado en este mismo ticket) y lo que la ruta viva
+  // documenta como el "bug E2E V0-1" ya corregido en su día. El guard convierte "que nadie se
+  // olvide" en algo que no se puede olvidar.
+  //
+  // Preferir NO sellar antes que sellar mal: los call-sites capturan (igual que con el
+  // justificante de arriba) y el PDF sale sin QR, que es un fallo visible y reparable —
+  // al contrario que una cadena de huellas con una cuota falsa dentro.
+  const conLineas = await prismaClient.invoice.findUnique({
+    where: { id: invoice.id },
+    select: { lines: true },
+  });
+  const lineas = Array.isArray(conLineas?.lines) ? (conLineas!.lines as any[]) : null;
+  if (!lineas || lineas.length === 0) {
+    throw new Error('invoice_without_lines_not_sealable');
+  }
+
   // Última factura del merchant que ya tenga huella (excluye la actual)
   const prev = await prismaClient.invoice.findFirst({
     where: {
@@ -168,14 +191,9 @@ export async function applyVeriFactu(
   const timestamp = formatFechaHoraHuso(new Date());
   const importeTotal = Number(invoice.total.toString()).toFixed(2);
 
-  // Cuota total de IVA real desde las líneas de la factura (0.00 si no tiene líneas)
-  const full = await prismaClient.invoice.findUnique({
-    where: { id: invoice.id },
-    select: { lines: true },
-  });
-  const cuotaTotal = calcVatCuotaTotal(
-    Array.isArray(full?.lines) ? (full!.lines as any[]) : null,
-  ).toFixed(2);
+  // Cuota total de IVA real desde las líneas (garantizadas no vacías por el guard de arriba,
+  // que además reutiliza esta misma lectura — no hay consulta de más).
+  const cuotaTotal = calcVatCuotaTotal(lineas).toFixed(2);
 
   const vfHash = computeVeriFactuHash({
     nif: taxId,

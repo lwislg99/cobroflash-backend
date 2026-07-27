@@ -285,56 +285,21 @@ export async function rejectQuoteAdmin(
 }
 
 /**
- * Crear una factura 100% del presupuesto aceptado.
- * - Solo si status = accepted.
- * - Idempotente: si ya tiene factura, devuelve la existente.
+ * SCRUM-149: aquí vivía `createInvoiceFromQuoteAdmin`, RETIRADA (código muerto).
+ *
+ * Estaba importada en `quotesAdmin.routes.ts` pero ninguna ruta la llamaba, y si se hubiera
+ * cableado habría emitido una factura con DOS defectos fiscales:
+ *   · SIN copiar las líneas → `calcVatCuotaTotal` da 0,00 → la huella VeriFactu se sellaba
+ *     declarando CERO IVA repercutido sobre un importe que sí lo lleva. Es el mismo "bug E2E
+ *     V0-1" que la ruta viva (`POST /admin/quotes/:id/invoice`) documenta como ya corregido:
+ *     se arregló en el camino vivo y quedó fosilizado en este.
+ *   · Ignorando el plan de tramos (`total: quote.total` completo), saltándose SCRUM-27/32/141.
+ *
+ * NO se conserva "por si acaso": es un arma cargada. El caso que podría haberla justificado
+ * —facturar un Trabajo con condiciones MANUAL/SIN_CONDICIONES, hoy no facturable por ninguna
+ * vía— es un GAP REAL reconocido (SCRUM-150), y cuando toque se construye bien desde cero, no
+ * resucitando algo que nace con el bug dentro.
+ *
+ * El guard que impide que esto vuelva a poder pasar vive en `applyVeriFactu`
+ * (`invoicing/domain/verifactu.service.ts`): una factura sin líneas ya no se puede sellar.
  */
-export async function createInvoiceFromQuoteAdmin(quoteId: number, merchantId?: number) {
-  // A12.1: scoping multi-tenant (regla 2)
-  const quote = await prisma.quote.findFirst({
-    where: { id: quoteId, ...(merchantId != null ? { merchantId } : {}) },
-    include: {
-      merchant: true,
-      customer: true,
-      Invoice: true,
-    },
-  });
-
-  if (!quote) {
-    throw new Error('quote_not_found');
-  }
-
-  if (quote.status !== 'accepted') {
-    throw new Error('quote_not_accepted');
-  }
-
-  if (!quote.merchant || !quote.customer) {
-    throw new Error('quote_missing_fk');
-  }
-
-  if (quote.Invoice && quote.Invoice.length > 0) {
-    return quote.Invoice[0];
-  }
-
-  const merchant = quote.merchant;
-
-  const invoice = await prisma.$transaction(async (tx) => {
-    const formattedNumber = await allocateInvoiceNumber(tx, merchant.id);
-    return tx.invoice.create({
-      data: {
-        merchantId: merchant.id,
-        customerId: quote.customerId,
-        quoteId: quote.id,
-        number: formattedNumber,
-        type: isReceiptNumber(formattedNumber) ? 'JUST' : 'F1', // V0-0
-        total: quote.total,
-        currency: quote.currency,
-        pdfUrl: 'PENDING',
-        qrData: 'PENDING',       // 👈 requerido por Prisma
-        registerId: null,        // 👈 opcional en tu schema
-      },
-    });
-  });
-
-  return invoice;
-}
