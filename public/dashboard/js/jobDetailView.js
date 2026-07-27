@@ -768,6 +768,118 @@ async function renderJobDetailView(container, jobId) {
   // que en <640px ya es hoja inferior full-width con scroll y slide-from-bottom (styles.css, como
   // customersView). Cada albarán abre su propio sheet. Se monta en document.body para que el
   // position:fixed no dependa de ningún stacking-context de la vista.
+  /**
+   * SCRUM-170 · HOJA DE «FACTURAR PARTE».
+   *
+   * Enseña lo SERVIDO, lo ya FACTURADO y lo que queda de cada línea, y deja escribir cuánto se
+   * factura ahora. Por defecto propone TODO lo pendiente: el caso normal es cobrar lo que falta,
+   * y quien quiera partirlo solo tiene que bajar el número.
+   *
+   * Los topes viven también en el servidor (`validarPeticionParcial`): esto es comodidad, no
+   * seguridad — el importe de una factura no puede depender de lo que valide un navegador.
+   */
+  function openFacturarParcialSheet(alb) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', `Facturar parte del albarán ${alb.numero}`);
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    const header = document.createElement('div');
+    header.className = 'modal-header';
+    const title = document.createElement('div');
+    title.className = 'modal-title';
+    title.textContent = `Facturar parte de ${alb.numero}`;
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'modal-close';
+    closeBtn.type = 'button';
+    closeBtn.textContent = '×';
+    closeBtn.setAttribute('aria-label', 'Cerrar');
+    header.append(title, closeBtn);
+
+    const err = document.createElement('div');
+    err.className = 'alert error';
+    err.style.display = 'none';
+
+    const body = document.createElement('div');
+    body.className = 'modal-body';
+    const inputs = [];
+    (alb.pendientes || []).forEach((p) => {
+      if (p.pendiente <= 0) return; // lo ya cobrado no se vuelve a ofrecer
+      const fila = document.createElement('div');
+      fila.style.cssText = 'display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)';
+      const izq = document.createElement('div');
+      izq.style.cssText = 'min-width:0;flex:1';
+      izq.innerHTML =
+        `<div style="font-weight:600">${esc(p.concepto || 'Sin concepto')}</div>` +
+        `<div style="font-size:12px;color:var(--muted)">Servido ${p.servida}${p.unidad ? ' ' + esc(p.unidad) : ''}` +
+        (p.facturada > 0 ? ` · ya facturado ${p.facturada}` : '') +
+        ` · queda <strong>${p.pendiente}</strong></div>`;
+      const inp = document.createElement('input');
+      inp.type = 'number';
+      inp.min = '0';
+      inp.max = String(p.pendiente);
+      inp.step = '0.001';
+      inp.value = String(p.pendiente); // por defecto, lo que queda
+      inp.style.cssText = 'width:110px;min-height:44px'; // target al pulgar (AB6)
+      inp.setAttribute('aria-label', `Cantidad a facturar de ${p.concepto || 'la línea'}`);
+      inputs.push({ index: p.index, input: inp, max: p.pendiente });
+      fila.append(izq, inp);
+      body.appendChild(fila);
+    });
+
+    const footer = document.createElement('div');
+    footer.className = 'modal-footer';
+    const cancelar = document.createElement('button');
+    cancelar.className = 'btn-secondary';
+    cancelar.type = 'button';
+    cancelar.textContent = 'Cancelar';
+    const emitir = document.createElement('button');
+    emitir.className = 'btn-primary';
+    emitir.type = 'button';
+    emitir.textContent = 'Emitir factura';
+    footer.append(cancelar, emitir);
+
+    const cerrar = () => overlay.remove();
+    closeBtn.addEventListener('click', cerrar);
+    cancelar.addEventListener('click', cerrar);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
+
+    emitir.addEventListener('click', async () => {
+      const lineas = inputs
+        .map((i) => ({ index: i.index, cantidad: Number(i.input.value) }))
+        .filter((l) => l.cantidad > 0);
+      if (lineas.length === 0) {
+        err.textContent = 'Indica qué cantidad quieres facturar de al menos una línea.';
+        err.style.display = 'block';
+        return;
+      }
+      emitir.disabled = true;
+      const orig = emitir.textContent;
+      emitir.textContent = 'Emitiendo…';
+      try {
+        const d = await apiRequest(`/admin/albaranes/${alb.id}/facturar-parcial`, {
+          method: 'POST', body: JSON.stringify({ lineas }),
+        });
+        cerrar();
+        // El sellado que falla NO se calla (mismo criterio que la consolidación).
+        showToast(d && d.veriFactu === false ? '⚠️ Factura emitida, revisa su registro' : '✓ Factura emitida.');
+        if (d && d.message) setStatus('error', d.message);
+        refresh();
+      } catch (e) {
+        err.textContent = e?.data?.message || 'No se pudo emitir la factura.';
+        err.style.display = 'block';
+        emitir.disabled = false;
+        emitir.textContent = orig;
+      }
+    });
+
+    modal.append(header, err, body, footer);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+  }
+
   function openAlbEditorSheet(alb) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -826,7 +938,12 @@ async function renderJobDetailView(container, jobId) {
         `<div class="job-doc-row__meta">` +
           `<span class="status-pill ${JOBDET_ALB_PILL[alb.estado] || 'status-pill-draft'}">${jobDetAlbEstado(alb.estado)}</span>` +
           // SCRUM-17: badge "Facturado" derivado (alb.facturado = invoiceId != null en el serializer)
-          (alb.facturado ? `<span class="job-doc-row__badge">Facturado</span>` : '') +
+          // SCRUM-170: y el intermedio, también DERIVADO — `estadoCobro` sale de comparar lo
+          // servido con lo facturado (libro de líneas), no de ninguna columna de estado. Por eso
+          // el pill del documento (borrador/emitido/firmado) sigue a su bola: son dos ejes.
+          (alb.estadoCobro === 'parcial'
+            ? `<span class="job-doc-row__badge">Facturado en parte</span>`
+            : (alb.facturado || alb.estadoCobro === 'facturado' ? `<span class="job-doc-row__badge">Facturado</span>` : '')) +
           `<span>${esc(docDate(alb.fecha))}</span>` +
           `<span>v${alb.version}</span>` +
           (albValorado ? `<span>Con precios · Total orientativo <span class="job-doc-row__amount">${fmtMoneyEs(alb.totales?.total ?? 0, cur)}</span></span>` : `<span>Sin precios</span>`) +
@@ -836,7 +953,9 @@ async function renderJobDetailView(container, jobId) {
       `</div>`;
     const albBody = item.querySelector('.job-doc-row__body');
     // SCRUM-17: checkbox de selección (modo consolidación) en albaranes elegibles.
-    if (alb.estado === 'firmado' && alb.modoValoracion === 'VALORADO' && !alb.facturado) {
+    // SCRUM-170: un albarán a MEDIAS tampoco entra en la consolidación (el backend lo rechaza
+    // con `albaran_facturado_parcial`); ofrecer el checkbox sería un botón que solo puede fallar.
+    if (alb.estado === 'firmado' && alb.modoValoracion === 'VALORADO' && !alb.facturado && alb.estadoCobro !== 'parcial' && alb.estadoCobro !== 'facturado') {
       const wrap = document.createElement('label');
       wrap.style.cssText = 'display:none;align-items:center;gap:6px;margin:0 0 6px;font-size:13px;color:var(--ink);cursor:pointer';
       const cb = document.createElement('input');
@@ -949,6 +1068,22 @@ async function renderJobDetailView(container, jobId) {
       addSecondary(acts, [fotoBtn(), firmarWaBtn]);
     } else {
       acts.appendChild(pdfBtn()); // firmado = congelado: solo PDF
+      // SCRUM-170 (FACT-2c): facturar SOLO PARTE de lo servido. Aparece cuando queda algo por
+      // facturar y el parte lleva precios; si ya está todo cobrado, no hay acción que ofrecer.
+      // Admin-only como toda emisión (S1) → al técnico se le DESHABILITA con explicación, nunca
+      // se le esconde (norma de SCRUM-89: un botón que no puede usar tiene que decirle por qué).
+      const quedaPorFacturar = (alb.pendientes || []).some((p) => p.pendiente > 0);
+      if (alb.modoValoracion === 'VALORADO' && !alb.facturado && quedaPorFacturar) {
+        const parcialBtn = mkBtn(
+          alb.estadoCobro === 'parcial' ? 'Facturar lo que queda' : 'Facturar parte',
+          () => openFacturarParcialSheet(alb),
+        );
+        acts.appendChild(parcialBtn);
+        if (isTecnico) {
+          lockActionForRole(parcialBtn);
+          acts.appendChild(roleLockedNote());
+        }
+      }
       // SCRUM-47: enviar la copia FIRMADA al WhatsApp del cliente (plantilla albaran_firmado_es).
       const waBtn = mkBtn('Enviar por WhatsApp', async () => {
         waBtn.disabled = true;

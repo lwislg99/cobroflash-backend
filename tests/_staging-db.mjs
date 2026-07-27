@@ -69,6 +69,22 @@ if (gate) {
     process.exit(1);
   }
 
+  // ── SCRUM-165 · asignación SÍNCRONA, antes del primer `await` del módulo ─────
+  // Va AQUÍ, no al final, A PROPÓSITO. Antes se asignaba tras la sonda (barrera 2), que
+  // lleva un `await`: durante esa suspensión un import HERMANO del test podía construir el
+  // cliente de `dist` (resuelve DATABASE_URL AL CONSTRUIRSE) ANTES de que se asignara →
+  // nacía sin variable, «Environment variable not found: DATABASE_URL» en 5 tests gateados
+  // (el TLA de un módulo NO serializa sus imports hermanos). Asignando aquí, síncrono y antes
+  // de cualquier `await`, la variable ya está cuando el hermano evalúe.
+  //
+  // ⚠️ RIESGO RESIDUAL ACEPTADO: entre esta línea y el `process.exit` de la barrera 2 hay una
+  // ventana en la que un import podría construir un cliente con esta URL. Es inherente a
+  // «asignar y luego verificar» — el único orden que arregla el bug. Consecuencia: la
+  // ALLOWLIST (barrera 1, arriba) es ahora la ÚNICA barrera que actúa ANTES de que la URL sea
+  // utilizable; el marcador (barrera 2) sigue abortando si la BD no es staging, pero DESPUÉS
+  // de esa ventana. POR ESO la allowlist no se toca.
+  process.env.DATABASE_URL = staging;
+
   // ── BARRERA 2 · el MARCADOR: la propiedad. Solo lectura ─────────────────────
   const sonda = new PrismaClient({ datasources: { db: { url: staging } } });
   let marca = null;
@@ -100,6 +116,4 @@ if (gate) {
     console.error('   CREAN Y BORRAN merchants, y eso contra producción es irreversible.\n');
     process.exit(1);
   }
-
-  process.env.DATABASE_URL = staging;
 }

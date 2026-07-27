@@ -672,18 +672,41 @@ blockClient.appendChild(descWrapper);
    * único que quiere hacer. Aquí las plantillas se pintan como fichas de un toque dentro del
    * propio cuadernillo.
    *
-   * SOBRE "CONCEPTOS FRECUENTES", que es la otra mitad que pedía el plan de fases: NO se
-   * construye, y no por falta de tiempo. `QuoteTemplate` no guarda ningún contador de uso y no
-   * hay ninguna señal de frecuencia en el esquema, así que "los más frecuentes" solo podría
-   * salir de inventarse un criterio (¿los últimos creados? ¿los primeros por id?) y
-   * presentárselo al usuario como si fuera su historial. Eso sería mentirle sobre sus propios
-   * datos. Los conceptos ya se buscan con el autocompletado del catálogo, que sí es real; la
-   * frecuencia de verdad necesita contar usos (schema) y va en su propio ticket.
+   * SOBRE "CONCEPTOS FRECUENTES", la otra mitad que pedía el plan de fases: aquí se dejó fuera
+   * a propósito —no por falta de tiempo— porque no había ninguna señal de frecuencia y "los más
+   * usados" solo podía salir de inventarse un criterio y presentárselo al pro como si fuera su
+   * historial. Eso es mentirle sobre sus propios datos.
+   *
+   * SCRUM-162 la construye, y el motivo de arriba sigue mandando: la señal NO se inventó ni se
+   * añadió al esquema, se DERIVÓ de los presupuestos reales del merchant (`Quote.lines`), y solo
+   * se enseña cuando existe de verdad — el backend devuelve lista VACÍA si no hay al menos 3
+   * conceptos repetidos en 3 presupuestos o más. Medido en producción antes de construirlo: tres
+   * merchants la superan y cinco no; esos cinco no ven nada, que es exactamente lo que había que
+   * proteger. El autocompletado del catálogo sigue igual para lo demás.
    */
   const plantillasRapidas = document.createElement("div");
   plantillasRapidas.className = "quote-plantillas";
   plantillasRapidas.hidden = true;
   blockLines.appendChild(plantillasRapidas);
+
+  // ⚠️ ESTA DECLARACIÓN VIVE AQUÍ, JUNTO A SU CONTENEDOR, Y NO MÁS ABAJO (SCRUM-162).
+  // Estaba declarada al lado de `pintarPlantillasRapidas`, ~1.700 líneas más adelante, y
+  // `recalcTotals()` la lee a través de `refrescarRotuloPlantillas()` mucho antes: en el
+  // primer `addLine()` del render, cuando ese `let` todavía está en su zona muerta (TDZ).
+  // El `ReferenceError` resultante ABORTABA el resto del render — así que la fila de
+  // plantillas de F6 no llegaba a pintarse NUNCA y el listener de «📋 Usar plantilla» no
+  // llegaba a engancharse. Lo destapó el E2E de SCRUM-162 al ver que sus propias fichas
+  // tampoco aparecían. Si vuelve a bajar, vuelve el fallo.
+  let plantillasRotulo = null;
+
+  // SCRUM-162: los conceptos que este pro repite de verdad. Misma fila de fichas que las
+  // plantillas (AB3, patrón de F6) y debajo de ellas: la plantilla trae varias líneas de
+  // golpe, el concepto trae una — de más a menos, como la escalera del héroe (SCRUM-31 F4).
+  // Nace OCULTO y solo se muestra si el backend devuelve conceptos: sin señal, no hay fila.
+  const conceptosFrecuentes = document.createElement("div");
+  conceptosFrecuentes.className = "quote-conceptos";
+  conceptosFrecuentes.hidden = true;
+  blockLines.appendChild(conceptosFrecuentes);
 
   const linesBody = document.createElement("div");
   linesBody.className = "quote-lines";
@@ -2344,8 +2367,6 @@ if (Number.isFinite(n) && n >= 0) {
    * Si la petición falla no se avisa de nada: es un atajo, no una función que el usuario haya
    * pedido; el camino del modal sigue entero y molestar con un error sería ruido.
    */
-  let plantillasRotulo = null;
-
   function refrescarRotuloPlantillas() {
     if (!plantillasRotulo) return;
     plantillasRotulo.textContent = editorEnBlanco()
@@ -2396,7 +2417,70 @@ if (Number.isFinite(n) && n >= 0) {
     else useTemplateBtn.hidden = true;
   }
 
+  /**
+   * SCRUM-162 · TUS CONCEPTOS MÁS USADOS — un toque, una línea con el concepto puesto.
+   *
+   * La lista la decide el BACKEND, y su contrato es lo importante: si no hay señal suficiente
+   * devuelve `items: []`, y vacío aquí significa NO ENSEÑAR NADA. Este front no rellena el
+   * hueco con "lo que haya" (los últimos, los primeros, el catálogo entero) — hacerlo sería
+   * volver a lo que F6 se negó a construir: una lista arbitraria disfrazada de historial.
+   *
+   * El fallo de red también deja la fila oculta: es una ayuda, no un requisito del editor.
+   */
+  async function pintarConceptosFrecuentes() {
+    let respuesta;
+    try {
+      respuesta = await apiRequest('/admin/products/frequent-concepts');
+    } catch (_e) {
+      return;
+    }
+    const items = respuesta && Array.isArray(respuesta.items) ? respuesta.items : [];
+    if (items.length === 0) return;
+
+    conceptosFrecuentes.innerHTML = '';
+    const rotulo = document.createElement('span');
+    rotulo.className = 'quote-plantillas__label';
+    rotulo.textContent = 'Tus conceptos más usados';
+    conceptosFrecuentes.appendChild(rotulo);
+
+    items.forEach(function (item) {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'quote-plantilla-chip quote-concepto-chip';
+      // El "por qué está aquí" viaja con la ficha: el pro puede comprobar la afirmación en
+      // vez de tener que creérsela. Es la diferencia entre un dato suyo y una sugerencia.
+      chip.title = `Añadir una línea con "${item.concepto}" (en ${item.usos} presupuestos)`;
+      const nombre = document.createElement('span');
+      nombre.className = 'quote-plantilla-chip__nombre';
+      nombre.textContent = item.concepto;
+      const meta = document.createElement('span');
+      meta.className = 'quote-plantilla-chip__meta';
+      meta.textContent = `en ${item.usos} presupuestos`;
+      chip.appendChild(nombre);
+      chip.appendChild(meta);
+      chip.addEventListener('click', function () { anadirLineaDesdeConcepto(item.concepto); });
+      conceptosFrecuentes.appendChild(chip);
+    });
+
+    conceptosFrecuentes.hidden = false;
+  }
+
+  /**
+   * Añade la línea con el concepto ya escrito y deja el foco en el PRECIO — que es lo único
+   * que falta. Mandar el foco al concepto (como hace "+ Añadir línea") obligaría a saltar un
+   * campo ya relleno con el pulgar, justo el trámite que la ficha viene a quitar.
+   */
+  function anadirLineaDesdeConcepto(concepto) {
+    addLine({ concept: concepto });
+    const nueva = linesBody.lastElementChild;
+    if (!nueva) return;
+    const precio = nueva.querySelector('.quote-line__price input');
+    if (precio) precio.focus({ preventScroll: true });
+    nueva.scrollIntoView({ block: 'nearest' });
+  }
+
   pintarPlantillasRapidas();
+  pintarConceptosFrecuentes();
 
   // ── Botón "📋 Usar plantilla" ────────────────────────────────────────────
   useTemplateBtn.addEventListener("click", async function () {

@@ -599,6 +599,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   invSec.appendChild(btnInvoice);
 
   let canGenerateInvoice = false;
+  // SCRUM-178: a qué ruta va el botón. Por defecto la de TRAMOS; la emisión manual (un solo
+  // documento por el total, condiciones MANUAL/SIN_CONDICIONES) tiene la suya y se elige abajo.
+  let invoiceEndpoint = 'invoice';
   if (quote.hasCustomPlan) {
     // SCRUM-34 (SOLO planes custom): puerta al SIGUIENTE tramo sin exigir trabajo
     // terminado (POST /admin/quotes/:id/invoice no lo exige; emite por conteo vía
@@ -606,7 +609,11 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     // btnInvoice.textContent → label crudo (textContent escapa solo).
     const next = quote.nextStage || null;
     if (!isAccepted) {
-      btnInvoice.textContent = 'No disponible para estas condiciones de pago';
+      // SCRUM-151: decía "No disponible para estas condiciones de pago" y el motivo NO son las
+      // condiciones —el plan custom SÍ genera tramos—: es que el presupuesto aún no está
+      // aceptado. Se reutiliza el texto que ya usa la rama de los presets para ese mismo caso,
+      // así que no es microcopy nueva: es dejar de dar un motivo falso.
+      btnInvoice.textContent = 'Solo disponible tras aceptar el presupuesto';
       btnInvoice.disabled = true;
     } else if (next) {
       btnInvoice.textContent = `Generar siguiente tramo: ${next.label} (${fmtQuoteMoney(next.amount, next.currency || cur)})`;
@@ -625,8 +632,26 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     if (invoices.length === 0) { btnInvoice.textContent = 'Generar 1ª factura (50%)'; canGenerateInvoice = true; }
     else if (invoices.length === 1) { btnInvoice.textContent = 'Generar 2ª factura (50% restante)'; canGenerateInvoice = true; }
     else { btnInvoice.textContent = 'Plan de facturación completado'; btnInvoice.disabled = true; }
+  } else if (invoices.length === 0) {
+    // SCRUM-178 · MANUAL/SIN_CONDICIONES ya SÍ se pueden facturar: un documento por el total.
+    //
+    // LAS DOS FRASES SON VERDAD Y SE QUEDAN LAS DOS. Hasta hoy el botón llevaba el texto que el
+    // fundador aprobó en SCRUM-151 —"Estas condiciones no generan tramos automáticos"— porque la
+    // vía de emisión no existía. Ahora existe, pero seguir sin tramos SIGUE siendo cierto y es
+    // justo lo que el pro necesita saber para no buscar un plan que no va a aparecer. Así que esa
+    // frase NO se retira (es N5 aprobada, regla 30, y su guard la vigila): baja del botón a la
+    // nota que lo acompaña, y el botón pasa a llevar la acción — con el MISMO texto que ya usa
+    // el 100 % unas ramas más arriba, que es exactamente lo que se emite aquí.
+    btnInvoice.textContent = 'Generar factura (100%)';
+    canGenerateInvoice = true;
+    invoiceEndpoint = 'invoice-manual'; // ruta propia: la de tramos sigue rechazando esto
+
+    const notaSinTramos = document.createElement('div');
+    notaSinTramos.style.cssText = 'font-size:13px;color:var(--muted);margin-top:6px';
+    notaSinTramos.textContent = 'Estas condiciones no generan tramos automáticos';
+    invSec.appendChild(notaSinTramos);
   } else {
-    btnInvoice.textContent = 'No disponible para estas condiciones de pago';
+    btnInvoice.textContent = 'Factura ya generada';
     btnInvoice.disabled = true;
   }
 
@@ -636,13 +661,16 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       const original = btnInvoice.textContent;
       btnInvoice.textContent = 'Generando…';
       try {
-        const res = await fetch(`/admin/quotes/${quote.id}/invoice`, {
+        const res = await fetch(`/admin/quotes/${quote.id}/${invoiceEndpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          setStatus('error', 'Error generando factura: ' + (data.error || 'desconocido'));
+          // SCRUM-151: el mensaje del servidor manda. Antes se pintaba `data.error`, o sea el
+          // identificador interno: el usuario leía "Error generando factura:
+          // no_more_invoices_for_payment_terms". El código queda para el log, no para la pantalla.
+          setStatus('error', data.message || ('Error generando factura: ' + (data.error || 'desconocido')));
           btnInvoice.disabled = false;
           btnInvoice.textContent = original;
           return;

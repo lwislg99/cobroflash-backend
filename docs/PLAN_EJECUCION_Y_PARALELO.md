@@ -74,6 +74,42 @@ Cada carril es DUEÑO de sus módulos. El dueño puede tocarlos sin preguntar; e
 ### 3.2 Reglas de oro (las 8)
 1. **Un ticket = una rama = un PR.** Ramas cortas (máx 2-3 días de vida). Mergear frecuente > ramas perfectas.
 2. **Cada uno en SU máquina/carpeta.** Jamás dos sesiones de Claude Code sobre el mismo checkout (lección del 13-jul: colisión 14/43). Si un mismo humano necesita 2 sesiones: worktrees.
+
+   > ⚠️ **RETIRAR un worktree: deshacer sus ENLACES primero** (incidente #11, 27-jul-2026, ver
+   > `docs/ERRORES_ASESOR.md`). Los worktrees llevan un junction `node_modules → <repo>/node_modules`
+   > para no duplicar 271 paquetes por copia. `git worktree remove` **entra por el enlace y borra
+   > el contenido del destino**: una limpieza rutinaria de 37 worktrees dejó sin dependencias a
+   > TODAS las sesiones a la vez, y ningún comando falló. Orden obligatorio, probado en los dos
+   > sentidos (con enlace → el destino se vacía; con `rmdir` antes → sobrevive):
+   >
+   > ```bash
+   > cmd //c "rmdir D:\ruta\al\worktree\node_modules"   # quita el ENLACE, no el destino
+   > git worktree remove ../wt-loquesea                 # ahora sí
+   > ```
+   >
+   > Si ya ha pasado: `npm ci` + `npx prisma generate` en el repo principal lo restaura, y los
+   > junctions de los worktrees que sobrevivan vuelven a resolver solos.
+
+   > 📏 **QUÉ COMPARTEN DE VERDAD LOS WORKTREES — medido, no supuesto** (SCRUM-182, 27-jul-2026,
+   > sobre los 24 worktrees vivos). Se midió porque la sospecha era otra y era falsa:
+   >
+   > | Artefacto | ¿Compartido? | Cómo |
+   > |---|---|---|
+   > | `dist/` | **NO. Nunca.** | Cada worktree tiene el suyo; cero junctions. `tsc` escribe con `outDir` relativo a su propio `tsconfig.json`. |
+   > | `node_modules/` | **SÍ, por DOS vías** | ① junction explícito → `<repo>/node_modules` (3 worktrees hoy: `wt-scrum-114`, `wt-scrum-162`, `wt-scrum-178`). ② **resolución hacia arriba de Node**: los worktrees bajo `.claude/worktrees/` viven DENTRO del repo y **ni siquiera tienen la carpeta** — resuelven la del padre sin que haya ningún enlace que lo delate. |
+   > | Cliente de Prisma | **SÍ** | Vive dentro de `node_modules`; hereda las dos vías de arriba. Un `npx prisma generate` en un worktree los cambia a TODOS (es el incidente #11 otra vez, por la puerta de al lado). |
+   >
+   > **La vía ② es la peor y es la que no se ve:** no hay junction que inspeccionar, así que
+   > una comprobación del tipo "¿es esto un enlace?" da negativo y concluye "aislado" cuando no
+   > lo está. Cualquier herramienta que quiera razonar sobre estos artefactos tiene que
+   > **resolver** la ruta (`require.resolve`), nunca construirla a mano.
+   >
+   > **Y el solapamiento no necesita worktrees:** `npm test` es `build && node --test`, así que
+   > dos tandas en el MISMO árbol ya se pisan el `dist`. **R6 serializa la BD, no las
+   > compilaciones.** Por eso el freno de SCRUM-182 no vigila quién comparte qué, sino el
+   > efecto: el runner gateado toma una huella de `dist/`, `tests/` y el cliente de Prisma
+   > antes y después, y si algo cambió sale con **código 4** diciendo que sus números no son
+   > evidencia de nada — ni el verde ni el rojo (`scripts/_artefactos-guard.mjs`).
 3. **Empezar SIEMPRE con `git checkout main && git pull`.** Rebase de main a la rama si pasa de 1 día.
 4. **Anunciar zona roja:** antes de empezar un ticket, comentar en él qué archivos de zona roja tocará. El otro carril lo lee antes de arrancar el suyo.
 5. **El segundo reconcilia:** si dos PRs tocan lo mismo, el que mergea segundo resuelve conflictos rebasando sobre main (patrón del PR #10). Los merges los hace Luis con "Create a merge commit" si hay 2+ commits.
