@@ -180,3 +180,24 @@ export const PENDIENTE_MAX = 16;
  * del fundador y queda en el diff.
  */
 export const REVISAR_ANTES_DE = '2026-09-30';
+
+/**
+ * SCRUM-164 · GATES DE ROL POR CAMPO — enumerados a mano PORQUE la derivación no los ve.
+ *
+ * `scrum55-admin-fail-closed` deriva el árbol `/admin` reflejando los montajes y el marcador
+ * `__requiredRole` que deja `requireRole`. Un gate que vive DENTRO del handler (porque depende
+ * del cuerpo de la petición, no de la ruta) no deja marcador y es invisible para esa derivación
+ * — y también para `ADMIN_ONLY_ROUTES`. Punto ciego compartido por los dos mecanismos.
+ *
+ * Esta lista existe para que dejen de ser invisibles: cualquier gate de rol escrito a mano en un
+ * handler tiene que estar aquí, y hay un guard que lo comprueba contra el código
+ * (`scrum164-gate-por-campo.test.mjs`). No es documentación: es lo que se compara.
+ */
+export const FIELD_LEVEL_ROLE_GATES: ReadonlyArray<{ method: string; path: string; campos: readonly string[]; why: string }> = [
+  {
+    method: 'PATCH',
+    path: '/admin/jobs/:id',
+    campos: ['tipoOperacion', 'assignedUserId', "status:'cerrado'"],
+    why: 'SCRUM-120: la ruta NO es admin-only (status/scheduledAt/notes son del operario); lo reservado al admin son los campos que tocan facturación o dinero. Regla en roleCapabilities.adminOnlyJobField.',
+  },
+];

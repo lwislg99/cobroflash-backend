@@ -4,7 +4,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: dinero = admin)
-import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-147: capacidad, no literal
+import { seesOnlyOwnJobs, seesAllJobs, adminOnlyJobField } from '../../../../core/http/roleCapabilities'; // SCRUM-147 / SCRUM-164
 import { canTransition, estadoCobroFor, JOB_TIPOS_OPERACION } from '../../domain/job.service';
 import { recordAudit } from '../../../system/audit.service'; // SCRUM-66: traza de tipo_operacion_elegido
 import { resolveBillingPlan, distributeStageAmounts } from '../../../quotes/domain/billingPlan';
@@ -328,12 +328,15 @@ router.patch('/:id', async (req, res) => {
     // única transición IRREVERSIBLE de la FSM y mata la vía de "Cobrar el resto"). FAIL-CLOSED: si un técnico
     // manda CUALQUIERA (aunque venga mezclado con campos legítimos), se rechaza ENTERO — nada de aplicar
     // parcial en zona fiscal. (La UI ya deshabilita estos controles para el técnico; esto es el candado real.)
-    if (req.userRole !== 'admin') {
-      const adminOnlyField =
-        req.body?.tipoOperacion !== undefined ? 'tipoOperacion' :
-        req.body?.assignedUserId !== undefined ? 'assignedUserId' :
-        (req.body?.status !== undefined && String(req.body.status) === 'cerrado') ? 'status:cerrado' :
-        null;
+    // SCRUM-164: la REGLA vive en roleCapabilities.ts, junto al resto de reglas de rol, y aquí
+    // solo se aplica. Antes era un `if` suelto con la lista de campos escrita a mano dentro del
+    // handler: el único gate de rol de todo src/ invisible para la derivación de
+    // scrum55-admin-fail-closed (que reconoce el marcador que pone requireRole, y un `if` no lo
+    // lleva). Sigue siendo gate por CAMPO —convertirlo en requireRole('admin') dejaría al
+    // técnico sin tocar sus propios trabajos, que es lo que SCRUM-120 construyó—, pero ahora es
+    // una función con nombre, probable sin BD y declarada en FIELD_LEVEL_ROLE_GATES.
+    if (!seesAllJobs(req.userRole)) {
+      const adminOnlyField = adminOnlyJobField(req.body);
       if (adminOnlyField) {
         return res.status(403).json({ error: 'forbidden', required_role: 'admin', field: adminOnlyField });
       }
