@@ -116,6 +116,25 @@ Los dos eslabones fallan igual y en silencio: el trabajo existe, el mensaje dice
 
 Lo que la hace la más útil: las dos primeras variantes fallaban hacia *"parece entregado y no lo está"*; esta falla hacia *"parece que falta y ya estaba"*, y su coste es **rehacer trabajo hecho** o contradecir a quien tenía razón (aquí, un compañero que decía que el fichero ya estaba en `main` — y lo estaba). **La lección completa: resolver el SHA primero, consultar por SHA, y no fiarse de alias.**
 
+### 2026-07-27 · #11 — Retiré 37 worktrees con la orden correcta y vacié el `node_modules` de TODO EL EQUIPO (lección propia, del ejecutor)
+
+**Qué pasó:** con el GO del fundador para retirar los worktrees ya mergeados, corrí `git worktree remove` sobre 37 de ellos. Cada worktree lleva dentro un **junction de Windows** (`mklink /J node_modules → <repo>/node_modules`) para no duplicar 271 paquetes por copia. `git worktree remove` **entró por el enlace y borró el contenido del destino**: el `node_modules` compartido quedó con 0 ficheros. Ningún comando falló; los 37 dijeron OK.
+
+**El daño real no fue mío:** ese `node_modules` lo comparten TODAS las sesiones por junction. Cualquiera que estuviera compilando o corriendo tests en ese momento se encontró un repo sin dependencias, sin haber tocado nada. Es la primera de estas lecciones cuyo coste cae **sobre terceros**.
+
+**Detectado:** al minuto siguiente, al ir a medir para SCRUM-162 y no resolverse `@prisma/client`. Restaurado con `npm ci` + `npx prisma generate` (271 paquetes, build y suite en verde otra vez).
+
+**Verificado, no supuesto:** se reprodujo con un destino de juguete — worktree desechable + junction a una carpeta con un fichero marcador → `git worktree remove` → **el marcador desaparece**. Y se comprobó el orden correcto en el mismo experimento: `rmdir <enlace>` primero (borra el ENLACE, no el destino: el marcador sobrevive) y `git worktree remove` después. Las dos mitades, provocadas.
+
+**Regla derivada — nueva:** **antes de retirar un worktree, deshacer sus enlaces.** Un junction no es una carpeta del worktree: es una puerta a algo compartido, y las herramientas de borrado recursivo no distinguen. Orden obligatorio:
+
+```bash
+cmd //c "rmdir D:\ruta\al\worktree\node_modules"   # quita el ENLACE (no el destino)
+git worktree remove ../wt-loquesea                 # ahora sí
+```
+
+**Nota:** hermana de #8 y #9 —la herramienta hizo su trabajo correctamente sobre un objeto que no era el que yo creía— pero con una vuelta de tuerca: aquí el objeto equivocado **no estaba a la vista**. Lo que se ve es una carpeta del worktree; lo que se borra está al otro lado del enlace, fuera de él. Cuando una operación de borrado toca algo compartido, el radio de la acción es mayor que el de la carpeta que se nombra en el comando.
+
 ---
 
 ## PATRÓN COMÚN (lo que de verdad hay que corregir)
