@@ -35,6 +35,10 @@ export type MotivoDescarte =
   | 'no_firmado'
   | 'sin_precios'
   | 'ya_facturado'
+  // SCRUM-171a: el albarán a medias (SCRUM-170) NO lleva `invoiceId` —ese campo significa
+  // «facturado entero»—, así que sin este motivo propio se colaría como elegible y la
+  // recapitulativa cobraría otra vez lo ya facturado.
+  | 'facturado_parcial'
   | 'obra_unica'
   | 'fuera_de_rango';
 
@@ -61,6 +65,7 @@ const MENSAJE: Record<MotivoDescarte, (numero: string) => string> = {
   no_firmado: (n) => `El parte ${n} no está firmado.`,
   sin_precios: (n) => `El parte ${n} no lleva precios.`,
   ya_facturado: (n) => `El parte ${n} ya está facturado.`,
+  facturado_parcial: (n) => `El parte ${n} ya tiene líneas facturadas: factura lo que queda desde el propio parte.`,
   obra_unica: (n) => `El parte ${n} es de una obra única: se factura al concluir, no se agrupa por meses.`,
   fuera_de_rango: (n) => `El parte ${n} queda fuera del rango elegido.`,
 };
@@ -142,6 +147,7 @@ export function seleccionarConsolidablesDeCliente(
     // llega se dice eso y no "fuera de rango", que despistaría.
     if (a.customerId !== customerId) { fuera(a, 'otro_cliente'); continue; }
     if (a.invoiceId != null) { fuera(a, 'ya_facturado'); continue; }
+    if (a.facturadoParcial) { fuera(a, 'facturado_parcial'); continue; }
     if (a.tipoOperacion === 'TRABAJO_UNICO') { fuera(a, 'obra_unica'); continue; }
     if (a.estado !== 'firmado') { fuera(a, 'no_firmado'); continue; }
     if (a.modoValoracion !== 'VALORADO') { fuera(a, 'sin_precios'); continue; }

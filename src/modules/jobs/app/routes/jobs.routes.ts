@@ -15,6 +15,7 @@ import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; //
 import { allocateAlbaranNumber } from '../../domain/albaranNumber.service';
 // SCRUM-170: derivación del estado de cobro (parcial) — nunca un flag almacenado.
 import { estadoCobroAlbaran, facturadoPorLinea, pendientePorLinea } from '../../domain/albaranFacturacion';
+import { emitirRecapitulativas } from '../../domain/recapitulativa.service'; // SCRUM-171a: emisión compartida
 import {
   ALBARAN_MODOS_VALORACION,
   serializeAlbaran,
@@ -668,76 +669,25 @@ router.post('/:id/consolidar-albaranes', requireRole('admin'), async (req, res) 
     }
 
     const grupos = groupByRotura(consolidables);
-    const currency = merchant.defaultCurrency || 'EUR';
 
-    // UNA transacción para TODOS los grupos: si algo falla o el guard de concurrencia salta,
-    // rollback TOTAL (nadie consolida a medias).
-    const created = await prisma.$transaction(async (tx) => {
-      const out: Array<{ id: number; number: string; mesLabel: string; total: string }> = [];
-      for (const g of grupos) {
-        // Líneas VALORADO de cada albarán → líneas de factura {concept, qty, price, tax(fracción)}.
-        const lines = g.albaranes.flatMap((a) => {
+    // SCRUM-171a: la emisión vive en `recapitulativa.service` y la comparten esta vía (ámbito
+    // Job) y la de ámbito CLIENTE. Antes estaba escrita aquí dentro; copiarla para la segunda
+    // vía habría dejado dos sitios que numeran, agrupan y sellan «casi igual», y el día que uno
+    // se arregle el otro se queda con el fallo. La rotura del art. 13, la transacción única, el
+    // guard anti-doble y el sellado fuera del commit son los mismos, byte a byte.
+    const { facturas: created, sinSellar } = await emitirRecapitulativas(prisma, {
+      merchantId: req.merchantId!,
+      customerId: job.customerId,
+      currency: merchant.defaultCurrency || 'EUR',
+      taxId: merchant.taxId,
+      grupos: grupos.map((g) => ({
+        mesLabel: g.mesLabel,
+        albaranes: g.albaranes.map((a) => {
           const full = albaranes.find((x) => x.id === a.id)!;
-          const ls = Array.isArray(full.lineas) ? (full.lineas as any[]) : [];
-          const fechaTxt = new Date(a.fecha).toLocaleDateString('es-ES');
-          return ls.map((l) => ({
-            concept: `Albarán ${a.numero} (${fechaTxt}): ${l.concepto}`,
-            qty: Number(l.cantidad) || 0,
-            price: Number(l.precioUnitario) || 0,
-            tax: (Number(l.tipoIva) || 0) / 100,
-          }));
-        });
-        const bd = calcVatBreakdown(lines);
-        const total = (bd.base + bd.cuota).toFixed(2);
-        const albaranRefs = g.albaranes.map((a) => ({ albaranId: a.id, numero: a.numero, fecha: a.fecha }));
-
-        const invoice = await emitInvoice(tx, {
-          merchantId: req.merchantId, customerId: job.customerId, total, currency,
-          type: 'F1', lines, albaranRefs, quoteId: null,
-        });
-        // Robustez fiscal: una recapitulativa JAMÁS puede salir como justificante J-. Si
-        // allocateInvoiceNumber devolviera serie receipt (getEmissionMode discrepa del gate
-        // por no ver merchant.flags), abortamos TODO en vez de emitir un documento inválido.
-        if (isReceiptNumber(invoice.number)) throw new Error('consolidacion_no_disponible');
-
-        // Guard anti-doble-consolidación: solo marca los que SIGUEN invoiceId:null.
-        const groupIds = g.albaranes.map((a) => a.id);
-        const upd = await tx.albaran.updateMany({
-          where: { id: { in: groupIds }, merchantId: req.merchantId, invoiceId: null },
-          data: { invoiceId: invoice.id },
-        });
-        if (upd.count !== groupIds.length) throw new Error('consolidacion_concurrente'); // → rollback TOTAL
-
-        out.push({ id: invoice.id, number: invoice.number, mesLabel: g.mesLabel, total });
-      }
-      return out;
+          return { id: a.id, numero: a.numero, fecha: a.fecha, lineas: full.lineas };
+        }),
+      })),
     });
-
-    // ── SCRUM-173: sellar la cadena VeriFactu, DESPUÉS del commit y una a una ──────────────
-    // La recapitulativa se emitía SIN registro VeriFactu: `emitInvoice` asigna número y crea
-    // la fila, pero no llama a `applyVeriFactu` — y este camino tampoco lo hacía, a diferencia
-    // de los otros cinco de emisión. Con el flag ON habría salido una factura fiscal sin
-    // huella, sin encadenar y sin QR: un agujero en la cadena, no una función que faltase.
-    // Estaba tapado solo porque INVOICING_ES_ENABLED lleva OFF.
-    //
-    // FUERA de la `$transaction` de arriba y EN SERIE, nunca en paralelo: sellar dentro de la
-    // tx haría que las N facturas del lote no se vieran entre sí y todas encadenaran al mismo
-    // registro anterior. `applyVeriFactu` ya lo impide por su cuenta (lanza si recibe un
-    // cliente de transacción), pero el orden correcto es este.
-    //
-    // Un fallo aquí NO revierte la consolidación: las facturas existen y los albaranes quedan
-    // marcados. Es deliberado — deshacer una factura emitida va contra la regla 29. Se avisa
-    // en la respuesta para que quede constancia y se pueda reintentar el sellado.
-    const sinSellar: string[] = [];
-    for (const f of created) {
-      try {
-        const inv = await prisma.invoice.findUnique({ where: { id: f.id } });
-        if (inv) await applyVeriFactu(inv, merchant?.taxId ?? '', prisma);
-      } catch (e: any) {
-        console.error(`[consolidar-albaranes] sellado VeriFactu falló en ${f.number}:`, e?.message || e);
-        sinSellar.push(f.number);
-      }
-    }
 
     return res.status(201).json({
       ok: true,
