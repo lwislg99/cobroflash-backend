@@ -510,11 +510,6 @@ async function rejectQuoteAdmin(id, payload = {}) {
   });
 }
 
-// Enviar presupuesto por WhatsApp
-async function sendQuoteWhatsApp(id) {
-  return apiRequest(`/admin/quotes/${id}/send-whatsapp`, { method: "POST" });
-}
-
 // -------- Admin – Productos --------
 
 function getProducts(search = "", limit = 20) {

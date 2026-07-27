@@ -580,6 +580,49 @@ Ruta nueva = declara rol mínimo; default Admin-only. **Lo hace cumplir un test,
 > rol): no verifica que un handler declarado `token` valide bien el token, solo que alguien lo afirmó y lo
 > revisó — el complemento natural sería un test de comportamiento, mismo papel que `tenancy-permisos.test.mjs`.
 > `npm test`: 192 · 164 pass · 0 fail · 28 skip (gateados), sin regresión en SCRUM-55.
+> **✅ SCRUM-128 · paso b (24-jul-2026):**
+> SCRUM-126 unificó el vocabulario "¿salió el envío?" en 8 endpoints `/admin` con contrato de cuerpo
+> (`src/lib/sendOutcome.ts`: `sent` en la raíz, o anidado en `collect-rest`) + 1 fire-and-forget sin
+> contrato HTTP (`quotes.routes.ts:568`, solo WA-0b lo registra). Este ticket lo blinda con el MISMO
+> mecanismo que Guard A/S1: `src/core/http/sendEndpointDeclarations.ts` + test de enumeración
+> (`tests/scrum128-send-endpoints-fail-closed.test.mjs`) que recorre `/admin` vía `getAdminMounts()`
+> (registro real, no reflection sobre Express) y falla si una ruta que **huele a envío** (heurística
+> `enviar|send|resend` en el path) no está declarada — con dónde vive `sent` — o aparcada con ticket.
+> **Límite honesto, documentado en el propio archivo**: (1) no verifica que el handler use
+> `sendFailureBody`/`sendSuccessBody` de verdad, solo que alguien lo declaró; (2) la heurística tiene
+> un punto ciego CONOCIDO y ya materializado — `collect-rest` es uno de los 8 y su path no contiene
+> ninguna de las tres palabras, así que está declarado A MANO; un futuro endpoint con nombre igual de
+> opaco que envíe algo como efecto secundario tampoco se detectaría solo; (3) no verifica que el FRONT
+> mire el campo (esa es la capa 2, frontend, sin implementar). **Dos hallazgos colaterales del propio
+> recon, fuera de alcance de este PR y abiertos como tickets propios:** `POST /charges/:id/send` envía
+> por **n8n** (`N8N_ONSEND_URL`) — regla dura 1 violada — y encima de forma CONDICIONAL: sin la URL
+> configurada (lo esperable, al estar prohibido), el bloque se salta entero y aun así responde
+> `{ok:true, status:'sent'}`; verificado sin ningún caller vivo en el repo → **SCRUM-129**, recomendación
+> retirar, no migrar. `POST /admin/team/:id/resend` (reenviar invitación) traga el error de `sendEmail`
+> en un `catch` que solo hace `console.error` y responde `{ok:true}` siempre — misma clase de bug que
+> el cluster 114→127, en invitaciones de equipo → **SCRUM-131**, aparcado en `SEND_ENDPOINTS_PENDING`
+> (ratchet `MAX=1`, plazo 30-sep-2026) en vez de con una declaración falsa. Probado en rojo (undeclared
+> + declaración muerta, ambos confirmados). `npm test`: 260 · 222 pass · 0 fail · 38 skip, sin regresión.
+> **Frontend, decisión del fundador (24-jul-2026): capa (a) SÍ, capa (b) DIFERIDA con gate escrito.**
+> Corregida antes la premisa del propio ticket: **Playwright NO está instalado** (sin devDependency,
+> sin config) — lo que existe y está probado es `scripts/e2e-critico.mjs` (`npm run e2e:critico`),
+> un harness con **puppeteer-core sobre Edge/Chromium** que ya recorre la cadena crítica de dinero.
+> La capa (b) sería extender ESE patrón, no montar un framework nuevo — más barato de lo asumido,
+> pero sigue siendo 8 flujos de navegador (login, selectores, DOM), ~1-2 días, y los tests más
+> frágiles de la suite. **Capa (a) implementada:** `tests/scrum128-frontend-census.test.mjs`, mismo
+> mecanismo de censo que SCRUM-113 — recorre `public/dashboard/js/*.js`, detecta llamadas a las 8
+> rutas sin `waSendFailed`/`waCollectRestSent`/`.sent` en una ventana de 20 líneas, con censo de
+> calibración (7 ficheros, 0 con violación) y ratchet de pendientes (`MAX=0`). Dos ajustes tras
+> calibrar contra el código real (no asumido): ventana ampliada de 15→20 líneas (dos falsos positivos
+> por precondiciones más largas de lo esperado) y una excepción documentada y verificada A MANO para
+> la clave `onEmail:` — callback pasado a `waFallbackBar` (api.js), que YA comprueba `sent` de forma
+> centralizada; exigir otro chequeo en cada `onEmail:` pediría deshacer esa centralización de
+> SCRUM-115. Limpieza colateral: `sendQuoteWhatsApp` en `api.js` era código muerto (cero llamadores
+> en todo `public/`) que el detector no podía distinguir de un bug real — retirado. Probado en rojo
+> (chequeo real retirado a mano, detector lo cazó; revertido). **GATE de la capa (b), para que no se
+> pierda ni se haga por inercia:** se reconsidera SI aparece un endpoint de envío NUEVO, o SI algo se
+> cuela pese a la capa (a). No antes, y no por defecto al tocar este área. `npm test`: 263 · 225 pass
+> · 0 fail · 38 skip, sin regresión.
 > **✅ SCRUM-102 (23-jul-2026):** hallazgo MEDIO de SCRUM-88 — `fees.csv` (facturación de TODA la
 > plataforma) y `platform-funnel` dependían SOLO de `isOwnerEmail()` (comparación contra la env var
 > `OWNER_EMAILS`); verificado que hoy está bien puesta en prod, así que era endurecimiento, no
