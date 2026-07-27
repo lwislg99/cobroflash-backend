@@ -572,7 +572,13 @@
 - **Decisión (fundador): opción 1 — documentar, sin cambio funcional.** Montar un suelo de fiabilidad en la lectura para proteger 0 datos infra-reportaría PARA SIEMPRE una era vacía. Queda un comentario en `reports.routes.ts:144` (con la frontera y el resultado del count) para que nadie lea `reminderEur` creyéndolo limpio de un periodo con volumen pre-116. Si algún día lo hay, reabrir con un suelo de LECTURA (`reminderXSentAt >= fecha`), nunca tocando el histórico.
 - **Alcance:** solo la lectura de la métrica. Sin schema, sin write, sin cron, sin test (cero cambio de comportamiento).
 
-### [ ] P3-13 · Editor de presupuesto ≥768 px: el campo PRECIO se descuadra cuando hay margen (27-jul, hallazgo de la QA visual de SCRUM-139 F2)
+### [x] P3-13 · Editor de presupuesto ≥768 px: el campo PRECIO se descuadra cuando hay margen (27-jul, hallazgo de la QA visual de SCRUM-139 F2)
+- **CERRADO (27-jul, SCRUM-139 F4):** el aviso "Final: X €" deja de colgar bajo el input y pasa
+  a vivir DENTRO de la etiqueta de PRECIO (`.quote-line__label`, ahora flex). Así ninguna celda
+  es más alta que las demás y el descuadre desaparece **de raíz**, en vez de compensarse con un
+  ajuste de alineación. Medido tras el arreglo: **descuadre 0 px** en 768 y 1440 (antes ~15 px).
+  Se arregló en F4 y no antes porque F4 rehacía justo esa zona de la línea (margen e IVA a la
+  hoja inferior): arreglarlo en F2 habría sido trabajo que F4 tiraba.
 - **Síntoma:** en la rejilla de escritorio, una línea con margen > 0 muestra el aviso "Final: X €"
   bajo el precio; ese aviso hace la celda más alta y, con `align-items: end` en `.quote-line`,
   el `input` de PRECIO sube ~15 px respecto a CANTIDAD / MARGEN / IVA. Se ve en la captura de

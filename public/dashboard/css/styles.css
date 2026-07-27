@@ -1081,8 +1081,7 @@ html, body { overflow-x: clip; }
 @media (max-width: 767px) {
   .quote-line--vacia:not(:focus-within) > .quote-line__qty,
   .quote-line--vacia:not(:focus-within) > .quote-line__price,
-  .quote-line--vacia:not(:focus-within) > .quote-line__markup,
-  .quote-line--vacia:not(:focus-within) > .quote-line__vat,
+  .quote-line--vacia:not(:focus-within) > .quote-line__ajustes,
   .quote-line--vacia:not(:focus-within) > .quote-line__totalwrap,
   .quote-line--vacia:not(:focus-within) > .quote-line__actions { display: none; }
 
@@ -1099,6 +1098,9 @@ html, body { overflow-x: clip; }
 .quote-line__field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 /* El concepto es el PROTAGONISTA: ancho completo y primero, como en un cuadernillo. */
 .quote-line__concept { grid-column: 1 / -1; }
+/* En móvil el disparador va a lo ancho, debajo de cantidad y precio: es una acción, no un
+   campo, y partirlo en media columna lo haría parecer un tercer número. */
+.quote-line__ajustes { grid-column: 1 / -1; }
 
 /* Estilo Label de DESIGN.md §3 (12px, 600, MAYÚSCULAS, Apagado). Sustituye a los <th>. */
 .quote-line__label {
@@ -1135,17 +1137,71 @@ html, body { overflow-x: clip; }
   display: flex; align-items: center; justify-content: flex-end; gap: 8px;
   border-top: 1px solid var(--neutral-100, #eef1ee); padding-top: 8px;
 }
-.price-final-hint { font-size: 12px; color: var(--muted); margin-top: 2px; min-height: 0; }
+/* SCRUM-139 F4 (cierra BUGS.md P3-13): el aviso vive dentro de la etiqueta de PRECIO, no
+   debajo del input. Debajo hacía esa celda más alta que las demás y `align-items:end` le subía
+   el input ~15 px. Aquí no añade alto a nadie. `text-transform:none` porque la etiqueta va en
+   MAYÚSCULAS y "Final: 40,25 €" no debe gritar. */
+.quote-line__label { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.price-final-hint {
+  font-size: 11px; font-weight: 600; color: var(--muted, #6b756f);
+  text-transform: none; letter-spacing: 0; font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* SCRUM-139 F4 · disparador de la hoja de ajustes. Terciario a propósito: es lo que MENOS se
+   toca de la línea (margen casi siempre 0, IVA casi siempre el general), pero se lee sin
+   abrir nada. Target de 44 px como el resto de la tarjeta (AB6). */
+.quote-line__ajustes {
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 13px; font-weight: 600;
+  color: var(--muted, #6b756f);
+  /* Chip SÓLIDO y silencioso, ni discontinuo ni con borde de input. En F2 se reservó el borde
+     discontinuo para "+ Añadir línea" (crear) y aquí se había colado otra vez: la captura de
+     escritorio mostraba tres cajas discontinuas queriendo decir cosas distintas. Y con borde de
+     input parecería un campo más, que es justo lo que F4 le quita a la línea. */
+  border: none;
+  border-radius: 999px;
+  background: var(--bg, #f6f7f5);
+  white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;   /* el ancho de columna manda sobre el texto */
+  cursor: pointer;
+}
+.quote-line__ajustes:hover { color: var(--ink, #0f1c17); background: var(--bg, #f6f7f5); }
+.quote-line__ajustes:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(34,197,94,.30); }
+
+/* La hoja: los dos campos apilados y a lo ancho — es su pantalla, no una columna estrecha. */
+.quote-ajustes-modal { max-width: 420px; }
+.quote-ajustes-cual {
+  margin: 0 0 12px; font-size: 13px; font-weight: 600; color: var(--muted, #6b756f);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.quote-ajustes-campos { display: flex; flex-direction: column; gap: 14px; }
+.quote-ajustes-campos .quote-line__field { display: flex; flex-direction: column; gap: 4px; }
+.quote-ajustes-campos input {
+  width: 100%; min-height: 44px; padding: 10px 12px;
+  border: 1px solid var(--border, #e7e9e5); border-radius: var(--radius-md, 12px);
+  font-size: 16px; color: var(--ink, #0f1c17); background: var(--surface, #fff);
+}
+.quote-ajustes-campos input:focus {
+  outline: none; border-color: var(--green-600, #16a34a);
+  box-shadow: 0 0 0 3px rgba(34,197,94,.30);
+}
 
 /* ≥768 px: la MISMA tarjeta en una fila — el escritorio recupera la densidad de la tabla
    sin recuperar su scroll lateral ni obligar a mantener un segundo DOM. */
 @media (min-width: 768px) {
   .quote-line {
-    grid-template-columns: minmax(0, 3fr) 90px 120px 100px 90px minmax(96px, auto) auto;
+    /* SCRUM-139 F4: de 7 columnas a 6. Margen e IVA se fueron a la hoja y su sitio lo ocupa
+       un disparador que además DICE lo que esconde ("IVA 21 % · Margen 15 %").
+       Ancho FIJO para el disparador (no `auto`): cada línea es su propia rejilla, así que con
+       `auto` una línea con margen ensanchaba su columna y encogía su concepto — y las columnas
+       dejaban de cuadrar ENTRE filas. Lo destapó la captura, no la lectura. */
+    grid-template-columns: minmax(0, 3fr) 90px 120px 168px minmax(96px, auto) auto;
     align-items: end;
     gap: 12px;
   }
-  .quote-line__concept, .quote-line__actions { grid-column: auto; }
+  .quote-line__concept, .quote-line__actions, .quote-line__ajustes { grid-column: auto; }
   .quote-line__actions { border-top: none; padding-top: 0; justify-content: flex-start; }
 }
 
