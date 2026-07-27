@@ -89,7 +89,22 @@ Un fontanero no cobra una reforma de 3.000 € el último día. Cobra un anticip
 - 50% al empezar y 50% al terminar.
 - Por hitos personalizados (30/40/30, mensualidades, lo que se pacte).
 
-YaQu reparte el importe **al céntimo exacto** entre los tramos y va generando el cobro de cada uno cuando toca. Nada de calculadoras ni de descuadres de un céntimo.
+YaQu reparte el importe entre los tramos y va generando el cobro de cada uno cuando toca. Nada de calculadoras.
+
+> **¿Por qué la suma de mis facturas a veces no da EXACTAMENTE el total del presupuesto?**
+>
+> Puede haber **1 o 2 céntimos** de diferencia, y es a propósito.
+>
+> Cada factura tiene que cuadrar consigo misma: su total debe ser exactamente lo que suman sus
+> líneas con su IVA. Eso es lo que comprueba Hacienda, porque una factura es un documento
+> independiente — no se mira contra el presupuesto del que salió.
+>
+> Al partir un importe en varios tramos, el IVA de cada trozo se redondea por separado, y a veces
+> no hay ningún reparto que cuadre a la vez con el total del presupuesto **y** dentro de cada
+> factura. Cuando eso pasa, YaQu da prioridad a que **cada factura sea correcta**, aunque la suma
+> se quede a un céntimo o dos del presupuesto original.
+>
+> No se pierde ni se cobra dinero de más: lo que se cobra es lo que dice cada factura.
 
 **Métodos de cobro:**
 - **Tarjeta** (enlace de pago que se manda por WhatsApp).

@@ -1,5 +1,26 @@
 // tests/billingPlan.test.mjs — SCRUM-32: reparto EXACTO de tramos (el último absorbe el resto).
 // Invariante: céntimos enteros + suma de tramos == total, EXACTA (par e impar). Puro, no toca BD.
+//
+// ── SCRUM-141 (27-jul-2026) · QUÉ SIGUE PROTEGIENDO ESTE FICHERO, Y QUÉ YA NO ──────────────
+// Estos tests siguen siendo VÁLIDOS y no se han tocado: `distributeStageAmounts` conserva su
+// invariante (los tramos suman el total, exacto). Lo que cambió es QUIÉN LA CONSUME.
+//
+// Hasta SCRUM-141, `Invoice.total` se copiaba de aquí y las líneas de la factura se escalaban
+// APARTE. Dos redondeos independientes sobre el mismo dinero → hasta 1 céntimo de diferencia
+// entre el total y lo que suman sus propias líneas. Y esos dos números van a DOS CAMPOS DE LA
+// MISMA HUELLA VeriFactu (`importeTotal` ← total, `cuotaTotal` ← líneas), que se sella, se
+// encadena (`vfPrevHash`) y es inmutable (regla 29): el descuadre solo se corregía con una R1.
+//
+// DECISIÓN DEL FUNDADOR (opción A): una factura es un documento AUTÓNOMO — Hacienda no mira el
+// presupuesto del que salió, mira si sus líneas suman su total. Así que `Invoice.total` se
+// DERIVA de las líneas (`grossOfLines`). Este reparto sigue usándose como OBJETIVO a alcanzar
+// (`reconcileToTarget`), y se alcanza en el ~99 % de los tramos; cuando el importe es
+// matemáticamente inalcanzable (base y cuota redondean saltándolo), manda la coherencia interna
+// de la factura y la suma de las facturas queda a 1-2 céntimos del total del presupuesto.
+//
+// ⚠️ NO "restaures" el acoplamiento antiguo (copiar este importe a `Invoice.total`) para hacer
+// que la suma cuadre siempre: eso reintroduce el descuadre SELLADO, que es el daño irreversible.
+// El coste aceptado está medido y con tope en tests/scrum141-factura-final.test.mjs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
