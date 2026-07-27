@@ -99,6 +99,13 @@
           <span>Gastos</span>
         </button>
 
+        <!-- SCRUM-138: el paquete para el asesor / una inspección estaba enterrado en
+             Configuración. Es dinero, no una preferencia de la cuenta: va en Finanzas. -->
+        <button class="nav-item" data-view="export" id="nav-export">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Descargar datos</span>
+        </button>
+
         <div class="nav-section-label">Cuenta</div>
 
         <button class="nav-item" data-view="plans" id="nav-plans">
@@ -170,6 +177,7 @@
   <script src="./js/invoiceDetailView.js"></script>
   <script src="./js/expensesView.js"></script>
   <script src="./js/settingsView.js"></script>
+  <script src="./js/exportView.js"></script>
   <script src="./js/teamView.js"></script>
   <script src="./js/jobsView.js"></script>
   <script src="./js/signaturePad.js"></script>
