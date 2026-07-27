@@ -145,6 +145,38 @@ Siete trampas que ya nos han costado tiempo, y no fallan igual:
    lo hace invisible para cualquier monitorización por status — nadie mira el cuerpo de un
    200. Eso se sigue en su ticket.)*
 
+### La tanda gateada COMPLETA: `npm run test:staging:gated` (SCRUM-157)
+
+Los 51 tests gateados NO los cubre un solo comando. `QA_DB_TEST=1 npm run test:staging`
+exporta **solo** `QA_DB_TEST`, así que `a55-window-quote` (`A55_DB_TEST`) y `bot-suite`
+(`BOT_SUITE_TEST`) quedaban fuera: contaban como cobertura y **no se ejecutaban nunca** —
+su gate solo vivía en un doc, no en un comando. El mecanismo es el comando que la gente
+ejecuta, no la intención de acordarse de dos variables sueltas.
+
+```bash
+npm run test:staging:gated > /tmp/gated.log 2>&1; echo "exit=$?"   # ✅ los 51, exit real
+```
+
+Lo lanza `scripts/test-staging-gated.mjs`, que corre **tres procesos** y agrega sus cuatro
+números (total·pass·fail·skip): el bloque `QA_DB_TEST` (los 49, menos los dos aislados para
+no contarlos dos veces) y `a55`/`bot-suite` **cada uno aislado** con sus envs — porque mutan
+el merchant demo id=1, son lentos y la config de `dist` se congela al primer import (mezclar
+sus envs en un mismo `node --test` las cruzaría). El runner devuelve ≠0 si cualquier hijo
+falla y **nombra cuál**; lee `res.status` directo, sin tubería (la trampa 5, dentro del
+mecanismo). Contraprueba de esa propagación: `node scripts/test-staging-gated.mjs <fichero>`
+apunta los tres hijos a un fichero trivial y debe dar exit 0.
+
+⚠️ **Hoy la tanda sale ROJA en 2** (`a55` y `bot-suite`): bitrot del seed demo, «cliente seed
+no encontrado» — **SCRUM-159** (P3-9). Es lo correcto: un test que se ejecuta y falla grita;
+uno que no se ejecuta miente en el recuento. El verde de esos dos es cosa de SCRUM-159.
+
+⚠️ **El cleanup de los hijos gateados NO es higiene: es requisito del hijo siguiente.** Como
+`a55`/`bot-suite` corren ANTES de la suite pesada (obligado por el lock de DLL), cualquier
+fila que dejen en staging la hereda el bloque QA. Hoy da igual —mueren en el seed sin
+escribir—, pero cuando **SCRUM-159** los ponga a crear merchants efímeros, un `finally` que
+no limpie contaminará al hijo siguiente. Su bloque de limpieza es parte del contrato, no un
+detalle opcional.
+
 ## Escribir verificaciones: un verde falso no lo mira nadie (SCRUM-103)
 
 Entre el 22 y el 23-jul-2026 aparecieron **seis** mecanismos que pasaban sin comprobar lo que
