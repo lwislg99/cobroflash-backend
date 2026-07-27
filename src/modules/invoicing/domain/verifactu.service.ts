@@ -302,27 +302,56 @@ export async function applyVeriFactuAnulacion(
     throw new Error('receipt_document_not_invoiceable'); // V0-0: un J- nunca entra en la cadena
   }
 
-  const prevHash = await ultimaHuellaDeLaCadena(invoice.merchantId, prismaClient);
-  const timestamp = formatFechaHoraHuso(new Date());
+  // ── SCRUM-173b · MISMO CERROJO QUE EL ALTA, Y POR LA MISMA RAZÓN ────────────────────────
+  //
+  // La anulación lee y extiende **LA MISMA CADENA** que el alta (`ultimaHuellaDeLaCadena` mira
+  // altas Y anulaciones), así que hereda los tres peligros que SCRUM-173 cerró en
+  // `applyVeriFactu`: sellar dentro de otra tx, orden no determinista, y dos emisiones
+  // concurrentes leyendo el mismo `prev`.
+  //
+  // Dejarlo fuera era el peor resultado posible: **un mecanismo a medias parece uno entero**.
+  // Quien leyera `applyVeriFactu` daría por serializada toda la cadena, y lo estaría solo por
+  // un lado — un alta y una anulación simultáneas del mismo emisor encadenarían al mismo
+  // eslabón. Mismo cerrojo y MISMO namespace a propósito: es UNA cadena, no dos, y el cerrojo
+  // va por merchant precisamente para que los dos caminos compitan por él.
+  if (typeof (prismaClient as any).$transaction !== 'function') {
+    throw new Error(
+      'verifactu_seal_inside_transaction: applyVeriFactuAnulacion debe llamarse FUERA de una ' +
+      '$transaction, con el cliente global. Sellar dentro de una tx rompe el encadenamiento: ' +
+      'los registros del mismo lote no se ven entre sí y encadenarían al mismo eslabón anterior.',
+    );
+  }
 
-  const vfAnulHash = computeVeriFactuHashAnulacion({
-    nif: taxId,
-    serie: invoice.number,
-    fecha: formatDateES(invoice.createdAt),
-    prevHash,
-    timestamp,
+  const sellado = await (prismaClient as any).$transaction(async (tx: any) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${VERIFACTU_LOCK_NS}::int, ${invoice.merchantId}::int)`;
+
+    const prevHash = await ultimaHuellaDeLaCadena(invoice.merchantId, tx);
+    // El sello se toma DENTRO del cerrojo: es el que entra en la huella y tiene que ser
+    // posterior al del eslabón anterior.
+    const timestamp = formatFechaHoraHuso(new Date());
+
+    const vfAnulHash = computeVeriFactuHashAnulacion({
+      nif: taxId,
+      serie: invoice.number,
+      fecha: formatDateES(invoice.createdAt),
+      prevHash,
+      timestamp,
+    });
+
+    // SCRUM-145d: el eslabón anterior se PERSISTE, no se infiere. Antes se resolvía por sello al
+    // emitir (el registro inmediatamente anterior), y eso es frágil justo donde no puede serlo:
+    // con dos anulaciones próximas en el tiempo el orden por sello puede empatar o invertirse, y
+    // una cadena de huellas se sella PARA SIEMPRE. Se guarda lo que de verdad se hasheó — igual
+    // que `vfPrevHash` con el alta. Un dato, no una inferencia.
+    await tx.invoice.update({
+      where: { id: invoice.id },
+      data: { vfAnulHash, vfAnulPrevHash: prevHash, vfAnulTimestamp: new Date(timestamp) },
+    });
+
+    return { vfAnulHash, prevHash };
   });
 
-  // SCRUM-145d: el eslabón anterior se PERSISTE, no se infiere. Antes se resolvía por sello al
-  // emitir (el registro inmediatamente anterior), y eso es frágil justo donde no puede serlo:
-  // con dos anulaciones próximas en el tiempo el orden por sello puede empatar o invertirse, y
-  // una cadena de huellas se sella PARA SIEMPRE. Se guarda lo que de verdad se hasheó — igual
-  // que `vfPrevHash` con el alta. Un dato, no una inferencia.
-  await prismaClient.invoice.update({
-    where: { id: invoice.id },
-    data: { vfAnulHash, vfAnulPrevHash: prevHash, vfAnulTimestamp: new Date(timestamp) },
-  });
-
+  const { vfAnulHash, prevHash } = sellado;
   console.log(`[verifactu] ANULACION invoice=${invoice.number} hash=${vfAnulHash.slice(0, 16)}…`);
   return { vfAnulHash, vfPrevHash: prevHash };
 }
@@ -334,7 +363,7 @@ export async function applyVeriFactuAnulacion(
  * ya usaba `applyVeriFactu` (la última factura con huella), así que no altera ninguna cadena
  * persistida; solo deja de romperse el día que exista la primera anulación.
  */
-async function ultimaHuellaDeLaCadena(merchantId: number, prismaClient: typeof defaultPrisma): Promise<string> {
+async function ultimaHuellaDeLaCadena(merchantId: number, prismaClient: any): Promise<string> {
   const [ultimaAlta, ultimaAnul] = await Promise.all([
     prismaClient.invoice.findFirst({
       where: { merchantId, vfHash: { not: null } },
