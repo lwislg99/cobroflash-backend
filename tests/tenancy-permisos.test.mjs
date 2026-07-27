@@ -162,6 +162,26 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
     // A12.4 — el técnico SIEMPRE 403 en la lista admin-only
     for (const r of ADMIN_ONLY_ROUTES) {
       const path = r.path.replace(':invoiceId', '999999').replace(':planId', '999999');
+
+      // SCRUM-155: ningún placeholder puede sobrevivir a la sustitución.
+      //
+      // Verificado (24-jul): hoy las 48 rutas devuelven 403 REAL y ninguna llega con `:` — el
+      // guard NO está ciego. Pero funciona por una coincidencia frágil: la lista declara
+      // `:invoiceId` mientras las rutas Express reales usan `:id`. Si alguien "arregla" esa
+      // inconsistencia poniendo `:id` en la lista, el replace de arriba dejaría de aplicar, la
+      // URL viajaría con el literal `:id` dentro y el 403 se convertiría en otra cosa —
+      // debilitando este guard SIN que ningún assert se queje, porque el bucle seguiría
+      // recorriendo sus 48 rutas.
+      //
+      // Este assert lo hace imposible: un placeholder nuevo o renombrado sale ROJO aquí, en el
+      // sitio donde se ve el motivo, en vez de degradar en silencio la comprobación de permisos.
+      assert.ok(
+        !path.includes(':'),
+        `🔴 PLACEHOLDER SIN SUSTITUIR: se iba a pedir "${path}" con el literal dentro. ` +
+        `Añade su reemplazo arriba (junto a :invoiceId/:planId) — si no, esta ruta deja de ` +
+        `comprobar permisos de verdad y el guard se queda flojo sin avisar.`,
+      );
+
       const res = await fetch(base + path, {
         method: r.method,
         headers: { cookie: cookieTecnicoB, 'Content-Type': 'application/json' },
