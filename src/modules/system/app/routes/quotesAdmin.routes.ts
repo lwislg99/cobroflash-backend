@@ -8,7 +8,7 @@ import {
 } from '../../quoteAdmin';
 
 import { prisma } from '../../../../core/db/prisma';
-import { resolveBillingPlan, distributeStageAmounts } from '../../../quotes/domain/billingPlan';
+import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo } from '../../../quotes/domain/billingPlan';
 import { sendQuoteWhatsAppToCustomer } from '../../../quotes/domain/sendQuote.service';
 import { suggestMaintenance } from '../../../maintenance/domain/maintenance.service';
 import { isFlagEnabled } from '../../../../core/flags';
@@ -168,7 +168,9 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     const stage = plan[existingInvoices.length] ?? null;
 
     if (!stage) {
-      return res.status(409).json({ error: 'no_more_invoices_for_payment_terms' });
+      // SCRUM-151: mismo código de error, motivo distinto — plan agotado vs. condiciones que
+      // nunca generan tramos (MANUAL/SIN_CONDICIONES). El rechazo se explica, no solo se emite.
+      return res.status(409).json({ error: 'no_more_invoices_for_payment_terms', message: motivoSinTramo(plan) });
     }
 
     const isCustomPlan = Array.isArray((quote as any).customBillingPlan) && (quote as any).customBillingPlan.length > 0;
