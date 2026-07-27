@@ -316,6 +316,14 @@ async function renderJobDetailView(container, jobId) {
   const tipoCollapse = () => { tipoExpanded.style.display = 'none'; tipoCollapsed.style.display = 'flex'; };
   const tipoExpand = () => { tipoCollapsed.style.display = 'none'; tipoExpanded.style.display = 'block'; };
   tipoChangeBtn.addEventListener('click', tipoExpand);
+  // SCRUM-120: cambiar el TIPO DE OPERACIÓN es admin-only (bandera fiscal; gate backend por campo).
+  // Técnico → el selector se ve pero DESHABILITADO con explicación (no dejar un botón muerto — la
+  // norma tras SCRUM-89: un gate nuevo que deja UI huérfana se arregla en el MISMO PR). El técnico
+  // sigue viendo el tipo actual (solo lectura); no lo puede cambiar.
+  if (isTecnico) {
+    lockActionForRole(tipoChangeBtn);
+    tipoSec.appendChild(roleLockedNote());
+  }
 
   for (const c of TIPO_CARDS) {
     const card = document.createElement('button');

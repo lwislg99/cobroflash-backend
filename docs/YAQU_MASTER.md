@@ -929,6 +929,27 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 >
 > `npm test`: 207 · 178 pass · 0 fail · 29 skip. Sin schema, sin tocar Meta.
 >
+> **✅ SCRUM-120 · gate FISCAL por CAMPO en `PATCH /admin/jobs/:id` (23-jul-2026, hallazgo propio de SCRUM-89):**
+> el handler NO llevaba `requireRole('admin')`, así que un TÉCNICO podía enviar `{ tipoOperacion }` y
+> cambiar la bandera que decide CÓMO SE FACTURA el Trabajo (`OPERACIONES_SUELTAS` = recapitulativa
+> mensual · `TRABAJO_UNICO` = factura al concluir) — altera el tratamiento fiscal (mes natural de la
+> recapitulativa, SCRUM-17). **Zona fiscal (STOP AA1.4): tabla campo→rol aprobada por el fundador ANTES
+> de tocar código.** Criterio: lo operativo del día a día es del operario; lo que toca facturación/dinero
+> es admin. **Gate POR CAMPO** (no `requireRole` de RUTA, que rompería lo legítimo del operario, porque el
+> PATCH mezcla campos de ambos): si `req.userRole !== 'admin'` y el body trae `tipoOperacion` (bandera
+> fiscal), `assignedUserId` (reparto de equipo = supervisión, coherente con S1) o `status:'cerrado'` → **403**
+> `{error:'forbidden', required_role:'admin', field}`. **Técnico ✅:** `status` (agendar/empezar/terminar),
+> `scheduledAt`, `notes`. **`cerrado` → ADMIN** (decisión SCRUM-120): es la ÚNICA transición IRREVERSIBLE de
+> la FSM y MATA la vía de "Cobrar el resto"; el operario ya tiene `terminado` (acabó el trabajo de campo),
+> `cerrado` = "liquidado" es administrativo. **FAIL-CLOSED:** un campo admin-only MEZCLADO con campos
+> legítimos rechaza el PATCH ENTERO (nada se aplica) — en zona fiscal no se aplica parcialmente. **Front en
+> el MISMO PR** (norma tras SCRUM-89: un gate nuevo que deja UI huérfana se arregla en su propio PR, nunca en
+> el siguiente): el selector "Tipo de trabajo · Cambiar" (`jobDetailView.js`) se muestra DESHABILITADO con
+> explicación para el técnico (`lockActionForRole` + `roleLockedNote`, mismo patrón que SCRUM-89) — sigue
+> viendo el tipo actual en solo lectura. **Test gateado propio** `tests/scrum120-patch-job-roles.test.mjs`
+> (a nivel de CAMPO; A12.4 es a nivel de RUTA): técnico `{tipoOperacion}`/`{assignedUserId}`/`{status:'cerrado'}`/
+> mezcla → 403 y nada aplicado; técnico `{notes}`/`{status:'terminado'}` → 200; admin todo → 200. Cierra
+> **P1-ROL-1** (BUGS.md). Sin schema.
 > **✅ SCRUM-117 · métrica honesta de recordatorios (23-jul-2026, tercera cara del cluster 115/116/117):**
 > `reminderEur` (reports x2, `reports.routes.ts:147`) contaba como «€ recuperado por recordatorios»
 > facturas cuya `reminderXSentAt` se escribió aunque el WhatsApp FALLARA — la métrica que mide si los
