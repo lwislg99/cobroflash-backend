@@ -157,3 +157,51 @@ test('SCRUM-173: las cadenas YA PERSISTIDAS siguen siendo válidas tras el cambi
 
   console.log(`[SCRUM-173] cadenas persistidas: ${verificadas} verificadas, ${sinTimestamp} no recomputables (vfTimestamp o líneas ausentes, histórico pre-SCRUM-145)`);
 });
+
+// ── SCRUM-173b: la ANULACIÓN extiende LA MISMA cadena, y tenía que llevar el mismo cerrojo ──
+// Sin esto el arreglo quedaba a medias, que es peor que dos mecanismos declarados: parece uno
+// solo. Un alta y una anulación simultáneas del mismo emisor encadenarían al mismo eslabón.
+
+test('SCRUM-173b: sellar una ANULACIÓN dentro de una transacción está prohibido', { skip: !ENABLED }, async () => {
+  const { prisma } = await import('../dist/core/db/prisma.js');
+  const { applyVeriFactu, applyVeriFactuAnulacion } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
+
+  await withMerchant(prisma, { name: 'QA S173d', email: `qa-173d-${Date.now()}@test.local`, taxId: NIF }, async (merchant) => {
+    const cliente = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente 173d' } });
+    const inv = await crearFactura(prisma, merchant.id, cliente.id, `QA173D-${Date.now()}`);
+
+    // Presencia: primero el alta, para que la cadena exista y la anulación tenga a qué encadenar.
+    const alta = await applyVeriFactu(inv, NIF, prisma);
+    assert.ok(alta.vfHash, 'el alta debe sellar');
+
+    // Y la anulación, con el cliente global, encadena AL ALTA — una cadena, no dos.
+    const anul = await applyVeriFactuAnulacion(inv, NIF, prisma);
+    assert.equal(anul.vfPrevHash, alta.vfHash,
+      '🔴 la anulación debe encadenar al alta: es la MISMA cadena');
+
+    // Dentro de una tx: rechazo explícito, igual que el alta.
+    const inv2 = await crearFactura(prisma, merchant.id, cliente.id, `QA173D2-${Date.now()}`);
+    await applyVeriFactu(inv2, NIF, prisma);
+    await assert.rejects(
+      () => prisma.$transaction(async (tx) => applyVeriFactuAnulacion(inv2, NIF, tx)),
+      (err) => {
+        assert.match(err.message, /verifactu_seal_inside_transaction/,
+          `🔴 la anulación dentro de una tx debe rechazarse; llegó: ${err.message}`);
+        return true;
+      },
+    );
+  });
+});
+
+// ⚠️ AQUÍ IBA UN TEST MÁS — retirado a propósito, con su motivo:
+//
+// "un ALTA y una ANULACIÓN concurrentes no encadenan al mismo eslabón" FALLA incluso con el
+// cerrojo puesto, y al investigarlo salió que el problema no es la concurrencia: es una
+// ASIMETRÍA DE LECTURA. `applyVeriFactu` busca el eslabón anterior mirando SOLO altas
+// (`where: { vfHash: { not: null } }`), mientras que `ultimaHuellaDeLaCadena` —la que usa la
+// anulación— mira altas Y anulaciones. O sea: para la anulación hay UNA cadena; para el alta,
+// las anulaciones no existen.
+//
+// El cerrojo no puede arreglar eso, y arreglarlo es tocar qué eslabón encadena cada registro
+// — núcleo fiscal, decisión con dictamen detrás. Se reporta como hallazgo aparte en vez de
+// dejar aquí un test rojo o, peor, "ajustarlo" hasta que pase.
