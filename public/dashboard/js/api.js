@@ -32,8 +32,15 @@ async function apiRequest(path, options = {}) {
       throw e;
     }
 
-    const err = new Error(`API ${res.status}: ${data?.error || res.statusText}`);
+    // SCRUM-151: el MENSAJE HUMANO gana al código técnico. Esto componía siempre
+    // `API 409: no_more_invoices_for_payment_terms` y muchas vistas lo enseñan tal cual, así que
+    // CUALQUIER endpoint sin `message` acababa mostrándole al usuario un identificador interno.
+    // Arreglarlo aquí lo arregla también para todo lo que venga después. El código sigue
+    // disponible en `err.code` y en `err.data` para quien decida POR código (que es lo correcto:
+    // ramificar por texto es lo que nunca hay que hacer).
+    const err = new Error(data?.message || `API ${res.status}: ${data?.error || res.statusText}`);
     err.status = res.status;
+    err.code   = data?.error || null;
     err.data   = data;
     throw err;
   }

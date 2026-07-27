@@ -168,9 +168,10 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     const stage = plan[existingInvoices.length] ?? null;
 
     if (!stage) {
-      // SCRUM-151: mismo código de error, motivo distinto — plan agotado vs. condiciones que
-      // nunca generan tramos (MANUAL/SIN_CONDICIONES). El rechazo se explica, no solo se emite.
-      return res.status(409).json({ error: 'no_more_invoices_for_payment_terms', message: motivoSinTramo(plan) });
+      // SCRUM-151: CÓDIGO y motivo distintos — plan agotado vs. condiciones que nunca generan
+      // tramos (MANUAL/SIN_CONDICIONES). Un solo código para dos causas obliga a leer el texto
+      // para saber qué pasó, y el texto es lo único que no se debe parsear.
+      return res.status(409).json(motivoSinTramo(plan));
     }
 
     const isCustomPlan = Array.isArray((quote as any).customBillingPlan) && (quote as any).customBillingPlan.length > 0;
