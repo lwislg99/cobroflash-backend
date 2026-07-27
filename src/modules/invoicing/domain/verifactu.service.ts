@@ -208,13 +208,132 @@ export async function applyVeriFactu(
 
   const qrUrl = buildVeriFactuQrUrl({ nif: taxId, serie: invoice.number, fecha, importe: importeTotal });
 
+  // SCRUM-145: se PERSISTE el instante exacto que entró en la huella. Sin él, el registro
+  // emitía `FechaHoraHusoGenRegistro` = fecha de la FACTURA, que NO es lo que se hasheó, y
+  // un tercero no podía recomputar la huella para verificarla. `timestamp` ya viene con huso
+  // (formatFechaHoraHuso); se guarda como Date y se re-formatea al emitir, para no depender
+  // del huso del servidor que lea la fila después.
   await prismaClient.invoice.update({
     where: { id: invoice.id },
-    data: { vfHash, vfPrevHash: prevHash, qrData: qrUrl },
+    data: { vfHash, vfPrevHash: prevHash, qrData: qrUrl, vfTimestamp: new Date(timestamp) },
   });
 
   console.log(`[verifactu] invoice=${invoice.number} hash=${vfHash.slice(0, 16)}…`);
   return { vfHash, vfPrevHash: prevHash, qrUrl };
+}
+
+/**
+ * SCRUM-145 — sella el REGISTRO DE ANULACIÓN de una factura ya emitida.
+ *
+ * Es un registro DISTINTO del de alta, con su propia huella encadenada: la factura anulada
+ * CONSERVA su `vfHash` (regla 29 — una emitida jamás se edita ni borra; se anula CON su
+ * registro). Por eso se guarda en columnas propias y no se pisa nada.
+ *
+ * ⚠️ ALCANCE — esto es la MAQUINARIA, no el flujo. Hoy **nada anula facturas**: `annulled` no
+ * aparece en `src/`, así que la transición `pending → annulled` que declara la Parte L no tiene
+ * ejecutor. Construir ese disparador (endpoint + UI + su registro) es FSM nueva sobre dinero
+ * y necesita OK del fundador (AA1.4) — ticket aparte. Lo que queda listo aquí es lo que ese
+ * ticket necesitará, y lo que permite emitir `RegistroAnulacion` en el XML.
+ *
+ * El eslabón anterior se toma de TODA la cadena (altas y anulaciones), no solo de las altas:
+ * si la última operación del emisor fue una anulación, la siguiente huella encadena con ella.
+ */
+export async function applyVeriFactuAnulacion(
+  invoice: { id: number; number: string; createdAt: Date; merchantId: number },
+  taxId: string,
+  prismaClient = defaultPrisma,
+): Promise<{ vfAnulHash: string; vfPrevHash: string }> {
+  if (isReceiptNumber(invoice.number)) {
+    throw new Error('receipt_document_not_invoiceable'); // V0-0: un J- nunca entra en la cadena
+  }
+
+  const prevHash = await ultimaHuellaDeLaCadena(invoice.merchantId, prismaClient);
+  const timestamp = formatFechaHoraHuso(new Date());
+
+  const vfAnulHash = computeVeriFactuHashAnulacion({
+    nif: taxId,
+    serie: invoice.number,
+    fecha: formatDateES(invoice.createdAt),
+    prevHash,
+    timestamp,
+  });
+
+  // NOTA (decisión consciente, sin columna nueva): NO se persiste el `prevHash` del registro
+  // de anulación. Al emitir el XML, el eslabón anterior se RESUELVE por sello temporal (el
+  // registro inmediatamente anterior del emisor), que reproduce exactamente el que se hasheó
+  // aquí porque los registros son append-only y sus sellos son crecientes. La alternativa más
+  // robusta —guardarlo— es una 4ª columna aditiva (`vf_anul_prev_hash`) y por tanto un STOP de
+  // schema: queda propuesto, no aplicado.
+  await prismaClient.invoice.update({
+    where: { id: invoice.id },
+    data: { vfAnulHash, vfAnulTimestamp: new Date(timestamp) },
+  });
+
+  console.log(`[verifactu] ANULACION invoice=${invoice.number} hash=${vfAnulHash.slice(0, 16)}…`);
+  return { vfAnulHash, vfPrevHash: prevHash };
+}
+
+/**
+ * Último eslabón de la cadena del emisor, mirando altas Y anulaciones.
+ *
+ * Con CERO anulaciones —el estado de hoy— devuelve exactamente lo mismo que la consulta que
+ * ya usaba `applyVeriFactu` (la última factura con huella), así que no altera ninguna cadena
+ * persistida; solo deja de romperse el día que exista la primera anulación.
+ */
+async function ultimaHuellaDeLaCadena(merchantId: number, prismaClient: typeof defaultPrisma): Promise<string> {
+  const [ultimaAlta, ultimaAnul] = await Promise.all([
+    prismaClient.invoice.findFirst({
+      where: { merchantId, vfHash: { not: null } },
+      orderBy: { createdAt: 'desc' },
+      select: { vfHash: true, vfTimestamp: true, createdAt: true },
+    }),
+    prismaClient.invoice.findFirst({
+      where: { merchantId, vfAnulHash: { not: null } },
+      orderBy: { vfAnulTimestamp: 'desc' },
+      select: { vfAnulHash: true, vfAnulTimestamp: true },
+    }),
+  ]);
+
+  if (!ultimaAnul?.vfAnulHash) return ultimaAlta?.vfHash ?? '';
+  if (!ultimaAlta?.vfHash) return ultimaAnul.vfAnulHash;
+
+  // Se compara por el sello del REGISTRO (cuándo se generó), no por la fecha de la factura.
+  const tAlta = (ultimaAlta.vfTimestamp ?? ultimaAlta.createdAt).getTime();
+  const tAnul = (ultimaAnul.vfAnulTimestamp as Date).getTime();
+  return tAnul > tAlta ? ultimaAnul.vfAnulHash : ultimaAlta.vfHash;
+}
+
+/**
+ * SCRUM-145 — `RegistroAnterior` del registro de ANULACIÓN.
+ *
+ * El prev del alta se resuelve por HUELLA (está persistida en `vfPrevHash`); el de la
+ * anulación no se guarda (ver la nota en `applyVeriFactuAnulacion`), así que se resuelve por
+ * SELLO: el registro inmediatamente anterior del emisor. Reproduce el que se hasheó porque los
+ * registros son append-only y sus sellos crecen. Devuelve '' si no hay anterior → PrimerRegistro.
+ *
+ * `registros` viene ya ordenado por sello ascendente y contiene AMBOS tipos (altas y
+ * anulaciones), porque una anulación puede encadenar con cualquiera de los dos.
+ */
+function anulacionPrev(
+  inv: { number: string; vfAnulTimestamp: Date | null },
+  taxId: string,
+  registros: { sello: number; huella: string; numero: string; fecha: Date }[],
+): string {
+  if (!inv.vfAnulTimestamp) return '';
+  const t = inv.vfAnulTimestamp.getTime();
+  let anterior: { huella: string; numero: string; fecha: Date } | null = null;
+  for (const r of registros) {
+    if (r.sello < t) anterior = r;
+    else break;
+  }
+  if (!anterior) return '';
+  return `
+        <sum1:RegistroAnterior>
+          <sum1:IDEmisorFactura>${xmlEscape(taxId)}</sum1:IDEmisorFactura>
+          <sum1:NumSerieFactura>${xmlEscape(anterior.numero)}</sum1:NumSerieFactura>
+          <sum1:FechaExpedicionFactura>${formatDateES(anterior.fecha)}</sum1:FechaExpedicionFactura>
+          <sum1:Huella>${xmlEscape(anterior.huella)}</sum1:Huella>
+        </sum1:RegistroAnterior>`;
 }
 
 function xmlEscape(v: unknown): string {
@@ -255,6 +374,7 @@ export async function buildVerifactuRegistrosXml(
       },
     },
     orderBy: { createdAt: 'asc' },
+    // SCRUM-145: vfTimestamp (sello real de la huella) y los campos de ANULACIÓN.
     include: {
       // SCRUM-145 (gap 6): el NIF del cliente decide si se puede emitir `Destinatarios`.
       customer:  { select: { name: true, taxId: true } },
@@ -292,9 +412,29 @@ export async function buildVerifactuRegistrosXml(
   // registro de un ejercicio encadena con el último del anterior.
   const conHuella = await prismaClient.invoice.findMany({
     where: { merchantId: params.merchantId, vfHash: { not: null } },
-    select: { number: true, createdAt: true, vfHash: true },
+    select: { number: true, createdAt: true, vfHash: true, vfTimestamp: true, vfAnulHash: true, vfAnulTimestamp: true },
   });
   const porHuella = new Map(conHuella.map((i) => [i.vfHash as string, i]));
+
+  // SCRUM-145 (gap 5): la cadena COMPLETA del emisor ordenada por sello — altas y anulaciones
+  // mezcladas —, para poder resolver el `RegistroAnterior` de cada anulación. Se construye una
+  // sola vez, no por registro.
+  const registrosOrdenados = [
+    ...conHuella.map((i) => ({
+      sello: (i.vfTimestamp ?? i.createdAt).getTime(),
+      huella: i.vfHash as string,
+      numero: i.number,
+      fecha: i.createdAt,
+    })),
+    ...conHuella
+      .filter((i) => i.vfAnulHash && i.vfAnulTimestamp)
+      .map((i) => ({
+        sello: (i.vfAnulTimestamp as Date).getTime(),
+        huella: i.vfAnulHash as string,
+        numero: i.number,
+        fecha: i.createdAt,
+      })),
+  ].sort((a, b) => a.sello - b.sello);
 
   const nombreEmisor = merchant.legalName || merchant.name;
   // ⚠️ NO UNIFICAR con el formato de los CSV (SCRUM-86). Aquí los importes van con PUNTO
@@ -355,7 +495,12 @@ export async function buildVerifactuRegistrosXml(
         <sum1:TipoUsoPosibleMultiOT>S</sum1:TipoUsoPosibleMultiOT>
         <sum1:IndicadorMultiplesOT>S</sum1:IndicadorMultiplesOT>
       </sum1:SistemaInformatico>
-      <sum1:FechaHoraHusoGenRegistro>${formatFechaHoraHuso(inv.createdAt)}</sum1:FechaHoraHusoGenRegistro>
+      <!-- SCRUM-145: el sello REAL que entró en la huella (vfTimestamp). El fallback a
+           createdAt es solo para las filas selladas ANTES de existir la columna: ahí la
+           huella sigue sin ser recomputable por un tercero y no hay forma de recuperarlo
+           (el instante no se guardó). Ninguna de esas filas se remitirá: la remisión
+           empieza post-SIF y solo con registros nuevos. -->
+      <sum1:FechaHoraHusoGenRegistro>${formatFechaHoraHuso(inv.vfTimestamp ?? inv.createdAt)}</sum1:FechaHoraHusoGenRegistro>
       <sum1:TipoHuella>01</sum1:TipoHuella>
       <sum1:Huella>${xmlEscape(inv.vfHash)}</sum1:Huella>` : '';
 
@@ -373,6 +518,39 @@ export async function buildVerifactuRegistrosXml(
           <sum1:NIF>${xmlEscape(inv.customer.taxId)}</sum1:NIF>
         </sum1:IDDestinatario>
       </sum1:Destinatarios>` : '';
+
+    // SCRUM-145 (gap 5): si la factura tiene sellado un registro de ANULACIÓN, se emite DETRÁS
+    // de su alta como registro PROPIO — el XSD declara `RegistroAnulacion` como hermano de
+    // `RegistroAlta` dentro de `RegistroFactura`. El alta NO se retira: la factura anulada
+    // conserva su registro y su huella (regla 29: una emitida jamás se edita ni borra).
+    const anulacion = inv.vfAnulHash && inv.vfAnulTimestamp ? `
+  <sum:RegistroFactura>
+    <sum1:RegistroAnulacion>
+      <sum1:IDVersion>1.0</sum1:IDVersion>
+      <sum1:IDFactura>
+        <sum1:IDEmisorFacturaAnulada>${xmlEscape(merchant.taxId!)}</sum1:IDEmisorFacturaAnulada>
+        <sum1:NumSerieFacturaAnulada>${xmlEscape(inv.number)}</sum1:NumSerieFacturaAnulada>
+        <sum1:FechaExpedicionFacturaAnulada>${formatDateES(inv.createdAt)}</sum1:FechaExpedicionFacturaAnulada>
+      </sum1:IDFactura>
+      <sum1:Encadenamiento>${anulacionPrev(inv, merchant.taxId!, registrosOrdenados) || `
+        <sum1:PrimerRegistro>S</sum1:PrimerRegistro>`}
+      </sum1:Encadenamiento>
+      <sum1:SistemaInformatico>
+        <sum1:NombreRazon>${xmlEscape(productor.nombre)}</sum1:NombreRazon>
+        <sum1:NIF>${xmlEscape(productor.nif)}</sum1:NIF>
+        <sum1:NombreSistemaInformatico>YaQu</sum1:NombreSistemaInformatico>
+        <sum1:IdSistemaInformatico>${xmlEscape(productor.idSistema)}</sum1:IdSistemaInformatico>
+        <sum1:Version>${xmlEscape(productor.version)}</sum1:Version>
+        <sum1:NumeroInstalacion>${xmlEscape(productor.numInstalacion)}</sum1:NumeroInstalacion>
+        <sum1:TipoUsoPosibleSoloVerifactu>S</sum1:TipoUsoPosibleSoloVerifactu>
+        <sum1:TipoUsoPosibleMultiOT>S</sum1:TipoUsoPosibleMultiOT>
+        <sum1:IndicadorMultiplesOT>S</sum1:IndicadorMultiplesOT>
+      </sum1:SistemaInformatico>
+      <sum1:FechaHoraHusoGenRegistro>${formatFechaHoraHuso(inv.vfAnulTimestamp)}</sum1:FechaHoraHusoGenRegistro>
+      <sum1:TipoHuella>01</sum1:TipoHuella>
+      <sum1:Huella>${xmlEscape(inv.vfAnulHash)}</sum1:Huella>
+    </sum1:RegistroAnulacion>
+  </sum:RegistroFactura>` : '';
 
     return `
   <sum:RegistroFactura>
@@ -397,7 +575,7 @@ export async function buildVerifactuRegistrosXml(
       <sum1:CuotaTotal>${vat.cuota.toFixed(2)}</sum1:CuotaTotal>
       <sum1:ImporteTotal>${Number(inv.total).toFixed(2)}</sum1:ImporteTotal>${encadenamiento}
     </sum1:RegistroAlta>
-  </sum:RegistroFactura>`;
+  </sum:RegistroFactura>${anulacion}`;
   }).join('\n');
 
   // SCRUM-145 (gap 1): envelope REAL del XSD. Antes la raíz era `<RegistrosFacturacion>` sin

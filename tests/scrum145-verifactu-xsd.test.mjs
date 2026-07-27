@@ -157,3 +157,32 @@ test('SCRUM-145: FAIL-CLOSED — sin datos del productor NO se emite un registro
   assert.match(out, /verifactu_productor_no_configurado/,
     `sin datos del productor debe LANZAR, no emitir un SistemaInformatico con placeholders (salida: ${out})`);
 });
+
+test('SCRUM-145: FechaHoraHusoGenRegistro emite el sello REAL de la huella (vfTimestamp), no createdAt', async () => {
+  const sello = new Date('2026-03-15T18:45:12Z');
+  const xml = await build([mkInvoice({ vfTimestamp: sello, createdAt: new Date('2026-03-01T09:00:00Z') })]);
+  const emitido = (xml.match(/<sum1:FechaHoraHusoGenRegistro>([^<]+)</) || [])[1];
+  assert.ok(emitido, 'debe emitirse el sello');
+  // El valor debe derivar de vfTimestamp (18:45:12), no de la fecha de la factura (09:00).
+  assert.match(emitido, /T\d{2}:45:12/, `el sello debe venir de vfTimestamp y fue ${emitido}`);
+});
+
+test('SCRUM-145: una factura anulada emite su RegistroAnulacion DETRAS del alta, sin perder el alta', async () => {
+  const alta = mkInvoice({ number: '2026-CF-001', vfHash: 'D'.repeat(64), vfTimestamp: new Date('2026-03-15T10:00:00Z') });
+  const anulada = mkInvoice({
+    number: '2026-CF-002', vfHash: 'E'.repeat(64), vfPrevHash: 'D'.repeat(64),
+    vfTimestamp: new Date('2026-03-16T10:00:00Z'),
+    vfAnulHash: 'F'.repeat(64), vfAnulTimestamp: new Date('2026-03-17T10:00:00Z'),
+  });
+  const xml = await build([alta, anulada]);
+
+  assert.match(xml, /<sum1:RegistroAnulacion>/, 'debe emitirse el registro de anulacion');
+  assert.equal((xml.match(/<sum1:RegistroAlta>/g) || []).length, 2, 'las DOS altas siguen (regla 29: no se retira)');
+  for (const campo of ['IDEmisorFacturaAnulada', 'NumSerieFacturaAnulada', 'FechaExpedicionFacturaAnulada']) {
+    assert.ok(xml.includes(`<sum1:${campo}>`), `la anulacion debe identificar la factura anulada (${campo})`);
+  }
+  // Encadena con el registro inmediatamente anterior por sello: el alta de 2026-CF-002.
+  const bloque = xml.slice(xml.indexOf('<sum1:RegistroAnulacion>'));
+  assert.ok(bloque.includes('<sum1:RegistroAnterior>'), 'la anulacion encadena, no abre cadena');
+  assert.ok(bloque.includes('E'.repeat(64)), 'debe encadenar con la huella del registro anterior por sello');
+});
