@@ -61,7 +61,12 @@ const hijos = [
   },
   {
     nombre: 'bot-suite (aislado)',
-    env: { BOT_SUITE_TEST: '1', QA_DB_TEST: undefined, A55_DB_TEST: undefined },
+    // SCRUM-180: `WHATSAPP_DRY_RUN` lo fijaba SOLO la línea 26 de bot-suite.test.mjs, cuando
+    // sus dos hermanos de esta lista ya lo traían del runner. La asimetría no se veía y es
+    // justo el hijo peor: bot-suite simula un flujo entero, once mensajes, no uno. Ponerlo
+    // aquí no sustituye al freno del sender (whatsappPolicy.esProcesoDeTest) — lo dobla, que
+    // es lo que toca cuando el fallo se paga en el número de WhatsApp Business.
+    env: { BOT_SUITE_TEST: '1', WHATSAPP_DRY_RUN: '1', QA_DB_TEST: undefined, A55_DB_TEST: undefined },
     args: ['--test', '--test-force-exit', '--test-concurrency=1', override || `${TESTS_DIR}/bot-suite.test.mjs`],
   },
   {
