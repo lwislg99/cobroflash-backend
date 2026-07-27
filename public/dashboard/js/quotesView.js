@@ -859,8 +859,12 @@ blockClient.appendChild(descWrapper);
       if (!d || !Array.isArray(d.lines) || !d.lines.length) return false;
       tbody.innerHTML = "";
       lines = [];
-      d.lines.forEach((l) => addLine(l));
+      // SCRUM-134 (precedencia de estado): el IVA por defecto se restaura ANTES de crear las
+      // líneas. `addLine` usa `fieldVatDefault.input.value` como fallback cuando una línea no
+      // trae IVA propio, así que con el orden inverso las líneas del borrador heredaban el
+      // defecto ANTERIOR (el de la pantalla recién montada), no el que el usuario tenía guardado.
       if (d.vatDefault) fieldVatDefault.input.value = d.vatDefault;
+      d.lines.forEach((l) => addLine(l));
       if (d.paymentTerms) paymentSelect.value = d.paymentTerms;
       // SCRUM-27: restaurar el editor de tramos si el borrador era "Personalizado".
       if (d.paymentTerms === "CUSTOM" && Array.isArray(d.customStages)) {
@@ -2110,12 +2114,20 @@ if (Number.isFinite(n) && n >= 0) {
 
       // Si venimos de la vista de Plantillas, auto-cargar
       const pendingTemplate = sessionStorage.getItem('pf_load_template');
-      var templatePending = !!pendingTemplate;
+      var templatePending = false;
       if (pendingTemplate) {
         sessionStorage.removeItem('pf_load_template');
         try {
           const tpl = JSON.parse(pendingTemplate);
-          if (Array.isArray(tpl.lines) && tpl.lines.length > 0) {
+          // SCRUM-134: SOLO se acepta una plantilla escrita por la acción que ACABA de navegar
+          // aquí ("Usar plantilla" / "Duplicar"), que sellan `_ts` justo antes de navegar. Una
+          // clave sin sello o vieja es HUÉRFANA: se descarta (ya se quitó arriba). Sin esto, una
+          // plantilla que quedó escrita y nunca se consumió hacía que un "+ Nuevo presupuesto"
+          // NORMAL apareciera con líneas que nadie pidió —y encima suprimía la restauración del
+          // borrador—; verificado en staging. Líneas = dinero: no se cargan sin pedirlo.
+          const fresca = typeof tpl._ts === 'number' && Date.now() - tpl._ts < 15000;
+          if (fresca && Array.isArray(tpl.lines) && tpl.lines.length > 0) {
+            templatePending = true;
             tbody.innerHTML = '';
             lines = [];
             tpl.lines.forEach(function (l) { addLine(l); });

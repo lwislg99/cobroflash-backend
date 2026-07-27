@@ -106,9 +106,15 @@ async function renderTemplatesView(container) {
       btnUse.className = 'btn-primary btn-sm';
       btnUse.textContent = '📋 Usar';
       btnUse.onclick = () => {
+        // SCRUM-134: GUARDAR ANTES DE NAVEGAR. El orden inverso (navegar→guardar) causaba un
+        // off-by-one: `renderAppView('quotes-new')` llega SÍNCRONO hasta la lectura de esta misma
+        // clave en quotesView (renderQuotesView no es async → loadInitialData corre sin ningún
+        // `await` por delante), así que el editor leía SIEMPRE el valor de la vez ANTERIOR — y en
+        // el primer uso, con la clave vacía, restauraba el borrador pendiente. Reproducido en
+        // staging: pulsar "Usar" en B abría A. Este es el mismo orden que ya usa "Duplicar"
+        // (quotesDetailView), el camino que nunca falló. `_ts` = sello de frescura, ver abajo.
+        sessionStorage.setItem('pf_load_template', JSON.stringify({ ...tpl, _ts: Date.now() }));
         if (window.renderAppView) renderAppView('quotes-new');
-        // Guardar la plantilla en sessionStorage para que quotesView la cargue
-        sessionStorage.setItem('pf_load_template', JSON.stringify(tpl));
       };
       actDiv.appendChild(btnUse);
 
