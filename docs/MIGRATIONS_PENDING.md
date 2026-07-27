@@ -484,7 +484,7 @@ CREATE TABLE jobs (A13) · maintenance_plans (A15) · audit_log (A11.1) · attac
 
 ---
 
-## 27-jul-2026 — albaran_lineas_facturadas (SCRUM-170) — STAGING ✅ · PROD ⏳
+## 27-jul-2026 — albaran_lineas_facturadas (SCRUM-170) — APLICADO ✅ (staging + prod)
 
 ```sql
 CREATE TABLE "albaran_lineas_facturadas" (
@@ -512,7 +512,11 @@ CREATE INDEX "albaran_lineas_facturadas_merchant_id_invoice_id_idx" ON "albaran_
 - Orden seguido: preview enseñado → host comprobado contra la allowlist (`acela.proxy.rlwy.net`)
   → staging sin otras sesiones (`pg_stat_activity`) → sentinel de un solo uso → `db push` →
   **verificado leyendo `information_schema`**, no el mensaje del comando → `prisma generate`.
-- PROD: preview idéntico (misma tabla, mismos índices), pendiente del GO del fundador.
+- PROD: aplicado el 27-jul-2026 con GO del fundador. Preview idéntico al de staging (0 ALTER,
+  0 DROP), host verificado (`autorack.proxy.rlwy.net`), y comprobado DESPUÉS por
+  `information_schema` + `pg_indexes`: 7 columnas, 2 índices + PK, 0 filas. La tabla nace
+  vacía y nadie la lee todavía en prod (la ruta parcial exige albarán firmado, con precios
+  y flag fiscal ON: en producción no se cumple ninguna de las tres).
 
 ## 6-jul-2026 — merchants.flags (APLICADO ✅)
 
