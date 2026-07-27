@@ -1,0 +1,79 @@
+# .github/workflows/ci.yml — SCRUM-154
+#
+# POR QUÉ EXISTE: hasta ahora NADA corría `npm test` sobre un PR, así que todos los guards
+# de la casa (SCRUM-55, 87, 96, 98, 113, 124, 152…) solo podían fallar DESPUÉS del merge, ya
+# sobre `main`. El fallo no rompía el PR que lo traía: rompía `main` para todo el mundo.
+#
+# Pasó dos veces con el mismo mecanismo: `scrum106` y `scrum51` se escribieron ANTES de que
+# existiera el ratchet de SCRUM-113 y chocaron con él el día que aterrizaron. Y volverá a
+# pasar, porque este proyecto crea guards constantemente y trabaja con ramas que viven días
+# en varias sesiones a la vez: toda rama viva es, por definición, anterior a cualquier guard
+# que se mergee mientras ella existe.
+#
+# ⚠️ SOLO LO NO GATEADO. Aquí NO se pone `QA_DB_TEST=1` ni `DATABASE_URL_STAGING`:
+#   1. Regla 9 — los secretos los pega el fundador en Railway, no viajan a terceros.
+#   2. Los tests gateados CREAN Y BORRAN merchants; varios PR a la vez escribiendo en la
+#      misma BD de staging no los serializa nadie.
+#   3. No hacen falta para esto: los guards estructurales corren sin BD A PROPÓSITO, y son
+#      justo los que cazan este tipo de rotura.
+# Los gateados siguen corriéndose a mano contra staging al cerrar cada tarea (AA1.3).
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  # También en push a main: es la red que caza EL CASO QUE ORIGINÓ ESTO. Dos PR verdes por
+  # separado pueden dar un `main` rojo al mezclarse — una rama vieja y un guard nuevo pasan
+  # cada uno su CI y solo colisionan al juntarse. Sin esto, ese rojo no lo ve nadie.
+  push:
+    branches: [main]
+
+# Un push nuevo a la misma rama cancela la ejecución anterior: la que importa es la última.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: build + tests (sin gate)
+    runs-on: ubuntu-latest
+    # Tope de seguridad: la suite tarda ~30 s. Si algo se queda colgado esperando una red
+    # que aquí no existe, se corta pronto en vez de consumir minutos de Actions.
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # ⚠️ El repo NO pincha la versión de Node en ningún sitio (no hay .nvmrc, ni
+          # `engines` en package.json, ni configuración de Railway en el árbol). Se fija 24
+          # porque es la de desarrollo, pero eso NO garantiza que sea la de producción: si
+          # Railway construye con otra, este CI puede dar verdes o rojos que allí no salen.
+          # Unificarlo toca el deploy (prod) → decisión del fundador, fuera de este ticket.
+          node-version: '24'
+          cache: npm
+
+      # `npm ci` y no `npm install`: instala EXACTAMENTE el lockfile y falla si package.json
+      # y package-lock.json han divergido. En un CI eso es lo que se quiere — reproducir, no
+      # resolver.
+      - run: npm ci
+
+      # OBLIGATORIO Y FÁCIL DE OLVIDAR: `npm ci` borra node_modules entero, y con él el
+      # cliente de Prisma GENERADO (node_modules/.prisma + @prisma/client). No hay
+      # `postinstall` en package.json que lo regenere, así que sin este paso `tsc` casca con
+      # "Cannot find module '@prisma/client'" y el CI saldría rojo el primer día por un fallo
+      # del propio CI, no del código. En local no se nota porque nadie borra node_modules.
+      # Solo genera tipos a partir de prisma/schema.prisma: NO toca ninguna base de datos.
+      - name: Generar cliente de Prisma
+        run: npx prisma generate
+
+      # `npm test` ya hace build por dentro (`"test": "npm run build && node --test ..."`),
+      # así que esto compila dos veces. Es a propósito y cuesta segundos: separarlo hace que
+      # el nombre del paso rojo diga si fue un error de COMPILACIÓN o un test fallando, sin
+      # tener que abrir el log.
+      - name: Compilar (tsc)
+        run: npm run build
+
+      - name: Tests sin gate
+        run: npm test
