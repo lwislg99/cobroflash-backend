@@ -974,6 +974,16 @@ blockClient.appendChild(descWrapper);
       line.totalCell.textContent = enBlanco ? "—" : fmtMoneyEs(lineBase + lineVat, cur);
       line.row.classList.toggle("quote-line--vacia", enBlanco);
 
+      // SCRUM-139 F4: el botón de ajustes DICE lo que esconde. Un disparador mudo ("Ajustes")
+      // obligaría a abrir la hoja para comprobar el IVA de cada línea; así se lee de un vistazo
+      // y solo se abre para CAMBIARLO. El margen solo aparece cuando existe: "Margen 0 %" en
+      // todas las líneas sería ruido en la inmensa mayoría de los presupuestos.
+      if (line.ajustesBtn) {
+        const resumen = ["IVA " + safeVat + " %"];
+        if (safeMarkup > 0) resumen.push("Margen " + safeMarkup + " %");
+        line.ajustesBtn.textContent = resumen.join(" · ");
+      }
+
       base += lineBase;
       vatTotal += lineVat;
     });
@@ -1565,11 +1575,15 @@ priceInput.value = String(base.toFixed(2));
     }
   } catch (_e) {}
 
-  // UX PRO: al seleccionar, saltar al siguiente campo (qty)
+  // UX PRO: al seleccionar, saltar al siguiente campo (cantidad).
+  // SCRUM-139 F4: esto llevaba MUERTO desde F1 sin que nadie lo notara — buscaba
+  // `closest("tr")` y `td:nth-child(2)`, y desde F1 la línea no es una fila de tabla sino una
+  // tarjeta de `div`s. `closest` devolvía null, el `try` se lo tragaba y el foco simplemente no
+  // saltaba. Ahora se ancla en las clases del componente, que son el contrato real de la tarjeta.
   try {
-    const row = conceptInput.closest("tr");
+    const row = conceptInput.closest(".quote-line");
     if (row) {
-      const qty = row.querySelector('td:nth-child(2) input');
+      const qty = row.querySelector(".quote-line__qty input");
       if (qty) qty.focus();
     }
   } catch (_e) {}
@@ -1763,6 +1777,90 @@ conceptInput.addEventListener("input", () => {
    * DESIGN.md (12px, 600, MAYÚSCULAS, Apagado) y va asociada al input con `<label>`, que además
    * amplía el área pulsable: el propio texto enfoca el campo (target ≥44px de AB6).
    */
+  /**
+   * SCRUM-139 F4 · HOJA DE AJUSTES DE LA LÍNEA (margen % e IVA %).
+   *
+   * Reutiliza `.modal-overlay` + `.modal` del inventario AB3 tal cual: la casa ya los convierte
+   * en HOJA INFERIOR por debajo de 640 px y en modal centrado por encima. Un solo DOM y cero
+   * componentes nuevos — decide el CSS, no el JavaScript.
+   *
+   * Mueve los inputs REALES de la línea (no copias): al cerrar vuelven a su contenedor. Por eso
+   * no hay nada que sincronizar ni ningún estado que pueda quedar desparejado.
+   */
+  let hojaAbierta = null;
+
+  function abrirHojaAjustes(line) {
+    if (hojaAbierta) hojaAbierta();   // una sola hoja a la vez (como el overflowMenu de AB3)
+
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+
+    const modal = document.createElement("div");
+    modal.className = "modal quote-ajustes-modal";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-label", "Ajustes de la línea");
+
+    const header = document.createElement("div");
+    header.className = "modal-header";
+    const titulo = document.createElement("h3");
+    titulo.className = "modal-title";
+    titulo.textContent = "Ajustes de la línea";
+    const cerrar = document.createElement("button");
+    cerrar.type = "button";
+    cerrar.className = "modal-close";
+    cerrar.setAttribute("aria-label", "Cerrar");
+    cerrar.innerHTML = "&times;";
+    header.appendChild(titulo);
+    header.appendChild(cerrar);
+
+    const body = document.createElement("div");
+    body.className = "modal-body";
+
+    // Qué línea se está tocando. Sin esto, en una hoja a pantalla completa se pierde el hilo
+    // de a cuál de las líneas pertenecen estos dos números.
+    const cual = document.createElement("p");
+    cual.className = "quote-ajustes-cual";
+    const concepto = (line.conceptInput.value || "").trim();
+    cual.textContent = concepto || "Línea sin concepto todavía";
+    body.appendChild(cual);
+    body.appendChild(line.ajustesCampos);
+
+    const pie = document.createElement("div");
+    pie.className = "modal-footer";
+    const listo = document.createElement("button");
+    listo.type = "button";
+    listo.className = "btn-primary";
+    listo.textContent = "Listo";
+    pie.appendChild(listo);
+
+    modal.appendChild(header);
+    modal.appendChild(body);
+    modal.appendChild(pie);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    function cerrarHoja() {
+      // Los campos son los de la línea: se RECUPERAN antes de tirar la hoja, o se irían con ella.
+      line.ajustesCampos.remove();
+      overlay.remove();
+      document.removeEventListener("keydown", onEsc);
+      hojaAbierta = null;
+      try { line.ajustesBtn.focus({ preventScroll: true }); } catch (_e) { line.ajustesBtn.focus(); }
+    }
+    function onEsc(e) {
+      if (e.key === "Escape") { e.stopPropagation(); cerrarHoja(); }
+    }
+
+    hojaAbierta = cerrarHoja;
+    cerrar.addEventListener("click", cerrarHoja);
+    listo.addEventListener("click", cerrarHoja);
+    overlay.addEventListener("click", function (e) { if (e.target === overlay) cerrarHoja(); });
+    document.addEventListener("keydown", onEsc);
+
+    try { line.markupInput.focus({ preventScroll: true }); } catch (_e) {}
+  }
+
   function campoLinea(etiqueta, clase) {
     const wrap = document.createElement("label");
     wrap.className = "quote-line__field " + clase;
@@ -1813,11 +1911,17 @@ conceptInput.dataset.pfProductId = ""; // vacío = "manual"
     priceTd.appendChild(priceInput);
     priceInput.dataset.pfBasePrice = ""; // precio catálogo o base antes de markup
 
-    // Hint: precio final con markup (solo visual; vacío si no hay markup)
-const priceHint = document.createElement("div");
+    // Hint: precio final con markup (solo visual; vacío si no hay markup).
+    // SCRUM-139 F4 (cierra BUGS.md P3-13): vive JUNTO A LA ETIQUETA, no debajo del input.
+    // Colgando debajo hacía la celda de PRECIO más alta que las demás y, con `align-items:end`,
+    // su input subía ~15 px respecto a Cantidad y Total. Al lado de la etiqueta todas las cajas
+    // miden lo mismo y el descuadre desaparece de raíz, en vez de compensarse con un ajuste.
+    // Y ahora es MÁS necesario que antes: con el margen dentro de la hoja, este aviso es la
+    // única señal visible de que el precio que verá el cliente no es el que hay escrito.
+const priceHint = document.createElement("span");
 priceHint.className = "price-final-hint";
 priceHint.textContent = "";
-priceTd.appendChild(priceHint);
+priceTd.querySelector(".quote-line__label").appendChild(priceHint);
 
 
     const markupTd = campoLinea("Margen %", "quote-line__markup");
@@ -1895,11 +1999,36 @@ markupTd.appendChild(markupInput);
     removeBtn.textContent = "🗑️";
     actionsTd.appendChild(removeBtn);
 
+    /**
+     * SCRUM-139 F4 · MARGEN E IVA A LA HOJA INFERIOR.
+     *
+     * De los cinco campos de una línea, dos NO se tocan casi nunca: el margen (casi siempre 0)
+     * y el IVA (casi siempre el general del merchant, que ya se elige una vez arriba). Estaban
+     * ocupando el mismo peso visual que el concepto y el precio, que son los que sí se
+     * escriben en cada línea.
+     *
+     * Los inputs son LOS MISMOS de siempre —no hay copias ni espejos que sincronizar—: viven
+     * en este contenedor y se MUEVEN a la hoja al abrirla y vuelven al cerrarla. Así
+     * `lineObj.markupInput` / `lineObj.vatInput` siguen siendo exactamente los que ya
+     * consumen el payload, el borrador, las plantillas, la IA y el autocompletado: cambia
+     * dónde se ven, no qué son.
+     */
+    const ajustesCampos = document.createElement("div");
+    ajustesCampos.className = "quote-ajustes-campos";
+    ajustesCampos.appendChild(markupTd);
+    ajustesCampos.appendChild(vatTd);
+
+    const ajustesBtn = document.createElement("button");
+    ajustesBtn.type = "button";
+    ajustesBtn.className = "btn-ghost quote-line__ajustes";
+    ajustesBtn.title = "Ajustes de la línea (margen e IVA)";
+    ajustesBtn.setAttribute("aria-haspopup", "dialog");
+    ajustesBtn.textContent = "IVA 21 %";   // lo mantiene al día recalcTotals
+
     tr.appendChild(conceptTd);
     tr.appendChild(qtyTd);
     tr.appendChild(priceTd);
-    tr.appendChild(markupTd);
-    tr.appendChild(vatTd);
+    tr.appendChild(ajustesBtn);
     tr.appendChild(totalWrap);
     tr.appendChild(actionsTd);
 
@@ -1914,8 +2043,16 @@ markupTd.appendChild(markupInput);
       vatInput,
       totalCell: totalTd,
       priceHint,
+      // SCRUM-139 F4 — dónde viven margen e IVA y quién abre su hoja. Las claves de arriba
+      // NO cambian: `markupInput` y `vatInput` siguen siendo los mismos elementos.
+      ajustesCampos,
+      ajustesBtn,
 
     };
+
+    ajustesBtn.addEventListener("click", function () {
+      abrirHojaAjustes(lineObj);
+    });
     
     lines.push(lineObj);
 
