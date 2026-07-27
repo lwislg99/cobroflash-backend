@@ -135,13 +135,25 @@ export async function requestMagicLink(email: string): Promise<void> {
 }
 
 // Invita a un miembro del equipo: crea AuthSession magic_link vinculada al teamMemberId
+/**
+ * Crea la invitación (authSession de 7 días) e intenta entregarla por email.
+ *
+ * SCRUM-131: devuelve **si el email SALIÓ**. Antes era `Promise<void>` y el `catch` del envío
+ * se tragaba el error, así que `resendInvite` y la ruta respondían `{ok:true}` pase lo que
+ * pase: un admin veía "invitación reenviada" con Resend caído. Misma familia que el cluster
+ * 114-129 (marcar enviado sin confirmar el envío).
+ *
+ * NO lanza si el email falla, y es deliberado: la invitación **existe y es válida** (la
+ * authSession está creada y el enlace vive 7 días) — lo único que no ocurrió es la entrega.
+ * Lanzar obligaría a revertir algo que sí es correcto; lo honesto es informar con `sent`.
+ */
 export async function inviteTeamMember(params: {
   merchantId: number;
   teamMemberId: number;
   memberName: string;
   memberEmail: string;
   merchantName: string;
-}): Promise<void> {
+}): Promise<{ sent: boolean; reason?: 'not_configured' | 'email_send_failed' }> {
   const token = generateToken();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días para aceptar invitación
 
@@ -158,6 +170,16 @@ export async function inviteTeamMember(params: {
   const link = `${config.PUBLIC_BASE_URL}/auth/verify?token=${token}`;
   logMagicLink('invite', params.memberEmail, link); // SCRUM-39 (a): mismo gate — link válido 7 días
 
+  // SCRUM-131: sin Resend NI SMTP, `createMailer()` cae a `streamTransport` — `sendMail`
+  // NO lanza y el correo no va a ninguna parte. Reportar `sent:true` ahí sería la MISMA
+  // mentira que este ticket cierra, un nivel más abajo. Se distingue como `not_configured`
+  // (motivo que ya existe en sendOutcome.ts). No se toca `sendEmail` ni el magic link de
+  // login: en dev/staging el log del enlace es la vía de entrada prevista (SCRUM-39).
+  if (!config.RESEND_API_KEY && !config.SMTP_URL) {
+    console.warn(`[invite] email NO configurado (sin Resend ni SMTP): la invitación existe pero no se entrega`);
+    return { sent: false, reason: 'not_configured' };
+  }
+
   try {
     await sendEmail({
       to: params.memberEmail,
@@ -173,8 +195,10 @@ export async function inviteTeamMember(params: {
       }),
     });
     console.log(`[invite] email enviado OK a ${maskEmail(params.memberEmail)}`); // SCRUM-101
+    return { sent: true };
   } catch (emailErr: any) {
     console.error(`[invite] ERROR enviando email a ${maskEmail(params.memberEmail)}:`, emailErr?.message || emailErr); // SCRUM-101
+    return { sent: false, reason: 'email_send_failed' }; // SCRUM-131: el fallo VIAJA
   }
 }
 
