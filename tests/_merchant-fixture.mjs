@@ -49,6 +49,10 @@ export const merchantsVivos = new Set();
  * propósito, porque una lista de limpieza incompleta que calla es basura acumulándose.
  */
 const MODELOS_POR_MERCHANT = [
+  // SCRUM-170: el libro de líneas facturadas va PRIMERO — cuelga de albarán y de factura, y
+  // ninguna FK lo cascadea (patrón multi-tenant de columna). Si no se barre antes que ellos,
+  // quedan filas huérfanas que nadie ve fallar (justo lo que documenta SCRUM-172).
+  'albaranLineaFacturada',
   'auditLog', 'whatsAppMessage', 'legalAcceptance', 'customerEvent', 'attachment',
   'albaran', 'maintenancePlan', 'invoice', 'charge', 'job', 'quote', 'quoteRequest',
   'botSession', 'quoteTemplate', 'expense', 'product', 'provider', 'authSession',
