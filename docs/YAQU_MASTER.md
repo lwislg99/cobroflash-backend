@@ -1004,6 +1004,39 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 > **SCRUM-58**): la lista se quedaba esperando por un adorno. Verificado con click-through real (servidor
 > local contra la BD de staging) como **admin y como OPERARIO**, con el gasto del operario guardado con su
 > `teamMemberId`. Sin schema; no toca cálculo de margen ni nada fiscal.
+>
+> **✅ SCRUM-136 · un solo hub de Equipo: el operario es un ROL, no un apartado (24-jul-2026,
+> equipo/UX):** el ticket decía que Equipo y Operarios estaban partidos **en dos**. Eran **TRES**: el
+> mismo roster se listaba en `teamView` (alta/roles/estado, `GET /admin/team`), en `operariosView`
+> (dinero por operario, `GET /admin/metrics/operarios`) y en el panel "Rendimiento del equipo" del
+> **Inicio** (presupuestos del mes, `GET /admin/metrics/team`). Las tres **sintetizaban por separado la
+> fila del propietario** — porque el propietario **no es un TeamMember** (`teamMemberId null` =
+> propietario en `authMiddleware`) — y las tres escribían el rol distinto para el MISMO valor de schema
+> (`tecnico`): dos decían "Operario" y el Inicio decía "Técnico". **(1)** `GET /admin/team` devuelve
+> ahora el roster **con su resumen** por miembro (presupuestos del mes, trabajos abiertos, pendiente),
+> vía `teamOverview.service.ts`. Se **enriquece la ruta existente** en vez de abrir
+> `/admin/team/overview`: ya es admin-only y ya es "el equipo", así que una ruta nueva sería superficie
+> que declarar en el ratchet (SCRUM-113) para el mismo dato, y dos peticiones donde basta una. Aditivo:
+> mismo array, mismos campos, solo se **añade** `resumen`. **(2)** `teamView` pasa de tabla a **lista de
+> cards** (AB3): con 5 cifras nuevas por miembro una tabla pide 9 columnas que en móvil se apilan en una
+> torre ilegible, y la card es el patrón de la vista que absorbe. **(3)** "Operarios" **sale del nav y
+> del index**; el `case 'operarios'` de `app.js` se conserva como **redirección** a `team` (hay
+> marcadores y enlaces vivos, y el guard de rol es el mismo); `operariosView.js` se borra. **(4)**
+> Vocabulario **único**: "Operario" también en el Inicio, y ese panel deja de ser un callejón —enlaza al
+> hub— pero **se queda**, porque un vistazo en el dashboard es otro trabajo distinto de gestionar el
+> equipo. **DOS VENTANAS, ETIQUETADAS:** el resumen mezcla presupuestos del **MES** (por
+> `Quote.teamMemberId`, quien lo creó) con trabajos del **HISTÓRICO** (por `Job.operarioId`, quien lo
+> originó). Deliberado —son preguntas distintas y ya se agregaban así—, y la UI **escribe la ventana al
+> lado del número** ("este mes" / "de N en total") para no mentir; hay test que lo congela. **HALLAZGO
+> (del rojo): `/admin/team` tiene GATE DOBLE** — quitar `router.use(requireRole('admin'))` NO abre la
+> ruta porque `app.ts` ya la monta con `requireRole`; hubo que quitar **los dos** para ver el test
+> fallar. No se retira ninguno (redundancia barata que sobrevive a reorganizar `app.ts`) y queda escrito
+> en el código para que nadie dé por bueno un verde tras tocar uno solo. **PERMISOS:** lo que pedía el
+> ticket ("solo propietario y admins gestionan miembros") **ya se cumplía**; ahora está congelado por
+> test — y ahora importa más, porque la respuesta lleva el **dinero pendiente de cada compañero**, no
+> solo nombres. **FUERA:** el detalle por miembro (click → sus presupuestos/trabajos) — hoy ni
+> `/admin/quotes` ni `/admin/jobs` aceptan filtro por `teamMemberId`, así que es superficie nueva en dos
+> módulos más → ticket aparte. **Sin schema:** `role` es `String`, no enum de Prisma.
 > **🟡 SCRUM-145 (144a) · payload VeriFactu conforme a los XSD — PARCIAL (24-jul-2026, fiscal):**
 > nace del recon de SCRUM-144, que **corrigió una premisa**: el «Modelo C» tal como se planteó **no
 > existe** — la AEAT **no tiene canal de subida de XML** en la Sede (la remisión del art. 15 RRSIF es
