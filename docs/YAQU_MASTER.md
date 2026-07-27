@@ -1040,6 +1040,36 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 > solo nombres. **FUERA:** el detalle por miembro (click → sus presupuestos/trabajos) — hoy ni
 > `/admin/quotes` ni `/admin/jobs` aceptan filtro por `teamMemberId`, así que es superficie nueva en dos
 > módulos más → ticket aparte. **Sin schema:** `role` es `String`, no enum de Prisma.
+>
+> **✅ SCRUM-138 · export selectivo + "Descargar datos" sale de Configuración a Finanzas (24-jul-2026,
+> export/S4):** el paquete para el asesor o para una inspección vivía **enterrado en Configuración**,
+> donde no lo encuentra nadie: es **dinero**, no una preferencia de la cuenta. Ahora es apartado propio
+> en **Finanzas**, junto a Informes/Facturas/Gastos (`public/dashboard/js/exportView.js`, vista nueva).
+> **Zona compartida (anunciada antes de tocar):** de `settingsView.js` solo se quita la llamada a
+> `renderExportDataCard` y la función, que se muda entera; nada más de ese fichero se toca. **SELECTIVO:**
+> antes solo se elegía el PERIODO, ahora también **qué** llevarse, de seis datasets. La decisión vive en
+> una función **PURA** (`seleccionExport.ts`) separada del armado del ZIP — lo que se prueba son GATES, y
+> un gate se prueba mejor donde se decide que a través de un ZIP de 40 MB. **LOS GATES DE SCRUM-25 NO SE
+> RELAJAN:** *admin-only* sin cambios (router con `requireRole` + guard de rol en la vista, igual que
+> `settings`/`team`); **el XML VeriFactu sigue atado a `INVOICING_ES_ENABLED`** (regla 24/26, SCRUM-73) —
+> marcar "Facturas" **NO** lo enciende, es un **AND, nunca un OR**, y está **verificado EN ROJO**
+> (cambiando `&&` por `||` el test falla con "REGLA 24 ROTA"); **gate POR dataset** — pedir uno no
+> arrastra otro, y los PDF/XML solo entran con las facturas (sin ellas ni se consultan: ahorra el render
+> medido en SCRUM-83). **Fallo seguro:** selección vacía o ilegible = **TODO**, nunca "nada" — un ZIP
+> vacío que parece correcto es peor que uno completo, el mismo criterio que ya rige el paquete
+> incompleto. **`gastos.csv` entra en el paquete POR PRIMERA VEZ:** solo existía como descarga suelta,
+> así que el asesor abría el ZIP y veía **ingresos sin costes**. Mismas columnas que el CSV suelto; por
+> fecha DEL GASTO, no de alta (criterio SCRUM-106); **no** alimenta `clientes.csv`, porque un gasto
+> apunta a una cotización y no a un cliente (SCRUM-135). **EL LEEME NO PUEDE MENTIR:** enumeraba los 5
+> CSV a pelo; ahora describe **solo** lo que lleva, avisa arriba si el paquete es **PARCIAL** (para que
+> una ausencia no se lea como "no facturó nada") y apunta a Finanzas en vez de a Configuración.
+> **HALLAZGO DEL CLICK-THROUGH** (abriendo un ZIP real, no un test): pedir "clientes + gastos" daba un
+> `clientes.csv` con **solo la cabecera** —lleva los REFERENCIADOS por los documentos del paquete
+> (SCRUM-104) y no había ninguno— bajo un LEEME que prometía "todos los clientes con algún documento".
+> Ahora lo dice y explica cómo arreglarlo; **ningún test de backend lo habría visto**. **Verificación:**
+> `npm test` 315/0; 13/13 gateados del export en verde tras el refactor (incluidos técnico→403 y flag
+> OFF); ZIP selectivo descargado **y abierto** contra la BD de staging. Sin schema.
+>
 > **🟡 SCRUM-145 (144a) · payload VeriFactu conforme a los XSD — PARCIAL (24-jul-2026, fiscal):**
 > nace del recon de SCRUM-144, que **corrigió una premisa**: el «Modelo C» tal como se planteó **no
 > existe** — la AEAT **no tiene canal de subida de XML** en la Sede (la remisión del art. 15 RRSIF es
