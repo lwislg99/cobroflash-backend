@@ -198,6 +198,35 @@ try {
     ok(`PDF ${label} regenerado on-demand (${(buf.length / 1024).toFixed(0)} KB)`);
   }
 
+  // ── PANTALLAS DEL PANEL (SCRUM-183b) ─────────────────────────────────────────────────────
+  //
+  // POR QUÉ ESTE BLOQUE EXISTE: la oreja de SCRUM-183 solo oye las pantallas que ALGUIEN ABRE, y
+  // este recorrido abría `/dashboard/` (onboarding) y la pública de pago. **El TDZ que originó el
+  // ticket vivía en `quotes-new`, que no se abría** — o sea que el guard, tal y como quedó, NO
+  // habría cazado el fallo que lo motivó. Un guard que no cubre su propio caso es exactamente la
+  // trampa que el ticket documenta: parece cobertura y no lo es.
+  //
+  // Cada pantalla lleva su ANCLA DE RENDER, y no es adorno: sin ella, «cero errores de consola» y
+  // «no se cargó nada» son indistinguibles, y el segundo pasaría por bueno. Si la pantalla no
+  // pinta lo suyo, esto FALLA — no pasa en vacío.
+  const pantallas = [
+    ['home', () => window.renderAppView('home'), () => !!document.querySelector('.home-greeting')],
+    ['nuevo presupuesto', () => window.renderAppView('quotes-new'), () => !!document.querySelector('.quote-lines')],
+    ['detalle de presupuesto', (id) => { window.appState.quoteId = id; window.renderAppView('quotes-detail'); },
+      () => !!document.querySelector('.detail-page') && !!document.getElementById('btn-generate-invoice')],
+    ['detalle de Trabajo', (id) => { window.appState.jobId = id; window.renderAppView('jobs-detail'); },
+      () => !!document.querySelector('.detail-page')],
+  ];
+  for (const [nombre, abrir, ancla] of pantallas) {
+    const id = nombre === 'detalle de presupuesto' ? quoteId : (nombre === 'detalle de Trabajo' ? job?.id : null);
+    await page.evaluate(abrir, id);
+    if (!(await waitFor(ancla))) {
+      fail(`DETECTOR CIEGO en «${nombre}»: la pantalla no ha renderizado su contenido. No se puede ` +
+        'afirmar que no tiene errores de consola: nadie ha mirado nada. Arregla el render o el ancla.');
+    }
+    ok(`pantalla «${nombre}» renderizada y escuchada`);
+  }
+
   // SCRUM-183: se comprueba AL FINAL, no al vuelo, para que el informe salga entero de una vez y
   // no aborte el recorrido a la primera — interesa saber TODO lo que se rompió, no lo primero.
   const consola = resumirErroresConsola(erroresConsola);
