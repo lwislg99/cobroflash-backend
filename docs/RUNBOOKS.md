@@ -188,3 +188,66 @@
 4. Entidad Refund automática = F2: no existe a propósito. Todo movimiento de vuelta es
    manual y con resguardo.
 
+
+---
+
+## R17 · El CI bloquea un merge (y cuándo es legítimo saltárselo)
+
+- **Síntoma:** el check **CI / build + tests (sin gate)** sale en rojo en un PR y GitHub no
+  deja pulsar "Merge". El fundador es el único que mergea, así que un CI atascado por causa
+  ajena lo deja sin poder entregar NADA — de ahí este runbook.
+- **Dónde mirar:** pestaña **Checks** del PR → job `build + tests (sin gate)`. El paso que
+  falla ya dice de qué se trata: **`Compilar (tsc)`** = error de compilación;
+  **`Tests sin gate`** = un test en rojo; **`npm ci`** = lockfile/registro.
+
+### Primero: clasificar el rojo. Solo hay dos casos.
+
+| | 🔴 **Rojo REAL** (el código está mal) | 🟠 **Rojo AJENO** (la infraestructura está mal) |
+|---|---|---|
+| **Cómo se ve** | Un assert con su mensaje, un `error TS`, un guard nombrando el fichero que lo rompe | `npm ci` con `ETIMEDOUT`/`ENOTFOUND`/503 del registro, el runner sin arrancar, timeout de 10 min sin salida de tests, incidencia abierta en githubstatus.com |
+| **Se reproduce en local** | **SÍ** — `npm ci && npm run build && npm test` falla igual | **NO** — en local pasa entero y en verde |
+| **Qué hacer** | **Arreglarlo.** Nunca se salta | Bypass, con las condiciones de abajo |
+
+**La prueba que decide es siempre la misma: correr `npm ci && npm run build && npm test`
+en local, sobre la rama del PR.** Si falla, es rojo real, y da igual lo rara que parezca la
+causa. Si pasa entero, es rojo ajeno.
+
+### Acción — bypass como admin del repo
+
+Solo si el rojo es **AJENO** y verificado con la prueba de arriba:
+
+1. En el PR, abajo del todo, GitHub ofrece al admin **"Merge without waiting for
+   requirements to be met (bypass branch protections)"**. Ese es el escape. No hace falta
+   desactivar la protección de rama: **jamás se toca la configuración para desatascar un
+   merge** — se apaga para todos y se queda apagada.
+2. **Escribe el motivo en el PR antes de mergear**, en un comentario: qué falló, por qué es
+   ajeno, y que `npm test` pasa en local. Sin esa línea, dentro de dos semanas nadie sabe si
+   aquel bypass fue legítimo.
+3. **Vuelve a lanzar el CI después** (Checks → *Re-run all jobs*) cuando la causa externa se
+   haya resuelto, para confirmar que `main` está de verdad en verde.
+
+### Qué NO es motivo legítimo de bypass
+
+- **"Es un test que no tiene que ver con mi cambio."** Es exactamente el caso de SCRUM-51 que
+  originó todo esto: un guard cazando algo real que venía de otra rama. Que no sea *tuyo* no
+  lo hace ajeno — hay que arreglarlo (o pedir que lo arreglen) antes de mergear encima.
+- **"Corre con prisa."** El coste de `main` en rojo lo pagan todas las sesiones a la vez, y
+  cada merge posterior hereda el fallo.
+- **"Ya lo arreglo en el siguiente PR."** El siguiente PR se mergea sobre una `main` rota, y
+  a partir de ahí ningún CI vuelve a dar información útil hasta que alguien lo limpie.
+- **"El test está mal escrito."** Puede que sí — pero entonces se arregla el test en su PR,
+  con su motivo. Saltárselo deja el test malo Y el hueco abierto.
+
+### Qué decir al merchant
+
+Nada: esto es interno, no afecta a producción. Un CI rojo impide desplegar código nuevo;
+lo que ya está desplegado sigue funcionando.
+
+### Prevención
+
+- El CI corre también en **push a `main`**, no solo en PR: dos ramas verdes por separado
+  pueden dar una `main` roja al mezclarse, y esa es justo la rotura que nadie ve venir.
+- Si un guard nuevo va a romper ramas vivas (porque prohíbe algo que ya existe en ellas),
+  avísalo al mergearlo — o esas ramas se enterarán al aterrizar, que es tarde.
+- Un bypass repetido por la misma causa **no es un bypass: es un CI mal montado**. Dos veces
+  seguidas por lo mismo → ticket para arreglarlo, no una tercera.
