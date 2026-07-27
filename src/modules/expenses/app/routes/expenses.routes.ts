@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import {
   listExpenses, createExpense, updateExpense, deleteExpense,
-  getExpenseSummary, getQuoteMargin, EXPENSE_CATEGORIES,
+  getExpenseSummary, getQuoteMargin, EXPENSE_CATEGORIES, ExpenseRefError,
 } from '../../domain/expenses.service';
 import { requireRole } from '../../../../core/http/authMiddleware';
 
@@ -21,6 +21,20 @@ const router = Router();
 // no corregir el importe que tecleó mal — la fricción se traslada del alta a la
 // corrección. Se levanta cuando exista el campo (ver el ticket de Expense.teamMemberId,
 // bloqueante de la V2 con patrón row-level tipo SCRUM-23).
+
+// SCRUM-135: referencia a una cotización/proveedor que no es de este merchant → 400, no 500.
+// Es entrada inválida, no un fallo del servidor. El mensaje NO distingue "no existe" de "no
+// es tuya" (ver assertRefsOwned): con el selector de Trabajos esto ya no debería verse nunca
+// desde la UI — queda como red para llamadas directas al endpoint.
+function refErrorBody(err: ExpenseRefError) {
+  return {
+    ok: false,
+    error: err.code,
+    message: err.code === 'quote_not_found'
+      ? 'Ese trabajo no existe en tu cuenta.'
+      : 'Ese proveedor no existe en tu cuenta.',
+  };
+}
 
 // GET /admin/expenses?month=2026-05&category=materiales&quoteId=5
 router.get('/', requireRole('admin'), async (req, res) => {
@@ -93,6 +107,7 @@ router.post('/', async (req, res) => {
     });
     return res.status(201).json({ ok: true, item: expense });
   } catch (err) {
+    if (err instanceof ExpenseRefError) return res.status(400).json(refErrorBody(err));
     console.error('[POST /admin/expenses]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
@@ -119,6 +134,7 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
     if (!updated) return res.status(404).json({ error: 'not_found' });
     return res.json({ ok: true, item: updated });
   } catch (err) {
+    if (err instanceof ExpenseRefError) return res.status(400).json(refErrorBody(err));
     console.error('[PUT /admin/expenses/:id]', err);
     return res.status(500).json({ error: 'internal_error' });
   }

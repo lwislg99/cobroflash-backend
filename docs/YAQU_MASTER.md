@@ -963,6 +963,45 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 > si aparece un 2.º uso real se generaliza (misma doctrina que `.job-doc-row` → `.doc-row`). Solo front,
 > sin backend, sin schema; no toca cálculo, totales ni fiscal.
 >
+> **✅ SCRUM-135 · el gasto se asocia a un TRABAJO, no tecleando el id de una cotización (24-jul-2026,
+> gastos/UX + tenencia):** el gasto se guarda en `Expense.quoteId` (**COTIZACIÓN**), pero lo que el pro
+> ve en pantalla es el **TRABAJO** (`Job`), que tiene su **propio** id — `Job #57` y `Cotización #57`
+> son registros distintos. La UI mezclaba los dos vocabularios: campo "ID de la cotización", ayuda
+> "vincula este gasto a un trabajo", y columna titulada "Trabajo" que pintaba "Cotización #N". Quien
+> leía "Trabajo #57" y tecleaba 57 vinculaba el gasto a **otra cosa, en silencio**. No era solo
+> fricción: era mis-asociación por defecto al seguir la etiqueta. **(1) Selector de Trabajos** en el
+> modal, alimentado por `GET /admin/jobs` (endpoint YA existente → **ninguna ruta nueva** que declarar
+> en el ratchet de SCRUM-113). **"Abiertos" = todos menos `cerrado`** (decisión del fundador). Los Jobs
+> **sin presupuesto** salen **DESHABILITADOS con el motivo**, no escondidos (criterio SCRUM-89): sin
+> `quoteId` no hay nada que guardar. Al **editar**, si la vinculación actual apunta a un trabajo cerrado
+> (o a una cotización que nunca fue trabajo) esa opción **se conserva marcada** — sin eso, abrir el modal
+> y guardar movía un dato que nadie tocó, que es de lo que más erosiona la confianza; ídem si falla la
+> carga de la lista. **(2) "+ Añadir gasto" en la ficha del Trabajo**, ya vinculado y sin preguntar id:
+> es el **alta rápida "desde la furgoneta"** que SCRUM-107 aparcó hasta que existiera
+> `Expense.teamMemberId` (SCRUM-109, ya en prod). **SIN veta `isTecnico`** (decisión del fundador): a
+> diferencia de las acciones de dinero, `POST /admin/expenses` está abierto al técnico a propósito y la
+> autoría se rellena sola; es además su **único** camino, porque su nav de Gastos está oculto (`app.js`).
+> Solo aparece **si el Trabajo tiene presupuesto** — ahí NO aplica "deshabilitar con explicación", porque
+> no es restricción de rol sino que no hay nada que hacer. **(3) Vocabulario:** la columna "Trabajo"
+> nombra el trabajo y enlaza a SU ficha, **exactamente como `jobsView` (solo el título, sin prefijo de
+> id)**: esa pantalla no enseña el id del Job en ningún sitio, así que anteponerlo metía un **tercer**
+> número junto al "Presupuesto #N" del título por defecto — el lío que el ticket viene a quitar, no a
+> mover de sitio. **TENENCIA (regla 2, hallazgo del recon):** `quoteId`/`providerId` se escribían **a
+> pelo** — la FK garantiza que la fila EXISTE, no que sea de este merchant, así que un gasto podía
+> apuntar a la cotización de **otro negocio**. La fuga era pequeña mientras `listExpenses` solo
+> devolviera `quote.id`, pero este mismo ticket **ensancha** ese camino → habría pasado a ser lectura
+> cross-tenant. El guard va en el **DOMINIO** (`assertRefsOwned` en `createExpense`/`updateExpense`), no
+> en la ruta: un futuro tercer llamador no se lo salta por olvido. El `PUT` comprobaba la tenencia del
+> **gasto** pero no la de la referencia **nueva**. **Mismo código de error** para "no existe" y "no es
+> tuya": distinguirlas haría del endpoint un **oráculo** para enumerar ids ajenos. 4 tests gateados,
+> **verificados EN ROJO dos veces** (quitando el guard de `createExpense` fallan 2 y la guarda de
+> presencia sigue verde → falla el guard, no el fixture; quitándolo de `updateExpense` falla solo el del
+> PUT). **RENDIMIENTO:** el trabajo de cada gasto se resuelve en `listExpenses` con **UNA** query para
+> toda la página. La primera versión lo pedía a `/admin/jobs` desde el front y, **medido contra
+> staging, ese endpoint tardaba 2910 ms frente a 1270 ms** del de gastos (N+1 de `serializeJob`, ver
+> **SCRUM-58**): la lista se quedaba esperando por un adorno. Verificado con click-through real (servidor
+> local contra la BD de staging) como **admin y como OPERARIO**, con el gasto del operario guardado con su
+> `teamMemberId`. Sin schema; no toca cálculo de margen ni nada fiscal.
 > **🟡 SCRUM-145 (144a) · payload VeriFactu conforme a los XSD — PARCIAL (24-jul-2026, fiscal):**
 > nace del recon de SCRUM-144, que **corrigió una premisa**: el «Modelo C» tal como se planteó **no
 > existe** — la AEAT **no tiene canal de subida de XML** en la Sede (la remisión del art. 15 RRSIF es
