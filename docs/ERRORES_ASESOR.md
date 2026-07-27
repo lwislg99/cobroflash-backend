@@ -12,10 +12,21 @@
 
 **R2 · No cerrar un ticket sin evidencia de que el fix está donde debe.** "Claude Code dice que está hecho" no es evidencia; el diff o el test que lo prueba, sí. **Un mensaje de éxito NO es evidencia de éxito** — hay que preguntarle al sitio donde debería estar el resultado, no al proceso que dice haberlo puesto. Dos métodos concretos, uno por cada eslabón:
 
-- **¿Llegó la rama al remoto?** → `git ls-remote --heads origin <rama>`. Si no devuelve una línea con el SHA, la rama **no está**, por mucho que `git push` haya impreso `* [new branch]` y salido con código 0. Ocurrió el 27-jul-2026 (incidente #10): push con mensaje de éxito, exit 0, y la rama no existía en GitHub — el PR daba 404 y `main` siguió en rojo mientras el fix parecía entregado. Contrastar el SHA del remoto con `git rev-parse HEAD`.
-- **¿Llegó el commit a `main`?** → `git merge-base --is-ancestor <commit> origin/main` (o el "This branch has been merged" de GitHub) — nunca el estado de Jira ni el resumen en prosa del ejecutor. Si el comando no confirma que el commit es antepasado de `main`, el fix no está ahí, aunque el ticket diga "Cerrada" y el reporte diga "hecho".
+- **¿Llegó la rama al remoto?** → `git ls-remote --heads origin | grep <rama>`. **El listado COMPLETO con `grep`, nunca la consulta filtrada** (`ls-remote --heads origin <rama>`): una consulta filtrada que devuelve vacío y una que no llega a devolver son **indistinguibles en una línea de salida**; el listado enseña el conjunto y ahí el hueco se ve. Contrastar el SHA con `git rev-parse HEAD`. Ocurrió el 27-jul-2026 (incidente #10): push con mensaje de éxito, exit 0, y la rama no existía en GitHub — el PR daba 404 y `main` siguió en rojo mientras el fix parecía entregado.
+- **¿Llegó el commit (o el contenido) a `main`?** → **resolver primero el SHA y preguntar por el SHA**, nunca por el alias:
+
+  ```bash
+  git fetch origin main -q
+  MAIN=$(git rev-parse origin/main)
+  git merge-base --is-ancestor <commit> "$MAIN"      # ¿está el commit?
+  git show "$MAIN:<ruta>" | grep "<lo que buscas>"   # ¿está el contenido?
+  ```
+
+  Nunca el estado de Jira ni el resumen en prosa del ejecutor. Y **`origin/main` es un alias local que puede ir por detrás del remoto**, sobre todo consultado justo después de un `fetch` encadenado en la misma línea: el 27-jul-2026 eso dio un **falso "NO está"** sobre un fichero (`.github/workflows/ci.yml`) que sí estaba en `main`, y estuvo a punto de mandar a rehacer trabajo ya entregado. Resolver el SHA primero quita la ambigüedad.
 
 Los dos eslabones fallan igual y en silencio: el trabajo existe, el mensaje dice que salió, y el resultado no está donde hace falta.
+
+**Y fallan en las DOS direcciones, las dos caras cuestan:** un falso *"sí está"* deja el trabajo sin entregar creyendo que se entregó (`main` en rojo mientras el arreglo parece hecho); un falso *"no está"* manda a rehacer lo que ya estaba. Los dos salen de lo mismo — fiarse de un alias, o de una salida de una línea, en vez de preguntarle al objeto.
 
 **R3 · Orden de diagnóstico para "algo no llega/no funciona":** ① ¿se generó? ② ¿se envió/ejecutó? ③ ¿llegó? ④ ¿lo filtró/bloqueó alguien? Empezar por ①, no por ④.
 
@@ -100,6 +111,10 @@ Los dos eslabones fallan igual y en silencio: el trabajo existe, el mensaje dice
 **Coste:** `main` en rojo más tiempo del necesario, con el resto del equipo trabajando sin red y cada merge nuevo heredando el fallo — mientras el arreglo parecía entregado.
 **Regla derivada:** R2, **ampliada con el eslabón del push**. Lo que ya se exigía para el merge (`merge-base --is-ancestor`) vale igual para el push (`ls-remote`): son los dos sitios donde el trabajo puede quedarse por el camino con un mensaje de éxito por delante. **Un mensaje de éxito no es evidencia de éxito.**
 **Nota:** es exactamente el patrón de los incidentes #8 y #9 —la herramienta informa bien de una operación que no produjo el efecto esperado— pero cometido sobre lo más básico del flujo: entregar. Los tres comparten que la salida del comando no habla del estado del mundo, solo de sí misma.
+
+**Tercera variante, el mismo día y la más útil de las tres — un falso "NO está":** horas después, comprobando si `.github/workflows/ci.yml` había llegado a `main`, `git cat-file -e origin/main:.github/workflows/ci.yml` respondió que **no existía**. Era falso: el fichero estaba. El comando iba encadenado justo detrás de un `git fetch origin main` en la misma línea, y `origin/main` —que es un **alias local**, no el remoto— todavía apuntaba al estado anterior. Se resolvió preguntando por SHA explícito (`MAIN=$(git rev-parse origin/main)` y luego `git show "$MAIN:<ruta>"`), que dio la respuesta correcta.
+
+Lo que la hace la más útil: las dos primeras variantes fallaban hacia *"parece entregado y no lo está"*; esta falla hacia *"parece que falta y ya estaba"*, y su coste es **rehacer trabajo hecho** o contradecir a quien tenía razón (aquí, un compañero que decía que el fichero ya estaba en `main` — y lo estaba). **La lección completa: resolver el SHA primero, consultar por SHA, y no fiarse de alias.**
 
 ---
 
