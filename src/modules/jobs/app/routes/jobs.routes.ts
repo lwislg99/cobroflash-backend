@@ -13,6 +13,8 @@ import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsA
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-173
 import { allocateAlbaranNumber } from '../../domain/albaranNumber.service';
+// SCRUM-170: derivación del estado de cobro (parcial) — nunca un flag almacenado.
+import { estadoCobroAlbaran, facturadoPorLinea, pendientePorLinea } from '../../domain/albaranFacturacion';
 import {
   ALBARAN_MODOS_VALORACION,
   serializeAlbaran,
@@ -188,12 +190,31 @@ async function serializeJobDetail(job: any) {
   // SCRUM-51: los albaranes son del Trabajo (Job-owned vía jobId), INDEPENDIENTES del quote →
   // se cargan SIEMPRE, también para un Job manual sin quoteId (antes el early-return del quote
   // los dejaba invisibles en el detalle — bug latente de datos "desaparecidos").
-  const albaranes = (
-    await prisma.albaran.findMany({
-      where: { merchantId: job.merchantId, jobId: job.id },
-      orderBy: { createdAt: 'asc' },
-    })
-  ).map((a) => ({ ...serializeAlbaran(a), operario: base.operario }));
+  const albaranesRaw = await prisma.albaran.findMany({
+    where: { merchantId: job.merchantId, jobId: job.id },
+    orderBy: { createdAt: 'asc' },
+  });
+  // SCRUM-170: el estado de cobro y lo pendiente por línea se DERIVAN del libro de líneas
+  // facturadas — ninguna columna los guarda. UN solo `findMany` para todos los albaranes del
+  // Trabajo (patrón de SCRUM-58: un lote, no una consulta por fila).
+  const libroJob = albaranesRaw.length
+    ? await prisma.albaranLineaFacturada.findMany({
+        where: { merchantId: job.merchantId, albaranId: { in: albaranesRaw.map((a) => a.id) } },
+        select: { albaranId: true, lineaIndex: true, cantidad: true, invoiceId: true },
+      })
+    : [];
+  const albaranes = albaranesRaw.map((a) => {
+    const facturado = facturadoPorLinea(libroJob.filter((f) => f.albaranId === a.id));
+    const lineas = (Array.isArray(a.lineas) ? a.lineas : []) as any[];
+    return {
+      ...serializeAlbaran(a),
+      operario: base.operario,
+      // `facturado` (invoiceId != null) sigue intacto en serializeAlbaran; esto lo COMPLETA con
+      // los tres valores derivados: sin_facturar | parcial | facturado.
+      estadoCobro: estadoCobroAlbaran(lineas, facturado, a.invoiceId != null),
+      pendientes: pendientePorLinea(lineas, facturado),
+    };
+  });
 
   // invoices[] y charge SÍ dependen del quote (tramos/cobro): un Job sin quote no tiene → []/null.
   if (!job.quoteId) return { ...base, customer, invoices: [], charge: null, albaranes };
@@ -623,14 +644,26 @@ router.post('/:id/consolidar-albaranes', requireRole('admin'), async (req, res) 
       return res.status(404).json({ error: 'albaran_no_encontrado', message: 'Alguno de los partes seleccionados no existe en este Trabajo.' });
     }
 
+    // SCRUM-170: quién tiene ya líneas facturadas por la vía PARCIAL. Sin esta consulta, un
+    // albarán a medias (que NO lleva `invoiceId`) entraría entero en la recapitulativa y se
+    // cobraría dos veces lo ya facturado.
+    const conParcial = new Set(
+      (await prisma.albaranLineaFacturada.findMany({
+        where: { merchantId: req.merchantId, albaranId: { in: ids } },
+        select: { albaranId: true },
+        distinct: ['albaranId'],
+      })).map((r) => r.albaranId),
+    );
+
     // Forma que consume el dominio puro (customerId del Job — 1 Job = 1 cliente).
     const consolidables = albaranes.map((a) => ({
       id: a.id, numero: a.numero, fecha: a.fecha, estado: a.estado,
       modoValoracion: a.modoValoracion, invoiceId: a.invoiceId, customerId: job.customerId,
+      facturadoParcial: conParcial.has(a.id),
     }));
     const val = validarConsolidacion(consolidables, { tipoOperacion: job.tipoOperacion, customerId: job.customerId });
     if (!val.ok) {
-      const status = (val.error === 'albaran_ya_facturado' || val.error === 'consolidacion_no_aplica') ? 409 : 400;
+      const status = (val.error === 'albaran_ya_facturado' || val.error === 'albaran_facturado_parcial' || val.error === 'consolidacion_no_aplica') ? 409 : 400;
       return res.status(status).json({ error: val.error, message: val.message });
     }
 

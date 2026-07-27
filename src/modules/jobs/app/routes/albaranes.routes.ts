@@ -1,7 +1,12 @@
 // src/modules/jobs/app/routes/albaranes.routes.ts — SCRUM-14 (ALBARAN-1)
 // Acciones sobre un albarán existente (el create vive en POST /admin/jobs/:id/albaranes).
-// Documento NO FISCAL (regla 24): nada de facturación/VeriFactu aquí. Tenancy SIEMPRE
-// findFirst { id, merchantId } → 404 (regla 2). Editable hasta 'firmado' (409 albaran_locked).
+// El ALBARÁN sigue siendo documento NO FISCAL (regla 24): ni se sella ni sustituye a nada.
+// ⚠️ SCRUM-170 CAMBIÓ EL LÍMITE DE ESTE FICHERO, a propósito: `facturar-parcial` (al final) SÍ
+// emite factura y sella VeriFactu. Está aquí porque el recurso sobre el que se actúa es UN
+// albarán —igual que firmar o enviar— y partirlo en otro router obligaría a duplicar tenancy y
+// precondiciones. Todo lo demás de aquí sigue sin tocar facturación.
+// Tenancy SIEMPRE findFirst { id, merchantId } → 404 (regla 2). Editable hasta 'firmado'
+// (409 albaran_locked).
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { recordAudit, requestIp } from '../../../system/audit.service';
@@ -24,6 +29,20 @@ import {
   type AlbaranCandidato,
 } from '../../domain/consolidacionCliente.service'; // SCRUM-70
 import { calcAlbaranTotales, mesNaturalLabel, type AlbaranLinea } from '../../domain/albaran.service'; // SCRUM-70
+// SCRUM-170 (FACT-2c): facturación PARCIAL por cantidad servida. El estado de cobro se DERIVA
+// del libro de líneas facturadas — nunca es un flag (regla 27 y la lección de DELSOL, SCRUM-17).
+import { requireRole } from '../../../../core/http/authMiddleware';
+import {
+  estadoCobroAlbaran,
+  facturadoPorLinea,
+  pendientePorLinea,
+  validarPeticionParcial,
+} from '../../domain/albaranFacturacion';
+import { emitInvoice } from '../../../invoicing/domain/invoicing.service';
+import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
+import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { getEmissionMode } from '../../../invoicing/domain/emission.service';
+import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
 
 const router = Router();
 
@@ -434,6 +453,131 @@ router.post('/:id/enviar-para-firmar', requireActivePlan, async (req, res) => {
     return sendResultJson(res, r);
   } catch (err: any) {
     console.error('[POST /admin/albaranes/:id/enviar-para-firmar]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/albaranes/:id/facturar-parcial — SCRUM-170 (FACT-2c) · FACTURAR SOLO PARTE.
+ *
+ * Se factura la CANTIDAD SERVIDA que se elija de cada línea y el resto queda pendiente. El
+ * estado de cobro del albarán no se guarda en ninguna columna: se DERIVA del libro
+ * `AlbaranLineaFacturada` (ver `albaranFacturacion.ts`).
+ *
+ * MISMO CAMINO FISCAL que la recapitulativa de SCRUM-17: `emitInvoice` dentro de la transacción,
+ * sellado VeriFactu FUERA y después del commit (SCRUM-173), y ningún documento fiscal en modo
+ * justificante — la parcial es una factura, no un J-.
+ *
+ * ZONA DE DINERO: admin-only, como toda emisión (S1).
+ */
+router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
+  try {
+    const found = await findAlbaran(req); // tenancy (regla 2)
+    if (!found.ok) return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
+    const albaran = found.albaran;
+
+    // Las mismas precondiciones que la consolidación, y por los mismos motivos: un parte sin
+    // firmar no prueba lo servido, y uno sin precios no puede convertirse en importe.
+    if (albaran.estado !== 'firmado') {
+      return res.status(409).json({ error: 'albaran_no_firmado', message: `El parte ${albaran.numero} no está firmado. Solo se facturan partes firmados.` });
+    }
+    if (albaran.modoValoracion !== 'VALORADO') {
+      return res.status(409).json({ error: 'albaran_sin_precios', message: `El parte ${albaran.numero} no lleva precios. Edítalo para añadirlos.` });
+    }
+    if (albaran.invoiceId != null) {
+      return res.status(409).json({ error: 'albaran_ya_facturado', message: `El parte ${albaran.numero} ya está facturado entero.` });
+    }
+
+    const job = await prisma.job.findFirst({ where: { id: albaran.jobId, merchantId: req.merchantId } });
+    if (!job) return res.status(404).json({ error: 'not_found' });
+
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: req.merchantId },
+      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true },
+    });
+    if (!merchant) return res.status(404).json({ error: 'not_found' });
+    // La parcial es documento FISCAL puro, igual que la recapitulativa: en modo justificante no
+    // existe. Mejor no ofrecerla que emitir un J- que después no vale como factura.
+    if (getEmissionMode(merchant) === 'receipt') {
+      return res.status(409).json({ error: 'facturacion_no_disponible', message: 'La facturación por partes no está disponible en este modo.' });
+    }
+
+    const lineas = (Array.isArray(albaran.lineas) ? albaran.lineas : []) as any[];
+    const libro = await prisma.albaranLineaFacturada.findMany({
+      where: { merchantId: req.merchantId, albaranId: albaran.id },
+      select: { lineaIndex: true, cantidad: true, invoiceId: true },
+    });
+    const pendientes = pendientePorLinea(lineas, facturadoPorLinea(libro));
+
+    const val = validarPeticionParcial(req.body?.lineas, pendientes);
+    if (!val.ok) {
+      const status = (val.error === 'cantidad_excede_pendiente' || val.error === 'linea_repetida') ? 409 : 400;
+      return res.status(status).json({ error: val.error, message: val.message });
+    }
+
+    const fechaTxt = new Date(albaran.fecha).toLocaleDateString('es-ES');
+    // Mismo formato de concepto que la recapitulativa, más la cantidad facturada: el cliente
+    // tiene que poder cuadrar la factura con su parte sin preguntar cuánto se le cobró de qué.
+    const invoiceLines = val.lineas.map((l) => ({
+      concept: `Albarán ${albaran.numero} (${fechaTxt}): ${l.concepto}${l.unidad ? ` — ${l.pendiente} ${l.unidad}` : ''}`,
+      qty: l.pendiente, // en `validarPeticionParcial`, `pendiente` = lo que se factura AHORA
+      price: l.precioUnitario,
+      tax: l.tipoIva / 100,
+    }));
+    const bd = calcVatBreakdown(invoiceLines);
+    const total = (bd.base + bd.cuota).toFixed(2);
+
+    const invoice = await prisma.$transaction(async (tx) => {
+      const inv = await emitInvoice(tx, {
+        merchantId: req.merchantId!, customerId: job.customerId, total,
+        currency: merchant.defaultCurrency || 'EUR', type: 'F1',
+        lines: invoiceLines,
+        albaranRefs: [{ albaranId: albaran.id, numero: albaran.numero, fecha: albaran.fecha }],
+        quoteId: null,
+      });
+      if (isReceiptNumber(inv.number)) throw new Error('facturacion_no_disponible');
+
+      // El libro se escribe DENTRO de la misma transacción que la factura: si algo falla, no
+      // queda ni factura sin apunte ni apunte sin factura. Es lo que sostiene la derivación.
+      await tx.albaranLineaFacturada.createMany({
+        data: val.lineas.map((l) => ({
+          merchantId: req.merchantId!, albaranId: albaran.id,
+          lineaIndex: l.index, invoiceId: inv.id, cantidad: l.pendiente,
+        })),
+      });
+      return inv;
+    });
+
+    // Sellado FUERA de la transacción (SCRUM-173): dentro, las facturas de un lote no se ven
+    // entre sí y todas encadenarían al mismo registro anterior. Un fallo aquí NO revierte la
+    // emisión —deshacer una factura va contra la regla 29—: se dice en la respuesta.
+    let sellada = false;
+    try {
+      await applyVeriFactu(invoice, merchant.taxId ?? '', prisma);
+      sellada = true;
+    } catch (e: any) {
+      console.error(`[facturar-parcial] sellado VeriFactu falló en ${invoice.number}:`, e?.message || e);
+    }
+
+    const libroTras = await prisma.albaranLineaFacturada.findMany({
+      where: { merchantId: req.merchantId, albaranId: albaran.id },
+      select: { lineaIndex: true, cantidad: true, invoiceId: true },
+    });
+    const facturadoTras = facturadoPorLinea(libroTras);
+
+    return res.status(201).json({
+      ok: true,
+      factura: { id: invoice.id, number: invoice.number, total: invoice.total.toString(), currency: invoice.currency },
+      estadoCobro: estadoCobroAlbaran(lineas, facturadoTras),
+      pendientes: pendientePorLinea(lineas, facturadoTras),
+      veriFactu: sellada,
+      ...(sellada ? {} : { message: 'Se emitió la factura, pero falló su registro VeriFactu. Revísalo antes de entregarla.' }),
+    });
+  } catch (err: any) {
+    if (err?.message === 'facturacion_no_disponible') {
+      return res.status(409).json({ error: 'facturacion_no_disponible', message: 'La facturación por partes no está disponible en este modo.' });
+    }
+    console.error('[POST /admin/albaranes/:id/facturar-parcial]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });

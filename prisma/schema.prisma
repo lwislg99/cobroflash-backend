@@ -744,3 +744,39 @@ model Albaran {
   @@index([merchantId, invoiceId])
   @@map("albaranes")
 }
+
+/// SCRUM-170 (FACT-2c) · LIBRO de lo facturado por LÍNEA de albarán.
+///
+/// POR QUÉ UNA TABLA Y NO UN `cantidadFacturada` DENTRO DEL JSON DE LA LÍNEA. Un contador
+/// dentro del Json es un CONTADOR MUTABLE: se incrementa al facturar y hay que acordarse de
+/// decrementarlo al anular. Eso es exactamente el flag manual que SCRUM-17 se negó a tener
+/// citando la queja de DELSOL (albaranes que quedan "pendientes" y hay que arreglar a mano),
+/// y la Parte L no admite estados almacenados nuevos (regla 27). Aquí cada fila dice QUÉ
+/// factura se llevó QUÉ cantidad de QUÉ línea: lo facturado de una línea es la SUMA de sus
+/// filas, y el estado de cobro del albarán se DERIVA comparando servido contra facturado.
+/// Anular una factura no obliga a tocar ningún contador: se excluyen sus filas de la suma.
+///
+/// APPEND-ONLY: estas filas no se editan. Son el rastro de un documento fiscal ya emitido
+/// (regla 29) y su cantidad tiene que seguir cuadrando con las líneas selladas en la huella.
+///
+/// Sin FK a propósito, siguiendo el patrón multi-tenant de columna de esta casa (WhatsAppMessage):
+/// el barrido de los merchants efímeros lo hace `MODELOS_POR_MERCHANT` en la fixture de tests,
+/// donde este modelo QUEDA REGISTRADO (SCRUM-172: una lista a mano que no sigue al esquema deja
+/// huérfanas en silencio).
+model AlbaranLineaFacturada {
+  id         Int      @id @default(autoincrement())
+  merchantId Int      @map("merchant_id")
+  albaranId  Int      @map("albaran_id")
+  /// Índice de la línea dentro de `Albaran.lineas` (el Json es un array ordenado).
+  lineaIndex Int      @map("linea_index")
+  /// Factura que se llevó esta cantidad. Es el enlace que permite deshacer por anulación.
+  invoiceId  Int      @map("invoice_id")
+  /// Cantidad facturada en ESA factura de ESA línea. Tres decimales: las unidades de obra
+  /// (horas, m², kg) se sirven fraccionadas y redondear aquí desplazaría el importe emitido.
+  cantidad   Decimal  @db.Decimal(12, 3)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([merchantId, albaranId])
+  @@index([merchantId, invoiceId])
+  @@map("albaran_lineas_facturadas")
+}
