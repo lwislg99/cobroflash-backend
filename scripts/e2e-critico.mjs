@@ -132,7 +132,23 @@ try {
   await prisma.quote.update({ where: { id: quoteId }, data: { status: 'sent' } }); // como tras el envío WA
 
   // ── 5 · LANDING PÚBLICA + FIRMA DEL CLIENTE ──────────────────────────────
-  await page.goto(`${base}/pay/quote/${quoteId}`, { waitUntil: 'networkidle2' });
+  //
+  // SCRUM-184: esto abría `/pay/quote/${quoteId}` — con el ID — y llevaba fallando desde que
+  // SCRUM-95 cerró esa puerta: la ruta pública espera el TOKEN OPACO (`Quote.decisionToken`,
+  // declarado como `kind: 'token'` en publicAccessDeclarations) y con un id responde el 404
+  // «Documento no disponible». O sea que el recorrido crítico no pasaba de aquí, y todo lo que
+  // viene después —aceptación, Job, factura, PDFs y la escucha de consola de SCRUM-183— llevaba
+  // tiempo sin comprobarse. El fallo NO era de la landing: era del guion, que se quedó con la
+  // URL vieja. Se resuelve el token por la BD, que es la fuente de verdad.
+  // El token NACE PEREZOSO: lo crea `ensureQuoteDecisionToken` la primera vez que alguien pide
+  // el detalle o manda el presupuesto (`quoteAdmin.ts`), no al crearlo. Así que se pide el
+  // detalle por la API real —lo mismo que hace la pantalla del pro antes de enviar— en vez de
+  // fabricar el token a mano: si esa vía se rompiera, este recorrido tiene que enterarse.
+  const detRes = await fetch(`${base}/admin/quotes/${quoteId}`, { headers: { cookie } });
+  const detBody = await detRes.json().catch(() => ({}));
+  const payToken = detBody.payToken || detBody.decisionToken;
+  if (!payToken) fail(`el detalle no devolvió token público: ${detRes.status} ${JSON.stringify(detBody).slice(0, 160)}`);
+  await page.goto(`${base}/pay/quote/${payToken}`, { waitUntil: 'networkidle2' });
   if (!(await waitFor(() => !!document.getElementById('btn-accept')))) fail('landing sin botón de aceptar');
   ok('landing pública renderiza (firma + total + validez)');
   await page.click('#no-sig-check'); // "Acepto sin firmar" (evidencia igualmente)
@@ -172,8 +188,13 @@ try {
     charge = await prisma.charge.findFirst({ where: { merchantId, customerId: customer.id }, orderBy: { id: 'desc' } });
   }
   if (!charge) fail('no hay charge para cobrar');
+  // SCRUM-184 (segunda causa, misma familia): `/webhooks/psp` se cerró tras el SECRETO INTERNO
+  // y responde 404 a quien no lo trae —no revela que existe—, así que este paso llevaba fallando
+  // desde entonces. Se manda la misma cabecera que usan los reenvíos internos de verdad
+  // (`internalHeaders`), que es exactamente lo que hace el webhook real de Stripe/MP/Bizum.
+  const { internalHeaders } = await import('../dist/core/http/internalAuth.js');
   const pay = await fetch(`${base}/webhooks/psp`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers: { ...internalHeaders(), 'Content-Type': 'application/json' },
     body: JSON.stringify({ event: 'payment.confirmed', charge_id: charge.id, method: 'card', bank_ref: 'pi_e2e_' + stamp, amount: Number(charge.amount), currency: 'EUR', ts: new Date().toISOString() }),
   });
   if (!pay.ok) fail(`pago test (psp) devolvió ${pay.status}`);
@@ -209,6 +230,14 @@ try {
   // Cada pantalla lleva su ANCLA DE RENDER, y no es adorno: sin ella, «cero errores de consola» y
   // «no se cargó nada» son indistinguibles, y el segundo pasaría por bueno. Si la pantalla no
   // pinta lo suyo, esto FALLA — no pasa en vacío.
+  // El recorrido acabó en la landing pública y en los PDFs, así que hay que VOLVER al panel y
+  // esperar a que monte su router: `renderAppView` se asigna al final del arranque del
+  // dashboard. Esperarlo, no suponerlo — si no está, lo que sigue no mediría nada.
+  await page.goto(`${base}/dashboard/`, { waitUntil: 'networkidle2' });
+  if (!(await waitFor(() => typeof window.renderAppView === 'function'))) {
+    fail('el panel no llegó a montar renderAppView: sin él no se puede abrir ninguna pantalla');
+  }
+
   const pantallas = [
     ['home', () => window.renderAppView('home'), () => !!document.querySelector('.home-greeting')],
     ['nuevo presupuesto', () => window.renderAppView('quotes-new'), () => !!document.querySelector('.quote-lines')],
