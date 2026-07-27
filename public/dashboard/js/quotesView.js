@@ -696,6 +696,31 @@ blockClient.appendChild(descWrapper);
     if (after == null) linesBody.appendChild(draggedTr);
     else linesBody.insertBefore(draggedTr, after);
   });
+  /**
+   * SCRUM-139 F5 · MOVER UNA LÍNEA (arriba / abajo).
+   *
+   * Reordenar existía SOLO por arrastre, y el arrastre HTML5 se apoya en eventos de ratón: en
+   * Android Chrome el toque no dispara `dragstart`. O sea, en la pantalla que declaramos
+   * MÓVIL PRIMERO (F1) reordenar líneas sencillamente no se podía. Estos dos botones lo
+   * arreglan sin tocar el arrastre, que se conserva donde sí funciona.
+   *
+   * Mueve el NODO y deja que `syncLinesOrder` derive el orden del DOM, que ya es la única
+   * fuente de verdad del orden desde el arrastre: así no hay dos maneras de ordenar lo mismo.
+   */
+  function moverLinea(line, delta) {
+    const filas = Array.from(linesBody.querySelectorAll(".quote-line"));
+    const i = filas.indexOf(line.row);
+    const j = i + delta;
+    if (i === -1 || j < 0 || j >= filas.length) return;
+    if (delta < 0) linesBody.insertBefore(line.row, filas[j]);
+    else linesBody.insertBefore(filas[j], line.row);
+    syncLinesOrder();
+    recalcTotals();
+    renderPreview();
+    scheduleDraftSave();
+    try { line.menuBtn.focus({ preventScroll: true }); } catch (_e) {}
+  }
+
   function syncLinesOrder() {
     const rows = Array.from(linesBody.querySelectorAll(".quote-line"));
     lines.sort((a, b) => rows.indexOf(a.row) - rows.indexOf(b.row));
@@ -923,7 +948,7 @@ blockClient.appendChild(descWrapper);
     let vatTotal = 0;
     const cur = (currentMerchant && currentMerchant.defaultCurrency) || 'EUR';
 
-    lines.forEach((line) => {
+    lines.forEach((line, idx) => {
       const qty = parseFloat(
         String(line.qtyInput.value || "").replace(",", ".")
       );
@@ -978,6 +1003,12 @@ blockClient.appendChild(descWrapper);
       // obligaría a abrir la hoja para comprobar el IVA de cada línea; así se lee de un vistazo
       // y solo se abre para CAMBIARLO. El margen solo aparece cuando existe: "Margen 0 %" en
       // todas las líneas sería ruido en la inmensa mayoría de los presupuestos.
+      // SCRUM-139 F5: "Subir" en la primera línea y "Bajar" en la última se DESHABILITAN, no
+      // se esconden — un menú que cambia de ítems según la fila obliga a leerlo entero cada vez
+      // (mismo criterio que SCRUM-89 con las acciones vetadas por rol).
+      if (line.subirBtn) line.subirBtn.disabled = idx === 0;
+      if (line.bajarBtn) line.bajarBtn.disabled = idx === lines.length - 1;
+
       if (line.ajustesBtn) {
         const resumen = ["IVA " + safeVat + " %"];
         if (safeMarkup > 0) resumen.push("Margen " + safeMarkup + " %");
@@ -1992,12 +2023,42 @@ markupTd.appendChild(markupInput);
     });
     actionsTd.appendChild(dragHandle);
 
+    /**
+     * SCRUM-139 F5 · LAS ACCIONES DE LA LÍNEA, AL MENÚ DE AB3.
+     *
+     * La premisa original de la fase era "la línea tiene demasiados botones", y no era cierta:
+     * tenía DOS (arrastrar y borrar). Lo que sí era cierto es que uno de los dos NO FUNCIONA
+     * en móvil —el arrastre HTML5 no se dispara con el dedo— y que la tira de acciones costaba
+     * ~45 px por línea a lo ancho para un único botón útil.
+     *
+     * Con Subir / Bajar / Eliminar son TRES acciones secundarias, que es justo el caso que AB3
+     * describe para `overflowMenu` (1 primaria visible + el resto agrupadas). Y de paso el
+     * móvil gana un reordenado que hoy no tiene.
+     */
+    const subirBtn = document.createElement("button");
+    subirBtn.type = "button";
+    subirBtn.textContent = "↑  Subir";
+    subirBtn.addEventListener("click", function () { moverLinea(lineObj, -1); });
+
+    const bajarBtn = document.createElement("button");
+    bajarBtn.type = "button";
+    bajarBtn.textContent = "↓  Bajar";
+    bajarBtn.addEventListener("click", function () { moverLinea(lineObj, +1); });
+
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
-    removeBtn.className = "btn-icon";
     removeBtn.title = "Eliminar línea";
-    removeBtn.textContent = "🗑️";
-    actionsTd.appendChild(removeBtn);
+    removeBtn.textContent = "🗑️  Eliminar línea";
+
+    // El menú es el helper compartido de AB3 (teclado, foco, cierre, hoja inferior en ≤640 px).
+    // Si no estuviera cargado, las acciones se quedan visibles sueltas: perder el menú no puede
+    // costar la posibilidad de borrar una línea.
+    const menuBtn =
+      typeof overflowMenu === "function"
+        ? overflowMenu([subirBtn, bajarBtn, removeBtn], { label: "Acciones de la línea" })
+        : null;
+    if (menuBtn) actionsTd.appendChild(menuBtn);
+    else { actionsTd.appendChild(subirBtn); actionsTd.appendChild(bajarBtn); actionsTd.appendChild(removeBtn); }
 
     /**
      * SCRUM-139 F4 · MARGEN E IVA A LA HOJA INFERIOR.
@@ -2047,6 +2108,11 @@ markupTd.appendChild(markupInput);
       // NO cambian: `markupInput` y `vatInput` siguen siendo los mismos elementos.
       ajustesCampos,
       ajustesBtn,
+      // SCRUM-139 F5 — el menú de acciones y sus dos ítems de orden (se habilitan/deshabilitan
+      // según la posición de la línea, no se ocultan: criterio de SCRUM-89).
+      menuBtn: menuBtn || removeBtn,
+      subirBtn,
+      bajarBtn,
 
     };
 
