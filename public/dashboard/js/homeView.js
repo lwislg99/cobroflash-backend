@@ -475,7 +475,9 @@ async function renderTeamPerformance(container) {
   const rows = data.members.map((m) => {
     const accColor = m.acceptanceRate >= 50 ? 'var(--green-600)' : m.acceptanceRate >= 25 ? 'var(--neutral-600)' : 'var(--red-600)';
     const best = m.isBest ? '<span style="background:#fef9c3;color:#a16207;font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:6px">⭐ Mejor del mes</span>' : '';
-    const roleLabel = m.role === 'owner' ? 'Propietario' : m.role === 'tecnico' ? 'Técnico' : m.role;
+    // SCRUM-136 (A20.3): aquí ponía "Técnico" mientras Equipo y Operarios decían "Operario"
+    // para el MISMO valor de schema (`tecnico`). Una sola palabra en toda la app.
+    const roleLabel = m.role === 'owner' ? 'Propietario' : m.role === 'tecnico' ? 'Operario' : m.role;
     return `
       <tr>
         <td style="font-weight:600">${esc(m.name)}${best}<div style="font-size:11px;color:var(--neutral-500);font-weight:400">${roleLabel}</div></td>
@@ -489,8 +491,14 @@ async function renderTeamPerformance(container) {
     ? `<div style="margin-top:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px 14px;font-size:13px;color:#9a3412">⚠️ Sin actividad esta semana: <strong>${data.inactive.map(esc).join(', ')}</strong></div>`
     : '';
 
+  // SCRUM-136: este panel SE QUEDA — un vistazo en el Inicio es otro trabajo distinto de
+  // gestionar el equipo — pero deja de ser un callejón: enlaza al hub, que es donde se
+  // añade gente, se cambian roles y se ve el pendiente por miembro.
   section.innerHTML = `
-    <div style="font-size:13px;font-weight:600;color:#6b756f;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">Rendimiento del equipo · este mes</div>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap">
+      <div style="font-size:13px;font-weight:600;color:#6b756f;text-transform:uppercase;letter-spacing:.04em">Rendimiento del equipo · este mes</div>
+      <button class="btn-ghost btn-sm" id="home-ver-equipo" type="button">Ver equipo →</button>
+    </div>
     <div class="data-card">
       <div class="table-scroll">
         <table class="table" style="min-width:420px">
@@ -507,6 +515,9 @@ async function renderTeamPerformance(container) {
     </div>
   `;
   container.appendChild(section);
+  section.querySelector('#home-ver-equipo')?.addEventListener('click', () => {
+    if (window.renderAppView) window.renderAppView('team');
+  });
 }
 
 // P-A66-3: delega en el formateador es-ES compartido (api.js) — "6.576,35 €",

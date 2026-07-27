@@ -3,40 +3,37 @@ import { requireRole } from '../../../../core/http/authMiddleware';
 import { prisma } from '../../../../core/db/prisma';
 import { getEntitlements } from '../../../../core/entitlements';
 import {
-  listTeamMembers,
   createTeamMember,
   updateTeamMember,
   suspendTeamMember,
   resendInvite,
 } from '../../domain/team.service';
+import { getTeamOverview } from '../../domain/teamOverview.service'; // SCRUM-136 (hub Equipo)
 
 const router = Router();
 
-// Todas las rutas de equipo requieren rol admin
+// Todas las rutas de equipo requieren rol admin.
+// ⚠️ SCRUM-136: este gate está DUPLICADO — `app.ts` ya monta este router con
+// `mountAdmin(app, '/admin/team', requireRole('admin'), teamRouter)`. Se descubrió al
+// verificar el test EN ROJO: quitar solo uno de los dos deja la ruta igual de cerrada, así
+// que el test no distingue cuál actúa (hubo que quitar los dos para verlo fallar). No se
+// retira ninguno: la redundancia es barata y sobrevive a que alguien reorganice `app.ts`.
+// Si algún día quitas uno, comprueba que el OTRO sigue en pie antes de fiarte del verde.
 router.use(requireRole('admin'));
 
-// GET /admin/team
+// GET /admin/team — SCRUM-136: el roster AHORA llega con su resumen (presupuestos del mes,
+// trabajos abiertos, pendiente). Se enriquece esta ruta en vez de abrir un /admin/team/overview
+// porque ya es admin-only y ya es "el equipo": una ruta nueva sería superficie que declarar en
+// el ratchet (SCRUM-113) para exactamente el mismo dato, y dos peticiones donde basta una.
+//
+// COMPATIBILIDAD: la respuesta sigue siendo un ARRAY con los mismos campos por miembro
+// (id/name/email/role/status/isOwner/createdAt) y el propietario el primero — solo se AÑADE
+// `resumen`. El array suelto se conserva a propósito: envolverlo en un objeto rompería a
+// cualquier consumidor que haga `members.length` (teamView lo hacía).
 router.get('/', async (req, res) => {
   try {
-    const members = await listTeamMembers(req.merchantId);
-
-    // Incluir el propietario como primer miembro con role=admin/owner
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: req.merchantId },
-      select: { name: true, email: true },
-    });
-
-    const owner = {
-      id: null,
-      name: merchant?.name ?? '',
-      email: merchant?.email ?? '',
-      role: 'admin',
-      status: 'active',
-      isOwner: true,
-      createdAt: null,
-    };
-
-    return res.json([owner, ...members.map((m) => ({ ...m, isOwner: false }))]);
+    const { miembros } = await getTeamOverview(req.merchantId);
+    return res.json(miembros);
   } catch (err) {
     console.error('[GET /admin/team]', err);
     return res.status(500).json({ error: 'internal_error' });
