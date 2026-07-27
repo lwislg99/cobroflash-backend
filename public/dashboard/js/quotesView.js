@@ -4,7 +4,22 @@
 // el create lleva created_via='voice' (telemetría V0-3). Se resetea por render.
 let quoteFormCreatedVia = 'text';
 
-function renderQuotesView(container) {
+/**
+ * SCRUM-140: `template` llega como ARGUMENTO EXPLÍCITO (antes por
+ * `sessionStorage['pf_load_template']`, un canal global e implícito).
+ *
+ * Lo que desaparece al hacerlo así, y no por defenderse mejor:
+ *   · el ORDEN deja de ser una variable — no hay "escribe antes de navegar" que respetar
+ *     (el off-by-one de SCRUM-134 era exactamente eso);
+ *   · no hay estado residual que consumir → no existe la plantilla HUÉRFANA;
+ *   · sobra el sello de frescura `_ts` y su umbral de 15 s, que era una heurística temporal
+ *     (una navegación lenta podía descartar una plantilla legítima);
+ *   · el acoplamiento queda VISIBLE en la firma: antes nada decía que el contenido de esta
+ *     vista podía venir de otra.
+ *
+ * `null`/omitido = presupuesto en blanco. Es de un solo uso: no se guarda en `window.appState`.
+ */
+function renderQuotesView(container, template) {
   container.innerHTML = "";
   quoteFormCreatedVia = 'text';
 
@@ -2138,28 +2153,18 @@ if (Number.isFinite(n) && n >= 0) {
     try {
       setAlert(null, "Cargando datos…");
 
-      // Si venimos de la vista de Plantillas, auto-cargar
-      const pendingTemplate = sessionStorage.getItem('pf_load_template');
+      // SCRUM-140: la plantilla es el ARGUMENTO de esta vista (ver la cabecera de
+      // renderQuotesView). Sin sessionStorage no hay huérfana que descartar ni sello de
+      // frescura que comprobar: si no llega plantilla, no hay plantilla. Se mantiene la
+      // comprobación de que trae líneas — líneas = dinero, y una plantilla vacía no debe
+      // vaciar el editor ni suprimir la restauración del borrador.
       var templatePending = false;
-      if (pendingTemplate) {
-        sessionStorage.removeItem('pf_load_template');
-        try {
-          const tpl = JSON.parse(pendingTemplate);
-          // SCRUM-134: SOLO se acepta una plantilla escrita por la acción que ACABA de navegar
-          // aquí ("Usar plantilla" / "Duplicar"), que sellan `_ts` justo antes de navegar. Una
-          // clave sin sello o vieja es HUÉRFANA: se descarta (ya se quitó arriba). Sin esto, una
-          // plantilla que quedó escrita y nunca se consumió hacía que un "+ Nuevo presupuesto"
-          // NORMAL apareciera con líneas que nadie pidió —y encima suprimía la restauración del
-          // borrador—; verificado en staging. Líneas = dinero: no se cargan sin pedirlo.
-          const fresca = typeof tpl._ts === 'number' && Date.now() - tpl._ts < 15000;
-          if (fresca && Array.isArray(tpl.lines) && tpl.lines.length > 0) {
-            templatePending = true;
-            tbody.innerHTML = '';
-            lines = [];
-            tpl.lines.forEach(function (l) { addLine(l); });
-            setAlert('success', `Plantilla "${tpl.name}" cargada — completa los datos del cliente y genera el presupuesto.`);
-          }
-        } catch (_) {}
+      if (template && Array.isArray(template.lines) && template.lines.length > 0) {
+        templatePending = true;
+        tbody.innerHTML = '';
+        lines = [];
+        template.lines.forEach(function (l) { addLine(l); });
+        setAlert('success', `Plantilla "${template.name}" cargada — completa los datos del cliente y genera el presupuesto.`);
       }
 
       const merchantPromise = getMerchantProfile();

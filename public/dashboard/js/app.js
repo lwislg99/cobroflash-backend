@@ -197,7 +197,12 @@ async function initApp() {
         break;
       case 'quotes-new':
         viewTitle.textContent = L.quoteNew;
-        renderQuotesView(viewContainer);
+        // SCRUM-140: la plantilla viaja como ARGUMENTO, no por sessionStorage. A propósito NO se
+        // guarda en `state`: es de un solo uso, y persistirla reintroduciría el estado residual
+        // que causaba la plantilla huérfana (SCRUM-134). Las navegaciones a 'quotes-new' que no
+        // pasan `template` (nuevo presupuesto, desde cliente, desde solicitud…) abren en blanco
+        // porque no mandan nada — antes podían recoger lo que otra vista hubiera dejado escrito.
+        renderQuotesView(viewContainer, options.template || null);
         break;
       case 'quotes-detail':
         viewTitle.textContent = L.quotePlural;
