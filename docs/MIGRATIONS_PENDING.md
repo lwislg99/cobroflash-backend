@@ -11,7 +11,7 @@
 > **NO uses `migrate deploy`/`migrate dev`** — aplicaría un schema viejo (entorno nuevo) o
 > propondría un reset. `db push` es el ÚNICO mecanismo. (Volver a migrate = SCRUM-40 opción A.)
 
-## SCRUM-145 · `invoices.vf_timestamp` + `vf_anul_hash` + `vf_anul_timestamp` (VeriFactu) — ⏳ PENDIENTE (staging y prod)
+## SCRUM-145 · `invoices.vf_timestamp` + `vf_anul_hash` + `vf_anul_timestamp` (VeriFactu) — ✅ APLICADO en prod (2026-07-24)
 
 ```sql
 ALTER TABLE "invoices" ADD COLUMN     "vf_anul_hash" TEXT,
@@ -35,8 +35,16 @@ ADD COLUMN     "vf_timestamp" TIMESTAMP(3);
   compartido por junction entre worktrees; un cliente con estas columnas contra una BD que aún
   no las tiene rompe cualquier lectura de `invoices` (`SELECT` de columna inexistente) — y con
   ello los tests gateados de la OTRA sesión.
-- **Estado:** staging ⏳ (pendiente de ventana con la otra sesión) · prod ⏳ (después, con su
-  propio preview y GO aparte, vía `bash scripts/db-push-prod`).
+- **Estado:** staging ✅ (24-jul) · **prod ✅ (24-jul)** — mismo diff exacto en los dos, con
+  host-check (`autorack` = prod, `acela` = staging) y `schema.prisma` idéntico a `main`
+  verificado con `git diff origin/main` VACÍO antes de cada push.
+- **Verificado tras el push a prod:** las 3 columnas existen en `information_schema` y una
+  lectura real de `invoices` (55 filas) devuelve los campos nuevos sin error.
+- ⚠️ **El cliente Prisma compartido estaba STALE al verificar** (otra sesión lo había
+  regenerado desde un `main` anterior al merge), así que la primera lectura falló con
+  «Unknown field vfTimestamp» aunque la columna SÍ estaba en la BD. Se regeneró DESPUÉS del
+  push —el orden correcto— y quedó verde. Es el mismo riesgo que documenta el runbook, visto
+  ahora desde el otro lado: un cliente viejo también miente.
 - **Inerte hasta entonces:** ningún código lee ni escribe estas columnas todavía; todo el
   registro sigue tras `INVOICING_ES_ENABLED` OFF (regla 24).
 
