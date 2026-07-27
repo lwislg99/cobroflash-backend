@@ -926,6 +926,23 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 > Sin schema. **INERTE en producción HOY** (ningún merchant real tiene Stripe LIVE aún, **SCRUM-41
 > abierta**): es defensa PREVENTIVA — el día que se active Stripe, impide que el primer cobro con tarjeta
 > de un merchant sin Connect caiga en la cuenta de plataforma. La protección que se agradece tarde.
+>
+> **✅ SCRUM-134 · seleccionar una plantilla abría OTRA: off-by-one de estado (24-jul-2026, front):**
+> «Usar plantilla» (`templatesView.js`) navegaba ANTES de escribir la plantilla en `sessionStorage`, y
+> el lector corre SÍNCRONO dentro de esa navegación (`renderQuotesView` no es async → `loadInitialData`
+> llega al `getItem` sin ningún `await` por delante) → el editor leía SIEMPRE el valor de la vez
+> ANTERIOR; en el primer uso, con la clave vacía, restauraba el borrador pendiente. **Lo probó un control
+> natural del propio repo:** «Duplicar» (`quotesDetailView`) escribe y LUEGO navega —orden correcto, nunca
+> se reportó roto— con el MISMO lector; el bug era el orden del escritor, no el lector. **Segundo bug**
+> destapado en el recon: la clave escrita no se consumía y quedaba HUÉRFANA → un «+ Nuevo presupuesto»
+> normal aparecía con líneas que nadie pidió y suprimía el borrador (líneas = dinero). **Fix:** swap del
+> orden + sello de frescura `_ts` en ambos escritores, y el lector acepta solo plantillas selladas y
+> recientes (<15 s) —lo que además neutraliza las huérfanas ya presentes en sesiones del build roto—.
+> Colateral de precedencia: en `loadDraft`, `vatDefault` se restaura ahora ANTES de crear las líneas.
+> **Verificado en vivo contra staging** (mismo script y fixtures, solo cambian los 3 JS): antes A→vacío,
+> B→A, nuevo→B; después A→A, B→B, nuevo→vacío. **El IVA de plantillas NO se toca: es SCRUM-132** — se
+> verificó que `addLine` lee `initial.vat` mientras al guardar se escribe `tax: vatPerc/100` (desajuste de
+> clave Y de unidad), así que hoy ambos caminos descartan el IVA de la plantilla. Sin schema.
 
 **V2. Trigger del segundo tramo:** **✅ VERIFICADO (SCRUM-10/13, 9-jul-2026): el resto NUNCA se cobra solo** (confirmado en código: `/admin/jobs/:id/collect-rest` vía `getNextBillingStage`, siempre acción del pro). Regla: el resto NUNCA se cobra solo; trigger = acción del pro ("Trabajo terminado → Cobrar resto"; con JOB-1: estado `terminado`) → cobro/factura del resto + payment_request.
 **V3. Anticipos [VALIDAR asesor en S1-F]:** señal con factura = **factura de anticipo con IVA**; la final descuenta el anticipo. Pre-SIF: señal con recibo no fiscal (coherente con flag). Post-SIF: implementar el dictamen (regla 32).
