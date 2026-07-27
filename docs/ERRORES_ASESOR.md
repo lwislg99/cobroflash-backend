@@ -135,6 +135,20 @@ git worktree remove ../wt-loquesea                 # ahora sí
 
 **Nota:** hermana de #8 y #9 —la herramienta hizo su trabajo correctamente sobre un objeto que no era el que yo creía— pero con una vuelta de tuerca: aquí el objeto equivocado **no estaba a la vista**. Lo que se ve es una carpeta del worktree; lo que se borra está al otro lado del enlace, fuera de él. Cuando una operación de borrado toca algo compartido, el radio de la acción es mayor que el de la carpeta que se nombra en el comando.
 
+### 2026-07-27 · #12 — Probé un guard fiscal en rojo con el caso equivocado, y el verde me habría dado por seguro (lección propia, del ejecutor)
+
+**Qué pasó:** en SCRUM-178 (emisión manual de factura) escribí un assert para proteger la regla de SCRUM-141 —el importe emitido sale de las LÍNEAS, no del campo `total` guardado del presupuesto—. Para probarlo en rojo, monté un presupuesto cuyo `total` guardado estaba desfasado **5 €** respecto a sus líneas y devolví el código al comportamiento malo. **El test siguió en verde.**
+
+**Por qué:** `reconcileToTarget` solo busca el cuadre dentro de una ventana de **±0,05 €** de base. Un hueco de 5 € es inalcanzable: la función se rinde y devuelve las líneas intactas, así que el comportamiento malo daba el mismo resultado que el bueno. Mi caso de prueba era **tan grave que caía fuera del mecanismo que quería vigilar**.
+
+**Lo peligroso no es el caso grande: es el pequeño.** Con un desfase de **3 céntimos** —dentro de la ventana— el código malo sí actúa: toca el precio de la última línea para cuadrar con una cifra vieja, el importe emitido pasa de 134,27 € a 134,30 €, y **eso queda sellado en la huella VeriFactu**, que solo se corrige con una R1 (regla 29). Con 3 céntimos el rojo salió a la primera.
+
+**Quién lo detectó:** yo mismo, al no ver el rojo que esperaba. El fallo habría sido invisible al revés: si no llego a probarlo en rojo, tenía un assert verde sobre un código correcto y **habría reportado que la regla estaba protegida**.
+
+**Regla derivada — nueva:** **el caso de prueba tiene que caer DENTRO del mecanismo que se vigila.** Un desvío enorme suele salirse de los márgenes, las tolerancias y las ventanas de la función que se quiere probar, y entonces el guard no distingue nada. Al inyectar una regresión hay que preguntarse *¿este valor activa de verdad el camino malo?* — y si el rojo no sale, la primera hipótesis no es «el guard sobra», es «el caso está mal elegido».
+
+**Nota:** es la vuelta de tuerca de la regla de la casa (*todo guard se prueba fallando primero*). Probar en rojo no basta si el rojo se busca con el caso equivocado: **un test que falla con el caso equivocado da falsa tranquilidad**, y en zona fiscal la falsa tranquilidad se sella en una cadena de huellas inmutable. Hermana de #8 —medir la página equivocada con total confianza—, pero sobre el propio mecanismo de verificación.
+
 ---
 
 ## PATRÓN COMÚN (lo que de verdad hay que corregir)
