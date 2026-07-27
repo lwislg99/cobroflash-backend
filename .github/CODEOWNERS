@@ -1,0 +1,78 @@
+# CODEOWNERS — zona roja de cobroflash-backend
+#
+# Alcance deliberadamente ESTRECHO: solo ficheros donde un cambio no revisado
+# rompe a otro carril o destruye datos. Proteger todo = bloquear el ritmo o
+# entrenar a saltarse la regla.
+# Owner: @lwislg99 (fundador, dueño del schema de producción).
+# @lwislg99 está en la bypass list del ruleset: esto vincula los PR de zona
+# roja de Javier y no los suyos. Asimetría asumida a conciencia, no olvido.
+#
+# ⚠️ RIESGO CONOCIDO: esta lista debe COINCIDIR con `ZONA_ROJA` en
+# `scripts/zona-roja.mjs` — la fuente de la zona roja desde SCRUM-168 (main movió ahí
+# la lista; el job de CI la lee y COMENTA, no bloquea). CODEOWNERS es lo que VINCULA la
+# revisión: no son sustitutos. Son dos listas a mano y HOY NADA garantiza que cuadren;
+# al tocar una, revisar la otra. SCRUM-179 lo mecaniza (un test que las compara y sale
+# rojo si divergen). Estado a esta fecha: CODEOWNERS cubre TODO lo de ZONA_ROJA
+# —incluidos jobs.routes.ts, jobDetailView.js y homeView.js, que faltaban y se añaden
+# aquí— y ADEMÁS /tests/, /prisma/migrations/, los scripts de staging, /.github/** y
+# los lockfiles: protección más ancha, no un hueco. Que ZONA_ROJA gane esas (o no) lo
+# decide el fundador; scripts/zona-roja.mjs no se toca desde aquí.
+
+# --- Schema y migraciones de producción (carril A, freno duro §3) ---
+/prisma/schema.prisma      @lwislg99
+# Hoy INEXISTENTE a propósito: el proyecto va por `db push` y no hay migraciones. El patrón se
+# queda porque CODEOWNERS casa contra los ficheros del PR: el día que alguien cree la
+# primera migración, ese PR queda cubierto. Es justo el PR que no debe pasar sin revisión.
+/prisma/migrations/        @lwislg99
+
+# --- Arranque y montajes (aquí viven los gates admin a nivel de mount) ---
+/src/app.ts                @lwislg99
+
+# --- Carril A: la ruta más caliente y las pantallas estrella (ZONA_ROJA, SCRUM-168) ---
+# Añadidas para cerrar el hueco: ZONA_ROJA las lista y CODEOWNERS no las cubría → la
+# protección habría nacido con agujeros, que es peor que nada porque parece que protege.
+# Son ficheros del carril A; el owner sigue siendo @lwislg99 (freno de zona roja, no de dominio).
+/src/modules/jobs/app/routes/jobs.routes.ts   @lwislg99
+/public/dashboard/js/jobDetailView.js         @lwislg99
+/public/dashboard/js/homeView.js              @lwislg99
+
+# --- Infra de tests compartida ---
+/tests/                            @lwislg99
+/scripts/seed-staging.mjs          @lwislg99
+/scripts/clean-staging-tests.mjs   @lwislg99
+/scripts/test-staging-gated.mjs    @lwislg99
+# El doc que define la tanda de regresión: el diff de la unificación lo toca JUNTO a
+# package.json, así que sin esta línea se podría cambiar sin que lo vea nadie.
+/docs/QA/SUITE_REGRESION.md        @lwislg99
+
+# --- CI y el propio mecanismo (que nadie lo desactive sin verse) ---
+/.github/workflows/        @lwislg99
+/.github/CODEOWNERS        @lwislg99
+
+# --- Dependencias: da mecanismo a la regla 36 (dependencia nueva = OK del
+#     fundador). Hoy esa regla depende de que alguien se acuerde. ---
+/package-lock.json         @lwislg99
+/package.json              @lwislg99
+
+# --- Master (única fuente de verdad, regla 35). Vive en docs/, NO en raíz:
+#     un /YAQU_MASTER.md no casaría con nada. Verificado en el árbol. ---
+/docs/YAQU_MASTER.md       @lwislg99
+
+# ─────────────────────────────────────────────────────────────────────
+# HUECO CONOCIDO — SERIALIZERS, SIN COBERTURA
+#
+# Los serializers son la zona de mayor riesgo de fuga de datos del repo:
+# en SCRUM-97 filtraron IBAN y portalToken. NO están protegidos aquí.
+#
+# Motivo: no existe ningún directorio ni fichero de serializers. Son
+# funciones inline dentro de ficheros de rutas y de servicios
+# (p. ej. serializeJob / serializeJobDetail en
+# src/modules/jobs/app/routes/jobs.routes.ts, serializeAlbaran en
+# src/modules/jobs/domain/albaran.service.ts). CODEOWNERS casa por RUTA,
+# no por función: un patrón tipo /src/**/serializers/ no casaría con nada
+# y daría protección aparente y cero real, sin avisar.
+#
+# Cerrarlo exige o bien extraer los serializers a una ruta propia, o bien
+# un check que los detecte por contenido. Anotado a propósito para que se
+# vea el hueco en vez de fingir que está cubierto.
+# ─────────────────────────────────────────────────────────────────────
