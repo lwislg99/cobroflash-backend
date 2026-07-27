@@ -648,8 +648,9 @@ blockClient.appendChild(descWrapper);
 
   const useTemplateBtn = document.createElement("button");
   useTemplateBtn.type = "button";
-  useTemplateBtn.className = "btn-ghost btn-sm";
-  useTemplateBtn.style.cssText = "font-size:12px;padding:4px 10px;border-radius:6px;border:1px dashed var(--neutral-300);color:var(--neutral-600)";
+  // SCRUM-139 F6: sin estilos en línea (AB3: "cero estilos inline aleatorios") y sin borde
+  // discontinuo, que desde F2 está RESERVADO a "+ Añadir línea" (crear).
+  useTemplateBtn.className = "btn-ghost btn-sm quote-header-btn";
   useTemplateBtn.innerHTML = "📋 Usar plantilla";
   useTemplateBtn.title = "Cargar líneas desde una plantilla guardada";
   linesHeader.appendChild(useTemplateBtn);
@@ -663,6 +664,27 @@ blockClient.appendChild(descWrapper);
   // Ahora cada línea es una TARJETA (`.quote-line`) en una sola columna; en ≥768 px la misma
   // tarjeta se dispone en rejilla horizontal, así que el escritorio no pierde densidad y NO hay
   // dos DOM que mantener. La cabecera de columnas desaparece: cada campo lleva su propia etiqueta.
+  /**
+   * SCRUM-139 F6 · PLANTILLAS A UN TOQUE, SIN SALIR DE LA PANTALLA.
+   *
+   * Hasta ahora usar una plantilla eran tres pasos: abrir el modal, leer la lista, elegir. Para
+   * el oficio que repite el mismo trabajo diez veces al mes, eso es un trámite delante de lo
+   * único que quiere hacer. Aquí las plantillas se pintan como fichas de un toque dentro del
+   * propio cuadernillo.
+   *
+   * SOBRE "CONCEPTOS FRECUENTES", que es la otra mitad que pedía el plan de fases: NO se
+   * construye, y no por falta de tiempo. `QuoteTemplate` no guarda ningún contador de uso y no
+   * hay ninguna señal de frecuencia en el esquema, así que "los más frecuentes" solo podría
+   * salir de inventarse un criterio (¿los últimos creados? ¿los primeros por id?) y
+   * presentárselo al usuario como si fuera su historial. Eso sería mentirle sobre sus propios
+   * datos. Los conceptos ya se buscan con el autocompletado del catálogo, que sí es real; la
+   * frecuencia de verdad necesita contar usos (schema) y va en su propio ticket.
+   */
+  const plantillasRapidas = document.createElement("div");
+  plantillasRapidas.className = "quote-plantillas";
+  plantillasRapidas.hidden = true;
+  blockLines.appendChild(plantillasRapidas);
+
   const linesBody = document.createElement("div");
   linesBody.className = "quote-lines";
   blockLines.appendChild(linesBody);
@@ -783,8 +805,7 @@ blockClient.appendChild(descWrapper);
 
   const saveTemplateBtn = document.createElement("button");
   saveTemplateBtn.type = "button";
-  saveTemplateBtn.className = "btn-ghost btn-sm";
-  saveTemplateBtn.style.cssText = "border:1px dashed var(--neutral-300);color:var(--neutral-500)";
+  saveTemplateBtn.className = "btn-ghost btn-sm quote-header-btn";   // SCRUM-139 F6: ver arriba
   saveTemplateBtn.innerHTML = "💾 Guardar como plantilla";
   saveTemplateBtn.title = "Guarda las líneas actuales como plantilla reutilizable";
 
@@ -1018,6 +1039,8 @@ blockClient.appendChild(descWrapper);
       base += lineBase;
       vatTotal += lineVat;
     });
+
+    refrescarRotuloPlantillas();
 
     const total = base + vatTotal;
     const effVat = base > 0 ? Math.round((vatTotal / base) * 100) : 0;
@@ -2289,6 +2312,92 @@ if (Number.isFinite(n) && n >= 0) {
     setResult(null);
   });
 
+  /**
+   * SCRUM-139 F6 · el ÚNICO camino de carga de una plantilla, compartido por las fichas rápidas
+   * y por el modal de la lista completa. Antes vivía suelto dentro del `onclick` del modal; con
+   * dos disparadores, duplicarlo era garantizar que uno de los dos se quedara atrás — y lo que
+   * hay dentro no es cosmético: es la lectura CRUDA de `l.tax` de SCRUM-132 y el "vaciar solo
+   * si está en blanco" de F2, dos correcciones que costaron su propio ticket.
+   */
+  function cargarPlantilla(tpl) {
+    if (editorEnBlanco()) {
+      linesBody.innerHTML = '';
+      lines = [];
+    }
+    const templateLines = Array.isArray(tpl.lines) ? tpl.lines : [];
+    templateLines.forEach(function (l) {
+      // SCRUM-132: `l.tax` CRUDO, sin `|| 0`. El `|| 0` convertía "esta línea no trae IVA" en
+      // "IVA 0 %", y desde SCRUM-65 el 0 % es un tipo legítimo (21/10/4/0).
+      addLine({ concept: l.concept, qty: l.qty, price: l.price, tax: l.tax });
+    });
+    setAlert('success', `Plantilla "${tpl.name}" cargada — ${templateLines.length} líneas añadidas.`);
+    return templateLines.length;
+  }
+
+  /**
+   * SCRUM-139 F6 · pinta las fichas rápidas. Se llama UNA vez al abrir el editor.
+   *
+   * Reglas de cuántas y cuándo (para que las fichas y el botón de la cabecera no digan lo mismo):
+   *   · sin plantillas  → sin fichas; el botón se queda, que es quien explica cómo crear una.
+   *   · hasta 3         → fichas y NADA MÁS: el botón abriría un modal con esas mismas tres.
+   *   · más de 3        → 3 fichas + el botón, ya como "ver las N".
+   * Si la petición falla no se avisa de nada: es un atajo, no una función que el usuario haya
+   * pedido; el camino del modal sigue entero y molestar con un error sería ruido.
+   */
+  let plantillasRotulo = null;
+
+  function refrescarRotuloPlantillas() {
+    if (!plantillasRotulo) return;
+    plantillasRotulo.textContent = editorEnBlanco()
+      ? 'Empieza con una plantilla'
+      : 'Añadir una plantilla';
+  }
+
+  async function pintarPlantillasRapidas() {
+    let templates;
+    try {
+      templates = await apiRequest('/admin/templates');
+    } catch (_e) {
+      return;
+    }
+    if (!Array.isArray(templates) || templates.length === 0) return;
+
+    const visibles = templates.slice(0, 3);
+    plantillasRapidas.innerHTML = '';
+
+    // El rótulo dice la VERDAD en los dos estados. "Empieza con una plantilla" sobre un
+    // presupuesto a medio escribir sería falso, y además esconde lo que de verdad pasa al
+    // tocar la ficha con contenido delante: que las líneas se AÑADEN (semántica de F2).
+    plantillasRotulo = document.createElement('span');
+    plantillasRotulo.className = 'quote-plantillas__label';
+    plantillasRapidas.appendChild(plantillasRotulo);
+    refrescarRotuloPlantillas();
+
+    visibles.forEach(function (tpl) {
+      const n = Array.isArray(tpl.lines) ? tpl.lines.length : 0;
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'quote-plantilla-chip';
+      chip.title = `Añadir las ${n} líneas de "${tpl.name}"`;
+      const nombre = document.createElement('span');
+      nombre.className = 'quote-plantilla-chip__nombre';
+      nombre.textContent = tpl.name;
+      const meta = document.createElement('span');
+      meta.className = 'quote-plantilla-chip__meta';
+      meta.textContent = n + (n === 1 ? ' línea' : ' líneas');
+      chip.appendChild(nombre);
+      chip.appendChild(meta);
+      chip.addEventListener('click', function () { cargarPlantilla(tpl); });
+      plantillasRapidas.appendChild(chip);
+    });
+
+    plantillasRapidas.hidden = false;
+    if (templates.length > 3) useTemplateBtn.innerHTML = `📋 Ver las ${templates.length}`;
+    else useTemplateBtn.hidden = true;
+  }
+
+  pintarPlantillasRapidas();
+
   // ── Botón "📋 Usar plantilla" ────────────────────────────────────────────
   useTemplateBtn.addEventListener("click", async function () {
     let templates;
@@ -2339,28 +2448,12 @@ if (Number.isFinite(n) && n >= 0) {
         <span style="font-size:12px;color:var(--green-600);font-weight:600">Usar →</span>
       `;
       btn.onclick = function () {
-        // SCRUM-139 F2: se vacía si el editor está EN BLANCO; si el usuario ya escribió algo,
-        // la plantilla se AÑADE debajo.
-        //
-        // Antes había un `else` que borraba TODO en cuanto hubiera 2+ filas: cargar una
-        // plantilla destruía en silencio las líneas ya escritas. Con el cuadernillo ese camino
-        // pasaría a dispararse SIEMPRE (ahora hay 3 filas de salida), así que había que tocarlo
-        // igualmente. Se corrige hacia lo que la propia pantalla promete: el modal dice "cargar
-        // sus líneas en el presupuesto actual" y el aviso de éxito dice "N líneas añadidas".
-        if (editorEnBlanco()) {
-          linesBody.innerHTML = '';
-          lines = [];
-        }
-        // Cargar líneas de la plantilla
-        const templateLines = Array.isArray(tpl.lines) ? tpl.lines : [];
-        templateLines.forEach(function (l) {
-          // SCRUM-132: `l.tax` CRUDO, sin `|| 0`. El `|| 0` convertía "esta línea no trae IVA"
-          // en "IVA 0 %", y desde SCRUM-65 el 0 % es un tipo legítimo (21/10/4/0): con él, una
-          // línea sin IVA guardado se emitía al 0 % en vez de heredar el IVA por defecto.
-          addLine({ concept: l.concept, qty: l.qty, price: l.price, tax: l.tax });
-        });
+        // SCRUM-139 F6: un ÚNICO camino de carga, el mismo que usan las fichas rápidas. Antes
+        // esta lógica vivía suelta aquí dentro; con dos disparadores, duplicarla era garantizar
+        // que uno de los dos se quedara sin la lectura cruda de `l.tax` (SCRUM-132) o sin el
+        // "vaciar solo si está en blanco" (F2).
+        cargarPlantilla(tpl);
         closeOverlay();
-        setAlert('success', `Plantilla "${tpl.name}" cargada — ${templateLines.length} líneas añadidas.`);
       };
       tplList.appendChild(btn);
     });
