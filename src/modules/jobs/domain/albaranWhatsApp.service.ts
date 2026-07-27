@@ -11,7 +11,8 @@ import crypto from 'crypto';
 import fs from 'fs';
 import { prisma } from '../../../core/db/prisma';
 import { normalizePhone } from '../../../core/utils/utils';
-import { sendWhatsAppTemplate, uploadWhatsAppMedia } from '../../../integrations/whatsapp';
+import { sendWhatsAppTemplate, sendWhatsAppWindowFirst, uploadWhatsAppMedia } from '../../../integrations/whatsapp';
+import { BASE_URL } from '../../../core/config/env'; // SCRUM-62
 import { buildAlbaranFirmado, buildAlbaranParaFirmar } from '../../../integrations/whatsappTemplates';
 import { ensureAlbaranPdf } from './albaran.service';
 import { SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../lib/sendOutcome';
@@ -138,12 +139,41 @@ export async function sendAlbaranParaFirmarWhatsApp(albaranId: number): Promise<
     albaranNumber: albaran.numero,
     token,
   });
-  const result: any = await sendWhatsAppTemplate({
+  /**
+   * SCRUM-62 · VENTANA PRIMERO. Esto mandaba SIEMPRE plantilla (~0,023 EUR cada envío) aunque la
+   * ventana de servicio de 24 h estuviera abierta, donde el mismo mensaje es GRATIS. La
+   * detección de ventana ya existía y se puebla sola (`recordInboundWaMessage` con cada
+   * entrante, incluido el toque de "Recibido"): no hace falta tracking nuevo.
+   *
+   * Se reutiliza `sendWhatsAppWindowFirst` ENTERA en vez de re-implementar el criterio: dentro
+   * viven el respeto al opt-out (J3), `isServiceWindowOpen`, el fallback a plantilla si el texto
+   * falla y el registro en WA-0b con `costEstimate: 0`. Es el mismo camino que ya usan
+   * presupuesto, factura y recordatorio — así esta vía y `a55-window-quote` NO PUEDEN discrepar,
+   * porque no hay dos criterios: hay uno.
+   *
+   * El texto de ventana es K1 OFICIAL, aprobado por el fundador el 27-jul-2026 (regla 30):
+   * calcado en estructura al del presupuesto y con las MISMAS tres variables que la plantilla ya
+   * aprobada en Meta (cliente, empresa, número), sin añadir información que la plantilla no diga.
+   */
+  const enlaceFirma = `${BASE_URL}/albaran/${token}`;
+  const nombreCliente = (customer?.name || '').trim() || 'cliente';
+  const cuerpoVentana =
+    `Hola ${nombreCliente} 👋
+` +
+    `*${businessName}* te ha preparado el parte de trabajo:
+` +
+    `📄 *Albarán ${albaran.numero}*`;
+
+  const result: any = await sendWhatsAppWindowFirst({
     to,
     merchantId: albaran.merchantId,
-    templateName: msg.templateName,
-    languageCode: msg.languageCode,
-    components: msg.components,
+    customerId: customer?.id ?? null,
+    // Sin botón (camino de reserva de la propia función): el enlace va dentro del texto.
+    windowText: `${cuerpoVentana}
+${enlaceFirma}`,
+    // Con botón-enlace, que es la vía normal: nada de URL cruda en el cuerpo (A23).
+    windowCta: { bodyText: cuerpoVentana, buttonText: 'Ver y firmar', url: enlaceFirma },
+    template: { templateName: msg.templateName, languageCode: msg.languageCode, components: msg.components },
     log: { customerId: customer?.id ?? null, relatedType: 'albaran', relatedId: albaran.id },
   });
   if (!result?.ok) {
