@@ -1031,6 +1031,48 @@ html, body { overflow-x: clip; }
    en ≥768 px — un solo DOM, sin scroll lateral en ninguna anchura. Sin cabecera de tabla, cada
    campo lleva su etiqueta (`.quote-line__label`, estilo Label de DESIGN.md).
    Componente nuevo → propuesto al inventario AB3. Solo tokens: cero valores inventados. */
+/* SCRUM-139 F6 · PLANTILLAS A UN TOQUE, dentro del propio cuadernillo.
+   Fichas, no lista en un modal: usar una plantilla eran tres pasos (abrir, leer, elegir) para
+   el oficio que repite el mismo trabajo diez veces al mes. Se pintan como mucho 3; a partir de
+   ahí el botón de la cabecera pasa a ser "ver las N", para que ficha y botón no digan lo mismo. */
+.quote-plantillas {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-bottom: 12px;
+}
+.quote-plantillas__label {
+  font-size: 12px; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--muted, #6b756f);
+  width: 100%;
+}
+/* Ficha SÓLIDA: ni discontinua (desde F2 eso es "+ Añadir línea" = crear) ni con borde de
+   input (no es un campo). Target de 44 px al pulgar (AB6). */
+.quote-plantilla-chip {
+  display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  min-height: 44px; padding: 6px 14px;
+  border: 1px solid var(--border, #e7e9e5);
+  border-radius: 999px;
+  background: var(--surface, #fff);
+  color: var(--ink, #0f1c17);
+  font: inherit; cursor: pointer;
+  max-width: 100%;
+}
+.quote-plantilla-chip:hover { background: var(--bg, #f6f7f5); }
+.quote-plantilla-chip:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(34,197,94,.30); }
+.quote-plantilla-chip__nombre {
+  font-size: 14px; font-weight: 600; max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.quote-plantilla-chip__meta { font-size: 11px; color: var(--muted, #6b756f); }
+
+/* Botones de la cabecera de líneas (IA, plantillas, guardar como plantilla): venían con sus
+   estilos EN LÍNEA y con borde discontinuo. Aquí, como clase y sin discontinuo. */
+.quote-header-btn {
+  font-size: 12px; padding: 6px 10px;
+  border: 1px solid var(--border, #e7e9e5); border-radius: 999px;
+  color: var(--muted, #6b756f); background: transparent;
+}
+.quote-header-btn:hover { color: var(--ink, #0f1c17); background: var(--bg, #f6f7f5); }
+
 .quote-lines { display: flex; flex-direction: column; gap: 10px; }
 
 .quote-line {
