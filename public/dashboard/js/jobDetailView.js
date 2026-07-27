@@ -426,6 +426,33 @@ async function renderJobDetailView(container, jobId) {
   valoradoLabel.appendChild(valoradoCheck);
   valoradoLabel.appendChild(document.createTextNode('Incluir precios en el parte'));
   newAlbRow.appendChild(valoradoLabel);
+
+  // ── SCRUM-135: "+ Añadir gasto" ya vinculado a ESTE trabajo ──────────────────
+  // Es el alta rápida "desde la furgoneta" que SCRUM-107 dejó aparcada hasta que existiera
+  // Expense.teamMemberId (SCRUM-109, ya en prod): el técnico compra material y lo registra
+  // sin llamar al jefe. Por eso NO lleva veta `isTecnico` — a diferencia de las acciones de
+  // dinero, POST /admin/expenses está abierto a técnico a propósito, y la autoría se rellena
+  // sola con su teamMemberId. Este es además su ÚNICO camino: el nav de Gastos está oculto
+  // para él (app.js), y aquí no hace falta que elija trabajo porque ya está dentro de uno.
+  //
+  // El botón solo aparece si el Trabajo tiene presupuesto: el gasto se guarda por quoteId y
+  // sin él no hay nada que vincular (mismo caso que las opciones deshabilitadas del selector).
+  if (job.quote?.id != null && typeof openExpenseModal === 'function') {
+    const gastoBtn = document.createElement('button');
+    gastoBtn.className = 'btn-secondary btn-sm';
+    gastoBtn.textContent = '+ Añadir gasto';
+    gastoBtn.addEventListener('click', () => {
+      openExpenseModal(null, {
+        job: { id: job.id, quoteId: job.quote.id, titulo: job.titulo },
+        // No hay vista de Gastos que recargar aquí (y para un técnico sus dos llamadas serían
+        // 403): basta con confirmar. El gasto no se pinta en esta ficha — mostrar el gasto en
+        // el Trabajo sería rentabilidad por obra, que es otro ticket.
+        onSaved: () => { showToast('✓ Gasto añadido a este trabajo.'); },
+      });
+    });
+    newAlbRow.appendChild(gastoBtn);
+  }
+
   docsSec.appendChild(newAlbRow);
   const valoradoHint = document.createElement('p');
   valoradoHint.style.cssText = 'margin:4px 0 10px;color:var(--muted);font-size:12px';
