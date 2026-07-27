@@ -1,4 +1,28 @@
 // public/dashboard/js/teamView.js
+//
+// SCRUM-136: HUB único de Equipo. Antes el equipo vivía en TRES sitios que listaban el mismo
+// roster de tres formas distintas: esta pantalla (alta/roles), "Operarios" (dinero por
+// operario) y el panel del Inicio (presupuestos del mes). El pro no sabía dónde iba cada
+// cosa. Ahora la lista lleva el resumen dentro y "Operarios" desaparece como apartado.
+//
+// El resumen llega YA resuelto en `m.resumen` (GET /admin/team, una sola petición).
+//
+// ⚠️ DOS VENTANAS DISTINTAS, escritas al lado del número a propósito: los presupuestos son
+// del MES en curso (se atribuyen por quien los creó) y los trabajos son del HISTÓRICO
+// completo (por quien los originó). Son preguntas distintas y así lo agregan los servicios
+// que ya existían; presentarlas bajo una etiqueta común diría algo falso.
+
+// A20.3: el schema guarda 'tecnico', pero al pro se le dice "Operario" en TODA la app.
+// Antes homeView escribía "Técnico" y estas dos pantallas "Operario", para el mismo valor.
+function teamRoleLabel(member) {
+  if (member.isOwner) return 'Propietario';
+  return member.role === 'admin' ? 'Admin' : 'Operario';
+}
+
+function teamRoleClass(member) {
+  if (member.isOwner) return 'status-pill-accepted';
+  return member.role === 'admin' ? 'status-pill-accepted' : 'status-pill-pending';
+}
 
 async function renderTeamView(container) {
   container.innerHTML = '';
@@ -13,10 +37,10 @@ async function renderTeamView(container) {
   header.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap';
   header.innerHTML = `
     <div>
-      <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Miembros del equipo</h2>
-      <p style="margin:0;font-size:13px;color:var(--neutral-400)">Invita colaboradores a tu cuenta. Los operarios pueden crear presupuestos pero no tocar la configuración.</p>
+      <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Equipo</h2>
+      <p style="margin:0;font-size:13px;color:var(--neutral-400)">Quién trabaja contigo y qué lleva cada uno. Los operarios pueden crear presupuestos y registrar gastos, pero no tocan la configuración.</p>
     </div>
-    <button class="btn-primary btn-sm" id="btn-invite-member">+ Invitar miembro</button>
+    <button class="btn-primary btn-sm" id="btn-invite-member">+ Añadir miembro</button>
   `;
   wrap.appendChild(header);
 
@@ -34,64 +58,79 @@ async function renderTeamView(container) {
     alertBox.style.display = (type || msg) ? 'block' : 'none';
   }
 
-  // Tabla de miembros
-  const tableCard = document.createElement('div');
-  tableCard.className = 'data-card';
-  wrap.appendChild(tableCard);
-
-  const tableScroll = document.createElement('div');
-  tableScroll.className = 'table-scroll';
-  tableCard.appendChild(tableScroll);
-
-  const table = document.createElement('table');
-  table.className = 'table table--stack-mobile'; // feedback fundador 6-jul
-  tableScroll.appendChild(table);
+  // SCRUM-136: lista de CARDS, no tabla. Cada miembro trae ahora su resumen (5 cifras), y
+  // eso en una tabla obliga a 9 columnas que en móvil se apilan en una torre ilegible. La
+  // card es el patrón que ya usa la vista que absorbemos (operariosView) y el resto de listas
+  // con dinero de la casa (AB3).
+  const listWrap = document.createElement('div');
+  listWrap.style.cssText = 'display:flex;flex-direction:column;gap:12px';
+  wrap.appendChild(listWrap);
 
   async function loadMembers() {
-    table.innerHTML = `<thead><tr>
-      <th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th style="width:120px"></th>
-    </tr></thead>`;
-    const tbody = document.createElement('tbody');
-    table.appendChild(tbody);
+    uiSkeletonCards(listWrap, 3);
 
     let members;
     try {
       members = await apiRequest('/admin/team');
     } catch {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--neutral-400);padding:32px">Error al cargar el equipo.</td></tr>`;
+      uiErrorState(listWrap, 'No pudimos cargar el equipo.', loadMembers);
       return;
     }
 
-    if (!members.length) {
-      // A6.5: estado vacío digno (mismo patrón que el resto de listas)
-      tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-state-icon">👷</div>
+    listWrap.innerHTML = '';
+
+    // El propietario SIEMPRE viene (se sintetiza en backend), así que "sin equipo" es
+    // "sólo estoy yo", no una lista vacía: por eso el estado vacío mira si hay ALGUIEN MÁS.
+    if (members.filter((m) => !m.isOwner).length === 0) {
+      const vacio = document.createElement('div');
+      vacio.className = 'customers-card';
+      vacio.innerHTML = `<div class="empty-state"><div class="empty-state-icon">👷</div>
         <div class="empty-state-title">Trabaja en equipo</div>
-        <div class="empty-state-desc">Invita a tus operarios: podrán crear presupuestos desde la obra y tú apruebas los que pasen de tu umbral.</div>
-      </div></td></tr>`;
+        <div class="empty-state-desc">Invita a tus operarios: podrán crear presupuestos desde la obra y registrar gastos del trabajo, y tú apruebas los que pasen de tu umbral.</div>
+      </div>`;
+      listWrap.appendChild(vacio);
       return;
     }
 
     members.forEach((m) => {
-      const tr = document.createElement('tr');
+      const tr = document.createElement('div');
+      tr.className = 'customers-card';
+      tr.style.cssText = 'display:flex;flex-direction:column;gap:10px';
 
-      const roleLabel  = m.role === 'admin' ? 'Admin' : 'Operario'; // A20.3
-      const roleClass  = m.role === 'admin' ? 'status-pill-accepted' : 'status-pill-pending';
+      const roleLabel  = teamRoleLabel(m);
+      const roleClass  = teamRoleClass(m);
       const statusLabel = { active: 'Activo', invited: 'Invitado', suspended: 'Suspendido' }[m.status] || m.status;
       const statusClass = { active: 'status-pill-accepted', invited: 'status-pill-pending', suspended: 'status-pill-rejected' }[m.status] || '';
+      const r = m.resumen || { presupuestosEnviados: 0, presupuestosAceptados: 0, trabajosAbiertos: 0, trabajosTotales: 0, pendiente: 0 };
+      const cur = (window.appLocale && window.appLocale.currency) || 'EUR';
 
       tr.innerHTML = `
-        <td class="cell-title">${esc(m.name)}${m.isOwner ? ' <span style="font-size:11px;color:var(--neutral-400);font-weight:400">(propietario)</span>' : ''}</td>
-        <td class="col-hide-mobile" style="color:var(--neutral-500)">${esc(m.email)}</td>
-        <td><span class="status-pill ${roleClass}">${roleLabel}</span></td>
-        <td><span class="status-pill ${statusClass}">${statusLabel}</span></td>
-        <td class="cell-actions"></td>
+        <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;color:var(--ink);font-size:15px">${esc(m.name)}</div>
+            <div style="font-size:12.5px;color:var(--neutral-500);margin-top:2px;word-break:break-all">${esc(m.email)}</div>
+            <div style="margin-top:6px">
+              <span class="status-pill ${roleClass}">${roleLabel}</span>
+              ${m.isOwner ? '' : ` <span class="status-pill ${statusClass}">${statusLabel}</span>`}
+            </div>
+          </div>
+          <div style="flex:none;text-align:right">
+            <div style="font-size:12px;color:var(--muted)">Pendiente de cobrar</div>
+            <div style="font-weight:700;color:var(--ink);font-size:16px;font-variant-numeric:tabular-nums">${fmtMoneyEs(r.pendiente, cur)}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);border-top:1px solid var(--neutral-100);padding-top:10px">
+          <span>Presupuestos <b style="color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums">${r.presupuestosEnviados}</b> <span style="color:var(--neutral-400)">este mes</span>${r.presupuestosEnviados > 0 ? ` · ${r.presupuestosAceptados} aceptados` : ''}</span>
+          <span>Trabajos abiertos <b style="color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums">${r.trabajosAbiertos}</b> <span style="color:var(--neutral-400)">de ${r.trabajosTotales} en total</span></span>
+        </div>
+        <div class="cell-actions"></div>
       `;
 
-      const actionsCell = tr.querySelector('td:last-child');
+      const actionsCell = tr.querySelector('.cell-actions');
 
       if (!m.isOwner) {
         const actionsDiv = document.createElement('div');
-        actionsDiv.style.cssText = 'display:flex;gap:6px;justify-content:flex-end';
+        actionsDiv.style.cssText = 'display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap';
 
         if (m.status !== 'suspended') {
           // Botón editar
@@ -148,7 +187,7 @@ async function renderTeamView(container) {
         actionsCell.appendChild(actionsDiv);
       }
 
-      tbody.appendChild(tr);
+      listWrap.appendChild(tr);
     });
   }
 

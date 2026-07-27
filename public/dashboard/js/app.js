@@ -38,9 +38,9 @@ async function initApp() {
 
   // Ocultar elementos de navegación para técnicos
   if (window.appUserRole !== 'admin') {
-    // SCRUM-24: la supervisión por operario es solo del admin (S1). Ocultar el nav es
-    // UX; la seguridad real la da el 403 de GET /admin/metrics/operarios (backend, S3).
-    ['nav-plans', 'nav-team', 'nav-operarios'].forEach((id) => {
+    // SCRUM-24/136: la gestión y supervisión del equipo es solo del admin (S1). Ocultar el
+    // nav es UX; la seguridad real la da el requireRole('admin') de /admin/team (backend, S3).
+    ['nav-plans', 'nav-team'].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
@@ -264,17 +264,12 @@ async function initApp() {
           renderTeamView(viewContainer);
         }
         break;
+      // SCRUM-136: 'operarios' se fusiona en 'team' (un operario es un ROL del miembro, no
+      // un apartado). Se mantiene el case como REDIRECCIÓN, no se borra: hay enlaces y
+      // marcadores vivos apuntando ahí, y el guard de rol de 'team' es el mismo, así que
+      // caer en Equipo es exactamente lo que el usuario venía buscando.
       case 'operarios':
-        // SCRUM-24: mismo guard que 'team' — un técnico no entra ni tecleando la vista
-        if (window.appUserRole !== 'admin') {
-          viewTitle.textContent = 'Inicio';
-          renderHomeView(viewContainer);
-          view = 'home';
-        } else {
-          viewTitle.textContent = 'Operarios';
-          if (typeof renderOperariosView === 'function') renderOperariosView(viewContainer);
-        }
-        break;
+        return renderView('team', options);
       case 'settings':
         // A1.3: guard como en 'team' — un técnico no entra ni tecleando la vista
         if (window.appUserRole !== 'admin') {
