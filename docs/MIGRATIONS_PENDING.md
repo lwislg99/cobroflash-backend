@@ -11,6 +11,35 @@
 > **NO uses `migrate deploy`/`migrate dev`** — aplicaría un schema viejo (entorno nuevo) o
 > propondría un reset. `db push` es el ÚNICO mecanismo. (Volver a migrate = SCRUM-40 opción A.)
 
+## SCRUM-145 · `invoices.vf_timestamp` + `vf_anul_hash` + `vf_anul_timestamp` (VeriFactu) — ⏳ PENDIENTE (staging y prod)
+
+```sql
+ALTER TABLE "invoices" ADD COLUMN     "vf_anul_hash" TEXT,
+ADD COLUMN     "vf_anul_timestamp" TIMESTAMP(3),
+ADD COLUMN     "vf_timestamp" TIMESTAMP(3);
+```
+
+- **Preview real** (`prisma migrate diff` contra staging, 24-jul): exactamente esas 3
+  sentencias. **0 DROPs, 0 ALTER de columnas existentes**, las 3 nullable → aditiva pura.
+- **Para qué:** `vf_timestamp` guarda el instante EXACTO (con huso) que entró en el cálculo de
+  la huella — hoy el registro emite el momento de la FACTURA, que no es el que se hasheó, así
+  que un tercero **no puede recomputar la huella**. `vf_anul_hash`/`vf_anul_timestamp` son del
+  registro de **anulación**, que es un registro distinto con su propia huella (regla 29: la
+  factura anulada conserva la suya).
+- ⚠️ **ORDEN OBLIGATORIO (dos schemas en vuelo, 24-jul):** antes de empujar, `git pull` y
+  comprobar que el `schema.prisma` local contiene **todo** lo que hay en `main`. Empujar desde
+  un schema viejo **borraría columnas ajenas** de staging — estuvo a punto de pasar dos veces
+  el mismo día. El preview de arriba se hizo con `schema.prisma` **idéntico a `main`**
+  (verificado con `git diff origin/main -- prisma/schema.prisma`, vacío).
+- ⚠️ **NO regenerar el cliente Prisma antes del push a staging:** el `node_modules` está
+  compartido por junction entre worktrees; un cliente con estas columnas contra una BD que aún
+  no las tiene rompe cualquier lectura de `invoices` (`SELECT` de columna inexistente) — y con
+  ello los tests gateados de la OTRA sesión.
+- **Estado:** staging ⏳ (pendiente de ventana con la otra sesión) · prod ⏳ (después, con su
+  propio preview y GO aparte, vía `bash scripts/db-push-prod`).
+- **Inerte hasta entonces:** ningún código lee ni escribe estas columnas todavía; todo el
+  registro sigue tras `INVOICING_ES_ENABLED` OFF (regla 24).
+
 ## SCRUM-109 · `expenses.team_member_id` — ✅ APLICADO en prod (2026-07-23)
 
 ```sql

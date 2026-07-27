@@ -523,6 +523,23 @@ combate — por eso, con la campaña cerrada, se documentó en vez de recontar: 
 > la suya**. Los 4 huérfanos `qa-s74-*` (#339, #340, #381, #383) viven en `railway` (Sesión 2);
 > medidos inocuos en SCRUM-79.
 
+> **Orden obligatorio de un `db push` con varias sesiones vivas (24-jul-2026).** Dos schemas en
+> vuelo el mismo día estuvieron a punto de BORRAR una columna ajena de staging: una sesión iba a
+> empujar desde un `schema.prisma` que venía de un `main` sin ella. La secuencia que lo evita:
+>
+> 1. `git pull` y **`git diff origin/main -- prisma/schema.prisma`**: si sale algo que no es tuyo,
+>    PARA. Empujar desde un schema viejo no "añade lo tuyo": **sincroniza**, y lo que falte se borra.
+> 2. Comprobar que **nadie está dentro** de staging — con datos, no por suposición:
+>    `pg_stat_activity` (conexiones y consultas activas) + fixtures QA recién creadas.
+> 3. Preview (`prisma migrate diff`) y enseñarlo. Cero DROPs y cero ALTER de columnas ajenas.
+> 4. `db push` **con `--skip-generate`**.
+> 5. **Regenerar el cliente DESPUÉS del push, nunca antes.** `node_modules` está compartido por
+>    junction entre worktrees: un cliente con columnas que la BD todavía no tiene rompe **cualquier
+>    lectura** de esa tabla (`SELECT` de columna inexistente) — incluidos los tests gateados de las
+>    OTRAS sesiones, que no han tocado nada.
+>
+> Prod va aparte: su propio preview y su propio GO (`bash scripts/db-push-prod`).
+
 > **Cómo saber si hay «schema en vuelo» — NO por el diff (23-jul-2026).** Buscar ramas o worktrees
 > con cambios en `prisma/schema.prisma` **no es fiable**: da falsos positivos en las dos direcciones.
 > - Una **rama mergeada sin borrar** conserva su diff de `schema.prisma` frente a un `main` viejo:

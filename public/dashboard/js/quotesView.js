@@ -1522,7 +1522,9 @@ priceInput.value = String(base.toFixed(2));
 
   if (typeof it.vat !== "undefined" && it.vat !== null && it.vat !== "") {
     const v = Number(it.vat);
-    if (Number.isFinite(v)) vatInput.value = String(v * 100);
+    // SCRUM-132: el producto guarda el IVA en FRACCIÓN; el input lo quiere en porcentaje.
+    // Vía `fractionToPercent` para no volver a escribir "21.000000000000004" en el campo.
+    if (Number.isFinite(v)) vatInput.value = String(fractionToPercent(v));
   }
 
   hide();
@@ -1722,6 +1724,15 @@ conceptInput.addEventListener("input", () => {
     }, true);
   }
 
+  // SCRUM-132: fracción (0.21) → porcentaje para el input (21). Redondea a 2 decimales de
+  // PORCENTAJE porque `0.21 * 100` da 21.000000000000004 en coma flotante — sin esto el campo
+  // muestra esa ristra de decimales. 2 decimales admiten tipos no enteros (p. ej. 4,5 %) sin
+  // inventar precisión.
+  function fractionToPercent(tax) {
+    const n = Number(tax);
+    return Number.isFinite(n) ? Math.round(n * 10000) / 100 : 0;
+  }
+
   function addLine(initial) {
     const tr = document.createElement("tr");
 
@@ -1781,8 +1792,18 @@ markupTd.appendChild(markupInput);
     vatInput.type = "number";
     vatInput.min = "0";
     vatInput.step = "1";
+    // SCRUM-132: el IVA llega en DOS unidades según de dónde venga la línea, y antes solo se
+    // leía una — por eso el "IVA por defecto" PISABA el IVA real de plantillas y de la IA:
+    //   · `vat`  = PORCENTAJE (21)   → borrador de localStorage, autocompletado de producto
+    //   · `tax`  = FRACCIÓN (0.21)   → plantillas y líneas sugeridas por la IA (contrato del back)
+    // Convierte el RECEPTOR, no cada llamador: así las tres rutas de carga quedan bien sin
+    // tocar sus call-sites (que además son zona de SCRUM-134).
+    // El general SIEMBRA, nunca PISA: solo se aplica si la línea no trae IVA propio.
     if (initial && initial.vat != null) {
       vatInput.value = initial.vat;
+    } else if (initial && initial.tax != null) {
+      // `tax: 0` es un tipo LEGÍTIMO (0 %, SCRUM-65), no "sin especificar" → no cae al default.
+      vatInput.value = String(fractionToPercent(initial.tax));
     } else {
       const def = fieldVatDefault.input.value || "21";
       vatInput.value = def;
@@ -2051,7 +2072,10 @@ if (Number.isFinite(n) && n >= 0) {
         // Cargar líneas de la plantilla
         const templateLines = Array.isArray(tpl.lines) ? tpl.lines : [];
         templateLines.forEach(function (l) {
-          addLine({ concept: l.concept, qty: l.qty, price: l.price, tax: (l.tax || 0) });
+          // SCRUM-132: `l.tax` CRUDO, sin `|| 0`. El `|| 0` convertía "esta línea no trae IVA"
+          // en "IVA 0 %", y desde SCRUM-65 el 0 % es un tipo legítimo (21/10/4/0): con él, una
+          // línea sin IVA guardado se emitía al 0 % en vez de heredar el IVA por defecto.
+          addLine({ concept: l.concept, qty: l.qty, price: l.price, tax: l.tax });
         });
         closeOverlay();
         setAlert('success', `Plantilla "${tpl.name}" cargada — ${templateLines.length} líneas añadidas.`);
