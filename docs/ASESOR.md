@@ -48,7 +48,7 @@ Todo lo demás — endpoints, lógica, UI, tests, envíos de WhatsApp, PDFs — 
 ## 4. LO QUE NINGÚN CARRIL HACE (coordinación mínima, no burocracia)
 Estas tres cosas no son "pedir permiso"; son lo que evita que dos personas choquen. Un programador humano tampoco las hace:
 1. **No reabrir un ticket que el otro carril ya cerró, ni redefinir su alcance.** Si crees que le falta algo a un ticket cerrado → abre uno NUEVO o coméntalo, no lo reabras. (Origen: incidente SCRUM-22, 16-jul.)
-2. **No tocar archivos del dominio del otro carril sin avisar en el ticket.** Carril A: jobs/albaranes, quotes, WhatsApp, fiscal, pagos, PDFs, `jobDetailView.js`/`homeView.js`, landings. Carril B: operarios/equipo, export (archivos NUEVOS). Zona roja compartida (avisar antes): `app.ts`, serializers, `SUITE_REGRESION.md`, `package.json`, `YAQU_MASTER.md`.
+2. **No tocar archivos del dominio del otro carril sin avisar en el ticket.** Carril A: jobs/albaranes, quotes, WhatsApp, fiscal, pagos, PDFs, `jobDetailView.js`/`homeView.js`, landings. Carril B: operarios/equipo, export (archivos NUEVOS). Zona roja compartida (avisar antes): **la lista NO se repite aquí a propósito** — vive en `ZONA_ROJA` (`scripts/zona-roja.mjs`) y un job de CI comenta en cada PR qué toca (SCRUM-168). Antes había tres copias a mano de esta lista —esta, la de `PLAN_EJECUCION_Y_PARALELO.md` §3.2 y la que se suponía en un `CODEOWNERS` que nunca existió— y ya habían derivado: esta omitía `prisma/schema.prisma`, `jobDetailView.js` y `homeView.js`. Una lista repetida en prosa es una lista que se separa.
 3. **No editar `schema.prisma` de prod fuera del carril A** (§3).
 
 Fuera de estas tres, vía libre.

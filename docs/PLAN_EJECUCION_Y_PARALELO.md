@@ -69,7 +69,11 @@ Cada carril es DUEÑO de sus módulos. El dueño puede tocarlos sin preguntar; e
 
 **Dominio JAVIER (carril B):** equipo/operarios (roles, invitaciones, visibilidad), export. Sus vistas de UI van en **ARCHIVOS NUEVOS** (`operariosView.js`, `exportView.js`...), nunca dentro de las vistas existentes.
 
-**ZONA ROJA (compartida — reglas especiales, §3.3):** `prisma/schema.prisma`, `src/app.ts`, `jobs.routes.ts` (serializers), `public/dashboard/js/jobDetailView.js` y `homeView.js`, `docs/QA/SUITE_REGRESION.md`, `package.json`, `docs/YAQU_MASTER.md`.
+**ZONA ROJA (compartida — reglas especiales, §3.3):** `prisma/schema.prisma`, `src/app.ts`, `jobs.routes.ts`, `public/dashboard/js/jobDetailView.js`, `homeView.js`, `docs/QA/SUITE_REGRESION.md`, `package.json`, `docs/YAQU_MASTER.md`.
+
+> 📌 **Esta frase describe; la lista que MANDA es `ZONA_ROJA` en `scripts/zona-roja.mjs`** (SCRUM-168). Un test falla si las dos se separan, así que editar aquí sin editar allí sale en rojo. El job de CI `zona-roja.yml` comenta en cada PR qué ficheros de la lista toca, con el motivo de cada uno. **No hay gate de «Require review from Code Owners» y no va a haberlo** (decisión del fundador, 27-jul-2026): este aviso no complementa a nada, es la única señal que existe sobre la zona roja, para los dos carriles.
+>
+> **Hueco declarado — los serializers.** Salen de la lista: no son una ruta. Estaban como `jobs.routes.ts (serializers)` y esa entrada no cubría lo que decía: `serializ` aparece en 11 ficheros de 8 módulos (jobs, maintenance, exports, expenses, invoicing, quotes, `core/http`, `core/i18n`), así que cualquier patrón de ruta o deja fuera la mayoría o marca medio repo. El precedente de por qué importan es **SCRUM-97** (filtraban IBAN y `portalToken`) — y `portalToken` vive hoy en 5 ficheros, **ninguno** `jobs.routes.ts`: el caso exacto que justificaba la entrada caía fuera de ella. Se prefiere un hueco visible a una protección decorativa, porque la decorativa se cuenta como cobertura y nadie vuelve a mirarla.
 
 ### 3.2 Reglas de oro (las 8)
 1. **Un ticket = una rama = un PR.** Ramas cortas (máx 2-3 días de vida). Mergear frecuente > ramas perfectas.

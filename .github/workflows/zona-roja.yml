@@ -1,0 +1,75 @@
+# .github/workflows/zona-roja.yml — SCRUM-168
+#
+# POR QUÉ EXISTE: @lwislg99 está en la bypass list del ruleset de `main`, por una razón
+# correcta y asumida a conciencia (GitHub no deja auto-aprobarse, y sin bypass se bloquearía
+# en sus propios cambios de schema, el carril con más volumen). El efecto secundario es que
+# quien posee el schema de producción es justo quien no queda restringido por el mecanismo que
+# lo protege. Este job NO arregla eso —no debe— sino que lo hace visible: comenta en el PR que
+# ha entrado en zona roja. Un bypass silencioso y un bypass anunciado son la misma política
+# con distinto riesgo.
+#
+# NO BLOQUEA NUNCA. Sin `needs`, sin exit≠0, y con `continue-on-error` por si acaso: un aviso
+# que puede tumbar un PR por un fallo propio se acaba quitando, y entonces no avisa de nada.
+name: Zona roja
+
+on:
+  pull_request:
+    branches: [main]
+
+# El comentario necesita escritura sobre PRs. `contents: read` basta para el diff.
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: zona-roja-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  avisar:
+    name: ¿este PR toca la zona roja?
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Hace falta el histórico para poder diffear contra la base. Con el default
+          # (fetch-depth 1) `git diff base...HEAD` no tiene contra qué comparar.
+          fetch-depth: 0
+
+      # La lista de ficheros sale del diff de tres puntos (base...HEAD): son los cambios que
+      # el PR APORTA, sin contar lo que `main` haya avanzado por su cuenta. Con dos puntos,
+      # una rama con unos días encima aparecería tocando media casa.
+      - name: Ficheros que cambia el PR
+        run: |
+          git fetch origin "${{ github.base_ref }}" --depth=0 -q
+          git diff --name-only "origin/${{ github.base_ref }}...HEAD" > cambiados.txt
+          echo "── ficheros del PR ──"; cat cambiados.txt
+
+      - name: Detectar zona roja
+        run: node scripts/zona-roja.mjs cambiados.txt > informe.md; cat informe.md
+
+      # Un comentario por PR, actualizado — no uno por push. Se busca por la marca HTML que
+      # escribe el propio informe. Sin esto, un PR con diez pushes acumula diez avisos
+      # idénticos y la gente aprende a no leerlos.
+      - name: Comentar en el PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ ! -s informe.md ]; then
+            echo "El PR no toca la zona roja: no se comenta nada."
+            exit 0
+          fi
+          EXISTENTE=$(gh api "repos/$REPO/issues/$PR/comments" --paginate \
+            --jq 'map(select(.body | contains("<!-- yaqu:zona-roja -->"))) | .[0].id // empty')
+          if [ -n "$EXISTENTE" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$EXISTENTE" -F body=@informe.md
+            echo "Comentario actualizado ($EXISTENTE)."
+          else
+            gh api -X POST "repos/$REPO/issues/$PR/comments" -F body=@informe.md
+            echo "Comentario creado."
+          fi
