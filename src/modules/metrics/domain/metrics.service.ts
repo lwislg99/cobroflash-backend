@@ -1,5 +1,6 @@
 import { prisma } from '../../../core/db/prisma';
 import { estadoCobroFor } from '../../jobs/domain/job.service'; // SCRUM-24: mismo semáforo que la lista de Trabajos
+import { isFieldMember } from '../../../core/http/roleCapabilities'; // SCRUM-147
 
 export async function getHomeMetrics(merchantId: number) {
   const now = new Date();
@@ -450,11 +451,14 @@ export async function getTeamMetrics(merchantId: number) {
 
   // Técnicos activos sin actividad esta semana
   const inactive = list
-    .filter((e) => e.role === 'tecnico' && e.status === 'active' && e.thisWeek === 0)
+    // SCRUM-147: por capacidad. Con `=== 'tecnico'` un rol nuevo quedaba INVISIBLE en las
+    // métricas de equipo (la otra mitad del problema de SCRUM-137). Aquí el conjunto cerrado es
+    // el EXCLUIDO (admin/propietario), así que lo desconocido SÍ se cuenta — ver roleCapabilities.
+    .filter((e) => isFieldMember(e.role) && e.status === 'active' && e.thisWeek === 0)
     .map((e) => e.name);
 
-  const tecnicoCount = members.filter((m) => m.role === 'tecnico').length;
-  return { hasTeam: tecnicoCount > 0, members: list, inactive };
+  const equipoDeCampo = members.filter((m) => isFieldMember(m.role)).length; // SCRUM-147: por capacidad
+  return { hasTeam: equipoDeCampo > 0, members: list, inactive };
 }
 
 // ──────────────────────────────────────────────────────────────────────────
