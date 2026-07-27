@@ -18,6 +18,7 @@ import {
   construirCsvsDelPaquete, csvBody, csvRow, csvNum, MAX_FACTURAS_ZIP, resolverEntregaZip, construirLeeme,
   buildClientes, buildFacturas, buildCobros, buildTrabajos, buildPresupuestos,
 } from '../../domain/exportData';
+import { resolverSeleccion } from '../../domain/seleccionExport'; // SCRUM-138 (export selectivo)
 
 const router = Router();
 
@@ -77,6 +78,14 @@ function sendCsv(res: any, filename: string, header: string[], rows: string[]) {
 router.get('/datos.zip/info', async (req, res) => {
   try {
     const { from, to } = parseDateFilter(req.query as any);
+    // SCRUM-138: el tope es de FACTURAS (lo caro es renderizar sus PDF, medición de
+    // SCRUM-83). Si la selección no las incluye, no hay nada que contar ni tope que avisar —
+    // avisarlo igual mandaría al usuario a acotar fechas por un fichero que no ha pedido.
+    // `xmlPermitido: false` a propósito: aquí no se genera XML, solo se cuenta.
+    const seleccion = resolverSeleccion(req.query.incluir, false);
+    if (!seleccion.pdfs) {
+      return res.json({ facturas: 0, maximo: MAX_FACTURAS_ZIP, excede: false });
+    }
     const facturas = await prisma.invoice.count({
       where: {
         merchantId: req.merchantId,
@@ -108,17 +117,27 @@ router.get('/datos.zip', async (req, res) => {
     const merchant = await prisma.merchant.findUnique({ where: { id: req.merchantId } });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
 
+    // ── SCRUM-138: qué se lleva el paquete ──────────────────────────────────
+    // El gate del XML se calcula ANTES y con el criterio de SIEMPRE (SCRUM-73: flag +
+    // país + NIF). `resolverSeleccion` solo puede APAGARLO (si no pides facturas), nunca
+    // encenderlo: pedir "facturas" no salta la regla 24.
+    const xmlPermitido = isFlagEnabled('INVOICING_ES_ENABLED', { merchant })
+      && merchant.country === 'ES' && !!merchant.taxId;
+    const seleccion = resolverSeleccion(req.query.incluir, xmlPermitido);
+
     // Facturas del rango: solo ids + número (el PDF se genera después, de una en una).
     // createdAt: SCRUM-82 la necesita para saber qué AÑOS naturales toca el rango (el XML
     // VeriFactu se genera por ejercicio, no por el rango pedido — ver más abajo).
-    const invoices = await prisma.invoice.findMany({
+    // SCRUM-138: si no se piden facturas no se consultan siquiera — un export de "solo
+    // gastos" no debe pagar el render de cien PDF que nadie va a recibir (coste de SCRUM-83).
+    const invoices = seleccion.pdfs ? await prisma.invoice.findMany({
       where: {
         merchantId: req.merchantId,
         ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } } : {}),
       },
       select: { id: true, number: true, createdAt: true },
       orderBy: { createdAt: 'asc' },
-    });
+    }) : [];
 
     // Tope provisional (MAX_FACTURAS_ZIP, medición §7): por encima, la espera sin recibir
     // un solo byte se dispara. Se corta ANTES de renderizar nada y se explica qué hacer.
@@ -164,8 +183,9 @@ router.get('/datos.zip', async (req, res) => {
     // el ZIP entero, ANTES de la primera cabecera — nunca "el LEEME dice que incluye
     // VeriFactu" sobre un paquete al que realmente le falta. Mejor un error explícito que
     // un entregable de inspección que miente sobre su propio contenido.
-    const conXml = isFlagEnabled('INVOICING_ES_ENABLED', { merchant })
-      && merchant.country === 'ES' && !!merchant.taxId;
+    // SCRUM-138: el gate de SCRUM-73 sigue mandando; la selección solo puede quitar el XML
+    // (si no pides facturas), jamás ponerlo. Ver resolverSeleccion: es un AND, no un OR.
+    const conXml = seleccion.xml;
 
     const xmlPorAnio: Array<{ year: number; xml: string }> = [];
     if (conXml) {
@@ -229,7 +249,7 @@ router.get('/datos.zip', async (req, res) => {
     //    REFERENCIADOS por los documentos del rango, no los dados de alta en él. El CSV
     //    suelto (/customers.csv, más abajo) sigue con el criterio de alta a propósito —
     //    responden a preguntas distintas. Ver el bloque de `buildClientes` en el dominio.
-    for (const t of await construirCsvsDelPaquete(req.merchantId, { from, to })) {
+    for (const t of await construirCsvsDelPaquete(req.merchantId, { from, to }, seleccion.datasets)) {
       archive.append(csvBody(t.data), { name: `csv/${t.nombre}` });
     }
 
@@ -257,6 +277,7 @@ router.get('/datos.zip', async (req, res) => {
         pdfsTotal: invoices.length,
         xmlAnios: xmlPorAnio.map((x) => x.year),
         cabecera: entrega.cabeceraLeeme,
+        datasets: seleccion.datasets, // SCRUM-138: el LEEME describe SOLO lo que hay dentro
       }),
       { name: 'LEEME.txt' },
     );

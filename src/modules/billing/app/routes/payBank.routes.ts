@@ -7,7 +7,12 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
-import { esc } from '../../../../core/utils/utils';
+// SCRUM-150: `formatMoneyEs` es el formateador de dinero de la casa. Esta página pintaba
+// `toFixed(2)` + código de divisa (`300.00 EUR`) mientras el selector de /pay/invoice —la
+// pantalla ANTERIOR del mismo pago— mostraba `300,00 €`: el cliente veía el mismo importe con
+// dos formatos en dos pasos seguidos. Es cambio de PRESENTACIÓN: no toca el importe, ni el XML
+// fiscal ni los CSV, donde el punto decimal SÍ es obligatorio (nota de SCRUM-86/145).
+import { esc, formatMoneyEs } from '../../../../core/utils/utils';
 import { BASE_URL } from '../../../../core/config/env';
 
 const router = Router();
@@ -88,19 +93,25 @@ router.get('/bank/:token', async (req, res) => {
     .section-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.5rem}
     .account-row{background:var(--slate-50);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;margin-bottom:.5rem}
     .account-label{font-size:.75rem;color:var(--muted);display:block;margin-bottom:.2rem}
-    .account-value-row{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
-    .account-value{font-size:.95rem;font-weight:700;color:var(--ink);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.02em}
-    .copy-btn{background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:.3rem .75rem;font-size:.75rem;font-weight:600;cursor:pointer;color:var(--ink);flex-shrink:0;transition:background .15s,border-color .15s}
+    /* SCRUM-150: a 390px el IBAN (24 caracteres sin puntos de corte) no cabe junto al boton.
+       En un flex el item no baja de su contenido (min-width:auto), asi que empujaba el boton
+       FUERA de la tarjeta y el body scrolleaba en horizontal (prohibido por AB6). Se permite
+       partir la cadena y que el boton caiga a su linea si hace falta. */
+    .account-value-row{display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap}
+    .account-value{font-size:.95rem;font-weight:700;color:var(--ink);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.02em;min-width:0;overflow-wrap:anywhere}
+    /* SCRUM-150: copiar el IBAN es LA accion de esta pantalla y se hace con el pulgar;
+       DESIGN.md pide targets >=44px. Estaba en ~28px de alto. */
+    .copy-btn{background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:.5rem 1rem;min-height:44px;font-size:.8rem;font-weight:600;cursor:pointer;color:var(--ink);flex-shrink:0;transition:background .15s,border-color .15s}
     .copy-btn:hover{background:var(--slate-50);border-color:#cdd2cb}
     .copy-btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(34,197,94,.28)}
     .copy-btn.copied{background:var(--brand-tint);border-color:#bbf7d0;color:var(--brand)}
     .ref-box{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:.75rem 1rem}
     .ref-label{font-size:.75rem;color:#92400e;font-weight:600}
-    .ref-value-row{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:.2rem}
+    .ref-value-row{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:.2rem;flex-wrap:wrap}
     .ref-value{font-size:1rem;font-weight:700;color:#92400e;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
     .warning{font-size:.8rem;color:#78350f;margin-top:.4rem}
     .steps{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.5rem}
-    .steps li{font-size:.85rem;color:var(--body);display:flex;gap:.5rem;align-items:flex-start;line-height:1.45}
+    .steps li{font-size:.85rem;color:var(--body);display:flex;gap:.5rem;align-items:flex-start;line-height:1.45;overflow-wrap:anywhere}
     .steps li::before{content:attr(data-n);background:var(--brand);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;margin-top:.1rem}
     .dev-sim{margin-top:1.5rem;padding-top:1.25rem;border-top:1px dashed var(--border)}
     .btn-sim{background:var(--ink);color:#fff;border:none;border-radius:999px;padding:.6rem 1.25rem;cursor:pointer;font-size:.9rem;font-weight:600;font-family:inherit}
@@ -115,7 +126,7 @@ router.get('/bank/:token', async (req, res) => {
     <p class="subtitle">Realiza la transferencia con los datos indicados y el concepto exacto.</p>
 
     <div class="amount-box">
-      <div class="amount">${esc(Number(charge.amount).toFixed(2))} ${esc(charge.currency)}</div>
+      <div class="amount">${esc(formatMoneyEs(charge.amount, charge.currency))}</div>
       <div class="concept">${esc(charge.concept)}</div>
     </div>
 
@@ -140,7 +151,7 @@ router.get('/bank/:token', async (req, res) => {
       <div class="section-title">Cómo pagar</div>
       <ol class="steps">
         <li data-n="1">Abre la app de tu banco o accede a banca online.</li>
-        <li data-n="2">Haz una transferencia por <strong>${esc(Number(charge.amount).toFixed(2))} ${esc(charge.currency)}</strong>${iban ? ` al IBAN ${esc(iban)}` : clabe ? ` a la CLABE ${esc(clabe)}` : ''}.</li>
+        <li data-n="2">Haz una transferencia por <strong>${esc(formatMoneyEs(charge.amount, charge.currency))}</strong>${iban ? ` al IBAN ${esc(iban)}` : clabe ? ` a la CLABE ${esc(clabe)}` : ''}.</li>
         <li data-n="3">En el concepto escribe exactamente: <strong>${esc(reference)}</strong></li>
         <li data-n="4">Recibirás confirmación cuando se procese el pago.</li>
       </ol>

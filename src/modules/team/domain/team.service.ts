@@ -49,9 +49,12 @@ export async function createTeamMember(params: {
     });
   }
 
-  await inviteTeamMember({ merchantId, teamMemberId: member.id, memberName: name, memberEmail: email, merchantName });
+  // SCRUM-131: `sent` viaja junto al miembro — el alta puede ser correcta y el email no salir.
+  // El miembro queda creado igualmente (su invitación es válida 7 días); lo que cambia es que
+  // ahora se puede DECIR que no se entregó, en vez de responder ok a secas.
+  const { sent, reason } = await inviteTeamMember({ merchantId, teamMemberId: member.id, memberName: name, memberEmail: email, merchantName });
 
-  return member;
+  return { ...member, sent, sendError: reason ?? null };
 }
 
 export async function updateTeamMember(params: {
@@ -94,7 +97,8 @@ export async function resendInvite(id: number, merchantId: number) {
     select: { name: true },
   });
 
-  await inviteTeamMember({
+  // SCRUM-131: se PROPAGA el desenlace real del envío en vez de devolver un {ok:true} fijo.
+  const { sent, reason } = await inviteTeamMember({
     merchantId,
     teamMemberId: member.id,
     memberName: member.name,
@@ -102,5 +106,5 @@ export async function resendInvite(id: number, merchantId: number) {
     merchantName: merchant?.name ?? 'YaQu',
   });
 
-  return { ok: true };
+  return { ok: true, sent, reason };
 }

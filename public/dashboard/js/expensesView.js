@@ -13,6 +13,64 @@ function catPill(category) {
   return `<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;background:${c.bg};color:${c.color}">${c.label}</span>`;
 }
 
+// ── SCRUM-135: selector de Trabajos ───────────────────────────────────────────
+// OJO AL MODELO (hallazgo del recon): el gasto se vincula por `Expense.quoteId` → COTIZACIÓN,
+// mientras que lo que el pro ve en pantalla es el TRABAJO (`Job`), que tiene su PROPIO id.
+// Job#57 y Cotización#57 son registros distintos. Antes había un input numérico rotulado "ID
+// de la cotización" con un texto de ayuda que decía "vincula este gasto a un trabajo": quien
+// leía "Trabajo #57" y tecleaba 57 vinculaba el gasto a otra cosa, en silencio.
+// El selector resuelve el quoteId DESDE el Job, así que el valor guardado no cambia (aditivo,
+// cero migración) pero el pro ya solo elige Trabajos por su nombre.
+const JOB_CERRADO = 'cerrado'; // "abiertos" = todos menos este (decisión del fundador)
+
+// El trabajo se nombra EXACTAMENTE como en la pantalla de Trabajos: su `titulo` y nada más.
+// Sin prefijo con el id: jobsView.js no enseña el id del Job en ningún sitio, así que
+// anteponerlo metería un número que el pro no ha visto nunca — y encima pegado al
+// "Presupuesto #N" que ya lleva el título por defecto. Tres números distintos para una cosa
+// es justo el lío que este ticket viene a quitar, no a mover de sitio.
+function jobLabel(job) {
+  return job.titulo || 'Trabajo';
+}
+
+// Un Job sin cotización (Job.quoteId es nullable) NO se puede vincular: no hay quoteId que
+// guardar. Se muestra DESHABILITADO con el motivo, no se esconde — criterio de SCRUM-89:
+// que el pro sepa por qué no puede, en vez de buscar un trabajo que no aparece.
+function jobOptionsHtml(jobs, currentQuoteId) {
+  const abiertos = (jobs || []).filter((j) => j.status !== JOB_CERRADO);
+  const cur = currentQuoteId != null ? Number(currentQuoteId) : null;
+  let hayActualEnLista = false;
+
+  const opts = abiertos.map((j) => {
+    const qId = j.quote?.id ?? null;
+    const label = jobLabel(j);
+    if (qId == null) {
+      return `<option value="" disabled>${escHtml(label)} — sin presupuesto, no se puede vincular</option>`;
+    }
+    if (cur != null && Number(qId) === cur) hayActualEnLista = true;
+    return `<option value="${qId}"${cur != null && Number(qId) === cur ? ' selected' : ''}>${escHtml(label)}</option>`;
+  });
+
+  // El gasto que estás editando puede apuntar a un trabajo CERRADO (o a una cotización que
+  // nunca llegó a ser trabajo). Si no ofreciéramos esa opción, abrir el modal y guardar
+  // movería la vinculación sin que nadie lo pidiera. Se conserva, marcada.
+  if (cur != null && !hayActualEnLista) {
+    opts.unshift(`<option value="${cur}" selected>Vinculación actual (trabajo cerrado o sin trabajo abierto)</option>`);
+  }
+
+  return `<option value="">— Sin trabajo —</option>` + opts.join('');
+}
+
+// Celda "Trabajo" de la lista de gastos. Con Job → su nombre y enlace a SU ficha. Sin Job
+// (gasto vinculado a un presupuesto que nunca se aceptó) → se dice tal cual y se enlaza al
+// presupuesto: mejor nombrar lo que hay que fingir un trabajo que no existe.
+function expenseJobCell(expense) {
+  if (expense.job) {
+    return `<a href="#" onclick="event.stopPropagation();renderAppView('jobs-detail',{jobId:${expense.job.id}})" style="color:var(--blue-600)">${escHtml(jobLabel(expense.job))}</a>`;
+  }
+  const qId = Number(expense.quote.id);
+  return `<a href="#" onclick="event.stopPropagation();renderAppView('quotes-detail',{quoteId:${qId}})" style="color:var(--blue-600)">Presupuesto sin trabajo</a>`;
+}
+
 async function renderExpensesView(container) {
   container.innerHTML = `
     <div>
@@ -99,7 +157,7 @@ async function loadSummary() {
       <div class="kpi-card">
         <div class="kpi-label">Sin asignar a trabajo</div>
         <div class="kpi-value" style="color:${data.unassignedAmount>0?'#d97706':'#22c55e'}">${fmtEuro(data.unassignedAmount)}</div>
-        <div class="kpi-sub">no vinculados a cotización</div>
+        <div class="kpi-sub">no vinculados a un trabajo</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Mayor categoría</div>
@@ -125,6 +183,9 @@ async function loadExpenses() {
   try {
     const qs = new URLSearchParams({ month });
     if (cat) qs.set('category', cat);
+    // SCRUM-135: el trabajo de cada gasto viene YA resuelto en `item.job` (una sola query en
+    // listExpenses). Nada de pedir /admin/jobs aquí: eso dejaba la lista esperando por el
+    // endpoint más lento solo para poder nombrar la columna.
     const data = await apiRequest(`/admin/expenses?${qs}`);
     const items = data.items || [];
 
@@ -160,7 +221,7 @@ async function loadExpenses() {
                 </td>
                 <td>${catPill(e.category)}</td>
                 <td style="font-size:13px;color:var(--neutral-500)">
-                  ${e.quote ? `<a href="#" onclick="event.stopPropagation();renderAppView('quotes-detail',{quoteId:${e.quote.id}})" style="color:var(--blue-600)">Cotización #${e.quote.id}</a>` : '—'}
+                  ${e.quote ? expenseJobCell(e) : '—'}
                   ${e.provider ? `<div style="font-size:12px">${escHtml(e.provider.name)}</div>` : ''}
                 </td>
                 <td class="amount" style="text-align:right;font-size:15px">${fmtEuro(Number(e.amount))}</td>
@@ -188,9 +249,17 @@ async function deleteExpenseItem(id) {
   }
 }
 
-function openExpenseModal(expense) {
+// opts (SCRUM-135, ambos opcionales — sin ellos el modal se comporta igual que antes):
+//   opts.job     → { id, quoteId, titulo } : abre el gasto YA vinculado a ESE trabajo y sin
+//                  selector (es el alta desde la ficha del Trabajo: no se pregunta lo que ya
+//                  se sabe). Es el camino del técnico en obra.
+//   opts.onSaved → qué recargar al guardar. Por defecto recarga la vista de Gastos, que es
+//                  lo que hacía antes; desde el detalle del Trabajo no existe esa vista.
+function openExpenseModal(expense, opts) {
   if (document.getElementById('exp-modal')) return;
 
+  const o = opts || {};
+  const fixedJob = o.job || null;
   const isEdit = !!expense;
   const today = new Date().toISOString().slice(0, 10);
 
@@ -226,8 +295,10 @@ function openExpenseModal(expense) {
           </select>
         </div>
         <div class="field">
-          <label>Cotización vinculada (opcional)</label>
-          <input id="exp-quoteid" type="number" placeholder="ID de la cotización" value="${expense?.quote?.id||expense?.quoteId||''}"/>
+          <label>Trabajo (opcional)</label>
+          ${fixedJob
+            ? `<div id="exp-job-fixed" data-quote-id="${fixedJob.quoteId}" style="padding:11px 13px;border:1px solid var(--neutral-200);border-radius:var(--r-md);background:var(--neutral-50);font-size:14px;color:var(--ink)">${escHtml(jobLabel(fixedJob))}</div>`
+            : `<select id="exp-quoteid"><option value="">Cargando trabajos…</option></select>`}
           <p style="font-size:12px;color:var(--neutral-400);margin:2px 0 0">Vincula este gasto a un trabajo para calcular el margen.</p>
         </div>
         <div class="field">
@@ -258,12 +329,36 @@ function openExpenseModal(expense) {
   document.getElementById('exp-cancel').addEventListener('click', closeExpModal);
   backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeExpModal(); });
 
+  // SCRUM-135: los Trabajos se piden a /admin/jobs (endpoint YA existente; para un técnico
+  // viene filtrado a los suyos por SCRUM-23, así que el selector nunca enseña trabajo ajeno).
+  // Se rellena DESPUÉS de pintar el modal: el formulario se puede empezar a rellenar mientras.
+  const jobSel = document.getElementById('exp-quoteid');
+  if (jobSel) {
+    const actual = expense?.quote?.id ?? expense?.quoteId ?? null;
+    apiRequest('/admin/jobs')
+      .then((jobs) => {
+        if (!document.getElementById('exp-modal')) return; // lo cerró antes de que llegara
+        jobSel.innerHTML = jobOptionsHtml(Array.isArray(jobs) ? jobs : [], actual);
+      })
+      .catch(() => {
+        if (!document.getElementById('exp-modal')) return;
+        // Fallo al cargar la lista: NO se deja un desplegable vacío que borre la vinculación
+        // al guardar. Se conserva la actual y se dice qué ha pasado.
+        jobSel.innerHTML = actual != null
+          ? `<option value="${actual}" selected>Vinculación actual (no se pudo cargar la lista)</option>`
+          : `<option value="">— Sin trabajo — (no se pudo cargar la lista)</option>`;
+      });
+  }
+
   document.getElementById('exp-save').addEventListener('click', async () => {
     const concept    = document.getElementById('exp-concept').value.trim();
     const amount     = Number(document.getElementById('exp-amount').value);
     const date       = document.getElementById('exp-date').value;
     const category   = document.getElementById('exp-category').value;
-    const quoteId    = document.getElementById('exp-quoteid').value;
+    // SCRUM-135: o el selector, o el trabajo fijo cuando se abre desde su ficha.
+    const quoteId    = fixedJob
+      ? String(fixedJob.quoteId ?? '')
+      : document.getElementById('exp-quoteid').value;
     const providerId = document.getElementById('exp-providerid').value;
     const notes      = document.getElementById('exp-notes').value.trim();
     const fileInput  = document.getElementById('exp-receipt');
@@ -296,7 +391,10 @@ function openExpenseModal(expense) {
       }
 
       closeExpModal();
-      await Promise.all([loadSummary(), loadExpenses()]);
+      // SCRUM-135: desde el detalle del Trabajo no existe la vista de Gastos que recargar
+      // (y para un técnico esas dos llamadas son 403). El llamador dice qué refrescar.
+      if (o.onSaved) await o.onSaved();
+      else await Promise.all([loadSummary(), loadExpenses()]);
     } catch (err) {
       showExpError(err.message || 'Error al guardar.');
       btn.disabled = false; btn.textContent = isEdit ? 'Guardar cambios' : 'Añadir gasto';

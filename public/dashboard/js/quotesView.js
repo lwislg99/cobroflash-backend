@@ -4,7 +4,22 @@
 // el create lleva created_via='voice' (telemetría V0-3). Se resetea por render.
 let quoteFormCreatedVia = 'text';
 
-function renderQuotesView(container) {
+/**
+ * SCRUM-140: `template` llega como ARGUMENTO EXPLÍCITO (antes por
+ * `sessionStorage['pf_load_template']`, un canal global e implícito).
+ *
+ * Lo que desaparece al hacerlo así, y no por defenderse mejor:
+ *   · el ORDEN deja de ser una variable — no hay "escribe antes de navegar" que respetar
+ *     (el off-by-one de SCRUM-134 era exactamente eso);
+ *   · no hay estado residual que consumir → no existe la plantilla HUÉRFANA;
+ *   · sobra el sello de frescura `_ts` y su umbral de 15 s, que era una heurística temporal
+ *     (una navegación lenta podía descartar una plantilla legítima);
+ *   · el acoplamiento queda VISIBLE en la firma: antes nada decía que el contenido de esta
+ *     vista podía venir de otra.
+ *
+ * `null`/omitido = presupuesto en blanco. Es de un solo uso: no se guarda en `window.appState`.
+ */
+function renderQuotesView(container, template) {
   container.innerHTML = "";
   quoteFormCreatedVia = 'text';
 
@@ -641,39 +656,36 @@ blockClient.appendChild(descWrapper);
 
   blockLines.appendChild(linesHeader);
 
-  const table = document.createElement("table");
-  table.className = "table quote-lines-table";
-  const thead = document.createElement("thead");
-  const trHead = document.createElement("tr");
-  // A20.2 (PV-FIX-1): "Markup" → "Margen" + tooltip de una frase (i)
-  ["Concepto", "Cantidad", "Precio", "Margen %", "IVA %", "Total línea", ""].forEach(
-    (h) => {
-      const th = document.createElement("th");
-      if (h === "Margen %") {
-        th.innerHTML = 'Margen % <span title="Porcentaje que añades sobre tu precio de coste — tu beneficio en esta línea." style="cursor:help;display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:var(--neutral-200);color:var(--neutral-600);font-size:10px;font-weight:700" tabindex="0" role="img" aria-label="Qué es el margen">i</span>';
-      } else {
-        th.textContent = h;
-      }
-      trHead.appendChild(th);
-    }
-  );
-  thead.appendChild(trHead);
-  table.appendChild(thead);
-  const tbody = document.createElement("tbody");
-  table.appendChild(tbody);
-  // A6.6 (P1 móvil): la tabla de líneas es más ancha que un móvil de 390px;
-  // scrollea DENTRO de su contenedor y no arrastra toda la vista (overflow-x).
-  const tableWrap = document.createElement("div");
-  tableWrap.className = "quote-lines-scroll";
-  tableWrap.appendChild(table);
-  blockLines.appendChild(tableWrap);
+  // SCRUM-139 F1: la línea deja de ser una FILA DE TABLA. Antes era `<table class="quote-lines-table">`
+  // con `min-width:560px` dentro de un `overflow-x:auto`: en un móvil de 390 px se rellenaba
+  // scrolleando de lado por 7 columnas. Eso es lo que hacía que "pareciera meter precios" y no
+  // hacer un presupuesto — y con el pulgar en la furgoneta era inservible (AB1: móvil REAL).
+  // Ahora cada línea es una TARJETA (`.quote-line`) en una sola columna; en ≥768 px la misma
+  // tarjeta se dispone en rejilla horizontal, así que el escritorio no pierde densidad y NO hay
+  // dos DOM que mantener. La cabecera de columnas desaparece: cada campo lleva su propia etiqueta.
+  const linesBody = document.createElement("div");
+  linesBody.className = "quote-lines";
+  blockLines.appendChild(linesBody);
+
+  // SCRUM-133: segundo "+ Añadir línea", AQUÍ ABAJO — pegado a la última fila, que es
+  // donde está la mano tras teclear. El de la cabecera SE QUEDA (no lo sustituye): con
+  // una lista larga las dos puntas son útiles —arriba al volver de una plantilla, abajo
+  // al encadenar líneas— y es el control de la acción más repetida del editor. Mismo
+  // patrón que el editor de albarán (jobDetailView, SCRUM-31 F2): ghost + "+ Añadir línea".
+  // `type=button` es obligatorio: sin él, dentro del <form>, el clic ENVIARÍA el presupuesto.
+  const addLineBtnBottom = document.createElement("button");
+  addLineBtnBottom.type = "button";
+  addLineBtnBottom.className = "btn-ghost quote-add-line";
+  addLineBtnBottom.textContent = "+ Añadir línea";
+  addLineBtnBottom.title = "Añade una línea al final de la lista";
+  blockLines.appendChild(addLineBtnBottom);
 
   // ---------- DRAG & DROP para reordenar líneas (FRONT1-4) ----------
   let draggedTr = null;
-  tbody.addEventListener("dragover", function (e) {
+  linesBody.addEventListener("dragover", function (e) {
     if (!draggedTr) return;
     e.preventDefault();
-    const rows = Array.from(tbody.querySelectorAll("tr:not(.dragging)"));
+    const rows = Array.from(linesBody.querySelectorAll(".quote-line:not(.dragging)"));
     let after = null;
     let closest = Number.NEGATIVE_INFINITY;
     for (const row of rows) {
@@ -681,11 +693,11 @@ blockClient.appendChild(descWrapper);
       const offset = e.clientY - box.top - box.height / 2;
       if (offset < 0 && offset > closest) { closest = offset; after = row; }
     }
-    if (after == null) tbody.appendChild(draggedTr);
-    else tbody.insertBefore(draggedTr, after);
+    if (after == null) linesBody.appendChild(draggedTr);
+    else linesBody.insertBefore(draggedTr, after);
   });
   function syncLinesOrder() {
-    const rows = Array.from(tbody.querySelectorAll("tr"));
+    const rows = Array.from(linesBody.querySelectorAll(".quote-line"));
     lines.sort((a, b) => rows.indexOf(a.row) - rows.indexOf(b.row));
   }
 
@@ -857,10 +869,14 @@ blockClient.appendChild(descWrapper);
       if (!raw) return false;
       const d = JSON.parse(raw);
       if (!d || !Array.isArray(d.lines) || !d.lines.length) return false;
-      tbody.innerHTML = "";
+      linesBody.innerHTML = "";
       lines = [];
-      d.lines.forEach((l) => addLine(l));
+      // SCRUM-134 (precedencia de estado): el IVA por defecto se restaura ANTES de crear las
+      // líneas. `addLine` usa `fieldVatDefault.input.value` como fallback cuando una línea no
+      // trae IVA propio, así que con el orden inverso las líneas del borrador heredaban el
+      // defecto ANTERIOR (el de la pantalla recién montada), no el que el usuario tenía guardado.
       if (d.vatDefault) fieldVatDefault.input.value = d.vatDefault;
+      d.lines.forEach((l) => addLine(l));
       if (d.paymentTerms) paymentSelect.value = d.paymentTerms;
       // SCRUM-27: restaurar el editor de tramos si el borrador era "Personalizado".
       if (d.paymentTerms === "CUSTOM" && Array.isArray(d.customStages)) {
@@ -1154,7 +1170,7 @@ blockClient.appendChild(descWrapper);
     ptHead.appendChild(ptr);
     linesTable.appendChild(ptHead);
 
-    const ptBody = document.createElement("tbody");
+    const ptBody = document.createElement("linesBody");
 
     if (previewLines.length === 0) {
       const trEmpty = document.createElement("tr");
@@ -1490,7 +1506,9 @@ priceInput.value = String(base.toFixed(2));
 
   if (typeof it.vat !== "undefined" && it.vat !== null && it.vat !== "") {
     const v = Number(it.vat);
-    if (Number.isFinite(v)) vatInput.value = String(v * 100);
+    // SCRUM-132: el producto guarda el IVA en FRACCIÓN; el input lo quiere en porcentaje.
+    // Vía `fractionToPercent` para no volver a escribir "21.000000000000004" en el campo.
+    if (Number.isFinite(v)) vatInput.value = String(fractionToPercent(v));
   }
 
   hide();
@@ -1690,10 +1708,43 @@ conceptInput.addEventListener("input", () => {
     }, true);
   }
 
-  function addLine(initial) {
-    const tr = document.createElement("tr");
+  // SCRUM-132: fracción (0.21) → porcentaje para el input (21). Redondea a 2 decimales de
+  // PORCENTAJE porque `0.21 * 100` da 21.000000000000004 en coma flotante — sin esto el campo
+  // muestra esa ristra de decimales. 2 decimales admiten tipos no enteros (p. ej. 4,5 %) sin
+  // inventar precisión.
+  function fractionToPercent(tax) {
+    const n = Number(tax);
+    return Number.isFinite(n) ? Math.round(n * 10000) / 100 : 0;
+  }
 
-    const conceptTd = document.createElement("td");
+  /**
+   * SCRUM-139 F1: envoltorio de un campo de la línea con su ETIQUETA propia.
+   *
+   * Al desaparecer la cabecera de tabla, cada campo tiene que decir qué es por sí mismo — si no,
+   * en móvil quedan cuatro cajitas numéricas sin significado. La etiqueta usa el estilo Label de
+   * DESIGN.md (12px, 600, MAYÚSCULAS, Apagado) y va asociada al input con `<label>`, que además
+   * amplía el área pulsable: el propio texto enfoca el campo (target ≥44px de AB6).
+   */
+  function campoLinea(etiqueta, clase) {
+    const wrap = document.createElement("label");
+    wrap.className = "quote-line__field " + clase;
+    const lab = document.createElement("span");
+    lab.className = "quote-line__label";
+    lab.textContent = etiqueta;
+    wrap.appendChild(lab);
+    return wrap;
+  }
+
+  function addLine(initial) {
+    // SCRUM-139 F1: tarjeta, no `<tr>`. Se conservan EXACTAMENTE las mismas claves en `lineObj`
+    // (conceptInput, qtyInput, priceInput, markupInput, vatInput, totalCell, priceHint) para que
+    // todo lo que ya las consume —payload, borrador, recalcTotals, plantillas, IA, autocompletado—
+    // siga funcionando sin tocarse. Lo que cambia es el DOM, no el contrato.
+    const tr = document.createElement("div");
+    tr.className = "quote-line";
+    tr.setAttribute("role", "listitem");
+
+    const conceptTd = campoLinea("Concepto", "quote-line__concept");
     const conceptInput = document.createElement("input");
     conceptInput.type = "text";
     conceptInput.placeholder = "Concepto / servicio";
@@ -1707,7 +1758,7 @@ conceptInput.dataset.pfProductId = ""; // vacío = "manual"
 
 
 
-    const qtyTd = document.createElement("td");
+    const qtyTd = campoLinea("Cantidad", "quote-line__qty");
     const qtyInput = document.createElement("input");
     qtyInput.type = "number";
     qtyInput.min = "0";
@@ -1715,7 +1766,7 @@ conceptInput.dataset.pfProductId = ""; // vacío = "manual"
     qtyInput.value = initial && initial.qty != null ? initial.qty : "1";
     qtyTd.appendChild(qtyInput);
 
-    const priceTd = document.createElement("td");
+    const priceTd = campoLinea("Precio", "quote-line__price");
     const priceInput = document.createElement("input");
     priceInput.type = "number";
     priceInput.min = "0";
@@ -1731,7 +1782,7 @@ priceHint.textContent = "";
 priceTd.appendChild(priceHint);
 
 
-    const markupTd = document.createElement("td");
+    const markupTd = campoLinea("Margen %", "quote-line__markup");
 const markupInput = document.createElement("input");
 markupInput.type = "number";
 markupInput.min = "0";
@@ -1741,7 +1792,7 @@ markupInput.value = initial && initial.markup != null ? initial.markup : "0";
 markupTd.appendChild(markupInput);
 
 
-    const vatTd = document.createElement("td");
+    const vatTd = campoLinea("IVA %", "quote-line__vat");
     const vatInput = document.createElement("input");
     attachProductAutocomplete({ conceptInput, priceInput, vatInput, markupInput });
 
@@ -1749,19 +1800,34 @@ markupTd.appendChild(markupInput);
     vatInput.type = "number";
     vatInput.min = "0";
     vatInput.step = "1";
+    // SCRUM-132: el IVA llega en DOS unidades según de dónde venga la línea, y antes solo se
+    // leía una — por eso el "IVA por defecto" PISABA el IVA real de plantillas y de la IA:
+    //   · `vat`  = PORCENTAJE (21)   → borrador de localStorage, autocompletado de producto
+    //   · `tax`  = FRACCIÓN (0.21)   → plantillas y líneas sugeridas por la IA (contrato del back)
+    // Convierte el RECEPTOR, no cada llamador: así las tres rutas de carga quedan bien sin
+    // tocar sus call-sites (que además son zona de SCRUM-134).
+    // El general SIEMBRA, nunca PISA: solo se aplica si la línea no trae IVA propio.
     if (initial && initial.vat != null) {
       vatInput.value = initial.vat;
+    } else if (initial && initial.tax != null) {
+      // `tax: 0` es un tipo LEGÍTIMO (0 %, SCRUM-65), no "sin especificar" → no cae al default.
+      vatInput.value = String(fractionToPercent(initial.tax));
     } else {
       const def = fieldVatDefault.input.value || "21";
       vatInput.value = def;
     }
     vatTd.appendChild(vatInput);
 
-    const totalTd = document.createElement("td");
+    // Total de la línea: Regla del Importe (DESIGN.md) — Tinta, ≥700, tabular. Con su etiqueta,
+    // porque sin cabecera de tabla una cifra suelta no dice qué es.
+    const totalTd = document.createElement("div");
+    totalTd.className = "quote-line__total";
     totalTd.textContent = "0.00";
+    const totalWrap = campoLinea("Total", "quote-line__totalwrap");
+    totalWrap.appendChild(totalTd);
 
-    const actionsTd = document.createElement("td");
-    actionsTd.style.whiteSpace = "nowrap";
+    const actionsTd = document.createElement("div");
+    actionsTd.className = "quote-line__actions";
 
     // Handle de arrastre para reordenar (FRONT1-4)
     const dragHandle = document.createElement("span");
@@ -1796,11 +1862,10 @@ markupTd.appendChild(markupInput);
     tr.appendChild(priceTd);
     tr.appendChild(markupTd);
     tr.appendChild(vatTd);
-    tr.appendChild(totalTd);
+    tr.appendChild(totalWrap);
     tr.appendChild(actionsTd);
-    
 
-    tbody.appendChild(tr);
+    linesBody.appendChild(tr);
 
     const lineObj = {
       row: tr,
@@ -1888,7 +1953,7 @@ if (Number.isFinite(n) && n >= 0) {
         renderPreview();
         return;
       }
-      tbody.removeChild(tr);
+      linesBody.removeChild(tr);
       lines = lines.filter(function (l) {
         return l !== lineObj;
       });
@@ -1902,9 +1967,22 @@ if (Number.isFinite(n) && n >= 0) {
 
   addLine();
 
-  addLineBtn.addEventListener("click", function () {
+  // SCRUM-133: añadir + dejar el cursor DENTRO del concepto de la línea nueva, para poder
+  // seguir tecleando sin tocar el ratón. `preventScroll` + `scrollIntoView({block:'nearest'})`:
+  // el foco no da el salto brusco del scroll automático y, si la fila ya se ve, no se mueve
+  // nada (sin animación → nada que gatear con prefers-reduced-motion).
+  function addLineAndFocus() {
     addLine();
-  });
+    const nueva = linesBody.lastElementChild;
+    if (!nueva) return;
+    const concepto = nueva.querySelector("input");
+    if (!concepto) return;
+    concepto.focus({ preventScroll: true });
+    nueva.scrollIntoView({ block: "nearest" });
+  }
+
+  addLineBtn.addEventListener("click", addLineAndFocus);
+  addLineBtnBottom.addEventListener("click", addLineAndFocus);
 
   // Botón IA — añade las líneas sugeridas por Claude
   aiBtn.addEventListener("click", function () {
@@ -1912,11 +1990,11 @@ if (Number.isFinite(n) && n >= 0) {
       openAiSuggestModal(function (suggestedLines, meta) {
         if (meta && meta.voiceUsed) quoteFormCreatedVia = 'voice'; // VZ-3
         // Limpiar la fila vacía si es la única y no tiene datos
-        const existingRows = tbody.querySelectorAll('tr');
+        const existingRows = linesBody.querySelectorAll('.quote-line');
         if (existingRows.length === 1) {
           const firstConcept = existingRows[0].querySelector('input[type=text]');
           if (firstConcept && !firstConcept.value.trim()) {
-            tbody.innerHTML = '';
+            linesBody.innerHTML = '';
             lines = [];
           }
         }
@@ -1932,7 +2010,7 @@ if (Number.isFinite(n) && n >= 0) {
     fieldVatDefault.input.value = "21";
     paymentSelect.value = "FULL_UPFRONT";
 
-    tbody.innerHTML = "";
+    linesBody.innerHTML = "";
     lines = [];
     addLine();
     clearDraft();
@@ -1992,21 +2070,24 @@ if (Number.isFinite(n) && n >= 0) {
       `;
       btn.onclick = function () {
         // Vaciar líneas actuales vacías
-        const existingRows = tbody.querySelectorAll('tr');
+        const existingRows = linesBody.querySelectorAll('.quote-line');
         if (existingRows.length === 1) {
           const firstConcept = existingRows[0].querySelector('input[type=text]');
           if (firstConcept && !firstConcept.value.trim()) {
-            tbody.innerHTML = '';
+            linesBody.innerHTML = '';
             lines = [];
           }
         } else {
-          tbody.innerHTML = '';
+          linesBody.innerHTML = '';
           lines = [];
         }
         // Cargar líneas de la plantilla
         const templateLines = Array.isArray(tpl.lines) ? tpl.lines : [];
         templateLines.forEach(function (l) {
-          addLine({ concept: l.concept, qty: l.qty, price: l.price, tax: (l.tax || 0) });
+          // SCRUM-132: `l.tax` CRUDO, sin `|| 0`. El `|| 0` convertía "esta línea no trae IVA"
+          // en "IVA 0 %", y desde SCRUM-65 el 0 % es un tipo legítimo (21/10/4/0): con él, una
+          // línea sin IVA guardado se emitía al 0 % en vez de heredar el IVA por defecto.
+          addLine({ concept: l.concept, qty: l.qty, price: l.price, tax: l.tax });
         });
         closeOverlay();
         setAlert('success', `Plantilla "${tpl.name}" cargada — ${templateLines.length} líneas añadidas.`);
@@ -2108,20 +2189,18 @@ if (Number.isFinite(n) && n >= 0) {
     try {
       setAlert(null, "Cargando datos…");
 
-      // Si venimos de la vista de Plantillas, auto-cargar
-      const pendingTemplate = sessionStorage.getItem('pf_load_template');
-      var templatePending = !!pendingTemplate;
-      if (pendingTemplate) {
-        sessionStorage.removeItem('pf_load_template');
-        try {
-          const tpl = JSON.parse(pendingTemplate);
-          if (Array.isArray(tpl.lines) && tpl.lines.length > 0) {
-            tbody.innerHTML = '';
-            lines = [];
-            tpl.lines.forEach(function (l) { addLine(l); });
-            setAlert('success', `Plantilla "${tpl.name}" cargada — completa los datos del cliente y genera el presupuesto.`);
-          }
-        } catch (_) {}
+      // SCRUM-140: la plantilla es el ARGUMENTO de esta vista (ver la cabecera de
+      // renderQuotesView). Sin sessionStorage no hay huérfana que descartar ni sello de
+      // frescura que comprobar: si no llega plantilla, no hay plantilla. Se mantiene la
+      // comprobación de que trae líneas — líneas = dinero, y una plantilla vacía no debe
+      // vaciar el editor ni suprimir la restauración del borrador.
+      var templatePending = false;
+      if (template && Array.isArray(template.lines) && template.lines.length > 0) {
+        templatePending = true;
+        linesBody.innerHTML = '';
+        lines = [];
+        template.lines.forEach(function (l) { addLine(l); });
+        setAlert('success', `Plantilla "${template.name}" cargada — completa los datos del cliente y genera el presupuesto.`);
       }
 
       const merchantPromise = getMerchantProfile();

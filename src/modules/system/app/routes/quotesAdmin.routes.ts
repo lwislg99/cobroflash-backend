@@ -5,7 +5,6 @@ import {
   getQuoteDetailAdmin,
   acceptQuoteAdmin,
   rejectQuoteAdmin,
-  createInvoiceFromQuoteAdmin,
 } from '../../quoteAdmin';
 
 import { prisma } from '../../../../core/db/prisma';
@@ -19,6 +18,7 @@ import { sendTechQuoteApprovedEmail } from '../../../messaging/domain/merchantNo
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: emitir factura = admin)
 
 import fetch from 'node-fetch';
@@ -35,7 +35,19 @@ router.get('/', async (req, res) => {
     const status   = req.query.status   ? String(req.query.status)   : undefined;
     const dateFrom = req.query.dateFrom ? new Date(String(req.query.dateFrom)) : null;
     const dateTo   = req.query.dateTo   ? (() => { const d = new Date(String(req.query.dateTo)); d.setHours(23,59,59,999); return d; })() : null;
-    const quotes = await listQuotesAdmin(req.merchantId, search, status, dateFrom, dateTo);
+    // SCRUM-148: ?teamMemberId=<id> | 'owner' → presupuestos de ESE autor (detalle por
+    // miembro del hub de Equipo). 'owner' es EXPLÍCITO a propósito: el propietario se guarda
+    // con teamMemberId null, y un parámetro vacío o un 0 accidental no pueden significar "el
+    // propietario" por descuido. Lo que no se entiende NO filtra (undefined) — devolver la
+    // lista completa es el fallo seguro aquí: esta ruta ya la ve entera cualquier rol que
+    // llegue a ella (S1: `TECNICO_ALLOWED` para GET /admin/quotes), así que no filtrar no
+    // enseña nada que el llamante no pudiera pedir sin el parámetro.
+    const raw = req.query.teamMemberId;
+    let teamMemberId: number | null | undefined;
+    if (raw === 'owner') teamMemberId = null;
+    else if (raw !== undefined && Number.isInteger(Number(raw))) teamMemberId = Number(raw);
+
+    const quotes = await listQuotesAdmin(req.merchantId, search, status, dateFrom, dateTo, teamMemberId);
     return res.json(quotes);
   } catch (err) {
     console.error('[GET /admin/quotes]', err);
@@ -159,17 +171,19 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
       return res.status(409).json({ error: 'no_more_invoices_for_payment_terms' });
     }
 
-    // SCRUM-27+32: importe del tramo del plan resuelto, reparto exacto (último = resto, céntimos enteros).
-    const invoiceAmount = distributeStageAmounts(quote.total, plan)[stage.index];
     const isCustomPlan = Array.isArray((quote as any).customBillingPlan) && (quote as any).customBillingPlan.length > 0;
     const merchant = quote.merchant;
 
-    // Escalar las líneas de la cotización al porcentaje facturado (ej. 50% en FIFTY_FIFTY)
-    // TODO(SCRUM-16/17): reparto fino línea-a-línea del último tramo (≤1 cént. vs Invoice.total de SCRUM-32).
+    // SCRUM-141: las líneas del tramo PRIMERO, y el importe DERIVADO de ellas — el total de una
+    // factura es consecuencia de sus líneas, no al revés. Antes el importe venía de
+    // `distributeStageAmounts` y las líneas se escalaban aparte: dos redondeos independientes que
+    // podían diferir 1 cént., y esa diferencia quedaba SELLADA en la huella VeriFactu
+    // (`importeTotal` del total vs `cuotaTotal` de las líneas). Ver invoiceLines.service.ts.
     const quoteLines = Array.isArray(quote.lines) ? quote.lines as any[] : [];
-    const scaledLines = stage.percentage < 1
-      ? quoteLines.map((l: any) => ({ ...l, price: Number(l.price) * stage.percentage }))
-      : quoteLines;
+    const scaledLines = stageLinesReconciled(
+      quoteLines, plan, stage.index, distributeStageAmounts(quote.total, plan)[stage.index],
+    );
+    const invoiceAmount = grossOfLines(scaledLines);
 
     const invoice = await prisma.$transaction(async (tx) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId);

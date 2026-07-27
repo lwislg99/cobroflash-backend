@@ -905,8 +905,11 @@ async function duplicateQuote(quoteId) {
     tiers: detail.tiers || null,
     paymentTerms: detail.paymentTerms || null,
   };
-  sessionStorage.setItem('pf_load_template', JSON.stringify(tpl));
-  if (window.renderAppView) renderAppView('quotes-new');
+  // SCRUM-140: la copia va como ARGUMENTO (antes por sessionStorage + sello `_ts`). Este camino
+  // ya tenía el orden correcto y nunca falló, pero compartía el canal global con "Usar plantilla":
+  // el mismo canal que producía la plantilla huérfana. Al pasarlo como argumento no queda nada
+  // escrito que otra navegación pueda recoger.
+  if (window.renderAppView) renderAppView('quotes-new', { template: tpl });
 }
 
 // ── Timeline visual del estado del presupuesto (tokens) ───────────────────

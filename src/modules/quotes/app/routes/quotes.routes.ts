@@ -37,6 +37,7 @@ import { generateQuotePdf } from '../../../../lib/pdf';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 
 
@@ -517,21 +518,19 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
       const stage = plan[existingInvoices.length] ?? null;
 
       if (stage) {
-        const percentage = stage.percentage; // 1 → 100%, 0.5 → 50% (para escalar las líneas)
-        // updatedQuote (no quote): si el cliente eligió un tier, total y líneas ya son los del tier.
-        // SCRUM-27+32: importe del tramo del plan resuelto, reparto exacto (último tramo = resto,
-        // céntimos enteros) → la suma de tramos cuadra EXACTA con el total.
-        const invoiceAmount = distributeStageAmounts(updatedQuote.total, plan)[stage.index];
         const isCustomPlan = Array.isArray((updatedQuote as any).customBillingPlan) && (updatedQuote as any).customBillingPlan.length > 0;
 
-        // Copiar las líneas a la factura (escaladas al % facturado, ej. 50% en FIFTY_FIFTY).
+        // Copiar las líneas a la factura (la parte del tramo, ej. 50% en FIFTY_FIFTY).
         // Sin esto el PDF salía sin desglose y la huella VeriFactu con cuota IVA 0,00 (bug E2E V0-1).
-        // TODO(SCRUM-16/17): el reparto fino línea-a-línea del ÚLTIMO tramo (que puede diferir ≤1 cént.
-        // del Invoice.total exacto de SCRUM-32) se cuadra al entrar las facturas de anticipo/final.
+        // updatedQuote (no quote): si el cliente eligió un tier, total y líneas ya son los del tier.
+        // SCRUM-141: el importe se DERIVA de las líneas del tramo — el total de una factura es
+        // consecuencia de sus líneas. Antes salía de `distributeStageAmounts` con las líneas
+        // escaladas aparte, y el desfase de redondeo quedaba sellado en la huella VeriFactu.
         const quoteLines = Array.isArray(updatedQuote.lines) ? (updatedQuote.lines as any[]) : [];
-        const scaledLines = percentage < 1
-          ? quoteLines.map((l: any) => ({ ...l, price: Number(l.price) * percentage }))
-          : quoteLines;
+        const scaledLines = stageLinesReconciled(
+          quoteLines, plan, stage.index, distributeStageAmounts(updatedQuote.total, plan)[stage.index],
+        );
+        const invoiceAmount = grossOfLines(scaledLines);
 
         const invoice = await prisma.$transaction(async (tx) => {
           const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId);

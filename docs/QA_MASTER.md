@@ -116,6 +116,28 @@ Android gama media · iPhone · tablet:
 
 - [ ] Rol Técnico NO accede a billing/config/exports/flags (lista de rutas admin)
 
+### ⚠️ Un gate puede estar DUPLICADO — quitar uno y ver verde NO prueba nada
+
+Hallado en **SCRUM-136** al verificar un test en rojo: `/admin/team` está protegido **dos
+veces** — en el montaje (`mountAdmin(app, '/admin/team', requireRole('admin'), teamRouter)`
+en `app.ts`) **y** dentro del router (`router.use(requireRole('admin'))`). Quitar **uno solo**
+deja la ruta igual de cerrada, así que el test sigue en verde y parece que el gate que has
+tocado "no hacía falta". Hubo que quitar **los dos** para verlo fallar.
+
+**Qué hacer con esto:**
+
+- Al verificar un guard de permisos en rojo, si el test **no** se pone rojo, **no concluyas
+  que el test es malo**: busca primero si hay un segundo gate. Un verde tras quitar un gate es
+  ambiguo, no tranquilizador.
+- **Antes de retirar** un `requireRole` que parezca redundante, localiza el otro y comprueba
+  que sigue en pie. La redundancia es barata; quitar el que resultaba ser el único, no.
+- Cuando existan los dos, **déjalo escrito en el código** (en ambos sitios), para que el
+  siguiente no repita la investigación.
+- Nunca des por probado un permiso con un verde: pruébalo con el **403 real** de una sesión
+  del rol que NO debe pasar, **y con una guarda de presencia delante** (que el rol que SÍ debe
+  pasar recibe 200). Un 403 para todo el mundo —ruta rota, servidor mal montado— también deja
+  el assert de abajo en verde sin haber probado nada.
+
 ## 10. Idempotencia general
 
 - [ ] Todo webhook (Stripe, Connect, MP, Meta) registra `provider + event_id` y corta
