@@ -36,7 +36,19 @@ router.get('/', async (req, res) => {
     const status   = req.query.status   ? String(req.query.status)   : undefined;
     const dateFrom = req.query.dateFrom ? new Date(String(req.query.dateFrom)) : null;
     const dateTo   = req.query.dateTo   ? (() => { const d = new Date(String(req.query.dateTo)); d.setHours(23,59,59,999); return d; })() : null;
-    const quotes = await listQuotesAdmin(req.merchantId, search, status, dateFrom, dateTo);
+    // SCRUM-148: ?teamMemberId=<id> | 'owner' → presupuestos de ESE autor (detalle por
+    // miembro del hub de Equipo). 'owner' es EXPLÍCITO a propósito: el propietario se guarda
+    // con teamMemberId null, y un parámetro vacío o un 0 accidental no pueden significar "el
+    // propietario" por descuido. Lo que no se entiende NO filtra (undefined) — devolver la
+    // lista completa es el fallo seguro aquí: esta ruta ya la ve entera cualquier rol que
+    // llegue a ella (S1: `TECNICO_ALLOWED` para GET /admin/quotes), así que no filtrar no
+    // enseña nada que el llamante no pudiera pedir sin el parámetro.
+    const raw = req.query.teamMemberId;
+    let teamMemberId: number | null | undefined;
+    if (raw === 'owner') teamMemberId = null;
+    else if (raw !== undefined && Number.isInteger(Number(raw))) teamMemberId = Number(raw);
+
+    const quotes = await listQuotesAdmin(req.merchantId, search, status, dateFrom, dateTo, teamMemberId);
     return res.json(quotes);
   } catch (err) {
     console.error('[GET /admin/quotes]', err);

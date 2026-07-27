@@ -199,7 +199,28 @@ router.get('/', async (req, res) => {
     // 'admin', así que un rol desconocido queda RESTRINGIDO — misma lección que SCRUM-55 dejó
     // escrita en consolidar-albaranes (:470) y que aquí no se había aplicado.
     const where: { merchantId: number; operarioId?: number | null } = { merchantId: req.merchantId };
-    if (seesOnlyOwnJobs(req.userRole)) where.operarioId = req.teamMemberId;
+    const restringido = seesOnlyOwnJobs(req.userRole);
+    if (restringido) where.operarioId = req.teamMemberId;
+
+    // SCRUM-148: ?operarioId=<id> | 'owner' → Trabajos de ESE operario, para el detalle por
+    // miembro del hub de Equipo.
+    //
+    // ⚠️ EL FILTRO VA ENCIMA DEL ROW-LEVEL, NUNCA EN SU LUGAR. Para quien está restringido
+    // (SCRUM-23/147) el `where.operarioId` ya está fijado a SÍ MISMO y el parámetro se
+    // IGNORA por completo: si se asignara aquí, un técnico tendría, con un query param, la
+    // llave para leer los Trabajos de un compañero — justo el agujero que SCRUM-23 cerró.
+    // Ignorar en vez de responder 403 es deliberado: el hub que usa este parámetro es
+    // admin-only, así que un restringido que lo mande no tiene caso de uso legítimo, y
+    // devolverle SUS trabajos es una respuesta correcta y sin oráculo (no le dice si el
+    // operario que preguntaba existe).
+    if (!restringido) {
+      const raw = req.query.operarioId;
+      // 'owner' explícito: el propietario no tiene fila en team_members y sus Trabajos van con
+      // operarioId null. Un parámetro vacío o un 0 accidental NO pueden significar "los del
+      // propietario" por descuido; lo que no se entiende, no filtra.
+      if (raw === 'owner') where.operarioId = null;
+      else if (raw !== undefined && Number.isInteger(Number(raw))) where.operarioId = Number(raw);
+    }
     const jobs = await prisma.job.findMany({
       where,
       orderBy: [{ scheduledAt: 'asc' }, { id: 'desc' }],

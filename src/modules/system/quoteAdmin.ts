@@ -13,8 +13,17 @@ export async function listQuotesAdmin(
   status?: string,
   dateFrom?: Date | null,
   dateTo?: Date | null,
+  // SCRUM-148: filtro por AUTOR del presupuesto (`Quote.teamMemberId`), para el detalle por
+  // miembro del hub de Equipo. `null` = los del PROPIETARIO (no tiene fila en team_members,
+  // así que su autoría se guarda como null); `undefined` = sin filtrar. Distinguir null de
+  // undefined es exactamente el motivo de no escribir aquí un `if (teamMemberId)`: con `0` o
+  // `null` ese if es falso y el filtro "del propietario" se caería en silencio, devolviendo
+  // TODOS los presupuestos del negocio bajo el nombre de una persona.
+  teamMemberId?: number | null,
 ) {
   const where: any = { merchantId };
+
+  if (teamMemberId !== undefined) where.teamMemberId = teamMemberId;
 
   if (status && status !== 'all') {
     where.status = status;
