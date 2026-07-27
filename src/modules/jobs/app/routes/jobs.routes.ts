@@ -22,6 +22,7 @@ import {
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-17
 import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-17: gate fiscal
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-17: total con desglose IVA
+import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 
@@ -39,6 +40,7 @@ async function serializeJob(job: any) {
         select: {
           id: true, quoteNumber: true, total: true, currency: true,
           paymentTerms: true, customBillingPlan: true, // SCRUM-27: para resolver el plan efectivo
+          lines: true, // SCRUM-141: el importe de cada tramo se deriva de las líneas (= lo que se emitirá)
           Invoice: { select: { id: true, status: true, total: true } },
         },
       })
@@ -413,14 +415,15 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
       return res.status(409).json({ error: 'nothing_pending', message: 'No queda ningún tramo por cobrar de este presupuesto.' });
     }
     const stage = plan[emitted];
-    // SCRUM-27+32: importe del tramo del plan resuelto, reparto exacto (último = resto, céntimos enteros).
-    const amount = distributeStageAmounts(quote.total, plan)[stage.index];
     const isCustomPlan = Array.isArray((quote as any).customBillingPlan) && (quote as any).customBillingPlan.length > 0;
-    // TODO(SCRUM-16/17): reparto fino línea-a-línea del último tramo (≤1 cént. vs Invoice.total de SCRUM-32).
+    // SCRUM-141: líneas del tramo primero, importe DERIVADO de ellas (el total es consecuencia de
+    // las líneas). Antes venía de `distributeStageAmounts` con las líneas escaladas aparte: el
+    // desfase de redondeo acababa sellado en la huella VeriFactu. Ver invoiceLines.service.ts.
     const quoteLines = Array.isArray(quote.lines) ? (quote.lines as any[]) : [];
-    const scaledLines = stage.percentage < 1
-      ? quoteLines.map((l: any) => ({ ...l, price: Number(l.price) * stage.percentage }))
-      : quoteLines;
+    const scaledLines = stageLinesReconciled(
+      quoteLines, plan, stage.index, distributeStageAmounts(quote.total, plan)[stage.index],
+    );
+    const amount = grossOfLines(scaledLines);
 
     const invoice = await prisma.$transaction(async (tx) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId);
