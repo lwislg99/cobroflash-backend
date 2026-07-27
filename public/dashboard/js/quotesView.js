@@ -656,32 +656,16 @@ blockClient.appendChild(descWrapper);
 
   blockLines.appendChild(linesHeader);
 
-  const table = document.createElement("table");
-  table.className = "table quote-lines-table";
-  const thead = document.createElement("thead");
-  const trHead = document.createElement("tr");
-  // A20.2 (PV-FIX-1): "Markup" → "Margen" + tooltip de una frase (i)
-  ["Concepto", "Cantidad", "Precio", "Margen %", "IVA %", "Total línea", ""].forEach(
-    (h) => {
-      const th = document.createElement("th");
-      if (h === "Margen %") {
-        th.innerHTML = 'Margen % <span title="Porcentaje que añades sobre tu precio de coste — tu beneficio en esta línea." style="cursor:help;display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:var(--neutral-200);color:var(--neutral-600);font-size:10px;font-weight:700" tabindex="0" role="img" aria-label="Qué es el margen">i</span>';
-      } else {
-        th.textContent = h;
-      }
-      trHead.appendChild(th);
-    }
-  );
-  thead.appendChild(trHead);
-  table.appendChild(thead);
-  const tbody = document.createElement("tbody");
-  table.appendChild(tbody);
-  // A6.6 (P1 móvil): la tabla de líneas es más ancha que un móvil de 390px;
-  // scrollea DENTRO de su contenedor y no arrastra toda la vista (overflow-x).
-  const tableWrap = document.createElement("div");
-  tableWrap.className = "quote-lines-scroll";
-  tableWrap.appendChild(table);
-  blockLines.appendChild(tableWrap);
+  // SCRUM-139 F1: la línea deja de ser una FILA DE TABLA. Antes era `<table class="quote-lines-table">`
+  // con `min-width:560px` dentro de un `overflow-x:auto`: en un móvil de 390 px se rellenaba
+  // scrolleando de lado por 7 columnas. Eso es lo que hacía que "pareciera meter precios" y no
+  // hacer un presupuesto — y con el pulgar en la furgoneta era inservible (AB1: móvil REAL).
+  // Ahora cada línea es una TARJETA (`.quote-line`) en una sola columna; en ≥768 px la misma
+  // tarjeta se dispone en rejilla horizontal, así que el escritorio no pierde densidad y NO hay
+  // dos DOM que mantener. La cabecera de columnas desaparece: cada campo lleva su propia etiqueta.
+  const linesBody = document.createElement("div");
+  linesBody.className = "quote-lines";
+  blockLines.appendChild(linesBody);
 
   // SCRUM-133: segundo "+ Añadir línea", AQUÍ ABAJO — pegado a la última fila, que es
   // donde está la mano tras teclear. El de la cabecera SE QUEDA (no lo sustituye): con
@@ -698,10 +682,10 @@ blockClient.appendChild(descWrapper);
 
   // ---------- DRAG & DROP para reordenar líneas (FRONT1-4) ----------
   let draggedTr = null;
-  tbody.addEventListener("dragover", function (e) {
+  linesBody.addEventListener("dragover", function (e) {
     if (!draggedTr) return;
     e.preventDefault();
-    const rows = Array.from(tbody.querySelectorAll("tr:not(.dragging)"));
+    const rows = Array.from(linesBody.querySelectorAll(".quote-line:not(.dragging)"));
     let after = null;
     let closest = Number.NEGATIVE_INFINITY;
     for (const row of rows) {
@@ -709,11 +693,11 @@ blockClient.appendChild(descWrapper);
       const offset = e.clientY - box.top - box.height / 2;
       if (offset < 0 && offset > closest) { closest = offset; after = row; }
     }
-    if (after == null) tbody.appendChild(draggedTr);
-    else tbody.insertBefore(draggedTr, after);
+    if (after == null) linesBody.appendChild(draggedTr);
+    else linesBody.insertBefore(draggedTr, after);
   });
   function syncLinesOrder() {
-    const rows = Array.from(tbody.querySelectorAll("tr"));
+    const rows = Array.from(linesBody.querySelectorAll(".quote-line"));
     lines.sort((a, b) => rows.indexOf(a.row) - rows.indexOf(b.row));
   }
 
@@ -885,7 +869,7 @@ blockClient.appendChild(descWrapper);
       if (!raw) return false;
       const d = JSON.parse(raw);
       if (!d || !Array.isArray(d.lines) || !d.lines.length) return false;
-      tbody.innerHTML = "";
+      linesBody.innerHTML = "";
       lines = [];
       // SCRUM-134 (precedencia de estado): el IVA por defecto se restaura ANTES de crear las
       // líneas. `addLine` usa `fieldVatDefault.input.value` como fallback cuando una línea no
@@ -1186,7 +1170,7 @@ blockClient.appendChild(descWrapper);
     ptHead.appendChild(ptr);
     linesTable.appendChild(ptHead);
 
-    const ptBody = document.createElement("tbody");
+    const ptBody = document.createElement("linesBody");
 
     if (previewLines.length === 0) {
       const trEmpty = document.createElement("tr");
@@ -1733,10 +1717,34 @@ conceptInput.addEventListener("input", () => {
     return Number.isFinite(n) ? Math.round(n * 10000) / 100 : 0;
   }
 
-  function addLine(initial) {
-    const tr = document.createElement("tr");
+  /**
+   * SCRUM-139 F1: envoltorio de un campo de la línea con su ETIQUETA propia.
+   *
+   * Al desaparecer la cabecera de tabla, cada campo tiene que decir qué es por sí mismo — si no,
+   * en móvil quedan cuatro cajitas numéricas sin significado. La etiqueta usa el estilo Label de
+   * DESIGN.md (12px, 600, MAYÚSCULAS, Apagado) y va asociada al input con `<label>`, que además
+   * amplía el área pulsable: el propio texto enfoca el campo (target ≥44px de AB6).
+   */
+  function campoLinea(etiqueta, clase) {
+    const wrap = document.createElement("label");
+    wrap.className = "quote-line__field " + clase;
+    const lab = document.createElement("span");
+    lab.className = "quote-line__label";
+    lab.textContent = etiqueta;
+    wrap.appendChild(lab);
+    return wrap;
+  }
 
-    const conceptTd = document.createElement("td");
+  function addLine(initial) {
+    // SCRUM-139 F1: tarjeta, no `<tr>`. Se conservan EXACTAMENTE las mismas claves en `lineObj`
+    // (conceptInput, qtyInput, priceInput, markupInput, vatInput, totalCell, priceHint) para que
+    // todo lo que ya las consume —payload, borrador, recalcTotals, plantillas, IA, autocompletado—
+    // siga funcionando sin tocarse. Lo que cambia es el DOM, no el contrato.
+    const tr = document.createElement("div");
+    tr.className = "quote-line";
+    tr.setAttribute("role", "listitem");
+
+    const conceptTd = campoLinea("Concepto", "quote-line__concept");
     const conceptInput = document.createElement("input");
     conceptInput.type = "text";
     conceptInput.placeholder = "Concepto / servicio";
@@ -1750,7 +1758,7 @@ conceptInput.dataset.pfProductId = ""; // vacío = "manual"
 
 
 
-    const qtyTd = document.createElement("td");
+    const qtyTd = campoLinea("Cantidad", "quote-line__qty");
     const qtyInput = document.createElement("input");
     qtyInput.type = "number";
     qtyInput.min = "0";
@@ -1758,7 +1766,7 @@ conceptInput.dataset.pfProductId = ""; // vacío = "manual"
     qtyInput.value = initial && initial.qty != null ? initial.qty : "1";
     qtyTd.appendChild(qtyInput);
 
-    const priceTd = document.createElement("td");
+    const priceTd = campoLinea("Precio", "quote-line__price");
     const priceInput = document.createElement("input");
     priceInput.type = "number";
     priceInput.min = "0";
@@ -1774,7 +1782,7 @@ priceHint.textContent = "";
 priceTd.appendChild(priceHint);
 
 
-    const markupTd = document.createElement("td");
+    const markupTd = campoLinea("Margen %", "quote-line__markup");
 const markupInput = document.createElement("input");
 markupInput.type = "number";
 markupInput.min = "0";
@@ -1784,7 +1792,7 @@ markupInput.value = initial && initial.markup != null ? initial.markup : "0";
 markupTd.appendChild(markupInput);
 
 
-    const vatTd = document.createElement("td");
+    const vatTd = campoLinea("IVA %", "quote-line__vat");
     const vatInput = document.createElement("input");
     attachProductAutocomplete({ conceptInput, priceInput, vatInput, markupInput });
 
@@ -1810,11 +1818,16 @@ markupTd.appendChild(markupInput);
     }
     vatTd.appendChild(vatInput);
 
-    const totalTd = document.createElement("td");
+    // Total de la línea: Regla del Importe (DESIGN.md) — Tinta, ≥700, tabular. Con su etiqueta,
+    // porque sin cabecera de tabla una cifra suelta no dice qué es.
+    const totalTd = document.createElement("div");
+    totalTd.className = "quote-line__total";
     totalTd.textContent = "0.00";
+    const totalWrap = campoLinea("Total", "quote-line__totalwrap");
+    totalWrap.appendChild(totalTd);
 
-    const actionsTd = document.createElement("td");
-    actionsTd.style.whiteSpace = "nowrap";
+    const actionsTd = document.createElement("div");
+    actionsTd.className = "quote-line__actions";
 
     // Handle de arrastre para reordenar (FRONT1-4)
     const dragHandle = document.createElement("span");
@@ -1849,11 +1862,10 @@ markupTd.appendChild(markupInput);
     tr.appendChild(priceTd);
     tr.appendChild(markupTd);
     tr.appendChild(vatTd);
-    tr.appendChild(totalTd);
+    tr.appendChild(totalWrap);
     tr.appendChild(actionsTd);
-    
 
-    tbody.appendChild(tr);
+    linesBody.appendChild(tr);
 
     const lineObj = {
       row: tr,
@@ -1941,7 +1953,7 @@ if (Number.isFinite(n) && n >= 0) {
         renderPreview();
         return;
       }
-      tbody.removeChild(tr);
+      linesBody.removeChild(tr);
       lines = lines.filter(function (l) {
         return l !== lineObj;
       });
@@ -1961,7 +1973,7 @@ if (Number.isFinite(n) && n >= 0) {
   // nada (sin animación → nada que gatear con prefers-reduced-motion).
   function addLineAndFocus() {
     addLine();
-    const nueva = tbody.lastElementChild;
+    const nueva = linesBody.lastElementChild;
     if (!nueva) return;
     const concepto = nueva.querySelector("input");
     if (!concepto) return;
@@ -1978,11 +1990,11 @@ if (Number.isFinite(n) && n >= 0) {
       openAiSuggestModal(function (suggestedLines, meta) {
         if (meta && meta.voiceUsed) quoteFormCreatedVia = 'voice'; // VZ-3
         // Limpiar la fila vacía si es la única y no tiene datos
-        const existingRows = tbody.querySelectorAll('tr');
+        const existingRows = linesBody.querySelectorAll('.quote-line');
         if (existingRows.length === 1) {
           const firstConcept = existingRows[0].querySelector('input[type=text]');
           if (firstConcept && !firstConcept.value.trim()) {
-            tbody.innerHTML = '';
+            linesBody.innerHTML = '';
             lines = [];
           }
         }
@@ -1998,7 +2010,7 @@ if (Number.isFinite(n) && n >= 0) {
     fieldVatDefault.input.value = "21";
     paymentSelect.value = "FULL_UPFRONT";
 
-    tbody.innerHTML = "";
+    linesBody.innerHTML = "";
     lines = [];
     addLine();
     clearDraft();
@@ -2058,15 +2070,15 @@ if (Number.isFinite(n) && n >= 0) {
       `;
       btn.onclick = function () {
         // Vaciar líneas actuales vacías
-        const existingRows = tbody.querySelectorAll('tr');
+        const existingRows = linesBody.querySelectorAll('.quote-line');
         if (existingRows.length === 1) {
           const firstConcept = existingRows[0].querySelector('input[type=text]');
           if (firstConcept && !firstConcept.value.trim()) {
-            tbody.innerHTML = '';
+            linesBody.innerHTML = '';
             lines = [];
           }
         } else {
-          tbody.innerHTML = '';
+          linesBody.innerHTML = '';
           lines = [];
         }
         // Cargar líneas de la plantilla
@@ -2185,7 +2197,7 @@ if (Number.isFinite(n) && n >= 0) {
       var templatePending = false;
       if (template && Array.isArray(template.lines) && template.lines.length > 0) {
         templatePending = true;
-        tbody.innerHTML = '';
+        linesBody.innerHTML = '';
         lines = [];
         template.lines.forEach(function (l) { addLine(l); });
         setAlert('success', `Plantilla "${template.name}" cargada — completa los datos del cliente y genera el presupuesto.`);
