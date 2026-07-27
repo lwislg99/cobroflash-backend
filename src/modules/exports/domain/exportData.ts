@@ -395,6 +395,42 @@ export async function buildPresupuestos(merchantId: number, rango: Rango, status
  */
 export const MAX_FACTURAS_ZIP = 100;
 
+/**
+ * SCRUM-83, paso 2 de la escalera — cuántos PDF se resuelven a la vez en la fase 1 del ZIP.
+ *
+ * POR QUÉ 4, MEDIDO Y NO ELEGIDO REDONDO. Simulando 100 facturas con el perfil de §7 (774 ms
+ * por factura: ~510 ms de ESPERA por red y ~264 ms de CPU de PDFKit):
+ *
+ *   secuencial (lo de antes) ── 92,5 s
+ *   límite 2 ────────────────── 43,5 s
+ *   límite 4 ────────────────── 34,7 s   ← 2,7× y aquí se aplana
+ *   límite 8 ────────────────── 31,1 s   ← un 10 % más, por 2× de presión sobre la BD
+ *
+ * Se aplana porque **el suelo es la CPU**: 100 renders × 264 ms son ~26 s que no se solapan
+ * con nada (Node tiene un hilo). Pasar de 4 compra un 10 % a cambio de duplicar las consultas
+ * simultáneas — cada `ensureInvoicePdf` hace ~3 idas y vueltas, así que 4 en vuelo son ~12
+ * consultas, holgado para el pool por defecto (`num_cpus*2+1`), y 8 ya empieza a pelear con el
+ * resto de la app. Ese coste no lo paga el export: lo paga el merchant que esté usando el
+ * dashboard a la vez.
+ *
+ * ⚠️ LO QUE ESTO ACELERA Y LO QUE NO — importa para no prometer de más:
+ *
+ * La medición de §7 (774 ms/factura) se tomó **por WAN**, con ~3 idas y vueltas por factura;
+ * de esos 774 ms, ~510 son RED (corrección de SCRUM-79 en el ticket). Esperar por la red SÍ
+ * se solapa, así que ahí el paralelismo da lo que promete: ~77 s → ~20 s con 100 facturas.
+ *
+ * **En producción la cuenta cambia y el propio ticket lo anticipa:** con app y BD en la misma
+ * región la red casi desaparece y el coste pasa a estar dominado por el render de PDFKit, que
+ * es **CPU en el mismo hilo**. Node no tiene otro hilo donde meterlo: cuatro renders
+ * concurrentes se turnan en el mismo núcleo y la ganancia tiende a la parte de I/O que quede
+ * (leer el logo, escribir el fichero, las consultas), no a 4×.
+ *
+ * O sea: esto quita el cuello que HOY está medido, y no sustituye a re-medir en producción —
+ * que es el primer punto abierto del ticket. Si allí manda PDFKit, la siguiente palanca no es
+ * más concurrencia, es el render (cachear el logo, o sacarlo a un worker).
+ */
+export const EXPORT_PDF_CONCURRENCIA = 4;
+
 export interface EntregaZip {
   completo: boolean;
   /** Nombre del fichero: dice la verdad SIN que haya que abrir nada. */
