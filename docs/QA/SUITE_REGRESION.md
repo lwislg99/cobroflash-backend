@@ -532,11 +532,18 @@ combate — por eso, con la campaña cerrada, se documentó en vez de recontar: 
 > 2. Comprobar que **nadie está dentro** de staging — con datos, no por suposición:
 >    `pg_stat_activity` (conexiones y consultas activas) + fixtures QA recién creadas.
 > 3. Preview (`prisma migrate diff`) y enseñarlo. Cero DROPs y cero ALTER de columnas ajenas.
-> 4. `db push` **con `--skip-generate`**.
+> 4. `db push` **con `--skip-generate`**. ⚠️ **Al extraer la URL del `.env`**: el fichero es
+>    CRLF y el valor va **entre comillas simples**, así que un `cut -d= -f2-` a secas produce
+>    una URL con `` y comillas → Prisma corta con **`P1013` "The scheme is not recognized"**,
+>    que parece un problema de credenciales y no lo es. Sanea: `| tr -d '' | sed -E "s/^'//; s/'$//"`.
+>    (Perdido un rato con esto en el push de SCRUM-145 a prod, 24-jul.)
 > 5. **Regenerar el cliente DESPUÉS del push, nunca antes.** `node_modules` está compartido por
 >    junction entre worktrees: un cliente con columnas que la BD todavía no tiene rompe **cualquier
 >    lectura** de esa tabla (`SELECT` de columna inexistente) — incluidos los tests gateados de las
->    OTRAS sesiones, que no han tocado nada.
+>    OTRAS sesiones, que no han tocado nada. Y ojo al reverso: si otra sesión regeneró el
+>    cliente desde un `main` ANTERIOR a tu merge, el cliente compartido se queda **viejo** y una
+>    lectura falla con «Unknown field» aunque la columna SÍ esté en la BD — pasó al verificar el
+>    push a prod de SCRUM-145. Regenerar después del push arregla ambos lados.
 >
 > Prod va aparte: su propio preview y su propio GO (`bash scripts/db-push-prod`).
 
