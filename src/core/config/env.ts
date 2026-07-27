@@ -151,5 +151,60 @@ export const config = {
     }
   }
 
+  /**
+   * SCRUM-163 — ¿`PUBLIC_BASE_URL` es una URL de verdad?
+   *
+   * Devuelve el motivo del rechazo, o `null` si está bien. PURA a propósito: así se puede
+   * probar sin arrancar nada ni tocar `process.env`.
+   *
+   * NACE DE un fallo real: staging tenía el **placeholder literal de las instrucciones**
+   * (`https://<TU-URL-DE-STAGING>`). Como `BASE_URL` es la raíz de TODO enlace absoluto que
+   * genera el sistema, eso dejó rotos los enlaces de pago, los recibos y los magic links de
+   * acceso e invitación — y encima tumbó `confirm-bizum`, que se llama a sí mismo por
+   * `${BASE_URL}/webhooks/psp` (500, el pro no podía confirmar un Bizum cobrado de verdad).
+   *
+   * Por qué no se vio antes: el arranque YA imprimía el valor (`listening on …`) y nadie lo
+   * leyó, y los E2E construyen las URLs por su cuenta con el host bueno — así que solo falla
+   * lo que genera el SERVIDOR, que es el camino menos probado.
+   */
+  export function invalidPublicBaseUrl(value: string): string | null {
+    const v = (value || '').trim();
+    if (!v) return 'está vacía';
+    // Marcadores de plantilla sin sustituir. `<`/`>` cubre cualquier <PON-AQUI-LO-TUYO>.
+    if (/[<>]/.test(v)) return `parece un placeholder sin sustituir: ${v}`;
+    if (/TU-URL|TU_URL|EXAMPLE\.COM|CAMBIAME/i.test(v)) return `parece un valor de ejemplo: ${v}`;
+    let url: URL;
+    try {
+      url = new URL(v);
+    } catch {
+      return `no es una URL válida: ${v}`;
+    }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return `no es http/https: ${v}`;
+    if (!url.hostname) return `no tiene host: ${v}`;
+    return null;
+  }
+
+  /**
+   * SCRUM-163 — a diferencia de los dos `warn*` de arriba, esto **REVIENTA**.
+   *
+   * Un secreto que falta degrada una función (el webhook rechaza, el owner no ve su
+   * facturación); una `PUBLIC_BASE_URL` inválida envenena en SILENCIO todo lo que el sistema
+   * manda al cliente final — enlaces de pago que no abren, invitaciones que no entran— y no da
+   * ninguna señal hasta que alguien se queja. Arrancar con eso mal es peor que no arrancar.
+   *
+   * En dev/local se deja pasar con aviso: el default es `http://localhost:PORT` y nadie manda
+   * enlaces desde ahí.
+   */
+  export function assertPublicBaseUrl(): void {
+    const motivo = invalidPublicBaseUrl(config.PUBLIC_BASE_URL);
+    if (!motivo) return;
+    const msg =
+      `🚨 [config] PUBLIC_BASE_URL ${motivo}. Es la raíz de TODO enlace que el sistema envía ` +
+      `(pagos, recibos, magic links de acceso e invitación) y de la llamada interna de ` +
+      `confirm-bizum. Configúrala en Railway con la URL real del entorno.`;
+    if (config.NODE_ENV === 'production') throw new Error(msg);
+    console.warn(msg);
+  }
+
   export const BASE_URL = config.PUBLIC_BASE_URL;
   
