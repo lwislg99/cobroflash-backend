@@ -204,11 +204,43 @@ export function validateCustomBillingPlan(
  *     (`getBillingPlan` devuelve [] a propósito), así que no es que "ya no quede": es que
  *     nunca hubo tramos.
  * Decir "no queda ningún tramo por cobrar" en el segundo caso es mentirle al pro sobre un
- * plan que no existió. Cada código de error se queda como está (los clientes y los logs
- * los distinguen); lo que se corrige es el texto humano que acompaña al rechazo.
+ * plan que no existió.
+ *
+ * SCRUM-151 (27-jul-2026) — se separa también el CÓDIGO, no solo el texto. La primera versión
+ * conservaba `no_more_invoices_for_payment_terms` para los dos motivos, con el argumento de que
+ * "los clientes y los logs los distinguen": no los distinguen, porque el código era el mismo.
+ * Un solo código para dos causas obliga a cualquier consumidor —UI, soporte, un log— a leer el
+ * texto para saber qué pasó, y el texto es justo lo que no se debe parsear.
+ *
+ * DECISIÓN DEL FUNDADOR (misma fecha, aprobada como cambio de N5 / regla 30): un Trabajo con
+ * condiciones MANUAL/SIN_CONDICIONES **sí debe poder facturarse** desde YaQu — "manual" es
+ * "yo pacto CUÁNDO cobro", no "yo facturo fuera de la app". Por eso el mensaje del plan vacío
+ * NO dice "no disponible" (que suena a "aquí no se factura"): dice que no hay TRAMOS, que es
+ * la verdad de hoy, sin prometer la vía manual que todavía no existe.
  */
-export function motivoSinTramo(plan: unknown[]): string {
+export interface MotivoSinTramo {
+  error: string;
+  message: string;
+}
+
+/**
+ * El código del caso AGOTADO lo pone cada ruta, porque cada una tiene el suyo desde siempre
+ * (`no_more_invoices_for_payment_terms` al emitir desde el presupuesto, `nothing_pending` al
+ * cobrar el resto desde el Trabajo) y renombrarlos rompería a cualquiera que ya ramifique por
+ * ellos. El caso VACÍO, en cambio, es `no_billing_plan` en las dos: es la MISMA condición
+ * —estas condiciones de pago no generan tramos— mirada desde dos pantallas.
+ */
+export function motivoSinTramo(
+  plan: unknown[],
+  codigoAgotado = 'no_more_invoices_for_payment_terms',
+): MotivoSinTramo {
   return plan.length === 0
-    ? 'No disponible para estas condiciones de pago: no generan tramos de factura.'
-    : 'No queda ningún tramo por cobrar de este presupuesto.';
+    ? {
+        error: 'no_billing_plan',
+        message: 'Estas condiciones de pago no generan tramos automáticos, así que no hay facturas que emitir desde aquí.',
+      }
+    : {
+        error: codigoAgotado,
+        message: 'Ya se han emitido todas las facturas de este presupuesto.',
+      };
 }

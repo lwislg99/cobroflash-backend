@@ -516,9 +516,15 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     const plan = resolveBillingPlan(quote); // SCRUM-27: custom o preset
     const emitted = (quote.Invoice || []).length;
     if (emitted >= plan.length) {
-      // SCRUM-151: con plan VACÍO (MANUAL/SIN_CONDICIONES) el mensaje de siempre mentía —
-      // no es que no QUEDE tramo, es que nunca los hubo. El código de error no cambia.
-      return res.status(409).json({ error: 'nothing_pending', message: motivoSinTramo(plan) });
+      // SCRUM-151: con plan VACÍO (MANUAL/SIN_CONDICIONES) el mensaje de siempre mentía — no es
+      // que no QUEDE tramo, es que nunca los hubo. Ahora también cambia el CÓDIGO en ese caso
+      // (`no_billing_plan`), porque es otra condición; el de "ya se cobró todo" sigue siendo
+      // `nothing_pending`, que es el de esta ruta desde siempre.
+      //
+      // ⚠️ `motivoSinTramo` devuelve {error, message}: aquí se ESPARCE. Pasarlo como
+      // `message: motivoSinTramo(plan)` metía el objeto entero dentro del mensaje, y TypeScript
+      // no lo veía porque el cuerpo del JSON es `any`.
+      return res.status(409).json(motivoSinTramo(plan, 'nothing_pending'));
     }
     const stage = plan[emitted];
     const isCustomPlan = Array.isArray((quote as any).customBillingPlan) && (quote as any).customBillingPlan.length > 0;

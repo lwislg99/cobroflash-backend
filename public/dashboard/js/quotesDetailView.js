@@ -606,7 +606,11 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     // btnInvoice.textContent → label crudo (textContent escapa solo).
     const next = quote.nextStage || null;
     if (!isAccepted) {
-      btnInvoice.textContent = 'No disponible para estas condiciones de pago';
+      // SCRUM-151: decía "No disponible para estas condiciones de pago" y el motivo NO son las
+      // condiciones —el plan custom SÍ genera tramos—: es que el presupuesto aún no está
+      // aceptado. Se reutiliza el texto que ya usa la rama de los presets para ese mismo caso,
+      // así que no es microcopy nueva: es dejar de dar un motivo falso.
+      btnInvoice.textContent = 'Solo disponible tras aceptar el presupuesto';
       btnInvoice.disabled = true;
     } else if (next) {
       btnInvoice.textContent = `Generar siguiente tramo: ${next.label} (${fmtQuoteMoney(next.amount, next.currency || cur)})`;
@@ -626,7 +630,13 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     else if (invoices.length === 1) { btnInvoice.textContent = 'Generar 2ª factura (50% restante)'; canGenerateInvoice = true; }
     else { btnInvoice.textContent = 'Plan de facturación completado'; btnInvoice.disabled = true; }
   } else {
-    btnInvoice.textContent = 'No disponible para estas condiciones de pago';
+    // SCRUM-151 · texto aprobado por el fundador (cambio de N5, regla 30). El anterior —"No
+    // disponible para estas condiciones de pago"— decía el QUÉ y no el PORQUÉ, y sobre todo
+    // sonaba a "con estas condiciones aquí no se factura", que es justo la lectura que el
+    // fundador descartó: MANUAL significa "yo pacto CUÁNDO cobro", no "yo facturo fuera de la
+    // app". Este dice la verdad de hoy —no hay TRAMOS— sin prometer la vía de emisión manual,
+    // que todavía no existe (sigue en SCRUM-151, zona fiscal).
+    btnInvoice.textContent = 'Estas condiciones no generan tramos automáticos';
     btnInvoice.disabled = true;
   }
 
@@ -642,7 +652,10 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          setStatus('error', 'Error generando factura: ' + (data.error || 'desconocido'));
+          // SCRUM-151: el mensaje del servidor manda. Antes se pintaba `data.error`, o sea el
+          // identificador interno: el usuario leía "Error generando factura:
+          // no_more_invoices_for_payment_terms". El código queda para el log, no para la pantalla.
+          setStatus('error', data.message || ('Error generando factura: ' + (data.error || 'desconocido')));
           btnInvoice.disabled = false;
           btnInvoice.textContent = original;
           return;
