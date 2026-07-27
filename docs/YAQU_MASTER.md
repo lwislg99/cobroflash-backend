@@ -943,6 +943,25 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 > B→A, nuevo→B; después A→A, B→B, nuevo→vacío. **El IVA de plantillas NO se toca: es SCRUM-132** — se
 > verificó que `addLine` lee `initial.vat` mientras al guardar se escribe `tax: vatPerc/100` (desajuste de
 > clave Y de unidad), así que hoy ambos caminos descartan el IVA de la plantilla. Sin schema.
+>
+> **✅ SCRUM-133 · "+ Añadir línea" DEBAJO de la última fila (24-jul-2026, front/UX):** añadir línea es
+> la acción MÁS repetida del editor de presupuestos y su único control vivía ARRIBA: tras rellenar una
+> línea había que volver arriba con scroll, y esa fricción se paga en CADA línea del flujo core
+> ("presupuesto en 30 s"). Se añade un segundo control pegado a la última fila. **Decisión de UI
+> (carril A): CONVIVE, no sustituye** — con lista larga las dos puntas sirven (arriba al volver de una
+> plantilla, abajo al encadenar líneas) y el de la cabecera agrupa con "Sugerir con IA"/"Usar plantilla",
+> que son las otras formas de poblar líneas. **Cero tokens nuevos:** reutiliza el patrón del editor de
+> albarán (`jobDetailView`, SCRUM-31 F2: ghost + "+ Añadir línea") y el lenguaje de esta misma pantalla
+> (borde discontinuo + `--neutral-*`); clase compartida `.quote-add-line` en `styles.css` (nada de
+> estilos inline), ancho completo y **min-height 44 px** por el target al pulgar de DESIGN.md (el
+> `.btn-ghost` base se queda en 36 px). **Ambos** botones pasan por `addLineAndFocus()`: crea la línea y
+> deja el cursor en su concepto (`focus({preventScroll})` + `scrollIntoView({block:'nearest'})` → sin
+> salto brusco y sin animación que gatear con `prefers-reduced-motion`). `type="button"` explícito: sin
+> él, dentro del `<form>`, el clic ENVIARÍA el presupuesto. Verificado en staging a 390 y 1280 con
+> capturas antes/después: sin el fix el foco se queda en `BODY`; con él cae en el `INPUT` de la última
+> fila. `.quote-add-line` es **variante de botón acotada a esta pantalla**, no componente nuevo de AB3:
+> si aparece un 2.º uso real se generaliza (misma doctrina que `.job-doc-row` → `.doc-row`). Solo front,
+> sin backend, sin schema; no toca cálculo, totales ni fiscal.
 
 **V2. Trigger del segundo tramo:** **✅ VERIFICADO (SCRUM-10/13, 9-jul-2026): el resto NUNCA se cobra solo** (confirmado en código: `/admin/jobs/:id/collect-rest` vía `getNextBillingStage`, siempre acción del pro). Regla: el resto NUNCA se cobra solo; trigger = acción del pro ("Trabajo terminado → Cobrar resto"; con JOB-1: estado `terminado`) → cobro/factura del resto + payment_request.
 **V3. Anticipos [VALIDAR asesor en S1-F]:** señal con factura = **factura de anticipo con IVA**; la final descuenta el anticipo. Pre-SIF: señal con recibo no fiscal (coherente con flag). Post-SIF: implementar el dictamen (regla 32).
