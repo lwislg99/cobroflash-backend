@@ -706,14 +706,36 @@ blockClient.appendChild(descWrapper);
   blockTotals.className = "quote-block quote-block-totals";
   leftCard.appendChild(blockTotals);
 
-  const blockCTitle = document.createElement("h3");
-  blockCTitle.textContent = "Totales";
-  blockCTitle.className = "quote-block-title";
-  blockTotals.appendChild(blockCTitle);
+  // SCRUM-139 F3: este bloque ya NO lleva título "Totales". La cifra ES el título.
+  // Un h3 "Totales" a 30 px por encima de una etiqueta "TOTAL PRESUPUESTO" dice la misma
+  // palabra dos veces (AB1, Una Sola Voz), y de paso empujaba hacia abajo lo único que el
+  // usuario está buscando en esta pantalla: cuánto suma lo que acaba de escribir.
 
   const totalsBox = document.createElement("div");
   totalsBox.className = "quote-totals";
   blockTotals.appendChild(totalsBox);
+
+  /**
+   * SCRUM-139 F3 · EL TOTAL, ANCLADO EN MÓVIL.
+   *
+   * MEDIDO: con un presupuesto realista de 3 líneas, la cifra caía en **y = 1.470 px** dentro
+   * de una pantalla de 844 px. Es decir: mientras escribes NUNCA ves cuánto llevas. Un total
+   * "protagonista" que hay que ir a buscar no es protagonista, y esta pantalla es la que más
+   * ingresos genera de la aplicación (AB1: todo gira alrededor del dinero en juego).
+   *
+   * Por eso el KPI es su PROPIO bloque y cuelga directamente de `leftCard`: `position:sticky`
+   * se limita a la caja del padre, así que dentro de `.quote-totals` (~145 px de alto) el
+   * anclaje no habría servido de nada. Aquí el padre abarca todo el editor, así que la cifra
+   * queda fija abajo mientras editas y se posa en su sitio —justo encima de las acciones— al
+   * llegar al final. UNA sola representación del total: no hay barra flotante *además* del
+   * bloque, es el mismo bloque.
+   *
+   * Solo se ancla por debajo de 768 px: en escritorio la cifra ya se ve sin scroll (medido:
+   * y = 666 px), y anclarla allí sería una barra fija que no resuelve nada.
+   */
+  const kpiBox = document.createElement("div");
+  kpiBox.className = "quote-block quote-total-kpi";
+  leftCard.appendChild(kpiBox);
 
   // ---------- BLOQUE D: ACCIONES ----------
   const blockActions = document.createElement("div");
@@ -963,10 +985,18 @@ blockClient.appendChild(descWrapper);
     // "€X + IVA = €Y" decían lo mismo dos veces). Base + IVA como desglose y el
     // TOTAL como única cifra grande (Regla del Importe: en Tinta).
     // P-A66-3: formato es-ES compartido (adiós al hack del símbolo por moneda).
+    // SCRUM-139 F3: el TOTAL como Signature KPI (DESIGN.md §5) — Label en MAYÚSCULAS
+    // ARRIBA y la cifra Display debajo, no una fila más de una lista. Antes el total era
+    // `.quote-vat-calc`: una fila `space-between` con "Total presupuesto" a 20 px peleando
+    // por el ancho con su propia cifra. Base e IVA quedan como APOYO (pequeños, apagados):
+    // se consultan, no se buscan. La cifra sigue la Regla del Importe (Tinta, ≥700, tabular).
     totalsBox.innerHTML = `
-      <div><span>Base imponible:</span><strong>${fmtMoneyEs(base, cur)}</strong></div>
-      <div><span>IVA (${effVat}%):</span><strong>${fmtMoneyEs(vatTotal, cur)}</strong></div>
-      <div class="quote-vat-calc"><span>Total presupuesto</span><strong>${fmtMoneyEs(total, cur)}</strong></div>
+      <div class="quote-totals__apoyo"><span>Base imponible</span><strong>${fmtMoneyEs(base, cur)}</strong></div>
+      <div class="quote-totals__apoyo"><span>IVA (${effVat}%)</span><strong>${fmtMoneyEs(vatTotal, cur)}</strong></div>
+    `;
+    kpiBox.innerHTML = `
+      <span class="quote-total-kpi__label">Total presupuesto</span>
+      <strong class="quote-total-kpi__cifra">${fmtMoneyEs(total, cur)}</strong>
     `;
 
     return { base, vatTotal, total };

@@ -1164,12 +1164,52 @@ html, body { overflow-x: clip; }
 }
 .quote-add-line:hover:not(:disabled) { background: var(--neutral-100); color: var(--neutral-700); }
 
-.quote-totals {
-  background: var(--neutral-50); border-radius: var(--radius-md);
-  padding: 12px 14px; font-size: 13px; border: 1px solid var(--neutral-200);
-}
+/* SCRUM-139 F3: sin fondo ni borde propios. Era una caja gris DENTRO de la tarjeta blanca
+   del bloque —caja dentro de caja— y con el título "Totales" fuera se notaba el doble marco.
+   Ahora la tarjeta del bloque es el único contenedor y esto es solo el desglose de apoyo. */
+.quote-totals { padding: 0; font-size: 13px; }
 .quote-totals > div { display: flex; justify-content: space-between; margin-bottom: 4px; }
-.quote-total-final { font-weight: 700; color: var(--neutral-900); font-size: 15px; margin-top: 6px !important; }
+
+/* SCRUM-139 F3 · EL TOTAL COMO SIGNATURE KPI (DESIGN.md §5).
+   Base e IVA son APOYO: se consultan, no se buscan. */
+.quote-totals__apoyo { color: var(--muted, #6b756f); }
+.quote-totals__apoyo strong { color: var(--ink, #0f1c17); font-variant-numeric: tabular-nums; font-weight: 600; }
+
+/* El KPI: Label arriba, cifra Display debajo — NO una fila `space-between` donde el rótulo
+   pelea por el ancho con su propia cifra (así estaba en `.quote-vat-calc`). */
+.quote-total-kpi { display: block; }
+
+/* ANCLADO EN MÓVIL. Medido: con 3 líneas reales la cifra caía en y=1.470 px dentro de una
+   pantalla de 844 px — mientras escribes no ves nunca cuánto llevas. Anclada, la cifra
+   acompaña toda la edición y se posa en su sitio (encima de las acciones) al llegar al final.
+   Es EL MISMO bloque, no una barra flotante añadida: una sola representación del total.
+   En ≥768 px NO se ancla: allí ya se ve sin scroll (medido: y=666 px) y una barra fija no
+   resolvería nada. */
+@media (max-width: 767px) {
+  .quote-total-kpi {
+    position: sticky;
+    bottom: 8px;
+    z-index: 5;
+    box-shadow: 0 8px 24px rgba(16, 24, 40, .10);   /* sombra Flotante (DESIGN.md §4) */
+  }
+}
+.quote-total-kpi__label {
+  display: block;
+  font-size: 12px; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--muted, #6b756f);
+  margin-bottom: 2px;
+}
+/* Display de DESIGN.md §3 (800, tracking -.02em) + Regla del Importe: Tinta, nunca verde,
+   nunca gris apagado. `clamp` para que 12.099,99 € no rompa la caja en un móvil de 360 px. */
+.quote-total-kpi__cifra {
+  display: block;
+  font-size: clamp(1.75rem, 7vw, 2.25rem);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  color: var(--ink, #0f1c17);
+  font-variant-numeric: tabular-nums;
+}
 
 /* Quote preview */
 .quote-preview {
@@ -1674,22 +1714,10 @@ html, body { overflow-x: clip; }
 /* Modal post-crear: grupo de acciones de envío dentro del cuerpo */
 .modal-share-label { font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin: 14px 0 8px; }
 .modal-share { display: flex; gap: 8px; flex-wrap: wrap; }
-.quote-vat-calc {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 12px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--neutral-200, #e2e8f0);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--neutral-700, #334155);
-  text-align: right;
-}
-/* Regla del Importe (DESIGN.md): el dinero SIEMPRE en Tinta, jamás en verde
-   (el verde es de las acciones). Antes el total final salía verde. */
-.quote-vat-calc strong { color: var(--ink, #0f1c17); font-size: 24px; font-variant-numeric: tabular-nums; }
+/* `.quote-vat-calc` y `.quote-total-final` RETIRADAS en SCRUM-139 F3: la primera era el
+   total viejo (fila `space-between` de 24 px), sustituida por `.quote-total-kpi`; la
+   segunda ya estaba muerta de antes (ningun fichero la emitia). Se retiran en vez de
+   dejarlas "por si acaso": CSS que nadie usa es CSS que el siguiente copia por error. */
 .quote-drag-handle {
   cursor: grab;
   color: var(--neutral-300, #cbd5e1);
