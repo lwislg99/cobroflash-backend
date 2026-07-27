@@ -7,7 +7,7 @@ import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 
 import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-147: capacidad, no literal
 import { canTransition, estadoCobroFor, JOB_TIPOS_OPERACION } from '../../domain/job.service';
 import { recordAudit } from '../../../system/audit.service'; // SCRUM-66: traza de tipo_operacion_elegido
-import { resolveBillingPlan, distributeStageAmounts } from '../../../quotes/domain/billingPlan';
+import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo } from '../../../quotes/domain/billingPlan';
 import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; // SCRUM-34
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
@@ -515,7 +515,9 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     const plan = resolveBillingPlan(quote); // SCRUM-27: custom o preset
     const emitted = (quote.Invoice || []).length;
     if (emitted >= plan.length) {
-      return res.status(409).json({ error: 'nothing_pending', message: 'No queda ningún tramo por cobrar de este presupuesto.' });
+      // SCRUM-151: con plan VACÍO (MANUAL/SIN_CONDICIONES) el mensaje de siempre mentía —
+      // no es que no QUEDE tramo, es que nunca los hubo. El código de error no cambia.
+      return res.status(409).json({ error: 'nothing_pending', message: motivoSinTramo(plan) });
     }
     const stage = plan[emitted];
     const isCustomPlan = Array.isArray((quote as any).customBillingPlan) && (quote as any).customBillingPlan.length > 0;
