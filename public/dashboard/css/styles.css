@@ -1132,10 +1132,21 @@ html, body { overflow-x: clip; }
   font-variant-numeric: tabular-nums;
   min-height: 44px; display: flex; align-items: center;
 }
+/* SCRUM-139 F5: las acciones dejan de ser una TIRA a lo ancho con su línea divisoria y pasan
+   a compartir fila con el total. Aquella tira costaba ~45 px por línea para, en móvil, un solo
+   botón que funcionara. Ahora es un «⋯» junto al importe. */
 .quote-line__actions {
-  grid-column: 1 / -1;
-  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
-  border-top: 1px solid var(--neutral-100, #eef1ee); padding-top: 8px;
+  display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+  justify-self: end;
+}
+/* Target al pulgar (AB6): `.overflow-trigger` viene con `btn-sm`, que se queda corto. */
+.quote-line__actions .overflow-trigger { min-width: 44px; min-height: 44px; }
+
+/* El asa de arrastre NO se pinta en móvil: el arrastre HTML5 se apoya en eventos de ratón y en
+   Android Chrome el toque no dispara `dragstart`. Un asa que no arrastra es una promesa falsa,
+   así que ahí manda "Subir"/"Bajar" del menú. En escritorio el arrastre sigue igual. */
+@media (max-width: 767px) {
+  .quote-drag-handle { display: none; }
 }
 /* SCRUM-139 F4 (cierra BUGS.md P3-13): el aviso vive dentro de la etiqueta de PRECIO, no
    debajo del input. Debajo hacía esa celda más alta que las demás y `align-items:end` le subía
@@ -1202,7 +1213,7 @@ html, body { overflow-x: clip; }
     gap: 12px;
   }
   .quote-line__concept, .quote-line__actions, .quote-line__ajustes { grid-column: auto; }
-  .quote-line__actions { border-top: none; padding-top: 0; justify-content: flex-start; }
+  .quote-line__actions { justify-content: flex-start; justify-self: auto; }
 }
 
 /* SCRUM-133: "+ Añadir línea" DEBAJO de la última fila — añadir es la acción más
