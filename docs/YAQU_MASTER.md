@@ -962,6 +962,36 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 > fila. `.quote-add-line` es **variante de botón acotada a esta pantalla**, no componente nuevo de AB3:
 > si aparece un 2.º uso real se generaliza (misma doctrina que `.job-doc-row` → `.doc-row`). Solo front,
 > sin backend, sin schema; no toca cálculo, totales ni fiscal.
+>
+> **🟡 SCRUM-145 (144a) · payload VeriFactu conforme a los XSD — PARCIAL (24-jul-2026, fiscal):**
+> nace del recon de SCRUM-144, que **corrigió una premisa**: el «Modelo C» tal como se planteó **no
+> existe** — la AEAT **no tiene canal de subida de XML** en la Sede (la remisión del art. 15 RRSIF es
+> servicio web SOAP con certificado, y la app gratuita *«no permite exportar registros para continuar
+> la facturación en otro SIF»*). La decisión de transporte queda en **SCRUM-146 (144b)**; este payload
+> es **común a los tres modelos**, así que se construye sin esperar nada. **Todo sigue tras
+> `INVOICING_ES_ENABLED` OFF (regla 24).**
+> **HECHO (sin schema):** el XML pasa de «inspirado en» a conforme en estructura — raíz real
+> **`sum:RegFactuSistemaFacturacion`** con los dos namespaces oficiales (antes `<RegistrosFacturacion>`
+> sin ns), envoltorio **`RegistroFactura`** y el elemento **`RegistroAlta`** (antes se usaba
+> `RegistroFacturacionAlta`, que es el nombre del **TIPO**, no del elemento); **`SistemaInformatico`
+> completo** (9 campos) alimentado por env desde la declaración responsable, con **FAIL-CLOSED**: sin
+> datos del productor **lanza** en vez de emitir un registro fiscal con placeholders;
+> **`Encadenamiento/RegistroAnterior`** ahora identifica la factura anterior COMPLETA (emisor + nº +
+> fecha + huella) resolviéndola por su huella —sin columna nueva—, y si la cadena no se puede acreditar
+> **lanza** en vez de fingir `PrimerRegistro`; **`Destinatarios`** solo se emite con NIF del cliente
+> (antes salía `NombreRazon` suelto → **XML inválido**); guard de **1000 registros** por envío (tope del
+> XSD). **Test propio** (`scrum145-verifactu-xsd`, sin gate) que **extrae del XSD** los elementos
+> obligatorios y las ramas de cada `choice` en tiempo de test — si la AEAT publica un campo nuevo, se
+> entera solo. **Alcance dicho en voz alta:** NO es validación XSD completa (sin `xmllint` ni libxmljs
+> no hay forma sin dependencia nativa); tipos/longitudes/cardinalidades los validará el entorno de
+> pruebas AEAT en S1-D. **La huella NO se toca** (cadenas persistidas intactas).
+> **PENDIENTE — bloqueado por SCHEMA (necesita GO del fundador, AA1.4 + una sola mano en
+> `schema.prisma`):** (a) `vf_timestamp` para emitir el instante REAL que entró en la huella — hoy se
+> emite `createdAt` **con el formato correcto pero valor no verificable por un tercero**; (b) el
+> **registro de ANULACIÓN**, que necesita persistir su propia huella. **PENDIENTE — dictamen del
+> asesor (no se inventa en código):** si una F1 sin destinatario identificado debe marcarse
+> `FacturaSinIdentifDestinatarioArt61d` o emitirse como **F2 simplificada**; y qué
+> `TipoRectificativa` (S/I) corresponde a nuestras R1.
 
 **V2. Trigger del segundo tramo:** **✅ VERIFICADO (SCRUM-10/13, 9-jul-2026): el resto NUNCA se cobra solo** (confirmado en código: `/admin/jobs/:id/collect-rest` vía `getNextBillingStage`, siempre acción del pro). Regla: el resto NUNCA se cobra solo; trigger = acción del pro ("Trabajo terminado → Cobrar resto"; con JOB-1: estado `terminado`) → cobro/factura del resto + payment_request.
 **V3. Anticipos [VALIDAR asesor en S1-F]:** señal con factura = **factura de anticipo con IVA**; la final descuenta el anticipo. Pre-SIF: señal con recibo no fiscal (coherente con flag). Post-SIF: implementar el dictamen (regla 32).
