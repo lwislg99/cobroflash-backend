@@ -11,6 +11,59 @@
 > **NO uses `migrate deploy`/`migrate dev`** — aplicaría un schema viejo (entorno nuevo) o
 > propondría un reset. `db push` es el ÚNICO mecanismo. (Volver a migrate = SCRUM-40 opción A.)
 
+## SCRUM-145 · `invoices.vf_timestamp` + `vf_anul_hash` + `vf_anul_timestamp` (VeriFactu) — ✅ APLICADO en prod (2026-07-24)
+
+```sql
+ALTER TABLE "invoices" ADD COLUMN     "vf_anul_hash" TEXT,
+ADD COLUMN     "vf_anul_timestamp" TIMESTAMP(3),
+ADD COLUMN     "vf_timestamp" TIMESTAMP(3);
+```
+
+- **Preview real** (`prisma migrate diff` contra staging, 24-jul): exactamente esas 3
+  sentencias. **0 DROPs, 0 ALTER de columnas existentes**, las 3 nullable → aditiva pura.
+- **Para qué:** `vf_timestamp` guarda el instante EXACTO (con huso) que entró en el cálculo de
+  la huella — hoy el registro emite el momento de la FACTURA, que no es el que se hasheó, así
+  que un tercero **no puede recomputar la huella**. `vf_anul_hash`/`vf_anul_timestamp` son del
+  registro de **anulación**, que es un registro distinto con su propia huella (regla 29: la
+  factura anulada conserva la suya).
+- ⚠️ **ORDEN OBLIGATORIO (dos schemas en vuelo, 24-jul):** antes de empujar, `git pull` y
+  comprobar que el `schema.prisma` local contiene **todo** lo que hay en `main`. Empujar desde
+  un schema viejo **borraría columnas ajenas** de staging — estuvo a punto de pasar dos veces
+  el mismo día. El preview de arriba se hizo con `schema.prisma` **idéntico a `main`**
+  (verificado con `git diff origin/main -- prisma/schema.prisma`, vacío).
+- ⚠️ **NO regenerar el cliente Prisma antes del push a staging:** el `node_modules` está
+  compartido por junction entre worktrees; un cliente con estas columnas contra una BD que aún
+  no las tiene rompe cualquier lectura de `invoices` (`SELECT` de columna inexistente) — y con
+  ello los tests gateados de la OTRA sesión.
+- **Estado:** staging ✅ (24-jul) · **prod ✅ (24-jul)** — mismo diff exacto en los dos, con
+  host-check (`autorack` = prod, `acela` = staging) y `schema.prisma` idéntico a `main`
+  verificado con `git diff origin/main` VACÍO antes de cada push.
+- **Verificado tras el push a prod:** las 3 columnas existen en `information_schema` y una
+  lectura real de `invoices` (55 filas) devuelve los campos nuevos sin error.
+- ⚠️ **El cliente Prisma compartido estaba STALE al verificar** (otra sesión lo había
+  regenerado desde un `main` anterior al merge), así que la primera lectura falló con
+  «Unknown field vfTimestamp» aunque la columna SÍ estaba en la BD. Se regeneró DESPUÉS del
+  push —el orden correcto— y quedó verde. Es el mismo riesgo que documenta el runbook, visto
+  ahora desde el otro lado: un cliente viejo también miente.
+- **Inerte hasta entonces:** ningún código lee ni escribe estas columnas todavía; todo el
+  registro sigue tras `INVOICING_ES_ENABLED` OFF (regla 24).
+
+## SCRUM-109 · `expenses.team_member_id` — ✅ APLICADO en prod (2026-07-23)
+
+```sql
+ALTER TABLE "expenses" ADD COLUMN     "team_member_id" INTEGER;
+CREATE INDEX "expenses_merchant_id_team_member_id_idx" ON "expenses"("merchant_id", "team_member_id");
+```
+
+100 % aditivo (columna nullable, sin backfill, 0 DROPs) — mismo patrón que `Job.operarioId`
+(SCRUM-52): autoría del gasto (`null` = propietario), sin relación Prisma declarada a
+propósito. Aplicado con `scripts/db-push-prod`, host-check + preview `migrate diff` +
+verificación post vacía, en el orden de SCRUM-102: **STAGING** (`acela.proxy.rlwy.net:40802`)
+primero → **GO explícito del fundador** → **PRODUCCIÓN** (`autorack.proxy.rlwy.net:40654`),
+ambas con diff idéntico y verificación vacía. `createExpense` ya la rellena con
+`req.teamMemberId` en el `POST /admin/expenses` (abierto a técnico desde SCRUM-107 V1); el
+filtrado row-level (GET/PUT/DELETE por autor) es la V2 de SCRUM-107, carril B (Javier).
+
 ## SCRUM-102 · `merchants.is_platform_owner` (segundo factor del gate owner) — ✅ APLICADO en prod (2026-07-23)
 
 `bash scripts/db-push-prod` (SCRUM-40, procedimiento canónico) aplicado primero a **STAGING**

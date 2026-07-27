@@ -1,42 +1,44 @@
 import { Router } from 'express';
 import { requireRole } from '../../../../core/http/authMiddleware';
+import { isSupportedRole, SUPPORTED_ROLES } from '../../../../core/http/roleCapabilities'; // SCRUM-147
 import { prisma } from '../../../../core/db/prisma';
 import { getEntitlements } from '../../../../core/entitlements';
 import {
-  listTeamMembers,
   createTeamMember,
   updateTeamMember,
   suspendTeamMember,
   resendInvite,
 } from '../../domain/team.service';
+// SCRUM-131: mismo vocabulario de "¿salió el envío?" que los 9 endpoints (SCRUM-126). No es uno
+// de ellos (es un email de invitación interno, no un documento a cliente final), pero la forma
+// del bug era idéntica y no hay motivo para que el contrato difiera.
+import { sendSuccessBody, sendFailureBody } from '../../../../lib/sendOutcome';
+import { getTeamOverview } from '../../domain/teamOverview.service'; // SCRUM-136 (hub Equipo)
 
 const router = Router();
 
-// Todas las rutas de equipo requieren rol admin
+// Todas las rutas de equipo requieren rol admin.
+// ⚠️ SCRUM-136: este gate está DUPLICADO — `app.ts` ya monta este router con
+// `mountAdmin(app, '/admin/team', requireRole('admin'), teamRouter)`. Se descubrió al
+// verificar el test EN ROJO: quitar solo uno de los dos deja la ruta igual de cerrada, así
+// que el test no distingue cuál actúa (hubo que quitar los dos para verlo fallar). No se
+// retira ninguno: la redundancia es barata y sobrevive a que alguien reorganice `app.ts`.
+// Si algún día quitas uno, comprueba que el OTRO sigue en pie antes de fiarte del verde.
 router.use(requireRole('admin'));
 
-// GET /admin/team
+// GET /admin/team — SCRUM-136: el roster AHORA llega con su resumen (presupuestos del mes,
+// trabajos abiertos, pendiente). Se enriquece esta ruta en vez de abrir un /admin/team/overview
+// porque ya es admin-only y ya es "el equipo": una ruta nueva sería superficie que declarar en
+// el ratchet (SCRUM-113) para exactamente el mismo dato, y dos peticiones donde basta una.
+//
+// COMPATIBILIDAD: la respuesta sigue siendo un ARRAY con los mismos campos por miembro
+// (id/name/email/role/status/isOwner/createdAt) y el propietario el primero — solo se AÑADE
+// `resumen`. El array suelto se conserva a propósito: envolverlo en un objeto rompería a
+// cualquier consumidor que haga `members.length` (teamView lo hacía).
 router.get('/', async (req, res) => {
   try {
-    const members = await listTeamMembers(req.merchantId);
-
-    // Incluir el propietario como primer miembro con role=admin/owner
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: req.merchantId },
-      select: { name: true, email: true },
-    });
-
-    const owner = {
-      id: null,
-      name: merchant?.name ?? '',
-      email: merchant?.email ?? '',
-      role: 'admin',
-      status: 'active',
-      isOwner: true,
-      createdAt: null,
-    };
-
-    return res.json([owner, ...members.map((m) => ({ ...m, isOwner: false }))]);
+    const { miembros } = await getTeamOverview(req.merchantId);
+    return res.json(miembros);
   } catch (err) {
     console.error('[GET /admin/team]', err);
     return res.status(500).json({ error: 'internal_error' });
@@ -48,7 +50,15 @@ router.post('/', async (req, res) => {
   try {
     const name  = String(req.body?.name  || '').trim();
     const email = String(req.body?.email || '').toLowerCase().trim();
-    const role  = req.body?.role === 'admin' ? 'admin' : 'tecnico';
+    // SCRUM-147: se VALIDA, ya no se coacciona. Antes, cualquier valor distinto de 'admin' se
+    // reescribía a 'tecnico' EN SILENCIO: pedir role:'comercial' creaba un técnico sin avisar, y
+    // quien lo pidiera creía tener un rol que no existe. Omitirlo sigue siendo válido (default
+    // 'tecnico'); mandar uno no soportado ahora es un 400.
+    const roleRaw = req.body?.role == null ? 'tecnico' : req.body.role;
+    if (!isSupportedRole(roleRaw)) {
+      return res.status(400).json({ error: 'invalid_role', message: `Rol no soportado. Válidos: ${SUPPORTED_ROLES.join(', ')}.` });
+    }
+    const role = roleRaw;
 
     if (!name)  return res.status(400).json({ error: 'name_required' });
     if (!email || !email.includes('@')) return res.status(400).json({ error: 'invalid_email' });
@@ -100,7 +110,13 @@ router.put('/:id', async (req, res) => {
     if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const name = req.body?.name ? String(req.body.name).trim() : undefined;
-    const role = req.body?.role === 'admin' ? 'admin' : req.body?.role === 'tecnico' ? 'tecnico' : undefined;
+    // SCRUM-147: `undefined` = "no se cambia el rol" (sigue siendo válido). Pero un rol PRESENTE
+    // y no soportado ya no se ignora en silencio — se rechaza, en vez de guardar el cambio de
+    // nombre y descartar el de rol sin decir nada.
+    if (req.body?.role != null && !isSupportedRole(req.body.role)) {
+      return res.status(400).json({ error: 'invalid_role', message: `Rol no soportado. Válidos: ${SUPPORTED_ROLES.join(', ')}.` });
+    }
+    const role = req.body?.role == null ? undefined : (req.body.role as 'admin' | 'tecnico');
 
     const updated = await updateTeamMember({ id, merchantId: req.merchantId, name, role });
     return res.json(updated);
@@ -117,8 +133,12 @@ router.post('/:id/resend', async (req, res) => {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
 
-    await resendInvite(id, req.merchantId);
-    return res.json({ ok: true });
+    // SCRUM-131: `sent` es la única verdad sobre si el email salió (contrato de sendOutcome.ts).
+    // Antes se respondía `{ok:true}` fijo aunque Resend fallara: el admin leía "invitación
+    // reenviada" y el operario no recibía nada. Se mantiene el 200 a propósito — la invitación
+    // SÍ se regeneró y sigue válida 7 días; lo que falló es la ENTREGA.
+    const { sent, reason } = await resendInvite(id, req.merchantId);
+    return res.json(sent ? sendSuccessBody() : sendFailureBody(reason ?? 'email_send_failed'));
   } catch (err: any) {
     console.error('[POST /admin/team/:id/resend]', err);
     if (err.message === 'member_not_found') return res.status(404).json({ error: 'not_found' });

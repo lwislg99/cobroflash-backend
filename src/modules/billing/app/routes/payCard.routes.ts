@@ -7,17 +7,13 @@ import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { stripe } from '../../../../integrations/stripe';
 import { BASE_URL, config } from '../../../../core/config/env';
 import { isFlagEnabled } from '../../../../core/flags';
+import { DEMO_MERCHANT_ID } from '../../../invoicing/domain/emission.service';
+import { cardChargeDecision } from '../../domain/cardCharge';
 
 const router = Router();
 
 router.get('/card/:token', async (req, res) => {
   const token = req.params.token;
-
-  if (!stripe) {
-    return res
-      .status(501)
-      .send('Stripe no está configurado. Define STRIPE_SECRET_KEY y STRIPE_WEBHOOK_SECRET.');
-  }
 
   try {
     const charge = await prisma.charge.findUnique({
@@ -28,6 +24,18 @@ router.get('/card/:token', async (req, res) => {
     const id = charge.id;
     if (charge.status !== 'pending') {
       return res.redirect(303, `/recibo/${token}`);
+    }
+
+    // SCRUM-119: la comprobación de Stripe va DEBAJO de resolver el token. Un identificador
+    // inexistente debe dar 404 (respuesta sobre el RECURSO) esté Stripe configurado o no; el 501
+    // (estado del SERVIDOR) no debe adelantarse, porque uniformaba token-válido e id-numérico y
+    // hacía indistinguible «IDOR cerrado» de «Stripe ausente» — y de paso enterraba el resto del
+    // bloque de scrum85 (bizum + el cruce A/B de tenancy). Alinea /pay/card con /pay/mp, /pay/bank
+    // y /pay/bizum, que resuelven el recurso ANTES de mirar su integración/flag.
+    if (!stripe) {
+      return res
+        .status(501)
+        .send('Stripe no está configurado. Define STRIPE_SECRET_KEY y STRIPE_WEBHOOK_SECRET.');
     }
 
     const amountCents = Math.round(Number(charge.amount) * 100);
@@ -42,6 +50,29 @@ router.get('/card/:token', async (req, res) => {
       isFlagEnabled('PAYMENTS_CONNECT_ENABLED', { merchant }) &&
       merchant?.connectStatus === 'active' &&
       !!merchant?.stripeAccountId;
+
+    // SCRUM-130 (r23 · reglas 23 + 18): la tarjeta va a la cuenta CONECTADA del merchant, o NADA — la cuenta de
+    // PLATAFORMA solo es legítima para el merchant demo. Un merchant real SIN Connect NO cobra tarjeta
+    // aquí (dinero de clientes finales en la cuenta equivocada es regulatorio). Hasta hoy solo lo
+    // tapaba el selector de la UI (no ofrecía tarjeta); esto lo cierra en el backend. Va DEBAJO del
+    // `if (!stripe)` a propósito: sin Stripe ya se devolvió 501, así que el guard solo muerde donde
+    // hay Stripe (producción), no en staging.
+    const mode = cardChargeDecision({ useConnect, isDemo: merchant?.id === DEMO_MERCHANT_ID });
+    if (mode === 'refuse') {
+      return res
+        .status(409)
+        .setHeader('Content-Type', 'text/html; charset=utf-8')
+        .send(
+          `<!doctype html><html lang="es"><head><meta charset="utf-8"/>` +
+          `<meta name="viewport" content="width=device-width,initial-scale=1"/>` +
+          `<title>Pago con tarjeta no disponible</title></head>` +
+          `<body style="font-family:system-ui,-apple-system,sans-serif;max-width:420px;margin:48px auto;padding:0 20px;text-align:center;color:#0f1c17">` +
+          `<h1 style="font-size:20px;margin:0 0 8px">El pago con tarjeta no está disponible</h1>` +
+          `<p style="color:#6b756f;font-size:14px;line-height:1.5;margin:0 0 16px">Este negocio aún no ha activado los cobros con tarjeta. Puedes pagar por transferencia o Bizum.</p>` +
+          `<a href="/pay/invoice/${token}" style="display:inline-block;color:#15803d;font-weight:600;text-decoration:none">← Ver otras formas de pago</a>` +
+          `</body></html>`,
+        );
+    }
 
     const sessionParams = {
       mode: 'payment' as const,

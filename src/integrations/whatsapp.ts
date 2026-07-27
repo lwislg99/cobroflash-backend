@@ -139,20 +139,41 @@ export async function sendWhatsAppTemplate(params: {
   const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
   const token = config.WHATSAPP_ACCESS_TOKEN;
 
+  // SCRUM-115: un envío que nunca llegó a Meta (guard o credencial) no debe desaparecer
+  // sin rastro — WA-0b registraba SOLO el camino de éxito, así que un fallo no dejaba
+  // fila que consultar (el ticket "el fallo no se registra en ningún sitio"). No cuenta
+  // para los topes A3.2/J6 porque esas queries filtran por waMessageId (no lo tiene).
+  const logFailure = (reason: string) => {
+    if (!params.merchantId) return;
+    recordWaMessage({
+      merchantId: params.merchantId,
+      customerId: params.log?.customerId ?? null,
+      type: 'template',
+      templateName: params.templateName,
+      status: 'failed',
+      error: reason,
+      relatedType: params.log?.relatedType ?? null,
+      relatedId: params.log?.relatedId ?? null,
+    }).catch(() => {});
+  };
+
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, mensaje omitido');
+    logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
   }
 
   // V0-2: modo demo seguro — el demo solo envía a DEMO_SAFE_NUMBERS
   if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
     console.warn(`[WhatsApp] V0-2: envío desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO (no está en DEMO_SAFE_NUMBERS)`);
+    logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
   }
 
   // J3: baja del canal — bloqueo de plantillas a ese número para ese merchant
   if (params.merchantId && (await isWaOptedOut(params.merchantId, params.to))) {
     console.warn(`[WhatsApp] ${maskPhone(params.to)} dado de baja (waOptOut) para merchant ${params.merchantId}; envío bloqueado`);
+    logFailure('wa_opt_out');
     return { ok: false, reason: 'wa_opt_out' };
   }
 
@@ -163,9 +184,11 @@ export async function sendWhatsAppTemplate(params: {
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
 
-      // Tope por merchant/día (protege el número y el gasto)
+      // Tope por merchant/día (protege el número y el gasto). SCRUM-115: solo cuenta
+      // intentos que LLEGARON a Meta (waMessageId presente) — un fallo de guard o de
+      // credencial no consumió API ni gasto, así que no debe comerse cupo.
       const sentToday = await prisma.whatsAppMessage.count({
-        where: { merchantId: params.merchantId, type: 'template', createdAt: { gte: startOfDay } },
+        where: { merchantId: params.merchantId, type: 'template', createdAt: { gte: startOfDay }, waMessageId: { not: null } },
       });
       if (sentToday >= config.WA_DAILY_TEMPLATE_CAP) {
         // Alerta interna de gasto/uso diario (visible en logs de Railway)
@@ -173,6 +196,7 @@ export async function sendWhatsAppTemplate(params: {
           `[WhatsApp][ALERTA] merchant ${params.merchantId} alcanzó el tope diario de plantillas ` +
           `(${sentToday}/${config.WA_DAILY_TEMPLATE_CAP}); envío BLOQUEADO (A3.2)`,
         );
+        logFailure('daily_cap');
         return { ok: false, reason: 'daily_cap' };
       }
 
@@ -180,13 +204,14 @@ export async function sendWhatsAppTemplate(params: {
       const customerId = params.log?.customerId;
       if (customerId) {
         const toCustomerToday = await prisma.whatsAppMessage.count({
-          where: { merchantId: params.merchantId, customerId, type: 'template', createdAt: { gte: startOfDay } },
+          where: { merchantId: params.merchantId, customerId, type: 'template', createdAt: { gte: startOfDay }, waMessageId: { not: null } },
         });
         if (toCustomerToday >= config.WA_CUSTOMER_DAILY_CAP) {
           console.warn(
             `[WhatsApp] J6: cliente ${customerId} ya recibió ${toCustomerToday} plantillas hoy ` +
             `del merchant ${params.merchantId}; envío BLOQUEADO`,
           );
+          logFailure('customer_daily_cap');
           return { ok: false, reason: 'customer_daily_cap' };
         }
       }
@@ -199,6 +224,7 @@ export async function sendWhatsAppTemplate(params: {
   const invalid = validateTemplateComponents(params.templateName, params.components);
   if (invalid) {
     console.error('[WhatsApp] Plantilla inválida, envío abortado:', invalid);
+    logFailure(`template_invalid: ${invalid}`);
     return { ok: false, error: `template_invalid: ${invalid}` };
   }
 
@@ -260,6 +286,8 @@ export async function sendWhatsAppTemplate(params: {
     return { ok: true, data: response.data };
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando mensaje:', err?.response?.data || err?.message);
+    const errMsg = err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error');
+    logFailure(errMsg);
     return { ok: false, error: err?.response?.data || err?.message };
   }
 }
@@ -282,13 +310,27 @@ export async function sendWhatsAppWindowFirst(params: {
   template: { templateName: string; languageCode?: string; components?: any[] };
   log?: WaLogMeta;
 }): Promise<{ ok: boolean; via: 'window' | 'template' | 'none'; reason?: string; error?: any; data?: any }> {
+  const customerId = params.customerId ?? params.log?.customerId ?? null;
+
   // J3: la baja del canal manda también sobre los textos de ventana
   if (await isWaOptedOut(params.merchantId, params.to)) {
     console.warn(`[WhatsApp] ${maskPhone(params.to)} dado de baja (waOptOut) para merchant ${params.merchantId}; ventana-first bloqueado`);
+    // SCRUM-126: este early-return no registraba nada en WA-0b (a diferencia del fallback
+    // a sendWhatsAppTemplate, que sí lo hace desde SCRUM-115). El único llamador fire-and-
+    // forget de esta función (el auto-envío tras decisión de presupuesto, quotes.routes.ts)
+    // no tiene NINGÚN otro sitio donde ver este fallo si no queda aquí.
+    recordWaMessage({
+      merchantId: params.merchantId,
+      customerId,
+      type: 'service',
+      templateName: params.template.templateName,
+      status: 'failed',
+      error: 'wa_opt_out',
+      relatedType: params.log?.relatedType ?? null,
+      relatedId: params.log?.relatedId ?? null,
+    }).catch(() => {});
     return { ok: false, via: 'none', reason: 'wa_opt_out' };
   }
-
-  const customerId = params.customerId ?? params.log?.customerId ?? null;
   if (customerId && (await isServiceWindowOpen(params.merchantId, customerId))) {
     // A23: si el llamador da windowCta, la ventana viaja como BOTÓN-ENLACE (sin URL cruda);
     // si no, texto libre como siempre. En ambos casos = service message (0 €).
@@ -339,18 +381,40 @@ export async function sendWhatsAppText(params: {
   text: string;
   // V0-2: si se indica, el merchant demo solo puede enviar a DEMO_SAFE_NUMBERS
   merchantId?: number;
+  // WA-0b: metadata opcional para el registro de un FALLO (SCRUM-115). No se usa en éxito:
+  // sendWhatsAppWindowFirst ya registra el éxito de su propio texto de ventana — duplicaría
+  // la fila si esta función también lo hiciera aquí.
+  log?: WaLogMeta;
 }) {
   const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
   const token = config.WHATSAPP_ACCESS_TOKEN;
 
+  // SCRUM-115: esta función nunca registraba nada en WA-0b, ni éxito ni fallo. Aquí solo
+  // se añade el registro de FALLO (ver comentario del param `log`), que es lo que el
+  // ticket pedía: que un envío que no salió deje rastro consultable.
+  const logFailure = (reason: string) => {
+    if (!params.merchantId) return;
+    recordWaMessage({
+      merchantId: params.merchantId,
+      customerId: params.log?.customerId ?? null,
+      type: 'service',
+      status: 'failed',
+      error: reason,
+      relatedType: params.log?.relatedType ?? null,
+      relatedId: params.log?.relatedId ?? null,
+    }).catch(() => {});
+  };
+
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, mensaje omitido');
+    logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
   }
 
   // V0-2: modo demo seguro (los textos libres además solo entregan en ventana 24h — J2)
   if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
     console.warn(`[WhatsApp] V0-2: texto desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO (no está en DEMO_SAFE_NUMBERS)`);
+    logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
   }
 
@@ -378,6 +442,8 @@ export async function sendWhatsAppText(params: {
     return { ok: true, data: response.data };
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando texto:', err?.response?.data || err?.message);
+    const errMsg = err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error');
+    logFailure(errMsg);
     return { ok: false, error: err?.response?.data || err?.message };
   }
 }

@@ -1021,22 +1021,98 @@ html, body { overflow-x: clip; }
   display: flex; justify-content: space-between; align-items: center;
   margin-bottom: 8px; font-size: 12.5px; color: var(--neutral-500); font-weight: 600;
 }
-/* A6.6 (P1 móvil): la tabla de líneas scrollea en su propio carril y no
-   arrastra toda la vista (el clip de html/body recortaba el formulario). */
-.quote-lines-scroll { overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; }
-.quote-lines-table { width: 100%; min-width: 560px; border-collapse: collapse; }
-/* A2.x: top en las celdas — la celda de precio puede llevar hint debajo y con
-   middle el input "flotaba" desalineado respecto al resto de la fila */
-.quote-lines-table th { font-size: 13px; vertical-align: middle; padding: 6px 4px; }
-.quote-lines-table td { font-size: 13px; vertical-align: top; padding: 6px 4px; }
-.price-final-hint { font-size: 12px; color: var(--muted); margin-top: 4px; min-height: 0; }
-.quote-lines-table input {
-  width: 100%; padding: 7px 8px;
-  border-radius: var(--radius); border: 1.5px solid var(--neutral-200);
-  font-size: 13px; transition: border-color .12s;
+/* ── SCRUM-139 F1 · LA LÍNEA DE PRESUPUESTO ES UNA TARJETA, NO UNA FILA DE TABLA ──────────
+   Antes: `.quote-lines-table { min-width: 560px }` dentro de un `overflow-x:auto`. En un móvil
+   de 390 px cada línea se rellenaba SCROLLEANDO DE LADO por 7 columnas — el origen de que la
+   pantalla "pareciera meter precios" en vez de hacer un presupuesto, y con el pulgar en obra
+   directamente inservible (AB1: móvil REAL, DESIGN.md: "pensado para el pulgar en una obra").
+
+   Ahora: una tarjeta por línea, UNA COLUMNA en móvil y la MISMA tarjeta en rejilla horizontal
+   en ≥768 px — un solo DOM, sin scroll lateral en ninguna anchura. Sin cabecera de tabla, cada
+   campo lleva su etiqueta (`.quote-line__label`, estilo Label de DESIGN.md).
+   Componente nuevo → propuesto al inventario AB3. Solo tokens: cero valores inventados. */
+.quote-lines { display: flex; flex-direction: column; gap: 10px; }
+
+.quote-line {
+  display: grid;
+  grid-template-columns: 1fr 1fr;   /* móvil: concepto a ancho completo, números en pares */
+  gap: 10px 12px;
+  align-items: end;
+  padding: 12px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e7e9e5);
+  border-radius: var(--radius-md, 12px);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04);   /* sombra Reposo (DESIGN.md §4) */
 }
-.quote-lines-table input:focus { outline: none; border-color: var(--green-500); }
-.quote-lines-table tbody tr:hover { background: transparent !important; }
+.quote-line.dragging { opacity: .5; }
+
+.quote-line__field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+/* El concepto es el PROTAGONISTA: ancho completo y primero, como en un cuadernillo. */
+.quote-line__concept { grid-column: 1 / -1; }
+
+/* Estilo Label de DESIGN.md §3 (12px, 600, MAYÚSCULAS, Apagado). Sustituye a los <th>. */
+.quote-line__label {
+  font-size: 12px; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--muted, #6b756f);
+}
+
+.quote-line input {
+  width: 100%;
+  min-height: 44px;                 /* target al pulgar (AB6) — antes 7px de padding */
+  padding: 10px 12px;
+  border: 1px solid var(--border, #e7e9e5);
+  border-radius: var(--radius-md, 12px);
+  font-size: 15px;                  /* ≥16px evita el zoom de iOS al enfocar; 15 + el resto del form */
+  color: var(--ink, #0f1c17);
+  background: var(--surface, #fff);
+  transition: border-color .12s, box-shadow .12s;
+}
+.quote-line input:focus {
+  outline: none;
+  border-color: var(--green-600, #16a34a);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, .30);   /* anillo Foco (DESIGN.md §4) */
+}
+
+/* Regla del Importe (DESIGN.md §3): el dinero en Tinta, ≥700, tabular. Nunca en gris. */
+.quote-line__total {
+  font-weight: 700; font-size: 16px;
+  color: var(--ink, #0f1c17);
+  font-variant-numeric: tabular-nums;
+  min-height: 44px; display: flex; align-items: center;
+}
+.quote-line__actions {
+  grid-column: 1 / -1;
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  border-top: 1px solid var(--neutral-100, #eef1ee); padding-top: 8px;
+}
+.price-final-hint { font-size: 12px; color: var(--muted); margin-top: 2px; min-height: 0; }
+
+/* ≥768 px: la MISMA tarjeta en una fila — el escritorio recupera la densidad de la tabla
+   sin recuperar su scroll lateral ni obligar a mantener un segundo DOM. */
+@media (min-width: 768px) {
+  .quote-line {
+    grid-template-columns: minmax(0, 3fr) 90px 120px 100px 90px minmax(96px, auto) auto;
+    align-items: end;
+    gap: 12px;
+  }
+  .quote-line__concept, .quote-line__actions { grid-column: auto; }
+  .quote-line__actions { border-top: none; padding-top: 0; justify-content: flex-start; }
+}
+
+/* SCRUM-133: "+ Añadir línea" DEBAJO de la última fila — añadir es la acción más
+   repetida del editor y obligaba a volver arriba tras rellenar cada línea. Mismo
+   lenguaje que "Sugerir con IA"/"Usar plantilla" de esta pantalla (ghost + borde
+   discontinuo, tokens neutral) para que se lea como "añadir/poblar" y no compita con
+   la primaria. Ancho completo y min-height 44px: target al pulgar de DESIGN.md (el
+   .btn-ghost base se queda en 36px, insuficiente para la acción más repetida). */
+.quote-add-line {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 8px;
+  border: 1px dashed var(--neutral-300);
+  color: var(--neutral-600);
+}
+.quote-add-line:hover:not(:disabled) { background: var(--neutral-100); color: var(--neutral-700); }
 
 .quote-totals {
   background: var(--neutral-50); border-radius: var(--radius-md);

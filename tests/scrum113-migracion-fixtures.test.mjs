@@ -87,6 +87,15 @@ const CONOCIDOS_AL_MEDIR = [
  *
  * Si un fichero se BORRA del repo de verdad, se baja este suelo A PROPÓSITO y en el mismo
  * commit, con el motivo escrito — igual que MIGRACION_MAX.
+ *
+ * ── SCRUM-124 · CONVENCIÓN ACEPTADA ─────────────────────────────────────────────────────
+ * El mensaje del guard dice «NO bajes CENSO_MIN para que esto pase» y NADA lo hace cumplir.
+ * Es deliberado, no un descuido: bajar esta línea aparece en el diff de un PR y alguien lo
+ * revisa. La regresión es infinita —el suelo del suelo del suelo— y aquí es donde para.
+ *
+ * El criterio no es «¿tiene mecanismo?» sino «¿cuánto cuesta el atajo y quién lo vería?»:
+ * olvidarse de una entrada del censo no aparece en ningún sitio (→ mecanismo, este suelo);
+ * bajar el suelo a propósito sí aparece (→ convención, esta nota).
  */
 export const CENSO_MIN = 25;
 
@@ -104,29 +113,48 @@ export const CENSO_MIN = 25;
  * ESTAS DOS LÍNEAS son la ÚNICA excepción: censo, asserts y fecha los sigue tocando quien
  * escribió el ratchet (carril B, SCRUM-113).
  *
+ * ── SCRUM-124 · CONVENCIÓN ACEPTADA ─────────────────────────────────────────────────────
+ * Ese reparto de propiedad no tiene mecanismo, y no puede tenerlo: un test no sabe quién
+ * edita. Se acepta porque tocar el censo o un assert aparece en el diff, y porque el coste
+ * de saltárselo es bajo y reversible. Lo que sí tiene mecanismo es el EFECTO de saltárselo
+ * mal — sacar un fichero de la lista sin bajar el tope lo caza la igualdad exacta de abajo.
+ *
  * Origen: al migrar `scrum94` (23-jul-2026) el reparto por FICHERO chocó con la atomicidad
  * que este ratchet exige — quien migraba no era dueño de la lista. Se resolvió a favor de
  * la atomicidad: la regla NO se relaja, lo que cambia es quién la cumple. Con reparto por
  * fichero, quien migra es el único que puede cumplirla.
  */
+// MIGRADOS hasta hoy (23-jul-2026) — 22 de 25. Por tandas:
+//   t1 scrum24 · t2 scrum22 · t3 scrum104, scrum25-exports, scrum25-export-zip, scrum106
+//   t4 pdfs, scrum50, scrum73, scrum76, scrum92 · (scrum94 lo migró la sesión 1)
+//   t5 scrum49, scrum72
+//   t7 scrum57, scrum66, albaran, scrum68, scrum85, scrum90, tenancy-permisos, scrum47
+//
+// ── SCRUM-125 · LA UNIDAD DEL CONTADOR: FICHEROS, NO SITIOS DE CREACIÓN ──────────────────
+// `MIGRACION_PENDIENTE.length` (y `MIGRACION_MAX`) cuentan FICHEROS. La unidad REAL de trabajo es
+// el SITIO de creación manual de merchant (los `create`/`createMany`/`upsert` que caza el regex
+// `CREA_A_MANO`; NO se escribe aquí junto, o este mismo fichero se auto-clasificaría `manual` — el
+// detector lee TODOS los `tests/*.test.mjs`, incluido éste). Un fichero puede tener varios:
+// `albaran` y `tenancy-permisos` tenían 2 cada uno → en el pico, 8 ficheros pendientes eran
+// 9 sitios (~12% de desvío). HOY el desvío es 0: los 3 pendientes tienen 1 sitio cada uno (medido,
+// no estimado — ojo: scrum17 tiene 12 bloques `test()` pero UN solo sitio, así que "contar bloques"
+// sería aún MÁS inexacto que contar ficheros).
+//
+// POR QUÉ SE APROXIMA A PROPÓSITO — no lo "arregles" contando sitios:
+//  · La CONTENCIÓN (un fichero nuevo con el patrón viejo sale rojo el primer día) y el DETECTOR
+//    (un fichero a medias sigue marcando `manual` y NO puede salir de la lista) trabajan POR
+//    FICHERO — les da igual la unidad. Solo la lectura humana de «cuánto queda» se resiente, y solo
+//    durante una campaña VIVA. Ésta está cerrada (22/25, quedan 3, todos de 1 sitio).
+//  · Contar sitios obliga a pasar el detector de booleano a contador de matches, y `createMany`
+//    (1 llamada / N merchants), los bucles y las factories NO casan → reintroduce la CEGUERA que
+//    este fichero existe para evitar (SCRUM-103). Campaña cerrada: payoff cero, downside real.
 export const MIGRACION_PENDIENTE = [
-  // tanda 7: albaran (DOS bloques test(), un merchant cada uno — la migración es por
-  //          bloque, no por fichero)
-  'scrum17-recapitulativa.test.mjs',
-  // MIGRADOS — tanda 1: scrum24-operarios-metrics · tanda 2: scrum22-operario-readpath
-  // tanda 3 (exports): scrum104-clientes-referenciados, scrum25-exports, scrum25-export-zip
-  // tanda 4 (grupo A): pdfs, scrum50-bot-albaranes, scrum73-verifactu-gate,
-  //                    scrum76-email-adjunto
-  'scrum47-enviar-albaran-wa.test.mjs',
-  // tanda 5: scrum49-firma-remota · scrum72-pdfs-privados
-  // tanda 7: scrum57-operario-propagacion · scrum66-tipo-operacion
-  'scrum68-evidencias-firma.test.mjs',
-  'scrum74-recibo-token.test.mjs',
-  'scrum85-pay-routes-token.test.mjs',
-  'scrum90-pay-bank-mp-token.test.mjs',
-  // tanda 4 (cont.): scrum92-login-operario · scrum94-register-teammember (sesión 1)
-  'tenancy-permisos.test.mjs',
-  'webhooks-idempotencia.test.mjs',
+  // Los tres que quedan NO son del carril B:
+  'scrum17-recapitulativa.test.mjs',   // consolidación fiscal — con su dueño
+  'scrum74-recibo-token.test.mjs',     // carril A: su throw en el finally es la evidencia
+                                       // que sostiene la hipótesis de SCRUM-79. Migrarlo
+                                       // haría desaparecer el síntoma sin arreglar la causa.
+  'webhooks-idempotencia.test.mjs',    // depende del seed demo (SCRUM-63), sin resolver
 ];
 
 /**
@@ -135,7 +163,7 @@ export const MIGRACION_PENDIENTE = [
  * para que alguien aparque un fichero nuevo sin que nadie se entere. Es la lección literal
  * de SCRUM-103 (el ratchet de rutas se dejó en 25 con 24 entradas).
  */
-// 24 → 23 (t1) → 22 (t2) → 19 (t3) → 13 (t4 + scrum94 sesión 1) → 11 (t5) → 8 (t7)
+// 24 → 23 (t1) → 22 (t2) → 19 (t3) → 13 (t4 + scrum94 sesión 1) → 11 (t5) → 3 (t7)
 //
 // El número salió de CONTAR la lista fusionada, no de elegir rama. Este rebase trajo tres
 // conflictos seguidos en esta línea (16 de la sesión 1 sacando scrum94, contra 15 y 14 del
@@ -143,7 +171,7 @@ export const MIGRACION_PENDIENTE = [
 // una de las dos ramas. Es el escenario exacto que el assert de IGUALDAD EXACTA vino a
 // hacer ruidoso: con `<=` cualquiera de esos números habría pasado en verde, dejando
 // huecos libres.
-export const MIGRACION_MAX = 8;
+export const MIGRACION_MAX = 3;
 
 /**
  * Fecha límite. Pasada, el test falla mientras queden pendientes.
@@ -221,8 +249,12 @@ test('SCRUM-113: la lista de pendientes solo mengua (ratchet + caducidad)', (t) 
   assert.equal(
     MIGRACION_PENDIENTE.length, MIGRACION_MAX,
     MIGRACION_PENDIENTE.length > MIGRACION_MAX
+      // SCRUM-124: decía «una ruta nueva se declara, no se aparca» — frase traída tal cual
+      // del ratchet de rutas de SCRUM-55. Aquí no hay rutas: hay ficheros de test. Copiar
+      // la plantilla trajo también su vocabulario, y un mensaje que habla de otra cosa manda
+      // a quien lo lee a buscar donde no es.
       ? `\n\n🔴 La lista de pendientes ha CRECIDO: ${MIGRACION_PENDIENTE.length} > ${MIGRACION_MAX}.\n` +
-        `Solo puede menguar. Una ruta nueva se declara, no se aparca.\n`
+        `Solo puede menguar. Un test nuevo se escribe con withMerchant, no se aparca aquí.\n`
       : `\n\n🔴 HOLGURA en el ratchet: ${MIGRACION_PENDIENTE.length} pendientes con el tope en ${MIGRACION_MAX}.\n` +
         `Sobran ${MIGRACION_MAX - MIGRACION_PENDIENTE.length} hueco(s), y un hueco libre es sitio para aparcar\n` +
         `un fichero nuevo sin que el test se queje. Baja MIGRACION_MAX a ${MIGRACION_PENDIENTE.length}.\n\n` +

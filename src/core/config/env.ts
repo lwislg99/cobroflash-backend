@@ -19,7 +19,20 @@ export const config = {
     // de plataforma en basis points (90 = 0,9 %, W1/D3 del master).
     STRIPE_CONNECT_WEBHOOK_SECRET: process.env.STRIPE_CONNECT_WEBHOOK_SECRET || '',
     APPLICATION_FEE_BPS: Number(process.env.APPLICATION_FEE_BPS || 90),
-  
+
+    // SCRUM-145 (VeriFactu) — datos del PRODUCTOR del software para el bloque
+    // `SistemaInformatico` del registro de facturación (art. 13 RRSIF). Son los MISMOS que
+    // se firman en `docs/legal/DECLARACION_RESPONSABLE.md`: no se inventan aquí ni se ponen
+    // por defecto. Hoy el documento tiene PLACEHOLDERS (pendiente S1-E + validación del
+    // asesor S1-F), así que estas vars van VACÍAS a propósito y el builder falla en claro
+    // si se intenta emitir un registro sin ellas — un registro fiscal con datos de relleno
+    // sería peor que un error.
+    VERIFACTU_PRODUCTOR_NOMBRE: process.env.VERIFACTU_PRODUCTOR_NOMBRE || '',
+    VERIFACTU_PRODUCTOR_NIF: process.env.VERIFACTU_PRODUCTOR_NIF || '',
+    VERIFACTU_ID_SISTEMA: process.env.VERIFACTU_ID_SISTEMA || '',        // máx 2 caracteres (XSD)
+    VERIFACTU_VERSION: process.env.VERIFACTU_VERSION || '',              // versión declarada del SIF
+    VERIFACTU_NUM_INSTALACION: process.env.VERIFACTU_NUM_INSTALACION || '',
+
     SMTP_URL: process.env.SMTP_URL || '',
     EMAIL_FROM: process.env.EMAIL_FROM || 'YaQu <no-reply@yaqu.local>',
   
@@ -33,11 +46,9 @@ export const config = {
     AUTO_EMAIL_INVOICE_ON_PAID:
       String(process.env.AUTO_EMAIL_INVOICE_ON_PAID).toLowerCase() === 'true' || process.env.AUTO_EMAIL_INVOICE_ON_PAID === '1',
   
-    N8N_ONPAID_URL: process.env.N8N_ONPAID_URL || '',
-    N8N_ONFAILED_URL: process.env.N8N_ONFAILED_URL || '',
-    N8N_ONEXPIRED_URL: process.env.N8N_ONEXPIRED_URL || '',
-    N8N_ONSEND_URL: process.env.N8N_ONSEND_URL || '',
-    N8N_TOKEN: process.env.N8N_TOKEN || '',
+    // SCRUM-129: env vars de n8n RETIRADAS (n8n viola la regla nº1: WhatsApp = Meta Cloud API
+    // directa, jamás n8n). Eran código muerto; el guard estructural vive en scrum129-n8n-guard
+    // (busca el prefijo de env var, escrito con guion bajo, que aquí no repito para no auto-marcarme).
 
 
 

@@ -10,7 +10,7 @@
 
 **R1 · Verifica en la fuente antes de afirmar.** No deducir el estado de algo por su síntoma. Si es configuración externa (Meta, Resend, Railway, DNS), mirar EN la herramienta. Si es código, leer EL código. Si es un archivo, comprobar que existe.
 
-**R2 · No cerrar un ticket sin evidencia de que el fix está donde debe.** "Claude Code dice que está hecho" no es evidencia; el diff o el test que lo prueba, sí.
+**R2 · No cerrar un ticket sin evidencia de que el fix está donde debe.** "Claude Code dice que está hecho" no es evidencia; el diff o el test que lo prueba, sí. **Método concreto:** `git merge-base --is-ancestor <commit> origin/main` (o el "This branch has been merged" de GitHub) — nunca el estado de Jira ni el resumen en prosa del ejecutor. Si el comando no confirma que el commit es antepasado de `main`, el fix no está ahí, aunque el ticket diga "Cerrada" y el reporte diga "hecho".
 
 **R3 · Orden de diagnóstico para "algo no llega/no funciona":** ① ¿se generó? ② ¿se envió/ejecutó? ③ ¿llegó? ④ ¿lo filtró/bloqueó alguien? Empezar por ①, no por ④.
 
@@ -65,6 +65,20 @@
 **Quién lo detectó:** las sesiones, al encontrarse el árbol cambiado.
 **Coste:** una hora de reconstrucción manual, y una columna aplicada a producción antes que su código.
 **Regla derivada:** R6.
+
+### 2026-07-23 · #7 — Cerré SCRUM-114 fiándome de un reporte, sin verificar que el código estaba en main
+**Qué pasó:** cerré el ticket SCRUM-114 (scrum47/scrum49 debían autoimponerse `WHATSAPP_DRY_RUN=1` en vez de depender de que quien invocara el test no lo olvidara) dando el fix por mergeado. La rama con el código real (`scrum-114-enviar-para-firmar-ok-false`) nunca llegó a `main`: lo único que aterrizó fue un PR ajeno de otro carril (#112, `scrum-114-runbook-falso-rojo`) que documentaba el mismo hallazgo en `docs/QA/SUITE_REGRESION.md` ("trampa 7") sin tocar una línea de código. Jira decía "Cerrada"; el repositorio decía otra cosa.
+**Por qué:** di el ticket por bueno porque el relato del cierre coincidía con lo esperado (la misma causa raíz que el propio reporte ya había distinguido con detalle), sin el paso mínimo de comprobar que el commit era antepasado de `main`. Es el MISMO fallo que el incidente #1 (SCRUM-54): confiar en el reporte en vez de en el repositorio.
+**Quién lo detectó:** la siguiente tarea (SCRUM-126), al tocar los mismos ficheros para unificar el shape de los endpoints de envío y encontrar que `WHATSAPP_DRY_RUN` seguía sin autoimponerse — unas 6 horas después de cerrada la 114.
+**Coste:** dos tests gateados (scrum47, scrum49) quedaron frágiles frente a quien los invocara durante esas 6 horas sin que nadie lo supiera; el fix tuvo que reaplicarse dentro de SCRUM-126 en vez de tener su propio PR revisable.
+**Regla derivada:** R2 (reforzada arriba con el método exacto de verificación).
+
+### 2026-07-24 · #8 — Di por rota la vía de transferencia midiendo la PÁGINA equivocada (SCRUM-4 → SCRUM-150)
+**Qué pasó:** al verificar el cobro por transferencia (SCRUM-4) reporté un 🔴 grave: *"el cliente no ve el IBAN ni la referencia — un método de cobro que no se puede completar"*. Era falso. El script medía `/pay/invoice`, que es el **selector** ("Elige cómo pagar"), donde transferencia es un **enlace**; los datos viven en `/pay/bank/:token`. Al mirar `/pay/bank`: IBAN, referencia y dos botones "Copiar", exactamente como promete N2:325.
+**Por qué:** el assert estaba bien escrito y la medición era correcta — *sobre la URL equivocada*. `muestra_iban:false` era **verdad** en esa página. Nada en el resultado indicaba que la página no fuera la del flujo: un rojo bien fundado y un rojo mal dirigido se leen idénticos.
+**Quién lo detectó:** yo mismo, al **abrir la captura** antes de crear el ticket 🔴. La imagen mostraba el selector con "Transferencia bancaria ›" como enlace — la medición numérica no lo mostraba y no podía mostrarlo.
+**Coste:** casi se abre un 🔴 falso sobre un método de cobro (el tipo de alarma que reordena prioridades). Contenido antes de publicarse; el ticket real que salió (SCRUM-150) es un Medium de UI, no un bloqueo de cobro.
+**Regla derivada — nueva:** **un assert sobre la URL equivocada es verde o rojo con la misma confianza.** La medición no valida su propio objeto: antes de fiarse de un resultado automático sobre una pantalla, hay que confirmar que es LA pantalla del flujo (una captura, el HTML, o un assert de identidad del tipo "esta página contiene el título esperado"). Aplica a todo el trabajo de guards de esta semana: un test puede estar midiendo el sitio equivocado con total seguridad.
 
 ---
 

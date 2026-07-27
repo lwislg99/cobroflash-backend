@@ -8,6 +8,7 @@ import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TE
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 import { computeAlbaranContentHash } from '../dist/modules/jobs/domain/albaran.service.js';
 
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
@@ -73,9 +74,19 @@ test('SCRUM-68: sella evidencias (remoto + in situ) y NUNCA expone ip/ua/hash', 
   const base = `http://127.0.0.1:${server.address().port}`;
 
   const stamp = Date.now();
-  const merchant = await prisma.merchant.create({
-    data: { name: 'QA S68', legalName: 'QA S68 SL', taxId: 'B68000000', country: 'ES', email: `qa-s68-${stamp}@test.local`, onboardingCompleted: true, planExpiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000) },
-  });
+
+  // SCRUM-113: el merchant y TODO su montaje dentro de withMerchant; antes nacían fuera del
+  // try. `legalName`/`taxId` se conservan (el PDF del albarán los usa).
+  //
+  // SCRUM-123: `planExpiresAt` SÍ sobraba — confirmado y retirado. Este test usa
+  // /albaran/:token/firmar (pública, sin requireActivePlan), no ninguna de las cuatro rutas
+  // gateadas (ver el docstring de withMerchant). Decisión ya tomada: no default en el
+  // helper, así que no hay motivo para conservarlo "por si acaso".
+  try {
+    await withMerchant(prisma, {
+      name: 'QA S68', legalName: 'QA S68 SL', taxId: 'B68000000',
+      email: `qa-s68-${stamp}@test.local`,
+    }, async (merchant) => {
   const customer = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente 68', phone: `34602${stamp % 1000000}`, email: `cli-s68-${stamp}@test.local` } });
   const job = await prisma.job.create({ data: { merchantId: merchant.id, customerId: customer.id, status: 'terminado', titulo: 'C/ Sol 3', direccion: 'C/ Sol 3' } });
 
@@ -94,7 +105,6 @@ test('SCRUM-68: sella evidencias (remoto + in situ) y NUNCA expone ip/ua/hash', 
     return (res.headers.get('set-cookie') || '').split(';')[0];
   };
 
-  try {
     // ── (A) FIRMA REMOTA (pública) ───────────────────────────────────────────
     const rFirmar = await fetch(`${base}/albaran/${firmaToken}/firmar`, {
       method: 'POST',
@@ -154,13 +164,9 @@ test('SCRUM-68: sella evidencias (remoto + in situ) y NUNCA expone ip/ua/hash', 
     assert.match(rPdf.headers.get('content-type') || '', /application\/pdf/);
 
     console.log('✔ SCRUM-68: evidencias selladas (remoto tokenId + in situ) · ip/ua/hash NUNCA expuestos · PDF con certificado.');
+    });
   } finally {
-    await prisma.whatsAppMessage.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.albaran.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.job.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.customer.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.authSession.deleteMany({ where: { merchantId: merchant.id } });
-    await prisma.merchant.deleteMany({ where: { id: merchant.id } });
+    // Solo lo que NO es del merchant: el borrado de datos lo garantiza withMerchant.
     server.close();
     await prisma.$disconnect();
   }

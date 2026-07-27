@@ -214,17 +214,27 @@ async function renderJobDetailView(container, jobId) {
       try {
         if (nextAct.kind === 'cobrar') {
           const r = await apiRequest(`/admin/jobs/${job.id}/collect-rest`, { method: 'POST' });
-          showToast(r.whatsapp === 'sent'
+          // SCRUM-126: la factura se crea siempre; el envío es un efecto secundario con su
+          // propio resultado en r.whatsapp.sent (ver api.js: waCollectRestSent).
+          const waSent = waCollectRestSent(r.whatsapp);
+          showToast(waSent
             ? `💰 Enlace de cobro enviado (${fmtMoneyEs(r.amount, r.currency)})`
-            : 'Cobro creado — el WhatsApp falló, reenvíalo desde Cobros', r.whatsapp === 'sent' ? 'ok' : 'warn');
+            : 'Cobro creado — el WhatsApp falló, reenvíalo desde Cobros', waSent ? 'ok' : 'warn');
           refresh();
         } else if (nextAct.kind === 'recordar') {
-          await apiRequest(`/admin/invoices/${nextAct.invoiceId}/send-reminder`, { method: 'POST' });
-          showToast('✓ Recordatorio enviado por WhatsApp.');
-          refresh();
+          const d = await apiRequest(`/admin/invoices/${nextAct.invoiceId}/send-reminder`, { method: 'POST' });
+          // SCRUM-115: el endpoint responde 200+ok:true incluso si el envío falló — el
+          // resultado real vive en `sent`, no en que la petición haya llegado.
+          if (d && d.sent === false) {
+            showToast('El WhatsApp del recordatorio falló — reinténtalo desde la factura', 'warn');
+            cta.disabled = false; cta.textContent = orig;
+          } else {
+            showToast('✓ Recordatorio enviado por WhatsApp.');
+            refresh();
+          }
         } else if (nextAct.kind === 'firmar') {
           const d = await apiRequest(`/admin/albaranes/${nextAct.albaranId}/enviar-para-firmar`, { method: 'POST' });
-          if (d && d.ok === false) setStatus('error', d.message || 'No se pudo enviar por WhatsApp.');
+          if (waSendFailed(d)) setStatus('error', d.message || 'No se pudo enviar por WhatsApp.');
           else showToast('✓ Enviado al cliente para firmar.');
           cta.disabled = false; cta.textContent = orig; // el albarán sigue emitido: no se refresca
         } else if (nextAct.kind === 'emitir') {
@@ -424,6 +434,33 @@ async function renderJobDetailView(container, jobId) {
   valoradoLabel.appendChild(valoradoCheck);
   valoradoLabel.appendChild(document.createTextNode('Incluir precios en el parte'));
   newAlbRow.appendChild(valoradoLabel);
+
+  // ── SCRUM-135: "+ Añadir gasto" ya vinculado a ESTE trabajo ──────────────────
+  // Es el alta rápida "desde la furgoneta" que SCRUM-107 dejó aparcada hasta que existiera
+  // Expense.teamMemberId (SCRUM-109, ya en prod): el técnico compra material y lo registra
+  // sin llamar al jefe. Por eso NO lleva veta `isTecnico` — a diferencia de las acciones de
+  // dinero, POST /admin/expenses está abierto a técnico a propósito, y la autoría se rellena
+  // sola con su teamMemberId. Este es además su ÚNICO camino: el nav de Gastos está oculto
+  // para él (app.js), y aquí no hace falta que elija trabajo porque ya está dentro de uno.
+  //
+  // El botón solo aparece si el Trabajo tiene presupuesto: el gasto se guarda por quoteId y
+  // sin él no hay nada que vincular (mismo caso que las opciones deshabilitadas del selector).
+  if (job.quote?.id != null && typeof openExpenseModal === 'function') {
+    const gastoBtn = document.createElement('button');
+    gastoBtn.className = 'btn-secondary btn-sm';
+    gastoBtn.textContent = '+ Añadir gasto';
+    gastoBtn.addEventListener('click', () => {
+      openExpenseModal(null, {
+        job: { id: job.id, quoteId: job.quote.id, titulo: job.titulo },
+        // No hay vista de Gastos que recargar aquí (y para un técnico sus dos llamadas serían
+        // 403): basta con confirmar. El gasto no se pinta en esta ficha — mostrar el gasto en
+        // el Trabajo sería rentabilidad por obra, que es otro ticket.
+        onSaved: () => { showToast('✓ Gasto añadido a este trabajo.'); },
+      });
+    });
+    newAlbRow.appendChild(gastoBtn);
+  }
+
   docsSec.appendChild(newAlbRow);
   const valoradoHint = document.createElement('p');
   valoradoHint.style.cssText = 'margin:4px 0 10px;color:var(--muted);font-size:12px';
@@ -812,7 +849,11 @@ async function renderJobDetailView(container, jobId) {
       albBody.insertBefore(wrap, albBody.firstChild);
       consolidaCheckboxes.push({ alb, checkbox: cb, wrap });
     }
-    docs.push({ when: alb.estado === 'firmado' ? (alb.firmadoAt || alb.createdAt) : alb.createdAt, el: item });
+    // SCRUM-31 (fix fechas): ordenar por la fecha de OPERACIÓN `alb.fecha` — la MISMA que se muestra
+    // en la fila y la legalmente relevante (determina el mes natural de la recapitulativa, SCRUM-17).
+    // Antes ordenaba por firmadoAt (cuándo se firmó el papel, no cuándo se hizo el trabajo) → la fila
+    // mostraba una fecha y se colocaba por otra, rompiendo el orden ascendente visible.
+    docs.push({ when: alb.fecha, el: item });
     const acts = item.querySelector('.jobdet-alb-actions');
     const fotosBox = item.querySelector('.jobdet-alb-fotos');
 
@@ -865,7 +906,8 @@ async function renderJobDetailView(container, jobId) {
       });
       em.className = 'btn-primary btn-sm';
       acts.appendChild(em); // primaria visible
-      addSecondary(acts, [editBtn(), fotoBtn()]); // «⋯» Editar líneas · Añadir foto
+      acts.appendChild(editBtn()); // SCRUM-31 (descubribilidad): "Editar líneas" VISIBLE (nunca escondida, AB3).
+      addSecondary(acts, [fotoBtn()]); // «⋯» → solo Añadir foto (1 ítem = inline; sin muro)
     } else if (alb.estado === 'emitido') {
       acts.appendChild(pdfBtn());
       const fs = mkBtn('Firmar', () => {
@@ -883,6 +925,7 @@ async function renderJobDetailView(container, jobId) {
       });
       fs.className = 'btn-primary btn-sm';
       acts.appendChild(fs); // primaria visible (PDF ya está visible arriba)
+      acts.appendChild(editBtn()); // SCRUM-31 (descubribilidad): "Editar líneas" VISIBLE (nunca escondida, AB3).
       // SCRUM-49: enviar al cliente el link para FIRMAR a distancia (plantilla albaran_para_firmar_es).
       const firmarWaBtn = mkBtn('Enviar para firmar', async () => {
         firmarWaBtn.disabled = true;
@@ -890,7 +933,7 @@ async function renderJobDetailView(container, jobId) {
         firmarWaBtn.textContent = 'Enviando…';
         try {
           const d = await apiRequest(`/admin/albaranes/${alb.id}/enviar-para-firmar`, { method: 'POST' });
-          if (d && d.ok === false) {
+          if (waSendFailed(d)) {
             setStatus('error', d.message || 'No se pudo enviar por WhatsApp.');
           } else {
             showToast('✓ Enviado al cliente para firmar.');
@@ -901,8 +944,9 @@ async function renderJobDetailView(container, jobId) {
         firmarWaBtn.disabled = false;
         firmarWaBtn.textContent = orig;
       });
-      // SCRUM-31 (F3): secundarias del emitido → «⋯» (Editar líneas · Añadir foto · Enviar para firmar).
-      addSecondary(acts, [editBtn(), fotoBtn(), firmarWaBtn]);
+      // SCRUM-31: visibles = [PDF][Firmar][Editar líneas] (3 nunca-ocultas); «⋯» = Añadir foto ·
+      // Enviar para firmar (las menos frecuentes). Emitido: 3 visibles + «⋯»(2), lejos del muro de 5.
+      addSecondary(acts, [fotoBtn(), firmarWaBtn]);
     } else {
       acts.appendChild(pdfBtn()); // firmado = congelado: solo PDF
       // SCRUM-47: enviar la copia FIRMADA al WhatsApp del cliente (plantilla albaran_firmado_es).
@@ -912,7 +956,7 @@ async function renderJobDetailView(container, jobId) {
         waBtn.textContent = 'Enviando…';
         try {
           const d = await apiRequest(`/admin/albaranes/${alb.id}/enviar-whatsapp`, { method: 'POST' });
-          if (d && d.ok === false) {
+          if (waSendFailed(d)) {
             setStatus('error', d.message || 'No se pudo enviar por WhatsApp.');
           } else {
             showToast('✓ Albarán enviado por WhatsApp.');
@@ -1006,11 +1050,18 @@ async function renderJobDetailView(container, jobId) {
         }
 
         // Recordar pago → POST /admin/invoices/:id/send-reminder (solo si el cliente tiene teléfono).
+        // SCRUM-126: este botón (distinto del de la CTA del héroe, arriba) nunca miró el
+        // resultado del envío — mostraba "✓ Recordatorio enviado" aunque hubiera fallado.
+        // Mismo bug que SCRUM-115 arregló en otro sitio del mismo fichero; este quedó fuera.
         const recordarBtn = job.customer?.phone ? mkBtn('Recordar pago', async () => {
           try {
-            await apiRequest(`/admin/invoices/${inv.id}/send-reminder`, { method: 'POST' });
-            showToast('✓ Recordatorio enviado por WhatsApp.');
-            refresh();
+            const d = await apiRequest(`/admin/invoices/${inv.id}/send-reminder`, { method: 'POST' });
+            if (waSendFailed(d)) {
+              setStatus('error', 'El WhatsApp del recordatorio falló — reinténtalo desde la factura.');
+            } else {
+              showToast('✓ Recordatorio enviado por WhatsApp.');
+              refresh();
+            }
           } catch { setStatus('error', 'Error al enviar el recordatorio.'); }
         }) : null;
 
@@ -1021,7 +1072,7 @@ async function renderJobDetailView(container, jobId) {
           wa.textContent = 'Enviando…';
           try {
             const d = await apiRequest(`/admin/invoices/${inv.id}/resend-whatsapp`, { method: 'POST' });
-            if (d && d.ok === false) { // Meta puede rechazar con 200 ok:false + mensaje legible
+            if (waSendFailed(d)) { // Meta puede rechazar: 200 + sent:false + mensaje legible
               setStatus('error', d.message || 'No se pudo enviar por WhatsApp.');
               invWaFallback(inv, d.pay_token, () => wa.click());
               wa.disabled = false; wa.textContent = orig;

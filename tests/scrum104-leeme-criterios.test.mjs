@@ -18,7 +18,7 @@ const BASE = {
   generado: '2026-07-23T10:00:00.000Z',
   pdfsOk: 5,
   pdfsTotal: 5,
-  conXml: false,
+  xmlAnios: [], // SCRUM-82: lista de años reales, no un booleano
   cabecera: [],
 };
 const conRango = (p = {}) => construirLeeme({ ...BASE, from: new Date('2026-07-01'), to: new Date('2026-07-31'), ...p });
@@ -94,6 +94,15 @@ test('SCRUM-104: se conserva lo que ya decía el LEEME (formato y XML)', () => {
   assert.ok(t.includes('5 de 5 PDF'), 'el recuento de PDF');
   assert.ok(t.includes('no incluye el XML'), 'con el flag OFF se dice que no hay XML (regla 24/26)');
 
-  assert.ok(!construirLeeme({ ...BASE, from: null, to: null, conXml: true }).includes('no incluye el XML'),
-    'con el flag ON esa nota NO debe aparecer');
+  // SCRUM-82: con años reales, el LEEME describe el contenido REAL (no solo calla el
+  // aviso de ausencia) — un LEEME que dice de menos también es un LEEME que miente.
+  const conXml = construirLeeme({ ...BASE, from: null, to: null, xmlAnios: [2026] });
+  assert.ok(!conXml.includes('no incluye el XML'), 'con XML presente esa nota NO debe aparecer');
+  assert.ok(conXml.includes('verifactu_2026.xml'), 'debe nombrar el fichero real, no solo callar el aviso');
+  assert.ok(conXml.includes('RRSIF'), 'debe decir qué es (registro VeriFactu/RRSIF), no solo "XML"');
+
+  // Varios ejercicios (rango que cruza años, SCRUM-82 decisión: un archivo por año).
+  const dosAnios = construirLeeme({ ...BASE, from: null, to: null, xmlAnios: [2025, 2026] });
+  assert.ok(dosAnios.includes('verifactu_2025.xml') && dosAnios.includes('verifactu_2026.xml'),
+    'con un rango que cruza años, el LEEME debe nombrar CADA archivo, uno por ejercicio');
 });

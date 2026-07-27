@@ -106,9 +106,12 @@ async function renderTemplatesView(container) {
       btnUse.className = 'btn-primary btn-sm';
       btnUse.textContent = '📋 Usar';
       btnUse.onclick = () => {
-        if (window.renderAppView) renderAppView('quotes-new');
-        // Guardar la plantilla en sessionStorage para que quotesView la cargue
-        sessionStorage.setItem('pf_load_template', JSON.stringify(tpl));
+        // SCRUM-140: la plantilla va como ARGUMENTO de la navegación. Antes viajaba por
+        // `sessionStorage['pf_load_template']` y el ORDEN importaba: SCRUM-134 tuvo que arreglar
+        // aquí un off-by-one (se navegaba ANTES de escribir, y como el editor lee SÍNCRONO dentro
+        // de esa misma navegación, abría la plantilla de la vez anterior). Con un argumento no
+        // hay "antes" ni "después" que respetar — la clase entera desaparece.
+        if (window.renderAppView) renderAppView('quotes-new', { template: tpl });
       };
       actDiv.appendChild(btnUse);
 

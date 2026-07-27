@@ -8,6 +8,7 @@
 import { prisma } from '../../../core/db/prisma';
 import { calcVatBreakdown } from '../../invoicing/domain/vat.service';
 import { estadoCobroFor } from '../../jobs/domain/job.service';
+import type { Dataset } from './seleccionExport'; // SCRUM-138 (export selectivo)
 
 export interface Rango { from: Date | null; to: Date | null }
 export interface CsvData {
@@ -292,6 +293,46 @@ export async function buildTrabajos(merchantId: number, rango: Rango, status = '
   };
 }
 
+// ── gastos.csv ────────────────────────────────────────────────────────────
+// SCRUM-138: hasta ahora los gastos SOLO existían como descarga suelta
+// (`GET /admin/exports/expenses.csv`) y NUNCA entraban en el paquete — el asesor abría el ZIP
+// y veía ingresos sin costes. Mismas columnas que el CSV suelto, para que las dos descargas
+// cuadren entre sí (mismo criterio que el resto de builders compartidos).
+//
+// FECHA: `date` (cuándo se hizo el gasto), no `createdAt` (cuándo se tecleó) — el criterio de
+// "fecha del hecho, no del apunte" que SCRUM-106 fijó para trabajos.
+//
+// NO devuelve `customerIds`: un gasto apunta a una COTIZACIÓN, no a un cliente (SCRUM-135),
+// así que no puede alimentar la lista de clientes referenciados de SCRUM-104. Añadirlo por
+// simetría metería en clientes.csv a gente sin ningún documento en el rango.
+export async function buildGastos(merchantId: number, rango: Rango): Promise<CsvData> {
+  const [gastos, members] = await Promise.all([
+    prisma.expense.findMany({
+      where: whereRango(merchantId, rango, 'date'),
+      orderBy: { date: 'desc' },
+      include: { provider: { select: { name: true } } },
+    }),
+    prisma.teamMember.findMany({ where: { merchantId }, select: { id: true, name: true } }),
+  ]);
+  const autorName = new Map(members.map((m) => [m.id, m.name]));
+
+  return {
+    header: ['Fecha', 'Concepto', 'Categoría', 'Importe', 'Moneda', 'Proveedor', 'Presupuesto ID', 'Registrado por', 'Notas'],
+    rows: gastos.map((g) => csvRow([
+      dia(g.date),
+      g.concept,
+      g.category,
+      csvNum(g.amount),
+      g.currency,
+      g.provider?.name ?? '',
+      g.quoteId ?? '',
+      // teamMemberId null = propietario (SCRUM-109): se deja vacío, no se inventa nombre.
+      g.teamMemberId != null ? (autorName.get(g.teamMemberId) ?? '') : '',
+      g.notes ?? '',
+    ])),
+  };
+}
+
 // ── presupuestos.csv ──────────────────────────────────────────────────────
 export async function buildPresupuestos(merchantId: number, rango: Rango, status = 'all'): Promise<CsvData> {
   const quotes = await prisma.quote.findMany({
@@ -413,12 +454,25 @@ export function construirLeeme(p: {
   to: Date | null;
   pdfsOk: number;
   pdfsTotal: number;
-  conXml: boolean;
+  // SCRUM-82: lista de AÑOS realmente incluidos, no un booleano — el LEEME describe el
+  // contenido real (facturas/verifactu_AAAA.xml por cada uno), nunca "sí/no" genérico.
+  // [] = sin XML (flag OFF, o no aplica a este merchant).
+  xmlAnios: number[];
   cabecera: string[];
+  // SCRUM-138: qué datasets lleva ESTE paquete. `undefined` = todos (paquete completo de
+  // SCRUM-25). El LEEME describe SOLO lo que hay dentro: un LEEME que promete cinco tablas
+  // sobre un ZIP que lleva una es exactamente el "entregable que miente sobre su propio
+  // contenido" que SCRUM-82 prohibió para el XML.
+  datasets?: Set<Dataset>;
 }): string {
-  const { nombre, generado, from, to, pdfsOk, pdfsTotal, conXml, cabecera } = p;
+  const { nombre, generado, from, to, pdfsOk, pdfsTotal, xmlAnios, cabecera, datasets } = p;
   const acotado = !!(from || to);
   const periodo = acotado ? 'el periodo seleccionado' : 'todo tu histórico';
+  const lleva = (d: Dataset) => !datasets || datasets.has(d);
+  const parcial = !!datasets && datasets.size < 6;
+  // clientes.csv se alimenta de los documentos del paquete (SCRUM-104): sin ninguno, sale
+  // con la cabecera y nada más. Hay que decirlo, no dejar que el asesor lo interprete.
+  const sinDocumentos = !['facturas', 'cobros', 'trabajos', 'presupuestos'].some((d) => lleva(d as Dataset));
 
   // El criterio de CADA fichero, en una línea. Los de EVENTOS (factura, cobro, trabajo,
   // presupuesto) tienen fecha propia y filtrar por ella es correcto. `clientes` es una
@@ -426,30 +480,60 @@ export function construirLeeme(p: {
   const criterios = [
     // OJO al "de + el": esta línea es la única que necesita la preposición delante del
     // periodo, así que se escribe entera en cada caso en vez de concatenar (y salir "de el").
-    acotado
-      ? '  clientes.csv       Los clientes a los que corresponden los documentos del periodo.'
-      : '  clientes.csv       Todos los clientes con algún documento en tu histórico.',
-    `  facturas.csv       Facturas emitidas en ${periodo}.`,
-    `  cobros.csv         Cobros registrados en ${periodo}.`,
+    ...(lleva('clientes')
+      ? [sinDocumentos
+          ? '  clientes.csv       VACÍO: solo lleva los clientes que aparecen en los documentos\n'
+            + '                     de este paquete, y no has incluido ninguno. Añade facturas,\n'
+            + '                     cobros, trabajos o presupuestos a la descarga.'
+          : acotado
+            ? '  clientes.csv       Los clientes a los que corresponden los documentos del periodo.'
+            : '  clientes.csv       Todos los clientes con algún documento en tu histórico.']
+      : []),
+    ...(lleva('facturas') ? [`  facturas.csv       Facturas emitidas en ${periodo}.`] : []),
+    ...(lleva('cobros')   ? [`  cobros.csv         Cobros registrados en ${periodo}.`] : []),
     // SCRUM-106: el texto SALE del criterio real (CAMPO_FECHA_TRABAJOS). No se puede
     // cambiar uno sin cambiar el otro, que es lo que antes había que recordar a mano.
-    `  trabajos.csv       ${CRITERIO_TRABAJOS[CAMPO_FECHA_TRABAJOS](periodo, acotado)}`,
-    `  presupuestos.csv   Presupuestos creados en ${periodo}.`,
-    `  facturas/          El PDF de cada factura de csv/facturas.csv.`,
+    ...(lleva('trabajos') ? [`  trabajos.csv       ${CRITERIO_TRABAJOS[CAMPO_FECHA_TRABAJOS](periodo, acotado)}`] : []),
+    ...(lleva('presupuestos') ? [`  presupuestos.csv   Presupuestos creados en ${periodo}.`] : []),
+    // SCRUM-138: los gastos entran por primera vez en el paquete. Fecha DEL GASTO, no de alta.
+    ...(lleva('gastos') ? [`  gastos.csv         Gastos con fecha en ${periodo}.`] : []),
+    // Los PDF van con las facturas: sin facturas en el paquete, no hay carpeta que anunciar.
+    ...(lleva('facturas') ? [`  facturas/          El PDF de cada factura de csv/facturas.csv.`] : []),
+    // SCRUM-82: solo aparece si de verdad hay XML en el paquete — un año natural por
+    // archivo (el registro RRSIF es por ejercicio, nunca "por el rango pedido").
+    ...(xmlAnios.length > 0
+      ? [`  facturas/          Registro VeriFactu (RRSIF), un XML por ejercicio: ${xmlAnios.map((y) => `verifactu_${y}.xml`).join(', ')}.`]
+      : []),
   ];
 
   // SCRUM-104 (D4): que nadie lea la divergencia como un bug. El aviso de la fase 1
   // («puede faltarte un cliente») ya no aplica: en la fase 2 no falta ninguno. Lo que sí
   // hay que explicar es por qué este fichero NO coincide con la descarga suelta.
-  const avisoCartera = acotado
+  // SCRUM-138: sin clientes.csv en el paquete, esta explicación no tiene sujeto.
+  const avisoCartera = (acotado && lleva('clientes'))
     ? [
         '',
         'SOBRE clientes.csv — por qué no es tu lista de clientes completa:',
         '  Aquí van los clientes a los que corresponden los documentos de este paquete,',
         '  aunque los dieras de alta hace años. Así ninguna factura queda sin saber de',
         '  quién es. Por eso NO coincide con el "clientes.csv" que descargas suelto desde',
-        '  Configuración, que sí lista tu cartera por fecha de alta: son dos preguntas',
-        '  distintas, no un error. La columna "Fecha de alta" te dice cuándo entró cada uno.',
+        // SCRUM-138: la descarga suelta ya no vive en Configuración, sino en Finanzas.
+        '  Finanzas › Descargar datos, que sí lista tu cartera por fecha de alta: son dos',
+        '  preguntas distintas, no un error. La columna "Fecha de alta" te dice cuándo',
+        '  entró cada uno.',
+      ]
+    : [];
+
+  // SCRUM-138: si el paquete es PARCIAL hay que decirlo arriba y con todas las letras. Un
+  // asesor que recibe este ZIP no sabe qué se pidió; sin esta línea podría leer la ausencia
+  // de facturas como "este año no facturó nada" en vez de "no las pidieron".
+  const avisoParcial = parcial
+    ? [
+        '',
+        'ESTE PAQUETE ES PARCIAL',
+        `  Se pidieron solo: ${[...(datasets as Set<Dataset>)].join(', ')}.`,
+        '  Lo que no aparece aquí NO significa que no exista: significa que no se incluyó',
+        '  en esta descarga. Para el paquete completo, descarga sin acotar la selección.',
       ]
     : [];
 
@@ -459,6 +543,7 @@ export function construirLeeme(p: {
     `Paquete de datos de ${nombre}`,
     `Generado: ${generado}`,
     `Rango: ${from ? dia(from) : 'desde el principio'} → ${to ? dia(to) : 'hoy'}`,
+    ...avisoParcial,
     '',
     'QUÉ LLEVA CADA FICHERO',
     ...criterios,
@@ -469,9 +554,11 @@ export function construirLeeme(p: {
     '  Preparado para abrirse con doble clic en Excel con configuración regional española.',
     '',
     `facturas/  ${pdfsOk} de ${pdfsTotal} PDF de factura/justificante`,
-    // La nota del XML solo aparece con el flag OFF; los '' de arriba son separación
-    // deliberada, así que NO se filtran vacíos en bloque.
-    ...(conXml ? [] : ['Nota: este paquete no incluye el XML de registros de facturación.']),
+    // SCRUM-82: describe lo que HAY, nunca solo lo que falta. Los '' de arriba son
+    // separación deliberada, así que NO se filtran vacíos en bloque.
+    ...(xmlAnios.length > 0
+      ? [`facturas/  Registro VeriFactu (RRSIF) incluido — ejercicio${xmlAnios.length > 1 ? 's' : ''} ${xmlAnios.join(', ')}.`]
+      : ['Nota: este paquete no incluye el XML de registros de facturación.']),
   ].join('\n');
 }
 
@@ -493,30 +580,46 @@ export function construirLeeme(p: {
 export async function construirCsvsDelPaquete(
   merchantId: number,
   rango: Rango,
+  // SCRUM-138: qué datasets entran. `undefined` = todos (comportamiento de SCRUM-25 intacto
+  // para cualquier llamador que no se entere del parámetro nuevo).
+  datasets?: Set<Dataset>,
 ): Promise<Array<{ nombre: string; data: CsvData }>> {
-  const [facturas, cobros, trabajos, presupuestos] = await Promise.all([
-    buildFacturas(merchantId, rango),
-    buildCobros(merchantId, rango),
-    buildTrabajos(merchantId, rango),
-    buildPresupuestos(merchantId, rango),
+  const quiere = (d: Dataset) => !datasets || datasets.has(d);
+
+  // Solo se CONSULTA lo que se va a entregar: un export de "solo clientes" no debe leer las
+  // facturas del merchant para luego tirarlas.
+  const [facturas, cobros, trabajos, presupuestos, gastos] = await Promise.all([
+    quiere('facturas')     ? buildFacturas(merchantId, rango)     : null,
+    quiere('cobros')       ? buildCobros(merchantId, rango)       : null,
+    quiere('trabajos')     ? buildTrabajos(merchantId, rango)     : null,
+    quiere('presupuestos') ? buildPresupuestos(merchantId, rango) : null,
+    quiere('gastos')       ? buildGastos(merchantId, rango)       : null,
   ]);
 
-  // A quién apuntan los documentos del rango. Sin consultas: los ids venían en las filas.
-  const referenciados = [...new Set([
-    ...(facturas.customerIds ?? []),
-    ...(cobros.customerIds ?? []),
-    ...(trabajos.customerIds ?? []),
-    ...(presupuestos.customerIds ?? []),
-  ])];
+  const salida: Array<{ nombre: string; data: CsvData }> = [];
 
-  const clientes = await buildClientesReferenciados(merchantId, referenciados);
+  if (quiere('clientes')) {
+    // SCRUM-104: los clientes REFERENCIADOS por los documentos del paquete, no los dados de
+    // alta en el rango. Con export selectivo eso pasa a depender de QUÉ documentos lleva:
+    // si solo pides gastos, no hay documento que referencie a nadie y clientes.csv sale
+    // vacío. Es lo correcto — el criterio es "los que hacen falta para leer ESTE paquete",
+    // y meter clientes que no aparecen en ningún fichero sería justo la incoherencia
+    // inversa a la que SCRUM-104 vino a arreglar. El LEEME lo dice.
+    const referenciados = [...new Set([
+      ...(facturas?.customerIds ?? []),
+      ...(cobros?.customerIds ?? []),
+      ...(trabajos?.customerIds ?? []),
+      ...(presupuestos?.customerIds ?? []),
+    ])];
+    salida.push({ nombre: 'clientes.csv', data: await buildClientesReferenciados(merchantId, referenciados) });
+  }
 
   // El orden de las entradas es el del paquete de siempre: clientes primero.
-  return [
-    { nombre: 'clientes.csv', data: clientes },
-    { nombre: 'facturas.csv', data: facturas },
-    { nombre: 'cobros.csv', data: cobros },
-    { nombre: 'trabajos.csv', data: trabajos },
-    { nombre: 'presupuestos.csv', data: presupuestos },
-  ];
+  if (facturas)     salida.push({ nombre: 'facturas.csv',     data: facturas });
+  if (cobros)       salida.push({ nombre: 'cobros.csv',       data: cobros });
+  if (trabajos)     salida.push({ nombre: 'trabajos.csv',     data: trabajos });
+  if (presupuestos) salida.push({ nombre: 'presupuestos.csv', data: presupuestos });
+  if (gastos)       salida.push({ nombre: 'gastos.csv',       data: gastos });
+
+  return salida;
 }

@@ -1,4 +1,4 @@
-# SUITE DE REGRESIÓN E2E — v1.8 (SCRUM-38 · fixes SCRUM-42/36 · albaranes SCRUM-14 · alineación UI real SCRUM-43/44 · seguridad PDF SCRUM-48 · autoría operario SCRUM-22 · albarán-WA SCRUM-47 · albarán valorado + PDF legal SCRUM-65/67 · runbook de ejecución SCRUM-79 · `.env` del carril B SCRUM-55/60 · cómo se escribe una verificación SCRUM-103)
+# SUITE DE REGRESIÓN E2E — v1.8 (SCRUM-38 · fixes SCRUM-42/36 · albaranes SCRUM-14 · alineación UI real SCRUM-43/44 · seguridad PDF SCRUM-48 · autoría operario SCRUM-22 · albarán-WA SCRUM-47 · albarán valorado + PDF legal SCRUM-65/67 · runbook de ejecución SCRUM-79 · `.env` del carril B SCRUM-55/60 · cómo se escribe una verificación SCRUM-103 · dónde parar y patrones copiados SCRUM-124)
 
 > Guion que Claude Code ejecuta con el **Playwright MCP** contra **STAGING** tras cada
 > merge+deploy. Cubre la regresión de PAGOS-FLEX (SCRUM-27/32/34) y los CTAs de invoice
@@ -74,6 +74,27 @@ Siete trampas que ya nos han costado tiempo, y no fallan igual:
    su propio caso es el motivo de la segunda capa: **confirma la base antes de empezar** con
    `git merge-base --is-ancestor origin/main HEAD`, o al menos un `git log --oneline -1`. Cuesta
    un segundo y evita rebasar a destiempo con el trabajo ya hecho encima.
+
+   **Cuarto caso, con la suite gateada (SCRUM-113).** `npm run test:staging 2>&1 | tail -30`
+   reportó **exit 0 con 2 tests fallando**, y además cortó el log a 30 líneas: uno de los dos
+   fallos llegó **truncado**, sin el assert que lo identificaba. Se estuvieron tratando como dos
+   problemas distintos —"el runner no propaga el exit" y "el log se pierde"— cuando eran **un
+   solo error con dos síntomas**. Comprobado después: `node --test --test-force-exit` devuelve
+   **1** correctamente. El runner no tiene ningún fallo; lo tragó la tubería. Por eso esto **no**
+   es un ticket de equipo: es esta regla, incumplida por cuarta vez.
+
+   **La forma correcta, para copiar y pegar** — una suite de 10 minutos no se relanza por haber
+   perdido su salida:
+
+   ```bash
+   npm run test:staging > /tmp/suite.log 2>&1; echo "exit=$?"   # ✅ log entero + exit real
+   tail -60 /tmp/suite.log                                       # y el log se lee DESPUÉS
+   ```
+
+   El punto y coma es deliberado: con `&&` el `echo` no se ejecutaría justo cuando más falta hace.
+   Que esto haya reincidido cuatro veces teniendo su propia sección desde la primera es el dato
+   que importa: **una regla escrita no es un mecanismo.** El mecanismo aquí es el patrón de arriba,
+   copiado literal, no la intención de recordarla.
 
 6. **Al empezar y al terminar una tanda, consulta tus tickets asignados con JQL.** El otro
    carril puede haberte asignado trabajo, y **el contexto de sesión nunca lo refleja**.
@@ -349,7 +370,50 @@ Las tres reglas que salen de ahí, para cualquier test, assert o check nuevo:
    assert que la respalde.** Si la única cosa que impide el atajo es la frase que lo prohíbe,
    no lo impide — solo lo documenta.
 
-### La conclusión de las seis reglas: mueve la garantía de la disciplina al mecanismo
+8. **Dónde PARAR: no es «¿tiene mecanismo?», es «¿cuánto cuesta el atajo y quién lo vería?»
+   (SCRUM-124)**
+
+   La regla 7 llevada al pie de la letra no termina nunca: el censo necesita un suelo, el
+   suelo necesita quien lo vigile, y ese otro. **En algún punto la última capa es una
+   convención, y hay que aceptarlo** — lo contrario es gastar el presupuesto de atención en
+   capas que nadie mira.
+
+   El mismo ejemplo sirve para los dos lados:
+
+   | | ¿deja rastro? | veredicto |
+   |---|---|---|
+   | Olvidarse de una entrada del censo | **no**, ningún diff, ningún assert | → **mecanismo** (`CENSO_MIN`) |
+   | Bajar `CENSO_MIN` a propósito | **sí**, una línea en el diff de un PR | → **convención**, anotada |
+
+   → Protege con assert lo que puede romperse **sin dejar rastro visible**; deja en convención
+   lo que **exige un cambio deliberado y revisable**. Y **anota cuál es cuál junto a la frase**:
+   una prohibición que se queda en convención a sabiendas no es deuda; una que se queda por
+   descuido, sí. Esa nota es la diferencia entre las dos.
+
+   **Corolario para los suelos y canarios:** un suelo flojo miente en la dirección peor. El
+   canario del enumerador de SCRUM-55 era `routes.length > 100` con **125 rutas montadas**:
+   una avería que se llevara las 11 rutas que no figuran en ninguna lista pasaba **entera en
+   verde**. Un suelo que protege contra una caída *invisible* va al recuento real; solo los
+   que se bajan a mano pueden ir holgados.
+
+9. **Al corregir un patrón copiado, busca las hermanas: propaga la corrección o anótala.
+   (SCRUM-124)**
+
+   El 23-jul-2026 el mismo patrón apareció **tres veces en un día**: los fixtures de
+   `scrum74`/`85`/`90` con la misma estructura, la guarda de presencia que solo estaba en una
+   de las rutas de pago, y un ratchet con `===` mientras su hermano seguía con `<=`. En los
+   tres casos, **el patrón se copió y la corrección no**.
+
+   El caso más claro: la lección del tope apretado se aprendió **en** `scrum55` (se dejó en 25
+   con 24 entradas, SCRUM-103). El ratchet de SCRUM-113 nació con `===` **citando ese caso por
+   su nombre**, y `scrum55` se quedó con el `<=` cuatro meses. Quien escribió la corrección
+   tenía el original delante.
+
+   → Al arreglar algo que huele a plantilla, **busca sus hermanas antes de cerrar** (`grep` del
+   patrón, no de memoria). Si no toca propagarlo, escribe por qué no — un «aquí no aplica
+   porque…» de una línea evita que el siguiente lo mire desde cero.
+
+### La conclusión de estas reglas: mueve la garantía de la disciplina al mecanismo
 
 Las reglas de arriba son útiles, pero el 23-jul-2026 falló **una regla que estaba bien escrita y
 que se cumplió**. Merece la pena entender por qué, porque decide cómo se escribe la siguiente
@@ -424,10 +488,138 @@ Dos consecuencias operativas:
    quede ningún `create` a mano. Es la diferencia entre comprobar el síntoma cómodo (*¿hay import?*)
    y la propiedad (*¿queda algo sin cubrir?*) — ver la regla 5.
 
-> **Coordinación (regla del canal):** la suite y el seed **resetean la BD del merchant QA**.
-> Avisa por el canal antes de lanzarla — solo uno a la vez. `tests/` es **zona compartida**:
-> avisar antes de tocarlo (SCRUM-78 y SCRUM-79 arreglaron el mismo fichero el mismo día sin
-> saberlo, y chocaron en un merge).
+**Lección de campaña (SCRUM-125): elige la UNIDAD del contador ANTES de fijar el plazo.** Este
+ratchet cuenta **ficheros**, pero el trabajo real es el **sitio de creación** de merchant
+(`prisma.merchant.create`): un fichero puede tener varios (`albaran` y `tenancy-permisos` tenían 2
+cada uno → ~12% de desvío en el pico, 8 ficheros = 9 sitios). No invalidó el plazo del 31-oct, pero
+por suerte, no por diseño — y se supo tarde, migrando `albaran`. La unidad es una **decisión de
+diseño, no un detalle de implementación**: la próxima campaña con ratchet la fija al abrir, no a
+mitad. (Y que no sea "bloque `test()`": `scrum17` tiene 12 bloques y 1 solo sitio; contar bloques
+sería aún más inexacto. Contar sitios, a su vez, reintroduce la ceguera del detector que SCRUM-103
+combate — por eso, con la campaña cerrada, se documentó en vez de recontar: SCRUM-125.)
+
+> **Coordinación (regla del canal) — ACTUALIZADA por SCRUM-84 (23-jul-2026).**
+>
+> **Ya NO hay que pedir ventana para correr los gateados.** Cada carril tiene su propia base
+> dentro del mismo Postgres de staging (`acela.proxy.rlwy.net:40802`):
+> **Sesión 1 → `yaqu_dev_javier`** · **Sesión 2 → `railway`**. Cada uno la apunta en
+> `DATABASE_URL_STAGING` de su `.env` local (nunca en el repo). La suite resetea la BD del
+> merchant QA **de tu base**, no de la del otro.
+>
+> **Lo que SÍ sigue necesitando aviso por el canal:**
+> - **El `db push` de SCHEMA.** Es serial por naturaleza: el carril A sirve el campo y luego
+>   cada carril lo aplica a SU base. Dos manos en `prisma/schema.prisma` siguen prohibidas.
+> - **Tocar `tests/`**, que sigue siendo **zona compartida** (SCRUM-78 y SCRUM-79 arreglaron
+>   el mismo fichero el mismo día sin saberlo, y chocaron en un merge). Un fichero **nuevo**
+>   no colisiona: si solo añades, no hace falta esperar turno.
+>
+> ⚠️ **El seed no es opcional en una base nueva.** `scripts/seed-staging.mjs` crea el merchant
+> demo `id=1` que exigen `a55-window-quote`, `bot-suite`, `scrum13-cobrado` y
+> `scrum52-operario` (`const MERCHANT_ID = 1`), y realinea la secuencia de Postgres. Sin él,
+> esos cuatro fallan **solo en un carril** — un rojo que no se reproduce en el otro, justo el
+> síntoma que SCRUM-84 vino a eliminar.
+>
+> `scripts/clean-staging-tests.mjs` lee `DATABASE_URL_STAGING`, así que **cada carril limpia
+> la suya**. Los 4 huérfanos `qa-s74-*` (#339, #340, #381, #383) viven en `railway` (Sesión 2);
+> medidos inocuos en SCRUM-79.
+
+> **Orden obligatorio de un `db push` con varias sesiones vivas (24-jul-2026).** Dos schemas en
+> vuelo el mismo día estuvieron a punto de BORRAR una columna ajena de staging: una sesión iba a
+> empujar desde un `schema.prisma` que venía de un `main` sin ella. La secuencia que lo evita:
+>
+> 1. `git pull` y **`git diff origin/main -- prisma/schema.prisma`**: si sale algo que no es tuyo,
+>    PARA. Empujar desde un schema viejo no "añade lo tuyo": **sincroniza**, y lo que falte se borra.
+> 2. Comprobar que **nadie está dentro** de staging — con datos, no por suposición:
+>    `pg_stat_activity` (conexiones y consultas activas) + fixtures QA recién creadas.
+> 3. Preview (`prisma migrate diff`) y enseñarlo. Cero DROPs y cero ALTER de columnas ajenas.
+> 4. `db push` **con `--skip-generate`**. ⚠️ **Al extraer la URL del `.env`**: el fichero es
+>    CRLF y el valor va **entre comillas simples**, así que un `cut -d= -f2-` a secas produce
+>    una URL con `` y comillas → Prisma corta con **`P1013` "The scheme is not recognized"**,
+>    que parece un problema de credenciales y no lo es. Sanea: `| tr -d '' | sed -E "s/^'//; s/'$//"`.
+>    (Perdido un rato con esto en el push de SCRUM-145 a prod, 24-jul.)
+> 5. **Regenerar el cliente DESPUÉS del push, nunca antes.** `node_modules` está compartido por
+>    junction entre worktrees: un cliente con columnas que la BD todavía no tiene rompe **cualquier
+>    lectura** de esa tabla (`SELECT` de columna inexistente) — incluidos los tests gateados de las
+>    OTRAS sesiones, que no han tocado nada. Y ojo al reverso: si otra sesión regeneró el
+>    cliente desde un `main` ANTERIOR a tu merge, el cliente compartido se queda **viejo** y una
+>    lectura falla con «Unknown field» aunque la columna SÍ esté en la BD — pasó al verificar el
+>    push a prod de SCRUM-145. Regenerar después del push arregla ambos lados.
+>
+> Prod va aparte: su propio preview y su propio GO (`bash scripts/db-push-prod`).
+
+> **Cómo saber si hay «schema en vuelo» — NO por el diff (23-jul-2026).** Buscar ramas o worktrees
+> con cambios en `prisma/schema.prisma` **no es fiable**: da falsos positivos en las dos direcciones.
+> - Una **rama mergeada sin borrar** conserva su diff de `schema.prisma` frente a un `main` viejo:
+>   parece «en vuelo» y ya está aplicada. (El barrido de ramas del 23-jul encontró decenas así;
+>   `scrum-27-pagos-flex` fue el falso positivo que disparó la sospecha.)
+> - Un **worktree con WIP** (schema tocado, sin commitear) enseña el diff aunque ESE trabajo ya se
+>   haya `db push`-eado a prod — es su estado normal a media tarea. (`wt-scrum-109` el 23-jul: schema
+>   modificado en el worktree, pero ya aplicado a producción por su propia sesión.)
+>
+> La pregunta correcta no es «¿alguien tocó el schema?» (síntoma) sino **«¿queda algún `db push`
+> pendiente de aplicar?»** (propiedad, regla 5). Se responde en dos sitios, no en el diff:
+> **1)** `docs/MIGRATIONS_PENDING.md` — el log de `db push` a prod; y **2)** si hay **alguna sesión
+> con un STOP de schema abierto** en el canal (AA1.4: los cambios de schema paran y piden OK). Si ambos
+> están limpios, no hay schema en vuelo por mucho diff que haya colgando en ramas o worktrees.
+
+### 🔑 Toda BD de staging necesita el MARCADOR (SCRUM-118)
+
+Desde SCRUM-118, `tests/_staging-db.mjs` **no** decide si una BD es staging mirando el texto
+de la URL. Se lo pregunta a la propia BD: tiene que llevar
+
+```sql
+COMMENT ON DATABASE <la base> IS 'YAQU_STAGING'
+```
+
+**Una BD sin marcar hace abort en cualquier test gateado.** Es fail-closed y es lo correcto:
+si no se puede *verificar* que es staging, no se corre — los gateados crean y **borran**
+merchants.
+
+**Cómo marcar una BD:**
+
+| Situación | Qué hacer |
+| --- | --- |
+| BD **nueva** | `node scripts/seed-staging.mjs` — ya la marca al sembrar |
+| BD **ya sembrada y en uso** | `DATABASE_URL="<su url>" node scripts/marcar-staging.mjs` |
+
+⚠️ **No re-siembres una BD en uso solo para marcarla:** el seed hace
+`merchant.update({ nextQuoteNumber })` sobre el merchant QA y **retrocedería su contador de
+numeración**. `marcar-staging.mjs` existe justo para eso: pone el comentario y **no toca ni
+una fila**.
+
+El marcador es **inerte** hasta que el guard lo lee, así que se puede poner con antelación
+sin cambiar ningún comportamiento — que es lo que permite marcar primero y desplegar después,
+sin ventana de abort.
+
+**Por qué un marcador y no una lista de hosts.** Hay las dos cosas, y no son lo mismo:
+
+* La **allowlist de host** (`scripts/_db-guard.mjs`, `assertSafeStagingUrl`) es una barrera
+  **barata y previa**, fail-closed: evita conectar a lo desconocido. **No verifica nada por sí
+  sola.** Añadir un host ahí **no** convierte esa BD en staging — seguirá siendo rechazada
+  hasta que lleve su comentario.
+* El **marcador** es la garantía, porque es una propiedad que **producción no puede tener por
+  accidente**: no viaja en `schema.prisma`, y prod se aprovisiona con el mismo `db push` que
+  staging, o sea que recibe el schema y nada más.
+
+Es la **regla 5** de la sección anterior aplicada a la salvaguarda más cara del repo:
+comprobar la propiedad («esta BD es staging») en vez del síntoma («el texto no dice
+`autorack`»). El guard anterior no protegía porque fuera estricto — protegía porque nadie
+había tenido a mano una URL de producción con otro host.
+
+⚠️ **Los scripts que ESCRIBEN** (`seed-staging`, `marcar-staging`) llevan la allowlist de host
+**incondicional**, fuera de todo gate: escriben pase lo que pase, así que se protegen pase lo
+que pase. `marcar-staging` en particular es **el único tool capaz de convertir producción en
+falso-staging** — si le pusiera el marcador a prod, el guard la aceptaría. Su protección no
+puede ser el marcador (él lo pone) ni la subcadena vieja: es la allowlist, y por eso no se
+desactiva. Ojo al llamarla: `assertSafeStagingUrl` **devuelve `{safe, reason}`, no aborta**.
+Un valor de retorno se puede ignorar; en un script que escribe va envuelto en un
+`process.exit(1)` explícito y en el cuerpo del módulo, no dentro de una función que alguien
+pueda no llamar.
+
+> **Nota de historia:** SCRUM-118 se resolvió en **dos PR en paralelo** (#125 de carril A y el
+> de carril B) y se reconciliaron a mano, porque atacaban mitades distintas: uno la
+> **pertenencia de la URL**, el otro la **propiedad de la BD**. No competían. Si vuelves a ver
+> dos guards, no sobra ninguno — el orden es allowlist → conectar → marcador.
 
 ## Variables
 

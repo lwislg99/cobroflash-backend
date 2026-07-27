@@ -192,6 +192,38 @@
   SCRUM-74 `/recibo` → SCRUM-85 `/pay/card`+`/pay/bizum`+`/pay/invoice` → SCRUM-90
   `/pay/bank`+`/pay/mp`).
 
+### [x] P2-SEC-10 · `/pay/card` miraba Stripe ANTES de resolver el token: el 501 tapaba el 404 y enterraba el assert de tenancy de scrum85 (hallazgo en la suite gateada de SCRUM-113, 23-jul; corregido en SCRUM-119)
+- **Encuadre:** NO es «el IDOR está abierto» — no hay fuga probada. Es «el aislamiento NO estaba VERIFICADO»: una comprobación que no se ejercía y otras dos que ni corrían.
+- **Raíz (en el HANDLER, no en el test):** `payCard.routes.ts` hacía `if (!stripe) return 501` ANTES del `findUnique` del token. Sin `STRIPE_SECRET_KEY`, un token válido y un id numérico recibían la MISMA respuesta (501) → ningún assert podía distinguir _IDOR cerrado_ de _Stripe ausente_. Era la única de las 4 rutas de pago que miraba su integración antes de resolver el recurso (`/pay/mp`, `/pay/bank`, `/pay/bizum` resuelven primero → su 404 sigue siendo informativo aunque falte la integración). Evidencia directa: el numérico devolvía **501, no 404**.
+- **Impacto colateral (peor que el síntoma):** `node:test` aborta el bloque en el primer assert que falla. El de `/pay/card` numérico (`scrum85:71`, `501 !== 404`) tumbaba TODO lo de debajo: `/pay/card` por token, `/pay/bizum`, y **el cruce A/B de tenancy (líneas 90-95)** — el assert de aislamiento entre inquilinos del fichero. Una ruta caída se llevaba por delante la comprobación de fuga.
+- **Fix (raíz, no parche):** SCRUM-119 mueve `if (!stripe)` DEBAJO del `findUnique`+404+redirect. Un identificador inexistente da 404 (recurso) esté Stripe configurado o no; el 501 (estado del servidor) deja de adelantarse. Alinea `/pay/card` con sus tres hermanas y el bloque deja de abortar → bizum y el cruce A/B vuelven a ejecutarse. **Bonus correcto:** un cobro ya PAGADO sin Stripe ahora redirige a `/recibo` en vez de 501.
+- **Honestidad (criterio SCRUM-121):** el lado del token ya aceptaba `[303, 501]`; se añade un `t.diagnostic` EN VOZ ALTA cuando es 501 — sin `STRIPE_SECRET_KEY` el redirect real a Stripe Checkout NO se ejerce; el cierre del IDOR SÍ (numérico 404 ≠ token 501, testigo de «mecanismo vivo»). Ni verde fingido ni skip mudo.
+- **Verificado** en el entorno donde se reprodujo (staging sin Stripe): `scrum85` pasa ENTERO (antes abortaba en :71), el diagnóstico se oye y el cruce A/B corre. `npm test` 242 · 209 pass · 0 fail. Sin schema.
+- **Lo que NO tocó:** `/pay/bank` y `/pay/mp` (scrum90, verde, ya con guarda de presencia) y `/recibo` (scrum74, aserciones de contenido) — la falsa garantía vivía en el ORDEN del handler de card, no en la estructura del test copiada.
+
+### [x] P2-SEC-11 · `/pay/card` caía a la cuenta de PLATAFORMA para un merchant real sin Connect (hallazgo en el recon SCRUM-124 → r23; guard en SCRUM-130, 24-jul)
+- **Encuadre:** prohibición sin mecanismo. La regla 23 dice «PSP = cuenta conectada del merchant o NADA» y C1-2 la especifica («tarjeta deshabilitada para reales salvo demo»), pero el backend NO lo verificaba: sin Connect, `payCard.routes.ts` creaba la Checkout Session en la cuenta de PLATAFORMA para CUALQUIER merchant. Solo lo tapaba el selector de la UI (no ofrece tarjeta sin Connect) — justo el «seguro por disciplina» que el recon SCRUM-124 vino a cazar.
+- **Por qué importa:** dinero de clientes finales en la cuenta Stripe equivocada (la de plataforma) es un problema REGULATORIO (regla 23: el merchant es merchant-of-record), no una fuga de datos.
+- **Guard (SCRUM-130):** función PURA `cardChargeDecision({useConnect, isDemo})` → `connect` (Connect activo) · `demo_platform` (sin Connect pero es el demo, regla 18) · `refuse` (real sin Connect → **409**, NO cae a plataforma). Va DEBAJO del `if (!stripe) 501` a propósito → solo muerde donde hay Stripe (producción); staging y scrum85 no cambian de comportamiento hoy. Test PURO propio (`scrum130-card-charge-connect`, `npm test` normal, patrón `demoSendBlocked`); `scrum85` actualizado (el token de su fixture —merchant real sin Connect— ahora acepta `[303,501,409]`, sigue probando el IDOR). Sin schema.
+- **INERTE en producción HOY:** ningún merchant real tiene Stripe LIVE todavía (**SCRUM-41 abierta**), así que el camino de plataforma no se ejerce con dinero real. Es defensa PREVENTIVA: el día que se active Stripe, este guard es lo que impide que el **primer** cobro con tarjeta de un merchant sin Connect caiga en la cuenta de plataforma. Del tipo de protección que se agradece tarde.
+
+### [x] P2-N8N-1 · `POST /charges/:id/send` tenía n8n VIVO (viola la regla nº1) + falso éxito — retirado + guard estructural (SCRUM-129, 24-jul)
+- **Hallazgo (otra sesión, lineage del recon SCRUM-124):** `charges.routes.ts` tenía `POST /:id/send` con `axios.post` a la URL de webhook de n8n — n8n VIVO en una ruta de COBROS, violando la regla nº1 (WhatsApp = Meta Cloud API DIRECTA, jamás n8n/WATI/Zoko).
+- **Y con FALSO ÉXITO:** `if (url) { axios.post... }` — sin la URL configurada (lo esperable, n8n está prohibido) se saltaba el envío pero IGUAL creaba el `Event type:'sent'` y respondía `{ok:true, status:'sent'}`. Mentía sobre un envío que nunca salió. Y esquivaba TODOS los guards de `whatsapp.ts` (topes J6, opt-out J3, dry-run, registro WA-0b) — la misma clase de riesgo que r28.
+- **Verificado SIN callers** (grep del repo entero: dashboard, tests, scripts, docs) → el fix es RETIRAR, no migrar. Código muerto que viola la regla 1 y miente no se mantiene.
+- **Alcance real (más que el endpoint):** todo el n8n del repo era muerto — `src/integrations/n8n.ts` (`emitToN8n`, nunca llamado) + las 5 env vars de n8n en `env.ts`. Se retiró TODO (endpoint + módulo + env vars); sin ello el guard no podría quedar limpio (o falla, o allowlistea justo lo que vigila).
+- **Guard estructural (`tests/scrum129-n8n-guard.test.mjs`, `npm test` normal):** ningún fichero de código del repo declara el prefijo de env var de n8n. Calca el guard de r28 (SCRUM-124): walk de TODO el repo, self-exclusión por ruta (SCRUM-125), sin allowlist (nada legítimo lo usa). Vigila el MECANISMO (la config que enchufa n8n), no la palabra "n8n" en prosa histórica.
+- **Nota meta:** el guard de r28 cazó a mi guard de n8n en el primer intento (mi comentario mencionaba el host de Meta como analogía) — la trampa de auto-referencia de SCRUM-125, ahora CRUZADA entre dos guards. Reescrito sin el literal. Sin schema.
+### [x] P2-TPL-1 · Seleccionar una plantilla abría OTRA (off-by-one) + una huérfana pre-rellenaba un presupuesto nuevo (SCRUM-134, 24-jul)
+- **Síntoma (Javier):** al pulsar «Usar» en una plantilla, el editor abría el borrador pendiente u OTRA plantilla, nunca la seleccionada.
+- **Causa RAÍZ — orden invertido en el escritor** (`templatesView.js`): hacía `renderAppView('quotes-new')` y DESPUÉS `sessionStorage.setItem('pf_load_template', …)`. El lector corre SÍNCRONO dentro de esa navegación (`renderQuotesView` NO es async → `loadInitialData()` llega al `getItem` sin ningún `await` por delante), así que leía SIEMPRE el valor de la vez anterior. Off-by-one puro.
+- **Control natural que lo probó sin ejecutar:** hay DOS escritores de la misma clave — «Duplicar» (`quotesDetailView.js`) hace `setItem` → navegar (correcto, nunca se reportó roto) y «Usar plantilla» lo hacía al revés. Mismo lector, resultados opuestos: el lector estaba bien, el bug era el ORDEN del escritor.
+- **Segundo bug (destapado en el recon, sobrevive al swap):** el valor escrito no se consumía en ese ciclo y solo hay un `removeItem` (en la lectura) → la plantilla quedaba HUÉRFANA en `sessionStorage` y el siguiente **«+ Nuevo presupuesto» normal** aparecía con líneas que nadie pidió, suprimiendo además la restauración del borrador. Líneas = dinero.
+- **Fix:** (1) SWAP del orden en `templatesView.js` (queda simétrico con «Duplicar»); (2) sello de frescura `_ts` en ambos escritores + el lector acepta SOLO plantillas selladas y recientes (<15 s) — una clave sin sello o vieja se descarta, lo que además neutraliza las huérfanas que ya viven en la sesión de quien usó el build roto; (3) `templatePending` pasa a ser `true` solo si de verdad se cargaron líneas (antes lo era aunque la plantilla viniera vacía, suprimiendo el borrador para nada).
+- **Colateral (precedencia de estado, mismo diagnóstico):** en `loadDraft` el IVA por defecto se restauraba DESPUÉS de crear las líneas, así que las líneas sin IVA propio heredaban el defecto anterior. Ahora `vatDefault` se restaura ANTES del `forEach`.
+- **Verificado EN VIVO contra staging** (mismo script, mismas fixtures, solo cambian los 3 JS): antes → paso1 vacío, paso2 mostraba A, paso3 mostraba B huérfana; después → paso1 A, paso2 B, paso3 vacío. Fixtures efímeras `QA-134-*` creadas y borradas (2/2).
+- **NO tocado — es SCRUM-132:** el IVA de las líneas de plantilla. Verificado que `addLine` lee `initial.vat` y que al guardar plantilla se escribe `tax: vatPerc/100` → **doble desajuste de clave (`tax` vs `vat`) y de unidad (0,21 vs 21)**: hoy AMBOS caminos de carga descartan el IVA de la plantilla y aplican el defecto. Por eso `tax: (l.tax || 0)` (`:2009`) es código muerto y pasarlo «crudo» no arreglaría nada. Sin schema.
+
 ### [x] P0-AUTH-1 · Un operario no puede volver a entrar: `/auth/login` solo buscaba en `Merchant` (hallazgo 22-jul; corregido en SCRUM-92)
 - **Síntoma:** `requestMagicLink` (`auth.service.ts`) resolvía la cuenta con
   `prisma.merchant.findUnique({ where: { email } })` y salía por un `return` silencioso si no
@@ -496,7 +528,7 @@
   junta (antes imposible: cada archivo se ejecutaba suelto en su propia tarea) expuso una
   inestabilidad de concurrencia contra staging, ajena a estos 4 archivos.
 
-### [ ] P3-11 · `tests/scrum50-bot-albaranes.test.mjs` roto por el fail-closed de SCRUM-99 (23-jul, hallazgo en SCRUM-69; ticket SCRUM-122)
+### [x] P3-11 · `tests/scrum50-bot-albaranes.test.mjs` roto por el fail-closed de SCRUM-99 (23-jul, hallazgo en SCRUM-69; ticket SCRUM-122; corregido en SCRUM-122)
 - **Síntoma:** al correr la suite gateada completa en staging para SCRUM-69 (`QA_DB_TEST=1
   WHATSAPP_DRY_RUN=1 npm run test:staging`), `scrum50-bot-albaranes.test.mjs` falla en el primer
   `assert` («acuse del «Recibido»»). `scrum47-enviar-albaran-wa` y `scrum49-firma-remota` también
@@ -520,6 +552,45 @@
 - **No bloquea SCRUM-69**: ninguno de los archivos que toca (`pendientesFacturar.service.ts`,
   `customerAdmin.ts`, `albaranes.routes.ts`, schema `Customer.tipoDestinatario`, frontend) tiene
   relación con el webhook entrante de WhatsApp.
+- **Corregido en SCRUM-122:** `scrum50-bot-albaranes.test.mjs` fija `WHATSAPP_APP_SECRET` de
+  prueba y firma cada POST con HMAC-SHA256 (mismo algoritmo que `isValidSignature`) antes de
+  enviarlo. Verde en staging.
+- **Hallazgo colateral (barrido pedido por el fundador):** `tests/bot-suite.test.mjs` (A8.4,
+  gateado por `BOT_SUITE_TEST=1`, distinto de `QA_DB_TEST`) tenía el MISMO patrón — POST sin
+  firmar a `/webhooks/whatsapp`. Corregido con el mismo fix. Sigue sin poder pasar en verde de
+  punta a punta, pero por una razón DISTINTA y ya registrada: **P3-9** (cliente seed quemado por
+  SCRUM-42 en el merchant demo id=1) — confirmado al correrlo: ahora falla en «cliente seed no
+  encontrado», no en la firma. `webhooks-idempotencia.test.mjs` (A12.2c) usa `/webhooks/psp` con
+  `internalHeaders()` (P0-SEC-1, secreto interno propio) — NO afectado por el fail-closed de
+  SCRUM-99, no necesita cambios.
+
+### [x] P2-MET-1 · `reminderEur` (reports x2) contaba como recuperado dinero de recordatorios que FALLARON — histórico sin arreglo limpio (SCRUM-117, 23-jul)
+- **Síntoma:** `reports.routes.ts:147` calcula el «€ recuperado por recordatorios» a partir de `reminderXSentAt`, fechas que ANTES de SCRUM-116 se escribían aunque el envío de WhatsApp fallara. La métrica que mide si los recordatorios funcionan contaba los que NO se enviaron — y el sesgo va en la PEOR dirección (los hace parecer más eficaces: un merchant con el WA mal configurado vería dinero «recuperado» que es mentira).
+- **Origen ya arreglado:** SCRUM-116 (deploy 2026-07-23 15:22 UTC) — desde ahí `reminderXSentAt` significa «se envió»; un fallo NO lo marca. Los registros nuevos son fiables.
+- **Sin arreglo retroactivo limpio:** el dato para distinguir un recordatorio real de uno marcado en falso NUNCA se guardó, y no hay sustituto (los fallos pre-116 no dejaron fila en `WhatsAppMessage` ni `customerEvent`). Nulear las fechas pre-fix está DESCARTADO: `reminderXSentAt` es el candado de idempotencia del cron → nulearlo reenviaría recordatorios de facturas viejas ya pagadas.
+- **Medido antes de decidir (COUNT read-only contra prod, 23-jul):** de 3 facturas pagadas con fecha de recordatorio (las 3 pre-fix), **0 contribuyen a `reminderEur`** (ninguna se pagó ≤72h de un aviso) → inflación histórica real = **0 filas / 0,00 €**.
+- **Decisión (fundador): opción 1 — documentar, sin cambio funcional.** Montar un suelo de fiabilidad en la lectura para proteger 0 datos infra-reportaría PARA SIEMPRE una era vacía. Queda un comentario en `reports.routes.ts:144` (con la frontera y el resultado del count) para que nadie lea `reminderEur` creyéndolo limpio de un periodo con volumen pre-116. Si algún día lo hay, reabrir con un suelo de LECTURA (`reminderXSentAt >= fecha`), nunca tocando el histórico.
+- **Alcance:** solo la lectura de la métrica. Sin schema, sin write, sin cron, sin test (cero cambio de comportamiento).
+
+### [ ] P3-12 · `scrum116-recordatorio-candado.test.mjs` requiere `WHATSAPP_DRY_RUN` SIN poner — conflicto con los tests que sí lo necesitan (23-jul, hallazgo colateral en SCRUM-122)
+- **NO es un bug — es una nota de higiene de invocación**, registrada para que nadie la lea como
+  regresión: al correr `QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm run test:staging` (necesario para
+  scrum47/49/50/bot-suite), `scrum116-recordatorio-candado.test.mjs` falla con el mismo mensaje
+  que describe («FUGA DE DINERO»). Parece grave — no lo es: en solitario, SIN
+  `WHATSAPP_DRY_RUN=1` (solo `QA_DB_TEST=1`), pasa limpio.
+- **Causa:** `whatsapp.ts:142` — `if ((!phoneNumberId || !token) && !isDryRun())`. El modo
+  dry-run se diseñó a propósito para saltarse ESTE guard (comentario en el propio archivo:
+  «WHATSAPP_DRY_RUN=1 los senders pasan TODOS los guards»), y `scrum116` depende exactamente de
+  ese guard (`not_configured`) para simular un envío fallido sin credenciales reales. Su propio
+  comentario lo explica pero no protege el env var: no fija `WHATSAPP_DRY_RUN` a `''`/`'0'` como
+  sí hacen scrum50/bot-suite con LOS SUYOS.
+- **La lógica de SCRUM-116 está bien** — se verificó leyendo `invoiceReminder.service.ts`
+  completo: el candado (`reminderXSentAt`) solo se escribe si `sendReminderWA` devuelve `true`.
+  Confirmado además por la propia ejecución aislada en verde.
+- **No arreglado aquí** (fuera del alcance pedido — "el mismo problema" era la firma del
+  webhook, esto es otra cosa): si se quiere un fix, el candidato obvio es que `scrum116` fije
+  `process.env.WHATSAPP_DRY_RUN = ''` al principio del archivo, igual que ya hacen otros tests
+  con sus propios flags.
 
 ### [x] P3-10 · Suite gateada COMPLETA (`QA_DB_TEST=1 npm test`) era inestable por concurrencia contra staging (22-jul, hallazgo en SCRUM-75; corregido en SCRUM-78)
 - **Síntoma:** con los ~19 archivos de test gateados corriendo TODOS a la vez (comportamiento por

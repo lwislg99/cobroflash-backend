@@ -10,6 +10,16 @@ import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TE
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+
+// SCRUM-114 (reaplicado en SCRUM-126: el fix original no llegó a mergear — solo su
+// documentación en SUITE_REGRESION.md, "trampa 7"; el código se perdió en el camino).
+// Este test depende de dry-run (el envío real a Meta no debe dispararse), pero solo lo
+// DOCUMENTABA en el comentario de arriba — si quien lo invoca olvida el flag, el guard
+// not_configured de sendWhatsAppTemplate devuelve `ok:false` y el test falla con un
+// mensaje que no dice nada del motivo real. ANTES de importar dist (config se congela
+// al cargar).
+process.env.WHATSAPP_DRY_RUN = '1';
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
@@ -34,15 +44,19 @@ test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-t
   const base = `http://127.0.0.1:${server.address().port}`;
 
   const stamp = Date.now();
-  const mkMerchant = (tag) =>
-    prisma.merchant.create({
-      data: {
-        name: `QA S47 ${tag}`, country: 'ES', email: `qa-s47-${tag}-${stamp}@test.local`,
-        onboardingCompleted: true, planExpiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000), // pasa requireActivePlan
-      },
-    });
-  const merchantA = await mkMerchant('A');
-  const merchantB = await mkMerchant('B');
+  // SCRUM-113: `planExpiresAt` es OBLIGATORIO aquí — este test llama a
+  // POST /admin/albaranes/:id/enviar-whatsapp, una de las cuatro rutas con
+  // requireActivePlan. Sin el campo, el paywall corta y el test falla por un motivo que no
+  // es el suyo. (El comentario original ya lo decía: "pasa requireActivePlan".)
+  const datosMerchant = (tag) => ({
+    name: `QA S47 ${tag}`, email: `qa-s47-${tag}-${stamp}@test.local`,
+    planExpiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000),
+  });
+
+  // Los merchants y TODO su montaje dentro de withMerchant; antes nacían fuera del try.
+  try {
+    await withMerchant(prisma, datosMerchant('A'), (merchantA) =>
+      withMerchant(prisma, datosMerchant('B'), async (merchantB) => {
   const tecnico = await prisma.teamMember.create({
     data: { merchantId: merchantA.id, name: 'QA Téc 47', email: `qa-tec47-${stamp}@test.local`, role: 'tecnico', status: 'active' },
   });
@@ -81,14 +95,15 @@ test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-t
   const post = (albId, cookie) =>
     fetch(`${base}/admin/albaranes/${albId}/enviar-whatsapp`, { method: 'POST', headers: { cookie, 'content-type': 'application/json' } });
 
-  try {
     const cookieTecnico = await mkCookie(merchantA.id, tecnico.id); // rol técnico (S1: enviar WA ✅)
     const cookieB = await mkCookie(merchantB.id, null);
 
     // ── TÉCNICO permitido (S1) + happy path dry-run → 200 ok:true ──
     const rOk = await post(albFirmado.id, cookieTecnico);
     assert.equal(rOk.status, 200, `técnico debe poder enviar (S1) y fue ${rOk.status}`);
-    assert.equal((await rOk.json()).ok, true, 'envío ok en dry-run');
+    const okBody = await rOk.json();
+    assert.equal(okBody.ok, true, 'envío ok en dry-run');
+    assert.equal(okBody.sent, true, 'SCRUM-126: sent es la verdad del envío, no solo ok');
     // WA-0b: el envío pasó por la cadena y se registró con relatedType 'albaran'
     assert.ok(await waitForWaLog(prisma, merchantA.id, albFirmado.id), 'debe registrarse WhatsAppMessage relatedType=albaran');
 
@@ -97,24 +112,19 @@ test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-t
     assert.equal(rEmit.status, 409, `emitido debe ser 409 y fue ${rEmit.status}`);
     assert.equal((await rEmit.json()).error, 'albaran_no_firmado');
 
-    // ── Cliente sin teléfono → 409 sin_telefono ──
+    // ── Cliente sin teléfono → 409 customer_missing_phone (SCRUM-126: antes "sin_telefono") ──
     const rNoTel = await post(albSinTel.id, cookieTecnico);
     assert.equal(rNoTel.status, 409);
-    assert.equal((await rNoTel.json()).error, 'sin_telefono');
+    assert.equal((await rNoTel.json()).error, 'customer_missing_phone');
 
     // ── Tenancy (regla 2): B no ve el albarán de A → 404 ──
     const rB = await post(albFirmado.id, cookieB);
     assert.equal(rB.status, 404, 'merchant B no accede al albarán de A');
 
     console.log('✔ SCRUM-47: técnico 200 (firmado, dry-run), 409 no-firmado/sin-tel, tenancy 404, WA-0b albaran ✓');
+      }));
   } finally {
-    await prisma.whatsAppMessage.deleteMany({ where: { merchantId: { in: [merchantA.id, merchantB.id] } } });
-    await prisma.albaran.deleteMany({ where: { merchantId: merchantA.id } });
-    await prisma.job.deleteMany({ where: { merchantId: merchantA.id } });
-    await prisma.customer.deleteMany({ where: { merchantId: merchantA.id } });
-    await prisma.teamMember.deleteMany({ where: { merchantId: merchantA.id } });
-    await prisma.authSession.deleteMany({ where: { merchantId: { in: [merchantA.id, merchantB.id] } } });
-    await prisma.merchant.deleteMany({ where: { id: { in: [merchantA.id, merchantB.id] } } });
+    // Solo lo que NO es del merchant: el borrado de datos lo garantiza withMerchant.
     server.close();
     await prisma.$disconnect();
   }

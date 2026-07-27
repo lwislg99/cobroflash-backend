@@ -13,6 +13,9 @@ export interface CreateExpenseInput {
   date?: Date;
   notes?: string | null;
   receiptData?: string | null;
+  // SCRUM-109: autoría — el técnico que registró el gasto (null = propietario). Inmutable:
+  // no forma parte de updateExpense a propósito, mismo convenio que Job.operarioId (SCRUM-22).
+  teamMemberId?: number | null;
 }
 
 export async function listExpenses(
@@ -29,7 +32,7 @@ export async function listExpenses(
       lt:  new Date(y, m, 1),
     };
   }
-  return prisma.expense.findMany({
+  const items = await prisma.expense.findMany({
     where,
     include: {
       quote:    { select: { id: true } },
@@ -38,21 +41,76 @@ export async function listExpenses(
     orderBy: { date: 'desc' },
     take: 200,
   });
+
+  // SCRUM-135: el gasto guarda `quoteId` (COTIZACIÓN), pero lo que el pro ve y entiende es el
+  // TRABAJO. Se resuelve aquí, con UNA query para toda la página, en vez de que el front pida
+  // /admin/jobs aparte: ese endpoint serializa hasta 200 trabajos con varias consultas cada uno
+  // (N+1, ver SCRUM-58) y medido contra staging tardaba 2910 ms frente a 1270 ms de este — o
+  // sea que la lista de gastos se quedaba esperando por un adorno. Aditivo: `job` se AÑADE al
+  // item y `quote` sigue igual para quien ya lo leyera.
+  const quoteIds = [...new Set(items.map((e) => e.quoteId).filter((id): id is number => id != null))];
+  if (!quoteIds.length) return items.map((e) => ({ ...e, job: null }));
+
+  const jobs = await prisma.job.findMany({
+    where: { merchantId, quoteId: { in: quoteIds } },
+    select: { id: true, titulo: true, quoteId: true },
+  });
+  const porQuote = new Map(jobs.map((j) => [j.quoteId, j]));
+  return items.map((e) => {
+    const j = e.quoteId != null ? porQuote.get(e.quoteId) : null;
+    // `titulo` puede ser null en Jobs anteriores a SCRUM-10: el front cae a un texto neutro.
+    return { ...e, job: j ? { id: j.id, titulo: j.titulo } : null };
+  });
+}
+
+// SCRUM-135 (hallazgo 2): `quoteId` y `providerId` se escribían A PELO. La FK garantiza que
+// la fila EXISTE, no que sea de este merchant → un gasto podía apuntar a la cotización de
+// OTRO negocio (regla 2). Hoy la fuga era casi nula porque `listExpenses` solo devuelve
+// `quote.id` (el número que ya habías tecleado), pero este mismo ticket ENSANCHA ese select
+// para pintar el trabajo en el desplegable: sin este guard, eso pasa a ser lectura
+// cross-tenant. Por eso la comprobación va aquí, en el DOMINIO, y no en la ruta: un futuro
+// tercer llamador de createExpense no se la salta por olvido.
+export class ExpenseRefError extends Error {
+  constructor(public readonly code: 'quote_not_found' | 'provider_not_found') {
+    super(code);
+    this.name = 'ExpenseRefError';
+  }
+}
+
+// MISMA respuesta para "no existe" y "no es tuya" a propósito: distinguirlas convertiría el
+// endpoint en un oráculo para enumerar ids de otros merchants.
+async function assertRefsOwned(merchantId: number, data: Partial<CreateExpenseInput>) {
+  if (data.quoteId != null) {
+    const quote = await prisma.quote.findFirst({
+      where: { id: data.quoteId, merchantId },
+      select: { id: true },
+    });
+    if (!quote) throw new ExpenseRefError('quote_not_found');
+  }
+  if (data.providerId != null) {
+    const provider = await prisma.provider.findFirst({
+      where: { id: data.providerId, merchantId },
+      select: { id: true },
+    });
+    if (!provider) throw new ExpenseRefError('provider_not_found');
+  }
 }
 
 export async function createExpense(merchantId: number, data: CreateExpenseInput) {
+  await assertRefsOwned(merchantId, data);
   return prisma.expense.create({
     data: {
       merchantId,
-      quoteId:     data.quoteId    ?? null,
-      providerId:  data.providerId ?? null,
-      concept:     data.concept,
-      amount:      data.amount,
-      currency:    data.currency   ?? 'EUR',
-      category:    data.category   ?? 'otros',
-      date:        data.date       ?? new Date(),
-      notes:       data.notes      ?? null,
-      receiptData: data.receiptData ?? null,
+      quoteId:      data.quoteId     ?? null,
+      providerId:   data.providerId  ?? null,
+      concept:      data.concept,
+      amount:       data.amount,
+      currency:     data.currency    ?? 'EUR',
+      category:     data.category    ?? 'otros',
+      date:         data.date        ?? new Date(),
+      notes:        data.notes       ?? null,
+      receiptData:  data.receiptData ?? null,
+      teamMemberId: data.teamMemberId ?? null,
     },
   });
 }
@@ -60,6 +118,8 @@ export async function createExpense(merchantId: number, data: CreateExpenseInput
 export async function updateExpense(merchantId: number, id: number, data: Partial<CreateExpenseInput>) {
   const existing = await prisma.expense.findFirst({ where: { id, merchantId } });
   if (!existing) return null;
+  // SCRUM-135: el PUT comprobaba la tenencia del GASTO pero no la de las referencias NUEVAS.
+  await assertRefsOwned(merchantId, data);
   return prisma.expense.update({ where: { id }, data });
 }
 

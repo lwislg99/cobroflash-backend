@@ -12,7 +12,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { withMerchant, limpiarMerchant, merchantsVivos } from './_merchant-fixture.mjs';
+import {
+  withMerchant, limpiarMerchant, merchantsVivos, barridoFinal, registrarBarridoFinal,
+  _resetBarridoParaTests,
+} from './_merchant-fixture.mjs';
 
 /**
  * Doble de PrismaClient. Registra cada deleteMany por modelo y permite programar fallos.
@@ -101,4 +104,63 @@ test('SCRUM-113: reintenta la pasada cuando una escritura tardía revive la FK',
 
   assert.ok(ok, 'la segunda pasada debe cerrar el borrado');
   assert.equal(f.llamadas.filter((c) => c === 'merchant.delete').length, 2, 'dos intentos');
+});
+
+// ── Garantía nº3: el barrido final (verificación post-cierre de SCRUM-113) ─────────────────
+// Las cuatro pruebas de arriba cubren las garantías 1 y 2. La 3 (after() de última
+// instancia) estaba escrita y documentada, pero CERO ficheros la invocaban — la propia red
+// dependía de que cada autor tendiera OTRA red aparte, y nadie lo probó porque nadie la
+// usaba. Aquí se prueban las dos mitades: la barrida en sí (`barridoFinal`) y que
+// `withMerchant` la deja activada SOLA, sin llamada aparte.
+
+test('SCRUM-113: barridoFinal limpia lo que quedó vivo y avisa por consola', async () => {
+  const f = fakePrisma();
+  merchantsVivos.add(777); // simula un camino que NO pasó por withMerchant
+
+  await barridoFinal(f.cliente);
+
+  assert.ok(f.merchantBorrado, 'el huérfano debe quedar borrado');
+  assert.equal(merchantsVivos.has(777), false, 'y desregistrado');
+});
+
+test('SCRUM-113: barridoFinal no toca nada si no hay huérfanos (no limpia en silencio lo que no existe)', async () => {
+  const f = fakePrisma();
+  assert.equal(merchantsVivos.size, 0, 'precondición: nada vivo antes de esta prueba');
+
+  await barridoFinal(f.cliente);
+
+  assert.equal(f.llamadas.length, 0, 'sin huérfanos, no debe llamar a nada');
+});
+
+test('SCRUM-113: registrarBarridoFinal ata la barrida al after() inyectado', async () => {
+  let callbackRegistrado = null;
+  const afterFalso = (cb) => { callbackRegistrado = cb; };
+
+  registrarBarridoFinal({}, { after: afterFalso });
+
+  assert.equal(typeof callbackRegistrado, 'function', 'debe registrar un callback en el after() recibido');
+});
+
+test('SCRUM-113: withMerchant deja el barrido ACTIVADO SOLO — nadie llama a registrarBarridoFinal aparte', async () => {
+  _resetBarridoParaTests(); // aísla del withMerchant ya usado por una prueba anterior de este mismo fichero
+  const f = fakePrisma();
+  const afterCallbacks = [];
+  const afterFalso = (cb) => { afterCallbacks.push(cb); };
+
+  // Un uso normal de withMerchant, con el after() inyectado — como lo usaría cualquier
+  // fichero real, sin tocar registrarBarridoFinal.
+  await withMerchant(f.cliente, { name: 'QA', email: 'qa@test.local' }, async () => {}, { after: afterFalso });
+
+  assert.equal(afterCallbacks.length, 1, 'el primer withMerchant del fichero debe activar la red');
+
+  // Huérfano posterior (otro camino, sin pasar por withMerchant) — el after() ya registrado
+  // debe barrerlo cuando el runner lo dispare de verdad; aquí se simula disparándolo a mano.
+  merchantsVivos.add(888);
+  await afterCallbacks[0]();
+  assert.equal(merchantsVivos.has(888), false, 'el after() activado por withMerchant debe barrer huérfanos posteriores');
+
+  // Un SEGUNDO withMerchant en el mismo fichero NO debe registrar un after() adicional
+  // (evita barridos duplicados / N llamadas a la BD al cerrar el fichero).
+  await withMerchant(f.cliente, { name: 'QA2', email: 'qa2@test.local' }, async () => {}, { after: afterFalso });
+  assert.equal(afterCallbacks.length, 1, 'un segundo withMerchant no debe registrar otro after()');
 });

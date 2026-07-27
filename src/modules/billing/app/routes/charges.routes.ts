@@ -1,10 +1,9 @@
 // srcNew/modules/billing/app/routes/charges.routes.ts
 import { Router } from 'express';
-import axios from 'axios';
 import { prisma } from '../../../../core/db/prisma';
 import { CreateChargeSchema } from '../../../../core/validation/schemas';
 import { normalizePhone, makeReference } from '../../../../core/utils/utils';
-import { config, BASE_URL } from '../../../../core/config/env';
+import { BASE_URL } from '../../../../core/config/env';
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 
 const router = Router();
@@ -140,60 +139,11 @@ router.get('/:id', async (req, res) => {
   });
 });
 
-// Envío por WhatsApp (vía n8n)
-router.post('/:id/send', async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
-
-    const charge = await prisma.charge.findUnique({
-      where: { id },
-      include: { customer: true, merchant: true },
-    });
-    if (!charge) return res.status(404).json({ error: 'charge_not_found' });
-    if (charge.status !== 'pending') {
-      return res.status(409).json({ error: 'invalid_status', status: charge.status });
-    }
-
-    const overrideRaw = typeof req.body?.to === 'string' ? req.body.to : '';
-    const to = normalizePhone(overrideRaw) || normalizePhone(charge.customer?.phone || '');
-    if (!to) return res.status(400).json({ error: 'missing_customer_phone' });
-
-    // SCRUM-74: token OPACO del recibo público, NUNCA el chargeId (IDOR/RGPD).
-    const receiptToken = await ensureChargeReceiptToken(charge.id, prisma);
-    const payload = {
-      kind: 'charge_request',
-      charge_id: charge.id,
-      to,
-      customer_name: charge.customer?.name ?? '',
-      amount: charge.amount.toString(),
-      currency: charge.currency,
-      concept: charge.concept,
-      reference: charge.reference,
-      // URL única que mandaremos por WhatsApp
-      receipt_url: `${BASE_URL}/recibo/${receiptToken}`,
-      // Campos opcionales para futuro. SCRUM-90: /pay/bank también tokenizado.
-      paybank_url: `${BASE_URL}/pay/bank/${receiptToken}`,
-      paycard_url: `${BASE_URL}/pay/card/${receiptToken}`,
-    };
-
-    const url = config.N8N_ONSEND_URL;
-    if (url) {
-      await axios.post(url, payload, {
-        headers: config.N8N_TOKEN ? { Authorization: `Bearer ${config.N8N_TOKEN}` } : undefined,
-        timeout: 10_000,
-      });
-    }
-
-    await prisma.event.create({
-      data: { chargeId: charge.id, type: 'sent', payload: payload as any },
-    });
-
-    return res.json({ ok: true, status: 'sent', to });
-  } catch (err: any) {
-    console.error('POST /charges/:id/send error', err?.response?.data || err);
-    return res.status(500).json({ error: 'internal_error' });
-  }
-});
+// SCRUM-129: se RETIRÓ `POST /:id/send`. Violaba la regla nº1 (n8n vivo: axios.post a la URL de
+// webhook de n8n) en una ruta de cobros, y MENTÍA — sin esa URL (lo esperable, n8n está prohibido)
+// se saltaba el envío pero igual creaba el Event `type:'sent'` y respondía `{ok:true, status:'sent'}`.
+// Además esquivaba TODOS los guards de `whatsapp.ts` (topes J6, opt-out J3, dry-run, registro WA-0b).
+// Sin callers (dashboard/tests/scripts). El envío por WhatsApp vive en `whatsapp.ts` — un guard
+// estructural (scrum129-n8n-guard) impide que n8n vuelva.
 
 export default router;

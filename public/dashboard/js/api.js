@@ -135,6 +135,23 @@ function uiSkeletonRows(tbody, cols, rows = 6) {
 }
 window.uiSkeletonRows = uiSkeletonRows;
 
+// SCRUM-126: `sent` es la ÚNICA verdad sobre si una notificación (WhatsApp/email) salió,
+// en los 9 endpoints de envío del dashboard — nunca `ok` (eso era el punto ciego: un 200
+// se lee como éxito si nadie mira el cuerpo). Un solo sitio que lo sepa, para que ningún
+// consumidor futuro vuelva a mirar el campo equivocado.
+function waSendFailed(result) {
+  return !!result && result.sent === false;
+}
+window.waSendFailed = waSendFailed;
+
+// Mismo criterio para el subobjeto anidado de collect-rest (`whatsapp:{sent,error,message}`
+// — la factura SÍ se creó, `ok` de la respuesta es siempre true; el envío es un efecto
+// secundario con su propio resultado).
+function waCollectRestSent(whatsapp) {
+  return !!whatsapp && whatsapp.sent === true;
+}
+window.waCollectRestSent = waCollectRestSent;
+
 // A20.5 (J5): acciones de FALLBACK cuando un envío de WhatsApp falla — SIEMPRE
 // se ofrecen las tres salidas: Copiar enlace · Enviar por email · Reintentar.
 // Devuelve el elemento para insertarlo junto al mensaje de error de la vista.
@@ -167,8 +184,14 @@ function waFallbackBar({ link, onEmail, onRetry, emailDisabledReason }) {
     emailBtn.addEventListener('click', async () => {
       emailBtn.disabled = true;
       emailBtn.textContent = 'Enviando…';
-      try { await onEmail(); showToast('✓ Enviado por email'); emailBtn.textContent = '✉️ Enviado'; }
-      catch (e) {
+      try {
+        const result = await onEmail();
+        // SCRUM-115: apiRequest() solo rechaza en HTTP≠2xx. Los 2 endpoints /send-email
+        // responden 200+sent:false cuando el envío falla — sin este chequeo, esta barra
+        // (compartida por facturas, presupuestos y trabajos) siempre decía "✓ Enviado".
+        if (waSendFailed(result)) throw { data: result, message: result.message };
+        showToast('✓ Enviado por email'); emailBtn.textContent = '✉️ Enviado';
+      } catch (e) {
         showToast('Email falló: ' + (e?.data?.message || e.message), 'error');
         emailBtn.disabled = false; emailBtn.textContent = '✉️ Enviar por email';
       }
@@ -485,11 +508,6 @@ async function rejectQuoteAdmin(id, payload = {}) {
     method: "POST",
     body: JSON.stringify(payload),
   });
-}
-
-// Enviar presupuesto por WhatsApp
-async function sendQuoteWhatsApp(id) {
-  return apiRequest(`/admin/quotes/${id}/send-whatsapp`, { method: "POST" });
 }
 
 // -------- Admin – Productos --------

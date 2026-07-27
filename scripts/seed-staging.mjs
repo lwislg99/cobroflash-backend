@@ -8,15 +8,25 @@
 //   (email del merchant QA configurable con E2E_QA_EMAIL; default qa@staging.yaqu)
 // ⚠️ SIN datos personales (regla del brief): emails sintéticos del dominio staging.yaqu.
 import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { assertSafeStagingUrl } from './_db-guard.mjs';
 
 // GUARD anti-producción: este seed JAMÁS corre contra la BD de prod.
+//
+// SCRUM-118: antes bloqueaba la subcadena `autorack` — el host de prod de entonces. Eso no
+// comprueba nada: cualquier otro host pasaba, incluida una URL de producción tras una
+// rotación. Ahora es una ALLOWLIST POSITIVA de host exacto, incondicional y fail-closed
+// (la misma que usa el guard de los tests, para que no puedan divergir).
+//
+// Este seed BORRA Y REESCRIBE datos, así que la protección va antes de construir el cliente
+// y no depende de ningún gate.
 const dbUrl = process.env.DATABASE_URL || '';
-if (dbUrl.includes('autorack.proxy.rlwy.net')) {
-  console.error('❌ DATABASE_URL apunta a PRODUCCIÓN — abortado. Usa la DATABASE_URL de staging.');
+const dbCheck = assertSafeStagingUrl(dbUrl);
+if (!dbCheck.safe) {
+  console.error(`❌ DATABASE_URL no es una URL de staging segura (${dbCheck.reason}) — abortado. Usa la DATABASE_URL de staging.`);
   process.exit(1);
 }
+
+const prisma = new PrismaClient();
 
 const QA_EMAIL = (process.env.E2E_QA_EMAIL || 'qa@staging.yaqu').toLowerCase();
 const MARK = '(SCRUM-38 staging seed)';
@@ -172,6 +182,19 @@ async function main() {
     });
     console.log(`✓ job #${job.id} creado para el quote #${q.quoteNumber ?? q.id}`);
   }
+
+  // SCRUM-118 · MARCADOR DE STAGING. Es lo que `tests/_staging-db.mjs` lee para verificar
+  // la PROPIEDAD «esta BD es staging» en vez del síntoma «la URL no dice autorack».
+  // Va aquí para que toda BD recién sembrada quede marcada sin que nadie se acuerde.
+  // Producción no lo tiene ni puede tenerlo por accidente: no viaja en `schema.prisma`, y
+  // prod se aprovisiona con el mismo `db push`, o sea que recibe el schema y nada más.
+  // (Para una BD YA sembrada usa `scripts/marcar-staging.mjs`: re-sembrar retrocedería
+  // `nextQuoteNumber`.)
+  // format('%I') dentro de Postgres: el nombre nunca sale de la BD y no hay inyección.
+  await prisma.$executeRawUnsafe(
+    "DO $$ BEGIN EXECUTE format('COMMENT ON DATABASE %I IS %L', current_database(), 'YAQU_STAGING'); END $$;",
+  );
+  console.log('✓ BD marcada como STAGING (YAQU_STAGING)');
 
   console.log('DONE — seed staging idempotente completado.');
 }

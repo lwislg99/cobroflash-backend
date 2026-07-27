@@ -33,7 +33,9 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
     include: { merchant: true, customer: true },
   });
   if (!invoice) return { ok: false, reason: 'invoice_not_found' };
-  if (!invoice.customer?.phone) return { ok: false, reason: 'customer_without_phone' };
+  // SCRUM-126: "customer_missing_phone" (no "customer_without_phone") — mismo código que
+  // usan albaranWhatsApp.service.ts y sendQuote.service.ts para la misma condición.
+  if (!invoice.customer?.phone) return { ok: false, reason: 'customer_missing_phone' };
 
   const to = normalizePhone(invoice.customer.phone);
   if (!to) return { ok: false, reason: 'invalid_phone_format' };

@@ -38,9 +38,9 @@ async function initApp() {
 
   // Ocultar elementos de navegación para técnicos
   if (window.appUserRole !== 'admin') {
-    // SCRUM-24: la supervisión por operario es solo del admin (S1). Ocultar el nav es
-    // UX; la seguridad real la da el 403 de GET /admin/metrics/operarios (backend, S3).
-    ['nav-plans', 'nav-team', 'nav-operarios'].forEach((id) => {
+    // SCRUM-24/136: la gestión y supervisión del equipo es solo del admin (S1). Ocultar el
+    // nav es UX; la seguridad real la da el requireRole('admin') de /admin/team (backend, S3).
+    ['nav-plans', 'nav-team', 'nav-export'].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
@@ -197,7 +197,12 @@ async function initApp() {
         break;
       case 'quotes-new':
         viewTitle.textContent = L.quoteNew;
-        renderQuotesView(viewContainer);
+        // SCRUM-140: la plantilla viaja como ARGUMENTO, no por sessionStorage. A propósito NO se
+        // guarda en `state`: es de un solo uso, y persistirla reintroduciría el estado residual
+        // que causaba la plantilla huérfana (SCRUM-134). Las navegaciones a 'quotes-new' que no
+        // pasan `template` (nuevo presupuesto, desde cliente, desde solicitud…) abren en blanco
+        // porque no mandan nada — antes podían recoger lo que otra vista hubiera dejado escrito.
+        renderQuotesView(viewContainer, options.template || null);
         break;
       case 'quotes-detail':
         viewTitle.textContent = L.quotePlural;
@@ -250,6 +255,19 @@ async function initApp() {
         viewTitle.textContent = 'Gastos';
         renderExpensesView(viewContainer);
         break;
+      // SCRUM-138: mismo guard que 'settings'/'team' — el export se lleva TODO el negocio,
+      // datos de cliente incluidos (S4/RGPD), así que un técnico no entra ni tecleando la
+      // vista. La seguridad real la da el requireRole('admin') del router /admin/exports.
+      case 'export':
+        if (window.appUserRole !== 'admin') {
+          viewTitle.textContent = 'Inicio';
+          renderHomeView(viewContainer);
+          view = 'home';
+        } else {
+          viewTitle.textContent = 'Descargar datos';
+          renderExportView(viewContainer);
+        }
+        break;
       case 'plans':
         viewTitle.textContent = 'Planes';
         renderPlansView(viewContainer);
@@ -264,17 +282,12 @@ async function initApp() {
           renderTeamView(viewContainer);
         }
         break;
+      // SCRUM-136: 'operarios' se fusiona en 'team' (un operario es un ROL del miembro, no
+      // un apartado). Se mantiene el case como REDIRECCIÓN, no se borra: hay enlaces y
+      // marcadores vivos apuntando ahí, y el guard de rol de 'team' es el mismo, así que
+      // caer en Equipo es exactamente lo que el usuario venía buscando.
       case 'operarios':
-        // SCRUM-24: mismo guard que 'team' — un técnico no entra ni tecleando la vista
-        if (window.appUserRole !== 'admin') {
-          viewTitle.textContent = 'Inicio';
-          renderHomeView(viewContainer);
-          view = 'home';
-        } else {
-          viewTitle.textContent = 'Operarios';
-          if (typeof renderOperariosView === 'function') renderOperariosView(viewContainer);
-        }
-        break;
+        return renderView('team', options);
       case 'settings':
         // A1.3: guard como en 'team' — un técnico no entra ni tecleando la vista
         if (window.appUserRole !== 'admin') {
@@ -302,7 +315,7 @@ async function initApp() {
   // Deep-links por hash: /dashboard/#products abre Productos directamente.
   // Útil para compartir/QA (y para las capturas de la maqueta A4.7).
   const HASH_VIEWS = ['home','quotes-list','quotes-new','customers','products','providers',
-    'invoices','expenses','reports','templates','quote-requests','jobs','plans','team','settings'];
+    'invoices','expenses','export','reports','templates','quote-requests','jobs','plans','team','settings'];
   function viewFromHash() {
     const h = (window.location.hash || '').replace('#', '');
     return HASH_VIEWS.includes(h) ? h : null;

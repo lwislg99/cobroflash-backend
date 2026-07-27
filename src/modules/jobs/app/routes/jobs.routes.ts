@@ -4,6 +4,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: dinero = admin)
+import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-147: capacidad, no literal
 import { canTransition, estadoCobroFor, JOB_TIPOS_OPERACION } from '../../domain/job.service';
 import { recordAudit } from '../../../system/audit.service'; // SCRUM-66: traza de tipo_operacion_elegido
 import { resolveBillingPlan, distributeStageAmounts } from '../../../quotes/domain/billingPlan';
@@ -22,7 +23,9 @@ import {
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-17
 import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-17: gate fiscal
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-17: total con desglose IVA
+import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
+import { SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 
 const router = Router();
 
@@ -31,28 +34,82 @@ const jobInclude = {
   // quote via relation? Job no tiene relación Prisma declarada — se resuelve a mano
 } as const;
 
-async function serializeJob(job: any) {
+// SCRUM-58: selects EXACTOS que ya usaba serializeJob por fila — se extraen para que la
+// versión por lote y la de una sola fila no puedan divergir (mismos campos, misma forma).
+const QUOTE_SELECT = {
+  id: true, quoteNumber: true, total: true, currency: true,
+  paymentTerms: true, customBillingPlan: true, // SCRUM-27: para resolver el plan efectivo
+  lines: true, // SCRUM-141: el importe de cada tramo se deriva de las líneas (= lo que se emitirá)
+  Invoice: { select: { id: true, status: true, total: true } },
+} as const;
+const CUSTOMER_SELECT = { id: true, name: true, phone: true } as const;
+
+/**
+ * SCRUM-58: resuelve quote + customer + operario de TODOS los jobs de una lista en 3
+ * consultas, en vez de 3 por fila (N+1 de SCRUM-22). El detalle (1 job) no lo necesita y
+ * sigue por el camino de siempre.
+ *
+ * La clave del operario incluye el merchantId a propósito: la consulta por fila iba
+ * SCOPEADA al merchant del Job (regla 2, tenancy) y el lote tiene que conservar esa
+ * semántica exacta — un `id in (...)` a secas resolvería operarios de otro merchant si dos
+ * filas trajeran el mismo id.
+ */
+type JobRefs = {
+  quotes: Map<number, any>;
+  customers: Map<number, any>;
+  operarios: Map<string, { id: number; name: string }>;
+};
+const operarioKey = (merchantId: number, operarioId: number) => `${merchantId}:${operarioId}`;
+
+async function loadJobRefs(jobs: any[]): Promise<JobRefs> {
+  const quoteIds = [...new Set(jobs.map((j) => j.quoteId).filter((v): v is number => v != null))];
+  const customerIds = [...new Set(jobs.map((j) => j.customerId).filter((v): v is number => v != null))];
+  const conOperario = jobs.filter((j) => j.operarioId != null);
+  const operarioIds = [...new Set(conOperario.map((j) => j.operarioId as number))];
+  const merchantIds = [...new Set(conOperario.map((j) => j.merchantId as number))];
+
+  const [quotes, customers, operarios] = await Promise.all([
+    quoteIds.length
+      ? prisma.quote.findMany({ where: { id: { in: quoteIds } }, select: QUOTE_SELECT })
+      : Promise.resolve([]),
+    customerIds.length
+      ? prisma.customer.findMany({ where: { id: { in: customerIds } }, select: CUSTOMER_SELECT })
+      : Promise.resolve([]),
+    operarioIds.length
+      ? prisma.teamMember.findMany({
+          where: { id: { in: operarioIds }, merchantId: { in: merchantIds } },
+          select: { id: true, name: true, merchantId: true },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  return {
+    quotes: new Map(quotes.map((q: any) => [q.id, q])),
+    customers: new Map(customers.map((c: any) => [c.id, c])),
+    operarios: new Map(operarios.map((o: any) => [operarioKey(o.merchantId, o.id), { id: o.id, name: o.name }])),
+  };
+}
+
+async function serializeJob(job: any, refs?: JobRefs) {
+  // SCRUM-58: con `refs` (lista) se lee del lote; sin él (detalle, update) se consulta como
+  // siempre. Mismos selects en ambas ramas — ver QUOTE_SELECT/CUSTOMER_SELECT.
   const quote = job.quoteId
-    ? await prisma.quote.findUnique({
-        where: { id: job.quoteId },
-        select: {
-          id: true, quoteNumber: true, total: true, currency: true,
-          paymentTerms: true, customBillingPlan: true, // SCRUM-27: para resolver el plan efectivo
-          Invoice: { select: { id: true, status: true, total: true } },
-        },
-      })
+    ? refs
+      ? refs.quotes.get(job.quoteId) ?? null
+      : await prisma.quote.findUnique({ where: { id: job.quoteId }, select: QUOTE_SELECT })
     : null;
-  const customer = await prisma.customer.findUnique({
-    where: { id: job.customerId },
-    select: { id: true, name: true, phone: true },
-  });
+  const customer = refs
+    ? refs.customers.get(job.customerId) ?? null
+    : await prisma.customer.findUnique({ where: { id: job.customerId }, select: CUSTOMER_SELECT });
   // SCRUM-22 (read-path): autoría del operario. Resuelve el TeamMember de la Parte S1
   // por operarioId, SCOPEADO al merchant del Job (regla 2, tenancy). null = propietario.
   const operario = job.operarioId
-    ? await prisma.teamMember.findFirst({
-        where: { id: job.operarioId, merchantId: job.merchantId },
-        select: { id: true, name: true },
-      })
+    ? refs
+      ? refs.operarios.get(operarioKey(job.merchantId, job.operarioId)) ?? null
+      : await prisma.teamMember.findFirst({
+          where: { id: job.operarioId, merchantId: job.merchantId },
+          select: { id: true, name: true },
+        })
     : null;
 
   // A13.3: ¿queda tramo pendiente? (plan según paymentTerms vs facturas emitidas)
@@ -189,15 +246,43 @@ router.get('/', async (req, res) => {
     // SCRUM-23 (S1 roles · S3 filtrar en BACKEND): el técnico solo ve los Trabajos que
     // originó (operarioId = él; autoría inmutable de SCRUM-22). Admin/owner: sin cambio.
     // El filtro va en la QUERY, jamás ocultando en front datos ya enviados.
+    // SCRUM-147: se pregunta por CAPACIDAD, no por igualdad a 'tecnico'. Era una DENYLIST y por
+    // tanto fail-OPEN: cualquier rol que no fuera exactamente 'tecnico' se saltaba el filtro y
+    // veía TODOS los Trabajos del merchant. `seesOnlyOwnJobs` complementa un allowlist de
+    // 'admin', así que un rol desconocido queda RESTRINGIDO — misma lección que SCRUM-55 dejó
+    // escrita en consolidar-albaranes (:470) y que aquí no se había aplicado.
     const where: { merchantId: number; operarioId?: number | null } = { merchantId: req.merchantId };
-    if (req.userRole === 'tecnico') where.operarioId = req.teamMemberId;
+    const restringido = seesOnlyOwnJobs(req.userRole);
+    if (restringido) where.operarioId = req.teamMemberId;
+
+    // SCRUM-148: ?operarioId=<id> | 'owner' → Trabajos de ESE operario, para el detalle por
+    // miembro del hub de Equipo.
+    //
+    // ⚠️ EL FILTRO VA ENCIMA DEL ROW-LEVEL, NUNCA EN SU LUGAR. Para quien está restringido
+    // (SCRUM-23/147) el `where.operarioId` ya está fijado a SÍ MISMO y el parámetro se
+    // IGNORA por completo: si se asignara aquí, un técnico tendría, con un query param, la
+    // llave para leer los Trabajos de un compañero — justo el agujero que SCRUM-23 cerró.
+    // Ignorar en vez de responder 403 es deliberado: el hub que usa este parámetro es
+    // admin-only, así que un restringido que lo mande no tiene caso de uso legítimo, y
+    // devolverle SUS trabajos es una respuesta correcta y sin oráculo (no le dice si el
+    // operario que preguntaba existe).
+    if (!restringido) {
+      const raw = req.query.operarioId;
+      // 'owner' explícito: el propietario no tiene fila en team_members y sus Trabajos van con
+      // operarioId null. Un parámetro vacío o un 0 accidental NO pueden significar "los del
+      // propietario" por descuido; lo que no se entiende, no filtra.
+      if (raw === 'owner') where.operarioId = null;
+      else if (raw !== undefined && Number.isInteger(Number(raw))) where.operarioId = Number(raw);
+    }
     const jobs = await prisma.job.findMany({
       where,
       orderBy: [{ scheduledAt: 'asc' }, { id: 'desc' }],
       take: 200,
     });
+    // SCRUM-58: un solo lote para toda la lista → 3 consultas fijas en vez de 3 por fila.
+    const refs = await loadJobRefs(jobs);
     const out = [];
-    for (const j of jobs) out.push(await serializeJob(j));
+    for (const j of jobs) out.push(await serializeJob(j, refs));
     return res.json(out);
   } catch (err: any) {
     console.error('[GET /admin/jobs]', err?.message || err);
@@ -215,7 +300,8 @@ router.get('/:id', async (req, res) => {
     if (!job) return res.status(404).json({ error: 'not_found' });
     // SCRUM-23: row-level por operario dentro del MISMO merchant. Un técnico no abre por
     // URL el Trabajo de otro → 404 (mismo patrón que la tenancy: no filtra existencia).
-    if (req.userRole === 'tecnico' && job.operarioId !== req.teamMemberId) {
+    // SCRUM-147: por capacidad (ver el comentario de GET /admin/jobs y roleCapabilities.ts).
+    if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
       return res.status(404).json({ error: 'not_found' });
     }
     return res.json(await serializeJobDetail(job));
@@ -429,14 +515,15 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
       return res.status(409).json({ error: 'nothing_pending', message: 'No queda ningún tramo por cobrar de este presupuesto.' });
     }
     const stage = plan[emitted];
-    // SCRUM-27+32: importe del tramo del plan resuelto, reparto exacto (último = resto, céntimos enteros).
-    const amount = distributeStageAmounts(quote.total, plan)[stage.index];
     const isCustomPlan = Array.isArray((quote as any).customBillingPlan) && (quote as any).customBillingPlan.length > 0;
-    // TODO(SCRUM-16/17): reparto fino línea-a-línea del último tramo (≤1 cént. vs Invoice.total de SCRUM-32).
+    // SCRUM-141: líneas del tramo primero, importe DERIVADO de ellas (el total es consecuencia de
+    // las líneas). Antes venía de `distributeStageAmounts` con las líneas escaladas aparte: el
+    // desfase de redondeo acababa sellado en la huella VeriFactu. Ver invoiceLines.service.ts.
     const quoteLines = Array.isArray(quote.lines) ? (quote.lines as any[]) : [];
-    const scaledLines = stage.percentage < 1
-      ? quoteLines.map((l: any) => ({ ...l, price: Number(l.price) * stage.percentage }))
-      : quoteLines;
+    const scaledLines = stageLinesReconciled(
+      quoteLines, plan, stage.index, distributeStageAmounts(quote.total, plan)[stage.index],
+    );
+    const amount = grossOfLines(scaledLines);
 
     const invoice = await prisma.$transaction(async (tx) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId);
@@ -461,16 +548,24 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     // Enviar el enlace de cobro (payment_request / ventana-first A5.5)
     const sent = await sendInvoicePaymentRequest(invoice.id).catch((e) => {
       console.error('[jobs] collect-rest send:', e?.message || e);
-      return { ok: false as const, reason: 'send_failed' };
+      return { ok: false as const, reason: 'whatsapp_send_failed' as const };
     });
 
+    // SCRUM-126: la factura SÍ se creó (ok:true siempre) — el envío es un efecto
+    // secundario con su propio resultado, en un subobjeto con el mismo vocabulario que
+    // el resto de los 9 endpoints (antes era un string 'sent'/'failed' sin explicar por
+    // qué había fallado si fallaba).
+    const waReason: SendFailureReason =
+      sent.reason && sent.reason in SEND_FAILURE_MESSAGES ? (sent.reason as SendFailureReason) : 'whatsapp_send_failed';
     return res.json({
       ok: true,
       invoiceId: invoice.id,
       number: invoice.number,
       amount: Number(invoice.total),
       currency: invoice.currency,
-      whatsapp: sent.ok ? 'sent' : 'failed',
+      whatsapp: sent.ok
+        ? { sent: true }
+        : { sent: false, error: waReason, message: SEND_FAILURE_MESSAGES[waReason] },
     });
   } catch (err: any) {
     console.error('[POST /admin/jobs/:id/collect-rest]', err?.message || err);

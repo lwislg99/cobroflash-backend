@@ -109,6 +109,8 @@ Profesional de servicios a domicilio (fontanero, electricista, reformista, pinto
 | Catálogo + import CSV + IA sugiere líneas + IA mensaje WA | ✅ |
 | Equipo/roles/aprobaciones; gastos y margen; exports | ✅ |
 
+> **✅ SCRUM-109 (23-jul-2026) — `Expense.teamMemberId` (carril A, bloqueante de SCRUM-107 V2):** nace de SCRUM-107, que abrió `POST /admin/expenses` al técnico (compra material en el almacén, lo registra desde la furgoneta) pero tuvo que dejar GET/PUT/DELETE en admin **por falta de dato**: sin autoría no hay forma de distinguir "su gasto" del de un compañero. Campo aditivo/nullable, mismo patrón que `Job.operarioId` (SCRUM-52): `null` = propietario, sin relación Prisma declarada a propósito (así se hace en este proyecto para estos campos de autoría — `Quote.teamMemberId` tampoco la tiene). `createExpense` lo rellena con `req.teamMemberId` de la sesión; **inmutable** — no forma parte de `updateExpense`, mismo criterio que la autoría congelada de `Job` (SCRUM-22). Schema aplicado STAGING → GO del fundador → PROD (ver `docs/MIGRATIONS_PENDING.md`). **Desbloquea, no implementa:** el filtrado row-level (GET del técnico ve solo los suyos, 404 en el ajeno, patrón SCRUM-23) y retirar el ocultamiento del nav son la V2 de SCRUM-107, carril B (Javier) — esta tarea solo sirve el campo.
+
 ## C2. Premium / diferenciales (orden por impacto en dinero)
 1. **Take rate vía Connect** (CONNECT-1) — modelo de negocio + requisito legal de flujo de fondos.
 2. **Mantenimientos recurrentes** (Parte R · MANT-1) — anti-churn del merchant y de YaQu.
@@ -251,6 +253,8 @@ Opt-in: checkbox al crear cliente (texto legal; el merchant declara que el clien
 ## J4. Estados de mensaje y log — WA-0b `F2-spec (early; permitido en huecos de SIF-1)`
 Tabla `WhatsAppMessage {id, merchantId, customerId?, type:'template'|'service', templateName?, waMessageId, status, error?, relatedType?, relatedId?, costEstimate, createdAt}`. Estados: `queued → sent → delivered → read` | `→ failed(error)`; fuente: webhook `/webhooks/whatsapp` (rama `statuses`, activable antes que el bot). UI: chip de entrega en detalle de quote/factura.
 **🟡 GROUNDWORK 13-jun-26 (en hueco de SIF-1):** modelo `WhatsAppMessage` (schema), servicio TOLERANTE `messaging/domain/whatsappLog.service.ts` (record + updateStatus + getDeliveryStatus + `shouldApplyStatus` puro, no retrocede estado salvo failed), captura de `waMessageId` en `sendWhatsAppTemplate` (metadata `log`), rama `statuses` del webhook procesando delivered/read/failed, call-sites quote/invoice etiquetados, tests 5/5. db push de la tabla **✅ aplicado** (13-jun) + **chip de entrega en UI ✅** (`waDeliveryChip` en api.js + `.wa-chip` en styles.css con tokens; pintado en detalle de quote y factura, estados sent/delivered/read/failed, captura visual verificada). **WA-0b operativo de extremo a extremo** (log → estados webhook → chip); falta solo verlo con tráfico real de WhatsApp. Sigue F2: métricas de coste/entrega (J8) y log de service messages en más call-sites.
+
+> **✅ SCRUM-115 (23-jul-2026) — el fallo deja de desaparecer sin rastro:** hasta ahora `sendWhatsAppTemplate` solo llamaba a `recordWaMessage` en el camino de ÉXITO — cada rama de fallo (`not_configured`, `demo_safe_numbers`, `wa_opt_out`, `daily_cap`, `customer_daily_cap`, `template_invalid`, error de Meta) devolvía `{ok:false}` sin dejar fila en WA-0b; `sendWhatsAppText` no registraba NADA, ni éxito ni fallo. Ahora ambas registran `status:'failed', error:<motivo>` en cada rama de fallo (aditivo: nuevas filas, ninguna firma ni forma de return cambia). Los topes A3.2 (diario) y J6 (por cliente) se filtran ahora por `waMessageId: { not: null }` en vez de solo `type:'template'` — solo cuentan intentos que de verdad llegaron a Meta, así que un fallo ya no consume cupo (un mensaje que SÍ llegó y luego falla en entrega vía webhook conserva su `waMessageId` y sigue contando igual que antes: el filtro no cambia ese caso). `sendWhatsAppText` NO registra su propio éxito — evita duplicar la fila que ya escribe `sendWhatsAppWindowFirst` cuando el texto de ventana sale bien. **Lado front:** 3 sitios decían "✓ Enviado" sin mirar el resultado real — `jobDetailView.js` (rama `recordar`, no miraba nada) e `invoiceDetailView.js` (botón "Recordar pago", miraba `r.ok` en vez de `d.sent`) para el mismo endpoint `/admin/invoices/:id/send-reminder`; y la barra compartida `waFallbackBar` (`api.js`, usada por 4 sitios: facturas ×2, presupuestos, trabajos) que solo miraba si la promesa no rechazaba, ciega al `200+ok:false` de los 4 endpoints `send-email`. Cluster con **SCRUM-116** (registro falso `reminder7SentAt`/`14SentAt` que desactivaba el cron de recordatorios — ya mergeado, ver `invoicesAdmin.routes.ts`) y **SCRUM-117** (la métrica `reminderEur` cuenta histórico no fiable — decisión del fundador, sin código). Tests: `scrum115-wa-fallo-registrado.test.mjs` (gateado) confirma en staging real que un guard bloqueado deja `status:'failed', waMessageId:null` en ambas funciones.
 
 ## J5. Fallback si WhatsApp falla `F1-doc` (parcial vía P3-2 ✅)
 Error Meta → 200 `ok:false` con motivo legible (hecho). Acciones SIEMPRE ofrecidas: **Copiar enlace** · **Enviar por email** · **Reintentar**. 131026 (sin WhatsApp) → "copia el enlace y mándaselo por SMS o llámale". Nunca fallo silencioso: cron que falla un envío lo registra y aparece en BO.
@@ -468,6 +472,7 @@ Alcance: (a) foto de la avería adjunta a QuoteRequest (desde bot y portal); (b)
 | Marcar pagado / deshacer | ✅ | ❌ |
 | Configuración, datos fiscales, Connect, flags · billing/plan · equipo · exports | ✅ | ❌ |
 Ruta nueva = declara rol mínimo; default Admin-only. **Lo hace cumplir un test, no la disciplina** (SCRUM-55).
+> **✅ SCRUM-147 (27-jul-2026) — el rol se pregunta por CAPACIDAD, y lo desconocido cae al lado seguro:** nace del recon de SCRUM-137 (rol "comercial"). SCRUM-55 convirtió una denylist de rol en allowlist y dejó la lección escrita en `jobs.routes.ts:470`… **tres líneas más abajo de otras DOS que se quedaron sin convertir**: el filtro row-level de SCRUM-23 (`if (req.userRole === 'tecnico') where.operarioId = …`, lista y detalle de Trabajos). Al ser denylist, **cualquier rol que no fuera exactamente `'tecnico'` se saltaba el filtro** y vería TODOS los Trabajos del merchant — el rol pensado para tener los MISMOS permisos que el operario habría tenido MÁS. No mordía porque solo hay dos roles; habría explotado con el primero que se añadiera, que es justo el que lo destapó. **Fix:** `src/core/http/roleCapabilities.ts` — `seesAllJobs` es **allowlist de `'admin'`**, así que un rol desconocido (o ausente) queda RESTRINGIDO. **Con una asimetría deliberada y documentada:** en las MÉTRICAS (`isFieldMember`) el conjunto cerrado es el EXCLUIDO (admin/propietario), de modo que un rol nuevo **aparece** en el equipo de campo en vez de desaparecer — blindarlo en la misma dirección que el gate habría creado la otra mitad del problema. **Además:** `team.routes.ts` **valida** el rol (400 `invalid_role`) en vez de **coaccionarlo en silencio** — antes cualquier valor ≠ `'admin'` se reescribía a `'tecnico'`, así que pedir `role:'comercial'` creaba un técnico sin avisar (y hacía imposible crear el rol por API). **Tests:** 6 puros sin gate, con un guard ESTRUCTURAL que falla si vuelve a aparecer `req.userRole === 'tecnico'` en el fuente — el arreglo es una CLASE, no dos líneas. Probado en rojo por partida doble: reintroduciendo la denylist (el guard la nombra con fichero y línea) e invirtiendo `seesAllJobs` a denylist (cae el test del rol desconocido). **Desbloquea SCRUM-137**, que queda pendiente de decidir rol-vs-puesto.
 > **✅ SCRUM-55 (22-jul-2026, absorbe SCRUM-54):** hasta hoy esta regla no la hacía cumplir NADA — 124 rutas
 > bajo `/admin`, 79 llegaban a un Operario sin declaración de rol, y la 125 iba a nacer abierta igual. Ahora
 > un test de enumeración recorre TODAS las rutas montadas bajo `/admin` y **falla si alguna no declara rol**:
@@ -529,6 +534,27 @@ Ruta nueva = declara rol mínimo; default Admin-only. **Lo hace cumplir un test,
 > Sin tocar la lógica de generación del XML ni el encadenamiento de huellas. Test end-to-end contra
 > staging con una factura F1 real con huella: técnico→403, flag OFF→404 sin fuga (ni el número de
 > factura aparece en ningún body), flag ON (override por merchant)→200 con el registro correcto.
+> **✅ SCRUM-82 (23-jul-2026):** completa el hueco que dejó SCRUM-25 a propósito — el ZIP
+> (`GET /admin/exports/datos.zip`) ya tenía el gate `INVOICING_ES_ENABLED` (reutilizado de SCRUM-73)
+> y la omisión limpia con el flag OFF, pero la rama ON no hacía NADA: el XML seguía sin entrar, EN
+> SILENCIO. Peor aún — confirmado leyendo el código, no solo descrito en el ticket —: con el flag ON
+> el `LEEME.txt` dejaba de avisar "no incluye el XML" sin que el XML llegara a incluirse de verdad:
+> un aviso que se apaga solo cuando lo que anuncia sigue sin ser cierto, justo el día que nadie
+> volvería a mirar el LEEME. Fix: constructor RRSIF extraído de `GET /verifactu.xml` a
+> `buildVerifactuRegistrosXml()` (`verifactu.service.ts`) — MISMA fuente para el endpoint suelto y el
+> ZIP, cero divergencia posible; `GET /verifactu.xml` pasa a ser gate + llamada al servicio, mismo
+> comportamiento exacto. **Decisión del fundador — un XML por AÑO NATURAL que toque el rango pedido**
+> (no por el rango en sí): el registro RRSIF se organiza por ejercicio y la cadena de huellas es
+> anual — recortar por meses rompería el encadenamiento, mezclar años no representaría un registro
+> válido. **Fail-closed deliberado** (asimetría con los PDF del mismo ZIP, que sí toleran fallos
+> parciales con aviso): si la generación del XML falla, el ZIP entero se aborta ANTES de la primera
+> cabecera — "mejor un error que un paquete que dice de más" (cita literal del fundador). El LEEME
+> nombra cada archivo real (`verifactu_AAAA.xml`) en vez de un booleano genérico. Verificado con el
+> flag ON en staging real, 2 años cruzando el rango: el XML de cada ejercicio dentro del ZIP es
+> idéntico al de `GET /verifactu.xml?year=N` suelto salvo `fechaGeneracion` (timestamp de la llamada,
+> no un dato de la factura — normalizado antes de comparar). Confirmado en Railway: OWNER_EMAILS
+> aparte, ningún merchant real tenía el override activado — la fuga del LEEME era teórica hoy y
+> se habría vuelto real el día que se encendiera el flag. Sin schema.
 > **✅ SCRUM-98 · Guard A (23-jul-2026):** nace de la auditoría SCRUM-88 (`docs/AUDITORIA_SUPERFICIE_PUBLICA.md`),
 > que encontró SEIS puertas de la misma fuga (SCRUM-72/74/85/87/90/95) descubiertas por tropiezo, cada fix
 > destapando la siguiente — nadie se preguntaba de forma sistemática "¿esta ruta PÚBLICA resuelve su recurso
@@ -554,6 +580,49 @@ Ruta nueva = declara rol mínimo; default Admin-only. **Lo hace cumplir un test,
 > rol): no verifica que un handler declarado `token` valide bien el token, solo que alguien lo afirmó y lo
 > revisó — el complemento natural sería un test de comportamiento, mismo papel que `tenancy-permisos.test.mjs`.
 > `npm test`: 192 · 164 pass · 0 fail · 28 skip (gateados), sin regresión en SCRUM-55.
+> **✅ SCRUM-128 · paso b (24-jul-2026):**
+> SCRUM-126 unificó el vocabulario "¿salió el envío?" en 8 endpoints `/admin` con contrato de cuerpo
+> (`src/lib/sendOutcome.ts`: `sent` en la raíz, o anidado en `collect-rest`) + 1 fire-and-forget sin
+> contrato HTTP (`quotes.routes.ts:568`, solo WA-0b lo registra). Este ticket lo blinda con el MISMO
+> mecanismo que Guard A/S1: `src/core/http/sendEndpointDeclarations.ts` + test de enumeración
+> (`tests/scrum128-send-endpoints-fail-closed.test.mjs`) que recorre `/admin` vía `getAdminMounts()`
+> (registro real, no reflection sobre Express) y falla si una ruta que **huele a envío** (heurística
+> `enviar|send|resend` en el path) no está declarada — con dónde vive `sent` — o aparcada con ticket.
+> **Límite honesto, documentado en el propio archivo**: (1) no verifica que el handler use
+> `sendFailureBody`/`sendSuccessBody` de verdad, solo que alguien lo declaró; (2) la heurística tiene
+> un punto ciego CONOCIDO y ya materializado — `collect-rest` es uno de los 8 y su path no contiene
+> ninguna de las tres palabras, así que está declarado A MANO; un futuro endpoint con nombre igual de
+> opaco que envíe algo como efecto secundario tampoco se detectaría solo; (3) no verifica que el FRONT
+> mire el campo (esa es la capa 2, frontend, sin implementar). **Dos hallazgos colaterales del propio
+> recon, fuera de alcance de este PR y abiertos como tickets propios:** `POST /charges/:id/send` envía
+> por **n8n** (`N8N_ONSEND_URL`) — regla dura 1 violada — y encima de forma CONDICIONAL: sin la URL
+> configurada (lo esperable, al estar prohibido), el bloque se salta entero y aun así responde
+> `{ok:true, status:'sent'}`; verificado sin ningún caller vivo en el repo → **SCRUM-129**, recomendación
+> retirar, no migrar. `POST /admin/team/:id/resend` (reenviar invitación) traga el error de `sendEmail`
+> en un `catch` que solo hace `console.error` y responde `{ok:true}` siempre — misma clase de bug que
+> el cluster 114→127, en invitaciones de equipo → **SCRUM-131**, aparcado en `SEND_ENDPOINTS_PENDING`
+> (ratchet `MAX=1`, plazo 30-sep-2026) en vez de con una declaración falsa. Probado en rojo (undeclared
+> + declaración muerta, ambos confirmados). `npm test`: 260 · 222 pass · 0 fail · 38 skip, sin regresión.
+> **Frontend, decisión del fundador (24-jul-2026): capa (a) SÍ, capa (b) DIFERIDA con gate escrito.**
+> Corregida antes la premisa del propio ticket: **Playwright NO está instalado** (sin devDependency,
+> sin config) — lo que existe y está probado es `scripts/e2e-critico.mjs` (`npm run e2e:critico`),
+> un harness con **puppeteer-core sobre Edge/Chromium** que ya recorre la cadena crítica de dinero.
+> La capa (b) sería extender ESE patrón, no montar un framework nuevo — más barato de lo asumido,
+> pero sigue siendo 8 flujos de navegador (login, selectores, DOM), ~1-2 días, y los tests más
+> frágiles de la suite. **Capa (a) implementada:** `tests/scrum128-frontend-census.test.mjs`, mismo
+> mecanismo de censo que SCRUM-113 — recorre `public/dashboard/js/*.js`, detecta llamadas a las 8
+> rutas sin `waSendFailed`/`waCollectRestSent`/`.sent` en una ventana de 20 líneas, con censo de
+> calibración (7 ficheros, 0 con violación) y ratchet de pendientes (`MAX=0`). Dos ajustes tras
+> calibrar contra el código real (no asumido): ventana ampliada de 15→20 líneas (dos falsos positivos
+> por precondiciones más largas de lo esperado) y una excepción documentada y verificada A MANO para
+> la clave `onEmail:` — callback pasado a `waFallbackBar` (api.js), que YA comprueba `sent` de forma
+> centralizada; exigir otro chequeo en cada `onEmail:` pediría deshacer esa centralización de
+> SCRUM-115. Limpieza colateral: `sendQuoteWhatsApp` en `api.js` era código muerto (cero llamadores
+> en todo `public/`) que el detector no podía distinguir de un bug real — retirado. Probado en rojo
+> (chequeo real retirado a mano, detector lo cazó; revertido). **GATE de la capa (b), para que no se
+> pierda ni se haga por inercia:** se reconsidera SI aparece un endpoint de envío NUEVO, o SI algo se
+> cuela pese a la capa (a). No antes, y no por defecto al tocar este área. `npm test`: 263 · 225 pass
+> · 0 fail · 38 skip, sin regresión.
 > **✅ SCRUM-102 (23-jul-2026):** hallazgo MEDIO de SCRUM-88 — `fees.csv` (facturación de TODA la
 > plataforma) y `platform-funnel` dependían SOLO de `isOwnerEmail()` (comparación contra la env var
 > `OWNER_EMAILS`); verificado que hoy está bien puesta en prod, así que era endurecimiento, no
@@ -825,6 +894,9 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 # PARTE V — MONEY FLOWS `F1-doc · piezas build en F2`
 **V1. Esquemas:** F1 = 100 % y 50/50. Hitos N tramos = F2-spec ligado a JOB-1 (cada hito = charge; trigger manual del pro).
 > **✅ SCRUM-32 · money (10-jul-2026):** el **reparto del importe** de cada tramo se centraliza en `billingPlan.ts` (`distributeStageAmounts`/`getStageAmount`): **céntimos enteros** y el **ÚLTIMO tramo absorbe el resto** (`totalCents − Σ anteriores`) → la suma de tramos == total, **EXACTA** (par e impar; adiós al "151,26 de 151,25"). Usado por los **3 call-sites** de cobro (aceptar `/quote/:id/decision`, generar factura BO `/admin/quotes/:id/invoice`, cobrar el resto `/admin/jobs/:id/collect-rest`) en vez de `total × %` en float. **Base para planes personalizados (SCRUM-27).** No toca el `Charge` (sigue copiando `Invoice.total`), ni webhooks, ni la materialización de `totalCobrado` (SCRUM-13/28); sin schema. El reparto fino línea-a-línea del último tramo (`scaledLines` del PDF, ≤1 cént.) queda para las facturas de anticipo (SCRUM-16/17 → V3).
+> **⚠️ REINTERPRETADO por SCRUM-141 (27-jul-2026) — leer antes de tocar `distributeStageAmounts`:** la función y su invariante (los tramos suman el total, exacto) **no cambian**; cambia **quién la consume**. `Invoice.total` ya NO se copia de aquí: se **DERIVA de las líneas** de esa factura (`grossOfLines`, `invoiceLines.service.ts`). Motivo: el total y las líneas se redondeaban por caminos distintos y podían diferir 1 céntimo, y esos dos números van a **dos campos de la MISMA huella VeriFactu** (`importeTotal` ← total · `cuotaTotal` ← líneas), que se sella, se encadena (`vfPrevHash`) y es **inmutable** (regla 29) — el descuadre solo se corregía con una R1. Decisión del fundador: **una factura es un documento AUTÓNOMO** (Hacienda no mira el presupuesto del que salió, mira si sus líneas suman su total), así que manda la coherencia interna. Este reparto sigue usándose como **objetivo** (`reconcileToTarget`) y se alcanza en el **~99,2 %** de los tramos; cuando el importe es *matemáticamente inalcanzable* (base y cuota redondean saltándolo) la suma de las facturas queda a **1-2 céntimos** del total del presupuesto — medido sobre 45.000 tramos, con tope en `tests/scrum141-factura-final.test.mjs` y explicado al usuario en `COMO_FUNCIONA_YAQU.md` §4. **NO restaurar el acoplamiento antiguo** para que la suma cuadre siempre: reintroduce el descuadre SELLADO, que es el daño irreversible.
+> **✅ SCRUM-149 (27-jul-2026) — una factura SIN LÍNEAS ya no se puede sellar:** nace del recon de SCRUM-142. `createInvoiceFromQuoteAdmin` (`quoteAdmin.ts`) era **código muerto** —importada en `quotesAdmin.routes.ts`, ninguna ruta la llamaba— que, de cablearse, habría emitido factura con **dos** defectos fiscales: **sin copiar las líneas** (→ `calcVatCuotaTotal` da 0,00 → la huella VeriFactu sellaría **cero IVA repercutido** sobre un importe que sí lo lleva, y la huella es inmutable y encadenada: solo se corrige con R1) e **ignorando el plan de tramos** (`total: quote.total` completo, saltándose SCRUM-27/32/141). Es el mismo "bug E2E V0-1" que la ruta viva documenta como corregido, **fosilizado en un camino paralelo**. **Retirada** (decisión del fundador: conservarla "por si acaso" es guardar un arma cargada; si el caso hace falta se construye bien desde cero, no resucitando algo que nace con el bug dentro). **Guard fail-closed** en `applyVeriFactu`: sin líneas se LANZA `invoice_without_lines_not_sealable` en vez de sellar — preferir no sellar antes que sellar mal, mismo patrón que el rechazo de justificantes que ya existía, y los call-sites ya capturan (el PDF sale sin QR: fallo visible y reparable, al contrario que una cadena con una cuota falsa dentro). Reutiliza la lectura de `lines` que la función ya hacía: **cero consultas de más**. **Tests:** 5, de COMPORTAMIENTO real (no estructurales — `applyVeriFactu` acepta el cliente Prisma por parámetro, así que se ejercita con un doble), incluido que el orden de comprobaciones no cambia el motivo del rechazo de un J-. Probado en rojo: al quitar el guard caen exactamente los 2 asserts del fail-closed y ninguno más. **GAP registrado aparte → SCRUM-151**: un presupuesto con `MANUAL`/`SIN_CONDICIONES` tiene `plan = []` y por tanto **no es facturable por ninguna vía** (ambos endpoints devuelven 409); el fundador confirma que algún día debe poder serlo, pero se construirá desde cero.
+> **✅ SCRUM-141 · FISCAL-1a (27-jul-2026):** primera mitad de SCRUM-16, **partida tras el recon** porque P1 (cuándo se emite y fecha la factura de anticipo) resultó ser **arquitectura, no política**: `verifactu.service.ts:158` sella `invoice.createdAt` en una huella inmutable y encadenada, así que "construir ahora y encender el flag después" dejaría la fecha de devengo mal sellada. La EMISIÓN del anticipo es **SCRUM-142**, bloqueada por el dictamen. **Lo construible sin dictamen, aquí:** (1) **`invoiceLines.service.ts`** — `Invoice.total` se DERIVA de las líneas de la factura, cerrando los **3** `TODO(SCRUM-16/17)` (el recon viejo listaba 2 y con líneas desfasadas). `stageLines` reparte cada precio entre tramos (el último = resto, invariante de SCRUM-32 aplicada A NIVEL DE LÍNEA) y `reconcileToTarget` **intenta** además cuadrar con el importe aritmético del plan — lo logra en el ~99,2 %; cuando el importe es *matemáticamente inalcanzable* (base y cuota redondean por separado y saltan ese valor — demostrado: 250,77 con una línea al 4 %) manda la coherencia interna y la suma queda a 1-2 cént. **La coherencia dentro de la huella no falla NUNCA**, que es lo único irreparable. (2) **`finalInvoice.service.ts`** — motor PURO de la factura final: líneas negativas de deducción **una por tipo de IVA** (deducir en una sola línea obligaría a elegir un tipo y descuadraría el 303) + `Invoice.deductsRefs` (espejo de `albaranRefs`); documento sin líneas → se deduce su bruto y se **marca `sinDesglose`** en vez de inventar un tipo. (3) **`billingPlanView`** pasa a usar el mismo cálculo que la emisión: la UI no puede prometer un importe distinto del que llega en la factura. **SIN SCHEMA** — `Invoice.deductsRefs` estaba en el plan aprobado, pero al quedar el endpoint fuera de alcance **nada la escribiría**: se aplaza a SCRUM-142 junto con su escritor, por el mismo criterio que `devengoAt` (una columna sin quien la rellene es el caso de `vat_default`, SCRUM-132). El tipo `DeductRef` vive ya en el motor puro, que no toca Prisma. **Sin endpoint a propósito** — en el modelo actual los tramos ya suman el 100 %, así que una "final" solo podría emitir 0 €; se monta en SCRUM-142, cuando exista el anticipo como documento distinto. **Tests:** 13 puros sin gate, incluido fuzz de **45.000 tramos** con topes sobre el coste aceptado (≤1,5 % con deriva, ≤2 cént.). Ver la nota de REINTERPRETACIÓN en SCRUM-32 arriba y `COMO_FUNCIONA_YAQU.md` §4 (explicación al usuario).
 > **✅ SCRUM-27 · PAGOS-FLEX (10-jul-2026):** **planes de cobro por tramos PERSONALIZADOS** (30/40/30, hitos, mensualidades) además de los presets. `Quote.customBillingPlan Json?` guarda `[{percentage, label}]` (aditivo); `resolveBillingPlan(quote)` (billingPlan.ts) devuelve el plan custom si existe, si no el preset (`getBillingPlan`, **sin tocar**) — usado por los **3 call-sites** de cobro y por `serializeJob` (Pendiente/semáforo). El **reparto exacto** lo hace `distributeStageAmounts` (SCRUM-32, **sin tocar**). `Invoice.stageLabel String?` (aditivo) **congela la etiqueta** del tramo al crear la factura y viaja al **detalle del Trabajo** (timeline + bloque de cobros); la etiqueta a la **factura/WhatsApp = SCRUM-33**. Validación al crear: ≥1 tramo, etiqueta no vacía, `% > 0`, **suman 100 %** exacto (rechazo 400 es-ES). Editor de tramos en `quotesView.js` (clon de `addLine`, filas etiqueta+%, suma en vivo verde/rojo, bloquea guardar). **No toca** `Charge`, webhooks, `totalCobrado` (SCRUM-13/28) ni `scaledLines`. **Copy nuevo del editor (dashboard):** "Plan personalizado (por tramos)" · "Tramos de cobro" · "+ Añadir tramo" · placeholder "Etiqueta (p. ej. Anticipo)" / "%" · "Eliminar tramo" · "Suman X % ✓" / "Suman X % — deben sumar 100 %" · error "Revisa los tramos: cada uno necesita etiqueta y porcentaje, y deben sumar 100 %."
 > **✅ SCRUM-34 · PAGOS-FLEX UX (11-jul-2026):** la generación del **siguiente tramo** tiene **puerta de UI en el quote-detail SIN exigir trabajo Terminado** (respaldada por `POST /admin/quotes/:id/invoice`, que nunca lo exigió; los hitos se cobran a mitad de obra). Los serializers de quote-detail (`getQuoteDetailAdmin`) y job (`serializeJob`) exponen el **plan resuelto + `nextStage`** (helper puro `buildBillingPlanView` en `billingPlanView.ts`, mismo CONTEO que las rutas de cobro, importes exactos de `distributeStageAmounts`) + `hasCustomPlan` (distingue custom del default FULL_UPFRONT de `paymentTerms=null`) + `status`/`stageLabel` por invoice del quote-detail. "Condiciones de pago" del quote-detail pinta el plan custom (`"{label} {pct}% · …"`); presets byte-idénticos. **Textos de CTA canónicos:** quote-detail custom → **"Generar siguiente tramo: {label} ({importe})"**; job-detail custom con 2+ pendientes → **"🪙 Cobrar siguiente tramo: {label} ({importe del tramo})"**; con el último → **"💰 Cobrar el resto ({importe})"** (texto de hoy, importe exacto de `nextStage.amount`, no el float de `remaining`). `collect-rest` y su exigencia de `terminado` NO cambian (V2 intacta: emitir sigue siendo acción del pro). CTAs viejos de invoices del quote-detail (`status` ahora viaja) = verificación en SCRUM-35; rediseño del job-detail = SCRUM-31.
 > **✅ SCRUM-31 · REDISEÑO del detalle del Trabajo (jul-2026, front):** la pantalla estrella (centro de mando) estaba ordenada por CUÁNDO se construyó cada pieza (57/65/66/47/49/17…), no por lo que necesita el fontanero. Rediseño en **6 fases mergeables** (jerarquía **1 estado + 1 acción + 1 lista**), cada una su PR y su verificación 390/1280: **F1** héroe (estado del Trabajo AHORA visible + CTA de cobro arriba + cliente tap-to-call; helper `jobStatusMeta`); **F2** editor de líneas del albarán → **bottom-sheet** (arregla el 390px); **F3** botonera por documento = **1 primaria + overflow «⋯»** (componente `overflowMenu`, en AB3; nunca oculta primaria/Marcar PAGADA/PDF); **F4** **CTA contextual** del héroe (resolver PURO `jobNextAction`, escalera aprobada: cobrar > recordar ≥7d+teléfono > firmar > emitir > nuevo albarán); **F5** **FUSIÓN** de Documentos+Albaranes+Cobros en UNA lista cronológica ascendente `.job-doc-row` (AB3, acotada) — mata el timeline read-only y la triple duplicación; presupuesto/albarán/factura son filas con icono + estado + fecha (año+hora, sin pérdida) + importe Tinta≥700 + acciones; "Nuevo albarán"/"Consolidar" pasan a acciones SOBRE la lista; **F6** **config plegada** (Tipo de trabajo → línea editable, Datos → segundo plano). Solo front (vanilla, DESIGN.md/AB): **reutiliza endpoints existentes, cero backend/schema**. Resuelve los 4 hallazgos de la ficha (estado FSM visible, morosidad en el héroe, fechas unificadas, sin factura duplicada).
@@ -878,6 +950,232 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 > (a nivel de CAMPO; A12.4 es a nivel de RUTA): técnico `{tipoOperacion}`/`{assignedUserId}`/`{status:'cerrado'}`/
 > mezcla → 403 y nada aplicado; técnico `{notes}`/`{status:'terminado'}` → 200; admin todo → 200. Cierra
 > **P1-ROL-1** (BUGS.md). Sin schema.
+> **✅ SCRUM-117 · métrica honesta de recordatorios (23-jul-2026, tercera cara del cluster 115/116/117):**
+> `reminderEur` (reports x2, `reports.routes.ts:147`) contaba como «€ recuperado por recordatorios»
+> facturas cuya `reminderXSentAt` se escribió aunque el WhatsApp FALLARA — la métrica que mide si los
+> recordatorios funcionan contaba los que no salieron, y en la peor dirección (parecen más eficaces).
+> El **origen** ya lo cerró SCRUM-116 (deploy 23-jul 15:22 UTC): desde ahí `reminderXSentAt` = «se envió».
+> Lo que este ticket resuelve es el **histórico + la presentación**: el dato para distinguir un
+> recordatorio real de uno marcado en falso NUNCA se guardó (los fallos pre-116 no dejaron rastro), así
+> que **no hay recálculo retroactivo posible**; y nulear las fechas pre-fix está descartado (son el
+> **candado de idempotencia del cron** — nulearlas reenviaría recordatorios de facturas ya pagadas).
+> **Medido antes de decidir** (COUNT read-only contra prod): de 3 facturas pagadas con fecha de
+> recordatorio (las 3 pre-fix), **0 suman a `reminderEur`** → inflación real **0 filas / 0,00 €**.
+> **Decisión (fundador): documentar, sin cambio funcional** — montar un suelo de fiabilidad para
+> proteger 0 datos infra-reportaría para siempre una era vacía. Queda un comentario en la propia métrica
+> (frontera 23-jul + resultado del count) para que nadie lea `reminderEur` creyéndolo limpio; si algún
+> día abarca un periodo con volumen real pre-116, se reabre con un suelo **de lectura** (`>= fecha`),
+> nunca tocando el histórico. Solo la lectura; sin schema, sin write, sin cron, sin test.
+>
+> **✅ SCRUM-119 · verificación REAL del cierre de IDOR en `/pay/card` (23-jul-2026, pagos):**
+> el cierre del IDOR de `/pay/card` (SCRUM-85, cadena SCRUM-72→74→85→90) NO estaba VERIFICADO: el
+> handler hacía `if (!stripe) return 501` ANTES del `findUnique` del token, así que sin
+> `STRIPE_SECRET_KEY` el token válido y el id numérico daban la MISMA respuesta (501) — ningún assert
+> distinguía «IDOR cerrado» de «Stripe ausente». Era la única de las 4 rutas de pago que miraba su
+> integración antes de resolver el recurso. Peor: `node:test` aborta el bloque en el primer assert que
+> falla (`scrum85:71`, `501 !== 404`), enterrando lo de debajo — incluido el **assert de aislamiento
+> entre inquilinos** (cruce A/B, líneas 90-95). **Fix de RAÍZ:** mover `if (!stripe)` debajo del
+> `findUnique`+404+redirect → el id inexistente da 404 esté Stripe o no, el bloque deja de abortar y se
+> desbloquean bizum + el cruce A/B; alinea `/pay/card` con `/pay/mp`, `/pay/bank`, `/pay/bizum`.
+> **Honestidad (criterio SCRUM-121):** el test ya aceptaba `[303, 501]` en el token; se añade un
+> `t.diagnostic` EN VOZ ALTA cuando es 501 (Stripe ausente → el redirect real a Checkout NO se ejerce;
+> el IDOR sí queda verificado, numérico 404 ≠ token 501). Ni verde fingido ni skip mudo. Verificado en
+> staging sin Stripe: scrum85 pasa entero, el cruce A/B corre. `npm test` 242 · 209 pass · 0 fail. Sin schema.
+>
+> **✅ SCRUM-130 · guard r23: la tarjeta va a la cuenta CONECTADA del merchant, o NADA (24-jul-2026, pagos):**
+> hallazgo del recon SCRUM-124 (prohibiciones sin mecanismo). La regla 23 y C1-2 ya especificaban
+> «tarjeta deshabilitada para reales salvo demo», pero el backend NO lo verificaba: sin Connect,
+> `payCard.routes.ts` creaba la Checkout Session en la cuenta de PLATAFORMA para CUALQUIER merchant —
+> solo lo tapaba el selector de la UI. Dinero de clientes finales en la cuenta equivocada = regulatorio
+> (el merchant es merchant-of-record). **Guard:** función PURA `cardChargeDecision({useConnect, isDemo})`
+> → `connect` / `demo_platform` (regla 18) / `refuse` (real sin Connect → **409**, no cae a plataforma).
+> DEBAJO del `if (!stripe) 501` → solo muerde con Stripe (prod); staging y scrum85 sin cambio de
+> comportamiento hoy. Test PURO (`scrum130-card-charge-connect`) + `scrum85` actualizado (`[303,501,409]`).
+> Sin schema. **INERTE en producción HOY** (ningún merchant real tiene Stripe LIVE aún, **SCRUM-41
+> abierta**): es defensa PREVENTIVA — el día que se active Stripe, impide que el primer cobro con tarjeta
+> de un merchant sin Connect caiga en la cuenta de plataforma. La protección que se agradece tarde.
+>
+> **✅ SCRUM-129 · retirado n8n VIVO de `/charges/:id/send` + guard de la regla nº1 (24-jul-2026):**
+> hallazgo de otra sesión (lineage del recon SCRUM-124). `charges.routes.ts` tenía `POST /:id/send` con
+> n8n vivo (`axios.post` a una URL de webhook de n8n) en una ruta de COBROS — viola la regla 1 (WhatsApp
+> = Meta Cloud API directa, jamás n8n). Y MENTÍA: sin la URL configurada (lo esperable, n8n prohibido)
+> se saltaba el envío pero creaba el `Event type:'sent'` y respondía `{ok:true}`; además esquivaba todos
+> los guards de `whatsapp.ts` (topes J6, opt-out J3, dry-run, WA-0b). Verificado SIN callers → RETIRAR,
+> no migrar. Todo el n8n del repo era muerto: se retiró el endpoint + `src/integrations/n8n.ts`
+> (`emitToN8n`, nunca llamado) + las env vars de n8n. **Guard estructural** (`scrum129-n8n-guard`,
+> `npm test` normal): ningún fichero de código cablea n8n; calca el guard de r28 (SCRUM-124) — walk de
+> todo el repo, self-exclusión (SCRUM-125), sin allowlist. Vigila el mecanismo (la config), no la prosa
+> histórica ("ya NO usa n8n" debe poder escribirse). Sin schema.
+> **✅ SCRUM-139 F1 · la línea de presupuesto deja de ser una fila de tabla (27-jul-2026, front):** primera fase del rediseño del editor ("de formulario de datos a cuadernillo"). **El gate del ticket —"feedback real primero"— se cumplió solo**: SCRUM-132/133/134/140 salieron todas de usar esta pantalla. **La medida que ordenó el diseño:** `.quote-lines-table` tenía `min-width:560px` dentro de un `overflow-x:auto`, así que en un móvil de 390 px cada línea se rellenaba **scrolleando de lado por 7 columnas** — eso *es* la sensación de "meter precios" que reportó el fundador, y con el pulgar en obra es inservible (AB1: móvil REAL). **Decisión del fundador: MÓVIL PRIMERO, asumiendo furgoneta** (producto WhatsApp-first; si funciona con el pulgar en obra funciona en el escritorio, al revés no) — así se cierra la pregunta que el ticket dejaba abierta. **Hallazgo que cambió el ORDEN de las fases:** pre-dibujar 2-3 líneas vacías (la idea del "cuadernillo") **empeora** las cosas mientras la línea siga siendo una fila que scrollea de lado — tres filas vacías con scroll son tres trámites, no una invitación. Por eso el cuadernillo es F2 y no F1. **F1 entrega:** componente `.quote-line` (alta en AB3 arriba), cabecera de tabla eliminada (cada campo lleva su etiqueta), inputs a **44 px** de alto (antes 7 px de padding), total de línea en Tinta ≥700, anillo Foco de DESIGN.md, y **un solo DOM** para todas las anchuras. El contrato de `lineObj` (`conceptInput`/`qtyInput`/`priceInput`/`markupInput`/`vatInput`/`totalCell`/`priceHint`) se conserva INTACTO, así que payload, borrador, `recalcTotals`, plantillas, IA y autocompletado siguen sin tocarse: cambia el DOM, no el contrato. **Fases siguientes:** F2 cuadernillo · F3 total protagonista (Signature KPI) · F4 margen/IVA a hoja inferior (AB3) · F5 acciones al `overflowMenu` · F6 plantillas sin salir. ⚠️ **QA visual AB6 PENDIENTE**: la verificación renderizada (capturas móvil/tablet/escritorio) quedó bloqueada por contención del navegador en la sesión, no por el cambio; verificado sí: build, 264 tests, sintaxis y cero referencias huérfanas a la tabla. **No se cierra la fase como validada visualmente hasta que alguien la vea en pantalla.**
+> **✅ SCRUM-140 · la plantilla viaja como ARGUMENTO, no por un canal global (27-jul-2026, front):** cierra la CLASE que SCRUM-134 solo pudo mitigar. La plantilla seleccionada pasaba de una vista a otra por `sessionStorage['pf_load_template']` — canal global, implícito, con dos escritores y un lector — y de ese diseño salieron sus dos fallos: el **off-by-one** (el escritor navegaba antes de escribir y el lector corre SÍNCRONO dentro de esa navegación → abría la plantilla anterior) y la **huérfana** (lo escrito y no consumido pre-rellenaba un «+ Nuevo presupuesto» normal con líneas que nadie pidió). El fix de 134 fue correcto pero **defensivo**: swap de orden + sello `_ts` con ventana de 15 s. Quedaban tres cosas incómodas — el contrato "escribe justo antes de navegar" no lo imponía nada (un tercer escritor podía volver a invertirlo), `_ts` era una **heurística temporal** (una navegación lenta podía descartar una plantilla legítima), y el acoplamiento era **invisible en las firmas**. Ahora: `renderAppView('quotes-new', { template })` → `renderQuotesView(container, template)`. Desaparece el orden como variable (es un parámetro), desaparece el estado residual (no hay huérfana posible), sobra el sello y su umbral, y el acoplamiento queda visible. **La plantilla NO se persiste en `appState`** a propósito: es de un solo uso, y guardarla reintroduciría exactamente la huérfana. De las **7** navegaciones a `quotes-new`, solo 2 llevan plantilla; las otras 5 (nuevo presupuesto, desde cliente, desde factura, desde solicitud, deep-link por hash) antes podían recoger lo que otra vista hubiera dejado escrito y ahora reciben `null`. `sessionStorage` **retirado del todo**, no como fallback: mantenerlo habría conservado la clase que el ticket elimina (escritor y lector viven en el mismo bundle, así que no hay escenario de versiones mezcladas). **Tests:** 6, guard ESTRUCTURAL con su límite escrito (vanilla de navegador, no importable en node: verifica que el canal no vuelve y que el argumento se pasa y se recibe, no que el navegador lo renderice). Los 4 asserts centrales probados en rojo con la regresión real: reintroducir la clave, reintroducir `_ts`, dejar de pasar el argumento y persistirlo en `appState`. La verificación de comportamiento sigue siendo el guion de staging de SCRUM-134 (A→A, B→B, nuevo→vacío).
+> **✅ SCRUM-132 · el "IVA por defecto" PISABA el IVA real de las líneas (27-jul-2026, front):** el IVA de una línea llega en **dos unidades** según su origen — `vat` en PORCENTAJE (21: borrador de localStorage, autocompletado de producto) y `tax` en FRACCIÓN (0,21: plantillas y líneas de la IA, contrato del backend) — y `addLine` **solo leía `vat`**: en las otras tres rutas `initial.vat` era `undefined`, caía al `else` y el general **pisaba** el IVA de la línea. Efecto visible: guardar una plantilla al 10 % y reabrirla la devolvía al 21 %. **Fix contenido en el RECEPTOR** (`addLine` normaliza las dos unidades) para no tocar los call-sites, que eran zona de SCRUM-134 — coordinación explícita: 134 primero (estructura, mueve esas líneas), 132 encima (conversión de dato). **El recon corrigió la premisa del ticket** (que decía que el general "no siembra las líneas nuevas"): el `+ Añadir línea` manual SÍ sembraba; el defecto real era el opuesto. Y **no es un residuo inocuo**: `vat_default` entra en el repo el 26-nov-2025, ocho meses antes del modelo multi-IVA de SCRUM-65 — es diseño mono-IVA sin retirar, no un modelo rival. **El bug NO era latente pese a `INVOICING_ES_ENABLED=OFF`**: el flag protege el *documento* fiscal, no el *dato* — el IVA corrupto se congela al crear el presupuesto y viaja `Quote.lines` → `Invoice.lines` al aceptar, alimentando el 303 y la cuota de la huella el día que se encienda. **Decisión del fundador:** NO retirar el campo (tiene consumidor legítimo: quien factura casi todo al 21 %); el general **siembra, nunca pisa**. De paso: `tax: (l.tax || 0)` en la carga de plantilla colapsaba "sin IVA especificado" en "0 %" — y el 0 % es un tipo LEGÍTIMO desde SCRUM-65 (21/10/4/0), así que ambos casos dejaban de distinguirse; y la conversión cruda `String(v * 100)` escribía `21.000000000000004` en el campo (centralizada en `fractionToPercent`). **Tests:** guard ESTRUCTURAL (`tests/scrum132-iva-unidad.test.mjs`, 4 asserts) — `quotesView.js` es vanilla de navegador y no se puede importar en node, así que verifica que la FORMA del arreglo sigue ahí, no que el navegador la ejecute; límite escrito en el propio fichero. Los 4 probados en rojo inyectando la regresión real uno a uno, y **uno de ellos se corrigió al probarlo**: el regex usaba `\w+` y no cazaba `String(initial.tax * 100)` (con punto) — pasaba en verde sobre la forma más probable de reintroducir el bug.
+> **✅ SCRUM-134 · seleccionar una plantilla abría OTRA: off-by-one de estado (24-jul-2026, front):**
+> «Usar plantilla» (`templatesView.js`) navegaba ANTES de escribir la plantilla en `sessionStorage`, y
+> el lector corre SÍNCRONO dentro de esa navegación (`renderQuotesView` no es async → `loadInitialData`
+> llega al `getItem` sin ningún `await` por delante) → el editor leía SIEMPRE el valor de la vez
+> ANTERIOR; en el primer uso, con la clave vacía, restauraba el borrador pendiente. **Lo probó un control
+> natural del propio repo:** «Duplicar» (`quotesDetailView`) escribe y LUEGO navega —orden correcto, nunca
+> se reportó roto— con el MISMO lector; el bug era el orden del escritor, no el lector. **Segundo bug**
+> destapado en el recon: la clave escrita no se consumía y quedaba HUÉRFANA → un «+ Nuevo presupuesto»
+> normal aparecía con líneas que nadie pidió y suprimía el borrador (líneas = dinero). **Fix:** swap del
+> orden + sello de frescura `_ts` en ambos escritores, y el lector acepta solo plantillas selladas y
+> recientes (<15 s) —lo que además neutraliza las huérfanas ya presentes en sesiones del build roto—.
+> Colateral de precedencia: en `loadDraft`, `vatDefault` se restaura ahora ANTES de crear las líneas.
+> **Verificado en vivo contra staging** (mismo script y fixtures, solo cambian los 3 JS): antes A→vacío,
+> B→A, nuevo→B; después A→A, B→B, nuevo→vacío. **El IVA de plantillas NO se toca: es SCRUM-132** — se
+> verificó que `addLine` lee `initial.vat` mientras al guardar se escribe `tax: vatPerc/100` (desajuste de
+> clave Y de unidad), así que hoy ambos caminos descartan el IVA de la plantilla. Sin schema.
+>
+> **✅ SCRUM-133 · "+ Añadir línea" DEBAJO de la última fila (24-jul-2026, front/UX):** añadir línea es
+> la acción MÁS repetida del editor de presupuestos y su único control vivía ARRIBA: tras rellenar una
+> línea había que volver arriba con scroll, y esa fricción se paga en CADA línea del flujo core
+> ("presupuesto en 30 s"). Se añade un segundo control pegado a la última fila. **Decisión de UI
+> (carril A): CONVIVE, no sustituye** — con lista larga las dos puntas sirven (arriba al volver de una
+> plantilla, abajo al encadenar líneas) y el de la cabecera agrupa con "Sugerir con IA"/"Usar plantilla",
+> que son las otras formas de poblar líneas. **Cero tokens nuevos:** reutiliza el patrón del editor de
+> albarán (`jobDetailView`, SCRUM-31 F2: ghost + "+ Añadir línea") y el lenguaje de esta misma pantalla
+> (borde discontinuo + `--neutral-*`); clase compartida `.quote-add-line` en `styles.css` (nada de
+> estilos inline), ancho completo y **min-height 44 px** por el target al pulgar de DESIGN.md (el
+> `.btn-ghost` base se queda en 36 px). **Ambos** botones pasan por `addLineAndFocus()`: crea la línea y
+> deja el cursor en su concepto (`focus({preventScroll})` + `scrollIntoView({block:'nearest'})` → sin
+> salto brusco y sin animación que gatear con `prefers-reduced-motion`). `type="button"` explícito: sin
+> él, dentro del `<form>`, el clic ENVIARÍA el presupuesto. Verificado en staging a 390 y 1280 con
+> capturas antes/después: sin el fix el foco se queda en `BODY`; con él cae en el `INPUT` de la última
+> fila. `.quote-add-line` es **variante de botón acotada a esta pantalla**, no componente nuevo de AB3:
+> si aparece un 2.º uso real se generaliza (misma doctrina que `.job-doc-row` → `.doc-row`). Solo front,
+> sin backend, sin schema; no toca cálculo, totales ni fiscal.
+>
+> **✅ SCRUM-135 · el gasto se asocia a un TRABAJO, no tecleando el id de una cotización (24-jul-2026,
+> gastos/UX + tenencia):** el gasto se guarda en `Expense.quoteId` (**COTIZACIÓN**), pero lo que el pro
+> ve en pantalla es el **TRABAJO** (`Job`), que tiene su **propio** id — `Job #57` y `Cotización #57`
+> son registros distintos. La UI mezclaba los dos vocabularios: campo "ID de la cotización", ayuda
+> "vincula este gasto a un trabajo", y columna titulada "Trabajo" que pintaba "Cotización #N". Quien
+> leía "Trabajo #57" y tecleaba 57 vinculaba el gasto a **otra cosa, en silencio**. No era solo
+> fricción: era mis-asociación por defecto al seguir la etiqueta. **(1) Selector de Trabajos** en el
+> modal, alimentado por `GET /admin/jobs` (endpoint YA existente → **ninguna ruta nueva** que declarar
+> en el ratchet de SCRUM-113). **"Abiertos" = todos menos `cerrado`** (decisión del fundador). Los Jobs
+> **sin presupuesto** salen **DESHABILITADOS con el motivo**, no escondidos (criterio SCRUM-89): sin
+> `quoteId` no hay nada que guardar. Al **editar**, si la vinculación actual apunta a un trabajo cerrado
+> (o a una cotización que nunca fue trabajo) esa opción **se conserva marcada** — sin eso, abrir el modal
+> y guardar movía un dato que nadie tocó, que es de lo que más erosiona la confianza; ídem si falla la
+> carga de la lista. **(2) "+ Añadir gasto" en la ficha del Trabajo**, ya vinculado y sin preguntar id:
+> es el **alta rápida "desde la furgoneta"** que SCRUM-107 aparcó hasta que existiera
+> `Expense.teamMemberId` (SCRUM-109, ya en prod). **SIN veta `isTecnico`** (decisión del fundador): a
+> diferencia de las acciones de dinero, `POST /admin/expenses` está abierto al técnico a propósito y la
+> autoría se rellena sola; es además su **único** camino, porque su nav de Gastos está oculto (`app.js`).
+> Solo aparece **si el Trabajo tiene presupuesto** — ahí NO aplica "deshabilitar con explicación", porque
+> no es restricción de rol sino que no hay nada que hacer. **(3) Vocabulario:** la columna "Trabajo"
+> nombra el trabajo y enlaza a SU ficha, **exactamente como `jobsView` (solo el título, sin prefijo de
+> id)**: esa pantalla no enseña el id del Job en ningún sitio, así que anteponerlo metía un **tercer**
+> número junto al "Presupuesto #N" del título por defecto — el lío que el ticket viene a quitar, no a
+> mover de sitio. **TENENCIA (regla 2, hallazgo del recon):** `quoteId`/`providerId` se escribían **a
+> pelo** — la FK garantiza que la fila EXISTE, no que sea de este merchant, así que un gasto podía
+> apuntar a la cotización de **otro negocio**. La fuga era pequeña mientras `listExpenses` solo
+> devolviera `quote.id`, pero este mismo ticket **ensancha** ese camino → habría pasado a ser lectura
+> cross-tenant. El guard va en el **DOMINIO** (`assertRefsOwned` en `createExpense`/`updateExpense`), no
+> en la ruta: un futuro tercer llamador no se lo salta por olvido. El `PUT` comprobaba la tenencia del
+> **gasto** pero no la de la referencia **nueva**. **Mismo código de error** para "no existe" y "no es
+> tuya": distinguirlas haría del endpoint un **oráculo** para enumerar ids ajenos. 4 tests gateados,
+> **verificados EN ROJO dos veces** (quitando el guard de `createExpense` fallan 2 y la guarda de
+> presencia sigue verde → falla el guard, no el fixture; quitándolo de `updateExpense` falla solo el del
+> PUT). **RENDIMIENTO:** el trabajo de cada gasto se resuelve en `listExpenses` con **UNA** query para
+> toda la página. La primera versión lo pedía a `/admin/jobs` desde el front y, **medido contra
+> staging, ese endpoint tardaba 2910 ms frente a 1270 ms** del de gastos (N+1 de `serializeJob`, ver
+> **SCRUM-58**): la lista se quedaba esperando por un adorno. Verificado con click-through real (servidor
+> local contra la BD de staging) como **admin y como OPERARIO**, con el gasto del operario guardado con su
+> `teamMemberId`. Sin schema; no toca cálculo de margen ni nada fiscal.
+>
+> **✅ SCRUM-136 · un solo hub de Equipo: el operario es un ROL, no un apartado (24-jul-2026,
+> equipo/UX):** el ticket decía que Equipo y Operarios estaban partidos **en dos**. Eran **TRES**: el
+> mismo roster se listaba en `teamView` (alta/roles/estado, `GET /admin/team`), en `operariosView`
+> (dinero por operario, `GET /admin/metrics/operarios`) y en el panel "Rendimiento del equipo" del
+> **Inicio** (presupuestos del mes, `GET /admin/metrics/team`). Las tres **sintetizaban por separado la
+> fila del propietario** — porque el propietario **no es un TeamMember** (`teamMemberId null` =
+> propietario en `authMiddleware`) — y las tres escribían el rol distinto para el MISMO valor de schema
+> (`tecnico`): dos decían "Operario" y el Inicio decía "Técnico". **(1)** `GET /admin/team` devuelve
+> ahora el roster **con su resumen** por miembro (presupuestos del mes, trabajos abiertos, pendiente),
+> vía `teamOverview.service.ts`. Se **enriquece la ruta existente** en vez de abrir
+> `/admin/team/overview`: ya es admin-only y ya es "el equipo", así que una ruta nueva sería superficie
+> que declarar en el ratchet (SCRUM-113) para el mismo dato, y dos peticiones donde basta una. Aditivo:
+> mismo array, mismos campos, solo se **añade** `resumen`. **(2)** `teamView` pasa de tabla a **lista de
+> cards** (AB3): con 5 cifras nuevas por miembro una tabla pide 9 columnas que en móvil se apilan en una
+> torre ilegible, y la card es el patrón de la vista que absorbe. **(3)** "Operarios" **sale del nav y
+> del index**; el `case 'operarios'` de `app.js` se conserva como **redirección** a `team` (hay
+> marcadores y enlaces vivos, y el guard de rol es el mismo); `operariosView.js` se borra. **(4)**
+> Vocabulario **único**: "Operario" también en el Inicio, y ese panel deja de ser un callejón —enlaza al
+> hub— pero **se queda**, porque un vistazo en el dashboard es otro trabajo distinto de gestionar el
+> equipo. **DOS VENTANAS, ETIQUETADAS:** el resumen mezcla presupuestos del **MES** (por
+> `Quote.teamMemberId`, quien lo creó) con trabajos del **HISTÓRICO** (por `Job.operarioId`, quien lo
+> originó). Deliberado —son preguntas distintas y ya se agregaban así—, y la UI **escribe la ventana al
+> lado del número** ("este mes" / "de N en total") para no mentir; hay test que lo congela. **HALLAZGO
+> (del rojo): `/admin/team` tiene GATE DOBLE** — quitar `router.use(requireRole('admin'))` NO abre la
+> ruta porque `app.ts` ya la monta con `requireRole`; hubo que quitar **los dos** para ver el test
+> fallar. No se retira ninguno (redundancia barata que sobrevive a reorganizar `app.ts`) y queda escrito
+> en el código para que nadie dé por bueno un verde tras tocar uno solo. **PERMISOS:** lo que pedía el
+> ticket ("solo propietario y admins gestionan miembros") **ya se cumplía**; ahora está congelado por
+> test — y ahora importa más, porque la respuesta lleva el **dinero pendiente de cada compañero**, no
+> solo nombres. **FUERA:** el detalle por miembro (click → sus presupuestos/trabajos) — hoy ni
+> `/admin/quotes` ni `/admin/jobs` aceptan filtro por `teamMemberId`, así que es superficie nueva en dos
+> módulos más → ticket aparte. **Sin schema:** `role` es `String`, no enum de Prisma.
+>
+> **✅ SCRUM-138 · export selectivo + "Descargar datos" sale de Configuración a Finanzas (24-jul-2026,
+> export/S4):** el paquete para el asesor o para una inspección vivía **enterrado en Configuración**,
+> donde no lo encuentra nadie: es **dinero**, no una preferencia de la cuenta. Ahora es apartado propio
+> en **Finanzas**, junto a Informes/Facturas/Gastos (`public/dashboard/js/exportView.js`, vista nueva).
+> **Zona compartida (anunciada antes de tocar):** de `settingsView.js` solo se quita la llamada a
+> `renderExportDataCard` y la función, que se muda entera; nada más de ese fichero se toca. **SELECTIVO:**
+> antes solo se elegía el PERIODO, ahora también **qué** llevarse, de seis datasets. La decisión vive en
+> una función **PURA** (`seleccionExport.ts`) separada del armado del ZIP — lo que se prueba son GATES, y
+> un gate se prueba mejor donde se decide que a través de un ZIP de 40 MB. **LOS GATES DE SCRUM-25 NO SE
+> RELAJAN:** *admin-only* sin cambios (router con `requireRole` + guard de rol en la vista, igual que
+> `settings`/`team`); **el XML VeriFactu sigue atado a `INVOICING_ES_ENABLED`** (regla 24/26, SCRUM-73) —
+> marcar "Facturas" **NO** lo enciende, es un **AND, nunca un OR**, y está **verificado EN ROJO**
+> (cambiando `&&` por `||` el test falla con "REGLA 24 ROTA"); **gate POR dataset** — pedir uno no
+> arrastra otro, y los PDF/XML solo entran con las facturas (sin ellas ni se consultan: ahorra el render
+> medido en SCRUM-83). **Fallo seguro:** selección vacía o ilegible = **TODO**, nunca "nada" — un ZIP
+> vacío que parece correcto es peor que uno completo, el mismo criterio que ya rige el paquete
+> incompleto. **`gastos.csv` entra en el paquete POR PRIMERA VEZ:** solo existía como descarga suelta,
+> así que el asesor abría el ZIP y veía **ingresos sin costes**. Mismas columnas que el CSV suelto; por
+> fecha DEL GASTO, no de alta (criterio SCRUM-106); **no** alimenta `clientes.csv`, porque un gasto
+> apunta a una cotización y no a un cliente (SCRUM-135). **EL LEEME NO PUEDE MENTIR:** enumeraba los 5
+> CSV a pelo; ahora describe **solo** lo que lleva, avisa arriba si el paquete es **PARCIAL** (para que
+> una ausencia no se lea como "no facturó nada") y apunta a Finanzas en vez de a Configuración.
+> **HALLAZGO DEL CLICK-THROUGH** (abriendo un ZIP real, no un test): pedir "clientes + gastos" daba un
+> `clientes.csv` con **solo la cabecera** —lleva los REFERENCIADOS por los documentos del paquete
+> (SCRUM-104) y no había ninguno— bajo un LEEME que prometía "todos los clientes con algún documento".
+> Ahora lo dice y explica cómo arreglarlo; **ningún test de backend lo habría visto**. **Verificación:**
+> `npm test` 315/0; 13/13 gateados del export en verde tras el refactor (incluidos técnico→403 y flag
+> OFF); ZIP selectivo descargado **y abierto** contra la BD de staging. Sin schema.
+>
+> **🟡 SCRUM-145 (144a) · payload VeriFactu conforme a los XSD — PARCIAL (24-jul-2026, fiscal):**
+> nace del recon de SCRUM-144, que **corrigió una premisa**: el «Modelo C» tal como se planteó **no
+> existe** — la AEAT **no tiene canal de subida de XML** en la Sede (la remisión del art. 15 RRSIF es
+> servicio web SOAP con certificado, y la app gratuita *«no permite exportar registros para continuar
+> la facturación en otro SIF»*). La decisión de transporte queda en **SCRUM-146 (144b)**; este payload
+> es **común a los tres modelos**, así que se construye sin esperar nada. **Todo sigue tras
+> `INVOICING_ES_ENABLED` OFF (regla 24).**
+> **HECHO (sin schema):** el XML pasa de «inspirado en» a conforme en estructura — raíz real
+> **`sum:RegFactuSistemaFacturacion`** con los dos namespaces oficiales (antes `<RegistrosFacturacion>`
+> sin ns), envoltorio **`RegistroFactura`** y el elemento **`RegistroAlta`** (antes se usaba
+> `RegistroFacturacionAlta`, que es el nombre del **TIPO**, no del elemento); **`SistemaInformatico`
+> completo** (9 campos) alimentado por env desde la declaración responsable, con **FAIL-CLOSED**: sin
+> datos del productor **lanza** en vez de emitir un registro fiscal con placeholders;
+> **`Encadenamiento/RegistroAnterior`** ahora identifica la factura anterior COMPLETA (emisor + nº +
+> fecha + huella) resolviéndola por su huella —sin columna nueva—, y si la cadena no se puede acreditar
+> **lanza** en vez de fingir `PrimerRegistro`; **`Destinatarios`** solo se emite con NIF del cliente
+> (antes salía `NombreRazon` suelto → **XML inválido**); guard de **1000 registros** por envío (tope del
+> XSD). **Test propio** (`scrum145-verifactu-xsd`, sin gate) que **extrae del XSD** los elementos
+> obligatorios y las ramas de cada `choice` en tiempo de test — si la AEAT publica un campo nuevo, se
+> entera solo. **Alcance dicho en voz alta:** NO es validación XSD completa (sin `xmllint` ni libxmljs
+> no hay forma sin dependencia nativa); tipos/longitudes/cardinalidades los validará el entorno de
+> pruebas AEAT en S1-D. **La huella NO se toca** (cadenas persistidas intactas).
+> **PENDIENTE — bloqueado por SCHEMA (necesita GO del fundador, AA1.4 + una sola mano en
+> `schema.prisma`):** (a) `vf_timestamp` para emitir el instante REAL que entró en la huella — hoy se
+> emite `createdAt` **con el formato correcto pero valor no verificable por un tercero**; (b) el
+> **registro de ANULACIÓN**, que necesita persistir su propia huella. **PENDIENTE — dictamen del
+> asesor (no se inventa en código):** si una F1 sin destinatario identificado debe marcarse
+> `FacturaSinIdentifDestinatarioArt61d` o emitirse como **F2 simplificada**; y qué
+> `TipoRectificativa` (S/I) corresponde a nuestras R1.
 
 **V2. Trigger del segundo tramo:** **✅ VERIFICADO (SCRUM-10/13, 9-jul-2026): el resto NUNCA se cobra solo** (confirmado en código: `/admin/jobs/:id/collect-rest` vía `getNextBillingStage`, siempre acción del pro). Regla: el resto NUNCA se cobra solo; trigger = acción del pro ("Trabajo terminado → Cobrar resto"; con JOB-1: estado `terminado`) → cobro/factura del resto + payment_request.
 **V3. Anticipos [VALIDAR asesor en S1-F]:** señal con factura = **factura de anticipo con IVA**; la final descuenta el anticipo. Pre-SIF: señal con recibo no fiscal (coherente con flag). Post-SIF: implementar el dictamen (regla 32).
@@ -1068,7 +1366,7 @@ Premium, simple, cálido, rápido. Claridad de Stripe + confianza de Wise (la do
 **DESIGN.md es la ÚNICA fuente de tokens** (colores incl. semánticos y de estado, tipografía Inter con su jerarquía, radios, sombras Reposo/Elevado/Flotante/Foco, spacing, status pills). PROHIBIDO inventar colores, fuentes o sombras nuevas. Si falta un token (p. ej. iconografía, skeleton, motion): derivarlo de los existentes y **proponerlo como cambio a DESIGN.md [VALIDAR CON DESIGN.md]** antes de usarlo en más de una pantalla. Motion: sobrio, ≤200 ms, siempre con `prefers-reduced-motion`. Iconografía: un solo set lineal coherente [VALIDAR: definir set en UI-0; sin dependencias pesadas].
 
 ## AB3. Inventario de componentes base (reutilizar SIEMPRE; componente nuevo = añadirlo aquí)
-Botón primario/secundario/ghost/danger (DESIGN.md) · card y KPI-card · tabla→cards apiladas en móvil · modal y drawer · banner/aviso · chips de estado de quote/invoice (status pills DESIGN.md) · chip de entrega WhatsApp (J4) · input/select/textarea con label y error · upload de foto (F2) · empty state (ilustración ligera + 1 frase + CTA primario) · skeleton/loading (en cargas >300 ms) · toast · timeline de documento · selector de método de pago (N2/W4) · contador founding · **barra de progreso (`.progress`/`.progress-fill`)** — % cobrado/uso, track neutro + fill de estado verde/ámbar, con tokens y `prefers-reduced-motion`; helper JS compartido **`progressBar(pct, estado)`** (api.js, SCRUM-12) para pintarla desde cualquier vista sin duplicar el markup (SCRUM-11/12; ver DESIGN.md §5) · **menú de acciones (overflow «⋯»)** (SCRUM-31 F3; helper `overflowMenu(actionEls)` en api.js) — kebab que agrupa las acciones SECUNDARIAS cuando una fila/card tiene >2 (AB1 Una Sola Voz: 1 primaria visible + resto en overflow). Trigger `aria-haspopup=menu`/`aria-expanded`; panel `role=menu` con `menuitem`; teclado ↑↓/Home/End/Enter/Esc/Tab; foco al abrir→1.er ítem y al cerrar→trigger (`preventScroll`); cierre por clic-fuera/Esc/scroll; uno abierto a la vez; **popover anclado (con flip) en desktop y HOJA INFERIOR (`.modal-overlay`, como F2) en ≤640px**; sombra Flotante, motion ≤150 ms con `prefers-reduced-motion`. **Nunca esconde**: la acción primaria, **Marcar como PAGADA** (momento del dinero) ni **PDF** (lectura frecuente); **sí esconde**: lo destructivo, lo raro y lo de admin. Reutilizable en jobDetail, jobsView y listas de presupuestos/facturas/clientes · **fila de documento (`.job-doc-row`, ACOTADA al detalle de Trabajo)** — fila para listar documento/actividad con acción: icono de tipo + título + meta (pill `.status-pill` + fecha única es-ES + importe en Tinta ≥700) + 1 acción primaria + overflow «⋯»; unifica los tres semáforos sobre `.status-pill`. Base de la lista fusionada del detalle de Trabajo (SCRUM-31 F5); **se generaliza a `.doc-row` cuando haya un 2.º uso real** (customerDetail/quotesDetail/invoices), no antes. Regla: **cero estilos inline aleatorios**; clases/tokens compartidos.
+Botón primario/secundario/ghost/danger (DESIGN.md) · card y KPI-card · tabla→cards apiladas en móvil · modal y drawer · banner/aviso · chips de estado de quote/invoice (status pills DESIGN.md) · chip de entrega WhatsApp (J4) · input/select/textarea con label y error · upload de foto (F2) · empty state (ilustración ligera + 1 frase + CTA primario) · skeleton/loading (en cargas >300 ms) · toast · timeline de documento · selector de método de pago (N2/W4) · contador founding · **barra de progreso (`.progress`/`.progress-fill`)** — % cobrado/uso, track neutro + fill de estado verde/ámbar, con tokens y `prefers-reduced-motion`; helper JS compartido **`progressBar(pct, estado)`** (api.js, SCRUM-12) para pintarla desde cualquier vista sin duplicar el markup (SCRUM-11/12; ver DESIGN.md §5) · **menú de acciones (overflow «⋯»)** (SCRUM-31 F3; helper `overflowMenu(actionEls)` en api.js) — kebab que agrupa las acciones SECUNDARIAS cuando una fila/card tiene >2 (AB1 Una Sola Voz: 1 primaria visible + resto en overflow). Trigger `aria-haspopup=menu`/`aria-expanded`; panel `role=menu` con `menuitem`; teclado ↑↓/Home/End/Enter/Esc/Tab; foco al abrir→1.er ítem y al cerrar→trigger (`preventScroll`); cierre por clic-fuera/Esc/scroll; uno abierto a la vez; **popover anclado (con flip) en desktop y HOJA INFERIOR (`.modal-overlay`, como F2) en ≤640px**; sombra Flotante, motion ≤150 ms con `prefers-reduced-motion`. **Nunca esconde**: la acción primaria, **Marcar como PAGADA** (momento del dinero), **PDF** (lectura frecuente) ni **EDITAR el documento** ("Editar líneas": acción muy frecuente, más que Foto/Enviar — añadido en SCRUM-31 tras verificar que escondida no se descubría); **sí esconde**: lo destructivo, lo raro y lo de admin. Reutilizable en jobDetail, jobsView y listas de presupuestos/facturas/clientes · **fila de documento (`.job-doc-row`, ACOTADA al detalle de Trabajo)** — fila para listar documento/actividad con acción: icono de tipo + título + meta (pill `.status-pill` + fecha única es-ES + importe en Tinta ≥700) + 1 acción primaria + overflow «⋯»; unifica los tres semáforos sobre `.status-pill`. Base de la lista fusionada del detalle de Trabajo (SCRUM-31 F5); **se generaliza a `.doc-row` cuando haya un 2.º uso real** (customerDetail/quotesDetail/invoices), no antes. · **línea de presupuesto editable (`.quote-line`)** (SCRUM-139 F1) — TARJETA por línea del editor de presupuesto: concepto a ancho completo (protagonista), campos numéricos con su propia etiqueta (`.quote-line__label`, estilo Label de DESIGN.md — sustituye a los `<th>` al desaparecer la cabecera de tabla), total de línea en Tinta ≥700 tabular (Regla del Importe) y acciones al pie. UNA COLUMNA en móvil, la MISMA tarjeta en rejilla horizontal en ≥768 px: **un solo DOM, cero scroll lateral en cualquier anchura**. NO se reutilizó `.job-doc-row` a propósito: aquella es para LISTAR un documento con una acción, no para EDITAR campos — forzarla habría sido usar el componente equivocado por cumplir el inventario. Acotada al editor de presupuesto; se generaliza si aparece un 2.º uso real (mismo criterio que `.job-doc-row`). Regla: **cero estilos inline aleatorios**; clases/tokens compartidos.
 
 ## AB4. Sensación por pantalla (dashboard)
 **Home:** "dinero en juego" arriba (Parte E), 3 KPIs, acciones rápidas (Nueva cotización gigante). **Quick Quote:** <30 s, una columna, autocomplete del catálogo, micro de voz, cero campos opcionales visibles. **Lista de presupuestos:** orientada a estado/dinero (pills + importes en Tinta ≥700), filtrable, cards en móvil. **Detalle:** timeline + estado + UN CTA primario verde + secundarias discretas (Duplicar, PDF, Recordar). **Facturas/cobros:** lo pendiente de cobrar PRIMERO, antigüedad visible. **Clientes:** ficha simple — deuda/pagos/presupuestos, historial (ENT-3), cero CRM. **Catálogo:** usable, no ERP: buscar, crear rápido, importar. **Configuración:** checklist de readiness (M) con estados claros — Connect, fiscal, WhatsApp, Bizum/IBAN. **Onboarding:** 3 pasos visuales, nunca formulario largo. **Estados vacíos:** siempre enseñan la acción primaria ("Crea tu primera cotización en 30 segundos"). **Errores:** dignos, accionables, cero stacktraces. 

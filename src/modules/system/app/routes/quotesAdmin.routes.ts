@@ -5,7 +5,6 @@ import {
   getQuoteDetailAdmin,
   acceptQuoteAdmin,
   rejectQuoteAdmin,
-  createInvoiceFromQuoteAdmin,
 } from '../../quoteAdmin';
 
 import { prisma } from '../../../../core/db/prisma';
@@ -19,9 +18,11 @@ import { sendTechQuoteApprovedEmail } from '../../../messaging/domain/merchantNo
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: emitir factura = admin)
 
 import fetch from 'node-fetch';
+import { sendSuccessBody, sendFailureBody } from '../../../../lib/sendOutcome'; // SCRUM-126
 
 const router = Router();
 
@@ -34,7 +35,19 @@ router.get('/', async (req, res) => {
     const status   = req.query.status   ? String(req.query.status)   : undefined;
     const dateFrom = req.query.dateFrom ? new Date(String(req.query.dateFrom)) : null;
     const dateTo   = req.query.dateTo   ? (() => { const d = new Date(String(req.query.dateTo)); d.setHours(23,59,59,999); return d; })() : null;
-    const quotes = await listQuotesAdmin(req.merchantId, search, status, dateFrom, dateTo);
+    // SCRUM-148: ?teamMemberId=<id> | 'owner' → presupuestos de ESE autor (detalle por
+    // miembro del hub de Equipo). 'owner' es EXPLÍCITO a propósito: el propietario se guarda
+    // con teamMemberId null, y un parámetro vacío o un 0 accidental no pueden significar "el
+    // propietario" por descuido. Lo que no se entiende NO filtra (undefined) — devolver la
+    // lista completa es el fallo seguro aquí: esta ruta ya la ve entera cualquier rol que
+    // llegue a ella (S1: `TECNICO_ALLOWED` para GET /admin/quotes), así que no filtrar no
+    // enseña nada que el llamante no pudiera pedir sin el parámetro.
+    const raw = req.query.teamMemberId;
+    let teamMemberId: number | null | undefined;
+    if (raw === 'owner') teamMemberId = null;
+    else if (raw !== undefined && Number.isInteger(Number(raw))) teamMemberId = Number(raw);
+
+    const quotes = await listQuotesAdmin(req.merchantId, search, status, dateFrom, dateTo, teamMemberId);
     return res.json(quotes);
   } catch (err) {
     console.error('[GET /admin/quotes]', err);
@@ -158,17 +171,19 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
       return res.status(409).json({ error: 'no_more_invoices_for_payment_terms' });
     }
 
-    // SCRUM-27+32: importe del tramo del plan resuelto, reparto exacto (último = resto, céntimos enteros).
-    const invoiceAmount = distributeStageAmounts(quote.total, plan)[stage.index];
     const isCustomPlan = Array.isArray((quote as any).customBillingPlan) && (quote as any).customBillingPlan.length > 0;
     const merchant = quote.merchant;
 
-    // Escalar las líneas de la cotización al porcentaje facturado (ej. 50% en FIFTY_FIFTY)
-    // TODO(SCRUM-16/17): reparto fino línea-a-línea del último tramo (≤1 cént. vs Invoice.total de SCRUM-32).
+    // SCRUM-141: las líneas del tramo PRIMERO, y el importe DERIVADO de ellas — el total de una
+    // factura es consecuencia de sus líneas, no al revés. Antes el importe venía de
+    // `distributeStageAmounts` y las líneas se escalaban aparte: dos redondeos independientes que
+    // podían diferir 1 cént., y esa diferencia quedaba SELLADA en la huella VeriFactu
+    // (`importeTotal` del total vs `cuotaTotal` de las líneas). Ver invoiceLines.service.ts.
     const quoteLines = Array.isArray(quote.lines) ? quote.lines as any[] : [];
-    const scaledLines = stage.percentage < 1
-      ? quoteLines.map((l: any) => ({ ...l, price: Number(l.price) * stage.percentage }))
-      : quoteLines;
+    const scaledLines = stageLinesReconciled(
+      quoteLines, plan, stage.index, distributeStageAmounts(quote.total, plan)[stage.index],
+    );
+    const invoiceAmount = grossOfLines(scaledLines);
 
     const invoice = await prisma.$transaction(async (tx) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId);
@@ -225,7 +240,7 @@ router.post('/:id/send-whatsapp', async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
-      return res.status(400).json({ error: 'invalid_id' });
+      return res.status(400).json({ ok: false, error: 'invalid_id' });
     }
 
     // A15.2: la lógica vive en sendQuoteWhatsAppToCustomer (texto K1 + guards
@@ -235,63 +250,44 @@ router.post('/:id/send-whatsapp', async (req, res) => {
 
     if (!result.ok) {
       switch (result.reason) {
+        // Precondición real: nunca se intentó el envío — sin `sent`.
         case 'not_found':
-          return res.status(404).json({ error: 'not_found' });
+          return res.status(404).json({ ok: false, error: 'not_found' });
         case 'customer_missing_phone':
-          return res.status(400).json({ error: 'customer_missing_phone' });
+          return res.status(400).json({ ok: false, error: 'customer_missing_phone' });
         case 'invalid_phone_format':
-          return res.status(400).json({ error: 'invalid_phone_format' });
+          return res.status(400).json({ ok: false, error: 'invalid_phone_format' });
         case 'pending_approval':
-          return res.status(409).json({ error: 'pending_approval' });
-        // Bloqueos de POLÍTICA propios (no son errores de Meta) — mensaje específico (J5)
+          return res.status(409).json({ ok: false, error: 'pending_approval' });
+        // SCRUM-126: envío intentado, no salió — SIEMPRE 200, vocabulario compartido
+        // (src/lib/sendOutcome.ts). Antes cada motivo repetía su mensaje aquí a mano.
         case 'demo_safe_numbers':
-          return res.status(200).json({
-            ok: false, sent: false, error: 'demo_safe_numbers',
-            message: 'Modo demo seguro: este número no está en DEMO_SAFE_NUMBERS, no se envía nada (V0-2).',
-          });
         case 'wa_opt_out':
-          return res.status(200).json({
-            ok: false, sent: false, error: 'wa_opt_out',
-            message: 'Este cliente se dio de baja de WhatsApp (no se le envían más mensajes).',
-          });
-        // A3.2: topes anti-abuso del canal (J6 / PV-WA-CAPS)
         case 'daily_cap':
-          return res.status(200).json({
-            ok: false, sent: false, error: 'daily_cap',
-            message: 'Has alcanzado el tope diario de mensajes de WhatsApp. Vuelve a intentarlo mañana o envíalo por email.',
-          });
         case 'customer_daily_cap':
-          return res.status(200).json({
-            ok: false, sent: false, error: 'customer_daily_cap',
-            message: 'Este cliente ya recibió varios mensajes hoy (límite anti-spam). Vuelve a intentarlo mañana o envíalo por email.',
-          });
+          return res.status(200).json(sendFailureBody(result.reason));
         default: {
           // P3-2: NO devolver un 502 crudo. El presupuesto sigue guardado; informamos
-          // con un mensaje claro (incluyendo el motivo de Meta si lo hay) y 200 ok:false.
+          // con un mensaje claro (incluyendo el motivo de Meta si lo hay).
           const metaMsg =
             (result.error as any)?.error?.message ||
             (typeof result.error === 'string' ? result.error : '') ||
             'WhatsApp rechazó el envío';
-          return res.status(200).json({
-            ok: false,
-            sent: false,
-            error: 'whatsapp_send_failed',
+          return res.status(200).json(sendFailureBody('whatsapp_send_failed', {
             message: `No se pudo enviar por WhatsApp: ${metaMsg}. El presupuesto quedó guardado; puedes reintentarlo.`,
             detail: result.error,
-          });
+          }));
         }
       }
     }
 
-    return res.json({
-      ok: true,
-      sent: true,
+    return res.json(sendSuccessBody({
       quote_id: result.quoteId,
       to: result.to,
-    });
+    }));
   } catch (err) {
     console.error('[POST /admin/quotes/:id/send-whatsapp]', err);
-    return res.status(500).json({ error: 'internal_error' });
+    return res.status(500).json({ ok: false, error: 'internal_error' });
   }
 });
 
@@ -359,9 +355,9 @@ router.post('/:id/send-email', async (req, res) => {
       where: { id, merchantId: req.merchantId },
       select: { id: true, quoteNumber: true, status: true, total: true, currency: true, merchantId: true, customerId: true, customer: { select: { email: true } } },
     });
-    if (!quote) return res.status(404).json({ error: 'not_found' });
-    if (quote.status === 'pending_approval') return res.status(409).json({ error: 'pending_approval' });
-    if (!quote.customer?.email) return res.status(400).json({ error: 'customer_missing_email' });
+    if (!quote) return res.status(404).json({ ok: false, error: 'not_found' });
+    if (quote.status === 'pending_approval') return res.status(409).json({ ok: false, error: 'pending_approval' });
+    if (!quote.customer?.email) return res.status(400).json({ ok: false, error: 'customer_missing_email' });
 
     const { sendQuoteEmail } = await import('../../../messaging/domain/email.service');
     await sendQuoteEmail({ quoteId: id, prisma });
@@ -378,16 +374,15 @@ router.post('/:id/send-email', async (req, res) => {
       detail: `${Number(quote.total).toFixed(2)} ${quote.currency}`,
     });
 
-    return res.json({ ok: true, sent: true });
+    return res.json(sendSuccessBody());
   } catch (err: any) {
     if (err?.message === 'customer_missing_email') {
-      return res.status(400).json({ error: 'customer_missing_email' });
+      return res.status(400).json({ ok: false, error: 'customer_missing_email' });
     }
     console.error('[POST /admin/quotes/:id/send-email]', err?.message || err);
-    return res.status(200).json({
-      ok: false, sent: false, error: 'email_send_failed',
+    return res.status(200).json(sendFailureBody('email_send_failed', {
       message: 'No se pudo enviar el email. El presupuesto quedó guardado; puedes reintentarlo.',
-    });
+    }));
   }
 });
 
