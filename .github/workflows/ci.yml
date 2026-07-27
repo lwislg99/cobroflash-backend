@@ -52,7 +52,16 @@ jobs:
           # Railway construye con otra, este CI puede dar verdes o rojos que allí no salen.
           # Unificarlo toca el deploy (prod) → decisión del fundador, fuera de este ticket.
           node-version: '24'
-          cache: npm
+          # SIN `cache: npm` (retirado 27-jul-2026). El paso "Post Run actions/setup-node" —la
+          # fase que GUARDA la caché, posterior a los tests— tumbaba el job con exit 1 aunque
+          # `npm test` hubiera pasado: un PR quedaba bloqueado por algo que no tiene que ver con
+          # su código. Coste de quitarlo: `npm ci` tarda unos segundos más. Beneficio: el rojo
+          # del CI vuelve a significar "el código falla".
+          #
+          # Sospecha de la causa, para quien lo reconsidere: arriba hay `cancel-in-progress:
+          # true`; un run cancelado a mitad puede dejar la escritura de caché a medias y hacer
+          # fallar el guardado del siguiente. Si algún día se quiere recuperar la caché, mirar
+          # eso primero — o fijarla a `push` a main, donde nada se cancela.
 
       # `npm ci` y no `npm install`: instala EXACTAMENTE el lockfile y falla si package.json
       # y package-lock.json han divergido. En un CI eso es lo que se quiere — reproducir, no
