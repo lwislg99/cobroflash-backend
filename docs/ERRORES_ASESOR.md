@@ -10,7 +10,12 @@
 
 **R1 · Verifica en la fuente antes de afirmar.** No deducir el estado de algo por su síntoma. Si es configuración externa (Meta, Resend, Railway, DNS), mirar EN la herramienta. Si es código, leer EL código. Si es un archivo, comprobar que existe.
 
-**R2 · No cerrar un ticket sin evidencia de que el fix está donde debe.** "Claude Code dice que está hecho" no es evidencia; el diff o el test que lo prueba, sí. **Método concreto:** `git merge-base --is-ancestor <commit> origin/main` (o el "This branch has been merged" de GitHub) — nunca el estado de Jira ni el resumen en prosa del ejecutor. Si el comando no confirma que el commit es antepasado de `main`, el fix no está ahí, aunque el ticket diga "Cerrada" y el reporte diga "hecho".
+**R2 · No cerrar un ticket sin evidencia de que el fix está donde debe.** "Claude Code dice que está hecho" no es evidencia; el diff o el test que lo prueba, sí. **Un mensaje de éxito NO es evidencia de éxito** — hay que preguntarle al sitio donde debería estar el resultado, no al proceso que dice haberlo puesto. Dos métodos concretos, uno por cada eslabón:
+
+- **¿Llegó la rama al remoto?** → `git ls-remote --heads origin <rama>`. Si no devuelve una línea con el SHA, la rama **no está**, por mucho que `git push` haya impreso `* [new branch]` y salido con código 0. Ocurrió el 27-jul-2026 (incidente #10): push con mensaje de éxito, exit 0, y la rama no existía en GitHub — el PR daba 404 y `main` siguió en rojo mientras el fix parecía entregado. Contrastar el SHA del remoto con `git rev-parse HEAD`.
+- **¿Llegó el commit a `main`?** → `git merge-base --is-ancestor <commit> origin/main` (o el "This branch has been merged" de GitHub) — nunca el estado de Jira ni el resumen en prosa del ejecutor. Si el comando no confirma que el commit es antepasado de `main`, el fix no está ahí, aunque el ticket diga "Cerrada" y el reporte diga "hecho".
+
+Los dos eslabones fallan igual y en silencio: el trabajo existe, el mensaje dice que salió, y el resultado no está donde hace falta.
 
 **R3 · Orden de diagnóstico para "algo no llega/no funciona":** ① ¿se generó? ② ¿se envió/ejecutó? ③ ¿llegó? ④ ¿lo filtró/bloqueó alguien? Empezar por ①, no por ④.
 
@@ -87,6 +92,14 @@
 **Coste:** bajo en sí (documentación ilegible unas horas), pero el patrón no lo es: es el mismo con el que se cuela una migración mal escrita o un guard que no comprueba nada.
 **Regla derivada — nueva:** **una edición hecha con herramienta no está hecha hasta que se relee el resultado.** Vale para scripts de texto, `sed`/`python` sobre ficheros y cualquier generación automática: la salida del comando **no es evidencia del contenido**. Es la misma R1 que se exige a los reportes ajenos, aplicada a los artefactos propios.
 **Nota:** hermana del incidente #8 (medir la página equivocada con total confianza). En los dos, la herramienta hizo su trabajo **correctamente sobre el objeto equivocado** — y no hay nada en su salida que lo delate.
+
+### 2026-07-27 · #10 — Di un PR por entregado con el mensaje del push, y la rama no estaba en GitHub (lección propia, del ejecutor)
+**Qué pasó:** arreglé el rojo de `main` (migración de `scrum51` a `withMerchant`), hice `git push`, y la salida fue la de siempre: `remote: Create a pull request...`, `* [new branch] fix-main-scrum51-fixtures -> fix-main-scrum51-fixtures`, **exit 0**. Reporté el trabajo como entregado con su link de compare. El fundador fue a abrirlo: **404**, y la rama no aparecía en la lista de PRs. `main` seguía en rojo.
+**Por qué:** confundí *"el comando dijo que salió bien"* con *"el resultado está en el remoto"*. Al comprobarlo, `git ls-remote --heads origin fix-main-scrum51-fixtures` no devolvía **nada**: la rama no existía. Un segundo push idéntico sí la creó. No sé por qué se perdió el primero — y ese es justo el punto: **no hace falta saberlo para que el método sea obligatorio**, porque el fallo es indistinguible del éxito en la salida del comando.
+**Quién lo detectó:** el fundador, al abrir el link que yo le di.
+**Coste:** `main` en rojo más tiempo del necesario, con el resto del equipo trabajando sin red y cada merge nuevo heredando el fallo — mientras el arreglo parecía entregado.
+**Regla derivada:** R2, **ampliada con el eslabón del push**. Lo que ya se exigía para el merge (`merge-base --is-ancestor`) vale igual para el push (`ls-remote`): son los dos sitios donde el trabajo puede quedarse por el camino con un mensaje de éxito por delante. **Un mensaje de éxito no es evidencia de éxito.**
+**Nota:** es exactamente el patrón de los incidentes #8 y #9 —la herramienta informa bien de una operación que no produjo el efecto esperado— pero cometido sobre lo más básico del flujo: entregar. Los tres comparten que la salida del comando no habla del estado del mundo, solo de sí misma.
 
 ---
 
