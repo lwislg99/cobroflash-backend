@@ -1035,7 +1035,12 @@ html, body { overflow-x: clip; }
    Fichas, no lista en un modal: usar una plantilla eran tres pasos (abrir, leer, elegir) para
    el oficio que repite el mismo trabajo diez veces al mes. Se pintan como mucho 3; a partir de
    ahí el botón de la cabecera pasa a ser "ver las N", para que ficha y botón no digan lo mismo. */
-.quote-plantillas {
+/* SCRUM-162: la fila de conceptos frecuentes comparte AQUÍ la disposición y la ficha con las
+   plantillas, en vez de tener su propio juego de reglas. Son el mismo gesto (un toque = líneas
+   listas) y tienen que verse como el mismo gesto; duplicar el bloque haría que dentro de tres
+   meses una de las dos filas se moviera sola. */
+.quote-plantillas,
+.quote-conceptos {
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
   margin-bottom: 12px;
 }

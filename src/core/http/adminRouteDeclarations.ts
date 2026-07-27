@@ -83,6 +83,10 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'PUT',    path: '/admin/products/:id', why: 'Corregir un precio suelto al presupuestar' },
   { method: 'DELETE', path: '/admin/products/:id', why: 'Simétrico del alta; una línea de catálogo, no el tarifario' },
   { method: 'GET',    path: '/admin/products/autocomplete', why: 'Autocompletar al montar el presupuesto' },
+  // SCRUM-162: misma familia que el autocompletado —alimenta el mismo campo del editor— y no
+  // enseña nada que el técnico no vea ya: son conceptos de los presupuestos de SU merchant,
+  // acotados por `req.merchantId`. Sin importes, sin clientes, sin datos de terceros.
+  { method: 'GET',    path: '/admin/products/frequent-concepts', why: 'Sus conceptos más usados al montar el presupuesto' },
   { method: 'GET',    path: '/admin/products/ping', why: 'Healthcheck del módulo, sin datos' },
   { method: 'GET',    path: '/admin/providers/ping', why: 'Healthcheck del módulo, sin datos' },
 

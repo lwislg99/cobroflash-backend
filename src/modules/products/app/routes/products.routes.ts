@@ -8,6 +8,7 @@ import { getTradeCatalog } from '../../../../core/data/tradeCatalogs';
 import { getCatalogFile, midPrice, orientativoLabel } from '../../../../core/data/catalogLoader';
 import { getLocale } from '../../../../core/i18n/locales';
 import { requireRole } from '../../../../core/http/authMiddleware';
+import { conceptosFrecuentes, VENTANA_DIAS } from '../../domain/frequentConcepts'; // SCRUM-162
 
 const router = Router();
 
@@ -125,6 +126,30 @@ router.get('/autocomplete', async (req, res) => {
     return res.json({ ok: true, items });
   } catch (err) {
     console.error('[GET /admin/products/autocomplete]', err);
+    return res.status(500).json({ ok: false, error: 'internal_error' });
+  }
+});
+
+// SCRUM-162 — los conceptos que ESTE merchant repite de verdad, sacados de sus presupuestos.
+// Vive junto al autocompletado porque alimenta el mismo campo, aunque el dato no salga del
+// catálogo sino de `Quote.lines`: no hay contador en el esquema y, medido, no hace falta.
+// La lista viene VACÍA mientras no haya señal suficiente (umbral en `conceptosFrecuentes`),
+// y vacío significa que el front no enseña nada — nunca «enseña lo que haya».
+router.get('/frequent-concepts', async (req, res) => {
+  try {
+    const desde = new Date(Date.now() - VENTANA_DIAS * 24 * 60 * 60 * 1000);
+    // Regla 2: SIEMPRE acotado al tenant. Y acotado también en el tiempo: la ventana se
+    // aplica en la consulta además de en la función pura, para no traerse a memoria un
+    // histórico entero el día que lo haya.
+    const presupuestos = await prisma.quote.findMany({
+      where: { merchantId: req.merchantId, createdAt: { gte: desde } },
+      select: { lines: true, createdAt: true },
+      orderBy: { id: 'desc' },
+      take: 500,
+    });
+    return res.json({ ok: true, items: conceptosFrecuentes(presupuestos) });
+  } catch (err) {
+    console.error('[GET /admin/products/frequent-concepts]', err);
     return res.status(500).json({ ok: false, error: 'internal_error' });
   }
 });
