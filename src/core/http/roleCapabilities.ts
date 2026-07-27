@@ -65,3 +65,41 @@ export function seesOnlyOwnJobs(role: string | null | undefined): boolean {
 export function isFieldMember(role: string | null | undefined): boolean {
   return role !== 'admin' && role !== OWNER_ROLE;
 }
+
+/**
+ * SCRUM-164 · CAMPOS DE UN TRABAJO RESERVADOS AL ADMIN (gate por CAMPO, no por ruta).
+ *
+ * `PATCH /admin/jobs/:id` NO es admin-only y no debe serlo: status, scheduledAt y notes son el
+ * día a día del operario (SCRUM-120). Lo que está reservado al admin son tres campos que tocan
+ * FACTURACIÓN o DINERO:
+ *   · `tipoOperacion`   — bandera fiscal (recapitulativa mensual vs. facturar al concluir)
+ *   · `assignedUserId`  — reparto del equipo (S1)
+ *   · `status: 'cerrado'` — única transición IRREVERSIBLE de la FSM, y mata la vía de "Cobrar el resto"
+ *
+ * POR QUÉ VIVE AQUÍ Y NO EN LA RUTA. Estaba escrito como un `if` suelto dentro del handler: el
+ * único gate de rol de todo `src/` que no pasaba por `requireRole`. Eso lo hacía **invisible por
+ * partida doble** — ni aparece en la lista de rutas admin-only, ni lo ve la derivación de
+ * `scrum55-admin-fail-closed` (que reconoce el marcador `__requiredRole` que pone `requireRole`,
+ * y un `if` no lleva marcador). Si desapareciera en un refactor, no se enteraba nadie.
+ *
+ * NO se convierte en `requireRole('admin')` a propósito: eso haría admin-only la ruta ENTERA y
+ * dejaría al técnico sin poder tocar el estado de sus propios trabajos, que es justo lo que
+ * SCRUM-120 construyó. La regla es por campo; lo que había que arreglar es que fuera visible y
+ * comprobable, no convertirla en otra cosa.
+ */
+export const ADMIN_ONLY_JOB_FIELDS = ['tipoOperacion', 'assignedUserId', "status:'cerrado'"] as const;
+
+/**
+ * Devuelve el PRIMER campo reservado al admin que trae el cuerpo, o null si no hay ninguno.
+ *
+ * FAIL-CLOSED y de una pieza: basta que aparezca UNO —aunque venga mezclado con campos
+ * legítimos— para rechazar la petición ENTERA. Nada de aplicar la parte inocente y descartar la
+ * fiscal: un PATCH a medias en zona de dinero es peor que un 403.
+ */
+export function adminOnlyJobField(body: any): string | null {
+  if (!body || typeof body !== 'object') return null;
+  if (body.tipoOperacion !== undefined) return 'tipoOperacion';
+  if (body.assignedUserId !== undefined) return 'assignedUserId';
+  if (body.status !== undefined && String(body.status) === 'cerrado') return "status:'cerrado'";
+  return null;
+}
