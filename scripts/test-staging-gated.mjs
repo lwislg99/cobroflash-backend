@@ -31,6 +31,14 @@
 // en el recuento. El verde de esos dos es cosa de SCRUM-159, no de aquí.
 import { spawnSync } from 'node:child_process';
 import { readdirSync } from 'node:fs';
+// SCRUM-182: la tanda dura ~11 min leyendo dist/, tests/ y el cliente de Prisma. Si algo los
+// reescribe mientras corre, los resultados no valen. El detalle, en el propio módulo.
+import {
+  huellaArtefactos,
+  compararHuellas,
+  mensajeArbolMovido,
+  CODIGO_SALIDA_ARBOL_MOVIDO,
+} from './_artefactos-guard.mjs';
 
 const override = process.argv[2] || null; // contraprueba/diagnóstico: si viene, todos lo usan
 
@@ -107,6 +115,8 @@ const fallaron = [];
 
 console.log(`\n── SCRUM-157 · tanda gateada COMPLETA (3 procesos)${override ? ` · AUTOTEST → ${override}` : ''} ──\n`);
 
+const huellaAntes = huellaArtefactos(process.cwd()); // SCRUM-182
+
 for (let i = 0; i < hijos.length; i++) {
   const h = hijos[i];
   const env = { ...process.env };
@@ -144,6 +154,18 @@ for (let i = 0; i < hijos.length; i++) {
   //           proceso salió ≠0 el hijo cuenta como fallido.
   if (code !== 0) fallaron.push(h.nombre);
   console.log(`\n[${i + 1}/${hijos.length}] ${h.nombre}: exit=${code}  tests=${c.tests} pass=${c.pass} fail=${c.fail} skip=${c.skipped} cancelled=${c.cancelled} todo=${c.todo}`);
+}
+
+// SCRUM-182 · ¿leyó la tanda un árbol quieto? Va ANTES del agregado y del recuento de
+// fallos a propósito: si el árbol se movió, ni el verde ni el rojo son evidencia, así que no
+// tiene sentido presentar unos números que invitan a interpretarlos. Sale con su propio
+// código (4) para no confundirse con "hubo tests rojos" (1) ni con "los números no cuadran" (3).
+{
+  const cambios = compararHuellas(huellaAntes, huellaArtefactos(process.cwd()));
+  if (cambios.length) {
+    console.error(mensajeArbolMovido(cambios));
+    process.exit(CODIGO_SALIDA_ARBOL_MOVIDO);
+  }
 }
 
 const suma = agg.pass + agg.fail + agg.cancelled + agg.skipped + agg.todo;
