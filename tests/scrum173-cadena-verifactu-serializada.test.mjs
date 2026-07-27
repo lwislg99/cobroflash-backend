@@ -205,3 +205,60 @@ test('SCRUM-173b: sellar una ANULACIÓN dentro de una transacción está prohibi
 // El cerrojo no puede arreglar eso, y arreglarlo es tocar qué eslabón encadena cada registro
 // — núcleo fiscal, decisión con dictamen detrás. Se reporta como hallazgo aparte en vez de
 // dejar aquí un test rojo o, peor, "ajustarlo" hasta que pase.
+
+// ── SCRUM-177: UNA SOLA CADENA — el alta encadena también a las anulaciones ─────────────────
+// Verificado contra el XSD oficial: alta y anulación comparten `Encadenamiento` y el tipo
+// `EncadenamientoFacturaAnteriorType`, que NO lleva ningún campo para discriminar el tipo del
+// registro anterior. Con dos cadenas, apuntar a un eslabón sin decir a cuál pertenece sería
+// irreconstruible para la AEAT.
+
+test('SCRUM-177: el alta siguiente a una ANULACIÓN encadena a ELLA, no al alta anterior', { skip: !ENABLED }, async () => {
+  const { prisma } = await import('../dist/core/db/prisma.js');
+  const { applyVeriFactu, applyVeriFactuAnulacion } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
+
+  await withMerchant(prisma, { name: 'QA S177', email: `qa-177-${Date.now()}@test.local`, taxId: NIF }, async (merchant) => {
+    const cliente = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente 177' } });
+    const stamp = Date.now();
+
+    // 1) Alta A — primer eslabón de la cadena.
+    const a = await crearFactura(prisma, merchant.id, cliente.id, `QA177A-${stamp}`);
+    const selloA = await applyVeriFactu(a, NIF, prisma);
+    assert.equal(selloA.vfPrevHash, '', 'la primera del emisor abre la cadena');
+
+    // 2) Anulación de A — encadena a A. (Fijado ya en SCRUM-173b; aquí es guarda de presencia:
+    //    si esto fallara, el assert de abajo no probaría lo que dice probar.)
+    const anul = await applyVeriFactuAnulacion(a, NIF, prisma);
+    assert.equal(anul.vfPrevHash, selloA.vfHash, 'la anulación encadena al alta de su factura');
+
+    // 3) EL CASO DE SCRUM-177: alta B, posterior a la anulación.
+    const b = await crearFactura(prisma, merchant.id, cliente.id, `QA177B-${stamp}`);
+    const selloB = await applyVeriFactu(b, NIF, prisma);
+
+    assert.equal(selloB.vfPrevHash, anul.vfAnulHash,
+      '🔴 DOS CADENAS: el alta B saltó la anulación y encadenó al alta A. La secuencia se ' +
+      'bifurca — dos registros apuntando al mismo eslabón, que es lo que la AEAT lee como ' +
+      'manipulación.');
+    assert.notEqual(selloB.vfPrevHash, selloA.vfHash,
+      'y en concreto NO debe encadenar al alta anterior, que era el comportamiento viejo');
+  });
+});
+
+test('SCRUM-177: excluirId — resellar un alta no la encadena a sí misma', { skip: !ENABLED }, async () => {
+  const { prisma } = await import('../dist/core/db/prisma.js');
+  const { applyVeriFactu } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
+
+  await withMerchant(prisma, { name: 'QA S177b', email: `qa-177b-${Date.now()}@test.local`, taxId: NIF }, async (merchant) => {
+    const cliente = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente 177b' } });
+    const inv = await crearFactura(prisma, merchant.id, cliente.id, `QA177C-${Date.now()}`);
+
+    const primero = await applyVeriFactu(inv, NIF, prisma);
+    assert.equal(primero.vfPrevHash, '', 'primer sellado: abre la cadena');
+
+    // Resellado: la factura YA tiene huella. Sin `excluirId` se encontraría a sí misma y
+    // encadenaría a su propia huella — un bucle en una cadena que se sella para siempre.
+    const segundo = await applyVeriFactu(inv, NIF, prisma);
+    assert.notEqual(segundo.vfPrevHash, primero.vfHash,
+      '🔴 BUCLE: la factura se encadenó a su propia huella al resellar');
+    assert.equal(segundo.vfPrevHash, '', 'sigue siendo la única de la cadena: prev vacío');
+  });
+});
