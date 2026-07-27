@@ -43,6 +43,7 @@ import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { getEmissionMode } from '../../../invoicing/domain/emission.service';
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
+import { emitirRecapitulativas } from '../../domain/recapitulativa.service'; // SCRUM-171a: emisión compartida con la vía de Job
 
 const router = Router();
 
@@ -148,6 +149,134 @@ router.get('/consolidables', async (req, res) => {
     return res.json({ customer, grupos, descartados });
   } catch (err: any) {
     console.error('[GET /admin/albaranes/consolidables]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/albaranes/consolidar — SCRUM-171a · EMITIR LA RECAPITULATIVA A ÁMBITO CLIENTE.
+ *
+ * Es la mitad que SCRUM-70 dejó a medias: la vista previa por cliente existía (`/consolidables`)
+ * pero NO había forma de emitir desde ahí — solo desde un Job (`/admin/jobs/:id/consolidar-albaranes`),
+ * y un cliente factura por MES, no por Trabajo. Sin esto, SCRUM-171 (periodicidad) no puede existir:
+ * no hay camino que facture «lo de este mes de este cliente» cuando sus albaranes vienen de varios
+ * Trabajos.
+ *
+ * LA SELECCIÓN LA MANDA EL USUARIO, SIEMPRE. Se emite lo que venga en `albaranIds` y nada más —
+ * el propio research de SCRUM-70 lo pide por la queja documentada de usuarios de Odoo con
+ * agrupaciones automáticas que nadie confirma. A ámbito cliente eso no es recomendable: es
+ * imprescindible, porque la selección deja de hacerla él parte a parte.
+ *
+ * FAIL-CLOSED: si UNO de los seleccionados no es elegible, no se emite NADA y se dice cuál y por
+ * qué. Emitir «los que sí» dejaría facturas correctas mezcladas con una sorpresa, y una factura
+ * emitida no se borra (regla 29).
+ *
+ * La emisión en sí (rotura del art. 13, transacción única, guard anti-doble y sellado VeriFactu
+ * fuera del commit) es LA MISMA que la vía de Job: vive en `recapitulativa.service`.
+ */
+router.post('/consolidar', requireRole('admin'), async (req, res) => {
+  try {
+    const customerId = Number(req.body?.customerId);
+    if (!Number.isInteger(customerId)) {
+      return res.status(400).json({ error: 'customer_requerido', message: 'Indica el cliente.' });
+    }
+    // Tenancy (regla 2): el cliente tiene que ser de este merchant o no existe.
+    const customer = await prisma.customer.findFirst({
+      where: { id: customerId, merchantId: req.merchantId! },
+      select: { id: true, name: true },
+    });
+    if (!customer) return res.status(404).json({ error: 'not_found' });
+
+    const rawIds: any[] = Array.isArray(req.body?.albaranIds) ? req.body.albaranIds : [];
+    const ids: number[] = Array.from(new Set<number>(rawIds.map((x) => Number(x)).filter((n) => Number.isInteger(n))));
+    if (ids.length === 0) {
+      return res.status(400).json({ error: 'seleccion_vacia', message: 'Selecciona al menos un parte de trabajo firmado.' });
+    }
+
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: req.merchantId },
+      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true },
+    });
+    if (!merchant) return res.status(404).json({ error: 'not_found' });
+    if (getEmissionMode(merchant) === 'receipt') {
+      return res.status(409).json({ error: 'consolidacion_no_disponible', message: 'La factura recapitulativa no está disponible en este modo.' });
+    }
+
+    // Los albaranes, SIEMPRE por merchant; el cliente se comprueba después vía su Trabajo
+    // (`Albaran` no guarda customerId: cuelga del Job, y 1 Job = 1 cliente).
+    const albaranes = await prisma.albaran.findMany({
+      where: { id: { in: ids }, merchantId: req.merchantId! },
+    });
+    if (albaranes.length !== ids.length) {
+      return res.status(404).json({ error: 'albaran_no_encontrado', message: 'Alguno de los partes seleccionados no existe.' });
+    }
+    const jobs = await prisma.job.findMany({
+      where: { id: { in: [...new Set(albaranes.map((a) => a.jobId))] }, merchantId: req.merchantId! },
+      select: { id: true, customerId: true, tipoOperacion: true },
+    });
+    const jobById = new Map(jobs.map((j) => [j.id, j]));
+
+    // SCRUM-170: quién tiene ya líneas facturadas por la vía parcial (no lleva `invoiceId`).
+    const conParcial = new Set(
+      (await prisma.albaranLineaFacturada.findMany({
+        where: { merchantId: req.merchantId!, albaranId: { in: ids } },
+        select: { albaranId: true },
+        distinct: ['albaranId'],
+      })).map((r) => r.albaranId),
+    );
+
+    const candidatos: AlbaranCandidato[] = albaranes.map((a) => ({
+      id: a.id, numero: a.numero, fecha: a.fecha, estado: a.estado,
+      modoValoracion: a.modoValoracion, invoiceId: a.invoiceId,
+      customerId: jobById.get(a.jobId)?.customerId ?? -1,
+      jobId: a.jobId,
+      tipoOperacion: jobById.get(a.jobId)?.tipoOperacion ?? null,
+      facturadoParcial: conParcial.has(a.id),
+    }));
+
+    const { elegibles, descartados } = seleccionarConsolidablesDeCliente(candidatos, customerId, {});
+    if (descartados.length > 0) {
+      // Se devuelven TODOS los motivos, no solo el primero: quien seleccionó ocho partes
+      // necesita saber cuáles quitar de una vez, no ir descubriéndolos de uno en uno.
+      return res.status(409).json({
+        error: descartados[0].motivo,
+        message: descartados[0].mensaje,
+        descartados,
+      });
+    }
+
+    const lineasById = new Map(albaranes.map((a) => [a.id, a.lineas]));
+    const grupos = agruparPorMes(elegibles).map((g) => ({
+      mesLabel: mesNaturalLabel(g.mesKey),
+      albaranes: g.albaranes.map((a) => ({
+        id: a.id, numero: a.numero, fecha: a.fecha, lineas: lineasById.get(a.id),
+      })),
+    }));
+
+    const { facturas, sinSellar } = await emitirRecapitulativas(prisma, {
+      merchantId: req.merchantId!,
+      customerId,
+      currency: merchant.defaultCurrency || 'EUR',
+      taxId: merchant.taxId,
+      grupos,
+    });
+
+    return res.status(201).json({
+      ok: true,
+      customer,
+      facturas,
+      ...(sinSellar.length
+        ? { sinSellar, message: 'Se emitieron las facturas, pero falló el registro VeriFactu de alguna. Revísalo antes de entregarlas.' }
+        : {}),
+    });
+  } catch (err: any) {
+    if (err?.message === 'consolidacion_concurrente') {
+      return res.status(409).json({ error: 'consolidacion_concurrente', message: 'Alguno de los partes se facturó a la vez desde otra sesión. Vuelve a intentarlo.' });
+    }
+    if (err?.message === 'consolidacion_no_disponible') {
+      return res.status(409).json({ error: 'consolidacion_no_disponible', message: 'La factura recapitulativa no está disponible en este modo.' });
+    }
+    console.error('[POST /admin/albaranes/consolidar]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });
