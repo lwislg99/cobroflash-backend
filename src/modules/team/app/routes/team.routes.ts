@@ -9,6 +9,10 @@ import {
   suspendTeamMember,
   resendInvite,
 } from '../../domain/team.service';
+// SCRUM-131: mismo vocabulario de "¿salió el envío?" que los 9 endpoints (SCRUM-126). No es uno
+// de ellos (es un email de invitación interno, no un documento a cliente final), pero la forma
+// del bug era idéntica y no hay motivo para que el contrato difiera.
+import { sendSuccessBody, sendFailureBody } from '../../../../lib/sendOutcome';
 import { getTeamOverview } from '../../domain/teamOverview.service'; // SCRUM-136 (hub Equipo)
 
 const router = Router();
@@ -129,8 +133,12 @@ router.post('/:id/resend', async (req, res) => {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
 
-    await resendInvite(id, req.merchantId);
-    return res.json({ ok: true });
+    // SCRUM-131: `sent` es la única verdad sobre si el email salió (contrato de sendOutcome.ts).
+    // Antes se respondía `{ok:true}` fijo aunque Resend fallara: el admin leía "invitación
+    // reenviada" y el operario no recibía nada. Se mantiene el 200 a propósito — la invitación
+    // SÍ se regeneró y sigue válida 7 días; lo que falló es la ENTREGA.
+    const { sent, reason } = await resendInvite(id, req.merchantId);
+    return res.json(sent ? sendSuccessBody() : sendFailureBody(reason ?? 'email_send_failed'));
   } catch (err: any) {
     console.error('[POST /admin/team/:id/resend]', err);
     if (err.message === 'member_not_found') return res.status(404).json({ error: 'not_found' });

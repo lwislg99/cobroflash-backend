@@ -148,8 +148,15 @@ async function renderTeamView(container) {
             btnResend.onclick = async () => {
               btnResend.disabled = true;
               try {
-                await apiRequest(`/admin/team/${m.id}/resend`, { method: 'POST' });
-                setAlert('success', `Invitación reenviada a ${m.email}`);
+                // SCRUM-131: mirar `sent`, NO `ok`. El backend responde 200 aunque el email no
+                // salga (la invitación se regenera y vive 7 días), así que un `await` sin error
+                // NO significa "entregada" — decirlo era justo la mentira que cierra este ticket.
+                const r = await apiRequest(`/admin/team/${m.id}/resend`, { method: 'POST' });
+                if (r && r.sent === false) {
+                  setAlert('error', r.message || 'No se pudo enviar el email. Puedes reintentarlo.');
+                } else {
+                  setAlert('success', `Invitación reenviada a ${m.email}`);
+                }
               } catch {
                 setAlert('error', 'Error al reenviar la invitación.');
               }
@@ -247,12 +254,19 @@ function showInviteModal(onSuccess, setAlert, prefill = null) {
     btn.textContent = 'Enviando…';
 
     try {
-      await apiRequest('/admin/team', {
+      // SCRUM-131: el alta puede ir bien y el email NO salir. El miembro queda creado y su
+      // invitación es válida 7 días, así que no es un error del alta — pero decir "invitación
+      // enviada" cuando no salió deja al admin esperando a alguien que nunca recibió nada.
+      const creado = await apiRequest('/admin/team', {
         method: 'POST',
         body: JSON.stringify({ name, email, role }),
       });
       overlay.remove();
-      setAlert('success', `Invitación enviada a ${email}`);
+      if (creado && creado.sent === false) {
+        setAlert('error', `${name} está añadido, pero no se pudo enviar el email a ${email}. Usa "Reenviar" para intentarlo de nuevo.`);
+      } else {
+        setAlert('success', `Invitación enviada a ${email}`);
+      }
       await onSuccess();
     } catch (err) {
       // A10.3 (W3): al tope de usuarios, mensaje digno con la oferta Equipo
