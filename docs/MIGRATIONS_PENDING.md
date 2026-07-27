@@ -484,6 +484,36 @@ CREATE TABLE jobs (A13) · maintenance_plans (A15) · audit_log (A11.1) · attac
 
 ---
 
+## 27-jul-2026 — albaran_lineas_facturadas (SCRUM-170) — STAGING ✅ · PROD ⏳
+
+```sql
+CREATE TABLE "albaran_lineas_facturadas" (
+    "id" SERIAL NOT NULL,
+    "merchant_id" INTEGER NOT NULL,
+    "albaran_id" INTEGER NOT NULL,
+    "linea_index" INTEGER NOT NULL,
+    "invoice_id" INTEGER NOT NULL,
+    "cantidad" DECIMAL(12,3) NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "albaran_lineas_facturadas_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX "albaran_lineas_facturadas_merchant_id_albaran_id_idx" ON "albaran_lineas_facturadas"("merchant_id", "albaran_id");
+CREATE INDEX "albaran_lineas_facturadas_merchant_id_invoice_id_idx" ON "albaran_lineas_facturadas"("merchant_id", "invoice_id");
+```
+
+- **Aditiva pura**: tabla nueva + 2 índices. Cero ALTER y cero DROP sobre lo existente, así que
+  el código de hoy no la ve y sigue funcionando igual (nada la lee salvo lo de SCRUM-170).
+- **Sin FK a propósito**, patrón multi-tenant de columna de esta casa (WhatsAppMessage). El
+  barrido de merchants efímeros la cubre porque el modelo QUEDA REGISTRADO en
+  `MODELOS_POR_MERCHANT` (`tests/_merchant-fixture.mjs`) — y va PRIMERO en la lista, antes que
+  albaranes y facturas, o el borrado dejaría filas huérfanas sin que nada fallara (SCRUM-172).
+- Es un LIBRO append-only: sus filas no se editan. Son el rastro de facturas ya emitidas
+  (regla 29) y su suma tiene que seguir cuadrando con las líneas selladas en la huella.
+- Orden seguido: preview enseñado → host comprobado contra la allowlist (`acela.proxy.rlwy.net`)
+  → staging sin otras sesiones (`pg_stat_activity`) → sentinel de un solo uso → `db push` →
+  **verificado leyendo `information_schema`**, no el mensaje del comando → `prisma generate`.
+- PROD: preview idéntico (misma tabla, mismos índices), pendiente del GO del fundador.
+
 ## 6-jul-2026 — merchants.flags (APLICADO ✅)
 
 ```sql
