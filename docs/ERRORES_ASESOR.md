@@ -105,8 +105,19 @@ Los dos eslabones fallan igual y en silencio: el trabajo existe, el mensaje dice
 
 ## PATRÓN COMÚN (lo que de verdad hay que corregir)
 
-Cinco de los seis incidentes son **la misma cosa**: afirmar el estado del mundo sin comprobarlo. Un reporte, un síntoma, una suposición o una ausencia de mención se convirtieron en "esto es así" — y en tickets con prioridad alta, tareas manuales para el fundador y un ticket cerrado en falso.
+**Ocho de los diez incidentes son la misma cosa: afirmar el estado del mundo sin comprobarlo.** Un reporte, un síntoma, una suposición, una ausencia de mención o **la salida de un comando** se convirtieron en "esto es así" — y de ahí salieron tickets con prioridad alta, tareas manuales para el fundador, un ticket cerrado en falso y `main` en rojo mientras el arreglo parecía entregado.
 
-**Lo que funciona como red:** en los seis casos, quien fue a mirar (el carril B, el fundador, una sesión de ejecución) lo corrigió. Los ejecutores verifican porque el código no les deja mentir; el asesor no tiene ese freno y debe imponérselo.
+Son #1, #2, #3, #4, #7, #8, #9 y #10. Los otros dos (#5 y #6) son de otra familia: **actuar sin anticipar** — repartir tres sesiones sobre una BD sin turnos, y proponer los worktrees *después* de que dos sesiones se pisaran. Ahí el fallo no fue creerse algo, fue no haberlo pensado antes.
 
-**Corolario para el fundador:** cuando el asesor afirme algo con seguridad sobre el estado del sistema, es legítimo preguntar *"¿lo has comprobado o lo estás deduciendo?"*. Esa pregunta habría evitado cuatro de estos seis.
+### La evolución importa: el objeto de la confianza se ha movido
+
+- **#1 a #7 — confiar en lo AJENO.** Un reporte del ejecutor, un panel que no se abrió, un síntoma de email, el estado de un ticket en Jira.
+- **#8, #9 y #10 — confiar en lo PROPIO.** Un assert que medía la página equivocada, un script que dijo "actualizado" y partió el párrafo, un `git push` que imprimió `* [new branch]` y no dejó la rama en el remoto.
+
+Los tres últimos son peores de detectar, porque **la herramienta hizo su trabajo correctamente sobre el objeto equivocado** y no hay nada en su salida que lo delate. Un rojo bien dirigido y uno mal dirigido se leen idénticos; un push que salió y uno que no, también.
+
+De ahí la formulación que los cubre a todos: **un mensaje de éxito no es evidencia de éxito.** Hay que preguntarle al sitio donde debería estar el resultado (`ls-remote`, `merge-base`, releer el fichero, abrir la captura), no al proceso que dice haberlo puesto.
+
+**Lo que funciona como red:** en los diez casos alguien fue a mirar y lo corrigió — el carril B, el fundador, o el propio ejecutor un rato después (#8 y #9 se autodetectaron; #10 lo pilló el fundador al abrir el link). Los ejecutores verifican porque el código no les deja mentir; el asesor no tiene ese freno y debe imponérselo. **Y como enseña #10, tener ese freno para el código no basta: el ejecutor también da por hecho lo que sus propias herramientas le dicen.**
+
+**Corolario para el fundador:** cuando alguien —asesor o ejecutor— afirme algo con seguridad sobre el estado del sistema, es legítimo preguntar *"¿lo has comprobado o lo estás deduciendo?"*. Esa pregunta habría evitado seis de estos diez. Para los tres de herramienta propia, la versión útil es otra: *"¿has mirado el resultado, o solo que el comando no diera error?"*.
