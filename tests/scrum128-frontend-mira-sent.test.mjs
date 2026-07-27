@@ -67,11 +67,17 @@ const PENDIENTES = [
   // del censo lo acusaba), así que alguno de estos puede estarlo también. Aquí eso es
   // INOFENSIVO: un pendiente de más solo sobra en la lista; lo que el ratchet impide es que
   // aparezca uno NUEVO. Quien arregle o descarte cada uno, que lo borre de aquí.
+  // Los TRES son la misma forma: `onEmail: () => apiRequest('.../send-email', ...)` — un
+  // callback que se le pasa a un helper de UI y que no mira el resultado en el call-site.
+  // Verificados uno a uno el 27-jul-2026.
   'invoiceDetailView.js:send-email',
-  'jobDetailView.js:send-reminder',
-  'jobDetailView.js:resend-whatsapp',
   'jobDetailView.js:send-email',
   'quotesDetailView.js:send-email',
+  // RETIRADOS (ya comprueban, verificado línea a línea):
+  //  · jobDetailView.js:resend-whatsapp → `if (waSendFailed(d))`  (jobDetailView.js:1210)
+  //  · jobDetailView.js:send-reminder   → `if (d && d.sent === false)` (jobDetailView.js:229)
+  // Los arregló otra sesión mientras se escribía este censo. El ratchet los delató en el CI
+  // en cuanto la lista dejó de cuadrar con el árbol — que es exactamente su trabajo.
 ];
 const PENDIENTES_MAX = PENDIENTES.length;
 
@@ -83,10 +89,17 @@ function censar() {
   const sinComprobar = [];
   const total = [];
   for (const f of ficherosJs()) {
-    const lineas = fs.readFileSync(path.join(JS, f), 'utf8').split('\n');
+    // ⚠️ Se NORMALIZAN los finales de línea antes de nada. La primera versión hacía
+    // `split('\n')` a secas y quitaba comentarios con `/\/\/.*$/`: en un checkout de Windows
+    // (CRLF) cada línea acaba en `\r`, `.` no cruza un retorno de carro y `$` solo casa al
+    // final de la CADENA, así que el reemplazo NO ocurría y los comentarios se contaban como
+    // llamadas. En Linux (LF) sí se quitaban. Resultado: verde en local, ROJO en el CI, con
+    // el ratchet acusando pendientes "ya arreglados" que en realidad eran comentarios.
+    // El censo contaba mal, que es peor que no censar.
+    const lineas = fs.readFileSync(path.join(JS, f), 'utf8').replace(/\r/g, '').split('\n');
     for (let i = 0; i < lineas.length; i++) {
-      // Se ignoran los comentarios: una línea que MENCIONA la ruta no es una llamada.
-      const linea = lineas[i].replace(/\/\/.*$/, '');
+      // Una línea que MENCIONA la ruta en un comentario no es una llamada.
+      const linea = lineas[i].replace(/\/\/.*/, '');
       const ruta = RUTAS_DE_ENVIO.find((r) => linea.includes(r));
       if (!ruta) continue;
       const clave = `${f}:${ruta}`;
