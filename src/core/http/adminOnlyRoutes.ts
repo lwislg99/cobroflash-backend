@@ -73,6 +73,9 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'POST', path: '/admin/charges/999999/confirm-bizum' },
   // Emitir factura desde presupuesto (S1: "facturas emitir ❌", D2 del fundador).
   { method: 'POST', path: '/admin/quotes/999999/invoice' },
+  // SCRUM-178: la vía MANUAL emite igual de fiscal que la de tramos, así que su 403 se
+  // ejerce igual. No hereda el de arriba: es otra ruta y otro `requireRole`.
+  { method: 'POST', path: '/admin/quotes/999999/invoice-manual' },
   // La factura del resto + payment_request. ERA EL OBJETIVO ORIGINAL DE SCRUM-54,
   // que se cerró sobre consolidar-albaranes y dejó esta abierta: aquí su evidencia.
   { method: 'POST', path: '/admin/jobs/999999/collect-rest' },
