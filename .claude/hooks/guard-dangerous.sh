@@ -1,41 +1,22 @@
 #!/usr/bin/env bash
-# guard-dangerous — hook PreToolUse (master Parte AA2, reglas 3 y AA1.8).
-# Bloquea: `prisma migrate dev` · `db push` sin preview confirmado · `--force` · `rm -rf`
-# fuera del workspace. Recibe por stdin el JSON del tool call; salir con código 2 bloquea
-# la ejecución y el mensaje de stderr vuelve a Claude.
+# guard-dangerous — envoltorio del hook PreToolUse (master Parte AA2, reglas 3 y AA1.8).
+#
+# La lógica vive en guard-dangerous.mjs (SCRUM-176). Este fichero solo canaliza stdin.
+# Por qué se movió: el guard tenía que dejar de casar por TEXTO (el mensaje de commit, el
+# campo `description`) y pasar a mirar solo el comando que se ejecuta, descontando las
+# regiones que son carga de texto. Eso pide parsear JSON de verdad y regex con estado, y en
+# bash sale frágil. Como efecto secundario deseado, ahora las reglas son EJECUTABLES DESDE UN
+# TEST en cualquier plataforma (`bash` no está en el PATH de la máquina Windows del fundador,
+# así que un guard escrito en bash no se podía verificar ahí).
+#
+# FAIL-CLOSED: sin node no se puede evaluar la regla, y un guard que no puede evaluar no deja
+# pasar — bloquea y lo dice. Es ruidoso a propósito: un guard mudo se pudre sin que nadie lo note.
 
-input="$(cat)"
+set -u
 
-block() {
-  echo "guard-dangerous BLOQUEADO: $1" >&2
+if ! command -v node >/dev/null 2>&1; then
+  echo "guard-dangerous BLOQUEADO: no encuentro 'node' para evaluar el guard (AA2). Sin evaluacion no hay paso." >&2
   exit 2
-}
-
-# 1) prisma migrate dev — PROHIBIDO siempre (regla 3: Prisma sin TTY)
-if echo "$input" | grep -qE 'prisma[^\"]{0,40}migrate +dev'; then
-  block "'prisma migrate dev' esta prohibido (regla 3). Usa 'prisma migrate diff' (preview) y luego 'db push' autorizado."
 fi
 
-# 2) db push sin preview confirmado — exige sentinel de un solo uso.
-#    Flujo: migrate diff -> ensenar diff al fundador -> con su OK crear .claude/allow-db-push
-#    (touch) -> el siguiente db push pasa y consume el sentinel.
-if echo "$input" | grep -qE 'prisma[^\"]{0,40}db +push'; then
-  sentinel="$(dirname "$0")/../allow-db-push"
-  if [ -f "$sentinel" ]; then
-    rm -f "$sentinel"
-  else
-    block "'db push' sin preview confirmado. Ejecuta el preview (migrate diff), ensena el diff al fundador y, con su OK, crea .claude/allow-db-push (un solo uso) antes de reintentar."
-  fi
-fi
-
-# 3) --force (git push --force, npm --force, prisma --force...)
-if echo "$input" | grep -qE '(^|[^A-Za-z-])--force(-with-lease)?\b'; then
-  block "'--force' esta prohibido por AA2. Si es imprescindible, pide OK explicito al fundador y que lo ejecute el."
-fi
-
-# 4) rm -rf fuera del workspace (ruta absoluta, unidad o ~). Relativo dentro del repo se permite.
-if echo "$input" | grep -qE 'rm +-[a-zA-Z]*[rR][a-zA-Z]*[fF][a-zA-Z]* +("?(/|~|[A-Za-z]:))'; then
-  block "'rm -rf' con ruta absoluta fuera del workspace esta prohibido (AA2). Usa rutas relativas dentro del repo."
-fi
-
-exit 0
+exec node "$(dirname "$0")/guard-dangerous.mjs"
