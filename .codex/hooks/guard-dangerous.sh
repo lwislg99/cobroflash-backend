@@ -1,41 +1,30 @@
 #!/usr/bin/env bash
-# guard-dangerous — hook PreToolUse (master Parte AA2, reglas 3 y AA1.8).
-# Bloquea: `prisma migrate dev` · `db push` sin preview confirmado · `--force` · `rm -rf`
-# fuera del workspace. Recibe por stdin el JSON del tool call; salir con código 2 bloquea
-# la ejecución y el mensaje de stderr vuelve a Claude.
+# guard-dangerous (espejo de Codex) — hook PreToolUse (master Parte AA2, reglas 3 y AA1.8).
+#
+# SCRUM-176: este fichero YA NO tiene copia de las reglas. Delega en la MISMA lógica que usa
+# Claude Code (`.claude/hooks/guard-dangerous.mjs`).
+#
+# Por qué se colapsó en vez de arreglar las dos copias: eran byte a byte idénticas y el máster
+# (AA2) ya avisaba de que "al tocar uno, revisar el espejo" — o sea, la divergencia estaba
+# reconocida como riesgo y confiada a que alguien se acordara. Ya había divergido en algo real:
+# esta copia buscaba el sentinel en `.codex/allow-db-push` mientras su PROPIO mensaje de error
+# mandaba crear `.claude/allow-db-push`. Un Codex que siguiera la instrucción al pie de la letra
+# seguía bloqueado, sin pista de por qué. Con una sola implementación eso no puede repetirse.
+#
+# FAIL-CLOSED: sin node no se puede evaluar la regla → se bloquea y se dice.
 
-input="$(cat)"
+set -u
 
-block() {
-  echo "guard-dangerous BLOQUEADO: $1" >&2
+LOGICA="$(dirname "$0")/../../.claude/hooks/guard-dangerous.mjs"
+
+if [ ! -f "$LOGICA" ]; then
+  echo "guard-dangerous BLOQUEADO: no encuentro la logica del guard en $LOGICA (AA2). Sin evaluacion no hay paso." >&2
   exit 2
-}
-
-# 1) prisma migrate dev — PROHIBIDO siempre (regla 3: Prisma sin TTY)
-if echo "$input" | grep -qE 'prisma[^\"]{0,40}migrate +dev'; then
-  block "'prisma migrate dev' esta prohibido (regla 3). Usa 'prisma migrate diff' (preview) y luego 'db push' autorizado."
 fi
 
-# 2) db push sin preview confirmado — exige sentinel de un solo uso.
-#    Flujo: migrate diff -> ensenar diff al fundador -> con su OK crear .claude/allow-db-push
-#    (touch) -> el siguiente db push pasa y consume el sentinel.
-if echo "$input" | grep -qE 'prisma[^\"]{0,40}db +push'; then
-  sentinel="$(dirname "$0")/../allow-db-push"
-  if [ -f "$sentinel" ]; then
-    rm -f "$sentinel"
-  else
-    block "'db push' sin preview confirmado. Ejecuta el preview (migrate diff), ensena el diff al fundador y, con su OK, crea .claude/allow-db-push (un solo uso) antes de reintentar."
-  fi
+if ! command -v node >/dev/null 2>&1; then
+  echo "guard-dangerous BLOQUEADO: no encuentro 'node' para evaluar el guard (AA2). Sin evaluacion no hay paso." >&2
+  exit 2
 fi
 
-# 3) --force (git push --force, npm --force, prisma --force...)
-if echo "$input" | grep -qE '(^|[^A-Za-z-])--force(-with-lease)?\b'; then
-  block "'--force' esta prohibido por AA2. Si es imprescindible, pide OK explicito al fundador y que lo ejecute el."
-fi
-
-# 4) rm -rf fuera del workspace (ruta absoluta, unidad o ~). Relativo dentro del repo se permite.
-if echo "$input" | grep -qE 'rm +-[a-zA-Z]*[rR][a-zA-Z]*[fF][a-zA-Z]* +("?(/|~|[A-Za-z]:))'; then
-  block "'rm -rf' con ruta absoluta fuera del workspace esta prohibido (AA2). Usa rutas relativas dentro del repo."
-fi
-
-exit 0
+exec node "$LOGICA"
