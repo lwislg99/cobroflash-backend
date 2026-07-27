@@ -149,6 +149,22 @@ git worktree remove ../wt-loquesea                 # ahora sí
 
 **Nota:** es la vuelta de tuerca de la regla de la casa (*todo guard se prueba fallando primero*). Probar en rojo no basta si el rojo se busca con el caso equivocado: **un test que falla con el caso equivocado da falsa tranquilidad**, y en zona fiscal la falsa tranquilidad se sella en una cadena de huellas inmutable. Hermana de #8 —medir la página equivocada con total confianza—, pero sobre el propio mecanismo de verificación.
 
+### 2026-07-27 · #13 — Verifiqué las piezas del job de CI en los dos sentidos y nunca ejecuté el job (lección propia, del ejecutor)
+
+**Qué pasó:** entregué SCRUM-168 (aviso «este PR toca la zona roja») con el detector verificado a conciencia — los dos sentidos con datos reales, el test de deriva doc↔código probado en rojo. El PR salió con el check **en ROJO a los 7 segundos**. El job moría en `git fetch origin "$BASE" --depth=0`, que **no es un flag válido** (`fatal: depth 0 is not a positive number`, exit 128): el paso reventaba ANTES de ejecutar el detector. El job nunca llegó a mirar si había zona roja. Lo detectó el fundador al abrir el PR.
+
+**Por qué:** verifiqué todas las piezas y ninguna la de arriba. El detector es código y lo ejercité; el workflow es **una hipótesis escrita en YAML que nunca se ejecutó**, y su primer intento de correr fue en producción, sobre el PR del propio ticket. Escribí en su cabecera que el job «sale verde siempre» sin haber visto salir verde a nada.
+
+**El segundo error, de concepto:** puse `continue-on-error: true` creyendo que garantizaba el verde. **No hace eso.** Evita que falle el *workflow*; el job sigue apareciendo con su aspa roja en la lista de checks del PR. Confié en un ajuste por lo que sugería su nombre. Y para un aviso eso no es un detalle: **un check rojo es un gate de facto**, y como `package.json` y `YAQU_MASTER.md` son zona roja por definición, habría acabado en rojo casi permanente — justo lo que el ticket existía para evitar.
+
+**El tercero, y el más humillante:** el test que escribí para que `--depth=0` no volviera **falló contra la prosa de su propio comentario** — el literal aparece en la cabecera donde explico que no se use. Es, calcado, el bug de **SCRUM-176**, cometido el mismo día, en el ticket de al lado, por quien acababa de arreglarlo. Arreglado igual: mirar solo las líneas ejecutables.
+
+**Coste:** bajo (un check rojo en un PR sin mergear), pero el patrón no: un aviso que se pinta rojo se acaba desactivando, y entonces no avisa de nada el día que importa.
+
+**Regla derivada — nueva:** **un artefacto de CI no está entregado hasta que se le ha visto ejecutar.** Vale para workflows, hooks y cualquier cosa cuyo entorno de ejecución no sea la máquina donde se escribe. Si no se puede lanzar de verdad, se ejecuta su lógica **paso a paso en local con las mismas variables** antes de empujar — que es lo que hice al arreglarlo, y lo que habría cazado el fallo en dos minutos. Verificar los componentes no es verificar el sistema: **el pegamento también es código, y es donde estaba el fallo.**
+
+**Nota:** es la familia de #8, #9 y #10 (confiar en lo propio), con una vuelta más: allí la herramienta hacía su trabajo sobre el objeto equivocado; aquí directamente **no llegué a ejecutar el objeto**, y el resto de verificaciones —reales y buenas— me dieron la sensación de haberlo hecho.
+
 ---
 
 ## PATRÓN COMÚN (lo que de verdad hay que corregir)

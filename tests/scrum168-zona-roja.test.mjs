@@ -142,5 +142,71 @@ test('SCRUM-168 · el workflow usa el script y la misma marca', () => {
     '🔴 el diff debe ser de tres puntos: con dos, una rama con unos días encima aparece tocando ' +
       'media casa por lo que avanzó main',
   );
-  assert.ok(wf.includes('continue-on-error: true'), '🔴 este aviso no puede tumbar un PR');
+});
+
+// ── 6. El job no puede salir en rojo ─────────────────────────────────────────────────────
+//
+// Aprendido en el propio PR de este ticket: el job salió ROJO y eso lo invalidaba entero. Un
+// check rojo es un gate de facto, y `tests/`, `package.json` y `.github/` son zona roja por
+// definición → rojo casi permanente, justo lo que se evitó con el CI y la tanda gateada.
+// **Si sale rojo, no es un aviso.** Fueron dos errores distintos y cada uno tiene su assert:
+//
+//   · BUG — `git fetch --depth=0` no existe (`fatal: depth 0 is not a positive number`,
+//     exit 128). El paso moría antes de ejecutar el detector: el job nunca llegó a mirar.
+//   · CONCEPTO — `continue-on-error: true` a nivel de job NO evita el rojo; solo evita que
+//     falle el WORKFLOW. El check sigue con su aspa. Confiar en él era confiar en algo que no
+//     hace lo que su nombre sugiere.
+
+// Solo las líneas EJECUTABLES del workflow: fuera los comentarios (YAML y shell).
+//
+// Hace falta por una razón que este mismo fichero se ganó a pulso: la primera versión de estos
+// asserts miraba el YAML entero y salió ROJA porque los literales `--depth=0` y
+// `continue-on-error` aparecen en la CABECERA, en la prosa que explica por qué no se usan.
+// Es, calcado, el bug de SCRUM-176 —un guard que inspecciona texto falla justo en los
+// documentos que describen la acción peligrosa— cometido el mismo día, en el ticket de al
+// lado, por quien acababa de arreglarlo. Documentar mejor la regla no puede costar más rojos.
+const soloCodigo = (yaml) =>
+  yaml
+    .split('\n')
+    .filter((l) => !/^\s*#/.test(l))
+    .join('\n');
+
+test('SCRUM-168 · el job no puede terminar en fallo', () => {
+  const wf = soloCodigo(leer('.github', 'workflows', 'zona-roja.yml'));
+
+  assert.ok(
+    !/--depth=0/.test(wf),
+    '🔴 ha vuelto `--depth=0`. No es un flag válido de git fetch: sale 128 y el paso muere ' +
+      'ANTES de evaluar nada, dejando el check en rojo sin haber mirado si hay zona roja. ' +
+      'Con `fetch-depth: 0` en el checkout la base ya está; no hace falta ningún fetch.',
+  );
+  assert.ok(
+    !/^\s*set -e/m.test(wf) && !/set -euo/.test(wf),
+    '🔴 `set -e` en este job significa que cualquier tropiezo lo pinta de rojo, y un aviso ' +
+      'rojo es un gate. Los fallos se capturan a mano y se cuentan en el resumen.',
+  );
+  assert.ok(
+    /exit 0\s*$/m.test(wf),
+    '🔴 el paso debe terminar en `exit 0` explícito: es lo que garantiza el verde ahora que ' +
+      'no se depende de continue-on-error (que no evitaba el rojo).',
+  );
+  assert.ok(
+    !wf.includes('continue-on-error'),
+    '🔴 `continue-on-error` da falsa tranquilidad: evita que falle el WORKFLOW, no que el job ' +
+      'salga con el aspa roja en el PR. Si vuelve, alguien está confiando en él otra vez.',
+  );
+});
+
+test('SCRUM-168 · si el aviso se rompe, lo dice en vez de callar', () => {
+  const wf = soloCodigo(leer('.github', 'workflows', 'zona-roja.yml'));
+  assert.ok(
+    wf.includes('GITHUB_STEP_SUMMARY'),
+    '🔴 sin resumen, un job verde que reventó por dentro se lee igual que uno que miró y no ' +
+      'encontró nada. Verde no puede significar "no lo he comprobado".',
+  );
+  assert.ok(
+    /no pudo evaluarse/.test(wf),
+    '🔴 falta el camino de "no he podido comprobarlo": es el que impide que salir verde ' +
+      'siempre degenere en un job mudo.',
+  );
 });
