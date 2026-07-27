@@ -347,6 +347,12 @@ model Invoice {
   // suya; regla 29: una emitida jamás se edita ni borra, solo se anula CON su registro).
   vfAnulHash      String?   @map("vf_anul_hash")
   vfAnulTimestamp DateTime? @map("vf_anul_timestamp")
+  // SCRUM-145d: eslabón anterior de la ANULACIÓN, PERSISTIDO. Antes se resolvía por sello al
+  // emitir (el registro inmediatamente anterior), lo que es frágil justo donde no puede serlo:
+  // con dos anulaciones próximas en el tiempo el orden por sello puede empatar o invertirse, y
+  // esto se sella PARA SIEMPRE en una cadena de huellas. Se guarda lo que de verdad se hasheó,
+  // igual que `vfPrevHash` hace con el alta — un dato, no una inferencia.
+  vfAnulPrevHash  String?   @map("vf_anul_prev_hash")
 
   // Recordatorios de pago automáticos
   reminder7SentAt  DateTime? @map("reminder_7_sent_at")  // fecha 1er recordatorio (7 días)

@@ -258,15 +258,14 @@ export async function applyVeriFactuAnulacion(
     timestamp,
   });
 
-  // NOTA (decisión consciente, sin columna nueva): NO se persiste el `prevHash` del registro
-  // de anulación. Al emitir el XML, el eslabón anterior se RESUELVE por sello temporal (el
-  // registro inmediatamente anterior del emisor), que reproduce exactamente el que se hasheó
-  // aquí porque los registros son append-only y sus sellos son crecientes. La alternativa más
-  // robusta —guardarlo— es una 4ª columna aditiva (`vf_anul_prev_hash`) y por tanto un STOP de
-  // schema: queda propuesto, no aplicado.
+  // SCRUM-145d: el eslabón anterior se PERSISTE, no se infiere. Antes se resolvía por sello al
+  // emitir (el registro inmediatamente anterior), y eso es frágil justo donde no puede serlo:
+  // con dos anulaciones próximas en el tiempo el orden por sello puede empatar o invertirse, y
+  // una cadena de huellas se sella PARA SIEMPRE. Se guarda lo que de verdad se hasheó — igual
+  // que `vfPrevHash` con el alta. Un dato, no una inferencia.
   await prismaClient.invoice.update({
     where: { id: invoice.id },
-    data: { vfAnulHash, vfAnulTimestamp: new Date(timestamp) },
+    data: { vfAnulHash, vfAnulPrevHash: prevHash, vfAnulTimestamp: new Date(timestamp) },
   });
 
   console.log(`[verifactu] ANULACION invoice=${invoice.number} hash=${vfAnulHash.slice(0, 16)}…`);
@@ -304,29 +303,27 @@ async function ultimaHuellaDeLaCadena(merchantId: number, prismaClient: typeof d
 }
 
 /**
- * SCRUM-145 — `RegistroAnterior` del registro de ANULACIÓN.
+ * SCRUM-145d — `RegistroAnterior` del registro de ANULACIÓN, por la huella PERSISTIDA.
  *
- * El prev del alta se resuelve por HUELLA (está persistida en `vfPrevHash`); el de la
- * anulación no se guarda (ver la nota en `applyVeriFactuAnulacion`), así que se resuelve por
- * SELLO: el registro inmediatamente anterior del emisor. Reproduce el que se hasheó porque los
- * registros son append-only y sus sellos crecen. Devuelve '' si no hay anterior → PrimerRegistro.
+ * Antes se infería por SELLO (el registro inmediatamente anterior). Eso es frágil justo donde
+ * no puede serlo: con dos anulaciones próximas en el tiempo los sellos pueden empatar o
+ * invertirse, y una cadena de huellas se sella PARA SIEMPRE. Ahora se busca por
+ * `vfAnulPrevHash` — exactamente lo que se hasheó —, igual que el alta hace con `vfPrevHash`.
  *
- * `registros` viene ya ordenado por sello ascendente y contiene AMBOS tipos (altas y
- * anulaciones), porque una anulación puede encadenar con cualquiera de los dos.
+ * `registros` contiene AMBOS tipos (altas y anulaciones): una anulación puede encadenar con
+ * cualquiera de los dos.
  */
 function anulacionPrev(
-  inv: { number: string; vfAnulTimestamp: Date | null },
+  inv: { number: string; vfAnulPrevHash: string | null },
   taxId: string,
-  registros: { sello: number; huella: string; numero: string; fecha: Date }[],
+  registros: { huella: string; numero: string; fecha: Date }[],
 ): string {
-  if (!inv.vfAnulTimestamp) return '';
-  const t = inv.vfAnulTimestamp.getTime();
-  let anterior: { huella: string; numero: string; fecha: Date } | null = null;
-  for (const r of registros) {
-    if (r.sello < t) anterior = r;
-    else break;
-  }
-  if (!anterior) return '';
+  // Vacío = primer registro de la cadena. Es legítimo, no un fallo.
+  if (!inv.vfAnulPrevHash) return '';
+  const anterior = registros.find((r) => r.huella === inv.vfAnulPrevHash);
+  // Huella guardada pero sin registro que la respalde = cadena no acreditable. Se lanza, igual
+  // que en el alta: fingir `PrimerRegistro` mentiría sobre la cadena.
+  if (!anterior) throw new Error(`verifactu_cadena_anulacion_rota:${inv.number}`);
   return `
         <sum1:RegistroAnterior>
           <sum1:IDEmisorFactura>${xmlEscape(taxId)}</sum1:IDEmisorFactura>
@@ -412,7 +409,7 @@ export async function buildVerifactuRegistrosXml(
   // registro de un ejercicio encadena con el último del anterior.
   const conHuella = await prismaClient.invoice.findMany({
     where: { merchantId: params.merchantId, vfHash: { not: null } },
-    select: { number: true, createdAt: true, vfHash: true, vfTimestamp: true, vfAnulHash: true, vfAnulTimestamp: true },
+    select: { number: true, createdAt: true, vfHash: true, vfTimestamp: true, vfAnulHash: true, vfAnulTimestamp: true, vfAnulPrevHash: true },
   });
   const porHuella = new Map(conHuella.map((i) => [i.vfHash as string, i]));
 
