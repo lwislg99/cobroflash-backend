@@ -942,7 +942,15 @@ blockClient.appendChild(descWrapper);
       const lineBase = safeQty * safePrice;
       const lineVat = lineBase * (safeVat / 100);
 
-      line.totalCell.textContent = fmtMoneyEs(lineBase + lineVat, cur);
+      // SCRUM-139 F2: una línea EN BLANCO del cuadernillo se ve en blanco.
+      // Sin esto, las 3 líneas de salida muestran "0,00 €" cada una y el editor parece tener
+      // tres artículos a cero, no tres renglones libres. En blanco = sin concepto y sin precio;
+      // un concepto escrito a 0 € SÍ enseña su 0,00 € porque es un importe deliberado
+      // (una línea regalada, por ejemplo).
+      const enBlanco =
+        !line.conceptInput.value.trim() && !String(line.priceInput.value || "").trim();
+      line.totalCell.textContent = enBlanco ? "—" : fmtMoneyEs(lineBase + lineVat, cur);
+      line.row.classList.toggle("quote-line--vacia", enBlanco);
 
       base += lineBase;
       vatTotal += lineVat;
@@ -1965,7 +1973,38 @@ if (Number.isFinite(n) && n >= 0) {
     renderPreview();
   }
 
-  addLine();
+  /**
+   * SCRUM-139 F2 · EL CUADERNILLO.
+   *
+   * Antes se dibujaba UNA línea y un botón "+ Añadir". El problema no es de pulsaciones, es
+   * psicológico (observación del fundador): un cuadernillo con líneas visibles TE DICE CUÁNTO
+   * ESPACIO TIENES; una hoja en blanco con "+ Añadir" te obliga a decidir cuántas líneas
+   * necesitas ANTES de saberlo. Varias líneas esperando son una invitación; un botón es un trámite.
+   *
+   * Este número es DELIBERADO y fácil de cambiar: son las líneas que se ven sin hacer scroll y
+   * que sugieren "aquí caben varias cosas" sin parecer un formulario largo. El fundador acotó
+   * 2-3; se elige 3 y se mide al cerrar la fase (si empuja el total demasiado abajo en móvil,
+   * baja a 2 — es una línea de código).
+   *
+   * NO se dibuja al restaurar un BORRADOR: ahí el editor no está en blanco, y añadir vacías
+   * encima de lo que el usuario ya escribió sería ruido, no invitación.
+   */
+  const LINEAS_CUADERNILLO = 3;
+
+  function dibujarCuadernillo() {
+    for (let i = 0; i < LINEAS_CUADERNILLO; i++) addLine();
+  }
+
+  /**
+   * ¿El editor sigue en blanco? (ninguna línea tiene concepto). Sustituye al viejo
+   * "si hay UNA fila y está vacía": con el cuadernillo hay varias, y aquella comprobación
+   * habría dejado las 3 vacías POR DELANTE de las líneas de la plantilla o de la IA.
+   */
+  function editorEnBlanco() {
+    return lines.every((l) => !l.conceptInput.value.trim());
+  }
+
+  dibujarCuadernillo();
 
   // SCRUM-133: añadir + dejar el cursor DENTRO del concepto de la línea nueva, para poder
   // seguir tecleando sin tocar el ratón. `preventScroll` + `scrollIntoView({block:'nearest'})`:
@@ -1989,14 +2028,12 @@ if (Number.isFinite(n) && n >= 0) {
     if (typeof openAiSuggestModal === 'function') {
       openAiSuggestModal(function (suggestedLines, meta) {
         if (meta && meta.voiceUsed) quoteFormCreatedVia = 'voice'; // VZ-3
-        // Limpiar la fila vacía si es la única y no tiene datos
-        const existingRows = linesBody.querySelectorAll('.quote-line');
-        if (existingRows.length === 1) {
-          const firstConcept = existingRows[0].querySelector('input[type=text]');
-          if (firstConcept && !firstConcept.value.trim()) {
-            linesBody.innerHTML = '';
-            lines = [];
-          }
+        // SCRUM-139 F2: se vacía si el editor está EN BLANCO (antes: "si hay una sola fila
+        // vacía"). Con el cuadernillo hay 3 vacías, así que la comprobación vieja las habría
+        // dejado por delante de las líneas que sugiere la IA.
+        if (editorEnBlanco()) {
+          linesBody.innerHTML = '';
+          lines = [];
         }
         suggestedLines.forEach(function (l) { addLine(l); });
       });
@@ -2012,7 +2049,7 @@ if (Number.isFinite(n) && n >= 0) {
 
     linesBody.innerHTML = "";
     lines = [];
-    addLine();
+    dibujarCuadernillo();   // SCRUM-139 F2: "empezar de cero" devuelve el cuadernillo, no una línea
     clearDraft();
 
     setAlert(null, "");
@@ -2069,15 +2106,15 @@ if (Number.isFinite(n) && n >= 0) {
         <span style="font-size:12px;color:var(--green-600);font-weight:600">Usar →</span>
       `;
       btn.onclick = function () {
-        // Vaciar líneas actuales vacías
-        const existingRows = linesBody.querySelectorAll('.quote-line');
-        if (existingRows.length === 1) {
-          const firstConcept = existingRows[0].querySelector('input[type=text]');
-          if (firstConcept && !firstConcept.value.trim()) {
-            linesBody.innerHTML = '';
-            lines = [];
-          }
-        } else {
+        // SCRUM-139 F2: se vacía si el editor está EN BLANCO; si el usuario ya escribió algo,
+        // la plantilla se AÑADE debajo.
+        //
+        // Antes había un `else` que borraba TODO en cuanto hubiera 2+ filas: cargar una
+        // plantilla destruía en silencio las líneas ya escritas. Con el cuadernillo ese camino
+        // pasaría a dispararse SIEMPRE (ahora hay 3 filas de salida), así que había que tocarlo
+        // igualmente. Se corrige hacia lo que la propia pantalla promete: el modal dice "cargar
+        // sus líneas en el presupuesto actual" y el aviso de éxito dice "N líneas añadidas".
+        if (editorEnBlanco()) {
           linesBody.innerHTML = '';
           lines = [];
         }

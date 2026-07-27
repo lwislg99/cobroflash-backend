@@ -1046,6 +1046,56 @@ html, body { overflow-x: clip; }
 }
 .quote-line.dragging { opacity: .5; }
 
+/* SCRUM-139 F2 · RENGLÓN EN BLANCO DEL CUADERNILLO.
+   El editor abre con varias líneas dibujadas (LINEAS_CUADERNILLO): son una INVITACIÓN, no
+   tres artículos pendientes. Las que aún no tienen concepto ni precio se apagan — sin sombra,
+   borde discontinuo — para que la vista caiga en la que se está rellenando. Ningún token
+   nuevo: el mismo --border y la sombra Reposo retirada. Y NO se oculta ningún campo ni se
+   reduce el target: se puede escribir directamente en cualquiera de ellas. */
+.quote-line--vacia {
+  box-shadow: none;
+  border-color: var(--neutral-100, #eef1ee);
+}
+/* Se probó con borde DISCONTINUO y la captura lo desmintió: "+ Añadir línea" ya es
+   discontinuo (SCRUM-133), así que los renglones vacíos y el botón se volvían cuatro cajas
+   iguales y no se distinguía cuál escribe y cuál crea. El discontinuo queda reservado para
+   la ACCIÓN; el renglón vacío se apaga bajando el borde, no cambiándolo de idioma. */
+.quote-line--vacia .quote-line__label { opacity: .75; }
+/* Su total es "—", no "0,00 €": un renglón vacío no promete un importe. */
+.quote-line--vacia .quote-line__total { color: var(--muted, #6b756f); font-weight: 600; }
+/* En cuanto se entra a escribir deja de estar apagada, sin esperar al primer carácter. */
+.quote-line--vacia:focus-within {
+  border-color: var(--border, #e7e9e5);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+}
+
+/* RENGLÓN EN BLANCO = SOLO EL RENGLÓN (móvil).
+   MEDIDO, no supuesto: con la tarjeta completa cada línea ocupa ~400 px en un móvil de
+   390 px, así que tres renglones vacíos empujaban el "+ Añadir línea" a 1.258 px — tres
+   pantallas de scroll para ver un cuadernillo VACÍO. Un cuadernillo de verdad tiene finos
+   los renglones en blanco: cantidad, precio, margen, IVA y total no significan nada hasta
+   que hay un concepto. Aparecen al enfocar la línea (:focus-within) o en cuanto se escribe
+   (recalcTotals retira la clase), así que no se esconde nada que haga falta: el tabulador
+   recorre los conceptos y entra en los números al posarse en uno.
+   Solo por debajo de 768 px: a partir de ahí la tarjeta ya es UNA fila y no sobra alto. */
+@media (max-width: 767px) {
+  .quote-line--vacia:not(:focus-within) > .quote-line__qty,
+  .quote-line--vacia:not(:focus-within) > .quote-line__price,
+  .quote-line--vacia:not(:focus-within) > .quote-line__markup,
+  .quote-line--vacia:not(:focus-within) > .quote-line__vat,
+  .quote-line--vacia:not(:focus-within) > .quote-line__totalwrap,
+  .quote-line--vacia:not(:focus-within) > .quote-line__actions { display: none; }
+
+  /* Y sin repetir "CONCEPTO" tres veces sobre tres renglones vacíos: el marcador de posición
+     ("Concepto / servicio") ya lo dice, y un cuadernillo no lleva un encabezado por renglón.
+     La etiqueta vuelve en cuanto la línea se enfoca o se escribe — nunca desaparece de una
+     línea con contenido. Solo en móvil: en la rejilla de ≥768 px la etiqueta es la cabecera
+     de su columna y quitarla rompería la lectura vertical. */
+  .quote-line--vacia:not(:focus-within) > .quote-line__concept > .quote-line__label {
+    display: none;
+  }
+}
+
 .quote-line__field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 /* El concepto es el PROTAGONISTA: ancho completo y primero, como en un cuadernillo. */
 .quote-line__concept { grid-column: 1 / -1; }
