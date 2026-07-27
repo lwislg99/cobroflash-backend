@@ -80,6 +80,14 @@
 **Coste:** casi se abre un 🔴 falso sobre un método de cobro (el tipo de alarma que reordena prioridades). Contenido antes de publicarse; el ticket real que salió (SCRUM-150) es un Medium de UI, no un bloqueo de cobro.
 **Regla derivada — nueva:** **un assert sobre la URL equivocada es verde o rojo con la misma confianza.** La medición no valida su propio objeto: antes de fiarse de un resultado automático sobre una pantalla, hay que confirmar que es LA pantalla del flujo (una captura, el HTML, o un assert de identidad del tipo "esta página contiene el título esperado"). Aplica a todo el trabajo de guards de esta semana: un test puede estar midiendo el sitio equivocado con total seguridad.
 
+### 2026-07-24 · #9 — Escribí en el runbook con un script y no releí el resultado (lección propia, del ejecutor)
+**Qué pasó:** al añadir al runbook de QA el apunte del error `P1013` del `db push`, lo inserté con un script en vez de a mano. El texto llevaba un retorno de carro escapado; el script lo **interpretó** y partió el párrafo en tres trozos sin sentido. Se commiteó, se mergeó y **quedó así en `main`**.
+**Por qué:** confundí *"el comando terminó sin error"* con *"el fichero quedó bien"*. El script imprimió `runbook actualizado` y di el trabajo por hecho — justo el hueco entre **ejecutar** y **verificar el efecto**.
+**Quién lo detectó:** yo mismo, dos tickets después, al ir a añadir OTRO apunte al mismo bloque y encontrarme el párrafo roto.
+**Coste:** bajo en sí (documentación ilegible unas horas), pero el patrón no lo es: es el mismo con el que se cuela una migración mal escrita o un guard que no comprueba nada.
+**Regla derivada — nueva:** **una edición hecha con herramienta no está hecha hasta que se relee el resultado.** Vale para scripts de texto, `sed`/`python` sobre ficheros y cualquier generación automática: la salida del comando **no es evidencia del contenido**. Es la misma R1 que se exige a los reportes ajenos, aplicada a los artefactos propios.
+**Nota:** hermana del incidente #8 (medir la página equivocada con total confianza). En los dos, la herramienta hizo su trabajo **correctamente sobre el objeto equivocado** — y no hay nada en su salida que lo delate.
+
 ---
 
 ## PATRÓN COMÚN (lo que de verdad hay que corregir)

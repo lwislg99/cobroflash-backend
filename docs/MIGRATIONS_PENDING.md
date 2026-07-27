@@ -11,6 +11,24 @@
 > **NO uses `migrate deploy`/`migrate dev`** — aplicaría un schema viejo (entorno nuevo) o
 > propondría un reset. `db push` es el ÚNICO mecanismo. (Volver a migrate = SCRUM-40 opción A.)
 
+## SCRUM-145d · `invoices.vf_anul_prev_hash` (eslabon de la anulacion) — APLICADO en staging y prod (2026-07-24)
+
+```sql
+ALTER TABLE "invoices" ADD COLUMN     "vf_anul_prev_hash" TEXT;
+```
+
+- **Preview identico contra las dos BD** antes de aplicar: 1 ADD COLUMN nullable, 0 DROPs,
+  0 ALTER de columnas existentes. Host-check en cada push (`acela` = staging, `autorack` = prod)
+  y `git diff origin/main -- prisma/schema.prisma` VACIO antes de cada uno.
+- **Para que:** el `RegistroAnterior` del registro de ANULACION se resolvia por SELLO (el
+  registro inmediatamente anterior). Es fragil justo donde no puede serlo: con dos anulaciones
+  proximas los sellos pueden empatar o invertirse, y una cadena de huellas se sella PARA
+  SIEMPRE. Ahora se guarda la huella que de verdad se hasheo — un dato, no una inferencia.
+- **Verificado tras cada push:** la columna existe en `information_schema` y una lectura real
+  de `invoices` la devuelve (55 filas en prod). Cliente Prisma regenerado DESPUES de cada push.
+- **Inerte:** ninguna factura tiene aun registro de anulacion (no existe el disparador de la
+  FSM — ver SCRUM-153); todo sigue tras `INVOICING_ES_ENABLED` OFF.
+
 ## SCRUM-145 · `invoices.vf_timestamp` + `vf_anul_hash` + `vf_anul_timestamp` (VeriFactu) — ✅ APLICADO en prod (2026-07-24)
 
 ```sql
