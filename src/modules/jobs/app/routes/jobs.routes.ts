@@ -4,6 +4,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: dinero = admin)
+import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-147: capacidad, no literal
 import { canTransition, estadoCobroFor, JOB_TIPOS_OPERACION } from '../../domain/job.service';
 import { recordAudit } from '../../../system/audit.service'; // SCRUM-66: traza de tipo_operacion_elegido
 import { resolveBillingPlan, distributeStageAmounts } from '../../../quotes/domain/billingPlan';
@@ -192,8 +193,13 @@ router.get('/', async (req, res) => {
     // SCRUM-23 (S1 roles · S3 filtrar en BACKEND): el técnico solo ve los Trabajos que
     // originó (operarioId = él; autoría inmutable de SCRUM-22). Admin/owner: sin cambio.
     // El filtro va en la QUERY, jamás ocultando en front datos ya enviados.
+    // SCRUM-147: se pregunta por CAPACIDAD, no por igualdad a 'tecnico'. Era una DENYLIST y por
+    // tanto fail-OPEN: cualquier rol que no fuera exactamente 'tecnico' se saltaba el filtro y
+    // veía TODOS los Trabajos del merchant. `seesOnlyOwnJobs` complementa un allowlist de
+    // 'admin', así que un rol desconocido queda RESTRINGIDO — misma lección que SCRUM-55 dejó
+    // escrita en consolidar-albaranes (:470) y que aquí no se había aplicado.
     const where: { merchantId: number; operarioId?: number | null } = { merchantId: req.merchantId };
-    if (req.userRole === 'tecnico') where.operarioId = req.teamMemberId;
+    if (seesOnlyOwnJobs(req.userRole)) where.operarioId = req.teamMemberId;
     const jobs = await prisma.job.findMany({
       where,
       orderBy: [{ scheduledAt: 'asc' }, { id: 'desc' }],
@@ -218,7 +224,8 @@ router.get('/:id', async (req, res) => {
     if (!job) return res.status(404).json({ error: 'not_found' });
     // SCRUM-23: row-level por operario dentro del MISMO merchant. Un técnico no abre por
     // URL el Trabajo de otro → 404 (mismo patrón que la tenancy: no filtra existencia).
-    if (req.userRole === 'tecnico' && job.operarioId !== req.teamMemberId) {
+    // SCRUM-147: por capacidad (ver el comentario de GET /admin/jobs y roleCapabilities.ts).
+    if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
       return res.status(404).json({ error: 'not_found' });
     }
     return res.json(await serializeJobDetail(job));

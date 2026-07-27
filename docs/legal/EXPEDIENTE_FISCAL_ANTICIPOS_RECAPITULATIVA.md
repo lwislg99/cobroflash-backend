@@ -360,6 +360,79 @@ dictamen del asesor para bloquear esta decisión de producto** — solo confirma
 se implemente la liberación (fuera de V1), la nueva factura deberá seguir agrupando por las
 fechas originales de los albaranes.
 
+### P11 · Factura completa a cliente SIN NIF: ¿marcarla «sin identificar destinatario» o emitirla como simplificada (F2)?
+
+> *Nuestro cliente-tipo es un particular que muchas veces no da NIF. Hoy toda factura sale
+> como **F1**. ¿Se puede emitir F1 sin identificar al destinatario marcándola como tal, o ese
+> caso obliga a emitir **F2 simplificada**?*
+
+**Articulado:** art. **6.1.d) RD 1619/2012** (contenido de la factura completa: identificación
+del destinatario) frente a los arts. **4 y 7 RD 1619/2012** (supuestos y contenido de la
+factura simplificada; art. 7.2 y 7.3 para la simplificada *cualificada*, la que sí identifica
+al destinatario). Enlaza con **P6**, que ya dejó abierto el umbral de 3.000 € del art. 4.1.
+
+**Por qué la pregunta es técnica además de fiscal:** el esquema oficial de VeriFactu
+(`SuministroInformacion.xsd`) **prevé expresamente las dos salidas**, y sus nombres citan el
+articulado:
+
+- `FacturaSinIdentifDestinatarioArt61d` — factura **completa** SIN identificación del
+  destinatario, marcada como tal.
+- `FacturaSimplificadaArt7273` — factura **simplificada** cualificada.
+
+Es decir: la AEAT contempla en el propio registro que exista una F1 sin destinatario
+identificado. Lo que el esquema **no** dice es *cuándo* es lícito usar cada una — eso es el
+Reglamento, y es lo que necesitamos confirmado.
+
+**Estado en el producto (verificado, SCRUM-145):** hoy el registro **omite** el bloque
+`Destinatarios` cuando el cliente no tiene NIF (es válido contra el esquema: el bloque es
+`minOccurs="0"`), y **no** se marca ninguno de los dos indicadores — a propósito, porque
+elegirlos es una calificación fiscal que no se inventa en código. El emisor está preparado
+para cualquiera de las dos salidas.
+
+**Lo que necesitamos del asesor (decide alcance de producto):**
+
+1. ¿El caso «particular sin NIF» debe emitirse como **F2 simplificada** (y entonces hay que
+   comprobar los límites del art. 4: 400 € / 3.000 € según actividad — ver P6), o basta con
+   **F1 marcada** `FacturaSinIdentifDestinatarioArt61d`?
+2. Si la respuesta es F2: ¿qué pasa cuando el importe **supera** el límite del art. 4? Ahí sí
+   habría que **exigir el NIF en el producto** (gap de DATOS: hoy el alta de cliente no lo
+   pide obligatoriamente).
+
+**Impacto:** alto en producto. De esta respuesta depende si hay que pedir NIF al cliente final
+en el flujo de cobro (fricción en el paso más delicado) o no.
+
+### P12 · Nuestras rectificativas (R1): ¿«por sustitución» (S) o «por diferencias» (I)?
+
+> *El registro de VeriFactu pide `TipoRectificativa` con dos valores posibles. ¿Cuál
+> corresponde a cómo rectificamos hoy?*
+
+**Articulado:** art. **15 RD 1619/2012** (facturas rectificativas) y art. **80 LIVA** (supuestos
+de modificación de la base imponible). El Reglamento exige que la rectificativa refleje los
+datos rectificados, pero la elección entre **sustitución** y **diferencias** determina *qué
+importes* se consignan.
+
+**Consecuencia técnica directa (no es cosmética):** el esquema oficial define
+`TipoRectificativa` (`S` = por sustitución · `I` = por diferencias) y, ligado a él,
+`ImporteRectificacion` — de modo que la elección cambia **qué se remite a la AEAT**, no solo
+una etiqueta.
+
+**Estado en el producto (verificado, SCRUM-145):** hoy la R1 se emite con
+`FacturasRectificadas` (identificando la factura original) y con el **importe total de la
+rectificativa**, y **no** se emite `TipoRectificativa` ni `ImporteRectificacion` — ambos son
+`minOccurs="0"` en el esquema, así que el registro es estructuralmente válido, pero está
+**incompleto en su calificación fiscal** mientras no haya dictamen.
+
+**Lo que necesitamos del asesor:**
+
+1. ¿Nuestras R1 (que hoy consignan el total corregido, no el delta) son **por sustitución**?
+2. Si lo son: ¿qué debe llevar exactamente `ImporteRectificacion` (base y cuota **rectificadas**,
+   es decir las de la factura original que se sustituye)?
+3. ¿Cambia la respuesta según el motivo (error de datos vs. modificación de base imponible del
+   art. 80 LIVA — impago, devolución, descuento posterior)?
+
+**Impacto:** medio. No bloquea la emisión local, pero **sí** bloquea que las rectificativas se
+puedan remitir correctamente cuando se active la remisión (SCRUM-146).
+
 ---
 
 ## Resumen para llevar a la cita — qué confirmar/corregir
@@ -376,6 +449,8 @@ fechas originales de los albaranes.
 | P8 | Albarán valorado sin validez fiscal | Confirmar el criterio ya aplicado (SCRUM-65) | Alta (sin controversia esperada) |
 | P9 | TipoFactura VeriFactu | F1 estándar; el resto es técnico (SIF-1), no fiscal puro | Alta en el encaje legal |
 | P10 | Liberación tras R1 | Decisión de producto, no fiscal; solo la re-agrupación por fecha original es obligatoria si se liberase | Alta |
+| P11 | F1 sin NIF del destinatario | El esquema prevé AMBAS salidas (`FacturaSinIdentifDestinatarioArt61d` / `FacturaSimplificadaArt7273`); hoy no se marca ninguna. Falta saber cuál procede y si obliga a pedir NIF por encima del límite del art. 4 | **Baja — decide alcance de producto** (ver P6) |
+| P12 | `TipoRectificativa` S/I de las R1 | Nuestras R1 consignan el total corregido → apunta a «por sustitución», pendiente de confirmar junto con qué lleva `ImporteRectificacion` | Media — el encaje parece claro, la forma exacta no |
 
 **La pregunta con mayor impacto económico/de producto es P6 (umbral de 3.000 € del art. 4.1
 RD 1619/2012)** — si el asesor confirma que el vertical de YaQu encaja, cambia

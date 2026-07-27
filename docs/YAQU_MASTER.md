@@ -472,6 +472,7 @@ Alcance: (a) foto de la avería adjunta a QuoteRequest (desde bot y portal); (b)
 | Marcar pagado / deshacer | ✅ | ❌ |
 | Configuración, datos fiscales, Connect, flags · billing/plan · equipo · exports | ✅ | ❌ |
 Ruta nueva = declara rol mínimo; default Admin-only. **Lo hace cumplir un test, no la disciplina** (SCRUM-55).
+> **✅ SCRUM-147 (27-jul-2026) — el rol se pregunta por CAPACIDAD, y lo desconocido cae al lado seguro:** nace del recon de SCRUM-137 (rol "comercial"). SCRUM-55 convirtió una denylist de rol en allowlist y dejó la lección escrita en `jobs.routes.ts:470`… **tres líneas más abajo de otras DOS que se quedaron sin convertir**: el filtro row-level de SCRUM-23 (`if (req.userRole === 'tecnico') where.operarioId = …`, lista y detalle de Trabajos). Al ser denylist, **cualquier rol que no fuera exactamente `'tecnico'` se saltaba el filtro** y vería TODOS los Trabajos del merchant — el rol pensado para tener los MISMOS permisos que el operario habría tenido MÁS. No mordía porque solo hay dos roles; habría explotado con el primero que se añadiera, que es justo el que lo destapó. **Fix:** `src/core/http/roleCapabilities.ts` — `seesAllJobs` es **allowlist de `'admin'`**, así que un rol desconocido (o ausente) queda RESTRINGIDO. **Con una asimetría deliberada y documentada:** en las MÉTRICAS (`isFieldMember`) el conjunto cerrado es el EXCLUIDO (admin/propietario), de modo que un rol nuevo **aparece** en el equipo de campo en vez de desaparecer — blindarlo en la misma dirección que el gate habría creado la otra mitad del problema. **Además:** `team.routes.ts` **valida** el rol (400 `invalid_role`) en vez de **coaccionarlo en silencio** — antes cualquier valor ≠ `'admin'` se reescribía a `'tecnico'`, así que pedir `role:'comercial'` creaba un técnico sin avisar (y hacía imposible crear el rol por API). **Tests:** 6 puros sin gate, con un guard ESTRUCTURAL que falla si vuelve a aparecer `req.userRole === 'tecnico'` en el fuente — el arreglo es una CLASE, no dos líneas. Probado en rojo por partida doble: reintroduciendo la denylist (el guard la nombra con fichero y línea) e invirtiendo `seesAllJobs` a denylist (cae el test del rol desconocido). **Desbloquea SCRUM-137**, que queda pendiente de decidir rol-vs-puesto.
 > **✅ SCRUM-55 (22-jul-2026, absorbe SCRUM-54):** hasta hoy esta regla no la hacía cumplir NADA — 124 rutas
 > bajo `/admin`, 79 llegaban a un Operario sin declaración de rol, y la 125 iba a nacer abierta igual. Ahora
 > un test de enumeración recorre TODAS las rutas montadas bajo `/admin` y **falla si alguna no declara rol**:
@@ -929,6 +930,7 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 > abierta**): es defensa PREVENTIVA — el día que se active Stripe, impide que el primer cobro con tarjeta
 > de un merchant sin Connect caiga en la cuenta de plataforma. La protección que se agradece tarde.
 >
+> **✅ SCRUM-132 · el "IVA por defecto" PISABA el IVA real de las líneas (27-jul-2026, front):** el IVA de una línea llega en **dos unidades** según su origen — `vat` en PORCENTAJE (21: borrador de localStorage, autocompletado de producto) y `tax` en FRACCIÓN (0,21: plantillas y líneas de la IA, contrato del backend) — y `addLine` **solo leía `vat`**: en las otras tres rutas `initial.vat` era `undefined`, caía al `else` y el general **pisaba** el IVA de la línea. Efecto visible: guardar una plantilla al 10 % y reabrirla la devolvía al 21 %. **Fix contenido en el RECEPTOR** (`addLine` normaliza las dos unidades) para no tocar los call-sites, que eran zona de SCRUM-134 — coordinación explícita: 134 primero (estructura, mueve esas líneas), 132 encima (conversión de dato). **El recon corrigió la premisa del ticket** (que decía que el general "no siembra las líneas nuevas"): el `+ Añadir línea` manual SÍ sembraba; el defecto real era el opuesto. Y **no es un residuo inocuo**: `vat_default` entra en el repo el 26-nov-2025, ocho meses antes del modelo multi-IVA de SCRUM-65 — es diseño mono-IVA sin retirar, no un modelo rival. **El bug NO era latente pese a `INVOICING_ES_ENABLED=OFF`**: el flag protege el *documento* fiscal, no el *dato* — el IVA corrupto se congela al crear el presupuesto y viaja `Quote.lines` → `Invoice.lines` al aceptar, alimentando el 303 y la cuota de la huella el día que se encienda. **Decisión del fundador:** NO retirar el campo (tiene consumidor legítimo: quien factura casi todo al 21 %); el general **siembra, nunca pisa**. De paso: `tax: (l.tax || 0)` en la carga de plantilla colapsaba "sin IVA especificado" en "0 %" — y el 0 % es un tipo LEGÍTIMO desde SCRUM-65 (21/10/4/0), así que ambos casos dejaban de distinguirse; y la conversión cruda `String(v * 100)` escribía `21.000000000000004` en el campo (centralizada en `fractionToPercent`). **Tests:** guard ESTRUCTURAL (`tests/scrum132-iva-unidad.test.mjs`, 4 asserts) — `quotesView.js` es vanilla de navegador y no se puede importar en node, así que verifica que la FORMA del arreglo sigue ahí, no que el navegador la ejecute; límite escrito en el propio fichero. Los 4 probados en rojo inyectando la regresión real uno a uno, y **uno de ellos se corrigió al probarlo**: el regex usaba `\w+` y no cazaba `String(initial.tax * 100)` (con punto) — pasaba en verde sobre la forma más probable de reintroducir el bug.
 > **✅ SCRUM-134 · seleccionar una plantilla abría OTRA: off-by-one de estado (24-jul-2026, front):**
 > «Usar plantilla» (`templatesView.js`) navegaba ANTES de escribir la plantilla en `sessionStorage`, y
 > el lector corre SÍNCRONO dentro de esa navegación (`renderQuotesView` no es async → `loadInitialData`
@@ -1004,6 +1006,39 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 > **SCRUM-58**): la lista se quedaba esperando por un adorno. Verificado con click-through real (servidor
 > local contra la BD de staging) como **admin y como OPERARIO**, con el gasto del operario guardado con su
 > `teamMemberId`. Sin schema; no toca cálculo de margen ni nada fiscal.
+>
+> **✅ SCRUM-136 · un solo hub de Equipo: el operario es un ROL, no un apartado (24-jul-2026,
+> equipo/UX):** el ticket decía que Equipo y Operarios estaban partidos **en dos**. Eran **TRES**: el
+> mismo roster se listaba en `teamView` (alta/roles/estado, `GET /admin/team`), en `operariosView`
+> (dinero por operario, `GET /admin/metrics/operarios`) y en el panel "Rendimiento del equipo" del
+> **Inicio** (presupuestos del mes, `GET /admin/metrics/team`). Las tres **sintetizaban por separado la
+> fila del propietario** — porque el propietario **no es un TeamMember** (`teamMemberId null` =
+> propietario en `authMiddleware`) — y las tres escribían el rol distinto para el MISMO valor de schema
+> (`tecnico`): dos decían "Operario" y el Inicio decía "Técnico". **(1)** `GET /admin/team` devuelve
+> ahora el roster **con su resumen** por miembro (presupuestos del mes, trabajos abiertos, pendiente),
+> vía `teamOverview.service.ts`. Se **enriquece la ruta existente** en vez de abrir
+> `/admin/team/overview`: ya es admin-only y ya es "el equipo", así que una ruta nueva sería superficie
+> que declarar en el ratchet (SCRUM-113) para el mismo dato, y dos peticiones donde basta una. Aditivo:
+> mismo array, mismos campos, solo se **añade** `resumen`. **(2)** `teamView` pasa de tabla a **lista de
+> cards** (AB3): con 5 cifras nuevas por miembro una tabla pide 9 columnas que en móvil se apilan en una
+> torre ilegible, y la card es el patrón de la vista que absorbe. **(3)** "Operarios" **sale del nav y
+> del index**; el `case 'operarios'` de `app.js` se conserva como **redirección** a `team` (hay
+> marcadores y enlaces vivos, y el guard de rol es el mismo); `operariosView.js` se borra. **(4)**
+> Vocabulario **único**: "Operario" también en el Inicio, y ese panel deja de ser un callejón —enlaza al
+> hub— pero **se queda**, porque un vistazo en el dashboard es otro trabajo distinto de gestionar el
+> equipo. **DOS VENTANAS, ETIQUETADAS:** el resumen mezcla presupuestos del **MES** (por
+> `Quote.teamMemberId`, quien lo creó) con trabajos del **HISTÓRICO** (por `Job.operarioId`, quien lo
+> originó). Deliberado —son preguntas distintas y ya se agregaban así—, y la UI **escribe la ventana al
+> lado del número** ("este mes" / "de N en total") para no mentir; hay test que lo congela. **HALLAZGO
+> (del rojo): `/admin/team` tiene GATE DOBLE** — quitar `router.use(requireRole('admin'))` NO abre la
+> ruta porque `app.ts` ya la monta con `requireRole`; hubo que quitar **los dos** para ver el test
+> fallar. No se retira ninguno (redundancia barata que sobrevive a reorganizar `app.ts`) y queda escrito
+> en el código para que nadie dé por bueno un verde tras tocar uno solo. **PERMISOS:** lo que pedía el
+> ticket ("solo propietario y admins gestionan miembros") **ya se cumplía**; ahora está congelado por
+> test — y ahora importa más, porque la respuesta lleva el **dinero pendiente de cada compañero**, no
+> solo nombres. **FUERA:** el detalle por miembro (click → sus presupuestos/trabajos) — hoy ni
+> `/admin/quotes` ni `/admin/jobs` aceptan filtro por `teamMemberId`, así que es superficie nueva en dos
+> módulos más → ticket aparte. **Sin schema:** `role` es `String`, no enum de Prisma.
 > **🟡 SCRUM-145 (144a) · payload VeriFactu conforme a los XSD — PARCIAL (24-jul-2026, fiscal):**
 > nace del recon de SCRUM-144, que **corrigió una premisa**: el «Modelo C» tal como se planteó **no
 > existe** — la AEAT **no tiene canal de subida de XML** en la Sede (la remisión del art. 15 RRSIF es
