@@ -12,6 +12,15 @@ import crypto from 'crypto';
 import { prisma as defaultPrisma } from '../../../core/db/prisma';
 import { calcVatBreakdown, calcVatCuotaTotal } from './vat.service';
 import { isReceiptNumber } from './invoiceNumber.service';
+import { config } from '../../../core/config/env';
+
+// SCRUM-145: namespaces oficiales de los XSD de la AEAT (los ficheros están en
+// `src/modules/fiscal/verifactu/xsd/`). Los `targetNamespace` son la URL del esquema; NO son
+// endpoints y no se resuelven en tiempo de ejecución.
+const NS_LR = 'https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroLR.xsd';
+const NS_INFO = 'https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd';
+/** Máximo de registros por envío que admite el XSD (`RegistroFactura` maxOccurs="1000"). */
+const MAX_REGISTROS = 1000;
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
@@ -229,10 +238,45 @@ export async function buildVerifactuRegistrosXml(
     },
     orderBy: { createdAt: 'asc' },
     include: {
-      customer:  { select: { name: true } },
+      // SCRUM-145 (gap 6): el NIF del cliente decide si se puede emitir `Destinatarios`.
+      customer:  { select: { name: true, taxId: true } },
       rectifies: { select: { number: true, createdAt: true } },
     },
   });
+
+  // SCRUM-145 (gap 1): el XSD tope `RegistroFactura` en 1000 por envío. Con más facturas en
+  // el ejercicio habría que trocear en varios envíos (lo hará la cola de remisión, S1-D).
+  // Hasta entonces se falla en claro: mejor un error que un fichero inválido que parece bueno.
+  if (invoices.length > MAX_REGISTROS) {
+    throw new Error(`verifactu_demasiados_registros:${invoices.length}`);
+  }
+
+  // SCRUM-145 (gap 2): datos del PRODUCTOR (art. 13 RRSIF) — los que se firman en la
+  // declaración responsable. FAIL-CLOSED: sin ellos NO se emite. Un `SistemaInformatico`
+  // relleno con placeholders sería un registro fiscal que miente sobre quién produjo el
+  // software; preferimos un error explícito (el caller ya sabe abortar: 409 en la ruta
+  // suelta, ZIP entero abortado — nunca un XML a medias).
+  const productor = {
+    nombre: config.VERIFACTU_PRODUCTOR_NOMBRE,
+    nif: config.VERIFACTU_PRODUCTOR_NIF,
+    idSistema: config.VERIFACTU_ID_SISTEMA,
+    version: config.VERIFACTU_VERSION,
+    numInstalacion: config.VERIFACTU_NUM_INSTALACION,
+  };
+  if (!productor.nombre || !productor.nif || !productor.idSistema || !productor.version || !productor.numInstalacion) {
+    throw new Error('verifactu_productor_no_configurado');
+  }
+
+  // SCRUM-145 (gap 4): el XSD exige que `RegistroAnterior` identifique la factura anterior
+  // COMPLETA (emisor + nº + fecha + huella), no solo su huella. No hace falta columna nueva:
+  // la anterior es, por definición, aquella cuya `vfHash` es nuestra `vfPrevHash`. Se indexan
+  // TODAS las facturas con huella del merchant (no solo las del año pedido) porque el primer
+  // registro de un ejercicio encadena con el último del anterior.
+  const conHuella = await prismaClient.invoice.findMany({
+    where: { merchantId: params.merchantId, vfHash: { not: null } },
+    select: { number: true, createdAt: true, vfHash: true },
+  });
+  const porHuella = new Map(conHuella.map((i) => [i.vfHash as string, i]));
 
   const nombreEmisor = merchant.legalName || merchant.name;
   // ⚠️ NO UNIFICAR con el formato de los CSV (SCRUM-86). Aquí los importes van con PUNTO
@@ -244,69 +288,114 @@ export async function buildVerifactuRegistrosXml(
     const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
     const vat = calcVatBreakdown(lines);
     const desglose = vat.entries.map((e) => `
-      <DetalleDesglose>
-        <Impuesto>01</Impuesto>
-        <TipoImpositivo>${e.rate}</TipoImpositivo>
-        <BaseImponibleOimporteNoSujeto>${e.base.toFixed(2)}</BaseImponibleOimporteNoSujeto>
-        <CuotaRepercutida>${e.cuota.toFixed(2)}</CuotaRepercutida>
-      </DetalleDesglose>`).join('');
+        <sum1:DetalleDesglose>
+          <sum1:Impuesto>01</sum1:Impuesto>
+          <sum1:TipoImpositivo>${e.rate}</sum1:TipoImpositivo>
+          <sum1:BaseImponibleOimporteNoSujeto>${e.base.toFixed(2)}</sum1:BaseImponibleOimporteNoSujeto>
+          <sum1:CuotaRepercutida>${e.cuota.toFixed(2)}</sum1:CuotaRepercutida>
+        </sum1:DetalleDesglose>`).join('');
 
+    // ⚠️ PENDIENTE FISCAL (asesor): el XSD admite `TipoRectificativa` (S=sustitución /
+    // I=diferencias) y `ImporteRectificacion`, ambos minOccurs=0. NO se emiten porque elegir
+    // uno u otro es una calificación fiscal, no una decisión de implementación (regla: no
+    // inventar). Queda registrado en SCRUM-145 para el dictamen.
     const rectificadas = inv.type === 'R1' && inv.rectifies ? `
-    <FacturasRectificadas>
-      <IDFacturaRectificada>
-        <IDEmisorFactura>${xmlEscape(merchant.taxId)}</IDEmisorFactura>
-        <NumSerieFactura>${xmlEscape(inv.rectifies.number)}</NumSerieFactura>
-        <FechaExpedicionFactura>${formatDateES(inv.rectifies.createdAt)}</FechaExpedicionFactura>
-      </IDFacturaRectificada>
-    </FacturasRectificadas>` : '';
+      <sum1:FacturasRectificadas>
+        <sum1:IDFacturaRectificada>
+          <sum1:IDEmisorFactura>${xmlEscape(merchant.taxId!)}</sum1:IDEmisorFactura>
+          <sum1:NumSerieFactura>${xmlEscape(inv.rectifies.number)}</sum1:NumSerieFactura>
+          <sum1:FechaExpedicionFactura>${formatDateES(inv.rectifies.createdAt)}</sum1:FechaExpedicionFactura>
+        </sum1:IDFacturaRectificada>
+      </sum1:FacturasRectificadas>` : '';
 
+    // SCRUM-145 (gap 4): `RegistroAnterior` completo. Si la huella anterior existe pero NO
+    // se encuentra su factura (cadena rota o registro de otro sistema), se cae a
+    // `PrimerRegistro` NO: eso mentiría sobre la cadena. Se lanza — un encadenamiento que no
+    // se puede acreditar invalida el registro (regla de la skill: la cadena es intocable).
+    const anterior = inv.vfPrevHash && inv.vfPrevHash !== '0' ? porHuella.get(inv.vfPrevHash) : null;
+    if (inv.vfPrevHash && inv.vfPrevHash !== '0' && !anterior) {
+      throw new Error(`verifactu_cadena_rota:${inv.number}`);
+    }
     const encadenamiento = inv.vfHash ? `
-    <Encadenamiento>${inv.vfPrevHash && inv.vfPrevHash !== '0' ? `
-      <RegistroAnterior><Huella>${xmlEscape(inv.vfPrevHash)}</Huella></RegistroAnterior>` : `
-      <PrimerRegistro>S</PrimerRegistro>`}
-    </Encadenamiento>
-    <TipoHuella>01</TipoHuella>
-    <Huella>${xmlEscape(inv.vfHash)}</Huella>` : '';
+      <sum1:Encadenamiento>${anterior ? `
+        <sum1:RegistroAnterior>
+          <sum1:IDEmisorFactura>${xmlEscape(merchant.taxId!)}</sum1:IDEmisorFactura>
+          <sum1:NumSerieFactura>${xmlEscape(anterior.number)}</sum1:NumSerieFactura>
+          <sum1:FechaExpedicionFactura>${formatDateES(anterior.createdAt)}</sum1:FechaExpedicionFactura>
+          <sum1:Huella>${xmlEscape(inv.vfPrevHash!)}</sum1:Huella>
+        </sum1:RegistroAnterior>` : `
+        <sum1:PrimerRegistro>S</sum1:PrimerRegistro>`}
+      </sum1:Encadenamiento>
+      <sum1:SistemaInformatico>
+        <sum1:NombreRazon>${xmlEscape(productor.nombre)}</sum1:NombreRazon>
+        <sum1:NIF>${xmlEscape(productor.nif)}</sum1:NIF>
+        <sum1:NombreSistemaInformatico>YaQu</sum1:NombreSistemaInformatico>
+        <sum1:IdSistemaInformatico>${xmlEscape(productor.idSistema)}</sum1:IdSistemaInformatico>
+        <sum1:Version>${xmlEscape(productor.version)}</sum1:Version>
+        <sum1:NumeroInstalacion>${xmlEscape(productor.numInstalacion)}</sum1:NumeroInstalacion>
+        <sum1:TipoUsoPosibleSoloVerifactu>S</sum1:TipoUsoPosibleSoloVerifactu>
+        <sum1:TipoUsoPosibleMultiOT>S</sum1:TipoUsoPosibleMultiOT>
+        <sum1:IndicadorMultiplesOT>S</sum1:IndicadorMultiplesOT>
+      </sum1:SistemaInformatico>
+      <sum1:FechaHoraHusoGenRegistro>${formatFechaHoraHuso(inv.createdAt)}</sum1:FechaHoraHusoGenRegistro>
+      <sum1:TipoHuella>01</sum1:TipoHuella>
+      <sum1:Huella>${xmlEscape(inv.vfHash)}</sum1:Huella>` : '';
+
+    // SCRUM-145 (gap 6): `Destinatarios` es minOccurs=0 en el XSD, pero SI se emite,
+    // `IDDestinatario` exige `NombreRazon` + choice OBLIGATORIO `NIF|IDOtro`. Hasta ahora se
+    // emitía `NombreRazon` suelto → XML INVÁLIDO. Se emite solo cuando hay NIF del cliente.
+    // ⚠️ PENDIENTE FISCAL (asesor, NO se decide en código): una F1 sin destinatario
+    // identificado debe marcarse con `FacturaSinIdentifDestinatarioArt61d` o emitirse como F2
+    // simplificada. Mientras no haya dictamen NO se inventa ninguna de las dos: se omite el
+    // bloque (válido contra el XSD) y la cuestión queda registrada en SCRUM-145.
+    const destinatarios = inv.customer?.taxId ? `
+      <sum1:Destinatarios>
+        <sum1:IDDestinatario>
+          <sum1:NombreRazon>${xmlEscape(inv.customer.name || 'Cliente')}</sum1:NombreRazon>
+          <sum1:NIF>${xmlEscape(inv.customer.taxId)}</sum1:NIF>
+        </sum1:IDDestinatario>
+      </sum1:Destinatarios>` : '';
 
     return `
-  <RegistroFacturacionAlta>
-    <IDVersion>1.0</IDVersion>
-    <IDFactura>
-      <IDEmisorFactura>${xmlEscape(merchant.taxId)}</IDEmisorFactura>
-      <NumSerieFactura>${xmlEscape(inv.number)}</NumSerieFactura>
-      <FechaExpedicionFactura>${formatDateES(inv.createdAt)}</FechaExpedicionFactura>
-    </IDFactura>
-    <NombreRazonEmisor>${xmlEscape(nombreEmisor)}</NombreRazonEmisor>
-    <TipoFactura>${inv.type === 'R1' ? 'R1' : 'F1'}</TipoFactura>${rectificadas}
-    <DescripcionOperacion>${xmlEscape(lines[0]?.concept || `Factura ${inv.number}`)}</DescripcionOperacion>
-    <Destinatarios>
-      <IDDestinatario><NombreRazon>${xmlEscape(inv.customer?.name || 'Cliente')}</NombreRazon></IDDestinatario>
-    </Destinatarios>
-    <Desglose>${desglose || `
-      <DetalleDesglose>
-        <Impuesto>01</Impuesto>
-        <TipoImpositivo>0</TipoImpositivo>
-        <BaseImponibleOimporteNoSujeto>${Number(inv.total).toFixed(2)}</BaseImponibleOimporteNoSujeto>
-        <CuotaRepercutida>0.00</CuotaRepercutida>
-      </DetalleDesglose>`}
-    </Desglose>
-    <CuotaTotal>${vat.cuota.toFixed(2)}</CuotaTotal>
-    <ImporteTotal>${Number(inv.total).toFixed(2)}</ImporteTotal>${encadenamiento}
-    <SistemaInformatico><NombreSistemaInformatico>YaQu</NombreSistemaInformatico></SistemaInformatico>
-    <FechaHoraHusoGenRegistro>${inv.createdAt.toISOString()}</FechaHoraHusoGenRegistro>
-  </RegistroFacturacionAlta>`;
+  <sum:RegistroFactura>
+    <sum1:RegistroAlta>
+      <sum1:IDVersion>1.0</sum1:IDVersion>
+      <sum1:IDFactura>
+        <sum1:IDEmisorFactura>${xmlEscape(merchant.taxId!)}</sum1:IDEmisorFactura>
+        <sum1:NumSerieFactura>${xmlEscape(inv.number)}</sum1:NumSerieFactura>
+        <sum1:FechaExpedicionFactura>${formatDateES(inv.createdAt)}</sum1:FechaExpedicionFactura>
+      </sum1:IDFactura>
+      <sum1:NombreRazonEmisor>${xmlEscape(nombreEmisor)}</sum1:NombreRazonEmisor>
+      <sum1:TipoFactura>${inv.type === 'R1' ? 'R1' : 'F1'}</sum1:TipoFactura>${rectificadas}
+      <sum1:DescripcionOperacion>${xmlEscape(lines[0]?.concept || `Factura ${inv.number}`)}</sum1:DescripcionOperacion>${destinatarios}
+      <sum1:Desglose>${desglose || `
+        <sum1:DetalleDesglose>
+          <sum1:Impuesto>01</sum1:Impuesto>
+          <sum1:TipoImpositivo>0</sum1:TipoImpositivo>
+          <sum1:BaseImponibleOimporteNoSujeto>${Number(inv.total).toFixed(2)}</sum1:BaseImponibleOimporteNoSujeto>
+          <sum1:CuotaRepercutida>0.00</sum1:CuotaRepercutida>
+        </sum1:DetalleDesglose>`}
+      </sum1:Desglose>
+      <sum1:CuotaTotal>${vat.cuota.toFixed(2)}</sum1:CuotaTotal>
+      <sum1:ImporteTotal>${Number(inv.total).toFixed(2)}</sum1:ImporteTotal>${encadenamiento}
+    </sum1:RegistroAlta>
+  </sum:RegistroFactura>`;
   }).join('\n');
 
+  // SCRUM-145 (gap 1): envelope REAL del XSD. Antes la raíz era `<RegistrosFacturacion>` sin
+  // namespaces y el registro se llamaba `<RegistroFacturacionAlta>` — que es el nombre del
+  // TIPO, no del ELEMENTO (`SuministroInformacion.xsd:37` declara `RegistroAlta`). Nada de
+  // eso validaba. Límite duro del XSD: `RegistroFactura` maxOccurs=1000 por envío.
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<RegistrosFacturacion generadoPor="YaQu" ejercicio="${params.year}" fechaGeneracion="${new Date().toISOString()}">
-  <Cabecera>
-    <ObligadoEmision>
-      <NombreRazon>${xmlEscape(nombreEmisor)}</NombreRazon>
-      <NIF>${xmlEscape(merchant.taxId)}</NIF>
-    </ObligadoEmision>
-  </Cabecera>
+<sum:RegFactuSistemaFacturacion xmlns:sum="${NS_LR}" xmlns:sum1="${NS_INFO}">
+  <sum:Cabecera>
+    <sum1:ObligadoEmision>
+      <sum1:NombreRazon>${xmlEscape(nombreEmisor)}</sum1:NombreRazon>
+      <sum1:NIF>${xmlEscape(merchant.taxId)}</sum1:NIF>
+    </sum1:ObligadoEmision>
+  </sum:Cabecera>
 ${registros}
-</RegistrosFacturacion>
+</sum:RegFactuSistemaFacturacion>
 `;
 
   return { xml, count: invoices.length };
