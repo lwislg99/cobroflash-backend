@@ -112,16 +112,21 @@ function reglas(objetivo, sentinelPath) {
   // 2) db push sin preview confirmado — exige sentinel de un solo uso.
   //    Flujo: migrate diff -> ensenar diff al fundador -> con su OK crear .claude/allow-db-push
   //    (touch) -> el siguiente db push pasa y consume el sentinel.
-  if (/prisma[^"]{0,40}db +push/.test(objetivo)) {
-    if (fs.existsSync(sentinelPath)) {
-      fs.rmSync(sentinelPath, { force: true });
-    } else {
-      return {
-        bloqueado: true,
-        motivo:
-          "'db push' sin preview confirmado. Ejecuta el preview (migrate diff), ensena el diff al fundador y, con su OK, crea .claude/allow-db-push (un solo uso) antes de reintentar.",
-      };
-    }
+  //
+  //    SE COMPRUEBA AQUÍ, PERO NO SE CONSUME AQUÍ (ver el final de la función). Consumirlo en
+  //    este punto quemaba la autorización de un solo uso aunque el comando acabara BLOQUEADO
+  //    por otra regla: `npx prisma db push --force-reset` con el sentinel puesto salía
+  //    bloqueado por `--force` y el sentinel ya estaba borrado. El fundador había dado un OK
+  //    que no ejecutó nada y tenía que volver a darlo — o peor, creerse que lo había gastado.
+  //    Es un fallo PREEXISTENTE (venía de la versión en bash, con el mismo orden) que la
+  //    portación a .mjs conservó tal cual; lo encontró la sesión 1 comparando implementaciones.
+  const pideDbPush = /prisma[^"]{0,40}db +push/.test(objetivo);
+  if (pideDbPush && !fs.existsSync(sentinelPath)) {
+    return {
+      bloqueado: true,
+      motivo:
+        "'db push' sin preview confirmado. Ejecuta el preview (migrate diff), ensena el diff al fundador y, con su OK, crea .claude/allow-db-push (un solo uso) antes de reintentar.",
+    };
   }
 
   // 3) --force (git push --force, npm --force, prisma --force...)
@@ -141,6 +146,16 @@ function reglas(objetivo, sentinelPath) {
         "'rm -rf' con ruta absoluta fuera del workspace esta prohibido (AA2). Usa rutas relativas dentro del repo.",
     };
   }
+
+  // Aquí ya no bloquea NADA. Solo ahora se gasta la autorización, y solo si se pidió un
+  // `db push`: una autorización de un solo uso se consume cuando algo se va a ejecutar, no
+  // cuando se mira. El orden es la regla entera — comprobar arriba, consumir abajo.
+  //
+  // Residuo conocido, escrito para que no sorprenda: que el hook deje pasar no garantiza que
+  // el comando llegue a correr (el usuario aún puede denegarlo en el prompt de permisos). En
+  // ese caso el sentinel sí se habrá gastado. Es el comportamiento de siempre y no se toca
+  // aquí: desde el hook no hay forma de saber qué pasa después.
+  if (pideDbPush) fs.rmSync(sentinelPath, { force: true });
 
   return { bloqueado: false, motivo: '' };
 }
