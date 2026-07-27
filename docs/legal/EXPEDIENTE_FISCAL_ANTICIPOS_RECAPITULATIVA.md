@@ -352,13 +352,47 @@ re-consolidarlos en una **nueva** factura, esa nueva factura sigue sujeta a la m
 mes natural (P7) según las fechas **originales** de los albaranes (no la fecha de la
 re-consolidación) — no se "resetea" el mes solo por anular y re-emitir.
 
-**Interpretación recomendada:** dado que no hay obligación legal de liberar, y que la decisión
-ya tomada para V1 (`SESION_ACTUAL_SCRUM-17.md` §2: *"en V1 no se implementa liberación; si se
-anula una recapitulativa, los albaranes quedan ligados y se reporta como pendiente"*) es la
-opción más simple y de menor riesgo (evita re-aplicar P7/P6 dos veces), **no hace falta
-dictamen del asesor para bloquear esta decisión de producto** — solo confirmar que, el día que
-se implemente la liberación (fuera de V1), la nueva factura deberá seguir agrupando por las
-fechas originales de los albaranes.
+**Interpretación recomendada:** dado que no hay obligación legal de liberar, esto es una
+decisión de producto y **no hace falta dictamen del asesor para tomarla** — solo confirmar que,
+cuando se libere, la nueva factura deberá seguir agrupando por las fechas **originales** de los
+albaranes (P7), no por la fecha de la re-consolidación.
+
+---
+
+#### ⚠️ CAMBIO DE CRITERIO (27-jul-2026) — se LIBERA. Lo anterior queda superado.
+
+**Criterio anterior (V1, `SESION_ACTUAL_SCRUM-17.md` §2):** *"en V1 no se implementa liberación;
+si se anula una recapitulativa, los albaranes quedan ligados y se reporta como pendiente"*.
+Se eligió por ser lo más simple y evitar re-aplicar P6/P7 dos veces.
+
+**Criterio NUEVO, decidido por el fundador:** *anular una factura devuelve sus cantidades a
+pendiente, sea la anulación total o parcial.*
+
+**Razonamiento, que es lo que el asesor tiene que ver:**
+
+1. **Una factura anulada no cobró nada, así que ese trabajo sigue sin facturar.** El albarán
+   documenta un servicio REALMENTE PRESTADO; si la factura que lo recogía se anula, la
+   obligación de facturarlo no desaparece — al contrario, sigue viva y con su plazo del
+   art. 13.2 corriendo. Dejar el albarán ligado a un documento sin efectos significa que el
+   profesional **no puede volver a facturar ese trabajo nunca**: no es una pérdida contable,
+   es dinero real que no se cobra.
+2. **La restricción legal del art. 15 no obliga a lo contrario.** La ley regula cómo se anula
+   la factura, no qué pasa con los documentos internos que la originaron. Liberar no infringe
+   nada mientras la nueva factura respete el mes natural por las fechas ORIGINALES (P7), que
+   es justo lo que ya exigía este apartado.
+3. **El sistema ya lo hace así por construcción para lo parcial.** SCRUM-170 introdujo el libro
+   `albaran_lineas_facturadas`: lo facturado de cada línea es la SUMA de las filas de facturas
+   NO anuladas, así que excluir una factura anulada devuelve su cantidad a pendiente sin tocar
+   ningún contador. Unificar hacia el criterio anterior habría exigido **añadir código para
+   empeorar el comportamiento**.
+
+**Consecuencia operativa:** el disparador de anulación (SCRUM-153) recibe el `invoiceId`
+anulado y lo excluye del cómputo. Sin ese dato, el albarán quedaría marcado como facturado por
+cantidades que ya no lo están — el único punto de todo este flujo donde una anulación puede
+perder dinero en silencio.
+
+**Lo que NO cambia:** la nueva factura que recoja el trabajo liberado sigue agrupando por las
+fechas originales de los albaranes (P7). Anular y re-emitir no "resetea" el mes natural.
 
 ### P11 · Factura completa a cliente SIN NIF: ¿marcarla «sin identificar destinatario» o emitirla como simplificada (F2)?
 
