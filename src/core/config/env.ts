@@ -46,11 +46,9 @@ export const config = {
     AUTO_EMAIL_INVOICE_ON_PAID:
       String(process.env.AUTO_EMAIL_INVOICE_ON_PAID).toLowerCase() === 'true' || process.env.AUTO_EMAIL_INVOICE_ON_PAID === '1',
   
-    N8N_ONPAID_URL: process.env.N8N_ONPAID_URL || '',
-    N8N_ONFAILED_URL: process.env.N8N_ONFAILED_URL || '',
-    N8N_ONEXPIRED_URL: process.env.N8N_ONEXPIRED_URL || '',
-    N8N_ONSEND_URL: process.env.N8N_ONSEND_URL || '',
-    N8N_TOKEN: process.env.N8N_TOKEN || '',
+    // SCRUM-129: env vars de n8n RETIRADAS (n8n viola la regla nº1: WhatsApp = Meta Cloud API
+    // directa, jamás n8n). Eran código muerto; el guard estructural vive en scrum129-n8n-guard
+    // (busca el prefijo de env var, escrito con guion bajo, que aquí no repito para no auto-marcarme).
 
 
 
