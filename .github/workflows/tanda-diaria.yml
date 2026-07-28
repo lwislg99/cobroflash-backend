@@ -1,0 +1,153 @@
+# .github/workflows/tanda-diaria.yml — SCRUM-161
+#
+# POR QUÉ EXISTE: la tanda gateada (scripts/test-staging-gated.mjs) EXISTE, funciona, y no la
+# dispara nadie — dependía de que alguien se acordara de teclearla. Es el TERCER caso del mismo
+# patrón (zona roja y el preflight fueron los otros dos): un mecanismo que existe y nadie activa.
+# Esto la corre automáticamente.
+#
+# ── HORA: NO es "nightly", es la TANDA DIARIA ────────────────────────────────────────────────
+# 12:00 UTC = 14:00 Europe/Madrid en verano (CEST) / 13:00 en invierno (CET). A MEDIODÍA a
+# propósito: este equipo trabaja de MADRUGADA (una tanda del 28-jul arrancó a las 04:42 y a las
+# 06:05 seguía viva), así que la "hora muerta" NO es la madrugada — un cron a las 3am chocaría
+# de lleno. Por eso NO se llama "nightly" en ningún sitio: ese nombre empuja a moverlo a las 3am
+# "porque es lo normal" sin volver a pensarlo. Es la tanda diaria, a mediodía.
+#
+# ── SERIALIZACIÓN Y SU HUECO (SCRUM-188) ─────────────────────────────────────────────────────
+# `concurrency` serializa CI-contra-CI: dos runs de ESTE workflow no corren a la vez. Pero NO
+# serializa CI-contra-HUMANO: R6 (turno de staging EXCLUSIVO) es una convención que ninguna
+# máquina lee, así que este job PUEDE arrancar mientras una persona tiene el turno y pisarle la
+# BD — y el resultado no significaría nada. Esa defensa NO EXISTE todavía: es SCRUM-188. Se dice
+# aquí para que el hueco esté ESCRITO, no callado — un mecanismo con su hueco visible es honesto.
+#
+# ⚠️ LA COLA NO ES FIFO ILIMITADA: GitHub mantiene UN run pendiente por `concurrency.group`. Si
+# llega un TERCERO mientras uno corre y otro espera, el que ESPERABA se CANCELA (no se pone
+# detrás). Con diaria + dispatch el riesgo es bajo, pero no construyas encima asumiendo cola
+# infinita: no la hay.
+#
+# ── SECRET (lo crea el fundador) ─────────────────────────────────────────────────────────────
+# DATABASE_URL_STAGING es un secret del repo que crea el fundador en Settings → Secrets → Actions.
+# HOY NO EXISTE: el modo de fallo por defecto de este workflow durante los próximos días es fallar
+# RUIDOSO nombrándolo (paso "Comprobar el secret"), NUNCA saltarse la tanda en verde — ese "verde
+# vacío" es el fallo de SCRUM-160 en otra forma. El secret solo puede apuntar a STAGING
+# (acela/railway), JAMÁS a producción.
+#
+# ── CÓMO SE ENTERA UN HUMANO DE UN ROJO (sin cuenta ni integración nueva) ────────────────────
+#   1. El run sale ROJO en la pestaña Actions del repo.
+#   2. GitHub envía email de fallo al último que tocó el cron (de serie, pero frágil: una persona).
+#   3. Robusto y sin nada nuevo: en fallo, el job ABRE/ACTUALIZA un ISSUE con el GITHUB_TOKEN de
+#      serie (paso "Avisar en fallo"). Un issue es un artefacto persistente que ALGUIEN tiene que
+#      cerrar — no un correo que se ignora. Sin él, un rojo se queda en un run que nadie mira, y
+#      eso es MOVER el problema (existe, no lo dispara nadie → corre solo, nadie ve el rojo), no
+#      resolverlo.
+name: Tanda diaria gateada (staging)
+
+on:
+  schedule:
+    # 12:00 UTC FIJO (el cron de GitHub es siempre UTC y NO se ajusta al horario de verano).
+    # En Madrid eso es 14:00 en verano (CEST, UTC+2) y 13:00 en invierno (CET, UTC+1): la hora
+    # local VARÍA medio año, la UTC no. Mediodía a propósito (equipo de madrugada, ver cabecera).
+    - cron: '0 12 * * *'
+  workflow_dispatch: {} # escape hatch: un humano la lanza cuando TIENE el turno de staging.
+
+concurrency:
+  group: tanda-staging # un solo run a la vez (CI-vs-CI). NO cubre CI-vs-humano → SCRUM-188.
+  cancel-in-progress: false # el que corre NO se cancela; el que ESPERA sí, si llega un tercero (ver cabecera).
+
+permissions:
+  contents: read
+  issues: write # solo para el aviso en fallo, con el GITHUB_TOKEN de serie.
+
+jobs:
+  tanda:
+    runs-on: ubuntu-latest
+    # RED DE FUERA (condición 2): por ENCIMA del techo por-hijo (60 min, abajo) + overhead. Los
+    # límites por hijo los pone el runner; si el RUNNER MISMO se cuelga ANTES de lanzar un hijo,
+    # ese timeout no aplica y GitHub metería su default de 6 HORAS — que con cancel-in-progress:
+    # false bloquea la cola un día entero. 90 no corta un run sano (~35-40 min esperados en CI) y
+    # ataja el cuelgue del runner. Sube con el techo por-hijo si ese sube.
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── FAIL-CLOSED: sin el secret, se PARA nombrándolo. Nunca un "verde vacío". ──
+      - name: Comprobar el secret DATABASE_URL_STAGING
+        env:
+          DB: ${{ secrets.DATABASE_URL_STAGING }}
+        run: |
+          set -uo pipefail
+          if [ -z "${DB:-}" ]; then
+            echo "::error title=Falta el secret DATABASE_URL_STAGING::La tanda gateada no puede correr sin él; se PARA a propósito (fail-closed)."
+            {
+              echo "Falta el secret DATABASE_URL_STAGING."
+              echo "Créalo en Settings -> Secrets and variables -> Actions, apuntando a la BD de STAGING (acela/railway), NUNCA a producción."
+              echo "Se para a propósito: saltar la tanda en verde seria un 'verde vacio' que no prueba nada -- el fallo de SCRUM-160 en otra forma."
+            } >&2
+            exit 1
+          fi
+          echo "Secret DATABASE_URL_STAGING presente."
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - run: npm ci
+
+      # ── LA TANDA ──────────────────────────────────────────────────────────────────────────
+      # El runner setea los TRES gates POR HIJO (QA_DB_TEST, A55_DB_TEST, BOT_SUITE_TEST) dentro
+      # de su array `hijos`; NO se ponen aquí a propósito: globales romperían el aislamiento por
+      # proceso que el runner mantiene. Aquí solo viaja DATABASE_URL_STAGING, que los hijos leen
+      # vía tests/_staging-db.mjs (con su guard anti-prod).
+      #
+      # PREFLIGHT (SCRUM-167): el preflight de deriva de esquema corre DENTRO del runner en cuanto
+      # scrum-167 esté en main (enganche, commit 01de4ac de scrum-167-preflight-schema-drift). Si
+      # este workflow aterriza en main ANTES que scrum-167, el runner de main aún no lo lleva —
+      # es un añadido, no un bloqueo, y no se invoca aquí por separado para no inventar nada.
+      - name: Tanda gateada contra staging
+        env:
+          DATABASE_URL_STAGING: ${{ secrets.DATABASE_URL_STAGING }}
+          # TECHO PROVISIONAL DEL TIMEOUT POR HIJO, EN CI (condición 1). El default del runner
+          # (hijo pesado 30 min) se midió en LOCAL/Windows, donde el bloque QA tarda ~20 min
+          # (baseline bowovjif2, 503 tests). Esto es ubuntu-latest (2 vCPU) hablando con Railway
+          # por internet: 30-35 min es NORMAL, y un timeout que corta un run SANO enseña a ignorar
+          # el rojo — y entonces el rojo de verdad tampoco se mira. 60 min es un TECHO de arranque,
+          # NO una medida (declarado: es una estimación 1,5-2x, no hay dato de CI todavía). El
+          # número definitivo sale de las 3-5 primeras ejecuciones EN CI: léelo en la línea
+          # "(X.Xs)" del hijo pesado (SCRUM-181 ya la imprime) y ajusta ESTE valor.
+          # OJO: GATED_CHILD_TIMEOUT_MS es GLOBAL (SCRUM-181) — 60 min aplica a los tres hijos. El
+          # pesado es el que lo necesita; los aislados terminan en <1 min, no se ven afectados en la
+          # práctica, y si uno se colgara lo ataja el timeout-minutes del job.
+          GATED_CHILD_TIMEOUT_MS: '3600000' # 60 min. Techo provisional — ver arriba.
+        run: npm run test:staging:gated
+
+      # ── AVISO EN FALLO: que un rojo NO se quede en un run que nadie mira ──
+      - name: Avisar en fallo (issue)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -uo pipefail
+          MARCA="<!-- yaqu:tanda-diaria -->"
+          {
+            echo "$MARCA"
+            echo "La **tanda diaria gateada** (\`.github/workflows/tanda-diaria.yml\`) salió ROJA."
+            echo ""
+            echo "Run: $RUN_URL"
+            echo ""
+            echo "Un rojo aquí es cobertura real caída, no un flaky de CI. Alguien con el turno de staging tiene que mirarlo. Cierra este issue cuando esté resuelto o entendido."
+          } > cuerpo.md
+          # DEDUP: lista los issues ABIERTOS (--paginate: sin tope de 100) y coge el que lleva el
+          # MARCADOR oculto en el CUERPO — no por título (editable) ni label (habría que crearlo).
+          # Excluye PRs (la API de issues los incluye). Así 30 días de rojo = 1 issue actualizado
+          # 30 veces, no 30 issues. (Si alguien lo CIERRA y la tanda vuelve a fallar, se abre uno
+          # nuevo: es un incidente nuevo, y es correcto.)
+          ID=$(gh api "repos/$REPO/issues?state=open&per_page=100" --paginate \
+                 --jq ".[] | select(.pull_request == null and .body != null and (.body | contains(\"$MARCA\"))) | .number" \
+               2>/dev/null | head -1)
+          if [ -n "${ID:-}" ]; then
+            gh api -X PATCH "repos/$REPO/issues/$ID" -F body=@cuerpo.md >/dev/null && echo "Issue #$ID actualizado."
+          else
+            gh api -X POST "repos/$REPO/issues" \
+              -f title="🔴 La tanda diaria gateada salió ROJA" -F body=@cuerpo.md >/dev/null && echo "Issue creado."
+          fi
