@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 
 import {
   withMerchant, limpiarMerchant, merchantsVivos, barridoFinal, registrarBarridoFinal,
-  _resetBarridoParaTests,
+  _resetBarridoParaTests, telefonosDe,
 } from './_merchant-fixture.mjs';
 
 /**
@@ -163,4 +163,48 @@ test('SCRUM-113: withMerchant deja el barrido ACTIVADO SOLO — nadie llama a re
   // (evita barridos duplicados / N llamadas a la BD al cerrar el fichero).
   await withMerchant(f.cliente, { name: 'QA2', email: 'qa2@test.local' }, async () => {}, { after: afterFalso });
   assert.equal(afterCallbacks.length, 1, 'un segundo withMerchant no debe registrar otro after()');
+});
+
+// ── SCRUM-174: botSession con merchantId=null se barre por el PHONE que el fixture generó ────
+// BotSession.merchantId es NULLABLE y SIN FK: el barrido por merchantId no alcanza las filas con
+// merchantId=null, y como no hay FK merchant.delete no protesta si quedan (fallo MUDO). El fixture
+// las barre por los teléfonos que él mismo generó. Doble CON store en memoria para verlo de verdad:
+// la sesión anónima debe SOBREVIVIR al barrido por-id y MORIR en el barrido por-phone.
+function fakePrismaConBotSessions(sesiones) {
+  const casa = (s, where) =>
+    (where.merchantId !== undefined && s.merchantId === where.merchantId) ||
+    (Array.isArray(where.phone?.in) && where.phone.in.includes(s.phone));
+  return new Proxy(
+    {
+      merchant: {
+        create: async ({ data }) => ({ id: 42, ...data }),
+        delete: async () => ({ id: 42 }),
+      },
+      botSession: {
+        deleteMany: async ({ where }) => {
+          const antes = sesiones.length;
+          for (let i = sesiones.length - 1; i >= 0; i--) if (casa(sesiones[i], where)) sesiones.splice(i, 1);
+          return { count: antes - sesiones.length };
+        },
+      },
+    },
+    { get: (obj, prop) => (prop in obj ? obj[prop] : { deleteMany: async () => ({ count: 0 }) }) },
+  );
+}
+
+test('SCRUM-174: withMerchant barre botSession con merchantId=null por el phone que él generó', async () => {
+  _resetBarridoParaTests();
+  const MID = 42; // el fake crea merchant.id = 42
+  const { cliente } = telefonosDe(MID); // EXACTAMENTE el phone que withMerchant generará para 42
+  const sesiones = [
+    { id: 1, phone: cliente, merchantId: null }, // anónima: SOLO la alcanza el barrido por phone
+    { id: 2, phone: cliente, merchantId: MID },  // con merchantId: la alcanzaría también el por-id
+  ];
+  const prisma = fakePrismaConBotSessions(sesiones);
+
+  await withMerchant(prisma, { name: 'QA S174', email: 'qa-s174@test.local' }, async () => {}, { after: () => {} });
+
+  // Antes del fix (barrido solo por merchantId), la #1 (merchantId=null) SOBREVIVÍA → este assert
+  // era rojo. Con el barrido por phone del fixture, las dos mueren.
+  assert.equal(sesiones.length, 0, 'ambas sesiones borradas — incluida la de merchantId=null (SCRUM-174)');
 });

@@ -114,13 +114,12 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED }, asy
     // (limpiarMerchant) borra el merchant y sus filas por merchantId — camino de FALLO
     // incluido (un assert que reviente a mitad NO deja huérfanos del merchant). Barre
     // whatsAppMessage, attachment, quoteRequest, customerEvent y customer (MODELOS_POR_MERCHANT).
-    await withMerchant(prisma, { name: 'QA S159 bot', email: `qa-s159-bot-${Date.now()}@test.local` }, async (merchant) => {
+    await withMerchant(prisma, { name: 'QA S159 bot', email: `qa-s159-bot-${Date.now()}@test.local` }, async (merchant, phones) => {
       MERCHANT_ID = merchant.id;
       savedMerchantId = merchant.id;
-      // Teléfono derivado de merchant.id (único por construcción). padStart(6): si merchant.id
-      // superara 999999 el teléfono crecería a 12 dígitos — sigue único, no bloquea, solo deja
-      // de tener 11. No pasa hoy; anotado aquí para que se descubra leyendo, no en un año.
-      TEST_PHONE = `34600${String(merchant.id).padStart(6, '0')}`;
+      // SCRUM-174: los teléfonos los GENERA withMerchant (fuente única, SCRUM-180) y los entrega
+      // aquí; ya no se inventan. `cliente` = 34600… (entrante) · `pro` = 34601… (whatsappPhone).
+      TEST_PHONE = phones.cliente;
       assert.ok(TEST_PHONE && MERCHANT_ID, 'fixture efímero no montado');
 
       // El merchant efímero LLEVA whatsappPhone A PROPÓSITO (SCRUM-159). Dos asertos lo exigen:
@@ -128,11 +127,10 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED }, asy
       // Ambos comprueban que el PRO recibe el aviso, que el bot envía a merchant.whatsappPhone.
       // Sin él, ese envío no tiene destino y los dos fallan. NO es residuo del seed demo: es
       // cobertura de un comportamiento real del bot (avisar al pro). NO lo quites al limpiar
-      // fixtures. Va DISTINTO de TEST_PHONE (34601 vs 34600) porque 8f asierta `m.to !== TEST_PHONE`:
-      // si colisionaran, ese aserto pasaría SIN comprobar nada (verde falso justo donde crees tener
-      // cobertura). Derivado de merchant.id igual que el del cliente → único, no del reloj.
-      // (34600/34601 son rango móvil ES real; el freno es el dry-run del fichero — ver SCRUM-180.)
-      const PRO_PHONE = `34601${String(merchant.id).padStart(6, '0')}`;
+      // fixtures. `pro` va DISTINTO de `cliente` (34601 vs 34600) porque 8f asierta
+      // `m.to !== TEST_PHONE`: si colisionaran, ese aserto pasaría SIN comprobar nada (verde falso
+      // justo donde crees tener cobertura). Ambos salen del fixture — misma fuente, SCRUM-180.
+      const PRO_PHONE = phones.pro;
       await prisma.merchant.update({ where: { id: merchant.id }, data: { whatsappPhone: PRO_PHONE } });
 
       const customer = await prisma.customer.create({
@@ -335,15 +333,12 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED }, asy
     //   · si el test fue BIEN y la limpieza dejó filas: eso ES el fallo (contaminaría el proceso
     //     siguiente del runner) y se lanza al final → ROJO. Un verde falso no lo mira nadie.
     //
-    // withMerchant ya borró merchant + sus filas por merchantId (whatsAppMessage, attachment,
-    // quoteRequest, customerEvent, customer). botSession va por PHONE aparte: BotSession.merchantId
-    // es NULLABLE (SCRUM-174) → el barrido por merchantId no lo garantiza; este delete es su ÚNICA
-    // limpieza, así que su .catch GRITA en vez de tragarse el error (que era el agravante).
+    // withMerchant (limpiarMerchant) ya borró merchant + sus filas por merchantId (whatsAppMessage,
+    // attachment, quoteRequest, customerEvent, customer) Y —desde SCRUM-174— barre botSession por
+    // los PHONES que él mismo generó (cliente/pro), que es lo que alcanza las sesiones con
+    // merchantId=null (nullable + sin FK). Aquí ya NO se limpia nada: solo se CONTRAPRUEBA que
+    // todo quedó a cero. Un conteo > 0 significa que el fixture no barrió — y es rojo.
     let waLeft = 0, attLeft = 0, sessLeft = 0;
-    if (TEST_PHONE) {
-      await prisma.botSession.deleteMany({ where: { phone: TEST_PHONE } })
-        .catch((e) => console.error(`🔴 SCRUM-159: botSession.deleteMany(phone=${TEST_PHONE}) LANZÓ, y es su ÚNICA limpieza: ${e?.message || e}`));
-    }
     // Si la CONSULTA de conteo falla, "NO PUDE CONTAR" y null — NUNCA 0: un 0 de error se leería
     // como "limpio". Se coalesce a 0 solo para el umbral (el grito ya avisó de que no se contó).
     const countOrNull = async (label, fn) => {
@@ -358,7 +353,7 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED }, asy
     }
     if (TEST_PHONE) {
       sessLeft = (await countOrNull('botSession', () => prisma.botSession.count({ where: { phone: TEST_PHONE } }))) ?? 0;
-      if (sessLeft > 0) console.error(`🔴 SCRUM-159 LIMPIEZA INCOMPLETA: ${sessLeft} botSession con phone ${TEST_PHONE} sobrevivieron (merchantId nullable → su única limpieza es el delete de arriba).`);
+      if (sessLeft > 0) console.error(`🔴 SCRUM-174 LIMPIEZA INCOMPLETA: ${sessLeft} botSession con phone ${TEST_PHONE} sobrevivieron — el barrido por phone del fixture (withMerchant) no las alcanzó.`);
     }
     // Conteo POSITIVO, SIEMPRE (no solo si >0): ver el conteo, no la ausencia de error. Un 0
     // silencioso se lee igual que "la contraprueba no corrió".

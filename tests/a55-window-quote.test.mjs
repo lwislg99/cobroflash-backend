@@ -40,12 +40,12 @@ test('A5.5: ventana abierta → envío de presupuesto por SESIÓN (service), no 
   let savedMerchantId;
   let failed = false;
   try {
-    await withMerchant(prisma, { name: 'QA S159 a55', email: `qa-s159-a55-${Date.now()}@test.local` }, async (merchant) => {
+    await withMerchant(prisma, { name: 'QA S159 a55', email: `qa-s159-a55-${Date.now()}@test.local` }, async (merchant, phones) => {
       savedMerchantId = merchant.id;
-      // Teléfono derivado de merchant.id (único por construcción, NO del reloj → sin el ciclo de
-      // ~16,7 min que colisionaría). padStart(6): si merchant.id supera 999999 el teléfono crece
-      // a 12 dígitos; sigue único, no bloquea, solo deja de tener 11. No pasa hoy; anotado por si llega.
-      const TEST_PHONE = `34600${String(merchant.id).padStart(6, '0')}`;
+      // SCRUM-174: el teléfono lo GENERA withMerchant (fuente única, SCRUM-180) y lo entrega aquí,
+      // ya no se inventa. a55 no crea bot sessions, así que solo usa `cliente` (34600…) para el
+      // cliente y los envíos; el barrido por phone del fixture no tiene nada que llevarse aquí.
+      const TEST_PHONE = phones.cliente;
       const customer = await prisma.customer.create({
         data: { merchantId: merchant.id, name: 'María García QA', phone: TEST_PHONE },
         select: { id: true, name: true },
