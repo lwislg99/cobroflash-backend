@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { leerFuente } from './_guard-texto.mjs'; // SCRUM-193: leer YA filtrado
 import { motivoSinTramo } from '../dist/modules/quotes/domain/billingPlan.js';
 
 const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const api = fs.readFileSync(path.join(raiz, 'public', 'dashboard', 'js', 'api.js'), 'utf8');
-const detalle = fs.readFileSync(path.join(raiz, 'public', 'dashboard', 'js', 'quotesDetailView.js'), 'utf8');
+const api = leerFuente(path.join(raiz, 'public', 'dashboard', 'js', 'api.js')); // SCRUM-193
+const detalle = leerFuente(path.join(raiz, 'public', 'dashboard', 'js', 'quotesDetailView.js')); // SCRUM-193
 const sinComentarios = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1');
 
 /**

@@ -3,12 +3,15 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { leerFuente } from './_guard-texto.mjs'; // SCRUM-193
 
 const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FUENTE = path.join(raiz, 'src', 'modules', 'jobs', 'domain', 'albaranWhatsApp.service.ts');
 // SIN comentarios: un guard que busca llamadas por texto casa con la prosa que las explica
 // (trampa de auto-referencia de SCRUM-129 — ha mordido cuatro veces en este mismo día).
-const codigo = fs.readFileSync(FUENTE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1');
+// SCRUM-193: la copia local del filtrado se retira; `leerFuente` ya devuelve solo lo ejecutable
+// y además sabe qué está leyendo (en CSS `#` es un selector; en Markdown, un encabezado).
+const codigo = leerFuente(FUENTE);
 
 const paraFirmar = codigo.slice(codigo.indexOf('buildAlbaranParaFirmar({'));
 const firmado = codigo.slice(0, codigo.indexOf('buildAlbaranParaFirmar({'));
