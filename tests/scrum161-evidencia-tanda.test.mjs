@@ -72,7 +72,9 @@ test('SCRUM-161 · el control: un recibo bueno pasa', () => {
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
-// LAS CUATRO VÍAS DEL DISEÑO — una por trampa
+// LAS VÍAS DEL DISEÑO — una por trampa. NACIERON CUATRO (commit, rojo, ventana, suelo); el
+// mecanismo creció y hoy son seis comprobaciones. El «cuatro» es historia del origen, no un
+// inventario: cuenta las de verdad en los tests de abajo, no en este rótulo.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-161 · ① recibo AUSENTE → no hay evidencia', () => {
@@ -93,46 +95,61 @@ test('SCRUM-161 · ② recibo de OTRO COMMIT → evidencia caducada', () => {
   assert.match(res.problemas[0].detalle, /ffffffff/, 'debe decir de qué commit era el recibo');
 });
 
-test('SCRUM-161 · ③ recibo con fail>0 → «la corrí» habiendo salido en rojo', () => {
-  const res = validar(reciboBueno({ fail: 1, pass: 639 }));
-  assert.equal(res.ok, false);
-  assert.deepEqual(claves(res), ['rojo']);
-
-  // El remedio de un ROJO real NO es re-correr: reproduce el mismo rojo y el mismo bloqueo, y un
+test('SCRUM-161 · ③ recibo con fail>0 → ticket y cuarentena, NUNCA re-correr', () => {
+  // Un rojo real no se arregla re-corriendo: reproduce el mismo rojo y el mismo bloqueo, y un
   // mensaje que manda a repetir lo que acaba de fallar enseña a saltarse el guard. Va a ticket y
-  // cuarentena (SCRUM-160), y NO lleva el «corre la tanda ENTERA», que es justo esa trampa.
-  const msg = mensajeVeredicto(res, { activo: true });
-  assert.match(msg, /cuarentena/, 'un rojo va a ticket y cuarentena (SCRUM-160), no a re-correr');
-  assert.match(msg, /SCRUM-160/);
-  assert.doesNotMatch(msg, /tanda ENTERA/,
-    '🔴 a un rojo no se le manda a re-correr: reproduce el rojo y enseña a saltarse el guard');
+  // cuarentena (SCRUM-160), sin el pie de «corre la tanda ENTERA».
+  const solo = validar(reciboBueno({ fail: 1, pass: 639 }));
+  assert.equal(solo.ok, false);
+  assert.deepEqual(claves(solo), ['rojo']);
+
+  // Y EL CASO NORMAL de una tanda roja: el hijo que CONTIENE esos rojos sale exit≠0. Ese exit no
+  // es información nueva —es el mismo hecho que `fail>0`—, así que NO genera clave propia. Si la
+  // generara, el veredicto mostraría «cuarentena» y «re-correr» a la vez y la gente haría la fácil.
+  const normal = validar(reciboBueno({ fail: 21, pass: 619, hijos: { a55: 0, bot: 0, qa: 1 } }));
+  assert.equal(normal.ok, false);
+  assert.deepEqual(claves(normal), ['rojo'],
+    '🔴 el exit≠0 del hijo que lleva los rojos es redundante con `fail>0`: no debe dar clave');
+
+  for (const res of [solo, normal]) {
+    const msg = mensajeVeredicto(res, { activo: true });
+    assert.match(msg, /cuarentena/, 'un rojo va a ticket y cuarentena (SCRUM-160)');
+    assert.match(msg, /SCRUM-160/);
+    assert.doesNotMatch(msg, /tanda ENTERA/, '🔴 a un rojo no se le manda a re-correr');
+  }
 });
 
-test('SCRUM-161 · ③b un hijo que no acaba en verde → clave «hijo», y su propio remedio', () => {
-  // Por qué hacen falta los dos criterios: un hijo que CRASHEA sin ejecutar tests (regla A del
-  // runner) o uno ABORTADO POR TIEMPO (SCRUM-181) NO agrega sus contadores. `fail` sigue siendo 0
-  // y la tanda es basura. Mirando solo `fail`, este recibo pasaría.
-  //
-  // Y por qué clave PROPIA, distinta de `rojo`: el remedio diverge. Un rojo real (fail>0) no se
-  // arregla re-corriendo (va a ticket y cuarentena, SCRUM-160); un hijo caído o agotado por tiempo
-  // SÍ. Si compartieran clave, el texto de uno mandaría al otro al sitio equivocado — y un mensaje
-  // que manda a repetir lo que acaba de fallar es el modo por el que se aprende a saltarse el
-  // guard, que es justo lo que este ticket vino a cerrar.
-  const crash = validar(reciboBueno({ hijos: { a55: 0, bot: 3221225794, qa: 0 } }));
-  assert.equal(crash.ok, false);
-  assert.deepEqual(claves(crash), ['hijo']);
-  assert.match(crash.problemas[0].detalle, /bot/);
-
+test('SCRUM-161 · ③b hijo que no da resultados de fiar → «tanda no válida», y DOMINA sobre el rojo', () => {
+  // Un hijo que CRASHEA sin ejecutar tests (regla A del runner) o uno ABORTADO POR TIEMPO
+  // (SCRUM-181) NO agrega sus contadores: `fail` puede ser 0 con un proceso muerto y los números
+  // del recibo quedan INCOMPLETOS. Eso es más grave que unos rojos —no sabemos si están todos— y
+  // por eso es clave PROPIA (`hijo`) con su propio remedio: re-correr, no cuarentena.
   const timeout = validar(reciboBueno({ hijos: { a55: 0, bot: 0, qa: null } }));
   assert.equal(timeout.ok, false, '🔴 un hijo que NO llegó a terminar no es un hijo que pasó');
   assert.deepEqual(claves(timeout), ['hijo']);
   assert.match(timeout.problemas[0].detalle, /no llegó a terminar/);
 
-  // LA COMPROBACIÓN EXPLÍCITA DEL ALCANCE: a un timeout NO se le manda a cuarentena. Su mensaje
-  // lleva el remedio de re-correr (correcto para un timeout) y NUNCA el de «ticket y cuarentena».
-  const msg = mensajeVeredicto(timeout, { activo: true });
-  assert.match(msg, /test:staging:gated/, 'un timeout se arregla re-corriendo: el comando tiene que estar');
-  assert.doesNotMatch(msg, /cuarentena/, '🔴 un timeout NO va a cuarentena — eso es para un rojo real');
+  const muerto = validar(reciboBueno({ hijos: { a55: 0, bot: 3221225794, qa: 0 } }));
+  assert.equal(muerto.ok, false);
+  assert.deepEqual(claves(muerto), ['hijo']);
+  assert.match(muerto.problemas[0].detalle, /bot/);
+
+  for (const res of [timeout, muerto]) {
+    const msg = mensajeVeredicto(res, { activo: true });
+    assert.match(msg, /NO ES VÁLIDA/, 'un hijo caído invalida la tanda, y hay que decirlo');
+    assert.match(msg, /test:staging:gated/, 'y se arregla re-corriéndola, no con cuarentena');
+    assert.doesNotMatch(msg, /cuarentena/, '🔴 un timeout/crash NO va a cuarentena — eso es de un rojo real');
+  }
+
+  // LA COEXISTENCIA REALISTA que este arreglo cierra: reds Y un hijo caído a la vez. El hijo con
+  // los reds sale exit≠0 (redundante, sin clave); OTRO se cayó. Debe salir UN SOLO remedio, y es
+  // el del más grave: la tanda no es válida. Ni rastro de «cuarentena» ni doble mensaje.
+  const mixto = validar(reciboBueno({ fail: 21, pass: 619, hijos: { a55: 0, bot: null, qa: 1 } }));
+  assert.equal(mixto.ok, false);
+  assert.deepEqual(claves(mixto).sort(), ['hijo', 'rojo'], 'el rojo se lista, pero el hijo caído es el que manda');
+  const msgMixto = mensajeVeredicto(mixto, { activo: true });
+  assert.match(msgMixto, /NO ES VÁLIDA/, 'domina el remedio del hijo caído, no el del rojo');
+  assert.doesNotMatch(msgMixto, /cuarentena/, '🔴 no se ponen en cuarentena rojos de una tanda incompleta');
 });
 
 test('SCRUM-161 · ④ recibo FÓSIL → la ventana temporal', () => {
