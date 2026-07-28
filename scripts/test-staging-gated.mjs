@@ -68,6 +68,9 @@ import {
 // SCRUM-161: al terminar, el runner deja un RECIBO de que la tanda corrió. Es lo único que el
 // guard de cierre acepta como evidencia, porque es lo único que no se puede teclear.
 import { RUTA_RECIBO, HIJOS_SPEC, AISLADOS, pesadoEsElUltimo } from './_evidencia-tanda.mjs';
+// SCRUM-197: el parseo del resumen de node:test vive extraído, para que un test lo ejercite sin
+// arrancar la tanda. De su comportamiento con salida truncada depende la distinción crash-vs-rojo.
+import { CATS, parseCuenta } from './_parse-cuenta.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url)); // resolver el preflight junto a este script (SCRUM-167)
 const override = process.argv[2] || null; // contraprueba/diagnóstico: si viene, todos lo usan
@@ -115,23 +118,17 @@ if (!pesadoEsElUltimo()) {
   process.exit(2);
 }
 
-// node --test cierra con líneas de resumen prefijadas por `ℹ` (spec) o `#` (tap). Se cuentan
-// TODAS las categorías para poder cuadrar la suma; si node reporta cancelled/todo y no se
-// cuentan, la suma no daría el total por diseño.
-const CATS = ['tests', 'pass', 'fail', 'cancelled', 'skipped', 'todo'];
-function parseCuenta(salida) {
-  const c = Object.fromEntries(CATS.map((k) => [k, 0]));
-  const re = /^[#ℹ]\s+(tests|pass|fail|cancelled|skipped|todo)\s+(\d+)/gm;
-  let m;
-  while ((m = re.exec(salida)) !== null) c[m[1]] = Number(m[2]);
-  return c;
-}
+// SCRUM-197: `CATS` y `parseCuenta` se importan de _parse-cuenta.mjs (arriba). Se extrajeron para
+// que un test las ejercite sin arrancar la tanda; su comportamiento con salida truncada —del que
+// depende la distinción crash-vs-rojo del recibo— queda fijado en tests/scrum197-parse-cuenta.test.mjs.
 
 const agg = Object.fromEntries(CATS.map((k) => [k, 0]));
 const fallaron = [];
-// SCRUM-161 · exit real por hijo, para el recibo de evidencia. Arranca en `null` = «no llegó a
-// terminar»; solo se sustituye por un número cuando el proceso de verdad devolvió uno.
-const exitHijos = Object.fromEntries(hijos.map((h) => [h.clave, null]));
+// SCRUM-161/197 · DESGLOSE por hijo para el recibo de evidencia. Arranca en `null` = «no llegó a
+// terminar»; se sustituye por `{exit, tests, pass, fail}` cuando el proceso de verdad terminó.
+// SCRUM-197: guardar el fail PROPIO de cada hijo (no solo el exit) es lo que deja distinguir un
+// CRASH (exit≠0, fail propio 0) de un ROJO (exit≠0, fail propio >0) sin heurística sobre el agregado.
+const desgloseHijos = Object.fromEntries(hijos.map((h) => [h.clave, null]));
 
 // ── BANNER (SCRUM-166): test:staging y test:staging:gated apuntan AQUÍ. Sale ANTES de nada,
 // ruidoso, para que quien teclee el nombre viejo con memoria muscular vea QUÉ es esto y cuál es
@@ -386,8 +383,11 @@ async function tanda() {
     // del corte por timeout, para que un hijo abortado por tiempo se quede en `null` y no en
     // «0»: un proceso que no terminó no es un proceso que pasó. Los dos caminos que quedan por
     // debajo (el «NO EJECUTÓ» con su `continue`, y el normal) pasan los dos por esta línea.
-    exitHijos[h.clave] = code;
     const c = parseCuenta(salida);
+    // SCRUM-197: se guarda el DESGLOSE del hijo, no solo su exit. `c` sale de parseCuenta (lo que ya
+    // se calcula para agregar): un crash sin resumen lo deja en ceros (fail=0), así el validador lo
+    // lee como crash y no como rojo. Un resumen truncado no llega a escribirse: REGLA B (abajo) aborta.
+    desgloseHijos[h.clave] = { exit: code, tests: c.tests, pass: c.pass, fail: c.fail };
 
     // REGLA A · si status≠0 y no ejecutó ningún test, NO es "0 fallos": es un proceso que NO
     //           arrancó (crash, DLL, lo que sea). Se nombra como tal y NO se agregan sus ceros.
@@ -453,7 +453,7 @@ async function tanda() {
       terminadaEn: new Date().toISOString(),
       total: agg.tests, pass: agg.pass, fail: agg.fail, skip: agg.skipped,
       ficheros: override ? 1 : ficherosQa.length,
-      hijos: exitHijos,
+      hijos: desgloseHijos,
       autotest: Boolean(override),
       runner: 'scripts/test-staging-gated.mjs',
     };

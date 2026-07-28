@@ -241,39 +241,48 @@ export function validarEvidencia({ texto, commitActual, ahoraMs, ficherosEsperad
       'has tocado código después de correr la tanda');
   }
 
-  // ② EL ROJO Y LOS HIJOS · `fail` Y los tres hijos, los dos criterios, no uno: un hijo ABORTADO
-  //    POR TIEMPO (SCRUM-181) no agrega sus contadores, así que `fail` puede ser 0 con un proceso
-  //    muerto. Pero un exit≠0 de un hijo NO significa siempre lo mismo, y de ahí sale el clave
-  //    (SCRUM-161):
-  //      · exit≠0 CON `fail>0` en el agregado → es el MISMO hecho que el rojo, contado dos veces.
-  //        No es información nueva ni tiene remedio propio → NO se emite. Si se emitiera, el
-  //        veredicto mostraría «cuarentena» y «re-correr» a la vez —y en una tanda roja real eso
-  //        pasa CASI SIEMPRE— y la gente haría la fácil: el bucle que este guard vino a cerrar.
-  //      · exit=null (no terminó) o exit≠0 SIN fails (murió a mitad) → información NUEVA y más
-  //        grave: los contadores de ese hijo NO están en el agregado, así que los números del
-  //        recibo están INCOMPLETOS y la tanda no es válida. Clave `hijo`.
-  //    Así `rojo` = «salió roja» (→ cuarentena, SCRUM-160) y `hijo` = «no es de fiar» (→ re-correr).
-  //    mensajeVeredicto elige UN remedio por gravedad; nunca los dos.
+  // ② EL ROJO Y LOS HIJOS. Dos criterios, dos claves, porque el remedio DIVERGE: un `fail>0` en el
+  //    agregado es una tanda ROJA (→ ticket y cuarentena, SCRUM-160); un hijo que no terminó o
+  //    CRASHEÓ es una tanda INCOMPLETA (→ re-correr) — sus tests no están en el recuento, así que ni
+  //    siquiera sabemos si los rojos están todos. mensajeVeredicto elige UN remedio por gravedad
+  //    (incompleta > roja), nunca los dos. El detalle de la clasificación por hijo, junto al bucle.
   if (!Number.isInteger(r.fail)) {
     mal('incompleto', 'el recibo no trae `fail`');
   } else if (r.fail !== 0) {
     mal('rojo', `la tanda del recibo terminó con ${r.fail} test(s) en rojo`);
   }
-  const hayReds = Number.isInteger(r.fail) && r.fail > 0;
+  // SCRUM-197 · POR HIJO, con su desglose {exit, tests, pass, fail} — no una heurística sobre el
+  // agregado. Antes se SUPRIMÍA la clave `hijo` cuando el agregado traía rojos (`hayReds`), y eso
+  // enmascaraba un CRASH que coincidía con rojos de OTRO hijo: decía «cuarentena» sobre una tanda
+  // incompleta. Con el fail PROPIO de cada hijo la distinción es exacta, sin adivinar:
+  //    · exit=0                 → verde.
+  //    · exit≠0 y fail propio >0 → ROJO real: es el MISMO hecho que el `fail` agregado, redundante,
+  //                               sin clave propia (o saldrían dos remedios contradictorios a la vez).
+  //    · exit≠0 y fail propio =0 → CRASHEÓ sin registrar fallos: la tanda está INCOMPLETA. Clave `hijo`.
+  //    · null                    → no llegó a terminar (timeout / sin ejecutar): INCOMPLETA. Clave `hijo`.
+  //
+  // ⚠️ LÍMITE DECLARADO (SCRUM-197): esta clasificación ASUME que un hijo con rojos TERMINÓ. Un hijo
+  //    que tiene rojos Y ADEMÁS muere antes de acabar trae exit≠0 y fail>0, así que se lee como rojo
+  //    normal (→ cuarentena), aunque le falten los tests que no llegó a correr. NO se distingue a
+  //    propósito: hacerlo exigiría saber cuántos tests DEBERÍA tener cada hijo, y eso es otra lista a
+  //    mano — justo lo que SCRUM-199 eliminó. La cura sería peor que el residual. Un límite escrito es
+  //    un límite; uno callado es la próxima sorpresa.
   const hijos = r.hijos && typeof r.hijos === 'object' ? r.hijos : null;
   if (!hijos) {
-    mal('incompleto', 'el recibo no trae `hijos` con el exit de cada proceso');
+    mal('incompleto', 'el recibo no trae `hijos` con el desglose de cada proceso');
   } else {
     for (const clave of CLAVES_HIJOS) {
-      const v = hijos[clave];
-      if (v === 0) continue;
-      if (v === null || v === undefined) {
+      const h = hijos[clave];
+      if (h === null || h === undefined) {
         mal('hijo', `el hijo «${clave}» no llegó a terminar (abortado por tiempo o sin ejecutar): sus tests no están en el recuento, la tanda está incompleta`);
-      } else if (hayReds) {
-        // exit≠0 con rojos en el agregado: el mismo hecho que `fail>0`. Redundante → no se emite.
-        continue;
+      } else if (typeof h !== 'object' || !Number.isInteger(h.exit) || !Number.isInteger(h.fail)) {
+        mal('incompleto', `el hijo «${clave}» no trae su desglose {exit, fail} — recibo viejo (pre-SCRUM-197) o corrupto`);
+      } else if (h.exit === 0) {
+        continue; // verde
+      } else if (h.fail > 0) {
+        continue; // ROJO real: redundante con el `fail` agregado (clave `rojo`), sin clave propia
       } else {
-        mal('hijo', `el hijo «${clave}» salió con exit=${JSON.stringify(v)} sin registrar ningún fallo: murió a mitad, la tanda está incompleta`);
+        mal('hijo', `el hijo «${clave}» salió con exit=${JSON.stringify(h.exit)} SIN registrar ningún fallo: crasheó, la tanda está incompleta`);
       }
     }
   }
