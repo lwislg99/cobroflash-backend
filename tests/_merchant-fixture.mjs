@@ -238,7 +238,38 @@ export async function withMerchant(prisma, data, fn, { after: afterFn = after, p
  * de un camino sin cubrir, y por eso AVISA en vez de limpiar en silencio: una red que
  * limpia calladamente esconde justo el fallo que hay que arreglar.
  */
+/**
+ * SCRUM-194 · LAS QUE LLEGAN TARDE — cerrar el ORIGEN, no limpiar el resultado.
+ *
+ * Medido el 28-jul-2026: 68 filas huérfanas en staging (`AuditLog` 47, `WhatsAppMessage` 21) y
+ * CERO en producción. El reparto lo dice todo: son exactamente los dos modelos que se escriben
+ * FIRE-AND-FORGET (`recordAudit`, `recordWaMessage`, ninguno esperado con `await`).
+ *
+ * O sea que NO es un problema de cobertura —los dos están en `MODELOS_POR_MERCHANT` y el barrido
+ * los visita— sino de CUÁNDO: la escritura asíncrona aterriza DESPUÉS de que se borrara el
+ * merchant efímero, así que la fila nace ya huérfana. `limpiarMerchant` reintenta por esto
+ * mismo, pero el reintento tiene un final y la que llega más tarde se queda.
+ *
+ * Aquí se cierra por el otro lado: al terminar el fichero se barren las filas cuyo `merchantId`
+ * NO EXISTE. Es seguro por definición —no hay merchant al que pertenezcan ni consulta legítima
+ * que las quiera— y ataja la carrera sin tener que adivinar cuánto tarda una escritura suelta.
+ */
+async function barridoDeHuerfanas(prisma) {
+  const ids = (await prisma.merchant.findMany({ select: { id: true } })).map((m) => m.id);
+  let total = 0;
+  for (const modelo of MODELOS_POR_MERCHANT) {
+    const r = await prisma[modelo]
+      ?.deleteMany({ where: { merchantId: { notIn: ids } } })
+      .catch(() => null);
+    total += r?.count || 0;
+  }
+  if (total > 0) console.warn(`🧹 SCRUM-194: ${total} fila(s) huérfana(s) barridas al cerrar el fichero.`);
+}
+
 export async function barridoFinal(prisma) {
+  // Las huérfanas se barren SIEMPRE, haya o no merchants vivos: aparecen justamente cuando el
+  // merchant ya se borró y su escritura tardía llegó después.
+  await barridoDeHuerfanas(prisma).catch((e) => console.warn('barrido de huérfanas:', e?.message));
   if (merchantsVivos.size === 0) return;
   const pendientes = [...merchantsVivos];
   console.warn(
