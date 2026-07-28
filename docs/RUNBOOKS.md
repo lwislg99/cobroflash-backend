@@ -251,3 +251,43 @@ lo que ya está desplegado sigue funcionando.
   avísalo al mergearlo — o esas ramas se enterarán al aterrizar, que es tarde.
 - Un bypass repetido por la misma causa **no es un bypass: es un CI mal montado**. Dos veces
   seguidas por lo mismo → ticket para arreglarlo, no una tercera.
+
+## R18 · Un cambio de schema no está aplicado hasta estar en las TRES BD (SCRUM-169)
+
+**Síntoma:** tests gateados o `npm run dev` en rojo, o `P2022`, tras un cambio de schema que
+"ya se aplicó". Costó 16 tests rojos y un lote entero de diagnóstico para acabar en "faltaba
+un `db push`".
+
+**Regla:** una columna nueva / `ALTER` NO está aplicada hasta estar en las TRES bases. El MISMO
+mapa y el MISMO criterio están, verbatim, en la cabecera de `docs/MIGRATIONS_PENDING.md`; si
+divergen en una palabra, el problema no está resuelto, solo movido.
+
+Un cambio de schema NO está aplicado hasta estar en las TRES bases:
+
+```
+1. acela.proxy.rlwy.net / railway          — STAGING. Protegida por el máster: no se toca
+                                             sin que el fundador lo sepa. Es la base del
+                                             worktree cobroflash-b2.
+2. acela.proxy.rlwy.net / yaqu_dev_javier  — DESARROLLO. El fundador dijo que NO requiere su
+                                             GO para aplicarle schema. Base de cobroflash-b1.
+3. autorack.proxy.rlwy.net                 — PRODUCCIÓN.
+```
+
+⚠️ Las dos primeras viven en el MISMO servidor (`acela`) y son bases DISTINTAS. Ninguna es
+"local". Por eso pueden divergir de esquema sin que nada avise: `scripts/_db-guard.mjs` valida
+el HOSTNAME, no la base, y el marcador `YAQU_STAGING` está en las dos. Las salvaguardas
+garantizan "NO es producción", no "es la base que crees" — y eso es exactamente lo que produjo
+los 16 rojos crípticos de SCRUM-160.
+
+Fuente de los hostnames: `scripts/_db-guard.mjs` (`PROD_HOST` / `STAGING_HOST`), único sitio que
+los define en el árbol.
+
+Nomenclatura fijada por carril B el 27-jul-2026 con la regla de desempate del fundador. El
+criterio para asignar el papel ha sido la AUTORIZACIÓN, no la ubicación ni el uso: las dos
+primeras están en el mismo servidor y las dos las ejercitan tandas gateadas; lo que las
+distingue es quién puede tocarlas. Se descarta llamar a `yaqu_dev_javier` "segunda BD de
+staging" (SCRUM-84) porque implicaría el régimen de `railway` y no lo tiene. Si el fundador lo
+ve de otra forma, es una línea.
+
+**Prevención:** cada entrada de `docs/MIGRATIONS_PENDING.md` lleva las tres como checkbox; una
+sin marcar = migración NO aplicada.
