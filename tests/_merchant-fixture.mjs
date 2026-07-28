@@ -68,12 +68,17 @@ export function telefonosDe(merchantId) {
  *
  * Son los 21 modelos con `merchantId` del schema (SCRUM-170 sumó `albaranLineaFacturada`). La
  * red de seguridad NO es uniforme (censo SCRUM-172), y saberlo importa:
- *   · 12 tienen FK a Merchant (Restrict): si uno se sale de la lista, el `merchant.delete` del
- *     fixture falla RUIDOSO y el error nombra la tabla. Red real.
+ *   · 12 tienen FK a Merchant, todas RESTRICT: si uno se sale de la lista, el `merchant.delete`
+ *     del fixture falla RUIDOSO y el error nombra la tabla. Red real. MEDIDO, no inferido del
+ *     schema: `pg_constraint` en dev Y en staging (SCRUM-192) da 12 constraints, todas
+ *     `confdeltype='r'` (RESTRICT). Los otros números que rondaron (0 y 2) eran mediciones
+ *     erróneas — no lo vuelvas a medir, el dato ya está confirmado en dos BD con el mismo método.
  *   · 9 son COLUMNA SUELTA, sin FK (WhatsAppMessage, LegalAcceptance, Job, MaintenancePlan,
- *     AuditLog, Attachment, Albaran, AlbaranLineaFacturada + BotSession — varias de las de más
- *     volumen). Para estos NO hay red: `merchant.delete` «tiene éxito» dejando huérfanos. Fallo
- *     MUDO. Su única protección es estar en esta lista con el predicado correcto.
+ *     AuditLog, Attachment, Albaran, AlbaranLineaFacturada + BotSession). Para estos NO hay red:
+ *     `merchant.delete` «tiene éxito» dejando huérfanos. Fallo MUDO. Su única protección es estar
+ *     en esta lista con el predicado correcto. OJO — NO son «logs»: `Job` es el Trabajo, la
+ *     entidad CENTRAL del producto, y Albaran/AlbaranLineaFacturada/Attachment/MaintenancePlan
+ *     son datos de negocio. Olvidar una deja huérfanos MUDOS de datos REALES, no de un log.
  * Principio FK-Restrict (docs/QA/SUITE_REGRESION.md). `botSession` agrava: merchantId nullable,
  * el predicado `{ merchantId }` ni toca sus filas null → se barre aparte, por phone (SCRUM-174).
  */
