@@ -266,6 +266,20 @@ Valida cuatro cosas, y **cada una cierra una trampa concreta**:
 | `terminadaEn` dentro de 24 h | recibo fósil en una rama larga |
 | `total` ≥ suelo **y** `ficheros` ≥ los que hay en `tests/` | correr **un** fichero y llamarlo tanda |
 
+**Cuándo hay recibo y cuándo no — medido contra Postgres real (28-jul-2026):**
+
+| Cómo acaba la tanda | ¿Recibo? |
+| --- | --- |
+| verde | ✅ sí |
+| **roja** (tests en rojo, o un hijo con exit≠0) | ✅ **sí**, con `fail` y los exits reales — el validador lo rechaza después |
+| preflight aborta (deriva de esquema, o sin veredicto) | ❌ no |
+| turno de staging ajeno (exit 5) | ❌ no, y **no pisa** el recibo que hubiera |
+| árbol movido a mitad (exit 4) | ❌ no |
+
+La asimetría es deliberada: las cuatro últimas son «no pude comprobar», y un recibo ahí diría
+más de lo que se sabe. La segunda fila es la que suele sorprender — si el recibo solo se
+escribiera en verde, **«no hay recibo» sería ambiguo** entre «no la corriste» y «salió roja».
+
 **Por qué está apagado, y cuándo se enciende.** La tanda no está verde. Un guard que exige
 evidencia hoy obliga a adjuntar una tanda ROJA: o bloquea a todo el mundo, o enseña a adjuntar
 rojos — y lo segundo es peor, porque convierte el rojo en trámite (la doctrina del «check rojo
