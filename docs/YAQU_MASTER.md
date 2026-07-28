@@ -145,7 +145,8 @@ src/core/storage/r2.ts        ← F2 (fs Railway es efímero)
 
 ## D3. Decisiones técnicas cerradas
 - **Pagos:** Stripe Connect **Express** + **DIRECT CHARGES** sobre la cuenta conectada (`stripeAccount`) con `application_fee_amount` (`APPLICATION_FEE_BPS=90`). El merchant es merchant-of-record (disputas/refunds en su cuenta). La suscripción del SaaS va por Billing en la cuenta de plataforma (flujo separado). Mercado Pago se mantiene para F3.
-- **Bizum:** Stripe Bizum NO soporta Connect a día de hoy [VALIDADO 10-jun, docs.stripe.com] → **Bizum manual asistido** (C1-4) + **BIZUM-WATCH** trimestral; MONEI solo si la telemetría lo pide (U2). El fee del 0,9 % aplica SOLO a tarjeta (W1); Bizum manual y transferencia van sin fee. PROHIBIDO procesar pagos de clientes finales en la cuenta de plataforma (regla 23).
+- **Bizum:** ~~Stripe Bizum NO soporta Connect a día de hoy [VALIDADO 10-jun, docs.stripe.com]~~ → **🔔 BIZUM-WATCH DISPARADO EN POSITIVO — 28-jul-2026: Stripe Bizum YA SOPORTA Connect.** Verificado en `docs.stripe.com/payments/bizum`: trae tabla de tipos de cargo (Directo / Destino / `on_behalf_of`) y exige la capability **`bizum_payments`** en `active` **en la plataforma Y en cada cuenta conectada**. La afirmación anterior era cierta el 10-jun y **caducó**; el watch existía justo para esto y lo cazó (por la vía del spike de SCRUM-7, no por la revisión trimestral — ver nota abajo). **MONEI queda descartado**: era la alternativa por si Connect no llegaba. Conviven dos vías: **Bizum manual asistido** (C1-4, confirmación declarativa, **sin fee**) y **Bizum automático** (SCRUM-3, direct charge en la cuenta conectada, **fee 0,9 %** igual que tarjeta, confirmación real por webhook). **Política de fee (decisión del fundador, SCRUM-2):** el 0,9 % aplica a **tarjeta y a Bizum automático** — las dos vías con PSP; **Bizum manual y transferencia siguen sin fee**, porque en ellas YaQu no procesa el dinero. PROHIBIDO procesar pagos de clientes finales en la cuenta de plataforma (regla 23) — cubierto por construcción: Bizum automático viaja dentro de la misma sesión de checkout que la tarjeta, ya gateada por `cardChargeDecision`.
+  > **Nota de método, y es la lección:** el watch era **trimestral y manual**, y quien lo disparó fue un spike de otro ticket que fue a leer la doc por otro motivo. Entre el 10-jun y el 28-jul el máster afirmó como VALIDADO algo que había dejado de ser cierto, y nadie lo habría notado hasta la siguiente revisión. Una afirmación con fecha de validación no es una afirmación permanente: **el «[VALIDADO fecha]» dice cuándo se miró, no que siga siendo verdad.**
 - **Voz:** Web Speech API en cliente (Chrome Android = mayoría ICP), textarea editable; fallback F2: audio→Whisper/Deepgram [VALIDAR coste].
 - **Storage:** R2 con URLs firmadas (F2) para firmas/fotos/PDF nuevos.
 - **Flags:** precedencia merchant > país > env global (Parte P).
@@ -1327,6 +1328,20 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 **W3. Entitlements a IMPLEMENTAR — solo dos:** límite de usuarios (1 Pro / 5 Equipo manual) + contador fair-use WA (soft). Todo lo demás = incluido = cero checks.
 **W4. Selector de pago (referencia de N2):** ≤500 € → Bizum + Tarjeta (botones), transferencia (enlace) · 500-1.000 € → Tarjeta principal · >1.000 € → Tarjeta + transferencia (Bizum oculto por límites bancarios del pagador: 500-1.000 €/op según banco, 2.000 €/día).
 
+> **¿Cambia W4 con el Bizum automático? (SCRUM-8, 28-jul-2026) — LOS TRAMOS NO, y el motivo importa.**
+>
+> La tentación era subir el techo: Stripe admite Bizum hasta **5.000 €**, cinco veces el tope actual. **Sería un error**, y la propia W4 ya lleva escrita la razón: el tope de 1.000 € **no sale de Stripe ni del método manual — sale de los límites del BANCO DEL PAGADOR** (500-1.000 €/operación según banco, 2.000 €/día). Ese límite no lo mueve ningún cambio de Stripe. Ofrecer Bizum en un cobro de 3.000 € porque «Stripe lo permite» pondría delante del cliente un método que **su banco va a rechazar**, en la pantalla de cobro, después de haber elegido. Es peor que no ofrecerlo. **Los tramos de W4 se quedan como están.**
+>
+> Lo que sí cambia es **cuál de los dos Bizum se ofrece dentro de ≤1.000 €**, y eso es decisión de producto pendiente:
+>
+> | | Bizum manual (C1-4) | Bizum automático (SCRUM-3) |
+> |---|---|---|
+> | Fee | **0 %** | **0,9 %** |
+> | Confirmación | **declarativa** (el merchant dice que le llegó) | **real** (webhook de Stripe) |
+> | Requiere | `bizumPhone` | Connect activo + capability `bizum_payments` |
+>
+> **Recomendación: el automático cuando esté disponible, el manual como respaldo.** El manual es la única vía de cobro de la casa que puede *mentir* sobre si el dinero llegó — su riesgo está asumido a conciencia (como el efectivo), pero cuando existe una confirmación real, aceptar una declarativa a cambio de 0,9 % es pagar con certeza para ahorrar dinero. **Contraargumento legítimo y por eso la decisión es tuya:** en cobros pequeños el 0,9 % sobre 200 € son 1,80 € que el fontanero se ahorra hoy, y el manual lleva meses funcionando. Si se quiere dejar elegir, es un ajuste por merchant, no una regla global. **Nada de esto se ha construido: el selector no se tocó** (SCRUM-3 entregó solo la capa de dominio).
+
 ---
 
 # PARTE X — DECISIONES IA/MEDIA Y ANALYTICS
@@ -1538,7 +1553,7 @@ Vanilla, sin React/Tailwind/build, sin dependencias pesadas, sin reescritura: **
 | **STEL Order: WhatsApp + tarjeta + VeriFactu certificado, pero ERP pesado por usuario (24-60 €)** | ✅ (research 13-jun) | stelorder.com — defensa: simplicidad + precio plano |
 | Holded/Quipu: VeriFactu anunciado, no operativo en prod (feb-2026) | **[VALIDAR estado actual]** | webs oficiales |
 | PresuNow sin cobro integrado / sin WA API nativa | **[VALIDAR con trial]** | su web (inferido) |
-| Stripe Bizum: Checkout/Links/refunds/disputas SÍ · **Connect NO** | ✅ (10-jun) | docs.stripe.com/payments/bizum → BIZUM-WATCH trimestral |
+| ~~Stripe Bizum: Connect **NO**~~ → **Connect SÍ** (capability `bizum_payments` en plataforma + cuenta conectada) | ✅ 10-jun **CADUCADA** · revalidada **28-jul-2026** | docs.stripe.com/payments/bizum · **BIZUM-WATCH disparado en positivo**, lo cazó el spike de SCRUM-7 y no la revisión trimestral |
 | Límites Bizum: 500-1.000 €/op según banco · 2.000 €/día · 60 recepciones/mes | ✅ | Stripe/Openbank + bancos |
 | WhatsApp utility ES ~0,025 $/msg · servicio en ventana 24h gratis (Meta cobra por mensaje entregado desde jul-2025 — modelar margen recordatorios) | ✅ | tarifas Meta 2026 |
 | Volumen vía plataforma 1.200 €/merchant/mes · adopción 40-60 % | **[SUPUESTO → discovery + telemetría]** | variable del modelo dual |
