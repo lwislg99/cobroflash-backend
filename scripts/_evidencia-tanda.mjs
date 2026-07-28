@@ -123,8 +123,11 @@ export const MARGEN_FUTURO_MS = 60 * 60 * 1000;
  */
 export const SUELO_TOTAL = 400;
 
-/** Las tres claves de los hijos del runner. Si cambian ahí, este recibo deja de cuadrar. */
-export const CLAVES_HIJOS = ['a55', 'bot', 'qa'];
+/** Las CUATRO claves de los hijos del runner. Si cambian ahí, este recibo deja de cuadrar.
+ *  SCRUM-180 añadió 'scrum180' (hijo propio, dry-run OFF). El guard ITERA esta lista para exigir
+ *  exit=0 por hijo: una clave que falte aquí = un hijo que puede salir ROJO sin que el guard lo
+ *  mire (el fallo silencioso). Emparejada con AISLADOS del runner y del verificador (SCRUM-199 unifica). */
+export const CLAVES_HIJOS = ['a55', 'bot', 'qa', 'scrum180'];
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // EL VALIDADOR — puro. Recibe el TEXTO del recibo (o null si no está) y devuelve el veredicto.

@@ -73,9 +73,12 @@ const HERE = path.dirname(fileURLToPath(import.meta.url)); // resolver el prefli
 const override = process.argv[2] || null; // contraprueba/diagnóstico: si viene, todos lo usan
 
 const TESTS_DIR = 'tests';
-const AISLADOS = ['a55-window-quote.test.mjs', 'bot-suite.test.mjs'];
+// SCRUM-180: el 3er aislado corre en su propio hijo SIN WHATSAPP_DRY_RUN (afirma dry-run OFF).
+// ⚠️ Esta lista está DUPLICADA a mano en verificar-evidencia-tanda.mjs (AISLADOS) y emparejada
+// con CLAVES_HIJOS de _evidencia-tanda.mjs: mover una sin las otras descalibra el guard. SCRUM-199 unifica.
+const AISLADOS = ['a55-window-quote.test.mjs', 'bot-suite.test.mjs', 'scrum180-fixtures-nunca-a-meta.test.mjs'];
 
-// El bloque QA_DB_TEST corre TODOS los *.test.mjs MENOS los dos aislados (para no contarlos
+// El bloque QA_DB_TEST corre TODOS los *.test.mjs MENOS los tres aislados (para no contarlos
 // dos veces: aquí saltarían, y abajo se ejecutan de verdad). DERIVADO DEL DIRECTORIO, no
 // una lista literal: un fichero de test nuevo entra solo — si fuese enumeración a mano,
 // un test que nadie añada aquí no correría nunca (sería SCRUM-158 dentro de este runner).
@@ -108,6 +111,17 @@ const hijos = [
     // es lo que toca cuando el fallo se paga en el número de WhatsApp Business.
     env: { BOT_SUITE_TEST: '1', WHATSAPP_DRY_RUN: '1', QA_DB_TEST: undefined, A55_DB_TEST: undefined },
     args: ['--test', '--test-force-exit', '--test-concurrency=1', override || `${TESTS_DIR}/bot-suite.test.mjs`],
+  },
+  {
+    nombre: 'scrum180-fixtures-nunca-a-meta (aislado, dry-run OFF a propósito)',
+    clave: 'scrum180', // SCRUM-161: clave estable para el recibo (emparejada con CLAVES_HIJOS)
+    // SCRUM-180: este fichero AFIRMA que WHATSAPP_DRY_RUN está apagado (su línea 32) — comprueba
+    // que las fixtures NUNCA salen a Meta por el freno REAL (whatsappPolicy.salidaAMetaBloqueada),
+    // no por el atajo del dry-run. En el hijo QA (que fija WHATSAPP_DRY_RUN=1) su assert fallaba.
+    // Va en su propio proceso SIN dry-run (el runner hace `delete env[k]` con undefined) y con el
+    // resto de gates apagados. ANTES del pesado por el invariante de orden.
+    env: { WHATSAPP_DRY_RUN: undefined, QA_DB_TEST: undefined, A55_DB_TEST: undefined, BOT_SUITE_TEST: undefined },
+    args: ['--test', '--test-force-exit', '--test-concurrency=1', override || `${TESTS_DIR}/scrum180-fixtures-nunca-a-meta.test.mjs`],
   },
   {
     nombre: 'suite QA_DB_TEST (gateados QA + ungated, sin a55/bot)',
