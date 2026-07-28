@@ -1,4 +1,5 @@
 // tests/_guard-texto.mjs — helper compartido para GUARDS QUE MIRAN TEXTO.
+import fs from 'node:fs'; // SCRUM-193: `leerFuente` LEE, no solo filtra
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // POR QUÉ EXISTE (decisión del fundador, 28-jul-2026)
@@ -42,6 +43,32 @@ export function soloEjecutable(fuente) {
     .split('\n')
     .filter((l) => !/^\s*(\/\/|#)/.test(l))
     .join('\n');
+}
+
+/**
+ * SCRUM-193 · LEER UN FICHERO YA FILTRADO. **Este es el camino por defecto.**
+ *
+ * POR QUÉ HIZO FALTA, aunque la regla y `soloEjecutable` ya existían: mordió una CUARTA vez
+ * después de escribirlas. Que una regla exista no basta si no es el camino corto — mientras
+ * `fs.readFileSync` sea lo primero que uno teclea, el filtrado depende de acordarse, y
+ * acordarse falla. Aquí se invierte la comodidad: leer devuelve YA filtrado, y quedarse con
+ * los comentarios exige pedirlo (`{ conComentarios: true }`) y justificarlo donde se pide.
+ *
+ * No añade capacidad —hace lo mismo que `readFileSync` + `soloEjecutable`—; lo que cambia es
+ * cuál de las dos cosas es la fácil de escribir.
+ */
+export function leerFuente(ruta, { conComentarios = false } = {}) {
+  // ⚠️ MARKDOWN NO. En .md el # es un ENCABEZADO, no un comentario: filtrar se comeria la
+  // mitad del documento y el guard pasaria a mirar un texto que no existe — verde falso del
+  // peor tipo. Se para en vez de adivinar; para leer un .md se pide explicitamente.
+  if (/.(md|markdown)$/i.test(ruta) && !conComentarios) {
+    throw new Error(
+      `leerFuente: ${ruta} es Markdown y ahi el # es un encabezado, no un comentario. ` +
+      "Usa leerFuente(ruta, { conComentarios: true }) — en un .md no hay codigo que separar.",
+    );
+  }
+  const texto = fs.readFileSync(ruta, 'utf8');
+  return conComentarios ? texto : soloEjecutable(texto);
 }
 
 /**

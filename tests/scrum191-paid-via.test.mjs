@@ -19,11 +19,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { paidViaDesdeStripe, esPaidViaValido, PAID_VIA } from '../dist/modules/billing/domain/paidVia.js';
-import { soloEjecutable } from './_guard-texto.mjs';
+import { leerFuente } from './_guard-texto.mjs'; // SCRUM-193: leer YA filtrado es el camino corto
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
-const WEBHOOK = fs.readFileSync(
+const WEBHOOK = leerFuente(
   path.join(RAIZ, 'src', 'modules', 'payments', 'connect', 'connectWebhook.routes.ts'),
   'utf8',
 );
@@ -79,7 +79,7 @@ test('SCRUM-191 · el máster y el código dicen lo mismo', () => {
 // que es exactamente el fallo que se repitió tres veces esta sesión.
 
 test('SCRUM-191 · el webhook ya no fija el método a fuego', () => {
-  const codigo = soloEjecutable(WEBHOOK);
+  const codigo = WEBHOOK;
   assert.ok(
     !/method:\s*'card'/.test(codigo),
     "🔴 ha vuelto `method: 'card'` a fuego en el webhook de Connect. Todo cobro por Bizum " +
@@ -97,7 +97,7 @@ test('SCRUM-191 · el webhook ya no fija el método a fuego', () => {
 });
 
 test('SCRUM-191 · si no se puede resolver el método, se omite en vez de inventarlo', () => {
-  const codigo = soloEjecutable(WEBHOOK);
+  const codigo = WEBHOOK;
   assert.ok(
     /\.\.\.\(metodo \? \{ method: metodo \} : \{\}\)/.test(codigo),
     '🔴 el `method` debe omitirse cuando no se resolvió, para que /webhooks/psp conserve el que ' +
@@ -113,7 +113,9 @@ test('SCRUM-191 · si no se puede resolver el método, se omite en vez de invent
 // mañana. Ya no bloquea nada hoy; bloquea la reincidencia.
 
 test('SCRUM-191 · el acoplamiento flag↔webhook sigue en pie', () => {
-  const acopl = fs.readFileSync(path.join(AQUI, 'scrum3b-selector-bizum.test.mjs'), 'utf8');
+  // SCRUM-193: también filtrado. Si 'BIZUM_AUTO_ENABLED' solo apareciera en un COMENTARIO de
+  // ese test, este assert habría dado por vivo un acoplamiento retirado — verde falso.
+  const acopl = leerFuente(path.join(AQUI, 'scrum3b-selector-bizum.test.mjs'));
   assert.ok(
     acopl.includes('BIZUM_AUTO_ENABLED'),
     '🔴 se ha retirado el acoplamiento entre el flag y el webhook. Mientras exista la ' +
