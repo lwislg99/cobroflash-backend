@@ -30,7 +30,9 @@
 //
 // `prisma` va por PARÁMETRO, no importado: así merchant-fixture.test.mjs puede inyectar un
 // doble y probar en rojo las dos garantías SIN BD y SIN gate, en `npm test` normal
-// (regla 3 del runbook: la garantía estructural no vive detrás de QA_DB_TEST).
+// (principio 3 de docs/QA/SUITE_REGRESION.md, sección «Escribir verificaciones»: la garantía
+// estructural no vive detrás de QA_DB_TEST — «una red que solo funciona cuando alguien se
+// acuerda de levantarla no es una red»).
 import { after } from 'node:test';
 
 /**

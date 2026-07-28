@@ -40,7 +40,8 @@ test('SCRUM-158: todo montaje admin-gateado tiene ≥1 ruta suya en ADMIN_ONLY_R
   const fuente = fs.readFileSync(APP_TS, 'utf8');
   const montajes = montajesGateados(fuente);
 
-  // GUARDA DEL DETECTOR (regla 2 del runbook / lección de SCRUM-113): si el extractor deja de
+  // GUARDA DEL DETECTOR (principio 2 de docs/QA/SUITE_REGRESION.md, sección «Escribir
+  // verificaciones» / lección de SCRUM-113): si el extractor deja de
   // reconocer la forma de `mountAdmin` —porque alguien la reescribe, la envuelve o la renombra—
   // este test pasaría EN VACÍO con cero montajes que comprobar, que es indistinguible de "todo
   // correcto". Antes de afirmar nada hay que probar que se está viendo algo.

@@ -1,7 +1,9 @@
 // tests/merchant-fixture.test.mjs — SCRUM-113
 //
 // Prueba el helper de limpieza contra un DOBLE de prisma: sin BD, sin gate, en `npm test`
-// normal. Es deliberado (regla 3 del runbook): la garantía estructural no puede vivir
+// normal. Es deliberado (principio 3 de docs/QA/SUITE_REGRESION.md, sección «Escribir
+// verificaciones»: «una red que solo funciona cuando alguien se acuerda de levantarla no es
+// una red»): la garantía estructural no puede vivir
 // detrás de QA_DB_TEST, que es donde A12.4 se cayó entera sin que nadie se enterara.
 //
 // Y prueba lo que de verdad importa, que son los dos caminos de FALLO — no el feliz:

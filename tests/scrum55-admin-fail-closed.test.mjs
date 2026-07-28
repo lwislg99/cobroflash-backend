@@ -122,7 +122,8 @@ function enumerateAdminRoutes() {
  *
  * El primer intento de demostrarlo recortó rutas al azar y salió rojo con el suelo viejo —
  * pero lo cazó el assert de «entrada muerta», no el suelo, y solo porque el recorte pilló
- * rutas declaradas. Cazar por casualidad no es cubrir esa clase (regla 7 del runbook): había
+ * rutas declaradas. Cazar por casualidad no es cubrir esa clase (principio 7 de
+ * docs/QA/SUITE_REGRESION.md, sección «Escribir verificaciones»): había
  * que buscar la avería que NO deja rastro, y esa pasaba entera.
  *
  * Al añadir rutas SUBE (el assert no molesta: 126 >= 125 pasa). Si se BORRA una ruta de
