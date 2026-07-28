@@ -9,8 +9,9 @@
 // sea un ROJO y no un silencio.
 //
 // Lee el SCHEMA (la fuente), no la lista a mano. Ungated: sin BD, sin gate — la garantía
-// estructural no vive detrás de QA_DB_TEST (regla 3 del runbook). La parte del schema es
-// INYECTABLE para poder VER el rojo sin tocar el fichero real.
+// estructural no vive detrás de QA_DB_TEST (principio 3 de docs/QA/SUITE_REGRESION.md: «una red
+// que solo funciona cuando alguien se acuerda de levantarla no es una red»). La parte del schema
+// es INYECTABLE para poder VER el rojo sin tocar el fichero real.
 //
 // LÍMITE, dicho también aquí: verifica que la cobertura esté DECLARADA, NO que el mecanismo
 // declarado exista ni funcione (un `{ x: 'barrido mágico' }` pasaría). Que el barrido por phone
@@ -46,7 +47,11 @@ export function modelosTenenciaNullable(schemaText) {
       modelo = null;
       continue;
     }
-    if (modelo && /^\s*merchantId\s+Int\?/.test(linea)) esNullable = true;
+    // Casa por «campo merchantId de tipo NULLABLE, sea cual sea el tipo» (Int?, String?, …), NO
+    // por Int. El guard existe para cazar un nullable NUEVO de mañana, que podría no ser Int; un
+    // `merchantId String?` sin cobertura pasaría verde con `Int\?` — el agujero de tipo que este
+    // guard promete no tener. NO simplificar de vuelta a `Int\?`.
+    if (modelo && /^\s*merchantId\s+\w+\?/.test(linea)) esNullable = true;
   }
   return out;
 }
@@ -74,7 +79,10 @@ test('SCRUM-172 · el guard SE DISPARA: un nullable nuevo sin declarar sale ROJO
   // el guard — «visto fallar», no descrito.
   const schemaFalso = [
     'model BotSession {', '  merchantId Int?', '}',
-    'model NuevaCosaSinCubrir {', '  merchantId Int?', '}',
+    // String?, NO Int?: prueba que el guard casa CUALQUIER tipo nullable. Con el regex viejo
+    // (`Int\?`) este modelo NO se detectaba y el test salía verde — el agujero de tipo. Es la
+    // regresión de ese fallo, dentro del propio test.
+    'model NuevaCosaSinCubrir {', '  merchantId String?', '}',
     'model Customer {', '  merchantId Int', '}',
   ].join('\n');
   assert.deepEqual(
