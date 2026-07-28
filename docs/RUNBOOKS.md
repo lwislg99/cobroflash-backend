@@ -291,3 +291,136 @@ ve de otra forma, es una línea.
 
 **Prevención:** cada entrada de `docs/MIGRATIONS_PENDING.md` lleva las tres como checkbox; una
 sin marcar = migración NO aplicada.
+
+## R19 · Rotar la contraseña de la BD de PRODUCCIÓN (Railway)
+
+- **Síntoma / cuándo se usa:** una credencial de producción se ha visto donde no debía (salida de un comando, log, pantallazo, chat, PR), alguien con acceso deja el proyecto, o toca rotación periódica. Nace del incidente **#14** de `ERRORES_ASESOR.md` (27-jul-2026): un script leyó `DATABASE_URL` sin quitarle las comillas del `.env`, `new URL()` lanzó, y el volcado del error publicó la URL de producción con su contraseña.
+- **Regla de partida:** ante la duda, **se rota**. Una credencial que *quizá* se ha visto es una credencial comprometida. Rotar cuesta el corte que se describe abajo; no rotar cuesta la BD.
+
+### ⚠️ Antes de nada: lo que este runbook NO puede saber por ti
+
+Todo lo que sigue está verificado **contra el repo**. Hay tres cosas que solo se ven en el panel de Railway y que **cambian el procedimiento**, así que el Paso 0 existe para resolverlas:
+
+1. Si el `DATABASE_URL` del servicio de la API es una **referencia** (`${{Postgres.DATABASE_URL}}`) o un **literal pegado a mano**. Decide si la rotación se propaga sola o hay que tocar N sitios.
+2. Si hay **más servicios** (worker, cron, otro entorno) con su propia copia.
+3. Si la API conecta por el **dominio privado** (`*.railway.internal`) o por el **proxy público** (`autorack.proxy.rlwy.net`). En el repo TODO apunta al proxy público (`scripts/_db-guard.mjs`), pero el runtime puede usar el privado — y entonces hay **dos** URLs con la misma contraseña.
+
+### Paso 0 · Averiguar en cuál de los dos mundos estás (2 minutos, sin tocar nada)
+
+Railway → proyecto → servicio **API** → pestaña *Variables*. Mira `DATABASE_URL`:
+
+- **Mundo A — referencia** (se ve `${{Postgres.DATABASE_URL}}` o similar): la contraseña vive en **UN** sitio, el servicio Postgres, y todo lo demás se recompone solo. Es el caso bueno.
+- **Mundo B — literal** (se ve `postgresql://postgres:…@…`): la contraseña está **copiada** en cada servicio que la tenga. Hay que enumerarlos TODOS antes de empezar; olvidar uno es el estado a medias C.
+
+Haz lo mismo en cada servicio del proyecto. **Apunta la lista antes de tocar nada** — a mitad de rotación no es momento de descubrir un cuarto sitio.
+
+### Inventario · Qué lleva la contraseña embebida
+
+| Sitio | ¿Lleva la contraseña? | Quién lo actualiza |
+|---|---|---|
+| Servicio **Postgres** → `POSTGRES_PASSWORD` / `PGPASSWORD` | **SÍ** — es el origen | manual, Paso 4 |
+| Postgres → `DATABASE_URL` y `DATABASE_PUBLIC_URL` | **SÍ**, pero **compuestas** por referencia | se regeneran solas al cambiar la de arriba |
+| Servicio **API** → `DATABASE_URL` | Mundo A: no (referencia) · Mundo B: **SÍ** | Mundo B: manual |
+| **`.env` local del fundador** | **SÍ** — CLAUDE.md regla 3: *`.env` apunta a PROD* | manual, Paso 5. **Se olvida siempre.** |
+| `.env.local` | NO — es la BD de desarrollo | — |
+| `DATABASE_URL_STAGING` | NO — es `acela`, otra BD | — |
+| GitHub Actions | **NO** — decisión del fundador en SCRUM-161: no hay URL de BD en Actions | — |
+| Backups de `scripts/backup-dump.mjs` | NO (contienen datos, no la URL) | — |
+
+### El procedimiento
+
+**Paso 1 · Genera la contraseña nueva, y que sea segura PARA UNA URL.**
+
+```bash
+# Solo [A-Za-z0-9]. A propósito: sin @ / : ? # %
+node -e "console.log(require('crypto').randomBytes(24).toString('base64url').replace(/[-_]/g,''))"
+```
+
+> **Por qué el alfabeto restringido.** Un `@` o un `/` en la contraseña obliga a `%`-escaparla, y a partir de ahí cada parser (Prisma, libpq, `sed`, el shell) la trocea a su manera. `scripts/db-push-prod` extrae el host con un `sed` glotón: con un `@` en la contraseña **acierta el host por casualidad, no por diseño**. Este runbook nace de un fallo de parseo de URL — no metas otro.
+
+**Paso 2 · Abre una sesión psql a producción y NO la cierres.** Es tu salida de emergencia: si el Paso 4 sale mal, esta sesión sigue autenticada y puede deshacerlo.
+
+```bash
+psql "$DATABASE_URL"     # con la URL VIEJA, que aún vale
+# alternativas: Railway → Postgres → pestaña Data, o `railway connect Postgres`
+```
+
+**Paso 3 · Cambia la contraseña DENTRO de Postgres.**
+
+```
+\password postgres
+```
+
+> **`\password`, no `ALTER USER … WITH PASSWORD '…'`.** `\password` calcula el hash SCRAM **en el cliente**: la contraseña en claro no viaja por el cable ni puede acabar en `log_statement` ni en `pg_stat_activity`. El `ALTER USER` con literal sí. En un runbook que existe por una fuga, la diferencia importa.
+
+⚠️ **Cambiar `POSTGRES_PASSWORD` en las variables de Railway NO cambia la contraseña.** La imagen de Postgres solo la lee al **inicializar** el volumen. En una BD que ya existe, esa variable es un rótulo: si la cambias sola, las URLs compuestas dicen una cosa y la BD sigue esperando otra. **Este es el error clásico y es el estado a medias B.**
+
+**Paso 4 · Actualiza las variables de Railway, INMEDIATAMENTE después.** Aquí empieza la ventana.
+
+- **Mundo A:** servicio Postgres → `POSTGRES_PASSWORD` (y `PGPASSWORD` si existe) → la nueva. `DATABASE_URL`/`DATABASE_PUBLIC_URL` se recomponen solas.
+- **Mundo B:** además, cada servicio de tu lista del Paso 0, uno por uno.
+
+Guardar una variable **dispara un redeploy** del servicio. Es lo que quieres: reinicia y coge la URL nueva.
+
+**Paso 5 · El `.env` local.** Sustituye la línea `DATABASE_URL=…` por la nueva, **sin comillas alrededor**.
+
+> `scripts/db-push-prod` quita la clave `DATABASE_URL=` con `sed` y **deja las comillas dentro del valor**. Con comillas, Prisma recibe una URL con comillas literales y falla. Y las comillas del `.env` son, literalmente, la causa raíz del incidente #14.
+
+**Paso 6 · Verificación** (sección propia más abajo — no te saltes la parte del arranque en frío).
+
+**Paso 7 · Cierra la sesión psql del Paso 2** solo cuando el Paso 6 esté en verde.
+
+### Si te quedas a medias
+
+**Estado A · Cambiada en Postgres, NO en las variables.** (Te interrumpen entre el Paso 3 y el Paso 4.)
+
+- **Qué ves:** *nada, durante un rato.* Y eso es lo peligroso. Postgres autentica **al abrir la conexión**, no en cada consulta: el pool de Prisma que ya está abierto **sigue funcionando con la contraseña vieja**. La app responde, `/health` da `db: up`, y parece que no ha pasado nada. Revienta cuando el pool recicla una conexión ociosa, o al primer reinicio — o sea, **de madrugada y sin nadie mirando**.
+- **Salida:** completa el Paso 4. Si no puedes (no tienes la nueva a mano), vuelve atrás desde la sesión del Paso 2 con `\password postgres` y la vieja.
+- **Si ya cerraste la sesión y no tienes ninguna de las dos:** Railway → Postgres → pestaña *Data*. El panel no usa tus variables, así que sigue entrando cuando tú ya no puedes.
+
+**Estado B · Cambiadas las variables, NO en Postgres.** (Cambiaste `POSTGRES_PASSWORD` creyendo que eso rotaba la contraseña.)
+
+- **Qué ves:** fallo **inmediato y total**. El guardado dispara un redeploy, la app arranca con una URL que la BD rechaza, y todo lo que toque BD cae. En los logs de Railway: `P1000` (autenticación fallida) — no `P1001`, que sería no llegar al servidor. **Distinguirlos es el diagnóstico entero.**
+- **Salida, por orden de preferencia:** ① revertir la variable al valor viejo (redeploy, servicio arriba, y vuelves a empezar con calma); ② si ya no tienes el valor viejo, entrar por Railway → Postgres → *Data* y hacer `\password postgres` poniendo la **nueva**, para que la BD se alinee con lo que ya dicen las variables.
+- **Por eso el Paso 2 dice que no cierres la sesión, y por eso la contraseña vieja no se borra hasta que el Paso 6 está verde.** La salida de este estado necesita una de las dos.
+
+**Estado C · Mundo B con un servicio olvidado.** La API va y el worker cae, o al revés. Mismo síntoma `P1000` pero **solo en un servicio** — de ahí que el Paso 0 pida la lista escrita.
+
+### Cómo verificar que sigue conectando
+
+**`/health` en verde NO demuestra que la credencial nueva funcione.** Está verificado en el código: `src/modules/system/app/routes/health.routes.ts` hace `SELECT 1` sobre el **cliente Prisma compartido** de `src/core/db/prisma.ts`, o sea sobre el pool que ya estaba abierto. Un proceso vivo con conexiones abiertas responde `db: up` con la credencial vieja. **Hay que forzar un arranque en frío.**
+
+1. **Redeploy explícito** de la API en Railway (aunque el Paso 4 ya disparara uno: quieres uno que arranque *después* de todas las variables).
+2. **Con el proceso recién arrancado**, y no antes:
+   ```bash
+   curl -s https://yaqu.app/health
+   # esperado: {"ok":true,"service":"yaqu-backend","version":"…","db":"up"}
+   ```
+3. **Logs de Railway** durante el arranque: ni `P1000` ni `Authentication failed`.
+4. **Una lectura real de extremo a extremo**, no solo el `SELECT 1`: entra al dashboard con `demo@yaqu.app` y abre una lista que consulte BD. `/health` prueba que hay conexión; esto prueba que la app funciona.
+5. **La ruta que casi nadie prueba y es la que muerde luego:** el preview de `db push` desde local, que usa el `.env` del Paso 5.
+   ```bash
+   npx prisma migrate diff \
+     --from-schema-datasource prisma/schema.prisma \
+     --to-schema-datamodel prisma/schema.prisma --script
+   ```
+   Es **solo lectura**. Si falla con `P1013`, el `.env` tiene comillas (Paso 5). Si falla con `P1000`, la contraseña del `.env` no es la nueva.
+
+### ¿Se puede sin downtime?
+
+**Rotando la contraseña del MISMO rol, no.** Postgres no admite dos contraseñas simultáneas por rol (no hay equivalente al dual-password de MySQL 8). Entre el Paso 3 y el arranque en frío del Paso 6 hay una ventana en la que **toda conexión NUEVA falla**; las ya abiertas aguantan. En la práctica: **de 1 a 3 minutos**, y el impacto real depende de si algo arranca en frío justo ahí.
+
+Para que la ventana sea lo más corta posible:
+- Ten la contraseña generada y la lista de variables **antes** de empezar.
+- Paso 3 y Paso 4 **seguidos**, sin pausa para el café.
+- **No mergees nada a `main` durante la ventana**: Railway auto-despliega desde `main` y un deploy a mitad de rotación arranca en frío con las variables a medias — que es el estado A convertido en caída.
+- Hazlo en hueco de tráfico bajo. No hay ventana de cero.
+
+**Sí hay una vía sin corte, y no la recomiendo aquí:** crear un rol nuevo (`yaqu_app`) con su contraseña, apuntar `DATABASE_URL` a él, verificar, y retirar el viejo. Nunca hay una credencial inválida en uso. **El problema para YaQu:** las tablas las **posee** `postgres`, y `ALTER TABLE` exige propiedad, no `GRANT`. Un rol nuevo con todos los `GRANT` del mundo **haría fallar el siguiente `db push`** salvo que se le dé pertenencia al rol dueño (`GRANT postgres TO yaqu_app`) o se reasigne la propiedad (`REASSIGN OWNED`) — dos operaciones con más superficie de rotura que el corte de dos minutos que evitan. Cambiar el modelo de roles es un cambio de infraestructura por su cuenta, no un paso de un runbook de emergencia. Si algún día la app deja de hacer DDL en producción, esta vía pasa a ser la buena.
+
+### Prevención
+
+- **`parseBDSegura` / `redactarSecretos`** (`scripts/_db-guard.mjs`) y la regla **R7** de `ERRORES_ASESOR.md`: una credencial no se protege redactando mensajes, sino impidiendo que el error salga. Guard: `tests/scrum195-url-bd-sin-fuga.test.mjs`.
+- **Un script que toca una BD importa `_db-guard.mjs`.** Nunca `new URL(dbUrl)` suelto, ni «solo para leer el host».
+- **El scratchpad sigue siendo superficie descubierta** (fue donde ocurrió #14): ningún test del repo lo cubre. Ahí solo vale la disciplina — y este runbook, para cuando la disciplina falle otra vez.
+- **Tras rotar:** borra la contraseña vieja de donde la anotaras. Y si la fuga fue a un log o a un PR, recuerda que **rotar no borra el registro**: la credencial deja de valer, pero el rastro sigue ahí.
