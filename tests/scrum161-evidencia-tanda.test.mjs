@@ -326,9 +326,12 @@ test('SCRUM-161 · el recibo lo escribe el runner, con los exit REALES de sus hi
   const fuente = leerFuente(path.join(RAIZ, 'scripts', 'test-staging-gated.mjs'));
   assert.match(fuente, /writeFileSync\(RUTA_RECIBO/, 'el runner tiene que escribirlo');
   assert.match(fuente, /hijos: exitHijos/, 'y con los exit reales, no con ceros optimistas');
-  for (const clave of CLAVES_HIJOS) {
-    assert.match(fuente, new RegExp(`clave: '${clave}'`), `falta la clave «${clave}» en el runner`);
-  }
+  // SCRUM-199: las claves ya NO son literales en el runner — se DERIVAN de HIJOS_SPEC. Se comprueba
+  // que el runner construye los hijos Y el mapa de exits DESDE el spec: así toda clave queda cubierta
+  // por construcción, no por una lista a mano que hubiera que mantener en paralelo (el hueco que cerró
+  // SCRUM-199). Que las claves NO reaparezcan como literales lo vigila scrum199-fuente-unica-hijos.
+  assert.match(fuente, /hijos\s*=\s*HIJOS_SPEC\.map/, 'los hijos se construyen iterando HIJOS_SPEC (fuente única)');
+  assert.match(fuente, /exitHijos\s*=\s*Object\.fromEntries\(hijos\.map/, 'el mapa de exits se deriva de los hijos, no se enumera');
 });
 
 test('SCRUM-161 · el recibo se escribe DESPUÉS de los guards de «no pude comprobar»', () => {

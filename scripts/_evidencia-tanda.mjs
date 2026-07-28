@@ -123,11 +123,72 @@ export const MARGEN_FUTURO_MS = 60 * 60 * 1000;
  */
 export const SUELO_TOTAL = 646;
 
-/** Las CUATRO claves de los hijos del runner. Si cambian ahí, este recibo deja de cuadrar.
- *  SCRUM-180 añadió 'scrum180' (hijo propio, dry-run OFF). El guard ITERA esta lista para exigir
- *  exit=0 por hijo: una clave que falte aquí = un hijo que puede salir ROJO sin que el guard lo
- *  mire (el fallo silencioso). Emparejada con AISLADOS del runner y del verificador (SCRUM-199 unifica). */
-export const CLAVES_HIJOS = ['a55', 'bot', 'qa', 'scrum180'];
+/**
+ * SCRUM-199 · LA LISTA CANÓNICA DE HIJOS DE LA TANDA — la FUENTE ÚNICA.
+ *
+ * Antes, «qué ficheros/hijos son especiales» vivía en TRES copias a mano (AISLADOS del runner,
+ * AISLADOS del verificador, CLAVES_HIJOS) y los tres modos de fallo NO eran equivalentes — el
+ * peor, SILENCIOSO: un hijo que sale rojo y el guard no lo mira. Ahora TODO se deriva de aquí:
+ * añadir un hijo es UNA entrada. El runner (test-staging-gated.mjs) construye su array de
+ * ejecución ITERANDO este spec (no re-lista nada); el verificador usa `AISLADOS`; el validador de
+ * abajo usa `CLAVES_HIJOS`. Un guard de texto (scrum199-fuente-unica-hijos.test.mjs) impide que
+ * cualquiera de esas listas reaparezca a mano en el runner o el verificador.
+ *
+ * `env`, `nombre` y `fichero` son dato puro — no rompen la pureza de este módulo (sin fs, sin
+ * imports). El validador solo usa `clave`; el resto lo consume el runner.
+ */
+export const HIJOS_SPEC = [
+  {
+    clave: 'a55',
+    nombre: 'a55-window-quote (aislado)',
+    fichero: 'a55-window-quote.test.mjs',
+    aislado: true,
+    env: { A55_DB_TEST: '1', WHATSAPP_DRY_RUN: '1', DEMO_SAFE_NUMBERS: '34611000001', QA_DB_TEST: undefined, BOT_SUITE_TEST: undefined },
+  },
+  {
+    clave: 'bot',
+    nombre: 'bot-suite (aislado)',
+    fichero: 'bot-suite.test.mjs',
+    aislado: true,
+    // SCRUM-180: WHATSAPP_DRY_RUN lo fijaba SOLO la línea 26 de bot-suite; ponerlo aquí no depende
+    // de eso y DOBLA el freno del sender (whatsappPolicy.esProcesoDeTest) — lo que toca cuando el
+    // fallo se paga en el número de WhatsApp Business. bot-suite simula un flujo entero, no un envío.
+    env: { BOT_SUITE_TEST: '1', WHATSAPP_DRY_RUN: '1', QA_DB_TEST: undefined, A55_DB_TEST: undefined },
+  },
+  {
+    clave: 'scrum180',
+    nombre: 'scrum180-fixtures-nunca-a-meta (aislado, dry-run OFF a propósito)',
+    fichero: 'scrum180-fixtures-nunca-a-meta.test.mjs',
+    aislado: true,
+    // SCRUM-180: este fichero AFIRMA que WHATSAPP_DRY_RUN está apagado — comprueba que las fixtures
+    // NUNCA salen a Meta por el freno REAL (whatsappPolicy.salidaAMetaBloqueada), no por el atajo del
+    // dry-run. Corre SIN dry-run (el runner hace `delete env[k]` con undefined), resto de gates apagados.
+    env: { WHATSAPP_DRY_RUN: undefined, QA_DB_TEST: undefined, A55_DB_TEST: undefined, BOT_SUITE_TEST: undefined },
+  },
+  {
+    clave: 'qa',
+    nombre: 'suite QA_DB_TEST (gateados QA + ungated, sin a55/bot)',
+    aislado: false, // corre TODOS los *.test.mjs MENOS los aislados (ficherosQa, lo arma el runner)
+    pesado: true,   // node --test sobre ~337 ficheros → deja el DLL de Prisma bloqueado → va el ÚLTIMO
+    env: { QA_DB_TEST: '1', WHATSAPP_DRY_RUN: '1', A55_DB_TEST: undefined, BOT_SUITE_TEST: undefined },
+  },
+];
+
+/** Ficheros que el bloque QA NO corre (van aislados, en su propio proceso). DERIVADO del spec. */
+export const AISLADOS = HIJOS_SPEC.filter((h) => h.aislado).map((h) => h.fichero);
+
+/** Las claves de los hijos, para el recibo y el guard. DERIVADO del spec: no puede divergir de él. */
+export const CLAVES_HIJOS = HIJOS_SPEC.map((h) => h.clave);
+
+/**
+ * Invariante de orden: el hijo `pesado` (si existe) va el ÚLTIMO — requisito de Windows (el DLL de
+ * Prisma que deja el pesado hace CRASHear al siguiente con 0xC0000142). Se comprueba contra el SPEC,
+ * no contra el array runtime del runner, para que sea el MISMO dato único y no una cuarta lista.
+ */
+export function pesadoEsElUltimo(spec = HIJOS_SPEC) {
+  const i = spec.findIndex((h) => h.pesado);
+  return i === -1 || i === spec.length - 1;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // EL VALIDADOR — puro. Recibe el TEXTO del recibo (o null si no está) y devuelve el veredicto.
