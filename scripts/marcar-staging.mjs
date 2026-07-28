@@ -16,6 +16,12 @@
 //
 // Idempotente: correrlo N veces deja exactamente el mismo estado.
 //
+// SCRUM-188 · ES TAMBIÉN LA LIBERACIÓN MANUAL DEL TURNO DE STAGING. Deja el marcador LIMPIO,
+// o sea que borra cualquier sufijo `lock:<dueño>@<ISO>` que hubiera. Eso es lo que se quiere
+// cuando una sesión murió sin soltar y no apetece esperar al TTL — y es exactamente lo que NO
+// se quiere si la otra tanda sigue viva: quitarle el turno a una tanda en marcha reproduce el
+// problema que SCRUM-188 evita. Úsalo sabiendo cuál de los dos casos es.
+//
 // ─────────────────────────────────────────────────────────────────────────────
 // 🚨 ESTE ES EL ÚNICO TOOL QUE PUEDE CONVERTIR PRODUCCIÓN EN FALSO-STAGING.
 //
@@ -39,8 +45,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { PrismaClient } from '@prisma/client';
 import { assertSafeStagingUrl, STAGING_HOST } from './_db-guard.mjs';
+import { MARCADOR } from './_staging-lock.mjs'; // SCRUM-188: fuente única del literal
 
-const MARCADOR = 'YAQU_STAGING';
 const url = process.env.DATABASE_URL;
 
 // PRIMERA LÍNEA EJECUTABLE: antes de construir el cliente, antes de conectar, antes de nada.

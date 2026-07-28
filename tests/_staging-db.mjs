@@ -26,6 +26,15 @@
 //      por accidente: no viaja en `schema.prisma`, y prod se aprovisiona con el mismo
 //      `db push` que staging, o sea que recibe EXACTAMENTE el schema y nada más.
 //
+// ── QUÉ CAMBIÓ EN SCRUM-188 ───────────────────────────────────────────────────
+// El marcador puede llevar ahora un SUFIJO con el turno de staging
+// (`YAQU_STAGING lock:<dueño>@<ISO>`), porque el lock vive donde ya vivía el marcador y así
+// no hace falta ni tabla ni `db push`. Eso obliga a un criterio duro: el PREFIJO se lee con
+// la misma exactitud de antes, y un sufijo ilegible se IGNORA — jamás invalida esta barrera.
+// Si un lock mal escrito pudiera tumbarla, NADIE podría correr tests contra staging hasta que
+// alguien reparase el catálogo a mano. Por eso la decisión usa `esMarcaDeStaging()`, que no
+// mira el sufijo, y el turno se parsea aparte y solo para AVISAR.
+//
 // ── ORDEN DE LAS DOS BARRERAS ─────────────────────────────────────────────────
 //   1) allowlist de HOST  → antes de conectar. Barata, fail-closed.
 //   2) MARCADOR de la BD  → tras conectar. **Esta es la garantía.**
@@ -49,8 +58,11 @@
 import 'dotenv/config'; // carga .env (dotenv NO sobrescribe vars ya presentes en el entorno)
 import { PrismaClient } from '@prisma/client';
 import { assertSafeStagingUrl } from '../scripts/_db-guard.mjs';
+// SCRUM-188: el marcador puede llevar detrás el TURNO de staging (`YAQU_STAGING lock:…`).
+// `esMarcaDeStaging` conserva EXACTAMENTE la exactitud de antes sobre el prefijo; el sufijo
+// se lee aparte y solo para AVISAR. El detalle de por qué son dos funciones, en el módulo.
+import { esMarcaDeStaging, parsearLock, estaRancio, formatearDuracion } from '../scripts/_staging-lock.mjs';
 
-const MARCADOR = 'YAQU_STAGING';
 const GATES = ['QA_DB_TEST', 'A55_DB_TEST', 'BOT_SUITE_TEST'];
 const gate = GATES.find((g) => process.env[g] === '1');
 
@@ -89,12 +101,17 @@ if (gate) {
   const sonda = new PrismaClient({ datasources: { db: { url: staging } } });
   let marca = null;
   let nombreBd = '(desconocida)';
+  let ahoraMs = Date.now(); // se sustituye por el reloj de la BD si la sonda responde
   try {
+    // SCRUM-188: `now()` viaja en ESTA misma consulta. El aviso de turno ajeno (abajo) compara
+    // fechas, y compararlas con el reloj del portátil metería el sesgo entre máquinas justo en
+    // la decisión de «¿está rancio?». El reloj de la base es uno para todas las sesiones.
     const filas = await sonda.$queryRaw`
-      SELECT current_database() AS db, shobj_description(oid, 'pg_database') AS marca
+      SELECT current_database() AS db, shobj_description(oid, 'pg_database') AS marca, now() AS ahora
       FROM pg_database WHERE datname = current_database()`;
     marca = filas[0]?.marca ?? null;
     nombreBd = filas[0]?.db ?? nombreBd;
+    if (filas[0]?.ahora instanceof Date) ahoraMs = filas[0].ahora.getTime();
   } catch (err) {
     // Fail-closed: si no se puede COMPROBAR, no se corre. Una BD inalcanzable o sin
     // permisos de catálogo no es una BD verificada.
@@ -105,7 +122,12 @@ if (gate) {
   }
   await sonda.$disconnect().catch(() => {});
 
-  if (marca !== MARCADOR) {
+  // SCRUM-188 · LA DECISIÓN DE LA BARRERA NO PASA POR EL PARSER DEL TURNO. `esMarcaDeStaging`
+  // solo mira el prefijo, con la misma exactitud que el `marca !== MARCADOR` de antes: acepta
+  // `YAQU_STAGING` a secas y `YAQU_STAGING ` + sufijo, y nada más. Un sufijo que no se entienda
+  // NO puede tumbar esto — si pudiera, un lock mal escrito dejaría a TODAS las sesiones sin
+  // poder correr la tanda hasta que un humano reparase el catálogo a mano.
+  if (!esMarcaDeStaging(marca)) {
     // El mensaje nombra la PROPIEDAD, no el mecanismo: quien se lo encuentre a las once de
     // la noche tiene que entender qué pasa, no qué fila le falta a un catálogo.
     console.error(`\n❌ ${gate}=1: ESTA BD NO ES STAGING — abortado antes de tocar nada.`);
@@ -115,5 +137,24 @@ if (gate) {
     console.error('   Si NO lo es, revisa DATABASE_URL_STAGING en tu .env: los tests gateados');
     console.error('   CREAN Y BORRAN merchants, y eso contra producción es irreversible.\n');
     process.exit(1);
+  }
+
+  // ── SCRUM-188 · AVISO (nunca bloqueo) de turno ajeno ─────────────────────────
+  // Quien lanza la tanda por `npm run test:staging` ya pasa por el runner, que TOMA el turno y
+  // aborta si está ocupado. Esto es para el otro camino: el gateado suelto a mano
+  // (`QA_DB_TEST=1 node --test tests/loquesea.test.mjs`), que no pasa por el runner y hoy no se
+  // entera de nada. AVISA, no aborta — esta barrera existe para impedir correr contra PROD, y
+  // convertirla también en un gate de coordinación la haría capaz de bloquear a todo el mundo
+  // por un turno rancio. Ese trabajo es del runner, que sí sabe reclamarlo.
+  // El runner exporta YAQU_LOCK_DUENO a sus hijos: así el turno del propio padre no se avisa
+  // como ajeno en cada uno de los tres procesos.
+  const lockVivo = parsearLock(marca);
+  if (lockVivo && !estaRancio(lockVivo, ahoraMs) && lockVivo.dueño !== process.env.YAQU_LOCK_DUENO) {
+    console.warn(
+      `\n⚠️  SCRUM-188: el turno de staging lo tiene «${lockVivo.dueño}» desde ${lockVivo.desdeIso} ` +
+      `(hace ${formatearDuracion(ahoraMs - lockVivo.desdeMs)}).\n` +
+      `    Base "${nombreBd}". Sigo porque esto es un test suelto, no la tanda — pero si esa\n` +
+      '    sesión está viva, los dos estáis creando y borrando merchants sobre la misma base.\n',
+    );
   }
 }
