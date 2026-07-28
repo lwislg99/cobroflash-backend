@@ -2,8 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { isFlagEnabled, FLAG_DEFAULTS } from '../dist/core/flags.js';
 
-// La tabla P es cerrada: estos son exactamente los 10 flags del master.
-test('tabla P: exactamente los 10 flags del master con sus defaults', () => {
+// La tabla P es cerrada: estos son exactamente los 11 flags del master.
+// SCRUM-71 añadió VOICE_ALBARAN_ENABLED con aprobación explícita del fundador (regla 5: la
+// lista es cerrada, así que crecer exige cambio de máster). Que este test se pusiera rojo al
+// añadirlo es el mecanismo funcionando: la tabla no puede crecer en silencio.
+test('tabla P: exactamente los 11 flags del master con sus defaults', () => {
   assert.deepEqual(Object.keys(FLAG_DEFAULTS).sort(), [
     'BIZUM_MANUAL_ENABLED',
     'BOT_AI_ENABLED',
@@ -13,6 +16,7 @@ test('tabla P: exactamente los 10 flags del master con sus defaults', () => {
     'PAYMENTS_CONNECT_ENABLED',
     'PUBLIC_PROFILE_ENABLED',
     'SIF_ENABLED',
+    'VOICE_ALBARAN_ENABLED',
     'VOICE_QUOTE_ENABLED',
     'WHATSAPP_TEMPLATES_ENABLED',
   ]);

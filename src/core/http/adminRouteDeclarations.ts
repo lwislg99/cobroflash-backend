@@ -101,6 +101,11 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // pago: si algún día hay que limitarlo, es una cuota, no un permiso de rol.
   { method: 'POST', path: '/admin/ai/suggest-quote', why: 'Ayuda a montar el presupuesto (su trabajo)' },
   { method: 'POST', path: '/admin/ai/quote-message', why: 'Ayuda a redactar el mensaje del presupuesto' },
+  // SCRUM-71 (VOZ-ALB): el operario es JUSTO quien dicta esto, en obra y con una mano. No
+  // escribe nada que no pudiera escribir a mano en el mismo albarán: devuelve líneas
+  // propuestas, no las guarda. Y la ruta ya está cerrada por dos sitios más — el flag
+  // VOICE_ALBARAN_ENABLED y que el albarán tiene que ser suyo y estar en borrador.
+  { method: 'POST', path: '/admin/ai/suggest-albaran-lines', why: 'Dicta el parte en obra: es su trabajo' },
 
   // Gastos — SCRUM-107. El fundador partió el router POR VERBO: CREAR es campo, LEER el
   // conjunto no. Solo estas dos quedan abiertas; las otras cinco llevan requireRole.
