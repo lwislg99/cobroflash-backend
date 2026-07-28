@@ -64,12 +64,16 @@ export function telefonosDe(merchantId) {
  * operación va aislada y `limpiarMerchant` REINTENTA la pasada entera —, pero un orden
  * razonable evita la mayoría de los reintentos.
  *
- * Son los 21 modelos con `merchantId` del schema (SCRUM-170 sumó `albaranLineaFacturada`). Si
- * mañana aparece otro y no está aquí, el borrado del merchant fallará por FK y el aviso de
- * consola lo nombrará: ruidoso a propósito. Pero ESO solo vale para los que TIENEN FK — el
- * principio FK-Restrict (docs/QA/SUITE_REGRESION.md): una FK Restrict GRITA si el borrado va
- * mal; SIN FK, el borrado «tiene éxito» dejando basura y el fallo es MUDO. `botSession` es justo
- * ese caso (merchantId nullable y sin FK) y por eso se barre aparte, por phone (SCRUM-174).
+ * Son los 21 modelos con `merchantId` del schema (SCRUM-170 sumó `albaranLineaFacturada`). La
+ * red de seguridad NO es uniforme (censo SCRUM-172), y saberlo importa:
+ *   · 12 tienen FK a Merchant (Restrict): si uno se sale de la lista, el `merchant.delete` del
+ *     fixture falla RUIDOSO y el error nombra la tabla. Red real.
+ *   · 9 son COLUMNA SUELTA, sin FK (WhatsAppMessage, LegalAcceptance, Job, MaintenancePlan,
+ *     AuditLog, Attachment, Albaran, AlbaranLineaFacturada + BotSession — varias de las de más
+ *     volumen). Para estos NO hay red: `merchant.delete` «tiene éxito» dejando huérfanos. Fallo
+ *     MUDO. Su única protección es estar en esta lista con el predicado correcto.
+ * Principio FK-Restrict (docs/QA/SUITE_REGRESION.md). `botSession` agrava: merchantId nullable,
+ * el predicado `{ merchantId }` ni toca sus filas null → se barre aparte, por phone (SCRUM-174).
  */
 const MODELOS_POR_MERCHANT = [
   // SCRUM-170: el libro de líneas facturadas va PRIMERO — cuelga de albarán y de factura, y
