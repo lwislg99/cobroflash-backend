@@ -37,12 +37,31 @@ import fs from 'node:fs'; // SCRUM-193: `leerFuente` LEE, no solo filtra
  * literal escrito en la prosa que explica la prohibición) queda cubierto. Lo que no cubre
  * queda dicho aquí en vez de descubrirse en un rojo raro.
  */
-export function soloEjecutable(fuente) {
+export function soloEjecutable(fuente, { almohadillaEsComentario = true } = {}) {
   const sinBloques = fuente.replace(/\/\*[\s\S]*?\*\//g, '');
+  const patron = almohadillaEsComentario ? /^\s*(\/\/|#)/ : /^\s*\/\//;
   return sinBloques
     .split('\n')
-    .filter((l) => !/^\s*(\/\/|#)/.test(l))
+    .filter((l) => !patron.test(l))
     .join('\n');
+}
+
+/**
+ * SCRUM-193b · ¿la almohadilla es un comentario en ESTE tipo de fichero?
+ *
+ * Solo en YAML y shell. En los demás significa otra cosa y borrar esas líneas destruye
+ * justo lo que el guard viene a mirar:
+ *   · CSS  → `#loquesea` es un SELECTOR DE ID. Filtrar se lleva por delante cada regla anclada
+ *            a un id, y el guard acaba buscando en una hoja de estilos a la que le faltan reglas.
+ *   · JS/TS→ `#campo` son campos privados de clase.
+ *   · MD   → `#` es un encabezado (por eso `leerFuente` ni siquiera acepta Markdown).
+ *
+ * Se descubrió retrofitando los guards de SCRUM-139, que leen `styles.css`: el mismo fallo que
+ * el del Markdown, una capa más abajo. La lección se repite — un filtro de texto que no sabe
+ * qué está leyendo borra cosas que no son comentarios.
+ */
+export function almohadillaComenta(ruta) {
+  return /\.(ya?ml|sh|bash|env|conf|toml|ini)$/i.test(ruta);
 }
 
 /**
@@ -61,14 +80,14 @@ export function leerFuente(ruta, { conComentarios = false } = {}) {
   // ⚠️ MARKDOWN NO. En .md el # es un ENCABEZADO, no un comentario: filtrar se comeria la
   // mitad del documento y el guard pasaria a mirar un texto que no existe — verde falso del
   // peor tipo. Se para en vez de adivinar; para leer un .md se pide explicitamente.
-  if (/.(md|markdown)$/i.test(ruta) && !conComentarios) {
+  if (/\.(md|markdown)$/i.test(ruta) && !conComentarios) {
     throw new Error(
       `leerFuente: ${ruta} es Markdown y ahi el # es un encabezado, no un comentario. ` +
       "Usa leerFuente(ruta, { conComentarios: true }) — en un .md no hay codigo que separar.",
     );
   }
   const texto = fs.readFileSync(ruta, 'utf8');
-  return conComentarios ? texto : soloEjecutable(texto);
+  return conComentarios ? texto : soloEjecutable(texto, { almohadillaEsComentario: almohadillaComenta(ruta) });
 }
 
 /**
