@@ -490,6 +490,63 @@ async function fetchInvoiceDetail(id) {
       actions.appendChild(btnRectify);
     }
 
+    // ── SCRUM-153 (c) · ANULAR — EN BLOQUE APARTE, NO JUNTO A RECTIFICAR ──────────────
+    //
+    // La separación visual es el requisito, no la decoración. «Anular» y «Rectificar» suenan
+    // a lo mismo para quien no es fiscalista, y si salen como botones hermanos el pro elegirá
+    // ANULAR por ser la palabra que suena a lo que quiere. Son cosas distintas:
+    //   · Anular   → la factura NUNCA DEBIÓ EXISTIR (duplicada, prueba, subida por error).
+    //   · R1       → la operación SÍ existió y hay que corregirla.
+    // Por eso esto no se añade a `actions` (donde vive Rectificar) sino a su propia sección,
+    // debajo, con su explicación delante. Que cueste un poco más llegar es parte del diseño.
+    //
+    // Condiciones: solo F1 (nunca un justificante J-), solo `pending` —una pagada no se anula:
+    // el dinero entró, la operación existió— y no si ya está anulada.
+    const puedeAnular = invoice.type !== 'R1'
+      && st === 'pending'
+      && !/^J-/i.test(invoice.number || '');
+
+    if (puedeAnular) {
+      // SECCIÓN PROPIA, hermana de «Acciones» y no un botón dentro de ella. Es la separación
+      // que pide el ticket, hecha con el componente que ya existe (`detail-section`, AB3) en
+      // vez de inventar uno.
+      const zona = document.createElement('div');
+      zona.className = 'detail-section zona-anular';
+
+      const titulo = document.createElement('h3');
+      titulo.className = 'detail-section-title';
+      titulo.textContent = 'Anular esta factura';
+
+      const explica = document.createElement('p');
+      explica.className = 'zona-anular-texto';
+      explica.textContent =
+        'Solo si esta factura nunca debió existir: duplicada, de prueba, o emitida por error '
+        + 'sin que hubiera trabajo. Si el trabajo sí se hizo y hay algo que corregir, usa '
+        + 'Rectificar en vez de anular.';
+
+      const btnAnular = document.createElement('button');
+      btnAnular.className = 'btn-secondary btn-sm';
+      btnAnular.textContent = 'Anular factura…';
+      btnAnular.title = 'Deja la factura sin efecto. No la borra.';
+
+      // SCRUM-89: si no es admin, se ve DESHABILITADO con la explicación, no escondido —
+      // que el técnico aprenda que esto lo hace quien gestiona la cuenta. La seguridad real
+      // la da el 403 del backend, no esto.
+      const esAdmin = window.appUserRole !== 'tecnico' && window.appUserRole !== 'operario';
+      if (!esAdmin) {
+        lockActionForRole(btnAnular);
+      } else {
+        btnAnular.addEventListener('click', () => abrirModalAnular(invoice, setStatus));
+      }
+
+      zona.appendChild(titulo);
+      zona.appendChild(explica);
+      zona.appendChild(btnAnular);
+      if (!esAdmin) zona.appendChild(roleLockedNote());
+      // A `page` y NO a `actions` a propósito: ver el comentario de arriba.
+      page.appendChild(zona);
+    }
+
     // Botón Regenerar PDF (con VeriFactu si aplica)
     const btnRegen = document.createElement('button');
     btnRegen.className = 'btn-ghost btn-sm';
@@ -512,6 +569,115 @@ async function fetchInvoiceDetail(id) {
       btnRegen.textContent = '↻ Regenerar PDF';
     });
     actions.appendChild(btnRegen);
+  }
+
+  // ── SCRUM-153 (c) · MODAL DE ANULACIÓN ───────────────────────────────────────────────
+  //
+  // NO es un `confirm()` de una línea, a diferencia de Rectificar. Anular es irreversible sobre
+  // un documento fiscal, y el pro tiene que hacer DOS cosas antes: elegir por qué, y leer qué
+  // pasa. El motivo no es burocracia — es lo que hace CUMPLIBLE la regla «anular ≠ R1»: los
+  // cuatro valores describen situaciones en las que la operación NO existió. Si ninguno encaja,
+  // la respuesta correcta es rectificar, y el propio menú lo enseña sin decirlo.
+  //
+  // Lista CERRADA y no texto libre (decisión del fundador): (a) RGPD — un campo libre en zona
+  // fiscal invita a escribir datos personales que no hay obligación de recoger; (b) se puede
+  // contar («60 % duplicadas» es un bug de producto); (c) el registro oficial de la AEAT NO
+  // lleva motivo —comprobado contra el XSD—, así que esto es interno y nada obliga a su forma.
+  const MOTIVOS_ANULACION = [
+    { valor: 'duplicada',            texto: 'Factura duplicada' },
+    { valor: 'error_sin_operacion',  texto: 'Emitida por error (no hubo trabajo)' },
+    { valor: 'datos_cliente',        texto: 'Datos del cliente equivocados' },
+    { valor: 'prueba',               texto: 'Era una prueba' },
+  ];
+
+  // Escape local: `escHtml` vive en aiQuoteAssistant.js, que carga DESPUÉS de este fichero.
+  // Al hacer clic ya está definido, pero es una dependencia invisible que se rompería el día
+  // que alguien reordene los <script> — y el fallo sería inyección de HTML, no un error visible.
+  const escAnul = (v) => String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+  function abrirModalAnular(invoice, setStatus) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal" style="max-width:460px" role="dialog" aria-modal="true" aria-labelledby="anul-t">
+        <div class="modal-header">
+          <h3 class="modal-title" id="anul-t">Anular la factura ${escAnul(invoice.number)}</h3>
+          <button class="modal-close" id="anul-x" aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="field">
+            <label for="anul-motivo">¿Por qué se anula?</label>
+            <select id="anul-motivo" style="width:100%">
+              <option value="">Elige un motivo…</option>
+              ${MOTIVOS_ANULACION.map((m) => `<option value="${m.valor}">${m.texto}</option>`).join('')}
+            </select>
+          </div>
+
+          <div class="alert warning" style="margin-top:12px">
+            <strong>Qué pasa al anular</strong>
+            <ul style="margin:6px 0 0;padding-left:18px">
+              <li><strong>No se borra nada.</strong> La factura sigue existiendo, marcada como
+                  ANULADA, y conserva su registro y su huella.</li>
+              <li>El número <strong>${escAnul(invoice.number)}</strong> queda usado:
+                  <strong>no se reutiliza</strong> ni se renumera lo demás.</li>
+              <li>No se puede deshacer. Si luego hay que cobrar ese trabajo, se emite una
+                  factura nueva.</li>
+            </ul>
+          </div>
+
+          <div class="alert" id="anul-err" style="display:none;margin-top:12px"></div>
+
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+            <button class="btn-ghost btn-sm" id="anul-no">Cancelar</button>
+            <button class="btn-danger btn-sm" id="anul-si" disabled>Anular factura</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const cerrar = () => overlay.remove();
+    const motivo = overlay.querySelector('#anul-motivo');
+    const btnSi = overlay.querySelector('#anul-si');
+    const err = overlay.querySelector('#anul-err');
+
+    overlay.querySelector('#anul-x').onclick = cerrar;
+    overlay.querySelector('#anul-no').onclick = cerrar;
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
+    document.addEventListener('keydown', function esc(e) {
+      if (e.key === 'Escape') { cerrar(); document.removeEventListener('keydown', esc); }
+    });
+
+    // El botón nace DESHABILITADO: sin motivo no se puede anular. Es la mitad de la
+    // «confirmación explícita» — la otra mitad es que el motivo obliga a mirar la lista y
+    // darse cuenta de si lo que se quiere es rectificar.
+    motivo.addEventListener('change', () => { btnSi.disabled = !motivo.value; });
+    motivo.focus();
+
+    btnSi.addEventListener('click', async () => {
+      btnSi.disabled = true;
+      btnSi.textContent = 'Anulando…';
+      err.style.display = 'none';
+      try {
+        const r = await fetch(`/admin/invoices/${invoice.id}/annul`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ motivo: motivo.value }),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.message || d.error || 'No se pudo anular la factura.');
+        cerrar();
+        setStatus('success', `✓ Factura ${invoice.number} anulada. Su número no se reutiliza.`);
+        if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: invoice.id });
+      } catch (e) {
+        err.textContent = e && e.message ? e.message : 'No se pudo anular la factura.';
+        err.style.display = '';
+        btnSi.disabled = false;
+        btnSi.textContent = 'Anular factura';
+      }
+    });
   }
 
   // Hacemos la función accesible desde otros scripts
