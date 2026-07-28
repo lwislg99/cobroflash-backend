@@ -40,6 +40,26 @@ import { after } from 'node:test';
 export const merchantsVivos = new Set();
 
 /**
+ * SCRUM-174: teléfonos que `withMerchant` GENERA por merchant y con los que limpia `botSession`.
+ * Map merchantId → [teléfonos]. `BotSession.merchantId` es NULLABLE y SIN FK, así que el barrido
+ * por merchantId (abajo) NO alcanza las filas con `merchantId = null` (sesiones anónimas del
+ * webhook, keyed por phone). Se barren por estos phones — los que el fixture generó, no los que
+ * supone que alguien creó.
+ */
+const telefonosPorMerchant = new Map();
+
+/**
+ * Convención de teléfonos de test — FUENTE ÚNICA (SCRUM-180: cambiar el rango es cambiarlo AQUÍ,
+ * no en cada suite). `34600…` = cliente entrante · `34601…` = PRO (whatsappPhone del merchant).
+ * Derivados de `merchant.id` (no del reloj) → únicos por construcción, sin colisión entre suites.
+ * `padStart(6)`: 11 dígitos hasta id 999999; por encima crece a 12 y sigue único.
+ */
+export function telefonosDe(merchantId) {
+  const sufijo = String(merchantId).padStart(6, '0');
+  return { cliente: `34600${sufijo}`, pro: `34601${sufijo}` };
+}
+
+/**
  * Orden de borrado: hijos antes que padres. No es crítico acertarlo del todo — cada
  * operación va aislada y `limpiarMerchant` REINTENTA la pasada entera —, pero un orden
  * razonable evita la mayoría de los reintentos.
@@ -89,9 +109,21 @@ export async function limpiarMerchant(prisma, merchantId, { intentos = 3 } = {})
         .catch((err) => { ultimoError = err; });
     }
 
+    // SCRUM-174: barrido de `botSession` por PHONE. El de arriba, por merchantId, no alcanza las
+    // filas con `merchantId = null` (nullable + SIN FK), y como no hay FK `merchant.delete` no
+    // protesta si quedan: fallo MUDO (principio FK-Restrict, docs/QA/SUITE_REGRESION.md). Se
+    // barren por los teléfonos que `withMerchant` generó para este merchant (+ los de `phones`).
+    const telefonos = telefonosPorMerchant.get(merchantId);
+    if (telefonos?.length) {
+      await prisma.botSession
+        ?.deleteMany({ where: { phone: { in: telefonos } } })
+        .catch((err) => { ultimoError = err; });
+    }
+
     try {
       await prisma.merchant.delete({ where: { id: merchantId } });
       merchantsVivos.delete(merchantId);
+      telefonosPorMerchant.delete(merchantId);
       return true;
     } catch (err) {
       ultimoError = err;
@@ -137,6 +169,14 @@ export async function limpiarMerchant(prisma, merchantId, { intentos = 3 } = {})
  * necesitarlo, uno de ellos con un comentario que JUSTIFICABA (mal) por qué hacía falta.
  * Copiar el fixture de un test hermano sin mirar esta lista es exactamente el error que
  * un default habría hecho imposible de detectar.
+ *
+ * TELÉFONOS (SCRUM-174): `fn` recibe un 2º argumento `phones = { cliente, pro }` que ESTE
+ * fixture genera desde `merchant.id` (`34600…`/`34601…`, fuente única — SCRUM-180). Úsalos en
+ * vez de inventarlos: al limpiar, el fixture barre `botSession` por exactamente estos.
+ *   await withMerchant(prisma, data, async (merchant, { cliente, pro }) => { ... });
+ * CONDICIÓN: si tu test crea bot sessions con teléfonos que el fixture NO generó, pásalos en la
+ * opción `{ phones: [...] }` — si no, quedarán HUÉRFANAS: el barrido solo alcanza los que
+ * conoce, y `BotSession.merchantId` (nullable, sin FK) no deja rastro para encontrarlas.
  */
 // SCRUM-113 (verificación post-cierre): `registrarBarridoFinal` estaba escrita, documentada
 // como la garantía nº3, y CERO ficheros la llamaban — la propia red de última instancia
@@ -156,7 +196,7 @@ export function _resetBarridoParaTests() {
   barridoRegistradoEnEsteFichero = false;
 }
 
-export async function withMerchant(prisma, data, fn, { after: afterFn = after } = {}) {
+export async function withMerchant(prisma, data, fn, { after: afterFn = after, phones: phonesExtra = [] } = {}) {
   if (!barridoRegistradoEnEsteFichero) {
     barridoRegistradoEnEsteFichero = true;
     registrarBarridoFinal(prisma, { after: afterFn });
@@ -169,8 +209,13 @@ export async function withMerchant(prisma, data, fn, { after: afterFn = after } 
   // aunque `fn` reviente en su primera línea.
   merchantsVivos.add(merchant.id);
 
+  // SCRUM-174: el fixture GENERA los teléfonos y se los ENTREGA a `fn`; al limpiar barre
+  // `botSession` por EXACTAMENTE estos (+ los pasados en `phones`, ver CONDICIÓN en el doc).
+  const phones = telefonosDe(merchant.id);
+  telefonosPorMerchant.set(merchant.id, [...Object.values(phones), ...phonesExtra]);
+
   try {
-    return await fn(merchant);
+    return await fn(merchant, phones);
   } finally {
     await limpiarMerchant(prisma, merchant.id);
   }
