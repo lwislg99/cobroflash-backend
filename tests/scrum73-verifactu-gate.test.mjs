@@ -66,7 +66,7 @@ test('SCRUM-73: verifactu.xml — técnico 403, flag OFF sin registros, flag ON 
     const rOff = await fetch(url, { headers: { cookie: cookieAdmin } });
     assert.equal(rOff.status, 404, `admin con flag OFF debería ser 404 y fue ${rOff.status}`);
     const bodyOff = await rOff.text();
-    assert.doesNotMatch(bodyOff, /RegistroFacturacionAlta/, 'con el flag OFF NO debe generarse ningún registro');
+    assert.doesNotMatch(bodyOff, /RegistroAlta/, 'con el flag OFF NO debe generarse ningún registro — SuministroInformacion.xsd:37: RegistroAlta es el ELEMENTO; RegistroFacturacionAlta es el TIPO y no aparece en el XML');
     assert.doesNotMatch(bodyOff, new RegExp(invoice.number), 'con el flag OFF la factura real no debe filtrarse en ningún body');
 
     // 3) Admin, flag ON (override por merchant — no toca el env global) → genera el XML real.
@@ -75,7 +75,7 @@ test('SCRUM-73: verifactu.xml — técnico 403, flag OFF sin registros, flag ON 
     assert.equal(rOn.status, 200, `admin con flag ON debería ser 200 y fue ${rOn.status}`);
     assert.match(rOn.headers.get('content-type') || '', /application\/xml/);
     const bodyOn = await rOn.text();
-    assert.match(bodyOn, /RegistroFacturacionAlta/);
+    assert.match(bodyOn, /RegistroAlta/, 'SuministroInformacion.xsd:37 — RegistroAlta es el ELEMENTO; RegistroFacturacionAlta es el TIPO y no aparece en el XML');
     assert.match(bodyOn, new RegExp(invoice.number), 'la factura real SÍ debe aparecer con el flag ON');
     });
   } finally {
