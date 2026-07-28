@@ -16,7 +16,7 @@
 //
 // EXIT CODE: ≠0 si CUALQUIER hijo falla, nombrando cuál. `res.status` MANDA sobre los
 // contadores parseados (ver abajo): un proceso que revienta con 0 tests no es "0 fallos",
-// es "NO EJECUTÓ". Y se lee directo, sin tubería — la trampa 5 del runbook, aquí dentro.
+// es "NO EJECUTÓ". Y se lee directo, sin tubería — SUITE_REGRESION.md «*Nunca leas el resultado de una herramienta a través de una tubería*», aquí dentro.
 //
 // ── AUTOTEST / CONTRAPRUEBA (NO es la vía de uso normal) ──────────────────────
 // Con un argumento de fichero, los TRES hijos apuntan a ESE fichero en vez de a sus

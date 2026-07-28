@@ -10,7 +10,7 @@
 // puede nacer el fichero 25 con el patrón viejo y nadie se entera.
 //
 // SIN GATE, en `npm test` normal: solo lee ficheros de tests/. No toca BD ni compila nada
-// (regla 3 del runbook).
+// (SUITE_REGRESION.md «*Que la garantía estructural corra en `npm test` normal, sin gate*»).
 //
 // ── EL RIESGO PROPIO DE ESTE RATCHET ────────────────────────────────────────────────
 // La heurística de detección puede MENTIR EN LA DIRECCIÓN PEOR: decir "0 pendientes"
@@ -22,7 +22,7 @@
 // Contra eso va CONOCIDOS_AL_MEDIR: los 24 ficheros censados en el recon de SCRUM-79.
 // Cada uno tiene que seguir siendo clasificable como «crea a mano» O «usa el helper». Si
 // uno deja de encajar en ninguna de las dos, el detector está CIEGO y el test lo dice con
-// esas palabras — no asume que se migró solo. Es la regla 2 del runbook (toda comprobación
+// esas palabras — no asume que se migró solo. Es SUITE_REGRESION.md «*Toda comprobación por AUSENCIA necesita antes un assert de que lo buscado existe*» (toda comprobación
 // por ausencia necesita antes un assert de que lo buscado existe cuando debe) aplicada al
 // propio detector.
 import test from 'node:test';
