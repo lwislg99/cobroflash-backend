@@ -104,6 +104,25 @@ export async function ensureJobForQuote(quoteId: number): Promise<void> {
  * ver el porqué en `recalcJobCobradoForJob`.
  */
 export async function quotesDelJob(jobId: number, prismaClient = prisma): Promise<number[]> {
+  // ① La vía nueva: los Quotes que apuntan al Job (`Quote.jobId`, SCRUM-195 paso 1).
+  //
+  // ⚠️ EL `catch` NO ES DECORATIVO — es lo que hace este código desplegable HOY. La columna
+  // `quotes.job_id` está en staging pero NO en producción todavía (orden de las tres BD:
+  // staging → yaqu_dev_javier → prod), y Railway despliega en auto desde `main`. O sea que
+  // este código llega a producción ANTES que su columna. Sin el catch, el primer cobro tras
+  // el merge reventaría el cálculo de `totalCobrado` con un «column does not exist» hasta que
+  // alguien aplicara el schema — y el recálculo es best-effort, así que fallaría EN SILENCIO.
+  let porJobId: Array<{ id: number }> = [];
+  try {
+    porJobId = await prismaClient.quote.findMany({ where: { jobId }, select: { id: true } });
+  } catch {
+    porJobId = []; // la columna aún no existe en esta BD → se cae a la vía vieja
+  }
+  if (porJobId.length > 0) return porJobId.map((q) => q.id);
+
+  // ② Caída a `Job.quoteId` mientras las dos formas convivan. También cubre el hueco entre
+  // aplicar la columna y ejecutar el backfill: ahí ① devuelve vacío y esto sigue acertando.
+  // El paso 2 de SCRUM-195 retira `Job.quoteId` y con él esta rama.
   const job = await prismaClient.job.findUnique({ where: { id: jobId }, select: { quoteId: true } });
   return job?.quoteId ? [job.quoteId] : [];
 }

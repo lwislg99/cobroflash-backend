@@ -22,6 +22,7 @@ import { allocateQuoteNumber } from '../dist/modules/quotes/domain/quoteNumber.s
 import { allocateInvoiceNumber, isReceiptNumber } from '../dist/modules/invoicing/domain/invoiceNumber.service.js';
 import { allocateAlbaranNumber } from '../dist/modules/jobs/domain/albaranNumber.service.js';
 import { resolveBillingPlan, distributeStageAmounts } from '../dist/modules/quotes/domain/billingPlan.js';
+import { parseBDSegura } from './_db-guard.mjs';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIGURACIÓN EDITABLE POR EL FUNDADOR
@@ -56,8 +57,11 @@ async function preflight() {
   const dbUrl = process.env.DATABASE_URL || '';
   if (!dbUrl) abort('DATABASE_URL no está definida. El fundador decide contra qué BD se ejecuta.');
 
-  let host = '';
-  try { host = new URL(dbUrl).hostname; } catch { abort('DATABASE_URL no es una URL válida.'); }
+  // `parseBDSegura` en vez de `new URL(dbUrl)`: ni lanza con la cadena dentro del error, ni se
+  // atraganta con las comillas que trae un valor copiado del `.env` (SCRUM-195).
+  const bd = parseBDSegura(dbUrl);
+  if (!bd) abort('DATABASE_URL no es una URL válida.');
+  const host = bd.host;
 
   // El fundador DEBE confirmar explícitamente el host de la BD (no se asume prod).
   if (process.env.SEED_VIDEO_CONFIRM !== host) {

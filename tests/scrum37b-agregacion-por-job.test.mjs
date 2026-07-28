@@ -34,7 +34,10 @@ const CODIGO = soloEjecutable(FUENTE); // principio 10
 
 // ── El doble de prisma: un mundo pequeño con jobs, quotes y facturas ─────────────────────
 
-function mundo({ jobs, invoices }) {
+// `quotes`: la vía nueva (Quote.jobId). Si se omite, se simula una BD donde la columna AÚN NO
+// EXISTE y Prisma revienta — que es exactamente el estado de producción cuando este código
+// llegue allí por auto-deploy, antes de que nadie aplique el schema.
+function mundo({ jobs, invoices, quotes = null }) {
   const escrituras = [];
   return {
     escrituras,
@@ -62,7 +65,18 @@ function mundo({ jobs, invoices }) {
       findUnique: async () => null,
       findFirst: async () => null,
     },
-    quote: { findFirst: async () => null },
+    quote: {
+      findFirst: async () => null,
+      findMany: async ({ where }) => {
+        if (quotes === null) {
+          // El error REAL de Prisma cuando la columna no está en la BD.
+          const e = new Error('The column `quotes.job_id` does not exist in the current database.');
+          e.code = 'P2022';
+          throw e;
+        }
+        return quotes.filter((q) => q.jobId === where.jobId).map((q) => ({ id: q.id }));
+      },
+    },
   };
 }
 
@@ -114,6 +128,77 @@ test('SCRUM-37 · quotesDelJob es el ÚNICO punto que resuelve la pertenencia', 
   const p = mundo({ jobs: [{ id: 1, quoteId: 10 }], invoices: [] });
   assert.deepEqual(await quotesDelJob(1, p), [10], 'hoy 1:1 → un elemento');
   assert.deepEqual(await quotesDelJob(999, p), [], 'job inexistente → vacío, sin lanzar');
+});
+
+// ── 2-bis. LAS TRES BD A LA VEZ: el código sobrevive a las tres etapas de la migración ────
+//
+// Esto NO es defensa hipotética. El orden de SCRUM-169 es staging → yaqu_dev_javier → prod, y
+// Railway despliega solo al mergear a `main`. O sea que hay una ventana REAL, medida en días,
+// en la que producción ejecuta este código SIN la columna. Y hay una segunda ventana, más
+// corta, entre aplicar la columna y ejecutar el backfill. `quotesDelJob` tiene que acertar en
+// las tres, porque de él cuelga el número que le dice al pro cuánto le deben.
+
+test('SCRUM-37 · ETAPA A (producción hoy: sin columna) → cae a Job.quoteId y NO revienta', async () => {
+  const p = mundo({ jobs: [{ id: 1, quoteId: 10, totalCobrado: 0 }], invoices: [{ quoteId: 10, status: 'paid', total: 1500 }] });
+  //                                                                   ↑ `quotes` omitido = la columna no existe
+  assert.deepEqual(
+    await quotesDelJob(1, p),
+    [10],
+    '🔴 sin la columna `quotes.job_id`, `quotesDelJob` no cae a `Job.quoteId`. Este código llega a ' +
+      'producción ANTES que su columna (auto-deploy desde main, y prod es la ÚLTIMA de las tres BD): ' +
+      'sin la caída, el primer cobro tras el merge deja de actualizar `totalCobrado` — y en silencio, ' +
+      'porque el recálculo es best-effort y se traga el error.',
+  );
+  await recalcJobCobradoForJob(1, p);
+  assert.equal(p.escrituras.at(-1)?.totalCobrado, 1500, '🔴 el dinero no se actualiza en producción');
+});
+
+test('SCRUM-37 · ETAPA B (columna aplicada, backfill aún no) → sigue acertando por la vía vieja', async () => {
+  const p = mundo({
+    jobs: [{ id: 1, quoteId: 10, totalCobrado: 0 }],
+    invoices: [{ quoteId: 10, status: 'paid', total: 900 }],
+    quotes: [{ id: 10, jobId: null }], // la columna existe pero está vacía
+  });
+  assert.deepEqual(
+    await quotesDelJob(1, p),
+    [10],
+    '🔴 entre aplicar la columna y correr el backfill, la vía nueva devuelve vacío. Si eso se toma ' +
+      'como «este Job no tiene quotes», el total se queda congelado durante toda esa ventana.',
+  );
+});
+
+test('SCRUM-37 · ETAPA C (backfill hecho) → manda la vía nueva, y ya admite varios', async () => {
+  const p = mundo({
+    jobs: [{ id: 1, quoteId: 10, totalCobrado: 0 }],
+    invoices: [
+      { quoteId: 10, status: 'paid', total: 3000 },
+      { quoteId: 11, status: 'paid', total: 200 }, // el adicional del mecanismo 2
+    ],
+    quotes: [{ id: 10, jobId: 1 }, { id: 11, jobId: 1 }],
+  });
+  assert.deepEqual(
+    (await quotesDelJob(1, p)).sort(),
+    [10, 11],
+    '🔴 con el backfill hecho, `quotesDelJob` sigue devolviendo solo el quote original',
+  );
+  await recalcJobCobradoForJob(1, p);
+  assert.equal(
+    p.escrituras.at(-1)?.totalCobrado,
+    3200,
+    '🔴 cobrar un adicional de 200 € sobre 3.000 € cobrados no da 3.200. Este es el número exacto ' +
+      'del bug: con la forma vieja el total BAJABA a 200 después de cobrar.',
+  );
+});
+
+test('SCRUM-37 · la vía nueva GANA a la vieja cuando difieren', async () => {
+  // Si el backfill deja `Job.quoteId` apuntando a un sitio y `Quote.jobId` a otro, tiene que
+  // mandar la nueva: es la que sobrevive al paso 2 (que retira `Job.quoteId`).
+  const p = mundo({
+    jobs: [{ id: 1, quoteId: 10 }],
+    invoices: [],
+    quotes: [{ id: 77, jobId: 1 }],
+  });
+  assert.deepEqual(await quotesDelJob(1, p), [77], '🔴 gana la vía vieja: el paso 2 cambiaría el resultado');
 });
 
 test('SCRUM-37 · un Job sin quotes NO se pone a cero', async () => {

@@ -27,6 +27,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
+import { redactarSecretos } from './_db-guard.mjs';
 
 const KEY_RAW = process.env.BACKUP_ENCRYPTION_KEY || '';
 const OUT_DIR = process.env.BACKUP_DIR || path.join(process.cwd(), 'backups');
@@ -114,7 +115,18 @@ async function main() {
   let raw, kind;
   if (hasPgDump()) {
     console.log('pg_dump disponible → dump físico (formato custom)');
-    raw = execFileSync('pg_dump', ['--format=custom', '--no-owner', process.env.DATABASE_URL], { maxBuffer: 1024 * 1024 * 512 });
+    // La URL va en argv porque `pg_dump` la quiere ahí. Si `pg_dump` falla —versión
+    // incompatible, red, permisos— el error lleva LA URL DE PRODUCCIÓN CON SU CONTRASEÑA por
+    // DOS caminos distintos: en `.message` («Command failed: pg_dump … <argv>») cuando sale
+    // con código ≠ 0, y en la propiedad `.spawnargs` siempre, que es lo que se imprime si el
+    // objeto llega a un `console.error(e)` o a una excepción no capturada. Un script de backup
+    // corre contra prod por definición: es el peor sitio del repo para ese fallo.
+    // Se re-lanza un Error NUEVO y limpio — el original no sale de aquí por ninguna vía.
+    try {
+      raw = execFileSync('pg_dump', ['--format=custom', '--no-owner', process.env.DATABASE_URL], { maxBuffer: 1024 * 1024 * 512 });
+    } catch (e) {
+      throw new Error(`pg_dump falló: ${redactarSecretos(e)}`);
+    }
     kind = 'pgdump';
   } else {
     console.log('pg_dump NO disponible → dump lógico vía Prisma (todas las tablas a JSON)');
@@ -131,4 +143,6 @@ async function main() {
   console.log('→ MUÉVELO fuera de esta máquina (S4). Verifícalo: node scripts/backup-dump.mjs --restore-test');
 }
 
-main().catch((e) => { console.error('backup FALLÓ:', e?.message || e); process.exit(1); });
+// Redactado también aquí, no solo en el origen: este catch imprime CUALQUIER error del script,
+// incluidos los de Prisma y los de librerías que citan la cadena de conexión al quejarse.
+main().catch((e) => { console.error('backup FALLÓ:', redactarSecretos(e)); process.exit(1); });
