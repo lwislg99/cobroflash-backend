@@ -43,6 +43,45 @@ distingue es quién puede tocarlas. Se descarta llamar a `yaqu_dev_javier` "segu
 staging" (SCRUM-84) porque implicaría el régimen de `railway` y no lo tiene. Si el fundador lo
 ve de otra forma, es una línea.
 
+## SCRUM-195 · `quotes.job_id` + índice (Job 1:N Quote, paso 1 de 2) — 🟡 PARCIAL
+
+- [x] **staging · acela/railway** — aplicado 28-jul-2026 con GO del fundador tras preview.
+- [ ] **desarrollo · acela/yaqu_dev_javier** — PENDIENTE. No requiere GO, pero va ANTES que prod
+      a propósito: si se queda atrás, el carril B se encuentra mañana la deriva que causó los 16
+      rojos de SCRUM-160.
+- [ ] **producción · autorack** — PENDIENTE. Preview propio + GO aparte, **nunca en la misma
+      tanda que staging**.
+
+**SQL aplicado** (aditivo puro; el preview contra la BD real de staging dio exactamente esto,
+o sea que no había deriva por otro lado):
+
+```sql
+ALTER TABLE "quotes" ADD COLUMN "job_id" INTEGER;
+CREATE INDEX "quotes_merchantId_job_id_idx" ON "quotes"("merchantId", "job_id");
+```
+
+**Nullable y SIN FK, a propósito** (decisión del fundador, SCRUM-195): coherencia con el resto
+del schema, reversibilidad (`DROP COLUMN` limpio, sin constraint que arrastre) y sobre todo
+porque la FK que importaría aquí es `onDelete`, y eso ya se decidió en SCRUM-192 — servicio de
+borrado, no cascadas. **La integridad `Quote.jobId → Job.id` la sostiene el CÓDIGO.**
+
+**Medición previa al backfill** (solo lectura, host-check en las dos):
+
+| | staging (`railway`) | producción (`autorack`) |
+|---|---|---|
+| pares job↔quote | 3 | 42 |
+| jobs con `quote_id` NULL | 0 | 0 |
+| quotes sin job | 0 | 83 |
+| referencias rotas | **0** | **0** |
+| quotes con >1 job | **0** | **0** |
+
+**El backfill NO se ha ejecutado todavía** — la columna está a NULL en las 3 filas de staging.
+Los 83 quotes sin job de producción son los no aceptados: es correcto que se queden a NULL.
+
+⚠️ **Verificado contra la BD, no por el mensaje de `db push`**: `job_id integer nullable=YES`,
+índice presente, y **`job_id` sin FK** (las 3 FKs de `quotes` son de `chargeId`, `customerId` y
+`merchantId`).
+
 <!-- ─── LÍNEA DE CORTE · SCRUM-169 (2026-07-27) ─────────────────────────────────────────
      A partir de esta línea HACIA ARRIBA, cada entrada NUEVA lleva los tres checkboxes:
        [ ] staging · acela/railway    [ ] desarrollo · acela/yaqu_dev_javier    [ ] producción · autorack
