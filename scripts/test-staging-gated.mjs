@@ -116,6 +116,19 @@ function parseCuenta(salida) {
 const agg = Object.fromEntries(CATS.map((k) => [k, 0]));
 const fallaron = [];
 
+// ── BANNER (SCRUM-166): test:staging y test:staging:gated apuntan AQUÍ. Sale ANTES de nada,
+// ruidoso, para que quien teclee el nombre viejo con memoria muscular vea QUÉ es esto y cuál es
+// la rápida — en vez de descubrir a los ~11 min que se equivocó de comando (la tanda perdida del
+// 27-jul). Dice la VERDAD en los DOS modos: en autotest declara que NO es la real, mismo
+// principio que el "preflight OMITIDO" — un mecanismo que declara lo que NO hace no engaña.
+if (override) {
+  console.log(`\n⚠️  MODO AUTOTEST — fichero trivial (${override}), NO es la tanda real.`);
+  console.log('    Los tres hijos apuntan a ese fichero: es diagnóstico del runner, no cobertura.');
+} else {
+  console.log('\n▶  TANDA GATEADA COMPLETA — 51 gateados + ungated, ~11 min.');
+  console.log('    ¿Solo querías la rápida (ungated, sin staging)? → npm test');
+}
+
 console.log(`\n── SCRUM-157 · tanda gateada COMPLETA (3 procesos)${override ? ` · AUTOTEST → ${override}` : ''} ──\n`);
 
 // ── PREFLIGHT (SCRUM-167): antes de lanzar ningún hijo, comprobar que el esquema de la BD
