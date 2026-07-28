@@ -421,6 +421,26 @@ Para que la ventana sea lo más corta posible:
 ### Prevención
 
 - **`parseBDSegura` / `redactarSecretos`** (`scripts/_db-guard.mjs`) y la regla **R7** de `ERRORES_ASESOR.md`: una credencial no se protege redactando mensajes, sino impidiendo que el error salga. Guard: `tests/scrum195-url-bd-sin-fuga.test.mjs`.
-- **Un script que toca una BD importa `_db-guard.mjs`.** Nunca `new URL(dbUrl)` suelto, ni «solo para leer el host».
-- **El scratchpad sigue siendo superficie descubierta** (fue donde ocurrió #14): ningún test del repo lo cubre. Ahí solo vale la disciplina — y este runbook, para cuando la disciplina falle otra vez.
+#### 🔴 La regla operativa, que es la que de verdad evita la próxima
+
+**NINGÚN script parsea una URL de BD a mano. Ni siquiera uno desechable.** Ni «solo para leer el host», ni «esto lo borro en cinco minutos». Se usa `parseBDSegura` de `scripts/_db-guard.mjs`, que ya existe y ya tiene el `catch` ciego.
+
+El script que filtró la credencial era exactamente eso: de leer, de usar y tirar. **La categoría «desechable» no es una categoría de riesgo menor — es la que toca producción sin que nadie la revise.**
+
+**Y para que la regla se cumpla, el camino corto tiene que ser el seguro.** Por eso los desechables que tocan BD van en **`scripts/tmp-*.mjs`** (ignorado por git desde SCRUM-195), no en el scratchpad:
+
+```js
+// scripts/tmp-loquesea.mjs
+import { parseBDSegura, describirBD } from './_db-guard.mjs';   // import relativo, sin rutas absolutas
+import { PrismaClient } from '@prisma/client';                   // resuelve solo, estás dentro del repo
+
+const url = process.argv[2];
+const bd = parseBDSegura(url);
+if (!bd) { console.error('URL de BD ilegible'); process.exit(1); }   // sin imprimir la cadena
+console.log('host-check →', describirBD(url));                        // host/base, nunca credenciales
+```
+
+Lo que esto cambia **no es la disciplina, es la cobertura**: el guard de `tests/scrum195-url-bd-sin-fuga.test.mjs` recorre `scripts/` con `readdirSync`, o sea el **directorio**, no lo que git tenga trackeado. **Un fichero ignorado sigue siendo un fichero escaneado**, así que un `tmp-*.mjs` con `new URL(dbUrl)` pone el test en rojo igual que uno versionado — verificado en rojo el 28-jul-2026. En el scratchpad, ese mismo fichero no lo ve nadie.
+
+- **El scratchpad es zona ciega POR DEFINICIÓN** — no versionado, invisible al CI y a todo guard — y no tiene arreglo técnico limpio. Por eso la respuesta no es vigilarlo, es **no tener ahí nada que toque una BD**. Si un script de BD acaba en el scratchpad, la única defensa vuelve a ser que alguien se acuerde; y el 27-jul-2026 eso ya falló una vez.
 - **Tras rotar:** borra la contraseña vieja de donde la anotaras. Y si la fuga fue a un log o a un PR, recuerda que **rotar no borra el registro**: la credencial deja de valer, pero el rastro sigue ahí.

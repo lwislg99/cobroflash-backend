@@ -13,8 +13,13 @@
 // `redactarSecretos`, están en el fichero por el que ya pasa todo el que mira una URL de BD, y
 // el repo no puede volver a la forma insegura sin que esto se ponga rojo.
 //
-// La regla operativa que acompaña al mecanismo: **un script que toca una BD importa
-// `_db-guard.mjs`**. Nunca `new URL(dbUrl)` suelto, ni siquiera «solo para leer el host».
+// LA REGLA OPERATIVA, y el motivo de que el scan de abajo mire el DIRECTORIO y no git:
+// **ningún script parsea una URL de BD a mano, ni siquiera uno desechable.** Se usa
+// `parseBDSegura`. Y los desechables de BD van en `scripts/tmp-*.mjs` —ignorado por git— en
+// vez de en el scratchpad: ahí el import de `_db-guard.mjs` es relativo, `@prisma/client`
+// resuelve solo, y sobre todo **este guard los ve**. `readdirSync` lee el directorio, así que
+// **un fichero ignorado sigue siendo un fichero escaneado**; en el scratchpad no lo ve nadie.
+// El camino corto y el seguro, el mismo — que es lo único que funciona en zona sin red.
 // ─────────────────────────────────────────────────────────────────────────────────────────
 import test from 'node:test';
 import assert from 'node:assert/strict';

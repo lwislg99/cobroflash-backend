@@ -157,3 +157,12 @@ public/invoices/
 # SCRUM-48: PDFs de albarán fuera de public/ (privados, se sirven por endpoint auth).
 # Anclado a la raíz (/) para NO ignorar src/core/storage/ ni otros "storage" del árbol.
 /storage/
+
+# SCRUM-195 · Los scripts DESECHABLES que tocan una BD viven AQUÍ, no en el scratchpad.
+# No es manía de orden: el scratchpad es zona ciega —no versionado, invisible al CI y a todo
+# guard—, y ahí es donde se filtró la credencial de producción (#14 de ERRORES_ASESOR.md).
+# En `scripts/` el guard de tests/scrum195-url-bd-sin-fuga.test.mjs SÍ los ve, porque lee el
+# DIRECTORIO con readdirSync, no lo que git tenga trackeado. Un fichero ignorado sigue siendo
+# un fichero escaneado. Además, `import { parseBDSegura } from './_db-guard.mjs'` funciona sin
+# rutas absolutas y `@prisma/client` resuelve solo. El camino corto y el seguro, el mismo.
+scripts/tmp-*.mjs
