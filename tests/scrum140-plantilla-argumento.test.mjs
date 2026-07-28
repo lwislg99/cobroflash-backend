@@ -23,9 +23,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { leerFuente } from './_guard-texto.mjs'; // SCRUM-193
 
 const JS = path.join(path.dirname(path.dirname(fileURLToPath(import.meta.url))), 'public', 'dashboard', 'js');
-const leer = (f) => fs.readFileSync(path.join(JS, f), 'utf8');
+// SCRUM-193: el lector del test pasa por leerFuente — filtrado por defecto, y sabe qué lee.
+const leer = (f) => leerFuente(path.join(JS, f));
 /** Líneas de CÓDIGO (sin comentarios): los comentarios SÍ pueden nombrar el canal retirado. */
 const codigo = (f) => leer(f).split('\n').filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n');
 
