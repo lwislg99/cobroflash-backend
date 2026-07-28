@@ -37,7 +37,7 @@
 // una herramienta que escribe no puede depender de que alguien recuerde comprobar antes.
 import 'dotenv/config'; // el turno necesita DATABASE_URL_STAGING en el PADRE, no solo en los hijos
 import { spawnSync } from 'node:child_process';
-import { readdirSync, existsSync } from 'node:fs';
+import { readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import os from 'node:os';
@@ -65,6 +65,9 @@ import {
   CODIGO_SALIDA_LOCK_AJENO,
   CODIGO_SALIDA_LOCK_PERDIDO,
 } from './_staging-lock.mjs';
+// SCRUM-161: al terminar, el runner deja un RECIBO de que la tanda corrió. Es lo único que el
+// guard de cierre acepta como evidencia, porque es lo único que no se puede teclear.
+import { RUTA_RECIBO } from './_evidencia-tanda.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url)); // resolver el preflight junto a este script (SCRUM-167)
 const override = process.argv[2] || null; // contraprueba/diagnóstico: si viene, todos lo usan
@@ -91,11 +94,13 @@ const ficherosQa = readdirSync(TESTS_DIR)
 const hijos = [
   {
     nombre: 'a55-window-quote (aislado)',
+    clave: 'a55', // SCRUM-161: clave estable para el recibo de evidencia
     env: { A55_DB_TEST: '1', WHATSAPP_DRY_RUN: '1', DEMO_SAFE_NUMBERS: '34611000001', QA_DB_TEST: undefined, BOT_SUITE_TEST: undefined },
     args: ['--test', '--test-force-exit', '--test-concurrency=1', override || `${TESTS_DIR}/a55-window-quote.test.mjs`],
   },
   {
     nombre: 'bot-suite (aislado)',
+    clave: 'bot', // SCRUM-161
     // SCRUM-180: `WHATSAPP_DRY_RUN` lo fijaba SOLO la línea 26 de bot-suite.test.mjs, cuando
     // sus dos hermanos de esta lista ya lo traían del runner. La asimetría no se veía y es
     // justo el hijo peor: bot-suite simula un flujo entero, once mensajes, no uno. Ponerlo
@@ -106,6 +111,7 @@ const hijos = [
   },
   {
     nombre: 'suite QA_DB_TEST (gateados QA + ungated, sin a55/bot)',
+    clave: 'qa', // SCRUM-161
     pesado: true, // node --test sobre ~337 ficheros → deja el DLL de Prisma bloqueado
     env: { QA_DB_TEST: '1', WHATSAPP_DRY_RUN: '1', A55_DB_TEST: undefined, BOT_SUITE_TEST: undefined },
     args: ['--test', '--test-force-exit', '--test-concurrency=1', ...(override ? [override] : ficherosQa)],
@@ -139,6 +145,9 @@ function parseCuenta(salida) {
 
 const agg = Object.fromEntries(CATS.map((k) => [k, 0]));
 const fallaron = [];
+// SCRUM-161 · exit real por hijo, para el recibo de evidencia. Arranca en `null` = «no llegó a
+// terminar»; solo se sustituye por un número cuando el proceso de verdad devolvió uno.
+const exitHijos = Object.fromEntries(hijos.map((h) => [h.clave, null]));
 
 // ── BANNER (SCRUM-166): test:staging y test:staging:gated apuntan AQUÍ. Sale ANTES de nada,
 // ruidoso, para que quien teclee el nombre viejo con memoria muscular vea QUÉ es esto y cuál es
@@ -389,6 +398,11 @@ async function tanda() {
     }
 
     const code = res.status; // ← directo, sin tubería (trampa 5 del runbook de SUITE_REGRESION.md)
+    // SCRUM-161 · el exit REAL de cada hijo va al recibo de evidencia. Se anota AQUÍ, después
+    // del corte por timeout, para que un hijo abortado por tiempo se quede en `null` y no en
+    // «0»: un proceso que no terminó no es un proceso que pasó. Los dos caminos que quedan por
+    // debajo (el «NO EJECUTÓ» con su `continue`, y el normal) pasan los dos por esta línea.
+    exitHijos[h.clave] = code;
     const c = parseCuenta(salida);
 
     // REGLA A · si status≠0 y no ejecutó ningún test, NO es "0 fallos": es un proceso que NO
@@ -432,6 +446,41 @@ async function tanda() {
       console.error(mensajeArbolMovido(cambios));
       salir(CODIGO_SALIDA_ARBOL_MOVIDO);
     }
+  }
+
+  // ── SCRUM-161 · EL RECIBO DE EVIDENCIA ───────────────────────────────────────
+  // Va AQUÍ, y el sitio importa. Todo lo que aborta por encima —turno ajeno (5), deriva de
+  // esquema, preflight sin veredicto (2), números que no cuadran (3), árbol movido (4)— son
+  // casos de «NO PUDE COMPROBAR», y un recibo con esos números diría más de lo que se sabe.
+  // A partir de esta línea los tres hijos han terminado y el agregado significa algo, tanto si
+  // es verde como si es rojo: **el recibo se escribe también en rojo, a propósito**. Si solo se
+  // escribiera en verde, «no hay recibo» sería ambiguo entre «no la corriste» y «salió roja», y
+  // el validador no podría distinguir el descuido del rojo. Prefiere decir la verdad y que sea
+  // el validador quien rechace un recibo con `fail > 0`.
+  //
+  // En MODO AUTOTEST se escribe igual, marcado `autotest: true`. Así el camino de escritura es
+  // EL MISMO en los dos modos y se puede ensayar sin BD real (lección de SCRUM-168: un artefacto
+  // que nunca se ejecuta como se va a ejecutar no está verificado), y el validador lo rechaza
+  // por su nombre. De paso pisa cualquier recibo bueno anterior: falla cerrado.
+  try {
+    const commit = spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).stdout?.trim() || null;
+    const recibo = {
+      commit,
+      terminadaEn: new Date().toISOString(),
+      total: agg.tests, pass: agg.pass, fail: agg.fail, skip: agg.skipped,
+      ficheros: override ? 1 : ficherosQa.length,
+      hijos: exitHijos,
+      autotest: Boolean(override),
+      runner: 'scripts/test-staging-gated.mjs',
+    };
+    mkdirSync(path.dirname(RUTA_RECIBO), { recursive: true });
+    writeFileSync(RUTA_RECIBO, JSON.stringify(recibo, null, 2) + '\n');
+    console.log(`\n🧾 recibo de evidencia escrito en ${RUTA_RECIBO} (SCRUM-161).`);
+  } catch (err) {
+    // No convierte la tanda en fallida: el recibo es para el guard de cierre, no para la tanda.
+    // Pero se DICE, porque su ausencia se lee como «no la corriste» y eso mandaría a repetir
+    // once minutos de tests por un fallo de escritura de fichero.
+    console.error(`\n⚠️  SCRUM-161: no pude escribir ${RUTA_RECIBO} (${err?.message || err}). La tanda SÍ corrió; el guard de cierre no lo sabrá.`);
   }
 
   const suma = agg.pass + agg.fail + agg.cancelled + agg.skipped + agg.todo;

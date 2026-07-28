@@ -239,6 +239,48 @@ leer-decidir-escribir se ejecuta con `$executeRawUnsafe`, **no** con `$queryRawU
 `$queryRaw` el turno **no se podía tomar** y la tanda abortaba con exit 2. Los tests con doble
 pasaban en verde — solo ejecutarlo de verdad lo delató.
 
+### El RECIBO de la tanda, y el guard de cierre — 🔴 CONSTRUIDO Y APAGADO (SCRUM-161)
+
+**Lo que ya está vivo hoy:** al terminar, el runner deja un recibo en
+`.claude/evidencia-tanda.json` con el commit, la hora, los contadores, cuántos ficheros corrió y
+**el exit real de cada uno de sus tres hijos**. Se escribe **también cuando la tanda sale roja**
+—si solo se escribiera en verde, «no hay recibo» sería ambiguo entre «no la corriste» y «salió
+roja»— y **no** cuando algo abortó antes de que los tres hijos terminaran (turno ajeno, deriva
+de esquema, árbol movido): ahí los números no son evidencia de nada. No se commitea nunca
+(`.gitignore`), por el mismo motivo que el sentinel de `db push`: una prueba que viaja con la
+rama se copia, y algo que se copia deja de probar.
+
+**Lo que está APAGADO:** el guard que impediría cerrar una tarea sin ese recibo.
+
+```bash
+node scripts/verificar-evidencia-tanda.mjs      # hoy: imprime el veredicto y sale 0
+YAQU_EVIDENCIA_TANDA=1 node scripts/…           # ensayo: bloquea de verdad, solo esa ejecución
+```
+
+Valida cuatro cosas, y **cada una cierra una trampa concreta**:
+
+| Comprobación | Qué trampa cierra |
+| --- | --- |
+| `commit` == `HEAD` | correr la tanda, seguir programando y cerrar con evidencia vieja |
+| `fail === 0` **y** los tres hijos a exit 0 | «la corrí» habiendo salido en rojo — hacen falta los **dos**: un hijo que crashea o que aborta por tiempo (SCRUM-181) no agrega contadores, así que `fail` puede ser 0 con un proceso muerto |
+| `terminadaEn` dentro de 24 h | recibo fósil en una rama larga |
+| `total` ≥ suelo **y** `ficheros` ≥ los que hay en `tests/` | correr **un** fichero y llamarlo tanda |
+
+**Por qué está apagado, y cuándo se enciende.** La tanda no está verde. Un guard que exige
+evidencia hoy obliga a adjuntar una tanda ROJA: o bloquea a todo el mundo, o enseña a adjuntar
+rojos — y lo segundo es peor, porque convierte el rojo en trámite (la doctrina del «check rojo
+permanente» que ya se pagó en SCRUM-168). Se enciende con `ACTIVO = true` en
+`scripts/_evidencia-tanda.mjs` el día que la tanda esté verde o cada rojo tenga ticket y
+cuarentena (SCRUM-160), y ese día se sube también `SUELO_TOTAL` al agregado real.
+`YAQU_EVIDENCIA_TANDA=1` solo **enciende**, nunca apaga: una puerta de escape en un guard se
+acaba usando siempre.
+
+**🚨 Su alcance, y no se puede leer por más:** es un guard contra el **OLVIDO, no contra la mala
+fe** — nada impide borrar o editar el recibo a mano. Y **NO sustituye a un CI** de los gateados,
+que no existe porque `DATABASE_URL_STAGING` no entra en GitHub Actions (regla 9, decisión del
+fundador). Sustituye al descuido, que es el fallo que de verdad ocurre. Si algún día hiciera
+falta la garantía de verdad, la respuesta honesta no es endurecer este JSON: es el CI.
+
 ## Escribir verificaciones: un verde falso no lo mira nadie (SCRUM-103)
 
 Entre el 22 y el 23-jul-2026 aparecieron **seis** mecanismos que pasaban sin comprobar lo que
