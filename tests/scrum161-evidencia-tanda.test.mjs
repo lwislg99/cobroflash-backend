@@ -279,6 +279,11 @@ test('SCRUM-161 · apagado, el veredicto se calcula IGUAL — solo cambia si apr
 });
 
 test('SCRUM-161 · la variable de entorno ENCIENDE, y NUNCA apaga', () => {
+  // ⚠️ Con el guard ENCENDIDO (ACTIVO=true) este primer assert ya NO discrimina: estaActivo({})
+  // da true porque ACTIVO domina el OR — pasaría igual con la rama del env var rota. Su valor vive
+  // en el camino reversible (si ACTIVO vuelve a false); probar esa rama exige inyectar ACTIVO, otro
+  // alcance. Se deja dicho para que nadie lo lea como cobertura de la variable. El assert del FUENTE
+  // (abajo) SÍ sigue discriminando: no depende de ACTIVO.
   assert.equal(estaActivo({}), ACTIVO);
   assert.equal(estaActivo({ YAQU_EVIDENCIA_TANDA: '1' }), true, 'puede encender para un ensayo');
   // La dirección prohibida: que exista una variable capaz de desactivarlo. Una puerta de escape

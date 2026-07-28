@@ -77,12 +77,14 @@ export const MOTIVO_APAGADO =
 /**
  * ¿Bloquea ahora mismo?
  *
- * `YAQU_EVIDENCIA_TANDA=1` lo enciende para UNA ejecución — sirve para ensayar el día que
- * toque encenderlo de verdad, sin encenderlo para nadie más.
+ * Con el guard ENCENDIDO (`ACTIVO = true`, hoy) esta variable es INERTE: el OR ya da `true` pase
+ * lo que pase con el entorno. Su valor vive en el camino REVERSIBLE — si alguien vuelve a poner
+ * `ACTIVO = false`, `YAQU_EVIDENCIA_TANDA=1` vuelve a encenderlo para UNA ejecución (ensayo), sin
+ * encenderlo para nadie más.
  *
  * ⚠️ ES DE UN SOLO SENTIDO A PROPÓSITO: la variable puede ENCENDER, nunca APAGAR. Una puerta
- * de escape en un guard se acaba usando siempre, y entonces el guard no guarda nada. El día
- * que `ACTIVO` sea `true`, no habrá variable que lo desactive: habrá que cambiar la línea.
+ * de escape en un guard se acaba usando siempre, y entonces el guard no guarda nada. Con `ACTIVO`
+ * en `true` no hay variable que lo desactive: apagarlo es cambiar la línea.
  */
 export function estaActivo(env = {}) {
   return ACTIVO || env.YAQU_EVIDENCIA_TANDA === '1';
