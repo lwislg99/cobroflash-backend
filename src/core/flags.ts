@@ -17,6 +17,10 @@ export const FLAG_DEFAULTS = {
   SIF_ENABLED: false,                // global ES · OFF hasta pruebas AEAT (S1-D)
   PAYMENTS_CONNECT_ENABLED: false,   // global · OFF hasta CONNECT-1
   BIZUM_MANUAL_ENABLED: false,       // global/merchant · OFF hasta C1-4
+  // SCRUM-3 · global/merchant · OFF. Gobierna NUESTRA superficie de Bizum automático (si se
+  // ofrece la vía en el selector), NO lo que Stripe pinta dentro de su checkout alojado: eso
+  // lo decide la capability `bizum_payments`. Ver el porqué en billing/domain/bizumCharge.ts.
+  BIZUM_AUTO_ENABLED: false,
   VOICE_QUOTE_ENABLED: false,        // global · OFF hasta eval VZ-2 (≥8/10)
   // VOZ-ALB (SCRUM-71) · global · OFF. Flag PROPIO y no reutilización de VOICE_QUOTE_ENABLED,
   // por decisión del fundador (27-jul-2026): el dictado en albarán tiene un riesgo distinto
