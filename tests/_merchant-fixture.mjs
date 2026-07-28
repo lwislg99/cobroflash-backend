@@ -86,6 +86,22 @@ const MODELOS_POR_MERCHANT = [
   'teamMember', 'customer',
 ];
 
+/**
+ * SCRUM-172 (tier 3): cobertura declarada de la tenencia NULLABLE. Para un modelo con `merchantId`
+ * NULLABLE, estar en MODELOS_POR_MERCHANT NO basta — el barrido por merchantId no toca las filas
+ * `merchantId = null` y, sin FK, `merchant.delete` no protesta: fallo MUDO. Aquí se declara, por
+ * modelo, QUÉ mecanismo lo limpia. `tests/scrum172-tenencia-nullable.test.mjs` lee el schema y
+ * exige que TODO nullable esté aquí: uno sin declarar es ROJO, no silencio.
+ *
+ * LÍMITE HONESTO (para que no sea la próxima promesa falsa — es el defecto que arregló SCRUM-186):
+ * esto verifica que la cobertura esté DECLARADA, no que el mecanismo declarado EXISTA ni FUNCIONE.
+ * Un `{ x: 'barrido mágico' }` inventado pasaría a verde. Que el barrido por phone de `botSession`
+ * funciona DE VERDAD lo prueba `merchant-fixture.test.mjs` (SCRUM-174), no este guard.
+ */
+export const TENENCIA_NULLABLE_CUBIERTA = {
+  botSession: 'barrido por phone en limpiarMerchant — SCRUM-174',
+};
+
 /** Espera sin bloquear; el reintento existe por las escrituras asíncronas (ver abajo). */
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 
