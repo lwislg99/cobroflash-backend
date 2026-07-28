@@ -3,7 +3,8 @@
 // PURO Y SIN GATE: se construye un ZIP con una fuga DENTRO y se comprueba, sobre datos
 // reales y no sobre el código, que el método viejo no la ve y el nuevo sí.
 //
-// Es la regla 1 del runbook aplicada al arreglo, no solo al test original: **un arreglo
+// Es el principio 1 de docs/QA/SUITE_REGRESION.md, sección «Escribir verificaciones»
+// («pruébalo en rojo, modo por modo»), aplicado al arreglo y no solo al test original: **un arreglo
 // que no has visto fallar tiene el mismo problema que el test que arregla.** Aquí el
 // "rojo" está escrito como assert: si alguien revirtiera la descompresión, el caso
 // «el método CRUDO no detecta la fuga» seguiría pasando y el «el método NUEVO sí» caería.

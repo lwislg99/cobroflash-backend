@@ -16,7 +16,8 @@
 //
 // EXIT CODE: ≠0 si CUALQUIER hijo falla, nombrando cuál. `res.status` MANDA sobre los
 // contadores parseados (ver abajo): un proceso que revienta con 0 tests no es "0 fallos",
-// es "NO EJECUTÓ". Y se lee directo, sin tubería — la trampa 5 del runbook, aquí dentro.
+// es "NO EJECUTÓ". Y se lee directo, sin tubería — la trampa 5 del «Runbook de ejecución de los
+// tests gateados» de docs/QA/SUITE_REGRESION.md, aquí dentro.
 //
 // ── AUTOTEST / CONTRAPRUEBA (NO es la vía de uso normal) ──────────────────────
 // Con un argumento de fichero, los TRES hijos apuntan a ESE fichero en vez de a sus
@@ -228,7 +229,7 @@ for (let i = 0; i < hijos.length; i++) {
     continue;
   }
 
-  const code = res.status; // ← se lee directo, sin tubería (trampa 5)
+  const code = res.status; // ← directo, sin tubería (trampa 5 del runbook de SUITE_REGRESION.md)
   const c = parseCuenta(salida);
 
   // REGLA A · si status≠0 y no ejecutó ningún test, NO es "0 fallos": es un proceso que NO
