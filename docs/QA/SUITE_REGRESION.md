@@ -452,6 +452,29 @@ Las tres reglas que salen de ahí, para cualquier test, assert o check nuevo:
    patrón, no de memoria). Si no toca propagarlo, escribe por qué no — un «aquí no aplica
    porque…» de una línea evita que el siguiente lo mire desde cero.
 
+10. **Un guard que busca TEXTO mira líneas EJECUTABLES, no el fichero. (SCRUM-176/168/3,
+    28-jul-2026)**
+
+    El sitio natural donde se escribe un literal prohibido es **el comentario que explica por
+    qué está prohibido**. Así que un guard que barre el fichero entero se caza a sí mismo — y
+    no en teoría: pasó **tres veces en una sola sesión**, en tres tickets distintos.
+
+    · **SCRUM-176:** el hook bloqueaba `git commit -m "…nunca ejecutes db push…"`. Miraba el
+      JSON entero del tool call, así que casaba la prosa del mensaje de commit.
+    · **SCRUM-168:** el test que impedía que volviera `--depth=0` salió rojo contra la
+      **cabecera de su propio workflow**, donde ese literal aparece para explicar que no se use.
+    · **SCRUM-3:** el assert de «el selector no le habla al pagador del fee» casó el «0,9 %» de
+      un comentario que explicaba la decisión del fundador.
+
+    Es el enunciado de SCRUM-176 aplicado un piso más arriba: *cuanto mejor documentas la
+    regla, más te bloquea el mecanismo que la defiende.* Y el daño no es el rojo: es que un
+    guard ruidoso se acaba puenteando, y se puentea el día que de verdad importaba.
+
+    **Cómo:** `soloEjecutable()` de `tests/_guard-texto.mjs`. Si de verdad hay que mirar
+    también los comentarios, se dice en el test y se justifica ahí — es la excepción, no el
+    punto de partida. Y cuando lo que se protege es **lo que lee un humano** (una etiqueta, un
+    microcopy), mejor todavía: mira los literales que se renderizan, no el fuente.
+
 ### La conclusión de estas reglas: mueve la garantía de la disciplina al mecanismo
 
 Las reglas de arriba son útiles, pero el 23-jul-2026 falló **una regla que estaba bien escrita y
