@@ -528,6 +528,162 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   const invList = document.createElement('div');
   invSec.appendChild(invList);
 
+  // ── SCRUM-37 (mec. 1) · REAJUSTAR LOS TRAMOS QUE QUEDAN ────────────────────────────────
+  //
+  // «Obras que evolucionan»: en una reforma de meses nadie sabe al firmar cuántos tramos harán
+  // falta. Esto deja mover los que aún NO se han facturado y añadir nuevos, sin tocar los que
+  // ya tienen su factura emitida — esas existen, con su `stageLabel`, y una factura emitida no
+  // se edita ni se borra (regla 29).
+  //
+  // TRAMOS EMITIDOS = número de facturas del presupuesto. Es el mismo criterio por CONTEO que
+  // usa la emisión (`plan[invoices.length]`) y el que aplica el servidor (`quote.Invoice.length`).
+  //
+  // ⚠️ DOS FORMAS DISTINTAS PARA EL MISMO DATO, y hay que mapearlas a mano: la API SIRVE el plan
+  // con `percent` (billingPlanView) y el PATCH ESPERA `percentage`. Ambas fracción 0-1. Si se
+  // envía `percent`, el servidor lee `undefined` y responde «porcentaje mayor que 0» — un error
+  // que parece del usuario y es de fontanería.
+  const puedeEditarPlan = quote.hasCustomPlan
+    && Array.isArray(quote.billingPlan)
+    && quote.billingPlan.length > 0;
+
+  if (puedeEditarPlan) {
+    const planSec = document.createElement('div');
+    planSec.className = 'detail-section';
+    planSec.innerHTML = '<h3 class="detail-section-title">Plan de cobro</h3>';
+    page.appendChild(planSec);
+
+    const emitidos = invoices.length;
+    const ayuda = document.createElement('p');
+    ayuda.style.cssText = 'font-size:13px;color:var(--muted);margin:0 0 10px';
+    ayuda.textContent = emitidos > 0
+      ? `Ya hay ${emitidos} tramo(s) facturado(s): esos quedan fijos. Puedes reajustar los que quedan y añadir tramos nuevos si la obra ha crecido.`
+      : 'Aún no has facturado ningún tramo: puedes reajustarlos todos y añadir los que necesites.';
+    planSec.appendChild(ayuda);
+
+    const filas = document.createElement('div');
+    filas.style.cssText = 'display:flex;flex-direction:column;gap:8px';
+    planSec.appendChild(filas);
+
+    const resumen = document.createElement('div');
+    resumen.style.cssText = 'margin-top:10px;font-size:12.5px;font-weight:600';
+    planSec.appendChild(resumen);
+
+    // Admin-only, coherente con `requireRole('admin')` del endpoint: reajustar tramos cambia
+    // el reparto de lo que se va a cobrar, y eso es zona de dinero.
+    const esAdmin = window.appUserRole !== 'tecnico' && window.appUserRole !== 'operario';
+
+    const tramos = quote.billingPlan.map((s, i) => ({
+      label: String(s.label || ''),
+      pct: Math.round(Number(s.percent || 0) * 10000) / 100, // fracción → % para el input
+      emitido: i < emitidos,
+    }));
+
+    function leerTramos() {
+      return tramos.map((t) => ({ label: t.label.trim(), percentage: (Number(t.pct) || 0) / 100 }));
+    }
+
+    function repintar() {
+      filas.innerHTML = '';
+      tramos.forEach((t, i) => {
+        const fila = document.createElement('div');
+        fila.style.cssText = 'display:flex;gap:8px;align-items:center';
+
+        const lab = document.createElement('input');
+        lab.type = 'text'; lab.className = 'input'; lab.value = t.label;
+        lab.style.cssText = 'flex:1;min-width:0';
+        lab.addEventListener('input', () => { t.label = lab.value; recalcular(); });
+
+        const pct = document.createElement('input');
+        pct.type = 'number'; pct.min = '0'; pct.step = '1'; pct.className = 'input';
+        pct.value = String(t.pct); pct.style.cssText = 'width:84px';
+        pct.addEventListener('input', () => {
+          t.pct = parseFloat(String(pct.value).replace(',', '.'));
+          recalcular();
+        });
+
+        const quitar = document.createElement('button');
+        quitar.type = 'button'; quitar.className = 'btn-icon';
+        quitar.title = 'Eliminar tramo'; quitar.textContent = '🗑️';
+        quitar.addEventListener('click', () => { tramos.splice(i, 1); repintar(); });
+
+        // SCRUM-89: los emitidos se BLOQUEAN CON SU MOTIVO A LA VISTA, nunca se esconden. Un
+        // control que no se puede usar tiene que decir por qué, o el pro cree que la pantalla
+        // está rota — y aquí además el motivo es la información importante: ese tramo ya tiene
+        // una factura detrás.
+        if (t.emitido || !esAdmin) {
+          [lab, pct].forEach((el) => { el.disabled = true; el.classList.add('role-locked'); });
+          quitar.disabled = true; quitar.classList.add('role-locked');
+        }
+
+        fila.appendChild(lab);
+        fila.appendChild(pct);
+        fila.appendChild(quitar);
+
+        if (t.emitido) {
+          const motivo = document.createElement('span');
+          motivo.style.cssText = 'font-size:11.5px;color:var(--muted);white-space:nowrap';
+          motivo.textContent = '🔒 ya facturado';
+          motivo.title = 'Este tramo ya tiene su factura emitida: no se puede cambiar (regla 29).';
+          fila.appendChild(motivo);
+        }
+        filas.appendChild(fila);
+      });
+      recalcular();
+    }
+
+    const btnAdd = document.createElement('button');
+    btnAdd.type = 'button'; btnAdd.className = 'btn-secondary btn-sm';
+    btnAdd.textContent = '+ Añadir tramo';
+    btnAdd.addEventListener('click', () => {
+      tramos.push({ label: '', pct: 0, emitido: false });
+      repintar();
+    });
+
+    const btnGuardar = document.createElement('button');
+    btnGuardar.type = 'button'; btnGuardar.className = 'btn-primary btn-sm';
+    btnGuardar.textContent = 'Guardar plan';
+
+    // EL DESCUADRE SE DELATA MIENTRAS SE EDITA, no con un 409 después de guardar. El 409 del
+    // servidor sigue ahí y sigue mandando — pero como RED, no como forma de enterarse. La regla
+    // es la MISMA que aplica el backend porque sale de `planTramosEstado` (api.js), la única
+    // copia en el front, atada al dominio por un test diferencial.
+    function recalcular() {
+      const est = planTramosEstado(leerTramos(), emitidos);
+      resumen.textContent = est.ok
+        ? `Suman ${est.sumaPct} % ✓`
+        : `Suman ${est.sumaPct} % — ${est.error}`;
+      resumen.style.color = est.ok ? 'var(--green-600)' : 'var(--danger)';
+      btnGuardar.disabled = !est.ok || !esAdmin;
+    }
+
+    btnGuardar.addEventListener('click', async () => {
+      btnGuardar.disabled = true;
+      const antes = btnGuardar.textContent;
+      btnGuardar.textContent = 'Guardando…';
+      try {
+        await apiRequest(`/admin/quotes/${quote.id}/billing-plan`, {
+          method: 'PATCH',
+          body: JSON.stringify({ customBillingPlan: leerTramos() }),
+        });
+        showToast('✓ Plan de cobro actualizado');
+        if (window.renderAppView) window.renderAppView('quote-detail', { quoteId: quote.id });
+      } catch (e) {
+        showToast(e && e.message ? e.message : 'No se pudo guardar el plan', 'error');
+        btnGuardar.textContent = antes;
+        recalcular();
+      }
+    });
+
+    const acciones = document.createElement('div');
+    acciones.style.cssText = 'display:flex;gap:8px;margin-top:12px';
+    if (esAdmin) acciones.appendChild(btnAdd);
+    acciones.appendChild(btnGuardar);
+    planSec.appendChild(acciones);
+    if (!esAdmin) planSec.appendChild(roleLockedNote());
+
+    repintar();
+  }
+
   function renderInvoices() {
     invList.innerHTML = '';
     if (invoices.length === 0) {
