@@ -73,6 +73,13 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'POST', path: '/admin/charges/999999/confirm-bizum' },
   // Emitir factura desde presupuesto (S1: "facturas emitir ❌", D2 del fundador).
   { method: 'POST', path: '/admin/quotes/999999/invoice' },
+  // SCRUM-178: la vía MANUAL emite igual de fiscal que la de tramos, así que su 403 se
+  // ejerce igual. No hereda el de arriba: es otra ruta y otro `requireRole`.
+  { method: 'POST', path: '/admin/quotes/999999/invoice-manual' },
+  // SCRUM-170 / SCRUM-171a: las dos vías nuevas de emisión desde albarán. Emiten factura y
+  // sellan VeriFactu igual que la de Job, así que su 403 se ejerce igual.
+  { method: 'POST', path: '/admin/albaranes/999999/facturar-parcial', body: { lineas: [{ index: 0, cantidad: 1 }] } },
+  { method: 'POST', path: '/admin/albaranes/consolidar', body: { customerId: 999999, albaranIds: [999999] } },
   // La factura del resto + payment_request. ERA EL OBJETIVO ORIGINAL DE SCRUM-54,
   // que se cerró sobre consolidar-albaranes y dejó esta abierta: aquí su evidencia.
   { method: 'POST', path: '/admin/jobs/999999/collect-rest' },

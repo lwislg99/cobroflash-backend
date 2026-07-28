@@ -237,6 +237,13 @@ Las tres reglas que salen de ahí, para cualquier test, assert o check nuevo:
    borrado en su lugar — además de saltarse todo lo que venga detrás en el mismo bloque
    (`server.close()`, `$disconnect()`). Avisa por consola y sigue.
 
+   **Principio de borrado en fixtures (SCRUM-159/174).** Una entidad con **FK Restrict**
+   (quoteRequest, customerEvent) falla RUIDOSA si el orden de borrado está mal: el `delete` del
+   merchant revienta y te enteras. Una entidad **sin FK** (whatsAppMessage, attachment) falla
+   MUDA — exit 0, verde, y basura dentro. La restricción que parece un estorbo es la única que
+   avisa: si tu fixture limpia por `merchantId` y una tabla no tiene FK, comprueba a mano que
+   quedó vacía, porque nadie lo hará por ti.
+
    ### Y mientras lo miras en rojo, escribe el MENSAJE: anticipa el error de quien lo vea
 
    Verlo fallar es el único momento en que lees tu propio mensaje como lo va a leer otro. Es

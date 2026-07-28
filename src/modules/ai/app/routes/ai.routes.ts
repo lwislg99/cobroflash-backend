@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
-import { suggestQuoteLines, generateQuoteMessage, isAiConfigured } from '../../domain/ai.service';
+import { suggestQuoteLines, generateQuoteMessage, isAiConfigured, suggestAlbaranLines } from '../../domain/ai.service';
 import { hitRateLimit } from '../../../../core/http/rateLimit';
+import { isFlagEnabled } from '../../../../core/flags'; // SCRUM-71
 
 const router = Router();
 
@@ -66,6 +67,66 @@ router.post('/suggest-quote', async (req, res) => {
     return res.json({ lines });
   } catch (err: any) {
     console.error('[POST /admin/ai/suggest-quote]', err?.message || err);
+    return aiErrorResponse(res, err);
+  }
+});
+
+/**
+ * POST /admin/ai/suggest-albaran-lines — SCRUM-71 (VOZ-ALB V1)
+ * Body: { albaranId: number, description: string }
+ * Devuelve: { lines: [{concepto, cantidad, unidad, precioUnitario?, tipoIva?}] }
+ *
+ * DOS DECISIONES QUE NO SON DE ESTILO:
+ *
+ * 1. El GATE del flag está AQUÍ, no solo en la UI. Si el flag únicamente escondiera el
+ *    botón, apagarlo no apagaría la función: dejaría la puerta abierta a quien conozca la
+ *    ruta. Un flag que no cierra el mecanismo es una prohibición sin mecanismo.
+ *
+ * 2. `modoValoracion` se lee del ALBARÁN EN LA BD, jamás del cuerpo de la petición. Si el
+ *    cliente pudiera mandar 'VALORADO', se saltaría por completo la regla de que un albarán
+ *    SIN_VALORAR no lleva precios — que es el requisito central de este ticket. Y el
+ *    `findFirst` filtra por `merchantId` (regla 2): el albarán tiene que ser suyo.
+ */
+router.post('/suggest-albaran-lines', async (req, res) => {
+  const merchant = await prisma.merchant.findUnique({
+    where: { id: req.merchantId },
+    select: { id: true, country: true, defaultCurrency: true, flags: true },
+  });
+  if (!isFlagEnabled('VOICE_ALBARAN_ENABLED', { merchant })) {
+    return res.status(404).json({ error: 'not_found' }); // apagado = indistinguible de inexistente
+  }
+  if (!isAiConfigured()) return aiUnavailable(res);
+  if (aiCapExceeded(req.merchantId)) {
+    return res.status(429).json({ error: 'ai_cap', message: 'Has usado el asistente muchas veces seguidas. Espera un poco o rellena las líneas a mano.' });
+  }
+
+  const albaranId = Number(req.body?.albaranId);
+  const description = String(req.body?.description || '').trim();
+  if (!Number.isInteger(albaranId) || albaranId <= 0) return res.status(400).json({ error: 'albaran_id_required' });
+  if (!description) return res.status(400).json({ error: 'description_required' });
+  if (description.length > 2000) return res.status(400).json({ error: 'description_too_long' });
+
+  try {
+    const albaran = await prisma.albaran.findFirst({
+      where: { id: albaranId, merchantId: req.merchantId },
+      select: { modoValoracion: true, estado: true },
+    });
+    if (!albaran) return res.status(404).json({ error: 'not_found' });
+    // Las líneas solo se editan en borrador (mismo candado que lineas/notas/fecha, SCRUM-65):
+    // sugerir para un albarán ya emitido sería ofrecer algo que no se puede aplicar.
+    if (albaran.estado !== 'borrador') return res.status(409).json({ error: 'albaran_no_editable' });
+
+    const lines = await suggestAlbaranLines({
+      description,
+      merchantId: req.merchantId,
+      country: merchant?.country || 'ES',
+      currency: merchant?.defaultCurrency || 'EUR',
+      modoValoracion: albaran.modoValoracion === 'VALORADO' ? 'VALORADO' : 'SIN_VALORAR',
+    });
+
+    return res.json({ lines });
+  } catch (err: any) {
+    console.error('[POST /admin/ai/suggest-albaran-lines]', err?.message || err);
     return aiErrorResponse(res, err);
   }
 });

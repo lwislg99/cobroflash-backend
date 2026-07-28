@@ -116,6 +116,55 @@ Los dos eslabones fallan igual y en silencio: el trabajo existe, el mensaje dice
 
 Lo que la hace la más útil: las dos primeras variantes fallaban hacia *"parece entregado y no lo está"*; esta falla hacia *"parece que falta y ya estaba"*, y su coste es **rehacer trabajo hecho** o contradecir a quien tenía razón (aquí, un compañero que decía que el fichero ya estaba en `main` — y lo estaba). **La lección completa: resolver el SHA primero, consultar por SHA, y no fiarse de alias.**
 
+### 2026-07-27 · #11 — Retiré 37 worktrees con la orden correcta y vacié el `node_modules` de TODO EL EQUIPO (lección propia, del ejecutor)
+
+**Qué pasó:** con el GO del fundador para retirar los worktrees ya mergeados, corrí `git worktree remove` sobre 37 de ellos. Cada worktree lleva dentro un **junction de Windows** (`mklink /J node_modules → <repo>/node_modules`) para no duplicar 271 paquetes por copia. `git worktree remove` **entró por el enlace y borró el contenido del destino**: el `node_modules` compartido quedó con 0 ficheros. Ningún comando falló; los 37 dijeron OK.
+
+**El daño real no fue mío:** ese `node_modules` lo comparten TODAS las sesiones por junction. Cualquiera que estuviera compilando o corriendo tests en ese momento se encontró un repo sin dependencias, sin haber tocado nada. Es la primera de estas lecciones cuyo coste cae **sobre terceros**.
+
+**Detectado:** al minuto siguiente, al ir a medir para SCRUM-162 y no resolverse `@prisma/client`. Restaurado con `npm ci` + `npx prisma generate` (271 paquetes, build y suite en verde otra vez).
+
+**Verificado, no supuesto:** se reprodujo con un destino de juguete — worktree desechable + junction a una carpeta con un fichero marcador → `git worktree remove` → **el marcador desaparece**. Y se comprobó el orden correcto en el mismo experimento: `rmdir <enlace>` primero (borra el ENLACE, no el destino: el marcador sobrevive) y `git worktree remove` después. Las dos mitades, provocadas.
+
+**Regla derivada — nueva:** **antes de retirar un worktree, deshacer sus enlaces.** Un junction no es una carpeta del worktree: es una puerta a algo compartido, y las herramientas de borrado recursivo no distinguen. Orden obligatorio:
+
+```bash
+cmd //c "rmdir D:\ruta\al\worktree\node_modules"   # quita el ENLACE (no el destino)
+git worktree remove ../wt-loquesea                 # ahora sí
+```
+
+**Nota:** hermana de #8 y #9 —la herramienta hizo su trabajo correctamente sobre un objeto que no era el que yo creía— pero con una vuelta de tuerca: aquí el objeto equivocado **no estaba a la vista**. Lo que se ve es una carpeta del worktree; lo que se borra está al otro lado del enlace, fuera de él. Cuando una operación de borrado toca algo compartido, el radio de la acción es mayor que el de la carpeta que se nombra en el comando.
+
+### 2026-07-27 · #12 — Probé un guard fiscal en rojo con el caso equivocado, y el verde me habría dado por seguro (lección propia, del ejecutor)
+
+**Qué pasó:** en SCRUM-178 (emisión manual de factura) escribí un assert para proteger la regla de SCRUM-141 —el importe emitido sale de las LÍNEAS, no del campo `total` guardado del presupuesto—. Para probarlo en rojo, monté un presupuesto cuyo `total` guardado estaba desfasado **5 €** respecto a sus líneas y devolví el código al comportamiento malo. **El test siguió en verde.**
+
+**Por qué:** `reconcileToTarget` solo busca el cuadre dentro de una ventana de **±0,05 €** de base. Un hueco de 5 € es inalcanzable: la función se rinde y devuelve las líneas intactas, así que el comportamiento malo daba el mismo resultado que el bueno. Mi caso de prueba era **tan grave que caía fuera del mecanismo que quería vigilar**.
+
+**Lo peligroso no es el caso grande: es el pequeño.** Con un desfase de **3 céntimos** —dentro de la ventana— el código malo sí actúa: toca el precio de la última línea para cuadrar con una cifra vieja, el importe emitido pasa de 134,27 € a 134,30 €, y **eso queda sellado en la huella VeriFactu**, que solo se corrige con una R1 (regla 29). Con 3 céntimos el rojo salió a la primera.
+
+**Quién lo detectó:** yo mismo, al no ver el rojo que esperaba. El fallo habría sido invisible al revés: si no llego a probarlo en rojo, tenía un assert verde sobre un código correcto y **habría reportado que la regla estaba protegida**.
+
+**Regla derivada — nueva:** **el caso de prueba tiene que caer DENTRO del mecanismo que se vigila.** Un desvío enorme suele salirse de los márgenes, las tolerancias y las ventanas de la función que se quiere probar, y entonces el guard no distingue nada. Al inyectar una regresión hay que preguntarse *¿este valor activa de verdad el camino malo?* — y si el rojo no sale, la primera hipótesis no es «el guard sobra», es «el caso está mal elegido».
+
+**Nota:** es la vuelta de tuerca de la regla de la casa (*todo guard se prueba fallando primero*). Probar en rojo no basta si el rojo se busca con el caso equivocado: **un test que falla con el caso equivocado da falsa tranquilidad**, y en zona fiscal la falsa tranquilidad se sella en una cadena de huellas inmutable. Hermana de #8 —medir la página equivocada con total confianza—, pero sobre el propio mecanismo de verificación.
+
+### 2026-07-27 · #13 — Verifiqué las piezas del job de CI en los dos sentidos y nunca ejecuté el job (lección propia, del ejecutor)
+
+**Qué pasó:** entregué SCRUM-168 (aviso «este PR toca la zona roja») con el detector verificado a conciencia — los dos sentidos con datos reales, el test de deriva doc↔código probado en rojo. El PR salió con el check **en ROJO a los 7 segundos**. El job moría en `git fetch origin "$BASE" --depth=0`, que **no es un flag válido** (`fatal: depth 0 is not a positive number`, exit 128): el paso reventaba ANTES de ejecutar el detector. El job nunca llegó a mirar si había zona roja. Lo detectó el fundador al abrir el PR.
+
+**Por qué:** verifiqué todas las piezas y ninguna la de arriba. El detector es código y lo ejercité; el workflow es **una hipótesis escrita en YAML que nunca se ejecutó**, y su primer intento de correr fue en producción, sobre el PR del propio ticket. Escribí en su cabecera que el job «sale verde siempre» sin haber visto salir verde a nada.
+
+**El segundo error, de concepto:** puse `continue-on-error: true` creyendo que garantizaba el verde. **No hace eso.** Evita que falle el *workflow*; el job sigue apareciendo con su aspa roja en la lista de checks del PR. Confié en un ajuste por lo que sugería su nombre. Y para un aviso eso no es un detalle: **un check rojo es un gate de facto**, y como `package.json` y `YAQU_MASTER.md` son zona roja por definición, habría acabado en rojo casi permanente — justo lo que el ticket existía para evitar.
+
+**El tercero, y el más humillante:** el test que escribí para que `--depth=0` no volviera **falló contra la prosa de su propio comentario** — el literal aparece en la cabecera donde explico que no se use. Es, calcado, el bug de **SCRUM-176**, cometido el mismo día, en el ticket de al lado, por quien acababa de arreglarlo. Arreglado igual: mirar solo las líneas ejecutables.
+
+**Coste:** bajo (un check rojo en un PR sin mergear), pero el patrón no: un aviso que se pinta rojo se acaba desactivando, y entonces no avisa de nada el día que importa.
+
+**Regla derivada — nueva:** **un artefacto de CI no está entregado hasta que se le ha visto ejecutar.** Vale para workflows, hooks y cualquier cosa cuyo entorno de ejecución no sea la máquina donde se escribe. Si no se puede lanzar de verdad, se ejecuta su lógica **paso a paso en local con las mismas variables** antes de empujar — que es lo que hice al arreglarlo, y lo que habría cazado el fallo en dos minutos. Verificar los componentes no es verificar el sistema: **el pegamento también es código, y es donde estaba el fallo.**
+
+**Nota:** es la familia de #8, #9 y #10 (confiar en lo propio), con una vuelta más: allí la herramienta hacía su trabajo sobre el objeto equivocado; aquí directamente **no llegué a ejecutar el objeto**, y el resto de verificaciones —reales y buenas— me dieron la sensación de haberlo hecho.
+
 ---
 
 ## PATRÓN COMÚN (lo que de verdad hay que corregir)

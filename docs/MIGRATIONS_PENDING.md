@@ -10,6 +10,45 @@
 > se ARCHIVÓ en `docs/historico/prisma-migrations-frozen-2026-03/` (congelada mar-2026):
 > **NO uses `migrate deploy`/`migrate dev`** — aplicaría un schema viejo (entorno nuevo) o
 > propondría un reset. `db push` es el ÚNICO mecanismo. (Volver a migrate = SCRUM-40 opción A.)
+>
+> **REGLA DE LAS TRES BD (SCRUM-169):** un cambio de schema NO está aplicado hasta estar en las
+> TRES bases (abajo). Faltar una costó 16 tests rojos y un lote de diagnóstico para acabar en
+> «faltaba un push». El MISMO mapa y el MISMO criterio están en `docs/RUNBOOKS.md` R18 verbatim;
+> si divergen en una palabra, el problema no está resuelto, solo movido.
+
+Un cambio de schema NO está aplicado hasta estar en las TRES bases:
+
+```
+1. acela.proxy.rlwy.net / railway          — STAGING. Protegida por el máster: no se toca
+                                             sin que el fundador lo sepa. Es la base del
+                                             worktree cobroflash-b2.
+2. acela.proxy.rlwy.net / yaqu_dev_javier  — DESARROLLO. El fundador dijo que NO requiere su
+                                             GO para aplicarle schema. Base de cobroflash-b1.
+3. autorack.proxy.rlwy.net                 — PRODUCCIÓN.
+```
+
+⚠️ Las dos primeras viven en el MISMO servidor (`acela`) y son bases DISTINTAS. Ninguna es
+"local". Por eso pueden divergir de esquema sin que nada avise: `scripts/_db-guard.mjs` valida
+el HOSTNAME, no la base, y el marcador `YAQU_STAGING` está en las dos. Las salvaguardas
+garantizan "NO es producción", no "es la base que crees" — y eso es exactamente lo que produjo
+los 16 rojos crípticos de SCRUM-160.
+
+Fuente de los hostnames: `scripts/_db-guard.mjs` (`PROD_HOST` / `STAGING_HOST`), único sitio que
+los define en el árbol.
+
+Nomenclatura fijada por carril B el 27-jul-2026 con la regla de desempate del fundador. El
+criterio para asignar el papel ha sido la AUTORIZACIÓN, no la ubicación ni el uso: las dos
+primeras están en el mismo servidor y las dos las ejercitan tandas gateadas; lo que las
+distingue es quién puede tocarlas. Se descarta llamar a `yaqu_dev_javier` "segunda BD de
+staging" (SCRUM-84) porque implicaría el régimen de `railway` y no lo tiene. Si el fundador lo
+ve de otra forma, es una línea.
+
+<!-- ─── LÍNEA DE CORTE · SCRUM-169 (2026-07-27) ─────────────────────────────────────────
+     A partir de esta línea HACIA ARRIBA, cada entrada NUEVA lleva los tres checkboxes:
+       [ ] staging · acela/railway    [ ] desarrollo · acela/yaqu_dev_javier    [ ] producción · autorack
+     Una entrada por ENCIMA sin las tres = migración NO aplicada (fallo detectable).
+     Lo de DEBAJO es historia previa a la regla: NO retrofitada a propósito — marcar 25 entradas
+     por suposición serían checkboxes que parecen evidencia y no lo son. ──────────────────── -->
 
 ## SCRUM-145d · `invoices.vf_anul_prev_hash` (eslabon de la anulacion) — APLICADO en staging y prod (2026-07-24)
 
@@ -483,6 +522,59 @@ CREATE TABLE jobs (A13) · maintenance_plans (A15) · audit_log (A11.1) · attac
 - Todo nace INERTE: cada ola cablea su pieza; attachments espera credenciales R2.
 
 ---
+
+## 27-jul-2026 — customers.billing_periodicity (SCRUM-171b) — APLICADO ✅ (staging + prod)
+
+```sql
+ALTER TABLE "customers" ADD COLUMN "billing_periodicity" TEXT NOT NULL DEFAULT 'NINGUNA';
+```
+
+- **Aditiva con DEFAULT**: con 44 filas en prod el ALTER es instantáneo y no reescribe la tabla
+  (Postgres ≥ 11 guarda el default en el catálogo). Cero DROP, cero cambios sobre lo existente.
+- `NINGUNA` de default = el comportamiento de hoy, intacto: ningún cliente empieza a avisar.
+  Verificado tras aplicar: los 44 quedaron en `NINGUNA`.
+- **Por qué DEFAULT aquí y `null` en `tipo_destinatario`** (su vecino de SCRUM-69): allí había
+  ambigüedad que preservar —«nunca clasificado» ≠ «clasificado como particular», y el plazo legal
+  depende de eso—. Aquí no: «sin pactar» y «sin periodicidad» son lo mismo.
+- Sirve para AVISAR, nunca para facturar sola: un envío automático nuevo exigiría su entrada en
+  la tabla J6 del máster (regla 28) y este ticket no la toca.
+- Orden seguido en las dos BD: preview enseñado → host verificado contra la allowlist → staging
+  sin otras sesiones → sentinel de un solo uso → `db push` → **verificado por
+  `information_schema`** (`text`, `default='NINGUNA'::text`, `nullable=NO`) → `prisma generate`.
+
+## 27-jul-2026 — albaran_lineas_facturadas (SCRUM-170) — APLICADO ✅ (staging + prod)
+
+```sql
+CREATE TABLE "albaran_lineas_facturadas" (
+    "id" SERIAL NOT NULL,
+    "merchant_id" INTEGER NOT NULL,
+    "albaran_id" INTEGER NOT NULL,
+    "linea_index" INTEGER NOT NULL,
+    "invoice_id" INTEGER NOT NULL,
+    "cantidad" DECIMAL(12,3) NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "albaran_lineas_facturadas_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX "albaran_lineas_facturadas_merchant_id_albaran_id_idx" ON "albaran_lineas_facturadas"("merchant_id", "albaran_id");
+CREATE INDEX "albaran_lineas_facturadas_merchant_id_invoice_id_idx" ON "albaran_lineas_facturadas"("merchant_id", "invoice_id");
+```
+
+- **Aditiva pura**: tabla nueva + 2 índices. Cero ALTER y cero DROP sobre lo existente, así que
+  el código de hoy no la ve y sigue funcionando igual (nada la lee salvo lo de SCRUM-170).
+- **Sin FK a propósito**, patrón multi-tenant de columna de esta casa (WhatsAppMessage). El
+  barrido de merchants efímeros la cubre porque el modelo QUEDA REGISTRADO en
+  `MODELOS_POR_MERCHANT` (`tests/_merchant-fixture.mjs`) — y va PRIMERO en la lista, antes que
+  albaranes y facturas, o el borrado dejaría filas huérfanas sin que nada fallara (SCRUM-172).
+- Es un LIBRO append-only: sus filas no se editan. Son el rastro de facturas ya emitidas
+  (regla 29) y su suma tiene que seguir cuadrando con las líneas selladas en la huella.
+- Orden seguido: preview enseñado → host comprobado contra la allowlist (`acela.proxy.rlwy.net`)
+  → staging sin otras sesiones (`pg_stat_activity`) → sentinel de un solo uso → `db push` →
+  **verificado leyendo `information_schema`**, no el mensaje del comando → `prisma generate`.
+- PROD: aplicado el 27-jul-2026 con GO del fundador. Preview idéntico al de staging (0 ALTER,
+  0 DROP), host verificado (`autorack.proxy.rlwy.net`), y comprobado DESPUÉS por
+  `information_schema` + `pg_indexes`: 7 columnas, 2 índices + PK, 0 filas. La tabla nace
+  vacía y nadie la lee todavía en prod (la ruta parcial exige albarán firmado, con precios
+  y flag fiscal ON: en producción no se cumple ninguna de las tres).
 
 ## 6-jul-2026 — merchants.flags (APLICADO ✅)
 

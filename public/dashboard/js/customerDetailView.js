@@ -302,6 +302,14 @@ function openEdit360Modal(customer, customerId, container) {
       <div class="field"><label>Email</label><input type="email" id="e360-email"/></div>
       <div class="field"><label>Razón social (empresa, opcional)</label><input type="text" id="e360-legalname"/></div>
       <div class="field"><label>NIF/CIF (opcional)</label><input type="text" id="e360-taxid"/></div>
+      <div class="field"><label>Facturación pactada</label>
+        <select id="e360-periodicidad" class="input">
+          <option value="NINGUNA">Cuando toque (sin periodicidad)</option>
+          <option value="QUINCENAL">Cada quince días</option>
+          <option value="MENSUAL">Mensual</option>
+        </select>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Solo sirve para avisarte de que toca facturarle. YaQu nunca factura ni envía nada solo — y el plazo legal manda por encima de lo que pactes.</div>
+      </div>
       <div class="field"><label>Tipo de cliente</label>
         <select id="e360-tipodestinatario" class="input">
           <option value="">Sin clasificar</option>
@@ -332,6 +340,7 @@ function openEdit360Modal(customer, customerId, container) {
   $('#e360-legalname').value = customer.legalName || ''; // A20.4
   $('#e360-taxid').value = customer.taxId || '';
   $('#e360-tipodestinatario').value = customer.tipoDestinatario || ''; // SCRUM-69
+  $('#e360-periodicidad').value = customer.billingPeriodicity || 'NINGUNA'; // SCRUM-171b
   $('#e360-waoptout').checked = !!customer.waOptOut;
   $('#e360-cancel').onclick = () => overlay.remove();
 
@@ -353,6 +362,7 @@ function openEdit360Modal(customer, customerId, container) {
       legalName: $('#e360-legalname').value.trim() || null, // A20.4
       taxId: $('#e360-taxid').value.trim() || null,
       tipoDestinatario: $('#e360-tipodestinatario').value || null, // SCRUM-69
+      billingPeriodicity: $('#e360-periodicidad').value || 'NINGUNA', // SCRUM-171b
       waOptOut: $('#e360-waoptout').checked,
     };
     if (phone) payload.phone = phone;

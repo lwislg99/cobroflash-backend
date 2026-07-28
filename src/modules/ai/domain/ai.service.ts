@@ -143,6 +143,204 @@ ${params.description}`;
   }));
 }
 
+// ─── Suggest albarán lines (SCRUM-71 · VOZ-ALB V1) ─────────────────────────
+//
+// ⚠️ NO es `suggestQuoteLines` con otro nombre. Dos diferencias que son requisito, no matiz:
+//
+//   1. PRECIO. `Albaran.modoValoracion` es SIN_VALORAR por defecto: albaranes SIN precios, a
+//      propósito (SCRUM-65). El extractor de presupuesto devuelve SIEMPRE `price`; enchufarlo
+//      tal cual metería **precios inventados en documentos que por diseño no los llevan** — y
+//      un albarán lo firma el cliente. En SIN_VALORAR aquí no sale precio, y no por pedírselo
+//      al modelo: se le quita en código (ver `sanearLineasAlbaran`).
+//   2. UNIDAD. La línea de albarán es `{concepto, cantidad, unidad, ...}` y **`unidad` no la
+//      produce hoy nadie**. Es uno de los tres campos del V1.
+//
+// EL AUDIO NO SALE DEL MÓVIL, y conviene que siga así. El dictado es la Web Speech API del
+// NAVEGADOR (`public/dashboard/js/voiceInput.js`), no una API de transcripción: no hay fichero
+// de audio que guardar, no hay coste por minuto y no hay superficie RGPD nueva. Lo que hace la
+// IA aquí es convertir TEXTO en líneas. Si alguna vez se propone "mejorar la transcripción con
+// una API", eso cambia las tres cosas a la vez y es una decisión de otro tamaño.
+
+/** Unidades que se aceptan. Cerrada a propósito: `unidad` acaba impresa en un documento que
+ *  se firma, y texto libre del modelo ahí produce "unidades", "uds.", "Ud" y "u" en el mismo
+ *  albarán. Lo que no se reconoce cae a 'ud', que es el caso mayoritario y nunca miente. */
+const UNIDADES = ['ud', 'h', 'm', 'm2', 'm3', 'kg', 'l'] as const;
+export type UnidadAlbaran = (typeof UNIDADES)[number];
+
+const SINONIMOS_UNIDAD: Record<string, UnidadAlbaran> = {
+  ud: 'ud', uds: 'ud', u: 'ud', unidad: 'ud', unidades: 'ud', pieza: 'ud', piezas: 'ud',
+  h: 'h', hora: 'h', horas: 'h', hr: 'h', hrs: 'h',
+  m: 'm', metro: 'm', metros: 'm', ml: 'm',
+  m2: 'm2', 'm²': 'm2', metrocuadrado: 'm2', metroscuadrados: 'm2',
+  m3: 'm3', 'm³': 'm3', metrocubico: 'm3', metroscubicos: 'm3',
+  kg: 'kg', kilo: 'kg', kilos: 'kg', kilogramo: 'kg', kilogramos: 'kg',
+  l: 'l', litro: 'l', litros: 'l', lt: 'l',
+};
+
+export function normalizarUnidad(bruto: unknown): UnidadAlbaran {
+  const clave = String(bruto ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[.\s]/g, '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, ''); // tildes fuera: "metros cúbicos" → "metroscubicos"
+  return SINONIMOS_UNIDAD[clave] ?? 'ud';
+}
+
+/**
+ * Cantidad utilizable a partir de lo que devuelva el modelo.
+ *
+ * Todo lo que no sea un número POSITIVO cae a 1, que es la regla que ya se le pide al modelo
+ * ("si no se dice, 1"). Se hace explícito en vez de heredar el `Math.max(0.01, Number(x) || 1)`
+ * del extractor de presupuesto, que es incoherente: con ese, un 0 acaba en 1 (porque 0 es
+ * falsy) pero un -4 acaba en **0,01** — "0,01 unidades" de algo, impreso en un documento que
+ * firma el cliente. Cero y negativo son la misma clase de basura de dictado y merecen la misma
+ * respuesta.
+ */
+function cantidadUtilizable(bruto: unknown): number {
+  const n = Number(bruto);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+}
+
+export interface LineaAlbaranSugerida {
+  concepto: string;
+  cantidad: number;
+  unidad: UnidadAlbaran;
+  precioUnitario?: number;
+  tipoIva?: number;
+}
+
+export type ModoValoracion = 'SIN_VALORAR' | 'VALORADO';
+
+/**
+ * Convierte lo que devuelva el modelo en líneas de albarán válidas.
+ *
+ * ES EL MECANISMO, NO EL PROMPT. Al modelo se le pide que no ponga precio en SIN_VALORAR,
+ * pero un prompt es una PETICIÓN: si el modelo se despista, o cambia de versión, o alguien
+ * edita el texto del prompt, la petición deja de cumplirse en silencio y nadie se entera hasta
+ * que un albarán firmado lleva un precio que el profesional no puso. Por eso el precio se
+ * ELIMINA aquí, después de la respuesta, y por eso esta función es pura y testeable sin red.
+ */
+export function sanearLineasAlbaran(crudo: unknown, modo: ModoValoracion): LineaAlbaranSugerida[] {
+  if (!Array.isArray(crudo)) throw new Error('ai_invalid_format');
+
+  const salida: LineaAlbaranSugerida[] = [];
+  for (const l of crudo as any[]) {
+    const concepto = String(l?.concepto ?? l?.concept ?? '').trim();
+    if (!concepto) continue; // una línea sin concepto no es una línea
+
+    const linea: LineaAlbaranSugerida = {
+      concepto,
+      cantidad: cantidadUtilizable(l?.cantidad ?? l?.qty),
+      unidad: normalizarUnidad(l?.unidad ?? l?.unit),
+    };
+
+    // El corazón del requisito: en SIN_VALORAR no se copia precio NI IVA, venga como venga.
+    if (modo === 'VALORADO') {
+      const precio = Number(l?.precioUnitario ?? l?.price);
+      const iva = Number(l?.tipoIva ?? l?.tax);
+      if (Number.isFinite(precio)) linea.precioUnitario = Math.max(0, precio);
+      if (Number.isFinite(iva)) linea.tipoIva = Math.min(1, Math.max(0, iva));
+    }
+
+    salida.push(linea);
+  }
+  return salida;
+}
+
+const ALBARAN_SYSTEM_BASE = `Eres un asistente para profesionales de servicios (fontaneros, \
+electricistas, reformistas, pintores, carpinteros…) de España y LATAM.
+
+Tu tarea: analiza lo que el profesional ha dictado EN OBRA y devuelve un JSON array con las
+líneas del ALBARÁN — lo que se ha hecho y lo que se ha puesto, no un presupuesto.
+
+Reglas:
+- concepto: específico y en pasado o sustantivado ("Sustitución de grifo monomando"), nunca
+  genérico ("Trabajos varios").
+- cantidad: la que se diga. "dos grifos" → 2. "tres horas" → 3. Si no se dice, 1.
+- unidad: UNA de estas exactamente: ud, h, m, m2, m3, kg, l.
+  Mano de obra y tiempo → h. Piezas y aparatos → ud. Tubería y cable → m. Superficie → m2.
+- Entre 1 y 10 líneas. NUNCA añadas trabajos que no se han mencionado.
+
+Entrada por DICTADO (el texto viene de voz, hablado en obra y a veces con ruido):
+- Puede llegar sin puntuación, con muletillas (eh, mira, apúntame, si eso, o sea) y números
+  en palabras. Ignora las muletillas: NUNCA las conviertas en conceptos.
+- Sinónimos de obra: váter/inodoro → cisterna · calentador/termo/boiler → termo eléctrico ·
+  desagüe atascado/embozado → desatasco · pérdida/gotera → fuga · mezclador → grifo monomando.`;
+
+const ALBARAN_SYSTEM_SIN_VALORAR = `${ALBARAN_SYSTEM_BASE}
+
+Formato — SOLO el JSON array, sin texto adicional:
+[{"concepto":"string","cantidad":number,"unidad":"string"}]
+
+Este albarán NO lleva precios. NO devuelvas precio ni IVA aunque el profesional los mencione.`;
+
+const ALBARAN_SYSTEM_VALORADO = `${ALBARAN_SYSTEM_BASE}
+
+Formato — SOLO el JSON array, sin texto adicional:
+[{"concepto":"string","cantidad":number,"unidad":"string","precioUnitario":number,"tipoIva":number}]
+
+- tipoIva es el IVA como decimal: 0.21 (ES/AR), 0.16 (MX), 0.19 (CO/CL), 0.18 (PE)
+- precioUnitario en moneda local. Si el catálogo tiene el ítem, usa SU precio.
+- Si el profesional dicta el precio ("unos 200"), usa ESE precio.`;
+
+export async function suggestAlbaranLines(params: {
+  description: string;
+  merchantId: number;
+  country: string;
+  currency: string;
+  modoValoracion: ModoValoracion;
+}): Promise<LineaAlbaranSugerida[]> {
+  const valorado = params.modoValoracion === 'VALORADO';
+
+  // El catálogo solo aporta PRECIOS, así que en SIN_VALORAR no se consulta siquiera: sería
+  // pagar una consulta para dar contexto que luego se tira (mismo criterio que SCRUM-138).
+  const catalogText = valorado
+    ? await (async () => {
+        const products = await prisma.product.findMany({
+          where: { merchantId: params.merchantId, isActive: true },
+          select: { name: true, price: true },
+          take: 40,
+          orderBy: { name: 'asc' },
+        });
+        return products.length
+          ? `\nCatálogo del profesional:\n${products.map((p) => `- ${p.name}: ${Number(p.price).toFixed(2)} ${params.currency}`).join('\n')}\n`
+          : '';
+      })()
+    : '';
+
+  const userContent = `País: ${params.country} | Moneda: ${params.currency}${catalogText}
+Dictado del profesional:
+${params.description}`;
+
+  const propiedades: Record<string, unknown> = {
+    concepto: { type: 'STRING' },
+    cantidad: { type: 'NUMBER' },
+    unidad: { type: 'STRING' },
+  };
+  const requeridas = ['concepto', 'cantidad', 'unidad'];
+  if (valorado) {
+    propiedades.precioUnitario = { type: 'NUMBER' };
+    propiedades.tipoIva = { type: 'NUMBER' };
+    requeridas.push('precioUnitario', 'tipoIva');
+  }
+
+  const raw = (
+    await aiComplete({
+      system: valorado ? ALBARAN_SYSTEM_VALORADO : ALBARAN_SYSTEM_SIN_VALORAR,
+      user: userContent,
+      maxTokens: 4096,
+      jsonSchema: { type: 'ARRAY', items: { type: 'OBJECT', properties: propiedades, required: requeridas } },
+    })
+  ).trim();
+
+  const jsonMatch = raw.match(/\[[\s\S]*\]/);
+  if (!jsonMatch) throw new Error('ai_invalid_json');
+
+  // El saneado manda sobre lo que diga el modelo — incluido el precio en SIN_VALORAR.
+  return sanearLineasAlbaran(JSON.parse(jsonMatch[0]), params.modoValoracion);
+}
+
 // ─── Generate WhatsApp message ─────────────────────────────────────────────
 
 export async function generateQuoteMessage(params: {

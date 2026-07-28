@@ -7,10 +7,16 @@
 # @lwislg99 está en la bypass list del ruleset: esto vincula los PR de zona
 # roja de Javier y no los suyos. Asimetría asumida a conciencia, no olvido.
 #
-# ⚠️ RIESGO CONOCIDO: esta lista y la de ASESOR.md §4 (zona roja) son DOS listas
-# a mano que deben cuadrar, y nada las sincroniza. Ya habían derivado en AMBAS
-# direcciones antes de que existiera este fichero (a esta le faltaban
-# SUITE_REGRESION.md y test-staging-gated.mjs). Al tocar una, revisar la otra.
+# ⚠️ RIESGO CONOCIDO: esta lista debe COINCIDIR con `ZONA_ROJA` en
+# `scripts/zona-roja.mjs` — la fuente de la zona roja desde SCRUM-168 (main movió ahí
+# la lista; el job de CI la lee y COMENTA, no bloquea). CODEOWNERS es lo que VINCULA la
+# revisión: no son sustitutos. Son dos listas a mano y HOY NADA garantiza que cuadren;
+# al tocar una, revisar la otra. SCRUM-179 lo mecaniza (un test que las compara y sale
+# rojo si divergen). Estado a esta fecha: CODEOWNERS cubre TODO lo de ZONA_ROJA
+# —incluidos jobs.routes.ts, jobDetailView.js y homeView.js, que faltaban y se añaden
+# aquí— y ADEMÁS /tests/, /prisma/migrations/, los scripts de staging, /.github/** y
+# los lockfiles: protección más ancha, no un hueco. Que ZONA_ROJA gane esas (o no) lo
+# decide el fundador; scripts/zona-roja.mjs no se toca desde aquí.
 
 # --- Schema y migraciones de producción (carril A, freno duro §3) ---
 /prisma/schema.prisma      @lwislg99
@@ -21,6 +27,14 @@
 
 # --- Arranque y montajes (aquí viven los gates admin a nivel de mount) ---
 /src/app.ts                @lwislg99
+
+# --- Carril A: la ruta más caliente y las pantallas estrella (ZONA_ROJA, SCRUM-168) ---
+# Añadidas para cerrar el hueco: ZONA_ROJA las lista y CODEOWNERS no las cubría → la
+# protección habría nacido con agujeros, que es peor que nada porque parece que protege.
+# Son ficheros del carril A; el owner sigue siendo @lwislg99 (freno de zona roja, no de dominio).
+/src/modules/jobs/app/routes/jobs.routes.ts   @lwislg99
+/public/dashboard/js/jobDetailView.js         @lwislg99
+/public/dashboard/js/homeView.js              @lwislg99
 
 # --- Infra de tests compartida ---
 /tests/                            @lwislg99

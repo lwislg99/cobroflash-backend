@@ -73,6 +73,7 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'POST',  path: '/admin/albaranes/:id/enviar-whatsapp', why: 'S1 "enviar WA" ✅; requireActivePlan, sin rol (SCRUM-47)' },
   { method: 'POST',  path: '/admin/albaranes/:id/enviar-para-firmar', why: 'Firma remota del albarán (SCRUM-47/49)' },
   { method: 'GET',   path: '/admin/albaranes/pendientes-facturar', why: 'SCRUM-69: bandeja de facturación, mismo criterio S1 que GET /admin/invoices ("facturas: ver sí")' },
+  { method: 'GET',   path: '/admin/albaranes/consolidables', why: 'SCRUM-70: vista previa de la recapitulativa (cliente+mes). MISMO criterio que la bandeja de SCRUM-69 — es la misma información, agrupada: solo lectura y ningún dato que el técnico no vea ya ahí. NO emite.' },
 
   // Productos — S1: "productos crear-ver" ✅. El tarifario en bloque (export/import/
   // load-catalog) NO está clasificado: ver PENDIENTE_CLASIFICAR.
@@ -82,6 +83,10 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'PUT',    path: '/admin/products/:id', why: 'Corregir un precio suelto al presupuestar' },
   { method: 'DELETE', path: '/admin/products/:id', why: 'Simétrico del alta; una línea de catálogo, no el tarifario' },
   { method: 'GET',    path: '/admin/products/autocomplete', why: 'Autocompletar al montar el presupuesto' },
+  // SCRUM-162: misma familia que el autocompletado —alimenta el mismo campo del editor— y no
+  // enseña nada que el técnico no vea ya: son conceptos de los presupuestos de SU merchant,
+  // acotados por `req.merchantId`. Sin importes, sin clientes, sin datos de terceros.
+  { method: 'GET',    path: '/admin/products/frequent-concepts', why: 'Sus conceptos más usados al montar el presupuesto' },
   { method: 'GET',    path: '/admin/products/ping', why: 'Healthcheck del módulo, sin datos' },
   { method: 'GET',    path: '/admin/providers/ping', why: 'Healthcheck del módulo, sin datos' },
 
@@ -96,6 +101,11 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // pago: si algún día hay que limitarlo, es una cuota, no un permiso de rol.
   { method: 'POST', path: '/admin/ai/suggest-quote', why: 'Ayuda a montar el presupuesto (su trabajo)' },
   { method: 'POST', path: '/admin/ai/quote-message', why: 'Ayuda a redactar el mensaje del presupuesto' },
+  // SCRUM-71 (VOZ-ALB): el operario es JUSTO quien dicta esto, en obra y con una mano. No
+  // escribe nada que no pudiera escribir a mano en el mismo albarán: devuelve líneas
+  // propuestas, no las guarda. Y la ruta ya está cerrada por dos sitios más — el flag
+  // VOICE_ALBARAN_ENABLED y que el albarán tiene que ser suyo y estar en borrador.
+  { method: 'POST', path: '/admin/ai/suggest-albaran-lines', why: 'Dicta el parte en obra: es su trabajo' },
 
   // Gastos — SCRUM-107. El fundador partió el router POR VERBO: CREAR es campo, LEER el
   // conjunto no. Solo estas dos quedan abiertas; las otras cinco llevan requireRole.
@@ -180,3 +190,24 @@ export const PENDIENTE_MAX = 16;
  * del fundador y queda en el diff.
  */
 export const REVISAR_ANTES_DE = '2026-09-30';
+
+/**
+ * SCRUM-164 · GATES DE ROL POR CAMPO — enumerados a mano PORQUE la derivación no los ve.
+ *
+ * `scrum55-admin-fail-closed` deriva el árbol `/admin` reflejando los montajes y el marcador
+ * `__requiredRole` que deja `requireRole`. Un gate que vive DENTRO del handler (porque depende
+ * del cuerpo de la petición, no de la ruta) no deja marcador y es invisible para esa derivación
+ * — y también para `ADMIN_ONLY_ROUTES`. Punto ciego compartido por los dos mecanismos.
+ *
+ * Esta lista existe para que dejen de ser invisibles: cualquier gate de rol escrito a mano en un
+ * handler tiene que estar aquí, y hay un guard que lo comprueba contra el código
+ * (`scrum164-gate-por-campo.test.mjs`). No es documentación: es lo que se compara.
+ */
+export const FIELD_LEVEL_ROLE_GATES: ReadonlyArray<{ method: string; path: string; campos: readonly string[]; why: string }> = [
+  {
+    method: 'PATCH',
+    path: '/admin/jobs/:id',
+    campos: ['tipoOperacion', 'assignedUserId', "status:'cerrado'"],
+    why: 'SCRUM-120: la ruta NO es admin-only (status/scheduledAt/notes son del operario); lo reservado al admin son los campos que tocan facturación o dinero. Regla en roleCapabilities.adminOnlyJobField.',
+  },
+];

@@ -17,7 +17,9 @@ import { buildVerifactuRegistrosXml } from '../../../invoicing/domain/verifactu.
 import {
   construirCsvsDelPaquete, csvBody, csvRow, csvNum, MAX_FACTURAS_ZIP, resolverEntregaZip, construirLeeme,
   buildClientes, buildFacturas, buildCobros, buildTrabajos, buildPresupuestos,
+  EXPORT_PDF_CONCURRENCIA, // SCRUM-83
 } from '../../domain/exportData';
+import { mapearConLimite } from '../../../../core/utils/concurrencia'; // SCRUM-83
 import { resolverSeleccion } from '../../domain/seleccionExport'; // SCRUM-138 (export selectivo)
 
 const router = Router();
@@ -157,19 +159,40 @@ router.get('/datos.zip', async (req, res) => {
     // hay que saber si el paquete está completo ANTES de empezar a transmitir.
     // No añade trabajo: `ensureInvoicePdf` solo renderiza si el fichero falta; lo único
     // que cambia es el ORDEN (todo el render ocurre antes del primer byte).
-    const listos: Array<{ numero: string; diskPath: string }> = [];
-    const fallidos: string[] = [];
-    for (const inv of invoices) {
-      try {
-        const { diskPath } = await ensureInvoicePdf(inv.id, prisma);
-        if (!fs.existsSync(diskPath)) { fallidos.push(inv.number); continue; }
-        listos.push({ numero: inv.number, diskPath });
-      } catch (e: any) {
-        // Un PDF que falla NO tumba el paquete, pero SÍ lo marca como incompleto.
-        console.error(`[exports/datos.zip] PDF ${inv.number}:`, e?.message || e);
-        fallidos.push(inv.number);
-      }
-    }
+    //
+    // SCRUM-83 (paso 2): esto era un `for` secuencial y ahora van EXPORT_PDF_CONCURRENCIA en
+    // vuelo. Lo que NO cambia, y es lo que había que no romper:
+    //   · el ORDEN. `mapearConLimite` devuelve en orden de entrada, así que los PDF entran al
+    //     paquete por orden de factura y `fallidos` se lista igual que antes. Que el orden
+    //     dependiera de quién terminase primero haría el ZIP no reproducible.
+    //   · que un PDF roto NO tumbe el paquete pero SÍ lo marque incompleto: por eso el
+    //     try/catch va DENTRO de la función y devuelve un resultado etiquetado, en vez de
+    //     dejar que el rechazo se propague y se lleve por delante las 99 facturas buenas.
+    //   · que todo esto siga ocurriendo ANTES de la primera cabecera (ver el comentario de
+    //     arriba): el paquete tiene que saber si está completo para poder nombrarse.
+    type Resuelto =
+      | { ok: true; numero: string; diskPath: string }
+      | { ok: false; numero: string };
+
+    const resueltos = await mapearConLimite<typeof invoices[number], Resuelto>(
+      invoices,
+      EXPORT_PDF_CONCURRENCIA,
+      async (inv) => {
+        try {
+          const { diskPath } = await ensureInvoicePdf(inv.id, prisma);
+          if (!fs.existsSync(diskPath)) return { ok: false, numero: inv.number };
+          return { ok: true, numero: inv.number, diskPath };
+        } catch (e: any) {
+          console.error(`[exports/datos.zip] PDF ${inv.number}:`, e?.message || e);
+          return { ok: false, numero: inv.number };
+        }
+      },
+    );
+
+    const listos: Array<{ numero: string; diskPath: string }> = resueltos
+      .filter((r): r is Extract<Resuelto, { ok: true }> => r.ok)
+      .map(({ numero, diskPath }) => ({ numero, diskPath }));
+    const fallidos: string[] = resueltos.filter((r) => !r.ok).map((r) => r.numero);
     const pdfsOk = listos.length;
 
     // ── FASE 1b: VeriFactu — gate de SCRUM-73 (INVOICING_ES_ENABLED), reutilizado tal

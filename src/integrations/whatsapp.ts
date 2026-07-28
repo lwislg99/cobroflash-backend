@@ -5,7 +5,7 @@ import { config } from '../core/config/env';
 import { prisma } from '../core/db/prisma';
 import { normalizePhone } from '../core/utils/utils';
 import { validateTemplateComponents } from './whatsappTemplates';
-import { demoSendBlocked } from './whatsappPolicy';
+import { demoSendBlocked, salidaAMetaBloqueada, MOTIVO_SALIDA_BLOQUEADA } from './whatsappPolicy';
 import {
   recordWaMessage,
   extractWaMessageId,
@@ -25,6 +25,32 @@ const dryRunData = () => ({ messages: [{ id: `wamid.dryrun.${Date.now()}.${Math.
 // globalThis.__waDryRunOutbox (array), cada envío dry-run se apunta ahí para
 // poder asertar QUÉ respondió el bot sin tocar Meta. En prod no existe y no hace nada.
 const dryRunRecord = (entry: any) => { try { (globalThis as any).__waDryRunOutbox?.push(entry); } catch { /* test-only */ } };
+
+// SCRUM-180 — PUNTO ÚNICO DE SALIDA HACIA META.
+//
+// Antes había DIEZ llamadas sueltas a graph.facebook.com repartidas por este fichero (7
+// `axios.post` de senders, 2 `axios.get` de descarga de media, 1 `fetch` de subida). Un guard
+// repartido en diez sitios es un guard que el sender número once se salta sin enterarse —
+// exactamente el patrón que SCRUM-128 está persiguiendo en los endpoints de envío. Así que en
+// vez de diez comprobaciones hay una: TODO el tráfico hacia Meta pasa por `metaHttp`, y el
+// interceptor decide. Lo sostiene un ratchet (tests/scrum180-fixtures-nunca-a-meta.test.mjs)
+// que falla si vuelve a aparecer una llamada suelta de axios en este fichero.
+//
+// El interceptor LANZA en vez de devolver un error suave a propósito: cada call-site de aquí
+// ya envuelve su llamada en try/catch y degrada a `{ok:false}` o `null`, así que la excepción
+// se convierte sola en "no se envió" sin romper el flujo — pero deja el motivo escrito en el
+// log de errores. Un fallo silencioso aquí sería peor que el problema.
+export function asegurarSalidaAMetaPermitida(): void {
+  if (!salidaAMetaBloqueada({ dryRun: isDryRun() })) return;
+  console.error(`[WhatsApp] BLOQUEADO ${MOTIVO_SALIDA_BLOQUEADA}`);
+  throw new Error(MOTIVO_SALIDA_BLOQUEADA);
+}
+
+const metaHttp = axios.create();
+metaHttp.interceptors.request.use((cfg) => {
+  asegurarSalidaAMetaPermitida();
+  return cfg;
+});
 
 // WA-0b: metadata opcional para el log de mensajes (chip de entrega). No afecta al envío.
 export interface WaLogMeta {
@@ -65,14 +91,14 @@ export async function downloadWhatsAppMedia(
   const token = config.WHATSAPP_ACCESS_TOKEN;
   if (!token || !mediaId) return null;
   try {
-    const meta = await axios.get(`${BASE_URL}/${mediaId}`, {
+    const meta = await metaHttp.get(`${BASE_URL}/${mediaId}`, {
       headers: { Authorization: `Bearer ${token}` },
       timeout: 15000,
     });
     const mediaUrl = meta.data?.url;
     const mime = String(meta.data?.mime_type || 'application/octet-stream');
     if (!mediaUrl) return null;
-    const bin = await axios.get(mediaUrl, {
+    const bin = await metaHttp.get(mediaUrl, {
       headers: { Authorization: `Bearer ${token}` },
       responseType: 'arraybuffer',
       timeout: 20000,
@@ -109,6 +135,9 @@ export async function uploadWhatsAppMedia(params: {
     form.append('messaging_product', 'whatsapp');
     form.append('type', mime);
     form.append('file', new Blob([new Uint8Array(params.buffer)], { type: mime }), params.filename);
+    // SCRUM-180: este es el ÚNICO camino a Meta que no es axios (multipart con fetch global),
+    // así que no lo cubre el interceptor de `metaHttp` y necesita la llamada explícita.
+    asegurarSalidaAMetaPermitida();
     const res = await fetch(`${BASE_URL}/${phoneNumberId}/media`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
@@ -248,7 +277,7 @@ export async function sendWhatsAppTemplate(params: {
   }
 
   try {
-    const response = await axios.post(
+    const response = await metaHttp.post(
       `${BASE_URL}/${phoneNumberId}/messages`,
       {
         messaging_product: 'whatsapp',
@@ -422,7 +451,7 @@ export async function sendWhatsAppText(params: {
   if (isDryRun()) { dryRunRecord({ kind: 'text', to: params.to, text: params.text }); return { ok: true, data: dryRunData(), dryRun: true } as any; }
 
   try {
-    const response = await axios.post(
+    const response = await metaHttp.post(
       `${BASE_URL}/${phoneNumberId}/messages`,
       {
         messaging_product: 'whatsapp',
@@ -477,7 +506,7 @@ export async function sendWhatsAppButtons(params: {
   if (isDryRun()) { dryRunRecord({ kind: 'buttons', to: params.to, bodyText: params.bodyText, buttons: params.buttons.map((b) => b.id) }); return { ok: true, data: dryRunData(), dryRun: true } as any; }
 
   try {
-    const response = await axios.post(
+    const response = await metaHttp.post(
       `${BASE_URL}/${phoneNumberId}/messages`,
       {
         messaging_product: 'whatsapp',
@@ -534,7 +563,7 @@ export async function sendWhatsAppList(params: {
   if (isDryRun()) { dryRunRecord({ kind: 'list', to: params.to, bodyText: params.bodyText, rows: params.rows.map((r) => r.id) }); return { ok: true, data: dryRunData(), dryRun: true } as any; }
 
   try {
-    const response = await axios.post(
+    const response = await metaHttp.post(
       `${BASE_URL}/${phoneNumberId}/messages`,
       {
         messaging_product: 'whatsapp',
@@ -605,7 +634,7 @@ export async function sendWhatsAppCtaUrl(params: {
     };
     if (params.header) interactive.header = { type: 'text', text: params.header.slice(0, 60) };
     if (params.footer) interactive.footer = { text: params.footer.slice(0, 60) };
-    const response = await axios.post(
+    const response = await metaHttp.post(
       `${BASE_URL}/${phoneNumberId}/messages`,
       { messaging_product: 'whatsapp', to: params.to, type: 'interactive', interactive },
       { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, timeout: 10_000 },
@@ -646,7 +675,7 @@ export async function sendWhatsAppDocument(params: {
     const document: any = { link: params.link };
     if (params.filename) document.filename = params.filename;
     if (params.caption) document.caption = params.caption;
-    const response = await axios.post(
+    const response = await metaHttp.post(
       `${BASE_URL}/${phoneNumberId}/messages`,
       { messaging_product: 'whatsapp', to: params.to, type: 'document', document },
       { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, timeout: 10_000 },
@@ -682,7 +711,7 @@ export async function sendWhatsAppLocationRequest(params: {
     return { ok: true, data: dryRunData(), dryRun: true } as any;
   }
   try {
-    const response = await axios.post(
+    const response = await metaHttp.post(
       `${BASE_URL}/${phoneNumberId}/messages`,
       {
         messaging_product: 'whatsapp',
@@ -712,8 +741,8 @@ export async function markInboundRead(messageId: string): Promise<void> {
   const url = `${BASE_URL}/${phoneNumberId}/messages`;
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   try {
-    await axios.post(url, { messaging_product: 'whatsapp', status: 'read', message_id: messageId, typing_indicator: { type: 'text' } }, { headers, timeout: 8_000 });
+    await metaHttp.post(url, { messaging_product: 'whatsapp', status: 'read', message_id: messageId, typing_indicator: { type: 'text' } }, { headers, timeout: 8_000 });
   } catch {
-    try { await axios.post(url, { messaging_product: 'whatsapp', status: 'read', message_id: messageId }, { headers, timeout: 8_000 }); } catch { /* best-effort */ }
+    try { await metaHttp.post(url, { messaging_product: 'whatsapp', status: 'read', message_id: messageId }, { headers, timeout: 8_000 }); } catch { /* best-effort */ }
   }
 }

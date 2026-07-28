@@ -8,7 +8,7 @@ import {
 } from '../../quoteAdmin';
 
 import { prisma } from '../../../../core/db/prisma';
-import { resolveBillingPlan, distributeStageAmounts } from '../../../quotes/domain/billingPlan';
+import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo } from '../../../quotes/domain/billingPlan';
 import { sendQuoteWhatsAppToCustomer } from '../../../quotes/domain/sendQuote.service';
 import { suggestMaintenance } from '../../../maintenance/domain/maintenance.service';
 import { isFlagEnabled } from '../../../../core/flags';
@@ -168,7 +168,10 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     const stage = plan[existingInvoices.length] ?? null;
 
     if (!stage) {
-      return res.status(409).json({ error: 'no_more_invoices_for_payment_terms' });
+      // SCRUM-151: CÓDIGO y motivo distintos — plan agotado vs. condiciones que nunca generan
+      // tramos (MANUAL/SIN_CONDICIONES). Un solo código para dos causas obliga a leer el texto
+      // para saber qué pasó, y el texto es lo único que no se debe parsear.
+      return res.status(409).json(motivoSinTramo(plan));
     }
 
     const isCustomPlan = Array.isArray((quote as any).customBillingPlan) && (quote as any).customBillingPlan.length > 0;
@@ -227,6 +230,137 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     });
   } catch (err) {
     console.error('[POST /admin/quotes/:id/invoice] error', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/quotes/:id/invoice-manual — SCRUM-178 · LA VÍA DE EMISIÓN MANUAL.
+ *
+ * Un presupuesto con condiciones MANUAL/SIN_CONDICIONES no genera tramos (`getBillingPlan`
+ * devuelve `[]` a propósito), y hasta hoy eso lo dejaba SIN NINGUNA vía de facturación dentro
+ * del producto. Decisión del fundador (27-jul-2026): «MANUAL» significa *yo pacto CUÁNDO cobro
+ * a mi manera*, no *yo facturo fuera de la app* — rechazar el plan de tramos no es rechazar la
+ * facturación. Aquí se emite UN documento por el total.
+ *
+ * RUTA APARTE, y no un flag en la de tramos, por dos razones: el 409 de la otra sigue
+ * significando exactamente lo que significaba (no se toca su contrato), y una emisión fiscal
+ * pedida a mano queda EXPLÍCITA en el log y en la auditoría — nadie la dispara por defecto.
+ *
+ * MISMA MAQUINARIA FISCAL, sin un camino paralelo: el plan de un solo tramo al 100 % pasa por
+ * `stageLinesReconciled` + `grossOfLines` igual que cualquier tramo (SCRUM-141: el importe es
+ * CONSECUENCIA de las líneas, nunca al revés), y por el mismo `applyVeriFactu`. Duplicar la
+ * lógica de líneas para «el caso fácil» es justo como nacen las cuotas mal selladas.
+ */
+router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
+  try {
+    const quoteId = Number(req.params.id);
+    if (!Number.isInteger(quoteId)) {
+      return res.status(400).json({ error: 'invalid_quote_id' });
+    }
+
+    const quote = await prisma.quote.findFirst({
+      where: { id: quoteId, merchantId: req.merchantId }, // A12.1: scoped (regla 2)
+      include: { merchant: true, customer: true, Invoice: true },
+    });
+
+    if (!quote) return res.status(404).json({ error: 'quote_not_found' });
+    if (quote.status !== 'accepted') {
+      return res.status(409).json({ error: 'quote_not_accepted', message: 'Solo disponible tras aceptar el presupuesto.' });
+    }
+    if (!quote.merchant || !quote.customer) {
+      return res.status(500).json({ error: 'quote_missing_relations' });
+    }
+
+    // FAIL-CLOSED 1 — esta vía es SOLO para los que no tienen tramos. Con plan, la factura sale
+    // por su cadena de siempre: dos vías compitiendo por el mismo presupuesto es como se emite
+    // dos veces lo mismo, y una factura emitida no se borra (regla 29).
+    const plan = resolveBillingPlan(quote);
+    if (plan.length > 0) {
+      return res.status(409).json({
+        error: 'has_billing_plan',
+        message: 'Este presupuesto tiene plan de tramos: su factura se emite por tramos, no a mano.',
+      });
+    }
+
+    // FAIL-CLOSED 2 — UN documento por presupuesto. No es una restricción técnica: es la regla 29
+    // (lo emitido no se edita ni se borra). Un segundo documento por el mismo total no sería una
+    // corrección, sería un duplicado, y eso se arregla con anulación o R1, no emitiendo otra vez.
+    const existingInvoices = quote.Invoice || [];
+    if (existingInvoices.length > 0) {
+      return res.status(409).json({
+        error: 'already_invoiced',
+        message: 'Este presupuesto ya tiene factura emitida.',
+      });
+    }
+
+    // FAIL-CLOSED 3 — sin líneas no se emite. El guard de SCRUM-149 ya impide SELLAR una factura
+    // sin líneas, pero para entonces la factura ya existe y ha consumido número de serie. Aquí se
+    // para antes: mejor no crear el documento que crear uno que no se puede sellar.
+    const quoteLines = Array.isArray(quote.lines) ? (quote.lines as any[]) : [];
+    if (quoteLines.length === 0) {
+      return res.status(409).json({
+        error: 'quote_without_lines',
+        message: 'Este presupuesto no tiene líneas: añade al menos una antes de facturar.',
+      });
+    }
+
+    // Un solo tramo al 100 %: el mismo camino que un tramo cualquiera, con el plan sintético.
+    //
+    // EL OBJETIVO SALE DE LAS LÍNEAS, NO DEL `total` GUARDADO DEL PRESUPUESTO. En la vía de
+    // tramos hay algo que repartir y el objetivo se calcula sobre `quote.total`; aquí no se
+    // reparte nada —es el documento entero—, así que tomar el total guardado solo añadiría una
+    // fuente de verdad rival: si ese campo quedó desfasado respecto a sus líneas, reconciliar
+    // contra él ESCALARÍA los precios de las líneas para cuadrar con una cifra vieja, y eso se
+    // sella en la huella. SCRUM-141 al pie de la letra: el importe es CONSECUENCIA de las
+    // líneas. Con el objetivo igual a su propio bruto, la reconciliación no toca nada.
+    const planManual = [{ index: 0, percentage: 1, label: 'manual_total' }];
+    const scaledLines = stageLinesReconciled(quoteLines, planManual, 0, grossOfLines(quoteLines));
+    const invoiceAmount = grossOfLines(scaledLines);
+    const merchant = quote.merchant;
+
+    const invoice = await prisma.$transaction(async (tx) => {
+      const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId);
+      return tx.invoice.create({
+        data: {
+          merchantId: quote.merchantId,
+          customerId: quote.customerId,
+          quoteId: quote.id,
+          number: invoiceNumber,
+          type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
+          total: invoiceAmount.toFixed(2),
+          stageLabel: null, // no es un tramo: es el documento entero
+          currency: quote.currency,
+          lines: scaledLines,
+          pdfUrl: 'PENDING_PDF',
+          qrData: 'PENDING_QR',
+          registerId: null,
+        },
+      });
+    });
+
+    // VeriFactu exactamente igual que en la vía de tramos (V0-0: nunca a justificantes).
+    let vfApplied = false;
+    if (merchant.country === 'ES' && merchant.taxId && !isReceiptNumber(invoice.number)) {
+      try {
+        await applyVeriFactu(invoice, merchant.taxId, prisma);
+        vfApplied = true;
+      } catch (e) {
+        console.error('[verifactu] Error al aplicar VeriFactu en emisión manual:', e);
+      }
+    }
+
+    return res.status(201).json({
+      id: invoice.id,
+      number: invoice.number,
+      total: invoice.total.toString(),
+      currency: invoice.currency,
+      createdAt: invoice.createdAt,
+      percentage: 1,
+      veriFactu: vfApplied,
+    });
+  } catch (err) {
+    console.error('[POST /admin/quotes/:id/invoice-manual] error', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });

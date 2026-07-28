@@ -138,6 +138,13 @@ export interface AlbaranConsolidable {
   modoValoracion: string;
   invoiceId: number | null;
   customerId: number;
+  /**
+   * SCRUM-170: ¿tiene ya alguna cantidad facturada por la vía PARCIAL? Es opcional para no
+   * romper a los llamadores de siempre, pero el que emite TIENE que rellenarlo: un albarán a
+   * medias no lleva `invoiceId` (ese campo marca el albarán entero), así que sin este dato la
+   * consolidación se lo tragaría y facturaría dos veces lo mismo.
+   */
+  facturadoParcial?: boolean;
 }
 
 /**
@@ -164,6 +171,12 @@ export function validarConsolidacion(
     }
     if (a.invoiceId != null) {
       return { ok: false, error: 'albaran_ya_facturado', message: `El parte ${a.numero} ya está facturado.` };
+    }
+    // SCRUM-170: y el que está a MEDIAS tampoco entra. Consolidar es facturar el albarán
+    // entero; si ya se facturó parte de sus líneas, esta vía cobraría otra vez lo mismo — y
+    // una factura emitida no se borra (regla 29). Lo pendiente se factura por su ruta parcial.
+    if (a.facturadoParcial) {
+      return { ok: false, error: 'albaran_facturado_parcial', message: `El parte ${a.numero} ya tiene líneas facturadas: factura lo que queda desde el propio parte.` };
     }
     if (a.customerId !== job.customerId) {
       return { ok: false, error: 'cliente_mixto', message: `El parte ${a.numero} es de otro cliente.` };

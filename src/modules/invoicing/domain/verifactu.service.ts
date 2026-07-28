@@ -22,6 +22,12 @@ const NS_INFO = 'https://www2.agenciatributaria.gob.es/static_files/common/inter
 /** Máximo de registros por envío que admite el XSD (`RegistroFactura` maxOccurs="1000"). */
 const MAX_REGISTROS = 1000;
 
+// SCRUM-173: namespace del cerrojo consultivo de la cadena de huellas. Primera clave de
+// `pg_advisory_xact_lock(int, int)`; la segunda es el merchantId, para que la serialización
+// sea POR EMISOR y dos merchants no se estorben. El número es arbitrario pero fijo: si algún
+// día se usan advisory locks para otra cosa, que no colisionen.
+const VERIFACTU_LOCK_NS = 1748;
+
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
 }
@@ -174,50 +180,110 @@ export async function applyVeriFactu(
     throw new Error('invoice_without_lines_not_sealable');
   }
 
-  // Última factura del merchant que ya tenga huella (excluye la actual)
-  const prev = await prismaClient.invoice.findFirst({
-    where: {
-      merchantId: invoice.merchantId,
-      vfHash: { not: null },
-      id: { not: invoice.id },
-    },
-    orderBy: { createdAt: 'desc' },
-    select: { vfHash: true },
-  });
-
-  // S1-A: el PRIMER registro del emisor lleva huella anterior VACÍA (no '0')
-  const prevHash = prev?.vfHash ?? '';
   const fecha = formatDateES(invoice.createdAt);
-  const timestamp = formatFechaHoraHuso(new Date());
   const importeTotal = Number(invoice.total.toString()).toFixed(2);
 
   // Cuota total de IVA real desde las líneas (garantizadas no vacías por el guard de arriba,
   // que además reutiliza esta misma lectura — no hay consulta de más).
   const cuotaTotal = calcVatCuotaTotal(lineas).toFixed(2);
 
-  const vfHash = computeVeriFactuHash({
-    nif: taxId,
-    serie: invoice.number,
-    fecha,
-    tipoFactura: invoice.type === 'R1' ? 'R1' : 'F1',
-    cuotaTotal,
-    importeTotal,
-    prevHash,
-    timestamp,
+  // ── SCRUM-173 · LA CADENA SE SELLA BAJO CERROJO, Y NUNCA DENTRO DE OTRA TX ──────────────
+  //
+  // `leer prev → calcular huella → persistir` es una secuencia leer-modificar-escribir sobre
+  // un recurso COMPARTIDO (la última huella del merchant) y no tenía ninguna protección.
+  // Tres formas de romper la cadena, las tres reales y las tres reproducidas en rojo:
+  //
+  //  ① SELLAR DENTRO DE OTRA TRANSACCIÓN: las facturas creadas en esa tx aún no están
+  //    committeadas, así que el `prev` no las ve y TODAS encadenan al mismo registro anterior
+  //    al lote. Es lo que habría pasado al enganchar la consolidación de recapitulativas,
+  //    que emite N facturas en un solo `$transaction`.
+  //  ② ORDENAR POR `createdAt`: en PostgreSQL `now()` es `transaction_timestamp()`, CONSTANTE
+  //    durante toda la transacción, así que N facturas creadas en una misma tx comparten
+  //    `createdAt` y "la última con huella" queda indeterminada. Se ordena por `id desc`:
+  //    estrictamente monótono y nunca nulo. (`vfTimestamp` NO sirve de criterio: nació en
+  //    SCRUM-145 y es NULL en todo el histórico anterior — ordenar por él dejaría fuera las
+  //    facturas viejas y encadenaría al sitio equivocado.)
+  //  ③ DOS EMISIONES CONCURRENTES: Prisma no fija nivel de aislamiento, así que hereda el de
+  //    PostgreSQL — READ COMMITTED. Dos transacciones simultáneas no se ven entre sí y ambas
+  //    leen el mismo `prev`. Este ya existía en los cinco caminos de emisión.
+  //
+  // El cerrojo consultivo por merchant serializa SOLO la cadena de ese emisor: dos merchants
+  // distintos no se estorban. Se libera al cerrar la transacción (`_xact_`) incluso si algo
+  // lanza — no hay que acordarse de soltarlo.
+  //
+  // ⚠️ SE ARREGLA AHORA PORQUE LA CADENA ESTÁ VACÍA: `INVOICING_ES_ENABLED` lleva OFF desde
+  // siempre → CERO facturas fiscales afectadas. Cada semana de retraso sube el coste, porque
+  // una cadena rota solo se deshace emitiendo una R1 por cada factura afectada (regla 29).
+  if (typeof (prismaClient as any).$transaction !== 'function') {
+    // Fail-closed y explícito: un cliente de transacción dejaría el sellado sin cerrojo y con
+    // lecturas que no ven el resto del lote — el peligro ① exactamente. Mejor romper aquí,
+    // ruidosamente, que sellar una cadena inválida en silencio.
+    throw new Error(
+      'verifactu_seal_inside_transaction: applyVeriFactu debe llamarse FUERA de una $transaction, ' +
+      'con el cliente global. Sellar dentro de una tx rompe el encadenamiento: las facturas del ' +
+      'mismo lote no se ven entre sí y todas encadenarían al mismo registro anterior. ' +
+      'Crea las facturas en la tx y séllalas DESPUÉS del commit, una a una.',
+    );
+  }
+
+  const sellado = await (prismaClient as any).$transaction(async (tx: any) => {
+    // Namespace fijo + merchantId: dos claves de 32 bits, para no colisionar con cualquier
+    // otro advisory lock de la aplicación.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${VERIFACTU_LOCK_NS}::int, ${invoice.merchantId}::int)`;
+
+    // ── SCRUM-177 · UNA SOLA CADENA: el alta también encadena a las anulaciones ────────────
+    //
+    // Antes esta consulta miraba SOLO altas (`vfHash not null`), mientras que la anulación
+    // usaba `ultimaHuellaDeLaCadena`, que mira altas Y anulaciones. Eran DOS definiciones de
+    // "la cadena" conviviendo en el mismo sistema: emitida una anulación, la siguiente alta la
+    // saltaba y encadenaba al alta anterior → dos registros apuntando al mismo eslabón. Una
+    // secuencia bifurcada es justo lo que la AEAT lee como manipulación.
+    //
+    // VERIFICADO CONTRA EL XSD OFICIAL (`SuministroInformacion.xsd`), no deducido:
+    //  · `RegistroFacturacionAltaType` y `RegistroFacturacionAnulacionType` declaran el MISMO
+    //    `Encadenamiento`, con el mismo `EncadenamientoFacturaAnteriorType`.
+    //  · Su documentación habla de "el REGISTRO DE FACTURACIÓN anterior" — y una anulación es
+    //    un registro de facturación (así se llama su propio tipo).
+    //  · `EncadenamientoFacturaAnteriorType` NO tiene ningún campo que discrimine el tipo del
+    //    registro anterior. Con dos cadenas, apuntar a un eslabón sin decir a cuál pertenece
+    //    sería irreconstruible. **Es la evidencia definitiva.**
+    //  · `PrimerRegistroCadenaType` — LA cadena, en singular.
+    //
+    // ⚠️ `excluirId` NO es una simetría estética: es la única diferencia real entre los dos
+    // caminos. Al sellar un ALTA hay que excluir la propia factura, porque un resellado la
+    // encontraría a sí misma y se encadenaría a su propia huella. La ANULACIÓN no la excluye:
+    // tiene que encadenar precisamente al alta de esa misma factura (fijado por test en
+    // SCRUM-173b). Unificar sin este parámetro rompe ese verde.
+    const prevHash = await ultimaHuellaDeLaCadena(invoice.merchantId, tx, invoice.id);
+    // El instante se toma DENTRO del cerrojo: es el que entra en la huella y tiene que ser
+    // posterior al del registro anterior de la cadena.
+    const timestamp = formatFechaHoraHuso(new Date());
+
+    const vfHash = computeVeriFactuHash({
+      nif: taxId,
+      serie: invoice.number,
+      fecha,
+      tipoFactura: invoice.type === 'R1' ? 'R1' : 'F1',
+      cuotaTotal,
+      importeTotal,
+      prevHash,
+      timestamp,
+    });
+
+    const qrUrl = buildVeriFactuQrUrl({ nif: taxId, serie: invoice.number, fecha, importe: importeTotal });
+
+    // SCRUM-145: se PERSISTE el instante exacto que entró en la huella. Sin él, el registro
+    // emitía `FechaHoraHusoGenRegistro` = fecha de la FACTURA, que NO es lo que se hasheó, y
+    // un tercero no podía recomputar la huella para verificarla.
+    await tx.invoice.update({
+      where: { id: invoice.id },
+      data: { vfHash, vfPrevHash: prevHash, qrData: qrUrl, vfTimestamp: new Date(timestamp) },
+    });
+
+    return { vfHash, prevHash, qrUrl };
   });
 
-  const qrUrl = buildVeriFactuQrUrl({ nif: taxId, serie: invoice.number, fecha, importe: importeTotal });
-
-  // SCRUM-145: se PERSISTE el instante exacto que entró en la huella. Sin él, el registro
-  // emitía `FechaHoraHusoGenRegistro` = fecha de la FACTURA, que NO es lo que se hasheó, y
-  // un tercero no podía recomputar la huella para verificarla. `timestamp` ya viene con huso
-  // (formatFechaHoraHuso); se guarda como Date y se re-formatea al emitir, para no depender
-  // del huso del servidor que lea la fila después.
-  await prismaClient.invoice.update({
-    where: { id: invoice.id },
-    data: { vfHash, vfPrevHash: prevHash, qrData: qrUrl, vfTimestamp: new Date(timestamp) },
-  });
-
+  const { vfHash, prevHash, qrUrl } = sellado;
   console.log(`[verifactu] invoice=${invoice.number} hash=${vfHash.slice(0, 16)}…`);
   return { vfHash, vfPrevHash: prevHash, qrUrl };
 }
@@ -247,27 +313,56 @@ export async function applyVeriFactuAnulacion(
     throw new Error('receipt_document_not_invoiceable'); // V0-0: un J- nunca entra en la cadena
   }
 
-  const prevHash = await ultimaHuellaDeLaCadena(invoice.merchantId, prismaClient);
-  const timestamp = formatFechaHoraHuso(new Date());
+  // ── SCRUM-173b · MISMO CERROJO QUE EL ALTA, Y POR LA MISMA RAZÓN ────────────────────────
+  //
+  // La anulación lee y extiende **LA MISMA CADENA** que el alta (`ultimaHuellaDeLaCadena` mira
+  // altas Y anulaciones), así que hereda los tres peligros que SCRUM-173 cerró en
+  // `applyVeriFactu`: sellar dentro de otra tx, orden no determinista, y dos emisiones
+  // concurrentes leyendo el mismo `prev`.
+  //
+  // Dejarlo fuera era el peor resultado posible: **un mecanismo a medias parece uno entero**.
+  // Quien leyera `applyVeriFactu` daría por serializada toda la cadena, y lo estaría solo por
+  // un lado — un alta y una anulación simultáneas del mismo emisor encadenarían al mismo
+  // eslabón. Mismo cerrojo y MISMO namespace a propósito: es UNA cadena, no dos, y el cerrojo
+  // va por merchant precisamente para que los dos caminos compitan por él.
+  if (typeof (prismaClient as any).$transaction !== 'function') {
+    throw new Error(
+      'verifactu_seal_inside_transaction: applyVeriFactuAnulacion debe llamarse FUERA de una ' +
+      '$transaction, con el cliente global. Sellar dentro de una tx rompe el encadenamiento: ' +
+      'los registros del mismo lote no se ven entre sí y encadenarían al mismo eslabón anterior.',
+    );
+  }
 
-  const vfAnulHash = computeVeriFactuHashAnulacion({
-    nif: taxId,
-    serie: invoice.number,
-    fecha: formatDateES(invoice.createdAt),
-    prevHash,
-    timestamp,
+  const sellado = await (prismaClient as any).$transaction(async (tx: any) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${VERIFACTU_LOCK_NS}::int, ${invoice.merchantId}::int)`;
+
+    const prevHash = await ultimaHuellaDeLaCadena(invoice.merchantId, tx);
+    // El sello se toma DENTRO del cerrojo: es el que entra en la huella y tiene que ser
+    // posterior al del eslabón anterior.
+    const timestamp = formatFechaHoraHuso(new Date());
+
+    const vfAnulHash = computeVeriFactuHashAnulacion({
+      nif: taxId,
+      serie: invoice.number,
+      fecha: formatDateES(invoice.createdAt),
+      prevHash,
+      timestamp,
+    });
+
+    // SCRUM-145d: el eslabón anterior se PERSISTE, no se infiere. Antes se resolvía por sello al
+    // emitir (el registro inmediatamente anterior), y eso es frágil justo donde no puede serlo:
+    // con dos anulaciones próximas en el tiempo el orden por sello puede empatar o invertirse, y
+    // una cadena de huellas se sella PARA SIEMPRE. Se guarda lo que de verdad se hasheó — igual
+    // que `vfPrevHash` con el alta. Un dato, no una inferencia.
+    await tx.invoice.update({
+      where: { id: invoice.id },
+      data: { vfAnulHash, vfAnulPrevHash: prevHash, vfAnulTimestamp: new Date(timestamp) },
+    });
+
+    return { vfAnulHash, prevHash };
   });
 
-  // SCRUM-145d: el eslabón anterior se PERSISTE, no se infiere. Antes se resolvía por sello al
-  // emitir (el registro inmediatamente anterior), y eso es frágil justo donde no puede serlo:
-  // con dos anulaciones próximas en el tiempo el orden por sello puede empatar o invertirse, y
-  // una cadena de huellas se sella PARA SIEMPRE. Se guarda lo que de verdad se hasheó — igual
-  // que `vfPrevHash` con el alta. Un dato, no una inferencia.
-  await prismaClient.invoice.update({
-    where: { id: invoice.id },
-    data: { vfAnulHash, vfAnulPrevHash: prevHash, vfAnulTimestamp: new Date(timestamp) },
-  });
-
+  const { vfAnulHash, prevHash } = sellado;
   console.log(`[verifactu] ANULACION invoice=${invoice.number} hash=${vfAnulHash.slice(0, 16)}…`);
   return { vfAnulHash, vfPrevHash: prevHash };
 }
@@ -279,11 +374,27 @@ export async function applyVeriFactuAnulacion(
  * ya usaba `applyVeriFactu` (la última factura con huella), así que no altera ninguna cadena
  * persistida; solo deja de romperse el día que exista la primera anulación.
  */
-async function ultimaHuellaDeLaCadena(merchantId: number, prismaClient: typeof defaultPrisma): Promise<string> {
+async function ultimaHuellaDeLaCadena(
+  merchantId: number,
+  prismaClient: any,
+  // SCRUM-177: id a EXCLUIR del lado de las altas. Lo pasa `applyVeriFactu` con la factura que
+  // está sellando: sin esto, un resellado la encontraría a sí misma y se encadenaría a su
+  // propia huella. `applyVeriFactuAnulacion` NO lo pasa a propósito — la anulación tiene que
+  // encadenar precisamente al alta de esa misma factura.
+  //
+  // Solo afecta a las ALTAS: una factura nunca se anula a sí misma, así que excluirla del lado
+  // de las anulaciones no tendría sentido y además rompería el caso de dos anulaciones
+  // seguidas de la misma factura.
+  excluirId?: number,
+): Promise<string> {
   const [ultimaAlta, ultimaAnul] = await Promise.all([
     prismaClient.invoice.findFirst({
-      where: { merchantId, vfHash: { not: null } },
-      orderBy: { createdAt: 'desc' },
+      where: {
+        merchantId,
+        vfHash: { not: null },
+        ...(excluirId != null ? { id: { not: excluirId } } : {}),
+      },
+      orderBy: { id: 'desc' },
       select: { vfHash: true, vfTimestamp: true, createdAt: true },
     }),
     prismaClient.invoice.findFirst({

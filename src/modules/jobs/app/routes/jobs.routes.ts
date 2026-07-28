@@ -4,14 +4,18 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: dinero = admin)
-import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-147: capacidad, no literal
+import { seesOnlyOwnJobs, seesAllJobs, adminOnlyJobField } from '../../../../core/http/roleCapabilities'; // SCRUM-147 / SCRUM-164
 import { canTransition, estadoCobroFor, JOB_TIPOS_OPERACION } from '../../domain/job.service';
 import { recordAudit } from '../../../system/audit.service'; // SCRUM-66: traza de tipo_operacion_elegido
-import { resolveBillingPlan, distributeStageAmounts } from '../../../quotes/domain/billingPlan';
+import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo } from '../../../quotes/domain/billingPlan';
 import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; // SCRUM-34
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-173
 import { allocateAlbaranNumber } from '../../domain/albaranNumber.service';
+// SCRUM-170: derivación del estado de cobro (parcial) — nunca un flag almacenado.
+import { estadoCobroAlbaran, facturadoPorLinea, pendientePorLinea } from '../../domain/albaranFacturacion';
+import { emitirRecapitulativas } from '../../domain/recapitulativa.service'; // SCRUM-171a: emisión compartida
 import {
   ALBARAN_MODOS_VALORACION,
   serializeAlbaran,
@@ -187,12 +191,31 @@ async function serializeJobDetail(job: any) {
   // SCRUM-51: los albaranes son del Trabajo (Job-owned vía jobId), INDEPENDIENTES del quote →
   // se cargan SIEMPRE, también para un Job manual sin quoteId (antes el early-return del quote
   // los dejaba invisibles en el detalle — bug latente de datos "desaparecidos").
-  const albaranes = (
-    await prisma.albaran.findMany({
-      where: { merchantId: job.merchantId, jobId: job.id },
-      orderBy: { createdAt: 'asc' },
-    })
-  ).map((a) => ({ ...serializeAlbaran(a), operario: base.operario }));
+  const albaranesRaw = await prisma.albaran.findMany({
+    where: { merchantId: job.merchantId, jobId: job.id },
+    orderBy: { createdAt: 'asc' },
+  });
+  // SCRUM-170: el estado de cobro y lo pendiente por línea se DERIVAN del libro de líneas
+  // facturadas — ninguna columna los guarda. UN solo `findMany` para todos los albaranes del
+  // Trabajo (patrón de SCRUM-58: un lote, no una consulta por fila).
+  const libroJob = albaranesRaw.length
+    ? await prisma.albaranLineaFacturada.findMany({
+        where: { merchantId: job.merchantId, albaranId: { in: albaranesRaw.map((a) => a.id) } },
+        select: { albaranId: true, lineaIndex: true, cantidad: true, invoiceId: true },
+      })
+    : [];
+  const albaranes = albaranesRaw.map((a) => {
+    const facturado = facturadoPorLinea(libroJob.filter((f) => f.albaranId === a.id));
+    const lineas = (Array.isArray(a.lineas) ? a.lineas : []) as any[];
+    return {
+      ...serializeAlbaran(a),
+      operario: base.operario,
+      // `facturado` (invoiceId != null) sigue intacto en serializeAlbaran; esto lo COMPLETA con
+      // los tres valores derivados: sin_facturar | parcial | facturado.
+      estadoCobro: estadoCobroAlbaran(lineas, facturado, a.invoiceId != null),
+      pendientes: pendientePorLinea(lineas, facturado),
+    };
+  });
 
   // invoices[] y charge SÍ dependen del quote (tramos/cobro): un Job sin quote no tiene → []/null.
   if (!job.quoteId) return { ...base, customer, invoices: [], charge: null, albaranes };
@@ -328,12 +351,15 @@ router.patch('/:id', async (req, res) => {
     // única transición IRREVERSIBLE de la FSM y mata la vía de "Cobrar el resto"). FAIL-CLOSED: si un técnico
     // manda CUALQUIERA (aunque venga mezclado con campos legítimos), se rechaza ENTERO — nada de aplicar
     // parcial en zona fiscal. (La UI ya deshabilita estos controles para el técnico; esto es el candado real.)
-    if (req.userRole !== 'admin') {
-      const adminOnlyField =
-        req.body?.tipoOperacion !== undefined ? 'tipoOperacion' :
-        req.body?.assignedUserId !== undefined ? 'assignedUserId' :
-        (req.body?.status !== undefined && String(req.body.status) === 'cerrado') ? 'status:cerrado' :
-        null;
+    // SCRUM-164: la REGLA vive en roleCapabilities.ts, junto al resto de reglas de rol, y aquí
+    // solo se aplica. Antes era un `if` suelto con la lista de campos escrita a mano dentro del
+    // handler: el único gate de rol de todo src/ invisible para la derivación de
+    // scrum55-admin-fail-closed (que reconoce el marcador que pone requireRole, y un `if` no lo
+    // lleva). Sigue siendo gate por CAMPO —convertirlo en requireRole('admin') dejaría al
+    // técnico sin tocar sus propios trabajos, que es lo que SCRUM-120 construyó—, pero ahora es
+    // una función con nombre, probable sin BD y declarada en FIELD_LEVEL_ROLE_GATES.
+    if (!seesAllJobs(req.userRole)) {
+      const adminOnlyField = adminOnlyJobField(req.body);
       if (adminOnlyField) {
         return res.status(403).json({ error: 'forbidden', required_role: 'admin', field: adminOnlyField });
       }
@@ -515,7 +541,15 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     const plan = resolveBillingPlan(quote); // SCRUM-27: custom o preset
     const emitted = (quote.Invoice || []).length;
     if (emitted >= plan.length) {
-      return res.status(409).json({ error: 'nothing_pending', message: 'No queda ningún tramo por cobrar de este presupuesto.' });
+      // SCRUM-151: con plan VACÍO (MANUAL/SIN_CONDICIONES) el mensaje de siempre mentía — no es
+      // que no QUEDE tramo, es que nunca los hubo. Ahora también cambia el CÓDIGO en ese caso
+      // (`no_billing_plan`), porque es otra condición; el de "ya se cobró todo" sigue siendo
+      // `nothing_pending`, que es el de esta ruta desde siempre.
+      //
+      // ⚠️ `motivoSinTramo` devuelve {error, message}: aquí se ESPARCE. Pasarlo como
+      // `message: motivoSinTramo(plan)` metía el objeto entero dentro del mensaje, y TypeScript
+      // no lo veía porque el cuerpo del JSON es `any`.
+      return res.status(409).json(motivoSinTramo(plan, 'nothing_pending'));
     }
     const stage = plan[emitted];
     const isCustomPlan = Array.isArray((quote as any).customBillingPlan) && (quote as any).customBillingPlan.length > 0;
@@ -595,8 +629,9 @@ router.post('/:id/consolidar-albaranes', requireRole('admin'), async (req, res) 
     // Gate de modo: la recapitulativa es documento FISCAL puro — NO hay variante justificante J-.
     const merchant = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
-      // getEmissionMode necesita id/email/country/flags (Parte P); defaultCurrency para la factura.
-      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true },
+      // getEmissionMode necesita id/email/country/flags (Parte P); defaultCurrency para la
+      // factura; taxId para el sellado VeriFactu de SCRUM-173 (entra en la huella).
+      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true },
     });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
     if (getEmissionMode(merchant) === 'receipt') {
@@ -613,64 +648,59 @@ router.post('/:id/consolidar-albaranes', requireRole('admin'), async (req, res) 
       return res.status(404).json({ error: 'albaran_no_encontrado', message: 'Alguno de los partes seleccionados no existe en este Trabajo.' });
     }
 
+    // SCRUM-170: quién tiene ya líneas facturadas por la vía PARCIAL. Sin esta consulta, un
+    // albarán a medias (que NO lleva `invoiceId`) entraría entero en la recapitulativa y se
+    // cobraría dos veces lo ya facturado.
+    const conParcial = new Set(
+      (await prisma.albaranLineaFacturada.findMany({
+        where: { merchantId: req.merchantId, albaranId: { in: ids } },
+        select: { albaranId: true },
+        distinct: ['albaranId'],
+      })).map((r) => r.albaranId),
+    );
+
     // Forma que consume el dominio puro (customerId del Job — 1 Job = 1 cliente).
     const consolidables = albaranes.map((a) => ({
       id: a.id, numero: a.numero, fecha: a.fecha, estado: a.estado,
       modoValoracion: a.modoValoracion, invoiceId: a.invoiceId, customerId: job.customerId,
+      facturadoParcial: conParcial.has(a.id),
     }));
     const val = validarConsolidacion(consolidables, { tipoOperacion: job.tipoOperacion, customerId: job.customerId });
     if (!val.ok) {
-      const status = (val.error === 'albaran_ya_facturado' || val.error === 'consolidacion_no_aplica') ? 409 : 400;
+      const status = (val.error === 'albaran_ya_facturado' || val.error === 'albaran_facturado_parcial' || val.error === 'consolidacion_no_aplica') ? 409 : 400;
       return res.status(status).json({ error: val.error, message: val.message });
     }
 
     const grupos = groupByRotura(consolidables);
-    const currency = merchant.defaultCurrency || 'EUR';
 
-    // UNA transacción para TODOS los grupos: si algo falla o el guard de concurrencia salta,
-    // rollback TOTAL (nadie consolida a medias).
-    const created = await prisma.$transaction(async (tx) => {
-      const out: Array<{ id: number; number: string; mesLabel: string; total: string }> = [];
-      for (const g of grupos) {
-        // Líneas VALORADO de cada albarán → líneas de factura {concept, qty, price, tax(fracción)}.
-        const lines = g.albaranes.flatMap((a) => {
+    // SCRUM-171a: la emisión vive en `recapitulativa.service` y la comparten esta vía (ámbito
+    // Job) y la de ámbito CLIENTE. Antes estaba escrita aquí dentro; copiarla para la segunda
+    // vía habría dejado dos sitios que numeran, agrupan y sellan «casi igual», y el día que uno
+    // se arregle el otro se queda con el fallo. La rotura del art. 13, la transacción única, el
+    // guard anti-doble y el sellado fuera del commit son los mismos, byte a byte.
+    const { facturas: created, sinSellar } = await emitirRecapitulativas(prisma, {
+      merchantId: req.merchantId!,
+      customerId: job.customerId,
+      currency: merchant.defaultCurrency || 'EUR',
+      taxId: merchant.taxId,
+      grupos: grupos.map((g) => ({
+        mesLabel: g.mesLabel,
+        albaranes: g.albaranes.map((a) => {
           const full = albaranes.find((x) => x.id === a.id)!;
-          const ls = Array.isArray(full.lineas) ? (full.lineas as any[]) : [];
-          const fechaTxt = new Date(a.fecha).toLocaleDateString('es-ES');
-          return ls.map((l) => ({
-            concept: `Albarán ${a.numero} (${fechaTxt}): ${l.concepto}`,
-            qty: Number(l.cantidad) || 0,
-            price: Number(l.precioUnitario) || 0,
-            tax: (Number(l.tipoIva) || 0) / 100,
-          }));
-        });
-        const bd = calcVatBreakdown(lines);
-        const total = (bd.base + bd.cuota).toFixed(2);
-        const albaranRefs = g.albaranes.map((a) => ({ albaranId: a.id, numero: a.numero, fecha: a.fecha }));
-
-        const invoice = await emitInvoice(tx, {
-          merchantId: req.merchantId, customerId: job.customerId, total, currency,
-          type: 'F1', lines, albaranRefs, quoteId: null,
-        });
-        // Robustez fiscal: una recapitulativa JAMÁS puede salir como justificante J-. Si
-        // allocateInvoiceNumber devolviera serie receipt (getEmissionMode discrepa del gate
-        // por no ver merchant.flags), abortamos TODO en vez de emitir un documento inválido.
-        if (isReceiptNumber(invoice.number)) throw new Error('consolidacion_no_disponible');
-
-        // Guard anti-doble-consolidación: solo marca los que SIGUEN invoiceId:null.
-        const groupIds = g.albaranes.map((a) => a.id);
-        const upd = await tx.albaran.updateMany({
-          where: { id: { in: groupIds }, merchantId: req.merchantId, invoiceId: null },
-          data: { invoiceId: invoice.id },
-        });
-        if (upd.count !== groupIds.length) throw new Error('consolidacion_concurrente'); // → rollback TOTAL
-
-        out.push({ id: invoice.id, number: invoice.number, mesLabel: g.mesLabel, total });
-      }
-      return out;
+          return { id: a.id, numero: a.numero, fecha: a.fecha, lineas: full.lineas };
+        }),
+      })),
     });
 
-    return res.status(201).json({ ok: true, facturas: created });
+    return res.status(201).json({
+      ok: true,
+      facturas: created,
+      // Solo aparece si algo falló: callar un sellado incompleto es peor que decirlo (mismo
+      // criterio que el paquete incompleto de SCRUM-25).
+      ...(sinSellar.length
+        ? { sinSellar, message: 'Se emitieron las facturas, pero falló el registro VeriFactu de alguna. Revísalo antes de entregarlas.' }
+        : {}),
+    });
   } catch (err: any) {
     if (err?.message === 'consolidacion_concurrente') {
       return res.status(409).json({ error: 'consolidacion_concurrente', message: 'Alguno de los partes se facturó a la vez desde otra sesión. Vuelve a intentarlo.' });

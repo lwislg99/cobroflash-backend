@@ -1,7 +1,12 @@
 // src/modules/jobs/app/routes/albaranes.routes.ts — SCRUM-14 (ALBARAN-1)
 // Acciones sobre un albarán existente (el create vive en POST /admin/jobs/:id/albaranes).
-// Documento NO FISCAL (regla 24): nada de facturación/VeriFactu aquí. Tenancy SIEMPRE
-// findFirst { id, merchantId } → 404 (regla 2). Editable hasta 'firmado' (409 albaran_locked).
+// El ALBARÁN sigue siendo documento NO FISCAL (regla 24): ni se sella ni sustituye a nada.
+// ⚠️ SCRUM-170 CAMBIÓ EL LÍMITE DE ESTE FICHERO, a propósito: `facturar-parcial` (al final) SÍ
+// emite factura y sella VeriFactu. Está aquí porque el recurso sobre el que se actúa es UN
+// albarán —igual que firmar o enviar— y partirlo en otro router obligaría a duplicar tenancy y
+// precondiciones. Todo lo demás de aquí sigue sin tocar facturación.
+// Tenancy SIEMPRE findFirst { id, merchantId } → 404 (regla 2). Editable hasta 'firmado'
+// (409 albaran_locked).
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { recordAudit, requestIp } from '../../../system/audit.service';
@@ -18,6 +23,27 @@ import {
   type AlbaranModoValoracion,
 } from '../../domain/albaran.service';
 import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
+import {
+  agruparPorMes,
+  seleccionarConsolidablesDeCliente,
+  type AlbaranCandidato,
+} from '../../domain/consolidacionCliente.service'; // SCRUM-70
+import { calcAlbaranTotales, mesNaturalLabel, type AlbaranLinea } from '../../domain/albaran.service'; // SCRUM-70
+// SCRUM-170 (FACT-2c): facturación PARCIAL por cantidad servida. El estado de cobro se DERIVA
+// del libro de líneas facturadas — nunca es un flag (regla 27 y la lección de DELSOL, SCRUM-17).
+import { requireRole } from '../../../../core/http/authMiddleware';
+import {
+  estadoCobroAlbaran,
+  facturadoPorLinea,
+  pendientePorLinea,
+  validarPeticionParcial,
+} from '../../domain/albaranFacturacion';
+import { emitInvoice } from '../../../invoicing/domain/invoicing.service';
+import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
+import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { getEmissionMode } from '../../../invoicing/domain/emission.service';
+import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
+import { emitirRecapitulativas } from '../../domain/recapitulativa.service'; // SCRUM-171a: emisión compartida con la vía de Job
 
 const router = Router();
 
@@ -33,6 +59,225 @@ router.get('/pendientes-facturar', async (req, res) => {
   } catch (err: any) {
     console.error('[GET /admin/albaranes/pendientes-facturar]', err?.message || err);
     res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * GET /admin/albaranes/consolidables — SCRUM-70 (FACT-2).
+ *
+ * VISTA PREVIA de lo que entraría en la recapitulativa de UN cliente, a ámbito CLIENTE + MES
+ * NATURAL (cruzando Trabajos), con los filtros de rango de fechas y de números.
+ *
+ * SOLO LECTURA, y es deliberado: el propio ticket lo pide («el usuario debe SIEMPRE ver y
+ * confirmar qué se va a agrupar antes de emitir», queja documentada de usuarios de Odoo con
+ * agrupaciones automáticas no controladas). A ámbito de cliente eso pasa de recomendable a
+ * imprescindible: la selección ya no la hace él parte a parte, la hace el sistema.
+ *
+ * ⚠️ NO EMITE. La emisión de la recapitulativa está en manos de SCRUM-173 (agujero de
+ * VeriFactu: `consolidar-albaranes` crea facturas sin `applyVeriFactu`) y se cablea a este
+ * ámbito cuando ese ticket cierre. Ver el comentario de SCRUM-70 para el porqué del orden.
+ *
+ * Filtros: ?customerId= (obligatorio) · ?desde= ?hasta= (ruta 1) · ?numeroDesde= ?numeroHasta=
+ * (ruta 2) · ?mes=YYYY-MM.
+ */
+router.get('/consolidables', async (req, res) => {
+  try {
+    const customerId = Number(req.query.customerId);
+    if (!Number.isInteger(customerId)) {
+      return res.status(400).json({ error: 'customer_requerido', message: 'Indica el cliente.' });
+    }
+    // Tenancy (regla 2): el cliente tiene que ser de este merchant o no existe.
+    const customer = await prisma.customer.findFirst({
+      where: { id: customerId, merchantId: req.merchantId! },
+      select: { id: true, name: true },
+    });
+    if (!customer) return res.status(404).json({ error: 'not_found' });
+
+    // `Albaran.jobId` es un Int plano (sin relación Prisma declarada), igual que en la bandeja
+    // de SCRUM-69: los Trabajos del cliente primero, sus albaranes después.
+    const jobs = await prisma.job.findMany({
+      where: { merchantId: req.merchantId!, customerId },
+      select: { id: true, tipoOperacion: true },
+    });
+    if (!jobs.length) return res.json({ customer, grupos: [], descartados: [] });
+
+    const jobById = new Map(jobs.map((j) => [j.id, j]));
+    const albaranes = await prisma.albaran.findMany({
+      where: { merchantId: req.merchantId!, jobId: { in: [...jobById.keys()] } },
+      select: {
+        id: true, numero: true, fecha: true, estado: true, modoValoracion: true,
+        invoiceId: true, lineas: true, jobId: true,
+      },
+      orderBy: { fecha: 'asc' },
+    });
+
+    const candidatos: AlbaranCandidato[] = albaranes.map((a) => ({
+      id: a.id, numero: a.numero, fecha: a.fecha, estado: a.estado,
+      modoValoracion: a.modoValoracion, invoiceId: a.invoiceId,
+      customerId, jobId: a.jobId,
+      tipoOperacion: jobById.get(a.jobId)?.tipoOperacion ?? null,
+    }));
+
+    const { elegibles, descartados } = seleccionarConsolidablesDeCliente(candidatos, customerId, {
+      desde: typeof req.query.desde === 'string' ? req.query.desde : null,
+      hasta: typeof req.query.hasta === 'string' ? req.query.hasta : null,
+      numeroDesde: typeof req.query.numeroDesde === 'string' ? req.query.numeroDesde : null,
+      numeroHasta: typeof req.query.numeroHasta === 'string' ? req.query.numeroHasta : null,
+      mes: typeof req.query.mes === 'string' ? req.query.mes : null,
+    });
+
+    const lineasById = new Map(albaranes.map((a) => [a.id, a.lineas]));
+    const grupos = agruparPorMes(elegibles).map((g) => {
+      let base = 0;
+      let cuota = 0;
+      for (const a of g.albaranes) {
+        const t = calcAlbaranTotales(lineasById.get(a.id) as AlbaranLinea[] | null);
+        base += t.base;
+        cuota += t.cuota;
+      }
+      return {
+        mesKey: g.mesKey,
+        mesLabel: mesNaturalLabel(g.mesKey),
+        jobIds: g.jobIds,
+        albaranes: g.albaranes.map((a) => ({ id: a.id, numero: a.numero, fecha: a.fecha, jobId: a.jobId })),
+        base: base.toFixed(2),
+        cuota: cuota.toFixed(2),
+        total: (base + cuota).toFixed(2),
+      };
+    });
+
+    return res.json({ customer, grupos, descartados });
+  } catch (err: any) {
+    console.error('[GET /admin/albaranes/consolidables]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/albaranes/consolidar — SCRUM-171a · EMITIR LA RECAPITULATIVA A ÁMBITO CLIENTE.
+ *
+ * Es la mitad que SCRUM-70 dejó a medias: la vista previa por cliente existía (`/consolidables`)
+ * pero NO había forma de emitir desde ahí — solo desde un Job (`/admin/jobs/:id/consolidar-albaranes`),
+ * y un cliente factura por MES, no por Trabajo. Sin esto, SCRUM-171 (periodicidad) no puede existir:
+ * no hay camino que facture «lo de este mes de este cliente» cuando sus albaranes vienen de varios
+ * Trabajos.
+ *
+ * LA SELECCIÓN LA MANDA EL USUARIO, SIEMPRE. Se emite lo que venga en `albaranIds` y nada más —
+ * el propio research de SCRUM-70 lo pide por la queja documentada de usuarios de Odoo con
+ * agrupaciones automáticas que nadie confirma. A ámbito cliente eso no es recomendable: es
+ * imprescindible, porque la selección deja de hacerla él parte a parte.
+ *
+ * FAIL-CLOSED: si UNO de los seleccionados no es elegible, no se emite NADA y se dice cuál y por
+ * qué. Emitir «los que sí» dejaría facturas correctas mezcladas con una sorpresa, y una factura
+ * emitida no se borra (regla 29).
+ *
+ * La emisión en sí (rotura del art. 13, transacción única, guard anti-doble y sellado VeriFactu
+ * fuera del commit) es LA MISMA que la vía de Job: vive en `recapitulativa.service`.
+ */
+router.post('/consolidar', requireRole('admin'), async (req, res) => {
+  try {
+    const customerId = Number(req.body?.customerId);
+    if (!Number.isInteger(customerId)) {
+      return res.status(400).json({ error: 'customer_requerido', message: 'Indica el cliente.' });
+    }
+    // Tenancy (regla 2): el cliente tiene que ser de este merchant o no existe.
+    const customer = await prisma.customer.findFirst({
+      where: { id: customerId, merchantId: req.merchantId! },
+      select: { id: true, name: true },
+    });
+    if (!customer) return res.status(404).json({ error: 'not_found' });
+
+    const rawIds: any[] = Array.isArray(req.body?.albaranIds) ? req.body.albaranIds : [];
+    const ids: number[] = Array.from(new Set<number>(rawIds.map((x) => Number(x)).filter((n) => Number.isInteger(n))));
+    if (ids.length === 0) {
+      return res.status(400).json({ error: 'seleccion_vacia', message: 'Selecciona al menos un parte de trabajo firmado.' });
+    }
+
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: req.merchantId },
+      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true },
+    });
+    if (!merchant) return res.status(404).json({ error: 'not_found' });
+    if (getEmissionMode(merchant) === 'receipt') {
+      return res.status(409).json({ error: 'consolidacion_no_disponible', message: 'La factura recapitulativa no está disponible en este modo.' });
+    }
+
+    // Los albaranes, SIEMPRE por merchant; el cliente se comprueba después vía su Trabajo
+    // (`Albaran` no guarda customerId: cuelga del Job, y 1 Job = 1 cliente).
+    const albaranes = await prisma.albaran.findMany({
+      where: { id: { in: ids }, merchantId: req.merchantId! },
+    });
+    if (albaranes.length !== ids.length) {
+      return res.status(404).json({ error: 'albaran_no_encontrado', message: 'Alguno de los partes seleccionados no existe.' });
+    }
+    const jobs = await prisma.job.findMany({
+      where: { id: { in: [...new Set(albaranes.map((a) => a.jobId))] }, merchantId: req.merchantId! },
+      select: { id: true, customerId: true, tipoOperacion: true },
+    });
+    const jobById = new Map(jobs.map((j) => [j.id, j]));
+
+    // SCRUM-170: quién tiene ya líneas facturadas por la vía parcial (no lleva `invoiceId`).
+    const conParcial = new Set(
+      (await prisma.albaranLineaFacturada.findMany({
+        where: { merchantId: req.merchantId!, albaranId: { in: ids } },
+        select: { albaranId: true },
+        distinct: ['albaranId'],
+      })).map((r) => r.albaranId),
+    );
+
+    const candidatos: AlbaranCandidato[] = albaranes.map((a) => ({
+      id: a.id, numero: a.numero, fecha: a.fecha, estado: a.estado,
+      modoValoracion: a.modoValoracion, invoiceId: a.invoiceId,
+      customerId: jobById.get(a.jobId)?.customerId ?? -1,
+      jobId: a.jobId,
+      tipoOperacion: jobById.get(a.jobId)?.tipoOperacion ?? null,
+      facturadoParcial: conParcial.has(a.id),
+    }));
+
+    const { elegibles, descartados } = seleccionarConsolidablesDeCliente(candidatos, customerId, {});
+    if (descartados.length > 0) {
+      // Se devuelven TODOS los motivos, no solo el primero: quien seleccionó ocho partes
+      // necesita saber cuáles quitar de una vez, no ir descubriéndolos de uno en uno.
+      return res.status(409).json({
+        error: descartados[0].motivo,
+        message: descartados[0].mensaje,
+        descartados,
+      });
+    }
+
+    const lineasById = new Map(albaranes.map((a) => [a.id, a.lineas]));
+    const grupos = agruparPorMes(elegibles).map((g) => ({
+      mesLabel: mesNaturalLabel(g.mesKey),
+      albaranes: g.albaranes.map((a) => ({
+        id: a.id, numero: a.numero, fecha: a.fecha, lineas: lineasById.get(a.id),
+      })),
+    }));
+
+    const { facturas, sinSellar } = await emitirRecapitulativas(prisma, {
+      merchantId: req.merchantId!,
+      customerId,
+      currency: merchant.defaultCurrency || 'EUR',
+      taxId: merchant.taxId,
+      grupos,
+    });
+
+    return res.status(201).json({
+      ok: true,
+      customer,
+      facturas,
+      ...(sinSellar.length
+        ? { sinSellar, message: 'Se emitieron las facturas, pero falló el registro VeriFactu de alguna. Revísalo antes de entregarlas.' }
+        : {}),
+    });
+  } catch (err: any) {
+    if (err?.message === 'consolidacion_concurrente') {
+      return res.status(409).json({ error: 'consolidacion_concurrente', message: 'Alguno de los partes se facturó a la vez desde otra sesión. Vuelve a intentarlo.' });
+    }
+    if (err?.message === 'consolidacion_no_disponible') {
+      return res.status(409).json({ error: 'consolidacion_no_disponible', message: 'La factura recapitulativa no está disponible en este modo.' });
+    }
+    console.error('[POST /admin/albaranes/consolidar]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
   }
 });
 
@@ -337,6 +582,131 @@ router.post('/:id/enviar-para-firmar', requireActivePlan, async (req, res) => {
     return sendResultJson(res, r);
   } catch (err: any) {
     console.error('[POST /admin/albaranes/:id/enviar-para-firmar]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/albaranes/:id/facturar-parcial — SCRUM-170 (FACT-2c) · FACTURAR SOLO PARTE.
+ *
+ * Se factura la CANTIDAD SERVIDA que se elija de cada línea y el resto queda pendiente. El
+ * estado de cobro del albarán no se guarda en ninguna columna: se DERIVA del libro
+ * `AlbaranLineaFacturada` (ver `albaranFacturacion.ts`).
+ *
+ * MISMO CAMINO FISCAL que la recapitulativa de SCRUM-17: `emitInvoice` dentro de la transacción,
+ * sellado VeriFactu FUERA y después del commit (SCRUM-173), y ningún documento fiscal en modo
+ * justificante — la parcial es una factura, no un J-.
+ *
+ * ZONA DE DINERO: admin-only, como toda emisión (S1).
+ */
+router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
+  try {
+    const found = await findAlbaran(req); // tenancy (regla 2)
+    if (!found.ok) return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
+    const albaran = found.albaran;
+
+    // Las mismas precondiciones que la consolidación, y por los mismos motivos: un parte sin
+    // firmar no prueba lo servido, y uno sin precios no puede convertirse en importe.
+    if (albaran.estado !== 'firmado') {
+      return res.status(409).json({ error: 'albaran_no_firmado', message: `El parte ${albaran.numero} no está firmado. Solo se facturan partes firmados.` });
+    }
+    if (albaran.modoValoracion !== 'VALORADO') {
+      return res.status(409).json({ error: 'albaran_sin_precios', message: `El parte ${albaran.numero} no lleva precios. Edítalo para añadirlos.` });
+    }
+    if (albaran.invoiceId != null) {
+      return res.status(409).json({ error: 'albaran_ya_facturado', message: `El parte ${albaran.numero} ya está facturado entero.` });
+    }
+
+    const job = await prisma.job.findFirst({ where: { id: albaran.jobId, merchantId: req.merchantId } });
+    if (!job) return res.status(404).json({ error: 'not_found' });
+
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: req.merchantId },
+      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true },
+    });
+    if (!merchant) return res.status(404).json({ error: 'not_found' });
+    // La parcial es documento FISCAL puro, igual que la recapitulativa: en modo justificante no
+    // existe. Mejor no ofrecerla que emitir un J- que después no vale como factura.
+    if (getEmissionMode(merchant) === 'receipt') {
+      return res.status(409).json({ error: 'facturacion_no_disponible', message: 'La facturación por partes no está disponible en este modo.' });
+    }
+
+    const lineas = (Array.isArray(albaran.lineas) ? albaran.lineas : []) as any[];
+    const libro = await prisma.albaranLineaFacturada.findMany({
+      where: { merchantId: req.merchantId, albaranId: albaran.id },
+      select: { lineaIndex: true, cantidad: true, invoiceId: true },
+    });
+    const pendientes = pendientePorLinea(lineas, facturadoPorLinea(libro));
+
+    const val = validarPeticionParcial(req.body?.lineas, pendientes);
+    if (!val.ok) {
+      const status = (val.error === 'cantidad_excede_pendiente' || val.error === 'linea_repetida') ? 409 : 400;
+      return res.status(status).json({ error: val.error, message: val.message });
+    }
+
+    const fechaTxt = new Date(albaran.fecha).toLocaleDateString('es-ES');
+    // Mismo formato de concepto que la recapitulativa, más la cantidad facturada: el cliente
+    // tiene que poder cuadrar la factura con su parte sin preguntar cuánto se le cobró de qué.
+    const invoiceLines = val.lineas.map((l) => ({
+      concept: `Albarán ${albaran.numero} (${fechaTxt}): ${l.concepto}${l.unidad ? ` — ${l.pendiente} ${l.unidad}` : ''}`,
+      qty: l.pendiente, // en `validarPeticionParcial`, `pendiente` = lo que se factura AHORA
+      price: l.precioUnitario,
+      tax: l.tipoIva / 100,
+    }));
+    const bd = calcVatBreakdown(invoiceLines);
+    const total = (bd.base + bd.cuota).toFixed(2);
+
+    const invoice = await prisma.$transaction(async (tx) => {
+      const inv = await emitInvoice(tx, {
+        merchantId: req.merchantId!, customerId: job.customerId, total,
+        currency: merchant.defaultCurrency || 'EUR', type: 'F1',
+        lines: invoiceLines,
+        albaranRefs: [{ albaranId: albaran.id, numero: albaran.numero, fecha: albaran.fecha }],
+        quoteId: null,
+      });
+      if (isReceiptNumber(inv.number)) throw new Error('facturacion_no_disponible');
+
+      // El libro se escribe DENTRO de la misma transacción que la factura: si algo falla, no
+      // queda ni factura sin apunte ni apunte sin factura. Es lo que sostiene la derivación.
+      await tx.albaranLineaFacturada.createMany({
+        data: val.lineas.map((l) => ({
+          merchantId: req.merchantId!, albaranId: albaran.id,
+          lineaIndex: l.index, invoiceId: inv.id, cantidad: l.pendiente,
+        })),
+      });
+      return inv;
+    });
+
+    // Sellado FUERA de la transacción (SCRUM-173): dentro, las facturas de un lote no se ven
+    // entre sí y todas encadenarían al mismo registro anterior. Un fallo aquí NO revierte la
+    // emisión —deshacer una factura va contra la regla 29—: se dice en la respuesta.
+    let sellada = false;
+    try {
+      await applyVeriFactu(invoice, merchant.taxId ?? '', prisma);
+      sellada = true;
+    } catch (e: any) {
+      console.error(`[facturar-parcial] sellado VeriFactu falló en ${invoice.number}:`, e?.message || e);
+    }
+
+    const libroTras = await prisma.albaranLineaFacturada.findMany({
+      where: { merchantId: req.merchantId, albaranId: albaran.id },
+      select: { lineaIndex: true, cantidad: true, invoiceId: true },
+    });
+    const facturadoTras = facturadoPorLinea(libroTras);
+
+    return res.status(201).json({
+      ok: true,
+      factura: { id: invoice.id, number: invoice.number, total: invoice.total.toString(), currency: invoice.currency },
+      estadoCobro: estadoCobroAlbaran(lineas, facturadoTras),
+      pendientes: pendientePorLinea(lineas, facturadoTras),
+      veriFactu: sellada,
+      ...(sellada ? {} : { message: 'Se emitió la factura, pero falló su registro VeriFactu. Revísalo antes de entregarla.' }),
+    });
+  } catch (err: any) {
+    if (err?.message === 'facturacion_no_disponible') {
+      return res.status(409).json({ error: 'facturacion_no_disponible', message: 'La facturación por partes no está disponible en este modo.' });
+    }
+    console.error('[POST /admin/albaranes/:id/facturar-parcial]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });
