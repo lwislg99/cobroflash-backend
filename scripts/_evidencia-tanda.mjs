@@ -179,17 +179,23 @@ export function validarEvidencia({ texto, commitActual, ahoraMs, ficherosEsperad
 
   // ② EL ROJO Y LOS HIJOS · `fail` Y los tres hijos, los dos criterios, no uno: un hijo ABORTADO
   //    POR TIEMPO (SCRUM-181) no agrega sus contadores, así que `fail` puede ser 0 con un proceso
-  //    muerto. Emiten claves DISTINTAS a propósito, porque el remedio diverge (SCRUM-161): un
-  //    `fail>0` es un rojo real que NO se arregla re-corriendo —reproduce el rojo—, sino con
-  //    ticket y cuarentena (SCRUM-160); un hijo caído o agotado por tiempo SÍ se re-corre. Clave
-  //    `rojo` para el primero, `hijo` para el segundo; mensajeVeredicto los manda a sitios
-  //    distintos, y un mensaje que mandara el timeout a cuarentena o el rojo a re-correr enseñaría
-  //    a saltarse el guard.
+  //    muerto. Pero un exit≠0 de un hijo NO significa siempre lo mismo, y de ahí sale el clave
+  //    (SCRUM-161):
+  //      · exit≠0 CON `fail>0` en el agregado → es el MISMO hecho que el rojo, contado dos veces.
+  //        No es información nueva ni tiene remedio propio → NO se emite. Si se emitiera, el
+  //        veredicto mostraría «cuarentena» y «re-correr» a la vez —y en una tanda roja real eso
+  //        pasa CASI SIEMPRE— y la gente haría la fácil: el bucle que este guard vino a cerrar.
+  //      · exit=null (no terminó) o exit≠0 SIN fails (murió a mitad) → información NUEVA y más
+  //        grave: los contadores de ese hijo NO están en el agregado, así que los números del
+  //        recibo están INCOMPLETOS y la tanda no es válida. Clave `hijo`.
+  //    Así `rojo` = «salió roja» (→ cuarentena, SCRUM-160) y `hijo` = «no es de fiar» (→ re-correr).
+  //    mensajeVeredicto elige UN remedio por gravedad; nunca los dos.
   if (!Number.isInteger(r.fail)) {
     mal('incompleto', 'el recibo no trae `fail`');
   } else if (r.fail !== 0) {
     mal('rojo', `la tanda del recibo terminó con ${r.fail} test(s) en rojo`);
   }
+  const hayReds = Number.isInteger(r.fail) && r.fail > 0;
   const hijos = r.hijos && typeof r.hijos === 'object' ? r.hijos : null;
   if (!hijos) {
     mal('incompleto', 'el recibo no trae `hijos` con el exit de cada proceso');
@@ -197,9 +203,14 @@ export function validarEvidencia({ texto, commitActual, ahoraMs, ficherosEsperad
     for (const clave of CLAVES_HIJOS) {
       const v = hijos[clave];
       if (v === 0) continue;
-      mal('hijo', v === null || v === undefined
-        ? `el hijo «${clave}» no llegó a terminar (abortado por tiempo o sin ejecutar)`
-        : `el hijo «${clave}» salió con exit=${JSON.stringify(v)}`);
+      if (v === null || v === undefined) {
+        mal('hijo', `el hijo «${clave}» no llegó a terminar (abortado por tiempo o sin ejecutar): sus tests no están en el recuento, la tanda está incompleta`);
+      } else if (hayReds) {
+        // exit≠0 con rojos en el agregado: el mismo hecho que `fail>0`. Redundante → no se emite.
+        continue;
+      } else {
+        mal('hijo', `el hijo «${clave}» salió con exit=${JSON.stringify(v)} sin registrar ningún fallo: murió a mitad, la tanda está incompleta`);
+      }
     }
   }
 
@@ -247,13 +258,31 @@ const COMO_ARREGLARLO =
   '     npm run test:staging:gated\n' +
   '   (Necesita el turno de staging — SCRUM-188. Si lo tiene otra sesión, te lo dirá.)\n';
 
-// Remedio propio de un ROJO real (`fail>0`). Va PEGADO a la línea del problema, no en el bloque
-// de abajo, porque el consejo es el OPUESTO a re-correr: re-correr una tanda que salió roja
-// reproduce el mismo rojo y el mismo bloqueo, y un mensaje que manda a repetir lo que acaba de
-// fallar enseña a saltarse el guard (SCRUM-161). El sitio correcto de un rojo es SCRUM-160.
+// Los tres remedios, uno por nivel de GRAVEDAD. mensajeVeredicto elige UNO —el del problema más
+// grave presente— y nunca imprime dos, para no ofrecer jamás la salida fácil junto a la correcta
+// (SCRUM-161: en una tanda roja real, `rojo` y `hijo` coexisten casi siempre).
+
+// (2) ROJO real (`fail>0`): re-correr reproduce el mismo rojo, así que el remedio es el OPUESTO.
+// NO lleva «tanda ENTERA» a propósito — el sitio de un rojo es SCRUM-160.
 const REMEDIO_ROJO =
-  '        → un rojo no se cierra re-corriendo: cada rojo necesita ticket y cuarentena\n' +
-  '          (SCRUM-160) antes de cerrar la tarea.\n';
+  '   La tanda salió ROJA. No se cierra re-corriendo —reproduce el mismo rojo—: cada rojo\n' +
+  '   necesita ticket y cuarentena (SCRUM-160) antes de cerrar la tarea.\n';
+
+// (1) TANDA INVÁLIDA (un hijo no terminó o murió a mitad): sus tests no están en el recuento, así
+// que ni siquiera sabemos si los rojos están todos. DOMINA sobre el rojo: primero una tanda completa.
+const REMEDIO_INVALIDA =
+  '   La tanda NO ES VÁLIDA: un proceso no terminó o murió a mitad, y sus tests no están en el\n' +
+  '   recuento — los rojos que veas pueden no ser todos. Antes que nada, vuelve a lanzarla\n' +
+  '   completa; no la des por roja hasta que corra entera:\n' +
+  '     npm run test:staging:gated\n' +
+  '   (Necesita el turno de staging — SCRUM-188. Si lo tiene otra sesión, te lo dirá.)\n';
+
+/** UN solo remedio, el del problema MÁS GRAVE presente. Nunca dos (SCRUM-161, coexistencia). */
+function remedioDominante(problemas) {
+  if (problemas.some((p) => p.clave === 'hijo')) return REMEDIO_INVALIDA; // (1) inválida > todo
+  if (problemas.some((p) => p.clave === 'rojo')) return REMEDIO_ROJO;     // (2) rojo real
+  return COMO_ARREGLARLO;                                                 // (3) olvido / rancio
+}
 
 export function mensajeVeredicto(res, { activo }) {
   if (res.ok) {
@@ -266,16 +295,10 @@ export function mensajeVeredicto(res, { activo }) {
   const cabecera = activo
     ? '\n❌ SCRUM-161: NO HAY EVIDENCIA VÁLIDA DE LA TANDA GATEADA — no cierres la tarea.\n'
     : '\n⚠️  SCRUM-161: no hay evidencia válida de la tanda gateada.\n';
-  // El remedio de un `rojo` real viaja PEGADO a su línea (arriba, no en el pie): para un rojo,
-  // «corre la tanda ENTERA» es el consejo opuesto al correcto.
-  const lineas = res.problemas
-    .map((p) => `   · [${p.clave}] ${p.detalle}\n` + (p.clave === 'rojo' ? REMEDIO_ROJO : ''))
-    .join('');
-  // El bloque «corre la tanda ENTERA» solo cuando hay algo que SÍ se arregla re-corriendo — todo
-  // lo que no es un rojo real: olvido, recibo rancio, un hijo caído o agotado… Si lo ÚNICO que hay
-  // es un rojo, se omite: su remedio ya fue arriba, y re-correr sería justo la trampa.
-  const hayReCorrible = res.problemas.some((p) => p.clave !== 'rojo');
-  return cabecera + lineas + (hayReCorrible ? '\n' + COMO_ARREGLARLO : '');
+  const lineas = res.problemas.map((p) => `   · [${p.clave}] ${p.detalle}\n`).join('');
+  // UN remedio, por gravedad: un hijo caído invalida la tanda y manda sobre el rojo; sin eso, un
+  // rojo va a cuarentena; lo demás, a re-correr. Nunca dos remedios contradictorios a la vez.
+  return cabecera + lineas + '\n' + remedioDominante(res.problemas);
 }
 
 /** Lo que se imprime cuando el guard está APAGADO: dice lo que HARÍA y por qué no lo hace. */
