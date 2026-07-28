@@ -36,6 +36,8 @@ Los dos eslabones fallan igual y en silencio: el trabajo existe, el mensaje dice
 
 **R6 · Coordinar recursos compartidos ANTES de repartir tareas**, no después del choque. Staging, `main`, un archivo caliente: si dos carriles pueden tocarlo, decirlo al asignar.
 
+**R7 · Una credencial no se protege redactando mensajes, sino impidiendo que el error salga.** El reflejo de `console.error(e.message)` es **insuficiente y engañoso**: en Node 24 una URL inválida deja el mensaje limpio («Invalid URL») y pone la cadena entera en `e.input`; `execFileSync` la pone en `e.spawnargs`. Lo que la publica es el **volcado del objeto** — el camino que nadie escribe y que se toma solo. En la práctica: parsear URLs con credenciales solo dentro de una función que no pueda imprimirlas (`parseBDSegura`, con el `catch` **sin binding** a propósito), y cuando el error es ajeno y hay que sacarlo, redactar el **objeto** (`redactarSecretos`), ambos en `scripts/_db-guard.mjs`. **Un script que toca una BD lo importa**; nunca `new URL(dbUrl)` suelto, ni «solo para leer el host». Incidente #14: costó rotar la credencial de producción.
+
 ---
 
 ## REGISTRO DE INCIDENTES
@@ -165,13 +167,48 @@ git worktree remove ../wt-loquesea                 # ahora sí
 
 **Nota:** es la familia de #8, #9 y #10 (confiar en lo propio), con una vuelta más: allí la herramienta hacía su trabajo sobre el objeto equivocado; aquí directamente **no llegué a ejecutar el objeto**, y el resto de verificaciones —reales y buenas— me dieron la sensación de haberlo hecho.
 
+### 2026-07-27 · #14 — Filtré la contraseña de producción, y el reflejo que todos tenemos para evitarlo no habría servido (lección propia, del ejecutor)
+
+**Qué pasó:** midiendo los pares Job↔Quote de SCRUM-195, un script del scratchpad leyó `DATABASE_URL` del `.env` **sin quitarle las comillas** y llamó a `new URL(...)` a pelo. El error resultante volcó la URL de **producción con su contraseña** a la salida del comando. El fundador rotó la credencial.
+
+**Por qué:** la primera sonda del día sí quitaba las comillas; la segunda, escrita a los diez minutos para otra cosa, no. **No probé el parseo antes de dejar que el error se imprimiera.** Y el `try/catch` que habría bastado no estaba porque «era un script de leer, de usar y tirar» — la categoría exacta de código que toca producción sin que nadie lo revise.
+
+**El hallazgo que va más allá del incidente, y es el motivo de esta entrada.** Al escribir el guard di por hecho, como todo el mundo, que `new URL()` mete la cadena en `.message` y que el freno es redactar el mensaje. **Es falso.** Medido en Node 24, no supuesto:
+
+| vector | ¿la URL está en `.message`? | ¿y al volcar el objeto? |
+|---|---|---|
+| `new URL()` inválida | **NO** — dice solo «Invalid URL» | **SÍ**, en `e.input` |
+| `execFileSync` ENOENT | **NO** | **SÍ**, en `e.spawnargs` |
+| `execFileSync` con exit ≠ 0 | **SÍ** («Command failed: … argv») | SÍ |
+
+O sea que **`console.error(e.message)` no habría evitado nada**: aquí el mensaje salía limpio y la credencial iba en una propiedad del error. Lo que la publicó fue el **volcado del objeto** por el manejador de excepciones no capturadas — el camino que nadie escribe y que se toma solo. «Redactar el mensaje» es un freno que protege del vector que menos importa.
+
+**Quién lo detectó:** el propio ejecutor, en el momento; reportado al fundador con la causa exacta y sin repetir el valor.
+
+**Coste:** rotación de la credencial de producción. Contenido porque la salida no salió de la sesión — pero es el fallo con el peor caso posible del registro: si esa salida llega a un log, a un pantallazo o a un pegado, es acceso directo a la BD de producción.
+
+**Hallazgo colateral, en el peor sitio del repo:** `scripts/backup-dump.mjs` pasa la `DATABASE_URL` en argv de `pg_dump` y su catch imprimía el error. Si `pg_dump` falla —o simplemente no está instalado— **el script de backup publica la contraseña de producción**, y un backup corre contra prod por definición. Vivo desde que existe el script; lo cazó el guard de esta misma tarea.
+
+**Regla derivada — nueva:** **una credencial no se protege redactando mensajes, sino impidiendo que el error salga.** En la práctica, dos cosas:
+1. **Parsear una URL con credenciales solo dentro de una función que no tenga forma de imprimirla** — `parseBDSegura()` en `scripts/_db-guard.mjs`, cuyo `catch` **no tiene binding a propósito**: sin variable no hay error que nadie pueda imprimir después.
+2. **Cuando el error es ajeno y hay que sacarlo, redactar el OBJETO, no el mensaje** — `redactarSecretos()` lo inspecciona y tapa la contraseña dejando el host (redactar también el host deja el error inútil y empuja a quitar el redactor).
+
+Y la regla operativa que las hace alcanzables: **un script que toca una BD importa `_db-guard.mjs`**. Nunca `new URL(dbUrl)` suelto, ni «solo para leer el host».
+
+**Lo que el mecanismo NO cubre, dicho aquí y en el propio fichero:** el script que filtró vivía en el scratchpad, fuera del repo. Ningún test lo habría parado y **el guard nuevo tampoco pararía al siguiente**. Quita la excusa —el helper existe y está en el camino— e impide que el repo vuelva a la forma insegura; el scratchpad sigue siendo superficie descubierta.
+
+**Nota:** es familia de #8/#9/#13 (confiar en lo propio) con una vuelta más: no fue una herramienta midiendo el objeto equivocado, fue **una creencia técnica compartida y falsa** sobre dónde vive el dato peligroso. Y al probar los guards en rojo, **dos de ellos dieron verde falso**: uno se conformaba con un redactor que perdía la información entera —«no contiene el secreto» también lo cumple quien lo tira todo—, y otro comprobaba `catch {` en todo el fichero y lo satisfacía el `catch` de **otra función**. Es #12 otra vez: probar en rojo no basta si el rojo se busca con el caso equivocado.
+
 ---
 
 ## PATRÓN COMÚN (lo que de verdad hay que corregir)
 
-**Ocho de los diez incidentes son la misma cosa: afirmar el estado del mundo sin comprobarlo.** Un reporte, un síntoma, una suposición, una ausencia de mención o **la salida de un comando** se convirtieron en "esto es así" — y de ahí salieron tickets con prioridad alta, tareas manuales para el fundador, un ticket cerrado en falso y `main` en rojo mientras el arreglo parecía entregado.
+**Ocho de los catorce incidentes son la misma cosa: afirmar el estado del mundo sin comprobarlo.** Un reporte, un síntoma, una suposición, una ausencia de mención o **la salida de un comando** se convirtieron en "esto es así" — y de ahí salieron tickets con prioridad alta, tareas manuales para el fundador, un ticket cerrado en falso y `main` en rojo mientras el arreglo parecía entregado.
 
-Son #1, #2, #3, #4, #7, #8, #9 y #10. Los otros dos (#5 y #6) son de otra familia: **actuar sin anticipar** — repartir tres sesiones sobre una BD sin turnos, y proponer los worktrees *después* de que dos sesiones se pisaran. Ahí el fallo no fue creerse algo, fue no haberlo pensado antes.
+Son #1, #2, #3, #4, #7, #8, #9 y #10. Los otros seis se reparten en dos familias más:
+
+- **Actuar sin anticipar** (#5, #6, #11): repartir tres sesiones sobre una BD sin turnos, proponer los worktrees *después* de que dos sesiones se pisaran, y ejecutar la orden correcta sin pensar qué más colgaba de lo que borraba. El fallo no fue creerse algo, fue no haberlo pensado antes.
+- **Verificar de una forma que no verifica** (#12, #13, #14): un guard probado en rojo **con el caso equivocado**, un artefacto de CI cuyas piezas se comprobaron todas menos la de arriba —**nunca se ejecutó**—, y un freno construido sobre una **creencia técnica falsa** (redactar `.message` cuando el dato viaja en el objeto). Es la familia más cara de detectar: aquí hubo verificación, fue seria, y aun así no tocó el fallo. **Su antídoto no es "verificar más", es preguntarse qué mediría exactamente este verde si el sistema estuviera roto.**
 
 ### La evolución importa: el objeto de la confianza se ha movido
 
