@@ -76,6 +76,17 @@ try {
   page.on('pageerror', (err) => {
     erroresConsola.push({ tipo: 'error', texto: String(err?.message || err), donde: page.url() });
   });
+  // SCRUM-184: los RECURSOS caidos se capturan por EVENTO DE RED, no del texto de consola. El
+  // mensaje que Chrome escribe (Failed to load resource ... 404) NO lleva la URL, asi que desde
+  // la consola es imposible saber QUE fallo — por eso la vieja allowlist del favicon no podia
+  // filtrar nada. Aqui si se sabe: la respuesta trae su propia URL y su status.
+  page.on('response', (r) => {
+    const st = r.status();
+    if (st >= 400) erroresConsola.push({ tipo: 'recurso', url: r.url(), status: st, donde: page.url() });
+  });
+  page.on('requestfailed', (r) => {
+    erroresConsola.push({ tipo: 'recurso', url: r.url(), status: (r.failure() || {}).errorText || 'sin respuesta', donde: page.url() });
+  });
   page.on('console', (m) => {
     if (m.type() === 'error') erroresConsola.push({ tipo: 'error', texto: m.text(), donde: page.url() });
   });
@@ -259,6 +270,7 @@ try {
   // SCRUM-183: se comprueba AL FINAL, no al vuelo, para que el informe salga entero de una vez y
   // no aborte el recorrido a la primera — interesa saber TODO lo que se rompió, no lo primero.
   const consola = resumirErroresConsola(erroresConsola);
+  if (consola.avisoRecursos) console.log(consola.avisoRecursos); // se ven aunque no rompan
   if (!consola.ok) fail(consola.informe);
 
 
