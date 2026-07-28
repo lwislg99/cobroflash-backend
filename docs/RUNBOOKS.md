@@ -282,6 +282,15 @@ los 16 rojos crípticos de SCRUM-160.
 Fuente de los hostnames: `scripts/_db-guard.mjs` (`PROD_HOST` / `STAGING_HOST`), único sitio que
 los define en el árbol.
 
+**El TURNO de una de esas bases (SCRUM-188).** Que dos sesiones no la usen a la vez ya no
+depende de que nos acordemos: `npm run test:staging:gated` **toma el turno** al arrancar, lo
+escribe en el propio marcador de la base (`YAQU_STAGING lock:<dueño>@<ISO>`) y lo suelta al
+acabar. Si lo encuentra tomado **no arranca** (exit 5) y dice quién lo tiene y desde cuándo.
+Caduca solo a los 45 min, así que una sesión muerta no bloquea a nadie. Para liberarlo a mano
+—**solo si sabes que la otra sesión está muerta**—:
+`DATABASE_URL="<url de esa base>" node scripts/marcar-staging.mjs`. Detalle en
+`docs/QA/SUITE_REGRESION.md` § «El TURNO de staging».
+
 Nomenclatura fijada por carril B el 27-jul-2026 con la regla de desempate del fundador. El
 criterio para asignar el papel ha sido la AUTORIZACIÓN, no la ubicación ni el uso: las dos
 primeras están en el mismo servidor y las dos las ejercitan tandas gateadas; lo que las

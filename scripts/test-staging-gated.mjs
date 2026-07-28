@@ -30,10 +30,19 @@
 // ROJOS por bitrot del seed demo (P3-9 / SCRUM-159): «cliente seed no encontrado». Es lo
 // esperado y correcto — un test que se ejecuta y falla grita; uno que no se ejecuta miente
 // en el recuento. El verde de esos dos es cosa de SCRUM-159, no de aquí.
+//
+// ⚠️ ESTE SCRIPT ESCRIBE EN STAGING (SCRUM-188). Desde que toma el turno, ya no es solo un
+// lanzador: modifica el comentario de catálogo de la BD. Por eso aplica la allowlist de host
+// de `_db-guard.mjs` de forma INCONDICIONAL, igual que `marcar-staging.mjs` — misma razón:
+// una herramienta que escribe no puede depender de que alguien recuerde comprobar antes.
+import 'dotenv/config'; // el turno necesita DATABASE_URL_STAGING en el PADRE, no solo en los hijos
 import { spawnSync } from 'node:child_process';
 import { readdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import os from 'node:os';
+import { PrismaClient } from '@prisma/client';
+import { assertSafeStagingUrl, STAGING_HOST } from './_db-guard.mjs';
 // SCRUM-182: la tanda dura ~11 min leyendo dist/, tests/ y el cliente de Prisma. Si algo los
 // reescribe mientras corre, los resultados no valen. El detalle, en el propio módulo.
 import {
@@ -42,6 +51,20 @@ import {
   mensajeArbolMovido,
   CODIGO_SALIDA_ARBOL_MOVIDO,
 } from './_artefactos-guard.mjs';
+// SCRUM-188: R6 («una sola tanda contra staging a la vez») era una convención que ninguna
+// máquina podía leer. El turno vive ahora como sufijo del marcador de SCRUM-118.
+import {
+  adquirirLock,
+  refrescarLock,
+  soltarLock,
+  idDeSesion,
+  ttlParaTanda,
+  formatearDuracion,
+  mensajeLockAjeno,
+  mensajeLockPerdido,
+  CODIGO_SALIDA_LOCK_AJENO,
+  CODIGO_SALIDA_LOCK_PERDIDO,
+} from './_staging-lock.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url)); // resolver el preflight junto a este script (SCRUM-167)
 const override = process.argv[2] || null; // contraprueba/diagnóstico: si viene, todos lo usan
@@ -132,151 +155,293 @@ if (override) {
 
 console.log(`\n── SCRUM-157 · tanda gateada COMPLETA (3 procesos)${override ? ` · AUTOTEST → ${override}` : ''} ──\n`);
 
-// ── PREFLIGHT (SCRUM-167): antes de lanzar ningún hijo, comprobar que el esquema de la BD
-// coincide con prisma/schema.prisma. Los tres hijos corren contra DATABASE_URL_STAGING (vía
-// _staging-db.mjs); el preflight lee ESA MISMA variable (sin pasarle URL) para mirar
-// EXACTAMENTE la misma BD. Si no da luz verde → ABORTA aquí con la causa nombrada, en vez de
-// dejar caer 16 errores crípticos de Prisma repartidos por los ficheros (SCRUM-160).
-if (!override) {
-  const preflightPath = path.join(HERE, 'preflight-schema-drift.mjs');
-  // AUSENTE ≠ deriva. `node <script-ausente>` arranca node (pf.error vacío) y sale 1 por
-  // «Cannot find module» — indistinguible de una deriva (exit 1) si no se comprueba antes.
-  // Caso real: un cherry-pick del enganche sin el preflight (van juntos, pero se pueden separar).
-  if (!existsSync(preflightPath)) {
-    console.error('\n❌ tanda gateada ABORTADA: falta scripts/preflight-schema-drift.mjs — el preflight no pudo ejecutarse. NO es una deriva de esquema; no toques la BD por esto.');
-    process.exit(2);
-  }
-  // Está pero podría REVENTAR con un error de SINTAXIS (edición a medias): `node --check` lo
-  // detecta sin ejecutarlo y da un mensaje específico. (--check valida sintaxis, NO resuelve
-  // imports: un import roto pasa --check y revienta en runtime con exit 1 — pero ESE caso lo
-  // cierra el código distintivo de abajo: exit 1 ≠ 3, así que no se lee como deriva.)
-  const chk = spawnSync(process.execPath, ['--check', preflightPath], { stdio: 'inherit' });
-  if (chk.status !== 0) {
-    console.error('\n❌ tanda gateada ABORTADA: el preflight tiene un error de sintaxis (ver arriba) — no se pudo ejecutar. NO es una deriva de esquema; no toques la BD por esto.');
-    process.exit(2);
-  }
-  const pf = spawnSync(process.execPath, [preflightPath], { stdio: 'inherit' });
-  // Códigos del preflight: 0 = en sync · 2 = no se pudo comparar / guard anti-prod · 3 = DERIVA.
-  // El 3 es DISTINTIVO: SOLO él autoriza a sugerir `db push`. node sale 1 ante cualquier fallo de
-  // arranque (import roto, crash) — que aquí cae en «no lo tomes como deriva», jamás en push.
-  if (pf.error) {
-    console.error(`\n❌ tanda gateada ABORTADA: el preflight no pudo ejecutarse (${pf.error.code || pf.error.message}). NO es una deriva de esquema — no toques la BD por esto.`);
-    process.exit(2);
-  } else if (pf.status === 3) {
-    // DERIVA de esquema: la BD no coincide con el fichero. ÚNICO caso en que se sincroniza.
-    console.error('\n❌ tanda gateada ABORTADA: DERIVA DE ESQUEMA. Sincroniza esa BD con `db push` — el sentido (por detrás / por delante) está impreso arriba.');
-    process.exit(1);
-  } else if (pf.status === 2) {
-    // Guard anti-prod o no se pudo comparar: la causa la imprimió el preflight. Nunca db push.
-    console.error('\n❌ tanda gateada ABORTADA: el preflight no dio luz verde (no se pudo comparar / guard anti-prod). La causa está impresa arriba. NO apliques nada hasta leerla.');
-    process.exit(2);
-  } else if (pf.status !== 0) {
-    // DEFECTO SEGURO: cualquier código NO RECONOCIDO (1 y demás) = el preflight no llegó a un
-    // veredicto (crash de Node, import roto). Cae AQUÍ, jamás en la rama de `db push`.
-    console.error(`\n❌ tanda gateada ABORTADA: el preflight no dio luz verde (código no reconocido: exit=${pf.status}; probable crash / import roto). La causa está arriba. NO es una deriva; NO apliques nada.`);
-    process.exit(2);
-  }
-  // pf.status === 0 → en sync: sigue.
-} else {
-  // El preflight NO se omite en silencio: se declara. En autotest no hay BD real que comprobar.
-  console.log('preflight OMITIDO (modo autotest: sin BD real que comprobar).');
-}
-
 // ── TIMEOUT POR HIJO + SEÑAL DE VIDA (SCRUM-181) ─────────────────────────────
 // Sin timeout, un hijo colgado dejaba la tanda muerta EN SILENCIO: la salida de cada hijo se
 // escribe DESPUÉS de que vuelve (más abajo), así que un cuelgue no imprimía nada. Ahora el
 // padre ANUNCIA antes de lanzar (con el límite efectivo) y ABORTA al hijo que se pase.
 // Medido: a55 ~16s, bot-suite ~55s, bloque QA ~10 min.
+// (SCRUM-188 lo subió aquí arriba: el TTL del turno se DERIVA de estos límites, y el turno se
+// toma antes del preflight — o sea, antes de donde vivían estas constantes.)
 const LIGHT_MS = 5 * 60 * 1000;   // aislados (a55, bot-suite): suelo generoso para CI en frío.
 const HEAVY_MS = 30 * 60 * 1000;  // bloque QA (~10 min): ~3× de margen.
 const OVERRIDE_MS = Number(process.env.GATED_CHILD_TIMEOUT_MS) || 0; // override, TODOS los hijos (tuning/pruebas).
 
-// SCRUM-182: huella de dist/, tests/ y el cliente de Prisma justo ANTES del bucle. El preflight
-// de arriba solo hace `migrate diff` (lectura), no mueve el árbol, así que va antes como gate.
-const huellaAntes = huellaArtefactos(process.cwd());
+// ── SCRUM-188 · EL TURNO DE STAGING ──────────────────────────────────────────
+// Va ANTES del preflight a propósito: el preflight ya toca la BD, así que el turno tiene que
+// estar tomado antes de la primera consulta y no solo antes del primer hijo.
+//
+// SE TOMA TAMBIÉN EN MODO AUTOTEST. El autotest no es «sin BD»: lanza los tres mismos procesos
+// con la misma configuración de staging, y si el fichero que se le pasa es un gateado toca la
+// base igual. Fingir que no la necesita convertiría el ensayo en un ensayo de otra cosa
+// (lección de SCRUM-168: un artefacto que nunca se ejecuta como se va a ejecutar no está
+// verificado). Lo que sí se omite en autotest es el preflight, y se declara.
+//
+// NO HAY VARIABLE PARA SALTÁRSELO, y es deliberado: una puerta de escape en un mecanismo de
+// coordinación se acaba usando siempre, y entonces no coordina nada. Si el turno está tomado
+// por una sesión muerta, el TTL lo libera solo; si hay prisa, `marcar-staging.mjs` lo limpia.
+const TIMEOUT_MAYOR_MS = Math.max(...hijos.map((h) => OVERRIDE_MS || (h.pesado ? HEAVY_MS : LIGHT_MS)));
+const TTL_MS = ttlParaTanda(TIMEOUT_MAYOR_MS);
+const DUENO = idDeSesion(os.hostname(), process.pid);
 
-for (let i = 0; i < hijos.length; i++) {
-  const h = hijos[i];
-  const env = { ...process.env };
-  for (const [k, v] of Object.entries(h.env)) {
-    if (v === undefined) delete env[k];
-    else env[k] = v;
-  }
-  const timeoutMs = OVERRIDE_MS || (h.pesado ? HEAVY_MS : LIGHT_MS);
-  const limiteTxt = OVERRIDE_MS ? `${Math.round(OVERRIDE_MS / 1000)}s (override)` : `${Math.round(timeoutMs / 60000)} min`;
-  // SEÑAL DE VIDA: se anuncia ANTES de lanzar, con el límite EFECTIVO (SCRUM-181 cond. 1). Si el
-  // hijo cuelga, al menos se sabe cuál y con qué límite; su salida real llega cuando vuelve.
-  console.log(`\n▶ [${i + 1}/${hijos.length}] lanzando ${h.nombre}… (límite ${limiteTxt})`);
-  const t0 = Date.now();
-  const res = spawnSync(process.execPath, h.args, {
-    env, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
-    timeout: timeoutMs, killSignal: 'SIGTERM',
-  });
-  const durS = ((Date.now() - t0) / 1000).toFixed(1);
-  const salida = (res.stdout || '') + (res.stderr || '');
-  process.stdout.write(salida); // que la salida del hijo NO se pierda
-
-  // TIMEOUT ≠ fallo normal (SCRUM-181). Al vencer el límite, spawnSync mata al hijo con
-  // killSignal y devuelve status=null, signal='SIGTERM' y error.code='ETIMEDOUT' (los tres,
-  // medido en Windows). Se nombra ABORTADO POR TIEMPO, cuenta como fallido y NO se agregan sus
-  // contadores — un proceso que no terminó miente («no pude comprobar» ≠ «falló un test»).
-  // NO se hace tree-kill: medido que matar a `node --test` reapea también su subproceso
-  // por-fichero (el nieto NO queda huérfano con la conexión). Y un taskkill defensivo sobre un
-  // res.pid YA MUERTO sería peligroso: si el SO reusó ese pid, mataría a otro proceso.
-  if (res.error?.code === 'ETIMEDOUT' || (res.status === null && res.signal != null)) {
-    fallaron.push(`${h.nombre} [ABORTADO POR TIEMPO · ${durS}s > ${limiteTxt}]`);
-    console.log(`\n[${i + 1}/${hijos.length}] ${h.nombre}: ⏱  ABORTADO POR TIEMPO tras ${durS}s (límite ${limiteTxt}; signal=${res.signal || res.error?.code}). No agrego sus contadores.`);
-    continue;
-  }
-
-  const code = res.status; // ← directo, sin tubería (trampa 5 del runbook de SUITE_REGRESION.md)
-  const c = parseCuenta(salida);
-
-  // REGLA A · si status≠0 y no ejecutó ningún test, NO es "0 fallos": es un proceso que NO
-  //           arrancó (crash, DLL, lo que sea). Se nombra como tal y NO se agregan sus ceros.
-  if (code !== 0 && c.tests === 0) {
-    fallaron.push(`${h.nombre} [NO EJECUTÓ · exit=${code}]`);
-    console.log(`\n[${i + 1}/${hijos.length}] ${h.nombre}: ❌ NO EJECUTÓ (exit=${code}, 0 tests, ${durS}s) — no me fío de sus contadores.`);
-    continue;
-  }
-
-  // REGLA B · la suma de categorías tiene que dar el total del propio hijo. Si no cuadra,
-  //           el parseo miente o node cambió de formato: se ABORTA, no se sigue agregando.
-  const sumaHijo = c.pass + c.fail + c.cancelled + c.skipped + c.todo;
-  if (sumaHijo !== c.tests) {
-    console.error(
-      `\n❌ test-staging-gated: los números del hijo «${h.nombre}» no cuadran ` +
-      `(tests=${c.tests}, pass+fail+cancelled+skip+todo=${sumaHijo}). No me fío — abortado.\n`,
-    );
-    process.exit(3);
-  }
-
-  for (const k of CATS) agg[k] += c[k];
-  // REGLA C · status≠0 MANDA sobre los contadores: aunque el parseo diga 0 fallos, si el
-  //           proceso salió ≠0 el hijo cuenta como fallido.
-  if (code !== 0) fallaron.push(h.nombre);
-  console.log(`\n[${i + 1}/${hijos.length}] ${h.nombre}: exit=${code} (${durS}s)  tests=${c.tests} pass=${c.pass} fail=${c.fail} skip=${c.skipped} cancelled=${c.cancelled} todo=${c.todo}`);
+// La allowlist de host, INCONDICIONAL y antes de construir el cliente: desde SCRUM-188 este
+// script escribe, y lo que escribe es la barrera de seguridad de SCRUM-118.
+const urlStaging = process.env.DATABASE_URL_STAGING;
+if (!urlStaging) {
+  console.error('\n❌ tanda gateada ABORTADA: falta DATABASE_URL_STAGING en el entorno — sin ella no hay ni turno ni tanda.\n');
+  process.exit(2);
 }
-
-// SCRUM-182 · ¿leyó la tanda un árbol quieto? Va ANTES del agregado y del recuento de
-// fallos a propósito: si el árbol se movió, ni el verde ni el rojo son evidencia, así que no
-// tiene sentido presentar unos números que invitan a interpretarlos. Sale con su propio
-// código (4) para no confundirse con "hubo tests rojos" (1) ni con "los números no cuadran" (3).
 {
-  const cambios = compararHuellas(huellaAntes, huellaArtefactos(process.cwd()));
-  if (cambios.length) {
-    console.error(mensajeArbolMovido(cambios));
-    process.exit(CODIGO_SALIDA_ARBOL_MOVIDO);
+  const check = assertSafeStagingUrl(urlStaging, process.env.DATABASE_URL);
+  if (!check.safe) {
+    console.error(
+      `\n❌ tanda gateada ABORTADA: DATABASE_URL_STAGING no es una URL de staging segura (${check.reason}).\n` +
+      `   Solo se opera contra el host de STAGING: ${STAGING_HOST}. Esta comprobación no se puede desactivar.\n`,
+    );
+    process.exit(2);
   }
 }
 
-const suma = agg.pass + agg.fail + agg.cancelled + agg.skipped + agg.todo;
-console.log('\n──────────────────────────────────────────────────────────────');
-console.log(`AGREGADO · total=${agg.tests} pass=${agg.pass} fail=${agg.fail} skip=${agg.skipped} cancelled=${agg.cancelled} todo=${agg.todo}` +
-  `  (suma=${suma} ${suma === agg.tests ? '✓ cuadra' : '✗ NO cuadra'})`);
-if (fallaron.length) {
-  console.log(`\n❌ FALLARON ${fallaron.length}: ${fallaron.join(' · ')}`);
-  process.exit(1);
+const clienteTurno = new PrismaClient({ datasources: { db: { url: urlStaging } } });
+let marcaPropia = null; // el marcador exacto que escribimos; sirve para no pisar el de otro
+
+{
+  let res;
+  try {
+    res = await adquirirLock(clienteTurno, { dueño: DUENO, ttlMs: TTL_MS });
+  } catch (err) {
+    // Fail-closed, igual que la barrera: si no se puede COORDINAR, no se corre.
+    console.error(`\n❌ tanda gateada ABORTADA: no se pudo tomar el turno de staging (${err?.message || err}).`);
+    console.error('   Si no se puede coordinar, no se corre: dos tandas solapadas pueden salir VERDES por accidente.\n');
+    await clienteTurno.$disconnect().catch(() => {});
+    process.exit(2);
+  }
+
+  if (!res.ok && res.motivo === 'no-es-staging') {
+    // Este script NUNCA marca una base. Si no llevaba ya el marcador de SCRUM-118, aborta.
+    console.error(`\n❌ tanda gateada ABORTADA: la base "${res.db}" NO lleva el marcador de staging (leído: ${JSON.stringify(res.marca)}).`);
+    console.error('   El turno solo se escribe sobre una base YA marcada: marcar una es cosa de');
+    console.error('   scripts/marcar-staging.mjs, que es el único con esa responsabilidad.\n');
+    await clienteTurno.$disconnect().catch(() => {});
+    process.exit(2);
+  }
+
+  if (!res.ok && res.motivo === 'ocupado') {
+    console.error(mensajeLockAjeno({ db: res.db, lock: res.lock, ahoraMs: res.ahoraMs, ttlMs: res.ttlMs }));
+    await clienteTurno.$disconnect().catch(() => {});
+    process.exit(CODIGO_SALIDA_LOCK_AJENO);
+  }
+
+  marcaPropia = res.marca;
+  console.log(`🔒 turno de staging TOMADO en "${res.db}" por «${DUENO}» (caduca solo en ${formatearDuracion(TTL_MS)}).`);
+  if (res.reclamado) {
+    console.log(`   (reclamado: lo tenía «${res.lockPrevio.dueño}» desde ${res.lockPrevio.desdeIso} y había caducado.)`);
+  }
+  if (res.sufijoIgnorado) {
+    console.log('   (el marcador traía un sufijo que no se entiende; se ha ignorado y reescrito — la barrera nunca dependió de él.)');
+  }
 }
-console.log('\n✅ Todos los procesos en verde.');
-process.exit(0);
+
+// A partir de AQUÍ el turno está tomado: todo va dentro del try/finally que lo suelta.
+// ⚠️ `process.exit()` NO ejecuta los `finally`. Por eso, de aquí abajo, ninguna salida usa
+// `process.exit`: se lanza `salir(n)` y el código real se aplica al final, tras soltar.
+// Aun así, el `finally` es BEST-EFFORT: un SIGKILL o un portátil cerrado no pasan por él.
+// Lo que de verdad garantiza que el turno se libera es el TTL.
+class SalidaTanda extends Error {
+  constructor(codigo) { super(`salida ${codigo}`); this.codigo = codigo; }
+}
+const salir = (codigo) => { throw new SalidaTanda(codigo); };
+
+/** Renueva el turno entre hijos. Si ya no es nuestro, aborta: la tanda deja de ser evidencia. */
+async function refrescarTurno() {
+  const r = await refrescarLock(clienteTurno, { marcaPropia, dueño: DUENO });
+  if (!r.ok) {
+    console.error(mensajeLockPerdido({ db: r.db, marcaPropia, marcaActual: r.marcaActual }));
+    salir(CODIGO_SALIDA_LOCK_PERDIDO);
+  }
+  marcaPropia = r.marca;
+}
+
+let codigoFinal = 0;
+try {
+  await tanda();
+} catch (err) {
+  if (err instanceof SalidaTanda) {
+    codigoFinal = err.codigo;
+  } else {
+    console.error('\n❌ tanda gateada ABORTADA por un error inesperado del runner:', err?.stack || err, '\n');
+    codigoFinal = 2;
+  }
+} finally {
+  try {
+    const s = await soltarLock(clienteTurno, { marcaPropia });
+    if (s.soltado) console.log(`\n🔓 turno de staging SOLTADO en "${s.db}".`);
+    else console.log(`\n🔓 turno de staging: ya no era mío (marcador actual: ${JSON.stringify(s.marcaActual)}); no lo toco.`);
+  } catch (err) {
+    // No se convierte en fallo de la tanda: el TTL lo limpia. Pero se DICE, para que quien
+    // encuentre el turno ocupado dentro de un rato sepa de dónde salió.
+    console.error(`\n⚠️  no pude soltar el turno de staging (${err?.message || err}). Caducará solo en ${formatearDuracion(TTL_MS)}.`);
+  }
+  await clienteTurno.$disconnect().catch(() => {});
+}
+process.exit(codigoFinal);
+
+// El cuerpo de la tanda. Declaración de función (se hoistea), así que puede quedar debajo del
+// try/finally que la llama y el flujo se lee en orden: turno → tanda → soltar.
+async function tanda() {
+
+  // ── PREFLIGHT (SCRUM-167): antes de lanzar ningún hijo, comprobar que el esquema de la BD
+  // coincide con prisma/schema.prisma. Los tres hijos corren contra DATABASE_URL_STAGING (vía
+  // _staging-db.mjs); el preflight lee ESA MISMA variable (sin pasarle URL) para mirar
+  // EXACTAMENTE la misma BD. Si no da luz verde → ABORTA aquí con la causa nombrada, en vez de
+  // dejar caer 16 errores crípticos de Prisma repartidos por los ficheros (SCRUM-160).
+  if (!override) {
+    const preflightPath = path.join(HERE, 'preflight-schema-drift.mjs');
+    // AUSENTE ≠ deriva. `node <script-ausente>` arranca node (pf.error vacío) y sale 1 por
+    // «Cannot find module» — indistinguible de una deriva (exit 1) si no se comprueba antes.
+    // Caso real: un cherry-pick del enganche sin el preflight (van juntos, pero se pueden separar).
+    if (!existsSync(preflightPath)) {
+      console.error('\n❌ tanda gateada ABORTADA: falta scripts/preflight-schema-drift.mjs — el preflight no pudo ejecutarse. NO es una deriva de esquema; no toques la BD por esto.');
+      salir(2);
+    }
+    // Está pero podría REVENTAR con un error de SINTAXIS (edición a medias): `node --check` lo
+    // detecta sin ejecutarlo y da un mensaje específico. (--check valida sintaxis, NO resuelve
+    // imports: un import roto pasa --check y revienta en runtime con exit 1 — pero ESE caso lo
+    // cierra el código distintivo de abajo: exit 1 ≠ 3, así que no se lee como deriva.)
+    const chk = spawnSync(process.execPath, ['--check', preflightPath], { stdio: 'inherit' });
+    if (chk.status !== 0) {
+      console.error('\n❌ tanda gateada ABORTADA: el preflight tiene un error de sintaxis (ver arriba) — no se pudo ejecutar. NO es una deriva de esquema; no toques la BD por esto.');
+      salir(2);
+    }
+    const pf = spawnSync(process.execPath, [preflightPath], { stdio: 'inherit' });
+    // Códigos del preflight: 0 = en sync · 2 = no se pudo comparar / guard anti-prod · 3 = DERIVA.
+    // El 3 es DISTINTIVO: SOLO él autoriza a sugerir `db push`. node sale 1 ante cualquier fallo de
+    // arranque (import roto, crash) — que aquí cae en «no lo tomes como deriva», jamás en push.
+    if (pf.error) {
+      console.error(`\n❌ tanda gateada ABORTADA: el preflight no pudo ejecutarse (${pf.error.code || pf.error.message}). NO es una deriva de esquema — no toques la BD por esto.`);
+      salir(2);
+    } else if (pf.status === 3) {
+      // DERIVA de esquema: la BD no coincide con el fichero. ÚNICO caso en que se sincroniza.
+      console.error('\n❌ tanda gateada ABORTADA: DERIVA DE ESQUEMA. Sincroniza esa BD con `db push` — el sentido (por detrás / por delante) está impreso arriba.');
+      salir(1);
+    } else if (pf.status === 2) {
+      // Guard anti-prod o no se pudo comparar: la causa la imprimió el preflight. Nunca db push.
+      console.error('\n❌ tanda gateada ABORTADA: el preflight no dio luz verde (no se pudo comparar / guard anti-prod). La causa está impresa arriba. NO apliques nada hasta leerla.');
+      salir(2);
+    } else if (pf.status !== 0) {
+      // DEFECTO SEGURO: cualquier código NO RECONOCIDO (1 y demás) = el preflight no llegó a un
+      // veredicto (crash de Node, import roto). Cae AQUÍ, jamás en la rama de `db push`.
+      console.error(`\n❌ tanda gateada ABORTADA: el preflight no dio luz verde (código no reconocido: exit=${pf.status}; probable crash / import roto). La causa está arriba. NO es una deriva; NO apliques nada.`);
+      salir(2);
+    }
+    // pf.status === 0 → en sync: sigue.
+  } else {
+    // El preflight NO se omite en silencio: se declara. En autotest no hay BD real que comprobar.
+    console.log('preflight OMITIDO (modo autotest: sin BD real que comprobar).');
+  }
+
+  // SCRUM-182: huella de dist/, tests/ y el cliente de Prisma justo ANTES del bucle. El preflight
+  // de arriba solo hace `migrate diff` (lectura), no mueve el árbol, así que va antes como gate.
+  const huellaAntes = huellaArtefactos(process.cwd());
+
+  for (let i = 0; i < hijos.length; i++) {
+    // SCRUM-188 · RENOVAR EL TURNO ENTRE HIJOS. El padre está bloqueado dentro de `spawnSync`
+    // mientras un hijo corre: no hay bucle de eventos donde poner un temporizador, así que el
+    // único sitio donde se puede refrescar es aquí. Eso acota el hueco sin renovar a lo que
+    // tarde UN hijo — y por eso el TTL se deriva del timeout del hijo más lento (SCRUM-181).
+    // Va al PRINCIPIO y no al final: si hemos perdido el turno, se sabe ANTES de lanzar el
+    // siguiente proceso contra una base que ya está usando otro.
+    await refrescarTurno();
+
+    const h = hijos[i];
+    const env = { ...process.env };
+    // Los hijos leen la barrera de SCRUM-118 y avisarían de «turno ajeno» al ver el nuestro.
+    // Con esto saben que el dueño es su propio padre y se callan (SCRUM-188).
+    env.YAQU_LOCK_DUENO = DUENO;
+    for (const [k, v] of Object.entries(h.env)) {
+      if (v === undefined) delete env[k];
+      else env[k] = v;
+    }
+    const timeoutMs = OVERRIDE_MS || (h.pesado ? HEAVY_MS : LIGHT_MS);
+    const limiteTxt = OVERRIDE_MS ? `${Math.round(OVERRIDE_MS / 1000)}s (override)` : `${Math.round(timeoutMs / 60000)} min`;
+    // SEÑAL DE VIDA: se anuncia ANTES de lanzar, con el límite EFECTIVO (SCRUM-181 cond. 1). Si el
+    // hijo cuelga, al menos se sabe cuál y con qué límite; su salida real llega cuando vuelve.
+    console.log(`\n▶ [${i + 1}/${hijos.length}] lanzando ${h.nombre}… (límite ${limiteTxt})`);
+    const t0 = Date.now();
+    const res = spawnSync(process.execPath, h.args, {
+      env, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+      timeout: timeoutMs, killSignal: 'SIGTERM',
+    });
+    const durS = ((Date.now() - t0) / 1000).toFixed(1);
+    const salida = (res.stdout || '') + (res.stderr || '');
+    process.stdout.write(salida); // que la salida del hijo NO se pierda
+
+    // TIMEOUT ≠ fallo normal (SCRUM-181). Al vencer el límite, spawnSync mata al hijo con
+    // killSignal y devuelve status=null, signal='SIGTERM' y error.code='ETIMEDOUT' (los tres,
+    // medido en Windows). Se nombra ABORTADO POR TIEMPO, cuenta como fallido y NO se agregan sus
+    // contadores — un proceso que no terminó miente («no pude comprobar» ≠ «falló un test»).
+    // NO se hace tree-kill: medido que matar a `node --test` reapea también su subproceso
+    // por-fichero (el nieto NO queda huérfano con la conexión). Y un taskkill defensivo sobre un
+    // res.pid YA MUERTO sería peligroso: si el SO reusó ese pid, mataría a otro proceso.
+    if (res.error?.code === 'ETIMEDOUT' || (res.status === null && res.signal != null)) {
+      fallaron.push(`${h.nombre} [ABORTADO POR TIEMPO · ${durS}s > ${limiteTxt}]`);
+      console.log(`\n[${i + 1}/${hijos.length}] ${h.nombre}: ⏱  ABORTADO POR TIEMPO tras ${durS}s (límite ${limiteTxt}; signal=${res.signal || res.error?.code}). No agrego sus contadores.`);
+      continue;
+    }
+
+    const code = res.status; // ← directo, sin tubería (trampa 5 del runbook de SUITE_REGRESION.md)
+    const c = parseCuenta(salida);
+
+    // REGLA A · si status≠0 y no ejecutó ningún test, NO es "0 fallos": es un proceso que NO
+    //           arrancó (crash, DLL, lo que sea). Se nombra como tal y NO se agregan sus ceros.
+    if (code !== 0 && c.tests === 0) {
+      fallaron.push(`${h.nombre} [NO EJECUTÓ · exit=${code}]`);
+      console.log(`\n[${i + 1}/${hijos.length}] ${h.nombre}: ❌ NO EJECUTÓ (exit=${code}, 0 tests, ${durS}s) — no me fío de sus contadores.`);
+      continue;
+    }
+
+    // REGLA B · la suma de categorías tiene que dar el total del propio hijo. Si no cuadra,
+    //           el parseo miente o node cambió de formato: se ABORTA, no se sigue agregando.
+    const sumaHijo = c.pass + c.fail + c.cancelled + c.skipped + c.todo;
+    if (sumaHijo !== c.tests) {
+      console.error(
+        `\n❌ test-staging-gated: los números del hijo «${h.nombre}» no cuadran ` +
+        `(tests=${c.tests}, pass+fail+cancelled+skip+todo=${sumaHijo}). No me fío — abortado.\n`,
+      );
+      salir(3);
+    }
+
+    for (const k of CATS) agg[k] += c[k];
+    // REGLA C · status≠0 MANDA sobre los contadores: aunque el parseo diga 0 fallos, si el
+    //           proceso salió ≠0 el hijo cuenta como fallido.
+    if (code !== 0) fallaron.push(h.nombre);
+    console.log(`\n[${i + 1}/${hijos.length}] ${h.nombre}: exit=${code} (${durS}s)  tests=${c.tests} pass=${c.pass} fail=${c.fail} skip=${c.skipped} cancelled=${c.cancelled} todo=${c.todo}`);
+  }
+
+  // SCRUM-188 · ¿seguía siendo nuestra la base al terminar? El refresco de dentro del bucle no
+  // cubre lo que pasó DURANTE el último hijo, que es justo el más largo. Sin esta comprobación,
+  // perder el turno en el bloque QA —el de ~10 min— sería el único caso que pasaría inadvertido.
+  await refrescarTurno();
+
+  // SCRUM-182 · ¿leyó la tanda un árbol quieto? Va ANTES del agregado y del recuento de
+  // fallos a propósito: si el árbol se movió, ni el verde ni el rojo son evidencia, así que no
+  // tiene sentido presentar unos números que invitan a interpretarlos. Sale con su propio
+  // código (4) para no confundirse con "hubo tests rojos" (1) ni con "los números no cuadran" (3).
+  {
+    const cambios = compararHuellas(huellaAntes, huellaArtefactos(process.cwd()));
+    if (cambios.length) {
+      console.error(mensajeArbolMovido(cambios));
+      salir(CODIGO_SALIDA_ARBOL_MOVIDO);
+    }
+  }
+
+  const suma = agg.pass + agg.fail + agg.cancelled + agg.skipped + agg.todo;
+  console.log('\n──────────────────────────────────────────────────────────────');
+  console.log(`AGREGADO · total=${agg.tests} pass=${agg.pass} fail=${agg.fail} skip=${agg.skipped} cancelled=${agg.cancelled} todo=${agg.todo}` +
+    `  (suma=${suma} ${suma === agg.tests ? '✓ cuadra' : '✗ NO cuadra'})`);
+  if (fallaron.length) {
+    console.log(`\n❌ FALLARON ${fallaron.length}: ${fallaron.join(' · ')}`);
+    salir(1);
+  }
+  console.log('\n✅ Todos los procesos en verde.');
+  salir(0);
+}

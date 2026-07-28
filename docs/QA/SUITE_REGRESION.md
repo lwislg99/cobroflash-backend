@@ -177,6 +177,68 @@ escribir—, pero cuando **SCRUM-159** los ponga a crear merchants efímeros, un
 no limpie contaminará al hijo siguiente. Su bloque de limpieza es parte del contrato, no un
 detalle opcional.
 
+### El TURNO de staging: R6 dejó de ser una convención invisible (SCRUM-188)
+
+**Antes:** «una sola tanda contra staging a la vez» era un acuerdo entre personas. No existía
+en ningún sitio que una máquina pudiera consultar, así que ninguna sesión podía saber que otra
+tenía el turno. Con tres sesiones sobre dos bases, dos tandas solapadas se **borran los
+merchants la una a la otra** a mitad de suite — y el resultado no es rojo: **puede salir VERDE
+por accidente**. Un verde que no ejercitó lo que dice haber ejercitado es peor que no correr.
+
+**Ahora:** el runner **toma el turno antes de nada** (antes incluso del preflight, que ya
+consulta la BD), lo **renueva entre hijos** y lo **suelta al terminar**. Si lo encuentra
+tomado, **no arranca**: sale con **código 5** diciendo quién lo tiene y desde cuándo.
+
+```
+🔒 turno de staging TOMADO en "railway" por «DESKTOP-T5MONF5.32936» (caduca solo en 45 min).
+…
+🔓 turno de staging SOLTADO en "railway".
+```
+
+**Dónde vive.** Como **sufijo del marcador de SCRUM-118**, o sea un comentario del catálogo de
+Postgres sobre la propia base: `YAQU_STAGING lock:<dueño>@<ISO>`. No es una tabla, así que no
+toca `prisma/schema.prisma` ni exige `db push` a las tres bases. Exige ser **propietario** de
+la base (`COMMENT ON DATABASE` no es un privilegio otorgable); comprobado en staging con una
+consulta de solo lectura antes de escribir una línea de código.
+
+**El TTL es el mecanismo principal, no un extra.** Soltar en un `finally` no basta: un
+`SIGKILL`, un portátil que se cierra o el timeout por hijo de SCRUM-181 no pasan por ahí. Sin
+caducidad, «otra sesión tiene el turno» se convertiría en «nadie puede correr la tanda hasta
+que alguien lo borre a mano». El TTL son 45 min, **derivados del hijo más lento**: si alguien
+sube `GATED_CHILD_TIMEOUT_MS`, el TTL sube con él, o una tanda legítimamente larga caducaría su
+propio turno a mitad. El reloj es el de **Postgres** (`now()`), no el de cada portátil.
+
+**Si el turno está tomado y sabes que esa sesión está muerta**, no hace falta esperar:
+
+```bash
+DATABASE_URL="<url de staging>" node scripts/marcar-staging.mjs   # reescribe el marcador limpio
+```
+
+Hazlo **solo si lo sabes**: quitárselo a una tanda viva reproduce exactamente el problema.
+
+**🚨 El criterio que no se negocia — y lo que hay que respetar al tocar esto.** Escribir ahí es
+escribir sobre la barrera que decide si CUALQUIERA puede correr la tanda gateada. Si el formato
+se rompiera y la barrera dejase de casar, el fallo es fail-closed (el lado bueno) pero es
+**caída total**: nadie podría correr tests contra staging. Por eso el prefijo `YAQU_STAGING` se
+lee con la **misma exactitud de siempre** y **un sufijo ilegible se IGNORA** — nunca invalida
+la barrera. La separación es estructural, no una convención: la barrera decide con
+`esMarcaDeStaging()`, que no mira el sufijo, y el turno se parsea aparte
+(`tests/scrum188-turno-staging.test.mjs` lo vigila leyendo el fuente).
+
+Medido contra un Postgres real: con el marcador en `YAQU_STAGING lock:roto@ayer`, la barrera
+**vieja** abortaba (nadie podía correr nada) y la nueva pasa y reescribe el sufijo.
+
+**Un gateado suelto** (`QA_DB_TEST=1 node --test tests/loquesea.test.mjs`) no pasa por el
+runner: **avisa** del turno ajeno pero **no bloquea**, a propósito. Convertir la barrera
+anti-producción en un gate de coordinación la haría capaz de dejar fuera a todo el mundo por un
+turno rancio, y reclamarlo es trabajo del runner.
+
+**Trampa de implementación, cazada solo por el E2E real:** el advisory lock que serializa el
+leer-decidir-escribir se ejecuta con `$executeRawUnsafe`, **no** con `$queryRawUnsafe`.
+`pg_advisory_xact_lock` devuelve `void` y Prisma revienta al deserializar esa columna: con
+`$queryRaw` el turno **no se podía tomar** y la tanda abortaba con exit 2. Los tests con doble
+pasaban en verde — solo ejecutarlo de verdad lo delató.
+
 ## Escribir verificaciones: un verde falso no lo mira nadie (SCRUM-103)
 
 Entre el 22 y el 23-jul-2026 aparecieron **seis** mecanismos que pasaban sin comprobar lo que
@@ -648,6 +710,13 @@ COMMENT ON DATABASE <la base> IS 'YAQU_STAGING'
 **Una BD sin marcar hace abort en cualquier test gateado.** Es fail-closed y es lo correcto:
 si no se puede *verificar* que es staging, no se corre — los gateados crean y **borran**
 merchants.
+
+⚠️ **Desde SCRUM-188 el marcador puede llevar un SUFIJO** con el turno de staging
+(`YAQU_STAGING lock:<dueño>@<ISO>`). El **prefijo** se sigue leyendo con la exactitud de
+siempre; un sufijo que no se entienda **se ignora** y jamás invalida la barrera — si pudiera,
+un lock mal escrito dejaría a todo el mundo sin poder correr tests. Y al revés: **nadie más que
+`marcar-staging.mjs` y el seed pueden MARCAR una base.** El runner escribe el sufijo solo sobre
+una base que ya llevaba el prefijo; si no lo lleva, aborta en vez de marcarla.
 
 **Cómo marcar una BD:**
 
