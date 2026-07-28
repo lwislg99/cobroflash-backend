@@ -45,7 +45,7 @@ ve de otra forma, es una línea.
 
 <!-- ─── LÍNEA DE CORTE · SCRUM-169 (2026-07-27) ─────────────────────────────────────────
      A partir de esta línea HACIA ARRIBA, cada entrada NUEVA lleva los tres checkboxes:
-       - [ ] staging (acela)   - [ ] yaqu_dev_javier   - [ ] prod (autorack)
+       [ ] staging · acela/railway    [ ] desarrollo · acela/yaqu_dev_javier    [ ] producción · autorack
      Una entrada por ENCIMA sin las tres = migración NO aplicada (fallo detectable).
      Lo de DEBAJO es historia previa a la regla: NO retrofitada a propósito — marcar 25 entradas
      por suposición serían checkboxes que parecen evidencia y no lo son. ──────────────────── -->
