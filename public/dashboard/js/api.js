@@ -261,6 +261,32 @@ function cobroPillClass(estadoCobro) {
 }
 window.cobroPillClass = cobroPillClass;
 
+// SCRUM-153: estado de la FACTURA → etiqueta + clase de status-pill CANÓNICA.
+//
+// Antes esto era un ternario DUPLICADO inline en invoicesView (listado) e invoiceDetailView
+// (detalle), y los dos terminaban igual: `: 'PENDIENTE'`. Es decir, **cualquier estado que no
+// fuese `paid` ni `expired` se pintaba como PENDIENTE** — así que una factura ANULADA salía en
+// pantalla como pendiente de cobro. La ruta de anulación existía y sellaba bien; lo que mentía
+// era la pantalla, que es donde el pro toma la decisión de perseguir el cobro.
+//
+// El fallo real no era el estado que faltaba: era **el `else` que se lo tragaba**. Por eso aquí
+// lo desconocido NO cae a «pendiente»: cae a un estado visible y raro (el propio código en
+// mayúsculas, con pill neutra), para que un estado nuevo sin mapear se vea en vez de disfrazarse
+// del más inocente. Mismo criterio que `cobroPillClass` y `jobStatusMeta`, un paso más lejos.
+//
+// ANULADA usa la pill `rejected` igual que VENCIDA: las dos dicen «de aquí no viene dinero».
+// La ETIQUETA las distingue, que es lo que exige DESIGN.md — el color no es el único canal.
+function invoiceStatusMeta(status) {
+  const M = {
+    paid:     { label: 'PAGADA',    pillClass: 'status-pill-accepted' },
+    pending:  { label: 'PENDIENTE', pillClass: 'status-pill-pending' },
+    expired:  { label: 'VENCIDA',   pillClass: 'status-pill-rejected' },
+    annulled: { label: 'ANULADA',   pillClass: 'status-pill-rejected' },
+  };
+  return M[status] || { label: String(status || '—').toUpperCase(), pillClass: 'status-pill-draft' };
+}
+window.invoiceStatusMeta = invoiceStatusMeta;
+
 // SCRUM-31 (F1): estado del TRABAJO (FSM Parte L) → etiqueta + clase de status-pill CANÓNICA.
 // Antes hand-styled en JOB_STATE_META (jobsView, deuda SCRUM-11). El color codifica la
 // disponibilidad de cobro (verde=terminado→cobrar · ámbar=en curso · neutro=aún no / cerrado);
