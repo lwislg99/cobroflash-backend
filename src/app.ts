@@ -232,6 +232,11 @@ app.get('/admin/me', async (req, res) => {
     voiceEnabled: isFlagEnabled('VOICE_QUOTE_ENABLED', {
       merchant: { id: session.merchantId, country: merchantFull?.country },
     }),
+    // SCRUM-71 (VOZ-ALB): flag PROPIO, no el del presupuesto. El dictado en albarán tiene otro
+    // riesgo —el documento lo firma el cliente y desde `emitido` se congela— y se apaga aparte.
+    voiceAlbaranEnabled: isFlagEnabled('VOICE_ALBARAN_ENABLED', {
+      merchant: { id: session.merchantId, country: merchantFull?.country },
+    }),
     // A10.2 (Parte L): estado de la suscripción para el banner past_due
     subscriptionStatus: owner ? 'active' : ((session.merchant as any).subscriptionStatus ?? null),
   });

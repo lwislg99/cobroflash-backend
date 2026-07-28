@@ -10,6 +10,7 @@ async function initApp() {
   window.appUserRole   = me.userRole || 'admin';
   window.appUserName   = me.name || '';
   window.appVoiceEnabled = me.voiceEnabled === true; // VZ-1: flag VOICE_QUOTE_ENABLED
+  window.appVoiceAlbaranEnabled = me.voiceAlbaranEnabled === true; // SCRUM-71: flag PROPIO del albarán
 
   // A10.2 (Parte L): past_due → banner global "Hay un problema con tu pago"
   // + portal de Stripe. La cuenta sigue funcionando (gracia); solo avisa.

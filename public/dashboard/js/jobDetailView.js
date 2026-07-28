@@ -692,6 +692,167 @@ async function renderJobDetailView(container, jobId) {
     addRow.addEventListener('click', () => { rows.appendChild(mkRow({})); updateTotales(); });
     box.appendChild(addRow);
 
+    // ── SCRUM-71 (punto 3) · DICTAR EL PARTE EN OBRA ──────────────────────────────────
+    //
+    // «He cambiado dos grifos monomando y he estado tres horas» → líneas. El operario dicta
+    // con una mano, a pleno sol, con guantes: por eso la revisión va en HOJA INFERIOR (el
+    // bottom sheet de AB3/SCRUM-31 F2, que `.modal-overlay .modal` ya da por debajo de 640 px)
+    // y NO en un modal de escritorio con checkboxes pequeños.
+    //
+    // «LA VOZ PROPONE, EL HUMANO CORRIGE», y aquí se lleva más lejos que en presupuestos: las
+    // líneas aceptadas **caen en las filas de arriba**, que ya son editables y no se guardan
+    // hasta que el pro pulse guardar. No hay una pantalla paralela que «confirme» nada — se
+    // aterriza en el formulario que ya conoce. Un presupuesto se rehace; un albarán lo firma
+    // el cliente y desde `emitido` se congela, así que la última palabra tiene que ser suya.
+    //
+    // GATE doble: el flag PROPIO del albarán (`VOICE_ALBARAN_ENABLED`, servido por /admin/me) y
+    // el `voiceSupportProbe()` de VZ-1 — si el navegador no vale, el micro NO se pinta y queda
+    // el formulario de siempre. Degradación silenciosa: jamás un botón roto.
+    // Escape local, y aquí NO es defensa de manual: el concepto viene de un MODELO DE
+    // LENGUAJE a partir de lo que alguien dictó. Es la entrada menos controlada de toda la
+    // pantalla, va a `innerHTML`, y no se depende de ningún helper global que cargue en otro
+    // fichero (la lección de SCRUM-153c: una dependencia invisible cuyo fallo es inyección).
+    const escVoz = (v) => String(v == null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+    const vozDisponible = window.appVoiceAlbaranEnabled === true
+      && typeof voiceSupportProbe === 'function' && voiceSupportProbe()
+      && typeof attachVoiceInput === 'function';
+
+    if (vozDisponible) {
+      const btnDictar = document.createElement('button');
+      btnDictar.type = 'button';
+      btnDictar.className = 'btn-secondary btn-sm';
+      btnDictar.style.cssText = 'margin-left:8px;min-height:44px'; // target al pulgar (AB6)
+      btnDictar.textContent = '🎤 Dictar el parte';
+      btnDictar.addEventListener('click', () => abrirHojaDictado());
+      box.appendChild(btnDictar);
+
+      function abrirHojaDictado() {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+          <div class="modal" style="max-width:520px" role="dialog" aria-modal="true" aria-labelledby="voz-t">
+            <div class="modal-header">
+              <h3 class="modal-title" id="voz-t">🎤 Dictar el parte</h3>
+              <button class="modal-close" id="voz-x" aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+              <p style="font-size:13px;color:var(--muted);margin:0 0 10px">
+                Cuenta lo que has hecho, como se lo contarías a un compañero. Luego lo repasas.
+              </p>
+              <textarea id="voz-txt" rows="4" class="input" style="width:100%;resize:vertical"
+                placeholder="Ej: he cambiado dos grifos monomando y he estado tres horas"></textarea>
+              <button class="btn-primary" id="voz-gen" style="width:100%;margin-top:10px;min-height:44px">
+                Convertir en líneas
+              </button>
+              <div class="alert" id="voz-err" style="display:none;margin-top:10px"></div>
+              <div id="voz-res" style="margin-top:12px"></div>
+            </div>
+          </div>`;
+        document.body.appendChild(overlay);
+
+        const cerrar = () => overlay.remove();
+        overlay.querySelector('#voz-x').onclick = cerrar;
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
+        document.addEventListener('keydown', function esc(e) {
+          if (e.key === 'Escape') { cerrar(); document.removeEventListener('keydown', esc); }
+        });
+
+        const ta = overlay.querySelector('#voz-txt');
+        const btnGen = overlay.querySelector('#voz-gen');
+        const err = overlay.querySelector('#voz-err');
+        const res = overlay.querySelector('#voz-res');
+
+        // El micro de VZ-1 sobre el textarea: SIEMPRE editable (la voz propone, el humano
+        // corrige) y con su degradación propia si el permiso falla.
+        attachVoiceInput(ta);
+        ta.focus();
+
+        btnGen.addEventListener('click', async () => {
+          const texto = (ta.value || '').trim();
+          if (!texto) { ta.focus(); return; }
+          btnGen.disabled = true;
+          const orig = btnGen.textContent;
+          btnGen.textContent = 'Convirtiendo…';
+          err.style.display = 'none';
+          try {
+            const d = await apiRequest('/admin/ai/suggest-albaran-lines', {
+              method: 'POST',
+              body: JSON.stringify({ albaranId: alb.id, description: texto }),
+            });
+            pintarPropuesta(Array.isArray(d.lines) ? d.lines : []);
+          } catch (e) {
+            err.textContent = e?.message || 'No se pudieron generar las líneas.';
+            err.style.display = 'block';
+          } finally {
+            btnGen.disabled = false;
+            btnGen.textContent = orig;
+          }
+        });
+
+        function pintarPropuesta(lineas) {
+          res.innerHTML = '';
+          if (!lineas.length) {
+            err.textContent = 'No he sacado ninguna línea. Prueba a contarlo con más detalle.';
+            err.style.display = 'block';
+            return;
+          }
+          const titulo = document.createElement('p');
+          titulo.style.cssText = 'font-size:13px;font-weight:600;margin:0 0 8px';
+          titulo.textContent = 'Repasa antes de añadirlas al parte:';
+          res.appendChild(titulo);
+
+          const marcas = [];
+          lineas.forEach((l, i) => {
+            const fila = document.createElement('label');
+            // ≥44 px y toda la fila es el target: en obra no se acierta a un checkbox de 16 px.
+            fila.style.cssText = 'display:flex;gap:10px;align-items:flex-start;padding:10px;'
+              + 'min-height:44px;border:1px solid var(--border);border-radius:10px;'
+              + 'margin-bottom:6px;background:var(--surface-2);cursor:pointer';
+            const chk = document.createElement('input');
+            chk.type = 'checkbox'; chk.checked = true;
+            chk.style.cssText = 'margin-top:3px;width:20px;height:20px;flex-shrink:0';
+            marcas.push({ chk, linea: l });
+            const txt = document.createElement('div');
+            // SIN_VALORAR: ni se pide ni se muestra precio. El saneado del servidor ya lo
+            // garantiza (SCRUM-71 puntos 1-2), pero la pantalla no puede contradecirlo —
+            // enseñar un precio que luego no se guarda sería peor que no enseñarlo.
+            const detalle = `${l.cantidad} ${l.unidad}`
+              + (modo === 'VALORADO' && l.precioUnitario != null ? ` · ${l.precioUnitario} €/ud` : '');
+            txt.innerHTML = `<div style="font-weight:600;color:var(--ink)">${escVoz(l.concepto)}</div>`
+              + `<div style="color:var(--muted);font-size:13px">${escVoz(detalle)}</div>`;
+            fila.append(chk, txt);
+            res.appendChild(fila);
+          });
+
+          const anadir = document.createElement('button');
+          anadir.className = 'btn-primary';
+          anadir.style.cssText = 'width:100%;margin-top:10px;min-height:44px';
+          anadir.textContent = 'Añadir al parte';
+          anadir.addEventListener('click', () => {
+            marcas.filter((m) => m.chk.checked).forEach((m) => {
+              const l = m.linea;
+              rows.appendChild(mkRow({
+                concepto: l.concepto,
+                cantidad: l.cantidad,
+                unidad: l.unidad,
+                // En SIN_VALORAR no se arrastra precio ni IVA: esas columnas ni se ven.
+                ...(modo === 'VALORADO'
+                  ? { precioUnitario: l.precioUnitario, tipoIva: l.tipoIva != null ? l.tipoIva * 100 : undefined }
+                  : {}),
+              }));
+            });
+            updateTotales();
+            cerrar();
+            showToast('✓ Líneas añadidas — repásalas antes de guardar');
+          });
+          res.appendChild(anadir);
+        }
+      }
+    }
+
     // Total orientativo (base + total, SIN desglose de cuota — igual que PDF/backend).
     const totalesBox = document.createElement('p');
     totalesBox.style.cssText = 'margin:8px 0 0;font-size:13px;color:var(--ink);font-weight:600;text-align:right';
