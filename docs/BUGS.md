@@ -301,7 +301,8 @@
 
 ## P1 — Bugs visibles al cliente / datos incorrectos
 
-### [ ] P1-BIZUM-PAIDVIA · El webhook de Connect grava `method:'card'` a fuego: un Bizum se registraría como tarjeta
+### [x] P1-BIZUM-PAIDVIA · El webhook de Connect grava `method:'card'` a fuego: un Bizum se registraría como tarjeta
+- **✅ ARREGLADO 28-jul-2026 (SCRUM-191, con la decisión del fundador):** se añade `bizum_auto` al conjunto cerrado de la regla 22 —`bizum_manual` sería falso (nadie confirmó a mano) y `card` era el bug— y el webhook **lee** el método real (`payment_method_details.type` del cargo, expandiendo `latest_charge`). Si no se puede resolver, se OMITE en vez de inventarlo. **Apareció una hermana** que no estaba en el diagnóstico: el camino de `payment_intent.payment_failed` fijaba el método igual, y la cazó el guard, no la vista.
 - **Encontrado:** 28-jul-2026, al ir a hacer visible el Bizum automático en el selector (SCRUM-3 / W4). **Bloquea ese cambio**, no es un hallazgo lateral.
 - **Dónde:** `src/modules/payments/connect/connectWebhook.routes.ts:54` — en `checkout.session.completed` se manda `method: 'card'` **literal**, sin mirar con qué pagó el cliente. Hoy no miente porque ese checkout solo acepta tarjeta; en cuanto la capability `bizum_payments` esté activa, el MISMO checkout aceptará Bizum (dynamic payment methods) y todo Bizum entrará al sistema etiquetado como tarjeta.
 - **Qué rompe:** la **regla 22** — *«`paid_via` se registra en el 100 % de los cobros»*. No falla por omisión sino por **atribución falsa**, que es peor: el dato existe, parece bueno y es mentira. Arrastra a la columna «Método (paid_via)» del CSV de exportación (el paquete que se entrega al asesor o a una inspección) y al desglose `paidVia` de métricas.
