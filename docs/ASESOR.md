@@ -51,7 +51,22 @@ Estas tres cosas no son "pedir permiso"; son lo que evita que dos personas choqu
 2. **No tocar archivos del dominio del otro carril sin avisar en el ticket.** Carril A: jobs/albaranes, quotes, WhatsApp, fiscal, pagos, PDFs, `jobDetailView.js`/`homeView.js`, landings. Carril B: operarios/equipo, export (archivos NUEVOS). Zona roja compartida (avisar antes): **la lista NO se repite aquí a propósito** — vive en `ZONA_ROJA` (`scripts/zona-roja.mjs`) y un job de CI comenta en cada PR qué toca (SCRUM-168). Antes había tres copias a mano de esta lista —esta, la de `PLAN_EJECUCION_Y_PARALELO.md` §3.2 y la que se suponía en un `CODEOWNERS` que nunca existió— y ya habían derivado: esta omitía `prisma/schema.prisma`, `jobDetailView.js` y `homeView.js`. Una lista repetida en prosa es una lista que se separa. Desde este cambio SÍ existe un `.github/CODEOWNERS` (owner @lwislg99) alineado con `ZONA_ROJA` que **vincula** la revisión donde el job de CI solo comenta; sus rutas no se repiten aquí.
 3. **No editar `schema.prisma` de prod fuera del carril A** (§3).
 
-Fuera de estas tres, vía libre.
+### Zona roja compartida — avisar ANTES de tocar, en el mismo reporte
+Ficheros donde un cambio no revisado rompe a otro carril o destruye datos. Es **LA MISMA lista** que `.github/CODEOWNERS` (owner: @lwislg99), verificada contra el árbol SALVO `/prisma/migrations/`, que es deliberadamente una puerta aún sin construir: vigila el PR que la construya (el día que alguien cree la primera migración, este proyecto deja de ir por `db push` — el cambio que no puede entrar sin revisión).
+
+- `/prisma/schema.prisma` · `/prisma/migrations/` (hoy INEXISTENTE: el proyecto va por `db push`; el patrón vigila el PR que cree la primera migración)
+- `/src/app.ts` (montajes + gates admin)
+- `/tests/` · `/scripts/seed-staging.mjs` · `/scripts/clean-staging-tests.mjs` · `/scripts/test-staging-gated.mjs`
+- `/docs/QA/SUITE_REGRESION.md`
+- `/.github/workflows/` · `/.github/CODEOWNERS`
+- `/package.json` · `/package-lock.json`
+- `/docs/YAQU_MASTER.md`
+
+**HUECO CONOCIDO — serializers, SIN cobertura.** No van como ruta: no existe directorio ni fichero de serializers, son funciones inline (`serializeJob`/`serializeJobDetail` en `src/modules/jobs/app/routes/jobs.routes.ts:93,175`; `serializeAlbaran` en `src/modules/jobs/domain/albaran.service.ts:320`). CODEOWNERS casa por RUTA, no por función: un `/src/**/serializers/` no casaría con nada — protección decorativa. Son la zona de mayor riesgo de fuga de datos del repo (SCRUM-97: IBAN + portalToken). Hueco visible > protección fingida.
+
+**Esta lista y `.github/CODEOWNERS` deben coincidir; si cambias una, cambias la otra en el MISMO commit.** Ya divergieron en ambas direcciones antes de existir el fichero; nada las sincroniza salvo esta regla.
+
+Fuera de estas reglas y la zona roja, vía libre.
 
 ---
 
