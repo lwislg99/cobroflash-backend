@@ -355,10 +355,12 @@ async function fetchInvoices(options = {}) {
 
           const tdStatus = document.createElement('td');
           tdStatus.className = 'cell-status';
+          // SCRUM-153: mapeo canónico (api.js). Antes el ternario caía a PENDIENTE por
+          // defecto, así que una factura ANULADA se pintaba como pendiente de cobro.
+          const metaSt = invoiceStatusMeta(st);
           const span = document.createElement('span');
-          span.className = 'status-pill' +
-            (st === 'paid' ? ' status-pill-accepted' : st === 'expired' ? ' status-pill-rejected' : ' status-pill-pending');
-          span.textContent = st === 'paid' ? 'PAGADA' : st === 'expired' ? 'VENCIDA' : 'PENDIENTE';
+          span.className = `status-pill ${metaSt.pillClass}`;
+          span.textContent = metaSt.label;
           tdStatus.appendChild(span);
           tr.appendChild(tdStatus);
 

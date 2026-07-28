@@ -128,12 +128,12 @@ async function fetchInvoiceDetail(id) {
     }
     stateBlock.appendChild(numLine);
 
+    // SCRUM-153: mapeo canónico (api.js), el mismo que el listado. Antes eran dos ternarios
+    // separados que había que acordarse de tocar a la vez, y los dos caían a PENDIENTE.
+    const metaFactura = invoiceStatusMeta(st);
     const spanStatus = document.createElement('span');
-    spanStatus.className = 'status-pill';
-    spanStatus.textContent = st === 'paid' ? 'PAGADA' : st === 'expired' ? 'VENCIDA' : 'PENDIENTE';
-    if (st === 'paid') spanStatus.classList.add('status-pill-accepted');
-    else if (st === 'expired') spanStatus.classList.add('status-pill-rejected');
-    else spanStatus.classList.add('status-pill-pending');
+    spanStatus.className = `status-pill ${metaFactura.pillClass}`;
+    spanStatus.textContent = metaFactura.label;
     stateBlock.appendChild(spanStatus);
 
     // WA-0b: chip de entrega del WhatsApp de la factura (J4)
@@ -282,11 +282,15 @@ async function fetchInvoiceDetail(id) {
     if (invoice.type !== 'R1') actions.appendChild(btnWhatsApp);
 
     // Marcar como PAGADA / PENDIENTE
+    // SCRUM-153: sobre una factura ANULADA este botón no se pinta. Antes salía «Marcar como
+    // PAGADA» —porque el ternario solo miraba si era `paid`—, ofreciendo resucitar un
+    // documento fiscal dado de baja. El backend ya lo rechaza (409), pero un botón que
+    // siempre falla es peor que no tenerlo: enseña que la pantalla miente.
     const btnTogglePaid = document.createElement('button');
     btnTogglePaid.className = 'btn-secondary btn-sm';
     btnTogglePaid.textContent =
       st === 'paid' ? 'Marcar como PENDIENTE' : 'Marcar como PAGADA';
-  
+
     btnTogglePaid.addEventListener('click', async () => {
       const targetStatus = st === 'paid' ? 'pending' : 'paid';
 
@@ -354,7 +358,9 @@ async function fetchInvoiceDetail(id) {
       }
     });
   
-    if (invoice.type !== 'R1') actions.appendChild(btnTogglePaid);
+    // SCRUM-153: `st !== 'annulled'` — una anulada no cambia de estado (Parte L no declara
+    // ninguna transición que salga de `annulled`).
+    if (invoice.type !== 'R1' && st !== 'annulled') actions.appendChild(btnTogglePaid);
 
     // A21.1 (R14): paquete de evidencia de disputa en 1 clic — con cobro de
     // tarjeta (charge) siempre disponible; la firma digital gana disputas.

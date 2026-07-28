@@ -100,6 +100,26 @@ export async function updateInvoiceStatusAdmin(
   });
   if (!existing) return null;
 
+  // SCRUM-153 · UNA FACTURA ANULADA NO VUELVE. Encontrado al pintar el estado `annulled` en las
+  // vistas: no había ninguna guarda sobre el estado ORIGEN, así que un `PATCH status:'paid'`
+  // sobre una anulada la resucitaba como pagada — un documento fiscal dado de baja ante la AEAT
+  // (con su registro de anulación sellado y encadenado) reapareciendo como cobrado, y sin que
+  // nada lo delatara.
+  //
+  // No es una regla nueva: la Parte L declara `pending → annulled` y **no declara ninguna
+  // transición que salga de `annulled`**. Esto solo hace cumplir lo que ya estaba escrito
+  // (regla 27: los estados son cerrados; lo que no está declarado no existe).
+  //
+  // Va ANTES de la guarda de des-pagar porque es más fuerte: aquella depende del tipo de
+  // documento, esta no admite excepción — ni siquiera para un justificante `J-`, porque anular
+  // un justificante también deja su registro.
+  if (existing.status === 'annulled' && status !== 'annulled') {
+    throw new UnpayNotAllowedError(
+      'Esta factura está ANULADA y su anulación ya está registrada: no puede volver a otro ' +
+        'estado. Si la operación existió y hay que cobrarla, emite una factura nueva.',
+    );
+  }
+
   if (status === 'pending' && existing.status === 'paid') {
     const isReceipt = existing.type === 'JUST' || /^J-/i.test(existing.number || '');
     if (!isReceipt) {
