@@ -16,7 +16,9 @@
     "db:push": "bash scripts/db-push-prod",
     "prisma:studio": "prisma studio",
     "db:seed": "prisma db seed",
-    "e2e:critico": "npm run build && node scripts/e2e-critico.mjs"
+    "e2e:critico": "npm run build && node scripts/e2e-critico.mjs",
+    "guard:prisma": "node scripts/_prisma-client-guard.mjs",
+    "pretest": "node scripts/_prisma-client-guard.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",
