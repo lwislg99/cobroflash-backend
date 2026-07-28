@@ -114,7 +114,37 @@ async function main() {
   let raw, kind;
   if (hasPgDump()) {
     console.log('pg_dump disponible → dump físico (formato custom)');
-    raw = execFileSync('pg_dump', ['--format=custom', '--no-owner', process.env.DATABASE_URL], { maxBuffer: 1024 * 1024 * 512 });
+    // SCRUM-196: la contraseña NO va en argv. Un secreto en argv es visible por CUALQUIER usuario
+    // de la máquina vía `ps` (/proc/<pid>/cmdline) Y —si pg_dump falla— en el mensaje de
+    // execFileSync («Command failed: <cmd con TODOS los args>», verificado con canario). Redactar
+    // el mensaje taparía solo esa 2ª vía y dejaría `ps` abierta: el arreglo de raíz es SACAR la
+    // contraseña de argv. Se pasa por PGPASSWORD (entorno del hijo) y a pg_dump una URL SIN
+    // contraseña (conserva host/usuario/base/params, que no son secretos).
+    //
+    // ⚠️ CONTRAINTUITIVO, NO lo «simplifiques» de vuelta: pasar la URL como ARGUMENTO (no por una
+    // línea de shell) es la práctica CORRECTA contra inyección de shell — y es JUSTO esa buena
+    // práctica la que mete el secreto en argv (visible en `ps`) y en e.message. Volver a una línea
+    // de shell cambiaría una fuga de credenciales por una inyección: peor. La salida es PGPASSWORD.
+    //
+    // VÍA QUE QUEDA ABIERTA, declarada (esto NO la cierra): el entorno vive en /proc/<pid>/environ,
+    // mode 0400 → legible por el DUEÑO del proceso y root, NO por otros usuarios (argv en `ps` sí).
+    // Se mueve el secreto de world-visible a owner-only. Elegido sobre un fichero .pgpass: misma
+    // exposición owner-only, pero sin fichero temporal que crear/chmod/limpiar ni el riesgo de que
+    // un crash lo deje en disco.
+    let urlSinPass, pgPassword;
+    try {
+      const u = new URL(process.env.DATABASE_URL);
+      pgPassword = decodeURIComponent(u.password);
+      u.password = ''; // lo que ven pg_dump, argv, `ps` y e.message: URL SIN contraseña
+      urlSinPass = u.toString();
+    } catch {
+      console.error('backup FALLÓ: DATABASE_URL no es una URL válida (no se vuelca la cadena).');
+      process.exit(1);
+    }
+    raw = execFileSync('pg_dump', ['--format=custom', '--no-owner', urlSinPass], {
+      env: { ...process.env, PGPASSWORD: pgPassword },
+      maxBuffer: 1024 * 1024 * 512,
+    });
     kind = 'pgdump';
   } else {
     console.log('pg_dump NO disponible → dump lógico vía Prisma (todas las tablas a JSON)');
