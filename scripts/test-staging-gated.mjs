@@ -68,6 +68,9 @@ import {
 // SCRUM-161: al terminar, el runner deja un RECIBO de que la tanda corrió. Es lo único que el
 // guard de cierre acepta como evidencia, porque es lo único que no se puede teclear.
 import { RUTA_RECIBO, HIJOS_SPEC, AISLADOS, pesadoEsElUltimo } from './_evidencia-tanda.mjs';
+// SCRUM-197: el parseo del resumen de node:test vive extraído, para que un test lo ejercite sin
+// arrancar la tanda. De su comportamiento con salida truncada depende la distinción crash-vs-rojo.
+import { CATS, parseCuenta } from './_parse-cuenta.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url)); // resolver el preflight junto a este script (SCRUM-167)
 const override = process.argv[2] || null; // contraprueba/diagnóstico: si viene, todos lo usan
@@ -115,17 +118,9 @@ if (!pesadoEsElUltimo()) {
   process.exit(2);
 }
 
-// node --test cierra con líneas de resumen prefijadas por `ℹ` (spec) o `#` (tap). Se cuentan
-// TODAS las categorías para poder cuadrar la suma; si node reporta cancelled/todo y no se
-// cuentan, la suma no daría el total por diseño.
-const CATS = ['tests', 'pass', 'fail', 'cancelled', 'skipped', 'todo'];
-function parseCuenta(salida) {
-  const c = Object.fromEntries(CATS.map((k) => [k, 0]));
-  const re = /^[#ℹ]\s+(tests|pass|fail|cancelled|skipped|todo)\s+(\d+)/gm;
-  let m;
-  while ((m = re.exec(salida)) !== null) c[m[1]] = Number(m[2]);
-  return c;
-}
+// SCRUM-197: `CATS` y `parseCuenta` se importan de _parse-cuenta.mjs (arriba). Se extrajeron para
+// que un test las ejercite sin arrancar la tanda; su comportamiento con salida truncada —del que
+// depende la distinción crash-vs-rojo del recibo— queda fijado en tests/scrum197-parse-cuenta.test.mjs.
 
 const agg = Object.fromEntries(CATS.map((k) => [k, 0]));
 const fallaron = [];
