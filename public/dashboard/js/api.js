@@ -261,6 +261,67 @@ function cobroPillClass(estadoCobro) {
 }
 window.cobroPillClass = cobroPillClass;
 
+// SCRUM-37 · ESTADO DEL PLAN DE TRAMOS — ÚNICA copia en el front de la regla del invariante.
+//
+// ⚠️ ESTO DUPLICA UNA REGLA DEL SERVIDOR, Y ES A PROPÓSITO. El pro tiene que ver el descuadre
+// MIENTRAS edita, no enterarse por un 409 después de guardar; para eso hace falta calcular en
+// el navegador. Pero duplicar una regla de dinero es exactamente el patrón que ya ha mordido
+// dos veces este mes —`vat_default` pisando el IVA por línea, y el total guardado ganando al
+// bruto de las líneas (SCRUM-141)—: dos fuentes que empiezan de acuerdo y se separan sin que
+// nadie lo note.
+//
+// Tres cosas hacen que aquí sea seguro y no una bomba con temporizador:
+//   1. **UNA sola copia.** Antes había ya una en `quotesView.js` (`customStagesValid`, SCRUM-27)
+//      y el editor de SCRUM-37 iba a ser la segunda. Ahora las dos llaman aquí.
+//   2. **Mismas unidades que el servidor**: `percentage` es FRACCIÓN (0,3 = 30 %), y la suma se
+//      hace en céntimos con el mismo redondeo. Comparar manzanas con manzanas es lo que permite…
+//   3. …un **test DIFERENCIAL** (`tests/scrum37-plan-front-vs-back.test.mjs`): las mismas
+//      entradas van a esta función y a `validateCustomBillingPlan`/`validarEdicionPlan` del
+//      dominio, y tienen que coincidir. No es un guard que comprueba que aquí «se mencione» a
+//      los emitidos: es uno que falla el día que las dos verdades discrepan, que es el fallo real.
+//
+// El 409 del servidor sigue ahí y sigue mandando. Esto es para que no haga falta llegar a él.
+function planTramosEstado(tramos, emitidas) {
+  const lista = Array.isArray(tramos) ? tramos : [];
+  const yaEmitidos = Number.isFinite(Number(emitidas)) ? Math.max(0, Math.trunc(Number(emitidas))) : 0;
+
+  if (lista.length === 0) {
+    return { ok: false, sumaPct: 0, error: 'El plan de cobro debe tener al menos un tramo.' };
+  }
+  // El plan no puede encoger por debajo de lo ya facturado: esas facturas existen, con su
+  // `stageLabel`, y una emitida no se edita ni se borra (regla 29).
+  if (lista.length < yaEmitidos) {
+    return {
+      ok: false,
+      sumaPct: 0,
+      error: `Ya hay ${yaEmitidos} tramo(s) facturado(s): el plan no puede tener menos.`,
+    };
+  }
+
+  // OJO CON LAS UNIDADES: `percentage` es FRACCIÓN (0,3 = 30 %), así que `pct * 100` da PUNTOS
+  // PORCENTUALES, no céntimos. El servidor llama `sumCents` a esta misma magnitud y compara
+  // contra 100; se conserva la aritmética exacta y se le da aquí el nombre que describe lo que
+  // es, porque este valor se PINTA en pantalla («Suman 130 %») y equivocarse de unidad ahí es
+  // enseñar un número falso al pro. Lo cazó el test diferencial: había puesto `/100`.
+  let sumaPuntos = 0;
+  for (const t of lista) {
+    const label = typeof t?.label === 'string' ? t.label.trim() : '';
+    if (!label) return { ok: false, sumaPct: sumaPuntos, error: 'Cada tramo necesita una etiqueta (p. ej. "Anticipo").' };
+    const pct = Number(t?.percentage);
+    if (!Number.isFinite(pct) || pct <= 0) {
+      return { ok: false, sumaPct: sumaPuntos, error: `El tramo "${label}" debe tener un porcentaje mayor que 0.` };
+    }
+    sumaPuntos += Math.round(pct * 100);
+  }
+  // La suma cuenta TODOS los tramos, emitidos incluidos. Repartir el 100 % «de lo que queda»
+  // es el error natural del pro y es justo lo que hay que delatar en vivo.
+  if (sumaPuntos !== 100) {
+    return { ok: false, sumaPct: sumaPuntos, error: 'Los tramos deben sumar exactamente el 100 %.' };
+  }
+  return { ok: true, sumaPct: sumaPuntos, error: '' };
+}
+window.planTramosEstado = planTramosEstado;
+
 // SCRUM-153: estado de la FACTURA → etiqueta + clase de status-pill CANÓNICA.
 //
 // Antes esto era un ternario DUPLICADO inline en invoicesView (listado) e invoiceDetailView

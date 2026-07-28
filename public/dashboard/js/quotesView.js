@@ -495,16 +495,13 @@ blockClient.appendChild(descWrapper);
         label: (s.labelInput.value || "").trim(),
       }));
     }
+    // SCRUM-37: delega en `planTramosEstado` (api.js) en vez de llevar su propia aritmética.
+    // Antes esta función era una SEGUNDA copia de la regla del servidor, y el editor de
+    // SCRUM-37 iba a ser la tercera. Cada copia es una que puede separarse del backend sin que
+    // nadie lo note — el patrón de `vat_default` y de SCRUM-141. Ahora hay UNA, y un test
+    // diferencial la compara contra el dominio (`scrum37-plan-front-vs-back`).
     function customStagesValid() {
-      if (!stages.length) return false;
-      let sumCents = 0;
-      for (const s of stages) {
-        const label = (s.labelInput.value || "").trim();
-        const pct = parseFloat(String(s.pctInput.value).replace(",", "."));
-        if (!label || !Number.isFinite(pct) || pct <= 0) return false;
-        sumCents += Math.round(pct * 100);
-      }
-      return sumCents === 10000;
+      return planTramosEstado(collectCustomStages(), 0).ok;
     }
 
     addStageBtn.addEventListener("click", () => addStage());
