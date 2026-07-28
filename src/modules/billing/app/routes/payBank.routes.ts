@@ -70,6 +70,7 @@ router.get('/bank/:token', async (req, res) => {
   res.send(`<!doctype html>
 <html lang="es">
 <head>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"/><!-- SCRUM-184: sin esto el navegador pide /favicon.ico y se lleva un 404 -->
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Pagar por transferencia — YaQu</title>

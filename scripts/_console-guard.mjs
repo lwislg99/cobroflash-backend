@@ -1,61 +1,91 @@
-// scripts/_console-guard.mjs — SCRUM-183
+// scripts/_console-guard.mjs — SCRUM-183, endurecido en SCRUM-184
 //
 // POR QUÉ EXISTE. SCRUM-139 F6 se mergeó ROTA y estuvo así en producción: un `let` de ámbito de
 // módulo (`plantillasRotulo`) se leía desde `recalcTotals()` ~1.700 líneas ANTES de su propia
 // declaración, o sea dentro de su zona muerta (TDZ). El `ReferenceError` **abortaba el resto del
 // render**: la fila de plantillas no se pintaba nunca y el listener de "📋 Usar plantilla" no
-// llegaba a engancharse.
+// llegaba a engancharse. Nada lo vio: `npm test` no ejecuta el navegador, `node --check` valida
+// sintaxis (no orden de evaluación) y el E2E no escuchaba la consola.
 //
-// Nada lo vio. `npm test` no ejecuta el navegador; `node --check` valida sintaxis, no orden de
-// evaluación; y `scripts/e2e-critico.mjs` —que SÍ abre las pantallas de verdad— no escuchaba la
-// consola, así que pasó por delante del error sin enterarse. Lo destapó por casualidad el E2E de
-// SCRUM-162, al notar que sus propias fichas tampoco aparecían.
+// ── LO QUE CORRIGE SCRUM-184 ─────────────────────────────────────────────────────────────────
 //
-// La lección: **un error de JS en la página no rompe el E2E si nadie escucha**. Este módulo es la
-// oreja, y vive aparte del E2E para poder probarse sin navegador ni BD.
-
-/**
- * Errores de consola TOLERADOS, uno por uno y con su motivo.
- *
- * ALLOWLIST VISIBLE, nunca silenciosa (misma regla que el resto de los guards de la casa): si
- * algo se tolera, se ve aquí y se explica. Una lista vacía es la respuesta correcta por defecto —
- * cada entrada nueva es deuda que alguien tendrá que justificar en revisión.
- */
+// La primera versión mezclaba dos cosas que no son la misma, y por eso fallaba en las dos
+// direcciones a la vez:
+//
+//   · UN ERROR DE JS aborta el render. Es el fallo que este guard nació para cazar y tiene que
+//     ROMPER el E2E.
+//   · UN RECURSO QUE NO CARGA (404 de un .png, un .css) no aborta nada: la página sigue viva y
+//     un poco peor. Merece salir en el informe, no tumbar el recorrido — un guard que se dispara
+//     con ruido se acaba ignorando, y entonces tampoco caza lo grave.
+//
+// Y había una trampa peor: la allowlist llevaba una entrada `/favicon\.ico/i` que **no podía
+// filtrar nada**. El mensaje que Chrome manda a la consola por un subrecurso caído es
+// `Failed to load resource: the server responded with a status of 404` **sin la URL**; lo único
+// que traía el registro era la página, no el fichero. La entrada aparentaba cubrir un caso que
+// era incapaz de reconocer: vocabulario declarado, mecanismo ausente — dentro del propio guard.
+// Se retira. La identidad del recurso ya NO se adivina del texto: la aporta el E2E desde los
+// eventos de red (`response` con status ≥ 400 / `requestfailed`), que sí saben qué URL falló.
 export const CONSOLA_ALLOWLIST = [
-  // Favicon ausente en el server de test: ruido del navegador, no de la aplicación.
-  { patron: /favicon\.ico/i, porque: 'el server de e2e no sirve favicon; no es un fallo de la app' },
   // El service worker no se registra contra 127.0.0.1 sin HTTPS en algunos motores.
   { patron: /ServiceWorker|sw\.js/i, porque: 'el SW no aplica en el entorno de e2e (sin HTTPS)' },
 ];
 
 /**
- * ¿Este mensaje de consola delata un fallo REAL de la aplicación?
+ * Formas REALES con las que un navegador anuncia un subrecurso caído (sin decir cuál).
  *
- * Solo cuenta `error`: los `warning` son ruido legítimo en un producto vivo y convertirlos en
- * fallo entrenaría a ignorar el guard entero, que es cómo mueren los guards.
+ * ⚠️ La primera versión de SCRUM-184 solo reconocía la de Chrome («Failed to load resource…») y
+ * clasificaba como ERROR DE JS cualquier otra redacción — por ejemplo `GET /favicon.ico 404`.
+ * Eso es justo lo contrario de lo que este guard debe hacer: inflaba el ruido hasta el punto de
+ * tumbar el E2E por un icono que falta. Lo destapó el test de SCRUM-183 al quedarse en rojo; el
+ * fallo estaba en el guard, no en el test.
  */
-export function esErrorRelevante(msg) {
-  if (!msg || typeof msg !== 'object') return false;
-  if (msg.tipo !== 'error') return false;
+const TEXTO_RECURSO = /Failed to load resource|net::ERR_|the server responded with a status of|\b(?:GET|POST|PUT|PATCH|DELETE|HEAD)\b[^\n]*\b[45]\d{2}\b/i;
+
+/**
+ * Clasifica un registro recogido durante el recorrido.
+ *   'js'       → error de JavaScript: rompe el render, ROMPE el E2E.
+ *   'recurso'  → carga fallida: se informa, no rompe.
+ *   'ignorado' → allowlist o ruido no accionable.
+ */
+export function clasificar(msg) {
+  if (!msg || typeof msg !== 'object') return 'ignorado';
+  if (msg.tipo === 'recurso') return 'recurso'; // viene de los eventos de red, ya identificado
+  if (msg.tipo !== 'error') return 'ignorado';
   const texto = String(msg.texto || '');
-  if (!texto.trim()) return false;
-  return !CONSOLA_ALLOWLIST.some((e) => e.patron.test(texto));
+  if (!texto.trim()) return 'ignorado';
+  if (CONSOLA_ALLOWLIST.some((e) => e.patron.test(texto))) return 'ignorado';
+  return TEXTO_RECURSO.test(texto) ? 'recurso' : 'js';
+}
+
+/** Compatibilidad: «¿este mensaje delata un fallo de JS?» (lo que antes decidía todo). */
+export function esErrorRelevante(msg) {
+  return clasificar(msg) === 'js';
 }
 
 /**
- * Resume lo recogido durante el recorrido y decide si el E2E debe fallar.
+ * Resume lo recogido y decide si el E2E debe fallar.
  *
- * Devuelve el mensaje ya montado en vez de lanzar: quien decide abortar es el E2E, y así esta
- * función se puede probar sin navegador.
+ * Devuelve el informe montado en vez de lanzar: quien decide abortar es el E2E, y así esto se
+ * puede probar sin navegador. **Solo los errores de JS ponen `ok:false`**; los recursos caídos
+ * viajan en `avisoRecursos` para que se vean —con su URL— sin tumbar el recorrido.
  */
 export function resumirErroresConsola(mensajes) {
-  const relevantes = (Array.isArray(mensajes) ? mensajes : []).filter(esErrorRelevante);
-  if (relevantes.length === 0) return { ok: true, relevantes: [], informe: '' };
+  const lista = Array.isArray(mensajes) ? mensajes : [];
+  const js = lista.filter((m) => clasificar(m) === 'js');
+  const recursos = lista.filter((m) => clasificar(m) === 'recurso');
+
+  const avisoRecursos = recursos.length
+    ? `\n⚠️  ${recursos.length} recurso(s) que no cargan (no rompen el render, pero el cliente los ve en su consola):\n` +
+      recursos.map((m) => `   · ${m.url || m.texto}${m.status ? ` → ${m.status}` : ''} [en ${m.donde || 'desconocido'}]`).join('\n') + '\n'
+    : '';
+
+  if (js.length === 0) return { ok: true, relevantes: [], recursos, avisoRecursos, informe: '' };
 
   const informe =
-    `\n🔴 ${relevantes.length} error(es) de JS en la PÁGINA durante el recorrido:\n` +
-    relevantes.map((m) => `   · [${m.donde || 'desconocido'}] ${m.texto}`).join('\n') +
+    `\n🔴 ${js.length} error(es) de JS en la PÁGINA durante el recorrido:\n` +
+    js.map((m) => `   · [${m.donde || 'desconocido'}] ${m.texto}`).join('\n') +
     '\n\nUn ReferenceError en el navegador aborta el render sin que la petición falle: la pantalla\n' +
-    'se queda a medias y el E2E sigue adelante tan contento. Así llegó SCRUM-139 F6 a producción.\n';
-  return { ok: false, relevantes, informe };
+    'se queda a medias y el E2E sigue adelante tan contento. Así llegó SCRUM-139 F6 a producción.\n' +
+    avisoRecursos;
+  return { ok: false, relevantes: js, recursos, avisoRecursos, informe };
 }
