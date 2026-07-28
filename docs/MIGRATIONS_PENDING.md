@@ -11,11 +11,37 @@
 > **NO uses `migrate deploy`/`migrate dev`** — aplicaría un schema viejo (entorno nuevo) o
 > propondría un reset. `db push` es el ÚNICO mecanismo. (Volver a migrate = SCRUM-40 opción A.)
 >
-> **REGLA DE LAS TRES BD (SCRUM-169):** un cambio de schema NO está aplicado hasta estarlo en
-> las TRES — staging (`acela.proxy.rlwy.net`), **`yaqu_dev_javier`** (dev local, carril B) y
-> prod (`autorack.proxy.rlwy.net`). Faltar la de dev costó 16 tests rojos y un lote de
-> diagnóstico para acabar en «faltaba un push». Detalle y por qué el guard no la cubre:
-> `docs/RUNBOOKS.md` R18.
+> **REGLA DE LAS TRES BD (SCRUM-169):** un cambio de schema NO está aplicado hasta estar en las
+> TRES bases (abajo). Faltar una costó 16 tests rojos y un lote de diagnóstico para acabar en
+> «faltaba un push». El MISMO mapa y el MISMO criterio están en `docs/RUNBOOKS.md` R18 verbatim;
+> si divergen en una palabra, el problema no está resuelto, solo movido.
+
+Un cambio de schema NO está aplicado hasta estar en las TRES bases:
+
+```
+1. acela.proxy.rlwy.net / railway          — STAGING. Protegida por el máster: no se toca
+                                             sin que el fundador lo sepa. Es la base del
+                                             worktree cobroflash-b2.
+2. acela.proxy.rlwy.net / yaqu_dev_javier  — DESARROLLO. El fundador dijo que NO requiere su
+                                             GO para aplicarle schema. Base de cobroflash-b1.
+3. autorack.proxy.rlwy.net                 — PRODUCCIÓN.
+```
+
+⚠️ Las dos primeras viven en el MISMO servidor (`acela`) y son bases DISTINTAS. Ninguna es
+"local". Por eso pueden divergir de esquema sin que nada avise: `scripts/_db-guard.mjs` valida
+el HOSTNAME, no la base, y el marcador `YAQU_STAGING` está en las dos. Las salvaguardas
+garantizan "NO es producción", no "es la base que crees" — y eso es exactamente lo que produjo
+los 16 rojos crípticos de SCRUM-160.
+
+Fuente de los hostnames: `scripts/_db-guard.mjs` (`PROD_HOST` / `STAGING_HOST`), único sitio que
+los define en el árbol.
+
+Nomenclatura fijada por carril B el 27-jul-2026 con la regla de desempate del fundador. El
+criterio para asignar el papel ha sido la AUTORIZACIÓN, no la ubicación ni el uso: las dos
+primeras están en el mismo servidor y las dos las ejercitan tandas gateadas; lo que las
+distingue es quién puede tocarlas. Se descarta llamar a `yaqu_dev_javier` "segunda BD de
+staging" (SCRUM-84) porque implicaría el régimen de `railway` y no lo tiene. Si el fundador lo
+ve de otra forma, es una línea.
 
 <!-- ─── LÍNEA DE CORTE · SCRUM-169 (2026-07-27) ─────────────────────────────────────────
      A partir de esta línea HACIA ARRIBA, cada entrada NUEVA lleva los tres checkboxes:

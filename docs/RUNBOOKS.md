@@ -258,33 +258,36 @@ lo que ya está desplegado sigue funcionando.
 "ya se aplicó". Costó 16 tests rojos y un lote entero de diagnóstico para acabar en "faltaba
 un `db push`".
 
-**Regla:** una columna nueva / `ALTER` NO está aplicada hasta estar en las TRES bases. El mapa
-REAL, medido (no inferido — `acela` es un SERVIDOR con VARIAS bases, no una base):
+**Regla:** una columna nueva / `ALTER` NO está aplicada hasta estar en las TRES bases. El MISMO
+mapa y el MISMO criterio están, verbatim, en la cabecera de `docs/MIGRATIONS_PENDING.md`; si
+divergen en una palabra, el problema no está resuelto, solo movido.
+
+Un cambio de schema NO está aplicado hasta estar en las TRES bases:
 
 ```
-acela.proxy.rlwy.net     ├─ yaqu_dev_javier   (marcada YAQU_STAGING)
-                         └─ railway            (marcada YAQU_STAGING)
-autorack.proxy.rlwy.net  └─ producción
+1. acela.proxy.rlwy.net / railway          — STAGING. Protegida por el máster: no se toca
+                                             sin que el fundador lo sepa. Es la base del
+                                             worktree cobroflash-b2.
+2. acela.proxy.rlwy.net / yaqu_dev_javier  — DESARROLLO. El fundador dijo que NO requiere su
+                                             GO para aplicarle schema. Base de cobroflash-b1.
+3. autorack.proxy.rlwy.net                 — PRODUCCIÓN.
 ```
 
-Dos sesiones distintas del carril B usan **bases distintas del mismo servidor** (una `railway`,
-otra `yaqu_dev_javier`). Hosts en `scripts/_db-guard.mjs` (`STAGING_HOST`/`PROD_HOST`), único
-sitio que los define (SCRUM-118).
+⚠️ Las dos primeras viven en el MISMO servidor (`acela`) y son bases DISTINTAS. Ninguna es
+"local". Por eso pueden divergir de esquema sin que nada avise: `scripts/_db-guard.mjs` valida
+el HOSTNAME, no la base, y el marcador `YAQU_STAGING` está en las dos. Las salvaguardas
+garantizan "NO es producción", no "es la base que crees" — y eso es exactamente lo que produjo
+los 16 rojos crípticos de SCRUM-160.
 
-**Qué garantizan las salvaguardas — y qué NO.** Las dos barreras verifican «no es producción»,
-NO «es la base que crees»:
-- **Barrera 1** (`_db-guard.mjs`) valida el **HOSTNAME**, no la base → acepta las DOS bases de
-  `acela` por igual.
-- **Barrera 2** (el marcador `YAQU_STAGING`, un `COMMENT ON DATABASE`) está en **LAS DOS** →
-  tampoco las distingue.
+Fuente de los hostnames: `scripts/_db-guard.mjs` (`PROD_HOST` / `STAGING_HOST`), único sitio que
+los define en el árbol.
 
-Correcto para su trabajo (impedir un borrado irreversible contra prod), pero **no te dice en
-cuál de las dos bases de `acela` estás escribiendo**. Esa es la explicación EXACTA de los 16
-rojos de SCRUM-160: un push a UNA de las dos bases deja la otra atrás, y ningún guard lo ve. De
-ahí la regla — el schema no está aplicado hasta estar en las tres.
+Nomenclatura fijada por carril B el 27-jul-2026 con la regla de desempate del fundador. El
+criterio para asignar el papel ha sido la AUTORIZACIÓN, no la ubicación ni el uso: las dos
+primeras están en el mismo servidor y las dos las ejercitan tandas gateadas; lo que las
+distingue es quién puede tocarlas. Se descarta llamar a `yaqu_dev_javier` "segunda BD de
+staging" (SCRUM-84) porque implicaría el régimen de `railway` y no lo tiene. Si el fundador lo
+ve de otra forma, es una línea.
 
 **Prevención:** cada entrada de `docs/MIGRATIONS_PENDING.md` lleva las tres como checkbox; una
 sin marcar = migración NO aplicada.
-
-> ⚠️ **TODO SCRUM-169 (nomenclatura SIN resolver):** SCRUM-84 llama a la tercera BD "segunda
-> BD de staging"; Luis la llama "BD de desarrollo" que no necesita su GO. No se resuelve aquí.
