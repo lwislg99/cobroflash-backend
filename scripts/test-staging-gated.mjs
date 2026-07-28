@@ -67,18 +67,16 @@ import {
 } from './_staging-lock.mjs';
 // SCRUM-161: al terminar, el runner deja un RECIBO de que la tanda corrió. Es lo único que el
 // guard de cierre acepta como evidencia, porque es lo único que no se puede teclear.
-import { RUTA_RECIBO } from './_evidencia-tanda.mjs';
+import { RUTA_RECIBO, HIJOS_SPEC, AISLADOS, pesadoEsElUltimo } from './_evidencia-tanda.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url)); // resolver el preflight junto a este script (SCRUM-167)
 const override = process.argv[2] || null; // contraprueba/diagnóstico: si viene, todos lo usan
 
 const TESTS_DIR = 'tests';
-// SCRUM-180: el 3er aislado corre en su propio hijo SIN WHATSAPP_DRY_RUN (afirma dry-run OFF).
-// ⚠️ Esta lista está DUPLICADA a mano en verificar-evidencia-tanda.mjs (AISLADOS) y emparejada
-// con CLAVES_HIJOS de _evidencia-tanda.mjs: mover una sin las otras descalibra el guard. SCRUM-199 unifica.
-const AISLADOS = ['a55-window-quote.test.mjs', 'bot-suite.test.mjs', 'scrum180-fixtures-nunca-a-meta.test.mjs'];
+// SCRUM-199: AISLADOS ya NO vive aquí — se IMPORTA de _evidencia-tanda.mjs (fuente única, derivada
+// de HIJOS_SPEC). El guard de texto scrum199 impide que vuelva a escribirse a mano en este fichero.
 
-// El bloque QA_DB_TEST corre TODOS los *.test.mjs MENOS los tres aislados (para no contarlos
+// El bloque QA_DB_TEST corre TODOS los *.test.mjs MENOS los aislados (para no contarlos
 // dos veces: aquí saltarían, y abajo se ejecutan de verdad). DERIVADO DEL DIRECTORIO, no
 // una lista literal: un fichero de test nuevo entra solo — si fuese enumeración a mano,
 // un test que nadie añada aquí no correría nunca (sería SCRUM-158 dentro de este runner).
@@ -94,55 +92,27 @@ const ficherosQa = readdirSync(TESTS_DIR)
 // del pesado. Por eso EL HIJO PESADO VA SIEMPRE EL ÚLTIMO. El síntoma (0xC0000142) no se
 // parece a la causa (reordenar este array), así que hay un chequeo mecánico abajo que lo
 // impide: reordenar y dejar el pesado sin ser el último ABORTA antes de lanzar nada.
-const hijos = [
-  {
-    nombre: 'a55-window-quote (aislado)',
-    clave: 'a55', // SCRUM-161: clave estable para el recibo de evidencia
-    env: { A55_DB_TEST: '1', WHATSAPP_DRY_RUN: '1', DEMO_SAFE_NUMBERS: '34611000001', QA_DB_TEST: undefined, BOT_SUITE_TEST: undefined },
-    args: ['--test', '--test-force-exit', '--test-concurrency=1', override || `${TESTS_DIR}/a55-window-quote.test.mjs`],
-  },
-  {
-    nombre: 'bot-suite (aislado)',
-    clave: 'bot', // SCRUM-161
-    // SCRUM-180: `WHATSAPP_DRY_RUN` lo fijaba SOLO la línea 26 de bot-suite.test.mjs, cuando
-    // sus dos hermanos de esta lista ya lo traían del runner. La asimetría no se veía y es
-    // justo el hijo peor: bot-suite simula un flujo entero, once mensajes, no uno. Ponerlo
-    // aquí no sustituye al freno del sender (whatsappPolicy.esProcesoDeTest) — lo dobla, que
-    // es lo que toca cuando el fallo se paga en el número de WhatsApp Business.
-    env: { BOT_SUITE_TEST: '1', WHATSAPP_DRY_RUN: '1', QA_DB_TEST: undefined, A55_DB_TEST: undefined },
-    args: ['--test', '--test-force-exit', '--test-concurrency=1', override || `${TESTS_DIR}/bot-suite.test.mjs`],
-  },
-  {
-    nombre: 'scrum180-fixtures-nunca-a-meta (aislado, dry-run OFF a propósito)',
-    clave: 'scrum180', // SCRUM-161: clave estable para el recibo (emparejada con CLAVES_HIJOS)
-    // SCRUM-180: este fichero AFIRMA que WHATSAPP_DRY_RUN está apagado (su línea 32) — comprueba
-    // que las fixtures NUNCA salen a Meta por el freno REAL (whatsappPolicy.salidaAMetaBloqueada),
-    // no por el atajo del dry-run. En el hijo QA (que fija WHATSAPP_DRY_RUN=1) su assert fallaba.
-    // Va en su propio proceso SIN dry-run (el runner hace `delete env[k]` con undefined) y con el
-    // resto de gates apagados. ANTES del pesado por el invariante de orden.
-    env: { WHATSAPP_DRY_RUN: undefined, QA_DB_TEST: undefined, A55_DB_TEST: undefined, BOT_SUITE_TEST: undefined },
-    args: ['--test', '--test-force-exit', '--test-concurrency=1', override || `${TESTS_DIR}/scrum180-fixtures-nunca-a-meta.test.mjs`],
-  },
-  {
-    nombre: 'suite QA_DB_TEST (gateados QA + ungated, sin a55/bot)',
-    clave: 'qa', // SCRUM-161
-    pesado: true, // node --test sobre ~337 ficheros → deja el DLL de Prisma bloqueado
-    env: { QA_DB_TEST: '1', WHATSAPP_DRY_RUN: '1', A55_DB_TEST: undefined, BOT_SUITE_TEST: undefined },
-    args: ['--test', '--test-force-exit', '--test-concurrency=1', ...(override ? [override] : ficherosQa)],
-  },
-];
+// SCRUM-199: los hijos se CONSTRUYEN iterando HIJOS_SPEC (la fuente única en _evidencia-tanda.mjs).
+// El runner solo añade lo runtime: los `args` (que dependen de `override` y de `ficherosQa`, que sí
+// necesitan fs y no caben en la hoja). No re-lista claves ni ficheros — el guard scrum199 lo impide.
+const hijos = HIJOS_SPEC.map((s) => ({
+  nombre: s.nombre,
+  clave: s.clave,
+  ...(s.pesado ? { pesado: true } : {}),
+  env: s.env,
+  args: ['--test', '--test-force-exit', '--test-concurrency=1',
+    ...(override ? [override] : (s.aislado ? [`${TESTS_DIR}/${s.fichero}`] : ficherosQa))],
+}));
 
-// CHEQUEO MECÁNICO del invariante de orden (condición 1): el pesado, si existe, es el último.
-{
-  const idxPesado = hijos.findIndex((h) => h.pesado);
-  if (idxPesado !== -1 && idxPesado !== hijos.length - 1) {
-    console.error(
-      '\n❌ test-staging-gated: el hijo PESADO no es el último de la lista.\n' +
-      '   Debe ir SIEMPRE al final: en Windows deja el DLL de Prisma bloqueado y el hijo\n' +
-      '   siguiente crashea con exit=3221225794 (0xC0000142). Reordena `hijos` y vuelve.\n',
-    );
-    process.exit(2);
-  }
+// CHEQUEO MECÁNICO del invariante de orden: el pesado, si existe, es el último. Se comprueba contra
+// HIJOS_SPEC (la fuente única, SCRUM-199), no contra `hijos`, para no crear una CUARTA lista.
+if (!pesadoEsElUltimo()) {
+  console.error(
+    '\n❌ test-staging-gated: el hijo PESADO no es el último de HIJOS_SPEC (_evidencia-tanda.mjs).\n' +
+    '   Debe ir SIEMPRE al final: en Windows deja el DLL de Prisma bloqueado y el hijo\n' +
+    '   siguiente crashea con exit=3221225794 (0xC0000142). Reordena HIJOS_SPEC y vuelve.\n',
+  );
+  process.exit(2);
 }
 
 // node --test cierra con líneas de resumen prefijadas por `ℹ` (spec) o `#` (tap). Se cuentan
@@ -508,3 +478,4 @@ async function tanda() {
   console.log('\n✅ Todos los procesos en verde.');
   salir(0);
 }
+

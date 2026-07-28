@@ -24,6 +24,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   RUTA_RECIBO,
+  AISLADOS, // SCRUM-199: fuente única (derivada de HIJOS_SPEC), ya no una copia a mano aquí
   estaActivo,
   validarEvidencia,
   mensajeVeredicto,
@@ -34,11 +35,9 @@ import {
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const rutaRecibo = path.join(RAIZ, RUTA_RECIBO);
 
-// Los TRES ficheros que el bloque QA del runner NO corre (van aislados, en su propio proceso).
-// Copia a mano de la lista del runner (SCRUM-180 añadió scrum180; SCRUM-199 las unifica): si
-// alguien añade un aislado allí sin tocar aquí, el conteo sale ALTO y el guard aprieta de más —
-// falla hacia «vuelve a correr la tanda», que es el lado seguro (ruidoso, no silencioso).
-const AISLADOS = ['a55-window-quote.test.mjs', 'bot-suite.test.mjs', 'scrum180-fixtures-nunca-a-meta.test.mjs'];
+// SCRUM-199: `AISLADOS` se IMPORTA de _evidencia-tanda.mjs (fuente única, derivada de HIJOS_SPEC).
+// Ya no es una copia a mano que pudiera divergir del runner: era el «lado seguro» (rechazar una
+// tanda buena), pero seguía siendo toil. El guard de texto scrum199 impide que reaparezca aquí.
 const ficherosEsperados = existsSync(path.join(RAIZ, 'tests'))
   ? readdirSync(path.join(RAIZ, 'tests')).filter((f) => f.endsWith('.test.mjs') && !AISLADOS.includes(f)).length
   : 0;
@@ -55,3 +54,5 @@ if (!activo) process.stdout.write(mensajeApagado());
 
 // El `exit` va DESPUÉS de imprimirlo todo, y solo aprieta si el guard está encendido.
 process.exit(activo && !res.ok ? 1 : 0);
+
+
