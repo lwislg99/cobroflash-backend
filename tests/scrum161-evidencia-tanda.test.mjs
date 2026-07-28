@@ -42,14 +42,21 @@ const COMMIT = 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678';
 const AHORA = Date.parse('2026-07-28T15:00:00.000Z');
 const h = (n) => n * 3600000;
 
+// SCRUM-197: cada hijo del recibo trae su DESGLOSE {exit, tests, pass, fail}, no solo el exit.
+const HIJO_OK = { exit: 0, tests: 1, pass: 1, fail: 0 };
+const HIJO_CRASH = { exit: 3221225794, tests: 0, pass: 0, fail: 0 }; // exit≠0 SIN fails: crasheó → «hijo»
+const hijoRojo = (fail) => ({ exit: 1, tests: 640, pass: 640 - fail, fail }); // exit≠0 CON fail propio: rojo
+// Todos verdes, DERIVADO de CLAVES_HIJOS (no literal): si el spec crece, la base lo sigue sola.
+const todosVerdes = () => Object.fromEntries(CLAVES_HIJOS.map((k) => [k, { ...HIJO_OK }]));
+
 /** Un recibo IMPECABLE. Cada test de abajo estropea UNA cosa y nada más. */
 function reciboBueno(extra = {}) {
   return {
     commit: COMMIT,
     terminadaEn: new Date(AHORA - 60000).toISOString(),
-    total: 646, pass: 646, fail: 0, skip: 0, // SCRUM-161: al encender, el suelo subió a 646 (agregado real 2a1d053)
+    total: 646, pass: 646, fail: 0, skip: 0, // SCRUM-161: el suelo subió a 646 al encender (agregado real 2a1d053)
     ficheros: 337,
-    hijos: { a55: 0, bot: 0, qa: 0, scrum180: 0 }, // SCRUM-180: 4º hijo sano; emparejado con CLAVES_HIJOS
+    hijos: todosVerdes(),
     autotest: false,
     runner: 'scripts/test-staging-gated.mjs',
     ...extra,
@@ -106,7 +113,7 @@ test('SCRUM-161 · ③ recibo con fail>0 → ticket y cuarentena, NUNCA re-corre
   // Y EL CASO NORMAL de una tanda roja: el hijo que CONTIENE esos rojos sale exit≠0. Ese exit no
   // es información nueva —es el mismo hecho que `fail>0`—, así que NO genera clave propia. Si la
   // generara, el veredicto mostraría «cuarentena» y «re-correr» a la vez y la gente haría la fácil.
-  const normal = validar(reciboBueno({ fail: 21, pass: 619, hijos: { a55: 0, bot: 0, qa: 1, scrum180: 0 } }));
+  const normal = validar(reciboBueno({ fail: 21, pass: 619, hijos: { ...todosVerdes(), qa: hijoRojo(21) } }));
   assert.equal(normal.ok, false);
   assert.deepEqual(claves(normal), ['rojo'],
     '🔴 el exit≠0 del hijo que lleva los rojos es redundante con `fail>0`: no debe dar clave');
@@ -124,12 +131,12 @@ test('SCRUM-161 · ③b hijo que no da resultados de fiar → «tanda no válida
   // (SCRUM-181) NO agrega sus contadores: `fail` puede ser 0 con un proceso muerto y los números
   // del recibo quedan INCOMPLETOS. Eso es más grave que unos rojos —no sabemos si están todos— y
   // por eso es clave PROPIA (`hijo`) con su propio remedio: re-correr, no cuarentena.
-  const timeout = validar(reciboBueno({ hijos: { a55: 0, bot: 0, qa: null, scrum180: 0 } }));
+  const timeout = validar(reciboBueno({ hijos: { ...todosVerdes(), qa: null } }));
   assert.equal(timeout.ok, false, '🔴 un hijo que NO llegó a terminar no es un hijo que pasó');
   assert.deepEqual(claves(timeout), ['hijo']);
   assert.match(timeout.problemas[0].detalle, /no llegó a terminar/);
 
-  const muerto = validar(reciboBueno({ hijos: { a55: 0, bot: 3221225794, qa: 0, scrum180: 0 } }));
+  const muerto = validar(reciboBueno({ hijos: { ...todosVerdes(), bot: HIJO_CRASH } }));
   assert.equal(muerto.ok, false);
   assert.deepEqual(claves(muerto), ['hijo']);
   assert.match(muerto.problemas[0].detalle, /bot/);
@@ -144,7 +151,7 @@ test('SCRUM-161 · ③b hijo que no da resultados de fiar → «tanda no válida
   // LA COEXISTENCIA REALISTA que este arreglo cierra: reds Y un hijo caído a la vez. El hijo con
   // los reds sale exit≠0 (redundante, sin clave); OTRO se cayó. Debe salir UN SOLO remedio, y es
   // el del más grave: la tanda no es válida. Ni rastro de «cuarentena» ni doble mensaje.
-  const mixto = validar(reciboBueno({ fail: 21, pass: 619, hijos: { a55: 0, bot: null, qa: 1, scrum180: 0 } }));
+  const mixto = validar(reciboBueno({ fail: 21, pass: 619, hijos: { ...todosVerdes(), bot: null, qa: hijoRojo(21) } }));
   assert.equal(mixto.ok, false);
   assert.deepEqual(claves(mixto).sort(), ['hijo', 'rojo'], 'el rojo se lista, pero el hijo caído es el que manda');
   const msgMixto = mensajeVeredicto(mixto, { activo: true });
@@ -152,17 +159,36 @@ test('SCRUM-161 · ③b hijo que no da resultados de fiar → «tanda no válida
   assert.doesNotMatch(msgMixto, /cuarentena/, '🔴 no se ponen en cuarentena rojos de una tanda incompleta');
 });
 
-test('SCRUM-161 · el 4º hijo (scrum180, SCRUM-180) también se vigila: en rojo el guard lo caza', () => {
+test('SCRUM-197 · crash de un hijo + rojos de OTRO → tanda NO VÁLIDA, no cuarentena', () => {
+  // El caso que el desglose por hijo cierra, y que la heurística vieja (hayReds) enmascaraba: un
+  // hijo CRASHEA (exit≠0, fail propio 0) a la vez que OTRO tiene rojos legítimos. El agregado trae
+  // fail>0, así que la lógica vieja descartaba el crash como redundante y decía «cuarentena» — sobre
+  // una tanda a la que le faltan los tests del que murió. Con el fail PROPIO, el crash da clave
+  // `hijo` y DOMINA. (Un null ya se cazaba; el CRASH con exit≠0 no-null es el que se escapaba.)
+  const mixto = validar(reciboBueno({
+    fail: 21, pass: 619,
+    hijos: { ...todosVerdes(), a55: HIJO_CRASH, qa: hijoRojo(21) },
+  }));
+  assert.equal(mixto.ok, false);
+  assert.deepEqual(claves(mixto).sort(), ['hijo', 'rojo'],
+    'el rojo se lista, pero el crash del OTRO hijo es información nueva y manda');
+  assert.match(mixto.problemas.find((p) => p.clave === 'hijo').detalle, /a55/, 'nombra al hijo que crasheó');
+  const msg = mensajeVeredicto(mixto, { activo: true });
+  assert.match(msg, /NO ES VÁLIDA/, 'domina la tanda incompleta, no la cuarentena del rojo');
+  assert.doesNotMatch(msg, /cuarentena/, '🔴 no se ponen en cuarentena rojos de una tanda incompleta');
+});
+
+test('SCRUM-161 · el 4º hijo (scrum180, SCRUM-180) también se vigila: si NO da verde, el guard lo caza', () => {
   // Añadir 'scrum180' a CLAVES_HIJOS no sirve de nada si ningún caso comprueba que el guard MIRE
-  // ese hijo cuando falla — que es el defecto («un hijo rojo que nadie mira») que la clave cierra.
+  // ese hijo cuando falla — que es el defecto («un hijo roto que nadie mira») que la clave cierra.
   // ANTES de SCRUM-180 (CLAVES_HIJOS = ['a55','bot','qa']) estos dos recibos pasaban en VERDE: el
   // bucle no iteraba scrum180. El contraste es la prueba de que la clave sirve, no haberla añadido.
-  const rojo = validar(reciboBueno({ hijos: { a55: 0, bot: 0, qa: 0, scrum180: 1 } }));
-  assert.equal(rojo.ok, false, '🔴 scrum180 con exit≠0 tiene que invalidar la tanda');
-  assert.deepEqual(claves(rojo), ['hijo']);
-  assert.match(rojo.problemas[0].detalle, /scrum180/, 'el mensaje tiene que NOMBRAR al hijo que falló');
+  const crash = validar(reciboBueno({ hijos: { ...todosVerdes(), scrum180: HIJO_CRASH } }));
+  assert.equal(crash.ok, false, '🔴 scrum180 con exit≠0 y sin fails (crash) tiene que invalidar la tanda');
+  assert.deepEqual(claves(crash), ['hijo']);
+  assert.match(crash.problemas[0].detalle, /scrum180/, 'el mensaje tiene que NOMBRAR al hijo que falló');
 
-  const abortado = validar(reciboBueno({ hijos: { a55: 0, bot: 0, qa: 0, scrum180: null } }));
+  const abortado = validar(reciboBueno({ hijos: { ...todosVerdes(), scrum180: null } }));
   assert.equal(abortado.ok, false, '🔴 scrum180 abortado por tiempo no es un hijo en verde');
   assert.deepEqual(claves(abortado), ['hijo']);
   assert.match(abortado.problemas[0].detalle, /no llegó a terminar/);
@@ -246,7 +272,7 @@ test('SCRUM-161 · falta una clave de hijo → no se lee como 0', () => {
   for (const clave of CLAVES_HIJOS) {
     // DERIVADO de CLAVES_HIJOS (no literal): con {a55,bot,qa} a mano, iterar sobre 'scrum180'
     // borraría una clave ausente y el test pasaría por coincidencia, sin probar nada de scrum180.
-    const hijos = Object.fromEntries(CLAVES_HIJOS.map((k) => [k, 0]));
+    const hijos = todosVerdes();
     delete hijos[clave];
     const res = validar(reciboBueno({ hijos }));
     assert.equal(res.ok, false, `🔴 sin «${clave}» el recibo pasó: un hijo ausente no es un hijo en verde`);
@@ -325,13 +351,13 @@ test('SCRUM-161 · el recibo NO se commitea', () => {
 test('SCRUM-161 · el recibo lo escribe el runner, con los exit REALES de sus hijos', () => {
   const fuente = leerFuente(path.join(RAIZ, 'scripts', 'test-staging-gated.mjs'));
   assert.match(fuente, /writeFileSync\(RUTA_RECIBO/, 'el runner tiene que escribirlo');
-  assert.match(fuente, /hijos: exitHijos/, 'y con los exit reales, no con ceros optimistas');
+  assert.match(fuente, /hijos: desgloseHijos/, 'y con el desglose real por hijo (SCRUM-197), no con ceros optimistas');
   // SCRUM-199: las claves ya NO son literales en el runner — se DERIVAN de HIJOS_SPEC. Se comprueba
   // que el runner construye los hijos Y el mapa de exits DESDE el spec: así toda clave queda cubierta
   // por construcción, no por una lista a mano que hubiera que mantener en paralelo (el hueco que cerró
   // SCRUM-199). Que las claves NO reaparezcan como literales lo vigila scrum199-fuente-unica-hijos.
   assert.match(fuente, /hijos\s*=\s*HIJOS_SPEC\.map/, 'los hijos se construyen iterando HIJOS_SPEC (fuente única)');
-  assert.match(fuente, /exitHijos\s*=\s*Object\.fromEntries\(hijos\.map/, 'el mapa de exits se deriva de los hijos, no se enumera');
+  assert.match(fuente, /desgloseHijos\s*=\s*Object\.fromEntries\(hijos\.map/, 'el mapa de desgloses se deriva de los hijos, no se enumera (SCRUM-197)');
 });
 
 test('SCRUM-161 · el recibo se escribe DESPUÉS de los guards de «no pude comprobar»', () => {
