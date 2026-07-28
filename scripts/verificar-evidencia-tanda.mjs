@@ -34,11 +34,11 @@ import {
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const rutaRecibo = path.join(RAIZ, RUTA_RECIBO);
 
-// Los dos ficheros que el bloque QA del runner NO corre (van aislados, en su propio proceso).
-// Duplicar la lista aquí sería la tercera copia del mismo dato; se deriva igual que allí, y si
-// alguien añade un aislado más sin tocar esto, el conteo sale ALTO y el guard aprieta de más —
-// falla hacia «vuelve a correr la tanda», que es el lado seguro.
-const AISLADOS = ['a55-window-quote.test.mjs', 'bot-suite.test.mjs'];
+// Los TRES ficheros que el bloque QA del runner NO corre (van aislados, en su propio proceso).
+// Copia a mano de la lista del runner (SCRUM-180 añadió scrum180; SCRUM-199 las unifica): si
+// alguien añade un aislado allí sin tocar aquí, el conteo sale ALTO y el guard aprieta de más —
+// falla hacia «vuelve a correr la tanda», que es el lado seguro (ruidoso, no silencioso).
+const AISLADOS = ['a55-window-quote.test.mjs', 'bot-suite.test.mjs', 'scrum180-fixtures-nunca-a-meta.test.mjs'];
 const ficherosEsperados = existsSync(path.join(RAIZ, 'tests'))
   ? readdirSync(path.join(RAIZ, 'tests')).filter((f) => f.endsWith('.test.mjs') && !AISLADOS.includes(f)).length
   : 0;
