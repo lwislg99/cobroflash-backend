@@ -47,7 +47,7 @@ function reciboBueno(extra = {}) {
   return {
     commit: COMMIT,
     terminadaEn: new Date(AHORA - 60000).toISOString(),
-    total: 640, pass: 640, fail: 0, skip: 0,
+    total: 646, pass: 646, fail: 0, skip: 0, // SCRUM-161: al encender, el suelo subió a 646 (agregado real 2a1d053)
     ficheros: 337,
     hijos: { a55: 0, bot: 0, qa: 0, scrum180: 0 }, // SCRUM-180: 4º hijo sano; emparejado con CLAVES_HIJOS
     autotest: false,
@@ -257,13 +257,16 @@ test('SCRUM-161 · falta una clave de hijo → no se lee como 0', () => {
 // EL INTERRUPTOR
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-161 · el guard está APAGADO y dice por qué', () => {
-  assert.equal(ACTIVO, false,
-    'si esto ya es true, la tanda debería estar verde (o cada rojo con ticket y cuarentena, ' +
-    'SCRUM-160) y este assert es lo que hay que actualizar CONSCIENTEMENTE.');
-  assert.ok(MOTIVO_APAGADO.length > 80, 'un interruptor sin motivo escrito nadie sabe cuándo tocarlo');
+test('SCRUM-161 · el guard está ENCENDIDO y BLOQUEA', () => {
+  // Encendido el 28-jul-2026 con la tanda 2a1d053 verde (646/646/0), ensayo VÁLIDA, 126=126.
+  // No basta el flag: se comprueba que el MECANISMO ACTÚA — con el guard encendido, un recibo
+  // inválido produce el mensaje que BLOQUEA («no cierres la tarea»), no el aviso blando.
+  assert.equal(ACTIVO, true, 'el guard quedó encendido en el commit del encendido (SCRUM-161)');
+  assert.match(mensajeVeredicto(validar(null), { activo: true }), /no cierres la tarea/,
+    'encendido, un recibo inválido tiene que BLOQUEAR, no avisar');
+  // El camino apagado sigue vivo y coherente por si alguien vuelve a poner ACTIVO=false.
+  assert.ok(MOTIVO_APAGADO.length > 80, 'si se apaga, el motivo tiene que estar escrito');
   assert.match(mensajeApagado(), /APAGADO/);
-  assert.match(mensajeApagado(), /no bloquea/i);
 });
 
 test('SCRUM-161 · apagado, el veredicto se calcula IGUAL — solo cambia si aprieta', () => {

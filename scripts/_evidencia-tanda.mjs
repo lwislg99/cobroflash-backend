@@ -1,11 +1,10 @@
 // scripts/_evidencia-tanda.mjs — SCRUM-161: evidencia de que la tanda gateada CORRIÓ de verdad.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// 🔴 ESTE GUARD ESTÁ APAGADO. LEE `MOTIVO_APAGADO` ANTES DE ENCENDERLO.
-//
-// Está construido, probado y enganchado — pero `ACTIVO = false`, así que HOY no bloquea a
-// nadie. No es una obra a medias: es una obra terminada esperando a que se cumpla su gate.
-// Encenderlo es cambiar UNA línea, y esa línea es el sitio donde vive la decisión.
+// 🟢 ESTE GUARD ESTÁ ENCENDIDO (28-jul-2026). Cerrar una tarea sin evidencia válida de la tanda
+// gateada del HEAD actual FALLA (exit≠0). Apagarlo = poner `ACTIVO = false` (una línea), y los
+// textos del camino apagado (`MOTIVO_APAGADO`, `mensajeApagado`) vuelven a aplicar.
+// Se encendió con la tanda 2a1d053 en verde (646/646/0), ensayo VÁLIDA, ficheros 126 = 126.
 // ─────────────────────────────────────────────────────────────────────────────────────────
 //
 // QUÉ PROBLEMA RESUELVE
@@ -53,28 +52,27 @@ export const RUTA_RECIBO = '.claude/evidencia-tanda.json';
 // ─────────────────────────────────────────────────────────────────────────────────────────
 
 /**
- * 🔴 EL INTERRUPTOR. Hoy `false`: el guard calcula el veredicto y lo IMPRIME, pero no bloquea.
- * Encenderlo = poner `true` aquí, en un PR, con el motivo de abajo ya resuelto.
+ * 🟢 EL INTERRUPTOR. Hoy `true`: el guard calcula el veredicto Y BLOQUEA (exit≠0) si no hay
+ * evidencia válida del HEAD actual. Apagarlo = poner `false` aquí, en un PR.
  */
-export const ACTIVO = false;
+export const ACTIVO = true;
 
 /**
- * POR QUÉ ESTÁ APAGADO — y qué tiene que pasar para encenderlo.
+ * POR QUÉ SE ENCENDIÓ (28-jul-2026) — y qué haría falta para apagarlo.
  *
- * La tanda gateada **no está verde**. Un guard que exige «evidencia de la tanda» cuando la
- * tanda sale roja exige adjuntar una tanda roja: o bloquea a TODO EL MUNDO para cerrar
- * cualquier tarea, o enseña a adjuntar rojos — y lo segundo es peor que no tenerlo, porque
- * convierte el rojo en trámite. Es la misma doctrina del «check rojo permanente» que ya se
- * pagó en SCRUM-168: un mecanismo que se aprende a ignorar deja de ser un mecanismo.
+ * El gate era: la tanda en verde, o cada rojo con ticket y cuarentena (SCRUM-160). Se cumplió —
+ * la tanda 2a1d053 salió 646/646/0, el ensayo dio VÁLIDA y los ficheros cuadraron (126 = 126).
+ * Encender con la tanda ROJA habría sido exigir adjuntar una tanda roja —o bloquea a todo el
+ * mundo, o enseña a adjuntar rojos—, la doctrina del «check rojo permanente» de SCRUM-168; por
+ * eso se esperó al verde.
  *
- * CONDICIÓN PARA ENCENDERLO: la tanda en verde, o cada rojo con ticket y cuarentena explícita
- * (criterio «ningún rojo sin número de ticket» de SCRUM-160). Ese día, `ACTIVO = true` y de
- * paso se sube `SUELO_TOTAL` al agregado real, que hasta entonces no se conoce.
+ * PARA APAGARLO: `ACTIVO = false`. Entonces `mensajeApagado()` vuelve a ser el camino vivo, y su
+ * `MOTIVO_APAGADO` debe explicar por qué se apagó — no dejar el motivo de antes del verde.
  */
 export const MOTIVO_APAGADO =
-  'la tanda gateada todavía no está verde: exigir evidencia hoy obligaría a adjuntar una tanda ' +
-  'ROJA, que o bloquea a todo el mundo o enseña a adjuntar rojos. Se enciende cuando la tanda ' +
-  'esté verde o cada rojo tenga ticket y cuarentena (SCRUM-160).';
+  'el guard está apagado a mano (ACTIVO=false): calcula el veredicto pero no bloquea. Si lo ' +
+  'apagas, escribe aquí POR QUÉ — el motivo de antes (la tanda no estaba verde) ya no aplica: ' +
+  'se encendió el 28-jul-2026 con la tanda en verde (SCRUM-160/161).';
 
 /**
  * ¿Bloquea ahora mismo?
@@ -108,20 +106,20 @@ export const MARGEN_FUTURO_MS = 60 * 60 * 1000;
  * EL SUELO — la comprobación que impide llamar «tanda» a correr un fichero.
  *
  * Sin él, `node --test un-fichero.mjs` produce un recibo formalmente impecable. Es la más
- * importante de las cuatro y la que más fácil se olvida.
+ * importante de las comprobaciones y la que más fácil se olvida.
  *
- * DELIBERADAMENTE CONSERVADOR y dicho sin adornos: el agregado REAL de la tanda no se conoce
- * todavía —no se ha podido correr entera en verde—, así que ponerlo «apretado» sería inventar
- * un número y estrenarlo bloqueando a alguien. Lo que sí se sabe, medido: `npm test` a solas
- * ya da 588 tests, y la tanda gateada es un superconjunto (mismos ficheros, con los gates
- * ENCENDIDOS). 400 separa con enorme holgura «una tanda» de «un fichero» (unidades a decenas),
- * que es lo único que este umbral tiene que distinguir. **No vigila la cobertura**; para eso
- * está `SUELO_FICHEROS`, que no necesita ningún número mágico.
+ * Con el guard ENCENDIDO, el agregado REAL de la tanda ya se conoce: 2a1d053 salió 646/646/0.
+ * Así que el suelo pasa de los 400 conservadores (que solo separaban «una tanda» de «un
+ * fichero») al agregado real, 646, y esto se convierte en un ratchet de verdad (estilo
+ * SCRUM-113): una tanda con menos de 646 tests es una tanda incompleta. **No vigila la
+ * cobertura por fichero**; para eso está el suelo de `ficheros`, que no necesita número mágico.
  *
- * El día que se encienda el guard, aquí va el agregado real y esto pasa a ser un ratchet de
- * verdad (estilo SCRUM-113).
+ * ⚠️ RATCHET MANUAL — NO SUBE SOLO. El día que la suite llegue a 700, el suelo seguirá en 646
+ * salvo que alguien lo mueva a mano; y el día que alguien borre un test legítimamente, este 646
+ * bloqueará hasta que se baje CONSCIENTEMENTE. Es otra cifra a mano que envejece — la misma
+ * familia que las tres listas de aislados; su unificación/automatización va en SCRUM-199.
  */
-export const SUELO_TOTAL = 400;
+export const SUELO_TOTAL = 646;
 
 /** Las CUATRO claves de los hijos del runner. Si cambian ahí, este recibo deja de cuadrar.
  *  SCRUM-180 añadió 'scrum180' (hijo propio, dry-run OFF). El guard ITERA esta lista para exigir
@@ -304,12 +302,16 @@ export function mensajeVeredicto(res, { activo }) {
   return cabecera + lineas + '\n' + remedioDominante(res.problemas);
 }
 
-/** Lo que se imprime cuando el guard está APAGADO: dice lo que HARÍA y por qué no lo hace. */
+/**
+ * Lo que se imprime cuando el guard está APAGADO: dice lo que HARÍA y por qué no lo hace.
+ * Con `ACTIVO = true` (hoy) NO se alcanza — `verificar-evidencia:54` solo la llama con `!activo`.
+ * Es el camino reversible: revive el día que alguien vuelva a poner `ACTIVO = false`.
+ */
 export function mensajeApagado() {
   return (
     '\n🔴 SCRUM-161 · GUARD APAGADO (`ACTIVO = false` en scripts/_evidencia-tanda.mjs).\n' +
     `   Motivo: ${MOTIVO_APAGADO}\n` +
-    '   Lo de arriba es lo que DIRÍA si estuviera encendido. Hoy no bloquea nada.\n' +
+    '   Lo de arriba es lo que DIRÍA si estuviera encendido. Con ACTIVO=false no bloquea.\n' +
     '   Para ensayarlo bloqueando de verdad, una sola ejecución: YAQU_EVIDENCIA_TANDA=1\n'
   );
 }
