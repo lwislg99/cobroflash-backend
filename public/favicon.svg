@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="YaQu">
+  <!--
+    SCRUM-184 · Favicon de YaQu. No existía NINGUNO en el repo, así que todo navegador pedía
+    /favicon.ico por su cuenta y se llevaba un 404 — visible en la consola de cualquier cliente
+    que abriera la landing pública. Lo destapó el guard de consola de SCRUM-183.
+
+    Colores de DESIGN.md: verde YaQu sobre crema. SVG y no .ico a propósito: es texto (se revisa
+    en un diff, no es un binario opaco), pesa 400 bytes y lo entienden todos los navegadores
+    modernos. Al declararlo en el <head> el navegador deja de pedir /favicon.ico solo.
+  -->
+  <rect width="64" height="64" rx="14" fill="#F7F5F0"/>
+  <path d="M16 18 L32 38 L48 18" fill="none" stroke="#0E7C5A" stroke-width="8"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="32" y1="38" x2="32" y2="48" stroke="#0E7C5A" stroke-width="8" stroke-linecap="round"/>
+</svg>
