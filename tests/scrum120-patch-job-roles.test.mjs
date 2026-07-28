@@ -67,7 +67,8 @@ test('SCRUM-120: PATCH /admin/jobs/:id — gate por campo (técnico: operativo �
 
         const rCerrar = await patch(cookieTecnico, { status: 'cerrado' });
         assert.equal(rCerrar.status, 403, 'técnico cerrando el Trabajo (irreversible + mata el cobro) debe dar 403');
-        assert.equal((await rCerrar.json()).field, 'status:cerrado');
+        // `status:'cerrado'` lleva comillas A PROPÓSITO (ver roleCapabilities.ts:77): reserva ese campo SOLO para ese VALOR, no el campo entero como los hermanos tipoOperacion/assignedUserId. No "unificar" el estilo quitándolas.
+        assert.equal((await rCerrar.json()).field, "status:'cerrado'");
 
         // ── FAIL-CLOSED: mezcla de campo fiscal + campo legítimo → 403 y NADA se aplica ──
         const rMix = await patch(cookieTecnico, { tipoOperacion: 'OPERACIONES_SUELTAS', notes: 'MEZCLA-NO-DEBE-GUARDARSE' });
