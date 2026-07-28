@@ -8,7 +8,7 @@ import {
 } from '../../quoteAdmin';
 
 import { prisma } from '../../../../core/db/prisma';
-import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo } from '../../../quotes/domain/billingPlan';
+import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo, validarEdicionPlan } from '../../../quotes/domain/billingPlan'; // SCRUM-37
 import { sendQuoteWhatsAppToCustomer } from '../../../quotes/domain/sendQuote.service';
 import { suggestMaintenance } from '../../../maintenance/domain/maintenance.service';
 import { isFlagEnabled } from '../../../../core/flags';
@@ -252,6 +252,49 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
  * CONSECUENCIA de las líneas, nunca al revés), y por el mismo `applyVeriFactu`. Duplicar la
  * lógica de líneas para «el caso fácil» es justo como nacen las cuotas mal selladas.
  */
+/**
+ * PATCH /admin/quotes/:id/billing-plan — SCRUM-37 (mec. 1) · REAJUSTAR LOS TRAMOS QUE QUEDAN.
+ *
+ * Las obras evolucionan: se amplían, se recortan, se pacta otra cosa a mitad. Hasta ahora el
+ * plan de cobro se fijaba al crear el presupuesto y no había forma de tocar lo que faltaba.
+ *
+ * El candado vive en  (dominio puro, probado en sus dos caras): los tramos
+ * ya facturados son intocables —están congelados en su  con su — y los que
+ * quedan, incluido el siguiente, se editan libremente. El plan nuevo tiene que sumar 100 %
+ * CONTANDO lo emitido, o el descuadre no aparecería hasta la última factura.
+ *
+ * Aquí no se emite nada: esto solo reordena lo que aún no existe como documento.
+ */
+router.patch('/:id/billing-plan', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_quote_id' });
+
+    const quote = await prisma.quote.findFirst({
+      where: { id, merchantId: req.merchantId },
+      include: { Invoice: true },
+    });
+    if (!quote) return res.status(404).json({ error: 'quote_not_found' });
+
+    const emitidas = (quote.Invoice || []).length;
+    const val = validarEdicionPlan((quote as any).customBillingPlan, req.body?.customBillingPlan, emitidas);
+    if (!val.ok) {
+      // 409 para lo que choca con el estado (tramo ya facturado); 400 para un plan mal formado.
+      const status = val.error === 'tramo_emitido_intocable' ? 409 : 400;
+      return res.status(status).json({ error: val.error, message: val.message });
+    }
+
+    const actualizado = await prisma.quote.update({
+      where: { id: quote.id },
+      data: { customBillingPlan: req.body.customBillingPlan },
+    });
+    return res.json({ ok: true, customBillingPlan: actualizado.customBillingPlan, emitidas });
+  } catch (err: any) {
+    console.error('[PATCH /admin/quotes/:id/billing-plan]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
   try {
     const quoteId = Number(req.params.id);

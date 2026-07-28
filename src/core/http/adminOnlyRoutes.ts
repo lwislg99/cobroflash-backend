@@ -76,6 +76,8 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   // SCRUM-178: la vía MANUAL emite igual de fiscal que la de tramos, así que su 403 se
   // ejerce igual. No hereda el de arriba: es otra ruta y otro `requireRole`.
   { method: 'POST', path: '/admin/quotes/999999/invoice-manual' },
+  // SCRUM-37: reajustar tramos es zona de DINERO (cambia el reparto de lo que se cobrará).
+  { method: 'PATCH', path: '/admin/quotes/999999/billing-plan', body: { customBillingPlan: [{ percentage: 1, label: 'X' }] } },
   // SCRUM-170 / SCRUM-171a: las dos vías nuevas de emisión desde albarán. Emiten factura y
   // sellan VeriFactu igual que la de Job, así que su 403 se ejerce igual.
   { method: 'POST', path: '/admin/albaranes/999999/facturar-parcial', body: { lineas: [{ index: 0, cantidad: 1 }] } },
