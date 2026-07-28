@@ -117,7 +117,10 @@ if (res.status !== 2) {
   const err = (res.stderr || res.stdout || '').split('\n')
     .filter((l) => l.trim() && !/^warn |deprecated|Update available|major update|npm i |pris\.ly|[┌│└]/.test(l))
     .slice(0, 8).join('\n');
-  if (err) console.error(err);
+  // SCRUM-196: aquí `err` YA es un string filtrado (no un objeto), así que `?? err` es lo que
+  // aplica — consistencia con los otros dos catch, NO reducción real: la superficie (el stderr de
+  // Prisma, ya filtrado por el regex de arriba) no cambia. Probado: no contiene la contraseña.
+  if (err) console.error(err?.message ?? err);
   process.exit(2);
 }
 
