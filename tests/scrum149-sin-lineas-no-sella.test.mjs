@@ -15,6 +15,7 @@
 // SIN GATE: el doble no toca BD.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { leerFuente } from './_guard-texto.mjs'; // SCRUM-193: leer YA filtrado
 
 const { applyVeriFactu } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
 
@@ -98,8 +99,8 @@ test('SCRUM-149: el camino muerto que creaba facturas sin líneas ya no existe',
   const { fileURLToPath } = await import('node:url');
   const raiz = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
-  const quoteAdmin = fs.readFileSync(path.join(raiz, 'src/modules/system/quoteAdmin.ts'), 'utf8');
-  const rutas = fs.readFileSync(path.join(raiz, 'src/modules/system/app/routes/quotesAdmin.routes.ts'), 'utf8');
+  const quoteAdmin = leerFuente(path.join(raiz, 'src/modules/system/quoteAdmin.ts'));
+  const rutas = leerFuente(path.join(raiz, 'src/modules/system/app/routes/quotesAdmin.routes.ts'));
   const codigo = (s) => s.split('\n').filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n');
 
   assert.doesNotMatch(codigo(quoteAdmin), /createInvoiceFromQuoteAdmin/,

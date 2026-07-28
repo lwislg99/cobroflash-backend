@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { leerFuente } from './_guard-texto.mjs'; // SCRUM-193
 
 const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const src = fs.readFileSync(path.join(raiz, 'public', 'dashboard', 'js', 'quotesView.js'), 'utf8');
-const css = fs.readFileSync(path.join(raiz, 'public', 'dashboard', 'css', 'styles.css'), 'utf8');
+const src = leerFuente(path.join(raiz, 'public', 'dashboard', 'js', 'quotesView.js'));
+const css = leerFuente(path.join(raiz, 'public', 'dashboard', 'css', 'styles.css'));
 
 // Código SIN comentarios: un guard que prohíbe un patrón tiene que mirar el CÓDIGO, no la
 // prosa que explica por qué se retiró (trampa de auto-referencia de SCRUM-129).

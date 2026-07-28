@@ -3,12 +3,13 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { leerFuente } from './_guard-texto.mjs'; // SCRUM-193
 
 const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FUENTE = path.join(raiz, 'public', 'dashboard', 'js', 'quotesView.js');
 const HOJA = path.join(raiz, 'public', 'dashboard', 'css', 'styles.css');
-const src = fs.readFileSync(FUENTE, 'utf8');
-const css = fs.readFileSync(HOJA, 'utf8');
+const src = leerFuente(FUENTE);
+const css = leerFuente(HOJA);
 
 /**
  * SCRUM-139 F2 — EL CUADERNILLO.
