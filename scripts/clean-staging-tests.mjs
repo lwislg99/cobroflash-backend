@@ -118,5 +118,8 @@ async function main() {
 }
 
 main()
-  .catch((e) => { console.error(e); process.exitCode = 1; })
+  // SCRUM-196: e?.message en vez del objeto entero — reduce superficie. NO es fuga hoy (Prisma no
+  // mete la contraseña en el mensaje de sus errores), pero eso es propiedad de la versión de
+  // Prisma que tenemos, no una garantía nuestra. Imprimir el error entero era superficie de más.
+  .catch((e) => { console.error(e?.message ?? e); process.exitCode = 1; })
   .finally(() => prisma.$disconnect());
