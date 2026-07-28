@@ -94,13 +94,81 @@ export async function ensureJobForQuote(quoteId: number): Promise<void> {
  * 1 tramo = 1 Invoice → sin doble conteo. Idempotente por diseño (recalcula el total
  * ENTERO cada vez → un evento duplicado no cuenta dos veces). Best-effort: nunca lanza.
  */
-export async function recalcJobCobradoForQuote(quoteId: number): Promise<void> {
+/**
+ * Los Quotes que pertenecen a un Job. **ÚNICO punto que cambia cuando llegue el 1:N**
+ * (SCRUM-37 mecanismo 2): hoy `Job.quoteId` es `@unique`, así que la respuesta tiene como
+ * mucho un elemento; con `Quote.jobId` pasará a ser un `findMany` y **nada más de este
+ * fichero se entera**.
+ *
+ * Existe para que la agregación de dinero deje de estar escrita en términos de «el quote» —
+ * ver el porqué en `recalcJobCobradoForJob`.
+ */
+export async function quotesDelJob(jobId: number, prismaClient = prisma): Promise<number[]> {
+  const job = await prismaClient.job.findUnique({ where: { id: jobId }, select: { quoteId: true } });
+  return job?.quoteId ? [job.quoteId] : [];
+}
+
+/**
+ * NÚCLEO REAL: materializa `Job.totalCobrado` sumando las Invoices `paid` de **TODOS** los
+ * quotes del Job.
+ *
+ * ⚠️ POR QUÉ SE SUMA POR JOB Y NO POR QUOTE — arreglado ANTES de que el bug pueda ocurrir
+ * (SCRUM-37, recon del mecanismo 2). La versión anterior hacía:
+ *
+ *     const job = await prisma.job.findUnique({ where: { quoteId } });
+ *     if (!job) return;                                              // ①
+ *     const agg = await prisma.invoice.aggregate({ where: { quoteId, status:'paid' } });
+ *     await prisma.job.update({ data: { totalCobrado: agg._sum.total ?? 0 } });   // ②
+ *
+ * Con 1:1 es correcto. En cuanto un Job tenga VARIOS quotes (presupuestos adicionales),
+ * fallan las dos líneas y la segunda es destructiva:
+ *
+ *   ① **Silencio.** Un presupuesto adicional no tiene Job apuntándole (`Job.quoteId` sigue
+ *      señalando al original) → `findUnique` da `null` → la función se va sin hacer nada.
+ *      Cobrar el extra no movería el total, y nadie vería un error.
+ *   ② **El total BAJA después de cobrar.** El `aggregate` sumaba solo las facturas de ESE
+ *      quote y **sobrescribía**: cobrar un extra de 200 € sobre un Job con 3.000 € ya
+ *      cobrados dejaba `totalCobrado = 200`.
+ *
+ * Es el patrón de SCRUM-141 y de `vat_default`: un agregado materializado que deja de cuadrar
+ * con lo que agrega. Y aquí no es un dato feo en pantalla — es el número con el que el pro
+ * sabe cuánto le deben.
+ *
+ * **Con 1:1 el resultado es IDÉNTICO al de antes** (la lista tiene un solo quote), así que
+ * este cambio es seguro y verificable hoy; lo que hace es dejar la bomba desactivada de
+ * antemano, en vez de tener que acordarse al abrir el schema.
+ *
+ * Sigue siendo idempotente por diseño (recalcula el total ENTERO cada vez → un evento
+ * duplicado no cuenta dos veces) y best-effort: nunca lanza.
+ */
+export async function recalcJobCobradoForJob(jobId: number, prismaClient = prisma): Promise<void> {
+  try {
+    if (!Number.isInteger(jobId)) return;
+    const quoteIds = await quotesDelJob(jobId, prismaClient);
+    // Sin quotes no se toca el total: un Job manual (SCRUM-51) puede no tener ninguno, y
+    // escribir 0 ahí borraría un cobro registrado por otra vía.
+    if (quoteIds.length === 0) return;
+    const agg = await prismaClient.invoice.aggregate({
+      where: { quoteId: { in: quoteIds }, status: 'paid' },
+      _sum: { total: true },
+    });
+    await prismaClient.job.update({ where: { id: jobId }, data: { totalCobrado: agg._sum.total ?? 0 } });
+  } catch (err: any) {
+    console.error('[jobs] recalcJobCobradoForJob:', err?.message || err);
+  }
+}
+
+/**
+ * Entrada por Quote: resuelve SU Job y delega en el núcleo por Job. Se conserva la firma
+ * porque la usan los tres wrappers; lo que cambia es que ya no agrega en términos del quote.
+ */
+export async function recalcJobCobradoForQuote(quoteId: number, prismaClient = prisma): Promise<void> {
   try {
     if (!Number.isInteger(quoteId)) return;
-    const job = await prisma.job.findUnique({ where: { quoteId }, select: { id: true } });
+    // Cuando llegue el 1:N este `findUnique` pasa a mirar `Quote.jobId`; el núcleo no cambia.
+    const job = await prismaClient.job.findUnique({ where: { quoteId }, select: { id: true } });
     if (!job) return; // el Quote no tiene Job
-    const agg = await prisma.invoice.aggregate({ where: { quoteId, status: 'paid' }, _sum: { total: true } });
-    await prisma.job.update({ where: { id: job.id }, data: { totalCobrado: agg._sum.total ?? 0 } });
+    await recalcJobCobradoForJob(job.id, prismaClient);
   } catch (err: any) {
     console.error('[jobs] recalcJobCobradoForQuote:', err?.message || err);
   }
