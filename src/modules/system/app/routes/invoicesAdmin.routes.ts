@@ -13,7 +13,7 @@ import {
 
 import { BASE_URL } from '../../../../core/config/env';
 import { prisma } from '../../../../core/db/prisma';
-import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
+import { applyVeriFactu, applyVeriFactuAnulacion } from '../../../invoicing/domain/verifactu.service'; // SCRUM-153
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { isDemoMerchant, DEMO_WATERMARK } from '../../../invoicing/domain/emission.service';
 import { getDeliveryStatus } from '../../../messaging/domain/whatsappLog.service';
@@ -525,6 +525,146 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
   } catch (err) {
     console.error('[POST /admin/invoices/:id/send-reminder]', err);
     return res.status(500).json({ ok: false, error: 'internal_error' });
+  }
+});
+
+/**
+ * SCRUM-153 · MOTIVOS DE ANULACIÓN — lista CERRADA, y no es burocracia.
+ *
+ * El registro oficial de la AEAT no lleva motivo (comprobado contra el XSD: `RegistroAnulacion`
+ * no tiene dónde ponerlo), así que esto es INTERNO. Cerrada y no texto libre por tres razones:
+ * RGPD —un campo libre en zona fiscal invita a escribir datos personales que no hay obligación
+ * de recoger—, porque así se puede CONTAR (un 60 % de «duplicada» es un bug de producto, no un
+ * hábito del usuario), y porque hace verificable la regla de abajo.
+ *
+ * ⚠️ ANULAR ≠ RECTIFICAR, y esto ACOTA la ruta: se anula lo que NUNCA DEBIÓ EXISTIR (duplicado,
+ * prueba, error de subida). Si la operación SÍ existió y el importe está mal, eso es una R1
+ * (`/rectify`, justo debajo). Los motivos son todos de «no hubo operación» a propósito: son lo
+ * que hace cumplible esa regla en vez de dejarla en un comentario.
+ */
+const MOTIVOS_ANULACION = ['duplicada', 'error_sin_operacion', 'datos_cliente', 'prueba'] as const;
+
+/**
+ * POST /admin/invoices/:id/annul — SCRUM-153 · ANULAR una factura emitida.
+ *
+ * La maquinaria fiscal existía desde SCRUM-145 (`applyVeriFactuAnulacion`, huella encadenada,
+ * columnas ya en staging y prod): lo que faltaba era el disparador. La Parte L declaraba
+ * `pending → annulled` y no había nadie que la ejecutara.
+ *
+ * TRES COSAS QUE NO SON OBVIAS Y SON EL TICKET ENTERO:
+ *
+ * 1. NO BORRA NADA. La factura sigue existiendo, anulada, con su registro de alta intacto y su
+ *    anulación encadenada detrás (regla 29). Su número NO se reutiliza: el hueco en la serie es
+ *    correcto, no un fallo que haya que «arreglar» renumerando.
+ *
+ * 2. LIBERA los albaranes — cambio de criterio de P10 (expediente fiscal, 27-jul-2026). Una
+ *    factura anulada no cobró nada, así que ese trabajo SIGUE SIN FACTURAR y su plazo del
+ *    art. 13.2 sigue corriendo. Dejarlo ligado significaría que el pro no puede volver a
+ *    facturarlo nunca: no es un apunte contable, es dinero real que no se cobra.
+ *
+ * 3. EL LIBRO DE SCRUM-170 SE ENTERA. Lo facturado de cada línea es la suma de las filas de
+ *    facturas no anuladas, así que hay que decirle CUÁL deja de contar. Es el único punto del
+ *    flujo donde una anulación puede perder dinero en silencio: sin esto el albarán quedaría
+ *    «facturado» por cantidades anuladas y ese trabajo no volvería a aparecer en la bandeja.
+ */
+router.post('/:id/annul', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+
+    const motivo = String(req.body?.motivo || '');
+    if (!(MOTIVOS_ANULACION as readonly string[]).includes(motivo)) {
+      return res.status(400).json({
+        error: 'motivo_invalido',
+        message: 'Elige por qué se anula: duplicada, emitida por error, datos del cliente equivocados o prueba.',
+        motivos: MOTIVOS_ANULACION,
+      });
+    }
+
+    const invoice = await prisma.invoice.findFirst({ where: { id, merchantId: req.merchantId } });
+    if (!invoice) return res.status(404).json({ error: 'not_found' });
+
+    // Idempotente: volver a anular lo ya anulado no es error del usuario, y sobre todo NO repite
+    // el sellado — una segunda huella de anulación en la cadena sería un registro falso.
+    if (invoice.status === 'annulled') {
+      return res.json({ ok: true, status: 'annulled', yaEstaba: true });
+    }
+    // Una factura COBRADA no se anula: el dinero entró, la operación existió. Eso es devolución
+    // + R1 (y ninguno de los motivos de arriba podría ser cierto).
+    if (invoice.status !== 'pending') {
+      return res.status(409).json({
+        error: 'invoice_not_pending',
+        message: 'Solo se anula una factura pendiente. Si ya se cobró, hay que rectificarla (R1), no anularla.',
+      });
+    }
+    // V0-0: un justificante J- no está en la cadena fiscal; no hay anulación que registrar.
+    if (isReceiptNumber(invoice.number)) {
+      return res.status(409).json({
+        error: 'receipt_not_annullable',
+        message: 'Este documento es un justificante, no una factura fiscal: no entra en la cadena VeriFactu.',
+      });
+    }
+
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: req.merchantId }, select: { taxId: true, country: true },
+    });
+
+    // ── 1) EL SELLADO, PRIMERO Y FUERA DE TODA TRANSACCIÓN (SCRUM-173/177) ──────────────────
+    // `applyVeriFactuAnulacion` extiende LA MISMA cadena que el alta y trae su propio cerrojo
+    // por merchant; llamarla dentro de una `$transaction` lanza a propósito. Va ANTES del cambio
+    // de estado porque el orden inverso dejaría una factura marcada como anulada sin registro
+    // que lo respalde: una huella sin estado se reintenta, un estado sin huella no se deshace.
+    let sellada = false;
+    if (merchant?.country === 'ES' && merchant?.taxId) {
+      try {
+        await applyVeriFactuAnulacion(invoice, merchant.taxId, prisma);
+        sellada = true;
+      } catch (e: any) {
+        console.error(`[annul] sellado de anulación falló en ${invoice.number}:`, e?.message || e);
+        return res.status(409).json({
+          error: 'anulacion_no_sellada',
+          message: 'No se pudo registrar la anulación en la cadena VeriFactu, así que no se ha anulado nada. Inténtalo de nuevo.',
+        });
+      }
+    }
+
+    // ── 2) ESTADO + LIBERACIÓN, en UNA transacción ──────────────────────────────────────────
+    const liberados = await prisma.$transaction(async (tx) => {
+      await tx.invoice.update({ where: { id: invoice.id }, data: { status: 'annulled' } });
+      // P10 (criterio nuevo): los albaranes que consolidó vuelven a estar pendientes.
+      const albs = await tx.albaran.updateMany({
+        where: { merchantId: req.merchantId, invoiceId: invoice.id },
+        data: { invoiceId: null },
+      });
+      // SCRUM-170: y lo facturado por la vía PARCIAL deja de contar. Borrar sus filas equivale a
+      // excluirlas de la suma y no deja dos fuentes de verdad conviviendo.
+      const libro = await tx.albaranLineaFacturada.deleteMany({
+        where: { merchantId: req.merchantId, invoiceId: invoice.id },
+      });
+      return { albaranes: albs.count, lineasLibro: libro.count };
+    });
+
+    // `anular_factura` YA existía en el enum de auditoría: declarada y jamás usada, exactamente
+    // igual que la transición `pending → annulled` de la Parte L. Se usa la que hay en vez de
+    // inventar otra — el hueco era el disparador, no el vocabulario.
+    recordAudit({
+      merchantId: req.merchantId!, action: 'anular_factura', entityType: 'invoice', entityId: invoice.id,
+      meta: { number: invoice.number, motivo, sellada, ...liberados }, ip: requestIp(req),
+    });
+
+    return res.json({
+      ok: true,
+      status: 'annulled',
+      number: invoice.number,
+      motivo,
+      veriFactu: sellada,
+      liberados,
+      // El aviso viaja también en la respuesta: quien llame por API tiene que saberlo igual.
+      message: `La factura ${invoice.number} queda anulada. Sigue existiendo con su registro, y su número no se reutiliza.`,
+    });
+  } catch (err: any) {
+    console.error('[POST /admin/invoices/:id/annul]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
   }
 });
 
