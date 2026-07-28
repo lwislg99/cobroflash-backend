@@ -64,9 +64,12 @@ export function telefonosDe(merchantId) {
  * operación va aislada y `limpiarMerchant` REINTENTA la pasada entera —, pero un orden
  * razonable evita la mayoría de los reintentos.
  *
- * Son los 20 modelos con `merchantId` del schema. Si mañana aparece otro y no está aquí,
- * el borrado del merchant fallará por FK y el aviso de consola lo nombrará: es ruidoso a
- * propósito, porque una lista de limpieza incompleta que calla es basura acumulándose.
+ * Son los 21 modelos con `merchantId` del schema (SCRUM-170 sumó `albaranLineaFacturada`). Si
+ * mañana aparece otro y no está aquí, el borrado del merchant fallará por FK y el aviso de
+ * consola lo nombrará: ruidoso a propósito. Pero ESO solo vale para los que TIENEN FK — el
+ * principio FK-Restrict (docs/QA/SUITE_REGRESION.md): una FK Restrict GRITA si el borrado va
+ * mal; SIN FK, el borrado «tiene éxito» dejando basura y el fallo es MUDO. `botSession` es justo
+ * ese caso (merchantId nullable y sin FK) y por eso se barre aparte, por phone (SCRUM-174).
  */
 const MODELOS_POR_MERCHANT = [
   // SCRUM-170: el libro de líneas facturadas va PRIMERO — cuelga de albarán y de factura, y
