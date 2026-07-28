@@ -168,6 +168,15 @@ if (!override) {
   console.log('preflight OMITIDO (modo autotest: sin BD real que comprobar).');
 }
 
+// ── TIMEOUT POR HIJO + SEÑAL DE VIDA (SCRUM-181) ─────────────────────────────
+// Sin timeout, un hijo colgado dejaba la tanda muerta EN SILENCIO: la salida de cada hijo se
+// escribe DESPUÉS de que vuelve (más abajo), así que un cuelgue no imprimía nada. Ahora el
+// padre ANUNCIA antes de lanzar (con el límite efectivo) y ABORTA al hijo que se pase.
+// Medido: a55 ~16s, bot-suite ~55s, bloque QA ~10 min.
+const LIGHT_MS = 5 * 60 * 1000;   // aislados (a55, bot-suite): suelo generoso para CI en frío.
+const HEAVY_MS = 30 * 60 * 1000;  // bloque QA (~10 min): ~3× de margen.
+const OVERRIDE_MS = Number(process.env.GATED_CHILD_TIMEOUT_MS) || 0; // override, TODOS los hijos (tuning/pruebas).
+
 // SCRUM-182: huella de dist/, tests/ y el cliente de Prisma justo ANTES del bucle. El preflight
 // de arriba solo hace `migrate diff` (lectura), no mueve el árbol, así que va antes como gate.
 const huellaAntes = huellaArtefactos(process.cwd());
@@ -179,9 +188,33 @@ for (let i = 0; i < hijos.length; i++) {
     if (v === undefined) delete env[k];
     else env[k] = v;
   }
-  const res = spawnSync(process.execPath, h.args, { env, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const timeoutMs = OVERRIDE_MS || (h.pesado ? HEAVY_MS : LIGHT_MS);
+  const limiteTxt = OVERRIDE_MS ? `${Math.round(OVERRIDE_MS / 1000)}s (override)` : `${Math.round(timeoutMs / 60000)} min`;
+  // SEÑAL DE VIDA: se anuncia ANTES de lanzar, con el límite EFECTIVO (SCRUM-181 cond. 1). Si el
+  // hijo cuelga, al menos se sabe cuál y con qué límite; su salida real llega cuando vuelve.
+  console.log(`\n▶ [${i + 1}/${hijos.length}] lanzando ${h.nombre}… (límite ${limiteTxt})`);
+  const t0 = Date.now();
+  const res = spawnSync(process.execPath, h.args, {
+    env, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+    timeout: timeoutMs, killSignal: 'SIGTERM',
+  });
+  const durS = ((Date.now() - t0) / 1000).toFixed(1);
   const salida = (res.stdout || '') + (res.stderr || '');
   process.stdout.write(salida); // que la salida del hijo NO se pierda
+
+  // TIMEOUT ≠ fallo normal (SCRUM-181). Al vencer el límite, spawnSync mata al hijo con
+  // killSignal y devuelve status=null, signal='SIGTERM' y error.code='ETIMEDOUT' (los tres,
+  // medido en Windows). Se nombra ABORTADO POR TIEMPO, cuenta como fallido y NO se agregan sus
+  // contadores — un proceso que no terminó miente («no pude comprobar» ≠ «falló un test»).
+  // NO se hace tree-kill: medido que matar a `node --test` reapea también su subproceso
+  // por-fichero (el nieto NO queda huérfano con la conexión). Y un taskkill defensivo sobre un
+  // res.pid YA MUERTO sería peligroso: si el SO reusó ese pid, mataría a otro proceso.
+  if (res.error?.code === 'ETIMEDOUT' || (res.status === null && res.signal != null)) {
+    fallaron.push(`${h.nombre} [ABORTADO POR TIEMPO · ${durS}s > ${limiteTxt}]`);
+    console.log(`\n[${i + 1}/${hijos.length}] ${h.nombre}: ⏱  ABORTADO POR TIEMPO tras ${durS}s (límite ${limiteTxt}; signal=${res.signal || res.error?.code}). No agrego sus contadores.`);
+    continue;
+  }
+
   const code = res.status; // ← se lee directo, sin tubería (trampa 5)
   const c = parseCuenta(salida);
 
@@ -189,7 +222,7 @@ for (let i = 0; i < hijos.length; i++) {
   //           arrancó (crash, DLL, lo que sea). Se nombra como tal y NO se agregan sus ceros.
   if (code !== 0 && c.tests === 0) {
     fallaron.push(`${h.nombre} [NO EJECUTÓ · exit=${code}]`);
-    console.log(`\n[${i + 1}/${hijos.length}] ${h.nombre}: ❌ NO EJECUTÓ (exit=${code}, 0 tests) — no me fío de sus contadores.`);
+    console.log(`\n[${i + 1}/${hijos.length}] ${h.nombre}: ❌ NO EJECUTÓ (exit=${code}, 0 tests, ${durS}s) — no me fío de sus contadores.`);
     continue;
   }
 
@@ -208,7 +241,7 @@ for (let i = 0; i < hijos.length; i++) {
   // REGLA C · status≠0 MANDA sobre los contadores: aunque el parseo diga 0 fallos, si el
   //           proceso salió ≠0 el hijo cuenta como fallido.
   if (code !== 0) fallaron.push(h.nombre);
-  console.log(`\n[${i + 1}/${hijos.length}] ${h.nombre}: exit=${code}  tests=${c.tests} pass=${c.pass} fail=${c.fail} skip=${c.skipped} cancelled=${c.cancelled} todo=${c.todo}`);
+  console.log(`\n[${i + 1}/${hijos.length}] ${h.nombre}: exit=${code} (${durS}s)  tests=${c.tests} pass=${c.pass} fail=${c.fail} skip=${c.skipped} cancelled=${c.cancelled} todo=${c.todo}`);
 }
 
 // SCRUM-182 · ¿leyó la tanda un árbol quieto? Va ANTES del agregado y del recuento de
