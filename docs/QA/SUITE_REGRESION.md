@@ -46,6 +46,28 @@ Siete trampas que ya nos han costado tiempo, y no fallan igual:
    → Si al abrir un worktree ves `Environment variable not found: DATABASE_URL`, es esto,
    y es lo esperado. Los tests **no gateados** (entre ellos la red fail-closed de SCRUM-55)
    no tocan BD y corren igual sin `.env`; solo los de `QA_DB_TEST=1` necesitan el fichero.
+   → **EXCEPCIÓN (SCRUM-185): dos gateados de VeriFactu NO se conforman con
+   `DATABASE_URL_STAGING`.** `scrum73-verifactu-gate` y `scrum82-zip-verifactu` construyen el
+   registro de alta y leen **cinco** variables del PRODUCTOR del SIF (`src/core/config/env.ts:30-34`).
+   Si falta cualquiera, el endpoint devuelve **`500 verifactu_productor_no_configurado`** y **la
+   tanda NO PUEDE SALIR VERDE**. Añádelas al `.env` del carril B con valores de PLACEHOLDER
+   (nunca reales — los reales van firmados en la declaración responsable, pendientes de S1-E):
+   ```bash
+   VERIFACTU_PRODUCTOR_NOMBRE="QA PLACEHOLDER SL"
+   VERIFACTU_PRODUCTOR_NIF="B00000000"
+   VERIFACTU_ID_SISTEMA="01"          # máx 2 caracteres (XSD)
+   VERIFACTU_VERSION="1.0"
+   VERIFACTU_NUM_INSTALACION="1"
+   ```
+   ⚠️ Los nombres son EXACTAMENTE los de `env.ts:30-34` y **NO son uniformes**: solo `NOMBRE` y
+   `NIF` llevan el infijo `PRODUCTOR_`; `VERIFACTU_ID_SISTEMA`, `VERIFACTU_VERSION` y
+   `VERIFACTU_NUM_INSTALACION` NO lo llevan. Copiar de un ticket viejo o de Railway asumiendo un
+   prefijo uniforme mete justo el error que esto destapa.
+   ⚠️ El fallo es **OPACO**: un `500` genérico, indistinguible de un bug real para quien lo vea
+   por primera vez. Y esto **DECLARA el requisito, no lo cierra**: quien no lea este runbook
+   seguirá bloqueado. El arreglo de raíz —que `scrum73`/`scrum82` hagan **SKIP** cuando el
+   productor no está configurado en vez de reventar con un 500— toca la cadena VeriFactu, es
+   **carril A**, y va a Luis.
 
 5. **Nunca leas el resultado de una herramienta a través de una tubería. (SCRUM-103)** En una
    pipeline, el código de salida que ves es el del **último** comando, no el del primero.
