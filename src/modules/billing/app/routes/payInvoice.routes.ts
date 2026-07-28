@@ -9,6 +9,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { esc, formatMoneyEs } from '../../../../core/utils/utils';
 import { isFlagEnabled } from '../../../../core/flags';
+import { bizumAutoDisponible } from '../../domain/bizumCharge'; // SCRUM-3
 import { isDemoMerchant } from '../../../invoicing/domain/emission.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 
@@ -74,6 +75,37 @@ router.get('/invoice/:token', async (req, res) => {
   const allowed = Array.isArray(charge.payMethods) ? (charge.payMethods as string[]) : null;
   const permits = (key: string) => !allowed || allowed.includes(key);
 
+  // SCRUM-3 · Bizum AUTOMÁTICO (vía PSP), que convive con el manual — decisión del fundador
+  // del 28-jul-2026: **los dos visibles, el manual primero**. El motivo, y conviene que no se
+  // pierda: no se decide por el fontanero si prefiere ahorrarse el 0,9 % o tener confirmación
+  // automática. Es su dinero y su tiempo. El manual va delante porque es GRATIS y es el que ya
+  // conoce; el automático se etiqueta con su ventaja real —«se confirma solo»—, que es
+  // exactamente lo que el manual no puede garantizar (es la única vía de la casa que puede
+  // mentir sobre si el dinero llegó: la confirma el merchant a mano).
+  //
+  // Y esto NO contradice la regla 22 («el selector se ordena por probabilidad de cobro del
+  // MERCHANT, no por el fee de YaQu»): poner delante el gratuito es justo lo contrario de
+  // ordenar por nuestro fee — el manual no nos deja nada.
+  const bizumAuto: Method | null =
+    bizumAutoDisponible({
+      flagOn: isFlagEnabled('BIZUM_AUTO_ENABLED', { merchant: m }),
+      useConnect: m?.connectStatus === 'active' && !!m?.stripeAccountId,
+      currency: charge.currency,
+      amountCents: Math.round(amountNum * 100),
+    }) === 'ok'
+      ? {
+          key: 'bizum_auto',
+          // Comparte ruta con la tarjeta A PROPÓSITO: el Bizum automático vive DENTRO del
+          // mismo Checkout de Stripe (dynamic payment methods), no en una pantalla propia.
+          // Darle una ruta suya obligaría a fijar `payment_method_types`, que Stripe
+          // desaconseja y que congelaría la lista de métodos (ver bizumCharge.ts).
+          href: `/pay/card/${token}`,
+          ico: '⚡',
+          title: 'Bizum al instante',
+          sub: 'Se confirma solo, sin esperar',
+        }
+      : null;
+
   type Method = { key: string; href: string; ico: string; title: string; sub: string };
   const card: Method = { key: 'card', href: `/pay/card/${token}`, ico: '💳', title: 'Pagar con tarjeta', sub: 'Visa · Mastercard · al instante' };
   const bizum: Method = { key: 'bizum', href: `/pay/bizum/${token}`, ico: '📲', title: 'Pagar por Bizum', sub: 'Desde la app de tu banco' };
@@ -82,10 +114,19 @@ router.get('/invoice/:token', async (req, res) => {
 
   // Orden W4: ≤500 → Bizum + Tarjeta (transferencia detrás) · 500-1.000 →
   // Tarjeta principal, Bizum secundario · >1.000 → Tarjeta + transferencia.
-  const ordered = (amountNum <= 500 ? [bizum, card, transfer] : [card, bizum, transfer])
+  // Los TRAMOS no cambian con el Bizum automático (SCRUM-8): el techo de 1.000 € no lo pone
+  // Stripe —que admite 5.000— sino el banco DEL PAGADOR (500-1.000 €/op, 2.000 €/día).
+  // El automático se coloca SIEMPRE justo detrás del manual, en el hueco que ocupe Bizum.
+  const conBizumAuto = (lista: Method[]): Method[] =>
+    bizumAuto ? lista.flatMap((mm) => (mm.key === 'bizum' ? [mm, bizumAuto] : [mm])) : lista;
+
+  const ordered = conBizumAuto(amountNum <= 500 ? [bizum, card, transfer] : [card, bizum, transfer])
     .filter((mm) =>
       (mm.key === 'card' && hasCard && permits('card')) ||
       (mm.key === 'bizum' && hasBizum && permits('bizum')) ||
+      // El automático hereda el permiso de 'bizum' (el PRO limitó "Bizum", no la fontanería
+      // de cómo se confirma) y su propia disponibilidad ya la resolvió bizumAutoDisponible.
+      (mm.key === 'bizum_auto' && permits('bizum')) ||
       (mm.key === 'transfer' && hasTransfer && permits('transfer')));
 
   const methodsHtml = ordered.map((mm, i) => `

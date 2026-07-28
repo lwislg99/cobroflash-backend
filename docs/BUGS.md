@@ -301,6 +301,14 @@
 
 ## P1 — Bugs visibles al cliente / datos incorrectos
 
+### [ ] P1-BIZUM-PAIDVIA · El webhook de Connect grava `method:'card'` a fuego: un Bizum se registraría como tarjeta
+- **Encontrado:** 28-jul-2026, al ir a hacer visible el Bizum automático en el selector (SCRUM-3 / W4). **Bloquea ese cambio**, no es un hallazgo lateral.
+- **Dónde:** `src/modules/payments/connect/connectWebhook.routes.ts:54` — en `checkout.session.completed` se manda `method: 'card'` **literal**, sin mirar con qué pagó el cliente. Hoy no miente porque ese checkout solo acepta tarjeta; en cuanto la capability `bizum_payments` esté activa, el MISMO checkout aceptará Bizum (dynamic payment methods) y todo Bizum entrará al sistema etiquetado como tarjeta.
+- **Qué rompe:** la **regla 22** — *«`paid_via` se registra en el 100 % de los cobros»*. No falla por omisión sino por **atribución falsa**, que es peor: el dato existe, parece bueno y es mentira. Arrastra a la columna «Método (paid_via)» del CSV de exportación (el paquete que se entrega al asesor o a una inspección) y al desglose `paidVia` de métricas.
+- **El dato SÍ está disponible:** la `Checkout.Session` trae `payment_method_types` y el `PaymentIntent` trae `payment_method_details.type` (`card` | `bizum`). No hay que adivinarlo, hay que leerlo.
+- **🚨 POR QUÉ NO SE ARREGLA DE PASO:** el arreglo técnico es de tres líneas, pero **el valor que hay que escribir no lo decido yo**. La regla 22 enumera el conjunto CERRADO `card / bizum_manual / transfer / cash`. Un Bizum automático no es ninguno de los cuatro: `bizum_manual` es falso (no es manual) y `card` es el bug. **Añadir `bizum_auto` es cambio de máster (reglas 5 y 27) → decisión del fundador.**
+- **Mientras tanto no hay daño:** `BIZUM_AUTO_ENABLED` está OFF y la capability `bizum_payments` no está activa. **El daño empieza el día que se active la capability**, que es una acción de Dashboard y NO pasa por este repo — o sea que nada del código avisará.
+
 ### [x] P1-1 · Botón "Firmar y aceptar presupuesto" sale en ROJO
 - **CAUSA RAÍZ (9 jun):** `brandOverrideCss` repintaba `.btn-accept`/`.btn-tier` con el `brandColor` del merchant. Commit `110c73f`: el color de marca va solo en acentos (avatar, bordes, badges, enlaces); el CTA aceptar/firmar es SIEMPRE verde. Verificado en prod: `/pay/quote/24` ya no lleva override en el botón.
 - **Síntoma:** en la landing del presupuesto #24 el botón de aceptar y el avatar salen rojos; en #23 era verde. Mismo merchant.
