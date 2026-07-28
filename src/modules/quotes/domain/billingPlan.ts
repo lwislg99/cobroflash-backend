@@ -230,6 +230,62 @@ export interface MotivoSinTramo {
  * ellos. El caso VACÍO, en cambio, es `no_billing_plan` en las dos: es la MISMA condición
  * —estas condiciones de pago no generan tramos— mirada desde dos pantallas.
  */
+/**
+ * SCRUM-37 (mecanismo 1) · EDITAR LOS TRAMOS QUE QUEDAN — «las obras evolucionan».
+ *
+ * LA REGLA Y SUS DOS CARAS, las dos igual de importantes:
+ *
+ *   · Los tramos YA EMITIDOS son intocables: cada uno está congelado en su `Invoice` con su
+ *     `stageLabel`, así que cambiar aquí su porcentaje o su etiqueta contradiría un documento
+ *     que ya existe — y una factura emitida no se edita (regla 29).
+ *   · Los que NO se han emitido SÍ se editan, incluido el SIGUIENTE. Esta cara es la que suele
+ *     faltar, y sin ella un candado que congelara el plan entero en cuanto hay una factura
+ *     pasaría por bueno: su test seguiría verde y el único que se enteraría sería el pro, que es
+ *     justo a quien esto viene a desbloquear.
+ *
+ * ⚠️ EL DESCUADRE SILENCIOSO: el plan nuevo suma 100 % CONTANDO lo ya emitido, no solo la parte
+ * editable. Aceptar un plan que suma 100 % «de lo que queda» repartiría más del total y no se
+ * vería hasta la última factura. Mismo fallo que SCRUM-141: reconciliar contra un total que no
+ * cuadra acaba tocando importes de línea, y eso se sella en la huella.
+ *
+ * PURO: no toca Prisma. `emitidas` lo cuenta el llamador (las `Invoice` del presupuesto).
+ */
+export function validarEdicionPlan(
+  planActual: unknown,
+  planNuevo: unknown,
+  emitidas: number,
+): { ok: true } | { ok: false; error: string; message: string } {
+  const actual = Array.isArray(planActual) ? (planActual as any[]) : [];
+  const nuevo = Array.isArray(planNuevo) ? (planNuevo as any[]) : [];
+
+  const base = validateCustomBillingPlan(nuevo);
+  if (!base.ok) return { ok: false, error: 'plan_invalido', message: base.error };
+
+  if (nuevo.length < emitidas) {
+    return {
+      ok: false,
+      error: 'tramo_emitido_intocable',
+      message: `Ya hay ${emitidas} tramo(s) facturado(s): el plan no puede tener menos.`,
+    };
+  }
+
+  for (let i = 0; i < Math.min(emitidas, actual.length); i++) {
+    const a = actual[i] ?? {};
+    const n = nuevo[i] ?? {};
+    const mismoPct = Math.round((Number(a.percentage) || 0) * 10000) === Math.round((Number(n.percentage) || 0) * 10000);
+    const mismaEtiqueta = String(a.label ?? '').trim() === String(n.label ?? '').trim();
+    if (!mismoPct || !mismaEtiqueta) {
+      return {
+        ok: false,
+        error: 'tramo_emitido_intocable',
+        message: `El tramo "${String(a.label ?? i + 1)}" ya está facturado y no se puede cambiar. Ajusta solo los que quedan por facturar.`,
+      };
+    }
+  }
+
+  return { ok: true };
+}
+
 export function motivoSinTramo(
   plan: unknown[],
   codigoAgotado = 'no_more_invoices_for_payment_terms',
