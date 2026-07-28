@@ -257,6 +257,19 @@ model Reconciliation {
 }
 
 model Quote {
+  // SCRUM-195 (mec. 2, PASO 1 · ADITIVO): un Job puede tener VARIOS Quotes — el original y sus
+  // presupuestos adicionales. NULLABLE a proposito: un Quote que aun no se ha aceptado no tiene
+  // Job (en produccion son 83 de 125). `Job.quoteId @unique` NO se retira aqui: conviven hasta
+  // el paso 2, cuando ningun consumidor lo use.
+  //
+  // SIN FK, y es decision del fundador con tres motivos: (1) coherencia -- ningun merchantId de
+  // este schema declara FK (SCRUM-192), meter una aqui crearia una isla con reglas propias;
+  // (2) reversibilidad -- sin FK el paso 1 se deshace con un DROP COLUMN limpio; (3) el que
+  // manda: la FK que importaria aqui es `onDelete`, y eso ya se decidio en SCRUM-192 (opcion B,
+  // servicio de borrado derivado del schema, no cascadas). La integridad Quote.jobId -> Job.id
+  // la sostiene el CODIGO, y quien la respeta al borrar es el servicio de SCRUM-192.
+  jobId        Int?    @map("job_id")
+
   // EXT3: origin (A15: maintenance) · validUntil (A16.2: caducidad, default 30d en código)
   // · docFields (A20.4: qué datos del cliente muestra el documento)
   origin     String?   // null|manual … | maintenance
@@ -318,6 +331,8 @@ model Quote {
   Invoice   Invoice[]
   Expense   Expense[]
 
+  // SCRUM-195: los adicionales se buscan por Job, SIEMPRE dentro del merchant (regla 2).
+  @@index([merchantId, jobId])
   @@map("quotes")
 }
 
