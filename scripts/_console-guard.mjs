@@ -30,8 +30,16 @@ export const CONSOLA_ALLOWLIST = [
   { patron: /ServiceWorker|sw\.js/i, porque: 'el SW no aplica en el entorno de e2e (sin HTTPS)' },
 ];
 
-/** Texto con el que el navegador anuncia un subrecurso caído (sin decir cuál). */
-const TEXTO_RECURSO = /Failed to load resource|net::ERR_|the server responded with a status of/i;
+/**
+ * Formas REALES con las que un navegador anuncia un subrecurso caído (sin decir cuál).
+ *
+ * ⚠️ La primera versión de SCRUM-184 solo reconocía la de Chrome («Failed to load resource…») y
+ * clasificaba como ERROR DE JS cualquier otra redacción — por ejemplo `GET /favicon.ico 404`.
+ * Eso es justo lo contrario de lo que este guard debe hacer: inflaba el ruido hasta el punto de
+ * tumbar el E2E por un icono que falta. Lo destapó el test de SCRUM-183 al quedarse en rojo; el
+ * fallo estaba en el guard, no en el test.
+ */
+const TEXTO_RECURSO = /Failed to load resource|net::ERR_|the server responded with a status of|\b(?:GET|POST|PUT|PATCH|DELETE|HEAD)\b[^\n]*\b[45]\d{2}\b/i;
 
 /**
  * Clasifica un registro recogido durante el recorrido.
