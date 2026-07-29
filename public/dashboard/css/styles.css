@@ -2110,3 +2110,50 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 /* ── SCRUM-89: acción vetada por rol (deshabilitar CON explicación, no ocultar) ──── */
 .role-locked, .role-locked:disabled { opacity: .5; cursor: not-allowed; }
 .role-locked-note { flex-basis: 100%; margin: 4px 0 0; font-size: 12px; color: var(--muted, #6b756f); }
+
+/* ── SCRUM-210 · SEMÁFORO FISCAL ─────────────────────────────────────────────────────
+   Móvil primero. Cero tokens nuevos: todo sale de los que ya existen (--amber-50,
+   --red-50, --border, --ink, --body). El VERDE no tiene estilos porque no pinta nada. */
+
+/* 🔴 ROJO — la explicación va SIEMPRE visible, nunca en un tooltip: en móvil no hay hover,
+   así que un tooltip como canal único es lo mismo que no decir nada. */
+.semaforo-rojo {
+  margin: 10px 0 0;
+  padding: 12px 14px;
+  background: var(--red-50);
+  border: 1px solid rgba(239, 68, 68, .25);
+  border-radius: var(--r-md, 12px);
+}
+.semaforo-rojo-que   { margin: 0; font-size: 14px; font-weight: 600; color: var(--ink, #0f1c17); }
+.semaforo-rojo-puede { margin: 6px 0 0; font-size: 14px; color: var(--body, #3f4a45); }
+
+/* 🟠 ÁMBAR — SIN estética de peligro a propósito. El usuario no hace nada ilegal: hace algo
+   corregible, y asustarle con rojo agresivo o abandona una factura que sí podía emitir, o
+   aprende a ignorar los avisos. Ámbar sobrio, el mismo par que ya usa status-pill-pending. */
+.semaforo-ambar {
+  margin: 12px 0;
+  padding: 16px;
+  background: var(--amber-50);
+  border: 1px solid rgba(234, 179, 8, .35);
+  border-radius: var(--r-lg, 16px);
+}
+.semaforo-ambar-titulo { margin: 0; font-size: 16px; font-weight: 600; color: #92400e; line-height: 1.35; }
+.semaforo-ambar-porque { margin: 8px 0 0; font-size: 14px; color: var(--body, #3f4a45); line-height: 1.5; }
+/* Cuerpo de una pieza: el copy aprobado que NO se trocea en bloques (plazo vencido). */
+.semaforo-ambar-cuerpo { margin: 0; font-size: 15px; color: var(--ink, #0f1c17); line-height: 1.55; }
+.semaforo-ambar-pie {
+  margin: 12px 0 0; padding-top: 10px;
+  border-top: 1px solid rgba(234, 179, 8, .35);
+  font-size: 13px; color: #92400e;
+}
+
+/* Acciones: columna en móvil (pulgar), fila desde 480 px. Target ≥44 px SIEMPRE. */
+.semaforo-ambar-acciones { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+.semaforo-accion { min-height: 44px; width: 100%; }
+.semaforo-rojo .semaforo-accion { margin-top: 10px; }
+.semaforo-accion:focus-visible { outline: none; box-shadow: var(--ring, 0 0 0 3px rgba(34,197,94,.30)); }
+
+@media (min-width: 480px) {
+  .semaforo-ambar-acciones { flex-direction: row; justify-content: flex-end; }
+  .semaforo-accion { width: auto; min-width: 160px; }
+}

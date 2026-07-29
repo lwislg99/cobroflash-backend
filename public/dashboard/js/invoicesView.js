@@ -35,12 +35,13 @@ async function fetchInvoices(options = {}) {
     rojo:  { pillClass: 'status-pill-rejected', label: 'PLAZO VENCIDO' },
   };
 
-  // Copy aprobado por el fundador (23-jul, docs/Sprint Scrum/SESION_ACTUAL_SCRUM-69.md) — NO reformular.
-  function copyRojo(mesLabel) {
-    return `El plazo de este mes venció — ya no se puede agrupar en una recapitulativa de `
-      + `${mesLabel}. Puedes facturar estos partes igualmente (factura individual o `
-      + `recapitulativa del mes en curso); si tienes dudas, consúltalo con tu asesor.`;
-  }
+  // SCRUM-210: `copyRojo` se MUDÓ a api.js sin tocar una letra de su texto. Motivo: el semáforo
+  // fiscal reutiliza este mismo copy aprobado como cuerpo de su aviso ámbar de plazo vencido, y
+  // dejar dos copias de un texto aprobado es el fallo de «dos listas a mano que deben cuadrar»
+  // (ADMIN_ONLY_ROUTES, MOTIVOS_ANULACION) aplicado a algo peor: microcopy fiscal que el
+  // AuditLog tiene que poder reproducir. Una sola fuente, como `cobroPillClass` e
+  // `invoiceStatusMeta`. De este fichero solo se quita la función; nada más se toca.
+  const copyRojo = window.copyRojo;
 
   async function renderInvoicesView(container) {
     container.innerHTML = '';
