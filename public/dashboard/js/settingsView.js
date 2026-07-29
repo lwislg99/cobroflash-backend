@@ -754,16 +754,100 @@ async function renderPublicProfileCard(container) {
 // ── A14.2 · QR de la página pública (PNG 1024px → /p/:slug?src=qr) ─────────
 // Para imprimir en la furgoneta o la tarjeta: quien lo escanea ve la página y,
 // si acaba registrándose en YaQu, queda atribuido (acquisitionSource='qr').
+// SCRUM-230 · TODO EL TEXTO NUEVO DE ESTA TARJETA EN UN SOLO SITIO.
+// [PENDIENTE microcopy oficial] — regla 30: estos literales NO están en el máster y NO se
+// inventan como definitivos. Se agrupan aquí para que sustituirlos sea cambiar este bloque y
+// nada más; van propuestos al fundador en el reporte del ticket.
+const QR_COPY = {
+  formato: 'Formato',
+  tamano: 'Tamaño',
+  color: 'Color',
+  colorNegro: 'Negro',
+  colorMarca: 'Color de marca',
+  descargar: '⬇ Descargar QR',
+  ayudaSvg: 'SVG es el que pide una rotulación: escala sin perder nitidez.',
+  errorGenerico: 'No se pudo generar el QR con esas opciones.',
+};
+
 function renderProfileQrButton(card, m) {
   const slot = card.querySelector('#pp-qr-slot');
   if (!slot) return;
   if (!m.slug) { slot.innerHTML = ''; return; }
+
+  // SCRUM-230: antes esto era un enlace de descarga a secas — el pro pedía y le caía un PNG,
+  // sin verlo. No podía juzgar si le servía para la furgoneta, la tarjeta o el escaparate.
   slot.innerHTML = `
-    <a class="btn btn-secondary btn-sm" href="/admin/merchant/public-profile-qr"
-       download="yaqu-qr-${escSettings(m.slug)}.png"
-       title="PNG en alta resolución para imprimir — apunta a tu página con atribución">
-      ⬇ QR para la furgoneta
-    </a>`;
+    <div class="qr-personalizar">
+      <div class="qr-preview"><img id="qr-img" alt="" width="180" height="180"></div>
+      <div class="qr-controles">
+        <label class="qr-campo"><span>${QR_COPY.formato}</span>
+          <select id="qr-formato" class="input">
+            <option value="png">PNG</option>
+            <option value="svg">SVG</option>
+          </select>
+        </label>
+        <label class="qr-campo"><span>${QR_COPY.tamano}</span>
+          <select id="qr-size" class="input">
+            <option value="512">512 px</option>
+            <option value="1024" selected>1024 px</option>
+            <option value="2048">2048 px</option>
+          </select>
+        </label>
+        <label class="qr-campo"><span>${QR_COPY.color}</span>
+          <select id="qr-dark" class="input">
+            <option value="">${QR_COPY.colorNegro}</option>
+            <option value="marca">${QR_COPY.colorMarca}</option>
+          </select>
+        </label>
+        <p class="qr-ayuda">${QR_COPY.ayudaSvg}</p>
+        <p class="qr-error" id="qr-error" hidden></p>
+        <a class="btn btn-secondary btn-sm qr-descargar" id="qr-descargar">${QR_COPY.descargar}</a>
+      </div>
+    </div>`;
+
+  const img = slot.querySelector('#qr-img');
+  const err = slot.querySelector('#qr-error');
+  const enlace = slot.querySelector('#qr-descargar');
+  const campos = ['qr-formato', 'qr-size', 'qr-dark'].map((id) => slot.querySelector('#' + id));
+
+  function query(extra) {
+    const p = new URLSearchParams();
+    const [formato, size, dark] = campos.map((c) => c.value);
+    if (formato) p.set('formato', formato);
+    if (size) p.set('size', size);
+    if (dark) p.set('dark', dark);
+    Object.entries(extra || {}).forEach(([k, v]) => p.set(k, v));
+    return p.toString();
+  }
+
+  async function refrescar() {
+    // La previsualización siempre en PNG: un <img> con SVG del servidor no aporta nada aquí y
+    // el formato solo cambia lo que se DESCARGA.
+    const url = '/admin/merchant/public-profile-qr?' + query({ preview: '1', formato: 'png' });
+    err.hidden = true;
+    try {
+      const r = await fetch(url);
+      if (!r.ok) {
+        // El backend devuelve el motivo (contraste_insuficiente, qr_invertido…) con su mensaje:
+        // se muestra ESE, no uno inventado aquí. [PENDIENTE microcopy oficial] solo el fallback.
+        const cuerpo = await r.json().catch(() => null);
+        err.textContent = (cuerpo && cuerpo.message) || QR_COPY.errorGenerico;
+        err.hidden = false;
+        img.removeAttribute('src');
+        return;
+      }
+      const blob = await r.blob();
+      img.src = URL.createObjectURL(blob);
+    } catch {
+      err.textContent = QR_COPY.errorGenerico;
+      err.hidden = false;
+    }
+    enlace.href = '/admin/merchant/public-profile-qr?' + query();
+    enlace.setAttribute('download', `yaqu-qr-${escSettings(m.slug)}.${campos[0].value || 'png'}`);
+  }
+
+  campos.forEach((c) => c.addEventListener('change', refrescar));
+  refrescar();
 }
 
 // ── Tarjeta de Referidos (Sprint REFERRAL) ────────────────────────────────
