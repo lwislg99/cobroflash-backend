@@ -1323,6 +1323,41 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 > asesor (no se inventa en código):** si una F1 sin destinatario identificado debe marcarse
 > `FacturaSinIdentifDestinatarioArt61d` o emitirse como **F2 simplificada**; y qué
 > `TipoRectificativa` (S/I) corresponde a nuestras R1.
+>
+> **✅ SCRUM-200 · RECON de la superficie de emisión: no hay punto único, pero SÍ embudo (29-jul-2026, recon — cero código).**
+> Entregable `docs/legal/SEMAFORO_MAPA_EMISION.md`, verificado leyendo el código (40 citas fichero:línea
+> comprobadas una a una). **Hay 7 sitios que crean una factura en 6 ficheros** — incluidos los que no son
+> de interfaz: las 4 bocas de `ensureInvoiceForCharge` (webhook de Mercado Pago, webhook PSP, `/charges`,
+> `/invoice/issue`). Los 5 crons, el bot de WhatsApp y los webhooks de Stripe **NO** emiten (negativo
+> verificado, no supuesto). **Pero los 7 pasan sin excepción por `allocateInvoiceNumber()`**, que además ya
+> es donde vive el gate `INVOICING_ES_ENABLED`. **El embudo existe; lo que no sirve es su firma:** solo
+> recibe `merchantId`, así que puede decidir «este merchant emite» y NO «esta factura cumple» — ampliarlo
+> es un cambio de firma + 7 llamadores, no reescribir la emisión. **Dos puntos de no retorno SEPARADOS EN
+> EL TIEMPO:** consumir número (irreversible en su commit) y sellar la huella, que es **perezoso** — ocurre
+> dentro de `ensureInvoicePdf`, y uno de sus llamadores es `GET /recibo/:token/pdf`, **público**: en dos
+> caminos el momento de entrar en la cadena **lo elige el cliente final abriendo su PDF**. Dos caminos
+> (aceptar presupuesto y `collect-rest`) numeran **sin sellar**. Y el fail-open grave no era el que se
+> sospechaba: los cinco `process.env.VERIFACTU_* || ''` tienen guard fail-CLOSED aguas abajo; el de verdad
+> es el `catch` del sellado (`lib/invoicing.ts:58` y `:152`), que deja la factura con número, con PDF, con
+> QR **no fiscal** y sin huella, dejando solo una línea de log. **Graphify se probó y se descartó CON DATO:**
+> 0 caminos revelados que `grep` no diera.
+>
+> **✅ SCRUM-201 · SEMÁFORO-1: la calibración ROJO/ÁMBAR no hay que inventarla, la publica la AEAT (29-jul-2026, recon fiscal — cero código).**
+> Entregable `docs/legal/SEMAFORO_CALIBRACION.md`, contra las fuentes oficiales **descargadas y con SHA-256
+> registrado** (PDF de Validaciones v1.2.2 + `errores.properties`), no citadas de memoria. **El hallazgo
+> estructural:** `errores.properties` ya viene partido por la AEAT en tres listas —rechazo de envío (44),
+> rechazo de registro (194), aceptado con errores (10)—, así que **el color sale del RANGO del código**:
+> `4xxx`/`35xx` y `1xxx`/`30xx` → ROJO, `2xxx` → ÁMBAR. **Tres ROJO que el generador de hoy ya produce**
+> (en el export de inspección, NO en remisión, que está apagada): `1189` (F1 sin `Destinatarios`), `1245`
+> (`Impuesto` sin `ClaveRegimen`) y `1195` (desglose sin `CalificacionOperacion`) — ponen código y color a
+> tres pendientes que hasta ahora eran prosa en comentarios. **Cuatro casos DUDOSOS quedan para el fundador**,
+> y los tres primeros son la misma colisión del criterio (la AEAT dice ámbar, la cadena dice rojo); el más
+> incómodo: **el mismo error de importes tiene DOS códigos, uno de rechazo y otro de aceptación**
+> (`1210`/`2005`, `1216`/`2006`, `1278`/`2008`) y **ninguna fuente dice cuándo dispara cuál**.
+> **SCRUM-201b — el guard que lo sostiene:** `tests/scrum201-citas-aeat.test.mjs`, en `npm test`, con **dos
+> capas** porque una sola se burla sola: ① el SHA-256 del listado vendorizado sigue siendo el que declara el
+> documento (leído DEL documento, no copiado a una constante) y ② ninguna fila de tabla cita un código que la
+> AEAT no publica. Las dos probadas en rojo por separado. Nació de que un `4172` inventado se coló redactando.
 
 **V2. Trigger del segundo tramo:** **✅ VERIFICADO (SCRUM-10/13, 9-jul-2026): el resto NUNCA se cobra solo** (confirmado en código: `/admin/jobs/:id/collect-rest` vía `getNextBillingStage`, siempre acción del pro). Regla: el resto NUNCA se cobra solo; trigger = acción del pro ("Trabajo terminado → Cobrar resto"; con JOB-1: estado `terminado`) → cobro/factura del resto + payment_request.
 **V3. Anticipos [VALIDAR asesor en S1-F]:** señal con factura = **factura de anticipo con IVA**; la final descuenta el anticipo. Pre-SIF: señal con recibo no fiscal (coherente con flag). Post-SIF: implementar el dictamen (regla 32).
