@@ -111,26 +111,24 @@ test('SCRUM-203 · el censo de creaciones de src/ cuadra con el mapa de SCRUM-20
 
 // ── 2 · LAS SEMILLAS (`scripts/`) ─────────────────────────────────────────────────────────
 //
-// El ticket acota el recorrido a `src/`. Se incluye `scripts/` porque al ejecutar el
+// El ticket acotaba el recorrido a `src/`. Se incluye `scripts/` porque al ejecutar el
 // analizador aparecieron ahí DOS creaciones con el número fabricado a mano, y un embudo que se
 // vigila solo en `src/` mientras la puerta de al lado sigue abierta es precisamente lo que este
-// ticket viene a evitar. No se arreglan aquí (es una semilla de demo, otro dominio y otro
-// ticket): se CONGELAN, para que la lista no crezca en silencio.
+// ticket viene a evitar. Se congelaron primero y se arreglaron después (SCRUM-204), que es el
+// orden que importa: la lista no podía crecer en silencio mientras tanto.
 
 /**
- * EXCEPCIONES DE `scripts/` — justificadas, y ninguna toca producción.
+ * EXCEPCIONES DE `scripts/` — **VACÍA desde SCRUM-204.**
  *
- * `scripts/seed-demo.mjs` (×2, hoy líneas 158 y 214): siembra el merchant de demostración con
- * números literales `AAAA-FG-NNN`. No pasa por el embudo y NO avanza el contador del merchant,
- * así que la serie del demo queda descuadrada respecto a `nextInvoiceNumber`. Se congela en vez
- * de arreglarse porque tocar la semilla del demo no es parte de este ticket — va en **SCRUM-204**,
- * que además tiene que decidir algo de producto (el embudo devolvería `J-` en el demo, no
- * `AAAA-FG-NNN`). Queda escrito, con su motivo, y cualquier fuga NUEVA aquí sale roja.
+ * Nació con una entrada: `scripts/seed-demo.mjs` (×2) sembraba el demo con números literales
+ * `AAAA-FG-NNN`, sin pasar por el embudo y sin tocar la serie del merchant. SCRUM-204 la
+ * arregló —ahora pide el número a `allocateInvoiceNumber()` dentro de la transacción, igual
+ * que `seed-video.mjs`— y la entrada se BORRÓ, no se puso a 0: el assert compara por
+ * igualdad exacta, así que una entrada sobrante con 0 fugas también saldría roja.
  *
- * Al arreglarlo, la entrada se BORRA, no se pone a 0: el assert compara por igualdad exacta.
- * (`scripts/seed-video.mjs` sí usa el embudo: no necesita excepción.)
+ * Que esté vacía es la afirmación: hoy NINGUNA semilla fabrica números de factura.
  */
-const EXCEPCIONES_SCRIPTS = { 'scripts/seed-demo.mjs': 2 };
+const EXCEPCIONES_SCRIPTS = {};
 
 test('SCRUM-203 · las semillas no abren caminos nuevos fuera del embudo', () => {
   const creaciones = analizarArbol(path.join(RAIZ, 'scripts'));
