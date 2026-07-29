@@ -34,12 +34,96 @@ export interface Encadenamiento {
 }
 
 export interface DetalleDesglose {
-  // Régimen general IVA: claveRegimen '01', calificacion 'S1' (sujeta no exenta)
-  claveRegimen?: string;        // IdOperacionesTrascendenciaTributariaType
+  // SCRUM-209: `claveRegimen` era OPCIONAL y eso era un 1245 latente — un llamador que la
+  // omitiera producía un registro que la AEAT rechaza, sin que nada chillara
+  // (docs/legal/SEMAFORO_CALIBRACION.md §7.2). Ahora es OBLIGATORIA: el tipo lo impide.
+  claveRegimen: string;         // IdOperacionesTrascendenciaTributariaType (L8A)
   calificacion: string;         // CalificacionOperacionType: S1 | S2 | N1 | N2
   tipoImpositivo?: string;      // ej. '21'
   baseImponible: string;        // ImporteSgn12.2 (punto decimal, 2 dec)
   cuotaRepercutida?: string;
+}
+
+/** Operación SUJETA y NO EXENTA (el caso general). `CalificacionOperacionType`. */
+export const CALIFICACION_SUJETA_NO_EXENTA = 'S1';
+/** Régimen general de IVA. `IdOperacionesTrascendenciaTributariaType`, lista L8A. */
+export const CLAVE_REGIMEN_GENERAL = '01';
+
+/**
+ * SCRUM-209 · Una línea que NO se puede calificar con certeza NO recibe un código por
+ * defecto: se bloquea la emisión. Adivinar un régimen o una calificación es declarar en
+ * falso ante la AEAT, y queda sellado en la huella (regla 29: solo se corrige con una R1).
+ */
+export class DesgloseNoClasificableError extends Error {
+  constructor(public readonly motivo: string, public readonly ref?: string) {
+    super(`verifactu_desglose_no_clasificable${ref ? `:${ref}` : ''} — ${motivo}`);
+    this.name = 'DesgloseNoClasificableError';
+  }
+}
+
+/**
+ * Traduce un tramo del desglose de IVA (`calcVatBreakdown`) a su calificación fiscal.
+ *
+ * SOLO sabe resolver el caso general: **sujeta y no exenta a un tipo positivo** → `S1` + `01`.
+ * Eso cubre el 21/10/4 % del régimen general, que es todo lo que YaQu emite hoy.
+ *
+ * ⚠️ EL 0 % NO ES CLASIFICABLE, y por eso lanza. De `tax: 0` no se puede distinguir:
+ *   · una operación **sujeta al 0 %** (existe desde 2023 en alimentación básica) → S1
+ *   · una operación **exenta** (art. 20 LIVA) → `OperacionExenta`, y CalificacionOperacion
+ *     NO debe ir informada (son excluyentes — AEAT 1196)
+ *   · una operación **no sujeta** → N1 / N2
+ * Son tres declaraciones distintas y el dato que las separa no existe en `Invoice.lines`
+ * (`VatLine` solo guarda `qty`, `price` y `tax`). Emitir `S1` "porque es lo más común"
+ * sería inventarse la calificación fiscal de un tercero.
+ */
+export function clasificarDetalleDesglose(
+  entrada: { rate: number; base: number; cuota: number },
+  ref?: string,
+): DetalleDesglose {
+  if (!Number.isFinite(entrada.rate) || entrada.rate <= 0) {
+    throw new DesgloseNoClasificableError(
+      `tramo de IVA al ${entrada.rate}% (base ${entrada.base.toFixed(2)}): no se puede saber si es ` +
+        'sujeta al 0%, exenta (art. 20 LIVA) o no sujeta, y cada una declara una cosa distinta. ' +
+        'El dato que las separa no está en las líneas de la factura. Se bloquea la emisión en vez ' +
+        'de elegir un código: adivinarlo es declarar en falso.',
+      ref,
+    );
+  }
+  return {
+    claveRegimen: CLAVE_REGIMEN_GENERAL,
+    calificacion: CALIFICACION_SUJETA_NO_EXENTA,
+    tipoImpositivo: String(entrada.rate),
+    baseImponible: entrada.base.toFixed(2),
+    cuotaRepercutida: entrada.cuota.toFixed(2),
+  };
+}
+
+/**
+ * ÚNICO constructor del bloque `DetalleDesglose` del proyecto (SCRUM-209).
+ *
+ * Antes había dos, y divergieron: el del servicio omitía `ClaveRegimen` y
+ * `CalificacionOperacion`, así que el XML que se exportaba NO validaba (AEAT 1245 y 1195)
+ * mientras el `.ps1` daba verde validando este de aquí, que no usaba nadie. Cualquier
+ * generador de registros pasa por esta función o no pasa: hay un guard que lo vigila
+ * (`tests/scrum209-un-solo-desglose.test.mjs`).
+ *
+ * `prefijo` existe porque los dos llamadores declaran el mismo namespace con distinto
+ * alias (`sf:` aquí, `sum1:` en el servicio). Es el alias, no el namespace: para la AEAT
+ * el documento es idéntico. Unificarlo tocaría seis asserts de scrum145 sin ganar nada.
+ *
+ * ORDEN DE ELEMENTOS = orden del XSD (sequence). Cambiarlo rompe la validación.
+ */
+export function buildDetallesDesgloseXml(detalles: DetalleDesglose[], prefijo: 'sf' | 'sum1' = 'sf'): string {
+  const p = prefijo;
+  return detalles.map((d) => `
+        <${p}:DetalleDesglose>
+          <${p}:Impuesto>01</${p}:Impuesto>
+          <${p}:ClaveRegimen>${esc(d.claveRegimen)}</${p}:ClaveRegimen>
+          <${p}:CalificacionOperacion>${esc(d.calificacion)}</${p}:CalificacionOperacion>${d.tipoImpositivo ? `
+          <${p}:TipoImpositivo>${esc(d.tipoImpositivo)}</${p}:TipoImpositivo>` : ''}
+          <${p}:BaseImponibleOimporteNoSujeto>${esc(d.baseImponible)}</${p}:BaseImponibleOimporteNoSujeto>${d.cuotaRepercutida ? `
+          <${p}:CuotaRepercutida>${esc(d.cuotaRepercutida)}</${p}:CuotaRepercutida>` : ''}
+        </${p}:DetalleDesglose>`).join('');
 }
 
 export interface RegistroAltaParams {
@@ -112,13 +196,10 @@ export function buildRegistroAlta(p: RegistroAltaParams): string {
     </sf:Destinatarios>`
     : '';
 
-  const detalles = p.desglose.map((d) => `<sf:DetalleDesglose>
-        ${d.claveRegimen ? `<sf:Impuesto>01</sf:Impuesto><sf:ClaveRegimen>${esc(d.claveRegimen)}</sf:ClaveRegimen>` : ''}
-        <sf:CalificacionOperacion>${esc(d.calificacion)}</sf:CalificacionOperacion>
-        ${d.tipoImpositivo ? `<sf:TipoImpositivo>${esc(d.tipoImpositivo)}</sf:TipoImpositivo>` : ''}
-        <sf:BaseImponibleOimporteNoSujeto>${esc(d.baseImponible)}</sf:BaseImponibleOimporteNoSujeto>
-        ${d.cuotaRepercutida ? `<sf:CuotaRepercutida>${esc(d.cuotaRepercutida)}</sf:CuotaRepercutida>` : ''}
-      </sf:DetalleDesglose>`).join('\n      ');
+  // SCRUM-209: delega en el constructor ÚNICO. Antes tenía su propia copia de la plantilla,
+  // y era la copia BUENA — la que divergió fue la del servicio. Pasar por aquí las dos es
+  // lo que impide que vuelvan a separarse.
+  const detalles = buildDetallesDesgloseXml(p.desglose, 'sf');
 
   return `<sf:RegistroAlta xmlns:sf="${NS_SF}">
     <sf:IDVersion>1.0</sf:IDVersion>
