@@ -18,10 +18,11 @@
 // No es «se intenta auditar»: es que **sin constancia el hecho no ocurre**. Un `catch` aquí
 // reconstruiría exactamente el fallo mudo que este ticket viene a cerrar.
 //
-// ⚠️ NOTA PARA EL FUNDADOR: `cambio_flag` NO está en `ACCIONES_BLOQUEANTES`, que es lista
-// CERRADA y decisión suya. Este servicio consigue la garantía por la vía de la transacción,
-// que no necesita tocar esa lista. Meterla ahí añadiría una segunda red —impediría que
-// alguien registrara este cambio con el `recordAudit` fire-safe— y queda PROPUESTO, no hecho.
+// DOS REDES, y cubren cosas distintas (decisión del fundador, 29-jul-2026):
+//   · la TRANSACCIÓN de aquí protege ESTE camino, en ejecución;
+//   · `cambio_flag` en `ACCIONES_BLOQUEANTES` protege el camino que alguien escriba MAÑANA, en
+//     compilación y sin depender de ningún call site — `recordAudit` (fire-safe) ya no lo acepta.
+// La primera sola dejaba abierta la puerta del segundo escritor.
 import { prisma as defaultPrisma } from '../../../core/db/prisma';
 import { isFlagEnabled, type FlagName } from '../../../core/flags';
 import { recordAuditOrThrow, sobreFiscal, type ActorAudit } from '../audit.service';
