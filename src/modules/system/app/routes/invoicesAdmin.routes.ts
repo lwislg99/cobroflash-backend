@@ -27,7 +27,7 @@ import { normalizePhone } from '../../../../core/utils/utils';
 import fs from 'fs';
 import { ensureInvoicePdf, ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { sendSuccessBody, sendFailureBody, SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
-import { sellarTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
+import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 
 
 const router = Router();
@@ -623,7 +623,7 @@ router.post('/:id/annul', requireRole('admin'), async (req, res) => {
     let sellada = false;
     if (merchant?.country === 'ES' && merchant?.taxId) {
       try {
-        await applyVeriFactuAnulacion(invoice, merchant.taxId, prisma);
+        await sellarAnulacionTrasEmision(invoice, merchant.taxId, prisma); // SCRUM-205: punto unico
         sellada = true;
       } catch (e: any) {
         console.error(`[annul] sellado de anulación falló en ${invoice.number}:`, e?.message || e);

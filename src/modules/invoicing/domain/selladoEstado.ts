@@ -44,7 +44,7 @@
 import { prisma as defaultPrisma } from '../../../core/db/prisma';
 import { recordAudit } from '../../system/audit.service';
 import { isReceiptNumber } from './invoiceNumber.service';
-import { applyVeriFactu } from './verifactu.service';
+import { applyVeriFactu, applyVeriFactuAnulacion } from './verifactu.service';
 
 export const SELLADO_PENDIENTE = 'pendiente_de_sellado';
 export const SELLADO_HECHO = 'sellado';
@@ -162,4 +162,26 @@ export async function sellarTrasEmision(
     });
     return { estado: SELLADO_PENDIENTE, error: mensaje };
   }
+}
+
+/**
+ * ANULAR también es entrar en la cadena — y por eso pasa por aquí.
+ *
+ * Lo destapó el propio guard de SCRUM-205: al exigir que solo este módulo selle, apareció
+ * `applyVeriFactuAnulacion` suelto en la ruta de anulación. No estaba mal colocado (es una
+ * ruta autenticada y sella después del commit), pero dejarlo fuera obligaba a abrir una lista
+ * de excepciones — y una lista de excepciones en la puerta del punto de no retorno fiscal es
+ * justo lo que acaba creciendo.
+ *
+ * ⚠️ NO toca `vfEstado`, y es deliberado: ese campo describe el sellado del ALTA. Una factura
+ * anulada conserva su alta y su huella (regla 29: una emitida jamás se edita ni borra, solo se
+ * anula CON su registro), así que sigue siendo `sellado`. El registro de anulación es un
+ * eslabón MÁS de la cadena, no un cambio de estado del anterior.
+ */
+export async function sellarAnulacionTrasEmision(
+  invoice: Parameters<typeof applyVeriFactuAnulacion>[0],
+  taxId: string,
+  prismaClient = defaultPrisma,
+): Promise<void> {
+  await applyVeriFactuAnulacion(invoice, taxId, prismaClient);
 }
