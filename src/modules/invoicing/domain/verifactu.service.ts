@@ -18,6 +18,10 @@ import {
   buildDetallesDesgloseXml,
   clasificarDetalleDesglose,
   DesgloseNoClasificableError,
+  MODO_SIN_DESTINATARIO,
+  type ModoSinDestinatario,
+  RegistroNoEmitibleError,
+  resolverSinDestinatario,
 } from '../../fiscal/verifactu/registro.builder';
 
 // SCRUM-145: namespaces oficiales de los XSD de la AEAT (los ficheros están en
@@ -474,6 +478,10 @@ function xmlEscape(v: unknown): string {
 export async function buildVerifactuRegistrosXml(
   params: { merchantId: number; year: number },
   prismaClient = defaultPrisma,
+  // SCRUM-215: el modo lo fija la constante del módulo fiscal. Este parámetro existe SOLO para
+  // poder DEMOSTRAR que las dos salidas del dictamen P11 se emiten y validan antes de que el
+  // dictamen exista. Producción tiene un único llamador y no lo pasa nunca.
+  opts: { modoSinDestinatario?: ModoSinDestinatario } = {},
 ): Promise<{ xml: string; count: number; excluidos: Array<{ number: string; motivo: string }> }> {
   const merchant = await prismaClient.merchant.findUnique({ where: { id: params.merchantId } });
   if (!merchant) throw new Error('merchant_not_found');
@@ -650,10 +658,21 @@ export async function buildVerifactuRegistrosXml(
     // SCRUM-145 (gap 6): `Destinatarios` es minOccurs=0 en el XSD, pero SI se emite,
     // `IDDestinatario` exige `NombreRazon` + choice OBLIGATORIO `NIF|IDOtro`. Hasta ahora se
     // emitía `NombreRazon` suelto → XML INVÁLIDO. Se emite solo cuando hay NIF del cliente.
-    // ⚠️ PENDIENTE FISCAL (asesor, NO se decide en código): una F1 sin destinatario
-    // identificado debe marcarse con `FacturaSinIdentifDestinatarioArt61d` o emitirse como F2
-    // simplificada. Mientras no haya dictamen NO se inventa ninguna de las dos: se omite el
-    // bloque (válido contra el XSD) y la cuestión queda registrada en SCRUM-145.
+    //
+    // SCRUM-215: y cuando NO lo hay, ya no se omite en silencio. Omitirlo era válido contra el
+    // XSD y RECHAZADO por la AEAT (1189) — el hueco exacto que ni el esquema ni un assert de
+    // cadena podían ver. Ahora se resuelve por `MODO_SIN_DESTINATARIO`, que hoy vale
+    // SIN_DICTAMEN: la factura se EXCLUYE del registro y se reporta, en vez de declararse con
+    // una marca que nadie ha decidido. El producto no se toca: la factura se emite y se cobra.
+    const tipoBase: 'F1' | 'R1' = inv.type === 'R1' ? 'R1' : 'F1';
+    const sinDestinatario = !inv.customer?.taxId
+      ? resolverSinDestinatario(tipoBase, inv.number, opts.modoSinDestinatario ?? MODO_SIN_DESTINATARIO)
+      : null;
+
+    const tipoFactura = sinDestinatario ? sinDestinatario.tipoFactura : tipoBase;
+    // Va entre `DescripcionOperacion` y `Destinatarios`: es el orden del XSD (sequence).
+    const marcadorSinDestinatario = sinDestinatario ? sinDestinatario.marcadorXml : '';
+
     const destinatarios = inv.customer?.taxId ? `
       <sum1:Destinatarios>
         <sum1:IDDestinatario>
@@ -705,8 +724,8 @@ export async function buildVerifactuRegistrosXml(
         <sum1:FechaExpedicionFactura>${formatDateES(inv.createdAt)}</sum1:FechaExpedicionFactura>
       </sum1:IDFactura>
       <sum1:NombreRazonEmisor>${xmlEscape(nombreEmisor)}</sum1:NombreRazonEmisor>
-      <sum1:TipoFactura>${inv.type === 'R1' ? 'R1' : 'F1'}</sum1:TipoFactura>${rectificadas}
-      <sum1:DescripcionOperacion>${xmlEscape(lines[0]?.concept || `Factura ${inv.number}`)}</sum1:DescripcionOperacion>${destinatarios}
+      <sum1:TipoFactura>${tipoFactura}</sum1:TipoFactura>${rectificadas}
+      <sum1:DescripcionOperacion>${xmlEscape(lines[0]?.concept || `Factura ${inv.number}`)}</sum1:DescripcionOperacion>${marcadorSinDestinatario}${destinatarios}
       <sum1:Desglose>${desglose}
       </sum1:Desglose>
       <sum1:CuotaTotal>${vat.cuota.toFixed(2)}</sum1:CuotaTotal>
@@ -724,7 +743,7 @@ export async function buildVerifactuRegistrosXml(
       // (verifactu_cadena_rota) sigue tumbando el paquete entero A PROPÓSITO: ahí el
       // problema no es una factura, es que el encadenamiento no se puede acreditar, y un
       // pack al que le falta un eslabón sin decirlo es peor que no entregarlo.
-      if (e instanceof DesgloseNoClasificableError) {
+      if (e instanceof RegistroNoEmitibleError) {
         excluidos.push({ number: inv.number, motivo: e.motivo });
         continue;
       }
