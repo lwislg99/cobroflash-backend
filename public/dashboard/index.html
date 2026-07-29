@@ -162,6 +162,13 @@
     </main>
   </div>
 
+  <!-- SCRUM-224b: el build con el que ESTE HTML fue servido. Lo rellena la ruta de app.ts al
+       servir /dashboard/. Si el valor llega con el marcador SIN sustituir, app.js lo trata como
+       ausente y vuelve a inferir la linea base (comportamiento anterior), en vez de disparar el
+       aviso en cada poll. Este comentario NO nombra el marcador a proposito: hacerlo se comia
+       la sustitucion, porque caia antes que el meta. -->
+  <meta name="yaqu-build" content="__BUILD_ID__">
+
   <!-- Scripts -->
   <script src="./js/api.js"></script>
   <!-- SCRUM-210: detrás de api.js a propósito — reutiliza su `copyRojo` (copy aprobado). -->
