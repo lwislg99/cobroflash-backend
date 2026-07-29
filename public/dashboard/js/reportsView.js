@@ -262,6 +262,16 @@ async function renderReportsView(container) {
     tableWrap.appendChild(table);
     summaryCard.appendChild(tableWrap);
 
+    // ── SCRUM-228 · desglose por empleado ─────────────────────────────────
+    //
+    // EL INVARIANTE MANDA EN EL DISEÑO: las filas suman SIEMPRE lo que dice el pie. Con todo
+    // seleccionado el pie es el TOTAL del año y coincide con el KPI de arriba; en cuanto se
+    // deselecciona algo, el pie cambia de nombre y avisa — un subtotal parcial no puede
+    // parecerse a un total, que es justo cómo se pierde la confianza en una pantalla de dinero.
+    if (Array.isArray(data.byEmployee) && data.byEmployee.length > 1) {
+      summaryCard.appendChild(buildDesgloseEmpleado(data.byEmployee, year, fmt, currency));
+    }
+
     // Actualizar links de exportar con el año
     btnInv.href  = `/admin/exports/invoices.csv?from=${year}-01-01&to=${year}-12-31`;
     btnExp.href  = `/admin/exports/expenses.csv?from=${year}-01-01&to=${year}-12-31`;
@@ -808,4 +818,117 @@ function buildBarChart(months, currency) {
   wrapper.style.cssText = 'overflow-x:auto;-webkit-overflow-scrolling:touch';
   wrapper.appendChild(svg);
   return wrapper;
+}
+
+
+// ── SCRUM-228 · desglose por empleado, con el invariante a la vista ─────────────────────────
+//
+// Cada fila es un cubo de una PARTICIÓN que hace el backend (`desgloseEmpleado.ts`): toda
+// factura y todo gasto cae en exactamente uno. Aquí no se recalcula nada ni se filtra nada —
+// sumar-seleccionados es aritmética sobre números ya repartidos.
+//
+// La fila «Sin asignar» recoge lo que no se puede atribuir a nadie: facturas nacidas de un
+// albarán o de una recapitulativa, que no tienen presupuesto y por tanto no tienen empleado.
+// Es fea a propósito. La alternativa —descartarlas, que es lo que hace hoy la pantalla de
+// Equipo (SCRUM-236)— deja unas cifras que no suman el total y nadie avisa.
+function buildDesgloseEmpleado(filas, year, fmt, currency) {
+  const box = document.createElement('div');
+  box.style.cssText = 'margin-top:26px;padding-top:22px;border-top:1px solid var(--neutral-200)';
+
+  // Microcopy OFICIAL: aprobado por el fundador el 29-jul-2026 (regla 30).
+  box.innerHTML = `
+    <h3 style="margin:0 0 4px;font-size:13px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em">Desglose por empleado</h3>
+    <p style="margin:0 0 14px;font-size:12.5px;color:var(--neutral-500)">Toca para quitar o añadir a la suma.</p>
+  `;
+
+  const sel = new Set(filas.map((f) => f.key)); // todo seleccionado: el pie es el total del año
+
+  const chips = document.createElement('div');
+  chips.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px';
+  chips.setAttribute('role', 'group');
+  chips.setAttribute('aria-label', 'Empleados incluidos en la suma');
+
+  const tableWrap = document.createElement('div');
+  tableWrap.className = 'table-scroll';
+  const table = document.createElement('table');
+  table.className = 'table';
+  table.style.minWidth = '460px';
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Empleado</th>
+        <th style="text-align:right">Ingresos</th>
+        <th style="text-align:right">Gastos</th>
+        <th style="text-align:right">Beneficio</th>
+      </tr>
+    </thead>
+  `;
+  const tbody = document.createElement('tbody');
+  table.appendChild(tbody);
+  tableWrap.appendChild(table);
+
+  const pintar = () => {
+    tbody.innerHTML = '';
+    const dentro = filas.filter((f) => sel.has(f.key));
+
+    dentro.forEach((f) => {
+      const tr = document.createElement('tr');
+      const nombre = f.esSinAsignar
+        ? `${f.label} <span class="badge badge-slate" style="margin-left:6px">sin presupuesto</span>`
+        : f.label + (f.esPropietario ? ' <span style="color:var(--neutral-400);font-weight:400">· tú</span>' : '');
+      tr.innerHTML = `
+        <td style="font-weight:600">${nombre}</td>
+        <td style="text-align:right;color:var(--green-700)">${f.revenue !== 0 ? fmt(f.revenue) : '<span style="color:var(--neutral-300)">—</span>'}</td>
+        <td style="text-align:right;color:var(--red-600)">${f.expenses !== 0 ? fmt(f.expenses) : '<span style="color:var(--neutral-300)">—</span>'}</td>
+        <td style="text-align:right;font-weight:600;color:${f.profit >= 0 ? 'var(--green-700)' : 'var(--red-600)'}">${fmt(f.profit)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    if (dentro.length === 0) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td colspan="4" style="text-align:center;color:var(--neutral-400);padding:22px 0;font-size:13px">Sin nadie seleccionado. Toca un nombre para volver a sumarlo.</td>';
+      tbody.appendChild(tr);
+      return;
+    }
+
+    const suma = (c) => dentro.reduce((a, f) => a + Math.round(Number(f[c]) * 100), 0) / 100;
+    const todos = dentro.length === filas.length;
+    const pie = document.createElement('tr');
+    pie.style.cssText = 'background:var(--neutral-50);font-weight:700;border-top:2px solid var(--neutral-200)';
+    // Con todo dentro esto ES el total del año y cuadra con el KPI. Con una selección parcial
+    // NO se llama «total»: el nombre cambia y dice cuántos hay dentro.
+    pie.innerHTML = `
+      <td>${todos ? 'TOTAL ' + year : `Seleccionados (${dentro.length} de ${filas.length})`}</td>
+      <td style="text-align:right;color:var(--green-700)">${fmt(suma('revenue'))}</td>
+      <td style="text-align:right;color:var(--red-600)">${fmt(suma('expenses'))}</td>
+      <td style="text-align:right;color:${suma('profit') >= 0 ? 'var(--green-700)' : 'var(--red-600)'}">${fmt(suma('profit'))}</td>
+    `;
+    tbody.appendChild(pie);
+  };
+
+  filas.forEach((f) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    // Objetivo táctil ≥44 px (AB6). Clases del inventario: seleccionado = primario.
+    b.style.cssText = 'min-height:44px';
+    b.textContent = f.label;
+    const sincronizar = () => {
+      const on = sel.has(f.key);
+      b.className = on ? 'btn-primary' : 'btn-secondary';
+      b.setAttribute('aria-pressed', String(on));
+    };
+    b.addEventListener('click', () => {
+      if (sel.has(f.key)) sel.delete(f.key); else sel.add(f.key);
+      sincronizar();
+      pintar();
+    });
+    sincronizar();
+    chips.appendChild(b);
+  });
+
+  box.appendChild(chips);
+  box.appendChild(tableWrap);
+  pintar();
+  return box;
 }

@@ -48,6 +48,10 @@ Tres cosas concretas, por orden de coste:
 
 *(Origen: incidente #15, 29-jul-2026. Se numera R8 y no R7 porque R7 existe en una rama sin mergear.)*
 
+**R9 · Un diff que nadie puede revisar ya está aprobado a ciegas. Antes de abrir el PR, mira `git diff --stat` y compáralo con el cambio que crees haber hecho.** Si el número de líneas no se parece, el PR no trae solo tu cambio: casi siempre son finales de línea (Windows convierte a CRLF un fichero que el repo guarda en LF y el diff pasa a ser el fichero ENTERO), y también reordenaciones de imports o formateadores automáticos. **Esto no es cosmético y no es una manía de limpieza: decide si alguien revisa el PR o lo aprueba a ojo.** Un cambio de 123 líneas se lee; uno de 1745 se hojea, y en un repo donde los STOPs viven en el diff, hojear es no mirar. La comprobación cuesta un comando y se hace SIEMPRE, no solo cuando algo huele raro — porque el ruido no huele, solo abulta. Si el diff está inflado: normalizar antes de empujar (`--ignore-cr-at-eol` sirve para DIAGNOSTICAR, no para arreglar; el fichero se escribe con el final de línea que el repo ya usaba).
+
+*(Origen: incidente #16, 29-jul-2026.)*
+
 ---
 
 ## REGISTRO DE INCIDENTES
@@ -202,6 +206,20 @@ Juntos producen un estado que no está en el alcance de ninguno: **un ejercicio 
 **Arreglado:** sin registros no se entrega documento — el servicio devuelve vacío, el ZIP no adjunta el fichero de ese ejercicio y el endpoint suelto responde `409` con los motivos de cada exclusión. Entregar un XML inválido es lo que la cadena entera venía a evitar; entregarlo en silencio, peor.
 
 **Regla derivada: R8** (arriba, en LAS REGLAS).
+
+---
+
+### 2026-07-29 · #16 — Entregué un PR de 123 líneas con un diff de 1745 (lección propia, del ejecutor)
+
+**Qué pasó:** SCRUM-228 añade una función de ~110 líneas a `public/dashboard/js/reportsView.js`. Al revisar el diffstat antes de escribir el cuerpo del PR, el fichero aparecía con **1745 líneas tocadas** sobre un original de 811. Medido: `main` guarda ese fichero en **LF** (811 LF, 0 CRLF) y mi copia de trabajo había quedado **entera en CRLF** (934 CRLF, 0 LF). Git lo veía como borrar el fichero y escribirlo de nuevo. Con `--ignore-cr-at-eol`, el cambio real: **123 inserciones, 0 borrados**.
+
+**Por qué importa, y no es cosmética:** el código era el mismo con o sin el ruido. Lo que cambiaba era **si el PR se puede revisar**. Un diff de 123 líneas se lee entero; uno de 1745 se hojea y se aprueba por confianza. En este repo los STOPs —fiscal, dinero, schema, superficie pública— se enseñan **como diff**: si el diff no es legible, el STOP se vuelve decorativo. Y lo peor del fallo es que **es invisible por dentro**: el fichero está bien, los tests pasan, nada avisa. Solo se ve mirando el diffstat y preguntándose si ese número tiene sentido.
+
+**Lo que lo cazó:** no un guard, sino comparar el tamaño del diff con el tamaño del cambio que creía haber hecho. Costó un vistazo.
+
+**Arreglado:** fichero normalizado a LF y commit propio que lo explica. El PR muestra 123 inserciones.
+
+**Regla derivada: R9** (arriba, en LAS REGLAS).
 
 ---
 

@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
+import { desglosarPorEmpleado } from '../../domain/desgloseEmpleado'; // SCRUM-228
 
 const router = Router();
 
@@ -31,8 +32,11 @@ router.get('/pl', async (req, res) => {
         paidAt: { gte: yearStart, lte: yearEnd },
       },
       select: { paidAt: true, total: true, currency: true,
+        // SCRUM-228: `quoteId` distingue «no atribuible» (sin presupuesto) de «del propietario»
+        // (presupuesto con `teamMemberId` null). Son cosas distintas y van a filas distintas.
+        quoteId: true,
         // A15.3 (MANT-1): € cobrados que nacieron del ciclo de mantenimientos
-        quote: { select: { origin: true } } },
+        quote: { select: { origin: true, teamMemberId: true } } },
     });
 
     // Gastos del año
@@ -41,7 +45,8 @@ router.get('/pl', async (req, res) => {
         merchantId,
         date: { gte: yearStart, lte: yearEnd },
       },
-      select: { date: true, amount: true },
+      // SCRUM-228: `teamMemberId` null = propietario (SCRUM-109), nunca «sin asignar».
+      select: { date: true, amount: true, teamMemberId: true },
     });
 
     // Facturas pagadas año anterior (para comparación)
@@ -84,6 +89,23 @@ router.get('/pl', async (req, res) => {
     const totalExpenses = monthlyExpenses.reduce((a, b) => a + b, 0);
     const totalProfit   = totalRevenue - totalExpenses;
 
+    // ── SCRUM-228 · desglose por empleado ────────────────────────────────────────────────
+    //
+    // Se calcula sobre `paidInvoices` y `expenses`, que son EXACTAMENTE las listas de las que
+    // salen los totales de arriba. No es una consulta paralela: si lo fuera, que las partes
+    // sumen el total sería una coincidencia que se rompe el día que las dos consultas divergen.
+    const [miembros, negocio] = await Promise.all([
+      prisma.teamMember.findMany({ where: { merchantId }, select: { id: true, name: true } }),
+      prisma.merchant.findUnique({ where: { id: merchantId }, select: { name: true } }),
+    ]);
+    const desglose = desglosarPorEmpleado({
+      invoices: paidInvoices,
+      expenses,
+      miembros,
+      // La fila del propietario lleva el nombre del NEGOCIO, igual que en Equipo.
+      nombrePropietario: negocio?.name ?? 'Propietario',
+    });
+
     const prevRev = Number(prevInvoices._sum.total ?? 0);
     const prevExp = Number(prevExpenses._sum.amount ?? 0);
 
@@ -97,6 +119,7 @@ router.get('/pl', async (req, res) => {
         profit:   Math.round(totalProfit   * 100) / 100,
         maintenance: Math.round(monthlyMaintenance.reduce((a, b) => a + b, 0) * 100) / 100, // A15.3
       },
+      byEmployee: desglose.filas,
       prevYear: {
         revenue:  Math.round(prevRev * 100) / 100,
         expenses: Math.round(prevExp * 100) / 100,
