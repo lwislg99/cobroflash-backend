@@ -13,6 +13,12 @@ import { prisma as defaultPrisma } from '../../../core/db/prisma';
 import { calcVatBreakdown, calcVatCuotaTotal } from './vat.service';
 import { isReceiptNumber } from './invoiceNumber.service';
 import { config } from '../../../core/config/env';
+// SCRUM-209: el desglose lo construye UN solo sitio del proyecto (registro.builder.ts).
+import {
+  buildDetallesDesgloseXml,
+  clasificarDetalleDesglose,
+  DesgloseNoClasificableError,
+} from '../../fiscal/verifactu/registro.builder';
 
 // SCRUM-145: namespaces oficiales de los XSD de la AEAT (los ficheros están en
 // `src/modules/fiscal/verifactu/xsd/`). Los `targetNamespace` son la URL del esquema; NO son
@@ -553,13 +559,32 @@ export async function buildVerifactuRegistrosXml(
   const registros = invoices.map((inv) => {
     const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
     const vat = calcVatBreakdown(lines);
-    const desglose = vat.entries.map((e) => `
-        <sum1:DetalleDesglose>
-          <sum1:Impuesto>01</sum1:Impuesto>
-          <sum1:TipoImpositivo>${e.rate}</sum1:TipoImpositivo>
-          <sum1:BaseImponibleOimporteNoSujeto>${e.base.toFixed(2)}</sum1:BaseImponibleOimporteNoSujeto>
-          <sum1:CuotaRepercutida>${e.cuota.toFixed(2)}</sum1:CuotaRepercutida>
-        </sum1:DetalleDesglose>`).join('');
+    // SCRUM-209: el desglose ya NO se construye aquí. Este bloque tenía su propia plantilla
+    // y divergió de la de `registro.builder.ts`: omitía `ClaveRegimen` y
+    // `CalificacionOperacion`, así que el XML exportado NO validaba contra el XSD (AEAT
+    // 1245 y 1195) mientras `validate-registros-xsd.ps1` daba verde — porque validaba el
+    // OTRO constructor, el que no usaba nadie. Ahora hay uno solo, y un guard lo vigila.
+    //
+    // `clasificarDetalleDesglose` LANZA si un tramo no se puede calificar con certeza (0 %:
+    // sujeta-al-0 / exenta / no sujeta son tres declaraciones distintas y el dato que las
+    // separa no está en las líneas). Bloquea la emisión en vez de inventarse el código.
+    const desglose = buildDetallesDesgloseXml(
+      vat.entries.map((e) => clasificarDetalleDesglose(e, inv.number)),
+      'sum1',
+    );
+
+    // Sin líneas no hay desglose que declarar. Antes se emitía un tramo al 0 % con la base
+    // igual al total de la factura — es decir, se DECLARABA que la operación no lleva IVA,
+    // sobre una factura de la que no sabemos nada. Eso es exactamente lo que el resto de
+    // esta función se niega a hacer con la cadena o con el destinatario.
+    if (!desglose) {
+      throw new DesgloseNoClasificableError(
+        `la factura no tiene líneas, así que no hay desglose de IVA que declarar. Antes se ` +
+          `emitía un 0% sobre el total (${Number(inv.total).toFixed(2)}), que es una declaración ` +
+          'inventada. Corrige las líneas de la factura antes de exportar.',
+        inv.number,
+      );
+    }
 
     // ⚠️ PENDIENTE FISCAL (asesor): el XSD admite `TipoRectificativa` (S=sustitución /
     // I=diferencias) y `ImporteRectificacion`, ambos minOccurs=0. NO se emiten porque elegir
@@ -672,13 +697,7 @@ export async function buildVerifactuRegistrosXml(
       <sum1:NombreRazonEmisor>${xmlEscape(nombreEmisor)}</sum1:NombreRazonEmisor>
       <sum1:TipoFactura>${inv.type === 'R1' ? 'R1' : 'F1'}</sum1:TipoFactura>${rectificadas}
       <sum1:DescripcionOperacion>${xmlEscape(lines[0]?.concept || `Factura ${inv.number}`)}</sum1:DescripcionOperacion>${destinatarios}
-      <sum1:Desglose>${desglose || `
-        <sum1:DetalleDesglose>
-          <sum1:Impuesto>01</sum1:Impuesto>
-          <sum1:TipoImpositivo>0</sum1:TipoImpositivo>
-          <sum1:BaseImponibleOimporteNoSujeto>${Number(inv.total).toFixed(2)}</sum1:BaseImponibleOimporteNoSujeto>
-          <sum1:CuotaRepercutida>0.00</sum1:CuotaRepercutida>
-        </sum1:DetalleDesglose>`}
+      <sum1:Desglose>${desglose}
       </sum1:Desglose>
       <sum1:CuotaTotal>${vat.cuota.toFixed(2)}</sum1:CuotaTotal>
       <sum1:ImporteTotal>${Number(inv.total).toFixed(2)}</sum1:ImporteTotal>${encadenamiento}

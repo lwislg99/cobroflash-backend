@@ -58,7 +58,10 @@ const merchant = {
 };
 const mkInvoice = (over = {}) => ({
   number: '2026-CF-001', createdAt: new Date('2026-03-15T10:00:00Z'), total: '121.00', type: 'F1',
-  lines: [{ concept: 'Reparación', qty: 1, price: 100, vat: 21 }],
+  // SCRUM-209: `tax` en FRACCIÓN, que es lo que lee calcVatBreakdown (vat.service.ts:26).
+  // Antes decía `vat: 21` — un campo que nadie lee: el desglose salía al 0 % y este test
+  // comprobaba la conformidad de un XML que el producto no genera nunca.
+  lines: [{ concept: 'Reparación', qty: 1, price: 100, tax: 0.21 }],
   vfHash: 'A'.repeat(64), vfPrevHash: null, customer: { name: 'Cliente QA', taxId: null }, rectifies: null,
   ...over,
 });
