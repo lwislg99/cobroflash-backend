@@ -222,17 +222,30 @@ router.get('/datos.zip', async (req, res) => {
     const conXml = seleccion.xml;
 
     const xmlPorAnio: Array<{ year: number; xml: string }> = [];
+    // 209 ↔ 221: las dos cuentan cosas DISTINTAS del mismo paquete y las dos hacen falta.
+    // No era una elección entre ramas: era una combinación.
+    //
     // SCRUM-221: cuántos registros RRSIF salen de verdad en el paquete. Lo cuenta el
     // constructor, no se deduce de `invoices.length` — no es lo mismo una factura que un
     // registro declarado, y el número que va al AuditLog tiene que ser el real.
     let registrosVerifactu = 0;
+    // SCRUM-209: facturas que NO se han podido declarar. No abortan el paquete —el resto del
+    // ejercicio sale— pero se nombran ARRIBA del LEEME, donde ya se avisa de un paquete
+    // incompleto. Una factura omitida en silencio de un registro fiscal es peor que el fallo.
+    const exclusionesVerifactu: Array<{ year: number; number: string; motivo: string }> = [];
     if (conXml) {
       const anios = [...new Set(invoices.map((inv) => inv.createdAt.getFullYear()))].sort();
       try {
         for (const year of anios) {
-          const { xml, count } = await buildVerifactuRegistrosXml({ merchantId: req.merchantId, year });
+          // Los TRES del constructor: el XML, cuántos registros declaró (221) y cuáles no
+          // pudo declarar (209). `count` viene de `registros.length`, no de las facturas
+          // miradas — verificado en `verifactu.service.ts:765` al resolver este conflicto,
+          // porque si el constructor hubiera dejado de devolverlo, `registrosVerifactu +=
+          // undefined` habría puesto un NaN en el AuditLog y eso no lo canta nadie.
+          const { xml, count, excluidos } = await buildVerifactuRegistrosXml({ merchantId: req.merchantId, year });
           xmlPorAnio.push({ year, xml });
           registrosVerifactu += count;
+          for (const x of excluidos) exclusionesVerifactu.push({ year, ...x });
         }
       } catch (e: any) {
         console.error('[exports/datos.zip] VeriFactu XML error:', e?.message || e);
@@ -360,7 +373,15 @@ router.get('/datos.zip', async (req, res) => {
         pdfsOk,
         pdfsTotal: invoices.length,
         xmlAnios: xmlPorAnio.map((x) => x.year),
-        cabecera: entrega.cabeceraLeeme,
+        // SCRUM-209: las exclusiones van con el aviso de paquete incompleto, arriba del todo.
+        cabecera: [
+          ...entrega.cabeceraLeeme,
+          ...(exclusionesVerifactu.length === 0 ? [] : [
+            `ATENCION: ${exclusionesVerifactu.length} factura(s) NO se han podido declarar y NO estan`,
+            'en el registro VeriFactu de este paquete. Corrigelas y vuelve a exportar:',
+            ...exclusionesVerifactu.map((x) => `  · ${x.number} (${x.year}): ${x.motivo}`),
+          ]),
+        ],
         datasets: seleccion.datasets, // SCRUM-138: el LEEME describe SOLO lo que hay dentro
       }),
       { name: 'LEEME.txt' },

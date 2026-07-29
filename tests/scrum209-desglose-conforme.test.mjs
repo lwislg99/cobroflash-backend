@@ -120,25 +120,69 @@ test('SCRUM-209 (caso rojo) · el XML anterior al arreglo NO valida, y falla por
   );
 });
 
-// ── 3 · LA REGLA FISCAL: lo que no se puede calificar, se bloquea ─────────────────────────
+// ── 3 · LA REGLA FISCAL: lo que no se puede calificar se EXCLUYE y se REPORTA ──────────────
+//
+// Un tramo que no se sabe calificar no se declara — pero tampoco tumba el paquete entero.
+// Una sola factura antigua sin líneas dejaría a un merchant sin su pack de inspección
+// completo, y eso convierte un rojo puntual en una caída total. Se excluye ESA, se dice
+// cuál y por qué, y el resto del ejercicio sale.
 
-test('SCRUM-209 · un tramo al 0% BLOQUEA la emisión en vez de inventarse el código', async () => {
-  const cero = mkInvoice({ total: '100.00', lines: [{ concept: 'Algo', qty: 1, price: 100, tax: 0 }] });
-  await assert.rejects(
-    () => build([cero]),
-    (e) => {
-      assert.match(e.message, /desglose_no_clasificable/);
-      assert.match(e.message, /2026-CF-001/, 'el error debe decir QUÉ factura lo provoca');
-      return true;
-    },
-    '🔴 un tramo al 0% se emitió con un código elegido por nosotros. De `tax: 0` no se puede ' +
-      'saber si es sujeta al 0%, exenta o no sujeta: son tres declaraciones distintas.',
-  );
+/** Igual que `build`, pero devuelve también el parte de exclusiones. */
+const buildCompleto = async (invoices) => {
+  const { buildVerifactuRegistrosXml } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
+  return buildVerifactuRegistrosXml({ merchantId: 1, year: 2026 }, fakePrisma(invoices));
+};
+
+test('SCRUM-209 · un tramo al 0% NO se declara: se excluye esa factura y se dice cuál', async () => {
+  const cero = mkInvoice({
+    number: '2026-CF-002', total: '100.00',
+    lines: [{ concept: 'Algo sin tipo', qty: 1, price: 100, tax: 0 }],
+  });
+  const { xml, count, excluidos } = await buildCompleto([mkInvoice(), cero]);
+
+  assert.equal(count, 1, '🔴 la buena tiene que salir igual: excluir una no puede llevarse las demás');
+  assert.equal(excluidos.length, 1);
+  assert.equal(excluidos[0].number, '2026-CF-002');
+  assert.match(excluidos[0].motivo, /0%/);
+
+  // La buena está; la mala no.
+  assert.match(xml, /<sum1:NumSerieFactura>2026-CF-001<\/sum1:NumSerieFactura>/);
+  assert.doesNotMatch(xml, /<sum1:NumSerieFactura>2026-CF-002<\/sum1:NumSerieFactura>/);
+
+  // Y NO es una omisión silenciosa: el parte viaja dentro del propio documento.
+  assert.match(xml, /ATENCION: 1 factura\(s\)/);
+  assert.match(xml, /2026-CF-002/, '🔴 la excluida debe aparecer NOMBRADA en el XML entregado');
 });
 
-test('SCRUM-209 · una factura SIN líneas también bloquea (antes declaraba un 0% inventado)', async () => {
-  const sinLineas = mkInvoice({ lines: [] });
-  await assert.rejects(() => build([sinLineas]), /desglose_no_clasificable/);
+test('SCRUM-209 · el XML con exclusiones SIGUE validando contra el XSD', async () => {
+  // El comentario del parte no puede romper el esquema: si lo rompiera, el aviso costaría
+  // el paquete entero — justo lo que se quería evitar.
+  const cero = mkInvoice({ number: '2026-CF-002', lines: [{ concept: 'x', qty: 1, price: 100, tax: 0 }] });
+  const { xml } = await buildCompleto([mkInvoice(), cero]);
+  const { valido, errores } = await validarRegistrosXml(xml, 'con-exclusiones.xml');
+  assert.equal(valido, true, `🔴 el parte de exclusiones rompe la validación:\n${errores.join('\n')}`);
+});
+
+test('SCRUM-209 · una factura SIN líneas se excluye igual (antes declaraba un 0% inventado)', async () => {
+  const sinLineas = mkInvoice({ number: '2026-CF-003', lines: [] });
+  const { count, excluidos } = await buildCompleto([mkInvoice(), sinLineas]);
+  assert.equal(count, 1);
+  assert.equal(excluidos[0].number, '2026-CF-003');
+  assert.match(excluidos[0].motivo, /no tiene líneas/);
+});
+
+test('SCRUM-209 · sin exclusiones NO se cuela ningún aviso en el XML', async () => {
+  // Un parte que apareciera siempre enseñaría a ignorarlo.
+  const { xml, excluidos } = await buildCompleto([mkInvoice()]);
+  assert.deepEqual(excluidos, []);
+  assert.doesNotMatch(xml, /ATENCION/);
+});
+
+test('SCRUM-209 · una cadena rota SIGUE tumbando el paquete entero, a propósito', async () => {
+  // No todo fallo se excluye: si el encadenamiento no se puede acreditar, el problema no es
+  // una factura suelta — es que el pack no se sostiene. Ahí sí se cae todo.
+  const huerfana = mkInvoice({ number: '2026-CF-004', vfPrevHash: 'F'.repeat(64) });
+  await assert.rejects(() => buildCompleto([huerfana]), /verifactu_cadena_rota/);
 });
 
 test('SCRUM-209 · una rectificativa (importes en negativo) SÍ se clasifica y valida', async () => {

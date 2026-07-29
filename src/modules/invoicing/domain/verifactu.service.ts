@@ -474,7 +474,7 @@ function xmlEscape(v: unknown): string {
 export async function buildVerifactuRegistrosXml(
   params: { merchantId: number; year: number },
   prismaClient = defaultPrisma,
-): Promise<{ xml: string; count: number }> {
+): Promise<{ xml: string; count: number; excluidos: Array<{ number: string; motivo: string }> }> {
   const merchant = await prismaClient.merchant.findUnique({ where: { id: params.merchantId } });
   if (!merchant) throw new Error('merchant_not_found');
   if (merchant.country !== 'ES' || !merchant.taxId) throw new Error('verifactu_not_applicable');
@@ -556,7 +556,18 @@ export async function buildVerifactuRegistrosXml(
   // el separador decimal de XSD es el punto, no depende del locale. Este fichero no lo abre
   // Excel — lo lee Hacienda. Cambiarlo a coma para que "cuadre con los CSV" invalidaría el
   // registro de facturación.
-  const registros = invoices.map((inv) => {
+  // SCRUM-209: una factura que no se puede declarar NO tumba el paquete entero. Se excluye
+  // ESA, se REPORTA con su número y su motivo, y el resto del ejercicio sale. Un merchant
+  // con una factura antigua sin líneas tiene derecho a su pack de inspección con las 400
+  // buenas; dejarlo sin nada es convertir un rojo puntual en una caída total.
+  //
+  // Lo que NO se hace es callarlo: la exclusión viaja DENTRO del propio XML como comentario
+  // (así llega igual por el ZIP y por el endpoint suelto, que deben ser idénticos) y además
+  // se devuelve al llamador para el LEEME del paquete. Omitir una factura en silencio de un
+  // registro fiscal sería peor que el fallo original.
+  const excluidos: Array<{ number: string; motivo: string }> = [];
+
+  const construirRegistro = (inv: (typeof invoices)[number]): string => {
     const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
     const vat = calcVatBreakdown(lines);
     // SCRUM-209: el desglose ya NO se construye aquí. Este bloque tenía su propia plantilla
@@ -570,7 +581,6 @@ export async function buildVerifactuRegistrosXml(
     // separa no está en las líneas). Bloquea la emisión en vez de inventarse el código.
     const desglose = buildDetallesDesgloseXml(
       vat.entries.map((e) => clasificarDetalleDesglose(e, inv.number)),
-      'sum1',
     );
 
     // Sin líneas no hay desglose que declarar. Antes se emitía un tramo al 0 % con la base
@@ -703,23 +713,54 @@ export async function buildVerifactuRegistrosXml(
       <sum1:ImporteTotal>${Number(inv.total).toFixed(2)}</sum1:ImporteTotal>${encadenamiento}
     </sum1:RegistroAlta>
   </sum:RegistroFactura>${anulacion}`;
-  }).join('\n');
+  };
+
+  const registros: string[] = [];
+  for (const inv of invoices) {
+    try {
+      registros.push(construirRegistro(inv));
+    } catch (e) {
+      // SOLO se excluye lo que no se puede CALIFICAR. Una cadena rota
+      // (verifactu_cadena_rota) sigue tumbando el paquete entero A PROPÓSITO: ahí el
+      // problema no es una factura, es que el encadenamiento no se puede acreditar, y un
+      // pack al que le falta un eslabón sin decirlo es peor que no entregarlo.
+      if (e instanceof DesgloseNoClasificableError) {
+        excluidos.push({ number: inv.number, motivo: e.motivo });
+        continue;
+      }
+      throw e;
+    }
+  }
 
   // SCRUM-145 (gap 1): envelope REAL del XSD. Antes la raíz era `<RegistrosFacturacion>` sin
   // namespaces y el registro se llamaba `<RegistroFacturacionAlta>` — que es el nombre del
   // TIPO, no del ELEMENTO (`SuministroInformacion.xsd:37` declara `RegistroAlta`). Nada de
   // eso validaba. Límite duro del XSD: `RegistroFactura` maxOccurs=1000 por envío.
+  // SCRUM-209: el parte de exclusiones viaja DENTRO del documento, como comentario XML.
+  // Va aquí y no solo en el LEEME por dos razones: el endpoint suelto (`GET /verifactu.xml`)
+  // no tiene LEEME, y el ZIP y el endpuesto deben entregar el MISMO fichero (scrum82). Un
+  // comentario no altera la validación XSD y deja el rastro pegado al documento que se
+  // enseña en una inspección — que es justo donde tiene que estar.
+  const parteExclusiones = excluidos.length === 0 ? '' : `
+  <!-- ATENCION: ${excluidos.length} factura(s) de ${params.year} NO se han podido declarar y
+       quedan FUERA de este registro. No es una omision silenciosa: se listan aqui con su
+       numero y su motivo para que se corrijan y se vuelva a exportar.
+${excluidos.map((x) => `       · ${xmlEscape(x.number)}: ${xmlEscape(x.motivo)}`).join('\n')}
+  -->`;
+
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<sum:RegFactuSistemaFacturacion xmlns:sum="${NS_LR}" xmlns:sum1="${NS_INFO}">
+<sum:RegFactuSistemaFacturacion xmlns:sum="${NS_LR}" xmlns:sum1="${NS_INFO}">${parteExclusiones}
   <sum:Cabecera>
     <sum1:ObligadoEmision>
       <sum1:NombreRazon>${xmlEscape(nombreEmisor)}</sum1:NombreRazon>
       <sum1:NIF>${xmlEscape(merchant.taxId)}</sum1:NIF>
     </sum1:ObligadoEmision>
   </sum:Cabecera>
-${registros}
+${registros.join('\n')}
 </sum:RegFactuSistemaFacturacion>
 `;
 
-  return { xml, count: invoices.length };
+  // `count` = registros REALMENTE declarados, no facturas miradas. Si contara las miradas,
+  // un pack con exclusiones informaría un número que el fichero no respalda.
+  return { xml, count: registros.length, excluidos };
 }
