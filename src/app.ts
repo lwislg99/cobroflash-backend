@@ -67,6 +67,7 @@ import searchRouter        from './modules/search/app/routes/search.routes';
 import { merchantProfileUpdateSchema } from './core/validation/schemas';
 import { getMerchantProfile, updateMerchantProfile, SlugError } from './modules/system/merchantAdmin';
 import QRCode from 'qrcode'; // A14.2: QR del perfil público (PNG alta res para furgoneta/tarjeta)
+import { resolverOpcionesQr, ErrorQr } from './modules/system/domain/qrPagina.service'; // SCRUM-230
 import { BASE_URL } from './core/config/env';
 import { getDigestPreview } from './modules/messaging/domain/weeklyDigest.service';
 import { getReferralStats, redeemFreeMonth } from './modules/auth/domain/referral.service';
@@ -424,15 +425,42 @@ app.get('/admin/merchant/public-profile-qr', requireRole('admin'), async (req, r
   try {
     const merchant = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
-      select: { slug: true },
+      select: { slug: true, brandColor: true }, // SCRUM-230: `marca` reutiliza el color ya configurado
     });
     if (!merchant?.slug) {
       return res.status(400).json({ error: 'no_slug', message: 'Primero elige la dirección de tu página.' });
     }
-    const png = await QRCode.toBuffer(`${BASE_URL}/p/${merchant.slug}?src=qr`, {
-      type: 'png', width: 1024, margin: 2, errorCorrectionLevel: 'M',
-    });
-    res.setHeader('Content-Disposition', `attachment; filename="yaqu-qr-${merchant.slug}.png"`);
+
+    // SCRUM-230: color, tamaño, formato y previsualización. SIN parámetros el resultado es
+    // EXACTAMENTE el de antes (1024 px, PNG, negro sobre blanco, descarga). La validación vive
+    // aparte y es fail-closed porque lo que hay que impedir no es un color feo: es entregar un
+    // QR que no se escanea, y de eso el pro se entera en la calle. Ver `qrPagina.service.ts`.
+    let opciones;
+    try {
+      opciones = resolverOpcionesQr(req.query as Record<string, unknown>, { brandColor: merchant.brandColor });
+    } catch (e) {
+      if (e instanceof ErrorQr) return res.status(400).json({ error: e.codigo, message: e.message });
+      throw e;
+    }
+
+    const destino = `${BASE_URL}/p/${merchant.slug}?src=qr`;
+    const comun = {
+      margin: 2,
+      errorCorrectionLevel: 'M' as const,
+      color: { dark: opciones.dark, light: opciones.light },
+    };
+    // Solo se fuerza la descarga si NO es previsualización: el hueco de uso que cerraba el
+    // ticket era que el pro no podía VER el QR antes de bajárselo.
+    if (opciones.descargar) {
+      const nombre = `yaqu-qr-${merchant.slug}.${opciones.formato}`;
+      res.setHeader('Content-Disposition', `attachment; filename="${nombre}"`);
+    }
+
+    if (opciones.formato === 'svg') {
+      const svg = await QRCode.toString(destino, { type: 'svg', width: opciones.size, ...comun });
+      return res.type('svg').send(svg);
+    }
+    const png = await QRCode.toBuffer(destino, { type: 'png', width: opciones.size, ...comun });
     return res.type('png').send(png);
   } catch (err) { return next(err); }
 });
