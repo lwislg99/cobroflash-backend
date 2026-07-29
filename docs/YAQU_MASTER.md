@@ -234,6 +234,8 @@ Un plan público (Parte W): **Pro 19,90 €/mes (199 €/año) + 0,9 % solo tarj
 > · **DENTRO** — el TDZ de `quotesView` (SCRUM-183) lo arregló SCRUM-162 en su propio PR: mismo fichero, una línea, y sin él su propia funcionalidad no se pintaba.
 > · **FUERA** — el agujero de VeriFactu en la recapitulativa (SCRUM-173) NO se arregló dentro de SCRUM-20: el análisis de los tres peligros del encadenamiento (empate de `createdAt`, READ COMMITTED, cliente global dentro de la transacción) costó su propia tarea. Hacerlo «de paso» habría metido esa sesión en el núcleo de la cadena sin ese análisis.
 
+**Proceso (29-jul-2026):** 38) **UN TEST READ-ONLY SOBRE EL CAMINO FISCAL NO ES STOP.** Añadir un test, un guard o una comprobación que solo LEE el camino de emisión (rutas, servicios, documentos, XML generado) no toca dinero ni cambia comportamiento: se hace sin pedir GO. Pero si para hacerlo posible hay que MODIFICAR el camino de emisión —extraer un helper, exportar algo que no estaba exportado, cambiar una firma, mover código de sitio— eso SÍ es STOP fiscal, aunque el objetivo final sea solo un test y aunque el cambio parezca mecánico. El motivo es el de la regla 29: refactorizar para poder observar es indistinguible, en el diff, de refactorizar y cambiar el sellado. Se para con el diff delante. Y antes de asumir el STOP, la pregunta es si se puede observar sin modificar: análisis estático del árbol (AST), no instrumentación ni grep — SCRUM-203 vigila las 7 creaciones de factura sin tocar ni una línea del camino de emisión.
+
 ---
 
 # PARTE J — WHATSAPP COMO CANAL CORE (WA-0)
