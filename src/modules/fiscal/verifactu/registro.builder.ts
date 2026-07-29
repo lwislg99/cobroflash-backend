@@ -50,15 +50,118 @@ export const CALIFICACION_SUJETA_NO_EXENTA = 'S1';
 export const CLAVE_REGIMEN_GENERAL = '01';
 
 /**
+ * Una factura que NO se puede declarar con certeza. Quien construye el envío la EXCLUYE y la
+ * REPORTA con su número y su motivo (SCRUM-209): ni se inventa el dato que falta, ni se tumba
+ * el paquete entero por una factura.
+ */
+export class RegistroNoEmitibleError extends Error {
+  constructor(public readonly motivo: string, public readonly ref?: string, codigo = 'verifactu_registro_no_emitible') {
+    super(`${codigo}${ref ? `:${ref}` : ''} — ${motivo}`);
+    this.name = new.target.name;
+  }
+}
+
+/**
  * SCRUM-209 · Una línea que NO se puede calificar con certeza NO recibe un código por
  * defecto: se bloquea la emisión. Adivinar un régimen o una calificación es declarar en
  * falso ante la AEAT, y queda sellado en la huella (regla 29: solo se corrige con una R1).
  */
-export class DesgloseNoClasificableError extends Error {
-  constructor(public readonly motivo: string, public readonly ref?: string) {
-    super(`verifactu_desglose_no_clasificable${ref ? `:${ref}` : ''} — ${motivo}`);
-    this.name = 'DesgloseNoClasificableError';
+export class DesgloseNoClasificableError extends RegistroNoEmitibleError {
+  constructor(motivo: string, ref?: string) {
+    super(motivo, ref, 'verifactu_desglose_no_clasificable');
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-215 · LA FACTURA SIN DESTINATARIO IDENTIFICADO
+//
+// EL PROBLEMA, y por qué no es un borde: el XSD deja `Destinatarios` en `minOccurs="0"`, pero
+// la AEAT rechaza con **1189** una F1/R1 que no lo lleve. Hoy el emisor lo omite en cuanto el
+// cliente no tiene NIF — y en oficios el cliente sin NIF **es el caso normal**: un fontanero
+// que arregla un baño a un particular no le pide el NIF. O sea que el rechazo no ocurre en un
+// caso raro: ocurre en el flujo principal, en cada factura a un particular.
+//
+// EL ESQUEMA PREVÉ DOS SALIDAS, y son declaraciones DISTINTAS:
+//
+//   A · `FacturaSinIdentifDestinatarioArt61d = S` — sigue siendo una factura COMPLETA (F1);
+//       se declara que el destinatario no está identificado al amparo del art. 61.d RIVA.
+//   B · `FacturaSimplificadaArt7273 = S` con `TipoFactura = F2` — la factura ES simplificada
+//       (arts. 7.2 y 7.3 del Reglamento). No es la misma factura con una marca: es otro
+//       documento, con otro contenido obligatorio y con el techo de importe del art. 4.1
+//       RD 1619/2012.
+//
+// 🚨 CUÁL PROCEDE LO DICE EL DICTAMEN P11, NO ESTE FICHERO. Elegir aquí sería exactamente lo
+// que el proyecto se prohíbe: decidir una calificación fiscal en código. Por eso el mecanismo
+// deja las DOS construidas y la elección en una constante marcada.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+
+export type ModoSinDestinatario = 'SIN_DICTAMEN' | 'ART_61D' | 'SIMPLIFICADA_F2';
+
+/**
+ * ⏸️ SIN DICTAMEN. Mientras valga esto, una factura sin NIF del cliente **no entra en el
+ * registro**: se excluye y se reporta (SCRUM-209). NO se bloquea nada del producto — la
+ * factura se crea, se envía y se cobra igual; lo único que espera es su registro fiscal.
+ *
+ * Cambiar esta constante es aplicar el dictamen. No se toca sin él.
+ */
+export const MODO_SIN_DESTINATARIO: ModoSinDestinatario = 'SIN_DICTAMEN';
+
+/** Se lanza mientras no haya dictamen: la factura se excluye del envío y se dice por qué. */
+export class DestinatarioSinDictamenError extends RegistroNoEmitibleError {
+  constructor(motivo: string, ref?: string) {
+    super(motivo, ref, 'verifactu_destinatario_sin_dictamen');
+  }
+}
+
+/**
+ * Resuelve QUÉ se emite para una factura sin destinatario identificado.
+ *
+ * Devuelve el `TipoFactura` que corresponde y el fragmento XML del marcador, en el orden del
+ * XSD (los dos campos van entre `DescripcionOperacion` y `Destinatarios`).
+ *
+ * `tipoOriginal` importa: bajo `SIMPLIFICADA_F2` solo una **F1** puede convertirse en F2. Una
+ * rectificativa sin NIF sería una **R5** (rectificativa de simplificada), que el producto no
+ * modela — así que no se resuelve, se excluye. Inventar el tipo de una rectificativa es la
+ * misma clase de error que inventar la calificación del desglose.
+ */
+export function resolverSinDestinatario(
+  tipoOriginal: 'F1' | 'R1',
+  ref?: string,
+  modo: ModoSinDestinatario = MODO_SIN_DESTINATARIO,
+): { tipoFactura: 'F1' | 'F2' | 'R1'; marcadorXml: string } {
+  if (modo === 'SIN_DICTAMEN') {
+    throw new DestinatarioSinDictamenError(
+      'la factura no tiene NIF del cliente y la AEAT rechaza una F1/R1 sin `Destinatarios` ' +
+        '(error 1189). El esquema admite dos salidas —`FacturaSinIdentifDestinatarioArt61d` ' +
+        '(factura completa, art. 61.d RIVA) o `FacturaSimplificadaArt7273` con TipoFactura F2 ' +
+        '(arts. 7.2/7.3)— y son declaraciones distintas: cuál procede lo decide el dictamen ' +
+        'P11, no el código. Hasta entonces la factura queda FUERA del registro, no se declara ' +
+        'con un dato inventado. La factura en sí no está bloqueada: se emite, se envía y se ' +
+        'cobra igual.',
+      ref,
+    );
+  }
+
+  if (modo === 'ART_61D') {
+    return {
+      tipoFactura: tipoOriginal,
+      marcadorXml: `\n      <sum1:FacturaSinIdentifDestinatarioArt61d>S</sum1:FacturaSinIdentifDestinatarioArt61d>`,
+    };
+  }
+
+  // SIMPLIFICADA_F2
+  if (tipoOriginal !== 'F1') {
+    throw new DestinatarioSinDictamenError(
+      `una ${tipoOriginal} sin NIF del cliente no se puede emitir como simplificada: su tipo ` +
+        'sería R5 (rectificativa de factura simplificada) y el producto no lo modela. Se ' +
+        'excluye en vez de inventarle el tipo a una rectificativa.',
+      ref,
+    );
+  }
+  return {
+    tipoFactura: 'F2',
+    marcadorXml: `\n      <sum1:FacturaSimplificadaArt7273>S</sum1:FacturaSimplificadaArt7273>`,
+  };
 }
 
 /**

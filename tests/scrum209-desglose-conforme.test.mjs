@@ -41,7 +41,7 @@ const merchant = {
 const mkInvoice = (over = {}) => ({
   number: '2026-CF-001', createdAt: new Date('2026-03-15T10:00:00Z'), total: '121.00', type: 'F1',
   lines: [{ concept: 'Reparación', qty: 1, price: 100, tax: 0.21 }],
-  vfHash: 'A'.repeat(64), vfPrevHash: null, customer: { name: 'Cliente QA', taxId: null }, rectifies: null,
+  vfHash: 'A'.repeat(64), vfPrevHash: null, customer: { name: 'Cliente QA', taxId: 'A11111111' }, rectifies: null,
   ...over,
 });
 
