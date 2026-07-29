@@ -390,6 +390,8 @@ async function logout() {
 // GET /version (BUILD_ID por deploy) + toast persistente con botón Recargar.
 // No se fuerza la recarga: se respeta lo que el usuario esté haciendo.
 const VERSION_POLL_MS = 90_000;
+// SCRUM-224: mientras NO haya línea base, se reintenta rápido. Ver `checkAppVersion`.
+const VERSION_BASELINE_RETRY_MS = 5_000;
 let appBuildId = null;
 let versionToastShown = false;
 
@@ -402,6 +404,19 @@ async function checkAppVersion() {
     v = (await r.json()).version;
   } catch { return; } // sin red / deploy en curso: se reintenta en el siguiente poll
   if (!v) return;
+  // SCRUM-224 · LA LÍNEA BASE ES LA TRAMPA, y salta justo cuando más duele.
+  //
+  // Esta primera lectura fija «la versión con la que arrancó esta página». Si FALLA —y el
+  // momento más probable de que falle es un deploy en vuelo, o sea EXACTAMENTE cuando sale un
+  // hotfix— `appBuildId` sigue a null y la línea base la fija la SIGUIENTE lectura buena, que
+  // ya trae el BUILD_ID NUEVO. A partir de ahí `v === appBuildId` para siempre: el aviso no
+  // sale nunca y el usuario se queda con el JS viejo sin que nada se lo diga.
+  //
+  // No se puede cerrar del todo desde aquí: la página no sabe con qué build la sirvieron (el
+  // HTML es estático, no lleva el BUILD_ID dentro). Lo que sí se hace es ESTRECHAR la ventana
+  // — mientras no haya línea base se reintenta cada 5 s en vez de cada 90 (ver
+  // `startVersionWatch`), así que el hueco pasa de minuto y medio a segundos.
+  // El cierre completo es sellar el BUILD_ID en el HTML servido; queda propuesto, no hecho.
   if (appBuildId === null) { appBuildId = v; return; } // primera lectura = versión de arranque
   if (v === appBuildId) return;
 
@@ -435,6 +450,13 @@ async function checkAppVersion() {
 function startVersionWatch() {
   checkAppVersion(); // fija appBuildId al arrancar
   setInterval(checkAppVersion, VERSION_POLL_MS);
+  // SCRUM-224: cadencia rápida SOLO hasta tener línea base. Si la primera lectura falló (deploy
+  // en vuelo), reintentar a los 90 s deja al usuario minuto y medio sin red de aviso, y encima
+  // fijando como base una versión que NO es la suya. El intervalo se apaga solo al conseguirla.
+  const baseline = setInterval(() => {
+    if (appBuildId !== null || versionToastShown) { clearInterval(baseline); return; }
+    checkAppVersion();
+  }, VERSION_BASELINE_RETRY_MS);
   // Al volver a la pestaña (el caso típico: la dejó abierta y hubo deploy)
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') checkAppVersion();
