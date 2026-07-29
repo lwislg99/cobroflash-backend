@@ -43,6 +43,43 @@ distingue es quién puede tocarlas. Se descarta llamar a `yaqu_dev_javier` "segu
 staging" (SCRUM-84) porque implicaría el régimen de `railway` y no lo tiene. Si el fundador lo
 ve de otra forma, es una línea.
 
+## SCRUM-205 · `invoices.vf_estado` (estado de sellado explícito) — 🔴 SIN APLICAR en ninguna de las tres
+
+**🚨 EL ORDEN ES INNEGOCIABLE Y NO ES EL DE SIEMPRE: `ALTER TABLE` → `backfill` → desplegar el
+código.** Los tres pasos, en ese orden, y **el código va el ÚLTIMO**. Aquí no basta con "aplicar
+el schema antes de que el código lo use": entre el `ALTER` y el `backfill` hay un estado en el
+que **todas** las facturas históricas figuran como pendientes de sellado.
+
+**Por qué el backfill no es opcional.** La columna entra `NOT NULL DEFAULT 'pendiente_de_sellado'`
+y ese default cae sobre TODAS las filas que ya existen — incluidas las que llevan meses selladas
+con su huella en la cadena. El código nuevo trae la regla «pendiente de sellado ⇒ ni PDF ni QR»
+(`puedeProducirDocumento()`), así que si el código llega antes que el backfill, **el histórico
+entero deja de servir PDF**. El default es el CORRECTO para las filas nuevas (fail-closed: lo que
+nadie sella queda visible y sin documento) y exactamente el equivocado para las viejas.
+
+**Preview (`prisma migrate diff`, aditivo):**
+
+```sql
+ALTER TABLE "invoices" ADD COLUMN "vf_estado" TEXT NOT NULL DEFAULT 'pendiente_de_sellado';
+```
+
+**Backfill:** `prisma/backfill/scrum205-vf-estado.sql` — idempotente, en una transacción.
+1. `vf_hash IS NOT NULL` → `'sellado'` (la huella ES el hecho).
+2. `J-%`, merchant no-ES o sin `tax_id` → `'no_aplica'` (justificantes y quien no entra en VeriFactu).
+3. **Lo que quede en `'pendiente_de_sellado'` se LISTA, no se adivina:** son facturas fiscales sin
+   huella y sin motivo para no tenerla. Es un dato de negocio —facturas fantasma reales— y hay que
+   mirarlo, no barrerlo. El script lo devuelve como `SELECT` final.
+
+**Ventana:** corta y de noche. Entre el paso 1 y el 2, ninguna factura antigua sirve PDF.
+
+**Estado por base:**
+
+```
+1. acela / railway (STAGING)         — 🔴 pendiente
+2. acela / yaqu_dev_javier (DEV)     — 🔴 pendiente (lo aplica el carril B)
+3. autorack (PRODUCCIÓN)             — 🔴 pendiente (lo aplica el fundador con su GO)
+```
+
 ## SCRUM-195 · `quotes.job_id` + índice (Job 1:N Quote, paso 1 de 2) — 🟡 PARCIAL
 
 > **Sigue en 🟡 PARCIAL, y no por inercia.** El paso 1 ya está en **staging y producción**, pero
