@@ -45,8 +45,8 @@ export const CLAVE_PROPIETARIO = 0;
 /** Clave de lo que no se puede atribuir a nadie (factura sin presupuesto). */
 export const CLAVE_SIN_ASIGNAR = -1;
 
-// [PENDIENTE microcopy oficial] — el fundador aprueba el texto (regla 30). Hasta entonces este
-// literal es provisional y NO debe copiarse a otras pantallas.
+// Microcopy OFICIAL: aprobado por el fundador el 29-jul-2026 (regla 30). SCRUM-236 reutiliza
+// esta misma constante para la pantalla de Equipo — no se escribe un segundo literal.
 export const ETIQUETA_SIN_ASIGNAR = 'Sin asignar';
 
 export interface FacturaDesglose {

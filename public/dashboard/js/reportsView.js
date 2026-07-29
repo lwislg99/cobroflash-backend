@@ -835,7 +835,7 @@ function buildDesgloseEmpleado(filas, year, fmt, currency) {
   const box = document.createElement('div');
   box.style.cssText = 'margin-top:26px;padding-top:22px;border-top:1px solid var(--neutral-200)';
 
-  // [PENDIENTE microcopy oficial] — textos provisionales hasta que el fundador los apruebe (regla 30).
+  // Microcopy OFICIAL: aprobado por el fundador el 29-jul-2026 (regla 30).
   box.innerHTML = `
     <h3 style="margin:0 0 4px;font-size:13px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em">Desglose por empleado</h3>
     <p style="margin:0 0 14px;font-size:12.5px;color:var(--neutral-500)">Toca para quitar o añadir a la suma.</p>
