@@ -119,18 +119,20 @@ export function resolverOpcionesQr(
   // El contraste solo NO basta: blanco sobre negro da 21:1 —el máximo posible— y aun así muchos
   // lectores no lo leen, porque el estándar espera módulos OSCUROS sobre fondo CLARO. Un QR
   // invertido con contraste perfecto pasaría el primer filtro y seguiría sin escanearse.
+  // ⚠️ Los DOS mensajes de abajo los APROBÓ el fundador el 29-jul-2026 (regla 30). Son los que
+  // ve el profesional tal cual —la UI los muestra sin reescribirlos—, así que NO se reformulan
+  // ni se les añade el dato técnico: el ratio exacto le dice al pro lo mismo que nada.
   if (luminanciaRelativa(dark) >= luminanciaRelativa(light)) {
     throw new ErrorQr(
       'qr_invertido',
-      'Los módulos del QR tienen que ser MÁS OSCUROS que el fondo: invertido, muchos lectores no lo leen.',
+      'El código tiene que ir oscuro sobre fondo claro. Al revés, muchos móviles no lo leen.',
     );
   }
 
-  const ratio = ratioContraste(dark, light);
-  if (ratio < CONTRASTE_MINIMO) {
+  if (ratioContraste(dark, light) < CONTRASTE_MINIMO) {
     throw new ErrorQr(
       'contraste_insuficiente',
-      `Contraste ${ratio.toFixed(1)}:1, por debajo del mínimo ${CONTRASTE_MINIMO}:1. Con menos, el QR deja de escanearse.`,
+      'Este color no se distingue del fondo y el QR dejaría de escanearse. Elige uno más oscuro.',
     );
   }
 

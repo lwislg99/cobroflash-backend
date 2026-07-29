@@ -754,19 +754,22 @@ async function renderPublicProfileCard(container) {
 // ── A14.2 · QR de la página pública (PNG 1024px → /p/:slug?src=qr) ─────────
 // Para imprimir en la furgoneta o la tarjeta: quien lo escanea ve la página y,
 // si acaba registrándose en YaQu, queda atribuido (acquisitionSource='qr').
-// SCRUM-230 · TODO EL TEXTO NUEVO DE ESTA TARJETA EN UN SOLO SITIO.
-// [PENDIENTE microcopy oficial] — regla 30: estos literales NO están en el máster y NO se
-// inventan como definitivos. Se agrupan aquí para que sustituirlos sea cambiar este bloque y
-// nada más; van propuestos al fundador en el reporte del ticket.
+// SCRUM-230 · TODO EL TEXTO NUEVO DE ESTA TARJETA EN UN SOLO SITIO, para que sustituirlo sea
+// cambiar este bloque y nada más.
+//
+// `ayudaSvg` y `errorGenerico` los APROBÓ el fundador el 29-jul-2026 (regla 30): NO se
+// reformulan. Las demás claves siguen marcadas abajo como pendientes.
 const QR_COPY = {
+  // [PENDIENTE microcopy oficial] — etiquetas de los tres selectores, aún sin aprobar.
   formato: 'Formato',
   tamano: 'Tamaño',
   color: 'Color',
   colorNegro: 'Negro',
   colorMarca: 'Color de marca',
   descargar: '⬇ Descargar QR',
-  ayudaSvg: 'SVG es el que pide una rotulación: escala sin perder nitidez.',
-  errorGenerico: 'No se pudo generar el QR con esas opciones.',
+  // APROBADOS (fundador, 29-jul-2026) — literales, no se tocan:
+  ayudaSvg: 'Elige SVG si vas a imprimirlo grande (furgoneta, cartel): no se pixela.',
+  errorGenerico: 'No hemos podido generar el QR con esas opciones. Prueba a cambiar el color o el tamaño.',
 };
 
 function renderProfileQrButton(card, m) {
