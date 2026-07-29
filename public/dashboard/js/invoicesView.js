@@ -41,7 +41,15 @@ async function fetchInvoices(options = {}) {
   // (ADMIN_ONLY_ROUTES, MOTIVOS_ANULACION) aplicado a algo peor: microcopy fiscal que el
   // AuditLog tiene que poder reproducir. Una sola fuente, como `cobroPillClass` e
   // `invoiceStatusMeta`. De este fichero solo se quita la función; nada más se toca.
-  const copyRojo = window.copyRojo;
+  //
+  // 🔴 AQUÍ HABÍA UN `const copyRojo = window.copyRojo;` QUE TUMBABA ESTE FICHERO ENTERO.
+  // Estos scripts son CLÁSICOS y comparten ámbito global: `api.js` ya declara
+  // `function copyRojo`, que es una global var-scoped, así que un `const` con ese mismo
+  // nombre en otro script choca — «Identifier 'copyRojo' has already been declared». Es
+  // SyntaxError EN PARSEO: no se ejecuta NI UNA LÍNEA de este fichero, así que Facturas y la
+  // bandeja de pendientes desaparecían enteras. La sangría de 2 espacios engaña: este fichero
+  // NO tiene IIFE, todo esto es ámbito global.
+  // No hace falta puente: `copyRojo` ya está en el global desde api.js. Se llama y ya.
 
   async function renderInvoicesView(container) {
     container.innerHTML = '';
