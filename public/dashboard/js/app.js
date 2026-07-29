@@ -392,7 +392,20 @@ async function logout() {
 const VERSION_POLL_MS = 90_000;
 // SCRUM-224: mientras NO haya línea base, se reintenta rápido. Ver `checkAppVersion`.
 const VERSION_BASELINE_RETRY_MS = 5_000;
-let appBuildId = null;
+// SCRUM-224b · LA LÍNEA BASE ES UN DATO, NO UNA INFERENCIA.
+//
+// El build con el que ESTA página fue servida viene sellado en el HTML (`app.ts` lo inyecta al
+// servir `/dashboard/`). Antes se deducía de la primera lectura buena de `/version`, y si esa
+// lectura fallaba —lo más probable durante un deploy en vuelo, o sea justo cuando sale un
+// hotfix— la base acababa siendo la versión NUEVA y el aviso no salía nunca.
+//
+// RESPALDO, y NO es `|| null` a secas: si el HTML se sirviera como estático, el meta llegaría
+// con el marcador SIN SUSTITUIR. Eso es una cadena no vacía que jamás va a coincidir con un
+// BUILD_ID real, así que el aviso saltaría en CADA poll — un falso positivo permanente, peor
+// que el bug que esto cierra. Un marcador sin sustituir cuenta como «no hay sello»: se vuelve
+// a inferir, que es el comportamiento de antes.
+const selloBuild = document.querySelector('meta[name="yaqu-build"]')?.content;
+let appBuildId = selloBuild && !/^__.*__$/.test(selloBuild) ? selloBuild : null;
 let versionToastShown = false;
 
 async function checkAppVersion() {
