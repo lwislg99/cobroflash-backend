@@ -99,7 +99,31 @@ export type AuditAction =
 // fiscales: si eso llegara a registrarse con el `recordAudit` fire-safe, un fallo del log se
 // tragaría y nos quedaríamos sin poder acreditar desde cuándo emite. Con la acción aquí, `tsc`
 // lo impide ANTES de que exista el segundo escritor.
-export const ACCIONES_BLOQUEANTES = ['factura_emitida', 'aviso_ambar_decidido', 'cambio_flag'] as const;
+//
+// SCRUM-221 · `exportacion_fiscal` entra aquí por decisión del fundador (29-jul-2026). Es la
+// acción por la que los registros fiscales SALEN del sistema hacia una gestoría o una
+// inspección: un pack que se descargó sin dejar rastro es exactamente lo que ese ticket
+// impide. Mismo criterio que `factura_emitida`.
+//
+// ⚠️ CON UNA PRECISIÓN QUE HAY QUE LEER ANTES DE USAR ESTA FILA COMO PRUEBA, y que va aquí
+// —y no solo en el ticket— porque quien la lea en una inspección tendrá el código delante,
+// no el Jira:
+//
+//   `exportacion_fiscal` registra una PETICIÓN AUTORIZADA, NO UNA ENTREGA CONFIRMADA.
+//
+// El export NO es transaccional (a diferencia de `factura_emitida`, que se escribe dentro de
+// la `$transaction` que consume el número). Aquí la fila se escribe ANTES de enviar los bytes,
+// así que puede constar un export cuya descarga se cayó después — cliente que aborta, red que
+// se corta. Se asume A CONCIENCIA: registrar de más es infinitamente menos grave que registrar
+// de menos, que es lo que este ticket impide. Pero quien lea esta fila tiene que saber qué
+// prueba (que alguien con permiso pidió el pack, cuándo, con qué alcance) y qué NO prueba
+// (que el fichero llegara a su destino).
+export const ACCIONES_BLOQUEANTES = [
+  'factura_emitida',
+  'aviso_ambar_decidido',
+  'cambio_flag',
+  'exportacion_fiscal',
+] as const;
 export type AuditActionBloqueante = (typeof ACCIONES_BLOQUEANTES)[number];
 /** Todo lo demás. Es lo ÚNICO que `recordAudit` (fire-safe) acepta. */
 export type AuditActionFireSafe = Exclude<AuditAction, AuditActionBloqueante>;
