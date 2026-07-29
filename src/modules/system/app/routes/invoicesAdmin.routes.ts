@@ -28,6 +28,7 @@ import fs from 'fs';
 import { ensureInvoicePdf, ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { sendSuccessBody, sendFailureBody, SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 import { esErrorSinSellar, ERROR_SIN_SELLAR } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
+import { sellarTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 
 
 const router = Router();
@@ -748,15 +749,9 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
     });
 
     // VeriFactu (tipoFactura R1) para merchants españoles con NIF
-    let vfApplied = false;
-    if (original.merchant?.country === 'ES' && original.merchant.taxId) {
-      try {
-        await applyVeriFactu(rect, original.merchant.taxId, prisma);
-        vfApplied = true;
-      } catch (e) {
-        console.error('[rectify] Error al aplicar VeriFactu:', e);
-      }
-    }
+    // SCRUM-205: punto único de sellado, después del commit que consumió el número de la R1.
+    const vfApplied =
+      (await sellarTrasEmision(rect, original.merchant ?? {}, prisma)).estado === SELLADO_HECHO;
 
     recordCustomerEvent({
       merchantId: original.merchantId,
@@ -830,14 +825,12 @@ router.post('/:id/regenerate-pdf', requireRole('admin'), async (req, res) => {
     let vfHash      = invoice.vfHash ?? null;
 
     // (Re)aplicar VeriFactu si es merchant español con NIF (V0-0: nunca a justificantes)
-    if (merchant.country === 'ES' && merchant.taxId && !isReceiptNumber(invoice.number)) {
-      try {
-        const vf = await applyVeriFactu(invoice, merchant.taxId, prisma);
-        qrData = vf.qrUrl;
-        vfHash = vf.vfHash;
-      } catch (e) {
-        console.error('[regenerate-pdf] VeriFactu error:', e);
-      }
+    // SCRUM-205: REGENERAR UN PDF NO ES EMITIR, así que aquí ya NO se sella. Era el mismo
+    // sellado perezoso de `ensureInvoicePdf` escondido en otra ruta: una factura entraba en la
+    // cadena porque alguien pidió regenerar su documento. Si no está sellada, no hay PDF que
+    // regenerar — se corta, igual que en `ensureInvoicePdf`.
+    if (!puedeProducirDocumento(invoice.vfEstado)) {
+      return res.status(409).json({ error: ERROR_PDF_SIN_SELLAR });
     }
 
     const invLines = invoice.lines && Array.isArray(invoice.lines)
