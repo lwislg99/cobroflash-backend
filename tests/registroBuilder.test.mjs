@@ -31,12 +31,12 @@ test('alta: orden del XSD y campos obligatorios presentes', () => {
     'Encadenamiento', 'SistemaInformatico', 'FechaHoraHusoGenRegistro', 'TipoHuella', 'Huella'];
   let last = -1;
   for (const el of order) {
-    const idx = xml.indexOf(`<sf:${el}>`);
+    const idx = xml.indexOf(`<sum1:${el}>`);
     assert.ok(idx > last, `${el} fuera de orden o ausente`);
     last = idx;
   }
-  assert.ok(xml.includes('<sf:PrimerRegistro>S</sf:PrimerRegistro>'));
-  assert.ok(xml.includes('<sf:TipoHuella>01</sf:TipoHuella>'));
+  assert.ok(xml.includes('<sum1:PrimerRegistro>S</sum1:PrimerRegistro>'));
+  assert.ok(xml.includes('<sum1:TipoHuella>01</sum1:TipoHuella>'));
 });
 
 test('alta: escapa XML peligroso (emisor con & y <>)', () => {
@@ -52,10 +52,10 @@ test('R1: TipoRectificativa + FacturasRectificadas con la factura original', () 
     numSerieFactura: '2026-CF-R-001',
     encadenamiento: { primerRegistro: false, anterior: { idEmisorFactura: 'B12345678', numSerieFactura: '2026-CF-001', fechaExpedicion: '11-06-2026', huella: 'B'.repeat(64) } },
   });
-  assert.ok(xml.includes('<sf:TipoRectificativa>I</sf:TipoRectificativa>'));
-  assert.ok(xml.includes('<sf:IDFacturaRectificada>'));
-  assert.ok(xml.includes('<sf:RegistroAnterior>'));
-  assert.ok(xml.includes(`<sf:Huella>${'B'.repeat(64)}</sf:Huella>`));
+  assert.ok(xml.includes('<sum1:TipoRectificativa>I</sum1:TipoRectificativa>'));
+  assert.ok(xml.includes('<sum1:IDFacturaRectificada>'));
+  assert.ok(xml.includes('<sum1:RegistroAnterior>'));
+  assert.ok(xml.includes(`<sum1:Huella>${'B'.repeat(64)}</sum1:Huella>`));
 });
 
 test('anulación: campos *Anulada y encadenamiento', () => {
@@ -65,16 +65,16 @@ test('anulación: campos *Anulada y encadenamiento', () => {
     encadenamiento: { primerRegistro: true },
     sistema, fechaHoraHusoGenRegistro: '2026-06-12T10:10:00+02:00', huella: 'C'.repeat(64),
   });
-  assert.ok(xml.includes('<sf:IDEmisorFacturaAnulada>B12345678</sf:IDEmisorFacturaAnulada>'));
-  assert.ok(xml.includes('<sf:NumSerieFacturaAnulada>2026-CF-001</sf:NumSerieFacturaAnulada>'));
-  assert.ok(xml.includes('<sf:FechaExpedicionFacturaAnulada>11-06-2026</sf:FechaExpedicionFacturaAnulada>'));
+  assert.ok(xml.includes('<sum1:IDEmisorFacturaAnulada>B12345678</sum1:IDEmisorFacturaAnulada>'));
+  assert.ok(xml.includes('<sum1:NumSerieFacturaAnulada>2026-CF-001</sum1:NumSerieFacturaAnulada>'));
+  assert.ok(xml.includes('<sum1:FechaExpedicionFacturaAnulada>11-06-2026</sum1:FechaExpedicionFacturaAnulada>'));
 });
 
 test('envelope: cabecera con obligado y límite de 1000 registros', () => {
   const reg = buildRegistroAlta(base);
   const xml = buildRegFactuEnvelope({ obligado: { nombreRazon: 'Demo ES S.L.', nif: 'B12345678' }, registrosXml: [reg] });
-  assert.ok(xml.includes('<sfLR:RegFactuSistemaFacturacion'));
-  assert.ok(xml.includes('<sf:ObligadoEmision>'));
+  assert.ok(xml.includes('<sum:RegFactuSistemaFacturacion'));
+  assert.ok(xml.includes('<sum1:ObligadoEmision>'));
   assert.throws(() => buildRegFactuEnvelope({ obligado: { nombreRazon: 'x', nif: 'y' }, registrosXml: [] }), /registros_fuera_de_rango/);
   assert.throws(() => buildRegFactuEnvelope({ obligado: { nombreRazon: 'x', nif: 'y' }, registrosXml: new Array(1001).fill(reg) }), /registros_fuera_de_rango/);
 });

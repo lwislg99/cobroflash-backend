@@ -107,23 +107,26 @@ export function clasificarDetalleDesglose(
  * generador de registros pasa por esta función o no pasa: hay un guard que lo vigila
  * (`tests/scrum209-un-solo-desglose.test.mjs`).
  *
- * `prefijo` existe porque los dos llamadores declaran el mismo namespace con distinto
- * alias (`sf:` aquí, `sum1:` en el servicio). Es el alias, no el namespace: para la AEAT
- * el documento es idéntico. Unificarlo tocaría seis asserts de scrum145 sin ganar nada.
+ * UNA SOLA SALIDA POSIBLE. La primera versión aceptaba el prefijo como parámetro, porque
+ * cada llamador declaraba el mismo namespace con otro alias (`sf:` aquí, `sum1:` en el
+ * servicio). Eso era la misma enfermedad con otra cara: un constructor con dos salidas
+ * posibles, y las dos en código de PRODUCCIÓN — no era una costura de test. Se fijó a
+ * `sum1:`, que es el alias que ya usaba el camino en uso (la exportación ZIP), y este
+ * fichero se alineó con él. Para la AEAT el alias es irrelevante —lo que identifica es el
+ * namespace—, pero tener una sola forma de escribirlo es lo que impide volver a divergir.
  *
  * ORDEN DE ELEMENTOS = orden del XSD (sequence). Cambiarlo rompe la validación.
  */
-export function buildDetallesDesgloseXml(detalles: DetalleDesglose[], prefijo: 'sf' | 'sum1' = 'sf'): string {
-  const p = prefijo;
+export function buildDetallesDesgloseXml(detalles: DetalleDesglose[]): string {
   return detalles.map((d) => `
-        <${p}:DetalleDesglose>
-          <${p}:Impuesto>01</${p}:Impuesto>
-          <${p}:ClaveRegimen>${esc(d.claveRegimen)}</${p}:ClaveRegimen>
-          <${p}:CalificacionOperacion>${esc(d.calificacion)}</${p}:CalificacionOperacion>${d.tipoImpositivo ? `
-          <${p}:TipoImpositivo>${esc(d.tipoImpositivo)}</${p}:TipoImpositivo>` : ''}
-          <${p}:BaseImponibleOimporteNoSujeto>${esc(d.baseImponible)}</${p}:BaseImponibleOimporteNoSujeto>${d.cuotaRepercutida ? `
-          <${p}:CuotaRepercutida>${esc(d.cuotaRepercutida)}</${p}:CuotaRepercutida>` : ''}
-        </${p}:DetalleDesglose>`).join('');
+        <sum1:DetalleDesglose>
+          <sum1:Impuesto>01</sum1:Impuesto>
+          <sum1:ClaveRegimen>${esc(d.claveRegimen)}</sum1:ClaveRegimen>
+          <sum1:CalificacionOperacion>${esc(d.calificacion)}</sum1:CalificacionOperacion>${d.tipoImpositivo ? `
+          <sum1:TipoImpositivo>${esc(d.tipoImpositivo)}</sum1:TipoImpositivo>` : ''}
+          <sum1:BaseImponibleOimporteNoSujeto>${esc(d.baseImponible)}</sum1:BaseImponibleOimporteNoSujeto>${d.cuotaRepercutida ? `
+          <sum1:CuotaRepercutida>${esc(d.cuotaRepercutida)}</sum1:CuotaRepercutida>` : ''}
+        </sum1:DetalleDesglose>`).join('');
 }
 
 export interface RegistroAltaParams {
@@ -148,82 +151,82 @@ export interface RegistroAltaParams {
 }
 
 function xmlSistema(s: SistemaInformatico): string {
-  return `<sf:SistemaInformatico>
-      <sf:NombreRazon>${esc(s.nombreRazonProductor)}</sf:NombreRazon>
-      <sf:NIF>${esc(s.nifProductor)}</sf:NIF>
-      <sf:NombreSistemaInformatico>${esc(s.nombreSistema)}</sf:NombreSistemaInformatico>
-      <sf:IdSistemaInformatico>${esc(s.idSistema)}</sf:IdSistemaInformatico>
-      <sf:Version>${esc(s.version)}</sf:Version>
-      <sf:NumeroInstalacion>${esc(s.numeroInstalacion)}</sf:NumeroInstalacion>
-      <sf:TipoUsoPosibleSoloVerifactu>${s.soloVerifactu}</sf:TipoUsoPosibleSoloVerifactu>
-      <sf:TipoUsoPosibleMultiOT>${s.multiOT}</sf:TipoUsoPosibleMultiOT>
-      <sf:IndicadorMultiplesOT>${s.indicadorMultiplesOT}</sf:IndicadorMultiplesOT>
-    </sf:SistemaInformatico>`;
+  return `<sum1:SistemaInformatico>
+      <sum1:NombreRazon>${esc(s.nombreRazonProductor)}</sum1:NombreRazon>
+      <sum1:NIF>${esc(s.nifProductor)}</sum1:NIF>
+      <sum1:NombreSistemaInformatico>${esc(s.nombreSistema)}</sum1:NombreSistemaInformatico>
+      <sum1:IdSistemaInformatico>${esc(s.idSistema)}</sum1:IdSistemaInformatico>
+      <sum1:Version>${esc(s.version)}</sum1:Version>
+      <sum1:NumeroInstalacion>${esc(s.numeroInstalacion)}</sum1:NumeroInstalacion>
+      <sum1:TipoUsoPosibleSoloVerifactu>${s.soloVerifactu}</sum1:TipoUsoPosibleSoloVerifactu>
+      <sum1:TipoUsoPosibleMultiOT>${s.multiOT}</sum1:TipoUsoPosibleMultiOT>
+      <sum1:IndicadorMultiplesOT>${s.indicadorMultiplesOT}</sum1:IndicadorMultiplesOT>
+    </sum1:SistemaInformatico>`;
 }
 
 function xmlEncadenamiento(e: Encadenamiento): string {
   if (e.primerRegistro || !e.anterior) {
-    return `<sf:Encadenamiento><sf:PrimerRegistro>S</sf:PrimerRegistro></sf:Encadenamiento>`;
+    return `<sum1:Encadenamiento><sum1:PrimerRegistro>S</sum1:PrimerRegistro></sum1:Encadenamiento>`;
   }
-  return `<sf:Encadenamiento>
-      <sf:RegistroAnterior>
-        <sf:IDEmisorFactura>${esc(e.anterior.idEmisorFactura)}</sf:IDEmisorFactura>
-        <sf:NumSerieFactura>${esc(e.anterior.numSerieFactura)}</sf:NumSerieFactura>
-        <sf:FechaExpedicionFactura>${esc(e.anterior.fechaExpedicion)}</sf:FechaExpedicionFactura>
-        <sf:Huella>${esc(e.anterior.huella)}</sf:Huella>
-      </sf:RegistroAnterior>
-    </sf:Encadenamiento>`;
+  return `<sum1:Encadenamiento>
+      <sum1:RegistroAnterior>
+        <sum1:IDEmisorFactura>${esc(e.anterior.idEmisorFactura)}</sum1:IDEmisorFactura>
+        <sum1:NumSerieFactura>${esc(e.anterior.numSerieFactura)}</sum1:NumSerieFactura>
+        <sum1:FechaExpedicionFactura>${esc(e.anterior.fechaExpedicion)}</sum1:FechaExpedicionFactura>
+        <sum1:Huella>${esc(e.anterior.huella)}</sum1:Huella>
+      </sum1:RegistroAnterior>
+    </sum1:Encadenamiento>`;
 }
 
 export function buildRegistroAlta(p: RegistroAltaParams): string {
   const rectificadas = p.tipoFactura === 'R1' && p.rectifica
-    ? `<sf:TipoRectificativa>${p.tipoRectificativa ?? 'I'}</sf:TipoRectificativa>
-    <sf:FacturasRectificadas>
-      <sf:IDFacturaRectificada>
-        <sf:IDEmisorFactura>${esc(p.idEmisorFactura)}</sf:IDEmisorFactura>
-        <sf:NumSerieFactura>${esc(p.rectifica.numSerieFactura)}</sf:NumSerieFactura>
-        <sf:FechaExpedicionFactura>${esc(p.rectifica.fechaExpedicion)}</sf:FechaExpedicionFactura>
-      </sf:IDFacturaRectificada>
-    </sf:FacturasRectificadas>`
+    ? `<sum1:TipoRectificativa>${p.tipoRectificativa ?? 'I'}</sum1:TipoRectificativa>
+    <sum1:FacturasRectificadas>
+      <sum1:IDFacturaRectificada>
+        <sum1:IDEmisorFactura>${esc(p.idEmisorFactura)}</sum1:IDEmisorFactura>
+        <sum1:NumSerieFactura>${esc(p.rectifica.numSerieFactura)}</sum1:NumSerieFactura>
+        <sum1:FechaExpedicionFactura>${esc(p.rectifica.fechaExpedicion)}</sum1:FechaExpedicionFactura>
+      </sum1:IDFacturaRectificada>
+    </sum1:FacturasRectificadas>`
     : '';
 
   const destinatarios = p.destinatario
-    ? `<sf:Destinatarios>
-      <sf:IDDestinatario>
-        <sf:NombreRazon>${esc(p.destinatario.nombreRazon)}</sf:NombreRazon>
-        <sf:NIF>${esc(p.destinatario.nif)}</sf:NIF>
-      </sf:IDDestinatario>
-    </sf:Destinatarios>`
+    ? `<sum1:Destinatarios>
+      <sum1:IDDestinatario>
+        <sum1:NombreRazon>${esc(p.destinatario.nombreRazon)}</sum1:NombreRazon>
+        <sum1:NIF>${esc(p.destinatario.nif)}</sum1:NIF>
+      </sum1:IDDestinatario>
+    </sum1:Destinatarios>`
     : '';
 
   // SCRUM-209: delega en el constructor ÚNICO. Antes tenía su propia copia de la plantilla,
   // y era la copia BUENA — la que divergió fue la del servicio. Pasar por aquí las dos es
   // lo que impide que vuelvan a separarse.
-  const detalles = buildDetallesDesgloseXml(p.desglose, 'sf');
+  const detalles = buildDetallesDesgloseXml(p.desglose);
 
-  return `<sf:RegistroAlta xmlns:sf="${NS_SF}">
-    <sf:IDVersion>1.0</sf:IDVersion>
-    <sf:IDFactura>
-      <sf:IDEmisorFactura>${esc(p.idEmisorFactura)}</sf:IDEmisorFactura>
-      <sf:NumSerieFactura>${esc(p.numSerieFactura)}</sf:NumSerieFactura>
-      <sf:FechaExpedicionFactura>${esc(p.fechaExpedicion)}</sf:FechaExpedicionFactura>
-    </sf:IDFactura>
-    <sf:NombreRazonEmisor>${esc(p.nombreRazonEmisor)}</sf:NombreRazonEmisor>
-    <sf:TipoFactura>${p.tipoFactura}</sf:TipoFactura>
+  return `<sum1:RegistroAlta xmlns:sum1="${NS_SF}">
+    <sum1:IDVersion>1.0</sum1:IDVersion>
+    <sum1:IDFactura>
+      <sum1:IDEmisorFactura>${esc(p.idEmisorFactura)}</sum1:IDEmisorFactura>
+      <sum1:NumSerieFactura>${esc(p.numSerieFactura)}</sum1:NumSerieFactura>
+      <sum1:FechaExpedicionFactura>${esc(p.fechaExpedicion)}</sum1:FechaExpedicionFactura>
+    </sum1:IDFactura>
+    <sum1:NombreRazonEmisor>${esc(p.nombreRazonEmisor)}</sum1:NombreRazonEmisor>
+    <sum1:TipoFactura>${p.tipoFactura}</sum1:TipoFactura>
     ${rectificadas}
-    <sf:DescripcionOperacion>${esc(p.descripcionOperacion)}</sf:DescripcionOperacion>
+    <sum1:DescripcionOperacion>${esc(p.descripcionOperacion)}</sum1:DescripcionOperacion>
     ${destinatarios}
-    <sf:Desglose>
+    <sum1:Desglose>
       ${detalles}
-    </sf:Desglose>
-    <sf:CuotaTotal>${esc(p.cuotaTotal)}</sf:CuotaTotal>
-    <sf:ImporteTotal>${esc(p.importeTotal)}</sf:ImporteTotal>
+    </sum1:Desglose>
+    <sum1:CuotaTotal>${esc(p.cuotaTotal)}</sum1:CuotaTotal>
+    <sum1:ImporteTotal>${esc(p.importeTotal)}</sum1:ImporteTotal>
     ${xmlEncadenamiento(p.encadenamiento)}
     ${xmlSistema(p.sistema)}
-    <sf:FechaHoraHusoGenRegistro>${esc(p.fechaHoraHusoGenRegistro)}</sf:FechaHoraHusoGenRegistro>
-    <sf:TipoHuella>01</sf:TipoHuella>
-    <sf:Huella>${esc(p.huella)}</sf:Huella>
-  </sf:RegistroAlta>`;
+    <sum1:FechaHoraHusoGenRegistro>${esc(p.fechaHoraHusoGenRegistro)}</sum1:FechaHoraHusoGenRegistro>
+    <sum1:TipoHuella>01</sum1:TipoHuella>
+    <sum1:Huella>${esc(p.huella)}</sum1:Huella>
+  </sum1:RegistroAlta>`;
 }
 
 export interface RegistroAnulacionParams {
@@ -237,19 +240,19 @@ export interface RegistroAnulacionParams {
 }
 
 export function buildRegistroAnulacion(p: RegistroAnulacionParams): string {
-  return `<sf:RegistroAnulacion xmlns:sf="${NS_SF}">
-    <sf:IDVersion>1.0</sf:IDVersion>
-    <sf:IDFactura>
-      <sf:IDEmisorFacturaAnulada>${esc(p.idEmisorFacturaAnulada)}</sf:IDEmisorFacturaAnulada>
-      <sf:NumSerieFacturaAnulada>${esc(p.numSerieFacturaAnulada)}</sf:NumSerieFacturaAnulada>
-      <sf:FechaExpedicionFacturaAnulada>${esc(p.fechaExpedicionAnulada)}</sf:FechaExpedicionFacturaAnulada>
-    </sf:IDFactura>
+  return `<sum1:RegistroAnulacion xmlns:sum1="${NS_SF}">
+    <sum1:IDVersion>1.0</sum1:IDVersion>
+    <sum1:IDFactura>
+      <sum1:IDEmisorFacturaAnulada>${esc(p.idEmisorFacturaAnulada)}</sum1:IDEmisorFacturaAnulada>
+      <sum1:NumSerieFacturaAnulada>${esc(p.numSerieFacturaAnulada)}</sum1:NumSerieFacturaAnulada>
+      <sum1:FechaExpedicionFacturaAnulada>${esc(p.fechaExpedicionAnulada)}</sum1:FechaExpedicionFacturaAnulada>
+    </sum1:IDFactura>
     ${xmlEncadenamiento(p.encadenamiento)}
     ${xmlSistema(p.sistema)}
-    <sf:FechaHoraHusoGenRegistro>${esc(p.fechaHoraHusoGenRegistro)}</sf:FechaHoraHusoGenRegistro>
-    <sf:TipoHuella>01</sf:TipoHuella>
-    <sf:Huella>${esc(p.huella)}</sf:Huella>
-  </sf:RegistroAnulacion>`;
+    <sum1:FechaHoraHusoGenRegistro>${esc(p.fechaHoraHusoGenRegistro)}</sum1:FechaHoraHusoGenRegistro>
+    <sum1:TipoHuella>01</sum1:TipoHuella>
+    <sum1:Huella>${esc(p.huella)}</sum1:Huella>
+  </sum1:RegistroAnulacion>`;
 }
 
 /** Envuelve registros en RegFactuSistemaFacturacion (cuerpo del SOAP de S1-D). */
@@ -261,15 +264,15 @@ export function buildRegFactuEnvelope(params: {
     throw new Error('registros_fuera_de_rango'); // límite del servicio AEAT
   }
   const registros = params.registrosXml
-    .map((r) => `  <sfLR:RegistroFactura>\n  ${r}\n  </sfLR:RegistroFactura>`)
+    .map((r) => `  <sum:RegistroFactura>\n  ${r}\n  </sum:RegistroFactura>`)
     .join('\n');
-  return `<sfLR:RegFactuSistemaFacturacion xmlns:sfLR="${NS_LR}" xmlns:sf="${NS_SF}">
-  <sfLR:Cabecera>
-    <sf:ObligadoEmision>
-      <sf:NombreRazon>${esc(params.obligado.nombreRazon)}</sf:NombreRazon>
-      <sf:NIF>${esc(params.obligado.nif)}</sf:NIF>
-    </sf:ObligadoEmision>
-  </sfLR:Cabecera>
+  return `<sum:RegFactuSistemaFacturacion xmlns:sum="${NS_LR}" xmlns:sum1="${NS_SF}">
+  <sum:Cabecera>
+    <sum1:ObligadoEmision>
+      <sum1:NombreRazon>${esc(params.obligado.nombreRazon)}</sum1:NombreRazon>
+      <sum1:NIF>${esc(params.obligado.nif)}</sum1:NIF>
+    </sum1:ObligadoEmision>
+  </sum:Cabecera>
 ${registros}
-</sfLR:RegFactuSistemaFacturacion>`;
+</sum:RegFactuSistemaFacturacion>`;
 }
