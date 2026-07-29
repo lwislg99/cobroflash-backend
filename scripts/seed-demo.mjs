@@ -7,13 +7,14 @@
  * (alimenta el "dinero en juego" de la Home). Idempotente: cada ejecución borra
  * SOLO los datos transaccionales del demo y los recrea igual.
  *
- * Uso:  npm run build && node scripts/seed-demo.mjs      (aplica: es un script de reset)
+ * EJECUCIÓN (quien ejecuta decide la BD; el script NO asume ninguna — SCRUM-208):
+ *   1) npm run build                             (importa de `dist/`, como seed-video.mjs)
+ *   2) export DATABASE_URL=<la BD destino>
+ *   3) export SEED_DEMO_CONFIRM=<hostname EXACTO de esa BD>   (te lo dice el script si falta)
+ *   4) node scripts/seed-demo.mjs
  *
- * Requiere `npm run build` porque importa el asignador de números COMPILADO
- * (`dist/`), igual que `seed-video.mjs`.
- *
- * ⚠️ La BD la decide quien ejecuta, vía `DATABASE_URL`. Sin ella, Prisma carga
- * `.env`, que apunta a PRODUCCIÓN — y esto es un script de RESET. Ver SCRUM-208.
+ * Sin los pasos 2 y 3 ABORTA sin tocar nada. No es ceremonia: este script BORRA y
+ * resiembra el merchant 1, y su destino por defecto era PRODUCCIÓN.
  *
  * SCRUM-204 · NUMERACIÓN: sale de `allocateInvoiceNumber()` dentro de la misma
  * transacción que crea el documento — PROHIBIDO fabricarla a mano (regla del embudo,
@@ -48,6 +49,57 @@ import {
  * lo seguiría solo — que es exactamente lo que este script hacía mal con el número.
  */
 const docLabel = (number) => (isReceiptNumber(number) ? 'Justificante' : 'Factura');
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCRUM-208 · GUARD DE DESTINO — hay que NOMBRAR la base
+//
+// Este script es un RESET: lo primero que hace es doce `deleteMany` sobre el merchant 1.
+// Hasta ahora su destino por DEFECTO era PRODUCCIÓN, y no por un flag mal puesto: al no
+// cargar dotenv, Prisma resolvía `DATABASE_URL` leyendo `.env`, que apunta a Railway.
+// `node scripts/seed-demo.mjs` a secas resembraba el demo de producción, sin avisar.
+//
+// Decisión del fundador (29-jul-2026): el patrón de `seed-video.mjs` — no se prohíbe, se
+// obliga a NOMBRAR la base. Sigue siendo posible hacerlo a propósito; deja de ser posible
+// por accidente. Si algún día se confirma que producción nunca debe ser destino de una
+// semilla, se endurece con la allowlist de host de SCRUM-118.
+//
+// ⚠️ POR QUÉ EXIGE `DATABASE_URL` EN EL ENTORNO Y NO SE CONFORMA CON LA DE `.env`:
+// porque el agujero es justo ese. Si aquí leyéramos el fichero para "ser amables", el
+// caso que motivó el ticket volvería a pasar con un mensaje de confirmación bonito
+// delante. Sin variable en el entorno no hay destino elegido, y sin destino elegido no
+// se ejecuta. Fail-closed.
+// ─────────────────────────────────────────────────────────────────────────────
+const abortar = (msg) => { console.error('\n❌ ABORTADO: ' + msg + '\n'); process.exit(1); };
+
+function confirmarDestino() {
+  const dbUrl = process.env.DATABASE_URL || '';
+  if (!dbUrl) {
+    abortar(
+      'DATABASE_URL no está definida EN EL ENTORNO.\n\n' +
+      '  Ojo: eso no significa "sin destino". Prisma cargaría `.env`, que apunta a\n' +
+      '  PRODUCCIÓN, y este script BORRA y resiembra el merchant demo (id=1).\n\n' +
+      '  Elige la base a mano y nómbrala:\n\n' +
+      '    DATABASE_URL=<url-de-la-bd> SEED_DEMO_CONFIRM=<hostname-de-esa-bd> node scripts/seed-demo.mjs',
+    );
+  }
+
+  let host = '';
+  try { host = new URL(dbUrl).hostname; } catch { abortar('DATABASE_URL no es una URL válida.'); }
+
+  if (process.env.SEED_DEMO_CONFIRM !== host) {
+    abortar(
+      `Confirma la base de forma EXPLÍCITA. DATABASE_URL apunta al host:\n\n    ${host}\n\n` +
+      `  Si es la correcta, re-ejecuta nombrándola:\n\n` +
+      `    SEED_DEMO_CONFIRM=${host} node scripts/seed-demo.mjs\n\n` +
+      '  Si NO es la que querías, no toques la variable: cambia DATABASE_URL.',
+    );
+  }
+  return host;
+}
+
+// Se ejecuta ANTES de construir el cliente: así no existe un orden de llamadas en el que
+// algo consulte la BD sin haber pasado por aquí.
+const HOST_DESTINO = confirmarDestino();
 
 const prisma = new PrismaClient();
 const DEMO_ID = 1;
@@ -293,7 +345,9 @@ async function seed() {
   }).catch(() => {});
 }
 
-console.log('A6.1 · Reseteando y sembrando el merchant DEMO (id=1)…');
+// El host va en la primera línea a propósito: si alguien se equivoca de base, que lo vea
+// en la salida y no lo deduzca del silencio.
+console.log(`A6.1 · Reseteando y sembrando el merchant DEMO (id=1) en → ${HOST_DESTINO}`);
 await wipeDemo();
 await seed();
 
