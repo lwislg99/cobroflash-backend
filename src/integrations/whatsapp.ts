@@ -489,21 +489,56 @@ export async function sendWhatsAppButtons(params: {
   bodyText: string;
   buttons: Array<{ id: string; title: string }>; // title máx 20 chars (Meta)
   merchantId?: number; // V0-2: demo solo a DEMO_SAFE_NUMBERS
+  log?: WaLogMeta;     // WA-0b (SCRUM-227): rastro del envío (éxito y fallo)
 }) {
   const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
   const token = config.WHATSAPP_ACCESS_TOKEN;
 
+  // SCRUM-227: toda vía deja rastro (forma de sendWhatsAppTemplate). Estos botones van AL PRO,
+  // así que `customerId` suele ir null — WhatsAppMessage.customerId es opcional, cabe sin schema.
+  const logFailure = (reason: string) => {
+    if (!params.merchantId) return;
+    recordWaMessage({
+      merchantId: params.merchantId,
+      customerId: params.log?.customerId ?? null,
+      type: 'service',
+      status: 'failed',
+      error: reason,
+      relatedType: params.log?.relatedType ?? null,
+      relatedId: params.log?.relatedId ?? null,
+    }).catch(() => {});
+  };
+  const logSent = (waMessageId: string | null) => {
+    if (!params.merchantId) return;
+    recordWaMessage({
+      merchantId: params.merchantId,
+      customerId: params.log?.customerId ?? null,
+      type: 'service',
+      waMessageId,
+      status: 'sent',
+      relatedType: params.log?.relatedType ?? null,
+      relatedId: params.log?.relatedId ?? null,
+    }).catch(() => {});
+  };
+
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, botones omitidos');
+    logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
   }
   if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
     console.warn(`[WhatsApp] V0-2: botones desde el merchant demo a ${maskPhone(params.to)} BLOQUEADOS`);
+    logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
   }
 
   // A5.5/A8.4: dry-run — Meta no se toca
-  if (isDryRun()) { dryRunRecord({ kind: 'buttons', to: params.to, bodyText: params.bodyText, buttons: params.buttons.map((b) => b.id) }); return { ok: true, data: dryRunData(), dryRun: true } as any; }
+  if (isDryRun()) {
+    const data = dryRunData();
+    dryRunRecord({ kind: 'buttons', to: params.to, bodyText: params.bodyText, buttons: params.buttons.map((b) => b.id) });
+    logSent(extractWaMessageId(data));
+    return { ok: true, data, dryRun: true } as any;
+  }
 
   try {
     const response = await metaHttp.post(
@@ -528,9 +563,11 @@ export async function sendWhatsAppButtons(params: {
         timeout: 10_000,
       },
     );
+    logSent(extractWaMessageId(response.data));
     return { ok: true, data: response.data };
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando botones:', err?.response?.data || err?.message);
+    logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
     return { ok: false, error: err?.response?.data || err?.message };
   }
 }
@@ -546,21 +583,55 @@ export async function sendWhatsAppList(params: {
   buttonText: string; // texto del botón que despliega la lista (máx 20 chars)
   rows: Array<{ id: string; title: string; description?: string }>;
   merchantId?: number; // V0-2: demo solo a DEMO_SAFE_NUMBERS
+  log?: WaLogMeta;     // WA-0b (SCRUM-227): rastro del envío (éxito y fallo)
 }) {
   const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
   const token = config.WHATSAPP_ACCESS_TOKEN;
 
+  // SCRUM-227: toda vía de envío deja rastro (misma forma que sendWhatsAppTemplate).
+  const logFailure = (reason: string) => {
+    if (!params.merchantId) return;
+    recordWaMessage({
+      merchantId: params.merchantId,
+      customerId: params.log?.customerId ?? null,
+      type: 'service',
+      status: 'failed',
+      error: reason,
+      relatedType: params.log?.relatedType ?? null,
+      relatedId: params.log?.relatedId ?? null,
+    }).catch(() => {});
+  };
+  const logSent = (waMessageId: string | null) => {
+    if (!params.merchantId) return;
+    recordWaMessage({
+      merchantId: params.merchantId,
+      customerId: params.log?.customerId ?? null,
+      type: 'service',
+      waMessageId,
+      status: 'sent',
+      relatedType: params.log?.relatedType ?? null,
+      relatedId: params.log?.relatedId ?? null,
+    }).catch(() => {});
+  };
+
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, lista omitida');
+    logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
   }
   if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
     console.warn(`[WhatsApp] V0-2: lista desde el merchant demo a ${maskPhone(params.to)} BLOQUEADA`);
+    logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
   }
 
   // A5.5/A8.4: dry-run — Meta no se toca
-  if (isDryRun()) { dryRunRecord({ kind: 'list', to: params.to, bodyText: params.bodyText, rows: params.rows.map((r) => r.id) }); return { ok: true, data: dryRunData(), dryRun: true } as any; }
+  if (isDryRun()) {
+    const data = dryRunData();
+    dryRunRecord({ kind: 'list', to: params.to, bodyText: params.bodyText, rows: params.rows.map((r) => r.id) });
+    logSent(extractWaMessageId(data));
+    return { ok: true, data, dryRun: true } as any;
+  }
 
   try {
     const response = await metaHttp.post(
@@ -591,9 +662,11 @@ export async function sendWhatsAppList(params: {
         timeout: 10_000,
       },
     );
+    logSent(extractWaMessageId(response.data));
     return { ok: true, data: response.data };
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando lista:', err?.response?.data || err?.message);
+    logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
     return { ok: false, error: err?.response?.data || err?.message };
   }
 }
@@ -611,20 +684,53 @@ export async function sendWhatsAppCtaUrl(params: {
   header?: string;      // texto de cabecera (máx 60)
   footer?: string;      // texto de pie (máx 60)
   merchantId?: number;  // V0-2: demo solo a DEMO_SAFE_NUMBERS
+  log?: WaLogMeta;      // WA-0b (SCRUM-227): rastro del envío (éxito y fallo)
 }) {
   const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
   const token = config.WHATSAPP_ACCESS_TOKEN;
+
+  // SCRUM-227: toda vía de envío deja rastro (misma forma que sendWhatsAppTemplate). Era la vía
+  // de la reseña Google, que se enviaba sin dejar constancia consultable.
+  const logFailure = (reason: string) => {
+    if (!params.merchantId) return;
+    recordWaMessage({
+      merchantId: params.merchantId,
+      customerId: params.log?.customerId ?? null,
+      type: 'service',
+      status: 'failed',
+      error: reason,
+      relatedType: params.log?.relatedType ?? null,
+      relatedId: params.log?.relatedId ?? null,
+    }).catch(() => {});
+  };
+  const logSent = (waMessageId: string | null) => {
+    if (!params.merchantId) return;
+    recordWaMessage({
+      merchantId: params.merchantId,
+      customerId: params.log?.customerId ?? null,
+      type: 'service',
+      waMessageId,
+      status: 'sent',
+      relatedType: params.log?.relatedType ?? null,
+      relatedId: params.log?.relatedId ?? null,
+    }).catch(() => {});
+  };
+
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, cta_url omitido');
+    logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
   }
   if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
     console.warn(`[WhatsApp] V0-2: cta_url desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO`);
+    logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
   }
   if (isDryRun()) {
+    const data = dryRunData();
     dryRunRecord({ kind: 'cta_url', to: params.to, bodyText: params.bodyText, buttonText: params.buttonText, url: params.url });
-    return { ok: true, data: dryRunData(), dryRun: true } as any;
+    logSent(extractWaMessageId(data));
+    return { ok: true, data, dryRun: true } as any;
   }
   try {
     const interactive: any = {
@@ -639,9 +745,11 @@ export async function sendWhatsAppCtaUrl(params: {
       { messaging_product: 'whatsapp', to: params.to, type: 'interactive', interactive },
       { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, timeout: 10_000 },
     );
+    logSent(extractWaMessageId(response.data));
     return { ok: true, data: response.data };
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando cta_url:', err?.response?.data || err?.message);
+    logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
     return { ok: false, error: err?.response?.data || err?.message };
   }
 }
@@ -656,20 +764,54 @@ export async function sendWhatsAppDocument(params: {
   filename?: string;
   caption?: string;
   merchantId?: number;
+  log?: WaLogMeta; // WA-0b (SCRUM-227): rastro del envío (éxito y fallo)
 }) {
   const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
   const token = config.WHATSAPP_ACCESS_TOKEN;
+
+  // SCRUM-227: toda vía de envío deja rastro. Misma forma que sendWhatsAppTemplate: FALLO en
+  // cada rama que no llega a Meta y en el catch; ÉXITO con el wamid tras el POST. `service`
+  // (documento en ventana, coste 0). Todo `.catch(()=>{})`: el log JAMÁS rompe el envío.
+  const logFailure = (reason: string) => {
+    if (!params.merchantId) return;
+    recordWaMessage({
+      merchantId: params.merchantId,
+      customerId: params.log?.customerId ?? null,
+      type: 'service',
+      status: 'failed',
+      error: reason,
+      relatedType: params.log?.relatedType ?? null,
+      relatedId: params.log?.relatedId ?? null,
+    }).catch(() => {});
+  };
+  const logSent = (waMessageId: string | null) => {
+    if (!params.merchantId) return;
+    recordWaMessage({
+      merchantId: params.merchantId,
+      customerId: params.log?.customerId ?? null,
+      type: 'service',
+      waMessageId,
+      status: 'sent',
+      relatedType: params.log?.relatedType ?? null,
+      relatedId: params.log?.relatedId ?? null,
+    }).catch(() => {});
+  };
+
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, documento omitido');
+    logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
   }
   if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
     console.warn(`[WhatsApp] V0-2: documento desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO`);
+    logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
   }
   if (isDryRun()) {
+    const data = dryRunData();
     dryRunRecord({ kind: 'document', to: params.to, link: params.link, filename: params.filename });
-    return { ok: true, data: dryRunData(), dryRun: true } as any;
+    logSent(extractWaMessageId(data));
+    return { ok: true, data, dryRun: true } as any;
   }
   try {
     const document: any = { link: params.link };
@@ -680,9 +822,11 @@ export async function sendWhatsAppDocument(params: {
       { messaging_product: 'whatsapp', to: params.to, type: 'document', document },
       { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, timeout: 10_000 },
     );
+    logSent(extractWaMessageId(response.data));
     return { ok: true, data: response.data };
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando documento:', err?.response?.data || err?.message);
+    logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
     return { ok: false, error: err?.response?.data || err?.message };
   }
 }
@@ -695,20 +839,52 @@ export async function sendWhatsAppLocationRequest(params: {
   to: string;
   bodyText: string;
   merchantId?: number;
+  log?: WaLogMeta; // WA-0b (SCRUM-227): rastro del envío (éxito y fallo)
 }) {
   const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
   const token = config.WHATSAPP_ACCESS_TOKEN;
+
+  // SCRUM-227: toda vía de envío deja rastro (misma forma que sendWhatsAppTemplate).
+  const logFailure = (reason: string) => {
+    if (!params.merchantId) return;
+    recordWaMessage({
+      merchantId: params.merchantId,
+      customerId: params.log?.customerId ?? null,
+      type: 'service',
+      status: 'failed',
+      error: reason,
+      relatedType: params.log?.relatedType ?? null,
+      relatedId: params.log?.relatedId ?? null,
+    }).catch(() => {});
+  };
+  const logSent = (waMessageId: string | null) => {
+    if (!params.merchantId) return;
+    recordWaMessage({
+      merchantId: params.merchantId,
+      customerId: params.log?.customerId ?? null,
+      type: 'service',
+      waMessageId,
+      status: 'sent',
+      relatedType: params.log?.relatedType ?? null,
+      relatedId: params.log?.relatedId ?? null,
+    }).catch(() => {});
+  };
+
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, location_request omitido');
+    logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
   }
   if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
     console.warn(`[WhatsApp] V0-2: location_request desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO`);
+    logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
   }
   if (isDryRun()) {
+    const data = dryRunData();
     dryRunRecord({ kind: 'location_request', to: params.to, bodyText: params.bodyText });
-    return { ok: true, data: dryRunData(), dryRun: true } as any;
+    logSent(extractWaMessageId(data));
+    return { ok: true, data, dryRun: true } as any;
   }
   try {
     const response = await metaHttp.post(
@@ -721,9 +897,11 @@ export async function sendWhatsAppLocationRequest(params: {
       },
       { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, timeout: 10_000 },
     );
+    logSent(extractWaMessageId(response.data));
     return { ok: true, data: response.data };
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando location_request:', err?.response?.data || err?.message);
+    logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
     return { ok: false, error: err?.response?.data || err?.message };
   }
 }

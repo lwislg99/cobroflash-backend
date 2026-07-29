@@ -229,6 +229,8 @@ router.post('/', async (req, res) => {
             bodyText: `¡Gracias por confiar en *${merchantName}*, ${customerName}! 🙏\n¿Nos dejas una reseña en Google? Solo te lleva 10 segundos y nos ayuda muchísimo ⭐`,
             buttonText: '⭐ Dejar reseña',
             url: merchant.googleReviewUrl,
+            // SCRUM-227: deja rastro consultable de la reseña (relatedType 'review', no 'charge')
+            log: { customerId: updated.customer?.id ?? null, relatedType: 'review', relatedId: updated.id },
           }).catch((err) => console.error('[review] Error enviando reseña:', err?.message));
         }
       }
