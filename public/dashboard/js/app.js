@@ -393,11 +393,30 @@ const VERSION_POLL_MS = 90_000;
 let appBuildId = null;
 let versionToastShown = false;
 
+// SCRUM-224: pregunta al SW su CACHE_NAME (instrumentación de rancio). Si no hay SW controlando la
+// página → 'sin-sw', un estado interesante en sí mismo, no un hueco indistinguible de un fallo de captura.
+function swCacheName() {
+  return new Promise((resolve) => {
+    const sw = navigator.serviceWorker && navigator.serviceWorker.controller;
+    if (!sw) { resolve('sin-sw'); return; }
+    const ch = new MessageChannel();
+    ch.port1.onmessage = (e) => resolve((e.data && e.data.cacheName) || 'desconocido');
+    setTimeout(() => resolve('sin-respuesta'), 1500); // el SW no contestó (resolve es idempotente)
+    try { sw.postMessage({ type: 'GET_CACHE_NAME' }, [ch.port2]); } catch { resolve('sin-respuesta'); }
+  });
+}
+
 async function checkAppVersion() {
   if (versionToastShown) return;
   let v;
   try {
-    const r = await fetch('/version', { cache: 'no-store' });
+    // SCRUM-224: adjunta el build en curso (?b) y el CACHE_NAME del SW (?sw). El servidor SOLO lo usa
+    // para registrar clientes RANCIOS (build != el desplegado). En el primer poll appBuildId es null
+    // (aún no fijado): no se manda `b`, y el servidor no compara.
+    const params = appBuildId
+      ? `?b=${encodeURIComponent(appBuildId)}&sw=${encodeURIComponent(await swCacheName())}`
+      : '';
+    const r = await fetch(`/version${params}`, { cache: 'no-store' });
     if (!r.ok) return;
     v = (await r.json()).version;
   } catch { return; } // sin red / deploy en curso: se reintenta en el siguiente poll

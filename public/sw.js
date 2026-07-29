@@ -68,7 +68,11 @@ self.addEventListener('fetch', (event) => {
   // Estáticos (HTML/JS/CSS/img): NETWORK-FIRST. La respuesta buena refresca la caché
   // runtime; si la red falla (offline), se sirve lo último cacheado.
   event.respondWith(
-    fetch(event.request)
+    // SCRUM-224: `no-cache` REVALIDA con If-None-Match (304 si no cambió). Sin esto, este `fetch`
+    // respeta la caché HTTP del navegador y sirve el estático RANCIO hasta `max-age` (14400 s en
+    // prod — las CABECERAS son SCRUM-231, no se tocan aquí): el network-first se volvía caché-first.
+    // La caída a caché de abajo (offline) NO se toca; NO `reload` (descargaría entero, ignora el ETag).
+    fetch(event.request, { cache: 'no-cache' })
       .then((resp) => {
         if (event.request.method === 'GET' && resp && resp.ok && url.origin === self.location.origin) {
           const copy = resp.clone();
@@ -80,4 +84,13 @@ self.addEventListener('fetch', (event) => {
         caches.match(event.request).then((cached) => cached || Response.error())
       )
   );
+});
+
+// SCRUM-224: el cliente puede preguntar qué CACHE_NAME corre ESTE SW (instrumentación de rancio:
+// app.js lo adjunta al poll de /version). ADITIVO — no toca install/activate/fetch ni el ciclo de
+// vida. Responde por el port del MessageChannel que manda el cliente.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'GET_CACHE_NAME' && event.ports && event.ports[0]) {
+    event.ports[0].postMessage({ cacheName: CACHE_NAME });
+  }
 });

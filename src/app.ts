@@ -158,8 +158,27 @@ app.get('/public/founding-status', async (_req, res) => {
 // SCRUM-45 (C): versión del build corriendo — la sondea el dashboard para avisar
 // "hay versión nueva" en pestañas abiertas durante un deploy. Sin caché: la gracia
 // es detectar el cambio (el SW también la deja pasar sin cachear).
-app.get('/version', (_req, res) => {
+// SCRUM-224: dedup en memoria del proceso — un cliente rancio sondea cada 90 s; sin esto son ~40
+// líneas/hora por cliente y el log se vuelve ruido justo cuando lo miras. Clave = (build, estado SW).
+// Si el proceso reinicia y repite una línea, da igual. NOTA: /version es PÚBLICO (requireAuth entra en
+// :196), así que aquí NO hay req.merchantId — se identifica por el BUILD rancio, que es lo que
+// correlaciona con el deploy; el merchant no se puede afirmar sin auth y no se inventa.
+const swStaleVistos = new Set<string>();
+app.get('/version', (req, res) => {
   res.set('Cache-Control', 'no-store');
+  // SCRUM-224: instrumentación de SW rancio (la mitad que faltó SCRUM-45/46/hoy: la evidencia se
+  // destruía al desregistrar el SW). El cliente adjunta su build en curso (?b) y el CACHE_NAME de su
+  // SW (?sw; 'sin-sw' si no hay SW controlando). Si su build != el desplegado, corre código viejo: se
+  // registra UNA vez por (build, sw). Sin IP: es dato personal y el build basta para el diagnóstico.
+  const clientBuild = typeof req.query.b === 'string' ? req.query.b : null;
+  const swCache = typeof req.query.sw === 'string' ? req.query.sw : 'sin-sw';
+  if (clientBuild && clientBuild !== config.BUILD_ID) {
+    const clave = `${clientBuild}|${swCache}`;
+    if (!swStaleVistos.has(clave)) {
+      swStaleVistos.add(clave);
+      console.warn('[SW-STALE]', JSON.stringify({ clientBuild, swCache, serverBuild: config.BUILD_ID }));
+    }
+  }
   res.json({ version: config.BUILD_ID });
 });
 app.use('/health', healthRouter);
