@@ -234,6 +234,8 @@ Un plan público (Parte W): **Pro 19,90 €/mes (199 €/año) + 0,9 % solo tarj
 > · **DENTRO** — el TDZ de `quotesView` (SCRUM-183) lo arregló SCRUM-162 en su propio PR: mismo fichero, una línea, y sin él su propia funcionalidad no se pintaba.
 > · **FUERA** — el agujero de VeriFactu en la recapitulativa (SCRUM-173) NO se arregló dentro de SCRUM-20: el análisis de los tres peligros del encadenamiento (empate de `createdAt`, READ COMMITTED, cliente global dentro de la transacción) costó su propia tarea. Hacerlo «de paso» habría metido esa sesión en el núcleo de la cadena sin ese análisis.
 
+**Proceso (29-jul-2026):** 38) **UN TEST READ-ONLY SOBRE EL CAMINO FISCAL NO ES STOP.** Añadir un test, un guard o una comprobación que solo LEE el camino de emisión (rutas, servicios, documentos, XML generado) no toca dinero ni cambia comportamiento: se hace sin pedir GO. Pero si para hacerlo posible hay que MODIFICAR el camino de emisión —extraer un helper, exportar algo que no estaba exportado, cambiar una firma, mover código de sitio— eso SÍ es STOP fiscal, aunque el objetivo final sea solo un test y aunque el cambio parezca mecánico. El motivo es el de la regla 29: refactorizar para poder observar es indistinguible, en el diff, de refactorizar y cambiar el sellado. Se para con el diff delante. Y antes de asumir el STOP, la pregunta es si se puede observar sin modificar: análisis estático del árbol (AST), no instrumentación ni grep — SCRUM-203 vigila las 7 creaciones de factura sin tocar ni una línea del camino de emisión.
+
 ---
 
 # PARTE J — WHATSAPP COMO CANAL CORE (WA-0)
@@ -1321,6 +1323,41 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 > asesor (no se inventa en código):** si una F1 sin destinatario identificado debe marcarse
 > `FacturaSinIdentifDestinatarioArt61d` o emitirse como **F2 simplificada**; y qué
 > `TipoRectificativa` (S/I) corresponde a nuestras R1.
+>
+> **✅ SCRUM-200 · RECON de la superficie de emisión: no hay punto único, pero SÍ embudo (29-jul-2026, recon — cero código).**
+> Entregable `docs/legal/SEMAFORO_MAPA_EMISION.md`, verificado leyendo el código (40 citas fichero:línea
+> comprobadas una a una). **Hay 7 sitios que crean una factura en 6 ficheros** — incluidos los que no son
+> de interfaz: las 4 bocas de `ensureInvoiceForCharge` (webhook de Mercado Pago, webhook PSP, `/charges`,
+> `/invoice/issue`). Los 5 crons, el bot de WhatsApp y los webhooks de Stripe **NO** emiten (negativo
+> verificado, no supuesto). **Pero los 7 pasan sin excepción por `allocateInvoiceNumber()`**, que además ya
+> es donde vive el gate `INVOICING_ES_ENABLED`. **El embudo existe; lo que no sirve es su firma:** solo
+> recibe `merchantId`, así que puede decidir «este merchant emite» y NO «esta factura cumple» — ampliarlo
+> es un cambio de firma + 7 llamadores, no reescribir la emisión. **Dos puntos de no retorno SEPARADOS EN
+> EL TIEMPO:** consumir número (irreversible en su commit) y sellar la huella, que es **perezoso** — ocurre
+> dentro de `ensureInvoicePdf`, y uno de sus llamadores es `GET /recibo/:token/pdf`, **público**: en dos
+> caminos el momento de entrar en la cadena **lo elige el cliente final abriendo su PDF**. Dos caminos
+> (aceptar presupuesto y `collect-rest`) numeran **sin sellar**. Y el fail-open grave no era el que se
+> sospechaba: los cinco `process.env.VERIFACTU_* || ''` tienen guard fail-CLOSED aguas abajo; el de verdad
+> es el `catch` del sellado (`lib/invoicing.ts:58` y `:152`), que deja la factura con número, con PDF, con
+> QR **no fiscal** y sin huella, dejando solo una línea de log. **Graphify se probó y se descartó CON DATO:**
+> 0 caminos revelados que `grep` no diera.
+>
+> **✅ SCRUM-201 · SEMÁFORO-1: la calibración ROJO/ÁMBAR no hay que inventarla, la publica la AEAT (29-jul-2026, recon fiscal — cero código).**
+> Entregable `docs/legal/SEMAFORO_CALIBRACION.md`, contra las fuentes oficiales **descargadas y con SHA-256
+> registrado** (PDF de Validaciones v1.2.2 + `errores.properties`), no citadas de memoria. **El hallazgo
+> estructural:** `errores.properties` ya viene partido por la AEAT en tres listas —rechazo de envío (44),
+> rechazo de registro (194), aceptado con errores (10)—, así que **el color sale del RANGO del código**:
+> `4xxx`/`35xx` y `1xxx`/`30xx` → ROJO, `2xxx` → ÁMBAR. **Tres ROJO que el generador de hoy ya produce**
+> (en el export de inspección, NO en remisión, que está apagada): `1189` (F1 sin `Destinatarios`), `1245`
+> (`Impuesto` sin `ClaveRegimen`) y `1195` (desglose sin `CalificacionOperacion`) — ponen código y color a
+> tres pendientes que hasta ahora eran prosa en comentarios. **Cuatro casos DUDOSOS quedan para el fundador**,
+> y los tres primeros son la misma colisión del criterio (la AEAT dice ámbar, la cadena dice rojo); el más
+> incómodo: **el mismo error de importes tiene DOS códigos, uno de rechazo y otro de aceptación**
+> (`1210`/`2005`, `1216`/`2006`, `1278`/`2008`) y **ninguna fuente dice cuándo dispara cuál**.
+> **SCRUM-201b — el guard que lo sostiene:** `tests/scrum201-citas-aeat.test.mjs`, en `npm test`, con **dos
+> capas** porque una sola se burla sola: ① el SHA-256 del listado vendorizado sigue siendo el que declara el
+> documento (leído DEL documento, no copiado a una constante) y ② ninguna fila de tabla cita un código que la
+> AEAT no publica. Las dos probadas en rojo por separado. Nació de que un `4172` inventado se coló redactando.
 >
 > **✅ SCRUM-202 · SKILL-CEREBRO: el cerebro operativo de las sesiones (29-jul-2026, docs/config — cero código).**
 > Nace `.claude/skills/cerebro-yaqu/SKILL.md`: checklist de arranque (los cuatro docs, `ls-remote` en

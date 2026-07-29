@@ -27,6 +27,13 @@ firma del cliente → cobro de señal/total → (post SIF-1) factura VeriFactu. 
    - cambios de schema **no aditivos**
    - datos de clientes (export/borrado)
    - flags de la Parte P a nivel **global**
+
+   **NO es STOP (regla 38):** un test o guard que solo **LEE** el camino de emisión (rutas,
+   servicios, documentos, XML generado) — se hace sin pedir GO. **SÍ lo es** si para escribirlo
+   hay que **MODIFICAR** ese camino (extraer un helper, exportar algo, cambiar una firma, mover
+   código), aunque el fin sea solo el test: en el diff eso no se distingue de tocar el sellado
+   (regla 29). Antes de asumir el STOP, prueba a observar sin modificar: AST, no `grep` ni
+   instrumentación (SCRUM-203).
 5. **Prohibido inventar** estados, transiciones, flags o textos de landing/bot
    (Partes L, P, N5, K1; reglas 27 y 30). Necesidad nueva = propuesta de cambio de master.
 6. Bugs → `docs/BUGS.md` con su formato; nada de arreglos "de paso" sin registrar.
