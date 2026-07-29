@@ -42,6 +42,7 @@ import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-206b
 import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
 import { recordAudit, sobreFiscal, flagsFiscalesDe } from '../../../system/audit.service'; // SCRUM-206b
+import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 
 
 const router = Router();
@@ -577,28 +578,16 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         // factura queda existiendo y sin sellar, y el portón de SCRUM-206 garantiza que no produzca
         // documento hasta que se selle. El número NO se revierte (regla 29): revertir es lo que
         // crearía el hueco en la serie que habría que justificar ante Hacienda.
-        if (debeEstarEnLaCadena(invoice.number, quote.merchant)) {
-          try {
-            await applyVeriFactu(invoice, quote.merchant.taxId!, prisma);
-          } catch (e: any) {
-            console.error('[quote_decision_C1] sellado VeriFactu falló en ' + invoice.number + ':', e?.message || e);
-            recordAudit({
-              merchantId: invoice.merchantId,
-              action: 'sellado_fallido', entityType: 'invoice', entityId: invoice.id,
-              meta: sobreFiscal({
-                actor: { tipo: 'sistema', ref: 'quote_decision_C1' },
-                flagsFiscales: flagsFiscalesDe(quote.merchant as any),
-                payload: {
-                  numero: invoice.number,
-                  errorMensaje: String(e?.message ?? e).slice(0, 300),
-                  puntoDeFallo: 'quote_decision_C1',
                   // No sale ningún documento de aquí: lo impide el portón de SCRUM-206.
-                  pdfEntregadoIgual: false,
-                },
-              }),
-            });
-          }
-        }
+    // ⚠️ El sellado pasa a `sellarTrasEmision` (SCRUM-205, punto unico). El arreglo de
+    // SCRUM-206b no se pierde: este camino SIGUE sellando, solo que por la puerta comun,
+    // que ademas registra el fallo por dentro. La llamada suelta a applyVeriFactu se va.
+        // SCRUM-205 · punto único de sellado, después del commit.
+        //
+        // C1 lo dispara el CLIENTE FINAL, y eso es legítimo: el hecho que emite es que ACEPTE
+        // el presupuesto, no que abra un PDF. Lo que el ticket corrige es lo segundo.
+        // Este camino tampoco sellaba: dependía del sellado perezoso de `ensureInvoicePdf`.
+        await sellarTrasEmision(invoice, quote.merchant, prisma);
 
         createdInvoice = invoice;
 
