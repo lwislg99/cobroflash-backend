@@ -60,6 +60,21 @@ Y por contenido antes que por identidad: **un squash merge cambia el sha**, así
 
 *(Origen: incidente #17, 29-jul-2026.)*
 
+**R11 · Una rama ausente del remoto NO distingue «el push falló» de «se mergeó y se borró». Los dos casos se ven IDÉNTICOS, así que la rama no es la pregunta: la pregunta es si el contenido está en `main`.** Los tres síntomas son los mismos en ambos: el compare de GitHub responde *«We couldn't figure out how to compare these references»*, la búsqueda de ramas no encuentra nada, y `git branch -vv` marca el upstream como `gone`. Leerlos como «no se publicó» es la conclusión natural **y puede ser exactamente la contraria de la verdad**: GitHub borra la rama al mergear si está activado *delete branch on merge*, o sea que **la desaparición es lo que ocurre cuando todo ha ido BIEN**.
+
+Lo que decide, y no admite ambigüedad, es esta cadena — toda colgando del sha que da el servidor, sin ninguna ref local:
+
+```
+git ls-remote origin refs/heads/main          # sha vivo, sin refs locales
+git log -1 --format=%s <sha>                  # ¿el merge nombra tu rama?
+git merge-base --is-ancestor <tu-commit> <sha>
+git ls-tree -r --name-only <sha> | grep <tu-fichero>
+```
+
+**Y la conducta peligrosa que esto evita:** ante «tu rama no está», el reflejo es volver a empujar. Sobre una rama ya mergeada eso recrea una rama muerta e invita a abrir un PR duplicado de código que ya está dentro. Publicar sigue probándose solo con `ls-remote` o con el navegador —eso no cambia—; lo que cambia es que **la ausencia de la rama no prueba nada por sí sola**, y que la respuesta correcta a «¿se perdió mi trabajo?» nunca se busca en la lista de ramas, se busca en el árbol de `main`.
+
+*(Origen: incidente #18, 29-jul-2026.)*
+
 ---
 
 ## REGISTRO DE INCIDENTES
@@ -242,6 +257,20 @@ Juntos producen un estado que no está en el alcance de ninguno: **un ejercicio 
 **Arreglado:** se repitió con `fetch` propio en el mismo bloque, citando el sha, y por contenido. Resultado: nada de 228 en main; un solo merge posterior (PR #299, `origin/main = 6c8554e`) metió código y microcopy juntos.
 
 **Regla derivada: R10** (arriba, en LAS REGLAS).
+
+---
+
+### 2026-07-29 · #18 — Una rama mergeada y borrada se leyó como trabajo sin publicar
+
+**Qué pasó:** tras el merge de SCRUM-228, el fundador buscó `scrum-228-informes-empleado` en GitHub y no aparecía: el compare daba *«We couldn't figure out how to compare these references»* y la búsqueda de ramas devolvía *«No branches match the search»*. La conclusión —razonable con esos datos— fue que el push nunca había pasado y que el trabajo vivía solo en un worktree, a una caída de sesión de perderse. La instrucción fue volver a empujar de inmediato.
+
+**Lo que pasaba de verdad:** la rama se había mergeado (**PR #299**) y GitHub la borró al mergear. `git ls-remote origin scrum-228-informes-empleado` devolvía 0 líneas, correctamente, **porque ya no hacía falta que existiera**. El contenido estaba entero en `main`: `git ls-remote origin refs/heads/main` → `6c8554e`, cuyo asunto es literalmente *«Merge pull request #299 from lwislg99/scrum-228-informes-empleado»*, con `ed96e93` de ancestro y los dos ficheros nuevos en su árbol.
+
+**Por qué se llegó ahí, que es lo corregible:** una comprobación anterior había dicho «local == remoto» con `ls-remote` —consulta viva, correcta **en ese instante**— y después la rama se borró al mergear. El error no fue medir contra una copia local: fue no anticipar que **«rama ausente» tiene dos causas opuestas** y no acompañar nunca la comprobación de la rama con la única que no caduca, que es si el código está en `main`.
+
+**Lo que lo hace caro:** el reflejo ante «tu rama no está» es volver a empujar. Sobre una rama ya mergeada, eso recrea una rama muerta e invita a abrir un PR duplicado — trabajo, ruido y una segunda oportunidad de confundirse. Aquí no llegó a hacerse porque la cadena de comprobación se corrió antes que el push.
+
+**Regla derivada: R11** (arriba, en LAS REGLAS).
 
 ---
 
