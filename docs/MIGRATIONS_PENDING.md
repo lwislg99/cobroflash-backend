@@ -45,12 +45,22 @@ ve de otra forma, es una línea.
 
 ## SCRUM-195 · `quotes.job_id` + índice (Job 1:N Quote, paso 1 de 2) — 🟡 PARCIAL
 
+> **Sigue en 🟡 PARCIAL, y no por inercia.** El paso 1 ya está en **staging y producción**, pero
+> faltan DOS cosas distintas: el checkbox de **`yaqu_dev_javier`** (lo aplica y lo confirma
+> Javier) y el **paso 2, el backfill**, que no se ha ejecutado en ninguna BD (bloque aparte más
+> abajo). Marcar esto como cerrado con cualquiera de las dos pendientes sería justo el checkbox
+> por suposición contra el que avisa la línea de corte.
+
 - [x] **staging · acela/railway** — aplicado 28-jul-2026 con GO del fundador tras preview.
-- [ ] **desarrollo · acela/yaqu_dev_javier** — PENDIENTE. No requiere GO, pero va ANTES que prod
+- [ ] **desarrollo · acela/yaqu_dev_javier** — PENDIENTE. No requiere GO, pero iba ANTES que prod
       a propósito: si se queda atrás, el carril B se encuentra mañana la deriva que causó los 16
-      rojos de SCRUM-160.
-- [ ] **producción · autorack** — PENDIENTE. Preview propio + GO aparte, **nunca en la misma
-      tanda que staging**.
+      rojos de SCRUM-160. **Ese orden se rompió el 29-jul y conviene que conste por qué:**
+      producción estaba CAÍDA con `P2022` sobre `quotes.job_id` (la home no cargaba), así que
+      prod se adelantó por incidencia, no por descuido. **Este checkbox lo marca Javier cuando
+      lo aplique y lo confirme** — nadie más, y nunca por suposición.
+- [x] **producción · autorack** — aplicado **29-jul-2026** con GO del fundador tras preview
+      propio, en tanda aparte de staging. **Verificación: el `migrate diff` posterior salió
+      VACÍO.** Motivo del adelanto: incidencia en producción (`P2022` en `quotes.job_id`).
 
 **SQL aplicado** (aditivo puro; el preview contra la BD real de staging dio exactamente esto,
 o sea que no había deriva por otro lado):
@@ -81,6 +91,35 @@ Los 83 quotes sin job de producción son los no aceptados: es correcto que se qu
 ⚠️ **Verificado contra la BD, no por el mensaje de `db push`**: `job_id integer nullable=YES`,
 índice presente, y **`job_id` sin FK** (las 3 FKs de `quotes` son de `chargeId`, `customerId` y
 `merchantId`).
+
+### SCRUM-195 · PASO 2 de 2 · backfill de `quotes.job_id` — ⛔ NO EJECUTADO en ninguna BD
+
+- [ ] **staging · acela/railway** — pendiente (3 filas, todas a NULL).
+- [ ] **desarrollo · acela/yaqu_dev_javier** — pendiente (va detrás de su paso 1).
+- [ ] **producción · autorack** — pendiente (42 pares job↔quote a rellenar).
+
+**Qué falta:** el paso 1 solo creó la columna; **nadie ha escrito un solo valor en ella**. Hoy
+`quotes.job_id` está a NULL en las tres BD, incluida producción tras el push del 29-jul.
+
+**Por qué el paso 1 aguanta solo, sin dejar nada inconsistente** (y por eso adelantarlo para
+arreglar la incidencia fue seguro): la columna es `nullable` y **sin FK**, así que una fila sin
+valor es un estado válido, no una integridad rota. La relación `Quote.jobId → Job.id` **la
+sostiene el CÓDIGO** (decisión SCRUM-195, ver arriba), y staging lleva desde el 28-jul con la
+columna entera a NULL sin incidencias. El `P2022` que tiró la home era *la columna no existe*,
+no *la columna está vacía*.
+
+**Lo que sí queda a medias mientras tanto:** cualquier consulta que espere `job_id` RELLENO leerá
+NULL. No rompe, pero tampoco relaciona: hasta el backfill, el vínculo Job↔Quote sigue viviendo
+solo donde vivía antes.
+
+**No se planifica aquí**: cuándo y con qué SQL se hace el backfill, y si necesita GO, es
+decisión del fundador y lleva su propio preview por BD. Lo que este bloque fija es que **está
+pendiente y es visible**, en vez de quedar como una frase suelta dentro del paso 1.
+
+**Lo que ya está medido y no hay que volver a medir** (tabla de arriba): **0 referencias rotas**
+y **0 quotes con más de un job** en las dos BD, así que el backfill no tiene ambigüedad que
+resolver. Y los **83 quotes sin job** de producción se quedan a NULL a propósito: son los no
+aceptados.
 
 <!-- ─── LÍNEA DE CORTE · SCRUM-169 (2026-07-27) ─────────────────────────────────────────
      A partir de esta línea HACIA ARRIBA, cada entrada NUEVA lleva los tres checkboxes:
