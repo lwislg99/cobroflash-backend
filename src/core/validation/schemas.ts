@@ -1,5 +1,6 @@
 // src/core/validation/schemas.ts
 import { z } from 'zod';
+import { invalidTipoIva, invalidPrefijoSerie } from './fiscalInput'; // SCRUM-217
 
 // ------- QUOTES -------
 
@@ -7,7 +8,15 @@ const QuoteLineSchema = z.object({
   concept: z.string().min(1),
   qty: z.number().positive(),
   price: z.number().nonnegative(),
-  tax: z.number().min(0).max(1).optional().default(0),
+  // SCRUM-217 (1124): `min(0).max(1)` aceptaba CUALQUIER fracción — un 15 % pasaba sin queja, y
+  // el 15 % no es un tipo de IVA español. El validador decía que sí a un impuesto inventado, y
+  // ese tipo acaba en la cuota que entra en la huella. Ahora solo pasan los que existen.
+  tax: z.number()
+    .superRefine((v: number, ctx: z.RefinementCtx) => {
+      const motivo = invalidTipoIva(v);
+      if (motivo) ctx.addIssue({ code: 'custom', message: `El IVA ${motivo}` });
+    })
+    .optional().default(0),
 });
 
 const QuoteTierSchema = z.object({
@@ -137,7 +146,15 @@ export const merchantProfileUpdateSchema = z.object({
     .string()
     .length(3)
     .optional(), // "EUR", "MXN", "BRL", etc.
-  invoiceSeriesPrefix: z.string().min(1).max(10).optional(),
+  // SCRUM-217 (1130/1287): el prefijo acaba DENTRO de `NumSerieFactura`, y ahí la AEAT prohíbe
+  // " ' < > = y todo lo que no sea ASCII imprimible. No se validaba nada: un merchant podía
+  // fijar una serie que hace rechazar TODAS sus facturas, y enterarse al remitir.
+  invoiceSeriesPrefix: z.string()
+    .superRefine((v: string, ctx: z.RefinementCtx) => {
+      const motivo = invalidPrefijoSerie(v);
+      if (motivo) ctx.addIssue({ code: 'custom', message: `El prefijo de serie ${motivo}` });
+    })
+    .optional(),
   // Logo: URL http(s) o data-URI de imagen (subida desde Configuración,
   // redimensionada a ≤512px en cliente; cap 1,5M chars ≈ 1 MB decodificado)
   logoUrl: z.union([
