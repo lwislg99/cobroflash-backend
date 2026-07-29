@@ -39,6 +39,7 @@ import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
+import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 
 
 const router = Router();
@@ -556,6 +557,13 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
             },
           });
         });
+
+        // SCRUM-205 · punto único de sellado, después del commit.
+        //
+        // C1 lo dispara el CLIENTE FINAL, y eso es legítimo: el hecho que emite es que ACEPTE
+        // el presupuesto, no que abra un PDF. Lo que el ticket corrige es lo segundo.
+        // Este camino tampoco sellaba: dependía del sellado perezoso de `ensureInvoicePdf`.
+        await sellarTrasEmision(invoice, quote.merchant, prisma);
 
         createdInvoice = invoice;
 

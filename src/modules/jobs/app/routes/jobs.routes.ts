@@ -30,6 +30,7 @@ import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCR
 import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
+import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 
 const router = Router();
 
@@ -585,6 +586,20 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     });
 
     // Enviar el enlace de cobro (payment_request / ventana-first A5.5)
+    // SCRUM-205 · punto único de sellado: después del commit y ANTES de pedir el documento.
+    // Este camino NO sellaba por su cuenta — se apoyaba en el sellado PEREZOSO de
+    // `ensureInvoicePdf`, que es justo lo que este ticket quita. Sin esta línea la factura se
+    // queda `pendiente_de_sellado` y la petición de cobro sale sin PDF.
+    //
+    // Si el merchant no se pudiera leer, NO se sella y NO se inventa nada: la factura sigue
+    // pendiente. Eso no queda mudo — el siguiente paso pide el PDF y ahí salta
+    // `invoice_pendiente_de_sellado`. El fallo se ve; lo que no puede pasar es sellar a ciegas.
+    const merchantFiscal = await prisma.merchant.findUnique({
+      where: { id: quote.merchantId },
+      select: { country: true, taxId: true },
+    });
+    if (merchantFiscal) await sellarTrasEmision(invoice, merchantFiscal, prisma);
+
     const sent = await sendInvoicePaymentRequest(invoice.id).catch((e) => {
       console.error('[jobs] collect-rest send:', e?.message || e);
       return { ok: false as const, reason: 'whatsapp_send_failed' as const };
