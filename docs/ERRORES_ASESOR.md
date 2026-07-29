@@ -52,6 +52,29 @@ Tres cosas concretas, por orden de coste:
 
 *(Origen: incidente #16, 29-jul-2026.)*
 
+**R10 · Toda afirmación sobre «esto ya está en `main`» lleva `git fetch` propio EN EL MISMO bloque de comandos, y cita el sha de `origin/main` en el reporte. Sin sha, la medición no vale.** Los worktrees **comparten los refs** con el repo principal y entre ellos: cuando OTRA sesión hace `fetch`, tu `refs/remotes/origin/main` se mueve **sin que tú hagas nada**. Dos comandos consecutivos tuyos pueden medir contra dos `main` distintos, y ninguno de los dos avisa. Un `merge-base --is-ancestor` es exacto sobre el ref que tenga en ese instante, así que **la respuesta es exacta y la pregunta indeterminada** — que es la peor combinación, porque el resultado parece autoritativo.
+
+Y por contenido antes que por identidad: **un squash merge cambia el sha**, así que `--is-ancestor` de TUS commits dice «no está» sobre un main donde el código sí está. Lo que se comprueba es que el símbolo, la función o el literal APAREZCAN en `origin/main` (`git grep <patrón> origin/main`). El sha se cita para que quien lea el reporte sepa contra qué main se midió; el contenido es lo que decide.
+
+**Corolario que ya costó un merge:** el número del PR **no** identifica el ticket. En este repo colisionan (el PR #228 mergeó SCRUM-186, y SCRUM-228 acabó siendo el PR #299). Nunca «lo mergeé, era el 228».
+
+*(Origen: incidente #17, 29-jul-2026.)*
+
+**R11 · Una rama ausente del remoto NO distingue «el push falló» de «se mergeó y se borró». Los dos casos se ven IDÉNTICOS, así que la rama no es la pregunta: la pregunta es si el contenido está en `main`.** Los tres síntomas son los mismos en ambos: el compare de GitHub responde *«We couldn't figure out how to compare these references»*, la búsqueda de ramas no encuentra nada, y `git branch -vv` marca el upstream como `gone`. Leerlos como «no se publicó» es la conclusión natural **y puede ser exactamente la contraria de la verdad**: GitHub borra la rama al mergear si está activado *delete branch on merge*, o sea que **la desaparición es lo que ocurre cuando todo ha ido BIEN**.
+
+Lo que decide, y no admite ambigüedad, es esta cadena — toda colgando del sha que da el servidor, sin ninguna ref local:
+
+```
+git ls-remote origin refs/heads/main          # sha vivo, sin refs locales
+git log -1 --format=%s <sha>                  # ¿el merge nombra tu rama?
+git merge-base --is-ancestor <tu-commit> <sha>
+git ls-tree -r --name-only <sha> | grep <tu-fichero>
+```
+
+**Y la conducta peligrosa que esto evita:** ante «tu rama no está», el reflejo es volver a empujar. Sobre una rama ya mergeada eso recrea una rama muerta e invita a abrir un PR duplicado de código que ya está dentro. Publicar sigue probándose solo con `ls-remote` o con el navegador —eso no cambia—; lo que cambia es que **la ausencia de la rama no prueba nada por sí sola**, y que la respuesta correcta a «¿se perdió mi trabajo?» nunca se busca en la lista de ramas, se busca en el árbol de `main`.
+
+*(Origen: incidente #18, 29-jul-2026.)*
+
 ---
 
 ## REGISTRO DE INCIDENTES
@@ -220,6 +243,34 @@ Juntos producen un estado que no está en el alcance de ninguno: **un ejercicio 
 **Arreglado:** fichero normalizado a LF y commit propio que lo explica. El PR muestra 123 inserciones.
 
 **Regla derivada: R9** (arriba, en LAS REGLAS).
+
+---
+
+### 2026-07-29 · #17 — Medí «qué hay en main» dos veces seguidas y me salieron dos main distintos (lección propia, del ejecutor)
+
+**Qué pasó:** tras empujar SCRUM-228, el fundador dio por mergeada la rama y dijo que en `main` había entrado el código pero no el microcopy. Al medirlo: en `main` **no había nada** de SCRUM-228 —ni `desglosarPorEmpleado`, ni `byEmployee`, ni el directorio `reports/domain/`—. Lo que se había mergeado dos veces era **SCRUM-230**. La confusión venía del corolario de R10: el PR llevaba un número que se parecía al del ticket.
+
+**El fallo de método, que es el que da nombre al incidente:** en el primer bloque de comandos `origin/main` era `c75c6d2`; en el siguiente, **sin haber hecho yo ningún `fetch`**, el mismo ref era `01d82b2`. Otra sesión había hecho `fetch` y los worktrees comparten `refs/remotes`. Salté a explicaciones sobre el log de git antes de caer en que **la pregunta era indeterminada**: no «qué contiene main», sino «qué contenía main en el instante de cada comando».
+
+**Lo que lo hace peligroso:** un `merge-base --is-ancestor` no falla nunca. Devuelve SÍ o NO con total seguridad sobre el ref que hubiera en ese microsegundo. El reporte sale con aspecto de medición dura y por debajo tiene una referencia móvil. Es la forma más limpia de afirmar algo falso habiendo «comprobado».
+
+**Arreglado:** se repitió con `fetch` propio en el mismo bloque, citando el sha, y por contenido. Resultado: nada de 228 en main; un solo merge posterior (PR #299, `origin/main = 6c8554e`) metió código y microcopy juntos.
+
+**Regla derivada: R10** (arriba, en LAS REGLAS).
+
+---
+
+### 2026-07-29 · #18 — Una rama mergeada y borrada se leyó como trabajo sin publicar
+
+**Qué pasó:** tras el merge de SCRUM-228, el fundador buscó `scrum-228-informes-empleado` en GitHub y no aparecía: el compare daba *«We couldn't figure out how to compare these references»* y la búsqueda de ramas devolvía *«No branches match the search»*. La conclusión —razonable con esos datos— fue que el push nunca había pasado y que el trabajo vivía solo en un worktree, a una caída de sesión de perderse. La instrucción fue volver a empujar de inmediato.
+
+**Lo que pasaba de verdad:** la rama se había mergeado (**PR #299**) y GitHub la borró al mergear. `git ls-remote origin scrum-228-informes-empleado` devolvía 0 líneas, correctamente, **porque ya no hacía falta que existiera**. El contenido estaba entero en `main`: `git ls-remote origin refs/heads/main` → `6c8554e`, cuyo asunto es literalmente *«Merge pull request #299 from lwislg99/scrum-228-informes-empleado»*, con `ed96e93` de ancestro y los dos ficheros nuevos en su árbol.
+
+**Por qué se llegó ahí, que es lo corregible:** una comprobación anterior había dicho «local == remoto» con `ls-remote` —consulta viva, correcta **en ese instante**— y después la rama se borró al mergear. El error no fue medir contra una copia local: fue no anticipar que **«rama ausente» tiene dos causas opuestas** y no acompañar nunca la comprobación de la rama con la única que no caduca, que es si el código está en `main`.
+
+**Lo que lo hace caro:** el reflejo ante «tu rama no está» es volver a empujar. Sobre una rama ya mergeada, eso recrea una rama muerta e invita a abrir un PR duplicado — trabajo, ruido y una segunda oportunidad de confundirse. Aquí no llegó a hacerse porque la cadena de comprobación se corrió antes que el push.
+
+**Regla derivada: R11** (arriba, en LAS REGLAS).
 
 ---
 
