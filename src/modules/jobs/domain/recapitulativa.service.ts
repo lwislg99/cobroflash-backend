@@ -21,6 +21,7 @@ import { emitInvoice } from '../../invoicing/domain/invoicing.service';
 import { applyVeriFactu } from '../../invoicing/domain/verifactu.service';
 import { isReceiptNumber } from '../../invoicing/domain/invoiceNumber.service';
 import { calcVatBreakdown } from '../../invoicing/domain/vat.service';
+import type { ActorAudit } from '../../system/audit.service'; // SCRUM-207
 
 /** Un albarán ya validado y listo para entrar en una factura. */
 export interface AlbaranAEmitir {
@@ -60,9 +61,11 @@ export async function emitirRecapitulativas(
     currency: string;
     taxId: string | null;
     grupos: GrupoAEmitir[];
+    /** SCRUM-207: quién pide la recapitulativa. Las 2 vías son rutas de admin. */
+    actor: ActorAudit;
   },
 ): Promise<{ facturas: FacturaEmitida[]; sinSellar: string[] }> {
-  const { merchantId, customerId, currency, taxId, grupos } = params;
+  const { merchantId, customerId, currency, taxId, grupos, actor } = params;
 
   const facturas = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const out: FacturaEmitida[] = [];
@@ -83,7 +86,7 @@ export async function emitirRecapitulativas(
       const albaranRefs = g.albaranes.map((a) => ({ albaranId: a.id, numero: a.numero, fecha: a.fecha }));
 
       const invoice = await emitInvoice(tx, {
-        merchantId, customerId, total, currency, type: 'F1', lines, albaranRefs, quoteId: null,
+        merchantId, customerId, total, currency, type: 'F1', lines, albaranRefs, quoteId: null, actor,
       });
       // Robustez fiscal: una recapitulativa JAMÁS puede salir como justificante J-. Si
       // `allocateInvoiceNumber` devolviera serie receipt (porque el gate de modo miró un

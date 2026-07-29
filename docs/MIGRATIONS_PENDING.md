@@ -654,6 +654,47 @@ CREATE INDEX "albaran_lineas_facturadas_merchant_id_invoice_id_idx" ON "albaran_
   vacía y nadie la lee todavía en prod (la ruta parcial exige albarán firmado, con precios
   y flag fiscal ON: en producción no se cumple ninguna de las tres).
 
+## 29-jul-2026 — audit_log: índice por entidad (SCRUM-207) — staging ✅ · yaqu_dev_javier 🔴 · producción 🔴
+
+```sql
+CREATE INDEX "audit_log_merchant_id_entity_type_entity_id_idx" ON "audit_log"("merchant_id", "entity_type", "entity_id");
+```
+
+- **Preview generado el 29-jul-2026 contra STAGING** (`acela.proxy.rlwy.net`) con
+  `prisma migrate diff --from-schema-datasource … --script`. Salida completa: **la línea de
+  arriba y nada más**. Cero ALTER, cero DROP, cero cambio de tipo.
+- **Por qué:** el índice que ya existe es `(merchant_id, action, created_at)` y responde
+  «dame las acciones de tipo X». La consulta de INSPECCIÓN pregunta otra cosa —«qué pasó con
+  la factura X»— y para eso el eje es la ENTIDAD (contrato §7.1 Q1). Sin este índice esa
+  consulta es un seq scan sobre toda la tabla del merchant.
+- **Es el ÚNICO cambio de schema de SCRUM-207.** El resto del contrato cabe en `meta` (JSONB
+  ya existente) por decisión D-1 del fundador: una columna nueva en una tabla polimórfica
+  sería nullable y no aportaría integridad que un guard no aporte ya.
+- **Riesgo de no aplicarlo: NINGUNO funcional.** El código no lo necesita para funcionar —
+  solo para no degradarse cuando la tabla crezca. Un índice ausente no rompe ninguna query.
+- ✅ **STAGING APLICADO el 29-jul-2026** por la sesión de SCRUM-207, con el GO del fundador y
+  el preview de arriba enseñado antes. Orden seguido: preview crudo → **host verificado contra
+  la allowlist** (`acela.proxy.rlwy.net`, y comprobado explícitamente que NO es el de prod) →
+  centinela de un solo uso → `npx prisma db push --skip-generate` (sin `--accept-data-loss`) →
+  **verificado leyendo `pg_indexes`, no el mensaje del comando** (los 3 índices de `audit_log`
+  presentes) → `migrate diff` posterior **vacío**.
+- 🔴 **LAS OTRAS DOS NO LAS APLICA ESTA SESIÓN, y es deliberado.** `yaqu_dev_javier` la aplica
+  **Javier (carril B)**, que es su dueño; **producción la aplica el fundador** con su propio
+  preview y su GO. Comando para las dos (el mismo, cambiando `DATABASE_URL`):
+  ```bash
+  # 1) preview — tiene que salir EXACTAMENTE el CREATE INDEX de arriba y nada más
+  DATABASE_URL="<url de esa base>" npx prisma migrate diff \
+    --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --script
+  # 2) aplicar, tras comprobar el host que imprime prisma en la primera línea
+  DATABASE_URL="<url de esa base>" npx prisma db push --skip-generate
+  ```
+  ⚠️ **NO uses `npm run db:push`**: el wrapper está roto (SCRUM-223 — el `sed` se lleva la
+  comilla del `.env`, el error se lo traga un `2>/dev/null` y `set -e` mata el script antes
+  del preview). Hasta que se arregle, el camino es el `migrate diff` crudo + `db push`.
+- **Hasta que esté en las TRES, la tanda gateada aborta** en las bases que le falten: el
+  preflight compara el esquema contra `prisma/schema.prisma` y dice «la BD va POR DETRÁS».
+  No es un fallo: es el guard de SCRUM-169 haciendo su trabajo.
+
 ## 6-jul-2026 — merchants.flags (APLICADO ✅)
 
 ```sql

@@ -53,6 +53,12 @@ test('makeReceiptNumber: formato J-YYYYMMDD-XXXX, reconocido por isReceiptNumber
 
 // ── allocateInvoiceNumber con el gate V0-0 (tx falsa) ────────────────────────
 
+// SCRUM-207: `allocateInvoiceNumber` escribe `factura_emitida` DENTRO de la misma tx, así
+// que la tx falsa necesita `auditLog`, y `camino`/`actor` pasan a ser obligatorios. Lo que
+// estos tests AFIRMAN no cambia ni una coma: siguen midiendo la numeración de V0-0.
+const AUDIT_FALSO = { create: async () => ({}) };
+const CTX = { camino: 'C3', actor: { tipo: 'pro_propietario', teamMemberId: null } };
+
 function fakeTx(merchant) {
   const calls = { updates: [] };
   return {
@@ -60,6 +66,9 @@ function fakeTx(merchant) {
     merchant: {
       findUnique: async () => merchant,
       update: async (args) => { calls.updates.push(args); },
+    },
+    auditLog: AUDIT_FALSO,
+    _calls: {
     },
   };
 }
@@ -70,7 +79,7 @@ test('allocate: ES real sin flag → J-number y NO toca los contadores de la ser
     id: 5, email: 'real@negocio.es', country: 'ES',
     invoiceSeriesPrefix: 'CF', nextInvoiceNumber: 4, nextRectInvoiceNumber: 1, invoiceSeriesYear: 2026,
   });
-  const n = await allocateInvoiceNumber(tx, 5);
+  const n = await allocateInvoiceNumber(tx, 5, CTX);
   assert.equal(isReceiptNumber(n), true);
   assert.equal(tx.calls.updates.length, 0, 'la serie fiscal no debe avanzar');
 });
@@ -81,7 +90,7 @@ test('allocate: ES real sin flag + rectificativa → invoicing_es_disabled', asy
     id: 5, email: 'real@negocio.es', country: 'ES',
     invoiceSeriesPrefix: 'CF', nextInvoiceNumber: 4, nextRectInvoiceNumber: 1, invoiceSeriesYear: 2026,
   });
-  await assert.rejects(() => allocateInvoiceNumber(tx, 5, { rectifying: true }), /invoicing_es_disabled/);
+  await assert.rejects(() => allocateInvoiceNumber(tx, 5, { ...CTX, rectifying: true }), /invoicing_es_disabled/);
 });
 
 test('allocate: demo sigue emitiendo de la serie fiscal anual', async () => {
@@ -89,7 +98,7 @@ test('allocate: demo sigue emitiendo de la serie fiscal anual', async () => {
     id: 1, email: 'demo@yaqu.app', country: 'ES',
     invoiceSeriesPrefix: 'CF', nextInvoiceNumber: 4, nextRectInvoiceNumber: 1, invoiceSeriesYear: 2026,
   });
-  const n = await allocateInvoiceNumber(tx, 1, {}, new Date(2026, 5, 11));
+  const n = await allocateInvoiceNumber(tx, 1, CTX, new Date(2026, 5, 11));
   assert.equal(n, '2026-CF-004');
   assert.equal(tx.calls.updates.length, 1);
 });
@@ -99,6 +108,6 @@ test('allocate: merchant no-ES intacto (serie fiscal de siempre)', async () => {
     id: 9, email: 'real@negocio.mx', country: 'MX',
     invoiceSeriesPrefix: 'MX', nextInvoiceNumber: 10, nextRectInvoiceNumber: 1, invoiceSeriesYear: 2026,
   });
-  const n = await allocateInvoiceNumber(tx, 9, {}, new Date(2026, 5, 11));
+  const n = await allocateInvoiceNumber(tx, 9, CTX, new Date(2026, 5, 11));
   assert.equal(n, '2026-MX-010');
 });

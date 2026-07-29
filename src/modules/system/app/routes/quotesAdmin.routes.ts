@@ -8,6 +8,7 @@ import {
 } from '../../quoteAdmin';
 
 import { prisma } from '../../../../core/db/prisma';
+import { actorDeRequest } from '../../audit.service'; // SCRUM-207: quién emite (C3/C4)
 import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo, validarEdicionPlan } from '../../../quotes/domain/billingPlan'; // SCRUM-37
 import { sendQuoteWhatsAppToCustomer } from '../../../quotes/domain/sendQuote.service';
 import { suggestMaintenance } from '../../../maintenance/domain/maintenance.service';
@@ -189,7 +190,9 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     const invoiceAmount = grossOfLines(scaledLines);
 
     const invoice = await prisma.$transaction(async (tx) => {
-      const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId);
+      const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
+        camino: 'C3', actor: actorDeRequest(req),
+      });
       return tx.invoice.create({
         data: {
           merchantId: quote.merchantId,
@@ -363,7 +366,9 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
     const merchant = quote.merchant;
 
     const invoice = await prisma.$transaction(async (tx) => {
-      const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId);
+      const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
+        camino: 'C4', actor: actorDeRequest(req),
+      });
       return tx.invoice.create({
         data: {
           merchantId: quote.merchantId,

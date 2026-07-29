@@ -291,6 +291,34 @@ Caduca solo a los 45 min, así que una sesión muerta no bloquea a nadie. Para l
 `DATABASE_URL="<url de esa base>" node scripts/marcar-staging.mjs`. Detalle en
 `docs/QA/SUITE_REGRESION.md` § «El TURNO de staging».
 
+> **Si MATAS la tanda, el turno se queda TOMADO (SCRUM-207, 29-jul-2026).** Lo suelta al
+> *acabar*, no al morir: un `kill` se salta ese paso. Síntoma: la siguiente tanda no arranca
+> (exit 5) y nombra a un dueño que ya no existe. Se comprueba leyendo el marcador
+> (`shobj_description(oid,'pg_database')` → `YAQU_STAGING lock:…`) y se suelta con
+> `marcar-staging.mjs`, que lo reescribe limpio. O se esperan los 45 min. **No es un fallo
+> del lock:** caducar solo es justo lo que impide que una sesión muerta bloquee al equipo.
+>
+> **CÓMO SABER SI SIGUE VIVA, que es de donde salió todo lo anterior.** Dos trampas, y las dos
+> hacen que una tanda SANA parezca colgada:
+>
+> · **`| tail` no muestra nada hasta el final.** `tail` buferea la tubería entera, así que
+>   ~11 min de silencio son indistinguibles de un cuelgue. **Escribe a fichero y lee el
+>   fichero:** `npm run test:staging > /tmp/tanda.log 2>&1`, y sigues con `tail -f`.
+>
+> · **`ps -ef` en Git Bash NO VE los procesos de la tanda.** Solo muestra su propio árbol de
+>   sesión, así que da 0 procesos mientras el runner y sus hijos corren tan tranquilos. Es la
+>   trampa peor de las dos, porque la respuesta parece un dato objetivo. **Míralo con lo que sí
+>   ve todo Windows:**
+>   `powershell -c "Get-CimInstance Win32_Process -Filter \"Name='node.exe'\" | ft ProcessId,CommandLine"`
+>   o `tasklist //FI "PID eq <pid>"`. El PID del runner es además el dueño del turno
+>   (`lock:<host>.<pid>@…`): si ese PID vive, la tanda vive y **el turno no se toca**.
+>
+> Aprendido ejecutando, y en este orden: se leyó mal el silencio del `tail`, se confirmó el
+> «cuelgue» con un `ps -ef` que era ciego, se mató una tanda que iba perfectamente — y ese
+> `kill` fue lo que dejó el turno tomado. Los tres párrafos de este aviso son **el mismo
+> incidente**, y el error de fondo no fue esperar poco: fue tratar «no veo nada» como «no hay
+> nada».
+
 Nomenclatura fijada por carril B el 27-jul-2026 con la regla de desempate del fundador. El
 criterio para asignar el papel ha sido la AUTORIZACIÓN, no la ubicación ni el uso: las dos
 primeras están en el mismo servidor y las dos las ejercitan tandas gateadas; lo que las

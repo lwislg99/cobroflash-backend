@@ -9,7 +9,7 @@
 // (409 albaran_locked).
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
-import { recordAudit, requestIp } from '../../../system/audit.service';
+import { recordAudit, actorDeRequest, requestIp } from '../../../system/audit.service'; // SCRUM-207
 import { requireActivePlan } from '../../../../core/http/authMiddleware'; // SCRUM-47 (S1: enviar WA ✅ técnico, sin requireRole)
 import { sendAlbaranFirmadoWhatsApp, sendAlbaranParaFirmarWhatsApp, type AlbaranFirmadoSendResult } from '../../domain/albaranWhatsApp.service'; // SCRUM-47/49
 import { sendSuccessBody, sendFailureBody, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
@@ -259,6 +259,7 @@ router.post('/consolidar', requireRole('admin'), async (req, res) => {
       currency: merchant.defaultCurrency || 'EUR',
       taxId: merchant.taxId,
       grupos,
+      actor: actorDeRequest(req),
     });
 
     return res.status(201).json({
@@ -663,6 +664,7 @@ router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
         lines: invoiceLines,
         albaranRefs: [{ albaranId: albaran.id, numero: albaran.numero, fecha: albaran.fecha }],
         quoteId: null,
+        actor: actorDeRequest(req),
       });
       if (isReceiptNumber(inv.number)) throw new Error('facturacion_no_disponible');
 
