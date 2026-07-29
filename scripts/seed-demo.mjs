@@ -13,7 +13,7 @@
  * (`dist/`), igual que `seed-video.mjs`.
  *
  * ⚠️ La BD la decide quien ejecuta, vía `DATABASE_URL`. Sin ella, Prisma carga
- * `.env`, que apunta a PRODUCCIÓN — y esto es un script de RESET. Ver SCRUM-205.
+ * `.env`, que apunta a PRODUCCIÓN — y esto es un script de RESET. Ver SCRUM-208.
  *
  * SCRUM-204 · NUMERACIÓN: sale de `allocateInvoiceNumber()` dentro de la misma
  * transacción que crea el documento — PROHIBIDO fabricarla a mano (regla del embudo,
