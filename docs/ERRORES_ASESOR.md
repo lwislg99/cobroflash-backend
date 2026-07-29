@@ -52,6 +52,14 @@ Tres cosas concretas, por orden de coste:
 
 *(Origen: incidente #16, 29-jul-2026.)*
 
+**R10 · Toda afirmación sobre «esto ya está en `main`» lleva `git fetch` propio EN EL MISMO bloque de comandos, y cita el sha de `origin/main` en el reporte. Sin sha, la medición no vale.** Los worktrees **comparten los refs** con el repo principal y entre ellos: cuando OTRA sesión hace `fetch`, tu `refs/remotes/origin/main` se mueve **sin que tú hagas nada**. Dos comandos consecutivos tuyos pueden medir contra dos `main` distintos, y ninguno de los dos avisa. Un `merge-base --is-ancestor` es exacto sobre el ref que tenga en ese instante, así que **la respuesta es exacta y la pregunta indeterminada** — que es la peor combinación, porque el resultado parece autoritativo.
+
+Y por contenido antes que por identidad: **un squash merge cambia el sha**, así que `--is-ancestor` de TUS commits dice «no está» sobre un main donde el código sí está. Lo que se comprueba es que el símbolo, la función o el literal APAREZCAN en `origin/main` (`git grep <patrón> origin/main`). El sha se cita para que quien lea el reporte sepa contra qué main se midió; el contenido es lo que decide.
+
+**Corolario que ya costó un merge:** el número del PR **no** identifica el ticket. En este repo colisionan (el PR #228 mergeó SCRUM-186, y SCRUM-228 acabó siendo el PR #299). Nunca «lo mergeé, era el 228».
+
+*(Origen: incidente #17, 29-jul-2026.)*
+
 ---
 
 ## REGISTRO DE INCIDENTES
@@ -220,6 +228,20 @@ Juntos producen un estado que no está en el alcance de ninguno: **un ejercicio 
 **Arreglado:** fichero normalizado a LF y commit propio que lo explica. El PR muestra 123 inserciones.
 
 **Regla derivada: R9** (arriba, en LAS REGLAS).
+
+---
+
+### 2026-07-29 · #17 — Medí «qué hay en main» dos veces seguidas y me salieron dos main distintos (lección propia, del ejecutor)
+
+**Qué pasó:** tras empujar SCRUM-228, el fundador dio por mergeada la rama y dijo que en `main` había entrado el código pero no el microcopy. Al medirlo: en `main` **no había nada** de SCRUM-228 —ni `desglosarPorEmpleado`, ni `byEmployee`, ni el directorio `reports/domain/`—. Lo que se había mergeado dos veces era **SCRUM-230**. La confusión venía del corolario de R10: el PR llevaba un número que se parecía al del ticket.
+
+**El fallo de método, que es el que da nombre al incidente:** en el primer bloque de comandos `origin/main` era `c75c6d2`; en el siguiente, **sin haber hecho yo ningún `fetch`**, el mismo ref era `01d82b2`. Otra sesión había hecho `fetch` y los worktrees comparten `refs/remotes`. Salté a explicaciones sobre el log de git antes de caer en que **la pregunta era indeterminada**: no «qué contiene main», sino «qué contenía main en el instante de cada comando».
+
+**Lo que lo hace peligroso:** un `merge-base --is-ancestor` no falla nunca. Devuelve SÍ o NO con total seguridad sobre el ref que hubiera en ese microsegundo. El reporte sale con aspecto de medición dura y por debajo tiene una referencia móvil. Es la forma más limpia de afirmar algo falso habiendo «comprobado».
+
+**Arreglado:** se repitió con `fetch` propio en el mismo bloque, citando el sha, y por contenido. Resultado: nada de 228 en main; un solo merge posterior (PR #299, `origin/main = 6c8554e`) metió código y microcopy juntos.
+
+**Regla derivada: R10** (arriba, en LAS REGLAS).
 
 ---
 
