@@ -487,6 +487,18 @@ function roleLockedNote() {
 window.lockActionForRole = lockActionForRole;
 window.roleLockedNote = roleLockedNote;
 
+// Copy aprobado por el fundador (23-jul, docs/Sprint Scrum/SESION_ACTUAL_SCRUM-69.md) — NO reformular.
+// SCRUM-210: vivía dentro de invoicesView.js; se mudó aquí SIN tocar una letra porque ahora lo
+// comparten dos superficies — la bandeja de pendientes (SCRUM-69) y el aviso ámbar de plazo
+// vencido del semáforo fiscal. Copy aprobado duplicado es copy que acaba divergiendo, y este
+// además tiene que ser reproducible desde el AuditLog.
+function copyRojo(mesLabel) {
+  return `El plazo de este mes venció — ya no se puede agrupar en una recapitulativa de `
+    + `${mesLabel}. Puedes facturar estos partes igualmente (factura individual o `
+    + `recapitulativa del mes en curso); si tienes dudas, consúltalo con tu asesor.`;
+}
+window.copyRojo = copyRojo;
+
 // WA-0b · chip de entrega de WhatsApp (J4). Recibe `waDelivery` del detalle
 // ({status, templateName, at} | null) y devuelve el HTML del chip, o '' si no hay envío.
 // Estados de Meta: sent → delivered → read | failed. Microcopy clara para el merchant.
