@@ -22,6 +22,7 @@ import { applyVeriFactu } from '../../invoicing/domain/verifactu.service';
 import { isReceiptNumber } from '../../invoicing/domain/invoiceNumber.service';
 import { calcVatBreakdown } from '../../invoicing/domain/vat.service';
 import type { ActorAudit } from '../../system/audit.service'; // SCRUM-207
+import { sellarTrasEmision, SELLADO_PENDIENTE } from '../../invoicing/domain/selladoEstado'; // SCRUM-205
 
 /** Un albarán ya validado y listo para entrar en una factura. */
 export interface AlbaranAEmitir {
@@ -113,12 +114,13 @@ export async function emitirRecapitulativas(
   // albaranes están marcados; deshacerlo iría contra la regla 29. Se informa y se reintenta.
   const sinSellar: string[] = [];
   for (const f of facturas) {
-    try {
-      const inv = await prisma.invoice.findUnique({ where: { id: f.id } });
-      if (inv) await applyVeriFactu(inv, taxId ?? '', prisma);
-    } catch (e: any) {
-      console.error(`[recapitulativa] sellado VeriFactu falló en ${f.number}:`, e?.message || e);
-      sinSellar.push(f.number);
+    // SCRUM-205: una a una y después del commit — nunca dentro de la tx, que bifurcaría la
+    // cadena. `sellarTrasEmision` no lanza: devuelve el estado, y lo que no quede sellado se
+    // reporta igual que antes, pero además queda `pendiente_de_sellado` en la BD.
+    const inv = await prisma.invoice.findUnique({ where: { id: f.id } });
+    if (inv) {
+      const r = await sellarTrasEmision(inv, { country: 'ES', taxId }, prisma);
+      if (r.estado === SELLADO_PENDIENTE) sinSellar.push(f.number);
     }
   }
 

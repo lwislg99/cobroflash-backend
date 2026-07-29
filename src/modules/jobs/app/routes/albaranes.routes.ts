@@ -44,6 +44,7 @@ import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service
 import { getEmissionMode } from '../../../invoicing/domain/emission.service';
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
 import { emitirRecapitulativas } from '../../domain/recapitulativa.service'; // SCRUM-171a: emisión compartida con la vía de Job
+import { sellarTrasEmision, SELLADO_HECHO } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 
 const router = Router();
 
@@ -682,13 +683,10 @@ router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
     // Sellado FUERA de la transacción (SCRUM-173): dentro, las facturas de un lote no se ven
     // entre sí y todas encadenarían al mismo registro anterior. Un fallo aquí NO revierte la
     // emisión —deshacer una factura va contra la regla 29—: se dice en la respuesta.
-    let sellada = false;
-    try {
-      await applyVeriFactu(invoice, merchant.taxId ?? '', prisma);
-      sellada = true;
-    } catch (e: any) {
-      console.error(`[facturar-parcial] sellado VeriFactu falló en ${invoice.number}:`, e?.message || e);
-    }
+    // SCRUM-205: el sellado pasa por el punto ÚNICO, después del commit. No lanza: si falla,
+    // la factura se queda `pendiente_de_sellado` —donde nació— y en ese estado no produce PDF
+    // ni QR (SCRUM-206). Antes esto era un catch que solo escribía en el log.
+    const sellada = (await sellarTrasEmision(invoice, merchant, prisma)).estado === SELLADO_HECHO;
 
     const libroTras = await prisma.albaranLineaFacturada.findMany({
       where: { merchantId: req.merchantId, albaranId: albaran.id },

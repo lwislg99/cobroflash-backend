@@ -24,6 +24,7 @@ import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 
 
 import fetch from 'node-fetch';
 import { sendSuccessBody, sendFailureBody } from '../../../../lib/sendOutcome'; // SCRUM-126
+import { sellarTrasEmision, SELLADO_HECHO } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 
 const router = Router();
 
@@ -212,15 +213,8 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     });
 
     // Aplicar VeriFactu para merchants españoles con NIF (V0-0: nunca a justificantes)
-    let vfApplied = false;
-    if (merchant.country === 'ES' && merchant.taxId && !isReceiptNumber(invoice.number)) {
-      try {
-        await applyVeriFactu(invoice, merchant.taxId, prisma);
-        vfApplied = true;
-      } catch (e) {
-        console.error('[verifactu] Error al aplicar VeriFactu en quote invoice:', e);
-      }
-    }
+    // SCRUM-205: punto único de sellado, después del commit.
+    const vfApplied = (await sellarTrasEmision(invoice, merchant, prisma)).estado === SELLADO_HECHO;
 
     return res.status(201).json({
       id: invoice.id,
@@ -388,15 +382,8 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
     });
 
     // VeriFactu exactamente igual que en la vía de tramos (V0-0: nunca a justificantes).
-    let vfApplied = false;
-    if (merchant.country === 'ES' && merchant.taxId && !isReceiptNumber(invoice.number)) {
-      try {
-        await applyVeriFactu(invoice, merchant.taxId, prisma);
-        vfApplied = true;
-      } catch (e) {
-        console.error('[verifactu] Error al aplicar VeriFactu en emisión manual:', e);
-      }
-    }
+    // SCRUM-205: punto único de sellado, después del commit.
+    const vfApplied = (await sellarTrasEmision(invoice, merchant, prisma)).estado === SELLADO_HECHO;
 
     return res.status(201).json({
       id: invoice.id,
