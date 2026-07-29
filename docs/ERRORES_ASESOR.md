@@ -46,6 +46,16 @@ Tres cosas concretas, por orden de coste:
 
 **Por qué es una familia propia y no un caso de R1:** aquí nadie afirmó nada sin comprobarlo. Todo estaba medido y todo estaba bien **por separado**. Es el reverso de *«prohibición sin mecanismo»*: **exceso de mecanismos que nadie compuso**. Y se parece al #12 —probar con un caso fuera del mecanismo— pero una capa más arriba: el caso está *dentro* de cada mecanismo y *fuera* de todos a la vez.
 
+**R9 · Un ticket se mide por CONTENIDO y `merge-base`, nunca por el número del PR ni por un `grep` en el log.** Los números de PR y los de SCRUM viven en el mismo rango y **colisionan**: en este repo, `PR #228` mergeó **SCRUM-186**, `PR #230` mergeó **SCRUM-189** y `PR #236` mergeó **SCRUM-184**. Un `git log | grep 228` devuelve una línea que *parece* la respuesta y contesta otra pregunta.
+
+Tres comprobaciones, y la tercera es la que decide:
+
+1. **`git merge-base --is-ancestor <sha> origin/main`** — la única que responde «¿está en main?». Precedida siempre de `git fetch --all --prune`.
+2. **El artefacto, por su ruta.** ¿Existe el fichero que ese ticket crea, en `origin/main`? Un ticket cuyo entregable no está en el árbol no está entregado, diga lo que diga cualquier número.
+3. **Si citas un número de PR, lee a QUÉ RAMA nombra su mensaje de merge.** `Merge pull request #228 from lwislg99/scrum-186-…` lo dice entero: el número es del PR, el ticket está en la rama. Leer solo el número es leer la mitad.
+
+**Y toda medición de un remoto lleva marca de tiempo.** `ls-remote` es una consulta viva, no una verdad permanente: una rama puede publicarse **entre dos mediciones tuyas**, y entonces las dos son correctas y se contradicen. Al reportar «no existe», di **con qué `sha` de `origin/main` y a qué hora** lo mediste; sin eso, tu medición no se puede reconciliar con la de otra sesión.
+
 *(Origen: incidente #15, 29-jul-2026. Se numera R8 y no R7 porque R7 existe en una rama sin mergear.)*
 
 ---
@@ -202,6 +212,30 @@ Juntos producen un estado que no está en el alcance de ninguno: **un ejercicio 
 **Arreglado:** sin registros no se entrega documento — el servicio devuelve vacío, el ZIP no adjunta el fichero de ese ejercicio y el endpoint suelto responde `409` con los motivos de cada exclusión. Entregar un XML inválido es lo que la cadena entera venía a evitar; entregarlo en silencio, peor.
 
 **Regla derivada: R8** (arriba, en LAS REGLAS).
+
+---
+
+### 2026-07-29 · #16 — `PR #228` mergeó SCRUM-186: un número que parece la respuesta y contesta otra pregunta (lección propia, del ejecutor)
+
+**Qué pasó:** con la orden explícita de *«no cojas SCRUM-236 antes de medir que SCRUM-228 está en main»*, la primera comprobación fue un `git log --oneline origin/main | grep -iE "228|230|236"`. Devolvió tres líneas, y las tres parecían confirmar que los tres tickets estaban dentro:
+
+```
+e98b20c Merge pull request #228 from lwislg99/scrum-186-fix-comentario-fk
+c461faf Merge pull request #230 from lwislg99/scrum-189-cita-runbook
+ce5e5ae Merge pull request #236 from lwislg99/scrum-184-guard-red
+```
+
+**Ninguna de las tres habla de los tickets buscados.** Son los PR **#228**, **#230** y **#236**, que mergearon SCRUM-**186**, SCRUM-**189** y SCRUM-**184**. Los dos contadores —PR y SCRUM— corren por el mismo rango numérico y a finales de julio se solapan casi uno a uno.
+
+**Por qué:** el número del PR y el del ticket **no tienen ninguna relación**, pero se parecen lo bastante como para que un `grep` los confunda. Y el `grep` no falla: devuelve exactamente lo que se le pidió. Es la forma más limpia de un falso positivo — la herramienta funciona, la pregunta estaba mal hecha.
+
+**Quién lo detectó:** el propio ejecutor, y **no por el número: por la columna de al lado.** El mensaje de merge nombra la RAMA (`from lwislg99/scrum-186-…`), y ahí se ve que el ticket no cuadra. Si el formato de merge de GitHub no incluyera el nombre de la rama, la comprobación habría dado verde y SCRUM-236 se habría arrancado sobre una base inexistente.
+
+**Coste evitado:** SCRUM-236 existe precisamente para **no tener dos formas de contestar la misma pregunta** (reutilizar el tratamiento de «Sin asignar» de SCRUM-228 en vez de reimplementarlo). Arrancarlo sin su base habría producido justo la segunda implementación que el ticket viene a impedir.
+
+**La segunda mitad de la lección, del mismo día:** al medir si la rama de SCRUM-228 estaba publicada, `ls-remote` (consulta viva a GitHub, no refs locales) dijo que **no existía**. Media hora después existía, en `ed96e93`. Las dos mediciones eran correctas: la rama se pusheó entremedias. **Una medición de un remoto es un instante, no un estado** — y al reportarla hay que decir contra qué `sha` de `origin/main` se hizo, o dos sesiones honestas se contradicen sin poder reconciliarse.
+
+**Regla derivada: R9** (arriba, en LAS REGLAS).
 
 ---
 
