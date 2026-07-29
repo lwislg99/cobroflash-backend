@@ -92,7 +92,14 @@ export type AuditAction =
  * Las que EXIGEN constancia: si no se pueden registrar, la acción NO ocurre.
  * Lista CERRADA — ampliarla es una decisión del fundador, no un detalle de implementación.
  */
-export const ACCIONES_BLOQUEANTES = ['factura_emitida', 'aviso_ambar_decidido'] as const;
+// SCRUM-218b · `cambio_flag` entra aquí por decisión del fundador (29-jul-2026), y el motivo
+// es de ALCANCE: la transacción de `cambiarFlagFiscal` protege ESE camino; esta lista protege
+// el que alguien escriba mañana, en COMPILACIÓN y sin depender de ningún call site. Encender
+// `INVOICING_ES_ENABLED` es el instante en que un profesional empieza a emitir con efectos
+// fiscales: si eso llegara a registrarse con el `recordAudit` fire-safe, un fallo del log se
+// tragaría y nos quedaríamos sin poder acreditar desde cuándo emite. Con la acción aquí, `tsc`
+// lo impide ANTES de que exista el segundo escritor.
+export const ACCIONES_BLOQUEANTES = ['factura_emitida', 'aviso_ambar_decidido', 'cambio_flag'] as const;
 export type AuditActionBloqueante = (typeof ACCIONES_BLOQUEANTES)[number];
 /** Todo lo demás. Es lo ÚNICO que `recordAudit` (fire-safe) acepta. */
 export type AuditActionFireSafe = Exclude<AuditAction, AuditActionBloqueante>;
