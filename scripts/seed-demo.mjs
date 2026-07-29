@@ -7,12 +7,47 @@
  * (alimenta el "dinero en juego" de la Home). Idempotente: cada ejecución borra
  * SOLO los datos transaccionales del demo y los recrea igual.
  *
- * Uso:  node scripts/seed-demo.mjs        (aplica: es un script de reset)
+ * Uso:  npm run build && node scripts/seed-demo.mjs      (aplica: es un script de reset)
+ *
+ * Requiere `npm run build` porque importa el asignador de números COMPILADO
+ * (`dist/`), igual que `seed-video.mjs`.
+ *
+ * ⚠️ La BD la decide quien ejecuta, vía `DATABASE_URL`. Sin ella, Prisma carga
+ * `.env`, que apunta a PRODUCCIÓN — y esto es un script de RESET. Ver SCRUM-205.
+ *
+ * SCRUM-204 · NUMERACIÓN: sale de `allocateInvoiceNumber()` dentro de la misma
+ * transacción que crea el documento — PROHIBIDO fabricarla a mano (regla del embudo,
+ * SCRUM-203). Antes se inventaba aquí el literal `AAAA-FG-NNN`.
+ *
+ * QUÉ SALE, MEDIDO (no deducido): el merchant demo es modo **'demo'**, no 'receipt'
+ * — `getEmissionMode` lo desvía por `isDemoMerchant` ANTES de mirar el flag
+ * (emission.service.ts:39, regla 8): factura completa con marca de agua
+ * "DEMO — no válida fiscalmente", NO justificante. Así que el embudo devuelve
+ * `2026-FG-001…` y el demo enseña EXACTAMENTE lo mismo que antes: el cambio es de
+ * dónde sale el número, no lo que se ve.
+ *
+ * ⚠️ Esto DESMIENTE la premisa con la que se abrió SCRUM-204 («el demo pasará a
+ * enseñar J-»). Se escribió sin ejecutar `getEmissionMode`; medirlo la tumbó.
  *
  * NO toca ningún otro merchant. Los teléfonos de los clientes son ficticios y
  * el guard V0-2 (DEMO_SAFE_NUMBERS) impide cualquier envío real desde el demo.
  */
 import { PrismaClient } from '@prisma/client';
+import {
+  allocateInvoiceNumber,
+  isReceiptNumber,
+} from '../dist/modules/invoicing/domain/invoiceNumber.service.js';
+
+/**
+ * El copy del cobro NUNCA dice "factura" de un `J-` (regla 24/26, Parte M). No es un texto
+ * nuevo: es la MISMA expresión que usa el camino real en `invoiceWhatsApp.service.ts:63` al
+ * crear el Charge de una factura.
+ *
+ * Hoy en el demo siempre da "Factura", porque el modo 'demo' emite serie fiscal (ver cabecera).
+ * Se deriva igualmente en vez de escribir "Factura" fijo: si el demo cambiara de modo, el copy
+ * lo seguiría solo — que es exactamente lo que este script hacía mal con el número.
+ */
+const docLabel = (number) => (isReceiptNumber(number) ? 'Justificante' : 'Factura');
 
 const prisma = new PrismaClient();
 const DEMO_ID = 1;
@@ -63,7 +98,11 @@ async function seed() {
       defaultCurrency: 'EUR',
       invoiceSeriesPrefix: 'FG',
       invoiceSeriesYear: now.getFullYear(),
-      nextInvoiceNumber: 6, // 5 facturas sembradas
+      // SCRUM-204: la serie arranca SIN consumir y la avanza el embudo, un documento a la
+      // vez, hasta dejarla en 6. Antes se escribía el 6 a mano ("5 facturas sembradas")
+      // mientras los 5 documentos no tocaban la serie: el número correcto por el motivo
+      // equivocado, que deja de ser correcto en cuanto alguien siembra un sexto.
+      nextInvoiceNumber: 1,
       nextRectInvoiceNumber: 1,
       nextQuoteNumber: 13, // 12 presupuestos sembrados
       logoUrl: LOGO,
@@ -133,51 +172,55 @@ async function seed() {
   }
 
   // Cobro pagado + factura pagada ligados a un quote aceptado
-  let invoiceSeq = 0;
   async function paidJob(q, customer, method, paidDaysAgo) {
-    invoiceSeq += 1;
-    const number = `${now.getFullYear()}-FG-${String(invoiceSeq).padStart(3, '0')}`;
-    const charge = await prisma.charge.create({
-      data: {
-        merchantId: DEMO_ID,
-        customerId: customer.id,
-        concept: `Factura ${number}`,
-        amount: q.total,
-        currency: 'EUR',
-        method,
-        status: 'paid',
-        createdAt: daysAgo(paidDaysAgo, 12),
-        events: {
-          create: [
-            { type: 'created', ts: daysAgo(paidDaysAgo, 12), payload: {} },
-            { type: 'paid', ts: daysAgo(paidDaysAgo, 18), payload: { method } },
-          ],
+    const emitAt = daysAgo(paidDaysAgo, 12);
+    // Cobro + documento en UNA transacción: `allocateInvoiceNumber` reserva el número
+    // y avanza la serie ahí dentro, para que un fallo no deje un hueco (invoiceNumber.service).
+    const { charge, number } = await prisma.$transaction(async (tx) => {
+      const number = await allocateInvoiceNumber(tx, DEMO_ID, {}, emitAt);
+      const charge = await tx.charge.create({
+        data: {
+          merchantId: DEMO_ID,
+          customerId: customer.id,
+          concept: `${docLabel(number)} ${number}`,
+          amount: q.total,
+          currency: 'EUR',
+          method,
+          status: 'paid',
+          createdAt: emitAt,
+          events: {
+            create: [
+              { type: 'created', ts: emitAt, payload: {} },
+              { type: 'paid', ts: daysAgo(paidDaysAgo, 18), payload: { method } },
+            ],
+          },
         },
-      },
-    });
-    await prisma.invoice.create({
-      data: {
-        merchantId: DEMO_ID,
-        customerId: customer.id,
-        quoteId: q.id,
-        chargeId: charge.id,
-        number,
-        type: 'F1',
-        status: 'paid',
-        paidAt: daysAgo(paidDaysAgo, 18),
-        total: q.total,
-        currency: 'EUR',
-        lines: q.lines,
-        pdfUrl: 'PENDING_PDF', // se regenera bajo demanda (con watermark DEMO)
-        qrData: 'PENDING_QR',
-        createdAt: daysAgo(paidDaysAgo, 12),
-      },
+      });
+      await tx.invoice.create({
+        data: {
+          merchantId: DEMO_ID,
+          customerId: customer.id,
+          quoteId: q.id,
+          chargeId: charge.id,
+          number,
+          type: isReceiptNumber(number) ? 'JUST' : 'F1', // V0-0 (regla 26)
+          status: 'paid',
+          paidAt: daysAgo(paidDaysAgo, 18),
+          total: q.total,
+          currency: 'EUR',
+          lines: q.lines,
+          pdfUrl: 'PENDING_PDF', // se regenera bajo demanda (con watermark DEMO)
+          qrData: 'PENDING_QR',
+          createdAt: emitAt,
+        },
+      });
+      return { charge, number };
     });
     await prisma.quote.update({ where: { id: q.id }, data: { chargeId: charge.id } });
     await prisma.customerEvent.create({
       data: {
         merchantId: DEMO_ID, customerId: customer.id, type: 'payment_received',
-        title: 'Pago recibido', detail: `${q.total} EUR · Factura ${number}`,
+        title: 'Pago recibido', detail: `${q.total} EUR · ${docLabel(number)} ${number}`,
         createdAt: daysAgo(paidDaysAgo, 18),
       },
     }).catch(() => {});
@@ -200,23 +243,28 @@ async function seed() {
   // 1 ACEPTADO con COBRO PENDIENTE (el "dinero en juego" nº1)
   const q5 = await quote({ customer: lucia, createdDaysAgo: 4, status: 'accepted', extra: { acceptedAt: daysAgo(3), decisionChannel: 'whatsapp', decisionComment: 'Firmado desde el móvil' }, lines: [L('Reforma de baño: fontanería completa', 1, 1650), L('Instalación de plato de ducha', 1, 320)] });
   {
-    invoiceSeq += 1;
-    const number = `${now.getFullYear()}-FG-${String(invoiceSeq).padStart(3, '0')}`;
-    const charge = await prisma.charge.create({
-      data: {
-        merchantId: DEMO_ID, customerId: lucia.id,
-        concept: `Factura ${number}`, amount: q5.total, currency: 'EUR',
-        method: 'card', status: 'pending', createdAt: daysAgo(3, 12),
-        payMethods: ['card', 'bizum', 'transfer'],
-        events: { create: [{ type: 'created', ts: daysAgo(3, 12), payload: {} }] },
-      },
-    });
-    await prisma.invoice.create({
-      data: {
-        merchantId: DEMO_ID, customerId: lucia.id, quoteId: q5.id, chargeId: charge.id,
-        number, type: 'F1', status: 'pending', total: q5.total, currency: 'EUR',
-        lines: q5.lines, pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR', createdAt: daysAgo(3, 12),
-      },
+    const emitAt = daysAgo(3, 12);
+    const charge = await prisma.$transaction(async (tx) => {
+      const number = await allocateInvoiceNumber(tx, DEMO_ID, {}, emitAt);
+      const charge = await tx.charge.create({
+        data: {
+          merchantId: DEMO_ID, customerId: lucia.id,
+          concept: `${docLabel(number)} ${number}`, amount: q5.total, currency: 'EUR',
+          method: 'card', status: 'pending', createdAt: emitAt,
+          payMethods: ['card', 'bizum', 'transfer'],
+          events: { create: [{ type: 'created', ts: emitAt, payload: {} }] },
+        },
+      });
+      await tx.invoice.create({
+        data: {
+          merchantId: DEMO_ID, customerId: lucia.id, quoteId: q5.id, chargeId: charge.id,
+          number,
+          type: isReceiptNumber(number) ? 'JUST' : 'F1', // V0-0 (regla 26)
+          status: 'pending', total: q5.total, currency: 'EUR',
+          lines: q5.lines, pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR', createdAt: emitAt,
+        },
+      });
+      return charge;
     });
     await prisma.quote.update({ where: { id: q5.id }, data: { chargeId: charge.id } });
   }
