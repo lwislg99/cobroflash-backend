@@ -144,3 +144,97 @@ test('SCRUM-228 (autoprueba) · el suelo anti-verde-hueco salta si el escenario 
     '🔴 el suelo no salta: entonces no es un suelo, es un adorno',
   );
 });
+
+// ── el invariante también tiene que sobrevivir al ENDPOINT ────────────────────────────────
+//
+// Todo lo de arriba prueba la función pura. Pero la función puede ser perfecta y la pantalla
+// mentir igual: basta con que `/pl` le pase LISTAS DISTINTAS de las que usa para los totales —
+// una segunda consulta con su propio `where`, por ejemplo. Entonces «las partes suman» pasa a
+// ser una coincidencia entre dos consultas que nadie ata, y se rompe el día que una cambia.
+//
+// Por eso esto mira el árbol del endpoint y exige que los argumentos sean los MISMOS
+// identificadores que alimentan los bucles del total. AST y no `grep`: los nombres aparecen
+// en los comentarios que explican justamente esto.
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
+
+test('SCRUM-228 · el desglose come de las MISMAS listas que los totales', () => {
+  const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const ruta = path.join(RAIZ, 'src/modules/reports/app/routes/reports.routes.ts');
+  const sf = ts.createSourceFile(ruta, fs.readFileSync(ruta, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+
+  let args = null;
+  const v = (n) => {
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'desglosarPorEmpleado') {
+      const o = n.arguments[0];
+      if (o && ts.isObjectLiteralExpression(o)) {
+        args = {};
+        for (const p of o.properties) {
+          if (ts.isPropertyAssignment(p)) args[p.name.getText(sf)] = p.initializer.getText(sf);
+          else if (ts.isShorthandPropertyAssignment(p)) args[p.name.text] = p.name.text;
+        }
+      }
+    }
+    ts.forEachChild(n, v);
+  };
+  ts.forEachChild(sf, v);
+
+  assert.ok(
+    args,
+    '🔴 ESCÁNER CIEGO: no encuentro la llamada a `desglosarPorEmpleado` en /pl. Si el desglose ' +
+      'se movió o se renombró, este guard dejó de vigilar nada.',
+  );
+
+  // Los identificadores que alimentan los totales mensuales del endpoint.
+  assert.equal(
+    args.invoices, 'paidInvoices',
+    '🔴 el desglose NO recibe `paidInvoices`, que es la lista de la que sale `totals.revenue`. ' +
+      'Si come de otra consulta, que las partes sumen el total pasa a ser una coincidencia.',
+  );
+  assert.equal(
+    args.expenses, 'expenses',
+    '🔴 el desglose NO recibe `expenses`, que es la lista de la que sale `totals.expenses`.',
+  );
+});
+
+// ── la pantalla: un subtotal parcial no puede llamarse «total» ─────────────────────────────
+//
+// LO QUE ESTO NO CUBRE, dicho en vez de fingirlo: no hay banco de DOM en el proyecto y montar
+// uno significaría una dependencia nueva (jsdom/linkedom → regla 36, lo aprueba el fundador).
+// Así que la aritmética del navegador NO se ejecuta aquí; lo que se fija es la propiedad que
+// convierte un número correcto en un número engañoso.
+//
+// La propiedad: con TODO seleccionado el pie es el total del año y cuadra con el KPI de arriba.
+// En cuanto se quita a alguien deja de ser un total, y tiene que dejar de llamarse así. Un
+// subtotal con cara de total es exactamente cómo se pierde la confianza en una pantalla de
+// dinero: quien lo mira no vuelve a fiarse ni de las cifras que sí eran correctas.
+test('SCRUM-228 · el pie solo se llama TOTAL cuando está todo dentro', () => {
+  const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const vista = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/reportsView.js'), 'utf8');
+
+  const i = vista.indexOf('function buildDesgloseEmpleado');
+  assert.notEqual(
+    i, -1,
+    '🔴 ESCÁNER CIEGO: no encuentro `buildDesgloseEmpleado` en reportsView.js. Si el desglose ' +
+      'se renombró, este guard dejó de vigilar nada.',
+  );
+  const bloque = vista.slice(i);
+
+  // Sin comentarios: el literal vigilado vive en la prosa que explica la regla (SCRUM-176/168/3/193).
+  const codigo = bloque.split(/\r?\n/).filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n');
+
+  const usosDeTotal = [...codigo.matchAll(/'TOTAL/g)];
+  assert.ok(usosDeTotal.length > 0, '🔴 ESCÁNER CIEGO: el pie ya no dice TOTAL en ningún caso');
+
+  for (const m of usosDeTotal) {
+    const contexto = codigo.slice(Math.max(0, m.index - 120), m.index);
+    assert.match(
+      contexto, /todos\s*\?/,
+      '🔴 el pie de la tabla se llama «TOTAL» sin comprobar que estén TODAS las filas dentro.\n\n' +
+        '  Con una selección parcial eso es un SUBTOTAL con cara de total. El usuario lo compara\n' +
+        '  con el KPI de ingresos de arriba, no le cuadra, y deja de fiarse de toda la pantalla.',
+    );
+  }
+});
