@@ -450,22 +450,94 @@ importes* se consignan.
 `ImporteRectificacion` — de modo que la elección cambia **qué se remite a la AEAT**, no solo
 una etiqueta.
 
-**Estado en el producto (verificado, SCRUM-145):** hoy la R1 se emite con
-`FacturasRectificadas` (identificando la factura original) y con el **importe total de la
-rectificativa**, y **no** se emite `TipoRectificativa` ni `ImporteRectificacion` — ambos son
-`minOccurs="0"` en el esquema, así que el registro es estructuralmente válido, pero está
-**incompleto en su calificación fiscal** mientras no haya dictamen.
+> ⚠️ **SECCIÓN CORREGIDA EL 29-JUL-2026 (SCRUM-216).** La versión anterior afirmaba que
+> «nuestras R1 consignan el total corregido, no el delta» y que el registro «es
+> estructuralmente válido». **Las dos afirmaciones eran falsas**, y la pregunta que se le
+> iba a llevar al asesor describía un sistema que no existe. Se reescribe con la medición
+> delante. Cómo se detectó y qué regla sale de ello: `docs/ERRORES_ASESOR.md`.
 
-**Lo que necesitamos del asesor:**
+#### Estado REAL en el producto — medido, no recordado
 
-1. ¿Nuestras R1 (que hoy consignan el total corregido, no el delta) son **por sustitución**?
-2. Si lo son: ¿qué debe llevar exactamente `ImporteRectificacion` (base y cuota **rectificadas**,
-   es decir las de la factura original que se sustituye)?
-3. ¿Cambia la respuesta según el motivo (error de datos vs. modificación de base imponible del
-   art. 80 LIVA — impago, devolución, descuento posterior)?
+**Nuestras R1 consignan el DELTA, no el total corregido.** Al rectificar, el producto crea la
+rectificativa con el importe de la original **en negativo** y las líneas con el precio negado:
 
-**Impacto:** medio. No bloquea la emisión local, pero **sí** bloquea que las rectificativas se
-puedan remitir correctamente cuando se active la remisión (SCRUM-146).
+```ts
+// src/modules/system/app/routes/invoicesAdmin.routes.ts:720
+total: (-Number(original.total)).toFixed(2),
+lines: negLines,   // :702-704 — las líneas de la original con el precio negado
+```
+
+Una factura de 121,00 € produce una R1 de **−121,00 €**. Eso es la **diferencia** entre lo
+facturado y lo que debería haberse facturado, no el importe corregido.
+
+**Y hay una tercera fuente, que ya lo decía y nadie contrastó:** el constructor de registros
+lo lleva escrito desde S1-C, con una marca de verificación pendiente que nunca se resolvió:
+
+```ts
+// src/modules/fiscal/verifactu/registro.builder.ts:243
+tipoRectificativa?: 'S' | 'I'; // YaQu usa 'I' (incremental: líneas en negativo) [VALIDAR asesor S1-F]
+```
+
+Las tres fuentes, cara a cara:
+
+| Fuente | Qué dice | ¿Coincide con el código? |
+|---|---|---|
+| **Este expediente (P12, versión anterior)** | «consignan el total corregido» → apunta a **S** | ❌ No |
+| **El código** (`invoicesAdmin.routes.ts:720`) | total negado, líneas negadas → **el delta** | — (es la referencia) |
+| **`registro.builder.ts:243`** (S1-C) | «YaQu usa **I** (incremental: líneas en negativo)» | ✅ Sí |
+
+Terminología del esquema oficial, para que la pregunta no se pierda en los nombres: el XSD
+documenta `S` como **SUSTITUTIVA** e `I` como **INCREMENTAL**, y define `ImporteRectificacion`
+(`DesgloseRectificacionType`) como *«Desglose de Base y Cuota **sustituida** en las Facturas
+Rectificativas sustitutivas»*.
+
+#### Corrección adicional: el registro de hoy NO es válido
+
+La versión anterior decía que, al ser `TipoRectificativa` e `ImporteRectificacion`
+`minOccurs="0"`, el registro «es estructuralmente válido». **Válido contra el esquema sí;
+aceptado por la AEAT no.** El catálogo oficial de errores lo rechaza:
+
+- **`1114`** — *rectificativa sin `TipoRectificativa`* → **rechazo**. Hoy lo pisa **cada** R1.
+- **`1118`** — si es por sustitución, `ImporteRectificacion` es **obligatorio**.
+- **`1119`** — si **no** es por sustitución, `ImporteRectificacion` **no debe** llevar valor.
+
+Que un campo sea opcional en el XSD no significa que se pueda omitir: **omitir un campo que la
+validación de negocio exige no es abstenerse, es garantizar el rechazo.**
+
+#### La pregunta para el asesor
+
+> **Nuestras rectificativas consignan el DELTA (el importe de la factura original en negativo),
+> no el total corregido. ¿Procede entonces `TipoRectificativa = I` (incremental / por
+> diferencias), o hay que rehacer cómo se generan para que consignen el total corregido y usar
+> `S` (sustitutiva)?**
+
+Y, encadenadas:
+
+1. Si la respuesta es **`I`**: ¿se confirma que `ImporteRectificacion` **no** debe emitirse
+   (código `1119`)?
+2. Si la respuesta es **`S`**: además de la etiqueta, habría que cambiar los importes de la
+   propia rectificativa. ¿Qué debe llevar exactamente `ImporteRectificacion` — la base y cuota
+   de la factura **sustituida** (la original), como sugiere la documentación del esquema?
+3. ¿Cambia la respuesta según el motivo (error de datos vs. modificación de la base imponible
+   del art. 80 LIVA — impago, devolución, descuento posterior)? Es decir: **¿puede convivir el
+   mismo sistema con las dos formas**, o hay que elegir una para todo?
+
+#### Consecuencia de cada respuesta (para dimensionar el trabajo antes de la cita)
+
+| Respuesta | Qué implica en el producto |
+|---|---|
+| **`I` (incremental)** | **Una constante.** Los importes actuales ya encajan: la R1 consigna el delta y `ImporteRectificacion` se queda fuera. Cambia una línea (`MODO_TIPO_RECTIFICATIVA`) y las rectificativas pasan a declararse. |
+| **`S` (sustitutiva)** | **Hay que cambiar cómo se CREAN las rectificativas**, no solo cómo se declaran. Una R1 que consigne el delta y se etiquete `S` declara un importe que no es el corregido — y eso queda **sellado en la huella** VeriFactu, corregible solo con otra rectificativa (regla 29). Es un cambio en `invoicesAdmin.routes.ts`, no un flag. |
+
+**Estado en el código mientras no haya respuesta (SCRUM-216):** las dos salidas están
+construidas y validan contra el esquema, y la rectificativa **se bloquea**: queda fuera del
+registro con su motivo escrito, en vez de emitirse sin `TipoRectificativa` (que sería un `1114`
+seguro) o con un valor elegido por el código. **La rectificativa en sí se emite y se entrega al
+cliente igual**: lo único que espera es su registro fiscal.
+
+**Impacto:** **alto** (subido desde «medio»). No bloquea la emisión local, pero **hoy toda R1
+sería rechazada** por la AEAT en cuanto se active la remisión, y si la respuesta es `S` el
+arreglo no es una etiqueta sino un cambio en cómo se generan las rectificativas.
 
 ---
 
@@ -484,7 +556,7 @@ puedan remitir correctamente cuando se active la remisión (SCRUM-146).
 | P9 | TipoFactura VeriFactu | F1 estándar; el resto es técnico (SIF-1), no fiscal puro | Alta en el encaje legal |
 | P10 | Liberación tras R1 | Decisión de producto, no fiscal; solo la re-agrupación por fecha original es obligatoria si se liberase | Alta |
 | P11 | F1 sin NIF del destinatario | El esquema prevé AMBAS salidas (`FacturaSinIdentifDestinatarioArt61d` / `FacturaSimplificadaArt7273`); hoy no se marca ninguna. Falta saber cuál procede y si obliga a pedir NIF por encima del límite del art. 4 | **Baja — decide alcance de producto** (ver P6) |
-| P12 | `TipoRectificativa` S/I de las R1 | Nuestras R1 consignan el total corregido → apunta a «por sustitución», pendiente de confirmar junto con qué lleva `ImporteRectificacion` | Media — el encaje parece claro, la forma exacta no |
+| P12 | `TipoRectificativa` S/I de las R1 | **Corregido 29-jul (SCRUM-216):** nuestras R1 consignan el **DELTA** (total en negativo), no el total corregido — medido en `invoicesAdmin.routes.ts:720`. Eso apunta a **`I`**, y coincide con lo que `registro.builder.ts:243` viene diciendo desde S1-C. **Este expediente afirmaba lo contrario.** La pregunta es si procede `I` o si hay que rehacer las R1 para usar `S` | **Ninguna — hay que preguntarlo.** La versión anterior decía «media» sobre una premisa falsa |
 
 **La pregunta con mayor impacto económico/de producto es P6 (umbral de 3.000 € del art. 4.1
 RD 1619/2012)** — si el asesor confirma que el vertical de YaQu encaja, cambia

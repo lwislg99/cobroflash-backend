@@ -533,7 +533,12 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         const invoiceAmount = grossOfLines(scaledLines);
 
         const invoice = await prisma.$transaction(async (tx) => {
-          const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId);
+          const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
+            camino: 'C1',
+            // Quien emite aquí NO es el pro: es el cliente final pulsando en WhatsApp.
+            // `ref` nombra la VÍA, nunca el token (sería guardar una credencial).
+            actor: { tipo: 'cliente_final', ref: 'quote_token' },
+          });
           return tx.invoice.create({
             data: {
               merchantId: quote.merchantId,

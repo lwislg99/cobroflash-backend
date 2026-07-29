@@ -206,5 +206,56 @@ export const config = {
     console.warn(msg);
   }
 
+  /**
+   * SCRUM-217 (AEAT 1177) — `VERIFACTU_ID_SISTEMA` es fail-open de manual arriba: el `|| ''`
+   * convierte «no configurado» en «configurado a vacío» y sigue.
+   *
+   * La AEAT exige EXACTAMENTE dos posiciones, cada una letra mayúscula (salvo la Ñ) o dígito.
+   * Un valor vacío ya lo para el emisor (`verifactu_productor_no_configurado`), pero un valor
+   * PRESENTE Y MAL —`abc`, `a`, `ñ1`, `a1`— pasa ese guard y llega a la AEAT como error 1177.
+   * Ese es el hueco de verdad: lo que no está no engaña a nadie; lo que está mal, sí.
+   *
+   * PURA para poder probarla con el valor exacto sin tocar `process.env`.
+   */
+  export function invalidVerifactuIdSistema(value: string | undefined | null): string | null {
+    const v = (value ?? '').trim();
+    if (!v) return 'no está configurado';
+    if (v.length !== 2) return `debe tener EXACTAMENTE 2 caracteres (tiene ${v.length}: ${JSON.stringify(v)})`;
+    if (!/^[0-9A-Z]{2}$/.test(v) || v.includes('Ñ')) {
+      return `solo admite mayúsculas (salvo Ñ) o dígitos: ${JSON.stringify(v)}`;
+    }
+    return null;
+  }
+
+  /**
+   * Arranque: ruidoso si falta, y REVIENTA si está pero mal.
+   *
+   * ⚠️ La asimetría es deliberada y conviene entenderla antes de "arreglarla": hoy las cinco
+   * `VERIFACTU_*` van VACÍAS A PROPÓSITO (ver el comentario del bloque, pendiente S1-E), así que
+   * hacer que la AUSENCIA reviente tumbaría producción en el arranque siguiente. La ausencia ya
+   * es fail-closed donde importa —el emisor no construye el registro sin ella— y aquí solo hace
+   * falta que se vea en el log. Un valor MALFORMADO no lo para nadie: por eso ese sí revienta.
+   */
+  export function assertVerifactuIdSistema(): void {
+    const bruto = process.env.VERIFACTU_ID_SISTEMA;
+    const motivo = invalidVerifactuIdSistema(bruto);
+    if (!motivo) return;
+
+    if (!bruto || !bruto.trim()) {
+      if (config.NODE_ENV === 'production') {
+        console.error(
+          `🚨 [verifactu] VERIFACTU_ID_SISTEMA ${motivo} — ningún registro fiscal se podrá emitir ` +
+          `(el emisor falla en claro) hasta que se configure en Railway.`,
+        );
+      }
+      return;
+    }
+    const msg =
+      `🚨 [verifactu] VERIFACTU_ID_SISTEMA ${motivo}. La AEAT lo rechaza con el error 1177 y el ` +
+      `emisor NO puede detectarlo (solo comprueba que no esté vacío). Corrígelo en Railway.`;
+    if (config.NODE_ENV === 'production') throw new Error(msg);
+    console.warn(msg);
+  }
+
   export const BASE_URL = config.PUBLIC_BASE_URL;
   

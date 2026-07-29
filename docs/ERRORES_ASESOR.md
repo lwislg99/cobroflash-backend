@@ -36,6 +36,18 @@ Los dos eslabones fallan igual y en silencio: el trabajo existe, el mensaje dice
 
 **R6 · Coordinar recursos compartidos ANTES de repartir tareas**, no después del choque. Staging, `main`, un archivo caliente: si dos carriles pueden tocarlo, decirlo al asignar.
 
+**R8 · Un guard nuevo se prueba TAMBIÉN contra los guards que ya existen, no solo contra el defecto que viene a cerrar.** Cuando varios mecanismos pueden rechazar, excluir o bloquear de forma independiente, la pregunta obligatoria es **«¿qué queda cuando actúan TODOS a la vez?»** — y muy en particular el **caso degenerado: que no quede nada**. Ese estado casi nunca está en el alcance de ningún ticket, así que no lo cubre ningún test, y **un diff no lo enseña, porque ninguna línea está mal**: el defecto vive en la composición, no en las piezas.
+
+Tres cosas concretas, por orden de coste:
+
+1. **Correr la suite ENTERA, no los tests del ticket.** Es la única capa que ve la composición. Y la señal es específica: **un test AJENO que cae por un motivo que no es su tema**. Si un test de otro ticket falla y su mensaje no habla de lo que ese test vigila, no es un fixture que haya que ajustar — es que el sistema entró en un estado nuevo. Ajustarlo sin entenderlo entierra el hallazgo.
+2. **Preguntarse por el vacío.** Si el mecanismo filtra, ¿el consumidor aguanta cero elementos? Los formatos con `minOccurs` ≥ 1, los agregados, los ZIP y los informes suelen romperse ahí, y romperse **en silencio**.
+3. **Al añadir el guard N-ésimo, listar los N−1 anteriores** que pueden actuar sobre el mismo objeto. Si la lista no cabe en una línea, ese es el aviso.
+
+**Por qué es una familia propia y no un caso de R1:** aquí nadie afirmó nada sin comprobarlo. Todo estaba medido y todo estaba bien **por separado**. Es el reverso de *«prohibición sin mecanismo»*: **exceso de mecanismos que nadie compuso**. Y se parece al #12 —probar con un caso fuera del mecanismo— pero una capa más arriba: el caso está *dentro* de cada mecanismo y *fuera* de todos a la vez.
+
+*(Origen: incidente #15, 29-jul-2026. Se numera R8 y no R7 porque R7 existe en una rama sin mergear.)*
+
 ---
 
 ## REGISTRO DE INCIDENTES
@@ -165,6 +177,32 @@ git worktree remove ../wt-loquesea                 # ahora sí
 
 **Nota:** es la familia de #8, #9 y #10 (confiar en lo propio), con una vuelta más: allí la herramienta hacía su trabajo sobre el objeto equivocado; aquí directamente **no llegué a ejecutar el objeto**, y el resto de verificaciones —reales y buenas— me dieron la sensación de haberlo hecho.
 
+### 2026-07-29 · #15 — Tres guards correctos por separado produjeron juntos un estado que ninguno contemplaba (lección propia, del ejecutor)
+
+> **Nota de numeración:** salta el **#14**, que existe en una rama sin mergear (`docs(errores-asesor): #14 la fuga de credencial + R7`). Se deja su hueco a propósito para que las dos entradas no colisionen al entrar. Misma razón para usar **R8** y no R7.
+
+**Qué pasó:** tres tickets seguidos de la cadena fiscal añadieron, cada uno, un motivo por el que una factura **se excluye** del registro VeriFactu en vez de declararse mal:
+
+- **SCRUM-209** — un tramo de IVA que no se puede calificar con certeza (el 0 %).
+- **SCRUM-215** — una factura sin destinatario identificado, mientras no haya dictamen.
+- **SCRUM-216** — una rectificativa cuyo tipo (`S`/`I`) no está confirmado.
+
+Los tres son correctos. Los tres tienen sus tests, probados en rojo. Los tres se revisaron con su diff delante y **ninguno estaba mal**.
+
+Juntos producen un estado que no está en el alcance de ninguno: **un ejercicio en el que TODAS las facturas caen en alguna de las tres exclusiones genera un envelope con la cabecera y CERO `RegistroFactura`** — y eso **no valida** contra el esquema, que exige al menos uno (`Missing child element(s)`). O sea: tres mecanismos construidos para no emitir un documento inválido acabaron, entre los tres, emitiendo uno.
+
+**Y no es un caso de laboratorio.** En el vertical de oficios el cliente sin NIF es lo normal, así que un merchant cuyo ejercicio sean todo facturas a particulares cae **entero** en la exclusión de SCRUM-215. No hace falta una combinación rara: basta un fontanero con un año normal.
+
+**Por qué:** cada ticket revisó **su** diff y **sus** tests, que es lo correcto y no habría bastado en ningún caso. El defecto no está *en* ninguno de los tres: está en su **composición**. El estado «no queda nada que declarar» no aparece en el alcance de ninguno, así que ningún test lo cubría — y un diff no lo enseña, porque no hay ninguna línea equivocada que mirar.
+
+**Quién lo detectó:** `npm test` **completo**. Y de la forma más indirecta posible: cayó un test de **otro** ticket (`SCRUM-209 · una rectificativa (importes en negativo) SÍ se clasifica y valida`) por un motivo que **no tenía nada que ver con su tema** — no fallaba la clasificación del desglose, fallaba que ya no había registro que validar. Ese «un test ajeno cae por un motivo que no es el suyo» fue toda la señal.
+
+**Lo que lo hace peligroso:** los tres guards siguen en verde mientras el sistema entrega un documento inválido. No hay ningún rojo que apunte al problema, porque **cada pieza está haciendo exactamente lo que se le pidió**. Es el primo del #12 —el caso de prueba fuera del mecanismo— pero una capa más arriba: aquí el caso de prueba está *dentro* de cada mecanismo y *fuera* de todos a la vez.
+
+**Arreglado:** sin registros no se entrega documento — el servicio devuelve vacío, el ZIP no adjunta el fichero de ese ejercicio y el endpoint suelto responde `409` con los motivos de cada exclusión. Entregar un XML inválido es lo que la cadena entera venía a evitar; entregarlo en silencio, peor.
+
+**Regla derivada: R8** (arriba, en LAS REGLAS).
+
 ---
 
 ## PATRÓN COMÚN (lo que de verdad hay que corregir)
@@ -172,6 +210,13 @@ git worktree remove ../wt-loquesea                 # ahora sí
 **Ocho de los diez incidentes son la misma cosa: afirmar el estado del mundo sin comprobarlo.** Un reporte, un síntoma, una suposición, una ausencia de mención o **la salida de un comando** se convirtieron en "esto es así" — y de ahí salieron tickets con prioridad alta, tareas manuales para el fundador, un ticket cerrado en falso y `main` en rojo mientras el arreglo parecía entregado.
 
 Son #1, #2, #3, #4, #7, #8, #9 y #10. Los otros dos (#5 y #6) son de otra familia: **actuar sin anticipar** — repartir tres sesiones sobre una BD sin turnos, y proponer los worktrees *después* de que dos sesiones se pisaran. Ahí el fallo no fue creerse algo, fue no haberlo pensado antes.
+
+**Los posteriores han abierto dos familias más, y conviene no meterlas en el saco de la primera:**
+
+- **#12 y #13 — verificar de verdad, pero el objeto equivocado.** Un guard probado en rojo con un caso que caía *fuera* del mecanismo que vigilaba, y un job de CI cuyas piezas se comprobaron una a una sin ejecutarlo nunca. Aquí sí se comprobó; lo que falló fue **sobre qué**.
+- **#15 — composición.** Tres guards correctos, cada uno medido y probado en rojo, que **juntos** producen un estado que ninguno contempla. Es la primera vez que el defecto no está en ninguna pieza: está entre ellas. No se caza leyendo diffs —no hay línea mala que leer— sino **corriendo la suite entera** y desconfiando cuando cae un test ajeno por un motivo que no es el suyo.
+
+Esa última es la que más cuesta ver, porque **todos los indicadores están en verde mientras el sistema hace algo mal**: cada mecanismo está cumpliendo exactamente su encargo.
 
 ### La evolución importa: el objeto de la confianza se ha movido
 

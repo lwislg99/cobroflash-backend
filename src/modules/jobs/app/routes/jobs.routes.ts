@@ -6,7 +6,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: dinero = admin)
 import { seesOnlyOwnJobs, seesAllJobs, adminOnlyJobField } from '../../../../core/http/roleCapabilities'; // SCRUM-147 / SCRUM-164
 import { canTransition, estadoCobroFor, JOB_TIPOS_OPERACION } from '../../domain/job.service';
-import { recordAudit } from '../../../system/audit.service'; // SCRUM-66: traza de tipo_operacion_elegido
+import { recordAudit, actorDeRequest } from '../../../system/audit.service'; // SCRUM-66 · SCRUM-207
 import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo } from '../../../quotes/domain/billingPlan';
 import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; // SCRUM-34
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
@@ -563,7 +563,9 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     const amount = grossOfLines(scaledLines);
 
     const invoice = await prisma.$transaction(async (tx) => {
-      const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId);
+      const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
+        camino: 'C2', actor: actorDeRequest(req),
+      });
       return tx.invoice.create({
         data: {
           merchantId: quote.merchantId,
@@ -683,6 +685,7 @@ router.post('/:id/consolidar-albaranes', requireRole('admin'), async (req, res) 
       customerId: job.customerId,
       currency: merchant.defaultCurrency || 'EUR',
       taxId: merchant.taxId,
+      actor: actorDeRequest(req),
       grupos: grupos.map((g) => ({
         mesLabel: g.mesLabel,
         albaranes: g.albaranes.map((a) => {

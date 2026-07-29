@@ -14,6 +14,7 @@ import { ZipArchive } from 'archiver';
 import fs from 'fs';
 import { ensureInvoicePdf } from '../../../../lib/invoicing';
 import { buildVerifactuRegistrosXml } from '../../../invoicing/domain/verifactu.service'; // SCRUM-82
+import { invalidAnioFiscal } from '../../../../core/validation/fiscalInput'; // SCRUM-217
 import {
   construirCsvsDelPaquete, csvBody, csvRow, csvNum, MAX_FACTURAS_ZIP, resolverEntregaZip, construirLeeme,
   buildClientes, buildFacturas, buildCobros, buildTrabajos, buildPresupuestos,
@@ -444,7 +445,14 @@ router.get('/fees.csv', async (req, res) => {
 // registro fiscal no es acción de Técnico (S1, patrón SCRUM-54).
 router.get('/verifactu.xml', requireRole('admin'), async (req, res) => {
   try {
-    const year = Number(req.query.year) || new Date().getFullYear();
+    // SCRUM-217 (1152): el año no tenía cota inferior, así que `?year=2023` pedía el export de un
+    // ejercicio ANTERIOR al 28-10-2024 — antes de que este sistema exista fiscalmente. No hacía
+    // falta ningún bug: bastaba escribir un número en la URL. Fail-closed en la puerta.
+    const year = req.query.year === undefined ? new Date().getFullYear() : Number(req.query.year);
+    const motivoAnio = invalidAnioFiscal(year);
+    if (motivoAnio) {
+      return res.status(400).json({ error: 'anio_invalido', message: `El año pedido ${motivoAnio}.` });
+    }
 
     const merchant = await prisma.merchant.findUnique({ where: { id: req.merchantId } });
     if (!merchant) return res.status(404).json({ error: 'not_found' });

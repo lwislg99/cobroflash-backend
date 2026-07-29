@@ -137,7 +137,10 @@ export interface RegistroAltaParams {
   tipoFactura: 'F1' | 'F2' | 'R1';
   // Solo R1:
   rectifica?: { numSerieFactura: string; fechaExpedicion: string };
-  tipoRectificativa?: 'S' | 'I'; // YaQu usa 'I' (incremental: líneas en negativo) [VALIDAR asesor S1-F]
+  // OBLIGATORIO cuando `tipoFactura === 'R1'` y hay `rectifica`. Opcional en el tipo porque solo
+  // aplica a rectificativas; su ausencia en ese caso NO se suple con un defecto — se bloquea.
+  // Ver `exigirTipoRectificativa` más abajo (SCRUM-216).
+  tipoRectificativa?: 'S' | 'I';
   descripcionOperacion: string;  // TextMax500
   // F1 exige destinatario identificado (NIF u otro); sin NIF del cliente → F2 (simplificada).
   destinatario?: { nombreRazon: string; nif: string };
@@ -178,9 +181,59 @@ function xmlEncadenamiento(e: Encadenamiento): string {
     </sum1:Encadenamiento>`;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-216 (ampliación) · EL TIPO DE UNA RECTIFICATIVA NO TIENE VALOR POR DEFECTO
+//
+// Aquí había `p.tipoRectificativa ?? 'I'`. Parecía inofensivo porque a este constructor no lo
+// llama producción (solo un test y `scripts/gen-registros-sample.mjs`), pero era la peor de las
+// dos salidas malas:
+//
+//   · OMITIR el campo garantiza el RECHAZO (AEAT **1114**) — y un rechazo SE VE.
+//   · Un DEFECTO cableado INVENTA la calificación fiscal, la declaración se ACEPTA, y queda
+//     SELLADA EN LA HUELLA (regla 29: ya no se edita ni se borra, solo se corrige con otra
+//     rectificativa). Una declaración incorrecta aceptada no se ve nunca.
+//
+// Y el valor no es una tecnicidad: `S` (sustitución) e `I` (diferencias) declaran hechos
+// distintos y arrastran `ImporteRectificacion` en sentidos opuestos (1118 lo exige para S,
+// 1119 lo prohíbe para el resto). Cuál procede es el dictamen P12 del expediente, que además
+// hoy está en contradicción con el código: nuestras R1 se crean negando la original —el
+// delta, que apuntaría a I—, mientras el expediente afirmaba lo contrario.
+//
+// Así que este constructor no elige: EXIGE el valor y, si no lo tiene, BLOQUEA.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+
+/** Se lanza si una rectificativa llega sin `TipoRectificativa`: no se inventa, se para. */
+export class TipoRectificativaAusenteError extends Error {
+  constructor(public readonly ref?: string) {
+    super(
+      `verifactu_tipo_rectificativa_ausente${ref ? `:${ref}` : ''} — una rectificativa exige ` +
+        '`TipoRectificativa` (AEAT 1114) y su valor NO se suple con un defecto: elegir entre ' +
+        'S (sustitución) e I (diferencias) es una calificación fiscal, y una vez declarada ' +
+        'queda sellada en la huella. Pásalo explícitamente o no construyas el registro.',
+    );
+    this.name = 'TipoRectificativaAusenteError';
+  }
+}
+
+function exigirTipoRectificativa(p: RegistroAltaParams): 'S' | 'I' {
+  if (!p.tipoRectificativa) throw new TipoRectificativaAusenteError(p.numSerieFactura);
+  return p.tipoRectificativa;
+}
+
 export function buildRegistroAlta(p: RegistroAltaParams): string {
   const rectificadas = p.tipoFactura === 'R1' && p.rectifica
-    ? `<sum1:TipoRectificativa>${p.tipoRectificativa ?? 'I'}</sum1:TipoRectificativa>
+    // RESOLUCIÓN DEL CONFLICTO 209↔main (29-jul-2026), CRUZADA a propósito: la LÓGICA de
+    // main con el PREFIJO de 209. Ninguno de los dos lados servía entero.
+    //   · `exigirTipoRectificativa(p)` (main, guard de SCRUM-216) sustituye al `?? 'I'` de
+    //     esta rama. Un valor por defecto ahí inventa una CALIFICACIÓN FISCAL que no ha
+    //     decidido nadie (S vs I — SEMAFORO_CALIBRACION §8.4, pendiente del asesor) y la
+    //     sella en una huella inmutable. El defecto ERA el defecto; el guard es el arreglo.
+    //   · `sum1:` (esta rama) sustituye al `sf:` de main, y no por estética: este fichero
+    //     declara `xmlns:sum1` en sus TRES raíces y NO declara `xmlns:sf` en ninguna, así
+    //     que el lado de main emitía un prefijo SIN VINCULAR — XML mal formado, no solo
+    //     inconsistente. Medido al resolver: 114 `sum1:` frente a 1 `sf:`, y ese único
+    //     `sf:` vive en el comentario de arriba que explica por qué se unificó.
+    ? `<sum1:TipoRectificativa>${exigirTipoRectificativa(p)}</sum1:TipoRectificativa>
     <sum1:FacturasRectificadas>
       <sum1:IDFacturaRectificada>
         <sum1:IDEmisorFactura>${esc(p.idEmisorFactura)}</sum1:IDEmisorFactura>

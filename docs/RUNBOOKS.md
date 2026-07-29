@@ -291,12 +291,59 @@ Caduca solo a los 45 min, así que una sesión muerta no bloquea a nadie. Para l
 `DATABASE_URL="<url de esa base>" node scripts/marcar-staging.mjs`. Detalle en
 `docs/QA/SUITE_REGRESION.md` § «El TURNO de staging».
 
+> **Si MATAS la tanda, el turno se queda TOMADO (SCRUM-207, 29-jul-2026).** Lo suelta al
+> *acabar*, no al morir: un `kill` se salta ese paso. Síntoma: la siguiente tanda no arranca
+> (exit 5) y nombra a un dueño que ya no existe. Se comprueba leyendo el marcador
+> (`shobj_description(oid,'pg_database')` → `YAQU_STAGING lock:…`) y se suelta con
+> `marcar-staging.mjs`, que lo reescribe limpio. O se esperan los 45 min. **No es un fallo
+> del lock:** caducar solo es justo lo que impide que una sesión muerta bloquee al equipo.
+>
+> **CÓMO SABER SI SIGUE VIVA, que es de donde salió todo lo anterior.** Dos trampas, y las dos
+> hacen que una tanda SANA parezca colgada:
+>
+> · **`| tail` no muestra nada hasta el final.** `tail` buferea la tubería entera, así que
+>   ~11 min de silencio son indistinguibles de un cuelgue. **Escribe a fichero y lee el
+>   fichero:** `npm run test:staging > /tmp/tanda.log 2>&1`, y sigues con `tail -f`.
+>
+> · **`ps -ef` en Git Bash NO VE los procesos de la tanda.** Solo muestra su propio árbol de
+>   sesión, así que da 0 procesos mientras el runner y sus hijos corren tan tranquilos. Es la
+>   trampa peor de las dos, porque la respuesta parece un dato objetivo. **Míralo con lo que sí
+>   ve todo Windows:**
+>   `powershell -c "Get-CimInstance Win32_Process -Filter \"Name='node.exe'\" | ft ProcessId,CommandLine"`
+>   o `tasklist //FI "PID eq <pid>"`. El PID del runner es además el dueño del turno
+>   (`lock:<host>.<pid>@…`): si ese PID vive, la tanda vive y **el turno no se toca**.
+>
+> Aprendido ejecutando, y en este orden: se leyó mal el silencio del `tail`, se confirmó el
+> «cuelgue» con un `ps -ef` que era ciego, se mató una tanda que iba perfectamente — y ese
+> `kill` fue lo que dejó el turno tomado. Los tres párrafos de este aviso son **el mismo
+> incidente**, y el error de fondo no fue esperar poco: fue tratar «no veo nada» como «no hay
+> nada».
+
 Nomenclatura fijada por carril B el 27-jul-2026 con la regla de desempate del fundador. El
 criterio para asignar el papel ha sido la AUTORIZACIÓN, no la ubicación ni el uso: las dos
 primeras están en el mismo servidor y las dos las ejercitan tandas gateadas; lo que las
 distingue es quién puede tocarlas. Se descarta llamar a `yaqu_dev_javier` "segunda BD de
 staging" (SCRUM-84) porque implicaría el régimen de `railway` y no lo tiene. Si el fundador lo
 ve de otra forma, es una línea.
+
+**EL DIFF PUEDE PEDIR UN `DROP`, Y ENTONCES EL QUE VA ATRASADO ERES TÚ (SCRUM-207, 29-jul-2026).**
+`migrate diff` compara la BD contra **tu** `schema.prisma`, no contra `main`. Si tu árbol es
+viejo y la BD ya tiene el cambio, el preview propone **borrarlo** — y `db push` **no pide
+`--accept-data-loss` para tirar un índice**, así que ahí el guard no te frena. Antes de aplicar
+nada: `git pull` y repetir el preview. **Un `DROP` inesperado en un preview casi nunca significa
+«sobra en la BD»; significa «falta en mi árbol».**
+
+> **Medido el día que apareció:** el índice `audit_log_merchant_id_entity_type_entity_id_idx` se
+> aplicó a staging **antes** de que su PR se mergeara, así que durante esa ventana la BD iba por
+> DELANTE de todos los árboles. Censo de entonces: **78 de 79 worktrees** no lo declaraban —
+> incluido el checkout principal, 15 commits por detrás— y cualquiera de ellos veía
+> `DROP INDEX` en su preview. **La ventana la abre aplicar schema a una BD compartida mientras
+> la declaración vive solo en una rama sin mergear:** mergea primero, o dilo en voz alta.
+>
+> ⚠️ **Y al censar, mira DENTRO del bloque `model`.** El primer censo dio los 79 en verde y era
+> falso: `@@index([merchantId, entityType, entityId])` existe **también en `Attachment`**, así que
+> un grep sobre el fichero casa siempre. Mismo patrón que la trampa de autorreferencia — el
+> literal que buscas vive en otro sitio del mismo fichero.
 
 **Prevención:** cada entrada de `docs/MIGRATIONS_PENDING.md` lleva las tres como checkbox; una
 sin marcar = migración NO aplicada.
