@@ -44,7 +44,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
-import { soloEjecutable } from './_guard-texto.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -133,10 +132,17 @@ export function infraccionesJs(codigo, ruta) {
 const TROCEADORES = /\b(sed|awk|cut|grep|tr)\b/;
 
 export function infraccionesShell(codigo, ruta) {
-  // `#` SÍ es comentario aquí: lo decide el shebang, no la extensión (ver cabecera).
-  const ejecutable = soloEjecutable(codigo, { almohadillaEsComentario: true });
+  // `#` SÍ es comentario aquí — lo decide el shebang, no la extensión (ver cabecera).
+  //
+  // Y se SALTAN, no se BORRAN: `soloEjecutable` filtra las líneas fuera del array y eso
+  // desplaza la numeración, así que el guard acababa señalando `db-push-prod:6` cuando el
+  // `sed` estaba en la 20. Un guard que apunta a la línea equivocada manda a mirar donde no
+  // es, y quien lo lea concluirá que se ha equivocado el guard — no el código. Aquí se
+  // recorre el fuente ORIGINAL y se ignora la línea de comentario, conservando su índice.
+  // (bash no tiene comentarios de bloque, así que no hace falta nada más.)
   const out = [];
-  ejecutable.split('\n').forEach((linea, i) => {
+  codigo.split(/\r?\n/).forEach((linea, i) => {
+    if (/^\s*#/.test(linea)) return;
     if (!/DATABASE_URL|\.env\b/.test(linea)) return;
     if (!TROCEADORES.test(linea)) return;
     if (FUNCIONES_SEGURAS.test(linea)) return; // el camino bueno
