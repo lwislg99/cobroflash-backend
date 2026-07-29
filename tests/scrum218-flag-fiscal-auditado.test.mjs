@@ -62,9 +62,12 @@ test('SCRUM-218 · encender el flag escribe cambio_flag con anterior, nuevo, act
   assert.equal(fila.entityId, 7);
 
   // Valor anterior y nuevo, que es lo que hace la fila acreditable ante una inspección.
-  assert.equal(fila.meta.payload.flag, 'INVOICING_ES_ENABLED');
-  assert.equal(fila.meta.payload.valorAnterior, false);
-  assert.equal(fila.meta.payload.valorNuevo, true);
+  // ⚠️ `sobreFiscal` APLANA el payload al nivel superior del sobre (`...params.payload`), no lo
+  // anida bajo `.payload`. Este test lo asumió mal y salió rojo: se corrigió el TEST, no el
+  // servicio — el contrato del sobre es de SCRUM-207 y manda él.
+  assert.equal(fila.meta.flag, 'INVOICING_ES_ENABLED');
+  assert.equal(fila.meta.valorAnterior, false);
+  assert.equal(fila.meta.valorNuevo, true);
   // El ACTOR viaja en el sobre fiscal.
   assert.equal(fila.meta.actor.tipo, 'pro_propietario');
   // El MOMENTO no se pone desde la aplicación: lo pone AuditLog.createdAt en la base.
