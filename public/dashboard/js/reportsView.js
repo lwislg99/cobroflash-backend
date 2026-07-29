@@ -819,8 +819,8 @@ function buildBarChart(months, currency) {
   wrapper.appendChild(svg);
   return wrapper;
 }
-
-
+
+
 // ── SCRUM-228 · desglose por empleado, con el invariante a la vista ─────────────────────────
 //
 // Cada fila es un cubo de una PARTICIÓN que hace el backend (`desgloseEmpleado.ts`): toda
