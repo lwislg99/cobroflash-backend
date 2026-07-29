@@ -239,11 +239,15 @@ router.get('/datos.zip', async (req, res) => {
         for (const year of anios) {
           // Los TRES del constructor: el XML, cuántos registros declaró (221) y cuáles no
           // pudo declarar (209). `count` viene de `registros.length`, no de las facturas
-          // miradas — verificado en `verifactu.service.ts:765` al resolver este conflicto,
-          // porque si el constructor hubiera dejado de devolverlo, `registrosVerifactu +=
-          // undefined` habría puesto un NaN en el AuditLog y eso no lo canta nadie.
+          // miradas — verificado en `verifactu.service.ts:765`, porque si el constructor
+          // dejara de devolverlo, `registrosVerifactu += undefined` pondría un NaN en el
+          // AuditLog y eso no lo canta nadie.
           const { xml, count, excluidos } = await buildVerifactuRegistrosXml({ merchantId: req.merchantId, year });
-          xmlPorAnio.push({ year, xml });
+          // SCRUM-216: xml vacío = no queda nada declarable ese ejercicio. No se adjunta un
+          // fichero inválido (el XSD exige >=1 RegistroFactura); el LEEME dirá por qué.
+          if (xml) xmlPorAnio.push({ year, xml });
+          // `count` se suma SIEMPRE, con o sin fichero adjunto: es cuántos registros se
+          // declararon de verdad. Un ejercicio vacío aporta 0 y no falsea el total.
           registrosVerifactu += count;
           for (const x of excluidos) exclusionesVerifactu.push({ year, ...x });
         }
@@ -536,7 +540,19 @@ router.get('/verifactu.xml', requireRole('admin'), async (req, res) => {
 
     // SCRUM-82: constructor RRSIF compartido con GET /datos.zip — misma fuente, sin
     // divergencia posible entre el endpoint suelto y el que va dentro del paquete.
-    const { xml, count } = await buildVerifactuRegistrosXml({ merchantId: req.merchantId, year });
+    const { xml, count, excluidos } = await buildVerifactuRegistrosXml({ merchantId: req.merchantId, year });
+
+    // SCRUM-216: sin registros declarables no hay documento válido que servir, así que se
+    // corta ANTES del registro de auditoría — y ese orden es el correcto: aquí NO ha salido
+    // nada de la plataforma, y `exportacion_fiscal` acredita una entrega. Auditar un 409
+    // sería anotar un export que nunca ocurrió.
+    if (!xml) {
+      return res.status(409).json({
+        error: 'verifactu_sin_registros',
+        message: 'No hay ninguna factura declarable en ese ejercicio, asi que no se genera el registro (un XML sin registros no es valido). Revisa los motivos y corrige las facturas.',
+        excluidos,
+      });
+    }
 
     // SCRUM-221 (A9) · EL REGISTRO VA ANTES QUE LOS BYTES, Y BLOQUEA.
     //
