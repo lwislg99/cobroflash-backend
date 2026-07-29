@@ -220,7 +220,9 @@ router.get('/datos.zip', async (req, res) => {
       try {
         for (const year of anios) {
           const { xml, excluidos } = await buildVerifactuRegistrosXml({ merchantId: req.merchantId, year });
-          xmlPorAnio.push({ year, xml });
+          // SCRUM-216: xml vacio = no queda nada declarable ese ejercicio. No se adjunta un
+          // fichero invalido (el XSD exige >=1 RegistroFactura); el LEEME dira por que.
+          if (xml) xmlPorAnio.push({ year, xml });
           for (const x of excluidos) exclusionesVerifactu.push({ year, ...x });
         }
       } catch (e: any) {
@@ -460,7 +462,16 @@ router.get('/verifactu.xml', requireRole('admin'), async (req, res) => {
 
     // SCRUM-82: constructor RRSIF compartido con GET /datos.zip — misma fuente, sin
     // divergencia posible entre el endpoint suelto y el que va dentro del paquete.
-    const { xml } = await buildVerifactuRegistrosXml({ merchantId: req.merchantId, year });
+    const { xml, excluidos } = await buildVerifactuRegistrosXml({ merchantId: req.merchantId, year });
+
+    // SCRUM-216: sin registros declarables no hay documento valido que servir.
+    if (!xml) {
+      return res.status(409).json({
+        error: 'verifactu_sin_registros',
+        message: 'No hay ninguna factura declarable en ese ejercicio, asi que no se genera el registro (un XML sin registros no es valido). Revisa los motivos y corrige las facturas.',
+        excluidos,
+      });
+    }
 
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="verifactu_${year}.xml"`);

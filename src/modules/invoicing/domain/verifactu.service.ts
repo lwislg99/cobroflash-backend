@@ -19,6 +19,9 @@ import {
   clasificarDetalleDesglose,
   DesgloseNoClasificableError,
   MODO_SIN_DESTINATARIO,
+  MODO_TIPO_RECTIFICATIVA,
+  type ModoTipoRectificativa,
+  resolverTipoRectificativa,
   type ModoSinDestinatario,
   RegistroNoEmitibleError,
   resolverSinDestinatario,
@@ -481,7 +484,7 @@ export async function buildVerifactuRegistrosXml(
   // SCRUM-215: el modo lo fija la constante del módulo fiscal. Este parámetro existe SOLO para
   // poder DEMOSTRAR que las dos salidas del dictamen P11 se emiten y validan antes de que el
   // dictamen exista. Producción tiene un único llamador y no lo pasa nunca.
-  opts: { modoSinDestinatario?: ModoSinDestinatario } = {},
+  opts: { modoSinDestinatario?: ModoSinDestinatario; modoTipoRectificativa?: ModoTipoRectificativa } = {},
 ): Promise<{ xml: string; count: number; excluidos: Array<{ number: string; motivo: string }> }> {
   const merchant = await prismaClient.merchant.findUnique({ where: { id: params.merchantId } });
   if (!merchant) throw new Error('merchant_not_found');
@@ -500,7 +503,10 @@ export async function buildVerifactuRegistrosXml(
     include: {
       // SCRUM-145 (gap 6): el NIF del cliente decide si se puede emitir `Destinatarios`.
       customer:  { select: { name: true, taxId: true } },
-      rectifies: { select: { number: true, createdAt: true } },
+      // SCRUM-216: `lines` de la factura RECTIFICADA — de ahi salen la base y la cuota
+      // SUSTITUIDAS que exige `ImporteRectificacion` en las rectificativas por sustitucion
+      // (AEAT 1118). Sin ellas ese camino no se puede construir, solo bloquear.
+      rectifies: { select: { number: true, createdAt: true, lines: true } },
     },
   });
 
@@ -608,14 +614,37 @@ export async function buildVerifactuRegistrosXml(
     // I=diferencias) y `ImporteRectificacion`, ambos minOccurs=0. NO se emiten porque elegir
     // uno u otro es una calificación fiscal, no una decisión de implementación (regla: no
     // inventar). Queda registrado en SCRUM-145 para el dictamen.
-    const rectificadas = inv.type === 'R1' && inv.rectifies ? `
+    // SCRUM-216: la R1 ya no sale sin `TipoRectificativa` — eso era un 1114 seguro en CADA
+    // rectificativa. Omitir un campo que el esquema exige no es abstenerse: es garantizar el
+    // rechazo. Hoy `MODO_TIPO_RECTIFICATIVA` vale SIN_CONFIRMAR, así que la R1 se EXCLUYE del
+    // registro y se reporta; no se emite con un valor que nadie ha confirmado.
+    //
+    // La base y la cuota SUSTITUIDAS salen de las líneas de la factura RECTIFICADA (no de la
+    // R1): es lo que significa «sustituida» en `DesgloseRectificacionType`.
+    const esRectificativa = inv.type === 'R1' && !!inv.rectifies;
+    const importeRectificado = esRectificativa && Array.isArray((inv.rectifies as any)!.lines)
+      ? (() => {
+          const v = calcVatBreakdown((inv.rectifies as any)!.lines as any[]);
+          return { baseRectificada: v.base.toFixed(2), cuotaRectificada: v.cuota.toFixed(2) };
+        })()
+      : null;
+
+    const rectificativa = esRectificativa
+      ? resolverTipoRectificativa(
+          inv.number,
+          importeRectificado,
+          opts.modoTipoRectificativa ?? MODO_TIPO_RECTIFICATIVA,
+        )
+      : { tipoXml: '', importeXml: '' };
+
+    const rectificadas = esRectificativa ? `
       <sum1:FacturasRectificadas>
         <sum1:IDFacturaRectificada>
           <sum1:IDEmisorFactura>${xmlEscape(merchant.taxId!)}</sum1:IDEmisorFactura>
-          <sum1:NumSerieFactura>${xmlEscape(inv.rectifies.number)}</sum1:NumSerieFactura>
-          <sum1:FechaExpedicionFactura>${formatDateES(inv.rectifies.createdAt)}</sum1:FechaExpedicionFactura>
+          <sum1:NumSerieFactura>${xmlEscape(inv.rectifies!.number)}</sum1:NumSerieFactura>
+          <sum1:FechaExpedicionFactura>${formatDateES(inv.rectifies!.createdAt)}</sum1:FechaExpedicionFactura>
         </sum1:IDFacturaRectificada>
-      </sum1:FacturasRectificadas>` : '';
+      </sum1:FacturasRectificadas>${rectificativa.importeXml}` : '';
 
     // SCRUM-145 (gap 4): `RegistroAnterior` completo. Si la huella anterior existe pero NO
     // se encuentra su factura (cadena rota o registro de otro sistema), se cae a
@@ -724,7 +753,7 @@ export async function buildVerifactuRegistrosXml(
         <sum1:FechaExpedicionFactura>${formatDateES(inv.createdAt)}</sum1:FechaExpedicionFactura>
       </sum1:IDFactura>
       <sum1:NombreRazonEmisor>${xmlEscape(nombreEmisor)}</sum1:NombreRazonEmisor>
-      <sum1:TipoFactura>${tipoFactura}</sum1:TipoFactura>${rectificadas}
+      <sum1:TipoFactura>${tipoFactura}</sum1:TipoFactura>${rectificativa.tipoXml}${rectificadas}
       <sum1:DescripcionOperacion>${xmlEscape(lines[0]?.concept || `Factura ${inv.number}`)}</sum1:DescripcionOperacion>${marcadorSinDestinatario}${destinatarios}
       <sum1:Desglose>${desglose}
       </sum1:Desglose>
@@ -766,6 +795,20 @@ export async function buildVerifactuRegistrosXml(
        numero y su motivo para que se corrijan y se vuelva a exportar.
 ${excluidos.map((x) => `       · ${xmlEscape(x.number)}: ${xmlEscape(x.motivo)}`).join('\n')}
   -->`;
+
+  // SCRUM-216: si NO queda ningún registro que declarar, no se entrega un documento vacío.
+  // El XSD exige al menos un `RegistroFactura` (`RegFactuSistemaFacturacion`: «Missing child
+  // element(s)»), así que un envelope con la cabecera sola es un XML INVÁLIDO — justo lo que
+  // toda esta cadena de tickets viene a evitar. Y no es un caso de laboratorio: con las
+  // exclusiones de SCRUM-215 y 216, un merchant cuyo ejercicio sean todo facturas a
+  // particulares, o solo rectificativas, cae aquí entero.
+  //
+  // Se devuelve `xml: ''` — «no hay nada que declarar», con el parte de exclusiones intacto
+  // para que quien llama diga POR QUÉ. Entregar un fichero inválido sería peor que no
+  // entregarlo; entregarlo en silencio, peor todavía.
+  if (registros.length === 0) {
+    return { xml: '', count: 0, excluidos };
+  }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <sum:RegFactuSistemaFacturacion xmlns:sum="${NS_LR}" xmlns:sum1="${NS_INFO}">${parteExclusiones}

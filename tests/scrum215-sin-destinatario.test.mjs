@@ -62,8 +62,25 @@ test('SCRUM-215 · sin dictamen, la factura a un particular se EXCLUYE y se repo
   assert.match(excluidos[0].motivo, /1189/, 'el motivo debe nombrar el error de la AEAT');
   assert.match(excluidos[0].motivo, /P11/, 'y el dictamen que lo desbloquea');
 
-  // Y se nombra en el propio fichero entregado (mecanismo de SCRUM-209).
-  assert.match(xml, /2026-CF-001/);
+  // SCRUM-216: si NO queda NADA declarable, no se entrega documento — un envelope sin
+  // `RegistroFactura` no valida contra el XSD. El parte viaja en `excluidos`, que es lo que
+  // el ZIP pone en el LEEME y el endpoint suelto devuelve con un 409.
+  assert.equal(xml, '', '🔴 se estaría entregando un XML sin registros, que es inválido');
+});
+
+test('SCRUM-215 · si SOBREVIVE alguna, el XML sale y nombra dentro a la excluida', async () => {
+  // El parte dentro del documento (SCRUM-209) sigue vivo mientras haya algo que declarar.
+  const conNif = mkInvoice({ number: '2026-CF-009', customer: { name: 'Empresa', taxId: 'B99999999' } });
+  const { count, excluidos, xml } = await build([mkInvoice(), conNif]);
+
+  assert.equal(count, 1);
+  assert.equal(excluidos.length, 1);
+  assert.match(xml, /<sum1:NumSerieFactura>2026-CF-009<\/sum1:NumSerieFactura>/, 'la buena se declara');
+  assert.match(xml, /ATENCION: 1 factura\(s\)/);
+  assert.match(xml, /2026-CF-001/, 'la excluida se nombra dentro del fichero entregado');
+
+  const { valido, errores } = await validarRegistrosXml(xml, 'mixto-sin-nif.xml');
+  assert.equal(valido, true, `🔴 el lote mixto no valida:\n${errores.join('\n')}`);
 });
 
 test('SCRUM-215 · una factura CON NIF sigue declarándose con normalidad', async () => {
