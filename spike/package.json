@@ -1,0 +1,1 @@
+{"name":"spike-xsd","private":true,"type":"module","dependencies":{"libxml2-wasm":"^0.7.1","libxmljs2":"^0.37.0","xmllint-wasm":"^5.2.0"}}
