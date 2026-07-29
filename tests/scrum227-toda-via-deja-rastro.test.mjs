@@ -33,7 +33,13 @@ const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const RUTA = path.join(RAIZ, 'src', 'integrations', 'whatsapp.ts');
 const fuente = leerFuente(RUTA); // sin comentarios (SCRUM-193)
 
-test('SCRUM-227 · toda sendWhatsApp* deja rastro en WhatsAppMessage (sin allowlist)', () => {
+// EL LÍMITE, DECLARADO DONDE SE VE EN VERDE (el título se imprime en el ✔, no solo al fallar): este
+// guard enumera POR EL PREFIJO `sendWhatsApp`. Una vía de envío futura con OTRO nombre queda invisible
+// —su verde significa «toda sendWhatsApp* registra», NO «toda función de envío registra»—. No se cierra
+// aquí a propósito: cerrarlo pediría atar la enumeración al ÚNICO punto de salida a Meta (el interceptor
+// `metaHttp` de SCRUM-180), que ya tiene su propio ratchet; mezclarlo sería otro guard. Un verde aquí no
+// es «no puede volver a pasar», es «no ha vuelto a pasar por las vías que se llaman como toca».
+test('SCRUM-227 · toda sendWhatsApp* (enumeradas POR FIRMA; una vía con otro nombre queda fuera) deja rastro en WhatsAppMessage — sin allowlist', () => {
   // Enumera las vías por su FIRMA, no por una lista. downloadWhatsAppMedia / uploadWhatsAppMedia /
   // markInboundRead no casan (no empiezan por sendWhatsApp): no son envíos, no registran.
   const nombres = [...fuente.matchAll(/export async function (sendWhatsApp\w+)\s*\(/g)].map((m) => m[1]);
@@ -62,6 +68,7 @@ test('SCRUM-227 · toda sendWhatsApp* deja rastro en WhatsAppMessage (sin allowl
     `🔴 SCRUM-227: estas vías de envío NO dejan rastro (no llaman a recordWaMessage): ` +
       `${sinRastro.join(', ')}. Toda sendWhatsApp* registra en WhatsAppMessage — es trazabilidad de ` +
       `un envío (una factura o una reseña enviada tiene que constar), no telemetría opcional. Copia ` +
-      `la forma de sendWhatsAppTemplate: recordWaMessage en el éxito Y en el fallo, todo .catch(()=>{}).`,
+      `la forma de sendWhatsAppTemplate: recordWaMessage en el éxito Y en el fallo, todo .catch(()=>{}). ` +
+      `LÍMITE: este guard solo ve las vías que se llaman sendWhatsApp*; una con otro nombre no la vigila.`,
   );
 });
