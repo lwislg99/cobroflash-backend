@@ -1358,6 +1358,22 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 > capas** porque una sola se burla sola: ① el SHA-256 del listado vendorizado sigue siendo el que declara el
 > documento (leído DEL documento, no copiado a una constante) y ② ninguna fila de tabla cita un código que la
 > AEAT no publica. Las dos probadas en rojo por separado. Nació de que un `4172` inventado se coló redactando.
+>
+> **✅ SCRUM-202 · SKILL-CEREBRO: el cerebro operativo de las sesiones (29-jul-2026, docs/config — cero código).**
+> Nace `.claude/skills/cerebro-yaqu/SKILL.md`: checklist de arranque (los cuatro docs, `ls-remote` en
+> listado COMPLETO contra duplicados de rama, worktree propio), los **disparadores anti-error** de
+> `ERRORES_ASESOR.md` (R1 verificar en la fuente · R2 `merge-base`/`ls-remote`, nunca Jira ni prosa ·
+> guard probado EN ROJO con caso DENTRO del mecanismo · el guard de texto que se caza a sí mismo ·
+> «qué mediría este verde si el sistema estuviera roto» · lo que no corre en `npm test` no existe ·
+> `parseBDSegura`/R7), los **STOPs** (schema · dinero · fiscal · superficie pública), la regla 37 de
+> hallazgos, el checklist pre-PR y los vetos permanentes. **El diagnóstico que lo justifica es el de
+> SCRUM-153: «el vocabulario estaba, faltaba el disparador»** — las reglas ya existían repartidas por
+> los docs, lo que faltaba era que se dispararan en el momento exacto.
+> **JERARQUÍA VINCULANTE (mismo patrón que AB7): `YAQU_MASTER.md` > `cerebro-yaqu` > cualquier otra
+> skill.** La skill **RESUME y DISPARA; no sustituye a los docs**: si choca con el máster, gana el
+> máster (regla 35 — `CLAUDE.md` y `.claude/` son derivados). Sin dependencias nuevas, así que la
+> regla 36 no aplica. **DoD:** skill en el repo, esta entrada, y una sesión NUEVA cargándola —
+> verificación en frío, del fundador.
 
 **V2. Trigger del segundo tramo:** **✅ VERIFICADO (SCRUM-10/13, 9-jul-2026): el resto NUNCA se cobra solo** (confirmado en código: `/admin/jobs/:id/collect-rest` vía `getNextBillingStage`, siempre acción del pro). Regla: el resto NUNCA se cobra solo; trigger = acción del pro ("Trabajo terminado → Cobrar resto"; con JOB-1: estado `terminado`) → cobro/factura del resto + payment_request.
 **V3. Anticipos [VALIDAR asesor en S1-F]:** señal con factura = **factura de anticipo con IVA**; la final descuenta el anticipo. Pre-SIF: señal con recibo no fiscal (coherente con flag). Post-SIF: implementar el dictamen (regla 32).
