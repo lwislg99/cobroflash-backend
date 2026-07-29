@@ -416,22 +416,67 @@ importes* se consignan.
 `ImporteRectificacion` — de modo que la elección cambia **qué se remite a la AEAT**, no solo
 una etiqueta.
 
-**Estado en el producto (verificado, SCRUM-145):** hoy la R1 se emite con
-`FacturasRectificadas` (identificando la factura original) y con el **importe total de la
-rectificativa**, y **no** se emite `TipoRectificativa` ni `ImporteRectificacion` — ambos son
-`minOccurs="0"` en el esquema, así que el registro es estructuralmente válido, pero está
-**incompleto en su calificación fiscal** mientras no haya dictamen.
+**Estado en el producto (RE-MEDIDO el 29-jul-2026 en SCRUM-216 — corrige lo que este mismo
+apartado afirmaba):** hoy la R1 se emite con `FacturasRectificadas` (identificando la factura
+original) y **no** emite `TipoRectificativa` ni `ImporteRectificacion`. Los dos son
+`minOccurs="0"` en el esquema, así que el registro es estructuralmente válido — y aun así la
+AEAT lo rechaza, porque omitir un campo que el esquema permite ausente pero la validación
+exige no es abstenerse: es garantizar el rechazo.
 
-**Lo que necesitamos del asesor:**
+> **1114** · *«Si la factura es de tipo rectificativa, el campo TipoRectificativa debe tener
+> valor.»* No es una calificación incompleta: es un rechazo seguro **en cada rectificativa**.
 
-1. ¿Nuestras R1 (que hoy consignan el total corregido, no el delta) son **por sustitución**?
-2. Si lo son: ¿qué debe llevar exactamente `ImporteRectificacion` (base y cuota **rectificadas**,
-   es decir las de la factura original que se sustituye)?
-3. ¿Cambia la respuesta según el motivo (error de datos vs. modificación de base imponible del
+> ⚠️ **LA PREMISA DE LA QUE PARTÍA ESTE APARTADO NO SE SOSTIENE.** Decía que nuestras R1
+> «consignan el total corregido», lo que apuntaba a **S (por sustitución)**. El código hace lo
+> contrario, y nadie lo volvió a comprobar desde que se escribió. Al medirlo aparecen **tres
+> fuentes que no dicen lo mismo**:
+>
+> | Fuente | Qué dice | Apunta a |
+> |---|---|---|
+> | **El código** · `invoicesAdmin.routes.ts` crea la R1 con `total: (-Number(original.total)).toFixed(2)` y las líneas con el precio negado | El **delta** (la original negada), no el total corregido | **I** |
+> | **Este expediente** · P12, redactado el 23-jul-2026: «consignan el total corregido» | El total corregido | **S** |
+> | **`registro.builder.ts`** · `tipoRectificativa?: 'S' \| 'I'; // YaQu usa 'I' (incremental: líneas en negativo) [VALIDAR asesor S1-F]` | Incremental — marcado para validar desde S1-C y **nunca validado** | **I** |
+>
+> Y una cuarta señal, hoy inerte pero cargada: `buildRegistroAlta()` emite
+> `${p.tipoRectificativa ?? 'I'}` — un **'I' por defecto cableado**. Hoy no lo llama ningún
+> código de producción (solo un test), así que no sale nada a la AEAT; el día que alguien lo
+> cablee, saldría una calificación fiscal elegida por un valor por defecto, sin dictamen y sin
+> que nadie se entere.
+
+**Lo que necesitamos del asesor** — la pregunta 1 cambia: ya no se pregunta por una premisa,
+se pregunta por el hecho medido:
+
+1. Nuestras R1 se crean hoy **negando la original** (total y líneas en negativo), es decir
+   consignando **el delta**. ¿Eso es «por diferencias» (**I**), como parece? ¿O el criterio
+   correcto para nuestro caso es «por sustitución» (**S**), y entonces lo que hay que cambiar
+   no es cómo se declaran sino **cómo se crean**?
+2. Si la respuesta es **S**: ¿qué lleva exactamente `ImporteRectificacion` (base y cuota
+   **rectificadas**, las de la factura original que se sustituye)? Es **obligatorio** —
+   **1118** · *«Si la factura es de tipo rectificativa por sustitución el bloque
+   ImporteRectificacion es obligatorio.»*— y hoy no se calcula en ninguna parte.
+3. Si la respuesta es **I**: confirmar que `ImporteRectificacion` **no** debe ir —
+   **1119** · *«Si la factura no es de tipo rectificativa por sustitución el bloque
+   ImporteRectificacion no debe tener valor.»*— y que las R1 de hoy encajan tal cual.
+4. ¿Cambia la respuesta según el motivo (error de datos vs. modificación de base imponible del
    art. 80 LIVA — impago, devolución, descuento posterior)?
 
-**Impacto:** medio. No bloquea la emisión local, pero **sí** bloquea que las rectificativas se
-puedan remitir correctamente cuando se active la remisión (SCRUM-146).
+**Impacto: ALTO — mayor de lo que decía este expediente.** No bloquea la emisión local, pero
+(a) **toda** rectificativa que se remitiese hoy sería rechazada con 1114, y (b) si la respuesta
+es **S**, no basta con declarar distinto: **hay que cambiar cómo se crean las R1** (pasarían a
+consignar el total corregido en vez del negativo). Eso es trabajo de producto, no un flag.
+
+**Mientras no haya dictamen (mecanismo de SCRUM-216):** ninguna R1 se declara — se excluye del
+registro y se reporta con su número y su motivo. Nunca se emite sin `TipoRectificativa` (sería
+un 1114 seguro) ni con un valor elegido por el código. La R1 en sí no está bloqueada: se emite,
+se entrega y se cobra igual.
+
+> **Por qué esto se corrige ANTES de la cita:** P12 es el documento que va a leer el asesor. Con
+> la premisa vieja respondería sobre un sistema que no se comporta así, y el dictamen nacería
+> inútil — o peor, engañoso, porque vendría firmado. Una afirmación escrita en pasado que nadie
+> volvió a comprobar se había convertido en la fuente, justo antes de usarse.
+
+*Códigos 1114 / 1118 / 1119 verificados literalmente contra el listado oficial vendorizado
+(`docs/legal/fuentes/aeat-errores.properties`), no contra un recuerdo.*
 
 ---
 
@@ -450,11 +495,16 @@ puedan remitir correctamente cuando se active la remisión (SCRUM-146).
 | P9 | TipoFactura VeriFactu | F1 estándar; el resto es técnico (SIF-1), no fiscal puro | Alta en el encaje legal |
 | P10 | Liberación tras R1 | Decisión de producto, no fiscal; solo la re-agrupación por fecha original es obligatoria si se liberase | Alta |
 | P11 | F1 sin NIF del destinatario | El esquema prevé AMBAS salidas (`FacturaSinIdentifDestinatarioArt61d` / `FacturaSimplificadaArt7273`); hoy no se marca ninguna. Falta saber cuál procede y si obliga a pedir NIF por encima del límite del art. 4 | **Baja — decide alcance de producto** (ver P6) |
-| P12 | `TipoRectificativa` S/I de las R1 | Nuestras R1 consignan el total corregido → apunta a «por sustitución», pendiente de confirmar junto con qué lleva `ImporteRectificacion` | Media — el encaje parece claro, la forma exacta no |
+| P12 | `TipoRectificativa` S/I de las R1 | ⚠️ **Premisa corregida el 29-jul-2026 (SCRUM-216):** el código crea las R1 **negando la original** (el delta → **I**), no «consignando el total corregido» (**S**) como afirmaba este expediente. Tres fuentes en conflicto (código · este documento · `registro.builder.ts`). Hasta que se confirme, ninguna R1 se declara | **Baja — hay una contradicción medida, no una forma exacta pendiente** |
 
 **La pregunta con mayor impacto económico/de producto es P6 (umbral de 3.000 € del art. 4.1
 RD 1619/2012)** — si el asesor confirma que el vertical de YaQu encaja, cambia
 sustancialmente cuánta fricción de NIF hay que resolver en el producto.
+
+**P12 subió de prioridad el 29-jul-2026** (era «Media — el encaje parece claro»): al medirlo
+contra el código apareció una contradicción que este mismo expediente había introducido, y su
+respuesta puede obligar a cambiar **cómo se crean** las rectificativas, no solo cómo se
+declaran. Conviene llevarla a la cita con la misma atención que P6.
 
 ---
 *Creado el 23-jul-2026. Fuentes secundarias: Iberley, SuperContable, Agencia Tributaria (sede
