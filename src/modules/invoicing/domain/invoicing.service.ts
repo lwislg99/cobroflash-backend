@@ -12,6 +12,7 @@
 // (regla 9 / decisión fundador). Se deja para un ticket aparte con su propia revisión.
 import { Prisma } from '@prisma/client';
 import { allocateInvoiceNumber, isReceiptNumber } from './invoiceNumber.service';
+import type { ActorAudit } from '../../system/audit.service'; // SCRUM-207
 
 export interface AlbaranRef {
   albaranId: number;
@@ -29,6 +30,8 @@ export interface EmitInvoiceInput {
   albaranRefs?: AlbaranRef[]; // FISCAL-2: operaciones agrupadas
   quoteId?: number | null;
   stageLabel?: string | null;
+  /** SCRUM-207 · OBLIGATORIO: quién emite. Los 2 llamadores de C7 son rutas de admin. */
+  actor: ActorAudit;
 }
 
 /**
@@ -36,7 +39,9 @@ export interface EmitInvoiceInput {
  * pdfUrl/qrData quedan en PENDING y VeriFactu se aplica al servir el PDF. Devuelve el Invoice creado.
  */
 export async function emitInvoice(tx: Prisma.TransactionClient, input: EmitInvoiceInput) {
-  const number = await allocateInvoiceNumber(tx, input.merchantId);
+  const number = await allocateInvoiceNumber(tx, input.merchantId, {
+    camino: 'C7', actor: input.actor,
+  });
   return tx.invoice.create({
     data: {
       merchantId: input.merchantId,

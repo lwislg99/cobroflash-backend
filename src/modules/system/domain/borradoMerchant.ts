@@ -44,6 +44,18 @@ export const ORDEN_BORRADO_MERCHANT: readonly string[] = [
   // ninguna FK lo cascadea. Si no se barre antes que ellos, quedan huérfanas invisibles.
   'albaranLineaFacturada',
   // Rastros y adjuntos: no los referencia nadie, así que caen pronto y sin ruido.
+  //
+  // 🚩 SCRUM-207 · PUNTO DE ENGANCHE DE D-4 — DECISIÓN ABIERTA, NO IMPLEMENTADA AQUÍ.
+  // Ese comentario de arriba era verdad y desde SCRUM-207 ya NO lo es del todo: `auditLog`
+  // contiene ahora el registro FISCAL (`factura_emitida`, `factura_anulada`, `sellado_fallido`…),
+  // que es la prueba que protege al FUNDADOR como productor del SIF — interés legítimo propio,
+  // no un dato del interesado. Borrarlo con el merchant destruye su propia defensa.
+  // Y a la vez contiene datos personales, y el RGPD publicado todavía no lo contempla en su
+  // tabla de tratamientos ni en el ROPA.
+  // Lectura del contrato (§9 D-4, NO vinculante): conservar las filas fiscales con el texto y
+  // las variables REDACTADOS, y `plantilla`+`version`+`hash` intactos.
+  // La decide el fundador con el asesor. Hasta entonces el comportamiento NO se cambia: se
+  // sigue borrando todo, igual que antes, para no dejar a medias una política de conservación.
   'auditLog', 'whatsAppMessage', 'legalAcceptance', 'customerEvent', 'attachment',
   // Documentos: albarán antes que factura (el albarán apunta a la factura que lo consolidó).
   'albaran', 'maintenancePlan', 'invoice', 'charge', 'job', 'quote', 'quoteRequest',

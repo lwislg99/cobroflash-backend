@@ -1,14 +1,46 @@
-// src/modules/system/audit.service.ts — A11.1 (EXT3, S2 F1-mínimo)
-// Auditoría de las 4 acciones sensibles de F1 (master S2): marcar_pagado_manual,
-// deshacer_pago, anular_factura, cambio_flag. Fire-safe: un fallo del log JAMÁS
-// tumba la acción de negocio. El AuditLog completo (login, fiscal, Connect…) es F2.
+// src/modules/system/audit.service.ts — A11.1 (EXT3, S2 F1-mínimo) + SCRUM-207 (AUDIT-FISCAL-1)
+//
+// Auditoría de las acciones sensibles. Nació fire-safe (un fallo del log jamás tumba la
+// acción de negocio) y para las 8 acciones originales ESO SIGUE SIENDO LO CORRECTO.
+//
+// ── QUÉ CAMBIÓ EN SCRUM-207, y por qué no bastaba con añadir acciones ──────────────────
+// El contrato (`docs/legal/AUDITLOG_FISCAL_CONTRATO.md`) exige que ante un ámbar «conste
+// que el sistema informó y que el usuario decidió», y que una factura no exista sin su
+// registro. `recordAudit` era ESTRUCTURALMENTE INCAPAZ de garantizar eso:
+//   · devolvía `void` → nadie podía esperarla;
+//   · `.catch(console.error)` → el fallo desaparecía;
+//   · usaba el cliente GLOBAL → no podía participar en la transacción de quien la llama.
+// Las tres cosas juntas significan que «se registra» era una intención, no un mecanismo.
+//
+// Ahora hay DOS puertas, y el nivel de durabilidad se ve en el nombre de la que se usa:
+//   · `recordAudit`         (T3) — fire-safe. Igual que siempre. Las 8 originales no se tocan.
+//   · `recordAuditOrThrow`  (T1/T2) — se ESPERA y PROPAGA, y acepta un cliente inyectado
+//     para escribir DENTRO de una transacción ajena. Si falla, quien llama decide — y en
+//     `allocateInvoiceNumber` esa decisión es que la transacción entera se deshaga.
+//
+// ── LA PROHIBICIÓN TIENE MECANISMO, NO COMENTARIO ─────────────────────────────────────
+// Las acciones BLOQUEANTES no se pueden escribir por la puerta fire-safe: `recordAudit`
+// no las acepta EN EL TIPO, así que un intento es un error de compilación, no una bomba
+// que salta en producción el día que importa. `npm test` compila antes de nada, o sea que
+// el guard corre en cada tanda sin que nadie tenga que acordarse de él.
 import { prisma } from '../../core/db/prisma';
+import { isFlagEnabled } from '../../core/flags';
 import type { Request } from 'express';
 
 export type AuditAction =
   | 'marcar_pagado_manual'
   | 'deshacer_pago'
+  // ⚠️ LEGADO — NO USAR EN CÓDIGO NUEVO (SCRUM-207, decisión D-3 del fundador).
+  // Cubría DOS hechos fiscales distintos con el mismo nombre: la anulación (SCRUM-153) y
+  // la rectificativa R1. Se parte en `factura_anulada` / `factura_rectificada`. Las filas
+  // ya escritas NO se tocan: reescribir un registro de auditoría para «limpiarlo» es
+  // justamente lo que este módulo existe para impedir. La regla de unión para consultarlas
+  // está en la §7.4 del contrato y vive en código en `auditoriaFiscal.query.ts`.
   | 'anular_factura'
+  // Declarada desde A11.1 y JAMÁS escrita: no existe ningún camino de código que cambie un
+  // flag (verificado en SCRUM-207: `flags` no aparece en ningún schema de validación ni en
+  // ningún `merchant.update`). La escritura es manual del fundador contra la BD — ver
+  // `core/flags.ts`. Se conserva declarada para el día que exista esa superficie (D-7).
   | 'cambio_flag'
   // SCRUM-14 (Parte L): traza del versionado del albarán — cada edición de un
   // albarán no firmado deja version++ y su registro aquí (decisión fundador 13-jul).
@@ -22,7 +54,124 @@ export type AuditAction =
   // SCRUM-25 (S2/S4): el merchant se descarga sus datos (CSV o paquete completo).
   // Queda traza de QUÉ fichero y con qué rango: es material que sale de la plataforma
   // con datos personales de los clientes finales.
-  | 'datos_exportados';
+  | 'datos_exportados'
+  // ── SCRUM-207 · acciones FISCALES ───────────────────────────────────────────────────
+  // A1 · se consume número de serie. **Punto de no retorno A** (SCRUM-200 §5). T1.
+  | 'factura_emitida'
+  // A5 · la factura entra en la cadena de huellas. **Punto de no retorno B**, que puede
+  // ocurrir días después y que en C1/C2 lo dispara el CLIENTE descargando su PDF.
+  | 'factura_sellada'
+  // A6 · el sellado falló y el documento siguió su curso. Antes de esto solo quedaba un
+  // `console.error` (lib/invoicing.ts:58 y :152): el fallo mudo del contrato §2.2.
+  | 'sellado_fallido'
+  // A7/A8 · las dos mitades de `anular_factura` (D-3).
+  | 'factura_anulada'
+  | 'factura_rectificada'
+  // A9 · sale de la plataforma el registro fiscal (XML RRSIF de inspección, R13).
+  | 'exportacion_fiscal'
+  // A2/A3/A4 · el semáforo. A3 es BLOQUEANTE: si no consta la decisión, no se emite (D-2).
+  //
+  // 🚩 PUNTO DE ENGANCHE DE D-6 — DECLARADAS, TODAVÍA SIN ESCRITOR, y a propósito.
+  // Escribir un aviso exige resolver su texto del CATÁLOGO VERSIONADO (contrato §6), y los
+  // textos son regla 30: los aprueba el fundador, no se inventan. Hasta que existan, un
+  // escritor solo podría guardar un identificador sin texto — es decir, exactamente el
+  // registro incompleto que este ticket viene a evitar.
+  //
+  // Lo que SÍ queda montado para el ticket del front que las use:
+  //   · `aviso_ambar_decidido` está en ACCIONES_BLOQUEANTES, así que `recordAudit` (fire-safe)
+  //     NO la acepta: quien la escriba tendrá que usar `recordAuditOrThrow` y decidir qué
+  //     hacer si falla. La garantía de D-2 no depende de que alguien se acuerde;
+  //   · el sobre (`sobreFiscal`) ya lleva actor y flags congelados;
+  //   · falta el bloque `aviso{ id, version, hash, texto, plantilla, variables }` del §5.2 y
+  //     su guard (§8 T-1…T-4). Eso entra CON el catálogo, no antes.
+  | 'aviso_ambar_mostrado'
+  | 'aviso_ambar_decidido'
+  | 'bloqueo_rojo_mostrado';
+
+/**
+ * Las que EXIGEN constancia: si no se pueden registrar, la acción NO ocurre.
+ * Lista CERRADA — ampliarla es una decisión del fundador, no un detalle de implementación.
+ */
+export const ACCIONES_BLOQUEANTES = ['factura_emitida', 'aviso_ambar_decidido'] as const;
+export type AuditActionBloqueante = (typeof ACCIONES_BLOQUEANTES)[number];
+/** Todo lo demás. Es lo ÚNICO que `recordAudit` (fire-safe) acepta. */
+export type AuditActionFireSafe = Exclude<AuditAction, AuditActionBloqueante>;
+
+// ── EL SOBRE FISCAL (contrato §4.2) ───────────────────────────────────────────────────
+// Decisión D-1 del fundador: **todo en `meta`, sin columnas nuevas.** En una tabla
+// polimórfica cualquier columna nueva sería nullable, y una nullable no aporta integridad
+// que un sobre declarado + guard no aporte ya.
+
+export const SOBRE_VERSION = 1;
+
+/**
+ * Quién actúa. `teamMemberId = null` significaba «el propietario», y eso ya era falso: el
+ * camino de emisión más transitado (C1) lo dispara el CLIENTE FINAL sin login. Sin este
+ * campo, una factura emitida por el cliente quedaba atribuida al propietario.
+ */
+export type ActorTipo = 'pro_propietario' | 'pro_equipo' | 'cliente_final' | 'sistema' | 'psp';
+
+export interface ActorAudit {
+  tipo: ActorTipo;
+  teamMemberId?: number | null;
+  /** 'webhook:mp' | 'cron:x' | 'quote_token'… NUNCA el token en claro: sería un llavero. */
+  ref?: string | null;
+}
+
+export interface SobreFiscal {
+  v: number;
+  actor: ActorAudit;
+  /**
+   * El modo fiscal EN EL MOMENTO del hecho, CONGELADO y no derivado — por el mismo motivo
+   * que `vfPrevHash` se guarda como dato: dentro de un año, mirar el flag actual para
+   * explicar por qué aquella factura salió `J-` es reconstruir, no probar.
+   */
+  flagsFiscales: { INVOICING_ES_ENABLED: boolean; SIF_ENABLED: boolean };
+  [k: string]: unknown;
+}
+
+export function sobreFiscal(params: {
+  actor: ActorAudit;
+  flagsFiscales: { INVOICING_ES_ENABLED: boolean; SIF_ENABLED: boolean };
+  payload?: Record<string, unknown>;
+}): SobreFiscal {
+  return {
+    v: SOBRE_VERSION,
+    actor: {
+      tipo: params.actor.tipo,
+      teamMemberId: params.actor.teamMemberId ?? null,
+      ref: params.actor.ref ?? null,
+    },
+    flagsFiscales: params.flagsFiscales,
+    ...(params.payload ?? {}),
+  };
+}
+
+/**
+ * El actor cuando hay una sesión del merchant detrás. `teamMemberId == null` sigue
+ * significando «el propietario» — pero ahora se DICE (`pro_propietario`) en vez de
+ * deducirse de un nulo, que es lo que hacía indistinguible al propietario del cliente
+ * final y de un webhook.
+ */
+export function actorDeRequest(req: { teamMemberId?: number | null }): ActorAudit {
+  const t = req.teamMemberId ?? null;
+  return { tipo: t == null ? 'pro_propietario' : 'pro_equipo', teamMemberId: t };
+}
+
+/**
+ * Los dos flags fiscales, resueltos y CONGELADOS a partir de un merchant ya leído. Si no
+ * hay merchant a mano se devuelven en `false`, que es el default de la tabla P — nunca se
+ * adivina «probablemente estaba encendido».
+ */
+export function flagsFiscalesDe(
+  merchant: { id?: number | null; country?: string | null; flags?: unknown } | null,
+): { INVOICING_ES_ENABLED: boolean; SIF_ENABLED: boolean } {
+  if (!merchant) return { INVOICING_ES_ENABLED: false, SIF_ENABLED: false };
+  return {
+    INVOICING_ES_ENABLED: isFlagEnabled('INVOICING_ES_ENABLED', { merchant }),
+    SIF_ENABLED: isFlagEnabled('SIF_ENABLED', { merchant }),
+  };
+}
 
 export function requestIp(req: Request): string | null {
   const fwd = req.headers['x-forwarded-for'];
@@ -30,26 +179,62 @@ export function requestIp(req: Request): string | null {
   return String(raw).split(',')[0].trim() || null;
 }
 
-export function recordAudit(params: {
+export interface AuditParams<A extends AuditAction = AuditAction> {
   merchantId: number;
-  teamMemberId?: number | null; // null = owner/admin implícito
-  action: AuditAction;
+  teamMemberId?: number | null; // null = owner/admin implícito (ver `meta.actor` en lo fiscal)
+  action: A;
   entityType?: string | null;
   entityId?: number | null;
   meta?: Record<string, unknown> | null;
   ip?: string | null;
-}): void {
+}
+
+/**
+ * Cliente mínimo capaz de escribir el registro. Lo cumplen tanto el `prisma` global como
+ * un `Prisma.TransactionClient`: esa es toda la gracia — poder escribir DENTRO de la
+ * transacción de quien llama, para que el registro y el hecho se confirmen o se deshagan
+ * juntos. Se tipa por estructura (y no como `Prisma.TransactionClient`) para que un test
+ * pueda inyectar un doble que falle a propósito y probar el rojo.
+ */
+export interface AuditClient {
+  auditLog: { create(args: { data: Record<string, unknown> }): Promise<unknown> };
+}
+
+function datosDe(params: AuditParams<AuditAction>): Record<string, unknown> {
+  return {
+    merchantId: params.merchantId,
+    teamMemberId: params.teamMemberId ?? null,
+    action: params.action,
+    entityType: params.entityType ?? null,
+    entityId: params.entityId ?? null,
+    meta: (params.meta as any) ?? undefined,
+    ip: params.ip ?? null,
+  };
+}
+
+/**
+ * **T3 · fire-safe.** No se espera y los fallos se tragan: un fallo del log JAMÁS tumba la
+ * acción de negocio. Correcto para todo lo que NO es constitutivo de una prueba.
+ *
+ * No acepta las acciones bloqueantes: el tipo lo impide y `tsc` lo caza en cada tanda.
+ */
+export function recordAudit(params: AuditParams<AuditActionFireSafe>): void {
   prisma.auditLog
-    .create({
-      data: {
-        merchantId: params.merchantId,
-        teamMemberId: params.teamMemberId ?? null,
-        action: params.action,
-        entityType: params.entityType ?? null,
-        entityId: params.entityId ?? null,
-        meta: (params.meta as any) ?? undefined,
-        ip: params.ip ?? null,
-      },
-    })
+    .create({ data: datosDe(params) as any })
     .catch((e) => console.error('[audit] no se pudo registrar:', e?.message));
+}
+
+/**
+ * **T1/T2 · se espera y PROPAGA.** Si el registro no se puede escribir, el error sube y
+ * quien llama decide. Dentro de una `$transaction` (pasando `tx` como `client`) esa
+ * decisión es automática: la transacción se deshace y el hecho no ocurre.
+ *
+ * No lleva `try/catch` A PROPÓSITO. Un `catch` aquí reconstruiría exactamente el fallo
+ * mudo que este módulo viene a cerrar.
+ */
+export async function recordAuditOrThrow(
+  params: AuditParams<AuditAction>,
+  client: AuditClient = prisma as unknown as AuditClient,
+): Promise<void> {
+  await client.auditLog.create({ data: datosDe(params) });
 }

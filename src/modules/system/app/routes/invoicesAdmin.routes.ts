@@ -1,6 +1,6 @@
 // src/modules/system/app/routes/invoicesAdmin.routes.ts
 import { Router } from 'express';
-import { recordAudit, requestIp } from '../../audit.service'; // A11.1 (S2)
+import { recordAudit, requestIp, actorDeRequest, sobreFiscal, flagsFiscalesDe } from '../../audit.service'; // A11.1 (S2) · SCRUM-207
 import { requireRole } from '../../../../core/http/authMiddleware'; // A21.3 (S1)
 import { UnpayNotAllowedError } from '../../invoiceAdmin';
 import {
@@ -581,7 +581,12 @@ router.post('/:id/annul', requireRole('admin'), async (req, res) => {
       });
     }
 
-    const invoice = await prisma.invoice.findFirst({ where: { id, merchantId: req.merchantId } });
+    // SCRUM-207: `include: { merchant: … }` es ADITIVO — solo para congelar los flags
+    // fiscales del momento en el registro. No cambia ninguna condición de este flujo.
+    const invoice = await prisma.invoice.findFirst({
+      where: { id, merchantId: req.merchantId },
+      include: { merchant: { select: { id: true, country: true, flags: true } } },
+    });
     if (!invoice) return res.status(404).json({ error: 'not_found' });
 
     // Idempotente: volver a anular lo ya anulado no es error del usuario, y sobre todo NO repite
@@ -644,12 +649,20 @@ router.post('/:id/annul', requireRole('admin'), async (req, res) => {
       return { albaranes: albs.count, lineasLibro: libro.count };
     });
 
-    // `anular_factura` YA existía en el enum de auditoría: declarada y jamás usada, exactamente
-    // igual que la transición `pending → annulled` de la Parte L. Se usa la que hay en vez de
-    // inventar otra — el hueco era el disparador, no el vocabulario.
+    // SCRUM-207 (D-3): antes esto y la rectificativa R1 compartían `anular_factura`, así que
+    // por el campo `action` NO se distinguían dos hechos fiscales que no son el mismo (R10,
+    // regla 29). Ahora cada uno tiene el suyo. Las filas viejas NO se tocan — reescribir un
+    // registro de auditoría para «limpiarlo» es lo que este módulo existe para impedir; la
+    // regla de unión para consultarlas vive en `auditoriaFiscal.query.ts`.
     recordAudit({
-      merchantId: req.merchantId!, action: 'anular_factura', entityType: 'invoice', entityId: invoice.id,
-      meta: { number: invoice.number, motivo, sellada, ...liberados }, ip: requestIp(req),
+      merchantId: req.merchantId!, teamMemberId: req.teamMemberId ?? null,
+      action: 'factura_anulada', entityType: 'invoice', entityId: invoice.id,
+      meta: sobreFiscal({
+        actor: actorDeRequest(req),
+        flagsFiscales: flagsFiscalesDe(invoice.merchant ?? null),
+        payload: { numero: invoice.number, motivo, estabaSellada: sellada, ...liberados },
+      }),
+      ip: requestIp(req),
     });
 
     return res.json({
@@ -710,7 +723,9 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
     }
 
     const rect = await prisma.$transaction(async (tx) => {
-      const number = await allocateInvoiceNumber(tx, req.merchantId, { rectifying: true });
+      const number = await allocateInvoiceNumber(tx, req.merchantId, {
+        rectifying: true, camino: 'C5', actor: actorDeRequest(req),
+      });
       return tx.invoice.create({
         data: {
           merchantId: original.merchantId,
@@ -750,11 +765,25 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
       meta: { invoiceId: original.id, rectificationId: rect.id },
     });
 
-    // A11.1 (S2): anular vía R1 es la única anulación permitida (regla 29) — auditada
+    // A11.1 (S2) · SCRUM-207 (D-3): `factura_rectificada`, ya no `anular_factura`.
+    // Rectificar NO es anular: la original sigue existiendo con su huella (regla 29).
     recordAudit({
       merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
-      action: 'anular_factura', entityType: 'invoice', entityId: original.id,
-      meta: { number: original.number, rectification: rect.number, rectificationId: rect.id },
+      action: 'factura_rectificada', entityType: 'invoice', entityId: original.id,
+      meta: sobreFiscal({
+        actor: actorDeRequest(req),
+        flagsFiscales: flagsFiscalesDe(original.merchant ?? null),
+        payload: {
+          numeroOriginal: original.number,
+          numeroRectificativa: rect.number,
+          rectificationId: rect.id,
+          // `TipoRectificativa` (S sustitución vs I diferencias) NO se registra porque el
+          // generador aún NO lo emite y elegirlo es una calificación FISCAL, no de
+          // implementación (SEMAFORO_CALIBRACION §8.4, pendiente del asesor). Inventarlo
+          // aquí sería poner en un registro de auditoría un dato que nadie ha decidido.
+          estabaSellada: !!original.vfHash,
+        },
+      }),
       ip: requestIp(req),
     });
 

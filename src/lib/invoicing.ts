@@ -4,6 +4,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import { PrismaClient } from '@prisma/client';
 import { allocateInvoiceNumber, isReceiptNumber } from '../modules/invoicing/domain/invoiceNumber.service';
+import { recordAudit, sobreFiscal, flagsFiscalesDe, type ActorAudit } from '../modules/system/audit.service'; // SCRUM-207
 import { isDemoMerchant, DEMO_WATERMARK } from '../modules/invoicing/domain/emission.service';
 import { generateInvoicePdf } from './pdf';
 import { invoicesDir } from '../core/storage/dirs';
@@ -55,8 +56,28 @@ export async function ensureInvoicePdf(
         const vf = await applyVeriFactu(inv, inv.merchant.taxId, prisma);
         qrData = vf.qrUrl;
         vfHash = vf.vfHash;
-      } catch (e) {
+      } catch (e: any) {
+        // SCRUM-207 (A6): el `catch` SE QUEDA —«preferir NO sellar antes que sellar mal»
+        // sigue siendo lo correcto— pero deja de ser mudo. Antes de esto, una factura podía
+        // existir con número, con PDF entregado y sin huella, y lo único que quedaba era esta
+        // línea en el log de un servidor. Fire-safe (T3): el documento ya salió, registrar el
+        // fallo no puede impedir nada; lo que sí puede es hacerlo consultable.
         console.error('[ensureInvoicePdf] VeriFactu error:', e);
+        recordAudit({
+          merchantId: inv.merchantId,
+          action: 'sellado_fallido', entityType: 'invoice', entityId: inv.id,
+          meta: sobreFiscal({
+            actor: { tipo: 'sistema', ref: 'ensureInvoicePdf' },
+            flagsFiscales: flagsFiscalesDe(inv.merchant),
+            payload: {
+              numero: inv.number,
+              errorMensaje: String(e?.message ?? e).slice(0, 300),
+              puntoDeFallo: 'ensureInvoicePdf',
+              // El dato que convierte el fallo mudo en un hecho: el cliente SE LLEVÓ el PDF.
+              pdfEntregadoIgual: true,
+            },
+          }),
+        });
       }
     }
 
@@ -118,6 +139,10 @@ export async function ensureChargeReceiptToken(
 export async function ensureInvoiceForCharge(
   chargeId: number,
   prisma: PrismaClient,
+  // SCRUM-207 · OPCIONAL a propósito: las 4 bocas de C6 (2 webhooks de PSP + 2 API
+  // internas) pueden decir quién son; las que aún no lo hagan quedan como 'sistema',
+  // que es la verdad — no un valor de relleno que aparente una atribución que no hay.
+  actorC6?: ActorAudit,
 ) {
   const charge = await prisma.charge.findUnique({
     where: { id: chargeId },
@@ -149,8 +174,24 @@ export async function ensureInvoiceForCharge(
         qrData  = vf.qrUrl;
         vfHash  = vf.vfHash;
         // inv.qrData updated in DB by applyVeriFactu
-      } catch (e) {
+      } catch (e: any) {
+        // SCRUM-207 (A6): mismo criterio que el otro fail-open. La palabra «se omite» seguía
+        // escrita en el código y no había forma de consultarlo después.
         console.error('[verifactu] Error al aplicar VeriFactu, se omite:', e);
+        recordAudit({
+          merchantId: inv.merchantId,
+          action: 'sellado_fallido', entityType: 'invoice', entityId: inv.id,
+          meta: sobreFiscal({
+            actor: { tipo: 'sistema', ref: 'ensureInvoiceForCharge' },
+            flagsFiscales: flagsFiscalesDe(merchant ?? null),
+            payload: {
+              numero: inv.number,
+              errorMensaje: String(e?.message ?? e).slice(0, 300),
+              puntoDeFallo: 'ensureInvoiceForCharge',
+              pdfEntregadoIgual: false, // aquí aún no se ha renderizado nada
+            },
+          }),
+        });
       }
     }
 
@@ -240,7 +281,13 @@ export async function ensureInvoiceForCharge(
     : [{ concept: ch.concept, qty: 1, price: Number(ch.amount), tax: 0 }];
 
   const inv = await prisma.$transaction(async (tx) => {
-    const number = await allocateInvoiceNumber(tx, ch.merchantId);
+    const number = await allocateInvoiceNumber(tx, ch.merchantId, {
+      camino: 'C6',
+      // C6 tiene CUATRO bocas (2 webhooks de PSP + 2 API internas, SCRUM-200 §2.2) y
+      // `ensureInvoiceForCharge` no sabe por cuál entró: distinguirlas exige propagar el
+      // actor desde los 4 llamadores. Se registra lo que se sabe y NO se inventa el resto.
+      actor: actorC6 ?? { tipo: 'sistema', ref: 'ensureInvoiceForCharge' },
+    });
     return tx.invoice.create({
       data: {
         merchantId: ch.merchantId,

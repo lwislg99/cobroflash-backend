@@ -709,6 +709,11 @@ model AuditLog {
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@index([merchantId, action, createdAt])
+  // SCRUM-207 (D-1): el eje de la consulta de INSPECCIÓN es «qué pasó con la factura X»
+  // (contrato §7.1 Q1), y el índice de arriba no lo sirve: pregunta por acción, no por
+  // entidad. ÚNICO cambio de schema del ticket, ADITIVO y de rendimiento — no cambia
+  // ninguna forma ni ningún dato.
+  @@index([merchantId, entityType, entityId])
   @@map("audit_log")
 }
 
