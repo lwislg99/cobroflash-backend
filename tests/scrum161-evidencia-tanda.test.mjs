@@ -39,6 +39,11 @@ const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
 
 const COMMIT = 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678';
+// SCRUM-239: el ancla del recibo ya no es la identidad del commit, es la HUELLA del contenido
+// del codigo. El `commit` sigue en el recibo, pero como contexto declarado. Los dos sentidos en
+// que `commit === HEAD` fallaba se fijan en tests/scrum239-huella-de-codigo.test.mjs.
+const HUELLA = '0123456789abcdef0123456789abcdef01234567';
+const HUELLA_ACTUAL = { huella: HUELLA, ficheros: 556 };
 const AHORA = Date.parse('2026-07-28T15:00:00.000Z');
 const h = (n) => n * 3600000;
 
@@ -53,6 +58,8 @@ const todosVerdes = () => Object.fromEntries(CLAVES_HIJOS.map((k) => [k, { ...HI
 function reciboBueno(extra = {}) {
   return {
     commit: COMMIT,
+    huella: HUELLA,
+    huellaFicheros: 556,
     terminadaEn: new Date(AHORA - 60000).toISOString(),
     total: 646, pass: 646, fail: 0, skip: 0, // SCRUM-161: el suelo subió a 646 al encender (agregado real 2a1d053)
     ficheros: 337,
@@ -65,6 +72,7 @@ function reciboBueno(extra = {}) {
 const validar = (recibo, opts = {}) => validarEvidencia({
   texto: recibo === null ? null : JSON.stringify(recibo),
   commitActual: COMMIT,
+  huellaActual: HUELLA_ACTUAL,
   ahoraMs: AHORA,
   ficherosEsperados: 337,
   ...opts,
@@ -93,13 +101,26 @@ test('SCRUM-161 · ① recibo AUSENTE → no hay evidencia', () => {
     'el mensaje tiene que decir qué comando arregla esto');
 });
 
-test('SCRUM-161 · ② recibo de OTRO COMMIT → evidencia caducada', () => {
+test('SCRUM-161 · ② recibo de OTRO CÓDIGO → evidencia caducada', () => {
   // La trampa: correr la tanda, seguir programando y cerrar con la evidencia de antes.
   // Es lo que separa este guard de un «sí»: caduca sola en cuanto tocas una línea.
-  const res = validar(reciboBueno({ commit: 'ffffffffffffffffffffffffffffffffffffffff' }));
+  //
+  // SCRUM-239: «tocas una línea» se mide por CONTENIDO, no por identidad de commit. Antes este
+  // test movía el `commit` y esperaba `commit-viejo`; eso probaba el proxy, no la propiedad —
+  // y el proxy fallaba en los dos sentidos (un commit de docs invalidaba un árbol intacto; una
+  // edición sin commitear NO invalidaba nada). Los dos sentidos, en scrum239-huella-de-codigo.
+  const res = validar(reciboBueno(), { huellaActual: { huella: 'f'.repeat(40), ficheros: 556 } });
   assert.equal(res.ok, false);
-  assert.deepEqual(claves(res), ['commit-viejo']);
-  assert.match(res.problemas[0].detalle, /ffffffff/, 'debe decir de qué commit era el recibo');
+  assert.deepEqual(claves(res), ['codigo-cambiado']);
+  assert.match(res.problemas[0].detalle, /01234567/, 'debe decir de qué código era el recibo');
+});
+
+test('SCRUM-161 · ②b un commit NUEVO con el mismo código NO caduca la evidencia', () => {
+  // El otro sentido, aquí porque es donde vivía la regla vieja: anotar la tarea en el máster es
+  // un commit que no toca código, y con el criterio anterior invalidaba el recibo de la tanda
+  // que acababa de anotarse. El acto de registrar la prueba destruía la prueba (SCRUM-239).
+  const res = validar(reciboBueno(), { commitActual: 'ffffffffffffffffffffffffffffffffffffffff' });
+  assert.deepEqual(res.problemas, [], '🔴 el bucle de SCRUM-239 ha vuelto');
 });
 
 test('SCRUM-161 · ③ recibo con fail>0 → ticket y cuarentena, NUNCA re-correr', () => {

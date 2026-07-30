@@ -736,17 +736,29 @@ combate — por eso, con la campaña cerrada, se documentó en vez de recontar: 
 > 3. Preview (`prisma migrate diff`) y enseñarlo. Cero DROPs y cero ALTER de columnas ajenas.
 > 4. `db push` **con `--skip-generate`**.
 >
->    ⚠️ **Falso positivo nº1 — `P1013` al extraer la URL del `.env`.** El fichero es CRLF y el
->    valor va **entre comillas simples**, así que un `cut -d= -f2-` a secas deja un retorno de
->    carro y las comillas dentro de la URL → Prisma corta con **`P1013` "The scheme is not
->    recognized"**, que parece un problema de credenciales y no lo es. Sanear con
->    `tr -d` del retorno de carro + quitar las comillas con `sed`.
+>    ⚠️ **La URL de la BD no se saca del `.env` a mano. Nunca.** Ni para este paso ni para
+>    ninguno. La lee `dotenv` —su parser quita el entrecomillado y el CRLF— y viaja al proceso
+>    hijo **por el entorno**, nunca en el `argv` (lo que ve cualquiera con `ps`). Y no se
+>    reexporta a una variable de shell por el camino. Está resuelto en el repo y se copia de
+>    ahí: `scripts/preflight-schema-drift.mjs` (preview) y `scripts/db-push-prod` (push guiado),
+>    que para MIRAR a dónde apunta usa `parseBDSegura` de `scripts/_db-guard.mjs` — una función
+>    que **no tiene forma de devolver la cadena**: solo host, base, usuario y puerto.
 >
->    ⚠️ **Falso positivo nº2 — usa el binario LOCAL, no `npx prisma`.** Si el worktree no tiene
->    el junction de `node_modules`, `npx` se baja **Prisma 7** del registro, y ahí `--from-url`
->    **ya no existe** (`"was removed"`). Parece que el comando de este runbook está obsoleto y
->    **no lo está**: es el binario equivocado. Crea el junction y usa
->    `node node_modules/prisma/build/index.js`.
+>    ⚠️ **Falso positivo nº1 — `P1013` "The scheme is not recognized" NO es un problema de
+>    credenciales.** Es la señal de que la URL se recortó del `.env` con herramientas de texto:
+>    el valor va entrecomillado y el fichero es CRLF, así que el recorte mete las comillas y el
+>    retorno de carro **dentro** de la URL. Mismo defecto que el incidente #14 (una credencial de
+>    producción publicada porque `new URL()` recibió la cadena con comillas y volcó su
+>    `.message`). El arreglo no es sanear el recorte: es no recortar — vuelve al párrafo de
+>    arriba. Lo vigilan SCRUM-223, SCRUM-226 y el guard de prosa de SCRUM-233.
+>
+>    ⚠️ **Falso positivo nº2 — un comando de este runbook que "no existe" es el binario
+>    equivocado.** `npx prisma` usa el binario LOCAL **solo si el worktree tiene `node_modules`**
+>    (aquí, por junction). Sin él, `npx` se baja del registro una versión **mayor distinta** de la
+>    fijada en `package.json` (`prisma ^6.18.0`), y su CLI no es la misma: en Prisma 7 el flag
+>    `--from-url` **ya no existe** (`"was removed"`), que es como se descubrió esto. Parece que el
+>    runbook está obsoleto y **no lo está**. Crea el junction, o invoca el binario local directo:
+>    `node node_modules/prisma/build/index.js` (es lo que hace `preflight-schema-drift.mjs`).
 >
 >    (Los dos costaron tiempo en los pushes de SCRUM-145, 24-jul. Nota: la primera versión de
 >    este apunte se escribió con un script que interpretó el retorno de carro y partió el

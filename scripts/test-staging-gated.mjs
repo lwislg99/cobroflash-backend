@@ -67,7 +67,9 @@ import {
 } from './_staging-lock.mjs';
 // SCRUM-161: al terminar, el runner deja un RECIBO de que la tanda corrió. Es lo único que el
 // guard de cierre acepta como evidencia, porque es lo único que no se puede teclear.
-import { RUTA_RECIBO, HIJOS_SPEC, AISLADOS, pesadoEsElUltimo } from './_evidencia-tanda.mjs';
+// SCRUM-239: `huellaDeCodigo` es el ANCLA del recibo, y se importa (no se reimplementa) para
+// que el runner y el verificador no puedan calcular cosas distintas.
+import { RUTA_RECIBO, HIJOS_SPEC, AISLADOS, pesadoEsElUltimo, huellaDeCodigo } from './_evidencia-tanda.mjs';
 // SCRUM-197: el parseo del resumen de node:test vive extraído, para que un test lo ejercite sin
 // arrancar la tanda. De su comportamiento con salida truncada depende la distinción crash-vs-rojo.
 import { CATS, parseCuenta } from './_parse-cuenta.mjs';
@@ -173,6 +175,23 @@ const TIMEOUT_MAYOR_MS = Math.max(...hijos.map((h) => OVERRIDE_MS || (h.pesado ?
 const TTL_MS = ttlParaTanda(TIMEOUT_MAYOR_MS);
 const DUENO = idDeSesion(os.hostname(), process.pid);
 
+// SCRUM-232 · QUÉ va a correr, para que quien llegue no tenga que adivinarlo.
+//
+// La REF sale de la rama, que es el dato que un humano reconoce a las once de la noche y el que
+// dice si lo que corre es más urgente que lo suyo. Si `git` falla —worktree raro, HEAD suelto—
+// se cae a `sin-ref` en vez de reventar: el contexto es informativo y no puede tumbar la tanda.
+//
+// La DURACIÓN PREVISTA es la suma de los timeouts de los hijos, no el TTL. Son cosas distintas y
+// confundirlas es justo lo que hace inútil el mensaje de hoy: el TTL dice cuándo caduca el turno
+// (1h 10min), no cuánto va a tardar esto (~27 min). Quien espera necesita lo segundo.
+const REF_TANDA = (() => {
+  const r = spawnSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { encoding: 'utf8' });
+  const nombre = r.status === 0 ? (r.stdout || '').trim() : '';
+  return nombre && nombre !== 'HEAD' ? nombre : 'sin-ref';
+})();
+const DURACION_PREVISTA_MS = hijos.reduce(
+  (t, h) => t + (OVERRIDE_MS || (h.pesado ? HEAVY_MS : LIGHT_MS)), 0);
+
 // La allowlist de host, INCONDICIONAL y antes de construir el cliente: desde SCRUM-188 este
 // script escribe, y lo que escribe es la barrera de seguridad de SCRUM-118.
 const urlStaging = process.env.DATABASE_URL_STAGING;
@@ -197,7 +216,10 @@ let marcaPropia = null; // el marcador exacto que escribimos; sirve para no pisa
 {
   let res;
   try {
-    res = await adquirirLock(clienteTurno, { dueño: DUENO, ttlMs: TTL_MS });
+    res = await adquirirLock(clienteTurno, {
+      dueño: DUENO, ttlMs: TTL_MS,
+      tipo: 'gated', ref: REF_TANDA, finPrevistoMs: Date.now() + DURACION_PREVISTA_MS,
+    });
   } catch (err) {
     // Fail-closed, igual que la barrera: si no se puede COORDINAR, no se corre.
     console.error(`\n❌ tanda gateada ABORTADA: no se pudo tomar el turno de staging (${err?.message || err}).`);
@@ -216,7 +238,10 @@ let marcaPropia = null; // el marcador exacto que escribimos; sirve para no pisa
   }
 
   if (!res.ok && res.motivo === 'ocupado') {
-    console.error(mensajeLockAjeno({ db: res.db, lock: res.lock, ahoraMs: res.ahoraMs, ttlMs: res.ttlMs }));
+    console.error(mensajeLockAjeno({
+      db: res.db, lock: res.lock, ahoraMs: res.ahoraMs, ttlMs: res.ttlMs,
+      contexto: res.contexto, // SCRUM-232: qué está corriendo y cuánto le queda
+    }));
     await clienteTurno.$disconnect().catch(() => {});
     process.exit(CODIGO_SALIDA_LOCK_AJENO);
   }
@@ -448,8 +473,20 @@ async function tanda() {
   // por su nombre. De paso pisa cualquier recibo bueno anterior: falla cerrado.
   try {
     const commit = spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).stdout?.trim() || null;
+    // SCRUM-239 · EL ANCLA. El `commit` se queda como CONTEXTO DECLARADO (contra qué se midió);
+    // lo que el guard compara es la HUELLA del contenido, que sí ve las ediciones sin commitear.
+    // Mismo `huellaDeCodigo` que usa el verificador: no hay dos cálculos capaces de divergir.
+    const gitParaHuella = (args, stdin) => {
+      const r = spawnSync('git', args, { encoding: 'utf8', input: stdin, maxBuffer: 64 * 1024 * 1024 });
+      return r.status === 0 ? (r.stdout ?? '') : null;
+    };
+    const huella = huellaDeCodigo(gitParaHuella);
     const recibo = {
       commit,
+      // `null` si no se pudo calcular, y el validador lo rechaza. Escribir un recibo SIN huella
+      // es mejor que escribir uno con una huella a medias: el fallo se ve en vez de heredarse.
+      huella: huella?.huella ?? null,
+      huellaFicheros: huella?.ficheros ?? null,
       terminadaEn: new Date().toISOString(),
       total: agg.tests, pass: agg.pass, fail: agg.fail, skip: agg.skipped,
       ficheros: override ? 1 : ficherosQa.length,
