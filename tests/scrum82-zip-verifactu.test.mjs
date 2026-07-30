@@ -104,7 +104,9 @@ test('SCRUM-82: datos.zip incluye el XML VeriFactu por año, byte-idéntico al e
           number: `${currentYear}-QA-${stamp % 1000}`,
           total: '121.00', currency: 'EUR', type: 'F1', status: 'paid',
           lines: [{ concept: 'Servicio QA S82 A', qty: 1, price: 100, tax: 0.21 }],
-          vfHash: 'HASH_QA_S82_A', vfPrevHash: '',
+          // SCRUM-205: `sellado` porque ya escribe `vfHash`. Este test necesita registros que
+          // exportar: una factura sin sellar no entra en el XML.
+          vfHash: 'HASH_QA_S82_A', vfPrevHash: '', vfEstado: 'sellado',
           pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
         },
       });
@@ -117,7 +119,9 @@ test('SCRUM-82: datos.zip incluye el XML VeriFactu por año, byte-idéntico al e
           total: '50.00', currency: 'EUR', type: 'F1', status: 'paid',
           createdAt: new Date(prevYear, 5, 15),
           lines: [{ concept: 'Servicio QA S82 B', qty: 1, price: 50, tax: 0 }],
-          vfHash: 'HASH_QA_S82_B', vfPrevHash: '',
+          // SCRUM-205: ídem, y esta es la del año ANTERIOR — el test comprueba que el ZIP
+          // separa los XML por año natural, así que las dos tienen que estar en la cadena.
+          vfHash: 'HASH_QA_S82_B', vfPrevHash: '', vfEstado: 'sellado',
           pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
         },
       });

@@ -42,6 +42,10 @@ test('SCRUM-74: /recibo/:token cierra el IDOR — numérico 404 sin fuga, token 
         merchantId: merchant.id, customerId: customer.id, number: `2026-QA-S74-${tag}-${stamp % 1000}`,
         total: '75.00', currency: 'EUR', type: 'F1', status: 'paid',
         lines: [{ concept: 'Servicio QA S74', qty: 1, price: 75 }],
+        // SCRUM-205: `no_aplica` — merchant ES SIN NIF, fuera de la cadena por definición. Lo
+        // que prueba este test es que el recibo público se sirve por token opaco y no por id
+        // enumerable (IDOR/RGPD), no el sellado.
+        vfEstado: 'no_aplica',
         pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
       },
     });
