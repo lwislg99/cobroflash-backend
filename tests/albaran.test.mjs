@@ -43,7 +43,12 @@ test('resolveAlbaranSeq: continúa en el mismo año, resetea al cambiar y con se
 test('allocateAlbaranNumber: correlativo y avanza el contador (tx mock)', async () => {
   const updates = [];
   const state = { nextAlbaranNumber: 1, albaranSeriesYear: null };
+  // SCRUM-234: el mock tiene que modelar `$executeRaw` porque la reserva ahora toma un
+  // advisory lock ANTES de leer. Y en vez de un no-op, lo REGISTRA: así este test pasa a
+  // comprobar también que el cerrojo se toma, que es lo que impide la carrera de serie.
+  const cerrojos = [];
   const tx = {
+    $executeRaw: async (plantilla) => { cerrojos.push(String(plantilla?.strings?.join('?') ?? plantilla)); return 0; },
     merchant: {
       findUnique: async () => ({ id: 7, ...state }),
       update: async ({ data }) => { Object.assign(state, data); updates.push(data); return state; },
@@ -53,6 +58,12 @@ test('allocateAlbaranNumber: correlativo y avanza el contador (tx mock)', async 
   assert.equal(await allocateAlbaranNumber(tx, 7, now), 'ALB-2026-001');
   assert.equal(await allocateAlbaranNumber(tx, 7, now), 'ALB-2026-002');
   assert.equal(state.nextAlbaranNumber, 3);
+  // SCRUM-234: una reserva, un cerrojo. Si esto baja a 0, la carrera está de vuelta.
+  assert.equal(cerrojos.length, 2, 'cada reserva de serie toma su advisory lock');
+  assert.ok(
+    cerrojos.every((c) => /pg_advisory_xact_lock/.test(c)),
+    'el cerrojo tiene que ser pg_advisory_xact_lock, no otra sentencia cualquiera',
+  );
   assert.equal(state.albaranSeriesYear, 2026);
   // Cambio de año → serie nueva desde 1
   assert.equal(await allocateAlbaranNumber(tx, 7, new Date('2027-01-02T09:00:00Z')), 'ALB-2027-001');
@@ -60,7 +71,9 @@ test('allocateAlbaranNumber: correlativo y avanza el contador (tx mock)', async 
 });
 
 test('allocateAlbaranNumber: merchant inexistente lanza', async () => {
-  const tx = { merchant: { findUnique: async () => null, update: async () => { throw new Error('no'); } } };
+  // SCRUM-234: `$executeRaw` hace falta porque el cerrojo se toma ANTES del findUnique; sin él
+  // este test fallaría por el mock y no por el merchant inexistente, que es lo que mide.
+  const tx = { $executeRaw: async () => 0, merchant: { findUnique: async () => null, update: async () => { throw new Error('no'); } } };
   await assert.rejects(() => allocateAlbaranNumber(tx, 999), /merchant_not_found/);
 });
 

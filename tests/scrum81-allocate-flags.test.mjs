@@ -16,6 +16,10 @@ const CTX = { camino: 'C3', actor: { tipo: 'pro_propietario', teamMemberId: null
 const mkTx = (merchant) => {
   const state = { ...merchant };
   return {
+    // SCRUM-234: la reserva toma un advisory lock antes de leer, así que la tx mínima
+    // necesita `$executeRaw`. No-op aquí: lo que este fichero mide son los flags, y el
+    // cerrojo tiene su propia comprobación en tests/albaran.test.mjs y en el censo.
+    $executeRaw: async () => 0,
     merchant: {
       findUnique: async () => state,
       update: async ({ data }) => { Object.assign(state, data); return state; },

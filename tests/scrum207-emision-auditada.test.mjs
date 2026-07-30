@@ -34,6 +34,10 @@ function txFalso({ auditFalla = false, merchant = {} } = {}) {
   const escrito = [];
   return {
     escrito,
+    // SCRUM-234: la reserva toma un advisory lock antes de leer, asi que el doble de
+    // TransactionClient necesita $executeRaw. No-op: lo que mide este fichero es la
+    // AUDITORIA, y el cerrojo tiene su comprobacion propia en tests/albaran.test.mjs.
+    $executeRaw: async () => 0,
     merchant: {
       findUnique: async () => ({
         id: MERCHANT_ID, email: 'pro@x.es', country: 'ES', flags: { INVOICING_ES_ENABLED: true },
