@@ -1,6 +1,7 @@
 import { prisma } from '../../../core/db/prisma';
 import { estadoCobroFor } from '../../jobs/domain/job.service'; // SCRUM-24: mismo semáforo que la lista de Trabajos
 import { isFieldMember } from '../../../core/http/roleCapabilities'; // SCRUM-147
+import { ensamblarMetricasEquipo } from './metricasEquipo'; // SCRUM-236
 
 export async function getHomeMetrics(merchantId: number) {
   const now = new Date();
@@ -384,7 +385,8 @@ export async function getTeamMetrics(merchantId: number) {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const weekAgo = new Date(now.getTime() - 7 * 86_400_000);
 
-  const [members, monthQuotes, paidInvoices, quoteOwners] = await Promise.all([
+  const [merchant, members, monthQuotes, paidInvoices] = await Promise.all([
+    prisma.merchant.findUnique({ where: { id: merchantId }, select: { name: true, legalName: true } }),
     prisma.teamMember.findMany({
       where: { merchantId },
       select: { id: true, name: true, role: true, status: true },
@@ -393,72 +395,36 @@ export async function getTeamMetrics(merchantId: number) {
       where: { merchantId, status: { not: 'draft' }, createdAt: { gte: monthStart } },
       select: { teamMemberId: true, status: true, createdAt: true },
     }),
+    // SCRUM-236: aquí había `quoteId: { not: null }`, que DESCARTABA en silencio toda factura
+    // no nacida de un presupuesto — o sea todo el flujo de Trabajos (`albaranes.routes.ts` y
+    // `recapitulativa.service.ts` fijan `quoteId: null` a pelo). Las filas por empleado no
+    // sumaban el total y la pantalla no lo decía: el profesional no cuadraba los números y
+    // dejaba de fiarse de TODA la pantalla, incluidos los que sí eran correctos.
+    //
+    // Ahora vienen TODAS y el reparto lo hace `desglosarPorEmpleado` (SCRUM-228), que lo no
+    // atribuible lo hace VISIBLE en «Sin asignar» en vez de tirarlo. El `quote.teamMemberId`
+    // se trae aquí en la misma consulta: la segunda query (`quoteOwners`, un `findMany` de
+    // TODOS los presupuestos del merchant para armar un mapa a mano) sobra.
     prisma.invoice.findMany({
-      where: { merchantId, status: 'paid', paidAt: { gte: monthStart }, quoteId: { not: null } },
-      select: { total: true, quoteId: true },
+      where: { merchantId, status: 'paid', paidAt: { gte: monthStart } },
+      select: { total: true, quoteId: true, quote: { select: { teamMemberId: true } } },
     }),
-    prisma.quote.findMany({ where: { merchantId }, select: { id: true, teamMemberId: true } }),
   ]);
 
-  // Mapa quoteId -> teamMemberId (para atribuir lo cobrado)
-  const ownerMap = new Map<number, number | null>();
-  quoteOwners.forEach((q) => ownerMap.set(q.id, q.teamMemberId ?? null));
-
-  type Agg = { sent: number; accepted: number; collected: number; thisWeek: number };
-  const agg = new Map<number, Agg>(); // clave 0 = propietario
-  const ensure = (k: number): Agg => {
-    if (!agg.has(k)) agg.set(k, { sent: 0, accepted: 0, collected: 0, thisWeek: 0 });
-    return agg.get(k)!;
-  };
-
-  for (const q of monthQuotes) {
-    const a = ensure(q.teamMemberId ?? 0);
-    a.sent++;
-    if (q.status === 'accepted') a.accepted++;
-    if (new Date(q.createdAt) >= weekAgo) a.thisWeek++;
-  }
-  for (const inv of paidInvoices) {
-    const tm = inv.quoteId != null ? (ownerMap.get(inv.quoteId) ?? null) : null;
-    ensure(tm ?? 0).collected += Number(inv.total);
-  }
-
-  const round2 = (n: number) => Math.round(n * 100) / 100;
-  const rate = (a: Agg) => (a.sent > 0 ? Math.round((a.accepted / a.sent) * 100) : 0);
-
-  const list: any[] = [];
-  const ownerAgg = ensure(0);
-  list.push({
-    id: null, name: 'Tú (propietario)', role: 'owner', status: 'active',
-    sent: ownerAgg.sent, accepted: ownerAgg.accepted, collected: round2(ownerAgg.collected),
-    acceptanceRate: rate(ownerAgg), thisWeek: ownerAgg.thisWeek, isBest: false,
+  // SCRUM-236: el ensamblado (reparto incluido) vive en `metricasEquipo.ts` como funcion PURA,
+  // para que el invariante «filas + Sin asignar = total» se pueda probar en centimos enteros y
+  // sin BD. Aqui solo quedan las consultas. Lo que se borro y por que:
+  //   · `ownerMap` + la consulta `quoteOwners` — hacian a mano lo que `desglosarPorEmpleado` ya
+  //     hace, y ademas cargaban TODOS los presupuestos del merchant para armar el mapa.
+  //   · `ensure(tm ?? 0)` — metia lo no atribuible en la clave 0, que es EL PROPIETARIO. Sumaba
+  //     bien y mentia: le cargaba al dueno, en su pantalla, dinero que nadie sabe de quien es.
+  return ensamblarMetricasEquipo({
+    members,
+    monthQuotes,
+    paidInvoices,
+    nombrePropietario: merchant?.legalName || merchant?.name || 'Tu (propietario)',
+    weekAgo,
   });
-  for (const m of members) {
-    const a = ensure(m.id);
-    list.push({
-      id: m.id, name: m.name, role: m.role, status: m.status,
-      sent: a.sent, accepted: a.accepted, collected: round2(a.collected),
-      acceptanceRate: rate(a), thisWeek: a.thisWeek, isBest: false,
-    });
-  }
-
-  // Mejor del mes: mayor importe cobrado entre quienes tienen actividad
-  let bestId: number | null | undefined;
-  let bestVal = 0;
-  for (const e of list) {
-    if (e.sent > 0 && e.collected > bestVal) { bestVal = e.collected; bestId = e.id; }
-  }
-  if (bestVal > 0) list.forEach((e) => { e.isBest = e.id === bestId; });
-
-  // Técnicos activos sin actividad esta semana
-  const inactive = list
-    // SCRUM-147: por capacidad. Con `=== 'tecnico'` un rol nuevo quedaba INVISIBLE en las
-    // métricas de equipo (la otra mitad del problema de SCRUM-137). Aquí el conjunto cerrado es
-    // el EXCLUIDO (admin/propietario), así que lo desconocido SÍ se cuenta — ver roleCapabilities.
-    .filter((e) => isFieldMember(e.role) && e.status === 'active' && e.thisWeek === 0)
-    .map((e) => e.name);
-
-  const equipoDeCampo = members.filter((m) => isFieldMember(m.role)).length; // SCRUM-147: por capacidad
-  return { hasTeam: equipoDeCampo > 0, members: list, inactive };
 }
 
 // ──────────────────────────────────────────────────────────────────────────
