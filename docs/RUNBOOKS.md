@@ -291,6 +291,32 @@ Caduca solo a los 45 min, así que una sesión muerta no bloquea a nadie. Para l
 `DATABASE_URL="<url de esa base>" node scripts/marcar-staging.mjs`. Detalle en
 `docs/QA/SUITE_REGRESION.md` § «El TURNO de staging».
 
+**CONSULTAR y TOMAR el turno sin lanzar una tanda (SCRUM-232).** Hasta aquí solo estaba escrito
+cómo LIBERARLO: tomarlo lo hacía únicamente el runner gateado, así que sostenerlo durante
+cualquier otra operación contra staging —un `npm install` en el árbol compartido, una semilla,
+una conciliación— obligaba a improvisar un script cada vez. Ya no:
+
+```bash
+npm run turno:estado     # quién lo tiene, QUÉ está corriendo y cuánto le queda. Solo lectura.
+npm run turno:tomar      # lo toma para lo que vayas a hacer (--ref <rama> --minutos <N>)
+npm run turno:soltar     # lo suelta (recuerda tu marca; --marca "<marca>" si se perdió la nota)
+```
+
+`turno:estado` es el que evita la conducta peligrosa: quien llega y lo ve ocupado puede **saber
+si le compensa esperar** en vez de elegir entre esperar a ciegas o romper el lock. Desde
+SCRUM-232 el rechazo del runner dice también qué está corriendo y cuánto le queda de verdad —
+que **no es el TTL**: el TTL dice cuándo caduca el turno (1h 10min), no cuánto tarda la tanda
+(~27 min). Si la otra sesión corre código anterior a SCRUM-232, sale «NO CONSTA» y el mensaje
+degrada al de siempre.
+
+> Estos comandos leen `DATABASE_URL_STAGING` del `.env`, y `.env` está en `.gitignore`: **solo
+> existe en el checkout principal, no en los worktrees**. Desde un worktree, ejecútalos con el
+> cwd del checkout principal (`cd <principal> && node ../<worktree>/scripts/turno-staging.mjs
+> estado`). Nunca pases la URL por línea de órdenes (regla 9).
+
+**Ninguno de los tres rompe un lock ajeno**, a propósito: para eso está `marcar-staging.mjs`, y
+solo sabiendo que la otra sesión está muerta.
+
 > **Si MATAS la tanda, el turno se queda TOMADO (SCRUM-207, 29-jul-2026).** Lo suelta al
 > *acabar*, no al morir: un `kill` se salta ese paso. Síntoma: la siguiente tanda no arranca
 > (exit 5) y nombra a un dueño que ya no existe. Se comprueba leyendo el marcador
