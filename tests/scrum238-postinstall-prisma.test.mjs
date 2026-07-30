@@ -11,6 +11,12 @@
 // exige que exista y que corra `prisma generate`, para que la dependencia deje de ser invisible.
 // Es aditivo e idempotente. La interacción con el node_modules compartido por junction (SCRUM-190)
 // la cubre el guard de coincidencia `scripts/_prisma-client-guard.mjs`, que corre en `pretest`.
+//
+// ⚠️ ALCANCE, dicho para que se lea en VERDE y no solo al fallar: este guard comprueba la
+// DECLARACIÓN (que la línea `postinstall: prisma generate` está en package.json), NO el RESULTADO.
+// Que el cliente QUEDE generado lo comprueba `_prisma-client-guard.mjs` (SCRUM-190) en `pretest`:
+// en una instalación limpia (Railway/CI), si el postinstall no corriera, el cliente estaría ausente
+// y ese guard caería. Verde aquí ≠ «el cliente está generado» — es «el mecanismo está declarado».
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -20,7 +26,7 @@ import { fileURLToPath } from 'node:url';
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const pkg = JSON.parse(fs.readFileSync(path.join(RAIZ, 'package.json'), 'utf8'));
 
-test('SCRUM-238: hay un `postinstall` que genera el cliente de Prisma', () => {
+test('SCRUM-238: package.json DECLARA el postinstall (prisma generate) — el RESULTADO (cliente generado) lo comprueba scrum190 en instalación limpia', () => {
   const post = pkg.scripts?.postinstall;
   assert.ok(
     post,
