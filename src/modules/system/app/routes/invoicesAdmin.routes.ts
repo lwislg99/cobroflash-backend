@@ -27,6 +27,7 @@ import { normalizePhone } from '../../../../core/utils/utils';
 import fs from 'fs';
 import { ensureInvoicePdf, ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { sendSuccessBody, sendFailureBody, SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
+import { esErrorSinSellar, ERROR_SIN_SELLAR } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
 
 
 const router = Router();
@@ -907,6 +908,15 @@ router.get('/:id/pdf', async (req, res) => {
     return fs.createReadStream(diskPath).pipe(res);
   } catch (err) {
     console.error('[GET /admin/invoices/:id/pdf]', err);
+    // SCRUM-206: no es un fallo de generación, y llamarlo así manda a quien depure al sitio
+    // equivocado. La factura existe y NO está registrada: 409 con su código.
+    if (esErrorSinSellar(err)) {
+      return res.status(409).json({
+        error: ERROR_SIN_SELLAR,
+        // [PENDIENTE microcopy oficial] — pantalla de admin, pendiente de aprobación (regla 30).
+        message: 'Esta factura todavía no está registrada. Se reintenta solo; si sigue así, avísanos.',
+      });
+    }
     return res.status(500).json({ error: 'pdf_generation_failed' });
   }
 });
