@@ -187,7 +187,11 @@ router.post('/', async (req, res) => {
             bodyText: `¡Gracias por confiar en *${merchant.name}*, ${updated.customer.name || 'Cliente'}! 🙏\n¿Nos dejas una reseña en Google? Solo te lleva 10 segundos y nos ayuda muchísimo ⭐`,
             buttonText: '⭐ Dejar reseña',
             url: merchant.googleReviewUrl,
-          }).catch(() => {});
+            // SCRUM-227: deja rastro consultable de la reseña (relatedType 'review', no 'charge')
+            log: { customerId: updated.customer?.id ?? null, relatedType: 'review', relatedId: updated.id },
+            // SCRUM-227: el fallo se registra (dentro de sendWhatsAppCtaUrl) y aquí se LOGUEA en vez
+            // de tragarse — pero NO se relanza: un throw reventaría el webhook y el PSP reintentaría el cobro.
+          }).catch((err) => console.error('[review] Error enviando reseña:', err?.message));
         }
       }
 
