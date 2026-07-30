@@ -198,6 +198,9 @@ export async function sendWhatsAppTemplate(params: {
     }).catch(() => {});
   };
 
+  // SCRUM-227 (extiende WA-0b de SCRUM-115): sin merchantId ningún log dejará rastro — avisar (sin romper el envío).
+  if (!params.merchantId) avisoSinRastro('sendWhatsAppTemplate', params.log);
+
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, mensaje omitido');
     logFailure('not_configured');
@@ -445,6 +448,9 @@ export async function sendWhatsAppText(params: {
       relatedId: params.log?.relatedId ?? null,
     }).catch(() => {});
   };
+
+  // SCRUM-227 (extiende WA-0b de SCRUM-115): sin merchantId ningún log dejará rastro — avisar (sin romper el envío).
+  if (!params.merchantId) avisoSinRastro('sendWhatsAppText', params.log);
 
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, mensaje omitido');
