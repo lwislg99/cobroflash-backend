@@ -59,6 +59,18 @@ export interface WaLogMeta {
   relatedId?: number | null;
 }
 
+// SCRUM-227: un envío sin merchantId NO puede dejar rastro (WhatsAppMessage.merchantId es
+// OBLIGATORIO en el schema). Antes, un llamador que omitiera merchantId no registraba y nadie
+// se enteraba — el mismo fallo mudo que este ticket cierra, una capa más abajo. Ahora AVISA con
+// el sender y el relatedType. NO lanza a propósito: reventar un envío por telemetría ausente es
+// peor que el problema (el envío sigue; lo único que se pierde es su fila de rastro).
+function avisoSinRastro(origen: string, log?: WaLogMeta): void {
+  console.error(
+    `[WA-0b] ${origen}: envío SIN merchantId → no deja rastro en WhatsAppMessage ` +
+      `(relatedType=${log?.relatedType ?? 'null'}). El llamador debe pasar merchantId.`,
+  );
+}
+
 /**
  * J3: ¿el destinatario se dio de baja de WhatsApp para este merchant?
  * Compara el teléfono normalizado contra los clientes con `waOptOut=true`
@@ -521,6 +533,9 @@ export async function sendWhatsAppButtons(params: {
     }).catch(() => {});
   };
 
+  // SCRUM-227: sin merchantId ningún log de abajo dejará rastro — avisar (sin romper el envío).
+  if (!params.merchantId) avisoSinRastro('sendWhatsAppButtons', params.log);
+
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, botones omitidos');
     logFailure('not_configured');
@@ -613,6 +628,9 @@ export async function sendWhatsAppList(params: {
       relatedId: params.log?.relatedId ?? null,
     }).catch(() => {});
   };
+
+  // SCRUM-227: sin merchantId ningún log de abajo dejará rastro — avisar (sin romper el envío).
+  if (!params.merchantId) avisoSinRastro('sendWhatsAppList', params.log);
 
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, lista omitida');
@@ -716,6 +734,9 @@ export async function sendWhatsAppCtaUrl(params: {
     }).catch(() => {});
   };
 
+  // SCRUM-227: sin merchantId ningún log de abajo dejará rastro — avisar (sin romper el envío).
+  if (!params.merchantId) avisoSinRastro('sendWhatsAppCtaUrl', params.log);
+
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, cta_url omitido');
     logFailure('not_configured');
@@ -797,6 +818,9 @@ export async function sendWhatsAppDocument(params: {
     }).catch(() => {});
   };
 
+  // SCRUM-227: sin merchantId ningún log de abajo dejará rastro — avisar (sin romper el envío).
+  if (!params.merchantId) avisoSinRastro('sendWhatsAppDocument', params.log);
+
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, documento omitido');
     logFailure('not_configured');
@@ -869,6 +893,9 @@ export async function sendWhatsAppLocationRequest(params: {
       relatedId: params.log?.relatedId ?? null,
     }).catch(() => {});
   };
+
+  // SCRUM-227: sin merchantId ningún log de abajo dejará rastro — avisar (sin romper el envío).
+  if (!params.merchantId) avisoSinRastro('sendWhatsAppLocationRequest', params.log);
 
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, location_request omitido');
