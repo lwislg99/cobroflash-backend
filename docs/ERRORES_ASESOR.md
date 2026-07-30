@@ -347,6 +347,23 @@ Son #1, #2, #3, #4, #7, #8, #9 y #10. Los otros dos (#5 y #6) son de otra famili
   > 6. **El medidor dentro de lo medido.** Un assert de «no aparece el rol crudo `sin_asignar`» medido sobre `document.body.textContent` — que **incluye el texto de los `<script>`**, donde está escrita la propia palabra. Salió rojo contra su propia prosa. Es la cara 3 una capa más allá: allí el ámbito era el fichero, aquí es el DOM que contiene al medidor.
   >
   > **Lo que las une:** en las seis la herramienta funcionó y la respuesta fue exacta. Lo que estaba mal era **el recorte** — qué se miró, o dónde. Por eso ninguna sale en un diff y ninguna la caza un rojo: hay que preguntarse *«¿qué mediría esto si el sistema estuviera roto?»* y, sobre todo, **¿está el medidor dentro del recorte?**
+  >
+  > ### El hábito que las cubre todas: **toda medición declara su contexto, o no es reconciliable con otra**
+  >
+  > No es una regla más — es lo que hace utilizables a las que ya hay. Una medición sin contexto declarado no se puede contrastar con la de otra sesión, y entonces **dos personas honestas se contradicen sin que ninguna esté equivocada**.
+  >
+  > | Dónde mides | Qué declaras siempre |
+  > |---|---|
+  > | **En repo** | el `sha` de `origin/main` contra el que mediste, **con `fetch` propio en el mismo bloque** |
+  > | **En visual** | el **fondo**, el **ancho**, y si el banco ejecuta **la función real** o una copia del template |
+  > | **En proceso** | si el proceso que dices haber lanzado **existía al mirarlo** |
+  >
+  > **Los dos casos que lo enseñan, los dos del 29 y 30 de julio:**
+  >
+  > - Dos sesiones se contradijeron sobre si una rama existía en el remoto. **Las dos tenían razón**: se publicó entre las dos mediciones. Lo que faltaba no era rigor, era **el instante**.
+  > - Un contraste medido en 4,44:1 se marcó FAIL y **no lo era**: el banco puso la fila sobre el fondo de página cuando en la app va dentro de una tarjeta (4,77:1). Lo que faltaba era **el fondo**.
+  >
+  > **Dos mediciones correctas que se contradicen no son un misterio: es que a una le falta el contexto.** Y el coste de declararlo es una línea; el de no declararlo fueron tres rondas de conflicto en un PR y un FAIL que no existía.
 - **#15 — composición.** Tres guards correctos, cada uno medido y probado en rojo, que **juntos** producen un estado que ninguno contempla. Es la primera vez que el defecto no está en ninguna pieza: está entre ellas. No se caza leyendo diffs —no hay línea mala que leer— sino **corriendo la suite entera** y desconfiando cuando cae un test ajeno por un motivo que no es el suyo.
 
 Esa última es la que más cuesta ver, porque **todos los indicadores están en verde mientras el sistema hace algo mal**: cada mecanismo está cumpliendo exactamente su encargo.
