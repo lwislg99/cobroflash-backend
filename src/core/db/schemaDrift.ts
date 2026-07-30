@@ -9,6 +9,8 @@
 // en `src/index.ts` es el último paso (SCRUM-222), y sólo se da tras confirmar en el panel de Railway
 // que un arranque fallido MANTIENE el deploy anterior — si lo dejara caído, este fail-closed pasaría
 // de protección a gatillo de caída.
+import fs from 'node:fs';
+import path from 'node:path';
 
 export type Manifiesto = Record<string, string[]>;
 export interface FilaColumna { table_name: string; column_name: string; }
@@ -99,5 +101,61 @@ export async function assertSchemaColumns(
       );
     }
     return; // todo cuadra
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// CABLEADO DE PRODUCCIÓN (SCRUM-222). El manifiesto se lee como FICHERO PLANO (nunca DMMF en runtime)
+// y la consulta usa el cliente Prisma real. La lógica de arriba queda pura y testeable; esto es el
+// borde impuro que la conecta a la app.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+interface ClientePrisma { $queryRaw: (...args: any[]) => Promise<unknown>; }
+
+// dist/core/db/schemaDrift.js → ../../../prisma/schema-manifest.json (raíz del repo, VERSIONADO).
+const RUTA_MANIFIESTO = path.resolve(__dirname, '..', '..', '..', 'prisma', 'schema-manifest.json');
+
+/** Lee el manifiesto versionado. Fail-closed: sin manifiesto legible NO se comprueba a ciegas. */
+export function cargarManifiesto(ruta: string = RUTA_MANIFIESTO): Manifiesto {
+  let texto: string;
+  try {
+    texto = fs.readFileSync(ruta, 'utf8');
+  } catch (e) {
+    throw new Error(`[SCHEMA] no se pudo leer el manifiesto (${ruta}): ${(e as Error).message}. Fail-closed.`);
+  }
+  let man: unknown;
+  try { man = JSON.parse(texto); } catch { throw new Error('[SCHEMA] el manifiesto no es JSON válido. Fail-closed.'); }
+  if (!man || typeof man !== 'object' || Array.isArray(man) || Object.keys(man).length === 0) {
+    throw new Error('[SCHEMA] el manifiesto está vacío o mal formado. Fail-closed.');
+  }
+  return man as Manifiesto;
+}
+
+/** El `consultar` de producción: lee information_schema con el cliente Prisma. Query estática. */
+export function consultaProd(prisma: ClientePrisma): () => Promise<FilaColumna[]> {
+  return async () => (await prisma.$queryRaw`
+    SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = current_schema()
+  `) as FilaColumna[];
+}
+
+/** Entrada del ARRANQUE: carga el manifiesto y comprueba contra la BD viva (fail-closed, puede lanzar). */
+export async function comprobarSchemaEnArranque(prisma: ClientePrisma, opciones: OpcionesAssert = {}): Promise<void> {
+  await assertSchemaColumns(cargarManifiesto(), consultaProd(prisma), opciones);
+}
+
+/**
+ * Chequeo de RUNTIME (para /health): NO lanza JAMÁS. Devuelve el estado para un campo informativo.
+ * Runtime ≠ arranque: con el proceso vivo no se puede tumbar nada por deriva (matar = servicio caído
+ * y no hay "anterior" al que volver). Cualquier fallo (consulta, suelo) → 'desconocido', nunca throw —
+ * por eso /health puede llamarlo sabiendo que su status NUNCA se vuelve rojo por deriva.
+ */
+export async function estadoDerivaRuntime(
+  manifiesto: Manifiesto,
+  consultar: () => Promise<FilaColumna[]>,
+): Promise<{ schema: 'ok' | 'drift' | 'desconocido'; faltan?: string[] }> {
+  try {
+    const faltan = columnasFaltantes(manifiesto, await consultar());
+    return faltan.length ? { schema: 'drift', faltan } : { schema: 'ok' };
+  } catch {
+    return { schema: 'desconocido' };
   }
 }

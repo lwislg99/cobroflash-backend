@@ -6,7 +6,7 @@
 // Importa de dist/ (npm test compila antes) — misma convención que el resto de tests de lógica src.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { assertSchemaColumns, columnasFaltantes } from '../dist/core/db/schemaDrift.js';
+import { assertSchemaColumns, columnasFaltantes, estadoDerivaRuntime } from '../dist/core/db/schemaDrift.js';
 
 const MANIFIESTO = { merchants: ['id', 'email'], quotes: ['id', 'job_id', 'merchantId'] };
 const FILAS_OK = [
@@ -59,4 +59,15 @@ test('SCRUM-222 · SUELO: sin la tabla centinela `merchants` → fail-closed', (
 
 test('SCRUM-222 · todo cuadra → no lanza', async () => {
   await assertSchemaColumns(MANIFIESTO, async () => FILAS_OK, { esperar: noEsperar });
+});
+
+// ── RUNTIME (/health): la propiedad de seguridad — el status NO se vuelve rojo por deriva ─────────
+// estadoDerivaRuntime NO lanza JAMÁS: informa el estado y traga cualquier fallo. Por eso el handler de
+// /health, una vez pasa `SELECT 1`, SIEMPRE puede devolver 200 — la deriva nunca lo tumba.
+test('SCRUM-222 · runtime: estadoDerivaRuntime nunca lanza (drift, ok, consulta caída, suelo)', async () => {
+  const sinJobId = FILAS_OK.filter((r) => !(r.table_name === 'quotes' && r.column_name === 'job_id'));
+  assert.deepEqual(await estadoDerivaRuntime(MANIFIESTO, async () => sinJobId), { schema: 'drift', faltan: ['quotes.job_id'] });
+  assert.deepEqual(await estadoDerivaRuntime(MANIFIESTO, async () => FILAS_OK), { schema: 'ok' });
+  assert.deepEqual(await estadoDerivaRuntime(MANIFIESTO, async () => { throw new Error('caída'); }), { schema: 'desconocido' });
+  assert.deepEqual(await estadoDerivaRuntime(MANIFIESTO, async () => []), { schema: 'desconocido' }); // suelo: catálogo vacío, no propaga
 });
