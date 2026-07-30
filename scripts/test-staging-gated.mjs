@@ -67,7 +67,9 @@ import {
 } from './_staging-lock.mjs';
 // SCRUM-161: al terminar, el runner deja un RECIBO de que la tanda corrió. Es lo único que el
 // guard de cierre acepta como evidencia, porque es lo único que no se puede teclear.
-import { RUTA_RECIBO, HIJOS_SPEC, AISLADOS, pesadoEsElUltimo } from './_evidencia-tanda.mjs';
+// SCRUM-239: `huellaDeCodigo` es el ANCLA del recibo, y se importa (no se reimplementa) para
+// que el runner y el verificador no puedan calcular cosas distintas.
+import { RUTA_RECIBO, HIJOS_SPEC, AISLADOS, pesadoEsElUltimo, huellaDeCodigo } from './_evidencia-tanda.mjs';
 // SCRUM-197: el parseo del resumen de node:test vive extraído, para que un test lo ejercite sin
 // arrancar la tanda. De su comportamiento con salida truncada depende la distinción crash-vs-rojo.
 import { CATS, parseCuenta } from './_parse-cuenta.mjs';
@@ -448,8 +450,20 @@ async function tanda() {
   // por su nombre. De paso pisa cualquier recibo bueno anterior: falla cerrado.
   try {
     const commit = spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).stdout?.trim() || null;
+    // SCRUM-239 · EL ANCLA. El `commit` se queda como CONTEXTO DECLARADO (contra qué se midió);
+    // lo que el guard compara es la HUELLA del contenido, que sí ve las ediciones sin commitear.
+    // Mismo `huellaDeCodigo` que usa el verificador: no hay dos cálculos capaces de divergir.
+    const gitParaHuella = (args, stdin) => {
+      const r = spawnSync('git', args, { encoding: 'utf8', input: stdin, maxBuffer: 64 * 1024 * 1024 });
+      return r.status === 0 ? (r.stdout ?? '') : null;
+    };
+    const huella = huellaDeCodigo(gitParaHuella);
     const recibo = {
       commit,
+      // `null` si no se pudo calcular, y el validador lo rechaza. Escribir un recibo SIN huella
+      // es mejor que escribir uno con una huella a medias: el fallo se ve en vez de heredarse.
+      huella: huella?.huella ?? null,
+      huellaFicheros: huella?.ficheros ?? null,
       terminadaEn: new Date().toISOString(),
       total: agg.tests, pass: agg.pass, fail: agg.fail, skip: agg.skipped,
       ficheros: override ? 1 : ficherosQa.length,
