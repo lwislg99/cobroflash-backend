@@ -6,7 +6,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: dinero = admin)
 import { seesOnlyOwnJobs, seesAllJobs, adminOnlyJobField } from '../../../../core/http/roleCapabilities'; // SCRUM-147 / SCRUM-164
 import { canTransition, estadoCobroFor, JOB_TIPOS_OPERACION } from '../../domain/job.service';
-import { recordAudit, actorDeRequest } from '../../../system/audit.service'; // SCRUM-66 · SCRUM-207
+import { recordAudit, actorDeRequest, sobreFiscal, flagsFiscalesDe } from '../../../system/audit.service'; // SCRUM-66 · SCRUM-207 · SCRUM-206b
 import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo } from '../../../quotes/domain/billingPlan';
 import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; // SCRUM-34
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
@@ -30,6 +30,7 @@ import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCR
 import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
+import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
 
 const router = Router();
 
@@ -585,6 +586,53 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     });
 
     // Enviar el enlace de cobro (payment_request / ventana-first A5.5)
+    // ── SCRUM-206b · SELLAR AL EMITIR. Este camino NO sellaba en absoluto.
+    //
+    // Medido: de los 7 sitios que crean factura, este y el de `jobs.routes.ts` eran los ÚNICOS
+    // sin sellado. Y no los cubría nada: la creencia razonable era que el sellado perezoso de
+    // `ensureInvoicePdf` los recogía al pedir el PDF, pero lo que sigue a la emisión aquí es
+    // `sendInvoicePaymentRequest`, y ese servicio NO toca el PDF ni el sellado (solo importa
+    // `ensureChargeReceiptToken`). Así que la factura quedaba emitida, numerada y FUERA de la
+    // cadena hasta que alguien, algún día, abriese su PDF. Si nadie lo abría, nunca entraba.
+    //
+    // Se sella DESPUÉS del commit y con el cliente global: `applyVeriFactu` lanza si recibe uno
+    // de transacción, porque sellar dentro de la tx de emisión bifurca la cadena (SCRUM-173/177).
+    //
+    // ⚠️ POR QUÉ AQUÍ «registrar y seguir» SÍ es correcto, y en `lib/invoicing.ts` no lo era:
+    // allí la continuación ENTREGABA un documento sin huella. Aquí no sale ningún byte — la
+    // factura queda existiendo y sin sellar, y el portón de SCRUM-206 garantiza que no produzca
+    // documento hasta que se selle. El número NO se revierte (regla 29): revertir es lo que
+    // crearía el hueco en la serie que habría que justificar ante Hacienda.
+    //
+    // El merchant no viene en la consulta de este camino: se piden los dos campos que
+    // decide el portón, y nada más.
+    const merchantFiscal = await prisma.merchant.findUnique({
+      where: { id: quote.merchantId },
+      select: { country: true, taxId: true },
+    });
+    if (merchantFiscal && debeEstarEnLaCadena(invoice.number, merchantFiscal)) {
+      try {
+        await applyVeriFactu(invoice, merchantFiscal.taxId!, prisma);
+      } catch (e: any) {
+        console.error('[jobs_collect_rest_C2] sellado VeriFactu falló en ' + invoice.number + ':', e?.message || e);
+        recordAudit({
+          merchantId: invoice.merchantId,
+          action: 'sellado_fallido', entityType: 'invoice', entityId: invoice.id,
+          meta: sobreFiscal({
+            actor: { tipo: 'sistema', ref: 'jobs_collect_rest_C2' },
+            flagsFiscales: flagsFiscalesDe(merchantFiscal as any),
+            payload: {
+              numero: invoice.number,
+              errorMensaje: String(e?.message ?? e).slice(0, 300),
+              puntoDeFallo: 'jobs_collect_rest_C2',
+              // No sale ningún documento de aquí: lo impide el portón de SCRUM-206.
+              pdfEntregadoIgual: false,
+            },
+          }),
+        });
+      }
+    }
+
     const sent = await sendInvoicePaymentRequest(invoice.id).catch((e) => {
       console.error('[jobs] collect-rest send:', e?.message || e);
       return { ok: false as const, reason: 'whatsapp_send_failed' as const };
