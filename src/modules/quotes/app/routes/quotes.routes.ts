@@ -432,6 +432,9 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
 
     let updatedQuote: any = quote;
     let createdInvoice: any = null;
+    // SCRUM-234 · si la EMISIÓN falla, la aceptación NO se pierde: ya está commiteada más
+    // arriba, en otra transacción. Lo único que falta es el documento.
+    let facturaPendiente = false;
 
     if (decision === 'accept') {
       // 1) Marcamos el presupuesto como ACCEPTED vía WhatsApp
@@ -536,7 +539,20 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         );
         const invoiceAmount = grossOfLines(scaledLines);
 
-        const invoice = await prisma.$transaction(async (tx) => {
+        // ── SCRUM-234 · la emisión con su propio catch, y esto es superficie PÚBLICA ────────
+        //
+        // Antes, cualquier fallo aquí caía en el catch general de la ruta y el CLIENTE FINAL
+        // recibía `500 { error: 'internal_error' }`, que `apiRequest` le muestra como
+        // «API 500: internal_error». En el momento de aceptar un presupuesto, eso es lo peor
+        // que le puede pasar: parece que su aceptación no ha valido, y sí ha valido.
+        //
+        // La aceptación se commitea ANTES (otra transacción, más arriba), así que separar los
+        // dos fallos no es cosmética: son dos hechos distintos y el cliente merece saber cuál
+        // ocurrió. Aquí no se entrega ningún documento —`createdInvoice` se queda en null— así
+        // que no hay fail-open: hay un aviso donde antes había un error técnico.
+        let invoice: any = null;
+        try {
+        invoice = await prisma.$transaction(async (tx) => {
           const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
             camino: 'C1',
             // Quien emite aquí NO es el pro: es el cliente final pulsando en WhatsApp.
@@ -588,6 +604,15 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         // el presupuesto, no que abra un PDF. Lo que el ticket corrige es lo segundo.
         // Este camino tampoco sellaba: dependía del sellado perezoso de `ensureInvoicePdf`.
         await sellarTrasEmision(invoice, quote.merchant, prisma);
+
+        } catch (e: any) {
+          // El caso conocido es la colisión de serie (P2002 sobre `invoices.number`), que
+          // SCRUM-234 elimina de raíz con el cerrojo. El catch se queda igualmente: cubre
+          // cualquier fallo de emisión, y lo que NO puede volver a pasar es que el cliente
+          // se lleve un error técnico por algo que su aceptación ya resolvió.
+          console.error('[quote_decision_C1] emisión fallida tras aceptar:', e?.code || '', e?.message || e);
+          facturaPendiente = true;
+        }
 
         createdInvoice = invoice;
 
@@ -656,6 +681,15 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
 
     return res.json({
       ok: true,
+      // SCRUM-234 · solo aparece si la emisión falló. Callarlo dejaría al cliente esperando un
+      // documento que nadie le va a mandar: hoy NO hay reintento automático (pregunta abierta 1
+      // del ticket), así que el aviso tiene que decir qué hacer, no prometer que llegará solo.
+      //
+      // [PENDIENTE microcopy oficial] — regla 30. Lo lee el CLIENTE FINAL, no el profesional:
+      // ni «serie», ni «numeración», ni «VeriFactu», ni el código del error (regla 26).
+      ...(facturaPendiente
+        ? { facturaPendiente: true, avisoFactura: 'Hemos recibido tu aceptación. Tu factura está en proceso; si no la recibes hoy, coméntaselo al profesional.' }
+        : {}),
       quote: {
         id: updatedQuote.id,
         status: updatedQuote.status,
