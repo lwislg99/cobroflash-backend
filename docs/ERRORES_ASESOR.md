@@ -345,8 +345,14 @@ Son #1, #2, #3, #4, #7, #8, #9 y #10. Los otros dos (#5 y #6) son de otra famili
   > 4. **La salida filtrada que oculta el fallo.** `npm run build | grep "error TS"` salió vacío y se leyó como «build OK». El build **no había corrido**: faltaba la junction y `tsc` no existía. Vacío ≠ correcto.
   > 5. **La pregunta mal formulada** (#19). `git log | grep 228` devolvió tres líneas que parecían la respuesta: eran números de PR, no de ticket.
   > 6. **El medidor dentro de lo medido.** Un assert de «no aparece el rol crudo `sin_asignar`» medido sobre `document.body.textContent` — que **incluye el texto de los `<script>`**, donde está escrita la propia palabra. Salió rojo contra su propia prosa. Es la cara 3 una capa más allá: allí el ámbito era el fichero, aquí es el DOM que contiene al medidor.
+  > 7. **El anuncio en lugar del hecho.** Un reporte decía «lanzo ya la tanda gateada» y **no se había ejecutado nada**: el mensaje describía la acción y ocupó su sitio. Se destapó al preguntar por el estado — `Get-CimInstance` devolvió *NINGUN runner de tanda corriendo*. Hermana de #9 (escribir con un script y no releer el resultado), #10 (dar un PR por entregado leyendo el mensaje del push) y #14 (dar por colgada una tanda que iba bien). **No es un recorte mal puesto: es que no hubo recorte, porque no hubo medición.**
   >
-  > **Lo que las une:** en las seis la herramienta funcionó y la respuesta fue exacta. Lo que estaba mal era **el recorte** — qué se miró, o dónde. Por eso ninguna sale en un diff y ninguna la caza un rojo: hay que preguntarse *«¿qué mediría esto si el sistema estuviera roto?»* y, sobre todo, **¿está el medidor dentro del recorte?**
+  > **Lo que las une:** son casos en los que una afirmación **pareció venir de una comprobación** — y la comprobación o encuadró mal el objeto, o **no existió**. Las seis primeras son la primera mitad: hubo medición y el recorte estaba mal. La séptima es la segunda mitad: no hubo medición, el anuncio ocupó el lugar del hecho. Por eso ninguna sale en un diff y ninguna la caza un rojo. Dos preguntas, y la nueva va **antes**:
+  >
+  > **0. ¿Hubo comprobación?** ¿Existe el proceso o el artefacto que digo haber producido? Compruébalo **antes** de contarlo.
+  > **1. ¿Está el medidor dentro del recorte?** Y: *«¿qué mediría esto si el sistema estuviera roto?»*
+  >
+  > El paso 0 es **más barato que el 1 y caza más**: basta con verificar que el proceso que dices haber lanzado existe, antes de decir que lo lanzaste.
 - **#15 — composición.** Tres guards correctos, cada uno medido y probado en rojo, que **juntos** producen un estado que ninguno contempla. Es la primera vez que el defecto no está en ninguna pieza: está entre ellas. No se caza leyendo diffs —no hay línea mala que leer— sino **corriendo la suite entera** y desconfiando cuando cae un test ajeno por un motivo que no es el suyo.
 
 Esa última es la que más cuesta ver, porque **todos los indicadores están en verde mientras el sistema hace algo mal**: cada mecanismo está cumpliendo exactamente su encargo.
