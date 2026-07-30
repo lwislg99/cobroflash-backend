@@ -14,6 +14,7 @@
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { crearFactura } from './_factura-fixture.mjs';
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -37,13 +38,12 @@ test('SCRUM-74: /recibo/:token cierra el IDOR — numérico 404 sin fuga, token 
     const charge = await prisma.charge.create({
       data: { merchantId: merchant.id, customerId: customer.id, concept: 'QA S74', amount: '75.00', currency: 'EUR', method: 'card', status: 'paid' },
     });
-    const invoice = await prisma.invoice.create({
-      data: {
-        merchantId: merchant.id, customerId: customer.id, number: `2026-QA-S74-${tag}-${stamp % 1000}`,
-        total: '75.00', currency: 'EUR', type: 'F1', status: 'paid',
-        lines: [{ concept: 'Servicio QA S74', qty: 1, price: 75 }],
-        pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
-      },
+    const invoice = await crearFactura(prisma, {
+      merchantId: merchant.id, customerId: customer.id, number: `2026-QA-S74-${tag}-${stamp % 1000}`,
+      total: '75.00', currency: 'EUR', type: 'F1', status: 'paid',
+      lines: [{ concept: 'Servicio QA S74', qty: 1, price: 75 }],
+      pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
+      vfEstado: 'no_aplica', // merchant ES pero SIN NIF → no entra en la cadena VeriFactu
     });
     await prisma.event.create({
       data: { chargeId: charge.id, type: 'invoiced', payload: { invoice_id: invoice.id } },

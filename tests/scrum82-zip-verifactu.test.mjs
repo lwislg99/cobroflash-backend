@@ -33,6 +33,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import { crearFactura } from './_factura-fixture.mjs';
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -98,33 +99,31 @@ test('SCRUM-82: datos.zip incluye el XML VeriFactu por año, byte-idéntico al e
       const currentYear = new Date().getFullYear();
       const prevYear = currentYear - 1;
 
-      const invoiceThisYear = await prisma.invoice.create({
-        data: {
-          merchantId: merchant.id, customerId: customer.id,
-          number: `${currentYear}-QA-${stamp % 1000}`,
-          total: '121.00', currency: 'EUR', type: 'F1', status: 'paid',
-          lines: [{ concept: 'Servicio QA S82 A', qty: 1, price: 100, tax: 0.21 }],
-          vfHash: 'HASH_QA_S82_A', vfPrevHash: '',
-          pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
-        },
+      const invoiceThisYear = await crearFactura(prisma, {
+        merchantId: merchant.id, customerId: customer.id,
+        number: `${currentYear}-QA-${stamp % 1000}`,
+        total: '121.00', currency: 'EUR', type: 'F1', status: 'paid',
+        lines: [{ concept: 'Servicio QA S82 A', qty: 1, price: 100, tax: 0.21 }],
+        vfHash: 'HASH_QA_S82_A', vfPrevHash: '',
+        pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
+        vfEstado: 'sellado', // fiscal (ES + NIF, con huella)
       });
       // Factura del año ANTERIOR — fuerza el caso multi-año (SCRUM-82: un XML por
       // ejercicio, no uno solo por el rango pedido).
-      const invoicePrevYear = await prisma.invoice.create({
-        data: {
-          merchantId: merchant.id, customerId: customer.id,
-          number: `${prevYear}-QA-${stamp % 1000}`,
-          // SCRUM-209: esta factura existe para forzar el caso MULTI-AÑO, no para probar un
-          // tipo de IVA. Llevaba `tax: 0`, y desde SCRUM-209 un tramo al 0 % ya no se emite
-          // con un código inventado: bloquea la exportación (no se puede saber si es sujeta
-          // al 0 %, exenta o no sujeta). Pasa a 21 % — el caso multi-año se prueba igual, y
-          // el total se ajusta para que cuadre con las líneas (50 + 21 % = 60,50).
-          total: '60.50', currency: 'EUR', type: 'F1', status: 'paid',
-          createdAt: new Date(prevYear, 5, 15),
-          lines: [{ concept: 'Servicio QA S82 B', qty: 1, price: 50, tax: 0.21 }],
-          vfHash: 'HASH_QA_S82_B', vfPrevHash: '',
-          pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
-        },
+      const invoicePrevYear = await crearFactura(prisma, {
+        merchantId: merchant.id, customerId: customer.id,
+        number: `${prevYear}-QA-${stamp % 1000}`,
+        // SCRUM-209: esta factura existe para forzar el caso MULTI-AÑO, no para probar un
+        // tipo de IVA. Llevaba `tax: 0`, y desde SCRUM-209 un tramo al 0 % ya no se emite
+        // con un código inventado: bloquea la exportación (no se puede saber si es sujeta
+        // al 0 %, exenta o no sujeta). Pasa a 21 % — el caso multi-año se prueba igual, y
+        // el total se ajusta para que cuadre con las líneas (50 + 21 % = 60,50).
+        total: '60.50', currency: 'EUR', type: 'F1', status: 'paid',
+        createdAt: new Date(prevYear, 5, 15),
+        lines: [{ concept: 'Servicio QA S82 B', qty: 1, price: 50, tax: 0.21 }],
+        vfHash: 'HASH_QA_S82_B', vfPrevHash: '',
+        pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
+        vfEstado: 'sellado', // fiscal (ES + NIF, con huella)
       });
 
       const token = 'qa82-' + crypto.randomBytes(12).toString('hex');

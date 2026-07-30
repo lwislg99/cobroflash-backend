@@ -24,6 +24,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { createRequire } from 'node:module';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import { crearFactura } from './_factura-fixture.mjs';
 
 const require = createRequire(import.meta.url);
 const ENABLED = process.env.QA_DB_TEST === '1';
@@ -61,15 +62,14 @@ test('SCRUM-221 · el registro BLOQUEA: sin fila no salen bytes (XML y ZIP por s
           data: { merchantId: merchant.id, name: 'Cliente QA S221', phone: `34604${stamp % 1000000}` },
         });
         const year = new Date().getFullYear();
-        await prisma.invoice.create({
-          data: {
-            merchantId: merchant.id, customerId: customer.id,
-            number: `${year}-QA221-${stamp % 1000}`,
-            total: '121.00', currency: 'EUR', type: 'F1', status: 'paid',
-            lines: [{ concept: 'Servicio QA S221', qty: 1, price: 100, tax: 0.21 }],
-            vfHash: 'HASH_QA_S221', vfPrevHash: '',
-            pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
-          },
+        await crearFactura(prisma, {
+          merchantId: merchant.id, customerId: customer.id,
+          number: `${year}-QA221-${stamp % 1000}`,
+          total: '121.00', currency: 'EUR', type: 'F1', status: 'paid',
+          lines: [{ concept: 'Servicio QA S221', qty: 1, price: 100, tax: 0.21 }],
+          vfHash: 'HASH_QA_S221', vfPrevHash: '',
+          pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
+          vfEstado: 'sellado', // fiscal (ES + NIF + flag, con huella)
         });
 
         const token = 'qa221-' + crypto.randomBytes(12).toString('hex');

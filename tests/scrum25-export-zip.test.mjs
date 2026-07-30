@@ -19,6 +19,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import { crearFactura } from './_factura-fixture.mjs';
 import { assertAusenteConMecanismoVivo } from './_ausencia.mjs'; // SCRUM-108
 
 const ENABLED = process.env.QA_DB_TEST === '1';
@@ -118,13 +119,12 @@ test('SCRUM-25 (B): datos.zip — técnico 403, entradas, PDFs, tenancy, rango, 
 
     // Factura de A: 100 € + 21 % → base 100,00 · IVA 21,00 · total 121,00
     const numero = `${new Date().getFullYear()}-CF-${String(600 + (stamp % 90)).padStart(3, '0')}`;
-    const invoiceA = await prisma.invoice.create({
-      data: {
-        merchantId: merchantA.id, customerId: custA.id, number: numero,
-        total: '121.00', currency: 'EUR', type: 'F1',
-        pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
-        lines: [{ concept: 'Obra QA S25B', qty: 1, price: 100, tax: 0.21 }],
-      },
+    const invoiceA = await crearFactura(prisma, {
+      merchantId: merchantA.id, customerId: custA.id, number: numero,
+      total: '121.00', currency: 'EUR', type: 'F1',
+      pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
+      lines: [{ concept: 'Obra QA S25B', qty: 1, price: 100, tax: 0.21 }],
+      vfEstado: 'no_aplica', // merchant sin NIF → no entra en la cadena VeriFactu
     });
     await prisma.job.create({
       data: {
