@@ -38,14 +38,121 @@
 // eso la evidencia es un artefacto que **solo puede existir si la tanda corrió**: lo escribe
 // el runner con los `res.status` reales de sus tres hijos, no lo teclea nadie.
 //
-// Y por eso se ata al COMMIT: la evidencia caduca sola en cuanto tocas una línea. Es lo que
+// Y por eso se ata al CÓDIGO: la evidencia caduca sola en cuanto tocas una línea. Es lo que
 // la separa de un «sí».
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-239 · POR QUÉ EL ANCLA ES EL CONTENIDO Y NO `commit === HEAD`
+//
+// Hasta hoy el ancla era la identidad del commit. Eso no es la propiedad que este guard
+// quiere: la propiedad es **que el código que la tanda ejercitó sea el mismo que se va a
+// cerrar**. `commit === HEAD` era un PROXY de eso, y los proxies fallan en los DOS sentidos:
+//
+//   (a) DEMASIADO ESTRICTO — el bucle. AA1.2 obliga a anotar la tarea en el máster en un
+//       commit aparte, así que TODA tarea termina con un commit que no toca código y que
+//       invalidaba el recibo. Medido: 5 de los últimos 40 commits sin merge de `main` tocan
+//       únicamente `docs/YAQU_MASTER.md`. El acto de registrar la evidencia la invalidaba, y
+//       un criterio inalcanzable no se cumple: se EXCUSA. Ahí muere un guard.
+//
+//   (b) DEMASIADO LAXO — y este era el grave, porque es el descuido más probable de los dos.
+//       `git rev-parse HEAD` no sabe nada del árbol de trabajo: corres la tanda, editas
+//       `src/app.ts`, NO commiteas, y cierras. HEAD no se ha movido, así que el recibo seguía
+//       valiendo. Es exactamente el descuido que el criterio existía para impedir.
+//
+// El contenido arregla los dos con un solo mecanismo, porque es la propiedad misma y no un
+// indicio de ella. El `commit` se queda en el recibo, pero como CONTEXTO DECLARADO —para que
+// quien lea el recibo sepa contra qué se midió— y ya no como criterio.
+//
+// NO SE REUTILIZA `huellaArtefactos` (SCRUM-182) y conviene decir por qué: aquel mide `mtime`
+// y número de ficheros de `dist/`, `tests/` y el cliente de Prisma para detectar que el árbol
+// se movió DURANTE la tanda. Sirve para eso y no para esto: un `npm run build` entre la tanda
+// y el cierre cambia todos esos mtime sin cambiar una línea de fuente (falso positivo), y el
+// mtime no dice nada del contenido (falso negativo). Otra pregunta, otro instrumento.
 //
 // El recibo NO se commitea (`.gitignore`), como el sentinel de `db push`: si viajara con la
 // rama se convertiría en un artefacto que se copia entre ramas — lo contrario de una prueba.
 
+import { createHash } from 'node:crypto';
+
 /** Dónde vive el recibo. Local, ignorado por git, escrito solo por el runner. */
 export const RUTA_RECIBO = '.claude/evidencia-tanda.json';
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-239 · LA HUELLA DEL CÓDIGO
+//
+// `node:crypto` es el único import de este módulo y no rompe lo que la pureza protegía: no
+// toca disco ni BD, es determinista, y los tests siguen ejercitando todo esto sin I/O. Lo que
+// SÍ necesita disco —listar y hashear ficheros— entra por un `git` INYECTADO, igual que la
+// capa de BD de `_staging-lock.mjs` recibe su cliente. Así el cálculo vive en UN solo sitio
+// (el runner y el verificador no pueden divergir, lección de SCRUM-199) y a la vez se puede
+// probar entero con un `git` de mentira.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * QUÉ **NO** ES CÓDIGO. Por EXCLUSIÓN, nunca por lista de lo que sí.
+ *
+ * Una allowlist (`src`, `tests`, `scripts`…) es otra lista a mano que envejece —la familia de
+ * `SUELO_TOTAL` y de las tres listas que mató SCRUM-199— y su modo de fallo es SILENCIOSO: el
+ * día que aparezca un directorio de fuente nuevo queda fuera de la huella y nadie se entera;
+ * el recibo seguiría valiendo con el código cambiado. Con exclusión, lo nuevo cuenta como
+ * código por defecto: como mucho invalida un recibo de más, que es el lado conservador.
+ *
+ * Lo excluido es lo que NO puede cambiar lo que la tanda ejercita: documentación y los
+ * artefactos locales de `.claude/` (donde vive el propio recibo).
+ */
+export const NO_ES_CODIGO = [
+  /^docs\//,          // documentación, incluido YAQU_MASTER.md — el commit que abría el bucle
+  /^\.claude\//,      // artefactos locales; aquí vive el recibo mismo
+  /^[^/]+\.md$/i,     // los .md de la raíz (CLAUDE.md, AGENTS.md, README…)
+];
+
+/** ¿Esta ruta entra en la huella? Pura, y la ÚNICA definición de «es código» que hay. */
+export function esCodigo(ruta) {
+  return typeof ruta === 'string' && ruta.length > 0 && !NO_ES_CODIGO.some((re) => re.test(ruta));
+}
+
+/**
+ * SUELO de la huella. Si `git ls-files` devuelve cuatro cosas porque el repo está roto, el
+ * comando falló a medias o alguien la calcula desde otro directorio, NO se puede producir una
+ * huella «válida»: se devuelve `null` y el validador falla cerrado.
+ *
+ * Sin este suelo el modo de fallo sería el peor posible — dos huellas vacías **son iguales**,
+ * así que un cálculo roto en las dos puntas daría VERDE sin haber mirado un solo fichero.
+ * Hoy la superficie son 556 ficheros; 100 separa «roto» de «alguien borró medio repo» sin
+ * convertirse en otro ratchet a mano que envejece.
+ */
+export const SUELO_FICHEROS_CODIGO = 100;
+
+/**
+ * La huella del código TAL Y COMO ESTÁ EN DISCO — no en el índice, no en HEAD.
+ *
+ * `git hash-object` hashea el fichero del ÁRBOL DE TRABAJO, que es justo lo que `rev-parse
+ * HEAD` no podía ver. Se le pasan las rutas por stdin (`--stdin-paths`) y no por argumentos:
+ * con ~556 ficheros, argv se queda corto en Windows y el fallo sería por longitud de línea de
+ * comandos, no por el contenido.
+ *
+ * Y aplica los filtros del repo, así que un árbol con CRLF en disco da la MISMA huella que uno
+ * con LF: la huella es del contenido que se commitearía, no del que hay byte a byte en el
+ * disco de cada portátil. Eso es lo que la hace comparable entre dos ejecuciones.
+ *
+ * @param {(args: string[], stdin?: string) => string|null} git  ejecuta git y devuelve stdout
+ * @returns {{huella: string, ficheros: number} | null}  `null` = NO COMPARABLE (fail-closed)
+ */
+export function huellaDeCodigo(git) {
+  const listado = git(['ls-files']);
+  if (typeof listado !== 'string') return null;
+  const ficheros = listado.split(/\r?\n/).map((s) => s.trim()).filter(Boolean).filter(esCodigo).sort();
+  if (ficheros.length < SUELO_FICHEROS_CODIGO) return null;
+
+  const salida = git(['hash-object', '--stdin-paths'], ficheros.join('\n') + '\n');
+  if (typeof salida !== 'string') return null;
+  const hashes = salida.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+  // Un hash por fichero, o no sabemos qué se hasheó: no se adivina, se devuelve no-comparable.
+  if (hashes.length !== ficheros.length) return null;
+
+  const canonico = ficheros.map((f, i) => `${hashes[i]} ${f}`).join('\n');
+  return { huella: createHash('sha1').update(canonico).digest('hex'), ficheros: ficheros.length };
+}
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // EL INTERRUPTOR
@@ -198,12 +305,14 @@ export function pesadoEsElUltimo(spec = HIJOS_SPEC) {
 /**
  * @param {object} p
  * @param {string|null} p.texto           contenido crudo del recibo, o null si no existe
- * @param {string} p.commitActual         `git rev-parse HEAD` de ahora
+ * @param {string} p.commitActual         `git rev-parse HEAD` de ahora — CONTEXTO, no criterio
+ * @param {{huella: string, ficheros: number}|null} p.huellaActual  SCRUM-239: EL criterio.
+ *        `null` = no se pudo calcular → falla cerrado (no comparable NO es igual).
  * @param {number} p.ahoraMs
  * @param {number} p.ficherosEsperados    cuántos ficheros debería haber corrido el bloque QA
  * @returns {{ok: boolean, problemas: Array<{clave: string, detalle: string}>, recibo: object|null}}
  */
-export function validarEvidencia({ texto, commitActual, ahoraMs, ficherosEsperados }) {
+export function validarEvidencia({ texto, commitActual, huellaActual, ahoraMs, ficherosEsperados }) {
   const problemas = [];
   const mal = (clave, detalle) => problemas.push({ clave, detalle });
 
@@ -231,14 +340,35 @@ export function validarEvidencia({ texto, commitActual, ahoraMs, ficherosEsperad
     mal('autotest', 'el recibo es de una ejecución en MODO AUTOTEST del runner (diagnóstico, no cobertura)');
   }
 
-  // ① EL COMMIT · lo que separa esto de un «sí». Correr la tanda, seguir programando y cerrar
-  //    con la evidencia de antes es el descuido más natural que existe.
-  if (typeof r.commit !== 'string' || r.commit.length < 7) {
-    mal('incompleto', 'el recibo no trae `commit`');
-  } else if (r.commit !== commitActual) {
-    mal('commit-viejo',
-      `el recibo es del commit ${r.commit.slice(0, 8)} y el árbol está en ${String(commitActual).slice(0, 8)}: ` +
-      'has tocado código después de correr la tanda');
+  // ① EL CÓDIGO · lo que separa esto de un «sí». Correr la tanda, seguir programando y cerrar
+  //    con la evidencia de antes es el descuido más natural que existe. SCRUM-239: se compara
+  //    el CONTENIDO, no la identidad del commit — ver la cabecera para los dos sentidos en que
+  //    `commit === HEAD` fallaba.
+  if (typeof r.huella !== 'string' || r.huella.length < 16) {
+    mal('incompleto',
+      'el recibo no trae `huella` del código: es un recibo anterior a SCRUM-239 y no se puede ' +
+      'comparar con nada — vuelve a correr la tanda');
+  } else if (!huellaActual || typeof huellaActual.huella !== 'string') {
+    // FAIL-CLOSED, y es el caso que más importa acertar: si esto devolviera «iguales» cuando
+    // no se puede calcular, dos huellas vacías coincidirían y el guard daría verde sin haber
+    // mirado un solo fichero. No comparable ≠ igual.
+    mal('no-comparable',
+      'no se ha podido calcular la huella del código ahora mismo (¿git no disponible, o menos ' +
+      `de ${SUELO_FICHEROS_CODIGO} ficheros listados?): sin ella no se puede afirmar que la tanda ` +
+      'probó este árbol, y esto falla cerrado a propósito');
+  } else if (r.huella !== huellaActual.huella) {
+    // El diagnóstico ÚTIL es cuál de los dos casos es, porque el remedio se lee distinto: si el
+    // commit es el mismo, lo que ha cambiado son ediciones SIN COMMITEAR — el agujero que
+    // `commit === HEAD` no veía y que ahora sí se nombra.
+    const mismoCommit = typeof r.commit === 'string' && r.commit === commitActual;
+    mal('codigo-cambiado',
+      `el código ha cambiado desde que corrió la tanda (huella ${r.huella.slice(0, 8)} → ` +
+      `${huellaActual.huella.slice(0, 8)}): ` +
+      (mismoCommit
+        ? `el commit es el MISMO (${String(commitActual).slice(0, 8)}), así que son cambios SIN ` +
+          'COMMITEAR en el árbol de trabajo — míralos con `git status` y `git diff HEAD`'
+        : `el recibo se tomó sobre ${String(r.commit).slice(0, 8)} y el árbol está en ` +
+          `${String(commitActual).slice(0, 8)}`));
   }
 
   // ② EL ROJO Y LOS HIJOS. Dos criterios, dos claves, porque el remedio DIVERGE: un `fail>0` en el
@@ -360,8 +490,12 @@ function remedioDominante(problemas) {
 export function mensajeVeredicto(res, { activo }) {
   if (res.ok) {
     const r = res.recibo;
+    // Se enseñan las DOS cosas y en su papel: la huella es lo que se ha comprobado, el commit
+    // es el contexto en que se tomó. Un veredicto que declara contra qué midió es reconciliable
+    // con el de otra sesión; uno que solo dice «válida», no.
     return (
-      `✅ SCRUM-161 · evidencia de tanda VÁLIDA — commit ${r.commit.slice(0, 8)}, ` +
+      `✅ SCRUM-161 · evidencia de tanda VÁLIDA — código ${String(r.huella).slice(0, 8)} ` +
+      `(${r.huellaFicheros ?? '?'} ficheros), tomada sobre el commit ${String(r.commit).slice(0, 8)}, ` +
       `${r.total} tests, 0 rojos, ${r.terminadaEn}.\n`
     );
   }

@@ -8,7 +8,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
-import { crearFacturaDeclarable } from './_factura-fixture.mjs';
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -34,12 +33,17 @@ test('SCRUM-73: verifactu.xml — técnico 403, flag OFF sin registros, flag ON 
     data: { merchantId: merchant.id, name: 'Cliente QA VF', phone: `34602${stamp % 1000000}` },
   });
   // Factura F1 REAL con huella — si el gate se rompiera, esto es justo lo que se filtraría.
-  const invoice = await crearFacturaDeclarable(prisma, {
-    merchantId: merchant.id, customerId: customer.id, number: `2026-QA-${stamp % 1000}`,
-    total: '121.00', currency: 'EUR', type: 'F1', status: 'paid',
-    lines: [{ concept: 'Servicio QA', qty: 1, price: 100, tax: 0.21 }],
-    pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
-  }, merchant.taxId); // fiscal: se sella de verdad (huella real), no se finge el hash
+  const invoice = await prisma.invoice.create({
+    data: {
+      merchantId: merchant.id, customerId: customer.id, number: `2026-QA-${stamp % 1000}`,
+      total: '121.00', currency: 'EUR', type: 'F1', status: 'paid',
+      lines: [{ concept: 'Servicio QA', qty: 1, price: 100, tax: 0.21 }],
+      // SCRUM-205: `sellado` porque este fixture YA escribe `vfHash` — el estado dice lo mismo
+      // que la huella. Este test necesita una factura DENTRO de la cadena: es lo que exporta.
+      vfHash: 'HASH_QA_TEST', vfPrevHash: '', vfEstado: 'sellado',
+      pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
+    },
+  });
 
   const mkCookie = async (teamMemberId = null) => {
     const token = 'qa73-' + crypto.randomBytes(12).toString('hex');

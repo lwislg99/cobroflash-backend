@@ -16,7 +16,6 @@
 // Los estados válidos se importan de la FUENTE (selladoEstado.ts, ya compilado en dist por `npm test`):
 // una sola lista, sin copia que pueda derivar.
 import { SELLADO_HECHO, SELLADO_NO_APLICA, SELLADO_PENDIENTE } from '../dist/modules/invoicing/domain/selladoEstado.js';
-import { applyVeriFactu } from '../dist/modules/invoicing/domain/verifactu.service.js';
 
 const ESTADOS_VALIDOS = new Set([SELLADO_HECHO, SELLADO_NO_APLICA, SELLADO_PENDIENTE]);
 
@@ -33,29 +32,4 @@ export function crearFactura(prisma, data) {
     );
   }
   return prisma.invoice.create({ data });
-}
-
-/**
- * Crea una factura FISCAL DECLARABLE. En vez de fingir un `vfHash` —que la verificación de cadena
- * (SCRUM-145/173) RECHAZA, dejando la factura EXCLUIDA del registro—, la sella DE VERDAD con
- * `applyVeriFactu`: la misma huella que usa la emisión (patrón aceptado de scrum173/207), con hash
- * real + `vfTimestamp` y encadenada. Nace pendiente, se sella, y queda 'sellado'.
- *
- * Cuándo usarla: cuando el test EJERCITA el camino fiscal (export VeriFactu, ZIP con XML, gate). Si
- * solo necesitas una factura que produzca PDF y no es fiscal (merchant sin NIF), usa `crearFactura`
- * con `vfEstado: 'no_aplica'` — más barato. NO pongas `vfHash` ni `vfEstado` en `data`: los pone esto.
- *
- * @param {string} taxId  el NIF del merchant (`merchant.taxId`), que entra en la huella.
- */
-export async function crearFacturaDeclarable(prisma, data, taxId) {
-  if (!taxId) {
-    throw new Error(
-      'crearFacturaDeclarable: falta el NIF (merchant.taxId). Sin NIF una factura no entra en la ' +
-      'cadena VeriFactu ni es declarable — usa crearFactura con vfEstado: \'no_aplica\'.',
-    );
-  }
-  const invoice = await crearFactura(prisma, { ...data, vfEstado: SELLADO_PENDIENTE }); // nace pendiente
-  await applyVeriFactu(invoice, taxId, prisma); // huella REAL + vfTimestamp, encadenada (scrum173/207)
-  await prisma.invoice.update({ where: { id: invoice.id }, data: { vfEstado: SELLADO_HECHO } });
-  return invoice;
 }

@@ -43,7 +43,9 @@ test('SCRUM-76: el email adjunta el PDF en TODAS las ramas (outbox .eml material
     total: '121.00', currency: 'EUR', type: 'F1',
     pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
     lines: [{ concept: 'QA S76', qty: 1, price: 100, tax: 0.21 }],
-    vfEstado: 'no_aplica', // merchant sin NIF → no entra en la cadena VeriFactu
+    // SCRUM-205: `no_aplica` — merchant ES SIN NIF: fuera de la cadena. Este test prueba que
+    // el ADJUNTO del email es la única vía de entrega del documento fiscal, no el sellado.
+    vfEstado: 'no_aplica',
   });
   const quote = await prisma.quote.create({
     data: { merchantId: merchant.id, customerId: customer.id, status: 'sent', total: '121.00', currency: 'EUR', lines: [{ concept: 'QA S76', qty: 1, price: 100, tax: 0.21 }] },

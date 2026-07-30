@@ -60,7 +60,10 @@ test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto
     pdfUrl: `/invoices/${numero}.pdf`,          // ← legacy a propósito
     qrData: `INV:${numero}|AMOUNT:100.00|CUR:EUR`,
     lines: [{ concept: 'QA SCRUM-72', qty: 1, price: 100, tax: 0 }],
-    vfEstado: 'no_aplica', // merchant sin NIF → no entra en la cadena VeriFactu
+    // SCRUM-205: `no_aplica` porque el merchant de este fixture es ES SIN NIF, y sin NIF
+    // VeriFactu no aplica: esta factura no entra en la cadena. Lo que se prueba aquí es el
+    // AISLAMIENTO del PDF entre merchants, no el sellado.
+    vfEstado: 'no_aplica',
   });
 
   const quoteA = await prisma.quote.create({
