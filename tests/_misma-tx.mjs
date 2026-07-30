@@ -163,10 +163,17 @@ export function analizarDelegacion(raiz, delegadas) {
               (pp) => ts.isIdentifier(pp.name) && pp.name.text === receptor &&
                 /TransactionClient/.test(pp.type?.getText?.() ?? ''),
             );
-            // La DECLARACIÓN de la función delegada no cuenta como llamada.
-            const esLaPropiaDeclaracion = ruta.endsWith('invoicing.service.ts') && nombre === d.fnNombre &&
-              ts.isFunctionDeclaration(fn ?? {});
-            if (!esLaPropiaDeclaracion) {
+            // SCRUM-219 · aquí había una exclusión para «la DECLARACIÓN de la función delegada
+            // no cuenta como llamada». No hacía eso: este visitante solo entra en
+            // `ts.isCallExpression`, y una llamada NUNCA es una declaración, así que para su
+            // propósito era inerte. Lo que sí hacía era descartar cualquier llamada cuyo
+            // envoltorio fuese una `FunctionDeclaration` dentro de `invoicing.service.ts` —
+            // y eso incluye `allocateInvoiceNumber(tx, …)` dentro de `emitInvoice`, que es un
+            // call site REAL del embudo fiscal. Inofensiva para SCRUM-207 (sus `DELEGADAS` son
+            // solo `emitInvoice`, que no se llama en ese fichero, y su comprobación principal
+            // va por `analizarArbol`); con la población derivada de SCRUM-219 ocultaba un
+            // camino de emisión. La cazó el suelo de call sites al contar 11 donde había 12.
+            {
               out.push({
                 ruta, fnNombre: nombre, receptor,
                 linea: sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1,
