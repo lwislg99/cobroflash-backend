@@ -12,7 +12,10 @@
 >
 > ```bash
 > git fetch --all --prune
-> git show origin/main:docs/ERRORES_ASESOR.md | grep -oE "^### .*#[0-9]+" | grep -oE "#[0-9]+$" | sort -V
+> # `[^—]*` = solo hasta el guion largo del titular: el número del incidente va ANTES, y lo que
+> # venga después (un `PR #228` citado, p. ej.) no es un número de este contador. Sin ese recorte,
+> # `.*` se queda con el ÚLTIMO `#` de la línea: inventa un `#228` y **pierde el `#19`**.
+> git show origin/main:docs/ERRORES_ASESOR.md | grep -oE "^### [^—]*#[0-9]+" | grep -oE "#[0-9]+$" | sort -V
 > git show origin/main:docs/ERRORES_ASESOR.md | grep -oE "^\*\*R[0-9]+ ·"        | grep -oE "R[0-9]+"  | sort -V
 > for b in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin); do
 >   git diff origin/main...$b -- docs/ERRORES_ASESOR.md | grep -E "^\+### |^\+\*\*R[0-9]+"
