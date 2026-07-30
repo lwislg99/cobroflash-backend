@@ -6,6 +6,23 @@
 
 ---
 
+## ⚠️ ANTES DE AÑADIR NADA AQUÍ — NUMERACIÓN
+
+> **Este documento tiene DOS contadores (incidentes y reglas) y varias ramas vivas escribiéndolo a la vez. Antes de numerar: cuenta los ocupados en `main` Y mira qué números reclaman las ramas sin mergear.**
+>
+> ```bash
+> git fetch --all --prune
+> git show origin/main:docs/ERRORES_ASESOR.md | grep -oE "^### .*#[0-9]+" | grep -oE "#[0-9]+$" | sort -V
+> git show origin/main:docs/ERRORES_ASESOR.md | grep -oE "^\*\*R[0-9]+ ·"        | grep -oE "R[0-9]+"  | sort -V
+> for b in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin); do
+>   git diff origin/main...$b -- docs/ERRORES_ASESOR.md | grep -E "^\+### |^\+\*\*R[0-9]+"
+> done
+> ```
+>
+> **Lo ocupado en `main` no basta: una rama viva puede reclamar varios números a la vez, y puede crecer entre tu medición y su merge.** El 29-jul costó **tres rondas de conflicto** en el mismo PR — `#16`/`R9`, luego `#18`/`R11` — porque solo se miró `main`, y porque la rama vecina pasó de reclamar dos números a reclamar cuatro. Y un conflicto de numeración **no se resuelve fusionando lecciones**: se renumera, y las dos entradas se quedan.
+
+---
+
 ## LAS REGLAS (leer antes de cada sesión)
 
 **R1 · Verifica en la fuente antes de afirmar.** No deducir el estado de algo por su síntoma. Si es configuración externa (Meta, Resend, Railway, DNS), mirar EN la herramienta. Si es código, leer EL código. Si es un archivo, comprobar que existe.
@@ -74,6 +91,16 @@ git ls-tree -r --name-only <sha> | grep <tu-fichero>
 **Y la conducta peligrosa que esto evita:** ante «tu rama no está», el reflejo es volver a empujar. Sobre una rama ya mergeada eso recrea una rama muerta e invita a abrir un PR duplicado de código que ya está dentro. Publicar sigue probándose solo con `ls-remote` o con el navegador —eso no cambia—; lo que cambia es que **la ausencia de la rama no prueba nada por sí sola**, y que la respuesta correcta a «¿se perdió mi trabajo?» nunca se busca en la lista de ramas, se busca en el árbol de `main`.
 
 *(Origen: incidente #18, 29-jul-2026.)*
+
+**R12 · Un `grep` del log por un número NO dice si un ticket está mergeado: los números de PR y los de SCRUM viven en el mismo rango y colisionan.** Medido en este repo el 29-jul: `PR #228` mergeó **SCRUM-186**, `PR #230` mergeó **SCRUM-189** y `PR #236` mergeó **SCRUM-184**. Un `git log --oneline origin/main | grep 228` devuelve una línea que *parece* la respuesta y contesta otra pregunta. El `grep` no falla: devuelve exactamente lo que se le pidió, y por eso el falso positivo es tan limpio.
+
+Tres comprobaciones, y la tercera es la que salvó el caso real:
+
+1. **`git merge-base --is-ancestor <sha> <sha-de-main>`**, precedido de `fetch` propio y contra el sha del servidor (**R10**).
+2. **El artefacto, por su ruta:** ¿existe en `origin/main` el fichero que ese ticket crea? Un entregable que no está en el árbol no está entregado, diga lo que diga cualquier número. Es la vía que además sobrevive a un squash (**R11**).
+3. **Si citas un PR, lee a QUÉ RAMA nombra su mensaje de merge.** `Merge pull request #228 from lwislg99/scrum-186-…` lo dice entero: el número es del PR, el ticket está en la rama. **Leer solo el número es leer la mitad** — y fue el nombre de la rama, no el número, lo que evitó arrancar SCRUM-236 sobre una base inexistente.
+
+*(Origen: incidente #19, 30-jul-2026. Complementa a R10 —que ya avisa de la colisión de numeración— y a R11, sin sustituirlas: R10 mira el ref, R11 el contenido, R12 la pregunta mal formulada. Se numera R12 porque R10 y R11 se ocuparon el 29-jul, y R7 sigue reservada por una rama sin mergear.)*
 
 ---
 
@@ -271,6 +298,32 @@ Juntos producen un estado que no está en el alcance de ninguno: **un ejercicio 
 **Lo que lo hace caro:** el reflejo ante «tu rama no está» es volver a empujar. Sobre una rama ya mergeada, eso recrea una rama muerta e invita a abrir un PR duplicado — trabajo, ruido y una segunda oportunidad de confundirse. Aquí no llegó a hacerse porque la cadena de comprobación se corrió antes que el push.
 
 **Regla derivada: R11** (arriba, en LAS REGLAS).
+
+---
+
+### 2026-07-30 · #19 — `PR #228` mergeó SCRUM-186: un número que parece la respuesta y contesta otra pregunta (lección propia, del ejecutor)
+
+> **Nota de numeración — y el incidente dentro del incidente.** Esta entrada se escribió **tres veces**: nació como `#16`/`R9`, se renumeró a `#18`/`R11`, y acabó en `#19`/`R12`. Las dos primeras colisionaron con entradas de otra sesión que entraron en `main` mientras ésta esperaba merge — y la segunda vez la rama vecina reclamó **cuatro** números (`#17`, `#18`, `R10`, `R11`), no los dos que se le habían medido. **Ninguna lección se fusionó: las cinco conviven.** De ahí el bloque *ANTES DE AÑADIR NADA AQUÍ* al principio del documento, que vale más que las tres reglas juntas porque evita las tres rondas.
+
+**Qué pasó:** con la orden explícita de *«no cojas SCRUM-236 antes de medir que SCRUM-228 está en `main`»*, la primera comprobación fue un `git log --oneline origin/main | grep -iE "228|230|236"`. Devolvió tres líneas, y las tres parecían confirmar que los tres tickets estaban dentro:
+
+```
+e98b20c Merge pull request #228 from lwislg99/scrum-186-fix-comentario-fk
+c461faf Merge pull request #230 from lwislg99/scrum-189-cita-runbook
+ce5e5ae Merge pull request #236 from lwislg99/scrum-184-guard-red
+```
+
+**Ninguna de las tres habla de los tickets buscados.** Son los PR **#228**, **#230** y **#236**, que mergearon SCRUM-**186**, SCRUM-**189** y SCRUM-**184**. Los dos contadores corren por el mismo rango y a finales de julio se solapan casi uno a uno.
+
+**Por qué:** el número del PR y el del ticket no tienen ninguna relación, pero se parecen lo bastante como para que un `grep` los confunda. Y el `grep` **no falla**: devuelve exactamente lo que se le pidió. Es la forma más limpia de un falso positivo — la herramienta funciona, la pregunta estaba mal hecha.
+
+**Quién lo detectó:** el propio ejecutor, y **no por el número: por la columna de al lado.** El mensaje de merge nombra la RAMA (`from lwislg99/scrum-186-…`). Si el formato de GitHub no la incluyera, la comprobación habría dado verde.
+
+**Coste evitado:** SCRUM-236 existe precisamente para **no tener dos formas de contestar la misma pregunta** (reutilizar el «Sin asignar» de SCRUM-228 en vez de reimplementarlo). Arrancarlo sin su base habría producido justo la segunda implementación que ese ticket viene a impedir.
+
+**Y el mismo día, la otra cara:** `ls-remote` dijo que la rama de SCRUM-228 no existía; media hora después existía en `ed96e93`; poco después ya estaba en `main` (PR #299). **Las tres mediciones eran correctas** — se publicó y se mergeó entre ellas. Una medición de un remoto es un **instante**, no un estado. Es la misma raíz que **R10** vista desde el otro lado: allí el ref se movía solo, aquí se movía el remoto.
+
+**Regla derivada: R12** (arriba, en LAS REGLAS).
 
 ---
 
