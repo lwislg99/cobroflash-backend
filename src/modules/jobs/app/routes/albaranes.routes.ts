@@ -262,14 +262,22 @@ router.post('/consolidar', requireRole('admin'), async (req, res) => {
       actor: actorDeRequest(req),
     });
 
-    return res.status(201).json({
-      ok: true,
-      customer,
-      facturas,
-      ...(sinSellar.length
-        ? { sinSellar, message: 'Se emitieron las facturas, pero falló el registro VeriFactu de alguna. Revísalo antes de entregarlas.' }
-        : {}),
-    });
+      // SCRUM-206 · antes esto respondía `ok: true` con `sinSellar` DENTRO. Un llamador que
+      // mira `ok` —o el status 201— veía éxito, y el fallo era un campo que podía ignorar sin
+      // enterarse: eso también es fail-open, solo que en la respuesta en vez de en el PDF. El
+      // front, medido, no leía `sinSellar` en ningún sitio.
+      //
+      // El portón es por DOCUMENTO, no por tanda: las que se sellaron bien siguen su curso y no
+      // se deshace nada (regla 29). Lo que cambia es que el fallo llega como fallo — 409, que
+      // `apiRequest` convierte en excepción con `message` humano y `err.code`.
+    if (sinSellar.length) {
+      return res.status(409).json({
+        ok: false, error: 'sellado_incompleto', message: 'Se emitieron las facturas, pero falló el registro VeriFactu de alguna. Revísalo antes de entregarlas.',
+        customer, facturas, sinSellar,
+      });
+    }
+
+    return res.status(201).json({ ok: true, customer, facturas });
   } catch (err: any) {
     if (err?.message === 'consolidacion_concurrente') {
       return res.status(409).json({ error: 'consolidacion_concurrente', message: 'Alguno de los partes se facturó a la vez desde otra sesión. Vuelve a intentarlo.' });

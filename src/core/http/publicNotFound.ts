@@ -66,3 +66,37 @@ export function notFoundPageHtml(): string {
 </body>
 </html>`;
 }
+
+// SCRUM-206 · la factura existe pero todavía NO está registrada, así que no sale documento.
+// Copy OFICIAL aprobado por el fundador el 30-jul-2026 (regla 30). El texto vive en
+// portonDocumento.ts, que es el único sitio que decide el rechazo: la regla y su texto no se
+// separan, para que nadie cambie uno creyendo que el otro le sigue.
+//
+// Ni «sellado», ni «huella», ni «VeriFactu», ni el error técnico: quien lee esto es el cliente
+// de un fontanero (regla 26). Y NO es un 404 — el documento existe, solo no puede salir aún —,
+// por eso es una página propia y no se reutiliza documentNotFoundHtml().
+export function documentoEnRegistroHtml(copy: string): string {
+  return `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="robots" content="noindex"/>
+  <title>Factura en proceso — YaQu</title>
+  <style>
+    body{margin:0;font-family:Inter,system-ui,-apple-system,sans-serif;background:#f6f7f5;color:#0f1c17;
+         min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .card{background:#fff;border:1px solid #e7e9e5;border-radius:16px;max-width:420px;width:100%;
+          padding:36px 28px;text-align:center;box-shadow:0 4px 12px -2px rgba(16,24,40,.08)}
+    .icon{font-size:40px;line-height:1;margin-bottom:14px}
+    h1{font-size:18px;margin:0;line-height:1.45}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">⏳</div>
+    <h1>${copy}</h1>
+  </div>
+</body>
+</html>`;
+}
