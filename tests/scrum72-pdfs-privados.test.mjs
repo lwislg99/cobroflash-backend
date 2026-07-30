@@ -14,6 +14,7 @@ import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TE
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import { crearFactura } from './_factura-fixture.mjs';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -53,18 +54,16 @@ test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto
 
   // Factura de A con pdfUrl LEGACY (esquema viejo, estático público) → debe regenerarse (D4)
   const numero = `${new Date().getFullYear()}-CF-${String(900 + (stamp % 90)).padStart(3, '0')}`;
-  const invoiceA = await prisma.invoice.create({
-    data: {
-      merchantId: merchantA.id, customerId: custA.id, number: numero,
-      total: '100.00', currency: 'EUR', type: 'F1',
-      pdfUrl: `/invoices/${numero}.pdf`,          // ← legacy a propósito
-      qrData: `INV:${numero}|AMOUNT:100.00|CUR:EUR`,
-      lines: [{ concept: 'QA SCRUM-72', qty: 1, price: 100, tax: 0 }],
-      // SCRUM-205: `no_aplica` porque el merchant de este fixture es ES SIN NIF, y sin NIF
-      // VeriFactu no aplica: esta factura no entra en la cadena. Lo que se prueba aquí es el
-      // AISLAMIENTO del PDF entre merchants, no el sellado.
-      vfEstado: 'no_aplica',
-    },
+  const invoiceA = await crearFactura(prisma, {
+    merchantId: merchantA.id, customerId: custA.id, number: numero,
+    total: '100.00', currency: 'EUR', type: 'F1',
+    pdfUrl: `/invoices/${numero}.pdf`,          // ← legacy a propósito
+    qrData: `INV:${numero}|AMOUNT:100.00|CUR:EUR`,
+    lines: [{ concept: 'QA SCRUM-72', qty: 1, price: 100, tax: 0 }],
+    // SCRUM-205: `no_aplica` porque el merchant de este fixture es ES SIN NIF, y sin NIF
+    // VeriFactu no aplica: esta factura no entra en la cadena. Lo que se prueba aquí es el
+    // AISLAMIENTO del PDF entre merchants, no el sellado.
+    vfEstado: 'no_aplica',
   });
 
   const quoteA = await prisma.quote.create({
