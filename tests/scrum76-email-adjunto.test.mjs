@@ -12,6 +12,7 @@
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import { crearFactura } from './_factura-fixture.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -37,16 +38,14 @@ test('SCRUM-76: el email adjunta el PDF en TODAS las ramas (outbox .eml material
     }, async (merchant) => {
   const customer = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente 76', email: `cli-s76-${stamp}@test.local` } });
   const numero = `${new Date().getFullYear()}-CF-${String(800 + (stamp % 90)).padStart(3, '0')}`;
-  const invoice = await prisma.invoice.create({
-    data: {
-      merchantId: merchant.id, customerId: customer.id, number: numero,
-      total: '121.00', currency: 'EUR', type: 'F1',
-      pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
-      lines: [{ concept: 'QA S76', qty: 1, price: 100, tax: 0.21 }],
-      // SCRUM-205: `no_aplica` — merchant ES SIN NIF: fuera de la cadena. Este test prueba que
-      // el ADJUNTO del email es la única vía de entrega del documento fiscal, no el sellado.
-      vfEstado: 'no_aplica',
-    },
+  const invoice = await crearFactura(prisma, {
+    merchantId: merchant.id, customerId: customer.id, number: numero,
+    total: '121.00', currency: 'EUR', type: 'F1',
+    pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
+    lines: [{ concept: 'QA S76', qty: 1, price: 100, tax: 0.21 }],
+    // SCRUM-205: `no_aplica` — merchant ES SIN NIF: fuera de la cadena. Este test prueba que
+    // el ADJUNTO del email es la única vía de entrega del documento fiscal, no el sellado.
+    vfEstado: 'no_aplica',
   });
   const quote = await prisma.quote.create({
     data: { merchantId: merchant.id, customerId: customer.id, status: 'sent', total: '121.00', currency: 'EUR', lines: [{ concept: 'QA S76', qty: 1, price: 100, tax: 0.21 }] },
