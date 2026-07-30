@@ -113,4 +113,33 @@ Español, directo, honesto. Opciones con recomendación, no decidir el negocio p
 2. Confirma la fase (`PLAN_EJECUCION_Y_PARALELO.md`).
 3. Filtro "¿acerca a clientes pagando?" para el orden.
 4. Autonomía por defecto; frenos solo los del §8. No reabras tickets ajenos. No toques schema de prod fuera del carril A.
-5. Lee `docs/ERRORES_ASESOR.md` — las reglas R1-R6 son de aplicación obligatoria.
+5. Lee `docs/ERRORES_ASESOR.md` — **todas** las reglas numeradas son de aplicación obligatoria.
+6. Lee el **§11 (Cómo se aborda el trabajo)**: es el método, y es lo que evita perder el hilo a mitad de jornada.
+
+---
+
+## 11. CÓMO SE ABORDA EL TRABAJO
+
+Escrito el 30-jul-2026 a petición del fundador, tras una jornada en la que el hilo se perdió dos veces. No es teoría: cada punto viene de algo que pasó ese día.
+
+1. **Se ataca un ticket concreto, no un área.** Una sesión sabe en todo momento qué tarjeta va a cerrar. «Estoy mirando el tema de los QR» no es un alcance; «estoy cerrando SCRUM-230» sí.
+
+2. **Si aparece un bug DENTRO de ese alcance, se arregla y se cierra en el mismo paso.** No se abre tarjeta nueva por algo que cabe en el PR que ya está abierto: gestionar esa tarjeta cuesta más que el arreglo.
+
+3. **Si el bug es de otro carril, se reporta y NO se arregla** (regla 9). A **comentario**, no a tarjeta, salvo que sea grave. Una tarjeta por cada hallazgo ajeno convierte el board en un vertedero sin arreglar nada.
+
+4. **No se pierde el foco ni el objetivo.** El filtro permanente es: **¿esto acerca a tener clientes pagando?** Si la respuesta honesta es no, va a la cola, por interesante que sea.
+
+5. **Antes de afirmar que un ticket está entregado o es cerrable, se mide por CONTENIDO y `merge-base`**, con `fetch` propio y citando el sha (R9/R10/R11). **El estado de Jira y el número del PR no son evidencia.** Se busca el artefacto —el fichero, la función, el literal, el test— y se comprueba que está en `main`.
+
+6. **Un ticket se cierra en el tracker en cuanto el merge está confirmado**, no al final del día. Un ticket cerrado tarde es indistinguible de uno olvidado, y hace que dos personas trabajen sobre el mismo mapa falso.
+
+7. **Los prompts que se entregan al fundador van completos y listos para copiar y pegar.** Un prompt con huecos que él tenga que rellenar llega roto y **bloquea una sesión entera**. Si falta un dato para escribirlo, se pide antes; no se deja el hueco.
+
+### Los tres incidentes del 30-jul-2026 que lo justifican
+
+- **Punto 6 — SCRUM-230 estuvo 18 horas mergeada en `main` y abierta en Jira.** Nadie mintió: se cerró «al final», y en ese hueco el board declaraba trabajo pendiente que ya no existía.
+
+- **Punto 5 — la auditoría de cierre de ese día.** De 30 tickets abiertos solo **uno** era cerrable; el atasco real eran **8 tickets terminados esperando merge**, que Jira no distingue de «sin empezar». Y midiendo por nombre en vez de por contenido salieron **dos falsos positivos**: `tests/scrum212-copy-sin-claim-fiscal.test.mjs` **no** es SCRUM-212 (colisión de numeración con un test antiguo), y `scripts/_prisma-client-guard.mjs` es **el problema** que denuncia SCRUM-235, no su arreglo. El número tampoco sirve de atajo por el otro lado: **el PR #228 de este repo mergeó SCRUM-186.**
+
+- **Punto 7 — dos prompts con huecos sin rellenar el mismo día.** Uno llegó con `OBJETIVO: <una frase>` y su comando de verificación en blanco; otro con `[pega aquí los textos de arriba tal cual]` donde iba el microcopy aprobado. En ambos la sesión tuvo que parar y preguntar, y el segundo dejó SCRUM-210 bloqueado hasta el turno siguiente.
