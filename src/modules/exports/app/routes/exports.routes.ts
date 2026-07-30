@@ -4,7 +4,17 @@ import { prisma } from '../../../../core/db/prisma';
 import { config, isVerifiedPlatformOwner } from '../../../../core/config/env';
 import { isFlagEnabled } from '../../../../core/flags';
 import { requireRole } from '../../../../core/http/authMiddleware';
-import { recordAudit, requestIp } from '../../../system/audit.service';
+import {
+  recordAudit,
+  requestIp,
+  // SCRUM-221 (A9): el export fiscal se registra por la puerta BLOQUEANTE y con el sobre de
+  // SCRUM-207 — actor declarado (`pro_propietario` | `pro_equipo`), no un `?? null` que hay
+  // que interpretar, y flags fiscales CONGELADOS en el momento del hecho.
+  recordAuditOrThrow,
+  sobreFiscal,
+  actorDeRequest,
+  flagsFiscalesDe,
+} from '../../../system/audit.service';
 import { estadoCobroFor } from '../../../jobs/domain/job.service';
 // SCRUM-25 (B): paquete ZIP. `archiver` hace streaming real (.pipe + backpressure);
 // jszip se descartó porque carga todo en memoria.
@@ -212,12 +222,34 @@ router.get('/datos.zip', async (req, res) => {
     const conXml = seleccion.xml;
 
     const xmlPorAnio: Array<{ year: number; xml: string }> = [];
+    // 209 ↔ 221: las dos cuentan cosas DISTINTAS del mismo paquete y las dos hacen falta.
+    // No era una elección entre ramas: era una combinación.
+    //
+    // SCRUM-221: cuántos registros RRSIF salen de verdad en el paquete. Lo cuenta el
+    // constructor, no se deduce de `invoices.length` — no es lo mismo una factura que un
+    // registro declarado, y el número que va al AuditLog tiene que ser el real.
+    let registrosVerifactu = 0;
+    // SCRUM-209: facturas que NO se han podido declarar. No abortan el paquete —el resto del
+    // ejercicio sale— pero se nombran ARRIBA del LEEME, donde ya se avisa de un paquete
+    // incompleto. Una factura omitida en silencio de un registro fiscal es peor que el fallo.
+    const exclusionesVerifactu: Array<{ year: number; number: string; motivo: string }> = [];
     if (conXml) {
       const anios = [...new Set(invoices.map((inv) => inv.createdAt.getFullYear()))].sort();
       try {
         for (const year of anios) {
-          const { xml } = await buildVerifactuRegistrosXml({ merchantId: req.merchantId, year });
-          xmlPorAnio.push({ year, xml });
+          // Los TRES del constructor: el XML, cuántos registros declaró (221) y cuáles no
+          // pudo declarar (209). `count` viene de `registros.length`, no de las facturas
+          // miradas — verificado en `verifactu.service.ts:765`, porque si el constructor
+          // dejara de devolverlo, `registrosVerifactu += undefined` pondría un NaN en el
+          // AuditLog y eso no lo canta nadie.
+          const { xml, count, excluidos } = await buildVerifactuRegistrosXml({ merchantId: req.merchantId, year });
+          // SCRUM-216: xml vacío = no queda nada declarable ese ejercicio. No se adjunta un
+          // fichero inválido (el XSD exige >=1 RegistroFactura); el LEEME dirá por qué.
+          if (xml) xmlPorAnio.push({ year, xml });
+          // `count` se suma SIEMPRE, con o sin fichero adjunto: es cuántos registros se
+          // declararon de verdad. Un ejercicio vacío aporta 0 y no falsea el total.
+          registrosVerifactu += count;
+          for (const x of excluidos) exclusionesVerifactu.push({ year, ...x });
         }
       } catch (e: any) {
         console.error('[exports/datos.zip] VeriFactu XML error:', e?.message || e);
@@ -245,6 +277,51 @@ router.get('/datos.zip', async (req, res) => {
       completo,
       verifactu_anios: xmlPorAnio.map((x) => x.year), // SCRUM-82
     });
+
+    // SCRUM-221 (A9) · SI EL PAQUETE LLEVA REGISTRO FISCAL DENTRO, ESO ES UN EXPORT FISCAL.
+    //
+    // Condicionado a `xmlPermitido` A PROPÓSITO: sin él, este ZIP no contiene ni un registro
+    // RRSIF (`xmlPorAnio` queda vacío), y registrar «exportacion_fiscal» de un paquete sin nada
+    // fiscal dentro sería un registro que miente en la dirección contraria — infla la prueba.
+    // El `datos_exportados` de arriba sigue cubriendo la descarga como hecho de negocio.
+    //
+    // Y va AQUÍ, antes de `archive.pipe(res)`: en cuanto se abre el pipe empiezan a salir
+    // bytes, y a partir de ese punto «bloquear» ya no significa nada. Es la misma razón por la
+    // que en la ruta del XML va antes de los headers, solo que aquí el margen es más corto.
+    if (xmlPermitido && xmlPorAnio.length > 0) {
+      await recordAuditOrThrow({
+        merchantId: req.merchantId,
+        teamMemberId: req.teamMemberId ?? null,
+        action: 'exportacion_fiscal',
+        entityType: 'export',
+        entityId: null,
+        ip: requestIp(req),
+        meta: sobreFiscal({
+          actor: actorDeRequest(req),
+          flagsFiscales: flagsFiscalesDe(merchant),
+          payload: {
+            fichero: entrega.nombreZip,
+            // Aquí el rango SÍ es un from/to (el filtro de fechas del paquete), a diferencia
+            // del XML suelto que va por ejercicio. Las dos formas conviven declaradas.
+            rango: {
+              tipo: 'fechas' as const,
+              from: from ? from.toISOString().slice(0, 10) : null,
+              to: to ? to.toISOString().slice(0, 10) : null,
+              // Los ejercicios que acabaron dentro del ZIP: es lo que un inspector querría
+              // cruzar contra los XML del paquete.
+              ejercicios: xmlPorAnio.map((x) => x.year),
+            },
+            nRegistros: registrosVerifactu,
+            // Si alguno de los años hubiera roto la cadena, `buildVerifactuRegistrosXml` habría
+            // lanzado y esta ruta habría respondido 500 sin entregar nada (ver el catch de la
+            // fase 1). Llegar aquí significa que ninguno saltó.
+            cadenaVerificada: true,
+            // ⛔ Sin `destinatarioDeclarado`, por decisión del fundador — ver el porqué completo
+            // en la ruta `verifactu.xml`: un dato autodeclarado es cobertura aparente.
+          },
+        }),
+      });
+    }
 
     // ── FASE 2: cabeceras (ya con el nombre honesto) y streaming ────────────
     res.setHeader('Content-Type', 'application/zip');
@@ -300,7 +377,15 @@ router.get('/datos.zip', async (req, res) => {
         pdfsOk,
         pdfsTotal: invoices.length,
         xmlAnios: xmlPorAnio.map((x) => x.year),
-        cabecera: entrega.cabeceraLeeme,
+        // SCRUM-209: las exclusiones van con el aviso de paquete incompleto, arriba del todo.
+        cabecera: [
+          ...entrega.cabeceraLeeme,
+          ...(exclusionesVerifactu.length === 0 ? [] : [
+            `ATENCION: ${exclusionesVerifactu.length} factura(s) NO se han podido declarar y NO estan`,
+            'en el registro VeriFactu de este paquete. Corrigelas y vuelve a exportar:',
+            ...exclusionesVerifactu.map((x) => `  · ${x.number} (${x.year}): ${x.motivo}`),
+          ]),
+        ],
         datasets: seleccion.datasets, // SCRUM-138: el LEEME describe SOLO lo que hay dentro
       }),
       { name: 'LEEME.txt' },
@@ -455,7 +540,64 @@ router.get('/verifactu.xml', requireRole('admin'), async (req, res) => {
 
     // SCRUM-82: constructor RRSIF compartido con GET /datos.zip — misma fuente, sin
     // divergencia posible entre el endpoint suelto y el que va dentro del paquete.
-    const { xml } = await buildVerifactuRegistrosXml({ merchantId: req.merchantId, year });
+    const { xml, count, excluidos } = await buildVerifactuRegistrosXml({ merchantId: req.merchantId, year });
+
+    // SCRUM-216: sin registros declarables no hay documento válido que servir, así que se
+    // corta ANTES del registro de auditoría — y ese orden es el correcto: aquí NO ha salido
+    // nada de la plataforma, y `exportacion_fiscal` acredita una entrega. Auditar un 409
+    // sería anotar un export que nunca ocurrió.
+    if (!xml) {
+      return res.status(409).json({
+        error: 'verifactu_sin_registros',
+        message: 'No hay ninguna factura declarable en ese ejercicio, asi que no se genera el registro (un XML sin registros no es valido). Revisa los motivos y corrige las facturas.',
+        excluidos,
+      });
+    }
+
+    // SCRUM-221 (A9) · EL REGISTRO VA ANTES QUE LOS BYTES, Y BLOQUEA.
+    //
+    // `recordAuditOrThrow` se ESPERA y PROPAGA: si la fila no se puede escribir, el error sube
+    // al `catch` de abajo → 500 y **cero bytes fuera**. No se usa la puerta fire-safe a
+    // propósito (mismo criterio que `factura_emitida`): un pack de inspección descargado sin
+    // rastro es justo lo que este ticket impide. Y no depende de que nadie se acuerde —
+    // `exportacion_fiscal` está en ACCIONES_BLOQUEANTES, así que `recordAudit` ni compila.
+    //
+    // El orden importa y es el único posible aquí: primero la fila, después los headers. Si se
+    // escribiera después del `res.send`, la respuesta ya habría salido cuando fallara el log.
+    //
+    // `cadenaVerificada`: el constructor lanza `verifactu_cadena_rota` si el encadenamiento no
+    // se puede acreditar (verifactu.service.ts). Si hemos llegado hasta aquí, no saltó.
+    await recordAuditOrThrow({
+      merchantId: req.merchantId,
+      teamMemberId: req.teamMemberId ?? null,
+      action: 'exportacion_fiscal',
+      // Contrato §4.1: `entityType` obligatorio; `entityId` es la excepción declarada para A9
+      // (un export no es una entidad, es un acto sobre un conjunto).
+      entityType: 'export',
+      entityId: null,
+      ip: requestIp(req),
+      meta: sobreFiscal({
+        actor: actorDeRequest(req),
+        flagsFiscales: flagsFiscalesDe(merchant),
+        payload: {
+          fichero: `verifactu_${year}.xml`,
+          // El rango de ESTA ruta es un EJERCICIO, no un from/to: el registro fiscal se genera
+          // por año natural. Se declara con su forma real en vez de forzarlo a un {from,to}
+          // inventado — ver `RangoExportado` en el contrato y en el guard de SCRUM-221.
+          rango: { tipo: 'ejercicio' as const, year },
+          nRegistros: count,
+          cadenaVerificada: true,
+          // ⛔ NO HAY `destinatarioDeclarado`, Y ES UNA DECISIÓN, NO UN OLVIDO (fundador,
+          // 29-jul-2026). El contrato lo proponía como texto libre («para quién se pide el
+          // export») y se descarta: **un campo que el usuario rellena a botonazo no prueba nada
+          // y PARECE que sí**. Dentro de dos años alguien lee «Mi gestoría» en un registro de
+          // auditoría y lo toma por evidencia de entrega, cuando solo acredita qué botón pulsó
+          // alguien con prisa. Un dato autodeclarado metido donde todo lo demás es verificable
+          // es COBERTURA APARENTE. Lo que la norma pide —quién, cuándo y qué periodo— ya está
+          // aquí arriba, y eso sí es verificable. No se le pregunta nada al profesional.
+        },
+      }),
+    });
 
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="verifactu_${year}.xml"`);

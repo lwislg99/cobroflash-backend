@@ -6,6 +6,23 @@
 
 ---
 
+## ⚠️ ANTES DE AÑADIR NADA AQUÍ — NUMERACIÓN
+
+> **Este documento tiene DOS contadores (incidentes y reglas) y varias ramas vivas escribiéndolo a la vez. Antes de numerar: cuenta los ocupados en `main` Y mira qué números reclaman las ramas sin mergear.**
+>
+> ```bash
+> git fetch --all --prune
+> git show origin/main:docs/ERRORES_ASESOR.md | grep -oE "^### .*#[0-9]+" | grep -oE "#[0-9]+$" | sort -V
+> git show origin/main:docs/ERRORES_ASESOR.md | grep -oE "^\*\*R[0-9]+ ·"        | grep -oE "R[0-9]+"  | sort -V
+> for b in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin); do
+>   git diff origin/main...$b -- docs/ERRORES_ASESOR.md | grep -E "^\+### |^\+\*\*R[0-9]+"
+> done
+> ```
+>
+> **Lo ocupado en `main` no basta: una rama viva puede reclamar varios números a la vez, y puede crecer entre tu medición y su merge.** El 29-jul costó **tres rondas de conflicto** en el mismo PR — `#16`/`R9`, luego `#18`/`R11` — porque solo se miró `main`, y porque la rama vecina pasó de reclamar dos números a reclamar cuatro. Y un conflicto de numeración **no se resuelve fusionando lecciones**: se renumera, y las dos entradas se quedan.
+
+---
+
 ## LAS REGLAS (leer antes de cada sesión)
 
 **R1 · Verifica en la fuente antes de afirmar.** No deducir el estado de algo por su síntoma. Si es configuración externa (Meta, Resend, Railway, DNS), mirar EN la herramienta. Si es código, leer EL código. Si es un archivo, comprobar que existe.
@@ -47,6 +64,43 @@ Tres cosas concretas, por orden de coste:
 **Por qué es una familia propia y no un caso de R1:** aquí nadie afirmó nada sin comprobarlo. Todo estaba medido y todo estaba bien **por separado**. Es el reverso de *«prohibición sin mecanismo»*: **exceso de mecanismos que nadie compuso**. Y se parece al #12 —probar con un caso fuera del mecanismo— pero una capa más arriba: el caso está *dentro* de cada mecanismo y *fuera* de todos a la vez.
 
 *(Origen: incidente #15, 29-jul-2026. Se numera R8 y no R7 porque R7 existe en una rama sin mergear.)*
+
+**R9 · Un diff que nadie puede revisar ya está aprobado a ciegas. Antes de abrir el PR, mira `git diff --stat` y compáralo con el cambio que crees haber hecho.** Si el número de líneas no se parece, el PR no trae solo tu cambio: casi siempre son finales de línea (Windows convierte a CRLF un fichero que el repo guarda en LF y el diff pasa a ser el fichero ENTERO), y también reordenaciones de imports o formateadores automáticos. **Esto no es cosmético y no es una manía de limpieza: decide si alguien revisa el PR o lo aprueba a ojo.** Un cambio de 123 líneas se lee; uno de 1745 se hojea, y en un repo donde los STOPs viven en el diff, hojear es no mirar. La comprobación cuesta un comando y se hace SIEMPRE, no solo cuando algo huele raro — porque el ruido no huele, solo abulta. Si el diff está inflado: normalizar antes de empujar (`--ignore-cr-at-eol` sirve para DIAGNOSTICAR, no para arreglar; el fichero se escribe con el final de línea que el repo ya usaba).
+
+*(Origen: incidente #16, 29-jul-2026.)*
+
+**R10 · Toda afirmación sobre «esto ya está en `main`» lleva `git fetch` propio EN EL MISMO bloque de comandos, y cita el sha de `origin/main` en el reporte. Sin sha, la medición no vale.** Los worktrees **comparten los refs** con el repo principal y entre ellos: cuando OTRA sesión hace `fetch`, tu `refs/remotes/origin/main` se mueve **sin que tú hagas nada**. Dos comandos consecutivos tuyos pueden medir contra dos `main` distintos, y ninguno de los dos avisa. Un `merge-base --is-ancestor` es exacto sobre el ref que tenga en ese instante, así que **la respuesta es exacta y la pregunta indeterminada** — que es la peor combinación, porque el resultado parece autoritativo.
+
+Y por contenido antes que por identidad: **un squash merge cambia el sha**, así que `--is-ancestor` de TUS commits dice «no está» sobre un main donde el código sí está. Lo que se comprueba es que el símbolo, la función o el literal APAREZCAN en `origin/main` (`git grep <patrón> origin/main`). El sha se cita para que quien lea el reporte sepa contra qué main se midió; el contenido es lo que decide.
+
+**Corolario que ya costó un merge:** el número del PR **no** identifica el ticket. En este repo colisionan (el PR #228 mergeó SCRUM-186, y SCRUM-228 acabó siendo el PR #299). Nunca «lo mergeé, era el 228».
+
+*(Origen: incidente #17, 29-jul-2026.)*
+
+**R11 · Una rama ausente del remoto NO distingue «el push falló» de «se mergeó y se borró». Los dos casos se ven IDÉNTICOS, así que la rama no es la pregunta: la pregunta es si el contenido está en `main`.** Los tres síntomas son los mismos en ambos: el compare de GitHub responde *«We couldn't figure out how to compare these references»*, la búsqueda de ramas no encuentra nada, y `git branch -vv` marca el upstream como `gone`. Leerlos como «no se publicó» es la conclusión natural **y puede ser exactamente la contraria de la verdad**: GitHub borra la rama al mergear si está activado *delete branch on merge*, o sea que **la desaparición es lo que ocurre cuando todo ha ido BIEN**.
+
+Lo que decide, y no admite ambigüedad, es esta cadena — toda colgando del sha que da el servidor, sin ninguna ref local:
+
+```
+git ls-remote origin refs/heads/main          # sha vivo, sin refs locales
+git log -1 --format=%s <sha>                  # ¿el merge nombra tu rama?
+git merge-base --is-ancestor <tu-commit> <sha>
+git ls-tree -r --name-only <sha> | grep <tu-fichero>
+```
+
+**Y la conducta peligrosa que esto evita:** ante «tu rama no está», el reflejo es volver a empujar. Sobre una rama ya mergeada eso recrea una rama muerta e invita a abrir un PR duplicado de código que ya está dentro. Publicar sigue probándose solo con `ls-remote` o con el navegador —eso no cambia—; lo que cambia es que **la ausencia de la rama no prueba nada por sí sola**, y que la respuesta correcta a «¿se perdió mi trabajo?» nunca se busca en la lista de ramas, se busca en el árbol de `main`.
+
+*(Origen: incidente #18, 29-jul-2026.)*
+
+**R12 · Un `grep` del log por un número NO dice si un ticket está mergeado: los números de PR y los de SCRUM viven en el mismo rango y colisionan.** Medido en este repo el 29-jul: `PR #228` mergeó **SCRUM-186**, `PR #230` mergeó **SCRUM-189** y `PR #236` mergeó **SCRUM-184**. Un `git log --oneline origin/main | grep 228` devuelve una línea que *parece* la respuesta y contesta otra pregunta. El `grep` no falla: devuelve exactamente lo que se le pidió, y por eso el falso positivo es tan limpio.
+
+Tres comprobaciones, y la tercera es la que salvó el caso real:
+
+1. **`git merge-base --is-ancestor <sha> <sha-de-main>`**, precedido de `fetch` propio y contra el sha del servidor (**R10**).
+2. **El artefacto, por su ruta:** ¿existe en `origin/main` el fichero que ese ticket crea? Un entregable que no está en el árbol no está entregado, diga lo que diga cualquier número. Es la vía que además sobrevive a un squash (**R11**).
+3. **Si citas un PR, lee a QUÉ RAMA nombra su mensaje de merge.** `Merge pull request #228 from lwislg99/scrum-186-…` lo dice entero: el número es del PR, el ticket está en la rama. **Leer solo el número es leer la mitad** — y fue el nombre de la rama, no el número, lo que evitó arrancar SCRUM-236 sobre una base inexistente.
+
+*(Origen: incidente #19, 30-jul-2026. Complementa a R10 —que ya avisa de la colisión de numeración— y a R11, sin sustituirlas: R10 mira el ref, R11 el contenido, R12 la pregunta mal formulada. Se numera R12 porque R10 y R11 se ocuparon el 29-jul, y R7 sigue reservada por una rama sin mergear.)*
 
 ---
 
@@ -205,6 +259,74 @@ Juntos producen un estado que no está en el alcance de ninguno: **un ejercicio 
 
 ---
 
+### 2026-07-29 · #16 — Entregué un PR de 123 líneas con un diff de 1745 (lección propia, del ejecutor)
+
+**Qué pasó:** SCRUM-228 añade una función de ~110 líneas a `public/dashboard/js/reportsView.js`. Al revisar el diffstat antes de escribir el cuerpo del PR, el fichero aparecía con **1745 líneas tocadas** sobre un original de 811. Medido: `main` guarda ese fichero en **LF** (811 LF, 0 CRLF) y mi copia de trabajo había quedado **entera en CRLF** (934 CRLF, 0 LF). Git lo veía como borrar el fichero y escribirlo de nuevo. Con `--ignore-cr-at-eol`, el cambio real: **123 inserciones, 0 borrados**.
+
+**Por qué importa, y no es cosmética:** el código era el mismo con o sin el ruido. Lo que cambiaba era **si el PR se puede revisar**. Un diff de 123 líneas se lee entero; uno de 1745 se hojea y se aprueba por confianza. En este repo los STOPs —fiscal, dinero, schema, superficie pública— se enseñan **como diff**: si el diff no es legible, el STOP se vuelve decorativo. Y lo peor del fallo es que **es invisible por dentro**: el fichero está bien, los tests pasan, nada avisa. Solo se ve mirando el diffstat y preguntándose si ese número tiene sentido.
+
+**Lo que lo cazó:** no un guard, sino comparar el tamaño del diff con el tamaño del cambio que creía haber hecho. Costó un vistazo.
+
+**Arreglado:** fichero normalizado a LF y commit propio que lo explica. El PR muestra 123 inserciones.
+
+**Regla derivada: R9** (arriba, en LAS REGLAS).
+
+---
+
+### 2026-07-29 · #17 — Medí «qué hay en main» dos veces seguidas y me salieron dos main distintos (lección propia, del ejecutor)
+
+**Qué pasó:** tras empujar SCRUM-228, el fundador dio por mergeada la rama y dijo que en `main` había entrado el código pero no el microcopy. Al medirlo: en `main` **no había nada** de SCRUM-228 —ni `desglosarPorEmpleado`, ni `byEmployee`, ni el directorio `reports/domain/`—. Lo que se había mergeado dos veces era **SCRUM-230**. La confusión venía del corolario de R10: el PR llevaba un número que se parecía al del ticket.
+
+**El fallo de método, que es el que da nombre al incidente:** en el primer bloque de comandos `origin/main` era `c75c6d2`; en el siguiente, **sin haber hecho yo ningún `fetch`**, el mismo ref era `01d82b2`. Otra sesión había hecho `fetch` y los worktrees comparten `refs/remotes`. Salté a explicaciones sobre el log de git antes de caer en que **la pregunta era indeterminada**: no «qué contiene main», sino «qué contenía main en el instante de cada comando».
+
+**Lo que lo hace peligroso:** un `merge-base --is-ancestor` no falla nunca. Devuelve SÍ o NO con total seguridad sobre el ref que hubiera en ese microsegundo. El reporte sale con aspecto de medición dura y por debajo tiene una referencia móvil. Es la forma más limpia de afirmar algo falso habiendo «comprobado».
+
+**Arreglado:** se repitió con `fetch` propio en el mismo bloque, citando el sha, y por contenido. Resultado: nada de 228 en main; un solo merge posterior (PR #299, `origin/main = 6c8554e`) metió código y microcopy juntos.
+
+**Regla derivada: R10** (arriba, en LAS REGLAS).
+
+---
+
+### 2026-07-29 · #18 — Una rama mergeada y borrada se leyó como trabajo sin publicar
+
+**Qué pasó:** tras el merge de SCRUM-228, el fundador buscó `scrum-228-informes-empleado` en GitHub y no aparecía: el compare daba *«We couldn't figure out how to compare these references»* y la búsqueda de ramas devolvía *«No branches match the search»*. La conclusión —razonable con esos datos— fue que el push nunca había pasado y que el trabajo vivía solo en un worktree, a una caída de sesión de perderse. La instrucción fue volver a empujar de inmediato.
+
+**Lo que pasaba de verdad:** la rama se había mergeado (**PR #299**) y GitHub la borró al mergear. `git ls-remote origin scrum-228-informes-empleado` devolvía 0 líneas, correctamente, **porque ya no hacía falta que existiera**. El contenido estaba entero en `main`: `git ls-remote origin refs/heads/main` → `6c8554e`, cuyo asunto es literalmente *«Merge pull request #299 from lwislg99/scrum-228-informes-empleado»*, con `ed96e93` de ancestro y los dos ficheros nuevos en su árbol.
+
+**Por qué se llegó ahí, que es lo corregible:** una comprobación anterior había dicho «local == remoto» con `ls-remote` —consulta viva, correcta **en ese instante**— y después la rama se borró al mergear. El error no fue medir contra una copia local: fue no anticipar que **«rama ausente» tiene dos causas opuestas** y no acompañar nunca la comprobación de la rama con la única que no caduca, que es si el código está en `main`.
+
+**Lo que lo hace caro:** el reflejo ante «tu rama no está» es volver a empujar. Sobre una rama ya mergeada, eso recrea una rama muerta e invita a abrir un PR duplicado — trabajo, ruido y una segunda oportunidad de confundirse. Aquí no llegó a hacerse porque la cadena de comprobación se corrió antes que el push.
+
+**Regla derivada: R11** (arriba, en LAS REGLAS).
+
+---
+
+### 2026-07-30 · #19 — `PR #228` mergeó SCRUM-186: un número que parece la respuesta y contesta otra pregunta (lección propia, del ejecutor)
+
+> **Nota de numeración — y el incidente dentro del incidente.** Esta entrada se escribió **tres veces**: nació como `#16`/`R9`, se renumeró a `#18`/`R11`, y acabó en `#19`/`R12`. Las dos primeras colisionaron con entradas de otra sesión que entraron en `main` mientras ésta esperaba merge — y la segunda vez la rama vecina reclamó **cuatro** números (`#17`, `#18`, `R10`, `R11`), no los dos que se le habían medido. **Ninguna lección se fusionó: las cinco conviven.** De ahí el bloque *ANTES DE AÑADIR NADA AQUÍ* al principio del documento, que vale más que las tres reglas juntas porque evita las tres rondas.
+
+**Qué pasó:** con la orden explícita de *«no cojas SCRUM-236 antes de medir que SCRUM-228 está en `main`»*, la primera comprobación fue un `git log --oneline origin/main | grep -iE "228|230|236"`. Devolvió tres líneas, y las tres parecían confirmar que los tres tickets estaban dentro:
+
+```
+e98b20c Merge pull request #228 from lwislg99/scrum-186-fix-comentario-fk
+c461faf Merge pull request #230 from lwislg99/scrum-189-cita-runbook
+ce5e5ae Merge pull request #236 from lwislg99/scrum-184-guard-red
+```
+
+**Ninguna de las tres habla de los tickets buscados.** Son los PR **#228**, **#230** y **#236**, que mergearon SCRUM-**186**, SCRUM-**189** y SCRUM-**184**. Los dos contadores corren por el mismo rango y a finales de julio se solapan casi uno a uno.
+
+**Por qué:** el número del PR y el del ticket no tienen ninguna relación, pero se parecen lo bastante como para que un `grep` los confunda. Y el `grep` **no falla**: devuelve exactamente lo que se le pidió. Es la forma más limpia de un falso positivo — la herramienta funciona, la pregunta estaba mal hecha.
+
+**Quién lo detectó:** el propio ejecutor, y **no por el número: por la columna de al lado.** El mensaje de merge nombra la RAMA (`from lwislg99/scrum-186-…`). Si el formato de GitHub no la incluyera, la comprobación habría dado verde.
+
+**Coste evitado:** SCRUM-236 existe precisamente para **no tener dos formas de contestar la misma pregunta** (reutilizar el «Sin asignar» de SCRUM-228 en vez de reimplementarlo). Arrancarlo sin su base habría producido justo la segunda implementación que ese ticket viene a impedir.
+
+**Y el mismo día, la otra cara:** `ls-remote` dijo que la rama de SCRUM-228 no existía; media hora después existía en `ed96e93`; poco después ya estaba en `main` (PR #299). **Las tres mediciones eran correctas** — se publicó y se mergeó entre ellas. Una medición de un remoto es un **instante**, no un estado. Es la misma raíz que **R10** vista desde el otro lado: allí el ref se movía solo, aquí se movía el remoto.
+
+**Regla derivada: R12** (arriba, en LAS REGLAS).
+
+---
+
 ## PATRÓN COMÚN (lo que de verdad hay que corregir)
 
 **Ocho de los diez incidentes son la misma cosa: afirmar el estado del mundo sin comprobarlo.** Un reporte, un síntoma, una suposición, una ausencia de mención o **la salida de un comando** se convirtieron en "esto es así" — y de ahí salieron tickets con prioridad alta, tareas manuales para el fundador, un ticket cerrado en falso y `main` en rojo mientras el arreglo parecía entregado.
@@ -214,6 +336,41 @@ Son #1, #2, #3, #4, #7, #8, #9 y #10. Los otros dos (#5 y #6) son de otra famili
 **Los posteriores han abierto dos familias más, y conviene no meterlas en el saco de la primera:**
 
 - **#12 y #13 — verificar de verdad, pero el objeto equivocado.** Un guard probado en rojo con un caso que caía *fuera* del mecanismo que vigilaba, y un job de CI cuyas piezas se comprobaron una a una sin ejecutarlo nunca. Aquí sí se comprobó; lo que falló fue **sobre qué**.
+
+  > **Esta familia no es un par de anécdotas: es la más frecuente, y no se ve porque cada cara parece un despiste distinto.** No hace falta regla nueva —la de siempre, *«pregúntale al objeto, no al proceso»*, ya la cubre— pero sí hace falta ver **cuántas caras tiene**. Las que llevamos contadas, todas de la última semana:
+  >
+  > 1. **El caso de prueba fuera del mecanismo** (#12). El rojo salió, pero por un motivo que el guard no vigilaba.
+  > 2. **Las piezas sin el conjunto** (#13). Cada eslabón del job de CI verificado; el job, nunca ejecutado.
+  > 3. **El ámbito más ancho que el sujeto.** Un `grep` de la prohibición sobre el fichero ENTERO casa el comentario que la explica — el guard se caza a sí mismo. Es el motivo de que exista `tests/_guard-texto.mjs` y de que los guards de código miren el AST: un comentario no es un nodo.
+  > 4. **La salida filtrada que oculta el fallo.** `npm run build | grep "error TS"` salió vacío y se leyó como «build OK». El build **no había corrido**: faltaba la junction y `tsc` no existía. Vacío ≠ correcto.
+  > 5. **La pregunta mal formulada** (#19). `git log | grep 228` devolvió tres líneas que parecían la respuesta: eran números de PR, no de ticket.
+  > 6. **El medidor dentro de lo medido.** Un assert de «no aparece el rol crudo `sin_asignar`» medido sobre `document.body.textContent` — que **incluye el texto de los `<script>`**, donde está escrita la propia palabra. Salió rojo contra su propia prosa. Es la cara 3 una capa más allá: allí el ámbito era el fichero, aquí es el DOM que contiene al medidor.
+  >
+  > 7. **El anuncio en lugar del hecho.** Un reporte decía «lanzo ya la tanda gateada» y **no se había ejecutado nada**: el mensaje describía la acción y ocupó su sitio. Se destapó al preguntar por el estado — `Get-CimInstance` devolvió *NINGUN runner de tanda corriendo*. Hermana de #9 (escribir con un script y no releer el resultado), #10 (dar un PR por entregado leyendo el mensaje del push) y #14 (dar por colgada una tanda que iba bien). **No es un recorte mal puesto: es que no hubo recorte, porque no hubo medición.**
+  >
+  > **Lo que las une:** son casos en los que una afirmación **pareció venir de una comprobación** — y la comprobación o encuadró mal el objeto, o **no existió**. Las seis primeras son la primera mitad: hubo medición y el recorte estaba mal. La séptima es la segunda mitad: no hubo medición, el anuncio ocupó el lugar del hecho. Por eso ninguna sale en un diff y ninguna la caza un rojo. Dos preguntas, y la nueva va **antes**:
+  >
+  > **0. ¿Hubo comprobación?** ¿Existe el proceso o el artefacto que digo haber producido? Compruébalo **antes** de contarlo.
+  > **1. ¿Está el medidor dentro del recorte?** Y: *«¿qué mediría esto si el sistema estuviera roto?»*
+  >
+  > El paso 0 es **más barato que el 1 y caza más**: basta con verificar que el proceso que dices haber lanzado existe, antes de decir que lo lanzaste.
+  >
+  > ### El hábito que las cubre todas: **toda medición declara su contexto, o no es reconciliable con otra**
+  >
+  > No es una regla más — es lo que hace utilizables a las que ya hay. Una medición sin contexto declarado no se puede contrastar con la de otra sesión, y entonces **dos personas honestas se contradicen sin que ninguna esté equivocada**.
+  >
+  > | Dónde mides | Qué declaras siempre |
+  > |---|---|
+  > | **En repo** | el `sha` de `origin/main` contra el que mediste, **con `fetch` propio en el mismo bloque** |
+  > | **En visual** | el **fondo**, el **ancho**, y si el banco ejecuta **la función real** o una copia del template |
+  > | **En proceso** | si el proceso que dices haber lanzado **existía al mirarlo** |
+  >
+  > **Los dos casos que lo enseñan, los dos del 29 y 30 de julio:**
+  >
+  > - Dos sesiones se contradijeron sobre si una rama existía en el remoto. **Las dos tenían razón**: se publicó entre las dos mediciones. Lo que faltaba no era rigor, era **el instante**.
+  > - Un contraste medido en 4,44:1 se marcó FAIL y **no lo era**: el banco puso la fila sobre el fondo de página cuando en la app va dentro de una tarjeta (4,77:1). Lo que faltaba era **el fondo**.
+  >
+  > **Dos mediciones correctas que se contradicen no son un misterio: es que a una le falta el contexto.** Y el coste de declararlo es una línea; el de no declararlo fueron tres rondas de conflicto en un PR y un FAIL que no existía.
 - **#15 — composición.** Tres guards correctos, cada uno medido y probado en rojo, que **juntos** producen un estado que ninguno contempla. Es la primera vez que el defecto no está en ninguna pieza: está entre ellas. No se caza leyendo diffs —no hay línea mala que leer— sino **corriendo la suite entera** y desconfiando cuando cae un test ajeno por un motivo que no es el suyo.
 
 Esa última es la que más cuesta ver, porque **todos los indicadores están en verde mientras el sistema hace algo mal**: cada mecanismo está cumpliendo exactamente su encargo.

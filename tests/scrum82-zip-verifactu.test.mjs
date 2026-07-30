@@ -114,9 +114,14 @@ test('SCRUM-82: datos.zip incluye el XML VeriFactu por año, byte-idéntico al e
         data: {
           merchantId: merchant.id, customerId: customer.id,
           number: `${prevYear}-QA-${stamp % 1000}`,
-          total: '50.00', currency: 'EUR', type: 'F1', status: 'paid',
+          // SCRUM-209: esta factura existe para forzar el caso MULTI-AÑO, no para probar un
+          // tipo de IVA. Llevaba `tax: 0`, y desde SCRUM-209 un tramo al 0 % ya no se emite
+          // con un código inventado: bloquea la exportación (no se puede saber si es sujeta
+          // al 0 %, exenta o no sujeta). Pasa a 21 % — el caso multi-año se prueba igual, y
+          // el total se ajusta para que cuadre con las líneas (50 + 21 % = 60,50).
+          total: '60.50', currency: 'EUR', type: 'F1', status: 'paid',
           createdAt: new Date(prevYear, 5, 15),
-          lines: [{ concept: 'Servicio QA S82 B', qty: 1, price: 50, tax: 0 }],
+          lines: [{ concept: 'Servicio QA S82 B', qty: 1, price: 50, tax: 0.21 }],
           vfHash: 'HASH_QA_S82_B', vfPrevHash: '',
           pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
         },

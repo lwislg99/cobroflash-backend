@@ -260,7 +260,13 @@ function selectTier(tierId, qId) {
   const heroVal = document.querySelector('.amount-hero-value');
   if (heroVal && totalTxt) heroVal.textContent = totalTxt;
   const heroLabel = document.querySelector('.amount-hero-label');
-  if (heroLabel) heroLabel.textContent = 'Total · ' + label + ' · IVA incluido';
+  // SCRUM-212: «IVA incluido» iba SIN condición, así que un presupuesto con tramos y cuota 0
+  // le afirmaba al cliente que el IVA estaba incluido cuando no había ninguno. El servidor solo
+  // pinta \`.totals-block\` cuando hay cuota, así que se reusa ESA condición en vez de repetirla
+  // aquí y arriesgarse a que las dos se separen. Sin cuota no se afirma nada sobre el IVA —
+  // que es justo lo que ya hacía la ruta sin tramos («Total del presupuesto»).
+  var conIva = !!document.querySelector('.totals-block');
+  if (heroLabel) heroLabel.textContent = 'Total · ' + label + (conIva ? ' · IVA incluido' : '');
   const btn = document.getElementById('btn-accept');
   if (btn && totalTxt) btn.textContent = 'Firmar y aceptar — ' + label + ' (' + totalTxt + ')';
   // Llevar al cliente a la FIRMA (lo que toca hacer ahora), no a la tarjeta
@@ -309,7 +315,15 @@ function renderQuoteDetail(
         </tbody>
       </table>` : '';
 
-  // PC-B: desglose de IVA (España). Si no hay cuota (LATAM/exento) → Total plano sin desglose.
+  // PC-B: desglose de IVA (España). Si no hay cuota → Total plano sin desglose.
+  //
+  // ⚠️ SCRUM-212 · UNA CUOTA 0 NO ES UNA EXENCIÓN. Aquí ponía «(LATAM/exento)», y eso es un
+  // claim fiscal derivado de un importe: de `cuota === 0` no se deduce nada: puede ser un país
+  // donde no se repercute, un tipo 0, o una línea sin tipo informado. «Exento» es una
+  // calificación con causa legal propia (arts. 20-25 LIVA, y en el registro VeriFactu se
+  // declara en `OperacionExenta` con causa E1..E6, NO con el tipo), y quién lo es sale del
+  // dictamen del asesor, no de que un número valga cero. Por eso el copy visible no afirma
+  // nada cuando no hay cuota: dice «Total del presupuesto» y punto.
   const vat = calcVatBreakdown(lines);
   const hasVat = vat.cuota > 0;
   const vatHtml = hasVat
@@ -746,4 +760,8 @@ quoteDecisionLandingRouter.post('/quote/:token/reject', express.urlencoded({ ext
   }
 });
 
-export { quoteDecisionLandingRouter };
+// `renderQuoteDetail` y `TIER_JS` se exportan SOLO para que el guard de SCRUM-212 pueda mirar
+// el HTML que ve el cliente en vez de la fuente que lo genera. Un guard de texto sobre el
+// fichero se cazaría a sí mismo: los comentarios de arriba están llenos de la palabra que
+// vigila («exento»), escrita precisamente para explicar por qué no debe aparecer.
+export { quoteDecisionLandingRouter, renderQuoteDetail, TIER_JS };

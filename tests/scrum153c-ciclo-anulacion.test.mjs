@@ -45,13 +45,14 @@ const factura = (over = {}) => ({
   createdAt: new Date('2026-03-15T10:00:00Z'),
   total: '121.00',
   type: 'F1',
-  lines: [{ concept: 'Reparación', qty: 1, price: 100, vat: 21 }],
+    // SCRUM-209: mismo bug de fixture que scrum145 — `vat` no lo lee nadie; es `tax` en fracción.
+  lines: [{ concept: 'Reparación', qty: 1, price: 100, tax: 0.21 }],
   vfHash: 'A'.repeat(64),
   vfPrevHash: null,
   vfAnulHash: null,
   vfAnulPrevHash: null,
   vfAnulTimestamp: null,
-  customer: { name: 'Cliente QA', taxId: null },
+  customer: { name: 'Cliente QA', taxId: 'A11111111' },
   rectifies: null,
   ...over,
 });

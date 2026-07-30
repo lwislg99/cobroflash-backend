@@ -14,14 +14,43 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-# ── 1) Resolver DATABASE_URL efectivo + host-check (sin imprimir credenciales) ──
-URL="${DATABASE_URL:-}"
-if [ -z "$URL" ] && [ -f .env ]; then
-  URL="$(grep -E '^DATABASE_URL=' .env | head -1 | sed -E 's|^DATABASE_URL=||' | tr -d '\r')"
+# ── 1) Host-check — SIN parsear la URL a mano y SIN reconstruirla ──
+#
+# SCRUM-223: aquí estaba el bug que mataba el script. La versión anterior sacaba la URL del
+# `.env` con `sed 's|^DATABASE_URL=||'` y la exportaba tal cual. Pero en `.env` el valor va
+# ENTRECOMILLADO, así que exportaba `'postgresql://…'` **con las comillas dentro** → Prisma
+# recibía una URL inválida, fallaba, su stderr se lo tragaba el `2>/dev/null` de abajo y
+# `set -e` mataba el script justo después de imprimir la cabecera. Cabecera y silencio.
+#
+# Y es el MISMO defecto del incidente #14 (una credencial de producción publicada porque
+# `new URL()` recibió la cadena con comillas y volcó su `.message`). Una causa, dos víctimas.
+#
+# Por eso el parseo NO se hace aquí: `parseBDSegura` (scripts/_db-guard.mjs) quita el
+# envoltorio de comillas y **no tiene forma de devolver la cadena** — solo host, base, usuario
+# y puerto. Regla de la casa: quien mira una URL de BD importa ese fichero.
+#
+# Y NO se reexporta nada: si `DATABASE_URL` viene del entorno, ya está puesta; si no, Prisma
+# carga el `.env` por su cuenta (su dotenv sí quita las comillas bien). Aquí solo se MIRA a
+# dónde apunta para poder avisar.
+HOST="$(node --input-type=module -e '
+  import fs from "node:fs";
+  const { parseBDSegura } = await import("./scripts/_db-guard.mjs");
+  let url = process.env.DATABASE_URL || "";
+  if (!url && fs.existsSync(".env")) {
+    const linea = fs.readFileSync(".env", "utf8").split(/\r?\n/).find((l) => /^DATABASE_URL=/.test(l));
+    if (linea) url = linea.replace(/^DATABASE_URL=/, "");
+  }
+  const p = parseBDSegura(url);   // devuelve null si no se puede: nunca la cadena
+  process.stdout.write(p ? p.host : "");
+')"
+
+if [ -z "$HOST" ]; then
+  echo "❌ No pude resolver a qué BD apunta DATABASE_URL (ni del entorno ni de .env), o la URL"
+  echo "   no es parseable. NO se dice cuál era: una URL de BD ilegible se diagnostica por su"
+  echo "   origen, no imprimiéndola (regla R7 / incidente #14). Aborto sin tocar nada."
+  exit 1
 fi
-if [ -z "$URL" ]; then echo "❌ No pude resolver DATABASE_URL (ni env ni .env). Aborto."; exit 1; fi
-export DATABASE_URL="$URL"
-HOST="$(printf '%s' "$URL" | sed -E 's|.*@([^:/?]+).*|\1|')"
+
 case "$HOST" in
   autorack.proxy.rlwy.net) LABEL="🔴 PRODUCCIÓN (autorack)";;
   acela.proxy.rlwy.net)    LABEL="🟠 STAGING (acela)";;
@@ -31,12 +60,51 @@ echo "🎯 Destino del db push: $LABEL"
 echo ""
 
 # ── 2) Preview (read-only): qué aplicaría el db push ──
+#
+# SCRUM-223 · SUELO ANTI-SILENCIO. Este paso tenía DOS formas de mentir y las dos daban el
+# mismo aspecto que un preview vacío legítimo:
+#   · `2>/dev/null` — el error de Prisma desaparecía sin dejar rastro.
+#   · `set -e` sobre la sustitución — el script moría aquí mismo, sin una línea.
+# Quien esperaba un diff vacío veía la cabecera, no veía SQL, y concluía «no hay nada que
+# aplicar». En la puerta de producción, un silencio que se lee como dato.
+#
+# Ahora: stderr se CAPTURA (no se tira), el exit code se comprueba, y si el paso no produce
+# absolutamente nada el script ABORTA. Un preview legítimamente vacío dice que está vacío —
+# Prisma escribe «-- This is an empty migration.» — así que «sin salida» no puede ser normal.
 echo "── PREVIEW · prisma migrate diff (BD → schema) ─────────────────────────"
+ERR_TMP="$(mktemp)"
+trap 'rm -f "$ERR_TMP"' EXIT
+
+set +e
 DIFF="$(npx prisma migrate diff \
   --from-schema-datasource prisma/schema.prisma \
-  --to-schema-datamodel prisma/schema.prisma --script 2>/dev/null)"
+  --to-schema-datamodel prisma/schema.prisma --script 2>"$ERR_TMP")"
+RC=$?
+set -e
+
+if [ "$RC" -ne 0 ]; then
+  echo "❌ El PREVIEW FALLÓ (exit $RC). No se ha aplicado NADA."
+  echo "── stderr de prisma (con las credenciales redactadas) ──────────────────"
+  # El stderr ajeno puede traer la URL dentro: se pasa por el redactor antes de enseñarlo.
+  node --input-type=module -e '
+    import fs from "node:fs";
+    const { redactarSecretos } = await import("./scripts/_db-guard.mjs");
+    process.stdout.write(redactarSecretos(fs.readFileSync(process.argv[1], "utf8")));
+  ' "$ERR_TMP"
+  exit 1
+fi
+
 printf '%s\n' "$DIFF"
 echo "────────────────────────────────────────────────────────────────────────"
+
+if [ -z "$(printf '%s' "$DIFF" | tr -d '[:space:]')" ]; then
+  echo "❌ SUELO ANTI-SILENCIO: el preview terminó bien pero NO produjo ninguna salida."
+  echo "   Eso no es «no hay nada que aplicar»: un diff vacío de verdad lo dice"
+  echo "   («-- This is an empty migration.»). Sin salida = no sabemos el estado de la BD,"
+  echo "   y no se aplica nada a ciegas. Aborto."
+  exit 1
+fi
+
 if printf '%s' "$DIFF" | grep -qiE 'empty migration'; then
   echo "✅ Nada que aplicar: la BD ya está en sync con el schema. Salgo."
   exit 0

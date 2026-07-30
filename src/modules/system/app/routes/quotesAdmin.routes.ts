@@ -219,6 +219,21 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
         vfApplied = true;
       } catch (e) {
         console.error('[verifactu] Error al aplicar VeriFactu en quote invoice:', e);
+        // SCRUM-206 · aquí no se entregan bytes (la respuesta es JSON), pero se respondía 201
+        // como si todo hubiera ido bien. Un 201 sobre una factura sin registrar es la misma
+        // mentira que un PDF sin huella, contada en otro formato: el llamador no tiene forma de
+        // enterarse. La factura EXISTE y su número está consumido, así que no se deshace nada
+        // (regla 29) y se devuelve con el fallo por delante.
+        return res.status(409).json({
+          ok: false,
+          error: 'sellado_incompleto',
+          // Microcopy OFICIAL: aprobado por el fundador el 30-jul-2026 (regla 30). «No la entregues
+          // todavía» es lo que hace el aviso accionable: la factura existe y su número está
+          // consumido, pero no debe salir de sus manos.
+          message: 'La factura se creó pero no se pudo registrar. No la entregues todavía; se reintenta solo.',
+          id: invoice.id,
+          number: invoice.number,
+        });
       }
     }
 

@@ -1,0 +1,240 @@
+// SCRUM-228 · el invariante del desglose por empleado (sin gate: función pura, ni BD ni red).
+//
+//     filas por empleado + «Sin asignar»  ===  el total de la pantalla, SIEMPRE
+//
+// Un informe cuyas partes no suman el total es peor que no tener informe: quien lo abre ve que
+// no cuadra y deja de fiarse de TODOS los números, incluidos los correctos. El invariante no es
+// una comprobación de calidad, es la definición de que la pantalla sirva para algo.
+//
+// SUELO ANTI-VERDE-HUECO. Los asserts de suma pasan trivialmente sobre datos que no contienen
+// el caso difícil: si ninguna factura del escenario viene sin presupuesto, «las partes suman»
+// no significa que el reparto sea correcto, significa que el test no ha mirado. Por eso cada
+// escenario declara y COMPRUEBA que trae facturas de los dos tipos antes de sumar nada.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+const {
+  desglosarPorEmpleado, aCentimos, CLAVE_PROPIETARIO, CLAVE_SIN_ASIGNAR, ETIQUETA_SIN_ASIGNAR,
+} = await import('../dist/modules/reports/domain/desgloseEmpleado.js');
+
+/** Escenario realista: propietario, dos empleados, y facturas CON y SIN presupuesto. */
+function escenario() {
+  return {
+    miembros: [{ id: 7, name: 'Marta' }, { id: 9, name: 'Javier' }],
+    nombrePropietario: 'Fontanería Pepe',
+    invoices: [
+      { total: '1200.50', quoteId: 101, quote: { teamMemberId: 7 } },   // Marta
+      { total: '300.00',  quoteId: 102, quote: { teamMemberId: 7 } },   // Marta
+      { total: '875.25',  quoteId: 103, quote: { teamMemberId: 9 } },   // Javier
+      { total: '640.00',  quoteId: 104, quote: { teamMemberId: null } },// el PROPIETARIO
+      { total: '410.10',  quoteId: null, quote: null },                 // albarán   → sin asignar
+      { total: '99.99',   quoteId: null, quote: null },                 // recapit.  → sin asignar
+    ],
+    expenses: [
+      { amount: '250.00', teamMemberId: 7 },
+      { amount: '80.40',  teamMemberId: null },   // null = PROPIETARIO (SCRUM-109), no «sin asignar»
+    ],
+  };
+}
+
+/** El suelo: sin los dos tipos de factura, cualquier verde de abajo no vale nada. */
+function exigirLosDosTipos(esc) {
+  const con = esc.invoices.filter((i) => i.quoteId != null).length;
+  const sin = esc.invoices.filter((i) => i.quoteId == null).length;
+  assert.ok(
+    con > 0 && sin > 0,
+    `🔴 SUELO ANTI-VERDE-HUECO: el escenario tiene ${con} facturas CON presupuesto y ${sin} SIN. ` +
+      'Hacen falta las dos. Sin facturas sin presupuesto no existe el caso que rompe la suma, y ' +
+      'un verde aquí solo dice que el test no ha mirado — no que el reparto sea correcto.',
+  );
+  return { con, sin };
+}
+
+test('SCRUM-228 · las partes suman el total (ingresos y gastos)', () => {
+  const esc = escenario();
+  exigirLosDosTipos(esc);
+
+  const { filas, totales } = desglosarPorEmpleado(esc);
+
+  const sumaFilas = (campo) => filas.reduce((a, f) => a + aCentimos(f[campo]), 0);
+
+  assert.equal(
+    sumaFilas('revenue'), aCentimos(totales.revenue),
+    '🔴 LAS PARTES NO SUMAN EL TOTAL (ingresos). Falta dinero en el reparto: hay facturas que ' +
+      'no caen en ninguna fila. Casi siempre es que se están DESCARTANDO las que no se pueden ' +
+      'atribuir (el `quoteId: { not: null }` de getTeamMetrics — SCRUM-236) en vez de mostrarlas.',
+  );
+  assert.equal(
+    sumaFilas('expenses'), aCentimos(totales.expenses),
+    '🔴 LAS PARTES NO SUMAN EL TOTAL (gastos).',
+  );
+  assert.equal(sumaFilas('profit'), aCentimos(totales.profit), '🔴 el beneficio no cuadra');
+});
+
+test('SCRUM-228 · lo que no se puede atribuir se VE, no se descarta', () => {
+  const esc = escenario();
+  const { sin } = exigirLosDosTipos(esc);
+
+  const { filas } = desglosarPorEmpleado(esc);
+  const sinAsignar = filas.find((f) => f.esSinAsignar);
+
+  assert.ok(
+    sinAsignar,
+    `🔴 hay ${sin} facturas sin presupuesto y NO aparece la fila «${ETIQUETA_SIN_ASIGNAR}». ` +
+      'Descartarlas es lo que hace que las partes no sumen.',
+  );
+  assert.equal(sinAsignar.key, CLAVE_SIN_ASIGNAR);
+  assert.equal(sinAsignar.revenue, 510.09, '🔴 la fila «sin asignar» no recoge TODO lo no atribuible');
+});
+
+test('SCRUM-228 · `teamMemberId` null es el PROPIETARIO, no «sin asignar»', () => {
+  // Las dos cosas parecen la misma y no lo son. Confundirlas etiquetaría los ingresos del dueño
+  // del negocio como «sin asignar» — un error de dinero en su propia cara.
+  const { filas } = desglosarPorEmpleado(escenario());
+
+  const propietario = filas.find((f) => f.key === CLAVE_PROPIETARIO);
+  assert.equal(propietario.label, 'Fontanería Pepe', '🔴 la fila del propietario lleva el nombre del NEGOCIO');
+  assert.equal(
+    propietario.revenue, 640,
+    '🔴 la factura con `quote.teamMemberId === null` no se ha atribuido al propietario. Si acabó ' +
+      'en «sin asignar», se está confundiendo «no hay empleado» con «no hay presupuesto».',
+  );
+  assert.equal(propietario.expenses, 80.4, '🔴 el gasto con `teamMemberId` null es del propietario (SCRUM-109)');
+});
+
+test('SCRUM-228 · sin nada que atribuir, la fila «sin asignar» NO aparece', () => {
+  // Enseñarla vacía sugiere un problema que no existe.
+  const esc = escenario();
+  esc.invoices = esc.invoices.filter((i) => i.quoteId != null);
+
+  const { filas, totales } = desglosarPorEmpleado(esc);
+  assert.equal(filas.find((f) => f.esSinAsignar), undefined);
+  assert.equal(
+    filas.reduce((a, f) => a + aCentimos(f.revenue), 0), aCentimos(totales.revenue),
+    '🔴 y aun así las partes tienen que sumar',
+  );
+});
+
+test('SCRUM-228 · el invariante aguanta con céntimos que no caen redondos', () => {
+  // 0.1 + 0.2 !== 0.3 en coma flotante. El reparto se hace en céntimos enteros justamente para
+  // que el invariante se pueda exigir EXACTO y no con una tolerancia donde esconder el fallo.
+  const esc = {
+    miembros: [{ id: 1, name: 'A' }, { id: 2, name: 'B' }],
+    nombrePropietario: 'Negocio',
+    invoices: [
+      { total: '0.10', quoteId: 1, quote: { teamMemberId: 1 } },
+      { total: '0.20', quoteId: 2, quote: { teamMemberId: 2 } },
+      { total: '0.07', quoteId: null, quote: null },
+    ],
+    expenses: [{ amount: '0.01', teamMemberId: null }],
+  };
+  exigirLosDosTipos(esc);
+
+  const { filas, totales } = desglosarPorEmpleado(esc);
+  assert.equal(filas.reduce((a, f) => a + aCentimos(f.revenue), 0), aCentimos(totales.revenue));
+  assert.equal(totales.revenue, 0.37);
+});
+
+test('SCRUM-228 (autoprueba) · el suelo anti-verde-hueco salta si el escenario pierde el caso difícil', () => {
+  const esc = escenario();
+  esc.invoices = esc.invoices.filter((i) => i.quoteId != null); // se le quita el caso que duele
+  assert.throws(
+    () => exigirLosDosTipos(esc),
+    /SUELO ANTI-VERDE-HUECO/,
+    '🔴 el suelo no salta: entonces no es un suelo, es un adorno',
+  );
+});
+
+// ── el invariante también tiene que sobrevivir al ENDPOINT ────────────────────────────────
+//
+// Todo lo de arriba prueba la función pura. Pero la función puede ser perfecta y la pantalla
+// mentir igual: basta con que `/pl` le pase LISTAS DISTINTAS de las que usa para los totales —
+// una segunda consulta con su propio `where`, por ejemplo. Entonces «las partes suman» pasa a
+// ser una coincidencia entre dos consultas que nadie ata, y se rompe el día que una cambia.
+//
+// Por eso esto mira el árbol del endpoint y exige que los argumentos sean los MISMOS
+// identificadores que alimentan los bucles del total. AST y no `grep`: los nombres aparecen
+// en los comentarios que explican justamente esto.
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
+
+test('SCRUM-228 · el desglose come de las MISMAS listas que los totales', () => {
+  const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const ruta = path.join(RAIZ, 'src/modules/reports/app/routes/reports.routes.ts');
+  const sf = ts.createSourceFile(ruta, fs.readFileSync(ruta, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+
+  let args = null;
+  const v = (n) => {
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'desglosarPorEmpleado') {
+      const o = n.arguments[0];
+      if (o && ts.isObjectLiteralExpression(o)) {
+        args = {};
+        for (const p of o.properties) {
+          if (ts.isPropertyAssignment(p)) args[p.name.getText(sf)] = p.initializer.getText(sf);
+          else if (ts.isShorthandPropertyAssignment(p)) args[p.name.text] = p.name.text;
+        }
+      }
+    }
+    ts.forEachChild(n, v);
+  };
+  ts.forEachChild(sf, v);
+
+  assert.ok(
+    args,
+    '🔴 ESCÁNER CIEGO: no encuentro la llamada a `desglosarPorEmpleado` en /pl. Si el desglose ' +
+      'se movió o se renombró, este guard dejó de vigilar nada.',
+  );
+
+  // Los identificadores que alimentan los totales mensuales del endpoint.
+  assert.equal(
+    args.invoices, 'paidInvoices',
+    '🔴 el desglose NO recibe `paidInvoices`, que es la lista de la que sale `totals.revenue`. ' +
+      'Si come de otra consulta, que las partes sumen el total pasa a ser una coincidencia.',
+  );
+  assert.equal(
+    args.expenses, 'expenses',
+    '🔴 el desglose NO recibe `expenses`, que es la lista de la que sale `totals.expenses`.',
+  );
+});
+
+// ── la pantalla: un subtotal parcial no puede llamarse «total» ─────────────────────────────
+//
+// LO QUE ESTO NO CUBRE, dicho en vez de fingirlo: no hay banco de DOM en el proyecto y montar
+// uno significaría una dependencia nueva (jsdom/linkedom → regla 36, lo aprueba el fundador).
+// Así que la aritmética del navegador NO se ejecuta aquí; lo que se fija es la propiedad que
+// convierte un número correcto en un número engañoso.
+//
+// La propiedad: con TODO seleccionado el pie es el total del año y cuadra con el KPI de arriba.
+// En cuanto se quita a alguien deja de ser un total, y tiene que dejar de llamarse así. Un
+// subtotal con cara de total es exactamente cómo se pierde la confianza en una pantalla de
+// dinero: quien lo mira no vuelve a fiarse ni de las cifras que sí eran correctas.
+test('SCRUM-228 · el pie solo se llama TOTAL cuando está todo dentro', () => {
+  const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const vista = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/reportsView.js'), 'utf8');
+
+  const i = vista.indexOf('function buildDesgloseEmpleado');
+  assert.notEqual(
+    i, -1,
+    '🔴 ESCÁNER CIEGO: no encuentro `buildDesgloseEmpleado` en reportsView.js. Si el desglose ' +
+      'se renombró, este guard dejó de vigilar nada.',
+  );
+  const bloque = vista.slice(i);
+
+  // Sin comentarios: el literal vigilado vive en la prosa que explica la regla (SCRUM-176/168/3/193).
+  const codigo = bloque.split(/\r?\n/).filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n');
+
+  const usosDeTotal = [...codigo.matchAll(/'TOTAL/g)];
+  assert.ok(usosDeTotal.length > 0, '🔴 ESCÁNER CIEGO: el pie ya no dice TOTAL en ningún caso');
+
+  for (const m of usosDeTotal) {
+    const contexto = codigo.slice(Math.max(0, m.index - 120), m.index);
+    assert.match(
+      contexto, /todos\s*\?/,
+      '🔴 el pie de la tabla se llama «TOTAL» sin comprobar que estén TODAS las filas dentro.\n\n' +
+        '  Con una selección parcial eso es un SUBTOTAL con cara de total. El usuario lo compara\n' +
+        '  con el KPI de ingresos de arriba, no le cuadra, y deja de fiarse de toda la pantalla.',
+    );
+  }
+});

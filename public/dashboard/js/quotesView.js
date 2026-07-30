@@ -987,6 +987,13 @@ blockClient.appendChild(descWrapper);
   function recalcTotals() {
     let base = 0;
     let vatTotal = 0;
+    // SCRUM-229: el margen agregado del pie se acumula EN ESTE MISMO recorrido, no en otro —
+    // dos recorridos distintos sobre las mismas líneas acaban dando dos cifras distintas (misma
+    // disciplina que SCRUM-228). `margenSinCalcular` va aparte del importe a propósito: un
+    // markup ilegible NO es «margen cero», es un dato que falta, y el pie tiene que decirlo.
+    let margenImporte = 0;
+    let margenCoste = 0;
+    let margenSinCalcular = 0;
     const cur = (currentMerchant && currentMerchant.defaultCurrency) || 'EUR';
 
     lines.forEach((line, idx) => {
@@ -1058,6 +1065,22 @@ blockClient.appendChild(descWrapper);
 
       base += lineBase;
       vatTotal += lineVat;
+
+      // SCRUM-229 · el margen de ESTA línea, en el mismo paso. `margenDeLinea` (quoteMargen.js)
+      // es la pieza pura, extraída para poder exigir por test que un markup ilegible NO se cuele
+      // como 0. Aquí solo se acumula: la aritmética de `safeMarkup` para el TOTAL sigue intacta
+      // — este ticket no la cambia, solo hace que el pie diga lo que se perdió.
+      const m = margenDeLinea({
+        qtyRaw: line.qtyInput.value,
+        priceRaw: line.priceInput.value,
+        markupRaw: line.markupInput ? line.markupInput.value : '0',
+      });
+      if (m.calculable) {
+        margenImporte += m.importe;
+        margenCoste += m.coste;
+      } else {
+        margenSinCalcular += 1;
+      }
     });
 
     refrescarRotuloPlantillas();
@@ -1074,9 +1097,22 @@ blockClient.appendChild(descWrapper);
     // `.quote-vat-calc`: una fila `space-between` con "Total presupuesto" a 20 px peleando
     // por el ancho con su propia cifra. Base e IVA quedan como APOYO (pequeños, apagados):
     // se consultan, no se buscan. La cifra sigue la Regla del Importe (Tinta, ≥700, tabular).
+    // SCRUM-229: tercera fila de APOYO, del mismo tipo que las dos de arriba — sin componente
+    // nuevo y sin tocar `.quote-line`. Coste medido: +24 px FIJOS, no por fila. El alcance que se
+    // descartó (margen e IVA en columnas por línea) costaba +77 px POR FILA a 390 px, o +770 px
+    // en un presupuesto de 10 líneas: dos pantallas más de scroll en obra.
+    //
+    // Microcopy APROBADO por el fundador (29-jul-2026), literal (regla 30): la etiqueta es
+    // «Margen» y el valor lo compone `textoMargen` — «18,00 € (18 %)», o
+    // «18,00 € · 2 líneas sin calcular» cuando alguna línea no se pudo leer.
+    const margenTexto = textoMargen(
+      { importe: margenImporte, coste: margenCoste, sinCalcular: margenSinCalcular },
+      (n) => fmtMoneyEs(n, cur),
+    );
     totalsBox.innerHTML = `
       <div class="quote-totals__apoyo"><span>Base imponible</span><strong>${fmtMoneyEs(base, cur)}</strong></div>
       <div class="quote-totals__apoyo"><span>IVA (${effVat}%)</span><strong>${fmtMoneyEs(vatTotal, cur)}</strong></div>
+      <div class="quote-totals__apoyo"><span>Margen</span><strong>${margenTexto}</strong></div>
     `;
     kpiBox.innerHTML = `
       <span class="quote-total-kpi__label">Total presupuesto</span>
