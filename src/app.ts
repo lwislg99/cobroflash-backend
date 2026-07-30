@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs'; // SCRUM-224b: leer UNA vez el HTML del dashboard para sellarle el build
 
 import { outboxDir } from './core/storage/dirs'; // SCRUM-72: invoicesDir ya no se sirve como estático
 import { jsonError } from './core/http/jsonError';
@@ -66,6 +67,7 @@ import searchRouter        from './modules/search/app/routes/search.routes';
 import { merchantProfileUpdateSchema } from './core/validation/schemas';
 import { getMerchantProfile, updateMerchantProfile, SlugError } from './modules/system/merchantAdmin';
 import QRCode from 'qrcode'; // A14.2: QR del perfil público (PNG alta res para furgoneta/tarjeta)
+import { resolverOpcionesQr, ErrorQr } from './modules/system/domain/qrPagina.service'; // SCRUM-230
 import { BASE_URL } from './core/config/env';
 import { getDigestPreview } from './modules/messaging/domain/weeklyDigest.service';
 import { getReferralStats, redeemFreeMonth } from './modules/auth/domain/referral.service';
@@ -136,6 +138,51 @@ if (config.NODE_ENV !== 'production') app.use('/outbox', express.static(outboxDi
 // enumerable). Se sirven SIEMPRE por GET /admin/albaranes/:id/pdf (auth + tenancy).
 
 const publicDir = path.join(__dirname, '../public');
+
+// ── SCRUM-224b · EL SELLO DE BUILD DEL DASHBOARD ─────────────────────────────────────────
+//
+// El aviso de «hay versión nueva» fijaba su línea base con la PRIMERA lectura buena de
+// `/version`. Si esa lectura fallaba —y lo que más probablemente la hace fallar es un deploy EN
+// VUELO, o sea justo cuando sale un hotfix—, la base la fijaba la siguiente lectura, que ya
+// traía el BUILD_ID NUEVO. Desde ahí el aviso NO SALÍA NUNCA y el usuario se quedaba con el JS
+// viejo sin que nada se lo dijera. SCRUM-224 estrechó la ventana de 90 s a 5 s; esto la ELIMINA:
+// la página deja de INFERIR con qué build la sirvieron y pasa a SABERLO.
+//
+// `no-store` NO es opcional: un HTML cacheado con un sello viejo es PEOR que no sellar — la app
+// creería estar en una versión que no es y el aviso volvería a mentir por otro camino. El coste
+// aceptado es perder ETag/Last-Modified en ESTE único documento; el resto de estáticos sigue
+// con su revalidación normal.
+const MARCADOR_BUILD = '__' + 'BUILD_ID' + '__'; // partido a propósito: ver la nota de abajo
+const dashboardHtmlSellado = (() => {
+  let cache: string | null = null; // memoizado: se lee del disco UNA vez, no en cada petición
+  return (): string => {
+    if (cache === null) {
+      // `replaceAll`, no `replace`: con `replace` solo cae la PRIMERA aparición, y eso ya mordió
+      // aquí — el comentario que explicaba el marcador dentro del HTML contenía el marcador, así
+      // que se sustituyó la prosa y el <meta> de verdad se quedó SIN sellar. Es la trampa de
+      // autorreferencia de _guard-texto.mjs, esta vez sobre una sustitución en vez de un grep.
+      // Por eso el marcador se construye partido: escribirlo entero aquí lo volvería a activar.
+      cache = fs
+        .readFileSync(path.join(publicDir, 'dashboard', 'index.html'), 'utf8')
+        .replaceAll(MARCADOR_BUILD, config.BUILD_ID);
+    }
+    return cache;
+  };
+})();
+
+app.get(['/dashboard', '/dashboard/', '/dashboard/index.html'], (req, res) => {
+  // ⚠️ EL 301 SE REPRODUCE A MANO, y hace falta: Express con `strict routing` desactivado (el
+  // default) casa `/dashboard` y `/dashboard/` con el MISMO patrón, así que registrar la ruta se
+  // come la redirección que hoy hace `express.static`. Medido: antes del cambio `/dashboard`
+  // devolvía 301 → /dashboard/, y sin esta línea pasó a devolver 200 — la forma de la URL
+  // cambiada para todo el mundo sin que nadie lo pidiera.
+  if (!req.path.endsWith('/') && !req.path.endsWith('index.html')) {
+    return res.redirect(301, '/dashboard/');
+  }
+  res.set('Cache-Control', 'no-store');
+  return res.type('html').send(dashboardHtmlSellado());
+});
+
 app.use(express.static(publicDir));
 
 // URLs limpias para políticas legales (privacidad requerida por Meta para publicar la app)
@@ -378,15 +425,42 @@ app.get('/admin/merchant/public-profile-qr', requireRole('admin'), async (req, r
   try {
     const merchant = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
-      select: { slug: true },
+      select: { slug: true, brandColor: true }, // SCRUM-230: `marca` reutiliza el color ya configurado
     });
     if (!merchant?.slug) {
       return res.status(400).json({ error: 'no_slug', message: 'Primero elige la dirección de tu página.' });
     }
-    const png = await QRCode.toBuffer(`${BASE_URL}/p/${merchant.slug}?src=qr`, {
-      type: 'png', width: 1024, margin: 2, errorCorrectionLevel: 'M',
-    });
-    res.setHeader('Content-Disposition', `attachment; filename="yaqu-qr-${merchant.slug}.png"`);
+
+    // SCRUM-230: color, tamaño, formato y previsualización. SIN parámetros el resultado es
+    // EXACTAMENTE el de antes (1024 px, PNG, negro sobre blanco, descarga). La validación vive
+    // aparte y es fail-closed porque lo que hay que impedir no es un color feo: es entregar un
+    // QR que no se escanea, y de eso el pro se entera en la calle. Ver `qrPagina.service.ts`.
+    let opciones;
+    try {
+      opciones = resolverOpcionesQr(req.query as Record<string, unknown>, { brandColor: merchant.brandColor });
+    } catch (e) {
+      if (e instanceof ErrorQr) return res.status(400).json({ error: e.codigo, message: e.message });
+      throw e;
+    }
+
+    const destino = `${BASE_URL}/p/${merchant.slug}?src=qr`;
+    const comun = {
+      margin: 2,
+      errorCorrectionLevel: 'M' as const,
+      color: { dark: opciones.dark, light: opciones.light },
+    };
+    // Solo se fuerza la descarga si NO es previsualización: el hueco de uso que cerraba el
+    // ticket era que el pro no podía VER el QR antes de bajárselo.
+    if (opciones.descargar) {
+      const nombre = `yaqu-qr-${merchant.slug}.${opciones.formato}`;
+      res.setHeader('Content-Disposition', `attachment; filename="${nombre}"`);
+    }
+
+    if (opciones.formato === 'svg') {
+      const svg = await QRCode.toString(destino, { type: 'svg', width: opciones.size, ...comun });
+      return res.type('svg').send(svg);
+    }
+    const png = await QRCode.toBuffer(destino, { type: 'png', width: opciones.size, ...comun });
     return res.type('png').send(png);
   } catch (err) { return next(err); }
 });

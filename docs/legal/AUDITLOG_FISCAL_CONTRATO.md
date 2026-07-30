@@ -308,8 +308,27 @@ El nivel decide **qué pasa si la escritura del registro falla**, y sale de la �
 | Nivel | Qué significa | Acciones |
 |---|---|---|
 | **T1 · Transaccional** | Se escribe **dentro de la misma `$transaction`** que el hecho. Si el registro falla, **el hecho no ocurre** (rollback) | **A1** `factura_emitida` |
-| **T2 · Bloqueante** | Se escribe **con `await`, antes** de dejar continuar. Si falla → error al usuario y **la acción no procede** | **A3** `aviso_ambar_decidido` |
-| **T3 · Fire-safe** | Como hoy: no se espera, los fallos se tragan | **A2, A4, A5, A6, A7, A8, A9, A10** |
+| **T2 · Bloqueante** | Se escribe **con `await`, antes** de dejar continuar. Si falla → error al usuario y **la acción no procede** | **A3** `aviso_ambar_decidido` · **A9** `exportacion_fiscal` · **A10** `cambio_flag` |
+| **T3 · Fire-safe** | Como hoy: no se espera, los fallos se tragan | **A2, A4, A5, A6, A7, A8** |
+
+> ⚠️ **A9 y A10 SUBIERON de T3 a T2 después de escribirse esta tabla.** Se corrige aquí, y no
+> solo en el código, porque un contrato que dice T3 mientras el código bloquea es la clase de
+> divergencia que este proyecto lleva días cerrando: el documento acaba siendo la fuente que
+> alguien lee, y describe un sistema que no se comporta así.
+>
+> · **A10 `cambio_flag`** — SCRUM-218b (fundador, 29-jul-2026). Encender `INVOICING_ES_ENABLED`
+>   es el instante en que un profesional empieza a emitir con efectos fiscales; con T3 un fallo
+>   del log se lo tragaría y no podríamos acreditar desde cuándo emite.
+> · **A9 `exportacion_fiscal`** — SCRUM-221 (fundador, 29-jul-2026). Es la acción por la que los
+>   registros SALEN hacia una gestoría o una inspección, y un pack descargado sin rastro es
+>   justo lo que el ticket impide. **Con una precisión que hay que leer ANTES de usar la fila
+>   como prueba: registra una PETICIÓN AUTORIZADA, no una entrega confirmada.** El export no es
+>   transaccional (a diferencia de A1): la fila se escribe antes de enviar los bytes, así que
+>   puede constar un export cuya descarga se cayó después. Se asume a conciencia — registrar de
+>   más es mucho menos grave que registrar de menos.
+>
+> Las dos están en `ACCIONES_BLOQUEANTES` (`audit.service.ts`), así que la puerta fire-safe
+> **no compila** para ellas: la garantía no depende de que nadie se equivoque de función.
 
 **Por qué A1 es T1 y no T3.** El hecho irreversible es *consumir número de serie*, y ocurre
 dentro de la transacción de `allocateInvoiceNumber`
@@ -424,7 +443,23 @@ convierte el fallo mudo en un hecho consultable.
 **A7 · `factura_anulada`** — `numero` · `motivo` · `estabaSellada` · `liberados{}` (albaranes/líneas devueltos al pool, P10).
 **A8 · `factura_rectificada`** — `numeroOriginal` · `numeroRectificativa` · `rectificationId` · `tipoRectificativa` (`S`\|`I`, SEMAFORO §8.4) · `estabaSellada`.
 
-**A9 · `exportacion_fiscal`** — `fichero` · `rango{from,to}` · `nRegistros` · `cadenaVerificada` (bool: si `verifactu_cadena_rota` no saltó) · `destinatarioDeclarado` (opcional, texto libre: *para quién se pidió*).
+**A9 · `exportacion_fiscal`** — `fichero` · `rango` · `nRegistros` · `cadenaVerificada` (bool: si `verifactu_cadena_rota` no saltó).
+
+> **`rango` tiene DOS formas, y es a propósito** (SCRUM-221, medido): las dos rutas no exportan
+> lo mismo. El XML suelto va por **ejercicio** (`{tipo:'ejercicio', year}`) porque el registro
+> RRSIF se organiza por año natural y la cadena de huellas es anual; el ZIP va por **fechas**
+> (`{tipo:'fechas', from, to, ejercicios[]}`), que es su filtro real. Forzar las dos a un
+> `{from,to}` único habría obligado a inventar un rango en la ruta del XML — un dato construido
+> por el registro en vez de observado.
+>
+> ⛔ **`destinatarioDeclarado` se DESCARTA** (fundador, 29-jul-2026). El contrato lo proponía
+> como texto libre y no se construye: **un campo que el usuario rellena a botonazo no prueba
+> nada y parece que sí**. Dentro de dos años alguien lee «Mi gestoría» en un registro de
+> auditoría y lo toma por evidencia de entrega, cuando solo acredita qué botón pulsó alguien con
+> prisa. Un dato autodeclarado metido donde todo lo demás es verificable es **cobertura
+> aparente**. Lo que la norma pide —**quién, cuándo y qué periodo**— ya está en la fila y sí es
+> verificable. No se le pregunta nada al profesional. Un guard mantiene la decisión
+> (`tests/scrum221-export-fiscal-auditado.test.mjs`).
 
 **A10 · `cambio_flag`** — `flag` · `de` · `a` · `alcance` (`global`\|`pais`\|`merchant`) · `motivo`.
 

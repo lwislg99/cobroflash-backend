@@ -3,7 +3,8 @@ import { Router } from 'express';
 import fs from 'fs';
 import axios from 'axios';
 import { prisma } from '../../../../core/db/prisma';
-import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
+import { documentNotFoundHtml, documentoEnRegistroHtml } from '../../../../core/http/publicNotFound';
+import { esErrorSinSellar, COPY_PUBLICO_SIN_SELLAR } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
 import { esc, formatMoneyEs } from '../../../../core/utils/utils';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { stripe } from '../../../../integrations/stripe';
@@ -422,6 +423,13 @@ router.get('/:token/pdf', async (req, res) => {
     return fs.createReadStream(diskPath).pipe(res);
   } catch (err) {
     console.error('[GET /recibo/:token/pdf]', (err as any)?.message || err);
+    // SCRUM-206 · esta ruta es PÚBLICA (solo la protege el token opaco de SCRUM-74), así que era
+    // el clic del CLIENTE FINAL el que disparaba el fail-open y se llevaba un documento sin
+    // huella. Ahora no sale nada — y no sale como 404, porque la factura existe: 409 con el copy
+    // oficial, que no nombra sellado, huella ni VeriFactu (reglas 26 y 30).
+    if (esErrorSinSellar(err)) {
+      return res.status(409).send(documentoEnRegistroHtml(COPY_PUBLICO_SIN_SELLAR));
+    }
     return res.status(500).send(documentNotFoundHtml());
   }
 });

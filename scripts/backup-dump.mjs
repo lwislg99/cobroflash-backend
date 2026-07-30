@@ -62,21 +62,34 @@ function hasPgDump() {
   try { execFileSync('pg_dump', ['--version'], { stdio: 'pipe' }); return true; } catch { return false; }
 }
 
+// SCRUM-241: esta lista es EXACTAMENTE las tablas del schema, y la ata el guard
+// tests/scrum241-backup-tablas.test.mjs (deriva las tablas de @@map / nombre de modelo). Un modelo
+// nuevo cuya tabla no esté aquí sale ROJO — antes esta lista derivaba en silencio y el dump lógico
+// perdía tablas mudamente (`wa_messages` no existía; faltaban albaranes y bot_sessions).
 const TABLES = [
   'merchants', 'customers', 'quotes', 'invoices', 'charges', 'events', 'expenses',
   'products', 'providers', 'team_members', 'auth_sessions', 'quote_templates',
-  'quote_requests', 'customer_events', 'reconciliations', 'wa_messages',
+  'quote_requests', 'customer_events', 'reconciliations', 'whatsapp_messages',
   'legal_acceptances', 'jobs', 'maintenance_plans', 'audit_log', 'attachments',
+  'bot_sessions', 'albaranes', 'albaran_lineas_facturadas',
 ];
 
 async function logicalDump(prisma) {
   const out = { format: 'yaqu-logical-v1', at: new Date().toISOString(), tables: {} };
+  const fallos = [];
   for (const t of TABLES) {
     try {
       out.tables[t] = await prisma.$queryRawUnsafe(`SELECT * FROM "${t}"`);
     } catch (e) {
-      out.tables[t] = { __error: String(e?.message || e) };
+      fallos.push(`${t}: ${String(e?.message || e)}`);
     }
+  }
+  // SCRUM-241: FAIL-CLOSED. Antes se guardaba `{__error}` por tabla y el dump se anunciaba «con
+  // éxito»: un backup parcial que miente sobre estar completo es peor que uno que falla a gritos
+  // (misma doctrina que el preflight con su exit 2). Si UNA sola tabla no se vuelca, no hay backup:
+  // se lanza, `main().catch` sale ≠ 0 y NO se escribe fichero.
+  if (fallos.length) {
+    throw new Error(`backup lógico INCOMPLETO: ${fallos.length} tabla(s) no se pudieron volcar:\n  ${fallos.join('\n  ')}`);
   }
   return Buffer.from(JSON.stringify(out, (k, v) => (typeof v === 'bigint' ? String(v) : v)));
 }
@@ -96,15 +109,33 @@ async function main() {
       return;
     }
     const data = JSON.parse(plain.toString());
+    const tablas = data.tables || {};
+    // SCRUM-241: SUELO, ANTES de tocar la BD (así un dump roto se caza sin conexión). Un {__error}
+    // —tabla que reventó al volcar— es FALLO, no algo que saltar con `continue`; y traer MENOS
+    // tablas de las esperadas es «no miré», no «todo bien». Un cero que puede significar las dos
+    // cosas no es una verificación.
+    const faltan = TABLES.filter((t) => !(t in tablas));
+    const erroneas = Object.keys(tablas).filter((t) => !Array.isArray(tablas[t]));
+    if (faltan.length || erroneas.length) {
+      console.error('✗ restore-test FALLÓ: el backup NO está completo/íntegro (SCRUM-241).');
+      if (faltan.length) console.error(`  faltan ${faltan.length} tabla(s) esperada(s): ${faltan.join(', ')}`);
+      if (erroneas.length) console.error(`  ${erroneas.length} tabla(s) con error en el volcado (no son filas): ${erroneas.join(', ')}`);
+      process.exit(1);
+    }
     const { PrismaClient } = await import('@prisma/client');
     const prisma = new PrismaClient();
     let ok = 0, drift = 0;
-    for (const [t, rows] of Object.entries(data.tables)) {
-      if (!Array.isArray(rows)) continue;
+    for (const [t, rows] of Object.entries(tablas)) {
       const [{ count }] = await prisma.$queryRawUnsafe(`SELECT COUNT(*)::int AS count FROM "${t}"`);
       const live = Number(count);
       if (live === rows.length) ok += 1;
       else { drift += 1; console.log(`  ~ ${t}: backup=${rows.length} vivo=${live} (deriva normal si hubo actividad)`); }
+    }
+    // SUELO nº2: se verificaron al menos las tablas esperadas — un conteo menor sería «no miré».
+    if (ok + drift < TABLES.length) {
+      console.error(`✗ restore-test FALLÓ: verificadas ${ok + drift} tablas, esperadas ${TABLES.length}.`);
+      await prisma.$disconnect();
+      process.exit(1);
     }
     console.log(`✓ backup ÍNTEGRO y legible · ${ok} tablas coinciden con la BD viva, ${drift} con deriva posterior`);
     await prisma.$disconnect();

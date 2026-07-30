@@ -326,5 +326,24 @@ distingue es quién puede tocarlas. Se descarta llamar a `yaqu_dev_javier` "segu
 staging" (SCRUM-84) porque implicaría el régimen de `railway` y no lo tiene. Si el fundador lo
 ve de otra forma, es una línea.
 
+**EL DIFF PUEDE PEDIR UN `DROP`, Y ENTONCES EL QUE VA ATRASADO ERES TÚ (SCRUM-207, 29-jul-2026).**
+`migrate diff` compara la BD contra **tu** `schema.prisma`, no contra `main`. Si tu árbol es
+viejo y la BD ya tiene el cambio, el preview propone **borrarlo** — y `db push` **no pide
+`--accept-data-loss` para tirar un índice**, así que ahí el guard no te frena. Antes de aplicar
+nada: `git pull` y repetir el preview. **Un `DROP` inesperado en un preview casi nunca significa
+«sobra en la BD»; significa «falta en mi árbol».**
+
+> **Medido el día que apareció:** el índice `audit_log_merchant_id_entity_type_entity_id_idx` se
+> aplicó a staging **antes** de que su PR se mergeara, así que durante esa ventana la BD iba por
+> DELANTE de todos los árboles. Censo de entonces: **78 de 79 worktrees** no lo declaraban —
+> incluido el checkout principal, 15 commits por detrás— y cualquiera de ellos veía
+> `DROP INDEX` en su preview. **La ventana la abre aplicar schema a una BD compartida mientras
+> la declaración vive solo en una rama sin mergear:** mergea primero, o dilo en voz alta.
+>
+> ⚠️ **Y al censar, mira DENTRO del bloque `model`.** El primer censo dio los 79 en verde y era
+> falso: `@@index([merchantId, entityType, entityId])` existe **también en `Attachment`**, así que
+> un grep sobre el fichero casa siempre. Mismo patrón que la trampa de autorreferencia — el
+> literal que buscas vive en otro sitio del mismo fichero.
+
 **Prevención:** cada entrada de `docs/MIGRATIONS_PENDING.md` lleva las tres como checkbox; una
 sin marcar = migración NO aplicada.

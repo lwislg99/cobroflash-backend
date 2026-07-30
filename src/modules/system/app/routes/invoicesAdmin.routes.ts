@@ -27,6 +27,8 @@ import { normalizePhone } from '../../../../core/utils/utils';
 import fs from 'fs';
 import { ensureInvoicePdf, ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { sendSuccessBody, sendFailureBody, SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
+import { esErrorSinSellar, ERROR_SIN_SELLAR } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
+import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 
 
 const router = Router();
@@ -622,7 +624,7 @@ router.post('/:id/annul', requireRole('admin'), async (req, res) => {
     let sellada = false;
     if (merchant?.country === 'ES' && merchant?.taxId) {
       try {
-        await applyVeriFactuAnulacion(invoice, merchant.taxId, prisma);
+        await sellarAnulacionTrasEmision(invoice, merchant.taxId, prisma); // SCRUM-205: punto unico
         sellada = true;
       } catch (e: any) {
         console.error(`[annul] sellado de anulación falló en ${invoice.number}:`, e?.message || e);
@@ -747,15 +749,9 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
     });
 
     // VeriFactu (tipoFactura R1) para merchants españoles con NIF
-    let vfApplied = false;
-    if (original.merchant?.country === 'ES' && original.merchant.taxId) {
-      try {
-        await applyVeriFactu(rect, original.merchant.taxId, prisma);
-        vfApplied = true;
-      } catch (e) {
-        console.error('[rectify] Error al aplicar VeriFactu:', e);
-      }
-    }
+    // SCRUM-205: punto único de sellado, después del commit que consumió el número de la R1.
+    const vfApplied =
+      (await sellarTrasEmision(rect, original.merchant ?? {}, prisma)).estado === SELLADO_HECHO;
 
     recordCustomerEvent({
       merchantId: original.merchantId,
@@ -829,14 +825,12 @@ router.post('/:id/regenerate-pdf', requireRole('admin'), async (req, res) => {
     let vfHash      = invoice.vfHash ?? null;
 
     // (Re)aplicar VeriFactu si es merchant español con NIF (V0-0: nunca a justificantes)
-    if (merchant.country === 'ES' && merchant.taxId && !isReceiptNumber(invoice.number)) {
-      try {
-        const vf = await applyVeriFactu(invoice, merchant.taxId, prisma);
-        qrData = vf.qrUrl;
-        vfHash = vf.vfHash;
-      } catch (e) {
-        console.error('[regenerate-pdf] VeriFactu error:', e);
-      }
+    // SCRUM-205: REGENERAR UN PDF NO ES EMITIR, así que aquí ya NO se sella. Era el mismo
+    // sellado perezoso de `ensureInvoicePdf` escondido en otra ruta: una factura entraba en la
+    // cadena porque alguien pidió regenerar su documento. Si no está sellada, no hay PDF que
+    // regenerar — se corta, igual que en `ensureInvoicePdf`.
+    if (!puedeProducirDocumento(invoice.vfEstado)) {
+      return res.status(409).json({ error: ERROR_PDF_SIN_SELLAR });
     }
 
     const invLines = invoice.lines && Array.isArray(invoice.lines)
@@ -907,6 +901,16 @@ router.get('/:id/pdf', async (req, res) => {
     return fs.createReadStream(diskPath).pipe(res);
   } catch (err) {
     console.error('[GET /admin/invoices/:id/pdf]', err);
+    // SCRUM-206: no es un fallo de generación, y llamarlo así manda a quien depure al sitio
+    // equivocado. La factura existe y NO está registrada: 409 con su código.
+    if (esErrorSinSellar(err)) {
+      return res.status(409).json({
+        error: ERROR_SIN_SELLAR,
+        // Microcopy OFICIAL: aprobado por el fundador el 30-jul-2026 (regla 30). Lo ve el
+        // PROFESIONAL al pulsar «Abrir PDF» de una factura cuyo sellado falló.
+        message: 'Esta factura todavía no está registrada. Se reintenta solo; si sigue así, avísanos.',
+      });
+    }
     return res.status(500).json({ error: 'pdf_generation_failed' });
   }
 });

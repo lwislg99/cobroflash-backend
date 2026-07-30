@@ -38,6 +38,9 @@ import {
   allocateInvoiceNumber,
   isReceiptNumber,
 } from '../dist/modules/invoicing/domain/invoiceNumber.service.js';
+// SCRUM-223: quien mira una URL de BD pasa por aquí. `parseBDSegura` quita el envoltorio de
+// comillas del `.env` y NO tiene forma de devolver la cadena — solo host, base, usuario y puerto.
+import { parseBDSegura } from './_db-guard.mjs';
 
 /**
  * El copy del cobro NUNCA dice "factura" de un `J-` (regla 24/26, Parte M). No es un texto
@@ -83,8 +86,14 @@ function confirmarDestino() {
     );
   }
 
-  let host = '';
-  try { host = new URL(dbUrl).hostname; } catch { abortar('DATABASE_URL no es una URL válida.'); }
+  // SCRUM-223: esto era `new URL(dbUrl).hostname` en un try/catch. NO filtraba —el catch no
+  // imprimía el error— pero es la forma prohibida, y la trajo SCRUM-208, que venía justamente
+  // a cerrar un agujero de bases de datos. `new URL()` no redacta: si la cadena llega con las
+  // comillas del `.env`, lanza y la lleva ENTERA dentro del objeto de error; basta que alguien
+  // añada un `console.error(e)` para publicar la contraseña (incidente #14).
+  const destino = parseBDSegura(dbUrl);
+  if (!destino) abortar('DATABASE_URL no es una URL válida. (No se dice cuál era: R7.)');
+  const host = destino.host;
 
   if (process.env.SEED_DEMO_CONFIRM !== host) {
     abortar(

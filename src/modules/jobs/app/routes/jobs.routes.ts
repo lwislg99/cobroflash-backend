@@ -6,7 +6,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: dinero = admin)
 import { seesOnlyOwnJobs, seesAllJobs, adminOnlyJobField } from '../../../../core/http/roleCapabilities'; // SCRUM-147 / SCRUM-164
 import { canTransition, estadoCobroFor, JOB_TIPOS_OPERACION } from '../../domain/job.service';
-import { recordAudit, actorDeRequest } from '../../../system/audit.service'; // SCRUM-66 · SCRUM-207
+import { recordAudit, actorDeRequest, sobreFiscal, flagsFiscalesDe } from '../../../system/audit.service'; // SCRUM-66 · SCRUM-207 · SCRUM-206b
 import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo } from '../../../quotes/domain/billingPlan';
 import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; // SCRUM-34
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
@@ -30,6 +30,8 @@ import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCR
 import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
+import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
+import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 
 const router = Router();
 
@@ -585,6 +587,44 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     });
 
     // Enviar el enlace de cobro (payment_request / ventana-first A5.5)
+    // ── SCRUM-206b · SELLAR AL EMITIR. Este camino NO sellaba en absoluto.
+    //
+    // Medido: de los 7 sitios que crean factura, este y el de `jobs.routes.ts` eran los ÚNICOS
+    // sin sellado. Y no los cubría nada: la creencia razonable era que el sellado perezoso de
+    // `ensureInvoicePdf` los recogía al pedir el PDF, pero lo que sigue a la emisión aquí es
+    // `sendInvoicePaymentRequest`, y ese servicio NO toca el PDF ni el sellado (solo importa
+    // `ensureChargeReceiptToken`). Así que la factura quedaba emitida, numerada y FUERA de la
+    // cadena hasta que alguien, algún día, abriese su PDF. Si nadie lo abría, nunca entraba.
+    //
+    // Se sella DESPUÉS del commit y con el cliente global: `applyVeriFactu` lanza si recibe uno
+    // de transacción, porque sellar dentro de la tx de emisión bifurca la cadena (SCRUM-173/177).
+    //
+    // ⚠️ POR QUÉ AQUÍ «registrar y seguir» SÍ es correcto, y en `lib/invoicing.ts` no lo era:
+    // allí la continuación ENTREGABA un documento sin huella. Aquí no sale ningún byte — la
+    // factura queda existiendo y sin sellar, y el portón de SCRUM-206 garantiza que no produzca
+    // documento hasta que se selle. El número NO se revierte (regla 29): revertir es lo que
+    // crearía el hueco en la serie que habría que justificar ante Hacienda.
+    //
+    // El merchant no viene en la consulta de este camino: se piden los dos campos que
+    // decide el portón, y nada más.
+    // SCRUM-205 · punto único de sellado: después del commit y ANTES de pedir el documento.
+    // Este camino NO sellaba por su cuenta — se apoyaba en el sellado PEREZOSO de
+    // `ensureInvoicePdf`, que es justo lo que este ticket quita. Sin esta línea la factura se
+    // queda `pendiente_de_sellado` y la petición de cobro sale sin PDF.
+    //
+    // Si el merchant no se pudiera leer, NO se sella y NO se inventa nada: la factura sigue
+    // pendiente. Eso no queda mudo — el siguiente paso pide el PDF y ahí salta
+    // `invoice_pendiente_de_sellado`. El fallo se ve; lo que no puede pasar es sellar a ciegas.
+    const merchantFiscal = await prisma.merchant.findUnique({
+      where: { id: quote.merchantId },
+      select: { country: true, taxId: true },
+    });
+              // No sale ningún documento de aquí: lo impide el portón de SCRUM-206.
+    // ⚠️ El sellado pasa a `sellarTrasEmision` (SCRUM-205, punto unico). El arreglo de
+    // SCRUM-206b no se pierde: este camino SIGUE sellando, solo que por la puerta comun,
+    // que ademas registra el fallo por dentro. La llamada suelta a applyVeriFactu se va.
+    if (merchantFiscal) await sellarTrasEmision(invoice, merchantFiscal, prisma);
+
     const sent = await sendInvoicePaymentRequest(invoice.id).catch((e) => {
       console.error('[jobs] collect-rest send:', e?.message || e);
       return { ok: false as const, reason: 'whatsapp_send_failed' as const };
@@ -695,15 +735,22 @@ router.post('/:id/consolidar-albaranes', requireRole('admin'), async (req, res) 
       })),
     });
 
-    return res.status(201).json({
-      ok: true,
-      facturas: created,
-      // Solo aparece si algo falló: callar un sellado incompleto es peor que decirlo (mismo
-      // criterio que el paquete incompleto de SCRUM-25).
-      ...(sinSellar.length
-        ? { sinSellar, message: 'Se emitieron las facturas, pero falló el registro VeriFactu de alguna. Revísalo antes de entregarlas.' }
-        : {}),
-    });
+      // SCRUM-206 · antes esto respondía `ok: true` con `sinSellar` DENTRO. Un llamador que
+      // mira `ok` —o el status 201— veía éxito, y el fallo era un campo que podía ignorar sin
+      // enterarse: eso también es fail-open, solo que en la respuesta en vez de en el PDF. El
+      // front, medido, no leía `sinSellar` en ningún sitio.
+      //
+      // El portón es por DOCUMENTO, no por tanda: las que se sellaron bien siguen su curso y no
+      // se deshace nada (regla 29). Lo que cambia es que el fallo llega como fallo — 409, que
+      // `apiRequest` convierte en excepción con `message` humano y `err.code`.
+    if (sinSellar.length) {
+      return res.status(409).json({
+        ok: false, error: 'sellado_incompleto', message: 'Se emitieron las facturas, pero falló el registro VeriFactu de alguna. Revísalo antes de entregarlas.',
+        facturas: created, sinSellar,
+      });
+    }
+
+    return res.status(201).json({ ok: true, facturas: created });
   } catch (err: any) {
     if (err?.message === 'consolidacion_concurrente') {
       return res.status(409).json({ error: 'consolidacion_concurrente', message: 'Alguno de los partes se facturó a la vez desde otra sesión. Vuelve a intentarlo.' });

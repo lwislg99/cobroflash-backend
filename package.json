@@ -13,6 +13,8 @@
     "test:staging": "npm run build && node scripts/test-staging-gated.mjs",
     "test:staging:gated": "npm run build && node scripts/test-staging-gated.mjs",
     "prisma:generate": "prisma generate",
+    "//postinstall": "SCRUM-238: Railway construye con `npm install` y NADA del repo generaba el cliente de Prisma -- dependia de la auto-deteccion de nixpacks, una dependencia invisible y load-bearing (si nixpacks dejara de auto-generar, prod no arrancaria). Este postinstall lo hace EXPLICITO: aditivo e idempotente. En local, node_modules se comparte por junction entre worktrees (SCRUM-190), asi que regenerar afecta a los vecinos -- pero eso YA lo caza el guard _prisma-client-guard.mjs (pretest), no es una clase de rotura nueva.",
+    "postinstall": "prisma generate",
     "db:push": "bash scripts/db-push-prod",
     "prisma:studio": "prisma studio",
     "db:seed": "prisma db seed",
@@ -47,7 +49,8 @@
     "puppeteer-core": "^25.3.0",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "xmllint-wasm": "^5.2.0"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

@@ -39,6 +39,10 @@ import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
+import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-206b
+import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
+import { recordAudit, sobreFiscal, flagsFiscalesDe } from '../../../system/audit.service'; // SCRUM-206b
+import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 
 
 const router = Router();
@@ -556,6 +560,34 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
             },
           });
         });
+
+        // ── SCRUM-206b · SELLAR AL EMITIR. Este camino NO sellaba en absoluto.
+        //
+        // Medido: de los 7 sitios que crean factura, este y el de `jobs.routes.ts` eran los ÚNICOS
+        // sin sellado. Y no los cubría nada: la creencia razonable era que el sellado perezoso de
+        // `ensureInvoicePdf` los recogía al pedir el PDF, pero lo que sigue a la emisión aquí es
+        // `sendInvoicePaymentRequest`, y ese servicio NO toca el PDF ni el sellado (solo importa
+        // `ensureChargeReceiptToken`). Así que la factura quedaba emitida, numerada y FUERA de la
+        // cadena hasta que alguien, algún día, abriese su PDF. Si nadie lo abría, nunca entraba.
+        //
+        // Se sella DESPUÉS del commit y con el cliente global: `applyVeriFactu` lanza si recibe uno
+        // de transacción, porque sellar dentro de la tx de emisión bifurca la cadena (SCRUM-173/177).
+        //
+        // ⚠️ POR QUÉ AQUÍ «registrar y seguir» SÍ es correcto, y en `lib/invoicing.ts` no lo era:
+        // allí la continuación ENTREGABA un documento sin huella. Aquí no sale ningún byte — la
+        // factura queda existiendo y sin sellar, y el portón de SCRUM-206 garantiza que no produzca
+        // documento hasta que se selle. El número NO se revierte (regla 29): revertir es lo que
+        // crearía el hueco en la serie que habría que justificar ante Hacienda.
+                  // No sale ningún documento de aquí: lo impide el portón de SCRUM-206.
+    // ⚠️ El sellado pasa a `sellarTrasEmision` (SCRUM-205, punto unico). El arreglo de
+    // SCRUM-206b no se pierde: este camino SIGUE sellando, solo que por la puerta comun,
+    // que ademas registra el fallo por dentro. La llamada suelta a applyVeriFactu se va.
+        // SCRUM-205 · punto único de sellado, después del commit.
+        //
+        // C1 lo dispara el CLIENTE FINAL, y eso es legítimo: el hecho que emite es que ACEPTE
+        // el presupuesto, no que abra un PDF. Lo que el ticket corrige es lo segundo.
+        // Este camino tampoco sellaba: dependía del sellado perezoso de `ensureInvoicePdf`.
+        await sellarTrasEmision(invoice, quote.merchant, prisma);
 
         createdInvoice = invoice;
 

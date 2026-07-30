@@ -13,6 +13,19 @@ import { prisma as defaultPrisma } from '../../../core/db/prisma';
 import { calcVatBreakdown, calcVatCuotaTotal } from './vat.service';
 import { isReceiptNumber } from './invoiceNumber.service';
 import { config } from '../../../core/config/env';
+// SCRUM-209: el desglose lo construye UN solo sitio del proyecto (registro.builder.ts).
+import {
+  buildDetallesDesgloseXml,
+  clasificarDetalleDesglose,
+  DesgloseNoClasificableError,
+  MODO_SIN_DESTINATARIO,
+  MODO_TIPO_RECTIFICATIVA,
+  type ModoTipoRectificativa,
+  resolverTipoRectificativa,
+  type ModoSinDestinatario,
+  RegistroNoEmitibleError,
+  resolverSinDestinatario,
+} from '../../fiscal/verifactu/registro.builder';
 
 // SCRUM-145: namespaces oficiales de los XSD de la AEAT (los ficheros están en
 // `src/modules/fiscal/verifactu/xsd/`). Los `targetNamespace` son la URL del esquema; NO son
@@ -468,7 +481,11 @@ function xmlEscape(v: unknown): string {
 export async function buildVerifactuRegistrosXml(
   params: { merchantId: number; year: number },
   prismaClient = defaultPrisma,
-): Promise<{ xml: string; count: number }> {
+  // SCRUM-215: el modo lo fija la constante del módulo fiscal. Este parámetro existe SOLO para
+  // poder DEMOSTRAR que las dos salidas del dictamen P11 se emiten y validan antes de que el
+  // dictamen exista. Producción tiene un único llamador y no lo pasa nunca.
+  opts: { modoSinDestinatario?: ModoSinDestinatario; modoTipoRectificativa?: ModoTipoRectificativa } = {},
+): Promise<{ xml: string; count: number; excluidos: Array<{ number: string; motivo: string }> }> {
   const merchant = await prismaClient.merchant.findUnique({ where: { id: params.merchantId } });
   if (!merchant) throw new Error('merchant_not_found');
   if (merchant.country !== 'ES' || !merchant.taxId) throw new Error('verifactu_not_applicable');
@@ -486,7 +503,10 @@ export async function buildVerifactuRegistrosXml(
     include: {
       // SCRUM-145 (gap 6): el NIF del cliente decide si se puede emitir `Destinatarios`.
       customer:  { select: { name: true, taxId: true } },
-      rectifies: { select: { number: true, createdAt: true } },
+      // SCRUM-216: `lines` de la factura RECTIFICADA — de ahi salen la base y la cuota
+      // SUSTITUIDAS que exige `ImporteRectificacion` en las rectificativas por sustitucion
+      // (AEAT 1118). Sin ellas ese camino no se puede construir, solo bloquear.
+      rectifies: { select: { number: true, createdAt: true, lines: true } },
     },
   });
 
@@ -550,29 +570,81 @@ export async function buildVerifactuRegistrosXml(
   // el separador decimal de XSD es el punto, no depende del locale. Este fichero no lo abre
   // Excel — lo lee Hacienda. Cambiarlo a coma para que "cuadre con los CSV" invalidaría el
   // registro de facturación.
-  const registros = invoices.map((inv) => {
+  // SCRUM-209: una factura que no se puede declarar NO tumba el paquete entero. Se excluye
+  // ESA, se REPORTA con su número y su motivo, y el resto del ejercicio sale. Un merchant
+  // con una factura antigua sin líneas tiene derecho a su pack de inspección con las 400
+  // buenas; dejarlo sin nada es convertir un rojo puntual en una caída total.
+  //
+  // Lo que NO se hace es callarlo: la exclusión viaja DENTRO del propio XML como comentario
+  // (así llega igual por el ZIP y por el endpoint suelto, que deben ser idénticos) y además
+  // se devuelve al llamador para el LEEME del paquete. Omitir una factura en silencio de un
+  // registro fiscal sería peor que el fallo original.
+  const excluidos: Array<{ number: string; motivo: string }> = [];
+
+  const construirRegistro = (inv: (typeof invoices)[number]): string => {
     const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
     const vat = calcVatBreakdown(lines);
-    const desglose = vat.entries.map((e) => `
-        <sum1:DetalleDesglose>
-          <sum1:Impuesto>01</sum1:Impuesto>
-          <sum1:TipoImpositivo>${e.rate}</sum1:TipoImpositivo>
-          <sum1:BaseImponibleOimporteNoSujeto>${e.base.toFixed(2)}</sum1:BaseImponibleOimporteNoSujeto>
-          <sum1:CuotaRepercutida>${e.cuota.toFixed(2)}</sum1:CuotaRepercutida>
-        </sum1:DetalleDesglose>`).join('');
+    // SCRUM-209: el desglose ya NO se construye aquí. Este bloque tenía su propia plantilla
+    // y divergió de la de `registro.builder.ts`: omitía `ClaveRegimen` y
+    // `CalificacionOperacion`, así que el XML exportado NO validaba contra el XSD (AEAT
+    // 1245 y 1195) mientras `validate-registros-xsd.ps1` daba verde — porque validaba el
+    // OTRO constructor, el que no usaba nadie. Ahora hay uno solo, y un guard lo vigila.
+    //
+    // `clasificarDetalleDesglose` LANZA si un tramo no se puede calificar con certeza (0 %:
+    // sujeta-al-0 / exenta / no sujeta son tres declaraciones distintas y el dato que las
+    // separa no está en las líneas). Bloquea la emisión en vez de inventarse el código.
+    const desglose = buildDetallesDesgloseXml(
+      vat.entries.map((e) => clasificarDetalleDesglose(e, inv.number)),
+    );
+
+    // Sin líneas no hay desglose que declarar. Antes se emitía un tramo al 0 % con la base
+    // igual al total de la factura — es decir, se DECLARABA que la operación no lleva IVA,
+    // sobre una factura de la que no sabemos nada. Eso es exactamente lo que el resto de
+    // esta función se niega a hacer con la cadena o con el destinatario.
+    if (!desglose) {
+      throw new DesgloseNoClasificableError(
+        `la factura no tiene líneas, así que no hay desglose de IVA que declarar. Antes se ` +
+          `emitía un 0% sobre el total (${Number(inv.total).toFixed(2)}), que es una declaración ` +
+          'inventada. Corrige las líneas de la factura antes de exportar.',
+        inv.number,
+      );
+    }
 
     // ⚠️ PENDIENTE FISCAL (asesor): el XSD admite `TipoRectificativa` (S=sustitución /
     // I=diferencias) y `ImporteRectificacion`, ambos minOccurs=0. NO se emiten porque elegir
     // uno u otro es una calificación fiscal, no una decisión de implementación (regla: no
     // inventar). Queda registrado en SCRUM-145 para el dictamen.
-    const rectificadas = inv.type === 'R1' && inv.rectifies ? `
+    // SCRUM-216: la R1 ya no sale sin `TipoRectificativa` — eso era un 1114 seguro en CADA
+    // rectificativa. Omitir un campo que el esquema exige no es abstenerse: es garantizar el
+    // rechazo. Hoy `MODO_TIPO_RECTIFICATIVA` vale SIN_CONFIRMAR, así que la R1 se EXCLUYE del
+    // registro y se reporta; no se emite con un valor que nadie ha confirmado.
+    //
+    // La base y la cuota SUSTITUIDAS salen de las líneas de la factura RECTIFICADA (no de la
+    // R1): es lo que significa «sustituida» en `DesgloseRectificacionType`.
+    const esRectificativa = inv.type === 'R1' && !!inv.rectifies;
+    const importeRectificado = esRectificativa && Array.isArray((inv.rectifies as any)!.lines)
+      ? (() => {
+          const v = calcVatBreakdown((inv.rectifies as any)!.lines as any[]);
+          return { baseRectificada: v.base.toFixed(2), cuotaRectificada: v.cuota.toFixed(2) };
+        })()
+      : null;
+
+    const rectificativa = esRectificativa
+      ? resolverTipoRectificativa(
+          inv.number,
+          importeRectificado,
+          opts.modoTipoRectificativa ?? MODO_TIPO_RECTIFICATIVA,
+        )
+      : { tipoXml: '', importeXml: '' };
+
+    const rectificadas = esRectificativa ? `
       <sum1:FacturasRectificadas>
         <sum1:IDFacturaRectificada>
           <sum1:IDEmisorFactura>${xmlEscape(merchant.taxId!)}</sum1:IDEmisorFactura>
-          <sum1:NumSerieFactura>${xmlEscape(inv.rectifies.number)}</sum1:NumSerieFactura>
-          <sum1:FechaExpedicionFactura>${formatDateES(inv.rectifies.createdAt)}</sum1:FechaExpedicionFactura>
+          <sum1:NumSerieFactura>${xmlEscape(inv.rectifies!.number)}</sum1:NumSerieFactura>
+          <sum1:FechaExpedicionFactura>${formatDateES(inv.rectifies!.createdAt)}</sum1:FechaExpedicionFactura>
         </sum1:IDFacturaRectificada>
-      </sum1:FacturasRectificadas>` : '';
+      </sum1:FacturasRectificadas>${rectificativa.importeXml}` : '';
 
     // SCRUM-145 (gap 4): `RegistroAnterior` completo. Si la huella anterior existe pero NO
     // se encuentra su factura (cadena rota o registro de otro sistema), se cae a
@@ -615,10 +687,21 @@ export async function buildVerifactuRegistrosXml(
     // SCRUM-145 (gap 6): `Destinatarios` es minOccurs=0 en el XSD, pero SI se emite,
     // `IDDestinatario` exige `NombreRazon` + choice OBLIGATORIO `NIF|IDOtro`. Hasta ahora se
     // emitía `NombreRazon` suelto → XML INVÁLIDO. Se emite solo cuando hay NIF del cliente.
-    // ⚠️ PENDIENTE FISCAL (asesor, NO se decide en código): una F1 sin destinatario
-    // identificado debe marcarse con `FacturaSinIdentifDestinatarioArt61d` o emitirse como F2
-    // simplificada. Mientras no haya dictamen NO se inventa ninguna de las dos: se omite el
-    // bloque (válido contra el XSD) y la cuestión queda registrada en SCRUM-145.
+    //
+    // SCRUM-215: y cuando NO lo hay, ya no se omite en silencio. Omitirlo era válido contra el
+    // XSD y RECHAZADO por la AEAT (1189) — el hueco exacto que ni el esquema ni un assert de
+    // cadena podían ver. Ahora se resuelve por `MODO_SIN_DESTINATARIO`, que hoy vale
+    // SIN_DICTAMEN: la factura se EXCLUYE del registro y se reporta, en vez de declararse con
+    // una marca que nadie ha decidido. El producto no se toca: la factura se emite y se cobra.
+    const tipoBase: 'F1' | 'R1' = inv.type === 'R1' ? 'R1' : 'F1';
+    const sinDestinatario = !inv.customer?.taxId
+      ? resolverSinDestinatario(tipoBase, inv.number, opts.modoSinDestinatario ?? MODO_SIN_DESTINATARIO)
+      : null;
+
+    const tipoFactura = sinDestinatario ? sinDestinatario.tipoFactura : tipoBase;
+    // Va entre `DescripcionOperacion` y `Destinatarios`: es el orden del XSD (sequence).
+    const marcadorSinDestinatario = sinDestinatario ? sinDestinatario.marcadorXml : '';
+
     const destinatarios = inv.customer?.taxId ? `
       <sum1:Destinatarios>
         <sum1:IDDestinatario>
@@ -670,37 +753,76 @@ export async function buildVerifactuRegistrosXml(
         <sum1:FechaExpedicionFactura>${formatDateES(inv.createdAt)}</sum1:FechaExpedicionFactura>
       </sum1:IDFactura>
       <sum1:NombreRazonEmisor>${xmlEscape(nombreEmisor)}</sum1:NombreRazonEmisor>
-      <sum1:TipoFactura>${inv.type === 'R1' ? 'R1' : 'F1'}</sum1:TipoFactura>${rectificadas}
-      <sum1:DescripcionOperacion>${xmlEscape(lines[0]?.concept || `Factura ${inv.number}`)}</sum1:DescripcionOperacion>${destinatarios}
-      <sum1:Desglose>${desglose || `
-        <sum1:DetalleDesglose>
-          <sum1:Impuesto>01</sum1:Impuesto>
-          <sum1:TipoImpositivo>0</sum1:TipoImpositivo>
-          <sum1:BaseImponibleOimporteNoSujeto>${Number(inv.total).toFixed(2)}</sum1:BaseImponibleOimporteNoSujeto>
-          <sum1:CuotaRepercutida>0.00</sum1:CuotaRepercutida>
-        </sum1:DetalleDesglose>`}
+      <sum1:TipoFactura>${tipoFactura}</sum1:TipoFactura>${rectificativa.tipoXml}${rectificadas}
+      <sum1:DescripcionOperacion>${xmlEscape(lines[0]?.concept || `Factura ${inv.number}`)}</sum1:DescripcionOperacion>${marcadorSinDestinatario}${destinatarios}
+      <sum1:Desglose>${desglose}
       </sum1:Desglose>
       <sum1:CuotaTotal>${vat.cuota.toFixed(2)}</sum1:CuotaTotal>
       <sum1:ImporteTotal>${Number(inv.total).toFixed(2)}</sum1:ImporteTotal>${encadenamiento}
     </sum1:RegistroAlta>
   </sum:RegistroFactura>${anulacion}`;
-  }).join('\n');
+  };
+
+  const registros: string[] = [];
+  for (const inv of invoices) {
+    try {
+      registros.push(construirRegistro(inv));
+    } catch (e) {
+      // SOLO se excluye lo que no se puede CALIFICAR. Una cadena rota
+      // (verifactu_cadena_rota) sigue tumbando el paquete entero A PROPÓSITO: ahí el
+      // problema no es una factura, es que el encadenamiento no se puede acreditar, y un
+      // pack al que le falta un eslabón sin decirlo es peor que no entregarlo.
+      if (e instanceof RegistroNoEmitibleError) {
+        excluidos.push({ number: inv.number, motivo: e.motivo });
+        continue;
+      }
+      throw e;
+    }
+  }
 
   // SCRUM-145 (gap 1): envelope REAL del XSD. Antes la raíz era `<RegistrosFacturacion>` sin
   // namespaces y el registro se llamaba `<RegistroFacturacionAlta>` — que es el nombre del
   // TIPO, no del ELEMENTO (`SuministroInformacion.xsd:37` declara `RegistroAlta`). Nada de
   // eso validaba. Límite duro del XSD: `RegistroFactura` maxOccurs=1000 por envío.
+  // SCRUM-209: el parte de exclusiones viaja DENTRO del documento, como comentario XML.
+  // Va aquí y no solo en el LEEME por dos razones: el endpoint suelto (`GET /verifactu.xml`)
+  // no tiene LEEME, y el ZIP y el endpuesto deben entregar el MISMO fichero (scrum82). Un
+  // comentario no altera la validación XSD y deja el rastro pegado al documento que se
+  // enseña en una inspección — que es justo donde tiene que estar.
+  const parteExclusiones = excluidos.length === 0 ? '' : `
+  <!-- ATENCION: ${excluidos.length} factura(s) de ${params.year} NO se han podido declarar y
+       quedan FUERA de este registro. No es una omision silenciosa: se listan aqui con su
+       numero y su motivo para que se corrijan y se vuelva a exportar.
+${excluidos.map((x) => `       · ${xmlEscape(x.number)}: ${xmlEscape(x.motivo)}`).join('\n')}
+  -->`;
+
+  // SCRUM-216: si NO queda ningún registro que declarar, no se entrega un documento vacío.
+  // El XSD exige al menos un `RegistroFactura` (`RegFactuSistemaFacturacion`: «Missing child
+  // element(s)»), así que un envelope con la cabecera sola es un XML INVÁLIDO — justo lo que
+  // toda esta cadena de tickets viene a evitar. Y no es un caso de laboratorio: con las
+  // exclusiones de SCRUM-215 y 216, un merchant cuyo ejercicio sean todo facturas a
+  // particulares, o solo rectificativas, cae aquí entero.
+  //
+  // Se devuelve `xml: ''` — «no hay nada que declarar», con el parte de exclusiones intacto
+  // para que quien llama diga POR QUÉ. Entregar un fichero inválido sería peor que no
+  // entregarlo; entregarlo en silencio, peor todavía.
+  if (registros.length === 0) {
+    return { xml: '', count: 0, excluidos };
+  }
+
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<sum:RegFactuSistemaFacturacion xmlns:sum="${NS_LR}" xmlns:sum1="${NS_INFO}">
+<sum:RegFactuSistemaFacturacion xmlns:sum="${NS_LR}" xmlns:sum1="${NS_INFO}">${parteExclusiones}
   <sum:Cabecera>
     <sum1:ObligadoEmision>
       <sum1:NombreRazon>${xmlEscape(nombreEmisor)}</sum1:NombreRazon>
       <sum1:NIF>${xmlEscape(merchant.taxId)}</sum1:NIF>
     </sum1:ObligadoEmision>
   </sum:Cabecera>
-${registros}
+${registros.join('\n')}
 </sum:RegFactuSistemaFacturacion>
 `;
 
-  return { xml, count: invoices.length };
+  // `count` = registros REALMENTE declarados, no facturas miradas. Si contara las miradas,
+  // un pack con exclusiones informaría un número que el fichero no respalda.
+  return { xml, count: registros.length, excluidos };
 }

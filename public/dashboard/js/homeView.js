@@ -487,6 +487,51 @@ async function renderTeamPerformance(container) {
       </tr>`;
   }).join('');
 
+  // SCRUM-236 · EL PIE DE LA TABLA: lo no atribuible y el total.
+  //
+  // Antes la columna «Cobrado» no sumaba el total del negocio y la pantalla no lo decía: el
+  // profesional sumaba las filas de cabeza, no le cuadraba, y dejaba de fiarse de TODOS los
+  // números — incluidos los correctos. Ahora las partes se ven y el total cuadra a la vista.
+  //
+  // Va en `<tfoot>` a propósito, no como una fila más del `<tbody>`: «Sin asignar» NO es una
+  // persona. En el cuerpo heredaría la etiqueta de rol, el porcentaje coloreado y el badge de
+  // «Mejor del mes» — un cubo disfrazado de operario es peor que el descarte que veníamos a
+  // arreglar. Por eso el backend lo devuelve aparte (`data.sinAsignar`), fuera de `members`.
+  //
+  // La etiqueta viene del BACKEND (`data.sinAsignar.label` = `ETIQUETA_SIN_ASIGNAR`, aprobado el
+  // 29-jul): no se escribe un segundo literal en el front, igual que el servicio no escribe una
+  // segunda función de reparto.
+  //
+  // Las dos celdas del medio llevan «—» y no van vacías: una celda en blanco se lee como «cero»
+  // o como un dato que falta; el guion dice «esto no aplica aquí».
+  const sinAsignarRow = data.sinAsignar
+    ? `<tr>
+        <td style="font-weight:600;color:var(--neutral-600)">${esc(data.sinAsignar.label)}<div style="font-size:11px;color:var(--neutral-500);font-weight:400">Cobros sin presupuesto</div></td>
+        <td style="text-align:right;color:var(--neutral-400)">—</td>
+        <td style="text-align:right;color:var(--neutral-400)">—</td>
+        <td style="text-align:right;color:var(--neutral-600);font-weight:600">${fmtMoney(data.sinAsignar.collected)}</td>
+      </tr>`
+    : '';
+
+  // Microcopy APROBADO por el fundador el 30-jul-2026 (regla 30): «Total cobrado» tal cual, y
+  // «Cobros sin presupuesto» — se le quitó «de origen», que era la palabra que lo hacía sonar a
+  // informe contable en vez de a algo que un fontanero lee de un vistazo.
+  //
+  // Son los dos únicos literales de este panel escritos en el front. El tercero, «Sin asignar»,
+  // lo sirve el BACKEND (`data.sinAsignar.label` = ETIQUETA_SIN_ASIGNAR) y así se queda: una
+  // sola definición para las dos pantallas que responden la misma pregunta.
+  const totalRow = (data.totalCollected != null)
+    ? `<tr>
+        <td style="font-weight:700;color:var(--neutral-900)">Total cobrado</td>
+        <td></td><td></td>
+        <td style="text-align:right;font-weight:700;color:var(--neutral-900)">${fmtMoney(data.totalCollected)}</td>
+      </tr>`
+    : '';
+
+  const tfoot = (sinAsignarRow || totalRow)
+    ? `<tfoot style="border-top:2px solid var(--neutral-200)">${sinAsignarRow}${totalRow}</tfoot>`
+    : '';
+
   const inactiveAlert = (data.inactive && data.inactive.length)
     ? `<div style="margin-top:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px 14px;font-size:13px;color:#9a3412">⚠️ Sin actividad esta semana: <strong>${data.inactive.map(esc).join(', ')}</strong></div>`
     : '';
@@ -509,6 +554,7 @@ async function renderTeamPerformance(container) {
             <th style="text-align:right">Cobrado</th>
           </tr></thead>
           <tbody>${rows}</tbody>
+          ${tfoot}
         </table>
       </div>
       ${inactiveAlert ? `<div style="padding:0 16px 14px">${inactiveAlert}</div>` : ''}

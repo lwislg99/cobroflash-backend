@@ -9,6 +9,15 @@ import { isDemoMerchant, DEMO_WATERMARK } from '../modules/invoicing/domain/emis
 import { generateInvoicePdf } from './pdf';
 import { invoicesDir } from '../core/storage/dirs';
 import { applyVeriFactu } from '../modules/invoicing/domain/verifactu.service';
+import { exigirDocumentoEmitible, FacturaSinSellarError } from '../modules/invoicing/domain/portonDocumento'; // SCRUM-206
+// SCRUM-205: este fichero YA NO SELLA. Solo consulta el estado para decidir si puede
+// producir documento; quien sella es `sellarTrasEmision`, en la emision.
+import {
+  puedeProducirDocumento,
+  sellarTrasEmision,
+  SELLADO_HECHO,
+  ERROR_PDF_SIN_SELLAR,
+} from '../modules/invoicing/domain/selladoEstado';
 
 /**
  * Asegura que el PDF de una factura existe en disco (genera bajo demanda si está
@@ -26,6 +35,24 @@ export async function ensureInvoicePdf(
   });
   if (!inv) throw new Error('invoice_not_found');
   if (!inv.merchant || !inv.customer) throw new Error('missing_relations');
+
+  // ── SCRUM-205 · AQUÍ YA NO SE SELLA ──────────────────────────────────────────────────
+  //
+  // Antes, si la factura no tenía huella, esta función la sellaba de camino. Eso ponía el
+  // punto de no retorno fiscal DENTRO de la generación del PDF — y uno de los llamadores de
+  // esta función es `GET /recibo/:token/pdf`, que es PÚBLICO. El instante en que una factura
+  // entraba en la cadena VeriFactu lo elegía el CLIENTE FINAL abriendo su documento.
+  //
+  // Ahora el sellado ocurre al EMITIR (`sellarTrasEmision`). Si llega aquí una factura sin
+  // sellar, eso es un ERROR, no una oportunidad: se corta antes de generar nada.
+  //
+  // Y esto es también el fail-closed de SCRUM-206. Antes, un sellado fallido dejaba salir la
+  // factura igual —con número, con PDF y con un QR NO fiscal— y solo quedaba una línea de log.
+  // Un QR que no verifica nada, impreso en algo que parece una factura, es peor que no
+  // entregar el documento: el cliente se lleva a casa la apariencia de garantía.
+  if (!puedeProducirDocumento(inv.vfEstado)) {
+    throw new Error(ERROR_PDF_SIN_SELLAR);
+  }
 
   // SCRUM-72: fichero en storage/invoices con prefijo de merchant (la serie es única POR
   // merchant: sin prefijo, dos merchants con "2026-CF-001" se pisaban el PDF) y `pdfUrl`
@@ -48,38 +75,25 @@ export async function ensureInvoicePdf(
       inv.qrData && !String(inv.qrData).startsWith('PENDING')
         ? inv.qrData
         : `INV:${inv.number}|AMOUNT:${inv.total.toString()}|CUR:${inv.currency}`;
-    let vfHash = inv.vfHash ?? null;
+    // ── SCRUM-205 (resolución sobre SCRUM-206) ────────────────────────────────────────
+    //
+    // Aquí vivía el `catch` fail-closed de SCRUM-206: registraba `sellado_fallido` y
+    // lanzaba `FacturaSinSellarError` para que no saliera documento sin huella. Se va con
+    // el sellado, no se pierde: el intento de sellado deja de existir EN ESTE FICHERO
+    // (tesis de SCRUM-205), así que ya no hay nada que pueda fallar aquí. Conservar el
+    // `catch` habría dejado DOS sitios sellando, que es el defecto que se está desmontando.
+    //
+    // La garantía se mantiene en dos piezas, y las dos están vivas:
+    //   · el fallo de sellado se registra y deja la factura `pendiente_de_sellado`, en
+    //     `sellarTrasEmision` (selladoEstado.ts);
+    //   · y de este fichero no sale documento sin permiso: `exigirDocumentoEmitible`.
+    const vfHash = inv.vfHash ?? null;
+    if (vfHash) qrData = inv.qrData && !String(inv.qrData).startsWith('PENDING') ? inv.qrData : qrData;
 
-    // V0-0: los justificantes (J-…) no llevan VeriFactu
-    if (inv.merchant.country === 'ES' && inv.merchant.taxId && !vfHash && !isReceiptNumber(inv.number)) {
-      try {
-        const vf = await applyVeriFactu(inv, inv.merchant.taxId, prisma);
-        qrData = vf.qrUrl;
-        vfHash = vf.vfHash;
-      } catch (e: any) {
-        // SCRUM-207 (A6): el `catch` SE QUEDA —«preferir NO sellar antes que sellar mal»
-        // sigue siendo lo correcto— pero deja de ser mudo. Antes de esto, una factura podía
-        // existir con número, con PDF entregado y sin huella, y lo único que quedaba era esta
-        // línea en el log de un servidor. Fire-safe (T3): el documento ya salió, registrar el
-        // fallo no puede impedir nada; lo que sí puede es hacerlo consultable.
-        console.error('[ensureInvoicePdf] VeriFactu error:', e);
-        recordAudit({
-          merchantId: inv.merchantId,
-          action: 'sellado_fallido', entityType: 'invoice', entityId: inv.id,
-          meta: sobreFiscal({
-            actor: { tipo: 'sistema', ref: 'ensureInvoicePdf' },
-            flagsFiscales: flagsFiscalesDe(inv.merchant),
-            payload: {
-              numero: inv.number,
-              errorMensaje: String(e?.message ?? e).slice(0, 300),
-              puntoDeFallo: 'ensureInvoicePdf',
-              // El dato que convierte el fallo mudo en un hecho: el cliente SE LLEVÓ el PDF.
-              pdfEntregadoIgual: true,
-            },
-          }),
-        });
-      }
-    }
+    // SCRUM-206 · PORTÓN, al borde de la salida y no al principio de la función: aquí la
+    // garantía es local y se lee de un vistazo. Cubre además el caso que el `catch` no ve — una
+    // factura que llega sin huella sin haberse intentado sellar en esta llamada.
+    exigirDocumentoEmitible({ number: inv.number, vfHash }, inv.merchant);
 
     const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
     await generateInvoicePdf({
@@ -168,31 +182,37 @@ export async function ensureInvoiceForCharge(
 
     const merchant = await prisma.merchant.findUnique({ where: { id: inv.merchantId } });
 
-    if (merchant?.country === 'ES' && merchant.taxId && !vfHash && !isReceiptNumber(inv.number)) {
-      try {
-        const vf = await applyVeriFactu(inv, merchant.taxId, prisma);
-        qrData  = vf.qrUrl;
-        vfHash  = vf.vfHash;
-        // inv.qrData updated in DB by applyVeriFactu
-      } catch (e: any) {
-        // SCRUM-207 (A6): mismo criterio que el otro fail-open. La palabra «se omite» seguía
-        // escrita en el código y no había forma de consultarlo después.
-        console.error('[verifactu] Error al aplicar VeriFactu, se omite:', e);
-        recordAudit({
-          merchantId: inv.merchantId,
-          action: 'sellado_fallido', entityType: 'invoice', entityId: inv.id,
-          meta: sobreFiscal({
-            actor: { tipo: 'sistema', ref: 'ensureInvoiceForCharge' },
-            flagsFiscales: flagsFiscalesDe(merchant ?? null),
-            payload: {
-              numero: inv.number,
-              errorMensaje: String(e?.message ?? e).slice(0, 300),
-              puntoDeFallo: 'ensureInvoiceForCharge',
-              pdfEntregadoIgual: false, // aquí aún no se ha renderizado nada
-            },
-          }),
-        });
-      }
+    // ── SCRUM-205 (resolución sobre SCRUM-206) ────────────────────────────────────────
+    //
+    // Aquí vivía el `catch` fail-closed de SCRUM-206: registraba `sellado_fallido` y
+    // lanzaba `FacturaSinSellarError` para que no saliera documento sin huella. Se va con
+    // el sellado, no se pierde: el intento de sellado deja de existir EN ESTE FICHERO
+    // (tesis de SCRUM-205), así que ya no hay nada que pueda fallar aquí. Conservar el
+    // `catch` habría dejado DOS sitios sellando, que es el defecto que se está desmontando.
+    //
+    // La garantía se mantiene en dos piezas, y las dos están vivas:
+    //   · el fallo de sellado se registra y deja la factura `pendiente_de_sellado`, en
+    //     `sellarTrasEmision` (selladoEstado.ts);
+    //   · y de este fichero no sale documento sin permiso: `exigirDocumentoEmitible`.
+    // ── SCRUM-205/206 · ESTE ES EL MOMENTO DE LA EMISIÓN: aquí SÍ se sella ───────────────
+    //
+    // Es la única boca que quedaba con el sellado enterrado en el camino del PDF. Ahora pasa
+    // por `sellarTrasEmision`, igual que el resto: cliente global, una a una, DESPUÉS del
+    // commit que consumió el número (nunca dentro de la tx — bifurcaría la cadena).
+    //
+    // Y el fail-open de SCRUM-206 desaparece SIN un caso especial. Antes este `catch` escribía
+    // literalmente «se omite» y dejaba salir la factura con número, con PDF y con un QR NO
+    // fiscal. Ahora, si el sellado falla, la factura se queda `pendiente_de_sellado` —donde
+    // nació— y en ese estado `ensureInvoicePdf` se niega a generar nada. El fallo deja de ser
+    // «sigue adelante con un log» y pasa a ser «no hay documento hasta que se selle».
+    const resultadoSellado = await sellarTrasEmision(inv, merchant ?? {}, prisma);
+    if (resultadoSellado.estado === SELLADO_HECHO) {
+      const releida = await prisma.invoice.findUnique({
+        where: { id: inv.id },
+        select: { vfHash: true, qrData: true },
+      });
+      vfHash = releida?.vfHash ?? vfHash;
+      if (releida?.qrData && !String(releida.qrData).startsWith('PENDING')) qrData = releida.qrData;
     }
 
     const needsPdf =
@@ -201,6 +221,10 @@ export async function ensureInvoiceForCharge(
       String(inv.pdfUrl).startsWith('PENDING');
 
     let updated = inv;
+
+    // SCRUM-206 · PORTÓN. Va ANTES del `if (needsPdf)` a propósito: la rama `else` de abajo
+    // también escribía `qrData` —el fallback casero— sobre una factura sin sellar.
+    exigirDocumentoEmitible({ number: inv.number, vfHash }, merchant);
 
     if (needsPdf) {
       const customer = await prisma.customer.findUnique({ where: { id: inv.customerId } });

@@ -24,6 +24,7 @@ import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 
 
 import fetch from 'node-fetch';
 import { sendSuccessBody, sendFailureBody } from '../../../../lib/sendOutcome'; // SCRUM-126
+import { sellarTrasEmision, SELLADO_HECHO, SELLADO_PENDIENTE } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 
 const router = Router();
 
@@ -212,14 +213,31 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     });
 
     // Aplicar VeriFactu para merchants españoles con NIF (V0-0: nunca a justificantes)
-    let vfApplied = false;
-    if (merchant.country === 'ES' && merchant.taxId && !isReceiptNumber(invoice.number)) {
-      try {
-        await applyVeriFactu(invoice, merchant.taxId, prisma);
-        vfApplied = true;
-      } catch (e) {
-        console.error('[verifactu] Error al aplicar VeriFactu en quote invoice:', e);
-      }
+    // ── SCRUM-205 sobre SCRUM-206 · los DOS, y no es un compromiso: son cosas distintas ──
+    //
+    // De SCRUM-205: el sellado pasa por el punto único (`sellarTrasEmision`), no por una
+    // llamada suelta a `applyVeriFactu`.
+    // De SCRUM-206: si NO se sella, la respuesta lo dice. Antes esta ruta devolvía 201 con
+    // `vfApplied: false` enterrado en el cuerpo — «la misma mentira que un PDF sin huella,
+    // contada en otro formato». Tomar el lado de 205 a secas habría borrado ese arreglo
+    // DENTRO de un merge, que es precisamente cómo se pierden las correcciones.
+    //
+    // `no_aplica` NO es un fallo: los justificantes J- y los merchants no-ES legítimamente
+    // no entran en la cadena. Solo `pendiente_de_sellado` es el caso que hay que contar.
+    const resultadoSellado = await sellarTrasEmision(invoice, merchant, prisma);
+    const vfApplied = resultadoSellado.estado === SELLADO_HECHO;
+
+    if (resultadoSellado.estado === SELLADO_PENDIENTE) {
+      return res.status(409).json({
+        ok: false,
+        error: 'sellado_incompleto',
+        // Microcopy OFICIAL: aprobado por el fundador el 30-jul-2026 (regla 30). «No la entregues
+        // todavía» es lo que hace el aviso accionable: la factura existe y su número está
+        // consumido, pero no debe salir de sus manos.
+        message: 'La factura se creó pero no se pudo registrar. No la entregues todavía; se reintenta solo.',
+        id: invoice.id,
+        number: invoice.number,
+      });
     }
 
     return res.status(201).json({
@@ -388,15 +406,8 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
     });
 
     // VeriFactu exactamente igual que en la vía de tramos (V0-0: nunca a justificantes).
-    let vfApplied = false;
-    if (merchant.country === 'ES' && merchant.taxId && !isReceiptNumber(invoice.number)) {
-      try {
-        await applyVeriFactu(invoice, merchant.taxId, prisma);
-        vfApplied = true;
-      } catch (e) {
-        console.error('[verifactu] Error al aplicar VeriFactu en emisión manual:', e);
-      }
-    }
+    // SCRUM-205: punto único de sellado, después del commit.
+    const vfApplied = (await sellarTrasEmision(invoice, merchant, prisma)).estado === SELLADO_HECHO;
 
     return res.status(201).json({
       id: invoice.id,
