@@ -171,8 +171,28 @@ test('SCRUM-153 · la idempotencia la garantiza la RUTA, no el sellado', () => {
       'se vuelve a sellar, y una SEGUNDA huella de baja de la misma factura es un registro ' +
       'falso en la cadena: describe una anulación que no ocurrió.',
   );
+  // SCRUM-205 · este assert estaba anclado al NOMBRE `applyVeriFactuAnulacion`, y el sellado
+  // se mudó al punto único (`sellarAnulacionTrasEmision`). El nombre desapareció del código
+  // ejecutable de la ruta y `indexOf` devolvió -1 — el test se puso rojo por un motivo que no
+  // era el suyo. Bien: prefiero ese rojo. Pero mirando el -1 de cerca aparece el agujero real:
+  // en el orden CONTRARIO (si desapareciera la guarda en vez del sellado) el `-1` habría hecho
+  // pasar la comparación EN VACÍO. Un guard que se apaga solo cuando renombran lo que vigila.
+  //
+  // Por eso ahora: (a) se acepta cualquiera de los dos nombres del sellado —el directo o el del
+  // punto único—, y (b) los dos anclajes se exigen PRESENTES antes de comparar posiciones.
+  const SELLADO_ANUL = ['sellarAnulacionTrasEmision', 'applyVeriFactuAnulacion'];
+  const iSella = Math.min(...SELLADO_ANUL.map((n) => bloque.indexOf(n)).filter((i) => i >= 0), Infinity);
+  const iGuarda = bloque.indexOf("'annulled'");
+
   assert.ok(
-    bloque.indexOf("'annulled'") < bloque.indexOf('applyVeriFactuAnulacion'),
+    Number.isFinite(iSella) && iGuarda >= 0,
+    `🔴 ESCÁNER CIEGO: en la ruta de anulación no encuentro ${Number.isFinite(iSella) ? '' : 'la llamada de sellado'}` +
+      `${Number.isFinite(iSella) || iGuarda >= 0 ? '' : ' ni '}${iGuarda >= 0 ? '' : 'la guarda de «ya anulada»'}. ` +
+      'Sin los dos anclajes esta comprobación de orden no compara nada: pasaría en vacío. Si el ' +
+      'sellado se ha renombrado otra vez, actualiza SELLADO_ANUL ANTES de fiarte del verde.',
+  );
+  assert.ok(
+    iGuarda < iSella,
     '🔴 la comprobación de «ya anulada» debe ir ANTES de llamar al sellado, no después',
   );
 });
