@@ -137,7 +137,13 @@ test('SCRUM-206 · (a) una ES con taxId y vfHash null NO produce documento', asy
 
 test('SCRUM-206 · (c) el QR casero NO se persiste cuando la factura debía sellarse', async () => {
   const prisma = prismaFalso({ number: '2026-FG-001', vfHash: null }, ES);
-  await assert.rejects(() => ensureInvoicePdf(1, prisma));
+
+  // NO se exige rechazo aquí a propósito. La primera versión de este test empezaba con un
+  // `assert.rejects` y, contra el código con el fail-open, fallaba EN ESA LÍNEA con «Missing
+  // expected rejection» — o sea que las comprobaciones del QR no llegaban a ejecutarse nunca y
+  // el rojo estaba probando lo mismo que el test (a), no lo suyo (incidente #12). Lo que se mide
+  // aquí es qué quedó ESCRITO, y eso se mide igual de bien resuelva o lance.
+  await ensureInvoicePdf(1, prisma).catch(() => {});
 
   const conQrFalso = prisma.escrituras.filter((a) => String(a?.data?.qrData ?? '').startsWith('INV:'));
   assert.deepEqual(
