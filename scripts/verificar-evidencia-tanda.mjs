@@ -27,6 +27,7 @@ import {
   AISLADOS, // SCRUM-199: fuente única (derivada de HIJOS_SPEC), ya no una copia a mano aquí
   estaActivo,
   validarEvidencia,
+  huellaDeCodigo, // SCRUM-239: el criterio de contenido, calculado igual aqui y en el runner
   mensajeVeredicto,
   mensajeApagado,
   AVISO_ALCANCE,
@@ -45,8 +46,17 @@ const ficherosEsperados = existsSync(path.join(RAIZ, 'tests'))
 const commitActual = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: RAIZ, encoding: 'utf8' }).stdout?.trim() || '';
 const texto = existsSync(rutaRecibo) ? readFileSync(rutaRecibo, 'utf8') : null;
 
+// SCRUM-239 · EL CRITERIO. El `git` se INYECTA y el cálculo vive en la hoja: esta punta y el
+// runner no pueden divergir (lección de SCRUM-199). Devuelve `null` si git falla o si el listado
+// no llega al suelo — y `null` NO se lee como «igual»: el validador falla cerrado.
+const git = (args, stdin) => {
+  const r = spawnSync('git', args, { cwd: RAIZ, encoding: 'utf8', input: stdin, maxBuffer: 64 * 1024 * 1024 });
+  return r.status === 0 ? (r.stdout ?? '') : null;
+};
+const huellaActual = huellaDeCodigo(git);
+
 const activo = estaActivo(process.env);
-const res = validarEvidencia({ texto, commitActual, ahoraMs: Date.now(), ficherosEsperados });
+const res = validarEvidencia({ texto, commitActual, huellaActual, ahoraMs: Date.now(), ficherosEsperados });
 
 process.stdout.write(mensajeVeredicto(res, { activo }));
 process.stdout.write(AVISO_ALCANCE);
