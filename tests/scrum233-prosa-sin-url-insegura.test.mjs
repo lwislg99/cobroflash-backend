@@ -112,10 +112,97 @@ export function infraccionesEnProsa(texto, ruta = 'ficticio.md') {
   return out;
 }
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// REGLA 2 · NINGÚN DOCUMENTO ENSEÑA A SACAR LA URL DEL `.env` CON HERRAMIENTAS DE TEXTO
+//
+// La regla 1 vigila el flag. Esto vigila el paso ANTERIOR: cómo consigues la cadena que le
+// pasarías. Recortar `DATABASE_URL=` del `.env` con `cut`/`sed`/`tr`/`awk` es lo que prohíben
+// SCRUM-223 y SCRUM-226 — y, medido, además ESTABA ROTO: en `.env` el valor va entrecomillado
+// y el fichero es CRLF, así que el recorte deja las comillas y el retorno de carro DENTRO de la
+// URL. Prisma contesta `P1013 "The scheme is not recognized"`, que parece un problema de
+// credenciales y no lo es. Es el mismo defecto del incidente #14: una credencial de producción
+// publicada porque `new URL()` recibió la cadena con comillas y volcó su `.message`.
+//
+// La forma segura ya existe en el repo y no hay que inventarla:
+//   · `scripts/preflight-schema-drift.mjs` — `dotenv` lee el `.env` (su parser sí quita comillas
+//     y CRLF), y la URL viaja al hijo por el ENTORNO: `env: { ...process.env, DATABASE_URL: url }`.
+//   · `scripts/db-push-prod` — para MIRAR a dónde apunta usa `parseBDSegura` (`_db-guard.mjs`),
+//     que tolera el envoltorio de comillas y **no tiene forma de devolver la cadena**.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// EL DISCRIMINADOR: **invocabilidad**, no proximidad
+//
+// Un documento tiene que poder PROHIBIR esto, y para prohibirlo lo nombra. Medido, hay dos
+// menciones legítimas en el repo que un guard por proximidad cazaría:
+//   · `docs/MIGRATIONS_PENDING.md:765` — «el `sed` se lleva la comilla del `.env`» (avisa de que
+//     el wrapper está roto).
+//   · `docs/ERRORES_ASESOR.md:180` — «`sed`/`python` sobre ficheros» (habla de releer ediciones).
+//
+// Las dos escriben la herramienta **desnuda**: `sed`, sin flags. Lo que se copia y se teclea es
+// lo INVOCABLE — `cut -d= -f2-`, `tr -d`, `sed 's|^DATABASE_URL=||'`. Así que la regla exige que
+// la herramienta traiga sus flags o su argumento. Nombrar no es enseñar; invocar sí.
+//
+// Ese discriminador es también la razón de que el runbook arreglado NO necesite excepción: para
+// prohibir la forma insegura no hace falta escribirla. Nombra la segura y ya. Por eso
+// `RUTAS_EXCLUIDAS` sigue vacía después de este arreglo.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/** Herramientas de texto CON flags/argumento — o sea, en forma copiable y ejecutable. */
+const INVOCACIONES = [
+  /\bcut\s+-[df]/,                       // cut -d= -f2-
+  /\btr\s+(-[a-zA-Z]|['"])/,             // tr -d '\r'
+  /\bawk\s+(-F|['"])/,                   // awk -F=
+  /\bsed\s+(-[a-zA-Z]|['"]?s[|/#])/,     // sed -e … / sed 's|^DATABASE_URL=||'
+  /\bfindstr\s+[/"\w]/,                  // findstr DATABASE_URL (Windows)
+  /\bSelect-String\s+[-"\w]/,            // Select-String -Pattern … (PowerShell)
+];
+
+/** El objeto sobre el que sería una infracción: el fichero de entorno o la variable. */
+const OBJETO = /\.env\b|DATABASE_URL/;
+
+/**
+ * VENTANA. En el caso real (`SUITE_REGRESION.md` antes de este arreglo) el `.env` estaba en
+ * `:739` y el `tr -d` en `:743`: **4 líneas de distancia**. Un detector de una sola línea NO lo
+ * habría visto. Se toma 6 para dar margen al reflujo del párrafo, y el test de abajo comprueba
+ * que la ventana hace falta de verdad.
+ */
+const VENTANA = 6;
+
+/** Infracciones de la regla 2: una invocación de recorte a menos de VENTANA líneas del objeto. */
+export function infraccionesDeRecorte(texto, ruta = 'ficticio.md') {
+  const lineas = texto.split(/\r?\n/);
+  const out = [];
+  lineas.forEach((linea, i) => {
+    const inv = INVOCACIONES.find((re) => re.test(linea));
+    if (!inv) return;
+    const desde = Math.max(0, i - VENTANA);
+    const hasta = Math.min(lineas.length, i + VENTANA + 1);
+    const cerca = lineas.slice(desde, hasta).findIndex((l) => OBJETO.test(l));
+    if (cerca === -1) return;
+    out.push({
+      ruta,
+      linea: i + 1,
+      objetoEn: desde + cerca + 1,
+      herramienta: (linea.match(inv) || [''])[0].trim(),
+      texto: linea.trim().slice(0, 100),
+    });
+  });
+  return out;
+}
+
 function escanear() {
   const out = [];
   for (const p of markdowns()) {
-    out.push(...infraccionesEnProsa(fs.readFileSync(p, 'utf8'), rel(p)));
+    const texto = fs.readFileSync(p, 'utf8');
+    out.push(...infraccionesEnProsa(texto, rel(p)));
+  }
+  return out;
+}
+
+function escanearRecortes() {
+  const out = [];
+  for (const p of markdowns()) {
+    out.push(...infraccionesDeRecorte(fs.readFileSync(p, 'utf8'), rel(p)));
   }
   return out;
 }
@@ -180,6 +267,91 @@ test('SCRUM-233 · las exclusiones son por RUTA y la lista está vacía', () => 
       'motivo al lado — y ojo: una allowlist que nace poblada enseña a poblarla (SCRUM-211). ' +
       'Ningún documento necesita enseñar la forma insegura: `--from-schema-datasource` hace lo ' +
       'mismo sin exponer la credencial.',
+  );
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// TESTS DE LA REGLA 2
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * EL CASO REAL, conservado literal. Es lo que decía `docs/QA/SUITE_REGRESION.md:739-743` en
+ * `main` hasta este commit. Vive aquí y no en el runbook a propósito: **el guard es quien
+ * recuerda la forma mala; el documento solo necesita nombrar la buena.** Mientras este fixture
+ * dé rojo, el arreglo del runbook tiene red debajo y no puede volver sin que la suite lo diga.
+ */
+const CASO_REAL = [
+  '>    ⚠️ **Falso positivo nº1 — `P1013` al extraer la URL del `.env`.** El fichero es CRLF y el',
+  '>    valor va **entre comillas simples**, así que un `cut -d= -f2-` a secas deja un retorno de',
+  '>    carro y las comillas dentro de la URL → Prisma corta con **`P1013` "The scheme is not',
+  '>    recognized"**, que parece un problema de credenciales y no lo es. Sanear con',
+  '>    `tr -d` del retorno de carro + quitar las comillas con `sed`.',
+].join('\n');
+
+test('SCRUM-233 · CONTROL POSITIVO: caza el caso REAL que había en el runbook', () => {
+  const h = infraccionesDeRecorte(CASO_REAL, 'fixture.md');
+  assert.ok(h.length >= 2, `🔴 no caza el caso real (${h.length} hallazgos)`);
+  assert.deepEqual(
+    h.map((x) => x.herramienta).sort(),
+    ['cut -d', 'tr -d'],
+    '🔴 tiene que cazar las DOS invocaciones: el recorte y el saneado',
+  );
+});
+
+test('SCRUM-233 · SUELO de la VENTANA: el caso real NO se ve línea a línea', () => {
+  // Si esto fallara, la ventana sería adorno y el guard estaría pasando por otro motivo.
+  const lineas = CASO_REAL.split('\n');
+  const laDelTr = lineas.findIndex((l) => /\btr\s+-d/.test(l));
+  assert.ok(laDelTr > 0, 'el fixture debe contener la línea del saneado');
+  assert.equal(
+    infraccionesDeRecorte(lineas[laDelTr], 'sola.md').length, 0,
+    '🔴 esa línea sola YA da rojo: entonces la ventana no está siendo lo que sostiene el guard',
+  );
+  assert.ok(
+    infraccionesDeRecorte(CASO_REAL, 'fixture.md').some((x) => x.linea === laDelTr + 1),
+    '🔴 en el párrafo completo sí tiene que salir: es exactamente lo que aporta la ventana',
+  );
+});
+
+test('SCRUM-233 · CONTROLES NEGATIVOS: nombrar la herramienta desnuda NO dispara', () => {
+  // Las dos líneas REALES del repo que un guard por proximidad cazaría. Si esto fallara, el
+  // guard daría rojo sobre dos documentos que PROHÍBEN el defecto — y se desactivaría.
+  const legitimas = [
+    '  ⚠️ **NO uses `npm run db:push`**: el wrapper está roto (SCRUM-223 — el `sed` se lleva la\n  comilla del `.env`, el error se lo traga un `2>/dev/null`)',
+    'Vale para scripts de texto, `sed`/`python` sobre ficheros y cualquier generación automática',
+    'la URL nunca se recorta a mano del `.env`: la lee `dotenv` y viaja por el entorno',
+  ];
+  for (const l of legitimas) {
+    assert.deepEqual(infraccionesDeRecorte(l, 'legitima.md'), [],
+      `🔴 caza una mención que PROHÍBE o describe, no que enseña: ${l.slice(0, 60)}…`);
+  }
+});
+
+test('SCRUM-233 · lejos del .env, una invocación de texto no es asunto de este guard', () => {
+  // `sed` sobre un fichero cualquiera es legítimo; solo importa aplicado a la URL de BD.
+  const lejos = 'Renombra en masa con `sed -i` los ficheros de la carpeta de plantillas.';
+  assert.deepEqual(infraccionesDeRecorte(lejos, 'x.md'), [],
+    '🔴 el guard se está metiendo donde no le toca: sin objeto (.env/DATABASE_URL) no hay caso');
+});
+
+test('SCRUM-233 · ningún .md enseña a recortar la URL del .env con herramientas de texto', () => {
+  const hallazgos = escanearRecortes();
+  assert.deepEqual(
+    hallazgos.map((h) => `${h.ruta}:${h.linea} [${h.herramienta}] objeto en :${h.objetoEn}`),
+    [],
+    '🔴 UN DOCUMENTO ENSEÑA A RECORTAR LA URL DEL `.env` A MANO:\n' +
+      hallazgos.map((h) => `    ${h.ruta}:${h.linea}\n      ${h.texto}`).join('\n') +
+      '\n\n  Es lo que prohíben SCRUM-223 y SCRUM-226, y además NO FUNCIONA: el valor va\n' +
+      '  entrecomillado y el fichero es CRLF, así que el recorte mete las comillas y el retorno\n' +
+      '  de carro DENTRO de la URL → `P1013 "The scheme is not recognized"`, que parece un\n' +
+      '  problema de credenciales y no lo es (mismo defecto que el incidente #14).\n\n' +
+      '  Forma segura, ya en el repo — no hay que inventarla:\n' +
+      '    · dotenv lee el `.env` y la URL viaja al hijo por el ENTORNO\n' +
+      '      (scripts/preflight-schema-drift.mjs: env: { ...process.env, DATABASE_URL: url })\n' +
+      '    · para MIRAR a dónde apunta: parseBDSegura de scripts/_db-guard.mjs, que no tiene\n' +
+      '      forma de devolver la cadena (scripts/db-push-prod)\n\n' +
+      '  Y para PROHIBIRLO en un documento no hace falta escribir la forma mala: nombra la\n' +
+      '  herramienta desnuda o describe el defecto. Lo invocable es lo que se copia.',
   );
 });
 
