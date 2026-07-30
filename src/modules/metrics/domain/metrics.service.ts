@@ -165,19 +165,45 @@ function monthRange(offset = 0) {
   return { start, end };
 }
 
-async function funnelForPeriod(merchantId: number, start: Date, end: Date) {
+/**
+ * Las cuatro etapas del **«Funnel de conversión · Cotizaciones»** (`reportsView.js`).
+ *
+ * `client` es inyectable SOLO para poder probar la relación entre etapas sin BD. Producción
+ * nunca lo pasa: usa el `prisma` global. (Mismo patrón que `buildVerifactuRegistrosXml`.)
+ */
+export async function funnelForPeriod(
+  merchantId: number,
+  start: Date,
+  end: Date,
+  client: typeof prisma = prisma,
+) {
   const inPeriod = { gte: start, lt: end };
+
+  // SCRUM-236 · LAS CUATRO ETAPAS CUENTAN LA MISMA POBLACIÓN: LOS PRESUPUESTOS.
+  //
+  // El embudo se titula «Funnel de conversión · Cotizaciones» y va Enviadas → Aceptadas →
+  // Facturadas → Cobradas. Si una etapa cuenta una población más ancha que la anterior, deja de
+  // ser un embudo: **una etapa posterior puede superar a la anterior**, y eso no es un dato
+  // impreciso, es un error que el usuario ve.
+  //
+  // Pasaba con `collected`, que contaba TODAS las facturas cobradas mientras `invoiced` contaba
+  // solo las nacidas de un presupuesto. Una sola factura de albarán cobrada en el mes ya ponía
+  // Cobradas por encima de Facturadas.
+  //
+  // El filtro de `invoiced` NO se toca y es correcto: una factura sin presupuesto **nunca fue
+  // presupuesto**, así que no pertenece a este embudo. Lo que se corrige es la asimetría.
+  const soloDePresupuesto = { quoteId: { not: null } };
 
   const [sent, accepted, rejected, awaiting, invoiced, collected, decided] = await Promise.all([
     // Enviadas = cualquier quote que salió de borrador
-    prisma.quote.count({ where: { merchantId, createdAt: inPeriod, status: { not: 'draft' } } }),
-    prisma.quote.count({ where: { merchantId, createdAt: inPeriod, status: 'accepted' } }),
-    prisma.quote.count({ where: { merchantId, createdAt: inPeriod, status: 'rejected' } }),
-    prisma.quote.count({ where: { merchantId, createdAt: inPeriod, status: 'sent' } }),
-    prisma.invoice.count({ where: { merchantId, createdAt: inPeriod, quoteId: { not: null } } }),
-    prisma.invoice.count({ where: { merchantId, status: 'paid', paidAt: inPeriod } }),
+    client.quote.count({ where: { merchantId, createdAt: inPeriod, status: { not: 'draft' } } }),
+    client.quote.count({ where: { merchantId, createdAt: inPeriod, status: 'accepted' } }),
+    client.quote.count({ where: { merchantId, createdAt: inPeriod, status: 'rejected' } }),
+    client.quote.count({ where: { merchantId, createdAt: inPeriod, status: 'sent' } }),
+    client.invoice.count({ where: { merchantId, createdAt: inPeriod, ...soloDePresupuesto } }),
+    client.invoice.count({ where: { merchantId, status: 'paid', paidAt: inPeriod, ...soloDePresupuesto } }),
     // Para tiempo medio de respuesta: quotes decididos en el periodo
-    prisma.quote.findMany({
+    client.quote.findMany({
       where: {
         merchantId,
         status: { in: ['accepted', 'rejected'] },
