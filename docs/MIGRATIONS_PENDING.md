@@ -119,19 +119,22 @@ cada `"tabla"."columna"` de `prisma/backfill/*.sql` contra el schema **sin neces
 
 ## SCRUM-195 · `quotes.job_id` + índice (Job 1:N Quote, paso 1 de 2) — 🟡 PARCIAL
 
-> **Sigue en 🟡 PARCIAL, y no por inercia.** El paso 1 ya está en **staging y producción**, pero
-> faltan DOS cosas distintas: el checkbox de **`yaqu_dev_javier`** (lo aplica y lo confirma
-> Javier) y el **paso 2, el backfill**, que no se ha ejecutado en ninguna BD (bloque aparte más
-> abajo). Marcar esto como cerrado con cualquiera de las dos pendientes sería justo el checkbox
-> por suposición contra el que avisa la línea de corte.
+> **Sigue en 🟡 PARCIAL, y ahora por UN SOLO motivo.** El **paso 1 (esquema)** ya está en las TRES
+> bases: staging, producción y `yaqu_dev_javier` (este último confirmado por Javier el 29-jul-2026
+> con `migrate diff` VACÍO — ver el checkbox de desarrollo). Lo que queda es el **paso 2, el
+> BACKFILL** de los 42 pares job↔quote, que no se ha ejecutado en ninguna BD (bloque aparte abajo).
+> PARCIAL sigue siendo correcto, pero el MOTIVO cambió: ya no es un checkbox de base pendiente
+> —esos están los tres—, es solo el backfill.
 
 - [x] **staging · acela/railway** — aplicado 28-jul-2026 con GO del fundador tras preview.
-- [ ] **desarrollo · acela/yaqu_dev_javier** — PENDIENTE. No requiere GO, pero iba ANTES que prod
-      a propósito: si se queda atrás, el carril B se encuentra mañana la deriva que causó los 16
-      rojos de SCRUM-160. **Ese orden se rompió el 29-jul y conviene que conste por qué:**
-      producción estaba CAÍDA con `P2022` sobre `quotes.job_id` (la home no cargaba), así que
-      prod se adelantó por incidencia, no por descuido. **Este checkbox lo marca Javier cuando
-      lo aplique y lo confirme** — nadie más, y nunca por suposición.
+- [x] **desarrollo · acela/yaqu_dev_javier** — aplicado **28-jul-2026** (en el mismo push de las 6
+      aditivas con GO del fundador; `job_id` entre ellas). **VERIFICADO 29-jul-2026 por Javier, no
+      por suposición:** con el destino confirmado por host ANTES de correr (`host=acela.proxy.rlwy.net
+      · db=yaqu_dev_javier`), el comando `npx prisma migrate diff --from-schema-datasource
+      prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --script` (URL en el entorno,
+      no en argv — SCRUM-196) devolvió **`-- This is an empty migration.`** → la columna y el índice
+      YA estaban. Nota de orden: iba ANTES que prod a propósito, pero el 29-jul prod se adelantó por
+      INCIDENCIA (estaba caída con `P2022` sobre `quotes.job_id`, la home no cargaba), no por descuido.
 - [x] **producción · autorack** — aplicado **29-jul-2026** con GO del fundador tras preview
       propio, en tanda aparte de staging. **Verificación: el `migrate diff` posterior salió
       VACÍO.** Motivo del adelanto: incidencia en producción (`P2022` en `quotes.job_id`).
