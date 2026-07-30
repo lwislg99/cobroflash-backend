@@ -43,6 +43,80 @@ distingue es quién puede tocarlas. Se descarta llamar a `yaqu_dev_javier` "segu
 staging" (SCRUM-84) porque implicaría el régimen de `railway` y no lo tiene. Si el fundador lo
 ve de otra forma, es una línea.
 
+## SCRUM-205 · `invoices.vf_estado` (estado de sellado explícito) — 🔴 SIN APLICAR en ninguna de las tres
+
+**🚨 EL ORDEN ES INNEGOCIABLE Y NO ES EL DE SIEMPRE: `ALTER TABLE` → `backfill` → desplegar el
+código.** Los tres pasos, en ese orden, y **el código va el ÚLTIMO**. Aquí no basta con "aplicar
+el schema antes de que el código lo use": entre el `ALTER` y el `backfill` hay un estado en el
+que **todas** las facturas históricas figuran como pendientes de sellado.
+
+**Por qué el backfill no es opcional.** La columna entra `NOT NULL DEFAULT 'pendiente_de_sellado'`
+y ese default cae sobre TODAS las filas que ya existen — incluidas las que llevan meses selladas
+con su huella en la cadena. El código nuevo trae la regla «pendiente de sellado ⇒ ni PDF ni QR»
+(`puedeProducirDocumento()`), así que si el código llega antes que el backfill, **el histórico
+entero deja de servir PDF**. El default es el CORRECTO para las filas nuevas (fail-closed: lo que
+nadie sella queda visible y sin documento) y exactamente el equivocado para las viejas.
+
+**Preview (`prisma migrate diff`, aditivo):**
+
+```sql
+ALTER TABLE "invoices" ADD COLUMN "vf_estado" TEXT NOT NULL DEFAULT 'pendiente_de_sellado';
+```
+
+**Backfill:** `prisma/backfill/scrum205-vf-estado.sql` — idempotente, en una transacción.
+1. `vf_hash IS NOT NULL` → `'sellado'` (la huella ES el hecho).
+2. `J-%`, merchant no-ES o sin `tax_id` → `'no_aplica'` (justificantes y quien no entra en VeriFactu).
+3. **Lo que quede en `'pendiente_de_sellado'` se LISTA, no se adivina:** son facturas fiscales sin
+   huella y sin motivo para no tenerla. Es un dato de negocio —facturas fantasma reales— y hay que
+   mirarlo, no barrerlo. El script lo devuelve como `SELECT` final.
+
+**Ventana:** corta y de noche. Entre el paso 1 y el 2, ninguna factura antigua sirve PDF.
+
+### 🚨 UNA SOLA PUERTA, y el gate de `vf_estado` NO puede estar activo antes del backfill
+
+Decisión del fundador (30-jul-2026), tras el rebase de esta rama sobre SCRUM-206:
+
+`exigirDocumentoEmitible` (SCRUM-206) es **la única puerta a la salida**. `puedeProducirDocumento(vf_estado)`
+**no convive con ella como segundo gate**: pasa a ser lo que la puerta consulta por dentro.
+Delegación, no dos comprobaciones.
+
+**El motivo es esta dependencia, y por eso está escrita aquí y no solo en el código:** el gate de
+`vf_estado` es el ESTRICTO. Antes de que el backfill haya corrido en una base, todas las facturas
+históricas figuran `pendiente_de_sellado` por el DEFAULT de la columna — incluidas las que llevan
+meses selladas con su huella en la cadena. Un gate que dependa solo de `vf_estado` **se cerraría
+sobre facturas legítimas** y dejaría sin PDF a todo el histórico.
+
+> **Un portón que depende de que una migración ya se haya aplicado es un portón que puede cerrarse
+> sobre facturas legítimas.**
+
+De ahí la regla de composición, que hay que respetar al implementar la delegación: **la huella
+manda**. Si la factura tiene `vf_hash`, la puerta se abre — el estado por sí solo nunca cierra una
+puerta que la huella abriría. Con eso, la ventana entre el `ALTER` y el `backfill` deja de ser
+peligrosa por construcción, y no por acordarse de un flag.
+
+⚠️ Consecuencia operativa: **NO desplegar código que consulte `vf_estado` para decidir si sale un
+documento en una base donde el backfill no haya corrido.** Es la misma razón del orden innegociable
+de arriba, dicha desde el otro lado.
+
+⚠️ **STAGING, 30-jul-2026: el ALTER está aplicado y el backfill NO.** El primer intento del
+backfill murió con `column i.merchant_id does not exist` (nombres de columna supuestos en
+snake_case; ver el encabezado del propio .sql). Va en BEGIN/COMMIT, así que **no se aplicó nada**:
+el estado es «columna creada con su DEFAULT, relleno sin aplicar», que es el punto de partida
+correcto para reintentar. Ahora mismo TODAS las facturas de staging figuran
+`pendiente_de_sellado` — inofensivo mientras `main` no consulte la columna.
+
+El fichero corregido lleva un bloque `DO` que aborta nombrando TODAS las columnas que falten,
+y hay un guard en `npm test` (`tests/scrum205-sql-a-mano-contra-schema.test.mjs`) que compara
+cada `"tabla"."columna"` de `prisma/backfill/*.sql` contra el schema **sin necesidad de base**.
+
+**Estado por base:**
+
+```
+1. acela / railway (STAGING)         — 🟡 ALTER APLICADO (30-jul-2026), BACKFILL PENDIENTE
+2. acela / yaqu_dev_javier (DEV)     — 🔴 pendiente (lo aplica el carril B)
+3. autorack (PRODUCCIÓN)             — 🔴 pendiente (lo aplica el fundador con su GO)
+```
+
 ## SCRUM-195 · `quotes.job_id` + índice (Job 1:N Quote, paso 1 de 2) — 🟡 PARCIAL
 
 > **Sigue en 🟡 PARCIAL, y no por inercia.** El paso 1 ya está en **staging y producción**, pero

@@ -44,7 +44,11 @@ const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(RAIZ, 'src');
 
 const EMBUDO = 'allocateInvoiceNumber';
-const SELLADORA = 'applyVeriFactu';
+// SCRUM-205 re-ancla esto: el sellado ya no se hace con una llamada suelta a `applyVeriFactu`
+// sino por el PUNTO ÚNICO. Exigir el punto único es MÁS estricto que exigir cualquier llamada
+// a `applyVeriFactu`, y que nadie lo puentee lo garantiza aparte
+// `tests/scrum205-un-solo-punto-de-sellado.test.mjs`, que solo deja sellar a `selladoEstado.ts`.
+const SELLADORA = 'sellarTrasEmision';
 
 /**
  * ÚNICA exención, declarada y COMPROBADA abajo en vez de supuesta.
@@ -151,7 +155,8 @@ test('SCRUM-206b · toda emisión sella (o delega, y se dice en quién)', () => 
       '  cadena. Queda emitida, numerada y FUERA — y con el portón de SCRUM-206 puesto, además\n' +
       '  sin poder producir documento. En silencio.\n\n' +
       `  No cuentes con que el PDF la selle de rebote: \`sendInvoicePaymentRequest\` no toca el PDF\n` +
-      `  ni el sellado. Llama a \`${SELLADORA}()\` DESPUÉS del commit, con el cliente global.`,
+      `  ni el sellado. Llama a \`${SELLADORA}()\` DESPUÉS del commit — el punto único de SCRUM-205,\n` +
+      '  que registra el fallo por dentro y deja la factura `pendiente_de_sellado`.',
   );
 });
 
@@ -189,7 +194,7 @@ test('SCRUM-206b (autoprueba) · el escáner ve una emisión sin sellar, y no co
     '    const n = await allocateInvoiceNumber(tx, 1, {} as any);',
     '    return tx.invoice.create({ data: { number: n } });',
     '  });',
-    '  await applyVeriFactu(inv, taxId, prisma);',
+    '  await sellarTrasEmision(inv, { country: "ES", taxId }, prisma);',
     '  return inv;',
     '}',
   ].join('\n'));

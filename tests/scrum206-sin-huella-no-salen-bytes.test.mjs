@@ -223,38 +223,22 @@ test('SCRUM-206 · (b) los consumidores de `ensureInvoicePdf` no convierten el r
 
 // ── (d) · pdfEntregadoIgual dice lo que PASÓ, no lo que se sabía en el instante del catch ──
 
-test('SCRUM-206 · (d) `pdfEntregadoIgual` va atado al `throw` que lo hace cierto', () => {
-  // Este campo es el único diseñado para medir el daño, y en `ensureInvoiceForCharge` decía
-  // `false` siendo cierto SOLO en el instante del catch: el PDF se renderizaba 34 líneas más
-  // abajo y `pdfUrl`/`qrData` se persistían. O sea que declaraba nulo el daño justo cuando
-  // ocurría. Un `false` solo es honesto si algo IMPIDE la entrega — y eso es el `throw`.
-  const src = fs.readFileSync(path.join(RAIZ, 'src/lib/invoicing.ts'), 'utf8');
-  const codigo = src.split(/\r?\n/).filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n');
-
-  const usos = [...codigo.matchAll(/pdfEntregadoIgual:\s*(\w+)/g)];
-  assert.equal(
-    usos.length, 2,
-    `🔴 ESCÁNER CIEGO: esperaba 2 usos de \`pdfEntregadoIgual\` y encuentro ${usos.length}. ` +
-      'Si aparecieron más sitios que registran sellados fallidos, este guard no los cubre.',
-  );
-
-  for (const u of usos) {
-    assert.equal(
-      u[1], 'false',
-      '🔴 `pdfEntregadoIgual: true` significa que se entregó un documento sin huella. Si eso ha ' +
-        'vuelto a ser posible, el defecto de SCRUM-206 está de vuelta.',
-    );
-    // El `throw` tiene que estar en el MISMO bloque, después del registro.
-    const despues = codigo.slice(u.index, u.index + 600);
-    assert.match(
-      despues, /throw new FacturaSinSellarError/,
-      '🔴 se registra `pdfEntregadoIgual: false` y NO se lanza después. Entonces el `false` es una ' +
-        'promesa que nada sostiene: la ejecución sigue y el documento sale igual, que es ' +
-        'exactamente lo que hacía antes de SCRUM-206.',
-    );
-  }
-});
-
+// ── (d) · RE-ANCLADO EN OTRO FICHERO, y esto no es una retirada ────────────────────────────
+//
+// Aquí vivía: «`pdfEntregadoIgual: false` va atado a un `throw` en el mismo bloque». Esa era la
+// FORMA de la propiedad cuando `lib/invoicing.ts` sellaba y, al fallar, seguía entregando: la
+// única manera de cortar era lanzar.
+//
+// SCRUM-205 mueve el sellado al punto único (`sellarTrasEmision`), donde `throw` sería
+// incorrecto —obligaría a cada llamador a decidir qué hacer con un número YA consumido—, así
+// que la forma pasa a ser «registrar y devolver un estado que el portón bloquea». Este fichero
+// se quedaría con un escáner ciego: 0 usos de `pdfEntregadoIgual` en `lib/invoicing.ts`.
+//
+// LA PROPIEDAD NO SE PIERDE: vive en `tests/scrum205-fallo-de-sellado-no-entrega.test.mjs`, y
+// allí es MÁS estricta — tres afirmaciones atadas en vez de una, porque el cambio de mecanismo
+// abre un agujero que el `throw` no tenía: **un throw no se puede ignorar, un valor devuelto
+// SÍ**. La tercera afirmación de allí (nadie descarta el resultado y entrega bytes) es la que
+// sustituye a este test, y no existía antes.
 test('SCRUM-206 · el copy del rechazo público no explica VeriFactu (reglas 26 y 30)', () => {
   // El destinatario es el cliente de un fontanero. Y la regla 26 prohíbe explicarle VeriFactu.
   assert.equal(

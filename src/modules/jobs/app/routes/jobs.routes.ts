@@ -31,6 +31,7 @@ import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/in
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
+import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 
 const router = Router();
 
@@ -606,32 +607,23 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     //
     // El merchant no viene en la consulta de este camino: se piden los dos campos que
     // decide el portón, y nada más.
+    // SCRUM-205 · punto único de sellado: después del commit y ANTES de pedir el documento.
+    // Este camino NO sellaba por su cuenta — se apoyaba en el sellado PEREZOSO de
+    // `ensureInvoicePdf`, que es justo lo que este ticket quita. Sin esta línea la factura se
+    // queda `pendiente_de_sellado` y la petición de cobro sale sin PDF.
+    //
+    // Si el merchant no se pudiera leer, NO se sella y NO se inventa nada: la factura sigue
+    // pendiente. Eso no queda mudo — el siguiente paso pide el PDF y ahí salta
+    // `invoice_pendiente_de_sellado`. El fallo se ve; lo que no puede pasar es sellar a ciegas.
     const merchantFiscal = await prisma.merchant.findUnique({
       where: { id: quote.merchantId },
       select: { country: true, taxId: true },
     });
-    if (merchantFiscal && debeEstarEnLaCadena(invoice.number, merchantFiscal)) {
-      try {
-        await applyVeriFactu(invoice, merchantFiscal.taxId!, prisma);
-      } catch (e: any) {
-        console.error('[jobs_collect_rest_C2] sellado VeriFactu falló en ' + invoice.number + ':', e?.message || e);
-        recordAudit({
-          merchantId: invoice.merchantId,
-          action: 'sellado_fallido', entityType: 'invoice', entityId: invoice.id,
-          meta: sobreFiscal({
-            actor: { tipo: 'sistema', ref: 'jobs_collect_rest_C2' },
-            flagsFiscales: flagsFiscalesDe(merchantFiscal as any),
-            payload: {
-              numero: invoice.number,
-              errorMensaje: String(e?.message ?? e).slice(0, 300),
-              puntoDeFallo: 'jobs_collect_rest_C2',
               // No sale ningún documento de aquí: lo impide el portón de SCRUM-206.
-              pdfEntregadoIgual: false,
-            },
-          }),
-        });
-      }
-    }
+    // ⚠️ El sellado pasa a `sellarTrasEmision` (SCRUM-205, punto unico). El arreglo de
+    // SCRUM-206b no se pierde: este camino SIGUE sellando, solo que por la puerta comun,
+    // que ademas registra el fallo por dentro. La llamada suelta a applyVeriFactu se va.
+    if (merchantFiscal) await sellarTrasEmision(invoice, merchantFiscal, prisma);
 
     const sent = await sendInvoicePaymentRequest(invoice.id).catch((e) => {
       console.error('[jobs] collect-rest send:', e?.message || e);
