@@ -113,8 +113,10 @@ export class DesgloseNoClasificableError extends RegistroNoEmitibleError {
 //   · Y este mismo fichero lo dice desde S1-C: «YaQu usa 'I' (incremental: líneas en
 //     negativo)», marcado `[VALIDAR asesor S1-F]` y nunca validado.
 //
-// Dos documentos y el código no dicen lo mismo, así que aquí NO se elige. Se construyen las
-// dos y se BLOQUEA hasta que P12 lo confirme contra el código, no contra un recuerdo.
+// Dos documentos y el código no dicen lo mismo. Se construyen las DOS salidas, y la que rige
+// hoy la fija `MODO_TIPO_RECTIFICATIVA` (abajo): **`I`, por decisión del fundador del
+// 30-jul-2026**, porque es la que coincide con lo que el documento realmente contiene. El modo
+// `SIN_CONFIRMAR` se conserva —y tiene su test— para el caso de que haya que volver a bloquear.
 //
 // LA ELECCIÓN ARRASTRA MÁS QUE UN VALOR:
 //   · `I` → `ImporteRectificacion` NO debe ir (AEAT 1119). Encaja con las R1 de hoy tal cual.
@@ -126,11 +128,26 @@ export class DesgloseNoClasificableError extends RegistroNoEmitibleError {
 export type ModoTipoRectificativa = 'SIN_CONFIRMAR' | 'INCREMENTAL_I' | 'SUSTITUTIVA_S';
 
 /**
- * ⏸️ SIN CONFIRMAR. Mientras valga esto, una R1 **no entra en el registro**: se excluye y se
- * reporta. No se emite sin `TipoRectificativa` (sería un 1114 seguro) ni con un valor elegido
- * por el código. Cambiar esta constante es aplicar la confirmación de P12.
+ * ✅ **`I` (INCREMENTAL) — decisión del FUNDADOR, 30-jul-2026.**
+ *
+ * Y conviene leer POR QUÉ, porque no es una elección de doctrina fiscal: **el producto ya emite
+ * el DELTA**. `invoicesAdmin.routes.ts` crea la R1 con `total: -original.total` y las líneas
+ * con el precio negado. Un documento cuyos importes SON la diferencia es, por definición, una
+ * rectificativa **por diferencias** = `I`. No se está eligiendo entre S e I: se está haciendo
+ * que la etiqueta coincida con lo que el documento ya contiene. Declararla `S` sería consignar
+ * como «total corregido» un importe que es el delta — y eso queda sellado en la huella.
+ *
+ * ⚠️ **EL RATCHET SE QUEDA Y NO SE QUITA.** El máster reserva la confirmación al dictamen del
+ * asesor (`docs/YAQU_MASTER.md:1328-1331`: *«qué `TipoRectificativa` (S/I) corresponde a
+ * nuestras R1»*), y P12 del expediente sigue diciendo lo contrario que el código. Esto NO cierra
+ * esa pregunta: la alinea con la realidad de hoy. El test del ratchet fija este valor para que
+ * el día que llegue el dictamen alguien tenga que venir aquí a propósito.
+ *
+ * Si algún día se confirma `S`, no basta con cambiar esta constante: hay que cambiar **cómo se
+ * CREAN** las R1 (que consignen el total corregido en vez del negativo) y añadir
+ * `ImporteRectificacion` (AEAT 1118). Las dos salidas están construidas y probadas.
  */
-export const MODO_TIPO_RECTIFICATIVA: ModoTipoRectificativa = 'SIN_CONFIRMAR';
+export const MODO_TIPO_RECTIFICATIVA: ModoTipoRectificativa = 'INCREMENTAL_I';
 
 /** Base y cuota SUSTITUIDAS — solo para rectificativas por sustitución (`DesgloseRectificacionType`). */
 export interface ImporteRectificado {
