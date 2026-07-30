@@ -192,13 +192,19 @@ export function formatearDuracion(ms) {
   return `${Math.floor(min / 60)}h ${min % 60}min`;
 }
 
-/** El mensaje que se encuentra quien llega y el turno está tomado. Nombra AL DUEÑO y DESDE CUÁNDO. */
-export function mensajeLockAjeno({ db, lock, ahoraMs, ttlMs }) {
+/**
+ * El mensaje que se encuentra quien llega y el turno está tomado. Nombra AL DUEÑO y DESDE CUÁNDO
+ * y —desde SCRUM-232— QUÉ está corriendo y cuánto le queda, que es lo que permite decidir entre
+ * esperar, avisar o seguir con otra cosa sin tener que romper el lock para averiguarlo.
+ * `contexto` es opcional: sin él, el mensaje degrada exactamente al de antes de SCRUM-232.
+ */
+export function mensajeLockAjeno({ db, lock, ahoraMs, ttlMs, contexto = null }) {
   const antiguedad = formatearDuracion(ahoraMs - lock.desdeMs);
   const restante = formatearDuracion(lock.desdeMs + ttlMs - ahoraMs);
   return (
     '\n❌ SCRUM-188: EL TURNO DE STAGING ESTÁ TOMADO — la tanda NO arranca.\n' +
     `   Base "${db}": la tiene «${lock.dueño}» desde ${lock.desdeIso} (hace ${antiguedad}).\n` +
+    lineasDeContexto(contexto, ahoraMs) +
     `   Caduca sola dentro de ${restante} (TTL ${formatearDuracion(ttlMs)}); a partir de ahí se reclama sola.\n\n` +
     '   POR QUÉ NO SE CORRE IGUAL: los gateados CREAN Y BORRAN merchants derivados del id. Dos\n' +
     '   tandas solapadas se los quitan la una a la otra a mitad de suite, y el resultado no es\n' +
@@ -291,7 +297,10 @@ async function enSeccionCritica(cliente, fn) {
  *        | {ok:false, motivo:'no-es-staging', db, marca}
  *        | {ok:false, motivo:'ocupado', db, lock, ahoraMs, ttlMs}
  */
-export async function adquirirLock(cliente, { dueño, ttlMs = TTL_POR_DEFECTO_MS }) {
+export async function adquirirLock(
+  cliente,
+  { dueño, ttlMs = TTL_POR_DEFECTO_MS, tipo = null, ref = null, finPrevistoMs = null },
+) {
   return enSeccionCritica(cliente, async (tx) => {
     const { db, marca, ahoraMs } = await leerMarcaCruda(tx);
 
@@ -301,13 +310,33 @@ export async function adquirirLock(cliente, { dueño, ttlMs = TTL_POR_DEFECTO_MS
 
     const lock = parsearLock(marca);
     if (lock && !estaRancio(lock, ahoraMs, ttlMs)) {
-      return { ok: false, motivo: 'ocupado', db, lock, ahoraMs, ttlMs };
+      // SCRUM-232 · al rechazar se devuelve TAMBIÉN qué está corriendo, para que quien llega
+      // pueda decidir sin romper el lock. Leerlo no puede tumbar el rechazo: si el contexto
+      // falla o no se entiende, `contexto` queda a null y el mensaje degrada al de antes.
+      let contexto = null;
+      try {
+        contexto = parsearContexto(await leerComentarioSchema(tx), lock.dueño);
+      } catch { /* advisory: nunca decide nada */ }
+      return { ok: false, motivo: 'ocupado', db, lock, ahoraMs, ttlMs, contexto };
     }
 
     const sufijoIgnorado = tieneSufijoIlegible(marca);
     const nueva = componerMarca(dueño, ahoraMs);
     await escribirMarca(tx, nueva);
-    return { ok: true, db, marca: nueva, ahoraMs, reclamado: Boolean(lock), lockPrevio: lock, sufijoIgnorado };
+
+    // SCRUM-232 · el contexto se escribe DESPUÉS del marcador y es best-effort: `fijarContexto`
+    // no propaga. Si no se pasa `tipo`, no se escribe nada nuevo — pero SÍ se borra el que
+    // hubiera, porque dejar el de la sesión anterior describiría una tanda que ya no corre.
+    const contexto = tipo
+      ? componerContexto({ dueño, tipo, ref, finPrevistoMs: finPrevistoMs ?? ahoraMs + ttlMs })
+      : null;
+    const ctxRes = await fijarContexto(tx, contexto);
+
+    return {
+      ok: true, db, marca: nueva, ahoraMs,
+      reclamado: Boolean(lock), lockPrevio: lock, sufijoIgnorado,
+      contexto, contextoEscrito: ctxRes.ok, contextoMotivo: ctxRes.motivo ?? null,
+    };
   });
 }
 
@@ -342,6 +371,167 @@ export async function soltarLock(cliente, { marcaPropia }) {
       return { ok: true, soltado: false, db, marcaActual: marca };
     }
     await escribirMarca(tx, MARCADOR);
+    // SCRUM-232 · al soltar se retira el contexto y se restaura lo que hubiera delante en el
+    // comentario del schema. Best-effort, igual que al tomarlo: un contexto huérfano ya se
+    // descarta al leerlo por no coincidir el dueño, así que esto es limpieza, no corrección.
+    await fijarContexto(tx, null);
     return { ok: true, soltado: true, db };
   });
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-232 · EL CONTEXTO: qué está corriendo, no solo quién lo tiene
+// ═════════════════════════════════════════════════════════════════════════════════════════
+//
+// EL HUECO: el marcador identifica `máquina.pid`. Con eso se sabe QUE está ocupado y nada más.
+// Quien llega no puede decidir si le compensa esperar 3 minutos o 40, ni si es su propia otra
+// sesión, así que solo le quedan dos conductas: esperar a ciegas o romper el lock. La segunda
+// es justo la que el turno existe para impedir, y la falta de información empuja hacia ella
+// cada vez que la espera se hace larga.
+//
+// ⚠️ POR QUÉ EL CONTEXTO NO VA DENTRO DEL MARCADOR, que es lo que parecía obvio.
+//
+// `RE_LOCK` está anclado con `$`. MEDIDO contra el código de este mismo fichero: una marca con
+// un campo de más da `esMarcaDeStaging === true` (la barrera aguanta, bien) pero
+// `parsearLock === null`. Y en `adquirirLock` la decisión es `if (lock && !estaRancio(…))`, así
+// que un `null` NO significa «ocupado»: cae al else y TOMA EL TURNO.
+//
+// O sea que meter el contexto en el marcador haría que cualquier sesión con el código anterior
+// viese el turno LIBRE y se lo quitase a una tanda viva — exactamente el «verde por accidente»
+// que SCRUM-188 evita. Y la ventana no la controla quien despliega: dura hasta que cada uno de
+// los ~33 worktrees rebase. La doctrina «ilegible === libre» es correcta para la barrera y es
+// justo lo que muerde al evolucionar el formato.
+//
+// Por eso el contexto vive en OTRO sitio: el comentario del schema `public`. El
+// `COMMENT ON DATABASE` no cambia ni un byte, así que el código anterior sigue leyendo un turno
+// válido y rechazando bien. El contexto es ADVISORY: si falta, si no se entiende o si es de
+// otro dueño, se ignora y el mensaje degrada exactamente al de hoy. Nunca decide nada.
+//
+// PERMISO VERIFICADO contra staging el 30-jul-2026, escribiendo y deshaciéndolo dentro de una
+// transacción (el DDL es transaccional en PostgreSQL): `COMMENT ON SCHEMA public` permitido.
+// La igualdad de nombres decía que no —el dueño es `pg_database_owner`, no `postgres`— pero
+// `pg_has_role(current_user, nspowner, 'USAGE')` dice que sí. Deducir por el nombre habría
+// descartado la opción buena.
+//
+// Y EL SLOT NO ESTABA VACÍO: traía `standard public schema`, la descripción estándar de
+// PostgreSQL. No se pisa. El contexto va como SUFIJO y al soltarlo se restaura lo que hubiera,
+// sin hardcodear ese texto — la misma doctrina con la que SCRUM-118 convive con el marcador.
+
+/** Marca de nuestro sufijo en el comentario del schema. */
+export const CTX_PREFIJO = 'YAQUCTX:';
+
+/** Vocabulario CERRADO del tipo de ejecución. Lista abierta = campo que no se puede razonar. */
+export const TIPOS_EJECUCION = ['gated', 'suelto'];
+
+const RE_CTX = new RegExp(
+  '^' + CTX_PREFIJO +
+  '([A-Za-z0-9._-]{1,64})' +                                   // dueño
+  '@(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z)' +   // fin previsto
+  '\\+(' + TIPOS_EJECUCION.join('|') + ')' +                   // tipo
+  '\\+([A-Za-z0-9._/-]{1,64})$',                               // ref (ticket o rama)
+);
+
+/** Charset del comentario del schema antes de tocar SQL. Sin comilla, barra invertida ni dólar. */
+const RE_CTX_SEGURO = /^[A-Za-z0-9._:@+/ -]{0,300}$/;
+
+/** Separa el comentario del schema en «lo que ya había» y «nuestro sufijo». */
+export function separarContexto(comentario) {
+  if (typeof comentario !== 'string' || comentario === '') return { base: '', crudo: null };
+  const i = comentario.indexOf(CTX_PREFIJO);
+  if (i === -1) return { base: comentario, crudo: null };
+  return { base: comentario.slice(0, i).trimEnd(), crudo: comentario.slice(i) };
+}
+
+/**
+ * Lee el contexto. Devuelve `null` si no hay, si no se entiende, o si es de OTRO dueño.
+ *
+ * Lo del dueño no es cosmético: el código anterior a este ticket toma el turno escribiendo solo
+ * el marcador, así que puede dejar aquí el contexto de la sesión anterior. Un contexto que
+ * describe una tanda que ya no corre es peor que no tener contexto — por eso va CLAVADO al
+ * dueño y se descarta si no coincide con el del marcador.
+ */
+export function parsearContexto(comentario, dueñoDelMarcador) {
+  const { crudo } = separarContexto(comentario);
+  if (!crudo) return null;
+  const m = RE_CTX.exec(crudo);
+  if (!m) return null;
+  const finMs = Date.parse(m[2]);
+  if (!Number.isFinite(finMs)) return null;
+  if (dueñoDelMarcador && m[1] !== dueñoDelMarcador) return null; // contexto huérfano
+  return { dueño: m[1], finIso: m[2], finMs, tipo: m[3], ref: m[4] };
+}
+
+/** Compone el sufijo. Lanza antes de escribir si no fuese representable (fail-closed barato). */
+export function componerContexto({ dueño, tipo, ref, finPrevistoMs }) {
+  const finIso = new Date(finPrevistoMs).toISOString();
+  const limpia = (v, porDefecto) =>
+    String(v ?? '').replace(/[^A-Za-z0-9._/-]/g, '-').slice(0, 64) || porDefecto;
+  const refLimpia = limpia(ref, 'sin-ref');
+  const crudo = CTX_PREFIJO + dueño + '@' + finIso + '+' + tipo + '+' + refLimpia;
+  if (!parsearContexto(crudo, dueño)) {
+    throw new Error('SCRUM-232: contexto no representable para ' +
+      JSON.stringify({ dueño, tipo, ref }) + ' — no se escribe nada.');
+  }
+  return crudo;
+}
+
+/** Une la base preservada con el sufijo (o lo quita, si `crudo` es null). */
+export function componerComentarioSchema(base, crudo) {
+  const b = (base ?? '').trimEnd();
+  const texto = crudo ? (b ? b + ' ' + crudo : crudo) : b;
+  if (!RE_CTX_SEGURO.test(texto)) {
+    throw new Error('SCRUM-232: comentario de schema fuera del charset seguro — no se escribe nada.');
+  }
+  return texto;
+}
+
+const SQL_LEER_CTX =
+  "SELECT obj_description(oid, 'pg_namespace') AS comentario FROM pg_namespace WHERE nspname = 'public'";
+
+/** Lee el comentario CRUDO del schema. No interpreta nada. */
+export async function leerComentarioSchema(cliente) {
+  const filas = await cliente.$queryRawUnsafe(SQL_LEER_CTX);
+  return filas?.[0]?.comentario ?? null;
+}
+
+async function escribirComentarioSchema(cliente, texto) {
+  if (!RE_CTX_SEGURO.test(texto)) {
+    throw new Error('SCRUM-232: comentario de schema fuera del charset seguro — abortado antes de tocar SQL.');
+  }
+  await cliente.$executeRawUnsafe(
+    "DO $$ BEGIN EXECUTE format('COMMENT ON SCHEMA public IS %L', '" + texto + "'); END $$;",
+  );
+}
+
+/**
+ * Escribe (o borra, con `contexto = null`) el contexto, PRESERVANDO lo que hubiera delante.
+ *
+ * Es best-effort por diseño y NUNCA propaga: el turno ya está tomado cuando esto corre, y que
+ * falle un dato informativo no puede tumbar una tanda. Si esto se cae, el mensaje de quien
+ * llegue degrada al de antes de este ticket, que es exactamente lo que había.
+ */
+export async function fijarContexto(cliente, contexto) {
+  try {
+    const actual = await leerComentarioSchema(cliente);
+    const { base } = separarContexto(actual);
+    await escribirComentarioSchema(cliente, componerComentarioSchema(base, contexto));
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, motivo: String(err?.message ?? err).slice(0, 200) };
+  }
+}
+
+/** Las líneas que el contexto añade al mensaje de turno ajeno. Nunca vacías: el «no consta» informa. */
+export function lineasDeContexto(ctx, ahoraMs) {
+  if (!ctx) {
+    return '   Qué está corriendo: NO CONSTA (esa sesión no dejó contexto — código anterior a SCRUM-232).\n';
+  }
+  const restante = ctx.finMs > ahoraMs ? formatearDuracion(ctx.finMs - ahoraMs) : null;
+  const queEs = ctx.tipo === 'gated' ? 'tanda gateada completa' : 'ejecución puntual';
+  return (
+    '   Qué está corriendo: ' + queEs + ' de «' + ctx.ref + '».\n' +
+    (restante
+      ? '   Estimado: le quedan ~' + restante + ' (no es el TTL: es lo que dijo durar).\n'
+      : '   Estimado: ya debería haber terminado (dijo acabar a las ' + ctx.finIso + '); puede haber muerto.\n')
+  );
 }

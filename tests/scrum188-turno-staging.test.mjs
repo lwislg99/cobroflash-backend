@@ -57,11 +57,18 @@ const min = (n) => n * 60 * 1000;
 // pasa el mismo objeto (en Prisma es un cliente de transacción; aquí da igual porque lo que se
 // vigila es la SECUENCIA leer→decidir→escribir, no el aislamiento de Postgres).
 // ─────────────────────────────────────────────────────────────────────────────────────────
-function clienteFalso({ marca, ahoraMs = T0, db = 'railway' } = {}) {
-  const estado = { marca, ahoraMs, db, escrituras: [] };
+function clienteFalso({ marca, ahoraMs = T0, db = 'railway', comentarioSchema = 'standard public schema' } = {}) {
+  const estado = { marca, ahoraMs, db, comentarioSchema, escrituras: [], escriturasSchema: [] };
   const cli = {
     estado,
+    // SCRUM-232 · el doble ROUTEA por objeto. Antes devolvía la misma fila a CUALQUIER consulta
+    // y trataba CUALQUIER escritura como si fuese el marcador, así que no podía distinguir «leí
+    // el comentario de la base» de «leí el del schema» — y en cuanto apareció un segundo objeto
+    // de catálogo (el contexto de SCRUM-232) el doble empezó a borrar el marcador él solo. Un
+    // doble que contesta lo mismo a todo no puede delatarte cuando preguntas por el sitio
+    // equivocado; es la misma familia que el `dist/` rancio y el guard que mira texto.
     async $queryRawUnsafe(sql) {
+      if (sql.includes('pg_namespace')) return [{ comentario: estado.comentarioSchema }];
       return [{ db: estado.db, marca: estado.marca, ahora: new Date(estado.ahoraMs) }];
     },
     async $executeRawUnsafe(sql) {
@@ -71,6 +78,11 @@ function clienteFalso({ marca, ahoraMs = T0, db = 'railway' } = {}) {
       if (sql.includes('advisory')) return 1;
       const m = /, '([^']*)'\); END \$\$;$/.exec(sql);
       assert.ok(m, `el SQL de escritura no tiene la forma esperada: ${sql}`);
+      if (sql.includes('COMMENT ON SCHEMA')) {
+        estado.escriturasSchema.push(m[1]);
+        estado.comentarioSchema = m[1];
+        return 1;
+      }
       estado.escrituras.push(m[1]);
       estado.marca = m[1];
       return 1;

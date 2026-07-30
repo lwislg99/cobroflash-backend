@@ -173,6 +173,23 @@ const TIMEOUT_MAYOR_MS = Math.max(...hijos.map((h) => OVERRIDE_MS || (h.pesado ?
 const TTL_MS = ttlParaTanda(TIMEOUT_MAYOR_MS);
 const DUENO = idDeSesion(os.hostname(), process.pid);
 
+// SCRUM-232 · QUÉ va a correr, para que quien llegue no tenga que adivinarlo.
+//
+// La REF sale de la rama, que es el dato que un humano reconoce a las once de la noche y el que
+// dice si lo que corre es más urgente que lo suyo. Si `git` falla —worktree raro, HEAD suelto—
+// se cae a `sin-ref` en vez de reventar: el contexto es informativo y no puede tumbar la tanda.
+//
+// La DURACIÓN PREVISTA es la suma de los timeouts de los hijos, no el TTL. Son cosas distintas y
+// confundirlas es justo lo que hace inútil el mensaje de hoy: el TTL dice cuándo caduca el turno
+// (1h 10min), no cuánto va a tardar esto (~27 min). Quien espera necesita lo segundo.
+const REF_TANDA = (() => {
+  const r = spawnSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { encoding: 'utf8' });
+  const nombre = r.status === 0 ? (r.stdout || '').trim() : '';
+  return nombre && nombre !== 'HEAD' ? nombre : 'sin-ref';
+})();
+const DURACION_PREVISTA_MS = hijos.reduce(
+  (t, h) => t + (OVERRIDE_MS || (h.pesado ? HEAVY_MS : LIGHT_MS)), 0);
+
 // La allowlist de host, INCONDICIONAL y antes de construir el cliente: desde SCRUM-188 este
 // script escribe, y lo que escribe es la barrera de seguridad de SCRUM-118.
 const urlStaging = process.env.DATABASE_URL_STAGING;
@@ -197,7 +214,10 @@ let marcaPropia = null; // el marcador exacto que escribimos; sirve para no pisa
 {
   let res;
   try {
-    res = await adquirirLock(clienteTurno, { dueño: DUENO, ttlMs: TTL_MS });
+    res = await adquirirLock(clienteTurno, {
+      dueño: DUENO, ttlMs: TTL_MS,
+      tipo: 'gated', ref: REF_TANDA, finPrevistoMs: Date.now() + DURACION_PREVISTA_MS,
+    });
   } catch (err) {
     // Fail-closed, igual que la barrera: si no se puede COORDINAR, no se corre.
     console.error(`\n❌ tanda gateada ABORTADA: no se pudo tomar el turno de staging (${err?.message || err}).`);
@@ -216,7 +236,10 @@ let marcaPropia = null; // el marcador exacto que escribimos; sirve para no pisa
   }
 
   if (!res.ok && res.motivo === 'ocupado') {
-    console.error(mensajeLockAjeno({ db: res.db, lock: res.lock, ahoraMs: res.ahoraMs, ttlMs: res.ttlMs }));
+    console.error(mensajeLockAjeno({
+      db: res.db, lock: res.lock, ahoraMs: res.ahoraMs, ttlMs: res.ttlMs,
+      contexto: res.contexto, // SCRUM-232: qué está corriendo y cuánto le queda
+    }));
     await clienteTurno.$disconnect().catch(() => {});
     process.exit(CODIGO_SALIDA_LOCK_AJENO);
   }
