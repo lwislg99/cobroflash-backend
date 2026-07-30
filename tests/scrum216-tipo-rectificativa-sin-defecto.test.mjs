@@ -86,12 +86,15 @@ test('SCRUM-216 · una R1 SIN TipoRectificativa no se construye: bloquea', () =>
 });
 
 test('SCRUM-216 · con el tipo dado explícitamente, se emite ESE y no otro', () => {
+  // SCRUM-209: el prefijo pasa de `sf:` a `sum1:` al unificar el alias del namespace en
+  // `registro.builder.ts` (ese fichero declara `xmlns:sum1` en sus tres raices y no declaraba
+  // `xmlns:sf` en ninguna). Se ajusta la ASERCION, no el guard: las capas ① y ② siguen intactas.
   // Los dos valores, para que el guard no quede atado a ninguno: si alguien cableara un
   // defecto 'I', este caso con 'S' seguiría pasando y sería ① quien lo cazara arriba.
   for (const tipo of ['S', 'I']) {
     const xml = buildRegistroAlta(rectificativa(tipo));
     assert.ok(
-      xml.includes(`<sf:TipoRectificativa>${tipo}</sf:TipoRectificativa>`),
+      xml.includes(`<sum1:TipoRectificativa>${tipo}</sum1:TipoRectificativa>`),
       `🔴 se pidió TipoRectificativa ${tipo} y el XML no lo lleva`,
     );
   }
