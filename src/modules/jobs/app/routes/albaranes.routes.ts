@@ -45,6 +45,7 @@ import { getEmissionMode } from '../../../invoicing/domain/emission.service';
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
 import { emitirRecapitulativas } from '../../domain/recapitulativa.service'; // SCRUM-171a: emisión compartida con la vía de Job
 import { sellarTrasEmision, SELLADO_HECHO } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
+import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 
 const router = Router();
 
@@ -666,6 +667,11 @@ router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
     const bd = calcVatBreakdown(invoiceLines);
     const total = (bd.base + bd.cuota).toFixed(2);
 
+    // SCRUM-246 · ANTES de pedir número. Si no hay nada que cobrar, no se emite y la serie
+    // ni se entera: comprobarlo DESPUÉS obligaría a modificar una factura ya numerada o a
+    // deshacerla, y deshacer es lo que crea el hueco que hay que justificar ante Hacienda.
+    exigirLineasFacturables(invoiceLines);
+
     const invoice = await prisma.$transaction(async (tx) => {
       const inv = await emitInvoice(tx, {
         merchantId: req.merchantId!, customerId: job.customerId, total,
@@ -711,6 +717,11 @@ router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
       ...(sellada ? {} : { message: 'Se emitió la factura, pero falló su registro VeriFactu. Revísalo antes de entregarla.' }),
     });
   } catch (err: any) {
+    // SCRUM-246: no hay nada que cobrar. No se ha emitido NI consumido número, así que el
+    // profesional arregla el presupuesto y vuelve — la serie sigue intacta.
+    if (esErrorSinLineas(err)) {
+      return res.status(409).json({ error: ERROR_SIN_LINEAS, message: COPY_ADMIN_SIN_LINEAS });
+    }
     if (err?.message === 'facturacion_no_disponible') {
       return res.status(409).json({ error: 'facturacion_no_disponible', message: 'La facturación por partes no está disponible en este modo.' });
     }

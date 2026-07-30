@@ -18,6 +18,7 @@ import {
   SELLADO_HECHO,
   ERROR_PDF_SIN_SELLAR,
 } from '../modules/invoicing/domain/selladoEstado';
+import { exigirLineasFacturables } from '../modules/invoicing/domain/lineasFacturables'; // SCRUM-246
 
 /**
  * Asegura que el PDF de una factura existe en disco (genera bajo demanda si está
@@ -303,6 +304,12 @@ export async function ensureInvoiceForCharge(
   const invoiceLines: any[] = quoteLines && Array.isArray(quoteLines.lines) && (quoteLines.lines as any[]).length > 0
     ? (quoteLines.lines as any[])
     : [{ concept: ch.concept, qty: 1, price: Number(ch.amount), tax: 0 }];
+
+  // SCRUM-246 · ANTES de pedir número. Este camino parecía a salvo por su fallback —si el
+  // presupuesto no tiene líneas, fabrica una con el importe del cobro— pero ese fallback es
+  // `price: Number(ch.amount)`: un cobro de 0 € produce una línea sin importe igual. No es
+  // excepción, es el sexto camino.
+  exigirLineasFacturables(invoiceLines);
 
   const inv = await prisma.$transaction(async (tx) => {
     const number = await allocateInvoiceNumber(tx, ch.merchantId, {

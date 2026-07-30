@@ -43,6 +43,7 @@ import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; //
 import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
 import { recordAudit, sobreFiscal, flagsFiscalesDe } from '../../../system/audit.service'; // SCRUM-206b
 import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
+import { exigirLineasFacturables, esErrorSinLineas, COPY_PUBLICO_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 
 
 const router = Router();
@@ -536,6 +537,15 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         );
         const invoiceAmount = grossOfLines(scaledLines);
 
+        // SCRUM-246 · ANTES de pedir número. Si no hay nada que cobrar, no se emite y la serie
+        // ni se entera: comprobarlo DESPUÉS obligaría a modificar una factura ya numerada o a
+        // deshacerla, y deshacer es lo que crea el hueco que hay que justificar ante Hacienda.
+        //
+        // ⚠️ Aquí quien dispara es el CLIENTE FINAL, y él no puede arreglar un presupuesto sin
+        // conceptos. Su aceptación ya está commiteada más arriba y sigue siendo válida: lo único
+        // que no ocurre es la emisión. El copy lo dice sin pedirle que repita nada.
+        exigirLineasFacturables(scaledLines);
+
         const invoice = await prisma.$transaction(async (tx) => {
           const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
             camino: 'C1',
@@ -702,6 +712,12 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
 
   } catch (err) {
     console.error('[POST /quote/:token/decision] error', err);
+    // SCRUM-246 · aquí lo lee el CLIENTE FINAL, no el profesional, y él no puede arreglar un
+    // presupuesto sin conceptos. Su aceptación YA está commiteada más arriba y sigue valiendo:
+    // lo único que no ha ocurrido es la emisión. Por eso el copy no le pide que repita nada.
+    if (esErrorSinLineas(err)) {
+      return res.status(409).json({ ok: false, error: 'factura_sin_lineas', message: COPY_PUBLICO_SIN_LINEAS });
+    }
     return res.status(500).json({ error: 'internal_error' });
   }
 });
