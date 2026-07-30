@@ -9,6 +9,7 @@
  * anual (albaranSeriesYear).
  */
 import { Prisma } from '@prisma/client';
+import { SERIE_LOCK_NS } from '../../invoicing/domain/invoiceNumber.service'; // SCRUM-234: un solo namespace
 
 export const ALBARAN_NUMBER_PREFIX = 'ALB-';
 
@@ -37,6 +38,13 @@ export async function allocateAlbaranNumber(
   merchantId: number,
   now = new Date(),
 ): Promise<string> {
+  // SCRUM-234 · misma carrera y mismo arreglo que `allocateInvoiceNumber`: read-then-write con
+  // valor absoluto, que no serializa en READ COMMITTED. También tiene reinicio anual
+  // (`albaranSeriesYear`), así que también va con cerrojo y no con `{ increment: 1 }`.
+  // El albarán no es un documento fiscal, pero su serie se le muestra al cliente y se cita en
+  // la factura recapitulativa: dos albaranes con el mismo número son dos referencias que no
+  // distinguen a qué parte de la obra corresponde cada cosa.
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LOCK_NS}::int, ${merchantId}::int)`;
   const year = now.getFullYear();
   const m = await tx.merchant.findUnique({
     where: { id: merchantId },
