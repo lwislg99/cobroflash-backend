@@ -1,6 +1,20 @@
-// SCRUM-216 (ampliación) · UNA RECTIFICATIVA NO PUEDE SALIR CON UN TipoRectificativa POR DEFECTO.
+// SCRUM-216 · TODO lo de `TipoRectificativa`, en UN SOLO FICHERO.
 //
-// POR QUÉ ESTE GUARD EXISTE, Y POR QUÉ ES PEOR QUE EL DE OMITIR
+// ⚠️ CONSOLIDACIÓN (30-jul-2026). Esto vivía en DOS ficheros que se mergearon por caminos
+// distintos: éste (guard AST + comportamiento, vía `main`) y `scrum216-tipo-rectificativa.test.mjs`
+// (los dos modos, XSD, 1118/1119, orden de elementos y el ratchet, que llegó con SCRUM-215).
+// Convivían sin chocar y **los dos pasaban**, así que la duplicación no daba rojo: se quedaba
+// callada, que es exactamente el patrón «dos listas que deben cuadrar y nada las ata». El otro
+// fichero se ELIMINA en este mismo commit; aquí no se ha perdido ni un assert de los suyos.
+//
+// LAS CUATRO COSAS QUE VIGILA, y fallan por motivos distintos:
+//   ① COMPORTAMIENTO del constructor — una R1 sin tipo LANZA.
+//   ② FORMA (AST) — no reaparece un literal por defecto en el módulo.
+//   ③ SALIDA REAL — los dos modos emiten lo que dicen, validan contra el XSD de la AEAT y
+//     respetan el orden de elementos (1118 / 1119).
+//   ④ RATCHET — la constante que decide el modo no se mueve sin que alguien lo vea.
+//
+// POR QUÉ EL GUARD ① EXISTE, Y POR QUÉ ES PEOR QUE EL DE OMITIR
 //
 // `buildRegistroAlta` emitía `${p.tipoRectificativa ?? 'I'}`. Nadie lo llamaba desde producción
 // —solo un test y `scripts/gen-registros-sample.mjs`—, así que parecía inofensivo. No lo es, y
@@ -39,11 +53,20 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { buildRegistroAlta } from '../dist/modules/fiscal/verifactu/registro.builder.js';
+import { validarRegistrosXml } from './_xsd-verifactu.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
 const FUENTE = path.join(RAIZ, 'src', 'modules', 'fiscal', 'verifactu', 'registro.builder.ts');
 const CAMPO = 'tipoRectificativa';
+
+// Datos del productor: los exige el guard fail-closed de `verifactu.service.ts` para construir
+// el XML. Valores de QA, nunca reales.
+process.env.VERIFACTU_PRODUCTOR_NOMBRE = 'QA Productor';
+process.env.VERIFACTU_PRODUCTOR_NIF = '89890001K';
+process.env.VERIFACTU_ID_SISTEMA = '01';
+process.env.VERIFACTU_VERSION = '1.0.0';
+process.env.VERIFACTU_NUM_INSTALACION = '1';
 
 const sistema = {
   nombreRazonProductor: 'PRODUCTOR DEMO SL', nifProductor: 'B12345678',
@@ -201,6 +224,137 @@ test('SCRUM-216 · el analizador ve los defectos y NO marca lo legítimo (suelo 
   // fichero —lleno de la palabra que vigila— se cazaría a sí mismo.
   assert.deepEqual(defectosParaElCampo(parsear(`// nunca escribas ${CAMPO} ?? 'I' aquí\nconst y = 1;`)), [],
     '🔴 el guard mira TEXTO: se cazaría a sí mismo y sería inmantenible');
+});
+
+// ── ③ SALIDA REAL · los dos modos, contra el XSD de la AEAT ───────────────────────────────
+// (injertado de `scrum216-tipo-rectificativa.test.mjs` al consolidar — ni un assert perdido)
+//
+// 🔴 LA CONTRADICCIÓN QUE HAY DETRÁS, porque explica por qué existen los TRES modos:
+//   · P12 del expediente: nuestras R1 «consignan el total corregido» → sería **S**.
+//   · El código: `invoicesAdmin.routes.ts` crea la R1 con `total: -original.total` y las
+//     líneas negadas — el delta, no el total corregido → es **I**.
+// El fundador resolvió (30-jul-2026) emitir **`I`**, no eligiendo doctrina fiscal sino haciendo
+// que la etiqueta coincida con lo que el documento ya contiene. El máster reserva la
+// confirmación al dictamen (`YAQU_MASTER.md:1328-1331`), y de eso se encarga el ratchet de ④.
+
+const merchantXml = {
+  id: 1, country: 'ES', taxId: 'B12345678', legalName: 'Fontanería QA S.L.', name: 'Fontanería QA',
+};
+const CLIENTE = { name: 'Cliente QA', taxId: 'A11111111' }; // con NIF: aquí se prueba la R1, no el 1189
+
+/** La factura ORIGINAL rectificada: 100 € de base al 21 % → cuota 21 €. */
+const ORIGINAL = {
+  number: '2026-CF-001',
+  createdAt: new Date('2026-03-15T10:00:00Z'),
+  lines: [{ concept: 'Reparación', qty: 1, price: 100, tax: 0.21 }],
+};
+
+/** La R1 tal y como la CREA el producto hoy: el original en negativo (el delta). */
+const mkR1 = (over = {}) => ({
+  number: '2026-CF-R-001', createdAt: new Date('2026-04-01T10:00:00Z'),
+  total: '-121.00', type: 'R1',
+  lines: [{ concept: 'Reparación', qty: 1, price: -100, tax: 0.21 }],
+  vfHash: 'A'.repeat(64), vfPrevHash: null,
+  customer: CLIENTE,
+  rectifies: ORIGINAL,
+  ...over,
+});
+
+const fakePrisma = (invoices) => ({
+  merchant: { findUnique: async () => merchantXml },
+  invoice: { findMany: async (a) => (a?.where?.vfHash ? invoices.filter((i) => i.vfHash) : invoices) },
+});
+
+const build = async (invoices, opts) => {
+  const { buildVerifactuRegistrosXml } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
+  return buildVerifactuRegistrosXml({ merchantId: 1, year: 2026 }, fakePrisma(invoices), opts);
+};
+
+test('SCRUM-216 · POR DEFECTO la R1 se declara, y se declara como I', async () => {
+  // El modo por defecto ya no bloquea: `MODO_TIPO_RECTIFICATIVA = 'INCREMENTAL_I'`.
+  const { xml, count, excluidos } = await build([mkR1()]);
+  assert.equal(count, 1, '🔴 la R1 ya no se excluye: la decisión del fundador es declararla');
+  assert.deepEqual(excluidos, []);
+  assert.match(xml, /<sum1:TipoRectificativa>I<\/sum1:TipoRectificativa>/);
+});
+
+test('SCRUM-216 · el modo SIN_CONFIRMAR sigue existiendo y sigue EXCLUYENDO', async () => {
+  // Se conserva el camino de bloqueo aunque ya no sea el de por defecto: si el dictamen
+  // obligara a volver a parar, la salida tiene que seguir construida y probada.
+  const { count, excluidos } = await build([mkR1()], { modoTipoRectificativa: 'SIN_CONFIRMAR' });
+  assert.equal(count, 0);
+  assert.equal(excluidos[0].number, '2026-CF-R-001');
+  assert.match(excluidos[0].motivo, /1114/, 'el motivo nombra el error que se evita');
+  assert.match(excluidos[0].motivo, /P12/, 'y la fuente que tiene que confirmarlo');
+});
+
+test('SCRUM-216 · una factura NORMAL no se ve afectada', async () => {
+  const f1 = { ...mkR1(), number: '2026-CF-002', type: 'F1', total: '121.00',
+    lines: ORIGINAL.lines, rectifies: null };
+  const { count, excluidos } = await build([f1]);
+  assert.equal(count, 1);
+  assert.deepEqual(excluidos, []);
+});
+
+test('SCRUM-216 · modo I (incremental): emite TipoRectificativa I y NO ImporteRectificacion', async () => {
+  const { xml, count } = await build([mkR1()], { modoTipoRectificativa: 'INCREMENTAL_I' });
+  assert.equal(count, 1);
+  assert.match(xml, /<sum1:TipoRectificativa>I<\/sum1:TipoRectificativa>/);
+  assert.doesNotMatch(xml, /ImporteRectificacion/,
+    '🔴 AEAT 1119: si NO es por sustitución, ImporteRectificacion no debe llevar valor');
+
+  const { valido, errores } = await validarRegistrosXml(xml, 'r1-incremental.xml');
+  assert.equal(valido, true, `🔴 la R1 incremental no valida:\n${errores.join('\n')}`);
+});
+
+test('SCRUM-216 · modo S (sustitutiva): emite TipoRectificativa S CON ImporteRectificacion', async () => {
+  const { xml, count } = await build([mkR1()], { modoTipoRectificativa: 'SUSTITUTIVA_S' });
+  assert.equal(count, 1);
+  assert.match(xml, /<sum1:TipoRectificativa>S<\/sum1:TipoRectificativa>/);
+  // AEAT 1118: el bloque es OBLIGATORIO, con la base y cuota SUSTITUIDAS — las de la factura
+  // RECTIFICADA (100,00 / 21,00), no las de la R1.
+  assert.match(xml, /<sum1:BaseRectificada>100\.00<\/sum1:BaseRectificada>/);
+  assert.match(xml, /<sum1:CuotaRectificada>21\.00<\/sum1:CuotaRectificada>/);
+
+  const { valido, errores } = await validarRegistrosXml(xml, 'r1-sustitutiva.xml');
+  assert.equal(valido, true, `🔴 la R1 sustitutiva no valida:\n${errores.join('\n')}`);
+});
+
+test('SCRUM-216 · el ORDEN del XSD: TipoRectificativa antes de FacturasRectificadas, y el importe después', async () => {
+  const { xml } = await build([mkR1()], { modoTipoRectificativa: 'SUSTITUTIVA_S' });
+  const i = (t) => xml.indexOf(t);
+  assert.ok(i('<sum1:TipoFactura>') < i('<sum1:TipoRectificativa>'), 'TipoRectificativa va tras TipoFactura');
+  assert.ok(i('<sum1:TipoRectificativa>') < i('<sum1:FacturasRectificadas>'), 'y antes de FacturasRectificadas');
+  assert.ok(i('<sum1:FacturasRectificadas>') < i('<sum1:ImporteRectificacion>'), 'el importe va después');
+});
+
+test('SCRUM-216 · modo S sin poder calcular el importe sustituido: BLOQUEA, no emite S a medias', async () => {
+  // Si la factura rectificada no tiene líneas, no hay base ni cuota sustituidas. Emitir S sin
+  // el bloque es un 1118 seguro; emitirlo con ceros sería inventarse la declaración.
+  const sinLineas = mkR1({ rectifies: { ...ORIGINAL, lines: null } });
+  const { count, excluidos } = await build([sinLineas], { modoTipoRectificativa: 'SUSTITUTIVA_S' });
+  assert.equal(count, 0);
+  assert.match(excluidos[0].motivo, /1118/);
+});
+
+// ── ④ EL RATCHET ──────────────────────────────────────────────────────────────────────────
+
+test('SCRUM-216 · la constante sigue en INCREMENTAL_I (y moverla exige el dictamen)', async () => {
+  const { MODO_TIPO_RECTIFICATIVA } = await import('../dist/modules/fiscal/verifactu/registro.builder.js');
+  assert.equal(
+    MODO_TIPO_RECTIFICATIVA,
+    'INCREMENTAL_I',
+    '🔴 SE HA MOVIDO EL MODO DE `TipoRectificativa`.\n\n' +
+      '  `I` está puesto por decisión del fundador (30-jul-2026) y NO es una elección de\n' +
+      '  doctrina fiscal: el producto ya emite el DELTA (`invoicesAdmin.routes.ts` niega\n' +
+      '  líneas y total), y un documento cuyos importes son la diferencia es por definición\n' +
+      '  una rectificativa por diferencias. La etiqueta coincide con el contenido.\n\n' +
+      '  El máster reserva la confirmación al dictamen del asesor (YAQU_MASTER.md:1328-1331)\n' +
+      '  y P12 sigue diciendo lo contrario que el código. Si vienes a poner `SUSTITUTIVA_S`,\n' +
+      '  no basta con esta constante: hay que cambiar cómo se CREAN las R1 para que consignen\n' +
+      '  el total corregido en vez del negativo. Una S que declare el delta consigna un\n' +
+      '  importe que no es el corregido, y eso queda sellado en la huella.',
+  );
 });
 
 test('SCRUM-216 · el módulo no suple `tipoRectificativa` con ningún literal', () => {
