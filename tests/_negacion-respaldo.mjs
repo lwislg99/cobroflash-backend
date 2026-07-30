@@ -187,7 +187,10 @@ export function clasificar(neg, positivos, varsFuente, tokensGlobal = []) {
   // Sujeto en MAYÚSCULAS = constante/estructura de datos (una lista, un mapa), no salida generada.
   // `!ORDEN_BORRADO_MERCHANT.includes('botSession')` es un invariante de MEMBRESÍA, no una búsqueda de
   // token en un XML/respuesta — no es la clase de scrum73 (donde el riesgo es un token nunca emitido).
-  if (/^[A-Z][A-Z0-9_]+$/.test(neg.subject)) return { nivel: 'DEBIL', motivo: 'sujeto = constante/estructura de datos (MAYÚSCULAS): guard de membresía, no salida generada — no es la clase de scrum73' };
+  // ⚠️ HEURÍSTICA SINTÁCTICA, NO GARANTÍA: reconoce la constante por el NOMBRE (MAYÚSCULAS), no por lo
+  // que ES. Acierta hoy; una variable mal nombrada en MAYÚSCULAS la engañaría. Es una aproximación
+  // DELIBERADA del lado de fallar-menos, no una verdad — misma disciplina que el límite del guard de 227.
+  if (/^[A-Z][A-Z0-9_]+$/.test(neg.subject)) return { nivel: 'DEBIL', motivo: 'sujeto = constante/estructura de datos (heurística SINTÁCTICA por MAYÚSCULAS, no garantía): guard de membresía, no salida generada' };
   // ¿El token aparece en un positivo de OTRO fichero? Entonces es REAL (no imposible como scrum73):
   // hermano cross-file → DÉBIL, no NINGUNO. La diferencia con scrum73 es que aquél no existía en NINGÚN sitio.
   if (t && tokensGlobal.some((pt) => contieneRama(pt, t.texto))) {

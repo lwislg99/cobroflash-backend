@@ -114,7 +114,10 @@ test('SCRUM-237 · ninguna negación de la suite se queda SIN respaldo (NINGUNO 
   process.stdout.write(
     `\n[SCRUM-237] ${corpus.totalNeg} negaciones · FUERTE ${s.FUERTE} · MEDIO ${s.MEDIO} · ` +
     `ESTRUCTURAL ${s.ESTRUCTURAL} · DÉBIL ${s.DEBIL} · NINGUNO ${s.NINGUNO}\n` +
-    `  (ESTRUCTURAL = respaldo por mutation-test, NO verificada por este guard — declarada, no fingida)\n`);
+    `  (ESTRUCTURAL = respaldo por mutation-test, NO verificada por este guard — declarada, no fingida)\n` +
+    `  ⚠️ LÍMITE: las DÉBIL se ACEPTAN y NO tienen techo. Si esta lista crece mucho, DÉBIL se vuelve el\n` +
+    `     vertedero de lo que no encaja y el guard vale MENOS de lo que parece. No hay ratchet a mano\n` +
+    `     (los sabemos acabar mal); pero míralas de vez en cuando — un DÉBIL que sube sin parar es una señal.\n`);
   if (debiles.length) {
     process.stdout.write('  DÉBIL (aceptadas y declaradas — mirar si alguna debería reforzarse):\n');
     for (const d of debiles) process.stdout.write(`    · ${rel(d.ruta)}:${d.linea}  «${d.token}» — ${d.motivo}\n`);
