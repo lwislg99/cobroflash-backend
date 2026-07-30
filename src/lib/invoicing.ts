@@ -9,6 +9,7 @@ import { isDemoMerchant, DEMO_WATERMARK } from '../modules/invoicing/domain/emis
 import { generateInvoicePdf } from './pdf';
 import { invoicesDir } from '../core/storage/dirs';
 import { applyVeriFactu } from '../modules/invoicing/domain/verifactu.service';
+import { exigirDocumentoEmitible, FacturaSinSellarError } from '../modules/invoicing/domain/portonDocumento'; // SCRUM-206
 
 /**
  * Asegura que el PDF de una factura existe en disco (genera bajo demanda si está
@@ -57,11 +58,9 @@ export async function ensureInvoicePdf(
         qrData = vf.qrUrl;
         vfHash = vf.vfHash;
       } catch (e: any) {
-        // SCRUM-207 (A6): el `catch` SE QUEDA —«preferir NO sellar antes que sellar mal»
-        // sigue siendo lo correcto— pero deja de ser mudo. Antes de esto, una factura podía
-        // existir con número, con PDF entregado y sin huella, y lo único que quedaba era esta
-        // línea en el log de un servidor. Fire-safe (T3): el documento ya salió, registrar el
-        // fallo no puede impedir nada; lo que sí puede es hacerlo consultable.
+        // SCRUM-206: el `catch` sigue REGISTRANDO —eso lo trajo SCRUM-207 (A6) y se queda— pero
+        // ya NO deja pasar. «Preferir no sellar antes que sellar mal» seguía siendo correcto; lo
+        // que estaba mal era lo de después, que entregaba el documento igual.
         console.error('[ensureInvoicePdf] VeriFactu error:', e);
         recordAudit({
           merchantId: inv.merchantId,
@@ -73,13 +72,22 @@ export async function ensureInvoicePdf(
               numero: inv.number,
               errorMensaje: String(e?.message ?? e).slice(0, 300),
               puntoDeFallo: 'ensureInvoicePdf',
-              // El dato que convierte el fallo mudo en un hecho: el cliente SE LLEVÓ el PDF.
-              pdfEntregadoIgual: true,
+              // SCRUM-206: antes decía `true` y era VERDAD — el cliente se llevaba el PDF. Ahora
+              // es `false` porque el `throw` de abajo lo impide. Este campo mide lo que PASÓ.
+              pdfEntregadoIgual: false,
             },
           }),
         });
+        // Sin huella no sale documento. El número NO se revierte (regla 29): la factura queda
+        // existiendo y sin sellar, reintentable. Revertir es lo que crearía el hueco en la serie.
+        throw new FacturaSinSellarError(inv.number, { cause: e });
       }
     }
+
+    // SCRUM-206 · PORTÓN, al borde de la salida y no al principio de la función: aquí la
+    // garantía es local y se lee de un vistazo. Cubre además el caso que el `catch` no ve — una
+    // factura que llega sin huella sin haberse intentado sellar en esta llamada.
+    exigirDocumentoEmitible({ number: inv.number, vfHash }, inv.merchant);
 
     const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
     await generateInvoicePdf({
@@ -175,9 +183,9 @@ export async function ensureInvoiceForCharge(
         vfHash  = vf.vfHash;
         // inv.qrData updated in DB by applyVeriFactu
       } catch (e: any) {
-        // SCRUM-207 (A6): mismo criterio que el otro fail-open. La palabra «se omite» seguía
-        // escrita en el código y no había forma de consultarlo después.
-        console.error('[verifactu] Error al aplicar VeriFactu, se omite:', e);
+        // SCRUM-206: mismo cambio que el otro. La palabra «se omite» describía el defecto con
+        // precisión — se omitía el sellado y la factura salía igual.
+        console.error('[verifactu] Error al aplicar VeriFactu:', e);
         recordAudit({
           merchantId: inv.merchantId,
           action: 'sellado_fallido', entityType: 'invoice', entityId: inv.id,
@@ -188,10 +196,15 @@ export async function ensureInvoiceForCharge(
               numero: inv.number,
               errorMensaje: String(e?.message ?? e).slice(0, 300),
               puntoDeFallo: 'ensureInvoiceForCharge',
-              pdfEntregadoIgual: false, // aquí aún no se ha renderizado nada
+              // SCRUM-206: este `false` ya estaba, pero era cierto solo en el INSTANTE del
+              // `catch` — el PDF se renderizaba 34 líneas más abajo y `pdfUrl`/`qrData` se
+              // persistían. El único campo diseñado para medir el daño lo declaraba nulo justo
+              // cuando ocurría. Ahora es cierto de verdad, porque el `throw` lo garantiza.
+              pdfEntregadoIgual: false,
             },
           }),
         });
+        throw new FacturaSinSellarError(inv.number, { cause: e });
       }
     }
 
@@ -201,6 +214,10 @@ export async function ensureInvoiceForCharge(
       String(inv.pdfUrl).startsWith('PENDING');
 
     let updated = inv;
+
+    // SCRUM-206 · PORTÓN. Va ANTES del `if (needsPdf)` a propósito: la rama `else` de abajo
+    // también escribía `qrData` —el fallback casero— sobre una factura sin sellar.
+    exigirDocumentoEmitible({ number: inv.number, vfHash }, merchant);
 
     if (needsPdf) {
       const customer = await prisma.customer.findUnique({ where: { id: inv.customerId } });
