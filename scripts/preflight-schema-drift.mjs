@@ -42,7 +42,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import dotenv from 'dotenv';
-import { PROD_HOST } from './_db-guard.mjs';
+import { PROD_HOST, redactarSecretos } from './_db-guard.mjs';
 
 // SCRUM-167 (b): resolver TODO contra la raíz del proyecto, no el CWD — así el preflight
 // funciona lanzado desde cualquier directorio (p. ej. desde el runner). Antes, rutas relativas
@@ -50,7 +50,11 @@ import { PROD_HOST } from './_db-guard.mjs';
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 dotenv.config({ path: path.join(PROJECT_ROOT, '.env'), quiet: true }); // .env de la raíz (no sobrescribe env presente)
 
-const url = process.argv[2] || process.env.DATABASE_URL_STAGING;
+// La URL con credencial entra SOLO por el ENTORNO, nunca por argv. Aceptarla como argv[2] la metía
+// en la línea de ESTE proceso (visible en `ps`) e invitaba a que el llamador la tecleara —
+// exponiéndola antes de entrar aquí. El único llamador (scripts/test-staging-gated.mjs) ya la pasa
+// por DATABASE_URL_STAGING, no por argumento. SCRUM-226.
+const url = process.env.DATABASE_URL_STAGING;
 // Datamodel a comparar: por defecto el REAL. `PREFLIGHT_DATAMODEL` lo sobrescribe SOLO para
 // verificar el preflight contra una COPIA mutada de schema.prisma, sin tocar nunca el fichero
 // real (SCRUM-167). En uso normal no se pone y no cambia nada.
@@ -76,7 +80,7 @@ function hostOf(u) {
 
 // ── GUARD ANTI-PROD, fail-closed ─────────────────────────────────────────────
 if (!url) {
-  console.error('❌ preflight: sin URL. Pásala como argumento o en DATABASE_URL_STAGING.');
+  console.error('❌ preflight: sin URL. Ponla en DATABASE_URL_STAGING (ya no se acepta por argumento — SCRUM-226).');
   process.exit(2);
 }
 const host = hostOf(url);
@@ -92,17 +96,23 @@ if (host === PROD_HOST) {
 }
 
 // ── migrate diff (SOLO LECTURA) ──────────────────────────────────────────────
-// Se invoca el CLI de prisma por `node <cli>` (no `npx`/`.cmd`/shell): así la URL viaja
-// como ARGUMENTO y no acaba en una línea de shell donde su contraseña sería visible.
+// La URL con credencial viaja SOLO por el ENTORNO (env DATABASE_URL, abajo), NUNCA en argv. Pasar
+// la URL como ARGUMENTO —`--from-url <url>`— la mete en el argv de este hijo, VISIBLE para cualquiera
+// con `ps` / /proc/<pid>/cmdline. Es la misma verdad que scripts/backup-dump.mjs (SCRUM-196) y la
+// forma de scripts/db-push-prod: la BD se lee con `--from-schema-datasource`, que toma la conexión
+// del datasource `url = env("DATABASE_URL")` — o sea, del entorno. El único extremo con credencial es
+// la BD (el FROM); el TO es un fichero de schema, jamás una URL. Lo vigila el guard de SCRUM-226.
 // `--script` da el SQL (para clasificar el sentido); `--exit-code` hace exit 2 si hay diff.
 const res = spawnSync(process.execPath, [
   path.join(PROJECT_ROOT, 'node_modules', 'prisma', 'build', 'index.js'), 'migrate', 'diff',
-  '--from-url', url,
+  '--from-schema-datasource', path.join(PROJECT_ROOT, 'prisma', 'schema.prisma'),
   '--to-schema-datamodel', DATAMODEL,
   '--script', '--exit-code',
 ], {
   cwd: PROJECT_ROOT, // rutas relativas (un override) se resuelven contra la raíz, no el CWD
-  env: { ...process.env, DATABASE_URL: url }, // prisma valida el datasource; sigue siendo solo lectura
+  // La credencial entra AQUÍ, por el entorno (no en argv): `--from-schema-datasource` lee la conexión
+  // del datasource `url = env("DATABASE_URL")`. Introspección pura — migrate diff no escribe.
+  env: { ...process.env, DATABASE_URL: url },
   encoding: 'utf8',
   maxBuffer: 32 * 1024 * 1024,
 });
@@ -117,10 +127,12 @@ if (res.status !== 2) {
   const err = (res.stderr || res.stdout || '').split('\n')
     .filter((l) => l.trim() && !/^warn |deprecated|Update available|major update|npm i |pris\.ly|[┌│└]/.test(l))
     .slice(0, 8).join('\n');
-  // SCRUM-196: aquí `err` YA es un string filtrado (no un objeto), así que `?? err` es lo que
-  // aplica — consistencia con los otros dos catch, NO reducción real: la superficie (el stderr de
-  // Prisma, ya filtrado por el regex de arriba) no cambia. Probado: no contiene la contraseña.
-  if (err) console.error(err?.message ?? err);
+  // SCRUM-226: se REDACTA con redactarSecretos antes de imprimir; no se confía en que el stderr de
+  // Prisma no traiga la URL. El regex de arriba solo poda ruido (warns, banners, actualizaciones); si
+  // una versión de Prisma echara la URL en su error, ese filtro no la vería y saldría aquí. Antes esto
+  // se apoyaba en un «probado: no contiene la contraseña» — una garantía sobre software de terceros que
+  // cambia de versión. No dependemos de eso: redactamos nosotros (quita la contraseña, deja el host).
+  if (err) console.error(redactarSecretos(err));
   process.exit(2);
 }
 
