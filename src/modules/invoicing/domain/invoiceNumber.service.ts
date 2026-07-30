@@ -34,6 +34,12 @@ export type CaminoEmision =
  * off NO consumen la serie fiscal — reciben una referencia `J-YYYYMMDD-XXXX` fuera
  * de toda serie de facturación ("sin numeración de factura", Parte M).
  */
+/**
+ * Namespace del advisory lock que serializa la RESERVA de serie (SCRUM-234).
+ * Distinto del de VeriFactu (1748) a propósito: reservar número y sellar son secciones
+ * críticas independientes y compartir namespace las pondría en cola una detrás de otra.
+ */
+export const SERIE_LOCK_NS = 1749;
 export const RECEIPT_NUMBER_PREFIX = 'J-';
 
 export function isReceiptNumber(number: string | null | undefined): boolean {
@@ -120,6 +126,32 @@ export async function allocateInvoiceNumber(
   },
   now = new Date(),
 ): Promise<string> {
+  // ── SCRUM-234 · SERIALIZA LA RESERVA. Primera sentencia, antes de leer nada. ──────────
+  //
+  // Lo de abajo es un read-then-write: se lee `nextInvoiceNumber` y se escribe `seq + 1` como
+  // valor ABSOLUTO. Sin cerrojo eso no serializa ni dentro de una transacción, porque ningún
+  // `$transaction` del proyecto fija `isolationLevel` (default READ COMMITTED) y el
+  // `findUnique` no bloquea la fila. Dos emisiones concurrentes leían el MISMO número.
+  //
+  // Lo que impedía el duplicado no era el aislamiento: era el índice `@@unique([merchantId,
+  // number])`. Un backstop que funciona REVENTANDO la segunda emisión — y la segunda emisión
+  // era perfectamente válida. El profesional veía `API 500: internal_error` al facturar.
+  //
+  // POR QUÉ CERROJO Y NO `{ increment: 1 }` (que es lo que usa `quoteNumber`): esta serie tiene
+  // REINICIO ANUAL (`invoiceSeriesYear`) y DOS contadores (F1 y R1). `increment` no puede
+  // expresar «y si cambió el año, vuelve a 1» en un solo update atómico, así que llevarlo a esa
+  // forma obligaría a mover el reinicio de sitio — y eso es semántica fiscal, no una
+  // optimización. El cerrojo serializa sin tocar una línea de la lógica del año.
+  //
+  // NAMESPACE PROPIO (no el de VeriFactu): compartirlo haría que reservar un número esperase a
+  // que terminase un sellado del mismo merchant, y son dos secciones críticas sin relación.
+  //
+  // ⚠️ El cerrojo es de TRANSACCIÓN: se libera al commit. Eso es lo correcto —cubre reserva Y
+  // creación, que viven en la misma `tx`— pero significa que si alguien llamase a esta función
+  // con el cliente GLOBAL en vez de con una `tx`, el lock se tomaría y liberaría en el mismo
+  // instante y no serviría de nada. Lo que lo impide es el guard de SCRUM-207 (misma `tx` en los
+  // 7 caminos); SCRUM-219 es el hueco de tipos que lo haría posible. Los dos sostienen esto.
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LOCK_NS}::int, ${merchantId}::int)`;
   const year = now.getFullYear();
   const m = await tx.merchant.findUnique({
     where: { id: merchantId },
