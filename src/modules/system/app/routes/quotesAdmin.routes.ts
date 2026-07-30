@@ -227,7 +227,9 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
         return res.status(409).json({
           ok: false,
           error: 'sellado_incompleto',
-          // [PENDIENTE microcopy oficial] — pendiente de aprobación (regla 30).
+          // Microcopy OFICIAL: aprobado por el fundador el 30-jul-2026 (regla 30). «No la entregues
+          // todavía» es lo que hace el aviso accionable: la factura existe y su número está
+          // consumido, pero no debe salir de sus manos.
           message: 'La factura se creó pero no se pudo registrar. No la entregues todavía; se reintenta solo.',
           id: invoice.id,
           number: invoice.number,
