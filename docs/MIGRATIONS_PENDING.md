@@ -98,10 +98,21 @@ peligrosa por construcción, y no por acordarse de un flag.
 documento en una base donde el backfill no haya corrido.** Es la misma razón del orden innegociable
 de arriba, dicha desde el otro lado.
 
+⚠️ **STAGING, 30-jul-2026: el ALTER está aplicado y el backfill NO.** El primer intento del
+backfill murió con `column i.merchant_id does not exist` (nombres de columna supuestos en
+snake_case; ver el encabezado del propio .sql). Va en BEGIN/COMMIT, así que **no se aplicó nada**:
+el estado es «columna creada con su DEFAULT, relleno sin aplicar», que es el punto de partida
+correcto para reintentar. Ahora mismo TODAS las facturas de staging figuran
+`pendiente_de_sellado` — inofensivo mientras `main` no consulte la columna.
+
+El fichero corregido lleva un bloque `DO` que aborta nombrando TODAS las columnas que falten,
+y hay un guard en `npm test` (`tests/scrum205-sql-a-mano-contra-schema.test.mjs`) que compara
+cada `"tabla"."columna"` de `prisma/backfill/*.sql` contra el schema **sin necesidad de base**.
+
 **Estado por base:**
 
 ```
-1. acela / railway (STAGING)         — 🔴 pendiente
+1. acela / railway (STAGING)         — 🟡 ALTER APLICADO (30-jul-2026), BACKFILL PENDIENTE
 2. acela / yaqu_dev_javier (DEV)     — 🔴 pendiente (lo aplica el carril B)
 3. autorack (PRODUCCIÓN)             — 🔴 pendiente (lo aplica el fundador con su GO)
 ```

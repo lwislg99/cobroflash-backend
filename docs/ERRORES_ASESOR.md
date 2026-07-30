@@ -102,6 +102,16 @@ Tres comprobaciones, y la tercera es la que salvó el caso real:
 
 *(Origen: incidente #19, 30-jul-2026. Complementa a R10 —que ya avisa de la colisión de numeración— y a R11, sin sustituirlas: R10 mira el ref, R11 el contenido, R12 la pregunta mal formulada. Se numera R12 porque R10 y R11 se ocuparon el 29-jul, y R7 sigue reservada por una rama sin mergear.)*
 
+**R13 · Un runbook DERIVADO de leer el código no está medido: se cae en el primer nombre supuesto. Todo lo que se escriba para ejecutar contra un sistema real —SQL a mano, comandos, rutas, nombres de columna— se DERIVA de la fuente, y si no se puede ejecutar antes, se ata con un guard que lo compare contra esa fuente.** La derivación se siente como medición: se ha leído el código, se ha razonado bien, el resultado es coherente. Pero *coherente* y *cierto* se separan justo en el detalle que nadie miró — y en un runbook el detalle es un nombre.
+
+**El caso canónico, porque es el que se comete:** Prisma renombra la columna **solo** si el campo lleva `@map`. Sin `@map`, la columna se llama exactamente como el campo, en camelCase, y en PostgreSQL eso exige comillas dobles. Suponer snake_case «porque el resto lo es» falla en las columnas sin `@map` y **en ninguna otra**, así que el error es parcial: parece que el fichero está bien porque la mayoría de nombres aciertan.
+
+Y el modo de fallo es acumulativo: **PostgreSQL nombra UNA sola columna por intento.** Se arregla esa, se relanza, muere en la siguiente. Cada iteración cuesta una ventana contra una base real. Por eso la comprobación tiene que **decirlas todas de golpe**, y por eso el sitio donde tiene que vivir es `npm test` y no el propio script: dentro del script solo protege a quien ya está ejecutando.
+
+**Regla práctica:** si el artefacto no se puede ejecutar en la sesión que lo escribe —falta la base, falta el turno, falta la credencial— eso no es una excusa para entregarlo derivado. Es la señal de que necesita un guard estático **en el mismo commit**.
+
+*(Origen: incidente #20, 30-jul-2026.)*
+
 ---
 
 ## REGISTRO DE INCIDENTES
@@ -324,6 +334,31 @@ ce5e5ae Merge pull request #236 from lwislg99/scrum-184-guard-red
 **Y el mismo día, la otra cara:** `ls-remote` dijo que la rama de SCRUM-228 no existía; media hora después existía en `ed96e93`; poco después ya estaba en `main` (PR #299). **Las tres mediciones eran correctas** — se publicó y se mergeó entre ellas. Una medición de un remoto es un **instante**, no un estado. Es la misma raíz que **R10** vista desde el otro lado: allí el ref se movía solo, aquí se movía el remoto.
 
 **Regla derivada: R12** (arriba, en LAS REGLAS).
+
+---
+
+### 2026-07-30 · #20 — Escribí un runbook y un backfill leyendo el código, y el SQL murió en el primer nombre supuesto (lección propia, del ejecutor)
+
+**Qué pasó:** entregué la guía para aplicar `invoices.vf_estado` y el fichero `prisma/backfill/scrum205-vf-estado.sql`. El `ALTER` se aplicó bien en staging. El backfill murió inmediatamente:
+
+```
+Error: column i.merchant_id does not exist
+```
+
+Escribí los nombres de columna **suponiendo snake_case en todas**. Falso: Prisma solo renombra la columna si el campo lleva `@map`. Derivado después del schema, columna por columna: el fichero usa **7 columnas distintas y 2 estaban mal** —`merchantId` y `createdAt`—, que son **justo las dos sin `@map`**.
+
+**Lo que lo hace peor que un typo:** `createdAt` habría sido el **siguiente** fallo. PostgreSQL nombra una sola columna por intento, así que el camino era arreglar, relanzar contra la base, morir en la otra, y otra vez. Y yo había **declarado explícitamente** que no podía verificarlo: entregué el runbook diciendo «no he ejecutado ninguno de estos comandos». Declararlo no lo arregla. La honestidad sobre lo no verificado es necesaria y **no** es un sustituto del mecanismo.
+
+**El patrón, que es la octava cara del de siempre:** no hubo medición, hubo **derivación**. Leí el código, razoné bien, y el resultado era coherente — pero coherente no es cierto. Y a diferencia de las otras siete caras, aquí no afirmé un estado del mundo sin comprobarlo: afirmé que *un artefacto que yo escribía* funcionaría, que es lo mismo con el sujeto cambiado.
+
+**Arreglado en tres capas, y solo una de las tres es el arreglo:**
+1. Los nombres corregidos, con la tabla de derivación (`campo → @map → columna física → comillas`) escrita **dentro** del .sql, para que el siguiente que lo lea no vuelva a suponer.
+2. Un bloque `DO` al principio del fichero que aborta nombrando **todas** las columnas que falten, antes de tocar una fila — y que dice explícitamente si la única que falta es `vf_estado`, porque entonces lo que no se ha hecho es el `ALTER`.
+3. **El que importa:** `tests/scrum205-sql-a-mano-contra-schema.test.mjs`, que compara cada `"tabla"."columna"` de `prisma/backfill/*.sql` contra el schema **en `npm test`, sin base de datos**. Verificado en rojo revirtiendo las dos columnas: las nombra **las dos a la vez**, con sugerencia («¿Querías "merchantId"?»).
+
+**Contexto que explica por qué no había guard:** este es el **único `.sql` escrito a mano del repo**. Todo el resto son migraciones históricas congeladas, generadas por Prisma desde el schema, que no pueden tener este defecto por construcción. No había precedente — y eso es exactamente cuándo hace falta el mecanismo, no cuándo se puede prescindir de él.
+
+**Regla derivada: R13** (arriba, en LAS REGLAS).
 
 ---
 
