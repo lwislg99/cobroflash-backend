@@ -68,12 +68,12 @@ jobs:
       # resolver.
       - run: npm ci
 
-      # OBLIGATORIO Y FÁCIL DE OLVIDAR: `npm ci` borra node_modules entero, y con él el
-      # cliente de Prisma GENERADO (node_modules/.prisma + @prisma/client). No hay
-      # `postinstall` en package.json que lo regenere, así que sin este paso `tsc` casca con
-      # "Cannot find module '@prisma/client'" y el CI saldría rojo el primer día por un fallo
-      # del propio CI, no del código. En local no se nota porque nadie borra node_modules.
-      # Solo genera tipos a partir de prisma/schema.prisma: NO toca ninguna base de datos.
+      # `npm ci` borra node_modules entero, y con él el cliente de Prisma GENERADO
+      # (node_modules/.prisma + @prisma/client). Desde SCRUM-238 el `postinstall` de package.json ya
+      # lo regenera al instalar (aditivo e idempotente), así que este paso es una RED EXPLÍCITA y
+      # redundante: deja el nombre del paso rojo diciendo "cliente de Prisma" si el generate fallara,
+      # en vez de que casque `tsc` más abajo con "Cannot find module '@prisma/client'". Solo genera
+      # tipos a partir de prisma/schema.prisma: NO toca ninguna base de datos.
       - name: Generar cliente de Prisma
         run: npx prisma generate
 
