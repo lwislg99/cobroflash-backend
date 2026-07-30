@@ -336,6 +336,17 @@ Son #1, #2, #3, #4, #7, #8, #9 y #10. Los otros dos (#5 y #6) son de otra famili
 **Los posteriores han abierto dos familias más, y conviene no meterlas en el saco de la primera:**
 
 - **#12 y #13 — verificar de verdad, pero el objeto equivocado.** Un guard probado en rojo con un caso que caía *fuera* del mecanismo que vigilaba, y un job de CI cuyas piezas se comprobaron una a una sin ejecutarlo nunca. Aquí sí se comprobó; lo que falló fue **sobre qué**.
+
+  > **Esta familia no es un par de anécdotas: es la más frecuente, y no se ve porque cada cara parece un despiste distinto.** No hace falta regla nueva —la de siempre, *«pregúntale al objeto, no al proceso»*, ya la cubre— pero sí hace falta ver **cuántas caras tiene**. Las que llevamos contadas, todas de la última semana:
+  >
+  > 1. **El caso de prueba fuera del mecanismo** (#12). El rojo salió, pero por un motivo que el guard no vigilaba.
+  > 2. **Las piezas sin el conjunto** (#13). Cada eslabón del job de CI verificado; el job, nunca ejecutado.
+  > 3. **El ámbito más ancho que el sujeto.** Un `grep` de la prohibición sobre el fichero ENTERO casa el comentario que la explica — el guard se caza a sí mismo. Es el motivo de que exista `tests/_guard-texto.mjs` y de que los guards de código miren el AST: un comentario no es un nodo.
+  > 4. **La salida filtrada que oculta el fallo.** `npm run build | grep "error TS"` salió vacío y se leyó como «build OK». El build **no había corrido**: faltaba la junction y `tsc` no existía. Vacío ≠ correcto.
+  > 5. **La pregunta mal formulada** (#19). `git log | grep 228` devolvió tres líneas que parecían la respuesta: eran números de PR, no de ticket.
+  > 6. **El medidor dentro de lo medido.** Un assert de «no aparece el rol crudo `sin_asignar`» medido sobre `document.body.textContent` — que **incluye el texto de los `<script>`**, donde está escrita la propia palabra. Salió rojo contra su propia prosa. Es la cara 3 una capa más allá: allí el ámbito era el fichero, aquí es el DOM que contiene al medidor.
+  >
+  > **Lo que las une:** en las seis la herramienta funcionó y la respuesta fue exacta. Lo que estaba mal era **el recorte** — qué se miró, o dónde. Por eso ninguna sale en un diff y ninguna la caza un rojo: hay que preguntarse *«¿qué mediría esto si el sistema estuviera roto?»* y, sobre todo, **¿está el medidor dentro del recorte?**
 - **#15 — composición.** Tres guards correctos, cada uno medido y probado en rojo, que **juntos** producen un estado que ninguno contempla. Es la primera vez que el defecto no está en ninguna pieza: está entre ellas. No se caza leyendo diffs —no hay línea mala que leer— sino **corriendo la suite entera** y desconfiando cuando cae un test ajeno por un motivo que no es el suyo.
 
 Esa última es la que más cuesta ver, porque **todos los indicadores están en verde mientras el sistema hace algo mal**: cada mecanismo está cumpliendo exactamente su encargo.
