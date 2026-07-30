@@ -506,17 +506,20 @@ async function renderTeamPerformance(container) {
   // o como un dato que falta; el guion dice «esto no aplica aquí».
   const sinAsignarRow = data.sinAsignar
     ? `<tr>
-        <td style="font-weight:600;color:var(--neutral-600)">${esc(data.sinAsignar.label)}<div style="font-size:11px;color:var(--neutral-500);font-weight:400">Cobros sin presupuesto de origen</div></td>
+        <td style="font-weight:600;color:var(--neutral-600)">${esc(data.sinAsignar.label)}<div style="font-size:11px;color:var(--neutral-500);font-weight:400">Cobros sin presupuesto</div></td>
         <td style="text-align:right;color:var(--neutral-400)">—</td>
         <td style="text-align:right;color:var(--neutral-400)">—</td>
         <td style="text-align:right;color:var(--neutral-600);font-weight:600">${fmtMoney(data.sinAsignar.collected)}</td>
       </tr>`
     : '';
 
-  // ⚠️ MICROCOPY PENDIENTE DE APROBACIÓN (regla 30) — los DOS únicos literales nuevos del ticket:
-  //   · «Total cobrado» — etiqueta de la fila de total
-  //   · «Cobros sin presupuesto de origen» — apoyo bajo «Sin asignar»
-  // Propuestos al fundador en el reporte. Si los cambia, se cambian AQUÍ y en ningún otro sitio.
+  // Microcopy APROBADO por el fundador el 30-jul-2026 (regla 30): «Total cobrado» tal cual, y
+  // «Cobros sin presupuesto» — se le quitó «de origen», que era la palabra que lo hacía sonar a
+  // informe contable en vez de a algo que un fontanero lee de un vistazo.
+  //
+  // Son los dos únicos literales de este panel escritos en el front. El tercero, «Sin asignar»,
+  // lo sirve el BACKEND (`data.sinAsignar.label` = ETIQUETA_SIN_ASIGNAR) y así se queda: una
+  // sola definición para las dos pantallas que responden la misma pregunta.
   const totalRow = (data.totalCollected != null)
     ? `<tr>
         <td style="font-weight:700;color:var(--neutral-900)">Total cobrado</td>
