@@ -41,7 +41,7 @@ const merchant = {
 const mkInvoice = (over = {}) => ({
   number: '2026-CF-001', createdAt: new Date('2026-03-15T10:00:00Z'), total: '121.00', type: 'F1',
   lines: [{ concept: 'Reparación', qty: 1, price: 100, tax: 0.21 }],
-  vfHash: 'A'.repeat(64), vfPrevHash: null, customer: { name: 'Cliente QA', taxId: null }, rectifies: null,
+  vfHash: 'A'.repeat(64), vfPrevHash: null, customer: { name: 'Cliente QA', taxId: 'A11111111' }, rectifies: null,
   ...over,
 });
 
@@ -192,6 +192,10 @@ test('SCRUM-209 · una rectificativa (importes en negativo) SÍ se clasifica y v
     lines: [{ concept: 'Reparación (rectificada)', qty: 1, price: -100, tax: 0.21 }],
     rectifies: { number: '2026-CF-001', createdAt: new Date('2026-03-15T10:00:00Z') },
   });
-  const { valido, errores } = await validarRegistrosXml(await build([r1]), 'rectificativa.xml');
+  const { buildVerifactuRegistrosXml } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
+  const { xml } = await buildVerifactuRegistrosXml(
+    { merchantId: 1, year: 2026 }, fakePrisma([r1]), { modoTipoRectificativa: 'INCREMENTAL_I' },
+  );
+  const { valido, errores } = await validarRegistrosXml(xml, 'rectificativa.xml');
   assert.equal(valido, true, `🔴 la rectificativa no valida:\n${errores.join('\n')}`);
 });

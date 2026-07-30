@@ -52,7 +52,7 @@ const factura = (over = {}) => ({
   vfAnulHash: null,
   vfAnulPrevHash: null,
   vfAnulTimestamp: null,
-  customer: { name: 'Cliente QA', taxId: null },
+  customer: { name: 'Cliente QA', taxId: 'A11111111' },
   rectifies: null,
   ...over,
 });

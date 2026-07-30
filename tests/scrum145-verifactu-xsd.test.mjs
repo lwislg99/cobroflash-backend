@@ -62,7 +62,7 @@ const mkInvoice = (over = {}) => ({
   // Antes decía `vat: 21` — un campo que nadie lee: el desglose salía al 0 % y este test
   // comprobaba la conformidad de un XML que el producto no genera nunca.
   lines: [{ concept: 'Reparación', qty: 1, price: 100, tax: 0.21 }],
-  vfHash: 'A'.repeat(64), vfPrevHash: null, customer: { name: 'Cliente QA', taxId: null }, rectifies: null,
+  vfHash: 'A'.repeat(64), vfPrevHash: null, customer: { name: 'Cliente QA', taxId: 'A11111111' }, rectifies: null,
   ...over,
 });
 
@@ -129,10 +129,18 @@ test('SCRUM-145: Encadenamiento — RegistroAnterior identifica la factura anter
   assert.ok(bloque.includes('2026-CF-001'), 'debe identificar la factura anterior REAL, no solo su huella');
 });
 
-test('SCRUM-145: Destinatarios solo si hay NIF (sin NIF el bloque se omite, no se emite inválido)', async () => {
-  const sinNif = await build([mkInvoice()]);
-  assert.ok(!sinNif.includes('<sum1:Destinatarios>'), 'sin NIF NO se emite Destinatarios (era XML inválido)');
-
+// SCRUM-215 · LA PREMISA DE ESTE TEST CAMBIÓ, y conviene entender por qué.
+//
+// Antes afirmaba que «sin NIF el bloque se omite, no se emite inválido». La primera mitad
+// seguía siendo cierta y la segunda era el error: omitirlo es válido contra el XSD y
+// RECHAZADO por la AEAT (1189). O sea que este test daba por bueno el defecto — con toda la
+// razón del mundo desde el XSD, que es exactamente lo que lo hacía invisible.
+//
+// Hoy, sin NIF la factura no se declara: se EXCLUYE del registro y se reporta, hasta que el
+// dictamen P11 diga cuál de las dos salidas del esquema procede. Ese caso vive ahora en
+// `tests/scrum215-sin-destinatario.test.mjs`. Aquí queda lo que este test sí prueba bien: que
+// CON NIF el bloque sale completo, con el choice obligatorio del XSD.
+test('SCRUM-145: con NIF, Destinatarios lleva NombreRazon + NIF (choice obligatorio del XSD)', async () => {
   const conNif = await build([mkInvoice({ customer: { name: 'Cliente SA', taxId: 'A11111111' } })]);
   const bloque = conNif.slice(conNif.indexOf('<sum1:Destinatarios>'), conNif.indexOf('</sum1:Destinatarios>'));
   assert.ok(bloque.includes('<sum1:NombreRazon>'), 'con NIF debe ir NombreRazon');
