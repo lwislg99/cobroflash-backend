@@ -72,6 +72,32 @@ ALTER TABLE "invoices" ADD COLUMN "vf_estado" TEXT NOT NULL DEFAULT 'pendiente_d
 
 **Ventana:** corta y de noche. Entre el paso 1 y el 2, ninguna factura antigua sirve PDF.
 
+### 🚨 UNA SOLA PUERTA, y el gate de `vf_estado` NO puede estar activo antes del backfill
+
+Decisión del fundador (30-jul-2026), tras el rebase de esta rama sobre SCRUM-206:
+
+`exigirDocumentoEmitible` (SCRUM-206) es **la única puerta a la salida**. `puedeProducirDocumento(vf_estado)`
+**no convive con ella como segundo gate**: pasa a ser lo que la puerta consulta por dentro.
+Delegación, no dos comprobaciones.
+
+**El motivo es esta dependencia, y por eso está escrita aquí y no solo en el código:** el gate de
+`vf_estado` es el ESTRICTO. Antes de que el backfill haya corrido en una base, todas las facturas
+históricas figuran `pendiente_de_sellado` por el DEFAULT de la columna — incluidas las que llevan
+meses selladas con su huella en la cadena. Un gate que dependa solo de `vf_estado` **se cerraría
+sobre facturas legítimas** y dejaría sin PDF a todo el histórico.
+
+> **Un portón que depende de que una migración ya se haya aplicado es un portón que puede cerrarse
+> sobre facturas legítimas.**
+
+De ahí la regla de composición, que hay que respetar al implementar la delegación: **la huella
+manda**. Si la factura tiene `vf_hash`, la puerta se abre — el estado por sí solo nunca cierra una
+puerta que la huella abriría. Con eso, la ventana entre el `ALTER` y el `backfill` deja de ser
+peligrosa por construcción, y no por acordarse de un flag.
+
+⚠️ Consecuencia operativa: **NO desplegar código que consulte `vf_estado` para decidir si sale un
+documento en una base donde el backfill no haya corrido.** Es la misma razón del orden innegociable
+de arriba, dicha desde el otro lado.
+
 **Estado por base:**
 
 ```
