@@ -913,7 +913,8 @@ router.get('/:id/pdf', async (req, res) => {
     if (esErrorSinSellar(err)) {
       return res.status(409).json({
         error: ERROR_SIN_SELLAR,
-        // [PENDIENTE microcopy oficial] — pantalla de admin, pendiente de aprobación (regla 30).
+        // Microcopy OFICIAL: aprobado por el fundador el 30-jul-2026 (regla 30). Lo ve el
+        // PROFESIONAL al pulsar «Abrir PDF» de una factura cuyo sellado falló.
         message: 'Esta factura todavía no está registrada. Se reintenta solo; si sigue así, avísanos.',
       });
     }
