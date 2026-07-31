@@ -314,6 +314,7 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
     // K1: desconocido → respuesta única, SIN captura, fin (throttle 24h vía sesión)
     if (session?.state === 'done') return true;
     await sendWhatsAppText({
+      sinMerchant: 'remitente-desconocido', // SCRUM-245: el numero que escribe no es cliente de ningun negocio
       to: from,
       text: '👋 Este número lo usan profesionales que trabajan con YaQu para enviar presupuestos y cobros a sus clientes. Si esperas un presupuesto, pídele a tu profesional que te lo mande por aquí.',
     });
@@ -342,6 +343,7 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
         pintor: 'Pintor', cerrajero: 'Cerrajero', climatizacion: 'Climatización',
       };
       await sendWhatsAppList({
+        sinMerchant: 'seleccion-de-negocio', // SCRUM-245: se esta preguntando DE QUE negocio se trata: el merchant es lo que falta
         to: from,
         bodyText: '👋 Este número atiende a varios negocios. ¿Con cuál quieres hablar?',
         buttonText: 'Elegir negocio',

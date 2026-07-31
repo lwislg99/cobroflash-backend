@@ -44,14 +44,15 @@ import { fileURLToPath } from 'node:url';
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /**
- * PENDIENTES DE DECLARAR, censados el 31-jul-2026 contra `origin/main` = `e9aa4bd`.
+ * PENDIENTES DE DECLARAR. Censados en 32 el 31-jul-2026 contra `origin/main` = `e9aa4bd`, y
+ * bajados a 27 en la FASE 2 al DECLARAR los 5 legítimos con su `sinMerchant`.
  *
- * 21 son el defecto (el merchant está resuelto y en ámbito y no se pasa), 5 son legítimos (no
- * existe un merchant único), y 6 están entre medias. El desglose vive en SCRUM-245; aquí solo
+ * De los 27 que quedan, 21 son el defecto (el merchant está resuelto y en ámbito y no se pasa) y
+ * 6 están entre medias. Los 21 son la FASE 3. El desglose vive en SCRUM-245; aquí solo
  * vive el número, a propósito: una lista de `fichero:línea` sería una allowlist, y una allowlist
  * es el sitio donde se apunta la excepción siguiente.
  */
-const TOPE_PENDIENTES = 32;
+const TOPE_PENDIENTES = 27;
 
 /** Suelo del escáner: hoy hay 62 llamadas. Si el análisis devuelve 0, no ha mirado. */
 const SUELO_LLAMADAS = 50;
