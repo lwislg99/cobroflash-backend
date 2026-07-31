@@ -51,6 +51,13 @@
 // dejaba los enums fuera del lado del schema —invisibles incluso en la dirección que el guard sí
 // decía cubrir— y era otra lista que envejece, la familia que mató SCRUM-199.
 //
+// LO QUE ESTO **NO** MIRA, y conviene saberlo antes de leer un verde:
+//   · El TIPO del campo, su opcionalidad y su `@default`. Dos schemas con las mismas columnas y
+//     distinto tipo (`String` ↔ `Int`) dan verde aquí, y el cliente revienta al deserializar. No
+//     entra porque es otra propiedad —la base RESPONDE, y es el cliente quien rechaza— y porque
+//     parsear defaults y tipos nativos del texto es frágil. Declarado, no descubierto en un rojo.
+//   · `@default` y `@db.<nativo>`, por lo mismo.
+//
 // LO QUE ESTO NO HACE: no compara contra la BASE, solo contra `schema.prisma`. Si la base y el
 // schema divergen (un `db push` pendiente), esto no lo ve — para eso está
 // `scripts/preflight-schema-drift.mjs`. Y no arregla la causa de fondo, el `node_modules`
@@ -68,13 +75,45 @@ import { fileURLToPath } from 'node:url';
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /**
- * Modelos y COLUMNAS escalares declaradas en el schema, parseados del texto.
+ * Quita el comentario `//` de una línea SIN romper las cadenas entrecomilladas.
+ *
+ * Hace falta porque el parser buscaba `@map("...")` en la línea ENTERA, comentario incluido: una
+ * nota como `slug String? // antes era @map("slug_url")` hacía que el guard se inventara la
+ * columna `slug_url` y diera ROJO sobre un árbol sano — y encima irreparable, porque el remedio
+ * que imprime («regenera el cliente») produce exactamente el mismo cliente. Es la trampa de
+ * autorreferencia de siempre: leer el código sin quitar los comentarios (SCRUM-176/168/3/193).
+ *
+ * Y no vale un `split('//')`: en este schema hay 44 líneas con el `@map` DETRÁS de un `@default`,
+ * así que el día que un default lleve una URL (`@default("https://…")`) un corte ingenuo se
+ * comería el `@map` y cambiaríamos un falso rojo por otro.
+ */
+export function sinComentario(linea) {
+  let dentro = null;
+  for (let i = 0; i < linea.length; i++) {
+    const c = linea[i];
+    if (dentro) {
+      if (c === dentro) dentro = null;
+    } else if (c === '"' || c === "'") {
+      dentro = c;
+    } else if (c === '/' && linea[i + 1] === '/') {
+      return linea.slice(0, i);
+    }
+  }
+  return linea;
+}
+
+/**
+ * Modelos, TABLA y COLUMNAS escalares declaradas en el schema, parseados del texto.
  *
  * Se lee el fichero y no el DMMF del propio Prisma a propósito: el DMMF sale de la última
  * generación, o sea del artefacto que precisamente estamos poniendo en duda. Preguntarle al
  * sospechoso no sirve.
  *
- * @returns {Map<string, Map<string, string>>} modelo → (campo → columna)
+ * LA TABLA cuenta tanto como las columnas: el `FROM` está en toda lectura igual que la lista de
+ * columnas, y los 24 modelos de este schema llevan `@@map`. Un cliente que lea de otra tabla
+ * falla con 42P01 en el 100% de las lecturas del modelo — el mismo desastre que las columnas.
+ *
+ * @returns {Map<string, {tabla: string, campos: Map<string, string>}>}
  */
 export function modelosDelSchema(textoSchema) {
   const bloques = [...textoSchema.matchAll(/^model\s+(\w+)\s*\{([\s\S]*?)^\}/gm)];
@@ -84,20 +123,32 @@ export function modelosDelSchema(textoSchema) {
 
   const out = new Map();
   for (const m of bloques) {
+    // `@@ignore`: Prisma NO genera ese modelo. Compararlo daría un rojo permanente que ningún
+    // `prisma generate` puede curar. Hoy el schema no usa ninguno; se contempla porque es la
+    // salida estándar de una introspección y el rojo sería irreparable.
+    if (/@@ignore\b/.test(m[2])) continue;
+
     const campos = new Map();
-    for (const linea of m[2].split('\n')) {
-      const t = linea.trim();
-      if (!t || t.startsWith('//') || t.startsWith('@@') || t.startsWith('///')) continue;
+    let tabla = m[1]; // sin @@map, Prisma usa el nombre del modelo tal cual
+    for (const cruda of m[2].split('\n')) {
+      const t = sinComentario(cruda).trim();
+      if (!t) continue;
+      if (t.startsWith('@@')) {
+        const mapTabla = t.match(/@@map\("([^"]+)"\)/);
+        if (mapTabla) tabla = mapTabla[1];
+        continue;
+      }
       const campo = t.match(/^(\w+)\s+(\w+)/);
       if (!campo) continue;
       const [, nombre, tipo] = campo;
       // ESTRUCTURAL: relación ⇔ el tipo nombra un modelo de este schema. Sin lista de tipos.
       if (nombresDeModelo.has(tipo)) continue;
+      if (/@ignore\b/.test(t)) continue; // el campo no llega al cliente: mismo motivo que @@ignore
       // La COLUMNA es lo que la base entiende. `@map` manda sobre el nombre del campo.
       const map = t.match(/@map\("([^"]+)"\)/);
       campos.set(nombre, map ? map[1] : nombre);
     }
-    out.set(m[1], campos);
+    out.set(m[1], { tabla, campos });
   }
   return out;
 }
@@ -114,10 +165,15 @@ export async function modelosDelCliente(rutaCliente) {
   const modelos = mod.Prisma?.dmmf?.datamodel?.models || [];
   return new Map(modelos.map((m) => [
     m.name,
-    // `kind: 'object'` son las RELACIONES: no son columnas y no viajan en el SELECT por defecto.
-    // Todo lo demás (scalar y enum) sí. Filtrar por «!== object» y no por una lista de kinds es
-    // lo mismo que hace la regla estructural del lado del schema: no enumera lo que acepta.
-    new Map(m.fields.filter((f) => f.kind !== 'object').map((f) => [f.name, f.dbName || f.name])),
+    {
+      // `m.dbName` es el nombre físico de la TABLA. Estaba cargado en memoria y se tiraba: los
+      // 24 modelos de este schema lo traen, así que el 100% de las tablas quedaba sin vigilar.
+      tabla: m.dbName || m.name,
+      // `kind: 'object'` son las RELACIONES: no son columnas y no viajan en el SELECT por defecto.
+      // Todo lo demás (scalar y enum) sí. Filtrar por «!== object» y no por una lista de kinds es
+      // lo mismo que hace la regla estructural del lado del schema: no enumera lo que acepta.
+      campos: new Map(m.fields.filter((f) => f.kind !== 'object').map((f) => [f.name, f.dbName || f.name])),
+    },
   ]));
 }
 
@@ -126,11 +182,16 @@ export async function modelosDelCliente(rutaCliente) {
  * SENTIDOS: lo que falta en el cliente y lo que sobra.
  */
 export function primeraDiscrepancia(delSchema, delCliente) {
-  for (const [modelo, campos] of delSchema) {
+  for (const [modelo, { tabla, campos }] of delSchema) {
     const enCliente = delCliente.get(modelo);
     if (!enCliente) return { direccion: 'falta', tipo: 'modelo', modelo };
+    // LA TABLA PRIMERO: si el `FROM` no coincide, da igual lo que pase con las columnas —
+    // ninguna lectura del modelo llega a ejecutarse.
+    if (enCliente.tabla !== tabla) {
+      return { direccion: 'tabla', tipo: 'modelo', modelo, tabla, tablaCliente: enCliente.tabla };
+    }
     for (const [campo, columna] of campos) {
-      const enClienteCol = enCliente.get(campo);
+      const enClienteCol = enCliente.campos.get(campo);
       if (enClienteCol === undefined) return { direccion: 'falta', tipo: 'campo', modelo, campo, columna };
       // Mismo campo, DISTINTA columna: el cliente pedirá un nombre que la base no conoce. Esto
       // es invisible si se comparan nombres de campo, que es lo que se hacía hasta SCRUM-235.
@@ -140,11 +201,11 @@ export function primeraDiscrepancia(delSchema, delCliente) {
     }
   }
   // LA VUELTA (SCRUM-235): lo que el cliente tiene de MÁS. Es lo que mata las lecturas.
-  for (const [modelo, campos] of delCliente) {
+  for (const [modelo, { campos }] of delCliente) {
     const enSchema = delSchema.get(modelo);
     if (!enSchema) return { direccion: 'sobra', tipo: 'modelo', modelo };
     for (const [campo, columna] of campos) {
-      if (!enSchema.has(campo)) return { direccion: 'sobra', tipo: 'campo', modelo, campo, columna };
+      if (!enSchema.campos.has(campo)) return { direccion: 'sobra', tipo: 'campo', modelo, campo, columna };
     }
   }
   return null;
@@ -169,6 +230,13 @@ export function mensaje(d) {
       '   Prisma selecciona todos los escalares por defecto, así que TODA LECTURA de ese modelo',
       `   pedirá la columna "${d.columna ?? d.modelo}" y la base la rechazará. Es lo que mató la`,
       '   tanda del 29-jul-2026: 6 tests y 27 minutos, con este guard en verde.',
+    ],
+    tabla: [
+      `   el modelo "${d.modelo}" apunta a TABLAS distintas:`,
+      `     schema.prisma → "${d.tabla}"     ·     cliente → "${d.tablaCliente}"`,
+      '',
+      '   El `FROM` está en TODA lectura igual que la lista de columnas: el cliente consultará una',
+      '   tabla que la base no tiene y fallará el 100% de las lecturas de este modelo.',
     ],
     columna: [
       `   ${qué} existe en los dos, pero apunta a COLUMNAS distintas:`,
@@ -240,7 +308,28 @@ export async function comprobarCliente({ schemaPath, rutaCliente } = {}) {
 }
 
 // Uso directo:  node scripts/_prisma-client-guard.mjs [rutaClienteAlternativo]
-const invocadoDirecto = process.argv[1] && import.meta.url.endsWith(process.argv[1].split(path.sep).join('/'));
+/**
+ * ¿Se está ejecutando este fichero COMO SCRIPT (y no importado)?
+ *
+ * ⚠️ NO se comparan `import.meta.url` y `argv[1]` por texto: la URL viene PERCENT-ENCODEADA y el
+ * argv no, así que en cualquier ruta con un espacio o un acento —`OneDrive - Empresa`, `Mi
+ * unidad`, `Documentos compartidos`— la comparación daba `false` y este fichero se convertía en
+ * un **NO-OP SILENCIOSO con exit 0**: el `pretest` de las tres tandas «pasaba» sin haber
+ * comparado nada, sin imprimir una línea.
+ *
+ * Un guard que no mide nada y sale verde es peor que no tenerlo, así que esto se exporta para
+ * poder probarlo: el test lo ejercita con una ruta con espacio, que es donde se rompía.
+ */
+export function esInvocacionDirecta(metaUrl, argv1) {
+  if (!argv1) return false;
+  try {
+    return fileURLToPath(metaUrl) === path.resolve(argv1);
+  } catch {
+    return false;
+  }
+}
+
+const invocadoDirecto = esInvocacionDirecta(import.meta.url, process.argv[1]);
 if (invocadoDirecto) {
   const r = await comprobarCliente({ rutaCliente: process.argv[2] });
   if (!r.ok) {
