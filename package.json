@@ -24,7 +24,10 @@
     "db:seed": "prisma db seed",
     "e2e:critico": "npm run build && node scripts/e2e-critico.mjs",
     "guard:prisma": "node scripts/_prisma-client-guard.mjs",
-    "pretest": "node scripts/_prisma-client-guard.mjs"
+    "pretest": "node scripts/_prisma-client-guard.mjs",
+    "//pretest:staging": "SCRUM-235: `pretest` SOLO se dispara antes del script `test`. La tanda gateada es OTRO script, asi que la unica tanda que toca una base real era la unica que no comprobaba el cliente: el 29-jul murio en la fase 4 tras 27 minutos y con el turno de staging tomado. Los dos nombres del runner (SCRUM-166) necesitan su propio pre-: npm no los deriva.",
+    "pretest:staging": "node scripts/_prisma-client-guard.mjs",
+    "pretest:staging:gated": "node scripts/_prisma-client-guard.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",
