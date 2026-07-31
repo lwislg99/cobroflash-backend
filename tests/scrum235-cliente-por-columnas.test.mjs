@@ -198,6 +198,29 @@ test('SCRUM-235 · la vuelta compara ESCALARES: comparar nombre a nombre daría 
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
+// SUELO CONTRA EL VERDE HUECO · dos conjuntos vacíos son iguales
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-235 · un schema del que no sale ningún modelo NO puede dar verde', async () => {
+  // Sin este suelo, un schema.prisma movido o truncado frente a un cliente sin DMMF devuelve
+  // `null` — o sea ✔ — sin haber comparado un solo modelo. Es el verde hueco en el propio guard:
+  // la comparación es correcta y no compara nada. Misma forma que el suelo de SCRUM-239.
+  // El fichero de sonda se escribe FUERA del repo: un `.prisma` suelto en el árbol lo vería
+  // cualquier otra sesión, y un schema fantasma es justo lo que este guard existe para cazar.
+  const tmp = process.env.TMPDIR || process.env.TEMP || '.';
+  const ruta = path.join(tmp, `scrum235-sin-modelos-${process.pid}.prisma`);
+  fs.writeFileSync(ruta, ['generator client {', '  provider = "prisma-client-js"', '}', ''].join('\n'));
+  try {
+    const r = await comprobarCliente({ schemaPath: ruta });
+    assert.equal(r.ok, false, '🔴 VERDE HUECO: un schema sin modelos dio ✔');
+    assert.match(r.mensaje, /NO SE PUEDE COMPARAR/);
+    assert.match(r.mensaje, /NINGÚN modelo/);
+  } finally {
+    fs.unlinkSync(ruta);
+  }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
 // HUECO 2 · el guard tiene que correr en la tanda que toca una base real
 // ═════════════════════════════════════════════════════════════════════════════════════════
 

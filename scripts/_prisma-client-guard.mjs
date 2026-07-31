@@ -194,10 +194,48 @@ export function mensaje(d) {
   ].join('\n');
 }
 
+/**
+ * SUELO contra el VERDE HUECO. Dos conjuntos vacíos **son iguales**, así que un schema del que no
+ * se extrae ningún modelo (fichero movido, truncado, regex rota) frente a un cliente sin DMMF
+ * daría `null` — o sea ✔ — sin haber comparado un solo modelo. En un guard de integridad ese es
+ * el peor resultado posible, y no es hipotético: es la misma forma que el suelo de la huella de
+ * SCRUM-239 y el de los escáneres de SCRUM-233.
+ *
+ * No lleva número mágico: **cero modelos no es un repo, es un fallo de lectura.**
+ */
+function sinDatos(delSchema, delCliente) {
+  if (delSchema.size === 0) return 'no se ha extraído NINGÚN modelo de schema.prisma';
+  if (delCliente.size === 0) return 'el cliente de Prisma no declara NINGÚN modelo (¿sin generar?)';
+  return null;
+}
+
 /** Devuelve `{ ok }` o `{ ok:false, mensaje }`. No imprime ni sale: eso lo decide el llamador. */
 export async function comprobarCliente({ schemaPath, rutaCliente } = {}) {
   const texto = fs.readFileSync(schemaPath || path.join(RAIZ, 'prisma', 'schema.prisma'), 'utf8');
-  const d = primeraDiscrepancia(modelosDelSchema(texto), await modelosDelCliente(rutaCliente));
+  const delSchema = modelosDelSchema(texto);
+  const delCliente = await modelosDelCliente(rutaCliente);
+
+  const vacio = sinDatos(delSchema, delCliente);
+  if (vacio) {
+    return {
+      ok: false,
+      mensaje: [
+        '',
+        '🔴 NO SE PUEDE COMPARAR EL CLIENTE DE PRISMA CON schema.prisma',
+        '',
+        `   ${vacio}.`,
+        '',
+        '   Esto NO es «todo bien»: sin datos que comparar, un verde no significaría nada — dos',
+        '   conjuntos vacíos son iguales. Falla cerrado a propósito.',
+        '',
+        '   Mira que `prisma/schema.prisma` esté donde debe y que el cliente esté generado:',
+        '     npx prisma generate   (desde ESTE worktree)',
+        '',
+      ].join('\n'),
+    };
+  }
+
+  const d = primeraDiscrepancia(delSchema, delCliente);
   return d ? { ok: false, mensaje: mensaje(d) } : { ok: true };
 }
 
