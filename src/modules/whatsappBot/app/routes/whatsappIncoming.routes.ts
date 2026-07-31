@@ -244,11 +244,17 @@ async function handleOptOutRequest(phone: string, from: string): Promise<void> {
     select: { id: true, merchantId: true, name: true },
   });
   if (!customers.length) {
-    await sendWhatsAppText({ to: from, text: 'Este número no tiene mensajes activos. No te enviaremos nada. 👋' });
+    // SCRUM-245: numero desconocido pidiendo la baja — no hay merchant al que atribuirlo.
+    await sendWhatsAppText({
+      sinMerchant: 'remitente-desconocido',
+      to: from,
+      text: 'Este número no tiene mensajes activos. No te enviaremos nada. 👋',
+    });
     return;
   }
   await prisma.customer.updateMany({ where: { phone: { in: [phone, `+${phone}`] } }, data: { waOptOut: true } });
   await sendWhatsAppText({
+    sinMerchant: 'multi-merchant', // SCRUM-245: la baja vale para TODOS sus negocios (customers.map)
     to: from,
     text: 'Hecho ✅ No te enviaremos más mensajes por WhatsApp. Si cambias de opinión, díselo a tu profesional.',
   });
@@ -322,6 +328,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
 
   if (!customers.length) {
     await sendWhatsAppText({
+      sinMerchant: 'remitente-desconocido', // SCRUM-245: el numero que escribe no es cliente de ningun negocio
       to: from,
       text: 'Hola 👋 No encontramos un presupuesto asociado a este número. Si te enviaron uno recientemente, ábrelo desde el enlace del mensaje.',
     });

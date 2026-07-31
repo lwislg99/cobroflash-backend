@@ -71,6 +71,38 @@ function avisoSinRastro(origen: string, log?: WaLogMeta): void {
   );
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-245 FASE 2 · QUIÉN MANDA EL MENSAJE — y por qué es un tipo y no una convención
+//
+// Hasta aquí el parámetro era `merchantId?: number`, y esa interrogación mentía: **omitirlo era
+// indistinguible de olvidarlo**. Y omitirlo no es gratis — sin merchant no hay rastro
+// (`logFailure` hace `return` sin él) y NO se aplica la guarda del demo (`demoSendBlocked`
+// compara contra el id del demo, así que sin id devuelve `false` y no bloquea nada).
+//
+// Ahora hay que declarar una de las dos cosas, y olvidarlas **no compila** — la línea de
+// SCRUM-207: imposible es mejor que vigilado.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+
+/** Los únicos casos en los que NO existe un merchant que pasar. Cerrado a propósito. */
+export type MotivoSinMerchant =
+  /** El número que escribe no es cliente de nadie: no hay merchant al que atribuir el envío. */
+  | 'remitente-desconocido'
+  /** El cliente lo es de VARIOS negocios y la acción vale para todos (p. ej. la baja del canal). */
+  | 'multi-merchant'
+  /** Se está preguntando de qué negocio se trata: el merchant es lo que aún no se sabe. */
+  | 'seleccion-de-negocio';
+
+/**
+ * O el merchant, o el motivo de que no lo haya. Nunca los dos, nunca ninguno.
+ *
+ * Los `?: never` son lo que hace que sean excluyentes: sin ellos, TypeScript aceptaría un objeto
+ * con las dos propiedades y volveríamos a no saber cuál manda.
+ */
+export type DestinoDeEnvio =
+  | { merchantId: number; sinMerchant?: never }
+  | { merchantId?: never; sinMerchant: MotivoSinMerchant };
+
 /**
  * J3: ¿el destinatario se dio de baja de WhatsApp para este merchant?
  * Compara el teléfono normalizado contra los clientes con `waOptOut=true`
@@ -425,6 +457,14 @@ export async function sendWhatsAppText(params: {
   text: string;
   // V0-2: si se indica, el merchant demo solo puede enviar a DEMO_SAFE_NUMBERS
   merchantId?: number;
+  // SCRUM-245 · TRANSITORIO. Esta vía NO puede llevar todavía `& DestinoDeEnvio` —la unión que
+  // hace que olvidarlo no compile— porque 30 de sus 38 llamadores aún no declaran nada y el
+  // arreglo de 21 de ellos es la FASE 3, que va en un PR propio por cambiar comportamiento
+  // (pasar `merchantId` activa `demoSendBlocked`). Mientras tanto `sinMerchant` se acepta como
+  // opcional para que los casos legítimos QUEDEN DECLARADOS ya, y el guard del llamador
+  // (tests/scrum245-llamador-declara-merchant.test.mjs) sostiene la regla con un ratchet.
+  // Cuando la FASE 3 cierre, estas dos líneas se sustituyen por `& DestinoDeEnvio`.
+  sinMerchant?: MotivoSinMerchant;
   // WA-0b: metadata opcional para el registro de un FALLO (SCRUM-115). No se usa en éxito:
   // sendWhatsAppWindowFirst ya registra el éxito de su propio texto de ventana — duplicaría
   // la fila si esta función también lo hiciera aquí.
@@ -506,9 +546,8 @@ export async function sendWhatsAppButtons(params: {
   to: string;
   bodyText: string;
   buttons: Array<{ id: string; title: string }>; // title máx 20 chars (Meta)
-  merchantId?: number; // V0-2: demo solo a DEMO_SAFE_NUMBERS
   log?: WaLogMeta;     // WA-0b (SCRUM-227): rastro del envío (éxito y fallo)
-}) {
+} & DestinoDeEnvio) { // SCRUM-245: merchantId o sinMerchant. Omitir los dos no compila.
   const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
   const token = config.WHATSAPP_ACCESS_TOKEN;
 
@@ -603,9 +642,8 @@ export async function sendWhatsAppList(params: {
   bodyText: string;
   buttonText: string; // texto del botón que despliega la lista (máx 20 chars)
   rows: Array<{ id: string; title: string; description?: string }>;
-  merchantId?: number; // V0-2: demo solo a DEMO_SAFE_NUMBERS
   log?: WaLogMeta;     // WA-0b (SCRUM-227): rastro del envío (éxito y fallo)
-}) {
+} & DestinoDeEnvio) { // SCRUM-245: merchantId o sinMerchant. Omitir los dos no compila.
   const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
   const token = config.WHATSAPP_ACCESS_TOKEN;
 
@@ -707,9 +745,8 @@ export async function sendWhatsAppCtaUrl(params: {
   url: string;
   header?: string;      // texto de cabecera (máx 60)
   footer?: string;      // texto de pie (máx 60)
-  merchantId?: number;  // V0-2: demo solo a DEMO_SAFE_NUMBERS
   log?: WaLogMeta;      // WA-0b (SCRUM-227): rastro del envío (éxito y fallo)
-}) {
+} & DestinoDeEnvio) { // SCRUM-245: merchantId o sinMerchant. Omitir los dos no compila.
   const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
   const token = config.WHATSAPP_ACCESS_TOKEN;
 
@@ -868,9 +905,8 @@ export async function sendWhatsAppDocument(params: {
 export async function sendWhatsAppLocationRequest(params: {
   to: string;
   bodyText: string;
-  merchantId?: number;
   log?: WaLogMeta; // WA-0b (SCRUM-227): rastro del envío (éxito y fallo)
-}) {
+} & DestinoDeEnvio) { // SCRUM-245: merchantId o sinMerchant. Omitir los dos no compila.
   const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
   const token = config.WHATSAPP_ACCESS_TOKEN;
 
