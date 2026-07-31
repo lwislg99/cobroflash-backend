@@ -299,7 +299,8 @@ async function enSeccionCritica(cliente, fn) {
  */
 export async function adquirirLock(
   cliente,
-  { dueño, ttlMs = TTL_POR_DEFECTO_MS, tipo = null, ref = null, finPrevistoMs = null },
+  { dueño, ttlMs = TTL_POR_DEFECTO_MS, tipo = null, ref = null, finPrevistoMs = null,
+    señalAntesDeMs = null },
 ) {
   return enSeccionCritica(cliente, async (tx) => {
     const { db, marca, ahoraMs } = await leerMarcaCruda(tx);
@@ -328,7 +329,11 @@ export async function adquirirLock(
     // no propaga. Si no se pasa `tipo`, no se escribe nada nuevo — pero SÍ se borra el que
     // hubiera, porque dejar el de la sesión anterior describiría una tanda que ya no corre.
     const contexto = tipo
-      ? componerContexto({ dueño, tipo, ref, finPrevistoMs: finPrevistoMs ?? ahoraMs + ttlMs })
+      ? componerContexto({
+          dueño, tipo, ref,
+          finPrevistoMs: finPrevistoMs ?? ahoraMs + ttlMs,
+          señalAntesDeMs,   // SCRUM-249 · el compromiso; null = no se promete nada
+        })
       : null;
     const ctxRes = await fijarContexto(tx, contexto);
 
@@ -346,7 +351,7 @@ export async function adquirirLock(
  * no hay bucle de eventos donde poner un temporizador).
  * Si el marcador ya no es el nuestro, NO lo pisa: lo reporta.
  */
-export async function refrescarLock(cliente, { marcaPropia, dueño }) {
+export async function refrescarLock(cliente, { marcaPropia, dueño, señalAntesDeMs = null }) {
   return enSeccionCritica(cliente, async (tx) => {
     const { db, marca, ahoraMs } = await leerMarcaCruda(tx);
     if (marca !== marcaPropia) {
@@ -354,7 +359,27 @@ export async function refrescarLock(cliente, { marcaPropia, dueño }) {
     }
     const nueva = componerMarca(dueño, ahoraMs);
     await escribirMarca(tx, nueva);
-    return { ok: true, db, marca: nueva, ahoraMs };
+
+    // SCRUM-249 · RENOVAR EL COMPROMISO, y esta es la pieza que hace que el latido NO produzca
+    // locks eternos. Esto NO se llama desde un temporizador: se llama al terminar cada hijo, o
+    // sea que la señal es de PROGRESO y no de existencia. Un proceso colgado pero vivo —el caso
+    // real: 0,25 s de CPU en 29 minutos— no termina ningún hijo, así que nunca renueva y su
+    // compromiso vence solo. Un `setInterval` habría hecho lo contrario: mantenerlo vivo para
+    // siempre y convertir un bloqueo de 45 min en uno infinito.
+    let contextoNuevo = null;
+    if (señalAntesDeMs !== null) {
+      try {
+        const previo = parsearContexto(await leerComentarioSchema(tx), dueño);
+        if (previo) {
+          contextoNuevo = componerContexto({
+            dueño, tipo: previo.tipo, ref: previo.ref,
+            finPrevistoMs: previo.finMs, señalAntesDeMs,
+          });
+          await fijarContexto(tx, contextoNuevo);
+        }
+      } catch { /* advisory: que falle el compromiso no puede tumbar la tanda */ }
+    }
+    return { ok: true, db, marca: nueva, ahoraMs, contexto: contextoNuevo };
   });
 }
 
@@ -423,12 +448,20 @@ export const CTX_PREFIJO = 'YAQUCTX:';
 /** Vocabulario CERRADO del tipo de ejecución. Lista abierta = campo que no se puede razonar. */
 export const TIPOS_EJECUCION = ['gated', 'suelto'];
 
+// SCRUM-249 · el último campo, el COMPROMISO, es OPCIONAL a propósito:
+//   · código nuevo leyendo un contexto VIEJO (sin compromiso) → parsea, y lo reporta como
+//     «sin compromiso» en vez de romper;
+//   · código viejo leyendo un contexto NUEVO → no casa, devuelve null y degrada a «NO CONSTA».
+// Esa asimetría es aceptable porque el contexto es ADVISORY: nunca decide si el turno está
+// libre. En el MARCADOR sería inaceptable — allí un ilegible se lee como LIBRE y le quitaría el
+// turno a una tanda viva (medido en SCRUM-232), y por eso el compromiso NO va en el marcador.
 const RE_CTX = new RegExp(
   '^' + CTX_PREFIJO +
   '([A-Za-z0-9._-]{1,64})' +                                   // dueño
   '@(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z)' +   // fin previsto
   '\\+(' + TIPOS_EJECUCION.join('|') + ')' +                   // tipo
-  '\\+([A-Za-z0-9._/-]{1,64})$',                               // ref (ticket o rama)
+  '\\+([A-Za-z0-9._/-]{1,64})' +                               // ref (ticket o rama)
+  '(?:\\+(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z))?$', // compromiso (opcional)
 );
 
 /** Charset del comentario del schema antes de tocar SQL. Sin comilla, barra invertida ni dólar. */
@@ -458,16 +491,41 @@ export function parsearContexto(comentario, dueñoDelMarcador) {
   const finMs = Date.parse(m[2]);
   if (!Number.isFinite(finMs)) return null;
   if (dueñoDelMarcador && m[1] !== dueñoDelMarcador) return null; // contexto huérfano
-  return { dueño: m[1], finIso: m[2], finMs, tipo: m[3], ref: m[4] };
+  const señalMs = m[5] ? Date.parse(m[5]) : null;
+  return {
+    dueño: m[1], finIso: m[2], finMs, tipo: m[3], ref: m[4],
+    // SCRUM-249 · el COMPROMISO: «vuelvo a dar señales antes de este instante».
+    señalIso: m[5] ?? null,
+    señalMs: Number.isFinite(señalMs) ? señalMs : null,
+  };
+}
+
+/**
+ * SCRUM-249 · ¿VIVO o HUÉRFANO? Se decide comparando el compromiso publicado con el reloj de la
+ * BASE — el mismo para todas las máquinas.
+ *
+ * ⚠️ POR QUÉ ESTO NO MIRA AL PROCESO, y es el requisito y no una limitación: el turno lo puede
+ * tener otra máquina, y desde aquí su PID no existe. Cualquier liveness que dependa de inspeccionar
+ * el proceso ajeno no resuelve el caso que importa. Por eso el que sostiene el turno PUBLICA
+ * cuándo va a volver, y quien llega solo compara fechas.
+ */
+export function estadoDeVida(ctx, ahoraMs) {
+  if (!ctx) return { estado: 'no-consta', retrasoMs: 0 };
+  if (ctx.señalMs === null) return { estado: 'sin-compromiso', retrasoMs: 0 };
+  return ahoraMs <= ctx.señalMs
+    ? { estado: 'vivo', retrasoMs: 0 }
+    : { estado: 'vencido', retrasoMs: ahoraMs - ctx.señalMs };
 }
 
 /** Compone el sufijo. Lanza antes de escribir si no fuese representable (fail-closed barato). */
-export function componerContexto({ dueño, tipo, ref, finPrevistoMs }) {
+export function componerContexto({ dueño, tipo, ref, finPrevistoMs, señalAntesDeMs = null }) {
   const finIso = new Date(finPrevistoMs).toISOString();
   const limpia = (v, porDefecto) =>
     String(v ?? '').replace(/[^A-Za-z0-9._/-]/g, '-').slice(0, 64) || porDefecto;
   const refLimpia = limpia(ref, 'sin-ref');
-  const crudo = CTX_PREFIJO + dueño + '@' + finIso + '+' + tipo + '+' + refLimpia;
+  const cola = Number.isFinite(señalAntesDeMs) && señalAntesDeMs !== null
+    ? '+' + new Date(señalAntesDeMs).toISOString() : '';
+  const crudo = CTX_PREFIJO + dueño + '@' + finIso + '+' + tipo + '+' + refLimpia + cola;
   if (!parsearContexto(crudo, dueño)) {
     throw new Error('SCRUM-232: contexto no representable para ' +
       JSON.stringify({ dueño, tipo, ref }) + ' — no se escribe nada.');
@@ -528,10 +586,20 @@ export function lineasDeContexto(ctx, ahoraMs) {
   }
   const restante = ctx.finMs > ahoraMs ? formatearDuracion(ctx.finMs - ahoraMs) : null;
   const queEs = ctx.tipo === 'gated' ? 'tanda gateada completa' : 'ejecución puntual';
+  const vida = estadoDeVida(ctx, ahoraMs);
+  const lineaVida =
+    vida.estado === 'vivo'
+      ? '   Señal de vida: VIVO — se comprometió a dar señales antes de las ' + ctx.señalIso + '.\n'
+      : vida.estado === 'vencido'
+        ? '   Señal de vida: 🔴 VENCIDO hace ' + formatearDuracion(vida.retrasoMs) +
+          ' — se comprometió a dar señales antes de las ' + ctx.señalIso + ' y no lo hizo.\n' +
+          '                  Probablemente HUÉRFANO: el proceso puede seguir en memoria y estar colgado.\n'
+        : '   Señal de vida: NO CONSTA (esa sesión no publica compromiso — código anterior a SCRUM-249).\n';
   return (
     '   Qué está corriendo: ' + queEs + ' de «' + ctx.ref + '».\n' +
     (restante
       ? '   Estimado: le quedan ~' + restante + ' (no es el TTL: es lo que dijo durar).\n'
-      : '   Estimado: ya debería haber terminado (dijo acabar a las ' + ctx.finIso + '); puede haber muerto.\n')
+      : '   Estimado: ya debería haber terminado (dijo acabar a las ' + ctx.finIso + '); puede haber muerto.\n') +
+    lineaVida
   );
 }

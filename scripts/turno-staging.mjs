@@ -39,11 +39,14 @@ import {
   lineasDeContexto, TTL_POR_DEFECTO_MS, CODIGO_SALIDA_LOCK_AJENO,
 } from './_staging-lock.mjs';
 import { assertSafeStagingUrl, STAGING_HOST } from './_db-guard.mjs';
+import { guardarNota, leerNota, borrarNota } from './_turno-nota.mjs';
 
 // Dónde se recuerda la marca propia entre `tomar` y `soltar`. El pid cambia entre invocaciones,
 // así que `soltar` no puede recomponerla: o se recuerda, o se pasa a mano. Si el fichero se
 // pierde, el TTL sigue siendo el mecanismo que de verdad libera el turno.
-const FICHERO_MARCA = path.join(os.tmpdir(), 'yaqu-turno-staging.json');
+// SCRUM-249 · la nota vive en `_turno-nota.mjs` para que el runner gateado escriba y lea
+// EXACTAMENTE la misma. Antes solo la escribia este CLI, y por eso una tanda que moria mal
+// dejaba el turno secuestrado hasta el TTL: nadie podia recomponer su marca (lleva el PID).
 
 const args = process.argv.slice(2);
 const modo = args[0];
@@ -115,6 +118,10 @@ try {
     const r = await adquirirLock(cliente, {
       dueño, ttlMs: TTL_POR_DEFECTO_MS,
       tipo: 'suelto', ref, finPrevistoMs: Date.now() + minutos * 60 * 1000,
+      // SCRUM-249 · un turno SUELTO no tiene hijos, o sea que no hay senal de progreso que lo
+      // renueve: el compromiso es la ventana que declara el humano. Si se le pasa, sale VENCIDO
+      // -- que es exactamente lo que se quiere saber de un `tomar` que alguien olvido soltar.
+      señalAntesDeMs: Date.now() + minutos * 60 * 1000,
     });
 
     if (!r.ok && r.motivo === 'no-es-staging') {
@@ -130,7 +137,7 @@ try {
     }
 
     try {
-      fs.writeFileSync(FICHERO_MARCA, JSON.stringify({ marca: r.marca, db: r.db }), 'utf8');
+      guardarNota({ marca: r.marca, db: r.db });
     } catch { /* si no se puede recordar, queda `soltar --marca`; y el TTL por debajo */ }
 
     console.log(`\n✅ Turno TOMADO sobre la base "${r.db}" para «${ref}» (~${minutos} min).`);
@@ -144,7 +151,8 @@ try {
     let marcaPropia = opcion('marca');
     if (!marcaPropia) {
       try {
-        marcaPropia = JSON.parse(fs.readFileSync(FICHERO_MARCA, 'utf8')).marca;
+        marcaPropia = leerNota();
+        if (!marcaPropia) throw new Error('sin nota');
       } catch {
         console.error('\n❌ no sé cuál era tu marca: no hay nota guardada y no se pasó --marca.');
         console.error('   Mira `estado` y pásala con --marca "<marca>", o espera al TTL.\n');
@@ -154,7 +162,7 @@ try {
     const r = await soltarLock(cliente, { marcaPropia });
     if (r.soltado) {
       console.log(`\n✅ Turno SOLTADO sobre la base "${r.db}" (marcador limpio).\n`);
-      try { fs.unlinkSync(FICHERO_MARCA); } catch { /* da igual */ }
+      borrarNota();
     } else {
       console.log(`\n⚠️  No se soltó: el marcador ya no era el tuyo (actual: ${JSON.stringify(r.marcaActual)}).`);
       console.log('   Puede que caducara y otra sesión lo reclamara. No se le quita a nadie.\n');

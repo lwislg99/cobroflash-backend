@@ -59,12 +59,15 @@ import {
   soltarLock,
   idDeSesion,
   ttlParaTanda,
+  MARGEN_TTL_MS,   // SCRUM-249 · margen del compromiso, el mismo que usa el TTL
   formatearDuracion,
   mensajeLockAjeno,
   mensajeLockPerdido,
   CODIGO_SALIDA_LOCK_AJENO,
   CODIGO_SALIDA_LOCK_PERDIDO,
 } from './_staging-lock.mjs';
+// SCRUM-249: la nota local, para que `turno:soltar` pueda liberar una tanda que murio mal.
+import { guardarNota, borrarNota } from './_turno-nota.mjs';
 // SCRUM-161: al terminar, el runner deja un RECIBO de que la tanda corrió. Es lo único que el
 // guard de cierre acepta como evidencia, porque es lo único que no se puede teclear.
 // SCRUM-239: `huellaDeCodigo` es el ANCLA del recibo, y se importa (no se reimplementa) para
@@ -219,6 +222,10 @@ let marcaPropia = null; // el marcador exacto que escribimos; sirve para no pisa
     res = await adquirirLock(clienteTurno, {
       dueño: DUENO, ttlMs: TTL_MS,
       tipo: 'gated', ref: REF_TANDA, finPrevistoMs: Date.now() + DURACION_PREVISTA_MS,
+      // SCRUM-249 · el primer compromiso cubre el preflight más el primer hijo. Sin esto, entre
+      // tomar el turno y terminar el primer hijo el estado sería «sin compromiso», que es
+      // justamente el hueco que este ticket cierra.
+      señalAntesDeMs: Date.now() + (OVERRIDE_MS || (hijos[0]?.pesado ? HEAVY_MS : LIGHT_MS)) + MARGEN_TTL_MS,
     });
   } catch (err) {
     // Fail-closed, igual que la barrera: si no se puede COORDINAR, no se corre.
@@ -247,6 +254,9 @@ let marcaPropia = null; // el marcador exacto que escribimos; sirve para no pisa
   }
 
   marcaPropia = res.marca;
+  // SCRUM-249: sin esta nota, una tanda que muere de forma anomala deja el turno secuestrado
+  // hasta el TTL, porque la marca lleva el PID y nadie puede recomponerla.
+  guardarNota({ marca: res.marca, db: res.db });
   console.log(`🔒 turno de staging TOMADO en "${res.db}" por «${DUENO}» (caduca solo en ${formatearDuracion(TTL_MS)}).`);
   if (res.reclamado) {
     console.log(`   (reclamado: lo tenía «${res.lockPrevio.dueño}» desde ${res.lockPrevio.desdeIso} y había caducado.)`);
@@ -266,9 +276,26 @@ class SalidaTanda extends Error {
 }
 const salir = (codigo) => { throw new SalidaTanda(codigo); };
 
-/** Renueva el turno entre hijos. Si ya no es nuestro, aborta: la tanda deja de ser evidencia. */
-async function refrescarTurno() {
-  const r = await refrescarLock(clienteTurno, { marcaPropia, dueño: DUENO });
+/** Timeout del hijo que se va a lanzar. Es la base del compromiso de SCRUM-249. */
+const timeoutDe = (h) => (h ? (OVERRIDE_MS || (h.pesado ? HEAVY_MS : LIGHT_MS)) : 0);
+
+/**
+ * Renueva el turno entre hijos. Si ya no es nuestro, aborta: la tanda deja de ser evidencia.
+ *
+ * SCRUM-249 · aquí se PUBLICA EL COMPROMISO: «vuelvo a dar señales antes de X», donde X es lo que
+ * como mucho puede tardar el hijo que se va a lanzar, más el margen. Quien llegue compara ese
+ * instante con el reloj de la BASE y sabe si el turno está vivo o huérfano sin esperar el TTL y
+ * sin mirar un proceso que, si es de otra máquina, no puede ver.
+ *
+ * ⚠️ ESTO NO ES UN TEMPORIZADOR, Y ESA ES LA GARANTÍA. Se llama al terminar cada hijo, así que la
+ * señal es de PROGRESO. Un proceso colgado pero vivo no termina hijos, no renueva, y su
+ * compromiso vence solo. Con un `setInterval` pasaría lo contrario y el lock sería eterno.
+ */
+async function refrescarTurno(siguienteHijo = null) {
+  const señalAntesDeMs = siguienteHijo
+    ? Date.now() + timeoutDe(siguienteHijo) + MARGEN_TTL_MS
+    : null;
+  const r = await refrescarLock(clienteTurno, { marcaPropia, dueño: DUENO, señalAntesDeMs });
   if (!r.ok) {
     console.error(mensajeLockPerdido({ db: r.db, marcaPropia, marcaActual: r.marcaActual }));
     salir(CODIGO_SALIDA_LOCK_PERDIDO);
@@ -365,7 +392,10 @@ async function tanda() {
     // tarde UN hijo — y por eso el TTL se deriva del timeout del hijo más lento (SCRUM-181).
     // Va al PRINCIPIO y no al final: si hemos perdido el turno, se sabe ANTES de lanzar el
     // siguiente proceso contra una base que ya está usando otro.
-    await refrescarTurno();
+    // SCRUM-249 · se le pasa el hijo que se va a lanzar para publicar el compromiso ajustado a SU
+    // timeout: prometer el del pesado mientras corre uno ligero daría 40 min de gracia a un
+    // proceso que debería responder en 5, y el huérfano tardaría lo mismo en verse.
+    await refrescarTurno(hijos[i]);
 
     const h = hijos[i];
     const env = { ...process.env };
