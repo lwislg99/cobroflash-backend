@@ -173,7 +173,11 @@ const OVERRIDE_MS = Number(process.env.GATED_CHILD_TIMEOUT_MS) || 0; // override
 // por una sesión muerta, el TTL lo libera solo; si hay prisa, `marcar-staging.mjs` lo limpia.
 const TIMEOUT_MAYOR_MS = Math.max(...hijos.map((h) => OVERRIDE_MS || (h.pesado ? HEAVY_MS : LIGHT_MS)));
 const TTL_MS = ttlParaTanda(TIMEOUT_MAYOR_MS);
-const DUENO = idDeSesion(os.hostname(), process.pid);
+// SCRUM-253 · el dueño HONRA `YAQU_LOCK_DUENO` como ENTRADA (no solo se exporta a los hijos, abajo).
+// Es lo que permite adoptar el turno que un `turno:tomar` previo de la MISMA sesión ya tomó: sin un
+// dueño estable compartido, el runner (otro PID) veía su propio turno como ajeno → exit 5 contra sí
+// mismo. Por defecto (sin la env) sigue siendo `host.PID`, único por sesión: nadie adopta por accidente.
+const DUENO = process.env.YAQU_LOCK_DUENO || idDeSesion(os.hostname(), process.pid);
 
 // SCRUM-232 · QUÉ va a correr, para que quien llegue no tenga que adivinarlo.
 //
@@ -247,7 +251,10 @@ let marcaPropia = null; // el marcador exacto que escribimos; sirve para no pisa
   }
 
   marcaPropia = res.marca;
-  console.log(`🔒 turno de staging TOMADO en "${res.db}" por «${DUENO}» (caduca solo en ${formatearDuracion(TTL_MS)}).`);
+  console.log(`🔒 turno de staging ${res.adoptado ? 'ADOPTADO' : 'TOMADO'} en "${res.db}" por «${DUENO}» (caduca solo en ${formatearDuracion(TTL_MS)}).`);
+  if (res.adoptado) {
+    console.log('   (adoptado: el turno ya era de esta sesión — un `turno:tomar` previo con el mismo YAQU_LOCK_DUENO. SCRUM-253.)');
+  }
   if (res.reclamado) {
     console.log(`   (reclamado: lo tenía «${res.lockPrevio.dueño}» desde ${res.lockPrevio.desdeIso} y había caducado.)`);
   }

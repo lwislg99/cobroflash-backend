@@ -293,9 +293,10 @@ async function enSeccionCritica(cliente, fn) {
  * de SCRUM-118, aborta. Esa propiedad es la que impide que esto se convierta en un segundo
  * `marcar-staging.mjs` capaz de convertir producción en falso-staging.
  *
- * @returns {{ok:true, db, marca, ahoraMs, reclamado:boolean, lockPrevio:object|null, sufijoIgnorado:boolean}}
+ * @returns {{ok:true, db, marca, ahoraMs, reclamado:boolean, adoptado:boolean, lockPrevio:object|null, sufijoIgnorado:boolean}}
  *        | {ok:false, motivo:'no-es-staging', db, marca}
  *        | {ok:false, motivo:'ocupado', db, lock, ahoraMs, ttlMs}
+ * `adoptado` (SCRUM-253): el turno ya era del MISMO dueño y se re-tomó — no bloquea, no es reclamo.
  */
 export async function adquirirLock(
   cliente,
@@ -309,7 +310,15 @@ export async function adquirirLock(
     }
 
     const lock = parsearLock(marca);
-    if (lock && !estaRancio(lock, ahoraMs, ttlMs)) {
+    // SCRUM-253 · el turno propio NO bloquea. Si el lock ya es MÍO (mismo dueño), no es un
+    // conflicto: cae al camino de escritura de abajo y se ADOPTA (se refresca el timestamp),
+    // aunque no esté rancio. Es lo que arregla el auto-bloqueo de `turno:tomar` + el runner en la
+    // MISMA sesión (dueño compartido vía YAQU_LOCK_DUENO): antes el runner veía su propio turno
+    // como ajeno porque el PID cambia entre procesos, y se daba exit 5 contra sí mismo.
+    const esMio = Boolean(lock && lock.dueño === dueño);
+    // `ocupado` SOLO con lock AJENO vivo. Esta es la puerta de SCRUM-188 y NO se toca: un dueño
+    // distinto no rancio sigue rechazando. La adopción de arriba solo se abre hacia el turno PROPIO.
+    if (lock && !esMio && !estaRancio(lock, ahoraMs, ttlMs)) {
       // SCRUM-232 · al rechazar se devuelve TAMBIÉN qué está corriendo, para que quien llega
       // pueda decidir sin romper el lock. Leerlo no puede tumbar el rechazo: si el contexto
       // falla o no se entiende, `contexto` queda a null y el mensaje degrada al de antes.
@@ -334,7 +343,9 @@ export async function adquirirLock(
 
     return {
       ok: true, db, marca: nueva, ahoraMs,
-      reclamado: Boolean(lock), lockPrevio: lock, sufijoIgnorado,
+      // reclamado = turno AJENO rancio que arrebatamos; adoptado = turno PROPIO re-tomado (SCRUM-253).
+      // Son excluyentes y ninguno es el otro: un mensaje que los confunda mentiría sobre qué pasó.
+      reclamado: Boolean(lock && !esMio), adoptado: esMio, lockPrevio: lock, sufijoIgnorado,
       contexto, contextoEscrito: ctxRes.ok, contextoMotivo: ctxRes.motivo ?? null,
     };
   });

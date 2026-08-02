@@ -111,7 +111,8 @@ try {
   if (modo === 'tomar') {
     const minutos = Number(opcion('minutos')) > 0 ? Number(opcion('minutos')) : 15;
     const ref = opcion('ref') || ramaActual();
-    const dueño = idDeSesion(os.hostname(), process.pid);
+    // SCRUM-253 · mismo dueño estable que el runner: honra YAQU_LOCK_DUENO si está, si no host.PID.
+    const dueño = process.env.YAQU_LOCK_DUENO || idDeSesion(os.hostname(), process.pid);
     const r = await adquirirLock(cliente, {
       dueño, ttlMs: TTL_POR_DEFECTO_MS,
       tipo: 'suelto', ref, finPrevistoMs: Date.now() + minutos * 60 * 1000,
@@ -133,10 +134,15 @@ try {
       fs.writeFileSync(FICHERO_MARCA, JSON.stringify({ marca: r.marca, db: r.db }), 'utf8');
     } catch { /* si no se puede recordar, queda `soltar --marca`; y el TTL por debajo */ }
 
-    console.log(`\n✅ Turno TOMADO sobre la base "${r.db}" para «${ref}» (~${minutos} min).`);
+    console.log(`\n✅ Turno ${r.adoptado ? 'ADOPTADO (ya era tuyo; refrescado)' : 'TOMADO'} sobre la base "${r.db}" para «${ref}» (~${minutos} min).`);
     if (r.reclamado) console.log('   (estaba tomado por una sesión rancia; se reclamó)');
     if (!r.contextoEscrito) console.log(`   ⚠️ el contexto no se pudo escribir (${r.contextoMotivo}); el turno SÍ es tuyo.`);
-    console.log(`   Suéltalo con:  node scripts/turno-staging.mjs soltar`);
+    // SCRUM-253 · la línea puente: para lanzar la tanda SOBRE este turno (misma sesión) sin que el
+    // runner se auto-bloquee, tiene que compartir el dueño. Con esta env el runner ADOPTA en vez de
+    // ver su propio turno como ajeno. Sin ella, `turno:tomar` + tanda daba exit 5 contra sí mismo.
+    console.log(`\n   Para lanzar la tanda SOBRE este turno (misma sesión, sin auto-bloqueo — SCRUM-253):`);
+    console.log(`       YAQU_LOCK_DUENO=${dueño} npm run test:staging:gated`);
+    console.log(`\n   Suéltalo con:  YAQU_LOCK_DUENO=${dueño} node scripts/turno-staging.mjs soltar   (o espera al TTL)`);
     console.log(`   MARCA=${r.marca}\n`);
   }
 
