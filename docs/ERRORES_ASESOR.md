@@ -115,6 +115,20 @@ Y el modo de fallo es acumulativo: **PostgreSQL nombra UNA sola columna por inte
 
 *(Origen: incidente #20, 30-jul-2026.)*
 
+**R14 · «Y POR TANTO» ES DONDE SE CUELA LA INFERENCIA. Un «y por tanto» que salta de un artefacto a OTRO no es una consecuencia: es una afirmación nueva, y necesita su propia medición.** Dentro del mismo objeto la deducción es legítima —he leído el fichero, luego sé lo que dice—. En cuanto la frase cruza a otro objeto —del `.env` local al panel de Railway, del test al servidor, del schema a la base real— deja de deducir y empieza a **suponer**, aunque la primera mitad estuviera medida al milímetro y aunque las dos cosas «deberían» coincidir.
+
+**Por qué no lo caza nadie, ni quien lo escribe:** la frase hereda la credibilidad de la parte medida. «Medí X, y por tanto Y» se lee como una sola medición con dos consecuencias, no como una medición y una conjetura pegadas. Y el que la escribe acaba de hacer el trabajo duro, así que la segunda mitad le sale sin fricción — es la parte que *no le costó nada* la que no lleva evidencia detrás.
+
+**El caso canónico, y conviene el detalle de dónde salió:** midiendo SCRUM-247 se leyó el `.env` del checkout compartido, se comprobó que `VERIFACTU_PRODUCTOR_NIF` tenía 11 posiciones frente a las 9 que exige el XSD, y se reportó como *«el NIF que hay hoy en `.env` **y por tanto en el panel de staging** tiene 11 caracteres»*. **El panel tenía el valor bueno.** El roto era el `.env` del checkout compartido, y solo ese. Dos artefactos distintos, un solo dato medido.
+
+Apareció **en el mejor hallazgo de la jornada, cometido por la sesión que mejor había medido ese día, y en la mitad de la frase que parecía más inocente** — que es exactamente el perfil de este fallo: no aparece cuando se va con prisa, aparece cuando se va con confianza.
+
+**La consecuencia práctica, que es la que engaña:** las tandas nunca cazaron el `.env` roto **porque corren contra staging**, que tiene el valor válido. O sea que el verde de la suite era correcto y el objeto roto estaba fuera de su alcance — otra vez la herramienta funcionando bien sobre el objeto que no era (hermana del incidente #8 y de la familia del `dist/` rancio). El guard escrito en ese ticket sigue siendo necesario y sigue naciendo en rojo; lo único falso era **contra qué objeto** se dijo que estaba rojo.
+
+**Regla práctica:** al releer un reporte antes de mandarlo, buscar literalmente «y por tanto», «así que», «lo que significa que» y «o sea que». En cada uno, preguntarse si los dos lados hablan del MISMO artefacto. Si no, o se mide el segundo, o se escribe como lo que es: una hipótesis, con esa palabra delante.
+
+*(Origen: incidente #21, 2-ago-2026. Complementa a R1 —verificar en la fuente— desde el otro lado: R1 avisa de afirmar sin mirar; R14 avisa de mirar UNA cosa y afirmar sobre DOS.)*
+
 ---
 
 ## REGISTRO DE INCIDENTES
