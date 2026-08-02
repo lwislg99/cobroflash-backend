@@ -9,7 +9,7 @@
 // real (no basta con escribirlo). Se imprime cada mensaje para que sea evidencia, no promesa.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { diagnosticarAusencia } from './_tenancy-diag.mjs';
+import { diagnosticarAusencia, mensajeAusencia } from './_tenancy-diag.mjs';
 
 // Doble del prisma: sirve el job/merchant que le digas; `jobThrows` fuerza que el re-read del Job
 // lance (rama c). Escribir NO hace nada: asertamos sobre lo que DEVUELVE el diagnóstico.
@@ -76,4 +76,19 @@ test('SCRUM-259 · ROJO-PRIMERO: el mensaje SALE de un assert.fail real, en las 
       `la rama (${rama}) debe salir DENTRO del mensaje del assert.fail`,
     );
   }
+});
+
+// REUTILIZACIÓN (SCRUM-269, «un merchant no ve SU albarán»): mensajeAusencia es NEUTRO de entidad.
+// Se usa TAL CUAL para otra entidad — solo cambian `etiqueta` y `contexto`; no hay nada de `job`.
+test('SCRUM-259 · mensajeAusencia se reutiliza tal cual para el albarán de SCRUM-269', () => {
+  const b = mensajeAusencia({ estado: 'borrado', etiqueta: 'el albarán', id: 42, merchantId: 9, merchantEstado: 'vivo', idsLen: 0 });
+  process.stdout.write(`  (269/b) → ${b}\n`);
+  assert.match(b, /\(b\) el albarán\(id=42\) YA NO EXISTE/);
+  assert.match(b, /merchant 9 SIGUE vivo/);
+  const a = mensajeAusencia({ estado: 'existe', etiqueta: 'el albarán', id: 42, merchantId: 9, contexto: 'merchantId=9', idsLen: 3 });
+  assert.match(a, /\(a\) el albarán EXISTE \(id=42, merchantId=9\)/);
+  assert.match(a, /FILTRO\/consulta/);
+  const c = mensajeAusencia({ estado: 'no-comprobable', etiqueta: 'el albarán', id: 42, merchantId: 9, idsLen: 1 });
+  assert.match(c, /\(c\) NO COMPROBABLE/);
+  assert.doesNotMatch(c, /YA NO EXISTE/); // (c)≠(b) también aquí; token con positivo en el caso (b)
 });
