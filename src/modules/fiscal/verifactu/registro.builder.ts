@@ -523,24 +523,89 @@ export function buildRegistroAnulacion(p: RegistroAnulacionParams): string {
   </sum1:RegistroAnulacion>`;
 }
 
-/** Envuelve registros en RegFactuSistemaFacturacion (cuerpo del SOAP de S1-D). */
-export function buildRegFactuEnvelope(params: {
+/**
+ * Máximo de `RegistroFactura` por envío que admite el XSD (`maxOccurs="1000"`).
+ *
+ * SCRUM-240: vive AQUÍ, con el constructor del sobre, y el servicio lo importa. Antes había
+ * dos: un `MAX_REGISTROS = 1000` en el servicio y un `1000` literal en el sobre. Dos copias de
+ * un número que el XSD fija son dos oportunidades de que solo se actualice una.
+ */
+export const MAX_REGISTROS_POR_ENVIO = 1000;
+
+/**
+ * SCRUM-240 · EL ÚNICO GENERADOR DEL CONTENIDO DEL SOBRE `RegFactuSistemaFacturacion`.
+ *
+ * ANTES HABÍA DOS, y la medición de la fase 1 es la que decidió unificarlos: sobre las mismas
+ * entradas, el sobre del servicio (el que exporta el producto) y el de aquí producían
+ * **el mismo contenido línea a línea**. Lo único que cambiaba era la DECLARACIÓN XML, la
+ * SANGRÍA y el SALTO FINAL. Eso no son dos constructores: es uno con dos presentaciones,
+ * escrito dos veces. Y escrito dos veces es una divergencia futura esperando su turno — que es
+ * literalmente lo que pasó una capa más abajo entre S1-C y SCRUM-209, con el desglose.
+ *
+ * Por eso la presentación entra por parámetro y el contenido no se duplica:
+ *   · `declaracionXml` — `<?xml …?>` delante. La exportación la lleva; el cuerpo SOAP NO puede
+ *     llevarla (un cuerpo SOAP no admite declaración XML dentro).
+ *   · `saltoFinal` — `\n` al final. La exportación acaba en salto; el cuerpo SOAP no.
+ *   · `comentario` — se pega a la etiqueta de apertura. Hoy solo lo usa la exportación, para el
+ *     parte de exclusiones de SCRUM-209/215/216.
+ *
+ * NO LLEVA LÍMITES NI DECIDE QUÉ HACER CON CERO REGISTROS a propósito: eso es política del
+ * llamador, no del formato (ver `construirCuerpoSoapRegFactu` y el servicio de exportación).
+ *
+ * `registrosFacturaXml` llega YA envuelto en `<sum:RegistroFactura>`: el sobre no opina sobre
+ * la sangría de lo que envuelve, solo lo une con saltos de línea.
+ */
+export function construirSobreRegFactu(params: {
   obligado: { nombreRazon: string; nif: string };
-  registrosXml: string[]; // salida de buildRegistroAlta/buildRegistroAnulacion (máx 1000)
+  registrosFacturaXml: string[];
+  comentario?: string;
+  declaracionXml?: boolean;
+  saltoFinal?: boolean;
 }): string {
-  if (params.registrosXml.length === 0 || params.registrosXml.length > 1000) {
-    throw new Error('registros_fuera_de_rango'); // límite del servicio AEAT
-  }
-  const registros = params.registrosXml
-    .map((r) => `  <sum:RegistroFactura>\n  ${r}\n  </sum:RegistroFactura>`)
-    .join('\n');
-  return `<sum:RegFactuSistemaFacturacion xmlns:sum="${NS_LR}" xmlns:sum1="${NS_SF}">
+  const declaracion = params.declaracionXml ? '<?xml version="1.0" encoding="UTF-8"?>\n' : '';
+  const fin = params.saltoFinal ? '\n' : '';
+  return `${declaracion}<sum:RegFactuSistemaFacturacion xmlns:sum="${NS_LR}" xmlns:sum1="${NS_SF}">${params.comentario ?? ''}
   <sum:Cabecera>
     <sum1:ObligadoEmision>
       <sum1:NombreRazon>${esc(params.obligado.nombreRazon)}</sum1:NombreRazon>
       <sum1:NIF>${esc(params.obligado.nif)}</sum1:NIF>
     </sum1:ObligadoEmision>
   </sum:Cabecera>
-${registros}
-</sum:RegFactuSistemaFacturacion>`;
+${params.registrosFacturaXml.join('\n')}
+</sum:RegFactuSistemaFacturacion>${fin}`;
+}
+
+/**
+ * PRESENTACIÓN «CUERPO SOAP», para el envío a la AEAT de S1-D. Se llamaba
+ * `buildRegFactuEnvelope`, que no decía de qué era el sobre; ahora dice lo que es.
+ *
+ * **HOY NO LA LLAMA NADIE EN PRODUCCIÓN** (medido en SCRUM-240: cero llamadores en `src/`; solo
+ * su test y `scripts/gen-registros-sample.mjs`). Se conserva porque el envío SOAP de S1-D irá
+ * por aquí, y **sin declaración XML porque un cuerpo SOAP no la admite** — esa ausencia no es
+ * un descuido, es el motivo de que exista esta presentación.
+ *
+ * LOS CASOS LÍMITE SIGUEN AL DE PRODUCCIÓN, decisión del fundador en SCRUM-240 — antes esta
+ * función lanzaba `registros_fuera_de_rango` en los dos casos, y eso era una tercera política
+ * para el mismo hecho:
+ *   · CERO registros → se devuelve `''`, como hace la exportación (SCRUM-216). Un sobre con la
+ *     cabecera sola es XML INVÁLIDO (el XSD exige al menos un `RegistroFactura`), y entregar un
+ *     fichero inválido es peor que no entregarlo.
+ *   · MÁS DE 1000 → `verifactu_demasiados_registros:N`, el mismo error y el mismo texto que
+ *     lanza la exportación, para que el día que S1-D trocee en varios envíos el motivo se lea
+ *     igual en los dos caminos.
+ */
+export function construirCuerpoSoapRegFactu(params: {
+  obligado: { nombreRazon: string; nif: string };
+  registrosXml: string[]; // salida de buildRegistroAlta/buildRegistroAnulacion
+}): string {
+  if (params.registrosXml.length > MAX_REGISTROS_POR_ENVIO) {
+    throw new Error(`verifactu_demasiados_registros:${params.registrosXml.length}`);
+  }
+  if (params.registrosXml.length === 0) return '';
+  return construirSobreRegFactu({
+    obligado: params.obligado,
+    registrosFacturaXml: params.registrosXml.map(
+      (r) => `  <sum:RegistroFactura>\n  ${r}\n  </sum:RegistroFactura>`,
+    ),
+  });
 }
