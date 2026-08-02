@@ -18,6 +18,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import { diagnosticarAusencia } from './_tenancy-diag.mjs'; // SCRUM-259: (a)filtro/(b)borrado/(c)no-comprobable
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -255,7 +256,16 @@ test('SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo mercha
     // (a) la LISTA del técnico A solo trae los suyos
     const listA = await (await get('/admin/jobs', cookieTecA)).json();
     const idsA = listA.map((j) => j.id);
-    assert.ok(idsA.includes(jobA.id), 'el técnico debe ver SU Trabajo en la lista');
+    // SCRUM-259: si el técnico NO ve su Trabajo, el "no lo veo" mudo esconde tres causas que hay que
+    // separar — (a) filtro, (b) borrado por debajo, (c) no comprobable. Antes de fallar re-leemos
+    // jobA+merchant y dejamos que el mensaje diga cuál. Best-effort: el diagnóstico JAMÁS tumba el
+    // test (su propio fallo se captura y se reporta como "no comprobable", no como otra excepción).
+    if (!idsA.includes(jobA.id)) {
+      const diag = await diagnosticarAusencia(prisma, {
+        jobId: jobA.id, merchantId: merchant.id, idsLen: idsA.length, ahoraIso: new Date().toISOString(),
+      }).catch((e) => `(c) diagnóstico no comprobable: el propio diagnóstico lanzó (${e?.message ?? e})`);
+      assert.fail(`el técnico debe ver SU Trabajo en la lista — ${diag}`);
+    }
     assert.ok(!idsA.includes(jobB.id), 'FUGA: el técnico ve en la lista el Trabajo de otro técnico');
 
     // (b) DETALLE por URL directa de un Trabajo ajeno (mismo merchant) → 404
