@@ -150,7 +150,7 @@ router.post('/create', async (req, res) => {
       if (adminPhone) {
         sendWhatsAppText({
           to: adminPhone,
-          merchantId: quote.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
+          merchantId: quote.merchantId,
           text: `📋 Nuevo presupuesto ${displayQuoteNumber(quote)} por ${totalNum.toFixed(2)} ${quote.currency} pendiente de tu aprobación antes de enviarlo al cliente. Revísalo en tu panel de YaQu.`,
         }).catch(() => {});
       }

@@ -22,10 +22,9 @@
 // LA REGLA, Y POR QUÉ ES UN RATCHET Y NO UN ROJO HOY
 //
 // La regla final es: toda llamada pasa `merchantId` **o declara** por qué no hay ninguno. Pero
-// hoy hay 32 llamadas sin declarar y arreglarlas es la FASE 3 del ticket —que va en un PR propio
-// porque **cambia comportamiento**: pasar `merchantId` activa `demoSendBlocked` en el camino que
-// el fundador enseña a clientes—. Un guard que naciera rojo bloquearía las tres tandas de todo
-// el mundo y acabaría apagado en una tarde, que es como mueren los guards de esta casa.
+// hoy había 32 llamadas sin declarar, y arreglarlas de golpe habría bloqueado las tres tandas de
+// todo el mundo — un guard que nace rojo acaba apagado en una tarde, que es como mueren los
+// guards de esta casa. Por eso nació con tope y hoy el tope es 0.
 //
 // Así que nace como RATCHET: el número de pendientes **no puede subir**. Una llamada nueva sin
 // declarar cae inmediatamente; las 32 conocidas están contadas, no listadas. **Sin allowlist**:

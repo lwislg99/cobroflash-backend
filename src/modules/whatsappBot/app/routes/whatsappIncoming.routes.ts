@@ -295,7 +295,6 @@ async function handleTemplateButtonReply(from: string, btnText: string): Promise
     await sendWhatsAppText({
       merchantId: unicoMerchant,
       sinMerchant: unicoMerchant ? undefined : 'multi-merchant',
-      exentoDelDemo: 'respuesta-a-entrante',
       to: from,
       text: '¡Gracias por confirmar! 🙌 Tu profesional ya lo sabe.',
     });
@@ -395,7 +394,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
       }).catch(() => {});
       await sendWhatsAppText({
         to: from,
-        merchantId: albaranMsg.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
+        merchantId: albaranMsg.merchantId,
         text: 'Gracias por tu mensaje 🙌 Se lo hemos pasado a tu profesional, que te responderá en breve.',
       });
       return;
@@ -408,7 +407,6 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
       // rastro donde mas se usa.
       merchantId: customers.length === 1 ? customers[0].merchantId : undefined,
       sinMerchant: customers.length === 1 ? undefined : 'multi-merchant',
-      exentoDelDemo: 'respuesta-a-entrante',
       to: from,
       text: 'Hola 👋 No tienes presupuestos pendientes en este momento.',
     });
@@ -423,7 +421,6 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
       // rastro donde mas se usa.
       merchantId: customers.length === 1 ? customers[0].merchantId : undefined,
       sinMerchant: customers.length === 1 ? undefined : 'multi-merchant',
-      exentoDelDemo: 'respuesta-a-entrante',
       to: from,
       text: 'Tienes varios presupuestos pendientes. Para responder, por favor abre el enlace que te enviamos en cada uno.',
     });
@@ -436,7 +433,6 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
   if (decision === 'unknown') {
     await sendWhatsAppText({
       merchantId: quote.merchantId,
-      exentoDelDemo: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
       to: from,
       text: `Para responder al presupuesto #${(quote as any).quoteNumber ?? quote.id}, escribe *Acepto* o *No*. También puedes firmarlo desde el enlace que te enviamos.`,
     });
@@ -459,7 +455,6 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
 
     await sendWhatsAppText({
       merchantId: quote.merchantId,
-      exentoDelDemo: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
       to: from,
       text: `✅ ¡Perfecto! Hemos registrado tu aceptación del presupuesto #${(quote as any).quoteNumber ?? quote.id}. Te avisaremos con los siguientes pasos.`,
     });
@@ -489,13 +484,6 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
     const mPhone = normalizePhone(merchant?.whatsappPhone);
     if (mPhone) {
       sendWhatsAppText({
-        // SCRUM-245: va al PRO, no a quien escribio, asi que NO es una respuesta y NO se exime.
-        // El freno del demo ACTUA aqui a proposito: el telefono del pro sembrado esta en rango
-        // de movil espanol real, y eximirlo autorizaria a la cuenta demo publica a escribir a un
-        // desconocido. Si el demo necesita avisar a su pro, ese numero entra en DEMO_SAFE_NUMBERS
-        // -- configuracion del fundador, visible y revocable. REGLA: cuando el coste de una
-        // excepcion lo paga un tercero que no participa, la excepcion sube a configuracion, no
-        // baja a codigo.
         merchantId: quote.merchantId,
         to: mPhone,
         text: `✅ *${customer?.name || 'Cliente'}* aceptó el presupuesto #${(quote as any).quoteNumber ?? quote.id} (${formatMoneyEs(quote.total, quote.currency)}) por WhatsApp.`,
@@ -516,7 +504,6 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
 
     await sendWhatsAppText({
       merchantId: quote.merchantId,
-      exentoDelDemo: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
       to: from,
       text: `Hemos registrado tu rechazo del presupuesto #${(quote as any).quoteNumber ?? quote.id}. Gracias por avisar.`,
     });
@@ -532,13 +519,6 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
     const mPhone = normalizePhone(merchant?.whatsappPhone);
     if (mPhone) {
       sendWhatsAppText({
-        // SCRUM-245: va al PRO, no a quien escribio, asi que NO es una respuesta y NO se exime.
-        // El freno del demo ACTUA aqui a proposito: el telefono del pro sembrado esta en rango
-        // de movil espanol real, y eximirlo autorizaria a la cuenta demo publica a escribir a un
-        // desconocido. Si el demo necesita avisar a su pro, ese numero entra en DEMO_SAFE_NUMBERS
-        // -- configuracion del fundador, visible y revocable. REGLA: cuando el coste de una
-        // excepcion lo paga un tercero que no participa, la excepcion sube a configuracion, no
-        // baja a codigo.
         merchantId: quote.merchantId,
         to: mPhone,
         text: `❌ *${customer?.name || 'Cliente'}* rechazó el presupuesto #${(quote as any).quoteNumber ?? quote.id} por WhatsApp.`,

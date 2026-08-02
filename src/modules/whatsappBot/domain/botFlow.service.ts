@@ -152,7 +152,6 @@ export async function handleUnsupportedMedia(from: string): Promise<void> {
 
     await sendWhatsAppText({
       merchantId: session?.merchantId ?? undefined,
-      exentoDelDemo: 'respuesta-a-entrante',
       to: from,
       text: '🙏 De momento solo entiendo texto. ¿Me lo escribes en un mensaje?',
     });
@@ -222,7 +221,6 @@ export async function handleIncomingPhoto(from: string, mediaId: string): Promis
     const businessName = merchant ? merchantDisplayName(merchant) : 'tu profesional';
     await sendWhatsAppText({
       merchantId: request.merchantId,
-      exentoDelDemo: 'respuesta-a-entrante',
       to: from,
       text: `📎 ¡Foto recibida! La he añadido a tu solicitud para que *${businessName}* la vea al preparar el presupuesto.`,
     });
@@ -267,7 +265,6 @@ async function handleQrEntry(from: string, phone: string, slug: string, session:
   await setSession(phone, { merchantId: merchant.id, state: 'asking_description', data: { lastAction: 'request', via: 'qr' } }, session);
   await sendWhatsAppText({
       merchantId: merchant?.id,
-      exentoDelDemo: 'respuesta-a-entrante',
     to: from,
     text: `👋 ¡Hola! Te paso con *${businessName}*. Cuéntame en una frase qué necesitas y les envío tu solicitud de presupuesto.`,
   });
@@ -380,7 +377,7 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
   if (inIntake && text && isCancel(text)) {
     await sendWhatsAppText({
       merchantId,
-      exentoDelDemo: 'respuesta-a-entrante', to: from, text: 'Sin problema, lo dejamos 👍' });
+ to: from, text: 'Sin problema, lo dejamos 👍' });
     await sendMenu(from, merchantId, businessName);
     await setSession(phone, { merchantId, state: 'menu', data: { offMenuCount: 0 } }, session);
     return true;
@@ -391,7 +388,6 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
     if (!isValidDescription(text)) {
       await sendWhatsAppText({
       merchantId,
-      exentoDelDemo: 'respuesta-a-entrante',
         to: from,
         text: '🙂 ¿Me cuentas un poco más? Por ejemplo: "se me ha roto un grifo en la cocina y pierde agua".\n\n(o escribe *cancelar* para salir)',
       });
@@ -412,7 +408,6 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
     if (!locReq.ok) {
       await sendWhatsAppText({
       merchantId,
-      exentoDelDemo: 'respuesta-a-entrante',
         to: from,
         text: '📍 ¿En qué zona está el trabajo? (barrio o municipio). Si no aplica, escribe "a domicilio".',
       });
@@ -425,7 +420,6 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
     if (!isValidZone(text)) {
       await sendWhatsAppText({
       merchantId,
-      exentoDelDemo: 'respuesta-a-entrante',
         to: from,
         text: '📍 Dime la zona (barrio o municipio), por ejemplo "Chamberí". Si no aplica, escribe "a domicilio".\n\n(o *cancelar*)',
       });
@@ -463,7 +457,7 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
       }, session);
       await sendWhatsAppText({
       merchantId,
-      exentoDelDemo: 'respuesta-a-entrante', to: from, text: '✏️ Vale, empezamos de nuevo. Cuéntame qué necesitas.' });
+ to: from, text: '✏️ Vale, empezamos de nuevo. Cuéntame qué necesitas.' });
       return true;
     }
 
@@ -502,7 +496,6 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
 
       await sendWhatsAppText({
       merchantId,
-      exentoDelDemo: 'respuesta-a-entrante',
         to: from,
         text: `✅ ¡Listo! ${businessName} ya tiene tu solicitud y te responderá pronto con el presupuesto por aquí.`,
       });
@@ -532,7 +525,6 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
     if (!quotes.length) {
       await sendWhatsAppText({
       merchantId,
-      exentoDelDemo: 'respuesta-a-entrante',
         to: from,
         text: `No tienes presupuestos pendientes con ${businessName}. Si necesitas uno nuevo, toca "🛠 Pedir presupuesto" en el menú 👇`,
       });
@@ -541,7 +533,6 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
       // A23: un botón-enlace "Ver y firmar" por presupuesto (sin URL cruda). Dinero es-ES.
       await sendWhatsAppText({
       merchantId,
-      exentoDelDemo: 'respuesta-a-entrante',
         to: from,
         text: quotes.length === 1
           ? `Esto tienes pendiente de decidir con *${businessName}* 👇`
@@ -575,13 +566,12 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
       // A8.1: tras "estás al día", el menú — que la conversación nunca muera
       await sendWhatsAppText({
       merchantId,
-      exentoDelDemo: 'respuesta-a-entrante', to: from, text: `🎉 ¡Estás al día! No tienes ningún pago pendiente con ${businessName}.` });
+ to: from, text: `🎉 ¡Estás al día! No tienes ningún pago pendiente con ${businessName}.` });
       await sendMenu(from, merchantId, businessName);
     } else {
       // A23: un botón-enlace "Pagar [importe]" por cobro (pago seguro y cifrado en la página).
       await sendWhatsAppText({
       merchantId,
-      exentoDelDemo: 'respuesta-a-entrante',
         to: from,
         text: charges.length === 1
           ? `Esto tienes pendiente de pago con *${businessName}* 👇`
@@ -609,7 +599,6 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
     // Copy v2 (fundador 5-jul): sin invitar al audio hasta MEDIA-1, con ejemplo
     await sendWhatsAppText({
       merchantId,
-      exentoDelDemo: 'respuesta-a-entrante',
       to: from,
       text: '📝 Cuéntame qué necesitas — cuanto más detalle, mejor.\n\nPor ejemplo: "cambiar 3 enchufes y poner un foco en la cocina".',
     });
@@ -637,7 +626,6 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
     }).catch((e) => console.error('[bot] handoff aviso:', e?.message || e));
     await sendWhatsAppText({
       merchantId,
-      exentoDelDemo: 'respuesta-a-entrante',
       to: from,
       text: `✅ Hecho, le he avisado. ${businessName} te escribirá en cuanto pueda desde su número personal.`,
     });
@@ -659,7 +647,7 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
   if (listId) {
     await sendWhatsAppText({
       merchantId,
-      exentoDelDemo: 'respuesta-a-entrante', to: from, text: 'Ese menú ya caducó — te dejo el de ahora 👇' });
+ to: from, text: 'Ese menú ya caducó — te dejo el de ahora 👇' });
     await sendMenu(from, merchantId, businessName);
     await setSession(phone, {
       merchantId,
@@ -691,7 +679,6 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
     }).catch((e) => console.error('[bot] handoff 2ª vez:', e?.message || e));
     await sendWhatsAppText({
       merchantId,
-      exentoDelDemo: 'respuesta-a-entrante',
       to: from,
       text: `✅ Te paso con ${businessName}: le he avisado y te escribirá en cuanto pueda desde su número personal.`,
     });
@@ -710,7 +697,6 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
   // 1ª vez: explicar con honestidad qué sabe hacer (sin precios/plazos, K1)
   await sendWhatsAppText({
       merchantId,
-      exentoDelDemo: 'respuesta-a-entrante',
     to: from,
     text: `🙈 Eso no lo sé responder — soy un asistente sencillo (los precios y los plazos te los da ${businessName}). Esto sí puedo hacerlo:`,
   });

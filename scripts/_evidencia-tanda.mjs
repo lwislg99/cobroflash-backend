@@ -250,7 +250,7 @@ export const HIJOS_SPEC = [
     nombre: 'a55-window-quote (aislado)',
     fichero: 'a55-window-quote.test.mjs',
     aislado: true,
-    env: { A55_DB_TEST: '1', WHATSAPP_DRY_RUN: '1', DEMO_SAFE_NUMBERS: '34611000001', QA_DB_TEST: undefined, BOT_SUITE_TEST: undefined },
+    env: { A55_DB_TEST: '1', WHATSAPP_DRY_RUN: '1', QA_DB_TEST: undefined, BOT_SUITE_TEST: undefined },
   },
   {
     clave: 'bot',

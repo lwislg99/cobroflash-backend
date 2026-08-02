@@ -477,7 +477,7 @@ router.post('/:token/quote-request', async (req, res) => {
         : description;
       sendWhatsAppText({
         to: mPhone,
-        merchantId: customer.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
+        merchantId: customer.merchantId,
         text: `📋 *Nueva solicitud de presupuesto*\n\n👤 *Cliente:* ${customer.name}\n\n📝 *Descripción:*\n"${trimmed}"\n\nRevísala en tu panel 👉 ${BASE_URL}/dashboard/#quote-requests`,
       }).catch((e) => console.error('[quoteRequest] WA error:', e?.message));
     }

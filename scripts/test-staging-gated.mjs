@@ -8,7 +8,7 @@
 //
 // POR QUÉ TRES PROCESOS Y NO UNO. a55 y bot-suite:
 //   · mutan el merchant DEMO id=1 (no el QA id≥2 del resto) y son más lentos;
-//   · a55 exige config propia (WHATSAPP_DRY_RUN, DEMO_SAFE_NUMBERS) que el resto no;
+//   · a55 exige config propia (WHATSAPP_DRY_RUN) que el resto no;
 //   · la config de `dist` se CONGELA al primer import — mezclarlos en un mismo `node --test`
 //     arriesga que las envs de uno pisen al otro. Por eso cada uno corre AISLADO, con sus
 //     envs, en su propio proceso. El bloque QA_DB_TEST excluye esos dos ficheros para que

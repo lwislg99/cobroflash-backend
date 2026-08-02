@@ -12,8 +12,7 @@
 // `sendWhatsAppLocationRequest`; `sendWhatsAppWindowFirst` ya exigía `merchantId: number` desde
 // antes). Las que faltan:
 //   · `sendWhatsAppText` — 30 de sus llamadores aún no declaran nada, y arreglar 21 de ellos es
-//     la FASE 3, que va en PR propio porque CAMBIA COMPORTAMIENTO (pasar `merchantId` activa
-//     `demoSendBlocked` en el camino que se enseña a clientes). Acepta `sinMerchant` como
+//     la FASE 3. Acepta `sinMerchant` como
 //     opcional para que los legítimos queden declarados ya.
 //   · `sendWhatsAppTemplate` — le queda un llamador sin declarar, la rama «llamadas legacy» de
 //     `whatsappNotifications`, hoy INALCANZABLE (sus dos llamadores sí pasan merchantId).

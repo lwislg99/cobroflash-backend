@@ -225,7 +225,7 @@ router.post('/', async (req, res) => {
           const merchantName = merchant.name || 'tu proveedor';
           sendWhatsAppCtaUrl({
             to: reviewPhone,
-            merchantId: updated.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
+            merchantId: updated.merchantId,
             bodyText: `¡Gracias por confiar en *${merchantName}*, ${customerName}! 🙏\n¿Nos dejas una reseña en Google? Solo te lleva 10 segundos y nos ayuda muchísimo ⭐`,
             buttonText: '⭐ Dejar reseña',
             url: merchant.googleReviewUrl,

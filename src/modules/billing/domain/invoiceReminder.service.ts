@@ -192,7 +192,7 @@ async function sendReminderWA(
       // fallo — la misma función tenía una rama honesta (plantilla) y otra que se felicitaba.
       const result = await sendWhatsAppText({
         to: phone,
-        merchantId: inv.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
+        merchantId: inv.merchantId,
         text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago del ${docLabel} *${inv.number}* por *${total} ${inv.currency}* de parte de *${merchantName}*.\n${urgency}\nSi ya has realizado el pago, por favor ignora este mensaje. ¡Gracias!`,
       });
       if (result?.ok) {

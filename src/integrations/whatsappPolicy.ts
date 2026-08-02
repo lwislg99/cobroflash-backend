@@ -1,50 +1,27 @@
-// V0-2 (master U1.1) — Modo demo seguro: el merchant demo (regla 8) SOLO puede
-// enviar WhatsApp a los números de `DEMO_SAFE_NUMBERS` (env, separados por comas).
-// Destino fuera de la lista → bloquear y loguear. Lista vacía/ausente → se bloquea
-// TODO envío desde el demo (imposible spamear). Rollback: quitar el guard.
+// SCRUM-245 · AQUÍ VIVÍA `demoSendBlocked` (V0-2), y se retiró el 2-ago-2026.
 //
-// Pura y sin dependencias de red/BD para poder testearla (tests/whatsappPolicy.test.mjs).
-import { normalizePhone } from '../core/utils/utils';
-import { DEMO_MERCHANT_ID } from '../modules/invoicing/domain/emission.service';
-
-/**
- * SCRUM-245 · LOS ÚNICOS MOTIVOS POR LOS QUE EL FRENO DEL DEMO NO SE APLICA.
- *
- * Cerrado a propósito, y con UN solo miembro: cada motivo nuevo es una puerta nueva.
- */
-export type MotivoExencionDemo =
-  /**
-   * Responder a quien ACABA DE ESCRIBIR. No es lo mismo escribirle a alguien que contestarle:
-   * el freno existe para lo que sale sin que nadie lo haya pedido —plantillas, recordatorios,
-   * avisos automáticos—, y una respuesta la ha pedido el destinatario al escribir.
-   *
-   * Solo lo puede declarar quien PROCESA el entrante, porque es el único que lo sabe con
-   * certeza. No se deduce de la ventana de 24 h de A5.2: `isServiceWindowOpen` exige un
-   * `customerId`, y `recordInboundWaMessage` hace `return` temprano cuando el número no es
-   * cliente de nadie — justo el caso del demo, donde quien escribe es un desconocido.
-   */
-  'respuesta-a-entrante';
-
-export function demoSendBlocked(
-  merchantId: number | null | undefined,
-  to: string,
-  safeNumbers: readonly string[],
-  exencion?: MotivoExencionDemo,
-): boolean {
-  // ⚠️ LA EXENCIÓN VA PRIMERO Y ES EXPLÍCITA, y ese es todo el cambio de SCRUM-245: hasta hoy
-  // el bot del demo respondía a cualquiera **por accidente** —sus llamadas no pasaban
-  // `merchantId`, así que la comparación de abajo devolvía `false` sin que nadie lo decidiera—.
-  // Comportamiento correcto por la razón equivocada: el día que alguien pasara el `merchantId`
-  // «para arreglar la trazabilidad», las demos se apagaban y nadie relacionaba las dos cosas.
-  // Ahora está exento porque está DECIDIDO Y ESCRITO, no porque se olvidara un parámetro.
-  if (exencion) return false;
-  if (merchantId !== DEMO_MERCHANT_ID) return false;
-  const dest = normalizePhone(to);
-  if (!dest) return true; // destino ilegible desde demo → bloquear
-  const allowed = safeNumbers.map((n) => normalizePhone(n)).filter(Boolean);
-  return !allowed.includes(dest);
-}
-
+// Bloqueaba todo envío del merchant demo cuyo destino no estuviera en `DEMO_SAFE_NUMBERS`.
+// Se retira porque el requisito de producto es el contrario y está escrito en el máster (J0):
+// **el producto debe poder enviar WhatsApp a cualquier número que el profesional introduzca
+// como cliente, y las listas blancas de teléfonos están prohibidas.**
+//
+// Y se retira MEDIDO, no por cansancio de discutirlo. La razón de ser del freno era que un
+// tercero pudiera abusar de la cuenta demo pública, y esa premisa se comprobó y es FALSA:
+//   · No hay contraseña: la autenticación es SOLO por magic link (`Merchant` no tiene campo de
+//     clave), así que la única llave de la cuenta demo es su buzón de correo.
+//   · En el Email Routing de `yaqu.app` el catch-all está DESACTIVADO y no hay regla para
+//     `demo@yaqu.app`: el correo a esa dirección no llega a ningún buzón. Nadie puede recibir
+//     su enlace mágico, ni de fuera ni de dentro.
+//   · `E2E_TEST_LOGIN_ENABLED/_SECRET/_EMAILS` NO están en producción — leído en el panel de
+//     Railway (23 variables), no en el runbook que decía que no deberían estar.
+//   · `/register` siempre crea un merchant NUEVO, todo `/admin/*` va tras `requireAuth`
+//     (`app.ts:243`) y las rutas públicas son de token atado a un registro que ya existe: nadie
+//     de fuera elige el teléfono de destino.
+// El freno no protegía a nadie de nada. Lo vigila `tests/scrum245-sin-listas-blancas.test.mjs`.
+//
+// LO QUE ESTO NO CUBRE: los teléfonos de PRUEBA que siembran los seeds, hoy en rango de móvil
+// español real. Es SCRUM-262 y es otro problema — protege de los datos de prueba, no de lo que
+// escriba el profesional.
 // ───────────────────────────────────────────────────────────────────────────────────────
 // SCRUM-180 — UN PROCESO DE TEST NO HABLA CON META. NUNCA.
 //

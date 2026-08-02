@@ -59,39 +59,23 @@ test('SCRUM-115: sendWhatsAppTemplate bloqueado por wa_opt_out registra status:f
   });
 });
 
-test('SCRUM-115: sendWhatsAppText bloqueado (demo fuera de DEMO_SAFE_NUMBERS) registra status:failed en WA-0b', { skip: !ENABLED }, async () => {
-  const { prisma } = await import('../dist/core/db/prisma.js');
-  registrarBarridoFinal(prisma);
-  const { sendWhatsAppText } = await import('../dist/integrations/whatsapp.js');
-
-  const DEMO_MERCHANT_ID = 1; // regla 8
-  const phone = '34600000099'; // deliberadamente fuera de cualquier DEMO_SAFE_NUMBERS razonable
-  const t0 = new Date();
-
-  const result = await sendWhatsAppText({
-    to: phone,
-    text: 'SCRUM-115 test — no debe salir de verdad (bloqueado por V0-2)',
-    merchantId: DEMO_MERCHANT_ID,
-    log: { relatedType: 'invoice', relatedId: 999 },
-  });
-
-  assert.equal(result.ok, false);
-  assert.equal(result.reason, 'demo_safe_numbers');
-
-  let row = null;
-  try {
-    for (let i = 0; i < 30 && !row; i++) {
-      row = await prisma.whatsAppMessage.findFirst({
-        where: { merchantId: DEMO_MERCHANT_ID, relatedType: 'invoice', relatedId: 999, createdAt: { gte: t0 } },
-      });
-      if (!row) await new Promise((r) => setTimeout(r, 100));
-    }
-    assert.ok(row, 'debe quedar una fila en WA-0b para el intento bloqueado');
-    assert.equal(row.status, 'failed');
-    assert.equal(row.error, 'demo_safe_numbers');
-    assert.equal(row.type, 'service');
-    assert.equal(row.waMessageId, null);
-  } finally {
-    if (row) await prisma.whatsAppMessage.delete({ where: { id: row.id } }).catch(() => {});
-  }
-});
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-245 (2-ago-2026) · AQUÍ HABÍA UN SEGUNDO TEST, y su desaparición se declara en vez de
+// dejarla en el `git log`.
+//
+// Ejercitaba la MISMA propiedad —un envío bloqueado deja fila `status:'failed'`— pero por
+// `sendWhatsAppText` y con el freno del demo (`demo_safe_numbers`). Ese freno se retiró: el
+// requisito de producto es que se pueda escribir a cualquier número que meta el profesional
+// (máster J0), y la premisa que lo sostenía se midió y era falsa.
+//
+// NO se re-ancló, y el motivo es medido, no comodidad: el test de arriba ya fija la propiedad
+// con `wa_opt_out`, así que re-anclar a lo mismo habría sido duplicarlo. Lo que SÍ se pierde es
+// la cobertura de `sendWhatsAppText`, y conviene saber por qué no se puede recuperar hoy: sus
+// dos caminos de fallo restantes son `not_configured` y el error de Meta, y **ninguno es
+// alcanzable en la tanda gateada**, que corre con `WHATSAPP_DRY_RUN=1` y sale antes por el
+// early-return del dry-run.
+//
+// O sea: `sendWhatsAppText` se queda sin ningún fallo ejercitable en la tanda. Eso es un hueco
+// REAL de cobertura, y está escrito aquí para que se lea al mirar este fichero — que es donde
+// alguien lo buscará — y no en un ticket que nadie relee.
+// ─────────────────────────────────────────────────────────────────────────────────────────

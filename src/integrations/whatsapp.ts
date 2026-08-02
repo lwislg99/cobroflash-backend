@@ -5,8 +5,7 @@ import { config } from '../core/config/env';
 import { prisma } from '../core/db/prisma';
 import { normalizePhone } from '../core/utils/utils';
 import { validateTemplateComponents } from './whatsappTemplates';
-import { demoSendBlocked, salidaAMetaBloqueada, MOTIVO_SALIDA_BLOQUEADA } from './whatsappPolicy';
-import type { MotivoExencionDemo } from './whatsappPolicy';
+import { salidaAMetaBloqueada, MOTIVO_SALIDA_BLOQUEADA } from './whatsappPolicy';
 import {
   recordWaMessage,
   extractWaMessageId,
@@ -77,9 +76,8 @@ function avisoSinRastro(origen: string, log?: WaLogMeta): void {
 // SCRUM-245 FASE 2 · QUIÉN MANDA EL MENSAJE — y por qué es un tipo y no una convención
 //
 // Hasta aquí el parámetro era `merchantId?: number`, y esa interrogación mentía: **omitirlo era
-// indistinguible de olvidarlo**. Y omitirlo no es gratis — sin merchant no hay rastro
-// (`logFailure` hace `return` sin él) y NO se aplica la guarda del demo (`demoSendBlocked`
-// compara contra el id del demo, así que sin id devuelve `false` y no bloquea nada).
+// indistinguible de olvidarlo**. Y omitirlo no es gratis: sin merchant no hay rastro
+// (`logFailure` hace `return` sin él), que es el motivo de SCRUM-245.
 //
 // Ahora hay que declarar una de las dos cosas, y olvidarlas **no compila** — la línea de
 // SCRUM-207: imposible es mejor que vigilado.
@@ -238,13 +236,6 @@ export async function sendWhatsAppTemplate(params: {
     console.warn('[WhatsApp] Credenciales no configuradas, mensaje omitido');
     logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
-  }
-
-  // V0-2: modo demo seguro — el demo solo envía a DEMO_SAFE_NUMBERS
-  if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
-    console.warn(`[WhatsApp] V0-2: envío desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO (no está en DEMO_SAFE_NUMBERS)`);
-    logFailure('demo_safe_numbers');
-    return { ok: false, reason: 'demo_safe_numbers' };
   }
 
   // J3: baja del canal — bloqueo de plantillas a ese número para ese merchant
@@ -456,24 +447,12 @@ export async function sendWhatsAppWindowFirst(params: {
 export async function sendWhatsAppText(params: {
   to: string;
   text: string;
-  // V0-2: si se indica, el merchant demo solo puede enviar a DEMO_SAFE_NUMBERS
   merchantId?: number;
-  // SCRUM-245 · TRANSITORIO. Esta vía NO puede llevar todavía `& DestinoDeEnvio` —la unión que
-  // hace que olvidarlo no compile— porque 30 de sus 38 llamadores aún no declaran nada y el
-  // arreglo de 21 de ellos es la FASE 3, que va en un PR propio por cambiar comportamiento
-  // (pasar `merchantId` activa `demoSendBlocked`). Mientras tanto `sinMerchant` se acepta como
-  // opcional para que los casos legítimos QUEDEN DECLARADOS ya, y el guard del llamador
-  // (tests/scrum245-llamador-declara-merchant.test.mjs) sostiene la regla con un ratchet.
-  // Cuando la FASE 3 cierre, estas dos líneas se sustituyen por `& DestinoDeEnvio`.
+  // SCRUM-245 · TRANSITORIO. Esta vía no lleva todavía `& DestinoDeEnvio` —la unión que hace que
+  // olvidarlo no compile— porque el censo de llamadores llegó a 0 por otro camino: el guard del
+  // llamador (tests/scrum245-llamador-declara-merchant.test.mjs) sostiene la regla con un tope
+  // en cero. Cuando se cierre, estas dos líneas se sustituyen por `& DestinoDeEnvio`.
   sinMerchant?: MotivoSinMerchant;
-  /**
-   * SCRUM-245 · Exime del freno del demo (V0-2), y SOLO existe en esta vía a propósito: un
-   * texto libre es lo único que puede ser una RESPUESTA. Las plantillas las inicia el negocio
-   * por definición, así que no pueden acogerse a esto — y no pueden ni intentarlo, porque el
-   * parámetro no está en su firma. La decisión es del fundador (2-ago-2026): el demo es una
-   * cuenta pública y sus clientes sembrados llevan teléfonos del rango de móvil español real.
-   */
-  exentoDelDemo?: MotivoExencionDemo;
   // WA-0b: metadata opcional para el registro de un FALLO (SCRUM-115). No se usa en éxito:
   // sendWhatsAppWindowFirst ya registra el éxito de su propio texto de ventana — duplicaría
   // la fila si esta función también lo hiciera aquí.
@@ -505,13 +484,6 @@ export async function sendWhatsAppText(params: {
     console.warn('[WhatsApp] Credenciales no configuradas, mensaje omitido');
     logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
-  }
-
-  // V0-2: modo demo seguro (los textos libres además solo entregan en ventana 24h — J2)
-  if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS, params.exentoDelDemo)) {
-    console.warn(`[WhatsApp] V0-2: texto desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO (no está en DEMO_SAFE_NUMBERS)`);
-    logFailure('demo_safe_numbers');
-    return { ok: false, reason: 'demo_safe_numbers' };
   }
 
   // A5.5/A8.4: dry-run — Meta no se toca (quien registre el log usa este wamid)
@@ -594,11 +566,6 @@ export async function sendWhatsAppButtons(params: {
     console.warn('[WhatsApp] Credenciales no configuradas, botones omitidos');
     logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
-  }
-  if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
-    console.warn(`[WhatsApp] V0-2: botones desde el merchant demo a ${maskPhone(params.to)} BLOQUEADOS`);
-    logFailure('demo_safe_numbers');
-    return { ok: false, reason: 'demo_safe_numbers' };
   }
 
   // A5.5/A8.4: dry-run — Meta no se toca
@@ -689,11 +656,6 @@ export async function sendWhatsAppList(params: {
     console.warn('[WhatsApp] Credenciales no configuradas, lista omitida');
     logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
-  }
-  if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
-    console.warn(`[WhatsApp] V0-2: lista desde el merchant demo a ${maskPhone(params.to)} BLOQUEADA`);
-    logFailure('demo_safe_numbers');
-    return { ok: false, reason: 'demo_safe_numbers' };
   }
 
   // A5.5/A8.4: dry-run — Meta no se toca
@@ -794,11 +756,6 @@ export async function sendWhatsAppCtaUrl(params: {
     logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
   }
-  if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
-    console.warn(`[WhatsApp] V0-2: cta_url desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO`);
-    logFailure('demo_safe_numbers');
-    return { ok: false, reason: 'demo_safe_numbers' };
-  }
   if (isDryRun()) {
     const data = dryRunData();
     dryRunRecord({ kind: 'cta_url', to: params.to, bodyText: params.bodyText, buttonText: params.buttonText, url: params.url });
@@ -878,11 +835,6 @@ export async function sendWhatsAppDocument(params: {
     logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
   }
-  if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
-    console.warn(`[WhatsApp] V0-2: documento desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO`);
-    logFailure('demo_safe_numbers');
-    return { ok: false, reason: 'demo_safe_numbers' };
-  }
   if (isDryRun()) {
     const data = dryRunData();
     dryRunRecord({ kind: 'document', to: params.to, link: params.link, filename: params.filename });
@@ -952,11 +904,6 @@ export async function sendWhatsAppLocationRequest(params: {
     console.warn('[WhatsApp] Credenciales no configuradas, location_request omitido');
     logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
-  }
-  if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
-    console.warn(`[WhatsApp] V0-2: location_request desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO`);
-    logFailure('demo_safe_numbers');
-    return { ok: false, reason: 'demo_safe_numbers' };
   }
   if (isDryRun()) {
     const data = dryRunData();

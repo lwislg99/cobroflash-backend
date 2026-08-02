@@ -31,7 +31,8 @@
  * enseñar J-»). Se escribió sin ejecutar `getEmissionMode`; medirlo la tumbó.
  *
  * NO toca ningún otro merchant. Los teléfonos de los clientes son ficticios y
- * el guard V0-2 (DEMO_SAFE_NUMBERS) impide cualquier envío real desde el demo.
+ * SCRUM-245: el guard V0-2 se retiró (ver whatsappPolicy.ts). Lo que impide un envío real
+ * desde una tanda es WHATSAPP_DRY_RUN + el freno de SCRUM-180, no una lista de teléfonos.
  */
 import { PrismaClient } from '@prisma/client';
 import {
