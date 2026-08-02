@@ -19,11 +19,9 @@ import assert from 'node:assert/strict';
 
 import { validarRegistrosXml } from './_xsd-verifactu.mjs';
 
-process.env.VERIFACTU_PRODUCTOR_NOMBRE = 'QA Productor';
-process.env.VERIFACTU_PRODUCTOR_NIF = '89890001K';
-process.env.VERIFACTU_ID_SISTEMA = '01';
-process.env.VERIFACTU_VERSION = '1.0.0';
-process.env.VERIFACTU_NUM_INSTALACION = '1';
+// SCRUM-247: aqui se fijaban las cinco `process.env.VERIFACTU_*` del PRODUCTOR. Ya no hacen
+// nada: son CONSTANTES del repo (`src/modules/fiscal/verifactu/productor.ts`), no configuracion.
+// Se retiran en vez de dejarlas: una asignacion inerte se lee como si tuviera efecto.
 
 const merchant = {
   id: 1, country: 'ES', taxId: 'B12345678', legalName: 'Fontanería QA S.L.', name: 'Fontanería QA',

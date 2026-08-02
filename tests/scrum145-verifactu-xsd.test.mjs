@@ -23,11 +23,9 @@ const DIR = path.dirname(fileURLToPath(import.meta.url));
 const XSD = path.join(DIR, '..', 'src', 'modules', 'fiscal', 'verifactu', 'xsd', 'SuministroInformacion.xsd');
 
 // Datos del productor ANTES de importar dist: `config` se congela al cargar el módulo.
-process.env.VERIFACTU_PRODUCTOR_NOMBRE = 'QA Productor';
-process.env.VERIFACTU_PRODUCTOR_NIF = '89890001K';
-process.env.VERIFACTU_ID_SISTEMA = '01';
-process.env.VERIFACTU_VERSION = '1.0.0';
-process.env.VERIFACTU_NUM_INSTALACION = '1';
+// SCRUM-247: aqui se fijaban las cinco `process.env.VERIFACTU_*` del PRODUCTOR. Ya no hacen
+// nada: son CONSTANTES del repo (`src/modules/fiscal/verifactu/productor.ts`), no configuracion.
+// Se retiran en vez de dejarlas: una asignacion inerte se lee como si tuviera efecto.
 
 /**
  * Extrae del XSD los hijos OBLIGATORIOS de un complexType.
@@ -147,27 +145,21 @@ test('SCRUM-145: con NIF, Destinatarios lleva NombreRazon + NIF (choice obligato
   assert.ok(bloque.includes('<sum1:NIF>A11111111</sum1:NIF>'), 'con NIF debe ir el NIF (choice obligatorio del XSD)');
 });
 
-test('SCRUM-145: FAIL-CLOSED — sin datos del productor NO se emite un registro con relleno', () => {
-  // En PROCESO HIJO a propósito: `config` se congela al cargar el módulo y un import "fresco"
-  // con query string NO lo reevalúa (el módulo de config sigue cacheado bajo el mismo
-  // especificador). Un intento anterior de probarlo en el mismo proceso pasaba en VERDE sin
-  // ejercer la rama — justo el falso verde que no se acepta. Con un proceso limpio y la var
-  // vacía, la rama se ejerce de verdad.
-  const hijo = `
-    const { buildVerifactuRegistrosXml } = await import('./dist/modules/invoicing/domain/verifactu.service.js');
-    const fake = { merchant: { findUnique: async () => ({ id:1, country:'ES', taxId:'B12345678', name:'QA' }) },
-                   invoice: { findMany: async () => [] } };
-    try { await buildVerifactuRegistrosXml({ merchantId:1, year:2026 }, fake); console.log('NO-LANZO'); }
-    catch (e) { console.log(e.message); }
-  `;
-  const env = { ...process.env, VERIFACTU_PRODUCTOR_NIF: '', VERIFACTU_PRODUCTOR_NOMBRE: '' };
-  const out = execFileSync(process.execPath, ['--input-type=module', '-e', hijo], {
-    cwd: path.join(DIR, '..'), env, encoding: 'utf8',
-  }).trim();
-
-  assert.match(out, /verifactu_productor_no_configurado/,
-    `sin datos del productor debe LANZAR, no emitir un SistemaInformatico con placeholders (salida: ${out})`);
-});
+// SCRUM-247: aquí vivía «FAIL-CLOSED — sin datos del productor NO se emite un registro con
+// relleno». Lanzaba un proceso HIJO con `VERIFACTU_PRODUCTOR_NIF: ''` y `NOMBRE: ''` en el
+// entorno y exigía que el emisor lanzase `verifactu_productor_no_configurado`.
+//
+// SE RETIRA PORQUE EL ESCENARIO QUE PROBABA YA NO PUEDE OCURRIR: el productor dejó de leerse del
+// entorno y es una CONSTANTE del repo. Vaciarlo desde fuera es imposible, así que ese hijo ya no
+// ejercería la rama — pasaría a comprobar una condición inalcanzable, que es exactamente lo que
+// SCRUM-237 barrió de esta suite.
+//
+// ⚠️ PERO LA PROTECCIÓN NO SE PIERDE: SE MUDA. El peligro no desapareció, cambió de forma —
+//     antes:  «¿y si el entorno no trae el dato?»
+//     ahora:  «¿y si alguien deja una constante vacía en un PR?»
+// Eso lo vigila `tests/scrum247-productor-constante.test.mjs`, que exige que las cinco constantes
+// NO estén vacías. Sin ese relevo, este ticket habría cambiado un fail-open VIGILADO por uno
+// INVISIBLE, que es peor que el estado del que se partía.
 
 test('SCRUM-145: FechaHoraHusoGenRegistro emite el sello REAL de la huella (vfTimestamp), no createdAt', async () => {
   const sello = new Date('2026-03-15T18:45:12Z');
