@@ -18,6 +18,8 @@
 import { PrismaClient } from '@prisma/client';
 import 'dotenv/config';
 import { assertSafeStagingUrl } from './_db-guard.mjs';
+import { leerMarcaCruda } from './_staging-lock.mjs'; // SCRUM-260: LEER el marcador (read-only; no edito _staging-lock ni turno-staging)
+import { registrar, ioDeCliente } from './_rastro-limpieza.mjs'; // SCRUM-260: constancia
 
 const TEST_EMAIL_DOMAIN = '@test.local';
 const APPLY = process.argv.includes('--apply');
@@ -57,12 +59,30 @@ async function main() {
     console.log(`  #${m.id}  ${m.name}  ${m.email}  ${m.createdAt.toISOString().slice(0, 10)}`);
   }
 
+  // SCRUM-260 · CONSTANCIA — se deja el rastro ANTES de borrar nada (R4): si un delete revienta a
+  // mitad, la fila con «qué se iba a barrer + qué turno estaba vigente» ya está a salvo. Vale para
+  // dry-run (applied=dry-run) y para --apply. Best-effort (R5): si la constancia falla, la limpieza
+  // sigue y la barrera anti-prod no se toca.
+  const ids = huerfanos.map((m) => m.id);
+  const jobsPrevistos = await prisma.job.count({ where: { merchantId: { in: ids } } }).catch(() => NaN);
+  const { marca } = await leerMarcaCruda(prisma).catch(() => ({ marca: null }));
+  const rastro = await registrar(ioDeCliente(prisma), {
+    ranAt: new Date().toISOString(),
+    turnMarker: marca ?? null, // null → «NO CONSTA» explícito en el rastro
+    applied: APPLY,
+    merchantsCount: huerfanos.length,
+    merchantEmails: huerfanos.map((m) => m.email),
+    jobsCount: jobsPrevistos,
+  });
+  console.log(rastro.ok
+    ? `📝 rastro dejado en COMMENT ON SCHEMA yaqu_rastro (turno vigente: ${marca ? 'consta' : 'NO CONSTA'})`
+    : `⚠️  no se pudo dejar rastro: ${rastro.motivo}`);
+
   if (!APPLY) {
     console.log('\n🔎 DRY RUN — no se ha borrado nada. Repite con --apply para borrarlos.');
     return;
   }
 
-  const ids = huerfanos.map((m) => m.id);
   const where = { merchantId: { in: ids } };
 
   // Hijos antes que padres. `.catch` por si alguna tabla no existe en este entorno:
