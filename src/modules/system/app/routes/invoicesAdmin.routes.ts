@@ -29,6 +29,7 @@ import { ensureInvoicePdf, ensureChargeReceiptToken } from '../../../../lib/invo
 import { sendSuccessBody, sendFailureBody, SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 import { esErrorSinSellar, ERROR_SIN_SELLAR } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
 import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
+import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 
 
 const router = Router();
@@ -723,6 +724,11 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
     if (isReceiptNumber(original.number)) {
       return res.status(409).json({ error: 'cannot_rectify_receipt' });
     }
+
+    // SCRUM-246 · ANTES de pedir número, igual que el resto. Aquí las líneas van NEGADAS
+    // (es una rectificativa), y por eso la regla mira que el importe sea distinto de cero y no
+    // que sea positivo: una R1 mueve dinero en la otra dirección, pero lo mueve.
+    exigirLineasFacturables(negLines);
 
     const rect = await prisma.$transaction(async (tx) => {
       const number = await allocateInvoiceNumber(tx, req.merchantId, {

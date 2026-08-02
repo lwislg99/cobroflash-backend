@@ -32,6 +32,7 @@ import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
 import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
+import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 
 const router = Router();
 
@@ -564,6 +565,11 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     );
     const amount = grossOfLines(scaledLines);
 
+    // SCRUM-246 · ANTES de pedir número. Si no hay nada que cobrar, no se emite y la serie
+    // ni se entera: comprobarlo DESPUÉS obligaría a modificar una factura ya numerada o a
+    // deshacerla, y deshacer es lo que crea el hueco que hay que justificar ante Hacienda.
+    exigirLineasFacturables(scaledLines);
+
     const invoice = await prisma.$transaction(async (tx) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
         camino: 'C2', actor: actorDeRequest(req),
@@ -648,6 +654,11 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     });
   } catch (err: any) {
     console.error('[POST /admin/jobs/:id/collect-rest]', err?.message || err);
+    // SCRUM-246: no hay nada que cobrar. No se ha emitido NI consumido número, así que el
+    // profesional arregla el presupuesto y vuelve — la serie sigue intacta.
+    if (esErrorSinLineas(err)) {
+      return res.status(409).json({ error: ERROR_SIN_LINEAS, message: COPY_ADMIN_SIN_LINEAS });
+    }
     return res.status(500).json({ error: 'internal_error' });
   }
 });

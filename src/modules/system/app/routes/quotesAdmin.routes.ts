@@ -25,6 +25,7 @@ import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 
 import fetch from 'node-fetch';
 import { sendSuccessBody, sendFailureBody } from '../../../../lib/sendOutcome'; // SCRUM-126
 import { sellarTrasEmision, SELLADO_HECHO, SELLADO_PENDIENTE } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
+import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 
 const router = Router();
 
@@ -190,6 +191,11 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     );
     const invoiceAmount = grossOfLines(scaledLines);
 
+    // SCRUM-246 · ANTES de pedir número. Si no hay nada que cobrar, no se emite y la serie
+    // ni se entera: comprobarlo DESPUÉS obligaría a modificar una factura ya numerada o a
+    // deshacerla, y deshacer es lo que crea el hueco que hay que justificar ante Hacienda.
+    exigirLineasFacturables(scaledLines);
+
     const invoice = await prisma.$transaction(async (tx) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
         camino: 'C3', actor: actorDeRequest(req),
@@ -251,6 +257,11 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     });
   } catch (err) {
     console.error('[POST /admin/quotes/:id/invoice] error', err);
+    // SCRUM-246: no hay nada que cobrar. No se ha emitido NI consumido número, así que el
+    // profesional arregla el presupuesto y vuelve — la serie sigue intacta.
+    if (esErrorSinLineas(err)) {
+      return res.status(409).json({ error: ERROR_SIN_LINEAS, message: COPY_ADMIN_SIN_LINEAS });
+    }
     return res.status(500).json({ error: 'internal_error' });
   }
 });
@@ -383,6 +394,11 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
     const invoiceAmount = grossOfLines(scaledLines);
     const merchant = quote.merchant;
 
+    // SCRUM-246 · ANTES de pedir número. Si no hay nada que cobrar, no se emite y la serie
+    // ni se entera: comprobarlo DESPUÉS obligaría a modificar una factura ya numerada o a
+    // deshacerla, y deshacer es lo que crea el hueco que hay que justificar ante Hacienda.
+    exigirLineasFacturables(scaledLines);
+
     const invoice = await prisma.$transaction(async (tx) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
         camino: 'C4', actor: actorDeRequest(req),
@@ -420,6 +436,11 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
     });
   } catch (err) {
     console.error('[POST /admin/quotes/:id/invoice-manual] error', err);
+    // SCRUM-246: no hay nada que cobrar. No se ha emitido NI consumido número, así que el
+    // profesional arregla el presupuesto y vuelve — la serie sigue intacta.
+    if (esErrorSinLineas(err)) {
+      return res.status(409).json({ error: ERROR_SIN_LINEAS, message: COPY_ADMIN_SIN_LINEAS });
+    }
     return res.status(500).json({ error: 'internal_error' });
   }
 });

@@ -23,6 +23,7 @@ import { isReceiptNumber } from '../../invoicing/domain/invoiceNumber.service';
 import { calcVatBreakdown } from '../../invoicing/domain/vat.service';
 import type { ActorAudit } from '../../system/audit.service'; // SCRUM-207
 import { sellarTrasEmision, SELLADO_PENDIENTE } from '../../invoicing/domain/selladoEstado'; // SCRUM-205
+import { exigirLineasFacturables } from '../../invoicing/domain/lineasFacturables'; // SCRUM-246
 
 /** Un albarán ya validado y listo para entrar en una factura. */
 export interface AlbaranAEmitir {
@@ -82,6 +83,10 @@ export async function emitirRecapitulativas(
           tax: (Number(l.tipoIva) || 0) / 100,
         }));
       });
+      // SCRUM-246 · antes de que `emitInvoice` pida número. Un grupo de albaranes sin nada
+      // que cobrar no produce factura, y así no gasta número de serie.
+      exigirLineasFacturables(lines);
+
       const bd = calcVatBreakdown(lines);
       const total = (bd.base + bd.cuota).toFixed(2);
       const albaranRefs = g.albaranes.map((a) => ({ albaranId: a.id, numero: a.numero, fecha: a.fecha }));
