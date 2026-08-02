@@ -87,23 +87,12 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.post('/-smoke', (_req, res) => {
-  res.json({ ok: true });
-});
-
-router.get('/', async (_req, res) => {
-  const charges = await prisma.charge.findMany({ orderBy: { id: 'desc' }, take: 20 });
-  res.json(
-    charges.map((c) => ({
-      id: c.id,
-      status: c.status,
-      amount: c.amount.toString(),
-      currency: c.currency,
-      reference: c.reference,
-      created_at: c.createdAt,
-    })),
-  );
-});
+// SCRUM-251: se RETIRARON `GET /` y `POST /-smoke`, ambos restos del scaffold interno SIN ningún
+// caller (medido en src/scripts/tests/public). `GET /` listaba los 20 cobros más recientes de TODA
+// la plataforma (findMany SIN `where`): su única protección era `requireInternalSecret` en el
+// montaje de app.ts — a un fichero de distancia, no en la consulta, y con el `_req` delatando que
+// nadie miraba la petición. Mismo criterio que el retiro de `POST /:id/send` (abajo, SCRUM-129):
+// ruta interna muerta que leía cross-merchant, fuera de raíz en vez de declarar una ficción.
 
 router.get('/:id', async (req, res) => {
   const id = Number(req.params.id);
