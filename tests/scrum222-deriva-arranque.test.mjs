@@ -246,6 +246,36 @@ test('la consulta llega hasta el comparador: un catálogo bueno de mentira da en
   assert.equal(r.estado, 'en-sync');
 });
 
+// ── El censo que ejecuta el fundador contra producción ────────────────────────
+//
+// `docs/sql/deriva-prod.sql` es UNA consulta autocontenida y de solo lectura: al otro lado no
+// hay node ni CLI de Prisma, así que la lista de columnas esperadas viaja DENTRO (un VALUES
+// grande). Eso la hace envejecer, y su forma de envejecer es la peor: al añadirse una columna
+// nueva al schema, una consulta vieja no la pregunta y devuelve «0 filas» — **dice «en sync»
+// justo sobre la columna que acaba de nacer**, que es el defecto que este ticket persigue,
+// cometido por la herramienta que lo persigue. Por eso se genera, y por eso esto lo vigila.
+
+test('el SQL del censo de producción NO está desfasado respecto al schema', async () => {
+  const { generarSql, RUTA_SQL } = await import('../scripts/generar-sql-deriva.mjs');
+  const enDisco = fs.readFileSync(RUTA_SQL, 'utf8').replace(/\r\n/g, '\n');
+  assert.equal(
+    enDisco,
+    generarSql(),
+    'docs/sql/deriva-prod.sql no coincide con el schema actual: `node scripts/generar-sql-deriva.mjs`',
+  );
+});
+
+test('el SQL del censo es de SOLO LECTURA y lleva su suelo anti-falso-positivo', () => {
+  const sql = fs.readFileSync(path.join(RAIZ, 'docs', 'sql', 'deriva-prod.sql'), 'utf8');
+  const sinComentarios = sql.split('\n').filter((l) => !l.trimStart().startsWith('--')).join('\n');
+  // Sin comentarios a propósito: el fichero EXPLICA que no escribe, y un guard por texto se
+  // cazaría con su propia explicación (trampa de autorreferencia de SCRUM-233).
+  assert.doesNotMatch(sinComentarios, /\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|GRANT)\b/i);
+  // El suelo: sin `columnas_vistas`, un search_path distinto se leería como «falta todo».
+  assert.match(sinComentarios, /columnas_vistas/);
+  assert.match(sinComentarios, /falta_la_tabla_entera/);
+});
+
 // ── CONTRA UNA BASE DE VERDAD (gateado) ───────────────────────────────────────
 //
 // Todo lo de arriba compara contra un catálogo que construyo yo a partir de `tablasEsperadas()`:
