@@ -191,13 +191,13 @@ async function seed() {
 
   // ── Clientes (teléfonos FICTICIOS 34611000xx — el guard V0-2 bloquea envíos) ──
   const customersData = [
-    { name: 'María García',                     phone: '34611000001', email: 'maria.garcia@example.com' },
-    { name: 'José Luis Martín',                 phone: '34611000002', email: 'jl.martin@example.com' },
-    { name: 'Carmen Ruiz',                      phone: '34611000003', email: null },
-    { name: 'Antonio López',                    phone: '34611000004', email: 'antoniolopez@example.com' },
-    { name: 'Lucía Fernández',                  phone: '34611000005', email: 'lucia.f@example.com' },
-    { name: 'Comunidad de Vecinos C/ Mayor 5',  phone: '34611000006', email: 'admin.mayor5@example.com' },
-    { name: 'Bar El Rincón',                    phone: '34611000007', email: 'barelrincon@example.com' },
+    { name: 'María García',                     phone: '34000000003', email: 'maria.garcia@example.com' },
+    { name: 'José Luis Martín',                 phone: '34000000004', email: 'jl.martin@example.com' },
+    { name: 'Carmen Ruiz',                      phone: '34000000005', email: null },
+    { name: 'Antonio López',                    phone: '34000000006', email: 'antoniolopez@example.com' },
+    { name: 'Lucía Fernández',                  phone: '34000000007', email: 'lucia.f@example.com' },
+    { name: 'Comunidad de Vecinos C/ Mayor 5',  phone: '34000000008', email: 'admin.mayor5@example.com' },
+    { name: 'Bar El Rincón',                    phone: '34000000009', email: 'barelrincon@example.com' },
   ];
   const customers = [];
   for (const c of customersData) {

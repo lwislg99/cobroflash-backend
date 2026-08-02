@@ -97,7 +97,7 @@ async function main() {
       address: 'C/ Staging 1, 28000 Madrid',
       defaultCurrency: 'EUR',
       invoiceSeriesPrefix: 'QA',
-      whatsappPhone: '34600000001',
+      whatsappPhone: '34000000010',
       plan: 'trial',
       planExpiresAt: new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000), // +10 años
     },
@@ -111,7 +111,7 @@ async function main() {
       data: {
         merchantId: merchant.id,
         name: 'Cliente QA',
-        phone: '34600000002',
+        phone: '34000000011',
         email: 'cliente@staging.yaqu',
         notes: MARK,
       },

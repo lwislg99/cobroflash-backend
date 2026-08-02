@@ -113,7 +113,7 @@ test('SCRUM-25 (B): datos.zip — técnico 403, entradas, PDFs, tenancy, rango, 
 
     const CANARIO_B = `VECINO-NO-DEBE-SALIR-${stamp}`;
     const custA = await prisma.customer.create({
-      data: { merchantId: merchantA.id, name: `Cliente S25B ${stamp}`, phone: '34600000255' },
+      data: { merchantId: merchantA.id, name: `Cliente S25B ${stamp}`, phone: '34000000034' },
     });
     await prisma.customer.create({ data: { merchantId: merchantB.id, name: CANARIO_B } });
 

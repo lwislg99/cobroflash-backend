@@ -44,10 +44,10 @@ test('SCRUM-25: exports admin-only, CSVs nuevos, base+IVA, rango y audit', { ski
     });
 
     const custA = await prisma.customer.create({
-      data: { merchantId: merchantA.id, name: 'Cliente S25 A', phone: '34600000025', email: 'cliente-s25@test.local' },
+      data: { merchantId: merchantA.id, name: 'Cliente S25 A', phone: '34000000035', email: 'cliente-s25@test.local' },
     });
     const custB = await prisma.customer.create({
-      data: { merchantId: merchantB.id, name: 'VECINO NO DEBE SALIR', phone: '34699999999' },
+      data: { merchantId: merchantB.id, name: 'VECINO NO DEBE SALIR', phone: '34000000036' },
     });
 
     // Factura de A con líneas 100 € + 21 % → base 100,00 · IVA 21,00 · total 121,00

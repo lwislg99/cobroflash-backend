@@ -38,19 +38,19 @@ test('SCRUM-104 (fase 2): clientes.csv del paquete = los referenciados, ni más 
     }, async (merchant) => {
       // (A) ANTIGUO: alta FUERA del rango, pero con factura DENTRO → debe aparecer.
       const antiguo = await prisma.customer.create({
-        data: { merchantId: merchant.id, name: `ANTIGUO-CON-FACTURA-${stamp}`, phone: '34600001041', createdAt: ANTIGUO },
+        data: { merchantId: merchant.id, name: `ANTIGUO-CON-FACTURA-${stamp}`, phone: '34000000028', createdAt: ANTIGUO },
       });
       // (B) NUEVO SIN DOCUMENTOS: alta DENTRO del rango, ningún documento → NO debe aparecer.
       const nuevoSinDocs = await prisma.customer.create({
-        data: { merchantId: merchant.id, name: `NUEVO-SIN-DOCUMENTOS-${stamp}`, phone: '34600001042', createdAt: DENTRO },
+        data: { merchantId: merchant.id, name: `NUEVO-SIN-DOCUMENTOS-${stamp}`, phone: '34000000029', createdAt: DENTRO },
       });
       // (C) Cliente de un COBRO del rango: comprueba que cobros también aporta referencias.
       const deCobro = await prisma.customer.create({
-        data: { merchantId: merchant.id, name: `SOLO-COBRO-${stamp}`, phone: '34600001043', createdAt: ANTIGUO },
+        data: { merchantId: merchant.id, name: `SOLO-COBRO-${stamp}`, phone: '34000000030', createdAt: ANTIGUO },
       });
       // (D) FUERA DEL TODO: alta antigua y su factura también antigua → NO debe aparecer.
       const fueraDelTodo = await prisma.customer.create({
-        data: { merchantId: merchant.id, name: `FUERA-DEL-TODO-${stamp}`, phone: '34600001044', createdAt: ANTIGUO },
+        data: { merchantId: merchant.id, name: `FUERA-DEL-TODO-${stamp}`, phone: '34000000031', createdAt: ANTIGUO },
       });
 
       await prisma.invoice.create({

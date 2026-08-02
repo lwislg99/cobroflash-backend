@@ -28,8 +28,8 @@ test('A12.5a: presupuesto FIRMADO → PDF válido con la firma dentro', async ()
   const { outPath } = await generateQuotePdf({
     quoteId: 99999901,
     quoteNumber: 901,
-    merchant: { name: 'QA Fontanería', legalName: 'QA SL', taxId: 'B00000000', address: 'C/ Test 1', whatsappPhone: '34600000000' },
-    customer: { name: 'Cliente QA', phone: '34611000001' },
+    merchant: { name: 'QA Fontanería', legalName: 'QA SL', taxId: 'B00000000', address: 'C/ Test 1', whatsappPhone: '34000000001' },
+    customer: { name: 'Cliente QA', phone: '34000000003' },
     currency: 'EUR',
     total: '9999.99', // AB6: importes grandes
     lines: [{ concept: 'Trabajo de prueba con un concepto razonablemente largo para el ancho', qty: 1, price: 9999.99, tax: 0 }],

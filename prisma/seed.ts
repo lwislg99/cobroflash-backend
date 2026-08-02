@@ -19,7 +19,7 @@ async function main() {
       invoiceSeriesPrefix: 'CF',
       logoUrl: null,
       taxId: 'B12345678',
-      whatsappPhone: '34600000000',
+      whatsappPhone: '34000000001',
     },
     create: {
       name: 'Demo ES',
@@ -32,7 +32,7 @@ async function main() {
       invoiceSeriesPrefix: 'CF',
       logoUrl: null,
       taxId: 'B12345678',
-      whatsappPhone: '34600000000',
+      whatsappPhone: '34000000001',
       nextInvoiceNumber: 1,
       plan: 'trial',
       planExpiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
@@ -44,14 +44,14 @@ async function main() {
     where: { id: 1 },
     update: {
       name: 'Cliente Prueba',
-      phone: '34629965893',
+      phone: '34000000002',
       email: 'cliente@example.com',
       notes: 'Cliente demo para probar YaQu',
     },
     create: {
       merchantId: 1,
       name: 'Cliente Prueba',
-      phone: '34629965893',
+      phone: '34000000002',
       email: 'cliente@example.com',
       notes: 'Cliente demo para probar YaQu',
     }
