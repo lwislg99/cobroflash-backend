@@ -1,7 +1,9 @@
 import crypto from 'crypto';
 
 // A11.2 (S3): teléfonos SIEMPRE enmascarados en logs — prefijo + últimos 3.
-// "34629965893" → "34•••••893". Nunca usar el número completo en console.*.
+// "34000000001" → "34•••••001". Nunca usar el número completo en console.*.
+// SCRUM-261: el ejemplo era un MÓVIL REAL. Un número de verdad en un comentario se copia —
+// a un test, a un seed, a un ticket— así que el ejemplo va en el rango imposible de SCRUM-262.
 export function maskPhone(input?: string | null): string {
   const p = String(input ?? '').replace(/\D/g, '');
   if (!p) return '—';
