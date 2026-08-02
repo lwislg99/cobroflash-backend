@@ -1,9 +1,21 @@
 // SCRUM-234 · LA CARRERA, OBSERVADA. Test GATEADO: exige PostgreSQL real y dos conexiones.
 //
-// ⚠️ ESTE TEST NO SE HA EJECUTADO NUNCA. Se escribió sin turno de staging y se deja declarado
-// a propósito, porque la alternativa era afirmar el comportamiento de READ COMMITTED por
-// razonamiento y llamarlo medición. Hasta que corra, lo que hay aquí es una HIPÓTESIS escrita
-// en forma de test — no una garantía. Quien le dé el primer turno debe leer esto antes.
+// ✅ EJECUTADO EL 02-AGO-2026 contra staging (acela/railway), en los DOS sentidos y tres veces
+// cada uno: SIN cerrojo 3/3 ROJO con `P2002`; CON cerrojo 3/3 VERDE, números consecutivos.
+// Nació declarado como hipótesis sin ejecutar; ya no lo es. Lo que sigue es lo medido.
+//
+// Y HUBO QUE ARREGLARLO DOS VECES ANTES DE QUE MIDIERA NADA. Las dos son la misma lección
+// —la herramienta funciona sobre el objeto equivocado— y por eso quedan escritas:
+//   1) `customerId` salía de `merchant.__customerId`, un campo que `withMerchant` NO crea.
+//      Las dos transacciones morían en la VALIDACIÓN de `invoice.create`, sin insertar: rojo
+//      abundante y ni un P2002 posible. Un rojo que no probaba nada.
+//   2) Ya con cliente, salía VERDE 4 de 4 SIN cerrojo. No porque no hubiera carrera: porque
+//      las dos emisiones entran con ~1,3 s de desfase y la ventana de la carrera es ~0,7 s a
+//      esta latencia — el caso caía FUERA del mecanismo (ERRORES_ASESOR #12). De ahí la
+//      barrera de fila que hay más abajo, que fuerza el entrelazado en vez de esperarlo.
+// Ojo con la trampa que casi cuela: en (1) las dos reservas devolvieron `2026-CF-001`, y eso
+// se lee como «carrera confirmada» — pero una serialización perfecta con rollback da EXACTAMENTE
+// la misma salida. Lo que lo desempató fue medir dos `pg_backend_pid` distintos, no el número.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // QUÉ TIENE QUE DEMOSTRAR, Y EN LAS DOS DIRECCIONES
@@ -52,6 +64,16 @@ test('SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivo
       flags: { INVOICING_ES_ENABLED: true },
     },
     async (merchant) => {
+      // `Invoice.customerId` es OBLIGATORIO en el schema (no `Int?`). Esto era
+      // `merchant.__customerId ?? undefined`, un campo que `withMerchant` NO crea nunca: las dos
+      // transacciones morían en la VALIDACIÓN de `invoice.create` («Argument `merchant` is
+      // missing») sin llegar a insertar nada, así que el P2002 no podía aparecer y el test medía
+      // otra cosa con total confianza. Se crea DENTRO de `withMerchant`, o sea cubierto por su
+      // limpieza (`customer` está en MODELOS_POR_MERCHANT).
+      const cliente = await prisma.customer.create({
+        data: { merchantId: merchant.id, name: 'QA S234 cliente' },
+      });
+
       const emitir = () =>
         prisma.$transaction(async (tx) => {
           const numero = await allocateInvoiceNumber(tx, merchant.id, {
@@ -61,7 +83,7 @@ test('SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivo
           const inv = await tx.invoice.create({
             data: {
               merchantId: merchant.id,
-              customerId: merchant.__customerId ?? undefined,
+              customerId: cliente.id,
               number: numero,
               type: 'F1',
               total: '100.00',
@@ -71,11 +93,39 @@ test('SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivo
             },
           });
           return inv.number;
-        });
+        }, { timeout: 30_000, maxWait: 30_000 });
+
+      // ── LA BARRERA · por qué no basta con lanzar las dos y esperar ───────────────────────
+      //
+      // MEDIDO contra staging (02-ago-2026), no razonado: dos `$transaction` lanzadas a la vez
+      // SÍ salen por conexiones distintas (dos `pg_backend_pid` distintos), pero entran con
+      // ~1,3 s de DESFASE, y la ventana de la carrera —entre el `findUnique` del contador y el
+      // `merchant.update` que lo avanza— es de ~0,7 s a esta latencia. O sea que la segunda
+      // reserva empieza cuando la primera YA escribió: sin cerrojo, el test salía VERDE 4 de 4
+      // veces. Un verde que no probaba nada — el caso caía FUERA del mecanismo que vigila
+      // (docs/ERRORES_ASESOR.md, incidente #12).
+      //
+      // Esta transacción de barrera toma el candado de FILA del merchant desde una TERCERA
+      // conexión. Con él tomado, las dos emisiones pueden LEER el contador (el `findUnique` no
+      // bloquea) pero ninguna puede ESCRIBIRLO. Se sueltan a la vez al liberar la barrera, y el
+      // entrelazado que la carrera necesita deja de depender del reloj.
+      //
+      // NO toca el camino de emisión (regla 38): es orquestación desde fuera, sobre una fila.
+      let liberarBarrera;
+      const barreraSoltada = new Promise((r) => { liberarBarrera = r; });
+      const barrera = prisma.$transaction(async (t) => {
+        await t.$queryRaw`SELECT id FROM merchants WHERE id = ${merchant.id} FOR UPDATE`;
+        await barreraSoltada;
+      }, { timeout: 30_000, maxWait: 30_000 });
 
       // `allSettled` y no `all`: si una revienta con P2002 queremos VER el error, no perderlo
       // detrás del fallo de la otra promesa.
-      const [a, b] = await Promise.allSettled([emitir(), emitir()]);
+      const enCurso = Promise.allSettled([emitir(), emitir()]);
+      // Margen para que las DOS hayan leído el contador y estén paradas en su `update`.
+      await new Promise((r) => setTimeout(r, 5_000));
+      liberarBarrera();
+      await barrera;
+      const [a, b] = await enCurso;
 
       const fallidas = [a, b].filter((r) => r.status === 'rejected');
       assert.deepEqual(
