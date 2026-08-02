@@ -40,7 +40,7 @@ test('SCRUM-106: trabajos.csv por fecha de EJECUCIÓN — el de junio ejecutado 
       name: `QA S106 ${stamp}`, email: `qa-s106-${stamp}@test.local`,
     }, async (merchant) => {
       const cliente = await prisma.customer.create({
-        data: { merchantId: merchant.id, name: `Cliente S106 ${stamp}`, phone: '34600001060' },
+        data: { merchantId: merchant.id, name: `Cliente S106 ${stamp}`, phone: '34000000032' },
       });
 
       // (A) EL CASO DEL TICKET: presupuestado/creado en JUNIO, ejecutado en JULIO.

@@ -132,20 +132,20 @@ const CATALOG = [
 // 4 con email (@example.com = RFC-2606, NUNCA se entrega → cero riesgo). El resto sin email (realista).
 const CLIENTS = [
   { name: 'María García', city: 'Alcorcón', address: 'C/ Mayor 12, 28921 Alcorcón (Madrid)', phone: MARIA_PHONE, email: 'maria.garcia@example.com' },
-  { name: 'José Martínez', city: 'Móstoles', address: 'Av. de Portugal 45, 28931 Móstoles (Madrid)', phone: '34600000002', email: null },
-  { name: 'Carmen López', city: 'Leganés', address: 'C/ Río Manzanares 8, 28914 Leganés (Madrid)', phone: '34600000003', email: 'carmen.lopez@example.com' },
-  { name: 'Antonio Sánchez', city: 'Fuenlabrada', address: 'C/ de la Plaza 3, 28941 Fuenlabrada (Madrid)', phone: '34600000004', email: null },
-  { name: 'Isabel Fernández', city: 'Getafe', address: 'Av. de España 120, 28903 Getafe (Madrid)', phone: '34600000005', email: 'isabel.fernandez@example.com' },
-  { name: 'Manuel Rodríguez', city: 'Alcorcón', address: 'C/ Cáceres 22, 28924 Alcorcón (Madrid)', phone: '34600000006', email: null },
-  { name: 'Dolores Gómez', city: 'Móstoles', address: 'C/ Simón Hernández 60, 28936 Móstoles (Madrid)', phone: '34600000007', email: null },
-  { name: 'Francisco Jiménez', city: 'Leganés', address: 'Av. Rey Juan Carlos I 40, 28916 Leganés (Madrid)', phone: '34600000008', email: 'francisco.jimenez@example.com' },
-  { name: 'Ana Ruiz', city: 'Fuenlabrada', address: 'C/ Portugal 15, 28943 Fuenlabrada (Madrid)', phone: '34600000009', email: null },
-  { name: 'Juan Moreno', city: 'Getafe', address: 'C/ Madrid 78, 28901 Getafe (Madrid)', phone: '34600000010', email: null },
-  { name: 'Pilar Muñoz', city: 'Alcorcón', address: 'C/ Fuenlabrada 9, 28922 Alcorcón (Madrid)', phone: '34600000011', email: null },
-  { name: 'Luis Álvarez', city: 'Móstoles', address: 'C/ Antonio Hernández 5, 28934 Móstoles (Madrid)', phone: '34600000012', email: null },
-  { name: 'Rosa Romero', city: 'Leganés', address: 'C/ Priorato 11, 28915 Leganés (Madrid)', phone: '34600000013', email: null },
-  { name: 'Teresa Navarro', city: 'Getafe', address: 'C/ Toledo 33, 28905 Getafe (Madrid)', phone: '34600000014', email: null },
-  { name: 'Beatriz Ortega', city: 'Fuenlabrada', address: 'C/ Grecia 27, 28946 Fuenlabrada (Madrid)', phone: '34600000015', email: null },
+  { name: 'José Martínez', city: 'Móstoles', address: 'Av. de Portugal 45, 28931 Móstoles (Madrid)', phone: '34000000011', email: null },
+  { name: 'Carmen López', city: 'Leganés', address: 'C/ Río Manzanares 8, 28914 Leganés (Madrid)', phone: '34000000012', email: 'carmen.lopez@example.com' },
+  { name: 'Antonio Sánchez', city: 'Fuenlabrada', address: 'C/ de la Plaza 3, 28941 Fuenlabrada (Madrid)', phone: '34000000013', email: null },
+  { name: 'Isabel Fernández', city: 'Getafe', address: 'Av. de España 120, 28903 Getafe (Madrid)', phone: '34000000014', email: 'isabel.fernandez@example.com' },
+  { name: 'Manuel Rodríguez', city: 'Alcorcón', address: 'C/ Cáceres 22, 28924 Alcorcón (Madrid)', phone: '34000000015', email: null },
+  { name: 'Dolores Gómez', city: 'Móstoles', address: 'C/ Simón Hernández 60, 28936 Móstoles (Madrid)', phone: '34000000016', email: null },
+  { name: 'Francisco Jiménez', city: 'Leganés', address: 'Av. Rey Juan Carlos I 40, 28916 Leganés (Madrid)', phone: '34000000017', email: 'francisco.jimenez@example.com' },
+  { name: 'Ana Ruiz', city: 'Fuenlabrada', address: 'C/ Portugal 15, 28943 Fuenlabrada (Madrid)', phone: '34000000018', email: null },
+  { name: 'Juan Moreno', city: 'Getafe', address: 'C/ Madrid 78, 28901 Getafe (Madrid)', phone: '34000000019', email: null },
+  { name: 'Pilar Muñoz', city: 'Alcorcón', address: 'C/ Fuenlabrada 9, 28922 Alcorcón (Madrid)', phone: '34000000020', email: null },
+  { name: 'Luis Álvarez', city: 'Móstoles', address: 'C/ Antonio Hernández 5, 28934 Móstoles (Madrid)', phone: '34000000021', email: null },
+  { name: 'Rosa Romero', city: 'Leganés', address: 'C/ Priorato 11, 28915 Leganés (Madrid)', phone: '34000000022', email: null },
+  { name: 'Teresa Navarro', city: 'Getafe', address: 'C/ Toledo 33, 28905 Getafe (Madrid)', phone: '34000000023', email: null },
+  { name: 'Beatriz Ortega', city: 'Fuenlabrada', address: 'C/ Grecia 27, 28946 Fuenlabrada (Madrid)', phone: '34000000024', email: null },
 ];
 
 // Helper para construir una línea desde el catálogo por nombre.
@@ -323,7 +323,7 @@ async function seed() {
         country: 'ES',
         defaultCurrency: 'EUR',
         invoiceSeriesPrefix: 'FT',
-        whatsappPhone: '34600000100',       // ficticio (no se envía nada en el seed)
+        whatsappPhone: '34000000025',       // ficticio (no se envía nada en el seed)
         bizumPhone: '34600000100',
         iban: 'ES9121000418450200051332',   // formato válido, ficticio
         status: 'active',
@@ -355,8 +355,8 @@ async function seed() {
     }
 
     // 3) PROVEEDORES (Proveedores tiene pantalla) — 2.
-    const prov1 = await tx.provider.create({ data: { merchantId: mid, name: 'Suministros Fontanería Sur S.L.', phone: '34600000201', email: 'ventas@example.com', notes: 'Almacén habitual — material sanitario' } });
-    const prov2 = await tx.provider.create({ data: { merchantId: mid, name: 'Almacenes Hidráulica Madrid', phone: '34600000202', email: null, notes: 'Termos y calderas' } });
+    const prov1 = await tx.provider.create({ data: { merchantId: mid, name: 'Suministros Fontanería Sur S.L.', phone: '34000000026', email: 'ventas@example.com', notes: 'Almacén habitual — material sanitario' } });
+    const prov2 = await tx.provider.create({ data: { merchantId: mid, name: 'Almacenes Hidráulica Madrid', phone: '34000000027', email: null, notes: 'Termos y calderas' } });
     counts.providers = 2;
 
     // 4) CATÁLOGO (Productos)

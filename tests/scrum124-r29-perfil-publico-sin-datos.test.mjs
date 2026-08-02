@@ -39,7 +39,7 @@ const merchantConDatosSensibles = {
   trade: 'fontanero',
   profileZones: ['Chamberí', 'Retiro'],
   profileYears: 8,
-  whatsappPhone: '600111222',
+  whatsappPhone: '34000000033',
   googleReviewUrl: 'https://g.page/r/ejemplo',
   country: 'ES',
   brandColor: '#16a34a',
