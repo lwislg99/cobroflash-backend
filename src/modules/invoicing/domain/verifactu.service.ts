@@ -13,6 +13,11 @@ import { prisma as defaultPrisma } from '../../../core/db/prisma';
 import { calcVatBreakdown, calcVatCuotaTotal } from './vat.service';
 import { isReceiptNumber } from './invoiceNumber.service';
 import { config } from '../../../core/config/env';
+// SCRUM-247: la identidad del PRODUCTOR es constante del repo, no configuración de panel.
+import {
+  VERIFACTU_PRODUCTOR_NOMBRE, VERIFACTU_PRODUCTOR_NIF, VERIFACTU_ID_SISTEMA,
+  VERIFACTU_VERSION, VERIFACTU_NUM_INSTALACION,
+} from '../../fiscal/verifactu/productor';
 // SCRUM-209: el desglose lo construye UN solo sitio del proyecto (registro.builder.ts).
 import {
   buildDetallesDesgloseXml,
@@ -523,11 +528,11 @@ export async function buildVerifactuRegistrosXml(
   // software; preferimos un error explícito (el caller ya sabe abortar: 409 en la ruta
   // suelta, ZIP entero abortado — nunca un XML a medias).
   const productor = {
-    nombre: config.VERIFACTU_PRODUCTOR_NOMBRE,
-    nif: config.VERIFACTU_PRODUCTOR_NIF,
-    idSistema: config.VERIFACTU_ID_SISTEMA,
-    version: config.VERIFACTU_VERSION,
-    numInstalacion: config.VERIFACTU_NUM_INSTALACION,
+    nombre: VERIFACTU_PRODUCTOR_NOMBRE,
+    nif: VERIFACTU_PRODUCTOR_NIF,
+    idSistema: VERIFACTU_ID_SISTEMA,
+    version: VERIFACTU_VERSION,
+    numInstalacion: VERIFACTU_NUM_INSTALACION,
   };
   if (!productor.nombre || !productor.nif || !productor.idSistema || !productor.version || !productor.numInstalacion) {
     throw new Error('verifactu_productor_no_configurado');

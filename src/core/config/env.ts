@@ -1,3 +1,7 @@
+// SCRUM-247: el id del sistema informático es una CONSTANTE del repo, no una variable de
+// entorno. Se importa para poder validarlo en el arranque.
+import { VERIFACTU_ID_SISTEMA } from '../../modules/fiscal/verifactu/productor';
+
 export const config = {
     NODE_ENV: process.env.NODE_ENV || 'development',
     PORT: Number(process.env.PORT || 3000),
@@ -20,18 +24,16 @@ export const config = {
     STRIPE_CONNECT_WEBHOOK_SECRET: process.env.STRIPE_CONNECT_WEBHOOK_SECRET || '',
     APPLICATION_FEE_BPS: Number(process.env.APPLICATION_FEE_BPS || 90),
 
-    // SCRUM-145 (VeriFactu) — datos del PRODUCTOR del software para el bloque
-    // `SistemaInformatico` del registro de facturación (art. 13 RRSIF). Son los MISMOS que
-    // se firman en `docs/legal/DECLARACION_RESPONSABLE.md`: no se inventan aquí ni se ponen
-    // por defecto. Hoy el documento tiene PLACEHOLDERS (pendiente S1-E + validación del
-    // asesor S1-F), así que estas vars van VACÍAS a propósito y el builder falla en claro
-    // si se intenta emitir un registro sin ellas — un registro fiscal con datos de relleno
-    // sería peor que un error.
-    VERIFACTU_PRODUCTOR_NOMBRE: process.env.VERIFACTU_PRODUCTOR_NOMBRE || '',
-    VERIFACTU_PRODUCTOR_NIF: process.env.VERIFACTU_PRODUCTOR_NIF || '',
-    VERIFACTU_ID_SISTEMA: process.env.VERIFACTU_ID_SISTEMA || '',        // máx 2 caracteres (XSD)
-    VERIFACTU_VERSION: process.env.VERIFACTU_VERSION || '',              // versión declarada del SIF
-    VERIFACTU_NUM_INSTALACION: process.env.VERIFACTU_NUM_INSTALACION || '',
+    // SCRUM-247: las cinco `VERIFACTU_PRODUCTOR_*` YA NO SE LEEN DE AQUÍ.
+    //
+    // Vivían en este bloque leyéndose de `process.env` con `|| ''`, y por tanto en el panel de
+    // Railway: estaban en staging y NO en producción, así que encender la facturación no habría
+    // emitido nada. Ahora son CONSTANTES VERSIONADAS en
+    // `src/modules/fiscal/verifactu/productor.ts` — cambiar el NIF del productor es un hecho
+    // fiscal, no configuración, y como constante aparece en un diff, se revisa y queda fechado.
+    //
+    // No se dejan aquí «por compatibilidad»: dos sitios con el mismo dato es exactamente el
+    // patrón que este ticket desmonta. Un guard impide que vuelvan a `process.env`.
 
     SMTP_URL: process.env.SMTP_URL || '',
     EMAIL_FROM: process.env.EMAIL_FROM || 'YaQu <no-reply@yaqu.local>',
@@ -228,31 +230,25 @@ export const config = {
   }
 
   /**
-   * Arranque: ruidoso si falta, y REVIENTA si está pero mal.
+   * Arranque: revienta si el id del sistema no es válido.
    *
-   * ⚠️ La asimetría es deliberada y conviene entenderla antes de "arreglarla": hoy las cinco
-   * `VERIFACTU_*` van VACÍAS A PROPÓSITO (ver el comentario del bloque, pendiente S1-E), así que
-   * hacer que la AUSENCIA reviente tumbaría producción en el arranque siguiente. La ausencia ya
-   * es fail-closed donde importa —el emisor no construye el registro sin ella— y aquí solo hace
-   * falta que se vea en el log. Un valor MALFORMADO no lo para nadie: por eso ese sí revienta.
+   * ⚠️ SCRUM-247 RETIRÓ LA ASIMETRÍA QUE HABÍA AQUÍ, y merece explicarse porque era deliberada:
+   * antes la AUSENCIA solo se avisaba por log y solo el valor MALFORMADO reventaba. El motivo era
+   * que las cinco `VERIFACTU_*` iban vacías a propósito y hacer que la ausencia reventase habría
+   * tumbado producción en el arranque siguiente.
+   *
+   * Con el productor en constantes versionadas, **la ausencia ya no puede ocurrir en tiempo de
+   * ejecución**: una constante vacía se caza en el PR (`tests/scrum247-productor-constante.test.mjs`),
+   * no en el arranque. Así que aquí ya no hace falta tolerarla — y seguir tolerándola sería
+   * mantener una excepción cuyo motivo desapareció.
    */
   export function assertVerifactuIdSistema(): void {
-    const bruto = process.env.VERIFACTU_ID_SISTEMA;
-    const motivo = invalidVerifactuIdSistema(bruto);
+    const motivo = invalidVerifactuIdSistema(VERIFACTU_ID_SISTEMA);
     if (!motivo) return;
-
-    if (!bruto || !bruto.trim()) {
-      if (config.NODE_ENV === 'production') {
-        console.error(
-          `🚨 [verifactu] VERIFACTU_ID_SISTEMA ${motivo} — ningún registro fiscal se podrá emitir ` +
-          `(el emisor falla en claro) hasta que se configure en Railway.`,
-        );
-      }
-      return;
-    }
     const msg =
       `🚨 [verifactu] VERIFACTU_ID_SISTEMA ${motivo}. La AEAT lo rechaza con el error 1177 y el ` +
-      `emisor NO puede detectarlo (solo comprueba que no esté vacío). Corrígelo en Railway.`;
+      `emisor NO puede detectarlo (solo comprueba que no esté vacío). Es una CONSTANTE del repo ` +
+      `(src/modules/fiscal/verifactu/productor.ts): corrígela ahí, no en Railway.`;
     if (config.NODE_ENV === 'production') throw new Error(msg);
     console.warn(msg);
   }
