@@ -22,6 +22,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
@@ -80,9 +81,18 @@ const esFuncion = (n) =>
  * Se reconoce por la forma del árbol, no por el nombre del fichero: un servicio nuevo aparece
  * aquí solo, sin que nadie tenga que acordarse de añadirlo.
  */
-function avancesDeSerie() {
+/*
+ * `raiz` es PARÁMETRO (y no `SRC` fijo) por lo que costó descubrirlo: las dos autopruebas de
+ * abajo escribían su servicio de mentira DENTRO de `src/modules/` y lo borraban al acabar.
+ * `node --test` corre los ficheros de test EN PARALELO, así que SCRUM-243 y SCRUM-245 —que
+ * recorren ese mismo árbol— se encontraban el fichero a medio existir y morían con ENOENT por
+ * un motivo que no tiene nada que ver con su tema (la señal de R8). Medido: 2 rojos ajenos en
+ * la suite completa, ninguno reproducible al correr este fichero solo. Un fixture que escribe
+ * en un árbol compartido no es un fixture aislado.
+ */
+function avancesDeSerie(raiz = SRC) {
   const out = [];
-  for (const p of fuentes(SRC)) {
+  for (const p of fuentes(raiz)) {
     const codigo = fs.readFileSync(p, 'utf8');
     const arbol = ts.createSourceFile(p, codigo, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
     const r = rel(p);
@@ -177,9 +187,10 @@ test('SCRUM-234 · cada serie CUMPLE la forma que declara', () => {
 test('SCRUM-234 (autoprueba) · una cuarta serie con la forma frágil sale ROJA', () => {
   // Un guard que nunca se ha visto en rojo es decoración. Se inventa el servicio que este censo
   // existe para cazar: el que reserva leyendo y escribiendo el valor absoluto, sin cerrojo.
-  const dir = path.join(SRC, 'modules', '__tmp_serie');
+  // FUERA de `src/`: ver la nota de `avancesDeSerie`. El escáner recibe la raíz, así que el
+  // fixture no necesita vivir en el árbol de verdad para que lo descubra por forma.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-s234-__tmp_serie-'));
   const f = path.join(dir, 'reciboNumber.service.ts');
-  fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(f, [
     "import { Prisma } from '@prisma/client';",
     'export async function allocateReciboNumber(tx: Prisma.TransactionClient, merchantId: number) {',
@@ -191,7 +202,7 @@ test('SCRUM-234 (autoprueba) · una cuarta serie con la forma frágil sale ROJA'
   ].join('\n'));
 
   try {
-    const avances = avancesDeSerie();
+    const avances = avancesDeSerie(dir);
     const nuevo = avances.find((a) => a.fichero.includes('__tmp_serie'));
     assert.ok(nuevo, '🔴 el escáner NO ve la cuarta serie: entonces no censa por forma, censa por lista');
     assert.equal(nuevo.campo, 'nextReciboNumber');
@@ -209,9 +220,8 @@ test('SCRUM-234 (autoprueba) · una cuarta serie con la forma frágil sale ROJA'
 test('SCRUM-234 (autoprueba) · el escáner NO confunde un `select` con un avance', () => {
   // `nextInvoiceNumber` aparece también en los `select:` de las lecturas. Contarlos como avances
   // haría que el censo pidiera un cerrojo en cada sitio que se limita a LEER el contador.
-  const dir = path.join(SRC, 'modules', '__tmp_serie2');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-s234-__tmp_serie2-')); // fuera de `src/`, ídem
   const f = path.join(dir, 'solo-lee.service.ts');
-  fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(f, [
     "import { Prisma } from '@prisma/client';",
     'export async function leer(tx: Prisma.TransactionClient, merchantId: number) {',
@@ -220,7 +230,7 @@ test('SCRUM-234 (autoprueba) · el escáner NO confunde un `select` con un avanc
   ].join('\n'));
 
   try {
-    const avances = avancesDeSerie();
+    const avances = avancesDeSerie(dir);
     assert.equal(
       avances.filter((a) => a.fichero.includes('__tmp_serie2')).length, 0,
       '🔴 FALSO POSITIVO: un `select` del contador se cuenta como avance de serie.',
