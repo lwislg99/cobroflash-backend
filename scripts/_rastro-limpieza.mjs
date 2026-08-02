@@ -11,6 +11,25 @@
 //   borra auditLog POR merchant (`:78`) → un rastro en un merchant de test se borraría a sí mismo
 //   en la siguiente pasada. Un registro que su propio autor borra no es registro.
 //
+// MEDIDO EN DEV (yaqu_dev_javier, 2-ago-2026, sin turno, dev limpio después) — para que el siguiente
+// no tenga que repetir la medición para confiar en este objeto:
+//   · `migrate diff` desde la BD con `yaqu_rastro` dentro NO lo menciona ni propone `DROP SCHEMA` →
+//     un `db push` no lo borra (migrate diff ES el plan que ejecuta el push).
+//   · Tampoco se reporta como DERIVA → nadie recibe un aviso que le tiente a «limpiarlo» a mano.
+//   · El guard de cliente (`_prisma-client-guard.mjs:61-62`) NUNCA conecta a la BD (compara
+//     schema↔cliente) → un schema extra le es invisible por construcción.
+//   · `has_database_privilege(user,'railway','CREATE') = true` (leído del catálogo desde dev, sin
+//     conectar a staging) → el usuario puede `CREATE SCHEMA` también en staging.
+//
+// ⚠️ PROHIBICIÓN CON SU CONSECUENCIA — NO actives `multiSchema` en el datasource (`schemas = [...]`
+// + el preview feature). HOY es single-schema (comprobado: no hay `schemas=`, `multiSchema` ni
+// `previewFeatures` en `prisma/schema.prisma`), y POR ESO `yaqu_rastro` está FUERA del universo que
+// Prisma gestiona. Si algún día alguien lo activa —por una razón perfectamente buena—, `yaqu_rastro`
+// pasa a ser VISIBLE para Prisma y un `db push` PODRÍA borrarlo: la constancia desaparecería EN
+// SILENCIO, justo el día que hiciera falta. Si se activa multiSchema, hay que MOVER este rastro a un
+// objeto que siga fuera del universo gestionado (el `COMMENT ON DATABASE` de 188 lo está) ANTES de
+// activarlo. No basta con «no tocar»: lo que se rompe es la constancia entera, sin ruido.
+//
 // FORMATO (rolling): una cabecera con el contador TOTAL de pasadas y cuántas entradas se han
 // DESCARTADO, y las últimas MAX_ENTRADAS entradas. Cuando se llena, la más vieja se pierde PERO
 // `total` y `descartadas` lo dejan ver — un log que descarta en silencio sería el verde hueco que
@@ -51,6 +70,25 @@ export function componerEntrada({ ranAt, turnMarker, applied, merchantsCount, me
     `merchants=${Number(merchantsCount) || 0}[${emails}]`,
     `jobs=${Number.isFinite(jobsCount) ? jobsCount : '?'}`,
   ].join(' | ');
+}
+
+/**
+ * AVISO (avisa, NO bloquea) que clean-staging imprime ANTES de barrer. Lleva las DOS señales de que
+ * las fixtures pueden ser de una tanda viva:
+ *   · la marca del TURNO vigente (o «NO CONSTA / libre»);
+ *   · el número de merchants @test.local VIVOS que se van a borrar — y ESTE es el que cubre lo que el
+ *     turno NO ve: un gateado suelto tiene fixtures vivas y NO toma el turno (por eso no basta el turno).
+ * PURO → se prueba sin BD. No decide nada: es manual y a veces el operador sabe lo que hace.
+ */
+export function mensajeAviso({ dueñoTurno, merchantsVivos }) {
+  const turno = dueñoTurno || 'NO CONSTA / libre';
+  return [
+    '⚠️  AVISO antes de borrar (no bloquea):',
+    `   · Turno de staging vigente: ${turno}`,
+    `   · Merchants @test.local VIVOS que se barrerán: ${Number(merchantsVivos) || 0}`,
+    '   Si otra sesión está corriendo tests, estas pueden ser sus fixtures VIVAS — incluso SIN turno:',
+    '   un gateado suelto tiene fixtures y NO toma el turno. Continúa solo si sabes que no lo son.',
+  ].join('\n');
 }
 
 /** Parsea el comentario crudo. Ilegible/null → historial fresco (degrada, no lanza). */
