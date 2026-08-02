@@ -281,7 +281,24 @@ async function handleOptOutRequest(phone: string, from: string): Promise<void> {
 // menú genérico. Otros button-replies de plantilla se ignoran con elegancia hasta tener su copy.
 async function handleTemplateButtonReply(from: string, btnText: string): Promise<void> {
   if (/recibido/i.test(btnText)) {
-    await sendWhatsAppText({ to: from, text: '¡Gracias por confirmar! 🙌 Tu profesional ya lo sabe.' });
+    // SCRUM-245: el merchant EXISTE (se le envio una plantilla), solo que esta funcion no lo
+    // recibia. Era el unico de los seis pendientes que era una omision de verdad, asi que se
+    // RESUELVE con la consulta en vez de declarar un "sin merchant" que seria falso.
+    const phone = normalizePhone(from);
+    const customers = phone
+      ? await prisma.customer.findMany({
+          where: { phone: { in: [phone, `+${phone}`] } },
+          select: { merchantId: true },
+        })
+      : [];
+    const unicoMerchant = customers.length === 1 ? customers[0].merchantId : undefined;
+    await sendWhatsAppText({
+      merchantId: unicoMerchant,
+      sinMerchant: unicoMerchant ? undefined : 'multi-merchant',
+      exentoDelDemo: 'respuesta-a-entrante',
+      to: from,
+      text: '¡Gracias por confirmar! 🙌 Tu profesional ya lo sabe.',
+    });
   }
 }
 
@@ -385,6 +402,13 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
     }
 
     await sendWhatsAppText({
+      // SCRUM-245: se RAMIFICA en vez de declarar siempre 'multi-merchant'. El caso mas
+      // frecuente es el cliente de UN solo negocio, y declarar "varios" por comodidad dejaria
+      // ciego justo el camino mas transitado: la rama barata de escribir es la que pierde el
+      // rastro donde mas se usa.
+      merchantId: customers.length === 1 ? customers[0].merchantId : undefined,
+      sinMerchant: customers.length === 1 ? undefined : 'multi-merchant',
+      exentoDelDemo: 'respuesta-a-entrante',
       to: from,
       text: 'Hola 👋 No tienes presupuestos pendientes en este momento.',
     });
@@ -393,6 +417,13 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
 
   if (pending.length > 1) {
     await sendWhatsAppText({
+      // SCRUM-245: se RAMIFICA en vez de declarar siempre 'multi-merchant'. El caso mas
+      // frecuente es el cliente de UN solo negocio, y declarar "varios" por comodidad dejaria
+      // ciego justo el camino mas transitado: la rama barata de escribir es la que pierde el
+      // rastro donde mas se usa.
+      merchantId: customers.length === 1 ? customers[0].merchantId : undefined,
+      sinMerchant: customers.length === 1 ? undefined : 'multi-merchant',
+      exentoDelDemo: 'respuesta-a-entrante',
       to: from,
       text: 'Tienes varios presupuestos pendientes. Para responder, por favor abre el enlace que te enviamos en cada uno.',
     });
@@ -458,6 +489,14 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
     const mPhone = normalizePhone(merchant?.whatsappPhone);
     if (mPhone) {
       sendWhatsAppText({
+        // SCRUM-245: va al PRO, no a quien escribio, asi que NO es una respuesta y NO se exime.
+        // El freno del demo ACTUA aqui a proposito: el telefono del pro sembrado esta en rango
+        // de movil espanol real, y eximirlo autorizaria a la cuenta demo publica a escribir a un
+        // desconocido. Si el demo necesita avisar a su pro, ese numero entra en DEMO_SAFE_NUMBERS
+        // -- configuracion del fundador, visible y revocable. REGLA: cuando el coste de una
+        // excepcion lo paga un tercero que no participa, la excepcion sube a configuracion, no
+        // baja a codigo.
+        merchantId: quote.merchantId,
         to: mPhone,
         text: `✅ *${customer?.name || 'Cliente'}* aceptó el presupuesto #${(quote as any).quoteNumber ?? quote.id} (${formatMoneyEs(quote.total, quote.currency)}) por WhatsApp.`,
       }).catch(() => {});
@@ -493,6 +532,14 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
     const mPhone = normalizePhone(merchant?.whatsappPhone);
     if (mPhone) {
       sendWhatsAppText({
+        // SCRUM-245: va al PRO, no a quien escribio, asi que NO es una respuesta y NO se exime.
+        // El freno del demo ACTUA aqui a proposito: el telefono del pro sembrado esta en rango
+        // de movil espanol real, y eximirlo autorizaria a la cuenta demo publica a escribir a un
+        // desconocido. Si el demo necesita avisar a su pro, ese numero entra en DEMO_SAFE_NUMBERS
+        // -- configuracion del fundador, visible y revocable. REGLA: cuando el coste de una
+        // excepcion lo paga un tercero que no participa, la excepcion sube a configuracion, no
+        // baja a codigo.
+        merchantId: quote.merchantId,
         to: mPhone,
         text: `❌ *${customer?.name || 'Cliente'}* rechazó el presupuesto #${(quote as any).quoteNumber ?? quote.id} por WhatsApp.`,
       }).catch(() => {});
