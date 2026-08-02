@@ -240,6 +240,19 @@ Un plan público (Parte W): **Pro 19,90 €/mes (199 €/año) + 0,9 % solo tarj
 
 # PARTE J — WHATSAPP COMO CANAL CORE (WA-0)
 
+## J0. REQUISITO DE PRODUCTO — A QUIÉN SE PUEDE ESCRIBIR `cerrado, decisión del fundador`
+
+> **El producto debe poder enviar WhatsApp a cualquier número que el profesional introduzca como cliente. Las listas blancas de teléfonos están prohibidas.**
+
+**Por qué está escrito aquí y no en un ticket:** se ha perdido **tres veces**. El fundador lo pidió tres veces y las tres se mantuvo el freno contrario —no por decisión suya, sino por inercia del asesor—, porque el requisito vivía en una conversación y el mecanismo que lo contradecía vivía en el código. Gana lo que está escrito, así que a partir de aquí lo escrito es esto.
+
+**Y un matiz que hay que leer antes de tocar nada, porque invita al error opuesto:** una lista blanca **vacía no significa «manda a todos», significa «no manda a nadie»**. `DEMO_SAFE_NUMBERS` con la lista vacía **bloquea el 100 % de los envíos** de esa cuenta (`whatsappPolicy.ts`, «lista vacía = bloquea todo»). Vaciarla para «abrir» apagaría el canal. Lo que se retira es **el freno**, no su contenido.
+
+**Estado a 2-ago-2026:** el freno `demoSendBlocked` (V0-2) **sigue en pie** y contradice este requisito para el merchant demo. Su retirada está medida y pendiente de **un solo dato que no vive en el repo**: si alguien ajeno al fundador y a Javier puede entrar en la cuenta demo. Todo lo comprobable desde el código dice que **no** hay puerta abierta —no existe contraseña (auth solo por magic link, `Merchant` no tiene campo de clave), `/register` siempre crea un merchant NUEVO, todo `/admin/*` va tras `requireAuth` (`app.ts:243`) y las rutas públicas son de token atado a un registro existente, así que nadie de fuera elige el teléfono de destino—, pero quedan **dos incógnitas fuera del repositorio**: quién puede leer el buzón `demo@yaqu.app` (que es la única llave del magic link) y si las tres variables `E2E_TEST_LOGIN_*` están de verdad ausentes en producción, como manda `docs/FLUJO_DE_TRABAJO.md`. **No se infiere ninguna de las dos.** Con la respuesta, el freno sale entero —código, `.env` y documentación— con un guard que impida reintroducir cualquier lista blanca de teléfonos.
+
+**Lo que este requisito NO cubre:** los teléfonos de PRUEBA sembrados por los seeds, que hoy están en rango de móvil español real y pueden pertenecer a personas ajenas. Eso es SCRUM-262 y es independiente: protege de los datos de prueba, no de lo que escriba el profesional.
+
+
 ## J1. Matriz de plantillas Utility `F1-doc`
 `docs/WHATSAPP_TEMPLATES.md` sigue siendo la spec canónica de ESTRUCTURA (vars, botones). Esta matriz añade el CUÁNDO y el coste; código y Meta deben coincidir EXACTO con ambas.
 | Plantilla | Estado | Cuándo | Disparador | Emisor | Coste ES |
