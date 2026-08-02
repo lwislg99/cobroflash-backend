@@ -316,10 +316,16 @@ router.get('/:token', async (req, res) => {
       : '';
 
   // Detalles internos solo en desarrollo (no para el cliente)
+  //
+  // SCRUM-254: aquí había un `<a href="${BASE_URL}/charges/${ch.id}">Ver JSON</a>`. Era el ÚNICO
+  // llamador de `GET /charges/:id` en todo el repo (medido sobre 452 ficheros), y esa ruta se
+  // retiró por leer cross-merchant: buscaba solo por id, sin `merchantId`. Se quita el enlace
+  // junto con la ruta — dejar un `<a>` apuntando a un 404 sería peor que no tenerlo.
+  // La lista de eventos SE QUEDA: no dependía de esa ruta y sigue siendo útil en desarrollo.
   const devInternals =
     config.NODE_ENV !== 'production'
       ? `<hr style="margin:1.25rem 0;border:none;border-top:1px solid var(--border)"/>
-         <small>Dev · <a href="${BASE_URL}/charges/${ch.id}">Ver JSON</a></small>
+         <small>Dev · eventos del cobro</small>
          <ul style="margin-top:.4rem">${eventsList || '<li>—</li>'}</ul>`
       : '';
 

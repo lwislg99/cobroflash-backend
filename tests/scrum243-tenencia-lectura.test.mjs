@@ -5,7 +5,7 @@
 //
 // NO afirma que hoy haya una fuga. Afirma lo contrario, y con un número: **CERO** lecturas sin
 // comprobación de merchant en rutas autenticadas. Lo que vigila es que ese cero SIGA siendo cero
-// y que las 45 excepciones no crezcan en silencio.
+// y que las 44 excepciones no crezcan en silencio.
 //
 // La regla 2 de CLAUDE.md —«toda query filtra por `req.merchantId`»— estaba escrita y no existía
 // en ningún sitio que una máquina pudiera comprobar. Prohibición sin mecanismo, el patrón de la
@@ -26,7 +26,7 @@
 //      INDIRECTO y las que se salvan por «su función menciona `merchantId`» están clasificadas
 //      por INDICIO, no por prueba.
 //   2. «La función menciona `merchantId`» no demuestra que lo use en ESA consulta.
-//   3. De las 45 SIN RED se han leído unas pocas (las de `/pay`, `/recibo`, `/albaran` y los dos
+//   3. De las 44 SIN RED se han leído unas pocas (las de `/pay`, `/recibo`, `/albaran` y los dos
 //      `groupBy` de métricas). Las demás están clasificadas por CATEGORÍA, no verificadas una a
 //      una. Están marcadas abajo.
 //   4. No se cuentan lecturas anidadas vía `include`.
@@ -64,10 +64,12 @@ const CENSO_SIN_RED = [
   ['src/modules/system/app/routes/customerPortal.routes.ts', 3],
   ['src/modules/quotes/domain/quoteToken.service.ts', 1],
 
-  // ── Endpoint INTERNO tras `requireInternalSecret`. ⚠️ `charges.routes.ts` tiene además un
-  //    `findMany({ take: 20 })` SIN `where` que devuelve cobros de TODOS los merchants: no lo
-  //    alcanza un usuario, pero es un global vivo y sale como ticket propio.
-  ['src/modules/billing/app/routes/charges.routes.ts', 1],
+  // ── `charges.routes.ts` YA NO ESTÁ EN ESTE CENSO, y bajar es para lo que sirve un censo.
+  //    Tenía 1: el `findUnique({ where: { id } })` de `GET /:id`, que devolvía el cobro de
+  //    CUALQUIER merchant. SCRUM-251 retiró su `GET /` (findMany sin `where`) y SCRUM-254 el
+  //    `GET /:id`, así que el fichero cae a CERO y sale: **45 → 44**. Los dos se RETIRARON en
+  //    vez de filtrarse porque no tenían llamadores reales — cero superficie es mejor que
+  //    superficie filtrada, y el motivo quedó escrito junto a donde estaba cada consulta.
 
   // ── Herramienta de desarrollo.
   ['src/modules/system/app/routes/dev.routes.ts', 1],
@@ -87,7 +89,7 @@ const CENSO_SIN_RED = [
   ['src/modules/invoicing/app/routes/invoice.routes.ts', 1],
   ['src/modules/quotes/app/routes/quotes.routes.ts', 2],
 ];
-const TOTAL_SIN_RED = CENSO_SIN_RED.reduce((t, [, n]) => t + n, 0);   // 45
+const TOTAL_SIN_RED = CENSO_SIN_RED.reduce((t, [, n]) => t + n, 0);   // 44 (eran 45 hasta SCRUM-254)
 const MINIMO_QUE_FILTRAN = 196;
 
 // ── SUELO, EN DOS MITADES ────────────────────────────────────────────────────────────────
@@ -175,7 +177,7 @@ test('SCRUM-243 · NINGUNA lectura sin comprobación de merchant en ruta AUTENTI
 
 // ── EL RATCHET ───────────────────────────────────────────────────────────────────────────
 
-test('SCRUM-243 · las 45 excepciones SIN RED no crecen en silencio', () => {
+test('SCRUM-243 · las 44 excepciones SIN RED no crecen en silencio', () => {
   const sinRed = analizarArbol(RAIZ).filter((h) => h.sinRed);
   const actual = new Map();
   for (const h of sinRed) actual.set(h.ruta, (actual.get(h.ruta) || 0) + 1);
@@ -189,7 +191,7 @@ test('SCRUM-243 · las 45 excepciones SIN RED no crecen en silencio', () => {
   assert.deepEqual([...nuevas, ...crecidas], [],
     '🔴 HAN APARECIDO LECTURAS SIN NINGUNA COMPROBACIÓN DE MERCHANT:\n    ' +
     [...nuevas, ...crecidas].join('\n    ') +
-    '\n\n  El censo del 30-jul-2026 era de 45 en 22 ficheros, y cada uno está ahí con su motivo\n' +
+    '\n\n  El censo es de 44 en 21 ficheros (eran 45 en 22 hasta que SCRUM-254 vació charges.routes.ts), y cada uno está ahí con su motivo\n' +
     '  escrito arriba. Una nueva no es automáticamente un fallo — puede ser otra ruta pública por\n' +
     '  token— pero SÍ es una decisión que alguien tiene que tomar a conciencia y dejar escrita,\n' +
     '  en vez de que entre sin que nadie la vea.\n\n' +
