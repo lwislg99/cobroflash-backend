@@ -94,39 +94,24 @@ router.post('/', async (req, res) => {
 // nadie miraba la petición. Mismo criterio que el retiro de `POST /:id/send` (abajo, SCRUM-129):
 // ruta interna muerta que leía cross-merchant, fuera de raíz en vez de declarar una ficción.
 
-router.get('/:id', async (req, res) => {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
-
-  const charge = await prisma.charge.findUnique({
-    where: { id },
-    include: { events: true, reconciliations: true, customer: true, merchant: true },
-  });
-  if (!charge) return res.status(404).json({ error: 'charge_not_found' });
-
-  res.json({
-    id: charge.id,
-    status: charge.status,
-    method: charge.method,
-    amount: charge.amount.toString(),
-    currency: charge.currency,
-    reference: charge.reference,
-    expires_at: charge.expiresAt,
-    merchant_id: charge.merchantId,
-    customer_id: charge.customerId,
-    events: charge.events.map((e) => ({
-      id: e.id,
-      type: e.type,
-      ts: e.ts,
-    })),
-    reconciliations: charge.reconciliations.map((r) => ({
-      id: r.id,
-      bank_ref: r.bankRef,
-      matched: r.matched,
-      ts: r.ts,
-    })),
-  });
-});
+// SCRUM-254: se RETIRÓ `GET /:id`, hermano del anterior y con el mismo defecto. Hacía
+// `prisma.charge.findUnique({ where: { id } })` — SOLO por id, sin `merchantId` — y devolvía el
+// cobro de CUALQUIER merchant con `merchant`, `customer`, `events` y `reconciliations` dentro.
+// Bastaba con probar ids: son enteros consecutivos.
+//
+// ⚠️ POR QUÉ SE RETIRA EN VEZ DE FILTRARSE, que es la pregunta que toca hacerse:
+// medido sobre 452 ficheros (src/scripts/tests/public) con el suelo puesto —el buscador
+// encuentra la propia definición, así que el cero no era «no miré»—, tenía UN solo llamador:
+// un `<a href="…/charges/:id">Ver JSON</a>` de diagnóstico en `receipt.routes.ts`, emitido
+// SOLO fuera de producción. Cero llamadores reales. Filtrar habría exigido cambiar la firma
+// para que el llamador declarase de quién es el cobro; retirar deja cero superficie, que es
+// mejor que superficie filtrada. Ese enlace se retiró en el mismo PR: dejar un `<a>` apuntando
+// a un 404 es peor que quitarlo.
+//
+// LA PROTECCIÓN QUE HABÍA NO SE VEÍA DESDE AQUÍ, y ese es el patrón, no el detalle: la cubría
+// `requireInternalSecret` en el montaje de `app.ts:218` — a un fichero de distancia. Quien leía
+// esta consulta no tenía delante nada que le dijera que estaba a salvo. Por eso este comentario
+// vive JUNTO a donde estaba la consulta y no en `app.ts`.
 
 // SCRUM-129: se RETIRÓ `POST /:id/send`. Violaba la regla nº1 (n8n vivo: axios.post a la URL de
 // webhook de n8n) en una ruta de cobros, y MENTÍA — sin esa URL (lo esperable, n8n está prohibido)
