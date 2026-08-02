@@ -19,7 +19,10 @@ import {
   VERIFACTU_VERSION, VERIFACTU_NUM_INSTALACION,
 } from '../../fiscal/verifactu/productor';
 // SCRUM-209: el desglose lo construye UN solo sitio del proyecto (registro.builder.ts).
+// SCRUM-240: y el SOBRE que los envuelve, también.
 import {
+  construirSobreRegFactu,
+  MAX_REGISTROS_POR_ENVIO,
   buildDetallesDesgloseXml,
   clasificarDetalleDesglose,
   DesgloseNoClasificableError,
@@ -32,13 +35,12 @@ import {
   resolverSinDestinatario,
 } from '../../fiscal/verifactu/registro.builder';
 
-// SCRUM-145: namespaces oficiales de los XSD de la AEAT (los ficheros están en
-// `src/modules/fiscal/verifactu/xsd/`). Los `targetNamespace` son la URL del esquema; NO son
-// endpoints y no se resuelven en tiempo de ejecución.
-const NS_LR = 'https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroLR.xsd';
-const NS_INFO = 'https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd';
-/** Máximo de registros por envío que admite el XSD (`RegistroFactura` maxOccurs="1000"). */
-const MAX_REGISTROS = 1000;
+// SCRUM-145: los namespaces oficiales de los XSD de la AEAT vivían aquí (`NS_LR`, `NS_INFO`)
+// SOLO para el sobre que se armaba en este fichero. SCRUM-240 se llevó el sobre a
+// `registro.builder.ts`, así que se retiran en vez de dejarlos: una constante que ya no usa
+// nadie se lee como si algo de aquí siguiera dependiendo de ella. El límite de 1000 se movió
+// por el mismo motivo y ahora se importa (`MAX_REGISTROS_POR_ENVIO`): era el mismo número
+// escrito en dos ficheros.
 
 // SCRUM-173: namespace del cerrojo consultivo de la cadena de huellas. Primera clave de
 // `pg_advisory_xact_lock(int, int)`; la segunda es el merchantId, para que la serialización
@@ -518,7 +520,7 @@ export async function buildVerifactuRegistrosXml(
   // SCRUM-145 (gap 1): el XSD tope `RegistroFactura` en 1000 por envío. Con más facturas en
   // el ejercicio habría que trocear en varios envíos (lo hará la cola de remisión, S1-D).
   // Hasta entonces se falla en claro: mejor un error que un fichero inválido que parece bueno.
-  if (invoices.length > MAX_REGISTROS) {
+  if (invoices.length > MAX_REGISTROS_POR_ENVIO) {
     throw new Error(`verifactu_demasiados_registros:${invoices.length}`);
   }
 
@@ -815,17 +817,25 @@ ${excluidos.map((x) => `       · ${xmlEscape(x.number)}: ${xmlEscape(x.motivo)}
     return { xml: '', count: 0, excluidos };
   }
 
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<sum:RegFactuSistemaFacturacion xmlns:sum="${NS_LR}" xmlns:sum1="${NS_INFO}">${parteExclusiones}
-  <sum:Cabecera>
-    <sum1:ObligadoEmision>
-      <sum1:NombreRazon>${xmlEscape(nombreEmisor)}</sum1:NombreRazon>
-      <sum1:NIF>${xmlEscape(merchant.taxId)}</sum1:NIF>
-    </sum1:ObligadoEmision>
-  </sum:Cabecera>
-${registros.join('\n')}
-</sum:RegFactuSistemaFacturacion>
-`;
+  // SCRUM-240: el sobre lo arma UN solo sitio del proyecto (`registro.builder.ts`), igual que
+  // el desglose desde SCRUM-209. Aquí estaba escrito a mano un segundo constructor que producía
+  // el MISMO contenido línea a línea que aquél: solo cambiaban la declaración XML, la sangría y
+  // el salto final. Ahora eso es presentación —los tres parámetros de abajo— y el contenido no
+  // se duplica.
+  //
+  // LA SALIDA DE ESTA RUTA NO CAMBIÓ NI UN BYTE, y se comprobó ejecutando: sha256 de la salida
+  // ANTES y DESPUÉS sobre siete casos (una factura, dos, con anulación, con exclusión, todo
+  // excluido, rectificativa, sin destinatario) — idénticos los siete, con el control de que la
+  // comparación SÍ veía un cambio deliberado. Esa comprobación fue del PR, **no** es un test
+  // permanente: lo que queda vigilando en `npm test` es que las dos presentaciones no divierjan
+  // en contenido y que las dos validen contra los XSD (`tests/scrum240-sobre-unico.test.mjs`).
+  const xml = construirSobreRegFactu({
+    obligado: { nombreRazon: nombreEmisor, nif: merchant.taxId },
+    registrosFacturaXml: registros,
+    comentario: parteExclusiones,
+    declaracionXml: true,
+    saltoFinal: true,
+  });
 
   // `count` = registros REALMENTE declarados, no facturas miradas. Si contara las miradas,
   // un pack con exclusiones informaría un número que el fichero no respalda.

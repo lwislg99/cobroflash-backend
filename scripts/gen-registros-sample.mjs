@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 
-const { buildRegistroAlta, buildRegistroAnulacion, buildRegFactuEnvelope } =
+const { buildRegistroAlta, buildRegistroAnulacion, construirSobreRegFactu } =
   require('../dist/modules/fiscal/verifactu/registro.builder.js');
 const { computeVeriFactuHash, computeVeriFactuHashAnulacion } =
   require('../dist/modules/invoicing/domain/verifactu.service.js');
@@ -71,9 +71,15 @@ const anul = buildRegistroAnulacion({
   sistema, fechaHoraHusoGenRegistro: ts3, huella: h3,
 });
 
-const xml = `<?xml version="1.0" encoding="UTF-8"?>\n` + buildRegFactuEnvelope({
+// SCRUM-240: la declaración XML era una concatenación A MANO aquí — el tercer sitio del repo
+// que decidía por su cuenta cómo presentar el MISMO sobre. Ahora es un parámetro del generador
+// único, y la sangría de `<sum:RegistroFactura>` la pone él, no este script.
+const xml = construirSobreRegFactu({
   obligado: { nombreRazon: 'Demo ES S.L.', nif },
-  registrosXml: [alta, rect, anul],
+  registrosFacturaXml: [alta, rect, anul].map(
+    (r) => `  <sum:RegistroFactura>\n  ${r}\n  </sum:RegistroFactura>`,
+  ),
+  declaracionXml: true,
 });
 
 fs.mkdirSync('tmp', { recursive: true });
