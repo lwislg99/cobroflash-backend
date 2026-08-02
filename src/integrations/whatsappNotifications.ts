@@ -63,7 +63,9 @@ export async function sendPaymentConfirmationInvoice(params: {
   businessName?: string | null;
   chargeId: number;
   receiptToken: string;
-  merchantId?: number;  // J3: respeta waOptOut del número para ese merchant
+  // SCRUM-245: OBLIGATORIO desde que se borró la rama «legacy» de abajo. Era opcional para
+  // sostener un camino sin merchant que ya no existe; dejarlo opcional invitaría a recrearlo.
+  merchantId: number;   // J3: respeta waOptOut del número para ese merchant
   customerId?: number;  // A5.3: habilita la vía ventana (0 €) si hay entrante <24 h
 }): Promise<{ ok: boolean }> {
   const to = normalizePhone(params.toPhone || '');
@@ -77,48 +79,39 @@ export async function sendPaymentConfirmationInvoice(params: {
     // cliente (tap en el WhatsApp del cobro) → intentar SIEMPRE la ventana antes
     // de gastar plantilla. El texto lleva el mismo contenido que la plantilla,
     // incluido el enlace al recibo (donde vive la reseña de A2.5).
-    if (params.merchantId) {
-      const result = await sendWhatsAppWindowFirst({
-        to,
-        merchantId: params.merchantId,
-        customerId: params.customerId ?? null,
-        windowText:
-          `Hola ${customerName} 👋\n` +
-          `Hemos confirmado tu pago de ${params.amountWithCurrency} (documento de cobro ${params.documentNumber}).\n` +
-          `¡Gracias por confiar en ${businessName}!\n` +
-          `Tu recibo, aquí 👇\n` +
-          `https://yaqu.app/recibo/${params.receiptToken}`,
-        // A23: en ventana → botón-enlace "Ver recibo" (sin URL cruda)
-        windowCta: {
-          bodyText:
-            `Hola ${customerName} 👋\n` +
-            `Hemos confirmado tu pago de *${params.amountWithCurrency}* (documento ${params.documentNumber}).\n` +
-            `¡Gracias por confiar en *${businessName}*!`,
-          buttonText: 'Ver recibo',
-          url: `https://yaqu.app/recibo/${params.receiptToken}`,
-        },
-        template: buildPaymentConfirmationInvoice({
-          customerName,
-          amountWithCurrency: params.amountWithCurrency,
-          documentNumber: params.documentNumber,
-          businessName,
-          urlToken: params.receiptToken,
-        }),
-        log: { customerId: params.customerId ?? null, relatedType: 'charge', relatedId: params.chargeId },
-      });
-      return { ok: !!result.ok };
-    }
-
-    // Sin merchantId (llamadas legacy): plantilla directa como siempre
-    const result = await sendWhatsAppTemplate({
+    // SCRUM-245: aquí había un `if (params.merchantId)` y, debajo, una rama «llamadas legacy»
+    // que mandaba la plantilla sin merchant. Estaba MUERTA —los dos únicos llamadores
+    // (`mpWebhook:158`, `psp:196`) pasan `merchantId`— y el código que nadie puede ejecutar no
+    // protege nada: solo miente a quien lo lea, que creerá que ese camino existe. Si algún día
+    // vuelve a hacer falta, está en el historial. Ahora `merchantId` es obligatorio en la firma,
+    // así que la rama no puede renacer sin que el compilador lo diga.
+    const result = await sendWhatsAppWindowFirst({
       to,
-      ...buildPaymentConfirmationInvoice({
+      merchantId: params.merchantId,
+      customerId: params.customerId ?? null,
+      windowText:
+        `Hola ${customerName} 👋\n` +
+        `Hemos confirmado tu pago de ${params.amountWithCurrency} (documento de cobro ${params.documentNumber}).\n` +
+        `¡Gracias por confiar en ${businessName}!\n` +
+        `Tu recibo, aquí 👇\n` +
+        `https://yaqu.app/recibo/${params.receiptToken}`,
+      // A23: en ventana → botón-enlace "Ver recibo" (sin URL cruda)
+      windowCta: {
+        bodyText:
+          `Hola ${customerName} 👋\n` +
+          `Hemos confirmado tu pago de *${params.amountWithCurrency}* (documento ${params.documentNumber}).\n` +
+          `¡Gracias por confiar en *${businessName}*!`,
+        buttonText: 'Ver recibo',
+        url: `https://yaqu.app/recibo/${params.receiptToken}`,
+      },
+      template: buildPaymentConfirmationInvoice({
         customerName,
         amountWithCurrency: params.amountWithCurrency,
         documentNumber: params.documentNumber,
         businessName,
         urlToken: params.receiptToken,
       }),
+      log: { customerId: params.customerId ?? null, relatedType: 'charge', relatedId: params.chargeId },
     });
     return { ok: !!result.ok };
   } catch (err: any) {

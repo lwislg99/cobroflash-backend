@@ -48,13 +48,19 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
  * bajados a 27 en la FASE 2 al DECLARAR los 5 legítimos con su `sinMerchant`.
  *
  * Y a 6 en la FASE 3, al pasar el `merchantId` en las 21 respuestas del bot con su
- * `exentoDelDemo` declarado. Los 6 que quedan son los que NO se pueden resolver sin decidir algo:
- * `handleTemplateButtonReply` (solo recibe `from`/`btnText`), dos respuestas donde `customers`
- * puede ser de varios negocios, y los dos avisos al PRO (`to: mPhone`), que no son respuestas. El desglose vive en SCRUM-245; aquí solo
+ * `exentoDelDemo` declarado. **Y a CERO** al resolver los 6 que faltaban (2-ago-2026): se borró
+ * la rama legacy inalcanzable, se resolvió `handleTemplateButtonReply` con su consulta, los dos
+ * multi-negocio se RAMIFICARON (uno solo → su merchant; varios → declarado) y los dos avisos al
+ * PRO pasan su merchant SIN eximirse.
+ *
+ * ⚠️ EN CERO ESTO YA NO ES UN RATCHET, ES UN GUARD: cualquier llamada nueva sin declarar cae
+ * inmediatamente, sin margen. El aviso de «no baja solo» se queda porque el mecanismo sigue
+ * siendo el mismo — pero ya no hay deuda que bajar, y volver a subirlo sería aceptar deuda nueva
+ * a propósito, no heredarla. El desglose vive en SCRUM-245; aquí solo
  * vive el número, a propósito: una lista de `fichero:línea` sería una allowlist, y una allowlist
  * es el sitio donde se apunta la excepción siguiente.
  */
-const TOPE_PENDIENTES = 6;
+const TOPE_PENDIENTES = 0;
 
 /** Suelo del escáner: hoy hay 62 llamadas. Si el análisis devuelve 0, no ha mirado. */
 const SUELO_LLAMADAS = 50;
