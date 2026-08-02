@@ -18,8 +18,8 @@
 import { PrismaClient } from '@prisma/client';
 import 'dotenv/config';
 import { assertSafeStagingUrl } from './_db-guard.mjs';
-import { leerMarcaCruda } from './_staging-lock.mjs'; // SCRUM-260: LEER el marcador (read-only; no edito _staging-lock ni turno-staging)
-import { registrar, ioDeCliente } from './_rastro-limpieza.mjs'; // SCRUM-260: constancia
+import { leerMarcaCruda, parsearLock } from './_staging-lock.mjs'; // SCRUM-260: LEER marcador (read-only; no edito _staging-lock ni turno-staging)
+import { registrar, ioDeCliente, mensajeAviso } from './_rastro-limpieza.mjs'; // SCRUM-260: constancia + aviso
 
 const TEST_EMAIL_DOMAIN = '@test.local';
 const APPLY = process.argv.includes('--apply');
@@ -66,6 +66,13 @@ async function main() {
   const ids = huerfanos.map((m) => m.id);
   const jobsPrevistos = await prisma.job.count({ where: { merchantId: { in: ids } } }).catch(() => NaN);
   const { marca } = await leerMarcaCruda(prisma).catch(() => ({ marca: null }));
+
+  // SCRUM-260 · AVISO (avisa, NO bloquea): las dos señales de que estas fixtures pueden ser de una
+  // tanda viva — el turno vigente Y el nº de @test.local vivos. El segundo cubre lo que el turno NO
+  // ve: un gateado suelto tiene fixtures y NO toma el turno. Es manual: se avisa y se sigue.
+  const lock = marca ? parsearLock(marca) : null;
+  console.log('\n' + mensajeAviso({ dueñoTurno: lock?.dueño ?? null, merchantsVivos: huerfanos.length }));
+
   const rastro = await registrar(ioDeCliente(prisma), {
     ranAt: new Date().toISOString(),
     turnMarker: marca ?? null, // null → «NO CONSTA» explícito en el rastro

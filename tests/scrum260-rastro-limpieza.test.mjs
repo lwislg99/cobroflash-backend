@@ -9,7 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { leerFuente } from './_guard-texto.mjs';
 import {
-  componerEntrada, parsearHistorial, añadirEntrada, registrar, MAX_ENTRADAS,
+  componerEntrada, parsearHistorial, añadirEntrada, registrar, mensajeAviso, MAX_ENTRADAS,
 } from '../scripts/_rastro-limpieza.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -117,6 +117,32 @@ test('SCRUM-260 · clean-staging lee el marcador SOLO con funciones read-only, s
   const src = leerFuente(path.join(RAIZ, 'scripts', 'clean-staging-tests.mjs'));
   assert.match(src, /import\s*\{[^}]*leerMarcaCruda[^}]*\}\s*from\s*['"]\.\/_staging-lock\.mjs['"]/,
     'el marcador se lee con leerMarcaCruda de _staging-lock.mjs (read-only)');
+  assert.match(src, /import\s*\{[^}]*parsearLock[^}]*\}\s*from\s*['"]\.\/_staging-lock\.mjs['"]/,
+    'el owner del turno para el aviso sale de parsearLock (read-only)');
   assert.doesNotMatch(src, /from\s*['"]\.\/turno-staging\.mjs['"]/,
     'NO importa turno-staging.mjs — ahí chocan 253 y 258');
+});
+
+// ─── AVISO (avisa, NO bloquea): las DOS señales antes de barrer ──────────────────────────────────
+test('SCRUM-260 · mensajeAviso lleva el turno vigente Y el nº de @test.local vivos', () => {
+  const m = mensajeAviso({ dueñoTurno: 'host.111', merchantsVivos: 7 });
+  process.stdout.write(`  aviso →\n${m}\n`);
+  assert.match(m, /no bloquea/i);
+  assert.match(m, /Turno de staging vigente: host\.111/);
+  assert.match(m, /VIVOS que se barrerán: 7/); // el dato que el turno NO ve (gateado suelto)
+  assert.match(m, /SIN turno/); // dice explícito que un gateado suelto no toma turno
+});
+
+test('SCRUM-260 · mensajeAviso sin turno → NO CONSTA / libre, pero el CONTEO sigue siendo la señal', () => {
+  const m = mensajeAviso({ dueñoTurno: null, merchantsVivos: 3 });
+  assert.match(m, /Turno de staging vigente: NO CONSTA \/ libre/);
+  assert.match(m, /VIVOS que se barrerán: 3/); // sin turno, el conteo es LA señal que queda
+});
+
+test('SCRUM-260 · clean-staging imprime el AVISO ANTES del bucle de deletes', () => {
+  const src = leerFuente(path.join(RAIZ, 'scripts', 'clean-staging-tests.mjs'));
+  const iAviso = src.search(/mensajeAviso\s*\(/);
+  const iDel = src.search(/deleteMany\s*\(/);
+  assert.ok(iAviso !== -1, 'clean-staging debe imprimir el aviso con mensajeAviso()');
+  assert.ok(iAviso < iDel, '🔴 el aviso debe salir ANTES del primer deleteMany');
 });
