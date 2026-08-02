@@ -47,12 +47,14 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
  * PENDIENTES DE DECLARAR. Censados en 32 el 31-jul-2026 contra `origin/main` = `e9aa4bd`, y
  * bajados a 27 en la FASE 2 al DECLARAR los 5 legítimos con su `sinMerchant`.
  *
- * De los 27 que quedan, 21 son el defecto (el merchant está resuelto y en ámbito y no se pasa) y
- * 6 están entre medias. Los 21 son la FASE 3. El desglose vive en SCRUM-245; aquí solo
+ * Y a 6 en la FASE 3, al pasar el `merchantId` en las 21 respuestas del bot con su
+ * `exentoDelDemo` declarado. Los 6 que quedan son los que NO se pueden resolver sin decidir algo:
+ * `handleTemplateButtonReply` (solo recibe `from`/`btnText`), dos respuestas donde `customers`
+ * puede ser de varios negocios, y los dos avisos al PRO (`to: mPhone`), que no son respuestas. El desglose vive en SCRUM-245; aquí solo
  * vive el número, a propósito: una lista de `fichero:línea` sería una allowlist, y una allowlist
  * es el sitio donde se apunta la excepción siguiente.
  */
-const TOPE_PENDIENTES = 27;
+const TOPE_PENDIENTES = 6;
 
 /** Suelo del escáner: hoy hay 62 llamadas. Si el análisis devuelve 0, no ha mirado. */
 const SUELO_LLAMADAS = 50;
@@ -84,12 +86,14 @@ const rel = (p) => path.relative(RAIZ, p).split(path.sep).join('/');
 export function censarLlamadas(ficheros) {
   let total = 0;
   const pendientes = [];
+  const conLlamadas = new Set(); // ficheros donde SÍ se han visto vías de envío
 
   for (const fich of ficheros) {
     const src = ts.createSourceFile(fich, fs.readFileSync(fich, 'utf8'), ts.ScriptTarget.Latest, true);
     const visit = (n) => {
       if (ts.isCallExpression(n) && ES_VIA_DE_ENVIO.test(n.expression.getText(src))) {
         total += 1;
+        conLlamadas.add(rel(fich));
         const arg = n.arguments[0];
         let declara = false;
         let motivo = 'no pasa merchantId ni declara sinMerchant';
@@ -115,7 +119,7 @@ export function censarLlamadas(ficheros) {
     };
     visit(src);
   }
-  return { total, pendientes };
+  return { total, pendientes, conLlamadas };
 }
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -126,19 +130,17 @@ test('SCRUM-245 · SUELO: el análisis encuentra las vías de envío de verdad',
   // Sin esto, una ruta mal resuelta o una regex rota devuelven 0 llamadas y 0 pendientes, y el
   // ratchet de abajo pasaría en VERDE sin haber leído un fichero. Cero no es «todo declarado»,
   // es «no he mirado» — y en un guard esos dos estados tienen que ser distinguibles.
-  const { total, pendientes } = censarLlamadas(fuentes());
+  const { total, conLlamadas } = censarLlamadas(fuentes());
   assert.ok(total >= SUELO_LLAMADAS,
     `🔴 ESCÁNER CIEGO: solo ${total} llamadas a sendWhatsApp* en src/. ¿Se movió el código o se ` +
     'rompió el recorrido del AST?');
-  assert.ok(pendientes.length > 0,
-    '🔴 cero pendientes: o se ha arreglado todo de golpe (entonces baja TOPE_PENDIENTES) o el ' +
-    'análisis no está leyendo los argumentos.');
-  // Y que vea los sitios donde de verdad vive el problema: si el barrido se quedara en `src/`
-  // sin descender, el total podría cuadrar por casualidad con otras vías.
-  const ficherosConPendientes = new Set(pendientes.map((p) => p.ruta));
+  // Y que vea el bot, que es donde vive el grueso. OJO AL ANCLAJE: hasta la FASE 3 esto se
+  // comprobaba sobre los PENDIENTES de `botFlow`, y al declararlos todos el suelo cayó — pedía
+  // que siguiera existiendo el problema para creerse que había mirado. El ancla correcta es que
+  // el barrido VEA el fichero, no que ese fichero siga estando mal.
   assert.ok(
-    ficherosConPendientes.has('src/modules/whatsappBot/domain/botFlow.service.ts'),
-    '🔴 el análisis no está viendo el bot de entrada, que es donde están 20 de los 32',
+    conLlamadas.has('src/modules/whatsappBot/domain/botFlow.service.ts'),
+    '🔴 el análisis no está viendo el bot de entrada, que es donde vive el grueso de las vías',
   );
 });
 
