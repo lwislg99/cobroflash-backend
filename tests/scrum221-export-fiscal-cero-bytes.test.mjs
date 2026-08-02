@@ -58,7 +58,9 @@ test('SCRUM-221 · el registro BLOQUEA: sin fila no salen bytes (XML y ZIP por s
         });
 
         const customer = await prisma.customer.create({
-          data: { merchantId: merchant.id, name: 'Cliente QA S221', phone: `34604${stamp % 1000000}` },
+          // SCRUM-248: `taxId` OBLIGATORIO — sin NIF, SCRUM-215 excluye la factura (AEAT 1189)
+          // y el control «el XML debe entregarse con todo en orden» recibe un 409.
+          data: { merchantId: merchant.id, name: 'Cliente QA S221', taxId: 'A11111111', phone: `34604${stamp % 1000000}` },
         });
         const year = new Date().getFullYear();
         await prisma.invoice.create({

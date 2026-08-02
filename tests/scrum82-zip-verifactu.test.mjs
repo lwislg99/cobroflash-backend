@@ -92,7 +92,9 @@ test('SCRUM-82: datos.zip incluye el XML VeriFactu por año, byte-idéntico al e
       email: `qa-s82-${stamp}@test.local`,
     }, async (merchant) => {
       const customer = await prisma.customer.create({
-        data: { merchantId: merchant.id, name: 'Cliente QA S82', phone: `34603${stamp % 1000000}` },
+        // SCRUM-248: `taxId` OBLIGATORIO — sin NIF, SCRUM-215 deja la factura fuera del
+        // registro (AEAT 1189) y el ZIP sale sin el XML del ejercicio.
+        data: { merchantId: merchant.id, name: 'Cliente QA S82', taxId: 'A11111111', phone: `34603${stamp % 1000000}` },
       });
 
       const currentYear = new Date().getFullYear();

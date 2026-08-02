@@ -365,6 +365,30 @@ Escribí los nombres de columna **suponiendo snake_case en todas**. Falso: Prism
 
 ---
 
+### 2026-08-02 · #21 — Leí la ausencia de un fichero como prueba sobre otra cosa, y el mecanismo que daba por roto funcionaba (lección propia, del ejecutor)
+
+**Qué pasó:** diagnosticando SCRUM-248 —el export fiscal excluía facturas selladas al 21 %— observé que el ZIP salía **con los dos PDF dentro y sin el XML**, y que **no aparecía `AVISO-PAQUETE-INCOMPLETO.txt`**. De ahí concluí, y se lo reporté al fundador como pista, que **`excluidos` estaba vacío** y que por tanto las facturas *«salen por otro sitio»* — que el mecanismo de exclusiones de SCRUM-209/215 no las contaba.
+
+**Era falso, y de la peor manera: la conclusión era sobre un artefacto distinto del que miré.** `AVISO-PAQUETE-INCOMPLETO.txt` lo genera `resolverEntregaZip` a partir de los **PDF que fallaron al renderizar**; no tiene ninguna relación con `exclusionesVerifactu`. Su ausencia demostraba que los PDF estaban bien — nada más. Las exclusiones fiscales viajan por otros dos sitios (el comentario dentro del XML y el cuerpo del LEEME), y ninguno de los dos se llama así.
+
+**Lo que había de verdad, medido al ejecutar en vez de inferir:** una sonda que reproducía el fixture y llamaba al constructor devolvió `count: 0`, `xml: ''` y **`excluidos` con UNA entrada**, con su motivo entero: *«la factura no tiene NIF del cliente y la AEAT rechaza una F1/R1 sin `Destinatarios` (error 1189)»*. **El mecanismo funcionaba y contaba correctamente.** Lo que estaba mal era el fixture — su cliente no tenía `taxId` — y mi lectura.
+
+**Coste:** un reporte con una pista falsa que apuntaba en dirección contraria (*«no las cuenta como excluidas»*), y que de haberse seguido habría llevado a buscar el fallo en el mecanismo de exclusiones, que era justo la parte sana.
+
+**Por qué entra en la familia #12/#13 y no es una cara nueva:** es la cara 1 —*el caso de prueba fuera del mecanismo*— con el sujeto invertido. Allí se comprobaba **el mecanismo correcto con el caso equivocado**; aquí se comprobó **el artefacto equivocado y se afirmó sobre el mecanismo**. En las dos, la herramienta funcionó y la respuesta fue exacta: `AVISO-PAQUETE-INCOMPLETO.txt` de verdad no estaba. Lo que no se comprobó es **qué mide ese fichero**.
+
+**Y hay una segunda mitad, del mismo día y del mismo diagnóstico:** el censo de condiciones de exclusión que había hecho el día anterior tenía **dos** (tramo al 0 %, factura sin líneas) y la causa real era **una tercera** que SCRUM-215 añadió después. El censo no estaba equivocado: estaba **caducado**. Un censo sin fecha ni ratchet envejece en silencio, y se lee como completo mientras lo sea.
+
+**Lo que lo cazó:** dejar de razonar sobre el síntoma y **ejecutar** — reproducir el fixture campo a campo contra staging y llamar al constructor directamente, imprimiendo `count`, `xml.length` y `excluidos`. Veinte líneas de sonda contra dos días de hipótesis.
+
+**No hace falta regla nueva.** R1 (*verifica en la fuente*) y la pregunta 0 del sub-bloque de caras (*¿hubo comprobación?*) ya lo cubren. Lo que faltaba era una tercera pregunta que ahora sí conviene tener escrita, porque es la que ninguna de las dos hace:
+
+> **¿Qué mide exactamente el artefacto que estoy mirando, y es el mismo del que voy a hablar?**
+
+Un fichero ausente, un contador a cero o un log vacío **no dicen de qué son la ausencia**. Eso hay que ir a leerlo al sitio que lo produce.
+
+---
+
 ## PATRÓN COMÚN (lo que de verdad hay que corregir)
 
 **Ocho de los diez incidentes son la misma cosa: afirmar el estado del mundo sin comprobarlo.** Un reporte, un síntoma, una suposición, una ausencia de mención o **la salida de un comando** se convirtieron en "esto es así" — y de ahí salieron tickets con prioridad alta, tareas manuales para el fundador, un ticket cerrado en falso y `main` en rojo mientras el arreglo parecía entregado.
