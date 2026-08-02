@@ -30,7 +30,10 @@ test('SCRUM-73: verifactu.xml — técnico 403, flag OFF sin registros, flag ON 
     data: { merchantId: merchant.id, name: 'QA Técnico', email: `qa-vf-tec-${stamp}@test.local`, role: 'tecnico', status: 'active' },
   });
   const customer = await prisma.customer.create({
-    data: { merchantId: merchant.id, name: 'Cliente QA VF', phone: `34602${stamp % 1000000}` },
+    // SCRUM-248: `taxId` OBLIGATORIO. Sin NIF, SCRUM-215 excluye la factura del registro
+    // (AEAT 1189: una F1 sin `Destinatarios` se rechaza) y el export devuelve 409. Este test
+    // dice simular «una factura F1 REAL con huella»: una F1 real lleva destinatario identificado.
+    data: { merchantId: merchant.id, name: 'Cliente QA VF', taxId: 'A11111111', phone: `34602${stamp % 1000000}` },
   });
   // Factura F1 REAL con huella — si el gate se rompiera, esto es justo lo que se filtraría.
   const invoice = await prisma.invoice.create({
