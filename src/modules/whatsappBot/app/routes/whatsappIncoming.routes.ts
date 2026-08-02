@@ -404,6 +404,8 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
 
   if (decision === 'unknown') {
     await sendWhatsAppText({
+      merchantId: quote.merchantId,
+      exentoDelDemo: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
       to: from,
       text: `Para responder al presupuesto #${(quote as any).quoteNumber ?? quote.id}, escribe *Acepto* o *No*. También puedes firmarlo desde el enlace que te enviamos.`,
     });
@@ -425,6 +427,8 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
     ensureJobForQuote(quote.id).catch(() => {});
 
     await sendWhatsAppText({
+      merchantId: quote.merchantId,
+      exentoDelDemo: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
       to: from,
       text: `✅ ¡Perfecto! Hemos registrado tu aceptación del presupuesto #${(quote as any).quoteNumber ?? quote.id}. Te avisaremos con los siguientes pasos.`,
     });
@@ -472,6 +476,8 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
     });
 
     await sendWhatsAppText({
+      merchantId: quote.merchantId,
+      exentoDelDemo: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
       to: from,
       text: `Hemos registrado tu rechazo del presupuesto #${(quote as any).quoteNumber ?? quote.id}. Gracias por avisar.`,
     });

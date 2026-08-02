@@ -6,6 +6,7 @@ import { prisma } from '../core/db/prisma';
 import { normalizePhone } from '../core/utils/utils';
 import { validateTemplateComponents } from './whatsappTemplates';
 import { demoSendBlocked, salidaAMetaBloqueada, MOTIVO_SALIDA_BLOQUEADA } from './whatsappPolicy';
+import type { MotivoExencionDemo } from './whatsappPolicy';
 import {
   recordWaMessage,
   extractWaMessageId,
@@ -465,6 +466,14 @@ export async function sendWhatsAppText(params: {
   // (tests/scrum245-llamador-declara-merchant.test.mjs) sostiene la regla con un ratchet.
   // Cuando la FASE 3 cierre, estas dos líneas se sustituyen por `& DestinoDeEnvio`.
   sinMerchant?: MotivoSinMerchant;
+  /**
+   * SCRUM-245 · Exime del freno del demo (V0-2), y SOLO existe en esta vía a propósito: un
+   * texto libre es lo único que puede ser una RESPUESTA. Las plantillas las inicia el negocio
+   * por definición, así que no pueden acogerse a esto — y no pueden ni intentarlo, porque el
+   * parámetro no está en su firma. La decisión es del fundador (2-ago-2026): el demo es una
+   * cuenta pública y sus clientes sembrados llevan teléfonos del rango de móvil español real.
+   */
+  exentoDelDemo?: MotivoExencionDemo;
   // WA-0b: metadata opcional para el registro de un FALLO (SCRUM-115). No se usa en éxito:
   // sendWhatsAppWindowFirst ya registra el éxito de su propio texto de ventana — duplicaría
   // la fila si esta función también lo hiciera aquí.
@@ -499,7 +508,7 @@ export async function sendWhatsAppText(params: {
   }
 
   // V0-2: modo demo seguro (los textos libres además solo entregan en ventana 24h — J2)
-  if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
+  if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS, params.exentoDelDemo)) {
     console.warn(`[WhatsApp] V0-2: texto desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO (no está en DEMO_SAFE_NUMBERS)`);
     logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
