@@ -103,7 +103,7 @@ try {
   if (!(await waitFor(() => !!document.getElementById('ob-name')))) fail('onboarding no aparece');
   await page.type('#ob-name', 'E2E Fontanería');
   await page.select('#ob-trade', 'fontanero');
-  await page.type('#ob-phone', '34611222333');
+  await page.type('#ob-phone', '34000000038');
   await page.click('#ob-next');
   if (!(await waitFor(() => !!document.getElementById('ob-load-catalog')))) fail('paso catálogo no llegó');
   ok('onboarding paso 1 → negocio+WhatsApp guardados');
@@ -120,7 +120,7 @@ try {
 
   // ── 4 · CLIENTE + PRESUPUESTO (API de creación real) ────────────────────
   const customer = await prisma.customer.create({
-    data: { merchantId, name: 'Cliente E2E', phone: '34611000001' },
+    data: { merchantId, name: 'Cliente E2E', phone: '34000000037' },
   });
   const cookie = (await (async () => {
     const t2 = 'e2e2-' + crypto.randomBytes(10).toString('hex');

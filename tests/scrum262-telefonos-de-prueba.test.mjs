@@ -45,7 +45,10 @@ function ficherosDeDatos() {
   const out = [path.join(RAIZ, 'prisma', 'seed.ts')];
   for (const d of ['scripts', 'tests']) {
     for (const f of fs.readdirSync(path.join(RAIZ, d))) {
-      if (/^seed.*\.mjs$/.test(f) || /\.test\.mjs$/.test(f)) out.push(path.join(RAIZ, d, f));
+      // TODOS los .mjs de scripts/, no solo `seed*`: al medir apareció `e2e-critico.mjs`
+      // creando un cliente con un móvil de rango real, y el recorte anterior no lo veía. Los
+      // datos de prueba no siempre se llaman «seed».
+      if (f.endsWith('.mjs') || /\.test\.mjs$/.test(f)) out.push(path.join(RAIZ, d, f));
     }
   }
   return out.filter((p) => fs.existsSync(p));
