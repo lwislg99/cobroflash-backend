@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   buildRegistroAlta,
   buildRegistroAnulacion,
-  buildRegFactuEnvelope,
+  construirCuerpoSoapRegFactu,
 } from '../dist/modules/fiscal/verifactu/registro.builder.js';
 
 const sistema = {
@@ -70,11 +70,25 @@ test('anulación: campos *Anulada y encadenamiento', () => {
   assert.ok(xml.includes('<sum1:FechaExpedicionFacturaAnulada>11-06-2026</sum1:FechaExpedicionFacturaAnulada>'));
 });
 
-test('envelope: cabecera con obligado y límite de 1000 registros', () => {
+// SCRUM-240: `buildRegFactuEnvelope` pasó a llamarse `construirCuerpoSoapRegFactu` (ahora dice
+// de qué es el sobre) y sus dos casos límite adoptaron el comportamiento del camino de
+// PRODUCCIÓN, que es el que gana.
+test('cuerpo SOAP: cabecera con obligado, y los límites siguen al camino de producción', () => {
   const reg = buildRegistroAlta(base);
-  const xml = buildRegFactuEnvelope({ obligado: { nombreRazon: 'Demo ES S.L.', nif: 'B12345678' }, registrosXml: [reg] });
+  const obligado = { nombreRazon: 'Demo ES S.L.', nif: 'B12345678' };
+  const xml = construirCuerpoSoapRegFactu({ obligado, registrosXml: [reg] });
   assert.ok(xml.includes('<sum:RegFactuSistemaFacturacion'));
   assert.ok(xml.includes('<sum1:ObligadoEmision>'));
-  assert.throws(() => buildRegFactuEnvelope({ obligado: { nombreRazon: 'x', nif: 'y' }, registrosXml: [] }), /registros_fuera_de_rango/);
-  assert.throws(() => buildRegFactuEnvelope({ obligado: { nombreRazon: 'x', nif: 'y' }, registrosXml: new Array(1001).fill(reg) }), /registros_fuera_de_rango/);
+
+  // CERO registros → '' (como la exportación desde SCRUM-216). Antes lanzaba
+  // `registros_fuera_de_rango`: era una TERCERA política para el mismo hecho.
+  assert.equal(construirCuerpoSoapRegFactu({ obligado, registrosXml: [] }), '');
+
+  // MÁS DE 1000 → el MISMO error que lanza la exportación, no uno propio.
+  assert.throws(
+    () => construirCuerpoSoapRegFactu({ obligado, registrosXml: new Array(1001).fill(reg) }),
+    /verifactu_demasiados_registros:1001/,
+  );
+  // Justo en el límite NO lanza: el XSD admite 1000.
+  assert.ok(construirCuerpoSoapRegFactu({ obligado, registrosXml: new Array(1000).fill(reg) }).length > 0);
 });
