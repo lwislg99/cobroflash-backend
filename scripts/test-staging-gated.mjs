@@ -73,6 +73,9 @@ import { guardarNota, borrarNota } from './_turno-nota.mjs';
 // SCRUM-239: `huellaDeCodigo` es el ANCLA del recibo, y se importa (no se reimplementa) para
 // que el runner y el verificador no puedan calcular cosas distintas.
 import { RUTA_RECIBO, HIJOS_SPEC, AISLADOS, pesadoEsElUltimo, huellaDeCodigo } from './_evidencia-tanda.mjs';
+// SCRUM-265: piezas puras del margen. Viven fuera porque este fichero es un SCRIPT — importarlo
+// desde un test lanzaría una tanda —, y sin poder importarlas no habría forma de darles red.
+import { medirMargen, textoDeMargen, esAbortadoPorTiempo, margenesVacios } from './_margen-tanda.mjs';
 // SCRUM-197: el parseo del resumen de node:test vive extraído, para que un test lo ejercite sin
 // arrancar la tanda. De su comportamiento con salida truncada depende la distinción crash-vs-rojo.
 import { CATS, parseCuenta } from './_parse-cuenta.mjs';
@@ -134,6 +137,33 @@ const fallaron = [];
 // SCRUM-197: guardar el fail PROPIO de cada hijo (no solo el exit) es lo que deja distinguir un
 // CRASH (exit≠0, fail propio 0) de un ROJO (exit≠0, fail propio >0) sin heurística sobre el agregado.
 const desgloseHijos = Object.fromEntries(hijos.map((h) => [h.clave, null]));
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-265 · EL MARGEN VA EN UN MAPA APARTE. NO SE FUSIONA CON `desgloseHijos`. NUNCA.
+//
+// El criterio, y es el que decide: **el desglose de hijos es un dato de VEREDICTO; el margen es
+// un dato de OBSERVACIÓN.** El validador decide si la tanda vale mirando el desglose; el margen
+// no debe poder influir en esa decisión jamás. Separados, esa independencia es ESTRUCTURAL —
+// imposible antes que vigilada.
+//
+// QUÉ SE ROMPE SI ALGUIEN LOS FUSIONA, con los números delante (medido en `_evidencia-tanda.mjs`):
+//   1. Un hijo abortado por tiempo hoy deja su entrada en `null`, y el validador lo clasifica
+//      con la clave `hijo` → «no llegó a terminar» (`_evidencia-tanda.mjs`, rama `h === null`).
+//   2. Si el margen se metiera dentro, esa entrada YA NO sería `null`: sería un objeto sin `exit`
+//      entero, así que caería en la rama siguiente → clave `incompleto` («recibo viejo o corrupto»).
+//   3. Y `remedioDominante` SOLO escala con la clave `hijo`. `incompleto` no escala.
+//   4. Resultado: una tanda abortada por tiempo dejaría de decir «inválida, re-córrela»; y si
+//      además hubiera rojos, ganaría el remedio de ROJO → se pondría en CUARENTENA algo que ni
+//      siquiera llegó a medir.
+//
+// Ese es exactamente el fallo que SCRUM-197 vino a impedir («el remedio DIVERGE: incompleta >
+// roja, nunca los dos»). Fusionar estos dos mapas lo reintroduce entero, y el diff no lo enseña
+// porque ninguna línea estaría mal: el defecto viviría en la composición.
+//
+// `null` = ese hijo NO LLEGÓ A LANZARSE. Un hijo que arrancó tiene SIEMPRE sus dos números,
+// aunque muriera por timeout o crasheara. El detalle, en `_margen-tanda.mjs`.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+const margenes = margenesVacios(hijos.map((h) => h.clave));
 
 // ── BANNER (SCRUM-166): test:staging y test:staging:gated apuntan AQUÍ. Sale ANTES de nada,
 // ruidoso, para que quien teclee el nombre viejo con memoria muscular vea QUÉ es esto y cuál es
@@ -416,7 +446,13 @@ async function tanda() {
       env, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
       timeout: timeoutMs, killSignal: 'SIGTERM',
     });
-    const durS = ((Date.now() - t0) / 1000).toFixed(1);
+    // SCRUM-265 · EL MARGEN SE ANOTA AQUÍ, ANTES DEL CORTE POR TIEMPO — y ese orden ES el ticket.
+    // El hijo que agota su límite es el ÚNICO caso en que el margen importa de verdad, y con el
+    // `continue` de abajo era justamente el que no dejaba nada escrito. Medir después del corte
+    // sería medir todos los casos menos el que motiva la medición.
+    const margen = medirMargen(t0, timeoutMs);
+    margenes[h.clave] = margen;
+    const durS = (margen.durMs / 1000).toFixed(1);
     const salida = (res.stdout || '') + (res.stderr || '');
     process.stdout.write(salida); // que la salida del hijo NO se pierda
 
@@ -427,9 +463,9 @@ async function tanda() {
     // NO se hace tree-kill: medido que matar a `node --test` reapea también su subproceso
     // por-fichero (el nieto NO queda huérfano con la conexión). Y un taskkill defensivo sobre un
     // res.pid YA MUERTO sería peligroso: si el SO reusó ese pid, mataría a otro proceso.
-    if (res.error?.code === 'ETIMEDOUT' || (res.status === null && res.signal != null)) {
+    if (esAbortadoPorTiempo(res)) {
       fallaron.push(`${h.nombre} [ABORTADO POR TIEMPO · ${durS}s > ${limiteTxt}]`);
-      console.log(`\n[${i + 1}/${hijos.length}] ${h.nombre}: ⏱  ABORTADO POR TIEMPO tras ${durS}s (límite ${limiteTxt}; signal=${res.signal || res.error?.code}). No agrego sus contadores.`);
+      console.log(`\n[${i + 1}/${hijos.length}] ${h.nombre}: ⏱  ABORTADO POR TIEMPO tras ${durS}s (límite ${limiteTxt}${textoDeMargen(margen)}; signal=${res.signal || res.error?.code}). No agrego sus contadores.`);
       continue;
     }
 
@@ -467,7 +503,7 @@ async function tanda() {
     // REGLA C · status≠0 MANDA sobre los contadores: aunque el parseo diga 0 fallos, si el
     //           proceso salió ≠0 el hijo cuenta como fallido.
     if (code !== 0) fallaron.push(h.nombre);
-    console.log(`\n[${i + 1}/${hijos.length}] ${h.nombre}: exit=${code} (${durS}s)  tests=${c.tests} pass=${c.pass} fail=${c.fail} skip=${c.skipped} cancelled=${c.cancelled} todo=${c.todo}`);
+    console.log(`\n[${i + 1}/${hijos.length}] ${h.nombre}: exit=${code} (${durS}s${textoDeMargen(margen)})  tests=${c.tests} pass=${c.pass} fail=${c.fail} skip=${c.skipped} cancelled=${c.cancelled} todo=${c.todo}`);
   }
 
   // SCRUM-188 · ¿seguía siendo nuestra la base al terminar? El refresco de dentro del bucle no
@@ -521,6 +557,9 @@ async function tanda() {
       total: agg.tests, pass: agg.pass, fail: agg.fail, skip: agg.skipped,
       ficheros: override ? 1 : ficherosQa.length,
       hijos: desgloseHijos,
+      // SCRUM-265 · OBSERVACIÓN, no veredicto. Mapa hermano de `hijos`, jamás dentro: el porqué
+      // y qué se rompe al fusionarlos está donde se declara `margenes`, arriba.
+      margenes,
       autotest: Boolean(override),
       runner: 'scripts/test-staging-gated.mjs',
     };
