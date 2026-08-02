@@ -259,16 +259,55 @@ export async function withMerchant(prisma, data, fn, { after: afterFn = after, p
  * NO EXISTE. Es seguro por definición —no hay merchant al que pertenezcan ni consulta legítima
  * que las quiera— y ataja la carrera sin tener que adivinar cuánto tarda una escritura suelta.
  */
-async function barridoDeHuerfanas(prisma) {
-  const ids = (await prisma.merchant.findMany({ select: { id: true } })).map((m) => m.id);
+/**
+ * SCRUM-272 · EL CRITERIO ES REFERENCIAL, NO UNA FOTO.
+ *
+ * Antes tomaba `merchant.findMany()` UNA vez y luego borraba con `merchantId: { notIn: ids }`
+ * durante los 21 `deleteMany` siguientes: decidía con una foto y borraba después. La dirección
+ * peligrosa es la que no se ve — **un merchant creado DESPUÉS de la foto no está en `ids`, así
+ * que sus filas CASAN el criterio y se borran**, aunque exista y esté en uso.
+ *
+ * Hoy eso no puede morder por sí solo, y conviene decirlo para que nadie lo lea como un
+ * incidente: dentro de una tanda nada crea merchants a la vez (los cuatro hijos se lanzan con
+ * `spawnSync`, secuenciales, y cada uno corre con `--test-concurrency=1`), y el turno de
+ * SCRUM-188 serializa las tandas entre sesiones. Lo mantenía inofensivo **un mecanismo externo
+ * que esta función no conoce** — correcto por la razón equivocada.
+ *
+ * Ahora el criterio se evalúa EN LA BASE y en el instante del borrado: `NOT EXISTS (SELECT 1 FROM
+ * merchants …)`. No hay foto que envejecer, así que la ventana desaparece por construcción en vez
+ * de depender de que nadie corra nada a la vez.
+ *
+ * ⚠️ SIGUEN SIENDO 21 SENTENCIAS Y NO UNA, y el motivo está medido: hay **13 relaciones entre
+ * tablas del propio barrido** (`Invoice → Charge`, `Quote → Customer`, `Expense → Provider`…).
+ * Meterlas en una sola sentencia con CTEs de escritura NO garantiza el orden de ejecución, y con
+ * FK inmediatas eso puede reventar por violación de clave. El orden de `MODELOS_POR_MERCHANT` es
+ * deliberado (SCRUM-170) y se conserva. Lo que se ahorra es la consulta de la foto: **22 → 21**.
+ *
+ * Los nombres físicos de tabla y columna salen del DMMF y NO se derivan a mano: convertir
+ * `merchantId → merchant_id` a ojo es lo que tumbó el backfill de SCRUM-205, y aquí hay 21
+ * oportunidades de equivocarse.
+ */
+export async function barridoDeHuerfanas(prisma, dmmf) {
+  const ns = dmmf ?? (await import('@prisma/client')).Prisma?.dmmf;
+  const modelos = new Map((ns?.datamodel?.models ?? []).map((m) => [m.name, m]));
+
   let total = 0;
   for (const modelo of MODELOS_POR_MERCHANT) {
-    const r = await prisma[modelo]
-      ?.deleteMany({ where: { merchantId: { notIn: ids } } })
+    // El nombre del delegado del cliente va en camelCase; en el DMMF, con inicial en mayúscula.
+    const meta = modelos.get(modelo[0].toUpperCase() + modelo.slice(1));
+    const tabla = meta?.dbName || meta?.name;
+    const col = meta?.fields?.find((f) => f.name === 'merchantId');
+    if (!tabla || !col) continue; // sin tabla o sin columna de merchant no hay nada que barrer
+    const columna = col.dbName || col.name;
+    const r = await prisma
+      .$executeRawUnsafe(
+        `DELETE FROM "${tabla}" t WHERE NOT EXISTS (SELECT 1 FROM "merchants" m WHERE m.id = t."${columna}")`,
+      )
       .catch(() => null);
-    total += r?.count || 0;
+    total += r || 0;
   }
   if (total > 0) console.warn(`🧹 SCRUM-194: ${total} fila(s) huérfana(s) barridas al cerrar el fichero.`);
+  return total;
 }
 
 export async function barridoFinal(prisma) {
