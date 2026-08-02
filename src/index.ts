@@ -2,6 +2,7 @@ import './core/config/loadEnv'; // PRIMERO: carga .env.local (prioridad) y .env
 import { app } from './app';
 import { config, warnMissingWebhookSecrets, warnEmptyOwnerEmails, assertPublicBaseUrl, assertVerifactuIdSistema } from './core/config/env';
 import { startCronJobs } from './core/cron/cron';
+import { assertSchemaSinDeriva } from './core/db/schemaDrift';
 
 // SCRUM-163: PRIMERO y REVIENTA (los dos de abajo solo avisan). Una PUBLIC_BASE_URL
 // invalida envenena en silencio todo enlace que se manda al cliente final; arrancar asi es
@@ -14,11 +15,27 @@ assertVerifactuIdSistema();
 warnMissingWebhookSecrets(); // SCRUM-99: aviso ruidoso ANTES de escuchar, no tras el primer webhook
 warnEmptyOwnerEmails(); // SCRUM-102: mismo motivo, para OWNER_EMAILS
 
-app.listen(config.PORT, () => {
-  console.log(`YaQu API listening on ${config.PUBLIC_BASE_URL}`);
-  if (config.DISABLE_CRONS) {
-    console.log('[cron] desactivados (DISABLE_CRONS=true)');
-  } else {
-    startCronJobs();
-  }
+// SCRUM-222: los cuatro de arriba miran la CONFIGURACION; este mira la BASE. Es asincrono
+// (una consulta al catalogo), asi que el arranque pasa a ser una funcion en vez de una linea.
+// Revienta SOLO si hay deriva de verdad; si no se pudo comprobar, avisa a gritos y arranca —
+// tumbar produccion por un hipo de red seria una cura peor que la enfermedad.
+async function arrancar(): Promise<void> {
+  await assertSchemaSinDeriva();
+
+  app.listen(config.PORT, () => {
+    console.log(`YaQu API listening on ${config.PUBLIC_BASE_URL}`);
+    if (config.DISABLE_CRONS) {
+      console.log('[cron] desactivados (DISABLE_CRONS=true)');
+    } else {
+      startCronJobs();
+    }
+  });
+}
+
+arrancar().catch((err) => {
+  // El mensaje ya viene explicado desde assertSchemaSinDeriva; aqui solo se imprime y se sale
+  // sin escuchar. Sin este catch seria un unhandled rejection y el motivo quedaria enterrado
+  // bajo una traza.
+  console.error(err instanceof Error ? err.message : err);
+  process.exit(1);
 });
