@@ -78,6 +78,45 @@ test('SCRUM-247 · las cinco constantes del productor tienen valor', () => {
     '  vigilado y pasa a ser invisible.');
 });
 
+/**
+ * La longitud que el XSD de la AEAT exige para un NIF, LEÍDA DEL PROPIO ESQUEMA.
+ *
+ * No se escribe un `9` a mano a propósito: si la AEAT publicase otra longitud, un número
+ * recordado aquí se quedaría mintiendo y el guard daría verde sobre un NIF inválido. Derivarlo
+ * del fichero vendorizado hace que el guard siga al esquema en vez de a nuestra memoria.
+ */
+function longitudNifSegunXsd() {
+  const xsd = fs.readFileSync(
+    path.join(RAIZ, 'src', 'modules', 'fiscal', 'verifactu', 'xsd', 'SuministroInformacion.xsd'), 'utf8');
+  const bloque = /<simpleType name="NIFType">[\s\S]*?<\/simpleType>/.exec(xsd);
+  assert.ok(bloque, '🔴 no se encuentra `NIFType` en el XSD: el guard de abajo no sabría contra qué medir');
+  const m = /<length value="(\d+)"\s*\/>/.exec(bloque[0]);
+  assert.ok(m, '🔴 `NIFType` ya no declara una `length` fija: vuelve a mirar el esquema antes de tocar el guard');
+  return Number(m[1]);
+}
+
+test('SCRUM-247 · el NIF del productor tiene la longitud que exige el XSD de la AEAT', () => {
+  // ⚠️ ESTE TEST NACIÓ ROJO CONTRA EL VALOR REAL, y por eso existe: el NIF configurado tenía
+  // 11 posiciones —2 de más, compatibles con un prefijo de país «ES»— y el XSD exige 9 exactas.
+  // Con los tests inyectando el NIF de ejemplo de la AEAT (`89890001K`, 9), la suite llevaba
+  // meses validando el XSD contra un productor que NO es el nuestro: el defecto de SCRUM-209
+  // —validar lo que producción no usa— aplicado al DATO en vez de al código.
+  //
+  // Y no es un error que se cierre con este ticket: el NIF va a cambiar cuando se constituya la
+  // SL, así que el mismo fallo puede volver con un dato nuevo. Eso es justo lo que se vigila.
+  const esperada = longitudNifSegunXsd();
+  const real = String(PRODUCTOR_VERIFACTU.VERIFACTU_PRODUCTOR_NIF ?? '').length;
+
+  assert.equal(real, esperada,
+    `🔴 VERIFACTU_PRODUCTOR_NIF tiene ${real} posiciones y el XSD de la AEAT exige ${esperada}.\n\n` +
+    '  Un NIF con longitud equivocada NO lo detecta el emisor: el XML sale, llega a la AEAT y\n' +
+    '  la declaración se RECHAZA. Con la facturación encendida, eso es una remisión fallida.\n\n' +
+    '  El valor se corrige en `src/modules/fiscal/verifactu/productor.ts`. Si lleva prefijo de\n' +
+    '  país («ES…»), el XSD no lo admite: el campo es el NIF a secas.\n\n' +
+    '  NOTA: esto comprueba LONGITUD, no formato. El XSD declara `<length value="9"/>` y nada\n' +
+    '  más, así que aquí no se inventan reglas de validación fiscal que el esquema no exige.');
+});
+
 test('SCRUM-247 · el id del sistema cumple el formato que exige la AEAT (1177)', () => {
   // No basta con «no vacío»: la AEAT exige EXACTAMENTE 2 posiciones, mayúscula (salvo Ñ) o
   // dígito. Un valor presente y MAL no lo para el emisor y llega a la AEAT como error 1177 —
