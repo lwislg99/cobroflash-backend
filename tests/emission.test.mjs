@@ -63,6 +63,9 @@ function fakeTx(merchant) {
   const calls = { updates: [] };
   return {
     calls,
+    // SCRUM-234: la reserva toma un advisory lock antes de leer. Se REGISTRA en `calls` en vez
+    // de ser un no-op, para que este fichero tambien note si el cerrojo desaparece.
+    $executeRaw: async () => { calls.cerrojos = (calls.cerrojos ?? 0) + 1; return 0; },
     merchant: {
       findUnique: async () => merchant,
       update: async (args) => { calls.updates.push(args); },
