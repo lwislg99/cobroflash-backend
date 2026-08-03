@@ -127,12 +127,42 @@ test('SCRUM-267 · ② el barrido encuentra entradas de verdad', () => {
     'los ficheros siguen `SCRUM-<n>.md`.');
 });
 
+// ── EL CENSO HEREDADO ────────────────────────────────────────────────────────────────────
+//
+// Entradas que YA existían en `docs/master/` cuando este guard entró, escritas cuando el formato
+// declarado en el README **todavía no incluía el campo**. Quien las escribió hizo lo correcto
+// según la documentación vigente: exigirles una regla que no estaba escrita sería castigar a
+// quien siguió el README.
+//
+// ⚠️ ESTO NO ES UNA ALLOWLIST, y la distinción es exactamente la que separa un censo que se
+// cierra de uno que crece:
+//
+//   ① **NO PUEDE CRECER.** Cualquier fichero de `docs/master/` que no esté aquí necesita ancla o
+//      es rojo. El conjunto queda CERRADO en el mismo commit que lo crea — no hay forma de
+//      añadirse a él después, porque añadirse es editar este fichero y eso se ve en el diff.
+//   ② **SI EL NÚMERO BAJA, TAMBIÉN FALLA.** Igual que el ratchet de SCRUM-243 y el censo de
+//      SCRUM-273: cuando alguien le ponga su ancla a una de éstas, el guard le obliga a
+//      actualizar el número, y la mejora queda ANOTADA en vez de pasar desapercibida.
+//
+// El motivo es uno solo y es verdadero para las tres: no es una excepción concedida, es una fecha.
+//
+// NO SE VAN A RELLENAR, y es decisión del fundador con su razón escrita: el ancla sirve para saber
+// si una afirmación sobre `main` ha caducado, y **nadie relee la entrada de un ticket ya cerrado
+// para decidir nada**. Su valor es PROSPECTIVO. Hacer que tres sesiones paren para reconstruir
+// mediciones que nadie va a consultar sería coste sin beneficio — y reconstruirlas sería
+// inventarlas, que es peor que no tenerlas.
+const HEREDADAS_SIN_ANCLA = {
+  'SCRUM-231.md': 'anterior a SCRUM-267 — el formato existía sin el campo',
+  'SCRUM-244.md': 'anterior a SCRUM-267 — el formato existía sin el campo',
+  'SCRUM-264.md': 'anterior a SCRUM-267 — el formato existía sin el campo',
+};
+
 // ── EL GUARD ─────────────────────────────────────────────────────────────────────────────
 
-test('SCRUM-267 · toda entrada del registro declara contra qué main se midió, y cuándo', () => {
+test('SCRUM-267 · toda entrada NUEVA del registro declara contra qué main se midió, y cuándo', () => {
   const sinAncla = entradas()
     .map((e) => ({ nombre: e.nombre, motivo: motivoSinAncla(e.texto) }))
-    .filter((e) => e.motivo)
+    .filter((e) => e.motivo && !(e.nombre in HEREDADAS_SIN_ANCLA))
     .map((e) => `${e.nombre} — ${e.motivo}`);
 
   assert.deepEqual(sinAncla, [],
@@ -146,6 +176,29 @@ test('SCRUM-267 · toda entrada del registro declara contra qué main se midió,
     '  Añade al encabezado, con el sha COMPLETO (40) y hora con huso:\n' +
     '    **Medido contra:** `origin/main` = `<sha40>` · <ISO-8601>\n\n' +
     '  El sha corto no vale: `1bb0b5e` aparece en tres ramas distintas de este repo esta semana.');
+});
+
+test('SCRUM-267 · el censo heredado no crece, y si BAJA hay que anotarlo', () => {
+  const porNombre = new Map(entradas().map((e) => [e.nombre, e]));
+
+  // (a) Ninguna del censo puede haber desaparecido sin que se note: si alguien borra la entrada
+  //     en vez de ponerle el ancla, el censo se quedaria describiendo un fichero que no existe.
+  const fantasmas = Object.keys(HEREDADAS_SIN_ANCLA).filter((n) => !porNombre.has(n));
+  assert.deepEqual(fantasmas, [],
+    '🔴 el censo nombra entradas que ya no existen en docs/master/:\n    ' + fantasmas.join('\n    ') +
+    '\n\n  Un censo que describe ficheros ausentes deja de medir nada. Quítalas de aquí.');
+
+  // (b) Y si alguna YA tiene su ancla, el número tiene que bajar en el censo. Sin esto, la mejora
+  //     pasaría desapercibida y el censo seguiría diciendo que hay tres cuando quedan dos.
+  const yaConAncla = Object.keys(HEREDADAS_SIN_ANCLA)
+    .filter((n) => porNombre.has(n) && !motivoSinAncla(porNombre.get(n).texto));
+
+  assert.deepEqual(yaConAncla, [],
+    '🔴 ESTAS ENTRADAS DEL CENSO YA TIENEN SU ANCLA:\n    ' + yaConAncla.join('\n    ') +
+    '\n\n  Buena noticia, y el censo tiene que reflejarla: quítalas de `HEREDADAS_SIN_ANCLA`.\n\n' +
+    '  Que el guard falle por una MEJORA es deliberado, y es la propiedad que separa este censo\n' +
+    '  de una allowlist: si bajar fuese silencioso, el censo seguiría declarando tres excepciones\n' +
+    '  cuando quedan dos, y nadie sabría nunca cuándo se vació del todo.');
 });
 
 test('SCRUM-267 · el formato declarado en el README incluye el ancla', () => {
