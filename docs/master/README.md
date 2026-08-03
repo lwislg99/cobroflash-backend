@@ -46,6 +46,7 @@ reconstruir la decisión sin preguntarle a nadie.
 # SCRUM-<n> · TÍTULO-CORTO: la frase que resume qué cambia
 
 **Fecha:** <d-mmm-aaaa> · **Carril:** A|B · **Gate:** sin gate | gateado | STOP con GO
+**Medido contra:** `origin/main` = `<sha de 40>` · <ISO-8601 con huso>
 **Tanda:** <N> tests, <N> pass, <N> fail, <N> skipped
 
 ## El defecto
@@ -60,6 +61,23 @@ Ninguna sección es obligatoria salvo el encabezado: un ticket de recon no tiene
 docs no tiene tanda. Lo que sí se espera siempre es **lo que NO cubre** — un registro que solo
 cuenta lo que salió bien se lee, dentro de unos meses, como si hubiera cubierto más de lo que
 cubrió.
+
+## El ancla de medicion (SCRUM-267)
+
+La linea `**Medido contra:**` es OBLIGATORIA y la exige
+`tests/scrum267-ancla-de-medicion.test.mjs`. Dos exigencias, cada una con su incidente detras:
+
+* **Sha de 40 posiciones, no abreviado.** `1bb0b5e` aparece en tres ramas distintas de este
+  repo en una sola semana: un sha corto identifica un commit igual de mal que un numero de PR
+  identifica un ticket. Si el ancla no distingue, no ancla.
+* **Fecha Y HORA, con huso.** El incidente que lo origino no fue una medicion mal hecha: fue
+  una CORRECTA que caduco en una hora porque `main` se movio tres veces. Sin hora, el ancla no
+  distingue «medido hace cinco minutos» de «medido esta manana».
+
+Va en el ENCABEZADO y no junto a cada afirmacion, a proposito: detectar afirmaciones («esta en
+main», «mergeado») seria un guard de texto, y un guard de texto se caza a si mismo en la prosa
+que explica la prohibicion — ademas de esquivarse reformulando. **Una regla que depende de como
+escribas la frase no es una regla.**
 
 ## El guard
 
