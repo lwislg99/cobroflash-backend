@@ -43,6 +43,8 @@ import path from 'node:path';
 import os from 'node:os';
 import { PrismaClient } from '@prisma/client';
 import { assertSafeStagingUrl, STAGING_HOST } from './_db-guard.mjs';
+// SCRUM-265 · los límites por hijo y la lectura del override, con su porqué medido y con red.
+import { LIGHT_MS, HEAVY_MS, VAR_OVERRIDE, resolverOverride } from './_timeouts-tanda.mjs';
 // SCRUM-182: la tanda dura ~11 min leyendo dist/, tests/ y el cliente de Prisma. Si algo los
 // reescribe mientras corre, los resultados no valen. El detalle, en el propio módulo.
 import {
@@ -184,12 +186,25 @@ console.log(`\n── SCRUM-157 · tanda gateada COMPLETA (3 procesos)${override
 // Sin timeout, un hijo colgado dejaba la tanda muerta EN SILENCIO: la salida de cada hijo se
 // escribe DESPUÉS de que vuelve (más abajo), así que un cuelgue no imprimía nada. Ahora el
 // padre ANUNCIA antes de lanzar (con el límite efectivo) y ABORTA al hijo que se pase.
-// Medido: a55 ~16s, bot-suite ~55s, bloque QA ~10 min.
+// Medido en el recibo del 2-ago-2026: a55 25,5 s · bot-suite 68,7 s · bloque QA 1.769,7 s.
 // (SCRUM-188 lo subió aquí arriba: el TTL del turno se DERIVA de estos límites, y el turno se
 // toma antes del preflight — o sea, antes de donde vivían estas constantes.)
-const LIGHT_MS = 5 * 60 * 1000;   // aislados (a55, bot-suite): suelo generoso para CI en frío.
-const HEAVY_MS = 30 * 60 * 1000;  // bloque QA (~10 min): ~3× de margen.
-const OVERRIDE_MS = Number(process.env.GATED_CHILD_TIMEOUT_MS) || 0; // override, TODOS los hijos (tuning/pruebas).
+//
+// SCRUM-265 · los números y la lectura del override viven en `_timeouts-tanda.mjs`, con su
+// porqué y con red. Aquí estaban SIN red, porque este fichero es un script: importarlo desde un
+// test lanzaría una tanda entera. El comentario que había aquí decía «bloque QA (~10 min): ~3×
+// de margen» y llevaba meses siendo falso — el bloque iba por 29,5 min contra un límite de 30.
+const OVERRIDE = resolverOverride(process.env[VAR_OVERRIDE]);
+if (!OVERRIDE.ok) {
+  // PRESENTE E ILEGIBLE = error. Antes esto era `Number(…) || 0`: un valor que no se entendía
+  // se convertía en «no hay override» y la tanda corría con el límite por defecto sin avisar.
+  // Se aborta ANTES de tomar el turno: pedir la base para correr con una configuración que no
+  // es la que se pidió sería bloquear a las demás sesiones para nada.
+  console.error(`\n❌ ${OVERRIDE.motivo}\n`);
+  console.error('   Ausente = se usan los límites por defecto. Presente e ilegible = esto.\n');
+  process.exit(2);
+}
+const OVERRIDE_MS = OVERRIDE.ms; // 0 = sin override
 
 // ── SCRUM-188 · EL TURNO DE STAGING ──────────────────────────────────────────
 // Va ANTES del preflight a propósito: el preflight ya toca la BD, así que el turno tiene que
