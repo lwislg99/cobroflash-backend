@@ -4,8 +4,12 @@
 **Medido contra:** `origin/main` = `9550f1b3dcc86a671036453372319440ea99003d` · 2026-08-03T20:05:00+02:00
 **Tanda:** 1156 tests, 1089 pass, 0 fail, 67 skipped
 
-> ⚠️ **Ticket de Javier (carril B).** Esta rama queda lista y **no se pide merge**: es su carril y
-> no está. Ver el comentario en SCRUM-266 con qué se hizo y por qué, igual que con sus PRs 259 y 260.
+> ⚠️ **Ticket de Javier (carril B).** La rama quedó lista sin pedir merge —es su carril y no
+> está—; **la mergeó el fundador el 3-ago** porque el defecto estaba vivo con una tanda corriendo.
+> Ver el comentario en SCRUM-266 con qué se hizo y por qué, igual que con sus PRs 259 y 260.
+>
+> **Tiene un SEGUNDO tramo**, al final de esta entrada: el guard que dejó este ticket protegía
+> UNO de los diez consumidores del turno, y quedaba otro decidiendo por su cuenta.
 
 ## El defecto
 
@@ -97,3 +101,96 @@ Las dos inyecciones revertidas, `scripts/` limpio.
 * `scripts/turno-staging.mjs` — `estado` con una sola decisión y su veredicto; `tomar` declara con
   qué reclamó; retirado el import inerte de `estaRancio`.
 * `tests/scrum266-ttl-desatado.test.mjs` (6, sin gate).
+
+---
+
+## Segundo tramo · el guard protegía UNO de los diez consumidores
+
+**Medido contra:** `origin/main` = `dd61eb09b7a22121217c19dbbdd2ec13ab939873` · 2026-08-03T20:16:27+02:00
+**Tanda:** 1158 tests, 1091 pass, 0 fail, 67 skipped
+
+La sesión 4 preguntó si `decidirVigencia()` era de verdad la única que decide **tras el merge**, y
+la respuesta medida en `main` (no en la rama) fue **no**:
+
+* `scripts/turno-staging.mjs:110` → `decidirVigencia` ✅ *(la línea 105 que se citaba es la
+  numeración de ANTES de este ticket)*
+* `scripts/_staging-lock.mjs:601` → el `estaRancio` de dentro de `decidirVigencia`: el fallback
+  declarado, no un segundo juez ✅
+* **`tests/_staging-db.mjs:152` → `estaRancio(lockVivo, ahoraMs)`, con el TTL por defecto** ❌
+
+El «otro runner sin override» sí estaba cubierto: pasa su `ttlMs` a `adquirirLock`, que ya decide
+con el juez, así que su TTL solo pesa cuando no hay compromiso.
+
+### El defecto que quedaba, y su signo
+
+Ese sitio es el **AVISO de turno ajeno** para el gateado suelto (`QA_DB_TEST=1 node --test …`),
+el camino que no pasa por el runner. Avisa, nunca bloquea. Y ahí el defecto de este ticket
+aparece **con el signo invertido**: con el TTL derivado por encima de los 45 supuestos, un turno
+**vivo** de 50 minutos se daba por rancio y **el aviso no salía**. Donde `tomar` reclamaba de más,
+el aviso avisaba de menos — y quien corría un test suelto se ponía a crear y borrar merchants
+sobre la base de una tanda en marcha sin enterarse.
+
+### Por qué se escapó: el guard enumeraba
+
+El guard que dejó este ticket decía, en texto y sin comentarios:
+
+```js
+assert.doesNotMatch(fuenteDeTurnoStaging, /estaRancio\s*\(/)
+```
+
+Correcto, e insuficiente por lo mismo: **protege el sitio que ya se había arreglado**. Medido con
+el barrido nuevo, los consumidores del turno son **diez**; ese guard cubría **uno**. Una lista de
+sitios protegidos se satisface dejando de enumerar, y el siguiente consumidor nace fuera.
+
+### La regla, y por qué no es «prohibido importar `estaRancio`»
+
+Prohibir el import tumbaría el test unitario de `scrum188`, que la prueba como lo que es —una
+función con su aritmética—, y obligaría a una excepción. La diferencia real no es quién importa,
+es **qué se hace con el resultado**:
+
+* llega a un `assert`, a un log, a un objeto → **se observa**, legítimo
+* llega al control de flujo → **decide**, prohibido
+
+Eso se ve en el AST, así que no hay que preguntar de qué fichero se trata. `scrum188` pasa y
+`_staging-db.mjs` caía **sin que ninguno de los dos esté en una lista**. La población sale igual
+de la estructura: quien importa del decisor es consumidor, lo sepa el guard o no.
+
+Se detectan **dos formas**, porque sin la segunda la regla se esquiva con una línea de más —la
+peor clase de regla, la que castiga escribirlo claro—:
+
+* `directa` — `if (… && !estaRancio(x, t))`
+* `variable` — `const rancio = estaRancio(x, t); if (rancio) …`
+
+### El arreglo
+
+El aviso lee el compromiso publicado en **la misma consulta** que ya hacía (la sonda se desconecta
+justo después) y decide con `decidirVigencia`. La lectura es **best-effort con su propio `catch`**:
+si falla, el contexto queda a `null`, el juez cae al TTL supuesto y el aviso se comporta
+exactamente como antes de este arreglo. Es la misma razón por la que un sufijo ilegible del
+marcador tampoco puede tumbar esta barrera: **lo que hay al otro lado de un fallo aquí es
+`QA_DB_TEST=1` contra producción.** El arreglo no puede empeorar el peor caso.
+
+### Verificado en rojo
+
+* **Sin inyectar nada:** el defecto estaba vivo en `main`, así que el guard nace rojo señalando
+  `tests/_staging-db.mjs:152 (forma: directa)`. El suelo, en verde, con 196 ms de recorrido.
+* **La forma `variable`, inyectada:** `const rancio = estaRancio(…)` + `if (… && !rancio …)` →
+  cae señalando la línea y la forma. Verificado que la inyección se aplicó y que compila
+  (`node --check`) antes de creerme el rojo. Revertida; árbol limpio.
+* **Y un tercer test para que «arreglarlo» no pueda ser «borrarlo»:** la barrera tiene que seguir
+  preguntando al juez. Sin él, el guard se satisface eliminando el aviso entero.
+
+### Lo que NO cubre
+
+* **El seguimiento del valor se queda en el fichero.** Si alguien devuelve `estaRancio(...)` desde
+  una función y decide con el resultado en otro módulo, el barrido no lo ve. Cubrirlo pediría
+  análisis entre ficheros, y el defecto real —y su forma esquivable— viven en la misma función.
+* **No se corrió la tanda gateada.** Estos tests no tocan BD ni turno; el aviso en sí solo se
+  observa contra staging real, y el turno lo tenía otra sesión.
+
+### Ficheros
+
+* `tests/_decisor-turno.mjs` (nuevo) — población derivada + detección de decisiones, por AST.
+* `tests/_staging-db.mjs` — el aviso pregunta al juez; lectura del contexto best-effort.
+* `tests/scrum266-ttl-desatado.test.mjs` — el guard de texto de un fichero se sustituye por el
+  barrido, más el suelo y el test de que el aviso sigue existiendo (6 → 8, sin gate).
