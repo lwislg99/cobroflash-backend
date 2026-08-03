@@ -35,8 +35,8 @@ import { spawnSync } from 'node:child_process';
 import { PrismaClient } from '@prisma/client';
 import {
   adquirirLock, soltarLock, leerMarcaCruda, parsearLock, parsearContexto, leerComentarioSchema,
-  esMarcaDeStaging, tieneSufijoIlegible, estaRancio, idDeSesion, formatearDuracion,
-  lineasDeContexto, TTL_POR_DEFECTO_MS, CODIGO_SALIDA_LOCK_AJENO,
+  esMarcaDeStaging, tieneSufijoIlegible, idDeSesion, formatearDuracion,
+  lineasDeContexto, decidirVigencia, TTL_POR_DEFECTO_MS, CODIGO_SALIDA_LOCK_AJENO,
 } from './_staging-lock.mjs';
 import { assertSafeStagingUrl, STAGING_HOST } from './_db-guard.mjs';
 import { guardarNota, leerNota, borrarNota } from './_turno-nota.mjs';
@@ -102,11 +102,22 @@ try {
       }
       console.log('');
     } else {
-      const rancio = estaRancio(lock, ahoraMs, TTL_POR_DEFECTO_MS);
+      // SCRUM-266 · UNA sola decisión, y por eso ya no puede contradecirse consigo misma. Antes
+      // el título salía de `estaRancio` con 45 min SUPUESTOS y la señal de vida de abajo salía
+      // del compromiso PUBLICADO: con `GATED_CHILD_TIMEOUT_MS=60` esta pantalla llegaba a decir
+      // «⏳ RANCIO (se reclama solo)» y dos líneas después «Señal de vida: VIVO».
       const ctx = parsearContexto(await leerComentarioSchema(cliente), lock.dueño);
+      const veredicto = decidirVigencia({ lock, contexto: ctx, ahoraMs, ttlSupuestoMs: TTL_POR_DEFECTO_MS });
+      const rancio = !veredicto.vigente;
       console.log(`\n${rancio ? '⏳' : '🔒'} Turno ${rancio ? 'RANCIO (se reclama solo)' : 'TOMADO'} en la base "${db}".`);
       console.log(`   Lo tiene «${lock.dueño}» desde ${lock.desdeIso} (hace ${formatearDuracion(ahoraMs - lock.desdeMs)}).`);
       process.stdout.write(lineasDeContexto(ctx, ahoraMs));
+      console.log(`   Veredicto: ${rancio ? 'RANCIO' : 'VIGENTE'} — ${veredicto.motivo}.`);
+      if (veredicto.base === 'ttl-supuesto') {
+        console.log('   ⚠️  Decidido por TTL SUPUESTO, no por lo que declaró su dueño: ese turno no publica');
+        console.log('      compromiso (código anterior a SCRUM-249). Si esa tanda corre con un');
+        console.log('      GATED_CHILD_TIMEOUT_MS alto, su TTL real puede ser mayor y seguir VIVA.');
+      }
       console.log('');
     }
   }
@@ -141,7 +152,19 @@ try {
     } catch { /* si no se puede recordar, queda `soltar --marca`; y el TTL por debajo */ }
 
     console.log(`\n✅ Turno TOMADO sobre la base "${r.db}" para «${ref}» (~${minutos} min).`);
-    if (r.reclamado) console.log('   (estaba tomado por una sesión rancia; se reclamó)');
+    if (r.reclamado) {
+      console.log('   (estaba tomado por otra sesión y se reclamó)');
+      // SCRUM-266 · reclamar NUNCA es silencioso, y menos cuando se decidió con una suposición.
+      // Antes, `tomar` con su TTL de 45 min se llevaba el turno de una tanda viva que lo sostenía
+      // con un TTL derivado mayor — sin decir nada. Ahora se dice SIEMPRE con qué se decidió.
+      console.log(`   Motivo: ${r.vigenciaPrevia?.motivo ?? '(sin motivo registrado)'}`);
+      if (r.vigenciaPrevia?.base === 'ttl-supuesto') {
+        console.log('   ⚠️  SE DECIDIÓ POR TTL SUPUESTO, no por lo que declaró su dueño.');
+        console.log('      Ese turno no publicaba compromiso (código anterior a SCRUM-249), así que');
+        console.log('      su TTL real puede ser MAYOR que el supuesto aquí y la tanda seguir viva.');
+        console.log('      Si era una tanda gateada con GATED_CHILD_TIMEOUT_MS alto, suéltalo y avisa.');
+      }
+    }
     if (!r.contextoEscrito) console.log(`   ⚠️ el contexto no se pudo escribir (${r.contextoMotivo}); el turno SÍ es tuyo.`);
     console.log(`   Suéltalo con:  node scripts/turno-staging.mjs soltar`);
     console.log(`   MARCA=${r.marca}\n`);

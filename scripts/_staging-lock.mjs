@@ -310,15 +310,24 @@ export async function adquirirLock(
     }
 
     const lock = parsearLock(marca);
-    if (lock && !estaRancio(lock, ahoraMs, ttlMs)) {
-      // SCRUM-232 · al rechazar se devuelve TAMBIÉN qué está corriendo, para que quien llega
-      // pueda decidir sin romper el lock. Leerlo no puede tumbar el rechazo: si el contexto
-      // falla o no se entiende, `contexto` queda a null y el mensaje degrada al de antes.
-      let contexto = null;
+
+    // SCRUM-266 · el contexto se lee ANTES de decidir, no solo al rechazar. Antes la decisión se
+    // tomaba con `estaRancio(lock, ahoraMs, ttlMs)` y el contexto solo servía para el mensaje —
+    // así que un `turno:tomar` con su TTL supuesto de 45 min RECLAMABA el turno de una tanda viva
+    // que se sostenía con TTL derivado de 70. Ahora manda lo que el dueño publicó.
+    //
+    // SCRUM-232 · leerlo no puede tumbar la decisión: si el contexto falla o no se entiende,
+    // queda a null y `decidirVigencia` cae al TTL, que es lo que había antes.
+    let contextoPrevio = null;
+    if (lock) {
       try {
-        contexto = parsearContexto(await leerComentarioSchema(tx), lock.dueño);
-      } catch { /* advisory: nunca decide nada */ }
-      return { ok: false, motivo: 'ocupado', db, lock, ahoraMs, ttlMs, contexto };
+        contextoPrevio = parsearContexto(await leerComentarioSchema(tx), lock.dueño);
+      } catch { /* advisory: nunca decide nada por su cuenta */ }
+    }
+    const vigencia = decidirVigencia({ lock, contexto: contextoPrevio, ahoraMs, ttlSupuestoMs: ttlMs });
+
+    if (vigencia.vigente) {
+      return { ok: false, motivo: 'ocupado', db, lock, ahoraMs, ttlMs, contexto: contextoPrevio, vigencia };
     }
 
     const sufijoIgnorado = tieneSufijoIlegible(marca);
@@ -341,6 +350,9 @@ export async function adquirirLock(
       ok: true, db, marca: nueva, ahoraMs,
       reclamado: Boolean(lock), lockPrevio: lock, sufijoIgnorado,
       contexto, contextoEscrito: ctxRes.ok, contextoMotivo: ctxRes.motivo ?? null,
+      // SCRUM-266 · con QUE se decidio reclamar: 'compromiso' (el dueno lo declaro) o
+      // 'ttl-supuesto' (no habia compromiso y se supuso). `tomar` avisa en el segundo caso.
+      vigenciaPrevia: vigencia,
     };
   });
 }
@@ -515,6 +527,86 @@ export function estadoDeVida(ctx, ahoraMs) {
   return ahoraMs <= ctx.señalMs
     ? { estado: 'vivo', retrasoMs: 0 }
     : { estado: 'vencido', retrasoMs: ahoraMs - ctx.señalMs };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-266 · UNA SOLA DECISIÓN SOBRE SI UN TURNO SIGUE VIGENTE
+// ═════════════════════════════════════════════════════════════════════════════════════════
+//
+// EL DEFECTO: había DOS juicios sobre lo mismo, y podían discrepar.
+//
+//   · El runner DERIVA su TTL: `ttlParaTanda(GATED_CHILD_TIMEOUT_MS)` = `max(45, GATED + 10)`.
+//   · `turno-staging.mjs` suponía **45 fijos**, tanto en `estado` como en `tomar`.
+//
+// Con `GATED_CHILD_TIMEOUT_MS=60` el runner sostiene su turno con TTL 70, así que **entre el
+// minuto 45 y el 70 el turno está vigente para quien lo tiene y rancio para quien lo consulta**.
+// La ventana es exactamente `GATED + 10 − 45`: crece con GATED, y cualquier régimen con GATED
+// por encima de 35 la vuelve permanente (de ahí que esto vaya ANTES que SCRUM-265).
+//
+// ⚠️ Y NO ERA SOLO DESINFORMACIÓN: `adquirirLock` decidía con ese mismo TTL supuesto, así que
+// `turno:tomar` **SE LLEVABA EL TURNO DE UNA TANDA VIVA** — solo, sin preguntar y sin `exit 5`.
+// Es el fallo que SCRUM-188 existe para impedir, ocurriendo por dentro de la herramienta que
+// debía protegerlo. Rozó el 2-ago-2026.
+//
+// Además `estado` llegaba a **contradecirse en la misma pantalla**: el título salía de
+// `estaRancio` («⏳ RANCIO, se reclama solo») y dos líneas más abajo la señal de vida de
+// SCRUM-249 decía «VIVO». Una herramienta que se contradice a sí misma es peor que una que calla.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// POR QUÉ NO SE ARREGLA PASÁNDOLE EL TTL AL CLI
+//
+// Lo obvio sería que el CLI calculase `ttlParaTanda(GATED_CHILD_TIMEOUT_MS)`. Se descartó: **el
+// CLI leería SU variable de entorno para adivinar el TTL con el que OTRA máquina tomó el turno.**
+// Si quien corre la tanda tiene GATED a 60 y quien consulta no la tiene puesta, vuelve a fallar —
+// y en silencio. Es adivinar con más pasos.
+//
+// El dato correcto YA está publicado desde SCRUM-249: el que sostiene el turno declara **hasta
+// cuándo va a dar señales**, y eso se compara contra el reloj de la BASE, que es el mismo para
+// todas las máquinas. No hay que deducir el TTL de nadie.
+//
+// ⚠️ COSTE DECLARADO: un turno tomado por código ANTERIOR a SCRUM-249 no publica compromiso, así
+// que para él sigue habiendo ventana. No es evitable sin inventar el TTL ajeno, que es justo lo
+// que este ticket viene a quitar. **El conjunto se vacía solo**: en cuanto todos los turnos vivos
+// se tomen con código actual, no queda ninguno sin compromiso. Y mientras tanto, `tomar` avisa
+// en vez de reclamar en silencio.
+
+/**
+ * ¿Sigue vigente este turno? **Es la ÚNICA función que lo decide**, y por eso ya no puede haber
+ * dos respuestas distintas en la misma pantalla.
+ *
+ * @returns {{vigente: boolean, base: 'compromiso'|'ttl-supuesto', motivo: string}}
+ *   `base` dice CON QUÉ se decidió, y no es cosmético: quien va a reclamar un turno necesita
+ *   saber si la decisión se apoya en lo que el dueño declaró o en una suposición sobre su TTL.
+ */
+export function decidirVigencia({ lock, contexto, ahoraMs, ttlSupuestoMs = TTL_POR_DEFECTO_MS }) {
+  if (!lock) return { vigente: false, base: 'compromiso', motivo: 'no hay turno tomado' };
+
+  const vida = estadoDeVida(contexto, ahoraMs);
+  if (vida.estado === 'vivo') {
+    return {
+      vigente: true, base: 'compromiso',
+      motivo: `se comprometió a dar señales antes de ${contexto.señalIso}`,
+    };
+  }
+  if (vida.estado === 'vencido') {
+    return {
+      vigente: false, base: 'compromiso',
+      motivo: `incumplió su compromiso hace ${formatearDuracion(vida.retrasoMs)}`,
+    };
+  }
+
+  // Sin compromiso publicado (turno anterior a SCRUM-249, o contexto ilegible u huérfano): no
+  // queda más que el TTL. Se marca la base para que quien decida sepa que se apoya en una
+  // suposición y no en un dato del dueño.
+  const rancio = estaRancio(lock, ahoraMs, ttlSupuestoMs);
+  return {
+    vigente: !rancio,
+    base: 'ttl-supuesto',
+    motivo: rancio
+      ? `no publica compromiso y lleva ${formatearDuracion(ahoraMs - lock.desdeMs)} sin renovar ` +
+        `(TTL supuesto: ${formatearDuracion(ttlSupuestoMs)})`
+      : `no publica compromiso; por TTL supuesto (${formatearDuracion(ttlSupuestoMs)}) aún no habría caducado`,
+  };
 }
 
 /** Compone el sufijo. Lanza antes de escribir si no fuese representable (fail-closed barato). */
