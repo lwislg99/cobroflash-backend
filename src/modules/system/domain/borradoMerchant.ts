@@ -79,6 +79,27 @@ export const FUERA_DEL_BARRIDO_GENERICO: Readonly<Record<string, string>> = {
   botSession: 'merchantId nullable (SCRUM-174): se barre por teléfono, no por merchant',
 };
 
+/**
+ * MODELOS QUE PERTENECEN A UN MERCHANT SIN TENER SU COLUMNA: cuelgan de `Charge`.
+ *
+ * 🔑 SCRUM-244 — por qué esto es una lista y no dos líneas sueltas. Estos modelos son
+ * INVISIBLES para el guard de cobertura de SCRUM-172/192, que deriva del schema los modelos
+ * **con columna `merchantId`**. Estos no la tienen, así que su verde nunca habló de ellos: el
+ * único sitio donde existen es esta lista, y una lista suelta no avisa de lo que le falta.
+ * Por eso está declarada aquí y la deriva un guard propio (`tests/scrum244-…`), que compara
+ * contra el schema y sale en rojo el día que aparezca el tercero.
+ *
+ * ⚠️ Y no fallan callando, que es lo que los hace urgentes: ninguna de las dos `@relation`
+ * declara `onDelete`, luego la FK es RESTRICT. Si uno de estos sobrevive, el `deleteMany` de
+ * `charge` **falla** — con las tablas anteriores ya vacías. Van SIEMPRE antes que sus charges.
+ */
+export const COLGADOS_DE_CHARGE: Readonly<Record<string, string>> = {
+  event: 'el histórico del cobro (SCRUM-192): cuelga de charge, sin merchantId propio',
+  reconciliation:
+    'la conciliación bancaria del cobro (SCRUM-244): mismo padre y mismo caso que event, ' +
+    'pero se quedó fuera. Es rastro de DINERO del merchant y su FK bloquea el borrado.',
+};
+
 export interface ResultadoBorrado {
   ok: boolean;
   /** Filas borradas por modelo, para poder auditar QUÉ se fue — RGPD art. 17 pide poder decirlo. */
@@ -113,9 +134,11 @@ export async function borrarMerchant(
     }
   };
 
-  // `Event` cuelga de `Charge`, no de merchant: no tiene `merchantId` propio, así que no está
-  // en el orden derivable y va explícito ANTES de que desaparezcan sus charges.
-  await cuenta('event', () => prisma.event.deleteMany({ where: { charge: { merchantId } } }));
+  // Los colgados de `Charge` no tienen `merchantId` propio, así que no están en el orden
+  // derivable: se filtran POR SU PADRE y van ANTES de que ese padre desaparezca (FK RESTRICT).
+  for (const modelo of Object.keys(COLGADOS_DE_CHARGE)) {
+    await cuenta(modelo, () => prisma[modelo].deleteMany({ where: { charge: { merchantId } } }));
+  }
 
   for (const modelo of ORDEN_BORRADO_MERCHANT) {
     if (!prisma[modelo]?.deleteMany) {
