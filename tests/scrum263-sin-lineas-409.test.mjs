@@ -65,6 +65,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pathToFileURL } from 'node:url';
+import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs'; // SCRUM-262
 
 const DIST = pathToFileURL(
   path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist')).href + '/';
@@ -109,7 +110,9 @@ const LINEA_SIN_IMPORTE = { concept: 'Pendiente de precio', qty: 1, price: 0 };
 const LINEA_CON_IMPORTE = { concept: 'Reparación', qty: 1, price: 100 };
 
 const MERCHANT = { id: 1, name: 'QA', country: 'ES', taxId: 'B12345678', invoiceSeriesPrefix: 'CF' };
-const CUSTOMER = { id: 2, name: 'Cliente QA', phone: '+34600000000' };
+// El telefono sale del RANGO IMPOSIBLE (SCRUM-262): '+34600000000' es un movil real y podria
+// ser de alguien. Se usa el helper oficial en vez de escribir digitos a mano.
+const CUSTOMER = { id: 2, name: 'Cliente QA', phone: telefonoDePrueba(263) };
 
 const quoteBase = (lines) => ({
   id: 7, merchantId: 1, customerId: 2, status: 'accepted', currency: 'EUR',
