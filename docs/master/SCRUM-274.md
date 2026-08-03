@@ -2,6 +2,8 @@
 
 **Fecha:** 3-ago-2026 · **Carril:** A · **Gate:** sin gate, corre en `npm test` · **Zona roja:** toca `src/app.ts`
 
+**Medido contra:** `origin/main` = `bebf93ad35846b38526b5fa61e16934a06ffc5bd` · 2026-08-03T12:38:24+02:00
+
 ## El defecto, y su precio
 
 Los 31 `<script>` del dashboard se referenciaban por su nombre pelado (`./js/api.js`), así que
