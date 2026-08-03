@@ -6,6 +6,24 @@
 > **Etiquetas de fase:** `F1-doc` (definición vigente ya) · `F1-build` (código permitido en F1) · `F2-spec` (verdad para su sprint; PROHIBIDO construir antes) · `F3/F4/cajón`.
 > Si una tarea necesita un estado, flag, transición o texto que no está aquí: NO se inventa — se propone cambio de master primero (regla 27).
 
+> **📍 DÓNDE VIVE EL REGISTRO DE TRABAJO (desde el 3-ago-2026 · SCRUM-273).** Este documento
+> sigue siendo la **única fuente de verdad** sobre reglas, decisiones y estrategia (regla 35). Lo
+> que cambia es dónde se apunta **lo que se ha hecho**: cada ticket escribe su entrada en su
+> propio fichero, `docs/master/SCRUM-<n>.md`.
+>
+> **Por qué:** el 2-ago-2026 siete ramas distintas chocaron aquí en un solo día, todas añadiendo
+> su entrada al mismo punto del mismo fichero. Resolver conflictos a mano en la fuente de verdad
+> del proyecto es la operación de más riesgo que se hace en este repo, y una de esas siete estuvo
+> a punto de dejar un marcador de conflicto dentro del documento. Con un fichero por ticket el
+> choque no se resuelve mejor: **no puede ocurrir**, porque dos tickets no comparten número.
+>
+> **El histórico NO se ha migrado**, a propósito: las 110 entradas anteriores a esa fecha siguen
+> exactamente donde están, con su redacción y su orden. Reescribir este documento entero para
+> reorganizarlo habría sido aceptar justo el riesgo que el cambio elimina. Si buscas un ticket
+> anterior al 3-ago-2026, está aquí; si es posterior, está en `docs/master/`. **No hay copia de
+> ninguno en los dos sitios** — dos verdades sobre la misma entrada sería el defecto que esto
+> viene a evitar, cometido por el propio arreglo.
+
 ---
 
 # PROJECT BRIEF — YAQU EN 12 LÍNEAS (leer SIEMPRE primero)
