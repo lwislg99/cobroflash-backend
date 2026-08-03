@@ -41,7 +41,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import {
   normalizarSchema,
@@ -219,9 +219,33 @@ test('REGRESIÓN · el escáner no trunca en paréntesis ANIDADOS', () => {
 // ── El enganche ──────────────────────────────────────────────────────────────
 
 test('esInvocacionDirecta aguanta una ruta con espacios', () => {
+  // ⚠️ LA URL SE CONSTRUYE CON `pathToFileURL`, COMO EN SCRUM-235, Y NO CONCATENANDO.
+  //
+  // La primera versión de este test hacía `` `file:///${ruta.replace(/\\/g,'/')}` ``, y eso medía
+  // cosas distintas según DÓNDE corriera:
+  //   · en Windows la ruta empieza por `C:` → `file:///C:/…/con espacio/g.mjs`, válida → VERDE.
+  //   · en Linux la ruta empieza por `/` → `file:////tmp/con espacio/g.mjs`, con CUATRO barras →
+  //     `fileURLToPath` lanza `ERR_INVALID_FILE_URL_PATH`, el `catch` del helper devuelve false
+  //     → ROJO. Local (Windows) verde, CI (`ubuntu-latest`) rojo, con el helper intacto.
+  // Y encima no probaba el peligro de verdad: un espacio LITERAL no es lo que produce
+  // `import.meta.url`, que viene percent-encodeado. `pathToFileURL` sí lo produce.
+  //
+  // EL PELIGRO QUE ESTO GUARDA (SCRUM-235, incidente real): si el helper comparase sin decodificar,
+  // bajo `OneDrive - Empresa` o `Mi unidad` el guard no se reconocería a sí mismo y saldría 0 sin
+  // comparar nada — un NO-OP silencioso, el verde hueco en su forma más cara.
   const conEspacio = path.join(os.tmpdir(), 'con espacio', 'g.mjs');
-  assert.equal(esInvocacionDirecta(`file:///${conEspacio.replace(/\\/g, '/')}`, conEspacio), true);
-  assert.equal(esInvocacionDirecta(import.meta.url, undefined), false);
+  const url = pathToFileURL(conEspacio).href;
+  assert.match(url, /%20/, 'sin percent-encoding este test no está probando el peligro que dice');
+  assert.equal(
+    esInvocacionDirecta(url, conEspacio), true,
+    '🔴 con un espacio en la ruta el guard no se reconoce y se vuelve un NO-OP con exit 0',
+  );
+
+  const normal = path.join(RAIZ, 'scripts', '_prisma-procedencia-guard.mjs');
+  assert.equal(esInvocacionDirecta(pathToFileURL(normal).href, normal), true);
+  assert.equal(esInvocacionDirecta(pathToFileURL(normal).href, path.join(RAIZ, 'otro.mjs')), false,
+    'importado desde otro script NO debe ejecutarse como CLI');
+  assert.equal(esInvocacionDirecta(pathToFileURL(normal).href, undefined), false);
 });
 
 test('el guard está enganchado en pretest, o no protege nada', () => {
