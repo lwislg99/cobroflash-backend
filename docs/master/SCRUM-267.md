@@ -75,6 +75,25 @@ afirmación sobre `main` ha caducado, y **nadie relee la entrada de un ticket ya
 decidir nada**. Su valor es **prospectivo**. Reconstruirlas hoy no sería recordarlas: sería
 inventarlas, y un ancla que ancla a otra cosa es peor que ninguna.
 
+### Lo que NO entró en el censo, y por qué importa la diferencia
+
+Mientras este ticket esperaba merge entraron en `main` **más entradas sin ancla** —`SCRUM-274` fue
+la primera—. **Ninguna se añadió al censo**, y el criterio es el que sostiene todo lo anterior:
+
+> El censo se justifica por una **fecha** —«el formato existía sin el campo»— y esa fecha es el
+> merge de SCRUM-267. Una entrada que llega **mientras** 267 espera no es anterior a la regla: es
+> **contemporánea**. Meterla convertiría un corte fechado en lo que se descartó por la mañana:
+> una lista que crece con buenas razones.
+
+Y la diferencia con `SCRUM-252`, que sí necesitó que su dueña actuara: aquella **ya estaba en
+`main`** antes de que el guard existiera, así que solo cabía o censarla o reconstruir su medición.
+`SCRUM-274` todavía podía ponerse el ancla **antes de que el guard llegara** — y eso se arregla
+**sin que nada se ponga rojo en ningún momento**.
+
+Se resolvió congelando los merges de las cuatro sesiones unos minutos: la sesión dueña de la
+entrada añadió su ancla —una línea, con el dato fresco— y este ticket entró después. **Parar la
+fuente cuesta veinte minutos; perseguir rezagados a golpe de rebase no termina nunca.**
+
 ## Verificado en rojo
 
 Cinco, cada uno con una sola causa y con el mensaje que da el diagnóstico:
