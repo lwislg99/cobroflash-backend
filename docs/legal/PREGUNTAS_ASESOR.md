@@ -67,6 +67,52 @@
 12. ¿Algún requisito previo para darnos de alta en el **entorno de pruebas de la AEAT**
     (además del certificado FNMT)?
 
+## E. Baja de un profesional: qué se borra y qué se conserva (bloquea SCRUM-244)
+
+> Añadido el 3-ago-2026. **Es la pregunta más cerrada de esta hoja: basta con marcar (a), (b) o
+> (c) y el plazo.** Todo lo demás es contexto para que no tengas que reconstruirlo.
+
+13. **Cuando un profesional ejerce el derecho de supresión (RGPD art. 17) y hemos emitido
+    facturas suyas, ¿qué hacemos con esas facturas, con sus registros VeriFactu y con el
+    registro de auditoría?**
+
+    - **(a) Conservar íntegro el rastro fiscal** —facturas emitidas, sus registros VeriFactu y
+      el `AuditLog`— durante el plazo legal de conservación, y borrar **todo lo demás** (cuenta,
+      clientes, presupuestos, trabajos, mensajes, adjuntos). Amparo: **art. 17.3.b RGPD**, que
+      excluye del derecho de supresión los datos necesarios para cumplir una obligación legal.
+    - **(b) Anonimizar los datos identificativos dentro de esos documentos** conservando el
+      asiento. ⚠️ **Necesitamos que valores esto sabiendo lo que cuesta técnicamente**, porque no
+      es un `UPDATE` inocuo: ver el recuadro de abajo.
+    - **(c) Borrado total**, incluidas facturas y registros fiscales.
+
+    **Y la pregunta de plazo, que es la que hace ejecutable la respuesta:** ¿**4 años**
+    (prescripción tributaria, art. 66 LGT) o **6 años** (art. 30 Código de Comercio)? La política
+    de privacidad ya publicada dice **6 años**; si es otro, hay que corregirla.
+
+    > **⚠️ Por qué (b) no es "simplemente anonimizar": rompería la prueba.** Nuestras facturas
+    > llevan una **huella encadenada** (VeriFactu): cada registro incorpora la huella del
+    > anterior, y esa huella se calcula **sobre el contenido de la factura**. Cambiar un dato
+    > dentro de una factura ya emitida deja la huella almacenada sin corresponder con el
+    > contenido, y **recalcularla rompe la cadena de todas las posteriores**. Es también lo que
+    > prohíbe nuestra regla interna nº 29 (*una factura emitida jamás se edita ni se borra*:
+    > corrección = rectificativa R1, nunca edición). O sea que (b), aplicada **dentro** de la
+    > factura, destruiría justo el valor probatorio que la conservación busca. Si aun así (b) es
+    > tu criterio, necesitamos que nos digas **sobre qué datos exactamente** se puede aplicar
+    > (¿solo los de la ficha de cliente fuera de la factura? ¿los de contacto?) y **cuáles no se
+    > tocan nunca**.
+
+    **Contexto de por qué preguntamos y no decidimos:** las dos obligaciones apuntan en
+    direcciones opuestas —suprimir datos personales frente a conservar el registro de
+    facturación— y el software ya sabe borrar un merchant entero (está construido y probado). Lo
+    que **no** vamos a hacer es exponer ese borrado antes de tener tu respuesta: hoy la lista de
+    borrado incluye facturas y `AuditLog`, así que darle un botón sería incumplir por el otro
+    lado. **Sin esta respuesta, SCRUM-244 no se construye.**
+
+    **Un apunte que quizá cambie tu respuesta:** el profesional **no es un tercero** en sus
+    facturas — su nombre y su NIF son parte del documento fiscal como emisor. Conservar la
+    factura implica conservar su identidad; no hay versión de la factura sin él.
+
 ---
 *Generado el 13-jun-2026. Cuando vuelvas con respuestas: B y C desbloquean S1-C/S1-E,
-A desbloquea S1-D. Estado vivo en `docs/PENDIENTES_FUNDADOR.md`.*
+A desbloquea S1-D, **E desbloquea SCRUM-244 (supresión + portabilidad)**. Estado vivo en
+`docs/PENDIENTES_FUNDADOR.md`.*
