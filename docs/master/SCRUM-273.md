@@ -1,6 +1,7 @@
 # SCRUM-273 · REGISTRO-POR-FICHERO: el conflicto del máster deja de existir
 
 **Fecha:** 3-ago-2026 · **Carril:** B (docs/tooling) · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `e6946173013d59dbd0d85fd8bdadbc4d651cbbe0` · 2026-08-03T17:05:00+02:00
 
 ## El defecto
 

@@ -46,6 +46,7 @@ reconstruir la decisión sin preguntarle a nadie.
 # SCRUM-<n> · TÍTULO-CORTO: la frase que resume qué cambia
 
 **Fecha:** <d-mmm-aaaa> · **Carril:** A|B · **Gate:** sin gate | gateado | STOP con GO
+**Medido contra:** `origin/main` = `<sha de 40>` · <ISO-8601 con huso>
 **Tanda:** <N> tests, <N> pass, <N> fail, <N> skipped
 
 ## El defecto
@@ -60,6 +61,42 @@ Ninguna sección es obligatoria salvo el encabezado: un ticket de recon no tiene
 docs no tiene tanda. Lo que sí se espera siempre es **lo que NO cubre** — un registro que solo
 cuenta lo que salió bien se lee, dentro de unos meses, como si hubiera cubierto más de lo que
 cubrió.
+
+## El ancla de medicion (SCRUM-267)
+
+La linea `**Medido contra:**` es OBLIGATORIA y la exige
+`tests/scrum267-ancla-de-medicion.test.mjs`. Dos exigencias, cada una con su incidente detras:
+
+* **Sha de 40 posiciones, no abreviado.** `1bb0b5e` aparece en tres ramas distintas de este
+  repo en una sola semana: un sha corto identifica un commit igual de mal que un numero de PR
+  identifica un ticket. Si el ancla no distingue, no ancla.
+* **Fecha Y HORA, con huso.** El incidente que lo origino no fue una medicion mal hecha: fue
+  una CORRECTA que caduco en una hora porque `main` se movio tres veces. Sin hora, el ancla no
+  distingue «medido hace cinco minutos» de «medido esta manana».
+
+Va en el ENCABEZADO y no junto a cada afirmacion, a proposito: detectar afirmaciones («esta en
+main», «mergeado») seria un guard de texto, y un guard de texto se caza a si mismo en la prosa
+que explica la prohibicion — ademas de esquivarse reformulando. **Una regla que depende de como
+escribas la frase no es una regla.**
+
+### Por que hay entradas sin ancla, y por que NO se van a rellenar
+
+`docs/master/` nacio con SCRUM-273 y el campo `Medido contra` lo anadio **SCRUM-267, el
+3-ago-2026**. Entre uno y otro se escribieron varias entradas cuando **este README todavia no
+mencionaba el campo**: quien las escribio hizo lo correcto segun la documentacion vigente, y
+exigirles una regla que no estaba escrita seria castigar a quien siguio el formato.
+
+Esas entradas —**SCRUM-231, SCRUM-244 y SCRUM-264**— estan censadas en el propio guard, con su
+motivo, y **no se van a rellenar**. Decision del fundador, con su razon: el ancla sirve para saber
+si una afirmacion sobre `main` **ha caducado**, y nadie relee la entrada de un ticket ya cerrado
+para decidir nada. **Su valor es prospectivo.** Reconstruir hoy contra que `main` se midio entonces
+no seria recordarlo: seria inventarlo, y un ancla que ancla a otra cosa es peor que ninguna.
+
+El censo **no puede crecer** —cualquier entrada que no este en el necesita ancla o sale rojo— y
+**si baja, tambien falla**: si alguien le pone su ancla a una de las tres, el guard le obliga a
+actualizar el censo, para que la mejora quede anotada en vez de pasar desapercibida.
+
+Si estas escribiendo una entrada NUEVA, nada de esto te afecta: pon el ancla.
 
 ## El guard
 
