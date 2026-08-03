@@ -77,7 +77,19 @@ self.addEventListener('fetch', (event) => {
         return resp;
       })
       .catch(() =>
-        caches.match(event.request).then((cached) => cached || Response.error())
+        // SCRUM-274 · `ignoreSearch` NO es laxitud: sin él este fallback deja de existir.
+        //
+        // Desde SCRUM-274 el HTML pide `/dashboard/js/api.js?v=<huella>`, y la query ENTRA en la
+        // clave de la Cache API igual que entra en la de Cloudflare (medido). El SHELL de arriba
+        // se precachea con las rutas PELADAS, así que sin `ignoreSearch` un `caches.match` de la
+        // URL con huella no casaría NUNCA con lo precacheado: el profesional sin cobertura se
+        // quedaría sin dashboard y el precache pasaría a ser peso muerto.
+        //
+        // Y es seguro AQUÍ y solo aquí: esto es el camino de OFFLINE, al que solo se llega
+        // cuando la red YA ha fallado. Servir una versión anterior es justo lo que se quiere en
+        // ese caso — la alternativa no es «servir la nueva», es no servir nada. La frescura la
+        // garantiza el network-first de arriba, que es quien manda mientras hay red.
+        caches.match(event.request, { ignoreSearch: true }).then((cached) => cached || Response.error())
       )
   );
 });
