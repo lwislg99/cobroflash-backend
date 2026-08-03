@@ -1,5 +1,43 @@
 # Migraciones de schema pendientes de aplicar a producción
 
+> ## ⛔ ESTE FICHERO YA NO CONTESTA «¿existe esa columna en esa base?» — SCRUM-225
+>
+> Lo contestaba **a mano**, y una lista a mano se desfasa en silencio. Sus dos direcciones de
+> error no son simétricas: decir PENDIENTE sobre algo ya aplicado es molesto e inocuo (pasó el
+> 30-jul con `quotes.job_id` en `yaqu_dev_javier`); decir **APLICADO sobre algo que no lo está es
+> un 500 en producción**, que es exactamente lo que se vivió en SCRUM-220 — el código desplegado
+> esperando una columna que la base no tenía.
+>
+> **Esa pregunta tiene desde SCRUM-222 un mecanismo, y el mecanismo manda sobre este fichero:**
+>
+> | Quiero saber… | Se lo pregunto a… |
+> |---|---|
+> | ¿le falta a ESTA base alguna columna que el código nombra? | **`docs/sql/deriva-prod.sql`** — se pega entero en la consola de Postgres de esa base (Railway → base → Query). Un `SELECT` de SOLO LECTURA, autocontenido: sin node, sin CLI de Prisma y **sin credenciales en ninguna parte**. 0 filas = en sync. |
+> | ¿arrancó la app contra una base que le falta algo? | El chequeo de arranque (`src/core/db/schemaDrift.ts`): en producción **no arranca** y dice qué falta; fuera, avisa. |
+>
+> Ese SQL se **genera** del mismo schema que usa la app (`scripts/generar-sql-deriva.mjs`) y hay
+> un test que impide que se desfase, así que no puede envejecer sin que algo se ponga rojo.
+> Preguntarle al fichero lo que sabe la base es la costumbre que SCRUM-225 viene a quitar.
+>
+> ### Las DOS clases de afirmación que conviven aquí abajo, y por qué hay que distinguirlas
+>
+> Éste es el fondo del ticket: hoy «existe esta columna» y «hicimos este backfill» se leían
+> **idénticos** —un checkbox— y solo el primero lo puede verificar una máquina.
+>
+> - **🔎 VERIFICABLE** — presencia de tabla o columna. **No te fíes del checkbox: pregúntaselo al
+>   SQL de arriba.** Lo que queda escrito abajo es **historia fechada** (qué se aplicó, cuándo y
+>   con qué GO), no el estado de hoy.
+> - **✋ DECLARACIÓN MANUAL, SIN MECANISMO** — todo lo demás, y **nada lo comprueba**: backfills y
+>   estado de los datos, índices, tipos, nullability, defaults, claves ajenas, valores de enum,
+>   y las decisiones de orden entre pasos. El censo de SCRUM-222 declara su alcance y es
+>   estrictamente «existe la tabla y existe la columna»; el resto **no lo ve, y no debe suponerse
+>   que lo ve**. Un backfill es el caso claro: la columna existe, así que el mecanismo dirá «en
+>   sync» con toda la razón mientras las filas siguen a NULL.
+>
+> **No se construye un segundo comprobador para lo de ✋.** Se podría, y sería otra herramienta
+> haciendo lo que ya hace una — el defecto que cerró SCRUM-240. Se marca como lo que es: una
+> afirmación humana, visible como tal, que se cree bajo la palabra de quien la escribió.
+
 > El deploy de Railway **NO** aplica el schema automáticamente (start = `node dist/index.js`).
 > Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
 > al desplegar) de que el código use la nueva tabla/columna.
@@ -44,6 +82,13 @@ staging" (SCRUM-84) porque implicaría el régimen de `railway` y no lo tiene. S
 ve de otra forma, es una línea.
 
 ## SCRUM-205 · `invoices.vf_estado` (estado de sellado explícito) — 🔴 SIN APLICAR en ninguna de las tres
+
+> **Las DOS clases conviven en esta misma entrada, y por eso va aquí el aviso (SCRUM-225):**
+> **🔎 VERIFICABLE** — que exista la columna `invoices.vf_estado`: pregúntaselo a
+> `docs/sql/deriva-prod.sql` contra cada base, no a esta cabecera.
+> **✋ DECLARACIÓN MANUAL, SIN MECANISMO** — el **backfill**, el orden `ALTER → backfill → código`
+> y el gate de más abajo. Ninguna herramienta lo comprueba, y aquí importa más que en ningún
+> otro sitio: en el estado intermedio, el histórico entero deja de servir PDF.
 
 **🚨 EL ORDEN ES INNEGOCIABLE Y NO ES EL DE SIEMPRE: `ALTER TABLE` → `backfill` → desplegar el
 código.** Los tres pasos, en ese orden, y **el código va el ÚLTIMO**. Aquí no basta con "aplicar
@@ -170,6 +215,34 @@ Los 83 quotes sin job de producción son los no aceptados: es correcto que se qu
 `merchantId`).
 
 ### SCRUM-195 · PASO 2 de 2 · backfill de `quotes.job_id` — ⛔ NO EJECUTADO en ninguna BD
+
+> **✋ DECLARACIÓN MANUAL, SIN MECANISMO (SCRUM-225).** Esto es estado de los DATOS, y es el
+> ejemplo que mejor enseña por qué la distinción hace falta: la columna `quotes.job_id` **existe
+> en las tres bases**, así que el censo de SCRUM-222 responde «en sync» — correctamente — mientras
+> las filas siguen a NULL. `information_schema` no ve datos y nunca los verá. Los checkboxes de
+> aquí abajo valen lo que valga la palabra de quien los marcó.
+>
+> ### 🗄️ FUERA DE ALCANCE — decisión del fundador, 2-ago-2026 (caduca, ver abajo)
+>
+> **Este backfill NO se va a ejecutar**, y la razón no es técnica: **todas las cuentas que hay hoy
+> en producción son de prueba**, así que rellenar 42 pares de datos falsos no vale nada. Lo que
+> importa es que los registros NUEVOS nazcan correctos. **Esta decisión caduca el día que entre el
+> primer cliente real** — de ahí la fecha. Regla completa en `docs/YAQU_MASTER.md`.
+>
+> ### 🔬 Y AL MEDIRLO APARECIÓ ALGO QUE EL TÍTULO DE ESTA ENTRADA NO DICE
+>
+> «🟡 PARCIAL, solo falta el backfill» sugiere que lo único pendiente son datos. **No es eso.**
+> Leído el camino de creación (no inferido del NULL, 2-ago-2026): **nadie escribe `Quote.jobId` y
+> nadie la lee.** Los dos únicos sitios que crean un `Quote` —`quotes/app/routes/quotes.routes.ts`
+> (`tx.quote.create`) y `maintenance/domain/maintenance.service.ts` (`tx.quote.create`)— tienen su
+> bloque `data` completo y ninguno la menciona; ningún `update` la toca. Y las dos únicas
+> apariciones de `Quote.jobId` en `src/` son **comentarios en futuro** de `jobs/domain/job.service.ts`
+> («cuando llegue el 1:N este `findUnique` pasa a mirar `Quote.jobId`»). Hoy el vínculo Job↔Quote
+> va por `Job.quoteId`, la dirección contraria, y funciona.
+>
+> O sea: **la columna no tiene consumidor.** Lo que falta no es el backfill, es la funcionalidad
+> 1:N para la que se creó. Si alguien hiciera el backfill mañana, no cambiaría nada — y por eso
+> tampoco hay aquí ningún defecto que se lleve por delante a un cliente real: nada la consulta.
 
 - [ ] **staging · acela/railway** — pendiente (3 filas, todas a NULL).
 - [ ] **desarrollo · acela/yaqu_dev_javier** — pendiente (va detrás de su paso 1).
@@ -732,6 +805,10 @@ CREATE INDEX "albaran_lineas_facturadas_merchant_id_invoice_id_idx" ON "albaran_
   y flag fiscal ON: en producción no se cumple ninguna de las tres).
 
 ## 29-jul-2026 — audit_log: índice por entidad (SCRUM-207) — staging ✅ · yaqu_dev_javier 🔴 · producción 🔴
+
+> **✋ DECLARACIÓN MANUAL, SIN MECANISMO (SCRUM-225).** Es un ÍNDICE, y el censo de SCRUM-222
+> declara que no mira índices — solo presencia de tabla y columna. Ningún verde de esa
+> herramienta dice nada sobre estas tres marcas: se creen bajo la palabra de quien las escribió.
 
 ```sql
 CREATE INDEX "audit_log_merchant_id_entity_type_entity_id_idx" ON "audit_log"("merchant_id", "entity_type", "entity_id");
