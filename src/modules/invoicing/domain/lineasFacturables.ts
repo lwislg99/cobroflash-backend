@@ -41,22 +41,36 @@ export const ERROR_SIN_LINEAS = 'factura_sin_lineas';
 
 /**
  * Copy para el PROFESIONAL (rutas de admin).
- * [PENDIENTE microcopy oficial] — lo aprueba el fundador (regla 30).
+ * ✅ TEXTO OFICIAL — aprobado por el fundador el 3-ago-2026 (SCRUM-264, regla 30). No se toca
+ * sin él.
  *
- * Lo lee un fontanero en el momento de facturar: dice qué pasa y qué hacer, sin jerga. Ni
- * «líneas», ni «importe bruto», ni el nombre del error.
+ * Lo lee un fontanero en el momento de facturar: dice qué pasa y qué hacer, sin jerga.
+ *
+ * 🔑 POR QUÉ ESTA FORMA Y NO OTRA: es **la voz que el producto ya usa para esta misma regla**.
+ * El aviso `ROJO_SIN_LINEAS` del semáforo fiscal (`public/dashboard/js/semaforoFiscal.js`) dice
+ * «No se puede emitir: esta factura no tiene ningún concepto.» + «Añade al menos una línea con
+ * su importe.». Mismo patrón —qué pasa, dos puntos, y qué hacer— para que el profesional no lea
+ * dos voces distintas sobre lo mismo.
  */
 export const COPY_ADMIN_SIN_LINEAS =
-  'Este presupuesto no tiene ningún concepto con precio, así que todavía no se puede facturar. Añade lo que vas a cobrar y vuelve a intentarlo.';
+  'No se puede facturar: este presupuesto no tiene ningún concepto con precio. Añade lo que vas a cobrar.';
 
 /**
  * Copy para el CLIENTE FINAL (C1: acepta el presupuesto desde WhatsApp).
- * [PENDIENTE microcopy oficial] — regla 30, y aquí importa más: **el cliente no puede
- * arreglarlo**. Su aceptación ya ha valido; lo que falta es que el profesional complete el
- * presupuesto. Por eso no dice «inténtalo de nuevo»: le diría que repita algo que ya hizo bien.
+ * ✅ TEXTO OFICIAL — aprobado por el fundador el 3-ago-2026 (SCRUM-264, regla 30).
+ *
+ * Aquí importa más: **el cliente no puede arreglarlo**. Su aceptación ya ha valido; lo que falta
+ * es que el profesional complete el presupuesto. Por eso no dice «inténtalo de nuevo»: le diría
+ * que repita algo que ya hizo bien, y el guard de SCRUM-246 lo comprueba.
+ *
+ * «Te enviaremos la factura» es deliberado y sustituye a «te llegará»: dice QUIÉN hace qué. Un
+ * «te llegará» sin sujeto deja al cliente sin saber si tiene que esperar o reclamar.
+ *
+ * ⚠️ Para que este texto llegue a la pantalla hace falta que la landing lea `message` y no
+ * `error` — antes de SCRUM-264 leía el código y el cliente veía el identificador interno.
  */
 export const COPY_PUBLICO_SIN_LINEAS =
-  'Hemos recibido tu aceptación. El profesional tiene que completar un detalle del presupuesto antes de emitir la factura; te llegará en cuanto lo haga.';
+  'Hemos recibido tu aceptación. El profesional tiene que terminar de detallar el presupuesto; te enviaremos la factura en cuanto lo haga.';
 
 export interface LineaFacturable {
   qty?: unknown;

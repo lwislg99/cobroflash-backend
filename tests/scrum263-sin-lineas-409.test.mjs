@@ -17,14 +17,24 @@
 // extremo a extremo sobre este camino.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// SON CUATRO RUTAS, NO TRES
+// SON CINCO RUTAS — ERAN CUATRO, Y LA QUINTA SE ESCAPÓ (SCRUM-264)
 //
-// El enunciado hablaba de tres ficheros; los caminos son cuatro, porque `quotesAdmin` emite por
+// El enunciado hablaba de tres ficheros; los caminos son cinco, porque `quotesAdmin` emite por
 // DOS rutas distintas (se separaron a propósito, no es un flag de la otra):
-//   · `jobs.routes.ts`        → POST /:id/collect-rest      (pro, cobra el resto del trabajo)
-//   · `quotes.routes.ts`      → POST /:token/decision       (CLIENTE FINAL, acepta por WhatsApp)
-//   · `quotesAdmin.routes.ts` → POST /:id/invoice           (pro, factura el tramo)
-//   · `quotesAdmin.routes.ts` → POST /:id/invoice-manual    (pro, factura manual)
+//   · `jobs.routes.ts`         → POST /:id/collect-rest      (pro, cobra el resto del trabajo)
+//   · `quotes.routes.ts`       → POST /:token/decision       (CLIENTE FINAL, acepta por WhatsApp)
+//   · `quotesAdmin.routes.ts`  → POST /:id/invoice           (pro, factura el tramo)
+//   · `quotesAdmin.routes.ts`  → POST /:id/invoice-manual    (pro, factura manual)
+//   · `invoicesAdmin.routes.ts`→ POST /:id/rectify           (pro, emite la R1)  ← la quinta
+//
+// 🔑 CÓMO SE ESCAPÓ LA QUINTA, porque es la lección y no la anécdota: `invoicesAdmin.routes.ts`
+// **importaba `esErrorSinLineas` y `COPY_ADMIN_SIN_LINEAS` y no usaba ninguno de los dos**. Los
+// tenía delante. Llamaba al portón (`:731`) y su `catch` devolvía `500 internal_error`, así que al
+// rectificar una factura sin importe el profesional leía «API 500: internal_error» en vez de saber
+// que el arreglo estaba en su mano. Un import sin usar no lo caza `tsc` con esta configuración, y
+// aquel recuento se hizo buscando dónde se RESPONDÍA el copy, no dónde se LLAMABA al portón —
+// mirar la respuesta encuentra las rutas que ya lo hacían bien. La lista de arriba, en cambio, se
+// deriva del guard AST de SCRUM-246, que sí ve las cinco llamadas.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // LOS CUATRO YA TRADUCEN BIEN HOY. ESTO NO ARREGLA NADA: FIJA EL CONTRATO
@@ -192,6 +202,29 @@ test('SCRUM-263 · POST /quote/:token/decision — 409 con el copy del CLIENTE F
   const resp = await invocar('modules/quotes/app/routes/quotes.routes.js', 'post', '/:token/decision',
     { params: { token: 'abc123' }, body: { decision: 'accept' }, query: {}, headers: {}, ip: '127.0.0.1' });
   exigir409ConCopy(resp, COPY_PUBLICO_SIN_LINEAS, 'quotes /:token/decision');
+});
+
+test('SCRUM-264 · POST /admin/invoices/:id/rectify — 409 con el copy del PROFESIONAL (la quinta)', async () => {
+  // La R1 es el ÚNICO instrumento con el que se corrige una factura ya emitida (regla 29). Que
+  // este camino respondiera un 500 mudo dejaba al profesional sin saber que le falta poner el
+  // importe, justo cuando está intentando arreglar algo.
+  //
+  // `number` NO puede ser un justificante (`J-…`): la ruta corta antes con
+  // `cannot_rectify_receipt` y no llegaría al portón. Y el `findFirst` distingue las dos
+  // consultas por su `where`: la primera trae la original, la segunda busca si YA existe una
+  // rectificativa y tiene que devolver `null` para no cortar con `already_rectified`.
+  const ORIGINAL = {
+    id: 11, merchantId: 1, type: 'F1', number: '2026-CF-0007', total: '0.00',
+    lines: [{ concept: 'Pendiente de precio', qty: 1, price: 0 }], merchant: MERCHANT,
+  };
+  moduloPrisma.prisma.invoice = {
+    findFirst: async (args) => (args?.where?.rectifiesId ? null : ORIGINAL),
+    findMany: async () => [],
+  };
+
+  const resp = await invocar('modules/system/app/routes/invoicesAdmin.routes.js', 'post', '/:id/rectify',
+    { params: { id: '11' }, body: {}, merchantId: 1, query: {}, headers: {} });
+  exigir409ConCopy(resp, COPY_ADMIN_SIN_LINEAS, 'invoicesAdmin /:id/rectify');
 });
 
 // ── SUELO: que el 409 salga por lo que creemos ───────────────────────────────────────────
