@@ -909,7 +909,11 @@ function renderQqLines() {
 
   container.querySelectorAll(".qq-qty").forEach((inp) => {
     inp.addEventListener("input", (e) => {
-      qqState.products[parseInt(e.target.dataset.idx)].qty = Number(e.target.value) || 1;
+      // SCRUM-271: antes ponía `|| 1`. `<input type="number">` devuelve CADENA VACÍA cuando el
+      // navegador no puede sanear lo escrito, y `Number("")` es **0, no NaN** — así que el `|| 1`
+      // convertía «no interpretable» en una cantidad plausible, sin error y sin marca. Ahora se
+      // guarda lo que de verdad hay: el total de abajo lo refleja y el envío lo valida.
+      qqState.products[parseInt(e.target.dataset.idx)].qty = Number(e.target.value);
       updateQqTotal();
     });
   });
@@ -1083,8 +1087,18 @@ async function submitQuickQuote() {
   } else {
     const lines = qqState.products.filter((l) => l.concept.trim() && Number(l.price) > 0);
     if (!lines.length) { showQqAlert("Añade al menos una línea con concepto y precio."); uiMarkFieldError(document.querySelector(".qq-concept")); return; }
+    // SCRUM-271: aquí vivía el SEGUNDO `|| 1`, y era el que costaba dinero — el del total en vivo
+    // solo engaña a la vista, este manda la línea al servidor con una cantidad inventada, y de ahí
+    // sale el presupuesto que firma el cliente. Se valida, como los otros cuatro puntos del front.
+    const sinCantidad = lines.findIndex((l) => !(Number(l.qty) > 0));
+    if (sinCantidad !== -1) {
+      showQqAlert("Pon una cantidad en cada línea.");
+      const idx = qqState.products.indexOf(lines[sinCantidad]);
+      uiMarkFieldError(document.querySelector(`.qq-qty[data-idx="${idx}"]`));
+      return;
+    }
     quotePayload = {
-      lines: lines.map((l) => ({ concept: l.concept.trim(), qty: Number(l.qty) || 1, price: Number(l.price), tax: 0 })),
+      lines: lines.map((l) => ({ concept: l.concept.trim(), qty: Number(l.qty), price: Number(l.price), tax: 0 })),
     };
   }
 
