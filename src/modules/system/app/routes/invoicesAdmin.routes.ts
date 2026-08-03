@@ -799,6 +799,13 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
       veriFactu: vfApplied,
     });
   } catch (err) {
+    // SCRUM-264 · la QUINTA ruta del portón de SCRUM-246, que se quedó fuera del recuento de
+    // SCRUM-263. Sin esta traducción, rectificar una factura sin importe daba «API 500:
+    // internal_error»: un error mudo justo cuando el profesional está intentando corregir algo,
+    // y con el arreglo en su mano sin saberlo. Los dos símbolos ya estaban importados aquí.
+    if (esErrorSinLineas(err)) {
+      return res.status(409).json({ error: ERROR_SIN_LINEAS, message: COPY_ADMIN_SIN_LINEAS });
+    }
     console.error('[POST /admin/invoices/:id/rectify]', err);
     return res.status(500).json({ error: 'internal_error' });
   }

@@ -181,21 +181,113 @@ test('SCRUM-246 · qué cuenta como «línea con importe»', async () => {
   assert.ok(!esErrorSinLineas(new Error('otra_cosa')), '🔴 reconoce errores ajenos como suyos');
 });
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// EL GUARD DE JERGA · RE-ANCLADO EN SCRUM-264, Y ESTE COMENTARIO ESTÁ PARA QUE NADIE LO VUELVA
+// A APRETAR
+//
+// La versión anterior prohibía una lista de palabras que incluía **«línea»**. Estaba mal anclado,
+// y no por poco: «línea» es **la palabra del propio producto**. El botón del editor dice
+// «Añadir línea» en cuatro pantallas (`quotesView`, `homeView`, `jobDetailView`,
+// `aiQuoteAssistant`) y los mensajes hermanos de este mismo flujo la usan — «Añade al menos una
+// línea con concepto y precio» y el aviso `ROJO_SIN_LINEAS` del semáforo fiscal, «Añade al menos
+// una línea con su importe.».
+//
+// O sea que el guard empujaba contra el vocabulario que el usuario lee todos los días, y para
+// pasarlo había que escribir peor. **Prohibir una palabra que el usuario ve en un botón no protege
+// a nadie: fuerza un sinónimo peor.** Decisión del fundador, 3-ago-2026.
+//
+// LO QUE SÍ ES JERGA, y es lo que ahora se vigila: lo que el usuario **no ve nunca** en ninguna
+// pantalla — identificadores de código, códigos de estado HTTP, literales de programación y los
+// nombres internos del sistema (incluidos los fiscales que la regla 26 aparta del cliente).
+//
+// Y no es una lista de palabras que crece a mano: las tres primeras reglas son ESTRUCTURALES
+// (forma de identificador, forma de código de estado, literales), así que cazan también el
+// identificador que nadie ha escrito todavía.
+
+/** Palabras que NO son jerga porque el usuario las ve en la interfaz. Declarado, no supuesto. */
+export const VOCABULARIO_DEL_PRODUCTO = [
+  'línea', 'concepto', 'precio', 'importe', 'presupuesto', 'factura', 'cobrar', 'firmar',
+];
+
+/** Nombres internos: aparatos del sistema y del canal fiscal que el usuario no debe leer. */
+const NOMBRES_INTERNOS = [
+  'verifactu', 'aeat', 'sif', 'xsd', 'soap', 'webhook', 'endpoint', 'token', 'api', 'json',
+  'sql', 'prisma', 'merchant', 'serie', 'numeración', 'huella', 'importe bruto',
+];
+
+/**
+ * Devuelve el trozo de jerga que contiene el texto, o `null` si está limpio.
+ * Devuelve el TROZO y no un booleano para que el rojo diga qué sobra.
+ */
+export function jergaTecnicaEn(texto) {
+  const t = String(texto);
+  const estructurales = [
+    [/\b[a-z]+(?:_[a-z0-9]+)+\b/, 'un identificador de código'],
+    // Código de estado suelto, salvo que sea dinero: «400 €» es un importe, no un estado.
+    [/\b[45]\d{2}\b(?!\s*(?:€|eur))/i, 'un código de estado HTTP'],
+    [/\b(?:null|undefined|NaN)\b/, 'un literal de programación'],
+  ];
+  for (const [patron, queEs] of estructurales) {
+    const m = t.match(patron);
+    if (m) return `${m[0]} (${queEs})`;
+  }
+  const bajo = t.toLowerCase();
+  for (const nombre of NOMBRES_INTERNOS) {
+    if (new RegExp(`\\b${nombre}\\b`).test(bajo)) return `${nombre} (nombre interno del sistema)`;
+  }
+  return null;
+}
+
 test('SCRUM-246 · el copy no le habla al fontanero en jerga (regla 30)', async () => {
   const { COPY_ADMIN_SIN_LINEAS, COPY_PUBLICO_SIN_LINEAS } =
     await import('../dist/modules/invoicing/domain/lineasFacturables.js');
 
   for (const [quien, copy] of [['admin', COPY_ADMIN_SIN_LINEAS], ['público', COPY_PUBLICO_SIN_LINEAS]]) {
-    for (const jerga of ['línea', 'importe bruto', 'serie', 'numeración', 'VeriFactu', 'error', 'null']) {
-      assert.ok(
-        !copy.toLowerCase().includes(jerga.toLowerCase()),
-        `🔴 el copy ${quien} dice «${jerga}». Lo lee un fontanero facturando, no un desarrollador.`,
-      );
-    }
+    const jerga = jergaTecnicaEn(copy);
+    assert.equal(
+      jerga, null,
+      `🔴 el copy ${quien} dice «${jerga}». Lo lee un fontanero facturando, no un desarrollador.`,
+    );
   }
   // El público NO puede pedirle al cliente que repita: su aceptación ya valió.
   assert.ok(
     !/vuelve a intentarlo|inténtalo/i.test(COPY_PUBLICO_SIN_LINEAS),
     '🔴 el copy público le pide al cliente que repita algo que ya hizo bien.',
+  );
+});
+
+test('SCRUM-264 · el detector de jerga CAZA lo que tiene que cazar (control positivo)', () => {
+  // Sin esto, re-anclar el guard podría haberlo dejado en nada y los dos copys pasarían por
+  // limpios sin que nadie los mirase. Cada caso es uno que de verdad se ha visto en pantalla.
+  for (const [texto, porque] of [
+    ['factura_sin_lineas', 'el código que la landing le enseñaba al cliente (SCRUM-264)'],
+    ['API 500: internal_error', 'lo que lee el pro cuando un catch no traduce'],
+    ['Este merchant no tiene VeriFactu activo', 'dos nombres internos, uno del sistema y otro fiscal'],
+    ['La respuesta vino null', 'un literal de programación'],
+    ['Fallo 409 al emitir', 'un código de estado en la cara del usuario'],
+  ]) {
+    assert.notEqual(jergaTecnicaEn(texto), null, `🔴 se le escapa «${texto}»: ${porque}`);
+  }
+});
+
+test('SCRUM-264 · y NO caza el vocabulario que el usuario ve en la pantalla', () => {
+  // El otro lado del re-anclaje, y es el que motivó el cambio: estas frases son las que el
+  // producto YA dice. Si alguna sale marcada, el guard vuelve a empujar hacia escribir peor.
+  for (const frase of [
+    'Añade al menos una línea con concepto y precio.',
+    'Añade al menos una línea con su importe.',
+    'No se puede facturar: este presupuesto no tiene ningún concepto con precio.',
+    'Te enviaremos la factura en cuanto lo haga.',
+    'Son 400 € en total.',
+  ]) {
+    assert.equal(
+      jergaTecnicaEn(frase), null,
+      `🔴 el guard marca como jerga «${frase}», que es lo que el producto dice en pantalla`,
+    );
+  }
+  assert.ok(
+    VOCABULARIO_DEL_PRODUCTO.includes('línea'),
+    '🔴 «línea» ha salido del vocabulario del producto: es la palabra del botón «Añadir línea», ' +
+      'y sacarla de aquí es el primer paso para volver a prohibirla.',
   );
 });

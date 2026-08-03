@@ -637,7 +637,11 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
             '</div>';
         } else {
           btn.disabled = false; btn.textContent = 'Firmar y aceptar ${locale.quoteVerb}';
-          document.getElementById('sig-error').textContent = data.error || 'Error al procesar.';
+          // SCRUM-264 · el MENSAJE HUMANO gana al código, igual que en api.js:35-37 (SCRUM-151).
+          // Leyendo \`error\` primero, el cliente veía «factura_sin_lineas» en rojo bajo la firma
+          // que acababa de dibujar. El código se conserva de reserva: para los endpoints que aún
+          // no mandan copy, un identificador es mejor que un mensaje genérico.
+          document.getElementById('sig-error').textContent = data.message || data.error || 'Error al procesar.';
           document.getElementById('sig-error').style.display = 'block';
         }
       } catch {
@@ -747,7 +751,9 @@ quoteDecisionLandingRouter.post('/quote/:token/reject', express.urlencoded({ ext
     const json = (await apiResponse.json().catch(() => null)) as DecisionApiError | null;
     if (!apiResponse.ok) {
       return res.status(400).setHeader('Content-Type', 'text/html; charset=utf-8').send(
-        renderPage('Error', `<div class="status-error"><strong>No se pudo registrar el rechazo.</strong><br/>${json?.error || ''}</div>`)
+        // SCRUM-264 · mismo criterio que el camino de aceptar: el texto humano primero. El tipo
+        // `DecisionApiError` ya declaraba `message?` y nadie lo leía.
+        renderPage('Error', `<div class="status-error"><strong>No se pudo registrar el rechazo.</strong><br/>${json?.message || json?.error || ''}</div>`)
       );
     }
     res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
