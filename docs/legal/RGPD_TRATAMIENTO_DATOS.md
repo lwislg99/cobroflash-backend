@@ -320,6 +320,11 @@ una vez el asesor valide el §2. No lo he creado todavía para no duplicar antes
    adicional (SCC firmadas aparte, evaluación de impacto de transferencia)?
 6. ¿Confirmas que el uso del IBAN del profesional (§2) es correcto tal y como está descrito, o
    hay un uso distinto en el producto que deba documentarse diferente?
+7. **Baja del profesional: qué se borra y qué se conserva** — supresión (art. 17) frente a
+   conservación fiscal, con el detalle de por qué anonimizar *dentro* de una factura rompería la
+   huella encadenada de VeriFactu. **Redactada como pregunta cerrada (a/b/c + plazo) en
+   `PREGUNTAS_ASESOR.md` §E, punto 13**; bloquea SCRUM-244. La pregunta 2 de esta lista (plazos
+   de conservación) es su otra mitad: conviene responderlas juntas.
 
 ---
 *Creado el 23-jul-2026 a partir del análisis de `prisma/schema.prisma`, `public/privacidad.html`,
