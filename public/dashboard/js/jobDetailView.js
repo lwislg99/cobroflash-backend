@@ -1007,13 +1007,33 @@ async function renderJobDetailView(container, jobId) {
     cancelar.addEventListener('click', cerrar);
     overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
 
+    // SCRUM-271: el aviso de «se cae alguna línea» necesita recordar si ya se dio, porque la
+    // segunda pulsación es la que confirma. Cualquier cambio en un campo lo vuelve a armar, para
+    // que una confirmación no se herede de una situación distinta de la que se está mirando.
+    let avisadoDeLineasSinCantidad = false;
+    for (const { input } of inputs) {
+      input.addEventListener('input', () => { avisadoDeLineasSinCantidad = false; });
+    }
+
     emitir.addEventListener('click', async () => {
-      const lineas = inputs
-        .map((i) => ({ index: i.index, cantidad: Number(i.input.value) }))
-        .filter((l) => l.cantidad > 0);
+      const todas = inputs.map((i) => ({ index: i.index, cantidad: Number(i.input.value) }));
+      const lineas = todas.filter((l) => l.cantidad > 0);
       if (lineas.length === 0) {
         err.textContent = 'Indica qué cantidad quieres facturar de al menos una línea.';
         err.style.display = 'block';
+        return;
+      }
+      // SCRUM-271: antes solo avisaba si se caían TODAS. Con tres líneas y una sin cantidad se
+      // emitía la factura con dos, EN SILENCIO — el pro pedía facturar tres y no se enteraba de
+      // haber perdido una. No corrompe un valor: OMITE una línea, y eso en facturación es peor.
+      //
+      // AVISA Y NO BLOQUEA, a propósito: facturar solo parte de las líneas es un uso legítimo —
+      // para eso existe esta pantalla—, así que impedirlo rompería el flujo. La segunda pulsación
+      // confirma, que es lo que convierte «no se enteró» en «lo decidió».
+      if (lineas.length < todas.length && !avisadoDeLineasSinCantidad) {
+        err.textContent = 'Revisa las líneas sin cantidad: no se facturarán.';
+        err.style.display = 'block';
+        avisadoDeLineasSinCantidad = true;
         return;
       }
       emitir.disabled = true;
