@@ -5,17 +5,29 @@
 // queda SOLO como fallback offline de la primera visita.
 const CACHE_NAME = 'yaqu-v4'; // último bump manual: con network-first ya no hace falta subirlo por deploy
 
-// Shell de la app (alineado con los <script src> reales de dashboard/index.html — SCRUM-45)
+// Shell de la app. Tiene que llevar TODOS los `<script src>` de dashboard/index.html — y desde
+// SCRUM-274 eso ya no es una afirmación en un comentario: lo comprueba
+// `tests/scrum274-shell-alineado.test.mjs`, en los DOS sentidos.
+//
+// La afirmación llevaba tiempo siendo falsa: al medirla, el HTML cargaba 31 scripts y aquí había
+// 28. Faltaban `semaforoFiscal.js`, `quoteMargen.js` y `exportView.js` — o sea que la primera
+// visita SIN COBERTURA ya se quedaba sin esas tres pantallas, y nada lo decía.
+//
+// ⚠️ El modo de fallo del otro sentido es peor: `cache.addAll` es ATÓMICO. Una sola ruta que ya
+// no exista hace que RECHACE ENTERA — el precache no se queda a medias, se queda en NADA y el
+// `install` falla. Por eso el guard mira también SHELL → HTML.
 const SHELL = [
   '/dashboard/',
   '/tokens.css',
   '/dashboard/css/styles.css',
   '/dashboard/js/api.js',
+  '/dashboard/js/semaforoFiscal.js',
   '/dashboard/js/homeView.js',
   '/dashboard/js/onboardingView.js',
   '/dashboard/js/plansView.js',
   '/dashboard/js/customersView.js',
   '/dashboard/js/quotesListView.js',
+  '/dashboard/js/quoteMargen.js',
   '/dashboard/js/quotesView.js',
   '/dashboard/js/quotesDetailView.js',
   '/dashboard/js/productsView.js',
@@ -24,6 +36,7 @@ const SHELL = [
   '/dashboard/js/invoiceDetailView.js',
   '/dashboard/js/expensesView.js',
   '/dashboard/js/settingsView.js',
+  '/dashboard/js/exportView.js',
   '/dashboard/js/teamView.js',
   '/dashboard/js/jobsView.js',
   '/dashboard/js/signaturePad.js',
