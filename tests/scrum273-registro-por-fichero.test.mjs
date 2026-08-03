@@ -73,9 +73,11 @@ const CENSO = {
   164: 1, 168: 1, 170: 1, 171: 2, 175: 1, 178: 1, 182: 1, 183: 2, 188: 1, 198: 1, 200: 1, 201: 1,
   202: 1, 203: 1, 205: 2, 206: 1, 207: 1, 219: 1, 222: 1, 227: 1, 228: 1, 232: 1, 234: 1, 235: 1,
   237: 1, 239: 1, 243: 1, 245: 3, 247: 1, 249: 1, 250: 1, 254: 1, 259: 1, 260: 1, 262: 1, 263: 1,
-  265: 1, 272: 1,
+  265: 1, 271: 1, 272: 1,
 };
-const TOTAL_CENSADAS = Object.values(CENSO).reduce((a, b) => a + b, 0);   // 110
+const TOTAL_CENSADAS = Object.values(CENSO).reduce((a, b) => a + b, 0);   // 111
+// SCRUM-271 se sumo durante el rebase de este mismo ticket: entro en main mientras se
+// construia. Es, literalmente, el ultimo choque que este fichero va a tener.
 
 /** Cuenta las entradas de trabajo del máster, por número de ticket. */
 function entradasDelMaster() {

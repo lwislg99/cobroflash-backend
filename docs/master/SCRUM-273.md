@@ -85,3 +85,7 @@ exacto por el que volvería la costumbre. Por eso se congela `número → cuánt
 * `docs/master/SCRUM-273.md` (nuevo) — esta entrada, que estrena el mecanismo.
 * `docs/YAQU_MASTER.md` — **solo** el puntero fechado en la cabecera. Ni una entrada tocada.
 * `tests/scrum273-registro-por-fichero.test.mjs` (4, sin gate).
+
+## Nota de cierre
+
+El censo se congelo en **110** entradas y se cerro en **111**: SCRUM-271 entro en  mientras este ticket se construia, y el guard lo caza durante su propio rebase. Es, literalmente, el ultimo choque que ese fichero va a tener.
