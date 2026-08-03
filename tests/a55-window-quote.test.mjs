@@ -26,6 +26,12 @@ import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando A55_DB_T
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-159 (①)
+import { interceptarWaLog } from './_wa-log-sync.mjs'; // SCRUM-250/255: esperar la escritura, no el reloj
+
+/** El objeto `exports` REAL del módulo de log — el mismo que lee `whatsapp.js` en cada llamada. */
+async function moduloDeLog() {
+  return (await import('../dist/modules/messaging/domain/whatsappLog.service.js')).default;
+}
 
 const ENABLED = process.env.A55_DB_TEST === '1';
 
@@ -51,21 +57,21 @@ test('A5.5: ventana abierta → envío de presupuesto por SESIÓN (service), no 
         select: { id: true, name: true },
       });
 
-      // El log WA-0b es fire-and-forget en prod (a propósito): aquí esperamos con un retry corto
-      // a que el INSERT aterrice antes de afirmar sobre él. Ya NO acumula ids para limpiar: de
-      // eso se encarga withMerchant (barre whatsAppMessage por merchantId).
-      const trackNew = async (since, expectMin = 0) => {
-        let rows = [];
-        for (let i = 0; i < 30; i++) {
-          rows = await prisma.whatsAppMessage.findMany({
-            where: { merchantId: merchant.id, customerId: customer.id, createdAt: { gte: since } },
-            orderBy: { id: 'asc' },
-          });
-          if (rows.length >= expectMin) break;
-          await new Promise((r) => setTimeout(r, 100));
-        }
-        return rows;
-      };
+      // SCRUM-255: aquí había un sondeo de 30 × 100 ms — la forma que SCRUM-250 retiró de
+      // scrum115. El log WA-0b es fire-and-forget A PROPÓSITO (registrar telemetría no puede
+      // tumbar un envío), así que bajo contención del pool de staging la fila llega pasada la
+      // ventana y el test cae CON EL MISMO CÓDIGO: el veredicto lo decidía el reloj.
+      // Ahora se espera a la PROMESA y la consulta se hace UNA vez. Sigue sin acumular ids para
+      // limpiar: de eso se encarga withMerchant (barre whatsAppMessage por merchantId).
+      //
+      // UNA VENTANA POR CASO, no una sola de principio a fin: el suelo `interceptadas === 0` es
+      // lo que avisa de que el registro dejó de pasar por `recordWaMessage`. Con una sola ventana
+      // abierta, ese suelo solo protegería al primer caso — para el segundo el contador ya no
+      // sería cero aunque su escritura no hubiera nacido.
+      const filasNuevas = async (since) => prisma.whatsAppMessage.findMany({
+        where: { merchantId: merchant.id, customerId: customer.id, createdAt: { gte: since } },
+        orderBy: { id: 'asc' },
+      });
 
       const t0 = new Date();
       const template = buildQuoteDecision({
@@ -78,6 +84,7 @@ test('A5.5: ventana abierta → envío de presupuesto por SESIÓN (service), no 
       const windowText = 'Hola 👋 (texto de sesión A5.5 — test)';
 
       // ── Caso 1: SIN ventana → debe salir PLANTILLA ─────────────────────────
+      const wa1 = interceptarWaLog({ log: await moduloDeLog(), prisma });
       const closed = await sendWhatsAppWindowFirst({
         to: TEST_PHONE,
         merchantId: merchant.id,
@@ -88,10 +95,18 @@ test('A5.5: ventana abierta → envío de presupuesto por SESIÓN (service), no 
       });
       assert.equal(closed.ok, true);
       assert.equal(closed.via, 'template', 'sin inbound reciente debe caer a plantilla');
-      let rows = await trackNew(t0, 1);
-      assert.equal(rows.filter((r) => r.type === 'template').length, 1, 'debe registrarse 1 fila template');
+      let rows;
+      try {
+        await wa1.esperar(); // resuelve cuando la escritura TERMINA, no cuando lo dice un reloj
+        rows = await filasNuevas(t0);
+      } finally {
+        wa1.restaurar();
+      }
+      assert.equal(rows.filter((r) => r.type === 'template').length, 1,
+        wa1.explicar('debe registrarse 1 fila template'));
 
       // ── Caso 2: el cliente escribe (bot) → ventana abierta → SESIÓN ────────
+      const wa2 = interceptarWaLog({ log: await moduloDeLog(), prisma }); // ventana propia: ver arriba
       await recordInboundWaMessage(TEST_PHONE); // lo que hace el webhook con CUALQUIER entrante
       const open = await sendWhatsAppWindowFirst({
         to: TEST_PHONE,
@@ -104,7 +119,12 @@ test('A5.5: ventana abierta → envío de presupuesto por SESIÓN (service), no 
       assert.equal(open.ok, true);
       assert.equal(open.via, 'window', 'con inbound <24h debe salir por VENTANA');
 
-      rows = await trackNew(t0, 3); // template + inbound + service
+      try {
+        await wa2.esperar();
+        rows = await filasNuevas(t0); // acumulado: template + inbound + service
+      } finally {
+        wa2.restaurar();
+      }
       const templates = rows.filter((r) => r.type === 'template');
       const services = rows.filter((r) => r.type === 'service');
       assert.equal(templates.length, 1, 'NO debe haberse añadido otra plantilla');
