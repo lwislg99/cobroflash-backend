@@ -191,3 +191,74 @@ test('SCRUM-250 · (8) sin un módulo de log válido, falla en claro al montar',
   assert.throws(() => interceptarWaLog({ log: {}, prisma: {} }), /recordWaMessage/);
   assert.throws(() => interceptarWaLog({}), /recordWaMessage/);
 });
+
+// ═════════════════════════════════════════════════════════════════════════════
+// SCRUM-255 · `esperarAlMenos(n)`: el disparo ANIDADO
+//
+// Nace de un rojo REAL, no de un supuesto: en la tanda gateada de SCRUM-255 cayó la segunda
+// ventana de `scrum49-firma-remota`. La ruta pública de firmar lanza el auto-envío SIN await y
+// responde antes (`albaranPublic.routes.ts:240`), así que cuando el test recibe la respuesta
+// `recordWaMessage` todavía no se ha llamado. `esperar()` drenaba lo ya empezado —nada— y su
+// suelo daba un rojo con el DIAGNÓSTICO EQUIVOCADO.
+//
+// Y no es un sitio suelto: el censo derivado del call-graph en SCRUM-255 encontró **23 disparos
+// anidados en 7 ficheros**.
+// ═════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-255 · esperarAlMenos(1) espera a que la escritura ARRANQUE, no solo a que termine', async () => {
+  const { log, prisma } = dobles(() => Promise.resolve({ id: 1 }));
+  const wa = interceptarWaLog({ log, prisma });
+  try {
+    // La forma real: la escritura nace DESPUÉS de que el test recupere el control.
+    assert.equal(wa.interceptadas, 0, 'precondición: todavía no ha arrancado');
+    setTimeout(() => log.recordWaMessage({ merchantId: 7, type: 'template', status: 'sent' }), 30);
+
+    await wa.esperarAlMenos(1);
+    assert.equal(wa.interceptadas, 1, '🔴 resolvió sin que la escritura hubiera arrancado');
+  } finally {
+    wa.restaurar();
+  }
+});
+
+test('SCRUM-255 · esperarAlMenos(1) no espera nada si la escritura YA arrancó', async () => {
+  const { log, prisma } = dobles(() => Promise.resolve({ id: 1 }));
+  const wa = interceptarWaLog({ log, prisma });
+  try {
+    log.recordWaMessage({ merchantId: 7, type: 'template', status: 'sent' });
+    await wa.esperarAlMenos(1);
+    assert.equal(wa.interceptadas, 1);
+  } finally {
+    wa.restaurar();
+  }
+});
+
+test('SCRUM-255 · si NO arranca, el rojo dice «NO EMPEZÓ» y no «no terminó»', async () => {
+  const { log, prisma } = dobles(() => Promise.resolve({ id: 1 }));
+  const wa = interceptarWaLog({ log, prisma, timeoutMs: 60 });
+  try {
+    await assert.rejects(
+      () => wa.esperarAlMenos(1),
+      (e) => /NO EMPEZ/.test(e.message) && /arrancaron 0/.test(e.message),
+      '🔴 los dos rojos mandan a mirar sitios distintos: tienen que decir cosas distintas',
+    );
+  } finally {
+    wa.restaurar();
+  }
+});
+
+test('SCRUM-255 · el suelo de esperar() manda a esperarAlMenos, que es el hueco real', () => {
+  // Sin esta pista, «el log ya no pasa por recordWaMessage» manda a buscar el defecto al sitio
+  // equivocado — que es exactamente lo que pasó en la tanda.
+  assert.match(SIN_INTERCEPTAR, /esperarAlMenos/);
+});
+
+test('SCRUM-255 · esperarAlMenos rechaza una `n` sin sentido', async () => {
+  const { log, prisma } = dobles(() => Promise.resolve({ id: 1 }));
+  const wa = interceptarWaLog({ log, prisma });
+  try {
+    await assert.rejects(() => wa.esperarAlMenos(0), /entero/);
+    await assert.rejects(() => wa.esperarAlMenos(1.5), /entero/);
+  } finally {
+    wa.restaurar();
+  }
+});
