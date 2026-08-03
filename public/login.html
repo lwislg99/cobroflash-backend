@@ -40,14 +40,20 @@
   // Si ya hay sesión válida, redirigir al dashboard
   fetch('/admin/me').then(r => { if (r.ok) window.location.href = '/dashboard/'; }).catch(() => {});
 
-  // Mostrar errores de URL
+  // SCRUM-275: la tabla vive FUERA del `if` a propósito. Estaba declarada dentro, así que
+  // `sendLink()` no la tenía ni en el alcance: la página sabía traducir los códigos que llegan
+  // por la URL (al pulsar el enlace del correo) y no podía traducir los que devuelve la API
+  // (al pedirlo), aunque son la misma clase de código y la misma pantalla.
+  const msgs = {
+    link_expired:   'El enlace ha caducado o ya fue usado. Solicita uno nuevo.',
+    invalid_token:  'Enlace inválido.',
+    internal_error: 'Error interno. Inténtalo de nuevo.',
+    invalid_email:  'Escribe un correo electrónico válido.',
+  };
+
+  // Mostrar errores de URL (vuelve de /auth/verify)
   const params = new URLSearchParams(location.search);
   if (params.get('error')) {
-    const msgs = {
-      link_expired:   'El enlace ha caducado o ya fue usado. Solicita uno nuevo.',
-      invalid_token:  'Enlace inválido.',
-      internal_error: 'Error interno. Inténtalo de nuevo.',
-    };
     showAlert(msgs[params.get('error')] || 'Error desconocido.', 'error');
   }
 
@@ -74,14 +80,19 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-      const data = await res.json();
+      // SCRUM-275: si la respuesta no es JSON (un 500 con cuerpo vacío o HTML), esto lanzaba y
+      // el `catch` de abajo lo etiquetaba «Error de conexión», mandando al usuario a mirar su
+      // wifi con el servidor caído. Un diagnóstico falso es peor que uno genérico.
+      const data = await res.json().catch(() => ({}));
 
       if (res.ok) {
         showAlert('✉️ Enlace enviado. Revisa tu bandeja de entrada (y spam).', 'ok');
         emailInput.disabled = true;
         startCountdown(60);
       } else {
-        showAlert(data.error || 'Error al enviar el enlace.', 'error');
+        // El texto humano gana al código (SCRUM-151/264); el código queda de reserva para los
+        // endpoints que aún no mandan `message` — es mejor que un genérico, se puede buscar.
+        showAlert(data.message || msgs[data.error] || data.error || 'Error al enviar el enlace.', 'error');
         btn.disabled = false;
         btn.textContent = 'Enviar enlace de acceso';
       }
