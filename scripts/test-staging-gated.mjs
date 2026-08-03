@@ -45,7 +45,8 @@ import { PrismaClient } from '@prisma/client';
 import { assertSafeStagingUrl, STAGING_HOST } from './_db-guard.mjs';
 // SCRUM-265 · los límites por hijo y la lectura del override, con su porqué medido y con red.
 import { LIGHT_MS, HEAVY_MS, VAR_OVERRIDE, resolverOverride } from './_timeouts-tanda.mjs';
-// SCRUM-182: la tanda dura ~11 min leyendo dist/, tests/ y el cliente de Prisma. Si algo los
+// SCRUM-182: la tanda dura ~31 min (SCRUM-265: MEDIDO en el recibo, no estimado) leyendo
+// dist/, tests/ y el cliente de Prisma. Si algo los
 // reescribe mientras corre, los resultados no valen. El detalle, en el propio módulo.
 import {
   huellaArtefactos,
@@ -169,14 +170,14 @@ const margenes = margenesVacios(hijos.map((h) => h.clave));
 
 // ── BANNER (SCRUM-166): test:staging y test:staging:gated apuntan AQUÍ. Sale ANTES de nada,
 // ruidoso, para que quien teclee el nombre viejo con memoria muscular vea QUÉ es esto y cuál es
-// la rápida — en vez de descubrir a los ~11 min que se equivocó de comando (la tanda perdida del
+// la rápida — en vez de descubrir a los ~31 min que se equivocó de comando (la tanda perdida del
 // 27-jul). Dice la VERDAD en los DOS modos: en autotest declara que NO es la real, mismo
 // principio que el "preflight OMITIDO" — un mecanismo que declara lo que NO hace no engaña.
 if (override) {
   console.log(`\n⚠️  MODO AUTOTEST — fichero trivial (${override}), NO es la tanda real.`);
   console.log('    Los tres hijos apuntan a ese fichero: es diagnóstico del runner, no cobertura.');
 } else {
-  console.log('\n▶  TANDA GATEADA COMPLETA — 51 gateados + ungated, ~11 min.');
+  console.log('\n▶  TANDA GATEADA COMPLETA — 51 gateados + ungated, ~31 min.');
   console.log('    ¿Solo querías la rápida (ungated, sin staging)? → npm test');
 }
 
