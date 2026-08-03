@@ -9,6 +9,10 @@ import { isFlagEnabled } from './core/flags';
 import { requireAuth, requireActivePlan, requireRole } from './core/http/authMiddleware';
 import { mountAdmin } from './core/http/adminMounts'; // SCRUM-55: red fail-closed de /admin
 import { requireInternalSecret } from './core/http/internalAuth';
+// SCRUM-274: huella de contenido en las referencias del dashboard (sin build ni bundler)
+import {
+  sellarReferencias, crearHuellas, PARAM_HUELLA, CACHE_CON_HUELLA,
+} from './core/http/huellaEstaticos';
 import { isVerifiedPlatformOwner, config } from './core/config/env';
 
 // Routers
@@ -153,6 +157,11 @@ const publicDir = path.join(__dirname, '../public');
 // aceptado es perder ETag/Last-Modified en ESTE único documento; el resto de estáticos sigue
 // con su revalidación normal.
 const MARCADOR_BUILD = '__' + 'BUILD_ID' + '__'; // partido a propósito: ver la nota de abajo
+// SCRUM-274 · UNA sola instancia, compartida por el sellado del HTML y por `setHeaders`. Si
+// fueran dos, cada una tendría su memoria y podrían calcular huellas distintas para el mismo
+// fichero — que es justo la clase de defecto (dos cosas que deben coincidir y nada las ata)
+// que este proyecto lleva la semana desmontando.
+const huellaDeFichero = crearHuellas(fs);
 const dashboardHtmlSellado = (() => {
   let cache: string | null = null; // memoizado: se lee del disco UNA vez, no en cada petición
   return (): string => {
@@ -162,9 +171,17 @@ const dashboardHtmlSellado = (() => {
       // que se sustituyó la prosa y el <meta> de verdad se quedó SIN sellar. Es la trampa de
       // autorreferencia de _guard-texto.mjs, esta vez sobre una sustitución en vez de un grep.
       // Por eso el marcador se construye partido: escribirlo entero aquí lo volvería a activar.
-      cache = fs
-        .readFileSync(path.join(publicDir, 'dashboard', 'index.html'), 'utf8')
-        .replaceAll(MARCADOR_BUILD, config.BUILD_ID);
+      // SCRUM-274 · y AQUÍ se sellan también las REFERENCIAS, en el mismo sitio y de una vez.
+      // El sello de build y la huella de los estáticos son la misma operación —transformar el
+      // HTML una sola vez al arrancar— y separarlas habría significado leer el fichero dos
+      // veces o memoizar dos cosas. El detalle de por qué `?v=` y no un bundler, en
+      // `core/http/huellaEstaticos.ts`.
+      cache = sellarReferencias(
+        fs
+          .readFileSync(path.join(publicDir, 'dashboard', 'index.html'), 'utf8')
+          .replaceAll(MARCADOR_BUILD, config.BUILD_ID),
+        { publicDir, baseUrl: '/dashboard/', huellaDeFichero },
+      );
     }
     return cache;
   };
@@ -183,7 +200,26 @@ app.get(['/dashboard', '/dashboard/', '/dashboard/index.html'], (req, res) => {
   return res.type('html').send(dashboardHtmlSellado());
 });
 
-app.use(express.static(publicDir));
+// SCRUM-274 · `immutable` SOLO si la URL trae una huella que CUADRA con el fichero servido.
+//
+// No basta con «trae `?v=` algo»: eso marcaría inmutable cualquier URL con una query inventada.
+// Se compara contra la huella real del fichero, así que la promesa «esta URL nunca cambia de
+// contenido» es cierta por construcción y no por confianza.
+//
+// Si NO cuadra —una huella vieja, o un fichero editado en dev con el HTML ya memoizado— no se
+// pone nada y manda el default de `express.static` (`max-age=0`), que es exactamente el
+// comportamiento anterior a este ticket. El modo de fallo de esto es «vuelve a como estaba»,
+// nunca «sirve contenido viejo para siempre».
+app.use(
+  express.static(publicDir, {
+    setHeaders: (res, rutaAbs, stat) => {
+      const pedida = (res.req as any)?.query?.[PARAM_HUELLA];
+      if (typeof pedida !== 'string' || !pedida) return;
+      const real = huellaDeFichero(rutaAbs, stat as { mtimeMs: number });
+      if (real && real === pedida) res.setHeader('Cache-Control', CACHE_CON_HUELLA);
+    },
+  }),
+);
 
 // URLs limpias para políticas legales (privacidad requerida por Meta para publicar la app)
 app.get('/privacidad', (_req, res) => res.sendFile(path.join(publicDir, 'privacidad.html')));
