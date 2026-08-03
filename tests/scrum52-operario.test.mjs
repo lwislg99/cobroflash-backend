@@ -11,22 +11,24 @@
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { interceptarAuditLog } from './_audit-log-sync.mjs'; // SCRUM-255: esperar la escritura, no el reloj
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 const MERCHANT_ID = 1;              // demo (regla 8)
 const MARK = '(SCRUM-52 QA) operarioId';
 
 // recordAudit es fire-and-forget → poll corto por la traza (sin await del log en el código).
-async function waitForAudit(prisma, jobId, timeoutMs = 3000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const row = await prisma.auditLog
-      .findFirst({ where: { action: 'operario_asignado', entityType: 'job', entityId: jobId }, orderBy: { id: 'desc' } })
-      .catch(() => null);
-    if (row) return row;
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  return null;
+// SCRUM-255: aqui habia un sondeo de 3 s. Ahora se espera a la PROMESA de la escritura
+// (`interceptarAuditLog`) y la consulta se hace UNA vez.
+//
+// EL HELPER DE AUDITORIA ES OTRO QUE EL DE WA-0b, y el porque esta escrito en
+// `tests/_audit-log-sync.mjs`: `recordAudit` devuelve `void` -- crea la promesa y la tira DENTRO
+// de la funcion --, asi que la premisa de SCRUM-250 ("hay una promesa y nadie la recoge") es
+// falsa aqui y hay que envolver el delegate de Prisma, no la exportacion.
+async function buscarAudit(prisma, jobId) {
+  return prisma.auditLog
+    .findFirst({ where: { action: 'operario_asignado', entityType: 'job', entityId: jobId }, orderBy: { id: 'desc' } })
+    .catch(() => null);
 }
 
 test('SCRUM-52: operarioId = quote.teamMemberId (+ null owner) + audit único + índice', { skip: !ENABLED }, async () => {
@@ -70,14 +72,22 @@ test('SCRUM-52: operarioId = quote.teamMemberId (+ null owner) + audit único + 
         lines: [], status: 'accepted', internalNotes: MARK, teamMemberId: operario.id,
       },
     });
+    // SCRUM-255: el interceptor se instala ANTES de la accion -- el audit nace dentro de ella.
+    const au1 = interceptarAuditLog({ prisma });
     await ensureJobForQuote(qWith.id);
     const jobWith = await prisma.job.findUnique({ where: { quoteId: qWith.id }, select: { id: true, operarioId: true } });
     assert.ok(jobWith, 'ensureJobForQuote debe crear el Job en el accept');
     assert.equal(jobWith.operarioId, operario.id, 'operarioId = creador del presupuesto (quote.teamMemberId)');
 
     // (3) AUDIT: 'operario_asignado' con teamMemberId = operarioId.
-    const audit = await waitForAudit(prisma, jobWith.id);
-    assert.ok(audit, 'debe registrarse un audit_log operario_asignado para el Job');
+    let audit = null;
+    try {
+      await au1.esperarAlMenos(1); // espera a que ARRANQUE y luego a que termine (fire-and-forget anidado)
+      audit = await buscarAudit(prisma, jobWith.id);
+    } finally {
+      au1.restaurar();
+    }
+    assert.ok(audit, au1.explicar('debe registrarse un audit_log operario_asignado para el Job'));
     assert.equal(audit.action, 'operario_asignado');
     assert.equal(audit.entityType, 'job');
     assert.equal(audit.teamMemberId, operario.id, 'audit.teamMemberId = operarioId');
@@ -96,11 +106,18 @@ test('SCRUM-52: operarioId = quote.teamMemberId (+ null owner) + audit único + 
         lines: [], status: 'accepted', internalNotes: MARK, teamMemberId: null,
       },
     });
+    const au2 = interceptarAuditLog({ prisma }); // ventana propia: el suelo debe valer tambien aqui
     await ensureJobForQuote(qOwner.id);
     const jobOwner = await prisma.job.findUnique({ where: { quoteId: qOwner.id }, select: { id: true, operarioId: true } });
     assert.equal(jobOwner.operarioId, null, 'quote de propietario (teamMemberId null) → operarioId null');
-    const auditOwner = await waitForAudit(prisma, jobOwner.id);
-    assert.ok(auditOwner, 'el quote de propietario también deja traza operario_asignado');
+    let auditOwner = null;
+    try {
+      await au2.esperarAlMenos(1);
+      auditOwner = await buscarAudit(prisma, jobOwner.id);
+    } finally {
+      au2.restaurar();
+    }
+    assert.ok(auditOwner, au2.explicar('el quote de propietario también deja traza operario_asignado'));
     assert.equal(auditOwner.teamMemberId, null, 'audit del propietario: teamMemberId null (owner)');
 
     // (4) ÍNDICE: (merchant_id, operario_id) presente en la tabla jobs (Postgres).

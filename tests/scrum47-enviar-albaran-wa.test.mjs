@@ -11,6 +11,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import { interceptarWaLog } from './_wa-log-sync.mjs'; // SCRUM-250/255: esperar la escritura, no el reloj
 
 // SCRUM-114 (reaplicado en SCRUM-126: el fix original no llegó a mergear — solo su
 // documentación en SUITE_REGRESION.md, "trampa 7"; el código se perdió en el camino).
@@ -24,16 +25,20 @@ process.env.WHATSAPP_DRY_RUN = '1';
 const ENABLED = process.env.QA_DB_TEST === '1';
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
-async function waitForWaLog(prisma, merchantId, albaranId, timeoutMs = 3000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const row = await prisma.whatsAppMessage
-      .findFirst({ where: { merchantId, relatedType: 'albaran', relatedId: albaranId }, select: { id: true } })
-      .catch(() => null);
-    if (row) return row;
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  return null;
+// SCRUM-255: aquí había un sondeo de 3 s sobre `whatsAppMessage` — la misma forma que SCRUM-250
+// retiró de scrum115, y por el mismo motivo: el log WA-0b es fire-and-forget A PROPÓSITO
+// (registrar telemetría no puede tumbar un envío), así que bajo contención del pool de staging
+// la fila llega pasada la ventana y el test cae CON EL MISMO CÓDIGO. El veredicto lo decidía el
+// reloj. Ahora se espera a la PROMESA y la consulta se hace UNA vez.
+async function buscarWaLog(prisma, merchantId, albaranId) {
+  return prisma.whatsAppMessage
+    .findFirst({ where: { merchantId, relatedType: 'albaran', relatedId: albaranId }, select: { id: true } })
+    .catch(() => null);
+}
+
+/** El objeto `exports` REAL del módulo de log — el mismo que lee `whatsapp.js` en cada llamada. */
+async function moduloDeLog() {
+  return (await import('../dist/modules/messaging/domain/whatsappLog.service.js')).default;
 }
 
 test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-teléfono, tenancy 404', { skip: !ENABLED }, async () => {
@@ -99,13 +104,24 @@ test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-t
     const cookieB = await mkCookie(merchantB.id, null);
 
     // ── TÉCNICO permitido (S1) + happy path dry-run → 200 ok:true ──
-    const rOk = await post(albFirmado.id, cookieTecnico);
-    assert.equal(rOk.status, 200, `técnico debe poder enviar (S1) y fue ${rOk.status}`);
-    const okBody = await rOk.json();
-    assert.equal(okBody.ok, true, 'envío ok en dry-run');
-    assert.equal(okBody.sent, true, 'SCRUM-126: sent es la verdad del envío, no solo ok');
+    // SCRUM-255: el interceptor se instala ANTES de la petición — la escritura de WA-0b nace
+    // dentro de ella, así que instalarlo después no la vería.
+    const wa = interceptarWaLog({ log: await moduloDeLog(), prisma });
+    let filaWa = null;
+    try {
+      const rOk = await post(albFirmado.id, cookieTecnico);
+      assert.equal(rOk.status, 200, `técnico debe poder enviar (S1) y fue ${rOk.status}`);
+      const okBody = await rOk.json();
+      assert.equal(okBody.ok, true, 'envío ok en dry-run');
+      assert.equal(okBody.sent, true, 'SCRUM-126: sent es la verdad del envío, no solo ok');
+
+      await wa.esperar(); // resuelve cuando la escritura TERMINA, no cuando lo dice un reloj
+      filaWa = await buscarWaLog(prisma, merchantA.id, albFirmado.id);
+    } finally {
+      wa.restaurar();
+    }
     // WA-0b: el envío pasó por la cadena y se registró con relatedType 'albaran'
-    assert.ok(await waitForWaLog(prisma, merchantA.id, albFirmado.id), 'debe registrarse WhatsAppMessage relatedType=albaran');
+    assert.ok(filaWa, wa.explicar('debe registrarse WhatsAppMessage relatedType=albaran'));
 
     // ── No firmado → 409 albaran_no_firmado (no se envía) ──
     const rEmit = await post(albEmitido.id, cookieTecnico);

@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 import { JOB_TIPOS_OPERACION } from '../dist/modules/jobs/domain/job.service.js';
+import { interceptarAuditLog } from './_audit-log-sync.mjs'; // SCRUM-255: esperar la escritura, no el reloj
 
 test('JOB_TIPOS_OPERACION: enum cerrado de 2 valores', () => {
   assert.deepEqual([...JOB_TIPOS_OPERACION].sort(), ['OPERACIONES_SUELTAS', 'TRABAJO_UNICO']);
@@ -58,6 +59,8 @@ test('SCRUM-66: tipoOperacion — default, edición, validación, audit del camb
     assert.equal((await rGet.json()).tipoOperacion, 'TRABAJO_UNICO', 'default TRABAJO_UNICO');
 
     // (b) PATCH a OPERACIONES_SUELTAS → 200 + persistido en BD
+    // SCRUM-255: el interceptor se instala ANTES de la peticion -- el audit nace dentro de ella.
+    const au = interceptarAuditLog({ prisma });
     const rPatch = await jsonReq(`/admin/jobs/${job.id}`, cookieA, 'PATCH', { tipoOperacion: 'OPERACIONES_SUELTAS' });
     assert.equal(rPatch.status, 200, `PATCH → 200 (fue ${rPatch.status})`);
     assert.equal((await rPatch.json()).tipoOperacion, 'OPERACIONES_SUELTAS');
@@ -67,16 +70,21 @@ test('SCRUM-66: tipoOperacion — default, edición, validación, audit del camb
       'persistido en BD',
     );
 
-    // (c) audit tipo_operacion_elegido (fire-and-forget → esperar) con meta del valor elegido
+    // (c) audit tipo_operacion_elegido con meta del valor elegido.
+    // SCRUM-255: aqui habia un sondeo de 3 s. Ahora se espera a la PROMESA de la escritura y la
+    // consulta se hace UNA vez. `esperarAlMenos(1)` y no `esperar()`: el audit puede nacer
+    // detras de un await, asi que hay que esperar a que ARRANQUE, no solo a que termine lo ya
+    // empezado -- ver el porque en `tests/_audit-log-sync.mjs`.
     let audit = null;
-    for (const deadline = Date.now() + 3000; Date.now() < deadline; ) {
+    try {
+      await au.esperarAlMenos(1);
       audit = await prisma.auditLog.findFirst({
         where: { merchantId: merchantA.id, action: 'tipo_operacion_elegido', entityType: 'job', entityId: job.id },
       });
-      if (audit) break;
-      await new Promise((r) => setTimeout(r, 100));
+    } finally {
+      au.restaurar();
     }
-    assert.ok(audit, 'se registró tipo_operacion_elegido');
+    assert.ok(audit, au.explicar('se registró tipo_operacion_elegido'));
     assert.equal(audit.meta?.tipoOperacion, 'OPERACIONES_SUELTAS', 'meta con el valor elegido');
 
     // (d) valor inválido → 400 invalid_tipo_operacion (enum cerrado)
@@ -85,11 +93,34 @@ test('SCRUM-66: tipoOperacion — default, edición, validación, audit del camb
     assert.equal((await rBad.json()).error, 'invalid_tipo_operacion');
 
     // (e) PATCH con el MISMO valor → 200 pero NO genera un segundo audit (solo el cambio real)
-    const before = await countAudit();
-    const rSame = await jsonReq(`/admin/jobs/${job.id}`, cookieA, 'PATCH', { tipoOperacion: 'OPERACIONES_SUELTAS' });
-    assert.equal(rSame.status, 200);
-    await new Promise((r) => setTimeout(r, 400)); // margen para un (no) audit async
-    assert.equal(await countAudit(), before, 'reenviar el mismo valor NO audita de nuevo');
+    //
+    // 🔴 ESTO NO ES UNA MIGRACIÓN: ES LA AFIRMACIÓN CONTRARIA. Y va escrito para que nadie lo
+    // «arregle» convirtiéndolo en una.
+    //
+    // Aquí había `await sleep(400)` — «margen para un (no) audit async». Un punto de
+    // sincronización espera a que algo TERMINE; lo que se afirma aquí es que **no hay nada que
+    // esperar**. Llamar a `esperar()` sería justo lo contrario de lo que toca, y además LANZA:
+    // su suelo (`SIN_INTERCEPTAR`) existe para avisar de que el registro dejó de pasar por el
+    // helper, que aquí sería el resultado BUENO.
+    //
+    // La afirmación correcta es sobre el CONTADOR: cero escrituras interceptadas. Es inmediata
+    // —no depende del reloj— y es más fuerte que contar filas después de dormir: dice que la
+    // escritura no llegó a NACER, no solo que no se ve todavía.
+    const noAudita = interceptarAuditLog({ prisma });
+    let despues;
+    try {
+      const before = await countAudit();
+      const rSame = await jsonReq(`/admin/jobs/${job.id}`, cookieA, 'PATCH', { tipoOperacion: 'OPERACIONES_SUELTAS' });
+      assert.equal(rSame.status, 200);
+      assert.equal(noAudita.interceptadas, 0,
+        'reenviar el mismo valor NO debe ni siquiera INICIAR una escritura de AuditLog');
+      despues = { before, ahora: await countAudit() };
+    } finally {
+      noAudita.restaurar();
+    }
+    // Y la comprobación de filas se conserva: el contador dice que no arrancó ninguna escritura
+    // por ESTE cliente; esto dice que tampoco apareció una fila por cualquier otra vía.
+    assert.equal(despues.ahora, despues.before, 'reenviar el mismo valor NO audita de nuevo');
 
     // (f) tenancy: B no ve/toca el Job de A → 404
     assert.equal(
