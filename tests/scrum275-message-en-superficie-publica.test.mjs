@@ -51,7 +51,7 @@ const leer = (...p) => fs.readFileSync(path.join(RAIZ, ...p), 'utf8');
 
 /**
  * EL TRINQUETE. No puede subir; y si baja, este test falla para que la bajada se anote aquí.
- * Medido el 3-ago-2026 sobre `origin/main` = 1f8c6a0.
+ * Medido el 3-ago-2026 sobre `origin/main` = 5cd6387 (re-verificado tras rebasar).
  *
  * ⚠️ SON 28 Y EL CENSO A MANO DIJO 27, y la diferencia merece quedarse escrita porque es la
  * misma lección de SCRUM-264: aquel censo se hizo sobre una lista de ficheros escrita a mano y

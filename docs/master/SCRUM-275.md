@@ -1,8 +1,13 @@
 # SCRUM-275 · MESSAGE-EN-EL-ACCESO: la tabla existía y vivía detrás de una llave
 
 **Fecha:** 3-ago-2026 · **Carril:** A · **Gate:** microcopy aprobado por el fundador (regla 30)
-**Medido contra:** `origin/main` = `1f8c6a0`
+**Medido contra:** `origin/main` = `5cd6387c0e21405a782d625dccef3ab58ad92db8` · 2026-08-03T13:16:20+02:00
 **Tanda:** 1128 tests, 1061 pass, 0 fail (el resto, gateados a staging)
+
+> La medición original se hizo sobre `1f8c6a07` y se **re-verificó entera** tras rebasar sobre
+> este main: el censo sigue dando 28 y la suite sigue en verde. El ancla apunta al main
+> re-verificado, no al de la primera pasada — si apuntara al viejo, declararía haber medido algo
+> que ya no es lo que se va a mergear.
 
 ## El defecto
 
