@@ -260,7 +260,26 @@ un `db push`".
 
 **Regla:** una columna nueva / `ALTER` NO está aplicada hasta estar en las TRES bases. El MISMO
 mapa y el MISMO criterio están, verbatim, en la cabecera de `docs/MIGRATIONS_PENDING.md`; si
-divergen en una palabra, el problema no está resuelto, solo movido.
+divergen en una palabra, el problema no está resuelto, solo movido. **Desde SCRUM-225 eso lo
+comprueba un test** (`tests/scrum225-mapa-tres-bd.test.mjs`): la prosa pedía que coincidieran y
+nada lo ataba, que es el mismo defecto que este runbook describe.
+
+**⛔ «¿está aplicada en esa base?» NO se contesta leyendo un documento (SCRUM-225).** Ni éste ni
+`MIGRATIONS_PENDING.md`: los dos lo decían a mano, y una lista a mano se desfasa en silencio —
+en la dirección cara, «APLICADO» sobre algo que no lo está, el resultado es un 500 en producción
+(SCRUM-220). Se le pregunta a la base:
+
+- **`docs/sql/deriva-prod.sql`** — se pega entero en la consola de Postgres de la base que sea
+  (Railway → base → Query). `SELECT` de SOLO LECTURA, autocontenido: sin node, sin CLI de Prisma
+  y **sin credenciales en ninguna parte**. 0 filas = esa base tiene todo lo que el código nombra.
+- **El chequeo de arranque** (`src/core/db/schemaDrift.ts`, SCRUM-222): en producción no arranca
+  si falta algo, y dice qué.
+
+**Alcance, para que no se le suponga de más:** ese censo ve **presencia de tabla y columna**, y
+nada más. **No ve backfills ni datos, ni índices, tipos, nullability, defaults, claves ajenas o
+enums.** Lo que caiga fuera vive en `MIGRATIONS_PENDING.md` marcado **✋ DECLARACIÓN MANUAL, SIN
+MECANISMO**, y se cree bajo la palabra de quien lo escribió. No se construye un segundo
+comprobador para eso: sería otra herramienta haciendo lo que ya hace una (SCRUM-240).
 
 Un cambio de schema NO está aplicado hasta estar en las TRES bases:
 
