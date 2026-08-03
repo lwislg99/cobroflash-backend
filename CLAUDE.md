@@ -87,7 +87,8 @@ npx prisma generate      # en Windows: matar node antes si el DLL queda bloquead
   `src/modules/payments/connect/` (CONNECT-1) · `src/modules/voice/` (VOZ-1)
 - Público: `public/` (landing, auth, dashboard vanilla, `tokens.css` = tokens compartidos)
 - Docs operativos: `docs/RUNBOOKS.md` · `docs/QA_MASTER.md` · `docs/BUGS.md` ·
-  `docs/WHATSAPP_TEMPLATES.md` (spec plantillas) · `docs/MIGRATIONS_PENDING.md` (db push log)
+  `docs/WHATSAPP_TEMPLATES.md` (spec plantillas) · `docs/MIGRATIONS_PENDING.md` (db push log) ·
+  `docs/CACHE_POLICY.md` (qué `Cache-Control` emite cada recurso; Cloudflare debe RESPETARLO)
 
 ## Skills locales (`.claude/skills/`)
 

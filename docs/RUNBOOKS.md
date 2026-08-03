@@ -392,3 +392,39 @@ nada: `git pull` y repetir el preview. **Un `DROP` inesperado en un preview casi
 
 **Prevención:** cada entrada de `docs/MIGRATIONS_PENDING.md` lleva las tres como checkbox; una
 sin marcar = migración NO aplicada.
+
+---
+
+## R19 · Desplegué un arreglo del front y al profesional le sigue saliendo el viejo (SCRUM-231)
+
+**Síntoma:** el deploy está en `main` y en Railway, pero un usuario con la pestaña abierta —o que
+vuelve al rato— sigue ejecutando el JS anterior. Sin ninguna señal de que eso esté pasando.
+
+**Dónde mirar, y en este orden.** La causa tiene DOS capas y mirar solo una lleva a conclusiones
+falsas:
+
+1. **La caché HTTP del navegador**, que es la que mordía. Se comprueba **comparando el MISMO
+   fichero por los dos caminos** — no vale mirar solo el dominio, porque eso no distingue quién
+   pone la cabecera:
+   ```bash
+   curl -sSI https://cobroflash-backend-production.up.railway.app/dashboard/js/api.js | grep -i cache-control   # ORIGEN
+   curl -sSI https://yaqu.app/dashboard/js/api.js | grep -i cache-control                                        # con Cloudflare
+   ```
+   **Los dos deben decir `public, max-age=0`.** Si el segundo dice otra cosa, **Cloudflare está
+   pisando al origen**: Caching → Configuration → Browser Cache TTL tiene que estar en «Respect
+   Existing Headers» (su default son 4 h = 14400 s, que fue el valor observado en SCRUM-231).
+   Política completa: `docs/CACHE_POLICY.md`.
+2. **El service worker** (`public/sw.js`). Desde SCRUM-224 es network-first, así que ya no es la
+   causa por sí solo. Ojo: su `fetch` usa el modo de caché por defecto, o sea que **consulta la
+   caché HTTP** — con una cabecera larga en (1), el network-first ni se ejercita.
+
+**Acción:** si (1) está mal, es un cambio de panel de Cloudflare → **acción del fundador**, no se
+arregla desde el repo. Verificar DESPUÉS con los dos `curl`: el clic no es la evidencia.
+
+**Qué decir al merchant:** "Cierra y vuelve a abrir la pestaña; ya lo tienes actualizado." Y si
+hay prisa de verdad: recargar con Ctrl+F5.
+
+**Prevención:** `docs/CACHE_POLICY.md` deja la política **en el repo** — el problema de SCRUM-231
+no fue el valor, fue que vivía en un panel que nadie ve desde el código. La solución de fondo es
+fingerprint por contenido en el nombre del fichero (**SCRUM-274**), que permite cachear un año
+sin este riesgo.
