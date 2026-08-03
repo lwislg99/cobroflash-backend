@@ -2,6 +2,21 @@
 
 **Fecha:** 2-ago-2026 · **Carril:** A (fiscal) · **Gate:** GO del fundador con diff antes de cerrar (regla 29) · sin gate en tests
 
+**Medido contra:** `origin/main` = `474ab20c3dfaa478f891aa4a90b96010eded55af` · 2026-08-02T18:20:43+02:00
+
+> ⚠️ **Misma advertencia que en [SCRUM-252](SCRUM-252.md):** la hora es el `committer date` del
+> primer commit del trabajo (`195200f`), **no** una lectura de reloj del instante de la medición.
+> La sha se creó a las `2026-08-02T17:49:21+02:00`, así que la medición cae en esa ventana.
+>
+> **La sha no sale de memoria:** `git reflog` de la rama original dice
+> `474ab20 … branch: Created from origin/main`.
+>
+> Esta rama se rebasó **cuatro veces** antes de mergear, así que la sha de sus commits actuales
+> NO es contra la que se midió — decir aquella diría cuándo se rebasó, no contra qué se midió.
+> Y el ticket citaba `0d45715`, que es la sha contra la que se midió **el hallazgo original de
+> SCRUM-198**; al re-medir sobre `474ab20` el código se había movido y las líneas del ticket ya
+> no valían.
+
 ## El defecto
 
 Había **DOS constructores** del sobre `<sum:RegFactuSistemaFacturacion>` y solo uno estaba

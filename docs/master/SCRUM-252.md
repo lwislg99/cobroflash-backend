@@ -2,6 +2,20 @@
 
 **Fecha:** 3-ago-2026 · **Carril:** B (QA/guards) · **Gate:** sin gate, corre en `npm test`
 
+**Medido contra:** `origin/main` = `44c1dfd30125e2a3107c5db03466c8b63dd675ab` · 2026-08-03T11:38:47+02:00
+
+> ⚠️ **Qué es exactamente esa hora, para que el ancla no ancle a otra cosa (R14):** es el
+> `committer date` del primer commit del trabajo (`17e45a1`), **no** una lectura de reloj del
+> instante de la medición. Esa lectura no la tengo y no se reconstruye. Lo que sí acota: la sha
+> de referencia se creó a las `2026-08-03T11:12:38+02:00` y el commit se hizo a las `11:38:47`,
+> así que **toda la medición cae dentro de esa ventana de 26 minutos**.
+>
+> **La sha no sale de memoria:** `git reflog` de la rama dice `44c1dfd … branch: Created from
+> origin/main`, y `git merge-base 44c1dfd scrum-252-procedencia-cliente` devuelve esa misma sha.
+>
+> Y el `55fd152` que cita esta entrada **no es esto**: es el commit histórico de sep-2025 que el
+> guard persigue, no la referencia contra la que se midió el trabajo.
+
 ## El defecto
 
 El guard de [SCRUM-235](SCRUM-235.md) compara el conjunto de nombres de COLUMNA en los dos
