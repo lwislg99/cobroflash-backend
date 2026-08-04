@@ -12,13 +12,19 @@ import { recolectarCopyPublico, promesasDeFactura } from './_copy-publico.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-// BASELINE = las promesas CONOCIDAS hoy, por FICHERO y CANTIDAD (no por línea: anclar a la línea
-// pone el guard en rojo cada vez que alguien añade texto encima — lección de SCRUM-243). Son el
-// defecto que el FUNDADOR corrige en su mitad del ticket (regla 30: el microcopy lo decide él). El
-// guard cae si aparece una promesa en un fichero NO baselined, o si el conteo de uno baselined SUBE.
-// Cuando el fundador limpie el copy, estos bajan a 0 y el guard pasa a exigir CERO promesas.
+// DEUDA ORIGINAL declarada — INMUTABLE. Es la vara contra la que se mide si alguien BAJÓ el copy y
+// por tanto DEBE anotar el commit que lo limpió. Fijada el 4-ago-2026: las 3 promesas conocidas de
+// index.html (:380/:424/:433), que corrige el FUNDADOR en su propio commit (regla 30).
+const DEUDA_ORIGINAL = { 'public/index.html': 3 };
+
+// BASELINE — EDITABLE, por FICHERO y CANTIDAD (no por línea: anclar a la línea pone el guard en rojo
+// cada vez que alguien añade texto encima — lección de SCRUM-243). Cuando el commit del fundador
+// limpie el copy, hay que BAJAR `n` al conteo real Y escribir en `limpiadoPor` el sha de ESE commit.
+// El «porqué» se anota AQUÍ, al lado del número, no en un comentario suelto: un baseline que solo
+// vigila hacia arriba convierte una deuda declarada en excepción permanente — si dentro de tres meses
+// sigue en 3, esos tres textos habrán quedado LEGITIMADOS por el guard que existía para matarlos.
 const BASELINE = {
-  'public/index.html': 3, // :380 «Recibe la factura» · :424 «tu factura» · :433 «Factura #F-128»
+  'public/index.html': { n: 3, limpiadoPor: null }, // ← baja `n` y pon el sha del commit en `limpiadoPor` al limpiar
 };
 
 test('SCRUM-299 · SUELO: el censo LEE de verdad (control positivo: presupuesto en index.html)', () => {
@@ -31,21 +37,61 @@ test('SCRUM-299 · SUELO: el censo LEE de verdad (control positivo: presupuesto 
   assert.ok(n >= 25, `🔴 control positivo roto: presupuesto=${n} en index.html (esperaba ≥25)`);
 });
 
-test('SCRUM-299 · el copy público no promete «factura» MÁS ALLÁ del baseline conocido', () => {
+test('SCRUM-299 · el trinquete muerde en LOS DOS SENTIDOS (subir Y bajar), y bajar obliga a anotar', () => {
   const corpus = recolectarCopyPublico(RAIZ);
-  const nuevas = [];
+
+  // ── SUELO ANTES DE COMPARAR — esta es la mitad PELIGROSA del trinquete: si el detector no lee, un
+  // conteo BAJO es «no supe mirar», no «se limpió» (el mismo número bajando). Dos controles positivos
+  // que corren ANTES de tocar el baseline: el LECTOR de ficheros (presupuesto=34) y el DETECTOR de
+  // promesas (una promesa canónica sigue cayendo). Si cualquiera falla, no se compara: falla aquí.
+  const idx = corpus.find((c) => c.rel === 'public/index.html');
+  assert.ok(idx, '🔴 SUELO: index.html no entró en el censo — el detector no lee; NO se compara.');
+  const nPres = (idx.texto.match(/presupuesto/gi) || []).length;
+  assert.ok(nPres >= 25,
+    `🔴 SUELO (lector): presupuesto=${nPres} (<25) en index.html. Un conteo bajo ahora sería «no ` +
+    'supe mirar», NO «se limpió» — no se compara contra el baseline.');
+  assert.equal(promesasDeFactura('Aquí tienes tu factura').length, 1,
+    '🔴 SUELO (detector): no reconoce una promesa canónica. Un conteo que baja a 0 con el detector ' +
+    'roto es «no supe mirar», no «se limpió».');
+
+  const problemas = [];
+  const detectado = new Map();
   for (const { rel, texto } of corpus) {
     const p = promesasDeFactura(texto);
-    const permitido = BASELINE[rel] ?? 0;
+    if (p.length) detectado.set(rel, p);
+  }
+
+  // ⬆️ SUBIÓ — promesa en un fichero NO baselined, o MÁS de las permitidas: NUEVA promesa.
+  for (const [rel, p] of detectado) {
+    const permitido = BASELINE[rel]?.n ?? 0;
     if (p.length > permitido) {
-      nuevas.push(`${rel}: ${p.length} promesa(s), baseline ${permitido} → ` +
+      problemas.push(`⬆️  SUBIÓ en ${rel}: ${p.length} promesa(s), baseline ${permitido}. NUEVA promesa de ` +
+        `«factura» (Parte M: el documento post-pago es justificante, no factura) → ` +
         p.map((h) => `:${h.linea} [${h.marcador}] «${h.frag}»`).join('  |  '));
     }
   }
-  assert.deepEqual(nuevas, [],
-    '🔴 NUEVA promesa de «factura» en copy público. Parte M: sin INVOICING_ES el documento ' +
-    'post-pago es «justificante de cobro», el copy NUNCA dice «factura». El texto lo decide el ' +
-    `fundador (regla 30).\n${nuevas.join('\n')}`);
+
+  // ⬇️ BAJÓ — un fichero baselined con MENOS de lo declarado: se limpió el copy y el baseline quedó
+  // viejo. No es un rojo de castigo: OBLIGA a registrar el arreglo (bajar `n` + anotar el commit).
+  for (const [rel, { n }] of Object.entries(BASELINE)) {
+    const actual = detectado.get(rel)?.length ?? 0;
+    if (actual < n) {
+      problemas.push(`⬇️  BAJÓ en ${rel}: ${actual} promesa(s) detectadas, baseline ${n}. Se limpió el copy ` +
+        `— BAJA \`n\` a ${actual} y escribe en \`limpiadoPor\` el sha del commit que lo hizo. Si baja en ` +
+        'silencio, nadie se entera de que se arregló y la deuda queda LEGITIMADA.');
+    }
+  }
+
+  // ✍️ ANOTACIÓN — bajaste `n` por debajo de la deuda original pero no dijiste qué commit limpió el copy.
+  for (const [rel, { n, limpiadoPor }] of Object.entries(BASELINE)) {
+    if (n < (DEUDA_ORIGINAL[rel] ?? 0) && !limpiadoPor) {
+      problemas.push(`✍️  ${rel}: el baseline bajó de ${DEUDA_ORIGINAL[rel]} a ${n} SIN anotar el arreglo. ` +
+        'Escribe el sha del commit que limpió el copy en `limpiadoPor` — bajar obliga a anotar por qué.');
+    }
+  }
+
+  assert.deepEqual(problemas, [],
+    `🔴 el trinquete de «factura» muerde (Parte M · el texto lo decide el fundador, regla 30):\n${problemas.join('\n')}`);
 });
 
 test('SCRUM-299 · CONTROL NEGATIVO: cae la PROMESA (A), no cae la MENCIÓN (B)', () => {
