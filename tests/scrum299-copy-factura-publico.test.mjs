@@ -24,7 +24,14 @@ const DEUDA_ORIGINAL = { 'public/index.html': 3 };
 // vigila hacia arriba convierte una deuda declarada en excepción permanente — si dentro de tres meses
 // sigue en 3, esos tres textos habrán quedado LEGITIMADOS por el guard que existía para matarlos.
 const BASELINE = {
-  'public/index.html': { n: 3, limpiadoPor: null }, // ← baja `n` y pon el sha del commit en `limpiadoPor` al limpiar
+  // LIMPIADO en este mismo commit: las 3 promesas (:380/:424/:433) se sustituyeron por los textos
+  // APROBADOS por el fundador (reglas 26/30) — :380 «Recibe el enlace de pago» · :424 «Ya puedes
+  // pagar cuando quieras» · :433 «Reforma de baño». El documento post-pago ya no se promete como
+  // «factura». `n` baja a 0 y `limpiadoPor` deja constancia; el guard exige ahora CERO promesas.
+  'public/index.html': {
+    n: 0,
+    limpiadoPor: 'SCRUM-299 (este commit): textos aprobados aplicados en index.html:380/:424/:433 — ver docs/master/SCRUM-299.md',
+  },
 };
 
 test('SCRUM-299 · SUELO: el censo LEE de verdad (control positivo: presupuesto en index.html)', () => {
