@@ -15,12 +15,18 @@
 // ruta**. Es la clase de defecto que ningún test de backend puede ver.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// Y EL SEGUNDO VIGILA LA REGLA 30
+// Y EL SEGUNDO VIGILA LA REGLA 30 — PERO YA NO EN LA MISMA DIRECCIÓN
 //
-// Los textos de esta card los aprueba el fundador y todavía no existen. Lo que se vigila no es
-// que estén —no pueden estar— sino que **nadie los rellene de su cosecha ni los adapte de la
-// card de gestoría**, que es lo que pasó en SCRUM-264: el texto existente hablaba de importe y
-// hacía falta para cantidad, y cambiar el sustantivo ES escribir microcopy nueva.
+// Nació exigiendo que los textos fueran marcadores `[PENDIENTE microcopy oficial]`, porque no
+// había textos aprobados. **El 4-ago-2026 el fundador aprobó los ocho y el guard se dio la
+// vuelta:** ahora exige que sean EXACTAMENTE ésos.
+//
+// La pregunta que contesta no ha cambiado —«¿ha escrito alguien microcopy sin pasar por el
+// fundador?»— y por eso sirve para las dos etapas sin ser dos guards. Lo que cambió es contra
+// qué se compara: antes un marcador, ahora el texto congelado.
+//
+// Es la lección de SCRUM-264: el texto existente hablaba de importe y hacía falta para cantidad,
+// y cambiar el sustantivo ES escribir microcopy nueva.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -33,7 +39,28 @@ const RUTAS = fs.readFileSync(
   path.join(RAIZ, 'src', 'modules', 'exports', 'app', 'routes', 'exports.routes.ts'), 'utf8',
 );
 
-const MARCA = '[PENDIENTE microcopy oficial]';
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// LOS OCHO TEXTOS APROBADOS POR EL FUNDADOR (4-ago-2026). LITERALES.
+//
+// ⚠️ ESTA DUPLICACIÓN ES DELIBERADA, y es lo contrario de las listas que este repo lleva la
+// semana desmontando. Allí había dos copias de un DATO y ninguna era la autoridad, así que
+// derivaban. Aquí la copia ES la autoridad: este bloque congela lo que el fundador aprobó, y el
+// código tiene que coincidir. Si alguien cambia una coma en la vista, esto se pone rojo.
+//
+// Y por eso NO se importa desde la vista: un test que comparase el fichero consigo mismo pasaría
+// siempre sin comprobar nada — el medidor dentro de lo medido. Cambiar un texto obliga a tocar
+// ESTE fichero, y eso aparece en el diff donde un humano lo ve. Ése es todo el mecanismo: no hace
+// falta trinquete, porque el conjunto es CERRADO y no crece solo.
+const APROBADOS = {
+  rotulo: 'TUS DATOS',
+  titulo: 'Descargar todos mis datos',
+  descripcion: 'Todo lo que YaQu guarda de tu negocio, sin filtros: clientes, presupuestos, facturas, cobros, trabajos, albaranes, gastos, proveedores, equipo y mensajes de WhatsApp. En formato abierto, para que puedas llevártelo donde quieras.',
+  boton: 'Descargar todo',
+  preparando: 'Preparando tus datos… puede tardar un minuto.',
+  exito: 'Listo. La descarga ha empezado.',
+  error: 'No hemos podido preparar tus datos ahora mismo. Vuelve a intentarlo en unos minutos; si sigue sin funcionar, escríbenos y lo resolvemos.',
+  aviso: 'Este archivo contiene datos de tus clientes. Guárdalo en un sitio seguro.',
+};
 
 test('SCRUM-244 · SUELO: la vista de descargas sigue siendo la que creo que es', () => {
   // Si alguien mueve o renombra la vista, los tests de abajo pasarían sobre un fichero que ya
@@ -93,39 +120,86 @@ test('SCRUM-244 · el nombre del fichero lleva la FECHA', () => {
   );
 });
 
-test('SCRUM-244 · regla 30: NADIE ha rellenado la microcopy pendiente por su cuenta', () => {
-  // Se acota a la card de portabilidad y a su manejador: el resto de la vista tiene microcopy
-  // aprobada y no se toca. Medir el fichero entero daría rojo contra texto legítimo — el error
-  // del ámbito demasiado ancho que este repo ya conoce.
-  // ⚠️ El recorte se ancla en DOS extremos que existen, y se comprueba que existen. Un `indexOf`
-  // que no encuentra su ancla devuelve -1, y `slice(inicio, -1)` se lleva medio fichero: la
-  // primera versión de este test dio rojo contra `0 && ds.length`, código de la función de
-  // filtros que está fuera de la card. El ámbito demasiado ancho, otra vez.
-  const iCard = VISTA.indexOf('id="portabilidad-card"');
-  const iFin = VISTA.indexOf('portabilidad-info', iCard);
-  assert.ok(iCard > 0 && iFin > iCard, '🔴 ESCÁNER CIEGO: no encuentro los extremos de la card');
-  const card = VISTA.slice(iCard, VISTA.indexOf('</p>', iFin));
-  const handler = VISTA.slice(VISTA.indexOf('btnPort.addEventListener'), VISTA.indexOf('btn.addEventListener'));
-  assert.ok(card.length > 100 && handler.length > 200, '🔴 ESCÁNER CIEGO: no encuentro la card o su manejador');
+/**
+ * TODO RECORTE COMPRUEBA SUS DOS EXTREMOS. Criterio, no manía.
+ *
+ * `indexOf` devuelve **-1** cuando no encuentra su ancla, y `slice(inicio, -1)` no falla: se
+ * lleva el fichero entero menos un carácter. El resultado es un rojo **que no es tuyo** y que te
+ * manda a mirar donde no es — la primera versión de este guard cayó contra `0 && ds.length`,
+ * código de la función de filtros que está fuera de la card.
+ *
+ * Por eso esto no hace `slice` a pelo: exige los dos índices, comprueba que existen y que van en
+ * orden, y falla nombrando cuál falta. Un ámbito equivocado no se nota en la salida —el rojo se
+ * lee igual de convincente— así que la única defensa es no dejar que ocurra.
+ */
+function recorte(texto, desde, hasta, etiqueta) {
+  const i = texto.indexOf(desde);
+  assert.ok(i >= 0, `🔴 ESCÁNER CIEGO: no encuentro el ancla de INICIO de ${etiqueta} («${desde}»)`);
+  const j = texto.indexOf(hasta, i + desde.length);
+  assert.ok(j > i, `🔴 ESCÁNER CIEGO: no encuentro el ancla de FIN de ${etiqueta} («${hasta}») después del inicio`);
+  return texto.slice(i, j);
+}
 
-  // Todo lo que el usuario LEE en esta card tiene que ser el marcador, no un texto inventado.
+test('SCRUM-244 · regla 30: los OCHO textos son EXACTAMENTE los aprobados', () => {
+  // El guard cambió de sentido el 4-ago-2026. Antes exigía que fueran marcadores `[PENDIENTE]`,
+  // porque no había textos; ahora que están aprobados exige que sean ESOS y no otros. La
+  // pregunta que contesta es la misma en los dos casos: «¿ha escrito alguien microcopy sin
+  // pasar por el fundador?».
+  const card = recorte(VISTA, 'id="portabilidad-card"', 'portabilidad-info', 'la card');
+  const handler = recorte(VISTA, 'btnPort.addEventListener', 'btn.addEventListener', 'el manejador');
+
+  // 1) Cada texto aprobado está donde tiene que estar.
+  for (const [clave, texto] of Object.entries(APROBADOS)) {
+    const donde = ['rotulo', 'titulo', 'descripcion', 'boton'].includes(clave) ? card : handler;
+    assert.ok(
+      donde.includes(texto),
+      `🔴 FALTA O SE HA CAMBIADO EL TEXTO APROBADO «${clave}».\n\n` +
+        `  Esperado, literal:\n    ${texto}\n\n` +
+        '  Los textos los aprueba el fundador (regla 30). Cambiar una coma, un plural o un\n' +
+        '  sustantivo ES escribir microcopy nueva — la lección de SCRUM-264, donde el texto\n' +
+        '  existente hablaba de importe y hacía falta para cantidad. Si de verdad hay que\n' +
+        '  cambiarlo, se aprueba primero y se actualiza APROBADOS en el mismo commit: así el\n' +
+        '  cambio aparece en el diff donde un humano lo ve.',
+    );
+  }
+
+  // 2) Y NO hay ningún texto visible que no esté aprobado. Sin esto, añadir una frase nueva
+  //    pasaría desapercibida: los ocho seguirían estando.
   const visibles = [
     ...card.matchAll(/>([^<>{}]{4,})</g),
     ...handler.matchAll(/showToast\('([^']+)'/g),
     ...handler.matchAll(/textContent = '([^']+)'/g),
   ].map((m) => m[1].trim()).filter(Boolean);
 
-  const inventados = visibles.filter((t) => !t.startsWith(MARCA));
+  const aprobados = new Set(Object.values(APROBADOS));
+  const sinAprobar = [...new Set(visibles.filter((t) => !aprobados.has(t)))];
   assert.deepEqual(
-    inventados, [],
-    '🔴 HAY MICROCOPY SIN APROBAR EN LA CARD DE PORTABILIDAD:\n' +
-      inventados.map((t) => `    «${t}»`).join('\n') +
-      '\n\n  Los textos los aprueba el fundador (regla 30) y NO se adaptan de la card de\n' +
-      '  gestoría: cambiar «tus datos para el asesor» por «todos tus datos» ES escribir\n' +
-      '  microcopy nueva. Es la lección de SCRUM-264. Cuando lleguen aprobados, esto es un\n' +
-      `  reemplazo de «${MARCA}», no una obra.`,
+    sinAprobar, [],
+    '🔴 HAY TEXTO VISIBLE SIN APROBAR EN LA CARD DE PORTABILIDAD:\n' +
+      sinAprobar.map((t) => `    «${t}»`).join('\n') +
+      '\n\n  No basta con que los ocho aprobados sigan ahí: una frase AÑADIDA también es\n' +
+      '  microcopy nueva, y pasaría desapercibida si solo se comprobara la presencia.',
   );
-  assert.ok(visibles.length >= 4, `🔴 ESCÁNER CIEGO: solo veo ${visibles.length} textos visibles en la card`);
+
+  assert.ok(
+    visibles.length >= Object.keys(APROBADOS).length - 1,
+    `🔴 ESCÁNER CIEGO: solo veo ${visibles.length} textos visibles y hay ${Object.keys(APROBADOS).length} aprobados. ` +
+      'Si el extractor dejó de verlos, la comprobación de arriba sería cierta sobre casi nada.',
+  );
+});
+
+test('SCRUM-244 · el botón NO construye su etiqueta: pegarle un contador cambiaría el texto', () => {
+  // La card de gestoría muestra «Preparando… 12s», o sea que CONSTRUYE la cadena. Aquí el texto
+  // de espera está aprobado literal, así que concatenarle nada lo modificaría. Se comprueba que
+  // el manejador no arma etiquetas: si alguien añade un contador «para mejorar la espera»,
+  // estaría reescribiendo microcopy aprobada sin darse cuenta.
+  const handler = recorte(VISTA, 'btnPort.addEventListener', 'btn.addEventListener', 'el manejador');
+  assert.ok(
+    !/btnPort\.textContent\s*=\s*[^;]*\+/.test(handler),
+    '🔴 el manejador CONCATENA algo a la etiqueta del botón. El texto de espera está aprobado ' +
+      'literal («' + APROBADOS.preparando + '»); pegarle un contador detrás es modificarlo. La ' +
+      'espera ya la comunica la propia frase, que dice cuánto puede tardar.',
+  );
 });
 
 test('SCRUM-244 · la vista NO ofrece la supresión: sigue bloqueada por dictamen', () => {

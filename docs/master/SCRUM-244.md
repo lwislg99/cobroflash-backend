@@ -438,3 +438,87 @@ sigue bloqueada por dictamen, y hoy ejecutarla destruiría el `AuditLog` fiscal.
 `Reconciliation` y los adjuntos binarios siguen fuera del paquete, como estaba escrito.
 
 **Falta lo único que no puedo poner yo:** los textos aprobados.
+
+---
+
+# SCRUM-244 · los textos aprobados sustituyen a los marcadores (paso 3 CERRADO)
+
+**Fecha:** 4-ago-2026 · **Carril:** A · **Gate:** sin gate, corre en `npm test`
+
+> **Ancla (en prosa).** Medido contra `origin/main` = `5d0cebef4fee6f180d44e8de4f1a458f29bcd97e` · 2026-08-04T14:59:28+02:00. En prosa porque el guard de SCRUM-267 juzga por FICHERO.
+
+## Los ocho, literales
+
+El fundador aprobó los ocho textos el 4-ago-2026 y se han puesto **sin tocar una coma**: rótulo,
+título, descripción y botón en la card; preparando, éxito, error y aviso en los estados.
+
+## EL GUARD SE DIO LA VUELTA, y esa es la parte interesante
+
+Nació exigiendo que los textos fueran `[PENDIENTE microcopy oficial]`, porque no había textos.
+Ahora exige que sean **exactamente los aprobados**.
+
+**La pregunta que contesta no ha cambiado** —«¿ha escrito alguien microcopy sin pasar por el
+fundador?»— y por eso sirve para las dos etapas sin ser dos guards. Lo que cambió es contra qué
+se compara: antes un marcador, ahora el texto congelado.
+
+Comprueba **las dos direcciones**, y la segunda es la que no es obvia:
+
+1. Cada texto aprobado **está** donde tiene que estar.
+2. **No hay ningún texto visible que no esté aprobado.** Sin esto, añadir una frase pasaría
+   desapercibida — los ocho seguirían estando.
+
+**No hace falta trinquete, y conviene decir por qué:** el conjunto es **cerrado** y no crece
+solo. Un trinquete existe para conjuntos que crecen (los pendientes de SCRUM-243, el censo de
+267). Aquí cambiar un texto obliga a tocar el fichero del guard, y **eso aparece en el diff donde
+un humano lo ve** — que es exactamente el momento de decisión que la regla 30 quiere provocar.
+
+**La duplicación del texto en el test es deliberada**, y es lo contrario de las listas que este
+repo lleva la semana desmontando: allí había dos copias de un dato y ninguna era la autoridad,
+así que derivaban. Aquí **la copia ES la autoridad**. Y por eso no se importa desde la vista: un
+test que comparase el fichero consigo mismo pasaría siempre sin comprobar nada — el medidor
+dentro de lo medido.
+
+## Dos decisiones de COLOCACIÓN que no venían dadas
+
+Los textos venían aprobados; **dónde va cada uno, no**. Las dos que tomé, para que se corrijan en
+una línea si no son lo que querías:
+
+- **El «aviso» va en la card después de descargar**, y el «éxito» va en el toast. El toast
+  confirma y se va; la advertencia sobre los datos de los clientes se queda visible cuando el
+  profesional vuelva a mirar. Como dice *«este archivo»*, se muestra cuando el archivo ya existe.
+- **El botón pierde el contador vivo que tiene la card de gestoría.** Aquel muestra
+  «Preparando… 12s», o sea que **construye** la cadena; aquí el texto de espera está aprobado
+  literal y pegarle un contador detrás **sería modificarlo**. La espera la comunica la propia
+  frase, que dice cuánto puede tardar — que es justo para lo que servía el contador. Hay un guard
+  que falla si alguien «mejora la espera» concatenando algo a la etiqueta.
+
+## El criterio del recorte, ahora como función
+
+Mi propio fallo de ayer se queda escrito y ejecutable: **todo recorte comprueba sus dos
+extremos.** `indexOf` devuelve −1 cuando no encuentra su ancla y `slice(inicio, −1)` **no falla**
+— se lleva el fichero entero menos un carácter, y el rojo que sale **no es tuyo**: te manda a
+mirar donde no es. La primera versión de este guard cayó contra `0 && ds.length`, código que está
+fuera de la card.
+
+Ya no se hace `slice` a pelo: la función `recorte(texto, desde, hasta, etiqueta)` exige los dos
+índices, comprueba que existen y que van en orden, y falla nombrando cuál falta. Un ámbito
+equivocado **no se nota en la salida** —el rojo se lee igual de convincente— así que la única
+defensa es no dejar que ocurra.
+
+## Verificado en rojo, cuatro veces
+
+1. **Cambiar UNA palabra** de un texto aprobado (`mis` → `tus`) → cae nombrando cuál.
+2. **Añadir una frase** nueva con los ocho intactos → cae nombrando la frase.
+3. **Concatenar un contador** a la etiqueta del botón → cae.
+4. **Quitarle un ancla al recorte** → cae por escáner ciego, en vez de medir medio fichero.
+
+Revertidas, verde después. **Suite ungated: 1260 tests, 0 fallos.**
+
+## Lo que queda
+
+- **El `LEEME.txt` del ZIP sigue con `[PENDIENTE]`.** No lo redacto: abajo va lo que
+  legalmente tiene que decir, para que el fundador apruebe el texto.
+- **La supresión** sigue bloqueada por dictamen, fuera de esta pantalla, con su test.
+
+Con esto, **el paso 3 de portabilidad queda cerrado**: registro, cobertura y puerta, con sus
+textos.

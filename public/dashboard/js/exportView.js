@@ -77,10 +77,10 @@ async function renderExportView(container) {
            marcadores visibles: el día que estén aprobados esto es un reemplazo, no una obra.
       -->
       <div class="customers-card" style="margin-top:16px" id="portabilidad-card">
-        <div style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">[PENDIENTE microcopy oficial]</div>
-        <h3 style="margin:0 0 4px;font-size:16px;font-weight:700;color:var(--ink)">[PENDIENTE microcopy oficial]</h3>
-        <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">[PENDIENTE microcopy oficial]</p>
-        <button class="btn-secondary" id="btn-portabilidad" style="min-height:44px">[PENDIENTE microcopy oficial]</button>
+        <div style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">TUS DATOS</div>
+        <h3 style="margin:0 0 4px;font-size:16px;font-weight:700;color:var(--ink)">Descargar todos mis datos</h3>
+        <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">Todo lo que YaQu guarda de tu negocio, sin filtros: clientes, presupuestos, facturas, cobros, trabajos, albaranes, gastos, proveedores, equipo y mensajes de WhatsApp. En formato abierto, para que puedas llevártelo donde quieras.</p>
+        <button class="btn-secondary" id="btn-portabilidad" style="min-height:44px">Descargar todo</button>
         <p id="portabilidad-info" style="margin:12px 0 0;font-size:12px;color:var(--muted)" aria-live="polite"></p>
       </div>
     </div>
@@ -169,23 +169,23 @@ async function renderExportView(container) {
     if (generandoPort) return;
     generandoPort = true;
     btnPort.disabled = true;
-    const txtPort = btnPort.textContent;
-
-    // Contador vivo, igual que arriba: el paquete recorre TODAS las tablas del merchant y un
-    // botón congelado parece colgado.
-    const t0p = Date.now();
-    const tickPort = setInterval(() => {
-      btnPort.textContent = '[PENDIENTE microcopy oficial] ' + Math.round((Date.now() - t0p) / 1000) + 's';
-    }, 1000);
-    btnPort.textContent = '[PENDIENTE microcopy oficial]';
+    // ⚠️ SIN CONTADOR VIVO, a diferencia de la card de gestoría — y es consecuencia de la
+    // regla 30, no un descuido. Aquel botón va mostrando «Preparando… 12s», o sea que la
+    // cadena se CONSTRUYE. Aquí el texto de espera está aprobado literal
+    // («Preparando tus datos… puede tardar un minuto.») y pegarle un contador detrás sería
+    // modificarlo. La espera se comunica donde el texto aprobado ya la comunica: la propia
+    // frase dice cuánto puede tardar, que es para lo que servía el contador. El botón solo se
+    // deshabilita y conserva su etiqueta.
+    infoPort.textContent = 'Preparando tus datos… puede tardar un minuto.';
 
     try {
       const res = await fetch('/admin/exports/portabilidad.zip', { credentials: 'same-origin' });
       if (!res.ok) {
-        // Se ramifica por CÓDIGO, nunca por texto (SCRUM-151). Lo que ve el profesional es
-        // microcopy y todavía no está aprobado.
-        showToast('[PENDIENTE microcopy oficial]', 'error');
-        infoPort.textContent = '[PENDIENTE microcopy oficial]';
+        // Se ramifica por CÓDIGO, nunca por texto (SCRUM-151): el cuerpo trae
+        // `error: 'portabilidad_fallida'` y lo que el profesional lee es este texto aprobado,
+        // el mismo sea cual sea el código. Nada de reenviar al usuario el mensaje del servidor.
+        showToast('No hemos podido preparar tus datos ahora mismo. Vuelve a intentarlo en unos minutos; si sigue sin funcionar, escríbenos y lo resolvemos.', 'error');
+        infoPort.textContent = 'No hemos podido preparar tus datos ahora mismo. Vuelve a intentarlo en unos minutos; si sigue sin funcionar, escríbenos y lo resolvemos.';
         return;
       }
 
@@ -205,14 +205,16 @@ async function renderExportView(container) {
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 10000);
 
-      showToast('[PENDIENTE microcopy oficial]');
-      infoPort.textContent = '[PENDIENTE microcopy oficial]';
+      // El toast CONFIRMA y se va; el aviso se queda en la card. Los dos textos están
+      // aprobados y cada uno hace su trabajo: «Listo» es efímero porque la descarga ya
+      // empezó, y la advertencia sobre los datos de sus clientes tiene que seguir ahí
+      // cuando el profesional vuelva a mirar la pantalla.
+      showToast('Listo. La descarga ha empezado.');
+      infoPort.textContent = 'Este archivo contiene datos de tus clientes. Guárdalo en un sitio seguro.';
     } catch {
-      showToast('[PENDIENTE microcopy oficial]', 'error');
-      infoPort.textContent = '[PENDIENTE microcopy oficial]';
+      showToast('No hemos podido preparar tus datos ahora mismo. Vuelve a intentarlo en unos minutos; si sigue sin funcionar, escríbenos y lo resolvemos.', 'error');
+      infoPort.textContent = 'No hemos podido preparar tus datos ahora mismo. Vuelve a intentarlo en unos minutos; si sigue sin funcionar, escríbenos y lo resolvemos.';
     } finally {
-      clearInterval(tickPort);
-      btnPort.textContent = txtPort;
       btnPort.disabled = false;
       generandoPort = false;
     }
