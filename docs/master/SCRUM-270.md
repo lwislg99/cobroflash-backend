@@ -26,9 +26,15 @@ Escáner AST sobre `tests/`: **1160 tests, 3334 asserts, 567 evidencias** (nombr
 | **Gateados** — cada re-corrida cuesta ~40 min de turno | **55** | 38 |
 | Puros — re-correr es gratis | 31 | 14 |
 
-> **⚠️ LOS 31 PUROS QUEDAN FUERA, Y ESTÁ DECIDIDO.** Tienen el mismo patrón y **ningún daño
-> descrito por el ticket**: se vuelven a correr en segundos, en local, sin turno. Que nadie lea
-> este trabajo como cobertura total del censo.
+> **⚠️ CÓMO SE LEE ESTE 55, Y NO ES UN DETALLE.** Es el **TECHO de lo señalado**, no una lista de
+> 55 conversiones pendientes ni una deuda de 55 tests. El escáner marca *«evidencia en la mano que
+> un assert posterior mira sin que ninguno anterior la nombre»*; eso es una **señal**, no un
+> veredicto, y el muestreo de abajo enseña que buena parte pide **otra cosa** que la pieza de este
+> ticket. Quien retome esto: mira los casos, no el número.
+>
+> **Y LOS 31 PUROS QUEDAN FUERA, DECIDIDO.** Tienen el mismo patrón y **ningún daño descrito por el
+> ticket**: se vuelven a correr en segundos, en local, sin turno. Que nadie lea este trabajo como
+> cobertura total del censo.
 
 **Un fallo cazado en la propia medición:** el primer censo dio **113**. Muestreando dos casos antes
 de entregarlo, `scrum221` no encajaba — su `okXml` se pide **después** del primer assert, así que
@@ -77,21 +83,36 @@ cual y solo se le pone la otra observación al lado — dos arneses del mismo he
 
 ## Lo que NO cubre — y el muestreo que lo dice
 
-Repetido el muestreo antes de dar el patrón por bueno, sobre dos de los 53 gateados restantes:
+Repetido el muestreo antes de dar el patrón por bueno, sobre dos de los 53 gateados restantes. Los
+dos están señalados y **ninguno de los dos encaja igual que los del ticket**:
 
-- **`scrum173:76`** (`a` y `b` en la mano, dos asserts seguidos): el defecto es real, pero lo que le
-  falta **no es `exigirTodas`** — es que el mensaje del primer assert lleve el valor del otro. Es una
-  variante más ligera de la misma regla.
-- **`scrum135:144`**: el segundo assert no mira evidencia en la mano, sino una llamada nueva. El
-  señalamiento ahí es **débil**.
+- **`scrum173:76`** — `a` y `b` están en la mano y hay dos asserts seguidos, así que **el defecto es
+  real**: si cae el primero, `b.id > a.id` no se imprime. Pero lo que le falta **NO es
+  `exigirTodas`**: son dos escalares, y basta con que el mensaje del primer assert lleve el valor
+  del otro. Es una **variante más ligera** de la misma regla, y meterle la pieza de N observaciones
+  sería usar un martillo para una chincheta.
+- **`scrum135:144`** — **señalamiento débil**: el segundo assert no mira evidencia en la mano, sino
+  una **llamada nueva** (`assert.rejects(() => createExpense(...))`). Si el primero cae, no se
+  pierde nada medido, porque esa llamada no se había hecho todavía. El escáner lo marca porque el
+  nombre venía de un `await` anterior; la regla del ticket no aplica.
 
-O sea: **55 es el techo de lo señalado, no una lista de 55 conversiones pendientes.** La pieza
-cubre la forma «N observaciones del mismo tipo»; el resto pide mirarse caso a caso, y **no se
-convierten 53 tests a ciegas** — eso sería generalizar de más, que es justo lo que el ticket prohíbe.
+**Consecuencia, y es la que hay que retener:** la pieza construida cubre la forma **«N observaciones
+del mismo tipo, ya obtenidas»** — que es la de los dos casos del ticket. El resto de lo señalado
+pide **mirarse caso a caso**, y **no se convierten 53 tests a ciegas**: eso sería generalizar de
+más, exactamente lo que el ticket prohíbe («se extrae el patrón de dos casos reales, no se
+construye un marco por adelantado»).
 
-**Tampoco cubre** el escáner en sí: vive en el scratchpad como herramienta de medición, no en la
-suite. Convertirlo en guard es otra decisión (haría falta trinquete, como en SCRUM-275) y no se
-toma aquí.
+## Pregunta abierta — para el fundador, NO decidida aquí
+
+El escáner del censo vive en el **scratchpad**, como herramienta de medición: no está en la suite y
+hoy no vigila nada. Convertirlo en guard es una decisión que **no toma esta sesión**, porque no es
+mecánica: al no ser todo lo señalado un defecto —lo acaba de enseñar el muestreo—, un guard tendría
+que nacer con **trinquete** (número que no puede subir, y que al bajar también falla para que la
+mejora se anote), igual que en SCRUM-275 y SCRUM-243. Y fijar ese número es fijar una deuda
+declarada sobre 38 ficheros de otros carriles.
+
+**Queda como pregunta:** ¿se quiere ese trinquete, y en qué número — 55, o solo los que sobrevivan a
+una revisión caso a caso?
 
 ## Ficheros
 
