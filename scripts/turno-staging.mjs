@@ -28,7 +28,6 @@
 //
 // Regla 9: no imprime NUNCA la URL. Solo el nombre de la base y el marcador.
 import 'dotenv/config';
-import os from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';

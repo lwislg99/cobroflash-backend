@@ -40,7 +40,6 @@ import { spawnSync } from 'node:child_process';
 import { readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import os from 'node:os';
 import { PrismaClient } from '@prisma/client';
 import { assertSafeStagingUrl, STAGING_HOST } from './_db-guard.mjs';
 // SCRUM-253 · la identidad de la sesión, derivada del árbol de trabajo.
