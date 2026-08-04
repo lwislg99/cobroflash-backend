@@ -61,7 +61,10 @@ import { assertSafeStagingUrl } from '../scripts/_db-guard.mjs';
 // SCRUM-188: el marcador puede llevar detrás el TURNO de staging (`YAQU_STAGING lock:…`).
 // `esMarcaDeStaging` conserva EXACTAMENTE la exactitud de antes sobre el prefijo; el sufijo
 // se lee aparte y solo para AVISAR. El detalle de por qué son dos funciones, en el módulo.
-import { esMarcaDeStaging, parsearLock, estaRancio, formatearDuracion } from '../scripts/_staging-lock.mjs';
+import {
+  esMarcaDeStaging, parsearLock, parsearContexto, leerComentarioSchema,
+  decidirVigencia, formatearDuracion,
+} from '../scripts/_staging-lock.mjs';
 
 const GATES = ['QA_DB_TEST', 'A55_DB_TEST', 'BOT_SUITE_TEST'];
 const gate = GATES.find((g) => process.env[g] === '1');
@@ -102,6 +105,7 @@ if (gate) {
   let marca = null;
   let nombreBd = '(desconocida)';
   let ahoraMs = Date.now(); // se sustituye por el reloj de la BD si la sonda responde
+  let contextoTurno = null;  // SCRUM-266 · el compromiso del dueño, si lo publicó
   try {
     // SCRUM-188: `now()` viaja en ESTA misma consulta. El aviso de turno ajeno (abajo) compara
     // fechas, y compararlas con el reloj del portátil metería el sesgo entre máquinas justo en
@@ -112,6 +116,19 @@ if (gate) {
     marca = filas[0]?.marca ?? null;
     nombreBd = filas[0]?.db ?? nombreBd;
     if (filas[0]?.ahora instanceof Date) ahoraMs = filas[0].ahora.getTime();
+
+    // SCRUM-266 (resto) · el compromiso publicado por el dueño del turno, para poder JUZGARLO
+    // con un dato en vez de con un TTL supuesto (ver el aviso, abajo). Va aquí dentro y no en
+    // otra llamada porque `sonda` se desconecta en cuanto acaba este bloque.
+    //
+    // BEST-EFFORT A PROPÓSITO, con su propio `catch`: esto es un AVISO. Si la lectura falla,
+    // `contextoTurno` se queda en null, `decidirVigencia` cae al TTL supuesto y el aviso se
+    // comporta EXACTAMENTE como antes de este arreglo. Lo que no puede pasar es que un
+    // comentario de schema ilegible tumbe la barrera que impide correr contra producción —
+    // es la misma razón por la que un sufijo raro del marcador tampoco puede (ver abajo).
+    try {
+      contextoTurno = parsearContexto(await leerComentarioSchema(sonda), parsearLock(marca)?.dueño);
+    } catch { /* advisory: el aviso se degrada, la barrera no se toca */ }
   } catch (err) {
     // Fail-closed: si no se puede COMPROBAR, no se corre. Una BD inalcanzable o sin
     // permisos de catálogo no es una BD verificada.
@@ -148,8 +165,19 @@ if (gate) {
   // por un turno rancio. Ese trabajo es del runner, que sí sabe reclamarlo.
   // El runner exporta YAQU_LOCK_DUENO a sus hijos: así el turno del propio padre no se avisa
   // como ajeno en cada uno de los tres procesos.
+  // SCRUM-266 (resto) · QUIÉN decide que ese turno sigue vivo. Antes decidía aquí `estaRancio`
+  // con el TTL POR DEFECTO —45 minutos SUPUESTOS—, mientras el runner sostiene el suyo con un
+  // TTL DERIVADO (`ttlParaTanda`), que con `GATED_CHILD_TIMEOUT_MS=60` son 70. En esa ventana
+  // este aviso hacía lo contrario de aquello para lo que existe: daba por rancio un turno VIVO
+  // y se CALLABA, dejando que el gateado suelto escribiera sobre la base de una tanda en marcha
+  // sin decir una palabra. Es el defecto de SCRUM-266 con el signo invertido — allí `tomar`
+  // reclamaba de más, aquí el aviso avisa de menos.
+  //
+  // `decidirVigencia` compara contra el compromiso que el dueño PUBLICÓ (SCRUM-249); el TTL solo
+  // decide cuando no hay compromiso, que es el peor caso y no el normal.
   const lockVivo = parsearLock(marca);
-  if (lockVivo && !estaRancio(lockVivo, ahoraMs) && lockVivo.dueño !== process.env.YAQU_LOCK_DUENO) {
+  const vigencia = decidirVigencia({ lock: lockVivo, contexto: contextoTurno, ahoraMs });
+  if (vigencia.vigente && lockVivo.dueño !== process.env.YAQU_LOCK_DUENO) {
     console.warn(
       `\n⚠️  SCRUM-188: el turno de staging lo tiene «${lockVivo.dueño}» desde ${lockVivo.desdeIso} ` +
       `(hace ${formatearDuracion(ahoraMs - lockVivo.desdeMs)}).\n` +

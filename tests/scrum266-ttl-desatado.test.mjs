@@ -36,12 +36,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   MARCADOR, componerMarca, componerContexto, decidirVigencia, ttlParaTanda,
   adquirirLock, TTL_POR_DEFECTO_MS, MARGEN_TTL_MS,
 } from '../scripts/_staging-lock.mjs';
+import { barrer, preguntaAlJuez } from './_decisor-turno.mjs';
 
+const RAIZ = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const T0 = Date.parse('2026-08-03T12:00:00.000Z');
 const min = (n) => n * 60 * 1000;
 const DUEÑO = 'DESKTOP-A24926K.28436';
@@ -161,20 +165,57 @@ test('SCRUM-266 · `tomar` que RECLAMA sin compromiso deja constancia de con qu�
 
 // ── LA CONTRADICCIÓN EN PANTALLA ─────────────────────────────────────────────────────────
 
-test('SCRUM-266 · el CLI ya no juzga la vigencia por su cuenta', () => {
-  // Guard estructural: mientras `turno-staging.mjs` llame a `estaRancio`, puede volver a haber
-  // DOS juicios sobre lo mismo en la misma pantalla — el título por un lado y la señal de vida
-  // por otro. Se lee sin comentarios: este fichero nombra `estaRancio` para explicarlo.
-  const fuente = fs.readFileSync(new URL('../scripts/turno-staging.mjs', import.meta.url), 'utf8');
-  const soloCodigo = fuente.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+// El guard que había aquí nombraba `turno-staging.mjs` y leía su texto sin comentarios. Se
+// sustituye por el barrido estructural de abajo, y el motivo está medido: protegía UNO de los
+// diez consumidores del turno, y el defecto seguía vivo en otro (`tests/_staging-db.mjs`).
+// Una lista de sitios protegidos se satisface dejando de enumerar.
 
-  assert.doesNotMatch(soloCodigo, /\bestaRancio\s*\(/,
-    '🔴 `turno-staging.mjs` vuelve a decidir la vigencia con `estaRancio`.\n\n' +
-    '  Eso reintroduce el defecto entero: `estaRancio` necesita un TTL, el CLI solo puede\n' +
-    '  SUPONERLO, y la suposición discrepa del TTL derivado del runner en cuanto\n' +
-    '  GATED_CHILD_TIMEOUT_MS pasa de 35. Además vuelve a permitir que el título de la pantalla\n' +
-    '  diga «RANCIO» mientras la señal de vida de abajo dice «VIVO».\n\n' +
-    '  La vigencia la decide `decidirVigencia`, y solo ella.');
-  assert.match(soloCodigo, /decidirVigencia\(/,
-    '🔴 el CLI ya no usa `decidirVigencia`: si no decide con ella, no hay una sola respuesta');
+test('SCRUM-266 · SUELO: el barrido encuentra a los consumidores del turno', () => {
+  // Sin esto, «0 decisiones fuera del decisor» significa a la vez «está limpio» y «no miré».
+  // El suelo es lo único que distingue las dos cosas.
+  const { consumidores } = barrer(RAIZ);
+
+  assert.ok(consumidores.length >= 8,
+    `🔴 el barrido solo ve ${consumidores.length} consumidores del turno; se midieron 10 el ` +
+    '3-ago-2026. Si han bajado tanto, lo que se rompió es el analizador (o el import del ' +
+    'decisor cambió de forma), no el código. Un guard que no encuentra nada no vigila nada.');
+
+  // Dos anclas concretas: el CLI (que SCRUM-266 arregló) y la barrera gateada (que no). No son
+  // una lista de excepciones — son la prueba de que el barrido llega a los dos sitios donde el
+  // defecto vivió de verdad.
+  for (const esperado of ['scripts/turno-staging.mjs', 'tests/_staging-db.mjs']) {
+    assert.ok(consumidores.includes(esperado),
+      `🔴 el barrido no llega a ${esperado}, que es uno de los sitios donde este ticket ` +
+      'encontró el defecto. Si no lo alcanza, su verde no dice nada de él.');
+  }
+});
+
+test('SCRUM-266 · nadie decide la vigencia del turno fuera de `decidirVigencia`', () => {
+  const { decisiones } = barrer(RAIZ);
+
+  assert.deepEqual(decisiones, [],
+    '🔴 alguien vuelve a decidir la vigencia del turno con `estaRancio`:\n\n' +
+    decisiones.map((d) => `      ${d.fichero}:${d.linea}  (forma: ${d.forma})`).join('\n') +
+    '\n\n' +
+    '  `estaRancio` necesita un TTL, y un consumidor solo puede SUPONERLO: el TTL de verdad\n' +
+    '  es el que usó OTRA máquina al tomar el turno, y el runner lo DERIVA\n' +
+    '  (`ttlParaTanda`), así que discrepa del supuesto en cuanto GATED_CHILD_TIMEOUT_MS\n' +
+    '  pasa de 35. Decidir con esa suposición es el defecto entero de SCRUM-266.\n\n' +
+    '  Pregúntale a `decidirVigencia({ lock, contexto, ahoraMs })`: compara contra el\n' +
+    '  compromiso que el dueño PUBLICÓ, que es un dato, no una suposición.\n\n' +
+    '  Observar sí se puede (un assert, un log): lo que este guard prohíbe es que el\n' +
+    '  resultado llegue al control de flujo.');
+});
+
+test('SCRUM-266 · la barrera gateada sigue avisando del turno ajeno', () => {
+  // Sin esto, el guard de arriba se satisface BORRANDO el aviso — y el aviso es lo que SCRUM-188
+  // puso ahí para que un gateado suelto no escriba a ciegas sobre la base de otra sesión.
+  // «Ya no decide mal» no puede conseguirse dejando de decidir.
+  const rel = 'tests/_staging-db.mjs';
+  const codigo = fs.readFileSync(path.join(RAIZ, rel), 'utf8');
+
+  assert.ok(preguntaAlJuez(rel, codigo),
+    '🔴 la barrera gateada ya no le pregunta a `decidirVigencia`. Si el aviso de turno ajeno\n' +
+    '  desapareció, un `QA_DB_TEST=1 node --test …` suelto vuelve a crear y borrar merchants\n' +
+    '  sobre la base de otra sesión sin decir una palabra.');
 });
