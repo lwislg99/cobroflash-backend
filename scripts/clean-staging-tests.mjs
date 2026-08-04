@@ -25,6 +25,8 @@
 import { PrismaClient } from '@prisma/client';
 import 'dotenv/config';
 import { assertSafeStagingUrl } from './_db-guard.mjs';
+// SCRUM-253 · la identidad de la sesión, derivada del árbol de trabajo (no de una env).
+import { dueñoActual } from './_identidad-sesion.mjs';
 import {
   leerMarcaCruda, parsearLock,
   // SCRUM-260 (2ª mitad): para saber si el turno está VIVO se reusa el juicio de SCRUM-266, que
@@ -109,7 +111,10 @@ async function main() {
     marca,
     lock,
     vigente: vigencia.vigente,
-    dueñoPropio: process.env.YAQU_LOCK_DUENO || null,
+    // SCRUM-253 · antes esto salía de `YAQU_LOCK_DUENO`, así que quien tomaba el turno a mano y
+    // no la exportaba se veía a sí mismo como AJENO y el rastro lo anotaba mal. Es el hueco que
+    // la sesión 4 dejó escrito aquí al lado, en SCRUM-260. Ahora la identidad se deriva.
+    dueñoPropio: dueñoActual(),
   });
   const decision = decidirBorrado({ estado, pisar: PISAR, dueñoTurno: lock?.dueño ?? null });
 

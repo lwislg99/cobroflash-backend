@@ -142,11 +142,32 @@ export function tieneSufijoIlegible(marca) {
 /**
  * Identificador de sesión. Legible por un humano a las once de la noche («¿quién es ese?»)
  * y dentro del charset del sufijo: cualquier otro carácter pasa a `-`.
- * Se reciben `host` y `pid` por argumento para que el módulo no importe `node:os`.
+ * Se reciben `host` y `sesion` por argumento para que el módulo no importe `node:os`.
+ *
+ * SCRUM-253 · el segundo componente ERA el PID, y ahí estaba el bug: el PID cambia entre los
+ * procesos de una misma sesión, así que una sesión no se reconocía a sí misma. QUÉ se pasa
+ * ahora lo decide `_identidad-sesion.mjs`, que es quien puede mirar el disco; aquí solo se
+ * compone y se limpia, que es la regla del marcador y vive con el marcador.
  */
-export function idDeSesion(host, pid) {
+export function idDeSesion(host, sesion) {
   const limpio = String(host || 'desconocido').replace(/[^A-Za-z0-9._-]/g, '-').slice(0, 48);
-  return `${limpio || 'desconocido'}.${pid}`;
+  const ses = String(sesion ?? '').replace(/[^A-Za-z0-9._-]/g, '-').slice(0, 24);
+  return `${limpio || 'desconocido'}.${ses || 'sin-sesion'}`;
+}
+
+/**
+ * SCRUM-253 · ¿este turno es MÍO? La PROPIEDAD del lock, que es una pregunta distinta de la
+ * CADUCIDAD que responde `decidirVigencia` (SCRUM-266). Existe como función y no como un
+ * `===` suelto por una razón medida: antes se contestaba en CUATRO sitios —el runner, el CLI,
+ * la barrera gateada y el rastro de limpieza— y tres de ellos la contestaban comparando contra
+ * `process.env.YAQU_LOCK_DUENO`, así que quien tomaba el turno a mano sin exportar esa variable
+ * **se veía a sí mismo como ajeno** (lo dejó anotado la sesión 4 en SCRUM-260).
+ *
+ * Sin lock no hay dueño, y por tanto no es de nadie: `false`, nunca `true` por defecto.
+ */
+export function esMiTurno(lock, dueño) {
+  if (!lock || !dueño) return false;
+  return lock.dueño === dueño;
 }
 
 /**
@@ -326,7 +347,16 @@ export async function adquirirLock(
     }
     const vigencia = decidirVigencia({ lock, contexto: contextoPrevio, ahoraMs, ttlSupuestoMs: ttlMs });
 
-    if (vigencia.vigente) {
+    // SCRUM-253 · LAS DOS PREGUNTAS, y hasta aquí solo se hacía una. `decidirVigencia` dice si el
+    // turno sigue VIVO; `esMiTurno` dice de QUIÉN es. Un turno vivo y MÍO no es un conflicto: es
+    // el mío, y bloquearme con él es lo que hacía que `turno:tomar` + tanda se diera `exit 5`
+    // contra sí misma.
+    //
+    // ⚠️ LA PUERTA AJENA NO SE TOCA: un lock vivo de OTRO dueño sigue rechazando exactamente
+    // igual. Esto abre una puerta hacia el turno propio, no hacia el de al lado — y el test tiene
+    // las dos caras porque sin la segunda la primera no prueba nada.
+    const mio = esMiTurno(lock, dueño);
+    if (vigencia.vigente && !mio) {
       return { ok: false, motivo: 'ocupado', db, lock, ahoraMs, ttlMs, contexto: contextoPrevio, vigencia };
     }
 
@@ -348,7 +378,15 @@ export async function adquirirLock(
 
     return {
       ok: true, db, marca: nueva, ahoraMs,
-      reclamado: Boolean(lock), lockPrevio: lock, sufijoIgnorado,
+      // SCRUM-253 · TRES desenlaces distintos, y ninguno es el otro:
+      //   libre     → ni reclamado ni adoptado
+      //   AJENO     → `reclamado` (estaba caducado y se le quitó a alguien)
+      //   PROPIO    → `adoptado`  (ya era mío y sigo)
+      // Antes `reclamado` era `Boolean(lock)` a secas, o sea que adoptar el turno propio se
+      // habría anunciado como «se lo he quitado a alguien». Un mensaje que confunde las dos
+      // cosas miente sobre lo que acaba de pasar, y este mecanismo se lee justo cuando hay
+      // dudas sobre quién está escribiendo en la base.
+      reclamado: Boolean(lock) && !mio, adoptado: mio, lockPrevio: lock, sufijoIgnorado,
       contexto, contextoEscrito: ctxRes.ok, contextoMotivo: ctxRes.motivo ?? null,
       // SCRUM-266 · con QUE se decidio reclamar: 'compromiso' (el dueno lo declaro) o
       // 'ttl-supuesto' (no habia compromiso y se supuso). `tomar` avisa en el segundo caso.

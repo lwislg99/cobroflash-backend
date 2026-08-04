@@ -40,9 +40,10 @@ import { spawnSync } from 'node:child_process';
 import { readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import os from 'node:os';
 import { PrismaClient } from '@prisma/client';
 import { assertSafeStagingUrl, STAGING_HOST } from './_db-guard.mjs';
+// SCRUM-253 · la identidad de la sesión, derivada del árbol de trabajo.
+import { dueñoActual } from './_identidad-sesion.mjs';
 // SCRUM-265 · los límites por hijo y la lectura del override, con su porqué medido y con red.
 import { LIGHT_MS, HEAVY_MS, VAR_OVERRIDE, resolverOverride } from './_timeouts-tanda.mjs';
 // SCRUM-182: la tanda dura ~31 min (SCRUM-265: MEDIDO en el recibo, no estimado) leyendo
@@ -60,7 +61,6 @@ import {
   adquirirLock,
   refrescarLock,
   soltarLock,
-  idDeSesion,
   ttlParaTanda,
   MARGEN_TTL_MS,   // SCRUM-249 · margen del compromiso, el mismo que usa el TTL
   formatearDuracion,
@@ -222,7 +222,11 @@ const OVERRIDE_MS = OVERRIDE.ms; // 0 = sin override
 // por una sesión muerta, el TTL lo libera solo; si hay prisa, `marcar-staging.mjs` lo limpia.
 const TIMEOUT_MAYOR_MS = Math.max(...hijos.map((h) => OVERRIDE_MS || (h.pesado ? HEAVY_MS : LIGHT_MS)));
 const TTL_MS = ttlParaTanda(TIMEOUT_MAYOR_MS);
-const DUENO = idDeSesion(os.hostname(), process.pid);
+// SCRUM-253 · la identidad sale de DÓNDE se trabaja, no del PID. Con el PID, este proceso y el
+// del `turno:tomar` que lo precede eran «dueños» distintos, así que el runner se daba `exit 5`
+// contra su propio turno. El porqué —y por qué no vale ni el host solo (SCRUM-258) ni una
+// variable de entorno— está en `_identidad-sesion.mjs`.
+const DUENO = dueñoActual();
 
 // SCRUM-232 · QUÉ va a correr, para que quien llegue no tenga que adivinarlo.
 //
@@ -303,7 +307,12 @@ let marcaPropia = null; // el marcador exacto que escribimos; sirve para no pisa
   // SCRUM-249: sin esta nota, una tanda que muere de forma anomala deja el turno secuestrado
   // hasta el TTL, porque la marca lleva el PID y nadie puede recomponerla.
   guardarNota({ marca: res.marca, db: res.db });
-  console.log(`🔒 turno de staging TOMADO en "${res.db}" por «${DUENO}» (caduca solo en ${formatearDuracion(TTL_MS)}).`);
+  // SCRUM-253 · ADOPTADO ≠ TOMADO ≠ RECLAMADO. Quien lee esta línea está intentando saber quién
+  // escribe en la base; la palabra tiene que decir la verdad de lo que acaba de pasar.
+  console.log(`🔒 turno de staging ${res.adoptado ? 'ADOPTADO' : 'TOMADO'} en "${res.db}" por «${DUENO}» (caduca solo en ${formatearDuracion(TTL_MS)}).`);
+  if (res.adoptado) {
+    console.log('   (ya era de esta sesión: lo tomaste con `turno:tomar` desde este mismo árbol. No se le ha quitado a nadie.)');
+  }
   if (res.reclamado) {
     console.log(`   (reclamado: lo tenía «${res.lockPrevio.dueño}» desde ${res.lockPrevio.desdeIso} y había caducado.)`);
   }
@@ -445,9 +454,12 @@ async function tanda() {
 
     const h = hijos[i];
     const env = { ...process.env };
-    // Los hijos leen la barrera de SCRUM-118 y avisarían de «turno ajeno» al ver el nuestro.
-    // Con esto saben que el dueño es su propio padre y se callan (SCRUM-188).
-    env.YAQU_LOCK_DUENO = DUENO;
+    // SCRUM-253 · aquí se exportaba `YAQU_LOCK_DUENO` para que los hijos no avisaran de «turno
+    // ajeno» al ver el del padre. Ya no hace falta: se lanzan SIN `cwd` propio, así que heredan
+    // el del padre y calculan la MISMA identidad ellos solos. Y quitarlo importa más de lo que
+    // parece — mientras esa variable existiera, la identidad se podía DECLARAR, y quien tomaba
+    // el turno a mano sin exportarla se veía a sí mismo como ajeno (el hueco que la sesión 4
+    // dejó anotado en SCRUM-260). Se deriva o no vale.
     for (const [k, v] of Object.entries(h.env)) {
       if (v === undefined) delete env[k];
       else env[k] = v;

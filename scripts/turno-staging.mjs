@@ -28,14 +28,13 @@
 //
 // Regla 9: no imprime NUNCA la URL. Solo el nombre de la base y el marcador.
 import 'dotenv/config';
-import os from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { PrismaClient } from '@prisma/client';
 import {
   adquirirLock, soltarLock, leerMarcaCruda, parsearLock, parsearContexto, leerComentarioSchema,
-  esMarcaDeStaging, tieneSufijoIlegible, idDeSesion, formatearDuracion,
+  esMarcaDeStaging, tieneSufijoIlegible, formatearDuracion,
   lineasDeContexto, decidirVigencia, TTL_POR_DEFECTO_MS, CODIGO_SALIDA_LOCK_AJENO,
 } from './_staging-lock.mjs';
 import { assertSafeStagingUrl, STAGING_HOST } from './_db-guard.mjs';
@@ -125,7 +124,10 @@ try {
   if (modo === 'tomar') {
     const minutos = Number(opcion('minutos')) > 0 ? Number(opcion('minutos')) : 15;
     const ref = opcion('ref') || ramaActual();
-    const dueño = idDeSesion(os.hostname(), process.pid);
+    // SCRUM-253 · la MISMA identidad que usa el runner, y por eso la tanda que lances después
+    // adopta este turno en vez de darse `exit 5` contra sí misma. Sale del árbol de trabajo: no
+    // hay nada que exportar ni copiar.
+    const dueño = dueñoActual();
     const r = await adquirirLock(cliente, {
       dueño, ttlMs: TTL_POR_DEFECTO_MS,
       tipo: 'suelto', ref, finPrevistoMs: Date.now() + minutos * 60 * 1000,
