@@ -81,6 +81,34 @@ function jobNextAction(job, isAdmin = true) {
   return null;
 }
 
+// ── SCRUM-257 · las líneas del presupuesto, convertidas en líneas de albarán ──────────────────
+//
+// SIN PRECIOS, y no es una preferencia estética: el albarán es COMPROBANTE DE ENTREGA (decisión
+// del fundador) y `validarLineas` RECHAZA una línea con precio o IVA en modo SIN_VALORAR. Colar
+// `price` aquí no daría un albarán con precios: daría un 400 al crear.
+//
+// SE COPIA UNA VEZ Y NO SE RE-SINCRONIZA NUNCA. El motivo no es la semántica de «foto»:
+// `computeAlbaranContentHash` sella estas líneas como el contenido FIRMADO por el cliente. Volver
+// a traerlas del presupuesto no actualizaría una vista — rompería la firma.
+//
+// Las que no pueden ser línea de albarán se DESCARTAN, porque `validarLineas` rechaza el LOTE
+// entero si una sola no vale: colarlas convertiría el prellenado en un error al crear. Quien
+// llama compara los dos tamaños para avisar — descartar en silencio en un documento que se firma
+// es lo que SCRUM-271 vino a cerrar.
+function lineasDeQuoteParaAlbaran(lines) {
+  if (!Array.isArray(lines)) return [];
+  const out = [];
+  for (const l of lines) {
+    const concepto = typeof l?.concept === 'string' ? l.concept.trim() : '';
+    const cantidad = Number(l?.qty);
+    if (!concepto || !(cantidad > 0)) continue;
+    // `unidad` no viene del presupuesto y el albarán la exige: 'ud' es común, neutro y editable
+    // por línea. Vacía dejaría un «—» en el papel que alguien lee en obra.
+    out.push({ concepto, cantidad, unidad: 'ud' });
+  }
+  return out;
+}
+
 async function renderJobDetailView(container, jobId) {
   container.innerHTML = '';
   const id = Number(jobId);
@@ -578,8 +606,41 @@ async function renderJobDetailView(container, jobId) {
     newAlbBtn.disabled = true;
     const modoValoracion = valoradoCheck.checked ? 'VALORADO' : 'SIN_VALORAR';
     try {
-      await apiRequest(`/admin/jobs/${job.id}/albaranes`, { method: 'POST', body: JSON.stringify({ modoValoracion }) });
-      showToast('✓ Albarán creado (borrador).');
+      // SCRUM-257 · el albarán nace PRELLENADO con lo presupuestado, para que el pro tache lo que
+      // no ha entregado en vez de teclear la lista entera desde la furgoneta.
+      //
+      // LAS LÍNEAS SE PIDEN AQUÍ y no vienen en el detalle del Trabajo: ese detalle se carga
+      // SIEMPRE, y estas líneas solo hacen falta al crear un albarán. El serializer manda
+      // `quote: {id, number, total…}` SIN `lines` —medido—, así que engordarlo habría hecho más
+      // pesada la carga de cada día por un botón que se pulsa a veces.
+      //
+      // ⚠️ SOLO en SIN_VALORAR. En VALORADO el backend EXIGE precio en todas las líneas
+      // (`validarLineas`) y las del presupuesto llegan sin él por decisión del fundador («sin los
+      // precios»): prellenar ahí daría un 400 al crear. Con precios se rellena a mano, como hoy.
+      let lineas = null;
+      let descartadas = 0;
+      if (modoValoracion === 'SIN_VALORAR' && job.quote?.id != null) {
+        // Si el presupuesto no se puede leer, se crea VACÍO como siempre: quedarse sin prellenado
+        // es un incordio; no poder crear el albarán estando en obra es un problema.
+        const q = await apiRequest(`/admin/quotes/${job.quote.id}`).catch(() => null);
+        if (q) {
+          const origen = Array.isArray(q.lines) ? q.lines : [];
+          lineas = lineasDeQuoteParaAlbaran(origen);
+          descartadas = origen.length - lineas.length;
+          if (!lineas.length) lineas = null; // nada aprovechable → exactamente como antes
+        }
+      }
+
+      const cuerpo = lineas ? { modoValoracion, lineas } : { modoValoracion };
+      await apiRequest(`/admin/jobs/${job.id}/albaranes`, { method: 'POST', body: JSON.stringify(cuerpo) });
+      // Avisar de las descartadas NO es cosmético: son líneas del presupuesto que el pro espera
+      // ver y no están. Callarlo sería omitir en silencio en un documento que se firma (SCRUM-271).
+      showToast(
+        lineas
+          ? `✓ Albarán creado con ${lineas.length} línea(s) del presupuesto.`
+            + (descartadas ? ` ${descartadas} sin cantidad no se han copiado.` : '')
+          : '✓ Albarán creado (borrador).',
+      );
       refresh();
     } catch (e) {
       setStatus('error', 'No se pudo crear el albarán: ' + (e?.data?.message || e.message));

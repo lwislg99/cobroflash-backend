@@ -478,6 +478,25 @@ router.post('/:id/albaranes', async (req, res) => {
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!job) return res.status(404).json({ error: 'not_found' });
 
+    // SCRUM-257 · UN ALBARÁN NACE DE UN PRESUPUESTO (decisión 1 del fundador, 2-ago-2026).
+    //
+    // El guard formaliza un invariante que YA se cumple de facto: la única vía de creación de
+    // `Job` en todo `src/` es `job.service.ts` al aceptar un presupuesto, y siempre fija
+    // `quoteId`. No hay endpoint de trabajo manual, así que hoy no rompe ningún camino
+    // alcanzable — lo que hace es cerrar la puerta antes de que alguien la abra sin mirar.
+    //
+    // Efecto lateral consciente y aceptado en el ticket: cierra el «trabajo manual» futuro que
+    // `Job.quoteId` nullable dejaba preparado. Es coherente con la decisión 1, no un descuido.
+    //
+    // El `message` va porque sin él el dashboard enseñaría el código crudo — `apiRequest` cae al
+    // identificador cuando no hay texto, que es el defecto que cerró SCRUM-275 en /login.html.
+    if (!job.quoteId) {
+      return res.status(409).json({
+        error: 'job_without_quote',
+        message: 'Este trabajo no tiene presupuesto; no se puede crear un albarán.',
+      });
+    }
+
     // SCRUM-65: modo de valoración al crear (default SIN_VALORAR = comportamiento de siempre).
     let modoValoracion: AlbaranModoValoracion = 'SIN_VALORAR';
     if (req.body?.modoValoracion !== undefined) {
