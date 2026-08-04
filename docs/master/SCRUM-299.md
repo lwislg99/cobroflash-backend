@@ -2,10 +2,11 @@
 
 **Fecha:** 4-ago-2026 · **Carril:** B (QA/guards) · **Gate:** sin gate, corre en `npm test`
 
-**Medido contra:** `origin/main` = `17289f59f73e041b8989bddd69868aca056eec17` · 2026-08-04T15:42:36+01:00
+**Medido contra:** `origin/main` = `d4bbea95d69802b5eabf9a020cbbd7e80f1a3ac3` · 2026-08-04T16:08:44+01:00
 
-> ⚠️ Esa hora es el **committer date del primer commit del trabajo** (`4d254a6`), no una lectura de
-> reloj — el ancla apunta al árbol contra el que se midió, igual que SCRUM-252/273 (R14).
+> ⚠️ Esa hora es el **committer date del primer commit del trabajo** (`8275da3`, el trinquete
+> bidireccional; el guard original se midió contra `17289f5`/`4d254a6` y ya está en `main`) — el
+> ancla apunta al árbol contra el que se midió, igual que SCRUM-252/273 (R14).
 
 ## El defecto que vigila
 
@@ -52,10 +53,21 @@ El discriminador **no mira la palabra**; mira si hay **señal de ENTREGA AL CLIE
    frontera de carpeta** (no por lista): «Facturas» ahí es del pro, no una promesa al cliente. Un
    test lo verifica.
 
-**BASELINE por FICHERO+CANTIDAD (no por línea — SCRUM-243):** `index.html = 3`. Son las tres promesas
-conocidas que corrige el fundador (regla 30). El guard cae si aparece una promesa en un fichero **no
-baselined** o si el conteo de uno baselined **sube**; **baja a 0** cuando se limpie el copy, y entonces
-exige CERO. Verde hoy y mergeable; caza cualquier promesa NUEVA desde ya.
+**BASELINE por FICHERO+CANTIDAD (no por línea — SCRUM-243), TRINQUETE BIDIRECCIONAL:**
+`index.html: { n: 3, limpiadoPor: null }` + una `DEUDA_ORIGINAL` inmutable. Cae en **los dos
+sentidos**: ⬆️ **SUBIÓ** (promesa en fichero no baselined o `detectado > n`) nombra la nueva; ⬇️
+**BAJÓ** (`detectado < n`: se limpió el copy y el baseline quedó viejo) obliga a bajar `n` **y** anotar
+en `limpiadoPor` el sha del commit que lo limpió; ✍️ bajar `n` por debajo de la deuda **sin**
+`limpiadoPor` también cae. **Por qué los dos:** un baseline que solo mira hacia arriba deja que la
+deuda baje **en silencio** —nadie se entera de que se arregló— y si sigue en 3 dentro de tres meses,
+LEGITIMA los tres textos que existía para matar. El «porqué» se anota **en el propio baseline**
+(campo `limpiadoPor`), no en un comentario suelto. **SUELO ANTES DE COMPARAR** (la mitad peligrosa):
+dos controles positivos —lector `presupuesto=34` y detector de una promesa canónica— corren **antes**
+de tocar el baseline; un conteo que baja a 0 con el detector roto es «no supe mirar», no «se limpió».
+**VERIFICADO EN ROJO LAS DOS DIRECCIONES:** inyectada una 4ª promesa (3→4) → ⬆️ nombrando `:585`;
+quitada una de las 3 (3→2) → ⬇️ «baja `n` y anota». Ambas revertidas con `git checkout`. **El texto de
+los 3 lo aplica el fundador en su commit (regla 30); esto vigila el cambio.** Ungated **1281 · 1214
+pass · 0 fail · 67 skip**.
 
 **COBERTURA (no es SCRUM-253):** el guard corre en `npm test` — suite **1276 · 1209 pass · 0 fail ·
 67 skip**; SCRUM-237 NINGUNO 0. No es un script suelto que nadie ejecuta.
