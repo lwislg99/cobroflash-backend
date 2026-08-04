@@ -270,3 +270,86 @@ corrida pasó.**
 - **Nadie lo dispara.** No hay ruta: eso es «la puerta», el paso 3. Es a conciencia, pero queda
   escrito para que no se lea como terminado — un mecanismo sin llamador es el patrón que este
   proyecto persigue.
+
+---
+
+# SCRUM-244 · punto 3: LA PUERTA — el profesional ejerce el derecho desde su cuenta
+
+**Fecha:** 4-ago-2026 · **Carril:** A · **Gate:** sin gate, corre en `npm test`
+
+> **Ancla (en prosa, no como campo).** Medido contra `origin/main` = `57f6380a467f53340ea36f25c38cfb2e579de20b` · 2026-08-04T12:58:18+02:00. En prosa por lo mismo que la sección anterior: el guard de SCRUM-267 juzga por FICHERO, así que un campo aquí sacaría todo el fichero del censo heredado.
+
+## Las tres piezas, unidas
+
+`GET /admin/exports/portabilidad.zip` — cobertura derivada + registro del derecho + entrega.
+Es el paso que convierte dos mecanismos sin llamador en un derecho ejercitable.
+
+## 🔴 Lo que este ticket NO ha hecho, y es la distinción que decide todo
+
+**Esta es la puerta de PORTABILIDAD (art. 15 y 20). NO es la de SUPRESIÓN (art. 17), que sigue
+bloqueada por dictamen.** Son dos derechos distintos y solo uno destruye el `AuditLog` fiscal: la
+portabilidad **solo lee**.
+
+Y no basta con decirlo en un comentario, porque el día que alguien «complete» esta ruta añadiéndole
+el borrado, **el diff se leería como una mejora** y el dictamen se habría saltado sin que nadie lo
+decidiera. Por eso hay un guard que **falla si esta ruta llega a contener una operación de
+borrado** — probado inyectando un `deleteMany` dentro.
+
+## El rol NO se relaja
+
+Decisión del fundador, con su motivo: el titular del derecho sobre los datos del **negocio** es el
+negocio, no cada miembro del equipo. Un técnico tiene derecho sobre **sus** datos personales —su
+nombre y su correo en `teamMembers`—, que es otra cosa y mucho más pequeña. Relajar un
+`requireRole` para resolver un caso que no es el que parece es cómo se abren los agujeros.
+
+La ruta hereda el `requireRole('admin')` del montaje, y hay un test que falla si ese montaje
+cambia.
+
+## El registro se escribe ANTES del primer byte
+
+Mismo criterio que `exportacion_fiscal` (SCRUM-221): registrar de más es infinitamente menos grave
+que registrar de menos. Si la descarga se corta a mitad, consta un ejercicio del derecho que quizá
+no llegó — preferible a no poder demostrar que se atendió. Hay un test que compara las posiciones
+en el AST y falla si el registro se cuela detrás de `archive.pipe`.
+
+**Las dos fechas coinciden aquí, y no es que sobre una:** en autoservicio el derecho se satisface
+en el acto, así que solicitud y atención son el mismo instante y `solicitudesPendientes` devuelve
+—correctamente— que no queda nada pendiente. Donde no coincidirán es en la supresión, que lleva
+revisión humana en medio (opción C MIXTA). El mismo registro sirve para las dos.
+
+## Microcopy: cero inventada (regla 30)
+
+La ruta responde con **códigos**, nunca con texto (`error: 'portabilidad_fallida'`), siguiendo
+SCRUM-151. El `LEEME.txt` del art. 15 viaja con `[PENDIENTE microcopy oficial]`, que es lo que el
+fundador autorizó: la pieza existe vacía para que ponerlo sea una línea el día que esté aprobado.
+
+**Lo que NO se ha hecho, y está esperando texto aprobado: el botón en Configuración.** Una etiqueta
+y su confirmación son microcopy, y adaptarlas de otro sitio ES escribirlas — la lección de
+SCRUM-264, donde el texto existente hablaba de importe y hacía falta para cantidad.
+
+## Un bug real que cazó el propio test
+
+`datasetACsv` unía las filas con `''`. `csvRow` devuelve la fila **sin terminador** —lo pone quien
+une, como en `sendCsv`— así que la cabecera quedaba **pegada a la primera fila** y el CSV entero
+salía en un renglón: `a;b;c;d1;;2026-08-04T…`. Un fichero que se abre, no da error y no significa
+nada. Corregido a `\r\n`, con un test que cuenta las líneas.
+
+El otro fallo de esa misma corrida era **mío en el test**: exigía el JSON sin escapar, cuando
+escaparlo es lo correcto. Se corrigió el assert, no el código.
+
+## Verificado en rojo, tres veces
+
+1. **Un `deleteMany` dentro de la puerta** → cae nombrándolo: la portabilidad se habría convertido
+   en supresión.
+2. **El registro detrás de `archive.pipe`** → cae por orden.
+3. **El registro desaparece** → cae nombrando la función que falta.
+
+Revertidas, verde después. **Suite ungated: 1222 tests, 0 fallos.**
+
+## Sigue fuera, y sigue escrito
+
+- **`Event` y `Reconciliation`**: pertenecen a un merchant sin tener su columna (cuelgan de
+  `Charge`), así que la derivación por `merchantId` no los ve — **por diseño**. Declarados en
+  `COLGADOS_DE_CHARGE`.
+- **Los adjuntos binarios**, que van como ficheros y no como filas de CSV.
+- **La ruta de supresión**, bloqueada por dictamen.
