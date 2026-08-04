@@ -39,11 +39,12 @@ export function censarAccionesFactura(codigo) {
   const dentro = (n) => n.getStart(sf) >= ini && n.getEnd() <= fin;
   const lineaDe = (n) => sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
 
-  const botones = new Map();   // var -> { id, linea }
-  const textoBtn = new Map();  // var -> primer texto asignado
-  const padreDe = new Map();   // hijoVar -> padreVar (de appendChild)
-  const condBtn = new Map();   // var -> [condiciones] (ifs que envuelven su appendChild)
-  const consts = new Map();    // nombre -> texto del inicializador (resuelve condiciones nombradas)
+  const botones = new Map();     // var -> { id, linea }
+  const textoBtn = new Map();    // var -> primer texto asignado
+  const padreDe = new Map();     // hijoVar -> padreVar (de appendChild)
+  const condBtn = new Map();     // var -> [condiciones] (ifs que envuelven su colocación)
+  const consts = new Map();      // nombre -> texto del inicializador (resuelve condiciones nombradas)
+  const colocadoPor = new Map(); // var -> 'ubicarAccion' | 'appendChild' (cómo llega a la pantalla)
 
   const esCreateButton = (init) =>
     init && ts.isCallExpression(init) && ts.isPropertyAccessExpression(init.expression)
@@ -83,6 +84,16 @@ export function censarAccionesFactura(codigo) {
         && n.arguments.length === 1 && ts.isIdentifier(n.arguments[0])) {
       const hijo = n.arguments[0].text;
       padreDe.set(hijo, n.expression.expression.text);
+      if (!colocadoPor.has(hijo)) { colocadoPor.set(hijo, 'appendChild'); condBtn.set(hijo, condicionesEnvolventes(n)); }
+    }
+
+    // ubicarAccion(btnX, 'id') — el patrón SCRUM-283 coloca desde el registro; equivale a "aparece
+    // en pantalla". La condición envolvente son los data-gates (chargeId/phone/…): el ESTADO ya no
+    // está en un if, vive en el registro.
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'ubicarAccion'
+        && n.arguments.length >= 1 && ts.isIdentifier(n.arguments[0])) {
+      const hijo = n.arguments[0].text;
+      colocadoPor.set(hijo, 'ubicarAccion');
       condBtn.set(hijo, condicionesEnvolventes(n));
     }
 
@@ -94,9 +105,11 @@ export function censarAccionesFactura(codigo) {
 
   const acciones = [], navegacion = [];
   for (const [v, info] of botones) {
-    if (!padreDe.has(v)) continue; // creado pero nunca appendeado: no está en pantalla
+    if (!colocadoPor.has(v)) continue; // ni ubicado por el registro ni appendeado: no está en pantalla
     const entrada = { id: v, linea: info.linea, texto: textoBtn.get(v) ?? '(sin texto)', condicion: resolver(condBtn.get(v) ?? []) };
-    (cadena(v).includes(CABECERA) ? navegacion : acciones).push(entrada);
+    // Navegación = appendeado a través de la cabecera (btnBack). Lo ubicado por el registro es acción.
+    const esNav = colocadoPor.get(v) === 'appendChild' && cadena(v).includes(CABECERA);
+    (esNav ? navegacion : acciones).push(entrada);
   }
   acciones.sort((a, b) => a.linea - b.linea);
   navegacion.sort((a, b) => a.linea - b.linea);

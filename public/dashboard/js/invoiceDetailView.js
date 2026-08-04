@@ -188,30 +188,56 @@ async function fetchInvoiceDetail(id) {
     dataSec.appendChild(dl);
     page.appendChild(dataSec);
 
-    // --- Sección: acciones ---
+    // --- Sección: acciones (SCRUM-283 · la LEY del patrón: 1 primaria + ≤2 secundarias + ⋮) ---
+    // Se PINTA desde el registro declarativo (invoiceActionsRegistry.js), la MISMA fuente que el
+    // guard verifica: nadie escribe la tabla dos veces. El estado decide el destino de cada acción;
+    // el rótulo es microcopy sin aprobar y sale con el marcador (regla 30). ANULAR no pasa por aquí:
+    // se queda en su propia sección, con su código y su rótulo intactos (excepción de la regla 5).
     const actionsSec = document.createElement('div');
     actionsSec.className = 'detail-section';
     actionsSec.innerHTML = '<h3 class="detail-section-title">Acciones</h3>';
     page.appendChild(actionsSec);
 
     const actions = document.createElement('div');
-    actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap';
+    actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center';
     actionsSec.appendChild(actions);
+
+    // pending · paid · annulled · R1 (Parte L). `expired` es un pending vencido → se trata como pending.
+    const estadoFactura = invoice.type === 'R1' ? 'R1'
+      : (st === 'annulled' ? 'annulled' : (st === 'paid' ? 'paid' : 'pending'));
+    const ctxAcciones = { hayCharge: !!invoice.chargeId };
+    const REGISTRO_ACC = (typeof window !== 'undefined' && window.INVOICE_ACTION_REGISTRY) || [];
+    const MARCA_MICRO = (typeof window !== 'undefined' && window.MICROCOPY_PENDIENTE) || '[PENDIENTE microcopy oficial]';
+    const cubosAcc = { primaria: [], secundaria: [], overflow: [] };
+
+    // Coloca un botón YA CREADO (con su handler intacto) según su destino en este estado. `oculta` no
+    // se pinta; `seccion-propia` (Anular) lo pinta su propio código. El rótulo lo pone cada botón al
+    // crearse, con el marcador (regla 30); el censo lo capta y el guard de microcopy lo verifica.
+    function ubicarAccion(btn, id) {
+      const a = REGISTRO_ACC.find((x) => x.id === id);
+      const destino = a && typeof window.destinoEfectivo === 'function'
+        ? window.destinoEfectivo(a, estadoFactura, ctxAcciones)
+        : 'oculta';
+      if (destino === 'oculta' || destino === 'seccion-propia') return;
+      btn.className = destino === 'primaria' ? 'btn-primary btn-sm'
+        : (destino === 'secundaria' ? 'btn-secondary btn-sm' : 'btn-ghost btn-sm');
+      cubosAcc[destino].push(btn);
+    }
 
     // Abrir PDF — siempre vía el endpoint que genera bajo demanda si falta
     // (nunca enlazar a invoice.pdfUrl directo, que puede valer 'PENDING_PDF').
     const btnPdf = document.createElement('button');
     btnPdf.className = 'btn-primary btn-sm';
-    btnPdf.textContent = 'Abrir PDF';
+    btnPdf.textContent = '[PENDIENTE microcopy oficial]';
     btnPdf.addEventListener('click', () => {
       window.open(`/admin/invoices/${invoice.id}/pdf`, '_blank');
     });
-    actions.appendChild(btnPdf);
+    ubicarAccion(btnPdf, 'btnPdf');
   
     // Reenviar por WhatsApp
     const btnWhatsApp = document.createElement('button');
     btnWhatsApp.className = 'btn-secondary btn-sm';
-    btnWhatsApp.textContent = 'Reenviar por WhatsApp';
+    btnWhatsApp.textContent = '[PENDIENTE microcopy oficial]';
   
     const canSendWhatsApp =
       invoice.customer && invoice.customer.phone;
@@ -278,8 +304,8 @@ async function fetchInvoiceDetail(id) {
       }
     });
   
-    // Una rectificativa no es cobrable: sin reenvío de cobro por WhatsApp
-    if (invoice.type !== 'R1') actions.appendChild(btnWhatsApp);
+    // La visibilidad por estado la decide el registro (secundaria en pending/paid; oculta en annulled/R1).
+    ubicarAccion(btnWhatsApp, 'btnWhatsApp');
 
     // Marcar como PAGADA / PENDIENTE
     // SCRUM-153: sobre una factura ANULADA este botón no se pinta. Antes salía «Marcar como
@@ -288,8 +314,7 @@ async function fetchInvoiceDetail(id) {
     // siempre falla es peor que no tenerlo: enseña que la pantalla miente.
     const btnTogglePaid = document.createElement('button');
     btnTogglePaid.className = 'btn-secondary btn-sm';
-    btnTogglePaid.textContent =
-      st === 'paid' ? 'Marcar como PENDIENTE' : 'Marcar como PAGADA';
+    btnTogglePaid.textContent = '[PENDIENTE microcopy oficial]';
 
     btnTogglePaid.addEventListener('click', async () => {
       const targetStatus = st === 'paid' ? 'pending' : 'paid';
@@ -358,32 +383,33 @@ async function fetchInvoiceDetail(id) {
       }
     });
   
-    // SCRUM-153: `st !== 'annulled'` — una anulada no cambia de estado (Parte L no declara
-    // ninguna transición que salga de `annulled`).
-    if (invoice.type !== 'R1' && st !== 'annulled') actions.appendChild(btnTogglePaid);
+    // La visibilidad por estado la decide el registro: primaria de pending (sin chargeId), «⋮» en
+    // paid (Marcar como PENDIENTE), oculta en annulled/R1 —SCRUM-153: una anulada no cambia de
+    // estado (Parte L no declara transición que salga de `annulled`)—.
+    ubicarAccion(btnTogglePaid, 'btnTogglePaid');
 
     // A21.1 (R14): paquete de evidencia de disputa en 1 clic — con cobro de
     // tarjeta (charge) siempre disponible; la firma digital gana disputas.
     if (invoice.chargeId) {
       const btnDispute = document.createElement('button');
       btnDispute.className = 'btn-secondary btn-sm';
-      btnDispute.textContent = '📎 Paquete de disputa';
+      btnDispute.textContent = '[PENDIENTE microcopy oficial]';
       btnDispute.title = 'Presupuesto firmado + evidencia de aceptación + justificante + registro de mensajes, listo para responder al banco';
       btnDispute.addEventListener('click', () => {
         window.open(`/admin/invoices/${invoice.id}/dispute-package`, '_blank');
       });
-      actions.appendChild(btnDispute);
+      ubicarAccion(btnDispute, 'btnDispute');
     }
 
     // C1-4: "Confirmar Bizum recibido" (N5) con DOBLE toque — el 1er clic pide
     // confirmación explícita con el importe, el 2º ejecuta. Dispara la misma
     // cadena post-pago que un PSP (paid_via='bizum_manual').
-    if (st === 'pending' && invoice.chargeId && invoice.type !== 'R1') {
+    if (invoice.chargeId) { // dato: hay cobro en vuelo. El estado (primaria de pending) lo decide el registro.
       const amountTxt = fmtMoneyEs(invoice.total, invoice.currency || 'EUR');
       const custName = (invoice.customer && invoice.customer.name) || 'el cliente';
       const btnBizum = document.createElement('button');
       btnBizum.className = 'btn-secondary btn-sm';
-      btnBizum.textContent = '📲 Confirmar Bizum recibido';
+      btnBizum.textContent = '[PENDIENTE microcopy oficial]';
       let armed = false;
       btnBizum.addEventListener('click', async () => {
         if (!armed) {
@@ -417,14 +443,14 @@ async function fetchInvoiceDetail(id) {
           btnBizum.textContent = '📲 Confirmar Bizum recibido';
         }
       });
-      actions.appendChild(btnBizum);
+      ubicarAccion(btnBizum, 'btnBizum');
     }
 
-    // Botón Recordar pago (solo visible si la factura está pendiente y el cliente tiene teléfono)
-    if (st === 'pending' && invoice.customer?.phone) {
+    // Recordar pago: el estado (solo pending) lo decide el registro; aquí queda el dato (teléfono).
+    if (invoice.customer?.phone) {
       const btnReminder = document.createElement('button');
       btnReminder.className = 'btn-secondary btn-sm';
-      btnReminder.innerHTML = '💬 Recordar pago';
+      btnReminder.textContent = '[PENDIENTE microcopy oficial]';
       btnReminder.title = 'Envía un WhatsApp recordatorio al cliente';
       btnReminder.addEventListener('click', async () => {
         btnReminder.disabled = true;
@@ -452,15 +478,16 @@ async function fetchInvoiceDetail(id) {
           btnReminder.textContent = '💬 Recordar pago';
         }
       });
-      actions.appendChild(btnReminder);
+      ubicarAccion(btnReminder, 'btnReminder');
     }
 
-    // Botón Rectificar (solo facturas F1 sin rectificativa previa)
+    // Rectificar: el estado (pending/paid; NO en annulled por SCRUM-308, NO en R1) lo decide el
+    // registro; aquí queda el dato (que no tenga ya una rectificativa).
     const alreadyRectified = invoice.rectifiedBy && invoice.rectifiedBy.length > 0;
-    if (invoice.type !== 'R1' && !alreadyRectified) {
+    if (!alreadyRectified) {
       const btnRectify = document.createElement('button');
       btnRectify.className = 'btn-danger btn-sm';
-      btnRectify.textContent = '⎌ Rectificar factura';
+      btnRectify.textContent = '[PENDIENTE microcopy oficial]';
       btnRectify.title = 'Emite una factura rectificativa (R1) con los importes en negativo';
       btnRectify.addEventListener('click', async () => {
         const ok = window.confirm(
@@ -487,7 +514,7 @@ async function fetchInvoiceDetail(id) {
           btnRectify.textContent = '⎌ Rectificar factura';
         }
       });
-      actions.appendChild(btnRectify);
+      ubicarAccion(btnRectify, 'btnRectify');
     }
 
     // ── SCRUM-153 (c) · ANULAR — EN BLOQUE APARTE, NO JUNTO A RECTIFICAR ──────────────
@@ -550,7 +577,7 @@ async function fetchInvoiceDetail(id) {
     // Botón Regenerar PDF (con VeriFactu si aplica)
     const btnRegen = document.createElement('button');
     btnRegen.className = 'btn-ghost btn-sm';
-    btnRegen.textContent = invoice.vfHash ? '↻ Regenerar PDF' : '↻ Regenerar PDF (VeriFactu)';
+    btnRegen.textContent = '[PENDIENTE microcopy oficial]';
     btnRegen.title = 'Regenera el PDF aplicando VeriFactu si el merchant tiene NIF configurado';
     btnRegen.addEventListener('click', async () => {
       btnRegen.disabled = true;
@@ -568,7 +595,17 @@ async function fetchInvoiceDetail(id) {
       btnRegen.disabled = false;
       btnRegen.textContent = '↻ Regenerar PDF';
     });
-    actions.appendChild(btnRegen);
+    ubicarAccion(btnRegen, 'btnRegen');
+
+    // Ensamblar la barra en orden: primaria (regla 1) · secundarias (regla 2) · «⋮» (regla 3). El
+    // «⋮» reutiliza overflowMenu de AB3 (a11y, teclado, hoja inferior ≤640px). Si no está cargado,
+    // las acciones del overflow se pintan sueltas: perder el menú no puede costar una acción (SCRUM-31).
+    cubosAcc.primaria.forEach((b) => actions.appendChild(b));
+    cubosAcc.secundaria.forEach((b) => actions.appendChild(b));
+    if (cubosAcc.overflow.length) {
+      if (typeof window.overflowMenu === 'function') actions.appendChild(window.overflowMenu(cubosAcc.overflow));
+      else cubosAcc.overflow.forEach((b) => actions.appendChild(b));
+    }
   }
 
   // ── SCRUM-153 (c) · MODAL DE ANULACIÓN ───────────────────────────────────────────────
