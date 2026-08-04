@@ -4,26 +4,35 @@
 // BORRAR UN MERCHANT SIN DEJAR HUÉRFANOS. Opción B (decisión del fundador): servicio
 // explícito, SIN migración de FK.
 //
-// EL DATO QUE LO MOTIVA, medido contra `schema.prisma` y no supuesto: de los 21 modelos con
-// columna `merchantId`, **NINGUNO declara FK con `onDelete`**. Cero. La base de datos no puede
-// cascadear ni protestar: un `prisma.merchant.delete()` sale con **exit 0** y deja el rastro
-// entero repartido en 21 tablas. Hoy no duele porque ninguna ruta borra merchants; el día que
-// exista «dar de baja mi cuenta» (RGPD art. 17), **un borrado parcial de datos personales es
-// peor que no borrarlos: creerías haber cumplido.**
+// EL DATO QUE LO MOTIVA vive en UN SOLO SITIO: **`docs/CENSO_FK_MERCHANT.md`** (censo de
+// SCRUM-192, medido contra la BD con dos catálogos independientes). Aquí no se repite, y la
+// razón es este mismo comentario: enunció los números por su cuenta, se quedó desfasado cuando
+// se corrigió la medición, y durante días mandó a quien lo leyera a razonar sobre un modelo de
+// fallo que no existe. Tres copias, una corregida. Si el dato cambia, cambia allí y solo allí.
+//
+// EL MODELO DE FALLO, en una frase: **la red de FK no es uniforme**, así que borrar en mal orden
+// revienta RUIDOSO en unas tablas y deja huérfanos MUDOS en otras — y lo ruidoso salta al final,
+// cuando el daño mudo ya está hecho.
+//
+// Hoy no duele porque ninguna ruta borra merchants; el día que exista «dar de baja mi cuenta»
+// (RGPD art. 17), **un borrado parcial de datos personales es peor que no borrarlos: creerías
+// haber cumplido.**
 //
 // 🔑 POR QUÉ EL ORDEN SE DECLARA A MANO Y NO SE DERIVA DEL SCHEMA
 //
 // Es la trampa de este ticket y merece decirse entera. `MODELOS_POR_MERCHANT` **no es un
-// conjunto: es una SECUENCIA de dependencias**, mantenida a mano precisamente porque no hay FK
-// que la imponga. Su primera entrada existe por un motivo concreto (SCRUM-170): el libro de
+// conjunto: es una SECUENCIA de dependencias**, mantenida a mano porque **ninguna FK impone el
+// orden ENTRE hijos**: las que hay solo obligan a que el merchant caiga el último, y de la
+// secuencia interna no dicen nada. Su primera entrada existe por un motivo concreto (SCRUM-170): el libro de
 // líneas facturadas cuelga de albarán y de factura, y si no se barre ANTES que ellos quedan
 // filas huérfanas que nadie ve fallar.
 //
 // Un detector derivado del schema devuelve los modelos en **orden de declaración**, que no
 // guarda ninguna relación con el orden seguro de borrado. Si el servicio borrase en ese orden,
-// en el mejor caso fallaría; en el peor —y es este, porque no hay FK— **borraría el padre
-// primero y dejaría los hijos huérfanos sin que nada protestase.** Exactamente el fallo que
-// este fichero viene a cerrar.
+// el peor caso sigue siendo el mismo —**dejar hijos huérfanos sin que nada protestase**— pero el
+// motivo NO es que falte la red entera: es que **falta a trozos**, y justo en las tablas donde
+// vive el trabajo y sus documentos. En las que sí tienen red el borrado revienta a mitad, y ese
+// estruendo tapa que las mudas ya se quedaron atrás. Exactamente el fallo que este fichero cierra.
 //
 // Por eso se hacen LAS DOS COSAS, que es lo que da la garantía sin copiar la lista:
 //   · la **COBERTURA** se deriva del schema (guard de SCRUM-172: no se puede olvidar un modelo);
