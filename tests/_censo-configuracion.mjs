@@ -9,7 +9,7 @@
 // Una lista escrita a mano no avisa de lo que le falta. El ticket trae una —doce asuntos— y
 // **no se usa como censo**: se usa como CONTRASTE. Lo que enumera esta función sale del árbol.
 //
-// ── LAS TRES FORMAS DE DECLARAR UN CAMPO EN ESA PANTALLA, medidas ─────────────
+// ── LAS CUATRO FORMAS DE DECLARAR UN CAMPO EN ESA PANTALLA, medidas ──────────
 //   1. `createField(etiqueta, clave, tipo, obligatorio)` — el formulario principal. La `clave`
 //      es literalmente `input.name`, o sea la columna de `Merchant` que se persiste.
 //   2. `document.createElement("select")` + `.name = "…"` — el selector de país, que no pasa
@@ -17,8 +17,8 @@
 //   3. Campos escritos como HTML dentro de plantillas (`<input id="…">`, `<select id="…">`)
 //      — página pública, color de marca, invita y gana, opciones del QR.
 //
-// Si mañana aparece una CUARTA forma, este censo no la verá: por eso el suelo (abajo) exige
-// encontrar de las tres, y por eso el contraste con la lista del ticket se reporta en vez de
+// Si mañana aparece una QUINTA forma, este censo no la verá: por eso el suelo (abajo) exige
+// encontrar de las cuatro, y por eso el contraste con la lista del ticket se reporta en vez de
 // silenciarse.
 import ts from 'typescript';
 
