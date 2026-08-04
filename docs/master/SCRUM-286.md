@@ -2,6 +2,7 @@
 
 **Fecha:** 4-ago-2026 · **Carril:** B (tooling) · **Gate:** sin gate, corre en `npm test`
 **Medido contra:** `origin/main` = `eebc191dc75da0040f4934ccd8b92cc857726832` · 2026-08-04T16:03:42+01:00
+**Tanda:** 1302 tests, 1235 pass, 0 fail, 67 skipped (`npm test` con exit **0**)
 **Ficheros:** `tests/_censo-nuevo-presupuesto.mjs`, `tests/scrum286-censo-nuevo-presupuesto.test.mjs` (6)
 
 > **ALCANCE:** solo el **censo**. No reordena ni un bloque — la construcción espera a B2 (estilo de
