@@ -439,12 +439,31 @@ export async function refrescarLock(cliente, { marcaPropia, dueño, señalAntesD
  * reproducir el problema. Es best-effort por diseño — el mecanismo que de verdad garantiza
  * que el turno se libera es el TTL, no esta llamada.
  */
-export async function soltarLock(cliente, { marcaPropia }) {
+export async function soltarLock(cliente, { marcaPropia, dueño = null }) {
   return enSeccionCritica(cliente, async (tx) => {
     const { db, marca } = await leerMarcaCruda(tx);
     if (marca !== marcaPropia) {
-      return { ok: true, soltado: false, db, marcaActual: marca };
+      return { ok: true, soltado: false, motivo: 'no-es-la-mia', db, marcaActual: marca };
     }
+
+    // SCRUM-258 · Y DE QUIÉN ES. Hasta aquí soltar comparaba SOLO la cadena del marcador: quien
+    // llegara con la marca correcta soltaba el turno, fuera suyo o no. Eso convertía un fichero
+    // temporal compartido por toda la máquina en un camino para soltarle el turno a otra sesión
+    // mientras su tanda escribía (el porqué entero, en `_turno-nota.mjs`), y el `--marca` que la
+    // ayuda documenta hace lo mismo con un copia-y-pega.
+    //
+    // La cabecera de `turno-staging.mjs` YA prometía «NO rompe locks ajenos». Esto no es política
+    // nueva: es esa promesa, comprobada. Quien sí puede romper un lock ajeno es
+    // `marcar-staging.mjs`, el único con esa responsabilidad y que se usa sabiendo lo que hace.
+    //
+    // `dueño` es opcional para no romper a quien llame sin él: sin dueño no hay nada que
+    // comprobar y queda el comportamiento anterior. Que los llamadores de esta casa no se lo
+    // dejen es cosa del guard de SCRUM-258.
+    const lock = parsearLock(marca);
+    if (dueño && lock && !esMiTurno(lock, dueño)) {
+      return { ok: true, soltado: false, motivo: 'ajeno', db, marcaActual: marca, lock };
+    }
+
     await escribirMarca(tx, MARCADOR);
     // SCRUM-232 · al soltar se retira el contexto y se restaura lo que hubiera delante en el
     // comentario del schema. Best-effort, igual que al tomarlo: un contexto huérfano ya se
