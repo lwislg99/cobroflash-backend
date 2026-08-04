@@ -170,3 +170,103 @@ proyecto persigue. Queda escrito para que no se lea como terminado.
 
 Y **la ruta de supresión sigue sin mergearse**: hoy ejecutarla destruiría el `AuditLog` fiscal.
 Registro sí, ejecución no, hasta el dictamen.
+
+---
+
+# SCRUM-244 · punto 2: LA COBERTURA — «dame TODO lo mío», derivado y no enumerado
+
+**Fecha:** 4-ago-2026 · **Carril:** A · **Gate:** sin gate, corre en `npm test`
+
+> **Ancla (en prosa, no como campo).** Medido contra `origin/main` = `24e0e4f336119797cc40e45f29fadc34d399352a` · 2026-08-04T11:15:46+02:00. Va en prosa **porque el guard de SCRUM-267 juzga por FICHERO y no por sección** — `entradas()` devuelve un objeto por fichero y `motivoSinAncla` corre sobre el texto entero, así que un campo `Medido contra:` aquí marcaría todo el fichero como anclado y lo sacaría del censo heredado. Medido, no supuesto.
+
+## El «todo» no se escribe a mano, y esa es toda la diferencia
+
+`/admin/exports/datos.zip` contesta **«dame mi actividad»**: seis datasets elegidos porque son
+los que un profesional mira. Está bien y no se toca. Esto contesta otra pregunta — **«dame TODO
+lo mío»** (art. 15 y 20) — y ahí una lista enumerada deja de ser una decisión de producto y pasa
+a ser un **defecto**: envejece el día que alguien declara un modelo, y nadie se entera de que el
+«todo» dejó de serlo.
+
+El dato del repo, y ya van dos de dos: las listas de modelos **con** guard
+(`MODELOS_POR_MERCHANT`, `ORDEN_BORRADO_MERCHANT`) están completas; las dos **sin** guard
+(`wipeDemo`, el `TABLES` del backup) han derivado las dos.
+
+Por eso aquí **no hay ninguna lista de modelos**. `modelosDelMerchant()` los deriva de
+`Prisma.dmmf` —el schema compilado dentro del cliente generado, la misma fuente de la que ya
+derivan SCRUM-192 y SCRUM-222— y un modelo nuevo con `merchantId` aparece **solo**.
+
+## La trampa de los nombres físicos, medida antes de escribir nada
+
+Se deriva por el **nombre del CAMPO** (`merchantId`), nunca por el de la columna. Medido contra
+el DMMF: de los **21** modelos con `merchantId`, **19** mapean a `merchant_id` y **DOS no** —
+`Quote` e `Invoice` guardan la columna en **camelCase** (`invoices.merchantId`).
+
+Es la trampa que ya costó el backfill de SCRUM-205, y el rojo la enseña exacta: al derivar por
+columna la lista **baja de 21 a 19 y desaparecen `Quote` e `Invoice`**. Un export de
+portabilidad sin las facturas ni los presupuestos, sin un solo aviso.
+
+Como el filtro va por Prisma (`findMany({ where: { merchantId } })`), el nombre físico no entra
+en juego en ningún punto del módulo. Y si algún día hiciera falta, sale del DMMF
+(`dbName ?? name`), jamás de una convención.
+
+## Dos derivaciones independientes, atadas por el guard
+
+| camino | fuente |
+|---|---|
+| producción | `Prisma.dmmf` (el schema compilado en el cliente) |
+| guard | `modelosConTenancy(schema.prisma)` — la derivación que YA usan SCRUM-172 y 192 |
+
+El guard exige que **coincidan**. Si divergen, algo está desincronizado —el cliente sin
+regenerar es el caso típico— y este export estaría prometiendo «todo» sobre una lista que no es
+la del schema. **No se ha escrito un tercer derivador**: reusar el existente es lo que impide
+repetir el defecto que cerró SCRUM-240 (dos generadores capaces de calcular cosas distintas).
+
+## Lo que queda fuera va DECLARADO, con su motivo
+
+- **`authSession`** — tokens de sesión vivos. Exportarlos es meter credenciales operativas en un
+  ZIP que viaja por correo: quien lo interceptara entraría en la cuenta. No son datos del
+  interesado en ningún sentido útil; son la llave, no el contenido.
+- **`auditLog`** — rastro fiscal, **bloqueado por dictamen** (punto 1b). Sacarlo ahora no
+  prejuzga esa decisión; meterlo sí.
+
+Y el guard comprueba las dos direcciones: que no haya modelos sin cubrir **ni declarar**, y que
+cada exclusión siga correspondiendo a un modelo que existe — una exclusión huérfana confunde a
+quien la lea.
+
+## El suelo, que es la mitad del valor
+
+Con el DMMF vacío —import roto, cliente sin generar— la derivación daría **cero** modelos y el
+paquete saldría **vacío y verde**: un ZIP con un `LEEME` dentro, entregado como «todos tus
+datos». Eso es peor que un error, porque nadie lo revisa. `comprobarDerivacion` exige un mínimo
+de 15 y `construirPaquete` **lanza** en vez de entregar a medias.
+
+El mínimo no se fija en 21 a propósito: un exacto obligaría a tocar este guard en cada PR que
+añada un modelo, y un guard que estorba se acaba desactivando.
+
+## Verificado en rojo, tres veces, cada una en un mecanismo distinto
+
+1. **Derivar por la columna** en vez de por el campo → caen dos tests, y el mensaje enseña la
+   lista de 19 sin `Quote` ni `Invoice`.
+2. **El suelo a 0** → un datamodel vacío pasa por bueno, y el test lo caza.
+3. **Un modelo se cae del paquete sin declararlo fuera** (`albaran`) → cae nombrándolo.
+
+Las tres revertidas y verde comprobado después. Las inyecciones fueron en `dist`: `src` limpio.
+**Suite ungated: 1196 tests, 0 fallos.**
+
+## ⚠️ Un verde falso que casi cuela, y queda escrito
+
+La primera vez los 12 tests salieron **verdes con el build ROTO** (`TS2353`): `node --test` corrió
+contra un `dist` anterior. El verde no era del código que acababa de escribir. Se vio porque el
+`tail` del build estaba en la misma salida — si hubiera mirado solo la línea de `pass`, habría
+dado por bueno un módulo que no compilaba. **Un test verde solo vale si el build de esa misma
+corrida pasó.**
+
+## Lo que NO entra todavía, dicho aquí y no en una nota al pie
+
+- **`Event` y `Reconciliation`** pertenecen a un merchant SIN tener su columna (cuelgan de
+  `Charge`), así que la derivación por `merchantId` no los ve — por diseño. Están declarados en
+  `COLGADOS_DE_CHARGE` y entran en el paso siguiente, junto con los **adjuntos binarios**, que no
+  son filas de CSV.
+- **Nadie lo dispara.** No hay ruta: eso es «la puerta», el paso 3. Es a conciencia, pero queda
+  escrito para que no se lea como terminado — un mecanismo sin llamador es el patrón que este
+  proyecto persigue.
