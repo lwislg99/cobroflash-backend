@@ -1,8 +1,8 @@
 # SCRUM-284 · B1 — censo derivado de los campos de Configuración
 
 **Fecha:** 4-ago-2026 · **Carril:** B (tooling) · **Gate:** sin gate, corre en `npm test`
-**Medido contra:** `origin/main` = `17289f59f73e041b8989bddd69868aca056eec17`
-**Tanda:** 1280 tests, 1213 pass, 0 fail, 67 skipped (`npm test` con exit **0**)
+**Medido contra:** `origin/main` = `17289f59f73e041b8989bddd69868aca056eec17` · 2026-08-04T15:20:57+01:00
+**Tanda:** 1287 tests, 1220 pass, 0 fail, 67 skipped (`npm test` con exit **0**)
 **Ficheros:** `tests/_censo-configuracion.mjs`, `tests/scrum284-censo-configuracion.test.mjs` (8)
 
 > **ALCANCE:** solo el **censo**. No toca la sidebar, no mueve ni un campo, no renombra nada y
@@ -82,3 +82,44 @@ Commiteado **antes** de inyectar. Árbol restaurado y verificado.
 - El censo enumera **controles de la pantalla**, no columnas persistidas: `qr-*` y `ref-link` son
   controles de interfaz, no ajustes que se guarden. La distinción la decide la asignación, que no
   es de esta tarea.
+
+---
+
+## Asignación a submenús (segunda entrega de B1)
+
+**19 asignados · 6 pendientes de decisión · 0 sin sitio.**
+
+El censo dice QUÉ hay; la asignación dice DÓNDE va. `tests/scrum284-asignacion-submenus.test.mjs`
+falla si un campo no está ni asignado ni declarado pendiente: el fallo mudo del ticket convertido
+en fallo ruidoso.
+
+**Los pendientes no se asignaron por cuenta propia** — la asignación es del fundador. Van
+declarados **con su motivo por campo**, porque una excepción sin motivo se hereda para siempre. Y
+van como *pendientes* y no como rojo a propósito: un guard en rojo permanente esperando una
+decisión se acaba desactivando.
+
+**Microcopy sin aprobar (regla 30):** solo hay claves internas; todo rótulo pasa por `PENDIENTE()`
+y un guard comprueba que ninguna clave parezca microcopy (mayúsculas, acentos o espacios).
+
+**Control cruzado, aplicando la lección del censo:** la lista de asuntos del ticket vive en el
+fichero tal cual y un test **reporta** la diferencia. Reporta y no bloquea.
+
+### 🔀 Diferencia encontrada al contrastar
+
+El ticket habla de **nueve submenús** pero enumera **doce asuntos**. La asignación usa **once**
+claves internas. La reconciliación doce → nueve **es una decisión del fundador**, no una que se
+pueda derivar: agrupar «fiscales» con «dirección», o «moneda» con «prefijo de factura», cambia
+dónde busca la gente su ajuste.
+
+### Lo que NO se construyó, y por qué
+
+**La sidebar y los nueve submenús no están construidos.** `CLAUDE.md` marca `yaqu-premium-ui` como
+obligatoria antes de tocar UI (DESIGN.md + Parte AB + checklist AB6), y esta sesión no tenía margen
+para hacerle justicia a esa mitad además del mecanismo. Media sidebar entregada sería el «menú que
+lleva a una página vacía» que el fundador acaba de vetar. Queda para una pasada propia.
+
+### Corrección propia
+
+La primera versión de esta entrada declaraba el sha **sin la hora**, y el guard de **SCRUM-267** la
+tumbó en la suite completa (`falta la HORA (la fecha sola no dice si caducó)`). Mis siete tests
+pasaban aislados: lo cazó correr la suite entera, que es exactamente para lo que se corre entera.
