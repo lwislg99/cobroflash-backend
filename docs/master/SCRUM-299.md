@@ -86,16 +86,23 @@ anotar). Verificado al revés: revertir un texto sube a 1 y ⬆️ cae. **La deu
 guard obligó a registrar el arreglo — la prueba de que el trinquete funciona.** `:317`/`:7`/`:37` NO se
 tocaron (categoría de producto, ciertas).
 
-🔴 **El guion H2 (`:498`) NO se aplicó — PARADO a propósito.** Al compararlo con el guion oficial
-(`docs/YAQU_MASTER.md:214`, regla 26) falta MÁS que la frase transcrita: (a) una CUARTA frase entera
-«Si quieres, le paso a tu gestor el detalle técnico cuando lo publique»; (b) «Te contesto» (oficial)
-vs «Te contestamos» (`:498`). El límite del fundador era «si falta alguna otra parte que no
-transcribisteis, PARAD; no lo completéis de memoria». Reportado para su decisión.
+**El guion H2 (`:498`) — restituido ÍNTEGRO por decisión del fundador (commit `dca4289`).** Se PARÓ
+primero al ver que `:498` divergía del guion oficial (`docs/YAQU_MASTER.md:214`, regla 26) en más que
+la frase transcrita; el fundador decidió restituirlo entero (la regla 26 exige el guion COMPLETO —
+un guion a medias es una violación vigente, no una decisión pendiente). Transcrito carácter a carácter
+desde la fuente (`master:214`), **bloque entero**: «Te contesto» (no «contestamos») · restituida «Por
+ley no puedo activarla hasta cerrarla; por eso la beta es de presupuestos y cobros.» · restituida la
+4ª frase «Si quieres, le paso a tu gestor el detalle técnico cuando lo publique.» · se mantiene «Los
+primeros usuarios la estrenarán» (alteración aprobada `founding`→`primeros usuarios`). Comparado
+carácter a carácter con el oficial: **sin tercera diferencia** (el tramo «la facturación VeriFactu…
+te pedirá» es idéntico). El H2 no es promesa de «factura» → el guard sigue en 0.
+
+**SCRUM-299 queda cerrado ENTERO:** defecto medido, guard construido, trinquete bidireccional que
+impide la recaída en los dos sentidos, y los cinco textos aprobados aplicados (4 de copy + el guion H2).
 
 ## Fuera de alcance (no tocado)
-El guion H2 completo (`:498`, regla 26 — reportado arriba para decisión del fundador), los tres textos
-de categoría (`:317`/`:7`/`:37`), el camino de emisión / el flag / `allocateInvoiceNumber` (regla 38),
-y el rediseño de la landing (F1).
+Los tres textos de categoría (`:317`/`:7`/`:37`, ciertas), el camino de emisión / el flag /
+`allocateInvoiceNumber` (regla 38), y el rediseño de la landing (F1).
 
 ## Ficheros
 - `tests/_copy-publico.mjs` — censo derivado + `promesasDeFactura` (discriminador A/B declarado)
