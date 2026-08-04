@@ -63,8 +63,11 @@ import { assertSafeStagingUrl } from '../scripts/_db-guard.mjs';
 // se lee aparte y solo para AVISAR. El detalle de por qué son dos funciones, en el módulo.
 import {
   esMarcaDeStaging, parsearLock, parsearContexto, leerComentarioSchema,
-  decidirVigencia, formatearDuracion,
+  decidirVigencia, esMiTurno, formatearDuracion,
 } from '../scripts/_staging-lock.mjs';
+// SCRUM-253 · quién soy yo, derivado del árbol de trabajo. Los hijos de una tanda heredan el
+// `cwd` del padre, así que calculan lo mismo que él sin que nadie exporte nada.
+import { dueñoActual } from '../scripts/_identidad-sesion.mjs';
 
 const GATES = ['QA_DB_TEST', 'A55_DB_TEST', 'BOT_SUITE_TEST'];
 const gate = GATES.find((g) => process.env[g] === '1');
@@ -175,9 +178,16 @@ if (gate) {
   //
   // `decidirVigencia` compara contra el compromiso que el dueño PUBLICÓ (SCRUM-249); el TTL solo
   // decide cuando no hay compromiso, que es el peor caso y no el normal.
+  //
+  // SCRUM-253 · y de QUIÉN es, que es la OTRA pregunta. Antes se comparaba contra
+  // `process.env.YAQU_LOCK_DUENO`, que solo existía porque el runner se la exportaba a sus
+  // hijos: o sea que este aviso únicamente sabía callarse cuando el turno venía de una tanda.
+  // Quien lo tomaba A MANO con `turno:tomar` y lanzaba luego un gateado suelto **se avisaba a
+  // sí mismo de su propio turno** — ruido justo en el sitio donde el ruido acaba ignorándose, y
+  // el aviso deja de servir para el caso que importa. Ahora la identidad se deriva del árbol.
   const lockVivo = parsearLock(marca);
   const vigencia = decidirVigencia({ lock: lockVivo, contexto: contextoTurno, ahoraMs });
-  if (vigencia.vigente && lockVivo.dueño !== process.env.YAQU_LOCK_DUENO) {
+  if (vigencia.vigente && !esMiTurno(lockVivo, dueñoActual())) {
     console.warn(
       `\n⚠️  SCRUM-188: el turno de staging lo tiene «${lockVivo.dueño}» desde ${lockVivo.desdeIso} ` +
       `(hace ${formatearDuracion(ahoraMs - lockVivo.desdeMs)}).\n` +

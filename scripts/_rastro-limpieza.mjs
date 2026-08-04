@@ -119,19 +119,24 @@ export function mensajeAviso({ dueñoTurno, merchantsVivos }) {
  * mezclaría dos cosas que no tienen nada que ver. El nombre dice QUÉ se pisa, que además es lo
  * que uno quiere leer en el historial de la terminal seis meses después.
  */
+// SCRUM-253 · la respuesta única a «ies mío?». Se importa del módulo del turno (que no importa
+// nada) para no reimplementar aquí la comparación: dos implementaciones de la misma pregunta se
+// separan sin avisar.
+import { esMiTurno } from './_staging-lock.mjs';
+
 export const BANDERA_PISAR = '--pisar-turno-ajeno';
 
 /**
  * Estado del turno frente a ESTA limpieza. Puro: recibe lo ya leído, no toca la BD.
  *
- * `propio` se decide por `YAQU_LOCK_DUENO`, que es la MISMA convención que ya usa
- * `tests/_staging-db.mjs` para no avisarse a sí mismo — no se inventa una segunda forma de
- * responder «¿este turno es mío?».
+ * `propio` se responde con `esMiTurno`, la MISMA función que usan el runner, el CLI y la barrera
+ * gateada — no hay una segunda forma de contestar «¿este turno es mío?».
  *
- * ⚠️ CONSECUENCIA CONOCIDA, y es de SCRUM-253, no de aquí: quien tomó el turno a mano con
- * `turno:tomar` y NO exporta `YAQU_LOCK_DUENO` se verá a sí mismo como ajeno. Es el mismo defecto
- * que allí se describe (el dueño se mide por sesión y el PID es otro). Aquí tiene salida —la
- * bandera— y por eso no se arregla de paso: el arreglo de verdad es el de 253.
+ * ✅ RESUELTO EN SCRUM-253 (esta nota decía lo contrario y se deja para que se vea el cierre):
+ * aquí se comparaba contra `YAQU_LOCK_DUENO`, así que quien tomaba el turno a mano con
+ * `turno:tomar` y no la exportaba **se veía a sí mismo como ajeno**. La causa era que el dueño
+ * era `host.PID` y el PID cambia entre los procesos de una sesión; ahora la identidad se deriva
+ * del árbol de trabajo y `dueñoPropio` llega ya calculado, sin depender de que nadie exporte nada.
  *
  * @returns {'ajeno'|'propio'|'libre'|'ilegible'}
  */
@@ -147,7 +152,10 @@ export function estadoDelTurno({ lecturaOk, marca, lock, vigente, dueñoPropio }
   if (!marca) return 'libre';
   // Un turno caducado es reclamable por contrato (el TTL existe para eso): no bloquea a nadie.
   if (!vigente) return 'libre';
-  if (dueñoPropio && lock.dueño === dueñoPropio) return 'propio';
+  // SCRUM-253 · la propiedad se responde en UN sitio. Era un `===` suelto aquí, otro en la
+  // barrera gateada y otro en el runner: tres respuestas separadas a la misma pregunta es
+  // exactamente cómo una de ellas se queda vieja sin que nadie lo note.
+  if (esMiTurno(lock, dueñoPropio)) return 'propio';
   return 'ajeno';
 }
 
