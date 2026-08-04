@@ -439,6 +439,111 @@ export async function refrescarLock(cliente, { marcaPropia, dueño, señalAntesD
  * reproducir el problema. Es best-effort por diseño — el mecanismo que de verdad garantiza
  * que el turno se libera es el TTL, no esta llamada.
  */
+/**
+ * SCRUM-268 · CEDER el turno: «he terminado y es TUYO», que no es lo mismo que soltarlo.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * EL DEFECTO QUE CIERRA
+ *
+ * El turno solo sabía decir «ocupado» y «libre». Una cola acordada entre personas —«cuando
+ * acabes me lo pasas»— no existía en ningún sitio que una máquina pudiera leer, así que soltar
+ * abría una CARRERA: la ganaba quien preguntara antes, y quien pregunta antes es siempre un
+ * bucle esperador. Ya pasó de verdad: un esperador automático se llevó un turno que otra sesión
+ * acababa de ceder a mano. La cola acordada perdió contra un `while` — y perdió en silencio,
+ * porque desde fuera eso no se distingue de «lo pillé yo primero».
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * CÓMO SE EXPRESA, Y POR QUÉ NO HACE FALTA UN CAMPO NUEVO EN LA MARCA
+ *
+ * Ceder es **escribir el marcador a nombre del destinatario**. Nada más. Y esa decisión está
+ * medida, no elegida por gusto:
+ *
+ *   · `RE_LOCK` está ANCLADO: un marcador que no case EXACTAMENTE se ignora y el turno se lee
+ *     como **LIBRE**. Así que si la cesión llevara un campo nuevo en la marca, el código
+ *     anterior —y hay árboles a más de cien commits— vería un turno cedido como libre: sería
+ *     **más robable que uno normal**. Justo lo contrario de lo que hace falta.
+ *   · Dejándolo como un lock normal del destinatario, el código viejo ve «tomado» y se aparta,
+ *     el nuevo compara con `esMiTurno` y **solo el destinatario entra** — adoptándolo, que es
+ *     el mecanismo que SCRUM-253 ya construyó. El bucle esperador pierde la carrera **por
+ *     construcción**, no por llegar tarde.
+ *
+ * Lo que sí es nuevo va en el CONTEXTO, que es advisory: la etiqueta (`tipo: 'cedido'`) y la
+ * ventana. Y esa asimetría es la correcta — si el contexto se pierde, lo que queda es un lock
+ * normal del destinatario: se pierde la ETIQUETA, nunca la protección.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * Y SI NADIE LA RECOGE
+ *
+ * La ventana se publica como el COMPROMISO de SCRUM-249, así que no hace falta inventar nada:
+ * pasada la ventana, `decidirVigencia` ve el compromiso VENCIDO y el turno vuelve a ser de quien
+ * lo pille. Una cesión que nadie recoge caduca **antes** que el TTL, no después.
+ *
+ * Y si el contexto se vuelve ilegible, se cae al TTL supuesto: MÁS TARDE, nunca antes. El
+ * degradado empuja siempre hacia esperar de más, que es el lado barato del error.
+ *
+ * @returns {{ok:true, cedido:true, db, marca, contextoEscrito, contextoMotivo}}
+ *        | {ok:false, motivo:'no-es-staging'|'no-es-la-mia'|'ajeno'|'a-mi-mismo', db, ...}
+ */
+export async function cederLock(cliente, {
+  marcaPropia, dueño, destinatario, ventanaMs = TTL_POR_DEFECTO_MS, ref = 'sin-ref',
+}) {
+  if (destinatario === dueño) {
+    return { ok: false, motivo: 'a-mi-mismo' };
+  }
+  return enSeccionCritica(cliente, async (tx) => {
+    const { db, marca, ahoraMs } = await leerMarcaCruda(tx);
+    if (!esMarcaDeStaging(marca)) {
+      return { ok: false, motivo: 'no-es-staging', db, marca };
+    }
+    // Ceder es un acto del DUEÑO. Las dos comprobaciones que ya hace soltar, por la misma razón:
+    // la cadena dice que es la marca que escribimos, y el dueño dice que el turno es nuestro.
+    if (marca !== marcaPropia) {
+      return { ok: false, motivo: 'no-es-la-mia', db, marcaActual: marca };
+    }
+    const lock = parsearLock(marca);
+    if (dueño && lock && !esMiTurno(lock, dueño)) {
+      return { ok: false, motivo: 'ajeno', db, marcaActual: marca, lock };
+    }
+
+    // El marcador pasa a nombre del destinatario. Sigue siendo un `lock:<dueño>@<ISO>` normal y
+    // corriente: eso es lo que lo hace seguro para quien lo lea con código anterior.
+    const nueva = componerMarca(destinatario, ahoraMs);
+    await escribirMarca(tx, nueva);
+
+    // El contexto dice QUÉ es esto y hasta cuándo. `señalAntesDeMs` es la ventana: pasada, el
+    // compromiso queda vencido y `decidirVigencia` devuelve el turno al común.
+    const finMs = ahoraMs + ventanaMs;
+    const contexto = componerContexto({
+      dueño: destinatario, tipo: 'cedido', ref,
+      finPrevistoMs: finMs, señalAntesDeMs: finMs,
+    });
+    const ctxRes = await fijarContexto(tx, contexto);
+
+    return {
+      ok: true, cedido: true, db, marca: nueva, ahoraMs, destinatario, finMs,
+      contextoEscrito: ctxRes.ok, contextoMotivo: ctxRes.motivo ?? null,
+    };
+  });
+}
+
+/**
+ * SCRUM-268 · ¿una tanda que acaba tiene que soltar el turno?
+ *
+ * **No, si lo ADOPTÓ.** Es la asimetría que quedó declarada y sin arreglar en SCRUM-258: si tomas
+ * el turno a mano para veinte minutos y lanzas una tanda por el medio, la tanda lo soltaba al
+ * acabar y te quedabas sin él. Soltar lo que tú tomaste es correcto; soltar lo que te encontraste
+ * puesto es decidir por otro.
+ *
+ * Con la cesión eso deja de ser una molestia y pasa a ser un agujero: A cede a B, B corre UNA
+ * tanda, y la tanda suelta el turno que le acababan de ceder — la cola vuelve a ser una carrera
+ * justo después de haberla respetado. Por eso este trozo entra aquí y no queda declarado fuera.
+ *
+ * Pura y aparte para poder probarla sin lanzar una tanda: el runner es un script.
+ */
+export function debeSoltarAlTerminar({ adoptado }) {
+  return !adoptado;
+}
+
 export async function soltarLock(cliente, { marcaPropia, dueño = null }) {
   return enSeccionCritica(cliente, async (tx) => {
     const { db, marca } = await leerMarcaCruda(tx);
@@ -514,8 +619,16 @@ export async function soltarLock(cliente, { marcaPropia, dueño = null }) {
 /** Marca de nuestro sufijo en el comentario del schema. */
 export const CTX_PREFIJO = 'YAQUCTX:';
 
-/** Vocabulario CERRADO del tipo de ejecución. Lista abierta = campo que no se puede razonar. */
-export const TIPOS_EJECUCION = ['gated', 'suelto'];
+/**
+ * Vocabulario CERRADO del tipo de ejecución. Lista abierta = campo que no se puede razonar.
+ *
+ * SCRUM-268 · entra `cedido`, y es el ÚNICO añadido de gramática que hace falta para expresar una
+ * cesión. Los otros dos dicen qué se está EJECUTANDO; `cedido` dice que no se ejecuta nada
+ * todavía: el turno está reservado a nombre de alguien que aún no ha llegado. Que este vocabulario
+ * esté congelado en `tests/scrum232-turno-contexto.test.mjs` es lo que hace que el cambio se
+ * ANUNCIE en rojo en vez de colarse — que es exactamente para lo que se congeló.
+ */
+export const TIPOS_EJECUCION = ['gated', 'suelto', 'cedido'];
 
 // SCRUM-249 · el último campo, el COMPROMISO, es OPCIONAL a propósito:
 //   · código nuevo leyendo un contexto VIEJO (sin compromiso) → parsea, y lo reporta como
@@ -734,7 +847,14 @@ export function lineasDeContexto(ctx, ahoraMs) {
     return '   Qué está corriendo: NO CONSTA (esa sesión no dejó contexto — código anterior a SCRUM-232).\n';
   }
   const restante = ctx.finMs > ahoraMs ? formatearDuracion(ctx.finMs - ahoraMs) : null;
-  const queEs = ctx.tipo === 'gated' ? 'tanda gateada completa' : 'ejecución puntual';
+  // SCRUM-268 · `cedido` no describe una ejecución: describe que no hay ninguna todavía. Decirlo
+  // como «ejecución puntual» —que es lo que salía por el `else`— haría que quien lo lea busque
+  // un proceso que no existe.
+  const queEs = ctx.tipo === 'gated'
+    ? 'tanda gateada completa'
+    : ctx.tipo === 'cedido'
+      ? 'NADA todavía: turno CEDIDO, reservado a nombre de su dueño'
+      : 'ejecución puntual';
   const vida = estadoDeVida(ctx, ahoraMs);
   const lineaVida =
     vida.estado === 'vivo'

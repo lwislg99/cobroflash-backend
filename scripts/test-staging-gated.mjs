@@ -61,6 +61,7 @@ import {
   adquirirLock,
   refrescarLock,
   soltarLock,
+  debeSoltarAlTerminar,   // SCRUM-268 · lo adoptado no se suelta
   ttlParaTanda,
   MARGEN_TTL_MS,   // SCRUM-249 · margen del compromiso, el mismo que usa el TTL
   formatearDuracion,
@@ -265,6 +266,9 @@ if (!urlStaging) {
 
 const clienteTurno = new PrismaClient({ datasources: { db: { url: urlStaging } } });
 let marcaPropia = null; // el marcador exacto que escribimos; sirve para no pisar el de otro
+// SCRUM-268 · arranca en `false`: si la adquisición no llega a completarse, esta tanda NO tomó
+// nada y no tiene por qué soltar nada. El defecto caro aquí es soltar de más.
+let soltarAlTerminar = false;
 
 {
   let res;
@@ -304,6 +308,10 @@ let marcaPropia = null; // el marcador exacto que escribimos; sirve para no pisa
   }
 
   marcaPropia = res.marca;
+  // SCRUM-268 · ¿habrá que soltarlo al acabar? Si el turno ya era de esta sesión —lo tomó a mano
+  // o se lo cedieron— NO es nuestro para soltarlo: nos lo encontramos puesto. Se decide aquí,
+  // con lo que devolvió la adquisición, y no al final adivinando.
+  soltarAlTerminar = debeSoltarAlTerminar({ adoptado: res.adoptado });
   // SCRUM-249: sin esta nota, una tanda que muere de forma anomala deja el turno secuestrado
   // hasta el TTL, porque la marca lleva el PID y nadie puede recomponerla.
   guardarNota({ marca: res.marca, db: res.db });
@@ -370,16 +378,27 @@ try {
   }
 } finally {
   try {
-    // SCRUM-258 · se pasa el dueño: soltar comprueba ahora que el turno es NUESTRO, y no solo
-    // que la cadena del marcador coincida.
-    const s = await soltarLock(clienteTurno, { marcaPropia, dueño: DUENO });
-    if (s.soltado) {
-      console.log(`\n🔓 turno de staging SOLTADO en "${s.db}".`);
-      // SCRUM-258 · y se retira la nota. `borrarNota` estaba IMPORTADO y no se llamaba NUNCA, así
-      // que cada tanda dejaba una nota huérfana apuntando a un turno ya soltado.
-      borrarNota();
+    // SCRUM-268 · lo que se ADOPTÓ no se suelta. Si el turno ya estaba puesto a nombre de esta
+    // sesión —lo tomó a mano con `turno:tomar`, o se lo cedieron— la tanda solo lo ha usado de
+    // paso: soltarlo sería tirar el turno de alguien que sigue teniendo trabajo. Con la cesión
+    // dentro esto pasa de molestia a agujero — A cede a B, B corre una tanda y la tanda suelta
+    // lo que acaban de cederle.
+    if (!soltarAlTerminar) {
+      console.log('\n🔒 turno de staging: NO se suelta — esta sesión ya lo tenía antes de la tanda.');
+      console.log('   La tanda solo lo ha usado de paso. Suéltalo tú cuando acabes de verdad:');
+      console.log('       node scripts/turno-staging.mjs soltar');
     } else {
-      console.log(`\n🔓 turno de staging: ya no era mío (marcador actual: ${JSON.stringify(s.marcaActual)}); no lo toco.`);
+      // SCRUM-258 · se pasa el dueño: soltar comprueba ahora que el turno es NUESTRO, y no solo
+      // que la cadena del marcador coincida.
+      const s = await soltarLock(clienteTurno, { marcaPropia, dueño: DUENO });
+      if (s.soltado) {
+        console.log(`\n🔓 turno de staging SOLTADO en "${s.db}".`);
+        // SCRUM-258 · y se retira la nota. `borrarNota` estaba IMPORTADO y no se llamaba NUNCA,
+        // así que cada tanda dejaba una nota huérfana apuntando a un turno ya soltado.
+        borrarNota();
+      } else {
+        console.log(`\n🔓 turno de staging: ya no era mío (marcador actual: ${JSON.stringify(s.marcaActual)}); no lo toco.`);
+      }
     }
   } catch (err) {
     // No se convierte en fallo de la tanda: el TTL lo limpia. Pero se DICE, para que quien
