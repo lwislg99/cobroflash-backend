@@ -776,8 +776,14 @@ router.get('/portabilidad.zip', async (req, res) => {
     const solicitudId = await registrarSolicitud(prisma, { merchantId, actor, ip });
     await registrarAtencion(prisma, { merchantId, solicitudId, actor, ip });
 
+    // EL NOMBRE LLEVA LA FECHA, y no es cosmética: dos ZIP con el mismo nombre en la carpeta de
+    // Descargas se convierten en `portabilidad (1).zip` y nadie sabe cuál es cuál. Quien ejerce
+    // este derecho lo descarga más de una vez —antes y después de un cambio, o para comparar— y
+    // el fichero tiene que decir de cuándo es sin abrirlo. `YYYY-MM-DD` porque ordena
+    // alfabéticamente igual que cronológicamente.
+    const dia = new Date().toISOString().slice(0, 10);
     res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', 'attachment; filename="portabilidad.zip"');
+    res.setHeader('Content-Disposition', `attachment; filename="portabilidad-${dia}.zip"`);
     res.setHeader('Cache-Control', 'no-store');
 
     const archive = new ZipArchive({ zlib: { level: 9 } });

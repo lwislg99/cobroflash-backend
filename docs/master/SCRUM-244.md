@@ -353,3 +353,88 @@ Revertidas, verde después. **Suite ungated: 1222 tests, 0 fallos.**
   `COLGADOS_DE_CHARGE`.
 - **Los adjuntos binarios**, que van como ficheros y no como filas de CSV.
 - **La ruta de supresión**, bloqueada por dictamen.
+
+---
+
+# SCRUM-244 · la descarga de portabilidad, EN EL MENÚ (donde se puede pulsar)
+
+**Fecha:** 4-ago-2026 · **Carril:** A · **Gate:** sin gate, corre en `npm test` · **UI:** vanilla (regla 4)
+
+> **Ancla (en prosa).** Medido contra `origin/main` = `fed079eaa94931aa9893ef91df59c7a2011898c0` · 2026-08-04T14:17:00+02:00. En prosa por lo mismo que las secciones anteriores: el guard de SCRUM-267 juzga por FICHERO.
+
+## El caso real que lo origina, y que ningún test de backend podía ver
+
+La ruta funcionaba y **el fundador no consiguió usarla**: la puso detrás del hash del dashboard
+(`/dashboard/#invoice-detail/admin/exports/portabilidad.zip`), así que **la petición nunca salió
+del navegador**. No fue un fallo del backend — fue que no había dónde pulsar.
+
+**Un endpoint sin sitio en la interfaz es, para quien lo necesita, lo mismo que un endpoint que
+no existe.** Por eso el primer test del guard no comprueba estilos: comprueba que el botón existe
+y llama a *su* ruta.
+
+## Dos descargas, dos preguntas — y tienen que distinguirse en la pantalla
+
+| | pregunta | forma |
+|---|---|---|
+| **Gestoría** (ya existía) | «dame mi actividad» | por fechas, seis entidades, para el asesor |
+| **Portabilidad** (nueva) | «dame TODO lo mío» | sin filtros, formato abierto (art. 15 y 20) |
+
+Van en cards separadas con su propio bloque. Y la de portabilidad **no ofrece filtros a
+propósito**: dar fechas o selección de datasets sería invitar a ejercer a medias un derecho que
+no admite medias tintas — y borraría justo la diferencia que evita que alguien se baje la que no
+era creyendo que se lleva todo. Hay un test que falla si esa descarga acepta `from`, `to`,
+`incluir` o `params()`.
+
+## Microcopy: CERO inventada, y con guard (regla 30)
+
+Todos los textos visibles de la card nuevos son **`[PENDIENTE microcopy oficial]`**: título,
+descripción, botón, contador, avisos y toasts. Los aprueba el fundador y **no se adaptan de la
+card de gestoría** — cambiar «tus datos para el asesor» por «todos tus datos» ES escribir
+microcopy nueva, que es exactamente la lección de SCRUM-264.
+
+Y no queda en una promesa: hay un test que **extrae los textos visibles de esa card y su
+manejador y falla si alguno no es el marcador**. Probado inyectando un título plausible
+(«Descargar todos tus datos») → cae nombrándolo. El día que lleguen aprobados, esto es un
+reemplazo de una cadena, no una obra.
+
+⚠️ El recorte de ese guard se acota a la card y su manejador **y comprueba sus dos extremos**: la
+primera versión usaba un ancla de fin que no existía, `indexOf` devolvía −1 y `slice(inicio, −1)`
+se llevaba medio fichero — dio rojo contra `0 && ds.length`, código de la función de filtros que
+está fuera de la card. El ámbito demasiado ancho, otra vez.
+
+## El nombre del fichero lleva la fecha
+
+`portabilidad-YYYY-MM-DD.zip`. Dos ZIP con el mismo nombre en la carpeta de Descargas se
+convierten en `portabilidad (1).zip` y nadie sabe cuál es cuál — y éste se descarga más de una
+vez por naturaleza (antes y después de un cambio, o para comparar). `YYYY-MM-DD` porque ordena
+alfabéticamente igual que cronológicamente.
+
+El front lee el nombre de la cabecera `Content-Disposition` en vez de fijarlo, igual que la
+descarga de gestoría: si el servidor cambia el formato, el fichero guardado lo sigue.
+
+## Vanilla, y sin componentes nuevos (regla 4 · AB3)
+
+Sin React, sin bundler. Se reutiliza el inventario existente —`customers-card`, `btn-secondary`,
+los tokens `--ink` / `--muted` / `--neutral-400`— y el mismo patrón `fetch` + blob de la descarga
+de al lado. **Ni un color, ni una sombra, ni una clase nueva.** `btn-secondary` se comprobó que
+existe en `styles.css` antes de usarla, en vez de suponerlo.
+
+Target del botón ≥44 px y `aria-live` en la línea de estado, como la card hermana.
+
+## Verificado en rojo, tres veces
+
+1. **Desaparece el botón** (el bug real del fundador) → cae explicando que un endpoint sin sitio
+   donde pulsar no existe para quien lo necesita.
+2. **Alguien rellena la microcopy de su cosecha** → cae nombrando el texto inventado.
+3. **La portabilidad acepta filtros** → caen dos tests: se habría convertido en la descarga de
+   gestoría con otro nombre.
+
+Revertidas, verde después. **Suite ungated: 1228 tests, 0 fallos.**
+
+## Lo que sigue fuera
+
+La **supresión** no aparece en esta pantalla y hay un test que falla si alguien la menciona:
+sigue bloqueada por dictamen, y hoy ejecutarla destruiría el `AuditLog` fiscal. `Event`,
+`Reconciliation` y los adjuntos binarios siguen fuera del paquete, como estaba escrito.
+
+**Falta lo único que no puedo poner yo:** los textos aprobados.
