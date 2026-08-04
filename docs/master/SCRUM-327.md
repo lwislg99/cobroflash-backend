@@ -28,6 +28,18 @@ fichero. (Eran 34 antes del merge de 299; la FAQ del export sumó una.)
 - **Mido los hechos, no dicto la calificación legal** — pero los hechos apuntan a un defecto vivo de
   los que «muerden». Es de los que el ticket esperaba en Q10.
 
+### Q17 · El contador «quedan 18 de 20» cuenta un CAMPO, no ventas — prueba social FALSA
+- El endpoint `/public/founding-status` deriva `seatsLeft` de
+  `prisma.merchant.count({ where: { plan: 'founding' } })` (`src/modules/billing/domain/founding.ts:9`):
+  cuenta **merchants con el CAMPO `plan='founding'`**, NO pagos confirmados ni suscripciones activas.
+- `taken = 2` → «quedan 18 de 20» le dice al visitante que **2 profesionales ya compraron**. Pero
+  `plan='founding'` no equivale a «pagó»: un merchant puede tener ese campo sin cobro confirmado
+  (y el fundador ha declarado que las cuentas de producción de hoy son falsas y que **hoy hay CERO
+  clientes pagando**). El propio fichero dice «contador REAL … prohibido fake» (`founding.ts:2`) — y
+  aun así la métrica que eligió (el campo `plan`) NO distingue pagado de asignado.
+- **Es la diferencia entre un dato y una afirmación falsa en material público:** una prueba social
+  («2 ya compraron») que hoy no es cierta. Defecto vivo.
+
 ---
 
 ## Las diez, medidas ([MEDIDO], fichero:línea)
@@ -74,11 +86,61 @@ fichero. (Eran 34 antes del merge de 299; la FAQ del export sumó una.)
   «tu factura», `:433` «Factura #F-128`) **ya no están**: 299 las cambió a «Recibe el enlace de
   pago», «Ya puedes pagar cuando quieras» y «Reforma de baño». Medido en main actual.
 
+## Bloque 3 · El precio (Q15-18) — [MEDIDO], salvo Q16
+**SUELO:** cifras de precio detectadas — `index.html` 27 · `precios.html` 9. La búsqueda LEE.
+
+**Q15 · ¿Qué precio rige? Las superficies COINCIDEN; el máster A22 DIVERGE.**
+- `public/index.html`: Pro **19,90 €/mes** (`:482`) · founding **9,90 €/mes** «para siempre» (`:297`,
+  `:480`) · anual 199 €/16,58 (`:486`).
+- `public/precios.html`: Pro **19,90** (`:7`, `:73`, `:74`) · founding **9,90** «de por vida» (`:65`)
+  · anual 199/16,58 (`:77`).
+- **Panel Planes del dashboard** (`public/dashboard/js/plansView.js:7`): `fetch('/admin/billing/plans')`
+  → `{ plans, founding }` del backend; la cifra founding **DERIVA de una constante del backend**
+  `FOUNDING_PRICE = 9.9` (`src/modules/billing/domain/founding.ts:6`), no del front ni de Stripe.
+- **Stripe (solo el árbol, sin llamarlo):** el CARGO usa price ids — Pro por env
+  `STRIPE_PRICE_ID_PRO` / `STRIPE_PRICE_ID_PRO_ANNUAL` (`src/core/config/env.ts:18-19`, **solo nombres
+  de clave**); founding por `lookup_key` `'yaqu_founding_monthly'` (`stripePrices.ts:14`, o `null →
+  501` sin Stripe). **El IMPORTE real (19,90/9,90) NO está en el árbol: vive en Stripe.** Lo que el
+  árbol declara es TEXTO (landing) y una constante de DISPLAY.
+- **Qué diverge:** `index.html` ↔ `precios.html` ↔ panel **COINCIDEN** (19,90 / 9,90). El **máster
+  A22** («29 € / founding 14,50») **DIVERGE** de las tres — stale (y `precios.html:117` aún comenta
+  «el 29 tachado»). **NO es un defecto publicado** (A22 es interno; lo que el usuario ve es
+  consistente). El riesgo de «lo descubre pagando» real es: importe mostrado (constante/texto) vs el
+  de Stripe **no confirmable sin Stripe** (ver Q16).
+
+**Q16 · ¿Se ha cobrado 19,90 alguna vez?** **[NO SE PUEDE MEDIR HOY — exige producción/Stripe, fuera
+del carril B].** Hueco declarado para el fundador.
+
+**Q17 · Qué cuenta «quedan 18 de 20» → ver DEFECTOS VIVOS.** Cuenta `merchant.count({plan:'founding'})`
+(el campo), no pagos.
+
+**Q18 · «de por vida» y qué pasa en la plaza 20 — [MEDIDO]: SÍ está escrito.**
+- «de por vida» definido en `docs/legal/ALCANCE_BETA.md:38`: «9,90 €/mes DE POR VIDA (mitad del precio
+  de lista, 19,90) **mientras mantengas la suscripción activa**». Servido en `/legal/alcance-beta`
+  (`legalPages.routes.ts:96`) y **aceptado ANTES del checkout founding** (regla 25,
+  `subscriptions.routes.ts:43`).
+- Plaza 20 (agotado): la oferta se cierra — checkout founding → `409 founding_sold_out`
+  (`subscriptions.routes.ts:79`); banner oculto (`precios.html:119`, `plansView.js:40`).
+- Matiz (no defecto): la landing dice «para siempre» SIN el matiz «mientras mantengas la suscripción»;
+  el término vinculante (con el matiz) está en el doc aceptado en el checkout, no en la landing.
+
+## Bloque 4 · Comprador consumidor vs empresario (Q19) — [MEDIDO]
+**Se mide una vez y sirve a SCRUM-287 (A0) y SCRUM-321 (E0). Copiable entero:**
+- **El COMPRADOR de YaQu (el merchant/pro) NO se clasifica consumidor-vs-empresa.** No hay campo
+  `isConsumer`/`buyerType`/tipo-comprador en el modelo `Merchant`. YaQu es B2B por naturaleza (se
+  vende a oficios/profesionales). El valor `plan='empresa'` (`schema.prisma:67`,
+  «trial|basic|pro|empresa») es un **TRAMO de plan** (Equipo), NO una clasificación del comprador.
+- **El CLIENTE FINAL del pro SÍ se clasifica `PARTICULAR | EMPRESARIO`** (`schema.prisma:157-161`,
+  SCRUM-69/FACT-1): determina el plazo legal de la recapitulativa (art. 13 RD 1619/2012); `null` =
+  «nunca clasificado» → tratado como PARTICULAR (plazo más corto) en `resolveTipoDestinatario`. Es
+  sobre los clientes del pro, NO sobre quién compra YaQu.
+- **Consecuencia para A0/E0:** el producto distingue consumidor/empresa AGUAS ABAJO (clientes del
+  pro, fin fiscal), pero NO en el COMPRADOR de la suscripción. Si un comprador fuera consumidor (no
+  autónomo/empresa), la protección de consumidores (p. ej. derecho de desistimiento) aplicaría a su
+  suscripción y **hoy el sistema no puede distinguirlo** — no hay campo. Dato medido, sin juicio.
+
 ## Fuera de alcance (no medido / no tocado)
-- **B2 (11-14) analítica/visitas:** no hay instrumentación de analítica de terceros en la landing
-  (solo `localStorage` de atribución). Medir visitas/origen del tráfico **[NO SE PUEDE MEDIR HOY]**
-  sin un panel de analítica, que no existe. No se construye (fuera de alcance).
-- **B3 (15-18) precio real / cobros:** **[NO SE PUEDE MEDIR HOY]** — exige Stripe y cobros REALES de
-  producción, que no se tocan ni en lectura.
-- **B4 (19):** pregunta de producto, no de código.
-- No se cambió nada de la landing (ni una palabra, ni el contador, ni el precio).
+- **Q16 y «cobros reales»:** [NO SE PUEDE MEDIR HOY] — producción/Stripe, no se tocan ni en lectura.
+- **B2 (11-14) analítica/visitas:** sin instrumentación de analítica de terceros (solo `localStorage`
+  de atribución, ver Q10). Visitas/origen [NO SE PUEDE MEDIR HOY]; no se construye.
+- No se cambió NADA de la landing (ni una palabra, ni el contador, ni el precio). Reglas 26/30 vivas.
