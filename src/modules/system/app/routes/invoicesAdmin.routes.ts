@@ -140,7 +140,7 @@ router.get('/:id/dispute-package', requireRole('admin'), async (req, res) => {
     });
     if (!invoice) return res.status(404).json({ error: 'not_found' });
 
-    const quote = invoice.quote as any;
+    const quote = invoice.quote;
     const messages = await prisma.whatsAppMessage.findMany({
       where: {
         merchantId: req.merchantId,
