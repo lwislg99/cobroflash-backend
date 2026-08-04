@@ -140,16 +140,21 @@ propósito: **Anular** (rótulo y código intactos, excepción de la regla 5) y 
 dentro de los handlers («Enviando…», toasts) — copy existente, reusado, y los handlers no se tocan;
 reusar lo existente no es microcopy nueva. El guard mira el RÓTULO (primer `textContent`), no el feedback.
 
-## 🔴 AB6 — checklist INCOMPLETO POR CONSTRUCCIÓN (paso humano pendiente)
+## AB6 — capturas HECHAS por la sesión · matriz de dispositivos, humana
 
-Esta entrega toca UI, así que AB6 aplica, y **dos de sus puntos no los puede producir esta sesión**:
+> **Corrección (4-ago):** la versión anterior de esta línea agrupaba mal las capturas con la matriz,
+> dándolas por humanas. **Fijado por el fundador:** las CAPTURAS las produce la sesión; solo la
+> MATRIZ de dispositivos es humana. Este follow-up cierra las capturas.
 
-- **Capturas antes/después** — requieren navegador con datos reales. NO hechas.
-- **Matriz de dispositivos** (Android gama media / iPhone / tablet, V0-5) — el máster la marca ⏳ HUMANO.
-  NO corrida contra dispositivos reales.
+- **Capturas antes/después: HECHAS** → [`docs/capturas/scrum-283/`](../capturas/scrum-283/). Producidas
+  con un **harness aislado** (los 4 estados reales, `invoice` de mentira, sin BD/auth/producción): el
+  «antes» renderiza la vista PRE-B2 (`eebc191`), el «después» la de main. Muestran el defecto (8 botones
+  planos del mismo peso) → el patrón (1 primaria + ≤2 secundarias + «⋮»), la primaria contextual de
+  `pending` (Bizum con cobro / Marcar pagada sin él), y que en `annulled`/`R1` no hay primaria y
+  Rectificar no se pinta (SCRUM-308).
+- **Matriz de dispositivos** (Android gama media / iPhone / tablet, V0-5): **humana, del fundador, POR
+  BLOQUE** (no por ticket). Es el único punto de AB6 que queda pendiente, y no bloquea el merge.
 
-Se declara el hueco, no se finge: «no corrí esto contra dispositivos reales» es información, no un
-fallo que se arregle escribiéndolo mejor. Lo verificable por código SÍ está: sintaxis (`node --check`),
-render desde el registro, a11y heredada de `overflowMenu` (AB3), y que el «⋮» degrada a botones sueltos
-si el helper no carga (perder el menú no puede costar una acción). **Pendiente de un humano:** las
-capturas y la matriz de dispositivos antes de considerar AB6 cerrado.
+Lo verificable por código también está: sintaxis (`node --check`), render desde el registro, a11y
+heredada de `overflowMenu` (AB3), y que el «⋮» degrada a botones sueltos si el helper no carga (perder
+el menú no puede costar una acción).
