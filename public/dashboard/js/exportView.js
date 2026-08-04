@@ -64,6 +64,25 @@ async function renderExportView(container) {
           Sin fechas se descarga todo.
         </p>
       </div>
+
+      <!-- ── SCRUM-244 · PORTABILIDAD (art. 15 y 20 RGPD) ───────────────────────────────
+           Segunda descarga, y contesta OTRA pregunta: la de arriba es «dame mi actividad»
+           (por fechas, para el asesor); ésta es «dame TODO lo mío» (sin filtros, formato
+           abierto). Van separadas y con su propio título porque la confusión tiene coste
+           real: bajarse la de gestoría creyendo que llevas todos tus datos.
+
+           ⚠️ MICROCOPY PENDIENTE (regla 30). Los textos los aprueba el fundador y NO se
+           adaptan de la card de arriba: cambiar «tus datos para el asesor» por «todos tus
+           datos» ES escribir microcopy nueva — la lección de SCRUM-264. Hasta que lleguen,
+           marcadores visibles: el día que estén aprobados esto es un reemplazo, no una obra.
+      -->
+      <div class="customers-card" style="margin-top:16px" id="portabilidad-card">
+        <div style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">[PENDIENTE microcopy oficial]</div>
+        <h3 style="margin:0 0 4px;font-size:16px;font-weight:700;color:var(--ink)">[PENDIENTE microcopy oficial]</h3>
+        <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">[PENDIENTE microcopy oficial]</p>
+        <button class="btn-secondary" id="btn-portabilidad" style="min-height:44px">[PENDIENTE microcopy oficial]</button>
+        <p id="portabilidad-info" style="margin:12px 0 0;font-size:12px;color:var(--muted)" aria-live="polite"></p>
+      </div>
     </div>
   `;
 
@@ -133,6 +152,71 @@ async function renderExportView(container) {
   inputTo.addEventListener('change', refrescarInfo);
   dsBox.addEventListener('change', refrescarInfo);
   refrescarInfo();
+
+  // ── SCRUM-244 · la descarga de PORTABILIDAD ─────────────────────────────────────────
+  //
+  // Mismo patrón que la de arriba (fetch + blob) y por el mismo motivo: hace falta leer el
+  // nombre que manda el servidor, que lleva la FECHA. Una navegación directa no lo permite.
+  //
+  // SIN selector de fechas ni de datasets, A PROPÓSITO: esta descarga es «TODO lo mío».
+  // Ofrecer filtros aquí sería invitar a ejercer a medias un derecho que no admite medias
+  // tintas — y es justo la confusión que separa esta card de la de gestoría.
+  const btnPort = document.getElementById('btn-portabilidad');
+  const infoPort = document.getElementById('portabilidad-info');
+  let generandoPort = false;
+
+  btnPort.addEventListener('click', async () => {
+    if (generandoPort) return;
+    generandoPort = true;
+    btnPort.disabled = true;
+    const txtPort = btnPort.textContent;
+
+    // Contador vivo, igual que arriba: el paquete recorre TODAS las tablas del merchant y un
+    // botón congelado parece colgado.
+    const t0p = Date.now();
+    const tickPort = setInterval(() => {
+      btnPort.textContent = '[PENDIENTE microcopy oficial] ' + Math.round((Date.now() - t0p) / 1000) + 's';
+    }, 1000);
+    btnPort.textContent = '[PENDIENTE microcopy oficial]';
+
+    try {
+      const res = await fetch('/admin/exports/portabilidad.zip', { credentials: 'same-origin' });
+      if (!res.ok) {
+        // Se ramifica por CÓDIGO, nunca por texto (SCRUM-151). Lo que ve el profesional es
+        // microcopy y todavía no está aprobado.
+        showToast('[PENDIENTE microcopy oficial]', 'error');
+        infoPort.textContent = '[PENDIENTE microcopy oficial]';
+        return;
+      }
+
+      // El nombre lo decide el servidor y LLEVA LA FECHA: dos ZIP iguales en la carpeta de
+      // Descargas se convierten en «(1)» y nadie sabe cuál es cuál.
+      const cd = res.headers.get('content-disposition') || '';
+      const m = /filename="([^"]+)"/.exec(cd);
+      const nombre = m ? m[1] : 'portabilidad.zip';
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = nombre;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+
+      showToast('[PENDIENTE microcopy oficial]');
+      infoPort.textContent = '[PENDIENTE microcopy oficial]';
+    } catch {
+      showToast('[PENDIENTE microcopy oficial]', 'error');
+      infoPort.textContent = '[PENDIENTE microcopy oficial]';
+    } finally {
+      clearInterval(tickPort);
+      btnPort.textContent = txtPort;
+      btnPort.disabled = false;
+      generandoPort = false;
+    }
+  });
 
   btn.addEventListener('click', async () => {
     if (generando) return;               // el botón no acepta un segundo clic
