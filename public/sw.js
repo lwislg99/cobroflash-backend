@@ -33,6 +33,7 @@ const SHELL = [
   '/dashboard/js/productsView.js',
   '/dashboard/js/providersView.js',
   '/dashboard/js/invoicesView.js',
+  '/dashboard/js/invoiceActionsRegistry.js',
   '/dashboard/js/invoiceDetailView.js',
   '/dashboard/js/expensesView.js',
   '/dashboard/js/settingsView.js',

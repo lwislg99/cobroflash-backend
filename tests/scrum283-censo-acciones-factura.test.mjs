@@ -106,16 +106,16 @@ test('SCRUM-283 · rojo por el mecanismo: quitar el appendChild de una acción l
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // CONTROL NEGATIVO — el toggle es UNA acción en dos caras, no dos
 // ═════════════════════════════════════════════════════════════════════════════════════════
-test('SCRUM-283 · control negativo: el toggle PAGADA/PENDIENTE cuenta UNA vez (9, no 10)', () => {
-  // `btnTogglePaid` cambia su texto con el estado (`st === 'paid' ? 'PENDIENTE' : 'PAGADA'`). Es la
-  // misma acción en sus dos caras, no dos acciones. Si el censo la contara por su texto y no por su
-  // botón, serían 10. Este control demuestra que el censo distingue «un botón con texto condicional»
-  // de «dos botones» — es lo que NO debe hacerlo caer.
+test('SCRUM-283 · control negativo: el toggle es UNA acción, no dos (9, no 10)', () => {
+  // `btnTogglePaid` es la misma acción en sus dos caras (pagar / revertir), no dos acciones. Si el
+  // censo la contara dos veces serían 10. Este control demuestra que el censo cuenta BOTONES, no
+  // textos — es lo que NO debe hacerlo caer. Sus dos caras ya no viven en un ternario del rótulo
+  // (que ahora es el marcador, regla 30): las decide el registro por estado (primaria en pending,
+  // «⋮» en paid).
   const { acciones } = censarAccionesFactura(codigoReal);
   const toggle = acciones.filter((a) => a.id === 'btnTogglePaid');
   assert.equal(toggle.length, 1, '🔴 el toggle se cuenta dos veces: serían 10 acciones, no 9');
-  assert.match(toggle[0].texto, /PAGADA/, 'conserva sus dos caras en el texto (PAGADA…');
-  assert.match(toggle[0].texto, /PENDIENTE/, '…y PENDIENTE)');
+  assert.ok(toggle[0].texto.includes('[PENDIENTE microcopy oficial]'), '🔴 el rótulo del toggle no es el marcador (regla 30)');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
