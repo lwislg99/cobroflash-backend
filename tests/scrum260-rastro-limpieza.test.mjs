@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { leerFuente } from './_guard-texto.mjs';
 import {
   componerEntrada, parsearHistorial, añadirEntrada, registrar, mensajeAviso, MAX_ENTRADAS,
+  estadoDelTurno, decidirBorrado, BANDERA_PISAR,
 } from '../scripts/_rastro-limpieza.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -127,7 +128,11 @@ test('SCRUM-260 · clean-staging lee el marcador SOLO con funciones read-only, s
 test('SCRUM-260 · mensajeAviso lleva el turno vigente Y el nº de @test.local vivos', () => {
   const m = mensajeAviso({ dueñoTurno: 'host.111', merchantsVivos: 7 });
   process.stdout.write(`  aviso →\n${m}\n`);
-  assert.match(m, /no bloquea/i);
+  // SCRUM-260 (2ª mitad): el aviso YA NO puede prometer «no bloquea» — con turno ajeno vivo, el
+  // script se planta. Un texto que describe el comportamiento viejo es peor que ninguno, porque
+  // el siguiente se lo cree; y aquí lo leería justo el operador al que sí se le va a bloquear.
+  assert.doesNotMatch(m, /no bloquea/i,
+    '🔴 el aviso sigue prometiendo que no bloquea, y con turno ajeno vivo ahora bloquea');
   assert.match(m, /Turno de staging vigente: host\.111/);
   assert.match(m, /VIVOS que se barrerán: 7/); // el dato que el turno NO ve (gateado suelto)
   assert.match(m, /SIN turno/); // dice explícito que un gateado suelto no toma turno
@@ -145,4 +150,107 @@ test('SCRUM-260 · clean-staging imprime el AVISO ANTES del bucle de deletes', (
   const iDel = src.search(/deleteMany\s*\(/);
   assert.ok(iAviso !== -1, 'clean-staging debe imprimir el aviso con mensajeAviso()');
   assert.ok(iAviso < iDel, '🔴 el aviso debe salir ANTES del primer deleteMany');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// LA DECISIÓN · con turno AJENO vivo no se borra sin la bandera (SCRUM-260, 2ª mitad)
+//
+// LOS TRES CASOS, y el motivo de que sean tres: probar solo el que bloquea no demuestra que no
+// se bloquee TODO. Una herramienta manual que se planta cuando no toca se acaba puenteando, y
+// entonces deja de proteger también cuando sí tocaba.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+const LOCK_AJENO = { dueño: 'otra-maquina.4242', desdeMs: 0 };
+const vivo = (extra = {}) => ({ lecturaOk: true, marca: 'YAQU_STAGING lock:otra-maquina.4242@…', lock: LOCK_AJENO, vigente: true, ...extra });
+
+test('SCRUM-260 · (1) turno AJENO vivo y SIN bandera → NO se borra nada', () => {
+  const estado = estadoDelTurno({ ...vivo(), dueñoPropio: null });
+  assert.equal(estado, 'ajeno');
+
+  const d = decidirBorrado({ estado, pisar: false, dueñoTurno: LOCK_AJENO.dueño });
+  assert.equal(
+    d.borra, false,
+    '🔴 SE BORRA CON UNA TANDA AJENA VIVA. Esos @test.local pueden ser sus fixtures, y borrarlas ' +
+    'le deja un rojo que parecerá un defecto suyo — que es el caso que abrió SCRUM-259.',
+  );
+  assert.match(d.mensaje, /NO se ha borrado nada/);
+  assert.match(d.mensaje, new RegExp(BANDERA_PISAR), 'el mensaje tiene que decir CÓMO seguir');
+  assert.match(d.mensaje, /otra-maquina\.4242/, 'y de quién es el turno que lo frena');
+});
+
+test('SCRUM-260 · (2) CONTROL: turno ajeno vivo y CON bandera → sí borra', () => {
+  const estado = estadoDelTurno({ ...vivo(), dueñoPropio: null });
+  const d = decidirBorrado({ estado, pisar: true, dueñoTurno: LOCK_AJENO.dueño });
+  assert.equal(d.borra, true, '🔴 la bandera no sirve de nada: entonces esto no es un freno, es un muro');
+  assert.match(d.motivo, new RegExp(BANDERA_PISAR));
+});
+
+test('SCRUM-260 · (3) CONTROL: sin turno ajeno, se borra como siempre', () => {
+  // Las tres formas de «no hay turno ajeno vivo», porque bloquear cualquiera de ellas sería
+  // convertir la herramienta en inútil justo cuando el operador tiene razón.
+  const casos = [
+    ['libre  (no hay marcador)', { lecturaOk: true, marca: null, lock: null, vigente: false, dueñoPropio: null }],
+    ['propio (YAQU_LOCK_DUENO casa)', { ...vivo(), dueñoPropio: 'otra-maquina.4242' }],
+    ['caducado (reclamable por contrato)', { ...vivo({ vigente: false }), dueñoPropio: null }],
+  ];
+  for (const [nombre, entrada] of casos) {
+    const estado = estadoDelTurno(entrada);
+    const d = decidirBorrado({ estado, pisar: false });
+    assert.equal(d.borra, true, `🔴 se bloquea con el turno ${nombre}: eso NO es lo que pide el enunciado`);
+  }
+  assert.equal(estadoDelTurno({ ...vivo(), dueñoPropio: 'otra-maquina.4242' }), 'propio');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// EL SUELO · no poder leer el turno NO es «no hay turno»
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-260 · SUELO: si el marcador no se puede LEER, no se degrada a «vía libre»', () => {
+  const estado = estadoDelTurno({ lecturaOk: false, marca: null, lock: null, vigente: false, dueñoPropio: null });
+  assert.equal(estado, 'ilegible', '🔴 una lectura caída se está leyendo como «no hay turno»');
+  const d = decidirBorrado({ estado, pisar: false });
+  assert.equal(
+    d.borra, false,
+    '🔴 SE BORRA SIN SABER SI HAY TANDA VIVA. Es el fallo mudo de este ticket con otra cara: no ' +
+    'poder leer el turno tiene que ser ruidoso, no permisivo.',
+  );
+  assert.match(d.mensaje, /NO SE PUDO LEER/);
+});
+
+test('SCRUM-260 · SUELO: un marcador que existe pero NO se parsea tampoco es «vía libre»', () => {
+  // El caso del formato cambiado: hay marca, `parsearLock` devuelve null. Sabemos que HAY algo
+  // escrito y no sabemos de quién — que es el peor sitio para dar por hecho que no es de nadie.
+  const estado = estadoDelTurno({ lecturaOk: true, marca: 'FORMATO_NUEVO_QUE_NO_CASA', lock: null, vigente: false, dueñoPropio: null });
+  assert.equal(estado, 'ilegible', '🔴 marca ilegible tratada como turno libre');
+  assert.equal(decidirBorrado({ estado, pisar: false }).borra, false);
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// Y QUE EL SCRIPT LA OBEDEZCA: la decisión va ANTES del primer borrado
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-260 · clean-staging decide ANTES de borrar, y sale sin tocar nada si no procede', () => {
+  // Sin esto, los tests de arriba probarían una función que el script podría no estar mirando.
+  const src = leerFuente(path.join(RAIZ, 'scripts', 'clean-staging-tests.mjs'));
+  const iDecide = src.search(/decidirBorrado\s*\(/);
+  const iSalida = src.search(/if\s*\(!\s*\w+\.borra\s*\)/);
+  const iDel = src.search(/deleteMany\s*\(/);
+
+  assert.ok(iDecide !== -1, '🔴 clean-staging no llama a decidirBorrado(): la decisión no está cableada');
+  assert.ok(iSalida !== -1, '🔴 no hay salida temprana cuando la decisión dice que no se borra');
+  assert.ok(iDecide < iSalida && iSalida < iDel,
+    '🔴 el orden está mal: decidir → salir → borrar. Si la salida queda después del primer ' +
+    'deleteMany, la decisión llega tarde y no protege nada.');
+});
+
+test('SCRUM-260 · un --apply RECHAZADO consta como rechazado, ni SI ni dry-run', () => {
+  // Si constara «SI», el rastro afirmaría un borrado que no ocurrió. Si constara «dry-run», sería
+  // indistinguible de una pasada de prueba — y «¿alguien INTENTÓ limpiar durante mi tanda?» es la
+  // pregunta que este rastro existe para responder.
+  const e = componerEntrada({ ...datos, applied: 'RECHAZADO-turno-ajeno-vivo' });
+  assert.match(e, /applied=RECHAZADO-turno-ajeno-vivo/);
+  assert.doesNotMatch(e, /applied=SI/);
+  // Y los dos valores de siempre siguen igual (control de no-regresión del formato).
+  assert.match(componerEntrada({ ...datos, applied: true }), /applied=SI/);
+  assert.match(componerEntrada({ ...datos, applied: false }), /applied=dry-run/);
 });

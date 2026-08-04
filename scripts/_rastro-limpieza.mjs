@@ -59,36 +59,135 @@ const saneaCampo = (s) => String(s ?? '')
 /**
  * Compone UNA entrada de una línea con los cinco campos. `turnMarker` null/vacío → «NO CONSTA»
  * EXPLÍCITO (nunca una cadena vacía que se lea como «sin turno» cuando en realidad no se pudo leer).
+ *
+ * `applied` admite `true` / `false` / **una cadena**: desde SCRUM-260 (2ª mitad) un `--apply` que
+ * el turno ajeno RECHAZA se apunta como tal. Apuntarlo como `SI` diría que se borró algo que no
+ * se borró, y como `dry-run` lo haría indistinguible de una pasada de prueba — y «¿alguien
+ * INTENTÓ limpiar durante mi tanda?» es justo lo que este rastro existe para responder.
  */
 export function componerEntrada({ ranAt, turnMarker, applied, merchantsCount, merchantEmails, jobsCount }) {
+  const estadoAplicado = typeof applied === 'string' ? saneaCampo(applied) : (applied ? 'SI' : 'dry-run');
   const turno = turnMarker ? saneaCampo(turnMarker) : 'NO-CONSTA';
   const emails = Array.isArray(merchantEmails) ? merchantEmails.map(saneaCampo).join(',') : saneaCampo(merchantEmails);
   return [
     saneaCampo(ranAt),
     `turno=${turno}`,
-    `applied=${applied ? 'SI' : 'dry-run'}`,
+    `applied=${estadoAplicado}`,
     `merchants=${Number(merchantsCount) || 0}[${emails}]`,
     `jobs=${Number.isFinite(jobsCount) ? jobsCount : '?'}`,
   ].join(' | ');
 }
 
 /**
- * AVISO (avisa, NO bloquea) que clean-staging imprime ANTES de barrer. Lleva las DOS señales de que
- * las fixtures pueden ser de una tanda viva:
+ * AVISO que clean-staging imprime ANTES de barrer. Lleva las DOS señales de que las fixtures
+ * pueden ser de una tanda viva:
  *   · la marca del TURNO vigente (o «NO CONSTA / libre»);
  *   · el número de merchants @test.local VIVOS que se van a borrar — y ESTE es el que cubre lo que el
  *     turno NO ve: un gateado suelto tiene fixtures vivas y NO toma el turno (por eso no basta el turno).
- * PURO → se prueba sin BD. No decide nada: es manual y a veces el operador sabe lo que hace.
+ * PURO → se prueba sin BD. NO decide: quien decide es `decidirBorrado`.
  */
 export function mensajeAviso({ dueñoTurno, merchantsVivos }) {
   const turno = dueñoTurno || 'NO CONSTA / libre';
   return [
-    '⚠️  AVISO antes de borrar (no bloquea):',
+    '⚠️  AVISO antes de borrar:',
     `   · Turno de staging vigente: ${turno}`,
     `   · Merchants @test.local VIVOS que se barrerán: ${Number(merchantsVivos) || 0}`,
     '   Si otra sesión está corriendo tests, estas pueden ser sus fixtures VIVAS — incluso SIN turno:',
     '   un gateado suelto tiene fixtures y NO toma el turno. Continúa solo si sabes que no lo son.',
   ].join('\n');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// LA DECISIÓN · SCRUM-260 (segunda mitad)
+//
+// El aviso solo, sin freno, no cambiaba nada: quien lanza `--apply` desde otra máquina no tiene
+// forma de enterarse de que está borrando fixtures VIVAS de una tanda ajena, y un aviso que se
+// imprime justo antes de borrar llega tarde para lo único que importa.
+//
+// LA REGLA, y sus dos mitades pesan igual:
+//   · con turno AJENO vivo, `--apply` EXIGE la bandera y sin ella SALE SIN BORRAR NADA;
+//   · con turno PROPIO o SIN turno, se comporta como siempre — «no bloquear a ciegas» es parte
+//     del enunciado, y una herramienta manual que se planta cuando no toca se acaba puenteando.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * La bandera que permite pisar un turno ajeno.
+ *
+ * ⚠️ NO se llama `--force` a propósito, aunque el enunciado la nombrara así («o equivalente»).
+ * En esta casa `--force` es una prohibición de git (AA2) que un hook bloquea al verla escrita:
+ * reusar ese nombre haría que documentar este comando fuese imposible sin disparar el guard, y
+ * mezclaría dos cosas que no tienen nada que ver. El nombre dice QUÉ se pisa, que además es lo
+ * que uno quiere leer en el historial de la terminal seis meses después.
+ */
+export const BANDERA_PISAR = '--pisar-turno-ajeno';
+
+/**
+ * Estado del turno frente a ESTA limpieza. Puro: recibe lo ya leído, no toca la BD.
+ *
+ * `propio` se decide por `YAQU_LOCK_DUENO`, que es la MISMA convención que ya usa
+ * `tests/_staging-db.mjs` para no avisarse a sí mismo — no se inventa una segunda forma de
+ * responder «¿este turno es mío?».
+ *
+ * ⚠️ CONSECUENCIA CONOCIDA, y es de SCRUM-253, no de aquí: quien tomó el turno a mano con
+ * `turno:tomar` y NO exporta `YAQU_LOCK_DUENO` se verá a sí mismo como ajeno. Es el mismo defecto
+ * que allí se describe (el dueño se mide por sesión y el PID es otro). Aquí tiene salida —la
+ * bandera— y por eso no se arregla de paso: el arreglo de verdad es el de 253.
+ *
+ * @returns {'ajeno'|'propio'|'libre'|'ilegible'}
+ */
+export function estadoDelTurno({ lecturaOk, marca, lock, vigente, dueñoPropio }) {
+  // ── EL SUELO ──────────────────────────────────────────────────────────────────────────────
+  // No poder leer el turno NO es «no hay turno». Si el marcador no se puede leer o no se puede
+  // parsear (formato cambiado, esquema movido, permisos), lo honesto es «no lo sé», y un «no lo
+  // sé» que degrada a «adelante» es exactamente el fallo mudo que este ticket vino a cerrar,
+  // con otra cara: la limpieza seguiría borrando fixtures ajenas y nadie se enteraría.
+  if (!lecturaOk) return 'ilegible';
+  if (marca && !lock) return 'ilegible';
+
+  if (!marca) return 'libre';
+  // Un turno caducado es reclamable por contrato (el TTL existe para eso): no bloquea a nadie.
+  if (!vigente) return 'libre';
+  if (dueñoPropio && lock.dueño === dueñoPropio) return 'propio';
+  return 'ajeno';
+}
+
+/**
+ * ¿Se borra? Puro, y con el motivo escrito para que la salida diga POR QUÉ y no solo QUÉ.
+ * @returns {{borra: boolean, motivo: string, mensaje: string}}
+ */
+export function decidirBorrado({ estado, pisar, dueñoTurno = null }) {
+  if (pisar) {
+    return {
+      borra: true,
+      motivo: `bandera ${BANDERA_PISAR}`,
+      mensaje: `⚠️  Se pisa el turno (${estado}) porque viene ${BANDERA_PISAR}. Queda en el rastro.`,
+    };
+  }
+  if (estado === 'ajeno') {
+    return {
+      borra: false,
+      motivo: 'turno ajeno vivo',
+      mensaje: [
+        `🛑 NO se ha borrado nada: el turno de staging lo tiene «${dueñoTurno ?? '¿?'}» y sigue vigente.`,
+        '   Esos merchants @test.local pueden ser sus fixtures VIVAS, y borrarlas le rompe la tanda',
+        '   con un rojo que parecerá un defecto suyo.',
+        `   Si sabes que no lo son, repite con ${BANDERA_PISAR}.`,
+      ].join('\n'),
+    };
+  }
+  if (estado === 'ilegible') {
+    return {
+      borra: false,
+      motivo: 'no se pudo leer el turno',
+      mensaje: [
+        '🛑 NO se ha borrado nada: NO SE PUDO LEER el turno de staging.',
+        '   Eso no es lo mismo que «no hay turno»: puede haber una tanda viva y no saberlo.',
+        '   Mira si el marcador cambió de formato o de sitio antes de insistir.',
+        `   Si estás seguro, repite con ${BANDERA_PISAR}.`,
+      ].join('\n'),
+    };
+  }
+  return { borra: true, motivo: estado === 'propio' ? 'turno propio' : 'sin turno vigente', mensaje: '' };
 }
 
 /** Parsea el comentario crudo. Ilegible/null → historial fresco (degrada, no lanza). */
