@@ -36,6 +36,7 @@
 // no entra en juego en ningún punto de este módulo. Y si algún día hiciera falta, sale del
 // DMMF (`field.dbName ?? field.name`), jamás de una convención.
 import { Prisma } from '@prisma/client';
+import { csvRow } from './exportData';
 
 /** El campo que marca la pertenencia a un merchant. Un solo sitio lo nombra. */
 export const CAMPO_TENENCIA = 'merchantId';
@@ -161,3 +162,40 @@ export async function construirPaquete(
   }
   return out;
 }
+
+/**
+ * Un dataset a CSV. Las CABECERAS son los nombres de CAMPO del DMMF, no los de columna.
+ *
+ * Es deliberado y va en la dirección del art. 20 («de uso común y lectura mecánica»): quien
+ * recibe el paquete lee `merchantId`, no `merchant_id` en unas tablas y `merchantId` en otras
+ * según cuál llevara `@map`. Mezclar las dos convenciones en un mismo ZIP es exactamente lo que
+ * hace ilegible un export automático.
+ *
+ * `null` y `undefined` salen vacíos; las fechas en ISO; los objetos (JSON de Prisma) en JSON.
+ * Sin esto, un `Json` saldría como `[object Object]` — una columna presente y sin información,
+ * que es peor que una ausente porque parece que está.
+ */
+export function datasetACsv(dataset: Dataset, campos: string[]): string {
+  const valor = (v: unknown): unknown => {
+    if (v == null) return '';
+    if (v instanceof Date) return v.toISOString();
+    if (typeof v === 'object') return JSON.stringify(v);
+    return v;
+  };
+  // ⚠️ `csvRow` devuelve la fila SIN terminador — lo pone quien une, igual que en `sendCsv`.
+  // Unir con '' pegaba la cabecera a la primera fila y dejaba el CSV entero en un renglón:
+  // un fichero que se abre, no da error, y no significa nada. Lo cazó el test al primer intento.
+  const lineas = [csvRow(campos)];
+  for (const fila of dataset.filas) lineas.push(csvRow(campos.map((c) => valor(fila[c]))));
+  return lineas.join('\r\n') + '\r\n';
+}
+
+/**
+ * El aviso que acompaña al paquete (art. 15: finalidades, destinatarios, plazos).
+ *
+ * ⚠️ EL TEXTO VA EN BLANCO A PROPÓSITO — decisión del fundador. Es microcopy oficial y lo
+ * aprueba él (regla 30). Que la pieza EXISTA vacía es mejor que no exista: el día que el texto
+ * esté aprobado, ponerlo es una línea, y mientras tanto quien abra el ZIP ve que falta algo en
+ * vez de no ver nada. Un hueco declarado es más honesto que una ausencia silenciosa.
+ */
+export const LEEME_PENDIENTE = '[PENDIENTE microcopy oficial]\n';

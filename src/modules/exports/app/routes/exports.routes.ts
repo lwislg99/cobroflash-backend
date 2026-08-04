@@ -30,6 +30,12 @@ import {
   buildClientes, buildFacturas, buildCobros, buildTrabajos, buildPresupuestos,
   EXPORT_PDF_CONCURRENCIA, // SCRUM-83
 } from '../../domain/exportData';
+// SCRUM-244 · la PUERTA de portabilidad: cobertura derivada + registro del derecho ejercido.
+// `actorDeRequest` y `requestIp` ya vienen del import de `audit.service` de arriba.
+import {
+  construirPaquete, camposDe, datasetACsv, LEEME_PENDIENTE,
+} from '../../domain/portabilidadCompleta';
+import { registrarSolicitud, registrarAtencion } from '../../domain/portabilidadRegistro';
 import { mapearConLimite } from '../../../../core/utils/concurrencia'; // SCRUM-83
 import { resolverSeleccion } from '../../domain/seleccionExport'; // SCRUM-138 (export selectivo)
 
@@ -730,3 +736,64 @@ router.get('/quotes.csv', async (req, res) => {
 });
 
 export default router;
+
+// ── SCRUM-244 · LA PUERTA DE PORTABILIDAD (art. 15 y 20) ────────────────────────────────
+//
+// Une las tres piezas: la COBERTURA derivada del schema, el REGISTRO del derecho ejercido, y
+// esta ruta, que es por donde el profesional lo ejerce **desde su cuenta**.
+//
+// ⚠️ ESTO NO ES LA RUTA DE SUPRESIÓN (art. 17), QUE SIGUE BLOQUEADA POR DICTAMEN. Son dos
+// derechos distintos y solo uno destruye el `AuditLog` fiscal: la portabilidad **solo lee**. Que
+// compartan ticket no las hace lo mismo, y confundirlas sería el error caro — por eso hay un
+// guard que falla si esta ruta llega a contener una operación de borrado.
+//
+// EL ROL NO SE RELAJA, y es decisión del fundador con su motivo escrito: el titular del derecho
+// sobre los datos del NEGOCIO es el negocio, no cada miembro del equipo. Un técnico tiene derecho
+// sobre SUS datos personales —su nombre y su correo en `teamMembers`—, que es otra cosa y mucho
+// más pequeña. Relajar un `requireRole` para resolver un caso que no es el que parece es cómo se
+// abren los agujeros. La ruta hereda el `requireRole('admin')` del montaje.
+//
+// EL REGISTRO SE ESCRIBE ANTES DEL PRIMER BYTE, mismo criterio que `exportacion_fiscal`
+// (SCRUM-221): registrar de más es infinitamente menos grave que registrar de menos. Si la
+// descarga se corta a mitad, consta un ejercicio del derecho que quizá no llegó — y eso es
+// preferible a no poder demostrar que se atendió.
+//
+// LAS DOS FECHAS COINCIDEN AQUÍ, y no es que sobre una: en autoservicio el derecho se satisface
+// EN EL ACTO, así que solicitud y atención son el mismo instante y `solicitudesPendientes`
+// devuelve —correctamente— que no queda nada pendiente. Donde NO coincidirán es en la supresión,
+// que lleva revisión humana en medio (opción C MIXTA). El mismo registro sirve para las dos.
+router.get('/portabilidad.zip', async (req, res) => {
+  try {
+    const merchantId = req.merchantId!;
+    const actor = actorDeRequest(req as any);
+    const ip = requestIp(req);
+
+    // El paquete PRIMERO: si la derivación está ciega, `construirPaquete` lanza y aquí no se
+    // registra ni se entrega nada. Registrar un derecho «atendido» con un ZIP vacío sería la
+    // peor de las dos mentiras posibles.
+    const paquete = await construirPaquete(prisma, merchantId);
+
+    const solicitudId = await registrarSolicitud(prisma, { merchantId, actor, ip });
+    await registrarAtencion(prisma, { merchantId, solicitudId, actor, ip });
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', 'attachment; filename="portabilidad.zip"');
+    res.setHeader('Cache-Control', 'no-store');
+
+    const archive = new ZipArchive({ zlib: { level: 9 } });
+    archive.pipe(res);
+    for (const dataset of paquete) {
+      archive.append(datasetACsv(dataset, camposDe(dataset.modelo)), { name: dataset.fichero });
+    }
+    // El aviso del art. 15 va con el texto PENDIENTE de aprobación (regla 30): la pieza existe
+    // vacía a propósito, para que ponerlo sea una línea el día que esté aprobado.
+    archive.append(LEEME_PENDIENTE, { name: 'LEEME.txt' });
+    await archive.finalize();
+  } catch (err) {
+    console.error('[GET /admin/exports/portabilidad.zip]', err);
+    // Se ramifica por CÓDIGO, nunca por el texto (SCRUM-151). Aquí no hay microcopy: el texto
+    // que vea el profesional lo pone la UI cuando esté aprobado.
+    if (!res.headersSent) return res.status(500).json({ ok: false, error: 'portabilidad_fallida' });
+    return res.end();
+  }
+});
