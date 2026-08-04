@@ -2,8 +2,9 @@
 
 **Fecha:** 5-ago-2026 · **Carril:** G (Trabajos) · **Gate:** sin gate — es un informe
 
-**Medido contra:** `origin/main` = `c0b41e64a520a001471294aae9ece9a3b1546b81` · fetch verificado **00:23:14** (+01:00)
-**Re-anclado a mitad:** a las **00:32:47** `main` ya era `f3dc977bc33abdb437a85cc0d5b6139f7d404a9a` (entró el PR #415, SCRUM-287). Comprobado **blob a blob a las 00:33:12**: los nueve ficheros medidos son **byte-idénticos** en los dos shas — los tres commits nuevos solo tocan `docs/`. **La medición vale en ambos.**
+**Medido contra:** `origin/main` = `c0b41e64a520a001471294aae9ece9a3b1546b81` · 2026-08-05T00:23:14+01:00
+
+**Re-anclado a mitad:** a las **00:32:47** (`2026-08-05T00:32:47+01:00`) `main` ya era `f3dc977bc33abdb437a85cc0d5b6139f7d404a9a` (entró el PR #415, SCRUM-287). Comprobado **blob a blob a las 00:33:12** (`2026-08-05T00:33:12+01:00`): los nueve ficheros medidos son **byte-idénticos** en los dos shas — los tres commits nuevos solo tocan `docs/`. **La medición vale en ambos.**
 **Suite:** 250 tests · 213 pass · **0 fail** · 37 skip · `npm test` exit **0** (ver la nota honesta del final: ese número describe el árbol de la sesión, no `main`)
 **Base de entrega:** este documento se commitea sobre `origin/main` = `f1a8ca507d6df9d530976c3a00289e051014fb0a` (medido **00:48:36**). `main` se movió una tercera vez mientras se preparaba la entrega; comprobado que `f3dc977..f1a8ca50` **no toca ninguno de los nueve ficheros medidos** (entran SCRUM-321, SCRUM-342 y un test), así que la medición sigue válida sobre esta base.
 
