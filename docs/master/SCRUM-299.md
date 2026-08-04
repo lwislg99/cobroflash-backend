@@ -72,9 +72,30 @@ pass · 0 fail · 67 skip**.
 **COBERTURA (no es SCRUM-253):** el guard corre en `npm test` — suite **1276 · 1209 pass · 0 fail ·
 67 skip**; SCRUM-237 NINGUNO 0. No es un script suelto que nadie ejecuta.
 
+## Cierre — textos aprobados aplicados y baseline a 0 (4-ago-2026, commit `246a582`)
+Con el trinquete bidireccional ya en su sitio, se transcribieron los textos APROBADOS por el fundador
+(reglas 26/30 — transcribir una decisión tomada NO es escribir microcopy), carácter a carácter:
+- `index.html:380` «Recibe la factura» → «Recibe el enlace de pago»
+- `index.html:424` «¡Genial! Aquí tienes tu factura. Págala cuando quieras:» → «¡Genial! Ya puedes pagar cuando quieras:»
+- `index.html:433` «Factura #F-128» → «Reforma de baño»
+- FAQ export → «clientes, presupuestos, facturas, cobros, trabajos y gastos se exportan en CSV cuando quieras»
+
+**El baseline bajó a 0 en el MISMO commit**, con `limpiadoPor` anotado al lado — y no por disciplina:
+el trinquete lo EXIGIÓ (con el copy limpio y el baseline aún en 3, el ⬇️ cayó pidiendo bajar `n` y
+anotar). Verificado al revés: revertir un texto sube a 1 y ⬆️ cae. **La deuda no bajó en silencio: el
+guard obligó a registrar el arreglo — la prueba de que el trinquete funciona.** `:317`/`:7`/`:37` NO se
+tocaron (categoría de producto, ciertas).
+
+🔴 **El guion H2 (`:498`) NO se aplicó — PARADO a propósito.** Al compararlo con el guion oficial
+(`docs/YAQU_MASTER.md:214`, regla 26) falta MÁS que la frase transcrita: (a) una CUARTA frase entera
+«Si quieres, le paso a tu gestor el detalle técnico cuando lo publique»; (b) «Te contesto» (oficial)
+vs «Te contestamos» (`:498`). El límite del fundador era «si falta alguna otra parte que no
+transcribisteis, PARAD; no lo completéis de memoria». Reportado para su decisión.
+
 ## Fuera de alcance (no tocado)
-El copy (los seis textos, del fundador), el guion H2 de la FAQ (`:498`, regla 26), el camino de
-emisión / el flag / `allocateInvoiceNumber` (regla 38), y el rediseño de la landing (F1).
+El guion H2 completo (`:498`, regla 26 — reportado arriba para decisión del fundador), los tres textos
+de categoría (`:317`/`:7`/`:37`), el camino de emisión / el flag / `allocateInvoiceNumber` (regla 38),
+y el rediseño de la landing (F1).
 
 ## Ficheros
 - `tests/_copy-publico.mjs` — censo derivado + `promesasDeFactura` (discriminador A/B declarado)
