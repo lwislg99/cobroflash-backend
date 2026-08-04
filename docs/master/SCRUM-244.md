@@ -83,3 +83,90 @@ por `SyntaxError` (la constante aún no existía), que no prueba nada. Se introd
 `docs/master/SCRUM-<n>.md`. Verificado que es previo y ajeno: el diff de esta rama no toca `docs/`
 más que en ficheros nuevos, y la entrada está en `origin/main`. **Suite: 1088 tests, 1 fallo, y ese
 fallo es ése.**
+
+---
+
+# SCRUM-244 · punto 3 (parte 1 de 2): EL REGISTRO de que se ejerció el derecho
+
+**Fecha:** 3-ago-2026 · **Carril:** A · **Gate:** sin gate, corre en `npm test`
+
+> **Nota sobre el ancla.** Esta sección se midió contra `origin/main` =
+> `dd61eb09b7a22121217c19dbbdd2ec13ab939873` · 2026-08-03T20:04:00+02:00. Va **en prosa y no como
+> campo `Medido contra:`** a propósito: el fichero está en el censo heredado de SCRUM-267, cuya
+> decisión escrita es que esas tres entradas **no se rellenan**. Ponerle el campo habría bajado el
+> censo y obligado a editar el guard de otro ticket — así que el dato queda declarado sin cambiar
+> una decisión que no es mía. Si prefieres que el fichero salga del censo, es una línea.
+
+## Qué resuelve, y no es «poder exportar»
+
+Exportar ya se puede. Lo imposible hoy es **demostrar que se atendió, y cuándo** — que es
+justamente lo que se incumple: el art. 12.3 da **un mes desde la recepción de la solicitud**. Sin
+registro no se sabe si un caso lleva tres días o cinco semanas, ni se puede probar después que se
+respondió a tiempo.
+
+## Dos instantes, porque el flujo tiene un humano en medio
+
+Opción **C MIXTA** (decisión del fundador, 3-ago-2026): el profesional **solicita** desde su cuenta
+—eso arranca el plazo— y el fundador **ejecuta** tras revisar. No son dos nombres para el mismo
+hecho: hay una revisión humana entre medias, así que dos fechas no son teatro, son la forma del
+flujo. El autoservicio completo espera a 1(b): **un botón que borra facturas es peor que no tener
+botón.**
+
+## Sin tocar schema, y sin tabla nueva
+
+`AuditLog` ya traía todo: `createdAt` (los dos instantes), `entityId` (la correlación) y los dos
+índices que las consultas necesitan (`[merchantId, action, createdAt]` y
+`[merchantId, entityType, entityId]`). **Cero migraciones, cero índices nuevos** — y el schema es
+el único freno duro del proyecto, así que evitarlo no es elegancia, es no abrir esa puerta.
+
+**La correlación, que es lo único no obvio:** la fila de ATENCIÓN guarda en `entityId` el `id` de
+la fila de SOLICITUD. Así «lo pendiente» es una diferencia de conjuntos entre dos columnas
+indexadas — sin buscar dentro del JSON de `meta` y sin inventar un identificador propio.
+
+## La pregunta que justifica el módulo
+
+`solicitudesPendientes(cliente, { dias })` contesta **«¿cuántas solicitudes llevan más de N días
+sin atender?»**. Un registro que guarda las dos fechas y no puede cruzarlas tiene el dato y no la
+respuesta, y la respuesta es lo único que sirve para demostrar cumplimiento.
+
+## Las dos acciones son BLOQUEANTES
+
+Mismo criterio que `exportacion_fiscal`: registrar de menos es lo único que esto existe para
+impedir. Una solicitud perdida en silencio deja **un plazo legal corriendo que nadie sabe que
+corre**. Fire-and-forget aquí sería construir la prueba y tirarla si el `INSERT` falla.
+
+`recordAuditOrThrow` pasa a devolver la fila (`Promise<{id}>`). Es **aditivo**: los llamadores
+fiscales que la ignoran siguen igual. Hacía falta para que la atención pueda apuntar a su
+solicitud sin releer la fila recién escrita, que sería una carrera contra uno mismo.
+
+## Un defecto que cazó el propio test, al primer intento
+
+`fechaLimite` usaba `setMonth`, que trabaja en hora **local**. Medido con el proceso en
+`Europe/Madrid`: una solicitud del 1-mar a las 10:00Z daba límite el 1-abr a las **09:00Z** — el
+cambio de hora CET→CEST cae en medio y **se comía una hora del plazo**, siempre hacia el lado
+peligroso. Y peor que la hora: el resultado **dependía del huso del servidor**, así que el mismo
+caso vencía en dos instantes distintos según dónde corriera el proceso. Corregido a `setUTCMonth`.
+
+El plazo se cuenta por **mes de calendario, no por 30 días**: en un mes de 31, contar 30 adelanta
+el vencimiento un día entero sobre una obligación legal.
+
+## Verificado en rojo, tres veces, cada una en un mecanismo distinto
+
+1. **La correlación se rompe** (la atención deja de apuntar a su solicitud) → cae nombrando que es
+   «la fila que PARECE cumplimiento sin serlo».
+2. **La consulta deja de excluir las atendidas** → caen dos tests: el registro diría que todo está
+   al día, que es la mentira cara.
+3. **Las acciones dejan de ser bloqueantes** → cae el que impide el fire-and-forget.
+
+Las tres revertidas, verde comprobado después, y las inyecciones fueron en `dist`: `src` limpio.
+**Suite ungated: 1162 tests, 0 fallos.**
+
+## 🔴 Lo que NO tiene todavía, dicho aquí y no en una nota al pie
+
+**Nadie lo dispara.** No hay ruta que registre una solicitud: eso es «la puerta», el paso
+siguiente. Es a conciencia —el orden acordado es registro → cobertura → puerta— pero mientras
+tanto **este mecanismo existe y no lo llama nadie**, que es exactamente el patrón que este
+proyecto persigue. Queda escrito para que no se lea como terminado.
+
+Y **la ruta de supresión sigue sin mergearse**: hoy ejecutarla destruiría el `AuditLog` fiscal.
+Registro sí, ejecución no, hasta el dictamen.

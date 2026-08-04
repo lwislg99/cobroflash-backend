@@ -55,6 +55,18 @@ export type AuditAction =
   // Queda traza de QUÉ fichero y con qué rango: es material que sale de la plataforma
   // con datos personales de los clientes finales.
   | 'datos_exportados'
+  // ── SCRUM-244 · DERECHOS RGPD ───────────────────────────────────────────────────────
+  // Los DOS instantes del art. 12.3, que da UN MES desde la solicitud. Están separados por un
+  // humano A PROPÓSITO (opción C MIXTA, decisión del fundador 3-ago-2026): el profesional
+  // SOLICITA desde su cuenta —eso arranca el plazo— y el fundador EJECUTA tras revisar.
+  // Lo que hoy falta para cumplir no es poder exportar, que ya se puede: es poder DEMOSTRAR
+  // que se atendió y cuándo.
+  //
+  // La fila de ATENCIÓN guarda en `entityId` el `id` de SU SOLICITUD. Esa correlación es lo que
+  // permite contestar «¿cuántas llevan más de N días sin atender?», que es la única pregunta
+  // que hace útil el registro. Detalle en `modules/exports/domain/portabilidadRegistro.ts`.
+  | 'portabilidad_solicitada'
+  | 'portabilidad_atendida'
   // ── SCRUM-207 · acciones FISCALES ───────────────────────────────────────────────────
   // A1 · se consume número de serie. **Punto de no retorno A** (SCRUM-200 §5). T1.
   | 'factura_emitida'
@@ -123,6 +135,13 @@ export const ACCIONES_BLOQUEANTES = [
   'aviso_ambar_decidido',
   'cambio_flag',
   'exportacion_fiscal',
+  // SCRUM-244 · las dos de RGPD son BLOQUEANTES por el mismo motivo que `exportacion_fiscal`:
+  // registrar de menos es lo único que este registro existe para impedir. Una solicitud que se
+  // pierde en silencio deja un plazo legal corriendo que NADIE sabe que corre — y el día que
+  // alguien pregunte, no hay nada que enseñar. Fire-and-forget aquí sería construir la prueba
+  // y tirarla si el INSERT falla.
+  'portabilidad_solicitada',
+  'portabilidad_atendida',
 ] as const;
 export type AuditActionBloqueante = (typeof ACCIONES_BLOQUEANTES)[number];
 /** Todo lo demás. Es lo ÚNICO que `recordAudit` (fire-safe) acepta. */
@@ -266,6 +285,13 @@ export function recordAudit(params: AuditParams<AuditActionFireSafe>): void {
 export async function recordAuditOrThrow(
   params: AuditParams<AuditAction>,
   client: AuditClient = prisma as unknown as AuditClient,
-): Promise<void> {
-  await client.auditLog.create({ data: datosDe(params) });
+): Promise<{ id: number }> {
+  // SCRUM-244 · DEVUELVE LA FILA. Antes era `Promise<void>` y el cambio es ADITIVO: los
+  // llamadores que la ignoran —todos los fiscales— siguen igual, porque `await` sobre un valor
+  // que no se usa no cambia nada.
+  //
+  // Hace falta porque el registro de RGPD necesita el `id` de la SOLICITUD para que la fila de
+  // ATENCIÓN pueda apuntar a ella. La alternativa era releer la fila recién escrita para
+  // averiguar su id, que es una carrera contra uno mismo y además una consulta de más.
+  return (await client.auditLog.create({ data: datosDe(params) })) as { id: number };
 }
