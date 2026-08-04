@@ -2,16 +2,18 @@
 // Sin gate: lee el schema como texto y usa un prisma de mentira. Ni BD ni red.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// EL DATO: de los modelos con `merchantId` en `schema.prisma`, NINGUNO declara FK con
-// `onDelete`. La BD no cascadea ni protesta: un `merchant.delete()` sale con exit 0 y deja el
-// rastro repartido. Hoy no duele (nadie borra merchants); el día del «dar de baja mi cuenta»
-// (RGPD art. 17), **un borrado parcial es peor que ninguno: creerías haber cumplido.**
+// EL DATO vive en **`docs/CENSO_FK_MERCHANT.md`** y no se repite aquí: este comentario fue una
+// de las tres copias que lo enunciaban por su cuenta, y la que se quedó con la versión vieja.
+// En una frase: **la red de FK no es uniforme**, así que un borrado en mal orden falla RUIDOSO en
+// unas tablas y deja huérfanos MUDOS en otras. Hoy no duele (nadie borra merchants); el día del
+// «dar de baja mi cuenta» (RGPD art. 17), **un borrado parcial es peor que ninguno: creerías
+// haber cumplido.**
 //
 // 🔑 LA TRAMPA, y por qué este fichero no deriva el orden: `MODELOS_POR_MERCHANT` **no es un
-// conjunto, es una SECUENCIA de dependencias** mantenida a mano porque no hay FK que la
-// imponga. Derivar el orden del schema daría el ORDEN DE DECLARACIÓN, que borraría el padre
-// antes que el hijo y dejaría huérfanos **sin que nada protestase** — el fallo exacto que el
-// ticket viene a cerrar.
+// conjunto, es una SECUENCIA de dependencias** mantenida a mano porque **ninguna FK impone el
+// orden ENTRE hijos**. Derivar el orden del schema daría el ORDEN DE DECLARACIÓN, que borraría el
+// padre antes que el hijo: **ruidoso donde hay red, MUDO donde no la hay** — el fallo exacto que
+// el ticket viene a cerrar.
 //
 // Por eso: la COBERTURA se deriva, el ORDEN se declara, y el guard ata las dos.
 // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -43,7 +45,8 @@ test('SCRUM-192 · todo modelo con merchantId está en el orden o declarado fuer
     olvidados,
     [],
     `🔴 ${olvidados.length} modelo(s) con merchantId no aparecen en el borrado (${olvidados.join(', ')}). ` +
-      `No hay FK que los cascadee: al borrar el merchant, sus filas se quedan y NADIE protesta. ` +
+      `La red de FK no es uniforme (docs/CENSO_FK_MERCHANT.md): en unas tablas el borrado ` +
+      `revienta ruidoso y en otras las filas se quedan sin que nadie proteste. ` +
       `Añádelos al ORDEN (pensando DÓNDE: hijos antes que padres) o decláralos fuera con su motivo.`,
   );
 });
