@@ -24,6 +24,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+// SCRUM-270 · las 4 respuestas ya están en la mano cuando se assertea: se reportan las 4.
+import { observarRespuesta, exigirTodas } from './_evidencia.mjs';
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
@@ -97,16 +99,29 @@ test('SCRUM-127: requireActivePlan bloquea de verdad las 4 rutas gateadas (y sol
       const cookie = await mkCookie(merchantVigente.id);
       const r = await llamarLas4(cookie, fx, merchantVigente.id);
 
-      assert.equal(r.rEnviarWa.status, 200, `enviar-whatsapp con plan vigente debe ser 200 (fue ${r.rEnviarWa.status}) — si esto falla, el problema es la fixture, no el guard`);
-      assert.equal((await r.rEnviarWa.json()).ok, true);
-
-      assert.equal(r.rEnviarFirmar.status, 200, `enviar-para-firmar con plan vigente debe ser 200 (fue ${r.rEnviarFirmar.status})`);
-      assert.equal((await r.rEnviarFirmar.json()).ok, true);
-
-      assert.equal(r.rQuoteWa.status, 200, `quotes send-whatsapp con plan vigente debe ser 200 (fue ${r.rQuoteWa.status})`);
-      assert.equal((await r.rQuoteWa.json()).ok, true);
-
-      assert.equal(r.rQuoteCreate.status, 201, `quote/create con plan vigente debe ser 201 (fue ${r.rQuoteCreate.status})`);
+      // SCRUM-270 · las CUATRO ya están en la mano: se comprueban juntas y el fallo las lleva
+      // todas. Antes se asserteaba una a una y la primera se llevaba por delante el dato que
+      // decide el diagnóstico — «falla SOLO enviar-whatsapp» (cadena de esa ruta) frente a
+      // «fallan las cuatro» (algo compartido: sesión, tenencia, la fila del merchant).
+      const obs = [
+        await observarRespuesta('enviar-whatsapp', r.rEnviarWa),
+        await observarRespuesta('enviar-para-firmar', r.rEnviarFirmar),
+        await observarRespuesta('quotes send-whatsapp', r.rQuoteWa),
+        await observarRespuesta('quote/create', r.rQuoteCreate),
+      ];
+      const esperado = { 'quote/create': 201 };
+      exigirTodas(
+        obs,
+        (o) => {
+          const quiero = esperado[o.nombre] ?? 200;
+          if (o.status !== quiero) return `esperaba ${quiero} y fue ${o.status}`;
+          // El cuerpo también, y en la misma pasada: un 200 con `{"ok":false}` es un fallo que
+          // el estado por sí solo daría por bueno.
+          if (o.nombre !== 'quote/create' && !/"ok"\s*:\s*true/.test(o.cuerpo)) return `200 pero el cuerpo no dice ok:true`;
+          return null;
+        },
+        'con plan VIGENTE las 4 rutas deben pasar de verdad — si fallan, el problema es la fixture, no el guard',
+      );
     });
 
     // ── (2) LO QUE EL TICKET PIDE: plan VENCIDO → las 4 deben cortar con 403 trial_expired ──
@@ -115,17 +130,25 @@ test('SCRUM-127: requireActivePlan bloquea de verdad las 4 rutas gateadas (y sol
       const cookie = await mkCookie(merchantVencido.id);
       const r = await llamarLas4(cookie, fx, merchantVencido.id);
 
-      for (const [nombre, res] of [
-        ['enviar-whatsapp', r.rEnviarWa],
-        ['enviar-para-firmar', r.rEnviarFirmar],
-        ['quotes send-whatsapp', r.rQuoteWa],
-        ['quote/create', r.rQuoteCreate],
-      ]) {
-        assert.equal(res.status, 403, `${nombre} con trial vencido debe ser 403 (fue ${res.status})`);
-        const body = await res.json();
-        assert.equal(body.error, 'trial_expired', `${nombre}: error debe ser trial_expired (fue ${body.error})`);
-        assert.equal(body.redirect, '/dashboard/#plans', `${nombre}: debe indicar dónde renovar`);
-      }
+      // SCRUM-270 · el bucle asserteaba DENTRO: la 2ª, 3ª y 4ª respuestas ya estaban recibidas y
+      // no llegaban a imprimirse. Ahora se recorre para OBSERVAR y se falla una sola vez con las
+      // cuatro delante — que es justo lo que separa «se escapó una ruta» de «el guard no corre».
+      const obs = await Promise.all([
+        observarRespuesta('enviar-whatsapp', r.rEnviarWa),
+        observarRespuesta('enviar-para-firmar', r.rEnviarFirmar),
+        observarRespuesta('quotes send-whatsapp', r.rQuoteWa),
+        observarRespuesta('quote/create', r.rQuoteCreate),
+      ]);
+      exigirTodas(
+        obs,
+        (o) => {
+          if (o.status !== 403) return `esperaba 403 y fue ${o.status}`;
+          if (!/"error"\s*:\s*"trial_expired"/.test(o.cuerpo)) return `403 pero sin error trial_expired`;
+          if (!/"redirect"\s*:\s*"\/dashboard\/#plans"/.test(o.cuerpo)) return `403 sin decir dónde renovar`;
+          return null;
+        },
+        'con trial VENCIDO las 4 rutas deben cortar con 403 trial_expired',
+      );
     });
 
     // ── (3) El guard es SOLO para trial: un plan de pago no se bloquea aunque su fecha

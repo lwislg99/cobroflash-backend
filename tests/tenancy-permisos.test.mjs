@@ -19,6 +19,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 import { diagnosticarAusencia } from './_tenancy-diag.mjs'; // SCRUM-259: (a)filtro/(b)borrado/(c)no-comprobable
+import { exigirTodas } from './_evidencia.mjs'; // SCRUM-270: las dos preguntas, en la misma corrida
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -260,13 +261,39 @@ test('SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo mercha
     // separar — (a) filtro, (b) borrado por debajo, (c) no comprobable. Antes de fallar re-leemos
     // jobA+merchant y dejamos que el mensaje diga cuál. Best-effort: el diagnóstico JAMÁS tumba el
     // test (su propio fallo se captura y se reporta como "no comprobable", no como otra excepción).
-    if (!idsA.includes(jobA.id)) {
-      const diag = await diagnosticarAusencia(prisma, {
+    //
+    // SCRUM-270 · y las DOS preguntas se responden en la MISMA corrida. Son diagnósticos
+    // OPUESTOS —«no veo lo mío» apunta al filtro, «veo lo ajeno» es una fuga— y antes la segunda
+    // no llegaba a ejecutarse si caía la primera: la lista ya estaba entera en la mano y su otra
+    // mitad se tiraba. El diagnóstico de tres estados de arriba NO se reescribe: se conserva y
+    // solo se le pone la otra observación al lado.
+    const faltaElPropio = !idsA.includes(jobA.id);
+    const diag = faltaElPropio
+      ? await diagnosticarAusencia(prisma, {
         jobId: jobA.id, merchantId: merchant.id, idsLen: idsA.length, ahoraIso: new Date().toISOString(),
-      }).catch((e) => `(c) diagnóstico no comprobable: el propio diagnóstico lanzó (${e?.message ?? e})`);
-      assert.fail(`el técnico debe ver SU Trabajo en la lista — ${diag}`);
-    }
-    assert.ok(!idsA.includes(jobB.id), 'FUGA: el técnico ve en la lista el Trabajo de otro técnico');
+      }).catch((e) => `(c) diagnóstico no comprobable: el propio diagnóstico lanzó (${e?.message ?? e})`)
+      : null;
+
+    exigirTodas(
+      [
+        {
+          nombre: 've SU Trabajo',
+          status: faltaElPropio ? 'NO' : 'sí',
+          cuerpo: diag ?? `jobA=${jobA.id} presente en idsA (${idsA.length} filas)`,
+        },
+        {
+          nombre: 'NO ve el ajeno',
+          status: idsA.includes(jobB.id) ? 'FUGA' : 'ok',
+          cuerpo: `jobB=${jobB.id}, idsA=[${idsA.join(',')}]`,
+        },
+      ],
+      (o) => {
+        if (o.nombre === 've SU Trabajo' && o.status === 'NO') return `el técnico NO ve su Trabajo — ${o.cuerpo}`;
+        if (o.nombre === 'NO ve el ajeno' && o.status === 'FUGA') return 'FUGA: el técnico ve en la lista el Trabajo de otro técnico';
+        return null;
+      },
+      'la lista del técnico debe traer lo suyo y NO lo ajeno',
+    );
 
     // (b) DETALLE por URL directa de un Trabajo ajeno (mismo merchant) → 404
     const cross = await get(`/admin/jobs/${jobB.id}`, cookieTecA);
