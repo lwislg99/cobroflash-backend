@@ -35,7 +35,7 @@ import { PrismaClient } from '@prisma/client';
 import {
   adquirirLock, soltarLock, leerMarcaCruda, parsearLock, parsearContexto, leerComentarioSchema,
   esMarcaDeStaging, tieneSufijoIlegible, formatearDuracion,
-  lineasDeContexto, decidirVigencia, TTL_POR_DEFECTO_MS, CODIGO_SALIDA_LOCK_AJENO,
+  lineasDeContexto, decidirVigencia, cederLock, TTL_POR_DEFECTO_MS, CODIGO_SALIDA_LOCK_AJENO,
 } from './_staging-lock.mjs';
 import { assertSafeStagingUrl, STAGING_HOST } from './_db-guard.mjs';
 // SCRUM-253 · la identidad de la sesión, derivada del árbol de trabajo.
@@ -66,11 +66,27 @@ function ramaActual() {
   return n && n !== 'HEAD' ? n : 'sin-ref';
 }
 
-if (!['estado', 'tomar', 'soltar'].includes(modo)) {
+if (!['estado', 'tomar', 'soltar', 'ceder', 'quien-soy'].includes(modo)) {
   console.error('\nuso:  node scripts/turno-staging.mjs estado');
   console.error('      node scripts/turno-staging.mjs tomar  [--ref <rama-o-ticket>] [--minutos <N>]');
-  console.error('      node scripts/turno-staging.mjs soltar [--marca <marca>]\n');
+  console.error('      node scripts/turno-staging.mjs soltar [--marca <marca>]');
+  console.error('      node scripts/turno-staging.mjs ceder  --a <id-de-sesion> [--minutos <N>]');
+  console.error('      node scripts/turno-staging.mjs quien-soy');
+  console.error('\n  soltar = «he terminado, queda libre para quien lo pille».');
+  console.error('  ceder  = «he terminado y es TUYO»: nadie más puede cogerlo (SCRUM-268).\n');
   process.exit(2);
+}
+
+// SCRUM-268 · `quien-soy` va ANTES de exigir la URL de staging: lo único que hace es decir cómo
+// te llamas, y eso es lo que le pasas a quien te va a ceder el turno. Pedirle el entorno de la
+// base para responder a eso sería un obstáculo sin motivo.
+if (modo === 'quien-soy') {
+  const yo = dueñoActual();
+  console.log(`\n${yo}\n`);
+  console.log('  Identificador de ESTA sesión: la máquina y el árbol de trabajo (SCRUM-253).');
+  console.log('  Pásaselo a quien te vaya a ceder el turno para que lo escriba a tu nombre:');
+  console.log(`      node scripts/turno-staging.mjs ceder --a ${yo}\n`);
+  process.exit(0);
 }
 
 const urlStaging = process.env.DATABASE_URL_STAGING;
@@ -176,6 +192,64 @@ try {
     if (!r.contextoEscrito) console.log(`   ⚠️ el contexto no se pudo escribir (${r.contextoMotivo}); el turno SÍ es tuyo.`);
     console.log(`   Suéltalo con:  node scripts/turno-staging.mjs soltar`);
     console.log(`   MARCA=${r.marca}\n`);
+  }
+
+  if (modo === 'ceder') {
+    // SCRUM-268 · CEDER ≠ SOLTAR. Soltar abre una carrera que gana el bucle esperador; ceder deja
+    // el turno escrito A NOMBRE de alguien, así que la cola acordada existe donde una máquina
+    // puede leerla y no solo en la conversación.
+    const destinatario = opcion('a');
+    if (!destinatario) {
+      console.error('\n❌ falta a quién. Uso: ceder --a <id-de-sesion>');
+      console.error('   Ese id lo da la OTRA sesión con:  node scripts/turno-staging.mjs quien-soy\n');
+      process.exit(2);
+    }
+    // Se valida la FORMA, no la existencia: no hay forma de saber si esa sesión existe, y no hace
+    // falta — si nunca llega, la ventana vence y el turno vuelve al común. Lo que sí se impide es
+    // escribir en el marcador algo que luego no se pueda releer (el marcador es la barrera).
+    if (!/^[A-Za-z0-9._-]{1,64}$/.test(destinatario)) {
+      console.error(`\n❌ «${destinatario}» no tiene forma de identificador de sesión.`);
+      console.error('   Pídeselo tal cual a la otra sesión:  node scripts/turno-staging.mjs quien-soy\n');
+      process.exit(2);
+    }
+    const minutos = Number(opcion('minutos')) > 0 ? Number(opcion('minutos')) : 30;
+
+    let marcaPropia = opcion('marca');
+    if (!marcaPropia) {
+      marcaPropia = leerNota();
+      if (!marcaPropia) {
+        console.error('\n❌ no sé cuál era tu marca: no hay nota guardada y no se pasó --marca.');
+        console.error('   Solo puede ceder quien tiene el turno. Mira `estado`.\n');
+        process.exit(2);
+      }
+    }
+
+    const r = await cederLock(cliente, {
+      marcaPropia, dueño: dueñoActual(), destinatario,
+      ventanaMs: minutos * 60 * 1000, ref: opcion('ref') || ramaActual(),
+    });
+
+    if (!r.ok) {
+      const explica = {
+        'a-mi-mismo': 'te lo estás cediendo a ti mismo; si querías conservarlo, no hagas nada',
+        'no-es-staging': `la base "${r.db}" no lleva el marcador de staging`,
+        'no-es-la-mia': `el marcador ya no es el tuyo (actual: ${JSON.stringify(r.marcaActual)})`,
+        ajeno: `ese turno es de «${r.lock?.dueño}», no tuyo: no se cede lo que no se tiene`,
+      }[r.motivo] ?? r.motivo;
+      console.error(`\n❌ NO se cedió: ${explica}.\n`);
+      process.exit(2);
+    }
+
+    borrarNota(); // ya no es nuestro: la nota describiría un turno de otro
+    console.log(`\n🤝 Turno CEDIDO a «${r.destinatario}» sobre la base "${r.db}".`);
+    console.log(`   Reservado a su nombre hasta ${new Date(r.finMs).toISOString()} (~${minutos} min).`);
+    console.log('   Nadie más puede cogerlo mientras tanto — tampoco un bucle esperador.');
+    console.log('   Si no lo recoge, la reserva vence y el turno vuelve a quedar libre solo.');
+    if (!r.contextoEscrito) {
+      console.log(`   ⚠️ el contexto no se pudo escribir (${r.contextoMotivo}): el turno SÍ está a su`);
+      console.log('      nombre, pero `estado` lo describirá como un turno normal suyo, no como cesión.');
+    }
+    console.log('');
   }
 
   if (modo === 'soltar') {

@@ -118,7 +118,10 @@ test('SCRUM-232 · ① el parser de contexto reconoce lo suyo y rechaza lo que n
   // Tipo fuera del vocabulario cerrado → null.
   assert.equal(parsearContexto(CTX_PREFIJO + DUEÑO + '@2026-07-30T12:00:00.000Z+inventado+x', DUEÑO), null,
     '🔴 acepta un tipo que no está en el vocabulario cerrado');
-  assert.deepEqual(TIPOS_EJECUCION, ['gated', 'suelto']);
+  // SCRUM-268 · entra `cedido`: un turno reservado a nombre de alguien que todavía no ha llegado.
+  // Este assert existe para que el vocabulario no crezca EN SILENCIO, y ha hecho exactamente eso
+  // — salió rojo y obligó a declarar el cambio aquí. Sigue cerrado, ahora con tres.
+  assert.deepEqual(TIPOS_EJECUCION, ['gated', 'suelto', 'cedido']);
 });
 
 test('SCRUM-232 · ② un contexto HUÉRFANO se descarta: va clavado al dueño', () => {
