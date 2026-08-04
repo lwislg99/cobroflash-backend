@@ -58,10 +58,17 @@ export const SIN_INTERCEPTAR =
   'SCRUM-250: no se interceptó NINGUNA escritura de WA-0b. El log ya no pasa por ' +
   '`recordWaMessage` (¿se enrutó por otra función?), así que este helper no está sincronizando ' +
   'nada y el test habría vuelto a depender del reloj sin que se notara. Revisa el camino de ' +
-  'registro antes de tocar el test.';
+  'registro antes de tocar el test. (SCRUM-255: si el envío se dispara ANIDADO —la ruta lo lanza ' +
+  'sin await y responde antes—, lo que quieres es `esperarAlMenos(n)`, no `esperar()`.)';
 
 /** El texto lleva los ms REALES con los que se armó la red, no la constante: si alguien la baja
  *  en un test y el mensaje siguiera diciendo 60000, el rojo mentiría sobre lo que midió. */
+/** SCRUM-255 · «no ARRANCÓ» ≠ «no terminó». Los dos rojos mandan a mirar sitios distintos. */
+export const mensajeNoArrancaron = (n, vistas, ms) =>
+  `SCRUM-255: se esperaban al menos ${n} escritura(s) de WA-0b y en ${ms} ms arrancaron ${vistas}. ` +
+  'Eso NO es «la escritura tarda»: es que NO EMPEZÓ. Mira si el camino sigue llamando a ' +
+  '`recordWaMessage` antes de subir este número.';
+
 export const mensajeRedDisparada = (ms) =>
   `SCRUM-250: la escritura de WA-0b no terminó en ${ms} ms. Eso NO es el sondeo de antes ` +
   'agotándose: es una escritura que no acaba nunca. Mira el pool de conexiones (P2024) antes ' +
@@ -88,6 +95,8 @@ export function interceptarWaLog({ log, prisma, timeoutMs = TIMEOUT_RED_MS } = {
   const pendientes = [];
   const fallos = [];
   let interceptadas = 0;
+  /** SCRUM-255 · espera de ARRANQUE pendiente: `{ n, resolver }`. Ver `esperarAlMenos`. */
+  let arranque = null;
 
   // ── CAPA 1 · el punto de espera, en el borde del módulo ─────────────────────
   // Se ENVUELVE, no se sustituye: la escritura de verdad sigue ocurriendo. Se devuelve la
@@ -98,6 +107,9 @@ export function interceptarWaLog({ log, prisma, timeoutMs = TIMEOUT_RED_MS } = {
     const p = recordOriginal.call(this, input);
     interceptadas++;
     pendientes.push(Promise.resolve(p));
+    // SCRUM-255: despertar a quien esperaba a que ARRANCARAN n escrituras (`esperarAlMenos`).
+    // Se resuelve en el mismo tick en que nace la promesa: sin sondeo y sin reloj.
+    if (arranque && interceptadas >= arranque.n) { arranque.resolver(); arranque = null; }
     return p;
   };
 
@@ -127,6 +139,20 @@ export function interceptarWaLog({ log, prisma, timeoutMs = TIMEOUT_RED_MS } = {
     };
   }
 
+  /** Corre `promesa` con la red de última instancia. La red no decide en el caso normal. */
+  async function conRed(promesa, mensaje) {
+    let temporizador = null;
+    const red = new Promise((_, rechazar) => {
+      temporizador = programar(() => rechazar(new Error(mensaje())), timeoutMs);
+      temporizador.unref?.(); // que la red no mantenga vivo el proceso por sí sola
+    });
+    try {
+      return await Promise.race([promesa, red]);
+    } finally {
+      clearTimeout(temporizador);
+    }
+  }
+
   /** Drena TODO lo registrado, incluidas las escrituras que nazcan mientras se drena. */
   async function drenar() {
     while (pendientes.length) {
@@ -141,18 +167,40 @@ export function interceptarWaLog({ log, prisma, timeoutMs = TIMEOUT_RED_MS } = {
      */
     async esperar() {
       if (interceptadas === 0) throw new Error(SIN_INTERCEPTAR);
+      await conRed(drenar(), () => mensajeRedDisparada(timeoutMs));
+    },
 
-      let temporizador = null;
-      const red = new Promise((_, rechazar) => {
-        temporizador = programar(() => rechazar(new Error(mensajeRedDisparada(timeoutMs))), timeoutMs);
-        temporizador.unref?.(); // que la red no mantenga vivo el proceso por sí sola
-      });
-
-      try {
-        await Promise.race([drenar(), red]);
-      } finally {
-        clearTimeout(temporizador);
+    /**
+     * SCRUM-255 · Espera a que hayan ARRANCADO al menos `n` escrituras, y luego a que terminen.
+     *
+     * 🔴 PARA QUÉ HACE FALTA, y no es `esperar()` con otro nombre. El envío de WhatsApp puede
+     * dispararse ANIDADO: una ruta lo lanza sin `await` y responde antes —
+     *
+     *     sendAlbaranFirmadoWhatsApp(albaran.id).catch(…);  ← albaranPublic.routes.ts:240
+     *     return res.json({ ok: true });                     ← responde ANTES
+     *
+     * Cuando el test recibe la respuesta, `recordWaMessage` **todavía no se ha llamado**:
+     * al envío le falta generar el PDF y hablar con Meta. `esperar()` drena lo ya empezado, que
+     * es nada, y su suelo da un ROJO CON EL DIAGNÓSTICO EQUIVOCADO — «el log ya no pasa por
+     * `recordWaMessage`» cuando la verdad es «aún no ha empezado». Pasó de verdad en la tanda
+     * gateada de SCRUM-255, en la segunda ventana de `scrum49-firma-remota`.
+     *
+     * CUÁNDO USAR CUÁL: si la acción que dispara el envío se ESPERA (la ruta hace
+     * `await sendAlbaran…`, como `albaranes.routes.ts:577` y `:592`), `esperar()` basta. Si la
+     * ruta lo lanza y responde, hace falta esto. **Censo derivado del call-graph en SCRUM-255:
+     * hay 23 disparos anidados en 7 ficheros**, así que esto no es un parche para un sitio.
+     *
+     * Es correcto también cuando la escritura YA arrancó: en ese caso no espera nada.
+     */
+    async esperarAlMenos(n = 1) {
+      if (!Number.isInteger(n) || n < 1) throw new Error('esperarAlMenos: `n` debe ser un entero ≥ 1');
+      if (interceptadas < n) {
+        await conRed(
+          new Promise((resolver) => { arranque = { n, resolver }; }),
+          () => mensajeNoArrancaron(n, interceptadas, timeoutMs),
+        );
       }
+      await conRed(drenar(), () => mensajeRedDisparada(timeoutMs));
     },
 
     /**

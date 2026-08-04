@@ -139,7 +139,15 @@ test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, a
     // (e) auto-envío de la copia firmada → WA-0b albaran_firmado_es
     let filaWa2 = null;
     try {
-      await wa2.esperar();
+      // SCRUM-255: `esperarAlMenos(1)` y NO `esperar()`. La ruta pública de firmar lanza el
+      // auto-envío SIN await y responde antes (`albaranPublic.routes.ts:240`), así que cuando
+      // llega `rFirmar` la escritura de WA-0b ni ha empezado — le falta generar el PDF y hablar
+      // con Meta. Con `esperar()` esto salió ROJO en la tanda gateada, y encima con el
+      // diagnóstico equivocado: decía «el log ya no pasa por recordWaMessage» cuando la verdad
+      // era «aún no ha empezado».
+      // La ventana 1 (enviar-para-firmar) NO lo necesita: esa ruta sí espera el envío
+      // (`albaranes.routes.ts:592`), y por eso pasó.
+      await wa2.esperarAlMenos(1);
       filaWa2 = await buscarWaTemplate(prisma, albaran.id, 'albaran_firmado_es');
     } finally {
       wa2.restaurar();
