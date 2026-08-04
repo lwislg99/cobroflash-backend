@@ -123,3 +123,74 @@ lleva a una página vacía» que el fundador acaba de vetar. Queda para una pasa
 La primera versión de esta entrada declaraba el sha **sin la hora**, y el guard de **SCRUM-267** la
 tumbó en la suite completa (`falta la HORA (la fecha sola no dice si caducó)`). Mis siete tests
 pasaban aislados: lo cazó correr la suite entera, que es exactamente para lo que se corre entera.
+
+---
+
+## Segunda tabla del mapa: las SUPERFICIES (tercera entrega de B1)
+
+**Medido contra:** `origin/main` = `eebc191dc75da0040f4934ccd8b92cc857726832` · 2026-08-04T16:03:42+01:00
+**Ficheros:** `tests/_censo-superficies-configuracion.mjs`, `tests/scrum284-dos-poblaciones.test.mjs` (9)
+
+### Por qué hacía falta
+
+El censo de campos midió 25 ajustes y no estaba mal — medía **campos**. La pantalla también tiene
+**bloques que no son campos**, y un mapa construido solo sobre los campos los deja sin sitio: el
+mismo fallo mudo con otra cara.
+
+**Es la segunda vez que un censo derivado mío se queda corto:** la primera por una FORMA
+(`createToggle`), esta por una POBLACIÓN ENTERA. Las dos las destapó el contraste humano.
+
+### El criterio, declarado
+
+**Una SUPERFICIE es una función `render…(container)` que pinta un bloque con TÍTULO PROPIO.** Dos
+hechos estructurales, y hacen falta los dos: recibe un contenedor (es un bloque, no un control) y
+su marcado abre un `<h2>` (el usuario la ve como «una cosa»).
+
+**⚠️ El criterio NO puede ser «tiene id»**, y el caso que lo prueba está medido: el contador de
+WhatsApp (`renderWaFairUseCard`) **no tiene ningún id**. Un censo por identificadores lo perdería
+entero — justo la superficie que destapó que faltaba una población. Hay un control positivo que lo
+fija.
+
+Y tampoco «toda función `render…`»: `renderProfileQrButton(card, m)` recibe una tarjeta ya pintada
+y no abre título — es un control DENTRO de una superficie. La distinción la da el primer parámetro
+más el título, no el nombre.
+
+### Las cuatro superficies
+
+| Línea | Clave | Título |
+|---|---|---|
+| 528 | `renderWaFairUseCard` | «WhatsApp este mes» |
+| 564 | `renderReadinessCard` | «Tu cuenta, lista para cobrar» |
+| 652 | `renderPublicProfileCard` | «Tu página pública» |
+| 857 | `renderReferralCard` | «Invita y gana meses gratis 🎁» |
+
+**`connect-status-body` no sale como superficie propia:** vive DENTRO de `renderReadinessCard`.
+Por eso su propuesta va anotada dentro de la de esa tarjeta.
+
+### El cuadre de la suma — no hay tercera población
+
+**21 identificadores: 8 son campos · 13 son controles de superficie o contenedores. 8 + 13 = 21 ✓**
+
+Hay un test que lo comprueba y falla si aparece un identificador que no sea ni una cosa ni la otra.
+
+### Dónde van — propuesta, no decisión
+
+Las cuatro van **declaradas pendientes con su propuesta escrita**, y el guard las acepta sin dar
+rojo: un guard que vive en rojo esperando una decisión es un guard que alguien desactiva.
+
+- **`renderPublicProfileCard`** → «Tu página pública» **cae sola**, y con ella los `qr-*` y el botón
+  de descarga, que son controles DE esta superficie, no ajustes sueltos. **Eso resuelve tres de los
+  huérfanos de campos.**
+- **`renderReadinessCard`** → a decidir. Es estado **transversal** (cobros, WhatsApp, datos
+  fiscales), no cae solo en ningún submenú. Contiene el estado de Connect, que por sí solo iría a
+  Cobros.
+- **`renderWaFairUseCard`** → a decidir. Informativo, no persiste: por la regla del fundador no es
+  Configuración, pero hoy no tiene otra pantalla donde vivir.
+- **`renderReferralCard`** → pendiente mayor: no es un ajuste, es un canal de crecimiento. Ya está
+  escrito como tarjeta con render propio sobre un contenedor, así que **moverlo a la barra lateral
+  es cambiar dónde se la llama, no rehacerla**.
+
+### Suelos y controles
+
+Suelo por población, por separado: ≥25 campos y ≥4 superficies. Positivo: la superficie **sin id**
+se censa. Negativos: un control dentro de una tarjeta no es superficie, y la vista entera tampoco.
