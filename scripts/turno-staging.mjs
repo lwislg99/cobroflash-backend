@@ -38,6 +38,12 @@ import {
   lineasDeContexto, decidirVigencia, TTL_POR_DEFECTO_MS, CODIGO_SALIDA_LOCK_AJENO,
 } from './_staging-lock.mjs';
 import { assertSafeStagingUrl, STAGING_HOST } from './_db-guard.mjs';
+// SCRUM-253 · la identidad de la sesión, derivada del árbol de trabajo.
+// ⚠️ ESTE IMPORT FALTABA, y llegó así a `main`: SCRUM-253 cambió el `const dueño = …` de abajo y
+// puso el import en los otros TRES consumidores, no en éste. `turno:tomar` reventaba con
+// `ReferenceError: dueñoActual is not defined` teniendo la suite en 1196 verdes — porque ningún
+// test ejecuta este CLI. Lo cierra el guard de `tests/scrum258-nota-por-sesion.test.mjs`.
+import { dueñoActual } from './_identidad-sesion.mjs';
 import { guardarNota, leerNota, borrarNota } from './_turno-nota.mjs';
 
 // Dónde se recuerda la marca propia entre `tomar` y `soltar`. El pid cambia entre invocaciones,
@@ -184,10 +190,18 @@ try {
         process.exit(2);
       }
     }
-    const r = await soltarLock(cliente, { marcaPropia });
+    // SCRUM-258 · el dueño viaja con la petición: soltar comprueba que el turno es MÍO. Sin esto,
+    // una marca ajena —de la nota compartida por toda la máquina, o pegada a mano en `--marca`—
+    // soltaba el turno VIVO de otra sesión en silencio.
+    const r = await soltarLock(cliente, { marcaPropia, dueño: dueñoActual() });
     if (r.soltado) {
       console.log(`\n✅ Turno SOLTADO sobre la base "${r.db}" (marcador limpio).\n`);
       borrarNota();
+    } else if (r.motivo === 'ajeno') {
+      console.log(`\n⛔ NO se soltó: ese turno es de «${r.lock.dueño}», no tuyo.`);
+      console.log(`   La marca que pasaste coincide con el marcador, pero el turno no es de esta sesión.`);
+      console.log('   Soltarlo dejaría a esa tanda escribiendo sobre una base que figura libre.');
+      console.log('   Si de verdad hay que romperlo (sesión muerta), eso es cosa de marcar-staging.mjs.\n');
     } else {
       console.log(`\n⚠️  No se soltó: el marcador ya no era el tuyo (actual: ${JSON.stringify(r.marcaActual)}).`);
       console.log('   Puede que caducara y otra sesión lo reclamara. No se le quita a nadie.\n');

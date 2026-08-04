@@ -370,9 +370,17 @@ try {
   }
 } finally {
   try {
-    const s = await soltarLock(clienteTurno, { marcaPropia });
-    if (s.soltado) console.log(`\n🔓 turno de staging SOLTADO en "${s.db}".`);
-    else console.log(`\n🔓 turno de staging: ya no era mío (marcador actual: ${JSON.stringify(s.marcaActual)}); no lo toco.`);
+    // SCRUM-258 · se pasa el dueño: soltar comprueba ahora que el turno es NUESTRO, y no solo
+    // que la cadena del marcador coincida.
+    const s = await soltarLock(clienteTurno, { marcaPropia, dueño: DUENO });
+    if (s.soltado) {
+      console.log(`\n🔓 turno de staging SOLTADO en "${s.db}".`);
+      // SCRUM-258 · y se retira la nota. `borrarNota` estaba IMPORTADO y no se llamaba NUNCA, así
+      // que cada tanda dejaba una nota huérfana apuntando a un turno ya soltado.
+      borrarNota();
+    } else {
+      console.log(`\n🔓 turno de staging: ya no era mío (marcador actual: ${JSON.stringify(s.marcaActual)}); no lo toco.`);
+    }
   } catch (err) {
     // No se convierte en fallo de la tanda: el TTL lo limpia. Pero se DICE, para que quien
     // encuentre el turno ocupado dentro de un rato sepa de dónde salió.
