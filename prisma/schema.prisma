@@ -767,6 +767,14 @@ model Albaran {
   jobId        Int       @map("job_id")
   numero       String    // ALB-YYYY-NNN, serie propia por merchant (no fiscal)
   fecha        DateTime  @default(now()) // fecha de la visita/entrega (editable en borrador)
+  // SCRUM-300 (C5): LUGAR DE ENTREGA — contenido mínimo obligatorio del albarán, y campo DEL
+  // ALBARÁN, no del Trabajo (decisión del asesor, 5-ago-2026). `Job.direccion` es una PRECARGA
+  // OPCIONAL: hoy es null para cualquier merchant real (su único escritor en el árbol es
+  // scripts/seed-video.mjs), así que en la práctica lo escribe el profesional. En un gremio la
+  // obra casi nunca está en el domicilio fiscal, y un cliente puede tener tres obras abiertas.
+  // ⚠️ SUELO: si la precarga falla o viene vacía se deja VACÍO — jamás se cae al domicilio
+  // fiscal en silencio. Una dirección equivocada en un documento de entrega es peor que ninguna.
+  lugarEntrega String?   @map("lugar_entrega")
   // SCRUM-65: SIN_VALORAR (hoy, sin precios) | VALORADO (líneas con precioUnitario+tipoIva
   // opcionales). Aditivo, default SIN_VALORAR = comportamiento actual intacto. Editable solo
   // en 'borrador' (mismo candado que lineas/notas/fecha); congelado desde 'emitido'.
@@ -776,6 +784,19 @@ model Albaran {
   version      Int       @default(1)
   signatureUrl String?   @db.Text @map("signature_url") // data-URI (patrón Quote.signatureUrl)
   firmadoAt    DateTime? @map("firmado_at")
+  // SCRUM-300 (C5): FIRMADO POR — QUIÉN firmó y EN CALIDAD DE QUÉ. Hasta ahora se guardaba un
+  // trazo sin nombre: la jurisprudencia sobre la fuerza probatoria del albarán dice que «las
+  // firmas ilegibles o no identificadas requieren prueba complementaria», y en la misma línea
+  // reconoce como normal que «personal de la misma obra rubrique la recepción». Identificar al
+  // firmante es lo que separa las dos frases, por el coste de un campo de texto.
+  // `firmadoPorCalidad` guarda el TEXTO que sale impreso: el rótulo exacto de la ranura elegida
+  // (una de las cinco aprobadas) o, en la ranura "otro", el texto libre del profesional. Se guarda
+  // resuelto y no la clave de la ranura a propósito — lo sellado debe ser lo que el documento DICE,
+  // porque es eso lo que se lee en un juzgado, y así un cambio futuro de rótulo no reescribe lo que
+  // firmó alguien. Ambos nullable: los albaranes ya firmados no los tienen y siguen abriéndose,
+  // imprimiéndose y facturándose igual.
+  firmadoPorNombre  String? @map("firmado_por_nombre")
+  firmadoPorCalidad String? @map("firmado_por_calidad")
   // SCRUM-49: firma REMOTA. `firmaToken` = token OPACO de la página pública /albaran/:token
   // (patrón Customer.portalToken, crypto.randomBytes(16).hex; null hasta enviar "para firmar";
   // @unique para el lookup findUnique). FSM SIN cambios (opción A): "esperando firma" se deriva

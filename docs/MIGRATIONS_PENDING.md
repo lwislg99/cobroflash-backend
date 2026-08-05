@@ -81,6 +81,47 @@ distingue es quién puede tocarlas. Se descarta llamar a `yaqu_dev_javier` "segu
 staging" (SCRUM-84) porque implicaría el régimen de `railway` y no lo tiene. Si el fundador lo
 ve de otra forma, es una línea.
 
+## SCRUM-300 · `albaranes.lugar_entrega` + `firmado_por_nombre` + `firmado_por_calidad` (C5) — 🔴 SIN APLICAR en ninguna de las tres
+
+> **🔎 VERIFICABLE** — que existan las tres columnas: pregúntaselo a `docs/sql/deriva-prod.sql`
+> contra cada base, no a esta cabecera. **✋ SIN MECANISMO** — que estén aplicadas en las tres.
+> **No hay backfill**: las tres nacen NULL y NULL es su valor legítimo para todo lo ya firmado.
+
+Preview generado **sin tocar ninguna base**: `migrate diff` de datamodel contra datamodel (el
+`prisma/schema.prisma` de `origin/main` como origen, el de esta rama como destino). Se evita a
+propósito `--from-schema-datasource`, que habría **conectado a la base de `.env`** — que es
+producción — y también la variante que recibe la conexión **por argumento**, que la deja a la
+vista en `argv`/`ps` (el motivo de SCRUM-226; la conexión viaja por el ENTORNO o no viaja):
+
+```sql
+-- AlterTable
+ALTER TABLE "albaranes" ADD COLUMN     "firmado_por_calidad" TEXT,
+ADD COLUMN     "firmado_por_nombre" TEXT,
+ADD COLUMN     "lugar_entrega" TEXT;
+```
+
+100 % aditivo: **tres columnas nullable, sin default, sin UNIQUE, sin índice** → `db push` no debe
+pedir `--accept-data-loss`. **Si lo pide, PARA**: significaría que el diff no es el que está aquí.
+
+- `lugar_entrega` — contenido mínimo obligatorio del albarán. Campo **del albarán**, no del Trabajo
+  (decisión del asesor, 5-ago-2026): `Job.direccion` es precarga opcional y hoy es null para
+  cualquier merchant real. ⚠️ Suelo: vacío antes que caer al domicilio fiscal.
+- `firmado_por_nombre` / `firmado_por_calidad` — QUIÉN firmó y EN CALIDAD DE QUÉ. `calidad` guarda
+  la ranura elegida y, en la ranura "otro", el texto libre.
+
+**NO se añade `fecha_entrega`, y la razón importa más que la columna:** `albaranes.fecha` **ya es**
+la fecha de entrega — está sellada dentro del hash canónico, se imprime en el PDF como
+«Entrega/ejecución» y es la clave del mes natural de la recapitulativa (art. 13 RD 1619/2012).
+Una segunda fecha de entrega podría divergir de la que agrupa la factura: PDF diciendo julio y
+recapitulativa agrupando en agosto. Lo que faltaba no era la columna sino que **ninguna UI la
+escribe** — se resuelve exponiendo la que ya existe, no duplicándola.
+
+**Orden de aplicación (regla de las TRES BD, SCRUM-169):** staging → `yaqu_dev_javier` → producción.
+Turno del fundador; esta rama solo deja el preview. El código de la rama **lee y escribe** las tres
+columnas, así que aplicar el schema va **antes** del deploy o hay P2022.
+
+---
+
 ## SCRUM-205 · `invoices.vf_estado` (estado de sellado explícito) — 🔴 SIN APLICAR en ninguna de las tres
 
 > **Las DOS clases conviven en esta misma entrada, y por eso va aquí el aviso (SCRUM-225):**
