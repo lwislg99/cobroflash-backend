@@ -41,6 +41,8 @@ import {
 // SCRUM-223: quien mira una URL de BD pasa por aquí. `parseBDSegura` quita el envoltorio de
 // comillas del `.env` y NO tiene forma de devolver la cadena — solo host, base, usuario y puerto.
 import { parseBDSegura } from './_db-guard.mjs';
+// SCRUM-314: el barrido del demo, DERIVADO del orden que ya guarda el schema (no una lista aquí).
+import { barridoDemo } from './_wipe-demo.mjs';
 
 /**
  * El copy del cobro NUNCA dice "factura" de un `J-` (regla 24/26, Parte M). No es un texto
@@ -129,20 +131,21 @@ const LOGO =
   ).toString('base64');
 
 async function wipeDemo() {
-  // Orden respetando FKs. Todo scoped al merchant demo.
-  await prisma.customerEvent.deleteMany({ where: { merchantId: DEMO_ID } }).catch(() => {});
-  await prisma.whatsAppMessage.deleteMany({ where: { merchantId: DEMO_ID } }).catch(() => {});
-  await prisma.expense.deleteMany({ where: { merchantId: DEMO_ID } });
-  await prisma.event.deleteMany({ where: { charge: { merchantId: DEMO_ID } } });
-  await prisma.reconciliation.deleteMany({ where: { charge: { merchantId: DEMO_ID } } }).catch(() => {});
-  await prisma.quoteRequest.deleteMany({ where: { merchantId: DEMO_ID } });
-  await prisma.invoice.deleteMany({ where: { merchantId: DEMO_ID } });
-  await prisma.quote.deleteMany({ where: { merchantId: DEMO_ID } });
-  await prisma.charge.deleteMany({ where: { merchantId: DEMO_ID } });
-  // Sesiones del bot de los teléfonos demo (ficticios, prefijo 6110000xx)
-  await prisma.botSession.deleteMany({ where: { phone: { startsWith: '346110000' } } }).catch(() => {});
-  await prisma.customer.deleteMany({ where: { merchantId: DEMO_ID } });
-  await prisma.product.deleteMany({ where: { merchantId: DEMO_ID } });
+  // SCRUM-314 · el barrido ya NO se escribe aquí. Esta función borraba una lista a mano de **10**
+  // modelos cuando los que tienen `merchantId` son **21**: se quedaban sucios `job`, `albaran`,
+  // `albaranLineaFacturada`, `teamMember`, `auditLog`, `attachment`, `authSession`, `provider`,
+  // `quoteTemplate`, `maintenancePlan` y `legalAcceptance` — once.
+  //
+  // Ahora cuelga de `ORDEN_BORRADO_MERCHANT`, que es la MISMA lista que ya guarda un test
+  // derivado del schema (SCRUM-172/192): un modelo nuevo con `merchantId` entra en el barrido del
+  // demo el día que entra en el del merchant, sin que nadie tenga que acordarse. Dos listas del
+  // mismo hecho se desincronizan solas, y es justo lo que dejó ésta en 10 de 21.
+  const { porModelo } = await barridoDemo(prisma, DEMO_ID);
+  const noDisponibles = Object.entries(porModelo).filter(([, n]) => n === null).map(([m]) => m);
+  if (noDisponibles.length) {
+    // `null` ≠ 0: uno dice «no se pudo mirar» y el otro «no había nada». Se dice, no se calla.
+    console.log(`   ⚠️  sin barrer (modelo no disponible en este entorno): ${noDisponibles.join(', ')}`);
+  }
 }
 
 async function seed() {
