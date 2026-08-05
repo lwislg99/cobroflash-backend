@@ -205,9 +205,16 @@ export async function importarClientes(
       await cliente.create({ data: { merchantId, name, phone, email, notes } });
       base.creados++;
     } catch (e: any) {
+      // 🔴 EL MENSAJE DE LA BASE VA AL LOG, NUNCA A LA PANTALLA.
+      //
+      // Antes esto ponía `e.message` en el informe, así que el pro leía cosas como
+      // «Unique constraint failed on the fields: (`merchantId`,`email`)». Eso no le dice qué
+      // hacer, y sí le dice cómo está montada nuestra base. Es la misma regla que sostiene
+      // SCRUM-275: una respuesta sin texto humano acaba enseñando un identificador interno.
+      console.error('[importarClientes] fila %d:', numeroDeFila, e?.message ?? e);
       base.rechazos.push({
         fila: numeroDeFila,
-        motivo: String(e?.message ?? e).slice(0, 120),
+        motivo: 'No hemos podido guardar esta fila.', // copy aprobada (regla 30)
         celdas,
       });
     }

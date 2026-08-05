@@ -210,3 +210,25 @@ test('TENENCIA · todo cliente se crea con el merchantId que se pasa, y el dedup
   assert.equal(r.omitidos, 0, '🔴 el dedup miró fuera del merchant: filtraría datos de otro');
   assert.equal(r.creados, 2);
 });
+
+test('③ el mensaje de la BASE nunca llega a la pantalla', async () => {
+  // Antes el informe ensenaba el error de Prisma en crudo. Eso no le dice al pro que hacer, y
+  // si le dice como esta montada nuestra base.
+  const CRUDO = 'Unique constraint failed on the fields: (merchantId,email)';
+  const cl = clienteFalso();
+  cl.create = async () => { throw Object.assign(new Error(CRUDO), { code: 'P2002' }); };
+  const r = await importarClientes(1, CSV, MAPEO, cl);
+
+  assert.ok(r.rechazos.length > 0, 'precondicion: tiene que haber rechazos');
+
+  // RESPALDO DE LA NEGACION (SCRUM-237): un `doesNotMatch` que nunca ha visto casar nada es un
+  // verde permanente. Primero se comprueba que el patron SI caza el mensaje crudo -- o sea que
+  // la negacion de abajo esta mirando a algo de verdad.
+  const PATRON = /constraint|prisma|merchantId/i;
+  assert.match(CRUDO, PATRON, 'si el patron no caza el mensaje de la base, la negacion no prueba nada');
+
+  for (const x of r.rechazos) {
+    assert.doesNotMatch(x.motivo, PATRON, 'se esta filtrando el mensaje de la base a la pantalla');
+  }
+  assert.equal(r.rechazos[0].motivo, 'No hemos podido guardar esta fila.');
+});
