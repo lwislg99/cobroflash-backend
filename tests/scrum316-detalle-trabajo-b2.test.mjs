@@ -298,12 +298,16 @@ test('SCRUM-316 · el RAIL está declarado como estructura (su contenido es G3)'
     /class(Name)?\s*=\s*'detail-rail'/.test(VISTA) && /detail-cuerpo/.test(VISTA),
     '🔴 la vista no monta la rejilla del rail: los bloques estarían declarados sin sitio donde ir.',
   );
-  // Y que hoy NO se pinta: el contenido es de otro ticket y una columna vacía en producción es
-  // peor que no tenerla.
+  // Y que NO se pinta sin contenido.
+  //
+  // ⚠️ La versión original de este assert buscaba el filtro CONCRETO de G1 (`.filter((b) => b.el)`)
+  // y SCRUM-318 lo sustituyó por `.filter(Boolean)` al traer los constructores reales: el guard se
+  // puso rojo por un cambio legítimo. Lo que hay que proteger es la REGLA —un bloque sin contenido
+  // no llega al rail—, no la expresión con la que se escribió el primer día.
   assert.ok(
-    /\.filter\(\(b\) => b\.el\)/.test(VISTA),
-    '🔴 el rail se pinta sin filtrar por contenido: hoy los cinco bloques están vacíos y se ' +
-      'publicaría una columna en blanco.',
+    /bloquesRail[\s\S]{0,400}?\.filter\(Boolean\)/.test(VISTA),
+    '🔴 el rail se pinta sin filtrar los bloques vacíos: se publicaría una columna con títulos y ' +
+      'nada debajo.',
   );
 });
 
