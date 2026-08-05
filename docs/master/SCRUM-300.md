@@ -270,3 +270,58 @@ haya texto oficial, y el patrón de portabilidad, SCRUM-289 y SCRUM-303. La afir
 - Pendiente y NO tocado en esta sesión, por acotación explícita del encargo: el **recuento de
   toques** del flujo de firma y la **caída de `albaranPublic.routes.ts:142`** (`job?.direccion ||
   job?.titulo`).
+
+## Los 7 fallos que quedan, clasificados (no se han tapado)
+
+Medido con `node --test tests/*.test.mjs`: **1818 · 1744 pass · 7 fail · 67 skip**.
+`npm test` NO llega a correr: su `pretest` (`_prisma-client-guard.mjs`) para antes, y con razón.
+
+### Grupo 1 · cliente de Prisma desfasado (5) — se van con `prisma generate`
+
+`el SQL del censo de producción…` · `SCRUM-235 ×3` · `CONTROL · el árbol sano da VERDE…`
+
+El schema estrena 4 columnas y el cliente generado es de antes. El guard de la casa lo dice
+exactamente y su arreglo es `npx prisma generate` desde este worktree. **NO se ha ejecutado**: está
+prohibido en esta sesión, y además `node_modules` se comparte por junction entre los cuatro
+worktrees (SCRUM-190), así que regenerarlo tocaría a las otras tres sesiones a la vez.
+No es un fallo de la fusión: es el estado del entorno mientras la migración sea turno humano.
+
+### Grupo 2 · SCRUM-371, el barrido no sabe de v:2 (2) — 🔴 TRABAJO REAL PENDIENTE
+
+`⑥ el adaptador resuelve CADA FUENTE igual que el sellador` · `SUELO del comparador`
+
+**El guard tiene razón y NO se ha bajado.** Lo que reporta es cierto:
+
+```
+jobDireccion: barrido «job?.direccion || null»
+            ≠ sellador.obra «obraSegunVersion(ALBARAN_CONTENIDO_VERSION_ACTUAL, {…})»
+```
+
+Su tabla `PAREJAS` daba por hecho que el `obra` del sellador **es** el `jobDireccion` del barrido.
+Eso valía con UNA versión. Con v:2, `obra` se resuelve POR VERSIÓN: v:1 → `Job.direccion`,
+v:2 → `Albaran.lugarEntrega`. La comparación 1:1 de textos dejó de modelar la realidad.
+
+⚠️ **Lo que NO hay que hacer es quitar la pareja de la tabla para que pase.** Ese guard existe
+porque si el barrido resuelve una fuente distinto al sellador, dirá «no coincide» sobre la
+población ENTERA de albaranes intactos. La forma correcta es enseñarle a comparar contra los dos
+argumentos que entran en `obraSegunVersion`.
+
+**Sí se arregló** una parte que era mía y era un suelo roto: el analizador cogía la PRIMERA
+llamada a `computeAlbaranContentHash` del fichero, y C5 añadió una anterior
+(`recomputarHashDeEvidencia`). Ahora nombra su objetivo (`buildFirmaEvidencia`) y falla si no lo
+encuentra, en vez de comparar en silencio contra la llamada equivocada.
+
+## Lo que NO se importó de las dos ramas, y por qué
+
+`tests/scrum300-albaran-campos.test.mjs` (288 líneas, rama A) ·
+`tests/scrum300-albaran-firmado-por.test.mjs` (301, B) ·
+`tests/scrum300-microcopy-firmante.test.mjs` (323, B).
+
+Los tres afirman, carácter a carácter, cosas que la fusión revirtió: los ids viejos de cada rama,
+los cinco textos falsamente aprobados y el guardado de la ETIQUETA en vez del `id`. Traerlos tal
+cual habría dejado la suite verde afirmando lo contrario de lo decidido.
+
+En su lugar se escribió `tests/scrum300-firmante-ids-y-microcopy.test.mjs` (12 casos, verde, con su
+rojo probado), que fija la frontera dato/pantalla. **Queda pendiente rescatar de aquellos tres lo
+que sí sigue valiendo** —la retrocompatibilidad de un albarán firmado antes de C5 y la extracción
+de texto del PDF con `tests/_pdf-texto.mjs`, que sí se ha traído—.
