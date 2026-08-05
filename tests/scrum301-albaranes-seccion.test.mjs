@@ -582,6 +582,62 @@ function cuerpoDe(fuente, nombre) {
   return cuerpo;
 }
 
+// ── LA TARJETA DE MÓVIL: CADA CELDA EN SU ÁREA ───────────────────────────────────────────
+
+/** Las clases de celda que la hoja de estilos define DE VERDAD para `.table--cards-mobile`. */
+function clasesDeCeldaEnCss() {
+  const css = fs.readFileSync(path.join(RAIZ, 'public', 'dashboard', 'css', 'styles.css'), 'utf8');
+  return new Set([...css.matchAll(/\.table--cards-mobile\s+td\.(cell-[a-z]+)/g)].map((m) => m[1]));
+}
+
+/** Las clases que la vista pone en sus `<td>`, leídas del AST (`tdX.className = '…'`). */
+function clasesDeCeldaEnLaVista() {
+  const sf = ts.createSourceFile('x.js', VISTA, ts.ScriptTarget.Latest, true);
+  const out = [];
+  const visita = (n) => {
+    if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+        ts.isPropertyAccessExpression(n.left) && n.left.name.text === 'className' &&
+        ts.isIdentifier(n.left.expression) && /^td[A-Z]/.test(n.left.expression.text) &&
+        ts.isStringLiteral(n.right)) {
+      out.push({ celda: n.left.expression.text, clase: n.right.text });
+    }
+    ts.forEachChild(n, visita);
+  };
+  visita(sf);
+  return out;
+}
+
+test('SCRUM-301 · 🔴 cada celda cae en SU área de la tarjeta de móvil, no en la rejilla implícita', () => {
+  // MEDIDO a 390 px antes de arreglarlo: sin estas clases, las celdas se auto-colocaban en pares por
+  // orden de aparición y, con un nombre de cliente largo, **el número del albarán quedaba PISADO por
+  // la fecha**. No era cosmético: el identificador del documento —que además es el enlace— se leía
+  // como «ALB-2026-0143/08/2026». Las dos hermanas del mismo patrón sí ponían sus clases.
+  const definidas = clasesDeCeldaEnCss();
+  assert.ok(definidas.size >= 5,
+    `🔴 solo se han leído ${definidas.size} clases de celda en styles.css: el lector no está leyendo ` +
+    'la hoja, así que el assert de abajo compararía contra un conjunto vacío y pasaría siempre.');
+
+  const puestas = clasesDeCeldaEnLaVista();
+  const celdas = (VISTA.match(/document\.createElement\('td'\)/g) || []).length;
+  assert.equal(puestas.length, celdas,
+    `🔴 hay ${celdas} celdas y solo ${puestas.length} llevan clase. Una celda sin clase cae en la ` +
+    'rejilla implícita y arrastra a las siguientes: el desorden no se queda en ella.');
+  assert.equal(celdas, COPY_APROBADA.columnas.length,
+    '🔴 el número de celdas ya no coincide con el de columnas de la cabecera');
+
+  const desconocidas = puestas.filter((c) => c.clase !== 'col-hide-mobile' && !definidas.has(c.clase));
+  assert.deepEqual(desconocidas, [],
+    '🔴 ALGUNA CELDA USA UNA CLASE QUE LA HOJA NO DEFINE: ' +
+    desconocidas.map((c) => `${c.celda} → .${c.clase}`).join(', ') +
+    '\n\n  Una clase con una letra de más no da error en ninguna parte: simplemente no aplica, y la\n' +
+    '  celda vuelve a la rejilla implícita. Por eso el conjunto válido se DERIVA de styles.css.');
+
+  // Y el patrón del `<table>` no se toca: hay un guard de S1 (en vuelo) que deriva de él qué patrón
+  // usa esta lista. Añadir clases a las celdas no lo afecta; cambiar la clase de la tabla, sí.
+  assert.match(VISTA, /table table--cards-mobile/,
+    '🔴 ha cambiado el patrón de la tabla. `cards-mobile` se queda: hay un guard que lo lee.');
+});
+
 test('SCRUM-301 · 🔴 el camino de ERROR no dibuja pestañas ni contadores', () => {
   const error = cuerpoDe(VISTA, 'pintarError');
   const exito = cuerpoDe(VISTA, 'pintar');

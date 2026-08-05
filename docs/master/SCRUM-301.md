@@ -9,7 +9,7 @@
 > el `main` RESULTANTE, `d5ac9761`, que ya lleva ese listado dentro. El ancla de arriba es la
 > segunda, que es la que sigue viva.
 
-**Tanda:** 1762 tests, 1695 pass, 0 fail, 67 skipped (los 67 son los gateados de staging)
+**Tanda:** 1763 tests, 1696 pass, 0 fail, 67 skipped (los 67 son los gateados de staging)
 
 ## El defecto
 
@@ -104,7 +104,7 @@ que mencione `merchantId` por el motivo que sea (medido en SCRUM-348). Aquí se 
 
 ## Verificado en rojo
 
-Veintitrés sabotajes, cada uno aplicado, compilado, corrido y revertido con verificación byte a byte:
+Veinticinco sabotajes, cada uno aplicado, compilado, corrido y revertido con verificación byte a byte:
 
 | Se quita la cosa vigilada | Sale rojo |
 | --- | --- |
@@ -126,6 +126,8 @@ Veintitrés sabotajes, cada uno aplicado, compilado, corrido y revertido con ver
 | **Una letra en CADA una de las cinco ranuras firmadas** (seis cadenas) | la ranura tocada, **nombrándola** |
 | El texto DESCARTADO de ⑤ en su ranura | ⑤ `vacioConFiltros` |
 | **Los dos vacíos INTERCAMBIADOS** (las dos frases siguen en el fichero) | ④ `vacioSinAlbaranes` |
+| Una celda de la tabla se queda sin su clase `cell-*` | la tarjeta de móvil (dice cuántas de cuántas) |
+| Una clase de celda con una letra de más (que no da error en ninguna parte) | la tarjeta de móvil, nombrándola |
 
 🔴 **El de «la vista deja de cargarse» encontró un guard incapaz de fallar.** Comprobaba `assert.match(index,
 /albaranesView\.js/)`, así que **comentar la etiqueta `<script>` lo dejaba en verde**: el texto
@@ -227,6 +229,53 @@ Efecto medido de la aprobación, visible en las capturas: con el marcador, el pr
 `Cliente`, `Trabajo` y `Estado` fuera del ancho visible — incluida la columna que es la ventaja del
 ticket. Con el texto aprobado, **las seis caben**.
 
+## 🔴 La tarjeta de móvil no llegaba a aplicarse (hallazgo de S1, medido y arreglado aquí)
+
+`albaranesView.js` marcaba `.table--cards-mobile` pero **no ponía las clases `cell-*`** que esa
+rejilla necesita. Con áreas con nombre, una celda sin su clase no cae en su área: cae en la rejilla
+IMPLÍCITA, auto-colocada en pares y por orden.
+
+**Medido a 390 px antes de tocar nada** (`docs/capturas/scrum-301/scrum301-listado-390-ANTES.png`):
+las dos primeras tarjetas salían con **el número del albarán pisado por la fecha** —`ALB-2026-014` y
+`03/08/2026` superpuestos, ilegibles— y el título del Trabajo tapado por la píldora. Las otras tres
+se veían bien, y ahí estaba la trampa: **el defecto se dispara con nombres de cliente largos**,
+porque la segunda columna es `auto`, se queda el ancho y la primera colapsa.
+
+**Veredicto: ilegible, no cosmético.** El identificador del documento —que además es el enlace al
+detalle— no se puede leer. Y no era una decisión de diseño: `invoicesView.js` pone 4 clases y
+`quotesListView.js` pone 6; ésta ponía **0**. Un olvido, y en vuelo dentro de este mismo ticket, así
+que se arregla aquí.
+
+El reparto: `Nº → cell-id` · `Cliente → cell-client` · `Entrega → cell-date` · `Estado →
+cell-status` · `Trabajo → cell-actions` (franja inferior a ancho completo — un título de obra no
+cabe en media tarjeta, y esa área exige target ≥44 px, que es lo que pide AB6) · `Emisión →
+col-hide-mobile` (la tarjeta enseña la fecha de ENTREGA, la operativa; la de emisión sigue en la
+tabla de escritorio).
+
+⚠️ **`Trabajo` está en `cell-actions` PRESTADO, y esa ranura se llama así por algo.** Está ahí
+porque es la única área de ancho completo —un título de obra no cabe en media tarjeta— y porque
+exige target ≥44 px, que es lo que pide AB6. **El día que esta fila reciba acciones de verdad,
+chocan: entonces las acciones se quedan con `cell-actions` y el Trabajo necesita ranura propia**
+(un área nueva en la rejilla, propuesta a DESIGN.md), no compartirla.
+
+El guard **deriva de `styles.css`** qué clases existen: una clase con una letra de más no da error
+en ninguna parte —simplemente no aplica y la celda vuelve a la rejilla implícita—, así que el
+conjunto válido no se escribe a mano. Dos rojos: quitarle la clase a una celda (dice cuántas
+llevan y cuántas hay) y usar una clase que la hoja no define (la nombra).
+
+⚠️ **La clase del `<table>` no se toca**: hay un guard de S1 en vuelo que deriva de ella qué patrón
+usa esta lista. Añadir clases a las celdas no lo afecta.
+
+## Una regla, no una anécdota: un guard de texto mira LITERALES, nunca el fichero
+
+Es la tercera vez esta semana. El assert de «ya no queda marcador» miró el fuente entero y **salió
+rojo solo**, porque la cabecera de la vista explica que se entregó CON el marcador. Un guard de
+texto que mira el fichero entero acaba **vigilando la explicación del código en vez del código**: la
+prosa que justifica una prohibición contiene siempre las palabras que persigue.
+
+**Solo literales** (o AST, si lo que se vigila es estructura). Un marcador citado en un comentario
+no llega a ninguna pantalla; uno dentro de una cadena, sí — y esa diferencia es justo la que el
+guard tiene que medir.
 ## Lo que NO cubre
 
 * **La matriz AB6 de dispositivos es un hueco declarado**: solo 390 px en Edge de escritorio. Ni
@@ -253,6 +302,6 @@ ticket. Con el texto aprobado, **las seis caben**.
 * `src/core/http/adminRouteDeclarations.ts` — por qué esta ruta NO está en TECNICO_ALLOWED.
 * `src/core/http/adminOnlyRoutes.ts` — su 403 con sesión de técnico, exigido en la tanda gateada.
 * `public/sw.js` — el script nuevo en el shell del service worker.
-* `tests/scrum301-albaranes-seccion.test.mjs` — **nuevo**, 18 tests.
+* `tests/scrum301-albaranes-seccion.test.mjs` — **nuevo**, 19 tests.
 * `tests/scrum302-patron-albaran.test.mjs` — su guard del derivado, ahora contra el valor compilado.
-* `docs/capturas/scrum-301/` — seis capturas AB6 (las de error y vacío también a 390 px) y su README.
+* `docs/capturas/scrum-301/` — siete capturas AB6 (error y vacío también a 390 px, más el ANTES del defecto de la tarjeta) y su README.

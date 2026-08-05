@@ -28,6 +28,7 @@ Ahora el suelo también falla si hay un `.modal-overlay` / `#onboarding-backdrop
 | `scrum301-listado-1280.png` | Escritorio: sección propia en el menú, 4 pestañas con contador (todos 5 · borrador 1 · emitido 2 · firmado 2), buscador, filtro de facturación y la tabla. |
 | `scrum301-listado-390.png` | Móvil 390 (gama media): la tabla en modo tarjetas (`table--cards-mobile`). |
 | `scrum301-error-1280.png` | **La captura que sostiene el ticket**: con la consulta caída NO hay pestañas, NO hay contadores y NO hay ceros — solo el aviso en rojo. |
+| `scrum301-listado-390-ANTES.png` | **El defecto, medido**: sin las clases `cell-*`, con un cliente largo el número del albarán queda PISADO por la fecha. |
 | `scrum301-error-390.png` · `scrum301-vacio-390.png` | Las dos pantallas que enseñan las cinco ranuras firmadas, a 390 px. |
 | `scrum301-vacio-1280.png` | Cero albaranes de verdad: pestañas a 0 y estado vacío. Es el contraste del anterior: el mismo número con significado opuesto, y se distinguen en pantalla. |
 
@@ -44,6 +45,28 @@ ni un marcador en pantalla**: las seis columnas caben y `Trabajo` se ve enlazada
 Las dos de 390 px existen porque son las que enseñan las cinco últimas ranuras: el aviso de error
 —que nombra la CARGA y no el inventario, para que un fallo no se lea como «no tienes albaranes»— y
 el vacío con su recuento, su buscador y su «Todavía no hay albaranes».
+## 🔴 Lo que encontró S1 en esta pantalla, medido antes de tocarlo
+
+`.table--cards-mobile` recompone cada fila en una tarjeta con **áreas con nombre**
+(`id`/`client`/`date`/`status`/`actions`). Una celda sin su clase `cell-*` no cae en su área: cae en
+la **rejilla implícita**, auto-colocada en pares y por orden de aparición.
+
+**Medido a 390 px** (`scrum301-listado-390-ANTES.png`): las dos primeras tarjetas salen con el
+número del albarán **pisado por la fecha** —se lee `ALB-2026-0143/08/2026`— y el título del Trabajo
+tapado por la píldora de estado. Las otras tres se salvan, y eso es lo que lo hacía fácil de no ver:
+**el defecto se dispara con nombres de cliente largos**, porque la segunda columna es `auto`, se
+come el ancho y la primera colapsa. «Comunidad de Propietarios Alcalá 231» no es un caso raro.
+
+Veredicto: **ilegible, no cosmético** — el identificador del documento, que además es el enlace, no
+se puede leer. Y no era una decisión de diseño: `invoicesView.js` pone 4 clases y
+`quotesListView.js` pone 6; ésta ponía **0**. Arreglado aquí, dentro de 301.
+
+El reparto: `Nº → cell-id` · `Cliente → cell-client` · `Entrega → cell-date` · `Estado →
+cell-status` · `Trabajo → cell-actions` (franja inferior a ancho completo, con su target ≥44 px) ·
+`Emisión → col-hide-mobile` (la tarjeta enseña la fecha operativa, la de entrega).
+
+⚠️ **La clase del `<table>` no se toca**: `table--cards-mobile` se queda, porque hay un guard de S1
+en vuelo que deriva de ella qué patrón usa esta lista.
 ## Checklist AB6
 
 | Punto | Estado |
