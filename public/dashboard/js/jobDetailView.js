@@ -185,12 +185,18 @@ function destinoEnFila(id, alb) {
 // tiene aprobados. Escribirlos otra vez sería la segunda lista de siempre, y divergirían el día que
 // alguien retoque una. `albaranDetailView.js` se carga ANTES que este fichero en `index.html` y hay
 // guard de ese orden: si alguien lo cambia, sale rojo en vez de dejar la columna muda.
+// MICROCOPY APROBADA por el fundador el 5-ago-2026 (regla 30), los cinco tal cual. Ya no llevan
+// `[PENDIENTE microcopy oficial]`, y el guard compara contra el texto aprobado uno a uno.
+//
+// ⚠️ Y NO ERA SOLO UN RÓTULO: con el marcador, la cabecera medía 29 caracteres de más POR COLUMNA
+// y sacaba de pantalla las tres últimas columnas a 390 px. De ahí la regla que salió de aquí —
+// CON MARCADOR NO SE JUZGA EL LAYOUT, solo se comprueba que el marcador esté.
 const ALB_TABLA_COPY = {
-  colNumero: '[PENDIENTE microcopy oficial] Nº',
-  colFecha: '[PENDIENTE microcopy oficial] Fecha',
-  colEstado: '[PENDIENTE microcopy oficial] Estado',
-  colLineas: '[PENDIENTE microcopy oficial] Líneas',
-  colAccion: '[PENDIENTE microcopy oficial] Acción',
+  colNumero: 'Nº',
+  colFecha: 'Fecha',
+  colEstado: 'Estado',
+  colLineas: 'Líneas',
+  colAccion: 'Acción',
 };
 
 // ── SCRUM-303 (C4) · QUÉ SE ABRE AL PULSAR «NUEVO ALBARÁN», Y POR QUÉ ─────────────────────────

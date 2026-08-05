@@ -323,13 +323,23 @@ test('SCRUM-304 · el rótulo de la acción NO se reescribe aquí: sale de C2', 
     'no existiría al pintar la tabla y la columna Acción saldría con el id crudo del botón.');
 });
 
-test('SCRUM-304 · REGLA 30: los nombres de columna van marcados como pendientes', () => {
+test('SCRUM-304 · REGLA 30: los nombres de columna son EXACTAMENTE los aprobados', () => {
+  // Antes este guard exigía el marcador de pendiente. Aprobados los cinco (5-ago-2026), su trabajo
+  // es el contrario: que nadie los reescriba. Retocar copy aprobada es decisión del fundador.
+  const APROBADOS = { colNumero: 'Nº', colFecha: 'Fecha', colEstado: 'Estado', colLineas: 'Líneas', colAccion: 'Acción' };
   const m = FILA.match(/const ALB_TABLA_COPY = \{([\s\S]*?)\n\};/);
   assert.ok(m, '🔴 ESCÁNER CIEGO: no encuentro `ALB_TABLA_COPY`');
-  const textos = [...m[1].matchAll(/:\s*'([^']*)'/g)].map((x) => x[1]);
-  assert.equal(textos.length, 5, `🔴 esperaba 5 nombres de columna y hay ${textos.length}`);
-  for (const t of textos) {
-    assert.ok(t.startsWith('[PENDIENTE microcopy oficial]'),
-      `🔴 el nombre de columna ${JSON.stringify(t)} no está aprobado (regla 30)`);
+
+  const leidos = Object.fromEntries([...m[1].matchAll(/(\w+):\s*'([^']*)'/g)].map((x) => [x[1], x[2]]));
+  assert.deepEqual(Object.keys(leidos).sort(), Object.keys(APROBADOS).sort(),
+    '🔴 las columnas ya no son las cinco aprobadas: hay texto nuevo (o falta uno).');
+  for (const [k, v] of Object.entries(APROBADOS)) {
+    assert.equal(leidos[k], v, `🔴 la columna «${k}» ya no dice lo aprobado: ${JSON.stringify(leidos[k])}`);
+  }
+  // Y ninguna arrastra el marcador: dejarlo puesto en algo YA decidido no es prudencia, es ruido —
+  // y aquí además costaba tres columnas de ancho a 390 px.
+  for (const v of Object.values(leidos)) {
+    assert.ok(!v.includes('[PENDIENTE microcopy oficial]'),
+      `🔴 queda el marcador en una columna ya aprobada: ${JSON.stringify(v)}`);
   }
 });

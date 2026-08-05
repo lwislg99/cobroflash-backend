@@ -4,9 +4,9 @@
 
 **Medido contra:** `origin/main` = `56874623baa406a0e8e38b93c236f7a4740b1e6a` · 2026-08-05T16:43:57+01:00
 
-> ⚠️ **NO MERGEAR TODAVÍA.** El código está completo y en verde, pero el AB6 **no está firmado**:
-> a 390 px la columna Acción se sale de pantalla, y la causa medida es el marcador de microcopy
-> pendiente. Se cierra aprobando los cinco rótulos y recapturando. Detalle abajo.
+> **Microcopy aprobada** (5-ago-2026, los cinco rótulos tal cual) y recapturado. Queda **una cosa
+> medida y sin resolver**, dicha en su sección: a 390 px `Líneas` y `Acción` siguen fuera de
+> pantalla, alcanzables por scroll. La palanca es de producto y no se toma de paso.
 
 ## 🔴 El censo corrige al ticket, y por eso va PRIMERO
 
@@ -90,21 +90,59 @@ se resuelve un nivel de indirección.
 `enSuSeccion` tenía **un solo llamante** (los albaranes) y se ha ido con él. Un ayudante que ya no
 llama nadie se pudre sin que nada lo diga. Misma norma que aplicó C2 al borrar `pdfBtn`/`fotoBtn`.
 
-## 🔴 Lo que falta para cerrar: AB6 y la microcopy
+## AB6: lo que la captura midió, y lo que queda dicho
 
-La captura enseñó lo que la suite no ve: **a 390 px solo caben Nº y Fecha; Estado, Líneas y Acción
-quedan fuera.** El envoltorio se pasó a `overflow-x: auto` para que al menos se pueda alcanzar
-scrollando —**no se tocó la clase compartida `.table-wrap`** (`overflow: hidden`, styles.css:590),
-que la usan otras cinco pantallas sin medir—, y la fecha se acortó a «12 jul» porque
+### 🔴 La primera tanda medía el MARCADOR, no la pantalla
+
+Con `[PENDIENTE microcopy oficial]` delante de cada nombre de columna —29 caracteres **por
+columna**, cinco columnas— la cabecera sacaba la tabla de la pantalla y a 390 px solo cabían `Nº` y
+`Fecha`. **Eso no era un problema de maquetación: era el coste del marcador.**
+
+> **Regla que sale de aquí (y es la segunda vez hoy, tras las diez pestañas de Configuración):
+> CON MARCADOR NO SE JUZGA EL LAYOUT. Solo se comprueba que el marcador esté.**
+
+Con los cinco rótulos aprobados (`Nº · Fecha · Estado · Líneas · Acción`) entran ya `Nº`, `Fecha` y
+`Estado`.
+
+### Lo que SIGUE sin caber a 390 px, dicho sin adornos
+
+**`Líneas` y `Acción` continúan fuera de pantalla.** Se alcanzan scrollando —el envoltorio de ESTA
+tabla se pasó a `overflow-x: auto`— pero **la única acción de la fila no está a la vista**, que es
+justo lo que el ticket viene a arreglar. Lo que ahora se come el ancho es la columna Estado, que
+lleva el pill **más** los badges de facturación (`BORRADOR` + `Sin precios`, `FIRMADO` +
+`Facturado en parte`).
+
+**La palanca obvia es quitar esos badges de la tabla**, y hay argumento de C2 para ello —«facturado
+no es un estado de la tabla, es CONTEXTO»— y la columna Acción ya lo codifica (celda vacía = nada
+que hacer). Pero es información que hoy ve el profesional, así que **es decisión del fundador y no
+se toma de paso**.
+
+**No se tocó `.table-wrap`** (`overflow: hidden`, `styles.css:590`): la comparten otras cinco
+pantallas sin medir, y cambiar un contenedor compartido para arreglar una tabla propia es el
+defecto de los 36 px en dirección contraria. Y la fecha se acortó a «12 jul» porque
 «12 jul 2026, 11:15» empujaba sola la columna Acción fuera.
 
-**Pero la causa de fondo es el marcador**: `[PENDIENTE microcopy oficial]` mide 29 caracteres **por
-columna**, y con cinco columnas infla la cabecera hasta sacar la tabla de la pantalla. Con los
-rótulos aprobados (`Nº`, `Fecha`, `Estado`, `Líneas`, `Acción`) la cabecera cae a una fracción.
+### Foco y targets: MEDIDOS, no supuestos
 
-**Por eso los cinco rótulos van al fundador para aprobación, y hasta entonces esto no se mergea:**
-una tabla cuya única acción hay que buscar scrollando es exactamente lo que este ticket viene a
-arreglar.
+| | Medido a 390 px | AB6 |
+|---|---|---|
+| Anillo de foco | **SÍ**, visible por `box-shadow` | ✅ |
+| Botones de acción (`btn-secondary btn-sm`) | **30 px** | 🔴 < 44 |
+| Enlace del número (`.detail-miga-link`) | **20 px** | 🔴 < 44 |
+
+**No lo introduce esta tarea:** los botones salen de `mkBtn`, el constructor que ya usaba toda la
+vista, y `.btn-sm` está **deliberadamente fuera** del bump de SCRUM-352 (su censo lo declara con
+`:not(.btn-sm)`). Pero esta tabla convierte esos controles en **la superficie principal** de los
+albaranes, así que aquí duele más que antes. Se reporta, no se arregla de paso: subir `.btn-sm` a 44
+alcanza a todo el producto y es su propio ticket.
+
+## Microcopy (regla 30) · APROBADA
+
+Los **cinco** nombres de columna los aprobó el fundador el 5-ago-2026, **tal cual**: `Nº` · `Fecha` ·
+`Estado` · `Líneas` · `Acción`. Son los del propio ticket y describen lo que hay debajo. El guard
+cambió de trabajo: antes exigía el marcador, ahora compara columna a columna contra el aprobado.
+
+Los rótulos de la ACCIÓN no son nuevos: salen de `ROTULOS_ALBARAN` (C2), ya aprobados.
 
 ## Lo que NO se tocó
 
