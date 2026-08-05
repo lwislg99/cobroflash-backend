@@ -35,11 +35,16 @@ const SHELL = [
   '/dashboard/js/providersView.js',
   '/dashboard/js/invoicesView.js',
   '/dashboard/js/nuevaFacturaModal.js', // SCRUM-289 (A0.3)
+  // SCRUM-302 (C2): la LEY del patrón va antes que los registros que la consumen — el mismo
+  // orden que en el shell HTML, porque el registro lee sus globales al cargarse.
+  '/dashboard/js/patronDetalleAcciones.js',
   '/dashboard/js/invoiceActionsRegistry.js',
   '/dashboard/js/invoiceDetailView.js',
   '/dashboard/js/jobActionsRegistry.js', // SCRUM-316 (G1)
   '/dashboard/js/jobDocsReparto.js', // SCRUM-319 (G4)
   '/dashboard/js/jobRailBlocks.js', // SCRUM-318 (G3)
+  '/dashboard/js/albaranActionsRegistry.js', // SCRUM-302 (C2)
+  '/dashboard/js/albaranDetailView.js',
   '/dashboard/js/expensesView.js',
   '/dashboard/js/settingsView.js',
   '/dashboard/js/exportView.js',

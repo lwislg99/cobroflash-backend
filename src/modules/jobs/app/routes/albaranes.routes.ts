@@ -394,6 +394,62 @@ router.patch('/:id', async (req, res) => {
 });
 
 // POST /admin/albaranes/:id/emitir — borrador→emitido (idempotente si ya emitido).
+/**
+ * GET /admin/albaranes/:id — SCRUM-302 (C2): lo que necesita la PÁGINA de detalle.
+ *
+ * No existía: el albarán solo se leía dentro del detalle del Trabajo, como una fila de la pila de
+ * DOCUMENTOS. Una página propia necesita poder cargarse sola (enlace directo, recarga, «atrás»).
+ *
+ * Devuelve el albarán serializado + lo que el RAIL de solo lectura enseña + el estado de
+ * facturación DERIVADO. Ese derivado se calcula aquí, con las mismas piezas que usa
+ * `facturar-parcial`, y viaja con sus TRES valores: aplanarlo a un booleano perdería el `parcial`,
+ * que en una obra por fases es el caso normal.
+ */
+router.get('/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+
+    const albaran = await prisma.albaran.findFirst({ where: { id, merchantId: req.merchantId } });
+    if (!albaran) return res.status(404).json({ error: 'not_found' });
+
+    const job = await prisma.job.findFirst({
+      where: { id: albaran.jobId, merchantId: req.merchantId },
+      select: { id: true, titulo: true, direccion: true, customerId: true },
+    });
+    const customer = job?.customerId
+      ? await prisma.customer.findFirst({
+          where: { id: job.customerId, merchantId: req.merchantId },
+          select: { id: true, name: true },
+        })
+      : null;
+
+    const lineas = (Array.isArray(albaran.lineas) ? albaran.lineas : []) as any[];
+    const libro = await prisma.albaranLineaFacturada.findMany({
+      where: { merchantId: req.merchantId, albaranId: albaran.id },
+      select: { lineaIndex: true, cantidad: true, invoiceId: true },
+    });
+    const facturado = facturadoPorLinea(libro);
+    const estadoFacturacion = estadoCobroAlbaran(lineas, facturado, !!albaran.invoiceId);
+
+    return res.json({
+      ...serializeAlbaran(albaran),
+      // El rail: contexto de solo lectura. Nada de aquí es accionable desde esta página.
+      job: job ? { id: job.id, titulo: job.titulo, direccion: job.direccion } : null,
+      customer,
+      // Los TRES valores, no un booleano (SCRUM-170/302).
+      estadoFacturacion,
+      // Lo que queda por facturar, por línea: es lo que hace verdadero el «parcial».
+      pendientes: pendientePorLinea(lineas, facturado),
+      // Derivado, NO un estado (Parte L intacta): el modelo solo tiene borrador|emitido|firmado.
+      enviadoParaFirma: !!albaran.enviadoParaFirmaAt && albaran.estado === 'emitido',
+    });
+  } catch (err: any) {
+    console.error('[GET /admin/albaranes/:id]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 router.post('/:id/emitir', async (req, res) => {
   try {
     const found = await findAlbaran(req);

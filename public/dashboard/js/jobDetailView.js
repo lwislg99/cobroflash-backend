@@ -1417,86 +1417,37 @@ async function renderJobDetailView(container, jobId) {
       });
     }).catch(() => {});
 
-    const pdfBtn = () => mkBtn('PDF', () => { window.open(`/admin/albaranes/${alb.id}/pdf`, '_blank'); });
+    // `pdfBtn` y `fotoBtn` VIVÍAN AQUÍ y se han borrado con sus botones, no dejado «por si acaso»:
+    // un constructor de botón que ya no llama nadie es código que se pudre sin que nada lo diga, y
+    // el siguiente que lo lea creerá que la fila todavía ofrece esas acciones. Lo que sí se queda
+    // es el bloque de miniaturas de arriba: eso es LECTURA, y la fila sigue enseñando las fotos.
     const editBtn = () => mkBtn('Editar líneas', () => openAlbEditorSheet(alb));
-    const fotoBtn = () => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/jpeg,image/png,image/webp';
-      input.style.display = 'none';
-      item.appendChild(input);
-      const b = mkBtn('📷 Añadir foto', () => input.click());
-      input.addEventListener('change', () => {
-        const file = input.files && input.files[0];
-        if (!file) return;
-        if (file.size > 5 * 1024 * 1024) { setStatus('error', 'Cada foto puede ocupar como máximo 5 MB.'); input.value = ''; return; }
-        const rd = new FileReader();
-        rd.onload = async () => {
-          try {
-            await apiRequest(`/admin/albaranes/${alb.id}/fotos`, { method: 'POST', body: JSON.stringify({ data: rd.result, mime: file.type }) });
-            showToast('✓ Foto añadida.');
-            refresh();
-          } catch (e) { setStatus('error', e?.data?.message || 'No se pudo subir la foto.'); }
-        };
-        rd.readAsDataURL(file);
-      });
-      return b;
-    };
 
-    if (alb.estado === 'borrador') {
-      const em = mkBtn('Emitir', async () => {
-        em.disabled = true;
-        try {
-          await apiRequest(`/admin/albaranes/${alb.id}/emitir`, { method: 'POST' });
-          showToast('✓ Albarán emitido.');
-          refresh();
-        } catch (e) { setStatus('error', 'No se pudo emitir: ' + (e?.data?.message || e.message)); em.disabled = false; }
-      });
-      em.className = 'btn-primary btn-sm';
-      acts.appendChild(em); // primaria visible
-      acts.appendChild(editBtn()); // SCRUM-31 (descubribilidad): "Editar líneas" VISIBLE (nunca escondida, AB3).
-      addSecondary(acts, [fotoBtn()]); // «⋯» → solo Añadir foto (1 ítem = inline; sin muro)
-    } else if (alb.estado === 'emitido') {
-      acts.appendChild(pdfBtn());
-      const fs = mkBtn('Firmar', () => {
-        if (!window.openSignaturePad) { setStatus('error', 'El componente de firma no está cargado.'); return; }
-        window.openSignaturePad({
-          title: 'Firma del cliente',
-          onConfirm: async (dataUri) => {
-            try {
-              await apiRequest(`/admin/albaranes/${alb.id}/firmar`, { method: 'POST', body: JSON.stringify({ signatureData: dataUri }) });
-              showToast('✓ Albarán firmado.');
-              refresh();
-            } catch (e) { setStatus('error', 'No se pudo firmar: ' + (e?.data?.message || e.message)); }
-          },
-        });
-      });
-      fs.className = 'btn-primary btn-sm';
-      acts.appendChild(fs); // primaria visible (PDF ya está visible arriba)
-      acts.appendChild(editBtn()); // SCRUM-31 (descubribilidad): "Editar líneas" VISIBLE (nunca escondida, AB3).
-      // SCRUM-49: enviar al cliente el link para FIRMAR a distancia (plantilla albaran_para_firmar_es).
-      const firmarWaBtn = mkBtn('Enviar para firmar', async () => {
-        firmarWaBtn.disabled = true;
-        const orig = firmarWaBtn.textContent;
-        firmarWaBtn.textContent = 'Enviando…';
-        try {
-          const d = await apiRequest(`/admin/albaranes/${alb.id}/enviar-para-firmar`, { method: 'POST' });
-          if (waSendFailed(d)) {
-            setStatus('error', d.message || 'No se pudo enviar por WhatsApp.');
-          } else {
-            showToast('✓ Enviado al cliente para firmar.');
-          }
-        } catch (e) {
-          setStatus('error', e?.data?.message || 'No se pudo enviar por WhatsApp.');
-        }
-        firmarWaBtn.disabled = false;
-        firmarWaBtn.textContent = orig;
-      });
-      // SCRUM-31: visibles = [PDF][Firmar][Editar líneas] (3 nunca-ocultas); «⋯» = Añadir foto ·
-      // Enviar para firmar (las menos frecuentes). Emitido: 3 visibles + «⋯»(2), lejos del muro de 5.
-      addSecondary(acts, [fotoBtn(), firmarWaBtn]);
-    } else {
-      acts.appendChild(pdfBtn()); // firmado = congelado: solo PDF
+    // SCRUM-302 (C2) · LA FILA YA NO ES UNA BARRA DE ACCIONES: ES UNA ENTRADA.
+    //
+    // Emitir, firmar, el PDF, enviar para firmar, enviar por WhatsApp y añadir foto SE HAN IDO a
+    // la página del albarán, que las hace de verdad (no las delega). Aquí queda el enlace.
+    //
+    // ── LO QUE NO SE HA IDO, Y NO ES OLVIDO ────────────────────────────────────────────────
+    // «Editar líneas» y «Facturar parte» siguen aquí porque su mecanismo VIVE aquí:
+    // `openAlbEditorSheet` y `openFacturarParcialSheet` están anidadas dentro de
+    // `renderJobDetailView`, no son globales, y la página solo puede NAVEGAR hasta ellas.
+    // Borrarlas de la fila no las movería: las dejaría inalcanzables desde los dos sitios, y los
+    // botones de la página pasarían a ser callejones sin salida.
+    //
+    // Sacarlas es su propio ticket —y el de facturar toca el camino del dinero, así que no se
+    // hace de paso (regla 37). Mientras tanto esto NO es una promesa de comentario:
+    // `tests/scrum302-sin-callejones.test.mjs` deriva de la página qué acciones navegan hasta
+    // aquí y exige que la fila las conserve.
+    const verFicha = mkBtn('Ver albarán', () => {
+      if (window.renderAppView) window.renderAppView('albaran-detail', { albaranId: alb.id });
+    });
+    acts.appendChild(verFicha);
+
+    // SCRUM-31 (descubribilidad): "Editar líneas" VISIBLE, nunca escondida tras el «⋯» (AB3).
+    acts.appendChild(editBtn());
+
+    if (alb.estado === 'firmado') {
       // SCRUM-170 (FACT-2c): facturar SOLO PARTE de lo servido. Aparece cuando queda algo por
       // facturar y el parte lleva precios; si ya está todo cobrado, no hay acción que ofrecer.
       // Admin-only como toda emisión (S1) → al técnico se le DESHABILITA con explicación, nunca
@@ -1513,25 +1464,6 @@ async function renderJobDetailView(container, jobId) {
           acts.appendChild(roleLockedNote());
         }
       }
-      // SCRUM-47: enviar la copia FIRMADA al WhatsApp del cliente (plantilla albaran_firmado_es).
-      const waBtn = mkBtn('Enviar por WhatsApp', async () => {
-        waBtn.disabled = true;
-        const orig = waBtn.textContent;
-        waBtn.textContent = 'Enviando…';
-        try {
-          const d = await apiRequest(`/admin/albaranes/${alb.id}/enviar-whatsapp`, { method: 'POST' });
-          if (waSendFailed(d)) {
-            setStatus('error', d.message || 'No se pudo enviar por WhatsApp.');
-          } else {
-            showToast('✓ Albarán enviado por WhatsApp.');
-          }
-        } catch (e) {
-          setStatus('error', e?.data?.message || 'No se pudo enviar por WhatsApp.');
-        }
-        waBtn.disabled = false;
-        waBtn.textContent = orig;
-      });
-      acts.appendChild(waBtn);
     }
   });
 

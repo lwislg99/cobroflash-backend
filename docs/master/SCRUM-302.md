@@ -1,14 +1,11 @@
 # SCRUM-302 · C2: el patrón de detalle aplicado al albarán — la ley, la tabla y las tres premisas
 
 **Fecha:** 5-ago-2026 · **Carril:** A (UI) · **Gate:** sin gate, corre en `npm test`
-**Medido contra:** `origin/main` = `fbe050592594569b967100114bf41724eede6ff0` · 2026-08-05T11:29:24+02:00
-**Tanda:** 1571 tests, 1503 pass, 0 fail (el resto, gateados a staging)
+**Medido contra:** `origin/main` = `c711b7968777f29fd00fcddae69c2ba8489c576a` · 2026-08-05T14:48:06+02:00
+**Tanda:** 1622 tests, 1555 pass, 0 fail (el resto, gateados a staging)
 
-> ⚠️ **ENTREGA PARCIAL, declarada.** Esto entrega **la ley compartida, la tabla del albarán y sus
-> guards**. La **página de detalle** (`albaranDetailView.js` + su ruta) **NO está construida**: el
-> albarán sigue viviendo como fila dentro de la pila de DOCUMENTOS del Trabajo. Lo que hay aquí es
-> el cimiento sobre el que esa página se pinta sin volver a decidir nada — y sin él, la página se
-> habría escrito sobre tres premisas de las que **dos son falsas**.
+> **Entregado en dos pasos:** primero la ley compartida, la tabla y sus guards —sin los cuales la
+> página se habría escrito sobre tres premisas de las que **dos son falsas**—; después la página.
 
 ## Una sola ley, que era el riesgo que el encargo nombró
 
@@ -53,17 +50,142 @@ decisión se rehaga en vez de seguir asumiéndose.
   tenía hermano positivo, así que habría sido verde para siempre aunque la regex estuviera rota. Se
   añadió el respaldo —el patrón **sí** casa en la ley compartida— en vez de silenciarlo.
 
-## Lo que falta para cerrar C2
+## La página
 
-- **La página** (`albaranDetailView.js`, la ruta `albaran-detail`, el rail de solo lectura y el
-  traslado de las acciones desde la fila del Trabajo).
-- **Los rótulos**: siguen sin aprobar; la ley trae el marcador `[PENDIENTE microcopy oficial]` y
-  la tabla **no escribe textos** (regla 30).
-- **AB6 · matriz de dispositivos: hueco declarado.**
+`albaranDetailView.js` + vista `albaran-detail`. Pinta **desde el registro**: crea los botones con
+su handler y los coloca donde la tabla diga — una primaria, hasta dos secundarias, el resto al «⋮».
+La vista no decide nada del patrón.
+
+**Endpoint nuevo, porque no existía:** `GET /admin/albaranes/:id`. El albarán solo se leía dentro
+del detalle del Trabajo, y una página propia tiene que poder cargarse sola (enlace directo,
+recarga, «atrás»). Devuelve el albarán, lo que el rail enseña, y el estado de facturación
+**derivado con sus tres valores**, calculado con las mismas piezas que `facturar-parcial`.
+
+**Rol declarado (S1):** va a `TECNICO_ALLOWED` con su motivo. Negarle al operario **leer** el parte
+mientras puede rellenarlo, emitirlo y firmarlo sería incoherente: es la misma pantalla de su
+trabajo de campo, solo que ahora tiene página.
+
+**El rail es de solo lectura** — Trabajo, cliente, dirección, facturación y cuántas líneas quedan
+por facturar. Y lo que **no** enseña tampoco es olvido: ninguna comparación con las líneas del
+presupuesto, porque no hay campo que las ate.
+
+**El traslado desde la fila:** ya no es una duplicación transitoria — está hecho, y lo que no se
+movió tiene razón escrita y guard. Ver más abajo.
+
+## Cuatro guards ajenos me cazaron, y los cuatro tenían razón
+
+Ninguno era ruido, y los cuatro apuntaban a defectos que se habrían visto en producción y no en la
+suite:
+
+1. **Nombres duplicados en scripts clásicos.** Puenteé la ley con un `const destinoEfectivo` en el
+   registro de factura: dos `const` con el mismo nombre comparten ámbito léxico → **SyntaxError en
+   parseo**, el segundo fichero no se ejecuta y su pantalla desaparece **sin 500 ni log**. Es el
+   caso de `copyRojo` (SCRUM-210). Ahora no se re-declaran: en el navegador ya son globales.
+2. **El service worker no precacheaba los tres ficheros nuevos.** La primera visita sin cobertura
+   se habría quedado sin esas pantallas, y con red no se nota nada.
+3. **SCRUM-55 · ruta sin rol.** El endpoint nuevo no declaraba ninguno; ahora está en
+   `TECNICO_ALLOWED` con su motivo escrito, en vez de aparcado en la lista de pendientes.
+4. **SCRUM-128 · envío sin comprobar el resultado, dos veces.** Un WhatsApp responde 200 aunque
+   Meta lo rechace. Escondí la comprobación primero en un `post` genérico y luego en un `enviar()`,
+   y el guard cazó las dos: mide la distancia entre la RUTA y la comprobación. Ahora va **en el
+   sitio de la llamada** — y es mejor código, porque quien lee el handler la ve.
+
+## RÓTULOS — aplicados, y ninguno redactado aquí (regla 30)
+
+Viven en un solo sitio, `ROTULOS_ALBARAN` (`albaranDetailView.js`). Cuatro los aprobó el fundador
+para este ticket; los otros cinco se reutilizan **letra por letra** de la fila del Trabajo, que es
+de donde estas acciones se mudan — reutilizar un rótulo aprobado no es redactarlo.
+
+| id | rótulo | procedencia | dónde sale |
+|---|---|---|---|
+| `btnEmitir` | Emitir | fila del Trabajo | primaria en **borrador** |
+| `btnEnviarFirmar` | Enviar para firmar | fila del Trabajo | primaria en **emitido** |
+| `btnFacturar` | Facturar lo entregado | **aprobado aquí** | primaria en **firmado**, solo si queda pendiente |
+| `btnFirmarAqui` | Firmar aquí mismo | **aprobado aquí** | secundaria en **emitido** |
+| `btnPdf` | PDF | fila del Trabajo | secundaria en los tres |
+| `btnWhatsApp` | Enviar por WhatsApp | fila del Trabajo | secundaria en **firmado** |
+| `btnEditarLineas` | Editar líneas | fila del Trabajo | secundaria en **borrador** |
+| `btnFoto` | 📷 Añadir foto | fila del Trabajo | «⋮» en los tres |
+| `btnVerTrabajo` | Ver trabajo | **aprobado aquí** | «⋮» en los tres |
+
+Y el enlace de la fila del Trabajo a esta ficha: **Ver albarán** (aprobado aquí).
+
+> ⚠️ Una medición ajena sobre `c711b79` dijo que cinco de los nueve «ya estaban aplicados en
+> main». Comprobado antes de tocar nada: las cadenas **existían en el árbol**, pero en la
+> **página** los nueve botones pintaban el marcador `[PENDIENTE]`. Existir en un fichero y estar
+> aplicado en la pantalla no son el mismo hecho. `btnPdf` es el que más chirría del grupo
+> reutilizado —«PDF» a secas, heredado de una fila estrecha, junto a rótulos que son frases—; si
+> el fundador lo quiere distinto, es una línea en `ROTULOS_ALBARAN`.
+
+## EL TRASLADO DESDE LA FILA: HECHO, PERO NO ENTERO — Y CON MECANISMO
+
+La fila del Trabajo era una barra de acciones y ahora es una **entrada**. Se han ido Emitir,
+Firmar, PDF, Enviar para firmar, Enviar por WhatsApp y Añadir foto. Se han borrado también sus
+constructores (`pdfBtn`, `fotoBtn`): un constructor que ya no llama nadie es código que se pudre
+y hace creer que la fila todavía ofrece esas acciones.
+
+**Firmar y la foto se implementaron DE VERDAD en la página** para poder irse de la fila. No es
+alcance de más: sin eso, «Firmar aquí mismo» habría sido un botón que promete firmar y te manda a
+otra pantalla a buscar otro botón. El pad de firma ya era global y el endpoint de fotos ya existía
+— misma mecánica, otra superficie.
+
+**Lo que NO se ha ido, y no es olvido: «Editar líneas» y «Facturar parte».** Su mecanismo
+(`openAlbEditorSheet`, `openFacturarParcialSheet`) vive **anidado dentro de
+`renderJobDetailView`** — medido: columna 2, no son globales. Desde la página solo se puede
+NAVEGAR hasta ellos. Borrarlos de la fila no los movería: los dejaría **inalcanzables desde los
+dos sitios**, y los dos botones de la página pasarían a ser callejones sin salida. Sacarlos es su
+propio ticket, y el de facturar toca el camino del dinero (regla 37: no se hace de paso).
+
+Eso no se queda en un comentario. `PUENTES_A_LA_FILA` declara el contrato y
+`tests/scrum302-sin-callejones.test.mjs` lo verifica **derivándolo del AST de la página**: qué
+acciones navegan de verdad, que estén todas declaradas, y que la fila conserve el botón de cada
+una. `btnVerTrabajo` está exento y declarado: navegar **es** su función — la diferencia entre un
+destino y un callejón.
+
+> El primer intento de ese guard **no se puso rojo** al borrar `acts.appendChild(editBtn())`:
+> comprobaba que existiera un `mkBtn` que llamara al mecanismo, y `editBtn` seguía *declarado*.
+> Un botón creado y nunca añadido al DOM no existe para el pro — el mismo fallo que el guard dice
+> cazar, escondido dentro del cazador. Ahora exige las dos cosas: que exista y que llegue a la
+> pantalla.
+
+## VALIDADO EN NAVEGADOR — los tres estados, con Tab de verdad
+
+Banco con los ficheros REALES servidos por HTTP, Chrome headless por CDP, y **código de salida**:
+nadie tiene que leer la salida para saber si pasó. 48 comprobaciones, `$? = 0`.
+
+- Tab **de verdad** (`Input.dispatchKeyEvent`), no `.focus()`: `:focus-visible` distingue
+  precisamente entre las dos cosas.
+- Lo pintado se contrasta contra el **registro**, derivado en el propio navegador.
+- El «⋮» se abre con **Enter** y se recorre con flechas (Tab lo cierra a propósito: es un menú).
+  Sin esto, las acciones del overflow serían inalcanzables sin ratón.
+
+## Lo que NO cubre
+
+- **AB6 · matriz de dispositivos: hueco declarado.** El banco corre en un solo tamaño.
+- **HALLAZGO AJENO — el anillo de foco no se pinta en NINGÚN botón primario del dashboard.**
+  Medido con control (`btn btn-primary` pelado, sin nada de C2, falla igual): `.btn-primary`
+  (`styles.css:412`) declara su propia `box-shadow` de reposo con la **misma especificidad** que
+  la regla global `:focus-visible` (`styles.css:94`) y va **después** en el fichero, así que gana
+  por orden de fuente. Afecta a todo el dashboard, es anterior a este ticket y es CSS global →
+  **se reporta, no se arregla aquí** (reglas 9 y 37). Siguiente acción concreta: subir la
+  especificidad de la regla de foco y medirlo con el mismo banco.
+  El banco lo lleva como **excepción declarada y visible**, nunca como silencio: exige anillo en
+  las no-primarias y **imprime** las primarias que se lo saltan.
+  (Cuidado al medirlo: leer el estilo calculado en t=0 devuelve el valor de partida interpolado
+  de la transición y hace pasar por «sin anillo» a un botón que sí lo tiene 350 ms después.)
+- **El «⋮» degrada**: si `overflowMenu` no estuviera cargado, los botones se pintan sueltos en vez
+  de perderse.
 
 ## Ficheros
 
 `public/dashboard/js/patronDetalleAcciones.js` (nuevo — la ley) ·
 `public/dashboard/js/invoiceActionsRegistry.js` (deja de definirla y delega) ·
 `public/dashboard/js/albaranActionsRegistry.js` (nuevo — la tabla) ·
-`tests/scrum302-patron-albaran.test.mjs` (8).
+`public/dashboard/js/albaranDetailView.js` (nuevo — la página) ·
+`src/modules/jobs/app/routes/albaranes.routes.ts` (`GET /:id`) ·
+`src/core/http/adminRouteDeclarations.ts` (el rol, con motivo) ·
+`public/dashboard/js/app.js` · `public/dashboard/index.html` · `public/sw.js` ·
+`public/dashboard/js/jobDetailView.js` (la fila recortada: el enlace + los dos puentes) ·
+`tests/scrum302-patron-albaran.test.mjs` (8) ·
+`tests/scrum302-sin-callejones.test.mjs` (4, nuevo — el contrato con la fila) ·
+`tests/scrum274-shell-alineado.test.mjs` (+1: toda entrada del SHELL resuelve a un fichero).

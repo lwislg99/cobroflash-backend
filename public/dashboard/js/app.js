@@ -135,7 +135,7 @@ async function initApp() {
   const viewContainer = document.getElementById('view-container');
   const viewTitle     = document.getElementById('view-title');
 
-  if (!window.appState) window.appState = { view: 'home', quoteId: null, invoiceId: null, jobId: null };
+  if (!window.appState) window.appState = { view: 'home', quoteId: null, invoiceId: null, jobId: null, albaranId: null };
 
   // 5. Hamburger menu (móvil)
   const overlay = document.createElement('div');
@@ -156,6 +156,7 @@ async function initApp() {
   // 6. Menú activo
   function setActiveMenu(view) {
     const menuView = view === 'quotes-detail' ? 'quotes-list'
+      : view === 'albaran-detail' ? 'jobs'
       : view === 'invoice-detail' ? 'invoices'
       : view === 'jobs-detail' ? 'jobs' : view;
 
@@ -175,6 +176,7 @@ async function initApp() {
     state.view = view;
     if (options.quoteId   !== undefined) state.quoteId   = options.quoteId;
     if (options.invoiceId !== undefined) state.invoiceId = options.invoiceId;
+    if (options.albaranId !== undefined) state.albaranId = options.albaranId; // SCRUM-302
     if (options.jobId     !== undefined) state.jobId     = options.jobId;
 
     closeSidebar();
@@ -241,6 +243,13 @@ async function initApp() {
       case 'invoices':
         viewTitle.textContent = 'Facturas';
         renderInvoicesView(viewContainer);
+        break;
+      case 'albaran-detail':
+        // SCRUM-302 (C2): el albarán tiene página propia. El rótulo del título es el nombre del
+        // documento, no microcopy de acción: no lleva marcador.
+        viewTitle.textContent = 'Albarán';
+        if (state.albaranId != null && typeof window.renderAlbaranDetailView === 'function')
+          window.renderAlbaranDetailView(viewContainer, state.albaranId);
         break;
       case 'invoice-detail':
         viewTitle.textContent = 'Factura';

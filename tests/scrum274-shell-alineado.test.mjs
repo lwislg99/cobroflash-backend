@@ -111,3 +111,49 @@ test('SCRUM-274 · el SHELL no precachea nada que el dashboard ya no cargue (add
       '  offline a todo el mundo, en silencio.',
   );
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-302 · Y CADA ENTRADA TIENE QUE RESOLVER A UN FICHERO DE VERDAD
+//
+// Los dos tests de arriba comparan HTML ↔ SHELL, que es la mitad de la pregunta. La otra mitad
+// es si lo listado EXISTE, y no la cubría nadie:
+//
+//   · una ruta puede estar en el HTML **y** en el SHELL y no existir en el árbol — entonces los
+//     dos están mal a la vez y la comparación sigue verde;
+//   · y el SHELL lleva entradas que NO son scripts (`/dashboard/`, `/tokens.css`, el CSS): si una
+//     de ésas se renombra, la comparación HTML↔SHELL ni se entera.
+//
+// ⚠️ POR QUÉ IMPORTA TANTO: `cache.addAll` es **ATÓMICO** (SCRUM-231). Una sola ruta que no
+// resuelva hace fallar el `install` ENTERO — el precache no se queda a medias, se queda en NADA —
+// y **todos los usuarios pierden el offline a la vez**, en silencio: no hay error en el servidor,
+// ni 500, ni log. Con red no se nota absolutamente nada.
+//
+// El riesgo real es de MERGE, y por eso el guard nace ahora: tres ramas añadieron ficheros a esta
+// lista el mismo día. Basta con que una renombre el suyo después de que otra lo haya listado.
+test('SCRUM-274 (+302) · toda entrada del SHELL resuelve a un fichero del árbol', () => {
+  const sw = fs.readFileSync(SW, 'utf8');
+  const bloque = sw.match(/const SHELL = \[([\s\S]*?)\];/);
+  assert.ok(bloque, '🔴 ESCÁNER CIEGO: no encuentro `const SHELL` en public/sw.js');
+  const rutas = [...bloque[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+
+  // SUELO: si el extractor deja de ver entradas, «ninguna muerta» y «no supe mirar» serían el
+  // mismo verde y significan lo contrario.
+  assert.ok(
+    rutas.length >= MINIMO_SCRIPTS,
+    `🔴 ESCÁNER CIEGO: veo ${rutas.length} entradas en el SHELL y hay al menos ${MINIMO_SCRIPTS}`,
+  );
+
+  // Un directorio se sirve por su index.html; el resto es el fichero tal cual bajo `public/`.
+  const aFichero = (r) => (r.endsWith('/')
+    ? path.join(RAIZ, 'public', r, 'index.html')
+    : path.join(RAIZ, 'public', r));
+
+  const muertas = rutas.filter((r) => !fs.existsSync(aFichero(r)));
+  assert.deepEqual(
+    muertas, [],
+    '🔴 EL SHELL PRECACHEA RUTAS QUE NO EXISTEN:\n    ' + muertas.join('\n    ') +
+      '\n\n  `cache.addAll` es ATÓMICO: con UNA sola que no resuelva, el `install` falla entero y\n' +
+      '  NADIE tiene offline — sin error visible en ninguna parte. Con red no se nota.\n' +
+      '  Si el fichero se renombró, actualiza la entrada; si se borró, quítala.',
+  );
+});
