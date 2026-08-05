@@ -25,6 +25,18 @@ function obTradeLabel(value) {
   return (OB_TRADES.find((t) => t.value === value) || {}).label || '';
 }
 
+// SCRUM-364 · la lista de oficios se PUBLICA para que otras vistas la reutilicen en vez de
+// escribir la suya. No es ceremonia: el censo de SCRUM-310 encontró TRES listas del mismo gremio
+// escritas a mano en el producto, y la cuarta habría sido la de `productsView`, que necesita
+// ofrecer el oficio a quien se quedó sin él.
+//
+// Por qué `window.` y no fiarse del ámbito compartido de los scripts clásicos: `OB_TRADES` es un
+// `const` de nivel superior y hoy NO lo usa ningún otro fichero — no hay precedente en el panel de
+// que eso funcione. El que sí lo tiene (`updateMerchantProfile`, usado desde tres vistas) es una
+// `function` de `api.js`. Publicarlo convierte una suposición sobre ámbitos en un contrato.
+window.OB_TRADES = OB_TRADES;
+window.obTradeLabel = obTradeLabel;
+
 function showOnboardingWizard(onComplete) {
   if (document.getElementById('onboarding-backdrop')) return;
 
