@@ -20,6 +20,8 @@ import {
   ensureAlbaranPdf,
   serializeAlbaran,
   validarLineas,
+
+  contarLineasDePresupuesto, // SCRUM-367
   type AlbaranModoValoracion,
 } from '../../domain/albaran.service';
 import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
@@ -346,7 +348,9 @@ router.patch('/:id', async (req, res) => {
     }
 
     if (req.body?.lineas !== undefined) {
-      const v = validarLineas(req.body.lineas, modoEfectivo);
+      // SCRUM-367: mismo rango real que al crear. ESTE es el punto donde el índice se perdía.
+      const nLineasQuote = await contarLineasDePresupuesto(albaran.jobId, req.merchantId!);
+      const v = validarLineas(req.body.lineas, modoEfectivo, nLineasQuote);
       if (!v.ok) return res.status(400).json({ error: 'lineas_invalidas', message: v.error });
       data.lineas = v.lineas;
       cambios.push('lineas');
