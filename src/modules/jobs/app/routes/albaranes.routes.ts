@@ -96,8 +96,23 @@ const lectorPrismaListado: LectorListado = {
  * La lógica (ejes, contadores, derivado de cobro) vive en `albaranesListado.ts` con su lector
  * inyectable: así la tenencia se prueba EJERCITANDO el camino con dos merchants, y no fiándose de
  * que el fichero mencione `merchantId` (SCRUM-348).
+ *
+ * 🔴 ADMIN-ONLY, y no es una precaución de más. SCRUM-147 midió y cerró que **un técnico solo ve
+ * SUS Trabajos** (`seesOnlyOwnJobs`: allowlist de 'admin', rol desconocido restringido). Los
+ * albaranes cuelgan de Trabajos, así que un listado global le enseñaría de qué obras AJENAS hay
+ * partes, de qué clientes y con qué fechas — lo que la puerta principal le niega, servido por la
+ * puerta de atrás.
+ *
+ * El criterio de «la misma información, agrupada» (el que abre `consolidables` al técnico) vale
+ * cuando la información YA era visible; aquí no lo era. Abrir de más no se deshace: haría falta
+ * saber quién lo usó mientras tanto.
+ *
+ * Si algún día el técnico debe ver los partes de SUS obras, el mecanismo ya existe y es barato
+ * —`seesOnlyOwnJobs(req.userRole)` + prefiltrar los `jobId` con `operarioId = req.teamMemberId`,
+ * como hace `GET /admin/jobs`—, pero **qué debe ver exactamente es una decisión de producto**, no
+ * un detalle de implementación: se decide en su ticket, no aquí.
  */
-router.get('/', async (req, res) => {
+router.get('/', requireRole('admin'), async (req, res) => {
   try {
     const listado = await listarAlbaranesDelMerchant(req.merchantId!, lectorPrismaListado);
     return res.json(listado);

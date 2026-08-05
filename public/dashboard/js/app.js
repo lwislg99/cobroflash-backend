@@ -247,9 +247,9 @@ async function initApp() {
         renderInvoicesView(viewContainer);
         break;
       case 'albaranes':
-        // SCRUM-301 (C1): sección propia. El título de la pantalla es microcopy sin aprobar
-        // (regla 30) igual que el rótulo del menú, así que lleva su marcador.
-        viewTitle.textContent = '[PENDIENTE microcopy oficial] Albaranes';
+        // SCRUM-301 (C1): sección propia. Rótulo APROBADO (5-ago-2026), mismo que el del menú: es
+        // el nombre del documento, no copy de acción — el criterio que C2 dejó escrito aquí abajo.
+        viewTitle.textContent = 'Albaranes';
         if (typeof window.renderAlbaranesView === 'function') window.renderAlbaranesView(viewContainer);
         break;
       case 'albaran-detail':

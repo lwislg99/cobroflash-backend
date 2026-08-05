@@ -30,17 +30,18 @@ Ahora el suelo también falla si hay un `.modal-overlay` / `#onboarding-backdrop
 | `scrum301-error-1280.png` | **La captura que sostiene el ticket**: con la consulta caída NO hay pestañas, NO hay contadores y NO hay ceros — solo el aviso en rojo. |
 | `scrum301-vacio-1280.png` | Cero albaranes de verdad: pestañas a 0 y estado vacío. Es el contraste del anterior: el mismo número con significado opuesto, y se distinguen en pantalla. |
 
-## ⚠️ Lo que se ve raro y por qué: el marcador de microcopy
+## Microcopy: aprobada el 5-ago-2026 — y lo que la aprobación arregló
 
-Todo rótulo nuevo lleva `[PENDIENTE microcopy oficial]` delante (regla 30, patrón de SCRUM-286). Es
-deliberado y se nota: **en escritorio el prefijo empuja las columnas `Cliente`, `Trabajo` y `Estado`
-fuera del ancho visible** (siguen accesibles con el scroll horizontal de `.table-scroll`).
+La primera tanda de capturas se hizo con `[PENDIENTE microcopy oficial]` en cada rótulo, y el
+marcador **empujaba `Cliente`, `Trabajo` y `Estado` fuera del ancho visible** — incluida la columna
+que es la ventaja del ticket. No era maquetación: era el coste del marcador.
 
-Eso incluye la columna `Trabajo`, que es la ventaja del ticket. **No es un defecto de maquetación:
-es el coste del marcador**, y desaparece en cuanto el asesor apruebe los textos —con los rótulos
-definitivos (`Nº · Emisión · Entrega · Cliente · Trabajo · Estado`) las seis columnas caben de
-sobra. La propuesta de copy va en la entrada del registro.
+El asesor aprobó las cuatro ranuras (tres tal cual y el filtro con retoque, «todos» en vez de
+«todas») y estas capturas están rehechas con el texto definitivo: **las seis columnas caben y
+`Trabajo` se ve enlazada**.
 
+Siguen con marcador los cinco textos que NO se sometieron —el aviso de error, el recuento del
+subtítulo, el buscador y los dos estados vacíos—, y se ven así a propósito en las capturas.
 ## Checklist AB6
 
 | Punto | Estado |

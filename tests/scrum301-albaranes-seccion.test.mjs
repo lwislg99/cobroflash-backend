@@ -367,29 +367,83 @@ test('SCRUM-301 · la sección está CABLEADA: menú, ruta y script', () => {
 
 // ── MICROCOPY (regla 30) ─────────────────────────────────────────────────────────────────
 
-test('SCRUM-301 · todo rótulo NUEVO va con el marcador de microcopy sin aprobar', () => {
+/**
+ * Las CUATRO ranuras que el asesor aprobó el 5-ago-2026 (tres tal cual, una con retoque).
+ *
+ * El guard cambió de trabajo: hasta la aprobación exigía el marcador; ahora compara **ranura a
+ * ranura** contra el texto aprobado, porque **retocar copy aprobada es una decisión del asesor**, no
+ * un detalle de implementación. Mismo patrón que dejó escrito SCRUM-303.
+ */
+const COPY_APROBADA = {
+  seccion: 'Albaranes',
+  pestanaTodos: 'Todos',
+  estados: { borrador: 'Borradores', emitido: 'Emitidos', firmado: 'Firmados' },
+  columnas: ['Nº', 'Emisión', 'Entrega', 'Cliente', 'Trabajo', 'Estado'],
+  filtroTodos: 'Facturación: todos',
+  cobro: { sin_facturar: 'sin facturar', parcial: 'parcial', facturado: 'facturado' },
+};
+
+/** La regla de plural de la vista, replicada aquí para poder carear sus resultados. */
+function etiquetaEstadoSegunLaVista(valor) {
+  const cuerpo = VISTA.slice(VISTA.indexOf('function etiquetaEstado('), VISTA.indexOf('function etiquetaCobro('));
+  // eslint-disable-next-line no-new-func
+  return new Function(cuerpo + '; return etiquetaEstado(' + JSON.stringify(valor) + ');')();
+}
+function etiquetaCobroSegunLaVista(valor) {
+  const cuerpo = VISTA.slice(VISTA.indexOf('function etiquetaCobro('), VISTA.indexOf('function esc('));
+  // eslint-disable-next-line no-new-func
+  return new Function(cuerpo + '; return etiquetaCobro(' + JSON.stringify(valor) + ');')();
+}
+
+test('SCRUM-301 · la copy APROBADA está, ranura a ranura, y el marcador se ha retirado', () => {
   const index = fs.readFileSync(F_INDEX, 'utf8');
   const app = fs.readFileSync(F_APP, 'utf8');
 
-  assert.ok(index.includes(MARCA + ' Albaranes'),
-    '🔴 el rótulo del menú no lleva el marcador. El nombre de la sección es microcopy SIN APROBAR ' +
-    '(regla 30): lo aprueba el asesor, no se inventa aquí.');
-  assert.ok(app.includes(MARCA + ' Albaranes'), '🔴 el título de la pantalla no lleva el marcador');
+  assert.ok(index.includes('>' + COPY_APROBADA.seccion + '<'),
+    `🔴 el rótulo del menú ya no es «${COPY_APROBADA.seccion}». Está APROBADO: cambiarlo es una ` +
+    'decisión del asesor, no un retoque de implementación.');
+  assert.ok(app.includes("viewTitle.textContent = '" + COPY_APROBADA.seccion + "'"),
+    `🔴 el título de la pantalla ya no es «${COPY_APROBADA.seccion}»`);
+  assert.equal(index.includes(MARCA + ' Albaranes'), false,
+    '🔴 el menú sigue con el marcador sobre un texto YA APROBADO: el marcador existe para molestar ' +
+    'hasta que hay aprobación, y ya la hay.');
 
-  // Y en la vista: pestañas, columnas, buscador y estados vacíos. Se cuenta cuántas veces se
-  // llama al helper — si alguien añade un rótulo suelto, este número deja de cuadrar.
-  const usos = (VISTA.match(/rotulo\(/g) || []).length;
-  assert.ok(usos >= 8,
-    `🔴 solo ${usos} rótulos pasan por el marcador. Todo texto nuevo de esta pantalla es microcopy ` +
-    'sin aprobar hasta que el asesor lo apruebe.');
-  assert.ok(VISTA.includes("MARCA + ' ' + borrador"),
-    '🔴 el helper del marcador ha cambiado de forma: revisa que sigue anteponiendo la marca');
+  for (const [valor, esperado] of Object.entries(COPY_APROBADA.estados)) {
+    assert.equal(etiquetaEstadoSegunLaVista(valor), esperado,
+      `🔴 la pestaña de «${valor}» ya no dice «${esperado}». Los cuatro rótulos de las pestañas ` +
+      'están aprobados; si la regla de plural deja de producirlos, hay que decirlo, no cambiarlos.');
+  }
+  for (const [valor, esperado] of Object.entries(COPY_APROBADA.cobro)) {
+    assert.equal(etiquetaCobroSegunLaVista(valor), esperado,
+      `🔴 la opción de facturación «${valor}» ya no dice «${esperado}»`);
+  }
+  assert.ok(VISTA.includes("'" + COPY_APROBADA.filtroTodos + "'"),
+    `🔴 el filtro ya no dice «${COPY_APROBADA.filtroTodos}». El retoque aprobado fue precisamente ` +
+    'ése: «todos» concuerda con «albaranes», que es lo que se cuenta; «todas» arrastra a pensar en ' +
+    'facturas, el objeto que este filtro NO cuenta.');
+  assert.equal(VISTA.includes('facturación: todas'), false,
+    '🔴 ha vuelto «todas», que es exactamente lo que el retoque corrigió');
 
-  // Las píldoras de la fila NO llevan marcador a propósito: imprimen el VALOR del modelo, que es
-  // dato y no copy — y es lo que impide que alguien vuelva a escribir «Enviado» donde el modelo
-  // dice `emitido`.
+  const cabeceras = VISTA.slice(VISTA.indexOf("thead.innerHTML"), VISTA.indexOf('</tr>'));
+  for (const c of COPY_APROBADA.columnas) {
+    assert.ok(cabeceras.includes("'" + c + "'"), `🔴 la columna «${c}» ya no se llama así`);
+  }
+
+  // Las píldoras de la fila imprimen el VALOR del modelo, que es dato y no copy — y es lo que
+  // impide que alguien vuelva a escribir «Enviado» donde el modelo dice `emitido`.
   assert.match(VISTA, /pill\.textContent = f\.estado;/,
     '🔴 la píldora de estado ha dejado de imprimir el valor del modelo');
+});
+
+test('SCRUM-301 · lo que NO se sometió sigue con marcador (no se aprueba solo)', () => {
+  // Cuatro ranuras se aprobaron; el aviso de error, el recuento, el buscador y los dos estados
+  // vacíos no se sometieron. Aprobarlos por mi cuenta sería inventarme copy oficial (regla 30).
+  const usos = (VISTA.match(/rotulo\(/g) || []).length;
+  assert.ok(usos >= 5,
+    `🔴 solo ${usos} textos siguen marcados. Si un rótulo sin aprobar ha perdido su marca, se ha ` +
+    'colado copy oficial por la puerta de atrás.');
+  assert.ok(VISTA.includes("MARCA + ' ' + borrador"),
+    '🔴 el helper del marcador ha cambiado de forma: revisa que sigue anteponiendo la marca');
 });
 
 // ── LA PANTALLA NO PINTA CEROS CUANDO FALLA ──────────────────────────────────────────────

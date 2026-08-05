@@ -4,7 +4,7 @@
 
 **Medido contra:** `origin/main` = `56874623baa406a0e8e38b93c236f7a4740b1e6a` · 2026-08-05T16:38:08+01:00
 
-**Tanda:** 1759 tests, 1692 pass, 0 fail, 67 skipped (los 67 son los gateados de staging)
+**Tanda:** 1760 tests, 1693 pass, 0 fail, 67 skipped (los 67 son los gateados de staging)
 
 ## El defecto
 
@@ -99,7 +99,7 @@ que mencione `merchantId` por el motivo que sea (medido en SCRUM-348). Aquí se 
 
 ## Verificado en rojo
 
-Once sabotajes, cada uno aplicado, compilado, corrido y revertido con verificación byte a byte:
+Dieciséis sabotajes, cada uno aplicado, compilado, corrido y revertido con verificación byte a byte:
 
 | Se quita la cosa vigilada | Sale rojo |
 | --- | --- |
@@ -112,10 +112,15 @@ Once sabotajes, cada uno aplicado, compilado, corrido y revertido con verificaci
 | La vista enumera un estado a mano | ③ la vista no enumera |
 | El camino de error dibuja pestañas | el guard del error |
 | El aviso de error pierde el tono (invisible por CSS) | el guard del error |
-| El rótulo del menú pierde el marcador | microcopy |
 | **La vista deja de cargarse en `index.html`** | **nada — y ése fue el hallazgo** |
+| La ruta pierde su `requireRole` | SCRUM-55 (fail-closed de roles) |
+| El filtro vuelve a decir «todas» | la copy aprobada, ranura a ranura |
+| La regla de plural deja de dar «Borradores» | la copy aprobada |
+| Se reescribe una columna aprobada | la copy aprobada |
+| Un rótulo SIN aprobar pierde su marcador | el guard de lo no sometido |
+| El menú vuelve a llevar marcador sobre texto aprobado | la copy aprobada |
 
-🔴 **El último sabotaje encontró un guard incapaz de fallar.** Comprobaba `assert.match(index,
+🔴 **El de «la vista deja de cargarse» encontró un guard incapaz de fallar.** Comprobaba `assert.match(index,
 /albaranesView\.js/)`, así que **comentar la etiqueta `<script>` lo dejaba en verde**: el texto
 seguía en el fichero. Un guard que no distingue una etiqueta viva de una comentada no vigila el
 cableado, vigila la ortografía. Ahora lee los `src` de verdad, con los comentarios HTML fuera, y el
@@ -142,12 +147,53 @@ La tanda completa —no la del ticket— salió roja tres veces. Ninguna era rui
    admitirlo—; y **reordenarlos, que sí compila, pone rojo el assert**. Antes, un comentario movido
    podía tumbarlo y un cambio real de tipo no lo tocaba.
 
-## Microcopy (regla 30) — y una propuesta
+## 🔴 Permisos: admin-only, y el motivo es una fuga
 
-Todo rótulo nuevo va con `[PENDIENTE microcopy oficial]` (patrón SCRUM-286) y su guard. **Se nota, y
-está fotografiado**: el prefijo empuja `Cliente`, `Trabajo` y `Estado` fuera del ancho visible en
-escritorio — incluida la columna que es la ventaja del ticket. No es un defecto de maquetación, es
-el coste del marcador, y con los textos aprobados las seis columnas caben de sobra.
+La primera versión declaró la ruta en `TECNICO_ALLOWED` con el criterio de `consolidables` —«es la
+misma información, agrupada»—. **El asesor lo rechazó y tenía razón:** ese criterio vale cuando la
+información YA era visible, y aquí no lo era.
+
+**SCRUM-147 midió y cerró que un técnico solo ve SUS Trabajos** (`seesOnlyOwnJobs`: allowlist de
+`admin`, rol desconocido restringido). Los albaranes cuelgan de Trabajos, así que un listado global
+le enseñaría **de qué obras ajenas hay partes, de qué clientes y con qué fechas**: justo lo que la
+puerta principal le niega, servido por la puerta de atrás. Y no es aplazable — **cerrar de más es un
+incordio; abrir de más no se deshace**, porque arreglarlo después obliga a saber quién lo usó
+mientras tanto.
+
+Así que `requireRole('admin')`, fuera de `TECNICO_ALLOWED`, y **dentro de `ADMIN_ONLY_ROUTES`**: ahí
+su 403 con sesión de técnico queda **exigido por la tanda gateada**, no solo declarado en un
+comentario. Es la diferencia entre una decisión de permisos y una intención.
+
+**Medido, por si se decide abrirlo con criterio:** aplicar el filtro de Trabajos sería barato —
+`seesOnlyOwnJobs(req.userRole)` + prefiltrar los `jobId` con `operarioId = req.teamMemberId`, como
+hace `GET /admin/jobs` — pero **qué debe ver exactamente el técnico es una decisión de producto**
+(¿los partes de sus obras? ¿solo los que él firmó?), y esa se toma en su ticket, no aquí.
+
+## Microcopy (regla 30): aprobada, y el guard cambia de trabajo
+
+Se entregó con `[PENDIENTE microcopy oficial]` en cada rótulo (patrón SCRUM-286) y el asesor aprobó
+las cuatro ranuras el 5-ago-2026: **tres tal cual y el filtro con retoque** — `Facturación: todos`,
+no «todas», porque concuerda con «albaranes», que es lo que se cuenta; «todas» arrastra a pensar en
+facturas, el objeto que este filtro NO cuenta.
+
+El rótulo `Albaranes` se aprobó **reutilizando un precedente escrito** en vez de pedir criterio
+nuevo: C2 ya fijó en `main` que «el rótulo del título es el nombre del documento, no microcopy de
+acción».
+
+Y el guard **cambia de trabajo**: dejó de exigir el marcador y ahora compara **ranura a ranura**
+contra el texto aprobado, porque retocar copy aprobada es decisión del asesor. Con un detalle que
+importa: los rótulos de las pestañas **no se escriben, se derivan** del valor con la regla de plural
+del español (vocal → +s, consonante → +es), que produce exactamente `Borradores · Emitidos ·
+Firmados`. Un mapa `{ borrador: 'Borradores', … }` habría reintroducido la lista a mano que el resto
+del fichero evita.
+
+**Los cinco textos que no se sometieron siguen con marcador** (aviso de error, recuento del
+subtítulo, buscador y los dos estados vacíos): aprobarlos por mi cuenta sería inventarme copy
+oficial, y hay un guard que lo impide.
+
+Efecto medido de la aprobación, visible en las capturas: con el marcador, el prefijo empujaba
+`Cliente`, `Trabajo` y `Estado` fuera del ancho visible — incluida la columna que es la ventaja del
+ticket. Con el texto aprobado, **las seis caben**.
 
 ## Lo que NO cubre
 
@@ -172,8 +218,9 @@ el coste del marcador, y con los textos aprobados las seis columnas caben de sob
 * `src/modules/jobs/app/routes/albaranes.routes.ts` — `GET /admin/albaranes` + su lector Prisma.
 * `public/dashboard/js/albaranesView.js` — **nuevo**. La vista vanilla, sin CSS nuevo.
 * `public/dashboard/index.html` · `public/dashboard/js/app.js` — entrada de menú, script y ruta.
-* `src/core/http/adminRouteDeclarations.ts` — la ruta declarada como TECNICO_ALLOWED, con motivo.
+* `src/core/http/adminRouteDeclarations.ts` — por qué esta ruta NO está en TECNICO_ALLOWED.
+* `src/core/http/adminOnlyRoutes.ts` — su 403 con sesión de técnico, exigido en la tanda gateada.
 * `public/sw.js` — el script nuevo en el shell del service worker.
-* `tests/scrum301-albaranes-seccion.test.mjs` — **nuevo**, 15 tests.
+* `tests/scrum301-albaranes-seccion.test.mjs` — **nuevo**, 16 tests.
 * `tests/scrum302-patron-albaran.test.mjs` — su guard del derivado, ahora contra el valor compilado.
 * `docs/capturas/scrum-301/` — cuatro capturas AB6 y su README.

@@ -28,23 +28,43 @@
 // «No tienes ninguno» sigue siendo una respuesta legítima y tiene su propio estado vacío.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// MICROCOPY (regla 30): TODO RÓTULO VA CON MARCADOR
+// MICROCOPY: APROBADA POR EL ASESOR EL 5-AGO-2026 (regla 30)
 //
-// El nombre de la sección, los de las pestañas y los de las columnas son texto SIN APROBAR. Van con
-// `[PENDIENTE microcopy oficial]` delante, mismo patrón que los cuatro títulos de bloque de
-// SCRUM-286. Sí, se lee mal a propósito: el marcador existe para que moleste hasta que el texto
-// definitivo esté aprobado.
+// Se entregó con `[PENDIENTE microcopy oficial]` en cada rótulo y el asesor aprobó las cuatro
+// ranuras: tres tal cual y una con retoque («Facturación: TODOS», no «todas», porque concuerda con
+// «albaranes» — que es lo que se cuenta; «todas» arrastra a pensar en facturas, que es justo el
+// objeto que este filtro NO cuenta). El marcador se retira y el guard cambia de trabajo: ahora
+// compara ranura a ranura contra el texto aprobado, porque retocar copy aprobada es decisión del
+// asesor y no un detalle de implementación.
 //
-// Las etiquetas de estado dentro de cada fila NO llevan marcador y no es una excepción: ahí se
-// imprime EL VALOR DEL MODELO tal cual (`emitido`, `parcial`), que es dato y no copy. Además es lo
-// que impide repetir el error de B2 — nadie va a escribir «Enviado» en una pantalla que pone
-// `emitido`.
+// ⚠️ LAS ETIQUETAS DE LAS PESTAÑAS SE DERIVAN DEL VALOR, NO SE ESCRIBEN. Un mapa
+// `{ borrador: 'Borradores', … }` sería otra vez la lista a mano que este fichero evita: el día que
+// el modelo gane un estado, esa pestaña saldría sin nombre o directamente no saldría. La regla de
+// plural del español (vocal → +s, consonante → +es) produce EXACTAMENTE los tres rótulos aprobados,
+// y un test los fija uno a uno.
+//
+// Las etiquetas de estado dentro de cada fila imprimen EL VALOR DEL MODELO tal cual (`emitido`,
+// `parcial`): dato, no copy. Es lo que impide repetir el error de B2 — nadie va a escribir
+// «Enviado» en una pantalla que pone `emitido`.
 (function () {
+  const TODOS = '__todos__'; // valor de pestaña, no un estado del modelo
+
+  // Las CUATRO ranuras aprobadas son: el nombre de la sección, las pestañas, las columnas y el
+  // filtro de facturación. El resto de textos de esta pantalla —el aviso de error, el subtítulo del
+  // recuento, el buscador y los dos estados vacíos— NO se sometieron y siguen con marcador: son
+  // ranuras distintas y aprobarlas por mi cuenta sería inventarme copy oficial (regla 30).
   const MARCA = '[PENDIENTE microcopy oficial]';
-  /** Rótulo sin aprobar: marcador + borrador de texto (patrón SCRUM-286). */
   function rotulo(borrador) { return MARCA + ' ' + borrador; }
 
-  const TODOS = '__todos__'; // valor de pestaña, no un estado del modelo
+  /** Plural español del valor + mayúscula inicial: `borrador` → `Borradores`, `emitido` → `Emitidos`. */
+  function etiquetaEstado(valor) {
+    const s = String(valor).replace(/_/g, ' ');
+    const plural = /[aeiouáéíóú]$/i.test(s) ? s + 's' : s + 'es';
+    return plural.charAt(0).toUpperCase() + plural.slice(1);
+  }
+
+  /** El eje de cobro se lee como se escribe: `sin_facturar` → `sin facturar`. Sin plural. */
+  function etiquetaCobro(valor) { return String(valor).replace(/_/g, ' '); }
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => (
@@ -84,7 +104,7 @@
 
     const left = document.createElement('div');
     const title = document.createElement('h2');
-    title.textContent = rotulo('Albaranes');
+    title.textContent = 'Albaranes'; // APROBADO 5-ago-2026 (nombre del documento, precedente C2)
     title.style.cssText = 'margin:0;font-size:18px';
     left.appendChild(title);
     const subtitle = document.createElement('p');
@@ -155,7 +175,7 @@
         b.type = 'button';
         b.className = 'data-card-tab' + (d.valor === TODOS ? ' active' : '');
         b.dataset.tab = d.valor;
-        b.textContent = rotulo(d.valor === TODOS ? 'todos' : d.valor);
+        b.textContent = d.valor === TODOS ? 'Todos' : etiquetaEstado(d.valor); // APROBADO
         const badge = document.createElement('span');
         badge.className = 'badge badge-slate';
         badge.dataset.contador = d.valor;
@@ -183,15 +203,19 @@
       const selCobro = document.createElement('select');
       selCobro.className = 'input';
       selCobro.style.cssText = 'width:auto';
-      selCobro.setAttribute('aria-label', rotulo('Filtrar por facturación'));
+      selCobro.setAttribute('aria-label', 'Facturación'); // APROBADO
       // El eje derivado vive en su propio control, con sus contadores: es OTRA pregunta, no una
       // pestaña más. Aplanarlo perdería el `parcial`.
-      const opciones = [{ valor: TODOS, texto: 'facturación: todas', n: contadores.total }]
-        .concat(ejes.cobro.map((v) => ({ valor: v, texto: v, n: contadores.porCobro[v] || 0 })));
+      //
+      // APROBADO con retoque (5-ago-2026): «todos», no «todas» — concuerda con «albaranes», que es
+      // lo que se cuenta. «Todas» arrastra a pensar en facturas, que es justo el objeto que este
+      // filtro NO cuenta.
+      const opciones = [{ valor: TODOS, texto: 'Facturación: todos', n: contadores.total }]
+        .concat(ejes.cobro.map((v) => ({ valor: v, texto: etiquetaCobro(v), n: contadores.porCobro[v] || 0 })));
       for (const o of opciones) {
         const op = document.createElement('option');
         op.value = o.valor;
-        op.textContent = rotulo(o.texto + ' (' + o.n + ')');
+        op.textContent = o.texto + ' (' + o.n + ')';
         selCobro.appendChild(op);
       }
       selCobro.addEventListener('change', () => { cobroActivo = selCobro.value; activar(); });
@@ -207,7 +231,7 @@
       const thead = document.createElement('thead');
       thead.innerHTML = '<tr>' +
         ['Nº', 'Emisión', 'Entrega', 'Cliente', 'Trabajo', 'Estado']
-          .map((c) => '<th>' + esc(rotulo(c)) + '</th>').join('') +
+          .map((c) => '<th>' + esc(c) + '</th>').join('') + // APROBADAS tal cual
         '</tr>';
       tabla.appendChild(thead);
       const tbody = document.createElement('tbody');
