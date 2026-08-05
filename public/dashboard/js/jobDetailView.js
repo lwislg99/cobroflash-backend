@@ -113,7 +113,36 @@ async function renderJobDetailView(container, jobId) {
   const sub = document.createElement('p');
   sub.className = 'detail-sub';
   headLeft.appendChild(sub);
+  // ── SCRUM-316 (G1) · los DOS chips, en la cabecera y juntos ──────────────────────────
+  // Estado del TRABAJO y estado de COBRO. Bajaban del bloque de resumen; aquí están donde el
+  // patrón los pide, al lado del título.
+  //
+  // ⚠️ Están juntos y NO son simétricos, y el código no debe sugerir que lo sean: el primero es
+  // un estado con tabla de transiciones y auditoría; el segundo es `estadoCobroFor(cobrado,
+  // aceptado)`, una división que se recalcula en cada lectura y que no tiene columna en la BD.
+  const chips = document.createElement('div');
+  chips.className = 'detail-head-chips';
+  headLeft.appendChild(chips);
   head.appendChild(headLeft);
+
+  // ── SCRUM-316 (G1) · LA BARRA DE ACCIONES DE LA CABECERA ─────────────────────────────
+  //
+  // La ley del patrón (B2, SCRUM-283): UNA primaria · máximo DOS secundarias · el resto en «⋮».
+  // Se pinta desde `jobActionsRegistry.js`, la MISMA tabla que verifica el guard: nadie la escribe
+  // dos veces y una acción que nadie declaró no llega a la cabecera aunque alguien la cree.
+  const headRight = document.createElement('div');
+  headRight.className = 'detail-head-acciones';
+  head.appendChild(headRight);
+
+  const cubosCabecera = { primaria: [], secundaria: [], overflow: [] };
+  // Se COLECTA durante el render y se ENSAMBLA al final: así el orden en que cada sección crea su
+  // botón no decide el orden de la cabecera — lo decide el registro.
+  const enCabecera = (id, el) => {
+    if (!el) return;
+    const destino = typeof destinoAccionTrabajo === 'function' ? destinoAccionTrabajo(id) : null;
+    if (!destino || !cubosCabecera[destino]) return;
+    cubosCabecera[destino].push(el);
+  };
 
   const statusBox = document.createElement('div');
   statusBox.className = 'alert';
@@ -125,8 +154,14 @@ async function renderJobDetailView(container, jobId) {
     statusBox.style.display = type || msg ? 'block' : 'none';
   };
 
+  // SCRUM-316 (G1): `cuerpo` es la rejilla del patrón — columna principal + rail derecho. El rail
+  // solo se añade si G3 le da contenido (ver el final del render); mientras, `body` ocupa el ancho
+  // entero y la pantalla se ve exactamente como hoy.
+  const cuerpo = document.createElement('div');
+  cuerpo.className = 'detail-cuerpo';
+  page.appendChild(cuerpo);
   const body = document.createElement('div');
-  page.appendChild(body);
+  cuerpo.appendChild(body);
   body.innerHTML = '<div class="detail-section"><p style="color:var(--muted);font-size:13px;margin:0">Cargando trabajo…</p></div>';
 
   let job;
@@ -219,16 +254,19 @@ async function renderJobDetailView(container, jobId) {
   sumRow.className = 'detail-summary';
   sumSec.appendChild(sumRow);
   // SCRUM-31 (F1): estado del TRABAJO + estado de cobro JUNTOS (antes solo se veía el de cobro).
-  const stBlock = document.createElement('div');
-  stBlock.innerHTML =
-    `<div class="detail-total-label">Estado</div>` +
-    `<span class="status-pill ${jobMeta.pillClass}">${esc(jobMeta.label)}</span> ` +
+  // SCRUM-316 (G1): los dos chips suben a la CABECERA (`chips`, creado con el título). Aquí ya no
+  // se pintan — tenerlos en los dos sitios sería la misma verdad dicha dos veces.
+  //
+  // ⚠️ CONFLICTO CON SCRUM-363, RESUELTO CONSERVANDO LAS DOS: 363 decide CUÁNDO hay chip de cobro
+  // y 316 decide DÓNDE va. Son respuestas a preguntas distintas y ninguna sustituye a la otra —
+  // quedarse con la de 316 habría devuelto el «Parcial» falso a la pantalla, en su sitio nuevo.
+  chips.innerHTML =
+    `<span class="status-pill ${jobMeta.pillClass}">${esc(jobMeta.label)}</span>` +
     // SCRUM-363 · sin eje de cobro NO se pinta chip. Ni «Parcial», ni «Pendiente», ni un hueco
     // gris: un Trabajo sin importe de referencia no admite ninguna afirmación sobre su dinero, y
     // «Parcial» era una afirmación FALSA que además no se podía deshacer nunca (la pestaña
     // «Pagado» no lo enseñaba jamás, así que el pro perseguía un pago que ya tenía).
     (job.estadoCobro ? `<span class="status-pill ${cobroCls}">${esc(job.estadoCobro)}</span>` : '');
-  sumRow.appendChild(stBlock);
   const totBlock = document.createElement('div');
   totBlock.style.textAlign = 'right';
   totBlock.innerHTML = `<div class="detail-total-label">Total aceptado</div><div class="detail-total-amount">${fmtMoneyEs(aceptado, cur)}</div>`;
@@ -249,11 +287,14 @@ async function renderJobDetailView(container, jobId) {
   // ── CTA primario del HÉROE — la SIGUIENTE acción del Trabajo (SCRUM-31 F4). jobNextAction
   // decide CUÁL por la escalera aprobada; aquí SOLO se ejecuta, reutilizando endpoints existentes
   // (collect-rest / send-reminder / enviar-para-firmar / emitir / nuevo albarán). Cero lógica nueva.
+  // SCRUM-316 (G1): el CTA es la PRIMARIA del patrón y sube a la cabecera. Quién la ocupa lo sigue
+  // decidiendo la escalera, con el mismo criterio y la misma llamada: aquí solo cambia DÓNDE se
+  // cuelga. Es la única acción que puede ocupar ese hueco, y por eso el registro declara el slot
+  // sin declarar su ocupante.
   const nextAct = jobNextAction(job, !isTecnico);
   if (nextAct) {
     const cta = document.createElement('button');
-    cta.className = 'btn-primary';
-    cta.style.marginTop = '16px';
+    cta.className = 'btn-primary btn-sm';
     cta.textContent = nextAct.label;
     cta.addEventListener('click', async () => {
       cta.disabled = true;
@@ -300,7 +341,7 @@ async function renderJobDetailView(container, jobId) {
         cta.textContent = orig;
       }
     });
-    sumSec.appendChild(cta);
+    enCabecera('cta', cta);
   }
 
   // ── Datos: cliente, dirección, presupuesto origen (link por quoteNumber) ──
@@ -545,7 +586,10 @@ async function renderJobDetailView(container, jobId) {
         onSaved: () => { showToast('✓ Gasto añadido a este trabajo.'); },
       });
     });
-    newAlbRow.appendChild(gastoBtn);
+    // SCRUM-316 (G1): sube a la cabecera como SECUNDARIA. Un gasto no es un documento — estaba
+    // en la barra de DOCUMENTOS por inercia, no por diseño. Su guarda (`job.quote?.id != null`)
+    // no se toca: si no se crea el botón, no hay secundaria y la cabecera se pinta sin ella.
+    enCabecera('btnGasto', gastoBtn);
   }
 
   docsSec.appendChild(newAlbRow);
@@ -1576,6 +1620,36 @@ async function renderJobDetailView(container, jobId) {
     docList.className = 'job-doc-list';
     docs.forEach((d) => docList.appendChild(d.el));
     docsSec.appendChild(docList);
+  }
+
+  // ── SCRUM-316 (G1) · ENSAMBLADO de la cabecera, en el orden de la ley ────────────────
+  // primaria · secundarias · «⋮». El «⋮» reutiliza `overflowMenu` de AB3 (a11y, teclado, hoja
+  // inferior en móvil). Si no estuviera cargado, las acciones del overflow se pintan sueltas:
+  // perder el menú no puede costar una acción (misma decisión que en factura y en SCRUM-31).
+  cubosCabecera.primaria.forEach((b) => headRight.appendChild(b));
+  cubosCabecera.secundaria.forEach((b) => headRight.appendChild(b));
+  if (cubosCabecera.overflow.length) {
+    if (typeof overflowMenu === 'function') headRight.appendChild(overflowMenu(cubosCabecera.overflow));
+    else cubosCabecera.overflow.forEach((b) => headRight.appendChild(b));
+  }
+
+  // ── SCRUM-316 (G1) · EL RAIL DERECHO: estructura hoy, contenido en G3 ────────────────
+  //
+  // Se declara la rejilla y los cinco bloques (`JOB_RAIL_BLOQUES`). Cada bloque se pinta SOLO si
+  // tiene contenido, y hoy **ninguno lo tiene**: el contenido es G3 y el ticket lo deja fuera.
+  // Así el sitio existe y está probado sin publicar una columna vacía en yaqu.app.
+  //
+  // Sin esto G3 no tendría dónde ir y acabaría creando su propio contenedor — que es exactamente
+  // como una pantalla termina con dos maquetaciones que nadie decidió tener.
+  const railBloques = (typeof JOB_RAIL_BLOQUES !== 'undefined' ? JOB_RAIL_BLOQUES : [])
+    .map((id) => ({ id, el: null })) // G3 rellena `el`; hoy null en los cinco.
+    .filter((b) => b.el);
+  if (railBloques.length) {
+    const rail = document.createElement('aside');
+    rail.className = 'detail-rail';
+    railBloques.forEach((b) => rail.appendChild(b.el));
+    cuerpo.appendChild(rail);
+    cuerpo.classList.add('detail-cuerpo--con-rail');
   }
 }
 window.renderJobDetailView = renderJobDetailView;
