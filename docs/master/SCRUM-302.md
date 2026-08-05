@@ -325,7 +325,20 @@ línea —lo hay, `quoteLineIndex`—, es que **el que hay no cubre todos los ca
 `VALORADO`, solo lo pone el prellenado, y el índice no sabe de qué presupuesto es. Así que el enlace
 del rail es **del DOCUMENTO**, no de las líneas, y no puede presentarse como si lo fuera.
 
-**FOTOS** — medir antes por dónde se leen.
+**FOTOS — MEDIDO (5-ago-2026): el camino de lectura EXISTE. No es hueco.**
+
+| Pieza | Dónde |
+|---|---|
+| Subir | `POST /:id/fotos` (`albaranes.routes.ts:648`) |
+| Listar | `GET /:id/fotos` (`albaranes.routes.ts:704`) |
+| Servir el binario | `GET /admin/attachments/:id`, montado en `app.ts:423` y **con su rol declarado** en `adminRouteDeclarations.ts:111` |
+| Precedente funcionando | `jobDetailView.js:1728` **ya las pinta**: `img.src = /admin/attachments/${f.id}` |
+
+> **Conclusión: se puede construir sin abrir camino nuevo.** No hay que inventar endpoint, ni ruta,
+> ni forma de servir el binario: las tres existen y hay una pantalla usándolas hoy. Lo único que
+> falta es pintarlas en el rail de esta página.
+
+Queda escrito aquí para que la siguiente sesión **no vuelva a medir lo mismo**.
 
 Ficheros: `src/modules/jobs/domain/albaranDuplicado.ts` (nuevo) ·
 `src/modules/jobs/app/routes/albaranes.routes.ts` (el endpoint) ·
