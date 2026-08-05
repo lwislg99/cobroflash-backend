@@ -347,3 +347,111 @@ Ficheros: `src/modules/jobs/domain/albaranDuplicado.ts` (nuevo) ·
 `public/dashboard/js/albaranDetailView.js` (el botón) ·
 `tests/scrum302-duplicar.test.mjs` (7, nuevo) ·
 `tests/scrum302-patron-albaran.test.mjs` (la premisa 3, reescrita).
+
+---
+
+# SCRUM-302 · CIERRE (6-ago-2026) · Presupuesto origen y fotos — las dos que faltaban
+
+**Medido contra:** `origin/main` = `9ce9ffd727411f0e69826bbdc174ed65f2582a13` · 2026-08-05T23:46:07+01:00
+**Carril:** A (UI) + lectura de backend · **Gate:** sin gate, corre en `npm test`
+**Tanda:** 1822 tests, 1755 pass, 0 fail, 67 gateados a staging
+
+> Las dos piezas venían **ya medidas** por la sesión anterior (bloque «Lo que queda del ticket»).
+> No se volvió a medir ninguna: se construyeron sobre esa medición, que es para lo que se escribió.
+
+## ① PRESUPUESTO ORIGEN · el enlace es del DOCUMENTO, y el guard vigila la POSICIÓN
+
+`Job.quoteId → Quote`, en el rail. Lo que **no** se hace, y es el fondo del asunto:
+
+Sí existe vínculo línea a línea —`AlbaranLinea.quoteLineIndex`, SCRUM-367— pero **no cubre todos
+los casos**: no lo hay en `SIN_VALORAR`, solo lo escribe el prellenado, y el índice no sabe de qué
+presupuesto es. Un enlace colocado junto a la tabla de líneas **afirma** que esas líneas salen de
+ese presupuesto, y eso es cierto **solo a veces**.
+
+> **LA QUE AFIRMA ES LA PROXIMIDAD, NO EL RÓTULO.** Un enlace metido en la cabecera de la tabla se
+> lee como procedencia de las líneas aunque su texto diga «del documento». Cambiarle las palabras
+> no lo arregla; moverlo, sí. Por eso el guard mide **dónde cuelga** en el grafo de `appendChild`
+> (AST, no `grep` — un `grep` casaría el comentario que explica la prohibición).
+
+### El guard son DOS hechos, porque uno solo tiene un agujero
+
+| # | Qué exige | El agujero que tapa |
+|---|---|---|
+| 1 | el enlace cuelga del **rail** | — |
+| 2 | las **líneas no se pintan dentro del rail** | sin él, alguien mete mañana la tabla en el propio rail, **(1) sigue verde** y el enlace vuelve a estar pegado a ellas |
+
+Y un tercero: el enlace **no se construye a partir de datos de línea** (ni `lineas` ni
+`quoteLineIndex` en su subárbol) — el origen es `Job.quoteId`, y solo ése.
+
+El rail y el enlace se **derivan** del fichero (clase `detail-rail`; quien escucha un clic que
+navega a `quotes-detail`), no se nombran a mano. Con su **suelo**: si el detector no encuentra
+rail, enlace o grafo, es rojo — un detector ciego daría verde para siempre.
+
+## ② FOTOS · construido copiando el precedente, cero caminos nuevos
+
+`GET /:id/fotos` lista y `GET /admin/attachments/:id` sirve el binario — las mismas dos llamadas
+que la fila del Trabajo hace hoy. El guard **ata los dos extremos**: exige que `/admin/attachments`
+siga montándose con ese prefijo en `src/app.ts`. Si alguien renombra el montaje, esta página se
+llena de marcos rotos y **ningún 500 lo cuenta**: el navegador se come el 404 de una imagen en
+silencio.
+
+El bloque se pinta **solo si hay fotos**, y el `catch` es mudo igual que en el precedente: que no
+carguen las miniaturas no puede tapar con un error rojo la ficha, que sí ha cargado.
+
+## Los tres rojos
+
+| # | Qué se rompe | Qué sale |
+|---|---|---|
+| 1 | El enlace movido del rail a `page` | 🔴 «ya no cuelga de `rail`: sube por [filaQuote → page → container]» |
+| 2 | Una tabla de líneas metida **dentro del rail** | 🔴 «LAS LÍNEAS DEL ALBARÁN HAN ENTRADO EN EL RAIL: appendChild sobre `tablaLineas`» |
+| 3 | `merchantId` fuera del `where` del presupuesto | 🔴 «la consulta del presupuesto NO filtra por `merchantId`» |
+
+El **2 es el que importa**: caza por posición un código que no existía cuando se escribió el guard
+— y con el rojo 2 puesto, **el guard de posición seguía verde**, que es exactamente la razón de que
+sean dos.
+
+## El backend, ejercitado (no leído)
+
+`GET /:id` devuelve `quote: { id, number }` con la forma de `jobs.routes.ts:275` (`number` con
+caída al `id`), no una nueva: dos formas del mismo dato acaban divergiendo y el pro ve dos números
+para un presupuesto. Se prueba **invocando el handler real** con `prisma` de doble (patrón
+SCRUM-263 / 257b), no mirando el fichero:
+
+- trae el presupuesto del documento;
+- la consulta lleva `merchantId` (regla 2) — sin él se pintaría **el número del presupuesto de otro
+  merchant**;
+- Trabajo **sin** presupuesto → `quote: null` y **cero consultas**: con `id: null` un `findFirst`
+  puede devolver cualquier presupuesto, y el rail omite la fila en vez de pintar un enlace muerto.
+
+## RÓTULOS — SIN APROBAR, con marcador visible (regla 30)
+
+`ROTULOS_RAIL_ALBARAN` vale `null` en los dos, así que la pantalla pinta
+`[PENDIENTE microcopy oficial]`. Es feo a propósito: un rótulo provisional que se lee bien se queda
+para siempre. **Pedidos al fundador, literales** — no se aprueban por su descripción.
+
+| id | qué rotula | estado |
+|---|---|---|
+| `presupuestoOrigen` | la fila del enlace al presupuesto, en el rail | ⏳ pedido literal |
+| `fotos` | la fila de miniaturas, en el rail | ⏳ pedido literal |
+
+`ALT_FOTO_ALBARAN` (`Foto del albarán`) **no** se redactó aquí: se reutiliza letra por letra del
+precedente de la fila del Trabajo. Reutilizar un rótulo aprobado no es redactarlo.
+
+## Lo que NO cubre
+
+- **AB6 · capturas y matriz de dispositivos: hueco declarado.** El cambio no está desplegado (el
+  deploy es el merge del PR) y no se levantó banco de navegador en esta sesión. La verificación en
+  `yaqu.app` queda **pendiente del merge**.
+- **HALLAZGO AJENO (no bloquea, no se arregla aquí — reglas 9 y 37).** El motivo declarado de
+  `GET /admin/attachments/:id` en `adminRouteDeclarations.ts:111` dice *«Fotos que mandó el cliente
+  con la solicitud»*, y esa ruta sirve **también** las fotos del albarán desde antes de este ticket
+  (la fila del Trabajo ya lo hace). El rol es correcto; lo que caducó es el **motivo**, que ahora
+  describe uno solo de sus dos usos. Siguiente acción concreta: ampliar el `why` a los dos usos en
+  su propio ticket, sin tocar el rol.
+- **Ref muerto en origin.** `scrum-302-detalle-albaran` (commit `eb02ed9`, 5-ago 13:50) NO es
+  ancestro de `main`, pero su contenido sí está (PRs #453/#457): es el residuo de la fusión, no
+  trabajo en paralelo. Medido antes de arrancar, no deducido del nombre.
+
+Ficheros: `src/modules/jobs/app/routes/albaranes.routes.ts` (`GET /:id` devuelve `quote`) ·
+`public/dashboard/js/albaranDetailView.js` (el enlace y las fotos, en el rail) ·
+`tests/scrum302-presupuesto-y-fotos.test.mjs` (10, nuevo).
