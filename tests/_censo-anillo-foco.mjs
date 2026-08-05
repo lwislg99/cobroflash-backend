@@ -41,7 +41,7 @@ export function parsearReglas(cssCrudo) {
   let i = 0;
   let orden = 0;
 
-  const bloque = (desde, hasta, dentroDeKeyframes) => {
+  const bloque = (desde, hasta, dentroDeKeyframes, medias = []) => {
     let p = desde;
     while (p < hasta) {
       const llave = css.indexOf('{', p);
@@ -58,7 +58,8 @@ export function parsearReglas(cssCrudo) {
       if (cabecera.startsWith('@')) {
         // at-rule con bloque: @media/@supports aportan reglas; @keyframes no.
         const esKeyframes = /^@(-\w+-)?keyframes\b/.test(cabecera);
-        bloque(llave + 1, q - 1, esKeyframes);
+        const esMedia = /^@media\b/.test(cabecera);
+        bloque(llave + 1, q - 1, esKeyframes, esMedia ? [...medias, cabecera] : medias);
       } else if (!dentroDeKeyframes && cabecera) {
         const decls = new Map();
         for (const trozo of cuerpo.split(';')) {
@@ -73,6 +74,7 @@ export function parsearReglas(cssCrudo) {
             selectores: cabecera.split(',').map((s) => s.trim()).filter(Boolean),
             decls,
             orden: orden++,
+            medias,
           });
         }
       }
@@ -85,12 +87,12 @@ export function parsearReglas(cssCrudo) {
 }
 
 /** Parte un selector en compuestos por combinadores. El último es el SUJETO. */
-function compuestos(sel) {
+export function compuestos(sel) {
   return sel.split(/\s*[>+~]\s*|\s+/).filter(Boolean);
 }
 
 /** Descompone un compuesto en `{ clases, pseudos, tag, ids, atributos }`. */
-function analizarCompuesto(c) {
+export function analizarCompuesto(c) {
   const clases = [...c.matchAll(/\.([-\w]+)/g)].map((m) => m[1]);
   const ids = [...c.matchAll(/#([-\w]+)/g)].map((m) => m[1]);
   const atributos = [...c.matchAll(/\[[^\]]*\]/g)].map((m) => m[0]);
@@ -102,7 +104,7 @@ function analizarCompuesto(c) {
 }
 
 /** Especificidad CSS como terna comparable [ids, clases+pseudos+attrs, tags+pseudoelems]. */
-function especificidad(sel) {
+export function especificidad(sel) {
   let a = 0, b = 0, c = 0;
   for (const comp of compuestos(sel)) {
     const x = analizarCompuesto(comp);
@@ -113,7 +115,7 @@ function especificidad(sel) {
   return [a, b, c];
 }
 
-const mayor = (p, q) => (p[0] !== q[0] ? p[0] > q[0] : p[1] !== q[1] ? p[1] > q[1] : p[2] > q[2]);
+export const mayor = (p, q) => (p[0] !== q[0] ? p[0] > q[0] : p[1] !== q[1] ? p[1] > q[1] : p[2] > q[2]);
 
 // Pseudo-clases compatibles con «el elemento está enfocado por teclado». Cualquier otra
 // (`:hover`, `:active`, `:disabled`…) describe OTRO estado: esa regla no decide este.
