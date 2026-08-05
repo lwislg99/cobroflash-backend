@@ -5,7 +5,7 @@ import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: dinero = admin)
 import { seesOnlyOwnJobs, seesAllJobs, adminOnlyJobField } from '../../../../core/http/roleCapabilities'; // SCRUM-147 / SCRUM-164
-import { canTransition, estadoCobroFor, JOB_TIPOS_OPERACION } from '../../domain/job.service';
+import { canTransition, estadoCobroFor, importeDeReferencia, JOB_TIPOS_OPERACION } from '../../domain/job.service';
 import { recordAudit, actorDeRequest, sobreFiscal, flagsFiscalesDe } from '../../../system/audit.service'; // SCRUM-66 · SCRUM-207 · SCRUM-206b
 import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo } from '../../../quotes/domain/billingPlan';
 import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; // SCRUM-34
@@ -166,6 +166,24 @@ async function quotesDeJob(job: any, refs?: JobRefs): Promise<any[]> {
   return salida;
 }
 
+/**
+ * SCRUM-363 · lo FACTURADO del Trabajo: suma de las facturas de sus presupuestos.
+ *
+ * Es el segundo candidato a importe de referencia, y existe porque el primero puede no estar: un
+ * Trabajo sin presupuesto (SCRUM-51) no tiene `totalAceptado`, pero si se le ha emitido factura,
+ * ESA es la cifra contra la que su cobro significa algo.
+ *
+ * Se suman TODAS las facturas del presupuesto, incluidas las anuladas: aquí no se decide política
+ * fiscal, solo si existe un eje contra el que medir. Afinarlo es otra decisión.
+ */
+function totalFacturadoDe(quotes: any[]): number {
+  let total = 0;
+  for (const q of quotes ?? []) {
+    for (const inv of q?.Invoice ?? []) total += Number(inv?.total ?? 0);
+  }
+  return total;
+}
+
 async function serializeJob(job: any, refs?: JobRefs) {
   // SCRUM-58: con `refs` (lista) se lee del lote; sin él (detalle, update) se consulta como
   // siempre. Mismos selects en ambas ramas — ver QUOTE_SELECT/CUSTOMER_SELECT.
@@ -226,9 +244,21 @@ async function serializeJob(job: any, refs?: JobRefs) {
     totalCobrado: Number(job.totalCobrado ?? 0),
     // SCRUM-13: semáforo de cobro derivado (SCRUM-11 lo pinta; aquí NO se hace UI).
     // totalCobrado lo materializa recalcJobCobradoForCharge en los webhooks de pago.
+    // SCRUM-363 · el eje de cobro puede NO existir, y entonces esto vale `null` y no se pinta
+    // chip. El importe FACTURADO es el segundo candidato del orden decidido: sale de las facturas
+    // de los presupuestos del Trabajo, que ya están resueltas aquí — sin consulta nueva.
     estadoCobro: estadoCobroFor(
       Number(job.totalCobrado ?? 0),
       job.totalAceptado != null ? Number(job.totalAceptado) : (quote ? Number(quote.total) : 0),
+      totalFacturadoDe(todosLosQuotes),
+    ),
+    // SCRUM-363 · el EJE, explícito. Viaja para que la interfaz no vuelva a derivarlo por su
+    // cuenta: el listado decidía si pintar el chip con `aceptado > 0`, que era un SEGUNDO
+    // criterio — y en cuanto el eje puede venir de lo facturado, los dos dejan de coincidir y el
+    // mismo Trabajo sale «Pagado» en el detalle y sin chip en la lista. `null` = sin eje.
+    importeReferencia: importeDeReferencia(
+      job.totalAceptado != null ? Number(job.totalAceptado) : (quote ? Number(quote.total) : 0),
+      totalFacturadoDe(todosLosQuotes),
     ),
     customer,
     // SCRUM-22: autoría del operario (creador del presupuesto, congelada en SCRUM-52).

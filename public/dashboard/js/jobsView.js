@@ -194,8 +194,13 @@ function jobCard(j, container) {
   const aceptado = Number(j.totalAceptado || 0);
   const cobrado = Number(j.totalCobrado || 0);
   const cur = j.quote?.currency || 'EUR';
-  const showCobro = aceptado > 0;
-  const pct = showCobro ? Math.min(100, Math.round((cobrado / aceptado) * 100)) : 0;
+  // SCRUM-363 · el eje lo decide el BACKEND (`importeReferencia`), no esta vista. Antes era
+  // `aceptado > 0`, un segundo criterio: en cuanto el eje puede venir de lo facturado, el mismo
+  // Trabajo salía «Pagado» en el detalle y sin chip aquí. El chip se pinta si hay veredicto; la
+  // barra necesita además un importe contra el que dibujar el porcentaje.
+  const referencia = Number(j.importeReferencia ?? 0);
+  const showCobro = !!j.estadoCobro && referencia > 0;
+  const pct = showCobro ? Math.min(100, Math.round((cobrado / referencia) * 100)) : 0;
   const cobroCls = cobroPillClass(j.estadoCobro);
   const isTecnico = window.appUserRole === 'tecnico'; // SCRUM-89: "Cobrar el resto" es admin-only (403)
 
@@ -210,7 +215,7 @@ function jobCard(j, container) {
       </div>
       <span style="flex:none;white-space:nowrap;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;${meta.pill}">${meta.label}</span>
     </div>
-    ${showCobro ? progressBar(pct, j.estadoCobro, { cobrado, aceptado, currency: cur }) : ''}
+    ${showCobro ? progressBar(pct, j.estadoCobro, { cobrado, aceptado: referencia, currency: cur }) : ''}
     <div class="job-actions" style="display:flex;gap:8px;flex-wrap:wrap"></div>
   `;
 

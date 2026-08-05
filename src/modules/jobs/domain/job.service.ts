@@ -298,10 +298,47 @@ export async function recalcJobCobradoForInvoice(invoiceId: number): Promise<voi
  *   0 < cobrado < aceptado            → 'Parcial'
  *   cobrado >= aceptado (aceptado>0)  → 'Pagado'
  */
-export function estadoCobroFor(cobrado: number, aceptado: number): 'Pagado' | 'Parcial' | 'Pendiente' {
+export type EstadoCobro = 'Pagado' | 'Parcial' | 'Pendiente';
+
+/**
+ * SCRUM-363 · EL IMPORTE DE REFERENCIA contra el que se mide el cobro. `null` = **este Trabajo no
+ * tiene eje de cobro**, y entonces no se puede afirmar nada sobre su dinero.
+ *
+ * El orden lo decidió el fundador:
+ *   1. el total ACEPTADO, si existe y es > 0;
+ *   2. si no, el total FACTURADO, si existe y es > 0;
+ *   3. si no hay ninguno, no hay eje.
+ *
+ * El tercero es el que importa. Antes, sin importe de referencia, un Trabajo cobrado se quedaba
+ * en «Parcial» PARA SIEMPRE: el pro cobraba, el dinero entraba, y el Trabajo seguía diciendo que
+ * faltaba — y la pestaña «Pagado» no lo enseñaba nunca, así que perseguía un pago que ya tenía.
+ * Y no es un caso raro: es el camino nuevo (Trabajos sin presupuesto, SCRUM-51; y la factura
+ * suelta de A0 los multiplica).
+ */
+export function importeDeReferencia(aceptado: unknown, facturado?: unknown): number | null {
+  const a = Number(aceptado);
+  if (Number.isFinite(a) && a > 0) return a;
+  const f = Number(facturado);
+  if (Number.isFinite(f) && f > 0) return f;
+  return null;
+}
+
+/**
+ * El semáforo de cobro. `null` = sin eje: **no se pinta chip**, ni «Parcial» ni «Pendiente».
+ *
+ * ⚠️ NO se devuelve un estado intermedio ante la duda. «Parcial» es una AFIRMACIÓN sobre el
+ * dinero de alguien, y afirmarla sin saber contra qué se compara es justo lo que produjo este
+ * defecto. No pintar nada es verdad; pintar «Parcial» no lo es.
+ */
+export function estadoCobroFor(
+  cobrado: number,
+  aceptado: number,
+  facturado?: number,
+): EstadoCobro | null {
+  const referencia = importeDeReferencia(aceptado, facturado);
+  if (referencia === null) return null;
   const c = Number(cobrado) || 0;
-  const a = Number(aceptado) || 0;
-  if (a > 0 && c >= a) return 'Pagado';
+  if (c >= referencia) return 'Pagado';
   if (c > 0) return 'Parcial';
   return 'Pendiente';
 }

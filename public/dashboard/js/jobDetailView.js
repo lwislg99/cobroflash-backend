@@ -223,7 +223,11 @@ async function renderJobDetailView(container, jobId) {
   stBlock.innerHTML =
     `<div class="detail-total-label">Estado</div>` +
     `<span class="status-pill ${jobMeta.pillClass}">${esc(jobMeta.label)}</span> ` +
-    `<span class="status-pill ${cobroCls}">${esc(job.estadoCobro)}</span>`;
+    // SCRUM-363 · sin eje de cobro NO se pinta chip. Ni «Parcial», ni «Pendiente», ni un hueco
+    // gris: un Trabajo sin importe de referencia no admite ninguna afirmación sobre su dinero, y
+    // «Parcial» era una afirmación FALSA que además no se podía deshacer nunca (la pestaña
+    // «Pagado» no lo enseñaba jamás, así que el pro perseguía un pago que ya tenía).
+    (job.estadoCobro ? `<span class="status-pill ${cobroCls}">${esc(job.estadoCobro)}</span>` : '');
   sumRow.appendChild(stBlock);
   const totBlock = document.createElement('div');
   totBlock.style.textAlign = 'right';
