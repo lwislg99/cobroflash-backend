@@ -42,8 +42,9 @@ const ROTULOS_ALBARAN = {
   btnFacturar: 'Facturar lo entregado',
   btnFirmarAqui: 'Firmar aquí mismo',
   btnVerTrabajo: 'Ver trabajo',
-  // SCRUM-302 · SIN APROBAR (regla 30): sale con el marcador hasta que el fundador decida.
-  btnDuplicar: MICROCOPY_PENDIENTE,
+  // SCRUM-302 · APROBADO por el fundador el 5-ago-2026: es la palabra del ticket y la que usa
+  // todo el mundo en un menu de desbordamiento. Describe lo que hace sin adornarlo.
+  btnDuplicar: 'Duplicar',
   // Reutilizados letra por letra de la fila del Trabajo (jobDetailView.js), de donde se mudan
   btnEmitir: 'Emitir',
   btnEnviarFirmar: 'Enviar para firmar',
