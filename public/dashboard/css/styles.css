@@ -1985,6 +1985,15 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
   }
 }
 
+/* SCRUM-319 (G4) · la rectificativa cuelga de su factura: sangrado + filete a la izquierda, para
+   que el vínculo se VEA. Suelta y ordenada por fecha no dice a qué factura corrige, que es lo
+   que la hace legalmente ilegible. Ni un token nuevo. */
+.job-doc-rectificativas {
+  margin-left: 22px; padding-left: 12px;
+  border-left: 2px solid var(--border);
+}
+@media (max-width: 720px) { .job-doc-rectificativas { margin-left: 10px; } }
+
 .detail-section { padding: 18px 22px; border-bottom: 1px solid var(--border); }
 .detail-section:last-child { border-bottom: none; }
 .detail-section-title {

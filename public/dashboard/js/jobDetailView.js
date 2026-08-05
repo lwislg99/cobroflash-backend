@@ -16,10 +16,14 @@ function jobDetInvEstado(st) {
   return s === 'paid' ? 'Pagada' : s === 'expired' ? 'Vencida' : 'Pendiente';
 }
 // Tipo de documento (copy ya usado en invoiceDetailView).
+//
+// SCRUM-319 (G4): el RÓTULO se queda aquí —es microcopy— pero la CLASIFICACIÓN se delega en
+// `tipoDeFactura` (jobDocsReparto.js). Antes esta función era la única que sabía distinguir un
+// justificante de una factura; el reparto habría necesitado su propia copia de esa condición, y
+// serían dos sitios decidiendo lo mismo sobre documentos con significados legales distintos.
+const JOBDET_DOC_ROTULO = { rectificativa: 'Rectificativa', justificante: 'Justificante', factura: 'Factura' };
 function jobDetDocLabel(inv) {
-  if (inv.type === 'R1') return 'Rectificativa';
-  if (inv.type === 'JUST' || String(inv.number || '').startsWith('J-')) return 'Justificante';
-  return 'Factura';
+  return JOBDET_DOC_ROTULO[typeof tipoDeFactura === 'function' ? tipoDeFactura(inv) : 'factura'];
 }
 // SCRUM-14: estado del albarán → copy canónico (brief; regla 30) + pill del inventario AB3.
 const JOBDET_ALB_PILL = { borrador: 'status-pill-draft', emitido: 'status-pill-pending', firmado: 'status-pill-accepted' };
@@ -66,6 +70,19 @@ function pintarBloqueRail(bloque) {
       a.className = 'detail-rail-enlace';
       a.href = linea.href;
       if (/^https?:/i.test(linea.href)) { a.target = '_blank'; a.rel = 'noopener'; }
+      fila.appendChild(a);
+      destino = a;
+    } else if (linea.invoiceId != null) {
+      // SCRUM-319 (G4): el justificante de cobro, que baja de la pila al bloque DINERO. Misma
+      // navegación que ya usa la ficha de cliente (`appState.invoiceId` + `invoice-detail`), no una
+      // inventada para el rail.
+      const a = document.createElement('a');
+      a.className = 'detail-rail-enlace';
+      a.href = '#';
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (window.renderAppView) { window.appState.invoiceId = linea.invoiceId; window.renderAppView('invoice-detail'); }
+      });
       fila.appendChild(a);
       destino = a;
     } else if (linea.quoteId != null) {
@@ -565,7 +582,9 @@ async function renderJobDetailView(container, jobId) {
   const albaranes = Array.isArray(job.albaranes) ? job.albaranes : [];
   const docsSec = document.createElement('div');
   docsSec.className = 'detail-section';
-  docsSec.innerHTML = '<h3 class="detail-section-title">Documentos</h3>';
+  // SCRUM-319 (G4): esta sección ya solo lleva ALBARANES; lo demás salió al rail o a su propio
+  // bloque. El rótulo ya existía en el producto: no es microcopy nueva.
+  docsSec.innerHTML = '<h3 class="detail-section-title">Albaranes</h3>';
   body.appendChild(docsSec);
   body.appendChild(infoSec); // SCRUM-31 (F6): "Datos" a segundo plano, bajo lo operativo.
   const docs = []; // { when, el } — se ordena ascendente y se vuelca al final en la lista.
@@ -1382,7 +1401,7 @@ async function renderJobDetailView(container, jobId) {
     // en la fila y la legalmente relevante (determina el mes natural de la recapitulativa, SCRUM-17).
     // Antes ordenaba por firmadoAt (cuándo se firmó el papel, no cuándo se hizo el trabajo) → la fila
     // mostraba una fecha y se colocaba por otra, rompiendo el orden ascendente visible.
-    docs.push({ when: alb.fecha, el: item });
+    docs.push({ when: alb.fecha, el: item, tipo: 'albaran', clave: 'albaran:' + alb.id });
     const acts = item.querySelector('.jobdet-alb-actions');
     const fotosBox = item.querySelector('.jobdet-alb-fotos');
 
@@ -1533,7 +1552,14 @@ async function renderJobDetailView(container, jobId) {
           `</div>` +
           `<div class="jobdet-inv-actions job-doc-row__actions"></div>` +
         `</div>`;
-      docs.push({ when, el: item });
+            docs.push({
+        // El tipo va INLINE a propósito: con una variable de por medio el derivador del guard no
+        // puede resolverlo por AST y avisa de un tipo sin sección — que es exactamente su trabajo.
+        when, el: item, tipo: tipoDeFactura(inv), clave: tipoDeFactura(inv) + ':' + inv.id,
+        // SCRUM-319: a qué factura se ancla si es rectificativa. `rectifiesId` ya existía en el
+        // modelo y no llegaba a esta pantalla; ahora sí (serializer, aditivo y de solo lectura).
+        rectificaClave: inv.rectifiesId != null ? 'factura:' + inv.rectifiesId : null,
+      });
       const acts = item.querySelector('.jobdet-inv-actions');
       if (!paid) {
         // Marcar como PAGADA → PUT /admin/invoices/:id/status. Verificación de importe A21.2:
@@ -1670,22 +1696,72 @@ async function renderJobDetailView(container, jobId) {
       `</div>`;
     const qBtn = mkBtn('Ver presupuesto', () => { if (window.renderAppView) window.renderAppView('quotes-detail', { quoteId: job.quote.id }); });
     item.querySelector('.job-doc-row__actions').appendChild(qBtn);
-    docs.push({ when: job.createdAt, el: item });
+    docs.push({ when: job.createdAt, el: item, tipo: 'presupuesto', clave: 'presupuesto:' + job.quote.id });
   }
 
-  // ── Volcado CRONOLÓGICO ASCENDENTE de la lista fusionada (o estado vacío de toda la lista) ──
+  // ── SCRUM-319 (G4) · EL REPARTO DE LA PILA ──────────────────────────────────────────
+  //
+  // Una sola lista por fecha juntaba objetos con ciclos de vida y significados legales distintos.
+  // El reparto lo decide `jobDocsReparto.js`, la misma tabla que verifica el guard.
+  //
+  // El orden CRONOLÓGICO ASCENDENTE se conserva dentro de cada sección: era la única forma de leer
+  // el histórico y partirlo no es motivo para perderlo.
   docs.sort((a, b) => new Date(a.when || 0) - new Date(b.when || 0));
-  if (!docs.length) {
-    const empty = document.createElement('p');
-    empty.style.cssText = 'margin:6px 0 0;color:var(--muted);font-size:13px';
-    empty.textContent = 'Aún no hay documentos. Crea un albarán por cada visita o entrega.';
-    docsSec.appendChild(empty);
-  } else {
-    const docList = document.createElement('div');
-    docList.className = 'job-doc-list';
-    docs.forEach((d) => docList.appendChild(d.el));
-    docsSec.appendChild(docList);
+  const reparto = repartirDocumentos(docs);
+
+  // ⚠️ NADA SE PIERDE. Un tipo que la tabla no conozca NO se descarta: cae en `desconocidos` y se
+  // pinta con el resto. Un documento que desaparece en un reordenamiento es mudo, y es el peor
+  // resultado posible de esta tarea. El guard falla si esta lista no está vacía; la pantalla, aun
+  // así, lo enseña — la red y el aviso son dos cosas distintas.
+  const enSuSeccion = (destino, seccion, vacio) => {
+    const items = reparto[destino];
+    if (!items.length) { if (vacio) seccion.appendChild(vacio); return false; }
+    const lista = document.createElement('div');
+    lista.className = 'job-doc-list';
+    items.forEach((d) => lista.appendChild(d.el));
+    seccion.appendChild(lista);
+    return true;
+  };
+
+  // ALBARANES — su sección, con su acción (`+ Nuevo albarán`, ya en la barra de arriba).
+  const vacioAlb = document.createElement('p');
+  vacioAlb.style.cssText = 'margin:6px 0 0;color:var(--muted);font-size:13px';
+  vacioAlb.textContent = 'Aún no hay documentos. Crea un albarán por cada visita o entrega.';
+  enSuSeccion('albaranes', docsSec, vacioAlb);
+
+  // ── FACTURAS — lo FACTURADO, en su propia sección de la columna principal ────────────
+  //
+  // Decisión del fundador: ni al rail, ni al bloque DINERO con los justificantes —eso sería el
+  // error de B4 en dirección contraria—, ni fuera de la pantalla: que el Trabajo enseñe el ciclo
+  // completo (entregado → facturado → cobrado) es el diferencial del producto.
+  //
+  // ⚠️ LA RECTIFICATIVA CUELGA DE SU ORIGINAL, nunca suelta. Como fila más de una lista ordenada
+  // por fecha es legalmente ilegible: no dice a qué factura corrige. Aquí va anidada dentro de la
+  // fila de su factura, así que leerlas juntas es la única forma de leerlas.
+  const restantes = reparto.facturas.concat(reparto.desconocidos);
+  if (restantes.length) {
+    const factSec = document.createElement('div');
+    factSec.className = 'detail-section';
+    factSec.innerHTML = '<h3 class="detail-section-title">Facturas</h3>';
+    const lista = document.createElement('div');
+    lista.className = 'job-doc-list';
+    restantes.forEach((d) => {
+      lista.appendChild(d.el);
+      // Sus rectificativas, justo debajo y sangradas: el vínculo se ve, no se deduce.
+      const suyas = reparto.anclada.filter((r) => r.rectificaClave === d.clave);
+      if (!suyas.length) return;
+      const nido = document.createElement('div');
+      nido.className = 'job-doc-rectificativas';
+      suyas.forEach((r) => nido.appendChild(r.el));
+      lista.appendChild(nido);
+    });
+    factSec.appendChild(lista);
+    body.appendChild(factSec);
   }
+
+  // Los de `rail-presupuesto` y `rail-dinero` NO se pintan aquí: el rail los construye por su
+  // cuenta desde `job` (SCRUM-318). Sus filas salen de la pila y sus elementos se descartan — el
+  // documento sigue en pantalla, en el rail, y el guard de «nada se pierde» lo comprueba por clave.
 
   // ── SCRUM-316 (G1) · ENSAMBLADO de la cabecera, en el orden de la ley ────────────────
   // primaria · secundarias · «⋮». El «⋮» reutiliza `overflowMenu` de AB3 (a11y, teclado, hoja
