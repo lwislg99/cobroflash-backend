@@ -2,7 +2,7 @@
 
 **Fecha:** 5-ago-2026 · **Carril:** C · **Gate:** sin gate, corre en `npm test`
 
-**Medido contra:** `origin/main` = `f734e33d2df6afc67380e7933db87f01383fed63` · 2026-08-05T16:03:16+01:00
+**Medido contra:** `origin/main` = `7ce53c31d9fc7d9a0093b13868beaddeeea65dcb` · 2026-08-05T16:07:45+01:00
 
 ## 🔴 La premisa del ticket estaba a medias, y se midió antes de construir nada
 
@@ -128,6 +128,6 @@ textos sigue verde sin tocarlo (patrón de SCRUM-263).
 
 ## Verificación
 
-- `npm run build` → **exit 0** · `npm test` → **exit 0**: **1719 tests · 1652 pass · 0 fail · 67
+- `npm run build` → **exit 0** · `npm test` → **exit 0**: **1730 tests · 1663 pass · 0 fail · 67
   skipped**, contra el `main` resultante del rebase.
 - Capturas AB6 y sus huecos declarados: `docs/capturas/scrum-303/README.md`.

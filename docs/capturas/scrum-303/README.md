@@ -1,6 +1,6 @@
 # SCRUM-303 (C4) · capturas de la hoja de crear albarán (AB6)
 
-**Medido contra:** `origin/main` = `f734e33d2df6afc67380e7933db87f01383fed63` · 2026-08-05T16:03:16+01:00
+**Medido contra:** `origin/main` = `7ce53c31d9fc7d9a0093b13868beaddeeea65dcb` · 2026-08-05T16:07:45+01:00
 
 Producidas con un **banco aislado** (puppeteer-core sobre el Edge instalado + servidor estático
 efímero sirviendo `public/`). Se cargan **los 41 scripts que carga `dashboard/index.html`, en su
