@@ -24,6 +24,8 @@ import {
   contarLineasDePresupuesto, // SCRUM-367
   type AlbaranModoValoracion,
 } from '../../domain/albaran.service';
+import { allocateAlbaranNumber } from '../../domain/albaranNumber.service'; // SCRUM-302: dentro de la tx
+import { datosDuplicado } from '../../domain/albaranDuplicado'; // SCRUM-302: qué viaja al duplicado
 import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
 // SCRUM-301 (C1): el listado global. Dominio puro + lector inyectable (la tenencia se ejercita).
 import { listarAlbaranesDelMerchant, type LectorListado } from '../../domain/albaranesListado';
@@ -538,6 +540,39 @@ router.post('/:id/emitir', async (req, res) => {
     return res.json(serializeAlbaran(updated));
   } catch (err: any) {
     console.error('[POST /admin/albaranes/:id/emitir]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/albaranes/:id/duplicar — SCRUM-302 (C2).
+ *
+ * En una reforma de tres semanas cada día es un parte. Duplicar el de ayer y ajustar cantidades
+ * ahorra casi todo el trabajo de rellenarlo.
+ *
+ * 🔴 QUÉ VIAJA Y QUÉ NO **NO SE DECIDE AQUÍ**: lo decide `albaranDuplicado.ts`, que clasifica los
+ * campos del modelo en «describe el trabajo» y «es un hecho que ocurrió», y cuyo guard falla si
+ * aparece un campo SIN CLASIFICAR. Escribir aquí la lista de campos a copiar sería la lista que
+ * envejece en silencio — y si el campo nuevo es evidencial, el duplicado afirmaría algo que no pasó.
+ *
+ * ⚠️ EL NÚMERO SE RESERVA DENTRO DE LA TRANSACCIÓN. Con `allocateAlbaranNumber` fuera, dos
+ * duplicados simultáneos se llevan el MISMO `ALB-YYYY-NNN`, y un número de albarán repetido no es
+ * un problema de interfaz: es un problema de documento. Mismo patrón que el alta
+ * (`jobs.routes.ts:674`), no uno nuevo.
+ */
+router.post('/:id/duplicar', async (req, res) => {
+  try {
+    const found = await findAlbaran(req);
+    if (!found.ok) return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
+    const { albaran } = found;
+
+    const copia = await prisma.$transaction(async (tx) => {
+      const numero = await allocateAlbaranNumber(tx, req.merchantId!);
+      return tx.albaran.create({ data: { ...datosDuplicado(albaran as any), numero } as any });
+    });
+    return res.status(201).json(serializeAlbaran(copia));
+  } catch (err: any) {
+    console.error('[POST /admin/albaranes/:id/duplicar]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });

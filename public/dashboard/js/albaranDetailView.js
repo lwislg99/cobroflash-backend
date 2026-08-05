@@ -42,6 +42,8 @@ const ROTULOS_ALBARAN = {
   btnFacturar: 'Facturar lo entregado',
   btnFirmarAqui: 'Firmar aquí mismo',
   btnVerTrabajo: 'Ver trabajo',
+  // SCRUM-302 · SIN APROBAR (regla 30): sale con el marcador hasta que el fundador decida.
+  btnDuplicar: MICROCOPY_PENDIENTE,
   // Reutilizados letra por letra de la fila del Trabajo (jobDetailView.js), de donde se mudan
   btnEmitir: 'Emitir',
   btnEnviarFirmar: 'Enviar para firmar',
@@ -233,6 +235,15 @@ async function renderAlbaranDetailView(container, albaranId) {
         rd.readAsDataURL(file);
       });
       input.click();
+    }),
+    // SCRUM-302 · duplicar: el POST crea el parte nuevo y se navega a EL, no al original —
+    // quedarse en el de ayer haria pensar que no ha pasado nada.
+    btnDuplicar: () => mk('btnDuplicar', async () => {
+      setStatus('info', MICROCOPY_PENDIENTE);
+      try {
+        const copia = await apiRequest(`/admin/albaranes/${alb.id}/duplicar`, { method: 'POST' });
+        if (window.renderAppView) window.renderAppView('albaran-detail', { albaranId: copia.id });
+      } catch (e) { setStatus('error', e?.data?.message || MICROCOPY_PENDIENTE); }
     }),
     btnVerTrabajo: () => mk('btnVerTrabajo', () => {
       if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: alb.job?.id });

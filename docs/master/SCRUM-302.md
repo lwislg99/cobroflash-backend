@@ -194,7 +194,7 @@ nadie tiene que leer la salida para saber si pasó. 48 comprobaciones, `$? = 0`.
 
 # SCRUM-302 · CONTINUACIÓN (5-ago-2026) · Duplicar: la clasificación y su guard
 
-**Medido contra:** `origin/main` = `425301c8ddc79ad20e8605b49194f608ecdf339c` · 2026-08-05T17:50:11+01:00
+**Medido contra:** `origin/main` = `425301c8ddc79ad20e8605b49194f608ecdf339c` · 2026-08-05T22:32:02+01:00
 
 > **ENTREGA PARCIAL Y DECLARADA.** Esto es el **mecanismo** de Duplicar, no la acción completa:
 > falta el endpoint y el botón. Se paró aquí a propósito, en un punto medible, porque el guard del
@@ -270,18 +270,67 @@ ticket lo exige así: *«un botón que no hace nada es peor que ninguno»*. Y no
 camino a factura: `btnFacturar` (facturar parte) ya existe y es otra cosa — dos caminos a factura
 sería SCRUM-240 otra vez.
 
-## Lo que queda de Duplicar, con precisión
+## 🔴 Un comentario que caducó, y la regla que sale de ahí
 
-1. **El endpoint** `POST /admin/albaranes/:id/duplicar`: llama a `datosDuplicado` y reserva número
-   con `allocateAlbaranNumber` dentro de la transacción.
-2. **`btnDuplicar` en el registro de C2**, en `overflow` para los tres estados (regla 3 del patrón).
-3. **El botón en la vista**, con rótulo `[PENDIENTE microcopy oficial]`.
-4. **Test de extremo a extremo** invocando el handler real con `prisma` de doble (patrón
-   SCRUM-263/257b), que compruebe que el albarán creado no trae firma.
+La cabecera de `scrum302-patron-albaran.test.mjs` afirmaba: «las líneas del albarán NO se pueden
+casar con las del presupuesto: no hay campo que las ate». **Dejó de ser cierto con SCRUM-367**:
+`AlbaranLinea.quoteLineIndex` existe (`albaran.service.ts:56`), se conserva al editar (`:128-149`),
+se valida contra el rango real (`jobs.routes.ts:664-667`) y lo escribe el prellenado
+(`jobDetailView.js:313`).
 
-Fuera de Duplicar sigue pendiente: **PRESUPUESTO ORIGEN enlazado** —en el rail, lejos de las líneas,
-porque nada ata las líneas con el presupuesto y el enlace no puede leerse como procedencia— y
-**FOTOS** (medir antes por dónde se leen).
+**El test nunca midió eso**: mide el modelo `AlbaranLineaFacturada`, donde efectivamente no hay
+referencia al presupuesto, y sigue verde con razón. Lo que caducó fue el COMENTARIO, que afirmaba
+algo del sistema entero mientras el test comprobaba un rincón. Costó una decisión tomada sobre una
+premisa falsa.
+
+> **Un comentario que afirma un HECHO DEL SISTEMA caduca cuando el sistema cambia, y nadie lo
+> revisa porque no está en ninguna suite. Un comentario que describe LO QUE MIDE EL TEST DE AL
+> LADO no puede caducar sin que el test caiga.**
+
+La premisa 3 se ha reescrito para decir qué mide, con la fecha y el ticket que la invalidaron.
+
+## Duplicar, terminado
+
+| Pieza | Dónde |
+|---|---|
+| Endpoint | `POST /admin/albaranes/:id/duplicar` (`albaranes.routes.ts`) |
+| Registro | `btnDuplicar` en `overflow` en los TRES estados |
+| Vista | botón con `MICROCOPY_PENDIENTE` (regla 30) |
+| Rol | declarado en `adminRouteDeclarations.ts` con su motivo |
+
+**El número se reserva DENTRO de la transacción**, con `allocateAlbaranNumber` — mismo patrón que
+el alta, no uno nuevo. Fuera, dos duplicados simultáneos se llevarían el mismo `ALB-YYYY-NNN`, y un
+número de albarán repetido no es un problema de interfaz: es un problema de documento. **Tiene su
+rojo**: sacada la reserva fuera, el test cae nombrando la carrera.
+
+El botón navega **al duplicado**, no al original: quedarse en el de ayer haría pensar que no ha
+pasado nada.
+
+### Los tres rojos
+
+| # | Qué se rompe | Qué sale |
+|---|---|---|
+| 1 | Campo NUEVO sin clasificar (`selloAeat`) | 🔴 «HAY CAMPOS DE `Albaran` SIN CLASIFICAR: **selloAeat**» |
+| 2 | `signatureUrl` al cubo que viaja | 🔴 «SE LLEVA LA FIRMA DEL CLIENTE… falsificar un documento» |
+| 3 | La reserva del número FUERA de la transacción | 🔴 «la reserva del número NO ocurrió dentro de `$transaction`» |
+
+Los tres con `npm run build` limpio antes de creerse el rojo, y `prisma/schema.prisma` restaurado y
+comprobado con `git status` tras el rojo 1.
+
+## Lo que queda del ticket
+
+**PRESUPUESTO ORIGEN enlazado**, en el rail y lejos de las líneas. Y el motivo es **más fino que el
+que teníamos**, ahora que la premisa caducada está corregida: no es que no haya vínculo línea a
+línea —lo hay, `quoteLineIndex`—, es que **el que hay no cubre todos los casos**: no existe en modo
+`VALORADO`, solo lo pone el prellenado, y el índice no sabe de qué presupuesto es. Así que el enlace
+del rail es **del DOCUMENTO**, no de las líneas, y no puede presentarse como si lo fuera.
+
+**FOTOS** — medir antes por dónde se leen.
 
 Ficheros: `src/modules/jobs/domain/albaranDuplicado.ts` (nuevo) ·
-`tests/scrum302-duplicar.test.mjs` (5, nuevo).
+`src/modules/jobs/app/routes/albaranes.routes.ts` (el endpoint) ·
+`src/core/http/adminRouteDeclarations.ts` (el rol, con motivo) ·
+`public/dashboard/js/albaranActionsRegistry.js` (`btnDuplicar` en overflow) ·
+`public/dashboard/js/albaranDetailView.js` (el botón) ·
+`tests/scrum302-duplicar.test.mjs` (7, nuevo) ·
+`tests/scrum302-patron-albaran.test.mjs` (la premisa 3, reescrita).

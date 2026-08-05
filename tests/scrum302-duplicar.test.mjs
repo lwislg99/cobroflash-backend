@@ -151,3 +151,102 @@ test('SCRUM-302 · el duplicado se construye SUMANDO, no copiando y borrando', (
     'borrando lo que sobra. Sumar es lo único que no deja pasar lo que nadie miró.',
   );
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// EL ENDPOINT · handler REAL con `prisma` de doble (patrón SCRUM-263 / SCRUM-257b)
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+const moduloPrisma = await import(DIST + 'core/db/prisma.js');
+const routerDe = (mod) => mod.default?.default ?? mod.default;
+
+/** Invoca POST /:id/duplicar de verdad y devuelve {salida, creado, numeroDentroDeTx}. */
+async function invocarDuplicar(origen) {
+  let creado = null;
+  let numeroPedidoDentroDeTx = false;
+
+  moduloPrisma.prisma.albaran = {
+    findFirst: async () => origen,
+    findUnique: async () => origen,
+    create: async ({ data }) => { creado = data; return { id: 99, ...data }; },
+  };
+  // 🔴 LA TRANSACCIÓN ES EL PUNTO. `allocateAlbaranNumber` coge el cerrojo con `$executeRaw` y
+  // lee/escribe el contador del merchant — TODO sobre el `tx` que recibe. Si alguien sacara la
+  // reserva fuera de `$transaction`, esas llamadas irían al `prisma` global y `dentroDeTx` se
+  // quedaría en false: dos duplicados simultáneos se llevarían el mismo ALB-YYYY-NNN.
+  const merchantDoble = {
+    findUnique: async () => ({ id: 1, nextAlbaranNumber: 4, albaranSeriesYear: new Date().getFullYear() }),
+    update: async () => ({}),
+  };
+  moduloPrisma.prisma.$executeRaw = async () => 1;
+  moduloPrisma.prisma.merchant = merchantDoble;
+  moduloPrisma.prisma.$transaction = async (fn) => fn({
+    albaran: moduloPrisma.prisma.albaran,
+    merchant: {
+      findUnique: async (...a) => { numeroPedidoDentroDeTx = true; return merchantDoble.findUnique(...a); },
+      update: merchantDoble.update,
+    },
+    $executeRaw: async () => 1,
+  });
+
+  const router = routerDe(await import(DIST + 'modules/jobs/app/routes/albaranes.routes.js'));
+  const capa = router.stack.find((l) => l.route?.path === '/:id/duplicar' && l.route?.methods?.post);
+  assert.ok(capa, '🔴 NO EXISTE POST /:id/duplicar. Sin endpoint, «Duplicar» es un botón sin nada detrás.');
+
+  let salida = null;
+  const res = {
+    status(c) { this._c = c; return this; },
+    json(b) { salida = { code: this._c ?? 200, body: b }; return this; },
+    setHeader() { return this; },
+  };
+  const hs = capa.route.stack;
+  await hs[hs.length - 1].handle(
+    { params: { id: '7' }, body: {}, merchantId: 1, query: {}, headers: {} }, res, () => {},
+  );
+  return { salida, creado, numeroPedidoDentroDeTx };
+}
+
+const ALBARAN_FIRMADO = {
+  id: 7, merchantId: 1, jobId: 42, numero: 'ALB-2026-0003',
+  fecha: new Date('2026-07-20T10:00:00Z'), modoValoracion: 'VALORADO',
+  lineas: [{ concepto: 'Bajante PVC 110', cantidad: 3, unidad: 'm', quoteLineIndex: 0 }],
+  estado: 'firmado', version: 4,
+  signatureUrl: 'data:image/png;base64,LAFIRMADELCLIENTE',
+  firmadoAt: new Date('2026-07-20T18:30:00Z'), firmaToken: 'a1b2c3d4e5f6',
+  enviadoParaFirmaAt: new Date('2026-07-20T17:00:00Z'),
+  evidenciaFirma: { v: 1, canal: 'remoto', ip: '88.1.2.3' },
+  notas: 'Acceso por el patio', pdfUrl: '/pdf/ALB-2026-0003.pdf',
+  createdAt: new Date('2026-07-19T08:00:00Z'), updatedAt: new Date('2026-07-20T18:30:00Z'),
+  invoiceId: 99,
+};
+
+test('SCRUM-302 · 🔴 EL ENDPOINT: el albarán creado NO trae firma', async () => {
+  const { salida, creado } = await invocarDuplicar(ALBARAN_FIRMADO);
+
+  assert.equal(salida?.code, 201, `🔴 no se creó el duplicado: ${JSON.stringify(salida)}`);
+  assert.ok(creado, '🔴 no se llamó a `albaran.create`');
+
+  assert.equal(creado.signatureUrl, undefined,
+    '🔴 EL ALBARÁN CREADO TRAE LA FIRMA DEL CLIENTE. No es un fallo de pantalla: es un documento ' +
+    'nuevo que dice que alguien aceptó algo que no ha visto.');
+  assert.equal(creado.evidenciaFirma, undefined, '🔴 trae la evidencia probatoria del otro documento');
+  assert.equal(creado.firmaToken, undefined, '🔴 trae el token de la página pública del original');
+  assert.equal(creado.invoiceId, undefined, '🔴 nace ya facturado');
+  assert.equal(creado.pdfUrl, undefined, '🔴 apunta al PDF del original');
+
+  // Nace en borrador, con su propio número, y con las líneas que son el motivo de duplicar.
+  assert.equal(creado.estado, 'borrador', '🔴 no nace en borrador');
+  assert.equal(creado.jobId, 42);
+  assert.deepEqual(creado.lineas, ALBARAN_FIRMADO.lineas, '🔴 no se lleva las líneas');
+  assert.ok(creado.numero, '🔴 el duplicado nace SIN número');
+  assert.notEqual(creado.numero, ALBARAN_FIRMADO.numero,
+    '🔴 el duplicado se lleva el MISMO número que el original: dos documentos con un solo número');
+});
+
+test('SCRUM-302 · 🔴 el número se reserva DENTRO de la transacción', async () => {
+  // Fuera de la transacción, dos duplicados simultáneos se llevan el mismo ALB-YYYY-NNN. Un número
+  // de albarán repetido no es un problema de interfaz: es un problema de documento.
+  const { numeroPedidoDentroDeTx } = await invocarDuplicar(ALBARAN_FIRMADO);
+  assert.ok(numeroPedidoDentroDeTx,
+    '🔴 la reserva del número NO ocurrió dentro de `$transaction`. Dos duplicados a la vez se ' +
+    'llevarían el mismo número, y eso no se arregla desde la pantalla.');
+});
