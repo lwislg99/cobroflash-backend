@@ -62,7 +62,23 @@ const leer = (...p) => fs.readFileSync(path.join(RAIZ, ...p), 'utf8');
  * se cuenta igual porque **excluir por ruta abriría una lista a mano dentro del guard que la
  * evita**. Las únicas exclusiones son por CLASE declarada (ver `CLASES_FUERA`).
  */
-export const SIN_MESSAGE = 28;
+/**
+ * ⚠️ SUBE A 29 POR SCRUM-195 (rebanada 3), y el motivo va escrito porque subir un trinquete es
+ * lo que este trinquete existe para dificultar.
+ *
+ * La respuesta nueva es `quotes.routes.ts` → `job_not_found` (404): el Trabajo al que se quiere
+ * enganchar un presupuesto ADICIONAL no existe o no es de este merchant. Hace falta que exista
+ * -- sin ella, un `job_id` ajeno se engancharia en silencio y su dinero acabaria sumado al
+ * Trabajo de otro (la agregacion de la rebanada 1).
+ *
+ * NO LLEVA `message` TODAVIA, Y NO ES UN DESCUIDO: el texto lo aprueba el fundador (regla 30),
+ * y este mismo guard lo dice en su mensaje de rojo. Inventarlo aqui seria saltarse la regla
+ * usando como excusa el guard que la defiende.
+ *
+ * 🔴 PENDIENTE DEL FUNDADOR: el copy de `job_not_found` en `/quote/create`. En cuanto exista,
+ * esto vuelve a 28 -- y esa bajada TAMBIEN la exige el trinquete, asi que no se puede olvidar.
+ */
+export const SIN_MESSAGE = 29;
 
 /** Suelo del escáner: si ve menos respuestas que esto, dejó de mirar y su cuenta no vale. */
 const SUELO_RESPUESTAS = 30;

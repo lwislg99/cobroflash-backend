@@ -49,6 +49,10 @@ export const CreateQuoteSchema = z.object({
   // SCRUM-27: plan de cobro personalizado (N tramos). Presente = ignora paymentTerms.
   // La suma-100% / etiqueta no vacía / % > 0 se valida en la ruta (validateCustomBillingPlan) con mensaje es-ES.
   customBillingPlan: z.array(z.object({ percentage: z.number(), label: z.string() })).optional(),
+  // SCRUM-195 (rebanada 3): el Trabajo al que se engancha este presupuesto. Presente = es un
+  // ADICIONAL sobre un Trabajo que ya existe, y NO se crea un Trabajo nuevo al aceptarlo.
+  // Ausente = presupuesto normal, que es el comportamiento de siempre.
+  job_id: z.number().int().positive().optional(),
 });
 
 export type QuoteTier = z.infer<typeof QuoteTierSchema>;
