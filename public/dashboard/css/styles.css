@@ -2261,3 +2261,23 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   .qr-personalizar { flex-direction: row; align-items: flex-start; }
   .qr-controles { flex: 1; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   SCRUM-368 — Anillo de foco visible en .btn-primary
+
+   MEDIDO con Tab REAL (no .focus(), que no siempre dispara :focus-visible) y
+   comprobado por PÍXELES: de las 9 paradas de tabulación de una página de prueba,
+   las 3 únicas sin anillo eran .btn-primary — con .btn, sin .btn y dentro de .qq-modal.
+
+   MECANISMO: la regla global `:focus-visible` (línea 94) pone `box-shadow: var(--ring)`,
+   pero `.btn-primary` (línea 412) declara su sombra de reposo con la MISMA especificidad
+   (0,1,0) y aparece DESPUÉS en el archivo: gana la de reposo y en foco no cambia un píxel.
+   `.qq-modal .modal-footer .btn-primary` (línea 995) gana por especificidad (0,3,0), así
+   que necesita su propia línea: sin ella ese pie se queda igual de invisible.
+
+   NO decide nada de identidad: reutiliza el MISMO --ring que ya usan las otras 6 paradas.
+   No toca tamaño (36 px) ni contraste (3,3:1) — eso sigue abierto en SCRUM-368 y el verde
+   de marca es decisión del fundador (regla 30).
+   ════════════════════════════════════════════════════════════ */
+.btn-primary:focus-visible { box-shadow: var(--shadow-btn), var(--ring); }
+.qq-modal .modal-footer .btn-primary:focus-visible { box-shadow: var(--shadow-brand), var(--ring); }
