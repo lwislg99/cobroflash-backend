@@ -624,10 +624,128 @@ La matriz de dispositivos reales sigue siendo humana y sin hacer. Para A1 pesa: 
 18,66 px se juzga leyéndolo al sol**, no midiendo su caja.
 
 
-## Reglas (las cuatro entregas)
+
+# ═══ QUINTA ENTREGA · LA TERCERA SALIDA, MEDIDA ═══
+
+**Medido contra:** `origin/main` = `d5ac9761da139bf9b6de3c808d7c990aa6b82157` · 2026-08-05T17:02:32+01:00
+
+## 🔴 «No hay tercera salida» era una conclusión sobre el TOKEN, no sobre el COMPONENTE
+
+La cuarta entrega concluyó que solo cabían dos caminos: tocar `--brand` o aceptar los botones
+pequeños. **Esa conclusión era correcta sobre el espacio que se buscó, y el espacio era más
+estrecho que la frase.** Se midieron verdes *más claros* para el fondo con texto blanco; nunca se
+evaluó **usar otro token de la familia como fondo del componente pequeño**.
+
+El contraste es simétrico: si `--brand-tint-ink` `#047857` da 5,48 como TEXTO sobre blanco,
+**blanco sobre `#047857` da 5,48 también**. Y ese token ya existe y ya se usa en el producto.
+
+### La candidata, medida en navegador (no calculada)
+
+| | color | fondo | tamaño | umbral | ratio | ¿AA? |
+| --- | --- | --- | --- | --- | --- | --- |
+| `btn-primary btn-sm` **hoy** | blanco | `--brand` `#16a34a` | 12,5px/600 | 4,5 | **3,30** | ❌ |
+| `btn-primary btn-sm` **candidata** | blanco | `--brand-tint-ink` `#047857` | 12,5px/600 | 4,5 | **5,48** | ✅ |
+| `btn-primary` grande (A1, sin tocar) | blanco | `--brand` | 18,66px/700 | 3,0 | 3,30 | ✅ |
+
+**Cumple sin tocar `--brand` y sin inventar ningún color.** Captura a 390 px con los dos
+conviviendo —en tarjeta y en fila de tabla—: `.playwright-mcp/368-candidata-btnsm-390.png`.
+
+**Observación visual (no medida):** parece un sistema, no un error. El tono oscuro se lee como
+«acción de la misma familia, subordinada», y de hecho **refuerza** la jerarquía: el grande sigue
+mandando. En la fila de tabla también funciona.
+
+### ¿Lo prohíbe `DESIGN.md` leído literal? — La respuesta tiene dos mitades
+
+**La regla que se citó NO lo prohíbe.** Y lo dice el propio documento:
+
+- La frase es del apartado de personalidad: «Es un producto **luminoso, nunca oscuro**» (l. 86).
+- El *Don't* literal acota a la base: «nada de **modo oscuro como base**» (l. 206).
+- Y `DESIGN.md` **prescribe** una superficie oscura: la navegación lleva «**Fondo Tinta muy
+  oscuro**, texto blanco a baja opacidad» (l. 185).
+
+Un componente pequeño con un tono más oscuro de la familia no es «modo oscuro como base». **La
+lectura del fundador es correcta.**
+
+**Pero hay otra línea, que no se citó, y ésa sí choca de frente:**
+
+> **Buttons → Primary:** «fondo Verde Confianza (**#16a34a**), texto blanco, peso 700, padding
+> 12px 20px» (l. 159)
+>
+> y en los tokens de componente: `button-primary.backgroundColor: "{colors.brand}"` (l. 57-58).
+
+Eso no es una regla de sensación: es la **especificación del componente**, con el hex escrito.
+Un `btn-primary` con otro fondo la contradice mientras siga llamándose primario. La salida
+limpia sería declarar en `DESIGN.md` una variante pequeña con su propio fondo — pero eso es
+**cambiar el documento**, y no lo hace una sesión (regla 30).
+
+**Y un tercer dato, que juega A FAVOR de la candidata y que nadie había puesto sobre la mesa:**
+
+> **La Regla de Una Sola Voz.** «El verde de marca ocupa ≤10% de cualquier pantalla… **Una
+> pantalla = un botón verde primario**» (l. 123), reforzada en los *Do*: «usar un solo botón
+> Verde Confianza por pantalla» (l. 196).
+
+Hoy hay **35 sitios** con `btn-primary btn-sm` además de los primarios normales, así que hay
+pantallas con varios botones verdes: **la Regla de Una Sola Voz ya se incumple**. Sacar los
+pequeños del verde de marca no solo arregla el contraste — **acerca el producto a una regla
+escrita que hoy no cumple**.
+
+## El residuo, contado y con contador
+
+`tests/scrum368-residuo-btn-sm.test.mjs`, en `npm test`.
+
+| | |
+| --- | --- |
+| Sitios con `btn-primary btn-sm` | **35** |
+| — en páginas **públicas** | **0** |
+| — **tras el login** | **35** |
+
+> ⚠ **35 sitios, no 28.** El 28 de la cuarta entrega contaba **rótulos distintos**; éste cuenta
+> **conjuntos de clases**, o sea sitios donde se escribe la combinación. Varios comparten rótulo.
+> El número que responde a «cuántos botones no cumplen» es **35**.
+
+El test vigila tres cosas y cae si el residuo **sube o baja** (bajar es una mejora que hay que
+anotar, no un verde silencioso). Tiene **suelo** (si el censo se queda ciego, falla), **control
+negativo** (un `btn-secondary btn-sm` es 17,52:1 y no cuenta) y un test aparte que exige que
+**ninguno esté en superficie pública** — que es la razón por la que el residuo se puede aceptar.
+
+**Rojo verificado** añadiendo un `btn-primary btn-sm` más: *«el residuo de contraste era 35 y
+ahora es 36»*, nombrando fichero y línea.
+
+> **Un residuo aceptado sin contador se convierte en un residuo creciente.** Por eso el contador
+> entra decida lo que decida el fundador: si se aplica la candidata, baja a 0 y el test lo dice.
+
+## Observaciones que se quedan escritas (regla 9)
+
+- **`quotesDetailView.js:772`** — `btnInvoice.textContent = 'Solo disponible tras aceptar el
+  presupuesto'` con `btnInvoice.disabled = true`. **Un cartel disfrazado de botón**: un control
+  inactivo cuya etiqueta es la explicación de por qué no se puede pulsar. No tiene víctima hoy
+  —está exento por la norma y se lee—, así que **no abre ticket**: queda anotado aquí.
+- **`landing-demo.js` no es alcanzable hoy** → **SCRUM-376**. `index.html` carga solo
+  `atribucion.js` y no menciona `idemo` ni una vez. La microcopy aprobada en la cuarta entrega
+  **se aplicó a código que ningún visitante ve**; el cambio no hace daño y se deja como está.
+
+## El hallazgo de método de la noche
+
+> **«Una excepción por par de colores no es una excepción: es un permiso para ese par en
+> cualquier sitio.»**
+
+Y cómo apareció importa tanto como la frase: **la prueba de caducidad salió verde la primera
+vez**, y en vez de darla por buena se fue a ver por qué. Sin esa prueba, el guard entraba en
+verde vigilando un permiso abierto.
+
+Ese mismo patrón se repitió dos veces más en la sesión, las dos con pruebas que **no probaban lo
+que parecían**: un botón inyectado en `login.html` que no reproducía el par (esa página no carga
+`styles.css`), y una inyección con `replace('export', …)` sobre un fichero **que no tiene**
+`export`. Las dos salieron «verdes» sin haber ejercitado nada. La regla que queda:
+
+> **Una prueba de rojo que sale verde no es una prueba superada: es una prueba que no se ha
+> ejecutado. Antes de creerse el verde, hay que comprobar que la mutación llegó a aplicarse.**
+
+
+## Reglas (las cinco entregas)
 
 Regla 4 (vanilla, un componente) · **Regla 30: el verde de marca NO se ha tocado en ninguna de
-las cuatro entregas** · Regla 9 (reportado y no arreglado: el botón primario a 3,30 —A1 medido y
+las cinco entregas** · Regla 9 (reportado y no arreglado: el botón primario a 3,30 —A1 medido y
 **PARADO** por dos rótulos que desbordan—, `admin.html` y los dos mockups de WhatsApp) · Regla 37.
 
 > **La copy no se toca.** Los dos rótulos que desbordan con A1 no se han acortado: es microcopy
