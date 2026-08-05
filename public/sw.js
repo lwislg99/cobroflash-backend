@@ -38,6 +38,7 @@ const SHELL = [
   '/dashboard/js/invoiceActionsRegistry.js',
   '/dashboard/js/invoiceDetailView.js',
   '/dashboard/js/jobActionsRegistry.js', // SCRUM-316 (G1)
+  '/dashboard/js/jobDocsReparto.js', // SCRUM-319 (G4)
   '/dashboard/js/jobRailBlocks.js', // SCRUM-318 (G3)
   '/dashboard/js/expensesView.js',
   '/dashboard/js/settingsView.js',
