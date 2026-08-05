@@ -316,6 +316,16 @@ test('SCRUM-371 · ⑤ ⚠️ el barrido SOLO LEE: ninguna llamada de escritura 
  * Resuelve también las abreviaturas (`cliente,`) contra el `const` de su misma función: si no, el
  * campo más delicado —el nombre del cliente— se quedaría fuera de la comparación sin que se note.
  */
+/** ¿Este nodo está DENTRO de la función `nombre`? Vale para declaraciones y para `const f = () =>`. */
+function dentroDeFuncion(n, nombre) {
+  for (let p = n.parent; p; p = p.parent) {
+    if ((ts.isFunctionDeclaration(p) || ts.isMethodDeclaration(p)) && p.name?.text === nombre) return true;
+    if ((ts.isFunctionExpression(p) || ts.isArrowFunction(p)) && ts.isVariableDeclaration(p.parent) &&
+        ts.isIdentifier(p.parent.name) && p.parent.name.text === nombre) return true;
+  }
+  return false;
+}
+
 function resolucionesDelSellador(fuente) {
   const sf = ts.createSourceFile('x.ts', fuente, ts.ScriptTarget.Latest, true);
   const consts = new Map();
@@ -331,12 +341,7 @@ function resolucionesDelSellador(fuente) {
   // `buildFirmaEvidencia`, que es el único que escribe un sobre nuevo. Un guard que depende de
   // quién aparece primero caduca en cuanto alguien añade una función encima.
   const SELLA_DE_VERDAD = 'buildFirmaEvidencia';
-  const dentroDelSellador = (n) => {
-    for (let p = n.parent; p; p = p.parent) {
-      if ((ts.isFunctionDeclaration(p) || ts.isMethodDeclaration(p)) && p.name?.text === SELLA_DE_VERDAD) return true;
-    }
-    return false;
-  };
+  const dentroDelSellador = (n) => dentroDeFuncion(n, SELLA_DE_VERDAD);
 
   const visita = (n) => {
     if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) {
@@ -393,18 +398,71 @@ function propiedadesDe(objeto, sf, consts) {
 // `lineas` queda FUERA a conciencia y con motivo: el sellador las castea al tipo (`as unknown as
 // AlbaranLinea[]`) y el adaptador las pasa tal cual, pero las dos acaban en el mismo embudo
 // `Array.isArray(...) ? ... : []` DENTRO de la receta, así que el texto difiere y el resultado no.
-// `lugarEntrega` tampoco tiene pareja hoy: su columna la trae C5 y v:1 no la sella.
+//
+// ⚠️ SCRUM-300 (C5) CAMBIÓ LA FORMA DE ESTA COMPARACIÓN, y conviene entender por qué antes de
+// tocarla. Aquí ponía `jobDireccion: 'obra'`, dando por hecho que el `obra` del sellador ERA la
+// dirección del Trabajo. Eso valía mientras hubo UNA sola versión de sobre. Desde v:2, el sellador
+// resuelve `obra` POR VERSIÓN —`obraSegunVersion(v, { lugarEntrega, jobDireccion })`—, así que
+// comparar `obra` contra un solo campo dejó de tener sentido: el guard reportó la diferencia, y
+// tenía razón.
+//
+// La forma correcta NO es quitar la pareja para que pase (eso apagaría justo lo que vigila): es
+// comparar las DOS fuentes contra los DOS argumentos que el sellador mete en `obraSegunVersion`.
+// El adaptador las pasa juntas y sin elegir, que es el contrato de `FuentesContenido`; elegir es
+// trabajo de la receta.
 const PAREJAS = {
   numero: 'numero',
   fecha: 'fecha',
   modoValoracion: 'modoValoracion',
   notas: 'notas',
-  jobDireccion: 'obra',
   referenciaTrabajo: 'referenciaTrabajo',
   cliente: 'cliente',
   emisor: 'emisor',
   emisorNif: 'emisorNif',
+  // SCRUM-300 (C5): los tres que estrena v:2 y que el barrido tiene que resolver igual.
+  fechaEntrega: 'fechaEntrega',
+  firmadoPorNombre: 'firmadoPorNombre',
+  firmadoPorCalidad: 'firmadoPorCalidad',
 };
+
+/** Las dos fuentes de `obra`, sacadas del objeto que el sellador le pasa a `obraSegunVersion`. */
+const PAREJAS_OBRA = { jobDireccion: 'jobDireccion', lugarEntrega: 'lugarEntrega' };
+
+/**
+ * El objeto literal que el sellador le pasa a `obraSegunVersion(...)` como segundo argumento.
+ * Es donde viven hoy las dos fuentes de `obra`.
+ */
+function fuentesDeObraDelSellador(fuente) {
+  const sf = ts.createSourceFile('x.ts', fuente, ts.ScriptTarget.Latest, true);
+  let objeto = null;
+  const visita = (n) => {
+    // ⚠️ Acotado a `buildFirmaEvidencia` por lo MISMO que la otra: `obraSegunVersion` se llama
+    // también desde `recomputarHashDeEvidencia` y desde `ensureAlbaranPdf`, y las dos quedan
+    // ANTES en el fichero. Coger «la primera» compararía contra la llamada equivocada.
+    if (!objeto && ts.isCallExpression(n) && ts.isIdentifier(n.expression) &&
+        n.expression.text === 'obraSegunVersion' && ts.isObjectLiteralExpression(n.arguments[1]) &&
+        dentroDeFuncion(n, 'buildFirmaEvidencia')) {
+      objeto = n.arguments[1];
+    }
+    ts.forEachChild(n, visita);
+  };
+  visita(sf);
+  return objeto ? propiedadesDe(objeto, sf, new Map()) : new Map();
+}
+
+/**
+ * Compara dos resoluciones ignorando DE DÓNDE sale el dato, pero NO cómo se normaliza.
+ *
+ * El sellador lee `firmadoPorNombre` de `params` (llega con la petición de firma) y el barrido de
+ * `a` (la fila guardada). Son orígenes distintos **a propósito** y su texto no coincidirá jamás.
+ * Lo que sí tiene que coincidir —y es lo único que cambia el hash— es el campo y su normalización:
+ * `?? null` y `|| null` NO son lo mismo (`''` sobrevive con el primero y muere con el segundo), y
+ * confundirlos es exactamente el fallo que este guard existe para cazar.
+ */
+function mismaResolucion(a, b) {
+  const pelar = (s) => String(s ?? '').replace(/\b[A-Za-z_$][\w$]*\??\.\s*/g, '');
+  return pelar(a) === pelar(b);
+}
 
 test('SCRUM-371 · ⑥ 🔴 el adaptador resuelve CADA FUENTE igual que el sellador', () => {
   const sellador = resolucionesDelSellador(fs.readFileSync(F_SELLADOR, 'utf8'));
@@ -418,9 +476,23 @@ test('SCRUM-371 · ⑥ 🔴 el adaptador resuelve CADA FUENTE igual que el sella
     '🔴 no se ha resuelto la abreviatura `cliente,` contra su const: el campo más delicado se ' +
     'estaría comparando contra un texto vacío');
 
-  const distintas = Object.entries(PAREJAS)
-    .filter(([mio, suyo]) => adaptador.get(mio) !== sellador.get(suyo))
-    .map(([mio, suyo]) => `${mio}: barrido «${adaptador.get(mio)}» ≠ sellador.${suyo} «${sellador.get(suyo)}»`);
+  // Las DOS fuentes de `obra` no se comparan contra `sellador.obra` —que hoy es una llamada a
+  // `obraSegunVersion`— sino contra los argumentos que entran EN esa llamada. Con su suelo: si el
+  // analizador no las encuentra, se dice, en vez de dar el guard por cumplido con cero parejas.
+  const fuentesObra = fuentesDeObraDelSellador(fs.readFileSync(F_SELLADOR, 'utf8'));
+  assert.equal(fuentesObra.size, 2,
+    '🔴 no se han encontrado las dos fuentes de `obra` en la llamada a `obraSegunVersion` del ' +
+    'sellador. O cambió de forma, o `obra` volvió a resolverse de un solo sitio: en los dos casos ' +
+    'hay que mirar esto a mano antes de fiarse del verde.');
+
+  const distintas = [
+    ...Object.entries(PAREJAS)
+      .filter(([mio, suyo]) => !mismaResolucion(adaptador.get(mio), sellador.get(suyo)))
+      .map(([mio, suyo]) => `${mio}: barrido «${adaptador.get(mio)}» ≠ sellador.${suyo} «${sellador.get(suyo)}»`),
+    ...Object.entries(PAREJAS_OBRA)
+      .filter(([mio, suyo]) => !mismaResolucion(adaptador.get(mio), fuentesObra.get(suyo)))
+      .map(([mio, suyo]) => `${mio}: barrido «${adaptador.get(mio)}» ≠ obraSegunVersion.${suyo} «${fuentesObra.get(suyo)}»`),
+  ];
 
   assert.deepEqual(distintas, [],
     '🔴 EL BARRIDO RESUELVE UNA FUENTE DISTINTO A COMO LA RESOLVIÓ EL SELLADOR:\n    ' +
@@ -435,14 +507,19 @@ test('SCRUM-371 · ⑥ 🔴 el adaptador resuelve CADA FUENTE igual que el sella
 });
 
 test('SCRUM-371 · SUELO del comparador: ve una resolución cambiada, y resuelve abreviaturas', () => {
+  // ⚠️ Envuelto en `buildFirmaEvidencia` a propósito: desde SCRUM-300 el analizador ya no coge «la
+  // primera llamada del fichero» —había tres y cogía la equivocada— sino la del sellador de verdad,
+  // nombrada. Este falso tiene que parecerse al real también en eso, o probaría otra cosa.
   const selladorFalso = `
-    const cliente = customer?.legalName || customer?.name || null;
-    const h = computeAlbaranContentHash({
-      numero: a.numero, fecha: a.fecha, modoValoracion: a.modoValoracion,
-      lineas: ls, notas: a.notas ?? null, obra: job?.direccion || null,
-      referenciaTrabajo: job?.titulo || null, cliente,
-      emisor: merchant?.name || null, emisorNif: merchant?.taxId || null,
-    });`;
+    async function buildFirmaEvidencia(params) {
+      const cliente = customer?.legalName || customer?.name || null;
+      const h = computeAlbaranContentHash({
+        numero: a.numero, fecha: a.fecha, modoValoracion: a.modoValoracion,
+        lineas: ls, notas: a.notas ?? null, obra: job?.direccion || null,
+        referenciaTrabajo: job?.titulo || null, cliente,
+        emisor: merchant?.name || null, emisorNif: merchant?.taxId || null,
+      });
+    }`;
   const r = resolucionesDelSellador(selladorFalso);
   assert.equal(r.get('cliente'), 'customer?.legalName || customer?.name || null',
     '🔴 el comparador no resuelve la abreviatura contra su const');
@@ -545,6 +622,12 @@ test('SCRUM-371 · el adaptador no disimula lo que no encontró', () => {
     cliente: null,
     emisor: null,
     emisorNif: null,
+    // SCRUM-300 (C5): los tres de v:2 también llegan como `null` cuando la fila no los trae —que
+    // es toda la población v:1—. Que estén en la comparación es deliberado: si alguno se cayera
+    // del adaptador, un albarán v:2 intacto se recalcularía sin él y saldría como manipulado.
+    fechaEntrega: null,
+    firmadoPorNombre: null,
+    firmadoPorCalidad: null,
   });
   assert.equal(e.evidencia, null, '🔴 un albarán firmado sin sobre tiene que llegar como null, no inventado');
 });

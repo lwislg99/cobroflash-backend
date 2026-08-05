@@ -325,3 +325,102 @@ En su lugar se escribió `tests/scrum300-firmante-ids-y-microcopy.test.mjs` (12 
 rojo probado), que fija la frontera dato/pantalla. **Queda pendiente rescatar de aquellos tres lo
 que sí sigue valiendo** —la retrocompatibilidad de un albarán firmado antes de C5 y la extracción
 de texto del PDF con `tests/_pdf-texto.mjs`, que sí se ha traído—.
+
+---
+
+# SCRUM-300 · C5 — CIERRE: microcopy aprobada, suite en verde
+
+**Medido contra:** `origin/main` = `9ce9ffd727411f0e69826bbdc174ed65f2582a13` · 2026-08-05T23:46:07+01:00
+**Suite:** `npm test` → 1819 · **1752 pass · 0 fail** · 67 skip
+
+## La microcopy, aprobada por el fundador (6-ago-2026)
+
+Rótulo: **¿En calidad de qué firma?** · Campo: **Nombre de quien firma**
+
+| `id` (dato, se guarda) | etiqueta (pantalla) |
+| --- | --- |
+| `el_propio_cliente` | El propio cliente |
+| `en_nombre_del_cliente` | En nombre del cliente |
+| `familiar_o_conviviente` | Un familiar o conviviente |
+| `encargado_o_personal_de_obra` | Encargado o personal de la obra |
+| `portero_o_conserje` | Portero o conserje |
+| `otro` | Otro |
+
+### 🔴 `representante_del_cliente` → `en_nombre_del_cliente`, y por qué
+
+La rama `scrum-300-firmado-por` razonaba por escrito que había que evitar «representante»,
+«apoderado» y «autorizado» por ser AFIRMACIONES JURÍDICAS que el profesional no puede sostener. La
+primera resolución del asesor fijó `representante_del_cliente`, **derogando ese razonamiento sin
+abordarlo**. El fundador lo revirtió:
+
+> «Representante» significa quien puede OBLIGAR al cliente. El profesional no está en condiciones
+> de verificar eso: le haríamos afirmar más de lo que sostiene, con nuestro sello encima.
+
+Pero la categoría hace falta —el administrador de una comunidad no es ninguna de las otras cinco—.
+**«En nombre del cliente» describe el hecho observado sin afirmar la figura.** Renombrado ANTES de
+la migración: después habría obligado a migrar filas. Tiene guard propio, que caza
+`represent|apoderad|autorizad` tanto en el `id` como en la etiqueta.
+
+## El nombre: columna NULLABLE, formulario OBLIGATORIO
+
+No es contradicción: **contestan a preguntas distintas.** La columna admite nulo por las filas
+viejas (retrocompatibilidad; `null` = «no se pidió al firmar»). El formulario lo exige porque es EL
+valor del ticket: C5 existe porque «guardamos un trazo sin nombre», y un nombre opcional deja el
+mismo trazo sin nombre en cuanto alguien tiene prisa.
+
+Vive en `exigirNombreFirmante`, UNA función para las DOS rutas que firman: si cada una validara por
+su cuenta, una acabaría aceptando lo que la otra rechaza. Además: «Otro» exige su texto, y **el
+nombre precargado se BORRA al cambiar de opción** — pero solo si sigue siendo la sugerencia nuestra
+intacta; lo que teclee el profesional no se toca nunca.
+
+## 🔴 DOS LECCIONES DE MÉTODO QUE VALEN FUERA DE ESTE TICKET
+
+### ① Comparar números de línea de DOS BASES DISTINTAS no dice nada sobre si dos cambios se solapan
+
+El mapa concluyó que A y B tocaban «zonas distintas» de `jobDetailView.js` porque sus números de
+línea no coincidían. Medido: el desfase era **constante, 168 líneas en las tres anclas** — porque
+cada rama diffea contra su propio merge-base. Eran LAS MISMAS zonas, y aplicar las dos habría
+duplicado los campos.
+
+**La comprobación correcta es el ancla, no el número.** Un desfase constante entre varias anclas es
+la firma de dos bases distintas, no de dos zonas distintas.
+
+### ② Coger un fichero ENTERO de una rama vieja borra lo que `main` añadió después
+
+Pasó **cuatro veces** en esta fusión: `albaran.service.ts` (perdía `contarLineasDePresupuesto`),
+`src/app.ts` y `app.js` (perdían SCRUM-301, 302, 314 y 291) y `albaranes.routes.ts` (172 líneas,
+con `allocateAlbaranNumber` dentro de la transacción). **Nueve de los diecisiete fallos iniciales
+salían de ahí.**
+
+`git checkout <rama> -- <fichero>` NO es fundir: es reemplazar. Para fundir, `git merge-file` con
+las tres versiones (main / merge-base de la rama / rama). Señal barata para detectarlo:
+contar las líneas borradas de `git diff origin/main -- <fichero>` — si borra líneas que tú no has
+tocado, mira.
+
+### Y una tercera, del guard: un analizador que coge «la primera llamada» caduca
+
+`tests/scrum371-…` localizaba el sellado como «la primera llamada a `computeAlbaranContentHash` del
+fichero». C5 añadió dos llamadas ANTES (`recomputarHashDeEvidencia`, `ensureAlbaranPdf`), así que
+pasó a comparar contra la equivocada. Se cazó solo porque su propio suelo exigía ver `customer` ahí
+dentro. Ahora **nombra su objetivo** (`buildFirmaEvidencia`) y falla si no lo encuentra.
+
+## SCRUM-371, resuelto (no bajado)
+
+El barrido no sabía de v:2: le faltaban `fechaEntrega`, `firmadoPorNombre` y `firmadoPorCalidad` en
+el adaptador Y en el `select`. **Sin ellos, un albarán v:2 INTACTO se habría recalculado con nulos y
+salido como «no coincide»** — la acusación de falsificación contra un papel que nadie tocó.
+
+El guard se REFORZÓ, no se relajó: ahora compara las DOS fuentes de `obra` contra los dos argumentos
+que entran en `obraSegunVersion`, y compara la NORMALIZACIÓN (`??` vs `||`) ignorando de qué objeto
+sale el dato — porque el sellador los lee de `params` (la petición) y el barrido de la fila, y eso
+es correcto que difiera. Probado en rojo cambiando `?? null` por `|| null`: cae.
+
+## Pendiente para la sesión siguiente
+
+- **La migración**, en el orden confirmado: **#1 SCRUM-205 (`vf_estado`, con su orden propio:
+  ALTER → backfill → desplegar) → #2 SCRUM-207 (índice) → #3 ésta.** El gate de la microcopy ya
+  está levantado: los seis textos están dentro.
+- El **recuento de toques** del flujo de firma (condición de cierre del ticket, sin cumplir).
+- La **caída de `albaranPublic.routes.ts:142`** (`job?.direccion || job?.titulo`).
+- Rescatar de los tres tests no importados lo que siga valiendo (retrocompatibilidad de un albarán
+  firmado antes de C5, y el uso de `tests/_pdf-texto.mjs`, que sí se trajo).

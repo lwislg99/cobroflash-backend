@@ -87,8 +87,12 @@
           'min-height:44px;margin-top:8px;padding:8px 16px;font-size:14px;font-weight:600;font-family:inherit;color:#166534;background:#ecfdf5;border:1.5px solid #a7f3d0;border-radius:999px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
         chip.addEventListener('click', () => {
           nombreEl.value = firmante.sugerencia;
+          // Marca de que ese nombre lo pusimos NOSOTROS y no el profesional. Es lo que permite
+          // borrarlo si luego declara que firmó otra persona, sin tocar lo que él haya tecleado.
+          nombreEl.dataset.deSugerencia = '1';
           chip.remove();
           nombreEl.focus();
+          syncOk();
         });
         wrap.appendChild(chip);
       }
@@ -120,14 +124,35 @@
           otraEl.hidden = true;
           otraEl.setAttribute('aria-label', c.etiqueta);
           otraEl.style.cssText = 'width:100%;min-height:44px;padding:10px 12px;font-size:16px;font-family:inherit;color:var(--ink);background:var(--surface,#fff);border:1.5px solid var(--border);border-radius:10px;margin:4px 0 4px 30px';
+          // «Otro» EXIGE su texto: la ranura sola no dice nada, así que el botón sigue bloqueado
+          // hasta que se escriba. Mismo criterio que el backend (`resolverCalidadFirmante`).
+          otraEl.addEventListener('input', () => syncOk());
           lista.appendChild(otraEl);
         }
       });
       lista.addEventListener('change', () => {
-        if (!otraEl) return;
         const sel = lista.querySelector('input[name="sp-calidad"]:checked');
-        otraEl.hidden = !sel || sel.value !== idLibre;
-        if (!otraEl.hidden) otraEl.focus();
+        if (otraEl) {
+          otraEl.hidden = !sel || sel.value !== idLibre;
+          if (!otraEl.hidden) otraEl.focus();
+        }
+        // 🔴 SCRUM-300: el nombre PRECARGADO se borra al cambiar de opción.
+        //
+        // Si el pro declara que firmó alguien que no es el cliente, dejar ahí el nombre del
+        // cliente que pusimos nosotros sellaría una declaración falsa —y encima con nuestra
+        // sugerencia como culpable—. Solo se borra si sigue siendo NUESTRA sugerencia intacta:
+        // lo que haya tecleado él no se toca nunca.
+        if (nombreEl && nombreEl.dataset.deSugerencia === '1' && sel && sel.value !== 'el_propio_cliente') {
+          nombreEl.value = '';
+          delete nombreEl.dataset.deSugerencia;
+          nombreEl.focus();
+        }
+        syncOk();
+      });
+      // Teclear a mano deja de ser «sugerencia nuestra»: pasa a ser lo que él ha dicho.
+      nombreEl.addEventListener('input', () => {
+        delete nombreEl.dataset.deSugerencia;
+        syncOk();
       });
       card.appendChild(lista);
     }
@@ -193,18 +218,23 @@
       syncOk();
     });
 
-    // Confirmar exige TRAZO, y solo trazo.
+    // Confirmar exige TRAZO **y** NOMBRE, y si la ranura es la libre, también su texto.
     //
-    // La rama `scrum-300-campos-albaran` hacía el nombre OBLIGATORIO y bloqueaba el botón sin él.
-    // No se ha traído: el modelo que gobierna es el del sellador fundido (base
-    // `scrum-300-firmado-por`), donde los tres campos son OPCIONALES —es lo que permite que los
-    // albaranes ya firmados sigan siendo válidos— y donde `null` significa «no se pidió».
-    // Exigirlo aquí y admitirlo nulo en el dominio dejaría las dos superficies de firma con
-    // reglas distintas, que es como se llega a que una acepte lo que la otra rechaza.
-    // ⚠️ Obligatorio o no es decisión de producto y está SIN TOMAR: va en el reporte.
+    // Decisión del fundador (6-ago-2026): la COLUMNA es nullable —por los albaranes firmados antes
+    // de C5, que no tienen estos campos y siguen siendo válidos— pero el FORMULARIO lo exige,
+    // porque es EL valor del ticket: C5 existe porque «guardamos un trazo sin nombre», y un nombre
+    // opcional deja el mismo trazo sin nombre en cuanto alguien tenga prisa. En una obra, siempre.
+    //
+    // Se bloquea el BOTÓN en vez de dejar pulsar y contestar con un error: el pro está de pie, con
+    // las manos sucias y el cliente delante. El 400 del backend es el respaldo, no el camino.
     function syncOk() {
-      okBtn.disabled = !hasInk;
-      okBtn.style.opacity = hasInk ? '1' : '.6';
+      // ⚠️ La CALIDAD sigue siendo opcional: no marcar nada es una respuesta válida y no bloquea.
+      // Lo obligatorio es el nombre, y el texto libre SOLO si se ha elegido la ranura «Otro».
+      const nombreOk = !nombreEl || nombreEl.value.trim().length > 0;
+      const libreOk = !otraEl || otraEl.hidden || otraEl.value.trim().length > 0;
+      const listo = hasInk && nombreOk && libreOk;
+      okBtn.disabled = !listo;
+      okBtn.style.opacity = listo ? '1' : '.6';
     }
     btnRow.appendChild(clearBtn);
 

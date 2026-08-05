@@ -17,8 +17,9 @@ import {
   FIRMANTE_CALIDAD_LIBRE,
   FIRMANTE_NOMBRE_MAX,
   FIRMANTE_OTRO_MAX,
+  PENDIENTE,
   firmanteCalidadOpciones,
-  normalizarNombreFirmante,
+  exigirNombreFirmante,
   resolverCalidadFirmante,
 } from '../../domain/albaranFirmante';
 import { sendAlbaranFirmadoWhatsApp } from '../../domain/albaranWhatsApp.service';
@@ -66,9 +67,10 @@ function renderPage(title: string, body: string): string {
   .sig-placeholder{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#cdd2cb;
     font-size:14px;pointer-events:none;user-select:none}
   .sig-actions{display:flex;gap:8px;margin-bottom:16px;align-items:center}
-  /* SCRUM-300: los dos campos de FIRMADO POR. El NOMBRE viene precargado con el del cliente
-     (lo pide el ticket); la CALIDAD viene SIN marcar y es opcional, así que quien no tenga nada
-     que declarar no los toca: el flujo sigue siendo trazo + un botón. */
+  /* SCRUM-300: los dos campos de FIRMADO POR. El NOMBRE es OBLIGATORIO y viene precargado con el
+     del cliente —quien tiene el móvil en la mano suele ser él—, así que el camino normal no
+     añade toques: trazo y botón. La CALIDAD viene SIN marcar y es opcional.
+     ⚠️ El nombre precargado se BORRA si se declara que firmó otra persona. */
   .firmante-campo{margin-bottom:10px}
   .firmante-campo label{display:block;font-size:13px;font-weight:600;color:#333c37;margin-bottom:4px}
   .firmante-campo input,.firmante-campo select{width:100%;padding:11px 12px;font-size:15px;font-family:inherit;
@@ -179,10 +181,20 @@ function firmanteCamposHtml(nombrePrecargado: string): string {
     </div>
     <script>(function(){
       var sel=document.getElementById('firmante-calidad'),wrap=document.getElementById('firmante-otro-wrap');
+      var nom=document.getElementById('firmante-nombre');
       if(!sel||!wrap)return;
+      // El nombre llega PRECARGADO con el del cliente: se marca como sugerencia NUESTRA.
+      if(nom&&nom.value)nom.dataset.deSugerencia='1';
+      if(nom)nom.addEventListener('input',function(){delete nom.dataset.deSugerencia;});
       sel.addEventListener('change',function(){
         wrap.style.display = sel.value===${JSON.stringify(libre)} ? '' : 'none';
         if(sel.value===${JSON.stringify(libre)}){var o=document.getElementById('firmante-otro'); if(o)o.focus();}
+        // 🔴 SCRUM-300: el nombre PRECARGADO se borra al cambiar de opción. Si quien firma dice
+        // que no es el cliente, dejar ahí el nombre del cliente que pusimos nosotros sellaría una
+        // declaración falsa. Lo que haya tecleado él a mano NO se toca.
+        if(nom&&nom.dataset.deSugerencia==='1'&&sel.value&&sel.value!=='el_propio_cliente'){
+          nom.value='';delete nom.dataset.deSugerencia;nom.focus();
+        }
       });
     })();</script>`;
 }
@@ -245,7 +257,22 @@ router.get('/:token', async (req: Request, res: Response) => {
     <script>
       document.getElementById('btn-sign').addEventListener('click', async function(){
         const sig = window.getSignatureData ? window.getSignatureData() : null;
-        if(!sig){ document.getElementById('sig-error').style.display='block'; return; }
+        const err = document.getElementById('sig-error');
+        if(!sig){ err.textContent=${JSON.stringify('Dibuja tu firma para continuar.')}; err.style.display='block'; return; }
+        // SCRUM-300: el NOMBRE es obligatorio al firmar (la columna admite nulo solo por las
+        // filas anteriores a C5). Se corta aquí para no gastarle al cliente un viaje al servidor.
+        // ⚠️ El texto va con marcador: nadie lo ha aprobado todavía (regla 30).
+        const nomEl = document.getElementById('firmante-nombre');
+        if(nomEl && !nomEl.value.trim()){
+          err.textContent=${JSON.stringify(PENDIENTE)}; err.style.display='block'; nomEl.focus(); return;
+        }
+        // Y si se ha elegido la ranura libre, su texto también.
+        const calEl0 = document.getElementById('firmante-calidad');
+        const otroEl0 = document.getElementById('firmante-otro');
+        if(calEl0 && calEl0.value===${JSON.stringify(FIRMANTE_CALIDAD_LIBRE)} && otroEl0 && !otroEl0.value.trim()){
+          err.textContent=${JSON.stringify(PENDIENTE)}; err.style.display='block'; otroEl0.focus(); return;
+        }
+        err.style.display='none';
         const btn=this; btn.disabled=true; btn.textContent='Enviando…';
         try{
           // SCRUM-300: los dos datos de FIRMADO POR viajan CON la firma, para que entren en el
@@ -303,7 +330,11 @@ router.post('/:token/firmar', firmaLimiter, async (req: Request, res: Response) 
       textoLibre: req.body?.firmadoPorCalidadOtro,
     });
     if (!calidad.ok) return res.status(400).json({ error: calidad.error, message: calidad.message });
-    const firmadoPorNombre = normalizarNombreFirmante(req.body?.firmadoPorNombre);
+    // SCRUM-300: el nombre es OBLIGATORIO al firmar (columna nullable por las filas viejas; el
+    // acto de firmar lo exige). Ver `exigirNombreFirmante` para el porqué de las dos reglas.
+    const nombre = exigirNombreFirmante(req.body?.firmadoPorNombre);
+    if (!nombre.ok) return res.status(400).json({ error: nombre.error, message: nombre.message });
+    const firmadoPorNombre = nombre.nombre;
 
     const firmadoAt = new Date();
     const evidencia = await buildFirmaEvidencia({

@@ -54,7 +54,7 @@ test('SCRUM-300 · los seis `id` de calidad son EXACTAMENTE los que fijó el ase
   // una constante, es dejar huérfanas las filas que guardaron el valor viejo.
   assert.deepEqual([...FIRMANTE_CALIDAD_IDS], [
     'el_propio_cliente',
-    'representante_del_cliente',
+    'en_nombre_del_cliente',
     'familiar_o_conviviente',
     'encargado_o_personal_de_obra',
     'portero_o_conserje',
@@ -72,30 +72,67 @@ test('SCRUM-300 · los seis `id` de calidad son EXACTAMENTE los que fijó el ase
 
 // ── ② 🔴 LAS ETIQUETAS SIGUEN SIN APROBAR, Y SE VE ───────────────────────────────────────
 
-test('SCRUM-300 · 🔴 las SEIS etiquetas llevan el marcador: nadie ha aprobado esta microcopy', () => {
+test('SCRUM-300 · las SEIS etiquetas son las APROBADAS por el fundador (6-ago-2026), literales', () => {
+  // Este test nació exigiendo el marcador `[PENDIENTE microcopy oficial]` en las seis, porque el
+  // comentario del asesor que prometía los textos NUNCA SE ESCRIBIÓ (SCRUM-300 tenía 5 comentarios
+  // y ninguno los contenía; medido el 5-ago-2026). El rojo estaba DISEÑADO para saltar el día que
+  // llegara la aprobación de verdad, y saltó: eso es lo que obligó a que el texto y su aprobación
+  // entraran en el mismo commit, con quién la dio y cuándo.
+  //
+  // ⚠️ Literales a propósito. Estos seis acaban impresos en un documento que se puede leer en un
+  // juzgado: cambiarlos exige una aprobación nueva, anotada, en el commit que los cambie.
+  assert.deepEqual({ ...FIRMANTE_CALIDAD_ETIQUETAS }, {
+    el_propio_cliente: 'El propio cliente',
+    en_nombre_del_cliente: 'En nombre del cliente',
+    familiar_o_conviviente: 'Un familiar o conviviente',
+    encargado_o_personal_de_obra: 'Encargado o personal de la obra',
+    portero_o_conserje: 'Portero o conserje',
+    otro: 'Otro',
+  }, '🔴 LA MICROCOPY APROBADA HA CAMBIADO. La aprobó el fundador el 6-ago-2026, literal. ' +
+     'Si hay aprobación nueva, actualiza este test en el MISMO commit y anota quién y cuándo.');
+
+  // Y NINGUNA lleva ya el marcador: si vuelve uno, es que alguien añadió una ranura sin aprobar.
   for (const id of FIRMANTE_CALIDAD_IDS) {
-    assert.equal(FIRMANTE_CALIDAD_ETIQUETAS[id], PENDIENTE,
-      `🔴 LA ETIQUETA DE «${id}» YA NO ES EL MARCADOR.\n\n` +
-      '  Si es porque el fundador ha aprobado los seis textos: perfecto, actualiza ESTE test en el\n' +
-      '  mismo commit y deja anotado quién los aprobó y cuándo. Esa es toda la gracia del rojo.\n\n' +
-      '  Si es porque alguien ha rellenado el hueco «mientras llega el texto bueno»: eso es\n' +
-      '  inventar microcopy (regla 30), y estos seis textos acaban impresos en un documento que\n' +
-      '  se puede leer en un juzgado. Un placeholder que parece definitivo acaba en producción.');
+    assert.notEqual(FIRMANTE_CALIDAD_ETIQUETAS[id], PENDIENTE,
+      `🔴 la ranura «${id}» ha vuelto al marcador, o es nueva y nadie ha aprobado su texto`);
   }
 
-  // Y el marcador es el del repo, no uno parecido: si cada sitio inventa el suyo, dejan de ser
-  // encontrables de una pasada y alguno se queda dentro para siempre.
+  // El marcador sigue existiendo —lo usan el nombre obligatorio y las calidades desconocidas— y es
+  // el del repo, no uno parecido: si cada sitio inventa el suyo, dejan de ser encontrables.
   assert.equal(PENDIENTE, '[PENDIENTE microcopy oficial]');
 });
 
-test('SCRUM-300 · lo que viaja al navegador son los ids + el marcador, no textos inventados', () => {
+test('SCRUM-300 · 🔴 «representante» NO está en el vocabulario, y el motivo es jurídico', () => {
+  // Decisión del fundador (6-ago-2026), revirtiendo la primera resolución del asesor:
+  // «representante» significa quien puede OBLIGAR al cliente, y el profesional no puede verificar
+  // eso — le haríamos afirmar más de lo que sostiene, con nuestro sello encima. La categoría hace
+  // falta (el administrador de una comunidad no es ninguna de las otras cinco), y por eso existe
+  // `en_nombre_del_cliente`: describe el HECHO OBSERVADO sin afirmar la figura jurídica.
+  //
+  // Esto NO es estilo: es lo que separa un albarán que sostiene lo que dice de uno que no.
+  const prohibidas = /represent|apoderad|autorizad/i;
+  for (const [id, etiqueta] of Object.entries(FIRMANTE_CALIDAD_ETIQUETAS)) {
+    assert.equal(prohibidas.test(id), false,
+      `🔴 el id «${id}» usa una figura jurídica que el profesional no puede verificar`);
+    assert.equal(prohibidas.test(etiqueta), false,
+      `🔴 la etiqueta «${etiqueta}» afirma una figura jurídica («representante», «apoderado», ` +
+      '«autorizado») que el profesional no está en condiciones de sostener — y va dentro del ' +
+      'contenido que sella la firma.');
+  }
+  assert.ok(FIRMANTE_CALIDAD_IDS.includes('en_nombre_del_cliente'),
+    '🔴 falta la ranura que cubre a quien firma por el cliente sin ser ninguna de las otras ' +
+    'cinco (el administrador de una comunidad). Sin ella, esa persona no tiene dónde caer.');
+});
+
+test('SCRUM-300 · al navegador viaja la microcopy SERVIDA, no una copia que el front reescriba', () => {
   const opciones = firmanteCalidadOpciones();
   assert.equal(opciones.length, 6, '🔴 el desplegable no ofrece las seis ranuras');
   assert.deepEqual(opciones.map((o) => o.id), [...FIRMANTE_CALIDAD_IDS],
     '🔴 el orden servido no es el orden fijado');
   for (const o of opciones) {
-    assert.equal(o.etiqueta, PENDIENTE,
-      `🔴 la ranura «${o.id}» viaja al navegador con un texto que no está aprobado`);
+    assert.equal(o.etiqueta, FIRMANTE_CALIDAD_ETIQUETAS[o.id],
+      `🔴 la ranura «${o.id}» viaja al navegador con un texto distinto del de la fuente única. ` +
+      'Dos copias de una microcopy que acaba en un juzgado es cómo divergen sin que nadie se entere.');
   }
   assert.deepEqual(opciones.filter((o) => o.libre).map((o) => o.id), [FIRMANTE_CALIDAD_LIBRE],
     '🔴 hay más de una ranura marcada como libre, o ninguna');
@@ -163,8 +200,9 @@ test('SCRUM-300 · un id que no está en la lista se RECHAZA, no se guarda «por
   }
 });
 
-test('SCRUM-300 · pintar una calidad guardada: id conocido → marcador · libre → su texto · desconocido → marcador', () => {
-  assert.equal(etiquetaCalidad('el_propio_cliente'), PENDIENTE);
+test('SCRUM-300 · pintar una calidad guardada: id conocido → su etiqueta · libre → su texto · desconocido → marcador', () => {
+  assert.equal(etiquetaCalidad('el_propio_cliente'), 'El propio cliente');
+  assert.equal(etiquetaCalidad('en_nombre_del_cliente'), 'En nombre del cliente');
   assert.equal(etiquetaCalidad('otro:Vecina del 3.º'), 'Vecina del 3.º',
     '🔴 en la ranura libre lo que se enseña es lo que escribió el profesional, no una etiqueta');
   assert.equal(etiquetaCalidad('un_id_que_ya_no_existe'), PENDIENTE,
