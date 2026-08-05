@@ -103,7 +103,9 @@
               return '<button class="idemo-chipbtn" data-chip="' + c.id + '">' + c.label + '</button>';
             }).join('') +
       '    </div>' +
-      '    <a class="btn btn-primary idemo-cta" href="/register.html">Así de fácil. Pruébalo con tus datos →</a>' +
+      // SCRUM-368: microcopy APROBADA por el fundador. Fuera «Así de fácil.»: un botón dice qué
+      // pasa al pulsarlo, no aplaude la demo que el usuario acaba de ver. (Y de paso cabe con A1.)
+      '    <a class="btn btn-primary idemo-cta" href="/register.html">Pruébalo con tus datos →</a>' +
       '  </div>' +
       '</div>';
     slot.appendChild(root);

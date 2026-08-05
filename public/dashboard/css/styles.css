@@ -2297,4 +2297,24 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    de marca es decisión del fundador (regla 30).
    ════════════════════════════════════════════════════════════ */
 .btn-primary:focus-visible { box-shadow: var(--shadow-btn), var(--ring); }
+
+/* ════════════════════════════════════════════════════════════
+   SCRUM-368 · A1 — el botón primario cumple AA por la VÍA DE TEXTO GRANDE
+
+   Blanco sobre --brand da 3,30:1. Con texto normal el umbral es 4,5 y no llega; con texto
+   grande y grueso (>=18,66px y peso >=700) el umbral de WCAG SC 1.4.3 es 3,0 y SÍ llega.
+   NO es mover la portería: la norma lo permite porque es cierto que el texto grande y
+   grueso se lee con menos contraste. Y disuelve el choque medido entre DESIGN.md («la marca
+   es luminosa, nunca oscura») y AA, porque NO TOCA NINGÚN COLOR.
+
+   El :not(.btn-sm) es el mismo mecanismo que SCRUM-352, y por el mismo motivo medido: sin
+   él, un "btn-primary btn-sm" saltaría a 18,66px mientras su gemelo "btn btn-primary btn-sm"
+   se queda en 12,5 — .btn.btn-sm es (0,2,0) y gana, .btn-sm a secas es (0,1,0) y pierde por
+   orden.
+
+   ⚠ LOS btn-sm PRIMARIOS SIGUEN SIN CUMPLIR (12,5px/600 → umbral 4,5, están en 3,30). No es
+   un olvido: a un botón pequeño no se le puede poner letra de 18,66px sin dejar de ser
+   pequeño. Contados y reportados en docs/master/SCRUM-368.md (regla 9). */
+.btn-primary:not(.btn-sm) { font-size: 18.66px; font-weight: 700; }
+
 .qq-modal .modal-footer .btn-primary:focus-visible { box-shadow: var(--shadow-brand), var(--ring); }

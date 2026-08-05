@@ -52,13 +52,13 @@ const SUELO_NODOS = 50;
  */
 const CONOCIDOS = [
   {
-    texto: 'rgb(255, 255, 255)', fondo: 'rgb(22,163,74)', ratio: 3.3,
+    texto: 'rgb(255, 255, 255)', fondo: 'rgb(22,163,74)', ratio: 3.3, nodos: 2,
     motivo: 'SCRUM-368 · texto blanco sobre el verde de marca en el botón primario. Subirlo a ' +
       '4,5:1 exige mover el verde (identidad, regla 30) o el tamaño del texto de todo el ' +
       'producto. Decisión del fundador, pendiente. Medido: no existe verde MÁS CLARO que cumpla.',
   },
   {
-    texto: 'rgb(107, 114, 128)', fondo: 'rgb(2,6,23)', ratio: 4.17,
+    texto: 'rgb(107, 114, 128)', fondo: 'rgb(2,6,23)', ratio: 4.17, nodos: 8,
     motivo: 'MOTIVO: admin.html es la consola interna del fundador —no tiene ruta desde el ' +
       'producto y ningún cliente llega a ella—, y usa una paleta oscura de Tailwind que no es ' +
       'la nuestra. Arreglarlo obligaría a mantener un segundo sistema de color para una sola ' +
@@ -66,7 +66,7 @@ const CONOCIDOS = [
       'abre a merchants, esto DEJA de ser aceptable y hay que quitarlo de esta lista.',
   },
   {
-    texto: 'rgb(255, 255, 255)', fondo: 'rgb(72,158,146)', ratio: 3.21,
+    texto: 'rgb(255, 255, 255)', fondo: 'rgb(72,158,146)', ratio: 3.21, nodos: 1,
     motivo: 'MOTIVO: IMITACIÓN DELIBERADA DE UNA INTERFAZ AJENA, NO ES NUESTRA PALETA. Es el ' +
       'avatar del mockup de WhatsApp del landing, que existe para que el visitante reconozca ' +
       'WhatsApp de un vistazo. Ese teal es el de WhatsApp, no un color de YaQu. ' +
@@ -74,7 +74,7 @@ const CONOCIDOS = [
       'única razón de estar ahí. Reportado, sin arreglar (regla 9).',
   },
   {
-    texto: 'rgb(138, 154, 146)', fondo: 'rgb(234,227,220)', ratio: 2.32,
+    texto: 'rgb(138, 154, 146)', fondo: 'rgb(234,227,220)', ratio: 2.32, nodos: 1,
     motivo: 'MOTIVO: IMITACIÓN DELIBERADA DE UNA INTERFAZ AJENA, NO ES NUESTRA PALETA. Es la ' +
       'marca de hora dentro de una burbuja de mensaje de WhatsApp del landing: gris claro sobre ' +
       'el beige del fondo de chat, ambos copiados de WhatsApp. ' +
@@ -156,7 +156,13 @@ function medirEnPagina() {
     const { color: bg, gradiente } = fondoEfectivo(el);
     const px = parseFloat(cs.fontSize), peso = parseInt(cs.fontWeight, 10) || 400;
     const grande = px >= 24 || (px >= 18.66 && peso >= 700);
+    // ¿Es texto de un componente de interfaz INACTIVO? Se mira el ESTADO REAL del DOM —no el
+    // selector ni una lista— para que la exención sea «este nodo, porque está inactivo» y no
+    // «este nodo, porque lo pusimos en la lista». El día que se habilite, deja de ser inactivo
+    // y vuelve al censo solo.
+    const inactivo = !!(el.disabled || el.closest('[disabled], fieldset:disabled, [aria-disabled="true"]'));
     filas.push({
+      inactivo,
       clase: (typeof el.className === 'string' && el.className.trim())
         ? el.className.trim().split(/\s+/).slice(0, 2).join('.') : el.tagName.toLowerCase(),
       muestra: txt.slice(0, 30),
@@ -226,6 +232,7 @@ let nodos = 0;
 const todos = [];
 const bajoAA = [];
 const gradientes = [];
+const inactivos = [];
 
 for (const ruta of paginas) {
   const page = await navegador.newPage();
@@ -238,6 +245,13 @@ for (const ruta of paginas) {
     for (const f of filas) {
       todos.push({ ...f, pagina: ruta });   // TODOS, no solo los que fallan: los que pasan por
       if (f.ratio >= f.umbral) continue;    // la vía de texto grande hay que poder revisarlos
+      // EXENCIÓN NORMATIVA, no de conveniencia. WCAG 2.1 SC 1.4.3, excepción «Incidental»:
+      //   «Text or images of text that are part of an inactive user interface component […]
+      //    have no contrast requirement.»
+      // y el Understanding lo dice sin rodeos: «User Interface Components that are not available
+      // for user interaction (e.g., a disabled control in HTML) are not required to meet contrast
+      // requirements.» Verificado en w3.org, no citado de memoria.
+      if (f.inactivo) { inactivos.push({ ...f, pagina: ruta }); continue; }
       if (f.gradiente) { gradientes.push({ ...f, pagina: ruta }); continue; }
       bajoAA.push({ ...f, pagina: ruta });
     }
@@ -258,6 +272,18 @@ if (nodos < SUELO_NODOS) {
   console.error(`\n✖ SUELO: solo ${nodos} nodos con texto (mínimo ${SUELO_NODOS}).`);
   console.error('  Cero fallos aquí no significa «todo cumple», significa «no supe mirar».');
   process.exit(1);
+}
+
+// ── EXENTOS POR COMPONENTE INACTIVO: se declaran, con la cita ───────────────
+if (inactivos.length) {
+  console.log(`\nEXENTOS por WCAG 2.1 SC 1.4.3 («Incidental»): ${inactivos.length} nodos de ` +
+    'componentes de interfaz INACTIVOS.');
+  console.log('  «Text […] that are part of an inactive user interface component […] have no');
+  console.log('   contrast requirement.» — la exención se mide sobre el ESTADO del DOM, no sobre');
+  console.log('   una lista: el día que el control se habilite, vuelve al censo solo.');
+  for (const i of inactivos) {
+    console.log(`   ${i.pagina}  .${i.clase}  ratio ${i.ratio} (umbral ${i.umbral})  «${i.muestra}»`);
+  }
 }
 
 // ── GRADIENTES: se declaran, no se juzgan ───────────────────────────────────
@@ -306,9 +332,21 @@ const conocidos = new Map(CONOCIDOS.map((c) => [`${c.texto}|${c.fondo}`, c]));
 
 const nuevos = new Map();
 const vistosConocidos = new Set();
+// Cuántos nodos aporta cada par conocido. Sin esto, un nodo NUEVO con un par que ya está en la
+// lista entra sin que nada avise: la excepción se escribió para unos nodos concretos y acabaría
+// amparando a cualquiera que reutilizara esos dos colores. Lo descubrió la prueba de la exención
+// por componente inactivo: al habilitar el botón, volvía al censo y el guard seguía en VERDE.
+const nodosPorConocido = new Map();
 for (const f of bajoAA) {
   const k = clave(f);
-  if (conocidos.has(k)) { vistosConocidos.add(k); continue; }
+  if (conocidos.has(k)) {
+    vistosConocidos.add(k);
+    if (!nodosPorConocido.has(k)) nodosPorConocido.set(k, { veces: 0, paginas: new Set(), clases: new Set(), muestras: [] });
+    const c = nodosPorConocido.get(k);
+    c.veces++; c.paginas.add(f.pagina); c.clases.add(f.clase);
+    if (c.muestras.length < 4) c.muestras.push(`${f.pagina} .${f.clase} «${f.muestra}»`);
+    continue;
+  }
   if (!nuevos.has(k)) nuevos.set(k, { ...f, veces: 0, paginas: new Set(), clases: new Set() });
   const v = nuevos.get(k); v.veces++; v.paginas.add(f.pagina); v.clases.add(f.clase);
 }
@@ -344,6 +382,28 @@ if (nuevos.size) {
     console.error(`   páginas: ${[...v.paginas].join(', ')}`);
     console.error(`   clases:  ${[...v.clases].join(', ')}`);
     console.error(`   ejemplo: «${v.muestra}»  ${v.px}px/${v.peso}`);
+  }
+}
+
+// Un par conocido que gana nodos NO es el mismo par conocido: la excepción se escribió para los
+// que había, no para los que vengan.
+for (const c of CONOCIDOS) {
+  const k = `${c.texto}|${c.fondo}`;
+  const visto = nodosPorConocido.get(k);
+  if (!visto || c.nodos === undefined) continue;
+  if (visto.veces > c.nodos) {
+    fallo = true;
+    console.error(`\n✖ UN PAR CONOCIDO HA GANADO NODOS: ${c.texto} sobre ${c.fondo}`);
+    console.error(`   esperados ${c.nodos}, medidos ${visto.veces}`);
+    console.error(`   páginas: ${[...visto.paginas].join(', ')}`);
+    console.error(`   clases:  ${[...visto.clases].join(', ')}`);
+    console.error(`   ejemplos: ${visto.muestras.join(' · ')}`);
+    console.error('   La excepción se escribió para los nodos que había, no para los que vengan.');
+    console.error('   Si el nodo nuevo es legítimo, sube el contador; si no, arréglalo.');
+  } else if (visto.veces < c.nodos) {
+    fallo = true;
+    console.error(`\n✖ UN PAR CONOCIDO HA PERDIDO NODOS: ${c.texto} sobre ${c.fondo}`);
+    console.error(`   esperados ${c.nodos}, medidos ${visto.veces} — baja el contador y anota la mejora.`);
   }
 }
 
