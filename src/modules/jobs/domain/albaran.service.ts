@@ -37,6 +37,23 @@ export interface AlbaranLinea {
   // que es la fracción 0.21 (convención propia del albarán, fijada en el brief).
   precioUnitario?: number;
   tipoIva?: number;
+  /**
+   * SCRUM-367 · ÍNDICE DE LA LÍNEA DEL PRESUPUESTO de la que sale esta línea.
+   *
+   * Hoy **nada ata una línea de albarán con su línea de presupuesto**: medido en A0.2, el esquema
+   * entero tiene exactamente un enlace por línea (`AlbaranLineaFacturada`) y está al lado
+   * equivocado del ciclo — da lo FACTURADO, no lo PRESUPUESTADO. Sin este campo, «quedan 3 metros
+   * de bajante por entregar» (C6) y media G5 solo se pueden responder cruzando textos, que no es un
+   * mecanismo: es una apuesta.
+   *
+   * Va DENTRO del `Json` que ya existe (`Albaran.lineas`), así que **no toca
+   * `prisma/schema.prisma` ni exige migración**.
+   *
+   * **Ausente = línea añadida en obra.** Eso es lo que pasa a distinguir las dos categorías, que es
+   * justo lo que SCRUM-257 declaró fuera de alcance por no tener con qué. Y afina aquel ticket: no
+   * había «líneas prellenadas» porque nada prellenaba — la segunda categoría no existía.
+   */
+  quoteLineIndex?: number;
 }
 
 /**
@@ -48,6 +65,16 @@ export interface AlbaranLinea {
 export function validarLineas(
   input: unknown,
   modoValoracion: AlbaranModoValoracion = 'SIN_VALORAR',
+  /**
+   * SCRUM-367 · cuántas líneas tiene el presupuesto de origen, para validar `quoteLineIndex`.
+   *
+   * `undefined` = no se puede comprobar (no hay presupuesto a mano) → el índice se CONSERVA tal
+   * cual. `número` = se valida contra el rango real y un índice fuera de él **se rechaza**.
+   *
+   * **Un enlace roto es peor que ningún enlace**, porque C6 se lo creería y respondería «no queda
+   * nada por entregar» sobre una correspondencia que no existe.
+   */
+  lineasDelPresupuesto?: number,
 ): { ok: true; lineas: AlbaranLinea[] } | { ok: false; error: string } {
   if (!Array.isArray(input)) return { ok: false, error: 'lineas debe ser un array' };
   if (input.length > 200) return { ok: false, error: 'máximo 200 líneas por albarán' };
@@ -88,6 +115,39 @@ export function validarLineas(
       linea.precioUnitario = precioUnitario;
       linea.tipoIva = tipoIva;
     }
+
+    // ── SCRUM-367 · CONSERVAR EL ORIGEN ────────────────────────────────────────────────
+    //
+    // ESTE ES EL PUNTO QUE HACE QUE TODO LO DEMÁS VALGA. Esta función reconstruye la línea campo
+    // a campo, así que hasta hoy **se comía cualquier extra en la primera edición**: se podía
+    // guardar el índice al crear y desaparecía en silencio al editar, dejando el mecanismo verde
+    // y vacío.
+    //
+    // No se EXIGE: una línea sin origen es perfectamente válida —es la añadida en obra—. Solo se
+    // conserva si viene, y se rechaza si viene MAL.
+    const bruto = (l as any)?.quoteLineIndex;
+    if (bruto !== undefined && bruto !== null && bruto !== '') {
+      // ⚠️ FAMILIA SCRUM-271, y aquí mordió de verdad: `Number([])` es **0**, un entero ≥ 0
+      // perfectamente válido. Con `Number()` a pelo, un array vacío —o cualquier objeto que
+      // convierta a 0— se guardaba atado a la PRIMERA partida del presupuesto, en silencio.
+      // Por eso se exige que el tipo sea número o cadena de dígitos ANTES de convertir.
+      const esNumero = typeof bruto === 'number';
+      const esDigitos = typeof bruto === 'string' && /^\d+$/.test(bruto.trim());
+      if (!esNumero && !esDigitos) {
+        return { ok: false, error: `línea ${i + 1}: quoteLineIndex debe ser un entero ≥ 0` };
+      }
+      const idx = Number(bruto);
+      if (!Number.isInteger(idx) || idx < 0) {
+        return { ok: false, error: `línea ${i + 1}: quoteLineIndex debe ser un entero ≥ 0` };
+      }
+      if (lineasDelPresupuesto !== undefined && idx >= lineasDelPresupuesto) {
+        return {
+          ok: false,
+          error: `línea ${i + 1}: quoteLineIndex ${idx} no existe en el presupuesto (tiene ${lineasDelPresupuesto} línea(s))`,
+        };
+      }
+      linea.quoteLineIndex = idx;
+    }
     out.push(linea);
   }
   return { ok: true, lineas: out };
@@ -99,6 +159,22 @@ export function validarLineas(
  * cuota = importe×IVA%) y se suman céntimos, nunca floats acumulados. Sin desglose por
  * tipo de IVA (a propósito: un albarán valorado NO simula el desglose de una factura).
  */
+/**
+ * SCRUM-367 · cuántas líneas tiene el presupuesto que originó este Trabajo.
+ *
+ * Sirve para validar `quoteLineIndex` contra el rango REAL en vez de creerse lo que llega del
+ * cliente. Devuelve `undefined` cuando no hay presupuesto o no se puede leer: entonces el índice se
+ * conserva sin validar el rango, que es honesto — **lo que no se puede es fingir que se comprobó**.
+ *
+ * Scopeado por merchant (regla 2).
+ */
+export async function contarLineasDePresupuesto(jobId: number, merchantId: number): Promise<number | undefined> {
+  const job = await prisma.job.findFirst({ where: { id: jobId, merchantId }, select: { quoteId: true } });
+  if (!job?.quoteId) return undefined;
+  const quote = await prisma.quote.findFirst({ where: { id: job.quoteId, merchantId }, select: { lines: true } });
+  return Array.isArray(quote?.lines) ? (quote!.lines as unknown[]).length : undefined;
+}
+
 export function calcAlbaranTotales(lineas: AlbaranLinea[] | null | undefined): {
   baseCents: number;
   cuotaCents: number;

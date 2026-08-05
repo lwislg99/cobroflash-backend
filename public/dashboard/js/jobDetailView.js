@@ -132,16 +132,28 @@ function jdAddRow(dl, term, value) {
 // entero si una sola no vale: colarlas convertiría el prellenado en un error al crear. Quien
 // llama compara los dos tamaños para avisar — descartar en silencio en un documento que se firma
 // es lo que SCRUM-271 vino a cerrar.
+// ── SCRUM-367 · AQUÍ SE ATA CADA LÍNEA A SU ORIGEN ────────────────────────────────────
+//
+// Éste es el único camino que prellena un albarán desde el presupuesto, así que es el único sitio
+// donde el vínculo se puede establecer con certeza — después ya no hay forma de saber de qué línea
+// salió cada una salvo cruzando textos, que no es un mecanismo: es una apuesta.
+//
+// ⚠️ EL ÍNDICE ES EL DE `lines`, NO EL DE `out`. Esta función DESCARTA las líneas que no pueden ser
+// línea de albarán, así que las dos listas se desalinean en cuanto se cae una: usar la posición de
+// salida ataría la línea 3 del albarán a la 3 del presupuesto cuando en realidad es la 4. Un enlace
+// desplazado es peor que ninguno, porque C6 se lo creería y respondería sobre la partida
+// equivocada.
 function lineasDeQuoteParaAlbaran(lines) {
   if (!Array.isArray(lines)) return [];
   const out = [];
-  for (const l of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
     const concepto = typeof l?.concept === 'string' ? l.concept.trim() : '';
     const cantidad = Number(l?.qty);
     if (!concepto || !(cantidad > 0)) continue;
     // `unidad` no viene del presupuesto y el albarán la exige: 'ud' es común, neutro y editable
     // por línea. Vacía dejaría un «—» en el papel que alguien lee en obra.
-    out.push({ concepto, cantidad, unidad: 'ud' });
+    out.push({ concepto, cantidad, unidad: 'ud', quoteLineIndex: i });
   }
   return out;
 }
