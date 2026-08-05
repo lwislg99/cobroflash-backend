@@ -258,6 +258,93 @@ test('SCRUM-302 · ① las LÍNEAS del albarán no se pintan dentro del rail (el
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════
+// ③ SIN DATO, SIN FILA · la regla del rail (fundador, 6-ago-2026)
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+//
+// Ninguna de estas dos filas se pinta con un guion cuando no hay dato: no se pinta ENTERA. Un
+// «Presupuesto: —» no informa de nada y se come una línea en una pantalla de 390 px.
+//
+// ⚠️ NO CONTRADICE al `fila()` del innerHTML de arriba, que sí cae a «—», y la diferencia importa
+// lo bastante como para que este guard NO la toque: allí el peligro era esconder un «0 €»
+// legítimo, porque **en dinero el cero significa algo**. Un enlace ausente no significa nada: o
+// hay documento o no lo hay. Por eso lo vigilado son solo las filas que se INSERTAN en el rail.
+
+/** Las filas que se añaden al rail con `appendChild` (las del `innerHTML` no entran). */
+const FILAS_DEL_RAIL = (() => {
+  const filas = [];
+  recorrer(sf, (n) => {
+    if (!ts.isCallExpression(n) || !ts.isPropertyAccessExpression(n.expression)) return;
+    if (n.expression.name.text !== 'appendChild') return;
+    if (baseDe(n.expression.expression) !== RAIL) return;
+    filas.push({ nombre: baseDe(n.arguments[0]), nodo: n });
+  });
+  return filas;
+})();
+
+/**
+ * ¿Este `appendChild` está CONDICIONADO?
+ *
+ * Las dos formas que usa la página, y las dos valen: un `if` que lo envuelve (el presupuesto) o
+ * un `return` temprano antes de él en el mismo bloque (las fotos, dentro del `.then`). Lo que no
+ * vale es pintar la fila pase lo que pase.
+ */
+function estaCondicionado(nodo) {
+  for (let p = nodo; p; p = p.parent) {
+    if (ts.isIfStatement(p)) return true;
+    if (ts.isBlock(p)) {
+      const antes = p.statements.filter((s) => s.getEnd() <= nodo.getStart(sf));
+      const cortaAntes = antes.some((s) => ts.isIfStatement(s)
+        && /\breturn\b/.test(s.thenStatement.getText(sf)));
+      if (cortaAntes) return true;
+    }
+  }
+  return false;
+}
+
+test('SCRUM-302 · ③ SUELO: hay filas insertadas en el rail que vigilar', () => {
+  assert.ok(FILAS_DEL_RAIL.length >= 2,
+    `🔴 DETECTOR CIEGO: solo veo ${FILAS_DEL_RAIL.length} fila(s) añadida(s) a \`${RAIL}\`, y las `
+    + 'piezas ① y ② son dos. Si las filas dejaron de insertarse con `appendChild`, la regla de '
+    + '«sin dato, sin fila» pasaría a medirse sobre el vacío.');
+});
+
+test('SCRUM-302 · ③ ninguna fila del rail se pinta sin su dato', () => {
+  const incondicionales = FILAS_DEL_RAIL
+    .filter((f) => !estaCondicionado(f.nodo))
+    .map((f) => `${f.nombre} (línea ${linea(f.nodo)})`);
+  assert.deepEqual(
+    incondicionales, [],
+    '🔴 estas filas se añaden al rail PASE LO QUE PASE: ' + incondicionales.join(', ') + '.\n'
+    + 'Sin dato no se pinta un guion: no se pinta la fila. «Presupuesto: —» no informa de nada y '
+    + 'ocupa una línea en 390 px — mismo criterio que G3 en `jobRailBlocks.js:77`. '
+    + '(El «—» de `fila()` es otra cosa y sigue bien: ahí el cero de un importe SÍ significa algo.)',
+  );
+});
+
+test('SCRUM-302 · ③ los rótulos del rail son los FIRMADOS, letra por letra (regla 30)', () => {
+  const rotulos = {};
+  recorrer(sf, (n) => {
+    if (!ts.isVariableDeclaration(n) || n.name.getText(sf) !== 'ROTULOS_RAIL_ALBARAN') return;
+    if (!n.initializer || !ts.isObjectLiteralExpression(n.initializer)) return;
+    for (const p of n.initializer.properties) {
+      if (ts.isPropertyAssignment(p) && esTextoLiteral(p.initializer)) {
+        rotulos[p.name.getText(sf)] = p.initializer.text;
+      }
+    }
+  });
+  assert.deepEqual(
+    rotulos, { presupuesto: 'Presupuesto', fotos: 'Fotos' },
+    '🔴 los rótulos del rail no son los que firmó el fundador el 6-ago-2026 (regla 30).\n'
+    + '· «Presupuesto», NO «Presupuesto origen»: el enlace sale de `Job.quoteId`, o sea que es el '
+    + 'presupuesto DEL TRABAJO. Llamarlo «origen» afirmaría que el albarán deriva de él, que es '
+    + 'justo lo que no se sostiene en SIN_VALORAR. Y sus vecinos son de una palabra: Trabajo, '
+    + 'Cliente, Dirección, Facturación.\n'
+    + '· «Fotos», no «Evidencias»: es la palabra del profesional. «Evidencia» es la nuestra.\n'
+    + 'Cambiarlos es una decisión del fundador, no un retoque.',
+  );
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
 // ② FOTOS · el camino que ya existía, copiado y atado por los dos extremos
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 

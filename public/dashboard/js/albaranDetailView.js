@@ -63,19 +63,22 @@ const _FIN_ROTULOS = {
   btnFoto: '📷 Añadir foto',
 };
 
-// LOS RÓTULOS DEL RAIL — SIN APROBAR (regla 30), y por eso valen `null`.
+// LOS RÓTULOS DEL RAIL — APROBADOS por el fundador el 6-ago-2026 (regla 30). Una palabra cada uno.
 //
-// No son un descuido ni un hueco a rellenar deprisa: el fundador NO aprueba textos por su
-// descripción, así que hasta que los dicte LITERALES cada uno se pinta con el marcador VISIBLE.
-// El pro ve `[PENDIENTE microcopy oficial]`, que es feo a propósito — un rótulo provisional que
-// se lee bien se queda para siempre y nadie vuelve a preguntarse quién lo escribió.
+// `presupuesto` es «Presupuesto», NO «Presupuesto origen», y el motivo lleva un paso más allá el
+// del enlace: sale de `Job.quoteId`, así que es el presupuesto **DEL TRABAJO**. Llamarlo «origen»
+// afirmaría que el albarán DERIVA de él — justo lo que no se puede sostener en `SIN_VALORAR`. A
+// secas nombra el documento relacionado sin decir de dónde viene nada. Y encaja con sus vecinos,
+// que también son de una palabra: Trabajo, Cliente, Dirección, Facturación.
 //
-// ⚠️ `presupuestoOrigen` es el que más cuidado pide, y el motivo NO es el texto: es que un rótulo
-// que hable de «estas líneas» convertiría un enlace del DOCUMENTO en una afirmación sobre CADA
-// línea, que es falsa en modo SIN_VALORAR y en todo albarán que no venga del prellenado.
+// `fotos` es «Fotos», no «Evidencias»: es la palabra del profesional —«le hice una foto»—, y
+// «evidencia» es la nuestra. En pantalla manda la suya.
+//
+// La clave se renombró con el rótulo (`presupuestoOrigen` → `presupuesto`): si la pantalla deja
+// de afirmar la procedencia, el código no puede seguir nombrándola.
 const ROTULOS_RAIL_ALBARAN = {
-  presupuestoOrigen: null,
-  fotos: null,
+  presupuesto: 'Presupuesto',
+  fotos: 'Fotos',
 };
 
 // Reutilizado LETRA POR LETRA del precedente que ya funciona (`jobDetailView.js`, las miniaturas
@@ -359,14 +362,20 @@ async function renderAlbaranDetailView(container, albaranId) {
   // colocado dentro de la tabla. Por eso el guard mide DÓNDE cuelga —el rail—, y exige además que
   // las líneas no entren en el rail: `tests/scrum302-presupuesto-y-fotos.test.mjs`.
   //
-  // Se omite entero si el Trabajo no vino de un presupuesto (`Job.quoteId` es nullable): una
-  // etiqueta con un guion invita a pulsar algo que no lleva a ningún sitio.
+  // SIN DATO, SIN FILA (regla del rail, fundador 6-ago-2026): si el Trabajo no vino de un
+  // presupuesto (`Job.quoteId` es nullable) esta fila NO se pinta. Nada de «Presupuesto: —»: no
+  // informa de nada y se come una línea de una pantalla de 390 px. Mismo criterio que G3 en
+  // `jobRailBlocks.js:77`.
+  //
+  // ⚠️ Y NO CONTRADICE lo decidido para `fila()` ahí arriba, que sí pinta el guion. Allí el
+  // peligro era esconder un «0 €» legítimo, porque **en dinero el cero significa algo**. Un
+  // enlace ausente no significa nada: o hay documento o no lo hay.
   if (alb.quote && alb.quote.id != null) {
     const filaQuote = document.createElement('div');
     filaQuote.className = 'detail-rail-linea';
     const etiquetaQuote = document.createElement('span');
     etiquetaQuote.className = 'detail-rail-etiqueta';
-    etiquetaQuote.textContent = ROTULOS_RAIL_ALBARAN.presupuestoOrigen || MICROCOPY_PENDIENTE;
+    etiquetaQuote.textContent = ROTULOS_RAIL_ALBARAN.presupuesto || MICROCOPY_PENDIENTE;
     filaQuote.appendChild(etiquetaQuote);
     // Navegación DENTRO del dashboard, con la misma llamada que ya usa el rail del Trabajo
     // (`jobRailBlocks`/`jobDetailView`): un `href` de verdad a otra URL recargaría la app entera.
@@ -390,9 +399,10 @@ async function renderAlbaranDetailView(container, albaranId) {
   // superficie — la cookie de sesión viaja en el `<img>`, así que la tenencia la sigue guardando
   // el backend y no hace falta token en la URL.
   //
-  // El bloque se pinta SOLO si hay fotos: un rótulo sobre un hueco vacío hace pensar que algo se
-  // ha perdido. Y el `catch` es mudo a propósito, igual que en el precedente: que no carguen las
-  // miniaturas no puede tapar con un error rojo la ficha del albarán, que sí ha cargado.
+  // SIN DATO, SIN FILA — la misma regla que la fila del presupuesto: sin fotos no hay bloque, y
+  // un rótulo sobre un hueco vacío hace pensar que algo se ha perdido. Y el `catch` es mudo a
+  // propósito, igual que en el precedente: que no carguen las miniaturas no puede tapar con un
+  // error rojo la ficha del albarán, que sí ha cargado.
   apiRequest(`/admin/albaranes/${alb.id}/fotos`).then((fotos) => {
     const lista = Array.isArray(fotos) ? fotos : [];
     if (!lista.length) return;
