@@ -85,6 +85,46 @@ const ROTULOS_RAIL_ALBARAN = {
 // de la fila): es el mismo objeto en otra superficie. Reutilizar no es redactar.
 const ALT_FOTO_ALBARAN = 'Foto del albarán';
 
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-379 · LA ESCRITURA SALIÓ BIEN Y LA RECARGA NO: QUÉ SE DICE
+//
+// FIRMADO por el fundador el 6-ago-2026. Dice las dos cosas y EN ESTE ORDEN: primero que la
+// acción SÍ ocurrió —que es lo que evita que el profesional la repita— y después que lo que
+// tiene delante puede estar desactualizado.
+//
+// No es el texto de SCRUM-375 y no puede serlo: allí lo que falla es la ACCIÓN.
+const COPY_ALBARAN_SIN_REFRESCO = 'Hecho. No hemos podido actualizar la pantalla: recárgala para ver cómo ha quedado.';
+
+/**
+ * Qué se le dice al profesional tras una acción. PURO: ni DOM ni red.
+ *
+ * 🔴 VIVE AQUÍ ARRIBA, EXPORTADO, POR EL MISMO MOTIVO QUE EL DECISOR DE SCRUM-375: el fallo que
+ * cierra este ticket **no se ve leyendo la pantalla**. Se ve preguntando «¿qué dice cuando la
+ * escritura fue bien y la recarga no?», y esa combinación no se puede provocar dentro del handler
+ * sin un navegador. Aquí sí, y la suite la ejecuta.
+ *
+ * La regla que codifica: **si la escritura ocurrió, el mensaje lo dice — pase lo que pase con la
+ * recarga**. Un fallo de lectura no se presenta como uno de escritura (ésa es la mitad de 375), y
+ * tampoco puede presentarse como NADA (ésta es la de 379: sin mensaje, el pro repite la acción).
+ *
+ * El tono importa y no es decoración: un `.alert` sin tono está OCULTO por CSS
+ * (`styles.css:1667`), así que un desenlace sin tono sería un mensaje que nadie ve.
+ */
+function resultadoAccionAlbaran({ escrituraOk, recargaOk, errorEscritura }) {
+  if (!escrituraOk) return { tono: 'error', texto: errorEscritura, seEscribio: false };
+  if (!recargaOk) return { tono: 'info', texto: COPY_ALBARAN_SIN_REFRESCO, seEscribio: true };
+  // Todo fue bien: la pantalla recargada ES el mensaje. Un «hecho» sobre una ficha que ya se ve
+  // actualizada es ruido, y el ruido enseña a ignorar los avisos que sí importan.
+  return { tono: null, texto: '', seEscribio: true };
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  // SCRUM-375 dejó escrito por qué esto hace falta: sin el `module.exports`, el decisor de arriba
+  // solo se podría comprobar LEYENDO su texto, que es justo lo que no distingue «lo gestiona» de
+  // «se pierde por otro sitio».
+  module.exports = { COPY_ALBARAN_SIN_REFRESCO, resultadoAccionAlbaran };
+}
+
 // EL CONTRATO CON LA FILA DEL TRABAJO, en un sitio que una máquina puede leer.
 //
 // Clave = acción de esta página que NO hace el trabajo, solo navega. Valor = la función de
@@ -97,18 +137,25 @@ const PUENTES_A_LA_FILA = {
   btnEditarLineas: 'openAlbEditorSheet',
 };
 
-async function renderAlbaranDetailView(container, albaranId) {
+async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   container.innerHTML = '';
   const page = document.createElement('div');
   page.className = 'detail-page';
   container.appendChild(page);
 
+  // SCRUM-379 · escribe en la ficha QUE ESTÁ EN PANTALLA, no en la del cierre léxico.
+  //
+  // Una recarga empieza por `container.innerHTML = ''`, que deja el `page` de la invocación
+  // ANTERIOR huérfano — fuera del documento. El `setStatus` de aquel cierre seguía funcionando sin
+  // error y pintaba en un nodo desconectado: el aviso existía y **nadie lo veía**. Justo el modo de
+  // fallo que este ticket cierra, escondido en el mecanismo con el que se avisa de él.
   const setStatus = (tipo, texto) => {
-    let box = page.querySelector('.alb-status');
+    const enPantalla = container.querySelector('.detail-page') || page;
+    let box = enPantalla.querySelector('.alb-status');
     if (!box) {
       box = document.createElement('div');
       box.className = 'alb-status';
-      page.prepend(box);
+      enPantalla.prepend(box);
     }
     box.className = 'alb-status alert ' + (tipo === 'error' ? 'error' : 'info');
     box.textContent = texto || '';
@@ -119,11 +166,38 @@ async function renderAlbaranDetailView(container, albaranId) {
   try {
     alb = await apiRequest(`/admin/albaranes/${albaranId}`);
   } catch (e) {
+    // SCRUM-379 · LOS DOS CAMINOS POR LOS QUE FALLA UNA RECARGA, y este es el probable.
+    //
+    // Cuando esta vista se invoca PARA REFRESCAR tras una acción, un GET que falla no es «no se
+    // pudo abrir la ficha»: la acción del profesional YA OCURRIÓ. Decirle aquí «No se pudo cargar
+    // el albarán» le informa de la lectura y le calla lo único que necesita saber —que su acción
+    // salió— así que vuelve a pulsar. Quien invoca sabe en qué caso está y pasa el aviso.
+    if (opciones.avisoSiNoCarga) { setStatus('info', opciones.avisoSiNoCarga); return; }
     setStatus('error', 'No se pudo cargar el albarán: ' + (e?.data?.message || e.message));
     return;
   }
 
-  const recargar = () => renderAlbaranDetailView(container, albaranId);
+  const recargar = () => renderAlbaranDetailView(container, albaranId, { avisoSiNoCarga: COPY_ALBARAN_SIN_REFRESCO });
+
+  /**
+   * SCRUM-379 · REFRESCAR DESPUÉS DE UNA ESCRITURA QUE YA SALIÓ BIEN.
+   *
+   * Aquí estaba el defecto: `recargar()` se llamaba **sin `await`**, así que su rechazo no entraba
+   * en el `catch` del handler — se iba como promesa sin gestionar. Y el desenlace no era un mensaje
+   * equivocado (eso es SCRUM-375): era **silencio**. El profesional hacía la acción, la escritura
+   * ocurría, la pantalla no cambiaba, y lo natural es que la REPITIERA.
+   *
+   * Va SIEMPRE con `await` y **fuera del `try` de la escritura**: un fallo de lectura no es uno de
+   * escritura. Y el rechazo se gestiona aquí dentro, de modo que la promesa que esta función
+   * devuelve no puede quedar sin gestionar aunque alguien vuelva a olvidarse del `await`.
+   */
+  const refrescar = async () => {
+    let recargaOk = true;
+    try { await recargar(); } catch { recargaOk = false; }
+    const r = resultadoAccionAlbaran({ escrituraOk: true, recargaOk });
+    if (r.texto) setStatus(r.tono, r.texto);
+    return r;
+  };
   const esc = (s) => String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -159,8 +233,11 @@ async function renderAlbaranDetailView(container, albaranId) {
       await apiRequest(`/admin/albaranes/${alb.id}${ruta}`, {
         method: 'POST', body: body ? JSON.stringify(body) : undefined,
       });
-      recargar();
-    } catch (e) { setStatus('error', e?.data?.message || e.message); }
+    } catch (e) {
+      setStatus('error', e?.data?.message || e.message);
+      return;
+    }
+    await refrescar();
   };
 
   /**
@@ -193,8 +270,13 @@ async function renderAlbaranDetailView(container, albaranId) {
       try {
         const d = await apiRequest(`/admin/albaranes/${alb.id}/enviar-para-firmar`, { method: 'POST' });
         if (waSendFailed(d)) { setStatus('error', d?.message || MICROCOPY_PENDIENTE); return; }
-        recargar();
-      } catch (e) { setStatus('error', e?.data?.message || e.message); }
+      } catch (e) {
+        setStatus('error', e?.data?.message || e.message);
+        return;
+      }
+      // SCRUM-379 · el WhatsApp YA SALIÓ. Repetir esto manda un segundo aviso al cliente y quema
+      // una de sus tres plazas diarias de J6, así que el silencio de antes no era gratis.
+      await refrescar();
     }),
     // ⚠️ LOS DOS PUENTES QUE QUEDAN, y son un CONTRATO con la fila del Trabajo.
     //
@@ -225,8 +307,15 @@ async function renderAlbaranDetailView(container, albaranId) {
             await apiRequest(`/admin/albaranes/${alb.id}/firmar`, {
               method: 'POST', body: JSON.stringify({ signatureData: dataUri }),
             });
-            recargar();
-          } catch (e) { setStatus('error', 'No se pudo firmar: ' + (e?.data?.message || e.message)); }
+          } catch (e) {
+            setStatus('error', 'No se pudo firmar: ' + (e?.data?.message || e.message));
+            return;
+          }
+          // SCRUM-379 · el peor de los cinco para el profesional, aunque los datos aguanten: sin
+          // aviso vuelve a pulsar «Firmar aquí mismo», le pide al cliente que firme POR SEGUNDA VEZ
+          // delante de él, y al terminar lee «Este albarán ya está firmado» (409). Ningún dato
+          // roto y la peor escena. «Inocuo en datos» no es inocuo.
+          await refrescar();
         },
       });
     }),
@@ -236,8 +325,11 @@ async function renderAlbaranDetailView(container, albaranId) {
       try {
         const d = await apiRequest(`/admin/albaranes/${alb.id}/enviar-whatsapp`, { method: 'POST' });
         if (waSendFailed(d)) { setStatus('error', d?.message || MICROCOPY_PENDIENTE); return; }
-        recargar();
-      } catch (e) { setStatus('error', e?.data?.message || e.message); }
+      } catch (e) {
+        setStatus('error', e?.data?.message || e.message);
+        return;
+      }
+      await refrescar();
     }),
     btnEditarLineas: () => mk('btnEditarLineas', () => {
       if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: alb.job?.id });
@@ -261,8 +353,17 @@ async function renderAlbaranDetailView(container, albaranId) {
             await apiRequest(`/admin/albaranes/${alb.id}/fotos`, {
               method: 'POST', body: JSON.stringify({ data: rd.result, mime: file.type }),
             });
-            recargar();
-          } catch (e) { setStatus('error', e?.data?.message || 'No se pudo subir la foto.'); }
+          } catch (e) {
+            setStatus('error', e?.data?.message || 'No se pudo subir la foto.');
+            return;
+          }
+          // SCRUM-379 · el residuo más difícil de deshacer de los cinco: cada POST crea un
+          // Attachment, y hoy NO hay borrado de fotos en ningún sitio del producto (solo
+          // `GET /admin/attachments/:id`). Una foto subida dos veces se queda en el albarán y
+          // gasta una de las 10 plazas. Y la señal que el pro busca para saber si funcionó son
+          // justo las miniaturas que la recarga fallida no llega a pintar. (SCRUM-382 decide qué
+          // hacer con las duplicadas que ya existan; aquí se corta que se sigan creando así.)
+          await refrescar();
         };
         rd.readAsDataURL(file);
       });
