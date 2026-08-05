@@ -267,3 +267,96 @@ Restaurado, 12/12.
 El **suelo va primero**, y tiene un complemento que hacía falta: el ③ podría estar verde si TODOS los
 submenús estuvieran declarados vacíos, así que un negativo exige que al menos siete tengan campos de
 verdad.
+
+---
+
+## La pantalla: Configuración troceada en diez submenús (quinta entrega de B1)
+
+**Medido contra:** `origin/main` = `c2be01e9347a2b0b761e764de7033f322f820f85` · 2026-08-05T06:13:36+01:00
+**Tanda:** 1448 tests, 1381 pass, 0 fail, 67 skipped
+**Ficheros:** `public/dashboard/js/settingsSubmenus.js` (nuevo) · `settingsView.js` ·
+`dashboard/index.html` · `sw.js` · `tests/_asignacion-submenus.mjs` ·
+`tests/scrum284-configuracion-submenus.test.mjs` (nuevo, 8) · `docs/capturas/scrum-284/`
+
+### 🔴 EL MAPA SE MUDA A `public/`, Y ESE ES EL CAMBIO QUE IMPORTA
+
+Mientras el mapa vivió en `tests/`, el guard comprobaba **una tabla que la pantalla no usaba**. Su
+verde no decía una sola cosa sobre lo que el profesional ve: bastaba con colocar un campo en otro
+sitio dentro de `settingsView.js` para que las dos versiones divergieran en silencio. **Es el defecto
+del ticket una vuelta más** — dos fuentes que empiezan de acuerdo y se separan sin que nadie lo note.
+
+Ahora el mapa es `public/dashboard/js/settingsSubmenus.js`: la pantalla **coloca leyendo de ahí** y
+el guard **verifica contra ahí**. `tests/_asignacion-submenus.mjs` se conserva como puerta del test
+(la ruta de importación no cambia) y como sitio del control cruzado.
+
+### La decisión de `googleReviewUrl`, y el criterio que la sostiene
+
+**→ `avisos`.** Criterio del fundador, que queda escrito porque sirve para las que vengan: **el
+destino de un ajuste sale de lo que GOBIERNA, no de dónde se ve su efecto.** El campo configura el
+envío automático de la petición de reseña —lo dice el propio texto de la pantalla,
+`settingsView.js:283`— y sus otras dos superficies solo lo CONSUMEN. Configurar y consumir no son lo
+mismo, y este mapa es de configuración. Igual que el logo: se configura en Marca y aparece en el PDF,
+en la ficha pública y en los correos, y a nadie se le ocurre que viva en tres sitios.
+
+**Los TRES consumidores quedan anotados en el mapa** para que quien toque cualquiera de ellos sepa
+que el origen es único y no salga a buscarlo: `psp.routes.ts:221` y `mpWebhook.routes.ts:181` (el
+WhatsApp tras el cobro) · `publicProfile.service.ts:73` (la ficha pública) · `receipt.routes.ts:248`
+(el botón y las estrellas del recibo).
+
+### Lo que el guard nuevo destapó al primer intento
+
+**Los seis `pp-*`/`qr-*` estaban asignados a `publica` en el mapa y se pintaban FUERA de los diez
+paneles**, porque quien los dibuja es `renderPublicProfileCard`, que colgaba del `container`. El
+guard de asignación —mirando solo el mapa— habría seguido verde para siempre.
+
+De ahí sale `ASIGNACION_SUPERFICIE` y el **cruce entre las dos poblaciones**: no basta con que una
+superficie esté colocada en algún sitio, tiene que estarlo en **el mismo submenú** que el mapa dice
+para los campos que ella pinta. Si no, el mapa diría `publica`, la pantalla los enseñaría en otro
+panel, y los dos guards estarían verdes.
+
+**Y una segunda cazada, a mí mismo:** el bloque de estado de Connect lo coloqué con
+`paneles.cobro.appendChild(...)`, que es la misma colocación a mano sin ser un literal. El censo no
+lo veía. Se amplió para mirar también los accesos `paneles.<clave>` — es la forma más cómoda de
+saltarse el mapa, y por eso la que se escribe sin pensar.
+
+### Cómo se hizo el cambio, y por qué así
+
+**No se ha movido ni reescrito la construcción de un solo campo.** Siguen creándose igual y en el
+mismo orden; lo único que cambia es dónde se hace `appendChild`: `form.appendChild(x)` pasa a
+`colocar('clave', x)`. Eso es lo que mantiene el cambio revisable (regla 4) y lo que permite que el
+censo siga viendo los 25. `submenuDeCampo` **lanza** si la clave no está en el mapa: caer en el sitio
+equivocado sería mudo, fallar se oye.
+
+Se retiran los cuatro separadores internos, cuyo único trabajo era subdividir un scroll que ya no
+existe. Los diez paneles cuelgan del MISMO `<form>`, así que **un solo «Guardar cambios» sigue
+guardando todo**: trocear la pantalla no trocea el guardado.
+
+### Verificado
+
+**EN EL NAVEGADOR, contando controles panel por panel** (no leyendo el código): **24 controles +
+`ref-link` (fuera de Configuración) = los 25 del censo, cero duplicados, cero perdidos.** Los tres
+paneles vacíos son exactamente los tres declarados. El índice de estado queda en la cabecera y no
+dentro de ningún panel; «Invita y gana» ya no está; el contador de WhatsApp está dentro de Avisos.
+
+**UN FIXTURE EQUIVOCADO CASI ME DEJA PROBAR DE MENOS**, y va escrito porque es la parte útil: la
+primera pasada mandaba `profileSlug` y `renderPublicProfileCard` sale por `if (m.slug === undefined)
+return`. La tarjeta no se pintaba **ni en el antes ni en el después**, así que la comparación parecía
+correcta y en realidad no miraba los seis `pp-*`/`qr-*`. Se midió la condición en el código en vez de
+suponerla.
+
+**Dos inyecciones** en la suite: colocar a mano en un panel, y dejar un campo sin colocar. Y el
+**guard bidireccional de la entrega anterior sigue en 14/14** después de tocar justo la pantalla que
+vigila — comprobado explícitamente, no por el verde global.
+
+### Lo que NO cubre
+
+* **La sidebar (incremento 2) y la pestaña de Plantillas (incremento 3) no se tocan.** «Invita y
+  gana» sale de Configuración en este commit; **darle su entrada en la barra lateral es el
+  incremento 2**, así que ahora mismo la tarjeta existe en el código y no la llama nadie. Es
+  deliberado y es el orden que fijó el asesor —el menú crece cuando existe el destino— pero hay que
+  saberlo: **hasta el incremento 2, «Invita y gana» no es alcanzable desde la interfaz.**
+* **Los diez rótulos son el marcador** (regla 30). A 390 px eso hace que las pestañas caigan una por
+  fila; se declara y no se ajusta contra un texto que va a ser sustituido.
+* **La matriz de dispositivos reales** (V0-5) es humana y por bloque. Declarada como hueco.
+* **No se ejecuta la vista en `npm test`**: no hay banco de DOM y montarlo sería dependencia nueva
+  (regla 36). Lo que corre es el mapa y el AST; el navegador se ejercitó a mano y quedó en capturas.
