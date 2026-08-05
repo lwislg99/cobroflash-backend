@@ -121,13 +121,38 @@ async function renderJobDetailView(container, jobId) {
   head.className = 'detail-head';
   page.appendChild(head);
   const headLeft = document.createElement('div');
-  headLeft.innerHTML = '<h2>Trabajo</h2><p class="detail-sub">Detalle del trabajo, cobros y documentos.</p>';
+  // ── SCRUM-317 (G2) · migas + título, en vez de un botón de volver ────────────────────
+  //
+  // El subtítulo anterior —«Detalle del trabajo, cobros y documentos.»— desaparece: describía
+  // LA PANTALLA, no el trabajo, y eso ya lo dicen las migas. Espacio gastado en decir dónde
+  // estás cuando lo que hace falta es decir QUÉ es esto.
+  //
+  // Las migas dicen `Trabajos ›` (no `Presupuestos ›`), que suena obvio y es exactamente el
+  // defecto que este ticket arregla.
+  const migas = document.createElement('nav');
+  migas.className = 'detail-migas';
+  migas.setAttribute('aria-label', 'Migas de navegación');
+  const migaTrabajos = document.createElement('button');
+  migaTrabajos.type = 'button';
+  migaTrabajos.className = 'detail-miga-link';
+  migaTrabajos.textContent = 'Trabajos';
+  migaTrabajos.addEventListener('click', () => { if (window.renderAppView) window.renderAppView('jobs'); });
+  const migaSep = document.createElement('span');
+  migaSep.className = 'detail-miga-sep';
+  migaSep.setAttribute('aria-hidden', 'true');
+  migaSep.textContent = '›';
+  const migaActual = document.createElement('span');
+  migaActual.className = 'detail-miga-actual';
+  migas.appendChild(migaTrabajos);
+  migas.appendChild(migaSep);
+  migas.appendChild(migaActual);
+  headLeft.appendChild(migas);
+  const h2 = document.createElement('h2');
+  headLeft.appendChild(h2);
+  const sub = document.createElement('p');
+  sub.className = 'detail-sub';
+  headLeft.appendChild(sub);
   head.appendChild(headLeft);
-  const backBtn = document.createElement('button');
-  backBtn.className = 'btn-secondary btn-sm';
-  backBtn.textContent = '← Volver a Trabajos';
-  backBtn.addEventListener('click', () => { if (window.renderAppView) window.renderAppView('jobs'); });
-  head.appendChild(backBtn);
 
   const statusBox = document.createElement('div');
   statusBox.className = 'alert';
@@ -157,7 +182,37 @@ async function renderJobDetailView(container, jobId) {
   // HÉROE (antes vivía al fondo, en 'Cobros'). Lo reutilizan también las acciones de albarán/factura.
   const refresh = () => renderJobDetailView(container, job.id);
 
-  if (job.titulo) headLeft.querySelector('h2').textContent = job.titulo;
+  // ── SCRUM-317 (G2) · el Trabajo se llama por su nombre ───────────────────────────────
+  //
+  // TÍTULO = el CLIENTE, siempre. Es el único dato que no puede faltar (`customerId` es NOT NULL
+  // en el modelo) y es como el profesional piensa en el trabajo: «lo de Francisco».
+  // SUBTÍTULO = el nombre que le haya puesto el pro + la fecha.
+  //
+  // ⚠️ EL SEPARADOR SOLO SE PINTA SI HAY ALGO A LOS DOS LADOS. `unirCon` es la única forma de
+  // componer estas líneas en esta vista, precisamente para que no exista el camino que produce
+  // `Francisco Jiménez · undefined` o un `·` colgando. Filtra vacíos, nulos y espacios: los
+  // tres se ven igual de mal y los tres llegan por caminos distintos.
+  const unirCon = (sep, ...partes) => partes
+    .map((p) => (p == null ? '' : String(p).trim()))
+    .filter(Boolean)
+    .join(sep);
+
+  // Fecha NEUTRA, sin «desde el»: el Trabajo tiene CINCO estados y «desde el» suena a abierto
+  // en uno `terminado` o `cerrado`. La fecha sola es verdad en los cinco.
+  const fechaCorta = (v) => {
+    if (!v) return '';
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? '' : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  };
+
+  const nombreCliente = (job.customer?.name || '').trim();
+  const nombreTrabajo = (job.titulo || '').trim();
+
+  h2.textContent = nombreCliente || 'Trabajo';
+  sub.textContent = unirCon(' · ', nombreTrabajo, fechaCorta(job.createdAt));
+  // Un subtítulo vacío no deja un párrafo en blanco empujando la pantalla.
+  sub.style.display = sub.textContent ? '' : 'none';
+  migaActual.textContent = unirCon(' · ', nombreCliente, nombreTrabajo);
 
   // SCRUM-57: "Responsable" en la cabecera = autoría del operario (job.operario, ya en el
   // serializer tras SCRUM-22). Si el Trabajo es del propietario (operario null), el nombre del
@@ -294,6 +349,45 @@ async function renderJobDetailView(container, jobId) {
   jdAddRow(dl, 'Dirección', job.direccion);
   if (!dl.children.length) dl.innerHTML = '<dd style="color:var(--muted)">Sin datos.</dd>';
   infoSec.appendChild(dl);
+
+  // ── SCRUM-317 (G2) · aquí el pro le pone NOMBRE al Trabajo ───────────────────────────
+  //
+  // Va en «Datos» y no en la cabecera a propósito: la cabecera MUESTRA, no edita — meter un
+  // campo ahí obligaría a rediseñarla, que es G1. Esto es la puerta mínima para que el nombre
+  // se pueda poner; sin ella, `titulo` seguiría siendo un campo que nadie escribe, que es
+  // exactamente el estado del que venimos.
+  //
+  // Se guarda al salir del campo (blur) y solo si CAMBIÓ: un PATCH por cada tecla sería ruido
+  // en la red y en el AuditLog.
+  const nombreWrap = document.createElement('div');
+  nombreWrap.style.cssText = 'margin-top:12px';
+  const nombreLabel = document.createElement('label');
+  nombreLabel.setAttribute('for', 'job-nombre');
+  nombreLabel.style.cssText = 'display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:4px';
+  nombreLabel.textContent = 'Nombre del trabajo';
+  const nombreInput = document.createElement('input');
+  nombreInput.id = 'job-nombre';
+  nombreInput.className = 'input';
+  nombreInput.type = 'text';
+  nombreInput.maxLength = 120; // mismo tope que el backend, para avisar antes de recortar
+  nombreInput.placeholder = 'Ej. Reforma baño';
+  nombreInput.value = nombreTrabajo;
+  nombreInput.style.minHeight = '44px';
+  nombreWrap.appendChild(nombreLabel);
+  nombreWrap.appendChild(nombreInput);
+  infoSec.appendChild(nombreWrap);
+
+  nombreInput.addEventListener('blur', async () => {
+    const nuevo = nombreInput.value.trim();
+    if (nuevo === nombreTrabajo) return; // nada que guardar
+    try {
+      await apiRequest(`/admin/jobs/${job.id}`, { method: 'PATCH', body: { titulo: nuevo } });
+      refresh(); // la cabecera y las migas se recalculan desde el dato, no a mano
+    } catch {
+      nombreInput.value = nombreTrabajo; // se deshace lo tecleado: mentir sería peor
+      setStatus('error', 'No se pudo guardar el nombre del trabajo.');
+    }
+  });
   // SCRUM-31 (F5): "Ver presupuesto" se mueve a la FILA de presupuesto de la lista 'Documentos'
   // (antes también estaba aquí; se quita para no duplicar).
   // SCRUM-31 (F6): "Datos" pasa a SEGUNDO PLANO — se appendea más abajo, tras Cobros

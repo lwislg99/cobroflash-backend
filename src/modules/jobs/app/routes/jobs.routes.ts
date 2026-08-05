@@ -484,6 +484,22 @@ router.patch('/:id', async (req, res) => {
       data.scheduledAt = d;
     }
     if (req.body?.notes !== undefined) data.notes = String(req.body.notes || '').slice(0, 2000) || null;
+    // ── SCRUM-317 (G2) · el pro pone NOMBRE al Trabajo ──────────────────────────────────
+    //
+    // `titulo` existía en el modelo desde SCRUM-10 y NINGUNA ruta lo escribía: se rellenaba solo
+    // al crear el Job y se quedaba así para siempre (medido en SCRUM-309 §4). Abrirlo aquí es
+    // todo lo que hacía falta — cero cambios de schema, que es el único freno duro del proyecto.
+    //
+    // NO es admin-only, y es deliberado: el nombre del Trabajo es una etiqueta operativa, no una
+    // bandera fiscal ni de dinero. Un técnico que está en la obra es quien mejor sabe si esto es
+    // «Reforma baño» o «Avería cocina». Las que sí son admin-only siguen donde estaban
+    // (`ADMIN_ONLY_JOB_FIELDS`: tipoOperacion, assignedUserId, cerrar).
+    //
+    // Vacío → `null`, no cadena vacía: así «sin nombre» es UN solo estado y la pantalla no tiene
+    // que distinguir `''` de `null` para decidir si pinta el separador.
+    if (req.body?.titulo !== undefined) {
+      data.titulo = String(req.body.titulo || '').trim().slice(0, 120) || null;
+    }
     if (req.body?.assignedUserId !== undefined) {
       const uid = req.body.assignedUserId === null ? null : Number(req.body.assignedUserId);
       if (uid !== null) {

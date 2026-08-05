@@ -55,6 +55,7 @@ export async function ensureJobForQuote(quoteId: number, prismaClient = prisma):
     });
     if (!quote || quote.status !== 'accepted') return;
 
+
     // ─────────────────────────────────────────────────────────────────────────
     // SCRUM-195 (rebanada 1) · EL FALLO SILENCIOSO QUE ESTO CIERRA
     //
@@ -77,9 +78,20 @@ export async function ensureJobForQuote(quoteId: number, prismaClient = prisma):
       await prismaClient.quote.update({ where: { id: quote.id }, data: { jobId: existing.id } });
       return;
     }
-    // SCRUM-10: título propio con el criterio actual (nº de presupuesto + cliente).
-    const num = quote.quoteNumber ?? quote.id;
-    const titulo = `Presupuesto #${num}${quote.customer?.name ? ` · ${quote.customer.name}` : ''}`;
+    // ── SCRUM-317 (G2) · EL TRABAJO YA NO NACE LLAMÁNDOSE «Presupuesto #N» ──────────────
+    //
+    // Antes se autogeneraba `Presupuesto #<num> · <cliente>` y se guardaba en `Job.titulo`: el
+    // objeto central del producto presentándose como una fase del presupuesto, que es justo la
+    // tesis que nos separa de un facturador al uso.
+    //
+    // Ahora nace SIN título y lo pone el profesional si quiere (PATCH). Mientras no lo ponga, la
+    // pantalla se titula con el CLIENTE — que siempre existe — y el presupuesto se queda como
+    // documento de ORIGEN, no como nombre.
+    //
+    // ⚠️ Los Trabajos YA CREADOS conservan su título viejo: es una columna con datos, no un
+    // cálculo. NO se hace backfill (decisión del fundador, 5-ago-2026), coherente con la regla
+    // fechada del 2-ago: los datos de producción son de prueba y lo que importa es que los
+    // registros NUEVOS nazcan bien.
     const job = await prismaClient.job.create({
       data: {
         merchantId: quote.merchantId,
@@ -87,7 +99,8 @@ export async function ensureJobForQuote(quoteId: number, prismaClient = prisma):
         quoteId: quote.id,
         status: 'pendiente_agendar',
         // SCRUM-10: campos del contenedor "Trabajo". direccion sin fuente hoy → null.
-        titulo,
+        // SCRUM-317: `titulo` tampoco se rellena al crear — lo pone el pro (PATCH), y mientras
+        // no lo ponga la pantalla se titula con el cliente.
         totalAceptado: quote.total, // Decimal(12,2): total del Quote congelado en el accept
         // totalCobrado = 0 por default (materializado; su lógica de sumar cobros = SCRUM-13)
         // SCRUM-52: autoría = creador del presupuesto (quote.teamMemberId), NO quien acepta
