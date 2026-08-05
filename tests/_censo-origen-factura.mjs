@@ -246,8 +246,10 @@ export const CENSO = {
   'src/modules/expenses/domain/expenses.service.ts::expense.findMany#2': { veredicto: 'HUECO', nota: 'getQuoteMargin: el margen SOLO existe por presupuesto. Una suelta no da margen malo — no aparece. Hueco PREEXISTENTE: ya afecta al flujo de albaranes/recapitulativa, que fija quoteId null' },
   'src/modules/exports/app/routes/exports.routes.ts::invoice.count#1': { veredicto: 'OPACO', nota: 'spread condicional de fechas; no ata al origen' },
   'src/modules/exports/app/routes/exports.routes.ts::invoice.findMany#1': { veredicto: 'OPACO', nota: 'spread condicional de fechas; no ata al origen' },
-  'src/modules/exports/app/routes/exports.routes.ts::expense.findMany#1': { veredicto: 'PROYECCION', nota: 'export de gastos; include quote solo para el id' },
   'src/modules/exports/domain/exportData.ts::invoice.findMany#1': { veredicto: 'OPACO', nota: 'where construido por whereRango(); no ata al origen' },
+  // SCRUM-343 unificó `/admin/exports/expenses.csv` por el builder compartido: la lectura de
+  // gastos que vivía en `exports.routes.ts` NO desapareció, se MOVIÓ aquí (`buildGastos`). Esta
+  // entrada ya existía y cubre las dos descargas, así que la vieja quedó fantasma y se retiró.
   'src/modules/exports/domain/exportData.ts::expense.findMany#1': { veredicto: 'OPACO', nota: 'where construido por whereRango(); no ata al origen' },
   'src/modules/invoicing/domain/verifactu.service.ts::invoice.findFirst#1': { veredicto: 'OPACO', nota: 'encadenado de huella: filtra por vfHash y merchant, no por origen' },
   'src/modules/jobs/domain/job.service.ts::invoice.aggregate#1': { veredicto: 'POBLACION', nota: 'totalCobrado de un Job = facturas de SUS quotes. Una suelta no pertenece a ningún Job' },
