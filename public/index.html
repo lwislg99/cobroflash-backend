@@ -295,7 +295,8 @@
 <div class="announce" id="announce" hidden>
   <div class="wrap announce-in">
     <span>Oferta de lanzamiento: <b>9,90&nbsp;€/mes para siempre</b>, mientras mantengas la suscripción activa <span class="hide-sm">para los primeros profesionales</span></span>
-    <span class="sep">·</span><span>quedan <b id="ann-left">–</b> plazas</span><span class="sep">·</span><a href="#precios">Ver planes →</a>
+    <!-- SCRUM-330: la escasez, envuelta para poder ocultarla sin tocar la oferta. Ni una palabra cambia. -->
+    <span id="ann-plazas"><span class="sep">·</span><span>quedan <b id="ann-left">–</b> plazas</span></span><span class="sep">·</span><a href="#precios">Ver planes →</a>
   </div>
 </div>
 
@@ -477,7 +478,7 @@
   <div class="wrap">
     <div class="sec-head"><span class="eyebrow">Precios</span><h2>Un solo plan. Todo incluido.</h2><p>14 días gratis, sin tarjeta. Y sin letra pequeña.</p></div>
     <div class="price-card">
-      <div class="founding" id="founding-banner" hidden>Oferta fundadores: <b>9,90 €/mes para siempre</b>, mientras mantengas la suscripción activa — quedan <b id="founding-left">–</b> plazas</div>
+      <div class="founding" id="founding-banner" hidden>Oferta fundadores: <b>9,90 €/mes para siempre</b>, mientras mantengas la suscripción activa<span id="founding-plazas"> — quedan <b id="founding-left">–</b> plazas</span></div>
       <span class="price-tag">YaQu Pro</span>
       <div class="price-amt tnum">19,90 €<span> /mes</span></div>
       <ul><li>Presupuestos y clientes ilimitados</li><li>Envío por WhatsApp + firma digital</li><li>Cobro con tarjeta, Bizum y transferencia</li><li>Bot de WhatsApp y solicitudes entrantes</li><li>Clientes, proveedores, productos y gastos</li><li>Informes, márgenes y equipo con roles</li></ul>
@@ -553,9 +554,27 @@
   (function(){
     if(!window.fetch)return;
     fetch('/public/founding-status').then(function(r){return r.json();}).then(function(s){
+      // SCRUM-330 · DOS decisiones distintas sobre el MISMO bloque, y por eso van separadas:
+      //   · la OFERTA (el precio founding y su condición) se enseña mientras queden plazas. No es
+      //     de este ticket, y su texto no se toca NI SE CITA aquí: el guard de SCRUM-341 exige que
+      //     toda promesa de permanencia lleve su condición al lado, y un comentario que la copiara
+      //     sería una promesa más a ojos de ese guard — con razón. Cazó este mismo comentario;
+      //   · la ESCASEZ («quedan N plazas») solo si alguien ha comprado DE VERDAD.
+      // Gatear el bloque entero por ventas haría desaparecer el precio founding justo cuando no ha
+      // comprado nadie, y entonces nadie podría comprarlo: el pez que se muerde la cola.
+      // «Quedan 20 de 20» no comunica escasez: comunica que no ha comprado nadie. Y si el dato no
+      // se puede leer, tampoco se pinta — un número inventado es peor que ninguno, porque quien lo
+      // lee no tiene forma de saber que lo es. Misma expresión, con el mismo nombre, en precios.html.
+      var pintarPlazas = !!(s && typeof s.taken==='number' && s.taken>0
+        && typeof s.seatsLeft==='number' && s.seatsLeft>0);
       if(s && typeof s.seatsLeft==='number' && s.seatsLeft>0){
-        var a=document.getElementById('ann-left'), f=document.getElementById('founding-left');
-        if(a)a.textContent=s.seatsLeft; if(f)f.textContent=s.seatsLeft;
+        if(pintarPlazas){
+          var a=document.getElementById('ann-left'), f=document.getElementById('founding-left');
+          if(a)a.textContent=s.seatsLeft; if(f)f.textContent=s.seatsLeft;
+        }else{
+          var ap=document.getElementById('ann-plazas'), fp=document.getElementById('founding-plazas');
+          if(ap)ap.hidden=true; if(fp)fp.hidden=true;
+        }
         var ab=document.getElementById('announce'), fb=document.getElementById('founding-banner');
         if(ab)ab.hidden=false; if(fb)fb.hidden=false;
       }

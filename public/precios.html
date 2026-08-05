@@ -99,7 +99,15 @@
     fetch('/public/founding-status').then(function (r) { return r.json(); }).then(function (f) {
       if (!f || typeof f.seatsLeft !== 'number' || f.seatsLeft <= 0) return;
       document.getElementById('founding-banner').style.display = 'flex';
-      document.getElementById('founding-seats').textContent = 'Quedan ' + f.seatsLeft + ' de ' + f.seatsTotal + ' plazas';
+      // SCRUM-330 · la ESCASEZ solo se pinta si alguien ha comprado DE VERDAD. La OFERTA (precio,
+      // tachado, CTA) se sigue mostrando igual — es otra decisión y no es de este ticket.
+      // «Quedan 20 de 20» no comunica escasez: comunica que no ha comprado nadie. Y con el dato
+      // ilegible tampoco se inventa un número: la frase se queda fuera.
+      var pintarPlazas = !!(f && typeof f.taken === 'number' && f.taken > 0
+        && typeof f.seatsLeft === 'number' && f.seatsLeft > 0);
+      document.getElementById('founding-seats').textContent = pintarPlazas
+        ? 'Quedan ' + f.seatsLeft + ' de ' + f.seatsTotal + ' plazas'
+        : '';
       document.getElementById('price-old').style.display = '';
       document.getElementById('price').textContent = '9,90 €';
       document.getElementById('cta').textContent = 'Quiero mi plaza founding';
