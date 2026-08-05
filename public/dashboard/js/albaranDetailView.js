@@ -63,6 +63,25 @@ const _FIN_ROTULOS = {
   btnFoto: '📷 Añadir foto',
 };
 
+// LOS RÓTULOS DEL RAIL — SIN APROBAR (regla 30), y por eso valen `null`.
+//
+// No son un descuido ni un hueco a rellenar deprisa: el fundador NO aprueba textos por su
+// descripción, así que hasta que los dicte LITERALES cada uno se pinta con el marcador VISIBLE.
+// El pro ve `[PENDIENTE microcopy oficial]`, que es feo a propósito — un rótulo provisional que
+// se lee bien se queda para siempre y nadie vuelve a preguntarse quién lo escribió.
+//
+// ⚠️ `presupuestoOrigen` es el que más cuidado pide, y el motivo NO es el texto: es que un rótulo
+// que hable de «estas líneas» convertiría un enlace del DOCUMENTO en una afirmación sobre CADA
+// línea, que es falsa en modo SIN_VALORAR y en todo albarán que no venga del prellenado.
+const ROTULOS_RAIL_ALBARAN = {
+  presupuestoOrigen: null,
+  fotos: null,
+};
+
+// Reutilizado LETRA POR LETRA del precedente que ya funciona (`jobDetailView.js`, las miniaturas
+// de la fila): es el mismo objeto en otra superficie. Reutilizar no es redactar.
+const ALT_FOTO_ALBARAN = 'Foto del albarán';
+
 // EL CONTRATO CON LA FILA DEL TRABAJO, en un sitio que una máquina puede leer.
 //
 // Clave = acción de esta página que NO hace el trabajo, solo navega. Valor = la función de
@@ -324,6 +343,78 @@ async function renderAlbaranDetailView(container, albaranId) {
     // dato, y es el caso normal en una obra por fases.
     (pendientes.length ? fila('Pendiente de facturar', `${pendientes.length} línea(s)`) : '');
   page.appendChild(rail);
+
+  // ── ① PRESUPUESTO ORIGEN · ENLACE DEL **DOCUMENTO**, EN EL RAIL ─────────────────────────
+  //
+  // 🔴 POR QUÉ VIVE AQUÍ Y NO JUNTO A LAS LÍNEAS, que es donde parecería más útil:
+  //
+  // Sí existe un vínculo línea a línea —`AlbaranLinea.quoteLineIndex`, desde SCRUM-367— pero **no
+  // cubre todos los casos**: no lo hay en modo SIN_VALORAR, solo lo escribe el prellenado, y el
+  // índice no sabe de QUÉ presupuesto es. Un enlace pegado a las líneas AFIRMA que esas líneas
+  // vienen de ese presupuesto, y eso es cierto solo a veces. Colocarlo lejos no es estética: es
+  // la diferencia entre decir «este parte nació de este presupuesto» (verdad, siempre) y «cada
+  // línea de aquí sale de allí» (mentira, a menudo).
+  //
+  // Y LA PROXIMIDAD ES LA QUE AFIRMA, no el rótulo: cambiarle el texto no salvaría a un enlace
+  // colocado dentro de la tabla. Por eso el guard mide DÓNDE cuelga —el rail—, y exige además que
+  // las líneas no entren en el rail: `tests/scrum302-presupuesto-y-fotos.test.mjs`.
+  //
+  // Se omite entero si el Trabajo no vino de un presupuesto (`Job.quoteId` es nullable): una
+  // etiqueta con un guion invita a pulsar algo que no lleva a ningún sitio.
+  if (alb.quote && alb.quote.id != null) {
+    const filaQuote = document.createElement('div');
+    filaQuote.className = 'detail-rail-linea';
+    const etiquetaQuote = document.createElement('span');
+    etiquetaQuote.className = 'detail-rail-etiqueta';
+    etiquetaQuote.textContent = ROTULOS_RAIL_ALBARAN.presupuestoOrigen || MICROCOPY_PENDIENTE;
+    filaQuote.appendChild(etiquetaQuote);
+    // Navegación DENTRO del dashboard, con la misma llamada que ya usa el rail del Trabajo
+    // (`jobRailBlocks`/`jobDetailView`): un `href` de verdad a otra URL recargaría la app entera.
+    const enlaceQuote = document.createElement('a');
+    enlaceQuote.className = 'detail-rail-enlace';
+    enlaceQuote.href = '#';
+    enlaceQuote.textContent = `#${alb.quote.number ?? alb.quote.id}`;
+    enlaceQuote.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (window.renderAppView) window.renderAppView('quotes-detail', { quoteId: alb.quote.id });
+    });
+    filaQuote.appendChild(enlaceQuote);
+    rail.appendChild(filaQuote);
+  }
+
+  // ── ② LAS FOTOS DEL PARTE ───────────────────────────────────────────────────────────────
+  //
+  // El camino de lectura YA EXISTE entero y esta página no abre ninguno nuevo: lista con
+  // `GET /:id/fotos` y sirve el binario con `GET /admin/attachments/:id`, que es exactamente lo
+  // que hace la fila del Trabajo hoy (`jobDetailView.js`, las miniaturas). Misma mecánica, otra
+  // superficie — la cookie de sesión viaja en el `<img>`, así que la tenencia la sigue guardando
+  // el backend y no hace falta token en la URL.
+  //
+  // El bloque se pinta SOLO si hay fotos: un rótulo sobre un hueco vacío hace pensar que algo se
+  // ha perdido. Y el `catch` es mudo a propósito, igual que en el precedente: que no carguen las
+  // miniaturas no puede tapar con un error rojo la ficha del albarán, que sí ha cargado.
+  apiRequest(`/admin/albaranes/${alb.id}/fotos`).then((fotos) => {
+    const lista = Array.isArray(fotos) ? fotos : [];
+    if (!lista.length) return;
+    const filaFotos = document.createElement('div');
+    filaFotos.className = 'detail-rail-linea';
+    const etiquetaFotos = document.createElement('span');
+    etiquetaFotos.className = 'detail-rail-etiqueta';
+    etiquetaFotos.textContent = ROTULOS_RAIL_ALBARAN.fotos || MICROCOPY_PENDIENTE;
+    filaFotos.appendChild(etiquetaFotos);
+    const galeria = document.createElement('div');
+    galeria.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap';
+    for (const f of lista) {
+      const img = document.createElement('img');
+      img.src = `/admin/attachments/${f.id}`;
+      img.alt = ALT_FOTO_ALBARAN;
+      img.loading = 'lazy';
+      img.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--border)';
+      galeria.appendChild(img);
+    }
+    filaFotos.appendChild(galeria);
+    rail.appendChild(filaFotos);
+  }).catch(() => {});
 }
 
 if (typeof window !== 'undefined') window.renderAlbaranDetailView = renderAlbaranDetailView;
