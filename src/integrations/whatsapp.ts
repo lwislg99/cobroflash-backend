@@ -384,6 +384,8 @@ export async function sendWhatsAppWindowFirst(params: {
   customerId?: number | null;
   windowText: string;
   windowCta?: { bodyText: string; buttonText: string; url: string }; // A23: si se pasa, la vía ventana usa botón-enlace (sin URL cruda)
+  /** SCRUM-195: con la ventana cerrada, NO caer a plantilla — ver el porqué abajo. */
+  sinPlantilla?: boolean;
   template: { templateName: string; languageCode?: string; components?: any[] };
   log?: WaLogMeta;
 }): Promise<{ ok: boolean; via: 'window' | 'template' | 'none'; reason?: string; error?: any; data?: any }> {
@@ -440,6 +442,25 @@ export async function sendWhatsAppWindowFirst(params: {
       return { ok: true, via: 'window' };
     }
     console.warn('[WhatsApp] A5.2: ventana abierta pero el texto falló; fallback a plantilla');
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // SCRUM-195 (rebanada 3) · SIN CAÍDA A PLANTILLA, cuando el llamador lo pide.
+  //
+  // POR QUÉ EXISTE, y no es preferencia de canal: `quote_decision_es` es «la ÚNICA plantilla
+  // del ciclo — la que abre la conversación» (`docs/WHATSAPP_TEMPLATES.md`). Volver a mandarla
+  // le llega al cliente como el mensaje de antes, y eso es **la receta del «pero si esto ya lo
+  // firmé»** — justo la disputa que el presupuesto adicional viene a evitar.
+  //
+  // Con la ventana cerrada es MEJOR NO MANDAR y decírselo al pro, que mandar algo que parece
+  // lo de antes. Decisión 3 del ticket (fundador, 28-jul-2026), que además evita el STOP de
+  // Meta entero: no hace falta plantilla nueva.
+  //
+  // OPCIONAL y por defecto NO cambia nada: quien no lo pide sigue cayendo a plantilla como
+  // siempre. Aquí NO se decide quién lo pide — eso depende del ROL del presupuesto, que es
+  // schema del fundador y está pendiente.
+  if (params.sinPlantilla) {
+    return { ok: false, via: 'none', reason: 'ventana_cerrada' };
   }
 
   const result = await sendWhatsAppTemplate({

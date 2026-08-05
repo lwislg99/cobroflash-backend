@@ -118,6 +118,31 @@ router.post('/create', async (req, res) => {
       creatorTeamMemberId != null && threshold != null && totalNum > threshold;
     const initialStatus = needsApproval ? 'pending_approval' : 'draft';
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // SCRUM-195 (rebanada 3) · EL PRESUPUESTO ADICIONAL SOBRE UN TRABAJO QUE YA EXISTE.
+    //
+    // Con `job_id`, el presupuesto nace ya enganchado al Trabajo (`Quote.jobId`), y por eso
+    // aceptarlo NO crea un segundo Trabajo: `ensureJobForQuote` pregunta primero por
+    // `Quote.jobId` desde la rebanada 1.
+    //
+    // SE COMPRUEBA LA TENENCIA ANTES DE ENGANCHAR (regla 2). Sin esto, un merchant podría
+    // colgar un presupuesto —con su dinero— del Trabajo de OTRO con solo mandar un id: la
+    // agregación de `totalCobrado` de la rebanada 1 lo sumaría al Trabajo ajeno.
+    let jobIdDelAdicional: number | null = null;
+    if (body.job_id != null) {
+      const jobDestino = await prisma.job.findFirst({
+        where: { id: body.job_id, merchantId: merchant_id },
+        select: { id: true, status: true },
+      });
+      if (!jobDestino) return res.status(404).json({ error: 'job_not_found' });
+      // ⚠️ NO se comprueba el `status` del Trabajo, y es deliberado: la transición
+      // `terminado → en_curso` quedó DECIDIDA como que NO se añade — un Trabajo terminado con
+      // un adicional pendiente se queda en `terminado`, y su CTA sigue siendo «Cobrar», que es
+      // verdad porque queda dinero. Filtrar por estado aquí sería inventar esa regla por la
+      // puerta de atrás.
+      jobIdDelAdicional = jobDestino.id;
+    }
+
     // 1) Crear el presupuesto (A1.2: número por merchant asignado en la misma
     // transacción, para que un fallo en el create no queme el contador)
     const quote = await prisma.$transaction(async (tx) => {
@@ -140,6 +165,7 @@ router.post('/create', async (req, res) => {
           teamMemberId: creatorTeamMemberId,
           createdVia: body.created_via ?? 'text', // V0-3: telemetría quote_created_via
           payMethods: body.payMethods ?? undefined, // A2.1: selector al crear
+          jobId: jobIdDelAdicional, // SCRUM-195: null = presupuesto normal; con valor = adicional
         },
       });
     });
