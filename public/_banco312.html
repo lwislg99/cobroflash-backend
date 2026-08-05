@@ -1,0 +1,81 @@
+<!doctype html>
+<!-- BANCO DE QA VISUAL — SCRUM-312. Temporal: se borra al terminar.
+     Carga el csvImport.js REAL y el CSS REAL; solo sustituye apiRequest por respuestas de
+     mentira. Lo que se mide aquí es el DOM de verdad, no una maqueta. -->
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Banco SCRUM-312</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/dashboard/css/styles.css"/>
+</head>
+<body style="padding:16px;background:var(--neutral-50,#f7f8f6)">
+  <div id="mandos" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+    <button class="btn-secondary" onclick="pantalla1()">1 · acentos</button>
+    <button class="btn-secondary" onclick="pantalla2()">2 · mapeo (8 columnas)</button>
+    <button class="btn-secondary" onclick="pantalla3()">3 · informe (40 rechazos)</button>
+  </div>
+
+<script src="/dashboard/js/csvImport.js"></script>
+<script>
+// Cabecera de OCHO columnas, como pide la comprobación, con nombres largos de verdad.
+const COLUMNAS = [
+  { indice: 0, columna: 'NOMBRE DEL CLIENTE', campo: 'name',  confianza: 'sinonimo' },
+  { indice: 1, columna: 'TELÉFONO',           campo: 'phone', confianza: 'sinonimo' },
+  { indice: 2, columna: 'MÓVIL',              campo: null,    confianza: 'ninguna'  },
+  { indice: 3, columna: 'Correo electrónico', campo: 'email', confianza: 'sinonimo' },
+  { indice: 4, columna: 'DIRECCIÓN COMPLETA', campo: null,    confianza: 'ninguna'  },
+  { indice: 5, columna: 'Observaciones',      campo: 'notes', confianza: 'sinonimo' },
+  { indice: 6, columna: 'NIF/CIF',            campo: null,    confianza: 'ninguna'  },
+  { indice: 7, columna: 'Código postal',      campo: null,    confianza: 'ninguna'  },
+];
+
+const RECHAZOS = Array.from({ length: 40 }, (_, i) => ({
+  fila: i + 2,
+  motivo: i % 3 === 0 ? 'Falta el nombre' : 'Unique constraint failed on the fields: (`merchantId`,`email`)',
+}));
+
+let MODO = 'preparar';
+window.apiRequest = async function (url) {
+  if (url.includes('/preparar')) {
+    return {
+      ok: true,
+      codificacion: 'windows-1252',
+      alternativa: 'utf-8',
+      // Tildes, ñ y un nombre largo: es lo que hay que poder LEER.
+      primeraFila: 'NOMBRE DEL CLIENTE;TELÉFONO;MÓVIL;Correo electrónico;DIRECCIÓN COMPLETA;Observaciones;NIF/CIF;Código postal',
+      columnas: COLUMNAS,
+    };
+  }
+  return { ok: true, creados: 12, omitidos: 3, rechazos: RECHAZOS, csvRechazos: 'x' };
+};
+window.loadCustomers = function () {};
+
+function limpiar() { document.querySelectorAll('.modal-overlay').forEach((n) => n.remove()); }
+
+function abrirConFichero() {
+  limpiar();
+  openImportCsvModal();
+  const input = document.querySelector('#csv-file-input');
+  const dt = new DataTransfer();
+  dt.items.add(new File([new Uint8Array([0x4a, 0x6f, 0x73, 0xe9])], 'clientes.csv', { type: 'text/csv' }));
+  input.files = dt.files;
+  input.dispatchEvent(new Event('change'));
+}
+
+function pantalla1() { abrirConFichero(); }
+
+function pantalla2() {
+  abrirConFichero();
+  setTimeout(() => { const b = document.querySelector('#csv-acentos-si'); if (b) b.click(); }, 120);
+}
+
+function pantalla3() {
+  pantalla2();
+  setTimeout(() => { const b = document.querySelector('#csv-importar'); if (b) b.click(); }, 320);
+}
+</script>
+</body>
+</html>

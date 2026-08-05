@@ -166,23 +166,27 @@ function openImportCsvModal() {
           return '<option value="' + f[0] + '"' + (c.campo === f[0] ? ' selected' : '') + '>' + f[1] + '</option>';
         }),
       ).join('');
+      // AB6: 44px de alto minimo — esto se toca con guantes y al sol.
       return [
-        '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--neutral-100)">',
+        '<div style="padding:8px 0;border-bottom:1px solid var(--neutral-100)">',
+        '<div style="display:flex;align-items:center;gap:10px">',
         '<span style="font-family:monospace;font-size:12px;color:var(--neutral-900);min-width:0;flex:1;word-break:break-all">' + escImp(c.columna) + '</span>',
         '<span style="color:var(--neutral-400)">→</span>',
-        '<select class="csv-campo" data-indice="' + c.indice + '" style="flex:1;padding:7px 9px;border:1px solid var(--neutral-200);border-radius:12px;font-size:13px">' + opciones + '</select>',
+        '<select class="csv-campo" data-indice="' + c.indice + '" style="flex:1;min-height:44px;padding:11px 13px;border:1px solid var(--neutral-200);border-radius:12px;font-size:13px">' + opciones + '</select>',
+        '</div>',
+        // El aviso va EN SU FILA, no una vez al final: «esta columna» en singular solo
+        // significa algo al lado de la columna a la que se refiere. Con cuatro sin reconocer,
+        // un aviso global no dice CUAL.
+        (c.campo ? '' : '<p style="font-size:12px;color:var(--neutral-500);margin:6px 0 0">No sabemos qué es esta columna. Elige un campo o déjala fuera.</p>'),
         '</div>',
       ].join('');
     }).join('');
 
-    const sinReconocer = est.columnas.some(function (c) { return !c.campo; })
-      ? '<p style="font-size:13px;color:var(--neutral-500);margin:10px 0 0">No sabemos qué es esta columna. Elige un campo o déjala fuera.</p>'
-      : '';
+
 
     paso.innerHTML = [
       '<h4 style="margin:0 0 12px;font-size:16px;color:var(--neutral-900)">Esto es lo que hemos entendido</h4>',
       '<div>' + filas + '</div>',
-      sinReconocer,
       '<button class="btn-primary" id="csv-importar" style="width:100%;margin-top:14px">Está bien, importar</button>',
     ].join('');
 
