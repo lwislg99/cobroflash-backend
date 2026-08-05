@@ -266,7 +266,7 @@ async function fetchInvoices(options = {}) {
       } catch {
         btn.disabled = false;
         btn.textContent = '✓ Marcar como pagadas';
-        statusBox.textContent = 'Error al actualizar las facturas.';
+        statusBox.textContent = 'No se han podido marcar como pagadas. Vuelve a intentarlo.';
         statusBox.className = 'alert error';
         statusBox.style.display = 'block';
       }
@@ -406,7 +406,7 @@ async function fetchInvoices(options = {}) {
         statusBox.style.display = 'none';
       } catch (err) {
         console.error('[renderInvoicesView] error', err);
-        statusBox.textContent = 'Error cargando facturas.';
+        statusBox.textContent = 'No se han podido cargar las facturas. Vuelve a intentarlo.';
         statusBox.className = 'alert error';
         statusBox.style.display = 'block';
       }
@@ -539,7 +539,7 @@ async function fetchInvoices(options = {}) {
       } catch (err) {
         console.error('[renderInvoicesView] pendientes error', err);
         pendBody.innerHTML = '';
-        pendStatusBox.textContent = 'Error cargando pendientes de facturar.';
+        pendStatusBox.textContent = 'No se han podido cargar los pendientes de facturar. Vuelve a intentarlo.';
         pendStatusBox.className = 'alert error';
         pendStatusBox.style.display = 'block';
       }
