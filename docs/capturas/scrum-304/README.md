@@ -1,6 +1,6 @@
 # SCRUM-304 (C3) · capturas de la tabla de albaranes (AB6)
 
-**Medido contra:** `origin/main` = `d5ac9761da139bf9b6de3c808d7c990aa6b82157` · 2026-08-05T17:04:15+01:00
+**Medido contra:** `origin/main` = `e2f397aa69a93f5ddf017a62a5865da35fad605f` · 2026-08-05T17:28:31+01:00
 
 Banco aislado (puppeteer-core sobre el Edge instalado + servidor estático efímero sirviendo
 `public/`), con los **41 scripts que carga `dashboard/index.html` en su orden** y la vista REAL
@@ -57,8 +57,31 @@ repartir**, así que el problema de ancho desaparece en vez de resolverse quitan
 ### El número se enseña ENTERO
 
 Se descartó acortarlo a «0001»: que el año y la serie se repitan en todas las filas es verdad **hoy
-con estos datos, no por diseño**. En la card ocupa `cell-client`, el hueco prominente — dentro de un
-Trabajo el número **es** la identidad.
+con estos datos, no por diseño**.
+
+### 🔴 La convención de las ranuras: se DERIVÓ, no se eligió
+
+La primera versión puso el número en `cell-client` y el **conteo de líneas** en `cell-id` — una
+**tercera convención** para las mismas ranuras. En la card eso salía como un «3» suelto arriba, sin
+etiqueta, porque el patrón oculta la cabecera.
+
+Medido en las otras dos vistas que usan el mismo patrón:
+
+| Ranura | `invoicesView.js` | `quotesListView.js` |
+|---|---|---|
+| `cell-id` | `tdNumber` ([:354](../../public/dashboard/js/invoicesView.js#L354)) | `tdId` ([:194](../../public/dashboard/js/quotesListView.js#L194)) |
+| `col-hide-mobile` | la Fecha ([:392](../../public/dashboard/js/invoicesView.js#L392)) | el Método ([:217](../../public/dashboard/js/quotesListView.js#L217)) |
+
+O sea: **`cell-id` es la ranura del NÚMERO del documento**, y lo informativo que no acciona se
+oculta en móvil con `col-hide-mobile`. Aplicado aquí igual: el número a `cell-id`, y `Líneas` a
+`col-hide-mobile` — en escritorio la rotula su columna, y en la card no aparece suelta.
+
+**Por eso no hizo falta la microcopy aprobada «Líneas» para la card:** el problema no era que
+faltara un rótulo, era que ese valor estaba en la ranura del número. `Líneas` sigue rotulando su
+columna en la tabla de escritorio.
+
+**Y la tarjeta no creció:** con el número en su sitio y `Líneas` fuera, la card a 390 px tiene una
+línea MENOS que antes. Se ve en la captura.
 
 ### Foco y targets: MEDIDOS, y el patrón arregló la mitad
 
@@ -97,8 +120,5 @@ El texto es el que ya existía de G4: no se ha tocado.
 - **Matriz de dispositivos (V0-5): HUECO.** Hay 390 px y 1280 px. **No hay Android de gama media,
   ni tablet, ni iPhone real**: el banco es Edge de escritorio con el viewport redimensionado, que no
   prueba fuentes del sistema, teclado en pantalla ni barra de navegador.
-- **La ranura `cell-id` sale sin rótulo.** En la card, el número de líneas («3», «4»…) aparece
-  arriba sin etiqueta, porque el patrón oculta la cabecera. Se ve en la captura. No se toca: darle
-  rótulo propio es microcopy nueva.
 - **`albaranesView.js` marca `.table--cards-mobile` pero NO pone las clases `cell-*`**, así que su
   rejilla de card no llega a usarse. Medido de paso; es otro carril (regla 9) y no se toca.
