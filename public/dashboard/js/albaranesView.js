@@ -289,7 +289,18 @@
       function fila(f) {
         const tr = document.createElement('tr');
 
+      // ── LAS CELDAS VAN A SU ÁREA DE LA TARJETA (≤640 px) ───────────────────────────
+      //
+      // `.table--cards-mobile` recompone cada fila en una tarjeta con AREAS CON NOMBRE
+      // (id/client/date/status/actions). Una celda sin su clase `cell-*` no cae en su area: cae
+      // en la rejilla IMPLICITA, en pares y por orden de aparicion. Medido a 390 px: con un
+      // cliente largo, la segunda columna (`auto`) se come el ancho, la primera colapsa y el
+      // numero del albaran QUEDA PISADO por la fecha. Las dos hermanas del mismo patron
+      // (invoicesView, quotesListView) si ponen estas clases.
+      //
+      // ⚠️ Lo que NO se toca es la clase del <table>: `table--cards-mobile` se queda.
         const tdNum = document.createElement('td');
+        tdNum.className = 'cell-id';
         const enlaceNum = document.createElement('a');
         enlaceNum.href = '#';
         enlaceNum.textContent = f.numero;
@@ -302,22 +313,31 @@
         tdNum.appendChild(enlaceNum);
         tr.appendChild(tdNum);
 
+        // La tarjeta ensena la fecha de ENTREGA, que es la operativa: la de emision se oculta
+        // en movil (el patron de la casa para lo que no cabe) y sigue en la tabla de escritorio.
         const tdEmision = document.createElement('td');
+        tdEmision.className = 'col-hide-mobile';
         tdEmision.textContent = fechaCorta(f.emisionAt);
         tr.appendChild(tdEmision);
 
         const tdEntrega = document.createElement('td');
+        tdEntrega.className = 'cell-date';
         tdEntrega.textContent = fechaCorta(f.fecha);
         tr.appendChild(tdEntrega);
 
         const tdCliente = document.createElement('td');
+        tdCliente.className = 'cell-client';
         tdCliente.textContent = f.cliente || '—';
         tr.appendChild(tdCliente);
 
         // 🏆 LA COLUMNA QUE ELLOS NO PUEDEN TENER: sus albaranes cuelgan de un cliente, no de una
         // obra. Saber que tres albaranes sin firmar son DEL MISMO TRABAJO cambia lo que haces:
         // haces una llamada, no tres. Por eso va ENLAZADA al Trabajo.
+        // Va a la franja inferior a ancho completo (`cell-actions`): es la columna que hace util
+        // el listado y un titulo de obra no cabe en media tarjeta. De regalo, esa area exige
+        // target >=44 px a sus enlaces, que es justo lo que pide AB6.
         const tdTrabajo = document.createElement('td');
+        tdTrabajo.className = 'cell-actions';
         if (f.jobId != null) {
           const enlaceJob = document.createElement('a');
           enlaceJob.href = '#';
@@ -334,6 +354,7 @@
         tr.appendChild(tdTrabajo);
 
         const tdEstado = document.createElement('td');
+        tdEstado.className = 'cell-status';
         const pill = document.createElement('span');
         pill.className = claseEstado(f.estado);
         pill.textContent = f.estado; // el VALOR del modelo, no un rótulo inventado
