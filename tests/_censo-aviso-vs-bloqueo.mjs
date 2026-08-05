@@ -156,3 +156,60 @@ export function censarEjecucionDelVencimiento(raizSrc) {
   montajes.sort((a, b) => a.id.localeCompare(b.id));
   return { montajes, rutasDeEscritura };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// CENSO C · LOS BORRADOS — la atadura del aviso de prueba terminada
+//
+// `trialExpired` promete que **los datos siguen ahí**. Hoy es cierto, pero ¿atado a qué? A que
+// NADA los borra: una AUSENCIA. Y «verde por ausencia» no vale — si mañana alguien añade una purga
+// por inactividad, el claim se rompe y no hay nada que lo cace, porque no hay nada que vigilar.
+//
+// Este censo convierte la ausencia en afirmación vigilada, en DOS capas:
+//
+//   ① FORMA — un borrado cuyo `where` lleva umbral de tiempo (`lt/lte/gt/gte`) o menciona plan,
+//      trial o inactividad. Es la purga evidente, y salta en el acto.
+//   ② SITIO — el censo entero de borrados, congelado. Cierra el agujero de ①: una purga que
+//      primero consulte los vencidos y luego borre por `id` NO tiene forma sospechosa, pero SÍ es
+//      un sitio nuevo.
+//
+// LO QUE ESTO NO PUEDE HACER, dicho aquí y no descubierto en un rojo raro: alguien puede
+// actualizar el censo de ② y contestar mal a la pregunta que le hace el mensaje. Entonces será
+// **una mentira en un diff, no un silencio**. Ése es el estándar de la casa, no una excusa.
+const SENALES_TIEMPO = /\b(lt|lte|gt|gte)\b/;
+const SENALES_VENCIMIENTO = /plan|trial|planExpiresAt|lastSeen|inactiv/i;
+
+export function censarBorrados(raizSrc) {
+  const sitios = [];
+  for (const abs of ficherosTs(raizSrc)) {
+    const rel = path.relative(path.dirname(raizSrc), abs).replace(/\\/g, '/');
+    const sf = ts.createSourceFile(abs, fs.readFileSync(abs, 'utf8'), ts.ScriptTarget.Latest, true);
+    const linea = (n) => sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
+    const vistos = new Map(); // para numerar ocurrencias dentro del fichero (identidad estable)
+
+    (function walk(n) {
+      if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression)
+          && ['delete', 'deleteMany'].includes(n.expression.name.text)
+          && ts.isPropertyAccessExpression(n.expression.expression)) {
+        const metodo = n.expression.name.text;
+        const modelo = n.expression.expression.name.text;
+        const clave = `${modelo}.${metodo}`;
+        const nth = (vistos.get(clave) ?? 0) + 1;
+        vistos.set(clave, nth);
+        const args = n.arguments[0] ? n.arguments[0].getText(sf).replace(/\s+/g, ' ') : '';
+        sitios.push({
+          fichero: rel,
+          linea: linea(n),
+          modelo,
+          metodo,
+          // Identidad por ocurrencia, NUNCA por línea (mismo criterio que el censo de montajes).
+          id: `${rel}::${clave}#${nth}`,
+          sospechoso: SENALES_TIEMPO.test(args) || SENALES_VENCIMIENTO.test(args),
+          filtro: args.slice(0, 160),
+        });
+      }
+      ts.forEachChild(n, walk);
+    })(sf);
+  }
+  sitios.sort((a, b) => a.id.localeCompare(b.id));
+  return sitios;
+}

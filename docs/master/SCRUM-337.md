@@ -1,139 +1,178 @@
-# SCRUM-337 · GUARD: un correo que promete una consecuencia y el código que la ejecuta no pueden divergir en silencio
+# SCRUM-337 · El correo del día 12 decía que se pierde el panel y el panel no se pierde — texto corregido y las dos caras atadas
 
 **Fecha:** 5-ago-2026 · **Carril:** B · **Gate:** sin gate, corre en `npm test`
 
-**Medido contra:** `origin/main` = `0d049878d61e0d3bbfe9d4033d2778007f15b0b0` · 2026-08-05T04:17:45+01:00
+**Medido contra:** `origin/main` = `3e6f63709d40c7781317a90523208872e2fb5605` · 2026-08-05T04:54:12+01:00
 
-> **Esta tarea entrega SOLO una de las dos mitades del ticket.** La otra —qué debe decir el texto,
-> o si hay que ampliar el bloqueo— es decisión del fundador y **no se ha tocado**: ni una palabra
-> de microcopy (regla 30), ni una línea del gate. Lo entregado es el mecanismo que impide que
-> vuelva a pasar sin que nadie se entere.
+> **Cierra las DOS mitades.** La técnica (el guard que impide que vuelva a divergir) y la de
+> producto (el texto corregido), esta última **decidida y aprobada por el fundador**: se corrige el
+> TEXTO, **no se amplía el bloqueo**. `requireActivePlan` no se toca — gatear 95 rutas cambiaría el
+> comportamiento de todas las cuentas en prueba y es un cambio de producto que nadie ha pedido.
 
 ---
 
-## El defecto, reconfirmado hoy por contenido (no repetido por fe)
+## El defecto, medido por contenido (el árbol se había movido desde D0)
 
-El árbol se ha movido desde D0 (SCRUM-310), así que las dos caras se han vuelto a derivar enteras.
+**Cara A — lo que el producto DICE.** Cinco avisos en el evaluador diario
+(`src/modules/messaging/domain/lifecycle.service.ts`), no tres: la derivación encontró también
+`trialExpired` e `inactive`, que **nadie había mirado**.
 
-**Cara A — lo que el producto DICE.** `src/modules/messaging/domain/lifecycle.service.ts`:
+**Cara B — lo que el producto HACE al vencer.** `requireActivePlan`
+(`src/core/http/authMiddleware.ts:55-74`), **4 montajes de 96 rutas de escritura**, cero `.use()`:
 
-| Aviso | Línea | Lo que promete (literal) |
-| --- | --- | --- |
-| **día 3** | `:114` | «Carga tu catálogo de servicios **(lo tienes precargado por oficio)**.» |
-| **día 7** | `:129` | «Tu prueba de YaQu expira en unos 7 días.» |
-| **día 12** | `:140` | «Si no, **perderías el acceso a tu panel** (tus datos se guardan).» |
-
-Y la derivación encuentra **cinco** avisos donde el ticket nombra tres: el evaluador diario manda
-además `trialExpired` (`:151`) e `inactive` (`:166`), que también le hablan al usuario del final de
-la prueba y **nadie los había mirado**. Esa es la diferencia entre derivar y enumerar.
-
-**Cara B — lo que el producto HACE al vencer.** El bloqueo es `requireActivePlan`
-(`src/core/http/authMiddleware.ts:55-74` → 403 `trial_expired` + redirect a `/dashboard/#plans`).
-Derivado del AST de todo `src/`, **4 montajes de 95 rutas de escritura**, y **cero `.use(...)`**:
-
-| Montaje | Fichero:línea |
+| Montaje | Qué es, medido |
 | --- | --- |
-| `POST /quote/create` | `src/app.ts:257` |
-| `POST /admin/quotes/:id/send-whatsapp` | `src/app.ts:333` |
-| `POST /:id/enviar-whatsapp` (albaranes) | `src/modules/jobs/app/routes/albaranes.routes.ts:571` |
-| `POST /:id/enviar-para-firmar` (albaranes) | `src/modules/jobs/app/routes/albaranes.routes.ts:588` |
+| `POST /quote/create` (`src/app.ts:257`) | la **ÚNICA** ruta de creación de presupuestos (`quotes.routes.ts:62`) |
+| `POST /admin/quotes/:id/send-whatsapp` (`src/app.ts:333`) | enviar el presupuesto por WhatsApp |
+| `POST /:id/enviar-whatsapp` (`albaranes.routes.ts:571`) | **enviar** la copia firmada por WhatsApp |
+| `POST /:id/enviar-para-firmar` (`albaranes.routes.ts:588`) | **enviar** el link de firma por WhatsApp |
 
-**Coinciden exactamente los 4 sitios y los 95 de D0.** Al vencer la prueba **el panel no se
-pierde**: lo único que caduca es crear presupuestos y enviar por WhatsApp presupuestos y albaranes.
+**Las dos de albaranes son de ENVÍO: crear albaranes no caduca.** Se midió antes de firmar el
+texto, para no escribir una analogía («igual que los albaranes») que no dice si dejas de crearlos o
+de enviarlos.
 
-**Y el del día 3**, medido: `getTradeCatalog` devuelve **`[]`** para un oficio sin catálogo —«otro»
-está declarado como tal en el propio fichero— (`src/core/data/tradeCatalogs.ts:136`, `:138-141`), y
-la precarga exige un `trade` no vacío o responde `trade_required`
-(`src/modules/products/app/routes/products.routes.ts:26-31`). O sea: la frase del correo es
-**condicional** y el correo la afirma **sin condición**.
+**Y el aviso del día 3**, medido: «lo tienes precargado por oficio» depende de **cuatro**
+condiciones, no de una — tener oficio (paso 1 del wizard, `onboardingView.js:90`), que no sea
+«otro» (`tradeCatalogs.ts:136`), **no desmarcar la casilla** del paso siguiente
+(`onboardingView.js:135`, marcada por defecto) y que la carga no reviente. **La cuarta falla en
+silencio**: el `POST /admin/products/load-catalog` va dentro de un `catch` vacío
+(`onboardingView.js:165`). Eso último es **SCRUM-338** y no se arregla aquí.
 
----
-
-## Lo entregado: el guard, y qué invariante fija exactamente
-
-`tests/scrum337-aviso-atado-al-bloqueo.test.mjs` + el derivador `tests/_censo-aviso-vs-bloqueo.mjs`.
-Corre en `npm test`, sin gate.
-
-**No fija cuál de las dos caras es la correcta. Fija que no puedan moverse por separado.** Congela
-el **estado de la pregunta**, no su respuesta:
-
-* **`NO_ATADO`** — el fundador ya ha declarado que el aviso promete algo que el árbol no ejecuta.
-  Hoy: `day12` (SCRUM-337) y `day3` (SCRUM-338). Lleva ticket obligatorio: una deuda sin nombre es
-  indistinguible de un olvido.
-* **`SIN_DECIDIR`** — nadie ha dictaminado si se corresponden. Hoy: `day7`, `trialExpired`,
-  `inactive`. **Declarar una pregunta abierta es correcto; clasificarla yo sería invadir la mitad
-  del fundador.**
-* **`ATADO`** — correspondencia verificada. **Hoy está vacío, y eso es el hallazgo, no un hueco
-  por rellenar.**
-
-Los seis asserts:
-
-1. **SUELO ①** — el censo ve el evaluador diario y empareja cada aviso con su bloque; si no, falla.
-2. **SUELO ②** — el censo ve el gate y ≥50 rutas de escritura; si no, falla.
-3. **Cobertura bidireccional** — todo aviso derivado está clasificado **y** toda clasificación
-   existe en el árbol. Un correo nuevo mañana = rojo hasta que alguien diga si promete algo.
-4. **Si cambia lo que el correo DICE** (huella del bloque: condición + asunto + cuerpo + botón),
-   rojo → obliga a mirar el bloqueo.
-5. **Si cambia lo que el producto HACE** (censo de montajes por identidad), rojo → obliga a mirar
-   los correos.
-6. **Ratchet** — el censo de `NO_ATADO` no crece, y si baja hay que anotarlo (mismo mecanismo que
-   el censo heredado de SCRUM-267): que el guard falle por una **mejora** es deliberado.
-
-**Nada escrito a mano.** Las cuatro rutas gateadas **no** están en el test: salen del AST.
-Escribirlas habría sido crear la enésima lista sin guard — y ya hay al menos una más en el repo
-(`tests/_merchant-fixture.mjs:176` las nombra a mano).
-
-**Por qué la huella y no el texto.** Un guard que mirase la palabra («que no diga panel») sería un
-guard de TEXTO: se cazaría a sí mismo en el comentario que explica la prohibición —el fichero la
-contiene— y se esquivaría reformulando. Y sobre todo, **no me corresponde leer el texto**. La huella
-solo sabe decir «cambió / no cambió», que es todo lo que hace falta para forzar la revisión y todo
-lo que se puede afirmar sin tocar microcopy ajena.
+De paso, y porque afectaba a la clasificación: la prueba es de **14 días**
+(`auth.service.ts:301`), así que las tres fechas que prometen los correos son **exactas**.
 
 ---
 
-## Verificado en rojo — sobre los ficheros REALES, sin inyectar
+## La mitad de producto: los dos textos (microcopy aprobada por el fundador, regla 30)
 
-Cada caso edita el artefacto de verdad, corre el guard y restaura con `git checkout`. Árbol
-comprobado limpio al terminar.
+**Día 12** — cambio mínimo, solo la frase falsa; la enumeración de ventajas del Pro no se toca
+porque es otro claim y no era el encargo:
 
-| Caso | Edición real | Resultado | ¿Cae el assert que debe? |
+> «Te quedan unos 2 días de prueba. Si activas el plan Pro, sigues con cotizaciones y facturas
+> ilimitadas, cobro integrado y soporte. Si no, **dejarás de poder crear presupuestos nuevos y de
+> enviar presupuestos y albaranes por WhatsApp. El resto del panel sigue funcionando: tus cobros,
+> tus clientes y tus datos siguen ahí.**»
+
+⚠️ **La enumeración final no es la que se aprobó, y el motivo es un guard.** El texto aprobado
+decía «tus facturas, tus cobros y tus datos», y el trinquete de **SCRUM-299 (Parte M)** lo cazó:
+el posesivo del documento fiscal es una **promesa**, y hasta SIF-1 el documento post-pago es
+justificante (reglas 24/26). El guard tenía razón y el texto cedió. La frase no pierde nada: «el
+resto del panel sigue funcionando» ya lo cubre entero, y la enumeración solo da ejemplos.
+
+**Día 3** — se descartó condicionar («si elegiste tu oficio…»): con cuatro condiciones, y una que
+falla sola, cualquier versión fiel salía retorcida. Y a quien **no** tiene catálogo —el que está
+atrapado en SCRUM-338— mandarle a comprobar algo que no puede arreglar es mandarle a una pared:
+
+> «**Revisa tu catálogo en Productos: si se precargó una lista para tu oficio, ya está ahí; si no,
+> puedes añadir tus servicios desde esa misma pantalla.**»
+
+No afirma el estado del usuario, y la segunda mitad es la única parte accionable para quien no
+tiene nada. Apunta a la misma pantalla que el propio wizard ofrece (`onboardingView.js:145`): no
+inventa camino, usa el que ya existe.
+
+---
+
+## La mitad técnica: el guard
+
+`tests/scrum337-aviso-atado-al-bloqueo.test.mjs` + el derivador `tests/_censo-aviso-vs-bloqueo.mjs`
+(tres censos: avisos, montajes, borrados). Corre en `npm test`, sin gate. **Nada escrito a mano:**
+ni las cuatro rutas ni los doce borrados se enumeran a mano — salen del AST.
+
+**No dice cuál de las dos caras es la correcta. Dice que no pueden moverse por separado.**
+
+### La clasificación de los cinco avisos
+
+| Aviso | Estado | Atadura |
+| --- | --- | --- |
+| `day3` | **ATADO** | censo de montajes — promete que en Productos se pueden añadir servicios, o sea que esa escritura **no** caduca |
+| `day7` | **SIN_CONSECUENCIA** | anuncia un hecho exacto (14−7) y no promete consecuencia |
+| `day12` | **ATADO** | censo de montajes — el texto enumera exactamente los 4 montajes |
+| `trialExpired` | **ATADO** | censo de borrados (dos capas) |
+| `inactive` | **SIN_CONSECUENCIA** | reenganche puro |
+
+**`NO_ATADO` queda VACÍO**, con su ratchet: cualquier promesa nueva sin respaldo es el defecto de
+337 otra vez, con otro correo, y si algún día se acepta una a sabiendas entra **con su ticket**.
+
+**`ATADO` no se concede por ausencia**, y hay un assert que lo impide: cada `ATADO` nombra el
+mecanismo que lo sostiene. Que hoy nada contradiga un aviso no es una atadura — es un hueco con
+suerte.
+
+### La atadura de `trialExpired`, en dos capas
+
+`trialExpired` promete que **los datos siguen ahí**. Eso es cierto, pero atado a una **ausencia**:
+que nada los borre. «Verde por ausencia» no vale, así que la ausencia se convierte en afirmación
+vigilada:
+
+* **Capa ① (forma)** — cero borrados cuyo `where` lleve umbral de tiempo (`lt/lte/gt/gte`) o
+  mencione plan, trial o inactividad. Caza la purga evidente en el acto. Hoy: **12 borrados en
+  `src`, 0 sospechosos**.
+* **Capa ② (sitio)** — los 12 borrados congelados por identidad. Cierra el punto ciego CONOCIDO de
+  la ①: una purga que primero consulte los vencidos y **luego borre por `id`** no tiene forma
+  sospechosa, pero sí es un sitio nuevo.
+
+**El límite, escrito en la cabecera del guard con estas palabras:** alguien puede actualizar el
+censo de ② y contestar mal a la pregunta que le hace el mensaje. Entonces será **una mentira en un
+diff, no un silencio** — que es el estándar de la casa, no una excusa.
+
+---
+
+## Verificado en rojo — siete casos sobre los ficheros REALES, sin inyectar
+
+| Caso | Edición real | Resultado | Assert que cae |
 | --- | --- | --- | --- |
-| **R1** · cambia el aviso del día 12 | `age >= 12` → `age >= 13` en `lifecycle.service.ts` | 🔴 **ROJO** (5/1) | sí — «si cambia lo que el correo DICE» |
-| **R2** · se desmonta el gate | quitar `requireActivePlan` de `app.post('/quote/create', …)` | 🔴 **ROJO** (5/1) | sí — «si cambia lo que el producto HACE» |
-| **R3** · derivación ciega | renombrar `runLifecycleEmails` | 🔴 **ROJO** (4/2) | sí — SUELO ① |
-| **N1** · control negativo | reindentar dentro del bloque del día 12 | 🟢 **VERDE** | — |
-| **N2** · control negativo | comentario nuevo fuera de los bloques de aviso | 🟢 **VERDE** | — |
+| **R1** | `age >= 12` → `age >= 13` | 🔴 8/1 | «si cambia lo que el correo DICE» |
+| **R2** | quitar `requireActivePlan` de `/quote/create` | 🔴 8/1 | «si cambia lo que el producto HACE» |
+| **R3** | renombrar `runLifecycleEmails` | 🔴 7/2 | SUELO ① |
+| **R4** | `deleteMany` con umbral de fecha en el evaluador diario | 🔴 7/2 | **capa ①** (y ②) |
+| **R5** | `delete` **por id**, sin forma sospechosa | 🔴 8/1 | **capa ② sola** — la prueba de que cierra el punto ciego de la ① |
+| **N1** | reindentar dentro del bloque del día 12 | 🟢 9/0 | — |
+| **N2** | comentario nuevo fuera de los bloques | 🟢 9/0 | — |
 
-**R1 se hizo sobre la CONDICIÓN, no sobre el texto, a propósito:** alterar la microcopy —aunque
-fuera un segundo y con `git checkout` detrás— no es mío (regla 30). El assert es el mismo y la
-huella cubre el bloque entero, así que un cambio de texto dispara por el mismo camino.
+**R1 se hizo sobre la CONDICIÓN y no sobre el texto, a propósito:** alterar microcopy —aunque fuera
+un segundo— no es del guard. La huella cubre el bloque entero, así que un cambio de texto dispara
+por el mismo camino.
 
-**Los dos controles negativos existen porque el modo de morir de un guard así es el ruido:** si un
+**Los dos controles negativos existen porque el modo de morir de un guard así es el ruido**: si un
 `prettier` pusiera en rojo los cinco avisos con un mensaje sobre promesas incumplidas, el siguiente
-lo puentea. Por eso la huella **normaliza espacios** — el reindentado (N1) pasa en verde.
+lo puentea. Por eso la huella normaliza espacios.
+
+### El guard ya se ha topado con una rama paralela, y aguantó
+
+Durante esta sesión `main` se movió tres veces. La última trajo **SCRUM-289 (incremento 2)**, que
+toca `src/app.ts` —el fichero de los montajes— y añade el entrypoint de la factura suelta. Tras
+rebasar: **rutas de escritura 95 → 96, montajes 4, borrados 12, guard 9/9 verde.** Correcto y por
+la razón correcta: el número total de rutas **no** está congelado (congelarlo pondría el guard en
+rojo en cada PR ajeno y acabaría puenteado), y la ruta nueva **no está gateada**, así que el texto
+del día 12 sigue describiendo el mecanismo.
+
+### Nota de método, porque casi cuesta el trabajo
+
+La primera versión del verificador restauraba con `git checkout -- <fichero>` y **se llevó por
+delante la microcopy de este mismo ticket**, que todavía no estaba commiteada. Restaurar «al último
+commit» no es restaurar «a como estaba»: solo coinciden si el árbol estaba limpio. Ahora el
+verificador guarda el contenido original **en memoria** y lo reescribe. Lo cantó el propio
+verificador —los tres primeros casos dijeron «restaurado y verde de nuevo: NO»—, que es justo para
+lo que sirve comprobar el estado DESPUÉS de restaurar.
 
 ---
 
-## Lo que NO cubre — y la mitad que sigue siendo del fundador
+## Lo que NO cubre
 
-* 🔴 **NO arregla la divergencia.** Hoy el día 12 sigue diciendo que se pierde el panel y el panel
-  no se pierde. Las dos salidas —corregir el texto (microcopy, regla 30) o ampliar el bloqueo
-  (cambia el comportamiento de **todas** las cuentas en prueba)— son del fundador. Un test que
-  eligiera una estaría fijando por accidente la respuesta a una pregunta que nadie ha contestado.
-* **Los tres `SIN_DECIDIR` siguen sin decidir.** `day7`, `trialExpired` e `inactive` están
-  declarados como pregunta abierta, no como correctos.
-* **El guard no lee el texto**, así que no detecta que un correo NUEVO prometa algo falso: detecta
-  que **existe** y obliga a clasificarlo. La clasificación la pone una persona.
+* **El guard no lee el texto.** No detecta que un correo NUEVO prometa algo falso: detecta que
+  existe y **obliga a clasificarlo**. La clasificación la pone una persona.
+* **Las dos capas de borrado no son una prueba de que nada se borrará jamás**: cubren la forma
+  sospechosa y la aparición de sitios. Ver el límite declarado arriba.
 * **Solo cubre los avisos del evaluador diario.** `sendWelcomeEmail` y `sendFirstPaymentEmail`
   quedan fuera porque los mandan otras funciones — el límite lo pone la estructura, no una lista.
-  Si alguien decide que también hacen promesas, es ampliar el derivador.
+* **El `catch` vacío de la precarga del catálogo no se arregla aquí**: es SCRUM-338 y es otro
+  alcance. El texto del día 3 deja de depender de él, que es lo que sí tocaba.
 * **No se ha ejecutado ningún envío real** ni se ha mirado producción.
-* No se ha tocado `prisma/schema.prisma`, ni el gate, ni Jira.
+* No se ha tocado `prisma/schema.prisma`, ni `requireActivePlan`, ni Jira.
 
 ## Ficheros
 
-* `tests/_censo-aviso-vs-bloqueo.mjs` — **nuevo.** Los dos censos derivados (AST).
-* `tests/scrum337-aviso-atado-al-bloqueo.test.mjs` — **nuevo.** El guard (6 asserts).
+* `src/modules/messaging/domain/lifecycle.service.ts` — los dos textos corregidos, cada uno con el
+  porqué medido al lado (**único fichero de producto tocado**).
+* `tests/_censo-aviso-vs-bloqueo.mjs` — los tres censos derivados (AST).
+* `tests/scrum337-aviso-atado-al-bloqueo.test.mjs` — el guard (9 asserts).
 * `docs/master/SCRUM-337.md` — este registro.
-
-**Cero ficheros de producto modificados.**

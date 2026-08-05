@@ -6,20 +6,20 @@
 //
 // El aviso del día 12 le dice al usuario que perdería el acceso a su panel. Medido: al vencer la
 // prueba el panel NO se pierde. El bloqueo real (`requireActivePlan`) está montado en 4 sitios de
-// 95 rutas de escritura, y no hay ningún `.use(...)` global: siguen funcionando facturar, cobrar,
+// 96 rutas de escritura, y no hay ningún `.use(...)` global: siguen funcionando facturar, cobrar,
 // clientes, productos, gastos, informes y equipo. Lo único que caduca es crear presupuestos y
 // enviar por WhatsApp presupuestos y albaranes.
 //
-// 🔴 ESTE GUARD NO ARREGLA ESO, Y NO PUEDE. Las dos salidas —corregir el texto, o ampliar el
-// bloqueo— son decisiones del FUNDADOR: la primera es microcopy (regla 30) y la segunda cambia el
-// comportamiento de todas las cuentas en prueba. Un test que eligiera una estaría fijando por
-// accidente la respuesta a una pregunta que nadie ha contestado.
+// LA DECISIÓN, TOMADA POR EL FUNDADOR (5-ago-2026): **se corrige el TEXTO, no se amplía el
+// bloqueo.** Gatear 95 rutas cambiaría el comportamiento de todas las cuentas en prueba y es un
+// cambio de producto que nadie ha pedido; dejar ver los datos e impedir crear cosas nuevas es una
+// decisión razonable. El que mentía era el texto, y ya está corregido (día 12 y día 3).
 //
-// LO QUE SÍ HACE, que es la otra mitad: **congela el ESTADO DE LA PREGUNTA, no su respuesta.**
-// El día que alguien reescriba uno de esos correos, o monte/desmonte el gate, la suite se pone
-// roja y le obliga a mirar la otra cara. Hoy la divergencia existe y está DECLARADA; lo que este
-// guard impide es que aparezca una NUEVA sin que nadie se entere — que es exactamente cómo llegó
-// aquí la que hay.
+// LO QUE ESTE GUARD HACE: **congela el ESTADO DE LA PREGUNTA, no su respuesta.** El día que
+// alguien reescriba uno de esos correos, monte o desmonte el gate, o añada un borrado, la suite se
+// pone roja y le obliga a mirar la otra cara. No dice cuál de las dos es la correcta —eso sigue
+// siendo del fundador—: dice que no pueden moverse por separado, que es exactamente cómo nació
+// este defecto.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // POR QUÉ LA HUELLA ES DEL BLOQUE ENTERO Y NO DEL TEXTO
@@ -48,40 +48,80 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  censarAvisos, censarEjecucionDelVencimiento, FICHERO_AVISOS, EVALUADOR_DIARIO, GATE_DEL_VENCIMIENTO,
+  censarAvisos, censarEjecucionDelVencimiento, censarBorrados,
+  FICHERO_AVISOS, EVALUADOR_DIARIO, GATE_DEL_VENCIMIENTO,
 } from './_censo-aviso-vs-bloqueo.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const avisosDerivados = censarAvisos(fs.readFileSync(path.join(RAIZ, FICHERO_AVISOS), 'utf8'));
 const ejecucion = censarEjecucionDelVencimiento(path.join(RAIZ, 'src'));
+const borrados = censarBorrados(path.join(RAIZ, 'src'));
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // LA CORRESPONDENCIA DECLARADA — tres estados, y ninguno es un juicio sobre el texto
 //
-//   · `NO_ATADO`  — el fundador YA ha declarado que este aviso promete algo que el árbol no
-//                   ejecuta. Lleva su ticket. NO es una excepción concedida: es una deuda con
-//                   nombre, y el ratchet de abajo impide que crezca.
-//   · `SIN_DECIDIR` — nadie ha dictaminado si lo que dice se corresponde con lo que pasa. Se
-//                   declara como lo que es: una pregunta abierta. Es infinitamente más honesto
-//                   que clasificarlo yo, que es justo lo que este ticket dice que no es mío.
-//   · `ATADO`     — correspondencia verificada. **Hoy está vacío, y eso es el hallazgo, no un
-//                   hueco por rellenar.** El día que el fundador decida, las entradas se mueven
-//                   aquí y el censo de `NO_ATADO` BAJA — y el guard obliga a anotarlo.
+//   · `ATADO`            — el aviso promete algo y hay un MECANISMO que vigila que siga siendo
+//                          cierto. `atadura` dice cuál: si ese mecanismo se mueve, el guard cae.
+//   · `SIN_CONSECUENCIA` — el aviso anuncia un hecho y no promete ninguna consecuencia del
+//                          vencimiento. No hay claim que atar. Meterlo en la lista de deudas
+//                          sería declarar una que no existe, y un ratchet lleno de deudas falsas
+//                          deja de significar algo.
+//   · `NO_ATADO`         — promete algo que el árbol NO ejecuta. Lleva ticket obligatorio.
+//                          **Hoy está VACÍO: SCRUM-337 corrigió los dos que había.**
 //
-// La HUELLA se congela para los tres estados por igual: cambiar el texto de uno «sin decidir»
-// también tiene que hacer mirar el bloqueo.
+// ⚠️ `ATADO` NO SE CONCEDE POR AUSENCIA. Que hoy nada contradiga un aviso no es una atadura: es
+// un hueco con suerte. Cada `ATADO` nombra el mecanismo que lo sostiene, y ese mecanismo es un
+// assert de este fichero. Ver la nota de `trialExpired`, que es el caso que lo obligó.
+//
+// La HUELLA se congela para los tres estados por igual: cambiar el texto de uno «sin
+// consecuencia» también tiene que hacer mirar el bloqueo.
 const CORRESPONDENCIA = {
-  // «tu catálogo, lo tienes precargado por oficio» — solo es cierto si el usuario completó el
-  // paso 2 del wizard con un oficio distinto de «otro» (SCRUM-338). El correo lo afirma sin
-  // condición. Declarado por el fundador en SCRUM-337.
-  day3:         { estado: 'NO_ATADO', ticket: 'SCRUM-338', huella: '4a2e786d903c5aad' },
-  day7:         { estado: 'SIN_DECIDIR', ticket: null,     huella: 'b7aff4fb61086e90' },
-  // «perderías el acceso a tu panel» — el panel no se pierde. Es el defecto que abre SCRUM-337.
-  day12:        { estado: 'NO_ATADO', ticket: 'SCRUM-337', huella: '7f4df8f34a7ff6ce' },
-  trialExpired: { estado: 'SIN_DECIDIR', ticket: null,     huella: 'a9c9bad1b95297c9' },
-  inactive:     { estado: 'SIN_DECIDIR', ticket: null,     huella: 'd2c934ccd6dbd3dd' },
+  // SCRUM-337 · TEXTO CORREGIDO. Antes: «lo tienes precargado por oficio», afirmado sin condición
+  // y dependiente de cuatro (oficio · que no sea «otro» · no desmarcar la casilla · que la carga
+  // no falle en silencio → SCRUM-338). Ahora no afirma el estado del usuario y apunta a Productos.
+  // ATADURA: promete que en Productos se pueden añadir servicios — o sea que esa escritura NO
+  // caduca. Lo vigila el censo de montajes: el día que alguien gatee productos, salta.
+  day3:         { estado: 'ATADO', ticket: null, atadura: 'censo de montajes', huella: 'efb984e3d1f54d14' },
+
+  // «Tu prueba expira en unos 7 días» — un hecho, y además EXACTO: la prueba es de 14 días
+  // (`auth.service.ts:301`) y el aviso sale con `age >= 7`. No promete qué pasa después.
+  day7:         { estado: 'SIN_CONSECUENCIA', ticket: null, atadura: null, huella: 'b7aff4fb61086e90' },
+
+  // SCRUM-337 · TEXTO CORREGIDO. Antes: «perderías el acceso a tu panel», y el panel no se pierde.
+  // ATADURA: el texto enumera exactamente lo que caduca, y eso son los 4 montajes de
+  // `requireActivePlan`. Si alguien monta o desmonta uno, el texto deja de describir el mecanismo
+  // y el censo de montajes salta.
+  // ⚠️ La enumeración de lo que SIGUE funcionando no usa el posesivo del documento fiscal: el
+  // trinquete de SCRUM-299 (Parte M) lo caza como promesa, y tenía razón (reglas 24/26).
+  day12:        { estado: 'ATADO', ticket: null, atadura: 'censo de montajes', huella: '668a7fff2a26b2d2' },
+
+  // «tus datos siguen aquí» — cierto. ¿Atado a qué? A que NADA los borra, que es una AUSENCIA.
+  // Por eso la atadura es el censo de borrados de abajo (forma + sitio): sin él, esto sería
+  // «verde por ausencia» y una purga por inactividad rompería el claim sin que nadie se enterase.
+  trialExpired: { estado: 'ATADO', ticket: null, atadura: 'censo de borrados', huella: 'a9c9bad1b95297c9' },
+
+  // Reenganche puro: no menciona prueba, plan ni bloqueo.
+  inactive:     { estado: 'SIN_CONSECUENCIA', ticket: null, atadura: null, huella: 'd2c934ccd6dbd3dd' },
 };
+
+// Los borrados del árbol, congelados por identidad (fichero + modelo.método + nº de ocurrencia),
+// nunca por línea. Es la ATADURA de `trialExpired`: ver el bloque del censo C en el derivador.
+const BORRADOS_DECLARADOS = [
+  'src/modules/auth/domain/auth.service.ts::authSession.deleteMany#1',
+  'src/modules/expenses/domain/expenses.service.ts::expense.delete#1',
+  'src/modules/maintenance/domain/maintenance.service.ts::quote.delete#1',
+  'src/modules/maintenance/domain/maintenance.service.ts::quote.delete#2',
+  'src/modules/products/domain/products.service.ts::product.delete#1',
+  'src/modules/providers/domain/providers.service.ts::provider.delete#1',
+  'src/modules/system/app/routes/invoicesAdmin.routes.ts::albaranLineaFacturada.deleteMany#1',
+  'src/modules/system/customerAdmin.ts::customer.deleteMany#1',
+  'src/modules/system/domain/borradoMerchant.ts::botSession.deleteMany#1',
+  'src/modules/system/domain/borradoMerchant.ts::merchant.deleteMany#1',
+  'src/modules/team/domain/team.service.ts::authSession.deleteMany#1',
+  'src/modules/templates/app/routes/templates.routes.ts::quoteTemplate.delete#1',
+];
+const MINIMO_BORRADOS = 10;
 
 // El censo de ejecución, congelado POR IDENTIDAD (fichero + método + ruta), nunca por línea.
 // Por línea, cualquier edición diez líneas más arriba lo pondría en rojo, y un guard que grita
@@ -187,27 +227,72 @@ test('SCRUM-337 · si cambia lo que el producto HACE al vencer, hay que volver a
     '  del fundador, no un efecto colateral de poner verde un test.');
 });
 
-test('SCRUM-337 · el censo de avisos NO ATADOS no crece, y si BAJA hay que anotarlo', () => {
-  // Mismo mecanismo que el censo heredado de SCRUM-267 y el ratchet de SCRUM-243, y por el mismo
-  // motivo: si bajar fuese silencioso, el censo seguiría declarando dos deudas cuando queda una y
-  // nadie sabría nunca cuándo se vació del todo. Que el guard falle por una MEJORA es deliberado.
+test('SCRUM-337 · ningún aviso promete algo que el producto no hace (y si vuelve, con ticket)', () => {
+  // Mismo mecanismo que el censo heredado de SCRUM-267 y el ratchet de SCRUM-243. Ahora la lista
+  // está VACÍA: SCRUM-337 corrigió los dos que había (day12 y day3). Que esté vacía es lo que hay
+  // que defender — cualquier promesa nueva sin respaldo es el defecto de 337 otra vez, con otro
+  // correo. Y si algún día vuelve a haber una legítima, entra aquí CON SU TICKET: una deuda sin
+  // nombre es indistinguible de un olvido.
   const noAtados = Object.entries(CORRESPONDENCIA)
     .filter(([, v]) => v.estado === 'NO_ATADO')
-    .map(([k, v]) => `${k} → ${v.ticket}`)
+    .map(([k, v]) => `${k} → ${v.ticket ?? 'SIN TICKET'}`)
     .sort();
 
-  assert.deepEqual(noAtados, ['day12 → SCRUM-337', 'day3 → SCRUM-338'],
-    '🔴 HA CAMBIADO EL CENSO DE AVISOS QUE PROMETEN ALGO QUE EL PRODUCTO NO HACE:\n    ' +
-    noAtados.join('\n    ') +
-    '\n\n  · Si ha CRECIDO: se ha aceptado una promesa nueva sin respaldo. Eso es el defecto de\n' +
-    '    SCRUM-337 otra vez, con otro correo.\n' +
-    '  · Si ha BAJADO: enhorabuena, se ha cerrado una — actualiza esta lista para que la mejora\n' +
-    '    quede anotada en vez de pasar desapercibida.\n\n' +
-    '  Cada entrada tiene que llevar su ticket. Una deuda sin nombre es indistinguible de un olvido.');
+  assert.deepEqual(noAtados, [],
+    '🔴 HAY AVISOS QUE PROMETEN ALGO QUE EL PRODUCTO NO HACE:\n    ' + noAtados.join('\n    ') +
+    '\n\n  Es el defecto de SCRUM-337 otra vez. Las dos salidas son las mismas y las dos son del\n' +
+    '  fundador: corregir el texto (microcopy, regla 30) o ampliar el bloqueo (afecta a TODAS las\n' +
+    '  cuentas en prueba). Si la deuda se acepta a sabiendas, declárala aquí con su ticket.');
 
-  const sinTicket = Object.entries(CORRESPONDENCIA)
-    .filter(([, v]) => v.estado === 'NO_ATADO' && !v.ticket)
+  // `ATADO` no se concede por ausencia: cada uno nombra el mecanismo que lo sostiene.
+  const atadosSinAtadura = Object.entries(CORRESPONDENCIA)
+    .filter(([, v]) => v.estado === 'ATADO' && !v.atadura)
     .map(([k]) => k);
-  assert.deepEqual(sinTicket, [],
-    '🔴 hay avisos declarados NO_ATADO sin ticket: ' + sinTicket.join(', '));
+  assert.deepEqual(atadosSinAtadura, [],
+    '🔴 HAY AVISOS DECLARADOS `ATADO` SIN NOMBRAR SU ATADURA: ' + atadosSinAtadura.join(', ') +
+    '\n\n  Que hoy nada contradiga un aviso no es una atadura: es un hueco con suerte, y «verde por\n' +
+    '  ausencia» no vale. O nombras el mecanismo que lo vigila —y ese mecanismo es un assert de\n' +
+    '  este fichero— o el estado honesto es otro.');
+});
+
+// ── LA ATADURA DE `trialExpired`: EL CENSO DE BORRADOS, EN DOS CAPAS ─────────────────────
+
+test('SCRUM-337 · SUELO ③ el censo de borrados ve el árbol', () => {
+  assert.ok(borrados.length >= MINIMO_BORRADOS,
+    `🔴 el censo ve ${borrados.length} borrados y debería ver al menos ${MINIMO_BORRADOS}. Cero ` +
+    'borrados no significa «nadie borra nada»: significa que el detector está ciego, y las dos ' +
+    'capas de abajo pasarían en verde sin comprobar nada.');
+});
+
+test('SCRUM-337 · capa ① ningún borrado se filtra por vencimiento, plan o inactividad', () => {
+  const sospechosos = borrados
+    .filter((b) => b.sospechoso)
+    .map((b) => `${b.fichero}:${b.linea}  ${b.modelo}.${b.metodo}  →  ${b.filtro}`);
+
+  assert.deepEqual(sospechosos, [],
+    '🔴 HAY UN BORRADO QUE PARECE UNA PURGA:\n    ' + sospechosos.join('\n    ') +
+    '\n\n  El aviso `trialExpired` le dice al usuario que sus datos siguen ahí cuando termina la\n' +
+    '  prueba. Un borrado filtrado por umbral de tiempo, por plan o por inactividad convierte esa\n' +
+    '  frase en mentira, y el usuario ya la ha recibido.\n\n' +
+    '  Si el borrado es legítimo y NO toca datos del profesional, dilo en el ticket y ajusta el\n' +
+    '  aviso ANTES de mergear. El orden importa: primero el texto, después la purga.');
+});
+
+test('SCRUM-337 · capa ② no aparece ni desaparece ningún sitio de borrado sin que se mire el aviso', () => {
+  // Esta capa existe porque la ① tiene un punto ciego CONOCIDO: una purga que primero consulte los
+  // vencidos y luego borre por `id` no tiene forma sospechosa. Como sitio nuevo, sí salta aquí.
+  const ids = borrados.map((b) => b.id);
+  const nuevos = ids.filter((id) => !BORRADOS_DECLARADOS.includes(id));
+  const desaparecidos = BORRADOS_DECLARADOS.filter((id) => !ids.includes(id));
+
+  assert.deepEqual({ nuevos, desaparecidos }, { nuevos: [], desaparecidos: [] },
+    '🔴 EL CENSO DE BORRADOS HA CAMBIADO:\n' +
+    (nuevos.length ? '    SITIOS NUEVOS:\n      ' + nuevos.join('\n      ') + '\n' : '') +
+    (desaparecidos.length ? '    SITIOS QUE HAN DESAPARECIDO:\n      ' + desaparecidos.join('\n      ') + '\n' : '') +
+    '\n  LA PREGUNTA QUE HAY QUE CONTESTAR: ¿este borrado se dispara al vencer la prueba o por\n' +
+    '  inactividad? Si la respuesta es sí, `trialExpired` («tus datos siguen aquí») deja de ser\n' +
+    '  cierto y hay que corregirlo ANTES de mergear.\n\n' +
+    '  Si la respuesta es no, actualiza BORRADOS_DECLARADOS en el mismo commit.\n\n' +
+    '  ⚠️ Y que quede dicho: se puede actualizar esta lista y contestar mal. Entonces será UNA\n' +
+    '  MENTIRA EN UN DIFF, NO UN SILENCIO — que es el estándar de la casa, no una excusa.');
 });
