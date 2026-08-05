@@ -23,6 +23,8 @@ import {
   ALBARAN_MODOS_VALORACION,
   serializeAlbaran,
   validarLineas,
+
+  contarLineasDePresupuesto, // SCRUM-367
   validarConsolidacion,
   groupByRotura,
   type AlbaranModoValoracion,
@@ -659,7 +661,10 @@ router.post('/:id/albaranes', async (req, res) => {
     // Líneas iniciales opcionales; si llegan, se validan contra el modo (condición 4 del OK + SCRUM-65)
     let lineas: any[] = [];
     if (req.body?.lineas !== undefined) {
-      const v = validarLineas(req.body.lineas, modoValoracion);
+      // SCRUM-367: el rango de `quoteLineIndex` se valida contra el presupuesto REAL, no contra
+      // lo que diga el cliente. Un enlace roto es peor que ninguno: C6 se lo creería.
+      const nLineasQuote = await contarLineasDePresupuesto(job.id, req.merchantId!);
+      const v = validarLineas(req.body.lineas, modoValoracion, nLineasQuote);
       if (!v.ok) return res.status(400).json({ error: 'lineas_invalidas', message: v.error });
       lineas = v.lineas;
     }
