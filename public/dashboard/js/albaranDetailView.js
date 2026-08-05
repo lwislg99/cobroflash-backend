@@ -12,10 +12,17 @@
 // donde el registro diga. Si mañana cambia el patrón, cambia en un sitio.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// LOS RÓTULOS ESTÁN SIN APROBAR (regla 30)
+// LOS RÓTULOS (regla 30: los aprueba el fundador, no esta sesión)
 //
-// Todo texto de acción se pinta con el marcador `[PENDIENTE microcopy oficial]` que trae la ley.
-// Esta sesión NO escribe microcopy: la lista de los que hacen falta va en el informe del ticket.
+// `ROTULOS` es el ÚNICO sitio donde vive el texto de una acción. Ninguno se ha redactado aquí:
+//   · cuatro los aprobó el fundador para este ticket — son NUEVOS en el árbol;
+//   · los otros cinco se reutilizan LETRA POR LETRA de la fila del Trabajo, que es de donde
+//     estas mismas acciones se están mudando. Reutilizar no es redactar: el rótulo aprobado
+//     para «emitir este albarán» no cambia de significado por cambiar de superficie.
+//
+// El `||` del fondo NO es decorativo. Una acción que el registro declare y que nadie haya
+// rotulado se pinta con el marcador VISIBLE, no con un hueco: un botón sin texto es un botón
+// que el pro no puede usar y que nadie ve en una captura.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // EL RAIL ES DE SOLO LECTURA, Y ESO INCLUYE LO QUE **NO** ENSEÑA
@@ -25,6 +32,36 @@
 // **no existe campo que las ate** (medido en A0.2; el libro de facturadas referencia el índice
 // de la línea del ALBARÁN, del presupuesto nada). Enseñarlas emparejadas sería inventar una
 // correspondencia por coincidencia de concepto.
+
+// El nombre lleva sufijo A PROPÓSITO: los scripts clásicos del dashboard comparten ámbito
+// léxico, y un `const ROTULOS` a secas es el tipo de nombre que otra pantalla vuelve a declarar
+// tarde o temprano. Dos `const` iguales = SyntaxError EN PARSEO y la pantalla desaparece sin
+// 500 ni log (caso `copyRojo`, SCRUM-210).
+const ROTULOS_ALBARAN = {
+  // Aprobados para ESTE ticket (nuevos en el árbol)
+  btnFacturar: 'Facturar lo entregado',
+  btnFirmarAqui: 'Firmar aquí mismo',
+  btnVerTrabajo: 'Ver trabajo',
+  // Reutilizados letra por letra de la fila del Trabajo (jobDetailView.js), de donde se mudan
+  btnEmitir: 'Emitir',
+  btnEnviarFirmar: 'Enviar para firmar',
+  btnPdf: 'PDF',
+  btnWhatsApp: 'Enviar por WhatsApp',
+  btnEditarLineas: 'Editar líneas',
+  btnFoto: '📷 Añadir foto',
+};
+
+// EL CONTRATO CON LA FILA DEL TRABAJO, en un sitio que una máquina puede leer.
+//
+// Clave = acción de esta página que NO hace el trabajo, solo navega. Valor = la función de
+// `jobDetailView.js` que tiene el mecanismo de verdad y que por eso NO se puede borrar de la fila.
+//
+// `btnVerTrabajo` no está aquí y no es un olvido: ese botón navega porque navegar ES lo que hace.
+// Es la diferencia entre un destino y un callejón sin salida, y el guard la respeta.
+const PUENTES_A_LA_FILA = {
+  btnFacturar: 'openFacturarParcialSheet',
+  btnEditarLineas: 'openAlbEditorSheet',
+};
 
 async function renderAlbaranDetailView(container, albaranId) {
   container.innerHTML = '';
@@ -108,8 +145,7 @@ async function renderAlbaranDetailView(container, albaranId) {
     const b = document.createElement('button');
     b.type = 'button';
     b.dataset.accion = id;
-    // Regla 30: el rótulo no lo escribe esta sesión.
-    b.textContent = MICROCOPY_PENDIENTE;
+    b.textContent = ROTULOS_ALBARAN[id] || MICROCOPY_PENDIENTE;
     b.addEventListener('click', onClick);
     return b;
   };
@@ -126,11 +162,39 @@ async function renderAlbaranDetailView(container, albaranId) {
         recargar();
       } catch (e) { setStatus('error', e?.data?.message || e.message); }
     }),
+    // ⚠️ LOS DOS PUENTES QUE QUEDAN, y son un CONTRATO con la fila del Trabajo.
+    //
+    // `btnFacturar` y `btnEditarLineas` no hacen el trabajo: llevan al Trabajo, donde SÍ está el
+    // mecanismo. Sus dos hojas (`openFacturarParcialSheet`, `openAlbEditorSheet`) viven ANIDADAS
+    // dentro de `renderJobDetailView` — medido: columna 2, no son globales — así que desde aquí
+    // no se pueden invocar sin sacarlas antes, y eso es un refactor de otra pantalla (y el de
+    // facturar toca el camino del dinero).
+    //
+    // Consecuencia dura, y por eso está escrita: mientras estos dos naveguen, la fila NO puede
+    // quedarse solo con el enlace — tiene que conservar «Editar líneas» y «Facturar parte» o
+    // estos botones se convierten en callejones sin salida. Lo vigila
+    // `tests/scrum302-sin-callejones.test.mjs`, que lo DERIVA de este fichero: no es una promesa
+    // de comentario.
     btnFacturar: () => mk('btnFacturar', () => {
       if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: alb.job?.id });
     }),
+    // FIRMAR ES DE VERDAD AQUÍ. El rótulo aprobado dice «aquí mismo» y tiene que ser cierto: un
+    // botón que promete firmar y te manda a otra pantalla a buscar otro botón es peor que no
+    // tenerlo. El componente de firma ya es global (`signaturePad.js`), así que esto es la MISMA
+    // mecánica en otra superficie, no una nueva.
     btnFirmarAqui: () => mk('btnFirmarAqui', () => {
-      if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: alb.job?.id });
+      if (!window.openSignaturePad) { setStatus('error', 'El componente de firma no está cargado.'); return; }
+      window.openSignaturePad({
+        title: 'Firma del cliente',
+        onConfirm: async (dataUri) => {
+          try {
+            await apiRequest(`/admin/albaranes/${alb.id}/firmar`, {
+              method: 'POST', body: JSON.stringify({ signatureData: dataUri }),
+            });
+            recargar();
+          } catch (e) { setStatus('error', 'No se pudo firmar: ' + (e?.data?.message || e.message)); }
+        },
+      });
     }),
     btnPdf: () => mk('btnPdf', () => window.open(`/admin/albaranes/${alb.id}/pdf`, '_blank')),
     btnWhatsApp: () => mk('btnWhatsApp', async () => {
@@ -144,8 +208,31 @@ async function renderAlbaranDetailView(container, albaranId) {
     btnEditarLineas: () => mk('btnEditarLineas', () => {
       if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: alb.job?.id });
     }),
+    // La foto también se sube aquí: el endpoint ya existe y el límite de 5 MB se comprueba ANTES
+    // de leer el fichero — un móvil de gama media leyendo 12 MB en base64 se queda clavado, y el
+    // pro no sabría si está subiendo o si se ha colgado.
     btnFoto: () => mk('btnFoto', () => {
-      if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: alb.job?.id });
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/jpeg,image/png,image/webp';
+      input.style.display = 'none';
+      page.appendChild(input);
+      input.addEventListener('change', () => {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) { setStatus('error', 'Cada foto puede ocupar como máximo 5 MB.'); input.value = ''; return; }
+        const rd = new FileReader();
+        rd.onload = async () => {
+          try {
+            await apiRequest(`/admin/albaranes/${alb.id}/fotos`, {
+              method: 'POST', body: JSON.stringify({ data: rd.result, mime: file.type }),
+            });
+            recargar();
+          } catch (e) { setStatus('error', e?.data?.message || 'No se pudo subir la foto.'); }
+        };
+        rd.readAsDataURL(file);
+      });
+      input.click();
     }),
     btnVerTrabajo: () => mk('btnVerTrabajo', () => {
       if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: alb.job?.id });
