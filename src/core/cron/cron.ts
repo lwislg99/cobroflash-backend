@@ -5,6 +5,7 @@ import { sendWeeklyDigests }            from '../../modules/messaging/domain/wee
 import { runLifecycleEmails }           from '../../modules/messaging/domain/lifecycle.service';
 import { runMaintenanceProposals }      from '../../modules/maintenance/domain/maintenance.service';
 import { expireQuotes }                 from '../../modules/quotes/domain/expire.service';
+import { barrerSellosAlbaran, resumenDelBarrido } from '../../modules/jobs/domain/albaranBarrido';
 
 export function startCronJobs(): void {
   // Cada hora en punto: cotizaciones sin respuesta >24h + caducidad A16.2
@@ -64,5 +65,30 @@ export function startCronJobs(): void {
     }
   });
 
-  console.log('[cron] Jobs registrados: recordatorio cotizaciones (cada hora), recordatorio facturas (diario 10:00), mantenimientos (diario 10:00), lifecycle emails (diario 8:00), digest semanal (lunes 9h)');
+  // SCRUM-371 · Cada día a las 3:15: barrido de los SELLOS de los albaranes firmados.
+  //
+  // Va en el cron y no en un comando porque un verificador que solo corre cuando alguien se acuerda
+  // de lanzarlo es «verde porque nadie lo ejecuta»: la misma clase de garantía muda que SCRUM-369
+  // vino a cerrar. Aquí corre solo, todos los días, tenga o no alguien la pregunta en la cabeza.
+  //
+  // A las 3:15 porque no manda nada a nadie —solo LEE y escribe una línea de log—, así que no toca
+  // horas tranquilas ni compite con los cinco de arriba, que sí envían.
+  //
+  // ⚠️ NO ARREGLA NADA. Si un sello no cuadra, se declara en el log con su número y su merchant y
+  // ahí se queda: lo firmado no se toca ni siquiera para arreglarlo (espíritu de la regla 29).
+  cron.schedule('15 3 * * *', async () => {
+    try {
+      const informe = await barrerSellosAlbaran();
+      const resumen = resumenDelBarrido(informe);
+      // Un hallazgo NO se susurra en un console.log entre otras veinte líneas; y «no se pudo mirar»
+      // tampoco es una noticia neutra: es que el barrido no encontró nada que comprobar.
+      if (informe.conclusion === 'hay_hallazgos') console.error('[cron] 🔴', resumen);
+      else if (informe.conclusion === 'no_se_pudo_mirar') console.warn('[cron] ⚠️', resumen);
+      else console.log('[cron]', resumen);
+    } catch (err: any) {
+      console.error('[cron] Error en barrerSellosAlbaran:', err?.message);
+    }
+  });
+
+  console.log('[cron] Jobs registrados: recordatorio cotizaciones (cada hora), recordatorio facturas (diario 10:00), mantenimientos (diario 10:00), lifecycle emails (diario 8:00), digest semanal (lunes 9h), sellos de albarán (diario 3:15)');
 }
