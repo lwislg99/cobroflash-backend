@@ -153,7 +153,6 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
   // se aparcan por volumen y porque tocarlas mueve el nav del dashboard.
   { method: 'POST',   path: '/admin/products/import', tanda: 3, duda: 'Reescribe el tarifario en bloque → admin' },
   { method: 'POST',   path: '/admin/products/load-catalog', tanda: 3, duda: 'Ídem, carga catálogo entero' },
-  { method: 'POST',   path: '/admin/customers/import', tanda: 3, duda: 'Alta masiva de clientes → probable admin' },
   { method: 'GET',    path: '/admin/providers', tanda: 3, duda: 'Proveedores: ligado a compras/gastos → probable admin' },
   { method: 'POST',   path: '/admin/providers', tanda: 3, duda: 'Ídem' },
   { method: 'PUT',    path: '/admin/providers/:id', tanda: 3, duda: 'Ídem' },
@@ -181,7 +180,12 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
  * protege por ir apretado; un tope con holgura es el descuadre silencioso que este
  * fichero existe para evitar (ver SCRUM-103 sobre qué más no valida).
  */
-export const PENDIENTE_MAX = 16;
+// SCRUM-312: 16 → 15. `POST /admin/customers/import` deja de ser una duda y pasa a
+// `requireRole('admin')`, con el criterio que ya estaba escrito aquí arriba: línea suelta →
+// Técnico, catálogo entero → Admin. Un alta MASIVA de clientes es catálogo entero.
+// Bajar el tope en el mismo commit es lo que impide que el terreno ganado se pierda en
+// silencio — por eso el ratchet falla también cuando SOBRA holgura.
+export const PENDIENTE_MAX = 15;
 
 /**
  * Fecha límite. Pasada esta fecha el test FALLA mientras queden pendientes.
