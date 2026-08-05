@@ -53,9 +53,13 @@ const LOTE = 200;
 /**
  * Las filas que hacen falta, en forma ESTRUCTURAL y no como tipos de Prisma.
  *
- * `lugarEntrega` es opcional a propósito: la columna la trae SCRUM-300 (C5) y hoy no está en el
- * esquema. Una fila sin ella entra igual y vale `null` — que es lo correcto, porque el único sobre
- * que existe hoy es v:1 y v:1 no sella ese campo.
+ * ⚠️ SCRUM-300 (C5) ya entró: `lugarEntrega`, `fechaEntrega`, `firmadoPorNombre` y
+ * `firmadoPorCalidad` son columnas reales y los CUATRO entran en el contenido sellado de v:2.
+ * Siguen siendo opcionales en esta interfaz porque valen `null` en toda la población v:1 —que no
+ * los sella— y porque el barrido no debe reventar con una fila que no los traiga.
+ *
+ * 🔴 Si faltaran al construir la entrada, un albarán v:2 INTACTO se recalcularía con nulos y
+ * saldría como «no coincide»: la acusación de falsificación contra un papel que nadie tocó.
  */
 export interface FilaAlbaranFirmado {
   id: number;
@@ -68,6 +72,9 @@ export interface FilaAlbaranFirmado {
   notas: string | null;
   evidenciaFirma: unknown;
   lugarEntrega?: string | null;
+  fechaEntrega?: Date | string | null;
+  firmadoPorNombre?: string | null;
+  firmadoPorCalidad?: string | null;
 }
 export interface FilaJob { titulo: string | null; direccion: string | null; merchantId: number }
 export interface FilaCustomer { name: string | null; legalName: string | null }
@@ -100,12 +107,20 @@ export function entradaDesdeFilas(
       modoValoracion: a.modoValoracion,
       lineas: a.lineas,
       notas: a.notas ?? null,
+      // ⚠️ Las DOS fuentes de `obra` viajan JUNTAS y SIN elegir: cuál manda depende de la versión
+      // del sobre (v:1 → `Job.direccion`; v:2 → `Albaran.lugarEntrega`) y elegir es trabajo de la
+      // receta, no del adaptador. Es el contrato escrito de `FuentesContenido`.
       jobDireccion: job?.direccion || null,
       lugarEntrega: a.lugarEntrega ?? null,
       referenciaTrabajo: job?.titulo || null,
       cliente: customer?.legalName || customer?.name || null,
       emisor: merchant?.legalName || merchant?.name || null,
       emisorNif: merchant?.taxId || null,
+      // SCRUM-300 (C5): los tres que estrena v:2. En v:1 la receta los ignora, así que ponerlos
+      // aquí no toca el recálculo del histórico.
+      fechaEntrega: a.fechaEntrega ?? null,
+      firmadoPorNombre: a.firmadoPorNombre ?? null,
+      firmadoPorCalidad: a.firmadoPorCalidad ?? null,
     },
   };
 }
@@ -143,6 +158,8 @@ export const lectorPrisma: LectorDePoblacion = {
       select: {
         id: true, merchantId: true, jobId: true, numero: true, fecha: true,
         modoValoracion: true, lineas: true, notas: true, evidenciaFirma: true,
+        // SCRUM-300 (C5): sin estos cuatro, un albarán v:2 intacto saldría como «no coincide».
+        lugarEntrega: true, fechaEntrega: true, firmadoPorNombre: true, firmadoPorCalidad: true,
       },
     });
   },

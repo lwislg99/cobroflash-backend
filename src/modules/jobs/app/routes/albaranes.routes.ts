@@ -27,7 +27,7 @@ import {
 import { allocateAlbaranNumber } from '../../domain/albaranNumber.service'; // SCRUM-302: dentro de la tx
 import { datosDuplicado } from '../../domain/albaranDuplicado'; // SCRUM-302: qué viaja al duplicado
 // SCRUM-300 (C5): microcopy y normalización del firmante, en su fuente única.
-import { normalizarLugarEntrega, normalizarNombreFirmante, resolverCalidadFirmante } from '../../domain/albaranFirmante';
+import { exigirNombreFirmante, normalizarLugarEntrega, resolverCalidadFirmante } from '../../domain/albaranFirmante';
 import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
 // SCRUM-301 (C1): el listado global. Dominio puro + lector inyectable (la tenencia se ejercita).
 import { listarAlbaranesDelMerchant, type LectorListado } from '../../domain/albaranesListado';
@@ -663,7 +663,11 @@ router.post('/:id/firmar', async (req, res) => {
       textoLibre: req.body?.firmadoPorCalidadOtro,
     });
     if (!calidad.ok) return res.status(400).json({ error: calidad.error, message: calidad.message });
-    const firmadoPorNombre = normalizarNombreFirmante(req.body?.firmadoPorNombre);
+    // SCRUM-300: el nombre es OBLIGATORIO al firmar (columna nullable por las filas viejas; el
+    // acto de firmar lo exige). Ver `exigirNombreFirmante` para el porqué de las dos reglas.
+    const nombre = exigirNombreFirmante(req.body?.firmadoPorNombre);
+    if (!nombre.ok) return res.status(400).json({ error: nombre.error, message: nombre.message });
+    const firmadoPorNombre = nombre.nombre;
 
     const firmadoAt = new Date();
     // SCRUM-68: sella evidencias (canal in situ, sin token). ip/ua se guardan pero NUNCA
