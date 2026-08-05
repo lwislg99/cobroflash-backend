@@ -1955,11 +1955,34 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .detail-rail { border-left: 1px solid var(--border); }
 .detail-rail > * { padding: 18px 22px; border-bottom: 1px solid var(--border); }
 .detail-rail > *:last-child { border-bottom: none; }
-/* Móvil: el rail deja de ser columna y pasa DEBAJO. Un rail de 220px al lado del cuerpo en un
-   Android de gama media deja las dos columnas ilegibles. */
+/* SCRUM-318 (G3) · el contenido del rail. Ni un token nuevo. */
+.detail-rail-linea {
+  display: flex; align-items: baseline; gap: 8px;
+  font-size: 13px; color: var(--body); margin-bottom: 4px;
+}
+.detail-rail-linea:last-child { margin-bottom: 0; }
+/* La etiqueta de DINERO va a ancho fijo para que los importes queden alineados en columna. */
+.detail-rail-etiqueta { color: var(--muted); min-width: 76px; }
+.detail-rail-fuerte { color: var(--ink); font-weight: 600; }
+.detail-rail-enlace { color: var(--brand, #16a34a); font-weight: 600; text-decoration: none; }
+.detail-rail-enlace:hover { text-decoration: underline; }
+.detail-rail-enlace--suelto { display: inline-block; margin-top: 6px; font-size: 13px; }
+/* Objetivo táctil de 44 px (AB6): el teléfono y el mapa se pulsan con las manos sucias, de pie y
+   con el motor en marcha. Es el único sitio del rail donde el tamaño del área importa. */
+.detail-rail-linea a { min-height: 44px; display: inline-flex; align-items: center; }
+
+/* Móvil: el rail deja de ser columna. Un rail de 220 px al lado del cuerpo en un Android de gama
+   media deja las dos columnas ilegibles.
+   ⚠️ Y VA ARRIBA, NO DEBAJO (`order:-1`). Debajo volvería a quedar detrás de la pila de
+   documentos, que es EXACTAMENTE el defecto que este ticket corrige: a quién llamo y adónde voy no
+   pueden estar al final de una lista que crece con el trabajo. El móvil es el caso de uso real de
+   esta pantalla — el pro la abre yendo a la obra. */
 @media (max-width: 720px) {
   .detail-cuerpo--con-rail { grid-template-columns: 1fr; }
-  .detail-rail { border-left: none; border-top: 1px solid var(--border); }
+  .detail-rail {
+    order: -1;
+    border-left: none; border-bottom: 1px solid var(--border);
+  }
 }
 
 .detail-section { padding: 18px 22px; border-bottom: 1px solid var(--border); }
