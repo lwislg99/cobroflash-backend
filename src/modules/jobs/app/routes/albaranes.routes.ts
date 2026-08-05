@@ -20,11 +20,17 @@ import {
   ensureAlbaranPdf,
   serializeAlbaran,
   validarLineas,
+
+  contarLineasDePresupuesto, // SCRUM-367
   type AlbaranModoValoracion,
 } from '../../domain/albaran.service';
+import { allocateAlbaranNumber } from '../../domain/albaranNumber.service'; // SCRUM-302: dentro de la tx
+import { datosDuplicado } from '../../domain/albaranDuplicado'; // SCRUM-302: qué viaja al duplicado
 // SCRUM-300 (C5): microcopy y normalización del firmante, en su fuente única.
 import { normalizarLugarEntrega, normalizarNombreFirmante, resolverCalidadFirmante } from '../../domain/albaranFirmante';
 import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
+// SCRUM-301 (C1): el listado global. Dominio puro + lector inyectable (la tenencia se ejercita).
+import { listarAlbaranesDelMerchant, type LectorListado } from '../../domain/albaranesListado';
 import {
   agruparPorMes,
   seleccionarConsolidablesDeCliente,
@@ -50,6 +56,75 @@ import { sellarTrasEmision, SELLADO_HECHO } from '../../../invoicing/domain/sell
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 
 const router = Router();
+
+/**
+ * SCRUM-301 · el lector de verdad del listado. Cada consulta recibe el `merchantId` y lo pone en
+ * su `where`: si alguna lo perdiera, el listado enseñaría el nombre del cliente de otro merchant.
+ * Vive aquí —y no en el dominio— para que `albaranesListado.ts` siga sin tocar Prisma y su tenencia
+ * se pueda ejercitar con una tienda falsa en la suite, sin base de datos.
+ */
+const lectorPrismaListado: LectorListado = {
+  albaranes: ({ merchantId }) => prisma.albaran.findMany({
+    where: { merchantId },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true, merchantId: true, jobId: true, numero: true, fecha: true,
+      createdAt: true, estado: true, lineas: true, invoiceId: true,
+    },
+  }),
+  jobs: ({ merchantId, ids }) => prisma.job.findMany({
+    where: { merchantId, id: { in: ids } },
+    select: { id: true, titulo: true, customerId: true },
+  }),
+  customers: ({ merchantId, ids }) => prisma.customer.findMany({
+    where: { merchantId, id: { in: ids } },
+    select: { id: true, name: true, legalName: true },
+  }),
+  libro: ({ merchantId, albaranIds }) => prisma.albaranLineaFacturada.findMany({
+    where: { merchantId, albaranId: { in: albaranIds } },
+    select: { albaranId: true, lineaIndex: true, cantidad: true, invoiceId: true },
+  }),
+};
+
+/**
+ * GET /admin/albaranes — SCRUM-301 (C1): el LISTADO GLOBAL del merchant.
+ *
+ * No existía: los albaranes solo se veían dentro de cada Trabajo, así que «¿qué tengo sin firmar?»
+ * —la pregunta del lunes— obligaba a entrar obra por obra.
+ *
+ * 🔴 NO CAPTURA los errores del lector para devolver una lista vacía. Si la lectura falla, esto
+ * responde 500 y la pantalla pinta un error: un contador de «sin firmar» a 0 porque la consulta se
+ * rompió manda al profesional a casa tranquilo con tres albaranes sin firmar. Cero de «no hay» y
+ * cero de «no supe mirar» son idénticos en pantalla y opuestos en significado.
+ *
+ * La lógica (ejes, contadores, derivado de cobro) vive en `albaranesListado.ts` con su lector
+ * inyectable: así la tenencia se prueba EJERCITANDO el camino con dos merchants, y no fiándose de
+ * que el fichero mencione `merchantId` (SCRUM-348).
+ *
+ * 🔴 ADMIN-ONLY, y no es una precaución de más. SCRUM-147 midió y cerró que **un técnico solo ve
+ * SUS Trabajos** (`seesOnlyOwnJobs`: allowlist de 'admin', rol desconocido restringido). Los
+ * albaranes cuelgan de Trabajos, así que un listado global le enseñaría de qué obras AJENAS hay
+ * partes, de qué clientes y con qué fechas — lo que la puerta principal le niega, servido por la
+ * puerta de atrás.
+ *
+ * El criterio de «la misma información, agrupada» (el que abre `consolidables` al técnico) vale
+ * cuando la información YA era visible; aquí no lo era. Abrir de más no se deshace: haría falta
+ * saber quién lo usó mientras tanto.
+ *
+ * Si algún día el técnico debe ver los partes de SUS obras, el mecanismo ya existe y es barato
+ * —`seesOnlyOwnJobs(req.userRole)` + prefiltrar los `jobId` con `operarioId = req.teamMemberId`,
+ * como hace `GET /admin/jobs`—, pero **qué debe ver exactamente es una decisión de producto**, no
+ * un detalle de implementación: se decide en su ticket, no aquí.
+ */
+router.get('/', requireRole('admin'), async (req, res) => {
+  try {
+    const listado = await listarAlbaranesDelMerchant(req.merchantId!, lectorPrismaListado);
+    return res.json(listado);
+  } catch (err: any) {
+    console.error('[GET /admin/albaranes]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
 
 // GET /admin/albaranes/pendientes-facturar — SCRUM-69 (FACT-1): bandeja "pendientes de
 // facturar" agrupada por cliente y mes natural, con semáforo de plazo legal (art. 13 RD
@@ -348,7 +423,9 @@ router.patch('/:id', async (req, res) => {
     }
 
     if (req.body?.lineas !== undefined) {
-      const v = validarLineas(req.body.lineas, modoEfectivo);
+      // SCRUM-367: mismo rango real que al crear. ESTE es el punto donde el índice se perdía.
+      const nLineasQuote = await contarLineasDePresupuesto(albaran.jobId, req.merchantId!);
+      const v = validarLineas(req.body.lineas, modoEfectivo, nLineasQuote);
       if (!v.ok) return res.status(400).json({ error: 'lineas_invalidas', message: v.error });
       data.lineas = v.lineas;
       cambios.push('lineas');
@@ -391,7 +468,6 @@ router.patch('/:id', async (req, res) => {
       if (!fechaInvalida) { data.fechaEntrega = d; cambios.push('fechaEntrega'); }
     }
     if (fechaInvalida) return res.status(400).json({ error: 'invalid_date' });
-
     // SCRUM-300 (C5): LUGAR DE ENTREGA. Se edita aquí —preparando el documento— y NO en el
     // momento de firmar: teclear una dirección con el cliente delante y las manos sucias es
     // justo la fricción en obra que el ticket manda evitar. ⚠️ Vacío se guarda como NULL,
@@ -423,6 +499,62 @@ router.patch('/:id', async (req, res) => {
 });
 
 // POST /admin/albaranes/:id/emitir — borrador→emitido (idempotente si ya emitido).
+/**
+ * GET /admin/albaranes/:id — SCRUM-302 (C2): lo que necesita la PÁGINA de detalle.
+ *
+ * No existía: el albarán solo se leía dentro del detalle del Trabajo, como una fila de la pila de
+ * DOCUMENTOS. Una página propia necesita poder cargarse sola (enlace directo, recarga, «atrás»).
+ *
+ * Devuelve el albarán serializado + lo que el RAIL de solo lectura enseña + el estado de
+ * facturación DERIVADO. Ese derivado se calcula aquí, con las mismas piezas que usa
+ * `facturar-parcial`, y viaja con sus TRES valores: aplanarlo a un booleano perdería el `parcial`,
+ * que en una obra por fases es el caso normal.
+ */
+router.get('/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+
+    const albaran = await prisma.albaran.findFirst({ where: { id, merchantId: req.merchantId } });
+    if (!albaran) return res.status(404).json({ error: 'not_found' });
+
+    const job = await prisma.job.findFirst({
+      where: { id: albaran.jobId, merchantId: req.merchantId },
+      select: { id: true, titulo: true, direccion: true, customerId: true },
+    });
+    const customer = job?.customerId
+      ? await prisma.customer.findFirst({
+          where: { id: job.customerId, merchantId: req.merchantId },
+          select: { id: true, name: true },
+        })
+      : null;
+
+    const lineas = (Array.isArray(albaran.lineas) ? albaran.lineas : []) as any[];
+    const libro = await prisma.albaranLineaFacturada.findMany({
+      where: { merchantId: req.merchantId, albaranId: albaran.id },
+      select: { lineaIndex: true, cantidad: true, invoiceId: true },
+    });
+    const facturado = facturadoPorLinea(libro);
+    const estadoFacturacion = estadoCobroAlbaran(lineas, facturado, !!albaran.invoiceId);
+
+    return res.json({
+      ...serializeAlbaran(albaran),
+      // El rail: contexto de solo lectura. Nada de aquí es accionable desde esta página.
+      job: job ? { id: job.id, titulo: job.titulo, direccion: job.direccion } : null,
+      customer,
+      // Los TRES valores, no un booleano (SCRUM-170/302).
+      estadoFacturacion,
+      // Lo que queda por facturar, por línea: es lo que hace verdadero el «parcial».
+      pendientes: pendientePorLinea(lineas, facturado),
+      // Derivado, NO un estado (Parte L intacta): el modelo solo tiene borrador|emitido|firmado.
+      enviadoParaFirma: !!albaran.enviadoParaFirmaAt && albaran.estado === 'emitido',
+    });
+  } catch (err: any) {
+    console.error('[GET /admin/albaranes/:id]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 router.post('/:id/emitir', async (req, res) => {
   try {
     const found = await findAlbaran(req);
@@ -436,6 +568,39 @@ router.post('/:id/emitir', async (req, res) => {
     return res.json(serializeAlbaran(updated));
   } catch (err: any) {
     console.error('[POST /admin/albaranes/:id/emitir]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/albaranes/:id/duplicar — SCRUM-302 (C2).
+ *
+ * En una reforma de tres semanas cada día es un parte. Duplicar el de ayer y ajustar cantidades
+ * ahorra casi todo el trabajo de rellenarlo.
+ *
+ * 🔴 QUÉ VIAJA Y QUÉ NO **NO SE DECIDE AQUÍ**: lo decide `albaranDuplicado.ts`, que clasifica los
+ * campos del modelo en «describe el trabajo» y «es un hecho que ocurrió», y cuyo guard falla si
+ * aparece un campo SIN CLASIFICAR. Escribir aquí la lista de campos a copiar sería la lista que
+ * envejece en silencio — y si el campo nuevo es evidencial, el duplicado afirmaría algo que no pasó.
+ *
+ * ⚠️ EL NÚMERO SE RESERVA DENTRO DE LA TRANSACCIÓN. Con `allocateAlbaranNumber` fuera, dos
+ * duplicados simultáneos se llevan el MISMO `ALB-YYYY-NNN`, y un número de albarán repetido no es
+ * un problema de interfaz: es un problema de documento. Mismo patrón que el alta
+ * (`jobs.routes.ts:674`), no uno nuevo.
+ */
+router.post('/:id/duplicar', async (req, res) => {
+  try {
+    const found = await findAlbaran(req);
+    if (!found.ok) return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
+    const { albaran } = found;
+
+    const copia = await prisma.$transaction(async (tx) => {
+      const numero = await allocateAlbaranNumber(tx, req.merchantId!);
+      return tx.albaran.create({ data: { ...datosDuplicado(albaran as any), numero } as any });
+    });
+    return res.status(201).json(serializeAlbaran(copia));
+  } catch (err: any) {
+    console.error('[POST /admin/albaranes/:id/duplicar]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });

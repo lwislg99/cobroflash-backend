@@ -37,6 +37,10 @@ export const CAMPOS_QUE_VIAJAN: Record<string, string> = {
   modoValoracion: 'con o sin precios es una decisión del parte, no un hecho ocurrido',
   lineas: 'ES lo que describe el trabajo: el motivo entero de duplicar',
   notas: 'las escribió el profesional sobre la obra, y las volvería a escribir igual',
+  // SCRUM-300 (C5): DÓNDE se entrega describe el trabajo —la obra es la misma— y el pro lo
+  // teclearía idéntico mañana. No afirma que se haya entregado nada: eso lo dice `fechaEntrega`,
+  // que está en el otro cubo justamente por eso.
+  lugarEntrega: 'es la dirección de la OBRA, que no cambia al duplicar: describe, no afirma',
 };
 
 /**
@@ -58,6 +62,14 @@ export const CAMPOS_QUE_NO_VIAJAN: Record<string, string> = {
   createdAt: 'lo pone la base de datos al crear',
   updatedAt: 'lo pone la base de datos al escribir',
   invoiceId: 'la factura que consumió al ORIGINAL; el duplicado no lo ha facturado nadie',
+  // ── SCRUM-300 (C5) ────────────────────────────────────────────────────────────────────
+  // Los tres son HECHOS ocurridos sobre el documento anterior, y los tres van dentro del
+  // contenido SELLADO por la firma (sobre v:2). Heredarlos afirmaría en un documento nuevo —y
+  // sin firma— que alguien entregó tal día y que fulano lo recibió. Es el mismo daño que copiar
+  // el trazo, dicho con letras en vez de con un PNG.
+  fechaEntrega: 'afirma CUÁNDO se entregó; el duplicado no se ha entregado todavía',
+  firmadoPorNombre: '🔴 afirma QUIÉN recibió la entrega anterior. Nadie ha recibido ésta',
+  firmadoPorCalidad: '🔴 en calidad de qué firmó ESA persona en el OTRO documento',
 };
 
 /**
