@@ -144,7 +144,7 @@ function openImportCsvModal() {
     paso.innerHTML = [
       '<h4 style="margin:0 0 6px;font-size:16px;color:var(--neutral-900)">¿Se ven bien los acentos?</h4>',
       '<p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">Así hemos leído la primera fila de tu archivo:</p>',
-      '<div id="csv-muestra" style="padding:12px 14px;border:1px solid var(--neutral-200);border-radius:12px;background:var(--neutral-50);font-family:monospace;font-size:13px;color:var(--neutral-900);word-break:break-all"></div>',
+      '<div id="csv-muestra" style="padding:12px 14px;border:1px solid var(--neutral-200);border-radius:12px;background:var(--neutral-50);font-family:monospace;font-size:13px;color:var(--neutral-900);overflow-wrap:break-word"></div>',
       '<div style="display:flex;gap:8px;margin-top:14px">',
       '<button class="btn-primary" id="csv-acentos-si" style="flex:1">Sí, continuar</button>',
       '<button class="btn-secondary" id="csv-acentos-no" style="flex:1">No, prueba de otra forma</button>',
@@ -170,7 +170,7 @@ function openImportCsvModal() {
       return [
         '<div style="padding:8px 0;border-bottom:1px solid var(--neutral-100)">',
         '<div style="display:flex;align-items:center;gap:10px">',
-        '<span style="font-family:monospace;font-size:12px;color:var(--neutral-900);min-width:0;flex:1;word-break:break-all">' + escImp(c.columna) + '</span>',
+        '<span style="font-family:monospace;font-size:12px;color:var(--neutral-900);min-width:0;flex:1;overflow-wrap:break-word">' + escImp(c.columna) + '</span>',
         '<span style="color:var(--neutral-400)">→</span>',
         '<select class="csv-campo" data-indice="' + c.indice + '" style="flex:1;min-height:44px;padding:11px 13px;border:1px solid var(--neutral-200);border-radius:12px;font-size:13px">' + opciones + '</select>',
         '</div>',
