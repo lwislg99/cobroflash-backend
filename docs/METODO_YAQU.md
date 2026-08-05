@@ -1,140 +1,184 @@
-# MÉTODO — las formas de verde que no valen
+# MÉTODO_YAQU — cómo se mide aquí
 
-> **Derivado de `docs/YAQU_MASTER.md`** (regla 35). Aquí vive el método de medición: **las formas
-> en que una comprobación se pone verde sin haber comprobado nada.** El registro de cada ticket
-> sigue en `docs/master/SCRUM-<n>.md`; esto es lo que se repite entre tickets.
->
-> Cada entrada trae **su caso real**. Una regla con su caso concreto al lado se recuerda; una
-> regla sola, no.
+> **Fichero COMPARTIDO entre sesiones.** Cada caso vive en su propia sección de segundo nivel con
+> su fecha y su sesión. Si dos sesiones lo tocan a la vez, **se conservan LAS DOS entradas**: no se
+> resuelve el conflicto eligiendo, se resuelve pegando las dos secciones seguidas. Un método que
+> pierde casos al mergear deja de ser un método.
 
 ---
 
-## 1 · La mutación que no llegó a aplicarse
+# 🔴 LA PRUEBA DE ROJO QUE NUNCA SE EJECUTÓ
 
-> **Una prueba de rojo que sale verde no es una prueba superada: es una prueba que no se ha
-> ejecutado. Antes de creerse el verde, hay que comprobar que la mutación llegó a aplicarse.**
+**Descubierto por DOS sesiones la misma noche (5-ago-2026), por caminos que no se parecen en nada.**
 
-Para verificar que un guard vigila de verdad se le rompe lo que vigila y se exige rojo. Si sale
-verde hay dos explicaciones —el guard no mira, o la rotura no ocurrió— y **el verde no las
-distingue**. La segunda es la más fácil de pasar por alto, porque parece que el trabajo está hecho.
+Llevamos una semana apoyándonos en la prueba de rojo como la prueba fuerte: *«quita la cosa vigilada
+y comprueba que sale rojo»*. Es correcta. Pero tiene un agujero que nadie había mirado:
 
-### Caso A — el `replace` sobre un ancla que no existe (SCRUM-368)
+> **Una prueba de rojo que sale verde no es una prueba superada: es una prueba que NO SE HA
+> EJECUTADO. Antes de creerse el verde, hay que comprobar que la mutación llegó a aplicarse.**
 
-Para probar que el contador del residuo cae al añadir un botón:
+Un rojo que no se inyectó y un verde son **indistinguibles** si no se mira. Los dos se ven igual en
+la terminal: la suite pasa.
+
+## Caso A · el ancla que no casa por los FINALES DE LÍNEA (SCRUM-302, sesión 1)
+
+El más traicionero de los dos, porque **el fichero se ve idéntico**.
+
+Se intentó sacar `allocateAlbaranNumber` fuera de la transacción para comprobar que el guard de la
+carrera caía. La inyección buscaba:
+
+```js
+const viejo = '    const copia = await prisma.$transaction(async (tx) => {\n      const numero = …';
+```
+
+Y el fichero está en **CRLF**, así que `\n` no casa nunca. El script imprimió `[!! no encuentro el
+ancla]`, la suite se corrió **sobre el código sin tocar** y salió verde. Dos intentos seguidos.
+
+**Lo que lo delató** fue que el script imprimía su propio fallo. Sin esa línea, el verde habría
+pasado por «rojo comprobado».
+
+```js
+// Lo que hay que hacer ANTES de creerse nada:
+if (!s.includes(viejo)) { console.log('[!! no encuentro el ancla]'); process.exit(1); }
+```
+
+Y comprobar los finales de línea del fichero **antes** de escribir el ancla:
+
+```js
+const nl = s.includes('\r\n') ? '\r\n' : '\n';
+```
+
+⚠️ `cat -A` **no basta** para verlo: a través de Git Bash puede mostrar `$` (LF) sobre un fichero
+que en disco es CRLF. Lo que no miente es leerlo con Node y preguntar por `\r\n`.
+
+## Caso B · el símbolo que no existía (SCRUM-368, sesión 3)
+
+Hermano del anterior, no alternativa: allí el ancla no casaba **por los bytes**, aquí **por el
+contenido**. El resultado es el mismo — la suite corre sobre el código sin tocar.
+
+Para comprobar que el contador de botones pequeños caía al añadir uno más:
 
 ```js
 fs.writeFileSync(p, s.replace('export', 'const __x = …\nexport'));
 ```
 
-`homeView.js` **no contiene la palabra `export`**. `String.replace` no lanza cuando no encuentra
-el patrón: devuelve la cadena igual. Se reescribió el fichero idéntico, el test volvió a contar
-35 y salió **verde**. La prueba «pasó» sin haber añadido nada.
+`homeView.js` **no contiene la palabra `export`** — es un script clásico, sin módulos.
+`String.replace` **no lanza** cuando no encuentra el patrón: devuelve la cadena igual. Se
+reescribió el fichero idéntico, el test volvió a contar 35 y salió **verde**. La prueba «pasó»
+sin haber añadido nada.
 
-El arreglo no fue tocar el test, sino **comprobar que la inyección se aplicó** antes de creerse
-el resultado:
+No hubo ninguna línea que lo delatara: a diferencia del caso A, aquí **el script no imprimía su
+propio fallo**. Se descubrió porque el número no cuadraba con lo esperado.
 
 ```js
+// Con la comprobación puesta:
 fs.appendFileSync(p, '\nconst __prueba = …\n__prueba.className = "btn-primary btn-sm";\n');
 console.log('  inyeccion aplicada?', fs.readFileSync(p,'utf8').includes('__prueba'));
+// → true, y entonces: «el residuo de contraste era 35 y ahora es 36»
 ```
 
-Con la mutación aplicada de verdad: `«el residuo de contraste era 35 y ahora es 36»`, con fichero
-y línea.
+## Caso C · el caso de prueba que no reproducía el defecto (SCRUM-368, sesión 3)
 
-### Caso B — el caso de prueba que no reproducía el defecto (SCRUM-368)
+El tercero es distinto de los dos anteriores y **peor**, porque la mutación **sí se aplicó**: lo
+que no existía era el defecto que se quería provocar.
 
-Para probar que la exención por componente inactivo **caduca** al habilitar el control, se inyectó
-un `<button class="btn-primary">` en `login.html` y se midió su contraste. Salió verde las dos
+Para comprobar que la exención de contraste por componente inactivo **caduca** al habilitarlo, se
+inyectó un `<button class="btn-primary">` en `login.html` y se midió su contraste. Verde las dos
 veces, deshabilitado y habilitado.
 
 Motivo: **`login.html` no carga `styles.css`**. Ahí `.btn-primary` no tiene fondo verde, así que
-el botón nunca reprodujo el par que se quería vigilar. Se midió un elemento que no era el caso.
+el botón nunca reprodujo el par blanco-sobre-verde que se quería vigilar. Se midió un elemento
+que no era el caso.
+
+> Un selector no pinta nada si su hoja no está cargada. **Antes de medir un componente, comprobar
+> qué CSS carga la página donde lo pones**, no solo qué clase le escribes.
 
 Repetido en `index.html`, que sí define `.btn-primary` con el verde de marca: deshabilitado →
-exento y declarado; habilitado → **rojo**. Y ese rojo destapó un defecto real del guard (§2).
+exento; habilitado → **rojo**. Y ese rojo, ya legítimo, destapó un defecto real del guard (ver
+más abajo, «La excepción escrita más ancha que su caso»).
 
-### Cómo se evita
+## La regla, para las tres
 
-- **Afirmar la mutación, no suponerla.** `assert.notEqual(mutada, original)` en los tests de rojo
-  que operan en memoria; un `includes()` impreso cuando se toca un fichero.
-- **Preguntarse qué carga la página**, no solo qué clase lleva el elemento. Un selector no pinta
-  nada si su hoja no está.
-- **Sospechar del verde barato.** Si una prueba de rojo pasa a la primera y sin esfuerzo, mirar
-  el diff de la mutación antes de darla por buena.
+1. **La inyección declara si se aplicó.** Un script de rojo que no imprime `[inyección VERIFICADA]`
+   —o que no sale con código ≠ 0 cuando no encuentra su ancla— no sirve.
+2. **Se comprueba que el fichero cambió**, no que el script terminó. `git diff --stat`, un `grep` del
+   texto nuevo, lo que sea: algo que mire el resultado y no el proceso.
+3. **Y se restaura comprobando.** `git status` después, no antes.
+4. **Y el caso de prueba tiene que poder reproducir el defecto** (caso C). Aplicar la mutación no
+   basta si el escenario donde se aplica no es el escenario del fallo.
+
+Es la misma familia que ya conocíamos —*ver un verde y preguntarse qué mediría si el sistema
+estuviera roto*— aplicada un nivel más abajo: al propio mecanismo con el que comprobamos los verdes.
 
 ---
 
-## 2 · La excepción escrita más ancha que su caso
+# LA EXCEPCIÓN ESCRITA MÁS ANCHA QUE SU CASO
+
+**SCRUM-368, sesión 3 · 5-ago-2026**
 
 > **Una excepción por par de colores no es una excepción: es un permiso para ese par en cualquier
 > sitio.**
 
-`scripts/guard-contraste.mjs` llevaba una lista de pares `texto|fondo` conocidos y aceptados. La
-comparación era **por par**, así que cualquier nodo NUEVO que reutilizara esos dos colores entraba
-al producto sin que nada avisara: la excepción se había escrito para unos nodos concretos y acabó
-amparando a todos los futuros.
+`scripts/guard-contraste.mjs` llevaba una lista de pares `texto|fondo` conocidos y aceptados, con
+su motivo. La comparación era **por par**, así que cualquier nodo NUEVO que reutilizara esos dos
+colores entraba al producto sin que nada avisara: la excepción se había escrito para unos nodos
+concretos y acabó amparando a todos los futuros.
 
-Apareció **porque la prueba del §1 caso B, ya bien hecha, seguía saliendo verde**: el botón
-habilitado volvía al censo, pero su par ya estaba en la lista. Sin esa prueba, el guard entraba
+**Cómo apareció:** por la prueba del caso C, ya bien hecha. El botón habilitado volvía al censo,
+pero su par ya estaba en la lista, así que el guard seguía verde. Sin esa prueba, el guard entraba
 en `main` en verde vigilando un permiso abierto.
 
 **Arreglo:** cada excepción declara **cuántos nodos** ampara, y el guard cae si el par gana o
-pierde nodos. Y las excepciones **caducan**: si un par listado deja de ocurrir, también falla,
-para que se borre.
+pierde nodos. Y las excepciones **caducan**: si un par listado deja de ocurrir, también falla, para
+que se borre. *Una excepción que sobrevive a su causa deja de ser una nota y pasa a ser un permiso.*
 
-### Cómo se evita
-
-- Una excepción se escribe con **su alcance contado**, no solo con su motivo.
-- Y con **fecha de caducidad por construcción**: si la causa desaparece, el guard lo dice.
-
----
-
-## 3 · El medidor que no llegó a ejecutarse
-
-Familia de las dos anteriores, y la que más veces ha aparecido: **el fallo no está en lo que el
-guard mira, sino en que el guard no miró nada.** Tres formas vistas en el proyecto:
-
-| Forma | Caso real |
-| --- | --- |
-| El código de salida se pierde en la tubería | `npm test \| tail` devolvía **exit 0** con dos tests en rojo: `$?` era el de `tail`. Se lee el código de salida de **node**, redirigiendo a fichero, nunca el del último proceso de un pipe. |
-| El analizador no reconoce lo que mira | El censo de clases no resolvía `className = <ternario>` y dejaba fuera `albaranDetailView.js:256`, donde las tres ramas son botones. Lo cazó **el suelo**, no el test. |
-| El CLI no se reconoce a sí mismo | SCRUM-235: `import.meta.url` viene percent-encodeado y `argv[1]` no, así que bajo una ruta con espacios el guard era un **NO-OP silencioso con exit 0**. |
-
-**El suelo es la defensa.** Todo censo declara un mínimo (nodos, ficheros, clases) por debajo del
-cual **falla en vez de informar de cero**: «no supe mirar» y «no hay» son el mismo número y
-significan lo contrario.
+**Y el motivo también caduca.** En el mismo guard, un par listado decía «el botón primario,
+decisión del fundador pendiente». Cuando esa decisión se tomó, los nodos que quedaban bajo ese par
+eran otros —mockups del landing— y el motivo escrito ya no describía nada. **Vigilar un motivo
+muerto es no vigilar.** Al cambiar la causa, se reescribe la excepción o se borra.
 
 ---
 
-## 4 · Medir mientras algo se mueve
+# NO SE MIDE MIENTRAS ALGO SE MUEVE
 
-> **No se mide mientras algo se mueve.** Transiciones y animaciones devuelven valores
-> **interpolados**, y en headless a veces el inicial.
+**SCRUM-368, sesión 3 · 5-ago-2026**
 
-Dos casos reales, los dos en SCRUM-368:
+Transiciones y animaciones devuelven valores **interpolados**, y en headless a veces el inicial.
+Dos casos, en dos superficies distintas:
 
 - **Estilos:** `getComputedStyle` justo tras un `Tab` real devolvió el `box-shadow` a mitad de la
-  transición de `.15s`. Dio «sin anillo» para `.btn-secondary`, `.btn-danger` y `.btn-ghost`, que
-  **sí lo tienen**. Falso rojo.
+  transición de `.15s`. Dio «sin anillo» para tres botones que **sí lo tienen**. Falso rojo.
 - **Cajas:** `getBoundingClientRect()` sobre botones dentro de un `.modal` con la animación
   `slide-up` (que arranca en `scale(.98)`) dio **43,48 px** donde el valor real era 44. El
-  `transform` del **ancestro** entra en el rect aunque el elemento medido no tenga ninguno.
+  `transform` del **ancestro** entra en el rect aunque el elemento medido no tenga ninguno. El
+  43,48 es traicionero porque *casi* es 44.
 
-**Cómo se evita:** `await Promise.all(document.getAnimations().map(a => a.finished.catch(() => {})))`
-antes de leer geometría, y doble `requestAnimationFrame` más una espera mayor que la transición
-más larga antes de leer estilos. Y cuando el criterio sea «¿lo ve el usuario?», **medir píxeles**
-—capturar en reposo y en el estado nuevo y comparar los bytes— en vez de propiedades computadas:
-un hash no se deja engañar por un valor a medio camino.
+**Un falso rojo cuesta lo mismo que un falso verde**: se investiga un defecto que no existe, o
+peor, se «arregla».
+
+```js
+await page.evaluate(() => Promise.all(
+  document.getAnimations().map(a => a.finished.catch(() => {}))));   // antes de geometría
+await page.evaluate(() => new Promise(r =>
+  requestAnimationFrame(() => requestAnimationFrame(r))));           // antes de estilos
+```
+
+Y cuando el criterio sea «¿lo ve el usuario?», **medir píxeles** —capturar en reposo y en el estado
+nuevo y comparar los bytes— en vez de propiedades computadas: un hash no se deja engañar por un
+valor a medio camino.
 
 ---
 
-## 5 · El árbitro
+# EL NAVEGADOR ES EL ÁRBITRO
+
+**SCRUM-368, sesión 3 · 5-ago-2026**
 
 > **Cuando el analizador estático y el navegador discrepan, el roto es el analizador.**
 
-El censo estático de contraste daba `.sidebar-logo-text` en **1,00** (blanco sobre blanco) porque
+Un censo estático de contraste daba `.sidebar-logo-text` en **1,00** (blanco sobre blanco) porque
 no sabía que ese texto vive dentro del sidebar oscuro, y marcaba `.nav-item.active` como fallo
-cuando medido en su contenedor real da **5,89**. Adivinar ancestros no funciona.
+cuando medido en su contenedor real da **5,89**. Adivinar ancestros y componer `rgba()` a mano no
+funciona: eso ya lo resuelve el motor.
 
 **Y no se confunde con «no ajustes el guard a tu código».** La prueba que los separa es concreta:
 
@@ -142,3 +186,20 @@ cuando medido en su contenedor real da **5,89**. Adivinar ancestros no funciona.
 - Si **llevaba ahí desde antes** → se arregla **el analizador**.
 
 Sin ese criterio, las dos reglas se contradicen.
+
+---
+
+# EL MEDIDOR QUE NO LLEGÓ A EJECUTARSE
+
+Familia de todo lo anterior, y la que más veces ha aparecido en el proyecto: **el fallo no está en
+lo que el guard mira, sino en que el guard no miró nada.**
+
+| Forma | Caso real |
+| --- | --- |
+| El código de salida se pierde en la tubería | `npm test \| tail` devolvía **exit 0** con dos tests en rojo: `$?` era el de `tail`. Se lee el código de salida de **node**, redirigiendo a fichero. |
+| El analizador no reconoce lo que mira | El censo de clases no resolvía `className = <ternario>` y dejaba fuera `albaranDetailView.js:256`, donde las tres ramas son botones. Lo cazó **el suelo**, no el test. |
+| El CLI no se reconoce a sí mismo | SCRUM-235: `import.meta.url` viene percent-encodeado y `argv[1]` no, así que bajo una ruta con espacios el guard era un **NO-OP silencioso con exit 0**. |
+
+**El suelo es la defensa.** Todo censo declara un mínimo (nodos, ficheros, clases) por debajo del
+cual **falla en vez de informar de cero**: «no supe mirar» y «no hay» son el mismo número y
+significan lo contrario.
