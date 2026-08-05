@@ -19,7 +19,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const RAIZ = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -199,20 +199,50 @@ test('SCRUM-291 ① · los esperados se componen con la MISMA función, no con u
 // REGLA 38 · el camino de emisión no se ha tocado
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-291 · el camino de emisión sigue INTACTO (regla 38)', () => {
-  // El fundador puso el límite y este guard lo comprueba en vez de prometerlo. Si algún día hace
-  // falta tocar ese fichero, se pide GO con el diff delante — y este rojo es el recordatorio.
-  const r = spawnSync('git', ['diff', '--stat', 'origin/main', '--',
-    'src/modules/invoicing/domain/invoiceNumber.service.ts'], { cwd: RAIZ, encoding: 'utf8' });
+// La referencia de este guard es un HASH CONGELADO EN EL REPO, no `origin/main`.
+//
+// La primera versión comparaba con `git diff --stat origin/main`. Falla en CI, y por una razón que
+// no es un detalle: **CI no tiene `origin/main` fetcheado**, así que el guard no podía obtener su
+// referencia. Como falla al no poder mirar, dejaba el PR en rojo — comportamiento correcto, pero
+// inservible.
+//
+// ⚠️ LO QUE NO SE HIZO, Y ERA LA TENTACIÓN: que el guard se salte la comprobación cuando no
+// encuentra la referencia. Ése es el verde hueco exacto — «no pude comparar» se leería igual que
+// «comparé y estaba intacto», justo en el guard que protege el camino de emisión.
+//
+// La referencia pasa a vivir DENTRO del repo: el sha256 del contenido. Sin red, sin git, sin
+// remoto; igual en un portátil que en CI. Y si el fichero no se puede leer, FALLA diciendo qué no
+// pudo obtener. Nunca pasa por no poder mirar.
+//
+// NORMALIZANDO LOS FINALES DE LÍNEA, y no es cosmético: este repo escribe CRLF en Windows y CI
+// hace checkout con LF. Hashear los bytes crudos daría un rojo por el sistema operativo, y un
+// guard que grita sin motivo se acaba desactivando — que es como se pierde el que sí importaba.
+const EMISOR = 'src/modules/invoicing/domain/invoiceNumber.service.ts';
+const EMISOR_SHA256 = 'fb0d6216f96bb1e3a8cae6989be06baaab8190c598a647938dd106be06d696bd';
 
-  if (r.status !== 0) {
-    // Sin git (o sin `origin/main`) no se puede afirmar nada: se dice, no se da por bueno.
-    assert.fail('🔴 no se pudo comparar contra `origin/main`: este guard no puede confirmar nada, ' +
-      'y un guard que no puede mirar no debe salir verde.');
+test('SCRUM-291 · el camino de emisión sigue INTACTO (regla 38)', () => {
+  // El fundador puso el límite y esto lo COMPRUEBA en vez de prometerlo. Si algún día hace falta
+  // tocar ese fichero, se pide GO con el diff delante — y este rojo es el recordatorio.
+  let contenido;
+  try {
+    contenido = fs.readFileSync(path.join(RAIZ, EMISOR), 'utf8');
+  } catch (e) {
+    // No poder leer NO es «está bien». Se dice qué falló y se cae.
+    assert.fail(
+      `🔴 no se pudo leer ${EMISOR} (${e && e.code ? e.code : e}).\n\n`
+      + '  Este guard no puede confirmar nada sin su referencia, y un guard que no puede mirar no\n'
+      + '  sale verde: «no pude comprobarlo» y «lo comprobé y está bien» no pueden dar el mismo\n'
+      + '  resultado, y menos en el fichero que sostiene la numeración fiscal.');
   }
-  assert.equal((r.stdout || '').trim(), '',
-    '🔴 `invoiceNumber.service.ts` ha cambiado.\n\n' +
-    '  Ahí viven `allocateInvoiceNumber` y su `pg_advisory_xact_lock`, que son lo ÚNICO que hoy\n' +
-    '  impide un hueco REAL en la numeración: reserva y creación en la MISMA transacción\n' +
-    '  (SCRUM-219/234). Tocarlo exige GO del fundador con el diff delante (regla 38).');
+
+  const sha = createHash('sha256').update(contenido.replace(/\r\n/g, '\n')).digest('hex');
+  assert.equal(sha, EMISOR_SHA256,
+    `🔴 ${EMISOR} ha cambiado.\n\n`
+    + `  esperado: ${EMISOR_SHA256}\n`
+    + `  leído:    ${sha}\n\n`
+    + '  Ahí viven `allocateInvoiceNumber` y su `pg_advisory_xact_lock`, que son lo ÚNICO que hoy\n'
+    + '  impide un hueco REAL en la numeración: reserva y creación en la MISMA transacción\n'
+    + '  (SCRUM-219/234). Tocarlo exige GO del fundador con el diff delante (regla 38).\n\n'
+    + '  Si el GO existe y el cambio es deliberado, actualiza el hash EN EL MISMO COMMIT que lo\n'
+    + '  cambia: es lo que deja el permiso escrito en el diff en vez de en la memoria de alguien.');
 });
