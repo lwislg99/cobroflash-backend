@@ -562,22 +562,11 @@
     }).catch(function(){});
   })();
 
-  // A9.1 (GTM-1): atribución — capturar UTM (+referrer) al aterrizar, persistir en localStorage.
-  (function(){
-    try{
-      var q=new URLSearchParams(location.search);
-      var ref=(q.get('ref')||'').trim();
-      if(ref && !localStorage.getItem('yaqu_ref')) localStorage.setItem('yaqu_ref',ref);
-      if(localStorage.getItem('yaqu_src')) return;
-      var src=(q.get('utm_source')||'').trim();
-      var attribution='';
-      if(src){ attribution=[src,(q.get('utm_medium')||'').trim(),(q.get('utm_campaign')||'').trim()].filter(Boolean).join('/'); }
-      else if(q.get('src')==='profile' || q.get('src')==='qr'){ attribution=q.get('src'); }
-      else if(document.referrer){ var host=new URL(document.referrer).hostname.replace(/^www\./,''); if(host && host!==location.hostname) attribution='referrer:'+host; }
-      if(attribution) localStorage.setItem('yaqu_src',attribution);
-    }catch(e){}
-  })();
+  // SCRUM-336: la atribución YA NO se persiste en el navegador del visitante (ePrivacy art. 5.3:
+  // almacenar sin consentimiento algo que no es imprescindible para el servicio pedido). Ahora
+  // viaja en la URL hasta el registro — ver `js/atribucion.js`, cargado abajo.
 })();
 </script>
+<script src="/js/atribucion.js" defer></script>
 </body>
 </html>

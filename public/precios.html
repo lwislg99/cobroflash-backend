@@ -90,29 +90,10 @@
 
   <p class="legal"><a href="/privacidad">Privacidad</a> · <a href="/terminos">Términos</a></p>
 
+  <script src="/js/atribucion.js" defer></script>
   <script>
-    // A9.1 (GTM-1): atribución — misma captura first-touch que la landing.
-    (function () {
-      try {
-        var q = new URLSearchParams(location.search);
-        var ref = (q.get('ref') || '').trim();
-        if (ref && !localStorage.getItem('yaqu_ref')) localStorage.setItem('yaqu_ref', ref);
-        if (localStorage.getItem('yaqu_src')) return;
-        var src = (q.get('utm_source') || '').trim();
-        var attribution = '';
-        if (src) {
-          attribution = [src, (q.get('utm_medium') || '').trim(), (q.get('utm_campaign') || '').trim()]
-            .filter(Boolean).join('/');
-        } else if (q.get('src') === 'profile' || q.get('src') === 'qr') {
-          // A14.2 (PERFIL-1): loop del perfil público / QR de furgoneta
-          attribution = q.get('src');
-        } else if (document.referrer) {
-          var host = new URL(document.referrer).hostname.replace(/^www\./, '');
-          if (host && host !== location.hostname) attribution = 'referrer:' + host;
-        }
-        if (attribution) localStorage.setItem('yaqu_src', attribution);
-      } catch (e) { /* best-effort */ }
-    })();
+    // SCRUM-336: la captura first-touch en `localStorage` se retiró de esta página igual que de la
+    // landing (ePrivacy art. 5.3). La atribución viaja ahora en la URL — ver `js/atribucion.js`.
 
     // Contador REAL de plazas founding (V0-4): si quedan, se muestra el banner y el 29 tachado.
     fetch('/public/founding-status').then(function (r) { return r.json(); }).then(function (f) {
