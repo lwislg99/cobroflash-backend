@@ -129,24 +129,83 @@ test('SCRUM-284 · colocar un campo que el mapa no conoce LANZA (ruidoso, no mud
 });
 
 // ── MICROCOPY (regla 30) ─────────────────────────────────────────────────────────────────────
-test('SCRUM-284 · los rótulos de los diez submenús son el marcador, no texto inventado', () => {
-  assert.equal(mapa.MARCA_MICROCOPY_SUBMENU, '[PENDIENTE microcopy oficial]');
-  // El botón de cada pestaña se pinta con el marcador; que no haya diez rótulos escritos a mano se
-  // deriva de que la vista no contiene ninguna cadena que parezca el nombre de un submenú.
+//
+// Los diez rótulos están APROBADOS por el fundador (5-ago-2026). No eran redacción nueva: los nueve
+// primeros vienen escritos en la descripción del ticket y el décimo es el nombre que usó al colocar
+// `approvalThreshold`. Aterrizarlos no fue escribir microcopy, fue dejar de usar el marcador.
+//
+// El guard cambia de forma en consecuencia: ya no exige el marcador —eso solo impedía INVENTAR
+// mientras no había texto—, sino que **fija el texto aprobado carácter a carácter**, que es lo que
+// impide CAMBIARLO sin pasar por el fundador. Es lo mismo que se hizo en SCRUM-344 al aprobarse las
+// cinco ranuras del aviso de cierre.
+const ROTULOS_APROBADOS = {
+  empresa: 'Empresa',
+  facturacion: 'Facturación',
+  numeracion: 'Numeración',
+  cobro: 'Cobros',
+  avisos: 'Avisos',
+  publica: 'Tu página pública',
+  marca: 'Marca',
+  datos: 'Tus datos',
+  cumplimiento: 'Cumplimiento',
+  equipo: 'Equipo',
+};
+
+test('SCRUM-284 · los diez rótulos dicen EXACTAMENTE el texto aprobado (regla 30)', () => {
+  assert.deepEqual([...mapa.SUBMENUS].sort(), Object.keys(ROTULOS_APROBADOS).sort(),
+    '🔴 el juego de submenús no es el que tiene rótulo aprobado: uno sin rótulo no lo vigila nadie.');
+  const distintos = mapa.SUBMENUS
+    .filter((s) => mapa.ROTULOS[s] !== ROTULOS_APROBADOS[s])
+    .map((s) => `${s}: es «${mapa.ROTULOS[s]}», debía «${ROTULOS_APROBADOS[s]}»`);
+  assert.deepEqual(distintos, [],
+    '🔴 un rótulo cambió respecto al APROBADO por el fundador. El texto lo aprueba él, también al ' +
+    'cambiarlo: si el cambio es deliberado, actualiza este test en el mismo commit y que se vea en ' +
+    'el diff:\n   · ' + distintos.join('\n   · '));
+});
+
+test('SCRUM-284 · la vista pinta el rótulo DESDE el mapa, no escrito a mano', () => {
   const sf = ts.createSourceFile('v.js', codigo, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
   const sospechosos = [];
   (function ver(n) {
     if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.EqualsToken
         && ts.isPropertyAccessExpression(n.left) && n.left.name.text === 'textContent'
         && ts.isIdentifier(n.left.expression) && n.left.expression.text === 'b'
-        && !(ts.isIdentifier(n.right) && n.right.text === 'MARCA_MICROCOPY_SUBMENU')) {
+        && !(ts.isCallExpression(n.right) && ts.isIdentifier(n.right.expression)
+             && n.right.expression.text === 'rotuloDeSubmenu')) {
       sospechosos.push(n.getText().slice(0, 70));
     }
     ts.forEachChild(n, ver);
   })(sf);
   assert.deepEqual(sospechosos, [],
-    '🔴 el rótulo de una pestaña de submenú no sale del marcador. Los diez nombres son microcopy ' +
-    'sin aprobar (regla 30):\n   · ' + sospechosos.join('\n   · '));
+    '🔴 el rótulo de una pestaña no sale de `rotuloDeSubmenu`. Escribirlo a mano sería una segunda ' +
+    'copia del texto aprobado:\n   · ' + sospechosos.join('\n   · '));
+  // Y el mecanismo falla ruidoso si falta un rótulo, igual que con los campos.
+  assert.throws(() => mapa.rotuloDeSubmenu('submenuInventado'), /sin rótulo/);
+  assert.equal(mapa.rotuloDeSubmenu('cobro'), 'Cobros');
+});
+
+test('SCRUM-284 · el estado vacío SIGUE con el marcador: eso sí es redacción nueva', () => {
+  // Los rótulos se aprobaron porque ya estaban escritos en el ticket. El texto de «aquí todavía no
+  // hay nada» NO está en ninguna parte, así que es microcopy nueva y sigue sin aprobar.
+  assert.equal(mapa.MARCA_MICROCOPY_SUBMENU, '[PENDIENTE microcopy oficial]');
+  assert.match(codigo, /empty-state-title[^]{0,40}MARCA_MICROCOPY_SUBMENU/,
+    '🔴 el estado vacío de un submenú ya no usa el marcador. Ese texto no lo ha aprobado nadie.');
+});
+
+test('SCRUM-284 · toda colocación PROVISIONAL está declarada y dice qué la sustituye', () => {
+  // «Temporal» es exactamente como se quedan las cosas. Una colocación provisional sin fecha de
+  // caducidad escrita es una permanente que todavía no lo sabe.
+  const entradas = Object.entries(mapa.SUPERFICIES_PROVISIONALES);
+  assert.ok(entradas.length >= 1,
+    '🔴 no hay ninguna provisional declarada. Si «Invita y gana» ya tiene su entrada en la barra ' +
+    'lateral (incremento 2), quita también su llamada de settingsView.js y esta comprobación.');
+  const flojas = entradas.filter(([, m]) => !/incremento 2/i.test(String(m)));
+  assert.deepEqual(flojas.map(([k]) => k), [],
+    '🔴 estas provisionales no dicen qué las sustituye:\n   · ' + flojas.map(([k]) => k).join('\n   · '));
+  // Y la que hay tiene que seguir PINTÁNDOSE: es el punto entero de declararla provisional.
+  assert.match(codigo, /renderReferralCard\(container\)/,
+    '🔴 «Invita y gana» está declarada como provisional pero ya no se pinta: quedaría inalcanzable, ' +
+    'que es justo lo que la declaración existe para impedir.');
 });
 
 // ── INYECCIONES ──────────────────────────────────────────────────────────────────────────────

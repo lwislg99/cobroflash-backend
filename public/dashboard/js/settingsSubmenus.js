@@ -29,8 +29,43 @@ var SUBMENUS = [
   'publica', 'marca', 'datos', 'cumplimiento', 'equipo',
 ];
 
-// Regla 30: los rótulos de los diez NO están aprobados. Se pintan con el marcador y hay guard.
+// Marcador de regla 30. YA NO lo usan los rótulos de los diez (ver `ROTULOS`), pero sí los textos
+// del estado vacío, que son redacción nueva y NO están aprobados.
 var MARCA_MICROCOPY_SUBMENU = '[PENDIENTE microcopy oficial]';
+
+/**
+ * LOS DIEZ RÓTULOS — APROBADOS por el fundador (5-ago-2026, regla 30).
+ *
+ * No es redacción nueva y por eso se aprobaron de una vez: **los nueve primeros están escritos en la
+ * descripción del ticket** y el décimo es el nombre que usó el fundador al colocar
+ * `approvalThreshold`. Aterrizarlos no es escribir microcopy, es dejar de usar el marcador.
+ *
+ * Y había un motivo de medición para hacerlo YA: con el marcador (28 caracteres) las diez pestañas
+ * caían **una por fila** a 390 px, así que las capturas estaban midiendo el marcador y no la
+ * pantalla. Con los rótulos reales se sabe de verdad cómo se agrupan.
+ *
+ * Fijados carácter a carácter en `tests/scrum284-configuracion-submenus.test.mjs`: cambiarlos sin
+ * pasar por el fundador sale rojo.
+ */
+var ROTULOS = {
+  empresa: 'Empresa',
+  facturacion: 'Facturación',
+  numeracion: 'Numeración',
+  cobro: 'Cobros',
+  avisos: 'Avisos',
+  publica: 'Tu página pública',
+  marca: 'Marca',
+  datos: 'Tus datos',
+  cumplimiento: 'Cumplimiento',
+  equipo: 'Equipo',
+};
+
+/** Rótulo de un submenú. Lanza si falta, por lo mismo que `submenuDeCampo`: mejor ruidoso que mudo. */
+function rotuloDeSubmenu(clave) {
+  var r = ROTULOS[clave];
+  if (!r) throw new Error('[settings] submenú sin rótulo: ' + clave);
+  return r;
+}
 
 /** Asignación campo → submenú. La clave es la del censo; el valor, una clave de `SUBMENUS`. */
 var ASIGNACION_SUBMENU = {
@@ -102,6 +137,26 @@ var ASIGNACION_SUPERFICIE = {
   // Bloque inline (no es una funcion render...): estado de Stripe Connect. Es estado + accion, no
   // un ajuste, pero cae solo en Cobros — es de lo que va el submenu.
   connectStatus: 'cobro',
+};
+
+/**
+ * SUPERFICIES CON COLOCACIÓN PROVISIONAL — declarada, con su fecha de caducidad escrita.
+ *
+ * ⚠️ EXISTE PORQUE «TEMPORAL» ES EXACTAMENTE COMO SE QUEDAN LAS COSAS. Sacar «Invita y gana» de
+ * Configuración es correcto y su destino es la barra lateral, pero **su entrada en la barra lateral
+ * es el incremento 2**. Entre un incremento y el otro la tarjeta existiría en el código y no la
+ * llamaría nadie: el programa de referidos paga un mes gratis al referidor, así que dejarla
+ * inalcanzable «solo durante un PR» es una REGRESIÓN DE DINERO, no un detalle de orden.
+ *
+ * Se sigue pintando donde está hoy —tarjeta suelta al final de Configuración, fuera de los diez
+ * paneles— y aquí queda escrito que es provisional y qué la sustituye.
+ */
+var SUPERFICIES_PROVISIONALES = {
+  renderReferralCard:
+    'PROVISIONAL hasta el incremento 2 (sidebar). Su destino es la barra lateral —no es un ajuste, ' +
+    'no persiste nada— pero hasta que exista esa entrada se sigue pintando en Configuración para no ' +
+    'dejar inalcanzable un programa que paga dinero al referidor. Quien haga el incremento 2 quita ' +
+    'esta línea y la llamada de `settingsView.js`.',
 };
 
 /**
@@ -204,6 +259,7 @@ if (typeof window !== 'undefined') {
   window.VACIOS_DECLARADOS = VACIOS_DECLARADOS;
   window.submenuDeCampo = submenuDeCampo;
   window.submenuDeSuperficie = submenuDeSuperficie;
+  window.rotuloDeSubmenu = rotuloDeSubmenu;
   window.ASIGNACION_SUPERFICIE = ASIGNACION_SUPERFICIE;
 }
 if (typeof module !== 'undefined' && module.exports) {
@@ -216,6 +272,9 @@ if (typeof module !== 'undefined' && module.exports) {
     VACIOS_DECLARADOS: VACIOS_DECLARADOS,
     ASIGNACION_SUPERFICIE: ASIGNACION_SUPERFICIE,
     SUPERFICIES_FUERA_DE_LOS_DIEZ: SUPERFICIES_FUERA_DE_LOS_DIEZ,
+    SUPERFICIES_PROVISIONALES: SUPERFICIES_PROVISIONALES,
+    ROTULOS: ROTULOS,
+    rotuloDeSubmenu: rotuloDeSubmenu,
     submenuDeCampo: submenuDeCampo,
     submenuDeSuperficie: submenuDeSuperficie,
     revisarAsignacion: revisarAsignacion,
