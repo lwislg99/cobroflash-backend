@@ -397,3 +397,33 @@ es correcto que difiera. Probado en rojo cambiando `?? null` por `|| null`: cae.
 - La **caída de `albaranPublic.routes.ts:142`** (`job?.direccion || job?.titulo`).
 - Rescatar de los tres tests no importados lo que siga valiendo (retrocompatibilidad de un albarán
   firmado antes de C5, y el uso de `tests/_pdf-texto.mjs`, que sí se trajo).
+
+## Addenda (6-ago-2026): los tres textos de error, y el matiz del precargado
+
+**Tres textos APROBADOS por el fundador**, con guard propio en
+`tests/scrum300-firmante-ids-y-microcopy.test.mjs`:
+
+| Caso | Texto |
+| --- | --- |
+| Falta el nombre (400) | Falta el nombre de quien firma. |
+| Calidad que no existe | Esa opción no existe. Recarga la página y vuelve a intentarlo. |
+| «Otro» sin texto | Si eliges «Otro», escribe en calidad de qué firma. |
+
+Los dos últimos venían de `scrum-300-firmado-por` como literales que **nadie había aprobado** — la
+misma clase de texto que las cinco ranuras retiradas — y se reescribieron. El segundo dice **QUÉ
+HACER** y eso no es adorno: quien lo ve tiene la pantalla desincronizada con las ranuras que sirve
+el backend, y recargar es la salida. Tiene assert propio (`/[Rr]ecarga/`) para que no se pierda.
+
+### 🔴 El nombre precargado se borra al cambiar de opción — SALVO si lo tecleó él
+
+La regla, tal y como la dio el fundador, era «se borra al cambiar de opción». Al implementarla
+apareció un caso que esa formulación no cubría: **si el profesional YA ha escrito un nombre a mano,
+borrárselo es peor que dejar una precarga obsoleta.** Pierde trabajo suyo, y en obra probablemente
+no se dé cuenta hasta después de firmar.
+
+La regla final, aprobada: se borra **solo si el valor sigue siendo nuestra sugerencia intacta**.
+Se marca con `dataset.deSugerencia` al rellenarla desde el chip (o desde la precarga de la página
+pública) y se retira en cuanto hay un `input` a mano. Lo que teclee el profesional no se toca nunca.
+
+**La lección:** «borrar lo obsoleto» y «no destruir lo que el usuario ha escrito» chocan, y gana el
+segundo. Un dato nuestro se puede volver a poner; uno suyo, no.

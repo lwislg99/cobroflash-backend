@@ -17,7 +17,8 @@ import {
   FIRMANTE_CALIDAD_LIBRE,
   FIRMANTE_NOMBRE_MAX,
   FIRMANTE_OTRO_MAX,
-  PENDIENTE,
+  COPY_CALIDAD_OTRO_VACIO,
+  COPY_FIRMA_SIN_NOMBRE,
   firmanteCalidadOpciones,
   exigirNombreFirmante,
   resolverCalidadFirmante,
@@ -261,16 +262,16 @@ router.get('/:token', async (req: Request, res: Response) => {
         if(!sig){ err.textContent=${JSON.stringify('Dibuja tu firma para continuar.')}; err.style.display='block'; return; }
         // SCRUM-300: el NOMBRE es obligatorio al firmar (la columna admite nulo solo por las
         // filas anteriores a C5). Se corta aquí para no gastarle al cliente un viaje al servidor.
-        // ⚠️ El texto va con marcador: nadie lo ha aprobado todavía (regla 30).
+        // El texto sale de la fuente única y está APROBADO (fundador, 6-ago-2026).
         const nomEl = document.getElementById('firmante-nombre');
         if(nomEl && !nomEl.value.trim()){
-          err.textContent=${JSON.stringify(PENDIENTE)}; err.style.display='block'; nomEl.focus(); return;
+          err.textContent=${JSON.stringify(COPY_FIRMA_SIN_NOMBRE)}; err.style.display='block'; nomEl.focus(); return;
         }
         // Y si se ha elegido la ranura libre, su texto también.
         const calEl0 = document.getElementById('firmante-calidad');
         const otroEl0 = document.getElementById('firmante-otro');
         if(calEl0 && calEl0.value===${JSON.stringify(FIRMANTE_CALIDAD_LIBRE)} && otroEl0 && !otroEl0.value.trim()){
-          err.textContent=${JSON.stringify(PENDIENTE)}; err.style.display='block'; otroEl0.focus(); return;
+          err.textContent=${JSON.stringify(COPY_CALIDAD_OTRO_VACIO)}; err.style.display='block'; otroEl0.focus(); return;
         }
         err.style.display='none';
         const btn=this; btn.disabled=true; btn.textContent='Enviando…';
