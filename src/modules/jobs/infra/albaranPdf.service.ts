@@ -12,6 +12,7 @@ import PDFDocument from 'pdfkit';
 import { albaranesDir } from '../../../core/storage/dirs';
 import { loadLogoBuffer } from '../../invoicing/infra/pdf/pdf.service';
 import type { AlbaranLinea, AlbaranModoValoracion, FirmaEvidencia } from '../domain/albaran.service';
+import { COPY, etiquetaCalidad, decodificarCalidad } from '../domain/albaranFirmaCopy';
 
 export async function generateAlbaranPdf(params: {
   merchantId: number; // SCRUM-48: prefija el nombre de archivo (mata la colisión entre merchants)
@@ -29,8 +30,16 @@ export async function generateAlbaranPdf(params: {
     whatsappPhone?: string | null;
   };
   customer: { name: string | null; legalName?: string | null; taxId?: string | null };
-  obra: string | null;              // Job.direccion (dirección física de la obra, si existe)
+  // SCRUM-300 (C5): DÓNDE y CUÁNDO se entregó, campos PROPIOS del albarán.
+  // 🔴 SUELO: si vienen vacíos se imprimen vacíos («No se pidió al firmar» en los antiguos).
+  // JAMÁS se sustituyen por el domicilio fiscal del emisor ni por el del cliente: una dirección
+  // equivocada en un documento de entrega es peor que ninguna, porque se firma sin mirarla.
+  lugarEntrega: string | null;
+  fechaEntrega: Date | null;
   referenciaTrabajo: string | null; // SCRUM-67: Job.titulo (referencia al Trabajo/presupuesto origen)
+  // SCRUM-300 (C5): quién firmó y en calidad de qué (null en todo lo firmado antes de la tarea).
+  firmadoPorNombre?: string | null;
+  firmadoPorCalidad?: string | null;
   lineas: AlbaranLinea[];
   totales: { base: number; cuota: number; total: number } | null; // solo en modo VALORADO
   notas?: string | null;
@@ -115,9 +124,19 @@ export async function generateAlbaranPdf(params: {
   doc.font('Helvetica-Bold').fillColor(INK).text('Receptor: ', { continued: true })
     .font('Helvetica').fillColor(BODY).text(params.customer.legalName || params.customer.name || '—');
   if (params.customer.taxId) doc.fillColor(BODY).text(`NIF: ${params.customer.taxId}`);
-  if (params.obra) {
-    doc.font('Helvetica-Bold').fillColor(INK).text('Obra: ', { continued: true })
-      .font('Helvetica').fillColor(BODY).text(params.obra);
+  // SCRUM-300 (C5): LUGAR y FECHA de entrega. Se pintan SIEMPRE en un albarán firmado —también
+  // cuando faltan— porque el hueco callado se lee como un fallo nuestro. `firmadoAt` distingue
+  // «firmado sin estos datos» (los de antes de la tarea) de un borrador que aún puede rellenarlos.
+  const firmado = !!params.firmadoAt;
+  if (params.lugarEntrega || firmado) {
+    doc.font('Helvetica-Bold').fillColor(INK).text(`${COPY.lugarEntrega.label}: `, { continued: true })
+      .font('Helvetica').fillColor(params.lugarEntrega ? BODY : MUTED)
+      .text(params.lugarEntrega || COPY.noSePidio);
+  }
+  if (params.fechaEntrega || firmado) {
+    doc.font('Helvetica-Bold').fillColor(INK).text(`${COPY.fechaEntrega.label}: `, { continued: true })
+      .font('Helvetica').fillColor(params.fechaEntrega ? BODY : MUTED)
+      .text(params.fechaEntrega ? fmtDate(params.fechaEntrega) : COPY.noSePidio);
   }
   if (params.referenciaTrabajo) {
     doc.font('Helvetica-Bold').fillColor(INK).text('Referencia: ', { continued: true })
@@ -222,6 +241,18 @@ export async function generateAlbaranPdf(params: {
       doc.moveDown(0.3);
       doc.image(imgBuffer, M, doc.y, { width: 180, height: 70, fit: [180, 70] });
       doc.moveDown(5);
+      // SCRUM-300 (C5): QUIÉN firmó, debajo del trazo. Sin esto teníamos la mejor firma del
+      // mercado y guardábamos un garabato anónimo, que no identifica a nadie.
+      doc.fontSize(9).font('Helvetica-Bold').fillColor(INK)
+        .text(`${COPY.firmadoPorNombre.label}: `, { continued: true })
+        .font('Helvetica').fillColor(params.firmadoPorNombre ? BODY : MUTED)
+        .text(params.firmadoPorNombre || COPY.noSePidio);
+      if (params.firmadoPorCalidad) {
+        const { textoLibre } = decodificarCalidad(params.firmadoPorCalidad);
+        const etiqueta = etiquetaCalidad(params.firmadoPorCalidad);
+        doc.fontSize(8).font('Helvetica').fillColor(MUTED)
+          .text(textoLibre ? `${etiqueta} · ${textoLibre}` : String(etiqueta));
+      }
       doc.fontSize(8).font('Helvetica').fillColor(MUTED).text(`Firmado el ${signDate}`);
       doc.fillColor('#000');
       doc.moveDown(0.5);

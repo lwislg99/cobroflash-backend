@@ -10,6 +10,7 @@ import { esc } from '../../../../core/utils/utils';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { rateLimit } from '../../../../core/http/rateLimit';
 import { buildFirmaEvidencia, canTransitionAlbaran, ensureAlbaranPdf } from '../../domain/albaran.service';
+import { COPY, CALIDAD_FIRMANTE, NOMBRE_FIRMANTE_MAX, leerFirmante } from '../../domain/albaranFirmaCopy'; // SCRUM-300
 import { sendAlbaranFirmadoWhatsApp } from '../../domain/albaranWhatsApp.service';
 import { requestIp } from '../../../system/audit.service';
 
@@ -67,6 +68,19 @@ function renderPage(title: string, body: string): string {
   small{font-size:12px;color:#6b756f;display:block;text-align:center;margin-top:12px}
   .privacy-note{font-size:11px;color:#8b948e;text-align:left;line-height:1.5;margin-top:10px}
   .privacy-note a{color:#8b948e;text-decoration:underline}
+  /* SCRUM-300 (C5): quién firma. Targets ≥44 px porque esto se rellena de pie y con guantes. */
+  .firmante-input{width:100%;min-height:48px;padding:12px 14px;font-size:16px;font-family:inherit;
+    color:#0f1c17;background:#fff;border:1.5px solid #cdd2cb;border-radius:12px;margin-bottom:8px}
+  .firmante-input:focus{border-color:#22c55e;outline:none}
+  .chip-sugerencia{min-height:44px;padding:10px 16px;font-size:14px;font-weight:600;color:#166534;
+    background:#ecfdf5;border:1.5px solid #a7f3d0;border-radius:999px;cursor:pointer;font-family:inherit;
+    max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .chip-sugerencia:active{background:#d1fae5}
+  .chip-sugerencia[hidden]{display:none}
+  .calidad-lista{display:flex;flex-direction:column;gap:4px;margin:10px 0 16px}
+  .calidad-opcion{display:flex;align-items:center;gap:10px;min-height:44px;padding:4px 6px;
+    font-size:14px;color:#333c37;cursor:pointer;border-radius:10px}
+  .calidad-opcion input{width:20px;height:20px;accent-color:#16a34a;flex:none}
   :focus-visible{outline:none;box-shadow:0 0 0 3px rgba(34,197,94,.30)}
 </style></head>
 <body><div class="card">${body}</div></body></html>`;
@@ -162,6 +176,21 @@ router.get('/:token', async (req: Request, res: Response) => {
     <div class="meta">Parte de trabajo ${esc(albaran.numero)}${obra ? ` · ${obra}` : ''}</div>
     ${linesHtml}
     <hr class="divider"/>
+    <label class="sig-label" for="firmante-nombre">${esc(COPY.firmadoPorNombre.label)}</label>
+    <p class="sig-sub">${esc(COPY.firmadoPorNombre.ayuda)}</p>
+    <input class="firmante-input" id="firmante-nombre" type="text" autocomplete="name"
+      maxlength="${NOMBRE_FIRMANTE_MAX}" enterkeyhint="done"/>
+    <button type="button" class="chip-sugerencia" id="chip-cliente"${customer?.name ? '' : ' hidden'}
+      >${esc(COPY.firmadoPorNombre.chip.replace('%s', customer?.name || ''))}</button>
+    <div class="calidad-lista" role="radiogroup" aria-label="${esc(COPY.firmadoPorNombre.label)}">
+      ${CALIDAD_FIRMANTE.map((c) => `
+      <label class="calidad-opcion">
+        <input type="radio" name="calidad" value="${esc(c.id)}"/>
+        <span>${esc(c.etiqueta)}</span>
+      </label>${c.libre ? `
+      <input class="firmante-input" id="calidad-otra" type="text" maxlength="${NOMBRE_FIRMANTE_MAX}"
+        aria-label="${esc(c.etiqueta)}" hidden/>` : ''}`).join('')}
+    </div>
     <label class="sig-label">Tu firma</label>
     <p class="sig-sub">Revisa el parte y firma con el dedo o el ratón.</p>
     <div class="sig-wrapper" id="sig-wrapper">
@@ -175,13 +204,40 @@ router.get('/:token', async (req: Request, res: Response) => {
     ${avisoPrivacidad(merchant)}
     ${SIG_JS}
     <script>
+      // SCRUM-300: el chip rellena el nombre de UN TOQUE. No viene prerrellenado a propósito —
+      // un campo de prueba ya escrito es una declaración que el firmante no ha hecho.
+      (function(){
+        const nombre=document.getElementById('firmante-nombre');
+        const chip=document.getElementById('chip-cliente');
+        if(chip){ chip.addEventListener('click',function(){
+          nombre.value=${JSON.stringify(customer?.name || '')}; chip.hidden=true; nombre.focus();
+        }); }
+        const otra=document.getElementById('calidad-otra');
+        document.querySelectorAll('input[name="calidad"]').forEach(function(r){
+          r.addEventListener('change',function(){
+            if(!otra) return;
+            const sel=document.querySelector('input[name="calidad"]:checked');
+            otra.hidden = !sel || sel.value!=='otra_persona';
+            if(!otra.hidden) otra.focus();
+          });
+        });
+      })();
       document.getElementById('btn-sign').addEventListener('click', async function(){
         const sig = window.getSignatureData ? window.getSignatureData() : null;
-        if(!sig){ document.getElementById('sig-error').style.display='block'; return; }
+        const nombreEl=document.getElementById('firmante-nombre');
+        const nombre=(nombreEl.value||'').trim();
+        const err=document.getElementById('sig-error');
+        // El nombre se comprueba ANTES que el trazo: si falta, es lo primero que hay que arreglar.
+        if(!nombre){ err.textContent=${JSON.stringify(COPY.firmadoPorNombre.ayuda)}; err.style.display='block'; nombreEl.focus(); return; }
+        if(!sig){ err.textContent='Dibuja tu firma para continuar.'; err.style.display='block'; return; }
+        const sel=document.querySelector('input[name="calidad"]:checked');
+        const otraEl=document.getElementById('calidad-otra');
         const btn=this; btn.disabled=true; btn.textContent='Enviando…';
         try{
           const r=await fetch(${JSON.stringify(`/albaran/${req.params.token}/firmar`)},{
-            method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({signatureData:sig})});
+            method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+              signatureData:sig, firmadoPorNombre:nombre,
+              firmadoPorCalidad: sel?sel.value:'', firmadoPorCalidadOtra: otraEl?otraEl.value:''})});
           if(r.ok){
             document.querySelector('.card').innerHTML=
               '<div style="text-align:center;padding:12px 0"><div class="success-check">✓</div>'+
@@ -219,6 +275,14 @@ router.post('/:token/firmar', firmaLimiter, async (req: Request, res: Response) 
     // Firma remota: sella evidencias (SCRUM-68) → estado firmado, congelado. Canal 'remoto'
     // y tokenId = firmaToken usado. ⚠️ ip/ua se guardan SOLO en evidenciaFirma y NUNCA se
     // exponen aquí: esta página pública jamás los devuelve (ni en el HTML ni en el JSON).
+    // SCRUM-300 (C5): el nombre de quien firma es obligatorio también aquí. El cliente está en su
+    // móvil y sin prisa: es el mejor momento para pedirlo, no el peor.
+    const firma = leerFirmante(req.body);
+    // El texto va DELETREADO aquí, no escondido tras la variable: el trinquete de SCRUM-275
+    // comprueba que cada respuesta pública enseñe su `message` en el sitio, y tiene razón — un
+    // `message` que solo se ve abriendo otro fichero es el que acaba desapareciendo sin ruido.
+    if ('error' in firma) return res.status(400).json({ error: firma.error.error, message: firma.error.message });
+
     const firmadoAt = new Date();
     const evidencia = await buildFirmaEvidencia({
       albaran,
@@ -227,10 +291,15 @@ router.post('/:token/firmar', firmaLimiter, async (req: Request, res: Response) 
       ua: (req.headers['user-agent'] as string) || null,
       tokenId: albaran.firmaToken,
       firmadoAt,
+      firmadoPorNombre: firma.nombre,
+      firmadoPorCalidad: firma.calidad,
     });
     await prisma.albaran.update({
       where: { id: albaran.id },
-      data: { estado: 'firmado', signatureUrl: signatureData, firmadoAt, evidenciaFirma: evidencia as any },
+      data: {
+        estado: 'firmado', signatureUrl: signatureData, firmadoAt, evidenciaFirma: evidencia as any,
+        firmadoPorNombre: firma.nombre, firmadoPorCalidad: firma.calidad,
+      },
     });
     await ensureAlbaranPdf(albaran.id, true).catch((e) => console.error('[albaranPublic] PDF tras firmar:', e?.message || e));
 

@@ -1103,6 +1103,30 @@ async function renderJobDetailView(container, jobId) {
     }
     updateTotales();
 
+    // SCRUM-300 (C5): DÓNDE y CUÁNDO se entregó. Van aquí, con las líneas y las notas, porque se
+    // rellenan en el mismo momento y con el mismo candado (editables hasta firmar).
+    // ⚠️ Sin precarga: `Job.direccion` es hoy la única fuente posible y NADIE la escribe (medido),
+    // así que una sugerencia sacada de ahí estaría siempre vacía. Cuando exista fuente, este es
+    // el sitio donde ponerla.
+    const entregaBox = document.createElement('div');
+    entregaBox.style.cssText = 'margin-top:10px;display:flex;flex-direction:column;gap:10px';
+    entregaBox.innerHTML =
+      '<div>' +
+        '<label for="alb-lugar" style="display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px">Lugar de entrega</label>' +
+        '<p style="margin:0 0 6px;font-size:12px;color:var(--muted);line-height:1.45">Dónde se ha hecho el trabajo, si no es la dirección del cliente. Sale en el albarán y queda dentro de la firma.</p>' +
+        '<input id="alb-lugar" class="input" type="text" maxlength="300" style="width:100%;min-height:44px"/>' +
+      '</div>' +
+      '<div>' +
+        '<label for="alb-fentrega" style="display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px">Fecha de entrega</label>' +
+        '<p style="margin:0 0 6px;font-size:12px;color:var(--muted);line-height:1.45">El día que se entregó, que no siempre es el día que se creó.</p>' +
+        '<input id="alb-fentrega" class="input" type="date" style="width:100%;min-height:44px"/>' +
+      '</div>';
+    box.appendChild(entregaBox);
+    const lugarEl = entregaBox.querySelector('#alb-lugar');
+    const fEntregaEl = entregaBox.querySelector('#alb-fentrega');
+    lugarEl.value = alb.lugarEntrega || '';
+    fEntregaEl.value = alb.fechaEntrega ? String(alb.fechaEntrega).slice(0, 10) : '';
+
     const notas = document.createElement('textarea');
     notas.className = 'input';
     notas.placeholder = 'Notas del albarán (opcional)';
@@ -1129,7 +1153,9 @@ async function renderJobDetailView(container, jobId) {
         }
         out.push(linea);
       }
-      const body = { lineas: out, notas: notas.value };
+      // SCRUM-300: se mandan SIEMPRE, también vacíos — vaciar el lugar de entrega es una
+      // decisión legítima del pro y el backend la respeta ('' → null).
+      const body = { lineas: out, notas: notas.value, lugarEntrega: lugarEl.value, fechaEntrega: fEntregaEl.value };
       // Solo se manda modoValoracion cuando es EDITABLE (borrador); en 'emitido' el
       // backend lo rechaza con 409 aunque el valor no cambie — mejor ni ofrecerlo.
       if (modoEditable) body.modoValoracion = modo;
@@ -1443,9 +1469,15 @@ async function renderJobDetailView(container, jobId) {
         if (!window.openSignaturePad) { setStatus('error', 'El componente de firma no está cargado.'); return; }
         window.openSignaturePad({
           title: 'Firma del cliente',
-          onConfirm: async (dataUri) => {
+          // SCRUM-300 (C5): el nombre va VACÍO y el chip lo rellena de un toque. `sugerencia` es
+          // eso, una sugerencia — no se escribe sola en el campo.
+          firmante: { sugerencia: (job && job.customer && job.customer.name) || '' },
+          onConfirm: async (dataUri, declaracion) => {
             try {
-              await apiRequest(`/admin/albaranes/${alb.id}/firmar`, { method: 'POST', body: JSON.stringify({ signatureData: dataUri }) });
+              await apiRequest(`/admin/albaranes/${alb.id}/firmar`, {
+                method: 'POST',
+                body: JSON.stringify(Object.assign({ signatureData: dataUri }, declaracion || {})),
+              });
               showToast('✓ Albarán firmado.');
               refresh();
             } catch (e) { setStatus('error', 'No se pudo firmar: ' + (e?.data?.message || e.message)); }

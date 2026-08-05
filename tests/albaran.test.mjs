@@ -256,7 +256,8 @@ test('SCRUM-14: tenancy del albarán + lock de firmado end-to-end', { skip: !ENA
     const rSignEarly = await jsonReq(`/admin/albaranes/${alb1.id}/firmar`, cookieA, 'POST', { signatureData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' });
     assert.equal(rSignEarly.status, 409);
     assert.equal((await jsonReq(`/admin/albaranes/${alb1.id}/emitir`, cookieA, 'POST')).status, 200);
-    const rSign = await jsonReq(`/admin/albaranes/${alb1.id}/firmar`, cookieA, 'POST', { signatureData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' });
+    // SCRUM-300: firmar exige declarar QUIÉN firma — el nombre entra en el contenido sellado.
+    const rSign = await jsonReq(`/admin/albaranes/${alb1.id}/firmar`, cookieA, 'POST', { signatureData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', firmadoPorNombre: 'Ana Pérez' });
     assert.equal(rSign.status, 200);
     const albSigned = await rSign.json(); // serializado con pdfUrl al endpoint auth
     const rLocked = await jsonReq(`/admin/albaranes/${alb1.id}`, cookieA, 'PATCH', { notas: 'tarde' });

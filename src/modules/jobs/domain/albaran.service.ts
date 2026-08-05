@@ -234,7 +234,9 @@ export interface FirmaEvidencia {
   ip: string | null;          // ⚠️ NO exponer
   ua: string | null;          // ⚠️ NO exponer (user-agent, truncado)
   tokenId: string | null;     // firmaToken usado (canal remoto); null in situ
-  firmante: string;           // nombre declarado del firmante (= cliente del albarán)
+  firmante: string;           // SCRUM-300: nombre DECLARADO por quien firma (v2). En v:1 era el
+                              // nombre del cliente, puesto por nosotros y sin que nadie lo dijera.
+  firmadoPorCalidad?: string | null; // en calidad de qué firma (v2; ausente en v:1)
   hashAlg: 'sha256';
   contentHash: string;        // SHA-256 del CONTENIDO canónico (NO del PDF, §1.3 del brief)
 }
@@ -245,24 +247,53 @@ export interface FirmaEvidencia {
  * Serialización determinista (claves fijas, `null` explícito) → el mismo contenido produce
  * SIEMPRE el mismo hash y cualquier alteración posterior lo cambia (prueba de integridad).
  */
+export const EVIDENCIA_VERSION_ACTUAL = 2;
+
+/**
+ * ⚠️ ESTA FUNCIÓN SELLA EN v2 Y SOLO EN v2 (SCRUM-300).
+ *
+ * Los sobres v:1 —todos los albaranes firmados antes de esta tarea— se calcularon con una forma
+ * canónica DISTINTA: sin `lugarEntrega`, sin `fechaEntrega`, sin quién firmó, y con un campo
+ * `obra` que salía de `Job.direccion`. Como `Job.direccion` no la escribe nadie (medido en
+ * SCRUM-300: ningún endpoint la acepta), ese `obra` fue SIEMPRE `null`. O sea: llevamos meses
+ * sellando el lugar de la obra vacío.
+ *
+ * Esos sobres NO se recalculan, NO se migran y NO se tocan: quedan como están, porque con su
+ * `obra: null` son la verdad de lo que se firmó. Esta función NO los reproduce, y eso es
+ * deliberado — quien construya el verificador (SCRUM-369) tiene que saber que hay DOS
+ * poblaciones y que `v` es lo que las distingue. Un verificador que pase todo por aquí daría
+ * por falsificado el histórico entero.
+ */
 export function computeAlbaranContentHash(params: {
   numero: string;
   fecha: Date | string;
   modoValoracion: string;
   lineas: AlbaranLinea[];
   notas: string | null;
-  obra: string | null;
+  /** SCRUM-300: campo PROPIO del albarán. NUNCA el domicilio fiscal (ver el suelo del ticket). */
+  lugarEntrega: string | null;
+  fechaEntrega: Date | string | null;
+  firmadoPorNombre: string | null;
+  firmadoPorCalidad: string | null;
   referenciaTrabajo: string | null;
   cliente: string | null;
   emisor: string | null;
   emisorNif: string | null;
 }): string {
   const canonical = {
-    v: 1,
+    v: EVIDENCIA_VERSION_ACTUAL,
     numero: params.numero,
     fecha: params.fecha instanceof Date ? params.fecha.toISOString() : String(params.fecha),
     modoValoracion: params.modoValoracion,
-    obra: params.obra ?? null,
+    lugarEntrega: params.lugarEntrega ?? null,
+    fechaEntrega:
+      params.fechaEntrega instanceof Date
+        ? params.fechaEntrega.toISOString()
+        : params.fechaEntrega
+          ? String(params.fechaEntrega)
+          : null,
+    firmadoPorNombre: params.firmadoPorNombre ?? null,
+    firmadoPorCalidad: params.firmadoPorCalidad ?? null,
     referenciaTrabajo: params.referenciaTrabajo ?? null,
     cliente: params.cliente ?? null,
     emisor: params.emisor ?? null,
@@ -285,17 +316,36 @@ export function computeAlbaranContentHash(params: {
  * en Albaran.evidenciaFirma (aditivo, Json). El llamador aporta ip/ua/tokenId del request.
  */
 export async function buildFirmaEvidencia(params: {
-  albaran: { id: number; numero: string; fecha: Date; modoValoracion: string; lineas: unknown; notas: string | null; jobId: number; merchantId: number };
+  albaran: {
+    id: number; numero: string; fecha: Date; modoValoracion: string; lineas: unknown;
+    notas: string | null; jobId: number; merchantId: number;
+    lugarEntrega?: string | null; fechaEntrega?: Date | null;
+  };
   canal: 'remoto' | 'in_situ';
   ip: string | null;
   ua: string | null;
   tokenId: string | null;
   firmadoAt: Date;
+  /**
+   * SCRUM-300: la DECLARACIÓN de quien firma, tal y como la ha escrito. Obligatoria — y por eso
+   * no tiene valor por defecto ni se rellena con el nombre del cliente: si firma el encargado y
+   * nadie lo corrige, un nombre prerrellenado sellaría una declaración FALSA, que se impugna y
+   * arrastra al documento entero. Un hueco es menos daño que una mentira firmada.
+   */
+  firmadoPorNombre: string;
+  firmadoPorCalidad: string | null;
 }): Promise<FirmaEvidencia> {
   const a = params.albaran;
+  const nombreFirmante = String(params.firmadoPorNombre ?? '').trim();
+  if (!nombreFirmante) {
+    // Fail-closed a propósito: antes esto ponía `cliente || 'Cliente'`, así que el sobre afirmaba
+    // que había firmado el cliente aunque nadie lo hubiera dicho. Preferimos no sellar a sellar
+    // un nombre que nadie ha declarado.
+    throw new Error('firma_sin_nombre');
+  }
   const job = await prisma.job.findUnique({
     where: { id: a.jobId },
-    select: { customerId: true, titulo: true, direccion: true },
+    select: { customerId: true, titulo: true },
   });
   const [customer, merchant] = await Promise.all([
     job
@@ -310,20 +360,30 @@ export async function buildFirmaEvidencia(params: {
     modoValoracion: a.modoValoracion,
     lineas: (Array.isArray(a.lineas) ? a.lineas : []) as unknown as AlbaranLinea[],
     notas: a.notas ?? null,
-    obra: job?.direccion || null,
+    // 🔴 SUELO DEL TICKET: el lugar de entrega sale del ALBARÁN y de ningún otro sitio. Si está
+    // vacío, se sella vacío. NO se cae al domicilio fiscal del merchant ni al del cliente:
+    // poner una dirección equivocada en un documento de entrega es peor que dejarla en blanco,
+    // porque el cliente la firma sin mirar y luego el papel dice que se entregó donde no fue.
+    lugarEntrega: a.lugarEntrega ?? null,
+    fechaEntrega: a.fechaEntrega ?? null,
+    firmadoPorNombre: nombreFirmante,
+    firmadoPorCalidad: params.firmadoPorCalidad ?? null,
     referenciaTrabajo: job?.titulo || null,
     cliente,
     emisor: merchant?.legalName || merchant?.name || null,
     emisorNif: merchant?.taxId || null,
   });
   return {
-    v: 1,
+    v: EVIDENCIA_VERSION_ACTUAL,
     canal: params.canal,
     firmadoAt: params.firmadoAt.toISOString(),
     ip: params.ip || null,
     ua: params.ua ? String(params.ua).slice(0, 500) : null,
     tokenId: params.tokenId || null,
-    firmante: cliente || 'Cliente',
+    // El firmante es QUIEN HA DICHO QUE FIRMA, no el titular del trabajo. Son cosas distintas
+    // en cuanto firma el encargado, la vecina o el portero — que es el caso normal en obra.
+    firmante: nombreFirmante,
+    firmadoPorCalidad: params.firmadoPorCalidad ?? null,
     hashAlg: 'sha256',
     contentHash,
   };
@@ -346,6 +406,13 @@ export function serializeAlbaran(a: any) {
     estado: a.estado,
     version: a.version,
     firmadoAt: a.firmadoAt,
+    // SCRUM-300 (C5). null = «No se pidió al firmar»: son los albaranes anteriores a esta tarea,
+    // y el front lo dice con esas palabras en vez de dejar un hueco mudo. Un blanco en un
+    // documento legal se lee como un fallo del sistema; esto explica por qué está vacío.
+    fechaEntrega: a.fechaEntrega ?? null,
+    lugarEntrega: a.lugarEntrega ?? null,
+    firmadoPorNombre: a.firmadoPorNombre ?? null,
+    firmadoPorCalidad: a.firmadoPorCalidad ?? null,
     notas: a.notas,
     pdfUrl: a.pdfUrl,
     // SCRUM-17: badge "Facturado" DERIVADO (invoiceId != null) — nunca flag manual (regla 27).
@@ -399,13 +466,20 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
     customer: customer
       ? { name: customer.name, legalName: customer.legalName, taxId: customer.taxId }
       : { name: null, legalName: null, taxId: null },
-    obra: job?.direccion || null,
+    // 🔴 SCRUM-300 · SUELO: del ALBARÁN y de ningún otro sitio. Antes esto era `job.direccion`,
+    // que no la escribe nadie, así que el PDF nunca imprimió el lugar de la obra. No se sustituye
+    // por `merchant.address` (domicilio FISCAL del profesional) ni por nada parecido: es la
+    // dirección de OTRO, y en un documento de entrega firmada eso miente.
+    lugarEntrega: albaran.lugarEntrega ?? null,
+    fechaEntrega: albaran.fechaEntrega ?? null,
     referenciaTrabajo: job?.titulo || null, // SCRUM-67: referencia al Trabajo/presupuesto origen
     lineas,
     totales: modoValoracion === 'VALORADO' ? calcAlbaranTotales(lineas) : null,
     notas: albaran.notas,
     signatureData: albaran.signatureUrl,
     firmadoAt: albaran.firmadoAt,
+    firmadoPorNombre: albaran.firmadoPorNombre ?? null,
+    firmadoPorCalidad: albaran.firmadoPorCalidad ?? null,
     // SCRUM-68: certificado de evidencias (solo hash/firmante/canal — NUNCA ip/ua).
     evidencia: (albaran.evidenciaFirma as unknown as FirmaEvidencia | null) ?? null,
   });

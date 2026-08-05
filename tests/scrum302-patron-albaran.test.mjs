@@ -41,7 +41,18 @@ const SCHEMA = leer('prisma', 'schema.prisma');
 
 test('SCRUM-302 · los estados del albarán son los del MODELO, y «Enviado» no es uno', () => {
   // Derivado del schema, no copiado del ticket.
-  const bloque = SCHEMA.slice(SCHEMA.indexOf('model Albaran '), SCHEMA.indexOf('model Albaran ') + 1200);
+  //
+  // ⚠️ SCRUM-300: esto cortaba 1200 caracteres FIJOS desde `model Albaran `. Al añadir campos al
+  // modelo, la declaración de `estado` se quedó fuera de la ventana y el guard se puso rojo
+  // diciendo «no encuentro `estado`» — cuando `estado` seguía exactamente donde estaba. Un
+  // tamaño adivinado caduca en cuanto el modelo crece, y además MIENTE sobre el motivo. Ahora se
+  // recorta el modelo entero hasta su llave de cierre, y se comprueba que se ha cogido completo
+  // ANTES de buscar nada dentro: si el recorte falla, se dice que falló el recorte.
+  const ini = SCHEMA.indexOf('model Albaran ');
+  assert.ok(ini >= 0, '🔴 no encuentro el modelo Albaran en el schema');
+  const bloque = SCHEMA.slice(ini, SCHEMA.indexOf('\n}', ini));
+  assert.ok(bloque.includes('@@map("albaranes")'), '🔴 el bloque del modelo se cortó antes de acabar');
+
   const comentario = bloque.match(/estado\s+String\s+@default\("borrador"\)\s*\/\/\s*([^\n]+)/);
   assert.ok(comentario, '🔴 no encuentro la declaración de `estado` en el modelo Albaran');
   const delModelo = comentario[1].split('(')[0].split('|').map((s) => s.trim()).filter(Boolean);

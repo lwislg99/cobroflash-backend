@@ -22,6 +22,7 @@ import {
   validarLineas,
   type AlbaranModoValoracion,
 } from '../../domain/albaran.service';
+import { leerFirmante } from '../../domain/albaranFirmaCopy'; // SCRUM-300 (C5)
 import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
 import {
   agruparPorMes,
@@ -365,11 +366,37 @@ router.patch('/:id', async (req, res) => {
       data.notas = String(req.body.notas || '').slice(0, 2000) || null;
       cambios.push('notas');
     }
+    // SCRUM-300 (C5): DOS fechas —la del documento y la de ENTREGA— con la misma regla y UNA
+    // sola salida de error. Se hizo así a propósito: duplicar el `return 400 invalid_date` habría
+    // añadido una respuesta pública más sin texto humano, y el trinquete de SCRUM-275 lo cazó al
+    // primer intento. Menos ramas, y el tope de respuestas mudas se queda donde estaba.
+    //
+    // `fechaEntrega` admite vaciarse (''→null); `fecha` no, porque el documento siempre tiene una.
+    let fechaInvalida = false;
+    const leerFecha = (valor: unknown, admiteVacio: boolean): Date | null => {
+      const bruto = String(valor ?? '').trim();
+      if (!bruto && admiteVacio) return null;
+      const d = new Date(bruto);
+      if (isNaN(d.getTime())) { fechaInvalida = true; return null; }
+      return d;
+    };
+
     if (req.body?.fecha !== undefined) {
-      const d = new Date(String(req.body.fecha));
-      if (isNaN(d.getTime())) return res.status(400).json({ error: 'invalid_date' });
-      data.fecha = d;
-      cambios.push('fecha');
+      const d = leerFecha(req.body.fecha, false);
+      if (!fechaInvalida) { data.fecha = d; cambios.push('fecha'); }
+    }
+    if (req.body?.fechaEntrega !== undefined) {
+      const d = leerFecha(req.body.fechaEntrega, true);
+      if (!fechaInvalida) { data.fechaEntrega = d; cambios.push('fechaEntrega'); }
+    }
+    if (fechaInvalida) return res.status(400).json({ error: 'invalid_date' });
+
+    // Lugar de entrega: mismo candado que el resto del documento —editable hasta 'firmado',
+    // congelado después (el 409 de arriba ya lo garantiza). Vaciarlo es legítimo; lo que NO se
+    // hace nunca es rellenarlo solo con la dirección de nadie.
+    if (req.body?.lugarEntrega !== undefined) {
+      data.lugarEntrega = String(req.body.lugarEntrega || '').trim().slice(0, 300) || null;
+      cambios.push('lugarEntrega');
     }
     if (cambios.length === 0) return res.status(400).json({ error: 'nothing_to_update' });
 
@@ -433,6 +460,12 @@ router.post('/:id/firmar', async (req, res) => {
       return res.status(413).json({ error: 'firma_demasiado_grande', message: 'La firma supera el tamaño máximo permitido.' });
     }
 
+    // SCRUM-300 (C5): quién firma es OBLIGATORIO. Una rúbrica sin nombre no identifica a nadie, y
+    // hasta ahora el sobre rellenaba el hueco con el nombre del CLIENTE aunque hubiera firmado el
+    // encargado — una declaración que nadie llegó a hacer.
+    const firma = leerFirmante(req.body);
+    if ('error' in firma) return res.status(400).json(firma.error);
+
     const firmadoAt = new Date();
     // SCRUM-68: sella evidencias (canal in situ, sin token). ip/ua se guardan pero NUNCA
     // se exponen (serializeAlbaran no los saca; el PDF solo pinta hash/firmante/canal).
@@ -443,10 +476,15 @@ router.post('/:id/firmar', async (req, res) => {
       ua: (req.headers['user-agent'] as string) || null,
       tokenId: null,
       firmadoAt,
+      firmadoPorNombre: firma.nombre,
+      firmadoPorCalidad: firma.calidad,
     });
     const updated = await prisma.albaran.update({
       where: { id: albaran.id },
-      data: { estado: 'firmado', signatureUrl: signatureData, firmadoAt, evidenciaFirma: evidencia as any },
+      data: {
+        estado: 'firmado', signatureUrl: signatureData, firmadoAt, evidenciaFirma: evidencia as any,
+        firmadoPorNombre: firma.nombre, firmadoPorCalidad: firma.calidad,
+      },
     });
     // Regenerar el PDF YA con el bloque de firma (force). Si el PDF falla, la firma
     // queda registrada igualmente (el GET /pdf lo regenerará bajo demanda).
