@@ -33,18 +33,29 @@ cinco columnas**— solo cabían `Nº` y `Fecha`. Eso no era maquetación: era e
 
 > **CON MARCADOR NO SE JUZGA EL LAYOUT. Solo se comprueba que el marcador esté.**
 
-### Lo que SIGUE sin caber, dicho sin adornos
+### La columna Estado APILA en movil, y Lineas se oculta
 
-Con los rótulos aprobados entran `Nº`, `Fecha` y `Estado`. **`Líneas` y `Acción` siguen fuera a
-390 px**, alcanzables scrollando: el envoltorio de ESTA tabla se pasó a `overflow-x: auto` — **no se
-tocó la clase compartida `.table-wrap`** (`overflow: hidden`, `styles.css:590`), que la usan otras
-cinco pantallas sin medir.
+Decision del fundador, y el motivo importa: **los badges NO se quitan**. Una celda de Accion vacia
+es ambigua entre «facturado del todo» y «no facturable por ser SIN_VALORAR», y el badge es lo unico
+que se lo dice al profesional. Quitarlo repetiria el error de aplanar el PARCIAL.
 
-Lo que ahora se come el ancho es la columna Estado, con el pill **más** los badges de facturación
-(`BORRADOR` + `Sin precios`, `FIRMADO` + `Facturado en parte`). Quitar esos badges de la tabla es la
-palanca obvia, y hay argumento de C2 —«facturado es CONTEXTO, no estado»— con la columna Acción ya
-codificándolo. Pero es información que hoy ve el profesional: **decisión del fundador, no se toma de
-paso**.
+Así que en móvil crece el **alto**, que sobra, en vez del **ancho**, que falta: pill arriba, badge
+debajo (`.jobdet-alb-estado`). Y si aun así no entra, la que se oculta es **Líneas** —un número
+informativo que no acciona nada—, **nunca Acción**: la acción es la razón de ser de la tabla. El
+dato no se pierde: está en el detalle del albarán, a un toque del número.
+
+### 🔴 Medido despues de las dos palancas: TODAVIA no entra
+
+| | 390 px | 1280 px |
+|---|---|---|
+| Borde derecho de la celda Accion | **515 px** | 940 px |
+| Viewport | 390 px | 1280 px |
+| ¿Entra sin scrollear? | 🔴 **NO** (faltan 125 px) | ✅ sí |
+
+Las dos palancas acercaron —`Acción` ya asoma en la cabecera y los botones empiezan a verse— pero
+**no bastan**. Lo que queda comiendo ancho, por orden: el enlace del número (`ALB-2026-0001`), el
+badge `Facturado en parte` y el rótulo `Facturar lo entregado`. **No se toca más sin decisión del
+fundador**: acortar cualquiera de los tres es quitar información o retocar copy aprobada.
 
 ### Foco y targets: MEDIDOS, no supuestos
 

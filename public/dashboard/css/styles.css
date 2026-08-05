@@ -2295,3 +2295,31 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    ════════════════════════════════════════════════════════════ */
 .btn-primary:focus-visible { box-shadow: var(--shadow-btn), var(--ring); }
 .qq-modal .modal-footer .btn-primary:focus-visible { box-shadow: var(--shadow-brand), var(--ring); }
+
+/* ════════════════════════════════════════════════════════════
+   SCRUM-304 (C3) · LA COLUMNA ESTADO DE LA TABLA DE ALBARANES
+
+   Lleva DOS cosas que son DOS EJES: el pill del documento
+   (borrador/emitido/firmado) y el badge de facturación
+   (nada / parcial / del todo). En fila ocupan tanto ancho que a
+   390 px empujan «Líneas» y «Acción» fuera de pantalla.
+
+   NO se resuelve quitando el badge: una celda de Acción vacía
+   significa DOS cosas distintas —facturado del todo, o no
+   facturable por ser SIN_VALORAR— y el badge es lo único que se
+   lo dice al profesional. Aplanarlo repetiría el error de
+   esconder el PARCIAL.
+
+   Así que en móvil APILA: crece el ALTO, que sobra, en vez del
+   ANCHO, que falta. Alcance mínimo a propósito — una clase
+   propia, no un cambio en `.table` ni en `.status-pill`, que
+   los comparten otras cinco pantallas sin medir.
+   ════════════════════════════════════════════════════════════ */
+.jobdet-alb-estado { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+@media (max-width: 639px) {
+  .jobdet-alb-estado { flex-direction: column; align-items: flex-start; gap: 4px; }
+  /* Y si aún así no entra, la que se va es LÍNEAS —un número informativo que no acciona nada—,
+     nunca ACCIÓN: la acción es la razón de ser de esta tabla. Decisión del fundador.
+     El dato no se pierde: está en el detalle del albarán, a un toque del número. */
+  .jobdet-alb-lineas { display: none; }
+}

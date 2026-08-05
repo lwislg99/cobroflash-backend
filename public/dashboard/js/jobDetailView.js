@@ -1666,7 +1666,11 @@ async function renderJobDetailView(container, jobId) {
       // «12 jul 2026, 11:15» empuja fuera de pantalla justo la columna Acción. El día y el mes son
       // lo que distingue una entrega de otra; la hora vive en el detalle, que es donde se consulta.
       `<td>${esc(albFechaCorta(alb.fecha))}</td>` +
-      `<td>` +
+      // SCRUM-304: el pill y el badge APILAN en móvil (`.jobdet-alb-estado`). Son dos ejes y los
+      // dos hacen falta —una celda de Acción vacía es ambigua entre «facturado del todo» y «no
+      // facturable por SIN_VALORAR», y el badge es lo único que lo desambigua—, así que crece el
+      // alto en vez del ancho.
+      `<td class="jobdet-alb-estado">` +
         `<span class="status-pill ${JOBDET_ALB_PILL[alb.estado] || 'status-pill-draft'}">${jobDetAlbEstado(alb.estado)}</span>` +
         // SCRUM-17/170: «facturado» NO es un estado del documento — es un derivado de TRES valores
         // contra el libro de líneas. Va como badge aparte del pill a propósito: son DOS EJES, y
@@ -1676,7 +1680,7 @@ async function renderJobDetailView(container, jobId) {
           : (alb.facturado || alb.estadoCobro === 'facturado' ? `<span class="job-doc-row__badge">Facturado</span>` : '')) +
         (albValorado ? '' : `<span class="job-doc-row__badge">Sin precios</span>`) +
       `</td>` +
-      `<td>${nLineas}</td>` +
+      `<td class="jobdet-alb-lineas">${nLineas}</td>` +
       `<td class="jobdet-alb-actions"></td>`;
     const albBody = item.querySelector('td');
     item.querySelector('.jobdet-alb-link').addEventListener('click', () => {
@@ -1994,7 +1998,7 @@ async function renderJobDetailView(container, jobId) {
         `<th>${esc(ALB_TABLA_COPY.colNumero)}</th>` +
         `<th>${esc(ALB_TABLA_COPY.colFecha)}</th>` +
         `<th>${esc(ALB_TABLA_COPY.colEstado)}</th>` +
-        `<th>${esc(ALB_TABLA_COPY.colLineas)}</th>` +
+        `<th class="jobdet-alb-lineas">${esc(ALB_TABLA_COPY.colLineas)}</th>` +
         `<th>${esc(ALB_TABLA_COPY.colAccion)}</th>` +
       `</tr></thead>`;
     const tbody = document.createElement('tbody');
