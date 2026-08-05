@@ -1104,3 +1104,145 @@ las siete entregas** · Regla 9 (reportado y no arreglado: el botón primario a 
 > **La copy no se toca.** Los dos rótulos que desbordan con A1 no se han acortado: es microcopy
 > del fundador (regla 30) y acortarla para que quepa sería resolver un problema de diseño por la
 > puerta de atrás.
+
+
+# ═══ OCTAVA ENTREGA · ③ EN PANTALLA: TRES REALES, LA CUARTA DECIDE, Y LA QUE NO SE PUDO ═══
+
+**Medido contra:** `origin/main` = `5843684c98e8f8a1b1cef1c3334fc4a094f84d19` · 2026-08-05T23:08:16+01:00
+
+> **Re-anclado.** `main` avanzó a `f96309b3fc58167507d610683c23e8f5072f80ce`
+> (2026-08-05T23:32:44+01:00) mientras corría esto: SCRUM-375, que toca `invoicesView.js`,
+> `scrum373`/`scrum375` y su entrada. **No toca ninguno de los ficheros medidos aquí**
+> (`styles.css`, `tokens.css`, `DESIGN.md`, ni las cuatro vistas capturadas). El ancla de arriba
+> es la del rebase y la del navegador. Rama `scrum-368-a1-texto-grande`, punta
+> `7d47d4635956df099f6781ee0febd24f07528991`, pila rebasada **sin `--force`**.
+
+## La premisa de la autorización no se cumplía, y se midió antes de usarla
+
+La séptima entrega dejó escrito: «AUTORIZADO: levantar backend local con base sembrada. **Es
+local, no toca nada de fuera.**» Medido en la máquina antes de tocar nada:
+
+| | |
+| --- | --- |
+| Postgres escuchando en 5432 | **no** |
+| `psql` / `pg_ctl` / `initdb` en el PATH | **no** |
+| Docker / `docker-compose` | **no** |
+| `.env.local` en alguno de los 4 worktrees | **no** |
+
+**No hay ninguna base local en esta máquina.** Los `.env` apuntan a `acela/railway` (**staging**,
+en b3/b1/b2) y `acela/yaqu_dev_javier` (**dev**, en el checkout principal). La autorización se
+había escrito para un supuesto que no existe, así que la salida se preguntó en vez de suponerse.
+
+**Decisión del fundador:** `yaqu_dev_javier`, con censo de solo lectura primero y siembra solo si
+estaba vacío. **Staging NO se toca** —b1 la necesita esa noche para la migración de C5 y b2 está
+viva— y **producción tampoco, ni en lectura**.
+
+> El guard de `seed-demo` compara `SEED_DEMO_CONFIRM` con el **HOST**, y `acela` aloja staging Y
+> dev (RUNBOOKS:294). Por sí solo no distingue una de otra. La llamada se envolvió afirmando
+> **la base**, no el host, antes de dejar ejecutar nada.
+
+## 🔴 LOS DOS SEMBRADORES ESTÁN ROTOS CONTRA `main` (regla 9: reportado, no arreglado)
+
+Ninguno de los dos puede ejecutarse hoy. No es de este ticket y no se arregla aquí (regla 37: es
+otra zona), pero **cualquiera que siga las instrucciones de la séptima entrega se los encuentra**.
+
+| Fichero | Defecto | Origen |
+| --- | --- | --- |
+| `scripts/seed-demo.mjs:45` | importa `./_wipe-demo.mjs`, **que no existe en `main`** | SCRUM-314 (`cbc2880`) mudó el barrido a `src/modules/system/domain/barridoDemo.ts` y **borró el `.mjs` sin actualizar el import** |
+| `scripts/seed-demo.mjs:244` · `scripts/seed-video.mjs:456` | llaman `allocateInvoiceNumber(tx, id, {}, at)`; `opts.camino` y `opts.actor` son **obligatorios** | SCRUM-207 cerró el contrato de emisión y los sembradores no lo siguieron |
+
+El primero mata el proceso en el `resolve`, antes de tocar la base. El segundo revienta a mitad,
+**después** de que el barrido haya borrado. Aquí no hubo daño porque el censo previo ya había
+medido el merchant 1 **a cero**; con datos dentro, ese orden los habría perdido.
+
+> **El arreglo del primero es una línea** (`from '../dist/modules/system/domain/barridoDemo.js'`).
+> El del segundo **NO lo es**: elegir el `camino` (`C1`…`C7`) y el `actor` de una factura sembrada
+> es semántica fiscal que acaba en `AuditLog`, y eso no lo decide una sesión de capturas.
+
+## Cómo se pobló, entonces: por el CAMINO REAL DEL PRODUCTO
+
+Sin inventar ninguna semántica fiscal — no se llamó a `allocateInvoiceNumber` ni se eligió
+`camino`/`actor`: eso lo pone la ruta del producto cuando toca.
+
+```
+POST /quote/create               → 4 presupuestos (no son documento fiscal)
+POST /admin/quotes/:id/accept    → acepta 2; con cada uno nace su Trabajo (ensureJobForQuote)
+POST /admin/onboarding/complete  → cierra el asistente (tapaba las 3 pantallas)
+```
+
+Resultado en dev: **5 presupuestos · 2 Trabajos · 7 clientes · 8 productos**. Las vistas se
+dispararon con el **router real** (`renderAppView`), no con un banco de scripts.
+
+## 🛑 ① `invoiceDetailView` NO SE PUDO CAPTURAR — y el motivo no es de este ticket
+
+`GET /admin/invoices` devuelve **500** contra dev. Confirmado en el log del backend, no deducido:
+
+```
+The column `invoices.vf_estado` does not exist in the current database.
+🚨 [schema] DERIVA: COLUMNAS que faltan (1): invoices.vf_estado (Invoice.vfEstado)
+```
+
+Arreglarlo es un **`db push` a dev** — STOP de schema, y justo la zona donde b1 migraba esa
+noche. **No se tocó.** ① queda pendiente de que dev tenga el esquema al día.
+
+## Lo que sí se capturó, con su censo medido en pantalla
+
+`.playwright-mcp/368-S3-{2,3,4}-*-390.png`, 390×844 @2x, backend local contra dev.
+
+> **La captura afirma qué CSS se está sirviendo antes de disparar**, porque `CAPTURE_BASE` apunta
+> por defecto a **producción**, donde esta hoja no está desplegada: allí la foto habría salido
+> bien **por el motivo equivocado**. Medido en cada pasada:
+> `btn-primary btn-sm` = `rgb(4,120,87)` ✔ · `btn-primary` = `rgb(22,163,74)` a 18,66px/700 ✔.
+
+| Pantalla | Botones verdes VISIBLES | tamaño | tipografía |
+| --- | --- | --- | --- |
+| ② `quotesListView` | `+ Crear presupuesto` — **marca** | 219×44 | 18,66px/700 |
+| ③ `settingsView` | `Guardar cambios` — **marca** | 204×44 | 18,66px/700 |
+| | `Copiar link` — **oscuro** | 89×30 | 12,5px/600 |
+| ④ `jobDetailView` | `+ Nuevo albarán` — **oscuro** | 123×30 | 12,5px/600 |
+
+### ¿Se lee como un sistema? **Sí, en las tres.** Con dos matices que no son de color
+
+- **③ es la única convivencia real de las tres.** El grande y brillante manda; el pequeño oscuro
+  se lee como la acción **de su tarjeta**, no como un botón estropeado. Y coincide en tono con
+  los enlaces `Completar →`, que ya usaban `--brand-tint-ink` como texto desde la segunda
+  entrega: **el oscuro se lee como familia, no como excepción**.
+- **④ invierte la premisa, y aun así aguanta.** El CTA del héroe es el único botón *relleno* de
+  la pantalla, contra un `+ Añadir gasto` de contorno: **manda sin discusión**. Pero manda
+  **porque no tiene competencia**, no porque sea subordinado. Medido en la fuente: los tres
+  `btn-primary` en verde de marca de esa vista (`:1186`, `:1270`, `:1450`) viven **dentro de
+  modales**, que la tapan. En la pantalla base **no hay ni un verde de marca**.
+- **② no ejercita la pregunta.** Con 5 presupuestos reales no aparece ningún primario pequeño:
+  `✓ Aprobar` exige estado `pending_approval` (`quotesListView.js:242`). Una sola voz en
+  pantalla — que es lo que `DESIGN.md` pide, pero no es la prueba que se buscaba.
+
+## 🛑 LO QUE CHIRRÍA EN ④, y no se ha tocado
+
+Las dos son de **tamaño y rótulo**, no de color, y las dos estaban ahí antes de la candidata.
+
+1. **La acción principal de la pantalla es un objetivo táctil de 30 px a 390 px.**
+   `jobDetailView.js:527` escribe `'btn-primary btn-sm'` **sin la clase base `btn`**, que es la
+   que sube a 44 px en móvil — el mecanismo exacto de SCRUM-352. Medido: **123×30**. El CTA del
+   héroe es el botón más importante del Trabajo y el más pequeño de pulsar de su fila.
+2. **`+ Nuevo albarán` sale DOS VECES en la misma pantalla**: como CTA del héroe (relleno oscuro,
+   arriba) y otra vez en la sección ALBARANES (contorno, abajo). Mismo rótulo, dos pesos. El
+   héroe replica la acción de la sección en vez de distinguirse de ella.
+
+**Ninguna se arregla aquí**: (1) es SCRUM-352 y (2) toca microcopy y jerarquía de una vista
+(regla 30 + regla 37).
+
+## El falso negativo que casi entra en el informe
+
+La primera pasada capturó ④ con un `setTimeout` fijo y el censo dijo **«ningún botón verde
+visible»**. Era mentira: la vista **no había terminado de montarse**. Se cambió el sleep por
+**espera a DOM estable** (mismo largo 4 veces seguidas) y el CTA apareció.
+
+> Es **METODO §4** («no se mide mientras algo se mueve») en su versión de captura, y también §3:
+> el medidor no llegó a ejecutarse del todo. **Un cero de un censo que no terminó de mirar es
+> indistinguible de un cero de verdad** — y este iba camino de reportarse como hallazgo.
+
+## Higiene
+
+Backend local parado, `.env.local` borrado, puente temporal de `_wipe-demo.mjs` retirado
+(nunca entró en el diff: `git status` limpio antes y después). **Producción no se tocó ni en
+lectura. Staging no se tocó.** Dev queda liberada.
