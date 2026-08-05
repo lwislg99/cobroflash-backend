@@ -125,13 +125,36 @@ test('SCRUM-284 · contraste con la lista del ticket (reporta, no bloquea)', () 
 });
 
 // ── CONTROLES NEGATIVOS ──────────────────────────────────────────────────────
-test('SCRUM-284 · NEGATIVO: un campo declarado pendiente o fuera NO cuenta como sin sitio', () => {
-  // Si contasen como huérfanos, el guard estaría en rojo permanente esperando al fundador — y un
+test('SCRUM-284 · NEGATIVO: un campo declarado FUERA no cuenta como sin sitio', () => {
+  // Si contase como huérfano, el guard estaría en rojo permanente esperando al fundador — y un
   // guard en rojo permanente se acaba desactivando.
-  const r = revisarAsignacion(['googleReviewUrl', 'ref-link']);
-  assert.deepEqual(r.sinSitio, [], 'están declarados con su motivo: son conocidos, no perdidos');
-  assert.equal(r.pendientes, 1);
+  const r = revisarAsignacion(['ref-link']);
+  assert.deepEqual(r.sinSitio, [], 'está declarado con su motivo: es conocido, no perdido');
   assert.equal(r.fuera, 1);
+});
+
+test('SCRUM-284 · toda excepción del mapa lleva su MOTIVO escrito', () => {
+  // Una excepción sin motivo se hereda para siempre: dentro de seis meses nadie sabe si sigue
+  // siendo válida, y quitarla da miedo. Vale para las tres listas de excepción.
+  const flojos = [];
+  for (const [nombre, tabla] of [['FUERA_DE_CONFIGURACION', FUERA_DE_CONFIGURACION],
+    ['PENDIENTES_DE_DECISION', PENDIENTES_DE_DECISION], ['VACIOS_DECLARADOS', VACIOS_DECLARADOS]]) {
+    for (const [clave, motivo] of Object.entries(tabla)) {
+      if (typeof motivo !== 'string' || motivo.trim().length < 40) flojos.push(`${nombre}.${clave}`);
+    }
+  }
+  assert.deepEqual(flojos, [],
+    '🔴 estas excepciones no explican por qué existen:\n   · ' + flojos.join('\n   · '));
+});
+
+test('SCRUM-284 · PENDIENTES_DE_DECISION está vacío, y eso es un hecho medido', () => {
+  // `googleReviewUrl` era el último y ya se decidió → `avisos`, por el criterio del fundador: el
+  // destino de un ajuste sale de lo que GOBIERNA, no de dónde se ve su efecto. El campo configura
+  // el envío automático de la petición de reseña; sus otras dos superficies (ficha pública y página
+  // de recibo) solo lo CONSUMEN. Este test existe para que volver a llenar la lista sea deliberado.
+  assert.deepEqual(Object.keys(PENDIENTES_DE_DECISION), [],
+    '🔴 hay campos esperando decisión otra vez. Está bien que los haya —es mejor que colocarlos a ' +
+    'ojo— pero tiene que verse en el diff, no aparecer de refilón.');
 });
 
 test('SCRUM-284 · NEGATIVO: un campo desconocido SÍ cae', () => {
