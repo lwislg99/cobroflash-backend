@@ -262,7 +262,30 @@ function jobCard(j, container) {
     actions.appendChild(ics);
   }
   if (j.status === 'en_curso') {
-    addBtn('✅ Marcar terminado', 'btn-primary btn-sm', () => patch({ status: 'terminado' }, '✅ Trabajo terminado'));
+    // SCRUM-366: baja a SECUNDARIO. Es un movimiento de la FSM, no «la siguiente acción»: esa la
+    // decide la escalera compartida (abajo) y era la que discrepaba con el detalle.
+    addBtn('✅ Marcar terminado', 'btn-secondary btn-sm', () => patch({ status: 'terminado' }, '✅ Trabajo terminado'));
+  }
+
+  // ── SCRUM-366 · LA SIGUIENTE ACCIÓN SALE DE LA ESCALERA COMPARTIDA ───────────────────
+  //
+  // Antes esta tarjeta decidía por su cuenta —`en_curso` → «Marcar terminado»— mientras el
+  // detalle consultaba `jobNextAction`. Mismo Trabajo, mismo estado, dos respuestas distintas y
+  // nada que avisara. No fue descuido: la escalera vivía DENTRO de `jobDetailView.js` y desde
+  // aquí no era nombrable.
+  //
+  // ⚠️ EL BOTÓN NAVEGA AL DETALLE, no ejecuta. Y es deliberado: duplicar aquí la EJECUCIÓN
+  // (collect-rest, enviar-para-firmar, emitir…) reintroduciría exactamente el defecto que este
+  // ticket cierra, solo que un nivel más abajo — dos copias del «cómo» en vez de dos del «qué».
+  // Un solo ejecutor, en el detalle; la lista dice qué toca y lleva hasta allí.
+  // `!isTecnico` es EXACTAMENTE lo que pasa el detalle (`jobDetailView.js`), y las dos lo derivan
+  // de `window.appUserRole`. Si una calculara el rol distinto, volverían a discrepar por otro
+  // camino — el mismo defecto con otro disfraz.
+  const siguiente = typeof jobNextAction === 'function' ? jobNextAction(j, !isTecnico) : null;
+  if (siguiente) {
+    addBtn(siguiente.label, 'btn-primary btn-sm', () => {
+      if (window.renderAppView) window.renderAppView('job-detail', { jobId: j.id });
+    });
   }
   if (j.status === 'terminado') {
     if (j.remaining && j.remaining.amount > 0) {

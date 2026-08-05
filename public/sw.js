@@ -21,6 +21,7 @@ const SHELL = [
   '/tokens.css',
   '/dashboard/css/styles.css',
   '/dashboard/js/api.js',
+  '/dashboard/js/jobNextAction.js',
   '/dashboard/js/semaforoFiscal.js',
   '/dashboard/js/homeView.js',
   '/dashboard/js/onboardingView.js',

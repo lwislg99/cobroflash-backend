@@ -37,49 +37,10 @@ function jdAddRow(dl, term, value) {
   dl.appendChild(dd);
 }
 
-// SCRUM-31 (F4): resolver de la SIGUIENTE acción del héroe (escalera aprobada por el fundador).
-// PURO: decide CUÁL acción mostrar a partir de `job`; NO ejecuta nada (el héroe reutiliza los
-// endpoints existentes). Prioridad: (1) Cobrar el resto si terminado con saldo · (2) Recordar pago
-// si hay factura sin pagar ≥7 días (y hay teléfono) · (3) Enviar para firmar un albarán emitido ·
-// (4) Emitir un albarán en borrador · (5) Nuevo albarán si no hay ninguno · (6) nada (null).
-// Entre albaranes gana el MÁS AVANZADO: emitido pesa más que borrador.
-function jobNextAction(job, isAdmin = true) {
-  // SCRUM-89: los niveles de DINERO (1 cobrar, 2 recordar) son admin-only (403 para técnico) — un
-  // técnico los SALTA y el héroe solo le sugiere lo que SÍ puede (firmar/emitir/nuevo) o nada (nivel 6),
-  // nunca un CTA muerto. El dinero queda deshabilitado en su sitio (la fila de factura), no en el héroe.
-  // 1 · terminado con saldo → Cobrar el resto (label honesto SCRUM-34).
-  if (isAdmin && job.status === 'terminado' && job.remaining && job.remaining.amount > 0) {
-    const restAmount = (job.pendingStagesCount === 1 && job.nextStage)
-      ? fmtMoneyEs(job.nextStage.amount, job.nextStage.currency)
-      : fmtMoneyEs(job.remaining.amount, job.remaining.currency);
-    const label = (job.hasCustomPlan && job.pendingStagesCount >= 2 && job.nextStage)
-      ? `🪙 Cobrar siguiente tramo: ${job.nextStage.label} (${fmtMoneyEs(job.nextStage.amount, job.nextStage.currency)})`
-      : `💰 Cobrar el resto (${restAmount})`;
-    return { level: 1, kind: 'cobrar', label };
-  }
-  // 2 · factura sin pagar ≥7 días (y con teléfono para poder recordar) → Recordar pago.
-  // Condicionado a propósito: no sugerir insistir a un cliente al que se facturó ayer.
-  const invoices = Array.isArray(job.invoices) ? job.invoices : [];
-  if (isAdmin && job.customer?.phone) {
-    const vieja = invoices.find((inv) => {
-      if (String(inv.status).toLowerCase() === 'paid') return false;
-      const created = inv.createdAt ? new Date(inv.createdAt) : null;
-      if (!created || isNaN(created.getTime())) return false;
-      return (Date.now() - created.getTime()) >= 7 * 86400000;
-    });
-    if (vieja) return { level: 2, kind: 'recordar', label: 'Recordar pago', invoiceId: vieja.id };
-  }
-  // 3/4 · albaranes: gana el MÁS AVANZADO (emitido → firmar; si no, borrador → emitir).
-  const albaranes = Array.isArray(job.albaranes) ? job.albaranes : [];
-  const emitido = albaranes.find((a) => a.estado === 'emitido');
-  if (emitido) return { level: 3, kind: 'firmar', label: 'Enviar para firmar', albaranId: emitido.id };
-  const borrador = albaranes.find((a) => a.estado === 'borrador');
-  if (borrador) return { level: 4, kind: 'emitir', label: 'Emitir albarán', albaranId: borrador.id };
-  // 5 · sin ningún albarán → crear el primero. (Con albaranes todos firmados y nada pendiente → null.)
-  if (!albaranes.length) return { level: 5, kind: 'nuevo', label: '+ Nuevo albarán' };
-  // 6 · nada que sugerir.
-  return null;
-}
+// SCRUM-366: `jobNextAction` ya NO vive aquí — se movió VERBATIM a `js/jobNextAction.js` para
+// que el listado pueda usar la MISMA escalera. Vivía dentro de este fichero, así que `jobsView.js`
+// no podía nombrarla y escribió la suya: mismo Trabajo, dos acciones distintas. El traslado no
+// cambió ni un nivel; lo que cambió es que ahora es alcanzable.
 
 // ── SCRUM-257 · las líneas del presupuesto, convertidas en líneas de albarán ──────────────────
 //

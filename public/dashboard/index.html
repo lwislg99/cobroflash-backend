@@ -171,6 +171,9 @@
 
   <!-- Scripts -->
   <script src="./js/api.js"></script>
+  <!-- SCRUM-366: la escalera de la siguiente accion, compartida por el listado y el detalle.
+       Detras de api.js porque usa fmtMoneyEs; delante de las dos vistas que la consumen. -->
+  <script src="./js/jobNextAction.js"></script>
   <!-- SCRUM-210: detrás de api.js a propósito — reutiliza su `copyRojo` (copy aprobado). -->
   <script src="./js/semaforoFiscal.js"></script>
   <script src="./js/homeView.js"></script>
