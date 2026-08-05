@@ -205,6 +205,23 @@ function renderSetupChecklist(merchant, data) {
     { label: 'Enlace de reseñas de Google', done: !!merchant.googleReviewUrl, action: 'settings', hint: 'Se lo pedimos al cliente tras pagar' },
     { label: 'Completa NIF y dirección',   done: !!(merchant.taxId && merchant.address), action: 'settings', hint: 'Salen en tus PDF' },
     { label: 'Crea tu primer presupuesto', done: data.recentActivity && data.recentActivity.length > 0, action: 'quotes-new', hint: null },
+    // ── SCRUM-315 (D4) · el checklist llega hasta donde llega el dinero ──────────────────────
+    //
+    // Acababa en «crea tu primer presupuesto», que es la mitad del camino: un presupuesto sin
+    // firmar no prueba nada y un trabajo sin cobrar no ha terminado. Los tres nuevos conservan lo
+    // que este checklist ya hacía mejor que nadie — cada paso dice PARA QUÉ SIRVE (`hint`).
+    //
+    // ⚠️ `=== true` NO es manía: si el bloque `onboarding` no llega —endpoint viejo, respuesta a
+    // medias, fallo del cálculo— cualquier otra forma de escribirlo dejaría el paso en un valor
+    // ambiguo. Aquí un dato ausente se pinta como NO HECHO. Un checklist que se marca solo por
+    // error le dice al profesional que ya está listo cuando no lo está, y eso es peor que uno que
+    // le pide de más.
+    { label: 'Carga tus precios', done: data.onboarding?.precios === true, action: 'products',
+      hint: 'Para que un presupuesto salga en 30 segundos' },
+    { label: 'Que tu cliente firme un presupuesto', done: data.onboarding?.firma === true, action: 'quotes-list',
+      hint: 'Es tu prueba si luego dice que no lo pidió' },
+    { label: 'Cobra tu primer trabajo', done: data.onboarding?.cobro === true, action: 'invoices',
+      hint: 'Bizum, tarjeta o transferencia, desde el mismo enlace' },
   ];
 
   const incomplete = steps.filter(s => !s.done);
