@@ -995,13 +995,20 @@ html, body { overflow-x: clip; }
 .qq-modal .modal-footer .btn-primary { box-shadow: var(--shadow-brand); }
 .qq-modal .modal-footer .btn-primary:hover:not(:disabled) { box-shadow: var(--shadow-brand); transform: translateY(-1px); }
 @media (max-width: 639px) {
-  /* Targets táctiles >=44px y campos cómodos en el bottom sheet */
-  .qq-modal .field input,
-  .qq-modal .btn,
-  .qq-modal .btn-primary,
-  .qq-modal .btn-secondary { min-height: 44px; }
+  /* Campos cómodos en el bottom sheet. Los INPUT sí necesitan esto: fuera del sheet valen 42 px
+     (regla de arriba) y aquí suben a 44 — la base no los toca.
+     SCRUM-384: los BOTONES salieron de esta lista. `.btn`, `.btn-primary` y `.btn-secondary` ya
+     reciben 44 px en móvil de la regla general (SCRUM-352, más abajo en este fichero), así que
+     repetirlo aquí no añadía nada y escondía de dónde venía el 44. MEDIDO antes de quitarlo, no
+     deducido: a 390 px los botones del pie siguen en 44. */
+  .qq-modal .field input { min-height: 44px; }
   .qq-modal .btn-icon { width: 44px; height: 44px; }
-  /* Footer: botones a ancho completo, "Enviar por WhatsApp" verde dominante arriba */
+  /* ⚠️ ESTO NO ES UN PARCHE DE LAYOUT — ES DISEÑO DELIBERADO, y SCRUM-384 lo dejó fijado con un
+     test para que el siguiente que pase por aquí no lo confunda con lo que sí se retiró.
+     Apila los botones a ancho completo para que "Enviar por WhatsApp" quede DOMINANTE ARRIBA.
+     La prueba de que no compite con `.modal-footer { flex-wrap: wrap }` (SCRUM-350) es que se
+     aplica a un DIV DENTRO del pie, no al pie: son dos contenedores distintos y `wrap` no da
+     esto —daría dos filas alineadas a la derecha, no dos botones a ancho completo—. */
   .qq-modal .modal-footer > div:last-child { flex-direction: column-reverse; gap: 8px; }
   .qq-modal .modal-footer .btn,
   .qq-modal .modal-footer .btn-primary,
