@@ -1,5 +1,8 @@
 // src/modules/products/domain/products.service.ts
-import { prisma } from '../../../core/db/prisma';
+import { prisma } from '../../../core/db/prisma';
+// SCRUM-312: el parseo de CSV vive en UN solo sitio del proyecto. Antes había dos (aquí y en
+// el importador del navegador), y no eran equivalentes.
+import { parsearLineaCsv, quitarBom, detectarSeparador } from '../../../core/csv/csv';
 
 function normalizeSearch(s: string) {
   return String(s || '')
@@ -96,37 +99,6 @@ export async function exportProductsCsv(merchantId: number) {
 }
 
 
-/**
- * SCRUM-339 (bug 3): parsea UNA línea CSV honrando comillas — `"a; b"` es UNA celda y `""` es una
- * comilla literal. Antes se hacía `line.split(delimiter)` a pelo, así que un `;` dentro del valor
- * partía la fila y desplazaba las columnas: el precio se leía de la celda equivocada y la fila caía.
- * (No cruza saltos de línea: el CSV se sigue troceando por `\n` antes; un valor con `\n` embebido
- * queda fuera de alcance de esta tarea — ver docs/master/SCRUM-339.md.)
- */
-function parseCsvLine(line: string, delimiter: string): string[] {
-  const out: string[] = [];
-  let cur = '';
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (inQuotes) {
-      if (ch === '"') {
-        if (line[i + 1] === '"') { cur += '"'; i++; } // "" = comilla escapada
-        else inQuotes = false;
-      } else {
-        cur += ch;
-      }
-    } else if (ch === '"') {
-      inQuotes = true;
-    } else if (ch === delimiter) {
-      out.push(cur); cur = '';
-    } else {
-      cur += ch;
-    }
-  }
-  out.push(cur);
-  return out;
-}
 
 /**
  * SCRUM-339: contrato ALINEADO con POST /admin/customers/import → { created, skipped, errors, errorList }.
@@ -143,8 +115,8 @@ export async function importProductsCsv(merchantId: number, csv: string) {
     return { created: 0, skipped: 0, errors: 0, errorList: [] as string[] };
   }
 
-  const delimiter = lines[0].includes(';') ? ';' : ',';
-  const header = parseCsvLine(lines[0], delimiter).map(s => s.trim().toLowerCase());
+  const delimiter = detectarSeparador(lines[0]);
+  const header = parsearLineaCsv(lines[0], delimiter).map(s => s.trim().toLowerCase());
 
   const idxName = header.indexOf('name');
   const idxDesc = header.indexOf('description');
@@ -164,7 +136,7 @@ export async function importProductsCsv(merchantId: number, csv: string) {
   const anota = (msg: string) => { errors++; if (errorList.length < 10) errorList.push(msg); };
 
   for (let i = 1; i < lines.length; i++) {
-    const cols = parseCsvLine(lines[i], delimiter); // bug 3: honra comillas
+    const cols = parsearLineaCsv(lines[i], delimiter); // bug 3: honra comillas
 
     const name = String(cols[idxName] || '').trim();
     if (!name) { anota(`fila ${i}: nombre vacío`); continue; } // bug 2: antes era continue mudo

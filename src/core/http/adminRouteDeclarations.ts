@@ -156,7 +156,8 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
   // criterio estaba escrito arriba, en el motivo de `DELETE /admin/products/:id` («una línea de
   // catálogo, no el tarifario»). Lo que las mantenía aquí no era una duda, era la tarea sin hacer
   // — igual que le pasó a `/admin/products/export` en SCRUM-103.
-  { method: 'POST',   path: '/admin/customers/import', tanda: 3, duda: 'Alta masiva de clientes → probable admin' },
+  // SCRUM-312: y con ella sale `/admin/customers/import`, por el mismo criterio: un alta
+  // MASIVA de clientes es catalogo entero, no una linea suelta.
   { method: 'GET',    path: '/admin/providers', tanda: 3, duda: 'Proveedores: ligado a compras/gastos → probable admin' },
   { method: 'POST',   path: '/admin/providers', tanda: 3, duda: 'Ídem' },
   { method: 'PUT',    path: '/admin/providers/:id', tanda: 3, duda: 'Ídem' },
@@ -189,7 +190,15 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
  * protege por ir apretado; un tope con holgura es el descuadre silencioso que este
  * fichero existe para evitar (ver SCRUM-103 sobre qué más no valida).
  */
-export const PENDIENTE_MAX = 14;
+// LAS TRES SALEN, y el numero es la suma de las dos bajadas, no la de una:
+//   16 - 2 (SCRUM-365: /products/import y /products/load-catalog)
+//      - 1 (SCRUM-312: /customers/import)  =  13
+//
+// Se resolvio asi porque quedarse en 14 o en 15 dejaria HOLGURA, y este mismo fichero dice
+// por que eso es un defecto: «un tope con holgura deja huecos libres para aparcar sin que
+// nadie se entere». Dos ramas bajaron el trinquete desde el mismo punto de partida y
+// ninguna estaba mal; lo que estaria mal es resolver eligiendo una.
+export const PENDIENTE_MAX = 13;
 
 /**
  * Fecha límite. Pasada esta fecha el test FALLA mientras queden pendientes.
