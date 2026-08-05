@@ -114,14 +114,25 @@
       } catch (e) { /* best-effort */ }
     })();
 
-    // Contador REAL de plazas founding (V0-4): si quedan, se muestra el banner y el 29 tachado.
+    // Contador REAL de plazas founding (V0-4).
+    // SCRUM-340 · las dos decisiones vienen resueltas del servidor y son distintas: `ofertaVigente`
+    // manda sobre lo que se ANUNCIA (banner, precio tachado, texto del botón) y `mostrar` sobre el
+    // CONTADOR. Antes las dos colgaban de `seatsLeft > 0`, así que con cero compras se anunciaba
+    // «Quedan 20 de 20 plazas», que no comunica escasez: comunica que no ha comprado nadie.
     fetch('/public/founding-status').then(function (r) { return r.json(); }).then(function (f) {
-      if (!f || typeof f.seatsLeft !== 'number' || f.seatsLeft <= 0) return;
+      if (!f || f.ofertaVigente !== true) return;
       document.getElementById('founding-banner').style.display = 'flex';
-      document.getElementById('founding-seats').textContent = 'Quedan ' + f.seatsLeft + ' de ' + f.seatsTotal + ' plazas';
       document.getElementById('price-old').style.display = '';
       document.getElementById('price').textContent = '9,90 €';
       document.getElementById('cta').textContent = 'Quiero mi plaza founding';
+
+      var seats = document.getElementById('founding-seats');
+      if (f.mostrar === true) {
+        seats.textContent = 'Quedan ' + f.seatsLeft + ' de ' + f.seatsTotal + ' plazas';
+      } else {
+        // Sin número real no se deja el «…» de relleno: se retira la píldora entera.
+        seats.style.display = 'none';
+      }
     }).catch(function () {});
   </script>
 </body>

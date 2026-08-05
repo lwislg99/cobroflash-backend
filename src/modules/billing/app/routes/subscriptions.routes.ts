@@ -74,8 +74,12 @@ router.post('/checkout', async (req, res) => {
 
   let priceId: string | null = null;
   if (planId === 'founding') {
-    // V0-4: contador real — sin plazas no hay checkout
+    // V0-4: contador real — sin plazas no hay checkout.
+    // SCRUM-340: y si el contador NO se puede resolver, TAMPOCO. Fail-closed: vender una plaza de
+    // una oferta limitada sin poder acreditar cuántas quedan es exactamente cómo se sobrevende.
+    // El caso es raro (solo si la consulta falla) y el error va en la dirección segura.
     const founding = await getFoundingStatus();
+    if (!founding.resoluble) return res.status(409).json({ error: 'founding_no_resoluble' });
     if (founding.seatsLeft <= 0) return res.status(409).json({ error: 'founding_sold_out' });
 
     // A10.1 (regla 25): sin aceptación VIGENTE del alcance beta no hay checkout

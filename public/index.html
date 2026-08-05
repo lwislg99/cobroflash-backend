@@ -292,10 +292,14 @@
 </head>
 <body>
 
+<!-- SCRUM-340 · DOS DECISIONES SEPARADAS: la barra se muestra si la oferta SIGUE VIGENTE (su
+     precio es cierto aunque no haya comprado nadie); el fragmento del contador, solo si el número
+     es real. Ni una palabra cambia: el trozo de las plazas se oculta entero y la frase de la
+     oferta queda tal cual (regla 30 — la microcopy es del fundador). -->
 <div class="announce" id="announce" hidden>
   <div class="wrap announce-in">
     <span>Oferta de lanzamiento: <b>9,90&nbsp;€/mes para siempre</b>, mientras mantengas la suscripción activa <span class="hide-sm">para los primeros profesionales</span></span>
-    <span class="sep">·</span><span>quedan <b id="ann-left">–</b> plazas</span><span class="sep">·</span><a href="#precios">Ver planes →</a>
+    <span id="ann-seats" hidden><span class="sep">·</span><span>quedan <b id="ann-left">–</b> plazas</span></span><span class="sep">·</span><a href="#precios">Ver planes →</a>
   </div>
 </div>
 
@@ -477,7 +481,7 @@
   <div class="wrap">
     <div class="sec-head"><span class="eyebrow">Precios</span><h2>Un solo plan. Todo incluido.</h2><p>14 días gratis, sin tarjeta. Y sin letra pequeña.</p></div>
     <div class="price-card">
-      <div class="founding" id="founding-banner" hidden>Oferta fundadores: <b>9,90 €/mes para siempre</b>, mientras mantengas la suscripción activa — quedan <b id="founding-left">–</b> plazas</div>
+      <div class="founding" id="founding-banner" hidden>Oferta fundadores: <b>9,90 €/mes para siempre</b>, mientras mantengas la suscripción activa<span id="founding-seats-frag" hidden> — quedan <b id="founding-left">–</b> plazas</span></div>
       <span class="price-tag">YaQu Pro</span>
       <div class="price-amt tnum">19,90 €<span> /mes</span></div>
       <ul><li>Presupuestos y clientes ilimitados</li><li>Envío por WhatsApp + firma digital</li><li>Cobro con tarjeta, Bizum y transferencia</li><li>Bot de WhatsApp y solicitudes entrantes</li><li>Clientes, proveedores, productos y gastos</li><li>Informes, márgenes y equipo con roles</li></ul>
@@ -549,16 +553,26 @@
     buildQuote();
   })();
 
-  // Founding: contador REAL de plazas (si el endpoint falla o no quedan, no se muestra nada falso).
+  // Founding: contador REAL de plazas.
+  // SCRUM-340: la decisión de PINTAR ya no se toma aquí — llega resuelta del servidor en `mostrar`.
+  // Antes esta página, precios y el panel repetían la condición cada una a su manera; tres copias
+  // de una regla son tres sitios donde olvidar el cambio siguiente. Ahora `mostrar` es la única
+  // fuente y ya lleva dentro el suelo («no resoluble» → no se pinta) y la regla de las cero plazas.
   (function(){
     if(!window.fetch)return;
     fetch('/public/founding-status').then(function(r){return r.json();}).then(function(s){
-      if(s && typeof s.seatsLeft==='number' && s.seatsLeft>0){
-        var a=document.getElementById('ann-left'), f=document.getElementById('founding-left');
-        if(a)a.textContent=s.seatsLeft; if(f)f.textContent=s.seatsLeft;
+      if(!s) return;
+      // ① la OFERTA: se anuncia si sigue vigente, con contador o sin él.
+      if(s.ofertaVigente === true){
         var ab=document.getElementById('announce'), fb=document.getElementById('founding-banner');
         if(ab)ab.hidden=false; if(fb)fb.hidden=false;
       }
+      // ② el CONTADOR: solo si el número es real (`mostrar` ya lleva dentro el suelo y las cero).
+      if(s.mostrar !== true) return;
+      var a=document.getElementById('ann-left'), f=document.getElementById('founding-left');
+      if(a)a.textContent=s.seatsLeft; if(f)f.textContent=s.seatsLeft;
+      var as=document.getElementById('ann-seats'), fs=document.getElementById('founding-seats-frag');
+      if(as)as.hidden=false; if(fs)fs.hidden=false;
     }).catch(function(){});
   })();
 

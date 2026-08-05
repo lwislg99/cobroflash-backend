@@ -36,8 +36,12 @@ async function renderPlansView(container) {
 function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual) {
   const plan = plans[0]; // plan único Pro
   if (!plan) return `<div class="empty-state"><div class="empty-state-title">Sin planes disponibles</div></div>`;
-  // V0-4: founding visible solo si quedan plazas y aún no tiene plan de pago
-  const showFounding = founding && founding.seatsLeft > 0 && currentPlan !== 'pro' && currentPlan !== 'founding';
+  // V0-4: founding visible solo si quedan plazas y aún no tiene plan de pago.
+  // SCRUM-340: la condición ya no se calcula aquí a partir de `seatsLeft` — llega resuelta en
+  // `ofertaVigente` (una sola fuente para las tres superficies, con el suelo dentro: si el contador
+  // no se puede resolver, la oferta no se anuncia). Y el CONTADOR es otra decisión: `mostrar`.
+  const showFounding = !!(founding && founding.ofertaVigente) && currentPlan !== 'pro' && currentPlan !== 'founding';
+  const showSeats = !!(founding && founding.mostrar);
 
   const isTrialExpired = currentPlan === 'trial' && planExpiresAt && new Date(planExpiresAt) < new Date();
   const trialDaysLeft  = planExpiresAt
@@ -104,9 +108,9 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
           Oferta founding: <span style="text-decoration:line-through;opacity:.7">19,90 €</span>
           <span style="font-size:18px"> 9,90 €/mes</span> de por vida, mientras mantengas la suscripción activa
         </div>
-        <span style="font-size:12px;font-weight:700;background:rgba(255,255,255,.35);border-radius:999px;padding:4px 12px;white-space:nowrap">
+        ${showSeats ? `<span style="font-size:12px;font-weight:700;background:rgba(255,255,255,.35);border-radius:999px;padding:4px 12px;white-space:nowrap">
           Quedan ${founding.seatsLeft} de ${founding.seatsTotal} plazas
-        </span>
+        </span>` : ''}
       </div>
       <button class="plan-btn" data-plan="founding" style="margin-top:12px;width:100%;font-size:14px;font-weight:700;padding:11px;border:none;border-radius:999px;cursor:pointer;background:#fff;color:var(--brand-700)">
         Quiero mi plaza founding — 9,90 €/mes
