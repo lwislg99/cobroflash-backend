@@ -58,30 +58,48 @@ export const FIRMANTE_CALIDAD_TEXTOS: Record<FirmanteCalidadRanura, string> = {
  *    nueva: es el rótulo con el que se expone `Albaran.fecha`, que YA era la fecha de entrega
  *    (sellada, impresa y clave del mes natural de la recapitulativa) y que ninguna UI escribía.
  *
- *  · Los CUATRO restantes — **PENDIENTES de la firma del asesor.** Salen del enunciado del propio
- *    ticket («Nombre de quien firma», «En calidad de qué») y de la copy que ya existía en el PDF,
- *    pero nadie los ha aprobado como rótulo. NO llevan el marcador `[PENDIENTE microcopy oficial]`
- *    a propósito: acaban en un documento que se lee en un juzgado, y un marcador impreso ahí sería
- *    peor que el rótulo. Quedan aquí, fijados por `tests/scrum300-microcopy-firmante.test.mjs`, y
- *    cambiarlos cuando lleguen los oficiales es UNA LÍNEA porque solo existen en este fichero.
+ *  · Los DOS DEL PDF — **PENDIENTES de la firma del asesor.** NO llevan el marcador
+ *    `[PENDIENTE microcopy oficial]` a propósito: acaban en un documento que se lee en un juzgado,
+ *    y un marcador impreso ahí sería peor que el rótulo. Quedan aquí, fijados por
+ *    `tests/scrum300-microcopy-firmante.test.mjs`, y cambiarlos cuando lleguen los oficiales es
+ *    UNA LÍNEA porque solo existen en este fichero.
+ *
+ *    El asesor los pidió LITERALES antes de firmarlos, con su razón: en un PDF que puede acabar
+ *    en un juzgado no se aprueba un rótulo por su descripción. Impresos salen así:
+ *        Firmado por: Marta Ruiz Alonso
+ *        En calidad de: Personal de la obra
  */
 export const ALBARAN_ROTULOS = {
   /** APROBADO (fundador, 5-ago-2026). */
   fechaEntrega: 'Fecha de entrega',
-  /** PENDIENTE de firma del asesor. */
+  /** APROBADO (asesor, 5-ago-2026): describe lo que el campo es. */
   lugarEntrega: 'Lugar de entrega',
-  /** PENDIENTE de firma del asesor. */
+  /** APROBADO (asesor, 5-ago-2026): describe lo que el campo es. */
   firmadoPorNombre: 'Nombre de quien firma',
-  /** PENDIENTE de firma del asesor. */
+  /** APROBADO (asesor, 5-ago-2026): viene LITERAL del enunciado del ticket, no es redacción nueva. */
   firmadoPorCalidad: 'En calidad de qué',
-  /** PENDIENTE de firma del asesor — rótulos del bloque de firma del PDF. */
+  // ⚠️ El espacio final de los dos siguientes es PARTE DEL LITERAL, no un descuido: el PDF los
+  // pinta con `continued: true`, así que el rótulo va en negrita y el dato se concatena detrás.
+  // Quitarlo pega el nombre al dos puntos.
+  /** PENDIENTE de firma del asesor — rótulo del bloque de firma del PDF. */
   pdfFirmadoPor: 'Firmado por: ',
-  /** PENDIENTE de firma del asesor. */
+  /** PENDIENTE de firma del asesor — rótulo del bloque de firma del PDF. */
   pdfEnCalidadDe: 'En calidad de: ',
 } as const;
 
-/** Los rótulos que YA tienen aprobación explícita. El resto espera firma del asesor. */
-export const ALBARAN_ROTULOS_APROBADOS = ['fechaEntrega'] as const;
+/**
+ * Los rótulos que YA tienen aprobación explícita. El resto espera firma del asesor.
+ *
+ * Que el guard falle cuando este censo cambia es DELIBERADO y es lo que lo separa de una
+ * allowlist: una aprobación nueva obliga a tocar el test en el mismo commit, así que queda en el
+ * diff quién aprobó qué y cuándo — en vez de que un rótulo se dé por bueno por costumbre.
+ */
+export const ALBARAN_ROTULOS_APROBADOS = [
+  'fechaEntrega',
+  'lugarEntrega',
+  'firmadoPorNombre',
+  'firmadoPorCalidad',
+] as const;
 
 /** La ranura precargada: el caso mayoritario es que firme el propio cliente. */
 export const FIRMANTE_CALIDAD_POR_DEFECTO: FirmanteCalidadRanura = 'cliente';

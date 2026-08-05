@@ -283,11 +283,26 @@ function lineasCanonicas(lineas: AlbaranLinea[]) {
 /**
  * El objeto canónico de cada versión, CADA UNO ESCRITO ENTERO Y APARTE.
  *
- * ⚠️ Se repiten claves entre las dos ramas a propósito, y no se refactoriza a un objeto base con
- * spread: `JSON.stringify` depende del ORDEN de inserción de las claves, así que un helper
- * compartido convertiría cualquier retoque futuro del v:2 en un cambio silencioso del hash de
- * v:1 — y el hash de v:1 tiene que poder recalcularse IGUAL dentro de diez años para verificar
- * un documento firmado hoy. Duplicar diez líneas es el precio de que eso sea imposible.
+ * ┌─ SI HAS VENIDO A DEDUPLICAR ESTO, LEE ESTO PRIMERO ────────────────────────────────────┐
+ * │                                                                                        │
+ * │ Las dos ramas repiten nueve claves y parece un objeto base con dos spreads esperando a  │
+ * │ que alguien lo extraiga. NO LO ES, y el motivo no se ve en el diff:                     │
+ * │                                                                                        │
+ * │ `JSON.stringify` serializa las claves EN SU ORDEN DE INSERCIÓN. Un helper compartido    │
+ * │ ata el orden de v:1 al de v:2, así que el día que alguien añada un campo a v:2 —o       │
+ * │ reordene los del helper— el hash de **v:1** cambiaría. Y no lo notaría nadie: los       │
+ * │ albaranes v:1 ya firmados no se vuelven a sellar, así que no hay nada que se rompa en   │
+ * │ el momento. Lo que se rompe es DESPUÉS, cuando alguien intente verificar uno y le       │
+ * │ salga «no coincide» sobre un documento intacto — o sea, una acusación de falsificación  │
+ * │ contra un papel que nadie tocó.                                                         │
+ * │                                                                                        │
+ * │ El hash de v:1 tiene que poder recalcularse IGUAL dentro de diez años para verificar    │
+ * │ un albarán firmado hoy. Diez líneas duplicadas son el precio de que romperlo sea        │
+ * │ IMPOSIBLE en vez de estar vigilado. Regla: **una versión cerrada no se refactoriza.**   │
+ * │                                                                                        │
+ * │ (`tests/scrum300-albaran-firmado-por.test.mjs` verifica un v:1 contra su hash de        │
+ * │ entonces. Si tocas esto, ese test es el que te lo dirá.)                                │
+ * └────────────────────────────────────────────────────────────────────────────────────────┘
  */
 function contenidoCanonico(params: AlbaranContenidoParams, version: number): unknown {
   const fecha = params.fecha instanceof Date ? params.fecha.toISOString() : String(params.fecha);

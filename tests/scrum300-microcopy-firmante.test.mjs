@@ -94,13 +94,47 @@ test('SCRUM-300 · ninguna ranura usa una calificación jurídica que el profesi
     'firma él: le traslada a él el problema. Quién es concretamente lo captura el campo NOMBRE.');
 });
 
-test('SCRUM-300 · el rótulo aprobado de la fecha de entrega está fijado, y lo pendiente se declara', () => {
-  assert.equal(ALBARAN_ROTULOS.fechaEntrega, 'Fecha de entrega',
-    '🔴 el rótulo de la fecha de entrega cambió. Lo aprobó el fundador el 5-ago-2026 con su razón ' +
-    'escrita: describe lo que el campo es y es el nombre que la ley usa para ese dato.');
-  assert.deepEqual([...ALBARAN_ROTULOS_APROBADOS], ['fechaEntrega'],
-    '🔴 el censo de rótulos APROBADOS ha cambiado. Si al asesor le han llegado los oficiales, ' +
-    'añádelos aquí en el mismo commit; si no, ninguno más está aprobado.');
+// Los rótulos APROBADOS, carácter a carácter. El de la fecha lo aprobó el fundador; los otros
+// tres, el asesor el 5-ago-2026 («describen lo que el campo es, y el tercero viene literal del
+// enunciado del ticket, así que no es redacción nueva»).
+const ROTULOS_APROBADOS = {
+  fechaEntrega: 'Fecha de entrega',
+  lugarEntrega: 'Lugar de entrega',
+  firmadoPorNombre: 'Nombre de quien firma',
+  firmadoPorCalidad: 'En calidad de qué',
+};
+
+// Los del PDF, PENDIENTES de firma. Se fijan igual —para que no deriven mientras esperan— pero
+// se declaran aparte para que el diff diga en qué momento dejan de estar pendientes.
+const ROTULOS_PDF_PENDIENTES = {
+  pdfFirmadoPor: 'Firmado por: ',
+  pdfEnCalidadDe: 'En calidad de: ',
+};
+
+test('SCRUM-300 · los rótulos APROBADOS dicen exactamente su texto, y el censo los declara', () => {
+  for (const [clave, texto] of Object.entries(ROTULOS_APROBADOS)) {
+    assert.equal(ALBARAN_ROTULOS[clave], texto,
+      `🔴 el rótulo «${clave}» cambió respecto al APROBADO. Si el cambio es deliberado, que venga ` +
+      'con su aprobación y actualiza este fichero en el mismo commit.');
+  }
+  assert.deepEqual([...ALBARAN_ROTULOS_APROBADOS].sort(), Object.keys(ROTULOS_APROBADOS).sort(),
+    '🔴 el censo de rótulos APROBADOS ha cambiado. Si han llegado aprobaciones nuevas, añádelas ' +
+    'aquí en el mismo commit; si no, ninguno más está aprobado. Que el guard falle por una ' +
+    'aprobación NUEVA es deliberado: obliga a que quede en el diff quién aprobó qué y cuándo.');
+});
+
+test('SCRUM-300 · los dos rótulos del PDF siguen PENDIENTES, y su espacio final está intacto', () => {
+  for (const [clave, texto] of Object.entries(ROTULOS_PDF_PENDIENTES)) {
+    assert.equal(ALBARAN_ROTULOS[clave], texto,
+      `🔴 el rótulo «${clave}» del PDF cambió mientras esperaba aprobación.`);
+    assert.ok(texto.endsWith(': '),
+      `🔴 «${clave}» ha perdido su espacio final. Es PARTE DEL LITERAL: el PDF lo pinta con ` +
+      '`continued: true`, así que sin él el dato se pega a los dos puntos («Firmado por:Marta»).');
+    assert.equal(ALBARAN_ROTULOS_APROBADOS.includes(clave), false,
+      `🔴 «${clave}» aparece como aprobado y el asesor aún no lo ha firmado. Pidió verlos ` +
+      'LITERALES antes: en un PDF que puede acabar en un juzgado no se aprueba un rótulo por su ' +
+      'descripción.');
+  }
 });
 
 // ── NI UNA SEGUNDA COPIA: divergencia IMPOSIBLE, no vigilada ─────────────────────────────

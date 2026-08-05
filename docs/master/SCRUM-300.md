@@ -2,7 +2,7 @@
 
 **Fecha:** 5-ago-2026 · **Carril:** A · **Gate:** STOP con GO (schema + sello de firma)
 **Medido contra:** `origin/main` = `de6abbd325419a9e85d60cf13b1588596125d66b` · 2026-08-05T05:30:16Z
-**Tanda:** 1485 tests, 1418 pass, 0 fail, 67 skipped — corrida contra el `main` RESULTANTE del
+**Tanda:** 1486 tests, 1419 pass, 0 fail, 67 skipped — corrida contra el `main` RESULTANTE del
 rebase (`main` se movió durante el trabajo: `077fa8a` → `de6abbd`, que trajo SCRUM-284 y SCRUM-286).
 
 ## El defecto
@@ -94,6 +94,27 @@ de dominio; copiar las cinco cadenas era la tentación. Van por `/admin/me` desd
 vigilada: la lección de las dos cabeceras de `gastos.csv` y las tres copias del porqué de
 `borradoMerchant`.
 
+## 🔴 UNA PALANCA NUEVA: el profesional ya puede mover el mes del art. 13
+
+**Al exponer `Albaran.fecha`, el profesional puede mover el mes de agrupación de la factura
+recapitulativa (art. 13 RD 1619/2012). Es lo que la ley quiere —la fecha de entrega real manda— y
+hasta hoy no existía en la interfaz.**
+
+Queda escrito aquí con esas palabras por un motivo concreto: **el día que alguien vea una
+recapitulativa agrupada en un mes que no esperaba, la explicación está en este párrafo.** No es un
+fallo ni un efecto secundario: `mesNaturalKey(a.fecha)` siempre gobernó la rotura
+(`albaran.service.ts:215`, `consolidacionCliente.service.ts:180`); lo que cambia es que hasta ahora
+lo hacía con el instante de creación, que **nadie había elegido nunca**, y ahora lo hace con una
+fecha que alguien sí ha elegido.
+
+Los dos límites que la acotan, medidos:
+
+* **A un albarán FIRMADO no se le puede mover.** `PATCH` devuelve 409 `albaran_locked`
+  (`albaranes.routes.ts:321-323`), y `fecha` está dentro del hash canónico. El sello está a salvo
+  por construcción.
+* **El valor por defecto NO cambia.** Los albaranes nuevos se siguen creando con `now()`; los
+  existentes no se tocan. Exponer el campo solo permite cambiarlo.
+
 ## Verificado en rojo
 
 1. **El sello, saboteado.** Se hizo que `obraSegunVersion` ignorase la versión (el fallo exacto que
@@ -123,8 +144,19 @@ vigilada: la lección de las dos cabeceras de `gastos.csv` y las tres copias del
 * **La migración no está aplicada en ninguna de las tres bases.** Turno del fundador (staging →
   `yaqu_dev_javier` → producción). El preview se generó **sin tocar ninguna base**: `migrate diff`
   de datamodel contra datamodel, evitando `--from-schema-datasource` (habría conectado a la base de
-  `.env`, que es producción). **El código lee y escribe las tres columnas: aplicar el schema va
-  ANTES del deploy o hay P2022.**
+  `.env`, que es producción).
+
+  🔴 **EL ORDEN NO ES UNA RECOMENDACIÓN: schema PRIMERO, merge DESPUÉS.** Mergear dispara el
+  auto-deploy de Railway desde `main`. Si el código llega antes que las columnas, el chequeo de
+  arranque encuentra deriva y **la app NO ARRANCA** — `desenlaceDeArranque` devuelve
+  `arranca: false` en `production` y `assertSchemaSinDeriva` lanza
+  (`src/core/db/schemaDrift.ts:242-276`). No es un 500 en una ruta: es yaqu.app caída entera.
+  Es la decisión correcta de SCRUM-222 («mejor no arrancar que arrancar mintiendo»), y aquí
+  significa que invertir el orden es una caída total, no una degradación.
+
+  **Y eso ya no cae sobre una demo:** el 5-ago-2026 se midió desde otro carril que hay **cuatro
+  merchants reales en producción**, uno de pago con 31 presupuestos y 6 facturas desde mayo. La
+  regla vigente decía que producción era toda fake y no lo es.
 * **La matriz de dispositivos de AB6 NO está pasada** y se declara como hueco, no se finge. El
   banco es un Edge headless a dos anchos; eso no es la matriz. Pendiente: el `<select>` nativo de
   Safari iOS, el teclado en pantalla tapando el canvas, y el dedo con guante.
