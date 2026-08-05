@@ -120,6 +120,65 @@ function renderJobGroups(list, jobs, container) {
   }
 }
 
+// SCRUM-344 · SECCIÓN PROPIA DEL CIERRE — la excepción escrita en la regla 5: lo destructivo vive
+// en el «⋮» SALVO los actos irreversibles, que van en su bloque CON SU EXPLICACIÓN. Aquí el riesgo
+// no es el clic accidental (esconder), es NO ENTENDER lo que se hace (explicar).
+//
+// SE AVISA, NO SE IMPIDE (decisión del fundador): cerrar con saldo puede ser legítimo —cobraste por
+// fuera, o lo das por perdido—. Impedirlo obligaría a marcar pagado lo que no se pagó para poder
+// cerrar, y ensuciar el dato de cobro es peor que el problema que resuelve.
+//
+// LAS DOS CARAS: sin saldo por facturar la sección solo EXPLICA y cerrar sigue siendo UN clic, sin
+// fricción nueva. La condición y el importe salen de `avisoCierreTrabajo` (jobsCierreTrabajo.js),
+// que es la única copia de la regla; aquí no se decide nada.
+//
+// NI UNA PALABRA SUELTA: todo el texto visible sale de `CIERRE_TEXTOS` (regla 30, con guard). Lo
+// único que esta función escribe es el IMPORTE, que es un número y no microcopy.
+function jobCierreSection(j, patch) {
+  const aviso = avisoCierreTrabajo(j);
+  const importeFmt = fmtMoneyEs(aviso.importe, aviso.currency);
+
+  const sec = document.createElement('div');
+  sec.className = 'job-cierre';
+  sec.style.cssText = 'border-top:1px solid var(--neutral-200);padding-top:12px;display:flex;flex-direction:column;gap:8px;align-items:flex-start';
+
+  const titulo = document.createElement('div');
+  titulo.style.cssText = 'font-size:12px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em';
+  titulo.textContent = textoCierre('titulo', importeFmt);
+  sec.appendChild(titulo);
+
+  const explicacion = document.createElement('div');
+  explicacion.style.cssText = 'font-size:12.5px;color:var(--muted);line-height:1.5';
+  explicacion.textContent = textoCierre('explicacion', importeFmt);
+  sec.appendChild(explicacion);
+
+  if (aviso.haySaldoPendiente) {
+    // Inventario AB3: `.alert.warning`, componente existente. Cero tokens nuevos.
+    // El importe viaja DENTRO de la frase (va en la ranura, no en un elemento aparte): un número
+    // suelto al lado de un aviso obliga al usuario a relacionarlos él.
+    const banda = document.createElement('div');
+    banda.className = 'alert warning';
+    banda.style.cssText = 'width:100%;font-size:12.5px';
+    banda.textContent = textoCierre('avisoSaldo', importeFmt);
+    sec.appendChild(banda);
+  }
+
+  const btnCerrar = document.createElement('button');
+  btnCerrar.className = 'btn-ghost btn-sm';
+  // AB6 · objetivo al pulgar. `btn-sm` se queda en 30 px (styles.css:442) y esta es la acción que
+  // no se puede deshacer: la que menos puede pulsarse por error de puntería.
+  btnCerrar.style.minHeight = '44px';
+  btnCerrar.textContent = textoCierre('boton', importeFmt);
+  btnCerrar.addEventListener('click', () => {
+    // AVISO, NO BLOQUEO: se puede seguir. Sin saldo no hay confirm — un clic, como siempre.
+    if (aviso.haySaldoPendiente && !window.confirm(textoCierre('confirmar', importeFmt))) return;
+    patch({ status: 'cerrado' }, '🔒 Trabajo cerrado');
+  });
+  sec.appendChild(btnCerrar);
+
+  return sec;
+}
+
 function jobCard(j, container) {
   const meta = JOB_STATE_META[j.status] || JOB_STATE_META.pendiente_agendar;
   const card = document.createElement('div');
@@ -228,7 +287,9 @@ function jobCard(j, container) {
       // SCRUM-89: "Cobrar el resto" es admin-only (403). Técnico → deshabilitado con explicación.
       if (isTecnico) { lockActionForRole(cobrarBtn); actions.appendChild(roleLockedNote()); }
     }
-    addBtn('Cerrar trabajo', 'btn-ghost btn-sm', () => patch({ status: 'cerrado' }, '🔒 Trabajo cerrado'));
+    // SCRUM-344: «Cerrar trabajo» YA NO va suelto en este renglón — ver jobCierreSection, que lo
+    // pinta en su propia sección al pie de la tarjeta. Cerrar es el único acto IRREVERSIBLE de la
+    // FSM y mata «Cobrar el resto»; eso se explica, no se esconde.
   }
 
   // Notas internas (blur = guardar)
@@ -245,6 +306,10 @@ function jobCard(j, container) {
     }
   });
   card.appendChild(notes);
+
+  // SCRUM-344: la sección propia del cierre va la ÚLTIMA de la tarjeta — separada del día a día,
+  // con su explicación delante. Solo existe cuando la FSM permite cerrar (`terminado → cerrado`).
+  if (puedeCerrarTrabajo(j)) card.appendChild(jobCierreSection(j, patch));
 
   // SCRUM-12: la tarjeta abre el detalle del Trabajo; los controles internos (botones,
   // enlace .ics, datetime de agendar, notas) NO disparan la navegación (guard por target).
