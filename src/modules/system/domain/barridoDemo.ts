@@ -1,4 +1,4 @@
-// scripts/_wipe-demo.mjs — SCRUM-314 (D3): el barrido del merchant demo, DERIVADO.
+// src/modules/system/domain/barridoDemo.ts — SCRUM-314 (D3): el barrido del merchant demo, DERIVADO.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // EL DEFECTO, medido y confirmado dos veces
@@ -33,7 +33,7 @@
 import {
   ORDEN_BORRADO_MERCHANT,
   COLGADOS_DE_CHARGE,
-} from '../dist/modules/system/domain/borradoMerchant.js';
+} from './borradoMerchant';
 
 /**
  * Prefijo de los teléfonos del bot en los datos de ejemplo.
@@ -52,9 +52,12 @@ export const PREFIJO_TELEFONO_DEMO = '346110000';
  * @returns {{ modelos: string[], porModelo: Record<string, number> }} qué se recorrió y cuánto
  *          cayó de cada uno — un barrido que no puede decir qué borró no se puede auditar.
  */
-export async function barridoDemo(prisma, demoId) {
-  const porModelo = {};
-  const modelos = [];
+export async function barridoDemo(
+  prisma: any,
+  demoId: number,
+): Promise<{ modelos: string[]; porModelo: Record<string, number | null> }> {
+  const porModelo: Record<string, number | null> = {};
+  const modelos: string[] = [];
 
   // 1) Los que cuelgan de `charge` y NO tienen `merchantId` propio (event, reconciliation): van
   //    ANTES que sus charges. Su FK es RESTRICT, así que al revés el borrado revienta a mitad
@@ -87,7 +90,7 @@ export async function barridoDemo(prisma, demoId) {
  * NO hace es esconderlo: devuelve `null`, y quien mira el resultado distingue «0 filas» de «no se
  * pudo».
  */
-async function contar(prisma, modelo, where) {
+async function contar(prisma: any, modelo: string, where: unknown): Promise<number | null> {
   const delegado = prisma?.[modelo];
   if (!delegado?.deleteMany) return null;
   const r = await delegado.deleteMany({ where }).catch(() => null);

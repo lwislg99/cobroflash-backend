@@ -70,6 +70,9 @@ import attachmentsRouter   from './modules/quoteRequests/app/routes/attachments.
 import searchRouter        from './modules/search/app/routes/search.routes';
 
 import { merchantProfileUpdateSchema } from './core/validation/schemas';
+// SCRUM-314 (D3): el barrido derivado del demo y quién es el demo.
+import { barridoDemo } from './modules/system/domain/barridoDemo';
+import { isDemoMerchant } from './modules/invoicing/domain/emission.service';
 import { getMerchantProfile, updateMerchantProfile, SlugError } from './modules/system/merchantAdmin';
 import QRCode from 'qrcode'; // A14.2: QR del perfil público (PNG alta res para furgoneta/tarjeta)
 import { resolverOpcionesQr, ErrorQr } from './modules/system/domain/qrPagina.service'; // SCRUM-230
@@ -466,6 +469,50 @@ app.put('/admin/merchant', requireRole('admin'), async (req, res, next) => {
     return next(err);
   }
 });
+
+// POST /admin/datos-ejemplo/eliminar — SCRUM-314 (D3): el botón «Eliminar datos de ejemplo».
+//
+// SOLO PARA LA CUENTA DEMO, y no es una cautela: es lo único que hace verdadero el rótulo.
+// Medido al construirlo — `registerMerchant` (auth.service.ts) crea ÚNICAMENTE la fila del
+// merchant, y no existe marca por fila que distinga un dato sembrado de uno real (censo de
+// SCRUM-262). Así que en una cuenta de verdad no hay «datos de ejemplo» que borrar: un botón con
+// ese rótulo borraría datos REALES bajo una etiqueta que dice lo contrario. Por eso el front no
+// lo pinta fuera del demo y aquí se rechaza igualmente — la puerta se cierra por los dos lados.
+//
+// El barrido es el DERIVADO del schema (SCRUM-314, primera mitad): cubre los 21 modelos con
+// `merchantId` y hereda el guard de SCRUM-172/192, así que no puede volver a quedarse corto.
+app.post('/admin/datos-ejemplo/eliminar', requireRole('admin'), async (req, res, next) => {
+  try {
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: req.merchantId },
+      select: { id: true, email: true },
+    });
+    if (!merchant) return res.status(404).json({ error: 'merchant_not_found' });
+
+    // Sin `message`: esta rama NO es alcanzable desde la interfaz (el botón solo se pinta en el
+    // demo), así que no hay copy aprobado que poner y no se inventa uno (regla 30). Queda
+    // declarado en `docs/master/SCRUM-314.md`.
+    if (!isDemoMerchant(merchant)) return res.status(409).json({ error: 'no_es_cuenta_demo' });
+
+    const { porModelo } = await barridoDemo(prisma, merchant.id);
+
+    // Un modelo que no se pudo barrer queda en `null` — «no se pudo mirar» no es «no había
+    // nada». Se devuelve la lista para que la interfaz pueda DECIRLO: una cuenta medio limpia
+    // que se anuncia como limpia es el fallo mudo que este ticket existe para evitar.
+    const noBarridos = Object.entries(porModelo)
+      .filter(([, n]) => n === null)
+      .map(([modelo]) => modelo);
+
+    return res.json({
+      ok: noBarridos.length === 0,
+      clientes: porModelo.customer ?? 0,
+      presupuestos: porModelo.quote ?? 0,
+      facturas: porModelo.invoice ?? 0,
+      noBarridos,
+    });
+  } catch (err) { return next(err); }
+});
+
 
 // A14.2 (PERFIL-1): QR del perfil público en PNG alta resolución (1024px) para
 // imprimir en furgoneta/tarjeta. Apunta a /p/:slug?src=qr → el registro que nazca

@@ -1,4 +1,5 @@
 // src/modules/system/merchantAdmin.ts
+import { isDemoMerchant } from '../invoicing/domain/emission.service'; // SCRUM-314
 import { prisma } from '../../core/db/prisma';
 
 export const DEFAULT_MERCHANT_ID = 1; // de momento trabajamos con el merchant demo
@@ -55,6 +56,10 @@ export async function getMerchantProfile(merchantId: number = DEFAULT_MERCHANT_I
     where: { id: merchantId },
     select: {
       id: true,
+      // SCRUM-314: se lee para derivar `esCuentaDemo` y NO se devuelve — el front no necesita el
+      // email, necesita la respuesta. Una fuente única para «¿es el demo?» (`isDemoMerchant`),
+      // en vez de que la interfaz reimplemente el criterio con un `id === 1`.
+      email: true,
       name: true,
       legalName: true,
       taxId: true,
@@ -87,7 +92,10 @@ export async function getMerchantProfile(merchantId: number = DEFAULT_MERCHANT_I
     },
   });
 
-  return merchant;
+  if (!merchant) return merchant;
+  // El email sale del objeto: lo único que viaja es el veredicto.
+  const { email, ...perfil } = merchant as typeof merchant & { email: string | null };
+  return { ...perfil, esCuentaDemo: isDemoMerchant({ id: merchant.id, email }) };
 }
 
 // 2) Actualizar el perfil del merchant (cuando guarde el formulario)
