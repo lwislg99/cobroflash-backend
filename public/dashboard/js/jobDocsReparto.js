@@ -41,21 +41,23 @@ function tipoDeFactura(inv) {
 // aquí. Un tipo nuevo sin entrada en esta tabla hace fallar el guard — que es el punto: una lista
 // escrita a mano nunca avisa de lo que le falta.
 //
-//   'albaranes'        → su propia sección, con su acción
+//   'albaranes'        → su propia sección: lo ENTREGADO
+//   'facturas'         → su propia sección: lo FACTURADO. Decisión del fundador — ni al rail, ni al
+//                        bloque DINERO con los justificantes (sería el error de B4 en dirección
+//                        contraria), ni fuera de la pantalla: que el Trabajo enseñe el ciclo
+//                        completo es el diferencial del producto.
+//   'anclada'          → COLGANDO de su factura original, nunca suelta (ver abajo)
 //   'rail-presupuesto' → el bloque PRESUPUESTO del rail (SCRUM-318). Es uno y no cambia.
 //   'rail-dinero'      → el bloque DINERO del rail, enlazados
-//   'sin-destino'      → NO SE DECIDE AQUÍ. Se quedan donde estaban, juntos y visibles, hasta que
-//                        el fundador diga dónde van. Es la única opción que no inventa un diseño
-//                        ni pierde un documento: las dos cosas que este ticket prohíbe.
 const DESTINO_POR_TIPO = {
   presupuesto: 'rail-presupuesto',
   albaran: 'albaranes',
   justificante: 'rail-dinero',
-  factura: 'sin-destino',
-  rectificativa: 'sin-destino',
+  factura: 'facturas',
+  rectificativa: 'anclada',
 };
 
-const DESTINOS_DOCUMENTO = ['albaranes', 'rail-presupuesto', 'rail-dinero', 'sin-destino'];
+const DESTINOS_DOCUMENTO = ['albaranes', 'facturas', 'anclada', 'rail-presupuesto', 'rail-dinero'];
 
 /**
  * Reparte los descriptores de la pila por destino.
@@ -66,12 +68,28 @@ const DESTINOS_DOCUMENTO = ['albaranes', 'rail-presupuesto', 'rail-dinero', 'sin
  * perderlo en silencio, que es el peor resultado posible de reordenar una pantalla.
  */
 function repartirDocumentos(items) {
-  const out = { 'albaranes': [], 'rail-presupuesto': [], 'rail-dinero': [], 'sin-destino': [], desconocidos: [] };
+  const out = { 'albaranes': [], 'facturas': [], 'anclada': [], 'rail-presupuesto': [], 'rail-dinero': [], desconocidos: [], huerfanas: [] };
   for (const it of items || []) {
     const destino = DESTINO_POR_TIPO[it && it.tipo];
     if (destino) out[destino].push(it);
     else out.desconocidos.push(it);
   }
+
+  // ── LA RECTIFICATIVA NUNCA VA SUELTA ────────────────────────────────────────────────
+  //
+  // Ordenada por fecha como una fila más es **legalmente ilegible**: no dice a qué factura
+  // corrige. Se ancla a su original (`rectificaClave`), colgando de ella.
+  //
+  // Si su original NO está en este Trabajo —una rectificativa de una factura de otro Job, o el
+  // dato ausente— **no se esconde**: baja a la sección de facturas, visible, y queda anotada en
+  // `huerfanas` para que el guard lo diga. Perderla sería peor que enseñarla mal.
+  const clavesFactura = new Set(out.facturas.map((f) => f.clave));
+  const ancladas = [];
+  for (const r of out.anclada) {
+    if (r.rectificaClave && clavesFactura.has(r.rectificaClave)) ancladas.push(r);
+    else { out.huerfanas.push(r); out.facturas.push(r); }
+  }
+  out.anclada = ancladas;
   return out;
 }
 
@@ -79,17 +97,19 @@ function repartirDocumentos(items) {
 //
 //   · `que-falta-para-cobrar` — es **G5** y no se pinta. Se declara para que G5 tenga sitio y para
 //     que el orden quede fijado aquí y no en el punto del render donde a alguien le venga bien.
-//   · `albaranes`             — la sección de este ticket.
+//   · `albaranes`             — lo entregado.
 //   · `gastos`                — DECLARADA Y VACÍA, y no por pereza: **en esta vista no hay ni un
 //     gasto**. La pila nunca tuvo ninguno; lo único que existe es el botón de alta, y el propio
 //     código lo dice donde se creó. Una sección GASTOS con su total exigiría traerlos, sumarlos y
 //     calcular margen — construir lo que no hay, no repartir lo que hay. Y el ticket declara «el
 //     mecanismo de gastos» fuera de alcance.
-//   · `documentos`            — lo que queda sin destino decidido.
-const SECCIONES_CUERPO = ['que-falta-para-cobrar', 'albaranes', 'gastos', 'documentos'];
+//   · `facturas`              — lo facturado, con sus rectificativas colgando.
+const SECCIONES_CUERPO = ['que-falta-para-cobrar', 'albaranes', 'facturas', 'gastos'];
 
 /** Todas las claves repartidas, para comprobar contra las de la pila original. */
 function clavesRepartidas(reparto) {
+  // Las huérfanas YA están dentro de `facturas`: contarlas otra vez inventaría un documento
+  // que no existe y el test de «nada se pierde» se pondría rojo por su propia aritmética.
   return DESTINOS_DOCUMENTO
     .flatMap((d) => reparto[d])
     .concat(reparto.desconocidos)

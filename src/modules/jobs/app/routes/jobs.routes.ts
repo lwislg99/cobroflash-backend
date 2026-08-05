@@ -348,6 +348,11 @@ async function serializeJobDetail(job: any) {
         select: {
           id: true, number: true, total: true, currency: true, createdAt: true,
           pdfUrl: true, type: true, status: true, paidAt: true, chargeId: true, stageLabel: true, // SCRUM-27
+          // SCRUM-319 (G4): el vínculo de la rectificativa con su original. Ya existía en el
+          // modelo (`rectifies_id`, relación "Rectification") y NO llegaba a la pantalla del
+          // Trabajo. Aditivo y de solo lectura: sin él la rectificativa se pinta como una fila
+          // suelta que no dice a qué factura corrige, que es legalmente ilegible.
+          rectifiesId: true,
         },
         orderBy: { createdAt: 'asc' },
       },
@@ -380,6 +385,7 @@ async function serializeJobDetail(job: any) {
     chargeId: inv.chargeId,           // acción admin confirm-bizum (autenticada, NO es link público)
     payToken: inv.chargeId ? await ensureChargeReceiptToken(inv.chargeId, prisma) : null, // ← GAP CERRADO (link /pay/invoice/:token)
     stageLabel: inv.stageLabel,       // SCRUM-27: etiqueta del tramo (custom); null en presets
+    rectifiesId: inv.rectifiesId,     // SCRUM-319 (G4): a qué factura rectifica (solo R1)
   })));
 
   const charge = quote?.charge

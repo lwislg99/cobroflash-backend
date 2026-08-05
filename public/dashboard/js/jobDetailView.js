@@ -1552,7 +1552,13 @@ async function renderJobDetailView(container, jobId) {
           `</div>` +
           `<div class="jobdet-inv-actions job-doc-row__actions"></div>` +
         `</div>`;
-      docs.push({ when, el: item, tipo: tipoDeFactura(inv), clave: tipoDeFactura(inv) + ':' + inv.id });
+      const tipoInv = tipoDeFactura(inv);
+      docs.push({
+        when, el: item, tipo: tipoInv, clave: tipoInv + ':' + inv.id,
+        // SCRUM-319: a qué factura se ancla si es rectificativa. `rectifiesId` ya existía en el
+        // modelo y no llegaba a esta pantalla; ahora sí (serializer, aditivo y de solo lectura).
+        rectificaClave: inv.rectifiesId != null ? 'factura:' + inv.rectifiesId : null,
+      });
       const acts = item.querySelector('.jobdet-inv-actions');
       if (!paid) {
         // Marcar como PAGADA → PUT /admin/invoices/:id/status. Verificación de importe A21.2:
@@ -1722,20 +1728,34 @@ async function renderJobDetailView(container, jobId) {
   vacioAlb.textContent = 'Aún no hay documentos. Crea un albarán por cada visita o entrega.';
   enSuSeccion('albaranes', docsSec, vacioAlb);
 
-  // EL RESTO — facturas y rectificativas, más lo que no esté clasificado. Se quedan JUNTAS y
-  // VISIBLES, con el título que ya tenían, hasta que el fundador diga dónde van. Mandarlas al
-  // bloque DINERO con los justificantes sería repetir el error que B4 arregló: dos documentos con
-  // significados legales distintos compartiendo sitio. Y esconderlas sería perderlas.
-  const restantes = reparto['sin-destino'].concat(reparto.desconocidos);
+  // ── FACTURAS — lo FACTURADO, en su propia sección de la columna principal ────────────
+  //
+  // Decisión del fundador: ni al rail, ni al bloque DINERO con los justificantes —eso sería el
+  // error de B4 en dirección contraria—, ni fuera de la pantalla: que el Trabajo enseñe el ciclo
+  // completo (entregado → facturado → cobrado) es el diferencial del producto.
+  //
+  // ⚠️ LA RECTIFICATIVA CUELGA DE SU ORIGINAL, nunca suelta. Como fila más de una lista ordenada
+  // por fecha es legalmente ilegible: no dice a qué factura corrige. Aquí va anidada dentro de la
+  // fila de su factura, así que leerlas juntas es la única forma de leerlas.
+  const restantes = reparto.facturas.concat(reparto.desconocidos);
   if (restantes.length) {
-    const otrosSec = document.createElement('div');
-    otrosSec.className = 'detail-section';
-    otrosSec.innerHTML = '<h3 class="detail-section-title">Documentos</h3>';
+    const factSec = document.createElement('div');
+    factSec.className = 'detail-section';
+    factSec.innerHTML = '<h3 class="detail-section-title">Facturas</h3>';
     const lista = document.createElement('div');
     lista.className = 'job-doc-list';
-    restantes.forEach((d) => lista.appendChild(d.el));
-    otrosSec.appendChild(lista);
-    body.appendChild(otrosSec);
+    restantes.forEach((d) => {
+      lista.appendChild(d.el);
+      // Sus rectificativas, justo debajo y sangradas: el vínculo se ve, no se deduce.
+      const suyas = reparto.anclada.filter((r) => r.rectificaClave === d.clave);
+      if (!suyas.length) return;
+      const nido = document.createElement('div');
+      nido.className = 'job-doc-rectificativas';
+      suyas.forEach((r) => nido.appendChild(r.el));
+      lista.appendChild(nido);
+    });
+    factSec.appendChild(lista);
+    body.appendChild(factSec);
   }
 
   // Los de `rail-presupuesto` y `rail-dinero` NO se pintan aquí: el rail los construye por su
