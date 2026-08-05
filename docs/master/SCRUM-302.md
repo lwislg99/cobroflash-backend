@@ -189,3 +189,99 @@ nadie tiene que leer la salida para saber si pasó. 48 comprobaciones, `$? = 0`.
 `tests/scrum302-patron-albaran.test.mjs` (8) ·
 `tests/scrum302-sin-callejones.test.mjs` (4, nuevo — el contrato con la fila) ·
 `tests/scrum274-shell-alineado.test.mjs` (+1: toda entrada del SHELL resuelve a un fichero).
+
+---
+
+# SCRUM-302 · CONTINUACIÓN (5-ago-2026) · Duplicar: la clasificación y su guard
+
+**Medido contra:** `origin/main` = `425301c8ddc79ad20e8605b49194f608ecdf339c` · 2026-08-05T17:50:11+01:00
+
+> **ENTREGA PARCIAL Y DECLARADA.** Esto es el **mecanismo** de Duplicar, no la acción completa:
+> falta el endpoint y el botón. Se paró aquí a propósito, en un punto medible, porque el guard del
+> campo nuevo vale más que la acción entera sin él.
+
+## El ticket estaba a medias, no «por hacer»
+
+La página **ya estaba en `main`** (`albaranDetailView.js`, 286 líneas, con sus dos guards y su ruta,
+PRs **#453** y **#457**). Jira decía «Tareas por hacer». Tercer ticket seguido con ese desfase:
+**el `ls-remote` manda sobre Jira**.
+
+## 🔴 Por qué es una clasificación y no una lista
+
+El ticket pide «test explícito de que no se copia la firma». Ese test hace falta y está — pero
+**solo sabe lo que hoy se nos ocurrió enumerar**. El fallo que da miedo es otro:
+
+> Dentro de tres meses alguien añade un campo a `Albaran`. El duplicado se lo lleva **en silencio**.
+> Si ese campo es evidencial, hemos fabricado un documento que **afirma algo que no pasó**.
+
+El guard **deriva los 19 campos del modelo** y falla cuando aparece uno **SIN CLASIFICAR**. La
+pregunta se le hace a quien añade el campo, en el momento en que lo añade — el único momento en que
+alguien sabe la respuesta: *¿esto DESCRIBE EL TRABAJO (viaja) o es UN HECHO QUE OCURRIÓ (no viaja)?*
+
+| Cubo | Campos |
+|---|---|
+| **Viajan** (5) | `merchantId` · `jobId` · `modoValoracion` · `lineas` · `notas` |
+| **No viajan** (14) | `id` · `numero` · `fecha` · `estado` · `version` · `signatureUrl` · `firmadoAt` · `firmaToken` · `enviadoParaFirmaAt` · `evidenciaFirma` · `pdfUrl` · `createdAt` · `updatedAt` · `invoiceId` |
+
+Cada uno con **su** motivo, no uno por grupo: cuando alguien discuta un campo concreto, hace falta
+la razón de ése.
+
+## Se construye SUMANDO, no copiando y borrando
+
+`datosDuplicado` parte de `{}` y añade los del cubo que viaja. **Restar deja pasar lo que nadie se
+acordó de restar.** Test propio con un campo inventado que no está en el modelo: si se copiara el
+origen, aparecería.
+
+`prisma/schema.prisma` **solo se lee**. El `numero` lo reserva `allocateAlbaranNumber` dentro de la
+transacción, que es quien sabe hacerlo sin huecos. Las **fotos** no son un campo —son filas que
+apuntan al albarán—, así que no copiarlas es no hacer nada; hay test de que sigue siendo así, porque
+«no hacer nada» deja de ser cierto en cuanto alguien escriba el código que las copia.
+
+## Los dos rojos
+
+| # | Qué se rompe | Qué sale |
+|---|---|---|
+| 1 | Un campo NUEVO en el modelo sin clasificar (`selloAeat`) | 🔴 «HAY CAMPOS DE `Albaran` SIN CLASIFICAR: **selloAeat**» |
+| 2 | `signatureUrl` pasa al cubo que viaja | 🔴 «EL DUPLICADO SE LLEVA LA FIRMA DEL CLIENTE… falsificar un documento» |
+
+El 1 es el que importa: **caza por nombre un campo que no existía cuando se escribió el guard.**
+`schema.prisma` se restauró y se comprobó con `git status` que quedó intacto.
+
+## Mediciones ordenadas por el fundador, hechas ANTES de construir
+
+**① `Job.direccion` no tiene NI UN escritor.** 17 menciones en `src/`, todas `select:` o tipo; 10 en
+`public/`, todas lecturas. El schema lo dice (`schema.prisma:671`). Consecuencia **distinta en cada
+pantalla**: el rail del Trabajo (`jobRailBlocks.js:77`) hace `if (!direccion) return null`; el del
+albarán (`albaranDetailView.js:272`) usa `valor ?? '—'` y **pinta la fila con un guion para todos los
+merchants reales**. → separado a **SCRUM-374**, cuyo fondo es mayor: `buildFirmaEvidencia` lleva
+meses sellando `obra: null`.
+
+**② La tabla de cuatro estados del ticket NO coincide con el registro**, en cuatro puntos.
+**Decisión: manda `albaranActionsRegistry.js`** — está construido sobre la corrección de que
+«Enviado» y «Facturado» no son estados del enum. *Manda el que sabe más.*
+
+**③ Los tres bloques `← C5`** (`FECHAS`, `LUGAR DE ENTREGA`, `FIRMADO POR`) esperan a SCRUM-300 y su
+migración. **No se tocan.**
+
+## Hueco declarado
+
+**«Convertir en factura» NO se pinta.** Su mecanismo es **A0.4 = SCRUM-290**, sin construir. El
+ticket lo exige así: *«un botón que no hace nada es peor que ninguno»*. Y no se inventa un segundo
+camino a factura: `btnFacturar` (facturar parte) ya existe y es otra cosa — dos caminos a factura
+sería SCRUM-240 otra vez.
+
+## Lo que queda de Duplicar, con precisión
+
+1. **El endpoint** `POST /admin/albaranes/:id/duplicar`: llama a `datosDuplicado` y reserva número
+   con `allocateAlbaranNumber` dentro de la transacción.
+2. **`btnDuplicar` en el registro de C2**, en `overflow` para los tres estados (regla 3 del patrón).
+3. **El botón en la vista**, con rótulo `[PENDIENTE microcopy oficial]`.
+4. **Test de extremo a extremo** invocando el handler real con `prisma` de doble (patrón
+   SCRUM-263/257b), que compruebe que el albarán creado no trae firma.
+
+Fuera de Duplicar sigue pendiente: **PRESUPUESTO ORIGEN enlazado** —en el rail, lejos de las líneas,
+porque nada ata las líneas con el presupuesto y el enlace no puede leerse como procedencia— y
+**FOTOS** (medir antes por dónde se leen).
+
+Ficheros: `src/modules/jobs/domain/albaranDuplicado.ts` (nuevo) ·
+`tests/scrum302-duplicar.test.mjs` (5, nuevo).
