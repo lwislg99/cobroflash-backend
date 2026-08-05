@@ -116,6 +116,27 @@ del comentario es de simetría, así que la simetría es lo que se vigila.
 > `className = <ternario>` y dejaba fuera `albaranDetailView.js:256`, donde las tres ramas son
 > botones. El suelo lo cazó y se arregló **el analizador**, no el test.
 
+## El hallazgo de fondo: ya estaba parcheado a mano en dos sitios que no se conocían
+
+Los dos apuntes de regla 9 de abajo, juntos, dicen algo más grande que cada uno por separado:
+
+- `styles.css:997-1002` lo arreglaba **dentro de `qq-modal`**, enumerando
+  `.qq-modal .btn, .qq-modal .btn-primary, .qq-modal .btn-secondary { min-height: 44px }`.
+- `reportsView.js:918` forzaba `style.cssText = 'min-height:44px'` **inline**, con el comentario
+  «Objetivo táctil ≥44 px (AB6)».
+
+> **Dos personas distintas encontraron el mismo problema, lo arreglaron en su rincón y ninguna
+> subió a la causa. Eso no es un defecto de CSS: es lo que pasa cuando el arreglo local es más
+> barato que entender por qué.**
+
+Ninguno de los dos parches es incorrecto en su sitio, y ninguno dejó rastro que llevara al
+siguiente hasta la causa común. Por eso el defecto sobrevivió a dos arreglos: cada uno resolvía
+**su** pantalla y dejaba las otras 44 intactas, sin que nada se pusiera rojo. Es también la razón
+de que el censo tuviera que ser derivado: los sitios que un arreglo local no toca no aparecen en
+ningún sitio hasta que alguien los cuenta.
+
+Los dos parches quedan **redundantes** con este cambio y **no se han tocado** (ver abajo).
+
 ## Lo que NO entra
 
 - **El contraste (3,3:1).** Puede exigir mover el verde de marca: identidad, **regla 30**, y
