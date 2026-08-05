@@ -26,6 +26,82 @@ const JOBDET_ALB_PILL = { borrador: 'status-pill-draft', emitido: 'status-pill-p
 function jobDetAlbEstado(e) {
   return e === 'firmado' ? 'Firmado' : e === 'emitido' ? 'Emitido' : 'Borrador';
 }
+/**
+ * SCRUM-318 (G3) · pinta UN bloque del rail a partir de los datos que devuelve su constructor.
+ *
+ * Aquí no se decide NADA: si un bloque llega, se pinta entero. Toda la lógica de «¿hay dato?» vive
+ * en `jobRailBlocks.js`, que es puro y por eso se puede probar sin navegador. Repartir la decisión
+ * entre los dos sitios es como se acaba pintando un bloque que el constructor daba por vacío.
+ *
+ * El rail es de SOLO LECTURA (regla 4 del patrón B2): esta función crea `div`, `span` y `a`, nunca
+ * un `input`, un `select` ni un `button`. Hay un guard que lo comprueba, porque es donde más tienta
+ * romperlo («ya que está el teléfono, que se pueda cambiar»).
+ */
+function pintarBloqueRail(bloque) {
+  const sec = document.createElement('div');
+  sec.className = 'detail-rail-bloque';
+  sec.dataset.bloque = bloque.id;
+
+  const h = document.createElement('h3');
+  h.className = 'detail-section-title';
+  h.textContent = bloque.titulo;
+  sec.appendChild(h);
+
+  for (const linea of bloque.lineas || []) {
+    const fila = document.createElement('div');
+    fila.className = 'detail-rail-linea';
+
+    if (linea.etiqueta) {
+      const et = document.createElement('span');
+      et.className = 'detail-rail-etiqueta';
+      et.textContent = linea.etiqueta;
+      fila.appendChild(et);
+    }
+
+    // Enlace SOLO si el constructor dio destino. Nada de anclas vacías: un enlace que no lleva a
+    // ningún sitio se pulsa igual y parece que falla el móvil, no nosotros.
+    let destino = fila;
+    if (linea.href) {
+      const a = document.createElement('a');
+      a.className = 'detail-rail-enlace';
+      a.href = linea.href;
+      if (/^https?:/i.test(linea.href)) { a.target = '_blank'; a.rel = 'noopener'; }
+      fila.appendChild(a);
+      destino = a;
+    } else if (linea.quoteId != null) {
+      // El presupuesto navega DENTRO del dashboard, no sale a una URL.
+      const a = document.createElement('a');
+      a.className = 'detail-rail-enlace';
+      a.href = '#';
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (window.renderAppView) window.renderAppView('quotes-detail', { quoteId: linea.quoteId });
+      });
+      fila.appendChild(a);
+      destino = a;
+    }
+
+    const txt = document.createElement('span');
+    if (linea.fuerte) txt.className = 'detail-rail-fuerte';
+    txt.textContent = (linea.icono ? `${linea.icono} ` : '') + linea.texto;
+    destino.appendChild(txt);
+    sec.appendChild(fila);
+  }
+
+  // El enlace suelto del bloque — hoy solo el mapa de DÓNDE, que no llega a pintarse nunca porque
+  // no hay dirección. Va debajo del dato del que sale, y sale del MISMO dato.
+  if (bloque.enlace && bloque.enlace.href) {
+    const a = document.createElement('a');
+    a.className = 'detail-rail-enlace detail-rail-enlace--suelto';
+    a.href = bloque.enlace.href;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = bloque.enlace.texto;
+    sec.appendChild(a);
+  }
+  return sec;
+}
+
 // Fila de <dl> inlineada (autocontenida; NO depende de addDefRow de quotesDetailView).
 function jdAddRow(dl, term, value) {
   if (value === undefined || value === null || value === '' || value === '—') return;
@@ -220,10 +296,8 @@ async function renderJobDetailView(container, jobId) {
       responsableName = m?.name || m?.legalName || 'Propietario';
     } catch { responsableName = 'Propietario'; }
   }
-  const responsableEl = document.createElement('div');
-  responsableEl.style.cssText = 'margin-top:6px;font-size:13px;color:var(--muted)';
-  responsableEl.innerHTML = `👷 Responsable: <strong style="color:var(--ink)">${esc(responsableName)}</strong>`;
-  headLeft.appendChild(responsableEl);
+  // SCRUM-318 (G3): el nombre se sigue resolviendo igual, pero se pinta en el rail (bloque
+  // RESPONSABLE). En la cabecera competía con el título y con la acción primaria.
 
   const cur = job.quote?.currency || 'EUR';
   const aceptado = Number(job.totalAceptado || 0);
@@ -238,18 +312,8 @@ async function renderJobDetailView(container, jobId) {
   const sumSec = document.createElement('div');
   sumSec.className = 'detail-section';
   body.appendChild(sumSec);
-  // SCRUM-31 (F1): cliente en una línea con tap-to-call (el detalle completo sigue en 'Datos').
-  if (job.customer?.name || job.customer?.phone) {
-    const cliLine = document.createElement('div');
-    cliLine.style.cssText = 'margin-bottom:12px;font-size:13px;color:var(--body)';
-    const tel = job.customer?.phone ? String(job.customer.phone).replace(/\s+/g, '') : '';
-    cliLine.innerHTML =
-      `👤 <strong style="color:var(--ink)">${esc(job.customer?.name || 'Cliente')}</strong>` +
-      (job.customer?.phone
-        ? ` · <a href="tel:${esc(tel)}" style="color:var(--brand,#16a34a);font-weight:600;text-decoration:none">📞 ${esc(job.customer.phone)}</a>`
-        : '');
-    sumSec.appendChild(cliLine);
-  }
+  // SCRUM-31 (F1) puso aquí el cliente con tap-to-call. SCRUM-318 (G3) lo sube al rail (bloque
+  // CLIENTE), donde vive el contexto y donde ya no compite con el dinero por la misma franja.
   const sumRow = document.createElement('div');
   sumRow.className = 'detail-summary';
   sumSec.appendChild(sumRow);
@@ -277,12 +341,9 @@ async function renderJobDetailView(container, jobId) {
     bar.innerHTML = progressBar(pct, job.estadoCobro, { cobrado, aceptado, currency: cur });
     sumSec.appendChild(bar);
   }
-  const twoTotals = document.createElement('div');
-  twoTotals.style.cssText = 'display:flex;gap:28px;margin-top:14px;flex-wrap:wrap';
-  twoTotals.innerHTML =
-    `<div><div class="detail-total-label">Cobrado</div><div style="font-weight:700;color:var(--ink);font-size:16px;font-variant-numeric:tabular-nums">${fmtMoneyEs(cobrado, cur)}</div></div>` +
-    `<div><div class="detail-total-label">Pendiente</div><div style="font-weight:700;color:var(--ink);font-size:16px;font-variant-numeric:tabular-nums">${fmtMoneyEs(pendiente, cur)}</div></div>`;
-  sumSec.appendChild(twoTotals);
+  // SCRUM-318 (G3): «Cobrado» y «Pendiente» pasan al rail (bloque DINERO). El titular «Total
+  // aceptado» se queda AQUÍ, a 2,2 rem: es el momento del dinero (AB1) y meterlo en una columna de
+  // 220 px lo encogería. Por eso `Aceptado` no se repite en el rail — ver `bloqueDinero`.
 
   // ── CTA primario del HÉROE — la SIGUIENTE acción del Trabajo (SCRUM-31 F4). jobNextAction
   // decide CUÁL por la escalera aprobada; aquí SOLO se ejecuta, reutilizando endpoints existentes
@@ -350,11 +411,15 @@ async function renderJobDetailView(container, jobId) {
   infoSec.innerHTML = '<h3 class="detail-section-title">Datos</h3>';
   const dl = document.createElement('dl');
   dl.className = 'detail-dl';
-  jdAddRow(dl, 'Cliente', job.customer?.name);
-  jdAddRow(dl, 'Teléfono', job.customer?.phone);
-  jdAddRow(dl, 'Dirección', job.direccion);
-  if (!dl.children.length) dl.innerHTML = '<dd style="color:var(--muted)">Sin datos.</dd>';
-  infoSec.appendChild(dl);
+  // ── SCRUM-318 (G3) · CLIENTE, TELÉFONO y DIRECCIÓN se van al rail ────────────────────
+  //
+  // Es el defecto entero de este ticket: estaban AQUÍ, debajo de toda la pila de documentos, y
+  // son justo lo que se consulta yendo de camino a la obra —a quién llamo y adónde voy—. La pila
+  // crece con el trabajo, así que cuanto más avanzado, más lejos quedaba lo que más se mira.
+  //
+  // Lo que se queda en «Datos» es lo que se EDITA (el nombre del Trabajo): el rail es contexto de
+  // solo lectura y un campo editable no puede vivir ahí (regla 4 del patrón B2).
+  // `dl` desaparece con ellas — un `<dl>` vacío pintaría «Sin datos.» debajo de un título.
 
   // ── SCRUM-317 (G2) · aquí el pro le pone NOMBRE al Trabajo ───────────────────────────
   //
@@ -1645,21 +1710,27 @@ async function renderJobDetailView(container, jobId) {
     else cubosCabecera.overflow.forEach((b) => headRight.appendChild(b));
   }
 
-  // ── SCRUM-316 (G1) · EL RAIL DERECHO: estructura hoy, contenido en G3 ────────────────
+  // ── SCRUM-318 (G3) · EL RAIL DERECHO, CON SU CONTENIDO ──────────────────────────────
   //
-  // Se declara la rejilla y los cinco bloques (`JOB_RAIL_BLOQUES`). Cada bloque se pinta SOLO si
-  // tiene contenido, y hoy **ninguno lo tiene**: el contenido es G3 y el ticket lo deja fuera.
-  // Así el sitio existe y está probado sin publicar una columna vacía en yaqu.app.
+  // G1 dejó la rejilla y los cinco bloques declarados; aquí se llenan. Los constructores viven en
+  // `jobRailBlocks.js` y son PUROS: devuelven datos, no DOM. Esta función solo pinta — así el
+  // test del enlace a mapa («el href sale del mismo dato que se lee») no necesita navegador.
   //
-  // Sin esto G3 no tendría dónde ir y acabaría creando su propio contenedor — que es exactamente
-  // como una pantalla termina con dos maquetaciones que nadie decidió tener.
-  const railBloques = (typeof JOB_RAIL_BLOQUES !== 'undefined' ? JOB_RAIL_BLOQUES : [])
-    .map((id) => ({ id, el: null })) // G3 rellena `el`; hoy null en los cinco.
-    .filter((b) => b.el);
-  if (railBloques.length) {
+  // LA REGLA DEL HUECO: un constructor sin dato devuelve `null` y su bloque no existe. Ni «—», ni
+  // «Sin datos», ni un título con el cuerpo vacío.
+  //
+  // ⚠️ HOY «DÓNDE» NO SALE NUNCA: `Job.direccion` es campo propio y nadie lo escribe (medido). Y
+  // NO se sustituye por la del cliente —que además no existe en el modelo—: un enlace a mapa que
+  // lleva al sitio equivocado es peor que no tenerlo, porque el que no existe no se sigue.
+  const bloquesRail = (typeof construirBloquesRail === 'function'
+    ? construirBloquesRail(job, { fmtMoney: fmtMoneyEs, fechaCorta, responsableName })
+    : []).filter(Boolean);
+
+  if (bloquesRail.length) {
     const rail = document.createElement('aside');
     rail.className = 'detail-rail';
-    railBloques.forEach((b) => rail.appendChild(b.el));
+    rail.setAttribute('aria-label', 'Contexto del trabajo');
+    for (const b of bloquesRail) rail.appendChild(pintarBloqueRail(b));
     cuerpo.appendChild(rail);
     cuerpo.classList.add('detail-cuerpo--con-rail');
   }
