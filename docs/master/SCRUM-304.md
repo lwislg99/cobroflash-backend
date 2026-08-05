@@ -2,7 +2,7 @@
 
 **Fecha:** 5-ago-2026 · **Carril:** C · **Gate:** sin gate, corre en `npm test`
 
-**Medido contra:** `origin/main` = `56874623baa406a0e8e38b93c236f7a4740b1e6a` · 2026-08-05T16:43:57+01:00
+**Medido contra:** `origin/main` = `d5ac9761da139bf9b6de3c808d7c990aa6b82157` · 2026-08-05T17:04:15+01:00
 
 > **Microcopy aprobada** (5-ago-2026, los cinco rótulos tal cual) y recapturado. Queda **una cosa
 > medida y sin resolver**, dicha en su sección: a 390 px `Líneas` y `Acción` siguen fuera de
