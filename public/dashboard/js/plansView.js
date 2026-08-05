@@ -73,7 +73,7 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
     <div class="customers-card" style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       <div style="font-size:28px">✅</div>
       <div>
-        <div style="font-weight:700;font-size:15px;color:var(--neutral-900)">Plan activo: <strong>${currentPlan === 'founding' ? 'Founding (9,90 €/mes de por vida)' : 'Pro'}</strong></div>
+        <div style="font-weight:700;font-size:15px;color:var(--neutral-900)">Plan activo: <strong>${currentPlan === 'founding' ? 'Founding (9,90 €/mes de por vida, mientras mantengas la suscripción activa)' : 'Pro'}</strong></div>
         ${planExpiresAt ? `<div style="font-size:13px;color:var(--neutral-400);margin-top:2px">Próxima renovación: ${new Date(planExpiresAt).toLocaleDateString('es', { day: '2-digit', month: 'long', year: 'numeric' })}</div>` : ''}
       </div>
     </div>
@@ -102,7 +102,7 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
       <div style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between">
         <div style="font-size:14px;font-weight:700">
           Oferta founding: <span style="text-decoration:line-through;opacity:.7">19,90 €</span>
-          <span style="font-size:18px"> 9,90 €/mes</span> de por vida
+          <span style="font-size:18px"> 9,90 €/mes</span> de por vida, mientras mantengas la suscripción activa
         </div>
         <span style="font-size:12px;font-weight:700;background:rgba(255,255,255,.35);border-radius:999px;padding:4px 12px;white-space:nowrap">
           Quedan ${founding.seatsLeft} de ${founding.seatsTotal} plazas
