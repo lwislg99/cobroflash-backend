@@ -1470,7 +1470,21 @@ html, body { overflow-x: clip; }
   .customer-form, .quote-form-row { grid-template-columns: minmax(0, 1fr); }
   .quotes-layout { grid-template-columns: minmax(0, 1fr); }
 
-  .btn { min-height: 44px; }
+  /* SCRUM-352 — el bump táctil alcanza también a las variantes escritas SIN la base.
+     styles.css:376-377 declara que .btn-primary/.btn-secondary/etc. "también funcionan
+     solas"; hasta aquí esta línea solo subía .btn, así que la promesa no se cumplía y 185
+     sitios del front (27 ficheros, censados) se quedaban fuera del bump.
+
+     El :not(.btn-sm) NO es un caso especial: reproduce la derrota que .btn ya sufre contra
+     .btn.btn-sm (0,2,0). Una variante suelta compite contra .btn-sm (0,1,0) declarado ANTES
+     y ganaría por orden, así que un "btn-primary btn-sm" saltaría de 30 a 44 mientras su
+     gemelo "btn btn-primary btn-sm" se queda en 30. MEDIDO: con :not, los dos miden 30 y
+     los dos sueltos miden 44. Que es lo que significa "funcionan solas". */
+  .btn,
+  .btn-primary:not(.btn-sm),
+  .btn-secondary:not(.btn-sm),
+  .btn-danger:not(.btn-sm),
+  .btn-ghost:not(.btn-sm) { min-height: 44px; }
 }
 
 /* Sheet desde abajo (bottom sheet). Keyframe a nivel superior para que lo use
