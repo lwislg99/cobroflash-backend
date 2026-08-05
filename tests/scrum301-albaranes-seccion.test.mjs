@@ -383,6 +383,67 @@ const COPY_APROBADA = {
   cobro: { sin_facturar: 'sin facturar', parcial: 'parcial', facturado: 'facturado' },
 };
 
+/**
+ * Las CINCO ranuras de estado, firmadas después de las cuatro de estructura. Cada una va atada a SU
+ * SITIO en el código, no a «aparece en el fichero»: el texto correcto en la ranura equivocada tiene
+ * que salir rojo igual que un texto cambiado.
+ */
+const COPY_RANURAS = {
+  avisoError: 'No se han podido cargar los albaranes. Vuelve a intentarlo.',
+  sufijoRecuento: ' en total',
+  buscadorVisible: 'Buscar por nº, cliente o trabajo',
+  buscadorAria: 'Buscar albaranes',
+  vacioSinAlbaranes: 'Todavía no hay albaranes',
+  vacioConFiltros: 'Ningún albarán coincide con los filtros',
+};
+
+/**
+ * Lee el texto de cada ranura DEL AST, en el sitio exacto donde se usa.
+ *
+ * No vale buscar la cadena por el fichero: eso daría verde con el texto del vacío-con-filtros puesto
+ * en el vacío-sin-albaranes, que es un error de producto —le diría «no tienes ninguno» a quien tiene
+ * doce y filtró mal— y no de ortografía.
+ */
+function ranurasDeLaVista(fuente) {
+  const sf = ts.createSourceFile('x.js', fuente, ts.ScriptTarget.Latest, true);
+  const r = {};
+  const texto = (n) => (n && (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) ? n.text : null);
+
+  const visita = (n) => {
+    // `aviso.textContent = '…'` · `subtitle.textContent = contadores.total + ' en total'`
+    if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+        ts.isPropertyAccessExpression(n.left) && n.left.name.text === 'textContent' &&
+        ts.isIdentifier(n.left.expression)) {
+      const destino = n.left.expression.text;
+      if (destino === 'aviso') r.avisoError = texto(n.right);
+      if (destino === 'subtitle' && ts.isBinaryExpression(n.right)) {
+        const suf = texto(n.right.right);
+        if (suf !== null) r.sufijoRecuento = suf;
+      }
+    }
+    // `buscador.placeholder = '…'`
+    if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+        ts.isPropertyAccessExpression(n.left) && n.left.name.text === 'placeholder' &&
+        ts.isIdentifier(n.left.expression) && n.left.expression.text === 'buscador') {
+      r.buscadorVisible = texto(n.right);
+    }
+    // `buscador.setAttribute('aria-label', '…')`
+    if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression) &&
+        n.expression.name.text === 'setAttribute' && ts.isIdentifier(n.expression.expression) &&
+        n.expression.expression.text === 'buscador' && texto(n.arguments[0]) === 'aria-label') {
+      r.buscadorAria = texto(n.arguments[1]);
+    }
+    // El ternario de los dos vacíos: `filas.length === 0 ? '…' : '…'`
+    if (ts.isConditionalExpression(n) && /filas\.length\s*===\s*0/.test(n.condition.getText(sf))) {
+      r.vacioSinAlbaranes = texto(n.whenTrue);
+      r.vacioConFiltros = texto(n.whenFalse);
+    }
+    ts.forEachChild(n, visita);
+  };
+  visita(sf);
+  return r;
+}
+
 /** La regla de plural de la vista, replicada aquí para poder carear sus resultados. */
 function etiquetaEstadoSegunLaVista(valor) {
   const cuerpo = VISTA.slice(VISTA.indexOf('function etiquetaEstado('), VISTA.indexOf('function etiquetaCobro('));
@@ -435,15 +496,76 @@ test('SCRUM-301 · la copy APROBADA está, ranura a ranura, y el marcador se ha 
     '🔴 la píldora de estado ha dejado de imprimir el valor del modelo');
 });
 
-test('SCRUM-301 · lo que NO se sometió sigue con marcador (no se aprueba solo)', () => {
-  // Cuatro ranuras se aprobaron; el aviso de error, el recuento, el buscador y los dos estados
-  // vacíos no se sometieron. Aprobarlos por mi cuenta sería inventarme copy oficial (regla 30).
-  const usos = (VISTA.match(/rotulo\(/g) || []).length;
-  assert.ok(usos >= 5,
-    `🔴 solo ${usos} textos siguen marcados. Si un rótulo sin aprobar ha perdido su marca, se ha ` +
-    'colado copy oficial por la puerta de atrás.');
-  assert.ok(VISTA.includes("MARCA + ' ' + borrador"),
-    '🔴 el helper del marcador ha cambiado de forma: revisa que sigue anteponiendo la marca');
+test('SCRUM-301 · las CINCO ranuras de estado dicen su texto FIRMADO, cada una en su sitio', () => {
+  const r = ranurasDeLaVista(VISTA);
+
+  // SUELO: si el lector no encuentra las ranuras, los asserts de abajo compararían `undefined`
+  // contra `undefined`... o peor, pasarían por casualidad. Se exige encontrarlas TODAS.
+  const ausentes = Object.keys(COPY_RANURAS).filter((k) => typeof r[k] !== 'string');
+  assert.deepEqual(ausentes, [],
+    '🔴 el lector de ranuras no ha encontrado: ' + ausentes.join(', ') +
+    '\n\n  O la vista cambió de forma, o el lector dejó de mirar donde debía. En los dos casos este\n' +
+    '  guard estaría comparando aire.');
+
+  for (const [ranura, firmado] of Object.entries(COPY_RANURAS)) {
+    assert.equal(r[ranura], firmado,
+      `🔴 LA RANURA «${ranura}» YA NO DICE SU TEXTO FIRMADO.\n` +
+      `     firmado:  ${JSON.stringify(firmado)}\n` +
+      `     y ahora:  ${JSON.stringify(r[ranura])}\n\n` +
+      '  Estos textos los firmó el asesor: cambiarlos —aunque sea una letra— es decisión suya, no\n' +
+      '  un retoque de implementación.');
+  }
+
+  // Y el marcador ya no PINTA nada aquí: las nueve ranuras están firmadas.
+  //
+  // ⚠️ Sobre LITERALES, no sobre el fichero. La primera versión de este assert miró el fuente entero
+  // y salió roja sola: la cabecera de la vista cuenta que «se entregó con [PENDIENTE microcopy
+  // oficial] en cada rótulo», así que el guard se cazaba a sí mismo en la prosa que lo explica —el
+  // clásico de la casa (SCRUM-176/168/3/193). Un marcador citado en un comentario no llega a
+  // ninguna pantalla; uno en una cadena, sí.
+  const marcados = literalesDe(VISTA).filter((t) => t.includes(MARCA));
+  assert.deepEqual(marcados, [],
+    '🔴 queda `[PENDIENTE microcopy oficial]` en un texto que se PINTA, y las nueve ranuras de esta ' +
+    'pantalla están firmadas. Un marcador sobre texto aprobado se despliega tal cual y se lee en ' +
+    'producción — que es lo que pasó con SCRUM-303 hasta que entró su aprobación.');
+});
+
+test('SCRUM-301 · el guard vigila LA RANURA, no «que el texto aparezca en el fichero»', () => {
+  // La prueba de que la comparación está atada al sitio: se intercambian los dos vacíos. Los dos
+  // textos siguen estando en el fichero, palabra por palabra —un guard que buscara por el fuente
+  // daría verde—, pero cada uno está en la ranura del otro.
+  //
+  // Y no es un matiz de tests: con los textos cruzados, a quien tiene doce albaranes y filtra mal se
+  // le diría «todavía no hay albaranes».
+  const cruzada = VISTA.replace(
+    `filas.length === 0 ? '${COPY_RANURAS.vacioSinAlbaranes}' : '${COPY_RANURAS.vacioConFiltros}'`,
+    `filas.length === 0 ? '${COPY_RANURAS.vacioConFiltros}' : '${COPY_RANURAS.vacioSinAlbaranes}'`);
+  assert.notEqual(cruzada, VISTA, '🔴 el sabotaje no ha cambiado nada: el ternario cambió de forma');
+
+  const r = ranurasDeLaVista(cruzada);
+  assert.notEqual(r.vacioSinAlbaranes, COPY_RANURAS.vacioSinAlbaranes,
+    '🔴 EL LECTOR NO DISTINGUE LAS DOS RAMAS DEL TERNARIO: con los textos intercambiados sigue ' +
+    'leyendo lo mismo, así que el guard no vigila la ranura — solo comprueba que las palabras ' +
+    'están escritas en alguna parte.');
+  assert.equal(r.vacioSinAlbaranes, COPY_RANURAS.vacioConFiltros,
+    '🔴 el lector no está leyendo la rama verdadera del ternario');
+
+  // Y el texto que el asesor DESCARTÓ para esa ranura tampoco puede colarse.
+  const descartado = 'Ningún albarán coincide con esa búsqueda';
+  assert.equal(VISTA.includes(descartado), false,
+    `🔴 aparece «${descartado}», que es la variante DESCARTADA: se eligió «los filtros» porque esa ` +
+    'rama se alcanza también desde la pestaña de estado y desde el filtro de facturación, no solo ' +
+    'escribiendo en el buscador.');
+});
+
+test('SCRUM-301 · el recuento no inventa plural: «1 en total» se escribe así', () => {
+  // El sufijo firmado es « en total» y la plantilla NO ramifica. Un plural inventado («1 en
+  // totales») saldría de ramificar por el número, así que se comprueba que no hay tal rama.
+  const r = ranurasDeLaVista(VISTA);
+  assert.equal(1 + r.sufijoRecuento, '1 en total', '🔴 el singular no sale como «1 en total»');
+  assert.equal(5 + r.sufijoRecuento, '5 en total', '🔴 el plural no sale como «5 en total»');
+  assert.equal(/en total(es|\(es\)|s)/.test(VISTA), false,
+    '🔴 hay un plural inventado sobre «en total». En español «1 en total» es correcto: no se ramifica.');
 });
 
 // ── LA PANTALLA NO PINTA CEROS CUANDO FALLA ──────────────────────────────────────────────

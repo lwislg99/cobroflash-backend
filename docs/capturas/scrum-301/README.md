@@ -28,20 +28,22 @@ Ahora el suelo también falla si hay un `.modal-overlay` / `#onboarding-backdrop
 | `scrum301-listado-1280.png` | Escritorio: sección propia en el menú, 4 pestañas con contador (todos 5 · borrador 1 · emitido 2 · firmado 2), buscador, filtro de facturación y la tabla. |
 | `scrum301-listado-390.png` | Móvil 390 (gama media): la tabla en modo tarjetas (`table--cards-mobile`). |
 | `scrum301-error-1280.png` | **La captura que sostiene el ticket**: con la consulta caída NO hay pestañas, NO hay contadores y NO hay ceros — solo el aviso en rojo. |
+| `scrum301-error-390.png` · `scrum301-vacio-390.png` | Las dos pantallas que enseñan las cinco ranuras firmadas, a 390 px. |
 | `scrum301-vacio-1280.png` | Cero albaranes de verdad: pestañas a 0 y estado vacío. Es el contraste del anterior: el mismo número con significado opuesto, y se distinguen en pantalla. |
 
-## Microcopy: aprobada el 5-ago-2026 — y lo que la aprobación arregló
+## Microcopy: las NUEVE ranuras firmadas
 
 La primera tanda de capturas se hizo con `[PENDIENTE microcopy oficial]` en cada rótulo, y el
 marcador **empujaba `Cliente`, `Trabajo` y `Estado` fuera del ancho visible** — incluida la columna
 que es la ventaja del ticket. No era maquetación: era el coste del marcador.
 
-El asesor aprobó las cuatro ranuras (tres tal cual y el filtro con retoque, «todos» en vez de
-«todas») y estas capturas están rehechas con el texto definitivo: **las seis columnas caben y
-`Trabajo` se ve enlazada**.
+El asesor firmó primero las cuatro de estructura (el filtro con retoque: «todos», no «todas») y
+después las cinco de estado. **Estas capturas están rehechas con el texto definitivo y ya no queda
+ni un marcador en pantalla**: las seis columnas caben y `Trabajo` se ve enlazada.
 
-Siguen con marcador los cinco textos que NO se sometieron —el aviso de error, el recuento del
-subtítulo, el buscador y los dos estados vacíos—, y se ven así a propósito en las capturas.
+Las dos de 390 px existen porque son las que enseñan las cinco últimas ranuras: el aviso de error
+—que nombra la CARGA y no el inventario, para que un fallo no se lea como «no tienes albaranes»— y
+el vacío con su recuento, su buscador y su «Todavía no hay albaranes».
 ## Checklist AB6
 
 | Punto | Estado |

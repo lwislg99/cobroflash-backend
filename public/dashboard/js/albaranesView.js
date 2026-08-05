@@ -28,14 +28,24 @@
 // «No tienes ninguno» sigue siendo una respuesta legítima y tiene su propio estado vacío.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// MICROCOPY: APROBADA POR EL ASESOR EL 5-AGO-2026 (regla 30)
+// MICROCOPY: LAS NUEVE RANURAS, FIRMADAS POR EL ASESOR EL 5-AGO-2026 (regla 30)
 //
-// Se entregó con `[PENDIENTE microcopy oficial]` en cada rótulo y el asesor aprobó las cuatro
-// ranuras: tres tal cual y una con retoque («Facturación: TODOS», no «todas», porque concuerda con
-// «albaranes» — que es lo que se cuenta; «todas» arrastra a pensar en facturas, que es justo el
-// objeto que este filtro NO cuenta). El marcador se retira y el guard cambia de trabajo: ahora
-// compara ranura a ranura contra el texto aprobado, porque retocar copy aprobada es decisión del
-// asesor y no un detalle de implementación.
+// Se entregó con `[PENDIENTE microcopy oficial]` en cada rótulo. El asesor firmó primero las cuatro
+// de estructura —sección, pestañas, columnas y filtro, ésta con retoque («Facturación: TODOS», no
+// «todas», porque concuerda con «albaranes», que es lo que se cuenta; «todas» arrastra a pensar en
+// facturas, el objeto que este filtro NO cuenta)— y después las cinco de estado —aviso de error,
+// recuento, buscador (sus DOS cadenas) y los dos vacíos—.
+//
+// El guard cambió de trabajo con la primera firma y ahora cubre las nueve: compara **ranura a
+// ranura** contra el texto firmado, atándolo a SU sitio en el código. Retocar copy firmada es
+// decisión del asesor, no un detalle de implementación.
+//
+// Dos de esos textos existen para no confundirse entre sí, y por eso se escribieron a la vez:
+//   · el AVISO DE ERROR nombra la CARGA («no se han podido cargar»), no el inventario, para que un
+//     fallo no se lea nunca como «no tienes albaranes»;
+//   · los dos VACÍOS separan «no tienes» de «no encuentro»: el segundo dice «los filtros» en plural
+//     porque su rama se alcanza por TRES vías —la pestaña de estado, el filtro de facturación y el
+//     buscador—, así que hablar de «esa búsqueda» mentiría a quien solo tocó un desplegable.
 //
 // ⚠️ LAS ETIQUETAS DE LAS PESTAÑAS SE DERIVAN DEL VALOR, NO SE ESCRIBEN. Un mapa
 // `{ borrador: 'Borradores', … }` sería otra vez la lista a mano que este fichero evita: el día que
@@ -49,12 +59,14 @@
 (function () {
   const TODOS = '__todos__'; // valor de pestaña, no un estado del modelo
 
-  // Las CUATRO ranuras aprobadas son: el nombre de la sección, las pestañas, las columnas y el
-  // filtro de facturación. El resto de textos de esta pantalla —el aviso de error, el subtítulo del
-  // recuento, el buscador y los dos estados vacíos— NO se sometieron y siguen con marcador: son
-  // ranuras distintas y aprobarlas por mi cuenta sería inventarme copy oficial (regla 30).
-  const MARCA = '[PENDIENTE microcopy oficial]';
-  function rotulo(borrador) { return MARCA + ' ' + borrador; }
+  // Ya NO queda marcador en esta pantalla: las cuatro primeras ranuras se aprobaron el 5-ago-2026 y
+  // las cinco restantes —aviso de error, recuento, buscador (sus DOS cadenas) y los dos estados
+  // vacíos— quedaron firmadas justo después. El helper `rotulo()` desaparece con ellas: mantenerlo
+  // sin usuarios invitaría a marcar texto nuevo en vez de someterlo.
+  //
+  // ⚠️ `'Cargando…'` (más abajo) NO es de este ticket y NO entra en el guard: es la cadena que ya
+  // usa `invoicesView.js` en tres sitios, copiada tal cual. Someterla aquí la convertiría en texto
+  // oficial de pantallas que este ticket no toca.
 
   /** Plural español del valor + mayúscula inicial: `borrador` → `Borradores`, `emitido` → `Emitidos`. */
   function etiquetaEstado(valor) {
@@ -137,7 +149,7 @@
       const aviso = document.createElement('div');
       aviso.className = 'alert error';
       aviso.style.cssText = 'margin:16px';
-      aviso.textContent = rotulo('No se han podido cargar los albaranes. No hay ningún número que enseñar: vuelve a intentarlo.');
+      aviso.textContent = 'No se han podido cargar los albaranes. Vuelve a intentarlo.';
       body.appendChild(aviso);
       const detalle = document.createElement('p');
       detalle.style.cssText = 'margin:0 16px 16px;font-size:12px;color:var(--muted)';
@@ -155,7 +167,7 @@
         return;
       }
 
-      subtitle.textContent = rotulo(contadores.total + ' en total');
+      subtitle.textContent = contadores.total + ' en total';
       body.innerHTML = '';
 
       let estadoActivo = TODOS;
@@ -194,8 +206,8 @@
       const buscador = document.createElement('input');
       buscador.className = 'input';
       buscador.type = 'search';
-      buscador.placeholder = rotulo('Buscar por nº, cliente o trabajo');
-      buscador.setAttribute('aria-label', rotulo('Buscar albaranes'));
+      buscador.placeholder = 'Buscar por nº, cliente o trabajo';
+      buscador.setAttribute('aria-label', 'Buscar albaranes');
       buscador.style.cssText = 'min-width:180px;flex:1';
       buscador.addEventListener('input', () => { busqueda = buscador.value; activar(); });
       toolbar.appendChild(buscador);
@@ -267,7 +279,7 @@
           // «No hay ninguno» NUNCA se pinta cuando la consulta falla: ese camino termina en
           // `pintarError` y no llega hasta aquí.
           vacio.innerHTML = '<div class="empty-state-icon">📄</div><div class="empty-state-title">' +
-            esc(rotulo(filas.length === 0 ? 'Todavía no hay albaranes' : 'Ningún albarán con ese filtro')) +
+            esc(filas.length === 0 ? 'Todavía no hay albaranes' : 'Ningún albarán coincide con los filtros') +
             '</div>';
           return;
         }
