@@ -194,3 +194,76 @@ rojo: un guard que vive en rojo esperando una decisión es un guard que alguien 
 
 Suelo por población, por separado: ≥25 campos y ≥4 superficies. Positivo: la superficie **sin id**
 se censa. Negativos: un control dentro de una tarjeta no es superficie, y la vista entera tampoco.
+
+---
+
+## El mapa se arregla y su guard pasa a BIDIRECCIONAL (cuarta entrega de B1)
+
+**Medido contra:** `origin/main` = `077fa8ac24d7e832d446a589b31367e9c15de916` · 2026-08-05T05:54:55+01:00
+**Tanda:** 1423 tests, 1356 pass, 0 fail, 67 skipped
+**Ficheros:** `tests/_asignacion-submenus.mjs`, `tests/scrum284-asignacion-submenus.test.mjs` (12, antes 7)
+
+> **ALCANCE: no toca UI.** `public/` está intacto. Este paso arregla el mapa y su guard; construir
+> los diez submenús es el resto del incremento 1 y **está bloqueado por la decisión de `resenas`**.
+
+### El defecto
+
+El mapa mergeado en `a6d2cd4` tenía **once destinos y seis no existían como submenú** (`fiscales`,
+`whatsapp`, `moneda`, `serie`, `resenas`, `referidos`). Al revés, **cinco de los diez submenús no
+tenían ni un campo** (`facturacion`, `numeracion`, `datos`, `cumplimiento`, `equipo`). **Y el guard
+estaba VERDE**, porque preguntaba «¿tiene sitio este campo?» y nunca «¿existe ese sitio?». Es el
+fallo mudo del ticket un piso más arriba, y el mismo trinquete de un solo sentido de SCRUM-299.
+
+**LA CAUSA ESTRUCTURAL, que es lo que hay que retener:** el conjunto de destinos válidos se
+**DERIVABA de los propios valores del mapa** (`[...new Set(Object.values(ASIGNACION))]`). Un conjunto
+que se define por lo que lo usa **no puede detectar un uso equivocado** — escribir un destino
+inventado lo declaraba válido en el mismo gesto. Por eso el arreglo no es añadir un `if`: es que la
+lista de los diez submenús pase a existir como **conjunto cerrado y declarado**, independiente de
+quién la use.
+
+### Los cuatro sentidos
+
+① campo sin sitio (el de siempre) · ② destino que no es submenú · ③ submenú sin campos, salvo que
+esté en `VACIOS_DECLARADOS` con su motivo · ④ **vacío declarado que YA tiene campos**. El ④ impide
+que esto degenere: si un submenú deja de estar vacío en silencio, la lista sigue declarando un hueco
+que ya no existe y nadie sabe nunca cuándo se vació del todo. **Que el guard falle por una MEJORA es
+deliberado** — misma propiedad que el censo heredado de SCRUM-267.
+
+Se abre una **tercera categoría**, `FUERA_DE_CONFIGURACION` (hoy solo `ref-link`): sin ella, sacar
+algo de Configuración sería indistinguible de olvidarlo. Y un test nuevo exige que las tres
+categorías sean **excluyentes** — un campo en dos dejaría el mapa diciendo dos cosas, y cuál gana
+dependería del orden de los `if`.
+
+### `resenas` no se decidió: la condición que se le puso no se cumple
+
+El criterio era «si es la petición automática tras el cobro → avisos; si es la ficha pública →
+publica». Medido: **las dos ramas son verdaderas a la vez y hay una tercera**. `googleReviewUrl` lo
+consumen (1) el WhatsApp automático tras el cobro — `psp.routes.ts:221`, `mpWebhook.routes.ts:181`;
+(2) la ficha pública `/p/:slug` — `publicProfile.service.ts:73`; y (3) **la página de recibo**, con
+botón y estrellas — `receipt.routes.ts:248`. Un campo, tres superficies. Queda en
+`PENDIENTES_DE_DECISION` con la medición escrita.
+
+### Discrepancia con el encargo, resuelta por el propio mecanismo
+
+El encargo listaba **cuatro** vacíos declarados incluyendo `equipo`, pero el fundador ya había
+colocado `approvalThreshold` → `equipo`. Con esa asignación **`equipo` ya no está vacío**, así que
+declararlo habría hecho saltar el sentido ④. Los vacíos son **tres**: `facturacion`, `datos`,
+`cumplimiento`. Lo dice el guard, no una lectura.
+
+### Verificado en rojo
+
+**PRIMER INTENTO DESCARTADO POR NO PROBAR NADA:** poner el mapa de `origin/main` tal cual tumbaba el
+fichero entero (`1 test, 1 fail`), pero por **error de importación** — el mapa viejo no exporta
+`SUBMENUS` ni `VACIOS_DECLARADOS`. Un rojo de carga del módulo no demuestra que el guard cace el
+defecto: demuestra que no llegó a correr.
+
+**EL ROJO BUENO:** se conserva el andamiaje nuevo y se sustituyen **los datos** por los del mapa
+viejo (19 campos, 11 destinos reales). El guard corre de verdad y da **7 de 12 en rojo**, con los
+sentidos nuevos nombrando el defecto exacto: **②** los seis destinos inexistentes, **③** `numeracion`
+y `equipo` sin un solo campo (los otros tres ya están declarados con su motivo, que es justo la
+diferencia entre deuda y error). Coincide **campo por campo** con lo medido a mano en el ticket.
+Restaurado, 12/12.
+
+El **suelo va primero**, y tiene un complemento que hacía falta: el ③ podría estar verde si TODOS los
+submenús estuvieran declarados vacíos, así que un negativo exige que al menos siete tengan campos de
+verdad.
