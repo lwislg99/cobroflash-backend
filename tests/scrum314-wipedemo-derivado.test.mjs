@@ -16,7 +16,8 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // LO QUE SE PRUEBA AQUÍ, Y POR QUÉ ASÍ
 //
-// El barrido vive en `scripts/_wipe-demo.mjs` y no dentro de `seed-demo.mjs` por una razón
+// El barrido vive FUERA de `seed-demo.mjs` (hoy en `src/modules/system/domain/barridoDemo.ts`,
+// compilado a `dist/`) por una razon
 // medida: ese script **se ejecuta al importarlo** (tiene await de nivel superior y siembra), así
 // que un test que lo importara sembraría la base. Sacada la pieza, se ejercita con un `prisma` de
 // doble: sin BD, sin turno y sin red.
@@ -167,7 +168,18 @@ test('SCRUM-314 · un modelo que este entorno no expone NO tumba el barrido, y s
 test('SCRUM-314 · seed-demo usa el barrido derivado y no una lista propia', () => {
   // Sin esto, el módulo podría estar perfecto y el script seguir borrando sus 10 de siempre.
   const src = fs.readFileSync(path.join(RAIZ, 'scripts', 'seed-demo.mjs'), 'utf8');
-  assert.match(src, /from '\.\/_wipe-demo\.mjs'/, '🔴 seed-demo no importa el barrido derivado');
+  // 🔴 SCRUM-381: este assert fijaba `from './_wipe-demo.mjs'` — un fichero que ESTE MISMO TICKET
+  // borró al mover el barrido al dominio. Comprobaba el TEXTO del import y nunca que el destino
+  // EXISTIERA, así que sostuvo el import muerto en verde durante tickets enteros: `seed-demo.mjs`
+  // no podía ni arrancar, y el test decía que sí.
+  //
+  // Un guard que fija una ruta sin resolverla vigila la ortografía, no el cableado. Ahora apunta a
+  // donde vive de verdad, y de que ESO exista se encarga el guard de SCRUM-381, que resuelve cada
+  // import de cada script de la capa.
+  assert.ok(
+    src.includes("from '../dist/modules/system/domain/barridoDemo.js'"),
+    '🔴 seed-demo no importa el barrido derivado',
+  );
   assert.match(src, /barridoDemo\(/, '🔴 seed-demo no llama a barridoDemo');
   const cuerpo = src.slice(src.indexOf('async function wipeDemo'), src.indexOf('async function seed'));
   const aMano = [...cuerpo.matchAll(/prisma\.(\w+)\.deleteMany/g)].map((m) => m[1]);

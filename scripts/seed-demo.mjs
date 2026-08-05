@@ -42,7 +42,10 @@ import {
 // comillas del `.env` y NO tiene forma de devolver la cadena — solo host, base, usuario y puerto.
 import { parseBDSegura } from './_db-guard.mjs';
 // SCRUM-314: el barrido del demo, DERIVADO del orden que ya guarda el schema (no una lista aquí).
-import { barridoDemo } from './_wipe-demo.mjs';
+// SCRUM-381: vivía en `./_wipe-demo.mjs`, que SCRUM-314 (cbc2880) borró al mover el barrido al
+// dominio SIN actualizar este import. El script llevaba tickets sin poder ni arrancar, y nadie se
+// enteró porque ninguna suite lo cargaba — el hueco que cierra el guard de este mismo ticket.
+import { barridoDemo } from '../dist/modules/system/domain/barridoDemo.js';
 
 /**
  * El copy del cobro NUNCA dice "factura" de un `J-` (regla 24/26, Parte M). No es un texto
