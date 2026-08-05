@@ -22,7 +22,7 @@ Medido antes de construir:
 
 Los dos puntos de este PR **no tocan nada de eso**: ④ decide si se admite un **cambio de ajuste**,
 y ① solo **mira** lo ya emitido. `invoiceNumber.service.ts` queda **byte-idéntico**, y hay un guard
-que lo comprueba contra `origin/main` en cada `npm test`.
+que lo comprueba contra un hash congelado en el repo, en cada `npm test` (ver abajo).
 
 ## ④ · El defecto VIVO: la serie se podía partir desde Configuración
 
@@ -87,29 +87,54 @@ distinguir las dos cosas. También se declara `truncado` cuando el barrido llega
   justificantes. Es el rojo que justifica tener la cara positiva: sin ella, *bloquear bien* y
   *bloquear a todos* se ven idénticos en verde.
 * **El detector parsea en vez de componer** (copia del formato a mano) → cae el guard del formato.
-* **El guard de la regla 38 no es decorativo:** se comprobó **sin tocar el camino de emisión**,
-  apuntando el mismo mecanismo a un fichero que sí cambió (`merchantAdmin.ts` → «CON CAMBIOS») y al
-  vigilado (→ vacío). Prueba que detecta, sin necesidad de tocar lo que el fundador pidió no tocar.
-
 Las tres inyecciones revertidas; árbol limpio.
+
+### El guard de la regla 38, y por qué su referencia cambió de sitio
+
+La primera versión comparaba con `git diff --stat origin/main`, y **CI dejó #454 en rojo: allí
+`origin/main` no está fetcheado**, así que el guard no podía obtener su referencia. Fallaba al no
+poder mirar — correcto, pero inservible.
+
+**Lo que NO se hizo, y era la tentación:** saltarse la comprobación cuando falta la referencia.
+Ése es el verde hueco exacto — «no pude comparar» se leería igual que «comparé y estaba intacto»,
+y justo en el guard que protege el camino de emisión.
+
+La referencia pasa a vivir **dentro del repo**: el sha256 del contenido, normalizando los finales
+de línea (el repo escribe CRLF en Windows y CI hace checkout con LF; hashear crudo daría rojos por
+sistema operativo, y un guard que grita sin motivo se acaba desactivando). Sin red, sin git, sin
+remoto.
+
+Verificado en rojo, por `$?` y no por el texto: **referencia inexistente** → `$? = 1` nombrando el
+fichero y el `ENOENT`; **referencia que no casa** → `$? = 1` con los dos hashes delante.
+
+⚠️ **Y un error propio, declarado:** el primer intento de ese rojo se hizo sobre trabajo **sin
+commitear**, y el `git checkout` de la reversión se llevó la reescritura entera. Se detectó porque
+el test salió verde **sin que la inyección se hubiera aplicado** — que no prueba nada. Rehecho,
+commiteando primero. Es la misma lección que ya costó una capa en esta sesión.
 
 ## Microcopy APROBADA (5-ago-2026) — y por qué esta variante y no la otra
 
-`MSG_SERIE_YA_EMITIDA` va con `[PENDIENTE microcopy]` y un guard que impide que se quede así sin
-que nadie se dé cuenta. **Lo que el texto tiene que transmitir**, para que el fundador lo apruebe o
-lo reescriba:
+> **Esta serie ya tiene facturas emitidas**
+> Su numeración tiene que seguir siendo correlativa, así que no se puede cambiar. Escríbenos por
+> WhatsApp y lo vemos contigo.
 
-1. **Que no se puede**, sin ambigüedad — no «te recomendamos que no».
-2. **Por qué:** ya hay facturas emitidas con esta serie **este año**, y los números tienen que
-   seguir siendo correlativos.
-3. **Que no es un capricho nuestro:** es cómo tiene que quedar el registro de facturación.
-4. **Qué SÍ puede hacer:** el prefijo se puede cambiar **al empezar un año nuevo**, cuando la serie
-   arranca de cero. Eso convierte un «no» en un «ahora no, y cuándo sí».
-5. **Los datos ya viajan en la respuesta** (`emitidas`, `ultimo`, `prefijoActual`), así que el texto
-   puede nombrarlos sin que haya que inventar nada.
+La microcopy aprobada traía **dos variantes**, y cuál aplica **no era una elección: era un hecho
+del producto**. Así que se midió.
 
-Lo que **no** debe hacer: sugerir que se contacte con soporte para forzarlo. No hay forma legítima
-de forzarlo, y ofrecerla es prometer algo que no existe.
+**No existe la acción «crear una serie nueva»:** no hay modelo `Serie` en `prisma/schema.prisma`
+—la serie son cuatro campos escalares de `Merchant`—, no hay ninguna ruta que la cree, y el front
+no la nombra en ningún sitio. Las series múltiples son justo la parte de A4 que sigue esperando GO.
+
+Por eso se aplicó la variante de WhatsApp. **Mandar al usuario a un botón que no existe convierte
+un bloqueo explicado en un callejón sin salida** — que es literalmente el defecto de SCRUM-338 que
+este mismo trabajo acaba de arreglar en el catálogo.
+
+Y el hecho queda **vigilado**, no recordado: un test comprueba que no aparezca un `model Serie` en
+el esquema. El día que exista, cae y obliga a pasar a la otra variante en vez de dejar al
+profesional con la peor de las dos salidas.
+
+El guard de «va marcado como pendiente» se retiró **en el mismo commit** que quitó la marca, y en
+su sitio quedan dos: uno que fija los textos aprobados literales y otro que vigila ese hecho.
 
 ## Lo que NO cubre
 
