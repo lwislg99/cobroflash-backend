@@ -25,26 +25,19 @@
 // el front esconde».
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// ⚠️ EL ESTADO REAL DE LA MICROCOPY DE «EN CALIDAD DE QUÉ»: NO ESTÁ APROBADA
+// LA MICROCOPY DE «¿EN CALIDAD DE QUÉ FIRMA?» — APROBADA POR EL FUNDADOR (6-ago-2026)
 //
-// La rama `scrum-300-firmado-por` traía cinco textos literales para estas ranuras, declarados
-// como aprobados palabra por palabra y las ranuras como validadas por el fundador el 5-ago-2026.
-// **Eso era falso: no pasaron por la regla 30.** El asesor lo midió al resolver la fusión, y la
-// afirmación se ha retirado JUNTO CON los textos.
+// Historia corta, porque explica por qué los `id` y los textos llegaron por caminos distintos:
 //
-// ⚠️ Los cinco literales retirados NO se citan en este comentario a propósito: un guard de texto
-// que los persiguiera se cazaría a sí mismo en la prosa que explica la prohibición. Quien quiera
-// verlos, `git show origin/scrum-300-firmado-por:src/modules/jobs/domain/albaranFirmante.ts`.
+//  · La rama `scrum-300-firmado-por` traía cinco textos declarados como aprobados palabra por
+//    palabra. **Era falso: no habían pasado por la regla 30.** Se retiraron junto con la
+//    afirmación. (No se citan aquí a propósito: un guard de texto que los persiguiera se cazaría
+//    a sí mismo en la prosa que lo explica. Están en el histórico de esa rama.)
+//  · Los seis textos de abajo SÍ los aprobó el fundador, literales, el 6-ago-2026.
 //
 // **Un texto etiquetado como aprobado es peor que uno con marcador: el marcador pide permiso y la
-// etiqueta falsa lo da.**
-//
-// El asesor fijó los `id` (abajo) y anunció los seis rótulos validados «en el comentario
-// siguiente» de SCRUM-300. **Ese comentario no llegó a escribirse** (medido el 5-ago-2026: el
-// ticket tiene 5 comentarios y ninguno los contiene). Así que las seis etiquetas van con el
-// marcador `[PENDIENTE microcopy oficial]`, que es lo que el propio enunciado del ticket manda
-// mientras no haya texto oficial, y el mismo patrón de portabilidad, SCRUM-289 y SCRUM-303.
-// Se ve feo A PROPÓSITO: un placeholder que parece definitivo acaba en producción.
+// etiqueta falsa lo da.** Por eso el hueco se sostuvo con `[PENDIENTE microcopy oficial]` hasta
+// que hubo aprobación de verdad, en vez de rellenarse con algo razonable.
 
 /** Marcador del repo para texto sin aprobar. Se pinta tal cual (no es un fallback silencioso). */
 export const PENDIENTE = '[PENDIENTE microcopy oficial]';
@@ -57,15 +50,30 @@ export const PENDIENTE = '[PENDIENTE microcopy oficial]';
 // obliga a migrar filas de documentos ya firmados. Descriptivos y no abreviados, por decisión del
 // asesor (SCRUM-300, 5-ago-2026) — ninguna de las dos ramas usaba éstos.
 //
-// ⚠️ Nota para quien venga a «mejorar» la lista: la rama B razonaba por escrito que había que
-// EVITAR «representante» por ser una afirmación jurídica que el profesional no puede sostener.
-// La decisión del asesor incluye `representante_del_cliente`, así que ese razonamiento queda
-// derogado — se deja dicho aquí para que no se reabra como si fuera un descuido.
+// ⚠️ 🔴 POR QUÉ LA SEGUNDA RANURA ES `en_nombre_del_cliente` Y NO `representante_del_cliente`
+//
+// No es ni un descuido ni una derogación: es una decisión tomada, revisada y corregida, y se
+// escribe aquí para que no se reabra por ninguno de los dos lados.
+//
+// La rama `scrum-300-firmado-por` razonaba por escrito que había que EVITAR «representante»,
+// «autorizado» y «apoderado» por ser AFIRMACIONES JURÍDICAS que el profesional no puede sostener.
+// La primera resolución del asesor fijó `representante_del_cliente`, derogando ese razonamiento
+// sin abordarlo. **El fundador lo revirtió el 6-ago-2026, y el motivo es el bueno:**
+//
+//   «Representante» significa quien puede OBLIGAR al cliente. El profesional no está en
+//   condiciones de verificar eso, así que le haríamos afirmar más de lo que sostiene — y con
+//   nuestro sello encima, dentro del contenido firmado.
+//
+// Pero la categoría hace falta: el administrador de una comunidad de propietarios no es ninguna de
+// las otras cinco. **«En nombre del cliente» describe el HECHO OBSERVADO sin afirmar la figura
+// jurídica**, que es exactamente lo que un albarán puede sostener.
+//
+// El renombrado se hizo ANTES de la migración. Después habría obligado a migrar filas.
 
-/** Las seis ranuras, en su orden. Los `id` están CERRADOS; las etiquetas, no (ver cabecera). */
+/** Las seis ranuras, en su orden. `id` y etiqueta están CERRADOS: los dos se aprobaron. */
 export const FIRMANTE_CALIDAD_IDS = [
   'el_propio_cliente',
-  'representante_del_cliente',
+  'en_nombre_del_cliente',
   'familiar_o_conviviente',
   'encargado_o_personal_de_obra',
   'portero_o_conserje',
@@ -77,19 +85,22 @@ export type FirmanteCalidadId = (typeof FIRMANTE_CALIDAD_IDS)[number];
 export const FIRMANTE_CALIDAD_LIBRE: FirmanteCalidadId = 'otro';
 
 /**
- * La etiqueta de cada ranura. Las seis están PENDIENTES (ver cabecera): el `id` es dato y está
- * cerrado, la etiqueta es pantalla y todavía no la ha aprobado nadie.
+ * La etiqueta de cada ranura. **APROBADAS por el fundador el 6-ago-2026**, literales.
  *
- * Cuando llegue el texto oficial se cambia SOLO aquí y no hay que migrar ni un albarán firmado,
- * porque lo que se guardó fue el `id`.
+ * ⚠️ Cambiar una etiqueta NO obliga a migrar nada, porque lo que se guarda en
+ * `Albaran.firmadoPorCalidad` es el `id`. Cambiar un `id` SÍ. Son dos cosas distintas y por eso
+ * viven en dos constantes distintas.
+ *
+ * ⚠️ Estos seis acaban impresos en un documento que se puede leer en un juzgado. No se «mejoran»:
+ * se cambian con una aprobación nueva, anotada, en el mismo commit.
  */
 export const FIRMANTE_CALIDAD_ETIQUETAS: Readonly<Record<FirmanteCalidadId, string>> = Object.freeze({
-  el_propio_cliente: PENDIENTE,
-  representante_del_cliente: PENDIENTE,
-  familiar_o_conviviente: PENDIENTE,
-  encargado_o_personal_de_obra: PENDIENTE,
-  portero_o_conserje: PENDIENTE,
-  otro: PENDIENTE,
+  el_propio_cliente: 'El propio cliente',
+  en_nombre_del_cliente: 'En nombre del cliente',
+  familiar_o_conviviente: 'Un familiar o conviviente',
+  encargado_o_personal_de_obra: 'Encargado o personal de la obra',
+  portero_o_conserje: 'Portero o conserje',
+  otro: 'Otro',
 });
 
 export const FIRMANTE_CALIDAD_SET: ReadonlySet<string> = new Set(FIRMANTE_CALIDAD_IDS);
@@ -126,8 +137,8 @@ export const ALBARAN_ROTULOS = {
   lugarEntrega: 'Lugar de entrega',
   /** APROBADO (asesor, 5-ago-2026): describe lo que el campo es. */
   firmadoPorNombre: 'Nombre de quien firma',
-  /** APROBADO (asesor, 5-ago-2026): viene LITERAL del enunciado del ticket, no es redacción nueva. */
-  firmadoPorCalidad: 'En calidad de qué',
+  /** APROBADO (fundador, 6-ago-2026), con sus signos de interrogación: es una pregunta al firmante. */
+  firmadoPorCalidad: '¿En calidad de qué firma?',
   // ⚠️ El espacio final de los dos siguientes es PARTE DEL LITERAL, no un descuido: el PDF los
   // pinta con `continued: true`, así que el rótulo va en negrita y el dato se concatena detrás.
   // Quitarlo produce «Firmado por:Marta» — el tipo de defecto que nadie ve hasta que el PDF está
@@ -281,6 +292,30 @@ export function resolverCalidadFirmante(entrada: { ranura?: unknown; textoLibre?
 export function normalizarNombreFirmante(v: unknown): string | null {
   const s = String(v ?? '').trim().replace(/\s+/g, ' ').slice(0, FIRMANTE_NOMBRE_MAX);
   return s || null;
+}
+
+/**
+ * 🔴 EL NOMBRE ES OBLIGATORIO AL FIRMAR, Y LA COLUMNA ES NULLABLE. Las dos cosas a la vez, y no
+ * es una contradicción: **contestan a preguntas distintas** (decisión del fundador, 6-ago-2026).
+ *
+ *  · La COLUMNA admite nulo por las filas VIEJAS. Los albaranes firmados antes de C5 no tienen
+ *    estos campos y tienen que seguir abriéndose, imprimiéndose y facturándose. No se negocia:
+ *    es retrocompatibilidad, y `null` significa ahí «no se pidió al firmar».
+ *  · El FORMULARIO lo exige porque es EL valor del ticket. C5 existe porque «guardamos un trazo
+ *    sin nombre», y un nombre opcional deja el mismo trazo sin nombre en cuanto alguien tenga
+ *    prisa — que en una obra es siempre.
+ *
+ * Por eso el guard vive AQUÍ y no en el schema: es una regla del acto de firmar, no del dato.
+ * Y vive en UNA función porque firman DOS rutas (in situ y remota): si cada una validara por su
+ * cuenta, una acabaría aceptando lo que la otra rechaza y no nos enteraríamos hasta el juicio.
+ *
+ * ⚠️ El `message` va con el marcador: el front bloquea el botón, así que esto es el respaldo y su
+ * texto no lo ha aprobado nadie (regla 30).
+ */
+export function exigirNombreFirmante(v: unknown): { ok: true; nombre: string } | { ok: false; error: string; message: string } {
+  const nombre = normalizarNombreFirmante(v);
+  if (!nombre) return { ok: false, error: 'firma_sin_nombre', message: PENDIENTE };
+  return { ok: true, nombre };
 }
 
 /**
