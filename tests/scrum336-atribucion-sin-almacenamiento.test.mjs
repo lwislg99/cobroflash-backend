@@ -110,28 +110,49 @@ test('SCRUM-336 · el panel NO entra en el censo (trampa de la casa)', () => {
  * Carga el script REAL con un DOM de mentira y le da los enlaces REALES de una página del repo.
  * No es una maqueta del comportamiento: es el fichero que se sirve, ejecutándose.
  */
+function enlaceFalso(href) {
+  let valor = href;
+  const el = {
+    getAttribute: () => valor,
+    setAttribute: (_, v) => { valor = v; },
+    get href() { return valor; },
+    // El manejador de respaldo filtra con `closest`: un enlace se devuelve a sí mismo si encaja.
+    closest: (sel) => {
+      const m = /^a\[href\^="(.+)"\]$/.exec(sel);
+      return m && valor.indexOf(m[1]) === 0 ? el : null;
+    },
+  };
+  return el;
+}
+
 function ejecutarAtribucion({ search = '', referrer = '', hostname = 'yaqu.app', hrefs }) {
   const codigo = fs.readFileSync(path.join(RAIZ, SCRIPT_ATRIBUCION), 'utf8');
 
-  const enlacesFalsos = hrefs.map((h) => {
-    let valor = h;
-    return {
-      getAttribute: () => valor,
-      setAttribute: (_, v) => { valor = v; },
-      get href() { return valor; },
-    };
-  });
+  const enlacesFalsos = hrefs.map(enlaceFalso);
+  const oyentes = [];
 
   const documento = {
     readyState: 'complete',
     referrer,
     querySelectorAll: (sel) => (sel.includes('/register.html') ? enlacesFalsos : []),
-    addEventListener: () => {},
+    addEventListener: (tipo, fn, captura) => oyentes.push({ tipo, fn, captura }),
   };
   const ventana = { location: { search, hostname }, document: documento, addEventListener: () => {} };
 
   new Function('window', 'document', codigo)(ventana, documento);
-  return { api: ventana.yaquAtribucion, resultado: enlacesFalsos.map((e) => e.href) };
+
+  /**
+   * Dispara el manejador de respaldo sobre un elemento, como haría el navegador al pulsar.
+   * ⚠️ Lo que se ejercita es el MANEJADOR REAL con su filtro `closest`; lo que NO se reproduce es
+   * la propagación del navegador (el recorrido de captura). Declarado en el informe.
+   */
+  const pulsar = (tipo, elemento) => {
+    const encontrados = oyentes.filter((o) => o.tipo === tipo && o.captura === true);
+    for (const o of encontrados) o.fn({ target: elemento });
+    return encontrados.length;
+  };
+
+  return { api: ventana.yaquAtribucion, resultado: enlacesFalsos.map((e) => e.href), pulsar, oyentes };
 }
 
 /** Los enlaces al registro que tiene DE VERDAD una página del repo. */
@@ -202,6 +223,59 @@ test('SCRUM-336 · el registro lee la URL y NO tiene ya ningún respaldo de alma
     '🔴 el registro ya no manda `ref`: `resolveReferrer` no recibiría el código y no habría referidor');
   assert.match(registro, /source:\s*acquisitionSource/,
     '🔴 el registro ya no manda `source`: `Merchant.acquisitionSource` quedaría vacío y el embudo ciego');
+});
+
+// ── EL CTA QUE LA DEMO INYECTA DESPUÉS DE CARGAR ─────────────────────────────────────────
+//
+// Es el camino del visitante que juega con «Pruébalo tú» y luego se registra: el embudo que la
+// propia landing empuja. Ese CTA no existe cuando el script hace su pasada
+// (`js/landing-demo.js` lo añade después), así que lo único que lo protege es el manejador de
+// respaldo. Y si falla, falla MUDO: los otros ocho enlaces sí llevan la atribución, el guard
+// seguiría verde, y la factura la paga un referidor que no cobra su mes.
+
+test('SCRUM-336 · un CTA inyectado DESPUÉS recibe la atribución al pulsarlo', () => {
+  // Ni un solo enlace al cargar: se inyecta luego, como hace la demo.
+  const { pulsar } = ejecutarAtribucion({ search: '?ref=JAVI123&utm_source=google', hrefs: [] });
+
+  const inyectado = enlaceFalso('/register.html');
+  const manejadores = pulsar('click', inyectado);
+
+  assert.ok(manejadores > 0,
+    '🔴 el script no registró NINGÚN manejador de respaldo en fase de captura. Sin él, el CTA que ' +
+    'la demo inyecta después de cargar navega sin atribución y nadie se entera.');
+
+  assert.match(inyectado.href, /ref=JAVI123/,
+    '🔴 EL CTA INYECTADO POR LA DEMO PIERDE EL CÓDIGO DE REFERIDO.\n\n' +
+    '  Es el fallo mudo con factura: los ocho enlaces del DOM inicial sí propagan, así que todo\n' +
+    '  parece bien, y el referidor que trajo a ese usuario no cobra su mes gratis.');
+  assert.match(inyectado.href, /utm_source=google/,
+    '🔴 el CTA inyectado pierde la UTM: esa alta cae en «directo/sin dato» en el embudo');
+});
+
+test('SCRUM-336 · y el clic con la rueda (auxclick) tampoco lo pierde', () => {
+  // Abrir en otra pestaña con la rueda NO dispara `click`. Sin `auxclick`, esa navegación
+  // perdería la atribución en silencio — y es una forma normal de abrir un CTA.
+  const { pulsar } = ejecutarAtribucion({ search: '?ref=JAVI123', hrefs: [] });
+  const inyectado = enlaceFalso('/register.html');
+
+  assert.ok(pulsar('auxclick', inyectado) > 0,
+    '🔴 no hay manejador para `auxclick`: el clic con la rueda perdería la atribución');
+  assert.match(inyectado.href, /ref=JAVI123/,
+    '🔴 abrir el CTA con la rueda pierde el código de referido');
+});
+
+test('SCRUM-336 · CONTROL NEGATIVO del respaldo: un enlace EXTERNO inyectado no recibe nada', () => {
+  const { pulsar } = ejecutarAtribucion({ search: '?ref=JAVI123', hrefs: [] });
+
+  const externo = enlaceFalso('https://otra.com/register.html');
+  pulsar('click', externo);
+  assert.equal(externo.href, 'https://otra.com/register.html',
+    '🔴 el respaldo está reescribiendo un enlace EXTERNO: la atribución se filtraría a terceros');
+
+  const interno = enlaceFalso('/precios.html');
+  pulsar('click', interno);
+  assert.equal(interno.href, '/precios.html',
+    '🔴 el respaldo está tocando enlaces que no van al registro');
 });
 
 // ── CONTROL NEGATIVO ─────────────────────────────────────────────────────────────────────

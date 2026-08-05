@@ -2,7 +2,7 @@
 
 **Fecha:** 5-ago-2026 · **Carril:** B · **Gate:** sin gate, corre en `npm test`
 
-**Medido contra:** `origin/main` = `21375e6108b26a70211b21d86bcf7429f9c2e917` · 2026-08-05T05:10:59+01:00
+**Medido contra:** `origin/main` = `2aaba3dccd763333b020c3c3a37514ee3b803d76` · 2026-08-05T05:17:21+01:00
 
 > **La medición previa cambió la decisión, y por eso existe esta entrada.** El plan era «dejar de
 > guardar lo que nadie lee». Medido: **los dos valores tenían dueño**, así que esto no es una
@@ -89,7 +89,9 @@ banner tiene que saber que **no es solo pintar una casilla**: hay una capacidad 
 | **R2** · vuelve el `localStorage` | `setItem` real añadido a `index.html` | 🔴 cae «no guarda NADA» |
 | **R3** · otra tecnología | `document.cookie = …` real añadido a `precios.html` | 🔴 cae el mismo assert — la cobertura no es por clave ni por API, es por **almacenar** |
 | **R4** · la atribución deja de viajar | Se quita `ref` de la propagación en el script real | 🔴 cae **«LA CARA QUE PAGA»** |
-| **N** · control negativo | Enlace que no es al registro · enlace **externo** · `?ref=` ya escrito en el CTA · página sin parámetros · hash | 🟢 no toca ninguno |
+| **R5** · se cae la red de seguridad | Se quita el manejador de `click` del script real | 🔴 cae **«un CTA inyectado DESPUÉS»** |
+| **R6** · se cae `auxclick` | Se quita el manejador de `auxclick` del script real | 🔴 cae **«el clic con la rueda»** |
+| **N** · control negativo | Enlace que no es al registro · enlace **externo** · `?ref=` ya escrito en el CTA · página sin parámetros · hash · y, en el respaldo, un **externo inyectado** | 🟢 no toca ninguno |
 
 **R4 es el que importa de verdad.** Si el guard solo mirase que no hay almacenamiento, la forma más
 fácil de tenerlo verde sería romper la atribución del todo — y nadie se enteraría **hasta que un
@@ -100,10 +102,12 @@ llevó por delante trabajo sin commitear.
 
 ## Lo que NO cubre
 
-* **No se ha abierto un navegador.** Los dos casos de propagación ejecutan el **script real** con un
-  DOM de mentira y los **enlaces reales** extraídos de `index.html`, pero nadie ha hecho clic. La
-  red de seguridad en `click`/`auxclick` (para enlaces inyectados) **no está cubierta por un test**:
-  se ejercita al pulsar, y eso pide navegador.
+* **No se ha abierto un navegador.** Todo ejecuta el **script real** con un DOM de mentira y los
+  **enlaces reales** del repo. **El CTA que la demo inyecta después de cargar SÍ está cubierto**
+  (tres tests: `click`, `auxclick` y su control negativo con un enlace externo) — se registran los
+  oyentes de verdad y se les despacha un evento cuyo `target` pasa por el filtro `closest` real.
+  **Lo que NO se reproduce es la propagación del navegador**: que el evento llegue efectivamente a
+  un oyente en fase de captura se da por bueno del DOM, no se prueba aquí. Eso sí pediría navegador.
 * **No se ha probado el alta contra la base**: `resolveReferrer` y el escritor de
   `acquisitionSource` no se han tocado, y el test comprueba que el registro **sigue mandando** `ref`
   y `source`. La cadena servidor→BD queda como estaba.
@@ -119,5 +123,5 @@ llevó por delante trabajo sin commitear.
 * `public/register.html` — fuera los dos respaldos de almacenamiento.
 * `public/login.html` — carga el script (también enlaza al registro).
 * `tests/_censo-almacenamiento-publico.mjs` — **nuevo.** Censo derivado (AST).
-* `tests/scrum336-atribucion-sin-almacenamiento.test.mjs` — **nuevo.** El guard (8 asserts).
+* `tests/scrum336-atribucion-sin-almacenamiento.test.mjs` — **nuevo.** El guard (11 asserts).
 * `docs/master/SCRUM-336.md` — este registro.
