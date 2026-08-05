@@ -353,7 +353,7 @@ function renderProductsView(container) {
     
       const data = await res.json().catch(() => null);
       if (!res.ok || !data || !data.ok) throw new Error(data?.error || "Error importando CSV");
-      return { inserted: Number(data.inserted || 0) };
+      return { created: Number(data.created || 0) }; // SCRUM-339: contrato alineado (era data.inserted)
     }
   
     function money(v) {
@@ -601,7 +601,13 @@ function renderProductsView(container) {
         const data = await res.json().catch(() => null);
         if (!res.ok || !data || !data.ok) throw new Error(data?.error || "Error importando");
     
-        setAlert("success", `CSV importado. Insertados: ${data.inserted ?? 0} · Duplicados omitidos: ${data.skippedDuplicates ?? 0}`);
+        // SCRUM-339: contrato alineado con clientes (created/skipped/errors/errorList). «Insertados» y
+        // «Duplicados omitidos» son feedback EXISTENTE reusado (no microcopy nueva, regla 30). El rótulo
+        // de los errores SÍ es nuevo → marcador [PENDIENTE microcopy oficial] hasta que lo apruebe el
+        // fundador (guard: tests/scrum339-microcopy-import.test.mjs). Antes las filas inválidas y los
+        // duplicados normales no se veían: el recuento decía «0 y 0».
+        const errNota = (data.errors ?? 0) > 0 ? ` · [PENDIENTE microcopy oficial]: ${data.errors}` : '';
+        setAlert("success", `CSV importado. Insertados: ${data.created ?? 0} · Duplicados omitidos: ${data.skipped ?? 0}${errNota}`);
         await refresh();
       } catch (err) {
         setAlert("error", err.message || "Error importando.");
