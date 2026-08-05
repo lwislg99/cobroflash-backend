@@ -272,8 +272,8 @@ verdad.
 
 ## La pantalla: Configuración troceada en diez submenús (quinta entrega de B1)
 
-**Medido contra:** `origin/main` = `c2be01e9347a2b0b761e764de7033f322f820f85` · 2026-08-05T06:13:36+01:00
-**Tanda:** 1448 tests, 1381 pass, 0 fail, 67 skipped
+**Medido contra:** `origin/main` = `c2be01e9347a2b0b761e764de7033f322f820f85` · 2026-08-05T06:25:00+01:00
+**Tanda:** 1451 tests, 1384 pass, 0 fail, 67 skipped
 **Ficheros:** `public/dashboard/js/settingsSubmenus.js` (nuevo) · `settingsView.js` ·
 `dashboard/index.html` · `sw.js` · `tests/_asignacion-submenus.mjs` ·
 `tests/scrum284-configuracion-submenus.test.mjs` (nuevo, 8) · `docs/capturas/scrum-284/`
@@ -348,15 +348,41 @@ suponerla.
 **guard bidireccional de la entrega anterior sigue en 14/14** después de tocar justo la pantalla que
 vigila — comprobado explícitamente, no por el verde global.
 
+### Dos correcciones del fundador, aplicadas en esta misma rama
+
+**① «Invita y gana» se ENLAZA PROVISIONALMENTE.** Yo la dejé sin llamar y lo propuse como opción; la
+respuesta corrige el criterio y tiene razón: *el programa de referidos paga un mes gratis al
+referidor, o sea que es DINERO, y que desaparezca de la interfaz «solo durante un PR» es una
+regresión real*. La orden «el menú crece cuando existe el destino» valía para crear entradas nuevas,
+**no para dejar huérfana una que ya funcionaba**. Se sigue pintando donde está hoy —tarjeta suelta al
+final, fuera de los diez paneles— y queda en `SUPERFICIES_PROVISIONALES` con lo que la sustituye.
+
+El guard exige **las dos mitades**, y esa es la parte que evita que «provisional» se vuelva
+permanente: que la colocación esté declarada **y** que se siga pintando. Declararla sin pintarla
+sería la regresión; pintarla sin declararla sería olvidarla.
+
+**② Los diez rótulos se APRUEBAN y se aplican.** No era redacción nueva —los nueve primeros están
+escritos en la descripción del ticket y el décimo es el nombre que usó el fundador al colocar
+`approvalThreshold`—, así que aterrizarlos no fue escribir microcopy: fue dejar de usar el marcador.
+
+**Y había un motivo de MEDICIÓN para hacerlo antes de capturar, que es el que no se me había
+ocurrido:** con el marcador (28 caracteres) las diez pestañas caían **una por fila** a 390 px, así
+que mis capturas estaban midiendo el marcador y no la pantalla. Con los textos reales, medido:
+**cuatro filas (3+3+3+1)**, pestaña más ancha 124 px, 44 px de alto, sin desbordamiento en X. **No
+había problema de layout: era el marcador.** Por eso no sale hallazgo ni ticket — se midió con el
+texto real antes de decidirlo, en vez de apañar contra un texto provisional.
+
+El guard de microcopy cambia de forma en consecuencia, igual que en SCRUM-344: deja de exigir el
+marcador —eso solo impedía INVENTAR mientras no había texto— y pasa a **fijar el aprobado carácter a
+carácter**, que es lo que impide CAMBIARLO. Verificado en rojo sobre el módulo real: «Cobros» →
+«Cobro» tumba el test y nombra la ranura. **El estado vacío SÍ sigue con el marcador**, y la
+diferencia importa: «aquí todavía no hay nada» no está escrito en ninguna parte, así que es
+redacción nueva y la aprueba el fundador.
+
 ### Lo que NO cubre
 
-* **La sidebar (incremento 2) y la pestaña de Plantillas (incremento 3) no se tocan.** «Invita y
-  gana» sale de Configuración en este commit; **darle su entrada en la barra lateral es el
-  incremento 2**, así que ahora mismo la tarjeta existe en el código y no la llama nadie. Es
-  deliberado y es el orden que fijó el asesor —el menú crece cuando existe el destino— pero hay que
-  saberlo: **hasta el incremento 2, «Invita y gana» no es alcanzable desde la interfaz.**
-* **Los diez rótulos son el marcador** (regla 30). A 390 px eso hace que las pestañas caigan una por
-  fila; se declara y no se ajusta contra un texto que va a ser sustituido.
+* **La sidebar (incremento 2) y la pestaña de Plantillas (incremento 3) no se tocan.** El incremento
+  2 le da a «Invita y gana» su entrada definitiva y borra su colocación provisional.
 * **La matriz de dispositivos reales** (V0-5) es humana y por bloque. Declarada como hueco.
 * **No se ejecuta la vista en `npm test`**: no hay banco de DOM y montarlo sería dependencia nueva
   (regla 36). Lo que corre es el mapa y el AST; el navegador se ejercitó a mano y quedó en capturas.

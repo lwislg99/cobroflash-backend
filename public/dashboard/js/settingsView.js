@@ -60,7 +60,7 @@ function renderSettingsView(container) {
         const b = document.createElement("button");
         b.type = "button";
         b.className = "btn-sm " + (submenuActivo === clave ? "btn-secondary" : "btn-ghost");
-        b.textContent = MARCA_MICROCOPY_SUBMENU;
+        b.textContent = rotuloDeSubmenu(clave);
         b.dataset.submenu = clave;
         b.style.minHeight = "44px"; // AB6: objetivo al pulgar (btn-sm se queda en 30)
         b.setAttribute("role", "tab");
@@ -80,10 +80,15 @@ function renderSettingsView(container) {
     // mapa — y por eso el «tres destinos» deja de existir como problema que resolver eligiendo uno.
     renderReadinessCard(container, card);
 
-    // SCRUM-284: `renderReferralCard` YA NO SE LLAMA AQUÍ. «Invita y gana meses gratis» no es un
-    // ajuste —no guarda nada, es una pantalla con un enlace— y por la regla del fundador («un
-    // ajuste se guarda y persiste») sale de Configuración a la barra lateral. La función se
-    // conserva intacta: mover una tarjeta con render propio es cambiar dónde se la llama.
+    // SCRUM-284 · «Invita y gana»: COLOCACIÓN PROVISIONAL, declarada en `SUPERFICIES_PROVISIONALES`.
+    //
+    // Su destino es la barra lateral —no es un ajuste, no persiste nada— pero esa entrada es el
+    // incremento 2. Dejarla sin llamar entre un incremento y el otro la haría INALCANZABLE, y el
+    // programa de referidos paga un mes gratis al referidor: eso es una regresión de dinero, no un
+    // detalle de orden. Se sigue pintando donde está hoy —tarjeta suelta al final, fuera de los diez
+    // paneles— hasta que exista su destino. Quien haga el incremento 2 borra esta llamada y su
+    // entrada en el mapa.
+    renderReferralCard(container);
     renderPublicProfileCard(panelDeSuperficie("renderPublicProfileCard")); // A14.1 (PERFIL-1): página pública + QR
     // SCRUM-138: "Descargar mis datos" se muda a Finanzas › Descargar datos
     // (public/dashboard/js/exportView.js). Es el entregable para el asesor y para una
