@@ -309,3 +309,65 @@ lado**, sin borrar.
 Y por eso se anota en vez de reescribir: **quien lea la entrada dentro de seis meses necesita ver las
 dos cosas** — lo que se creía entonces y cuándo dejó de valer. Una entrada corregida en silencio se
 lee como si nunca se hubiera equivocado.
+
+---
+
+# EL GUARD QUE VIGILA LA ORTOGRAFÍA, NO EL CABLEADO
+
+**SCRUM-381, sesión 2 · 6-ago-2026**
+
+Familia distinta de todo lo anterior. Arriba el fallo era **que el guard no llegó a mirar**; aquí
+el guard mira, corre, sale verde — y **mira la cosa equivocada**.
+
+> **① Un guard que fija una ruta sin resolverla vigila la ortografía, no el cableado.**
+>
+> **② Un test que fija el estado actual convierte un defecto en un requisito.**
+
+## El caso
+
+`scrum314-wipedemo-derivado.test.mjs` comprobaba que el sembrador importase el barrido del dominio:
+
+```js
+assert.match(src, /from '\.\/_wipe-demo\.mjs'/, '🔴 seed-demo no importa el barrido derivado');
+```
+
+Ese fichero **lo había borrado el propio SCRUM-314** al mover el barrido, sin actualizar el import.
+El assert comprobaba el **texto** del import y **nunca que el destino existiera**, así que
+`seed-demo.mjs` pasó **tickets enteros sin poder ni arrancar** —reventaba en su primer `import`,
+antes de la primera línea útil— con su test en verde. Se descubrió porque otra sesión necesitó
+datos a la una de la madrugada.
+
+## Lo que hace a ② peor que ①
+
+**Ese test no falló al romperse el import: falló al ARREGLARSE.** Mientras el defecto estuvo ahí,
+estuvo verde; el día que alguien puso la ruta buena, se puso rojo y pidió volver a la rota. Un test
+así no vigila una propiedad: **fotografía el árbol y exige que no cambie**, y en cuanto la foto
+incluye un defecto, el defecto pasa a ser el requisito.
+
+## Y el arreglo obvio es el mismo defecto mirando a otro lado
+
+Apuntar el `assert.match` a la ruta NUEVA se ve como una corrección y **muda el defecto de sitio**:
+volverá a fijar el siguiente import roto. Lo único que corrige de verdad es **resolver**:
+
+| | Cambia el texto del import | Rompe el cableado |
+| --- | --- | --- |
+| Mover el módulo a otra ruta válida | sí | **no** → tiene que seguir VERDE |
+| El destino deja de exportar el símbolo | **no** | sí → tiene que salir ROJO |
+
+Un assert de texto contesta las dos al revés. Las dos filas se comprobaron sabotéandolas.
+
+**Y resolver tiene que ser tan fácil como deletrear**, o nadie lo hará a las dos de la mañana: por
+eso vive en `tests/_imports-estaticos.mjs` (`origenDe(fichero, símbolo)` → dónde sale de verdad, o
+por cuál de los tres motivos no sale) y no dentro de un test.
+
+## Cómo se reconoce
+
+Un assert que nombra una **ruta**, un **número de línea** o una **cadena literal del árbol** está
+en riesgo. La pregunta que lo separa: **si esto que afirmo dejara de ser cierto, ¿sería porque algo
+se rompió, o porque algo se movió?** Si la respuesta puede ser «porque se movió», el assert no
+vigila lo que cree.
+
+⚠️ El asesor cuenta **tres apariciones de esta forma: SCRUM-340, SCRUM-378 y ésta.** Verificadas
+desde esta rama solo dos —378 (un `<script>` comentado que el guard seguía dando por cargado) y
+381—; de SCRUM-340 no hay entrada en `docs/master/` aquí, así que queda anotado como suyo y sin
+comprobar, no como medición propia.
