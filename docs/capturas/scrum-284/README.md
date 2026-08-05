@@ -1,6 +1,6 @@
 # SCRUM-284 · capturas de Configuración troceada en diez submenús (AB6)
 
-**Medido contra:** `origin/main` = `077fa8ac24d7e832d446a589b31367e9c15de916` · 2026-08-05T06:12:00+01:00
+**Medido contra:** `origin/main` = `c2be01e9347a2b0b761e764de7033f322f820f85` · 2026-08-05T06:25:00+01:00
 
 Producidas con un **harness aislado** (Playwright sobre un servidor estático efímero): se cargan
 `api.js` + `settingsSubmenus.js` + `settingsView.js`, se stubea `apiRequest` con un merchant de
@@ -40,7 +40,8 @@ que ya viven en Empresa y en Cobro.
   pública y la página de recibo solo lo consumen.
 * **«WhatsApp este mes» es un bloque informativo dentro de Avisos**, fuera del mapa y fuera del
   guard: es un contador de consumo y no persiste nada.
-* **«Invita y gana» ya no está** en ninguna parte de Configuración.
+* **«Invita y gana» ya no está en ningún panel** — pero sí al final de la pantalla, fuera de los
+  diez, con colocación **provisional declarada** hasta el incremento 2 (ver más abajo).
 
 ## El reparto, medido en el navegador (no leído del código)
 
@@ -61,25 +62,45 @@ que ya viven en Empresa y en Cobro.
 perdidos.** Los tres paneles vacíos son exactamente los tres declarados. Ningún ajuste desapareció
 en la reorganización, que es el fallo mudo que el ticket nombra.
 
-## 390 px — un vacío declarado
+## 390 px — con los RÓTULOS REALES
 
-![390 · vacío declarado](scrum284-390-vacio-declarado.png)
+![390 · rótulos reales](scrum284-390-rotulos-reales.png)
 
-Un submenú vacío **dice que está vacío** en vez de dejar un panel en blanco que parezca roto: «un
-menú que lleva a una página vacía es peor que no tener el menú». Medido a este ancho:
-`scrollWidth === clientWidth`, **no desborda en X**, y las diez pestañas miden **44 px** de alto
-(AB6 · objetivo al pulgar; `btn-sm` se queda en 30).
+**Aquí está el motivo de aprobar los rótulos antes de capturar.** Con el marcador (28 caracteres) las
+diez pestañas caían **una por fila**, así que la captura anterior medía el marcador y no la pantalla.
+Con los textos aprobados, medido en el navegador a 390 px:
+
+```
+fila 1  Empresa · Facturación · Numeración
+fila 2  Cobros · Avisos · Tu página pública
+fila 3  Marca · Tus datos · Cumplimiento
+fila 4  Equipo
+```
+
+**Cuatro filas (3+3+3+1)**, pestaña más ancha 124 px, **44 px** de alto todas (AB6 · objetivo al
+pulgar; `btn-sm` se queda en 30) y `scrollWidth === clientWidth`: **no desborda en X**.
+
+**No hay problema de layout: era el marcador.** Por eso no sale hallazgo ni ticket — se midió con el
+texto real antes de decidirlo.
 
 ---
 
-**Los diez rótulos son `[PENDIENTE microcopy oficial]`** (regla 30), con guard. Por eso las capturas
-se leen raro: es el marcador ocupando los diez nombres, no el diseño.
+**Los diez rótulos están APROBADOS** por el fundador (5-ago-2026) y fijados carácter a carácter en
+`tests/scrum284-configuracion-submenus.test.mjs`: cambiar uno sale rojo. No eran redacción nueva —
+los nueve primeros vienen escritos en la descripción del ticket y el décimo es el nombre que usó el
+fundador al colocar `approvalThreshold`.
 
-⚠️ **OBSERVACIÓN, no arreglada a propósito:** a 390 px las diez pestañas caen **una por fila**,
-porque el marcador son 28 caracteres — más que cualquier rótulo final plausible («Empresa»,
-«Cobros»…). Con los textos aprobados se agruparán en tres o cuatro filas. **Se declara en vez de
-arreglarse**: ajustar el layout contra un texto que va a ser sustituido es optimizar para lo que no
-se va a quedar. Quien aterrice la microcopy tiene que volver a mirar esta barra con los textos reales.
+**El estado vacío SÍ sigue con el marcador**, y la diferencia importa: «aquí todavía no hay nada» no
+está escrito en ninguna parte, así que es microcopy nueva y la aprueba el fundador.
+
+## «Invita y gana»: colocación PROVISIONAL, declarada
+
+Se sigue pintando al final de Configuración, **fuera de los diez paneles**, hasta que el incremento 2
+le dé su entrada en la barra lateral. No se deja sin llamar entre un incremento y otro porque el
+programa **paga un mes gratis al referidor**: dejarlo inalcanzable «solo durante un PR» es una
+regresión de dinero, y «temporal» es exactamente como se quedan las cosas. Está en
+`SUPERFICIES_PROVISIONALES` con lo que la sustituye, y hay guard que exige las dos mitades: que la
+provisional esté declarada **y que se siga pintando**.
 
 ---
 
