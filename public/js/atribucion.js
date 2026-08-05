@@ -133,7 +133,9 @@
     }
 
     // RED DE SEGURIDAD para enlaces inyectados DESPUÉS de cargar: la demo de la landing añade su
-    // propio CTA (`js/landing-demo.js`), así que una sola pasada al cargar no basta. Se reescribe
+    // propio CTA (la demo interactiva de la landing), así que una sola pasada al cargar no basta.
+    // (El `js/landing-demo.js` que se citaba aquí se retiró en SCRUM-376: no lo cargaba nadie.)
+    // Se reescribe
     // también justo antes de navegar, y en captura para llegar antes que cualquier otro manejador.
     // `auxclick` incluido a propósito: el clic con la rueda abre en otra pestaña y no dispara
     // `click`; sin él, esa navegación perdería la atribución sin que nadie lo notara.
