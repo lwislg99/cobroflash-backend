@@ -203,3 +203,109 @@ lo que el guard mira, sino en que el guard no miró nada.**
 **El suelo es la defensa.** Todo censo declara un mínimo (nodos, ficheros, clases) por debajo del
 cual **falla en vez de informar de cero**: «no supe mirar» y «no hay» son el mismo número y
 significan lo contrario.
+
+---
+
+# EL ANUNCIO NO ES EL HECHO, APLICADO A UN GUARD DE OTRA RAMA
+
+**SCRUM-376, sesión 2 · 5-ago-2026**
+
+> **Un guard que vive en otra rama no está en tu árbol. Correrlo desde ahí no lo ejecuta: lo
+> silencia.**
+
+Al retirar `landing-demo.js` había que comprobar que el guard de SCRUM-378 —«cada página carga lo
+que su código necesita»— seguía verde después. Se escribió en la entrega **que seguía verde**… y la
+orden que lo comprobaba había devuelto **vacío**, porque `tests/scrum378-*.test.mjs` vive en la rama
+de 378 y en la rama de 376 **no existe**.
+
+**Cómo se coló:** `node --test <fichero que no existe>` no es un rojo evidente en una tubería con
+`grep`. Se lee como «no ha salido nada malo», que es exactamente lo que uno espera de un verde. Y
+encima la suite completa **sí** estaba en verde, así que había un verde de verdad al lado del hueco,
+sosteniéndolo.
+
+**Qué lo delató:** que el bloque de salida estuviera **vacío en vez de tener siete líneas `✔`**. Un
+guard que pasa imprime sus tests; uno que no existe no imprime nada. La diferencia entre «pasó» y
+«no corrió» **no está en el código de salida: está en el volumen de la salida**.
+
+**Cómo se comprobó de verdad:** rama desechable con las dos ramas fusionadas, y ahí sí, los siete
+tests de 378 sobre el árbol sin `landing-demo.js`.
+
+```bash
+# Antes de escribir «el guard X sigue verde» cuando X vive en otra rama:
+git checkout -b tmp-a-con-b && git merge origin/rama-de-b --no-edit
+node --test tests/guard-de-b.test.mjs        # y se MIRA que imprime sus ✔, no solo que no falla
+```
+
+Es la misma familia que «la prueba de rojo que nunca se ejecutó», un paso más allá: allí la mutación
+no se aplicaba, aquí **el guard entero no estaba**.
+
+---
+
+# `git branch -D` NO AVISA, Y EL REFLOG ES UNA RED, NO UNA GARANTÍA
+
+**SCRUM-376, sesión 2 · 5-ago-2026**
+
+> **`-D` sobre una rama cuyo commit no es alcanzable desde ninguna otra referencia borra trabajo sin
+> preguntar. `-d` sí pregunta; `-D` es exactamente «no me preguntes».**
+
+Para comprobar el guard de otra rama (caso de arriba) se hizo una desechable: `stash` → `checkout
+-b tmp` → `stash pop` → `commit -m wip` → `merge`. Al terminar, `git branch -D tmp` — y ese `wip`
+**era el único sitio donde vivía el trabajo entero de SCRUM-376**: el fichero retirado, la
+documentación corregida, la entrada del registro y dos comentarios. La rama de destino no tenía ni
+un commit.
+
+Se recuperó del reflog (`8e8a06a`) con `git cherry-pick -n`, entero. Pero eso fue suerte con red, no
+diseño:
+
+* **El reflog CADUCA** (90 días por defecto, 30 para lo inalcanzable) y `git gc` puede podarlo antes.
+  Es una red, no una garantía.
+* **`-D` no distingue** «rama desechable ya fusionada» de «única referencia a tres horas de trabajo».
+  Para él son lo mismo.
+
+**La comprobación que lo evita**, antes de cualquier `-D`:
+
+```bash
+git branch --contains <rama>          # ¿alguien más alcanza sus commits? Si solo se lista ella, PARA
+git merge-base --is-ancestor <rama> origin/main && echo "ya está en main: seguro"
+```
+
+Y la costumbre que lo hace innecesario: **la desechable se crea DESDE la rama que quieres conservar
+y los commits se hacen en la buena**, no al revés. Lo que se tira tiene que ser lo prescindible, no
+lo único.
+
+---
+
+# UN REGISTRO NO CADUCA; UNA AFIRMACIÓN SOBRE EL PRESENTE, SÍ
+
+**SCRUM-376, sesión 2 · 6-ago-2026 · matiz de la regla del comentario de C2**
+
+La regla que se matiza aquí es la de SCRUM-302 (`docs/master/SCRUM-302.md:286`):
+
+> *Un comentario que afirma un HECHO DEL SISTEMA caduca cuando el sistema cambia, y nadie lo revisa
+> porque no está en ninguna suite.*
+
+Es cierta, y **leída sola invita a borrar lo viejo**. Ese es el matiz, porque las mediciones viejas
+son lo único que nos deja saber **qué era cierto y cuándo**:
+
+> **Un registro de lo que se MIDIÓ no caduca: es historia, y se conserva. Una afirmación sobre el
+> ESTADO ACTUAL sí caduca, y hay que anotarla cuando deja de ser verdad.**
+
+**El caso.** Al retirar `landing-demo.js`, su entrada vecina `docs/master/SCRUM-368.md` tenía las dos
+clases de frase a diez líneas de distancia:
+
+| Línea | Qué dice | Qué es | Qué se hizo |
+| --- | --- | --- | --- |
+| `:380` | «359,5 px · `landing-demo.js:106`» | **medición**, hecha cuando el fichero existía | **se conserva intacta** |
+| `:726` | «el cambio no hace daño y **se deja como está**» | **afirmación en presente** | se anota que dejó de ser cierta, con fecha y ticket |
+
+Borrar la primera habría destruido la prueba de por qué se decidió lo que se decidió. Dejar la
+segunda habría dejado en pie una premisa falsa esperando lector — que es como empezó todo esto.
+
+**La prueba para distinguirlas, en una pregunta:** *¿esta frase seguiría siendo verdad si la leo como
+«el DÍA X medimos esto»?* Si sí, es registro: lleva fecha implícita y se queda. Si solo tiene sentido
+en presente («hoy pasa», «se deja como está», «no es alcanzable»), es estado: caduca, y se anota **al
+lado**, sin borrar.
+
+Y por eso se anota en vez de reescribir: **quien lea la entrada dentro de seis meses necesita ver las
+dos cosas** — lo que se creía entonces y cuándo dejó de valer. Una entrada corregida en silencio se
+lee como si nunca se hubiera equivocado.
