@@ -40,22 +40,18 @@ const INVOICE_ACTION_REGISTRY = [
 // del presupuesto. La factura suelta (y sus acciones Emitir/Modificar/Duplicar…) llega con SCRUM-289.
 const INVOICE_STATES = ['pending', 'paid', 'annulled', 'R1'];
 
-// El rótulo de toda acción reorganizada, hasta que el fundador apruebe el microcopy (regla 30).
-const MICROCOPY_PENDIENTE = '[PENDIENTE microcopy oficial]';
+// El rótulo sale de la ley compartida (regla 30): un solo literal para todos los documentos.
+const MICROCOPY_PENDIENTE = ((typeof module !== 'undefined' && module.exports)
+  ? require('./patronDetalleAcciones.js')
+  : window).MICROCOPY_PENDIENTE;
 
-/**
- * Destino EFECTIVO de una acción en un estado y contexto dados. Resuelve la primaria contextual:
- * si `cuando` no casa con el contexto, la acción no ocupa la primaria (queda oculta ese día).
- */
-function destinoEfectivo(accion, estado, ctx) {
-  const d = accion.destinos[estado];
-  if (d === 'primaria' && accion.cuando) {
-    const hayCharge = !!(ctx && ctx.hayCharge);
-    if (accion.cuando === 'con-chargeId' && !hayCharge) return 'oculta';
-    if (accion.cuando === 'sin-chargeId' && hayCharge) return 'oculta';
-  }
-  return d;
-}
+// SCRUM-302 (C2): el resolutor y el marcador YA NO viven aquí. Son la LEY del patrón, no algo de
+// la factura, y el albarán los necesita igual: viven en `patronDetalleAcciones.js`. Aquí queda lo
+// único que es de este documento — su tabla y sus estados.
+const __ley = (typeof module !== 'undefined' && module.exports)
+  ? require('./patronDetalleAcciones.js')
+  : { destinoEfectivo: window.destinoEfectivo, MICROCOPY_PENDIENTE: window.MICROCOPY_PENDIENTE };
+const destinoEfectivo = __ley.destinoEfectivo;
 
 // Doble vida: global para el <script> clásico del dashboard, y module.exports para que el guard lo
 // IMPORTE en Node (una sola fuente; el guard no re-declara la tabla). `typeof` es seguro en ambos.
