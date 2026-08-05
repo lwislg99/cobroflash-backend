@@ -723,6 +723,10 @@ ahora es 36»*, nombrando fichero y línea.
 - **`landing-demo.js` no es alcanzable hoy** → **SCRUM-376**. `index.html` carga solo
   `atribucion.js` y no menciona `idemo` ni una vez. La microcopy aprobada en la cuarta entrega
   **se aplicó a código que ningún visitante ve**; el cambio no hace daño y se deja como está.
+  · ⚠️ **Actualizado el 5-ago-2026 (SCRUM-376): el fichero se RETIRÓ**, así que ese «se deja como
+    está» ya no aplica — la copy aprobada se fue con él. La medición de la tabla de arriba
+    (`landing-demo.js:106`, 359,5 px) sigue siendo cierta de cuando se hizo: se conserva como
+    registro, no como estado actual.
 
 ## El hallazgo de método de la noche
 
