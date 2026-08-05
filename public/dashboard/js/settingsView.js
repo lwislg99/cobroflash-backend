@@ -7,13 +7,89 @@ function renderSettingsView(container) {
     card.className = "customers-card";
     container.appendChild(card);
 
-    // A18.5 (AB4 · Parte M): checklist de readiness ARRIBA — qué te falta para cobrar
+    // ── SCRUM-284 (B1) · CONFIGURACIÓN TROCEADA EN DIEZ SUBMENÚS ────────────────────────────
+    //
+    // El scroll único con doce asuntos distintos se parte en diez paneles. **Cada campo se coloca
+    // LEYENDO EL MAPA** (`settingsSubmenus.js`), nunca por una posición escrita a mano aquí: el
+    // fallo mudo de este ticket es que un ajuste desaparezca en la reorganización, y la única forma
+    // de que el guard signifique algo sobre esta pantalla es que la pantalla y el guard lean LO
+    // MISMO. Si aparece un campo que el mapa no conoce, `submenuDeCampo` LANZA — ruidoso a
+    // propósito: caer en el sitio equivocado sería mudo.
+    //
+    // NO se ha movido ni reescrito la construcción de un solo campo: siguen creándose exactamente
+    // igual y en el mismo orden. Lo único que cambia es DÓNDE se hace `appendChild`. Eso es lo que
+    // mantiene el cambio revisable (regla 4) y lo que permite que el censo siga viendo los 25.
+    const nav = document.createElement("div");
+    nav.className = "settings-nav";
+    nav.setAttribute("role", "tablist");
+    nav.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px";
+    card.appendChild(nav);
+
+    const paneles = {};
+    let submenuActivo = SUBMENUS[0];
+
+    SUBMENUS.forEach((clave) => {
+      const panel = document.createElement("div");
+      panel.className = "settings-panel";
+      panel.dataset.submenu = clave;
+      panel.style.cssText = "display:none;flex-direction:column;gap:14px;width:100%;max-width:560px";
+      paneles[clave] = panel;
+    });
+
+    /** Coloca el bloque de un campo en SU panel. El sitio lo dice el mapa, no esta función. */
+    function colocar(clave, bloque) {
+      paneles[submenuDeCampo(clave)].appendChild(bloque);
+    }
+
+    /**
+     * El panel de una SUPERFICIE (la segunda población). Existe para que las dos poblaciones no
+     * puedan descuadrarse: los `pp-*`/`qr-*` están asignados a `publica` como CAMPOS, pero quien
+     * los pinta es `renderPublicProfileCard`. Si la tarjeta acabara en otro panel, esos seis campos
+     * dirían una cosa en el mapa y aparecerían en otra en pantalla — y el guard de campos, que solo
+     * mira el mapa, seguiría verde.
+     */
+    function panelDeSuperficie(nombre) {
+      return paneles[submenuDeSuperficie(nombre)];
+    }
+
+    function pintarNav() {
+      nav.innerHTML = "";
+      SUBMENUS.forEach((clave) => {
+        // Inventario AB3: mismo control segmentado que el filtro de Trabajos (SCRUM-11). Cero
+        // componentes nuevos. Rótulo = marcador: los diez nombres son microcopy sin aprobar.
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "btn-sm " + (submenuActivo === clave ? "btn-secondary" : "btn-ghost");
+        b.textContent = rotuloDeSubmenu(clave);
+        b.dataset.submenu = clave;
+        b.style.minHeight = "44px"; // AB6: objetivo al pulgar (btn-sm se queda en 30)
+        b.setAttribute("role", "tab");
+        b.setAttribute("aria-selected", submenuActivo === clave ? "true" : "false");
+        b.addEventListener("click", () => { submenuActivo = clave; pintarNav(); });
+        nav.appendChild(b);
+      });
+      SUBMENUS.forEach((clave) => {
+        paneles[clave].style.display = submenuActivo === clave ? "flex" : "none";
+      });
+    }
+
+    // A18.5 (AB4 · Parte M): checklist de readiness ARRIBA — qué te falta para cobrar.
+    // SCRUM-284: se queda en la CABECERA, fuera de los diez. No es una superficie de Configuración:
+    // es un ÍNDICE DE ESTADO, y sus tres elementos (whatsappPhone, iban, taxId) no son campos
+    // propios sino REFERENCIAS a campos que ya viven en Empresa y en Cobro. Por eso no entran en el
+    // mapa — y por eso el «tres destinos» deja de existir como problema que resolver eligiendo uno.
     renderReadinessCard(container, card);
 
-    // Tarjeta de Referidos (se rellena de forma asíncrona)
+    // SCRUM-284 · «Invita y gana»: COLOCACIÓN PROVISIONAL, declarada en `SUPERFICIES_PROVISIONALES`.
+    //
+    // Su destino es la barra lateral —no es un ajuste, no persiste nada— pero esa entrada es el
+    // incremento 2. Dejarla sin llamar entre un incremento y el otro la haría INALCANZABLE, y el
+    // programa de referidos paga un mes gratis al referidor: eso es una regresión de dinero, no un
+    // detalle de orden. Se sigue pintando donde está hoy —tarjeta suelta al final, fuera de los diez
+    // paneles— hasta que exista su destino. Quien haga el incremento 2 borra esta llamada y su
+    // entrada en el mapa.
     renderReferralCard(container);
-    renderWaFairUseCard(container); // A9.3: fair use W2 visible
-    renderPublicProfileCard(container); // A14.1 (PERFIL-1): página pública + QR
+    renderPublicProfileCard(panelDeSuperficie("renderPublicProfileCard")); // A14.1 (PERFIL-1): página pública + QR
     // SCRUM-138: "Descargar mis datos" se muda a Finanzas › Descargar datos
     // (public/dashboard/js/exportView.js). Es el entregable para el asesor y para una
     // inspección — dinero, no una preferencia de la cuenta — y aquí no lo encontraba nadie.
@@ -21,13 +97,13 @@ function renderSettingsView(container) {
     const title = document.createElement("h2");
     title.textContent = "Datos de la empresa";
     title.style.cssText = "margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)";
-    card.appendChild(title);
+    card.insertBefore(title, nav);
 
     const subtitle = document.createElement("p");
     subtitle.textContent = "Se usan en presupuestos, facturas y comunicaciones con clientes.";
     subtitle.style.cssText = "margin:0 0 20px;font-size:13px;color:var(--neutral-400)";
-    card.appendChild(subtitle);
-  
+    card.insertBefore(subtitle, nav);
+
     const alertBox = document.createElement("div");
     alertBox.className = "alert";
     alertBox.style.display = "none";
@@ -44,7 +120,26 @@ function renderSettingsView(container) {
     const form = document.createElement("form");
     form.style.cssText = "display:flex;flex-direction:column;gap:14px;width:100%;max-width:560px";
     card.appendChild(form);
-  
+    // Los diez paneles cuelgan del MISMO form: un solo «Guardar cambios» sigue guardando todo,
+    // se vea el panel que se vea. Trocear la pantalla no trocea el guardado.
+    SUBMENUS.forEach((clave) => form.appendChild(paneles[clave]));
+
+    // ── LOS TRES VACÍOS DECLARADOS ──────────────────────────────────────────────────────────
+    // «Un menú que lleva a una página vacía es peor que no tener el menú.» El submenú existe porque
+    // el hueco está DECLARADO y con motivo en el mapa (`VACIOS_DECLARADOS`), y se dice en pantalla
+    // que todavía no hay nada, en vez de dejar un panel en blanco que parezca roto.
+    //
+    // El motivo NO se pinta: es texto interno del mapa, no microcopy aprobada. Lo que se ve es el
+    // marcador (regla 30) sobre el componente de vacío que ya existe en el inventario AB3.
+    Object.keys(VACIOS_DECLARADOS).forEach((clave) => {
+      const vacio = document.createElement("div");
+      vacio.className = "empty-state";
+      vacio.innerHTML =
+        '<div class="empty-state-title">' + MARCA_MICROCOPY_SUBMENU + '</div>' +
+        '<div class="empty-state-desc">' + MARCA_MICROCOPY_SUBMENU + '</div>';
+      paneles[clave].appendChild(vacio);
+    });
+
     function createField(labelText, name, type = "text", required = false) {
       const wrapper = document.createElement("div");
       wrapper.className = "field";
@@ -113,15 +208,15 @@ function renderSettingsView(container) {
     const fIban  = createField("IBAN (para pagos por transferencia — España/Europa)", "iban", "text", false);
     const fClabe = createField("CLABE interbancaria (para pagos por transferencia — México)", "clabe", "text", false);
 
-    form.appendChild(fName.wrapper);
-    form.appendChild(fLegalName.wrapper);
-    form.appendChild(fTaxId.wrapper);
-    form.appendChild(fAddress.wrapper);
-    form.appendChild(fWhatsappPhone.wrapper);
-    form.appendChild(fCountryWrapper);
-    form.appendChild(fDefaultCurrency.wrapper);
-    form.appendChild(fInvoiceSeriesPrefix.wrapper);
-    form.appendChild(fLogoUrl.wrapper);
+    colocar("name", fName.wrapper);
+    colocar("legalName", fLegalName.wrapper);
+    colocar("taxId", fTaxId.wrapper);
+    colocar("address", fAddress.wrapper);
+    colocar("whatsappPhone", fWhatsappPhone.wrapper);
+    colocar("country", fCountryWrapper);
+    colocar("defaultCurrency", fDefaultCurrency.wrapper);
+    colocar("invoiceSeriesPrefix", fInvoiceSeriesPrefix.wrapper);
+    colocar("logoUrl", fLogoUrl.wrapper);
 
     // ── Logo: SUBIR imagen en vez de pegar una URL (feedback fundador) ──
     // El input de texto pasa a ser el contenedor oculto del valor (URL antigua
@@ -203,19 +298,14 @@ function renderSettingsView(container) {
     });
 
     // Separador — Pagos por transferencia
-    const sepBank = document.createElement("div");
-    sepBank.style.cssText = "border-top:1px solid var(--border);margin:12px 0 4px;padding-top:12px";
-    sepBank.innerHTML = '<p style="font-size:12px;color:var(--muted);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Datos bancarios para transferencias</p>';
-    form.appendChild(sepBank);
-
     fIban.input.placeholder = "ES91 2100 0418 4502 0005 1332";
     fIban.wrapper.querySelector("label").insertAdjacentHTML(
       "afterend",
       '<p style="font-size:12px;color:var(--muted);margin:2px 0 4px">Se muestra al cliente en la página de pago por transferencia bancaria.</p>'
     );
     fClabe.input.placeholder = "646180110400000007";
-    form.appendChild(fIban.wrapper);
-    form.appendChild(fClabe.wrapper);
+    colocar("iban", fIban.wrapper);
+    colocar("clabe", fClabe.wrapper);
 
     // C1-4: móvil de Bizum (default: el de WhatsApp, editable)
     const fBizumPhone = createField("Móvil de Bizum (para cobros por Bizum)", "bizumPhone", "text", false);
@@ -224,7 +314,7 @@ function renderSettingsView(container) {
       "afterend",
       '<p style="font-size:12px;color:var(--muted);margin:2px 0 4px">El cliente verá este móvil en la página "Pagar por Bizum". Si lo dejas vacío se usa tu número de WhatsApp.</p>'
     );
-    form.appendChild(fBizumPhone.wrapper);
+    colocar("bizumPhone", fBizumPhone.wrapper);
 
     // C1-1: card "Cobros con tarjeta" (Stripe Connect Express) — solo si el
     // flag PAYMENTS_CONNECT_ENABLED está activo (lo dice /admin/connect/status)
@@ -233,7 +323,7 @@ function renderSettingsView(container) {
     connectBlock.innerHTML =
       '<p style="font-size:12px;color:var(--muted);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Cobros con tarjeta</p>' +
       '<div id="connect-status-body" style="font-size:13px;color:var(--body)">Cargando…</div>';
-    form.appendChild(connectBlock);
+    panelDeSuperficie("connectStatus").appendChild(connectBlock);
 
     (async function renderConnectCard() {
       let st;
@@ -272,24 +362,14 @@ function renderSettingsView(container) {
     })();
 
     // Separador visual — Automatizaciones
-    const sep = document.createElement("div");
-    sep.style.cssText = "border-top:1px solid var(--border);margin:12px 0 4px;padding-top:12px";
-    sep.innerHTML = '<p style="font-size:12px;color:var(--muted);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Automatizaciones</p>';
-    form.appendChild(sep);
-
     fGoogleReviewUrl.input.placeholder = "https://g.page/r/tu-negocio/review";
     fGoogleReviewUrl.wrapper.querySelector("label").insertAdjacentHTML(
       "afterend",
       '<p style="font-size:12px;color:var(--muted);margin:2px 0 4px">Al recibir un pago, se enviará automáticamente un WhatsApp al cliente pidiéndole una reseña.</p>'
     );
-    form.appendChild(fGoogleReviewUrl.wrapper);
+    colocar("googleReviewUrl", fGoogleReviewUrl.wrapper);
 
     // Separador — Notificaciones por email
-    const sepNotif = document.createElement("div");
-    sepNotif.style.cssText = "border-top:1px solid var(--border);margin:12px 0 4px;padding-top:12px";
-    sepNotif.innerHTML = '<p style="font-size:12px;color:var(--muted);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Notificaciones por email</p>';
-    form.appendChild(sepNotif);
-
     function createToggle(id, labelText, hint) {
       const wrapper = document.createElement("div");
       wrapper.className = "field inline-checkbox";
@@ -373,16 +453,11 @@ function renderSettingsView(container) {
     tNotifyWeekly.wrapper.appendChild(previewBtn);
     tNotifyWeekly.wrapper.appendChild(previewBox);
 
-    form.appendChild(tNotifyPaid.wrapper);
-    form.appendChild(tNotifyAccepted.wrapper);
-    form.appendChild(tNotifyWeekly.wrapper);
+    colocar("notifyEmailOnPaid", tNotifyPaid.wrapper);
+    colocar("notifyEmailOnQuoteAccepted", tNotifyAccepted.wrapper);
+    colocar("notifyEmailWeeklyDigest", tNotifyWeekly.wrapper);
 
     // ── Enterprise: branding + aprobación (ENT-1, ENT-2) ──────────────────
-    const sepEnt = document.createElement("div");
-    sepEnt.style.cssText = "border-top:1px solid var(--border);margin:12px 0 4px;padding-top:12px";
-    sepEnt.innerHTML = '<p style="font-size:12px;color:var(--muted);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Empresa (Enterprise)</p>';
-    form.appendChild(sepEnt);
-
     // Color de marca
     const fBrandWrapper = document.createElement("div");
     fBrandWrapper.className = "field";
@@ -394,7 +469,7 @@ function renderSettingsView(container) {
         <span id="brand-color-hex" style="font-size:13px;color:var(--muted)">#22c55e</span>
         <button type="button" id="brand-color-reset" class="btn-secondary btn-sm">Sin color (por defecto)</button>
       </div>`;
-    form.appendChild(fBrandWrapper);
+    colocar("brand-color-input", fBrandWrapper);
     const brandColorInput = fBrandWrapper.querySelector("#brand-color-input");
     const brandColorHex = fBrandWrapper.querySelector("#brand-color-hex");
     let brandColorEnabled = false;
@@ -417,7 +492,7 @@ function renderSettingsView(container) {
       "afterend",
       '<p style="font-size:12px;color:var(--muted);margin:2px 0 4px">Las cotizaciones de un operario por encima de este importe quedarán "pendientes de aprobación" hasta que un admin las apruebe.</p>'
     );
-    form.appendChild(fApproval.wrapper);
+    colocar("approvalThreshold", fApproval.wrapper);
 
     const actions = document.createElement("div");
     actions.className = "form-actions";
@@ -429,14 +504,31 @@ function renderSettingsView(container) {
     actions.appendChild(saveBtn);
     form.appendChild(actions);
 
+    // SCRUM-284 · «WhatsApp este mes» dentro de AVISOS, pero FUERA del mapa y fuera del guard.
+    // No es un ajuste ni un control: es un contador de consumo y no persiste nada. Por la regla del
+    // fundador («un ajuste se guarda y persiste») no pertenece al mapa de campos — pero tiene que
+    // vivir en algún sitio, y Avisos es donde encaja: habla de lo que se envía.
+    renderWaFairUseCard(panelDeSuperficie("renderWaFairUseCard")); // A9.3: fair use W2 visible
+
     // SCRUM-314 (D3): hueco para «Eliminar datos de ejemplo». Nace VACÍO y solo se rellena en la
     // cuenta demo (lo decide el backend con `esCuentaDemo`), así que fuera del demo no ocupa nada
     // ni se ve — no hay botón deshabilitado que invite a preguntar por él.
+    //
+    // SCRUM-284 · POR QUÉ CUELGA DEL `form` Y NO DE UN PANEL. Su destino natural sería «Tus datos»
+    // —es un acto sobre los datos de la cuenta—, pero el botón SOLO se pinta en la cuenta demo. Meterlo
+    // ahí dejaría ese submenú vacío para todo el mundo menos el demo, y un submenú que aparece vacío
+    // para el 99 % de los usuarios es peor que el hueco declarado que ya tiene. Cuando «Tus datos»
+    // tenga contenido propio, se muda ahí. Queda en `SUPERFICIES_PROVISIONALES` con ese motivo.
     const huecoEjemplo = document.createElement("div");
     huecoEjemplo.id = "datos-ejemplo";
     huecoEjemplo.style.marginTop = "18px";
     form.appendChild(huecoEjemplo);
-  
+
+    // Y con todo colocado —incluido el hueco de arriba—, se enciende la navegación: pinta las diez
+    // pestañas y deja visible la primera. Va EL ÚLTIMO a propósito: pintarla antes dejaría paneles a
+    // medio llenar visibles durante el render.
+    pintarNav();
+
     // Cargar datos actuales
     async function loadMerchant() {
       try {

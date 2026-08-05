@@ -46,6 +46,7 @@ const SHELL = [
   '/dashboard/js/albaranActionsRegistry.js', // SCRUM-302 (C2)
   '/dashboard/js/albaranDetailView.js',
   '/dashboard/js/expensesView.js',
+  '/dashboard/js/settingsSubmenus.js', // SCRUM-284
   '/dashboard/js/settingsView.js',
   '/dashboard/js/exportView.js',
   '/dashboard/js/teamView.js',
