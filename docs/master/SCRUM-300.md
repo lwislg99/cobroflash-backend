@@ -2,7 +2,7 @@
 
 **Fecha:** 5-ago-2026 · **Carril:** A · **Gate:** STOP con GO (schema + sello de firma)
 **Medido contra:** `origin/main` = `de6abbd325419a9e85d60cf13b1588596125d66b` · 2026-08-05T05:30:16Z
-**Tanda:** 1486 tests, 1419 pass, 0 fail, 67 skipped — corrida contra el `main` RESULTANTE del
+**Tanda:** 1488 tests, 1421 pass, 0 fail, 67 skipped — corrida contra el `main` RESULTANTE del
 rebase (`main` se movió durante el trabajo: `077fa8a` → `de6abbd`, que trajo SCRUM-284 y SCRUM-286).
 
 ## El defecto
@@ -160,11 +160,14 @@ Los dos límites que la acotan, medidos:
 * **La matriz de dispositivos de AB6 NO está pasada** y se declara como hueco, no se finge. El
   banco es un Edge headless a dos anchos; eso no es la matriz. Pendiente: el `<select>` nativo de
   Safari iOS, el teclado en pantalla tapando el canvas, y el dedo con guante.
-* **Cuatro rótulos esperan firma del asesor** (regla 30): «Lugar de entrega», «Nombre de quien
-  firma», «En calidad de qué» y los dos del PDF. Solo «Fecha de entrega» está aprobado. **No llevan
-  el marcador `[PENDIENTE microcopy oficial]` a propósito**: acaban en un documento que se lee en un
-  juzgado, y un marcador impreso ahí sería peor que el rótulo. Están fijados por su guard y
-  cambiarlos es **una línea**, porque solo existen en `albaranFirmante.ts`.
+* **Microcopy: cerrada.** Los seis rótulos tienen aprobación explícita del 5-ago-2026 —«Fecha de
+  entrega» del fundador; los otros cinco del asesor— y el censo anota **quién aprobó cada uno**,
+  porque un texto aprobado sin rastro de quién lo aprobó vuelve a ser un texto que cualquiera
+  cambia. Los dos del PDF se aprobaron **solo después de verlos literales**, con su razón: en un
+  PDF que puede acabar en un juzgado no se aprueba un rótulo por su descripción. **No llevan el
+  marcador `[PENDIENTE microcopy oficial]` y ya nunca lo llevarán**: un marcador impreso ahí sería
+  peor que el rótulo. Guard aparte para el **espacio final** de los dos del PDF, que es funcional
+  (`continued: true`): sin él sale «Firmado por:Marta».
 * **No se verificó en `yaqu.app`**: sin la migración aplicada no hay nada que ver en producción.
 * **No se tocó** el mecanismo de firma (se le añaden datos), el listado (C1), el detalle (C2) ni la
   conversión a factura (A0.4). Los tres campos quedan listos para que **C2 los pinte en su rail**.

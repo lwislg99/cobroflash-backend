@@ -94,22 +94,21 @@ test('SCRUM-300 · ninguna ranura usa una calificación jurídica que el profesi
     'firma él: le traslada a él el problema. Quién es concretamente lo captura el campo NOMBRE.');
 });
 
-// Los rótulos APROBADOS, carácter a carácter. El de la fecha lo aprobó el fundador; los otros
-// tres, el asesor el 5-ago-2026 («describen lo que el campo es, y el tercero viene literal del
-// enunciado del ticket, así que no es redacción nueva»).
+// Los SEIS rótulos aprobados, carácter a carácter, con QUIÉN aprobó cada uno. El de la fecha lo
+// aprobó el fundador; los otros cinco el asesor, el 5-ago-2026 — y los dos del PDF solo DESPUÉS
+// de verlos literales, con su razón: en un PDF que puede acabar en un juzgado no se aprueba un
+// rótulo por su descripción.
 const ROTULOS_APROBADOS = {
   fechaEntrega: 'Fecha de entrega',
   lugarEntrega: 'Lugar de entrega',
   firmadoPorNombre: 'Nombre de quien firma',
   firmadoPorCalidad: 'En calidad de qué',
-};
-
-// Los del PDF, PENDIENTES de firma. Se fijan igual —para que no deriven mientras esperan— pero
-// se declaran aparte para que el diff diga en qué momento dejan de estar pendientes.
-const ROTULOS_PDF_PENDIENTES = {
   pdfFirmadoPor: 'Firmado por: ',
   pdfEnCalidadDe: 'En calidad de: ',
 };
+
+/** Los que el PDF concatena con `continued: true`: su espacio final es funcional, no estético. */
+const ROTULOS_PDF = ['pdfFirmadoPor', 'pdfEnCalidadDe'];
 
 test('SCRUM-300 · los rótulos APROBADOS dicen exactamente su texto, y el censo los declara', () => {
   for (const [clave, texto] of Object.entries(ROTULOS_APROBADOS)) {
@@ -120,21 +119,39 @@ test('SCRUM-300 · los rótulos APROBADOS dicen exactamente su texto, y el censo
   assert.deepEqual([...ALBARAN_ROTULOS_APROBADOS].sort(), Object.keys(ROTULOS_APROBADOS).sort(),
     '🔴 el censo de rótulos APROBADOS ha cambiado. Si han llegado aprobaciones nuevas, añádelas ' +
     'aquí en el mismo commit; si no, ninguno más está aprobado. Que el guard falle por una ' +
-    'aprobación NUEVA es deliberado: obliga a que quede en el diff quién aprobó qué y cuándo.');
+    'aprobación NUEVA es deliberado: obliga a que quede en el diff quién aprobó qué y cuándo — un ' +
+    'texto aprobado sin rastro de quién lo aprobó vuelve a ser un texto que cualquiera cambia.');
 });
 
-test('SCRUM-300 · los dos rótulos del PDF siguen PENDIENTES, y su espacio final está intacto', () => {
-  for (const [clave, texto] of Object.entries(ROTULOS_PDF_PENDIENTES)) {
-    assert.equal(ALBARAN_ROTULOS[clave], texto,
-      `🔴 el rótulo «${clave}» del PDF cambió mientras esperaba aprobación.`);
-    assert.ok(texto.endsWith(': '),
+test('SCRUM-300 · ningún rótulo se cuela en el censo sin estar declarado aquí', () => {
+  // El censo está COMPLETO hoy (seis de seis), y eso podría volverlo decorado: un guard que solo
+  // compara dos listas iguales no distingue «todo aprobado» de «nadie mira». Este test es el que
+  // lo impide — un rótulo nuevo nace FUERA y hay que declararlo, con su aprobación, para pasar.
+  const declarados = new Set(Object.keys(ROTULOS_APROBADOS));
+  const sinDeclarar = Object.keys(ALBARAN_ROTULOS).filter((k) => !declarados.has(k));
+  assert.deepEqual(sinDeclarar, [],
+    `🔴 el módulo declara rótulos que este guard NO fija: ${sinDeclarar.join(', ')}. Un rótulo que ` +
+    'el usuario lee y que nadie ha aprobado es microcopy suelta (regla 30). Añádelo aquí con su ' +
+    'aprobación, o quítalo.');
+});
+
+test('SCRUM-300 · los dos rótulos del PDF conservan su ESPACIO FINAL, que es funcional', () => {
+  for (const clave of ROTULOS_PDF) {
+    assert.ok(ALBARAN_ROTULOS[clave].endsWith(': '),
       `🔴 «${clave}» ha perdido su espacio final. Es PARTE DEL LITERAL: el PDF lo pinta con ` +
-      '`continued: true`, así que sin él el dato se pega a los dos puntos («Firmado por:Marta»).');
-    assert.equal(ALBARAN_ROTULOS_APROBADOS.includes(clave), false,
-      `🔴 «${clave}» aparece como aprobado y el asesor aún no lo ha firmado. Pidió verlos ` +
-      'LITERALES antes: en un PDF que puede acabar en un juzgado no se aprueba un rótulo por su ' +
-      'descripción.');
+      '`continued: true`, así que sin él el dato se pega a los dos puntos («Firmado por:Marta»). ' +
+      'Es el tipo de defecto que nadie ve hasta que el PDF está delante de alguien que importa.');
+    assert.ok(ALBARAN_ROTULOS_APROBADOS.includes(clave),
+      `🔴 «${clave}» ha salido del censo de aprobados: el asesor lo firmó el 5-ago-2026.`);
   }
+});
+
+test('SCRUM-300 · INYECCIÓN: quitarle el espacio final a un rótulo del PDF se caza', () => {
+  const mutilado = ALBARAN_ROTULOS.pdfFirmadoPor.trimEnd();
+  assert.notEqual(mutilado, ALBARAN_ROTULOS.pdfFirmadoPor, '🔴 la inyección no encontró qué quitar');
+  assert.equal(mutilado.endsWith(': '), false,
+    '🔴 el guard NO distingue el rótulo con espacio del rótulo sin él: sería ciego justo al ' +
+    'defecto que vigila.');
 });
 
 // ── NI UNA SEGUNDA COPIA: divergencia IMPOSIBLE, no vigilada ─────────────────────────────

@@ -58,16 +58,15 @@ export const FIRMANTE_CALIDAD_TEXTOS: Record<FirmanteCalidadRanura, string> = {
  *    nueva: es el rótulo con el que se expone `Albaran.fecha`, que YA era la fecha de entrega
  *    (sellada, impresa y clave del mes natural de la recapitulativa) y que ninguna UI escribía.
  *
- *  · Los DOS DEL PDF — **PENDIENTES de la firma del asesor.** NO llevan el marcador
- *    `[PENDIENTE microcopy oficial]` a propósito: acaban en un documento que se lee en un juzgado,
- *    y un marcador impreso ahí sería peor que el rótulo. Quedan aquí, fijados por
- *    `tests/scrum300-microcopy-firmante.test.mjs`, y cambiarlos cuando lleguen los oficiales es
- *    UNA LÍNEA porque solo existen en este fichero.
- *
- *    El asesor los pidió LITERALES antes de firmarlos, con su razón: en un PDF que puede acabar
- *    en un juzgado no se aprueba un rótulo por su descripción. Impresos salen así:
+ *  · Los DOS DEL PDF — **APROBADOS por el asesor el 5-ago-2026**, y solo DESPUÉS de verlos
+ *    literales. Su razón, que vale para cualquier rótulo que acabe impreso: en un PDF que puede
+ *    acabar en un juzgado **no se aprueba un rótulo por su descripción**. Se le enseñaron así,
+ *    con el espacio final visible y una muestra de cómo salen impresos:
  *        Firmado por: Marta Ruiz Alonso
  *        En calidad de: Personal de la obra
+ *
+ *    NO llevan el marcador `[PENDIENTE microcopy oficial]` y ya nunca lo llevarán: acaban en un
+ *    documento que se lee en un juzgado, y un marcador impreso ahí sería peor que el rótulo.
  */
 export const ALBARAN_ROTULOS = {
   /** APROBADO (fundador, 5-ago-2026). */
@@ -80,25 +79,32 @@ export const ALBARAN_ROTULOS = {
   firmadoPorCalidad: 'En calidad de qué',
   // ⚠️ El espacio final de los dos siguientes es PARTE DEL LITERAL, no un descuido: el PDF los
   // pinta con `continued: true`, así que el rótulo va en negrita y el dato se concatena detrás.
-  // Quitarlo pega el nombre al dos puntos.
-  /** PENDIENTE de firma del asesor — rótulo del bloque de firma del PDF. */
+  // Quitarlo produce «Firmado por:Marta» — el tipo de defecto que nadie ve hasta que el PDF está
+  // delante de alguien que importa. Tiene guard propio.
+  /** APROBADO (asesor, 5-ago-2026) con su espacio final — rótulo del bloque de firma del PDF. */
   pdfFirmadoPor: 'Firmado por: ',
-  /** PENDIENTE de firma del asesor — rótulo del bloque de firma del PDF. */
+  /** APROBADO (asesor, 5-ago-2026) con su espacio final — rótulo del bloque de firma del PDF. */
   pdfEnCalidadDe: 'En calidad de: ',
 } as const;
 
 /**
- * Los rótulos que YA tienen aprobación explícita. El resto espera firma del asesor.
+ * Los rótulos que tienen aprobación explícita, con QUIÉN la dio anotado arriba, campo a campo.
  *
  * Que el guard falle cuando este censo cambia es DELIBERADO y es lo que lo separa de una
  * allowlist: una aprobación nueva obliga a tocar el test en el mismo commit, así que queda en el
- * diff quién aprobó qué y cuándo — en vez de que un rótulo se dé por bueno por costumbre.
+ * diff **quién aprobó qué y cuándo**. Un texto aprobado sin rastro de quién lo aprobó vuelve a ser
+ * un texto que cualquiera cambia.
+ *
+ * Hoy están los seis. Que el censo esté completo NO lo convierte en decorado: si mañana nace un
+ * rótulo nuevo, nacerá FUERA de esta lista y el guard lo dirá.
  */
 export const ALBARAN_ROTULOS_APROBADOS = [
   'fechaEntrega',
   'lugarEntrega',
   'firmadoPorNombre',
   'firmadoPorCalidad',
+  'pdfFirmadoPor',
+  'pdfEnCalidadDe',
 ] as const;
 
 /** La ranura precargada: el caso mayoritario es que firme el propio cliente. */
