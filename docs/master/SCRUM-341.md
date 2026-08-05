@@ -51,9 +51,22 @@ propia) · `prisma/schema.prisma` · el camino de emisión.
 
 ## Premium-UI (AB6)
 Cambio de un solo concepto (la condición del precio), texto plano que hereda tokens existentes, vanilla,
-sin componente ni color nuevo. Antes/después: cada promesa gana «, mientras mantengas la suscripción
-activa» tras el importe. La **matriz de dispositivos (V0-5) es humana y del fundador**; la condición se
-deja visible en móvil (no va en `.hide-sm`).
+sin componente ni color nuevo. La condición se deja visible en móvil (no va en `.hide-sm`).
+
+### Capturas antes/después (AB6) — harness aislado, DOS anchos: 360px (Android gama media) y 390px (iPhone)
+Medido sobre el `index.html` real servido por HTTP, con los banners forzados visibles y contadores a 18.
+Riesgo real solo en las dos superficies estrechas (la barra de anuncio y el banner de fundadores); un
+cualificador más largo a ancho móvil es lo que las rompería en dos líneas o empujando el botón fuera.
+**Veredicto en AMBOS anchos: ninguna rompe.**
+- **Barra de anuncio (`index.html:297`):** alto 360px **91→112** · 390px **69→91**. A 390 queda en 3
+  líneas centradas; «Ver planes →» intacto en su línea, nada empujado fuera. A 360, igual (3 líneas).
+- **Banner de fundadores (`index.html:480`):** alto 360px **86→107** · 390px **66→107**. Caja ámbar
+  autocontenida de 4 líneas; la `price-card` fluye normal debajo, sin desbordar ni tapar el CTA.
+- Evidencia (8 PNG): `evidencias/scrum341/scrum341-{announce,founding}-{ANTES,DESPUES}-{360,390}.png`.
+
+El guard comprueba que la condición ESTÁ; estas capturas comprueban que se LEE (lo que un guard de texto
+no ve). **La matriz completa (V0-5: tablet y el resto) sigue declarada como hueco humano del fundador**;
+aquí se cubren los dos anchos de móvil, incluido el peor caso (360px).
 
 ## Ficheros
 - `public/index.html` (:297, :480) · `public/precios.html` (:65) · `public/dashboard/js/plansView.js` (:76, :105).
