@@ -40,7 +40,8 @@ import {
 } from '../dist/modules/invoicing/domain/invoiceNumber.service.js';
 // SCRUM-223: quien mira una URL de BD pasa por aquí. `parseBDSegura` quita el envoltorio de
 // comillas del `.env` y NO tiene forma de devolver la cadena — solo host, base, usuario y puerto.
-import { parseBDSegura } from './_db-guard.mjs';
+// SCRUM-381: y `destinoSembrable` es la allowlist que la nota de SCRUM-208 (abajo) dejaba escrita.
+import { parseBDSegura, destinoSembrable } from './_db-guard.mjs';
 // SCRUM-314: el barrido del demo, DERIVADO del orden que ya guarda el schema (no una lista aquí).
 // SCRUM-381: vivía en `./_wipe-demo.mjs`, que SCRUM-314 (cbc2880) borró al mover el barrido al
 // dominio SIN actualizar este import. El script llevaba tickets sin poder ni arrancar, y nadie se
@@ -59,6 +60,23 @@ import { barridoDemo } from '../dist/modules/system/domain/barridoDemo.js';
 const docLabel = (number) => (isReceiptNumber(number) ? 'Justificante' : 'Factura');
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SCRUM-381 · EL SOBRE DE UNA SIEMBRA
+//
+// `allocateInvoiceNumber` exige `camino` y `actor` desde SCRUM-207, y este script se los pasaba
+// VACÍOS (`{}`) — el mismo día que no podía ni arrancar. Con el sobre vacío, un número sembrado
+// quedaba en el AuditLog indistinguible de uno emitido de verdad.
+//
+// `actor.tipo:'semilla'` es lo que lo distingue, y `ref` dice qué sembrador y qué TANDA, para
+// poder separar dos ejecuciones del mismo script. Se define UNA vez: dos literales en dos sitios
+// se desincronizan solos, y el que se quede atrás lo hace en silencio.
+//
+// El `camino`, en cambio, va en cada llamada porque CAMBIA: un número sembrado sí sale por una
+// vía real —este script llama al mismo código—, así que declara la que imita, no una inventada.
+// ─────────────────────────────────────────────────────────────────────────────
+const TANDA = new Date().toISOString();
+const sembrado = (punto) => ({ actor: { tipo: 'semilla', ref: `seed-demo:${punto}@${TANDA}` } });
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SCRUM-208 · GUARD DE DESTINO — hay que NOMBRAR la base
 //
 // Este script es un RESET: lo primero que hace es doce `deleteMany` sobre el merchant 1.
@@ -70,6 +88,12 @@ const docLabel = (number) => (isReceiptNumber(number) ? 'Justificante' : 'Factur
 // obliga a NOMBRAR la base. Sigue siendo posible hacerlo a propósito; deja de ser posible
 // por accidente. Si algún día se confirma que producción nunca debe ser destino de una
 // semilla, se endurece con la allowlist de host de SCRUM-118.
+//
+// SCRUM-381 · ESE DÍA LLEGÓ (asesor, 6-ago-2026): producción NUNCA es destino de una semilla.
+// La allowlist va PRIMERO y no se puede confirmar para saltarla: nombrar la base contesta
+// «¿es la que querías?», no «¿se puede sembrar ahí?». Con solo la confirmación, escribir el
+// hostname de prod era suficiente para resembrar producción — la ceremonia estaba, la
+// prohibición no. Ahora son las dos, en este orden: IDENTIDAD del destino, luego INTENCIÓN.
 //
 // ⚠️ POR QUÉ EXIGE `DATABASE_URL` EN EL ENTORNO Y NO SE CONFORMA CON LA DE `.env`:
 // porque el agujero es justo ese. Si aquí leyéramos el fichero para "ser amables", el
@@ -99,6 +123,15 @@ function confirmarDestino() {
   const destino = parseBDSegura(dbUrl);
   if (!destino) abortar('DATABASE_URL no es una URL válida. (No se dice cuál era: R7.)');
   const host = destino.host;
+
+  // SCRUM-381 · ANTES que la confirmación: ninguna confirmación abre producción.
+  const sembrable = destinoSembrable(dbUrl);
+  if (!sembrable.ok) {
+    abortar(
+      `Destino NO sembrable → ${sembrable.etiqueta}\n\n  ${sembrable.motivo}\n\n` +
+      '  (Solo se nombra host/base: ni usuario, ni contraseña, ni la URL — R7.)',
+    );
+  }
 
   if (process.env.SEED_DEMO_CONFIRM !== host) {
     abortar(
@@ -244,7 +277,9 @@ async function seed() {
     // Cobro + documento en UNA transacción: `allocateInvoiceNumber` reserva el número
     // y avanza la serie ahí dentro, para que un fallo no deje un hueco (invoiceNumber.service).
     const { charge, number } = await prisma.$transaction(async (tx) => {
-      const number = await allocateInvoiceNumber(tx, DEMO_ID, {}, emitAt);
+      // C1: el cliente aceptó el presupuesto desde WhatsApp — que es la historia que cuenta el
+      // demo (`decisionChannel: 'whatsapp'`) — y el cobro ya está pagado.
+      const number = await allocateInvoiceNumber(tx, DEMO_ID, { camino: 'C1', ...sembrado('paidJob') }, emitAt);
       const charge = await tx.charge.create({
         data: {
           merchantId: DEMO_ID,
@@ -312,7 +347,8 @@ async function seed() {
   {
     const emitAt = daysAgo(3, 12);
     const charge = await prisma.$transaction(async (tx) => {
-      const number = await allocateInvoiceNumber(tx, DEMO_ID, {}, emitAt);
+      // C1 también: mismo camino, cobro todavía sin pagar (el "dinero en juego" de la Home).
+      const number = await allocateInvoiceNumber(tx, DEMO_ID, { camino: 'C1', ...sembrado('pendiente') }, emitAt);
       const charge = await tx.charge.create({
         data: {
           merchantId: DEMO_ID, customerId: lucia.id,
