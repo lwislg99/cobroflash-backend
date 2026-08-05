@@ -2,9 +2,6 @@
 
 **Medido contra:** `origin/main` = `d5ac9761da139bf9b6de3c808d7c990aa6b82157` · 2026-08-05T17:04:15+01:00
 
-> **Microcopy APROBADA** (5-ago-2026, los cinco rótulos tal cual): estas capturas son las del texto
-> definitivo. Queda **un punto medido y sin resolver**, en su sección.
-
 Banco aislado (puppeteer-core sobre el Edge instalado + servidor estático efímero sirviendo
 `public/`), con los **41 scripts que carga `dashboard/index.html` en su orden** y la vista REAL
 (`renderJobDetailView`) con `apiRequest` sustituido. Sin BD, sin auth, sin servidor de la app, sin
@@ -22,63 +19,65 @@ CSS de verdad) y traer **una fila por albarán**. Si no, para y no informa.
 | ALB-2026-0003 | `firmado` · facturado **a medias** | **Facturar lo entregado** (ejecuta aquí) |
 | ALB-2026-0004 | `firmado` · facturado del todo | **(vacía)** — C2 dice que no hay siguiente paso |
 
-## 390 px — iPhone estándar
+## 390 px — cada fila es una CARD, no una tabla
 
 ![tabla 390](scrum304-tabla-390.png)
 
-### 🔴 La primera tanda medía el MARCADOR, no la pantalla
+### 🔴 La medición que ahorró la tercera amputación
 
-Con `[PENDIENTE microcopy oficial]` delante de cada nombre de columna —**29 caracteres por columna,
-cinco columnas**— solo cabían `Nº` y `Fecha`. Eso no era maquetación: era el coste del marcador.
+Tras dos rondas quitando columnas seguíamos a **125 px** de que `Acción` entrara. En vez de amputar
+la tercera, la pregunta que no se había hecho: **¿qué forma tiene una lista de esta familia a 390 px
+en el resto del producto?**
 
-> **CON MARCADOR NO SE JUZGA EL LAYOUT. Solo se comprueba que el marcador esté.**
+**EL PATRÓN YA EXISTÍA**, y hay dos:
 
-### La columna Estado APILA en movil, y Lineas se oculta
-
-Decision del fundador, y el motivo importa: **los badges NO se quitan**. Una celda de Accion vacia
-es ambigua entre «facturado del todo» y «no facturable por ser SIN_VALORAR», y el badge es lo unico
-que se lo dice al profesional. Quitarlo repetiria el error de aplanar el PARCIAL.
-
-Así que en móvil crece el **alto**, que sobra, en vez del **ancho**, que falta: pill arriba, badge
-debajo (`.jobdet-alb-estado`). Y si aun así no entra, la que se oculta es **Líneas** —un número
-informativo que no acciona nada—, **nunca Acción**: la acción es la razón de ser de la tabla. El
-dato no se pierde: está en el detalle del albarán, a un toque del número.
-
-### 🔴 Medido despues de las dos palancas: TODAVIA no entra
-
-| | 390 px | 1280 px |
+| Patrón | Para | Quién lo usa |
 |---|---|---|
-| Borde derecho de la celda Accion | **515 px** | 940 px |
-| Viewport | 390 px | 1280 px |
-| ¿Entra sin scrollear? | 🔴 **NO** (faltan 125 px) | ✅ sí |
+| `.table--cards-mobile` | listas **con dinero** | `albaranesView.js` · `invoicesView.js` · `quotesListView.js` |
+| `.table--stack-mobile` | tablas **simples** | `customersView.js` · `providersView.js` · `templatesView.js` |
 
-Las dos palancas acercaron —`Acción` ya asoma en la cabecera y los botones empiezan a verse— pero
-**no bastan**. Lo que queda comiendo ancho, por orden: el enlace del número (`ALB-2026-0001`), el
-badge `Facturado en parte` y el rótulo `Facturar lo entregado`. **No se toca más sin decisión del
-fundador**: acortar cualquiera de los tres es quitar información o retocar copy aprobada.
+Se elige **`.table--cards-mobile`** porque es el que usa `albaranesView.js` —C1 (SCRUM-301), la
+lista global del **mismo documento**—. Dos formas móviles para el mismo albarán según la pantalla
+sería SCRUM-240 en la capa visual.
 
-### Foco y targets: MEDIDOS, no supuestos
+Por debajo de 640 px la cabecera se oculta y cada fila se recompone como card: **no hay columnas que
+repartir**, así que el problema de ancho desaparece en vez de resolverse quitando información.
 
-| | A 390 px | AB6 |
+### Antes y después, medido
+
+| A 390 px | Antes del patrón | Con el patrón |
 |---|---|---|
-| Anillo de foco | **SÍ** (por `box-shadow`; se ve en la captura sobre ALB-2026-0001) | ✅ |
-| Botones de acción (`btn-secondary btn-sm`) | **30 px** | 🔴 < 44 |
-| Enlace del número (`.detail-miga-link`) | **20 px** | 🔴 < 44 |
+| Borde derecho de la celda Acción | 515 px (viewport 390) | **324 px** |
+| ¿Entra sin scrollear? | 🔴 NO, faltaban 125 px | ✅ **SÍ**, 66 px de holgura |
+| Botones de acción | 30 px | ✅ **44 px** |
 
-**No lo introduce esta tarea:** los botones salen de `mkBtn`, el constructor que ya usaba toda la
-vista, y `.btn-sm` está **deliberadamente fuera** del bump de SCRUM-352 (su censo lo declara con
-`:not(.btn-sm)`). Pero esta tabla los convierte en la superficie principal de los albaranes, así que
-aquí duele más que antes. Se reporta, no se arregla de paso: subir `.btn-sm` alcanza a todo el
-producto y es su propio ticket.
+**Las dos amputaciones se revirtieron:** `Fecha` y `Líneas` vuelven. Y las dos palancas aprobadas
+—quitar Fecha en móvil, acortar el rótulo— **no hicieron falta**: no se aplicó ninguna.
 
-## Escritorio — 1280 px
+### El número se enseña ENTERO
+
+Se descartó acortarlo a «0001»: que el año y la serie se repitan en todas las filas es verdad **hoy
+con estos datos, no por diseño**. En la card ocupa `cell-client`, el hueco prominente — dentro de un
+Trabajo el número **es** la identidad.
+
+### Foco y targets: MEDIDOS, y el patrón arregló la mitad
+
+| | Antes | Con el patrón | AB6 |
+|---|---|---|---|
+| Anillo de foco | SÍ | SÍ (visible sobre ALB-2026-0001) | ✅ |
+| Botones de acción | 30 px | **44 px** | ✅ |
+| Enlace del número (`.detail-miga-link`) | 20 px | **20 px** | 🔴 < 44 |
+
+Los botones se arreglaron **solos** al cambiar de forma: `cell-actions` trae `min-height: 44px`. El
+enlace del número **no**, porque no cae en esa ranura: sigue para el censo de los 139 conjuntos.
+
+## Escritorio — 1280 px, sigue siendo tabla
 
 ![tabla 1280](scrum304-tabla-1280.png)
 
 ## Estado vacío — sin albaranes NO se pinta la tabla
 
-Una cabecera con nada debajo es lo que el ticket pide evitar. El texto es el que ya existía de G4:
-no se ha tocado.
+El texto es el que ya existía de G4: no se ha tocado.
 
 ![vacío](scrum304-vacio-390.png)
 
@@ -86,17 +85,20 @@ no se ha tocado.
 
 | Punto | Estado |
 |---|---|
-| Componentes | `.table` / `.table-wrap` / `.status-pill` / `.detail-miga-link` del inventario AB3. **Cero componentes nuevos, cero tokens nuevos** |
-| Estados empty | ✅ capturado — sin albaranes no hay tabla |
+| Componentes | `.table` / `.table-scroll` / `.table--cards-mobile` / `.status-pill` del inventario AB3. **Cero componentes nuevos, cero tokens nuevos** |
+| Estados empty | ✅ capturado |
 | Focus visible | ✅ **medido** |
-| Targets ≥44 px | 🔴 **medido y NO cumple** (30 px / 20 px) — reportado arriba |
-| Responsive 390 px | 🔴 **NO cumple**: `Líneas` y `Acción` fuera de pantalla, alcanzables por scroll |
+| Targets ≥44 px | ✅ **medido** en las acciones · 🔴 el enlace del número sigue en 20 px |
+| Responsive 390 px | ✅ **cumple**: cada fila es una card, sin scroll lateral |
 | Contraste AA | Pills y tabla con los tonos existentes, sin colores inventados |
-| Textos largos | Los rótulos aprobados son los más cortos posibles; el caso peor (con marcador) también se midió |
 
 ### Huecos declarados
 
 - **Matriz de dispositivos (V0-5): HUECO.** Hay 390 px y 1280 px. **No hay Android de gama media,
   ni tablet, ni iPhone real**: el banco es Edge de escritorio con el viewport redimensionado, que no
   prueba fuentes del sistema, teclado en pantalla ni barra de navegador.
-- **Loading**: la tabla se pinta con el detalle del Trabajo, que ya se cargaba entero. Sin cambio.
+- **La ranura `cell-id` sale sin rótulo.** En la card, el número de líneas («3», «4»…) aparece
+  arriba sin etiqueta, porque el patrón oculta la cabecera. Se ve en la captura. No se toca: darle
+  rótulo propio es microcopy nueva.
+- **`albaranesView.js` marca `.table--cards-mobile` pero NO pone las clases `cell-*`**, así que su
+  rejilla de card no llega a usarse. Medido de paso; es otro carril (regla 9) y no se toca.

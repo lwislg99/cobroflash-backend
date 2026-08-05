@@ -298,13 +298,41 @@ test('SCRUM-304 · «Editar líneas» obedece a C2 y deja de pintarse SIEMPRE', 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-304 · es una TABLA del inventario, y la cabecera no se pinta sin filas', () => {
-  assert.match(FILA, /tabla\.className = 'table'/, '🔴 la sección de albaranes ya no monta una `.table`');
-  assert.match(FILA, /wrap\.className = 'table-wrap'/, '🔴 falta el `.table-wrap` (scroll en móvil)');
+  assert.match(FILA, /tabla\.className = 'table table--cards-mobile'/,
+    '🔴 la tabla ya no adopta `.table--cards-mobile`. Sin ese patrón, en móvil vuelve a ser una ' +
+    'tabla de cinco columnas y la columna Acción se sale de pantalla — que es lo que dos rondas de ' +
+    'quitar columnas NO consiguieron arreglar.');
+  assert.match(FILA, /wrap\.className = 'table-scroll'/, '🔴 falta el `.table-scroll` del patrón');
   assert.match(
     FILA, /if \(!reparto\.albaranes\.length\) \{[\s\S]{0,200}?vacioAlb/,
     '🔴 la tabla se monta sin comprobar que haya albaranes: un Trabajo sin ninguno enseñaría una ' +
     'cabecera con nada debajo, que es justo lo que el ticket pide evitar.',
   );
+});
+
+test('SCRUM-304 · el patrón móvil es EL MISMO que usa la lista global de albaranes', () => {
+  // Dos formas móviles para el MISMO documento según la pantalla sería SCRUM-240 en la capa
+  // visual. Se deriva del otro fichero, no se escribe el nombre del patrón a mano en los dos.
+  const lista = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/albaranesView.js'), 'utf8');
+  const m = lista.match(/className = 'table (table--[a-z-]+)'/);
+  assert.ok(m, '🔴 ESCÁNER CIEGO: `albaranesView.js` ya no declara un patrón móvil de tabla');
+  assert.ok(FILA.includes(`table ${m[1]}`),
+    `🔴 la lista global usa «${m[1]}» y esta tabla usa otro. El mismo albarán se leería con dos ` +
+    'formas distintas según la pantalla desde la que se mire.');
+
+  // Y el patrón tiene que existir de verdad en la hoja de estilos, con su bump de 44 px.
+  const css = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8');
+  assert.ok(css.includes(`.${m[1]} thead { display: none; }`),
+    `🔴 «${m[1]}» no está definido en styles.css: la clase no haría nada y la tabla seguiría siendo tabla`);
+  assert.match(css, new RegExp(`\\.${m[1]} td\\.cell-actions button[\\s\\S]{0,80}min-height: 44px`),
+    '🔴 el patrón ya no lleva el `min-height: 44px` de las acciones — era lo que subía los botones ' +
+    'de 30 a 44 px sin tocar `.btn-sm`.');
+
+  // Las celdas llevan sus ranuras: sin ellas la clase está puesta y la rejilla no se usa (es lo
+  // que le pasa hoy a `albaranesView.js`, medido y reportado, pero no se arregla aquí: otro carril).
+  for (const ranura of ['cell-client', 'cell-date', 'cell-status', 'cell-id', 'cell-actions']) {
+    assert.ok(FILA.includes(ranura), `🔴 falta la ranura «${ranura}»: la card se recompondría a medias`);
+  }
 });
 
 test('SCRUM-304 · el rótulo de la acción NO se reescribe aquí: sale de C2', () => {

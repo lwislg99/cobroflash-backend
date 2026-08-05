@@ -2301,25 +2301,20 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 
    Lleva DOS cosas que son DOS EJES: el pill del documento
    (borrador/emitido/firmado) y el badge de facturación
-   (nada / parcial / del todo). En fila ocupan tanto ancho que a
-   390 px empujan «Líneas» y «Acción» fuera de pantalla.
+   (nada / parcial / del todo).
 
-   NO se resuelve quitando el badge: una celda de Acción vacía
-   significa DOS cosas distintas —facturado del todo, o no
-   facturable por ser SIN_VALORAR— y el badge es lo único que se
-   lo dice al profesional. Aplanarlo repetiría el error de
-   esconder el PARCIAL.
+   NO se aplanan en uno: una celda de Acción vacía significa DOS
+   cosas distintas —facturado del todo, o no facturable por ser
+   SIN_VALORAR— y el badge es lo único que se lo dice al
+   profesional. Juntarlos repetiría el error de esconder el
+   PARCIAL.
 
-   Así que en móvil APILA: crece el ALTO, que sobra, en vez del
-   ANCHO, que falta. Alcance mínimo a propósito — una clase
-   propia, no un cambio en `.table` ni en `.status-pill`, que
-   los comparten otras cinco pantallas sin medir.
+   El ancho en móvil NO se arregla aquí, y ésta es la corrección
+   que ahorró la tercera amputación: lo arregla
+   `.table--cards-mobile`, el patrón que YA EXISTE y que usa la
+   lista global de albaranes (`albaranesView.js`, SCRUM-301). En
+   móvil no hay columnas que repartir: cada fila es una card.
+   Esto es solo la separación de los dos ejes, que vale igual en
+   las dos formas.
    ════════════════════════════════════════════════════════════ */
 .jobdet-alb-estado { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-@media (max-width: 639px) {
-  .jobdet-alb-estado { flex-direction: column; align-items: flex-start; gap: 4px; }
-  /* Y si aún así no entra, la que se va es LÍNEAS —un número informativo que no acciona nada—,
-     nunca ACCIÓN: la acción es la razón de ser de esta tabla. Decisión del fundador.
-     El dato no se pierde: está en el detalle del albarán, a un toque del número. */
-  .jobdet-alb-lineas { display: none; }
-}

@@ -4,10 +4,6 @@
 
 **Medido contra:** `origin/main` = `d5ac9761da139bf9b6de3c808d7c990aa6b82157` · 2026-08-05T17:04:15+01:00
 
-> **Microcopy aprobada** (5-ago-2026, los cinco rótulos tal cual) y recapturado. Queda **una cosa
-> medida y sin resolver**, dicha en su sección: a 390 px `Líneas` y `Acción` siguen fuera de
-> pantalla, alcanzables por scroll. La palanca es de producto y no se toma de paso.
-
 ## 🔴 El censo corrige al ticket, y por eso va PRIMERO
 
 El ticket titula «El defecto, **medido**» y lo que sigue es una captura y un cálculo de altura de
@@ -35,7 +31,7 @@ separado: solo al ponerlos uno contra otro. Por eso el contraste tenía que ir p
 
 ## Lo que se construye
 
-Tabla `.table`/`.table-wrap` (inventario AB3, cero componentes nuevos) con **Nº · Fecha · Estado ·
+Tabla `.table`/`.table-scroll` (inventario AB3, cero componentes nuevos) con **Nº · Fecha · Estado ·
 Líneas · Acción**. Una fila por albarán, el número enlaza al detalle, y **una sola acción: la
 primaria de su estado según C2**, resuelta con `destinoEfectivo` — nunca con una jerarquía escrita
 aquí.
@@ -104,37 +100,61 @@ columna**, cinco columnas— la cabecera sacaba la tabla de la pantalla y a 390 
 Con los cinco rótulos aprobados (`Nº · Fecha · Estado · Líneas · Acción`) entran ya `Nº`, `Fecha` y
 `Estado`.
 
-### Lo que SIGUE sin caber a 390 px, dicho sin adornos
+### 🔴 LA MEDICIÓN QUE AHORRÓ LA TERCERA AMPUTACIÓN
 
-**`Líneas` y `Acción` continúan fuera de pantalla.** Se alcanzan scrollando —el envoltorio de ESTA
-tabla se pasó a `overflow-x: auto`— pero **la única acción de la fila no está a la vista**, que es
-justo lo que el ticket viene a arreglar. Lo que ahora se come el ancho es la columna Estado, que
-lleva el pill **más** los badges de facturación (`BORRADOR` + `Sin precios`, `FIRMADO` +
-`Facturado en parte`).
+Tras dos rondas quitando columnas seguíamos a **125 px** de que `Acción` entrara. En vez de amputar
+la tercera, la pregunta que nadie había hecho: **¿qué forma tiene una lista de esta familia a 390 px
+en el resto del producto?**
 
-**La palanca obvia es quitar esos badges de la tabla**, y hay argumento de C2 para ello —«facturado
-no es un estado de la tabla, es CONTEXTO»— y la columna Acción ya lo codifica (celda vacía = nada
-que hacer). Pero es información que hoy ve el profesional, así que **es decisión del fundador y no
-se toma de paso**.
+**EL PATRÓN YA EXISTÍA.** `styles.css` tiene DOS, y ninguno hubo que inventarlo:
 
-**No se tocó `.table-wrap`** (`overflow: hidden`, `styles.css:590`): la comparten otras cinco
-pantallas sin medir, y cambiar un contenedor compartido para arreglar una tabla propia es el
-defecto de los 36 px en dirección contraria. Y la fecha se acortó a «12 jul» porque
-«12 jul 2026, 11:15» empujaba sola la columna Acción fuera.
-
-### Foco y targets: MEDIDOS, no supuestos
-
-| | Medido a 390 px | AB6 |
+| Patrón | Para | Quién lo usa |
 |---|---|---|
-| Anillo de foco | **SÍ**, visible por `box-shadow` | ✅ |
-| Botones de acción (`btn-secondary btn-sm`) | **30 px** | 🔴 < 44 |
-| Enlace del número (`.detail-miga-link`) | **20 px** | 🔴 < 44 |
+| `.table--cards-mobile` | listas **con dinero** | `albaranesView.js` · `invoicesView.js` · `quotesListView.js` |
+| `.table--stack-mobile` | tablas **simples** | `customersView.js` · `providersView.js` · `templatesView.js` |
 
-**No lo introduce esta tarea:** los botones salen de `mkBtn`, el constructor que ya usaba toda la
-vista, y `.btn-sm` está **deliberadamente fuera** del bump de SCRUM-352 (su censo lo declara con
-`:not(.btn-sm)`). Pero esta tabla convierte esos controles en **la superficie principal** de los
-albaranes, así que aquí duele más que antes. Se reporta, no se arregla de paso: subir `.btn-sm` a 44
-alcanza a todo el producto y es su propio ticket.
+**Se elige `.table--cards-mobile` por un motivo que decide solo: es el que usa `albaranesView.js`**
+—C1 (SCRUM-301), la lista global del MISMO documento—. Dos formas móviles para el mismo albarán
+según la pantalla sería SCRUM-240 en la capa visual.
+
+Por debajo de 640 px la cabecera se oculta y cada fila se recompone como **card**: no hay columnas
+que repartir, así que **el problema de ancho desaparece en vez de resolverse quitando información**.
+
+**Las dos amputaciones se REVIRTIERON**: `Fecha` y `Líneas` vuelven. Y las dos palancas aprobadas
+(quitar Fecha en móvil, acortar el rótulo) **no hicieron falta** — no se aplicó ninguna.
+
+| Medido a 390 px | Antes del patrón | Con el patrón |
+|---|---|---|
+| Borde derecho de la celda Acción | 515 px (viewport 390) | **324 px** |
+| ¿Entra sin scrollear? | 🔴 NO, faltaban 125 px | ✅ **SÍ**, con 66 px de holgura |
+| Botones de acción | 30 px | ✅ **44 px** |
+
+### El número se enseña ENTERO. Cerrado.
+
+Se descartó acortarlo a «0001». Que el año y la serie se repitan en todas las filas **es verdad hoy
+con estos datos, no por diseño**: deja de serlo el 1 de enero y en cuanto un filtro junte dos años.
+Y la variante «lo acorto solo si todas comparten prefijo» es peor: el mismo albarán se leería de dos
+formas según el filtro. **El profesional dicta ese número a su gestoría; medio número es un número
+equivocado.** En la card ocupa `cell-client`, el hueco prominente: dentro de un Trabajo el número
+ES la identidad.
+
+### Foco y targets: MEDIDOS, y el patrón arregló la mitad
+
+| | Antes | Con el patrón | AB6 |
+|---|---|---|---|
+| Anillo de foco | SÍ | SÍ | ✅ |
+| Botones de acción | 30 px | **44 px** | ✅ |
+| Enlace del número (`.detail-miga-link`) | 20 px | **20 px** | 🔴 < 44 |
+
+Los botones se arreglaron **solos** al cambiar de forma: `cell-actions` trae `min-height: 44px`. El
+enlace del número **NO**, porque no cae en esa ranura — sigue para el censo de los 139 conjuntos, y
+el argumento que le faltaba a esa decisión es éste: *un botón de 30 px en una fila suelta es un
+incordio; en la tabla con la que el profesional gestiona TODAS sus entregas, es el control que más
+va a tocar*. Y el enlace a 20 px es peor que los botones, y nadie lo había mirado.
+
+**Y una asimetría medida de paso:** `albaranesView.js` marca la tabla con `.table--cards-mobile`
+pero **no pone las clases `cell-*`**, así que su rejilla de card no llega a usarse. Aquí sí se
+ponen. No se toca C1 —es otro carril (regla 9)—, pero queda dicho.
 
 ## Microcopy (regla 30) · APROBADA
 
@@ -147,7 +167,7 @@ Los rótulos de la ACCIÓN no son nuevos: salen de `ROTULOS_ALBARAN` (C2), ya ap
 ## Lo que NO se tocó
 
 El resto de la pantalla del Trabajo (G1) · el detalle (C2) · el listado (C1) · la firma · el PDF ·
-`prisma/schema.prisma` · la clase compartida `.table-wrap`.
+`prisma/schema.prisma` · la clase compartida `.table-wrap` · `albaranesView.js` (C1, otro carril).
 
 ## Verificación
 

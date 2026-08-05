@@ -1658,19 +1658,23 @@ async function renderJobDetailView(container, jobId) {
     const nLineas = Array.isArray(alb.lineas) ? alb.lineas.length : 0;
     const item = document.createElement('tr');
     item.innerHTML =
-      `<td>` +
+      // `cell-client` es el hueco PROMINENTE de la card en móvil, y aquí el número ES la identidad:
+      // dentro de un Trabajo no hay columna de cliente que ocupe ese sitio. **Se enseña ENTERO** —
+      // acortarlo a «0001» dependería de que todas las filas visibles compartan prefijo, que es una
+      // coincidencia de los datos de hoy y deja de ser cierta el 1 de enero. El profesional dicta
+      // ese número por teléfono a su gestoría: medio número es un número equivocado.
+      `<td class="cell-client">` +
         `<button type="button" class="detail-miga-link jobdet-alb-link">${esc(alb.numero)}</button>` +
         `<div class="jobdet-alb-fotos"></div>` +
       `</td>` +
-      // FECHA CORTA, no `docDate`: en una tabla de cinco columnas dentro de un móvil de 390 px,
-      // «12 jul 2026, 11:15» empuja fuera de pantalla justo la columna Acción. El día y el mes son
-      // lo que distingue una entrega de otra; la hora vive en el detalle, que es donde se consulta.
-      `<td>${esc(albFechaCorta(alb.fecha))}</td>` +
+      // FECHA CORTA, no `docDate`: «12 jul 2026, 11:15» es la hora de consulta, no lo que distingue
+      // una entrega de otra. En la card de móvil ocupa el hueco `cell-date`, pequeño y a un lado.
+      `<td class="cell-date">${esc(albFechaCorta(alb.fecha))}</td>` +
       // SCRUM-304: el pill y el badge APILAN en móvil (`.jobdet-alb-estado`). Son dos ejes y los
       // dos hacen falta —una celda de Acción vacía es ambigua entre «facturado del todo» y «no
       // facturable por SIN_VALORAR», y el badge es lo único que lo desambigua—, así que crece el
       // alto en vez del ancho.
-      `<td class="jobdet-alb-estado">` +
+      `<td class="jobdet-alb-estado cell-status">` +
         `<span class="status-pill ${JOBDET_ALB_PILL[alb.estado] || 'status-pill-draft'}">${jobDetAlbEstado(alb.estado)}</span>` +
         // SCRUM-17/170: «facturado» NO es un estado del documento — es un derivado de TRES valores
         // contra el libro de líneas. Va como badge aparte del pill a propósito: son DOS EJES, y
@@ -1680,8 +1684,8 @@ async function renderJobDetailView(container, jobId) {
           : (alb.facturado || alb.estadoCobro === 'facturado' ? `<span class="job-doc-row__badge">Facturado</span>` : '')) +
         (albValorado ? '' : `<span class="job-doc-row__badge">Sin precios</span>`) +
       `</td>` +
-      `<td class="jobdet-alb-lineas">${nLineas}</td>` +
-      `<td class="jobdet-alb-actions"></td>`;
+      `<td class="cell-id">${nLineas}</td>` +
+      `<td class="jobdet-alb-actions cell-actions"></td>`;
     const albBody = item.querySelector('td');
     item.querySelector('.jobdet-alb-link').addEventListener('click', () => {
       if (window.renderAppView) window.renderAppView('albaran-detail', { albaranId: alb.id });
@@ -1984,21 +1988,26 @@ async function renderJobDetailView(container, jobId) {
   if (!reparto.albaranes.length) {
     docsSec.appendChild(vacioAlb);
   } else {
+    // ── SCRUM-304 · EN MÓVIL NO ES UNA TABLA: ES UNA PILA DE CARDS ──────────────────────────
+    //
+    // El patrón YA EXISTÍA y no había que inventarlo — se descubrió al mirar el resto del producto
+    // en vez de seguir quitando columnas. `.table-scroll` + `.table--cards-mobile` (styles.css,
+    // A18.1) recompone cada fila como card por debajo de 640 px: la cabecera se oculta, las celdas
+    // pasan a bloques de una rejilla y **las acciones ganan `min-height: 44px`**.
+    //
+    // Se elige ÉSTE y no `.table--stack-mobile` porque es el que usa `albaranesView.js` (C1,
+    // SCRUM-301): la lista global del MISMO documento. Dos formas móviles para el mismo albarán
+    // según la pantalla sería el defecto de SCRUM-240 en la capa visual.
     const wrap = document.createElement('div');
-    wrap.className = 'table-wrap';
-    // 🔴 `.table-wrap` es `overflow: hidden` (styles.css:590), así que a 390 px la tabla se CORTA y
-    // la columna Acción queda inalcanzable — lo enseñó la captura AB6, no la suite. Aquí se
-    // convierte en scroll horizontal SOLO para esta tabla: cambiar la clase compartida arreglaría
-    // cinco pantallas más de un plumazo y ninguna de ellas está medida en este ticket.
-    wrap.style.overflowX = 'auto';
+    wrap.className = 'table-scroll';
     const tabla = document.createElement('table');
-    tabla.className = 'table';
+    tabla.className = 'table table--cards-mobile';
     tabla.innerHTML =
       `<thead><tr>` +
         `<th>${esc(ALB_TABLA_COPY.colNumero)}</th>` +
         `<th>${esc(ALB_TABLA_COPY.colFecha)}</th>` +
         `<th>${esc(ALB_TABLA_COPY.colEstado)}</th>` +
-        `<th class="jobdet-alb-lineas">${esc(ALB_TABLA_COPY.colLineas)}</th>` +
+        `<th>${esc(ALB_TABLA_COPY.colLineas)}</th>` +
         `<th>${esc(ALB_TABLA_COPY.colAccion)}</th>` +
       `</tr></thead>`;
     const tbody = document.createElement('tbody');
