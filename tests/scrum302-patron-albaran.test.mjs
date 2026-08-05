@@ -14,11 +14,32 @@
 //   1. El estado NO se llama «Enviado»: son `borrador | emitido | firmado`.
 //   2. «Facturado» NO es un estado: es un derivado de TRES valores, y aplanarlo pierde el
 //      `parcial`, que en una obra por fases es el caso normal.
-//   3. Las líneas del albarán NO se pueden casar con las del presupuesto: no hay campo que las
-//      ate. Lo que dependa de esa correspondencia no se construye.
+//   3. El **libro de líneas facturadas** (`AlbaranLineaFacturada`) NO referencia al presupuesto:
+//      ata `albaranId + lineaIndex → invoiceId`, y nada más. Por eso esta página no ofrece
+//      ninguna vista de «lo facturado vs lo presupuestado» sacada de ese libro.
 //
 // Las tres se comprueban **contra el schema y el dominio**, no contra el enunciado: es la misma
 // clase de error que el ticket confiesa haber cometido en B2.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// ⚠️ LA PREMISA 3 DECÍA OTRA COSA, Y CADUCÓ EL 5-AGO-2026 CON SCRUM-367
+//
+// Decía: «las líneas del albarán NO se pueden casar con las del presupuesto: no hay campo que las
+// ate». Eso **ya no es cierto**: `AlbaranLinea.quoteLineIndex` existe desde SCRUM-367
+// (`albaran.service.ts:56`), se conserva al editar (`:128-149`), se valida contra el rango real
+// (`jobs.routes.ts:664-667`) y lo escribe el prellenado (`jobDetailView.js:313`).
+//
+// El TEST de abajo nunca midió eso: mide el modelo `AlbaranLineaFacturada`, donde efectivamente no
+// hay referencia al presupuesto, y sigue verde con razón. Lo que caducó fue **este comentario**,
+// que afirmaba algo del sistema entero mientras el test comprobaba un rincón.
+//
+// 🔴 LA LECCIÓN, porque costó una decisión tomada sobre una premisa falsa:
+//
+//   Un comentario que afirma un HECHO DEL SISTEMA caduca cuando el sistema cambia, y nadie lo
+//   revisa porque no está en ninguna suite. Un comentario que describe LO QUE MIDE EL TEST DE AL
+//   LADO no puede caducar sin que el test caiga.
+//
+// Por eso la premisa 3 se ha reescrito para decir qué mide, no qué pasa en el mundo.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -101,10 +122,14 @@ test('SCRUM-302 · con el albarán ya facturado del todo, facturar NO ocupa la p
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
-// 3 · PREMISA: no hay correspondencia entre líneas de albarán y de presupuesto
+// 3 · PREMISA: el LIBRO DE LÍNEAS FACTURADAS no referencia al presupuesto
+//
+// ⚠️ Ojo con el título de antes («nada ata las líneas del albarán con las del presupuesto»): eso
+// dejó de ser cierto con SCRUM-367 y `quoteLineIndex`. Lo que este test mide —y lo único que
+// midió nunca— es el modelo `AlbaranLineaFacturada`. Ver la cabecera del fichero.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-302 · nada ata las líneas del albarán con las del presupuesto (y no se finge)', () => {
+test('SCRUM-302 · el libro de líneas facturadas no referencia al presupuesto (y no se finge)', () => {
   const bloque = SCHEMA.slice(SCHEMA.indexOf('model AlbaranLineaFacturada'));
   const fin = bloque.indexOf('\n}');
   const modelo = bloque.slice(0, fin);

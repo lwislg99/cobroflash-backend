@@ -54,6 +54,11 @@ const ALBARAN_ACTION_REGISTRY = [
   // El resto, al «⋮» (regla 3).
   { id: 'btnFoto',          destinos: { borrador: 'overflow',   emitido: 'overflow',   firmado: 'overflow' } },
   { id: 'btnVerTrabajo',    destinos: { borrador: 'overflow',   emitido: 'overflow',   firmado: 'overflow' } },
+  // SCRUM-302 · DUPLICAR. En una reforma de tres semanas cada dia es un parte: duplicar el de
+  // ayer y ajustar cantidades ahorra casi todo el trabajo. Va al «⋮» en los TRES estados —
+  // tambien en 'firmado', que es justo el caso normal: se duplica el parte de ayer, ya cerrado.
+  // Que se lleva y que NO lo decide `albaranDuplicado.ts`, no esta tabla.
+  { id: 'btnDuplicar',      destinos: { borrador: 'overflow',   emitido: 'overflow',   firmado: 'overflow' } },
 ];
 
 if (typeof window !== 'undefined') {
