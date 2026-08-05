@@ -1,6 +1,6 @@
 # SCRUM-284 · capturas de Configuración troceada en diez submenús (AB6)
 
-**Medido contra:** `origin/main` = `c2be01e9347a2b0b761e764de7033f322f820f85` · 2026-08-05T06:25:00+01:00
+**Medido contra:** `origin/main` = `54a08624425eea696e37982f3717961e927496b2` · 2026-08-05T06:28:00+01:00
 
 Producidas con un **harness aislado** (Playwright sobre un servidor estático efímero): se cargan
 `api.js` + `settingsSubmenus.js` + `settingsView.js`, se stubea `apiRequest` con un merchant de
