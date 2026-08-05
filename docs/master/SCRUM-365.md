@@ -1,8 +1,8 @@
 # SCRUM-365 · La asimetría de permisos del tarifario: lo protegido era leer y lo abierto, escribir
 
 **Fecha:** 5-ago-2026 · **Carril:** D (productos) · **Gate:** sin gate, corre en `npm test`
-**Medido contra:** `origin/main` = `4370aa6daab1618d7325a10ee17b20749b79011f` · 2026-08-05T10:43:08+02:00
-**Tanda:** 1517 tests, 1450 pass, 0 fail, 67 skipped
+**Medido contra:** `origin/main` = `32395e21a2ccaeb0b63ebb3dbb928670b83aa6d6` · 2026-08-05T10:45:17+02:00
+**Tanda:** 1544 tests, 1477 pass, 0 fail, 67 skipped
 
 ## El defecto
 
