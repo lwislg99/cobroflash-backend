@@ -1,6 +1,6 @@
 # SCRUM-300 · capturas del modal de firma en obra (AB6)
 
-**Medido contra:** `origin/main` = `077fa8ac24d7e832d446a589b31367e9c15de916` · 2026-08-05T04:51:37Z
+**Medido contra:** `origin/main` = `de6abbd325419a9e85d60cf13b1588596125d66b` · 2026-08-05T05:30:16Z
 
 Producidas con un **banco aislado** (puppeteer-core sobre el Edge instalado + servidor estático
 efímero sirviendo `public/`). El modal se monta con `tokens.css` y `dashboard/css/styles.css` de
