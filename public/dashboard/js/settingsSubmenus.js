@@ -152,11 +152,38 @@ var ASIGNACION_SUPERFICIE = {
  * paneles— y aquí queda escrito que es provisional y qué la sustituye.
  */
 var SUPERFICIES_PROVISIONALES = {
-  renderReferralCard:
-    'PROVISIONAL hasta el incremento 2 (sidebar). Su destino es la barra lateral —no es un ajuste, ' +
-    'no persiste nada— pero hasta que exista esa entrada se sigue pintando en Configuración para no ' +
-    'dejar inalcanzable un programa que paga dinero al referidor. Quien haga el incremento 2 quita ' +
-    'esta línea y la llamada de `settingsView.js`.',
+  // SCRUM-314 (D3) · «Eliminar datos de ejemplo», de Luis. Entró en `main` mientras se construían
+  // los submenús y es una superficie que este mapa no conocía.
+  //
+  // SU DESTINO NATURAL SERÍA «Tus datos» —es un acto sobre los datos de la cuenta— **y aun así no va
+  // ahí**: el botón SOLO se pinta en la cuenta demo (`esCuentaDemo`, derivado de `isDemoMerchant`; la
+  // ruta lo rechaza además por su cuenta). Meterlo en ese panel dejaría «Tus datos» vacío para todo
+  // el mundo menos el demo, y **un submenú que aparece vacío para el 99 % de los usuarios es peor que
+  // el hueco declarado que ya tiene**: el hueco al menos dice que todavía no hay nada, mientras que
+  // un panel que se llena para uno y no para el resto parece roto.
+  //
+  // Cuando «Tus datos» tenga contenido propio (portabilidad, borrar cuenta), se muda ahí y esta línea
+  // se va. Hasta entonces cuelga del `form`, fuera de los diez paneles.
+  huecoDatosEjemplo: {
+    motivo:
+      'Su destino natural es «Tus datos» —es un acto sobre los datos de la cuenta— pero el botón SOLO ' +
+      'existe en la cuenta demo, y colocarlo ahí dejaría ese panel vacío para todos los demás. Un ' +
+      'submenú que aparece vacío para el 99 % de los usuarios es peor que el hueco declarado que ya ' +
+      'tiene: el hueco dice que todavía no hay nada, y un panel que se llena para uno solo parece roto.',
+    sustituye: 'quien construya el contenido propio de «Tus datos» (portabilidad, borrar cuenta)',
+    // La OTRA MITAD: los identificadores que demuestran que se sigue pintando. Sin esto, «declarada»
+    // y «existente» serían la misma frase, y una función declarada pero no montada es la regresión
+    // que la declaración existe para impedir.
+    seMontaCon: ['huecoEjemplo', 'montarDatosDeEjemplo'],
+  },
+  renderReferralCard: {
+    motivo:
+      'Su destino es la barra lateral —no es un ajuste, no persiste nada— pero hasta que exista esa ' +
+      'entrada se sigue pintando en Configuración para no dejar inalcanzable un programa que paga ' +
+      'dinero al referidor. Dejarla sin llamar «solo durante un PR» es una regresión real.',
+    sustituye: 'el incremento 2 de B1 (barra lateral)',
+    seMontaCon: ['renderReferralCard'],
+  },
 };
 
 /**
@@ -239,11 +266,29 @@ function revisarAsignacion(clavesDelCenso) {
     if (destino && porSubmenu[destino]) porSubmenu[destino].push(clave);
   });
 
+  // ⚠️ SCRUM-284 · «VACÍO» ES DE LAS DOS POBLACIONES, y esto era un AGUJERO MEDIDO.
+  //
+  // Los sentidos ③ y ④ contaban solo CAMPOS. Con eso, colocar una SUPERFICIE en un submenú
+  // declarado vacío no hacía saltar nada: el panel dejaba de estar vacío para el usuario y la lista
+  // seguía declarando un hueco que ya no existía — que es exactamente la deuda-vuelta-excepción que
+  // el trinquete existe para impedir, colándose por la población que no miraba.
+  //
+  // Lo destapó el merge de SCRUM-314: su hueco «Eliminar datos de ejemplo» es una superficie nueva,
+  // y al preguntarse qué pasaría si fuese a «Tus datos» el guard respondió que nada.
+  var superficiesPorSubmenu = {};
+  SUBMENUS.forEach(function (s) { superficiesPorSubmenu[s] = []; });
+  Object.keys(ASIGNACION_SUPERFICIE).forEach(function (nombre) {
+    var destino = ASIGNACION_SUPERFICIE[nombre];
+    if (superficiesPorSubmenu[destino]) superficiesPorSubmenu[destino].push(nombre);
+  });
+  var tieneAlgo = function (s) { return porSubmenu[s].length > 0 || superficiesPorSubmenu[s].length > 0; };
+
   return {
     sinSitio: sinSitio,
     destinosInexistentes: destinosInexistentes,
-    submenusVacios: SUBMENUS.filter(function (s) { return porSubmenu[s].length === 0 && !(s in VACIOS_DECLARADOS); }),
-    vaciosQueYaNoLoEstan: Object.keys(VACIOS_DECLARADOS).filter(function (s) { return (porSubmenu[s] || []).length > 0; }),
+    submenusVacios: SUBMENUS.filter(function (s) { return !tieneAlgo(s) && !(s in VACIOS_DECLARADOS); }),
+    vaciosQueYaNoLoEstan: Object.keys(VACIOS_DECLARADOS).filter(tieneAlgo),
+    superficiesPorSubmenu: superficiesPorSubmenu,
     asignados: clavesDelCenso.filter(function (c) { return c in ASIGNACION_SUBMENU; }).length,
     pendientes: clavesDelCenso.filter(function (c) { return c in PENDIENTES_DE_DECISION; }).length,
     fuera: clavesDelCenso.filter(function (c) { return c in FUERA_DE_CONFIGURACION; }).length,

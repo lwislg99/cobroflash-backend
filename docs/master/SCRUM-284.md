@@ -272,8 +272,8 @@ verdad.
 
 ## La pantalla: Configuración troceada en diez submenús (quinta entrega de B1)
 
-**Medido contra:** `origin/main` = `54a08624425eea696e37982f3717961e927496b2` · 2026-08-05T06:28:00+01:00
-**Tanda:** 1475 tests, 1408 pass, 0 fail, 67 skipped
+**Medido contra:** `origin/main` = `794a61589924a453d49e13c545d613c0b517e8f0` · 2026-08-05T15:06:07+01:00
+**Tanda:** 1674 tests, 1607 pass, 0 fail, 67 skipped
 **Ficheros:** `public/dashboard/js/settingsSubmenus.js` (nuevo) · `settingsView.js` ·
 `dashboard/index.html` · `sw.js` · `tests/_asignacion-submenus.mjs` ·
 `tests/scrum284-configuracion-submenus.test.mjs` (nuevo, 8) · `docs/capturas/scrum-284/`
@@ -379,10 +379,44 @@ carácter**, que es lo que impide CAMBIARLO. Verificado en rojo sobre el módulo
 diferencia importa: «aquí todavía no hay nada» no está escrito en ninguna parte, así que es
 redacción nueva y la aprueba el fundador.
 
+### 🔴 El merge con SCRUM-314 destapó un AGUJERO EN MI PROPIO GUARD
+
+Al resolver el conflicto con «Eliminar datos de ejemplo» (de Luis, `cbc2880`), la pregunta era dónde
+colocar esa superficie nueva. **Y al preguntarle al guard qué pasaría si fuese a «Tus datos», el
+guard respondió que nada.**
+
+Medido antes de tocar el mapa: con `datos` en `VACIOS_DECLARADOS` y una superficie asignada a
+`datos`, el sentido ④ devolvía `[]`. **Los sentidos ③ y ④ contaban solo CAMPOS.** O sea que un
+submenú podía dejar de estar vacío en silencio por la otra población: el panel se llenaba para el
+usuario y la lista seguía declarando un hueco que ya no existía — **la misma deuda-vuelta-excepción
+que el trinquete existe para impedir, colándose por el lado que no se miraba**.
+
+Arreglado: «vacío» pasa a significar *sin campos **y** sin superficies*. Verificado en las dos
+direcciones — antes del arreglo el simulacro daba `[]`, después da `["datos"]` — y con **test propio
+que restaura el mapa** al terminar, porque una inyección que no se deshace deja al resto de la suite
+midiendo otra cosa.
+
+**La colocación de producto (decisión del fundador), escrita en el código:** el hueco va **fuera de
+los diez paneles**, en `SUPERFICIES_PROVISIONALES`. Su destino natural sería «Tus datos» —es un acto
+sobre los datos de la cuenta— pero el botón **solo se pinta en la cuenta demo**, así que meterlo ahí
+dejaría ese submenú vacío para todo el mundo menos el demo, y **un submenú que aparece vacío para el
+99 % de los usuarios es peor que el hueco declarado que ya tiene**. Cuando «Tus datos» tenga
+contenido propio, se muda.
+
+**Las provisionales pasan a declarar tres cosas** (`motivo`, `sustituye`, `seMontaCon`) en vez de una
+cadena. `seMontaCon` es **la otra mitad**: los identificadores que demuestran por AST que la
+superficie se sigue montando. Sin eso, «declarada» y «existente» serían la misma frase — y una
+función declarada pero no montada es exactamente la regresión que la declaración existe para
+impedir. Hay además un test específico para el hueco de SCRUM-314 que exige **las dos piezas**: que
+el `div` se añada **y** que `montarDatosDeEjemplo` se llame. Viven lejos del conflicto y son lo
+primero que se pierde al fusionar.
+
 ### Lo que NO cubre
 
 * **La sidebar (incremento 2) y la pestaña de Plantillas (incremento 3) no se tocan.** El incremento
   2 le da a «Invita y gana» su entrada definitiva y borra su colocación provisional.
+* **El hueco de datos de ejemplo NO lo mueve el incremento 2**: lo mueve quien construya el contenido
+  de «Tus datos». Queda escrito en su `sustituye` para que no se busque en el sitio equivocado.
 * **La matriz de dispositivos reales** (V0-5) es humana y por bloque. Declarada como hueco.
 * **No se ejecuta la vista en `npm test`**: no hay banco de DOM y montarlo sería dependencia nueva
   (regla 36). Lo que corre es el mapa y el AST; el navegador se ejercitó a mano y quedó en capturas.

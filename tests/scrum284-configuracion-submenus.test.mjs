@@ -192,20 +192,64 @@ test('SCRUM-284 · el estado vacío SIGUE con el marcador: eso sí es redacción
     '🔴 el estado vacío de un submenú ya no usa el marcador. Ese texto no lo ha aprobado nadie.');
 });
 
-test('SCRUM-284 · toda colocación PROVISIONAL está declarada y dice qué la sustituye', () => {
+test('SCRUM-284 · toda colocación PROVISIONAL declara su motivo Y qué la sustituye', () => {
   // «Temporal» es exactamente como se quedan las cosas. Una colocación provisional sin fecha de
   // caducidad escrita es una permanente que todavía no lo sabe.
   const entradas = Object.entries(mapa.SUPERFICIES_PROVISIONALES);
-  assert.ok(entradas.length >= 1,
-    '🔴 no hay ninguna provisional declarada. Si «Invita y gana» ya tiene su entrada en la barra ' +
-    'lateral (incremento 2), quita también su llamada de settingsView.js y esta comprobación.');
-  const flojas = entradas.filter(([, m]) => !/incremento 2/i.test(String(m)));
+  assert.ok(entradas.length >= 2,
+    `🔴 solo veo ${entradas.length} provisionales (esperaba ≥2: «Invita y gana» y el hueco de datos ` +
+    'de ejemplo). Si alguna ya encontró su sitio, quita también su colocación provisional.');
+  const flojas = entradas.filter(([, d]) =>
+    !d || typeof d.motivo !== 'string' || d.motivo.trim().length < 40
+       || typeof d.sustituye !== 'string' || d.sustituye.trim().length < 10
+       || !Array.isArray(d.seMontaCon) || d.seMontaCon.length === 0);
   assert.deepEqual(flojas.map(([k]) => k), [],
-    '🔴 estas provisionales no dicen qué las sustituye:\n   · ' + flojas.map(([k]) => k).join('\n   · '));
-  // Y la que hay tiene que seguir PINTÁNDOSE: es el punto entero de declararla provisional.
-  assert.match(codigo, /renderReferralCard\(container\)/,
-    '🔴 «Invita y gana» está declarada como provisional pero ya no se pinta: quedaría inalcanzable, ' +
-    'que es justo lo que la declaración existe para impedir.');
+    '🔴 estas provisionales no declaran motivo, sustituto o cómo se montan:\n   · ' +
+    flojas.map(([k]) => k).join('\n   · '));
+});
+
+test('SCRUM-284 · LA OTRA MITAD: toda provisional se sigue MONTANDO de verdad', () => {
+  // Declarada y no pintada sería la regresión que la declaración existe para impedir. Se comprueba
+  // por AST —no por substring— que cada identificador declarado en `seMontaCon` se USA en la vista:
+  // un `grep` casaría con el comentario que explica la regla, que a esta casa le ha mordido cinco veces.
+  const sf = ts.createSourceFile('v.js', codigo, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const usados = new Set();
+  (function ver(n) {
+    if (ts.isIdentifier(n)) usados.add(n.text);
+    ts.forEachChild(n, ver);
+  })(sf);
+  // Suelo: si el escáner no viera identificadores, todo lo de abajo pasaría en vacío.
+  assert.ok(usados.size > 100, `🔴 ESCÁNER CIEGO: solo ${usados.size} identificadores en la vista.`);
+
+  const sinMontar = [];
+  for (const [clave, d] of Object.entries(mapa.SUPERFICIES_PROVISIONALES)) {
+    for (const id of d.seMontaCon) if (!usados.has(id)) sinMontar.push(`${clave} → ${id}`);
+  }
+  assert.deepEqual(sinMontar, [],
+    '🔴 estas provisionales están DECLARADAS pero ya no se montan en la vista: quedarían ' +
+    'inalcanzables, que es justo lo que la declaración existe para impedir:\n   · ' +
+    sinMontar.join('\n   · '));
+});
+
+test('SCRUM-284 · el hueco de SCRUM-314 se monta Y se rellena (las dos mitades, no una)', () => {
+  // El hueco vive lejos de donde se resolvió el conflicto y es fácil perder una de las dos piezas al
+  // fusionar. Un div que se crea y no se rellena no es un botón: es un div.
+  const sf = ts.createSourceFile('v.js', codigo, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  let seAppendea = false;
+  let seMonta = false;
+  (function ver(n) {
+    if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression)
+        && n.expression.name.text === 'appendChild' && n.arguments.length === 1
+        && ts.isIdentifier(n.arguments[0]) && n.arguments[0].text === 'huecoEjemplo') seAppendea = true;
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression)
+        && n.expression.text === 'montarDatosDeEjemplo') seMonta = true;
+    ts.forEachChild(n, ver);
+  })(sf);
+  assert.ok(seAppendea, '🔴 el hueco `datos-ejemplo` ya no se añade a la pantalla (SCRUM-314).');
+  assert.ok(seMonta,
+    '🔴 `montarDatosDeEjemplo` ya no se llama: el hueco existiría vacío para siempre y el botón de ' +
+    'la cuenta demo no aparecería nunca. Vive lejos del conflicto y es lo primero que se pierde al ' +
+    'fusionar.');
 });
 
 // ── INYECCIONES ──────────────────────────────────────────────────────────────────────────────

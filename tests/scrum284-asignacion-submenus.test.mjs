@@ -16,6 +16,7 @@ import {
   SUBMENUS, ASIGNACION, PENDIENTES_DE_DECISION, FUERA_DE_CONFIGURACION, VACIOS_DECLARADOS,
   ASUNTOS_DEL_TICKET, PENDIENTE, revisarAsignacion,
 } from './_asignacion-submenus.mjs';
+import mapa from '../public/dashboard/js/settingsSubmenus.js';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -73,6 +74,41 @@ test('SCRUM-284 · ④ un vacío declarado que YA tiene campos obliga a anotarlo
     '  Que el guard falle por una MEJORA es deliberado. Si saldar la deuda fuese silencioso, la ' +
     'lista seguiría declarando huecos que ya no existen y nadie sabría cuándo se vació del todo — ' +
     'que es exactamente cómo una deuda declarada se convierte en excepción permanente (SCRUM-299).');
+});
+
+test('SCRUM-284 · ④ cuenta LAS DOS POBLACIONES: una superficie también deja de estar vacío', () => {
+  // 🔴 AGUJERO MEDIDO Y CERRADO. Los sentidos ③ y ④ contaban solo CAMPOS, así que colocar una
+  // SUPERFICIE en un submenú declarado vacío no hacía saltar nada: el panel dejaba de estar vacío
+  // para el usuario y la lista seguía declarando un hueco que ya no existía. Es la misma
+  // deuda-vuelta-excepción que el trinquete existe para impedir, colándose por la población que no
+  // se miraba.
+  //
+  // Lo destapó el merge de SCRUM-314 («Eliminar datos de ejemplo» es una superficie nueva): al
+  // preguntarse qué pasaría si fuese a «Tus datos», el guard respondía que nada.
+  const claves = Object.keys(ASIGNACION);
+  const mapaSup = mapa.ASIGNACION_SUPERFICIE;
+  const vacioDeclarado = Object.keys(VACIOS_DECLARADOS)[0];
+  assert.ok(vacioDeclarado, '🔴 no hay ningún vacío declarado contra el que probar esto.');
+
+  // Control: hoy ese submenú no tiene ni campos ni superficies, y el trinquete calla.
+  assert.deepEqual(revisarAsignacion(claves).vaciosQueYaNoLoEstan, [],
+    '🔴 el trinquete ya está sonando antes de inyectar nada: el caso no probaría lo que dice.');
+
+  const antes = Object.assign({}, mapaSup);
+  try {
+    mapaSup.superficieDePrueba = vacioDeclarado;
+    const r = revisarAsignacion(claves);
+    assert.ok(r.vaciosQueYaNoLoEstan.includes(vacioDeclarado),
+      `🔴 «${vacioDeclarado}» ya tiene una superficie y sigue declarado vacío sin que el trinquete ` +
+      'salte. ④ estaría mirando solo los campos, y un submenú podría dejar de estar vacío en ' +
+      'silencio por la otra población.');
+  } finally {
+    for (const k of Object.keys(mapaSup)) delete mapaSup[k];
+    Object.assign(mapaSup, antes);
+  }
+  // Y el mapa queda como estaba: si esto se ensuciara, los demás tests medirían otra cosa.
+  assert.deepEqual(revisarAsignacion(claves).vaciosQueYaNoLoEstan, [],
+    '🔴 la inyección no se deshizo y el mapa queda sucio para el resto de la suite.');
 });
 
 // ── SUELOS DEL MAPA ──────────────────────────────────────────────────────────
