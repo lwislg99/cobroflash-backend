@@ -2,9 +2,14 @@
 
 **Fecha:** 5-ago-2026 · **Carril:** A (producto — la pregunta del lunes) · **Gate:** sin gate, corre en `npm test`
 
-**Medido contra:** `origin/main` = `56874623baa406a0e8e38b93c236f7a4740b1e6a` · 2026-08-05T16:38:08+01:00
+**Medido contra:** `origin/main` = `d5ac9761da139bf9b6de3c808d7c990aa6b82157` · 2026-08-05T17:06:21+01:00
 
-**Tanda:** 1760 tests, 1693 pass, 0 fail, 67 skipped (los 67 son los gateados de staging)
+> **Dos vueltas, dos anclas.** El listado se midió y se construyó contra `56874623` (16:38) y entró
+> en `main` por el PR #469. Las **cinco ranuras de microcopy firmadas después** se midieron contra
+> el `main` RESULTANTE, `d5ac9761`, que ya lleva ese listado dentro. El ancla de arriba es la
+> segunda, que es la que sigue viva.
+
+**Tanda:** 1762 tests, 1695 pass, 0 fail, 67 skipped (los 67 son los gateados de staging)
 
 ## El defecto
 
@@ -99,7 +104,7 @@ que mencione `merchantId` por el motivo que sea (medido en SCRUM-348). Aquí se 
 
 ## Verificado en rojo
 
-Dieciséis sabotajes, cada uno aplicado, compilado, corrido y revertido con verificación byte a byte:
+Veintitrés sabotajes, cada uno aplicado, compilado, corrido y revertido con verificación byte a byte:
 
 | Se quita la cosa vigilada | Sale rojo |
 | --- | --- |
@@ -117,8 +122,10 @@ Dieciséis sabotajes, cada uno aplicado, compilado, corrido y revertido con veri
 | El filtro vuelve a decir «todas» | la copy aprobada, ranura a ranura |
 | La regla de plural deja de dar «Borradores» | la copy aprobada |
 | Se reescribe una columna aprobada | la copy aprobada |
-| Un rótulo SIN aprobar pierde su marcador | el guard de lo no sometido |
 | El menú vuelve a llevar marcador sobre texto aprobado | la copy aprobada |
+| **Una letra en CADA una de las cinco ranuras firmadas** (seis cadenas) | la ranura tocada, **nombrándola** |
+| El texto DESCARTADO de ⑤ en su ranura | ⑤ `vacioConFiltros` |
+| **Los dos vacíos INTERCAMBIADOS** (las dos frases siguen en el fichero) | ④ `vacioSinAlbaranes` |
 
 🔴 **El de «la vista deja de cargarse» encontró un guard incapaz de fallar.** Comprobaba `assert.match(index,
 /albaranesView\.js/)`, así que **comentar la etiqueta `<script>` lo dejaba en verde**: el texto
@@ -187,9 +194,34 @@ del español (vocal → +s, consonante → +es), que produce exactamente `Borrad
 Firmados`. Un mapa `{ borrador: 'Borradores', … }` habría reintroducido la lista a mano que el resto
 del fichero evita.
 
-**Los cinco textos que no se sometieron siguen con marcador** (aviso de error, recuento del
-subtítulo, buscador y los dos estados vacíos): aprobarlos por mi cuenta sería inventarme copy
-oficial, y hay un guard que lo impide.
+**Las cinco ranuras restantes se firmaron justo después** (aviso de error, recuento del subtítulo,
+buscador —sus DOS cadenas— y los dos estados vacíos), así que en esta pantalla **ya no queda ni un
+marcador**. Dos decisiones del asesor sobre esas cinco merecen quedar escritas:
+
+* **El aviso de error se acortó.** Yo propuse «No se han podido cargar los albaranes. No hay ningún
+  número que enseñar: vuelve a intentarlo.» y quedó en **«No se han podido cargar los albaranes.
+  Vuelve a intentarlo.»** Mi preocupación era buena —que el error no se lea como «no tienes
+  albaranes»— pero **«no se han podido cargar» ya nombra la carga, no el inventario**: la coletilla
+  añadía una explicación que un fontanero con el móvil en la mano no necesita leer.
+* **El vacío-con-filtros se eligió LEYENDO LA RAMA**, no por gusto. La condición es
+  `filas.length === 0 ? ④ : ⑤` y ⑤ se alcanza cuando `visibles()` no devuelve nada, que descarta por
+  **tres vías independientes**: la pestaña de estado, el filtro de facturación y el buscador
+  ([albaranesView.js:245-253](../../public/dashboard/js/albaranesView.js#L245-L253)). Por eso el
+  texto firmado es **«Ningún albarán coincide con los filtros»** y no «…con esa búsqueda»: quien
+  llega ahí desde un desplegable, sin haber escrito nada, leería una frase que le miente.
+
+### El guard de las cinco está atado a la RANURA, no al fichero
+
+Lee el texto **del AST, en el sitio exacto donde se usa** (`aviso.textContent`, el sufijo del
+`subtitle`, `buscador.placeholder`, el `setAttribute('aria-label', …)` y cada rama del ternario de
+los vacíos). Buscar la cadena por el fuente habría dado verde con **los dos vacíos intercambiados**
+—las dos frases siguen escritas, palabra por palabra—, y eso no es una errata: le diría «todavía no
+hay albaranes» a quien tiene doce y filtró mal.
+
+Y el propio guard se cazó a sí mismo al escribirlo: la primera versión del assert «ya no queda
+marcador» miró el fichero entero y salió roja sola, porque **la cabecera de la vista cuenta que se
+entregó con el marcador**. Es el clásico de la casa (SCRUM-176/168/3/193); ahora mira solo los
+literales, que son los que llegan a una pantalla.
 
 Efecto medido de la aprobación, visible en las capturas: con el marcador, el prefijo empujaba
 `Cliente`, `Trabajo` y `Estado` fuera del ancho visible — incluida la columna que es la ventaja del
@@ -221,6 +253,6 @@ ticket. Con el texto aprobado, **las seis caben**.
 * `src/core/http/adminRouteDeclarations.ts` — por qué esta ruta NO está en TECNICO_ALLOWED.
 * `src/core/http/adminOnlyRoutes.ts` — su 403 con sesión de técnico, exigido en la tanda gateada.
 * `public/sw.js` — el script nuevo en el shell del service worker.
-* `tests/scrum301-albaranes-seccion.test.mjs` — **nuevo**, 16 tests.
+* `tests/scrum301-albaranes-seccion.test.mjs` — **nuevo**, 18 tests.
 * `tests/scrum302-patron-albaran.test.mjs` — su guard del derivado, ahora contra el valor compilado.
-* `docs/capturas/scrum-301/` — cuatro capturas AB6 y su README.
+* `docs/capturas/scrum-301/` — seis capturas AB6 (las de error y vacío también a 390 px) y su README.
