@@ -79,7 +79,18 @@ router.post('/checkout', async (req, res) => {
     // una oferta limitada sin poder acreditar cuántas quedan es exactamente cómo se sobrevende.
     // El caso es raro (solo si la consulta falla) y el error va en la dirección segura.
     const founding = await getFoundingStatus();
-    if (!founding.resoluble) return res.status(409).json({ error: 'founding_no_resoluble' });
+    if (!founding.resoluble) {
+      // ⚠️ DEJA RASTRO NOMBRADO, y no es adorno: un checkout que corta en silencio son VENTAS
+      // PERDIDAS INVISIBLES, que es peor que el problema que este corte evita. Hoy, con cero
+      // ventas, no se notaría; el día que haya tráfico, esta línea es lo único que lo delata.
+      // QUÉ MIRAR si un día nadie puede comprar la plaza founding: buscar `founding_no_resoluble`
+      // en los logs. Si aparece, el corte es este y la causa está en el `catch` de
+      // `getFoundingStatus` (la consulta del contador falló), no en Stripe ni en el precio.
+      console.error(
+        `[founding] checkout BLOQUEADO por contador no resoluble (motivo=${founding.motivo}, merchant=${req.merchantId}) — venta perdida`,
+      );
+      return res.status(409).json({ error: 'founding_no_resoluble' });
+    }
     if (founding.seatsLeft <= 0) return res.status(409).json({ error: 'founding_sold_out' });
 
     // A10.1 (regla 25): sin aceptación VIGENTE del alcance beta no hay checkout
