@@ -33,6 +33,7 @@ const SHELL = [
   '/dashboard/js/productsView.js',
   '/dashboard/js/providersView.js',
   '/dashboard/js/invoicesView.js',
+  '/dashboard/js/nuevaFacturaModal.js', // SCRUM-289 (A0.3)
   '/dashboard/js/invoiceActionsRegistry.js',
   '/dashboard/js/invoiceDetailView.js',
   '/dashboard/js/expensesView.js',

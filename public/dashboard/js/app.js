@@ -11,6 +11,9 @@ async function initApp() {
   window.appUserName   = me.name || '';
   window.appVoiceEnabled = me.voiceEnabled === true; // VZ-1: flag VOICE_QUOTE_ENABLED
   window.appVoiceAlbaranEnabled = me.voiceAlbaranEnabled === true; // SCRUM-71: flag PROPIO del albarán
+  // SCRUM-289 (A0.3): veredicto YA CALCULADO por el servidor (puedeCrearFacturaSuelta). El
+  // navegador no reimplementa el modo de emisión: lo recibe.
+  window.appFacturaSueltaDisponible = me.facturaSueltaDisponible === true;
 
   // A10.2 (Parte L): past_due → banner global "Hay un problema con tu pago"
   // + portal de Stripe. La cuenta sigue funcionando (gracia); solo avisa.
