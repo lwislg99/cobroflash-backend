@@ -6,8 +6,8 @@
 //   · Los seis `id` son DATO. Se guardan en `Albaran.firmadoPorCalidad`, acaban en el paquete de
 //     evidencias que lee un tercero, y por eso quedaron fijados ANTES de la migración: cambiarlos
 //     después obliga a migrar filas de documentos ya firmados.
-//   · Las seis etiquetas son PANTALLA, y **no las ha aprobado nadie** (regla 30). Van con el
-//     marcador `[PENDIENTE microcopy oficial]`, como en portabilidad, SCRUM-289 y SCRUM-303.
+//   · Las seis etiquetas son PANTALLA. **APROBADAS por el fundador el 6-ago-2026**, literales.
+//     Cambiar una etiqueta no obliga a migrar nada; cambiar un `id`, sí.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 🔴 POR QUÉ ESTE FICHERO EXISTE, Y NO ES UNA FORMALIDAD
@@ -17,13 +17,14 @@
 // marcador pide permiso y la etiqueta falsa lo da — el siguiente que lo lea no comprobará.
 //
 // El asesor anunció los seis rótulos validados «en el comentario siguiente» de SCRUM-300.
-// **Medido el 5-ago-2026: ese comentario no llegó a escribirse** (el ticket tiene 5 comentarios y
-// ninguno los contiene). Así que aquí se vigila que NADIE los rellene por su cuenta mientras
-// tanto: inventar microcopy es exactamente lo que la regla 30 prohíbe, y estos textos acaban en
-// un documento que se puede leer en un juzgado.
+// **Medido el 5-ago-2026: ese comentario no llegó a escribirse** (el ticket tenía 5 comentarios y
+// ninguno los contenía). Así que las seis salieron con `[PENDIENTE microcopy oficial]` y este
+// fichero exigía el marcador, para que nadie rellenara el hueco «mientras llega el texto bueno».
 //
-// Cuando el fundador los apruebe, ESTE TEST SE PONDRÁ ROJO. Es deliberado: obliga a que la
-// aprobación quede en el mismo diff que el texto, con quién la dio y cuándo.
+// **El 6-ago-2026 llegó la aprobación de verdad y este test se puso ROJO — que era exactamente su
+// diseño.** Ese rojo es lo que obligó a que el texto y su aprobación entraran en el MISMO commit,
+// con quién la dio y cuándo. Sigue igual de vivo: ahora fija los seis literales, y volverá a caer
+// el día que alguien los toque sin una aprobación nueva anotada.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -36,10 +37,14 @@ import {
   FIRMANTE_NOMBRE_MAX,
   FIRMANTE_OTRO_MAX,
   LUGAR_ENTREGA_MAX,
+  COPY_CALIDAD_INVALIDA,
+  COPY_CALIDAD_OTRO_VACIO,
+  COPY_FIRMA_SIN_NOMBRE,
   PENDIENTE,
   codificarCalidad,
   decodificarCalidad,
   etiquetaCalidad,
+  exigirNombreFirmante,
   firmanteCalidadOpciones,
   normalizarLugarEntrega,
   normalizarNombreFirmante,
@@ -254,6 +259,32 @@ test('SCRUM-300 · los rótulos del PDF conservan su espacio final, que es parte
   // sería peor que el rótulo. Éstos sí tienen aprobación anotada campo a campo en el módulo.
   for (const [campo, texto] of Object.entries(ALBARAN_ROTULOS)) {
     assert.ok(!texto.includes(PENDIENTE), `🔴 el rótulo «${campo}» va al PDF con el marcador dentro`);
+  }
+});
+
+test('SCRUM-300 · los TRES textos de error están aprobados, literales, y ninguno lleva marcador', () => {
+  // Los tres los aprobó el fundador el 6-ago-2026. Dos venían de la rama `scrum-300-firmado-por`
+  // como literales que nadie había aprobado —la misma clase de texto que las cinco ranuras
+  // retiradas— y se reescribieron.
+  assert.equal(COPY_FIRMA_SIN_NOMBRE, 'Falta el nombre de quien firma.');
+  assert.equal(COPY_CALIDAD_INVALIDA, 'Esa opción no existe. Recarga la página y vuelve a intentarlo.');
+  assert.equal(COPY_CALIDAD_OTRO_VACIO, 'Si eliges «Otro», escribe en calidad de qué firma.');
+
+  // 🔴 El de la calidad inválida dice QUÉ HACER, y eso NO es adorno: si un profesional llega ahí
+  // es que su pantalla está desincronizada con las ranuras que sirve el backend, y recargar es la
+  // salida. Un error que solo constata el problema lo deja atascado con el cliente delante.
+  assert.match(COPY_CALIDAD_INVALIDA, /[Rr]ecarga/,
+    '🔴 el error de calidad inválida ha dejado de decir qué hacer. Quien lo ve tiene la pantalla ' +
+    'desincronizada: sin «recarga la página» se queda atascado sin saber por dónde salir.');
+
+  // Y los que salen por la API, de verdad, en los dos caminos que puede tomar la validación.
+  assert.equal(resolverCalidadFirmante({ ranura: 'no_existe' }).message, COPY_CALIDAD_INVALIDA);
+  assert.equal(resolverCalidadFirmante({ ranura: 'otro', textoLibre: '' }).message, COPY_CALIDAD_OTRO_VACIO);
+  assert.equal(exigirNombreFirmante('   ').message, COPY_FIRMA_SIN_NOMBRE);
+  assert.deepEqual(exigirNombreFirmante('  Marta   Ruiz  '), { ok: true, nombre: 'Marta Ruiz' });
+
+  for (const t of [COPY_FIRMA_SIN_NOMBRE, COPY_CALIDAD_INVALIDA, COPY_CALIDAD_OTRO_VACIO]) {
+    assert.ok(!t.includes(PENDIENTE), `🔴 «${t}» todavía lleva el marcador: no está aprobado`);
   }
 });
 
