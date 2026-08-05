@@ -132,7 +132,11 @@ const quoteBase = (lines) => ({
 
 /** Deja `prisma` con lo mínimo para llegar al portón. Best-effort y explícito. */
 function sustituirPrisma(quote, extra = {}) {
-  moduloPrisma.prisma.quote = { findFirst: async () => quote, findUnique: async () => quote, update: async () => quote, ...extra.quote };
+  // SCRUM-195 (rebanada 2): `collect-rest` pregunta ahora por el CONJUNTO de presupuestos del
+  // Trabajo (`findMany`), no solo por el que `Job.quoteId` apunta. El doble lo ANADE; no se
+  // toca ninguna asercion: lo que este test fija —que un tramo sin lineas facturables
+  // devuelve 409 con el copy del profesional y no un 500 mudo— sigue comprobandose igual.
+  moduloPrisma.prisma.quote = { findFirst: async () => quote, findUnique: async () => quote, findMany: async () => [quote], update: async () => quote, ...extra.quote };
   moduloPrisma.prisma.job = extra.job ?? moduloPrisma.prisma.job;
   moduloPrisma.prisma.invoice = { findMany: async () => [], findFirst: async () => null, ...extra.invoice };
 }
