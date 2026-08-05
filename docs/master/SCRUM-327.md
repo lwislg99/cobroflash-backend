@@ -144,3 +144,103 @@ del carril B].** Hueco declarado para el fundador.
 - **B2 (11-14) analítica/visitas:** sin instrumentación de analítica de terceros (solo `localStorage`
   de atribución, ver Q10). Visitas/origen [NO SE PUEDE MEDIR HOY]; no se construye.
 - No se cambió NADA de la landing (ni una palabra, ni el contador, ni el precio). Reglas 26/30 vivas.
+
+---
+
+# SCRUM-327 · RE-VERIFICACIÓN Y BLOQUE 2 (sesión 4)
+
+**Fecha:** 5-ago-2026 · **Carril:** B (medición) · **Gate:** sin gate — solo lee
+**Medido contra:** `origin/main` = `de6abbd325419a9e85d60cf13b1588596125d66b` · 2026-08-05T09:13:00+02:00
+
+> **Por qué hay una segunda medición y no una segunda entrada.** La de arriba se midió contra
+> `be3a201`, cuando `index.html` tenía **583 líneas**; hoy tiene **572** y entre medias entraron
+> SCRUM-336 y SCRUM-341 **sobre ese mismo fichero**. Una medición no caduca por vieja, caduca
+> porque su objeto se movió — y las tres preguntas urgentes son de cosas **publicadas**. Se
+> re-verifican aquí, y lo que ya estaba bien medido **no se reescribe**.
+>
+> **SUELO:** `presupuesto` = **32** apariciones en `index.html` → la búsqueda lee el fichero.
+> (Eran 35 en la medición anterior; bajó con 336/341, que es la prueba de que el objeto se movió.)
+
+## Las tres urgentes, re-medidas hoy
+
+**Q8 · «factura» ×8, «VeriFactu» ×2 — mismos anclajes que la medición anterior. Aguanta.**
+Las ocho de «factura*» son **mención de categoría**, no promesa: `:7`, `:17`, `:37` («Clientes,
+gastos, facturas y bot…» en meta/OG/JSON-LD), `:317` y `:495` («llevas clientes, gastos y
+facturas»), `:499` («se exportan en CSV»). Las dos de VeriFactu: el guion H2 en la FAQ (`:498`) y
+**el badge de confianza `:365`**.
+
+> 🔴 **LO QUE DECIDE EL FUNDADOR HOY — el badge `:365`.** Texto exacto:
+> **«Facturación VeriFactu en certificación»**, en la fila de credenciales junto a «Firma con
+> evidencia…», «Hecho en Madrid» y «Sin permanencia». La medición anterior lo señaló y **no lo
+> declaró defecto** porque repite una frase que el guion H2 sí aprueba. Lo re-mido y **añado el
+> matiz que lo hace decisión y no detalle**: la regla 26 dice que la pregunta de VeriFactu **se
+> responde SOLO con el guion H2** — y un badge no responde a nadie: **ofrece** el claim, sin que
+> nadie lo haya preguntado, y en el sitio de la página donde se ponen las credenciales. Es la
+> diferencia entre contestar con honestidad y **usarlo como argumento de venta**.
+> **No lo califico yo.** Es regla 26 y es del fundador: hoy.
+
+**Q17 · el contador es más flojo de lo que decía la medición anterior, y ahora está derivado.**
+`getFoundingStatus` cuenta `merchant.count({ where: { plan: 'founding' } })`
+(`src/modules/billing/domain/founding.ts:9`). Rastreando **quién ESCRIBE** ese campo —el webhook de
+Stripe, `src/modules/billing/app/routes/stripe.routes.ts:110-124`— el campo queda en `'founding'` en
+**tres** situaciones, no una:
+
+| Estado de Stripe | Qué hace el webhook | ¿Ha pagado? |
+|---|---|---|
+| `active` | `plan: planId`, status `active` | **sí** |
+| `trialing` | `plan: planId`, status `active` (`:110`) | **NO — aún no se ha cobrado nada** |
+| `past_due` / `unpaid` | `plan: planId` **se CONSERVA**, status `past_due` (`:123`) | **NO — el cobro falló** |
+
+O sea: **«quedan 18 de 20» dice al visitante que 2 profesionales ya compraron, y el dato que hay
+debajo es cierto también para una prueba sin cobrar y para un pago fallido.** La medición anterior
+decía «cuenta el campo, no pagos»; esto dice **cuáles** son los otros dos casos y con qué línea.
+Sigue siendo **defecto vivo**, y el mecanismo para arreglarlo existe al lado: `subscriptionStatus`
+distingue `active` de `past_due`, y el contador no lo mira.
+
+**Q16 · ¿se ha cobrado 19,90 alguna vez? [NO SE PUEDE MEDIR HOY]** — y conviene decir **por qué no
+es pereza**: el importe **no está en el árbol**. El cargo Pro sale de un price id de Stripe
+(`STRIPE_PRICE_ID_PRO`, `src/core/config/env.ts`), así que ni el precio real ni los cobros son
+visibles desde el repo. **Quien puede contestarla en dos minutos es el fundador**, en el panel de
+Stripe: pagos con importe 19,90 €. Mientras no se conteste, el tachado sigue siendo un precio de
+referencia **no verificado**.
+
+## BLOQUE 2 · el embudo — **y el resultado es que no hay embudo que medir**
+
+El ticket avisaba de que este bloque podía devolver «no hay tráfico suficiente». La medición
+devuelve algo **más fuerte y más simple**:
+
+**Q11 · [MEDIDO] Instrumentación de analítica: CERO.** Barrido de `public/` entero buscando
+`gtag`, `google-analytics`, `googletagmanager`, `plausible`, `matomo`, `fathom`, `posthog`,
+`hotjar`, `clarity`, `fbq`, pixel de Facebook, `mixpanel` y `segment`: **ninguna coincidencia**
+(los únicos aciertos son un comentario de código y tres binarios de imagen). Y **no hay modelo de
+visitas en el schema** (`Visit`/`PageView`/`Analytics`: ninguno).
+
+**Q12 · visitas de yaqu.app — [NO SE PUEDE MEDIR HOY].** No es que sean pocas: **no se cuentan en
+ningún sitio**. No hay dato que consultar, ni en el repo ni en la BD.
+
+**Q13 · origen del tráfico — [NO SE PUEDE MEDIR HOY] para las visitas, PARCIAL para los registros.**
+`Merchant.acquisitionSource` existe (`prisma/schema.prisma:71`, V0-3) y guarda la atribución
+capturada **en el registro**. Así que del que **se registra** sí consta de dónde vino; del que
+**visita y se va**, nada.
+
+**Q14 · registros que salen de esas visitas — [NO SE PUEDE MEDIR HOY].** El numerador (registros)
+es consultable en producción; el denominador (visitas) **no existe**.
+
+> 🔴 **LA CONSECUENCIA, que es el resultado del bloque.** No estamos ante «hay poco tráfico»:
+> estamos ante **no hay instrumento**. La conversión visitas→registro es **estructuralmente
+> inmedible hoy**, así que el Bloque F no puede priorizarse con evidencia: exactamente lo que el
+> ticket predijo — *«la landing no convierte» y «nadie la ha visto» van a ser el mismo número*.
+>
+> **Lo que esto implica para el orden de trabajo, y es decisión del fundador:** rehacer secciones
+> de la landing **no se puede evaluar** después. Antes de rehacer, o se pone un instrumento (una
+> línea de analítica respetuosa, que además arrastra la decisión de consentimiento de Q10), o se
+> acepta explícitamente que el Bloque F se hace **a ciegas y por criterio**, no por datos.
+
+## Lo que esta re-verificación NO cubre
+
+- **No se ha tocado nada.** Ni una palabra de la landing, ni el contador, ni el precio.
+- **Q16 sigue abierta** y solo la cierra el fundador con Stripe delante.
+- **No he verificado el render en producción**, solo el código servido desde el repo.
+- **Las preguntas 1-7, 9, 10, 15, 18 y 19 no se re-miden**: están medidas arriba con sus anclas y
+  su objeto no se ha movido en lo esencial. Si alguna importa para una decisión concreta, se
+  re-verifica esa, no todas.
