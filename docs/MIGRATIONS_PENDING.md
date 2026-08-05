@@ -104,6 +104,106 @@ distingue es quién puede tocarlas. Se descarta llamar a `yaqu_dev_javier` "segu
 staging" (SCRUM-84) porque implicaría el régimen de `railway` y no lo tiene. Si el fundador lo
 ve de otra forma, es una línea.
 
+## SCRUM-300 · albaranes: entrega + quién firma (C5) — 🔴 SIN APLICAR en ninguna de las tres
+
+> **🔎 VERIFICABLE** — que existan las cuatro columnas: pregúntaselo a `docs/sql/deriva-prod.sql`
+> contra cada base, no a esta cabecera. **✋ SIN MECANISMO** — que estén aplicadas en las tres.
+> **No hay backfill**: las cuatro nacen NULL y NULL es su valor legítimo para todo lo ya firmado.
+
+⚠️ **Entrada FUNDIDA de las dos implementaciones paralelas de C5** (`scrum-300-campos-albaran` y
+`scrum-300-firmado-por`), que escribieron su preview por separado y con esquemas distintos. El
+mapa de la fusión está en `docs/master/SCRUM-300.md`.
+
+Preview generado **sin tocar ninguna base**: `migrate diff` de datamodel contra datamodel (el
+`prisma/schema.prisma` de `origin/main` como origen, el de esta rama como destino). Se evita a
+propósito `--from-schema-datasource`, que habría **conectado a la base de `.env`** —que es
+producción— y también la variante que recibe la conexión **por argumento**, que la deja a la
+vista en `argv`/`ps` (el motivo de SCRUM-226; la conexión viaja por el ENTORNO o no viaja):
+
+```sql
+-- AlterTable
+ALTER TABLE "albaranes" ADD COLUMN     "fecha_entrega" TIMESTAMP(3),
+ADD COLUMN     "firmado_por_calidad" TEXT,
+ADD COLUMN     "firmado_por_nombre" TEXT,
+ADD COLUMN     "lugar_entrega" TEXT;
+```
+
+100 % aditivo: **cuatro columnas nullable, sin default, sin UNIQUE, sin índice** → `db push` no debe
+pedir `--accept-data-loss`. **Si lo pide, PARA**: significaría que el diff no es el que está aquí.
+
+- `lugar_entrega` — contenido mínimo obligatorio del albarán. Campo **del albarán**, no del Trabajo
+  (decisión del asesor, 5-ago-2026): `Job.direccion` es precarga opcional y hoy es null para
+  cualquier merchant real. ⚠️ Suelo: vacío antes que caer al domicilio fiscal.
+- `fecha_entrega` — el día real de la entrega, distinto del de emisión. Es el **campo nº 1 del
+  ticket**.
+- `firmado_por_nombre` / `firmado_por_calidad` — QUIÉN firmó y EN CALIDAD DE QUÉ.
+  ⚠️ `firmado_por_calidad` guarda **el `id` de la ranura** (`encargado_o_personal_de_obra`), no su
+  etiqueta, y en la ranura libre `otro:<texto>`. Por eso los seis ids quedaron fijados **antes** de
+  esta migración: cambiarlos después obliga a migrar filas de documentos ya firmados.
+
+### ⚠️ Por qué `fecha_entrega` SÍ va, aunque una de las dos ramas argumentara que no
+
+`scrum-300-firmado-por` la dejó fuera con este razonamiento: `albaranes.fecha` ya es la fecha de
+entrega —está sellada en el hash, se imprime como «Entrega/ejecución» y es la clave del mes natural
+de la recapitulativa (art. 13 RD 1619/2012)—, así que una segunda fecha podría **divergir de la que
+agrupa la factura**: PDF diciendo julio y recapitulativa agrupando en agosto.
+
+**El asesor decidió el esquema de 4 columnas** (5-ago-2026). El riesgo que señalaba esa rama es
+real y se neutraliza así, que es como está construido el código de esta rama:
+
+- `fecha` **sigue siendo** la fecha del documento y la única que agrupa la recapitulativa.
+  `fecha_entrega` es **documental**: no entra en ninguna agrupación ni en ningún cálculo fiscal.
+- El editor del albarán **NO escribe `fecha`** al tocar `fecha_entrega` (`jobDetailView.js`), así
+  que abrir el editor no puede mover una factura de mes.
+
+### ⚠️ AVISO DE HERRAMIENTA — muerde al preview obligatorio, no a esta migración
+
+El CLI instalado es **prisma 7.9.1** y el cliente **@prisma/client ^6.18.0**. En el 7, los flags
+`--from-schema-datamodel`/`--to-schema-datamodel` que documenta `CLAUDE.md` **ya no existen** (ahora
+son `--from-schema`/`--to-schema`), y **con cualquiera de las dos formas `migrate diff` devuelve
+SALIDA VACÍA con exit 0** — porque el 7 dejó de leer la config de `package.json#prisma` (lo avisa el
+propio 6: *«deprecated and will be removed in Prisma 7»*).
+
+Es decir: **el preview obligatorio antes de cada `db push` a producción dice hoy "no hay cambios"
+pase lo que pase.** Un fail-open silencioso justo en el guard que protege prod. Mientras no se
+arregle (`prisma.config.ts` o fijar el CLI al 6), el preview se hace con `npx prisma@6.18.0`, y
+**nunca** se da por bueno un diff vacío sin control positivo (`--from-empty` debe escupir el
+esquema entero; si sale vacío, el roto es el CLI).
+
+> 📌 **CADUCADO — MEDIDO EL 6-ago-2026 (SCRUM-385 arreglado).** Lo de arriba se CONSERVA como
+> registro de lo que se midió entonces; **como estado de HOY es falso**, y por eso se anota aquí
+> al lado en vez de borrarlo. El CLI instalado es **prisma 6.18.0** en los cuatro worktrees, y
+> `package.json` fija `^6.18.0`, que no alcanza el 7.x. `migrate diff` **discrimina**, medido con
+> los dos controles que este mismo aviso exigía:
+>
+> | Control | Salida | Veredicto |
+> | --- | --- | --- |
+> | `--from-empty` → schema actual | **24.338 bytes / 718 líneas** de DDL | no es fail-open |
+> | dos esquemas idénticos | `-- This is an empty migration.` (32 bytes) | vacío legítimo |
+> | un campo de más (mismo modo) | su `ALTER TABLE … DROP COLUMN` | discrimina |
+>
+> El tercero va porque `--from-empty` recorre **otro camino** que el `datamodel`-vs-`datamodel`:
+> los dos primeros solos no prueban que ESE modo distinga. Y el hallazgo que cambia la vigilancia:
+> **el vacío legítimo ya no es la cadena vacía** — se autodeclara. Así que **una salida de 0 bytes
+> es firma inequívoca de rotura**, que es justo lo que vigila el suelo anti-silencio de
+> `scripts/db-push-prod:100-111` (aborta sin salida; solo declara «nada que aplicar» si lee
+> literalmente `empty migration`).
+>
+> ⚠️ **Sigue SIN medir `--from-schema-datasource`**, que es el que usa el comando obligatorio de
+> `CLAUDE.md`: conecta a la base de `.env` —producción—, así que no se ejercitó. Lo validado es el
+> motor de diff y el wrapper por lectura, no el camino que conecta.
+
+**Orden de aplicación (regla de las TRES BD, SCRUM-169):** staging → `yaqu_dev_javier` → producción.
+Turno del fundador; esta rama solo deja el preview. El código de la rama **lee y escribe** las cuatro
+columnas, así que aplicar el schema va **antes** del deploy o hay P2022.
+
+🔴 **GATE ADICIONAL DE ESTA MIGRACIÓN, y no es de esquema:** las seis etiquetas de «en calidad de
+qué» **siguen sin aprobar** (regla 30) y hoy se pintan con `[PENDIENTE microcopy oficial]`. Ese
+marcador acabaría **impreso en el PDF de un albarán firmado** en cuanto se pueda firmar en v:2. No
+migres antes de tener los seis textos del fundador.
+
+---
+
 ## SCRUM-205 · `invoices.vf_estado` (estado de sellado explícito) — MEDIDO 6-ago-2026, ver tabla
 
 > **Estado POR BASE, con la fecha y el método de cada medición** (antes esta cabecera decía

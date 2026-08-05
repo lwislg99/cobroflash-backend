@@ -10,6 +10,17 @@ import { esc } from '../../../../core/utils/utils';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { rateLimit } from '../../../../core/http/rateLimit';
 import { buildFirmaEvidencia, canTransitionAlbaran, ensureAlbaranPdf } from '../../domain/albaran.service';
+// SCRUM-300 (C5): microcopy del firmante en su fuente única (regla 30) — aquí no se escribe copy.
+import {
+  ALBARAN_ROTULOS,
+  FIRMANTE_CALIDAD_ETIQUETAS,
+  FIRMANTE_CALIDAD_LIBRE,
+  FIRMANTE_NOMBRE_MAX,
+  FIRMANTE_OTRO_MAX,
+  firmanteCalidadOpciones,
+  normalizarNombreFirmante,
+  resolverCalidadFirmante,
+} from '../../domain/albaranFirmante';
 import { sendAlbaranFirmadoWhatsApp } from '../../domain/albaranWhatsApp.service';
 import { requestIp } from '../../../system/audit.service';
 
@@ -55,6 +66,13 @@ function renderPage(title: string, body: string): string {
   .sig-placeholder{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#cdd2cb;
     font-size:14px;pointer-events:none;user-select:none}
   .sig-actions{display:flex;gap:8px;margin-bottom:16px;align-items:center}
+  /* SCRUM-300: los dos campos de FIRMADO POR. El NOMBRE viene precargado con el del cliente
+     (lo pide el ticket); la CALIDAD viene SIN marcar y es opcional, así que quien no tenga nada
+     que declarar no los toca: el flujo sigue siendo trazo + un botón. */
+  .firmante-campo{margin-bottom:10px}
+  .firmante-campo label{display:block;font-size:13px;font-weight:600;color:#333c37;margin-bottom:4px}
+  .firmante-campo input,.firmante-campo select{width:100%;padding:11px 12px;font-size:15px;font-family:inherit;
+    color:#0f1c17;background:#fff;border:1px solid #cdd2cb;border-radius:10px;min-height:44px}
   .btn-clear{font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid #e7e9e5;background:#fff;cursor:pointer;color:#6b756f}
   .btn-accept{width:100%;padding:15px;font-size:16px;font-weight:700;background:#16a34a;color:#fff;border:none;
     border-radius:14px;cursor:pointer;min-height:52px;box-shadow:0 4px 14px -2px rgba(22,163,74,.35)}
@@ -120,6 +138,55 @@ const SIG_JS = `<script>(function(){
   window.getSignatureData=function(){return hasSig?canvas.toDataURL('image/png'):null;};
 })();</script>`;
 
+/**
+ * SCRUM-300 (C5): los dos campos de FIRMADO POR, sin añadir toques al camino normal.
+ *
+ * ⚠️ DOS DECISIONES QUE PARECEN LA MISMA Y SON OPUESTAS:
+ *
+ *  · El NOMBRE llega precargado con el del cliente. Lo pide el enunciado del ticket
+ *    («el nombre precargado con el del cliente para el caso más común») y es un dato que
+ *    nosotros ya sabemos, no una declaración de nadie.
+ *
+ *  · La CALIDAD llega SIN NADA MARCADO, y es deliberado: una casilla premarcada es una
+ *    declaración que el firmante no ha hecho. Lo dice también el comentario de
+ *    `firmadoPorCalidad` en `prisma/schema.prisma`. La rama `scrum-300-firmado-por` la
+ *    premarcaba con «El propio cliente»; se ha retirado.
+ *
+ * El campo es OPCIONAL, así que no marcar nada no bloquea nada: el camino normal sigue siendo
+ * trazo + botón. Solo paga toques quien firma siendo otra persona, que es justo el caso que el
+ * documento necesita capturar.
+ *
+ * Los textos NO se escriben aquí: salen de `albaranFirmante.ts`, su fuente única (regla 30).
+ * Hoy las seis etiquetas son `[PENDIENTE microcopy oficial]` porque nadie las ha aprobado.
+ */
+function firmanteCamposHtml(nombrePrecargado: string): string {
+  // La primera opción va vacía y seleccionada: es la que deja el campo sin declarar.
+  const opciones = firmanteCalidadOpciones()
+    .map((o) => `<option value="${esc(o.id)}">${esc(o.etiqueta)}</option>`)
+    .join('');
+  const libre = esc(FIRMANTE_CALIDAD_LIBRE);
+  return `
+    <div class="firmante-campo">
+      <label for="firmante-nombre">${esc(ALBARAN_ROTULOS.firmadoPorNombre)}</label>
+      <input id="firmante-nombre" type="text" value="${nombrePrecargado}" maxlength="${FIRMANTE_NOMBRE_MAX}" autocomplete="name"/>
+    </div>
+    <div class="firmante-campo">
+      <label for="firmante-calidad">${esc(ALBARAN_ROTULOS.firmadoPorCalidad)}</label>
+      <select id="firmante-calidad"><option value="" selected></option>${opciones}</select>
+    </div>
+    <div class="firmante-campo" id="firmante-otro-wrap" style="display:none">
+      <input id="firmante-otro" type="text" maxlength="${FIRMANTE_OTRO_MAX}" placeholder="${esc(FIRMANTE_CALIDAD_ETIQUETAS[FIRMANTE_CALIDAD_LIBRE])}"/>
+    </div>
+    <script>(function(){
+      var sel=document.getElementById('firmante-calidad'),wrap=document.getElementById('firmante-otro-wrap');
+      if(!sel||!wrap)return;
+      sel.addEventListener('change',function(){
+        wrap.style.display = sel.value===${JSON.stringify(libre)} ? '' : 'none';
+        if(sel.value===${JSON.stringify(libre)}){var o=document.getElementById('firmante-otro'); if(o)o.focus();}
+      });
+    })();</script>`;
+}
+
 async function loadContext(token: string) {
   const albaran = await prisma.albaran.findUnique({ where: { firmaToken: token } });
   if (!albaran) return null;
@@ -162,6 +229,7 @@ router.get('/:token', async (req: Request, res: Response) => {
     <div class="meta">Parte de trabajo ${esc(albaran.numero)}${obra ? ` · ${obra}` : ''}</div>
     ${linesHtml}
     <hr class="divider"/>
+    ${firmanteCamposHtml(customerName)}
     <label class="sig-label">Tu firma</label>
     <p class="sig-sub">Revisa el parte y firma con el dedo o el ratón.</p>
     <div class="sig-wrapper" id="sig-wrapper">
@@ -180,8 +248,16 @@ router.get('/:token', async (req: Request, res: Response) => {
         if(!sig){ document.getElementById('sig-error').style.display='block'; return; }
         const btn=this; btn.disabled=true; btn.textContent='Enviando…';
         try{
+          // SCRUM-300: los dos datos de FIRMADO POR viajan CON la firma, para que entren en el
+          // contenido ANTES de sellarlo. Pegarlos después rompería el hash.
+          const cal=document.getElementById('firmante-calidad');
           const r=await fetch(${JSON.stringify(`/albaran/${req.params.token}/firmar`)},{
-            method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({signatureData:sig})});
+            method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+              signatureData:sig,
+              firmadoPorNombre:(document.getElementById('firmante-nombre')||{}).value||'',
+              firmadoPorCalidad:cal?cal.value:'',
+              firmadoPorCalidadOtro:(document.getElementById('firmante-otro')||{}).value||''
+            })});
           if(r.ok){
             document.querySelector('.card').innerHTML=
               '<div style="text-align:center;padding:12px 0"><div class="success-check">✓</div>'+
@@ -219,6 +295,16 @@ router.post('/:token/firmar', firmaLimiter, async (req: Request, res: Response) 
     // Firma remota: sella evidencias (SCRUM-68) → estado firmado, congelado. Canal 'remoto'
     // y tokenId = firmaToken usado. ⚠️ ip/ua se guardan SOLO en evidenciaFirma y NUNCA se
     // exponen aquí: esta página pública jamás los devuelve (ni en el HTML ni en el JSON).
+    // SCRUM-300 (C5): quién firma y en calidad de qué, también en el canal remoto. Resueltos
+    // ANTES de sellar. Aquí quien tiene el móvil es normalmente el propio cliente, así que la
+    // ranura precargada acierta aún más que en obra.
+    const calidad = resolverCalidadFirmante({
+      ranura: req.body?.firmadoPorCalidad,
+      textoLibre: req.body?.firmadoPorCalidadOtro,
+    });
+    if (!calidad.ok) return res.status(400).json({ error: calidad.error, message: calidad.message });
+    const firmadoPorNombre = normalizarNombreFirmante(req.body?.firmadoPorNombre);
+
     const firmadoAt = new Date();
     const evidencia = await buildFirmaEvidencia({
       albaran,
@@ -227,10 +313,15 @@ router.post('/:token/firmar', firmaLimiter, async (req: Request, res: Response) 
       ua: (req.headers['user-agent'] as string) || null,
       tokenId: albaran.firmaToken,
       firmadoAt,
+      firmadoPorNombre,
+      firmadoPorCalidad: calidad.valor,
     });
     await prisma.albaran.update({
       where: { id: albaran.id },
-      data: { estado: 'firmado', signatureUrl: signatureData, firmadoAt, evidenciaFirma: evidencia as any },
+      data: {
+        estado: 'firmado', signatureUrl: signatureData, firmadoAt, evidenciaFirma: evidencia as any,
+        firmadoPorNombre, firmadoPorCalidad: calidad.valor,
+      },
     });
     await ensureAlbaranPdf(albaran.id, true).catch((e) => console.error('[albaranPublic] PDF tras firmar:', e?.message || e));
 
