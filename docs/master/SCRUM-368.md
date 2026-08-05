@@ -307,8 +307,171 @@ identificadores sin declarar. **Se cambió el código, no el censo** —se toman
 de la función que corre en el navegador— porque el residuo de ese guard no debe crecer para
 acomodar código nuevo.
 
-## Reglas (las dos entregas)
+
+# ═══ TERCERA ENTREGA · A1 MEDIDO Y PARADO, Y EL GUARD DE LAS DOS MITADES ═══
+
+**Medido contra:** `origin/main` = `d5ac9761da139bf9b6de3c808d7c990aa6b82157` · 2026-08-05T17:02:32+01:00
+
+> Tercera entrega del ticket. La primera cerró el FOCO, la segunda el CONTRASTE de `--muted` y
+> del verde como texto. Ésta mide el alcance de **A1** (texto grande en el botón primario), **para
+> antes de aplicarlo** por lo que encontró, arregla el landing y deja el guard vigilando las dos
+> mitades del motivo por el que un par pasa.
+
+## 🔴 La salida al choque entre reglas fue LA TIPOGRAFÍA, y no el color
+
+La segunda entrega dejó medido que `DESIGN.md` («la marca es luminosa, nunca oscura») y WCAG AA
+con texto blanco **no pueden cumplirse a la vez** en el botón primario: para 4,5:1 hace falta
+luminancia ≤ 0,175, y todo verde que la alcanza es más oscuro que `--brand`.
+
+**A1 disuelve el choque sin romper ninguna de las dos reglas**, porque no toca el color:
+
+> El texto grande y grueso (≥18,66 px con peso ≥700) tiene umbral **3:1** por SC 1.4.3 de la
+> propia norma. No es mover la portería: la norma lo permite porque **es cierto** que el texto
+> grande y grueso se lee con menos contraste. Es una **vía de conformidad**, no una excusa.
+>
+> **La marca sigue siendo luminosa y el botón cumple.** Que la salida a un choque entre `DESIGN.md`
+> y AA fuera la tipografía y no el color es el hallazgo de este ticket.
+
+**A2 queda descartada** por lo que un ratio no mide: con `--brand-ink` el ratio sube a 4,52 pero
+el texto casi se funde con el fondo y el botón deja de leerse como el botón primario. Un CTA que
+nadie distingue es peor para todo el mundo, **incluida la persona con baja visión a la que se
+intentaba ayudar**. 4,52 en un botón que no encuentras es peor que 3,30 en uno que sí.
+
+## Condición 1 · El alcance de A1, medido antes de tocar el CSS
+
+68 rótulos reales de botón primario extraídos del front (AST + plantillas), instanciados a
+**390 px** en sus dos contenedores habituales —pie de modal con «Cancelar» al lado, y ancho
+completo—: **136 botones medidos**.
+
+| | |
+| --- | --- |
+| Rótulos de botón primario en el front | **68** |
+| — de esos, `btn-sm` | **28** |
+| — de esos, `btn-lg` | 1 |
+| — normales | 39 |
+| Botones que **cambian de nº de líneas** | **0** (llevan `white-space: nowrap`: no envuelven, se salen) |
+
+### El cepo de SCRUM-352 se repite, y la misma acotación lo resuelve
+
+| Clase escrita | hoy | A1 amplia | A1 con `:not(.btn-sm)` |
+| --- | --- | --- | --- |
+| `btn btn-primary` | 13,5px/600 | 18,66px/700 | 18,66px/700 |
+| `btn-primary` (sin `btn`) | 13,5px/600 | 18,66px/700 | 18,66px/700 |
+| `btn btn-primary btn-sm` | 12,5px/600 | 12,5px/**700** | 12,5px/600 |
+| `btn-primary btn-sm` (sin `btn`) | 12,5px/600 | **18,66px/700** ⚠ | 12,5px/600 |
+
+Con la regla amplia, `btn-primary btn-sm` salta a 18,66 px mientras su gemelo con base se queda
+en 12,5: **la misma asimetría de SCRUM-352, sobre los mismos 139 conjuntos sin base**. El motivo
+también es el mismo: `.btn.btn-sm` es (0,2,0) y gana, pero `.btn-sm` a secas es (0,1,0) y pierde
+por orden. `:not(.btn-sm)` reproduce esa derrota y devuelve la simetría.
+
+⚠ **Efecto lateral a decidir:** la regla acotada también sube `btn btn-primary btn-lg` de 15 px a
+18,66 px, porque `:not(.btn-sm)` empata en especificidad con `.btn.btn-lg` y gana por orden. Es
+1 rótulo del censo.
+
+## 🛑 PARADA · dos rótulos desbordan a 390 px
+
+**No se ha tocado el CSS.** Ninguno de los dos se arregla acortando el rótulo: **la copy es del
+fundador**.
+
+| Rótulo | Ancho con A1 | Qué pasa | Dónde |
+| --- | --- | --- | --- |
+| «Solo disponible tras aceptar el presupuesto» | **409,9 px** | se sale de la pantalla de 390 en pie de modal; **recorta** el texto a ancho completo | `quotesDetailView.js:772` |
+| «Así de fácil. Pruébalo con tus datos →» | **359,5 px** | se sale del pie de modal | `landing-demo.js:106` |
+
+Dos datos que ayudan a decidir:
+
+- El primero es un **botón deshabilitado** (`btnInvoice.disabled = true`): no es una acción, es un
+  cartel que explica por qué no se puede facturar todavía. Un botón que nadie va a pulsar quizá no
+  necesita el objetivo táctil ni la tipografía de un CTA.
+- El segundo es el **CTA de la demo del landing**, ya con clase propia (`idemo-cta`).
+
+Ambos caben hoy: solo desbordan **al aplicar A1**.
+
+## Condición 2 · El guard afirma LAS DOS MITADES
+
+> **Regla general, porque volverá a hacer falta: un aprobado que depende de un tamaño de letra hay
+> que vigilarlo JUNTO con ese tamaño de letra. Si no, el guard comprueba la mitad de la razón por
+> la que pasa.**
+
+Un par que pasa con 3,30 sobre umbral 3,0 tiene **0,30 de margen, y se lo da la letra**. El guard
+lleva ahora una lista `POR_TEXTO_GRANDE` donde cada par declara que cumple por esa vía, y sobre el
+nodo **real y medido en navegador** afirma las dos cosas: `ratio ≥ 3,0` **Y** `font-size ≥ 18,66px`
+**Y** `font-weight ≥ 700`.
+
+Hoy vigila un caso real que ya existía: el «Qu» del logotipo de `precios.html` (verde de marca
+sobre el lienzo, 20 px/800, ratio **3,07**). Con texto normal necesitaría 4,5 y no llega; cumple
+**solo** porque es grande y grueso.
+
+**Verificado con dos rojos independientes**, cada uno tocando una sola cosa y dejando el color
+intacto:
+
+| Mutación | Resultado |
+| --- | --- |
+| 20 px → **16 px** (peso y color sin tocar) | ✖ *«la TIPOGRAFÍA ya no da derecho al umbral de 3:1 (mide 16px/800)»* — ratio sigue en 3,07 |
+| peso 800 → **400** (tamaño y color sin tocar) | ✖ *«la TIPOGRAFÍA ya no da derecho al umbral de 3:1 (mide 20px/400)»* — ratio sigue en 3,07 |
+
+En los dos casos el mensaje nombra **la tipografía, no el color**, y explica las dos salidas:
+recuperar la letra, o subir a 4,5:1 que es el umbral sin la vía. Restaurado el fichero, vuelve a
+verde (control negativo).
+
+## El landing arreglado: `--muted` sobre el verde de sección
+
+Era un fallo en **la página que ven los desconocidos**, no un «conocido». Costaba una declaración:
+`--tintbg` era `#eaf6ee`, un verde de realce **local y más apagado** que el canónico. Se unifica
+con `--brand-tint`, que ya existe:
+
+| | ratio con `--muted` |
+| --- | --- |
+| `#eaf6ee` (antes) | 4,36 ❌ |
+| `#ecfdf5` = `--brand-tint` (ahora) | **4,60** ✅ |
+
+Remedido en navegador: **14 nodos sobre ese fondo, ninguno falla**. Y todo lo que ya se leía ahí
+mejora (`--ink` 15,78→16,63; `--body` 8,31→8,76; `--brand-tint-ink` 4,94→5,21). Una duplicidad de
+color menos, además.
+
+## Los `CONOCIDOS`, ahora con motivo y no solo con el hecho
+
+Quedan **cuatro** (era cinco; el del landing se ha arreglado):
+
+- **`admin.html`** (8 nodos, 4,17): consola interna del fundador, sin ruta desde el producto, con
+  paleta oscura de Tailwind que no es la nuestra. **Si algún día se abre a merchants, deja de ser
+  aceptable y hay que quitarlo de la lista** — así está escrito en el guard.
+- **Los dos mockups de WhatsApp** (3,21 y 2,32): **imitación deliberada de una interfaz ajena, no
+  es nuestra paleta.** El teal del avatar y el gris de la marca de hora están copiados de WhatsApp
+  para que el visitante lo reconozca de un vistazo. El motivo lleva un **⚠ NO LO "ARREGLES"**
+  explícito: si se cambian, el mockup deja de parecerse a WhatsApp y pierde su única razón de estar.
+- **Blanco sobre el verde de marca** (10 nodos, 3,30): el botón primario, pendiente de A1.
+
+## Los tres casos de «el navegador es el árbitro», juntos
+
+Tres veces en este ticket un analizador estático dio por malo algo que el navegador aprueba, o al
+revés. Los tres, en el mismo sitio para que se lean juntos:
+
+| Caso | Censo estático | Navegador |
+| --- | --- | --- |
+| `.sidebar-logo-text` | **1,00** (blanco sobre blanco) | vive en el sidebar oscuro: cumple |
+| `.nav-item.active` | fallo | **5,89** — el fondo `rgba()` hay que componerlo |
+| `.nav-subitem.active` | fallo | **6,51** — ídem |
+
+Ninguno se tocó. La regla que sale de aquí: **cuando el analizador y la realidad discrepan, el roto
+es el analizador** — y se distingue de «no ajustes el guard a tu código» por una prueba concreta:
+si la forma que el analizador no ve la acabas de introducir tú, se cambia el código; si llevaba ahí
+desde antes, se arregla el analizador.
+
+## AB6 — hueco declarado
+
+`.playwright-mcp/368-landing-tintbg-390.png`. La matriz de dispositivos reales sigue siendo humana
+y sin hacer. Aquí importa para A1: **un texto de 18,66 px se juzga leyéndolo al sol**, no midiendo
+su caja.
+
+
+## Reglas (las tres entregas)
 
 Regla 4 (vanilla, un componente) · **Regla 30: el verde de marca NO se ha tocado en ninguna de
-las dos entregas** · Regla 9 (reportado y no arreglado: el botón primario a 3,30, `admin.html`,
-los mockups del landing) · Regla 37.
+las tres entregas** · Regla 9 (reportado y no arreglado: el botón primario a 3,30 —A1 medido y
+**PARADO** por dos rótulos que desbordan—, `admin.html` y los dos mockups de WhatsApp) · Regla 37.
+
+> **La copy no se toca.** Los dos rótulos que desbordan con A1 no se han acortado: es microcopy
+> del fundador (regla 30) y acortarla para que quepa sería resolver un problema de diseño por la
+> puerta de atrás.

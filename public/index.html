@@ -53,7 +53,11 @@
   <style>
   /* Extras de la landing sobre los tokens de /tokens.css (no redefinir los canónicos). */
   :root{
-    --tint:var(--brand-tint); --cyan:var(--logo-cyan); --tintbg:#eaf6ee; --amber:#b45309;
+    /* SCRUM-368: --tintbg era #eaf6ee, un verde de realce local y más apagado que el canónico.
+       --muted sobre él daba 4,36:1 — por debajo de AA en la página que ven los desconocidos.
+       Se unifica con --brand-tint, que ya existe: 4,60:1, y una duplicidad de color menos.
+       Todo lo demás que se lee sobre este fondo mejora (--ink 15,78→16,63; --body 8,31→8,76). */
+    --tint:var(--brand-tint); --cyan:var(--logo-cyan); --tintbg:var(--brand-tint); --amber:#b45309;
     --sh-sm:var(--shadow-sm); --sh-md:var(--shadow-md); --sh-lg:var(--shadow-lg);
     --sh-xl:0 40px 80px -24px rgba(16,24,40,.28);
     --font:'Inter','Inter var',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;

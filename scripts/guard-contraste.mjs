@@ -59,24 +59,53 @@ const CONOCIDOS = [
   },
   {
     texto: 'rgb(107, 114, 128)', fondo: 'rgb(2,6,23)', ratio: 4.17,
-    motivo: 'SCRUM-368 · gris de Tailwind sobre el tema oscuro de admin.html. Superficie interna ' +
-      'del fundador, no la ve ningún cliente. Reportado, sin arreglar (regla 9).',
-  },
-  {
-    texto: 'rgb(106, 116, 110)', fondo: 'rgb(234,246,238)', ratio: 4.36,
-    motivo: 'SCRUM-368 · --muted sobre el verde claro de una sección del landing (#eaf6ee), que ' +
-      'no es un token sino un fondo local. El ajuste de --muted se calculó contra --bg y ' +
-      '--surface. Reportado, sin arreglar (regla 9).',
+    motivo: 'MOTIVO: admin.html es la consola interna del fundador —no tiene ruta desde el ' +
+      'producto y ningún cliente llega a ella—, y usa una paleta oscura de Tailwind que no es ' +
+      'la nuestra. Arreglarlo obligaría a mantener un segundo sistema de color para una sola ' +
+      'página de uso propio. Reportado, sin arreglar (regla 9). Si algún día admin.html se ' +
+      'abre a merchants, esto DEJA de ser aceptable y hay que quitarlo de esta lista.',
   },
   {
     texto: 'rgb(255, 255, 255)', fondo: 'rgb(72,158,146)', ratio: 3.21,
-    motivo: 'SCRUM-368 · avatar del mockup de WhatsApp del landing: decorativo, imita la UI de ' +
-      'otra app. Reportado, sin arreglar (regla 9).',
+    motivo: 'MOTIVO: IMITACIÓN DELIBERADA DE UNA INTERFAZ AJENA, NO ES NUESTRA PALETA. Es el ' +
+      'avatar del mockup de WhatsApp del landing, que existe para que el visitante reconozca ' +
+      'WhatsApp de un vistazo. Ese teal es el de WhatsApp, no un color de YaQu. ' +
+      '⚠ NO LO "ARREGLES": si se cambia, el mockup deja de parecerse a WhatsApp y pierde su ' +
+      'única razón de estar ahí. Reportado, sin arreglar (regla 9).',
   },
   {
     texto: 'rgb(138, 154, 146)', fondo: 'rgb(234,227,220)', ratio: 2.32,
-    motivo: 'SCRUM-368 · marca de tiempo dentro del mockup de burbuja de WhatsApp del landing: ' +
-      'decorativo, imita la UI de otra app. Reportado, sin arreglar (regla 9).',
+    motivo: 'MOTIVO: IMITACIÓN DELIBERADA DE UNA INTERFAZ AJENA, NO ES NUESTRA PALETA. Es la ' +
+      'marca de hora dentro de una burbuja de mensaje de WhatsApp del landing: gris claro sobre ' +
+      'el beige del fondo de chat, ambos copiados de WhatsApp. ' +
+      '⚠ NO LO "ARREGLES": subir el contraste haría que la burbuja dejara de leerse como una ' +
+      'burbuja de WhatsApp. Reportado, sin arreglar (regla 9).',
+  },
+];
+
+/**
+ * Pares que cumplen AA **por la vía de texto grande** (SC 1.4.3: umbral 3:1 en vez de 4,5:1
+ * si el texto es >=24px, o >=18,66px con peso >=700).
+ *
+ * ── POR QUÉ ESTOS NO BASTA CON MEDIRLES EL RATIO ─────────────────────────────
+ * Su aprobado depende de DOS cosas, no de una: del color Y de la tipografía. Un par que pasa
+ * con 3,30 sobre un umbral de 3,0 tiene 0,30 de margen, y ese margen se lo da la letra. Si
+ * alguien baja la fuente a 16px o quita el bold, el umbral vuelve a 4,5 y el botón deja de
+ * cumplir — pero el COLOR no ha cambiado, así que un guard que solo mire el ratio contra «el
+ * umbral que le toque» puede seguir en verde o fallar sin decir por qué.
+ *
+ * REGLA GENERAL, porque volverá a hacer falta: un aprobado que depende de un tamaño de letra
+ * hay que vigilarlo JUNTO con ese tamaño de letra. Si no, el guard comprueba la mitad de la
+ * razón por la que pasa.
+ */
+const POR_TEXTO_GRANDE = [
+  {
+    texto: 'rgb(22, 163, 74)', fondo: 'rgb(246,247,245)', ratio: 3.07,
+    pagina: '/precios.html',
+    motivo: 'El «Qu» del logotipo en precios.html: verde de marca sobre el lienzo, 20px con peso ' +
+      '800. Con texto normal necesitaría 4,5:1 y solo llega a 3,07 — cumple porque es texto ' +
+      'grande y grueso (SC 1.4.3). Si alguien baja ese tamaño o le quita el peso, deja de cumplir ' +
+      'SIN QUE EL COLOR HAYA CAMBIADO. Por eso se vigila la tipografía junto al ratio.',
   },
 ];
 
@@ -194,6 +223,7 @@ try {
 
 const paginas = paginasDelProducto();
 let nodos = 0;
+const todos = [];
 const bajoAA = [];
 const gradientes = [];
 
@@ -206,7 +236,8 @@ for (const ruta of paginas) {
     const filas = await page.evaluate(medirEnPagina);
     nodos += filas.length;
     for (const f of filas) {
-      if (f.ratio >= f.umbral) continue;
+      todos.push({ ...f, pagina: ruta });   // TODOS, no solo los que fallan: los que pasan por
+      if (f.ratio >= f.umbral) continue;    // la vía de texto grande hay que poder revisarlos
       if (f.gradiente) { gradientes.push({ ...f, pagina: ruta }); continue; }
       bajoAA.push({ ...f, pagina: ruta });
     }
@@ -242,6 +273,33 @@ if (gradientes.length) {
   }
 }
 
+// ── LOS QUE PASAN POR LA VÍA DE TEXTO GRANDE: se afirman las DOS mitades ────
+// No basta con que el ratio supere su umbral: hay que comprobar TAMBIÉN la tipografía que le
+// da derecho a ese umbral más bajo. Si no, el guard comprueba la mitad de la razón por la que
+// pasa, y una bajada de fuente lo tumbaría sin que nadie supiera por qué.
+const MIN_PX_GRANDE = 18.66;
+const MIN_PESO_GRANDE = 700;
+const fallosTipografia = [];
+
+for (const esperado of POR_TEXTO_GRANDE) {
+  const nodos = todos.filter((f) => f.texto === esperado.texto && f.fondo === esperado.fondo
+    && (!esperado.clase || (f.clase || '').includes(esperado.clase)));
+  if (!nodos.length) {
+    fallosTipografia.push({ ...esperado, problema: 'YA NO APARECE — bórralo de POR_TEXTO_GRANDE' });
+    continue;
+  }
+  for (const n of nodos) {
+    const grandeDeVerdad = n.px >= 24 || (n.px >= MIN_PX_GRANDE && n.peso >= MIN_PESO_GRANDE);
+    if (!grandeDeVerdad) {
+      fallosTipografia.push({ ...esperado, nodo: n,
+        problema: `la TIPOGRAFÍA ya no da derecho al umbral de 3:1 (mide ${n.px}px/${n.peso})` });
+    } else if (n.ratio < 3) {
+      fallosTipografia.push({ ...esperado, nodo: n,
+        problema: `el COLOR bajó de 3:1 (ratio ${n.ratio})` });
+    }
+  }
+}
+
 // ── Comparación con lo conocido ─────────────────────────────────────────────
 const clave = (f) => `${f.texto}|${f.fondo}`;
 const conocidos = new Map(CONOCIDOS.map((c) => [`${c.texto}|${c.fondo}`, c]));
@@ -258,6 +316,25 @@ for (const f of bajoAA) {
 console.log(`\npares por debajo de AA: ${nuevos.size} nuevos · ${vistosConocidos.size}/${CONOCIDOS.length} conocidos presentes`);
 
 let fallo = false;
+
+// ── Los que pasan por la vía de texto grande: se dice CUÁL de las dos mitades cayó ──
+if (POR_TEXTO_GRANDE.length) {
+  console.log(`\npares que cumplen por la VÍA DE TEXTO GRANDE: ${POR_TEXTO_GRANDE.length} vigilados ` +
+    `(ratio ≥ 3,0 Y ≥${MIN_PX_GRANDE}px Y peso ≥${MIN_PESO_GRANDE})`);
+}
+if (fallosTipografia.length) {
+  fallo = true;
+  console.error('\n✖ UN PAR QUE PASABA POR LA VÍA DE TEXTO GRANDE HA DEJADO DE PASAR:');
+  for (const f of fallosTipografia) {
+    console.error(`\n   ${f.texto} sobre ${f.fondo}${f.clase ? `  (.${f.clase})` : ''}`);
+    console.error(`   ${f.problema}`);
+    if (f.nodo) console.error(`   página: ${f.nodo.pagina}  ·  «${f.nodo.muestra}»  ${f.nodo.px}px/${f.nodo.peso}  ratio ${f.nodo.ratio}`);
+    console.error('   ESTE PAR PASA POR LA VÍA DE TEXTO GRANDE: su aprobado depende del COLOR *y* de');
+    console.error('   la TIPOGRAFÍA. Si cambias el tamaño o el peso de la letra, deja de pasar aunque');
+    console.error('   el color siga igual. Para volver al verde: recupera la tipografía, o sube el');
+    console.error('   contraste hasta 4,5:1, que es el umbral sin la vía de texto grande.');
+  }
+}
 
 if (nuevos.size) {
   fallo = true;
