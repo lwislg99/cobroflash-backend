@@ -163,22 +163,53 @@ migres antes de tener los seis textos del fundador.
 > **Estado POR BASE, con la fecha y el método de cada medición** (antes esta cabecera decía
 > «🔴 SIN APLICAR en ninguna de las tres», y para producción **era falso**):
 >
-> | Base | `invoices.vf_estado` | Medido cómo | Cuándo |
-> | --- | --- | --- | --- |
-> | `acela.proxy.rlwy.net/yaqu_dev_javier` (dev) | 🔴 **NO existe** | `deriva-prod.sql` directo (330 columnas leídas) | 6-ago-2026 |
-> | producción (`yaqu.app`) | ✅ **existe** — pero por INFERENCIA, no medido | la app arranca, y `assertSchemaSinDeriva` se niega a arrancar con deriva en `NODE_ENV=production` (`schemaDrift.ts:266-268`). `/health` → `version: df4057b…`, `db:"up"` | 6-ago-2026 |
-> | staging | ❔ **sin medir** | no hay credencial de staging en el worktree (ver aviso de abajo) | — |
+> | Base | `invoices.vf_estado` | Backfill | Medido cómo | Cuándo |
+> | --- | --- | --- | --- | --- |
+> | `acela…/railway` (**staging**) | ✅ **existe** | ✅ **corrió** — 6 `no_aplica` · 1 `pendiente_de_sellado` (7 facturas). Si no hubiera corrido, las 7 estarían en el default | `deriva-prod.sql` + `COUNT(*) GROUP BY` (331 columnas leídas) | 6-ago-2026 |
+> | `acela…/yaqu_dev_javier` (**dev**) | 🔴 **NO existe** | — (sin columna no hay recuento) | `deriva-prod.sql` directo (330 columnas leídas) | 6-ago-2026 |
+> | `autorack…` (**producción**) | ✅ existe, **por INFERENCIA — NO medido** | ❔ **SIN MEDIR** | la app arranca y `assertSchemaSinDeriva` se niega a arrancar con deriva en `NODE_ENV=production` (`schemaDrift.ts:266-268`); `/health` → `db:"up"` | 6-ago-2026 |
 >
-> ⚠️ **El backfill NO está medido en ninguna.** Que la columna EXISTA no dice nada de si el
-> backfill corrió. Si en producción existe pero el backfill no corrió, todo el histórico está en
-> `pendiente_de_sellado` y `puedeProducirDocumento()` le niega PDF y QR **en silencio**: sin 500,
-> sin alarma. Se cierra con un `COUNT(*) GROUP BY vf_estado` contra producción.
+> ⚠️ **El backfill de PRODUCCIÓN sigue sin medir, y es la pregunta que queda viva.** Que la columna
+> exista no dice si el backfill corrió. Si existe pero no corrió, todo el histórico está en
+> `pendiente_de_sellado` y `puedeProducirDocumento()` le niega PDF y QR **en silencio**: sin 500 y
+> sin alarma. Que en staging sí corriera es un indicio, no una prueba: son bases distintas.
 >
-> 🔴 **AVISO DE CREDENCIAL, medido el 6-ago-2026:** en el worktree principal la clave
-> `DATABASE_URL_STAGING` **NO apunta a staging**: apunta a `acela.proxy.rlwy.net/yaqu_dev_javier`,
-> que es DESARROLLO. Una clave cuyo NOMBRE dice una base y cuyo VALOR es otra es exactamente cómo
-> se aplica una migración donde no tocaba. Comprobar el `host/base` (con `describirBD`, nunca la
-> URL) **antes** de cada operación, y no fiarse del nombre de la variable.
+> El único `pendiente_de_sellado` de staging es justo lo que el backfill DECLARA en vez de
+> adivinar: una factura fiscal sin huella y sin motivo para no tenerla. Es un dato de negocio que
+> hay que mirar, no barrer.
+
+### 🔴 LA MISMA CLAVE APUNTA A DOS BASES DISTINTAS SEGÚN EL WORKTREE (medido 6-ago-2026)
+
+Censo de los cuatro árboles, imprimiendo solo `clave → host/base` con `describirBD`:
+
+| Worktree | Clave | Base real |
+| --- | --- | --- |
+| `cobroflash-backend` | `DATABASE_URL_STAGING` | `acela…/yaqu_dev_javier` → **DEV** |
+| `cobroflash-b1` | `DATABASE_URL_STAGING` | `acela…/railway` → **STAGING** |
+| `cobroflash-b2` | `DATABASE_URL_STAGING` | `acela…/railway` → **STAGING** |
+| `cobroflash-b3` | `DATABASE_URL_STAGING` | `acela…/railway` → **STAGING** |
+
+**Un solo nombre de variable, dos bases.** Cuál te toca depende de en qué directorio estés parado
+—algo que ningún comando te recuerda—, y las dos viven en el mismo host, así que el guard de
+hostname (`_db-guard.mjs`) no las distingue. Es el escenario contra el que avisa SCRUM-383.
+
+⚠️ Y el reparto que este mismo documento declara más abajo **también está desfasado**: dice que
+staging es «la base del worktree `cobroflash-b2`» y dev «base de `cobroflash-b1`». Medido: `b1`
+tiene STAGING, y quien tiene DEV es el worktree PRINCIPAL, que ahí ni se menciona.
+
+**Regla que sale de esto:** antes de cualquier operación, imprimir `host/base` con `describirBD` y
+mirarlo. El nombre de la variable no es una fuente: esta noche ha mentido dos veces.
+
+### 🔴 NO HAY FORMA DE OBSERVAR PRODUCCIÓN SIN CREDENCIALES DE BASE (medido 6-ago-2026)
+
+Buscado en el árbol: **ninguna ruta** expone deriva de esquema ni reparto de `vf_estado`.
+`/health` (`health.routes.ts:10-17`) hace `SELECT 1` y devuelve `db:"up"` — prueba que hay
+conexión, y nada más. `comprobarDerivaDeSchema` solo se llama en el arranque (`index.ts:23`), y su
+resultado se escribe en el log y se descarta: no queda expuesto en ninguna respuesta.
+
+Consecuencia: el estado del esquema de producción **solo es observable con credencial de base**, y
+no hay ninguna en los cuatro worktrees (todas apuntan a `acela`; producción es `autorack`). El CLI
+de Railway tampoco está instalado. Va a SCRUM-383.
 
 ### 📌 Un registro de lo que se MIDIÓ no caduca; una afirmación sobre el estado ACTUAL, sí
 
