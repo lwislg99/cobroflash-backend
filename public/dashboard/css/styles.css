@@ -752,9 +752,16 @@ html, body { overflow-x: clip; }
   padding: 16px 24px;
   display: flex; flex-direction: column; gap: 14px;
 }
+/* SCRUM-350: el pie ENVUELVE en vez de desbordar. Los botones traen `white-space: nowrap`, así
+   que ninguno parte su texto; sin `flex-wrap` la fila tampoco se partía y lo que no cabía se
+   salía POR LA IZQUIERDA (el pie alinea a `flex-end`), fuera de la pantalla y sin scroll que
+   lo alcance. Medido a 390 px —un iPhone estándar— el primer botón empezaba en x=-83.
+   Es un no-op cuando los botones caben en una línea: por eso alcanza a los diez pies del
+   dashboard sin mover ninguno de los nueve que hoy entran. */
 .modal-footer {
   padding: 0 24px 20px;
   display: flex; justify-content: flex-end; gap: 8px;
+  flex-wrap: wrap;
 }
 
 @keyframes fade-in  { from { opacity: 0; } to { opacity: 1; } }
