@@ -148,3 +148,80 @@ export function bloqueoCambioDeSerie(params: {
   const ejemplo = [...params.numerosDeLaSerie].sort()[emitidas - 1];
   return { bloqueado: true, emitidas, ejemplo };
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-313 (D2) · «¿POR QUÉ NÚMERO VAS?» — LA CONTINUIDAD DE LA NUMERACIÓN
+//
+// Un autónomo que ya factura no se cambia de programa porque el nuevo sea más bonito. No se
+// cambia porque **romper la serie le da miedo con Hacienda**. Preguntarle por dónde va, y
+// continuarlo, es la barrera de cambio hecha polvo.
+//
+// SE PREGUNTA EN EL ALTA y no en Configuración: quien viene de otro programa no entra en
+// Configuración el primer día — entra, hace un presupuesto, y descubre el problema cuando ya ha
+// emitido tres facturas mal numeradas. La pregunta se hace cuando la respuesta todavía sirve.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// ⚠️ LOS DOS CAMPOS VAN JUNTOS O NO VAN. Ésta es la trampa del ticket, y es fiscal.
+//
+// `resolveSeriesSeq` (`invoiceNumber.service.ts:80`) decide así:
+//
+//     return m.invoiceSeriesYear === year ? m.nextInvoiceNumber : 1;
+//
+// O sea que fijar `nextInvoiceNumber = 42` **sin** fijar `invoiceSeriesYear` al año en curso NO
+// continúa la serie: la reinicia en 1, en silencio. El profesional creería ir por la 42 y su
+// primera factura saldría `2026-CF-001` — un número que **ya usó en su programa anterior**.
+// Duplicar un número emitido es peor que dejar un hueco, y es justo lo que D2 viene a evitar.
+//
+// Por eso esta función devuelve **el par entero o un rechazo**, nunca medio ajuste.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/** Tope de lo que se admite como «último número». Por encima es un dedazo, no una serie. */
+export const MAX_NUMERO_SERIE = 999_999;
+
+export type ArranqueSerie =
+  | { ok: true; nextInvoiceNumber: number; invoiceSeriesYear: number }
+  | { ok: false; motivo: 'numero_invalido' | 'numero_fuera_de_rango' | 'choca_con_emitidas'; detalle?: { ultimoEmitido: string } };
+
+/**
+ * Con qué número y en qué año arranca la serie de este merchant.
+ *
+ * @param vieneDeOtroSitio  Lo que contestó a «¿ya has facturado este año?».
+ * @param ultimoNumero      El número de su última factura en el programa anterior. Se ignora si
+ *                          no viene de otro sitio.
+ * @param año               El año en curso.
+ * @param numerosDeLaSerie  Lo YA emitido con nosotros. Si hay algo, mandan ellos: no se puede
+ *                          declarar un arranque por debajo de lo emitido (eso es el choque).
+ */
+export function arranqueDeSerie(params: {
+  vieneDeOtroSitio: boolean;
+  ultimoNumero?: unknown;
+  año: number;
+  numerosDeLaSerie: readonly string[];
+}): ArranqueSerie {
+  const { vieneDeOtroSitio, año } = params;
+  const emitidas = params.numerosDeLaSerie.length;
+
+  // ── CONTROL NEGATIVO: «No, empiezo ahora» NO hereda nada ────────────────────────────────
+  // Arranca en 1 del año en curso, que es lo que ya hace el sistema por defecto. Se devuelve
+  // explícito en vez de «no tocar nada» para que el llamador escriba SIEMPRE el par completo:
+  // dejar `invoiceSeriesYear` a null y el contador a 1 es un estado que también se resetea, y
+  // «no hice nada» no es lo mismo que «arranca en 1 de este año».
+  if (!vieneDeOtroSitio) {
+    return { ok: true, nextInvoiceNumber: 1, invoiceSeriesYear: año };
+  }
+
+  const n = typeof params.ultimoNumero === 'number' ? params.ultimoNumero : Number(params.ultimoNumero);
+  if (!Number.isInteger(n) || n < 1) return { ok: false, motivo: 'numero_invalido' };
+  if (n >= MAX_NUMERO_SERIE) return { ok: false, motivo: 'numero_fuera_de_rango' };
+
+  // ── EL CHOQUE (A4, SCRUM-291): no se declara por debajo de lo ya emitido ────────────────
+  // Si ya hemos emitido, el arranque declarado tiene que quedar POR ENCIMA. Declarar la 42 con
+  // la 50 emitida repetiría ocho números que ya existen — y una factura emitida no se edita.
+  if (emitidas > 0) {
+    const ultimo = [...params.numerosDeLaSerie].sort()[emitidas - 1];
+    return { ok: false, motivo: 'choca_con_emitidas', detalle: { ultimoEmitido: ultimo } };
+  }
+
+  // Continuar por la SIGUIENTE, no por la que él dio: si su última fue la 41, la nuestra es la 42.
+  return { ok: true, nextInvoiceNumber: n + 1, invoiceSeriesYear: año };
+}
