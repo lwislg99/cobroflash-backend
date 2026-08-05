@@ -176,7 +176,14 @@ router.post('/import', async (req, res) => {
     const csv = String(req.body?.csv || '').trim();
     if (!csv) return res.status(400).json({ ok: false, error: 'csv_required' });
     const result = await importProductsCsv(req.merchantId, csv);
-    return res.status(200).json({ ok: true, inserted: result.inserted, skippedDuplicates: result.skippedDuplicates ?? 0 });
+    // SCRUM-339: contrato ALINEADO con POST /admin/customers/import (created/skipped/errors/errorList).
+    return res.status(200).json({
+      ok: true,
+      created: result.created,
+      skipped: result.skipped,
+      errors: result.errors,
+      errorList: result.errorList,
+    });
   } catch (err) {
     console.error('[POST /admin/products/import]', err);
     const msg = err instanceof Error ? err.message : String(err || '');
