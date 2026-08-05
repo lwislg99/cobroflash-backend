@@ -4,7 +4,7 @@
 
 **Medido contra:** `origin/main` = `56874623baa406a0e8e38b93c236f7a4740b1e6a` · 2026-08-05T16:38:08+01:00
 
-**Tanda:** 1745 tests, 1678 pass, 0 fail, 67 skipped (los 67 son los gateados de staging)
+**Tanda:** 1759 tests, 1692 pass, 0 fail, 67 skipped (los 67 son los gateados de staging)
 
 ## El defecto
 
@@ -121,6 +121,27 @@ seguía en el fichero. Un guard que no distingue una etiqueta viva de una coment
 cableado, vigila la ortografía. Ahora lee los `src` de verdad, con los comentarios HTML fuera, y el
 mismo sabotaje sale rojo.
 
+## Tres guards de la casa cazaron el cambio, y los tres tenían razón
+
+La tanda completa —no la del ticket— salió roja tres veces. Ninguna era ruido:
+
+1. **SCRUM-55 (fail-closed de roles).** `GET /admin/albaranes` nació sin declarar rol, que es
+   exactamente lo que ese guard existe para impedir. Declarada en `TECNICO_ALLOWED` con el mismo
+   criterio que `consolidables` —«es la misma información, agrupada»— y con el motivo escrito para
+   que un humano lo revise: **es una decisión de permisos, no un trámite**. Si el criterio fuese que
+   el operario solo vea los partes de SUS obras, eso no se arregla en esa lista sino con un filtro
+   por operario en la consulta, y es otro ticket.
+2. **SCRUM-274 (shell del service worker).** El script nuevo no estaba en la lista del SW: sin eso,
+   la sección existiría en el navegador con red y no sin ella. Añadido.
+3. **SCRUM-302 (el derivado de tres valores).** Su guard leía el TEXTO de la unión
+   (`EstadoCobro = 'sin_facturar' | …`), y al pasar el eje a una constante en runtime dejó de
+   coincidir. **La premisa que protege no cambió**: se reescribió para leer el valor COMPILADO.
+
+   Y el guard salió reforzado, medido en rojo por los dos lados: **quitar un valor ya no llega ni al
+   test —`tsc` lo caza antes**, porque `estadoCobroAlbaran` devuelve `'parcial'` y el tipo dejaría de
+   admitirlo—; y **reordenarlos, que sí compila, pone rojo el assert**. Antes, un comentario movido
+   podía tumbarlo y un cambio real de tipo no lo tocaba.
+
 ## Microcopy (regla 30) — y una propuesta
 
 Todo rótulo nuevo va con `[PENDIENTE microcopy oficial]` (patrón SCRUM-286) y su guard. **Se nota, y
@@ -151,5 +172,8 @@ el coste del marcador, y con los textos aprobados las seis columnas caben de sob
 * `src/modules/jobs/app/routes/albaranes.routes.ts` — `GET /admin/albaranes` + su lector Prisma.
 * `public/dashboard/js/albaranesView.js` — **nuevo**. La vista vanilla, sin CSS nuevo.
 * `public/dashboard/index.html` · `public/dashboard/js/app.js` — entrada de menú, script y ruta.
+* `src/core/http/adminRouteDeclarations.ts` — la ruta declarada como TECNICO_ALLOWED, con motivo.
+* `public/sw.js` — el script nuevo en el shell del service worker.
 * `tests/scrum301-albaranes-seccion.test.mjs` — **nuevo**, 15 tests.
+* `tests/scrum302-patron-albaran.test.mjs` — su guard del derivado, ahora contra el valor compilado.
 * `docs/capturas/scrum-301/` — cuatro capturas AB6 y su README.

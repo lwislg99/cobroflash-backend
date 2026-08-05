@@ -77,6 +77,14 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'GET',   path: '/admin/albaranes/:id/fotos', why: 'Ver las fotos que él mismo subió' },
   { method: 'POST',  path: '/admin/albaranes/:id/enviar-whatsapp', why: 'S1 "enviar WA" ✅; requireActivePlan, sin rol (SCRUM-47)' },
   { method: 'POST',  path: '/admin/albaranes/:id/enviar-para-firmar', why: 'Firma remota del albarán (SCRUM-47/49)' },
+  // SCRUM-301 (C1): el LISTADO GLOBAL. Mismo criterio que `consolidables` justo debajo —«es la
+  // misma información, agrupada»—: solo lectura, filtrado por merchant, y ni un dato que el técnico
+  // no vea ya entrando obra por obra. Negárselo mientras puede rellenar, emitir y firmar cada parte
+  // (y ver su ficha, SCRUM-302) sería incoherente: es su trabajo de campo, ahora con un sitio.
+  // ⚠️ Es una decisión de PERMISOS y va escrita para que se revise: si el criterio fuera que el
+  // operario solo vea los partes de SUS obras, esto no se arregla aquí sino con un filtro por
+  // operario en la consulta — y eso es otro ticket.
+  { method: 'GET',   path: '/admin/albaranes', why: 'SCRUM-301: listado global de partes, la misma información que ya ve por obra, agrupada' },
   { method: 'GET',   path: '/admin/albaranes/pendientes-facturar', why: 'SCRUM-69: bandeja de facturación, mismo criterio S1 que GET /admin/invoices ("facturas: ver sí")' },
   { method: 'GET',   path: '/admin/albaranes/consolidables', why: 'SCRUM-70: vista previa de la recapitulativa (cliente+mes). MISMO criterio que la bandeja de SCRUM-69 — es la misma información, agrupada: solo lectura y ningún dato que el técnico no vea ya ahí. NO emite.' },
 
