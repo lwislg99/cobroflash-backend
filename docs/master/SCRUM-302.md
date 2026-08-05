@@ -455,3 +455,83 @@ precedente de la fila del Trabajo. Reutilizar un rótulo aprobado no es redactar
 Ficheros: `src/modules/jobs/app/routes/albaranes.routes.ts` (`GET /:id` devuelve `quote`) ·
 `public/dashboard/js/albaranDetailView.js` (el enlace y las fotos, en el rail) ·
 `tests/scrum302-presupuesto-y-fotos.test.mjs` (10, nuevo).
+
+---
+
+# SCRUM-302 · MICROCOPY FIRMADA (6-ago-2026) · «Presupuesto» y «Fotos», y la regla del rail
+
+**Medido contra:** `origin/main` = `9ce9ffd727411f0e69826bbdc174ed65f2582a13` · 2026-08-05T23:46:07+01:00
+**Tanda:** 1825 tests, 1758 pass, 0 fail, 67 gateados a staging
+
+## Los dos rótulos, APROBADOS por el fundador (regla 30)
+
+| id | rótulo | por qué ÉSE |
+|---|---|---|
+| `presupuesto` | **Presupuesto** | NO «Presupuesto origen». El enlace sale de `Job.quoteId`: es el presupuesto **DEL TRABAJO**. Llamarlo «origen» afirmaría que el albarán **deriva** de él — justo lo que no se sostiene en `SIN_VALORAR`. A secas nombra el documento relacionado sin decir de dónde viene nada. Y encaja con sus vecinos, todos de una palabra: Trabajo, Cliente, Dirección, Facturación. |
+| `fotos` | **Fotos** | No «Evidencias». Es la palabra del profesional —«le hice una foto»—; «evidencia» es la nuestra. En su pantalla manda la suya. |
+
+La clave se renombró **con** el rótulo (`presupuestoOrigen` → `presupuesto`): si la pantalla deja
+de afirmar la procedencia, el código no puede seguir nombrándola. Y hay guard: los dos rótulos se
+comparan **letra por letra** contra los firmados, con el motivo dentro del mensaje de fallo —
+cambiarlos es una decisión del fundador, no un retoque.
+
+## SIN DATO, SIN FILA — la regla del rail, con guard
+
+Ninguna de las dos filas se pinta con un guion cuando no hay dato: **no se pinta entera**. Un
+«Presupuesto: —» no informa de nada y se come una línea en una pantalla de 390 px. Mismo criterio
+que G3 en `jobRailBlocks.js:77`.
+
+> **Y NO CONTRADICE lo decidido para `fila()`**, que sí cae a «—». La diferencia es la que importa:
+> allí el peligro era esconder un **«0 €» legítimo**, porque en dinero el cero SIGNIFICA algo. Un
+> enlace ausente no significa nada: o hay documento o no lo hay. Por eso el guard vigila solo las
+> filas que se **insertan** en el rail, y deja en paz al `innerHTML`.
+
+## 🔴 EL GUARD DE ESA REGLA NO SE PUSO ROJO, Y EL ROTO ERA EL GUARD
+
+Al quitarle la condición a la fila del presupuesto, verde. La primera hipótesis del método es
+«caso mal elegido» — se midió, y no: era el cazador.
+
+`estaCondicionado` preguntaba `/\breturn\b/` **sobre el texto** del `then` de cada `if` previo del
+bloque. En el cuerpo de la vista vive:
+
+```js
+if (cubos.overflow.length) { … (() => { …; return d; })() … }
+```
+
+Ese `return` es de un **arrow anidado** y no corta nada, pero casaba la regex: cualquier fila del
+rail contaba como condicionada. **Un guard de texto escondido dentro del cazador** — el mismo
+fallo que este fichero dice vigilar (SCRUM-203), y van dos veces en este ticket (la primera fue
+`editBtn` en `scrum302-sin-callejones`).
+
+Ahora se mira por AST y se **para al entrar en otra función**: el `return` de una función anidada
+es suyo, no del bloque. Con el arreglo salen los dos rojos, nombrando la fila.
+
+## El motivo que mentía en la declaración de permisos
+
+`adminRouteDeclarations.ts:111` decía que `GET /admin/attachments/:id` sirve *«Fotos que mandó el
+cliente con la solicitud»*. Sirve **dos** cosas desde hace meses: también las fotos del albarán —y
+esta sesión acaba de construir encima de esa ruta.
+
+En un fichero de **declaración de permisos** eso no es cosmético: quien audita el rol lee el motivo
+para decidir si es el que toca, y con la mitad escrita la revisión se hace sobre una premisa falsa.
+**El rol NO se toca** (sigue en `TECNICO_ALLOWED`); lo que se corrige es lo que dice servir.
+
+## Los rojos de esta entrega
+
+| # | Qué se rompe | Qué sale |
+|---|---|---|
+| 4 | La fila del presupuesto sin su `if` | 🔴 «PASE LO QUE PASE: `filaQuote` (línea 391)» |
+| 5 | El rótulo cambiado a «Presupuesto origen» | 🔴 «no son los que firmó el fundador… llamarlo origen afirmaría que el albarán deriva de él» |
+| 6 | La fila de fotos sin su early-return | 🔴 «PASE LO QUE PASE: `filaFotos` (línea 425)» |
+
+El **4 es el que enseñó algo**: fue el que destapó que el guard estaba roto por dentro.
+
+## Estado del ticket
+
+**SCRUM-302 cierra.** Queda pendiente solo lo que no depende de este ticket: la verificación en
+`yaqu.app` **tras el merge** (no hay deploy hasta entonces) y las capturas AB6, hueco ya declarado.
+
+Ficheros: `public/dashboard/js/albaranDetailView.js` (rótulos firmados + la regla) ·
+`src/core/http/adminRouteDeclarations.ts` (el motivo, no el rol) ·
+`tests/scrum302-presupuesto-y-fotos.test.mjs` (13: +3 de la regla y los rótulos, y el arreglo del
+detector).
