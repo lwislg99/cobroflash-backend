@@ -2295,3 +2295,26 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    ════════════════════════════════════════════════════════════ */
 .btn-primary:focus-visible { box-shadow: var(--shadow-btn), var(--ring); }
 .qq-modal .modal-footer .btn-primary:focus-visible { box-shadow: var(--shadow-brand), var(--ring); }
+
+/* ════════════════════════════════════════════════════════════
+   SCRUM-304 (C3) · LA COLUMNA ESTADO DE LA TABLA DE ALBARANES
+
+   Lleva DOS cosas que son DOS EJES: el pill del documento
+   (borrador/emitido/firmado) y el badge de facturación
+   (nada / parcial / del todo).
+
+   NO se aplanan en uno: una celda de Acción vacía significa DOS
+   cosas distintas —facturado del todo, o no facturable por ser
+   SIN_VALORAR— y el badge es lo único que se lo dice al
+   profesional. Juntarlos repetiría el error de esconder el
+   PARCIAL.
+
+   El ancho en móvil NO se arregla aquí, y ésta es la corrección
+   que ahorró la tercera amputación: lo arregla
+   `.table--cards-mobile`, el patrón que YA EXISTE y que usa la
+   lista global de albaranes (`albaranesView.js`, SCRUM-301). En
+   móvil no hay columnas que repartir: cada fila es una card.
+   Esto es solo la separación de los dos ejes, que vale igual en
+   las dos formas.
+   ════════════════════════════════════════════════════════════ */
+.jobdet-alb-estado { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }

@@ -135,6 +135,70 @@ function jdAddRow(dl, term, value) {
 // no podía nombrarla y escribió la suya: mismo Trabajo, dos acciones distintas. El traslado no
 // cambió ni un nivel; lo que cambió es que ahora es alcanzable.
 
+// ── SCRUM-304 (C3) · LA COLUMNA «ACCIÓN» DE LA TABLA DE ALBARANES ────────────────────────────
+//
+// 🔴 UNA SOLA FUENTE DE VERDAD: la primaria sale del REGISTRO DE C2 resuelto con la ley
+// (`destinoEfectivo`), nunca de una jerarquía escrita aquí. Dos tablas de acciones para el mismo
+// documento es el defecto de SCRUM-240, y esta vez en la capa de interacción.
+//
+// ⚠️ EL CONTEXTO NO SE COPIA LITERAL DE C2, Y ESTE ES EL DETALLE QUE ENVENENA:
+// el MISMO derivado de tres valores viaja con NOMBRE DISTINTO según el endpoint —
+// `estadoFacturacion` en el detalle del albarán (`albaranes.routes.ts:437`) y `estadoCobro` en el
+// del Trabajo (`jobs.routes.ts:328`)—. Copiar `alb.estadoFacturacion` aquí daría `undefined`, y
+// `undefined !== 'facturado'` es TRUE: la fila ofrecería «facturar» sobre albaranes ya facturados
+// del todo, sin error y sin que nada se pusiera rojo. Tiene guard propio.
+/** Fecha corta para la columna de la tabla: «12 jul». La hora completa vive en el detalle. */
+function albFechaCorta(w) {
+  return w ? new Date(w).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : '';
+}
+
+function ctxAlbaranEnFila(alb) {
+  return {
+    // Tres valores (`sin_facturar` · `parcial` · `facturado`), no un booleano: en una obra por
+    // fases `parcial` es lo normal, y aplanarlo escondería que AÚN QUEDA algo que facturar.
+    'valorado-con-pendiente': alb.modoValoracion === 'VALORADO' && alb.estadoCobro !== 'facturado',
+  };
+}
+
+/** La acción primaria de este albarán según C2, o `null` si su estado no tiene siguiente paso. */
+function primariaDeAlbaran(alb) {
+  const registro = (typeof window !== 'undefined' && window.ALBARAN_ACTION_REGISTRY) || [];
+  const ctx = ctxAlbaranEnFila(alb);
+  return registro.find((a) => window.destinoEfectivo(a, alb.estado, ctx) === 'primaria') || null;
+}
+
+/**
+ * Destino de UNA acción concreta en la fila, leído del registro de C2.
+ *
+ * Existe para no reescribir aquí ninguna entrada del registro: copiar los `destinos` de una acción
+ * «para consultarlos rápido» es exactamente cómo nacen las dos fuentes de verdad que esta tarea
+ * viene a cerrar. Si la acción no está en el registro devuelve `'oculta'`: lo que no está declarado
+ * no se pinta.
+ */
+function destinoEnFila(id, alb) {
+  const registro = (typeof window !== 'undefined' && window.ALBARAN_ACTION_REGISTRY) || [];
+  const accion = registro.find((a) => a.id === id);
+  return accion ? window.destinoEfectivo(accion, alb.estado, ctxAlbaranEnFila(alb)) : 'oculta';
+}
+
+// Los rótulos NO se escriben aquí: se leen de `ROTULOS_ALBARAN` (albaranDetailView.js), que ya los
+// tiene aprobados. Escribirlos otra vez sería la segunda lista de siempre, y divergirían el día que
+// alguien retoque una. `albaranDetailView.js` se carga ANTES que este fichero en `index.html` y hay
+// guard de ese orden: si alguien lo cambia, sale rojo en vez de dejar la columna muda.
+// MICROCOPY APROBADA por el fundador el 5-ago-2026 (regla 30), los cinco tal cual. Ya no llevan
+// `[PENDIENTE microcopy oficial]`, y el guard compara contra el texto aprobado uno a uno.
+//
+// ⚠️ Y NO ERA SOLO UN RÓTULO: con el marcador, la cabecera medía 29 caracteres de más POR COLUMNA
+// y sacaba de pantalla las tres últimas columnas a 390 px. De ahí la regla que salió de aquí —
+// CON MARCADOR NO SE JUZGA EL LAYOUT, solo se comprueba que el marcador esté.
+const ALB_TABLA_COPY = {
+  colNumero: 'Nº',
+  colFecha: 'Fecha',
+  colEstado: 'Estado',
+  colLineas: 'Líneas',
+  colAccion: 'Acción',
+};
+
 // ── SCRUM-303 (C4) · QUÉ SE ABRE AL PULSAR «NUEVO ALBARÁN», Y POR QUÉ ─────────────────────────
 //
 // LA MITAD DEL TICKET QUE YA ESTABA HECHA: «se crea vacío y luego se rellena» dejó de ser cierto
@@ -1589,29 +1653,43 @@ async function renderJobDetailView(container, jobId) {
   albaranes.forEach((alb) => {
     // SCRUM-65: indicador de modo + total orientativo (serializeAlbaran ya trae `totales`).
     const albValorado = alb.modoValoracion === 'VALORADO';
-    const item = document.createElement('div');
-    item.className = 'job-doc-row';
+    // SCRUM-304 (C3): FILA DE TABLA, no tarjeta. El número lleva al detalle (C2), que es donde
+    // viven todas las acciones; aquí solo va la primaria de su estado.
+    const nLineas = Array.isArray(alb.lineas) ? alb.lineas.length : 0;
+    const item = document.createElement('tr');
     item.innerHTML =
-      `<div class="job-doc-row__icon" aria-hidden="true">📋</div>` +
-      `<div class="job-doc-row__body">` +
-        `<div class="job-doc-row__title">Albarán ${esc(alb.numero)}</div>` +
-        `<div class="job-doc-row__meta">` +
-          `<span class="status-pill ${JOBDET_ALB_PILL[alb.estado] || 'status-pill-draft'}">${jobDetAlbEstado(alb.estado)}</span>` +
-          // SCRUM-17: badge "Facturado" derivado (alb.facturado = invoiceId != null en el serializer)
-          // SCRUM-170: y el intermedio, también DERIVADO — `estadoCobro` sale de comparar lo
-          // servido con lo facturado (libro de líneas), no de ninguna columna de estado. Por eso
-          // el pill del documento (borrador/emitido/firmado) sigue a su bola: son dos ejes.
-          (alb.estadoCobro === 'parcial'
-            ? `<span class="job-doc-row__badge">Facturado en parte</span>`
-            : (alb.facturado || alb.estadoCobro === 'facturado' ? `<span class="job-doc-row__badge">Facturado</span>` : '')) +
-          `<span>${esc(docDate(alb.fecha))}</span>` +
-          `<span>v${alb.version}</span>` +
-          (albValorado ? `<span>Con precios · Total orientativo <span class="job-doc-row__amount">${fmtMoneyEs(alb.totales?.total ?? 0, cur)}</span></span>` : `<span>Sin precios</span>`) +
-        `</div>` +
-        `<div class="jobdet-alb-fotos job-doc-row__fotos"></div>` +
-        `<div class="jobdet-alb-actions job-doc-row__actions"></div>` +
-      `</div>`;
-    const albBody = item.querySelector('.job-doc-row__body');
+      // `cell-client` es el hueco PROMINENTE de la card en móvil, y aquí el número ES la identidad:
+      // dentro de un Trabajo no hay columna de cliente que ocupe ese sitio. **Se enseña ENTERO** —
+      // acortarlo a «0001» dependería de que todas las filas visibles compartan prefijo, que es una
+      // coincidencia de los datos de hoy y deja de ser cierta el 1 de enero. El profesional dicta
+      // ese número por teléfono a su gestoría: medio número es un número equivocado.
+      `<td class="cell-client">` +
+        `<button type="button" class="detail-miga-link jobdet-alb-link">${esc(alb.numero)}</button>` +
+        `<div class="jobdet-alb-fotos"></div>` +
+      `</td>` +
+      // FECHA CORTA, no `docDate`: «12 jul 2026, 11:15» es la hora de consulta, no lo que distingue
+      // una entrega de otra. En la card de móvil ocupa el hueco `cell-date`, pequeño y a un lado.
+      `<td class="cell-date">${esc(albFechaCorta(alb.fecha))}</td>` +
+      // SCRUM-304: el pill y el badge APILAN en móvil (`.jobdet-alb-estado`). Son dos ejes y los
+      // dos hacen falta —una celda de Acción vacía es ambigua entre «facturado del todo» y «no
+      // facturable por SIN_VALORAR», y el badge es lo único que lo desambigua—, así que crece el
+      // alto en vez del ancho.
+      `<td class="jobdet-alb-estado cell-status">` +
+        `<span class="status-pill ${JOBDET_ALB_PILL[alb.estado] || 'status-pill-draft'}">${jobDetAlbEstado(alb.estado)}</span>` +
+        // SCRUM-17/170: «facturado» NO es un estado del documento — es un derivado de TRES valores
+        // contra el libro de líneas. Va como badge aparte del pill a propósito: son DOS EJES, y
+        // aplanarlos escondería el parcial, que en una obra por fases es el caso normal.
+        (alb.estadoCobro === 'parcial'
+          ? `<span class="job-doc-row__badge">Facturado en parte</span>`
+          : (alb.facturado || alb.estadoCobro === 'facturado' ? `<span class="job-doc-row__badge">Facturado</span>` : '')) +
+        (albValorado ? '' : `<span class="job-doc-row__badge">Sin precios</span>`) +
+      `</td>` +
+      `<td class="cell-id">${nLineas}</td>` +
+      `<td class="jobdet-alb-actions cell-actions"></td>`;
+    const albBody = item.querySelector('td');
+    item.querySelector('.jobdet-alb-link').addEventListener('click', () => {
+      if (window.renderAppView) window.renderAppView('albaran-detail', { albaranId: alb.id });
+    });
     // SCRUM-17: checkbox de selección (modo consolidación) en albaranes elegibles.
     // SCRUM-170: un albarán a MEDIAS tampoco entra en la consolidación (el backend lo rechaza
     // con `albaran_facturado_parcial`); ofrecer el checkbox sería un botón que solo puede fallar.
@@ -1670,32 +1748,45 @@ async function renderJobDetailView(container, jobId) {
     // hace de paso (regla 37). Mientras tanto esto NO es una promesa de comentario:
     // `tests/scrum302-sin-callejones.test.mjs` deriva de la página qué acciones navegan hasta
     // aquí y exige que la fila las conserve.
-    const verFicha = mkBtn('Ver albarán', () => {
-      if (window.renderAppView) window.renderAppView('albaran-detail', { albaranId: alb.id });
-    });
-    acts.appendChild(verFicha);
-
-    // SCRUM-31 (descubribilidad): "Editar líneas" VISIBLE, nunca escondida tras el «⋯» (AB3).
-    acts.appendChild(editBtn());
-
-    if (alb.estado === 'firmado') {
-      // SCRUM-170 (FACT-2c): facturar SOLO PARTE de lo servido. Aparece cuando queda algo por
-      // facturar y el parte lleva precios; si ya está todo cobrado, no hay acción que ofrecer.
-      // Admin-only como toda emisión (S1) → al técnico se le DESHABILITA con explicación, nunca
-      // se le esconde (norma de SCRUM-89: un botón que no puede usar tiene que decirle por qué).
-      const quedaPorFacturar = (alb.pendientes || []).some((p) => p.pendiente > 0);
-      if (alb.modoValoracion === 'VALORADO' && !alb.facturado && quedaPorFacturar) {
-        const parcialBtn = mkBtn(
-          alb.estadoCobro === 'parcial' ? 'Facturar lo que queda' : 'Facturar parte',
-          () => openFacturarParcialSheet(alb),
-        );
-        acts.appendChild(parcialBtn);
-        if (isTecnico) {
-          lockActionForRole(parcialBtn);
-          acts.appendChild(roleLockedNote());
-        }
+    // ── SCRUM-304 (C3) · UNA SOLA ACCIÓN: LA PRIMARIA DE SU ESTADO, SEGÚN C2 ─────────────────
+    //
+    // El rótulo sale de `ROTULOS_ALBARAN`, que ya los tiene aprobados. Y el botón NAVEGA al detalle
+    // cuando el ejecutor vive allí: es el precedente que el fundador aprobó en SCRUM-366 para la
+    // lista de Trabajos —«un solo ejecutor, en el detalle; la lista dice qué toca y lleva hasta
+    // allí»—. Duplicar aquí la ejecución sería el mismo defecto un nivel más abajo.
+    //
+    // ⚠️ SIN PRIMARIA NO SE PINTA NADA. En `firmado` sin nada pendiente, C2 dice que no hay
+    // siguiente paso: la celda vacía SIGNIFICA «nada que hacer» y es información. Rellenarla para
+    // que la columna «se vea completa» sería inventar un paso que no toca.
+    const primaria = primariaDeAlbaran(alb);
+    if (primaria) {
+      const rotulo = (typeof ROTULOS_ALBARAN !== 'undefined' && ROTULOS_ALBARAN[primaria.id]) || primaria.id;
+      if (primaria.id === 'btnFacturar') {
+        // El ÚNICO cuyo mecanismo vive aquí (`openFacturarParcialSheet`, anidada en esta vista):
+        // éste ejecuta. Es también el puente que `scrum302-sin-callejones` exige conservar.
+        const bt = mkBtn(rotulo, () => openFacturarParcialSheet(alb));
+        acts.appendChild(bt);
+        // Admin-only como toda emisión (S1): al técnico se le DESHABILITA con explicación, nunca
+        // se le esconde (norma de SCRUM-89).
+        if (isTecnico) { lockActionForRole(bt); acts.appendChild(roleLockedNote()); }
+      } else {
+        acts.appendChild(mkBtn(rotulo, () => {
+          if (window.renderAppView) window.renderAppView('albaran-detail', { albaranId: alb.id });
+        }));
       }
     }
+
+    // ── «Editar líneas»: SOLO en borrador, y esto ARREGLA UNA CONTRADICCIÓN QUE YA EXISTÍA ──────
+    //
+    // La fila lo pintaba SIEMPRE, mientras el registro de C2 declara
+    // `borrador: secundaria · emitido: oculta · firmado: oculta`. O sea que la fila y el registro
+    // llevaban discrepando desde antes de esta tarea: la segunda fuente de verdad estaba viva y no
+    // la veía nadie, porque solo aparece al CONTRASTAR los dos censos, no al leer cualquiera suelto.
+    //
+    // Sigue estando en `borrador` —no se puede quitar— porque `openAlbEditorSheet` está anidada en
+    // esta vista y el botón del detalle solo NAVEGA hasta aquí (`PUENTES_A_LA_FILA`). Quitarlo
+    // dejaría ese botón como callejón sin salida, que es lo que `scrum302-sin-callejones` vigila.
+    if (destinoEnFila('btnEditarLineas', alb) !== 'oculta') acts.appendChild(editBtn());
   });
 
   // SCRUM-31 (F5): cada factura es una fila .job-doc-row de la lista fusionada (no una sección aparte).
@@ -1874,23 +1965,57 @@ async function renderJobDetailView(container, jobId) {
 
   // ⚠️ NADA SE PIERDE. Un tipo que la tabla no conozca NO se descarta: cae en `desconocidos` y se
   // pinta con el resto. Un documento que desaparece en un reordenamiento es mudo, y es el peor
-  // resultado posible de esta tarea. El guard falla si esta lista no está vacía; la pantalla, aun
-  // así, lo enseña — la red y el aviso son dos cosas distintas.
-  const enSuSeccion = (destino, seccion, vacio) => {
-    const items = reparto[destino];
-    if (!items.length) { if (vacio) seccion.appendChild(vacio); return false; }
-    const lista = document.createElement('div');
-    lista.className = 'job-doc-list';
-    items.forEach((d) => lista.appendChild(d.el));
-    seccion.appendChild(lista);
-    return true;
-  };
+  // resultado posible de aquella tarea. El guard falla si esta lista no está vacía; la pantalla,
+  // aun así, lo enseña — la red y el aviso son dos cosas distintas.
+  //
+  // SCRUM-304: `enSuSeccion` vivía aquí y SE HA BORRADO con su único llamante (los albaranes, que
+  // ahora son tabla), no dejado «por si acaso»: un ayudante que ya no llama nadie es código que se
+  // pudre sin que nada lo diga, y el siguiente que lo lea creerá que hay secciones montándose por
+  // ahí. Es la misma norma que aplicó C2 al borrar `pdfBtn` y `fotoBtn` de esta misma vista.
 
   // ALBARANES — su sección, con su acción (`+ Nuevo albarán`, ya en la barra de arriba).
+  //
+  // SCRUM-304 (C3): TABLA, no lista de tarjetas. Diez albaranes eran diez bloques que había que
+  // releer uno a uno porque los botones cambiaban de sitio; ahora son diez líneas con la misma
+  // columna de acción. `.table`/`.table-wrap` son del inventario AB3 (ya los usan otras cinco
+  // pantallas): ni componente nuevo ni token nuevo.
+  //
+  // El estado vacío NO se toca: ya existía y sigue siendo el mismo. Una tabla con cabecera y nada
+  // debajo es justo lo que el ticket pide evitar, así que la cabecera solo se monta si hay filas.
   const vacioAlb = document.createElement('p');
   vacioAlb.style.cssText = 'margin:6px 0 0;color:var(--muted);font-size:13px';
   vacioAlb.textContent = 'Aún no hay documentos. Crea un albarán por cada visita o entrega.';
-  enSuSeccion('albaranes', docsSec, vacioAlb);
+  if (!reparto.albaranes.length) {
+    docsSec.appendChild(vacioAlb);
+  } else {
+    // ── SCRUM-304 · EN MÓVIL NO ES UNA TABLA: ES UNA PILA DE CARDS ──────────────────────────
+    //
+    // El patrón YA EXISTÍA y no había que inventarlo — se descubrió al mirar el resto del producto
+    // en vez de seguir quitando columnas. `.table-scroll` + `.table--cards-mobile` (styles.css,
+    // A18.1) recompone cada fila como card por debajo de 640 px: la cabecera se oculta, las celdas
+    // pasan a bloques de una rejilla y **las acciones ganan `min-height: 44px`**.
+    //
+    // Se elige ÉSTE y no `.table--stack-mobile` porque es el que usa `albaranesView.js` (C1,
+    // SCRUM-301): la lista global del MISMO documento. Dos formas móviles para el mismo albarán
+    // según la pantalla sería el defecto de SCRUM-240 en la capa visual.
+    const wrap = document.createElement('div');
+    wrap.className = 'table-scroll';
+    const tabla = document.createElement('table');
+    tabla.className = 'table table--cards-mobile';
+    tabla.innerHTML =
+      `<thead><tr>` +
+        `<th>${esc(ALB_TABLA_COPY.colNumero)}</th>` +
+        `<th>${esc(ALB_TABLA_COPY.colFecha)}</th>` +
+        `<th>${esc(ALB_TABLA_COPY.colEstado)}</th>` +
+        `<th>${esc(ALB_TABLA_COPY.colLineas)}</th>` +
+        `<th>${esc(ALB_TABLA_COPY.colAccion)}</th>` +
+      `</tr></thead>`;
+    const tbody = document.createElement('tbody');
+    reparto.albaranes.forEach((d) => tbody.appendChild(d.el));
+    tabla.appendChild(tbody);
+    wrap.appendChild(tabla);
+    docsSec.appendChild(wrap);
+  }
 
   // ── FACTURAS — lo FACTURADO, en su propia sección de la columna principal ────────────
   //
