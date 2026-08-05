@@ -27,7 +27,7 @@ import { buildVerifactuRegistrosXml } from '../../../invoicing/domain/verifactu.
 import { invalidAnioFiscal } from '../../../../core/validation/fiscalInput'; // SCRUM-217
 import {
   construirCsvsDelPaquete, csvBody, csvRow, csvNum, MAX_FACTURAS_ZIP, resolverEntregaZip, construirLeeme,
-  buildClientes, buildFacturas, buildCobros, buildTrabajos, buildPresupuestos,
+  buildClientes, buildFacturas, buildCobros, buildTrabajos, buildPresupuestos, buildGastos,
   EXPORT_PDF_CONCURRENCIA, // SCRUM-83
 } from '../../domain/exportData';
 // SCRUM-244 · la PUERTA de portabilidad: cobertura derivada + registro del derecho ejercido.
@@ -673,36 +673,12 @@ router.get('/expenses.csv', async (req, res) => {
     const { from, to } = parseDateFilter(req.query as any);
     const category = String(req.query.category || 'all');
 
-    const where: any = { merchantId: req.merchantId };
-    if (category !== 'all') where.category = category;
-    if (from || to) {
-      where.date = {};
-      if (from) where.date.gte = from;
-      if (to)   where.date.lte = to;
-    }
-
-    const expenses = await prisma.expense.findMany({
-      where,
-      orderBy: { date: 'desc' },
-      include: {
-        quote:    { select: { id: true } },
-        provider: { select: { name: true } },
-      },
-    });
-
     auditExport(req, 'gastos.csv', { from, to });
 
-    const header = ['Fecha', 'Concepto', 'Categoría', 'Importe', 'Moneda', 'Proveedor', 'Presupuesto ID', 'Notas'];
-    const rows = expenses.map((e) => csvRow([
-      new Date(e.date).toISOString().slice(0, 10),
-      e.concept,
-      e.category,
-      csvNum(e.amount),
-      e.currency,
-      e.provider?.name ?? '',
-      e.quote?.id ?? '',
-      e.notes ?? '',
-    ]));
+    // SCRUM-343: el suelto usa el MISMO builder que el paquete (buildGastos) — antes tenía su propia
+    // cabecera a mano y le faltaba «Registrado por» (8 vs 9). Ahora hay una sola fuente y no pueden
+    // divergir (guard: tests/scrum343). `category` se pasa como filtro extra del suelto.
+    const { header, rows } = await buildGastos(req.merchantId, { from, to }, category);
 
     sendCsv(res, `gastos_${new Date().toISOString().slice(0,10)}.csv`, header, rows);
   } catch (err) {
