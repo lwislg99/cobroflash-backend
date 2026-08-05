@@ -272,8 +272,8 @@ verdad.
 
 ## La pantalla: Configuración troceada en diez submenús (quinta entrega de B1)
 
-**Medido contra:** `origin/main` = `c2be01e9347a2b0b761e764de7033f322f820f85` · 2026-08-05T06:25:00+01:00
-**Tanda:** 1451 tests, 1384 pass, 0 fail, 67 skipped
+**Medido contra:** `origin/main` = `54a08624425eea696e37982f3717961e927496b2` · 2026-08-05T06:28:00+01:00
+**Tanda:** 1475 tests, 1408 pass, 0 fail, 67 skipped
 **Ficheros:** `public/dashboard/js/settingsSubmenus.js` (nuevo) · `settingsView.js` ·
 `dashboard/index.html` · `sw.js` · `tests/_asignacion-submenus.mjs` ·
 `tests/scrum284-configuracion-submenus.test.mjs` (nuevo, 8) · `docs/capturas/scrum-284/`
