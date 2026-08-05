@@ -121,11 +121,21 @@ export function censarCantidadInventada(fuente, ruta) {
  * Va con su motivo y su ticket. Cuando el fundador decida, esta entrada se va — y si el patrón
  * reaparece en OTRA línea, el censo lo caza igual porque la excepción es por ruta+línea, no por
  * fichero entero.
+ *
+ * ⚠️ SCRUM-286 (5-ago-2026): la línea pasó de **2585 a 2634**. NO ha cambiado el código vigilado
+ * ni la decisión pendiente: B3 troceó el formulario en cuatro bloques y metió 49 líneas por
+ * encima. El guard cayó él solo con «ya no corresponde a nada: bórrala» — que es exactamente lo
+ * que tenía que hacer, y por eso se actualiza el número en vez de borrar la excepción.
+ *
+ * 🔎 HALLAZGO, NO ARREGLADO AQUÍ (regla 9): anclar una excepción por NÚMERO DE LÍNEA la rompe
+ * cualquier edición de más arriba, aunque no toque lo vigilado. Cambiar el anclaje a algo estable
+ * (el texto del sujeto, o la función que lo contiene) es rediseñar el guard de SCRUM-311 y no es
+ * de este ticket. Queda dicho, con su carril: SCRUM-311.
  */
 export const EXCEPCIONES_CON_MOTIVO = [
   {
     ruta: 'public/dashboard/js/quotesView.js',
-    linea: 2585,
+    linea: 2634,
     motivo: 'camino de GUARDAR PLANTILLA (no el envío del presupuesto), con segunda defensa en ' +
             '`Number.isFinite(qty) ? qty : 1`. Decisión del fundador pendiente en SCRUM-311.',
   },
