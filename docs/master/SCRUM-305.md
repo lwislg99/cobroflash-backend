@@ -125,6 +125,29 @@ Siete rojos más, todos revertidos byte a byte: una letra en un motivo · devolv
 devolver «no están enlazadas» a ③ · devolver el `(s)` · hacer el plural pegando una «s» · devolver
 «parte» a la pantalla · y quitar la rama del singular para que todo salga en plural.
 
+## 🔴 ESTE TICKET SE PARTE EN DOS, Y NO CIERRA CON ESTA MITAD
+
+Decisión del asesor (5-ago-2026, 23:0x), tomada sobre la medición de la cola de
+`jobDetailView.js`:
+
+* **El mecanismo entra ahora**: `resumenEntrega` puro, las tres cuentas, los cinco textos firmados
+  y sus rojos. No toca `jobDetailView.js`, no colisiona con nadie y entra limpio.
+* **La pantalla va después**, cuando la cola de ese fichero esté drenada. El sitio ya está elegido
+  —encima de la tabla de albaranes del Trabajo— y la copy ya está firmada: lo único que falta es
+  poder tocar el fichero.
+
+El motivo es concreto y está medido: **cuatro ramas tienen ediciones pendientes dentro de
+`renderJobDetailView`** y ninguna está en `main` (`scrum-300-campos-albaran` +34 líneas,
+`scrum-300-firmado-por` +52, `scrum-302-detalle-albaran` +8, `scrum-316-detalle-b2` +11). Dos de
+ellas son de SCRUM-300, que acaba de desbloquearse y se mueve esta noche: meter una quinta mano
+encima de 52 y 34 líneas que están a punto de rebasar, y dentro de la misma función, es
+garantizarse un conflicto de madrugada.
+
+⚠️ **Y por eso SCRUM-305 NO CIERRA con esta mitad.** «Quedan 3» que nadie puede ver no es C6
+entregado: el ticket se llama así porque el objetivo es que el profesional **lo lea**. Lo que falta
+para cerrarlo es una sola cosa —cablear el bloque encima de la tabla de albaranes del Trabajo— y no
+depende de ninguna decisión pendiente, solo del turno de ese fichero.
+
 ## Lo que NO cubre
 
 * 🔴 **No hay pantalla, y esta vez NO es porque falte decidirlo.** El asesor eligió el sitio —encima
