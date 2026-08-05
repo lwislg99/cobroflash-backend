@@ -2,7 +2,7 @@
 
 **Fecha:** 5-ago-2026 · **Carril:** B · **Gate:** sin gate, corre en `npm test`
 **Medido contra:** `origin/main` = `5ae48e836ec439d6c7d1bccd9ebe0836c9a2e141` · 2026-08-05T10:03:42+02:00
-**Tanda:** 1510 tests, 1443 pass, 0 fail (el resto, gateados a staging)
+**Tanda:** 1515 tests, 1448 pass, 0 fail (el resto, gateados a staging)
 
 ## El defecto, confirmado por derivación propia
 
@@ -36,9 +36,11 @@ del demo el mismo día que entra en el del merchant.
 del merchant**; aquí el merchant demo tiene que sobrevivir, porque el seed lo rellena justo
 después. Misma lista, distinto final — y hay un test que lo fija.
 
-**Dónde vive:** `scripts/_wipe-demo.mjs`. No dentro de `seed-demo.mjs` por un motivo medido: ese
-script **se ejecuta al importarlo** (await de nivel superior + siembra), así que un test que lo
-importara sembraría la base. Sacada la pieza, se ejercita con un `prisma` de doble — sin BD, sin
+**Dónde vive:** `src/modules/system/domain/barridoDemo.ts`. No dentro de `seed-demo.mjs` por un
+motivo medido: ese script **se ejecuta al importarlo** (await de nivel superior + siembra), así que
+un test que lo importara sembraría la base. Y en `src/` y no en `scripts/` porque **ahora lo usa una
+ruta**: un `.mjs` de scripts que importa de `dist/` no lo puede importar el backend sin enredar el
+sentido de las dependencias. Sacada la pieza, se ejercita con un `prisma` de doble — sin BD, sin
 turno y sin red.
 
 ## Verificado en rojo
@@ -59,19 +61,59 @@ turno y sin red.
 - **`null` ≠ 0:** un modelo que este entorno no expone se anota como `null` y el seed lo **dice**;
   «no se pudo mirar» y «no había nada» no se confunden.
 
-## Lo que NO entra
+## El botón, encima de ese suelo
 
-- **El botón «Eliminar datos de ejemplo»**: es el siguiente paso y no se ha tocado. Lo que este
-  ticket entrega es el suelo para que ese botón pueda decir la verdad.
+`Configuración › Empresa` → **«Eliminar datos de ejemplo»**, con los cuatro textos aprobados
+literales (regla 30).
+
+- **Confirmación explícita.** El borrado cuelga del botón «Sí, eliminar» del modal, no del de la
+  tarjeta, y hay un test que lo comprueba **por posición**: la llamada tiene que aparecer DESPUÉS
+  del confirmar. Misma lección que SCRUM-260 — un aviso que no detiene nada solo cambia dónde
+  aparece el destrozo.
+- **Dice qué borró:** «Listo. Hemos eliminado N clientes, N presupuestos y N facturas de ejemplo.»
+  El usuario tiene que poder **comprobar** que su cuenta está limpia, no creérselo: un «listo» a
+  secas es indistinguible de un borrado a medias.
+- **Y si falla a medias, lo dice.** La ruta devuelve `ok:false` y la lista de lo que no pudo
+  barrer; la interfaz lo enseña. Una cuenta medio limpia que se anuncia limpia es el fallo mudo
+  que este ticket existe para evitar.
+
+### 🔴 HALLAZGO QUE CAMBIÓ EL ALCANCE: el botón solo existe en la cuenta demo
+
+Medido al construirlo, y es del fundador decidirlo: **`registerMerchant` crea ÚNICAMENTE la fila
+del merchant** — no siembra clientes, ni presupuestos, ni facturas de ejemplo. Y **no hay marca por
+fila** que distinga un dato sembrado de uno real (censo de SCRUM-262).
+
+Consecuencia: en una cuenta de verdad **no hay «datos de ejemplo» que borrar**, y un botón con ese
+rótulo borraría **datos reales bajo una etiqueta que dice lo contrario**. El competidor que cita el
+ticket puede ofrecerlo porque sus cuentas **nacen sembradas**; las nuestras no.
+
+Así que el botón se pinta **solo en la cuenta demo**, y la puerta se cierra por los dos lados: el
+front no lo dibuja (`esCuentaDemo`, derivado en el backend con `isDemoMerchant` — una sola fuente,
+la interfaz no reimplementa el criterio) y la ruta lo rechaza igualmente.
+
+**Lo que queda para el fundador:** si se quiere el botón para todos, primero hay que decidir que
+las cuentas nuevas **nazcan con datos de ejemplo** —y con una marca que permita distinguirlos—.
+Eso es producto y onboarding, no este ticket.
+
+*(La rama del 409 `no_es_cuenta_demo` va sin `message` a propósito: no es alcanzable desde la
+interfaz y no hay copy aprobado que poner. Queda declarado aquí en vez de inventar uno.)*
+
+## Lo que NO entra
 - **Las plantillas por gremio**: fuera, por indicación del fundador, mientras su origen no se
   confirme. **No se ha inventado ningún precio ni ninguna plantilla.** Y un dato que conviene
   saber antes de retomarlas: `seed-demo.mjs` **no siembra `quoteTemplate`** —comprobado— pero el
   barrido derivado **sí lo limpia ahora**, así que si alguien creó plantillas a mano en el demo,
   una re-siembra se las lleva y nada las repone. No es una regresión (antes tampoco se sembraban),
   pero es la interacción que hay que tener delante al decidir su origen.
-- **No se ha ejecutado el seed contra ninguna base.** Todo lo de aquí se prueba con dobles.
+- **No se ha ejecutado el seed contra ninguna base.** Todo lo de aquí se prueba con dobles, y **el
+  botón no se ha pulsado contra datos reales**: lo verificado es la ruta, el gate y la interfaz.
+- **AB6 · matriz de dispositivos: hueco declarado.** No hay capturas en móvil/tablet de este
+  modal; el guard de SCRUM-350 cubre que su pie no se desborde, que era el riesgo conocido.
 
 ## Ficheros
 
-`scripts/_wipe-demo.mjs` (nuevo) · `scripts/seed-demo.mjs` (wipeDemo pasa a delegar) ·
-`tests/scrum314-wipedemo-derivado.test.mjs` (11).
+`src/modules/system/domain/barridoDemo.ts` (nuevo — el barrido vive en `src/` porque ahora lo usa
+una ruta, no solo el seed) · `scripts/seed-demo.mjs` (wipeDemo pasa a delegar) · `src/app.ts`
+(**zona roja**: la ruta, junto a sus hermanas de `/admin/merchant`) ·
+`src/modules/system/merchantAdmin.ts` (`esCuentaDemo` derivado; el email se lee y NO se devuelve) ·
+`public/dashboard/js/settingsView.js` · `tests/scrum314-wipedemo-derivado.test.mjs` (16).

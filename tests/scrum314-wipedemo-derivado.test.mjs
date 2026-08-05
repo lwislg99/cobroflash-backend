@@ -25,7 +25,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { barridoDemo, PREFIJO_TELEFONO_DEMO } from '../scripts/_wipe-demo.mjs';
+import { barridoDemo, PREFIJO_TELEFONO_DEMO } from '../dist/modules/system/domain/barridoDemo.js';
 import { modelosConTenancy } from './scrum172-cobertura-tenancy.test.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -176,4 +176,69 @@ test('SCRUM-314 · seed-demo usa el barrido derivado y no una lista propia', () 
     `🔴 wipeDemo sigue borrando a mano: ${aMano.join(', ')}. Dos listas del mismo hecho se ` +
       'desincronizan solas — es lo que lo dejó en 10 de 21.',
   );
+});
+
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// EL BOTÓN · confirmación explícita, dice qué borró, y dice si falló a medias
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+const settings = fs.readFileSync(path.join(RAIZ, 'public', 'dashboard', 'js', 'settingsView.js'), 'utf8');
+const appTs = fs.readFileSync(path.join(RAIZ, 'src', 'app.ts'), 'utf8');
+
+test('SCRUM-314 · el botón NO borra directamente: cuelga del botón de confirmar', () => {
+  // Es un borrado irreversible. Un aviso que no detiene nada solo cambia dónde aparece el
+  // destrozo (SCRUM-260): la llamada tiene que salir del «Sí, eliminar», no del botón de la
+  // tarjeta. Se comprueba por POSICIÓN, no por texto: el `fetch` va DESPUÉS del confirmar.
+  const iConfirmar = settings.indexOf("'#de-si'");
+  const iLlamada = settings.indexOf("/admin/datos-ejemplo/eliminar");
+  assert.ok(iConfirmar !== -1, '🔴 no hay botón de confirmación en el modal');
+  assert.ok(iLlamada !== -1, '🔴 el botón no llama a la ruta de borrado');
+  assert.ok(iConfirmar < iLlamada,
+    '🔴 el borrado NO cuelga de la confirmación: se dispararía con la primera pulsación');
+});
+
+test('SCRUM-314 · los cuatro textos son los aprobados, literales (regla 30)', () => {
+  for (const texto of [
+    'Eliminar datos de ejemplo',
+    'Vamos a borrar los clientes, presupuestos y facturas de ejemplo. Esto no se puede deshacer.',
+    'Sí, eliminar',
+  ]) {
+    assert.ok(settings.includes(texto), `🔴 falta el texto aprobado: «${texto}»`);
+  }
+  // El de después lleva las tres cifras interpoladas: se comprueba por sus trozos fijos.
+  assert.match(settings, /'Listo\. Hemos eliminado ' \+/, '🔴 falta el texto de resultado aprobado');
+  assert.match(settings, /' presupuestos y ' \+/);
+  assert.match(settings, /' facturas de ejemplo\.'/);
+});
+
+test('SCRUM-314 · el resultado DICE las tres cifras, no un «listo» a secas', () => {
+  // El usuario tiene que poder COMPROBAR que su cuenta está limpia, no creérselo.
+  for (const campo of ['clientes', 'presupuestos', 'facturas']) {
+    assert.match(appTs, new RegExp(`${campo}: porModelo\.`), `🔴 la ruta no devuelve ${campo}`);
+    assert.ok(settings.includes(`r.${campo}`), `🔴 la interfaz no pinta ${campo}`);
+  }
+});
+
+test('SCRUM-314 · si el barrido falla a medias, se DICE', () => {
+  // Una cuenta medio limpia que se anuncia limpia es el fallo mudo que este ticket evita.
+  assert.match(appTs, /noBarridos/, '🔴 la ruta no informa de lo que no pudo barrer');
+  assert.match(appTs, /ok: noBarridos\.length === 0/, '🔴 `ok` no refleja el barrido incompleto');
+  assert.ok(settings.includes('r.ok === false'), '🔴 la interfaz no mira si el barrido quedó incompleto');
+  assert.ok(settings.includes('r.noBarridos'), '🔴 la interfaz no dice QUÉ quedó sin borrar');
+});
+
+test('SCRUM-314 · el botón solo existe en la cuenta demo, y el criterio NO se reimplementa', () => {
+  // Medido: el registro no siembra datos de ejemplo y no hay marca por fila. Fuera del demo este
+  // botón borraría datos REALES bajo un rótulo que dice «de ejemplo».
+  assert.ok(settings.includes('merchant.esCuentaDemo'), '🔴 el front no consulta el veredicto del backend');
+  // SIN COMENTARIOS: un guard de texto casa con el comentario que EXPLICA la prohibición, y este
+  // fichero explica justo ésta. Ya mordió al escribirlo — se lee el código, no la prosa.
+  const codigo = settings.replace(/^\s*\/\/.*$/gm, '');
+  assert.doesNotMatch(
+    codigo, /id\s*===\s*1|merchantId\s*===\s*1/,
+    '🔴 la interfaz reimplementa «¿es el demo?» con un id a mano: eso es la segunda fuente de ' +
+    'verdad que se desincroniza (isDemoMerchant también mira el email)',
+  );
+  assert.match(appTs, /isDemoMerchant\(merchant\)/, '🔴 la ruta no cierra la puerta por su lado');
 });

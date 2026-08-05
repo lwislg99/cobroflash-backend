@@ -428,6 +428,14 @@ function renderSettingsView(container) {
   
     actions.appendChild(saveBtn);
     form.appendChild(actions);
+
+    // SCRUM-314 (D3): hueco para «Eliminar datos de ejemplo». Nace VACÍO y solo se rellena en la
+    // cuenta demo (lo decide el backend con `esCuentaDemo`), así que fuera del demo no ocupa nada
+    // ni se ve — no hay botón deshabilitado que invite a preguntar por él.
+    const huecoEjemplo = document.createElement("div");
+    huecoEjemplo.id = "datos-ejemplo";
+    huecoEjemplo.style.marginTop = "18px";
+    form.appendChild(huecoEjemplo);
   
     // Cargar datos actuales
     async function loadMerchant() {
@@ -444,6 +452,7 @@ function renderSettingsView(container) {
         fInvoiceSeriesPrefix.input.value = merchant.invoiceSeriesPrefix || "";
         fLogoUrl.input.value = merchant.logoUrl || "";
         refreshLogoUI(); // preview del logo actual (URL antigua o data-URI)
+        montarDatosDeEjemplo(merchant); // SCRUM-314 (D3)
         fGoogleReviewUrl.input.value = merchant.googleReviewUrl || "";
         fIban.input.value  = merchant.iban  || "";
         fClabe.input.value = merchant.clabe || "";
@@ -931,6 +940,89 @@ async function renderReferralCard(container) {
     }
     copyBtn.textContent = '¡Copiado!';
     setTimeout(() => { copyBtn.textContent = 'Copiar link'; }, 1800);
+  });
+}
+
+
+// ── SCRUM-314 (D3) · «Eliminar datos de ejemplo» ────────────────────────────────────────────
+//
+// SOLO se pinta en la cuenta demo, y el veredicto lo da el backend (`esCuentaDemo`, derivado de
+// `isDemoMerchant`): la interfaz no reimplementa el criterio con un `id === 1`.
+//
+// Y no es cosmético: medido al construirlo, el registro NO siembra datos de ejemplo y no hay
+// marca por fila que distinga sembrado de real. En una cuenta de verdad este botón borraría
+// datos REALES bajo un rótulo que dice «de ejemplo». Por eso no se pinta, y la ruta lo rechaza
+// además por su cuenta.
+//
+// Los cuatro textos son los APROBADOS por el fundador (regla 30) y van literales.
+function montarDatosDeEjemplo(merchant) {
+  const hueco = document.getElementById('datos-ejemplo');
+  if (!hueco) return;
+  hueco.innerHTML = '';
+  if (!merchant || !merchant.esCuentaDemo) return; // fuera del demo, ni existe
+
+  const btn = document.createElement('button');
+  btn.className = 'btn-secondary';
+  btn.type = 'button';
+  btn.textContent = 'Eliminar datos de ejemplo';
+  const salida = document.createElement('div');
+  salida.style.cssText = 'margin-top:10px;font-size:13px';
+  hueco.append(btn, salida);
+
+  btn.addEventListener('click', () => {
+    // CONFIRMACIÓN EXPLÍCITA. Es irreversible, y un aviso que no detiene nada solo cambia dónde
+    // aparece el destrozo (SCRUM-260): por eso el borrado cuelga del botón de confirmar, no de éste.
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    // Plantilla en un template literal, que es UNA de las tres formas que el censo de SCRUM-350
+    // sabe leer. Con concatenación el pie existía pero sus botones eran invisibles para ese guard
+    // — y un pie que el censo ve a medias es un modal que su arreglo de CSS no cubre.
+    overlay.innerHTML = `
+      <div class="modal" style="max-width:460px" role="dialog" aria-modal="true" aria-labelledby="de-t">
+        <div class="modal-header">
+          <h3 class="modal-title" id="de-t">Eliminar datos de ejemplo</h3>
+          <button class="modal-close" id="de-x" aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p>Vamos a borrar los clientes, presupuestos y facturas de ejemplo. Esto no se puede deshacer.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="de-no" type="button">Cancelar</button>
+          <button class="btn-primary" id="de-si" type="button">Sí, eliminar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const cerrar = () => overlay.remove();
+    overlay.querySelector('#de-x').addEventListener('click', cerrar);
+    overlay.querySelector('#de-no').addEventListener('click', cerrar);
+    overlay.addEventListener('click', (ev) => { if (ev.target === overlay) cerrar(); });
+
+    overlay.querySelector('#de-si').addEventListener('click', async () => {
+      const si = overlay.querySelector('#de-si');
+      si.disabled = true; si.textContent = 'Eliminando…';
+      try {
+        const r = await apiRequest('/admin/datos-ejemplo/eliminar', { method: 'POST' });
+        cerrar();
+        // DICE QUÉ BORRÓ: el usuario tiene que poder COMPROBAR que su cuenta está limpia, no
+        // creérselo. Un «listo» a secas es indistinguible de un borrado a medias.
+        salida.textContent =
+          'Listo. Hemos eliminado ' + (r.clientes || 0) + ' clientes, ' + (r.presupuestos || 0) +
+          ' presupuestos y ' + (r.facturas || 0) + ' facturas de ejemplo.';
+        // Y SI FALLÓ A MEDIAS, LO DICE. Una cuenta medio limpia que se anuncia limpia es el fallo
+        // mudo que este ticket existe para evitar.
+        if (r.ok === false) {
+          const aviso = document.createElement('div');
+          aviso.className = 'alert warning';
+          aviso.style.marginTop = '8px';
+          aviso.textContent =
+            'No se pudo terminar: quedan datos sin borrar (' + (r.noBarridos || []).join(', ') + ').';
+          salida.appendChild(aviso);
+        }
+      } catch (e) {
+        cerrar();
+        salida.textContent = 'No se pudo eliminar: ' + (e?.data?.message || e.message);
+      }
+    });
   });
 }
 
