@@ -333,9 +333,14 @@
         // 🏆 LA COLUMNA QUE ELLOS NO PUEDEN TENER: sus albaranes cuelgan de un cliente, no de una
         // obra. Saber que tres albaranes sin firmar son DEL MISMO TRABAJO cambia lo que haces:
         // haces una llamada, no tres. Por eso va ENLAZADA al Trabajo.
-        // Va a la franja inferior a ancho completo (`cell-actions`): es la columna que hace util
-        // el listado y un titulo de obra no cabe en media tarjeta. De regalo, esa area exige
-        // target >=44 px a sus enlaces, que es justo lo que pide AB6.
+        // Va a la franja inferior a ancho completo (`cell-actions`) por dos motivos: un titulo de
+        // obra no cabe en media tarjeta, y esa area exige target >=44 px a sus enlaces — que es
+        // justo lo que pide AB6.
+        //
+        // ⚠️ PERO LA RANURA SE LLAMA `actions` POR ALGO: ESTA PRESTADA. El dia que esta fila reciba
+        // acciones de verdad, chocan. Entonces las acciones se quedan con `cell-actions` y el
+        // Trabajo necesita RANURA PROPIA en la rejilla (area nueva, propuesta a DESIGN.md). No se
+        // comparte: dos cosas en la misma area es como estaba esta tabla antes de tener clases.
         const tdTrabajo = document.createElement('td');
         tdTrabajo.className = 'cell-actions';
         if (f.jobId != null) {

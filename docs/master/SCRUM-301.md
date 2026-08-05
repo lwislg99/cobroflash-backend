@@ -252,6 +252,12 @@ cabe en media tarjeta, y esa área exige target ≥44 px, que es lo que pide AB6
 col-hide-mobile` (la tarjeta enseña la fecha de ENTREGA, la operativa; la de emisión sigue en la
 tabla de escritorio).
 
+⚠️ **`Trabajo` está en `cell-actions` PRESTADO, y esa ranura se llama así por algo.** Está ahí
+porque es la única área de ancho completo —un título de obra no cabe en media tarjeta— y porque
+exige target ≥44 px, que es lo que pide AB6. **El día que esta fila reciba acciones de verdad,
+chocan: entonces las acciones se quedan con `cell-actions` y el Trabajo necesita ranura propia**
+(un área nueva en la rejilla, propuesta a DESIGN.md), no compartirla.
+
 El guard **deriva de `styles.css`** qué clases existen: una clase con una letra de más no da error
 en ninguna parte —simplemente no aplica y la celda vuelve a la rejilla implícita—, así que el
 conjunto válido no se escribe a mano. Dos rojos: quitarle la clase a una celda (dice cuántas
