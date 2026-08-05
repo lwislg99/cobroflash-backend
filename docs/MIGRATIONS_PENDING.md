@@ -158,7 +158,56 @@ migres antes de tener los seis textos del fundador.
 
 ---
 
-## SCRUM-205 · `invoices.vf_estado` (estado de sellado explícito) — 🔴 SIN APLICAR en ninguna de las tres
+## SCRUM-205 · `invoices.vf_estado` (estado de sellado explícito) — MEDIDO 6-ago-2026, ver tabla
+
+> **Estado POR BASE, con la fecha y el método de cada medición** (antes esta cabecera decía
+> «🔴 SIN APLICAR en ninguna de las tres», y para producción **era falso**):
+>
+> | Base | `invoices.vf_estado` | Medido cómo | Cuándo |
+> | --- | --- | --- | --- |
+> | `acela.proxy.rlwy.net/yaqu_dev_javier` (dev) | 🔴 **NO existe** | `deriva-prod.sql` directo (330 columnas leídas) | 6-ago-2026 |
+> | producción (`yaqu.app`) | ✅ **existe** — pero por INFERENCIA, no medido | la app arranca, y `assertSchemaSinDeriva` se niega a arrancar con deriva en `NODE_ENV=production` (`schemaDrift.ts:266-268`). `/health` → `version: df4057b…`, `db:"up"` | 6-ago-2026 |
+> | staging | ❔ **sin medir** | no hay credencial de staging en el worktree (ver aviso de abajo) | — |
+>
+> ⚠️ **El backfill NO está medido en ninguna.** Que la columna EXISTA no dice nada de si el
+> backfill corrió. Si en producción existe pero el backfill no corrió, todo el histórico está en
+> `pendiente_de_sellado` y `puedeProducirDocumento()` le niega PDF y QR **en silencio**: sin 500,
+> sin alarma. Se cierra con un `COUNT(*) GROUP BY vf_estado` contra producción.
+>
+> 🔴 **AVISO DE CREDENCIAL, medido el 6-ago-2026:** en el worktree principal la clave
+> `DATABASE_URL_STAGING` **NO apunta a staging**: apunta a `acela.proxy.rlwy.net/yaqu_dev_javier`,
+> que es DESARROLLO. Una clave cuyo NOMBRE dice una base y cuyo VALOR es otra es exactamente cómo
+> se aplica una migración donde no tocaba. Comprobar el `host/base` (con `describirBD`, nunca la
+> URL) **antes** de cada operación, y no fiarse del nombre de la variable.
+
+### 📌 Un registro de lo que se MIDIÓ no caduca; una afirmación sobre el estado ACTUAL, sí
+
+La lección de esta noche (con S2), y el motivo de que esta cabecera lleve ahora fecha y método en
+cada fila. Las dos cosas parecen la misma y se comportan al revés:
+
+* **«El 6-ago-2026 medí que dev no tenía la columna»** — sigue siendo cierto para siempre. Es un
+  hecho fechado.
+* **«SIN APLICAR en ninguna de las tres»** — es una afirmación sobre el AHORA, y envejece sola: se
+  volvió falsa en cuanto alguien aplicó el ALTER en producción, sin que nadie tocara el documento.
+
+Esta cabecera era lo segundo **escrito como si fuera lo primero**, y por eso mintió durante días en
+el único documento que se consulta ANTES de tocar una base. El arreglo no es «acordarse de
+actualizarla»: es que **toda afirmación de estado lleve fecha y método**, para que se lea como lo
+que es —una foto— y no como una verdad permanente.
+
+⚠️ El aviso «pregúntaselo a `deriva-prod.sql`, no a esta cabecera» ya estaba escrito más abajo, y
+no bastó: un aviso dentro de un documento cuya cabecera afirma lo contrario es un aviso que se lee
+tarde. Por eso la corrección va ARRIBA.
+
+### ✅ Autorización de lectura sobre producción (6-ago-2026) — y cuándo decae
+
+La regla «producción no se toca ni en lectura» tenía como premisa la existencia de **merchants
+reales y datos sensibles**. El fundador confirmó la noche del 5-ago-2026 que **hoy no los hay**
+(ver SCRUM-242), y sobre esa base autorizó esta medición de solo lectura: `deriva-prod.sql` y el
+`COUNT(*) GROUP BY vf_estado`, ninguna consulta más y ni una escritura.
+
+🔴 **LA REGLA VUELVE A ESTAR EN VIGOR EL DÍA QUE HAYA UN MERCHANT REAL.** Esta autorización es de
+esta medición y de esta fecha; no es un permiso permanente ni un precedente.
 
 > **Las DOS clases conviven en esta misma entrada, y por eso va aquí el aviso (SCRUM-225):**
 > **🔎 VERIFICABLE** — que exista la columna `invoices.vf_estado`: pregúntaselo a
