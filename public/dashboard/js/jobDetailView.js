@@ -1359,6 +1359,18 @@ async function renderJobDetailView(container, jobId) {
       return b;
     };
 
+    // SCRUM-302 (C2) · LA ENTRADA A LA PÁGINA DEL ALBARÁN.
+    //
+    // Las acciones de la fila SIGUEN AQUÍ a propósito, y conviene decir por qué en vez de dejarlo
+    // a interpretación: la página nueva no se ha podido validar en un navegador todavía, y
+    // quitarlas antes de eso dejaría al pro sin forma de emitir ni firmar si algo no encaja. La
+    // duplicación es TRANSITORIA y tiene dueño: en cuanto la página se valide, estas se van y la
+    // fila se queda solo con este enlace. Está declarado en `docs/master/SCRUM-302.md`.
+    const verFicha = mkBtn('[PENDIENTE microcopy oficial]', () => {
+      if (window.renderAppView) window.renderAppView('albaran-detail', { albaranId: alb.id });
+    });
+    acts.appendChild(verFicha);
+
     if (alb.estado === 'borrador') {
       const em = mkBtn('Emitir', async () => {
         em.disabled = true;

@@ -65,6 +65,11 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // Albaranes — SCRUM-14/47/49: partes de trabajo NO fiscales, el caso de uso del
   // Operario por definición. Firmar/enviar es explícito en SCRUM-47.
   { method: 'PATCH', path: '/admin/albaranes/:id', why: 'Rellenar el parte en la obra (SCRUM-14)' },
+  // SCRUM-302 (C2): la FICHA del albarán. Va al operario porque negarle LEER el parte mientras
+  // puede rellenarlo, emitirlo y firmarlo (las líneas de al lado) sería incoherente: es la misma
+  // pantalla de su trabajo de campo, solo que ahora tiene página propia en vez de ser una fila.
+  // Solo lectura y filtrada por merchant, como el resto.
+  { method: 'GET',   path: '/admin/albaranes/:id', why: 'Ver la ficha del parte que él mismo rellena y firma (SCRUM-302)' },
   { method: 'POST',  path: '/admin/albaranes/:id/emitir', why: 'Emitir ALBARÁN (no factura): documento NO fiscal' },
   { method: 'POST',  path: '/admin/albaranes/:id/firmar', why: 'Firma del cliente en el móvil del operario (SCRUM-49)' },
   { method: 'GET',   path: '/admin/albaranes/:id/pdf', why: 'Enseñar/enviar el parte firmado' },

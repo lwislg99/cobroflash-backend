@@ -189,7 +189,11 @@
   <script src="./js/providersView.js"></script>
   <script src="./js/invoicesView.js"></script>
   <script src="./js/nuevaFacturaModal.js"></script>
+  <!-- SCRUM-302 (C2): la LEY del patrón va PRIMERO — los registros la consumen al cargarse. -->
+  <script src="./js/patronDetalleAcciones.js"></script>
   <script src="./js/invoiceActionsRegistry.js"></script>
+  <script src="./js/albaranActionsRegistry.js"></script>
+  <script src="./js/albaranDetailView.js"></script>
   <script src="./js/invoiceDetailView.js"></script>
   <!-- SCRUM-316 (G1): la ley del patrón aplicada al Trabajo. Carga ANTES de jobDetailView.js, que pinta desde ella. -->
   <script src="./js/jobActionsRegistry.js"></script>
