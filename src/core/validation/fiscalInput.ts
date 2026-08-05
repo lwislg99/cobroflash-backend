@@ -86,3 +86,65 @@ export function invalidPrefijoSerie(valor: unknown): string | null {
   }
   return null;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-291 (A4) · LA SERIE ES INMUTABLE UNA VEZ EMITIDA SU PRIMERA FACTURA
+//
+// EL DEFECTO, medido y VIVO: el prefijo de serie es editable desde Configuración
+// (`settingsView.js:490` → `PUT /admin/merchant`) y **nada comprobaba si ya había facturas
+// emitidas**. `invalidPrefijoSerie` solo mira el charset que admite la AEAT (SCRUM-217), y
+// `merchantAdmin.ts` no consultaba `Invoice` ni una vez.
+//
+// Consecuencia: un merchant con 40 facturas `2026-CF-001…040` cambia el prefijo a `FAC` y la
+// siguiente sale `2026-FAC-041`. Mismo año, misma serie, dos prefijos distintos — y la
+// correlatividad que la AEAT exige dentro de una serie deja de existir. No se puede deshacer:
+// una factura emitida no se edita (regla 29), así que el daño queda dentro del registro.
+//
+// POR QUÉ SE BLOQUEA Y NO SE AVISA: lo que se impide aquí es IRREVERSIBLE. Un aviso que deja
+// pasar reparte la culpa y no evita nada — y esto no es una preferencia del profesional sobre
+// su propio negocio, es un requisito de forma del registro fiscal.
+//
+// ⚠️ ESTO NO TOCA EL CAMINO DE EMISIÓN (regla 38). Vive en la validación de Configuración:
+// decide si se admite un CAMBIO DE AJUSTE, no cómo se compone un número. `allocateInvoiceNumber`
+// y su `pg_advisory_xact_lock` quedan intactos — son lo único que hoy impide un hueco real.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * De todos los números de factura de un merchant, los que pertenecen a LA SERIE FISCAL del año
+ * dado. Puro: recibe los números ya leídos, no toca la base.
+ *
+ * Se decide por el NÚMERO y no por `createdAt`, porque el número **es** la identidad fiscal del
+ * documento (el `id` de la BD no lo es) y es lo que la serie tiene que dejar correlativo.
+ *
+ * Quedan fuera los JUSTIFICANTES (`J-…`): no van en la serie fiscal ni en VeriFactu, así que
+ * contarlos bloquearía el cambio de prefijo a quien todavía no ha emitido ninguna factura.
+ */
+export function numerosDeLaSerie(numeros: readonly (string | null | undefined)[], año: number): string[] {
+  const marca = `${año}-`;
+  return numeros
+    .filter((n): n is string => typeof n === 'string' && n.length > 0)
+    .filter((n) => !n.startsWith('J-'))
+    .filter((n) => n.startsWith(marca));
+}
+
+/**
+ * ¿Se bloquea este cambio de prefijo? Puro y sin base de datos.
+ *
+ * Solo bloquea el CAMBIO REAL: reenviar el mismo prefijo (que es lo que hace el formulario de
+ * Configuración cada vez que se guarda cualquier otro campo) no es tocar la serie y no puede
+ * dejar al profesional sin poder guardar su dirección.
+ */
+export function bloqueoCambioDeSerie(params: {
+  prefijoActual: string | null | undefined;
+  prefijoNuevo: string | null | undefined;
+  numerosDeLaSerie: readonly string[];
+}): { bloqueado: true; emitidas: number; ejemplo: string } | { bloqueado: false } {
+  const actual = (params.prefijoActual ?? '').trim();
+  const nuevo = (params.prefijoNuevo ?? '').trim();
+  if (!nuevo || nuevo === actual) return { bloqueado: false };
+  const emitidas = params.numerosDeLaSerie.length;
+  if (emitidas === 0) return { bloqueado: false };
+  // El ejemplo es el número MÁS ALTO ya emitido: es el que hace ver el salto que se evita.
+  const ejemplo = [...params.numerosDeLaSerie].sort()[emitidas - 1];
+  return { bloqueado: true, emitidas, ejemplo };
+}
