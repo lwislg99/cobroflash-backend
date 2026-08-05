@@ -1,0 +1,294 @@
+// src/modules/jobs/domain/albaranFirmante.ts — SCRUM-300 (C5)
+//
+// FUENTE ÚNICA de los campos que estrena C5: lugar y fecha de entrega, y QUIÉN firma.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// ESTE FICHERO ES EL RESULTADO DE UNA FUSIÓN, Y CONVIENE SABERLO
+//
+// C5 se construyó DOS VECES en paralelo (`scrum-300-campos-albaran` y `scrum-300-firmado-por`),
+// con dos ficheros de dominio distintos sobre lo mismo. El mapa de la fusión está en
+// `docs/master/SCRUM-300.md`. Se conserva ESTE fichero y NO `albaranFirmaCopy.ts`: dos módulos
+// vivos sobre la misma decisión serían la tercera fuente de verdad en un ticket que ya tenía dos.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// POR QUÉ ESTO ES UN MÓDULO Y NO UNAS CADENAS EN LA VISTA
+//
+// Estos textos acaban en un documento que se puede leer en un juzgado, y los aprueba el fundador
+// (regla 30). Si vivieran a la vez en el dashboard, en la página pública de firma y en el PDF,
+// habría TRES copias que pueden divergir en silencio — que es el defecto que este repo lleva
+// arreglando toda la semana (las dos cabeceras de gastos.csv, las tres copias del porqué de
+// `borradoMerchant`, los dos selectores de cliente). El arreglo nunca fue sincronizarlas: fue
+// dejar una sola. Aquí se aplica lo mismo ANTES de crear el problema.
+//
+// El navegador **recibe** las opciones por `/admin/me` y no las reimplementa — mismo criterio,
+// escrito, de SCRUM-289: «dos copias del criterio es cómo se llega a que el back acepte lo que
+// el front esconde».
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// ⚠️ EL ESTADO REAL DE LA MICROCOPY DE «EN CALIDAD DE QUÉ»: NO ESTÁ APROBADA
+//
+// La rama `scrum-300-firmado-por` traía cinco textos literales para estas ranuras, declarados
+// como aprobados palabra por palabra y las ranuras como validadas por el fundador el 5-ago-2026.
+// **Eso era falso: no pasaron por la regla 30.** El asesor lo midió al resolver la fusión, y la
+// afirmación se ha retirado JUNTO CON los textos.
+//
+// ⚠️ Los cinco literales retirados NO se citan en este comentario a propósito: un guard de texto
+// que los persiguiera se cazaría a sí mismo en la prosa que explica la prohibición. Quien quiera
+// verlos, `git show origin/scrum-300-firmado-por:src/modules/jobs/domain/albaranFirmante.ts`.
+//
+// **Un texto etiquetado como aprobado es peor que uno con marcador: el marcador pide permiso y la
+// etiqueta falsa lo da.**
+//
+// El asesor fijó los `id` (abajo) y anunció los seis rótulos validados «en el comentario
+// siguiente» de SCRUM-300. **Ese comentario no llegó a escribirse** (medido el 5-ago-2026: el
+// ticket tiene 5 comentarios y ninguno los contiene). Así que las seis etiquetas van con el
+// marcador `[PENDIENTE microcopy oficial]`, que es lo que el propio enunciado del ticket manda
+// mientras no haya texto oficial, y el mismo patrón de portabilidad, SCRUM-289 y SCRUM-303.
+// Se ve feo A PROPÓSITO: un placeholder que parece definitivo acaba en producción.
+
+/** Marcador del repo para texto sin aprobar. Se pinta tal cual (no es un fallback silencioso). */
+export const PENDIENTE = '[PENDIENTE microcopy oficial]';
+
+// ─── EN CALIDAD DE QUÉ FIRMA ─────────────────────────────────────────────────────────────
+//
+// ⚠️ LOS `id` SON DATO, NO PANTALLA, y por eso SÍ están fijados aunque las etiquetas no lo estén.
+// El valor que se guarda en `Albaran.firmadoPorCalidad` es el `id`, y acaba en el paquete de
+// evidencias que lee un tercero. Se fijan ANTES de la migración a propósito: cambiarlos después
+// obliga a migrar filas de documentos ya firmados. Descriptivos y no abreviados, por decisión del
+// asesor (SCRUM-300, 5-ago-2026) — ninguna de las dos ramas usaba éstos.
+//
+// ⚠️ Nota para quien venga a «mejorar» la lista: la rama B razonaba por escrito que había que
+// EVITAR «representante» por ser una afirmación jurídica que el profesional no puede sostener.
+// La decisión del asesor incluye `representante_del_cliente`, así que ese razonamiento queda
+// derogado — se deja dicho aquí para que no se reabra como si fuera un descuido.
+
+/** Las seis ranuras, en su orden. Los `id` están CERRADOS; las etiquetas, no (ver cabecera). */
+export const FIRMANTE_CALIDAD_IDS = [
+  'el_propio_cliente',
+  'representante_del_cliente',
+  'familiar_o_conviviente',
+  'encargado_o_personal_de_obra',
+  'portero_o_conserje',
+  'otro',
+] as const;
+export type FirmanteCalidadId = (typeof FIRMANTE_CALIDAD_IDS)[number];
+
+/** La única ranura que además lleva texto libre escrito por el profesional. */
+export const FIRMANTE_CALIDAD_LIBRE: FirmanteCalidadId = 'otro';
+
+/**
+ * La etiqueta de cada ranura. Las seis están PENDIENTES (ver cabecera): el `id` es dato y está
+ * cerrado, la etiqueta es pantalla y todavía no la ha aprobado nadie.
+ *
+ * Cuando llegue el texto oficial se cambia SOLO aquí y no hay que migrar ni un albarán firmado,
+ * porque lo que se guardó fue el `id`.
+ */
+export const FIRMANTE_CALIDAD_ETIQUETAS: Readonly<Record<FirmanteCalidadId, string>> = Object.freeze({
+  el_propio_cliente: PENDIENTE,
+  representante_del_cliente: PENDIENTE,
+  familiar_o_conviviente: PENDIENTE,
+  encargado_o_personal_de_obra: PENDIENTE,
+  portero_o_conserje: PENDIENTE,
+  otro: PENDIENTE,
+});
+
+export const FIRMANTE_CALIDAD_SET: ReadonlySet<string> = new Set(FIRMANTE_CALIDAD_IDS);
+
+// ⚠️ SIN opción marcada por defecto, y es deliberado: una casilla premarcada es una declaración
+// que el firmante no ha hecho. Lo dice también el comentario de `firmadoPorCalidad` en
+// `prisma/schema.prisma`, así que cambiarlo aquí dejaría el schema mintiendo.
+
+// ─── RÓTULOS Y AYUDAS DE LOS CAMPOS ──────────────────────────────────────────────────────
+
+/**
+ * Rótulos de los campos que estrena SCRUM-300, en UN solo sitio (dashboard y PDF los leen de aquí).
+ *
+ * ⚠️ Éstos SÍ tienen aprobación anotada campo a campo, y NO son los textos que el asesor retiró
+ * (aquéllos eran las cinco ranuras de «en calidad de qué», arriba).
+ *
+ *  · `fechaEntrega` — **APROBADO por el fundador el 5-ago-2026**: describe lo que el campo es, no
+ *    lo adorna, y es el nombre que la ley usa para ese dato.
+ *
+ *  · Los DOS DEL PDF — **APROBADOS por el asesor el 5-ago-2026**, y solo DESPUÉS de verlos
+ *    literales. Su razón, que vale para cualquier rótulo que acabe impreso: en un PDF que puede
+ *    acabar en un juzgado **no se aprueba un rótulo por su descripción**. Se le enseñaron así,
+ *    con el espacio final visible y una muestra de cómo salen impresos:
+ *        Firmado por: Marta Ruiz Alonso
+ *        En calidad de: Personal de la obra
+ *
+ *    NO llevan el marcador `[PENDIENTE microcopy oficial]` y ya nunca lo llevarán: acaban en un
+ *    documento que se lee en un juzgado, y un marcador impreso ahí sería peor que el rótulo.
+ */
+export const ALBARAN_ROTULOS = {
+  /** APROBADO (fundador, 5-ago-2026). */
+  fechaEntrega: 'Fecha de entrega',
+  /** APROBADO (asesor, 5-ago-2026): describe lo que el campo es. */
+  lugarEntrega: 'Lugar de entrega',
+  /** APROBADO (asesor, 5-ago-2026): describe lo que el campo es. */
+  firmadoPorNombre: 'Nombre de quien firma',
+  /** APROBADO (asesor, 5-ago-2026): viene LITERAL del enunciado del ticket, no es redacción nueva. */
+  firmadoPorCalidad: 'En calidad de qué',
+  // ⚠️ El espacio final de los dos siguientes es PARTE DEL LITERAL, no un descuido: el PDF los
+  // pinta con `continued: true`, así que el rótulo va en negrita y el dato se concatena detrás.
+  // Quitarlo produce «Firmado por:Marta» — el tipo de defecto que nadie ve hasta que el PDF está
+  // delante de alguien que importa. Tiene guard propio.
+  /** APROBADO (asesor, 5-ago-2026) con su espacio final — rótulo del bloque de firma del PDF. */
+  pdfFirmadoPor: 'Firmado por: ',
+  /** APROBADO (asesor, 5-ago-2026) con su espacio final — rótulo del bloque de firma del PDF. */
+  pdfEnCalidadDe: 'En calidad de: ',
+} as const;
+
+/**
+ * Los rótulos que tienen aprobación explícita, con QUIÉN la dio anotado arriba, campo a campo.
+ *
+ * Que el guard falle cuando este censo cambia es DELIBERADO y es lo que lo separa de una
+ * allowlist: una aprobación nueva obliga a tocar el test en el mismo commit, así que queda en el
+ * diff **quién aprobó qué y cuándo**. Un texto aprobado sin rastro de quién lo aprobó vuelve a ser
+ * un texto que cualquiera cambia.
+ *
+ * Hoy están los seis. Que el censo esté completo NO lo convierte en decorado: si mañana nace un
+ * rótulo nuevo, nacerá FUERA de esta lista y el guard lo dirá.
+ */
+export const ALBARAN_ROTULOS_APROBADOS = [
+  'fechaEntrega',
+  'lugarEntrega',
+  'firmadoPorNombre',
+  'firmadoPorCalidad',
+  'pdfFirmadoPor',
+  'pdfEnCalidadDe',
+] as const;
+
+/**
+ * Textos de AYUDA bajo cada campo del formulario. Vienen de la rama `scrum-300-campos-albaran`
+ * (que no tenía rótulos con ayuda en B) y explican POR QUÉ se pide el dato, no qué teclear.
+ *
+ * ⚠️ No van al PDF: son ayuda de formulario. Se traen literales por decisión del mapa de fusión.
+ */
+export const ALBARAN_AYUDAS = {
+  lugarEntrega: 'Dónde se ha hecho el trabajo, si no es la dirección del cliente. Sale en el albarán y queda dentro de la firma.',
+  fechaEntrega: 'El día que se entregó, que no siempre es el día que se creó.',
+  firmadoPorNombre: 'Una firma sin nombre no identifica a nadie. Con el nombre, el albarán vale como prueba de entrega si algún día hay discusión.',
+  /** El chip de sugerencia de UN TOQUE. `%s` = nombre del cliente. */
+  chipNombreCliente: 'Es %s',
+  /**
+   * Lo que se enseña en un albarán FIRMADO ANTES de esta tarea, que nunca tuvo estos datos.
+   * No es un error ni culpa de nadie: es que no se preguntó. Un hueco mudo en un documento
+   * legal se lee como un fallo del sistema.
+   */
+  noSePidio: 'No se pidió al firmar',
+} as const;
+
+// ─── TOPES ───────────────────────────────────────────────────────────────────────────────
+//
+// Decisión del asesor (SCRUM-300, 5-ago-2026): el nombre a 160 y no a 120. «El coste de un límite
+// corto es truncar el nombre legal de una persona en un documento firmado; el de uno generoso es
+// ninguno.» Es validación, no estilo.
+export const FIRMANTE_NOMBRE_MAX = 160;
+export const FIRMANTE_OTRO_MAX = 120;
+export const LUGAR_ENTREGA_MAX = 300;
+
+/** Lo que viaja al navegador por `/admin/me` para que pinte el desplegable SIN reescribir nada. */
+export function firmanteCalidadOpciones(): Array<{ id: FirmanteCalidadId; etiqueta: string; libre: boolean }> {
+  return FIRMANTE_CALIDAD_IDS.map((id) => ({
+    id,
+    etiqueta: FIRMANTE_CALIDAD_ETIQUETAS[id],
+    libre: id === FIRMANTE_CALIDAD_LIBRE,
+  }));
+}
+
+// ─── «OTRO ______», SIN PEDIR UNA COLUMNA MÁS ────────────────────────────────────────────
+//
+// El fundador aprobó CUATRO columnas, y el schema es territorio suyo. La ranura libre necesita
+// guardar además QUÉ escribió el firmante, así que se codifica dentro del mismo valor:
+// `otro:Vecina del 3.º`. El `id` queda antes de los dos puntos y el texto detrás. Se documenta
+// aquí porque un formato implícito en dos sitios es un formato roto.
+//
+// Ningún `id` contiene `:`, así que partir por el PRIMERO es inequívoco aunque el texto libre
+// traiga los suyos.
+
+const SEP_CALIDAD = ':';
+
+export function codificarCalidad(id: string, textoLibre?: string | null): string {
+  const t = String(textoLibre ?? '').trim().replace(/\s+/g, ' ').slice(0, FIRMANTE_OTRO_MAX);
+  return t ? `${id}${SEP_CALIDAD}${t}` : id;
+}
+
+export function decodificarCalidad(valor: string | null | undefined): { id: string | null; textoLibre: string | null } {
+  if (!valor) return { id: null, textoLibre: null };
+  const i = String(valor).indexOf(SEP_CALIDAD);
+  if (i < 0) return { id: String(valor), textoLibre: null };
+  return { id: String(valor).slice(0, i), textoLibre: String(valor).slice(i + 1) || null };
+}
+
+/**
+ * La etiqueta para pintar una calidad YA GUARDADA. Un `id` desconocido NO se inventa: se declara
+ * con el marcador. En la ranura libre lo que se enseña es el texto que escribió el profesional.
+ */
+export function etiquetaCalidad(valor: string | null | undefined): string | null {
+  const { id, textoLibre } = decodificarCalidad(valor);
+  if (!id) return null;
+  if (id === FIRMANTE_CALIDAD_LIBRE && textoLibre) return textoLibre;
+  return FIRMANTE_CALIDAD_SET.has(id) ? FIRMANTE_CALIDAD_ETIQUETAS[id as FirmanteCalidadId] : PENDIENTE;
+}
+
+// ─── NORMALIZACIÓN Y VALIDACIÓN ──────────────────────────────────────────────────────────
+
+export type ResolucionCalidad =
+  | { ok: true; valor: string | null }
+  | { ok: false; error: string; message: string };
+
+/**
+ * Convierte lo que manda el cliente (`{ ranura, textoLibre }`) en el VALOR que se guarda en
+ * `Albaran.firmadoPorCalidad`, que es el `id` (con el texto libre codificado detrás si la ranura
+ * es `otro`).
+ *
+ * ⚠️ Se guarda el `id` y NO la etiqueta, por decisión del asesor: la etiqueta es pantalla y puede
+ * cambiar —hoy ni siquiera está aprobada—, y un cambio de rótulo no puede obligar a reescribir el
+ * campo de un documento ya firmado.
+ *
+ * Ausente = `null`, sin error: los tres campos son opcionales y un albarán sin ellos es válido
+ * (es exactamente lo que son todos los ya firmados).
+ */
+export function resolverCalidadFirmante(entrada: { ranura?: unknown; textoLibre?: unknown }): ResolucionCalidad {
+  const ranura = entrada?.ranura === undefined || entrada?.ranura === null ? '' : String(entrada.ranura).trim();
+  if (!ranura) return { ok: true, valor: null };
+
+  if (!FIRMANTE_CALIDAD_SET.has(ranura)) {
+    // Un id fuera de la lista NO se guarda «por si acaso»: se rechaza. Guardar basura en un campo
+    // probatorio es peor que no tenerlo.
+    return {
+      ok: false,
+      error: 'calidad_firmante_invalida',
+      message: 'La calidad de quien firma no es una de las opciones válidas.',
+    };
+  }
+
+  if (ranura !== FIRMANTE_CALIDAD_LIBRE) return { ok: true, valor: ranura };
+
+  // Ranura libre: sin su texto no dice nada, así que se exige.
+  const libre = String(entrada?.textoLibre ?? '').trim();
+  if (!libre) {
+    return {
+      ok: false,
+      error: 'calidad_firmante_otro_vacio',
+      message: 'Al elegir la última opción, escribe en calidad de qué firma.',
+    };
+  }
+  return { ok: true, valor: codificarCalidad(ranura, libre) };
+}
+
+/** Normaliza el nombre de quien firma. Vacío → `null` (nunca la cadena vacía en la BD). */
+export function normalizarNombreFirmante(v: unknown): string | null {
+  const s = String(v ?? '').trim().replace(/\s+/g, ' ').slice(0, FIRMANTE_NOMBRE_MAX);
+  return s || null;
+}
+
+/**
+ * Normaliza el lugar de entrega. ⚠️ SUELO (lo pide el ticket y el asesor lo reafirma): vacío se
+ * queda VACÍO. Nunca se cae al domicilio fiscal ni a ninguna otra dirección «parecida» — poner
+ * la dirección equivocada en un documento de entrega es peor que dejarla en blanco.
+ */
+export function normalizarLugarEntrega(v: unknown): string | null {
+  const s = String(v ?? '').trim().slice(0, LUGAR_ENTREGA_MAX);
+  return s || null;
+}
