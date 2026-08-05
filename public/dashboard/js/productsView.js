@@ -51,6 +51,17 @@ function renderProductsView(container) {
     importFile.style.display = "none";
     headActions.appendChild(importFile);
 
+    // SCRUM-365 · exportar e importar el tarifario son admin-only en el servidor
+    // (`requireRole('admin')`). Sin esto, un Operario vería los dos botones, elegiría un fichero y
+    // se llevaría un 403 después de haber hecho el trabajo. Se VETA en vez de ocultar —helpers de
+    // SCRUM-89, con su copy ya aprobada— porque un botón que desaparece no explica nada y quien
+    // lo busque pensará que la pantalla está rota.
+    const esTecnico = window.appUserRole === 'tecnico';
+    if (esTecnico) {
+      lockActionForRole(exportBtn);
+      lockActionForRole(importBtn);
+    }
+
       // --- search + filters (client-side) ---
   const tools = document.createElement("div");
   tools.className = "data-card-toolbar";
@@ -388,7 +399,15 @@ function renderProductsView(container) {
         });
         // A18.4 (AB4 "importar") × A17: catálogo del gremio en un clic
         const catBtn = td.querySelector('#products-empty-catalog');
-        if (catBtn) catBtn.addEventListener('click', () => cargarCatalogoDeGremio(catBtn, td, refresh));
+        // SCRUM-365 · cargar el catalogo del gremio es admin-only en el servidor: son 25-30
+        // conceptos de golpe, o sea el tarifario entero, no una linea. Al Operario se le veta con
+        // su explicacion en vez de dejarle pulsar para que le devuelvan un 403.
+        if (catBtn && esTecnico) {
+          lockActionForRole(catBtn);
+          catBtn.insertAdjacentElement('afterend', roleLockedNote());
+        }
+        // SCRUM-364 · el rescate: si no hay oficio, ofrece elegirlo en vez de morir en el catch.
+        if (catBtn && !esTecnico) catBtn.addEventListener('click', () => cargarCatalogoDeGremio(catBtn, td, refresh));
         setCount(searching ? "0 resultados" : "0 productos");
         return;
       }
