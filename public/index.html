@@ -65,7 +65,9 @@
   p{margin:0} a{text-decoration:none;color:inherit}
   .tnum{font-variant-numeric:tabular-nums} .nowrap{white-space:nowrap}
   .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
-  .eyebrow{font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--brand);display:inline-flex;align-items:center;gap:8px}
+  /* SCRUM-368: el verde de FONDO (--brand) da 3,30:1 como TEXTO sobre blanco. Aquí va el verde
+     de TEXTO, que tokens.css:15 ya define para esto: 5,48 sobre blanco, 5,10 sobre --bg. */
+  .eyebrow{font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--brand-tint-ink);display:inline-flex;align-items:center;gap:8px}
   .eyebrow::before{content:"";width:16px;height:2px;background:var(--brand);border-radius:2px}
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 22px;border-radius:var(--r-full);
     font-weight:700;font-size:15px;font-family:inherit;cursor:pointer;border:1px solid transparent;

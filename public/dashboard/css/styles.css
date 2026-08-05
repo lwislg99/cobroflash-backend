@@ -1895,7 +1895,9 @@ tr.dragging { opacity: .5; background: #f0fdf4; }
   line-height: 1; letter-spacing: -.03em; font-variant-numeric: tabular-nums;
 }
 .home-hero-sub { font-size: 13px; color: var(--muted); margin-top: 6px; }
-.home-hero-ok { font-size: 13px; font-weight: 600; color: var(--brand); white-space: nowrap; }
+/* SCRUM-368: --brand como TEXTO da 3,30:1 sobre --surface y 3,07 sobre --bg. --brand-tint-ink
+   es el verde de TEXTO (tokens.css:15): 5,48 y 5,10. El verde de marca no se mueve. */
+.home-hero-ok { font-size: 13px; font-weight: 600; color: var(--brand-tint-ink); white-space: nowrap; }
 @media (max-width: 480px) {
   .home-hero-card { flex-direction: column; align-items: flex-start; }
 }
@@ -1978,7 +1980,8 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 /* La etiqueta de DINERO va a ancho fijo para que los importes queden alineados en columna. */
 .detail-rail-etiqueta { color: var(--muted); min-width: 76px; }
 .detail-rail-fuerte { color: var(--ink); font-weight: 600; }
-.detail-rail-enlace { color: var(--brand, #16a34a); font-weight: 600; text-decoration: none; }
+/* SCRUM-368: mismo caso que .home-hero-ok — verde de TEXTO, no el de fondo. */
+.detail-rail-enlace { color: var(--brand-tint-ink, #047857); font-weight: 600; text-decoration: none; }
 .detail-rail-enlace:hover { text-decoration: underline; }
 .detail-rail-enlace--suelto { display: inline-block; margin-top: 6px; font-size: 13px; }
 /* Objetivo táctil de 44 px (AB6): el teléfono y el mapa se pulsan con las manos sucias, de pie y
