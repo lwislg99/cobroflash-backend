@@ -861,3 +861,31 @@ ALTER TABLE "merchants" ADD COLUMN "flags" JSONB;
   (precedencia merchant > país > env > default). Escritura solo manual/fundador.
 - Primer uso: PUBLIC_PROFILE_ENABLED=true SOLO en demo (id=1). Ningún otro merchant
   tiene flags (verificado count=0).
+
+## 2-ago-2026 — SCRUM-300 · albaranes: entrega + quién firma (PENDIENTE ⏳)
+
+```sql
+ALTER TABLE "albaranes" ADD COLUMN     "fecha_entrega" TIMESTAMP(3),
+ADD COLUMN     "firmado_por_calidad" TEXT,
+ADD COLUMN     "firmado_por_nombre" TEXT,
+ADD COLUMN     "lugar_entrega" TEXT;
+```
+
+- **Aditiva pura**: 4 `ADD COLUMN` nullable. 0 DROP · 0 RENAME · 0 ALTER destructivo ·
+  0 NOT NULL. Los albaranes ya firmados no se tocan.
+- SQL generado OFFLINE (schema viejo → schema nuevo), sin conectar a ninguna base:
+  `npx prisma@6.18.0 migrate diff --from-schema-datamodel <viejo> --to-schema-datamodel
+  prisma/schema.prisma --script`.
+- **Orden: staging PRIMERO, prod después** (condición del fundador). Prod ⏳ con GO
+  explícito y preview delante.
+- ⚠️ **AVISO DE HERRAMIENTA (no es de esta migración, pero muerde a la siguiente):** el CLI
+  instalado es **prisma 7.9.1** y el cliente **@prisma/client ^6.18.0**. En el 7, los flags
+  `--from-schema-datamodel`/`--to-schema-datamodel` que documenta `CLAUDE.md` **ya no
+  existen** (ahora son `--from-schema`/`--to-schema`), y **con cualquiera de las dos formas
+  `migrate diff` devuelve SALIDA VACÍA con exit 0** — porque el 7 dejó de leer la config de
+  `package.json#prisma` (lo avisa el propio 6: *«deprecated and will be removed in Prisma 7»*).
+  Es decir: **el preview obligatorio antes de cada `db push` a producción dice hoy "no hay
+  cambios" pase lo que pase.** Un fail-open silencioso justo en el guard que protege prod.
+  Mientras no se arregle (`prisma.config.ts` o fijar el CLI al 6), el preview se hace con
+  `npx prisma@6.18.0` como arriba, y **nunca** se da por bueno un diff vacío sin control
+  positivo (`--from-empty` debe escupir el esquema entero; si sale vacío, el roto es el CLI).
