@@ -117,7 +117,10 @@ function pilaOriginal(job) {
   for (const alb of job.albaranes || []) items.push({ tipo: 'albaran', clave: 'albaran:' + alb.id });
   for (const inv of job.invoices || []) {
     const t = REPARTO.tipoDeFactura(inv);
-    items.push({ tipo: t, clave: t + ':' + inv.id });
+    items.push({
+      tipo: t, clave: t + ':' + inv.id,
+      rectificaClave: inv.rectifiesId != null ? 'factura:' + inv.rectifiesId : null,
+    });
   }
   return items;
 }
@@ -130,7 +133,7 @@ const jobCompleto = () => ({
     { id: 21, number: 'J-20260629-6981', type: 'JUST' },
     { id: 22, number: 'J-20260701-0002' },          // justificante por el número, sin `type`
     { id: 23, number: '2026-CF-001', type: 'F1' },  // factura
-    { id: 24, number: '2026-R1-001', type: 'R1' },  // rectificativa
+    { id: 24, number: '2026-R1-001', type: 'R1', rectifiesId: 23 }, // rectificativa DE la 23
   ],
   totalAceptado: 853.05, totalCobrado: 853.05,
 });
@@ -179,7 +182,7 @@ test('SCRUM-319 · un tipo desconocido NO se descarta: se ve y además avisa', (
   );
   // Y la vista los pinta con el resto, no los tira.
   assert.ok(
-    /reparto\['sin-destino'\]\.concat\(reparto\.desconocidos\)/.test(VISTA),
+    /reparto\.facturas\.concat\(reparto\.desconocidos\)/.test(VISTA),
     '🔴 la vista no pinta los desconocidos junto al resto: el guard avisaría y la pantalla, mientras ' +
       'tanto, perdería el documento.',
   );
@@ -284,7 +287,11 @@ test('SCRUM-319 · «Incluir precios en el parte» sigue intacto: ni movido ni r
 test('SCRUM-319 · las secciones del cuerpo están declaradas, con GASTOS vacía a propósito', () => {
   const s = REPARTO.SECCIONES_CUERPO;
   assert.ok(s.includes('que-falta-para-cobrar'), '🔴 falta el hueco declarado de G5');
-  assert.ok(s.includes('albaranes') && s.includes('documentos'));
+  assert.ok(s.includes('albaranes'), '🔴 falta la sección ALBARANES (lo entregado)');
+  assert.ok(s.includes('facturas'), '🔴 falta la sección FACTURAS (lo facturado)');
+  // El ORDEN es el ciclo: qué falta → entregado → facturado → gastos. No es decorativo.
+  assert.deepEqual(s, ['que-falta-para-cobrar', 'albaranes', 'facturas', 'gastos'],
+    '🔴 el orden de las secciones ya no es el del ciclo del Trabajo');
   assert.ok(
     s.includes('gastos'),
     '🔴 falta la sección GASTOS. Está declarada y VACÍA a propósito: en esta vista no hay ni un ' +
@@ -296,5 +303,70 @@ test('SCRUM-319 · las secciones del cuerpo están declaradas, con GASTOS vacía
     !/docs\.push\([^)]*tipo:\s*'gasto/.test(VISTA),
     '🔴 ahora la pila SÍ lleva gastos: la sección GASTOS ya no puede quedarse vacía y este ticket ' +
       'daba por medido que no existían.',
+  );
+});
+
+// ── LA RECTIFICATIVA, ANCLADA ───────────────────────────────────────────────────────────
+//
+// Suelta y ordenada por fecha como una fila más es **legalmente ilegible**: no dice a qué factura
+// corrige. La normativa exige que una rectificativa identifique la factura rectificada, así que
+// enseñarla sin su original no es un problema de maquetación.
+
+test('SCRUM-319 · la RECTIFICATIVA cuelga de su original, nunca suelta', () => {
+  const reparto = REPARTO.repartirDocumentos(pilaOriginal(jobCompleto()));
+
+  assert.deepEqual(
+    reparto.anclada.map((r) => r.clave), ['rectificativa:24'],
+    '🔴 la rectificativa no queda anclada a su factura. Como fila suelta de una lista por fecha no ' +
+      'dice a qué factura corrige — y la normativa exige que la identifique.',
+  );
+  assert.equal(reparto.anclada[0].rectificaClave, 'factura:23', '🔴 se ancló a otra factura');
+  assert.ok(
+    !reparto.facturas.some((f) => f.clave === 'rectificativa:24'),
+    '🔴 la rectificativa está ADEMÁS suelta en la sección: se vería dos veces, y una de ellas mal.',
+  );
+  assert.deepEqual(reparto.huerfanas, [], '🔴 una rectificativa con original presente no puede ser huérfana');
+
+  // La vista la anida de verdad, no solo la clasifica.
+  assert.ok(
+    /reparto\.anclada\.filter\(\(r\) => r\.rectificaClave === d\.clave\)/.test(VISTA),
+    '🔴 la vista no cuelga las rectificativas de su fila: el reparto las separa y luego se pintan igual.',
+  );
+});
+
+test('SCRUM-319 · una rectificativa SIN original en el Trabajo se ve igual, y avisa', () => {
+  // Perderla sería peor que enseñarla mal: baja a la sección, visible, y queda anotada.
+  const items = pilaOriginal(jobCompleto())
+    .concat([{ tipo: 'rectificativa', clave: 'rectificativa:99', rectificaClave: 'factura:404' }]);
+  const reparto = REPARTO.repartirDocumentos(items);
+
+  assert.deepEqual(reparto.huerfanas.map((r) => r.clave), ['rectificativa:99'], '🔴 la huérfana no se anota');
+  assert.ok(
+    reparto.facturas.some((f) => f.clave === 'rectificativa:99'),
+    '🔴 la rectificativa huérfana no se pinta en ninguna parte: se habría perdido.',
+  );
+  assert.ok(
+    REPARTO.clavesRepartidas(reparto).filter((c) => c === 'rectificativa:99').length === 1,
+    '🔴 la huérfana se cuenta dos veces: el test de «nada se pierde» daría rojo por su propia aritmética.',
+  );
+});
+
+test('SCRUM-319 · el VÍNCULO llega del backend, no se deduce del número', () => {
+  // `formatInvoiceNumber` conoce `rectifying`, pero eso es la SERIE del número, no el vínculo.
+  // Deducir de «2026-CF-R-001» a qué factura corrige es adivinar.
+  const rutas = leer('src/modules/jobs/app/routes/jobs.routes.ts');
+  assert.ok(
+    /rectifiesId: true/.test(rutas),
+    '🔴 el serializer del Trabajo dejó de exponer `rectifiesId`: la pantalla no puede anclar la ' +
+      'rectificativa y volvería a pintarla suelta.',
+  );
+  assert.ok(
+    /rectifiesId: inv\.rectifiesId/.test(rutas),
+    '🔴 `rectifiesId` se selecciona pero no se mapea a la respuesta: llega a la consulta y no al front.',
+  );
+  assert.ok(
+    /rectificaClave: inv\.rectifiesId != null/.test(VISTA),
+    '🔴 la vista no construye el ancla desde `rectifiesId`. Si la dedujera del número, estaría ' +
+      'adivinando a qué factura corrige.',
   );
 });

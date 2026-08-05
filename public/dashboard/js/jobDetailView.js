@@ -1552,9 +1552,10 @@ async function renderJobDetailView(container, jobId) {
           `</div>` +
           `<div class="jobdet-inv-actions job-doc-row__actions"></div>` +
         `</div>`;
-      const tipoInv = tipoDeFactura(inv);
-      docs.push({
-        when, el: item, tipo: tipoInv, clave: tipoInv + ':' + inv.id,
+            docs.push({
+        // El tipo va INLINE a propósito: con una variable de por medio el derivador del guard no
+        // puede resolverlo por AST y avisa de un tipo sin sección — que es exactamente su trabajo.
+        when, el: item, tipo: tipoDeFactura(inv), clave: tipoDeFactura(inv) + ':' + inv.id,
         // SCRUM-319: a qué factura se ancla si es rectificativa. `rectifiesId` ya existía en el
         // modelo y no llegaba a esta pantalla; ahora sí (serializer, aditivo y de solo lectura).
         rectificaClave: inv.rectifiesId != null ? 'factura:' + inv.rectifiesId : null,
