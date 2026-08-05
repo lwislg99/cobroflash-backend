@@ -177,17 +177,41 @@ export function resumenEntrega(params: {
 }
 
 /**
- * Los textos que vería el profesional. TODOS SIN APROBAR (regla 30): van con marcador hasta que el
- * asesor los firme, y ninguno se inventa aquí.
+ * Los textos que ve el profesional. **FIRMADOS por el asesor el 5-ago-2026**; retocarlos es
+ * decisión suya, no un detalle de implementación.
  *
  * Viven junto al mecanismo —y no en una vista— porque cada uno explica un MOTIVO de este módulo:
  * separarlos dejaría el código de los motivos sin su frase y la frase sin su condición. Mismo sitio
  * que `COPY_ADMIN_SIN_LINEAS` en `lineasFacturables.ts`.
+ *
+ * ⚠️ DOS COSAS QUE SE DECIDIERON AL FIRMAR Y QUE NO SE DESHACEN SIN VOLVER A PREGUNTAR:
+ *
+ *  · **«albaranes», no «partes».** En pantalla ese objeto se llama Albarán —lo dicen la entrada del
+ *    menú, el listado global y la tabla del Trabajo—. Un segundo nombre para el mismo objeto obliga
+ *    al profesional a aprenderse que son la misma cosa, y no hay motivo para cobrarle eso. «Parte»
+ *    vale para hablar entre nosotros; no para la pantalla.
+ *
+ *  · **Singular y plural DE VERDAD, nunca `(s)`.** «1 línea(s)» es una cadena que delata que la
+ *    escribió un programa, y quien la lee es un fontanero, no un formulario. Cambia el sustantivo Y
+ *    el verbo, así que se alterna la frase entera — mismo patrón que SCRUM-303, que quitó su
+ *    `línea(s)` por esto exactamente.
  */
 export const COPY_ENTREGA = {
-  hay_adicionales: '[PENDIENTE microcopy oficial] Este trabajo tiene presupuestos adicionales, así que todavía no se puede decir qué queda por entregar.',
-  sin_presupuesto: '[PENDIENTE microcopy oficial] Este trabajo no tiene presupuesto con el que comparar lo entregado.',
-  nada_atribuible: '[PENDIENTE microcopy oficial] Las líneas entregadas no están enlazadas con el presupuesto, así que no se puede calcular qué queda.',
-  sinAtribuir: '[PENDIENTE microcopy oficial] líneas entregadas que no se han podido atribuir al presupuesto',
-  enPartesSinFirmar: '[PENDIENTE microcopy oficial] líneas en partes sin firmar, que todavía no cuentan como entregadas',
+  hay_adicionales: 'Este trabajo tiene presupuestos adicionales. Todavía no podemos decir qué queda por entregar.',
+  sin_presupuesto: 'Este trabajo no tiene presupuesto con el que comparar lo entregado.',
+  nada_atribuible: 'Las líneas entregadas no salen del presupuesto, así que no podemos calcular qué queda.',
+  sinAtribuir: {
+    singular: 'línea entregada que no sale del presupuesto',
+    plural: 'líneas entregadas que no salen del presupuesto',
+  },
+  enPartesSinFirmar: {
+    singular: 'línea en un albarán sin firmar, que todavía no cuenta como entregada',
+    plural: 'líneas en albaranes sin firmar, que todavía no cuentan como entregadas',
+  },
 } as const;
+
+/** La rama de una línea que evita el `(s)`. `n` decide, y no hay más casos que estos dos. */
+export function fraseDeCuenta(cuenta: 'sinAtribuir' | 'enPartesSinFirmar', n: number): string {
+  const par = COPY_ENTREGA[cuenta];
+  return `${n} ${n === 1 ? par.singular : par.plural}`;
+}

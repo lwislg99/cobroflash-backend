@@ -4,7 +4,7 @@
 
 **Medido contra:** `origin/main` = `425301c8ddc79ad20e8605b49194f608ecdf339c` · 2026-08-05T22:27:24+01:00
 
-**Tanda:** 1791 tests, 1724 pass, 0 fail, 67 skipped (los 67 son los gateados de staging)
+**Tanda:** 1793 tests, 1726 pass, 0 fail, 67 skipped (los 67 son los gateados de staging)
 
 ## Lo que se midió antes de construir (y una premisa que cayó)
 
@@ -83,7 +83,7 @@ Un guard AST lo comprueba y falla nombrando el import que entró.
 
 ## Verificado en rojo
 
-Diez sabotajes, cada uno aplicado, compilado, corrido y revertido con verificación byte a byte:
+Diecisiete sabotajes, cada uno aplicado, compilado, corrido y revertido con verificación byte a byte:
 
 | Se quita la cosa vigilada | Sale rojo |
 | --- | --- |
@@ -102,11 +102,37 @@ Los **dos primeros son el rojo obligatorio, y están separados a propósito**: e
 contado tienen que moverse JUNTOS. Si solo se mueve uno, el resumen miente por omisión — y cada
 mitad tiene su sabotaje para que ninguna pueda pasar por la otra.
 
+## Microcopy: las cinco ranuras FIRMADAS, y dos reglas que vienen con ellas
+
+El asesor firmó los cinco textos. Dos decisiones suyas cambian lo que yo había propuesto, y las dos
+quedan escritas junto a la copy porque no son de estilo:
+
+* **«albaranes», no «partes».** En pantalla ese objeto se llama **Albarán** —lo dicen la entrada del
+  menú, el listado global y la tabla del Trabajo—. Un segundo nombre para la misma cosa obliga al
+  profesional a aprenderse que son lo mismo, y no hay motivo para cobrarle eso. «Parte» vale para
+  hablar entre nosotros; no para la pantalla.
+* 🔴 **Singular y plural DE VERDAD, nunca `(s)`.** «1 línea(s)» delata que la frase la escribió un
+  programa, y quien la lee es un fontanero con el móvil en la mano. Cambia el sustantivo **y el
+  verbo** («que no sale» → «que no salen»), así que se alterna la frase entera: `fraseDeCuenta`
+  elige por el número y es una rama de una línea. Hay un test que rechaza el `(s)` **y otro que
+  rechaza el plural hecho pegando una «s» al singular**, que es la misma trampa disimulada.
+
+Y el aviso de error se acortó (fuera el «así que»): dos frases cortas se leen de un vistazo en un
+móvil al sol; una subordinada, no. En ③ el «así que» SÍ se queda, porque ahí la relación
+causa-efecto es lo que explica el mensaje.
+
+Siete rojos más, todos revertidos byte a byte: una letra en un motivo · devolver el «así que» de ① ·
+devolver «no están enlazadas» a ③ · devolver el `(s)` · hacer el plural pegando una «s» · devolver
+«parte» a la pantalla · y quitar la rama del singular para que todo salga en plural.
+
 ## Lo que NO cubre
 
-* **No hay pantalla.** Este ticket entrega el mecanismo y sus motivos; **dónde se ve no lo elijo
-  yo**, y además la copy está sin firmar. En cuanto el asesor firme los cinco textos, colgarlo es
-  cablear: el informe ya trae el motivo y las tres cuentas.
+* 🔴 **No hay pantalla, y esta vez NO es porque falte decidirlo.** El asesor eligió el sitio —encima
+  de la tabla de albaranes del Trabajo— y la copy ya está firmada. Lo que falta es que se pueda
+  tocar `jobDetailView.js`: **cuatro ramas vivas tienen ediciones pendientes dentro de
+  `renderJobDetailView`** (medido: `scrum-300-campos-albaran` +34 líneas, `scrum-300-firmado-por`
+  +52, `scrum-302-detalle-albaran` +8, `scrum-316-detalle-b2` +11, ninguna en `main`). Se paró antes
+  de tocar el fichero, como pidió el asesor: el orden de merge lo decide él.
 * **No hay ruta ni consulta.** `resumenEntrega` es puro y recibe el presupuesto, los albaranes y
   `hayAdicionales`. Quien lo conecte tiene que resolver `hayAdicionales` leyendo `Quote.jobId`
   (SCRUM-195) — el módulo no consulta nada a propósito, para que su lógica se pruebe sin base de
@@ -121,4 +147,4 @@ mitad tiene su sabotaje para que ninguna pueda pasar por la otra.
 
 * `src/modules/jobs/domain/entregaPendiente.ts` — **nuevo**. El eje de entrega, puro, con su copy
   marcada.
-* `tests/scrum305-entrega-pendiente.test.mjs` — **nuevo**, 10 tests.
+* `tests/scrum305-entrega-pendiente.test.mjs` — **nuevo**, 12 tests.

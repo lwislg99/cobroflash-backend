@@ -19,7 +19,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
-import { resumenEntrega, COPY_ENTREGA } from '../dist/modules/jobs/domain/entregaPendiente.js';
+import { resumenEntrega, COPY_ENTREGA, fraseDeCuenta } from '../dist/modules/jobs/domain/entregaPendiente.js';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const F_DOMINIO = path.join(RAIZ, 'src', 'modules', 'jobs', 'domain', 'entregaPendiente.ts');
@@ -204,20 +204,71 @@ test('SCRUM-305 · ⑤ este módulo NO importa el de facturación: son preguntas
 
 // ── MICROCOPY ────────────────────────────────────────────────────────────────────────────
 
-test('SCRUM-305 · todo lo que se vería lleva marcador, y hay una frase por motivo', () => {
-  const motivos = ['hay_adicionales', 'sin_presupuesto', 'nada_atribuible'];
-  for (const m of motivos) {
-    assert.ok(typeof COPY_ENTREGA[m] === 'string' && COPY_ENTREGA[m].startsWith(MARCA),
-      `🔴 el motivo «${m}» no tiene frase marcada. Un motivo sin texto llega a la pantalla como un ` +
-      'código, y un código en la cara del profesional no explica nada.');
+/** Los cinco textos FIRMADOS por el asesor el 5-ago-2026. Retocarlos es decisión suya. */
+const COPY_FIRMADA = {
+  hay_adicionales: 'Este trabajo tiene presupuestos adicionales. Todavía no podemos decir qué queda por entregar.',
+  sin_presupuesto: 'Este trabajo no tiene presupuesto con el que comparar lo entregado.',
+  nada_atribuible: 'Las líneas entregadas no salen del presupuesto, así que no podemos calcular qué queda.',
+  sinAtribuir: {
+    singular: 'línea entregada que no sale del presupuesto',
+    plural: 'líneas entregadas que no salen del presupuesto',
+  },
+  enPartesSinFirmar: {
+    singular: 'línea en un albarán sin firmar, que todavía no cuenta como entregada',
+    plural: 'líneas en albaranes sin firmar, que todavía no cuentan como entregadas',
+  },
+};
+
+test('SCRUM-305 · la copy FIRMADA está, ranura a ranura, y el marcador se ha retirado', () => {
+  for (const motivo of ['hay_adicionales', 'sin_presupuesto', 'nada_atribuible']) {
+    assert.equal(COPY_ENTREGA[motivo], COPY_FIRMADA[motivo],
+      `🔴 LA RANURA «${motivo}» YA NO DICE SU TEXTO FIRMADO.\n` +
+      `     firmado:  ${JSON.stringify(COPY_FIRMADA[motivo])}\n` +
+      `     y ahora:  ${JSON.stringify(COPY_ENTREGA[motivo])}\n\n` +
+      '  Lo firmó el asesor: cambiarlo —aunque sea una letra— es decisión suya.');
   }
-  for (const [ranura, texto] of Object.entries(COPY_ENTREGA)) {
-    assert.ok(texto.startsWith(MARCA),
-      `🔴 «${ranura}» ha perdido el marcador: es microcopy SIN APROBAR (regla 30) hasta que la firme el asesor.`);
+  for (const cuenta of ['sinAtribuir', 'enPartesSinFirmar']) {
+    assert.deepEqual({ ...COPY_ENTREGA[cuenta] }, COPY_FIRMADA[cuenta],
+      `🔴 la ranura «${cuenta}» ya no dice sus dos formas firmadas`);
   }
-  // Y las dos cuentas de lo no contado también tienen su frase: el número no puede salir solo.
-  assert.ok(COPY_ENTREGA.sinAtribuir && COPY_ENTREGA.enPartesSinFirmar,
-    '🔴 falta la frase de alguna de las dos cuentas de lo no contado');
+  assert.equal(JSON.stringify(COPY_ENTREGA).includes(MARCA), false,
+    '🔴 queda un marcador en una copy YA FIRMADA: se despliega tal cual y se lee en producción.');
+});
+
+test('SCRUM-305 · 🔴 nunca «(s)»: singular y plural son frases distintas, y el número decide', () => {
+  // «1 línea(s)» es una cadena que delata que la escribió un programa, y quien la lee es un
+  // fontanero, no un formulario. Aquí cambia el sustantivo Y el verbo, así que se alterna la frase
+  // entera — mismo criterio con el que SCRUM-303 quitó su `línea(s)`.
+  assert.equal(fraseDeCuenta('sinAtribuir', 1), '1 línea entregada que no sale del presupuesto');
+  assert.equal(fraseDeCuenta('sinAtribuir', 3), '3 líneas entregadas que no salen del presupuesto');
+  assert.equal(fraseDeCuenta('enPartesSinFirmar', 1),
+    '1 línea en un albarán sin firmar, que todavía no cuenta como entregada');
+  assert.equal(fraseDeCuenta('enPartesSinFirmar', 2),
+    '2 líneas en albaranes sin firmar, que todavía no cuentan como entregadas');
+  assert.equal(fraseDeCuenta('sinAtribuir', 0), '0 líneas entregadas que no salen del presupuesto',
+    '🔴 el cero va en plural en español: «0 líneas», no «0 línea»');
+
+  assert.equal(/\((s|es|a|as)\)/i.test(JSON.stringify(COPY_ENTREGA)), false,
+    '🔴 ha vuelto el «(s)». No es una abreviatura: es una cadena que delata que la escribió un ' +
+    'programa, en un aviso que lee alguien con el móvil en la mano y las manos sucias.');
+
+  // Y la concordancia es de VERDAD: pegarle una «s» al singular no habría cambiado el verbo
+  // («que no sale» → «que no salen»), que es justo lo que hace falta y lo que el «(s)» no da.
+  for (const cuenta of ['sinAtribuir', 'enPartesSinFirmar']) {
+    assert.notEqual(COPY_ENTREGA[cuenta].plural, COPY_ENTREGA[cuenta].singular + 's',
+      `🔴 el plural de «${cuenta}» es el singular + «s»: entonces el verbo no concuerda y estamos ` +
+      'en el mismo sitio que con el «(s)», solo que disimulado.');
+  }
+});
+
+test('SCRUM-305 · en pantalla se dice «albarán», no «parte»', () => {
+  // Ese objeto se llama Albarán en el menú, en el listado global y en la tabla del Trabajo. Un
+  // segundo nombre para la misma cosa se lo cobra al profesional, y no hay motivo.
+  const copy = JSON.stringify(COPY_ENTREGA).toLowerCase();
+  assert.equal(/\bpartes?\b/.test(copy), false,
+    '🔴 la copy vuelve a decir «parte». En pantalla ese documento es un ALBARÁN; «parte» vale para ' +
+    'hablar entre nosotros, no para la pantalla.');
+  assert.match(copy, /albar[aá]n/, '🔴 la frase de los partes sin firmar ya no nombra el albarán');
 });
 
 test('SCRUM-305 · el número va DESNUDO: aquí no se inventa una unidad', () => {
