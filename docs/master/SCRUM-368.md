@@ -742,10 +742,285 @@ que parecían**: un botón inyectado en `login.html` que no reproducía el par (
 > ejecutado. Antes de creerse el verde, hay que comprobar que la mutación llegó a aplicarse.**
 
 
-## Reglas (las cinco entregas)
+
+# ═══ SEXTA ENTREGA · LA ENMIENDA PROPUESTA Y EL CENSO DE LAS OTRAS VARIANTES ═══
+
+**Medido contra:** `origin/main` = `d5ac9761da139bf9b6de3c808d7c990aa6b82157` · 2026-08-05T17:02:32+01:00
+
+**Nada aplicado al CSS.** La enmienda es una **propuesta**; la decisión espera a la captura.
+
+---
+
+## 📝 ENMIENDA PROPUESTA A `DESIGN.md` — no aplicada
+
+### Qué cambia, exactamente
+
+En **Buttons** (l. 157-163), donde hoy se lee:
+
+> **Primary:** fondo Verde Confianza (#16a34a), texto blanco, peso 700, padding 12px 20px.
+
+se añadiría una línea, y **solo** una:
+
+> **Primary (small):** fondo Verde Tinta Medio (`--brand-tint-ink`, **#047857**), texto blanco.
+> La variante pequeña del botón primario **no** usa el Verde Confianza.
+
+Y en los tokens de componente (l. 55-64), junto a `button-primary`:
+
+```yaml
+  button-primary-small:
+    backgroundColor: "{colors.brand-tint-ink}"
+    textColor: "{colors.surface}"
+```
+
+**Lo que NO cambia:**
+
+- `--brand` **#16a34a** no se toca. Sigue siendo el Verde Confianza.
+- El **botón primario normal** no se toca: fondo `--brand`, texto blanco.
+- El **botón grande** (`btn-lg`) no se toca.
+- Ninguna otra variante (`secondary`, `ghost`, `danger`) se toca.
+- La paleta no gana ningún color: `--brand-tint-ink` **ya existe** en `tokens.css` y ya se usa en
+  el producto (es el verde de texto desde la segunda entrega de este ticket).
+
+### La medición que lo motiva
+
+| | ratio | ¿AA? |
+| --- | --- | --- |
+| `btn-primary btn-sm` hoy (blanco sobre `--brand`) | **3,30** | ❌ (umbral 4,5) |
+| `btn-primary btn-sm` propuesto (blanco sobre `--brand-tint-ink`) | **5,48** | ✅ |
+
+Medido en navegador, no calculado. Y **no hay alternativa por el lado claro**: para 4,5:1 con
+texto blanco hace falta luminancia **≤ 0,175**, y `--brand` está en **0,2159**. Todo verde que
+cumpla es más oscuro que el de marca; aclarar **empeora** (`--brand-bright` da 2,28).
+
+Al botón pequeño no se le puede aplicar la salida del grande —texto de 18,66 px— **sin dejar de
+ser pequeño**. Por eso necesita una respuesta propia.
+
+### Y lo que hace que esto sea enmendar y no rebajar
+
+`DESIGN.md` tiene una regla con nombre que **hoy no se cumple**:
+
+> **La Regla de Una Sola Voz** (l. 123): «El verde de marca ocupa ≤10% de cualquier pantalla…
+> **Una pantalla = un botón verde primario**», reforzada en los *Do* (l. 196): «usar un solo
+> botón Verde Confianza por pantalla».
+
+Hoy hay **35 sitios** con `btn-primary btn-sm` **además** de los primarios normales, así que hay
+pantallas con varios botones en Verde Confianza. Sacar los pequeños del verde de marca **reduce
+el número de voces por pantalla**: acerca el producto a una regla que el documento ya exige.
+
+> **Esta enmienda hace que `DESIGN.md` describa un producto MÁS coherente que el actual, no que
+> describa el actual.** No rebaja el listón para que cuadre con lo que hay: mueve lo que hay
+> hacia una regla escrita que hoy se incumple, y de paso arregla el contraste. Si la única
+> motivación fuera el contraste, la salida honesta sería aceptar los 35 y dejarlo escrito.
+
+**Decisión del fundador (regla 30).** Ninguna sesión enmienda el sistema de diseño.
+
+---
+
+## ③ Las otras variantes pequeñas: qué pasa si se aplica la candidata
+
+### El dato que decide
+
+**Hoy, en las cuatro variantes, hacerse pequeño NO cambia el color.** Medido:
+
+| Variante | Grande | Pequeño | ¿Mismo color? |
+| --- | --- | --- | --- |
+| `btn-primary` | blanco sobre `#16a34a` · 3,30 | blanco sobre `#16a34a` · 3,30 | **sí** |
+| `btn-secondary` | tinta sobre blanco · 17,52 | tinta sobre blanco · 17,52 | **sí** |
+| `btn-ghost` | apagado sobre blanco · 4,77 | apagado sobre blanco · 4,77 | **sí** |
+| `btn-danger` | rojo sobre rojo claro · 4,41 | rojo sobre rojo claro · 4,41 | **sí** |
+
+`btn-sm` es hoy **puramente dimensional**: cambia `font-size`, `padding` y `min-height`, y nada
+más. Esa es una regla implícita que el sistema cumple 4 de 4.
+
+**Con la candidata, `btn-primary` sería la única variante en la que el tamaño cambia el color.**
+
+| | conjuntos | ¿mantiene la regla «pequeño = mismo color»? |
+| --- | --- | --- |
+| `btn-secondary btn-sm` | 66 | sí |
+| `btn-ghost btn-sm` | 43 | sí |
+| **`btn-primary btn-sm`** | **35** | **NO — sería la excepción** |
+| `btn-danger btn-sm` | 7 | sí |
+| `btn-sm` solo | 1 | sí |
+| **Total con `btn-sm`** | **152** | 117 la mantienen, 35 la rompen |
+
+**Ninguna otra variante queda más oscura ni más clara que su hermana grande**: las tres restantes
+no se tocan y siguen idénticas al grande. La incoherencia no es que otras variantes se descuadren
+—no lo hacen—: es que **el significado de `btn-sm` dejaría de ser uniforme**. Hoy quiere decir
+«el mismo botón, más pequeño»; después querría decir eso para tres variantes y «otro color
+además» para una.
+
+Eso puede ser aceptable —la enmienda lo declararía por escrito, que es justo lo que lo separa de
+una incoherencia— pero **es lo que se compra**, y conviene comprarlo sabiéndolo. No se arregla
+aquí.
+
+### 🔴 Hallazgo aparte, que no venía en ninguna pregunta
+
+**`btn-danger` da 4,41:1 — por debajo de AA — en grande Y en pequeño.** Rojo `#dc2626` sobre su
+fondo `--red-50`. No había aparecido antes porque el guard de navegador mide páginas HTML
+estáticas y `btn-danger` solo vive en vistas del dashboard generadas por JS.
+
+| | |
+| --- | --- |
+| Conjuntos con `btn-danger` | **7** |
+| — en páginas públicas | **0** |
+| — tras el login | **7** |
+
+Le faltan **0,09**. Es otro color de estado, no el verde de marca, así que no arrastra la decisión
+de identidad. **Reportado y no arreglado** (regla 9): no estaba en el encargo y esta noche se
+cierra, no se abre.
+
+Por completitud: `btn-ghost` pasa por **0,27** (4,77 contra 4,5). Cumple, pero con poco margen —
+cualquier retoque del gris apagado lo tumbaría, y el contador de tokens de
+`tests/scrum368-contraste-tokens.test.mjs` lo vigila.
+
+---
+
+## ① El contador del residuo: por qué es aceptable, no solo cuánto es
+
+`tests/scrum368-residuo-btn-sm.test.mjs` cuenta **35 sitios**, y trae un test aparte cuyo motivo
+está escrito en el propio fichero:
+
+> **`NINGÚN btn-sm primario está en una página pública`** — «Es lo que acota el daño: el residuo
+> vive detrás del login, no en la cara que ve un desconocido. Si eso deja de ser cierto, la
+> decisión de aceptarlo cambia de peso.»
+
+Esa es la pieza que hace **aceptable** el residuo, y por eso es un test y no una nota: el día que
+un botón primario pequeño aparezca en el landing, la razón por la que se aceptaron los 35 deja de
+valer, y el guard lo dice antes de que nadie tenga que acordarse.
+
+El contador cae **si sube o si baja** —bajar es una mejora que hay que anotar, no un verde
+silencioso—, con suelo y control negativo.
+
+---
+
+## Método
+
+Lo que salió de esta sesión sube a **`docs/METODO_YAQU.md`**, con sus casos reales:
+
+1. **La mutación que no llegó a aplicarse** — con los dos casos: el `replace('export', …)` sobre
+   un fichero sin `export`, y el botón inyectado en `login.html`, que no carga `styles.css` y por
+   tanto nunca reprodujo el par que se quería medir.
+2. **La excepción escrita más ancha que su caso** — el permiso por par de colores.
+3. **El medidor que no llegó a ejecutarse** — el `| tail`, el analizador ciego, el CLI que no se
+   reconoce.
+4. **No se mide mientras algo se mueve.**
+5. **El navegador es el árbitro**, y la prueba que lo separa de «no ajustes el guard a tu código».
+
+
+
+# ═══ SÉPTIMA ENTREGA · CANDIDATA APLICADA, ENMIENDA Y TRINQUETE ═══
+
+**Medido contra:** `origin/main` = `d5ac9761da139bf9b6de3c808d7c990aa6b82157` · 2026-08-05T17:02:32+01:00
+
+> 🛑 **368 NO CIERRA con esta entrega.** La condición ③ —capturar tres pantallas reales
+> pobladas— **no se ha cumplido**. Detalle al final, sin adornos.
+
+## 🔴 El hallazgo real del ticket: eran EL MISMO defecto
+
+Vista la captura, el fundador aprobó la candidata y dio el motivo, que es más grande que el
+arreglo:
+
+> En A, el pequeño y el grande son el **mismo verde** con el **mismo peso**, y **compiten**: la
+> tarjeta tiene dos voces y ninguna manda. En B aparece una escalera —relleno oscuro › contorno ›
+> texto plano— y el grande gana sin discusión. En C, en fila de tabla, el oscuro se lee mejor
+> sobre blanco.
+
+> **La candidata no es un parche de contraste que además no molesta. El defecto de contraste y el
+> incumplimiento de la Regla de Una Sola Voz eran EL MISMO defecto, y se arreglan con el mismo
+> cambio.**
+
+Por eso el trinquete vigila **el fondo** y no el ratio: quien devuelva un primario pequeño al
+verde de marca rompe las dos cosas a la vez.
+
+## Lo aplicado
+
+**CSS** (`styles.css`): `.btn-primary.btn-sm { background: var(--brand-tint-ink); }` y su hover.
+`--brand` no se toca; el primario normal y el grande, tampoco.
+
+**Enmienda de `DESIGN.md`**, escrita **por token y no por hex**:
+
+- En **Buttons**, una línea nueva: **Primary (small)** — fondo `{colors.brand-tint-ink}`, texto
+  blanco, con los dos motivos (3,30 → **5,48**, y la competencia entre pequeño y grande).
+- En los tokens de componente: `button-primary-sm.backgroundColor: "{colors.brand-tint-ink}"`.
+- Y una nota bajo **la Regla de Una Sola Voz** que dice que **se incumplía en 35 sitios** y que
+  esta enmienda **acerca el producto a lo que el documento ya exigía en esa línea**.
+
+> El hex `#16a34a` escrito a mano en la especificación del primario (l. 159) es **la razón por la
+> que este cambio necesitó enmienda**: un valor literal en la spec es una segunda fuente de verdad
+> esperando a derivar. La línea nueva no repite el error. **La vieja se deja como está** —cambiarla
+> no estaba en el encargo—, pero queda señalada.
+
+## El guard cambió de pregunta: de contador a trinquete
+
+`tests/scrum368-residuo-btn-sm.test.mjs` ya no cuenta un residuo aceptado. Ahora afirma:
+
+> **ningún `btn-primary btn-sm` usa `--brand` de fondo.**
+
+Simula la cascada de `background` para `<button class="btn btn-primary btn-sm">` y exige que gane
+`var(--brand-tint-ink)`. **Rojo verificado** —con la mutación **confirmada aplicada** antes de
+creerse el resultado (§1 de `METODO_YAQU.md`)—: devolver el fondo a `--brand` cae listando los
+**35 sitios con fichero y línea**.
+
+Y trae:
+
+- **La otra cara:** el primario **normal** debe seguir con `--brand`. Si alguien extendiera la
+  enmienda al grande, estaría cambiando la identidad sin decirlo.
+- **Control negativo:** `secondary`, `ghost` y `danger` pequeños **no** pueden recibir fondo
+  propio. `btn-sm` sigue siendo dimensional en todas salvo en el primario, que es **la única
+  excepción y está declarada en `DESIGN.md`**.
+- **`DESIGN.md` declara el componente, y por token:** el test falla si desaparece
+  `button-primary-sm` o si el fondo se escribe con el hex a mano.
+- **La otra cara pública:** el test de «ninguno en superficie pública» se queda, con el motivo
+  actualizado — ya no justifica un residuo, ahora **afirma que el cambio no toca lo que ve un
+  desconocido**.
+
+### Un motivo muerto, retirado
+
+El par blanco-sobre-verde de `CONOCIDOS` decía «el botón primario, decisión del fundador
+pendiente». **Eso ya no aplica**: el grande cumple por texto grande y el pequeño por el token
+nuevo. Los 2 nodos que quedan son **mockups del landing** (`.send-btn`, `.tnum-b`), y así está
+escrito ahora. Vigilar el motivo viejo habría sido vigilar un motivo muerto.
+
+> El `btn-primary btn-sm` **nunca estuvo** en `POR_TEXTO_GRANDE`, así que no había excepción de
+> tipografía que retirarle: pasa con 5,48 por la vía normal, sin excepción ninguna.
+
+## 🛑 ③ NO CUMPLIDO — las tres pantallas reales
+
+**No se han conseguido las capturas de `invoiceDetailView`, `quotesListView` y `settingsView`
+pobladas.**
+
+Lo que sí se hizo: un banco que carga **los 42 scripts reales del dashboard** (sin `app.js`, que
+redirige a login sin sesión) y llama a las funciones de vista reales — `renderQuotesListView`,
+`renderInvoiceDetailView`, `renderSettingsView`. **El markup y el CSS son los del producto.**
+
+Lo que falló: **los datos**. La API no existe en ese banco y el interceptor no acertó el contrato
+de cada vista, así que las tres renderizan **su estado de error o vacío**:
+
+| Vista | Resultado | Primarios pequeños |
+| --- | --- | --- |
+| `quotesListView` | estado vacío + «Error cargando presupuestos» | 1 |
+| `invoiceDetailView` | 7 nodos, no llegó a montar | 0 |
+| `settingsView` | estructura completa + «API 404: Not Found» | 0 |
+
+**Esas capturas no valen para lo que se pidió.** Se pidió ver si seis botones se leen como un
+sistema, y en tres estados vacíos no hay seis botones. Entregarlas como «pantallas reales» sería
+el mismo error contra el que avisó el encargo —una superficie que no es la que usa el
+profesional— con otro disfraz.
+
+Lo único que sí muestra algo útil es `quotesListView`: el `+ Crear presupuesto` grande en verde
+de marca **y** el `🚀 Crear mi primer presupuesto` pequeño en verde oscuro, en la misma pantalla
+real. Se lee como escalera. Pero es **una** convivencia, no seis.
+
+**La vía que sí funcionaría** es la que ya existe en el repo: `scripts/capture-demo.mjs`, que
+conduce Edge con `CAPTURE_PROFILE` (un perfil con sesión real del dashboard) contra un backend
+con la BD sembrada (`scripts/seed-demo.mjs`). Eso es levantar backend y base de datos — no se
+hizo por cuenta propia.
+
+
+## Reglas (las siete entregas)
 
 Regla 4 (vanilla, un componente) · **Regla 30: el verde de marca NO se ha tocado en ninguna de
-las cinco entregas** · Regla 9 (reportado y no arreglado: el botón primario a 3,30 —A1 medido y
+las siete entregas** · Regla 9 (reportado y no arreglado: el botón primario a 3,30 —A1 medido y
 **PARADO** por dos rótulos que desbordan—, `admin.html` y los dos mockups de WhatsApp) · Regla 37.
 
 > **La copy no se toca.** Los dos rótulos que desbordan con A1 no se han acortado: es microcopy
