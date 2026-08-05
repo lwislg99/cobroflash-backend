@@ -244,6 +244,11 @@ export function etiquetaCalidad(valor: string | null | undefined): string | null
 
 // ─── NORMALIZACIÓN Y VALIDACIÓN ──────────────────────────────────────────────────────────
 
+// APROBADOS (fundador, 6-ago-2026). Venían de la rama `scrum-300-firmado-por` como literales que
+// nadie había aprobado — la misma clase de texto que las cinco ranuras retiradas. Reescritos.
+export const COPY_CALIDAD_INVALIDA = 'Esa opción no existe. Recarga la página y vuelve a intentarlo.';
+export const COPY_CALIDAD_OTRO_VACIO = 'Si eliges «Otro», escribe en calidad de qué firma.';
+
 export type ResolucionCalidad =
   | { ok: true; valor: string | null }
   | { ok: false; error: string; message: string };
@@ -270,7 +275,9 @@ export function resolverCalidadFirmante(entrada: { ranura?: unknown; textoLibre?
     return {
       ok: false,
       error: 'calidad_firmante_invalida',
-      message: 'La calidad de quien firma no es una de las opciones válidas.',
+      // APROBADO (fundador, 6-ago-2026). Dice QUÉ HACER a propósito: si un profesional llega aquí
+      // es que su pantalla está desincronizada con las ranuras servidas, y recargar es la salida.
+      message: COPY_CALIDAD_INVALIDA,
     };
   }
 
@@ -282,7 +289,7 @@ export function resolverCalidadFirmante(entrada: { ranura?: unknown; textoLibre?
     return {
       ok: false,
       error: 'calidad_firmante_otro_vacio',
-      message: 'Al elegir la última opción, escribe en calidad de qué firma.',
+      message: COPY_CALIDAD_OTRO_VACIO,
     };
   }
   return { ok: true, valor: codificarCalidad(ranura, libre) };
@@ -309,12 +316,14 @@ export function normalizarNombreFirmante(v: unknown): string | null {
  * Y vive en UNA función porque firman DOS rutas (in situ y remota): si cada una validara por su
  * cuenta, una acabaría aceptando lo que la otra rechaza y no nos enteraríamos hasta el juicio.
  *
- * ⚠️ El `message` va con el marcador: el front bloquea el botón, así que esto es el respaldo y su
- * texto no lo ha aprobado nadie (regla 30).
+ * El `message` está APROBADO (fundador, 6-ago-2026). El front bloquea el botón, así que esto es
+ * el respaldo — pero un respaldo que el profesional puede llegar a ver también es microcopy.
  */
+export const COPY_FIRMA_SIN_NOMBRE = 'Falta el nombre de quien firma.';
+
 export function exigirNombreFirmante(v: unknown): { ok: true; nombre: string } | { ok: false; error: string; message: string } {
   const nombre = normalizarNombreFirmante(v);
-  if (!nombre) return { ok: false, error: 'firma_sin_nombre', message: PENDIENTE };
+  if (!nombre) return { ok: false, error: 'firma_sin_nombre', message: COPY_FIRMA_SIN_NOMBRE };
   return { ok: true, nombre };
 }
 
