@@ -6,6 +6,7 @@ import { outboxDir } from './core/storage/dirs'; // SCRUM-72: invoicesDir ya no 
 import { jsonError } from './core/http/jsonError';
 import { notFoundPageHtml } from './core/http/publicNotFound';
 import { isFlagEnabled } from './core/flags';
+import { puedeCrearFacturaSuelta } from './modules/invoicing/domain/facturaSuelta'; // SCRUM-289 (A0.3)
 import { requireAuth, requireActivePlan, requireRole } from './core/http/authMiddleware';
 import { mountAdmin } from './core/http/adminMounts'; // SCRUM-55: red fail-closed de /admin
 import { requireInternalSecret } from './core/http/internalAuth';
@@ -288,7 +289,9 @@ app.get('/admin/me', async (req, res) => {
 
   const merchantFull = await prisma.merchant.findUnique({
     where: { id: session.merchantId },
-    select: { country: true, logoUrl: true },
+    // SCRUM-289: `email` y `flags` los necesita `puedeCrearFacturaSuelta` — el modo de emisión
+    // (V0-0) se resuelve con merchant demo (por email) + flag por merchant, no solo con el país.
+    select: { country: true, logoUrl: true, email: true, flags: true },
   });
 
   const userRole = session.teamMember ? session.teamMember.role : 'admin';
@@ -319,6 +322,16 @@ app.get('/admin/me', async (req, res) => {
     // riesgo —el documento lo firma el cliente y desde `emitido` se congela— y se apaga aparte.
     voiceAlbaranEnabled: isFlagEnabled('VOICE_ALBARAN_ENABLED', {
       merchant: { id: session.merchantId, country: merchantFull?.country },
+    }),
+    // SCRUM-289 (A0.3): el botón «Nueva factura» solo existe cuando lo que se va a crear ES una
+    // factura. El veredicto se calcula AQUÍ, con la MISMA función que gatea `POST /admin/invoices`
+    // — el navegador no reimplementa la regla, la recibe. Dos copias del criterio es cómo se llega
+    // a que el back acepte lo que el front esconde.
+    facturaSueltaDisponible: puedeCrearFacturaSuelta({
+      id: session.merchantId,
+      email: merchantFull?.email ?? null,
+      country: merchantFull?.country ?? null,
+      flags: merchantFull?.flags,
     }),
     // A10.2 (Parte L): estado de la suscripción para el banner past_due
     subscriptionStatus: owner ? 'active' : ((session.merchant as any).subscriptionStatus ?? null),

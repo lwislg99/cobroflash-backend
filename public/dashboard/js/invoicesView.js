@@ -82,6 +82,21 @@ async function fetchInvoices(options = {}) {
     exportBtn.href = '/admin/exports/invoices.csv';
     header.appendChild(exportBtn);
 
+    // SCRUM-289 (A0.3): «nueva factura» sin presupuesto, trabajo ni albarán. El botón solo
+    // existe cuando lo que se va a crear ES una factura — el veredicto lo calcula el servidor
+    // con `puedeCrearFacturaSuelta` y viaja en /admin/me: aquí NO se reimplementa la regla.
+    // Rótulo con [PENDIENTE microcopy oficial] (regla 30) y su guard en la suite.
+    if (window.appFacturaSueltaDisponible === true && typeof openNuevaFacturaModal === 'function') {
+      const nuevaFacturaBtn = document.createElement('button');
+      nuevaFacturaBtn.type = 'button';
+      nuevaFacturaBtn.className = 'btn-primary btn-sm';
+      nuevaFacturaBtn.textContent = '[PENDIENTE microcopy oficial]';
+      nuevaFacturaBtn.addEventListener('click', () => {
+        openNuevaFacturaModal(() => renderInvoicesView(container));
+      });
+      header.appendChild(nuevaFacturaBtn);
+    }
+
     // SCRUM-69: pestañas "Emitidas" (default, contenido existente intacto) / "Pendientes"
     // (nueva). Componente NUEVO — no hay tabs hoy en el inventario AB3; se propone al máster.
     const tabs = document.createElement('div');

@@ -30,6 +30,12 @@ import { sendSuccessBody, sendFailureBody, SEND_FAILURE_MESSAGES, type SendFailu
 import { esErrorSinSellar, ERROR_SIN_SELLAR } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
 import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
+import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-289 (C7)
+import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-289
+import {
+  puedeCrearFacturaSuelta, validarFacturaSuelta,
+  ERROR_MODO_SIN_FACTURA, ERROR_CLIENTE_INVALIDO,
+} from '../../../invoicing/domain/facturaSuelta'; // SCRUM-289 (A0.3)
 
 
 const router = Router();
@@ -49,6 +55,118 @@ router.get('/', async (req, res) => {
   } catch (err) {
     console.error('[GET /admin/invoices]', err);
     res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/invoices — SCRUM-289 (A0.3) · LA FACTURA SUELTA.
+ *
+ * Sin presupuesto, sin trabajo y sin albarán: `quoteId: null`. Es el octavo camino de creación y
+ * el ÚNICO que no nace de un documento — los siete anteriores resuelven el `customerId` DEL
+ * documento del que salen (medido en SCRUM-287), y por eso éste necesita que se lo digan.
+ *
+ * SOLO ALTA (regla 29). Esta ruta no edita ni borra, y no debe crecer hacia ahí: una factura
+ * emitida se rectifica con R1 o se anula con registro, que ya tienen su sitio (`/:id/rectify`,
+ * `/:id/annul`). El guard de SCRUM-289 vigila que este entrypoint no abra esa puerta.
+ *
+ * El gate es `puedeCrearFacturaSuelta`, la MISMA función cuyo veredicto viaja al front en
+ * `GET /admin/me` — no una segunda copia del criterio.
+ */
+router.post('/', requireRole('admin'), async (req, res) => {
+  try {
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: req.merchantId },
+      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true },
+    });
+    if (!merchant) return res.status(404).json({ error: 'not_found' });
+
+    // GATE. 409 NOMBRADO y no un 500: quien lo reciba tiene que poder distinguir «aquí no toca»
+    // de «se ha roto algo». Hoy esto es lo que ve un merchant ES real (regla 24), y es lo esperado.
+    if (!puedeCrearFacturaSuelta(merchant)) {
+      return res.status(409).json({
+        error: ERROR_MODO_SIN_FACTURA,
+        message: 'En este modo no se emiten facturas.',
+      });
+    }
+
+    const val = validarFacturaSuelta(req.body);
+    if (!val.ok) return res.status(400).json({ error: val.error, message: val.message });
+
+    // TENENCIA (regla 2): el cliente tiene que ser DE ESTE merchant. Sin esto, un id ajeno
+    // emitiría una factura a nombre del cliente de otro — y una factura emitida no se borra.
+    const customer = await prisma.customer.findFirst({
+      where: { id: val.customerId, merchantId: req.merchantId },
+      select: { id: true },
+    });
+    if (!customer) {
+      return res.status(404).json({ error: ERROR_CLIENTE_INVALIDO, message: 'Ese cliente no existe.' });
+    }
+
+    const bd = calcVatBreakdown(val.lineas);
+    const total = (bd.base + bd.cuota).toFixed(2);
+
+    // SCRUM-246 · ANTES de pedir número: si no hay nada que cobrar no se emite y la serie ni se
+    // entera. Comprobarlo después obligaría a deshacer una factura ya numerada, que es el hueco
+    // que hay que justificar ante Hacienda.
+    exigirLineasFacturables(val.lineas);
+
+    const invoice = await prisma.$transaction(async (tx) =>
+      emitInvoice(tx, {
+        merchantId: req.merchantId!,
+        customerId: customer.id,
+        total,
+        currency: merchant.defaultCurrency || 'EUR',
+        type: 'F1',
+        lines: val.lineas,
+        quoteId: null, // ESTO es la factura suelta
+        actor: actorDeRequest(req),
+      }),
+    );
+
+    // El gate ya lo impide, pero el modo se resuelve DOS veces (aquí y dentro de
+    // `allocateInvoiceNumber`) y entre medias hay una transacción: si de la serie sale un J-, el
+    // documento NO es lo que dice el botón. Se rechaza en vez de entregarlo. Cinturón y tirantes,
+    // igual que en `facturar-parcial`.
+    if (isReceiptNumber(invoice.number)) {
+      console.error('[POST /admin/invoices] serie J- con el gate abierto — invoice', invoice.id);
+      return res.status(409).json({
+        error: ERROR_MODO_SIN_FACTURA,
+        message: 'En este modo no se emiten facturas.',
+      });
+    }
+
+    // Sellado FUERA de la transacción y por el punto ÚNICO (SCRUM-205). No lanza: si falla, la
+    // factura se queda `pendiente_de_sellado` y en ese estado no produce PDF ni QR (SCRUM-206).
+    // Un fallo aquí NO revierte la emisión — deshacerla iría contra la regla 29.
+    const sellada = (await sellarTrasEmision(invoice, merchant, prisma)).estado === SELLADO_HECHO;
+
+    // ⚠️ AQUÍ NO SE AUDITA, Y ES DELIBERADO. `factura_emitida` es acción BLOQUEANTE y la escribe
+    // `allocateInvoiceNumber` DENTRO de la transacción (SCRUM-207: «aquí se escribe, y no es un
+    // detalle de sitio»). Añadir un `recordAudit` aquí duplicaría el hecho y, encima, en su
+    // variante fire-safe: un registro fiscal que se puede perder sin que nadie se entere.
+    //
+    // HALLAZGO DECLARADO, no arreglado: el camino queda registrado como **C7**, igual que la
+    // recapitulativa y el albarán parcial, porque `emitInvoice` lo fija. Distinguir la suelta
+    // exigiría cambiar la firma del emisor compartido — o sea, tocar el camino de emisión, que es
+    // STOP (regla 38). Se dice en la entrada en vez de hacerlo de paso.
+
+    return res.status(201).json({
+      ok: true,
+      factura: {
+        id: invoice.id,
+        number: invoice.number,
+        total: invoice.total.toString(),
+        currency: invoice.currency,
+      },
+      veriFactu: sellada,
+      ...(sellada ? {} : { message: 'Se emitió la factura, pero falló su registro VeriFactu. Revísalo antes de entregarla.' }),
+    });
+  } catch (err: any) {
+    if (esErrorSinLineas(err)) {
+      return res.status(409).json({ error: ERROR_SIN_LINEAS, message: COPY_ADMIN_SIN_LINEAS });
+    }
+    console.error('[POST /admin/invoices]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
   }
 });
 
