@@ -1917,6 +1917,27 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 }
 .detail-head h2 { font-size: 18px; margin: 0 0 2px; }
 .detail-head .detail-sub { font-size: 13px; color: var(--muted); margin: 0; }
+
+/* SCRUM-317 (G2) · migas del detalle del Trabajo. Sustituyen al botón «← Volver a Trabajos»:
+   dicen dónde estás Y qué es esto, en la misma línea y sin gastar un botón.
+   Solo tokens existentes (--muted, --ink): ni un color ni una sombra nueva. */
+.detail-migas {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-size: 12px; color: var(--muted); margin: 0 0 4px;
+}
+.detail-miga-link {
+  background: none; border: 0; padding: 0; font: inherit;
+  color: var(--muted); cursor: pointer; text-decoration: underline;
+}
+.detail-miga-link:hover { color: var(--ink); }
+.detail-miga-sep { color: var(--muted); }
+/* La miga actual se TRUNCA en vez de romper la línea: un nombre de cliente largo más un nombre
+   de trabajo largo no deben empujar el título ni el chip de estado — es el caso que más falla
+   en el pase de dispositivos. */
+.detail-miga-actual {
+  color: var(--ink); min-width: 0; max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .detail-section { padding: 18px 22px; border-bottom: 1px solid var(--border); }
 .detail-section:last-child { border-bottom: none; }
 .detail-section-title {
