@@ -466,10 +466,168 @@ y sin hacer. Aquí importa para A1: **un texto de 18,66 px se juzga leyéndolo a
 su caja.
 
 
-## Reglas (las tres entregas)
+
+# ═══ CUARTA ENTREGA · A1 APLICADO, LA EXENCIÓN NORMATIVA Y EL RESIDUO CONTADO ═══
+
+**Medido contra:** `origin/main` = `d5ac9761da139bf9b6de3c808d7c990aa6b82157` · 2026-08-05T17:02:32+01:00
+
+## La norma, verificada en la fuente y no citada de memoria
+
+Comprobado en `w3.org` (SC 1.4.3 y su *Understanding*). La excepción **«Incidental»** dice:
+
+> «Text or images of text that are part of an **inactive user interface component** […] have no
+> contrast requirement.»
+
+Y el *Understanding* lo dice sin rodeos:
+
+> «User Interface Components that are not available for user interaction (**e.g., a disabled
+> control in HTML**) are not required to meet contrast requirements.»
+
+**Dice exactamente lo que el fundador dijo que decía.** Un botón `disabled` no tiene requisito de
+contraste — no por conveniencia nuestra, sino porque la norma lo exime.
+
+> ⚠️ **Y de paso corrige algo nuestro.** La misma lista trae la excepción **«Logotypes»**: «Text
+> that is part of a logo or brand name has no contrast requirement.» El «Qu» de `precios.html`
+> que la tercera entrega puso a vigilar en `POR_TEXTO_GRANDE` **es parte del logotipo**, así que
+> está exento y no necesitaba esa vía. Se deja vigilado igualmente —es más estricto que la norma
+> y no cuesta nada—, pero queda dicho que su motivo real es otro.
+
+## A1 aplicado: cuatro superficies, no una
+
+El botón primario no vive en un sitio. Cada superficie carga su propio CSS:
+
+| Superficie | Hojas | Dónde se aplicó A1 |
+| --- | --- | --- |
+| Dashboard | `tokens.css` + `styles.css` | `.btn-primary:not(.btn-sm)` |
+| Login / Register | `tokens.css` + `auth.css` | `.btn` (16px → 18,66px) |
+| Landing | `tokens.css` + estilos propios | `.btn-primary` y `.btn-lg` |
+| Precios | `tokens.css` + estilos propios | `.cta` (16px → 18,66px) |
+
+El `:not(.btn-sm)` solo hace falta en el dashboard, que es donde existen las variantes.
+
+**Un caso que solo apareció midiendo:** en el landing, `.btn-lg{font-size:16px}` se declara
+**después** de `.btn-primary` y con la misma especificidad, así que ganaba y dejaba los botones
+grandes en 16 px — sin cumplir. Subido también a 18,66.
+
+### `btn-lg`: entra
+
+Medido su único nodo del dashboard («Guardar cambios», `settingsView.js:501`) en pie de modal a
+390 px: **192,8 px de ancho, no recorta, no se sale**. Y la incoherencia que señaló el fundador
+queda resuelta: era grande de acolchado, no de letra.
+
+### El CTA de la demo: copy aprobada, y una corrección de mi medición
+
+Aplicada la microcopy del fundador: **«Pruébalo con tus datos →»**.
+
+| | ancho con A1 |
+| --- | --- |
+| «Así de fácil. Pruébalo con tus datos →» | 339,0 px |
+| **«Pruébalo con tus datos →»** | **275,6 px** |
+
+Espacio disponible en su contenedor real: 375 px.
+
+> **Corrección:** la tercera entrega dio ese rótulo como «se sale del pie de modal». Ese dato
+> estaba mal: lo medí en un **pie de modal genérico**, que no es el contenedor de este CTA. En su
+> sitio real cabían las dos versiones. **La copy nueva es mejor por el motivo del fundador —un
+> botón dice qué pasa al pulsarlo, no aplaude la demo— no por ancho.**
+
+> **Hallazgo aparte:** `index.html` carga **solo** `/js/atribucion.js` y no tiene ni una mención de
+> `idemo`. **Nadie carga `landing-demo.js`**, aunque `docs/SPRINT_DEMO_READY_EXT.md` lo da por
+> «publicada» y `atribucion.js:136` y un test asumen que existe y añade su CTA. Reportado, sin
+> arreglar (regla 9).
+
+## La exención por componente inactivo, medida en el DOM
+
+No es una lista de excepciones: es una condición sobre el **estado real del nodo**
+(`el.disabled`, `[disabled]`, `fieldset:disabled`, `[aria-disabled="true"]`). «Este nodo, porque
+está inactivo», no «este nodo, porque lo pusimos en la lista». **Caduca sola por construcción.**
+
+Verificado con el par real (blanco sobre el verde de marca), cambiando **solo** el atributo:
+
+| | Resultado |
+| --- | --- |
+| `<button disabled>` | ✔ verde — declarado como exento, con su ratio 3,30 a la vista |
+| el mismo, **sin** `disabled` | ✖ **rojo** — vuelve al censo |
+
+## 🔴 La prueba encontró un agujero en el guard, y lo arregló
+
+La primera vez que se probó la caducidad, **el guard siguió en verde**. El motivo: `CONOCIDOS`
+comparaba **por par de colores**, así que un nodo NUEVO que reutilizara dos colores ya listados
+entraba sin que nada avisara. La excepción se escribió para unos nodos concretos y acabaría
+amparando a cualquiera.
+
+Arreglado: cada conocido declara **cuántos nodos** aporta, y el guard falla si el par **gana** o
+**pierde** nodos. Verificado colando un `.btn-primary` de 13 px en el landing:
+
+```
+✖ UN PAR CONOCIDO HA GANADO NODOS: rgb(255, 255, 255) sobre rgb(22,163,74)
+   esperados 2, medidos 3
+   ejemplos: … · /index.html .btn.btn-primary «Solo disponible tras aceptar»
+   La excepción se escribió para los nodos que había, no para los que vengan.
+```
+
+> Sin la prueba que pidió el fundador, este agujero habría entrado con el guard en verde. **Una
+> excepción por par de colores no es una excepción: es un permiso para ese par en cualquier sitio.**
+
+## 🔴 EL RESIDUO, que es lo que queda vivo del ticket
+
+A1 salva los botones grandes y **deja suspendidos los pequeños**. No es un olvido: a un botón
+pequeño no se le puede poner letra de 18,66 px sin dejar de ser pequeño.
+
+### Nodos bajo AA después de A1, en las 9 páginas medidas
+
+| | Públicas | Tras login |
+| --- | --- | --- |
+| **Nodos bajo AA (reales)** | **4** | **8** |
+| — de ellos, `btn-sm` primarios | 0 | 0 |
+| Sobre gradiente (no medibles) | 3 | 11 |
+| Exentos por componente inactivo | 0 | 0 |
+
+Los 4 públicos son **mockups decorativos del landing** que imitan la interfaz de WhatsApp
+(`send-btn`, `tnum-b`, `wa-av`, y la marca «YaQu» dentro de una burbuja de chat). Los 8 de tras el
+login son todos de `admin.html`, la consola interna.
+
+### Los `btn-sm` primarios: 28, todos tras el login
+
+Las páginas estáticas no los contienen —viven en las vistas JS del dashboard—, así que su cuenta
+sale del censo derivado del front:
+
+| | |
+| --- | --- |
+| Rótulos de botón primario con `btn-sm` | **28** |
+| — en páginas **públicas** | **0** |
+| — **tras el login** | **28** |
+
+Con `12,5px/600` no tienen derecho al umbral de 3,0: les toca **4,5** y están en **3,30**.
+
+Repartidos por vista: `invoiceDetailView` 3 · `quotesListView` 3 · `settingsView` 3 ·
+`customersView` 2 · `invoicesView` 2 · `jobDetailView` 2 · `productsView` 2 · `quotesDetailView` 2 ·
+`templatesView` 2 · `aiQuoteAssistant` 1 · `customerDetailView` 1 · `expensesView` 1 · `homeView` 1 ·
+`quoteRequestsView` 1 · `signaturePad` 1 · `teamView` 1.
+
+> **La decisión que queda no es de CSS.** Ninguna sesión puede resolverla, porque la medición ya
+> demostró que **no hay tercera salida**: no existe un verde más claro que cumpla (haría falta
+> luminancia ≤ 0,175 y `--brand` está en 0,2159), y uno más oscuro rompe la regla escrita de que
+> la marca es luminosa. Así que: **o se toca `--brand`, o se acepta por escrito que los 28 botones
+> pequeños del dashboard no cumplen AA.** Ninguna de las dos la decide una sesión.
+
+## Observación reportada y no arreglada (regla 9)
+
+`quotesDetailView.js:772` — `btnInvoice.textContent = 'Solo disponible tras aceptar el
+presupuesto'` con `btnInvoice.disabled = true`. **Es un cartel disfrazado de botón**: un control
+inactivo que lleva dentro la explicación de por qué no se puede pulsar. Funciona y está exento de
+contraste por la norma, pero un texto explicativo no es la etiqueta de una acción. No se toca aquí.
+
+## AB6 — hueco declarado
+
+La matriz de dispositivos reales sigue siendo humana y sin hacer. Para A1 pesa: **un texto de
+18,66 px se juzga leyéndolo al sol**, no midiendo su caja.
+
+
+## Reglas (las cuatro entregas)
 
 Regla 4 (vanilla, un componente) · **Regla 30: el verde de marca NO se ha tocado en ninguna de
-las tres entregas** · Regla 9 (reportado y no arreglado: el botón primario a 3,30 —A1 medido y
+las cuatro entregas** · Regla 9 (reportado y no arreglado: el botón primario a 3,30 —A1 medido y
 **PARADO** por dos rótulos que desbordan—, `admin.html` y los dos mockups de WhatsApp) · Regla 37.
 
 > **La copy no se toca.** Los dos rótulos que desbordan con A1 no se han acortado: es microcopy
