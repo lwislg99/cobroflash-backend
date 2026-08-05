@@ -164,17 +164,59 @@ test('SCRUM-303 · las descartadas se siguen contando (SCRUM-271 sigue vigente)'
   assert.match(ALB_CREAR_COPY.descartadas(2), /2/, '🔴 el aviso no dice CUÁNTAS se han quedado fuera');
 });
 
-test('SCRUM-303 · REGLA 30: todo texto nuevo va marcado como pendiente', () => {
+// Los SIETE textos, tal como los aprobó el fundador el 5-ago-2026 (regla 30). El marcador
+// `[PENDIENTE microcopy oficial]` ya NO está: dejó de ser copy sin decidir.
+const COPY_APROBADA = {
+  titulo: 'Nuevo albarán',
+  guardar: 'Crear albarán',
+  valorado: 'Con precios, las líneas se escriben a mano: el presupuesto no los trae.',
+  sin_presupuesto: 'Este trabajo no tiene presupuesto, así que empiezas de cero.',
+  presupuesto_ilegible: 'No se ha podido leer el presupuesto, así que no se ha rellenado nada. Puedes escribir las líneas a mano.',
+  presupuesto_sin_lineas: 'El presupuesto no tiene ninguna línea que se pueda entregar.',
+};
+
+test('SCRUM-303 · REGLA 30: la copy aprobada es EXACTAMENTE la aprobada', () => {
+  // Antes este guard exigía el marcador de pendiente. Ahora que el fundador aprobó los siete
+  // textos, su trabajo es el contrario: que nadie los reescriba «para que suenen mejor». Un
+  // retoque de copy aprobada es una decisión del fundador, no un detalle de implementación.
   const { ALB_CREAR_COPY } = frontEjecutable();
-  const MARCADOR = '[PENDIENTE microcopy oficial]';
-  for (const [ranura, v] of Object.entries(ALB_CREAR_COPY)) {
-    const texto = typeof v === 'function' ? v(1) : v;
-    assert.ok(
-      texto.startsWith(MARCADOR),
-      `🔴 la ranura «${ranura}» lleva un texto que NO está aprobado: ${JSON.stringify(texto)}.\n\n` +
-      '  El microcopy lo aprueba el fundador (regla 30). Un rótulo que «suena bien» es justo lo\n' +
-      '  que el marcador existe para impedir que se cuele como si estuviera decidido.',
+
+  assert.deepEqual(
+    Object.keys(ALB_CREAR_COPY).sort(),
+    [...Object.keys(COPY_APROBADA), 'descartadas'].sort(),
+    '🔴 las ranuras de aviso ya no son las siete aprobadas: hay texto nuevo (o falta uno). Todo ' +
+    'texto que lee el profesional pasa por el fundador (regla 30).',
+  );
+
+  for (const [ranura, esperado] of Object.entries(COPY_APROBADA)) {
+    assert.equal(
+      ALB_CREAR_COPY[ranura], esperado,
+      `🔴 la ranura «${ranura}» ya no dice lo aprobado.\n     aprobado: ${JSON.stringify(esperado)}\n` +
+      `        ahora: ${JSON.stringify(ALB_CREAR_COPY[ranura])}`,
     );
+  }
+
+  // Y ninguna arrastra el marcador: si sigue ahí, se entregó como pendiente algo ya decidido.
+  for (const v of Object.values(ALB_CREAR_COPY)) {
+    const texto = typeof v === 'function' ? v(1) : v;
+    assert.ok(!texto.includes('[PENDIENTE microcopy oficial]'),
+      `🔴 queda el marcador de pendiente en un texto YA APROBADO: ${JSON.stringify(texto)}`);
+  }
+});
+
+test('SCRUM-303 · el aviso de descartadas resuelve singular y plural de verdad', () => {
+  const { ALB_CREAR_COPY } = frontEjecutable();
+
+  assert.equal(ALB_CREAR_COPY.descartadas(1), '1 línea sin cantidad no se ha copiado.',
+    '🔴 el singular no concuerda. «1 líneas … no se han copiado» es de programador, y esto lo lee ' +
+    'un profesional en obra.');
+  assert.equal(ALB_CREAR_COPY.descartadas(3), '3 líneas sin cantidad no se han copiado.',
+    '🔴 el plural no concuerda');
+
+  // El defecto concreto que se retiró: la abreviatura que servía para los dos a la vez.
+  for (const n of [1, 2, 5]) {
+    assert.ok(!ALB_CREAR_COPY.descartadas(n).includes('(s)'),
+      `🔴 vuelve la abreviatura «línea(s)» con n=${n}: resuelve el plural de mentira`);
   }
 });
 
@@ -197,7 +239,7 @@ test('SCRUM-303 · 🔴 EL AVISO SE VE: `styles.css` esconde `.alert` sin tono',
     `🔴 ESCÁNER CIEGO: solo he derivado ${TONOS_VISIBLES.length} tono(s) de la hoja de estilos`);
 
   // Los tonos que usa la hoja de creación, leídos del front.
-  const bloque = trozo('const ALB_AVISO_TONO = {', 'const ALB_PENDIENTE');
+  const bloque = trozo('const ALB_AVISO_TONO = {', 'const ALB_CREAR_COPY');
   const usados = [...bloque.matchAll(/:\s*'([a-z]+)'/g)].map((m) => m[1]);
   assert.ok(usados.length >= 5,
     `🔴 ESCÁNER CIEGO: he leído ${usados.length} tonos del front y hay 5 ranuras de aviso`);

@@ -175,15 +175,24 @@ const ALB_AVISO_TONO = {
   descartadas: 'warning',              // …y algo se ha quedado fuera (SCRUM-271)
 };
 
-const ALB_PENDIENTE = '[PENDIENTE microcopy oficial]';
+// MICROCOPY APROBADA por el fundador el 5-ago-2026 (regla 30). Ya NO lleva el marcador
+// `[PENDIENTE microcopy oficial]`: los siete textos están decididos y el guard los compara uno a
+// uno, así que reescribir uno «que suene mejor» sale rojo. Cambiarlos es cambiar copy aprobada.
 const ALB_CREAR_COPY = {
-  titulo: `${ALB_PENDIENTE} Nuevo albarán`,
-  guardar: `${ALB_PENDIENTE} Crear albarán`,
-  descartadas: (n) => `${ALB_PENDIENTE} ${n} línea(s) sin cantidad no se han copiado.`,
-  valorado: `${ALB_PENDIENTE} Con precios las líneas se escriben a mano: el presupuesto no trae precios.`,
-  sin_presupuesto: `${ALB_PENDIENTE} Este trabajo no tiene presupuesto a la vista.`,
-  presupuesto_ilegible: `${ALB_PENDIENTE} No se ha podido leer el presupuesto, así que no se ha rellenado nada. Puedes escribir las líneas a mano.`,
-  presupuesto_sin_lineas: `${ALB_PENDIENTE} El presupuesto no tiene ninguna línea que se pueda entregar.`,
+  titulo: 'Nuevo albarán',
+  guardar: 'Crear albarán',
+  // Singular y plural DE VERDAD: cambian el sustantivo y el verbo, así que se alterna la frase
+  // entera (patrón de `exportView.js`). «línea(s)» es abreviatura de programador, y esto lo lee
+  // un profesional en obra.
+  descartadas: (n) => (n === 1
+    ? '1 línea sin cantidad no se ha copiado.'
+    : `${n} líneas sin cantidad no se han copiado.`),
+  valorado: 'Con precios, las líneas se escriben a mano: el presupuesto no los trae.',
+  // «No tiene presupuesto» a secas dejaba dudando si existe y no se ve; la segunda mitad dice qué
+  // va a pasar, que es lo que hace falta saber.
+  sin_presupuesto: 'Este trabajo no tiene presupuesto, así que empiezas de cero.',
+  presupuesto_ilegible: 'No se ha podido leer el presupuesto, así que no se ha rellenado nada. Puedes escribir las líneas a mano.',
+  presupuesto_sin_lineas: 'El presupuesto no tiene ninguna línea que se pueda entregar.',
 };
 
 function decidirAperturaAlbaran({ modoValoracion, tieneQuote, quoteLeido, lineasQuote }) {

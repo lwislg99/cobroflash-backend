@@ -1,6 +1,6 @@
 # SCRUM-303 (C4) · capturas de la hoja de crear albarán (AB6)
 
-**Medido contra:** `origin/main` = `7ce53c31d9fc7d9a0093b13868beaddeeea65dcb` · 2026-08-05T16:07:45+01:00
+**Medido contra:** `origin/main` = `99d9b7004a5c520c114db7cb96ab6c7eac80e564` · 2026-08-05T16:17:40+01:00
 
 Producidas con un **banco aislado** (puppeteer-core sobre el Edge instalado + servidor estático
 efímero sirviendo `public/`). Se cargan **los 41 scripts que carga `dashboard/index.html`, en su
@@ -32,8 +32,8 @@ modificadores quedan visibles.
 ## El caso bueno — 390 px (iPhone estándar)
 
 La hoja se abre **ya rellena** con las 3 líneas aprovechables del presupuesto, y avisa de la 4ª
-(cantidad 0) que no se copió. **Todavía no existe ningún albarán**: si se cierra aquí, no queda
-documento ni hueco en la serie.
+(cantidad 0) que no se copió — en **singular correcto**: «1 línea sin cantidad no se ha copiado.»
+**Todavía no existe ningún albarán**: si se cierra aquí, no queda documento ni hueco en la serie.
 
 ![bueno 390](scrum303-sheet-bueno-390.png)
 
@@ -63,7 +63,7 @@ vacía.
 | Focus visible | Sí — anillo en el primer campo, visible en las cuatro capturas |
 | Targets ≥44 px | Heredados del editor de líneas, que ya cumplía |
 | Estados empty / error | **Los dos casos vacíos son el corazón del ticket** y están capturados; el error del guardado usa el banner propio del sheet (`.alert error`), que ya existía |
-| Textos largos | El microcopy va con el marcador `[PENDIENTE microcopy oficial]` (29 caracteres) **delante del texto**, así que lo capturado es el caso PEOR de longitud: el aprobado será más corto |
+| Textos largos | **Microcopy APROBADA** (5-ago-2026): las capturas son las del texto definitivo, sin marcador. La tanda anterior llevaba `[PENDIENTE microcopy oficial]` delante (29 caracteres más por ranura) y **también entraba**, así que el caso peor de longitud está probado |
 | Contraste AA | Tonos `info`/`warning` de `styles.css`, sin colores inventados |
 
 ### Huecos declarados
