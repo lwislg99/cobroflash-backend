@@ -93,7 +93,7 @@ distinguir las dos cosas. También se declara `truncado` cuando el barrido llega
 
 Las tres inyecciones revertidas; árbol limpio.
 
-## 🔴 Microcopy PENDIENTE — qué necesita decir el mensaje
+## Microcopy APROBADA (5-ago-2026) — y por qué esta variante y no la otra
 
 `MSG_SERIE_YA_EMITIDA` va con `[PENDIENTE microcopy]` y un guard que impide que se quede así sin
 que nadie se dé cuenta. **Lo que el texto tiene que transmitir**, para que el fundador lo apruebe o

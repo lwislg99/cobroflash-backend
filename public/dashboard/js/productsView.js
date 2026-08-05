@@ -737,7 +737,8 @@ async function pedirCatalogo(trade, refresh, btn) {
     // decir, en la entrada `docs/master/SCRUM-313.md`.
     const MSG = {
       no_catalog_for_trade: 'Tu gremio aún no tiene catálogo predefinido — añade servicios a mano o importa un CSV.',
-      already_has_products: '[PENDIENTE microcopy] Ya tienes servicios en tu catálogo, así que no se ha cargado nada: lo tuyo se queda como está.',
+      // Microcopy APROBADA por el fundador (5-ago-2026), literal.
+      already_has_products: 'Tu catálogo ya tiene productos, así que no hemos cargado la plantilla. Tus precios siguen como estaban.',
     };
     const msg = MSG[r.skipped] || 'No se pudo cargar el catálogo.';
     // El caso protegido se anuncia como AVISO ('warn'), no como error: no ha fallado nada, pero

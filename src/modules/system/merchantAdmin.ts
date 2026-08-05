@@ -63,19 +63,26 @@ export class SerieError extends Error {
   constructor(
     public code: 'serie_ya_emitida',
     message: string,
-    public detalle: { emitidas: number; ultimo: string; prefijoActual: string },
+    public detalle: { titulo: string; emitidas: number; ultimo: string; prefijoActual: string },
   ) {
     super(message);
   }
 }
 
-// 🔴 MICROCOPY PENDIENTE DE APROBACIÓN DEL FUNDADOR (regla 30). Este texto lo LEE el
-// profesional cuando se le impide cambiar su propia serie, así que no se improvisa. Lo que
-// tiene que decir está en la entrada `docs/master/SCRUM-291.md`; hasta que se apruebe, el
-// mensaje va marcado y un guard impide que se quede así sin darse cuenta.
+// Microcopy APROBADA por el fundador (5-ago-2026), literal.
+//
+// ⚠️ SE MIDIÓ CUÁL DE LAS DOS VARIANTES APLICA, no se eligió. La aprobada traía dos versiones:
+// una que remite a «crea una serie nueva» y otra que remite a WhatsApp. Medido en `main`: **no
+// existe la acción de crear una serie nueva** — no hay modelo `Serie` en el esquema (la serie son
+// cuatro campos escalares de `Merchant`), no hay ruta que la cree y el front no la nombra. Las
+// series múltiples son justo la parte de A4 que sigue esperando GO.
+//
+// Mandar al usuario a un botón que no existe convierte un bloqueo explicado en un callejón sin
+// salida — que es literalmente el defecto de SCRUM-338. Por eso va la variante de WhatsApp.
+export const TIT_SERIE_YA_EMITIDA = 'Esta serie ya tiene facturas emitidas';
 export const MSG_SERIE_YA_EMITIDA =
-  '[PENDIENTE microcopy] No se puede cambiar el prefijo de la serie: ya hay facturas emitidas '
-  + 'con ella este año y la numeración tiene que seguir siendo correlativa.';
+  'Su numeración tiene que seguir siendo correlativa, así que no se puede cambiar. '
+  + 'Escríbenos por WhatsApp y lo vemos contigo.';
 
 // 1) Obtener el perfil del merchant (para pintar el formulario del dashboard)
 export async function getMerchantProfile(merchantId: number = DEFAULT_MERCHANT_ID) {
@@ -195,6 +202,7 @@ export async function updateMerchantProfile(
     });
     if (veredicto.bloqueado) {
       throw new SerieError('serie_ya_emitida', MSG_SERIE_YA_EMITIDA, {
+        titulo: TIT_SERIE_YA_EMITIDA,
         emitidas: veredicto.emitidas,
         ultimo: veredicto.ejemplo,
         prefijoActual: (actual?.invoiceSeriesPrefix ?? '').trim(),

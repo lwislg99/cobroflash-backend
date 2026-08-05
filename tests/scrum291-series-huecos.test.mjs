@@ -95,14 +95,36 @@ test('SCRUM-291 ④ · una serie de OTRO año no bloquea la del año en curso', 
     '🔴 se están contando facturas de un año cerrado como si fueran de la serie en curso.');
 });
 
-test('SCRUM-291 ④ · el mensaje va marcado como PENDIENTE hasta que el fundador lo apruebe', () => {
-  // Regla 30: este texto lo lee el profesional cuando se le niega una acción legítima de su
-  // negocio. No se improvisa, y no puede quedarse marcado sin que nadie se dé cuenta.
+test('SCRUM-291 ④ · el mensaje del bloqueo es el APROBADO, literal', () => {
+  // Aprobado por el fundador el 5-ago-2026. Sustituye al assert de «va marcado como pendiente»,
+  // retirado EN EL MISMO COMMIT que quita la marca — que es lo que convierte «aprobado» en un
+  // hecho comprobable y no en el recuerdo de alguien.
   const src = fs.readFileSync(path.join(RAIZ, 'src/modules/system/merchantAdmin.ts'), 'utf8');
-  assert.match(src, /MSG_SERIE_YA_EMITIDA[\s\S]{0,200}\[PENDIENTE microcopy\]/,
-    '🔴 el mensaje del bloqueo ya no está marcado como pendiente.\n\n' +
-    '  Si el fundador lo aprobó, quita la marca Y este assert en el mismo commit — que es lo que\n' +
-    '  convierte «aprobado» en un hecho comprobable y no en un recuerdo.');
+
+  assert.match(src, /TIT_SERIE_YA_EMITIDA = 'Esta serie ya tiene facturas emitidas'/,
+    '🔴 el título aprobado del bloqueo ha cambiado.');
+  assert.match(src, /Su numeración tiene que seguir siendo correlativa, así que no se puede cambiar/,
+    '🔴 el cuerpo aprobado del bloqueo ha cambiado.');
+  assert.match(src, /Escríbenos por WhatsApp y lo vemos contigo/,
+    '🔴 la salida que se le ofrece al usuario ha cambiado. Si es porque YA existe «crear una serie\n' +
+    '  nueva», entonces toca la OTRA variante aprobada — y eso se MIDE, no se supone.');
+  assert.doesNotMatch(src, /PENDIENTE microcopy/,
+    '🔴 vuelve a haber una marca de pendiente sobre un texto que ya está aprobado.');
+});
+
+test('SCRUM-291 ④ · la variante aplicada sigue siendo la que corresponde', () => {
+  // ⚠️ EL TEXTO ELEGIDO DEPENDE DE UN HECHO DEL PRODUCTO, no de un gusto. La microcopy aprobada
+  // traía DOS variantes: una que remite a «crea una serie nueva» y otra a WhatsApp. Se midió que
+  // esa acción NO EXISTE —sin modelo `Serie` en el esquema, sin ruta que la cree, sin nada en el
+  // front— y por eso se aplicó la de WhatsApp.
+  //
+  // Mandar al usuario a un botón inexistente convierte un bloqueo explicado en un callejón sin
+  // salida: exactamente el defecto de SCRUM-338. Si algún día las series existen, este test cae y
+  // obliga a cambiar el copy, en vez de dejar al profesional con la peor de las dos salidas.
+  const schema = fs.readFileSync(path.join(RAIZ, 'prisma/schema.prisma'), 'utf8');
+  assert.doesNotMatch(schema, /^model Serie/m,
+    '🔴 ya existe un modelo de series: «crea una serie nueva» puede ser ahora una acción real, y\n' +
+    '  el mensaje del bloqueo tiene que pasar a la OTRA variante aprobada.');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
