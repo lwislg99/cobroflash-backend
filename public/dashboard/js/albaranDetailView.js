@@ -45,6 +45,15 @@ const ROTULOS_ALBARAN = {
   // SCRUM-302 · APROBADO por el fundador el 5-ago-2026: es la palabra del ticket y la que usa
   // todo el mundo en un menu de desbordamiento. Describe lo que hace sin adornarlo.
   btnDuplicar: 'Duplicar',
+};
+
+// SCRUM-302 · APROBADO por el fundador el 5-ago-2026. Dice lo que SÍ trae ANTES de lo que no: el
+// profesional necesita saber que su trabajo está ahí, no empezar por una carencia. Y el «nunca»
+// hace el trabajo pesado — convierte una ausencia en una REGLA; sin él, se lee como que esta vez
+// ha fallado algo y se vuelve a intentar. No se explica el motivo legal: eso es razonamiento
+// nuestro, no suyo. Él necesita saber qué tiene delante.
+const COPY_DUPLICADO_CREADO = 'Duplicado creado. Trae las líneas y las notas del original; la firma y las fotos no se copian nunca.';
+const _FIN_ROTULOS = {
   // Reutilizados letra por letra de la fila del Trabajo (jobDetailView.js), de donde se mudan
   btnEmitir: 'Emitir',
   btnEnviarFirmar: 'Enviar para firmar',
@@ -240,9 +249,11 @@ async function renderAlbaranDetailView(container, albaranId) {
     // SCRUM-302 · duplicar: el POST crea el parte nuevo y se navega a EL, no al original —
     // quedarse en el de ayer haria pensar que no ha pasado nada.
     btnDuplicar: () => mk('btnDuplicar', async () => {
-      setStatus('info', MICROCOPY_PENDIENTE);
       try {
         const copia = await apiRequest(`/admin/albaranes/${alb.id}/duplicar`, { method: 'POST' });
+        // El aviso tiene que sobrevivir a la navegación: un `setStatus` aquí se pierde al
+        // re-renderizar. Marca de UN SOLO USO, que la vista consume al montar.
+        if (window.appState) window.appState.avisoDuplicado = true;
         if (window.renderAppView) window.renderAppView('albaran-detail', { albaranId: copia.id });
       } catch (e) { setStatus('error', e?.data?.message || MICROCOPY_PENDIENTE); }
     }),
@@ -275,6 +286,26 @@ async function renderAlbaranDetailView(container, albaranId) {
     acts.appendChild(typeof overflowMenu === 'function'
       ? overflowMenu(cubos.overflow)
       : (() => { const d = document.createElement('div'); cubos.overflow.forEach((b) => d.appendChild(b)); return d; })());
+  }
+
+  // ── SCRUM-302 · EL AVISO DEL DUPLICADO, al aterrizar ────────────────────────────────────
+  //
+  // 🔴 POR QUÉ HACE FALTA: al duplicar un albarán FIRMADO se aterriza en el duplicado, y la única
+  // señal de que la firma NO ha viajado es el chip `borrador`. Hay que DEDUCIRLO — medido: esta
+  // página **no pinta la firma en ningún estado**, así que ni siquiera queda un hueco donde antes
+  // se veía. Duplicar un documento firmado y que el resultado no diga que la firma no viajó es la
+  // clase de silencio que alguien descubre el día que enseña el papel equivocado.
+  //
+  // ⚠️ ESTO ES UN PARCHE SOBRE UN HUECO, NO SU SOLUCIÓN. Que la firma se vea en esta página es
+  // `FIRMADO POR`, y eso es **SCRUM-300** (bloque C5, bloqueado por su migración). Cuando 300
+  // entre, este aviso sigue siendo útil, pero el problema de fondo se arregla allí — que nadie lea
+  // esto dentro de dos meses y crea que está resuelto.
+  //
+  // Se consume la marca (un solo uso): si se quedara puesta, el aviso reaparecería en cada visita
+  // a la ficha, y un aviso permanente deja de leerse.
+  if (window.appState && window.appState.avisoDuplicado) {
+    window.appState.avisoDuplicado = false;
+    setStatus('info', COPY_DUPLICADO_CREADO);
   }
 
   // ── RAIL DE SOLO LECTURA ────────────────────────────────────────────────────────────────
