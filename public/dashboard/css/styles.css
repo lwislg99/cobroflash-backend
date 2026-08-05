@@ -1938,6 +1938,30 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
   color: var(--ink); min-width: 0; max-width: 100%;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+/* SCRUM-316 (G1) · cabecera del patrón: chips de los dos ejes + barra de acciones.
+   Ni un token nuevo: gap/radios/colores son los que ya usa .detail-head. */
+.detail-head-chips { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+/* Las acciones se alinean a la DERECHA y bajan enteras cuando no caben (móvil): que la primaria
+   se parta de las secundarias es lo que rompe el patrón en pantalla estrecha. */
+.detail-head-acciones {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-left: auto;
+}
+
+/* SCRUM-316 (G1) · rejilla cuerpo + rail derecho. Hoy el rail no se pinta (su contenido es G3):
+   con una sola columna la rejilla es indistinguible del layout anterior. */
+.detail-cuerpo { display: grid; grid-template-columns: 1fr; }
+.detail-cuerpo--con-rail { grid-template-columns: 1fr minmax(220px, 300px); }
+.detail-rail { border-left: 1px solid var(--border); }
+.detail-rail > * { padding: 18px 22px; border-bottom: 1px solid var(--border); }
+.detail-rail > *:last-child { border-bottom: none; }
+/* Móvil: el rail deja de ser columna y pasa DEBAJO. Un rail de 220px al lado del cuerpo en un
+   Android de gama media deja las dos columnas ilegibles. */
+@media (max-width: 720px) {
+  .detail-cuerpo--con-rail { grid-template-columns: 1fr; }
+  .detail-rail { border-left: none; border-top: 1px solid var(--border); }
+}
+
 .detail-section { padding: 18px 22px; border-bottom: 1px solid var(--border); }
 .detail-section:last-child { border-bottom: none; }
 .detail-section-title {
