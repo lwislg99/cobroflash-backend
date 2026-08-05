@@ -9,6 +9,9 @@ import { canTransition, estadoCobroFor, JOB_TIPOS_OPERACION } from '../../domain
 import { recordAudit, actorDeRequest, sobreFiscal, flagsFiscalesDe } from '../../../system/audit.service'; // SCRUM-66 · SCRUM-207 · SCRUM-206b
 import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo } from '../../../quotes/domain/billingPlan';
 import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; // SCRUM-34
+// SCRUM-195 (rebanada 2): el CRITERIO (orden, cuál se cobra, cuánto queda) vive en su propio
+// módulo para que el test use el MISMO y no una copia.
+import { primeroConTramoPendiente, restanteDelTrabajo } from '../../domain/presupuestosDelTrabajo';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-173
@@ -63,6 +66,14 @@ const CUSTOMER_SELECT = { id: true, name: true, phone: true } as const;
  */
 type JobRefs = {
   quotes: Map<number, any>;
+  /**
+   * SCRUM-195 (rebanada 2) · TODOS los presupuestos de cada Trabajo, precargados en lote.
+   *
+   * Va en el lote y no en una consulta por fila a propósito: la lista serializa hasta 200
+   * Trabajos, y resolver la pertenencia dentro de `serializeJob` habría reintroducido el N+1
+   * que SCRUM-58 quitó — medido allí en 2910 ms contra 1270 ms.
+   */
+  quotesPorJob: Map<number, any[]>;
   customers: Map<number, any>;
   operarios: Map<string, { id: number; name: string }>;
 };
@@ -75,9 +86,22 @@ async function loadJobRefs(jobs: any[]): Promise<JobRefs> {
   const operarioIds = [...new Set(conOperario.map((j) => j.operarioId as number))];
   const merchantIds = [...new Set(conOperario.map((j) => j.merchantId as number))];
 
-  const [quotes, customers, operarios] = await Promise.all([
+  // SCRUM-195: el sentido NUEVO, en lote. `merchantId` acota la lectura (regla 2).
+  const jobIds = jobs.map((j) => j.id).filter((v): v is number => v != null);
+  const merchantsDeJobs = [...new Set(jobs.map((j) => j.merchantId).filter((v): v is number => v != null))];
+
+  const [quotes, porJobId, customers, operarios] = await Promise.all([
     quoteIds.length
       ? prisma.quote.findMany({ where: { id: { in: quoteIds } }, select: QUOTE_SELECT })
+      : Promise.resolve([]),
+    // Los adicionales, y los originales ya backfilleados. El sentido viejo de arriba se
+    // mantiene mientras conviven: sin él, un par anterior al backfill perdería su presupuesto
+    // en la lista — el mismo fallo que esto viene a cerrar, en la otra ventana.
+    jobIds.length && merchantsDeJobs.length
+      ? prisma.quote.findMany({
+          where: { jobId: { in: jobIds }, merchantId: { in: merchantsDeJobs } },
+          select: { ...QUOTE_SELECT, jobId: true },
+        })
       : Promise.resolve([]),
     customerIds.length
       ? prisma.customer.findMany({ where: { id: { in: customerIds } }, select: CUSTOMER_SELECT })
@@ -90,21 +114,66 @@ async function loadJobRefs(jobs: any[]): Promise<JobRefs> {
       : Promise.resolve([]),
   ]);
 
+  const porId = new Map<number, any>([...quotes, ...porJobId].map((q: any) => [q.id, q]));
+  const quotesPorJob = new Map<number, any[]>();
+  for (const j of jobs) {
+    const suyos: any[] = [];
+    const vistos = new Set<number>();
+    // El ORIGINAL primero: define el alcance base, y ese orden lo usan tanto el detalle como
+    // `collect-rest` para ser deterministas (§4 del ticket).
+    if (j.quoteId != null && porId.has(j.quoteId)) { suyos.push(porId.get(j.quoteId)); vistos.add(j.quoteId); }
+    for (const q of porJobId as any[]) {
+      if (q.jobId === j.id && !vistos.has(q.id)) { suyos.push(q); vistos.add(q.id); }
+    }
+    quotesPorJob.set(j.id, suyos);
+  }
+
   return {
-    quotes: new Map(quotes.map((q: any) => [q.id, q])),
+    quotes: porId,
+    quotesPorJob,
     customers: new Map(customers.map((c: any) => [c.id, c])),
     operarios: new Map(operarios.map((o: any) => [operarioKey(o.merchantId, o.id), { id: o.id, name: o.name }])),
   };
 }
 
+/**
+ * SCRUM-195 (rebanada 2) · LOS PRESUPUESTOS DE UN TRABAJO, para el camino de LECTURA.
+ *
+ * Con `refs` sale del lote (lista); sin él consulta, que es lo que hacen el detalle y el update.
+ * Devuelve el ORIGINAL primero y los adicionales después, por id: el orden es parte del
+ * contrato — de él dependen el título, el plan base y a qué presupuesto va el siguiente tramo.
+ *
+ * Los DOS sentidos siguen vivos (paso 1: `Job.quoteId` no se retira). El nuevo responde por
+ * `Quote.jobId`; el viejo cubre los pares que aún no tiene el backfill.
+ */
+async function quotesDeJob(job: any, refs?: JobRefs): Promise<any[]> {
+  if (refs) return refs.quotesPorJob.get(job.id) ?? [];
+
+  const [original, porJob] = await Promise.all([
+    job.quoteId != null
+      ? prisma.quote.findUnique({ where: { id: job.quoteId }, select: QUOTE_SELECT })
+      : Promise.resolve(null),
+    prisma.quote.findMany({
+      where: { jobId: job.id, merchantId: job.merchantId }, // regla 2
+      select: { ...QUOTE_SELECT, jobId: true },
+    }),
+  ]);
+
+  const salida: any[] = [];
+  const vistos = new Set<number>();
+  if (original) { salida.push(original); vistos.add(original.id); }
+  for (const q of porJob) if (!vistos.has(q.id)) { salida.push(q); vistos.add(q.id); }
+  return salida;
+}
+
 async function serializeJob(job: any, refs?: JobRefs) {
   // SCRUM-58: con `refs` (lista) se lee del lote; sin él (detalle, update) se consulta como
   // siempre. Mismos selects en ambas ramas — ver QUOTE_SELECT/CUSTOMER_SELECT.
-  const quote = job.quoteId
-    ? refs
-      ? refs.quotes.get(job.quoteId) ?? null
-      : await prisma.quote.findUnique({ where: { id: job.quoteId }, select: QUOTE_SELECT })
-    : null;
+  // SCRUM-195 (rebanada 2): el Trabajo puede tener VARIOS presupuestos. `quote` sigue siendo el
+  // ORIGINAL —define el alcance base, el título y la moneda—, pero el DINERO ya no se lee solo
+  // de él: ver `remaining` abajo.
+  const todosLosQuotes = await quotesDeJob(job, refs);
+  const quote = todosLosQuotes[0] ?? null;
   const customer = refs
     ? refs.customers.get(job.customerId) ?? null
     : await prisma.customer.findUnique({ where: { id: job.customerId }, select: CUSTOMER_SELECT });
@@ -123,14 +192,23 @@ async function serializeJob(job: any, refs?: JobRefs) {
   let remaining: { amount: number; currency: string } | null = null;
   let planView: ReturnType<typeof buildBillingPlanView> | null = null; // SCRUM-34
   if (quote) {
-    const plan = resolveBillingPlan(quote); // SCRUM-27: custom o preset (Pendiente/semáforo cuadran con el plan real)
-    const emitted = (quote.Invoice || []).length;
-    if (emitted < plan.length) {
-      const pct = plan.slice(emitted).reduce((a, s) => a + s.percentage, 0);
-      remaining = { amount: Math.round(Number(quote.total) * pct * 100) / 100, currency: quote.currency };
+    // SCRUM-195 (rebanada 2) · `remaining` SUMA TODOS los presupuestos del Trabajo.
+    //
+    // EL FALLO QUE CIERRA: antes salía solo del original, así que un adicional aceptado y no
+    // cobrado NO aparecía en «pendiente». El pro veía menos deuda de la que tiene — dinero
+    // visible que no aparece, y sin ningún error.
+    //
+    // Cada presupuesto tiene su PROPIO plan (decisión 5 del ticket: el plan del extra es
+    // independiente), así que lo correcto es sumar los restos, no recalcular un plan conjunto.
+    const pendiente = restanteDelTrabajo(todosLosQuotes, resolveBillingPlan);
+    if (pendiente > 0) {
+      remaining = { amount: Math.round(pendiente * 100) / 100, currency: quote.currency };
     }
     // SCRUM-34: siguiente tramo + pendientes por el MISMO conteo que collect-rest (plan[emitted]).
-    planView = buildBillingPlanView(quote, emitted);
+    // ⚠️ `planView` sigue siendo el del ORIGINAL a propósito: es la vista del plan BASE, y
+    // enseñar los planes de los adicionales es timeline multi-documento — rebanada 3, con su
+    // microcopy. Lo que NO puede seguir mintiendo hoy es el importe pendiente, y ése ya suma.
+    planView = buildBillingPlanView(quote, (quote.Invoice || []).length);
   }
 
   return {
@@ -220,12 +298,21 @@ async function serializeJobDetail(job: any) {
     };
   });
 
-  // invoices[] y charge SÍ dependen del quote (tramos/cobro): un Job sin quote no tiene → []/null.
-  if (!job.quoteId) return { ...base, customer, invoices: [], charge: null, albaranes };
+  // invoices[] y charge SÍ dependen de los presupuestos (tramos/cobro): un Job sin ninguno no
+  // tiene → []/null.
+  //
+  // SCRUM-195 (rebanada 2) · SE PREGUNTA POR TODOS, no solo por `job.quoteId`. Antes las
+  // facturas de un ADICIONAL no salían en el detalle: el pro no las veía, y no había error.
+  // Y la condición de corte era `!job.quoteId`, que con 1:N es la pregunta equivocada — un
+  // Trabajo manual (SCRUM-51) con un adicional colgado tiene `quoteId` null y SÍ tiene
+  // facturas que enseñar.
+  const quotesDelTrabajo = await quotesDeJob(job);
+  if (quotesDelTrabajo.length === 0) return { ...base, customer, invoices: [], charge: null, albaranes };
 
-  const quote = await prisma.quote.findUnique({
-    where: { id: job.quoteId },
+  const detalles = await prisma.quote.findMany({
+    where: { id: { in: quotesDelTrabajo.map((q) => q.id) }, merchantId: job.merchantId }, // regla 2
     select: {
+      id: true,
       charge: { select: { id: true, status: true, method: true, amount: true, currency: true } },
       Invoice: {
         select: {
@@ -237,10 +324,20 @@ async function serializeJobDetail(job: any) {
     },
   });
 
+  // El ORIGINAL manda para `charge` (es el cobro base y el campo es singular en la API);
+  // enseñar el de cada adicional es timeline multi-documento, o sea rebanada 3.
+  const porIdDetalle = new Map(detalles.map((d) => [d.id, d]));
+  const quote = porIdDetalle.get(quotesDelTrabajo[0].id) ?? null;
+  // Las FACTURAS sí se juntan todas y se ordenan por fecha: son el dinero, y omitir las del
+  // adicional es exactamente lo que este cambio viene a cerrar.
+  const facturasDelTrabajo = quotesDelTrabajo
+    .flatMap((q) => porIdDetalle.get(q.id)?.Invoice ?? [])
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
   // SCRUM-85: payToken (Charge.receiptToken) AÑADIDO para el link público /pay/invoice/:token
   // (IDOR/RGPD — ya no acepta el id numérico). chargeId se CONSERVA: lo sigue usando la
   // acción autenticada /admin/charges/:chargeId/confirm-bizum (no es superficie pública).
-  const invoices = await Promise.all((quote?.Invoice ?? []).map(async (inv) => ({
+  const invoices = await Promise.all(facturasDelTrabajo.map(async (inv) => ({
     id: inv.id,
     number: inv.number,               // número visible de la factura/justificante
     total: Number(inv.total),         // Decimal(12,2) → Number (como serializeJob)
@@ -552,17 +649,44 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     if (job.status !== 'terminado') {
       return res.status(409).json({ error: 'job_not_finished', message: 'Marca el trabajo como terminado para cobrar el resto.' });
     }
-    if (!job.quoteId) return res.status(409).json({ error: 'job_without_quote' });
-
-    const quote = await prisma.quote.findFirst({
-      where: { id: job.quoteId, merchantId: req.merchantId },
+    // ─────────────────────────────────────────────────────────────────────────
+    // SCRUM-195 (rebanada 2) · AQUÍ ESTABA LA TRAMPA, y merece leerse entera.
+    //
+    // Antes: `if (!job.quoteId) return 409 job_without_quote`, y luego el plan del quote
+    // apuntado por `job.quoteId`. Con 1:N **ese guard NO salta**, porque `job.quoteId` sigue
+    // apuntando al original. Así que la ruta cobraba el resto del ORIGINAL e ignoraba el
+    // adicional: **fallaba de menos, callando**.
+    //
+    // Y el caso peor no era ése. Con el original YA cobrado entero y un adicional pendiente,
+    // esta ruta devolvía `nothing_pending`: el pro no podía cobrar lo que le deben, y el
+    // mensaje decía que no quedaba nada. Dinero real, con la puerta cerrada por un guard que
+    // preguntaba por el objeto equivocado.
+    //
+    // Ahora se pregunta por el CONJUNTO. El 409 de «sin presupuesto» solo procede si el
+    // Trabajo no tiene NINGUNO — que es lo que ese error siempre quiso decir.
+    const quotesConPlan = await prisma.quote.findMany({
+      where: {
+        merchantId: req.merchantId, // regla 2
+        OR: [{ jobId: job.id }, ...(job.quoteId != null ? [{ id: job.quoteId }] : [])],
+      },
       include: { Invoice: { select: { id: true } } },
     });
-    if (!quote) return res.status(404).json({ error: 'quote_not_found' });
+    if (quotesConPlan.length === 0) return res.status(409).json({ error: 'job_without_quote' });
 
+    // ORIGINAL primero, adicionales después por id: el orden es determinista a propósito —
+    // «cobrar el resto» tiene que emitir siempre el mismo tramo si se pulsa dos veces.
+    const conPendiente = primeroConTramoPendiente(quotesConPlan, job.quoteId, resolveBillingPlan);
+    const ordenados = [
+      ...quotesConPlan.filter((q) => q.id === job.quoteId),
+      ...quotesConPlan.filter((q) => q.id !== job.quoteId).sort((a, b) => a.id - b.id),
+    ];
+
+    // Sin ninguno pendiente, el motivo se explica con el plan del ORIGINAL, que es el que el
+    // pro reconoce (`no_billing_plan` vs `nothing_pending`, SCRUM-151).
+    const quote = conPendiente ?? ordenados[0];
     const plan = resolveBillingPlan(quote); // SCRUM-27: custom o preset
     const emitted = (quote.Invoice || []).length;
-    if (emitted >= plan.length) {
+    if (!conPendiente) {
       // SCRUM-151: con plan VACÍO (MANUAL/SIN_CONDICIONES) el mensaje de siempre mentía — no es
       // que no QUEDE tramo, es que nunca los hubo. Ahora también cambia el CÓDIGO en ese caso
       // (`no_billing_plan`), porque es otra condición; el de "ya se cobró todo" sigue siendo
