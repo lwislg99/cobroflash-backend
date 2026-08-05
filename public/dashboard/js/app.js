@@ -14,6 +14,13 @@ async function initApp() {
   // SCRUM-289 (A0.3): veredicto YA CALCULADO por el servidor (puedeCrearFacturaSuelta). El
   // navegador no reimplementa el modo de emisión: lo recibe.
   window.appFacturaSueltaDisponible = me.facturaSueltaDisponible === true;
+  // SCRUM-300 (C5): las SEIS ranuras de «en calidad de qué», los rótulos y las ayudas del
+  // albarán llegan SERVIDOS. El navegador NO los escribe: son microcopy que acaba en un documento
+  // que se puede leer en un juzgado (regla 30), y una segunda copia aquí es cómo dos textos
+  // divergen sin que nadie se entere. Mismo criterio que `appFacturaSueltaDisponible`, encima.
+  window.appAlbaranFirmanteOpciones = Array.isArray(me.albaranFirmanteOpciones) ? me.albaranFirmanteOpciones : [];
+  window.appAlbaranRotulos = me.albaranRotulos || {};
+  window.appAlbaranAyudas = me.albaranAyudas || {};
 
   // A10.2 (Parte L): past_due → banner global "Hay un problema con tu pago"
   // + portal de Stripe. La cuenta sigue funcionando (gracia); solo avisa.
@@ -135,7 +142,7 @@ async function initApp() {
   const viewContainer = document.getElementById('view-container');
   const viewTitle     = document.getElementById('view-title');
 
-  if (!window.appState) window.appState = { view: 'home', quoteId: null, invoiceId: null, jobId: null, albaranId: null };
+  if (!window.appState) window.appState = { view: 'home', quoteId: null, invoiceId: null, jobId: null };
 
   // 5. Hamburger menu (móvil)
   const overlay = document.createElement('div');
@@ -155,10 +162,7 @@ async function initApp() {
 
   // 6. Menú activo
   function setActiveMenu(view) {
-    // SCRUM-301 (C1): el detalle del albarán ya tiene sección propia a la que pertenecer. Antes
-    // marcaba «Trabajos» porque los albaranes no existían como sitio; ahora sí.
     const menuView = view === 'quotes-detail' ? 'quotes-list'
-      : view === 'albaran-detail' ? 'albaranes'
       : view === 'invoice-detail' ? 'invoices'
       : view === 'jobs-detail' ? 'jobs' : view;
 
@@ -178,7 +182,6 @@ async function initApp() {
     state.view = view;
     if (options.quoteId   !== undefined) state.quoteId   = options.quoteId;
     if (options.invoiceId !== undefined) state.invoiceId = options.invoiceId;
-    if (options.albaranId !== undefined) state.albaranId = options.albaranId; // SCRUM-302
     if (options.jobId     !== undefined) state.jobId     = options.jobId;
 
     closeSidebar();
@@ -245,19 +248,6 @@ async function initApp() {
       case 'invoices':
         viewTitle.textContent = 'Facturas';
         renderInvoicesView(viewContainer);
-        break;
-      case 'albaranes':
-        // SCRUM-301 (C1): sección propia. Rótulo APROBADO (5-ago-2026), mismo que el del menú: es
-        // el nombre del documento, no copy de acción — el criterio que C2 dejó escrito aquí abajo.
-        viewTitle.textContent = 'Albaranes';
-        if (typeof window.renderAlbaranesView === 'function') window.renderAlbaranesView(viewContainer);
-        break;
-      case 'albaran-detail':
-        // SCRUM-302 (C2): el albarán tiene página propia. El rótulo del título es el nombre del
-        // documento, no microcopy de acción: no lleva marcador.
-        viewTitle.textContent = 'Albarán';
-        if (state.albaranId != null && typeof window.renderAlbaranDetailView === 'function')
-          window.renderAlbaranDetailView(viewContainer, state.albaranId);
         break;
       case 'invoice-detail':
         viewTitle.textContent = 'Factura';

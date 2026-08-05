@@ -198,10 +198,20 @@ async function renderAlbaranDetailView(container, albaranId) {
       if (!window.openSignaturePad) { setStatus('error', 'El componente de firma no está cargado.'); return; }
       window.openSignaturePad({
         title: 'Firma del cliente',
-        onConfirm: async (dataUri) => {
+        // SCRUM-300 (C5): QUIÉN firma y EN CALIDAD DE QUÉ. `sugerencia` es eso —una sugerencia—:
+        // el campo se pinta VACÍO y el chip lo rellena de un toque. Prerrellenarlo pondría en
+        // boca del firmante una declaración que no ha hecho; si firma el encargado y nadie lo
+        // corrige, guardaríamos un nombre falso.
+        //
+        // ⚠️ Las dos ramas de C5 cablearon esto en `jobDetailView.js`, que era donde vivía el
+        // botón cuando se escribieron. SCRUM-302 lo trajo aquí: el rótulo aprobado promete
+        // «aquí mismo». Va donde está el botón hoy, no donde estaba.
+        firmante: { sugerencia: (alb.customer && alb.customer.name) || '' },
+        onConfirm: async (dataUri, declaracion) => {
           try {
             await apiRequest(`/admin/albaranes/${alb.id}/firmar`, {
-              method: 'POST', body: JSON.stringify({ signatureData: dataUri }),
+              method: 'POST',
+              body: JSON.stringify(Object.assign({ signatureData: dataUri }, declaracion || {})),
             });
             recargar();
           } catch (e) { setStatus('error', 'No se pudo firmar: ' + (e?.data?.message || e.message)); }

@@ -157,3 +157,89 @@ el mismo `main`), así que son comparables entre sí.
 
 Midió S2 (esta entrada). **Ejecuta S3**: migración y fusión. Que C5 no lo toquen dos sesiones a la
 vez es parte del arreglo, no un detalle — es lo que causó las dos implementaciones.
+
+---
+
+# SCRUM-300 · C5 — LA FUSIÓN, EJECUTADA
+
+**Fecha:** 5-ago-2026 · **Carril:** S3 · **Gate:** código fundido y medido; migración NO ejecutada
+
+**Medido contra:** `origin/main` = `5843684c98e8f8a1b1cef1c3334fc4a094f84d19` · 2026-08-05T23:08:16+01:00
+
+> Esta sección es la EJECUCIÓN del mapa de arriba. El mapa se conserva entero: es la instrucción
+> de la propia fusión y sigue siendo lo que explica por qué cada fichero quedó como quedó.
+
+## Lo que se hizo
+
+Se funden las dos ramas paralelas según los diez veredictos del mapa. No se elige ninguna.
+
+| Fichero | Cómo quedó |
+| --- | --- |
+| `prisma/schema.prisma` | **A** — 4 columnas, `fechaEntrega` incluida |
+| `docs/sql/deriva-prod.sql` | **A**, coherente con su esquema |
+| `albaran.service.ts` | **fusión a TRES BANDAS sobre `main`** (ver hallazgo ② abajo) + `fechaEntrega` en el canónico de v:2 |
+| `albaranVerificacion.ts` | **receta de v:2 NUEVA** con su vector congelado — no estaba en ninguna rama |
+| `albaranFirmante.ts` | base B, con los seis ids del asesor, las ayudas de A y la microcopy retirada |
+| `albaranPdf.service.ts` · `albaranes.routes.ts` | fundidos; de A entra `fechaEntrega` |
+| `albaranPublic.routes.ts` | fundido a mano; retirada la premarca de la ranura |
+| `signaturePad.js` | base A (chip de un toque, radios), con la microcopy SERVIDA de B |
+| `jobDetailView.js` | zona del editor; la de firma se mudó (ver hallazgo ①) |
+| `albaranFirmaCopy.ts` (A) | **NO se trae**: sería la tercera fuente de verdad |
+
+## 🔴 Tres hallazgos MEDIDOS que corrigen el mapa
+
+### ① `jobDetailView.js`: las zonas NO eran distintas, y la de firma ya no está ahí
+
+El mapa concluyó *«zonas distintas, entran las dos»* comparando **números de línea de bases
+distintas**: A diffea contra `c711b79` y B contra `de6abbd`. Medidos los anclajes en cada base:
+
+| Ancla | en base de A | en base de B | desfase |
+| --- | --- | --- | --- |
+| `updateTotales();` (editor) | 1104 | 936 | 168 |
+| `const body = { lineas: out…` | 1132 | 964 | 168 |
+| `window.openSignaturePad({` | 1444 | 1276 | 168 |
+
+**Desfase constante de 168 líneas: son LAS MISMAS zonas.** Aplicar las dos habría duplicado los
+campos de entrega y el manejador de firma.
+
+Y además: **`openSignaturePad` ya no existe en `jobDetailView.js`.** SCRUM-302 lo mudó a
+`albaranDetailView.js:199` («firmar es de verdad AQUÍ»). Los campos van donde el código está hoy.
+
+### ② Coger el fichero de B entero BORRA lo que `main` añadió después
+
+`albaran.service.ts` de B es anterior a SCRUM-367/303: no tiene `contarLineasDePresupuesto` ni la
+firma de 3 argumentos de `validarLineas`. Un `checkout` de la rama B lo dejaba fuera y rompía
+`jobs.routes.ts`. Se rehízo con `git merge-file` (main / base de B / B), **limpio y sin conflictos**.
+
+### ③ Los seis textos de la microcopy NO EXISTEN
+
+El comentario del asesor remite a los seis rótulos validados *«en el comentario siguiente»*.
+**Medido: SCRUM-300 tiene 5 comentarios y ninguno los contiene.** Ese comentario no se escribió.
+
+Los seis **`id`** sí están fijados y se han aplicado. Las seis **etiquetas** van con
+`[PENDIENTE microcopy oficial]`, que es lo que manda el propio enunciado del ticket mientras no
+haya texto oficial, y el patrón de portabilidad, SCRUM-289 y SCRUM-303. La afirmación falsa de
+«aprobado tal cual» se ha retirado **junto con** los textos.
+
+## Decisiones que el mapa no cerraba, y cómo quedaron
+
+- **`firmadoPorCalidad` guarda el `id`, no la etiqueta** (decisión del asesor). B guardaba el texto
+  resuelto; se revirtió — un cambio de rótulo no puede obligar a reescribir un documento firmado.
+- **Ninguna ranura viene premarcada.** Lo exige el comentario de `firmadoPorCalidad` en el schema
+  de A, que es el que gobierna. B premarcaba la primera.
+- **El nombre del firmante es OPCIONAL** (modelo de B, que es la base del sellador). A lo hacía
+  obligatorio y bloqueaba el botón. ⚠️ **Es decisión de producto y está SIN TOMAR por nadie**: ni
+  el mapa ni el asesor la resuelven. Se deja en el modelo retrocompatible.
+- **El nombre se precarga en la página pública y NO en el pad de obra.** No es incoherencia: en el
+  móvil del cliente quien firma es normalmente él; en obra puede ser cualquiera.
+
+## Estado
+
+- **v:2 verificable**: receta escrita entera y aparte, con tres vectores congelados, y probada
+  EN ROJO por dos caminos (quitar la receta → 7 fallos; reordenar una clave del canónico → 1).
+- **Migración NO ejecutada** y `prisma generate` NO ejecutado (prohibido en esta sesión).
+- 🔴 **Gate para la sesión siguiente:** no migrar antes de tener los seis textos del fundador, o el
+  marcador acabaría impreso en el PDF de un albarán firmado.
+- Pendiente y NO tocado en esta sesión, por acotación explícita del encargo: el **recuento de
+  toques** del flujo de firma y la **caída de `albaranPublic.routes.ts:142`** (`job?.direccion ||
+  job?.titulo`).

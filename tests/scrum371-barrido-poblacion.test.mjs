@@ -225,24 +225,31 @@ test('SCRUM-371 · ③ SUELO: cero examinados es «no se pudo mirar», nunca «t
 
 test('SCRUM-371 · ④ una versión que el verificador no sabe despachar SALE NOMBRADA', async () => {
   const poblacion = POBLACION_BASE();
-  // Un sobre de una versión futura: hoy v:2 (SCRUM-300) todavía no está en el árbol, así que este
-  // es el caso que de verdad va a ocurrir cuando C5 entre y el verificador aún no tenga su receta.
+  // Un sobre de una versión que el verificador NO conoce.
+  //
+  // ⚠️ Aquí ponía `v: 2` con el comentario «hoy v:2 (SCRUM-300) todavía no está en el árbol».
+  // Ya lo está: C5 entró con su receta y su vector congelado, así que v:2 pasó a ser una versión
+  // SOPORTADA y este caso dejó de probar lo que decía probar — el guard seguía verde por el
+  // motivo contrario al que se escribió. Se sube a `v: 9`, que sigue sin receta.
+  //
+  // Que hubiera que tocar esta línea al traer v:2 es exactamente el aviso que el propio SCRUM-369
+  // dejó escrito: una versión nueva obliga a revisar quién la usaba como «la desconocida».
   poblacion.push({
     ...albaranFirmado(4, 9, 900, 'ALB-2026-A02'),
-    evidenciaFirma: { v: 2, hashAlg: 'sha256', contentHash: 'a'.repeat(64) },
+    evidenciaFirma: { v: 9, hashAlg: 'sha256', contentHash: 'a'.repeat(64) },
   });
 
   const informe = await barrerSellosAlbaran(lectorDe(poblacion));
-  assert.deepEqual(informe.versionesNoSoportadas, [2],
+  assert.deepEqual(informe.versionesNoSoportadas, [9],
     '🔴 el barrido no declara la versión que no sabe comprobar. Asumir la última sería declarar ' +
     'manipulados los albaranes de esa población entera.');
   assert.equal(informe.conclusion, 'hay_hallazgos',
     '🔴 una versión sin receta se está tragando en verde: el informe diría «todo cuadra» sobre ' +
     'una población que NO se ha podido comprobar del todo.');
-  assert.deepEqual(informe.censoPorVersion, { 1: 3, 2: 1 },
+  assert.deepEqual(informe.censoPorVersion, { 1: 3, 9: 1 },
     '🔴 el censo no cuenta los sobres de la versión desconocida: sin censo, la retrocompatibilidad ' +
     'es una suposición');
-  assert.match(resumenDelBarrido(informe), /versiones SIN receta: v:2/);
+  assert.match(resumenDelBarrido(informe), /versiones SIN receta: v:9/);
 });
 
 test('SCRUM-371 · tenencia (regla 2): el Trabajo de OTRO merchant no se usa, y el albarán se declara', async () => {
@@ -313,18 +320,45 @@ function resolucionesDelSellador(fuente) {
   const sf = ts.createSourceFile('x.ts', fuente, ts.ScriptTarget.Latest, true);
   const consts = new Map();
   let objeto = null;
+
+  // ⚠️ SCRUM-300: esto cogía la PRIMERA llamada a `computeAlbaranContentHash` del fichero, dando
+  // por hecho que solo había una. C5 añadió una segunda —`recomputarHashDeEvidencia`, que
+  // RECALCULA para verificar— y encima queda ANTES en el fichero, así que el guard pasó a leer
+  // la llamada equivocada: la que recibe `cliente` ya resuelto por su llamador, no la que lo saca
+  // del `customer`. Se cazó solo, porque su propio suelo exige ver `customer` ahí dentro.
+  //
+  // Ahora el objetivo se NOMBRA en vez de deducirse del orden: el sellado de verdad es el de
+  // `buildFirmaEvidencia`, que es el único que escribe un sobre nuevo. Un guard que depende de
+  // quién aparece primero caduca en cuanto alguien añade una función encima.
+  const SELLA_DE_VERDAD = 'buildFirmaEvidencia';
+  const dentroDelSellador = (n) => {
+    for (let p = n.parent; p; p = p.parent) {
+      if ((ts.isFunctionDeclaration(p) || ts.isMethodDeclaration(p)) && p.name?.text === SELLA_DE_VERDAD) return true;
+    }
+    return false;
+  };
+
   const visita = (n) => {
     if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) {
       consts.set(n.name.text, n.initializer.getText(sf).replace(/\s+/g, ' '));
     }
     if (!objeto && ts.isCallExpression(n) && ts.isIdentifier(n.expression) &&
-        n.expression.text === 'computeAlbaranContentHash' && ts.isObjectLiteralExpression(n.arguments[0])) {
+        n.expression.text === 'computeAlbaranContentHash' && ts.isObjectLiteralExpression(n.arguments[0]) &&
+        dentroDelSellador(n)) {
       objeto = n.arguments[0];
     }
     ts.forEachChild(n, visita);
   };
   visita(sf);
-  return objeto ? propiedadesDe(objeto, sf, consts) : new Map();
+
+  // SUELO: si el analizador no encuentra la llamada dentro de `buildFirmaEvidencia`, «no hay
+  // diferencias» y «no supe mirar» darían el mismo verde. Se dice.
+  assert.ok(objeto,
+    `🔴 no se ha encontrado la llamada a computeAlbaranContentHash dentro de \`${SELLA_DE_VERDAD}\`. ` +
+    'O se renombró la función, o el sellado se movió: en los dos casos este guard ha dejado de mirar ' +
+    'donde debía, y habría pasado en verde sin comparar nada.');
+
+  return propiedadesDe(objeto, sf, consts);
 }
 
 /** El objeto `contenido` que devuelve `entradaDesdeFilas`. */

@@ -1313,6 +1313,59 @@ async function renderJobDetailView(container, jobId) {
     }
     updateTotales();
 
+    // ── SCRUM-300 (C5): LUGAR y FECHA de entrega ───────────────────────────────────────
+    // Contenido mínimo obligatorio del albarán. Se editan AQUÍ —preparando el documento— y no en
+    // el momento de firmar: teclear una dirección con el cliente delante y las manos sucias es
+    // justo la fricción en obra que el ticket manda evitar.
+    //
+    // ⚠️ Los rótulos y las ayudas NO se escriben aquí: llegan servidos por `/admin/me` desde
+    // `albaranFirmante.ts` (regla 30). Sin ellos el bloque no se pinta.
+    const rotAlb = window.appAlbaranRotulos || {};
+    const ayuAlb = window.appAlbaranAyudas || {};
+    let lugarEl = null, fEntregaEl = null;
+    if (rotAlb.lugarEntrega && rotAlb.fechaEntrega) {
+      const campoAlb = (labelText, ayudaText, el) => {
+        const w = document.createElement('div');
+        w.style.cssText = 'margin-top:8px';
+        const l = document.createElement('label');
+        l.style.cssText = 'display:block;font-size:12px;font-weight:600;color:var(--ink);margin-bottom:3px';
+        l.textContent = labelText;
+        w.appendChild(l);
+        if (ayudaText) {
+          const p = document.createElement('p');
+          p.style.cssText = 'margin:0 0 6px;font-size:12px;color:var(--muted);line-height:1.45';
+          p.textContent = ayudaText;
+          w.appendChild(p);
+        }
+        w.appendChild(el);
+        box.appendChild(w);
+        return w;
+      };
+
+      lugarEl = document.createElement('input');
+      lugarEl.type = 'text';
+      lugarEl.className = 'input';
+      lugarEl.style.cssText = 'width:100%;min-height:44px';
+      lugarEl.maxLength = 300;
+      lugarEl.value = alb.lugarEntrega || '';
+      // ⚠️ SUELO del ticket: si no hay dirección de obra se deja VACÍO. `Job.direccion` entra solo
+      // como PLACEHOLDER —sugiere, no rellena—: una dirección equivocada en un documento de
+      // entrega es peor que ninguna. Hoy es null para cualquier merchant real (SCRUM-374), así
+      // que lo normal es que no haya nada que sugerir y lo escriba el profesional.
+      if (job.direccion && !lugarEl.value) lugarEl.placeholder = job.direccion;
+      campoAlb(rotAlb.lugarEntrega, ayuAlb.lugarEntrega, lugarEl);
+
+      // ⚠️ Columna PROPIA (`Albaran.fechaEntrega`), NO `Albaran.fecha`: un albarán se prepara un
+      // día y se entrega otro, y `fecha` además es la clave del mes natural de la recapitulativa
+      // (art. 13). Escribir una sobre la otra movería la factura de mes sin que nadie lo pidiera.
+      fEntregaEl = document.createElement('input');
+      fEntregaEl.type = 'date';
+      fEntregaEl.className = 'input';
+      fEntregaEl.style.cssText = 'width:100%;min-height:44px';
+      fEntregaEl.value = alb.fechaEntrega ? String(alb.fechaEntrega).slice(0, 10) : '';
+      campoAlb(rotAlb.fechaEntrega, ayuAlb.fechaEntrega, fEntregaEl);
+    }
+
     const notas = document.createElement('textarea');
     notas.className = 'input';
     notas.placeholder = 'Notas del albarán (opcional)';
@@ -1345,6 +1398,11 @@ async function renderJobDetailView(container, jobId) {
         out.push(linea);
       }
       const body = { lineas: out, notas: notas.value };
+      // SCRUM-300: se mandan SIEMPRE que el bloque exista, también vacíos — vaciar el lugar de
+      // entrega es una decisión legítima del pro y el backend la respeta ('' → null). No tocan
+      // `fecha`, que sigue siendo la del documento.
+      if (lugarEl) body.lugarEntrega = lugarEl.value;
+      if (fEntregaEl) body.fechaEntrega = fEntregaEl.value;
       // Solo se manda modoValoracion cuando es EDITABLE (borrador); en 'emitido' el
       // backend lo rechaza con 409 aunque el valor no cambie — mejor ni ofrecerlo.
       if (modoEditable) body.modoValoracion = modo;
