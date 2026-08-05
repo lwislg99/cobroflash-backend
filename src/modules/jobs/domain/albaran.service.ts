@@ -237,15 +237,23 @@ export interface FirmaEvidencia {
   firmante: string;           // nombre declarado del firmante (= cliente del albarán)
   hashAlg: 'sha256';
   contentHash: string;        // SHA-256 del CONTENIDO canónico (NO del PDF, §1.3 del brief)
+  // SCRUM-300 (v:2): quién firmó y en calidad de qué. AUSENTES en las evidencias v:1, que
+  // siguen siendo válidas tal cual — por eso son opcionales y NUNCA se rellenan a posteriori.
+  firmadoPorNombre?: string | null;
+  firmadoPorCalidad?: string | null;
 }
 
 /**
- * SHA-256 del CONTENIDO canónico del albarán — NO del binario del PDF (§1.3): lo que se
- * firma es el contenido (número, fecha, líneas, partes, notas), no una representación.
- * Serialización determinista (claves fijas, `null` explícito) → el mismo contenido produce
- * SIEMPRE el mismo hash y cualquier alteración posterior lo cambia (prueba de integridad).
+ * SCRUM-300: versión del CONTENIDO canónico que se sella HOY. Subió de 1 a 2 porque el campo
+ * `obra` CAMBIÓ DE FUENTE — no porque se añadan campos. Hasta ahora `obra` salía de
+ * `Job.direccion`, que nadie escribe (su único escritor en el árbol es un script de demo), así
+ * que el sello llevaba meses guardando el lugar de obra VACÍO. Pasarlo a `Albaran.lugarEntrega`
+ * cambia lo que significa un campo ya sellado, y eso exige versión nueva: sin ella, dos hashes
+ * calculados con reglas distintas serían indistinguibles.
  */
-export function computeAlbaranContentHash(params: {
+export const ALBARAN_CONTENIDO_VERSION_ACTUAL = 2;
+
+export interface AlbaranContenidoParams {
   numero: string;
   fecha: Date | string;
   modoValoracion: string;
@@ -256,27 +264,148 @@ export function computeAlbaranContentHash(params: {
   cliente: string | null;
   emisor: string | null;
   emisorNif: string | null;
+  // Solo v:2. En v:1 se ignoran (el objeto canónico de v:1 no los tiene, y no puede tenerlos).
+  firmadoPorNombre?: string | null;
+  firmadoPorCalidad?: string | null;
+}
+
+/** Las líneas, en su forma canónica. Idéntica en v:1 y v:2 — no ha cambiado. */
+function lineasCanonicas(lineas: AlbaranLinea[]) {
+  return (Array.isArray(lineas) ? lineas : []).map((l) => ({
+    concepto: l.concepto,
+    cantidad: l.cantidad,
+    unidad: l.unidad ?? null,
+    precioUnitario: l.precioUnitario ?? null,
+    tipoIva: l.tipoIva ?? null,
+  }));
+}
+
+/**
+ * El objeto canónico de cada versión, CADA UNO ESCRITO ENTERO Y APARTE.
+ *
+ * ⚠️ Se repiten claves entre las dos ramas a propósito, y no se refactoriza a un objeto base con
+ * spread: `JSON.stringify` depende del ORDEN de inserción de las claves, así que un helper
+ * compartido convertiría cualquier retoque futuro del v:2 en un cambio silencioso del hash de
+ * v:1 — y el hash de v:1 tiene que poder recalcularse IGUAL dentro de diez años para verificar
+ * un documento firmado hoy. Duplicar diez líneas es el precio de que eso sea imposible.
+ */
+function contenidoCanonico(params: AlbaranContenidoParams, version: number): unknown {
+  const fecha = params.fecha instanceof Date ? params.fecha.toISOString() : String(params.fecha);
+
+  if (version === 1) {
+    return {
+      v: 1,
+      numero: params.numero,
+      fecha,
+      modoValoracion: params.modoValoracion,
+      obra: params.obra ?? null,
+      referenciaTrabajo: params.referenciaTrabajo ?? null,
+      cliente: params.cliente ?? null,
+      emisor: params.emisor ?? null,
+      emisorNif: params.emisorNif ?? null,
+      notas: params.notas ?? null,
+      lineas: lineasCanonicas(params.lineas),
+    };
+  }
+
+  if (version === 2) {
+    return {
+      v: 2,
+      numero: params.numero,
+      fecha,
+      modoValoracion: params.modoValoracion,
+      obra: params.obra ?? null,
+      referenciaTrabajo: params.referenciaTrabajo ?? null,
+      cliente: params.cliente ?? null,
+      emisor: params.emisor ?? null,
+      emisorNif: params.emisorNif ?? null,
+      notas: params.notas ?? null,
+      lineas: lineasCanonicas(params.lineas),
+      firmadoPorNombre: params.firmadoPorNombre ?? null,
+      firmadoPorCalidad: params.firmadoPorCalidad ?? null,
+    };
+  }
+
+  // Una versión que no conocemos NO se aproxima con la más parecida: se dice. Un verificador
+  // que «hace lo que puede» con una versión futura devolvería «no coincide» sobre un documento
+  // intacto, y eso se lee como una falsificación que no ha ocurrido.
+  throw new Error(`albaran_contenido_version_desconocida:${version}`);
+}
+
+/**
+ * SHA-256 del CONTENIDO canónico del albarán — NO del binario del PDF (§1.3): lo que se
+ * firma es el contenido (número, fecha, líneas, partes, notas), no una representación.
+ * Serialización determinista (claves fijas, `null` explícito) → el mismo contenido produce
+ * SIEMPRE el mismo hash y cualquier alteración posterior lo cambia (prueba de integridad).
+ *
+ * `version` por defecto = la ACTUAL, que es lo correcto al SELLAR. Para VERIFICAR una evidencia
+ * ya guardada NO se usa el defecto: se pasa la versión leída del dato (ver `recomputarHashDeEvidencia`).
+ */
+export function computeAlbaranContentHash(
+  params: AlbaranContenidoParams,
+  version: number = ALBARAN_CONTENIDO_VERSION_ACTUAL,
+): string {
+  return crypto.createHash('sha256').update(JSON.stringify(contenidoCanonico(params, version)), 'utf8').digest('hex');
+}
+
+/**
+ * SCRUM-300: de dónde sale el campo `obra` SEGÚN LA VERSIÓN del sello.
+ *
+ * v:1 lo tomaba de `Job.direccion`; v:2 lo toma de `Albaran.lugarEntrega`. Verificar —o imprimir—
+ * un documento v:1 con la regla de v:2 daría «no coincide» sobre un albarán intacto. La versión
+ * se LEE del dato; nunca se supone.
+ *
+ * `version` null/undefined = albarán SIN FIRMAR todavía → manda el campo de hoy.
+ */
+export function obraSegunVersion(
+  version: number | null | undefined,
+  fuentes: { lugarEntrega: string | null; jobDireccion: string | null },
+): string | null {
+  if (version === 1) return fuentes.jobDireccion || null;
+  return fuentes.lugarEntrega || null;
+}
+
+/**
+ * Recalcula el hash de una evidencia YA GUARDADA para VERIFICARLA. No la reescribe: recalcular y
+ * volver a guardar el sello de un documento firmado es falsificarlo aunque el resultado coincida
+ * (regla 29). Esto solo compara.
+ *
+ * La versión sale de `evidencia.v` — un lector que diera por hecho v:2 rompería en silencio todos
+ * los v:1, que es exactamente el fallo que este parámetro existe para evitar.
+ */
+export function recomputarHashDeEvidencia(params: {
+  evidencia: Pick<FirmaEvidencia, 'v'> & Partial<FirmaEvidencia>;
+  albaran: { numero: string; fecha: Date | string; modoValoracion: string; lineas: unknown; notas: string | null; lugarEntrega: string | null };
+  jobDireccion: string | null;
+  referenciaTrabajo: string | null;
+  cliente: string | null;
+  emisor: string | null;
+  emisorNif: string | null;
 }): string {
-  const canonical = {
-    v: 1,
-    numero: params.numero,
-    fecha: params.fecha instanceof Date ? params.fecha.toISOString() : String(params.fecha),
-    modoValoracion: params.modoValoracion,
-    obra: params.obra ?? null,
-    referenciaTrabajo: params.referenciaTrabajo ?? null,
-    cliente: params.cliente ?? null,
-    emisor: params.emisor ?? null,
-    emisorNif: params.emisorNif ?? null,
-    notas: params.notas ?? null,
-    lineas: (Array.isArray(params.lineas) ? params.lineas : []).map((l) => ({
-      concepto: l.concepto,
-      cantidad: l.cantidad,
-      unidad: l.unidad ?? null,
-      precioUnitario: l.precioUnitario ?? null,
-      tipoIva: l.tipoIva ?? null,
-    })),
-  };
-  return crypto.createHash('sha256').update(JSON.stringify(canonical), 'utf8').digest('hex');
+  const { evidencia: ev, albaran: a } = params;
+  return computeAlbaranContentHash(
+    {
+      numero: a.numero,
+      fecha: a.fecha,
+      modoValoracion: a.modoValoracion,
+      lineas: (Array.isArray(a.lineas) ? a.lineas : []) as unknown as AlbaranLinea[],
+      notas: a.notas ?? null,
+      obra: obraSegunVersion(ev.v, { lugarEntrega: a.lugarEntrega, jobDireccion: params.jobDireccion }),
+      referenciaTrabajo: params.referenciaTrabajo,
+      cliente: params.cliente,
+      emisor: params.emisor,
+      emisorNif: params.emisorNif,
+      // En v:1 estos campos no entran en el objeto canónico, así que da igual lo que valgan.
+      firmadoPorNombre: ev.firmadoPorNombre ?? null,
+      firmadoPorCalidad: ev.firmadoPorCalidad ?? null,
+    },
+    ev.v,
+  );
+}
+
+/** ¿La evidencia guardada sigue cuadrando con el contenido actual del albarán? Solo LEE. */
+export function verificarEvidenciaAlbaran(params: Parameters<typeof recomputarHashDeEvidencia>[0]): boolean {
+  return recomputarHashDeEvidencia(params) === params.evidencia.contentHash;
 }
 
 /**
@@ -285,12 +414,16 @@ export function computeAlbaranContentHash(params: {
  * en Albaran.evidenciaFirma (aditivo, Json). El llamador aporta ip/ua/tokenId del request.
  */
 export async function buildFirmaEvidencia(params: {
-  albaran: { id: number; numero: string; fecha: Date; modoValoracion: string; lineas: unknown; notas: string | null; jobId: number; merchantId: number };
+  albaran: { id: number; numero: string; fecha: Date; modoValoracion: string; lineas: unknown; notas: string | null; jobId: number; merchantId: number; lugarEntrega: string | null };
   canal: 'remoto' | 'in_situ';
   ip: string | null;
   ua: string | null;
   tokenId: string | null;
   firmadoAt: Date;
+  // SCRUM-300: llegan CON la petición de firma, así que entran en el contenido ANTES de sellarlo.
+  // Ese orden es la razón de que añadirlos no rompa el sello: no se pegan después.
+  firmadoPorNombre?: string | null;
+  firmadoPorCalidad?: string | null;
 }): Promise<FirmaEvidencia> {
   const a = params.albaran;
   const job = await prisma.job.findUnique({
@@ -304,28 +437,45 @@ export async function buildFirmaEvidencia(params: {
     prisma.merchant.findUnique({ where: { id: a.merchantId }, select: { name: true, legalName: true, taxId: true } }),
   ]);
   const cliente = customer?.legalName || customer?.name || null;
-  const contentHash = computeAlbaranContentHash({
-    numero: a.numero,
-    fecha: a.fecha,
-    modoValoracion: a.modoValoracion,
-    lineas: (Array.isArray(a.lineas) ? a.lineas : []) as unknown as AlbaranLinea[],
-    notas: a.notas ?? null,
-    obra: job?.direccion || null,
-    referenciaTrabajo: job?.titulo || null,
-    cliente,
-    emisor: merchant?.legalName || merchant?.name || null,
-    emisorNif: merchant?.taxId || null,
-  });
+  const firmadoPorNombre = params.firmadoPorNombre ?? null;
+  const firmadoPorCalidad = params.firmadoPorCalidad ?? null;
+  const contentHash = computeAlbaranContentHash(
+    {
+      numero: a.numero,
+      fecha: a.fecha,
+      modoValoracion: a.modoValoracion,
+      lineas: (Array.isArray(a.lineas) ? a.lineas : []) as unknown as AlbaranLinea[],
+      notas: a.notas ?? null,
+      // SCRUM-300: la obra ya NO sale de `Job.direccion` (que nadie escribe) sino del campo del
+      // albarán. Es un cambio de FUENTE de un campo ya sellado → por eso la versión sube a 2.
+      obra: obraSegunVersion(ALBARAN_CONTENIDO_VERSION_ACTUAL, {
+        lugarEntrega: a.lugarEntrega ?? null,
+        jobDireccion: job?.direccion || null,
+      }),
+      referenciaTrabajo: job?.titulo || null,
+      cliente,
+      emisor: merchant?.legalName || merchant?.name || null,
+      emisorNif: merchant?.taxId || null,
+      firmadoPorNombre,
+      firmadoPorCalidad,
+    },
+    ALBARAN_CONTENIDO_VERSION_ACTUAL,
+  );
   return {
-    v: 1,
+    v: ALBARAN_CONTENIDO_VERSION_ACTUAL,
     canal: params.canal,
     firmadoAt: params.firmadoAt.toISOString(),
     ip: params.ip || null,
     ua: params.ua ? String(params.ua).slice(0, 500) : null,
     tokenId: params.tokenId || null,
-    firmante: cliente || 'Cliente',
+    // `firmante` era «el cliente del albarán» por definición. Ahora, si consta QUIÉN firmó de
+    // verdad, es ese nombre el que vale: era justo el hueco que abre SCRUM-300 (un trazo sin
+    // nombre). Se conserva el cliente como respaldo para no dejar la evidencia sin firmante.
+    firmante: firmadoPorNombre || cliente || 'Cliente',
     hashAlg: 'sha256',
     contentHash,
+    firmadoPorNombre,
+    firmadoPorCalidad,
   };
 }
 
@@ -347,6 +497,11 @@ export function serializeAlbaran(a: any) {
     version: a.version,
     firmadoAt: a.firmadoAt,
     notas: a.notas,
+    // SCRUM-300 (C5). ⚠️ `evidenciaFirma` sigue SIN salir de aquí: lleva ip/ua (dato personal).
+    // Estos tres son contenido del documento, no evidencia técnica.
+    lugarEntrega: a.lugarEntrega ?? null,
+    firmadoPorNombre: a.firmadoPorNombre ?? null,
+    firmadoPorCalidad: a.firmadoPorCalidad ?? null,
     pdfUrl: a.pdfUrl,
     // SCRUM-17: badge "Facturado" DERIVADO (invoiceId != null) — nunca flag manual (regla 27).
     facturado: a.invoiceId != null,
@@ -399,13 +554,25 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
     customer: customer
       ? { name: customer.name, legalName: customer.legalName, taxId: customer.taxId }
       : { name: null, legalName: null, taxId: null },
-    obra: job?.direccion || null,
+    // SCRUM-300: el PDF imprime la obra QUE SE SELLÓ, y eso depende de la versión de la
+    // evidencia. Un albarán v:1 se selló con `Job.direccion`; uno v:2, con `Albaran.lugarEntrega`.
+    // Imprimir la fuente de hoy en un documento firmado ayer haría que el papel dijera una cosa
+    // y su hash certificara otra. Sin firmar (v = undefined) manda el campo de hoy.
+    obra: obraSegunVersion((albaran.evidenciaFirma as any)?.v, {
+      lugarEntrega: albaran.lugarEntrega ?? null,
+      jobDireccion: job?.direccion || null,
+    }),
     referenciaTrabajo: job?.titulo || null, // SCRUM-67: referencia al Trabajo/presupuesto origen
     lineas,
     totales: modoValoracion === 'VALORADO' ? calcAlbaranTotales(lineas) : null,
     notas: albaran.notas,
     signatureData: albaran.signatureUrl,
     firmadoAt: albaran.firmadoAt,
+    // SCRUM-300 (C5): QUIÉN firmó y EN CALIDAD DE QUÉ, junto al trazo. Salen de las columnas del
+    // albarán (el documento), no de la evidencia (la prueba técnica). En los ya firmados son
+    // null y el bloque de firma sale exactamente como salía.
+    firmadoPorNombre: albaran.firmadoPorNombre ?? null,
+    firmadoPorCalidad: albaran.firmadoPorCalidad ?? null,
     // SCRUM-68: certificado de evidencias (solo hash/firmante/canal — NUNCA ip/ua).
     evidencia: (albaran.evidenciaFirma as unknown as FirmaEvidencia | null) ?? null,
   });

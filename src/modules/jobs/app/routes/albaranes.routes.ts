@@ -22,6 +22,8 @@ import {
   validarLineas,
   type AlbaranModoValoracion,
 } from '../../domain/albaran.service';
+// SCRUM-300 (C5): microcopy y normalización del firmante, en su fuente única.
+import { normalizarLugarEntrega, normalizarNombreFirmante, resolverCalidadFirmante } from '../../domain/albaranFirmante';
 import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
 import {
   agruparPorMes,
@@ -371,6 +373,14 @@ router.patch('/:id', async (req, res) => {
       data.fecha = d;
       cambios.push('fecha');
     }
+    // SCRUM-300 (C5): LUGAR DE ENTREGA. Se edita aquí —preparando el documento— y NO en el
+    // momento de firmar: teclear una dirección con el cliente delante y las manos sucias es
+    // justo la fricción en obra que el ticket manda evitar. ⚠️ Vacío se guarda como NULL,
+    // nunca se sustituye por el domicilio fiscal (suelo del ticket).
+    if (req.body?.lugarEntrega !== undefined) {
+      data.lugarEntrega = normalizarLugarEntrega(req.body.lugarEntrega);
+      cambios.push('lugarEntrega');
+    }
     if (cambios.length === 0) return res.status(400).json({ error: 'nothing_to_update' });
 
     const updated = await prisma.albaran.update({
@@ -433,6 +443,16 @@ router.post('/:id/firmar', async (req, res) => {
       return res.status(413).json({ error: 'firma_demasiado_grande', message: 'La firma supera el tamaño máximo permitido.' });
     }
 
+    // SCRUM-300 (C5): quién firma y en calidad de qué llegan CON la firma. Se resuelven ANTES de
+    // sellar —por eso no rompen el hash— y un valor inválido corta la firma en vez de guardarse
+    // a medias: el documento no puede quedar diciendo algo que nadie eligió.
+    const calidad = resolverCalidadFirmante({
+      ranura: req.body?.firmadoPorCalidad,
+      textoLibre: req.body?.firmadoPorCalidadOtro,
+    });
+    if (!calidad.ok) return res.status(400).json({ error: calidad.error, message: calidad.message });
+    const firmadoPorNombre = normalizarNombreFirmante(req.body?.firmadoPorNombre);
+
     const firmadoAt = new Date();
     // SCRUM-68: sella evidencias (canal in situ, sin token). ip/ua se guardan pero NUNCA
     // se exponen (serializeAlbaran no los saca; el PDF solo pinta hash/firmante/canal).
@@ -443,10 +463,15 @@ router.post('/:id/firmar', async (req, res) => {
       ua: (req.headers['user-agent'] as string) || null,
       tokenId: null,
       firmadoAt,
+      firmadoPorNombre,
+      firmadoPorCalidad: calidad.texto,
     });
     const updated = await prisma.albaran.update({
       where: { id: albaran.id },
-      data: { estado: 'firmado', signatureUrl: signatureData, firmadoAt, evidenciaFirma: evidencia as any },
+      data: {
+        estado: 'firmado', signatureUrl: signatureData, firmadoAt, evidenciaFirma: evidencia as any,
+        firmadoPorNombre, firmadoPorCalidad: calidad.texto,
+      },
     });
     // Regenerar el PDF YA con el bloque de firma (force). Si el PDF falla, la firma
     // queda registrada igualmente (el GET /pdf lo regenerará bajo demanda).

@@ -6,6 +6,8 @@ import { outboxDir } from './core/storage/dirs'; // SCRUM-72: invoicesDir ya no 
 import { jsonError } from './core/http/jsonError';
 import { notFoundPageHtml } from './core/http/publicNotFound';
 import { isFlagEnabled } from './core/flags';
+// SCRUM-300 (C5): microcopy del albarán servida al dashboard vanilla desde su fuente única.
+import { ALBARAN_ROTULOS, firmanteCalidadOpciones } from './modules/jobs/domain/albaranFirmante';
 import { puedeCrearFacturaSuelta } from './modules/invoicing/domain/facturaSuelta'; // SCRUM-289 (A0.3)
 import { requireAuth, requireActivePlan, requireRole } from './core/http/authMiddleware';
 import { mountAdmin } from './core/http/adminMounts'; // SCRUM-55: red fail-closed de /admin
@@ -333,6 +335,12 @@ app.get('/admin/me', async (req, res) => {
       country: merchantFull?.country ?? null,
       flags: merchantFull?.flags,
     }),
+    // SCRUM-300 (C5): las cinco ranuras de «en calidad de qué» y los rótulos del albarán se
+    // SIRVEN, no se copian. El dashboard es vanilla y no puede importar el módulo de dominio, y
+    // una segunda copia de una microcopy que acaba en un juzgado es exactamente cómo divergen
+    // dos textos en silencio. Mismo criterio, escrito, que SCRUM-289: el navegador la recibe.
+    albaranFirmanteOpciones: firmanteCalidadOpciones(),
+    albaranRotulos: ALBARAN_ROTULOS,
     // A10.2 (Parte L): estado de la suscripción para el banner past_due
     subscriptionStatus: owner ? 'active' : ((session.merchant as any).subscriptionStatus ?? null),
   });

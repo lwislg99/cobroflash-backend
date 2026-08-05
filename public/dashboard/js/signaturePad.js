@@ -25,6 +25,70 @@
       `<h3 style="margin:0 0 4px;font-size:1.05rem;font-weight:700;color:var(--ink)">${title}</h3>` +
       `<p style="margin:0 0 12px;font-size:13px;color:var(--muted)">${hint}</p>`;
 
+    // ── SCRUM-300 (C5): QUIÉN firma y EN CALIDAD DE QUÉ ────────────────────────────────
+    // Van ARRIBA y PRECARGADOS con el caso mayoritario (el propio cliente), no porque quede
+    // bonito sino porque es lo que mantiene el flujo en 2 toques + 1 trazo: quien no tenga nada
+    // que cambiar no los toca. El pro está en obra, de pie, con las manos sucias y el cliente
+    // esperando — si firmar pasara de tres toques a ocho, estaría mal aunque funcionase.
+    //
+    // ⚠️ Los textos NO se escriben aquí: llegan servidos en `window.appAlbaranFirmanteOpciones`
+    // y `window.appAlbaranRotulos` desde su fuente única en el backend (regla 30). Sin ellos el
+    // bloque NO se pinta: es preferible firmar como se firmaba a inventarse una microcopy.
+    const firmante = (opts && opts.firmante) || null;
+    const opciones = (window.appAlbaranFirmanteOpciones || []);
+    const rotulos = (window.appAlbaranRotulos || {});
+    let nombreInput = null, calidadSel = null, otroInput = null;
+
+    if (firmante && opciones.length && rotulos.firmadoPorNombre && rotulos.firmadoPorCalidad) {
+      const campo = (labelText) => {
+        const w = document.createElement('div');
+        w.style.cssText = 'margin-bottom:10px';
+        const l = document.createElement('label');
+        l.style.cssText = 'display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px';
+        l.textContent = labelText;
+        w.appendChild(l);
+        card.appendChild(w);
+        return w;
+      };
+      const estilo = 'width:100%;padding:10px 12px;font-size:15px;font-family:inherit;color:var(--ink);' +
+        'background:var(--surface,#fff);border:1px solid var(--border);border-radius:10px;min-height:44px';
+
+      const wNombre = campo(rotulos.firmadoPorNombre);
+      nombreInput = document.createElement('input');
+      nombreInput.type = 'text';
+      nombreInput.style.cssText = estilo;
+      nombreInput.maxLength = 160;
+      // Precargado con el del cliente: el caso mayoritario es que firme él.
+      nombreInput.value = firmante.nombre || '';
+      wNombre.appendChild(nombreInput);
+
+      const wCalidad = campo(rotulos.firmadoPorCalidad);
+      calidadSel = document.createElement('select');
+      calidadSel.style.cssText = estilo;
+      opciones.forEach((o) => {
+        const op = document.createElement('option');
+        op.value = o.ranura;
+        op.textContent = o.texto;
+        calidadSel.appendChild(op);
+      });
+      wCalidad.appendChild(calidadSel);
+
+      const wOtro = campo('');
+      wOtro.style.display = 'none';
+      otroInput = document.createElement('input');
+      otroInput.type = 'text';
+      otroInput.style.cssText = estilo;
+      otroInput.maxLength = 120;
+      const ranuraLibre = opciones.find((o) => o.libre);
+      otroInput.placeholder = ranuraLibre ? ranuraLibre.texto : '';
+      wOtro.appendChild(otroInput);
+      calidadSel.addEventListener('change', () => {
+        const libre = (opciones.find((o) => o.ranura === calidadSel.value) || {}).libre === true;
+        wOtro.style.display = libre ? '' : 'none';
+        if (libre) otroInput.focus();
+      });
+    }
+
     // Canvas nítido en pantallas retina (escala por devicePixelRatio)
     const cssW = Math.min(470, Math.max(240, window.innerWidth - 80));
     const cssH = 190;
@@ -113,8 +177,17 @@
     okBtn.addEventListener('click', () => {
       if (!hasInk) return;
       const dataUri = canvas.toDataURL('image/png');
+      // SCRUM-300: los datos del firmante viajan en un SEGUNDO argumento, así que un llamador
+      // que solo espere `onConfirm(dataUri)` sigue funcionando igual.
+      const extras = calidadSel
+        ? {
+            firmadoPorNombre: nombreInput ? nombreInput.value : '',
+            firmadoPorCalidad: calidadSel.value,
+            firmadoPorCalidadOtro: otroInput ? otroInput.value : '',
+          }
+        : {};
       close();
-      onConfirm(dataUri);
+      onConfirm(dataUri, extras);
     });
 
     document.body.appendChild(overlay);

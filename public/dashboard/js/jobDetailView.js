@@ -935,6 +935,50 @@ async function renderJobDetailView(container, jobId) {
     }
     updateTotales();
 
+    // ── SCRUM-300 (C5): fecha y LUGAR de entrega ───────────────────────────────────────
+    // Contenido mínimo obligatorio del albarán, y se editan AQUÍ —preparando el documento— y no
+    // en el momento de firmar: teclear una dirección con el cliente delante es justo la fricción
+    // en obra que el ticket manda evitar.
+    //
+    // ⚠️ La FECHA no estrena columna: `Albaran.fecha` ya era la fecha de entrega —sellada en el
+    // hash, impresa en el PDF y clave del mes natural de la recapitulativa (art. 13)— pero
+    // NINGUNA UI la escribía, así que acababa siendo siempre el instante de creación. Esto es lo
+    // que faltaba. Una sola fecha: no puede divergir de la que agrupa la factura.
+    const rotAlb = window.appAlbaranRotulos || {};
+    const campoAlb = (labelText, el) => {
+      const w = document.createElement('div');
+      w.style.cssText = 'margin-top:8px';
+      const l = document.createElement('label');
+      l.style.cssText = 'display:block;font-size:12px;font-weight:600;color:var(--ink);margin-bottom:3px';
+      l.textContent = labelText;
+      w.appendChild(l);
+      w.appendChild(el);
+      box.appendChild(w);
+      return w;
+    };
+
+    const fechaEnt = document.createElement('input');
+    fechaEnt.type = 'date';
+    fechaEnt.className = 'input';
+    fechaEnt.style.cssText = 'width:100%';
+    // <input type=date> habla en YYYY-MM-DD local; `alb.fecha` viaja en ISO.
+    fechaEnt.value = alb.fecha ? new Date(alb.fecha).toISOString().slice(0, 10) : '';
+    const fechaEntOriginal = fechaEnt.value;
+    if (rotAlb.fechaEntrega) campoAlb(rotAlb.fechaEntrega, fechaEnt);
+
+    const lugarEnt = document.createElement('input');
+    lugarEnt.type = 'text';
+    lugarEnt.className = 'input';
+    lugarEnt.style.cssText = 'width:100%';
+    lugarEnt.maxLength = 300;
+    lugarEnt.value = alb.lugarEntrega || '';
+    // ⚠️ SUELO del ticket: si no hay dirección de obra se deja VACÍO. Ni se precarga el domicilio
+    // fiscal ni se sugiere: una dirección equivocada en un documento de entrega es peor que
+    // ninguna. Hoy `Job.direccion` es null para cualquier merchant real, así que lo normal es
+    // que no haya nada que precargar y lo escriba el profesional.
+    if (job.direccion && !lugarEnt.value) lugarEnt.placeholder = job.direccion;
+    if (rotAlb.lugarEntrega) campoAlb(rotAlb.lugarEntrega, lugarEnt);
+
     const notas = document.createElement('textarea');
     notas.className = 'input';
     notas.placeholder = 'Notas del albarán (opcional)';
@@ -961,7 +1005,11 @@ async function renderJobDetailView(container, jobId) {
         }
         out.push(linea);
       }
-      const body = { lineas: out, notas: notas.value };
+      const body = { lineas: out, notas: notas.value, lugarEntrega: lugarEnt.value };
+      // SCRUM-300: la fecha SOLO se manda si el pro la ha tocado. Mandarla siempre reescribiría
+      // `Albaran.fecha` en cada guardado —y con ella el mes de la recapitulativa— por el simple
+      // hecho de abrir el editor, que es un cambio que nadie ha pedido.
+      if (fechaEnt.value && fechaEnt.value !== fechaEntOriginal) body.fecha = fechaEnt.value;
       // Solo se manda modoValoracion cuando es EDITABLE (borrador); en 'emitido' el
       // backend lo rechaza con 409 aunque el valor no cambie — mejor ni ofrecerlo.
       if (modoEditable) body.modoValoracion = modo;
@@ -1275,9 +1323,15 @@ async function renderJobDetailView(container, jobId) {
         if (!window.openSignaturePad) { setStatus('error', 'El componente de firma no está cargado.'); return; }
         window.openSignaturePad({
           title: 'Firma del cliente',
-          onConfirm: async (dataUri) => {
+          // SCRUM-300 (C5): el nombre va PRECARGADO con el del cliente y la calidad con «El
+          // propio cliente» — el caso mayoritario. Por eso el flujo sigue costando lo mismo.
+          firmante: { nombre: job.customer?.name || '' },
+          onConfirm: async (dataUri, extras) => {
             try {
-              await apiRequest(`/admin/albaranes/${alb.id}/firmar`, { method: 'POST', body: JSON.stringify({ signatureData: dataUri }) });
+              await apiRequest(`/admin/albaranes/${alb.id}/firmar`, {
+                method: 'POST',
+                body: JSON.stringify(Object.assign({ signatureData: dataUri }, extras || {})),
+              });
               showToast('✓ Albarán firmado.');
               refresh();
             } catch (e) { setStatus('error', 'No se pudo firmar: ' + (e?.data?.message || e.message)); }

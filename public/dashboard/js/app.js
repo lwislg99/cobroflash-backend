@@ -14,6 +14,12 @@ async function initApp() {
   // SCRUM-289 (A0.3): veredicto YA CALCULADO por el servidor (puedeCrearFacturaSuelta). El
   // navegador no reimplementa el modo de emisión: lo recibe.
   window.appFacturaSueltaDisponible = me.facturaSueltaDisponible === true;
+  // SCRUM-300 (C5): las cinco ranuras de «en calidad de qué» y los rótulos del albarán llegan
+  // SERVIDOS. El navegador NO los escribe: son microcopy que acaba en un documento que se puede
+  // leer en un juzgado (regla 30), y una segunda copia aquí es cómo dos textos divergen sin que
+  // nadie se entere. Mismo criterio que `appFacturaSueltaDisponible`, justo encima.
+  window.appAlbaranFirmanteOpciones = Array.isArray(me.albaranFirmanteOpciones) ? me.albaranFirmanteOpciones : [];
+  window.appAlbaranRotulos = me.albaranRotulos || {};
 
   // A10.2 (Parte L): past_due → banner global "Hay un problema con tu pago"
   // + portal de Stripe. La cuenta sigue funcionando (gracia); solo avisa.
