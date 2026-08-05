@@ -106,6 +106,9 @@ Tras dos rondas quitando columnas seguíamos a **125 px** de que `Acción` entra
 la tercera, la pregunta que nadie había hecho: **¿qué forma tiene una lista de esta familia a 390 px
 en el resto del producto?**
 
+> **No era qué columna quitar, era que a 390 px eso no es una tabla.**
+> **El patrón ya existía en la casa desde antes de que empezáramos a quitar columnas.**
+
 **EL PATRÓN YA EXISTÍA.** `styles.css` tiene DOS, y ninguno hubo que inventarlo:
 
 | Patrón | Para | Quién lo usa |
@@ -120,7 +123,7 @@ según la pantalla sería SCRUM-240 en la capa visual.
 Por debajo de 640 px la cabecera se oculta y cada fila se recompone como **card**: no hay columnas
 que repartir, así que **el problema de ancho desaparece en vez de resolverse quitando información**.
 
-**Las dos amputaciones se REVIRTIERON**: `Fecha` y `Líneas` vuelven. Y las dos palancas aprobadas
+**Las dos amputaciones se REVIRTIERON**: `Fecha` y `Líneas` vuelven — **nunca sobraban: sobraba la forma**. Y las dos palancas aprobadas
 (quitar Fecha en móvil, acortar el rótulo) **no hicieron falta** — no se aplicó ninguna.
 
 | Medido a 390 px | Antes del patrón | Con el patrón |
@@ -137,6 +140,20 @@ Y la variante «lo acorto solo si todas comparten prefijo» es peor: el mismo al
 formas según el filtro. **El profesional dicta ese número a su gestoría; medio número es un número
 equivocado.** En la card ocupa `cell-client`, el hueco prominente: dentro de un Trabajo el número
 ES la identidad.
+
+### 🔴 La convención de las ranuras se DERIVÓ, no se eligió
+
+La primera versión puso el número en `cell-client` y el CONTEO de líneas en `cell-id` — una TERCERA
+convención para las mismas ranuras. En la card eso salía como un «3» suelto, sin etiqueta, porque el
+patrón oculta la cabecera.
+
+Medido en las otras dos vistas que usan el patrón: **`cell-id` es la ranura del NÚMERO**
+(`invoicesView.js:354` `tdNumber`, `quotesListView.js:194` `tdId`), y lo informativo que no acciona
+se oculta con **`col-hide-mobile`** (la Fecha en facturas, el Método en presupuestos).
+
+Aplicado igual aquí: número a `cell-id`, `Líneas` a `col-hide-mobile`. **Por eso no hizo falta la
+microcopy aprobada «Líneas» para la card**: el problema no era que faltara un rótulo, era que ese
+valor estaba en la ranura del número. Y la tarjeta no creció — tiene una línea MENOS.
 
 ### Foco y targets: MEDIDOS, y el patrón arregló la mitad
 

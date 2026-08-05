@@ -1658,12 +1658,15 @@ async function renderJobDetailView(container, jobId) {
     const nLineas = Array.isArray(alb.lineas) ? alb.lineas.length : 0;
     const item = document.createElement('tr');
     item.innerHTML =
-      // `cell-client` es el hueco PROMINENTE de la card en móvil, y aquí el número ES la identidad:
-      // dentro de un Trabajo no hay columna de cliente que ocupe ese sitio. **Se enseña ENTERO** —
-      // acortarlo a «0001» dependería de que todas las filas visibles compartan prefijo, que es una
-      // coincidencia de los datos de hoy y deja de ser cierta el 1 de enero. El profesional dicta
-      // ese número por teléfono a su gestoría: medio número es un número equivocado.
-      `<td class="cell-client">` +
+      // `cell-id` ES la ranura del NÚMERO DEL DOCUMENTO, y no es una elección propia: es lo que
+      // hacen `invoicesView.js:354` (`tdNumber`) y `quotesListView.js:194` (`tdId`), las otras dos
+      // que usan este mismo patrón. La primera versión de aquí lo puso en `cell-client` y metió el
+      // CONTEO de líneas en `cell-id` — o sea, una tercera convención para las mismas ranuras.
+      //
+      // **Se enseña ENTERO**: acortarlo a «0001» dependería de que todas las filas visibles
+      // compartan prefijo, que es una coincidencia de los datos de hoy y deja de ser cierta el 1 de
+      // enero. El profesional dicta ese número a su gestoría; medio número es un número equivocado.
+      `<td class="cell-id">` +
         `<button type="button" class="detail-miga-link jobdet-alb-link">${esc(alb.numero)}</button>` +
         `<div class="jobdet-alb-fotos"></div>` +
       `</td>` +
@@ -1684,7 +1687,11 @@ async function renderJobDetailView(container, jobId) {
           : (alb.facturado || alb.estadoCobro === 'facturado' ? `<span class="job-doc-row__badge">Facturado</span>` : '')) +
         (albValorado ? '' : `<span class="job-doc-row__badge">Sin precios</span>`) +
       `</td>` +
-      `<td class="cell-id">${nLineas}</td>` +
+      // LÍNEAS se OCULTA en móvil con `col-hide-mobile`, que es lo que la casa hace con lo
+      // informativo que no acciona: `invoicesView.js:392` esconde ahí la Fecha y
+      // `quotesListView.js:217` el Método. En la card no hay cabecera, así que un «3» suelto no se
+      // lee; en la tabla de escritorio lo rotula su columna. El dato sigue en el detalle.
+      `<td class="col-hide-mobile">${nLineas}</td>` +
       `<td class="jobdet-alb-actions cell-actions"></td>`;
     const albBody = item.querySelector('td');
     item.querySelector('.jobdet-alb-link').addEventListener('click', () => {
@@ -2007,7 +2014,7 @@ async function renderJobDetailView(container, jobId) {
         `<th>${esc(ALB_TABLA_COPY.colNumero)}</th>` +
         `<th>${esc(ALB_TABLA_COPY.colFecha)}</th>` +
         `<th>${esc(ALB_TABLA_COPY.colEstado)}</th>` +
-        `<th>${esc(ALB_TABLA_COPY.colLineas)}</th>` +
+        `<th class="col-hide-mobile">${esc(ALB_TABLA_COPY.colLineas)}</th>` +
         `<th>${esc(ALB_TABLA_COPY.colAccion)}</th>` +
       `</tr></thead>`;
     const tbody = document.createElement('tbody');
