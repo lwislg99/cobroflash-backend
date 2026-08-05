@@ -2,7 +2,7 @@
 
 **Fecha:** 5-ago-2026 · **Carril:** C · **Gate:** sin gate, corre en `npm test`
 
-**Medido contra:** `origin/main` = `d5ac9761da139bf9b6de3c808d7c990aa6b82157` · 2026-08-05T17:04:15+01:00
+**Medido contra:** `origin/main` = `e2f397aa69a93f5ddf017a62a5865da35fad605f` · 2026-08-05T17:28:31+01:00
 
 ## 🔴 El censo corrige al ticket, y por eso va PRIMERO
 
