@@ -2,7 +2,7 @@
 
 **Fecha:** 5-ago-2026 · **Carril:** C · **Gate:** sin gate, corre en `npm test`
 
-**Medido contra:** `origin/main` = `7ce53c31d9fc7d9a0093b13868beaddeeea65dcb` · 2026-08-05T16:07:45+01:00
+**Medido contra:** `origin/main` = `99d9b7004a5c520c114db7cb96ab6c7eac80e564` · 2026-08-05T16:17:40+01:00
 
 ## 🔴 La premisa del ticket estaba a medias, y se midió antes de construir nada
 
@@ -71,17 +71,29 @@ Es el defecto que SCRUM-366 documentó en este mismo fichero: **lo que no se pue
 reescribe distinto.** Ahora el alta se llama `abrirAltaAlbaran`, se nombra UNA vez, y los dos
 botones la llaman. Con guard de que siguen siendo exactamente dos.
 
-### ② SCRUM-367 se quedaba sin dato al pasar por la hoja
+### ② 🔴 SCRUM-367 ESTABA INCOMPLETO EN `main`, y se descubrió arreglando otra cosa
 
 `mkRow` pinta un input por campo y el guardado **reconstruye la línea desde los inputs**.
 `quoteLineIndex` no tiene input, así que se perdía. Mi propio cambio habría dejado sin dato a
 SCRUM-367 el mismo día que se mergeó.
 
-**Y destapa que la EDICIÓN ya lo perdía en `main`:** SCRUM-367 demostró que el backend lo CONSERVA
-(`validarLineas`), pero **nadie comprobó que el front lo MANDE** — y no lo hacía. Ahora el origen
-viaja en `r.dataset` y vuelve a salir al guardar, con la comprobación de dígitos **antes** de
-convertir (familia SCRUM-271: `Number('')` es `0`, y un origen ausente habría quedado atado a la
-primera partida del presupuesto, en silencio).
+Pero al medirlo salió lo gordo: **la EDICIÓN ya lo perdía en `main` antes de tocar nada**.
+
+> **SCRUM-367 probó que el backend lo CONSERVA; nadie probó que el front lo MANDE.**
+
+O sea que el ticket que se cerró una hora antes tenía **el mecanismo a medias: el campo sobrevive a
+`validarLineas` y se pierde en el viaje de vuelta.** Editar un albarán desde la hoja borraba el
+origen, sin error y sin que nada se pusiera rojo.
+
+**Es exactamente la forma de verde que llevamos toda la semana cazando, y esta vez la produjo un
+test que SÍ probaba algo — solo que no lo que hacía falta.** El test de 367 es correcto: mide la
+conservación en el validador, y ahí el campo sobrevive de verdad. Lo que nadie midió es el tramo
+anterior, donde el dato ni siquiera llega a salir del navegador.
+
+Ahora el origen viaja en `r.dataset` y vuelve a salir al guardar, con la comprobación de dígitos
+**antes** de convertir (familia SCRUM-271: `Number('')` es `0`, y un origen ausente habría quedado
+atado a la primera partida del presupuesto, en silencio). Con guard que **empareja los dos extremos
+derivando el nombre del que escribe**: renombrar uno solo sale rojo.
 
 ## Lo que la suite no vio y sí vio la captura
 
@@ -91,7 +103,7 @@ habría quedado verde y mudo. Los tests pasaban porque comprueban que el motivo 
 no que lleguen a la pantalla. El guard nuevo **deriva de la hoja de estilos** qué tonos quedan
 visibles, en vez de comparar contra una lista escrita a mano.
 
-## Los seis rojos
+## Los ocho rojos
 
 | # | Qué se rompe | Qué sale |
 |---|---|---|
@@ -101,8 +113,14 @@ visibles, en vez de comparar contra una lista escrita a mano.
 | 4 | El atajo de cabecera vuelve a crear por su cuenta | 🔴 «hay un ALTA fuera de `openAlbCrearSheet`» + «deberían ser DOS» |
 | 5 | El aviso vuelve a la clase pelada | 🔴 «el tono «silencioso» no está entre los que styles.css deja visibles» |
 | 6 | Quitar cada extremo del origen (a y b) | 🔴 «LA FILA NO GUARDA EL ORIGEN» · «se lee pero no se pone en la línea que se envía» |
+| 7 | Reescribir copy **aprobada** «para que suene mejor» | 🔴 «la ranura «sin_presupuesto» ya no dice lo aprobado», con el antes y el después |
+| 8 | Devolver la abreviatura `línea(s)` | 🔴 «el singular no concuerda… es de programador, y esto lo lee un profesional en obra» |
 
-Los seis con `node --check` limpio antes de creerse el rojo: un rojo de sintaxis no prueba nada.
+Los ocho con `node --check` limpio antes de creerse el rojo: un rojo de sintaxis no prueba nada.
+
+Y un noveno **no provocado**: al quitar el marcador desapareció `const ALB_PENDIENTE`, que era el
+extremo de uno de mis propios recortes, y **mi escáner ciego saltó solo**. Es la prueba de que el
+suelo de los dos extremos no era decorativo.
 
 ## Un guard ajeno saltó, y tenía toda la razón
 
@@ -119,15 +137,29 @@ tocar**, con sus cuatro criterios cerrados incluido que **no re-sincroniza nunca
 `job_without_quote` del backend · el detalle (C2) · el listado (C1) · la conversión a factura
 (A0.4) · `prisma/schema.prisma`.
 
-## Microcopy (regla 30)
+## Microcopy (regla 30) · APROBADA
 
-Las **7 ranuras** nuevas salen con `[PENDIENTE microcopy oficial]` **delante del texto**, no en vez
-de él: con el marcador solo, «ilegible» y «sin líneas» dirían LO MISMO y el suelo sería decorativo.
-El guard compara contra las constantes, nunca contra un literal, así que el día que se aprueben los
-textos sigue verde sin tocarlo (patrón de SCRUM-263).
+Las **7 ranuras** se entregaron con `[PENDIENTE microcopy oficial]` **delante del texto, no en vez
+de él**: con el marcador solo, «ilegible» y «sin líneas» habrían dicho LO MISMO y el suelo habría
+sido decorativo. **El fundador aprobó las siete el 5-ago-2026**, cuatro tal cual y tres con retoque,
+así que el marcador ya no está.
+
+| Ranura | Texto aprobado | |
+|---|---|---|
+| `titulo` | Nuevo albarán | tal cual |
+| `guardar` | Crear albarán | tal cual |
+| `presupuesto_ilegible` | No se ha podido leer el presupuesto, así que no se ha rellenado nada. Puedes escribir las líneas a mano. | tal cual |
+| `presupuesto_sin_lineas` | El presupuesto no tiene ninguna línea que se pueda entregar. | tal cual |
+| `descartadas` | 1 línea sin cantidad no se ha copiado. / N líneas … no se han copiado. | **retoque**: `línea(s)` era abreviatura de programador en un aviso que lee un profesional en obra |
+| `valorado` | Con precios, las líneas se escriben a mano: el presupuesto no los trae. | **retoque**: «precios» dos veces en catorce palabras |
+| `sin_presupuesto` | Este trabajo no tiene presupuesto, así que empiezas de cero. | **retoque**: «a la vista» dejaba dudando si existe y no se ve; la segunda mitad dice qué va a pasar |
+
+El guard cambió de trabajo: antes exigía el marcador, ahora **compara ranura a ranura contra el
+texto aprobado**, porque retocar copy aprobada es una decisión del fundador y no un detalle de
+implementación. Con su rojo y el del plural.
 
 ## Verificación
 
-- `npm run build` → **exit 0** · `npm test` → **exit 0**: **1730 tests · 1663 pass · 0 fail · 67
+- `npm run build` → **exit 0** · `npm test` → **exit 0**: **1744 tests · 1677 pass · 0 fail · 67
   skipped**, contra el `main` resultante del rebase.
 - Capturas AB6 y sus huecos declarados: `docs/capturas/scrum-303/README.md`.
