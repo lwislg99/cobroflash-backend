@@ -61,6 +61,9 @@ components:
     padding: "12px 20px"
   button-primary-hover:
     backgroundColor: "#15803d"
+  button-primary-sm:
+    backgroundColor: "{colors.brand-tint-ink}"
+    textColor: "{colors.surface}"
   button-secondary:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
@@ -122,6 +125,13 @@ Una paleta luminosa anclada en un verde de confianza, sobre neutros cálidos cas
 ### Named Rules
 **La Regla de Una Sola Voz.** El verde de marca ocupa ≤10% de cualquier pantalla. Su escasez es lo que lo hace premium: si todo es verde, nada destaca. Una pantalla = un botón verde primario.
 
+> **SCRUM-368 (5-ago-2026) — esta regla se incumplía en 35 sitios**, y por eso existe **Primary
+> (small)** arriba. Había pantallas con un botón primario grande **y** varios pequeños, todos en
+> Verde Confianza: varias voces y ninguna mandando. Sacar la variante pequeña del verde de marca
+> **reduce las voces por pantalla**, que es lo que esta regla pide. La enmienda no rebaja el
+> documento para que cuadre con el código: mueve el código hacia lo que el documento ya exigía en
+> esta línea. Medido y contado en `docs/master/SCRUM-368.md`.
+
 **La Regla del Neutro Cálido.** Prohibido el gris azulado de oficina como fondo. Los neutros tienden a verde/tierra. Si un gris se ve "de hospital", está mal.
 
 ## 3. Typography
@@ -157,6 +167,7 @@ Sistema **estratificado pero suave**: las superficies descansan planas con un bo
 ### Buttons
 - **Shape:** pastilla (radius full, 9999px). Altura cómoda al pulgar (≥44px en móvil).
 - **Primary:** fondo Verde Confianza (#16a34a), texto blanco, peso 700, padding 12px 20px. Hover #15803d + leve `translateY(-1px)`.
+- **Primary (small):** fondo Verde Tinte Tinta (`{colors.brand-tint-ink}`), texto blanco. **La variante pequeña del botón primario no usa el Verde Confianza.** Dos motivos, y el segundo pesa más que el primero: ① con texto de 12,5px el blanco sobre Verde Confianza da 3,30:1 y no llega a AA, y a un botón pequeño no se le puede poner la letra de 18,66px que salva al grande sin dejar de ser pequeño (este token da **5,48:1**); ② el pequeño y el grande en el mismo verde **compiten**, y eso incumple la Regla de Una Sola Voz de más abajo — con el tono oscuro aparece una escalera (relleno oscuro › contorno › texto plano) y el primario grande manda sin discusión.
 - **Secondary:** superficie blanca, texto Tinta, borde 1px Borde. Hover fondo Fondo (#f6f7f5).
 - **Ghost:** sin fondo ni borde; texto Apagado→Tinta al hover. Para acciones terciarias.
 - **Danger:** fondo Peligro (#dc2626), texto blanco. Solo acciones destructivas.

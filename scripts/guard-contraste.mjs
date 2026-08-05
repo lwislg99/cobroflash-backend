@@ -53,9 +53,16 @@ const SUELO_NODOS = 50;
 const CONOCIDOS = [
   {
     texto: 'rgb(255, 255, 255)', fondo: 'rgb(22,163,74)', ratio: 3.3, nodos: 2,
-    motivo: 'SCRUM-368 · texto blanco sobre el verde de marca en el botón primario. Subirlo a ' +
-      '4,5:1 exige mover el verde (identidad, regla 30) o el tamaño del texto de todo el ' +
-      'producto. Decisión del fundador, pendiente. Medido: no existe verde MÁS CLARO que cumpla.',
+    // ⚠ EL MOTIVO DE ESTA EXCEPCIÓN CAMBIÓ, y el anterior ya no aplica. Decía «el botón primario,
+    // decisión del fundador pendiente»: eso se resolvió — el primario grande cumple por texto
+    // grande (A1) y el pequeño usa --brand-tint-ink. Vigilar el motivo viejo sería vigilar un
+    // motivo muerto, así que se reescribe con el que queda.
+    motivo: 'MOTIVO: los 2 nodos que quedan con este par son MOCKUPS del landing que imitan la ' +
+      'interfaz del cliente final —`.send-btn` («Enviar por WhatsApp») y `.tnum-b` (el número de ' +
+      'paso)—, no botones del producto. Dibujan cómo se ve YaQu por dentro, con el verde de ' +
+      'marca a tamaño pequeño porque así se ve en la pantalla que imitan. ' +
+      'Los botones REALES ya cumplen: el primario grande por la vía de texto grande (A1) y el ' +
+      'pequeño con --brand-tint-ink (5,48:1). Reportado, sin arreglar (regla 9).',
   },
   {
     texto: 'rgb(107, 114, 128)', fondo: 'rgb(2,6,23)', ratio: 4.17, nodos: 8,
