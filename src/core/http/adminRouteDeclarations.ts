@@ -77,6 +77,15 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'GET',   path: '/admin/albaranes/:id/fotos', why: 'Ver las fotos que él mismo subió' },
   { method: 'POST',  path: '/admin/albaranes/:id/enviar-whatsapp', why: 'S1 "enviar WA" ✅; requireActivePlan, sin rol (SCRUM-47)' },
   { method: 'POST',  path: '/admin/albaranes/:id/enviar-para-firmar', why: 'Firma remota del albarán (SCRUM-47/49)' },
+  // ⚠️ SCRUM-301: `GET /admin/albaranes` (el listado global) NO está en esta lista, y la razón
+  // merece leerse antes de «arreglarlo» añadiéndola: es **admin-only con `requireRole`**.
+  //
+  // El criterio de «la misma información, agrupada» —el que justifica `consolidables` aquí abajo—
+  // vale cuando la información YA era visible. Para el técnico no lo era: SCRUM-147 midió y cerró
+  // que un técnico solo ve SUS Trabajos (`seesOnlyOwnJobs`, allowlist, rol desconocido restringido).
+  // Los albaranes cuelgan de Trabajos, así que un listado global le enseñaría de qué obras AJENAS
+  // hay partes, de qué clientes y con qué fechas: exactamente lo que la puerta principal le niega,
+  // servido por la puerta de atrás. Cerrar de más es un incordio; abrir de más no se deshace.
   { method: 'GET',   path: '/admin/albaranes/pendientes-facturar', why: 'SCRUM-69: bandeja de facturación, mismo criterio S1 que GET /admin/invoices ("facturas: ver sí")' },
   { method: 'GET',   path: '/admin/albaranes/consolidables', why: 'SCRUM-70: vista previa de la recapitulativa (cliente+mes). MISMO criterio que la bandeja de SCRUM-69 — es la misma información, agrupada: solo lectura y ningún dato que el técnico no vea ya ahí. NO emite.' },
 

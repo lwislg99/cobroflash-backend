@@ -34,6 +34,9 @@ const ley = require_(path.join(RAIZ, 'public/dashboard/js/patronDetalleAcciones.
 const { ALBARAN_ACTION_REGISTRY, ALBARAN_STATES } =
   require_(path.join(RAIZ, 'public/dashboard/js/albaranActionsRegistry.js'));
 const SCHEMA = leer('prisma', 'schema.prisma');
+// SCRUM-301: el eje de cobro ya existe en runtime, así que se lee del valor compilado y no del
+// texto del fichero. Un assert sobre la prosa cae cuando alguien reordena un comentario; éste no.
+const { ESTADOS_COBRO } = require_(path.join(RAIZ, 'dist/modules/jobs/domain/albaranFacturacion.js'));
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // 1 · PREMISA DESMENTIDA: los estados reales
@@ -68,8 +71,13 @@ test('SCRUM-302 · «enviado para firmar» se trata como DERIVADO, no como estad
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-302 · «facturado» NO es un estado de la tabla, y conserva sus tres valores', () => {
-  const dominio = leer('src', 'modules', 'jobs', 'domain', 'albaranFacturacion.ts');
-  assert.match(dominio, /EstadoCobro = 'sin_facturar' \| 'parcial' \| 'facturado'/,
+  // SCRUM-301: este assert miraba el TEXTO de la unión (`EstadoCobro = 'sin_facturar' | …`). El eje
+  // pasó a existir en RUNTIME —`ESTADOS_COBRO` como const, con el tipo derivado de ella— para que
+  // las pestañas del listado global se puedan construir sin enumerar nada a mano. La premisa que
+  // este test protege no ha cambiado ni un ápice; lo que cambia es dónde se lee, y ahora se lee del
+  // valor COMPILADO en vez de la prosa del fichero: si alguien quita un valor, esto sigue cayendo,
+  // y ya no cae por reordenar un comentario.
+  assert.deepEqual([...ESTADOS_COBRO], ['sin_facturar', 'parcial', 'facturado'],
     '🔴 el derivado ha dejado de tener tres valores');
   assert.ok(!ALBARAN_STATES.includes('facturado'),
     '🔴 «facturado» se ha metido como estado. Aplanarlo pierde el PARCIAL — y en una obra por ' +

@@ -155,8 +155,10 @@ async function initApp() {
 
   // 6. Menú activo
   function setActiveMenu(view) {
+    // SCRUM-301 (C1): el detalle del albarán ya tiene sección propia a la que pertenecer. Antes
+    // marcaba «Trabajos» porque los albaranes no existían como sitio; ahora sí.
     const menuView = view === 'quotes-detail' ? 'quotes-list'
-      : view === 'albaran-detail' ? 'jobs'
+      : view === 'albaran-detail' ? 'albaranes'
       : view === 'invoice-detail' ? 'invoices'
       : view === 'jobs-detail' ? 'jobs' : view;
 
@@ -243,6 +245,12 @@ async function initApp() {
       case 'invoices':
         viewTitle.textContent = 'Facturas';
         renderInvoicesView(viewContainer);
+        break;
+      case 'albaranes':
+        // SCRUM-301 (C1): sección propia. Rótulo APROBADO (5-ago-2026), mismo que el del menú: es
+        // el nombre del documento, no copy de acción — el criterio que C2 dejó escrito aquí abajo.
+        viewTitle.textContent = 'Albaranes';
+        if (typeof window.renderAlbaranesView === 'function') window.renderAlbaranesView(viewContainer);
         break;
       case 'albaran-detail':
         // SCRUM-302 (C2): el albarán tiene página propia. El rótulo del título es el nombre del

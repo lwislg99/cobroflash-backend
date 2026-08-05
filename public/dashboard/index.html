@@ -46,6 +46,15 @@
           <span>Trabajos</span>
         </button>
 
+        <!-- SCRUM-301 (C1): los albaranes pasan a ser SITIO propio. Va justo detrás de Trabajos
+             porque cuelgan de una obra, no de un cliente. B1 no había creado esta entrada — medido,
+             no supuesto. Rótulo APROBADO por el asesor el 5-ago-2026: es el nombre del documento,
+             no copy de acción (mismo criterio que C2 fijó para el título del detalle). -->
+        <button class="nav-item" data-view="albaranes" id="nav-albaranes">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2h6a2 2 0 012 2v1h2a1 1 0 011 1v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a1 1 0 011-1h2V4a2 2 0 012-2z"/><path d="M9 12h6M9 16h4"/></svg>
+          <span id="nav-albaranes-label">Albaranes</span>
+        </button>
+
         <button class="nav-item" data-view="customers">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
           <span>Clientes</span>
@@ -194,6 +203,8 @@
   <script src="./js/invoiceActionsRegistry.js"></script>
   <script src="./js/albaranActionsRegistry.js"></script>
   <script src="./js/albaranDetailView.js"></script>
+  <!-- SCRUM-301 (C1): el listado global. Después del detalle porque enlaza a él. -->
+  <script src="./js/albaranesView.js"></script>
   <script src="./js/invoiceDetailView.js"></script>
   <!-- SCRUM-316 (G1): la ley del patrón aplicada al Trabajo. Carga ANTES de jobDetailView.js, que pinta desde ella. -->
   <script src="./js/jobActionsRegistry.js"></script>
