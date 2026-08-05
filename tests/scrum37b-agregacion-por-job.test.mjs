@@ -34,7 +34,7 @@ const CODIGO = soloEjecutable(FUENTE); // principio 10
 
 // ── El doble de prisma: un mundo pequeño con jobs, quotes y facturas ─────────────────────
 
-function mundo({ jobs, invoices }) {
+function mundo({ jobs, invoices, quotes }) {
   const escrituras = [];
   return {
     escrituras,
@@ -42,7 +42,13 @@ function mundo({ jobs, invoices }) {
       findUnique: async ({ where, select }) => {
         const j = jobs.find((x) => (where.id != null ? x.id === where.id : x.quoteId === where.quoteId));
         if (!j) return null;
-        return select?.quoteId !== undefined ? { quoteId: j.quoteId } : { id: j.id, quoteId: j.quoteId };
+        // SCRUM-195: `quotesDelJob` pide ahora tambien `merchantId` — de el sale el filtro de
+        // merchant de la consulta de quotes (regla 2), asi que el doble tiene que darlo o
+        // estariamos probando una consulta sin acotar que el codigo real si acota.
+        if (select?.quoteId !== undefined) {
+          return select.merchantId ? { quoteId: j.quoteId, merchantId: j.merchantId ?? 7 } : { quoteId: j.quoteId };
+        }
+        return { id: j.id, quoteId: j.quoteId, merchantId: j.merchantId ?? 7 };
       },
       update: async ({ where, data }) => {
         escrituras.push({ jobId: where.id, ...data });
@@ -62,7 +68,20 @@ function mundo({ jobs, invoices }) {
       findUnique: async () => null,
       findFirst: async () => null,
     },
-    quote: { findFirst: async () => null },
+    // SCRUM-195 (rebanada 1): la pertenencia se lee por `Quote.jobId`, asi que el doble
+    // necesita el `findMany` que antes no hacia falta. Se ANADE, no se toca ninguna asercion:
+    // lo que estos tests afirman —que `quotesDelJob` es el unico punto, que la agregacion pide
+    // el CONJUNTO y que con 1:1 el total sale igual— sigue siendo cierto y sigue comprobandose.
+    // `quotes` es opcional: los mundos que no lo declaran se comportan como antes (sin
+    // adicionales), que es justo el caso 1:1 que estos tests fijan.
+    quote: {
+      findFirst: async () => null,
+      findMany: async ({ where }) => (quotes ?? [])
+        .filter((q) => q.jobId === where.jobId)
+        .filter((q) => where.merchantId === undefined || q.merchantId === where.merchantId)
+        .map((q) => ({ id: q.id })),
+      findUnique: async ({ where }) => (quotes ?? []).find((q) => q.id === where.id) ?? null,
+    },
   };
 }
 

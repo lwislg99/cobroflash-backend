@@ -51,16 +51,70 @@ export async function listExpenses(
   const quoteIds = [...new Set(items.map((e) => e.quoteId).filter((id): id is number => id != null))];
   if (!quoteIds.length) return items.map((e) => ({ ...e, job: null }));
 
-  const jobs = await prisma.job.findMany({
-    where: { merchantId, quoteId: { in: quoteIds } },
-    select: { id: true, titulo: true, quoteId: true },
-  });
-  const porQuote = new Map(jobs.map((j) => [j.quoteId, j]));
+  const porQuote = await trabajosPorQuote(merchantId, quoteIds);
   return items.map((e) => {
     const j = e.quoteId != null ? porQuote.get(e.quoteId) : null;
     // `titulo` puede ser null en Jobs anteriores a SCRUM-10: el front cae a un texto neutro.
     return { ...e, job: j ? { id: j.id, titulo: j.titulo } : null };
   });
+}
+
+/**
+ * SCRUM-195 (rebanada 1) · A qué TRABAJO pertenece cada uno de esos presupuestos.
+ *
+ * EL FALLO QUE CIERRA: antes se buscaba el Job por `Job.quoteId`, y con varios Quotes por Job
+ * un gasto imputado a un presupuesto ADICIONAL no encontraba Trabajo — salía `job: null` y el
+ * pro veía el gasto suelto, **sin ningún error**. La pertenencia se pregunta ahora por
+ * `Quote.jobId`, que es el sentido que admite varios.
+ *
+ * VA EXTRAÍDA Y CON CLIENTE INYECTABLE a propósito: `listExpenses` usa el `prisma` global en 16
+ * sitios, así que probar este punto de fallo desde fuera exigiría o inyectarlo entero —mucho más
+ * cambio que el arreglo— o dejarlo sin red hasta la tanda gateada. Esto es el trozo pequeño que
+ * de verdad hay que vigilar.
+ *
+ * SIGUE SIENDO COSTE CONSTANTE, que es el motivo de SCRUM-135: dos consultas por página (el
+ * mapa quote→job y los títulos por id), nunca una por gasto.
+ */
+export async function trabajosPorQuote(
+  merchantId: number,
+  quoteIds: number[],
+  prismaClient = prisma,
+): Promise<Map<number, { id: number; titulo: string | null }>> {
+  if (!quoteIds.length) return new Map();
+
+  const quotes = await prismaClient.quote.findMany({
+    where: { merchantId, id: { in: quoteIds } },
+    select: { id: true, jobId: true },
+  });
+  const jobIdPorQuote = new Map<number, number>();
+  for (const q of quotes) if (q.jobId != null) jobIdPorQuote.set(q.id, q.jobId);
+
+  // Sentido viejo, mientras conviven (paso 1: `Job.quoteId` no se retira): los pares que
+  // todavía no tiene el backfill. Sin esto, entre el despliegue y el backfill los gastos
+  // perderían su Trabajo — el mismo fallo que este cambio cierra, en la otra ventana.
+  const faltan = quoteIds.filter((id) => !jobIdPorQuote.has(id));
+  if (faltan.length) {
+    const legado = await prismaClient.job.findMany({
+      where: { merchantId, quoteId: { in: faltan } },
+      select: { id: true, quoteId: true },
+    });
+    for (const j of legado) if (j.quoteId != null) jobIdPorQuote.set(j.quoteId, j.id);
+  }
+
+  const ids = [...new Set(jobIdPorQuote.values())];
+  if (!ids.length) return new Map();
+  const jobs = await prismaClient.job.findMany({
+    where: { merchantId, id: { in: ids } },
+    select: { id: true, titulo: true },
+  });
+  const porId = new Map(jobs.map((j) => [j.id, j]));
+
+  const salida = new Map<number, { id: number; titulo: string | null }>();
+  for (const [quoteId, jobId] of jobIdPorQuote) {
+    const j = porId.get(jobId);
+    if (j) salida.set(quoteId, j);
+  }
+  return salida;
 }
 
 // SCRUM-135 (hallazgo 2): `quoteId` y `providerId` se escribían A PELO. La FK garantiza que
