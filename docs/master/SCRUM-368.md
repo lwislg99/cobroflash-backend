@@ -1017,6 +1017,84 @@ con la BD sembrada (`scripts/seed-demo.mjs`). Eso es levantar backend y base de 
 hizo por cuenta propia.
 
 
+
+## 📌 CÓMO SE CIERRA ③ — instrucciones para la próxima sesión
+
+Es lo único que falta para cerrar SCRUM-368. Está escrito con detalle **para que nadie tenga que
+redescubrirlo ni volver a pedir permiso**.
+
+### Lo que hay que conseguir
+
+Capturas a **390 px** de **tres pantallas reales y POBLADAS** —`invoiceDetailView`,
+`quotesListView` y `settingsView`, las tres con 3 sitios de `btn-primary btn-sm` cada una— con la
+candidata aplicada. La pregunta que contestan: **con seis botones en pantalla, ¿sigue leyéndose
+como un sistema o parece un error?**
+
+Si en alguna chirría → **parar y enseñarla**, no arreglarla por cuenta propia.
+
+### ❌ Lo que NO sirve, y no hace falta reintentar
+
+Se montó un banco (`__/vistas.html`) que carga **los 42 scripts reales del dashboard** —todos
+menos `app.js`, que redirige a `/login.html` cuando no hay sesión— y llama a las funciones
+globales `renderQuotesListView`, `renderInvoiceDetailView`, `renderSettingsView`. Las vistas
+**existen y se montan**: 22 funciones `render*View` quedan disponibles en `window`.
+
+**El markup y el CSS son los reales. Lo que falla son los DATOS.** Con `page.route` devolviendo
+JSON inventado no se acierta el contrato de cada vista, y las tres salen así:
+
+| Vista | Resultado | Primarios pequeños |
+| --- | --- | --- |
+| `quotesListView` | estado vacío + «Error cargando presupuestos» | 1 |
+| `invoiceDetailView` | 7 nodos — no llegó a montar | 0 |
+| `settingsView` | estructura completa + «API 404: Not Found» | 0 |
+
+Se afinó el stub una vez (se descubrió que `/admin/quotes` devuelve un **array plano** con campos
+`id, number, customerName, customerPhone, status, totalAmount, currency, createdAt, method`) y
+**siguió sin poblar**. Cada vista tiene su contrato y son varios por vista. **Acertarlos a ciegas
+no es el camino.**
+
+### ✅ La vía buena, y está AUTORIZADA
+
+`scripts/capture-demo.mjs`, que ya existe en el repo y hace exactamente esto: conduce Edge por CDP
+con `puppeteer-core`, viewport móvil real, contra una base sembrada.
+
+```
+CAPTURE_BASE=http://127.0.0.1:3000 \
+CAPTURE_PROFILE=<dir con perfil que tenga la sesión del dashboard> \
+node scripts/capture-demo.mjs
+```
+
+Pasos:
+
+1. **Levantar el backend en local** — `npm run dev`, que carga `.env.local` con prioridad (BD
+   local y `DISABLE_CRONS=true`).
+2. **Sembrar la base** con `scripts/seed-demo.mjs` (merchant demo id=1, `demo@yaqu.app`, regla 8).
+3. **Conseguir la sesión** visitando `/auth/verify?token=<magic_link>` una vez con ese mismo
+   perfil de Edge; el token se acuña en BD (`authSession` type `magic_link`). Está explicado en la
+   cabecera de `capture-demo.mjs`.
+4. Capturar `#quotes-list`, `#invoices` → detalle, y `#settings` a 390 px.
+
+> **AUTORIZADO POR EL FUNDADOR (5-ago-2026): levantar backend local con base sembrada.** Es local,
+> no toca nada de fuera. **La próxima sesión no tiene que volver a pedir permiso para esto.**
+
+⚠️ `CAPTURE_BASE` por defecto apunta a `https://yaqu.app` (**producción**). Hay que ponerlo al
+local: el CSS de la candidata no está desplegado, así que contra producción se capturaría el
+producto viejo.
+
+### El único dato con producto de verdad que sí salió
+
+En **`quotesListView`**, con su código real, conviven en la misma pantalla:
+
+- **`+ Crear presupuesto`** — primario normal, grande, en **verde de marca** `rgb(22,163,74)`
+- **`🚀 Crear mi primer presupuesto`** — primario pequeño, en **verde oscuro** `rgb(4,120,87)`
+
+**Y se lee como escalera**: el grande manda y el pequeño se subordina, que es justo el efecto que
+motivó la aprobación de la candidata. Captura en `.playwright-mcp/368-real-quotesListView-390.png`.
+
+**Es UNA convivencia real, no seis botones.** No cierra ③ —lo que se pidió es ver si el sistema
+aguanta con seis— pero es **el primer dato con producto de verdad** y apunta en la buena dirección.
+
+
 ## Reglas (las siete entregas)
 
 Regla 4 (vanilla, un componente) · **Regla 30: el verde de marca NO se ha tocado en ninguna de
