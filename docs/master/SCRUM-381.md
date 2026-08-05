@@ -4,7 +4,8 @@
 
 **Medido contra:** `origin/main` = `68a5bfcc19a5fc27dd82a6e1ab06c0cf80d390bd` · 2026-08-06T00:35:01+01:00
 
-**Tanda:** 1839 tests, 1772 pass, 0 fail, 67 skipped
+**Tanda:** 1852 tests, 1785 pass, 0 fail, 67 skipped — medida sobre la rama YA REBASADA
+sobre `68a5bfc` (la de antes del rebase daba 1839/1772; el delta lo trae `main`, no este ticket)
 
 ## El defecto de fondo
 
