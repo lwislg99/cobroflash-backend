@@ -282,6 +282,30 @@ const FILAS_DEL_RAIL = (() => {
 })();
 
 /**
+ * ¿Este `if` corta de verdad el bloque en el que vive?
+ *
+ * ⚠️ LA PRIMERA VERSIÓN DE ESTO PREGUNTABA `/\breturn\b/` SOBRE EL TEXTO, y por eso el guard
+ * NO SE PUSO ROJO al quitarle la condición a la fila del presupuesto: en el cuerpo de la vista
+ * hay un `if (cubos.overflow.length) { … (() => { … return d; })() … }` cuyo `return` pertenece a
+ * un arrow ANIDADO y no corta nada. Un guard de texto escondido dentro del cazador — el mismo
+ * fallo que este fichero dice vigilar.
+ *
+ * Se mira por AST y se PARA al entrar en otra función: el `return` de una función anidada es
+ * suyo, no del bloque.
+ */
+function cortaElBloque(sentenciaIf) {
+  let si = false;
+  (function bajar(n) {
+    if (si) return;
+    if (ts.isFunctionDeclaration(n) || ts.isFunctionExpression(n)
+        || ts.isArrowFunction(n) || ts.isMethodDeclaration(n)) return;
+    if (ts.isReturnStatement(n)) { si = true; return; }
+    n.forEachChild(bajar);
+  })(sentenciaIf.thenStatement);
+  return si;
+}
+
+/**
  * ¿Este `appendChild` está CONDICIONADO?
  *
  * Las dos formas que usa la página, y las dos valen: un `if` que lo envuelve (el presupuesto) o
@@ -293,9 +317,7 @@ function estaCondicionado(nodo) {
     if (ts.isIfStatement(p)) return true;
     if (ts.isBlock(p)) {
       const antes = p.statements.filter((s) => s.getEnd() <= nodo.getStart(sf));
-      const cortaAntes = antes.some((s) => ts.isIfStatement(s)
-        && /\breturn\b/.test(s.thenStatement.getText(sf)));
-      if (cortaAntes) return true;
+      if (antes.some((s) => ts.isIfStatement(s) && cortaElBloque(s))) return true;
     }
   }
   return false;
