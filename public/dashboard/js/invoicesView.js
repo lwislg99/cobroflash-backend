@@ -1,5 +1,44 @@
 // public/dashboard/js/invoicesView.js
 
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-375 · EL RESULTADO DEL MARCADO EN BLOQUE, DECIDIDO EN UN SITIO Y SIN DOM
+//
+// Vive aquí arriba, puro y exportado, porque el fallo que cierra este ticket NO se ve leyendo la
+// pantalla: se ve preguntando «¿qué dice la pantalla cuando la escritura fue bien y la recarga
+// no?». Dentro del listener eso no se puede provocar sin un navegador; aquí sí, y el test lo
+// hace con las tres combinaciones.
+//
+// Los tres tonos son distintos A PROPÓSITO: `error` es que NO se marcó, `warning` es que SÍ se
+// marcó y la lista puede estar vieja, `success` es que todo fue bien. Un `.alert` sin tono está
+// OCULTO por CSS (styles.css:1667), así que el tono no es decoración.
+const COPY_BULK_PAGADAS = {
+  // FIRMADO por el asesor en SCRUM-373. Solo se dice cuando la ESCRITURA falló.
+  escrituraFallida: 'No se han podido marcar como pagadas. Vuelve a intentarlo.',
+  // SIN APROBAR (regla 30): microcopy nueva de SCRUM-375, va con marcador hasta que se firme.
+  recargaFallida: '[PENDIENTE microcopy oficial] Se han marcado como pagadas, pero la lista no se ha podido actualizar. Recárgala para verla al día.',
+};
+
+/** El plural de verdad, sin `(s)`: cambia el sustantivo y el participio. */
+function textoMarcadas(n) {
+  return n === 1 ? '✓ 1 factura marcada como pagada.' : `✓ ${n} facturas marcadas como pagadas.`;
+}
+
+/**
+ * Qué se le dice al profesional según lo que pasó. PURO: no toca DOM ni red.
+ *
+ * La regla que codifica, y es la del ticket: **un fallo de lectura no se presenta como un fallo de
+ * escritura**. Si `escrituraOk`, el mensaje dice que se marcaron — pase lo que pase con la recarga.
+ */
+function resultadoMarcadoEnBloque({ escrituraOk, recargaOk, marcadas }) {
+  if (!escrituraOk) return { tono: 'error', texto: COPY_BULK_PAGADAS.escrituraFallida, seMarcaron: false };
+  if (!recargaOk) return { tono: 'warning', texto: COPY_BULK_PAGADAS.recargaFallida, seMarcaron: true };
+  return { tono: 'success', texto: textoMarcadas(marcadas), seMarcaron: true };
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { COPY_BULK_PAGADAS, resultadoMarcadoEnBloque, textoMarcadas };
+}
+
 async function fetchInvoices(options = {}) {
     const { status = 'all', search = '', dateFrom = '', dateTo = '' } = options;
 
@@ -253,23 +292,38 @@ async function fetchInvoices(options = {}) {
       const btn = bulkBar.querySelector('#bulk-paid-btn');
       btn.disabled = true;
       btn.textContent = 'Procesando…';
+      // ⚠️ SCRUM-375 · LA ESCRITURA Y LA RECARGA SON DOS FALLOS DISTINTOS, y hasta aquí un solo
+      // `catch` los envolvía a los dos. Si el POST salía bien y fallaba la recarga, la pantalla
+      // decía «no se han podido marcar como pagadas» CUANDO SÍ SE MARCARON: el profesional volvía
+      // a pulsar sobre facturas que ya estaban pagadas, o se iba creyendo que no había cobrado.
+      //
+      // Un fallo de LECTURA no se puede presentar como un fallo de ESCRITURA. Por eso la recarga
+      // vive fuera del `try` del POST y tiene su propio aviso.
+      let data;
       try {
-        const data = await apiRequest('/admin/invoices/bulk-paid', {
+        data = await apiRequest('/admin/invoices/bulk-paid', {
           method: 'POST',
           body: JSON.stringify({ ids }),
         });
         selectedIds.clear();
-        await reload();
-        statusBox.textContent = '✓ ' + data.updated + ' factura' + (data.updated !== 1 ? 's' : '') + ' marcada' + (data.updated !== 1 ? 's' : '') + ' como pagadas.';
-        statusBox.className = 'alert success';
-        statusBox.style.display = 'block';
       } catch {
         btn.disabled = false;
         btn.textContent = '✓ Marcar como pagadas';
-        statusBox.textContent = 'No se han podido marcar como pagadas. Vuelve a intentarlo.';
+        statusBox.textContent = COPY_BULK_PAGADAS.escrituraFallida;
         statusBox.className = 'alert error';
         statusBox.style.display = 'block';
+        return;
       }
+
+      // A partir de aquí LA ESCRITURA YA OCURRIÓ. Pase lo que pase con la recarga, el mensaje
+      // tiene que decir que se marcaron.
+      let recargaOk = true;
+      try { await reload(); } catch { recargaOk = false; }
+
+      const r = resultadoMarcadoEnBloque({ escrituraOk: true, recargaOk, marcadas: data.updated });
+      statusBox.textContent = r.texto;
+      statusBox.className = 'alert ' + r.tono;
+      statusBox.style.display = 'block';
     });
 
     // "Seleccionar todo"
@@ -578,4 +632,6 @@ async function fetchInvoices(options = {}) {
   }
 
   // Hacemos la función accesible desde otros scripts
-window.renderInvoicesView = renderInvoicesView;
+// SCRUM-375: guardado como en `albaranActionsRegistry.js` — sin esto el fichero no se puede
+// `require()` desde la suite, y el decisor de arriba solo se podria probar leyendo el texto.
+if (typeof window !== 'undefined') window.renderInvoicesView = renderInvoicesView;
