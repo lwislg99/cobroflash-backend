@@ -151,8 +151,11 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
 
   // TANDA 3 — configuración y datos en bloque. Ninguna es flujo de campo evidente;
   // se aparcan por volumen y porque tocarlas mueve el nav del dashboard.
-  { method: 'POST',   path: '/admin/products/import', tanda: 3, duda: 'Reescribe el tarifario en bloque → admin' },
-  { method: 'POST',   path: '/admin/products/load-catalog', tanda: 3, duda: 'Ídem, carga catálogo entero' },
+  // SCRUM-365: SALEN `/admin/products/import` y `/admin/products/load-catalog`, declaradas con
+  // `requireRole('admin')`. No hacía falta decidir nada nuevo: su duda ya proponía admin y el
+  // criterio estaba escrito arriba, en el motivo de `DELETE /admin/products/:id` («una línea de
+  // catálogo, no el tarifario»). Lo que las mantenía aquí no era una duda, era la tarea sin hacer
+  // — igual que le pasó a `/admin/products/export` en SCRUM-103.
   { method: 'POST',   path: '/admin/customers/import', tanda: 3, duda: 'Alta masiva de clientes → probable admin' },
   { method: 'GET',    path: '/admin/providers', tanda: 3, duda: 'Proveedores: ligado a compras/gastos → probable admin' },
   { method: 'POST',   path: '/admin/providers', tanda: 3, duda: 'Ídem' },
@@ -173,6 +176,11 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
  * 24 → 17 (SCRUM-107): salen las 7 de /admin/expenses, clasificadas por verbo.
  * 17 → 16 (SCRUM-103): sale /admin/products/export. No la sacó una revisión humana:
  * la cazó el assert nuevo, porque su propia "duda" decía que S1 ya lo había decidido.
+ * 16 → 14 (SCRUM-365): salen /admin/products/import y /admin/products/load-catalog, las dos con
+ * requireRole('admin'). Lo que las delató fue la ASIMETRÍA, no una revisión: `export` (leer el
+ * tarifario) exigía admin desde SCRUM-103 y estas dos (reescribirlo) seguían abiertas — lo
+ * protegido era leer y lo abierto, escribir. Y el criterio ya estaba escrito arriba, en el motivo
+ * de DELETE /admin/products/:id: «una línea de catálogo, no el tarifario».
  *
  * BAJAR EL TOPE VA EN EL MISMO COMMIT QUE SACA LAS ENTRADAS, siempre. La lista va
  * SIEMPRE al límite exacto, sin holgura — es eso lo que hace que el ratchet muerda.
@@ -181,7 +189,7 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
  * protege por ir apretado; un tope con holgura es el descuadre silencioso que este
  * fichero existe para evitar (ver SCRUM-103 sobre qué más no valida).
  */
-export const PENDIENTE_MAX = 16;
+export const PENDIENTE_MAX = 14;
 
 /**
  * Fecha límite. Pasada esta fecha el test FALLA mientras queden pendientes.

@@ -19,7 +19,16 @@ router.get('/ping', (_req, res) => res.json({ ok: true, module: 'products' }));
 // A17.1 (ONBOARD-2): para España manda data/catalogs/{gremio}.json (schema del
 // master, precios ORIENTATIVOS etiquetados, borrador hasta validación) y además
 // siembra las plantillas frecuentes del gremio; LATAM sigue con el catálogo TS.
-router.post('/load-catalog', async (req, res) => {
+// SCRUM-365 · ADMIN. La asimetría que cierra este ticket: `/export` llevaba `requireRole` y estas
+// dos no, así que lo protegido era LEER el tarifario y lo abierto, REESCRIBIRLO — al revés de como
+// se protege cualquier cosa. Y detrás están los precios: un tarifario reescrito es cada
+// presupuesto siguiente mal, y eso no se nota hasta que el cliente firma.
+//
+// EL CRITERIO NO SE INVENTA AQUÍ. Ya estaba escrito en `adminRouteDeclarations.ts:84`, donde
+// `DELETE /admin/products/:id` SÍ es de Técnico y su motivo dice por qué: **«Simétrico del alta;
+// una línea de catálogo, no el tarifario»**. Ésa es la frontera — línea suelta al presupuestar,
+// trabajo de operario; catálogo entero, no.
+router.post('/load-catalog', requireRole('admin'), async (req, res) => {
   try {
     const merchant = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
@@ -171,7 +180,10 @@ router.get('/export', requireRole('admin'), async (req, res) => {
   }
 });
 
-router.post('/import', async (req, res) => {
+// SCRUM-365 · ADMIN, por el mismo criterio de `adminRouteDeclarations.ts:84`: esto reescribe el
+// tarifario en bloque. Y era el lado peor de la asimetría — `GET /export` (leer) ya exigía admin
+// desde SCRUM-103 mientras esta (escribir) estaba abierta.
+router.post('/import', requireRole('admin'), async (req, res) => {
   try {
     const csv = String(req.body?.csv || '').trim();
     if (!csv) return res.status(400).json({ ok: false, error: 'csv_required' });
