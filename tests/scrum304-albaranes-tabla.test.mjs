@@ -330,9 +330,45 @@ test('SCRUM-304 · el patrón móvil es EL MISMO que usa la lista global de alba
 
   // Las celdas llevan sus ranuras: sin ellas la clase está puesta y la rejilla no se usa (es lo
   // que le pasa hoy a `albaranesView.js`, medido y reportado, pero no se arregla aquí: otro carril).
-  for (const ranura of ['cell-client', 'cell-date', 'cell-status', 'cell-id', 'cell-actions']) {
+  for (const ranura of ['cell-id', 'cell-date', 'cell-status', 'cell-actions']) {
     assert.ok(FILA.includes(ranura), `🔴 falta la ranura «${ranura}»: la card se recompondría a medias`);
   }
+});
+
+test('SCRUM-304 · 🔴 `cell-id` lleva el NÚMERO, como en las otras dos que usan el patrón', () => {
+  // LA CONVENCIÓN SE DERIVA, no se escribe aquí. La primera versión puso el número en `cell-client`
+  // y el CONTEO de líneas en `cell-id` — una tercera convención para las mismas ranuras, y en la
+  // card el conteo salía como un «3» suelto que nadie sabe leer (la cabecera está oculta).
+  const hermanas = ['invoicesView.js', 'quotesListView.js'].map((n) => ({
+    n, src: fs.readFileSync(path.join(RAIZ, 'public/dashboard/js', n), 'utf8'),
+  }));
+
+  // ¿Qué variable recibe `cell-id` en cada hermana? Su nombre dice qué guarda.
+  const portadores = hermanas.map(({ n, src }) => {
+    const m = src.match(/(\w+)\.className = ["']cell-id["']/);
+    assert.ok(m, `🔴 ESCÁNER CIEGO: «${n}» ya no asigna \`cell-id\` — la convención cambió o se fue`);
+    return { n, variable: m[1] };
+  });
+  for (const { n, variable } of portadores) {
+    assert.match(variable, /number|id/i,
+      `🔴 en «${n}» la ranura \`cell-id\` la ocupa \`${variable}\`, que no parece el número del ` +
+      'documento. Si la convención de la casa ha cambiado, esta tabla tiene que cambiar con ella.');
+  }
+
+  // Y aquí el número va en `cell-id`, no en otra ranura.
+  const i = FILA.indexOf('<td class="cell-id">');
+  assert.ok(i >= 0, '🔴 la fila ya no usa `cell-id`');
+  const j = FILA.indexOf('</td>', i);
+  assert.ok(FILA.slice(i, j).includes('alb.numero'),
+    '🔴 `cell-id` NO lleva el número del albarán. Es la ranura del número en las otras dos vistas ' +
+    'que usan este patrón; meter otra cosa ahí es inventar una tercera convención, y en la card ' +
+    '—sin cabecera— ese valor sale suelto y no se puede leer.');
+
+  // Lo informativo que no acciona se oculta en móvil, que es lo que hacen las dos hermanas.
+  assert.ok(/col-hide-mobile[^]{0,80}colLineas|colLineas[^]{0,80}col-hide-mobile/.test(FILA)
+    || FILA.includes('<td class="col-hide-mobile">${nLineas}'),
+    '🔴 «Líneas» ya no se oculta en móvil. En la card no hay cabecera que la rotule, así que su ' +
+    'número saldría suelto — el mismo defecto que tenía `cell-id` mal usado.');
 });
 
 test('SCRUM-304 · el rótulo de la acción NO se reescribe aquí: sale de C2', () => {
