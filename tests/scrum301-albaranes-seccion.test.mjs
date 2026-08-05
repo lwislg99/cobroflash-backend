@@ -1,0 +1,424 @@
+// tests/scrum301-albaranes-seccion.test.mjs — SCRUM-301 (C1)
+//
+// LOS ALBARANES PASAN A SER UN SITIO. Hasta aquí vivían dentro de cada Trabajo, así que «¿qué
+// tengo sin firmar?» —la pregunta del lunes de un reformista con seis obras— obligaba a entrar
+// obra por obra.
+//
+// Lo que este fichero tiene que dejar demostrado:
+//
+//   ① LOS CONTADORES CUADRAN CON LAS FILAS. La suma de cada eje es el total, siempre.
+//   ② 🔴 SUELO — una consulta que falla NO produce ceros: revienta. Un contador de «sin firmar»
+//      a 0 porque la lectura se rompió manda al profesional a casa tranquilo con tres albaranes
+//      sin firmar. Cero de «no hay» y cero de «no supe mirar» son idénticos en pantalla.
+//   ③ CENSO DERIVADO de los dos ejes, y guard: si el modelo gana un estado, aparece solo — y
+//      nadie puede enumerarlos a mano en el navegador.
+//   ④ 🔴 TENENCIA EJERCITADA, no deducida: dos merchants en la tienda falsa y se pregunta como
+//      uno. El analizador de SCRUM-243 da por cubierta cualquier lectura en un handler que
+//      mencione `merchantId` por el motivo que sea (medido en SCRUM-348), así que aquí no se
+//      confía en él: se prueba el camino.
+//   ⑤ CONTROL NEGATIVO — un cambio que NO debe mover ningún contador, contrastado con uno que sí.
+//   ⑥ LOS DOS EJES NO SE APLANAN: el `parcial` sobrevive, que es el caso normal en obra por fases.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
+
+import { ALBARAN_ESTADOS } from '../dist/modules/jobs/domain/albaran.service.js';
+import { ESTADOS_COBRO } from '../dist/modules/jobs/domain/albaranFacturacion.js';
+import {
+  EJES_ALBARAN,
+  contarAlbaranes,
+  filtrarAlbaranes,
+  listarAlbaranesDelMerchant,
+} from '../dist/modules/jobs/domain/albaranesListado.js';
+
+const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+const F_VISTA = path.join(RAIZ, 'public', 'dashboard', 'js', 'albaranesView.js');
+const F_INDEX = path.join(RAIZ, 'public', 'dashboard', 'index.html');
+const F_APP = path.join(RAIZ, 'public', 'dashboard', 'js', 'app.js');
+const VISTA = fs.readFileSync(F_VISTA, 'utf8');
+const MARCA = '[PENDIENTE microcopy oficial]';
+
+// ── LA TIENDA FALSA ──────────────────────────────────────────────────────────────────────
+//
+// Aplica el filtro TAL Y COMO SE LO PASEN, igual que Postgres. Es lo que hace que el test de
+// tenencia pruebe algo: si el código olvidara el `merchantId`, esta tienda devolvería los
+// albaranes del otro merchant y el rojo saldría solo.
+
+const M_PROPIO = 7;
+const M_AJENO = 9;
+
+const TIENDA = {
+  albaranes: [
+    // merchant propio
+    { id: 1, merchantId: M_PROPIO, jobId: 100, numero: 'ALB-2026-001', fecha: '2026-03-02T10:00:00.000Z', createdAt: '2026-03-01T09:00:00.000Z', estado: 'borrador', lineas: [{ concepto: 'Bajante', cantidad: 10, unidad: 'm', precioUnitario: 20, tipoIva: 21 }], invoiceId: null },
+    { id: 2, merchantId: M_PROPIO, jobId: 100, numero: 'ALB-2026-002', fecha: '2026-03-05T10:00:00.000Z', createdAt: '2026-03-04T09:00:00.000Z', estado: 'emitido', lineas: [{ concepto: 'Grifería', cantidad: 2, unidad: 'ud', precioUnitario: 50, tipoIva: 21 }], invoiceId: null },
+    { id: 3, merchantId: M_PROPIO, jobId: 101, numero: 'ALB-2026-003', fecha: '2026-03-09T10:00:00.000Z', createdAt: '2026-03-08T09:00:00.000Z', estado: 'firmado', lineas: [{ concepto: 'Alicatado', cantidad: 8, unidad: 'm2', precioUnitario: 30, tipoIva: 21 }], invoiceId: null },
+    // …y éste está a MEDIAS: 4 de 8 facturados. Es el caso que se pierde si se aplanan los ejes.
+    { id: 4, merchantId: M_PROPIO, jobId: 101, numero: 'ALB-2026-004', fecha: '2026-03-11T10:00:00.000Z', createdAt: '2026-03-10T09:00:00.000Z', estado: 'firmado', lineas: [{ concepto: 'Solado', cantidad: 8, unidad: 'm2', precioUnitario: 25, tipoIva: 21 }], invoiceId: null },
+    // merchant AJENO — no puede salir por ningún sitio
+    { id: 90, merchantId: M_AJENO, jobId: 900, numero: 'ALB-AJENO-001', fecha: '2026-03-03T10:00:00.000Z', createdAt: '2026-03-02T09:00:00.000Z', estado: 'firmado', lineas: [], invoiceId: null },
+  ],
+  jobs: [
+    { id: 100, merchantId: M_PROPIO, titulo: 'Reforma baño Alcalá', customerId: 700 },
+    { id: 101, merchantId: M_PROPIO, titulo: 'Obra nueva Chamberí', customerId: 701 },
+    { id: 900, merchantId: M_AJENO, titulo: 'OBRA DEL VECINO', customerId: 900 },
+  ],
+  customers: [
+    { id: 700, merchantId: M_PROPIO, name: 'Bar El Rincón', legalName: null },
+    { id: 701, merchantId: M_PROPIO, name: 'Comunidad Alcalá', legalName: 'C.P. Alcalá 231' },
+    { id: 900, merchantId: M_AJENO, name: 'CLIENTE DEL VECINO', legalName: null },
+  ],
+  libro: [
+    { albaranId: 4, merchantId: M_PROPIO, lineaIndex: 0, cantidad: 4, invoiceId: 500 },
+  ],
+};
+
+function lectorFalso(tienda = TIENDA, espia = {}) {
+  espia.filtros = [];
+  const mismos = (fila, merchantId) => fila.merchantId === merchantId;
+  return {
+    async albaranes(filtro) {
+      espia.filtros.push({ metodo: 'albaranes', ...filtro });
+      return tienda.albaranes.filter((a) => filtro.merchantId === undefined || mismos(a, filtro.merchantId));
+    },
+    async jobs(filtro) {
+      espia.filtros.push({ metodo: 'jobs', ...filtro });
+      return tienda.jobs.filter((j) => (filtro.merchantId === undefined || mismos(j, filtro.merchantId)) && filtro.ids.includes(j.id));
+    },
+    async customers(filtro) {
+      espia.filtros.push({ metodo: 'customers', ...filtro });
+      return tienda.customers.filter((c) => (filtro.merchantId === undefined || mismos(c, filtro.merchantId)) && filtro.ids.includes(c.id));
+    },
+    async libro(filtro) {
+      espia.filtros.push({ metodo: 'libro', ...filtro });
+      return tienda.libro.filter((l) => (filtro.merchantId === undefined || mismos(l, filtro.merchantId)) && filtro.albaranIds.includes(l.albaranId));
+    },
+  };
+}
+
+// ── ① LOS CONTADORES CUADRAN ─────────────────────────────────────────────────────────────
+
+test('SCRUM-301 · ① la suma de cada eje ES el total: los contadores cuadran con las filas', async () => {
+  const { filas, contadores } = await listarAlbaranesDelMerchant(M_PROPIO, lectorFalso());
+  assert.equal(filas.length, 4, '🔴 la población de prueba no es la que este test cree');
+  assert.equal(contadores.total, filas.length);
+
+  const sumaEstado = Object.values(contadores.porEstado).reduce((a, b) => a + b, 0);
+  assert.equal(sumaEstado, contadores.total,
+    `🔴 LAS PESTAÑAS NO CUADRAN CON LA TABLA: suman ${sumaEstado} y hay ${contadores.total} filas.\n\n` +
+    '  Un contador que no cuadra con lo que se pinta debajo es peor que no tener contador: el\n' +
+    '  profesional decide con el número, no con la tabla.');
+
+  const sumaCobro = Object.values(contadores.porCobro).reduce((a, b) => a + b, 0);
+  assert.equal(sumaCobro, contadores.total, '🔴 el eje de facturación no cuadra con el total');
+
+  assert.deepEqual(contadores.porEstado, { borrador: 1, emitido: 1, firmado: 2 });
+  assert.deepEqual(contadores.porCobro, { sin_facturar: 3, parcial: 1, facturado: 0 });
+});
+
+test('SCRUM-301 · todo valor del eje tiene contador AUNQUE sea cero', () => {
+  // Una pestaña que desaparece cuando su contador es 0 convierte «no tienes ninguno sin firmar»
+  // en «esa pregunta ya no existe». El cero se enseña.
+  const c = contarAlbaranes([]);
+  assert.deepEqual(Object.keys(c.porEstado).sort(), [...ALBARAN_ESTADOS].sort());
+  assert.deepEqual(Object.keys(c.porCobro).sort(), [...ESTADOS_COBRO].sort());
+  assert.equal(c.total, 0);
+});
+
+// ── ② 🔴 SUELO: LA CONSULTA CEGADA FALLA, NO DEVUELVE CEROS ──────────────────────────────
+
+test('SCRUM-301 · ② 🔴 SUELO: sin población no se devuelven ceros, se lanza', () => {
+  for (const ausencia of [null, undefined, 'no soy una lista', 42]) {
+    assert.throws(() => contarAlbaranes(ausencia), /sin_poblacion/,
+      `🔴 con \`${String(ausencia)}\` en vez de filas, los contadores han devuelto NÚMEROS.\n\n` +
+      '  Ese es exactamente el fallo del ticket: una pantalla tranquila construida sobre una\n' +
+      '  lectura que no ocurrió. «Cero sin firmar» y «no supe mirar» se ven idénticos.');
+  }
+});
+
+test('SCRUM-301 · ② 🔴 SUELO: si la lectura revienta, el listado revienta con ella', async () => {
+  const lectorRoto = {
+    ...lectorFalso(),
+    async albaranes() { throw new Error('la base no contesta'); },
+  };
+  await assert.rejects(
+    () => listarAlbaranesDelMerchant(M_PROPIO, lectorRoto),
+    /la base no contesta/,
+    '🔴 EL LISTADO SE HA TRAGADO EL FALLO DE LECTURA y ha devuelto algo. Quien lo pinte enseñará ' +
+    'ceros que parecen «no tienes nada pendiente». La ruta tiene que poder devolver 500.');
+
+  // Y el contraste: con la lectura sana, sí resuelve. Sin esto, el rechazo de arriba pasaría
+  // igual con un listado roto del todo que lanzase siempre.
+  const ok = await listarAlbaranesDelMerchant(M_PROPIO, lectorFalso());
+  assert.equal(ok.contadores.total, 4);
+});
+
+// ── ③ CENSO DERIVADO DE LOS DOS EJES ─────────────────────────────────────────────────────
+
+test('SCRUM-301 · ③ los ejes se DERIVAN del modelo, no se enumeran', () => {
+  assert.deepEqual([...EJES_ALBARAN.estado], [...ALBARAN_ESTADOS],
+    '🔴 el eje de estado ha dejado de derivarse de ALBARAN_ESTADOS');
+  assert.deepEqual([...EJES_ALBARAN.cobro], [...ESTADOS_COBRO],
+    '🔴 el eje de facturación ha dejado de derivarse de ESTADOS_COBRO');
+
+  // Y son DOS ejes distintos, no cinco casillas planas. Si alguien los fusionara, esto cae.
+  assert.equal(EJES_ALBARAN.estado.length, 3, '🔴 el enum del documento tiene 3 valores: borrador|emitido|firmado');
+  assert.equal(EJES_ALBARAN.cobro.length, 3, '🔴 el eje de cobro tiene 3 valores: el `parcial` es uno de ellos');
+  for (const v of EJES_ALBARAN.cobro) {
+    assert.equal(EJES_ALBARAN.estado.includes(v), false,
+      `🔴 «${v}» aparece en los DOS ejes: se han aplanado. Aplanarlos obliga a inventar un estado ` +
+      'que no existe y pierde el `parcial`, que en una obra por fases es el caso normal.');
+  }
+});
+
+test('SCRUM-301 · ③ un estado NUEVO del modelo aparece solo, no se descarta en silencio', () => {
+  // El día que la Parte L gane un estado, el contador tiene que enseñarlo. Si lo tirase, la
+  // pestaña «Todos» seguiría cuadrando y esos albaranes no estarían en ninguna pestaña.
+  const filas = [
+    { estado: 'borrador', estadoCobro: 'sin_facturar' },
+    { estado: 'anulado_hipotetico', estadoCobro: 'sin_facturar' },
+  ];
+  const c = contarAlbaranes(filas);
+  assert.equal(c.porEstado.anulado_hipotetico, 1,
+    '🔴 un estado que el eje no conoce se está descartando: sus albaranes desaparecerían de la ' +
+    'pantalla sin que nadie lo note');
+  assert.equal(Object.values(c.porEstado).reduce((a, b) => a + b, 0), c.total,
+    '🔴 con un estado desconocido, las pestañas dejan de cuadrar con el total');
+});
+
+/** Literales de cadena de un fuente JS/TS, por AST (un `grep` no distingue un comentario). */
+function literalesDe(fuente) {
+  const sf = ts.createSourceFile('x.js', fuente, ts.ScriptTarget.Latest, true);
+  const out = [];
+  const visita = (n) => {
+    if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) out.push(n.text);
+    ts.forEachChild(n, visita);
+  };
+  visita(sf);
+  return out;
+}
+
+test('SCRUM-301 · ③ 🔴 la vista NO enumera los estados: los recibe', () => {
+  // ⚠️ Las DOS funciones de presentación (`claseEstado` / `claseCobro`) quedan fuera del barrido, y
+  // no es una excepción de conveniencia: el peligro que este guard persigue es que un estado NUEVO
+  // DESAPAREZCA de la pantalla. Un mapa de valor→clase CSS no puede esconder nada porque tiene
+  // caso por defecto — el albarán se pinta igual, con la píldora neutra. Lo que sí escondería es
+  // enumerar los estados para construir pestañas o para filtrar, y eso sigue vigilado.
+  //
+  // La exención se paga con el assert de abajo: las dos tienen que TENER ese caso por defecto.
+  const presentacion = ['claseEstado', 'claseCobro'];
+  let barrido = VISTA;
+  for (const nombre of presentacion) {
+    const cuerpo = cuerpoDe(VISTA, nombre);
+    assert.ok(cuerpo, `🔴 no se encuentra \`${nombre}\` en la vista: la exención estaría mirando al aire`);
+    assert.match(cuerpo, /return (?!.*if)[^;]+;\s*}$/s,
+      `🔴 \`${nombre}\` no termina en un return por defecto: un estado nuevo se quedaría SIN clase ` +
+      'y la exención de este guard dejaría de estar justificada.');
+    barrido = barrido.replace(cuerpo, '');
+  }
+
+  const literales = literalesDe(barrido);
+  assert.ok(literales.length > 20,
+    `🔴 el analizador solo ha encontrado ${literales.length} literales en la vista: o el fichero ` +
+    'cambió de forma o no se está leyendo. Con un analizador ciego este guard pasa en verde vacío.');
+
+  const enumerados = [...ALBARAN_ESTADOS, ...ESTADOS_COBRO].filter((v) => literales.includes(v));
+  assert.deepEqual(enumerados, [],
+    '🔴 LA VISTA ESCRIBE A MANO VALORES DEL MODELO: ' + enumerados.join(', ') +
+    '\n\n  Una lista escrita a mano no avisa de lo que le falta: el día que el modelo gane un\n' +
+    '  estado, esta pantalla lo esconderá en silencio y sus albaranes no estarán en ninguna\n' +
+    '  pestaña. Los ejes llegan en la respuesta (`ejes.estado`, `ejes.cobro`) ya derivados.\n' +
+    '  Las CLASES CSS por estado no cuentan como enumerar: son presentación, y su caso por\n' +
+    '  defecto cubre cualquier valor nuevo.');
+
+  // EN ROJO: el analizador tiene que ver un literal cuando lo hay.
+  assert.ok(literalesDe("const x = 'firmado';").includes('firmado'),
+    '🔴 el analizador no ve un literal evidente: entonces el guard de arriba no vigila nada');
+});
+
+// ── ④ 🔴 TENENCIA, EJERCITADA ────────────────────────────────────────────────────────────
+
+test('SCRUM-301 · ④ 🔴 un merchant NO ve los albaranes de otro (ni en filas ni en contadores)', async () => {
+  const espia = {};
+  const { filas, contadores } = await listarAlbaranesDelMerchant(M_PROPIO, lectorFalso(TIENDA, espia));
+
+  assert.equal(filas.some((f) => f.numero.includes('AJENO')), false,
+    '🔴 SE ESTÁ ENSEÑANDO EL ALBARÁN DE OTRO MERCHANT. En un listado nuevo esto se cuela con ' +
+    'facilidad, y aquí saldría con el nombre de SU cliente y el título de SU obra.');
+  assert.equal(contadores.total, 4, '🔴 el contador incluye albaranes de otro merchant');
+  assert.equal(JSON.stringify(filas).includes('VECINO'), false,
+    '🔴 se ha filtrado el nombre del cliente o del trabajo de otro merchant');
+
+  // Y que el filtro VIAJA en cada consulta, no que el fichero mencione `merchantId` por ahí.
+  const sinFiltro = espia.filtros.filter((f) => f.merchantId !== M_PROPIO);
+  assert.deepEqual(sinFiltro, [],
+    '🔴 alguna consulta se ha hecho SIN el merchantId correcto: ' + JSON.stringify(sinFiltro));
+  assert.ok(espia.filtros.length >= 4, '🔴 no se han ejercitado las cuatro lecturas');
+
+  // Contraste: preguntando como el OTRO merchant sí sale el suyo — si no, este test pasaría
+  // igual con un listado que no devuelve nada nunca.
+  const ajeno = await listarAlbaranesDelMerchant(M_AJENO, lectorFalso());
+  assert.equal(ajeno.filas.length, 1);
+  assert.equal(ajeno.filas[0].numero, 'ALB-AJENO-001');
+});
+
+// ── ⑤ CONTROL NEGATIVO ───────────────────────────────────────────────────────────────────
+
+test('SCRUM-301 · ⑤ control negativo: cambiar el CONTENIDO no mueve ningún contador', async () => {
+  const antes = (await listarAlbaranesDelMerchant(M_PROPIO, lectorFalso())).contadores;
+
+  // Un cambio real que NO afecta a ningún eje: más líneas, otro título de obra, otro cliente.
+  const tocada = JSON.parse(JSON.stringify(TIENDA));
+  tocada.albaranes[0].lineas.push({ concepto: 'Extra', cantidad: 1, unidad: 'ud', precioUnitario: 10, tipoIva: 21 });
+  tocada.jobs[0].titulo = 'Otro título completamente distinto';
+  tocada.customers[0].name = 'Otro cliente';
+  const despues = (await listarAlbaranesDelMerchant(M_PROPIO, lectorFalso(tocada))).contadores;
+
+  assert.deepEqual(despues, antes,
+    '🔴 los contadores se mueven con cambios que no son de estado ni de facturación. Un contador ' +
+    'que reacciona a cualquier cosa deja de significar lo que dice su pestaña.');
+
+  // Y el contraste, para que el `deepEqual` de arriba no pase por ser incapaz de cambiar:
+  // facturar lo que quedaba del albarán 4 lo mueve de `parcial` a `facturado`.
+  const facturada = JSON.parse(JSON.stringify(TIENDA));
+  facturada.libro.push({ albaranId: 4, merchantId: M_PROPIO, lineaIndex: 0, cantidad: 4, invoiceId: 501 });
+  const movida = (await listarAlbaranesDelMerchant(M_PROPIO, lectorFalso(facturada))).contadores;
+  assert.deepEqual(movida.porCobro, { sin_facturar: 3, parcial: 0, facturado: 1 },
+    '🔴 completar lo que faltaba por facturar NO ha movido el contador: entonces el control ' +
+    'negativo de arriba no prueba nada, porque los contadores no cambian nunca.');
+});
+
+// ── ⑥ EL `parcial` SOBREVIVE, Y EL BUSCADOR BUSCA ────────────────────────────────────────
+
+test('SCRUM-301 · ⑥ el eje derivado conserva el PARCIAL (lo que se perdería al aplanar)', async () => {
+  const { filas } = await listarAlbaranesDelMerchant(M_PROPIO, lectorFalso());
+  const aMedias = filas.find((f) => f.numero === 'ALB-2026-004');
+  assert.equal(aMedias.estadoCobro, 'parcial',
+    '🔴 un albarán con 4 de 8 facturados NO sale como `parcial`. Es el caso NORMAL en una obra ' +
+    'por fases, y es justo el que desaparece si los dos ejes se aplanan en cinco pestañas.');
+  assert.equal(aMedias.estado, 'firmado',
+    '🔴 y sigue estando FIRMADO: el ciclo del documento y el de cobro son ejes distintos');
+});
+
+test('SCRUM-301 · el buscador encuentra por número, cliente y trabajo (y sin acentos)', async () => {
+  const { filas } = await listarAlbaranesDelMerchant(M_PROPIO, lectorFalso());
+  assert.equal(filtrarAlbaranes(filas, '002').length, 1, '🔴 no busca por número');
+  // Los DOS albaranes del Trabajo 100 son de «Bar El Rincón»: buscar el cliente los trae a los dos.
+  assert.equal(filtrarAlbaranes(filas, 'rincon').length, 2, '🔴 no busca por cliente sin acento');
+  assert.equal(filtrarAlbaranes(filas, 'chamberi').length, 2, '🔴 no busca por trabajo sin acento');
+  assert.equal(filtrarAlbaranes(filas, '').length, filas.length, '🔴 sin texto debe devolver todo');
+  assert.equal(filtrarAlbaranes(filas, 'zzz').length, 0);
+});
+
+// ── LA COLUMNA QUE ES LA VENTAJA, Y EL CABLEADO ──────────────────────────────────────────
+
+test('SCRUM-301 · 🏆 cada fila lleva su TRABAJO, con id para poder enlazarlo', async () => {
+  // Ellos no pueden tener esta columna: sus albaranes cuelgan de un cliente. Saber que dos
+  // albaranes sin firmar son de la MISMA obra cambia lo que haces: una llamada, no dos.
+  const { filas } = await listarAlbaranesDelMerchant(M_PROPIO, lectorFalso());
+  for (const f of filas) {
+    assert.ok(Number.isInteger(f.jobId), `🔴 la fila ${f.numero} no lleva jobId: no se puede enlazar`);
+    assert.ok(f.trabajo, `🔴 la fila ${f.numero} no lleva el título del Trabajo`);
+  }
+  const deLaMismaObra = filas.filter((f) => f.jobId === 101);
+  assert.equal(deLaMismaObra.length, 2, '🔴 la población de prueba debía tener dos albaranes de una misma obra');
+  assert.equal(new Set(deLaMismaObra.map((f) => f.trabajo)).size, 1,
+    '🔴 dos albaranes del mismo Trabajo enseñan títulos distintos');
+});
+
+/**
+ * Los `src` que index.html CARGA de verdad, con los comentarios HTML fuera.
+ *
+ * Medido en rojo: la primera versión de este guard buscaba el nombre del fichero en el HTML entero
+ * y **comentar el `<script>` la dejaba en verde** — el texto seguía ahí dentro. Un guard que no
+ * distingue una etiqueta viva de una comentada no vigila el cableado, vigila la ortografía.
+ */
+function scriptsCargados(html) {
+  const sinComentarios = html.replace(/<!--[\s\S]*?-->/g, '');
+  return [...sinComentarios.matchAll(/<script[^>]*\ssrc=["']([^"']+)["']/g)].map((m) => m[1]);
+}
+
+test('SCRUM-301 · la sección está CABLEADA: menú, ruta y script', () => {
+  const index = fs.readFileSync(F_INDEX, 'utf8');
+  const app = fs.readFileSync(F_APP, 'utf8');
+
+  assert.match(index, /data-view="albaranes"/,
+    '🔴 no hay entrada de menú `albaranes`. B1 (SCRUM-284) NO la creó —su propia entrada del ' +
+    'registro dice «solo el censo, no toca la sidebar»—, así que la crea este ticket.');
+
+  const scripts = scriptsCargados(index);
+  assert.ok(scripts.length > 20,
+    `🔴 solo se han leído ${scripts.length} scripts de index.html: el lector no está leyendo`);
+  assert.ok(scripts.includes('./js/albaranesView.js'),
+    '🔴 la vista NO se carga en index.html: no existiría en el navegador. Comentar la etiqueta ' +
+    'cuenta como no cargarla — el fichero se queda escrito y la pantalla, vacía.');
+  assert.match(app, /case 'albaranes':/, '🔴 la vista no está enrutada en app.js');
+  assert.match(app, /renderAlbaranesView/, '🔴 app.js no llama a la vista');
+  assert.match(VISTA, /window\.renderAlbaranesView = renderAlbaranesView/,
+    '🔴 la vista no se publica en `window`: app.js no la encontraría');
+
+  // El detalle (C2) ya tiene sección propia a la que pertenecer.
+  assert.match(app, /'albaran-detail' \? 'albaranes'/,
+    '🔴 el detalle del albarán sigue marcando «Trabajos» en el menú, ahora que tiene sección propia');
+});
+
+// ── MICROCOPY (regla 30) ─────────────────────────────────────────────────────────────────
+
+test('SCRUM-301 · todo rótulo NUEVO va con el marcador de microcopy sin aprobar', () => {
+  const index = fs.readFileSync(F_INDEX, 'utf8');
+  const app = fs.readFileSync(F_APP, 'utf8');
+
+  assert.ok(index.includes(MARCA + ' Albaranes'),
+    '🔴 el rótulo del menú no lleva el marcador. El nombre de la sección es microcopy SIN APROBAR ' +
+    '(regla 30): lo aprueba el asesor, no se inventa aquí.');
+  assert.ok(app.includes(MARCA + ' Albaranes'), '🔴 el título de la pantalla no lleva el marcador');
+
+  // Y en la vista: pestañas, columnas, buscador y estados vacíos. Se cuenta cuántas veces se
+  // llama al helper — si alguien añade un rótulo suelto, este número deja de cuadrar.
+  const usos = (VISTA.match(/rotulo\(/g) || []).length;
+  assert.ok(usos >= 8,
+    `🔴 solo ${usos} rótulos pasan por el marcador. Todo texto nuevo de esta pantalla es microcopy ` +
+    'sin aprobar hasta que el asesor lo apruebe.');
+  assert.ok(VISTA.includes("MARCA + ' ' + borrador"),
+    '🔴 el helper del marcador ha cambiado de forma: revisa que sigue anteponiendo la marca');
+
+  // Las píldoras de la fila NO llevan marcador a propósito: imprimen el VALOR del modelo, que es
+  // dato y no copy — y es lo que impide que alguien vuelva a escribir «Enviado» donde el modelo
+  // dice `emitido`.
+  assert.match(VISTA, /pill\.textContent = f\.estado;/,
+    '🔴 la píldora de estado ha dejado de imprimir el valor del modelo');
+});
+
+// ── LA PANTALLA NO PINTA CEROS CUANDO FALLA ──────────────────────────────────────────────
+
+/** Cuerpo de una función declarada en el fuente, por AST. */
+function cuerpoDe(fuente, nombre) {
+  const sf = ts.createSourceFile('x.js', fuente, ts.ScriptTarget.Latest, true);
+  let cuerpo = null;
+  const visita = (n) => {
+    if (ts.isFunctionDeclaration(n) && n.name && n.name.text === nombre && n.body) cuerpo = n.body.getText(sf);
+    ts.forEachChild(n, visita);
+  };
+  visita(sf);
+  return cuerpo;
+}
+
+test('SCRUM-301 · 🔴 el camino de ERROR no dibuja pestañas ni contadores', () => {
+  const error = cuerpoDe(VISTA, 'pintarError');
+  const exito = cuerpoDe(VISTA, 'pintar');
+  assert.ok(error && exito,
+    '🔴 no se han encontrado `pintarError` / `pintar` en la vista: el guard estaría mirando al aire');
+
+  assert.equal(error.includes('data-card-tabs'), false,
+    '🔴 EL CAMINO DE ERROR DIBUJA PESTAÑAS. Con la consulta rota, esas pestañas enseñarían ceros — ' +
+    'y un 0 en «sin firmar» manda al profesional a casa tranquilo con tres albaranes sin firmar.');
+  assert.ok(exito.includes('data-card-tabs'),
+    '🔴 el camino de ÉXITO no dibuja pestañas: entonces el assert de arriba no distingue nada');
+  assert.ok(error.includes("'alert error'"),
+    '🔴 el aviso de error no lleva tono. `.alert` SIN modificador está oculta por CSS (styles.css): ' +
+    'sería un error invisible, que es peor que ninguno (lección de SCRUM-303/350).');
+  assert.ok(exito.includes('contadores.total'), '🔴 el camino de éxito no usa los contadores del servidor');
+});

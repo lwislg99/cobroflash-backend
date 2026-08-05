@@ -155,8 +155,10 @@ async function initApp() {
 
   // 6. Menú activo
   function setActiveMenu(view) {
+    // SCRUM-301 (C1): el detalle del albarán ya tiene sección propia a la que pertenecer. Antes
+    // marcaba «Trabajos» porque los albaranes no existían como sitio; ahora sí.
     const menuView = view === 'quotes-detail' ? 'quotes-list'
-      : view === 'albaran-detail' ? 'jobs'
+      : view === 'albaran-detail' ? 'albaranes'
       : view === 'invoice-detail' ? 'invoices'
       : view === 'jobs-detail' ? 'jobs' : view;
 
@@ -243,6 +245,12 @@ async function initApp() {
       case 'invoices':
         viewTitle.textContent = 'Facturas';
         renderInvoicesView(viewContainer);
+        break;
+      case 'albaranes':
+        // SCRUM-301 (C1): sección propia. El título de la pantalla es microcopy sin aprobar
+        // (regla 30) igual que el rótulo del menú, así que lleva su marcador.
+        viewTitle.textContent = '[PENDIENTE microcopy oficial] Albaranes';
+        if (typeof window.renderAlbaranesView === 'function') window.renderAlbaranesView(viewContainer);
         break;
       case 'albaran-detail':
         // SCRUM-302 (C2): el albarán tiene página propia. El rótulo del título es el nombre del

@@ -25,6 +25,8 @@ import {
   type AlbaranModoValoracion,
 } from '../../domain/albaran.service';
 import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
+// SCRUM-301 (C1): el listado global. Dominio puro + lector inyectable (la tenencia se ejercita).
+import { listarAlbaranesDelMerchant, type LectorListado } from '../../domain/albaranesListado';
 import {
   agruparPorMes,
   seleccionarConsolidablesDeCliente,
@@ -50,6 +52,60 @@ import { sellarTrasEmision, SELLADO_HECHO } from '../../../invoicing/domain/sell
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 
 const router = Router();
+
+/**
+ * SCRUM-301 · el lector de verdad del listado. Cada consulta recibe el `merchantId` y lo pone en
+ * su `where`: si alguna lo perdiera, el listado enseñaría el nombre del cliente de otro merchant.
+ * Vive aquí —y no en el dominio— para que `albaranesListado.ts` siga sin tocar Prisma y su tenencia
+ * se pueda ejercitar con una tienda falsa en la suite, sin base de datos.
+ */
+const lectorPrismaListado: LectorListado = {
+  albaranes: ({ merchantId }) => prisma.albaran.findMany({
+    where: { merchantId },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true, merchantId: true, jobId: true, numero: true, fecha: true,
+      createdAt: true, estado: true, lineas: true, invoiceId: true,
+    },
+  }),
+  jobs: ({ merchantId, ids }) => prisma.job.findMany({
+    where: { merchantId, id: { in: ids } },
+    select: { id: true, titulo: true, customerId: true },
+  }),
+  customers: ({ merchantId, ids }) => prisma.customer.findMany({
+    where: { merchantId, id: { in: ids } },
+    select: { id: true, name: true, legalName: true },
+  }),
+  libro: ({ merchantId, albaranIds }) => prisma.albaranLineaFacturada.findMany({
+    where: { merchantId, albaranId: { in: albaranIds } },
+    select: { albaranId: true, lineaIndex: true, cantidad: true, invoiceId: true },
+  }),
+};
+
+/**
+ * GET /admin/albaranes — SCRUM-301 (C1): el LISTADO GLOBAL del merchant.
+ *
+ * No existía: los albaranes solo se veían dentro de cada Trabajo, así que «¿qué tengo sin firmar?»
+ * —la pregunta del lunes— obligaba a entrar obra por obra.
+ *
+ * 🔴 NO CAPTURA los errores del lector para devolver una lista vacía. Si la lectura falla, esto
+ * responde 500 y la pantalla pinta un error: un contador de «sin firmar» a 0 porque la consulta se
+ * rompió manda al profesional a casa tranquilo con tres albaranes sin firmar. Cero de «no hay» y
+ * cero de «no supe mirar» son idénticos en pantalla y opuestos en significado.
+ *
+ * La lógica (ejes, contadores, derivado de cobro) vive en `albaranesListado.ts` con su lector
+ * inyectable: así la tenencia se prueba EJERCITANDO el camino con dos merchants, y no fiándose de
+ * que el fichero mencione `merchantId` (SCRUM-348).
+ */
+router.get('/', async (req, res) => {
+  try {
+    const listado = await listarAlbaranesDelMerchant(req.merchantId!, lectorPrismaListado);
+    return res.json(listado);
+  } catch (err: any) {
+    console.error('[GET /admin/albaranes]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
 
 // GET /admin/albaranes/pendientes-facturar — SCRUM-69 (FACT-1): bandeja "pendientes de
 // facturar" agrupada por cliente y mes natural, con semáforo de plazo legal (art. 13 RD
