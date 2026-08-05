@@ -112,7 +112,74 @@
     facturas — su nombre y su NIF son parte del documento fiscal como emisor. Conservar la
     factura implica conservar su identidad; no hay versión de la factura sin él.
 
+## F. Calificación de la operación: exentas, no sujetas e inversión del sujeto pasivo (bloquea SCRUM-212)
+
+> Añadido el 5-ago-2026. Las once preguntas se midieron el 29-jul-2026 y vivían solo en un
+> comentario de Jira; se traen aquí porque **son lo único que bloquea SCRUM-212** y no estaban en
+> la hoja que va a la cita. **No hay ninguna decisión técnica que tomar hasta que existan estas
+> respuestas**, y así lo dejó dicho el fundador el 29-jul: construir hoy sería inventar el
+> criterio fiscal.
+
+> **⚠️ LÉASE ANTES QUE LAS PREGUNTAS — el enunciado del ticket llevaba un error y lo hemos
+> corregido.** Decía que `S2` era «exenta». **No lo es.** Verificado palabra por palabra contra el
+> XSD oficial que tenemos vendorizado (`xsd/SuministroInformacion.xsd`):
+>
+> | Valor | Literal oficial (`xsd:1238-1260`) |
+> | --- | --- |
+> | **S1** | «OPERACIÓN SUJETA Y NO EXENTA — **SIN** INVERSIÓN DEL SUJETO PASIVO» |
+> | **S2** | «OPERACIÓN SUJETA Y NO EXENTA — **CON** INVERSIÓN DEL SUJETO PASIVO» |
+> | **N1** | «OPERACIÓN NO SUJETA ARTÍCULO 7, 14, OTROS» |
+> | **N2** | «OPERACIÓN NO SUJETA POR REGLAS DE LOCALIZACIÓN» |
+>
+> O sea: **S1 y S2 son las dos sujetas y no exentas**, y se diferencian por la inversión del
+> sujeto pasivo. **La exención no es un valor de `CalificacionOperacion`**: vive en un elemento
+> hermano, `OperacionExenta`, con causa obligatoria **E1..E6** (`xsd:679-711` — E1 art. 20 ·
+> E2 art. 21 · E3 art. 22 · E4 art. 24 · E5 art. 25 · E6 otros). Y los dos están en un `<choice>`
+> **sin** `minOccurs="0"` (`xsd:293-296`): en cada línea hay que informar **exactamente uno de los
+> dos**, nunca ambos ni ninguno.
+>
+> Lo decimos porque cambia lo que te preguntamos: no es «añadir tres códigos más», son **dos cosas
+> distintas** —la calificación y, en su caso, la causa de exención—, y sin la causa no se puede
+> emitir una exenta aunque supiéramos que lo es.
+
+**Por qué preguntamos y no lo decidimos nosotros:** hoy el producto captura del profesional **un
+solo dato fiscal, un número: el tipo de IVA**. No hay ninguna casilla de exención, de no sujeción
+ni de inversión del sujeto pasivo, ni en la línea, ni en la factura, ni en el cliente, ni en el
+producto (medido el 29-jul sobre las 813 líneas del schema y todo el front). Por eso **un 0 % es
+hoy indistinguible de una exenta y de una no sujeta**, y el exportador se niega a elegir entre las
+tres: adivinarlo sería declarar en falso ante la AEAT. Qué operación es exenta y cuál no sujeta es
+criterio fiscal, no técnico.
+
+**Consecuencia práctica, ya medida:** un solo tramo al 0 % **excluye la factura entera** del
+registro VeriFactu. Hoy no se nota porque la facturación fiscal está apagada para negocios reales
+(`INVOICING_ES_ENABLED` OFF, regla 24); saltará el día que se encienda.
+
+14. En oficios en España (fontanería, electricidad, reformas, mantenimientos), **¿se dan
+    operaciones exentas?** Si sí, ¿bajo qué causa **E1..E6**?
+15. **¿Se dan supuestos de inversión del sujeto pasivo (S2)?** ¿En qué casos y **con qué dato
+    observable** se detectan?
+16. **¿Se dan operaciones no sujetas (N1 / N2)?** ¿Qué dato del cliente o del servicio permitiría
+    identificarlas?
+17. **¿Existe algún supuesto legítimo de 0 % en estos oficios?** Si no, ¿debe el sistema
+    **prohibir el 0 % en la entrada** en vez de aceptarlo y bloquear después?
+18. **Granularidad:** ¿puede una misma factura mezclar calificaciones distintas (el XSD admite
+    hasta 12 `DetalleDesglose`), o la calificación es de la factura entera?
+19. **¿Quién declara la calificación?** ¿El profesional bajo su responsabilidad, o se deriva de
+    datos objetivos que YaQu capture?
+20. **Suplidos** (tasas, licencias, permisos adelantados por cuenta del cliente): ¿son línea de
+    factura? ¿con qué calificación?
+21. **Recargo de equivalencia:** ¿aplica a algún cliente típico de YaQu?
+22. **Retención de IRPF** en facturas a empresarios: ¿aplica en este perfil?
+23. **¿Qué datos del destinatario son imprescindibles** para decidir localización o ISP? (hoy
+    **no hay país**).
+24. **Histórico:** las facturas ya emitidas se guardaron sin el dato y son **inmutables por regla
+    29**. ¿Qué se hace si el dictamen concluye que alguna estaba mal calificada?
+
+> **Las tres que más te agradeceríamos aunque no dé tiempo a más:** la **14**, la **15** y la
+> **16**. Si la respuesta a las tres fuera «en este vertical no se dan», el ticket se cierra sin
+> construir nada y el 0 % pasa a ser simplemente un dato que no debe admitirse (pregunta **17**).
+
 ---
 *Generado el 13-jun-2026. Cuando vuelvas con respuestas: B y C desbloquean S1-C/S1-E,
-A desbloquea S1-D, **E desbloquea SCRUM-244 (supresión + portabilidad)**. Estado vivo en
-`docs/PENDIENTES_FUNDADOR.md`.*
+A desbloquea S1-D, **E desbloquea SCRUM-244 (supresión + portabilidad)**, **F desbloquea
+SCRUM-212 (calificación de la operación)**. Estado vivo en `docs/PENDIENTES_FUNDADOR.md`.*
