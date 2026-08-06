@@ -46,6 +46,7 @@ import publicProfileRouter from './modules/system/app/routes/publicProfile.route
 import jobsRouter from './modules/jobs/app/routes/jobs.routes';
 import albaranesRouter from './modules/jobs/app/routes/albaranes.routes'; // SCRUM-14 (ALBARAN-1)
 import libroRegistroRouter from './modules/invoicing/app/routes/libroRegistro.routes'; // SCRUM-296 (A6): libro de registro, SOLO LECTURA
+import modelo303Router from './modules/fiscal/modelo303/modelo303.routes'; // SCRUM-295 (A5): modelo 303, SOLO LECTURA
 import maintenanceRouter from './modules/maintenance/app/routes/maintenance.routes';
 
 import quotesRouter from './modules/quotes/app/routes/quotes.routes';
@@ -382,6 +383,9 @@ mountAdmin(app, '/admin/albaranes',  albaranesRouter); // SCRUM-14 (ALBARAN-1): 
 // SCRUM-296 (A6): libro de facturas emitidas. ADMIN-ONLY, el default de S1 y aquí además el
 // correcto por contenido: es la facturación entera del negocio, no trabajo de campo del Operario.
 mountAdmin(app, '/admin/libro-registro', requireRole('admin'), libroRegistroRouter);
+// SCRUM-295 (A5): el 303 del trimestre. Admin-only por el mismo motivo que el libro: es la
+// declaración fiscal del negocio entero, no trabajo de campo del Operario.
+mountAdmin(app, '/admin/modelo-303', requireRole('admin'), modelo303Router);
 mountAdmin(app, '/admin/maintenance', maintenanceRouter); // A15 (MANT-1): tras flag, 404 sin él
 
 // Rutas solo para admin
