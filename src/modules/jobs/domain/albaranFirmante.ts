@@ -85,7 +85,17 @@ export type FirmanteCalidadId = (typeof FIRMANTE_CALIDAD_IDS)[number];
 export const FIRMANTE_CALIDAD_LIBRE: FirmanteCalidadId = 'otro';
 
 /**
- * La etiqueta de cada ranura. **APROBADAS por el fundador el 6-ago-2026**, literales.
+ * La etiqueta de cada ranura, literales.
+ *
+ * **Aprobadas por el asesor y validadas por el fundador el 6-ago-2026.**
+ * **Consta en SCRUM-300, comentario «Microcopy de FIRMADO POR — FIRMADA».**
+ *
+ * ⚠️ La referencia NO es decoración: antes aquí ponía «APROBADAS por el fundador» a secas, y eso
+ * es exactamente lo que SCRUM-387 vigila. Una marca sin dónde-consta obliga al siguiente lector a
+ * creerse la palabra, y en este ticket ya pasó una vez — la rama `scrum-300-firmado-por` traía
+ * cinco textos declarados «aprobados tal cual, ni una palabra distinta» que **no había aprobado
+ * nadie**. Un texto etiquetado como aprobado es peor que uno con marcador: el marcador pide
+ * permiso y la etiqueta falsa lo da.
  *
  * ⚠️ Cambiar una etiqueta NO obliga a migrar nada, porque lo que se guarda en
  * `Albaran.firmadoPorCalidad` es el `id`. Cambiar un `id` SÍ. Son dos cosas distintas y por eso
