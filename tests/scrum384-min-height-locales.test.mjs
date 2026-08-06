@@ -47,6 +47,7 @@ import { minHeightDe } from './_censo-target-tactil.mjs';
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CSS = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8');
 const REPORTS = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/reportsView.js'), 'utf8');
+const EXPORTV = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/exportView.js'), 'utf8');
 const REGLAS = parsearReglas(CSS);
 
 const MOVIL = 390;
@@ -127,29 +128,67 @@ test('SCRUM-384 · CONTROL: el `min-height` del INPUT de la qq-modal SIGUE, y ha
   );
 });
 
-test('SCRUM-384 · `reportsView.js` no vuelve a fijar `min-height` en línea', () => {
-  // AST: se buscan asignaciones a `style.cssText` / `style.minHeight`, no la cadena suelta.
-  const sf = ts.createSourceFile('reportsView.js', REPORTS, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+// ⚠️ LO QUE ESTE GUARD **NO** PERSIGUE, Y NO ES UN OLVIDO ────────────────────────────────────
+//
+// Solo se vigilan los **BOTONES**. Un `min-height` en línea sobre un `input`, un `select` o un
+// `label` es **LEGÍTIMO** y retirarlo rompería la pantalla: **la base no los cubre**. Medido en
+// navegador, no supuesto — a 1280 px y a 390 px un `input.input` computa `min-height: 0` (alto
+// real 38 px) y un `label` de dataset se queda exactamente en lo que su estilo diga.
+//
+// Va escrito aquí porque el riesgo es real y tiene nombre: el siguiente que lea «SCRUM-384 retiró
+// los min-height locales» y haga un barrido por fichero se llevará los de los campos por delante.
+// **Coherencia sin medición es una excusa para tocar lo que no toca.**
+const SOLO_BOTONES = /^(?:btn|b|boton|button)\b/i;
+
+/** `min-height` fijados en línea sobre BOTONES, por AST y por HTML de plantilla. */
+function minHeightsEnLinea(nombre, fuente) {
+  const sf = ts.createSourceFile(nombre, fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
   const culpables = [];
+  const ln = (n) => sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
+
+  // (a) `x.style.cssText = '…min-height…'` / `x.style.minHeight = …` sobre una variable de botón
   (function recorrer(n) {
     if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.EqualsToken
-        && ts.isPropertyAccessExpression(n.left)) {
+        && ts.isPropertyAccessExpression(n.left)
+        && /\bstyle$/.test(n.left.expression.getText(sf))) {
       const prop = n.left.name.text;
-      const enStyle = /\bstyle$/.test(n.left.expression.getText(sf));
-      const texto = n.right.getText(sf);
-      if ((prop === 'minHeight' && enStyle) || (prop === 'cssText' && enStyle && /min-height/.test(texto))) {
-        culpables.push(`línea ${sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1}`);
-      }
+      const receptor = n.left.expression.getText(sf).replace(/\.style$/, '').split('.').pop();
+      const tocaMinHeight = prop === 'minHeight'
+        || (prop === 'cssText' && /min-height/.test(n.right.getText(sf)));
+      if (tocaMinHeight && SOLO_BOTONES.test(receptor)) culpables.push(`línea ${ln(n)} (${receptor})`);
     }
     n.forEachChild(recorrer);
   })(sf);
 
-  assert.deepEqual(
-    culpables, [],
-    '🔴 ha vuelto un `min-height` EN LÍNEA en `reportsView.js` (' + culpables.join(', ') + ').\n'
-    + 'Un estilo inline gana a toda la hoja: repite en móvil lo que la base ya da y **pisa** el '
-    + '36 px de escritorio, dejando ese botón más alto que sus hermanos sin que nadie lo decida. '
-    + 'Si de verdad hace falta un alto distinto, va al CSS con su motivo, no en el atributo.',
+  // (b) `<button … style="…min-height…">` dentro de un template literal (así se escribe exportView)
+  for (const m of fuente.matchAll(/<button[^>]*style="[^"]*min-height[^"]*"[^>]*>/gi)) {
+    culpables.push(`línea ${fuente.slice(0, m.index).split('\n').length} (<button> en plantilla)`);
+  }
+  return culpables;
+}
+
+for (const [nombre, fuente] of [['reportsView.js', REPORTS], ['exportView.js', EXPORTV]]) {
+  test(`SCRUM-384 · \`${nombre}\` no vuelve a fijar \`min-height\` en línea en un BOTÓN`, () => {
+    const culpables = minHeightsEnLinea(nombre, fuente);
+    assert.deepEqual(
+      culpables, [],
+      `🔴 ha vuelto un \`min-height\` EN LÍNEA sobre un botón en \`${nombre}\` (${culpables.join(', ')}).\n`
+      + 'Un estilo inline gana a toda la hoja: repite en móvil lo que la base ya da y **pisa** el '
+      + '36 px de escritorio, dejando ese botón más alto que sus hermanos sin que nadie lo decida. '
+      + 'Si de verdad hace falta un alto distinto, va al CSS con su motivo, no en el atributo.',
+    );
+  });
+}
+
+test('SCRUM-384 · CONTROL: los `min-height` en línea de CAMPOS y LABELS siguen intactos', () => {
+  // El control negativo del guard de arriba: si el detector empezara a perseguirlos, este test
+  // seguiría verde pero la pantalla se rompería. Así que se exige que SIGAN estando.
+  assert.match(
+    EXPORTV, /min-height:44px[^']*'\s*;?[\s\S]{0,80}?export-ds|l\.style\.cssText\s*=\s*'[^']*min-height:44px/,
+    '🔴 se ha retirado el `min-height` del LABEL de datasets en `exportView.js`. Ése NO sobra: la '
+    + 'base no toca labels ni inputs (medido: un `input.input` computa `min-height: 0`), así que '
+    + 'quitarlo baja el objetivo táctil de esa fila. Coherencia sin medición es una excusa para '
+    + 'tocar lo que no toca.',
   );
 });
 
