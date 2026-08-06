@@ -231,6 +231,41 @@ export function motivosParaNoEmitir(c: Casacion, hayPresupuesto: boolean): strin
   return motivos;
 }
 
+/**
+ * Cuánto se ha facturado ya de CADA LÍNEA DEL PRESUPUESTO, sumando TODOS los albaranes del
+ * Trabajo. Devuelve el mapa que come `casarLineas`.
+ *
+ * ⚠️ EL LIBRO NO ESTÁ EN ESA UNIDAD, y ahí está la trampa. `AlbaranLineaFacturada` guarda
+ * `(albaranId, lineaIndex)` — el índice de la línea del **ALBARÁN**, no del presupuesto. Dos
+ * albaranes distintos tienen su propio `lineaIndex` 0, y los dos pueden apuntar a la MISMA línea
+ * del presupuesto. Sumar por `lineaIndex` a secas mezclaría líneas que no tienen nada que ver.
+ *
+ * Por eso hay que traducir albarán a albarán antes de sumar. Y por eso esto no se resuelve con un
+ * `groupBy` en la consulta: la traducción vive en el Json de cada albarán.
+ *
+ * Sin esto, una obra por fases factura DOS VECES lo mismo — y la segunda factura ya no se puede
+ * borrar (regla 29).
+ */
+export function yaFacturadoPorLineaDePresupuesto(
+  albaranes: Array<{ id: number; lineas: unknown }>,
+  libro: Array<{ albaranId: number; lineaIndex: number; cantidad: unknown }>,
+): Map<number, number> {
+  const porAlbaran = new Map<number, LineaAlbaranEntrada[]>();
+  for (const a of albaranes) porAlbaran.set(a.id, Array.isArray(a.lineas) ? (a.lineas as LineaAlbaranEntrada[]) : []);
+
+  const acumulado = new Map<number, number>();
+  for (const apunte of libro) {
+    const lineas = porAlbaran.get(apunte.albaranId);
+    if (!lineas) continue; // apunte de un albarán que no nos han pasado: no se inventa a qué línea va
+    const idx = num(lineas[apunte.lineaIndex]?.quoteLineIndex);
+    if (!Number.isInteger(idx) || idx < 0) continue; // línea sin origen: nunca salió del presupuesto
+    const cantidad = num(apunte.cantidad);
+    if (!Number.isFinite(cantidad) || cantidad <= 0) continue;
+    acumulado.set(idx, (acumulado.get(idx) ?? 0) + cantidad);
+  }
+  return acumulado;
+}
+
 /** Base imponible de lo facturable, en la misma unidad decimal que `Quote.lines[].price`. */
 export function baseDeFacturables(facturables: LineaFacturableDelAlbaran[]): number {
   return facturables.reduce((acc, l) => acc + l.cantidad * l.precioUnitario, 0);

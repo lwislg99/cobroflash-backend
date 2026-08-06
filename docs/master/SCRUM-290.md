@@ -136,3 +136,72 @@ fundador: un texto legal mal escrito no es feo, **es peligroso**.
 Ficheros: `src/modules/jobs/domain/albaranAFactura.ts` (nuevo — el criterio) ·
 `tests/scrum290-albaran-a-factura.test.mjs` (15, nuevo) ·
 `docs/legal/PREGUNTAS_ASESOR.md` (sección G, preguntas 25-28).
+
+---
+
+# SCRUM-290 · SEGUNDA ENTREGA (6-ago-2026) · El endpoint, y por qué el botón SIGUE sin pintarse
+
+**Medido contra:** `origin/main` = `22d8e84` · 2026-08-06T15:20:00+02:00
+**Tanda:** 2004 tests, 1937 pass, 0 fail, 67 gateados a staging
+
+## `POST /admin/albaranes/:id/convertir-en-factura`
+
+**LLAMADOR de `emitInvoice`, no vía de emisión nueva.** Comprobado en el diff contra `main`:
+**cero cambios en `src/modules/invoicing/` y cero en `prisma/`**. `EmitInvoiceInput` aceptaba tal
+cual `lines`, `albaranRefs`, `quoteId`, `total` y `actor`, así que el límite de la regla 38 no se
+cruza y no hizo falta pedir STOP.
+
+En qué se diferencia de sus dos hermanas, dicho en el código para que nadie las funda:
+`facturar-parcial` exige `VALORADO` y saca los precios **del propio albarán**; ésta es para el
+albarán **`SIN_VALORAR`** —el valor por defecto— que hasta hoy no se podía facturar de ninguna
+manera.
+
+Tres cosas que van donde van por un motivo:
+
+- **El suelo actúa ANTES de pedir número.** Si se pidiera y luego se abortara, quedaría un hueco en
+  la serie que hay que justificar ante Hacienda.
+- **El libro se escribe DENTRO de la transacción** de la factura: si algo falla no queda ni factura
+  sin apunte ni apunte sin factura. Es lo que sostiene el acumulado por fases.
+- **El sellado va FUERA** (SCRUM-173/205): dentro, las facturas de un lote no se ven entre sí. Un
+  fallo ahí **no revierte** la emisión —deshacer va contra la regla 29—: se dice en la respuesta.
+
+`paraAdicional` viaja en la respuesta **con nombre y motivo**, tanto en el 201 como en el 409. Lo
+que no se factura tiene que poder convertirse en el adicional que se firma; desaparecer sin decirlo
+es SCRUM-271.
+
+## Rol: la tercera vía de emisión desde albarán, con su 403 ejercido
+
+Añadida a `ADMIN_ONLY_ROUTES`. **No basta el `requireRole('admin')`**: sus dos hermanas están en esa
+lista porque el test de permisos la recorre con sesión de técnico y exige 403. Comprobado que el
+verde significa algo — quitando el `requireRole`, caen SCRUM-55 y SCRUM-365.
+
+## 🔴 OTRA VEZ EL DATO DE PRUEBA TAPANDO LA COMPROBACIÓN
+
+El caso «en modo justificante no se emite» salía **201 en vez de 409**. No era el código: era el
+fixture. `isDemoMerchant` es `id === 1` o `demo@yaqu.app`, y mi merchant de prueba tenía **`id: 1`**
+— así que **los diez casos corrían como merchant DEMO** y la puerta de la regla 24 no se ejercitaba
+en ninguno. Con un profesional real (`id: 7`, `pro@fontaneria.es`) el caso sale como debe.
+
+> Es exactamente la regla que salió del rojo que no salió rojo, aplicada a otro sitio: **el suelo
+> tiene que estar también en los DATOS de prueba**. Un fixture cómodo desactiva comprobaciones sin
+> tocar ni una línea del guard.
+
+## El botón NO se pinta, y esto es la aplicación de la regla, no un olvido
+
+A0.4 **no está completo**: falta que la pantalla cree el presupuesto adicional desde
+`paraAdicional`. El mecanismo existe (`quotes.routes.ts:168`), pero **no está enchufado**.
+
+Pintar «Convertir en factura» hoy dejaría al profesional en el peor sitio posible: factura emitida
+—que **no se puede borrar** (regla 29)— y lo añadido en obra devuelto en un JSON que nadie enseña.
+Un botón que hace la mitad de lo que promete en el camino del dinero es peor que ninguno.
+
+## Lo que falta para cerrar A0.4
+
+1. La creación del **adicional** desde `paraAdicional`, sobre el camino que ya existe.
+2. La **acción primaria** en el albarán firmado — cuando (1) esté.
+3. La **microcopy**, cuando vuelva el asesor (§G, pregunta 25 bloqueante).
+
+Ficheros: `src/modules/jobs/app/routes/albaranes.routes.ts` (el endpoint) ·
+`src/modules/jobs/domain/albaranAFactura.ts` (+`yaFacturadoPorLineaDePresupuesto`) ·
+`src/core/http/adminOnlyRoutes.ts` (el 403 ejercido) ·
+`tests/scrum290-endpoint-convertir.test.mjs` (10, nuevo).
