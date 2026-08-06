@@ -150,22 +150,116 @@ test('SCRUM-386 · el contexto viaja por parámetro (por eso el cuerpo no cambi�
   assert.match(CODIGO, /function openAlbEditorSheet\(alb, ctx\) \{/);
 });
 
-test('SCRUM-386 · los dos llamadores le pasan el contexto', () => {
+// ── EL CONTRATO DEL CONTEXTO, POR AST ───────────────────────────────────────────────────
+//
+// ⚠️ ESTE TEST SE HA EQUIVOCADO DOS VECES EN LA MISMA DIRECCIÓN. Las dos vigilando la
+// REDACCIÓN en vez del contrato, y merece la pena que las dos queden escritas:
+//
+//   1ª · buscaba la llamada entera con un regex multilínea (`buildAlbEditor\(bodyEl,[^;]*?\},
+//        \{ cur…`) y salía ROJA con el código CORRECTO: `[^;]*?` no cruza los `;` del cuerpo del
+//        objeto de opciones. Falso rojo.
+//   2ª · el arreglo de aquella —contar el literal exacto `{ cur, refresh, setStatus })`— aguantó
+//        hasta que SCRUM-300 (C5) necesitó añadir `direccionSugerida` a uno de los dos pasos.
+//        Entonces el contador bajó de 2 a 1 y el guard se puso rojo ante un cambio LEGÍTIMO.
+//
+// La segunda es la que da la lección, porque el guard hacía **imposible una clase entera de
+// cambio**: cualquier propiedad añadida a cualquiera de los dos pasos lo rompía. Y eso ya no es
+// vigilar un contrato — es congelar una redacción. Misma familia que SCRUM-381: un guard que fija
+// una ruta sin resolverla vigila la ortografía, no el cableado.
+//
+// Lo que de verdad hay que sostener: **cada llamada recibe un contexto que CONTIENE al menos
+// `cur`, `refresh` y `setStatus`**. Añadir claves es libre; quitar una de las tres, no.
+
+/** Qué funciones reciben contexto, y en qué POSICIÓN de sus argumentos. */
+const RECIBEN_CTX = {
+  buildAlbEditor: 3,      // (box, alb, opciones, ctx)
+  openAlbEditorSheet: 1,  // (alb, ctx)
+};
+
+/** Las tres que el cuerpo desestructura: si falta una, revienta en ejecución, no al compilar. */
+const CLAVES_MINIMAS = ['cur', 'refresh', 'setStatus'];
+
+/** Todo paso de contexto del fichero, con sus claves si es un objeto literal. */
+function pasosDeContexto() {
+  const out = [];
+  const v = (n) => {
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression)) {
+      const i = RECIBEN_CTX[n.expression.text];
+      if (i !== undefined) {
+        const arg = n.arguments[i];
+        out.push({
+          fn: n.expression.text,
+          linea: SF.getLineAndCharacterOfPosition(n.getStart(SF)).line + 1,
+          // Objeto escrito ahí mismo → se pueden leer sus claves.
+          claves: arg && ts.isObjectLiteralExpression(arg)
+            ? arg.properties.map((p) => p.name && p.name.getText(SF)).filter(Boolean)
+            : null,
+          // `…, ctx)` → REENVÍO: el contexto viene de más arriba y ya se validó en su origen.
+          reenvio: arg && ts.isIdentifier(arg) ? arg.text : null,
+          ausente: arg === undefined,
+        });
+      }
+    }
+    ts.forEachChild(n, v);
+  };
+  v(SF);
+  return out;
+}
+
+test('SCRUM-386 · los dos llamadores le pasan el contexto (el HECHO, no su redacción)', () => {
   // Sacar la función y no pasarle el contexto compila igual y revienta en tiempo de ejecución,
   // que es el peor de los dos momentos: pasa el CI y falla en la obra.
-  //
-  // ⚠️ La primera versión de este test buscaba la llamada entera con un regex multilínea
-  // (`buildAlbEditor\(bodyEl,[^;]*?\}, \{ cur…`) y salía ROJA con el código CORRECTO: `[^;]*?` no
-  // puede cruzar los `;` del cuerpo del objeto de opciones. El fallo estaba en el instrumento, no
-  // en lo medido — igual que el «0 menciones» de un grep apuntado a un fichero inexistente.
-  // Ahora se cuentan los PASOS de contexto, que es el hecho, y no la forma de escribirlos.
-  const pasos = (CODIGO.match(/\{ cur, refresh, setStatus \}\)/g) || []).length;
-  assert.equal(
-    pasos, 2,
-    '🔴 esperaba DOS pasos de contexto (el editor desde la fila y el de crear) y hay ' + pasos + '. ' +
-      'Sacar la función y no pasarle el contexto compila igual y revienta en ejecución: pasa el ' +
-      'CI y falla en la obra.',
+  const pasos = pasosDeContexto();
+
+  // SUELO. Si el escáner deja de reconocer las llamadas —porque se renombren, se muevan a un
+  // método o se llamen por referencia— aquí sale CERO, y «no supe mirar» se lee igual que «está
+  // bien». Falla en vez de informar de cero.
+  assert.ok(
+    pasos.length >= 3,
+    `🔴 ESCÁNER CIEGO: esperaba al menos 3 llamadas con contexto (crear, editar y el reenvío de ` +
+      `la hoja) y encontré ${pasos.length}. Si las llamadas cambiaron de forma, ARREGLA EL ` +
+      'ESCÁNER — un censo que no sabe mirar da el mismo número que un censo vacío.',
   );
-  assert.match(CODIGO, /openAlbEditorSheet\(alb, \{ cur, refresh, setStatus \}\)/,
-    '🔴 el botón «Editar líneas» ya no le pasa el contexto a la hoja');
+
+  const sinContexto = pasos.filter((p) => p.ausente);
+  assert.deepEqual(
+    sinContexto.map((p) => `${p.fn}:${p.linea}`), [],
+    '🔴 hay llamadas SIN contexto: ' + sinContexto.map((p) => `${p.fn}:${p.linea}`).join(' · '),
+  );
+
+  // Los que escriben el objeto ahí mismo: tienen que llevar las tres. De más, lo que quieran.
+  const literales = pasos.filter((p) => p.claves);
+  assert.equal(
+    literales.length, 2,
+    `🔴 esperaba DOS pasos de contexto escritos como objeto (el editor desde la fila y el de ` +
+      `crear) y hay ${literales.length}.`,
+  );
+
+  for (const p of literales) {
+    const faltan = CLAVES_MINIMAS.filter((k) => !p.claves.includes(k));
+    assert.deepEqual(
+      faltan, [],
+      `🔴 ${p.fn} (línea ${p.linea}) recibe un contexto SIN «${faltan.join('», «')}». El cuerpo ` +
+        'desestructura las tres, así que la que falte llega `undefined` y revienta al usarla: ' +
+        `compila, pasa el CI y falla en la obra. Lleva: {${p.claves.join(', ')}}.`,
+    );
+  }
+
+  // Y el reenvío de la hoja al editor, que es lo que hace que el de la fila llegue hasta abajo.
+  const reenvios = pasos.filter((p) => p.reenvio === 'ctx');
+  assert.ok(
+    reenvios.length >= 1,
+    '🔴 `openAlbEditorSheet` ya no reenvía su `ctx` a `buildAlbEditor`: el contexto se pierde a ' +
+      'mitad de camino y el editor abierto desde la fila se queda sin él.',
+  );
+});
+
+test('SCRUM-386 · el botón «Editar líneas» le pasa el contexto a la hoja', () => {
+  const desdeLaFila = pasosDeContexto().find((p) => p.fn === 'openAlbEditorSheet' && p.claves);
+  assert.ok(desdeLaFila, '🔴 el botón «Editar líneas» ya no le pasa un contexto a la hoja');
+  const faltan = CLAVES_MINIMAS.filter((k) => !desdeLaFila.claves.includes(k));
+  assert.deepEqual(
+    faltan, [],
+    `🔴 al abrir el editor desde la fila falta «${faltan.join('», «')}» en el contexto.`,
+  );
 });
