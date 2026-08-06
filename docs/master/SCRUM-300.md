@@ -200,3 +200,40 @@ cuatro worktrees (`fsutil` → error 4390, `LinkType` vacío), así que regenera
 > Lo que sigue es lo medido, no lo supuesto.
 
 el albarán firmado guardaba un trazo anónimo y ningún dato de la entrega. **La premisa del ticket estaba DESMENTIDA y se midió antes de tocar nada:** el ticket daba por hecho que el lugar de obra salía de `Job.direccion`, pero **nadie escribe `Job.direccion`** (ningún esquema de `src/core/validation/` la acepta; sus únicas apariciones en `src/` son lecturas — el propio comentario del schema ya lo admitía: *"sin fuente hoy… se llenará en la UI (tarea futura)"*) y **`Customer` no tiene dirección**. Peor: `buildFirmaEvidencia` metía `obra: job.direccion` DENTRO del hash del contenido, así que **todos los albaranes firmados hasta hoy llevan el lugar de obra sellado como `null`**. Y `firmante` se rellenaba con el nombre del CLIENTE pasara lo que pasara — una declaración que nadie había hecho, que es peor que un hueco porque se impugna y arrastra al documento. **Schema aditivo (GO del fundador, diff presentado antes de aplicar):** `Albaran.fechaEntrega DateTime?` · `lugarEntrega String?` · `firmadoPorNombre String?` · `firmadoPorCalidad String?`, las cuatro opcionales; SQL generado offline (`prisma migrate diff` schema→schema) = **4 `ADD COLUMN` y nada más**: 0 DROP, 0 RENAME, 0 ALTER destructivo, 0 NOT NULL. **El sobre de evidencia sube a `v: 2`** y los campos nuevos entran al contenido sellado (probado: cambiar cualquiera de los cuatro cambia el hash). **Los sobres `v:1` NO se recalculan, NO se migran y NO se tocan** — con su `obra: null` son la verdad de lo que se firmó; `computeAlbaranContentHash` emite SOLO v2 y lo dice en su docstring, para que quien construya el verificador (**SCRUM-369**) sepa que hay dos poblaciones y que `v` las distingue. **Quién firma es OBLIGATORIO en los dos canales**, y ni prerrellenado ni con opción marcada: campo VACÍO + **chip de sugerencia de un toque** con el nombre del cliente, y «en calidad de qué» sin default (las cinco etiquetas las aprobó el fundador el 5-ago-2026 y entraron sin migrar ni un albarán, porque lo que se guarda es el `id`, fijado antes que el texto; el guard NO se retiró al llegar la copy: cambió de objeto y ahora clava el texto literal en las DOS listas —módulo TS y pad del dashboard—, porque un guard que se borra al aprobarse la copy deja la copy sin vigilar). **SUELO:** si no hay lugar de entrega se imprime «No se pidió al firmar»; **jamás** se cae al domicilio fiscal del emisor ni al del cliente — una dirección equivocada en un documento de entrega es peor que un hueco, porque se firma sin mirarla. **TOQUES del flujo de firma (medidos sobre el código, antes → después):** in situ **3 → 4** (Firmar · *chip* · dibujar · Confirmar) y remoto **2 → 3** (*chip* · dibujar · Firmar); +1 más en cada uno si se marca la calidad, que es opcional. Si el firmante NO es el cliente hay que teclear el nombre — es el precio de no mentir, y el chip cubre el caso normal. **Tests:** `tests/scrum300-albaran-campos.test.mjs` (17, puros, sin gate) + `tests/_pdf-texto.mjs`, **primer lector de texto de PDF del repo** — hasta ahora los tests de PDF solo miraban tamaño y `%PDF-`, que un PDF con los campos en blanco también pasa; el ticket exigía afirmar sobre el DOCUMENTO. Los tres campos, la retrocompatibilidad de un albarán `v:1` (se imprime, conserva su hash tal cual, se sigue facturando) y el suelo se prueban leyendo el PDF generado. **Probado en rojo por el mecanismo:** quitando cada campo del PDF (cae nombrándolo), rompiendo el suelo (cae solo el test del suelo, con su control al lado en verde) y sacando `lugarEntrega` del sello. **Tres trinquetes ajenos se pusieron rojos y los tres tenían razón:** el censo SQL de SCRUM-222 (regenerado, 331→335 columnas), el de SCRUM-275 (mi `invalid_date` duplicado añadía una respuesta pública muda: las dos fechas comparten ahora UNA salida de error; y el `message` va deletreado en el sitio, no escondido tras una variable) y el de SCRUM-302, que **cortaba 1200 caracteres FIJOS** del modelo y al crecer éste decía «no encuentro `estado`» cuando `estado` seguía donde estaba — arreglado para recortar el modelo entero con comprobación de que se cogió completo. **`Job.direccion` NO se toca** (queda como precarga opcional para cuando alguien le dé fuente); tampoco se implementa precarga hoy, porque saldría siempre vacía. **Hallazgo → SCRUM-369:** `computeAlbaranContentHash` se invoca en **un solo sitio de `src/`** (al firmar) y **nada lo recalcula**: el hash es evidencia guardada, no un invariante comprobado — no existe verificador. **Migración aditiva: staging antes que producción, y prod ⏳ con GO del fundador.**
+
+---
+
+## ⛔ POR QUÉ SE CIERRA ESTA RAMA (A · `scrum-300-campos-albaran`, PR #492) — 6-ago-2026
+
+**Se cierra la DUPLICACIÓN, no el trabajo.** Decisión del fundador, con la razón escrita: mergear
+esto metería en `main` `albaranFirmaCopy.ts`, **una tercera fuente de verdad sobre lo mismo** en un
+ticket que ya tenía dos, más un segundo juego de ids de `firmadoPorCalidad` en conflicto con el de
+la fusión. C5 se entrega desde **`scrum-300-c5-fusion`**.
+
+### Lo que de esta rama SÍ está dentro de la fusión
+
+| Qué | Comprobado |
+| --- | --- |
+| **El esquema: las 4 columnas** (`fechaEntrega`, `lugarEntrega`, `firmadoPorNombre`, `firmadoPorCalidad`) | `git show origin/scrum-300-c5-fusion:prisma/schema.prisma` las trae **con los comentarios literales de aquí** |
+| **`fechaEntrega`** — el campo que el ticket pedía y la rama B no tenía | idem |
+| **`tests/_pdf-texto.mjs`** — el primer lector de texto de PDF del repo | está en el árbol de la fusión |
+| **El SQL del censo** (`docs/sql/deriva-prod.sql`, 4 columnas) | veredicto «**A**» en el mapa de arriba |
+| **La medición que desmintió la premisa** — que nadie escribe `Job.direccion` y que el sello llevaba meses con `obra: null` | es el origen de **SCRUM-369** |
+
+### Lo que se descarta, y por qué
+
+* **`albaranFirmaCopy.ts`** → se queda `albaranFirmante.ts` (rama B), por decisión del asesor: dos
+  ficheros de dominio para el mismo hecho es el defecto que este ticket ya pagó dos veces.
+* **El sellador «solo v:2»** → gana el despacho por versión de B. Se escribió cuando SCRUM-369 no
+  existía; hoy el verificador está en `main` y exige una receta por versión.
+* **Los 5 ids de aquí** → ⛔ **CONGELADOS**, no descartados. La fusión lleva 6 y no coinciden en 4.
+  La contradicción está abierta en **SCRUM-387** y la decide el fundador: es el valor que se guarda
+  en la columna, y cambiarlo después de migrar obliga a reescribir filas de un documento firmado.
+
+### Los 8 rojos de esta rama contra `main`, para que no se lean como un fallo
+
+`SCRUM-369` (×2), `SCRUM-371` (×4... el barrido) y `SCRUM-302` (×1, campos sin clasificar) son
+**contratos que entraron en `main` DESPUÉS** de escribirse esta rama — el verificador del sello se
+construyó a partir de la medición de esta misma rama. No es trabajo perdido: es la cadena
+funcionando. Matiz medido: el mapa dice que A «salta el suelo» de SCRUM-369; **no lo salta** — el
+suelo la caza y falla en rojo diciendo que dejó de mirar donde debía.
