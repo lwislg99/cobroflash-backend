@@ -286,6 +286,39 @@ export function totalDeFacturables(facturables: LineaFacturableDelAlbaran[]): st
   return (cents / 100).toFixed(2);
 }
 
+/**
+ * Las líneas del PRESUPUESTO ADICIONAL, a partir de lo que no se pudo facturar.
+ *
+ * ── POR QUÉ VAN SIN PRECIO ──────────────────────────────────────────────────────────────────
+ * Son trabajo NUEVO: no existe ninguna referencia firmada de la que sacar su importe — que es
+ * justo lo contrario del caso normal de este fichero. Ponerles un precio aquí sería inventarlo, y
+ * el precio de un adicional lo pone el profesional y lo acepta el cliente. Nacen a 0 y el
+ * presupuesto nace en `draft`: **no se manda solo**.
+ *
+ * ── QUÉ NO LLEVA EL CONCEPTO, Y NO ES OLVIDO ────────────────────────────────────────────────
+ * El `motivo` (`no_estaba_en_el_presupuesto`, `exceso_sobre_lo_presupuestado`…) **no** entra en el
+ * texto de la línea: eso lo lee el CLIENTE, y «exceso sobre lo presupuestado» en un documento que
+ * se le pide firmar es jerga nuestra puesta delante de sus ojos. El motivo viaja aparte, en la
+ * respuesta, para quien tiene que decidir: el profesional.
+ *
+ * La unidad SÍ va en el concepto porque `Quote.lines` no tiene campo para ella y sin ella «2» no
+ * dice si son dos horas o dos metros.
+ */
+export function lineasParaAdicional(paraAdicional: LineaNoFacturable[]): Array<{
+  concept: string; qty: number; price: number; tax: number;
+}> {
+  return paraAdicional
+    // `sin_cantidad` NO va al adicional: una línea sin cantidad no es trabajo nuevo, es una línea
+    // mal rellenada. Meterla haría firmar al cliente algo que ni siquiera se hizo.
+    .filter((l) => l.motivo !== 'sin_cantidad' && l.cantidad > 0)
+    .map((l) => ({
+      concept: l.unidad ? `${l.concepto} (${l.cantidad} ${l.unidad})` : l.concepto,
+      qty: l.cantidad,
+      price: 0,
+      tax: 0,
+    }));
+}
+
 /** Las líneas en la forma que espera `Invoice.lines` — `{concept, qty, price, tax}`. */
 export function lineasParaFactura(facturables: LineaFacturableDelAlbaran[]): Array<{
   concept: string; qty: number; price: number; tax: number;

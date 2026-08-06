@@ -44,6 +44,16 @@ const ALBARAN_ACTION_REGISTRY = [
   { id: 'btnEnviarFirmar',  destinos: { borrador: 'oculta',     emitido: 'primaria',   firmado: 'oculta' } },
   { id: 'btnFacturar',      destinos: { borrador: 'oculta',     emitido: 'oculta',     firmado: 'primaria' },
     cuando: 'valorado-con-pendiente' },
+  // SCRUM-290 (A0.4) · LA OTRA MITAD DE LA PRIMARIA DE `firmado`, y son EXCLUYENTES por
+  // construcción: `btnFacturar` es para el albarán VALORADO (precios en el propio parte,
+  // SCRUM-170) y ésta para el SIN_VALORAR —el valor por DEFECTO, el parte que no lleva precios—,
+  // que hasta A0.4 no se podía facturar de ninguna manera. Un albarán es de un modo o del otro,
+  // nunca de los dos, así que nunca hay dos primarias.
+  //
+  // No se funden en una: fundirlas haría desaparecer una de las dos según el contexto, que es el
+  // fallo mudo que este registro existe para cazar (misma razón que btnBizum/btnTogglePaid en B2).
+  { id: 'btnConvertirFactura', destinos: { borrador: 'oculta',  emitido: 'oculta',     firmado: 'primaria' },
+    cuando: 'sin-valorar-convertible' },
 
   // Secundarias: como mucho dos por estado (regla 2).
   { id: 'btnFirmarAqui',    destinos: { borrador: 'oculta',     emitido: 'secundaria', firmado: 'oculta' } },

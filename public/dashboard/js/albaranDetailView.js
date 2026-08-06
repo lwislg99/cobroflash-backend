@@ -306,6 +306,41 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     btnFacturar: () => mk('btnFacturar', () => {
       if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: alb.job?.id });
     }),
+    /**
+     * SCRUM-290 (A0.4) · CONVERTIR EN FACTURA. Cantidades del parte, precios del presupuesto
+     * firmado — y lo añadido en obra NO se factura: el backend crea un presupuesto adicional que
+     * el cliente firma.
+     *
+     * El aviso de lo que quedó fuera se pinta SIEMPRE que venga, incluso con la factura emitida
+     * bien: es la mitad de la información y callarla dejaría al profesional creyendo que ha
+     * facturado todo lo que hizo.
+     */
+    btnConvertirFactura: () => mk('btnConvertirFactura', async () => {
+      setStatus('info', MICROCOPY_PENDIENTE);
+      let d;
+      try {
+        d = await apiRequest(`/admin/albaranes/${alb.id}/convertir-en-factura`, { method: 'POST' });
+      } catch (e) {
+        // Los motivos del 409 son diagnóstico y vienen en claro: se enseñan tal cual porque
+        // «no se pudo» sin decir por qué obliga a adivinar si falta el presupuesto o las líneas.
+        const motivos = e?.data?.motivos;
+        setStatus('error', Array.isArray(motivos) && motivos.length
+          ? motivos.join(' · ')
+          : (e?.data?.message || e.message));
+        return;
+      }
+      // SCRUM-379 · el refresco va FUERA del `try` de la escritura, y por `refrescar` —nunca por
+      // `recargar()` a pelo—. Aquí pesa más que en ningún otro sitio de esta pantalla: LA FACTURA
+      // YA ESTÁ EMITIDA y no se puede borrar (regla 29). Si el rechazo del refresco se fuera como
+      // promesa sin gestionar, el profesional no leería nada, la pantalla no cambiaría y lo
+      // natural sería que repitiese — emitiendo una segunda factura que tampoco se puede deshacer.
+      await refrescar();
+      // El aviso de lo que quedó fuera va DESPUÉS del refresco, que pinta su propio estado: antes,
+      // lo borraría, y el profesional se quedaría creyendo que facturó todo lo que hizo.
+      if (Array.isArray(d?.paraAdicional) && d.paraAdicional.length) {
+        setStatus('info', MICROCOPY_PENDIENTE);
+      }
+    }),
     // FIRMAR ES DE VERDAD AQUÍ. El rótulo aprobado dice «aquí mismo» y tiene que ser cierto: un
     // botón que promete firmar y te manda a otra pantalla a buscar otro botón es peor que no
     // tenerlo. El componente de firma ya es global (`signaturePad.js`), así que esto es la MISMA
@@ -402,6 +437,12 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   const ctx = {
     'valorado-con-pendiente':
       alb.modoValoracion === 'VALORADO' && alb.estadoFacturacion !== 'facturado',
+    // SCRUM-290 (A0.4) · la otra mitad, EXCLUYENTE con la de arriba: el parte SIN precios se
+    // factura contra el presupuesto firmado. Exige presupuesto detrás — sin él no hay precios
+    // aceptados por el cliente y el endpoint responde 409, así que ofrecerlo sería un botón que
+    // solo sabe fallar.
+    'sin-valorar-convertible':
+      alb.modoValoracion !== 'VALORADO' && !!alb.quote && alb.estadoFacturacion !== 'facturado',
   };
 
   const cubos = { primaria: [], secundaria: [], overflow: [] };

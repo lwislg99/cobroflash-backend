@@ -208,17 +208,23 @@ const LLAMADAS = (() => {
   return out;
 })();
 
-test('SCRUM-379 · SUELO: los CINCO sitios siguen ahí', () => {
+// SCRUM-290 (A0.4) subió el suelo a SEIS: «convertir en factura» es una acción nueva de esta
+// pantalla y refresca igual que las otras cinco. El número se sube A MANO a propósito — si se
+// derivara del propio fichero, el suelo no protegería nada: una acción que perdiera su refresco
+// bajaría el número y el test seguiría verde.
+const SITIOS_QUE_REFRESCAN = 6;
+
+test('SCRUM-379 · SUELO: los SEIS sitios siguen ahí', () => {
   assert.equal(
-    LLAMADAS.length, 5,
-    `🔴 esperaba 5 refrescos tras acción y veo ${LLAMADAS.length} `
-    + `(líneas ${LLAMADAS.map((l) => l.linea).join(', ') || 'ninguna'}). Los cinco son: emitir, `
-    + 'enviar para firmar, firmar aquí, enviar por WhatsApp y subir foto. Si uno se fue, o la '
-    + 'acción desapareció o volvió a llamar a la recarga por su cuenta.',
+    LLAMADAS.length, SITIOS_QUE_REFRESCAN,
+    `🔴 esperaba ${SITIOS_QUE_REFRESCAN} refrescos tras acción y veo ${LLAMADAS.length} `
+    + `(líneas ${LLAMADAS.map((l) => l.linea).join(', ') || 'ninguna'}). Los seis son: emitir, `
+    + 'enviar para firmar, firmar aquí, enviar por WhatsApp, subir foto y convertir en factura. '
+    + 'Si uno se fue, o la acción desapareció o volvió a llamar a la recarga por su cuenta.',
   );
 });
 
-test('SCRUM-379 · los cinco refrescos van con `await`', () => {
+test('SCRUM-379 · los seis refrescos van con `await`', () => {
   const sinAwait = LLAMADAS.filter((l) => !l.conAwait).map((l) => `línea ${l.linea}`);
   assert.deepEqual(
     sinAwait, [],

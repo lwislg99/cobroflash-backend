@@ -28,7 +28,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
 
-const VISTA = path.join(import.meta.dirname, '..', 'public/dashboard/js/albaranDetailView.js');
+const RAIZ = path.resolve(import.meta.dirname, '..');
+const VISTA = path.join(RAIZ, 'public/dashboard/js/albaranDetailView.js');
 const codigo = fs.readFileSync(VISTA, 'utf8');
 const arbol = ts.createSourceFile('albaranDetailView.js', codigo, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
 
@@ -61,6 +62,35 @@ function rotulosDeclarados() {
   return pares;
 }
 
+/**
+ * ACCIONES CON LA MICROCOPY BLOQUEADA, y **dónde consta** que lo está.
+ *
+ * No es una lista de perdonados: es la regla de procedencia de SCRUM-387 aplicada aquí — un texto
+ * no puede declararse pendiente (ni aprobado) sin decir DÓNDE consta. Cada entrada apunta al
+ * documento donde la pregunta está hecha, y el test de abajo comprueba que ese documento **existe
+ * y contiene esa sección**: la excepción no sobrevive a que alguien borre la pregunta.
+ *
+ * `btnConvertirFactura` (SCRUM-290) no lleva rótulo porque su texto le dice a un profesional qué
+ * puede y qué no puede cobrarle a su cliente, y eso no se redacta sobre fuentes públicas. La
+ * pregunta 25 —¿basta nuestra firma digital para acreditar la aceptación del adicional?— bloquea
+ * el TEXTO, no el mecanismo.
+ */
+const MICROCOPY_BLOQUEADA = {
+  btnConvertirFactura: { documento: 'docs/legal/PREGUNTAS_ASESOR.md', seccion: '## G.' },
+};
+
+test('SCRUM-302 · SUELO de la excepción: la procedencia de cada bloqueo EXISTE', () => {
+  // Una excepción que apunta a un documento que ya no dice nada es una excepción sin procedencia,
+  // o sea justo lo que SCRUM-387 vino a cerrar. Si el asesor responde y la sección desaparece,
+  // esto cae y obliga a poner el rótulo aprobado.
+  for (const [id, { documento, seccion }] of Object.entries(MICROCOPY_BLOQUEADA)) {
+    const ruta = path.join(RAIZ, documento);
+    assert.ok(fs.existsSync(ruta), `\`${id}\` dice que su microcopy está pendiente en ${documento}, que NO existe`);
+    assert.ok(fs.readFileSync(ruta, 'utf8').includes(seccion),
+      `\`${id}\` apunta a ${documento} ${seccion}, que ya no está: o el asesor respondió —y toca poner el rótulo— o alguien borró la pregunta`);
+  }
+});
+
 test('SCRUM-302 · SUELO: el extractor ve botones y ve rótulos', () => {
   const creados = botonesCreados();
   const rotulos = rotulosDeclarados();
@@ -71,7 +101,9 @@ test('SCRUM-302 · SUELO: el extractor ve botones y ve rótulos', () => {
 
 test('SCRUM-302 · ningún botón de la página se queda sin rótulo', () => {
   const rotulos = rotulosDeclarados();
-  const sinRotulo = botonesCreados().filter((id) => !(id in rotulos));
+  const sinRotulo = botonesCreados()
+    .filter((id) => !(id in MICROCOPY_BLOQUEADA)) // ver abajo: bloqueo DECLARADO y con procedencia
+    .filter((id) => !(id in rotulos));
   assert.deepEqual(
     sinRotulo, [],
     `estos botones se pintarían con el marcador «[PENDIENTE microcopy oficial]» en pantalla: ${JSON.stringify(sinRotulo)}. Si el rótulo existe pero está fuera de ROTULOS_ALBARAN, el objeto se ha partido — vuelve a unirlo. Si de verdad falta microcopy, pídelo al fundador (regla 30) y déjalo declarado, no suelto`,

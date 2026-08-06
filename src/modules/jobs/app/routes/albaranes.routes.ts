@@ -55,8 +55,10 @@ import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN
 // SCRUM-290 (A0.4): el CRITERIO de qué se factura y a qué precio vive en funciones puras, no aquí.
 import {
   casarLineas, motivosParaNoEmitir, lineasParaFactura, totalDeFacturables,
-  yaFacturadoPorLineaDePresupuesto,
+  yaFacturadoPorLineaDePresupuesto, lineasParaAdicional,
 } from '../../domain/albaranAFactura';
+// SCRUM-195: el número del adicional se reserva DENTRO de su transacción, igual que el del alta.
+import { allocateQuoteNumber } from '../../../quotes/domain/quoteNumber.service';
 
 const router = Router();
 
@@ -1069,14 +1071,57 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
     // entre sí. Un fallo aquí NO revierte la emisión —deshacer va contra la regla 29—: se dice.
     const sellada = (await sellarTrasEmision(invoice, merchant, prisma)).estado === SELLADO_HECHO;
 
+    // ── EL PRESUPUESTO ADICIONAL ───────────────────────────────────────────────────────────
+    //
+    // Lo añadido en obra no se factura: se convierte en un adicional que el cliente firma. Se crea
+    // **enganchado al Trabajo** (`Quote.jobId`), que es el camino de SCRUM-195 — aceptarlo NO crea
+    // un segundo Trabajo porque `ensureJobForQuote` pregunta primero por `Quote.jobId`.
+    //
+    // ⚠️ FUERA de la transacción de la factura, y por el mismo motivo que el sellado: si esto
+    // falla, la factura ya emitida **no se revierte** (regla 29). Se dice en la respuesta.
+    //
+    // ⚠️ NACE EN `draft` Y NO SE MANDA SOLO. Sus líneas van sin precio —es trabajo nuevo, no hay
+    // referencia firmada de la que sacarlo— así que el profesional tiene que ponerles importe
+    // antes de enviarlo. Mandar al cliente un documento a 0 € para que lo firme sería pedirle que
+    // firme la nada.
+    const lineasAdicional = lineasParaAdicional(casacion.paraAdicional);
+    let adicional: { id: number; quoteNumber: number | null } | null = null;
+    let falloAdicional = false;
+    if (lineasAdicional.length > 0) {
+      try {
+        adicional = await prisma.$transaction(async (tx) => {
+          const quoteNumber = await allocateQuoteNumber(tx, req.merchantId!);
+          const creado = await tx.quote.create({
+            data: {
+              merchantId: req.merchantId!, customerId: job.customerId, quoteNumber,
+              status: 'draft',
+              total: '0.00',
+              currency: merchant.defaultCurrency || 'EUR',
+              lines: lineasAdicional as any,
+              jobId: job.id, // SCRUM-195: con valor = ADICIONAL sobre este Trabajo
+            },
+            select: { id: true, quoteNumber: true },
+          });
+          return creado;
+        });
+      } catch (e: any) {
+        // No se relanza: la factura ya está emitida y deshacerla va contra la regla 29. Se avisa.
+        falloAdicional = true;
+        console.error('[POST /admin/albaranes/:id/convertir-en-factura] adicional', e?.message || e);
+      }
+    }
+
     return res.status(201).json({
       ok: true,
       factura: { id: invoice.id, number: invoice.number, total: invoice.total.toString(), currency: invoice.currency },
-      // LO QUE NO SE FACTURÓ, nombrado. La pantalla lo convierte en presupuesto adicional; nada
-      // desaparece sin decirlo.
+      // LO QUE NO SE FACTURÓ, nombrado y con su motivo. Nada desaparece sin decirlo (SCRUM-271).
       paraAdicional: casacion.paraAdicional,
+      // El adicional creado, o `null` si no había nada fuera de presupuesto. `null` NO es un fallo:
+      // es que no hacía falta. El fallo se dice aparte, para que no se confundan.
+      adicional,
+      adicionalFallido: falloAdicional,
       veriFactu: sellada,
-      ...(sellada ? {} : { message: MICROCOPY_PENDIENTE_290 }),
+      ...(sellada && !falloAdicional ? {} : { message: MICROCOPY_PENDIENTE_290 }),
     });
   } catch (err: any) {
     if (esErrorSinLineas(err)) {
