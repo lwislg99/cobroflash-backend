@@ -54,6 +54,16 @@ export interface AsientoLibro {
   clienteId: number | null;
   base: number | null;
   cuota: number | null;
+  /**
+   * SCRUM-295 (A5) · el desglose POR TIPO de la misma factura, en porcentaje (21, 10, 4, 0…).
+   *
+   * ⚠️ Sale de la MISMA llamada a `calcVatBreakdown` que `base` y `cuota` de arriba — no de una
+   * segunda pasada. Es lo que permite que el modelo 303 se construya SOBRE el libro en vez de
+   * volver a agregar por su cuenta: si el 303 y el libro contasen por caminos distintos, un día
+   * dirían cifras distintas y el profesional tendría dos documentos oficiales contradictorios
+   * sin saber cuál miente.
+   */
+  porTipo: { tipo: number; base: number; cuota: number }[];
   total: number | null;
   moneda: string | null;
   estado: string | null;
@@ -178,6 +188,12 @@ export function construirLibroRegistro(params: {
       clienteId: typeof f.customerId === 'number' ? f.customerId : null,
       base: tieneLineas ? desglose.base : null,
       cuota: tieneLineas ? desglose.cuota : null,
+      // Mismo `desglose`, misma llamada: el 303 suma ESTO, así que no hay dos caminos que puedan
+      // divergir. Sin líneas la lista va vacía — no cero, vacía: «no se puede desglosar» y
+      // «desglosa a cero» son cosas distintas, y el 303 tiene que poder separarlas.
+      porTipo: tieneLineas
+        ? desglose.entries.map((e) => ({ tipo: e.rate, base: e.base, cuota: e.cuota }))
+        : [],
       total,
       moneda: f.currency ?? null,
       estado: f.status ?? null,
