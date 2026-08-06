@@ -36,8 +36,8 @@ Siete trampas que ya nos han costado tiempo, y no fallan igual:
    `node scripts/clean-staging-tests.mjs --apply`. Tiene doble guard anti-producción y solo
    toca emails `@test.local`.
 
-4. **El `.env` del carril B lleva SOLO `DATABASE_URL_STAGING`, a propósito. NO está
-   incompleto.** Se creó así en SCRUM-60: **sin `DATABASE_URL`**, para que desde el portátil
+4. **El `.env` del carril B NO lleva `DATABASE_URL`, a propósito. NO está incompleto.**
+   Se creó así en SCRUM-60: **sin `DATABASE_URL`**, para que desde el portátil
    del carril B sea imposible tocar producción ni queriendo — el mismo fail-closed que
    `tests/_staging-db.mjs`. El resto de variables (Stripe, WhatsApp, Gemini…) viven solo en
    Railway, porque en carril B no se levanta la app en local: solo se corren tests.
@@ -47,7 +47,7 @@ Siete trampas que ya nos han costado tiempo, y no fallan igual:
    y es lo esperado. Los tests **no gateados** (entre ellos la red fail-closed de SCRUM-55)
    no tocan BD y corren igual sin `.env`; solo los de `QA_DB_TEST=1` necesitan el fichero.
    → **EXCEPCIÓN (SCRUM-185): dos gateados de VeriFactu NO se conforman con
-   `DATABASE_URL_STAGING`.** `scrum73-verifactu-gate` y `scrum82-zip-verifactu` construyen el
+   `DATABASE_URL_TESTS`.** `scrum73-verifactu-gate` y `scrum82-zip-verifactu` construyen el
    registro de alta y leen **cinco** variables del PRODUCTOR del SIF (`src/core/config/env.ts:30-34`).
    Si falta cualquiera, el endpoint devuelve **`500 verifactu_productor_no_configurado`** y **la
    tanda NO PUEDE SALIR VERDE**. Añádelas al `.env` del carril B con valores de PLACEHOLDER
@@ -313,7 +313,7 @@ acaba usando siempre.
 
 **🚨 Su alcance, y no se puede leer por más:** es un guard contra el **OLVIDO, no contra la mala
 fe** — nada impide borrar o editar el recibo a mano. Y **NO sustituye a un CI** de los gateados,
-que no existe porque `DATABASE_URL_STAGING` no entra en GitHub Actions (regla 9, decisión del
+que no existe porque `DATABASE_URL_TESTS` no entra en GitHub Actions (regla 9, decisión del
 fundador). Sustituye al descuido, que es el fallo que de verdad ocurre. Si algún día hiciera
 falta la garantía de verdad, la respuesta honesta no es endurecer este JSON: es el CI.
 
@@ -705,7 +705,7 @@ combate — por eso, con la campaña cerrada, se documentó en vez de recontar: 
 > **Ya NO hay que pedir ventana para correr los gateados.** Cada carril tiene su propia base
 > dentro del mismo Postgres de staging (`acela.proxy.rlwy.net:40802`):
 > **Sesión 1 → `yaqu_dev_javier`** · **Sesión 2 → `railway`**. Cada uno la apunta en
-> `DATABASE_URL_STAGING` de su `.env` local (nunca en el repo). La suite resetea la BD del
+> `DATABASE_URL_TESTS` de su `.env` local (nunca en el repo). La suite resetea la BD del
 > merchant QA **de tu base**, no de la del otro.
 >
 > **Lo que SÍ sigue necesitando aviso por el canal:**
@@ -721,7 +721,7 @@ combate — por eso, con la campaña cerrada, se documentó en vez de recontar: 
 > esos cuatro fallan **solo en un carril** — un rojo que no se reproduce en el otro, justo el
 > síntoma que SCRUM-84 vino a eliminar.
 >
-> `scripts/clean-staging-tests.mjs` lee `DATABASE_URL_STAGING`, así que **cada carril limpia
+> `scripts/clean-staging-tests.mjs` lee `DATABASE_URL_TESTS`, así que **cada carril limpia
 > la suya**. Los 4 huérfanos `qa-s74-*` (#339, #340, #381, #383) viven en `railway` (Sesión 2);
 > medidos inocuos en SCRUM-79.
 

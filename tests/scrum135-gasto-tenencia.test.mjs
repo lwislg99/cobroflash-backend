@@ -7,7 +7,7 @@
 // camino para pintar el trabajo, y ahí pasaría a ser lectura cross-tenant.
 //
 // ⚠️ Toca BD real (staging), gateado:
-//   QA_DB_TEST=1 DATABASE_URL_STAGING="..." npm run test:staging
+//   QA_DB_TEST=1 DATABASE_URL_TESTS="..." npm run test:staging
 //
 // GUARDA DE PRESENCIA (SCRUM-108/103): cada test de RECHAZO va precedido de su caso POSITIVO
 // —  la referencia PROPIA sí se acepta —  porque un test que solo comprueba que algo falla

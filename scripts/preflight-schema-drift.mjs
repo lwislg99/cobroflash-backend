@@ -5,9 +5,20 @@
 // errores de Prisma repartidos por 14 ficheros (lo que pasó en SCRUM-160: a yaqu_dev_javier
 // le faltaba un `db push` y la tanda se cayó a pedazos sin decir por qué).
 //
-// LO QUE HACE CUMPLIR (SCRUM-169): «un cambio de schema no está aplicado hasta estar en las
-// tres BD». Cobertura de las tres NO significa que un comando se conecte a las tres — significa
-// que las tres estén cubiertas por ALGÚN mecanismo. Este preflight cubre STAGING y DESARROLLO;
+// ── QUÉ BASE MIRA, EXACTAMENTE: UNA ─────────────────────────────────────────────────────────
+// Este preflight compara **la base de pruebas del carril donde se ejecuta** (`DATABASE_URL_TESTS`)
+// y ninguna otra. En `cobroflash-backend` eso es `yaqu_dev_javier`; en `b1`/`b2`/`b3`, `railway`.
+//
+// ⚠️ CORREGIDO EN SCRUM-383. Hasta el 6-ago-2026 esta cabecera afirmaba «cubre STAGING y
+// DESARROLLO», y era falso leído desde un solo árbol: la clave que lee es UNA, así que cada
+// ejecución mira UNA base. La frase solo era cierta sumando los cuatro worktrees, que no es lo
+// que hace un comando. **Un comentario que afirma un hecho del sistema caduca y nadie lo revisa
+// porque no está en ninguna suite** (SCRUM-302) — aquí caducó del lado tranquilizador.
+//
+// Y POR ESO NO CONTESTA A SCRUM-169 («un cambio de schema no está aplicado hasta estar en las
+// tres BD»): un preflight que mira una base no puede afirmar nada sobre las tres. Ampliarlo es
+// otro ticket, no un «de paso».
+//
 // PRODUCCIÓN tiene el suyo: el `scripts/db-push-prod` del fundador (host-check + preview de
 // migrate diff + GO explícito de un humano que ha leído el host). NO apuntes esto a prod.
 //
@@ -53,8 +64,8 @@ dotenv.config({ path: path.join(PROJECT_ROOT, '.env'), quiet: true }); // .env d
 // La URL con credencial entra SOLO por el ENTORNO, nunca por argv. Aceptarla como argv[2] la metía
 // en la línea de ESTE proceso (visible en `ps`) e invitaba a que el llamador la tecleara —
 // exponiéndola antes de entrar aquí. El único llamador (scripts/test-staging-gated.mjs) ya la pasa
-// por DATABASE_URL_STAGING, no por argumento. SCRUM-226.
-const url = process.env.DATABASE_URL_STAGING;
+// por DATABASE_URL_TESTS, no por argumento. SCRUM-226.
+const url = process.env.DATABASE_URL_TESTS;
 // Datamodel a comparar: por defecto el REAL. `PREFLIGHT_DATAMODEL` lo sobrescribe SOLO para
 // verificar el preflight contra una COPIA mutada de schema.prisma, sin tocar nunca el fichero
 // real (SCRUM-167). En uso normal no se pone y no cambia nada.
@@ -80,7 +91,7 @@ function hostOf(u) {
 
 // ── GUARD ANTI-PROD, fail-closed ─────────────────────────────────────────────
 if (!url) {
-  console.error('❌ preflight: sin URL. Ponla en DATABASE_URL_STAGING (ya no se acepta por argumento — SCRUM-226).');
+  console.error('❌ preflight: sin URL. Ponla en DATABASE_URL_TESTS (ya no se acepta por argumento — SCRUM-226).');
   process.exit(2);
 }
 const host = hostOf(url);

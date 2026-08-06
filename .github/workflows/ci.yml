@@ -10,7 +10,8 @@
 # en varias sesiones a la vez: toda rama viva es, por definición, anterior a cualquier guard
 # que se mergee mientras ella existe.
 #
-# ⚠️ SOLO LO NO GATEADO. Aquí NO se pone `QA_DB_TEST=1` ni `DATABASE_URL_STAGING`:
+# ⚠️ SOLO LO NO GATEADO. Aquí NO se pone `QA_DB_TEST=1` ni `DATABASE_URL_TESTS` (SCRUM-383; era
+# `DATABASE_URL_STAGING` hasta el 6-ago-2026):
 #   1. Regla 9 — los secretos los pega el fundador en Railway, no viajan a terceros.
 #   2. Los tests gateados CREAN Y BORRAN merchants; varios PR a la vez escribiendo en la
 #      misma BD de staging no los serializa nadie.

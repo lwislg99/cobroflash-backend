@@ -129,13 +129,13 @@ Cada carril es DUEÑO de sus módulos. El dueño puede tocarlos sin preguntar; e
    | **Sesión 1 (Javier / carril B)** | `yaqu_dev_javier` |
    | **Sesión 2** | `railway` (la original) |
 
-   Cada uno la apunta en `DATABASE_URL_STAGING` de **su `.env` local** — nunca en el repo.
+   Cada uno la apunta en `DATABASE_URL_TESTS` de **su `.env` local** — nunca en el repo.
    Las dos están sembradas con `scripts/seed-staging.mjs`, que es **obligatorio**: crea el
    merchant demo `id=1` que exigen `a55-window-quote`, `bot-suite`, `scrum13-cobrado` y
    `scrum52-operario`. Sin él, esos cuatro fallan **solo en un carril** — el rojo ambiguo
    que este cambio vino a eliminar.
 
-   **`scripts/clean-staging-tests.mjs` pasa a ser por carril:** lee `DATABASE_URL_STAGING`,
+   **`scripts/clean-staging-tests.mjs` pasa a ser por carril:** lee `DATABASE_URL_TESTS`,
    así que cada uno limpia la suya. Ya no es una herramienta compartida.
 
    > **Los 4 merchants huérfanos `qa-s74-*` (#339, #340, #381, #383) viven en `railway`**, o
@@ -161,7 +161,7 @@ Cada carril es DUEÑO de sus módulos. El dueño puede tocarlos sin preguntar; e
 2. **Abrir SIEMPRE la carpeta raíz del repo** en VS Code (no una carpeta madre) — así su Claude Code carga `.mcp.json` (Playwright MCP) y `CLAUDE.md` automáticamente. Primera sesión: verificar con `/mcp` que playwright aparece.
 3. **Lectura obligatoria (día 1):** `docs/YAQU_MASTER.md` → este documento → `docs/FLUJO_DE_TRABAJO.md` → `docs/QA/SUITE_REGRESION.md`. Su Claude Code hereda las mismas reglas: briefs como fuente de verdad, STOP conditions (AA1.4), regla 9 (hallazgo→reporte), nunca transicionar a Finalizada, nunca `--accept-data-loss`, PRs con descripción pegada ANTES de crear.
 4. **Briefs:** mismo sistema — el asesor escribe `docs/Srpint Scrum/SESION_ACTUAL_SCRUM-<n>.md`, Luis se lo pasa a Javier, Javier se lo da a su Claude Code. Recon primero, brief después, código al final.
-5. **Secrets:** Luis le pasa por canal privado (nunca chat de Claude ni el repo) lo que necesite: URL de staging y `E2E_TEST_LOGIN_SECRET` para la suite. La `DATABASE_URL_STAGING` solo si su tarea exige seed — de inicio, NO (sus tickets 22-24 no tocan seed).
+5. **Secrets:** Luis le pasa por canal privado (nunca chat de Claude ni el repo) lo que necesite: URL de staging y `E2E_TEST_LOGIN_SECRET` para la suite. La `DATABASE_URL_TESTS` solo si su tarea exige seed — de inicio, NO (sus tickets 22-24 no tocan seed).
 6. **Jira:** Javier comenta y mueve a "En revisión"; Finalizada = asesor. Si su Claude Code tiene conector Atlassian, mismas reglas.
 7. **Primera tarea (rodaje sin riesgo):** RECON de SCRUM-22 en solo-lectura → reporte con rutas:líneas → el asesor escribe el brief → construye. Así aprende el flujo completo con una tarea de su dominio.
 8. **GitHub approvals:** cuando Javier esté activo, restaurar required approvals = 1 en el ruleset "protect main" → cada PR lo revisa el otro (Luis revisa los de Javier, Javier los de Luis). El merge a main lo sigue haciendo Luis.
