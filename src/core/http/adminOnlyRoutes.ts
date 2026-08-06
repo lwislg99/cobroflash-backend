@@ -90,6 +90,10 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   // sellan VeriFactu igual que la de Job, así que su 403 se ejerce igual.
   { method: 'POST', path: '/admin/albaranes/999999/facturar-parcial', body: { lineas: [{ index: 0, cantidad: 1 }] } },
   { method: 'POST', path: '/admin/albaranes/consolidar', body: { customerId: 999999, albaranIds: [999999] } },
+  // SCRUM-290 (A0.4): la TERCERA vía de emisión desde albarán — cantidades del parte, precios del
+  // presupuesto firmado. Emite factura y sella VeriFactu igual que sus dos hermanas, así que su
+  // 403 se ejerce igual. No hereda el de ninguna: es otra ruta y otro `requireRole`.
+  { method: 'POST', path: '/admin/albaranes/999999/convertir-en-factura' },
   // La factura del resto + payment_request. ERA EL OBJETIVO ORIGINAL DE SCRUM-54,
   // que se cerró sobre consolidar-albaranes y dejó esta abierta: aquí su evidencia.
   { method: 'POST', path: '/admin/jobs/999999/collect-rest' },
