@@ -16,6 +16,7 @@ import {
   SUBMENUS, ASIGNACION, PENDIENTES_DE_DECISION, FUERA_DE_CONFIGURACION, VACIOS_DECLARADOS,
   ASUNTOS_DEL_TICKET, PENDIENTE, revisarAsignacion,
 } from './_asignacion-submenus.mjs';
+import mapa from '../public/dashboard/js/settingsSubmenus.js';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -75,6 +76,41 @@ test('SCRUM-284 · ④ un vacío declarado que YA tiene campos obliga a anotarlo
     'que es exactamente cómo una deuda declarada se convierte en excepción permanente (SCRUM-299).');
 });
 
+test('SCRUM-284 · ④ cuenta LAS DOS POBLACIONES: una superficie también deja de estar vacío', () => {
+  // 🔴 AGUJERO MEDIDO Y CERRADO. Los sentidos ③ y ④ contaban solo CAMPOS, así que colocar una
+  // SUPERFICIE en un submenú declarado vacío no hacía saltar nada: el panel dejaba de estar vacío
+  // para el usuario y la lista seguía declarando un hueco que ya no existía. Es la misma
+  // deuda-vuelta-excepción que el trinquete existe para impedir, colándose por la población que no
+  // se miraba.
+  //
+  // Lo destapó el merge de SCRUM-314 («Eliminar datos de ejemplo» es una superficie nueva): al
+  // preguntarse qué pasaría si fuese a «Tus datos», el guard respondía que nada.
+  const claves = Object.keys(ASIGNACION);
+  const mapaSup = mapa.ASIGNACION_SUPERFICIE;
+  const vacioDeclarado = Object.keys(VACIOS_DECLARADOS)[0];
+  assert.ok(vacioDeclarado, '🔴 no hay ningún vacío declarado contra el que probar esto.');
+
+  // Control: hoy ese submenú no tiene ni campos ni superficies, y el trinquete calla.
+  assert.deepEqual(revisarAsignacion(claves).vaciosQueYaNoLoEstan, [],
+    '🔴 el trinquete ya está sonando antes de inyectar nada: el caso no probaría lo que dice.');
+
+  const antes = Object.assign({}, mapaSup);
+  try {
+    mapaSup.superficieDePrueba = vacioDeclarado;
+    const r = revisarAsignacion(claves);
+    assert.ok(r.vaciosQueYaNoLoEstan.includes(vacioDeclarado),
+      `🔴 «${vacioDeclarado}» ya tiene una superficie y sigue declarado vacío sin que el trinquete ` +
+      'salte. ④ estaría mirando solo los campos, y un submenú podría dejar de estar vacío en ' +
+      'silencio por la otra población.');
+  } finally {
+    for (const k of Object.keys(mapaSup)) delete mapaSup[k];
+    Object.assign(mapaSup, antes);
+  }
+  // Y el mapa queda como estaba: si esto se ensuciara, los demás tests medirían otra cosa.
+  assert.deepEqual(revisarAsignacion(claves).vaciosQueYaNoLoEstan, [],
+    '🔴 la inyección no se deshizo y el mapa queda sucio para el resto de la suite.');
+});
+
 // ── SUELOS DEL MAPA ──────────────────────────────────────────────────────────
 test('SCRUM-284 · SUELO: toda clave asignada existe de verdad en el censo', () => {
   // El reverso: una asignación a un campo que ya no existe deja el mapa mintiendo.
@@ -125,13 +161,36 @@ test('SCRUM-284 · contraste con la lista del ticket (reporta, no bloquea)', () 
 });
 
 // ── CONTROLES NEGATIVOS ──────────────────────────────────────────────────────
-test('SCRUM-284 · NEGATIVO: un campo declarado pendiente o fuera NO cuenta como sin sitio', () => {
-  // Si contasen como huérfanos, el guard estaría en rojo permanente esperando al fundador — y un
+test('SCRUM-284 · NEGATIVO: un campo declarado FUERA no cuenta como sin sitio', () => {
+  // Si contase como huérfano, el guard estaría en rojo permanente esperando al fundador — y un
   // guard en rojo permanente se acaba desactivando.
-  const r = revisarAsignacion(['googleReviewUrl', 'ref-link']);
-  assert.deepEqual(r.sinSitio, [], 'están declarados con su motivo: son conocidos, no perdidos');
-  assert.equal(r.pendientes, 1);
+  const r = revisarAsignacion(['ref-link']);
+  assert.deepEqual(r.sinSitio, [], 'está declarado con su motivo: es conocido, no perdido');
   assert.equal(r.fuera, 1);
+});
+
+test('SCRUM-284 · toda excepción del mapa lleva su MOTIVO escrito', () => {
+  // Una excepción sin motivo se hereda para siempre: dentro de seis meses nadie sabe si sigue
+  // siendo válida, y quitarla da miedo. Vale para las tres listas de excepción.
+  const flojos = [];
+  for (const [nombre, tabla] of [['FUERA_DE_CONFIGURACION', FUERA_DE_CONFIGURACION],
+    ['PENDIENTES_DE_DECISION', PENDIENTES_DE_DECISION], ['VACIOS_DECLARADOS', VACIOS_DECLARADOS]]) {
+    for (const [clave, motivo] of Object.entries(tabla)) {
+      if (typeof motivo !== 'string' || motivo.trim().length < 40) flojos.push(`${nombre}.${clave}`);
+    }
+  }
+  assert.deepEqual(flojos, [],
+    '🔴 estas excepciones no explican por qué existen:\n   · ' + flojos.join('\n   · '));
+});
+
+test('SCRUM-284 · PENDIENTES_DE_DECISION está vacío, y eso es un hecho medido', () => {
+  // `googleReviewUrl` era el último y ya se decidió → `avisos`, por el criterio del fundador: el
+  // destino de un ajuste sale de lo que GOBIERNA, no de dónde se ve su efecto. El campo configura
+  // el envío automático de la petición de reseña; sus otras dos superficies (ficha pública y página
+  // de recibo) solo lo CONSUMEN. Este test existe para que volver a llenar la lista sea deliberado.
+  assert.deepEqual(Object.keys(PENDIENTES_DE_DECISION), [],
+    '🔴 hay campos esperando decisión otra vez. Está bien que los haya —es mejor que colocarlos a ' +
+    'ojo— pero tiene que verse en el diff, no aparecer de refilón.');
 });
 
 test('SCRUM-284 · NEGATIVO: un campo desconocido SÍ cae', () => {

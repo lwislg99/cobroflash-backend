@@ -227,11 +227,14 @@ test('SCRUM-336 · el registro lee la URL y NO tiene ya ningún respaldo de alma
 
 // ── EL CTA QUE LA DEMO INYECTA DESPUÉS DE CARGAR ─────────────────────────────────────────
 //
-// Es el camino del visitante que juega con «Pruébalo tú» y luego se registra: el embudo que la
-// propia landing empuja. Ese CTA no existe cuando el script hace su pasada
-// (`js/landing-demo.js` lo añade después), así que lo único que lo protege es el manejador de
-// respaldo. Y si falla, falla MUDO: los otros ocho enlaces sí llevan la atribución, el guard
-// seguiría verde, y la factura la paga un referidor que no cobra su mes.
+// Cualquier CTA que aparezca DESPUÉS de la pasada inicial del script: lo único que lo protege es
+// el manejador de respaldo en fase de captura. Y si falla, falla MUDO: los otros ocho enlaces sí
+// llevan la atribución, el guard seguiría verde, y la factura la paga un referidor que no cobra su
+// mes.
+//
+// ⚠️ Este bloque citaba `js/landing-demo.js` como el que inyectaba ese CTA. Ese fichero se RETIRÓ
+// en SCRUM-376 (5-ago-2026) porque no lo cargaba ninguna página. El test NO dependía de él —simula
+// un enlace inyectado, venga de donde venga— así que se queda: lo que protege sigue vivo.
 
 test('SCRUM-336 · un CTA inyectado DESPUÉS recibe la atribución al pulsarlo', () => {
   // Ni un solo enlace al cargar: se inyecta luego, como hace la demo.

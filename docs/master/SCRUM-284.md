@@ -267,3 +267,156 @@ Restaurado, 12/12.
 El **suelo va primero**, y tiene un complemento que hacía falta: el ③ podría estar verde si TODOS los
 submenús estuvieran declarados vacíos, así que un negativo exige que al menos siete tengan campos de
 verdad.
+
+---
+
+## La pantalla: Configuración troceada en diez submenús (quinta entrega de B1)
+
+**Medido contra:** `origin/main` = `794a61589924a453d49e13c545d613c0b517e8f0` · 2026-08-05T15:06:07+01:00
+**Tanda:** 1674 tests, 1607 pass, 0 fail, 67 skipped
+**Ficheros:** `public/dashboard/js/settingsSubmenus.js` (nuevo) · `settingsView.js` ·
+`dashboard/index.html` · `sw.js` · `tests/_asignacion-submenus.mjs` ·
+`tests/scrum284-configuracion-submenus.test.mjs` (nuevo, 8) · `docs/capturas/scrum-284/`
+
+### 🔴 EL MAPA SE MUDA A `public/`, Y ESE ES EL CAMBIO QUE IMPORTA
+
+Mientras el mapa vivió en `tests/`, el guard comprobaba **una tabla que la pantalla no usaba**. Su
+verde no decía una sola cosa sobre lo que el profesional ve: bastaba con colocar un campo en otro
+sitio dentro de `settingsView.js` para que las dos versiones divergieran en silencio. **Es el defecto
+del ticket una vuelta más** — dos fuentes que empiezan de acuerdo y se separan sin que nadie lo note.
+
+Ahora el mapa es `public/dashboard/js/settingsSubmenus.js`: la pantalla **coloca leyendo de ahí** y
+el guard **verifica contra ahí**. `tests/_asignacion-submenus.mjs` se conserva como puerta del test
+(la ruta de importación no cambia) y como sitio del control cruzado.
+
+### La decisión de `googleReviewUrl`, y el criterio que la sostiene
+
+**→ `avisos`.** Criterio del fundador, que queda escrito porque sirve para las que vengan: **el
+destino de un ajuste sale de lo que GOBIERNA, no de dónde se ve su efecto.** El campo configura el
+envío automático de la petición de reseña —lo dice el propio texto de la pantalla,
+`settingsView.js:283`— y sus otras dos superficies solo lo CONSUMEN. Configurar y consumir no son lo
+mismo, y este mapa es de configuración. Igual que el logo: se configura en Marca y aparece en el PDF,
+en la ficha pública y en los correos, y a nadie se le ocurre que viva en tres sitios.
+
+**Los TRES consumidores quedan anotados en el mapa** para que quien toque cualquiera de ellos sepa
+que el origen es único y no salga a buscarlo: `psp.routes.ts:221` y `mpWebhook.routes.ts:181` (el
+WhatsApp tras el cobro) · `publicProfile.service.ts:73` (la ficha pública) · `receipt.routes.ts:248`
+(el botón y las estrellas del recibo).
+
+### Lo que el guard nuevo destapó al primer intento
+
+**Los seis `pp-*`/`qr-*` estaban asignados a `publica` en el mapa y se pintaban FUERA de los diez
+paneles**, porque quien los dibuja es `renderPublicProfileCard`, que colgaba del `container`. El
+guard de asignación —mirando solo el mapa— habría seguido verde para siempre.
+
+De ahí sale `ASIGNACION_SUPERFICIE` y el **cruce entre las dos poblaciones**: no basta con que una
+superficie esté colocada en algún sitio, tiene que estarlo en **el mismo submenú** que el mapa dice
+para los campos que ella pinta. Si no, el mapa diría `publica`, la pantalla los enseñaría en otro
+panel, y los dos guards estarían verdes.
+
+**Y una segunda cazada, a mí mismo:** el bloque de estado de Connect lo coloqué con
+`paneles.cobro.appendChild(...)`, que es la misma colocación a mano sin ser un literal. El censo no
+lo veía. Se amplió para mirar también los accesos `paneles.<clave>` — es la forma más cómoda de
+saltarse el mapa, y por eso la que se escribe sin pensar.
+
+### Cómo se hizo el cambio, y por qué así
+
+**No se ha movido ni reescrito la construcción de un solo campo.** Siguen creándose igual y en el
+mismo orden; lo único que cambia es dónde se hace `appendChild`: `form.appendChild(x)` pasa a
+`colocar('clave', x)`. Eso es lo que mantiene el cambio revisable (regla 4) y lo que permite que el
+censo siga viendo los 25. `submenuDeCampo` **lanza** si la clave no está en el mapa: caer en el sitio
+equivocado sería mudo, fallar se oye.
+
+Se retiran los cuatro separadores internos, cuyo único trabajo era subdividir un scroll que ya no
+existe. Los diez paneles cuelgan del MISMO `<form>`, así que **un solo «Guardar cambios» sigue
+guardando todo**: trocear la pantalla no trocea el guardado.
+
+### Verificado
+
+**EN EL NAVEGADOR, contando controles panel por panel** (no leyendo el código): **24 controles +
+`ref-link` (fuera de Configuración) = los 25 del censo, cero duplicados, cero perdidos.** Los tres
+paneles vacíos son exactamente los tres declarados. El índice de estado queda en la cabecera y no
+dentro de ningún panel; «Invita y gana» ya no está; el contador de WhatsApp está dentro de Avisos.
+
+**UN FIXTURE EQUIVOCADO CASI ME DEJA PROBAR DE MENOS**, y va escrito porque es la parte útil: la
+primera pasada mandaba `profileSlug` y `renderPublicProfileCard` sale por `if (m.slug === undefined)
+return`. La tarjeta no se pintaba **ni en el antes ni en el después**, así que la comparación parecía
+correcta y en realidad no miraba los seis `pp-*`/`qr-*`. Se midió la condición en el código en vez de
+suponerla.
+
+**Dos inyecciones** en la suite: colocar a mano en un panel, y dejar un campo sin colocar. Y el
+**guard bidireccional de la entrega anterior sigue en 14/14** después de tocar justo la pantalla que
+vigila — comprobado explícitamente, no por el verde global.
+
+### Dos correcciones del fundador, aplicadas en esta misma rama
+
+**① «Invita y gana» se ENLAZA PROVISIONALMENTE.** Yo la dejé sin llamar y lo propuse como opción; la
+respuesta corrige el criterio y tiene razón: *el programa de referidos paga un mes gratis al
+referidor, o sea que es DINERO, y que desaparezca de la interfaz «solo durante un PR» es una
+regresión real*. La orden «el menú crece cuando existe el destino» valía para crear entradas nuevas,
+**no para dejar huérfana una que ya funcionaba**. Se sigue pintando donde está hoy —tarjeta suelta al
+final, fuera de los diez paneles— y queda en `SUPERFICIES_PROVISIONALES` con lo que la sustituye.
+
+El guard exige **las dos mitades**, y esa es la parte que evita que «provisional» se vuelva
+permanente: que la colocación esté declarada **y** que se siga pintando. Declararla sin pintarla
+sería la regresión; pintarla sin declararla sería olvidarla.
+
+**② Los diez rótulos se APRUEBAN y se aplican.** No era redacción nueva —los nueve primeros están
+escritos en la descripción del ticket y el décimo es el nombre que usó el fundador al colocar
+`approvalThreshold`—, así que aterrizarlos no fue escribir microcopy: fue dejar de usar el marcador.
+
+**Y había un motivo de MEDICIÓN para hacerlo antes de capturar, que es el que no se me había
+ocurrido:** con el marcador (28 caracteres) las diez pestañas caían **una por fila** a 390 px, así
+que mis capturas estaban midiendo el marcador y no la pantalla. Con los textos reales, medido:
+**cuatro filas (3+3+3+1)**, pestaña más ancha 124 px, 44 px de alto, sin desbordamiento en X. **No
+había problema de layout: era el marcador.** Por eso no sale hallazgo ni ticket — se midió con el
+texto real antes de decidirlo, en vez de apañar contra un texto provisional.
+
+El guard de microcopy cambia de forma en consecuencia, igual que en SCRUM-344: deja de exigir el
+marcador —eso solo impedía INVENTAR mientras no había texto— y pasa a **fijar el aprobado carácter a
+carácter**, que es lo que impide CAMBIARLO. Verificado en rojo sobre el módulo real: «Cobros» →
+«Cobro» tumba el test y nombra la ranura. **El estado vacío SÍ sigue con el marcador**, y la
+diferencia importa: «aquí todavía no hay nada» no está escrito en ninguna parte, así que es
+redacción nueva y la aprueba el fundador.
+
+### 🔴 El merge con SCRUM-314 destapó un AGUJERO EN MI PROPIO GUARD
+
+Al resolver el conflicto con «Eliminar datos de ejemplo» (de Luis, `cbc2880`), la pregunta era dónde
+colocar esa superficie nueva. **Y al preguntarle al guard qué pasaría si fuese a «Tus datos», el
+guard respondió que nada.**
+
+Medido antes de tocar el mapa: con `datos` en `VACIOS_DECLARADOS` y una superficie asignada a
+`datos`, el sentido ④ devolvía `[]`. **Los sentidos ③ y ④ contaban solo CAMPOS.** O sea que un
+submenú podía dejar de estar vacío en silencio por la otra población: el panel se llenaba para el
+usuario y la lista seguía declarando un hueco que ya no existía — **la misma deuda-vuelta-excepción
+que el trinquete existe para impedir, colándose por el lado que no se miraba**.
+
+Arreglado: «vacío» pasa a significar *sin campos **y** sin superficies*. Verificado en las dos
+direcciones — antes del arreglo el simulacro daba `[]`, después da `["datos"]` — y con **test propio
+que restaura el mapa** al terminar, porque una inyección que no se deshace deja al resto de la suite
+midiendo otra cosa.
+
+**La colocación de producto (decisión del fundador), escrita en el código:** el hueco va **fuera de
+los diez paneles**, en `SUPERFICIES_PROVISIONALES`. Su destino natural sería «Tus datos» —es un acto
+sobre los datos de la cuenta— pero el botón **solo se pinta en la cuenta demo**, así que meterlo ahí
+dejaría ese submenú vacío para todo el mundo menos el demo, y **un submenú que aparece vacío para el
+99 % de los usuarios es peor que el hueco declarado que ya tiene**. Cuando «Tus datos» tenga
+contenido propio, se muda.
+
+**Las provisionales pasan a declarar tres cosas** (`motivo`, `sustituye`, `seMontaCon`) en vez de una
+cadena. `seMontaCon` es **la otra mitad**: los identificadores que demuestran por AST que la
+superficie se sigue montando. Sin eso, «declarada» y «existente» serían la misma frase — y una
+función declarada pero no montada es exactamente la regresión que la declaración existe para
+impedir. Hay además un test específico para el hueco de SCRUM-314 que exige **las dos piezas**: que
+el `div` se añada **y** que `montarDatosDeEjemplo` se llame. Viven lejos del conflicto y son lo
+primero que se pierde al fusionar.
+
+### Lo que NO cubre
+
+* **La sidebar (incremento 2) y la pestaña de Plantillas (incremento 3) no se tocan.** El incremento
+  2 le da a «Invita y gana» su entrada definitiva y borra su colocación provisional.
+* **El hueco de datos de ejemplo NO lo mueve el incremento 2**: lo mueve quien construya el contenido
+  de «Tus datos». Queda escrito en su `sustituye` para que no se busque en el sitio equivocado.
+* **La matriz de dispositivos reales** (V0-5) es humana y por bloque. Declarada como hueco.
+* **No se ejecuta la vista en `npm test`**: no hay banco de DOM y montarlo sería dependencia nueva
+  (regla 36). Lo que corre es el mapa y el AST; el navegador se ejercitó a mano y quedó en capturas.

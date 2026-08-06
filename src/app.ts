@@ -73,7 +73,7 @@ import { merchantProfileUpdateSchema } from './core/validation/schemas';
 // SCRUM-314 (D3): el barrido derivado del demo y quién es el demo.
 import { barridoDemo } from './modules/system/domain/barridoDemo';
 import { isDemoMerchant } from './modules/invoicing/domain/emission.service';
-import { getMerchantProfile, updateMerchantProfile, SlugError } from './modules/system/merchantAdmin';
+import { getMerchantProfile, updateMerchantProfile, SlugError, SerieError } from './modules/system/merchantAdmin';
 import QRCode from 'qrcode'; // A14.2: QR del perfil público (PNG alta res para furgoneta/tarjeta)
 import { resolverOpcionesQr, ErrorQr } from './modules/system/domain/qrPagina.service'; // SCRUM-230
 import { BASE_URL } from './core/config/env';
@@ -457,6 +457,12 @@ app.put('/admin/merchant', requireRole('admin'), async (req, res, next) => {
     const updated = await updateMerchantProfile(req.merchantId, parsed.data);
     return res.json(updated);
   } catch (err) {
+    // SCRUM-291 (A4): cambiar la serie con facturas ya emitidas se NIEGA, y se dice con cuántas
+    // y hasta qué número. Quien lo intenta está haciendo algo legítimo de su negocio: merece
+    // saber exactamente qué se lo impide, no un error genérico.
+    if (err instanceof SerieError) {
+      return res.status(409).json({ error: err.code, message: err.message, ...err.detalle });
+    }
     // A14.1: reglas del slug del perfil público → error humano, no 500
     if (err instanceof SlugError) {
       const status = err.code === 'slug_taken' ? 409 : err.code === 'slug_cooldown' ? 429 : 400;

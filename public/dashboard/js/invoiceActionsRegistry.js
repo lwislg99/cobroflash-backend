@@ -40,27 +40,30 @@ const INVOICE_ACTION_REGISTRY = [
 // del presupuesto. La factura suelta (y sus acciones Emitir/Modificar/Duplicar…) llega con SCRUM-289.
 const INVOICE_STATES = ['pending', 'paid', 'annulled', 'R1'];
 
-// El rótulo sale de la ley compartida (regla 30): un solo literal para todos los documentos.
-const MICROCOPY_PENDIENTE = ((typeof module !== 'undefined' && module.exports)
-  ? require('./patronDetalleAcciones.js')
-  : window).MICROCOPY_PENDIENTE;
-
-// SCRUM-302 (C2): el resolutor y el marcador YA NO viven aquí. Son la LEY del patrón, no algo de
-// la factura, y el albarán los necesita igual: viven en `patronDetalleAcciones.js`. Aquí queda lo
-// único que es de este documento — su tabla y sus estados.
-const __ley = (typeof module !== 'undefined' && module.exports)
-  ? require('./patronDetalleAcciones.js')
-  : { destinoEfectivo: window.destinoEfectivo, MICROCOPY_PENDIENTE: window.MICROCOPY_PENDIENTE };
-const destinoEfectivo = __ley.destinoEfectivo;
+// SCRUM-302 (C2): el resolutor y el marcador son la LEY del patrón —no algo de la factura— y
+// viven en `patronDetalleAcciones.js`, que el albarán usa igual.
+//
+// ⚠️ NO se re-declaran aquí, **ni siquiera como puente**: dos `const` con el mismo nombre en dos
+// scripts clásicos del dashboard comparten ámbito léxico, y eso es **SyntaxError EN PARSEO** — el
+// segundo fichero no se ejecuta entero y su pantalla desaparece sin 500 ni log en el servidor
+// (pasó con `copyRojo`, SCRUM-210). El primer intento de C2 los puenteaba con un `const` y el
+// guard de nombres duplicados lo cazó antes de salir. En el navegador ya son globales; en Node
+// los toma el bloque de abajo.
 
 // Doble vida: global para el <script> clásico del dashboard, y module.exports para que el guard lo
 // IMPORTE en Node (una sola fuente; el guard no re-declara la tabla). `typeof` es seguro en ambos.
 if (typeof window !== 'undefined') {
   window.INVOICE_ACTION_REGISTRY = INVOICE_ACTION_REGISTRY;
   window.INVOICE_STATES = INVOICE_STATES;
-  window.MICROCOPY_PENDIENTE = MICROCOPY_PENDIENTE;
-  window.destinoEfectivo = destinoEfectivo;
 }
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { INVOICE_ACTION_REGISTRY, INVOICE_STATES, MICROCOPY_PENDIENTE, destinoEfectivo };
+  // Los guards de B2 (SCRUM-283) importan `destinoEfectivo` y el marcador DESDE AQUÍ. Se
+  // re-exportan tomándolos de la ley, para no obligarles a cambiar de sitio por un refactor
+  // que no es suyo.
+  const ley = require('./patronDetalleAcciones.js');
+  module.exports = {
+    INVOICE_ACTION_REGISTRY, INVOICE_STATES,
+    MICROCOPY_PENDIENTE: ley.MICROCOPY_PENDIENTE,
+    destinoEfectivo: ley.destinoEfectivo,
+  };
 }

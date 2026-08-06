@@ -728,9 +728,23 @@ async function pedirCatalogo(trade, refresh, btn) {
   }
   if (btn) { btn.disabled = false; btn.textContent = PV_TXT_CARGAR; }
   if (typeof showToast === 'function') {
-    showToast(r.skipped === 'no_catalog_for_trade'
-      ? 'Tu gremio aún no tiene catálogo predefinido — añade servicios a mano o importa un CSV.'
-      : 'No se pudo cargar el catálogo.', 'error');
+    // SCRUM-338 (residuo) · `already_has_products` NO es un fallo: es el servidor protegiendo lo
+    // que el profesional ya tiene (con 2 o más productos no carga y no borra nada). Decirle «no
+    // se pudo» es contarle un error donde hubo una decisión a su favor, y encima le deja sin
+    // saber qué pasa con su catálogo. Los tres casos son distintos y ahora se distinguen.
+    //
+    // 🔴 MICROCOPY PENDIENTE (regla 30): el texto del caso nuevo está marcado. Lo que tiene que
+    // decir, en la entrada `docs/master/SCRUM-313.md`.
+    const MSG = {
+      no_catalog_for_trade: 'Tu gremio aún no tiene catálogo predefinido — añade servicios a mano o importa un CSV.',
+      // Microcopy APROBADA por el fundador (5-ago-2026), literal.
+      already_has_products: 'Tu catálogo ya tiene productos, así que no hemos cargado la plantilla. Tus precios siguen como estaban.',
+    };
+    const msg = MSG[r.skipped] || 'No se pudo cargar el catálogo.';
+    // El caso protegido se anuncia como AVISO ('warn'), no como error: no ha fallado nada, pero
+    // tampoco se ha cargado. 'ok' seria mentira (parece exito) y 'info' NO EXISTE -- showToast
+    // solo admite ok|warn|error y cualquier otra cosa cae al verde de exito (api.js:111).
+    showToast(msg, r.skipped === 'already_has_products' ? 'warn' : 'error');
   }
   return false;
 }

@@ -2,7 +2,12 @@
 
 **Fecha:** 5-ago-2026 · **Carril:** A · **Gate:** sin gate, corre en `npm test`
 
-**Medido contra:** `origin/main` = `c711b7968777f29fd00fcddae69c2ba8489c576a` · 2026-08-05T14:47:33+02:00
+**Medido contra:** `origin/main` = `1ef584cb6f16dad91bbb20fa33d7ad4d62e9165c` · 2026-08-05T15:24:40+01:00
+
+> **Re-anclado.** La medición original se hizo contra `c711b7968777f29fd00fcddae69c2ba8489c576a`
+> (2026-08-05T14:47:33+02:00) y **caducó en menos de una hora**: `main` avanzó 26 commits, tres de
+> ellos sobre ficheros que este trabajo toca. El ancla de arriba es la de la suite que se corrió
+> **contra el `main` resultante del rebase**, no contra el de partida. Detalle abajo.
 
 ## El problema
 
@@ -93,3 +98,34 @@ como «línea de obra», nunca como «no hay correspondencia».
 
 `prisma/schema.prisma` · el cálculo de C6 (**SCRUM-305**) · G5 (**SCRUM-320**) · la firma · el camino
 de emisión (regla 38).
+
+## Procedencia: qué es de quién
+
+**El trabajo —campo, conservación, prellenado, validación de rango y los cinco tests— es del
+fundador**, en `scrum-367-quote-line-index` (`b96b50cb270a00032c29ec071809dea2b106922c`,
+2026-08-05T14:50:00+02:00). **Esa rama queda INTACTA**: no se ha forzado, movido ni borrado.
+
+Lo único que aporta `scrum-367-quote-line-index-rebasada` es **el re-anclaje y la suite contra el
+`main` resultante**. Que no se reescribió nada no es una afirmación de confianza, está medido:
+
+```
+git range-diff c711b79..b96b50c origin/main..HEAD
+1:  b96b50c = 1:  1e45198   feat(SCRUM-367): atar cada línea de albarán…
+```
+
+El `=` es el parche **idéntico**. `git merge-tree` contra `1ef584c` tampoco dio conflicto, pese a que
+`main` tocó 3 de los 7 ficheros — así que era re-anclar, no rehacer.
+
+## Dos premisas del ticket que la medición corrige
+
+**① «Nada prellena» ya no es cierto.** El ticket dice que, si no existe camino de prellenado, «el
+campo queda declarado y vacío». `lineasDeQuoteParaAlbaran` **existe hoy en `main`**
+(`public/dashboard/js/jobDetailView.js:152`, llamada en `:815`), así que el punto 3 del ticket no
+aplica: **el campo se rellena de verdad**. La medición de A0.2 era cierta cuando se hizo y su objeto
+se movió después — *una medición no caduca por vieja, caduca porque su objeto se movió*.
+
+**② El índice va al de ENTRADA, y eso no estaba en el ticket.** Está resuelto arriba y tiene test
+propio, pero merece decirse por lo que evita: como el prellenado **descarta** líneas, atarlo a la
+posición de salida dejaría la línea 3 del albarán apuntando a la 3 del presupuesto cuando es la 4.
+**Habría roto C6 en silencio** — y C6 es la cifra con la que el profesional decide si ha terminado.
+Un enlace desplazado no da error: da un número creíble y falso.

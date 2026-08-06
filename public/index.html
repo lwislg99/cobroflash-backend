@@ -53,7 +53,11 @@
   <style>
   /* Extras de la landing sobre los tokens de /tokens.css (no redefinir los canónicos). */
   :root{
-    --tint:var(--brand-tint); --cyan:var(--logo-cyan); --tintbg:#eaf6ee; --amber:#b45309;
+    /* SCRUM-368: --tintbg era #eaf6ee, un verde de realce local y más apagado que el canónico.
+       --muted sobre él daba 4,36:1 — por debajo de AA en la página que ven los desconocidos.
+       Se unifica con --brand-tint, que ya existe: 4,60:1, y una duplicidad de color menos.
+       Todo lo demás que se lee sobre este fondo mejora (--ink 15,78→16,63; --body 8,31→8,76). */
+    --tint:var(--brand-tint); --cyan:var(--logo-cyan); --tintbg:var(--brand-tint); --amber:#b45309;
     --sh-sm:var(--shadow-sm); --sh-md:var(--shadow-md); --sh-lg:var(--shadow-lg);
     --sh-xl:0 40px 80px -24px rgba(16,24,40,.28);
     --font:'Inter','Inter var',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;
@@ -65,16 +69,23 @@
   p{margin:0} a{text-decoration:none;color:inherit}
   .tnum{font-variant-numeric:tabular-nums} .nowrap{white-space:nowrap}
   .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
-  .eyebrow{font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--brand);display:inline-flex;align-items:center;gap:8px}
+  /* SCRUM-368: el verde de FONDO (--brand) da 3,30:1 como TEXTO sobre blanco. Aquí va el verde
+     de TEXTO, que tokens.css:15 ya define para esto: 5,48 sobre blanco, 5,10 sobre --bg. */
+  .eyebrow{font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--brand-tint-ink);display:inline-flex;align-items:center;gap:8px}
   .eyebrow::before{content:"";width:16px;height:2px;background:var(--brand);border-radius:2px}
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 22px;border-radius:var(--r-full);
     font-weight:700;font-size:15px;font-family:inherit;cursor:pointer;border:1px solid transparent;
     transition:transform .08s ease,background .16s,box-shadow .16s,border-color .16s;text-align:center}
   .btn:active{transform:translateY(1px)} .btn:focus-visible{outline:none;box-shadow:var(--ring)}
-  .btn-primary{background:var(--brand);color:#fff;box-shadow:0 6px 16px -6px rgba(22,163,74,.55)}
+  /* SCRUM-368 · A1: blanco sobre --brand da 3,30:1. Con texto grande y grueso (>=18,66px,
+     peso >=700) el umbral de WCAG SC 1.4.3 baja a 3,0 y cumple SIN TOCAR NINGÚN COLOR. */
+  .btn-primary{background:var(--brand);color:#fff;box-shadow:0 6px 16px -6px rgba(22,163,74,.55);font-size:18.66px;font-weight:700}
   .btn-primary:hover{background:var(--brand-700);box-shadow:0 10px 22px -8px rgba(22,163,74,.6);transform:translateY(-1px)}
   .btn-ghost{background:var(--surface);color:var(--ink);border-color:var(--border)}
-  .btn-ghost:hover{background:var(--bg);border-color:#d7dbd5} .btn-lg{padding:15px 26px;font-size:16px}
+  /* SCRUM-368 · A1: .btn-lg se declara DESPUÉS de .btn-primary y con la misma especificidad, así
+     que su font-size ganaba y dejaba los botones grandes del landing en 16px — sin cumplir AA.
+     Era grande de acolchado, no de letra. 18.66px lo hace coherente y lo mete en la vía. */
+  .btn-ghost:hover{background:var(--bg);border-color:#d7dbd5} .btn-lg{padding:15px 26px;font-size:18.66px}
 
   .announce{background:#0b3d2e;color:#e8f2ee;font-size:13.5px}
   .announce-in{display:flex;align-items:center;justify-content:center;gap:8px 18px;flex-wrap:wrap;padding:10px 22px;text-align:center}

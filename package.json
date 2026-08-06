@@ -23,6 +23,8 @@
     "prisma:studio": "prisma studio",
     "db:seed": "prisma db seed",
     "e2e:critico": "npm run build && node scripts/e2e-critico.mjs",
+    "//guard:contraste": "SCRUM-368: mide el contraste WCAG AA en NAVEGADOR (Edge via puppeteer-core), no sobre el CSS. Un censo estatico da falsos: no sabe que .sidebar-logo-text vive en el sidebar oscuro ni compone los rgba(). Fuera de `npm test` porque necesita navegador; la red que SI corre siempre es tests/scrum368-contraste-tokens.test.mjs, que vigila los pares de tokens.",
+    "guard:contraste": "node scripts/guard-contraste.mjs",
     "guard:prisma": "node scripts/_prisma-client-guard.mjs && node scripts/_prisma-procedencia-guard.mjs",
     "pretest": "node scripts/_prisma-client-guard.mjs && node scripts/_prisma-procedencia-guard.mjs",
     "//pretest:staging": "SCRUM-235: `pretest` SOLO se dispara antes del script `test`. La tanda gateada es OTRO script, asi que la unica tanda que toca una base real era la unica que no comprobaba el cliente: el 29-jul murio en la fase 4 tras 27 minutos y con el turno de staging tomado. Los dos nombres del runner (SCRUM-166) necesitan su propio pre-: npm no los deriva.",

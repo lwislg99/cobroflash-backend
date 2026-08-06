@@ -30,7 +30,16 @@ export interface LineaAlbaran {
   tipoIva?: number | string;
 }
 
-export type EstadoCobro = 'sin_facturar' | 'parcial' | 'facturado';
+/**
+ * Los tres valores del eje de cobro, EN RUNTIME y no solo en el tipo (SCRUM-301).
+ *
+ * El tipo se deriva de esta lista, no al revés: un eje que solo existe como unión de TypeScript
+ * desaparece al compilar, así que cualquier pantalla que quisiera pintar «una pestaña por valor»
+ * tendría que enumerarlos a mano — y una lista escrita a mano no avisa de lo que le falta. Con la
+ * constante, añadir un valor aquí lo hace aparecer solo donde se derive, y `tsc` obliga a tratarlo.
+ */
+export const ESTADOS_COBRO = ['sin_facturar', 'parcial', 'facturado'] as const;
+export type EstadoCobro = (typeof ESTADOS_COBRO)[number];
 
 export interface PendienteLinea {
   index: number;
