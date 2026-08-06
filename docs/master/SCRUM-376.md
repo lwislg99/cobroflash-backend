@@ -2,6 +2,9 @@
 
 **Fecha:** 5-ago-2026 · **Carril:** B (limpieza medida) · **Gate:** sin gate, corre en `npm test`
 
+**Medido contra:** `origin/main` = `9ce9ffd727411f0e69826bbdc174ed65f2582a13` · 2026-08-05T23:53:48+01:00
+
+**Tanda:** 1805 tests, 1738 pass, 0 fail, 67 skipped
 **Medido contra:** `origin/main` = `0f7dfd1c1774dd0f9a968c10476d4f066a22b89c` · 2026-08-06T00:03:52+01:00
 
 **Tanda:** 1825 tests, 1758 pass, 0 fail, 67 skipped
