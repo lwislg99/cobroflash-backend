@@ -252,6 +252,12 @@ export const CENSO = {
   // entrada ya existía y cubre las dos descargas, así que la vieja quedó fantasma y se retiró.
   'src/modules/exports/domain/exportData.ts::expense.findMany#1': { veredicto: 'OPACO', nota: 'where construido por whereRango(); no ata al origen' },
   'src/modules/invoicing/domain/verifactu.service.ts::invoice.findFirst#1': { veredicto: 'OPACO', nota: 'encadenado de huella: filtra por vfHash y merchant, no por origen' },
+  // SCRUM-296 (A6) · el Libro de Registro. Es el sitio donde atar al origen sería MÁS grave: un
+  // libro que se presenta como completo y no lleva la factura suelta no es un libro incompleto —
+  // es un documento que AFIRMA que esa facturación no existió. El `where` es opaco solo por el
+  // spread condicional de fechas; `quoteId` no aparece en él, y en el asiento el presupuesto es
+  // un enlace OPCIONAL: una suelta sale con `presupuestoId: null`, no desaparece.
+  'src/modules/invoicing/domain/libroRegistro.repo.ts::invoice.findMany#1': { veredicto: 'OPACO', nota: 'libro de registro: spread condicional de fechas; NO ata al origen — la suelta SALE, con presupuestoId null' },
   'src/modules/jobs/domain/job.service.ts::invoice.aggregate#1': { veredicto: 'POBLACION', nota: 'totalCobrado de un Job = facturas de SUS quotes. Una suelta no pertenece a ningún Job' },
   'src/modules/maintenance/domain/maintenance.service.ts::invoice.findMany#1': { veredicto: 'POBLACION', nota: '€ nacidos del ciclo de mantenimientos (quote.origin); una suelta nunca nació de uno' },
   'src/modules/metrics/domain/metrics.service.ts::invoice.count#1': { veredicto: 'POBLACION', nota: 'embudo de PRESUPUESTOS: etapa «facturadas». Filtro simétrico con «cobradas» y razonado en SCRUM-236' },
