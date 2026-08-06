@@ -49,6 +49,7 @@ const SHELL = [
   '/dashboard/js/albaranesView.js', // SCRUM-301 (C1)
   '/dashboard/js/expensesView.js',
   '/dashboard/js/settingsSubmenus.js', // SCRUM-284
+  '/dashboard/js/puertaSerie.js',
   '/dashboard/js/settingsView.js',
   '/dashboard/js/exportView.js',
   '/dashboard/js/libroRegistroView.js',

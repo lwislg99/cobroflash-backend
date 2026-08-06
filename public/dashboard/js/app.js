@@ -15,6 +15,15 @@ async function initApp() {
   // navegador no reimplementa el modo de emisión: lo recibe.
   window.appFacturaSueltaDisponible = me.facturaSueltaDisponible === true;
 
+  // SCRUM-D1 · LA PUERTA DE ÚLTIMA OPORTUNIDAD. Mismo patrón: el veredicto lo da el servidor
+  // (`debeOfrecerArranqueDeSerie`, la MISMA regla que usa `resolveSeriesSeq`) y aquí solo se
+  // recibe. El navegador NO comprueba `invoiceSeriesYear !== año` por su cuenta: dos sitios
+  // decidiendo lo mismo acaban discrepando, y el de fuera es el fácil de equivocar.
+  window.appPuertaSerieDisponible = me.puertaSerieDisponible === true;
+  // Y POR QUÉ no se puede, cuando no se puede: `{ emitidas, ejemplo }`. La puerta es `false` por
+  // dos motivos distintos —ya emitió, o ya contestó este año— y solo el primero bloquea el campo.
+  window.appSerieEmitida = me.serieEmitida || { emitidas: 0, ejemplo: null };
+
   // A10.2 (Parte L): past_due → banner global "Hay un problema con tu pago"
   // + portal de Stripe. La cuenta sigue funcionando (gracia); solo avisa.
   if (me.subscriptionStatus === 'past_due' && !document.getElementById('pastdue-banner')) {
