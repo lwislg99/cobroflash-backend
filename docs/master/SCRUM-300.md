@@ -93,6 +93,12 @@ un recuento**. Es **condición de cierre escrita en el ticket** y está sin cump
   `el_propio_cliente` · `representante_del_cliente` · `familiar_o_conviviente` ·
   `encargado_o_personal_de_obra` · `portero_o_conserje` · `otro`
 
+  📌 **DEROGADO EL 6-ago-2026, y se conserva porque es el registro de lo que se decidió el día 5.**
+  La segunda ranura es hoy **`en_nombre_del_cliente`**, no `representante_del_cliente` — el motivo
+  está más abajo, en su propia sección. Se anota AQUÍ porque esta lista se lee como la decisión
+  vigente, y es el valor que se guarda en la columna: quien migre con la de arriba migra el id
+  equivocado.
+
   ⚠️ Ninguna de las dos ramas usa estos ids: A tenía `familiar_o_conviviente`/`encargado_o_personal_obra`…
   y B `convive`/`obra`/`porteria`. **Los seis son nuevos y hay que aplicarlos en la fusión.**
 
