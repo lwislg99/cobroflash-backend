@@ -162,11 +162,13 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
   const TEXTO_HUECO = {
     'sin-firmar': (h) => `${h.cantidad} ${h.cantidad === 1 ? 'albarán' : 'albaranes'} sin firmar`,
     'sin-facturar': (h) => `${fmt(h.importe, moneda)} entregados sin facturar`,
+    'sin-facturar-nada': (h) => `${fmt(h.importe, moneda)} aceptados y sin facturar`,
     'sin-cobrar': (h) => `${fmt(h.importe, moneda)} facturados sin cobrar`,
   };
   const TEXTO_ACCION = {
     'ver-albaranes': 'Ver albaranes',
     'facturar-lo-entregado': 'Facturar lo entregado',
+    'facturar-el-trabajo': 'Facturar el trabajo',
     'registrar-cobro': 'Registrar cobro',
   };
 
@@ -186,6 +188,10 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
     // facturas ya tienen su sección tras G4). Navegar, no ejecutar — ejecutar es de la cabecera y
     // de la fila de cada documento, que ya lo hacen y no se duplica aquí.
     a.addEventListener('click', () => {
+      // ⚠️ `facturar-el-trabajo` va a ALBARANES, no a FACTURAS: ese hueco sale precisamente cuando
+      // NO hay ninguna factura, así que la sección FACTURAS no está pintada y el enlace no llevaría
+      // a ningún sitio. La de albaranes se monta siempre, y es donde se empieza a documentar el
+      // trabajo que luego se factura.
       const destino = h.accion === 'registrar-cobro' ? '[data-seccion="facturas"]' : '[data-seccion="albaranes"]';
       const el = document.querySelector(destino);
       if (!el || !el.scrollIntoView) return;

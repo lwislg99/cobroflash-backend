@@ -113,7 +113,22 @@ function huecosDeCobro(job) {
     huecos.push({ id: 'sin-facturar', importe: entregadoSinFacturar, accion: 'facturar-lo-entregado' });
   }
 
-  // 3 · FACTURADO Y SIN COBRAR — por factura, no por resta. Las rectificativas (importe negativo)
+  // 3 · ACEPTADO Y SIN FACTURAR NADA — el caso en que el 100 % del dinero está fuera.
+  //
+  // Es el hueco que faltaba, y lo destapó el invariante con la cabecera (SCRUM-320): un Trabajo
+  // `terminado` con importe aceptado y **sin ningún documento** hacía que la cabecera dijera
+  // «Cobrar el resto» y esta sección no listara nada — o sea, que no se pintara. **Callarse justo
+  // ahí es fallar cuando más falta hace**: no es que falte una parte, es que no hay nada facturado.
+  //
+  // Va DESPUÉS del parcial a propósito: leídos de arriba abajo escalan el alcance —«600 € de lo
+  // entregado» y luego «853,05 € del trabajo entero»—. Los dos pueden salir a la vez y son dos
+  // verdades distintas, que es exactamente lo que esta sección hace: enumerar, no elegir.
+  const aceptado = num(job && job.totalAceptado);
+  if (aceptado > 0 && facturasDe(job).length === 0) {
+    huecos.push({ id: 'sin-facturar-nada', importe: aceptado, accion: 'facturar-el-trabajo' });
+  }
+
+  // 4 · FACTURADO Y SIN COBRAR — por factura, no por resta. Las rectificativas (importe negativo)
   //     no se cuentan como pendiente de cobro: una nota de abono no es dinero que entre.
   let facturadoSinCobrar = 0;
   for (const inv of facturasDe(job)) {
@@ -129,7 +144,7 @@ function huecosDeCobro(job) {
 }
 
 /** Los ids en su orden canónico. El guard lo usa para comprobar que no se reordenan ni se pierden. */
-const HUECOS_COBRO = ['sin-firmar', 'sin-facturar', 'sin-cobrar'];
+const HUECOS_COBRO = ['sin-firmar', 'sin-facturar', 'sin-facturar-nada', 'sin-cobrar'];
 
 /**
  * ¿Se pinta la sección? Solo si hay algún hueco.

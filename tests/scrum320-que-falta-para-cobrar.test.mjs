@@ -228,18 +228,9 @@ test('SCRUM-320 · si la cabecera propone una acción de COBRO, G5 lista algún 
     const acc = jobNextAction({ customer: {}, invoices: [], albaranes: [], ...job }, true);
     if (!acc || !DE_COBRO.includes(acc.kind)) continue;
 
-    // ⚠️ EL INVARIANTE SE LIMITA A LOS TRABAJOS CON DOCUMENTOS, y no por comodidad: los tres huecos
-    // aprobados hablan de DOCUMENTOS (albaranes sin firmar, entregado sin facturar, facturado sin
-    // cobrar). Un Trabajo `terminado` con importe aceptado y **sin ningún documento todavía** no
-    // tiene ninguno de los tres, y la cabecera sí propone «Cobrar el resto».
-    //
-    // Ese caso está MEDIDO y REPORTADO como decisión del fundador (ver `docs/master/SCRUM-320.md`):
-    // o se añade un cuarto hueco —«aceptado y sin facturar»— o se acepta que la sección no aparezca
-    // hasta que exista el primer documento. **No se decide aquí**, y sobre todo no se tapa
-    // metiendo un hueco que nadie aprobó.
-    const tieneDocumentos = (job.albaranes || []).length > 0 || (job.invoices || []).length > 0;
-    if (!tieneDocumentos) continue;
-
+    // La exclusión de los Trabajos SIN documentos desaparece con el cuarto hueco (SCRUM-320 · C4):
+    // ese caso era el único que se escapaba del invariante, y ahora `sin-facturar-nada` lo cubre.
+    // El invariante vuelve a valer para TODOS los casos, que es como tenía que ser.
     vistos++;
     assert.ok(
       G5.huecosDeCobro(job).length > 0,
@@ -250,29 +241,101 @@ test('SCRUM-320 · si la cabecera propone una acción de COBRO, G5 lista algún 
   }
   assert.ok(
     vistos > 0,
-    '🔴 ESCÁNER CIEGO: ningún caso de prueba produjo una acción del eje COBRO sobre un Trabajo con ' +
-      'documentos, así que el invariante de arriba no se ha comprobado ni una vez.',
+    '🔴 ESCÁNER CIEGO: ningún caso de prueba produjo una acción del eje COBRO, así que el ' +
+      'invariante de arriba no se ha comprobado ni una vez.',
   );
 });
 
-test('SCRUM-320 · el HUECO MEDIDO queda a la vista, no tapado', () => {
-  // Un Trabajo terminado, con importe aceptado y SIN ningún documento: la cabecera propone cobrar y
-  // los tres huecos aprobados no tienen nada que enumerar. Este test NO afirma que esté bien —
-  // afirma que la situación es la que se reportó, para que cambie de estado el día que el fundador
-  // decida, en vez de quedarse en una nota que nadie relee.
+// El test «el HUECO MEDIDO queda a la vista, no tapado» se ha BORRADO, no adaptado.
+//
+// Fijaba una situación PROVISIONAL —que un Trabajo terminado sin documentos no listara nada— para
+// que no se quedara en una nota que nadie relee. El fundador decidió el cuarto hueco y esa
+// situación ya no existe. Adaptarlo habría dejado un test describiendo un estado que se superó, y
+// eso es exactamente lo que se cazó en A4: **un test que fija un defecto cuesta más que no tener
+// test, porque el siguiente que lo lea creerá que está decidido.**
+//
+// Lo que aquel test protegía lo protege ahora el invariante de arriba, sin exclusiones.
+
+test('SCRUM-320 · C4 · el Trabajo SIN NADA FACTURADO ya no se queda mudo', () => {
+  // El caso que destapó el invariante: 100 % del dinero fuera y la sección callada. Callarse ahí
+  // era fallar cuando más falta hace.
   const jobNextAction = cargarEscalera();
   const pelado = {
-    totalAceptado: 500, totalCobrado: 0, albaranes: [], invoices: [],
-    status: 'terminado', remaining: { amount: 500, currency: 'EUR' }, customer: {},
+    totalAceptado: 853.05, totalCobrado: 0, albaranes: [], invoices: [],
+    status: 'terminado', remaining: { amount: 853.05, currency: 'EUR' }, customer: {},
   };
-  const acc = jobNextAction(pelado, true);
-  assert.equal(acc && acc.kind, 'cobrar', '🔴 la escalera ya no propone cobrar en este caso: el hueco ' +
-    'reportado ha cambiado de forma y la entrada del máster describe algo que ya no pasa.');
+  assert.equal(jobNextAction(pelado, true).kind, 'cobrar', '🔴 ESCÁNER CIEGO: la cabecera ya no ' +
+    'propone cobrar en este caso, así que este test dejó de cubrir la contradicción que lo motivó.');
+
+  const h = G5.huecosDeCobro(pelado);
   assert.deepEqual(
-    G5.huecosDeCobro(pelado), [],
-    '🔴 ahora SÍ salen huecos en el caso reportado. Si es porque se ha añadido un cuarto hueco, ' +
-      'tiene que venir con la aprobación del fundador y con su microcopy (regla 30) — y este test ' +
-      'y la entrada del máster dejan de describir la realidad.',
+    h.map((x) => x.id), ['sin-facturar-nada'],
+    '🔴 el Trabajo con el 100 % del dinero sin facturar no lista ningún hueco: la sección no se ' +
+      'pinta y la cabecera dice a la vez que hay que cobrar. Es la contradicción entera.',
+  );
+  assert.equal(h[0].importe, 853.05, '🔴 el hueco no lleva el importe ACEPTADO');
+  assert.equal(h[0].accion, 'facturar-el-trabajo');
+  assert.equal(G5.seccionCobroVisible(pelado), true, '🔴 la sección sigue sin pintarse');
+});
+
+test('SCRUM-320 · el orden canónico DECLARA todos los huecos que la función produce', () => {
+  //
+  // ⚠️ `HUECOS_COBRO` era una constante DECORATIVA: se podía borrar un id de ella y no fallaba
+  // nada, porque ningún test la contrastaba con lo que `huecosDeCobro` devuelve de verdad. Una
+  // lista que nadie compara con la realidad es una lista que se queda vieja sin avisar — el mismo
+  // defecto que este bloque lleva cazando todo el día.
+  //
+  // Un Trabajo construido para que salgan LOS CUATRO a la vez.
+  const todos = {
+    totalAceptado: 900, totalCobrado: 0,
+    albaranes: [
+      { id: 1, estado: 'emitido' },                                        // → sin-firmar
+      { id: 2, estado: 'firmado', facturado: false, totales: { total: 600 } }, // → sin-facturar
+    ],
+    invoices: [],                                                          // → sin-facturar-nada
+  };
+  const conFactura = { ...todos, invoices: [{ id: 9, total: 300, status: 'pending' }] }; // → sin-cobrar
+
+  const producidos = new Set([
+    ...G5.huecosDeCobro(todos).map((h) => h.id),
+    ...G5.huecosDeCobro(conFactura).map((h) => h.id),
+  ]);
+  assert.equal(
+    producidos.size, G5.HUECOS_COBRO.length,
+    `🔴 la función produce ${producidos.size} tipos de hueco y la lista canónica declara ` +
+      `${G5.HUECOS_COBRO.length}. O sobra un id en la lista, o hay un hueco que sale y nadie declaró.`,
+  );
+  for (const id of producidos) {
+    assert.ok(
+      G5.HUECOS_COBRO.includes(id),
+      `🔴 el hueco «${id}» se produce y NO está en el orden canónico: nada garantiza dónde se pinta.`,
+    );
+  }
+  // Y el orden que declara es el orden en que salen.
+  const salen = G5.huecosDeCobro(todos).map((h) => h.id);
+  assert.deepEqual(
+    salen, G5.HUECOS_COBRO.filter((id) => salen.includes(id)),
+    '🔴 los huecos NO salen en el orden canónico declarado.',
+  );
+});
+
+test('SCRUM-320 · C4 · el cuarto hueco NO sale si ya hay alguna factura', () => {
+  // Control negativo: «sin facturar NADA» significa nada, no «poco». Con una factura emitida —aunque
+  // sea de 1 € y aunque quede mucho por facturar— este hueco deja de ser cierto, y el que informa
+  // del resto es `sin-cobrar`.
+  const conUnaFactura = {
+    totalAceptado: 853.05, totalCobrado: 0, albaranes: [],
+    invoices: [{ id: 1, total: 1, status: 'pending' }],
+  };
+  assert.ok(
+    !G5.huecosDeCobro(conUnaFactura).some((x) => x.id === 'sin-facturar-nada'),
+    '🔴 dice «aceptados y sin facturar» sobre un Trabajo que SÍ tiene una factura. Sería falso.',
+  );
+  // Y sin importe aceptado tampoco: no hay nada contra lo que medir.
+  assert.ok(
+    !G5.huecosDeCobro({ totalAceptado: 0, totalCobrado: 0, albaranes: [], invoices: [] })
+      .some((x) => x.id === 'sin-facturar-nada'),
+    '🔴 propone facturar un trabajo sin importe aceptado: no hay nada que facturar.',
   );
 });
 
