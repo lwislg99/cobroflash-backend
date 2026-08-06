@@ -16,8 +16,8 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // LO QUE SE PRUEBA AQUÍ, Y POR QUÉ ASÍ
 //
-// El barrido vive en `scripts/_wipe-demo.mjs` y no dentro de `seed-demo.mjs` por una razón
-// medida: ese script **se ejecuta al importarlo** (tiene await de nivel superior y siembra), así
+// El barrido vive FUERA de `seed-demo.mjs` (hoy en `src/modules/system/domain/barridoDemo.ts`,
+// compilado a `dist/`) por una razón medida: ese script **se ejecuta al importarlo** (tiene await de nivel superior y siembra), así
 // que un test que lo importara sembraría la base. Sacada la pieza, se ejercita con un `prisma` de
 // doble: sin BD, sin turno y sin red.
 import test from 'node:test';
@@ -27,6 +27,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { barridoDemo, PREFIJO_TELEFONO_DEMO } from '../dist/modules/system/domain/barridoDemo.js';
 import { modelosConTenancy } from './scrum172-cobertura-tenancy.test.mjs';
+// SCRUM-381: RESOLVER el import, no deletrearlo. El porqué está en el assert de abajo y, largo,
+// en el propio módulo — nació de que este test fijara una ruta que ya no existía.
+import { origenDe } from './_imports-estaticos.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SCHEMA = fs.readFileSync(path.join(RAIZ, 'prisma', 'schema.prisma'), 'utf8');
@@ -166,8 +169,41 @@ test('SCRUM-314 · un modelo que este entorno no expone NO tumba el barrido, y s
 
 test('SCRUM-314 · seed-demo usa el barrido derivado y no una lista propia', () => {
   // Sin esto, el módulo podría estar perfecto y el script seguir borrando sus 10 de siempre.
-  const src = fs.readFileSync(path.join(RAIZ, 'scripts', 'seed-demo.mjs'), 'utf8');
-  assert.match(src, /from '\.\/_wipe-demo\.mjs'/, '🔴 seed-demo no importa el barrido derivado');
+  const seedDemo = path.join(RAIZ, 'scripts', 'seed-demo.mjs');
+  const src = fs.readFileSync(seedDemo, 'utf8');
+
+  // 🔴 SCRUM-381 · ESTE ASSERT FIJABA EL IMPORT ROTO.
+  //
+  // Decía `assert.match(src, /from '\.\/_wipe-demo\.mjs'/)` — un fichero que ESTE MISMO TICKET
+  // borró al mover el barrido al dominio. Comprobaba el TEXTO del import y NUNCA que el destino
+  // existiera, así que sostuvo en verde un `seed-demo.mjs` que no podía ni arrancar: reventaba en
+  // su primer `import`, antes de la primera línea útil, y el test decía que sí.
+  //
+  //   Un guard que fija una ruta sin resolverla vigila la ortografía, no el cableado.
+  //   Un test que fija el estado actual convierte un defecto en un requisito.
+  //
+  // Y no basta con apuntar el `match` a la ruta NUEVA: eso muda el defecto de sitio y volverá a
+  // fijar el siguiente import roto. Lo que se comprueba ahora es el CABLEADO — de dónde sale de
+  // verdad `barridoDemo` — y la ruta concreta deja de importar: si mañana el módulo se mueve, este
+  // test sigue vigilando lo suyo (que el barrido venga de fuera y no de una lista propia) en vez
+  // de caer por un cambio que no le incumbe.
+  const origen = origenDe(seedDemo, 'barridoDemo');
+  assert.ok(origen.ok, {
+    no_importado: '🔴 seed-demo YA NO IMPORTA `barridoDemo`: o volvió a barrer con su propia ' +
+      'lista, o lo renombró. Las dos cosas son el defecto que cerró SCRUM-314.',
+    no_resuelve: origen.ok ? '' : `🔴 seed-demo:${origen.linea} importa \`barridoDemo\` de ` +
+      `«${origen.especificador}», QUE NO EXISTE. El script no arranca. Es EXACTAMENTE el defecto ` +
+      'de SCRUM-381, y este assert es el que lo dejó pasar la vez anterior.',
+    no_exportado: origen.ok ? '' : `🔴 «${origen.especificador}» existe pero ya no exporta ` +
+      '`barridoDemo`: el import «parece» bien y falla al usarlo.',
+  }[origen.motivo] ?? '🔴 seed-demo no importa el barrido derivado');
+
+  // Y que el destino sea el DOMINIO, no otro script: el hallazgo de SCRUM-314 era justamente que
+  // el barrido no puede vivir en una lista de la capa `scripts/`.
+  const rel = path.relative(RAIZ, origen.destino ?? '').replace(/\\/g, '/');
+  assert.match(rel, /^dist\/modules\//,
+    `🔴 \`barridoDemo\` sale de «${rel}», que no es el dominio compilado. SCRUM-314 lo movió ahí ` +
+    'a propósito: dos listas del mismo hecho se desincronizan solas.');
   assert.match(src, /barridoDemo\(/, '🔴 seed-demo no llama a barridoDemo');
   const cuerpo = src.slice(src.indexOf('async function wipeDemo'), src.indexOf('async function seed'));
   const aMano = [...cuerpo.matchAll(/prisma\.(\w+)\.deleteMany/g)].map((m) => m[1]);

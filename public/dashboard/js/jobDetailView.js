@@ -16,10 +16,14 @@ function jobDetInvEstado(st) {
   return s === 'paid' ? 'Pagada' : s === 'expired' ? 'Vencida' : 'Pendiente';
 }
 // Tipo de documento (copy ya usado en invoiceDetailView).
+//
+// SCRUM-319 (G4): el RÓTULO se queda aquí —es microcopy— pero la CLASIFICACIÓN se delega en
+// `tipoDeFactura` (jobDocsReparto.js). Antes esta función era la única que sabía distinguir un
+// justificante de una factura; el reparto habría necesitado su propia copia de esa condición, y
+// serían dos sitios decidiendo lo mismo sobre documentos con significados legales distintos.
+const JOBDET_DOC_ROTULO = { rectificativa: 'Rectificativa', justificante: 'Justificante', factura: 'Factura' };
 function jobDetDocLabel(inv) {
-  if (inv.type === 'R1') return 'Rectificativa';
-  if (inv.type === 'JUST' || String(inv.number || '').startsWith('J-')) return 'Justificante';
-  return 'Factura';
+  return JOBDET_DOC_ROTULO[typeof tipoDeFactura === 'function' ? tipoDeFactura(inv) : 'factura'];
 }
 // SCRUM-14: estado del albarán → copy canónico (brief; regla 30) + pill del inventario AB3.
 const JOBDET_ALB_PILL = { borrador: 'status-pill-draft', emitido: 'status-pill-pending', firmado: 'status-pill-accepted' };
@@ -66,6 +70,19 @@ function pintarBloqueRail(bloque) {
       a.className = 'detail-rail-enlace';
       a.href = linea.href;
       if (/^https?:/i.test(linea.href)) { a.target = '_blank'; a.rel = 'noopener'; }
+      fila.appendChild(a);
+      destino = a;
+    } else if (linea.invoiceId != null) {
+      // SCRUM-319 (G4): el justificante de cobro, que baja de la pila al bloque DINERO. Misma
+      // navegación que ya usa la ficha de cliente (`appState.invoiceId` + `invoice-detail`), no una
+      // inventada para el rail.
+      const a = document.createElement('a');
+      a.className = 'detail-rail-enlace';
+      a.href = '#';
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (window.renderAppView) { window.appState.invoiceId = linea.invoiceId; window.renderAppView('invoice-detail'); }
+      });
       fila.appendChild(a);
       destino = a;
     } else if (linea.quoteId != null) {
@@ -118,6 +135,146 @@ function jdAddRow(dl, term, value) {
 // no podía nombrarla y escribió la suya: mismo Trabajo, dos acciones distintas. El traslado no
 // cambió ni un nivel; lo que cambió es que ahora es alcanzable.
 
+// ── SCRUM-304 (C3) · LA COLUMNA «ACCIÓN» DE LA TABLA DE ALBARANES ────────────────────────────
+//
+// 🔴 UNA SOLA FUENTE DE VERDAD: la primaria sale del REGISTRO DE C2 resuelto con la ley
+// (`destinoEfectivo`), nunca de una jerarquía escrita aquí. Dos tablas de acciones para el mismo
+// documento es el defecto de SCRUM-240, y esta vez en la capa de interacción.
+//
+// ⚠️ EL CONTEXTO NO SE COPIA LITERAL DE C2, Y ESTE ES EL DETALLE QUE ENVENENA:
+// el MISMO derivado de tres valores viaja con NOMBRE DISTINTO según el endpoint —
+// `estadoFacturacion` en el detalle del albarán (`albaranes.routes.ts:437`) y `estadoCobro` en el
+// del Trabajo (`jobs.routes.ts:328`)—. Copiar `alb.estadoFacturacion` aquí daría `undefined`, y
+// `undefined !== 'facturado'` es TRUE: la fila ofrecería «facturar» sobre albaranes ya facturados
+// del todo, sin error y sin que nada se pusiera rojo. Tiene guard propio.
+/** Fecha corta para la columna de la tabla: «12 jul». La hora completa vive en el detalle. */
+function albFechaCorta(w) {
+  return w ? new Date(w).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : '';
+}
+
+function ctxAlbaranEnFila(alb) {
+  return {
+    // Tres valores (`sin_facturar` · `parcial` · `facturado`), no un booleano: en una obra por
+    // fases `parcial` es lo normal, y aplanarlo escondería que AÚN QUEDA algo que facturar.
+    'valorado-con-pendiente': alb.modoValoracion === 'VALORADO' && alb.estadoCobro !== 'facturado',
+  };
+}
+
+/** La acción primaria de este albarán según C2, o `null` si su estado no tiene siguiente paso. */
+function primariaDeAlbaran(alb) {
+  const registro = (typeof window !== 'undefined' && window.ALBARAN_ACTION_REGISTRY) || [];
+  const ctx = ctxAlbaranEnFila(alb);
+  return registro.find((a) => window.destinoEfectivo(a, alb.estado, ctx) === 'primaria') || null;
+}
+
+/**
+ * Destino de UNA acción concreta en la fila, leído del registro de C2.
+ *
+ * Existe para no reescribir aquí ninguna entrada del registro: copiar los `destinos` de una acción
+ * «para consultarlos rápido» es exactamente cómo nacen las dos fuentes de verdad que esta tarea
+ * viene a cerrar. Si la acción no está en el registro devuelve `'oculta'`: lo que no está declarado
+ * no se pinta.
+ */
+function destinoEnFila(id, alb) {
+  const registro = (typeof window !== 'undefined' && window.ALBARAN_ACTION_REGISTRY) || [];
+  const accion = registro.find((a) => a.id === id);
+  return accion ? window.destinoEfectivo(accion, alb.estado, ctxAlbaranEnFila(alb)) : 'oculta';
+}
+
+// Los rótulos NO se escriben aquí: se leen de `ROTULOS_ALBARAN` (albaranDetailView.js), que ya los
+// tiene aprobados. Escribirlos otra vez sería la segunda lista de siempre, y divergirían el día que
+// alguien retoque una. `albaranDetailView.js` se carga ANTES que este fichero en `index.html` y hay
+// guard de ese orden: si alguien lo cambia, sale rojo en vez de dejar la columna muda.
+// MICROCOPY APROBADA por el fundador el 5-ago-2026 (regla 30), los cinco tal cual. Ya no llevan
+// `[PENDIENTE microcopy oficial]`, y el guard compara contra el texto aprobado uno a uno.
+//
+// ⚠️ Y NO ERA SOLO UN RÓTULO: con el marcador, la cabecera medía 29 caracteres de más POR COLUMNA
+// y sacaba de pantalla las tres últimas columnas a 390 px. De ahí la regla que salió de aquí —
+// CON MARCADOR NO SE JUZGA EL LAYOUT, solo se comprueba que el marcador esté.
+const ALB_TABLA_COPY = {
+  colNumero: 'Nº',
+  colFecha: 'Fecha',
+  colEstado: 'Estado',
+  colLineas: 'Líneas',
+  colAccion: 'Acción',
+};
+
+// ── SCRUM-303 (C4) · QUÉ SE ABRE AL PULSAR «NUEVO ALBARÁN», Y POR QUÉ ─────────────────────────
+//
+// LA MITAD DEL TICKET QUE YA ESTABA HECHA: «se crea vacío y luego se rellena» dejó de ser cierto
+// con SCRUM-257 — el albarán nacía YA PRELLENADO, en un solo POST. Medido antes de tocar nada.
+// Lo que seguía roto es lo otro: **el documento existía en el instante del clic**, sin que nadie
+// lo hubiera mirado y con el número YA QUEMADO. Eso es lo que cierra esta función.
+//
+// Es PURA a propósito —ni red, ni DOM, ni `await`—: decide qué se abre, y quien llama abre. Así el
+// test la ejecuta de verdad sobre los cuatro casos en vez de leer su texto (mismo criterio que
+// SCRUM-257(a): un guard de texto pasa en verde con la lógica escrita al revés).
+//
+// 🔴 EL SUELO, Y ES LA DECISIÓN DEL FUNDADOR DE HOY: «no se pudo LEER el presupuesto» y «el
+// presupuesto NO TENÍA líneas» son la misma pantalla vacía y significan cosas OPUESTAS. Se crea
+// igualmente en los dos casos —un pro con mala cobertura, de pie y con el cliente delante, NO
+// puede quedarse sin poder crear el documento (bloque H)— pero el producto NO MIENTE: cada caso
+// dice el suyo. Por eso `motivo` es un código distinto por caso y nunca `null` cuando falta algo.
+const ALB_MOTIVO = {
+  VALORADO: 'valorado',                       // el backend exige precio; el presupuesto no lo trae
+  SIN_PRESUPUESTO: 'sin_presupuesto',         // la vista no trae `quote` (el 409 lo pone el backend)
+  ILEGIBLE: 'presupuesto_ilegible',           // se pidió y NO se pudo leer  ← no es lo mismo…
+  SIN_LINEAS: 'presupuesto_sin_lineas',       // se leyó y no había nada aprovechable  ← …que esto
+};
+
+// REGLA 30 · el microcopy lo aprueba el fundador. Hasta que llegue, cada ranura sale con el
+// marcador `[PENDIENTE microcopy oficial]` y su texto detrás — el marcador solo NO valdría aquí,
+// porque entonces «ilegible» y «sin líneas» dirían LO MISMO y el suelo de arriba sería decorativo.
+// El guard compara contra estas constantes, nunca contra un literal: el día que se aprueben los
+// textos, el test sigue verde sin tocarlo (patrón de SCRUM-263).
+// 🔴 EL TONO NO ES DECORACIÓN: `styles.css` esconde `.alert` cuando NO lleva modificador de color
+// (`.alert:not(.success):not(.ok):not(.error):not(.info):not(.warning) { display: none }`). Un
+// aviso con la clase pelada existe en el DOM y NO SE VE — el suelo entero de este ticket quedaría
+// verde y mudo, que es justo el defecto que viene a cerrar. Lo cazó la captura AB6, no la suite.
+const ALB_AVISO_TONO = {
+  valorado: 'info',                    // esperado: lo ha pedido el pro marcando la casilla
+  sin_presupuesto: 'info',
+  presupuesto_ilegible: 'warning',     // algo ha fallado…
+  presupuesto_sin_lineas: 'warning',
+  descartadas: 'warning',              // …y algo se ha quedado fuera (SCRUM-271)
+};
+
+// MICROCOPY APROBADA por el fundador el 5-ago-2026 (regla 30). Ya NO lleva el marcador
+// `[PENDIENTE microcopy oficial]`: los siete textos están decididos y el guard los compara uno a
+// uno, así que reescribir uno «que suene mejor» sale rojo. Cambiarlos es cambiar copy aprobada.
+const ALB_CREAR_COPY = {
+  titulo: 'Nuevo albarán',
+  guardar: 'Crear albarán',
+  // Singular y plural DE VERDAD: cambian el sustantivo y el verbo, así que se alterna la frase
+  // entera (patrón de `exportView.js`). «línea(s)» es abreviatura de programador, y esto lo lee
+  // un profesional en obra.
+  descartadas: (n) => (n === 1
+    ? '1 línea sin cantidad no se ha copiado.'
+    : `${n} líneas sin cantidad no se han copiado.`),
+  valorado: 'Con precios, las líneas se escriben a mano: el presupuesto no los trae.',
+  // «No tiene presupuesto» a secas dejaba dudando si existe y no se ve; la segunda mitad dice qué
+  // va a pasar, que es lo que hace falta saber.
+  sin_presupuesto: 'Este trabajo no tiene presupuesto, así que empiezas de cero.',
+  presupuesto_ilegible: 'No se ha podido leer el presupuesto, así que no se ha rellenado nada. Puedes escribir las líneas a mano.',
+  presupuesto_sin_lineas: 'El presupuesto no tiene ninguna línea que se pueda entregar.',
+};
+
+function decidirAperturaAlbaran({ modoValoracion, tieneQuote, quoteLeido, lineasQuote }) {
+  // VALORADO: `validarLineas` EXIGE precio en todas las líneas y las del presupuesto llegan sin él
+  // (decisión del fundador, «sin los precios»), así que prellenar aquí daría un 400 al guardar.
+  if (modoValoracion === 'VALORADO') return { lineas: [], descartadas: 0, motivo: ALB_MOTIVO.VALORADO };
+  if (!tieneQuote) return { lineas: [], descartadas: 0, motivo: ALB_MOTIVO.SIN_PRESUPUESTO };
+  // `quoteLeido === null` es «lo pedí y falló», que NO es «no había líneas». Distinguirlos es el
+  // suelo entero de este ticket: confundirlos le diría al pro que el presupuesto estaba vacío.
+  if (!quoteLeido) return { lineas: [], descartadas: 0, motivo: ALB_MOTIVO.ILEGIBLE };
+  const origen = Array.isArray(lineasQuote) ? lineasQuote : [];
+  const lineas = lineasDeQuoteParaAlbaran(origen);
+  if (!lineas.length) return { lineas: [], descartadas: origen.length, motivo: ALB_MOTIVO.SIN_LINEAS };
+  // Las descartadas se CUENTAN y se avisan: omitir en silencio en un documento que se firma es el
+  // defecto de SCRUM-271, y aquí sigue vigente igual que en SCRUM-257.
+  return { lineas, descartadas: origen.length - lineas.length, motivo: null };
+}
+
 // ── SCRUM-257 · las líneas del presupuesto, convertidas en líneas de albarán ──────────────────
 //
 // SIN PRECIOS, y no es una preferencia estética: el albarán es COMPROBANTE DE ENTREGA (decisión
@@ -132,16 +289,28 @@ function jdAddRow(dl, term, value) {
 // entero si una sola no vale: colarlas convertiría el prellenado en un error al crear. Quien
 // llama compara los dos tamaños para avisar — descartar en silencio en un documento que se firma
 // es lo que SCRUM-271 vino a cerrar.
+// ── SCRUM-367 · AQUÍ SE ATA CADA LÍNEA A SU ORIGEN ────────────────────────────────────
+//
+// Éste es el único camino que prellena un albarán desde el presupuesto, así que es el único sitio
+// donde el vínculo se puede establecer con certeza — después ya no hay forma de saber de qué línea
+// salió cada una salvo cruzando textos, que no es un mecanismo: es una apuesta.
+//
+// ⚠️ EL ÍNDICE ES EL DE `lines`, NO EL DE `out`. Esta función DESCARTA las líneas que no pueden ser
+// línea de albarán, así que las dos listas se desalinean en cuanto se cae una: usar la posición de
+// salida ataría la línea 3 del albarán a la 3 del presupuesto cuando en realidad es la 4. Un enlace
+// desplazado es peor que ninguno, porque C6 se lo creería y respondería sobre la partida
+// equivocada.
 function lineasDeQuoteParaAlbaran(lines) {
   if (!Array.isArray(lines)) return [];
   const out = [];
-  for (const l of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
     const concepto = typeof l?.concept === 'string' ? l.concept.trim() : '';
     const cantidad = Number(l?.qty);
     if (!concepto || !(cantidad > 0)) continue;
     // `unidad` no viene del presupuesto y el albarán la exige: 'ud' es común, neutro y editable
     // por línea. Vacía dejaría un «—» en el papel que alguien lee en obra.
-    out.push({ concepto, cantidad, unidad: 'ud' });
+    out.push({ concepto, cantidad, unidad: 'ud', quoteLineIndex: i });
   }
   return out;
 }
@@ -392,9 +561,11 @@ async function renderJobDetailView(container, jobId) {
           showToast('✓ Albarán emitido.');
           refresh();
         } else if (nextAct.kind === 'nuevo') {
-          await apiRequest(`/admin/jobs/${job.id}/albaranes`, { method: 'POST', body: JSON.stringify({ modoValoracion: 'SIN_VALORAR' }) });
-          showToast('✓ Albarán creado (borrador).');
-          refresh();
+          // SCRUM-303: este atajo creaba un albarán VACÍO de un POST —sin prellenar siquiera— y con
+          // el número ya quemado. Ahora abre la MISMA hoja que el botón de la sección: un solo alta
+          // nombrada, para que los dos caminos no vuelvan a divergir (SCRUM-366).
+          await abrirAltaAlbaran('SIN_VALORAR');
+          cta.disabled = false; cta.textContent = orig; // no se refresca: aún no existe nada
         }
       } catch (err) {
         setStatus('error', 'No se pudo completar la acción: ' + (err?.data?.message || err.message));
@@ -565,7 +736,9 @@ async function renderJobDetailView(container, jobId) {
   const albaranes = Array.isArray(job.albaranes) ? job.albaranes : [];
   const docsSec = document.createElement('div');
   docsSec.className = 'detail-section';
-  docsSec.innerHTML = '<h3 class="detail-section-title">Documentos</h3>';
+  // SCRUM-319 (G4): esta sección ya solo lleva ALBARANES; lo demás salió al rail o a su propio
+  // bloque. El rótulo ya existía en el producto: no es microcopy nueva.
+  docsSec.innerHTML = '<h3 class="detail-section-title">Albaranes</h3>';
   body.appendChild(docsSec);
   body.appendChild(infoSec); // SCRUM-31 (F6): "Datos" a segundo plano, bajo lo operativo.
   const docs = []; // { when, el } — se ordena ascendente y se vuelca al final en la lista.
@@ -770,6 +943,49 @@ async function renderJobDetailView(container, jobId) {
     document.body.appendChild(overlay);
   });
 
+  // ── SCRUM-303 (C4) · PULSAR AQUÍ YA NO CREA NADA ────────────────────────────────────────────
+  //
+  // Antes este manejador hacía el POST directamente: el albarán existía —con número— antes de que
+  // nadie hubiera visto una línea. Ahora solo LEE el presupuesto y abre la hoja; el POST sale del
+  // botón de guardar, dentro del sheet. Si el pro sale, no queda nada: ni documento ni hueco en la
+  // serie.
+  //
+  // Lo que NO cambia (SCRUM-257, criterios cerrados del fundador): el mapeo `lineasDeQuoteParaAlbaran`
+  // se reutiliza ENTERO y sin tocarlo, se prellena UNA VEZ y no se re-sincroniza nunca —
+  // `computeAlbaranContentHash` sella estas líneas como el contenido firmado—, y el 409
+  // `job_without_quote` sigue viviendo en el backend, que es quien manda.
+  /**
+   * SCRUM-303 · EL ALTA DE UN ALBARÁN, EN UN SOLO SITIO.
+   *
+   * Hay DOS botones que dan de alta —el «+ Nuevo albarán» de la sección y la siguiente acción
+   * `nuevo` de la cabecera— y hasta hoy cada uno lo hacía a su manera: el de la sección prellenaba
+   * (SCRUM-257) y el de la cabecera creaba un albarán VACÍO de un POST, sin prellenar nada.
+   * Mismo Trabajo, dos altas distintas, y la peor era la del camino más corto.
+   *
+   * Es exactamente el defecto que SCRUM-366 documentó en este fichero: lo que no se puede nombrar
+   * se reescribe distinto. Por eso el alta se nombra UNA vez y los dos botones la llaman.
+   */
+  async function abrirAltaAlbaran(modoValoracion) {
+    const tieneQuote = modoValoracion === 'SIN_VALORAR' && job.quote?.id != null;
+    // ⚠️ `quoteLeido` arranca en `true` para el caso en que NI SIQUIERA se pide (VALORADO o sin
+    // presupuesto a la vista): ahí no ha fallado ninguna lectura, y decir «ilegible» sería
+    // mentir igual que decir «vacío». `decidirAperturaAlbaran` ya corta antes por su motivo.
+    let quoteLeido = true;
+    let lineasQuote = null;
+    if (tieneQuote) {
+      // Si el presupuesto no se puede leer se abre IGUALMENTE, con las líneas a mano: quedarse
+      // sin prellenado es un incordio; no poder crear el albarán estando en obra es un problema
+      // (decisión de SCRUM-257, ratificada por el fundador al decidir el suelo de este ticket).
+      // Lo que ya NO se hace es presentarlo como si el presupuesto estuviera vacío.
+      const q = await apiRequest(`/admin/quotes/${job.quote.id}`).catch(() => null);
+      quoteLeido = !!q;
+      lineasQuote = q && Array.isArray(q.lines) ? q.lines : [];
+    }
+    const decision = decidirAperturaAlbaran({ modoValoracion, tieneQuote, quoteLeido, lineasQuote });
+    // Y AQUÍ SE ABRE, NO SE CREA. El POST vive dentro del sheet, en el botón de guardar.
+    openAlbCrearSheet(decision, modoValoracion);
+  }
+
   newAlbBtn.addEventListener('click', async () => {
     newAlbBtn.disabled = true;
     const modoValoracion = valoradoCheck.checked ? 'VALORADO' : 'SIN_VALORAR';
@@ -785,31 +1001,8 @@ async function renderJobDetailView(container, jobId) {
       // ⚠️ SOLO en SIN_VALORAR. En VALORADO el backend EXIGE precio en todas las líneas
       // (`validarLineas`) y las del presupuesto llegan sin él por decisión del fundador («sin los
       // precios»): prellenar ahí daría un 400 al crear. Con precios se rellena a mano, como hoy.
-      let lineas = null;
-      let descartadas = 0;
-      if (modoValoracion === 'SIN_VALORAR' && job.quote?.id != null) {
-        // Si el presupuesto no se puede leer, se crea VACÍO como siempre: quedarse sin prellenado
-        // es un incordio; no poder crear el albarán estando en obra es un problema.
-        const q = await apiRequest(`/admin/quotes/${job.quote.id}`).catch(() => null);
-        if (q) {
-          const origen = Array.isArray(q.lines) ? q.lines : [];
-          lineas = lineasDeQuoteParaAlbaran(origen);
-          descartadas = origen.length - lineas.length;
-          if (!lineas.length) lineas = null; // nada aprovechable → exactamente como antes
-        }
-      }
-
-      const cuerpo = lineas ? { modoValoracion, lineas } : { modoValoracion };
-      await apiRequest(`/admin/jobs/${job.id}/albaranes`, { method: 'POST', body: JSON.stringify(cuerpo) });
-      // Avisar de las descartadas NO es cosmético: son líneas del presupuesto que el pro espera
-      // ver y no están. Callarlo sería omitir en silencio en un documento que se firma (SCRUM-271).
-      showToast(
-        lineas
-          ? `✓ Albarán creado con ${lineas.length} línea(s) del presupuesto.`
-            + (descartadas ? ` ${descartadas} sin cantidad no se han copiado.` : '')
-          : '✓ Albarán creado (borrador).',
-      );
-      refresh();
+      await abrirAltaAlbaran(modoValoracion);
+      newAlbBtn.disabled = false;
     } catch (e) {
       setStatus('error', 'No se pudo crear el albarán: ' + (e?.data?.message || e.message));
       newAlbBtn.disabled = false;
@@ -838,7 +1031,11 @@ async function renderJobDetailView(container, jobId) {
   // interna (campos, totales, PATCH) NO cambia; solo se parametrizan el CIERRE (onClose) y el
   // DESTINO del error (onError), porque el statusBox de la página queda DETRÁS del overlay.
   // Sin opts → comportamiento inline de antes intacto.
-  function buildAlbEditor(box, alb, { onClose, onError } = {}) {
+  // SCRUM-303 (C4): `onGuardar` y `textoGuardar` son OPCIONALES y solo los usa la creación. Sin
+  // ellos el editor se comporta EXACTAMENTE igual que antes (PATCH sobre un albarán que ya existe),
+  // que es lo que mantiene intacta la edición de los albaranes de siempre — incluidos los que hoy
+  // están en BORRADOR vacíos y que no se migran ni se borran.
+  function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } = {}) {
     box.innerHTML = '';
     // SCRUM-65: el modo solo se puede TOCAR en 'borrador' (congelado desde 'emitido' —
     // el backend devolvería 409 albaran_locked si se intentase cambiar después).
@@ -900,6 +1097,19 @@ async function renderJobDetailView(container, jobId) {
       iv.className = 'input alb-precio-field'; iv.placeholder = 'IVA %'; iv.type = 'number'; iv.min = '0'; iv.max = '100'; iv.step = 'any';
       iv.style.cssText = 'flex:1;min-width:64px';
       iv.value = (l.tipoIva !== undefined && l.tipoIva !== null) ? l.tipoIva : 21;
+      // ── SCRUM-303 · EL ORIGEN VIAJA CON LA FILA (y sin él, SCRUM-367 se queda en nada) ────────
+      //
+      // `quoteLineIndex` NO tiene input: no se teclea, se hereda del presupuesto. Pero el guardado
+      // reconstruye cada línea **desde los inputs**, así que sin guardarlo en la fila se perdería
+      // aquí — exactamente el mismo fallo que SCRUM-367 cerró en `validarLineas`, una capa más
+      // arriba. Aquel ticket demostró que el backend lo CONSERVA; nadie comprobó que el front lo
+      // MANDE, y no lo hacía: editar un albarán desde esta hoja ya borraba el origen hoy.
+      //
+      // Es lo que le da de comer a C6 («quedan 3 metros por entregar»). Perderlo no da error: da un
+      // albarán que ya no sabe de qué partida salió.
+      if (l.quoteLineIndex !== undefined && l.quoteLineIndex !== null && l.quoteLineIndex !== '') {
+        r.dataset.quoteLineIndex = String(l.quoteLineIndex);
+      }
       [q, p, iv].forEach((inp) => inp.addEventListener('input', updateTotales));
       const del = document.createElement('button');
       del.className = 'btn-ghost btn-sm';
@@ -1138,7 +1348,7 @@ async function renderJobDetailView(container, jobId) {
     saveRow.style.cssText = 'display:flex;gap:8px;margin-top:8px';
     const save = document.createElement('button');
     save.className = 'btn-primary btn-sm';
-    save.textContent = 'Guardar cambios';
+    save.textContent = textoGuardar || 'Guardar cambios';
     save.addEventListener('click', async () => {
       const out = [];
       for (const r of rows.children) {
@@ -1147,6 +1357,11 @@ async function renderJobDetailView(container, jobId) {
         const pv = inputs[3].value, ivv = inputs[4].value;
         if (!c && !qv && !u) continue; // fila totalmente vacía se ignora
         const linea = { concepto: c, cantidad: Number(String(qv).replace(',', '.')), unidad: u };
+        // SCRUM-303 · y el origen vuelve a salir con ella. ⚠️ FAMILIA SCRUM-271: `dataset` devuelve
+        // SIEMPRE cadena, y `Number('')` es 0 — un índice ausente se convertiría en «la primera
+        // partida del presupuesto», en silencio. Se exige que sean dígitos ANTES de convertir.
+        const origen = r.dataset.quoteLineIndex;
+        if (typeof origen === 'string' && /^\d+$/.test(origen)) linea.quoteLineIndex = Number(origen);
         if (modo === 'VALORADO') {
           linea.precioUnitario = Number(String(pv).replace(',', '.'));
           linea.tipoIva = Number(String(ivv).replace(',', '.'));
@@ -1161,8 +1376,14 @@ async function renderJobDetailView(container, jobId) {
       if (modoEditable) body.modoValoracion = modo;
       save.disabled = true;
       try {
-        await apiRequest(`/admin/albaranes/${alb.id}`, { method: 'PATCH', body: JSON.stringify(body) });
-        showToast('✓ Albarán actualizado (nueva versión).');
+        // SCRUM-303: en creación, ÉSTE es el único sitio del que sale el POST — y por eso no hay
+        // albarán ni número hasta aquí. En edición no cambia nada: sigue siendo el PATCH de antes.
+        if (onGuardar) {
+          await onGuardar({ lineas: out, notas: notas.value, modoValoracion: modo });
+        } else {
+          await apiRequest(`/admin/albaranes/${alb.id}`, { method: 'PATCH', body: JSON.stringify(body) });
+          showToast('✓ Albarán actualizado (nueva versión).');
+        }
         if (onClose) onClose(); // cierra el sheet antes de re-renderizar
         refresh();
       } catch (e) {
@@ -1362,32 +1583,146 @@ async function renderJobDetailView(container, jobId) {
     (bodyEl.querySelector('.input') || closeBtn).focus();
   }
 
+  /**
+   * SCRUM-303 (C4) · LA HOJA DE CREAR, QUE ES LA MISMA HOJA DE EDITAR.
+   *
+   * 🔴 EL CORAZÓN DEL TICKET: **aquí todavía NO existe ningún albarán**. Se abre con las líneas del
+   * presupuesto ya puestas, el pro repasa cantidades, y el POST —el único— sale al GUARDAR. Salir
+   * con ×, Esc o Cancelar no crea nada y **no quema número**: hasta hoy el documento existía en el
+   * instante del clic, con su `ALB-YYYY-NNN` ya reservado, sin que nadie lo hubiera mirado.
+   *
+   * Un número quemado no se ve en NINGUNA pantalla: deja un hueco en la serie que solo aparece
+   * cuando alguien audita. Por eso ese trozo tiene test propio y no se da por supuesto.
+   *
+   * Reutiliza `.modal-overlay`/`.modal` y `buildAlbEditor` ENTEROS (inventario AB3): ni componente
+   * nuevo ni token nuevo. Lo único que cambia es de dónde sale el guardado.
+   */
+  function openAlbCrearSheet(decision, modoValoracion) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', ALB_CREAR_COPY.titulo);
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    const header = document.createElement('div');
+    header.className = 'modal-header';
+    const title = document.createElement('div');
+    title.className = 'modal-title';
+    title.textContent = ALB_CREAR_COPY.titulo;
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'modal-close';
+    closeBtn.type = 'button';
+    closeBtn.textContent = '×';
+    closeBtn.setAttribute('aria-label', 'Cerrar');
+    header.append(title, closeBtn);
+
+    const errEl = document.createElement('div');
+    errEl.className = 'alert error';
+    errEl.style.cssText = 'display:none;margin:12px 24px 0';
+
+    // EL AVISO DEL SUELO. `motivo` nunca es null cuando falta algo, así que la pantalla vacía
+    // siempre dice POR QUÉ está vacía — «no se pudo leer» y «no tenía líneas» son avisos distintos.
+    const avisoEl = document.createElement('div');
+    avisoEl.style.cssText = 'margin:12px 24px 0';
+    // `descartadas` es una ranura más del aviso: se descartaron líneas del presupuesto y hay que
+    // DECIRLO. Callarlo en un documento que alguien firma es el defecto de SCRUM-271.
+    const claveAviso = decision.motivo || (decision.descartadas ? 'descartadas' : null);
+    if (claveAviso) {
+      // El tono es OBLIGATORIO: sin él la hoja de estilos lo esconde y el aviso no existe.
+      avisoEl.className = `alert ${ALB_AVISO_TONO[claveAviso]}`;
+      avisoEl.textContent = claveAviso === 'descartadas'
+        ? ALB_CREAR_COPY.descartadas(decision.descartadas)
+        : ALB_CREAR_COPY[claveAviso];
+    } else {
+      avisoEl.className = 'alert';
+      avisoEl.style.display = 'none';
+    }
+
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'modal-body';
+    modal.append(header, errEl, avisoEl, bodyEl);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    function close() {
+      overlay.remove();
+      document.removeEventListener('keydown', onKey);
+    }
+    closeBtn.addEventListener('click', close);
+    document.addEventListener('keydown', onKey);
+    // Igual que al editar: el fondo NO cierra, para no perder líneas repasadas sin querer.
+
+    // Albarán DE MENTIRA: sin `id` y sin `numero`, porque todavía no existe ninguno. `estado`
+    // 'borrador' es lo que le da sentido al nombre ahora — «lo estoy rellenando», no «lo creé
+    // vacío y ya lo llenaré».
+    const enBlanco = { estado: 'borrador', modoValoracion, lineas: decision.lineas, notas: '' };
+
+    buildAlbEditor(bodyEl, enBlanco, {
+      onClose: close,
+      onError: (msg) => { errEl.textContent = msg; errEl.style.display = 'block'; },
+      textoGuardar: ALB_CREAR_COPY.guardar,
+      onGuardar: async ({ lineas, notas, modoValoracion: modo }) => {
+        const cuerpo = lineas.length ? { modoValoracion: modo, lineas, notas } : { modoValoracion: modo, notas };
+        await apiRequest(`/admin/jobs/${job.id}/albaranes`, { method: 'POST', body: JSON.stringify(cuerpo) });
+        showToast(
+          lineas.length
+            ? `✓ Albarán creado con ${lineas.length} línea(s).`
+            : '✓ Albarán creado (borrador).',
+        );
+      },
+    });
+    (bodyEl.querySelector('.input') || closeBtn).focus();
+  }
+
   albaranes.forEach((alb) => {
     // SCRUM-65: indicador de modo + total orientativo (serializeAlbaran ya trae `totales`).
     const albValorado = alb.modoValoracion === 'VALORADO';
-    const item = document.createElement('div');
-    item.className = 'job-doc-row';
+    // SCRUM-304 (C3): FILA DE TABLA, no tarjeta. El número lleva al detalle (C2), que es donde
+    // viven todas las acciones; aquí solo va la primaria de su estado.
+    const nLineas = Array.isArray(alb.lineas) ? alb.lineas.length : 0;
+    const item = document.createElement('tr');
     item.innerHTML =
-      `<div class="job-doc-row__icon" aria-hidden="true">📋</div>` +
-      `<div class="job-doc-row__body">` +
-        `<div class="job-doc-row__title">Albarán ${esc(alb.numero)}</div>` +
-        `<div class="job-doc-row__meta">` +
-          `<span class="status-pill ${JOBDET_ALB_PILL[alb.estado] || 'status-pill-draft'}">${jobDetAlbEstado(alb.estado)}</span>` +
-          // SCRUM-17: badge "Facturado" derivado (alb.facturado = invoiceId != null en el serializer)
-          // SCRUM-170: y el intermedio, también DERIVADO — `estadoCobro` sale de comparar lo
-          // servido con lo facturado (libro de líneas), no de ninguna columna de estado. Por eso
-          // el pill del documento (borrador/emitido/firmado) sigue a su bola: son dos ejes.
-          (alb.estadoCobro === 'parcial'
-            ? `<span class="job-doc-row__badge">Facturado en parte</span>`
-            : (alb.facturado || alb.estadoCobro === 'facturado' ? `<span class="job-doc-row__badge">Facturado</span>` : '')) +
-          `<span>${esc(docDate(alb.fecha))}</span>` +
-          `<span>v${alb.version}</span>` +
-          (albValorado ? `<span>Con precios · Total orientativo <span class="job-doc-row__amount">${fmtMoneyEs(alb.totales?.total ?? 0, cur)}</span></span>` : `<span>Sin precios</span>`) +
-        `</div>` +
-        `<div class="jobdet-alb-fotos job-doc-row__fotos"></div>` +
-        `<div class="jobdet-alb-actions job-doc-row__actions"></div>` +
-      `</div>`;
-    const albBody = item.querySelector('.job-doc-row__body');
+      // `cell-id` ES la ranura del NÚMERO DEL DOCUMENTO, y no es una elección propia: es lo que
+      // hacen `invoicesView.js:354` (`tdNumber`) y `quotesListView.js:194` (`tdId`), las otras dos
+      // que usan este mismo patrón. La primera versión de aquí lo puso en `cell-client` y metió el
+      // CONTEO de líneas en `cell-id` — o sea, una tercera convención para las mismas ranuras.
+      //
+      // **Se enseña ENTERO**: acortarlo a «0001» dependería de que todas las filas visibles
+      // compartan prefijo, que es una coincidencia de los datos de hoy y deja de ser cierta el 1 de
+      // enero. El profesional dicta ese número a su gestoría; medio número es un número equivocado.
+      `<td class="cell-id">` +
+        `<button type="button" class="detail-miga-link jobdet-alb-link">${esc(alb.numero)}</button>` +
+        `<div class="jobdet-alb-fotos"></div>` +
+      `</td>` +
+      // FECHA CORTA, no `docDate`: «12 jul 2026, 11:15» es la hora de consulta, no lo que distingue
+      // una entrega de otra. En la card de móvil ocupa el hueco `cell-date`, pequeño y a un lado.
+      `<td class="cell-date">${esc(albFechaCorta(alb.fecha))}</td>` +
+      // SCRUM-304: el pill y el badge APILAN en móvil (`.jobdet-alb-estado`). Son dos ejes y los
+      // dos hacen falta —una celda de Acción vacía es ambigua entre «facturado del todo» y «no
+      // facturable por SIN_VALORAR», y el badge es lo único que lo desambigua—, así que crece el
+      // alto en vez del ancho.
+      `<td class="jobdet-alb-estado cell-status">` +
+        `<span class="status-pill ${JOBDET_ALB_PILL[alb.estado] || 'status-pill-draft'}">${jobDetAlbEstado(alb.estado)}</span>` +
+        // SCRUM-17/170: «facturado» NO es un estado del documento — es un derivado de TRES valores
+        // contra el libro de líneas. Va como badge aparte del pill a propósito: son DOS EJES, y
+        // aplanarlos escondería el parcial, que en una obra por fases es el caso normal.
+        (alb.estadoCobro === 'parcial'
+          ? `<span class="job-doc-row__badge">Facturado en parte</span>`
+          : (alb.facturado || alb.estadoCobro === 'facturado' ? `<span class="job-doc-row__badge">Facturado</span>` : '')) +
+        (albValorado ? '' : `<span class="job-doc-row__badge">Sin precios</span>`) +
+      `</td>` +
+      // LÍNEAS se OCULTA en móvil con `col-hide-mobile`, que es lo que la casa hace con lo
+      // informativo que no acciona: `invoicesView.js:392` esconde ahí la Fecha y
+      // `quotesListView.js:217` el Método. En la card no hay cabecera, así que un «3» suelto no se
+      // lee; en la tabla de escritorio lo rotula su columna. El dato sigue en el detalle.
+      `<td class="col-hide-mobile">${nLineas}</td>` +
+      `<td class="jobdet-alb-actions cell-actions"></td>`;
+    const albBody = item.querySelector('td');
+    item.querySelector('.jobdet-alb-link').addEventListener('click', () => {
+      if (window.renderAppView) window.renderAppView('albaran-detail', { albaranId: alb.id });
+    });
     // SCRUM-17: checkbox de selección (modo consolidación) en albaranes elegibles.
     // SCRUM-170: un albarán a MEDIAS tampoco entra en la consolidación (el backend lo rechaza
     // con `albaran_facturado_parcial`); ofrecer el checkbox sería un botón que solo puede fallar.
@@ -1408,7 +1743,7 @@ async function renderJobDetailView(container, jobId) {
     // en la fila y la legalmente relevante (determina el mes natural de la recapitulativa, SCRUM-17).
     // Antes ordenaba por firmadoAt (cuándo se firmó el papel, no cuándo se hizo el trabajo) → la fila
     // mostraba una fecha y se colocaba por otra, rompiendo el orden ascendente visible.
-    docs.push({ when: alb.fecha, el: item });
+    docs.push({ when: alb.fecha, el: item, tipo: 'albaran', clave: 'albaran:' + alb.id });
     const acts = item.querySelector('.jobdet-alb-actions');
     const fotosBox = item.querySelector('.jobdet-alb-fotos');
 
@@ -1424,128 +1759,67 @@ async function renderJobDetailView(container, jobId) {
       });
     }).catch(() => {});
 
-    const pdfBtn = () => mkBtn('PDF', () => { window.open(`/admin/albaranes/${alb.id}/pdf`, '_blank'); });
+    // `pdfBtn` y `fotoBtn` VIVÍAN AQUÍ y se han borrado con sus botones, no dejado «por si acaso»:
+    // un constructor de botón que ya no llama nadie es código que se pudre sin que nada lo diga, y
+    // el siguiente que lo lea creerá que la fila todavía ofrece esas acciones. Lo que sí se queda
+    // es el bloque de miniaturas de arriba: eso es LECTURA, y la fila sigue enseñando las fotos.
     const editBtn = () => mkBtn('Editar líneas', () => openAlbEditorSheet(alb));
-    const fotoBtn = () => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/jpeg,image/png,image/webp';
-      input.style.display = 'none';
-      item.appendChild(input);
-      const b = mkBtn('📷 Añadir foto', () => input.click());
-      input.addEventListener('change', () => {
-        const file = input.files && input.files[0];
-        if (!file) return;
-        if (file.size > 5 * 1024 * 1024) { setStatus('error', 'Cada foto puede ocupar como máximo 5 MB.'); input.value = ''; return; }
-        const rd = new FileReader();
-        rd.onload = async () => {
-          try {
-            await apiRequest(`/admin/albaranes/${alb.id}/fotos`, { method: 'POST', body: JSON.stringify({ data: rd.result, mime: file.type }) });
-            showToast('✓ Foto añadida.');
-            refresh();
-          } catch (e) { setStatus('error', e?.data?.message || 'No se pudo subir la foto.'); }
-        };
-        rd.readAsDataURL(file);
-      });
-      return b;
-    };
 
-    if (alb.estado === 'borrador') {
-      const em = mkBtn('Emitir', async () => {
-        em.disabled = true;
-        try {
-          await apiRequest(`/admin/albaranes/${alb.id}/emitir`, { method: 'POST' });
-          showToast('✓ Albarán emitido.');
-          refresh();
-        } catch (e) { setStatus('error', 'No se pudo emitir: ' + (e?.data?.message || e.message)); em.disabled = false; }
-      });
-      em.className = 'btn-primary btn-sm';
-      acts.appendChild(em); // primaria visible
-      acts.appendChild(editBtn()); // SCRUM-31 (descubribilidad): "Editar líneas" VISIBLE (nunca escondida, AB3).
-      addSecondary(acts, [fotoBtn()]); // «⋯» → solo Añadir foto (1 ítem = inline; sin muro)
-    } else if (alb.estado === 'emitido') {
-      acts.appendChild(pdfBtn());
-      const fs = mkBtn('Firmar', () => {
-        if (!window.openSignaturePad) { setStatus('error', 'El componente de firma no está cargado.'); return; }
-        window.openSignaturePad({
-          title: 'Firma del cliente',
-          // SCRUM-300 (C5): el nombre va VACÍO y el chip lo rellena de un toque. `sugerencia` es
-          // eso, una sugerencia — no se escribe sola en el campo.
-          firmante: { sugerencia: (job && job.customer && job.customer.name) || '' },
-          onConfirm: async (dataUri, declaracion) => {
-            try {
-              await apiRequest(`/admin/albaranes/${alb.id}/firmar`, {
-                method: 'POST',
-                body: JSON.stringify(Object.assign({ signatureData: dataUri }, declaracion || {})),
-              });
-              showToast('✓ Albarán firmado.');
-              refresh();
-            } catch (e) { setStatus('error', 'No se pudo firmar: ' + (e?.data?.message || e.message)); }
-          },
-        });
-      });
-      fs.className = 'btn-primary btn-sm';
-      acts.appendChild(fs); // primaria visible (PDF ya está visible arriba)
-      acts.appendChild(editBtn()); // SCRUM-31 (descubribilidad): "Editar líneas" VISIBLE (nunca escondida, AB3).
-      // SCRUM-49: enviar al cliente el link para FIRMAR a distancia (plantilla albaran_para_firmar_es).
-      const firmarWaBtn = mkBtn('Enviar para firmar', async () => {
-        firmarWaBtn.disabled = true;
-        const orig = firmarWaBtn.textContent;
-        firmarWaBtn.textContent = 'Enviando…';
-        try {
-          const d = await apiRequest(`/admin/albaranes/${alb.id}/enviar-para-firmar`, { method: 'POST' });
-          if (waSendFailed(d)) {
-            setStatus('error', d.message || 'No se pudo enviar por WhatsApp.');
-          } else {
-            showToast('✓ Enviado al cliente para firmar.');
-          }
-        } catch (e) {
-          setStatus('error', e?.data?.message || 'No se pudo enviar por WhatsApp.');
-        }
-        firmarWaBtn.disabled = false;
-        firmarWaBtn.textContent = orig;
-      });
-      // SCRUM-31: visibles = [PDF][Firmar][Editar líneas] (3 nunca-ocultas); «⋯» = Añadir foto ·
-      // Enviar para firmar (las menos frecuentes). Emitido: 3 visibles + «⋯»(2), lejos del muro de 5.
-      addSecondary(acts, [fotoBtn(), firmarWaBtn]);
-    } else {
-      acts.appendChild(pdfBtn()); // firmado = congelado: solo PDF
-      // SCRUM-170 (FACT-2c): facturar SOLO PARTE de lo servido. Aparece cuando queda algo por
-      // facturar y el parte lleva precios; si ya está todo cobrado, no hay acción que ofrecer.
-      // Admin-only como toda emisión (S1) → al técnico se le DESHABILITA con explicación, nunca
-      // se le esconde (norma de SCRUM-89: un botón que no puede usar tiene que decirle por qué).
-      const quedaPorFacturar = (alb.pendientes || []).some((p) => p.pendiente > 0);
-      if (alb.modoValoracion === 'VALORADO' && !alb.facturado && quedaPorFacturar) {
-        const parcialBtn = mkBtn(
-          alb.estadoCobro === 'parcial' ? 'Facturar lo que queda' : 'Facturar parte',
-          () => openFacturarParcialSheet(alb),
-        );
-        acts.appendChild(parcialBtn);
-        if (isTecnico) {
-          lockActionForRole(parcialBtn);
-          acts.appendChild(roleLockedNote());
-        }
+    // SCRUM-302 (C2) · LA FILA YA NO ES UNA BARRA DE ACCIONES: ES UNA ENTRADA.
+    //
+    // Emitir, firmar, el PDF, enviar para firmar, enviar por WhatsApp y añadir foto SE HAN IDO a
+    // la página del albarán, que las hace de verdad (no las delega). Aquí queda el enlace.
+    //
+    // ── LO QUE NO SE HA IDO, Y NO ES OLVIDO ────────────────────────────────────────────────
+    // «Editar líneas» y «Facturar parte» siguen aquí porque su mecanismo VIVE aquí:
+    // `openAlbEditorSheet` y `openFacturarParcialSheet` están anidadas dentro de
+    // `renderJobDetailView`, no son globales, y la página solo puede NAVEGAR hasta ellas.
+    // Borrarlas de la fila no las movería: las dejaría inalcanzables desde los dos sitios, y los
+    // botones de la página pasarían a ser callejones sin salida.
+    //
+    // Sacarlas es su propio ticket —y el de facturar toca el camino del dinero, así que no se
+    // hace de paso (regla 37). Mientras tanto esto NO es una promesa de comentario:
+    // `tests/scrum302-sin-callejones.test.mjs` deriva de la página qué acciones navegan hasta
+    // aquí y exige que la fila las conserve.
+    // ── SCRUM-304 (C3) · UNA SOLA ACCIÓN: LA PRIMARIA DE SU ESTADO, SEGÚN C2 ─────────────────
+    //
+    // El rótulo sale de `ROTULOS_ALBARAN`, que ya los tiene aprobados. Y el botón NAVEGA al detalle
+    // cuando el ejecutor vive allí: es el precedente que el fundador aprobó en SCRUM-366 para la
+    // lista de Trabajos —«un solo ejecutor, en el detalle; la lista dice qué toca y lleva hasta
+    // allí»—. Duplicar aquí la ejecución sería el mismo defecto un nivel más abajo.
+    //
+    // ⚠️ SIN PRIMARIA NO SE PINTA NADA. En `firmado` sin nada pendiente, C2 dice que no hay
+    // siguiente paso: la celda vacía SIGNIFICA «nada que hacer» y es información. Rellenarla para
+    // que la columna «se vea completa» sería inventar un paso que no toca.
+    const primaria = primariaDeAlbaran(alb);
+    if (primaria) {
+      const rotulo = (typeof ROTULOS_ALBARAN !== 'undefined' && ROTULOS_ALBARAN[primaria.id]) || primaria.id;
+      if (primaria.id === 'btnFacturar') {
+        // El ÚNICO cuyo mecanismo vive aquí (`openFacturarParcialSheet`, anidada en esta vista):
+        // éste ejecuta. Es también el puente que `scrum302-sin-callejones` exige conservar.
+        const bt = mkBtn(rotulo, () => openFacturarParcialSheet(alb));
+        acts.appendChild(bt);
+        // Admin-only como toda emisión (S1): al técnico se le DESHABILITA con explicación, nunca
+        // se le esconde (norma de SCRUM-89).
+        if (isTecnico) { lockActionForRole(bt); acts.appendChild(roleLockedNote()); }
+      } else {
+        acts.appendChild(mkBtn(rotulo, () => {
+          if (window.renderAppView) window.renderAppView('albaran-detail', { albaranId: alb.id });
+        }));
       }
-      // SCRUM-47: enviar la copia FIRMADA al WhatsApp del cliente (plantilla albaran_firmado_es).
-      const waBtn = mkBtn('Enviar por WhatsApp', async () => {
-        waBtn.disabled = true;
-        const orig = waBtn.textContent;
-        waBtn.textContent = 'Enviando…';
-        try {
-          const d = await apiRequest(`/admin/albaranes/${alb.id}/enviar-whatsapp`, { method: 'POST' });
-          if (waSendFailed(d)) {
-            setStatus('error', d.message || 'No se pudo enviar por WhatsApp.');
-          } else {
-            showToast('✓ Albarán enviado por WhatsApp.');
-          }
-        } catch (e) {
-          setStatus('error', e?.data?.message || 'No se pudo enviar por WhatsApp.');
-        }
-        waBtn.disabled = false;
-        waBtn.textContent = orig;
-      });
-      acts.appendChild(waBtn);
     }
+
+    // ── «Editar líneas»: SOLO en borrador, y esto ARREGLA UNA CONTRADICCIÓN QUE YA EXISTÍA ──────
+    //
+    // La fila lo pintaba SIEMPRE, mientras el registro de C2 declara
+    // `borrador: secundaria · emitido: oculta · firmado: oculta`. O sea que la fila y el registro
+    // llevaban discrepando desde antes de esta tarea: la segunda fuente de verdad estaba viva y no
+    // la veía nadie, porque solo aparece al CONTRASTAR los dos censos, no al leer cualquiera suelto.
+    //
+    // Sigue estando en `borrador` —no se puede quitar— porque `openAlbEditorSheet` está anidada en
+    // esta vista y el botón del detalle solo NAVEGA hasta aquí (`PUENTES_A_LA_FILA`). Quitarlo
+    // dejaría ese botón como callejón sin salida, que es lo que `scrum302-sin-callejones` vigila.
+    if (destinoEnFila('btnEditarLineas', alb) !== 'oculta') acts.appendChild(editBtn());
   });
 
   // SCRUM-31 (F5): cada factura es una fila .job-doc-row de la lista fusionada (no una sección aparte).
@@ -1565,7 +1839,14 @@ async function renderJobDetailView(container, jobId) {
           `</div>` +
           `<div class="jobdet-inv-actions job-doc-row__actions"></div>` +
         `</div>`;
-      docs.push({ when, el: item });
+            docs.push({
+        // El tipo va INLINE a propósito: con una variable de por medio el derivador del guard no
+        // puede resolverlo por AST y avisa de un tipo sin sección — que es exactamente su trabajo.
+        when, el: item, tipo: tipoDeFactura(inv), clave: tipoDeFactura(inv) + ':' + inv.id,
+        // SCRUM-319: a qué factura se ancla si es rectificativa. `rectifiesId` ya existía en el
+        // modelo y no llegaba a esta pantalla; ahora sí (serializer, aditivo y de solo lectura).
+        rectificaClave: inv.rectifiesId != null ? 'factura:' + inv.rectifiesId : null,
+      });
       const acts = item.querySelector('.jobdet-inv-actions');
       if (!paid) {
         // Marcar como PAGADA → PUT /admin/invoices/:id/status. Verificación de importe A21.2:
@@ -1702,22 +1983,106 @@ async function renderJobDetailView(container, jobId) {
       `</div>`;
     const qBtn = mkBtn('Ver presupuesto', () => { if (window.renderAppView) window.renderAppView('quotes-detail', { quoteId: job.quote.id }); });
     item.querySelector('.job-doc-row__actions').appendChild(qBtn);
-    docs.push({ when: job.createdAt, el: item });
+    docs.push({ when: job.createdAt, el: item, tipo: 'presupuesto', clave: 'presupuesto:' + job.quote.id });
   }
 
-  // ── Volcado CRONOLÓGICO ASCENDENTE de la lista fusionada (o estado vacío de toda la lista) ──
+  // ── SCRUM-319 (G4) · EL REPARTO DE LA PILA ──────────────────────────────────────────
+  //
+  // Una sola lista por fecha juntaba objetos con ciclos de vida y significados legales distintos.
+  // El reparto lo decide `jobDocsReparto.js`, la misma tabla que verifica el guard.
+  //
+  // El orden CRONOLÓGICO ASCENDENTE se conserva dentro de cada sección: era la única forma de leer
+  // el histórico y partirlo no es motivo para perderlo.
   docs.sort((a, b) => new Date(a.when || 0) - new Date(b.when || 0));
-  if (!docs.length) {
-    const empty = document.createElement('p');
-    empty.style.cssText = 'margin:6px 0 0;color:var(--muted);font-size:13px';
-    empty.textContent = 'Aún no hay documentos. Crea un albarán por cada visita o entrega.';
-    docsSec.appendChild(empty);
+  const reparto = repartirDocumentos(docs);
+
+  // ⚠️ NADA SE PIERDE. Un tipo que la tabla no conozca NO se descarta: cae en `desconocidos` y se
+  // pinta con el resto. Un documento que desaparece en un reordenamiento es mudo, y es el peor
+  // resultado posible de aquella tarea. El guard falla si esta lista no está vacía; la pantalla,
+  // aun así, lo enseña — la red y el aviso son dos cosas distintas.
+  //
+  // SCRUM-304: `enSuSeccion` vivía aquí y SE HA BORRADO con su único llamante (los albaranes, que
+  // ahora son tabla), no dejado «por si acaso»: un ayudante que ya no llama nadie es código que se
+  // pudre sin que nada lo diga, y el siguiente que lo lea creerá que hay secciones montándose por
+  // ahí. Es la misma norma que aplicó C2 al borrar `pdfBtn` y `fotoBtn` de esta misma vista.
+
+  // ALBARANES — su sección, con su acción (`+ Nuevo albarán`, ya en la barra de arriba).
+  //
+  // SCRUM-304 (C3): TABLA, no lista de tarjetas. Diez albaranes eran diez bloques que había que
+  // releer uno a uno porque los botones cambiaban de sitio; ahora son diez líneas con la misma
+  // columna de acción. `.table`/`.table-wrap` son del inventario AB3 (ya los usan otras cinco
+  // pantallas): ni componente nuevo ni token nuevo.
+  //
+  // El estado vacío NO se toca: ya existía y sigue siendo el mismo. Una tabla con cabecera y nada
+  // debajo es justo lo que el ticket pide evitar, así que la cabecera solo se monta si hay filas.
+  const vacioAlb = document.createElement('p');
+  vacioAlb.style.cssText = 'margin:6px 0 0;color:var(--muted);font-size:13px';
+  vacioAlb.textContent = 'Aún no hay documentos. Crea un albarán por cada visita o entrega.';
+  if (!reparto.albaranes.length) {
+    docsSec.appendChild(vacioAlb);
   } else {
-    const docList = document.createElement('div');
-    docList.className = 'job-doc-list';
-    docs.forEach((d) => docList.appendChild(d.el));
-    docsSec.appendChild(docList);
+    // ── SCRUM-304 · EN MÓVIL NO ES UNA TABLA: ES UNA PILA DE CARDS ──────────────────────────
+    //
+    // El patrón YA EXISTÍA y no había que inventarlo — se descubrió al mirar el resto del producto
+    // en vez de seguir quitando columnas. `.table-scroll` + `.table--cards-mobile` (styles.css,
+    // A18.1) recompone cada fila como card por debajo de 640 px: la cabecera se oculta, las celdas
+    // pasan a bloques de una rejilla y **las acciones ganan `min-height: 44px`**.
+    //
+    // Se elige ÉSTE y no `.table--stack-mobile` porque es el que usa `albaranesView.js` (C1,
+    // SCRUM-301): la lista global del MISMO documento. Dos formas móviles para el mismo albarán
+    // según la pantalla sería el defecto de SCRUM-240 en la capa visual.
+    const wrap = document.createElement('div');
+    wrap.className = 'table-scroll';
+    const tabla = document.createElement('table');
+    tabla.className = 'table table--cards-mobile';
+    tabla.innerHTML =
+      `<thead><tr>` +
+        `<th>${esc(ALB_TABLA_COPY.colNumero)}</th>` +
+        `<th>${esc(ALB_TABLA_COPY.colFecha)}</th>` +
+        `<th>${esc(ALB_TABLA_COPY.colEstado)}</th>` +
+        `<th class="col-hide-mobile">${esc(ALB_TABLA_COPY.colLineas)}</th>` +
+        `<th>${esc(ALB_TABLA_COPY.colAccion)}</th>` +
+      `</tr></thead>`;
+    const tbody = document.createElement('tbody');
+    reparto.albaranes.forEach((d) => tbody.appendChild(d.el));
+    tabla.appendChild(tbody);
+    wrap.appendChild(tabla);
+    docsSec.appendChild(wrap);
   }
+
+  // ── FACTURAS — lo FACTURADO, en su propia sección de la columna principal ────────────
+  //
+  // Decisión del fundador: ni al rail, ni al bloque DINERO con los justificantes —eso sería el
+  // error de B4 en dirección contraria—, ni fuera de la pantalla: que el Trabajo enseñe el ciclo
+  // completo (entregado → facturado → cobrado) es el diferencial del producto.
+  //
+  // ⚠️ LA RECTIFICATIVA CUELGA DE SU ORIGINAL, nunca suelta. Como fila más de una lista ordenada
+  // por fecha es legalmente ilegible: no dice a qué factura corrige. Aquí va anidada dentro de la
+  // fila de su factura, así que leerlas juntas es la única forma de leerlas.
+  const restantes = reparto.facturas.concat(reparto.desconocidos);
+  if (restantes.length) {
+    const factSec = document.createElement('div');
+    factSec.className = 'detail-section';
+    factSec.innerHTML = '<h3 class="detail-section-title">Facturas</h3>';
+    const lista = document.createElement('div');
+    lista.className = 'job-doc-list';
+    restantes.forEach((d) => {
+      lista.appendChild(d.el);
+      // Sus rectificativas, justo debajo y sangradas: el vínculo se ve, no se deduce.
+      const suyas = reparto.anclada.filter((r) => r.rectificaClave === d.clave);
+      if (!suyas.length) return;
+      const nido = document.createElement('div');
+      nido.className = 'job-doc-rectificativas';
+      suyas.forEach((r) => nido.appendChild(r.el));
+      lista.appendChild(nido);
+    });
+    factSec.appendChild(lista);
+    body.appendChild(factSec);
+  }
+
+  // Los de `rail-presupuesto` y `rail-dinero` NO se pintan aquí: el rail los construye por su
+  // cuenta desde `job` (SCRUM-318). Sus filas salen de la pila y sus elementos se descartan — el
+  // documento sigue en pantalla, en el rail, y el guard de «nada se pierde» lo comprueba por clave.
 
   // ── SCRUM-316 (G1) · ENSAMBLADO de la cabecera, en el orden de la ley ────────────────
   // primaria · secundarias · «⋮». El «⋮» reutiliza `overflowMenu` de AB3 (a11y, teclado, hoja

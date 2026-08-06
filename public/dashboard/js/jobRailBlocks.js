@@ -100,6 +100,16 @@ function bloqueDonde(job) {
  * además un importe de referencia (`aceptado > 0`): sin él no hay nada contra lo que estar
  * pendiente, y afirmarlo es el defecto que SCRUM-363 arregló en el chip de cobro.
  */
+/*
+ * SCRUM-319 (G4) añade los JUSTIFICANTES DE COBRO, que salen de la pila de documentos y aterrizan
+ * aquí enlazados. Es el criterio de B4 aplicado a esta pantalla: un justificante y una factura son
+ * dos documentos con significados legales distintos, y ordenarlos juntos por fecha los presenta
+ * como si fueran lo mismo. El justificante es la prueba de un cobro, así que vive con el dinero.
+ *
+ * ⚠️ Solo el JUSTIFICANTE. Las facturas y las rectificativas NO entran: mandarlas aquí sería
+ * cometer el mismo error de B4 en dirección contraria. Se quedan en su sección hasta que el
+ * fundador decida (SCRUM-319, hallazgo).
+ */
 function bloqueDinero(job, fmt) {
   const aceptado = Number((job && job.totalAceptado) || 0);
   const cobrado = Number((job && job.totalCobrado) || 0);
@@ -108,6 +118,21 @@ function bloqueDinero(job, fmt) {
   const lineas = [];
   if (cobrado > 0) lineas.push({ etiqueta: 'Cobrado', texto: fmt(cobrado, moneda) });
   if (aceptado > 0) lineas.push({ etiqueta: 'Pendiente', texto: fmt(Math.max(0, aceptado - cobrado), moneda) });
+
+  // Se clasifican con `tipoDeFactura`, la MISMA condición que usa la pila para repartir: si aquí
+  // se repitiera el `startsWith('J-')` a mano, un cambio en una de las dos copias mandaría el
+  // mismo documento a dos sitios, o a ninguno.
+  const clasifica = (typeof tipoDeFactura === 'function')
+    ? tipoDeFactura
+    : (typeof require === 'function' ? require('./jobDocsReparto.js').tipoDeFactura : null);
+  const invoices = Array.isArray(job && job.invoices) ? job.invoices : [];
+  if (clasifica) {
+    for (const inv of invoices) {
+      if (clasifica(inv) !== 'justificante') continue;
+      lineas.push({ texto: String(inv.number || ''), invoiceId: inv.id, icono: '🧾' });
+    }
+  }
+
   if (!lineas.length) return null;
   return { id: 'dinero', titulo: JOB_RAIL_TITULOS.dinero, lineas };
 }

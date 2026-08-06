@@ -23,6 +23,8 @@ import {
   ALBARAN_MODOS_VALORACION,
   serializeAlbaran,
   validarLineas,
+
+  contarLineasDePresupuesto, // SCRUM-367
   validarConsolidacion,
   groupByRotura,
   type AlbaranModoValoracion,
@@ -348,6 +350,11 @@ async function serializeJobDetail(job: any) {
         select: {
           id: true, number: true, total: true, currency: true, createdAt: true,
           pdfUrl: true, type: true, status: true, paidAt: true, chargeId: true, stageLabel: true, // SCRUM-27
+          // SCRUM-319 (G4): el vínculo de la rectificativa con su original. Ya existía en el
+          // modelo (`rectifies_id`, relación "Rectification") y NO llegaba a la pantalla del
+          // Trabajo. Aditivo y de solo lectura: sin él la rectificativa se pinta como una fila
+          // suelta que no dice a qué factura corrige, que es legalmente ilegible.
+          rectifiesId: true,
         },
         orderBy: { createdAt: 'asc' },
       },
@@ -380,6 +387,7 @@ async function serializeJobDetail(job: any) {
     chargeId: inv.chargeId,           // acción admin confirm-bizum (autenticada, NO es link público)
     payToken: inv.chargeId ? await ensureChargeReceiptToken(inv.chargeId, prisma) : null, // ← GAP CERRADO (link /pay/invoice/:token)
     stageLabel: inv.stageLabel,       // SCRUM-27: etiqueta del tramo (custom); null en presets
+    rectifiesId: inv.rectifiesId,     // SCRUM-319 (G4): a qué factura rectifica (solo R1)
   })));
 
   const charge = quote?.charge
@@ -653,7 +661,10 @@ router.post('/:id/albaranes', async (req, res) => {
     // Líneas iniciales opcionales; si llegan, se validan contra el modo (condición 4 del OK + SCRUM-65)
     let lineas: any[] = [];
     if (req.body?.lineas !== undefined) {
-      const v = validarLineas(req.body.lineas, modoValoracion);
+      // SCRUM-367: el rango de `quoteLineIndex` se valida contra el presupuesto REAL, no contra
+      // lo que diga el cliente. Un enlace roto es peor que ninguno: C6 se lo creería.
+      const nLineasQuote = await contarLineasDePresupuesto(job.id, req.merchantId!);
+      const v = validarLineas(req.body.lineas, modoValoracion, nLineasQuote);
       if (!v.ok) return res.status(400).json({ error: 'lineas_invalidas', message: v.error });
       lineas = v.lineas;
     }

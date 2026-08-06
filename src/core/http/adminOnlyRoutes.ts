@@ -35,6 +35,11 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'POST', path: '/admin/connect/onboard' },
   // Supervisión por operario (SCRUM-24): S1 → equipo/supervisión es Admin
   { method: 'GET', path: '/admin/metrics/operarios' },
+  // SCRUM-301 (C1): el listado GLOBAL de albaranes. Un técnico solo ve SUS Trabajos (SCRUM-147,
+  // `seesOnlyOwnJobs`), y los albaranes cuelgan de Trabajos: enseñárselos todos le diría de qué
+  // obras ajenas hay partes, de qué clientes y con qué fechas. Aquí queda su 403 EXIGIDO, no
+  // solo declarado — que es la diferencia entre una decisión de permisos y una intención.
+  { method: 'GET', path: '/admin/albaranes' },
   // SCRUM-55: su hermana /team salía 200 a un Operario en PRODUCCIÓN. Mismo criterio de S1
   // ("equipo ❌ Técnico") y mismo router; estaba aparcada como "Nivel 2" por descuido, no
   // por duda. Aquí queda su 403 exigido.

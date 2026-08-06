@@ -58,7 +58,10 @@ async function renderExportView(container) {
             <label for="export-to" style="display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Hasta</label>
             <input type="date" id="export-to" class="input" style="width:auto">
           </div>
-          <button class="btn-primary" id="btn-export-zip" style="min-height:44px">Descargar ZIP</button>
+          <!-- SCRUM-384: sin `style="min-height:44px"`. La base ya da 44 px en móvil a
+               `.btn-primary` suelta (SCRUM-352); el inline, además, ganaba a 1280 px y dejaba
+               este botón 8 px más alto que sus hermanos sin que nadie lo decidiera. -->
+          <button class="btn-primary" id="btn-export-zip">Descargar ZIP</button>
         </div>
         <p id="export-info" style="margin:12px 0 0;font-size:12px;color:var(--muted)" aria-live="polite">
           Sin fechas se descarga todo.
@@ -80,7 +83,9 @@ async function renderExportView(container) {
         <div style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">[PENDIENTE microcopy oficial]</div>
         <h3 style="margin:0 0 4px;font-size:16px;font-weight:700;color:var(--ink)">[PENDIENTE microcopy oficial]</h3>
         <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">[PENDIENTE microcopy oficial]</p>
-        <button class="btn-secondary" id="btn-portabilidad" style="min-height:44px">[PENDIENTE microcopy oficial]</button>
+        <!-- SCRUM-384: mismo caso que el de arriba. El RÓTULO no se toca: sigue pendiente de
+             aprobación (regla 30) y este ticket es de layout, no de copy. -->
+        <button class="btn-secondary" id="btn-portabilidad">[PENDIENTE microcopy oficial]</button>
         <p id="portabilidad-info" style="margin:12px 0 0;font-size:12px;color:var(--muted)" aria-live="polite"></p>
       </div>
     </div>
