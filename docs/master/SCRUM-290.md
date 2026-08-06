@@ -205,3 +205,98 @@ Ficheros: `src/modules/jobs/app/routes/albaranes.routes.ts` (el endpoint) ·
 `src/modules/jobs/domain/albaranAFactura.ts` (+`yaFacturadoPorLineaDePresupuesto`) ·
 `src/core/http/adminOnlyRoutes.ts` (el 403 ejercido) ·
 `tests/scrum290-endpoint-convertir.test.mjs` (10, nuevo).
+
+---
+
+# SCRUM-290 · TERCERA ENTREGA (6-ago-2026) · El adicional, el botón, y A0.4 cerrado
+
+**Medido contra:** `origin/main` = `c551224aeb03ef5994c53b263ee006a1869f6b58` · 2026-08-06T17:05:00+02:00
+**Tanda:** 2011 tests, 1944 pass, 0 fail, 67 gateados a staging
+
+> **La entrega anterior YA ESTABA EN `main`** y su rama borrada por el merge. Comprobado con
+> `ls-remote` + `merge-base --is-ancestor`, no por el nombre de la rama: `951ad77` es ancestro del
+> main real, así que el endpoint estaba dentro por su PR y **no se empujó nada**. Un push que no se
+> verifica es un push que no ocurrió — y aquí la trampa iba en la dirección contraria a la de ayer.
+
+## ① El presupuesto adicional, enchufado
+
+Se crea desde `paraAdicional` sobre el camino de SCRUM-195 (`Quote.jobId`): aceptarlo **no crea un
+segundo Trabajo**, porque `ensureJobForQuote` pregunta primero por `Quote.jobId`.
+
+**Fuera de la transacción de la factura**, por el mismo motivo que el sellado: si falla, la factura
+ya emitida **no se revierte** (regla 29). Se dice en la respuesta con `adicionalFallido`, separado
+de `adicional: null` — porque **«no hacía falta» y «no se pudo» no son lo mismo** y aplanarlos
+dejaría al profesional creyendo que tiene un documento que no existe.
+
+**Nace en `draft` y sin precios.** Es trabajo NUEVO: no hay ninguna referencia firmada de la que
+sacar su importe —lo contrario del caso normal de este ticket—, así que ponérselo aquí sería
+inventarlo. El profesional le pone importe y lo envía. Mandarlo a 0 € para que lo firmen sería
+pedirle al cliente que firme la nada por otra puerta.
+
+**El motivo NO entra en el documento.** «exceso_sobre_lo_presupuestado» es jerga nuestra; ponerla
+en un papel que alguien firma es enseñarle nuestro razonamiento interno en vez de lo que contrató.
+El motivo viaja en la respuesta, para quien tiene que decidir: el profesional. La **unidad** sí va
+en el concepto, porque `Quote.lines` no tiene campo para ella y sin ella «2» no dice si son dos
+horas o dos metros.
+
+Y **`sin_cantidad` no va al adicional**: no es trabajo nuevo, es una línea mal rellenada. Meterla
+haría firmar al cliente algo que ni siquiera se hizo. Pero **sigue nombrada** en el informe.
+
+## ② El botón, y ahora sí
+
+`btnConvertirFactura`, **primaria en `firmado`**. `firmado` ya tenía primaria (`btnFacturar`), así
+que son las **dos mitades de una primaria contextual y EXCLUYENTES por construcción**: `btnFacturar`
+es del albarán `VALORADO` (precios en el propio parte, SCRUM-170) y ésta del `SIN_VALORAR` —el
+valor por defecto—. Un albarán es de un modo o del otro, nunca de los dos. **No se funden**:
+fundirlas haría desaparecer una según el contexto, que es el fallo mudo que el registro existe para
+cazar (misma razón que `btnBizum`/`btnTogglePaid` en B2).
+
+El contexto exige además **presupuesto detrás**: sin él el endpoint responde 409, y ofrecer un
+botón que solo sabe fallar es peor que no ofrecerlo.
+
+## ③ Microcopy bloqueada, con PROCEDENCIA
+
+El rótulo se pinta con el marcador. Pero el guard de rótulos exige que **todo** botón tenga rótulo,
+así que la excepción está **declarada y apunta a dónde consta**:
+`MICROCOPY_BLOQUEADA = { btnConvertirFactura: docs/legal/PREGUNTAS_ASESOR.md §G }`.
+
+Es la regla de SCRUM-387 aplicada aquí: un texto no puede declararse pendiente sin decir dónde
+consta. **Con suelo**: si esa sección desaparece —porque el asesor respondió, o porque alguien
+borró la pregunta— el test cae y obliga a poner el rótulo aprobado. Probado en rojo renombrando la
+sección.
+
+## Un guard ajeno me cazó, y tenía razón: SCRUM-379
+
+Mi handler llamaba `recargar()` a pelo y metía el refresco DENTRO del `try` de la escritura. Los
+dos son el patrón que aquel ticket retiró: sin `await` el rechazo se va como promesa sin gestionar
+y el profesional **no lee nada**.
+
+Aquí pesa más que en las otras cinco acciones de la pantalla: **la factura ya está emitida y no se
+puede borrar** (regla 29). Si el refresco falla en silencio, la pantalla no cambia y lo natural es
+repetir — emitiendo una segunda factura que tampoco se puede deshacer.
+
+El **suelo de aquel guard sube de 5 a 6**, y **a mano a propósito**: si el número se derivara del
+propio fichero, una acción que perdiera su refresco bajaría el número y el test seguiría verde.
+
+## Verificado en rojo
+
+| # | Qué se rompe | Qué cae |
+|---|---|---|
+| 1 | Se neutraliza la creación del adicional | 🔴 «hay trabajo fuera de presupuesto y NADIE ha creado el adicional» |
+| 2 | Se crea SIEMPRE, aunque no haya nada fuera | 🔴 «un documento que le pide al cliente que firme la nada» |
+| 3 | El adicional nace sin `jobId` | 🔴 «sin `jobId` sería un presupuesto suelto, no un adicional» |
+| 4 | El fallo del adicional revierte la factura | 🔴 la factura emitida desaparece — contra la regla 29 |
+| 5 | Desaparece la sección §G del asesor | 🔴 el bloqueo de microcopy se queda sin procedencia |
+
+## A0.4, cerrado
+
+Falta **solo la microcopy**, y está bloqueada por la pregunta 25 del asesor — que bloquea el
+**texto**, no el mecanismo. Regla 24 intacta: **se construye, no se enciende**.
+
+Ficheros: `src/modules/jobs/domain/albaranAFactura.ts` (+`lineasParaAdicional`) ·
+`src/modules/jobs/app/routes/albaranes.routes.ts` (la creación del adicional) ·
+`public/dashboard/js/albaranActionsRegistry.js` (la otra mitad de la primaria) ·
+`public/dashboard/js/albaranDetailView.js` (el botón y su contexto) ·
+`tests/scrum290-adicional.test.mjs` (6, nuevo) ·
+`tests/scrum302-rotulos-completos.test.mjs` (+1: procedencia del bloqueo) ·
+`tests/scrum379-recarga-sin-await.test.mjs` (suelo 5 → 6).
