@@ -2,7 +2,7 @@
 
 **Fecha:** 6-ago-2026 · **Carril:** herramienta de reparto · **Gate:** sin gate, corre en `npm test`
 **Medido contra:** `origin/main` = `93e924e12c321c4a27749b249aaa17056e88d512` · 2026-08-06T12:10:00+02:00
-**Tanda:** 1906 tests, 1839 pass, 0 fail, 67 gateados a staging
+**Tanda:** 1943 tests, 1876 pass, 0 fail, 67 gateados a staging
 
 > La causa era de reparto: **Jira no se transiciona al mergear**, así que dice «por hacer» de cosas
 > que llevan un día en `main` — y el reparto se hace desde Jira. `main` sabe qué está **hecho**;
@@ -14,7 +14,7 @@
 |---|---|---|
 | La derivación | `scripts/_censo-reparto.mjs` | funciones puras; **una sola fuente** para el CLI y la suite |
 | El censo | `scripts/censo-reparto.mjs --jira <f.json>` | las listas **con nombres**, y código de salida |
-| Guards del censo | `tests/scrum387-censo-reparto.test.mjs` (13) | suelo, controles, rojo por el mecanismo |
+| Guards del censo | `tests/scrum387-censo-reparto.test.mjs` (15) | suelo, controles, rojo por el mecanismo |
 | Guard de procedencia | `tests/scrum387-procedencia-aprobacion.test.mjs` (5) | «aprobado» tiene que decir **dónde consta** |
 
 El JSON de Jira **no se cachea en el repo** a propósito: un censo guardado envejece y vuelve a ser
@@ -71,6 +71,48 @@ diez, nombradas:
 > falsos positivos, y un guard que da falsos positivos acaba silenciado. Se extraen con el escáner
 > de TypeScript, y hay test de que esa frase **no** cuenta como marca.
 
+## 🔴 EL GUARD TUMBÓ SU PROPIO PR EN CI — segunda vez en dos días por lo mismo
+
+La primera versión leía las entradas con `git ls-tree origin/main -- docs/master/`. En CI:
+
+```
+fatal: Not a valid object name origin/main
+```
+
+**CI no tiene `origin/main` fetcheado.** Es la **segunda vez en dos días**: #454 cayó igual y lo
+resolvió SCRUM-291 trayéndose la referencia DENTRO del repo (un sha256 congelado) en vez de
+pedírsela a un ref remoto.
+
+> ⚠️ **Lo que NO se hizo, y era la tentación: saltarse la comprobación cuando falta la
+> referencia.** Eso haría que «no pude mirar» se leyera igual que «miré y no hay desfases» — que
+> es LITERALMENTE el defecto que este ticket existe para cazar. Un guard que no puede mirar no
+> sale verde.
+
+**Qué se mide ahora, declarado:** el **árbol bajo prueba**, que tras el merge SERÁ `main`. Es la
+referencia correcta para un guard de PR —comprueba lo que se va a mergear, no lo que ya estaba— y
+no depende de red, remotos ni de cómo haya hecho el checkout el runner.
+
+**El CLI sigue leyendo `origin/main` a propósito, y no es incoherencia:** su pregunta es otra
+—«¿qué hay hecho AHORA MISMO para repartir?»— y el árbol local de quien lo ejecuta puede tener
+entradas a medio escribir. Corre en un portátil con remoto, no en CI. Y si el ref falta **lo dice
+y sale con error**, en vez de morir con un `fatal:` crudo o —peor— devolver cero entradas.
+
+### Y hay guard del guard, estructural
+
+`arrancaProcesos()` comprueba **por AST** que ni el test ni la librería importen `child_process` ni
+llamen a `exec*`/`spawn*`. La propiedad que importa no es «no escribir cierta cadena», es **no ir
+a buscar la referencia fuera del árbol bajo prueba**.
+
+> **Y hubo que hacerlo estructural porque la versión de texto se cazó a sí misma** — no en un
+> comentario, como suele, sino en su **propio mensaje de error** y en su control positivo, los dos
+> con `origin/main` dentro. La forma de la trampa cambia; la trampa es la misma (SCRUM-203).
+
+### ¿Hay más guards que lo asuman? Medido: no
+
+Los 8 ficheros de la suite que arrancan procesos, revisados uno a uno: `scrum239` usa
+`git ls-files` —árbol de trabajo, sin ref remota— y los otros siete arrancan procesos que no son
+git contra refs. **Ninguno depende de `origin/main`.** Reportado, no tocado (regla 9).
+
 ## Verificado en rojo
 
 | # | Qué se rompe | Qué sale |
@@ -79,6 +121,9 @@ diez, nombradas:
 | 1b | **La MISMA marca, pero con `(SCRUM-330)`** | ✅ pasa — el guard mide procedencia, no la frase |
 | 2 | Se arregla una y no se baja el número | 🔴 «se han arreglado (10 → 9) y el número no se ha bajado» |
 | 3 | Se quita una entrada de `docs/master/` | el ticket **cambia de cubo nombrado**, no desaparece |
+| 4 | **Sin `origin/main`** (la condición de CI) | suite `$? = 0` — arreglado; CLI `$? = 1` diciendo qué falta |
+| 5 | `docs/master/` desaparece | `$? = 1` nombrando el ENOENT y la ruta. **Nunca «0 desfases»** |
+| 6 | Alguien vuelve a meter `git` en el camino de lectura | `$? = 1` — lo caza el guard estructural |
 
 El **1b es el que da valor al 1**: sin él, el guard podría estar cazando la palabra en vez de la
 ausencia de procedencia, y sería verde para siempre en cuanto alguien reformulara la frase.
@@ -110,5 +155,5 @@ los tres suelos pasarían aunque la función devolviera siempre algo — y el ce
 
 Ficheros: `scripts/_censo-reparto.mjs` (nuevo — la derivación) ·
 `scripts/censo-reparto.mjs` (nuevo — el CLI) ·
-`tests/scrum387-censo-reparto.test.mjs` (13, nuevo) ·
+`tests/scrum387-censo-reparto.test.mjs` (15, nuevo) ·
 `tests/scrum387-procedencia-aprobacion.test.mjs` (5, nuevo).

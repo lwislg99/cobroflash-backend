@@ -13,8 +13,9 @@
 // que nunca llegó». Un censo que no encuentra nada tiene que GRITAR, no tranquilizar.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
+import ts from 'typescript';
 import {
   numeroDeEntrada, ticketsConEntrada, numeroDeClave,
   agruparRamas, cruzar, motivosParaNoFiarse, alarmasDeRama,
@@ -138,12 +139,97 @@ test('SCRUM-387 · lo INDETERMINADO no se cuenta como mergeado', () => {
 });
 
 // ── CONTRA EL ÁRBOL DE VERDAD ────────────────────────────────────────────────────────────────
+//
+// SE LEE EL ÁRBOL DE TRABAJO, NO `origin/main`, Y ESO ES UNA DECISIÓN DECLARADA.
+//
+// La primera versión hacía `git ls-tree origin/main -- docs/master/` y **tumbó el PR en CI**:
+//
+//     fatal: Not a valid object name origin/main
+//
+// **CI no tiene `origin/main` fetcheado.** Es la SEGUNDA vez en dos días que un guard se cae por
+// darlo por hecho — la primera fue SCRUM-291, que lo resolvió trayéndose la referencia DENTRO del
+// repo (un sha256 congelado) en vez de pedirla a un ref remoto.
+//
+// ⚠️ LO QUE NO SE HA HECHO, Y ERA LA TENTACIÓN: saltarse la comprobación cuando falta la
+// referencia. Eso haría que «no pude mirar» se leyera igual que «miré y no hay desfases» — que es
+// LITERALMENTE el defecto que este fichero existe para cazar. Un guard que no puede mirar no sale
+// verde.
+//
+// Qué se mide entonces: **el árbol bajo prueba**, que tras el merge SERÁ `main`. Es la referencia
+// correcta para un guard de PR —comprueba lo que se va a mergear, no lo que ya estaba— y no
+// depende de red, de remotos ni de cómo haya hecho el checkout el runner.
+//
+// El CLI (`scripts/censo-reparto.mjs`) sigue leyendo `origin/main` A PROPÓSITO y eso NO es una
+// incoherencia: ahí la pregunta es otra —«¿qué hay hecho AHORA MISMO para poder repartir?»— y el
+// árbol local de quien lo ejecuta puede tener entradas a medio escribir. Corre en un portátil con
+// remoto, no en CI, y si el ref falta lo dice y sale con error.
 
-test('SCRUM-387 · contra `main` de verdad: hay entradas y el suelo no salta', () => {
-  const ficheros = execFileSync('git', ['ls-tree', 'origin/main', '--name-only', 'docs/master/'],
-    { cwd: RAIZ, encoding: 'utf8' }).split('\n').map((s) => s.trim()).filter(Boolean);
+test('SCRUM-387 · SUELO: el directorio de entradas existe y no vuelve vacío', () => {
+  // Antes de contar nada. «Cero entradas» y «he leído el sitio equivocado» son indistinguibles
+  // desde el número, así que la ausencia del directorio se nombra en vez de contarse como cero.
+  const dir = path.join(RAIZ, 'docs/master');
+  let ficheros;
+  try {
+    ficheros = fs.readdirSync(dir);
+  } catch (e) {
+    assert.fail(
+      `🔴 no se pudo leer ${dir} (${e && e.code ? e.code : e}).\n\n`
+      + '  Este censo no puede afirmar «cero desfases» sin haber mirado. «No pude leer el\n'
+      + '  directorio» y «lo leí y está todo alineado» no pueden dar el mismo resultado: ésa es\n'
+      + '  exactamente la confusión que originó SCRUM-387.');
+  }
+  assert.ok(ficheros.length > 0, `🔴 ${dir} está VACÍO. No es «todo alineado»: es que no hay nada que cruzar`);
+});
+
+test('SCRUM-387 · el árbol bajo prueba trae las entradas que se esperan de él', () => {
+  const ficheros = fs.readdirSync(path.join(RAIZ, 'docs/master'));
   const entradas = ticketsConEntrada(ficheros);
   assert.ok(entradas.size >= 60,
-    `solo ${entradas.size} entradas derivadas de origin/main: o el trinquete de SCRUM-273 ha dejado de cumplirse, o este test está leyendo otro sitio`);
-  assert.ok(entradas.has(304), 'SCRUM-304 tiene entrada en main — si no se ve, el derivador no está mirando donde cree');
+    `solo ${entradas.size} entradas derivadas de docs/master/: o el trinquete de SCRUM-273 ha dejado de cumplirse, o este test está leyendo otro sitio`);
+  assert.ok(entradas.has(304), 'SCRUM-304 tiene entrada — si no se ve, el derivador no está mirando donde cree');
+});
+
+/**
+ * ¿Este fuente ARRANCA PROCESOS? (o sea: ¿puede depender de git, y por tanto de un ref remoto?)
+ *
+ * Se mira por AST y no por texto, y el motivo lo aprendí en rojo aquí mismo: la primera versión
+ * buscaba la cadena `origin/main` en el fichero y **se cazó a sí misma** — no en un comentario,
+ * como suele, sino en su propio MENSAJE DE ERROR y en su control positivo. La forma de la trampa
+ * cambia; la trampa es la misma (SCRUM-203).
+ *
+ * Y la propiedad estructural es además la correcta: lo que no puede hacer un guard de PR no es
+ * «escribir cierta cadena», es **ir a buscar su referencia fuera del árbol bajo prueba**.
+ */
+function arrancaProcesos(ruta) {
+  const codigo = fs.readFileSync(path.join(RAIZ, ruta), 'utf8');
+  const sf = ts.createSourceFile(ruta, codigo, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const hallazgos = [];
+  (function mirar(n) {
+    if (ts.isImportDeclaration(n) && ts.isStringLiteral(n.moduleSpecifier)
+        && /child_process/.test(n.moduleSpecifier.text)) {
+      hallazgos.push(`importa ${n.moduleSpecifier.text}`);
+    }
+    if (ts.isCallExpression(n) && /^(exec|execSync|execFile|execFileSync|spawn|spawnSync)$/.test(n.expression.getText(sf))) {
+      hallazgos.push(`llama a ${n.expression.getText(sf)}()`);
+    }
+    ts.forEachChild(n, mirar);
+  })(sf);
+  return hallazgos;
+}
+
+test('SCRUM-387 · el censo no va a buscar su referencia FUERA del árbol bajo prueba', () => {
+  // El guard del guard. Sin esto, alguien vuelve a meter `git ls-tree origin/main` en el camino de
+  // lectura y el PR se cae en CI — van dos veces en dos días, y las dos se descubrieron en rojo.
+  //
+  // El CLI (`scripts/censo-reparto.mjs`) queda FUERA a propósito y con motivo escrito: corre en un
+  // portátil con remoto, su pregunta es «¿qué hay hecho AHORA MISMO?» y para eso `origin/main` es
+  // la referencia correcta. No corre en CI.
+  for (const f of ['tests/scrum387-censo-reparto.test.mjs', 'scripts/_censo-reparto.mjs']) {
+    assert.deepEqual(arrancaProcesos(f), [],
+      `${f} arranca procesos: si eso es git, su referencia vive fuera del árbol y CI —que no tiene \`origin/main\` fetcheado— lo tumbará. La referencia de un guard de PR es el ÁRBOL BAJO PRUEBA`);
+  }
+  // Hermano positivo (SCRUM-237): el detector SÍ encuentra algo cuando lo hay, así que un
+  // `deepEqual([])` verde significa algo. El CLI es el control: sabemos que arranca git.
+  assert.ok(arrancaProcesos('scripts/censo-reparto.mjs').length > 0,
+    'el detector no ve los procesos del CLI, que sí los tiene: entonces tampoco vería los de nadie');
 });

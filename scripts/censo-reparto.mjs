@@ -26,8 +26,25 @@ if (!argv.includes('--jira') || !ficheroJira) {
 // Se lee del ÁRBOL DE GIT (`git ls-tree origin/main`), no del directorio de trabajo: el árbol
 // local puede tener entradas a medio escribir de la sesión que lo está usando, y el reparto se
 // hace sobre lo que está en main, no sobre lo que alguien tiene abierto.
-const enMain = execFileSync('git', ['ls-tree', 'origin/main', '--name-only', 'docs/master/'], { cwd: RAIZ, encoding: 'utf8' })
-  .split('\n').map((s) => s.trim()).filter(Boolean);
+//
+// ⚠️ Aquí `origin/main` SÍ es la referencia correcta, y por eso este fichero NO corre en CI: la
+// pregunta del CLI es «¿qué hay hecho AHORA MISMO?». El guard de la suite hace otra pregunta —«¿el
+// árbol que se va a mergear está sano?»— y por eso lee el árbol de trabajo (SCRUM-387, tras
+// tumbar #454 y #498 por dar `origin/main` por hecho en CI).
+//
+// Y si el ref falta, se DICE. Un `fatal: Not a valid object name` crudo no le explica a nadie qué
+// hacer, y lo que no puede pasar es que la ausencia del ref se convierta en «cero entradas».
+let enMain;
+try {
+  enMain = execFileSync('git', ['ls-tree', 'origin/main', '--name-only', 'docs/master/'],
+    { cwd: RAIZ, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+    .split('\n').map((s) => s.trim()).filter(Boolean);
+} catch {
+  console.error('\n🔴 no se pudo leer `origin/main`. Este censo NO informa sin su referencia:');
+  console.error('   «no pude mirar» y «miré y está todo alineado» no pueden dar el mismo resultado.');
+  console.error('\n   Arréglalo con:  git fetch origin\n');
+  process.exit(1);
+}
 const entradas = ticketsConEntrada(enMain);
 
 // ── 2 · lo que JIRA dice que falta ───────────────────────────────────────────────────────────
