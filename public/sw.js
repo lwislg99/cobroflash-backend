@@ -51,6 +51,7 @@ const SHELL = [
   '/dashboard/js/settingsSubmenus.js', // SCRUM-284
   '/dashboard/js/settingsView.js',
   '/dashboard/js/exportView.js',
+  '/dashboard/js/libroRegistroView.js',
   '/dashboard/js/teamView.js',
   '/dashboard/js/jobsCierreTrabajo.js', // SCRUM-344
   '/dashboard/js/jobsView.js',

@@ -272,6 +272,12 @@ async function initApp() {
         viewTitle.textContent = 'Proveedores';
         (window.renderProvidersView || renderProvidersView)(viewContainer);
         break;
+      case 'libro-registro':
+        // SCRUM-296 (A6). El titulo sale de la MISMA constante que la vista: dos copias del
+        // rotulo se desincronizan, y una de ellas se quedaria sin marcador.
+        viewTitle.textContent = (window.LIBRO_COPY && window.LIBRO_COPY.titulo) || '';
+        if (typeof window.renderLibroRegistroView === 'function') window.renderLibroRegistroView(viewContainer);
+        break;
       case 'expenses':
         viewTitle.textContent = 'Gastos';
         renderExpensesView(viewContainer);
@@ -336,7 +342,8 @@ async function initApp() {
   // Deep-links por hash: /dashboard/#products abre Productos directamente.
   // Útil para compartir/QA (y para las capturas de la maqueta A4.7).
   const HASH_VIEWS = ['home','quotes-list','quotes-new','customers','products','providers',
-    'invoices','expenses','export','reports','templates','quote-requests','jobs','plans','team','settings'];
+    'invoices','expenses','export','reports','templates','quote-requests','jobs','plans','team','settings',
+      'libro-registro'];
   function viewFromHash() {
     const h = (window.location.hash || '').replace('#', '');
     return HASH_VIEWS.includes(h) ? h : null;

@@ -18,6 +18,9 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'POST', path: '/admin/invoices/:invoiceId/send-reminder' },
   { method: 'GET', path: '/admin/invoices/:invoiceId/dispute-package' },
   { method: 'POST', path: '/admin/invoices/:invoiceId/payment-anomaly', body: { amount: 1 } },
+  // SCRUM-296 (A6): el libro de registro es la facturación ENTERA del negocio — lectura de
+  // admin, no trabajo de campo. Con una ruta basta: el montaje entero comparte la instancia.
+  { method: 'GET', path: '/admin/libro-registro' },
   // Configuración / cuenta (S1: Técnico ❌)
   { method: 'PUT', path: '/admin/merchant', body: { name: 'X' } },
   { method: 'GET', path: '/admin/merchant/public-profile-qr' },
