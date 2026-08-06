@@ -208,8 +208,20 @@ test('SCRUM-291 ① · los esperados se componen con la MISMA función, no con u
   const src = fs.readFileSync(path.join(RAIZ, 'src/modules/invoicing/domain/huecosSerie.ts'), 'utf8');
   const codigo = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
-  assert.match(codigo, /formatInvoiceNumber\(/,
-    '🔴 el detector ya no compone con `formatInvoiceNumber`.');
+  // SCRUM-306 (C7): el detector se generalizó con un parámetro `componer`, para que los ALBARANES
+  // reutilicen este mismo barrido en vez de escribir un segundo. Con eso `formatInvoiceNumber` ya
+  // no aparece LLAMADO dentro del bucle: aparece como valor POR DEFECTO del parámetro.
+  //
+  // El invariante que este test protege no ha cambiado —el detector compone, no parsea—, pero la
+  // forma sí, y el assert miraba la forma. Se comprueba ahora lo que de verdad importa, y es más
+  // fuerte que antes: que el defecto del compositor sea exactamente `formatInvoiceNumber`. Si
+  // alguien lo cambiara por otra función, las llamadas de factura empezarían a componer con otra
+  // cosa **sin tocar ni una de sus líneas**.
+  assert.match(codigo, /=\s*formatInvoiceNumber\s*,/,
+    '🔴 el detector ya no compone con `formatInvoiceNumber` por defecto: las llamadas de factura ' +
+    'compondrían con otra función sin cambiar ni una de sus líneas.');
+  assert.match(codigo, /const esperado = componer\(/,
+    '🔴 el bucle ya no usa el compositor recibido: o volvió a fijar una función, o compone por su cuenta.');
   assert.doesNotMatch(codigo, /padStart|\\d\{3\}|match\(|\.split\('-'\)/,
     '🔴 el detector ha empezado a PARSEAR o a componer el formato por su cuenta. Eso es una copia ' +
     'del formato, y una copia se queda vieja sin avisar.');
