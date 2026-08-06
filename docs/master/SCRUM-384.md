@@ -1,8 +1,8 @@
 # SCRUM-384 · Dos `min-height` locales que la base ya resolvía
 
 **Fecha:** 6-ago-2026 · **Carril:** UI (CSS + una vista) · **Gate:** ninguno, corre en `npm test`
-**Medido contra:** `origin/main` = `016ba48c78af18d7bafb291f24519926212b75d1` · 2026-08-06
-**Tanda:** 1856 tests · 1789 pass · **0 fail** · 67 gateados
+**Medido contra:** `origin/main` = `016ba48c78af18d7bafb291f24519926212b75d1` · 2026-08-06T00:43:01+01:00
+**Tanda:** 1858 tests · 1791 pass · **0 fail** · 67 gateados
 
 > Sale de un hallazgo de SCRUM-350: al comprobar si los parches de esa zona seguían haciendo
 > falta, dos ya no lo hacían. **No se borraron al paso** — y el motivo de que fuera ticket es el
@@ -86,8 +86,11 @@ devuelve la regla a la base, o este ticket se revierte entero.
 | 1 | Vuelve el inline a `reportsView` | 🔴 «ha vuelto un `min-height` EN LÍNEA (línea 921)» |
 | 2 | Se retira el `column-reverse` del pie | 🔴 «SE HA RETIRADO EL APILADO… y eso NO era un parche» |
 | 3 | La base pierde `.btn-primary:not(.btn-sm)` | 🔴 «…o este ticket hay que revertirlo entero» |
+| 4 | Vuelve el inline a `exportView` | 🔴 «ha vuelto un `min-height` EN LÍNEA sobre un botón (línea 64, `<button>` en plantilla)» |
+| 5 | Se barre el `min-height` del LABEL de datasets | 🔴 «Ése NO sobra: la base no toca labels ni inputs… quitarlo baja el objetivo táctil de esa fila» |
 
-El **3 es el que importa**: es el que demuestra que la retirada está sostenida y no colgando.
+El **3 es el que importa**: demuestra que la retirada está sostenida y no colgando. El **5 es su
+espejo**: demuestra que el guard no se ha vuelto un barredor.
 
 ## Un defecto que me cazó a mí, y era el detector
 
@@ -97,21 +100,44 @@ devuelve `{ selectores, decls, medias }` con `decls` como **Map**, y yo leía `r
 `r.cuerpo`. Un `JSON.stringify` de un Map se ve como `{}` y hace creer que la regla está vacía.
 Cuando el analizador y la realidad discrepan, el roto es el analizador.
 
-## 🔴 Hallazgo (mismo defecto, fuera del alcance dado — se reporta, no se arregla)
+## ③ `exportView.js` — el alcance ampliado (mismo defecto ①, exacto)
 
-**Hay más botones con `min-height` inline y variante suelta**, exactamente el caso ①:
+El hallazgo de esta sesión se amplió al ticket **antes de mergear**, por decisión del fundador:
+`exportView.js:61` (`btn-primary`, «Descargar ZIP») y `:83` (`btn-secondary`, portabilidad) son
+variante suelta + inline que fuerza 44 a 1280. Mismo tratamiento y mismas comprobaciones.
 
-| sitio | clase | qué pasa |
+Medición **pareada** —el gemelo con inline y el limpio en la MISMA página y la misma pasada, lo
+que elimina la variación entre ejecuciones—:
+
+| botón | 390 px | 1280 px |
 |---|---|---|
-| `exportView.js:61` | `btn-primary` | 44 forzado también a 1280 |
-| `exportView.js:83` | `btn-secondary` | ídem |
-| `jobDetailView.js:1186`, `:1166`, `:1271` | `btn-primary` / botones | ídem — **fichero VETADO** (rama parada de C5) |
+| con inline *(antes)* | 44 | **44** ← el daño |
+| sin inline *(después)* | 44 | **36** ✅ |
 
-No se tocan: el alcance de este ticket lo fijó el fundador en dos sitios, y `jobDetailView` está
-expresamente fuera. Siguiente acción concreta: mismo tratamiento que ① en `exportView.js` (ticket
-propio), y los de `jobDetailView` cuando C5 libere el fichero. Los `min-height` inline sobre
-**inputs, selects y labels** de esos ficheros **NO** entran: la base no los cubre y son legítimos.
+A 390 px **no cambia nada**: la base ya lo daba. El rótulo de `:83` sigue con su marcador — este
+ticket es de layout, no de copy (regla 30).
+
+## LOS CAMPOS NO ENTRAN, y ahora lo dice el GUARD
+
+El detector persigue **solo botones**. Un `min-height` en línea sobre un `input`, un `select` o un
+`label` es **legítimo**, y retirarlo rompe la pantalla: **la base no los cubre**. Medido, no
+supuesto — a 390 y a 1280 px un `input.input` computa `min-height: 0` (alto real 38 px), y el
+`label` de datasets se queda en lo que diga su estilo.
+
+Va escrito **dentro del guard** porque el riesgo tiene nombre: el siguiente que lea «SCRUM-384
+retiró los min-height locales» y haga un barrido por fichero se lleva los de los campos por
+delante. Hay un **control que exige que el del label SIGA estando**: si el detector empezara a
+perseguirlo, ese control cae.
+
+> **Coherencia sin medición es una excusa para tocar lo que no toca.** Es la lección que ya había
+> salvado a `.qq-modal .field input` en la primera mitad de este ticket: iba en la misma lista que
+> los botones y **no sobraba**.
+
+## 🔴 Lo que queda fuera, y dónde vive
+
+`jobDetailView.js:1186`, `:1166` y `:1271` tienen el mismo defecto y **NO se tocan**: fichero
+vetado (rama parada de C5). Anotado en **SCRUM-380**, que ya cubre los botones de esa pantalla.
 
 Ficheros: `public/dashboard/css/styles.css` (el bloque `.qq-modal`) ·
-`public/dashboard/js/reportsView.js` (el inline retirado) ·
-`tests/scrum384-min-height-locales.test.mjs` (7, nuevo).
+`public/dashboard/js/reportsView.js` y `public/dashboard/js/exportView.js` (los inline retirados) ·
+`tests/scrum384-min-height-locales.test.mjs` (9, nuevo).
