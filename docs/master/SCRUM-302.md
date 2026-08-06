@@ -102,7 +102,7 @@ de donde estas acciones se mudan — reutilizar un rótulo aprobado no es redact
 | `btnEnviarFirmar` | Enviar para firmar | fila del Trabajo | primaria en **emitido** |
 | `btnFacturar` | Facturar lo entregado | **aprobado aquí** | primaria en **firmado**, solo si queda pendiente |
 | `btnFirmarAqui` | Firmar aquí mismo | **aprobado aquí** | secundaria en **emitido** |
-| `btnPdf` | PDF | fila del Trabajo | secundaria en los tres |
+| `btnPdf` | PDF → **Descargar PDF** (6-ago) | fila del Trabajo → aprobado | secundaria en los tres |
 | `btnWhatsApp` | Enviar por WhatsApp | fila del Trabajo | secundaria en **firmado** |
 | `btnEditarLineas` | Editar líneas | fila del Trabajo | secundaria en **borrador** |
 | `btnFoto` | 📷 Añadir foto | fila del Trabajo | «⋮» en los tres |
@@ -113,9 +113,11 @@ Y el enlace de la fila del Trabajo a esta ficha: **Ver albarán** (aprobado aqu�
 > ⚠️ Una medición ajena sobre `c711b79` dijo que cinco de los nueve «ya estaban aplicados en
 > main». Comprobado antes de tocar nada: las cadenas **existían en el árbol**, pero en la
 > **página** los nueve botones pintaban el marcador `[PENDIENTE]`. Existir en un fichero y estar
-> aplicado en la pantalla no son el mismo hecho. `btnPdf` es el que más chirría del grupo
-> reutilizado —«PDF» a secas, heredado de una fila estrecha, junto a rótulos que son frases—; si
-> el fundador lo quiere distinto, es una línea en `ROTULOS_ALBARAN`.
+> aplicado en la pantalla no son el mismo hecho.
+>
+> `btnPdf` era el que chirriaba del grupo reutilizado —«PDF» a secas, heredado de una fila
+> estrecha, junto a rótulos que son frases—. **El fundador lo cambió el 6-ago a «Descargar PDF»**:
+> verbo, como sus dos vecinos de la barra.
 
 ## EL TRASLADO DESDE LA FILA: HECHO, PERO NO ENTERO — Y CON MECANISMO
 
@@ -535,3 +537,86 @@ Ficheros: `public/dashboard/js/albaranDetailView.js` (rótulos firmados + la reg
 `src/core/http/adminRouteDeclarations.ts` (el motivo, no el rol) ·
 `tests/scrum302-presupuesto-y-fotos.test.mjs` (13: +3 de la regla y los rótulos, y el arreglo del
 detector).
+
+---
+
+# SCRUM-302 · «Descargar PDF» (6-ago-2026) — y seis rótulos que se habían perdido camino de main
+
+**Medido contra:** `origin/main` = `3788ff840c70e3981d7e132b502bd7ac474a371e` · 2026-08-06T10:27:00+02:00
+**Carril:** A (UI) · **Gate:** sin gate, corre en `npm test`
+**Tanda:** 1893 tests, 1826 pass, 0 fail, 67 gateados a staging
+
+## El encargo era una palabra
+
+`btnPdf`: **PDF → «Descargar PDF»**, aprobado por el fundador. Verbo, como sus dos vecinos de la
+barra; «PDF» a secas venía heredado de una fila estrecha y aquí parecía una etiqueta de formato
+perdida entre dos acciones.
+
+## 🔴 Y al ir a cambiarla, el objeto que guarda los rótulos estaba PARTIDO EN DOS
+
+Una edición de otro carril (`34a494f`, 5-ago 22:51) cerró `ROTULOS_ALBARAN` a la mitad para colar
+`COPY_DUPLICADO_CREADO` entre medias, y bautizó la cola `_FIN_ROTULOS`. **Nadie leía la cola.**
+
+Medido en el navegador **antes** de tocar nada: `ROTULOS_ALBARAN[id]` devolvía `undefined` para los
+seis de la cola y el `||` los mandaba, uno por uno, al marcador. **En `borrador` los TRES botones de
+la barra decían «[PENDIENTE microcopy oficial]»**, y así estaba en `main`. Capturas antes/después en
+`docs/capturas/scrum-302/`.
+
+Perdidos: `btnEmitir` · `btnEnviarFirmar` · `btnPdf` · `btnWhatsApp` · `btnEditarLineas` · `btnFoto`.
+
+### Por qué no lo cazó nada, que es lo que importa
+
+- el JS era **válido** — dos objetos bien formados, cero excepciones en tiempo de ejecución;
+- el guard del marcador (SCRUM-283) comprueba que el marcador **exista y se use** — y aquí se usaba,
+  de más;
+- el guard del patrón mira **dónde** va cada acción, no cómo se llama;
+- el de sin-callejones mira **qué navega**, no qué se lee.
+
+Cada instrumento miraba a su sitio; el hueco estaba entre los cuatro.
+
+> **Y el marcador cae hacia el lado equivocado en una fusión.** Es una red de seguridad legítima
+> —mejor texto visible que botón mudo—, pero convierte «se ha perdido un rótulo» en «esta acción
+> todavía no tiene rótulo aprobado», que es una frase perfectamente normal en este proyecto. **Un
+> relleno que se pinta es peor que un hueco: parece intencionado.** Ese es el motivo de que llegara
+> a producción sin que nadie levantara la mano.
+
+### El mecanismo
+
+`tests/scrum302-rotulos-completos.test.mjs` **deriva del AST** los botones que la vista CREA (primer
+argumento de cada `mk('btnX', …)`) y exige rótulo para todos. La lista no se escribe en el test: una
+lista a mano tendría el mismo defecto que causó el fallo — no avisa de lo que le falta.
+
+Vigila cuatro cosas, y la tercera es la forma exacta en que se rompió:
+
+| # | Qué exige |
+|---|---|
+| 1 | suelo: el extractor ve ≥9 botones y ≥9 rótulos (si el objeto vuelve a partirse, el lector lo nota) |
+| 2 | ningún botón creado se queda sin entrada en `ROTULOS_ALBARAN` |
+| 3 | **no hay otro objeto con claves `btnX` que nadie lea** — detectado por CONTENIDO, no por el nombre `_FIN_ROTULOS`: el próximo accidente se llamará de otra manera |
+| 4 | ningún rótulo declarado es relleno (`PENDIENTE`/`TODO`/`FIXME`) — existir no es decir algo |
+
+**Probado en rojo por cuatro vías**, y la primera es el fallo real: el árbol de `main` tal cual
+estaba → **caen 3 de 5**. Además caza el botón nuevo sin rótulo, el rótulo que es relleno, y —suelo—
+que su propia excepción declarada siga existiendo.
+
+> **Dio rojo en falso el primer día.** `PUENTES_A_LA_FILA` también teclea por `btnX` con valores de
+> texto, pero su valor es un IDENTIFICADOR, no texto de pantalla. Se declaró como excepción
+> **visible y con suelo propio**, en vez de aflojar la regla: un guard que da rojo en falso es un
+> guard que alguien acaba silenciando.
+
+## AB6
+
+Capturas antes/después a 390 (móvil, donde vive el operario) y una a 1280, con **suelo**: el banco
+no captura si la barra no pinta al menos 3 botones — una captura de una pantalla vacía no es
+evidencia de nada. **Matriz de dispositivos: hueco humano declarado.**
+
+## Regla 9 — lo que NO he tocado
+
+`34a494f` es de otro carril y su trabajo (Duplicar, el aviso de aterrizaje) está bien: lo único que
+se corrige es el objeto partido, que es mi zona y bloqueaba el encargo. La constante
+`COPY_DUPLICADO_CREADO` **no se toca** — solo se mueve fuera del objeto, que es donde tenía que
+haber estado.
+
+Ficheros: `public/dashboard/js/albaranDetailView.js` (el objeto reunido + «Descargar PDF») ·
+`tests/scrum302-rotulos-completos.test.mjs` (5, nuevo) ·
+`docs/capturas/scrum-302/` (README + 5 capturas).

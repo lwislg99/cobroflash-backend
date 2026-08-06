@@ -2018,6 +2018,24 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 }
 @media (max-width: 720px) { .job-doc-rectificativas { margin-left: 10px; } }
 
+/* SCRUM-320 (G5) · «Qué falta para cobrar». Solo tokens existentes. */
+.cobro-lineas { display: flex; flex-direction: column; gap: 4px; }
+.cobro-linea { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; font-size: 13.5px; color: var(--body); }
+.cobro-linea__etiqueta { color: var(--muted); }
+.cobro-linea__importe { font-variant-numeric: tabular-nums; color: var(--ink); }
+/* El total lleva su filete arriba: es la respuesta, no una fila mas. */
+.cobro-linea--total { margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border); font-weight: 700; }
+.cobro-linea--total .cobro-linea__etiqueta { color: var(--ink); }
+.cobro-linea--total .cobro-linea__importe { font-size: 16px; }
+
+/* Los huecos: cada uno con SU enlace en SU linea. Ninguno es «la» accion — elegir es de la
+   cabecera, y hay una sola cabecera. */
+.cobro-huecos { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+.cobro-hueco { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--body); }
+/* Objetivo tactil de 44 px (AB6): se pulsan de pie y con prisa. */
+.cobro-hueco button { min-height: 44px; }
+@media (max-width: 720px) { .cobro-hueco { align-items: flex-start; } }
+
 .detail-section { padding: 18px 22px; border-bottom: 1px solid var(--border); }
 .detail-section:last-child { border-bottom: none; }
 .detail-section-title {
