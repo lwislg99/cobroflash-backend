@@ -225,3 +225,34 @@ export function arranqueDeSerie(params: {
   // Continuar por la SIGUIENTE, no por la que él dio: si su última fue la 41, la nuestra es la 42.
   return { ok: true, nextInvoiceNumber: n + 1, invoiceSeriesYear: año };
 }
+
+/**
+ * SCRUM-313 (D2) · LA PUERTA DE ÚLTIMA OPORTUNIDAD: ¿hay que preguntarle todavía por su
+ * numeración?
+ *
+ * Es la mitad que de verdad importa, y por una razón de perfil: **quien se salta el asistente es
+ * exactamente quien viene de otro programa con facturas ya emitidas**. El que se sienta a
+ * contestarlo suele ser el que empieza de cero — o sea, aquel para quien la pregunta da igual.
+ *
+ * LA CONDICIÓN SE DERIVA, no se guarda una bandera de «ya se le preguntó»:
+ *
+ *   · `invoiceSeriesYear !== año` → la serie de ESTE año no está declarada. Es la MISMA condición
+ *     que usa `resolveSeriesSeq` para decidir que arranca en 1, así que no hay dos verdades: si el
+ *     emisor la trataría como serie nueva, es que nadie declaró su arranque.
+ *   · cero facturas emitidas → todavía se puede elegir sin romper nada.
+ *
+ * Una bandera de «ya preguntado» se habría desincronizado el día que alguien la pusiera sin
+ * escribir el par, y entonces la puerta dejaría de salir a quien más la necesita.
+ *
+ * ⚠️ CONTROL NEGATIVO, y es lo que hace que esto sea seguro: **quien YA emitió no la ve**.
+ * Ofrecerle elegir el arranque a quien ya arrancó es ofrecerle romper su propia correlatividad —
+ * y eso no se arregla después, porque una factura emitida no se edita (regla 29).
+ */
+export function debeOfrecerArranqueDeSerie(params: {
+  invoiceSeriesYear: number | null | undefined;
+  año: number;
+  numerosDeLaSerie: readonly string[];
+}): boolean {
+  if (params.numerosDeLaSerie.length > 0) return false;
+  return params.invoiceSeriesYear !== params.año;
+}
