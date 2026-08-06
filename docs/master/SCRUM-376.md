@@ -5,6 +5,9 @@
 **Medido contra:** `origin/main` = `9ce9ffd727411f0e69826bbdc174ed65f2582a13` · 2026-08-05T23:53:48+01:00
 
 **Tanda:** 1805 tests, 1738 pass, 0 fail, 67 skipped
+**Medido contra:** `origin/main` = `0f7dfd1c1774dd0f9a968c10476d4f066a22b89c` · 2026-08-06T00:03:52+01:00
+
+**Tanda:** 1825 tests, 1758 pass, 0 fail, 67 skipped
 
 ## El hecho, medido
 
@@ -66,6 +69,28 @@ correcto; no comprueba que la pantalla que lo enseña llegue a existir.
   fichero, el conjunto derivado tendría el mismo encogimiento que ese ticket corrigió. No se rompe:
   `index.html` no lo cargaba, así que ni entra en su cuenta.
 * Suite completa en verde contra el `main` resultante.
+
+## El rebase, y qué chocó exactamente
+
+**SCRUM-368 entró en `main` mientras esta rama esperaba**, y toca el mismo fichero: le aplicó la
+copy acortada «Pruébalo con tus datos →» en `:106`. Esta rama lo BORRA → conflicto modificar/borrar.
+
+**Resuelto retirando el fichero, sin matices.** Que el cambio de 368 estorbe al retirarlo es la
+consecuencia lógica del hallazgo, no una pérdida: era copy aprobada para una pantalla que nadie
+carga. Sigue escrito arriba que **la copy aprobada se va con el fichero**.
+
+**El conflicto fue SOLO ese fichero** — medido, no supuesto: un único `U` en `git status --porcelain`
+(`UD public/js/landing-demo.js`); los otros cuatro ficheros del commit aplicaron limpios. La interfaz
+web enseñaba el primer choque y en este caso era también el único.
+
+Y se barrió el árbol ENTERO por nombre —no solo donde ya se había mirado—: **no queda ninguna
+referencia viva**. Las que quedan son de REGISTRO (entradas de 368, 376 y 378 contando el hallazgo)
+y esas se conservan a propósito. Ningún test lo asume: el único que lo nombra es el de SCRUM-336, y
+solo en el comentario que dice que se retiró.
+
+⚠️ Una frase de `SCRUM-368.md` sí caducó con esto: decía que la copy «se deja como está», y el
+fichero ya no existe. Se ha anotado allí con fecha y ticket **sin borrar la medición**, que sigue
+siendo cierta de cuando se hizo.
 
 ## Lo que NO cubre
 

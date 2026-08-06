@@ -72,7 +72,8 @@ lo ve, no está mirando donde cree.
 
 ## Lo que NO entra, y hay que leerlo
 
-* **⚠️ La pantalla del alta NO está construida.** Lo que entra es el **mecanismo** —la decisión
+* **⚠️ La pantalla del alta no entraba en este tramo** — está en el segundo, al final de esta entrada.
+* *(lo que sigue describía el estado de aquel momento)* **La pantalla NO estaba construida.** Lo que entra es el **mecanismo** —la decisión
   pura, con sus dos ramas, el choque y el rechazo— y sus tests. Falta el bloque en el asistente, la
   vista previa en vivo y la **puerta de última oportunidad** antes de la primera factura. Se dice
   claro: **D2 no está cerrado**, y con él tampoco el bloque D.
@@ -104,3 +105,163 @@ pasó. El texto nuevo va `[PENDIENTE microcopy]`.
 * `src/core/validation/fiscalInput.ts` — `arranqueDeSerie` y `MAX_NUMERO_SERIE`, puras.
 * `public/dashboard/js/productsView.js` — los tres casos de `load-catalog`, distinguidos.
 * `tests/scrum313-continuidad-numeracion.test.mjs` (8, sin gate).
+
+---
+
+## Segundo tramo · LA PANTALLA
+
+**Fecha:** 6-ago-2026 · **Carril:** D (alta) · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `3788ff840c70e3981d7e132b502bd7ac474a371e` · 2026-08-06T10:34:02+02:00
+**Tanda:** 1899 tests, 1832 pass, 0 fail, 67 skipped · `npm test` **`$? = 0`**
+
+> El **mecanismo** (`arranqueDeSerie`) entró con A4 y tiene su entrada en `docs/master/SCRUM-313.md`.
+> Esto es **la pantalla**, en rama propia sobre `main` fresco: una PR verde no se queda de rehén de
+> trabajo de interfaz.
+
+## Dónde se pregunta, que es lo que aporta D2
+
+El competidor lo tiene en `Configuración › Numeración`, y eso está mal aunque funcione: **quien
+viene de otro programa no entra en Configuración el primer día**. Entra, hace un presupuesto, y
+descubre el problema cuando ya ha emitido tres facturas mal numeradas. Entonces ya no es
+configurar: es un lío.
+
+La pregunta se hace **cuando la respuesta todavía sirve de algo**.
+
+## 🔴 El año va DENTRO de la pregunta, y sale de la fecha actual
+
+«¿Ya has facturado en **2026**?» — no «¿de qué año es esa factura?». Preguntar eso último sería
+pedirle al profesional que resuelva un problema nuestro; llevándolo dentro, **la respuesta ya trae
+el par completo** que necesita el mecanismo. Eso es lo que cierra la trampa de `resolveSeriesSeq`.
+
+Y el año **nunca se cablea**. Un test lo fija y además **prohíbe cualquier año literal de cuatro
+cifras en la vista**: así es como esto se rompe — alguien escribe `2026` «para probar» y se queda.
+El test obligatorio del cambio de año compara un alta del 31-dic con otra del 1-ene.
+
+⚠️ **Y ahí encontré un fallo en mi propio test:** las fechas estaban construidas como instantes
+**UTC**, y `31-dic 23:59Z` en UTC+2 **ya es 1 de enero**. Las dos daban 2027, así que el test
+habría pasado sin cruzar la frontera. Corregido a hora local — que además es lo correcto: el
+ejercicio fiscal de un autónomo español es su año local.
+
+## La vista previa: se le PIDE a quien decide
+
+Es el corazón de la pantalla, no un adorno: es lo único que convierte «41» en **`2026-CF-042`**
+delante de sus ojos **antes** de que sea irreversible. Sin ella, el aviso de «ya no se puede
+cambiar» no protege nada, porque el usuario no sabría qué confirma.
+
+Por eso **no se calcula en el navegador**. Se resuelve en el servidor con `resolveSeriesSeq` y
+`formatInvoiceNumber` —quien de verdad decide al emitir— en una ruta de **solo lectura**, porque
+cuelga de cada pulsación del teclado. Dos sitios componiendo el mismo número es exactamente cómo
+la pantalla promete una cosa y la factura hace otra.
+
+`vistaPreviaSerie` **importa** y no modifica: `invoiceNumber.service.ts` queda intacto (regla 38).
+
+## Ruta propia, no un campo más en el perfil
+
+`nextInvoiceNumber` gobierna qué número sale en la próxima factura. Abrirlo en
+`PUT /admin/merchant` lo dejaría escribible desde **cualquier** guardado de Configuración, para
+siempre. Aquí tiene su puerta y su momento.
+
+## 🔴 El censo de SCRUM-234 cazó una carrera real, antes de `main`
+
+La primera versión leía lo emitido y escribía un valor **absoluto** en el contador **sin cerrojo**
+— literalmente la tercera forma que aquel ticket prohíbe. El guard saltó solo, nombrando
+`src/app.ts`.
+
+No es una carrera abstracta: entre leer «no hay facturas» y escribir el 42 cabe una emisión, y esa
+factura consumiría la **001** — que **duplica un número que el profesional ya usó en su programa
+anterior**. Es el daño exacto que D2 existe para evitar, entrando por la puerta de al lado.
+
+Ahora va con el mismo `pg_advisory_xact_lock` y el mismo namespace que `allocateInvoiceNumber`, y
+**la relectura va DENTRO de la transacción**: comprobar fuera y escribir dentro no serializa nada.
+Declarado en el censo con su forma y su motivo, y con la nota de que **fija** el arranque en vez de
+avanzarlo.
+
+## Verificado en rojo — los tres por `$?`
+
+* **Año cableado en la vista** → cae «ya no sale de la fecha actual».
+* **Se rompe el par** (número sin año) → cae nombrando el descuadre: «3 escrituras del número y 3
+  del año» deja de cumplirse.
+* **Se quita el cerrojo** → cae el censo de SCRUM-234: «declara 'cerrojo' y NO hay
+  `pg_advisory_xact_lock`».
+
+Las tres inyecciones revertidas; árbol limpio, `npm test $? = 0`.
+
+## Las dos caras
+
+* **Control negativo:** «No, empiezo ahora» arranca en 1 y **no hereda nada**, ni en el caso hostil
+  de que la petición traiga un número igualmente.
+* **Control positivo:** el que declara la 41 acaba emitiendo la **042**, y se comprueba
+  explícitamente que **no** sea `001`. Hace falta porque aquí el requisito se cumple por
+  **ausencia**: sin él, la pantalla podría estar rechazándolo todo y el negativo seguiría verde.
+
+## Dos cosas que añadí al asistente, y por qué son seguras
+
+El bucle no soportaba `montar` ni `textoBoton` — **me los había inventado**, y lo comprobé antes de
+seguir. Se añadieron al bucle de forma **aditiva**: un paso que no los declare se comporta
+exactamente igual que antes.
+
+## AB6
+
+**Medido estáticamente y en verde:** objetivos ≥44 px, `for=` en las dos etiquetas, `aria-live` en
+la vista previa, `role="alert"` en el error, `inputmode="numeric"` en el número y cero colores
+fuera de los ya usados en el asistente.
+
+* ⚠️ **Capturas antes/después: NO están.** No se levantó la app: hacerlo pedía base de datos, y hoy
+  hay prohibición expresa de aplicar nada a ninguna base (SCRUM-385/383). Se declara como hueco en
+  vez de dar por buena una pantalla que nadie ha visto.
+* ⚠️ **Matriz de dispositivos: hueco declarado**, como pide el propio ticket. Es humana.
+* Nada nuevo en `public/` más allá de la vista: **no hay banco de QA en el repo**.
+
+## La puerta de última oportunidad — ENTRA, y es la mitad que importa
+
+Quien se salta el asistente es **exactamente** quien viene de otro programa con facturas ya
+emitidas; el que se sienta a contestarlo suele ser el que empieza de cero. Así que la puerta no es
+un extra: es el caso principal.
+
+**La condición se DERIVA, no se guarda una bandera de «ya preguntado»:** `invoiceSeriesYear !== año`
+es *la misma* condición que usa `resolveSeriesSeq` para decidir que la serie arranca en 1. Si el
+emisor la trataría como nueva, es que nadie declaró su arranque — y así no hay dos verdades. Una
+bandera se habría desincronizado el día que alguien la pusiera sin escribir el par, y la puerta
+dejaría de salirle justo a quien más la necesita.
+
+* **Control negativo:** quien ya emitió **no la ve**. Ofrecerle elegir el arranque a quien ya
+  arrancó es ofrecerle romper su propia correlatividad, y eso no se arregla después (regla 29).
+* **Control positivo:** quien se saltó el asistente y no ha emitido **sí la ve**. Hace falta
+  porque sin él la puerta podría no salirle a nadie y el negativo seguiría verde — «no se la
+  enseñamos a quien ya emitió» se cumple perfectamente si no se la enseña nadie.
+* **Rojo por el mecanismo:** quitando la condición de «ya emitió», cae nombrándola (`$? = 1`).
+
+El veredicto viaja **ya resuelto** desde `/admin/me`, igual que la factura suelta de SCRUM-289: si
+la pantalla reimplementara la regla habría dos criterios sobre cuándo se puede tocar la numeración,
+y el del navegador sería el fácil de equivocar.
+
+## AB6 — medido, y encontró un defecto real
+
+Con la app levantada contra **dev local** (`localhost`, ni prod ni staging) no se pudo entrar al
+panel: no hay Postgres local ni docker en esta máquina. Así que las capturas se hicieron con un
+**banco fuera del repo** que extrae el marcado **del propio fichero** —no retecleado— y se
+midieron con `chrome-headless-shell` («Browser is already in use» en el MCP, el mismo tropiezo del
+AB6 de SCRUM-139).
+
+**El hallazgo:** el número de la vista previa **se partía en dos líneas a 360 y 390 px** — el único
+dato que el profesional tiene que leer bien antes de confirmar algo irreversible, roto justo en los
+dos anchos de móvil. Medido (`lineasDelNumero: 2`), arreglado con `white-space:nowrap`, y **vuelto
+a medir**: 1 línea en los dos, botones a 44 px y sin desbordamiento horizontal.
+
+⚠️ **Lo que NO se pudo medir: el foco con Tab real.** El navegador del MCP lo tenía otra sesión y
+no hay librería de Playwright instalada (añadirla sería regla 36). **No se sustituyó por `.focus()`
+programático**, que es justo lo que da falsos negativos. Queda declarado.
+
+## Lo que NO entra
+* **El campo Serie bloqueado con su motivo** se resuelve hoy por el servidor: si hay emitidas, la
+  ruta responde 409 con el texto aprobado y la pantalla lo enseña. Lo que **no** hay es el campo
+  saliendo ya deshabilitado *antes* de escribir — se entera al intentarlo.
+
+## Ficheros
+
+* `src/modules/invoicing/domain/vistaPreviaSerie.ts` (nuevo) — importa a quien decide.
+* `src/app.ts` — `POST /admin/onboarding/serie` (con cerrojo) y `…/serie/previa` (solo lectura).
+* `public/dashboard/js/onboardingView.js` — el paso 2, la vista previa en vivo, y los hooks
+  `montar`/`textoBoton` en el bucle.
+* `tests/scrum313-pantalla-numeracion.test.mjs` (11, sin gate).
+* `tests/scrum234-censo-reserva-serie.test.mjs` — `src/app.ts` declarado en el censo.

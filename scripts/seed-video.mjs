@@ -22,6 +22,16 @@ import { allocateQuoteNumber } from '../dist/modules/quotes/domain/quoteNumber.s
 import { allocateInvoiceNumber, isReceiptNumber } from '../dist/modules/invoicing/domain/invoiceNumber.service.js';
 import { allocateAlbaranNumber } from '../dist/modules/jobs/domain/albaranNumber.service.js';
 import { resolveBillingPlan, distributeStageAmounts } from '../dist/modules/quotes/domain/billingPlan.js';
+// SCRUM-381: quien mira una URL de BD pasa por aquí (`parseBDSegura` no tiene forma de devolver
+// la cadena), y `destinoSembrable` es la allowlist de dónde puede escribir un sembrador.
+import { parseBDSegura, destinoSembrable } from './_db-guard.mjs';
+
+// SCRUM-381 · EL SOBRE DE UNA SIEMBRA — ver la nota larga en `seed-demo.mjs`. Este script también
+// llamaba a `allocateInvoiceNumber` con `{}`, así que sus números quedaban en el AuditLog sin nada
+// que los separase de una emisión real. `tipo:'semilla'` es lo que los separa; `ref` dice qué
+// sembrador y qué tanda.
+const TANDA = new Date().toISOString();
+const sembrado = (punto) => ({ actor: { tipo: 'semilla', ref: `seed-video:${punto}@${TANDA}` } });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIGURACIÓN EDITABLE POR EL FUNDADOR
@@ -56,8 +66,24 @@ async function preflight() {
   const dbUrl = process.env.DATABASE_URL || '';
   if (!dbUrl) abort('DATABASE_URL no está definida. El fundador decide contra qué BD se ejecuta.');
 
-  let host = '';
-  try { host = new URL(dbUrl).hostname; } catch { abort('DATABASE_URL no es una URL válida.'); }
+  // SCRUM-381: esto era `new URL(dbUrl).hostname` dentro de un try/catch. NO filtraba —el catch
+  // no imprimía el error— pero es la forma que SCRUM-223 quitó de `seed-demo.mjs` después de que
+  // publicara una contraseña de producción: `new URL()` no redacta, y la URL entera viaja dentro
+  // del objeto de error. Aquí sobrevivía porque nadie miró los dos sembradores a la vez.
+  const destino = parseBDSegura(dbUrl);
+  if (!destino) abort('DATABASE_URL no es una URL válida. (No se dice cuál era: R7.)');
+  const host = destino.host;
+
+  // SCRUM-381 · PRIMERO la allowlist: producción no es destino de una semilla, y ninguna
+  // confirmación la abre. Nombrar la base contesta «¿es la que querías?», no «¿se puede sembrar
+  // ahí?» — con solo la ceremonia, escribir el hostname de prod bastaba para sembrar en prod.
+  const sembrable = destinoSembrable(dbUrl);
+  if (!sembrable.ok) {
+    abort(
+      `Destino NO sembrable → ${sembrable.etiqueta}\n\n  ${sembrable.motivo}\n\n` +
+      '  (Solo se nombra host/base: ni usuario, ni contraseña, ni la URL — R7.)',
+    );
+  }
 
   // El fundador DEBE confirmar explícitamente el host de la BD (no se asume prod).
   if (process.env.SEED_VIDEO_CONFIRM !== host) {
@@ -453,7 +479,12 @@ async function seed() {
           // Justificante (Invoice). allocateInvoiceNumber → J- (merchant ES sin flag).
           // El nº lleva la fecha de emisión histórica (paidAt/createdAt).
           const emitAt = paidAt ?? createdAt;
-          const invoiceNumber = await allocateInvoiceNumber(tx, mid, {}, emitAt);
+          // El camino se DERIVA del tramo, no se fija: el primero nace cuando el cliente acepta
+          // el presupuesto (C1) y los siguientes son el pro cobrando el resto (C2, collect-rest).
+          // Un número sembrado sale por una vía real —este script llama al mismo código—, así que
+          // declara la que imita.
+          const camino = i === 0 ? 'C1' : 'C2';
+          const invoiceNumber = await allocateInvoiceNumber(tx, mid, { camino, ...sembrado(`tramo${i + 1}`) }, emitAt);
           const scaled = stage.percentage < 1
             ? q.lines.map((l) => ({ ...l, price: round2(Number(l.price) * stage.percentage) }))
             : q.lines;

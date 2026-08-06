@@ -492,12 +492,30 @@ router.get('/:id', async (req, res) => {
 
     const job = await prisma.job.findFirst({
       where: { id: albaran.jobId, merchantId: req.merchantId },
-      select: { id: true, titulo: true, direccion: true, customerId: true },
+      select: { id: true, titulo: true, direccion: true, customerId: true, quoteId: true },
     });
     const customer = job?.customerId
       ? await prisma.customer.findFirst({
           where: { id: job.customerId, merchantId: req.merchantId },
           select: { id: true, name: true },
+        })
+      : null;
+
+    // SCRUM-302 · EL PRESUPUESTO DE ORIGEN, Y ES DEL DOCUMENTO — NO DE LAS LÍNEAS.
+    //
+    // Se resuelve por `Job.quoteId`: el albarán cuelga de un Trabajo y el Trabajo nació de un
+    // presupuesto. Lo que NO se hace aquí, y no es olvido: emparejar las líneas del albarán con
+    // las del presupuesto. `AlbaranLinea.quoteLineIndex` existe desde SCRUM-367, pero **no cubre
+    // todos los casos** — no lo hay en modo `SIN_VALORAR`, solo lo escribe el prellenado, y el
+    // índice no dice de QUÉ presupuesto es. Un vínculo que es cierto a veces no puede presentarse
+    // como procedencia de cada línea.
+    //
+    // La forma es la de `jobs.routes.ts:275` (`number` con caída al `id`), no una nueva: dos
+    // formas del mismo dato acaban divergiendo y el pro ve dos números para un presupuesto.
+    const quote = job?.quoteId
+      ? await prisma.quote.findFirst({
+          where: { id: job.quoteId, merchantId: req.merchantId },
+          select: { id: true, quoteNumber: true },
         })
       : null;
 
@@ -514,6 +532,9 @@ router.get('/:id', async (req, res) => {
       // El rail: contexto de solo lectura. Nada de aquí es accionable desde esta página.
       job: job ? { id: job.id, titulo: job.titulo, direccion: job.direccion } : null,
       customer,
+      // Del DOCUMENTO. `null` cuando el Trabajo no vino de un presupuesto (`Job.quoteId` es
+      // nullable): el rail lo omite en vez de pintar un enlace que no lleva a ningún sitio.
+      quote: quote ? { id: quote.id, number: quote.quoteNumber ?? quote.id } : null,
       // Los TRES valores, no un booleano (SCRUM-170/302).
       estadoFacturacion,
       // Lo que queda por facturar, por línea: es lo que hace verdadero el «parcial».

@@ -285,12 +285,35 @@ Un cambio de schema NO está aplicado hasta estar en las TRES bases:
 
 ```
 1. acela.proxy.rlwy.net / railway          — STAGING. Protegida por el máster: no se toca
-                                             sin que el fundador lo sepa. Es la base del
-                                             worktree cobroflash-b2.
+                                             sin que el fundador lo sepa.
 2. acela.proxy.rlwy.net / yaqu_dev_javier  — DESARROLLO. El fundador dijo que NO requiere su
-                                             GO para aplicarle schema. Base de cobroflash-b1.
+                                             GO para aplicarle schema.
 3. autorack.proxy.rlwy.net                 — PRODUCCIÓN.
 ```
+
+> ### 📌 QUÉ BASE TOCA CADA WORKTREE — MAPA MEDIDO el 6-ago-2026
+>
+> **Método:** censo de `.env*` en los cuatro árboles, imprimiendo `clave → host/base` con
+> `describirBD` (nunca el valor). Es una FOTO fechada, no una verdad permanente: si alguien
+> cambia una clave en Railway, esta tabla envejece sin que nadie la toque. Re-medir antes de usarla.
+>
+> | Worktree | Clave | Base real | Cuál es |
+> | --- | --- | --- | --- |
+> | `cobroflash-backend` | `DATABASE_URL_STAGING` | `acela…/yaqu_dev_javier` | **DEV** |
+> | `cobroflash-b1` | `DATABASE_URL_STAGING` | `acela…/railway` | **STAGING** |
+> | `cobroflash-b2` | `DATABASE_URL_STAGING` | `acela…/railway` | **STAGING** |
+> | `cobroflash-b3` | `DATABASE_URL_STAGING` | `acela…/railway` | **STAGING** |
+>
+> 🔴 **La misma clave significa DOS bases distintas según el directorio en el que estés parado**, y
+> ningún comando te lo recuerda. Ninguna apunta a producción (`autorack`).
+>
+> ⚠️ Aquí ponía que staging era «la base del worktree `cobroflash-b2`» y dev la «de
+> `cobroflash-b1`». **Medido: es falso.** `b1` tiene STAGING, y quien tiene DEV es el worktree
+> PRINCIPAL, que ni se mencionaba. Se corrigió el 6-ago-2026; la afirmación anterior no llevaba
+> fecha ni método, que es justo por lo que pudo envejecer sin que nadie lo notara.
+>
+> **Lo vigila `tests/scrum383-clave-vs-destino.test.mjs`**: compara lo que la clave PROMETE con el
+> destino REAL y aborta antes de cualquier operación de esquema.
 
 ⚠️ Las dos primeras viven en el MISMO servidor (`acela`) y son bases DISTINTAS. Ninguna es
 "local". Por eso pueden divergir de esquema sin que nada avise: `scripts/_db-guard.mjs` valida

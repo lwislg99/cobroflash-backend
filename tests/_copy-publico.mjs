@@ -24,10 +24,97 @@
 //
 // TRAMPA DE LA CASA (req.5): `public/dashboard/**` es la app del PRO, no material público-cliente —
 // «Facturas» ahí es legítimo. Se EXCLUYE del censo por su frontera de carpeta (no por lista a mano).
+//
+// ─── SCRUM-349 · QUÉ PARTE DEL FICHERO ES COPY (y qué parte NO lo es) ─────────────────────────────
+// El censo leía el FICHERO ENTERO, comentarios incluidos. Medido: de los 99.496 bytes de `src/` que
+// escanea, **24.466 (24,6%) son comentarios** — 281 bloques. Un comentario no llega a ninguna
+// pantalla, así que ahí el guard no vigilaba copy: vigilaba prosa de programador.
+//
+// Y eso tiene una víctima medida, `lifecycle.service.ts:156`. Ese comentario explica por qué el
+// texto de al lado no enumera el documento fiscal, y para explicarlo **no puede nombrarlo**: dice
+// «NO usa el posesivo del documento fiscal» donde la frase clara sería «NO dice "tus facturas"».
+// Comprobado: la versión clara pone el guard ROJO. La circunlocución es el precio del guard.
+//
+//   **Un guard que obliga a escribir peor las explicaciones para no despertarlo cobra un impuesto
+//   sobre la claridad del código.**
+//
+// Se arregla por donde debía estar desde el principio: se enmascara lo que NO puede llegar a una
+// pantalla, y se conserva lo que sí. `enmascararNoPantalla` devuelve un texto **del mismo largo**,
+// con los mismos saltos de línea, así que los números de línea que reporta el detector siguen
+// siendo los del fichero real — enmascarar y recortar no es lo mismo.
+//
+//   · `.ts` / `.js` → AST: se conservan SOLO los literales de cadena y plantilla. Fuera quedan los
+//     comentarios y también el código (un `const facturaUrl` tampoco es copy).
+//   · `.html`       → fuera los comentarios `<!-- -->`, y dentro de cada `<script>` de JavaScript se
+//     aplica lo mismo (28 KB de script en línea: si no, el agujero se muda ahí).
+//   · `.json` `.xml` `.webmanifest` `.txt` → intactos: no tienen canal de comentario donde esconder
+//     una explicación, y su contenido ES el dato que se publica.
 import fs from 'node:fs';
 import path from 'node:path';
+import ts from 'typescript';
 
 const EXT_PUBLICO = new Set(['.html', '.htm', '.js', '.json', '.xml', '.webmanifest', '.txt']);
+
+/** Espacios del mismo largo, conservando `\n` y `\r` para no mover ni una línea. */
+const enBlanco = (s) => s.replace(/[^\n\r]/g, ' ');
+
+/**
+ * Deja SOLO los literales de cadena/plantilla de un JS/TS; lo demás, en blanco.
+ * Si el parseo falla, devuelve `null` — quien llama decide, porque «no supe leer» no puede
+ * confundirse con «no había copy» (sería un guard aprobando por ceguera).
+ */
+export function literalesDeJs(codigo) {
+  let sf;
+  try { sf = ts.createSourceFile('x.ts', codigo, ts.ScriptTarget.Latest, true); } catch { return null; }
+  // ⚠️ `split('')` y NO `Array.from`: `Array.from` itera por PUNTOS DE CÓDIGO y colapsa cada par
+  // suplente (emoji) en un elemento, así que un `⚠️` de un comentario se convertía en UN espacio
+  // donde ocupaba DOS unidades. El texto salía más corto y todos los offsets de detrás quedaban
+  // corridos — números de línea falsos. Los índices de TypeScript son unidades UTF-16, y aquí
+  // también. Lo cazó el suelo de «enmascarar no mueve una sola línea», no la vista.
+  const buf = codigo.replace(/[^\n\r]/g, ' ').split('');
+  const CADENAS = new Set([
+    ts.SyntaxKind.StringLiteral,
+    ts.SyntaxKind.NoSubstitutionTemplateLiteral,
+    ts.SyntaxKind.TemplateHead,
+    ts.SyntaxKind.TemplateMiddle,
+    ts.SyntaxKind.TemplateTail,
+  ]);
+  const visita = (n) => {
+    if (CADENAS.has(n.kind)) {
+      // `getStart` salta la trivia de delante (comentarios incluidos): se copia el literal y nada más.
+      for (let i = n.getStart(sf); i < n.getEnd(); i++) buf[i] = codigo[i];
+    }
+    ts.forEachChild(n, visita);
+  };
+  visita(sf);
+  return buf.join('');
+}
+
+/** Lo que de un fichero puede llegar a una pantalla. Mismo largo que la entrada, siempre. */
+export function enmascararNoPantalla(texto, rel) {
+  const ext = path.extname(rel).toLowerCase();
+
+  if (ext === '.ts' || ext === '.js') {
+    const m = literalesDeJs(texto);
+    // Fallback deliberado: si no se puede parsear, se escanea entero. Prefiere un falso rojo (que
+    // se investiga) a un falso verde (que no lo mira nadie). El suelo del test lo cuenta aparte.
+    return m ?? texto;
+  }
+
+  if (ext === '.html' || ext === '.htm') {
+    let out = texto.replace(/<!--[\s\S]*?-->/g, enBlanco);
+    // Y el mismo criterio dentro de cada <script> de JavaScript. Los que NO son JS (JSON-LD,
+    // `application/ld+json`) se dejan: ahí no hay comentarios y su contenido sí se publica.
+    out = out.replace(/(<script\b([^>]*)>)([\s\S]*?)(<\/script>)/gi, (todo, abre, attrs, cuerpo, cierra) => {
+      if (/type\s*=\s*["']?(?!text\/javascript|module)[^"'\s>]+/i.test(attrs)) return todo;
+      const m = literalesDeJs(cuerpo);
+      return m === null ? todo : abre + m + cierra;
+    });
+    return out;
+  }
+
+  return texto; // sin canal de comentario: el fichero ES el dato publicado
+}
 
 /**
  * Censo DERIVADO por recorrido del árbol (nunca lista a mano): todo el material público-cliente.
@@ -37,7 +124,13 @@ const EXT_PUBLICO = new Set(['.html', '.htm', '.js', '.json', '.xml', '.webmanif
  */
 export function recolectarCopyPublico(raiz) {
   const out = [];
-  const leer = (abs, rel) => out.push({ rel, texto: fs.readFileSync(abs, 'utf8') });
+  // SCRUM-349: `texto` es lo que puede LLEGAR A PANTALLA (comentarios y código enmascarados, con
+  // los offsets intactos). `bruto` es el fichero tal cual, para que el suelo pueda comparar los dos
+  // y notar si el enmascarado se comió el corpus entero.
+  const leer = (abs, rel) => {
+    const bruto = fs.readFileSync(abs, 'utf8');
+    out.push({ rel, texto: enmascararNoPantalla(bruto, rel), bruto });
+  };
 
   const recorrer = (dir, rel, filtro) => {
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
