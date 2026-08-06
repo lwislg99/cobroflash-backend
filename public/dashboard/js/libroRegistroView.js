@@ -157,7 +157,12 @@
 
     function avisar(texto, tono) {
       const a = document.createElement('div');
-      a.className = 'alert ' + tono;
+      // ⚠️ EL TONO SALE DE ESTA LISTA, NO DE LA IMAGINACIÓN. `styles.css` OCULTA
+      // (`display:none`) toda `.alert` que no lleve `success|ok|error|info|warning`, así que un
+      // tono inventado no se ve raro: NO SE VE. Escribí `'warn'` y el aviso de importes
+      // ilegibles desapareció; lo cazó la CAPTURA, no el conteo de nodos — el nodo estaba ahí.
+      const TONOS = ['success', 'ok', 'error', 'info', 'warning'];
+      a.className = 'alert ' + (TONOS.includes(tono) ? tono : 'warning');
       a.style.cssText = 'margin:16px 16px 0';
       a.textContent = texto;
       body.appendChild(a);
@@ -176,14 +181,14 @@
       subtitle.textContent = COPY.recuento(asientos.length);
 
       if (Array.isArray(libro.importesIlegibles) && libro.importesIlegibles.length > 0) {
-        avisar(COPY.avisoIlegibles(libro.importesIlegibles), 'warn');
+        avisar(COPY.avisoIlegibles(libro.importesIlegibles), 'warning');
       }
-      if (libro.ajenas > 0) avisar(COPY.avisoAjenas, 'warn');
-      if (libro.sinNumero > 0) avisar(COPY.avisoSinNumero(libro.sinNumero), 'warn');
+      if (libro.ajenas > 0) avisar(COPY.avisoAjenas, 'warning');
+      if (libro.sinNumero > 0) avisar(COPY.avisoSinNumero(libro.sinNumero), 'warning');
 
       if (asientos.length === 0) {
         // Las dos ramas que NO se pueden confundir.
-        if (libro.miradas > 0) avisar(COPY.descuadre(libro.miradas), 'warn');
+        if (libro.miradas > 0) avisar(COPY.descuadre(libro.miradas), 'warning');
         else {
           const vacio = document.createElement('p');
           vacio.style.cssText = 'margin:24px 16px;color:var(--muted);font-size:14px';
@@ -195,13 +200,21 @@
 
       // Envoltorio con scroll PROPIO: un libro tiene ocho columnas y en un móvil de 360 px no
       // caben. Scrollea la tabla, nunca la página.
+      // `.table-scroll` + `.table`: el inventario AB3, no una clase nueva. Escribí `data-table`
+      // de mi cosecha y el CSS no la conocía — la tabla salió sin padding, con el importe pegado
+      // al estado. Se vio en la CAPTURA, no en el conteo de nodos.
+      //
+      // NO lleva `table--cards-mobile` (el patrón de Facturas), y es una decisión: esa variante
+      // apila la fila en una rejilla de CINCO áreas fijas —id, cliente, fecha, importe, estado— y
+      // este libro tiene ocho columnas, con la de trazabilidad sin sitio en esa rejilla. Un libro
+      // de registro es un documento ANCHO: scrollea dentro de su envoltorio, y la página no.
       const scroll = document.createElement('div');
-      scroll.style.cssText = 'overflow-x:auto;margin-top:8px';
+      scroll.className = 'table-scroll';
+      scroll.style.cssText = 'margin-top:8px';
       body.appendChild(scroll);
 
       const tabla = document.createElement('table');
-      tabla.className = 'data-table';
-      tabla.style.cssText = 'width:100%;min-width:760px';
+      tabla.className = 'table';
       scroll.appendChild(tabla);
 
       const thead = document.createElement('thead');
@@ -210,7 +223,11 @@
         COPY.colTotal, COPY.colEstado, COPY.colTrazas]) {
         const th = document.createElement('th');
         th.textContent = c;
-        th.style.cssText = 'text-align:left;white-space:nowrap';
+        // SIN `nowrap`: los rótulos van con el marcador de 29 caracteres delante, y forzarlos a
+        // una línea empujaba la tabla a 2.277 px de scroll (medido en el banco AB6). Los
+        // encabezados envuelven; los datos —número, fecha, importes— siguen en una sola línea,
+        // que es donde importa.
+        th.style.cssText = 'text-align:left;vertical-align:bottom';
         trh.appendChild(th);
       }
       thead.appendChild(trh);
@@ -245,6 +262,10 @@
         celda(a.estado || '—');
 
         // ── La columna que ningún facturador puede pintar ───────────────────────────────────
+        // SIN tope de ancho, y es una decisión MEDIDA: le puse un `max-width:280px` creyendo que
+        // evitaría que la tabla se estirase, y el banco dijo que no cambiaba el ancho (760 px a
+        // 360, 1.246 a 1.280) y ENGORDABA las filas —262 px contra 244 a 360—, porque obliga a
+        // envolver más marcas. Lo que estiraba la tabla eran los encabezados con `nowrap`.
         const tdTrazas = document.createElement('td');
         const e = a.enlaces || {};
         let alguna = false;

@@ -188,6 +188,43 @@ test('SCRUM-296 · la factura SUELTA se ve como suelta, no como una fila a la qu
     '🔴 la factura suelta (SCRUM-289) sale con la celda en blanco, que se lee como «falta un dato».');
 });
 
+// ── QUE LOS AVISOS SE VEAN, QUE NO ES LO MISMO QUE EXISTIR ───────────────────────────────────
+
+test('SCRUM-296 · todo aviso lleva un tono que el CSS conoce (si no, es INVISIBLE)', async () => {
+  // `styles.css` oculta con `display:none` toda `.alert` que no lleve un modificador conocido.
+  // Un tono inventado no se ve raro: NO SE VE — y aquí el aviso que desaparece es el que dice
+  // «este importe no es cero, es que no se pudo leer».
+  //
+  // ⚠️ LOS TONOS VÁLIDOS SE DERIVAN DEL CSS, no se escriben aquí: una lista a mano se queda
+  // desfasada el día que el CSS cambie, y este guard daría verde sobre avisos invisibles.
+  const css = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8');
+  const validos = new Set();
+  for (const m of css.matchAll(/\.alert\.([a-z-]+)/g)) validos.add(m[1]);
+  assert.ok(validos.size >= 3,
+    `🔴 solo se han derivado ${validos.size} tonos del CSS: el extractor no está mirando bien y ` +
+    'este guard no comprobaría nada.');
+
+  const invisibles = [];
+  for (const respuesta of [
+    libro({ importesIlegibles: ['2026-CF-001'] }),
+    libro({ ajenas: 2 }),
+    libro({ sinNumero: 1 }),
+    libro({ asientos: [], miradas: 40 }),
+    new Error('boom'),
+  ]) {
+    const { contenedor } = await pintar(respuesta);
+    for (const n of todos(contenedor)) {
+      const clases = String(n.className || '').split(/\s+/);
+      if (!clases.includes('alert')) continue;
+      if (!clases.some((c) => c !== 'alert' && validos.has(c))) invisibles.push(n.className);
+    }
+  }
+
+  assert.deepEqual(invisibles, [],
+    `🔴 estos avisos se pintan con un tono que el CSS no conoce y quedan OCULTOS: ` +
+    `${invisibles.join(', ')}.\n\n  Tonos válidos (derivados de styles.css): ${[...validos].join(', ')}.`);
+});
+
 // ── MICROCOPY (regla 30) ─────────────────────────────────────────────────────────────────────
 
 test('SCRUM-296 · SUELO del guard de microcopy: hay ranuras que revisar', async () => {
