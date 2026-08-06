@@ -179,7 +179,69 @@ registro VeriFactu. Hoy no se nota porque la facturación fiscal está apagada p
 > **16**. Si la respuesta a las tres fuera «en este vertical no se dan», el ticket se cierra sin
 > construir nada y el 0 % pasa a ser simplemente un dato que no debe admitirse (pregunta **17**).
 
+## G. El presupuesto ADICIONAL cuando aparece trabajo en obra (bloquea SCRUM-290 / A0.4)
+
+> Añadido el 6-ago-2026, y **antes de escribir una sola línea de texto de la pantalla**. Lo pide el
+> propio ticket: aquí no basta la regla 30 (la microcopy la aprueba el fundador), porque **un texto
+> legal mal escrito no es feo, es peligroso** — le diría a un profesional lo que puede o no puede
+> cobrarle a su cliente.
+
+**Qué vamos a construir, para que entiendas la pregunta.** El profesional entrega un albarán
+firmado por el cliente. Las **cantidades** salen de ese albarán; los **precios**, del **presupuesto
+que el cliente firmó** — casando línea con línea. Entrega 3 de los 10 metros presupuestados, factura
+3 al precio que el cliente aceptó.
+
+El caso que nos trae aquí es el otro: **en obra aparece trabajo que no estaba en el presupuesto.**
+
+**Lo que hemos leído (fuentes públicas, NO un dictamen — por eso preguntamos):**
+
+- **Cliente empresa o autónomo:** art. 1593 CC — los adicionales se pueden cobrar si hubo
+  **autorización del propietario**, y el Supremo admite que sea **verbal o tácita**. Matiz: reparar
+  algo mal ejecutado no genera derecho a cobro adicional.
+- **Cliente particular** (el 90 % de la clientela de un gremio): el presupuesto aceptado **es
+  vinculante** y la factura debe coincidir con él; los trabajos nuevos exigen que el consumidor
+  **acepte el nuevo presupuesto por escrito**, y **puede rechazarlos**.
+
+**Por eso descartamos la solución fácil.** La primera idea fue «las líneas nuevas entran en la
+factura a 0 € y se avisa». Es cómoda y **creemos que es incorrecta**: convertiría a YaQu en la
+herramienta que produce **la factura mayor que el presupuesto**, que es justo la situación por la
+que se abren la mitad de las reclamaciones en OMIC. Le pondríamos fácil al profesional meterse en un
+lío.
+
+**Lo que vamos a hacer en su lugar:** las líneas que no estaban en el presupuesto **no se facturan**.
+Disparan un **presupuesto adicional** que se manda por WhatsApp y se firma. Si se firma, se
+incorpora y la factura sale entera; si no, se factura lo pactado y lo demás queda **pendiente y
+visible** — nunca descartado en silencio.
+
+**El dato que sí tenemos:** el cliente lleva un campo `tipoDestinatario`, que puede estar **sin
+clasificar** (`null`) porque nunca se preguntó. Mientras no haya respuesta a lo de abajo, esos
+clientes se tratarán con el **criterio estricto de consumidor**, porque equivocarse hacia el lado
+estricto no le cuesta un procedimiento a nadie.
+
+25. **¿Basta la firma digital que ya usamos** —el cliente firma con el dedo en su móvil, sobre una
+    landing a la que llega por un enlace de WhatsApp, y guardamos la imagen de la firma con su
+    sello de tiempo y su evidencia— **para acreditar que el consumidor aceptó por escrito el
+    presupuesto adicional?** Si no basta, ¿qué le falta?
+26. **¿Qué contenido mínimo debe llevar ese presupuesto adicional** para que valga como aceptación
+    de trabajos nuevos? En concreto: ¿tiene que referenciar el presupuesto original?, ¿desglosar
+    unidades y precio unitario?, ¿decir expresamente que el cliente puede rechazarlo?, ¿llevar
+    plazo de validez?
+27. **¿Cambia algo de lo anterior si el cliente es empresa o autónomo** en vez de consumidor? Es
+    decir: ¿podemos aceptar la autorización verbal o tácita del art. 1593 CC y facturar el
+    adicional sin firma, o **conviene exigir firma siempre** por prudencia?
+28. **Reparación de lo mal ejecutado:** si la línea nueva es rehacer algo que salió mal, no se puede
+    cobrar aparte. **¿Debe el sistema preguntárselo al profesional** cuando añade una línea que no
+    estaba en el presupuesto (algo como «¿esto es trabajo nuevo o es rehacer lo anterior?»), o eso
+    es responsabilidad suya y basta con dejarlo registrado?
+
+> **La que más nos urge es la 25.** Si la firma que ya tenemos vale, el mecanismo entero está
+> construido y solo falta enchufarlo. Si no vale, hay que rediseñar la aceptación del adicional
+> antes de escribir la pantalla, y preferimos saberlo ahora.
+
+---
+
 ---
 *Generado el 13-jun-2026. Cuando vuelvas con respuestas: B y C desbloquean S1-C/S1-E,
 A desbloquea S1-D, **E desbloquea SCRUM-244 (supresión + portabilidad)**, **F desbloquea
-SCRUM-212 (calificación de la operación)**. Estado vivo en `docs/PENDIENTES_FUNDADOR.md`.*
+SCRUM-212 (calificación de la operación)**, **G desbloquea la microcopy de SCRUM-290
+(albarán → factura y el presupuesto adicional)**. Estado vivo en `docs/PENDIENTES_FUNDADOR.md`.*

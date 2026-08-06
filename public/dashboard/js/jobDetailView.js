@@ -1120,16 +1120,6 @@ async function renderJobDetailView(container, jobId) {
   // SCRUM-65: totales orientativos en vivo — MISMA regla de céntimos enteros que el
   // backend (calcAlbaranTotales), para que lo que ve el pro al teclear no desentone
   // ni un céntimo con lo que sale luego en el PDF.
-  function albTotalesJS(lineas) {
-    let baseCents = 0, cuotaCents = 0;
-    for (const l of lineas) {
-      if (l.precioUnitario === undefined || l.precioUnitario === null || !Number.isFinite(l.precioUnitario)) continue;
-      const lineaBaseCents = Math.round(l.precioUnitario * (Number(l.cantidad) || 0) * 100);
-      const lineaCuotaCents = Math.round(lineaBaseCents * ((Number(l.tipoIva) || 0) / 100));
-      baseCents += lineaBaseCents; cuotaCents += lineaCuotaCents;
-    }
-    return { base: baseCents / 100, total: (baseCents + cuotaCents) / 100 };
-  }
 
   // Editor de líneas/notas/modo (borrador/emitido). PATCH → version++ en el backend.
   // Inputs creados por DOM (.value directo): sin interpolar valores en HTML.
@@ -1141,345 +1131,6 @@ async function renderJobDetailView(container, jobId) {
   // ellos el editor se comporta EXACTAMENTE igual que antes (PATCH sobre un albarán que ya existe),
   // que es lo que mantiene intacta la edición de los albaranes de siempre — incluidos los que hoy
   // están en BORRADOR vacíos y que no se migran ni se borran.
-  function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } = {}) {
-    box.innerHTML = '';
-    // SCRUM-65: el modo solo se puede TOCAR en 'borrador' (congelado desde 'emitido' —
-    // el backend devolvería 409 albaran_locked si se intentase cambiar después).
-    const modoEditable = alb.estado === 'borrador';
-    let modo = alb.modoValoracion === 'VALORADO' ? 'VALORADO' : 'SIN_VALORAR';
-
-    const modoRow = document.createElement('div');
-    modoRow.style.cssText = 'margin-bottom:10px';
-    if (modoEditable) {
-      const lbl = document.createElement('label');
-      lbl.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);cursor:pointer';
-      const chk = document.createElement('input');
-      chk.type = 'checkbox';
-      chk.checked = modo === 'VALORADO';
-      chk.addEventListener('change', () => {
-        modo = chk.checked ? 'VALORADO' : 'SIN_VALORAR';
-        [...rows.children].forEach(syncRowToModo);
-        updateTotales();
-      });
-      lbl.appendChild(chk);
-      lbl.appendChild(document.createTextNode('Incluir precios en el parte'));
-      modoRow.appendChild(lbl);
-      const hint = document.createElement('p');
-      hint.style.cssText = 'margin:2px 0 0;color:var(--muted);font-size:12px';
-      hint.textContent = 'El parte sigue sin ser una factura.';
-      modoRow.appendChild(hint);
-    } else {
-      const p = document.createElement('p');
-      p.style.cssText = 'margin:0;font-size:12px;color:var(--muted)';
-      p.textContent = modo === 'VALORADO' ? 'Con precios (modo congelado tras emitir).' : 'Sin precios (modo congelado tras emitir).';
-      modoRow.appendChild(p);
-    }
-    box.appendChild(modoRow);
-
-    const rows = document.createElement('div');
-    // Muestra/oculta las columnas precio+IVA de una fila según el modo actual.
-    function syncRowToModo(r) {
-      r.querySelectorAll('.alb-precio-field').forEach((el) => { el.style.display = modo === 'VALORADO' ? '' : 'none'; });
-    }
-    const mkRow = (l) => {
-      const r = document.createElement('div');
-      r.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;align-items:center;flex-wrap:wrap';
-      const c = document.createElement('input');
-      c.className = 'input'; c.placeholder = 'Concepto'; c.style.cssText = 'flex:3;min-width:0';
-      c.value = l.concepto || '';
-      const q = document.createElement('input');
-      q.className = 'input'; q.placeholder = 'Cant.'; q.type = 'number'; q.min = '0'; q.step = 'any';
-      q.style.cssText = 'flex:1;min-width:64px';
-      if (l.cantidad !== undefined && l.cantidad !== null) q.value = l.cantidad;
-      const u = document.createElement('input');
-      u.className = 'input'; u.placeholder = 'Unidad (ud, m, h…)'; u.style.cssText = 'flex:1;min-width:80px';
-      u.value = l.unidad || '';
-      // SCRUM-65: precio unitario + IVA%, solo visibles/exigidos en modo VALORADO.
-      const p = document.createElement('input');
-      p.className = 'input alb-precio-field'; p.placeholder = 'Precio ud.'; p.type = 'number'; p.min = '0'; p.step = 'any';
-      p.style.cssText = 'flex:1;min-width:80px';
-      if (l.precioUnitario !== undefined && l.precioUnitario !== null) p.value = l.precioUnitario;
-      const iv = document.createElement('input');
-      iv.className = 'input alb-precio-field'; iv.placeholder = 'IVA %'; iv.type = 'number'; iv.min = '0'; iv.max = '100'; iv.step = 'any';
-      iv.style.cssText = 'flex:1;min-width:64px';
-      iv.value = (l.tipoIva !== undefined && l.tipoIva !== null) ? l.tipoIva : 21;
-      // ── SCRUM-303 · EL ORIGEN VIAJA CON LA FILA (y sin él, SCRUM-367 se queda en nada) ────────
-      //
-      // `quoteLineIndex` NO tiene input: no se teclea, se hereda del presupuesto. Pero el guardado
-      // reconstruye cada línea **desde los inputs**, así que sin guardarlo en la fila se perdería
-      // aquí — exactamente el mismo fallo que SCRUM-367 cerró en `validarLineas`, una capa más
-      // arriba. Aquel ticket demostró que el backend lo CONSERVA; nadie comprobó que el front lo
-      // MANDE, y no lo hacía: editar un albarán desde esta hoja ya borraba el origen hoy.
-      //
-      // Es lo que le da de comer a C6 («quedan 3 metros por entregar»). Perderlo no da error: da un
-      // albarán que ya no sabe de qué partida salió.
-      if (l.quoteLineIndex !== undefined && l.quoteLineIndex !== null && l.quoteLineIndex !== '') {
-        r.dataset.quoteLineIndex = String(l.quoteLineIndex);
-      }
-      [q, p, iv].forEach((inp) => inp.addEventListener('input', updateTotales));
-      const del = document.createElement('button');
-      del.className = 'btn-ghost btn-sm';
-      del.textContent = '✕';
-      del.setAttribute('aria-label', 'Quitar línea');
-      del.addEventListener('click', () => { r.remove(); updateTotales(); });
-      r.appendChild(c); r.appendChild(q); r.appendChild(u); r.appendChild(p); r.appendChild(iv); r.appendChild(del);
-      syncRowToModo(r);
-      return r;
-    };
-    const lineas = Array.isArray(alb.lineas) ? alb.lineas : [];
-    lineas.forEach((l) => rows.appendChild(mkRow(l)));
-    if (!lineas.length) rows.appendChild(mkRow({}));
-    box.appendChild(rows);
-
-    const addRow = document.createElement('button');
-    addRow.className = 'btn-ghost btn-sm';
-    addRow.textContent = '+ Añadir línea';
-    addRow.addEventListener('click', () => { rows.appendChild(mkRow({})); updateTotales(); });
-    box.appendChild(addRow);
-
-    // ── SCRUM-71 (punto 3) · DICTAR EL PARTE EN OBRA ──────────────────────────────────
-    //
-    // «He cambiado dos grifos monomando y he estado tres horas» → líneas. El operario dicta
-    // con una mano, a pleno sol, con guantes: por eso la revisión va en HOJA INFERIOR (el
-    // bottom sheet de AB3/SCRUM-31 F2, que `.modal-overlay .modal` ya da por debajo de 640 px)
-    // y NO en un modal de escritorio con checkboxes pequeños.
-    //
-    // «LA VOZ PROPONE, EL HUMANO CORRIGE», y aquí se lleva más lejos que en presupuestos: las
-    // líneas aceptadas **caen en las filas de arriba**, que ya son editables y no se guardan
-    // hasta que el pro pulse guardar. No hay una pantalla paralela que «confirme» nada — se
-    // aterriza en el formulario que ya conoce. Un presupuesto se rehace; un albarán lo firma
-    // el cliente y desde `emitido` se congela, así que la última palabra tiene que ser suya.
-    //
-    // GATE doble: el flag PROPIO del albarán (`VOICE_ALBARAN_ENABLED`, servido por /admin/me) y
-    // el `voiceSupportProbe()` de VZ-1 — si el navegador no vale, el micro NO se pinta y queda
-    // el formulario de siempre. Degradación silenciosa: jamás un botón roto.
-    // Escape local, y aquí NO es defensa de manual: el concepto viene de un MODELO DE
-    // LENGUAJE a partir de lo que alguien dictó. Es la entrada menos controlada de toda la
-    // pantalla, va a `innerHTML`, y no se depende de ningún helper global que cargue en otro
-    // fichero (la lección de SCRUM-153c: una dependencia invisible cuyo fallo es inyección).
-    const escVoz = (v) => String(v == null ? '' : v)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-
-    const vozDisponible = window.appVoiceAlbaranEnabled === true
-      && typeof voiceSupportProbe === 'function' && voiceSupportProbe()
-      && typeof attachVoiceInput === 'function';
-
-    if (vozDisponible) {
-      const btnDictar = document.createElement('button');
-      btnDictar.type = 'button';
-      btnDictar.className = 'btn-secondary btn-sm';
-      btnDictar.style.cssText = 'margin-left:8px;min-height:44px'; // target al pulgar (AB6)
-      btnDictar.textContent = '🎤 Dictar el parte';
-      btnDictar.addEventListener('click', () => abrirHojaDictado());
-      box.appendChild(btnDictar);
-
-      function abrirHojaDictado() {
-        const overlay = document.createElement('div');
-        overlay.className = 'modal-overlay';
-        overlay.innerHTML = `
-          <div class="modal" style="max-width:520px" role="dialog" aria-modal="true" aria-labelledby="voz-t">
-            <div class="modal-header">
-              <h3 class="modal-title" id="voz-t">🎤 Dictar el parte</h3>
-              <button class="modal-close" id="voz-x" aria-label="Cerrar">&times;</button>
-            </div>
-            <div class="modal-body">
-              <p style="font-size:13px;color:var(--muted);margin:0 0 10px">
-                Cuenta lo que has hecho, como se lo contarías a un compañero. Luego lo repasas.
-              </p>
-              <textarea id="voz-txt" rows="4" class="input" style="width:100%;resize:vertical"
-                placeholder="Ej: he cambiado dos grifos monomando y he estado tres horas"></textarea>
-              <button class="btn-primary" id="voz-gen" style="width:100%;margin-top:10px;min-height:44px">
-                Convertir en líneas
-              </button>
-              <div class="alert" id="voz-err" style="display:none;margin-top:10px"></div>
-              <div id="voz-res" style="margin-top:12px"></div>
-            </div>
-          </div>`;
-        document.body.appendChild(overlay);
-
-        const cerrar = () => overlay.remove();
-        overlay.querySelector('#voz-x').onclick = cerrar;
-        overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
-        document.addEventListener('keydown', function esc(e) {
-          if (e.key === 'Escape') { cerrar(); document.removeEventListener('keydown', esc); }
-        });
-
-        const ta = overlay.querySelector('#voz-txt');
-        const btnGen = overlay.querySelector('#voz-gen');
-        const err = overlay.querySelector('#voz-err');
-        const res = overlay.querySelector('#voz-res');
-
-        // El micro de VZ-1 sobre el textarea: SIEMPRE editable (la voz propone, el humano
-        // corrige) y con su degradación propia si el permiso falla.
-        attachVoiceInput(ta);
-        ta.focus();
-
-        btnGen.addEventListener('click', async () => {
-          const texto = (ta.value || '').trim();
-          if (!texto) { ta.focus(); return; }
-          btnGen.disabled = true;
-          const orig = btnGen.textContent;
-          btnGen.textContent = 'Convirtiendo…';
-          err.style.display = 'none';
-          try {
-            const d = await apiRequest('/admin/ai/suggest-albaran-lines', {
-              method: 'POST',
-              body: JSON.stringify({ albaranId: alb.id, description: texto }),
-            });
-            pintarPropuesta(Array.isArray(d.lines) ? d.lines : []);
-          } catch (e) {
-            err.textContent = e?.message || 'No se pudieron generar las líneas.';
-            err.style.display = 'block';
-          } finally {
-            btnGen.disabled = false;
-            btnGen.textContent = orig;
-          }
-        });
-
-        function pintarPropuesta(lineas) {
-          res.innerHTML = '';
-          if (!lineas.length) {
-            err.textContent = 'No he sacado ninguna línea. Prueba a contarlo con más detalle.';
-            err.style.display = 'block';
-            return;
-          }
-          const titulo = document.createElement('p');
-          titulo.style.cssText = 'font-size:13px;font-weight:600;margin:0 0 8px';
-          titulo.textContent = 'Repasa antes de añadirlas al parte:';
-          res.appendChild(titulo);
-
-          const marcas = [];
-          lineas.forEach((l, i) => {
-            const fila = document.createElement('label');
-            // ≥44 px y toda la fila es el target: en obra no se acierta a un checkbox de 16 px.
-            fila.style.cssText = 'display:flex;gap:10px;align-items:flex-start;padding:10px;'
-              + 'min-height:44px;border:1px solid var(--border);border-radius:10px;'
-              + 'margin-bottom:6px;background:var(--surface-2);cursor:pointer';
-            const chk = document.createElement('input');
-            chk.type = 'checkbox'; chk.checked = true;
-            chk.style.cssText = 'margin-top:3px;width:20px;height:20px;flex-shrink:0';
-            marcas.push({ chk, linea: l });
-            const txt = document.createElement('div');
-            // SIN_VALORAR: ni se pide ni se muestra precio. El saneado del servidor ya lo
-            // garantiza (SCRUM-71 puntos 1-2), pero la pantalla no puede contradecirlo —
-            // enseñar un precio que luego no se guarda sería peor que no enseñarlo.
-            const detalle = `${l.cantidad} ${l.unidad}`
-              + (modo === 'VALORADO' && l.precioUnitario != null ? ` · ${l.precioUnitario} €/ud` : '');
-            txt.innerHTML = `<div style="font-weight:600;color:var(--ink)">${escVoz(l.concepto)}</div>`
-              + `<div style="color:var(--muted);font-size:13px">${escVoz(detalle)}</div>`;
-            fila.append(chk, txt);
-            res.appendChild(fila);
-          });
-
-          const anadir = document.createElement('button');
-          anadir.className = 'btn-primary';
-          anadir.style.cssText = 'width:100%;margin-top:10px;min-height:44px';
-          anadir.textContent = 'Añadir al parte';
-          anadir.addEventListener('click', () => {
-            marcas.filter((m) => m.chk.checked).forEach((m) => {
-              const l = m.linea;
-              rows.appendChild(mkRow({
-                concepto: l.concepto,
-                cantidad: l.cantidad,
-                unidad: l.unidad,
-                // En SIN_VALORAR no se arrastra precio ni IVA: esas columnas ni se ven.
-                ...(modo === 'VALORADO'
-                  ? { precioUnitario: l.precioUnitario, tipoIva: l.tipoIva != null ? l.tipoIva * 100 : undefined }
-                  : {}),
-              }));
-            });
-            updateTotales();
-            cerrar();
-            showToast('✓ Líneas añadidas — repásalas antes de guardar');
-          });
-          res.appendChild(anadir);
-        }
-      }
-    }
-
-    // Total orientativo (base + total, SIN desglose de cuota — igual que PDF/backend).
-    const totalesBox = document.createElement('p');
-    totalesBox.style.cssText = 'margin:8px 0 0;font-size:13px;color:var(--ink);font-weight:600;text-align:right';
-    box.appendChild(totalesBox);
-    function readRowsForTotales() {
-      return [...rows.children].map((r) => {
-        const inputs = r.querySelectorAll('input');
-        return {
-          cantidad: Number(String(inputs[1].value).replace(',', '.')),
-          precioUnitario: modo === 'VALORADO' && inputs[3].value !== '' ? Number(String(inputs[3].value).replace(',', '.')) : null,
-          tipoIva: modo === 'VALORADO' ? Number(String(inputs[4].value).replace(',', '.')) : null,
-        };
-      });
-    }
-    function updateTotales() {
-      if (modo !== 'VALORADO') { totalesBox.textContent = ''; return; }
-      const t = albTotalesJS(readRowsForTotales());
-      totalesBox.textContent = `Base: ${fmtMoneyEs(t.base, cur)} · Total orientativo: ${fmtMoneyEs(t.total, cur)}`;
-    }
-    updateTotales();
-
-    const notas = document.createElement('textarea');
-    notas.className = 'input';
-    notas.placeholder = 'Notas del albarán (opcional)';
-    notas.style.cssText = 'width:100%;margin-top:8px;min-height:56px';
-    notas.value = alb.notas || '';
-    box.appendChild(notas);
-
-    const saveRow = document.createElement('div');
-    saveRow.style.cssText = 'display:flex;gap:8px;margin-top:8px';
-    const save = document.createElement('button');
-    save.className = 'btn-primary btn-sm';
-    save.textContent = textoGuardar || 'Guardar cambios';
-    save.addEventListener('click', async () => {
-      const out = [];
-      for (const r of rows.children) {
-        const inputs = r.querySelectorAll('input');
-        const c = inputs[0].value.trim(), qv = inputs[1].value, u = inputs[2].value.trim();
-        const pv = inputs[3].value, ivv = inputs[4].value;
-        if (!c && !qv && !u) continue; // fila totalmente vacía se ignora
-        const linea = { concepto: c, cantidad: Number(String(qv).replace(',', '.')), unidad: u };
-        // SCRUM-303 · y el origen vuelve a salir con ella. ⚠️ FAMILIA SCRUM-271: `dataset` devuelve
-        // SIEMPRE cadena, y `Number('')` es 0 — un índice ausente se convertiría en «la primera
-        // partida del presupuesto», en silencio. Se exige que sean dígitos ANTES de convertir.
-        const origen = r.dataset.quoteLineIndex;
-        if (typeof origen === 'string' && /^\d+$/.test(origen)) linea.quoteLineIndex = Number(origen);
-        if (modo === 'VALORADO') {
-          linea.precioUnitario = Number(String(pv).replace(',', '.'));
-          linea.tipoIva = Number(String(ivv).replace(',', '.'));
-        }
-        out.push(linea);
-      }
-      const body = { lineas: out, notas: notas.value };
-      // Solo se manda modoValoracion cuando es EDITABLE (borrador); en 'emitido' el
-      // backend lo rechaza con 409 aunque el valor no cambie — mejor ni ofrecerlo.
-      if (modoEditable) body.modoValoracion = modo;
-      save.disabled = true;
-      try {
-        // SCRUM-303: en creación, ÉSTE es el único sitio del que sale el POST — y por eso no hay
-        // albarán ni número hasta aquí. En edición no cambia nada: sigue siendo el PATCH de antes.
-        if (onGuardar) {
-          await onGuardar({ lineas: out, notas: notas.value, modoValoracion: modo });
-        } else {
-          await apiRequest(`/admin/albaranes/${alb.id}`, { method: 'PATCH', body: JSON.stringify(body) });
-          showToast('✓ Albarán actualizado (nueva versión).');
-        }
-        if (onClose) onClose(); // cierra el sheet antes de re-renderizar
-        refresh();
-      } catch (e) {
-        const msg = e?.data?.message || 'No se pudo guardar el albarán.';
-        if (onError) onError(msg); else setStatus('error', msg); // el error se ve DENTRO del sheet
-        save.disabled = false;
-      }
-    });
-    saveRow.appendChild(save);
-    const cancelEd = document.createElement('button');
-    cancelEd.className = 'btn-secondary btn-sm';
-    cancelEd.textContent = 'Cancelar';
-    cancelEd.addEventListener('click', () => { if (onClose) onClose(); else box.style.display = 'none'; });
-    saveRow.appendChild(cancelEd);
-    box.appendChild(saveRow);
-  }
 
   // SCRUM-31 (F2): abre el editor de líneas en un BOTTOM-SHEET. Reutiliza .modal-overlay/.modal,
   // que en <640px ya es hoja inferior full-width con scroll y slide-from-bottom (styles.css, como
@@ -1617,51 +1268,6 @@ async function renderJobDetailView(container, jobId) {
     document.body.appendChild(overlay);
   }
 
-  function openAlbEditorSheet(alb) {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.setAttribute('role', 'dialog');
-    overlay.setAttribute('aria-modal', 'true');
-    overlay.setAttribute('aria-label', `Editar albarán ${alb.numero}`);
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    const header = document.createElement('div');
-    header.className = 'modal-header';
-    const title = document.createElement('div');
-    title.className = 'modal-title';
-    title.textContent = `Editar albarán ${alb.numero}`;
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'modal-close';
-    closeBtn.type = 'button';
-    closeBtn.textContent = '×';
-    closeBtn.setAttribute('aria-label', 'Cerrar');
-    header.append(title, closeBtn);
-    // Banner de error PROPIO del sheet (el statusBox de la página queda detrás del overlay).
-    const errEl = document.createElement('div');
-    errEl.className = 'alert error';
-    errEl.style.cssText = 'display:none;margin:12px 24px 0';
-    const bodyEl = document.createElement('div');
-    bodyEl.className = 'modal-body';
-    modal.append(header, errEl, bodyEl);
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
-
-    const onKey = (e) => { if (e.key === 'Escape') close(); };
-    function close() {
-      overlay.remove();
-      document.removeEventListener('keydown', onKey);
-    }
-    closeBtn.addEventListener('click', close);
-    document.addEventListener('keydown', onKey);
-    // NO se cierra al pulsar el fondo: evita perder líneas sin querer (usa ×, Cancelar o Esc).
-
-    buildAlbEditor(bodyEl, alb, {
-      onClose: close,
-      onError: (msg) => { errEl.textContent = msg; errEl.style.display = 'block'; },
-    });
-    // Foco al primer campo (Concepto) para teclear directo; si no hay, al botón de cerrar.
-    (bodyEl.querySelector('.input') || closeBtn).focus();
-  }
 
   /**
    * SCRUM-303 (C4) · LA HOJA DE CREAR, QUE ES LA MISMA HOJA DE EDITAR.
@@ -1752,7 +1358,7 @@ async function renderJobDetailView(container, jobId) {
             : '✓ Albarán creado (borrador).',
         );
       },
-    });
+    }, { cur, refresh, setStatus });
     (bodyEl.querySelector('.input') || closeBtn).focus();
   }
 
@@ -1843,7 +1449,7 @@ async function renderJobDetailView(container, jobId) {
     // un constructor de botón que ya no llama nadie es código que se pudre sin que nada lo diga, y
     // el siguiente que lo lea creerá que la fila todavía ofrece esas acciones. Lo que sí se queda
     // es el bloque de miniaturas de arriba: eso es LECTURA, y la fila sigue enseñando las fotos.
-    const editBtn = () => mkBtn('Editar líneas', () => openAlbEditorSheet(alb));
+    const editBtn = () => mkBtn('Editar líneas', () => openAlbEditorSheet(alb, { cur, refresh, setStatus }));
 
     // SCRUM-302 (C2) · LA FILA YA NO ES UNA BARRA DE ACCIONES: ES UNA ENTRADA.
     //
@@ -2201,4 +1807,420 @@ async function renderJobDetailView(container, jobId) {
     cuerpo.classList.add('detail-cuerpo--con-rail');
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-386 · LAS DOS HOJAS DEL ALBARÁN, FUERA DE `renderJobDetailView`
+//
+// Vivían ANIDADAS dentro de la vista del Trabajo, y por eso la página del albarán (SCRUM-302)
+// no podía hacerlas: solo NAVEGAR hasta ellas. La fila tenía que conservar sus botones para no
+// dejar callejones sin salida, que es la deuda que C2 declaró y esto salda.
+//
+// ⚠️ ES UNA MUDANZA, NO UNA MEJORA. El cuerpo de las tres funciones es el mismo carácter por
+// carácter; lo único que cambia son las firmas, porque lo que antes se capturaba del ámbito de
+// fuera ahora entra por parámetro. Se recibe DESESTRUCTURADO con los mismos nombres para que el
+// cuerpo no se toque — una función que capturaba cuatro cosas y ahora recibe tres no es la
+// misma función aunque el diff parezca inocente.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+function albTotalesJS(lineas) {
+  let baseCents = 0, cuotaCents = 0;
+  for (const l of lineas) {
+    if (l.precioUnitario === undefined || l.precioUnitario === null || !Number.isFinite(l.precioUnitario)) continue;
+    const lineaBaseCents = Math.round(l.precioUnitario * (Number(l.cantidad) || 0) * 100);
+    const lineaCuotaCents = Math.round(lineaBaseCents * ((Number(l.tipoIva) || 0) / 100));
+    baseCents += lineaBaseCents; cuotaCents += lineaCuotaCents;
+  }
+  return { base: baseCents / 100, total: (baseCents + cuotaCents) / 100 };
+}
+
+function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } = {}, ctx = {}) {
+  // SCRUM-386 · lo que antes venía del ámbito de `renderJobDetailView`. Se desestructura con
+  // los MISMOS nombres a propósito: así el cuerpo de abajo no cambia ni un carácter, y la
+  // mudanza se puede comprobar comparando textos en vez de leyendo.
+  const { cur, refresh, setStatus } = ctx;
+  box.innerHTML = '';
+  // SCRUM-65: el modo solo se puede TOCAR en 'borrador' (congelado desde 'emitido' —
+  // el backend devolvería 409 albaran_locked si se intentase cambiar después).
+  const modoEditable = alb.estado === 'borrador';
+  let modo = alb.modoValoracion === 'VALORADO' ? 'VALORADO' : 'SIN_VALORAR';
+
+  const modoRow = document.createElement('div');
+  modoRow.style.cssText = 'margin-bottom:10px';
+  if (modoEditable) {
+    const lbl = document.createElement('label');
+    lbl.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);cursor:pointer';
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.checked = modo === 'VALORADO';
+    chk.addEventListener('change', () => {
+      modo = chk.checked ? 'VALORADO' : 'SIN_VALORAR';
+      [...rows.children].forEach(syncRowToModo);
+      updateTotales();
+    });
+    lbl.appendChild(chk);
+    lbl.appendChild(document.createTextNode('Incluir precios en el parte'));
+    modoRow.appendChild(lbl);
+    const hint = document.createElement('p');
+    hint.style.cssText = 'margin:2px 0 0;color:var(--muted);font-size:12px';
+    hint.textContent = 'El parte sigue sin ser una factura.';
+    modoRow.appendChild(hint);
+  } else {
+    const p = document.createElement('p');
+    p.style.cssText = 'margin:0;font-size:12px;color:var(--muted)';
+    p.textContent = modo === 'VALORADO' ? 'Con precios (modo congelado tras emitir).' : 'Sin precios (modo congelado tras emitir).';
+    modoRow.appendChild(p);
+  }
+  box.appendChild(modoRow);
+
+  const rows = document.createElement('div');
+  // Muestra/oculta las columnas precio+IVA de una fila según el modo actual.
+  function syncRowToModo(r) {
+    r.querySelectorAll('.alb-precio-field').forEach((el) => { el.style.display = modo === 'VALORADO' ? '' : 'none'; });
+  }
+  const mkRow = (l) => {
+    const r = document.createElement('div');
+    r.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;align-items:center;flex-wrap:wrap';
+    const c = document.createElement('input');
+    c.className = 'input'; c.placeholder = 'Concepto'; c.style.cssText = 'flex:3;min-width:0';
+    c.value = l.concepto || '';
+    const q = document.createElement('input');
+    q.className = 'input'; q.placeholder = 'Cant.'; q.type = 'number'; q.min = '0'; q.step = 'any';
+    q.style.cssText = 'flex:1;min-width:64px';
+    if (l.cantidad !== undefined && l.cantidad !== null) q.value = l.cantidad;
+    const u = document.createElement('input');
+    u.className = 'input'; u.placeholder = 'Unidad (ud, m, h…)'; u.style.cssText = 'flex:1;min-width:80px';
+    u.value = l.unidad || '';
+    // SCRUM-65: precio unitario + IVA%, solo visibles/exigidos en modo VALORADO.
+    const p = document.createElement('input');
+    p.className = 'input alb-precio-field'; p.placeholder = 'Precio ud.'; p.type = 'number'; p.min = '0'; p.step = 'any';
+    p.style.cssText = 'flex:1;min-width:80px';
+    if (l.precioUnitario !== undefined && l.precioUnitario !== null) p.value = l.precioUnitario;
+    const iv = document.createElement('input');
+    iv.className = 'input alb-precio-field'; iv.placeholder = 'IVA %'; iv.type = 'number'; iv.min = '0'; iv.max = '100'; iv.step = 'any';
+    iv.style.cssText = 'flex:1;min-width:64px';
+    iv.value = (l.tipoIva !== undefined && l.tipoIva !== null) ? l.tipoIva : 21;
+    // ── SCRUM-303 · EL ORIGEN VIAJA CON LA FILA (y sin él, SCRUM-367 se queda en nada) ────────
+    //
+    // `quoteLineIndex` NO tiene input: no se teclea, se hereda del presupuesto. Pero el guardado
+    // reconstruye cada línea **desde los inputs**, así que sin guardarlo en la fila se perdería
+    // aquí — exactamente el mismo fallo que SCRUM-367 cerró en `validarLineas`, una capa más
+    // arriba. Aquel ticket demostró que el backend lo CONSERVA; nadie comprobó que el front lo
+    // MANDE, y no lo hacía: editar un albarán desde esta hoja ya borraba el origen hoy.
+    //
+    // Es lo que le da de comer a C6 («quedan 3 metros por entregar»). Perderlo no da error: da un
+    // albarán que ya no sabe de qué partida salió.
+    if (l.quoteLineIndex !== undefined && l.quoteLineIndex !== null && l.quoteLineIndex !== '') {
+      r.dataset.quoteLineIndex = String(l.quoteLineIndex);
+    }
+    [q, p, iv].forEach((inp) => inp.addEventListener('input', updateTotales));
+    const del = document.createElement('button');
+    del.className = 'btn-ghost btn-sm';
+    del.textContent = '✕';
+    del.setAttribute('aria-label', 'Quitar línea');
+    del.addEventListener('click', () => { r.remove(); updateTotales(); });
+    r.appendChild(c); r.appendChild(q); r.appendChild(u); r.appendChild(p); r.appendChild(iv); r.appendChild(del);
+    syncRowToModo(r);
+    return r;
+  };
+  const lineas = Array.isArray(alb.lineas) ? alb.lineas : [];
+  lineas.forEach((l) => rows.appendChild(mkRow(l)));
+  if (!lineas.length) rows.appendChild(mkRow({}));
+  box.appendChild(rows);
+
+  const addRow = document.createElement('button');
+  addRow.className = 'btn-ghost btn-sm';
+  addRow.textContent = '+ Añadir línea';
+  addRow.addEventListener('click', () => { rows.appendChild(mkRow({})); updateTotales(); });
+  box.appendChild(addRow);
+
+  // ── SCRUM-71 (punto 3) · DICTAR EL PARTE EN OBRA ──────────────────────────────────
+  //
+  // «He cambiado dos grifos monomando y he estado tres horas» → líneas. El operario dicta
+  // con una mano, a pleno sol, con guantes: por eso la revisión va en HOJA INFERIOR (el
+  // bottom sheet de AB3/SCRUM-31 F2, que `.modal-overlay .modal` ya da por debajo de 640 px)
+  // y NO en un modal de escritorio con checkboxes pequeños.
+  //
+  // «LA VOZ PROPONE, EL HUMANO CORRIGE», y aquí se lleva más lejos que en presupuestos: las
+  // líneas aceptadas **caen en las filas de arriba**, que ya son editables y no se guardan
+  // hasta que el pro pulse guardar. No hay una pantalla paralela que «confirme» nada — se
+  // aterriza en el formulario que ya conoce. Un presupuesto se rehace; un albarán lo firma
+  // el cliente y desde `emitido` se congela, así que la última palabra tiene que ser suya.
+  //
+  // GATE doble: el flag PROPIO del albarán (`VOICE_ALBARAN_ENABLED`, servido por /admin/me) y
+  // el `voiceSupportProbe()` de VZ-1 — si el navegador no vale, el micro NO se pinta y queda
+  // el formulario de siempre. Degradación silenciosa: jamás un botón roto.
+  // Escape local, y aquí NO es defensa de manual: el concepto viene de un MODELO DE
+  // LENGUAJE a partir de lo que alguien dictó. Es la entrada menos controlada de toda la
+  // pantalla, va a `innerHTML`, y no se depende de ningún helper global que cargue en otro
+  // fichero (la lección de SCRUM-153c: una dependencia invisible cuyo fallo es inyección).
+  const escVoz = (v) => String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+  const vozDisponible = window.appVoiceAlbaranEnabled === true
+    && typeof voiceSupportProbe === 'function' && voiceSupportProbe()
+    && typeof attachVoiceInput === 'function';
+
+  if (vozDisponible) {
+    const btnDictar = document.createElement('button');
+    btnDictar.type = 'button';
+    btnDictar.className = 'btn-secondary btn-sm';
+    btnDictar.style.cssText = 'margin-left:8px;min-height:44px'; // target al pulgar (AB6)
+    btnDictar.textContent = '🎤 Dictar el parte';
+    btnDictar.addEventListener('click', () => abrirHojaDictado());
+    box.appendChild(btnDictar);
+
+    function abrirHojaDictado() {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML = `
+        <div class="modal" style="max-width:520px" role="dialog" aria-modal="true" aria-labelledby="voz-t">
+          <div class="modal-header">
+            <h3 class="modal-title" id="voz-t">🎤 Dictar el parte</h3>
+            <button class="modal-close" id="voz-x" aria-label="Cerrar">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p style="font-size:13px;color:var(--muted);margin:0 0 10px">
+              Cuenta lo que has hecho, como se lo contarías a un compañero. Luego lo repasas.
+            </p>
+            <textarea id="voz-txt" rows="4" class="input" style="width:100%;resize:vertical"
+              placeholder="Ej: he cambiado dos grifos monomando y he estado tres horas"></textarea>
+            <button class="btn-primary" id="voz-gen" style="width:100%;margin-top:10px;min-height:44px">
+              Convertir en líneas
+            </button>
+            <div class="alert" id="voz-err" style="display:none;margin-top:10px"></div>
+            <div id="voz-res" style="margin-top:12px"></div>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+
+      const cerrar = () => overlay.remove();
+      overlay.querySelector('#voz-x').onclick = cerrar;
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
+      document.addEventListener('keydown', function esc(e) {
+        if (e.key === 'Escape') { cerrar(); document.removeEventListener('keydown', esc); }
+      });
+
+      const ta = overlay.querySelector('#voz-txt');
+      const btnGen = overlay.querySelector('#voz-gen');
+      const err = overlay.querySelector('#voz-err');
+      const res = overlay.querySelector('#voz-res');
+
+      // El micro de VZ-1 sobre el textarea: SIEMPRE editable (la voz propone, el humano
+      // corrige) y con su degradación propia si el permiso falla.
+      attachVoiceInput(ta);
+      ta.focus();
+
+      btnGen.addEventListener('click', async () => {
+        const texto = (ta.value || '').trim();
+        if (!texto) { ta.focus(); return; }
+        btnGen.disabled = true;
+        const orig = btnGen.textContent;
+        btnGen.textContent = 'Convirtiendo…';
+        err.style.display = 'none';
+        try {
+          const d = await apiRequest('/admin/ai/suggest-albaran-lines', {
+            method: 'POST',
+            body: JSON.stringify({ albaranId: alb.id, description: texto }),
+          });
+          pintarPropuesta(Array.isArray(d.lines) ? d.lines : []);
+        } catch (e) {
+          err.textContent = e?.message || 'No se pudieron generar las líneas.';
+          err.style.display = 'block';
+        } finally {
+          btnGen.disabled = false;
+          btnGen.textContent = orig;
+        }
+      });
+
+      function pintarPropuesta(lineas) {
+        res.innerHTML = '';
+        if (!lineas.length) {
+          err.textContent = 'No he sacado ninguna línea. Prueba a contarlo con más detalle.';
+          err.style.display = 'block';
+          return;
+        }
+        const titulo = document.createElement('p');
+        titulo.style.cssText = 'font-size:13px;font-weight:600;margin:0 0 8px';
+        titulo.textContent = 'Repasa antes de añadirlas al parte:';
+        res.appendChild(titulo);
+
+        const marcas = [];
+        lineas.forEach((l, i) => {
+          const fila = document.createElement('label');
+          // ≥44 px y toda la fila es el target: en obra no se acierta a un checkbox de 16 px.
+          fila.style.cssText = 'display:flex;gap:10px;align-items:flex-start;padding:10px;'
+            + 'min-height:44px;border:1px solid var(--border);border-radius:10px;'
+            + 'margin-bottom:6px;background:var(--surface-2);cursor:pointer';
+          const chk = document.createElement('input');
+          chk.type = 'checkbox'; chk.checked = true;
+          chk.style.cssText = 'margin-top:3px;width:20px;height:20px;flex-shrink:0';
+          marcas.push({ chk, linea: l });
+          const txt = document.createElement('div');
+          // SIN_VALORAR: ni se pide ni se muestra precio. El saneado del servidor ya lo
+          // garantiza (SCRUM-71 puntos 1-2), pero la pantalla no puede contradecirlo —
+          // enseñar un precio que luego no se guarda sería peor que no enseñarlo.
+          const detalle = `${l.cantidad} ${l.unidad}`
+            + (modo === 'VALORADO' && l.precioUnitario != null ? ` · ${l.precioUnitario} €/ud` : '');
+          txt.innerHTML = `<div style="font-weight:600;color:var(--ink)">${escVoz(l.concepto)}</div>`
+            + `<div style="color:var(--muted);font-size:13px">${escVoz(detalle)}</div>`;
+          fila.append(chk, txt);
+          res.appendChild(fila);
+        });
+
+        const anadir = document.createElement('button');
+        anadir.className = 'btn-primary';
+        anadir.style.cssText = 'width:100%;margin-top:10px;min-height:44px';
+        anadir.textContent = 'Añadir al parte';
+        anadir.addEventListener('click', () => {
+          marcas.filter((m) => m.chk.checked).forEach((m) => {
+            const l = m.linea;
+            rows.appendChild(mkRow({
+              concepto: l.concepto,
+              cantidad: l.cantidad,
+              unidad: l.unidad,
+              // En SIN_VALORAR no se arrastra precio ni IVA: esas columnas ni se ven.
+              ...(modo === 'VALORADO'
+                ? { precioUnitario: l.precioUnitario, tipoIva: l.tipoIva != null ? l.tipoIva * 100 : undefined }
+                : {}),
+            }));
+          });
+          updateTotales();
+          cerrar();
+          showToast('✓ Líneas añadidas — repásalas antes de guardar');
+        });
+        res.appendChild(anadir);
+      }
+    }
+  }
+
+  // Total orientativo (base + total, SIN desglose de cuota — igual que PDF/backend).
+  const totalesBox = document.createElement('p');
+  totalesBox.style.cssText = 'margin:8px 0 0;font-size:13px;color:var(--ink);font-weight:600;text-align:right';
+  box.appendChild(totalesBox);
+  function readRowsForTotales() {
+    return [...rows.children].map((r) => {
+      const inputs = r.querySelectorAll('input');
+      return {
+        cantidad: Number(String(inputs[1].value).replace(',', '.')),
+        precioUnitario: modo === 'VALORADO' && inputs[3].value !== '' ? Number(String(inputs[3].value).replace(',', '.')) : null,
+        tipoIva: modo === 'VALORADO' ? Number(String(inputs[4].value).replace(',', '.')) : null,
+      };
+    });
+  }
+  function updateTotales() {
+    if (modo !== 'VALORADO') { totalesBox.textContent = ''; return; }
+    const t = albTotalesJS(readRowsForTotales());
+    totalesBox.textContent = `Base: ${fmtMoneyEs(t.base, cur)} · Total orientativo: ${fmtMoneyEs(t.total, cur)}`;
+  }
+  updateTotales();
+
+  const notas = document.createElement('textarea');
+  notas.className = 'input';
+  notas.placeholder = 'Notas del albarán (opcional)';
+  notas.style.cssText = 'width:100%;margin-top:8px;min-height:56px';
+  notas.value = alb.notas || '';
+  box.appendChild(notas);
+
+  const saveRow = document.createElement('div');
+  saveRow.style.cssText = 'display:flex;gap:8px;margin-top:8px';
+  const save = document.createElement('button');
+  save.className = 'btn-primary btn-sm';
+  save.textContent = textoGuardar || 'Guardar cambios';
+  save.addEventListener('click', async () => {
+    const out = [];
+    for (const r of rows.children) {
+      const inputs = r.querySelectorAll('input');
+      const c = inputs[0].value.trim(), qv = inputs[1].value, u = inputs[2].value.trim();
+      const pv = inputs[3].value, ivv = inputs[4].value;
+      if (!c && !qv && !u) continue; // fila totalmente vacía se ignora
+      const linea = { concepto: c, cantidad: Number(String(qv).replace(',', '.')), unidad: u };
+      // SCRUM-303 · y el origen vuelve a salir con ella. ⚠️ FAMILIA SCRUM-271: `dataset` devuelve
+      // SIEMPRE cadena, y `Number('')` es 0 — un índice ausente se convertiría en «la primera
+      // partida del presupuesto», en silencio. Se exige que sean dígitos ANTES de convertir.
+      const origen = r.dataset.quoteLineIndex;
+      if (typeof origen === 'string' && /^\d+$/.test(origen)) linea.quoteLineIndex = Number(origen);
+      if (modo === 'VALORADO') {
+        linea.precioUnitario = Number(String(pv).replace(',', '.'));
+        linea.tipoIva = Number(String(ivv).replace(',', '.'));
+      }
+      out.push(linea);
+    }
+    const body = { lineas: out, notas: notas.value };
+    // Solo se manda modoValoracion cuando es EDITABLE (borrador); en 'emitido' el
+    // backend lo rechaza con 409 aunque el valor no cambie — mejor ni ofrecerlo.
+    if (modoEditable) body.modoValoracion = modo;
+    save.disabled = true;
+    try {
+      // SCRUM-303: en creación, ÉSTE es el único sitio del que sale el POST — y por eso no hay
+      // albarán ni número hasta aquí. En edición no cambia nada: sigue siendo el PATCH de antes.
+      if (onGuardar) {
+        await onGuardar({ lineas: out, notas: notas.value, modoValoracion: modo });
+      } else {
+        await apiRequest(`/admin/albaranes/${alb.id}`, { method: 'PATCH', body: JSON.stringify(body) });
+        showToast('✓ Albarán actualizado (nueva versión).');
+      }
+      if (onClose) onClose(); // cierra el sheet antes de re-renderizar
+      refresh();
+    } catch (e) {
+      const msg = e?.data?.message || 'No se pudo guardar el albarán.';
+      if (onError) onError(msg); else setStatus('error', msg); // el error se ve DENTRO del sheet
+      save.disabled = false;
+    }
+  });
+  saveRow.appendChild(save);
+  const cancelEd = document.createElement('button');
+  cancelEd.className = 'btn-secondary btn-sm';
+  cancelEd.textContent = 'Cancelar';
+  cancelEd.addEventListener('click', () => { if (onClose) onClose(); else box.style.display = 'none'; });
+  saveRow.appendChild(cancelEd);
+  box.appendChild(saveRow);
+}
+
+function openAlbEditorSheet(alb, ctx) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', `Editar albarán ${alb.numero}`);
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  const header = document.createElement('div');
+  header.className = 'modal-header';
+  const title = document.createElement('div');
+  title.className = 'modal-title';
+  title.textContent = `Editar albarán ${alb.numero}`;
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'modal-close';
+  closeBtn.type = 'button';
+  closeBtn.textContent = '×';
+  closeBtn.setAttribute('aria-label', 'Cerrar');
+  header.append(title, closeBtn);
+  // Banner de error PROPIO del sheet (el statusBox de la página queda detrás del overlay).
+  const errEl = document.createElement('div');
+  errEl.className = 'alert error';
+  errEl.style.cssText = 'display:none;margin:12px 24px 0';
+  const bodyEl = document.createElement('div');
+  bodyEl.className = 'modal-body';
+  modal.append(header, errEl, bodyEl);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  const onKey = (e) => { if (e.key === 'Escape') close(); };
+  function close() {
+    overlay.remove();
+    document.removeEventListener('keydown', onKey);
+  }
+  closeBtn.addEventListener('click', close);
+  document.addEventListener('keydown', onKey);
+  // NO se cierra al pulsar el fondo: evita perder líneas sin querer (usa ×, Cancelar o Esc).
+
+  buildAlbEditor(bodyEl, alb, {
+    onClose: close,
+    onError: (msg) => { errEl.textContent = msg; errEl.style.display = 'block'; },
+  }, ctx);
+  // Foco al primer campo (Concepto) para teclear directo; si no hay, al botón de cerrar.
+  (bodyEl.querySelector('.input') || closeBtn).focus();
+}
+
 window.renderJobDetailView = renderJobDetailView;
