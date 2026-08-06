@@ -212,11 +212,47 @@ fuera de los ya usados en el asistente.
 * ⚠️ **Matriz de dispositivos: hueco declarado**, como pide el propio ticket. Es humana.
 * Nada nuevo en `public/` más allá de la vista: **no hay banco de QA en el repo**.
 
-## Lo que NO entra
+## La puerta de última oportunidad — ENTRA, y es la mitad que importa
 
-* **La puerta de última oportunidad** (preguntar antes de la primera factura a quien se saltó el
-  asistente) **no está construida**. El mecanismo la soporta —`arranqueDeSerie` para si ya hay
-  emitidas— pero no hay pantalla que la dispare.
+Quien se salta el asistente es **exactamente** quien viene de otro programa con facturas ya
+emitidas; el que se sienta a contestarlo suele ser el que empieza de cero. Así que la puerta no es
+un extra: es el caso principal.
+
+**La condición se DERIVA, no se guarda una bandera de «ya preguntado»:** `invoiceSeriesYear !== año`
+es *la misma* condición que usa `resolveSeriesSeq` para decidir que la serie arranca en 1. Si el
+emisor la trataría como nueva, es que nadie declaró su arranque — y así no hay dos verdades. Una
+bandera se habría desincronizado el día que alguien la pusiera sin escribir el par, y la puerta
+dejaría de salirle justo a quien más la necesita.
+
+* **Control negativo:** quien ya emitió **no la ve**. Ofrecerle elegir el arranque a quien ya
+  arrancó es ofrecerle romper su propia correlatividad, y eso no se arregla después (regla 29).
+* **Control positivo:** quien se saltó el asistente y no ha emitido **sí la ve**. Hace falta
+  porque sin él la puerta podría no salirle a nadie y el negativo seguiría verde — «no se la
+  enseñamos a quien ya emitió» se cumple perfectamente si no se la enseña nadie.
+* **Rojo por el mecanismo:** quitando la condición de «ya emitió», cae nombrándola (`$? = 1`).
+
+El veredicto viaja **ya resuelto** desde `/admin/me`, igual que la factura suelta de SCRUM-289: si
+la pantalla reimplementara la regla habría dos criterios sobre cuándo se puede tocar la numeración,
+y el del navegador sería el fácil de equivocar.
+
+## AB6 — medido, y encontró un defecto real
+
+Con la app levantada contra **dev local** (`localhost`, ni prod ni staging) no se pudo entrar al
+panel: no hay Postgres local ni docker en esta máquina. Así que las capturas se hicieron con un
+**banco fuera del repo** que extrae el marcado **del propio fichero** —no retecleado— y se
+midieron con `chrome-headless-shell` («Browser is already in use» en el MCP, el mismo tropiezo del
+AB6 de SCRUM-139).
+
+**El hallazgo:** el número de la vista previa **se partía en dos líneas a 360 y 390 px** — el único
+dato que el profesional tiene que leer bien antes de confirmar algo irreversible, roto justo en los
+dos anchos de móvil. Medido (`lineasDelNumero: 2`), arreglado con `white-space:nowrap`, y **vuelto
+a medir**: 1 línea en los dos, botones a 44 px y sin desbordamiento horizontal.
+
+⚠️ **Lo que NO se pudo medir: el foco con Tab real.** El navegador del MCP lo tenía otra sesión y
+no hay librería de Playwright instalada (añadirla sería regla 36). **No se sustituyó por `.focus()`
+programático**, que es justo lo que da falsos negativos. Queda declarado.
+
+## Lo que NO entra
 * **El campo Serie bloqueado con su motivo** se resuelve hoy por el servidor: si hay emitidas, la
   ruta responde 409 con el texto aprobado y la pantalla lo enseña. Lo que **no** hay es el campo
   saliendo ya deshabilitado *antes* de escribir — se entera al intentarlo.

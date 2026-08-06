@@ -17,6 +17,8 @@ const { vistaPreviaSerie } = await import('../dist/modules/invoicing/domain/vist
 const { formatInvoiceNumber, resolveSeriesSeq } = await import('../dist/modules/invoicing/domain/invoiceNumber.service.js');
 
 const leerVista = () => fs.readFileSync(path.join(RAIZ, VISTA), 'utf8');
+/** Un número REAL de la serie, compuesto por quien los compone. */
+const num = (seq) => formatInvoiceNumber('CF', 2026, seq);
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // EL CAMBIO DE AÑO — obligatorio, y es el clásico que se descubre en enero
@@ -182,11 +184,87 @@ test('SCRUM-313 · SUELO: el censo encuentra dónde se ESCRIBE el arranque', () 
 test('SCRUM-313 · el par se escribe SIEMPRE junto, nunca medio', () => {
   // La trampa fiscal: `nextInvoiceNumber` sin `invoiceSeriesYear` reinicia la serie en silencio.
   // Se comprueba que ningún `data:` de la ruta escriba uno sin el otro.
+  // ⚠️ Se cuentan las ESCRITURAS, no las menciones: `invoiceSeriesYear` aparece también en los
+  // `select:` de lectura, y contarlas todas daba un descuadre falso (medido: 4 contra 6). Un
+  // guard que grita sin motivo se acaba desactivando, y con él se pierde el que sí importaba.
   const app = fs.readFileSync(path.join(RAIZ, 'src/app.ts'), 'utf8');
-  const conNumero = (app.match(/nextInvoiceNumber:/g) || []).length;
-  const conAño    = (app.match(/invoiceSeriesYear:/g) || []).length;
-  assert.ok(conNumero > 0, '🔴 el censo no ve ninguna escritura del número: no está mirando.');
-  assert.equal(conNumero, conAño,
-    `🔴 hay ${conNumero} escrituras del número y ${conAño} del año. Uno sin el otro reinicia la ` +
-    'serie en 1 en silencio, y el profesional emitiría un número que YA usó.');
+  const escrituraNumero = (app.match(/nextInvoiceNumber:\s*arranque\./g) || []).length;
+  const escrituraAño    = (app.match(/invoiceSeriesYear:\s*arranque\./g) || []).length;
+  assert.ok(escrituraNumero > 0,
+    '🔴 no se ve ninguna escritura del arranque: el guard no está mirando donde cree.');
+  assert.equal(escrituraNumero, escrituraAño,
+    `🔴 hay ${escrituraNumero} escrituras del número y ${escrituraAño} del año. Uno sin el otro ` +
+    'reinicia la serie en 1 EN SILENCIO, y el profesional emitiría un número que YA usó en su ' +
+    'programa anterior.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// LA PUERTA DE ÚLTIMA OPORTUNIDAD
+//
+// Es la mitad que de verdad importa, y por una razón de perfil: **quien se salta el asistente es
+// exactamente quien viene de otro programa con facturas ya emitidas**. El que se sienta a
+// contestarlo suele ser el que empieza de cero, o sea aquel para quien la pregunta da igual.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+const { debeOfrecerArranqueDeSerie } = await import('../dist/core/validation/fiscalInput.js');
+
+test('SCRUM-313 · CONTROL POSITIVO — quien se saltó el asistente y no ha emitido SÍ ve la puerta', () => {
+  // Sin este test la puerta puede no salirle a NADIE y el control negativo seguiría en verde:
+  // «no se la enseñamos a quien ya emitió» se cumple perfectamente si no se la enseñamos a nadie.
+  assert.equal(
+    debeOfrecerArranqueDeSerie({ invoiceSeriesYear: null, año: 2026, numerosDeLaSerie: [] }),
+    true,
+    '🔴 a quien nunca declaró su numeración y no ha emitido no se le pregunta. Es EL perfil que\n' +
+    '  viene de otro programa: si no se le pregunta aquí, su primera factura sale con el número\n' +
+    '  equivocado y ya no hay vuelta atrás.');
+  // Y el caso del año viejo: declaró en 2025 y estamos en 2026 → su serie de este año no existe.
+  assert.equal(
+    debeOfrecerArranqueDeSerie({ invoiceSeriesYear: 2025, año: 2026, numerosDeLaSerie: [] }),
+    true,
+    '🔴 quien declaró el año pasado no vuelve a ser preguntado este año, y su serie de este año ' +
+    'todavía no está declarada — `resolveSeriesSeq` la trataría como nueva.');
+});
+
+test('SCRUM-313 · CONTROL NEGATIVO — quien YA emitió con nosotros NO ve la puerta', () => {
+  // Ofrecerle elegir el arranque a quien ya arrancó es ofrecerle romper su propia correlatividad,
+  // y eso no se arregla después: una factura emitida no se edita (regla 29).
+  assert.equal(
+    debeOfrecerArranqueDeSerie({ invoiceSeriesYear: null, año: 2026, numerosDeLaSerie: [num(1)] }),
+    false,
+    '🔴 se le ofrece cambiar el arranque a alguien que YA emitió. Eso es ofrecerle romper su ' +
+    'propia numeración, y encima cuando ya no tiene arreglo.');
+  assert.equal(
+    debeOfrecerArranqueDeSerie({ invoiceSeriesYear: 2026, año: 2026, numerosDeLaSerie: [num(1), num(2)] }),
+    false);
+});
+
+test('SCRUM-313 · quien YA declaró este año no vuelve a ver la puerta', () => {
+  // No es que esté prohibido: es que no hay nada que preguntar. Repetir la pregunta a quien ya
+  // contestó convierte una ayuda en un obstáculo.
+  assert.equal(
+    debeOfrecerArranqueDeSerie({ invoiceSeriesYear: 2026, año: 2026, numerosDeLaSerie: [] }),
+    false,
+    '🔴 se repite la pregunta a quien ya la contestó este año.');
+});
+
+test('SCRUM-313 · la condición se DERIVA, no se guarda una bandera de «ya preguntado»', () => {
+  // Una bandera se desincroniza el día que alguien la ponga sin escribir el par, y entonces la
+  // puerta deja de salirle justo a quien más la necesita. La condición usa `invoiceSeriesYear`,
+  // que es LA MISMA que `resolveSeriesSeq` usa para decidir que la serie arranca en 1: si el
+  // emisor la trataría como nueva, es que nadie declaró su arranque.
+  const src = fs.readFileSync(path.join(RAIZ, 'src/core/validation/fiscalInput.ts'), 'utf8');
+  const cuerpo = src.slice(src.indexOf('export function debeOfrecerArranqueDeSerie'));
+  assert.match(cuerpo, /invoiceSeriesYear !== params\.año/,
+    '🔴 la puerta ya no decide por `invoiceSeriesYear`. Si decide por una bandera aparte, habrá ' +
+    'dos verdades sobre si la serie está declarada y la del emisor es la que manda.');
+  assert.doesNotMatch(cuerpo.slice(0, 400), /preguntad[oa]|yaPreguntado|serieDeclarada/,
+    '🔴 ha aparecido una bandera de «ya preguntado».');
+});
+
+test('SCRUM-313 · el veredicto de la puerta lo calcula el SERVIDOR, no la pantalla', () => {
+  const app = fs.readFileSync(path.join(RAIZ, 'src/app.ts'), 'utf8');
+  assert.match(app, /puertaSerieDisponible: debeOfrecerArranqueDeSerie\(/,
+    '🔴 `/admin/me` ya no resuelve la puerta. Si la regla se reimplementa en el navegador habrá ' +
+    'dos criterios sobre cuándo se puede tocar la numeración, y el del navegador es el fácil de ' +
+    'equivocar.');
 });

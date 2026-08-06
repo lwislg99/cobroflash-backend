@@ -184,7 +184,7 @@ function showOnboardingWizard(onComplete) {
           <div id="ob-serie-previa" aria-live="polite"
             style="background:#f4f7f4;border:1px solid #cdd2cb;border-radius:10px;padding:12px;display:none">
             <p style="margin:0 0 4px;font-size:13px;color:#333c37">Tu primera factura con YaQu será:
-              <strong id="ob-serie-numero-previa" style="font-size:15px"></strong></p>
+              <strong id="ob-serie-numero-previa" style="font-size:15px;white-space:nowrap"></strong></p>
             <p style="margin:0;font-size:12px;color:#6b756f">
               Compruébalo bien: cuando emitas esa factura, este número ya no se puede cambiar.</p>
           </div>

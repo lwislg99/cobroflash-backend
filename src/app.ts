@@ -77,7 +77,7 @@ import { getMerchantProfile, updateMerchantProfile, SlugError, SerieError } from
 // SCRUM-313 (D2): el arranque de serie usa las piezas puras de A4 y la vista previa que
 // IMPORTA a quien decide (regla 38: leer ese camino no es STOP, modificarlo si).
 import { TIT_SERIE_YA_EMITIDA, MSG_SERIE_YA_EMITIDA } from './modules/system/merchantAdmin';
-import { arranqueDeSerie, numerosDeLaSerie, bloqueoCambioDeSerie, invalidPrefijoSerie } from './core/validation/fiscalInput';
+import { arranqueDeSerie, numerosDeLaSerie, bloqueoCambioDeSerie, invalidPrefijoSerie, debeOfrecerArranqueDeSerie } from './core/validation/fiscalInput';
 import { vistaPreviaSerie } from './modules/invoicing/domain/vistaPreviaSerie';
 import { SERIE_LOCK_NS } from './modules/invoicing/domain/invoiceNumber.service';
 import QRCode from 'qrcode'; // A14.2: QR del perfil público (PNG alta res para furgoneta/tarjeta)
@@ -300,7 +300,16 @@ app.get('/admin/me', async (req, res) => {
     where: { id: session.merchantId },
     // SCRUM-289: `email` y `flags` los necesita `puedeCrearFacturaSuelta` — el modo de emisión
     // (V0-0) se resuelve con merchant demo (por email) + flag por merchant, no solo con el país.
-    select: { country: true, logoUrl: true, email: true, flags: true },
+    select: { country: true, logoUrl: true, email: true, flags: true, invoiceSeriesYear: true },
+  });
+
+  // SCRUM-313 (D2) · LA PUERTA DE ULTIMA OPORTUNIDAD. Se lee aqui porque el veredicto tiene que
+  // viajar YA RESUELTO: si la pantalla reimplementara la regla habria dos criterios sobre cuando
+  // se puede tocar la numeracion, y el del navegador seria el facil de equivocar.
+  const anioSerie = new Date().getFullYear();
+  const facturasDelAnio = await prisma.invoice.findMany({
+    where: { merchantId: session.merchantId, number: { startsWith: `${anioSerie}-` } },
+    select: { number: true },
   });
 
   const userRole = session.teamMember ? session.teamMember.role : 'admin';
@@ -344,6 +353,13 @@ app.get('/admin/me', async (req, res) => {
     }),
     // A10.2 (Parte L): estado de la suscripción para el banner past_due
     subscriptionStatus: owner ? 'active' : ((session.merchant as any).subscriptionStatus ?? null),
+    // SCRUM-313 (D2): ¿todavia se le puede preguntar por su numeracion? Mismo patron que la
+    // factura suelta -- veredicto del servidor, no regla en el navegador.
+    puertaSerieDisponible: debeOfrecerArranqueDeSerie({
+      invoiceSeriesYear: merchantFull?.invoiceSeriesYear ?? null,
+      año: anioSerie,
+      numerosDeLaSerie: numerosDeLaSerie(facturasDelAnio.map((f) => f.number), anioSerie),
+    }),
   });
 });
 
