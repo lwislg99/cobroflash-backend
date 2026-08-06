@@ -31,6 +31,8 @@ import { calcVatBreakdown } from './vat.service';
 
 /** Lo que el libro necesita de cada factura. Deliberadamente poco: esto solo LEE. */
 export interface FacturaParaLibro {
+  /** Opcional a propósito: sin `id` el asiento se construye igual, solo pierde los albaranes vivos. */
+  id?: number;
   merchantId: number;
   number: string | null;
   createdAt: Date | string | null;
@@ -57,12 +59,34 @@ export interface AsientoLibro {
   estado: string | null;
   /** ⚠️ `true` = el importe no se pudo leer. NO es cero: es «no se sabe». */
   importeIlegible: boolean;
-  /** La trazabilidad del euro: de dónde viene y dónde acabó. */
+  /** La trazabilidad del euro: de dónde viene, qué se entregó a cambio y dónde acabó. */
   enlaces: {
     presupuestoId: number | null;
+    /**
+     * `true` = ese presupuesto tiene FIRMA. `null` = esta factura no viene de un presupuesto.
+     *
+     * ⚠️ Se deriva de `Quote.signatureUrl`, NO de `acceptedAt`: aceptar y firmar no son lo
+     * mismo, y en un libro que se le enseña a un tercero el enlace tiene que apuntar a la
+     * prueba, no a la intención. El motivo largo está en `libroRegistro.repo.ts`.
+     */
+    presupuestoFirmado: boolean | null;
+    /** Los albaranes SELLADOS en la factura (`albaranRefs`): lo que el documento dice. */
     albaranes: { albaranId: number | null; numero: string | null }[];
+    /**
+     * Albaranes que apuntan hoy a esta factura y NO estaban en el sello. No se añaden a la
+     * lista de arriba —la factura emitida dice lo que dice, regla 29— pero tampoco se ocultan:
+     * un descuadre entre el documento sellado y la relación viva es exactamente lo que un
+     * libro de registro tiene que dejar ver.
+     */
+    albaranesNoSellados: number;
     cobroId: number | null;
   };
+}
+
+/** Un albarán que apunta HOY a la factura (relación viva), frente a los sellados en ella. */
+export interface AlbaranVivo {
+  albaranId: number;
+  numero: string | null;
 }
 
 export interface LibroRegistro {
@@ -113,9 +137,14 @@ function refsDeAlbaran(valor: unknown): { albaranId: number | null; numero: stri
 export function construirLibroRegistro(params: {
   facturas: readonly FacturaParaLibro[];
   merchantId: number;
+  /** Ids de presupuesto CON firma. Lo calcula quien lee la base; aquí solo se consulta. */
+  presupuestosFirmados?: Iterable<number>;
+  /** Albaranes que apuntan hoy a cada factura, por id de factura. */
+  albaranesVivos?: ReadonlyMap<number, readonly AlbaranVivo[]>;
 }): LibroRegistro {
   const asientos: AsientoLibro[] = [];
   const importesIlegibles: string[] = [];
+  const firmados = new Set<number>(params.presupuestosFirmados ?? []);
   let ajenas = 0;
   let sinNumero = 0;
 
@@ -132,6 +161,14 @@ export function construirLibroRegistro(params: {
 
     if (total === null) importesIlegibles.push(f.number);
 
+    const presupuestoId = typeof f.quoteId === 'number' ? f.quoteId : null;
+    const sellados = refsDeAlbaran(f.albaranRefs);
+    const vivos = typeof f.id === 'number' ? (params.albaranesVivos?.get(f.id) ?? []) : [];
+    // Un albarán vivo cuenta como «no sellado» si su id no está entre los del sello. Se compara
+    // por id, no por número: el número es texto del merchant y puede cambiar de forma.
+    const idsSellados = new Set(sellados.map((r) => r.albaranId).filter((n) => n !== null));
+    const noSellados = vivos.filter((v) => !idsSellados.has(v.albaranId)).length;
+
     asientos.push({
       numero: f.number,
       fecha: f.createdAt instanceof Date
@@ -146,8 +183,12 @@ export function construirLibroRegistro(params: {
       estado: f.status ?? null,
       importeIlegible: total === null,
       enlaces: {
-        presupuestoId: typeof f.quoteId === 'number' ? f.quoteId : null,
-        albaranes: refsDeAlbaran(f.albaranRefs),
+        presupuestoId,
+        // `null` cuando no hay presupuesto: «no viene de uno» y «viene de uno sin firmar» son
+        // cosas distintas, y un `false` para las dos las haría indistinguibles.
+        presupuestoFirmado: presupuestoId === null ? null : firmados.has(presupuestoId),
+        albaranes: sellados,
+        albaranesNoSellados: noSellados,
         cobroId: typeof f.chargeId === 'number' ? f.chargeId : null,
       },
     });
