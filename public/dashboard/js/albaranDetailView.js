@@ -37,6 +37,17 @@
 // léxico, y un `const ROTULOS` a secas es el tipo de nombre que otra pantalla vuelve a declarar
 // tarde o temprano. Dos `const` iguales = SyntaxError EN PARSEO y la pantalla desaparece sin
 // 500 ni log (caso `copyRojo`, SCRUM-210).
+// ⚠️ ESTE OBJETO ESTUVO PARTIDO EN DOS Y SEIS BOTONES SE QUEDARON SIN RÓTULO.
+//
+// Una edición de otro carril (`34a494f`) cerró el objeto a la mitad para colar una constante
+// entre medias, y bautizó la cola `_FIN_ROTULOS`. El JS seguía siendo VÁLIDO —dos objetos bien
+// formados— y el guard del marcador seguía verde, así que nada petó: `ROTULOS_ALBARAN[id]`
+// devolvía `undefined` para los seis de la cola y el `||` los mandaba, uno por uno, al marcador
+// `[PENDIENTE microcopy oficial]`. En `borrador` los TRES botones de la barra decían eso, y así
+// llegó a main. **Un texto de relleno que se pinta es peor que un hueco: parece intencionado.**
+//
+// Por eso ya no depende de que nadie vuelva a partirlo: `tests/scrum302-rotulos-completos.test.mjs`
+// deriva del AST los botones que la vista CREA y exige que todos tengan rótulo aquí.
 const ROTULOS_ALBARAN = {
   // Aprobados para ESTE ticket (nuevos en el árbol)
   btnFacturar: 'Facturar lo entregado',
@@ -45,6 +56,16 @@ const ROTULOS_ALBARAN = {
   // SCRUM-302 · APROBADO por el fundador el 5-ago-2026: es la palabra del ticket y la que usa
   // todo el mundo en un menu de desbordamiento. Describe lo que hace sin adornarlo.
   btnDuplicar: 'Duplicar',
+  // Reutilizados letra por letra de la fila del Trabajo (jobDetailView.js), de donde se mudan
+  btnEmitir: 'Emitir',
+  btnEnviarFirmar: 'Enviar para firmar',
+  // SCRUM-302 · APROBADO por el fundador el 6-ago-2026: VERBO, como sus dos vecinos de la barra.
+  // «PDF» a secas venía de una fila estrecha y aquí parecía una etiqueta de formato perdida entre
+  // dos acciones.
+  btnPdf: 'Descargar PDF',
+  btnWhatsApp: 'Enviar por WhatsApp',
+  btnEditarLineas: 'Editar líneas',
+  btnFoto: '📷 Añadir foto',
 };
 
 // SCRUM-302 · APROBADO por el fundador el 5-ago-2026. Dice lo que SÍ trae ANTES de lo que no: el
@@ -53,15 +74,6 @@ const ROTULOS_ALBARAN = {
 // ha fallado algo y se vuelve a intentar. No se explica el motivo legal: eso es razonamiento
 // nuestro, no suyo. Él necesita saber qué tiene delante.
 const COPY_DUPLICADO_CREADO = 'Duplicado creado. Trae las líneas y las notas del original; la firma y las fotos no se copian nunca.';
-const _FIN_ROTULOS = {
-  // Reutilizados letra por letra de la fila del Trabajo (jobDetailView.js), de donde se mudan
-  btnEmitir: 'Emitir',
-  btnEnviarFirmar: 'Enviar para firmar',
-  btnPdf: 'PDF',
-  btnWhatsApp: 'Enviar por WhatsApp',
-  btnEditarLineas: 'Editar líneas',
-  btnFoto: '📷 Añadir foto',
-};
 
 // LOS RÓTULOS DEL RAIL — APROBADOS por el fundador el 6-ago-2026 (regla 30). Una palabra cada uno.
 //
