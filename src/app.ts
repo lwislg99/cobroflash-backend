@@ -74,6 +74,12 @@ import { merchantProfileUpdateSchema } from './core/validation/schemas';
 import { barridoDemo } from './modules/system/domain/barridoDemo';
 import { isDemoMerchant } from './modules/invoicing/domain/emission.service';
 import { getMerchantProfile, updateMerchantProfile, SlugError, SerieError } from './modules/system/merchantAdmin';
+// SCRUM-313 (D2): el arranque de serie usa las piezas puras de A4 y la vista previa que
+// IMPORTA a quien decide (regla 38: leer ese camino no es STOP, modificarlo si).
+import { TIT_SERIE_YA_EMITIDA, MSG_SERIE_YA_EMITIDA } from './modules/system/merchantAdmin';
+import { arranqueDeSerie, numerosDeLaSerie, bloqueoCambioDeSerie, invalidPrefijoSerie } from './core/validation/fiscalInput';
+import { vistaPreviaSerie } from './modules/invoicing/domain/vistaPreviaSerie';
+import { SERIE_LOCK_NS } from './modules/invoicing/domain/invoiceNumber.service';
 import QRCode from 'qrcode'; // A14.2: QR del perfil público (PNG alta res para furgoneta/tarjeta)
 import { resolverOpcionesQr, ErrorQr } from './modules/system/domain/qrPagina.service'; // SCRUM-230
 import { BASE_URL } from './core/config/env';
@@ -574,6 +580,194 @@ app.post('/admin/onboarding/complete', requireRole('admin'), async (req, res) =>
     data: { onboardingCompleted: true },
   });
   return res.json({ ok: true });
+});
+
+/** SCRUM-313 · alguien emitió mientras se contestaba la pregunta: la serie ya empezó. */
+class SerieYaEmpezada extends Error {}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-313 (D2) · «¿POR QUÉ NÚMERO VAS?» — la continuidad de la serie al venir de otro programa
+//
+// Un autónomo que ya factura no se cambia de programa porque el nuevo sea más bonito: no se cambia
+// porque romper la serie le da miedo con Hacienda. Aquí se guarda esa continuidad.
+//
+// ⚠️ RUTA PROPIA, y no un campo más en `PUT /admin/merchant`. `nextInvoiceNumber` gobierna qué
+// número sale en la próxima factura: abrirlo en el formulario general lo dejaría escribible desde
+// cualquier guardado de Configuración, para siempre. Aquí tiene su puerta y su momento.
+//
+// LOS DOS CAMPOS SE ESCRIBEN JUNTOS. `resolveSeriesSeq` hace `invoiceSeriesYear === year ?
+// nextInvoiceNumber : 1`, así que guardar el número sin el año NO continúa la serie: la reinicia
+// en 1 en silencio, y el profesional emitiría un número que YA usó en su programa anterior.
+// SCRUM-313 · LA VISTA PREVIA, en su propia ruta y SIN escribir nada.
+//
+// Existe porque la vista previa NO se puede calcular en el navegador: hacerlo sería un segundo
+// sitio componiendo el mismo número, y ésa es exactamente la forma en que la pantalla acaba
+// diciendo una cosa y la factura otra. Aquí se resuelve con `resolveSeriesSeq` y
+// `formatInvoiceNumber` — quien de verdad decide al emitir— y se devuelve ya hecha.
+//
+// Es de SOLO LECTURA a propósito: se llama en cada pulsación del teclado, y una ruta que escribe
+// no puede colgar de un `input`.
+app.post('/admin/onboarding/serie/previa', requireRole('admin'), async (req, res, next) => {
+  try {
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: req.merchantId },
+      select: { invoiceSeriesPrefix: true },
+    });
+    if (!merchant) return res.status(404).json({ error: 'not_found' });
+
+    const año = new Date().getFullYear();
+    const emitidas = await prisma.invoice.findMany({
+      where: { merchantId: req.merchantId, number: { startsWith: `${año}-` } },
+      select: { number: true },
+    });
+    const deLaSerie = numerosDeLaSerie(emitidas.map((f) => f.number), año);
+
+    const arranque = arranqueDeSerie({
+      vieneDeOtroSitio: req.body?.vieneDeOtroSitio === true,
+      ultimoNumero: req.body?.ultimoNumero,
+      año,
+      numerosDeLaSerie: deLaSerie,
+    });
+    if (!arranque.ok) {
+      const esChoque = arranque.motivo === 'choca_con_emitidas';
+      return res.status(esChoque ? 409 : 400).json({
+        error: arranque.motivo,
+        ...(esChoque ? { titulo: TIT_SERIE_YA_EMITIDA, message: MSG_SERIE_YA_EMITIDA } : {}),
+        ...(arranque.detalle ?? {}),
+      });
+    }
+
+    const prefijoPedido = typeof req.body?.serie === 'string' ? req.body.serie.trim() : '';
+    const prefijo = prefijoPedido || merchant.invoiceSeriesPrefix;
+    return res.json({
+      ok: true,
+      proximoNumero: vistaPreviaSerie(
+        prefijo,
+        { invoiceSeriesYear: arranque.invoiceSeriesYear, nextInvoiceNumber: arranque.nextInvoiceNumber },
+        año,
+      ),
+    });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+app.post('/admin/onboarding/serie', requireRole('admin'), async (req, res, next) => {
+  try {
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: req.merchantId },
+      select: { invoiceSeriesPrefix: true },
+    });
+    if (!merchant) return res.status(404).json({ error: 'not_found' });
+
+    // El año sale del RELOJ DEL SERVIDOR, nunca del cuerpo: es el mismo año contra el que
+    // `resolveSeriesSeq` decidirá al emitir. Aceptarlo del cliente permitiría declarar una
+    // continuidad para un año que no es el que va a salir en la factura.
+    const año = new Date().getFullYear();
+
+    // Lo ya emitido manda. Se lee por el NÚMERO, que es la identidad fiscal del documento.
+    const emitidas = await prisma.invoice.findMany({
+      where: { merchantId: req.merchantId, number: { startsWith: `${año}-` } },
+      select: { number: true },
+    });
+    const deLaSerie = numerosDeLaSerie(emitidas.map((f) => f.number), año);
+
+    const arranque = arranqueDeSerie({
+      vieneDeOtroSitio: req.body?.vieneDeOtroSitio === true,
+      ultimoNumero: req.body?.ultimoNumero,
+      año,
+      numerosDeLaSerie: deLaSerie,
+    });
+
+    if (!arranque.ok) {
+      // `choca_con_emitidas` se responde con el MISMO texto aprobado que el bloqueo de
+      // Configuración (SCRUM-291): es el mismo hecho —la serie ya tiene facturas— y contarlo de
+      // dos maneras distintas haría parecer que son dos reglas.
+      const esChoque = arranque.motivo === 'choca_con_emitidas';
+      return res.status(esChoque ? 409 : 400).json({
+        error: arranque.motivo,
+        ...(esChoque ? { titulo: TIT_SERIE_YA_EMITIDA, message: MSG_SERIE_YA_EMITIDA } : {}),
+        ...(arranque.detalle ?? {}),
+      });
+    }
+
+    // El prefijo solo se toca si cambió Y la serie no ha empezado. Con emitidas ya habríamos salido
+    // arriba, pero se pregunta igual en vez de deducirlo del flujo: la puerta de SCRUM-291 vive en
+    // `bloqueoCambioDeSerie` y ésta es exactamente la misma pregunta.
+    const prefijoPedido = typeof req.body?.serie === 'string' ? req.body.serie.trim() : '';
+    if (prefijoPedido) {
+      const veredicto = bloqueoCambioDeSerie({
+        prefijoActual: merchant.invoiceSeriesPrefix,
+        prefijoNuevo: prefijoPedido,
+        numerosDeLaSerie: deLaSerie,
+      });
+      if (veredicto.bloqueado) {
+        return res.status(409).json({
+          error: 'serie_ya_emitida', titulo: TIT_SERIE_YA_EMITIDA, message: MSG_SERIE_YA_EMITIDA,
+          emitidas: veredicto.emitidas, ultimo: veredicto.ejemplo,
+        });
+      }
+      const malPrefijo = invalidPrefijoSerie(prefijoPedido);
+      if (malPrefijo) {
+        return res.status(400).json({ error: 'prefijo_invalido', message: `El prefijo de serie ${malPrefijo}` });
+      }
+    }
+
+    // ⚠️ CERROJO, y lo cazó el censo de SCRUM-234 antes de que llegara a main.
+    //
+    // Esto lee lo emitido y escribe un valor ABSOLUTO en el contador: exactamente la tercera forma
+    // que aquel ticket prohíbe. Sin serializar, entre la lectura de `emitidas` y este `update`
+    // cabe una emisión — el merchant tendría ya la 001 consumida y aquí se escribiría 42 encima.
+    // No es un hueco cualquiera: esa 001 DUPLICA un número que él ya usó en su programa anterior,
+    // que es justo el daño que D2 existe para evitar.
+    //
+    // Mismo cerrojo y mismo namespace que `allocateInvoiceNumber`, así que reservar un número y
+    // declarar el arranque no pueden ocurrir a la vez. Se toma como PRIMERA sentencia y la
+    // relectura va dentro: comprobar fuera y escribir dentro no serializa nada.
+    const actualizado = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LOCK_NS}::int, ${req.merchantId!}::int)`;
+      const dentro = await tx.invoice.findMany({
+        where: { merchantId: req.merchantId, number: { startsWith: `${año}-` } },
+        select: { number: true },
+      });
+      if (numerosDeLaSerie(dentro.map((f) => f.number), año).length > 0) {
+        throw new SerieYaEmpezada();
+      }
+      return tx.merchant.update({
+        where: { id: req.merchantId },
+        data: {
+          nextInvoiceNumber: arranque.nextInvoiceNumber,
+          invoiceSeriesYear: arranque.invoiceSeriesYear,
+          ...(prefijoPedido ? { invoiceSeriesPrefix: prefijoPedido } : {}),
+        },
+        select: { invoiceSeriesPrefix: true, nextInvoiceNumber: true, invoiceSeriesYear: true },
+      });
+    });
+
+    // La vista previa se devuelve YA RESUELTA por quien decide, para que la pantalla enseñe el
+    // mismo número que va a salir y no uno calculado aparte.
+    return res.json({
+      ok: true,
+      ...actualizado,
+      proximoNumero: vistaPreviaSerie(
+        actualizado.invoiceSeriesPrefix,
+        {
+          invoiceSeriesYear: actualizado.invoiceSeriesYear,
+          nextInvoiceNumber: actualizado.nextInvoiceNumber,
+        },
+        año,
+      ),
+    });
+  } catch (err) {
+    // La carrera perdida NO es un 500: alguien emitió mientras el profesional contestaba, así que
+    // la serie ya empezó. Se le dice con el MISMO texto aprobado que el bloqueo de Configuración.
+    if (err instanceof SerieYaEmpezada) {
+      return res.status(409).json({
+        error: 'serie_ya_emitida', titulo: TIT_SERIE_YA_EMITIDA, message: MSG_SERIE_YA_EMITIDA,
+      });
+    }
+    return next(err);
+  }
 });
 
 // A6.5: 404 con marca para navegadores (GET que acepta HTML); JSON para la API.
