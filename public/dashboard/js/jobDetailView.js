@@ -119,6 +119,86 @@ function pintarBloqueRail(bloque) {
   return sec;
 }
 
+/**
+ * SCRUM-320 (G5) · pinta «QUÉ FALTA PARA COBRAR».
+ *
+ * Aquí no se decide nada: los importes y los huecos salen de `jobCobroHuecos.js`, que es puro y por
+ * eso se puede probar sin navegador. Esta función solo los coloca.
+ *
+ * Cada hueco lleva SU enlace en SU línea. No hay una acción principal de sección: elegir una es el
+ * trabajo de la cabecera, y hay una sola cabecera.
+ */
+function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
+  const i = importesDeCobro(job);
+  sec.innerHTML = '<h3 class="detail-section-title">Qué falta para cobrar</h3>';
+
+  const tabla = document.createElement('div');
+  tabla.className = 'cobro-lineas';
+
+  const fila = (etiqueta, importe, clase) => {
+    const f = document.createElement('div');
+    f.className = 'cobro-linea' + (clase ? ' ' + clase : '');
+    const e = document.createElement('span');
+    e.className = 'cobro-linea__etiqueta';
+    e.textContent = etiqueta;
+    const v = document.createElement('span');
+    v.className = 'cobro-linea__importe';
+    v.textContent = fmt(importe, moneda);
+    f.append(e, v);
+    tabla.appendChild(f);
+  };
+
+  fila('Aceptado', i.aceptado);
+  // ⚠️ La línea del entregado se OMITE si no se pudo medir. Los albaranes SIN_VALORAR —el modo por
+  // DEFECTO— no llevan importe, así que con tres albaranes firmados y sin valorar el número sería
+  // «0,00 €»: una afirmación falsa, no un hueco. Ausencia antes que un cero que parece medido.
+  if (i.albaranesFirmadosConImporte > 0) fila('Entregado y firmado', i.entregadoFirmado);
+  fila('Facturado', i.facturado);
+  fila('Cobrado', i.cobrado);
+  fila('Te falta por cobrar', i.faltaPorCobrar, 'cobro-linea--total');
+  sec.appendChild(tabla);
+
+  // ── LOS HUECOS, cada uno con su enlace ────────────────────────────────────────────────
+  const TEXTO_HUECO = {
+    'sin-firmar': (h) => `${h.cantidad} ${h.cantidad === 1 ? 'albarán' : 'albaranes'} sin firmar`,
+    'sin-facturar': (h) => `${fmt(h.importe, moneda)} entregados sin facturar`,
+    'sin-cobrar': (h) => `${fmt(h.importe, moneda)} facturados sin cobrar`,
+  };
+  const TEXTO_ACCION = {
+    'ver-albaranes': 'Ver albaranes',
+    'facturar-lo-entregado': 'Facturar lo entregado',
+    'registrar-cobro': 'Registrar cobro',
+  };
+
+  const lista = document.createElement('div');
+  lista.className = 'cobro-huecos';
+  for (const h of huecosDeCobro(job)) {
+    const f = document.createElement('div');
+    f.className = 'cobro-hueco';
+    f.dataset.hueco = h.id;
+    const t = document.createElement('span');
+    t.textContent = TEXTO_HUECO[h.id](h);
+    const a = document.createElement('button');
+    a.type = 'button';
+    a.className = 'btn-ghost btn-sm';
+    a.textContent = TEXTO_ACCION[h.accion];
+    // Los tres llevan al sitio donde se resuelve: dentro de esta misma pantalla (albaranes y
+    // facturas ya tienen su sección tras G4). Navegar, no ejecutar — ejecutar es de la cabecera y
+    // de la fila de cada documento, que ya lo hacen y no se duplica aquí.
+    a.addEventListener('click', () => {
+      const destino = h.accion === 'registrar-cobro' ? '[data-seccion="facturas"]' : '[data-seccion="albaranes"]';
+      const el = document.querySelector(destino);
+      if (!el || !el.scrollIntoView) return;
+      // AB6: movimiento sobrio y respetando la preferencia del sistema.
+      const quieto = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth', block: 'start' });
+    });
+    f.append(t, a);
+    lista.appendChild(f);
+  }
+  sec.appendChild(lista);
+}
+
 // Fila de <dl> inlineada (autocontenida; NO depende de addDefRow de quotesDetailView).
 function jdAddRow(dl, term, value) {
   if (value === undefined || value === null || value === '' || value === '—') return;
@@ -477,6 +557,25 @@ async function renderJobDetailView(container, jobId) {
   const jobMeta = jobStatusMeta(job.status); // SCRUM-31 (F1): estado del Trabajo, hoy invisible en el detalle
   const isTecnico = window.appUserRole === 'tecnico'; // SCRUM-89: veta de acciones de dinero (admin-only, 403 backend)
 
+  // ── SCRUM-320 (G5) · QUÉ FALTA PARA COBRAR ──────────────────────────────────────────
+  //
+  // G4 dejó el hueco declarado en `SECCIONES_CUERPO`; aquí se llena. Va la PRIMERA del cuerpo, que
+  // es su sitio en el ciclo: qué falta → entregado → facturado.
+  //
+  // ⚠️ NO TIENE CTA PROPIO. La cabecera contesta «¿cuál es LA siguiente acción?» —una sola, y la
+  // elige `jobNextAction`—. Ésta contesta «¿qué falta para cobrar?», que puede tener VARIAS
+  // respuestas a la vez. Enumerar huecos no exige elegir uno: cada hueco lleva su propio enlace en
+  // su propia línea, así que la escalera no se toca y las dos superficies no pueden contradecirse.
+  //
+  // Si no hay ningún hueco, la sección NO SE PINTA: no falta nada, y preguntar qué falta cuando no
+  // falta nada es ruido (misma regla del hueco que G3 y G4).
+  if (typeof seccionCobroVisible === 'function' && seccionCobroVisible(job)) {
+    const cobroSec = document.createElement('div');
+    cobroSec.className = 'detail-section';
+    body.appendChild(cobroSec);
+    pintarQueFaltaParaCobrar(cobroSec, job, fmtMoneyEs, cur);
+  }
+
   // ── Resumen: estado de cobro + total + barra + cobrado/pendiente ──
   const sumSec = document.createElement('div');
   sumSec.className = 'detail-section';
@@ -736,6 +835,7 @@ async function renderJobDetailView(container, jobId) {
   const albaranes = Array.isArray(job.albaranes) ? job.albaranes : [];
   const docsSec = document.createElement('div');
   docsSec.className = 'detail-section';
+  docsSec.dataset.seccion = 'albaranes'; // SCRUM-320: destino del hueco «sin firmar»
   // SCRUM-319 (G4): esta sección ya solo lleva ALBARANES; lo demás salió al rail o a su propio
   // bloque. El rótulo ya existía en el producto: no es microcopy nueva.
   docsSec.innerHTML = '<h3 class="detail-section-title">Albaranes</h3>';
@@ -2037,6 +2137,7 @@ async function renderJobDetailView(container, jobId) {
   if (restantes.length) {
     const factSec = document.createElement('div');
     factSec.className = 'detail-section';
+    factSec.dataset.seccion = 'facturas'; // SCRUM-320: destino del hueco «sin cobrar»
     factSec.innerHTML = '<h3 class="detail-section-title">Facturas</h3>';
     const lista = document.createElement('div');
     lista.className = 'job-doc-list';
