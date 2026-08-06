@@ -157,3 +157,31 @@ el mismo `main`), así que son comparables entre sí.
 
 Midió S2 (esta entrada). **Ejecuta S3**: migración y fusión. Que C5 no lo toquen dos sesiones a la
 vez es parte del arreglo, no un detalle — es lo que causó las dos implementaciones.
+
+---
+
+## ⚠️ SI RETOMAS C5: `npx prisma generate` NADA MÁS HACER CHECKOUT
+
+**Estado a 6-ago-2026.** El trabajo de C5 vive en la rama **`scrum-300-c5-fusion`**, verde y
+parada, esperando a que alguien con credencial mida producción. No está en `main` y no debe
+mergearse hasta entonces.
+
+Esa rama añade **4 columnas** a `Albaran` (`fechaEntrega`, `lugarEntrega`, `firmadoPorNombre`,
+`firmadoPorCalidad`). El cliente de Prisma del worktree está generado **contra el schema de
+`main`**, que no las tiene. Así que:
+
+```bash
+git checkout scrum-300-c5-fusion
+npx prisma generate            # ← ANTES de npm test, o el pretest para (y con razón)
+```
+
+Sin eso, `npm test` muere en su `pretest` diciendo que el cliente va por detrás del schema. **El
+guard lo dice bien y no hay que rodearlo** — solo que enterarse por un rojo a las tres de la
+mañana cuesta media hora, y esta nota vale por esa media hora.
+
+⚠️ **Y al revés también:** al volver a `main` (o a cualquier rama sin las 4 columnas) hay que
+regenerar OTRA VEZ, porque entonces el cliente va por DELANTE. Ese sentido es el peor de los dos y
+tiene precedente escrito: *«es lo que mató la tanda del 29-jul-2026: 6 tests y 27 minutos, con este
+guard en verde»*. Medido el 6-ago-2026: `node_modules` **NO** es un junction en ninguno de los
+cuatro worktrees (`fsutil` → error 4390, `LinkType` vacío), así que regenerar **solo afecta al
+árbol en el que estás** — el motivo escrito que decía lo contrario es falso (SCRUM-351).
