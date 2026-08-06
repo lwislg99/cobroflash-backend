@@ -174,10 +174,11 @@ test('SCRUM-296 · CONTRA POSTGRES: el libro de un merchant no ve NI UNA factura
         `🔴 el lector solo miró ${libro.miradas} facturas habiendo sembrado 2 para este merchant. ` +
         'Un libro vacío no se lee como «no encontré nada»: se lee como «no facturaste nada», y ' +
         'ante Hacienda eso es una afirmación.');
-      assert.equal(libro.asientos.length, 2,
-        '🔴 el libro no tiene los dos asientos sembrados.');
-
       // ── EL CONTROL NEGATIVO ─────────────────────────────────────────────────────────────────
+      // ⚠️ VA ANTES QUE «tiene dos asientos» A PROPÓSITO. Cuando la fuga existe, el libro tiene
+      // CINCO asientos, y un fallo que dice «esperaba 2, había 5» describe un número; el de abajo
+      // describe lo que ha pasado de verdad. Medido: con las dos cerraduras abiertas, saltaba
+      // primero el conteo y el mensaje bueno no llegaba a ejecutarse.
       const numeros = libro.asientos.map((a) => a.numero).sort();
       assert.deepEqual(numeros, [`2026-CF-${SELLO}-001`, `2026-CF-${SELLO}-002`],
         '🔴 el libro del merchant MÍO enseña facturas que no son suyas. En un libro de registro ' +
@@ -187,6 +188,8 @@ test('SCRUM-296 · CONTRA POSTGRES: el libro de un merchant no ve NI UNA factura
       assert.equal(libro.ajenas, 0,
         '🔴 la consulta trajo filas ajenas y las paró el constructor. La segunda cerradura ha ' +
         'funcionado, pero la PRIMERA (el `where` de la consulta) está abierta.');
+      assert.equal(libro.asientos.length, 2,
+        '🔴 el libro no tiene los dos asientos sembrados.');
 
       // Y el negativo del negativo: el libro del OTRO ve las suyas y ninguna mía.
       const libroOtro = await leerLibroRegistro(prisma, { merchantId: otro.merchant.id });
