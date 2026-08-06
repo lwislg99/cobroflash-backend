@@ -24,6 +24,14 @@ pidiéndole al usuario que repitiera algo que no podía funcionar. Sin salida y 
 | **cuentas reales sin oficio** | **4** |
 | de ellas, con actividad | **2** — una de pago, con **31 presupuestos y 6 facturas** desde mayo |
 
+> **QUÉ MIDIÓ «real» AQUÍ (anotado el 6-ago-2026; las cifras de arriba NO se tocan, son correctas).**
+> En esta tabla **«real» = «su email no es `@test.local`»**, una clasificación por dominio de correo
+> hecha para acotar un rescate de UX. **No significa «cliente externo»:** el fundador confirmó el
+> 6-ago-2026 que **todas** estas cuentas son pruebas del propio equipo, **incluida la de pago**. En
+> el máster y en `ASESOR.md`, «cliente real» significa otra cosa —quien paga desde fuera y cuyos
+> datos son sensibles—, y de ESA acepción cuelgan las cláusulas de caducidad del régimen de riesgo.
+> Se anota porque la tabla ya se leyó una vez como censo de clientes externos, que es lo que no es.
+
 Y el dato que lo cierra: **los 8 tienen `onboardingCompleted: true`**. No están a medias — el único
 sitio donde se elige oficio ya se cerró para todos ellos.
 
