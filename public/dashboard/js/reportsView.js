@@ -910,8 +910,14 @@ function buildDesgloseEmpleado(filas, year, fmt, currency) {
   filas.forEach((f) => {
     const b = document.createElement('button');
     b.type = 'button';
-    // Objetivo táctil ≥44 px (AB6). Clases del inventario: seleccionado = primario.
-    b.style.cssText = 'min-height:44px';
+    // SCRUM-384 · el `style="min-height:44px"` que había aquí SE RETIRÓ, y no solo por redundante.
+    //
+    // La base ya da 44 px en móvil a `.btn-secondary`/`.btn-primary` sueltas desde SCRUM-352
+    // (`.btn-primary:not(.btn-sm)`), así que el objetivo táctil de AB6 se cumple sin esto. Pero
+    // al ser INLINE ganaba siempre: a 1280 px forzaba 44 donde la casa da 36, y este botón de
+    // filtro era 8 px más alto que sus hermanos en escritorio sin que nadie lo hubiera decidido.
+    //
+    // Clases del inventario: seleccionado = primario.
     b.textContent = f.label;
     const sincronizar = () => {
       const on = sel.has(f.key);
