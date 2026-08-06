@@ -37,7 +37,19 @@ test('isAlbaranNumber distingue la serie ALB de la fiscal y la J-', () => {
 test('resolveAlbaranSeq: continúa en el mismo año, resetea al cambiar y con serie nueva', () => {
   assert.equal(resolveAlbaranSeq({ albaranSeriesYear: 2026, nextAlbaranNumber: 8 }, 2026), 8);
   assert.equal(resolveAlbaranSeq({ albaranSeriesYear: 2026, nextAlbaranNumber: 8 }, 2027), 1);
-  assert.equal(resolveAlbaranSeq({ albaranSeriesYear: null, nextAlbaranNumber: 5 }, 2026), 1);
+
+  // ⚠️ SCRUM-306 (C7) · ESTE CASO ESTABA MAL Y FIJABA LA TRAMPA COMO COMPORTAMIENTO ESPERADO.
+  //
+  // Decía `{ albaranSeriesYear: null, nextAlbaranNumber: 5 }` → 1, bajo el rótulo «con serie
+  // nueva». Pero un contador en 5 NO es una serie nueva: es una serie a la que alguien le movió el
+  // número sin fijar el año. Este assert hacía que el reinicio silencioso pareciera deliberado — y
+  // un test que dice lo que no es cuesta más que no tenerlo, porque el siguiente que lo lea creerá
+  // que está decidido.
+  //
+  // La serie NUEVA de verdad es el merchant recién creado: año nulo y contador en 1.
+  assert.equal(resolveAlbaranSeq({ albaranSeriesYear: null, nextAlbaranNumber: 1 }, 2026), 1);
+  // Y el contador movido sin año falla en vez de reiniciar (detalle en scrum306-serie-albaranes).
+  assert.throws(() => resolveAlbaranSeq({ albaranSeriesYear: null, nextAlbaranNumber: 5 }, 2026));
 });
 
 test('allocateAlbaranNumber: correlativo y avanza el contador (tx mock)', async () => {
