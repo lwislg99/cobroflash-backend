@@ -247,11 +247,13 @@ export async function generateAlbaranPdf(params: {
         .text(`${COPY.firmadoPorNombre.label}: `, { continued: true })
         .font('Helvetica').fillColor(params.firmadoPorNombre ? BODY : MUTED)
         .text(params.firmadoPorNombre || COPY.noSePidio);
-      if (params.firmadoPorCalidad) {
-        const { textoLibre } = decodificarCalidad(params.firmadoPorCalidad);
-        const etiqueta = etiquetaCalidad(params.firmadoPorCalidad);
+      // Un `id` que no reconocemos NO se pinta: `etiquetaCalidad` devuelve null y aquí se calla.
+      // Antes esto imprimía la cadena "null" en el documento firmado.
+      const etiqueta = etiquetaCalidad(params.firmadoPorCalidad);
+      if (etiqueta) {
+        const { textoLibre } = decodificarCalidad(params.firmadoPorCalidad!);
         doc.fontSize(8).font('Helvetica').fillColor(MUTED)
-          .text(textoLibre ? `${etiqueta} · ${textoLibre}` : String(etiqueta));
+          .text(textoLibre ? `${etiqueta} · ${textoLibre}` : etiqueta);
       }
       doc.fontSize(8).font('Helvetica').fillColor(MUTED).text(`Firmado el ${signDate}`);
       doc.fillColor('#000');

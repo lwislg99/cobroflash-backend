@@ -36,7 +36,7 @@ import path from 'node:path';
 import { textoDePdf, contiene } from './_pdf-texto.mjs';
 import { generateAlbaranPdf } from '../dist/modules/jobs/infra/albaranPdf.service.js';
 import { computeAlbaranContentHash, EVIDENCIA_VERSION_ACTUAL } from '../dist/modules/jobs/domain/albaran.service.js';
-import { COPY, CALIDAD_FIRMANTE, PENDIENTE, leerFirmante, codificarCalidad, decodificarCalidad }
+import { COPY, CALIDAD_FIRMANTE, PENDIENTE, leerFirmante, codificarCalidad, decodificarCalidad, etiquetaCalidad }
   from '../dist/modules/jobs/domain/albaranFirmaCopy.js';
 import { estadoCobroAlbaran, facturadoPorLinea } from '../dist/modules/jobs/domain/albaranFacturacion.js';
 
@@ -102,7 +102,13 @@ test('SCRUM-300: la fecha de entrega es DISTINTA de la de emisión y se ven las 
 
 test('SCRUM-300: la calidad del firmante se imprime, con su texto libre si lo hay', async () => {
   const txt = await textoDelPdfDe({ firmadoPorCalidad: codificarCalidad('otra_persona', 'Vecina del 3º') });
+  assert.ok(contiene(txt, 'Otra persona'), 'la etiqueta aprobada de la calidad no llega al PDF');
   assert.ok(contiene(txt, 'Vecina del 3'), 'el texto libre de «otra persona» no llega al PDF');
+});
+
+test('SCRUM-300: una calidad desconocida no imprime «null» en el documento', async () => {
+  const txt = await textoDelPdfDe({ firmadoPorCalidad: 'jefe_supremo' });
+  assert.ok(!contiene(txt, 'null'), 'se está imprimiendo la cadena «null» en un albarán firmado');
 });
 
 // ── ② SUELO: sin lugar de entrega NO se inventa una dirección ────────────────
@@ -256,6 +262,9 @@ test('SCRUM-300: el microcopy del dashboard no se ha separado del módulo', () =
 
   for (const c of CALIDAD_FIRMANTE) {
     assert.ok(js.includes(`'${c.id}'`), `falta la calidad '${c.id}' en el pad de firma del dashboard`);
+    // La ETIQUETA también, no solo el id: el id es dato y la etiqueta es lo que lee la persona.
+    // Comparar solo ids dejaba pasar que una lista dijera «Portero o conserje» y la otra otra cosa.
+    assert.ok(js.includes(c.etiqueta), `la etiqueta de '${c.id}' en el dashboard no es la aprobada: «${c.etiqueta}»`);
   }
 
   // El editor del albarán es la TERCERA copia de estos textos (pad de firma, página pública y
@@ -279,10 +288,31 @@ test('SCRUM-300: el editor manda los dos campos al backend (si no, nacen muertos
   assert.match(cuerpo[0], /\bfechaEntrega:/, 'el editor NO envía fechaEntrega en el PATCH');
 });
 
-test('SCRUM-300: las etiquetas de calidad siguen marcadas como PENDIENTES', () => {
-  // Regla 30: mientras el fundador no apruebe el texto, se ve el marcador. Si alguien inventa
-  // una etiqueta y la da por buena, esto se pone rojo.
+test('SCRUM-300: las cinco calidades llevan EXACTAMENTE el texto aprobado', () => {
+  // Regla 30: microcopy cerrado. Antes este test exigía el marcador `[PENDIENTE …]`; al aprobar
+  // el fundador los cinco textos (5-ago-2026), el guard NO se retira — cambia de objeto y ahora
+  // clava el texto literal. Un guard que se borra al llegar la copy deja la copy sin vigilar.
+  assert.deepEqual(
+    CALIDAD_FIRMANTE.map((c) => [c.id, c.etiqueta]),
+    [
+      ['cliente', 'El propio cliente'],
+      ['familiar_o_conviviente', 'Un familiar o alguien que vive allí'],
+      ['encargado_o_personal_obra', 'Encargado o personal de la obra'],
+      ['portero_o_conserje', 'Portero o conserje'],
+      ['otra_persona', 'Otra persona'],
+    ],
+    'las calidades ya no son las cinco aprobadas (ni su texto ni su orden)',
+  );
+  // Y ninguna arrastra el marcador de «sin aprobar».
   for (const c of CALIDAD_FIRMANTE) {
-    assert.equal(c.etiqueta, PENDIENTE, `la calidad '${c.id}' lleva un texto que NADIE ha aprobado`);
+    assert.ok(!c.etiqueta.includes(PENDIENTE), `la calidad '${c.id}' sigue con el marcador puesto`);
   }
+});
+
+test('SCRUM-300: una calidad que no reconocemos NO se le inventa texto', () => {
+  // Un id desconocido en la BD (dato viejo, error de otro sitio) no puede acabar pintando una
+  // declaración en un documento probatorio. Se calla.
+  assert.equal(etiquetaCalidad('jefe_supremo'), null);
+  assert.equal(etiquetaCalidad(null), null);
+  assert.equal(etiquetaCalidad('portero_o_conserje'), 'Portero o conserje');
 });

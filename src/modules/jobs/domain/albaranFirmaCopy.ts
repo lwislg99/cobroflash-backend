@@ -42,23 +42,29 @@ export const COPY = {
  * EN CALIDAD DE QUÉ firma. ⚠️ Sin opción marcada por defecto — misma razón que el nombre vacío:
  * una casilla premarcada es una declaración que el firmante no ha hecho.
  *
- * Las etiquetas están PENDIENTES de aprobación; los `id` NO (son datos, no texto de pantalla).
+ * Etiquetas APROBADAS por el fundador (5-ago-2026); son microcopy cerrado (regla 30). Los `id`
+ * se fijaron ANTES de que llegara el texto y por eso no hubo que migrar ni un solo albarán al
+ * aprobarlo: lo que se guarda en `Albaran.firmadoPorCalidad` es el `id`, nunca la etiqueta.
  */
 export const CALIDAD_FIRMANTE: ReadonlyArray<{ id: string; etiqueta: string; libre?: boolean }> = [
-  { id: 'cliente', etiqueta: PENDIENTE },
-  { id: 'familiar_o_conviviente', etiqueta: PENDIENTE },
-  { id: 'encargado_o_personal_obra', etiqueta: PENDIENTE },
-  { id: 'portero_o_conserje', etiqueta: PENDIENTE },
-  { id: 'otra_persona', etiqueta: PENDIENTE, libre: true },
+  { id: 'cliente', etiqueta: 'El propio cliente' },
+  { id: 'familiar_o_conviviente', etiqueta: 'Un familiar o alguien que vive allí' },
+  { id: 'encargado_o_personal_obra', etiqueta: 'Encargado o personal de la obra' },
+  { id: 'portero_o_conserje', etiqueta: 'Portero o conserje' },
+  { id: 'otra_persona', etiqueta: 'Otra persona', libre: true },
 ];
 
 export const CALIDAD_IDS: ReadonlySet<string> = new Set(CALIDAD_FIRMANTE.map((c) => c.id));
 
-/** Etiqueta para pintar una calidad ya guardada. Un `id` desconocido NO se inventa: se dice. */
+/**
+ * Etiqueta para pintar una calidad ya guardada. Un `id` desconocido devuelve `null` y NO se
+ * pinta: inventarle un texto a un dato que no reconocemos sería poner en un documento probatorio
+ * una declaración que nadie hizo — el mismo error que el nombre de firmante autorrellenado.
+ */
 export function etiquetaCalidad(id: string | null | undefined): string | null {
   if (!id) return null;
   const c = CALIDAD_FIRMANTE.find((x) => x.id === decodificarCalidad(id).id);
-  return c ? c.etiqueta : PENDIENTE;
+  return c ? c.etiqueta : null;
 }
 
 // ── «Otra persona ______», sin pedir una columna más ─────────────────────────

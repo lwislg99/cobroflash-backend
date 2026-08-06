@@ -20,15 +20,14 @@
     nombreAyuda: 'Una firma sin nombre no identifica a nadie. Con el nombre, el albarán vale como prueba de entrega si algún día hay discusión.',
     chip: 'Es %s',
   };
-  // Los `id` son datos (van a la BD); las etiquetas están PENDIENTES de aprobación y se pintan
-  // con el marcador a la vista, como en portabilidad. Mismo trato que COPY: el test las compara.
-  const PENDIENTE = '[PENDIENTE microcopy oficial]';
+  // Los `id` son datos (van a la BD); las etiquetas son microcopy APROBADO (5-ago-2026).
+  // Mismo trato que COPY: el test compara esta lista con el módulo TS, etiqueta a etiqueta.
   const CALIDADES = [
-    { id: 'cliente', etiqueta: PENDIENTE },
-    { id: 'familiar_o_conviviente', etiqueta: PENDIENTE },
-    { id: 'encargado_o_personal_obra', etiqueta: PENDIENTE },
-    { id: 'portero_o_conserje', etiqueta: PENDIENTE },
-    { id: 'otra_persona', etiqueta: PENDIENTE, libre: true },
+    { id: 'cliente', etiqueta: 'El propio cliente' },
+    { id: 'familiar_o_conviviente', etiqueta: 'Un familiar o alguien que vive allí' },
+    { id: 'encargado_o_personal_obra', etiqueta: 'Encargado o personal de la obra' },
+    { id: 'portero_o_conserje', etiqueta: 'Portero o conserje' },
+    { id: 'otra_persona', etiqueta: 'Otra persona', libre: true },
   ];
 
   function openSignaturePad(opts) {
