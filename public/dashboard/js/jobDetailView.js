@@ -1345,10 +1345,9 @@ async function renderJobDetailView(container, jobId) {
     // vacío y ya lo llenaré».
     const enBlanco = { estado: 'borrador', modoValoracion, lineas: decision.lineas, notas: '' };
 
-    // ⚠️ AQUÍ NO SE PASA `ctx`, Y NO ES UN OLVIDO. La sugerencia de dirección es una ayuda de la
-    // EDICIÓN de un albarán, no de su creación (decisión del asesor, 6-ago-2026). Este camino no
-    // ha construido nunca un `ctx` —`cur`, `refresh` y `setStatus` tampoco viajan por aquí—, y
-    // fabricar uno parcial solo para la sugerencia mezclaría dos cosas distintas.
+    // ⚠️ AQUÍ NO VIAJA `direccionSugerida`, Y NO ES UN OLVIDO. El contexto sí se pasa —abajo, al
+    // cerrar las opciones— pero SIN la sugerencia: es una ayuda de la EDICIÓN de un albarán, no de
+    // su creación (decisión del asesor, 6-ago-2026).
     // Consecuencia buscada: al crear en blanco no hay placeholder de lugar de entrega. El
     // `ctx = {}` por defecto de `buildAlbEditor` lo hace inofensivo — `ctx.direccionSugerida` es
     // `undefined`, falsy, y el campo sale vacío en lugar de reventar.
