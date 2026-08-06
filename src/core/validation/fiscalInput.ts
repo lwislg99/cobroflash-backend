@@ -134,6 +134,23 @@ export function numerosDeLaSerie(numeros: readonly (string | null | undefined)[]
  * Configuración cada vez que se guarda cualquier otro campo) no es tocar la serie y no puede
  * dejar al profesional sin poder guardar su dirección.
  */
+/**
+ * Cuántas facturas hay ya emitidas en la serie, y cuál es el ejemplo que se enseña.
+ *
+ * ⚠️ SE EXTRAE DE `bloqueoCambioDeSerie` PORQUE AHORA HACEN FALTA LOS DOS: el servidor lo usa
+ * para RECHAZAR un cambio de serie, y `/admin/me` lo publica para que la pantalla pinte el campo
+ * BLOQUEADO con su motivo antes de que el usuario lo intente. Escribir «el ejemplo es el más
+ * alto» en dos sitios es cómo se llega a que el aviso diga un número y el rechazo otro.
+ *
+ * El ejemplo es el número MÁS ALTO ya emitido: es el que hace ver el salto que se evita.
+ */
+export function resumenSerieEmitida(
+  numerosDeLaSerie: readonly string[],
+): { emitidas: number; ejemplo: string | null } {
+  const emitidas = numerosDeLaSerie.length;
+  return { emitidas, ejemplo: emitidas ? [...numerosDeLaSerie].sort()[emitidas - 1] : null };
+}
+
 export function bloqueoCambioDeSerie(params: {
   prefijoActual: string | null | undefined;
   prefijoNuevo: string | null | undefined;
@@ -142,11 +159,9 @@ export function bloqueoCambioDeSerie(params: {
   const actual = (params.prefijoActual ?? '').trim();
   const nuevo = (params.prefijoNuevo ?? '').trim();
   if (!nuevo || nuevo === actual) return { bloqueado: false };
-  const emitidas = params.numerosDeLaSerie.length;
+  const { emitidas, ejemplo } = resumenSerieEmitida(params.numerosDeLaSerie);
   if (emitidas === 0) return { bloqueado: false };
-  // El ejemplo es el número MÁS ALTO ya emitido: es el que hace ver el salto que se evita.
-  const ejemplo = [...params.numerosDeLaSerie].sort()[emitidas - 1];
-  return { bloqueado: true, emitidas, ejemplo };
+  return { bloqueado: true, emitidas, ejemplo: ejemplo as string };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════
