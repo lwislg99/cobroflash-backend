@@ -312,6 +312,70 @@ lee como si nunca se hubiera equivocado.
 
 ---
 
+# EL CAMPO QUE SE PIERDE VIVE EN EL CÓDIGO QUE SE MUEVE
+
+**SCRUM-300 (C5), sesión 3 · 6-ago-2026 · al rebasar `scrum-300-c5-fusion` sobre 97 commits de main**
+
+> **Un conflicto POR MOVIMIENTO no se resuelve eligiendo un lado: los dos lados son correctos y lo
+> que falta es el PUENTE.**
+
+Es una familia distinta de las de arriba. Allí el problema era una medición que no llegaba a
+ejecutarse; aquí **todo se ejecuta y todo está bien**, y aun así se pierde trabajo — porque la
+herramienta que marca el conflicto no sabe distinguir «esto cambió» de «esto está en otro sitio».
+
+**El caso.** `buildAlbEditor` vivía ANIDADA dentro de `renderJobDetailView` y cogía `job` por
+CLAUSURA. SCRUM-386/320 la sacó al NIVEL SUPERIOR —un refactor correcto— y le añadió un quinto
+parámetro `ctx = {}` para devolverle el contexto que antes le llegaba solo. Al rebasar C5 encima:
+
+| Lo que git dijo | Lo que realmente había |
+| --- | --- |
+| 397 líneas en conflicto | **58** de la rama; las otras **339** son la misma función en otro sitio |
+| «elige un lado» | los dos lados correctos, y ninguno completo |
+
+**El diff parece enorme justo cuando el problema es diminuto**, y esa desproporción es la trampa:
+invita a resolver por volumen —«son 400 líneas, acepto el lado que parezca más nuevo»— cuando lo que
+toca es leer las 58.
+
+**Lo que se pierde si eliges un lado**, y por qué no hace ruido:
+
+* Aceptando **main**: desaparecen las 58 líneas. La suite sigue verde — no había test.
+* Aceptando **la rama**: reaparece la función vieja, sin `ctx`, **duplicada** con la de main. En JS
+  la segunda declaración gana por hoisting, así que las 397 líneas quedan de código muerto… o pisan
+  a las buenas, según el orden. Tampoco hace ruido.
+
+Y el detalle que da nombre a la regla: de las 58 líneas, **una sola** leía `job.direccion`. Ese era
+el campo que colgaba de la clausura desaparecida. El puente fue `ctx.direccionSugerida` —**un dato,
+no el objeto entero**: pasarle el `Job` le daría acceso a media pantalla e invitaría al acoplamiento
+siguiente—, y con `ctx = {}` por defecto el call site que no lo pasa obtiene `undefined`, falsy: sin
+sugerencia, no pantalla rota. **El modo de fallo es el bueno.**
+
+## Cómo se reconoce, antes de resolver nada
+
+```bash
+git diff --stat <base> <rama> -- <fichero>     # lo que la rama aporta DE VERDAD
+git diff --stat <base> origin/main -- <fichero> # lo que el otro lado movió
+git grep -n "<símbolo>" origin/main -- <ruta>   # ¿la función SIGUE existiendo, en otro sitio?
+```
+
+Si el segundo número es enorme, el tercero encuentra el símbolo **con otra firma o a otra
+indentación**, y el primero es pequeño → es movimiento, no cambio. **Se injertan las líneas del
+primero sobre la versión del segundo**, y se comprueba qué dependencias de ámbito se quedaron por el
+camino: lo que antes llegaba por clausura ahora no llega.
+
+## Y se deja un test, o vuelve a pasar
+
+Esto ya se perdió una vez sin que nada avisara, así que la regla no termina en resolver bien:
+**termina en dejar una red**. `tests/scrum300-direccion-sugerida.test.mjs` extrae el bloque del
+fichero publicado **por AST** y lo ejecuta en los dos sentidos (con dirección y sin ella), más el
+control de que la sugerencia **nunca** se escribe en un `.value`. Probado en rojo con cinco
+mutaciones, incluida la que importa: **mover o renombrar la función deja el escáner ciego, y
+entonces el test falla declarándolo** en vez de pasar sobre un conjunto vacío.
+
+*Un refactor correcto puede borrar trabajo correcto. Lo único que lo impide es que alguien lo mire —
+o un test que se ponga rojo cuando la función vuelva a mudarse.*
+
+---
+
 # EL GUARD QUE VIGILA LA ORTOGRAFÍA, NO EL CABLEADO
 
 **SCRUM-381, sesión 2 · 6-ago-2026**
