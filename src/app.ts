@@ -6,7 +6,7 @@ import { outboxDir } from './core/storage/dirs'; // SCRUM-72: invoicesDir ya no 
 import { jsonError } from './core/http/jsonError';
 import { notFoundPageHtml } from './core/http/publicNotFound';
 import { isFlagEnabled } from './core/flags';
-import { puedeCrearFacturaSuelta } from './modules/invoicing/domain/facturaSuelta'; // SCRUM-289 (A0.3)
+import { modoDocumentoSuelto } from './modules/invoicing/domain/facturaSuelta'; // SCRUM-289 (A0.3) · SCRUM-346 (A0.5)
 import { requireAuth, requireActivePlan, requireRole } from './core/http/authMiddleware';
 import { mountAdmin } from './core/http/adminMounts'; // SCRUM-55: red fail-closed de /admin
 import { requireInternalSecret } from './core/http/internalAuth';
@@ -299,7 +299,7 @@ app.get('/admin/me', async (req, res) => {
 
   const merchantFull = await prisma.merchant.findUnique({
     where: { id: session.merchantId },
-    // SCRUM-289: `email` y `flags` los necesita `puedeCrearFacturaSuelta` — el modo de emisión
+    // SCRUM-289: `email` y `flags` los necesita `modoDocumentoSuelto` — el modo de emisión
     // (V0-0) se resuelve con merchant demo (por email) + flag por merchant, no solo con el país.
     select: { country: true, logoUrl: true, email: true, flags: true, invoiceSeriesYear: true },
   });
@@ -348,7 +348,10 @@ app.get('/admin/me', async (req, res) => {
     // factura. El veredicto se calcula AQUÍ, con la MISMA función que gatea `POST /admin/invoices`
     // — el navegador no reimplementa la regla, la recibe. Dos copias del criterio es cómo se llega
     // a que el back acepte lo que el front esconde.
-    facturaSueltaDisponible: puedeCrearFacturaSuelta({
+    // SCRUM-346 (A0.5): viaja el VEREDICTO de tres valores, no un booleano. Sustituye a
+    // `facturaSueltaDisponible` en vez de convivir con él: dos campos del mismo hecho acaban
+    // divergiendo, y entonces el botón que se pinta y el documento que sale dicen cosas distintas.
+    documentoSuelto: modoDocumentoSuelto({
       id: session.merchantId,
       email: merchantFull?.email ?? null,
       country: merchantFull?.country ?? null,

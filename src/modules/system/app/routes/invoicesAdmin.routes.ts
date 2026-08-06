@@ -33,7 +33,7 @@ import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-289 (C7)
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-289
 import {
-  puedeCrearFacturaSuelta, validarFacturaSuelta,
+  modoDocumentoSuelto, validarFacturaSuelta,
   ERROR_MODO_SIN_FACTURA, ERROR_CLIENTE_INVALIDO,
 } from '../../../invoicing/domain/facturaSuelta'; // SCRUM-289 (A0.3)
 
@@ -69,7 +69,7 @@ router.get('/', async (req, res) => {
  * emitida se rectifica con R1 o se anula con registro, que ya tienen su sitio (`/:id/rectify`,
  * `/:id/annul`). El guard de SCRUM-289 vigila que este entrypoint no abra esa puerta.
  *
- * El gate es `puedeCrearFacturaSuelta`, la MISMA función cuyo veredicto viaja al front en
+ * El gate es `modoDocumentoSuelto`, la MISMA función cuyo veredicto viaja al front en
  * `GET /admin/me` — no una segunda copia del criterio.
  */
 router.post('/', requireRole('admin'), async (req, res) => {
@@ -81,8 +81,13 @@ router.post('/', requireRole('admin'), async (req, res) => {
     if (!merchant) return res.status(404).json({ error: 'not_found' });
 
     // GATE. 409 NOMBRADO y no un 500: quien lo reciba tiene que poder distinguir «aquí no toca»
-    // de «se ha roto algo». Hoy esto es lo que ve un merchant ES real (regla 24), y es lo esperado.
-    if (!puedeCrearFacturaSuelta(merchant)) {
+    // de «se ha roto algo».
+    //
+    // SCRUM-346 (A0.5): el veredicto tiene TRES valores. `justificante` ya NO cae aquí — el
+    // profesional español real sí puede crear su documento suelto, solo que es un justificante.
+    // Aquí solo queda `'no'`, que es el fallo cerrado (sin merchant).
+    const modoSuelto = modoDocumentoSuelto(merchant);
+    if (modoSuelto === 'no') {
       return res.status(409).json({
         error: ERROR_MODO_SIN_FACTURA,
         message: 'En este modo no se emiten facturas.',
@@ -127,8 +132,13 @@ router.post('/', requireRole('admin'), async (req, res) => {
     // `allocateInvoiceNumber`) y entre medias hay una transacción: si de la serie sale un J-, el
     // documento NO es lo que dice el botón. Se rechaza en vez de entregarlo. Cinturón y tirantes,
     // igual que en `facturar-parcial`.
-    if (isReceiptNumber(invoice.number)) {
-      console.error('[POST /admin/invoices] serie J- con el gate abierto — invoice', invoice.id);
+    //
+    // SCRUM-346 · EL CINTURÓN SE RAMIFICA, NO SE AFLOJA. Un `J-` solo es un fallo cuando el
+    // veredicto prometía FACTURA: ahí el documento no es lo que decía el botón y se rechaza.
+    // En el camino de justificante ese `J-` es EXACTAMENTE lo correcto —`emitInvoice` ya le pone
+    // `type: 'JUST'`—, y seguir rechazándolo sería el bug, no la protección.
+    if (modoSuelto === 'factura' && isReceiptNumber(invoice.number)) {
+      console.error('[POST /admin/invoices] serie J- con el gate de FACTURA abierto — invoice', invoice.id);
       return res.status(409).json({
         error: ERROR_MODO_SIN_FACTURA,
         message: 'En este modo no se emiten facturas.',

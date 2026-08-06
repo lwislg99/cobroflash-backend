@@ -27,9 +27,14 @@
 // CONSECUENCIA ASUMIDA Y DICHA: hoy ningún merchant ES real ve esto. Es lo que impone la regla 24
 // y es lo esperado, no un fallo de alcance. No se compensa enseñándolo.
 //
-// SCRUM-346 (el justificante suelto del merchant ES real) está enlazado como bloqueado por éste y
-// REUTILIZARÁ ESTA MISMA RUTA. Por eso el tipo y el rótulo salen del MODO y no del camino: cuando
-// 346 entre, lo que cambia es el rótulo y el `type`, no el entrypoint.
+// SCRUM-346 (A0.5) YA ENTRÓ, y salió exactamente como A0.3 lo dejó previsto: se reutiliza esta
+// misma ruta y lo único que cambia es el RÓTULO y el `type`, nunca el entrypoint. El gate pasó de
+// booleano a un veredicto de TRES valores (`modoDocumentoSuelto`), porque `receipt` no es «no
+// puedes»: es «tú emites justificantes».
+//
+// Y el `type` no hubo ni que tocarlo: `emitInvoice` ya fuerza `JUST` cuando la serie sale `J-`
+// (`invoicing.service.ts:52`). El camino de emisión no se modifica — se le añade un llamador
+// (regla 38).
 import { getEmissionMode, type MerchantLike } from './emission.service';
 
 /** Error nombrado del gate. Un 500 no prueba nada: quien lo reciba tiene que poder ramificar. */
@@ -44,9 +49,33 @@ export const ERROR_LINEAS_INVALIDAS = 'lineas_invalidas';
  * reimplementa la regla: recibe el veredicto ya calculado. Que el back acepte lo que el front
  * esconde es exactamente lo que pasa cuando cada lado tiene su propia copia del criterio.
  */
-export function puedeCrearFacturaSuelta(merchant: MerchantLike | null | undefined): boolean {
-  if (!merchant) return false; // sin merchant no se adivina: falla cerrado
-  return getEmissionMode(merchant) !== 'receipt';
+/**
+ * QUÉ DOCUMENTO SUELTO PUEDE CREAR ESTE MERCHANT. Tres valores, no dos.
+ *
+ * ── POR QUÉ DEJÓ DE SER UN BOOLEANO (SCRUM-346 / A0.5) ──────────────────────────────────────
+ * A0.3 devolvía `false` para el modo `receipt`, y eso metía en el mismo saco dos cosas opuestas:
+ *
+ *   · «no puedes emitir nada» (no hay merchant: se falla cerrado), y
+ *   · «tú emites JUSTIFICANTES», que es el caso del profesional español real de hoy — el 80 % de
+ *     la clientela, no una excepción.
+ *
+ * Aplanados, el segundo se lee como una carencia y el fontanero se queda sin puerta para la
+ * avería de 40 € del martes: la que se hace, se cobra y no tiene presupuesto, ni trabajo, ni
+ * albarán. **El camino existía entero desde A0.3; lo que faltaba era el permiso.**
+ *
+ * ⚠️ ESTO NO ENCIENDE NADA (regla 24). `INVOICING_ES_ENABLED` sigue OFF y ese merchant sigue sin
+ * emitir facturas: lo que se hace explícito es el justificante que YA le corresponde, que es un
+ * documento distinto y no una factura degradada.
+ *
+ * El gate sigue siendo el MODO DE EMISIÓN (V0-0) y no un flag escrito a mano, por lo que ya
+ * explicaba A0.3: `INVOICING_ES_ENABLED` es ES-only y un merchant no-ES se quedaría sin botón
+ * teniendo derecho a él.
+ */
+export type ModoDocumentoSuelto = 'factura' | 'justificante' | 'no';
+
+export function modoDocumentoSuelto(merchant: MerchantLike | null | undefined): ModoDocumentoSuelto {
+  if (!merchant) return 'no'; // sin merchant no se adivina: falla cerrado
+  return getEmissionMode(merchant) === 'receipt' ? 'justificante' : 'factura';
 }
 
 export interface LineaEntrada {
