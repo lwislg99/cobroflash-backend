@@ -292,7 +292,7 @@
       // buena es peor que un error — queda un albarán «firmado» con un trazo que no existe, y
       // nadie lo mira hasta el día que hace falta como prueba.
       if (!esTrazoUtil(dataUri)) {
-        mostrarAviso('[PENDIENTE microcopy oficial · firma no capturada]');
+        mostrarAviso('No se ha recogido el trazo. Pídele que firme otra vez dentro del recuadro.');
         return;
       }
 

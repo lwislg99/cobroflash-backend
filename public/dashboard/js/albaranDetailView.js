@@ -22,7 +22,7 @@
  * `sinRed` lo marca `api.js` al envolver el `fetch` (SCRUM-404).
  */
 function mensajeDeFalloAlFirmar(e) {
-  if (e && e.sinRed) return '[PENDIENTE microcopy oficial · firma sin conexión]';
+  if (e && e.sinRed) return 'No se ha podido conectar. La firma sigue en pantalla: inténtalo otra vez cuando tengas señal.';
   const detalle = (e && e.data && e.data.message) || '';
   return '[PENDIENTE microcopy oficial · firma rechazada]' + (detalle ? ` (${detalle})` : '');
 }

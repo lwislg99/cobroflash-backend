@@ -99,17 +99,27 @@ test('SCRUM-404 · 🔴 sin red y rechazo del servidor dicen COSAS DISTINTAS', (
     'mensaje único le hace probar diez veces algo que no va a funcionar, o rendirse cuando ' +
     'bastaba con esperar.');
 
-  assert.match(sinRed, /sin conexión/i, '🔴 el mensaje de red no nombra la falta de conexión');
-  assert.match(rechazo, /rechazada/i, '🔴 el mensaje de rechazo no dice que la rechazaron');
-  // Y el detalle del servidor viaja, porque es lo que dice QUÉ pasó.
+  // El detalle del servidor viaja, porque es lo que dice QUÉ pasó.
   assert.match(rechazo, /Este albarán ya está firmado/,
     '🔴 se pierde el motivo que da el servidor: sin él, «rechazada» no dice nada accionable');
 
-  // Microcopy SIN APROBAR (regla 30): los dos van con marcador hasta que el fundador los fije.
-  for (const m of [sinRed, rechazo]) {
-    assert.match(m, /\[PENDIENTE microcopy oficial/,
-      '🔴 se ha escrito microcopy definitivo sin aprobación del fundador (regla 30)');
-  }
+  // ── EL ESTADO DE APROBACIÓN DE CADA UNO (regla 30) ──────────────────────────────────
+  // Esta parte cambió el 7-ago-2026 porque el FUNDADOR APROBÓ el texto de «sin conexión», no
+  // porque se relajara nada: antes exigía marcador en los DOS y ahora fija el literal aprobado,
+  // que es una comprobación MÁS fuerte. Lo que este test vigila —que los dos casos digan cosas
+  // distintas— no se ha tocado.
+  assert.equal(sinRed,
+    'No se ha podido conectar. La firma sigue en pantalla: inténtalo otra vez cuando tengas señal.',
+    '🔴 el texto APROBADO por el fundador ha cambiado. No se reescribe sin su OK (regla 30). Y ojo ' +
+    'con volver a afirmar la causa: «aquí no hay cobertura» se descartó porque puede ser un portal ' +
+    'cautivo o nuestro propio servidor, y no lo sabemos.');
+
+  // El de rechazo sigue SIN aprobar: su frase prometía «avísanos» y se midió que el profesional
+  // no tiene hoy ningún canal visible desde el panel. Sale con marcador hasta que se fije otro.
+  assert.match(rechazo, /\[PENDIENTE microcopy oficial/,
+    '🔴 se ha escrito el mensaje de rechazo sin aprobación. Su versión propuesta decía «avísanos» ' +
+    'y NO hay canal: `hola@yaqu.app` solo está en privacidad.html y terminos.html, y el botón «?» ' +
+    'del panel es la guía de inicio, no un contacto.');
 });
 
 test('SCRUM-404 · `api.js` MARCA el fallo de red sin cambiar el mensaje de los demás', () => {
