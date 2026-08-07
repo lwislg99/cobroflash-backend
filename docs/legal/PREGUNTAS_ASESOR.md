@@ -241,6 +241,43 @@ estricto no le cuesta un procedimiento a nadie.
 ---
 
 ---
+## P11. Factura SIN identificación del destinatario: ¿art. 61.d o simplificada F2? (bloquea SCRUM-292 / A1)
+
+**La plantea el propio código, y hay una rama apagada esperando la respuesta.**
+
+`src/modules/fiscal/verifactu/registro.builder.ts` tiene tres modos declarados
+(`ModoSinDestinatario = 'SIN_DICTAMEN' | 'ART_61D' | 'SIMPLIFICADA_F2'`) y el activo hoy es
+`SIN_DICTAMEN`. Con él, una factura sin NIF del cliente **no se registra**: lanza
+`DestinatarioSinDictamenError` y el documento queda fuera. Su motivo, literal:
+
+> «la factura no tiene NIF del cliente y la AEAT rechaza una F1/R1 sin `Destinatarios`
+> (error 1189). El esquema admite dos salidas —`FacturaSinIdentifDestinatarioArt61d`
+> (factura completa, art. 61.d RIVA) o `FacturaSimplificadaArt7273` con TipoFactura F2
+> (arts. 7.2/7.3)— y son declaraciones distintas: cuál procede lo decide el dictamen
+> P11, no el código. Hasta entonces la factura queda FUERA del registro, no se declara
+> con un dato inventado. La factura en sí no está bloqueada: se emite, se envía y se
+> cobra igual.»
+
+**P11.1** Para un profesional de oficios que factura a un particular sin pedirle el NIF (la
+reparación de 40 €), ¿lo que procede es la **factura simplificada** (arts. 7.2/7.3 RD 1619/2012,
+`TipoFactura` F2) o la **factura completa sin identificación del destinatario** (art. 61.d RIVA)?
+
+**P11.2** ¿Depende del importe? Si hay umbral, ¿cuál y con qué base legal?
+
+**P11.3** ¿Cambia la respuesta si el cliente es una empresa que no ha facilitado el NIF? (Con una
+simplificada el destinatario **no puede deducir el IVA**, así que el coste del error lo paga él.)
+
+**P11.4** Una **rectificativa** de una factura sin destinatario sería una **R5** (rectificativa de
+simplificada), tipo que el producto **no modela** y que hoy se excluye en vez de inventarse. ¿Es
+correcto excluirla, o hay una salida que sí modelamos?
+
+> **Nota de estado.** SCRUM-292 (A1) elimina el caso más frecuente **pidiendo el NIF antes de
+> emitir**, así que la mayoría de facturas dejan de depender de esta respuesta. Lo que NO cubre es
+> el cliente que legítimamente no tiene NIF: ahí el producto dice que todavía no puede, en vez de
+> emitir algo a medias. La rama `SIMPLIFICADA_F2` sigue **apagada** esperando esta respuesta.
+
+---
+
 *Generado el 13-jun-2026. Cuando vuelvas con respuestas: B y C desbloquean S1-C/S1-E,
 A desbloquea S1-D, **E desbloquea SCRUM-244 (supresión + portabilidad)**, **F desbloquea
 SCRUM-212 (calificación de la operación)**, **G desbloquea la microcopy de SCRUM-290

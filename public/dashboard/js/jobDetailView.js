@@ -1222,6 +1222,54 @@ async function renderJobDetailView(container, jobId) {
       input.addEventListener('input', () => { avisadoDeLineasSinCantidad = false; });
     }
 
+    // ── SCRUM-292 (A1) · LA REVISIÓN ANTES DE EMITIR ────────────────────────────────────
+    //
+    // Una factura sin NIF del cliente se emite, se envía y se cobra — y queda FUERA del registro.
+    // En pantalla es idéntica a una registrada, así que el profesional no se entera. Esta puerta
+    // ELIMINA el caso en vez de avisar de él: con NIF, la derivación tiene lo que necesita.
+    //
+    // ⚠️ NO TOCA EL CAMINO DE EMISIÓN (regla 38). Vive ANTES: quien decide el tipo de factura sigue
+    // siendo `registro.builder.ts`, sin una línea cambiada. Aquí solo se pide el dato que falta.
+    //
+    // ⚠️ CON NIF NO PASA NADA: ni pregunta, ni fricción, ni un clic más. El camino que hoy funciona
+    // se queda igual, y tiene control positivo propio en el guard — meter una puerta en un camino
+    // que funciona es lo que más puede romper esta tarea.
+    //
+    // ⚠️ REGLA 26 · ni una palabra sobre el registro, VeriFactu, la AEAT o el calendario: esa
+    // pregunta se responde SOLO con el guion H2. Todos los textos salen con marcador hasta que el
+    // fundador los apruebe (regla 30). Procedencia: SCRUM-292.
+    const MARCA_A1 = (typeof window !== 'undefined' && window.MICROCOPY_PENDIENTE) || '[PENDIENTE microcopy oficial]';
+    const revisionInicial = revisionPreEmision(job.customer || {});
+
+    const cajaRevision = document.createElement('div');
+    cajaRevision.className = 'preemision';
+    cajaRevision.dataset.estado = revisionInicial.estado;
+    {
+      // LO QUE VA A SALIR, antes de que sea irreversible (regla 29: emitida no se toca).
+      //
+      // ⚠️ LAS DOS RAMAS LLEVAN MARCADOR, no solo una. Un rótulo que depende de una condición es
+      // justo donde un guard de literales se queda ciego: al pasar el valor a una expresión, deja
+      // de ver el texto y pasa en verde sin comprobar nada. El guard de este ticket recorre las
+      // DOS ramas y tiene suelo propio. Procedencia: SCRUM-292.
+      const linea = document.createElement('p');
+      linea.className = 'preemision__linea';
+      linea.textContent = revisionInicial.decidible ? MARCA_A1 : MARCA_A1;
+      cajaRevision.appendChild(linea);
+
+      if (revisionInicial.faltaNif) {
+        const lbl = document.createElement('label');
+        lbl.className = 'preemision__label';
+        lbl.setAttribute('for', 'preemision-nif');
+        lbl.textContent = MARCA_A1; // procedencia: SCRUM-292
+        const inp = document.createElement('input');
+        inp.id = 'preemision-nif';
+        inp.className = 'input';
+        inp.maxLength = 20; // el mismo tope que ya valida el backend
+        cajaRevision.append(lbl, inp);
+      }
+    }
+    body.appendChild(cajaRevision);
+
     emitir.addEventListener('click', async () => {
       const todas = inputs.map((i) => ({ index: i.index, cantidad: Number(i.input.value) }));
       const lineas = todas.filter((l) => l.cantidad > 0);
@@ -1229,6 +1277,30 @@ async function renderJobDetailView(container, jobId) {
         err.textContent = 'Indica qué cantidad quieres facturar de al menos una línea.';
         err.style.display = 'block';
         return;
+      }
+
+      // ── LA PUERTA ─────────────────────────────────────────────────────────────────────
+      // Sin NIF no se emite por este camino sin que el profesional haya visto la pregunta. Si lo
+      // rellena, se guarda en `Customer.taxId` por la ruta que YA existe. Si lo deja vacío, se
+      // para: no se emite a medias.
+      if (revisionInicial.faltaNif) {
+        const campo = document.getElementById('preemision-nif');
+        const nif = String((campo && campo.value) || '').trim();
+        if (!nif) {
+          err.textContent = MARCA_A1; // procedencia: SCRUM-292
+          err.style.display = 'block';
+          return;
+        }
+        try {
+          await apiRequest(`/admin/customers/${job.customer.id}`, {
+            method: 'PATCH', body: JSON.stringify({ taxId: nif }),
+          });
+          job.customer.taxId = nif; // en memoria, para que la revisión deje de disparar
+        } catch {
+          err.textContent = MARCA_A1; // procedencia: SCRUM-292
+          err.style.display = 'block';
+          return;
+        }
       }
       // SCRUM-271: antes solo avisaba si se caían TODAS. Con tres líneas y una sin cantidad se
       // emitía la factura con dos, EN SILENCIO — el pro pedía facturar tres y no se enteraba de

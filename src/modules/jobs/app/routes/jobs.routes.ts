@@ -293,10 +293,17 @@ async function serializeJobDetail(job: any) {
   const base = await serializeJob(job);
   // SCRUM-12 (decisión 2): el detalle expone customer.email (fallback de correo del
   // "Reenviar por WhatsApp"). Aditivo, solo lectura; Customer.email ya existe (no es schema).
+  // SCRUM-292 (A1): y `taxId`, para que la revisión ANTES de emitir sepa si falta el NIF. Aditivo y
+  // de solo lectura, igual que el email: `Customer.taxId` ya existe y ya se edita desde la ficha.
+  // No toca el camino de emisión (regla 38) — el tipo de factura lo sigue derivando quien lo
+  // derivaba; esto solo permite preguntar por el dato que falta ANTES de llegar ahí.
   let customer: any = base.customer;
   if (customer && job.customerId) {
-    const c = await prisma.customer.findUnique({ where: { id: job.customerId }, select: { email: true } });
-    customer = { ...customer, email: c?.email ?? null };
+    const c = await prisma.customer.findUnique({
+      where: { id: job.customerId },
+      select: { email: true, taxId: true },
+    });
+    customer = { ...customer, email: c?.email ?? null, taxId: c?.taxId ?? null };
   }
   // SCRUM-14 (ADITIVO): albaranes del Trabajo para la sección "Albaranes" y el timeline de
   // Documentos. Documento NO fiscal — nada de importes. SCRUM-22: la autoría del Trabajo se
