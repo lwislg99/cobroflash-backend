@@ -12,7 +12,7 @@ import { prisma } from '../../../core/db/prisma';
 import { isFlagEnabled } from '../../../core/flags';
 import { sendWhatsAppButtons, sendWhatsAppText } from '../../../integrations/whatsapp';
 import { sendQuoteWhatsAppToCustomer } from '../../quotes/domain/sendQuote.service';
-import { recordCustomerEvent } from '../../system/customerEvents.service';
+import { recordCustomerEvent, existeEventoDePlan } from '../../system/customerEvents.service';
 import { normalizePhone, formatMoneyEs, maskPhone } from '../../../core/utils/utils';
 import { allocateQuoteNumber } from '../../quotes/domain/quoteNumber.service';
 
@@ -20,6 +20,28 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const PROPOSAL_COOLDOWN_DAYS = 90; // 1 propuesta/cliente/90d (spec literal)
 const POSTPONE_DAYS = 30;
 const MAX_REJECTED_STREAK = 2; // 2 rechazos seguidos → pausa
+
+// ── SCRUM-394 · EL AVISO DE QUE EL PLAN NO SE PROPONE ────────────────────────────────────────
+//
+// **APROBADO por el fundador el 7-ago-2026**, con la condición de verificar cada afirmación contra
+// el mecanismo antes de escribirla. Las tres se verificaron:
+//
+//   · «no recibe mensajes de WhatsApp» — `whatsapp.ts:251-253` bloquea el envío a un número con
+//     `waOptOut` para ese merchant y devuelve `wa_opt_out`. Es el canal, no el cliente.
+//   · «el mantenimiento sigue vivo» — cierto, y **solo lo es porque NO se reprograma**: el plan
+//     queda `active: true` con `nextDueAt` en el pasado, así que el `where` del cron lo recoge
+//     otra vez al día siguiente. Si esta rama pasara a reprogramar, esta frase dejaría de ser
+//     cierta y hay que reescribirla.
+//   · «tendrás que llegar a él por otra vía» — el opt-out es del canal de WhatsApp; nada impide
+//     llamarle. Por eso se le dice: la alternativa existe y es suya.
+//
+// ⚠️ Es información del CLIENTE, y el sujeto de las dos frases es el MANTENIMIENTO, no él. No se
+// reprocha nada ni se le atribuye intención: se dice qué pasa con su plan y qué puede hacer.
+const EVENTO_SIN_CANAL = 'maintenance_sin_canal';
+const TITULO_SIN_CANAL = 'Mantenimiento no propuesto';
+const DETALLE_SIN_CANAL =
+  'Este cliente no recibe mensajes de WhatsApp. El mantenimiento sigue vivo: si quieres '
+  + 'proponérselo, tendrás que llegar a él por otra vía.';
 
 // Semillas del master (Parte R, MANT-1) — el PRO siempre puede editar intervalo.
 type MaintSeed = { match: RegExp; title: string; intervalMonths: number };
@@ -84,6 +106,57 @@ export function isQuietHoursMadrid(now: Date = new Date()): boolean {
 }
 
 // 2) Ciclo del cron — diario 10h. Devuelve un resumen para logs/tests.
+/**
+ * Dependencias del aviso, inyectables y **con default al real**: en producción nadie las pasa.
+ *
+ * Es el patrón que la casa ya declara (`tests/_audit-log-sync.mjs:66`, `_merchant-fixture.mjs:332`:
+ * «va por parámetro con default al real… así un test puede inyectar un doble y comprobar que el
+ * REGISTRO ocurre, sin BD y sin gate»). Aquí hace falta por lo mismo: lo que SCRUM-394 tiene que
+ * demostrar es que **queda un evento**, y eso es un EFECTO, no una decisión. Sin esto, la garantía
+ * principal del ticket viviría fuera de `npm test`, detrás de un turno de staging.
+ */
+export type DepsAviso = {
+  recordCustomerEvent: typeof recordCustomerEvent;
+  existeEventoDePlan: typeof existeEventoDePlan;
+};
+
+const DEPS_REALES: DepsAviso = { recordCustomerEvent, existeEventoDePlan };
+
+/**
+ * SCRUM-394 · El aviso de que un plan vencido no se propone porque su cliente no tiene canal.
+ *
+ * Vive APARTE del bucle a propósito, y no por estilo: el encargo dice que no se toque el mecanismo
+ * de propuesta, así que lo que se extrae es **solo esta rama**. El bucle la llama y sigue igual.
+ *
+ * @returns `true` si ha registrado el aviso; `false` si el episodio ya estaba avisado.
+ */
+export async function avisarPlanSinCanal(
+  plan: { id: number; merchantId: number; lastProposedAt: Date | null },
+  customerId: number,
+  deps: DepsAviso = DEPS_REALES,
+): Promise<boolean> {
+  // UNA VEZ POR EPISODIO, no una por ejecución: un cron diario grabando lo mismo llenaría la ficha
+  // del cliente de entradas idénticas. El episodio se cierra solo cuando el plan vuelve a
+  // proponerse —o sea, cuando el cliente vuelve—, y eso es justo lo que marca `lastProposedAt`:
+  // los avisos anteriores quedan detrás y un opt-out posterior vuelve a avisar, porque ya es otro
+  // episodio. `lastProposedAt` solo se LEE aquí; el anti-spam no se toca.
+  const yaAvisado = await deps.existeEventoDePlan(
+    plan.merchantId, customerId, EVENTO_SIN_CANAL, plan.id, plan.lastProposedAt,
+  );
+  if (yaAvisado) return false;
+  await deps.recordCustomerEvent({
+    merchantId: plan.merchantId,
+    customerId,
+    type: EVENTO_SIN_CANAL,
+    title: TITULO_SIN_CANAL,
+    detail: DETALLE_SIN_CANAL,
+    // `planId` en `meta` es lo que permite distinguir episodios de dos planes del mismo cliente
+    // sin añadir una columna: el schema es territorio del fundador.
+    meta: { planId: plan.id },
+  });
+  return true;
+}
+
 export async function runMaintenanceProposals(now: Date = new Date()): Promise<{
   due: number; proposed: number; skipped: string[];
 }> {
@@ -117,8 +190,36 @@ export async function runMaintenanceProposals(now: Date = new Date()): Promise<{
       skipped.push(`plan ${plan.id}: customer_gone`);
       continue;
     }
+    // ── SCRUM-394 · NO SE PROPONE, PERO SE DICE ──────────────────────────────────────────
+    //
     // Respeta waOptOut: sin canal con el cliente el ciclo no propone (si vuelve, se retoma).
+    // Eso era correcto y sigue igual. Lo que fallaba es que **no se decía**: el plan quedaba
+    // `active` con `nextDueAt` en el pasado, saltándose cada día, y el único rastro era el
+    // `skipped` que va al LOG DEL CRON — que el profesional no ve jamás. Dos situaciones muy
+    // distintas —«todavía no le toca» y «se paró por el opt-out de otro»— producían la misma
+    // bandeja vacía.
+    //
+    // 🔴 EL `continue` NO SE TOCA, Y NO ES PEREZA. Se estudió reprogramar `nextDueAt` como hace
+    // la rama del cooldown tres líneas más abajo, y **no encaja**, por dos motivos medidos:
+    //
+    //   1. El cooldown caduca SOLO, por tiempo: `resumeAt = last + 90d` es calculable. El
+    //      opt-out caduca cuando el cliente vuelve a darse de alta — un evento externo e
+    //      impredecible. No hay `resumeAt` que calcular.
+    //   2. Reprogramar rompería la propiedad que este comentario declara. Hoy «si vuelve, se
+    //      retoma» es cierto PRECISAMENTE porque `nextDueAt` se queda en el pasado y el cron
+    //      reevalúa el plan cada día. Con una fecha futura, el plan dormiría hasta ella aunque
+    //      el cliente volviera al día siguiente: se retrasaría el ciclo del profesional por una
+    //      decisión del cliente **que ya se había revertido**.
+    //
+    // Así que el plan sigue vivo y lo que se añade es la VOZ, con el mecanismo que este mismo
+    // bucle ya usa cuando sí propone: un `CustomerEvent`, que el profesional lee en la ficha de
+    // ese cliente (`customersAdmin.routes.ts` → `customerDetailView.js`).
+    //
+    // ⚠️ Es CONSULTABLE, no una notificación: solo lo ve quien entra en esa ficha. Que se entere
+    // sin ir a buscarlo es superficie nueva y otro ticket (no hay pantalla de planes: las rutas
+    // de mantenimiento solo tienen POST y DELETE).
     if (customer.waOptOut) {
+      await avisarPlanSinCanal(plan, customer.id);
       skipped.push(`plan ${plan.id}: wa_opt_out`);
       continue;
     }
