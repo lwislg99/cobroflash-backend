@@ -86,17 +86,43 @@ test('SCRUM-283 · regla 1 (≤1 primaria) y regla 2 (≤2 secundarias) en los 4
 // LOS DOS OCUPANTES de la primaria de `pending` — con chargeId y sin él
 // «Si solo se prueba uno, no se ha probado el diseño.»
 // ═════════════════════════════════════════════════════════════════════════════════════════
-test('SCRUM-283 · pending · CON chargeId → la primaria es Confirmar Bizum (btnBizum)', () => {
-  const g = layout(INVOICE_ACTION_REGISTRY, 'pending', { hayCharge: true });
-  assert.deepEqual(g.primaria, ['btnBizum'], `🔴 con cobro en vuelo, la primaria de pending debe ser btnBizum; es [${g.primaria}]`);
+// ⚠️ SCRUM-402 amplió el contexto: ya no basta «¿hay cobro en vuelo?», hace falta además que la
+// vía PUEDA funcionar. Los contextos de estos tests pasan a nombrar los predicados nuevos.
+const CTX_BIZUM_OK   = { hayCharge: true,  'bizum-disponible': true,  'bizum-no-disponible': false };
+const CTX_BIZUM_OFF  = { hayCharge: true,  'bizum-disponible': false, 'bizum-no-disponible': true };
+const CTX_SIN_CHARGE = { hayCharge: false, 'bizum-disponible': false, 'bizum-no-disponible': true };
+
+test('SCRUM-283 · pending · CON chargeId y Bizum ENCENDIDO → la primaria es Confirmar Bizum (btnBizum)', () => {
+  const g = layout(INVOICE_ACTION_REGISTRY, 'pending', CTX_BIZUM_OK);
+  assert.deepEqual(g.primaria, ['btnBizum'], `🔴 con cobro en vuelo y Bizum disponible, la primaria de pending debe ser btnBizum; es [${g.primaria}]`);
+});
+
+test('SCRUM-283/402 · pending · CON chargeId y Bizum APAGADO → la primaria es btnTogglePaid', () => {
+  // La ranura NO queda vacía: un estado sin primaria es un callejón sin salida, que es justo lo
+  // que C2 vino a quitar. Con Bizum apagado la ocupa la acción que SÍ funciona.
+  const g = layout(INVOICE_ACTION_REGISTRY, 'pending', CTX_BIZUM_OFF);
+  assert.deepEqual(g.primaria, ['btnTogglePaid'],
+    `🔴 con Bizum APAGADO la primaria de pending es [${g.primaria}]. Si está vacía, la factura se ` +
+    'queda sin siguiente paso; si es btnBizum, se sigue pintando el botón que devuelve 409.');
 });
 
 test('SCRUM-283 · pending · SIN chargeId → la primaria es Marcar como pagada (btnTogglePaid)', () => {
-  const g = layout(INVOICE_ACTION_REGISTRY, 'pending', { hayCharge: false });
+  const g = layout(INVOICE_ACTION_REGISTRY, 'pending', CTX_SIN_CHARGE);
   assert.deepEqual(g.primaria, ['btnTogglePaid'], `🔴 sin cobro en vuelo, la primaria de pending debe ser btnTogglePaid; es [${g.primaria}]`);
   // Ninguna de las dos desaparece: cada una es primaria en SU contexto. Fundirlas habría borrado una.
-  const conCharge = layout(INVOICE_ACTION_REGISTRY, 'pending', { hayCharge: true }).primaria;
-  assert.notDeepEqual(conCharge, g.primaria, '🔴 las dos primarias contextuales colapsaron en la misma: se fundió una');
+  const conBizum = layout(INVOICE_ACTION_REGISTRY, 'pending', CTX_BIZUM_OK).primaria;
+  assert.notDeepEqual(conBizum, g.primaria, '🔴 las dos primarias contextuales colapsaron en la misma: se fundió una');
+});
+
+test('SCRUM-402 · la ranura de `pending` NUNCA queda vacía, en los tres contextos', () => {
+  // Los dos predicados son complementarios por construcción, así que siempre hay exactamente UNA
+  // primaria. Este test es el que caza que alguien añada un tercer predicado y deje un hueco.
+  for (const [nombre, ctx] of [['bizum ON', CTX_BIZUM_OK], ['bizum OFF', CTX_BIZUM_OFF], ['sin charge', CTX_SIN_CHARGE]]) {
+    const g = layout(INVOICE_ACTION_REGISTRY, 'pending', ctx);
+    assert.equal(g.primaria.length, 1,
+      `🔴 en «${nombre}» la primaria de pending tiene ${g.primaria.length} ocupantes ([${g.primaria}]). ` +
+      'Cero = callejón sin salida; dos = se rompe la regla 1.');
+  }
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -148,8 +174,11 @@ test('SCRUM-283 · rojo por el mecanismo: meter una 2ª primaria en cualquier es
     // btnRegen vive en overflow en los 4 estados; ascenderlo a primaria crea una 2ª primaria en
     // pending, y una 1ª indebida en paid/annulled/R1. En AMBOS casos la fila deja de cumplir su forma.
     mut.find((a) => a.id === 'btnRegen').destinos[st] = 'primaria';
-    const gConCarga = layout(mut, st, { hayCharge: true });
-    const gSinCarga = layout(mut, st, { hayCharge: false });
+    // SCRUM-402: los contextos nombran ya los predicados nuevos. Se usa el de «sin charge» para
+    // `pending` por lo mismo que antes: es el que tiene UNA primaria legítima, así que la de más
+    // se ve como segunda.
+    const gConCarga = layout(mut, st, CTX_BIZUM_OK);
+    const gSinCarga = layout(mut, st, CTX_SIN_CHARGE);
     const primarias = st === 'pending' ? gSinCarga.primaria : gConCarga.primaria;
     const esperadas = st === 'pending' ? 1 : 0; // pending tiene 1; los otros 0
     assert.ok(

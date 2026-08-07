@@ -361,6 +361,15 @@ app.get('/admin/me', async (req, res) => {
     voiceAlbaranEnabled: isFlagEnabled('VOICE_ALBARAN_ENABLED', {
       merchant: { id: session.merchantId, country: merchantFull?.country },
     }),
+    // SCRUM-402: si Bizum manual está APAGADO, el botón «Confirmar Bizum recibido» no puede
+    // pintarse — hoy se pinta como acción PRIMARIA de las facturas `pending` con cobro en vuelo,
+    // y al segundo toque —después de enseñar importe y nombre del cliente— recibe un 409
+    // `bizum_disabled` (`chargesAdmin.routes.ts:29`). El veredicto lo da el SERVIDOR, que es
+    // quien tiene la bandera: el navegador no la reimplementa, la recibe. Mismo criterio que
+    // `documentoSuelto` y `modoEmision` — dos sitios decidiendo lo mismo acaban discrepando.
+    bizumManualEnabled: isFlagEnabled('BIZUM_MANUAL_ENABLED', {
+      merchant: { id: session.merchantId, country: merchantFull?.country },
+    }),
     // SCRUM-289 (A0.3): el botón «Nueva factura» solo existe cuando lo que se va a crear ES una
     // factura. El veredicto se calcula AQUÍ, con la MISMA función que gatea `POST /admin/invoices`
     // — el navegador no reimplementa la regla, la recibe. Dos copias del criterio es cómo se llega

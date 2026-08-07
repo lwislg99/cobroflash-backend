@@ -16,8 +16,24 @@
 // LA PRIMARIA DE `pending` ES UN SLOT CON DOS OCUPANTES, uno según el contexto (regla 1: el
 // siguiente paso ES distinto según haya un cobro en vuelo o no). No se funden — fundirlas haría
 // desaparecer una, que es el fallo mudo que el guard existe para cazar:
-//   `cuando: 'con-chargeId'` → btnBizum   («el Bizum que esperaba ha llegado»)
-//   `cuando: 'sin-chargeId'` → btnTogglePaid («me han pagado, márcalo»)
+//   `cuando: 'bizum-disponible'`     → btnBizum       («el Bizum que esperaba ha llegado»)
+//   `cuando: 'bizum-no-disponible'`  → btnTogglePaid  («me han pagado, márcalo»)
+//
+// 🔴 SCRUM-402 · POR QUÉ EL PREDICADO YA NO ES `con-chargeId`/`sin-chargeId`. Lo era, y con la
+// bandera `BIZUM_MANUAL_ENABLED` en `false` eso pintaba `btnBizum` como PRIMARIA de una factura
+// `pending` con cobro en vuelo — una acción que al segundo toque devuelve 409 `bizum_disabled`.
+// El dato (`hay cobro`) no bastaba: hace falta además que la vía PUEDA funcionar.
+//
+// Los dos predicados son COMPLEMENTARIOS —`bizum-no-disponible` es la negación exacta de
+// `bizum-disponible`— y eso es lo que garantiza que la ranura **nunca quede vacía**: con Bizum
+// apagado la primaria pasa a `btnTogglePaid`, que es el mismo ocupante que ya tenía el caso sin
+// cobro en vuelo. Se elige ÉSE y no otro porque **funciona y su texto ya está aprobado**: no
+// genera microcopy nueva (regla 30).
+//
+// ⚠️ `btnTogglePaid` NO escribe `paid_via` — no toca `Charge` en absoluto (medido: escribe solo
+// `Invoice.status` y `paidAt`, `invoiceAdmin.ts:144`). O sea que NO manda al usuario por el mismo
+// camino apagado con otro botón. Lo que sí deja es un hueco declarado: la factura queda `paid` y
+// el cobro se queda como estaba, sin vía. Es otro asunto y no se arregla aquí.
 //
 // Los IDENTIFICADORES son los de los botones de invoiceDetailView.js (el censo los deriva del AST).
 // Los RÓTULOS no viven aquí: son microcopy sin aprobar y se pintan con el marcador [PENDIENTE
@@ -27,8 +43,8 @@ const INVOICE_ACTION_REGISTRY = [
   // id              pending          paid            annulled     R1           (contexto)
   { id: 'btnPdf',        destinos: { pending: 'secundaria',     paid: 'secundaria', annulled: 'secundaria', R1: 'secundaria' } },
   { id: 'btnWhatsApp',   destinos: { pending: 'secundaria',     paid: 'secundaria', annulled: 'oculta',     R1: 'oculta' } },
-  { id: 'btnTogglePaid', destinos: { pending: 'primaria',       paid: 'overflow',   annulled: 'oculta',     R1: 'oculta' }, cuando: 'sin-chargeId' },
-  { id: 'btnBizum',      destinos: { pending: 'primaria',       paid: 'oculta',     annulled: 'oculta',     R1: 'oculta' }, cuando: 'con-chargeId' },
+  { id: 'btnTogglePaid', destinos: { pending: 'primaria',       paid: 'overflow',   annulled: 'oculta',     R1: 'oculta' }, cuando: 'bizum-no-disponible' },
+  { id: 'btnBizum',      destinos: { pending: 'primaria',       paid: 'oculta',     annulled: 'oculta',     R1: 'oculta' }, cuando: 'bizum-disponible' },
   { id: 'btnReminder',   destinos: { pending: 'overflow',       paid: 'oculta',     annulled: 'oculta',     R1: 'oculta' } },
   { id: 'btnRectify',    destinos: { pending: 'overflow',       paid: 'overflow',   annulled: 'oculta',     R1: 'oculta' } },
   { id: 'btnRegen',      destinos: { pending: 'overflow',       paid: 'overflow',   annulled: 'overflow',   R1: 'overflow' } },
