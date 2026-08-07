@@ -319,3 +319,42 @@ conservarlo y referenciarlo desde la factura, y con qué exigencia formal?
 > que la retención **no altera el `Invoice.total`** —es un pago a cuenta del pagador— y que el
 > «líquido a percibir» se **deriva al pintar**, nunca se guarda. Lo que sigue bloqueado por P12
 > es el **suplido**, más los campos de schema, que están congelados aparte por SCRUM-383.
+
+## P13. Recargo de equivalencia: los tipos, y qué pasa con el total sellado (bloquea SCRUM-294 / A3)
+
+**Lo que ya está medido, para no preguntar lo que se puede leer.** El XSD de la AEAT que está en
+este repo (`SuministroInformacion.xsd`, `DetalleDesglose`) pone `TipoRecargoEquivalencia` y
+`CuotaRecargoEquivalencia` como **hermanos** de `TipoImpositivo` y `CuotaRepercutida`, colgando de
+la **misma** `BaseImponibleOimporteNoSujeto`. **No existe ninguna base propia del recargo**, así
+que el recargo es un impuesto MÁS sobre la misma base y no cambia ni la base ni la cuota de IVA.
+Sobre eso no hace falta preguntar nada.
+
+Lo que sí hace falta:
+
+**P13.1 · Los tipos.** El mecanismo está construido con **21 % → 5,2 %**, **10 % → 1,4 %** y
+**4 % → 0,5 %**, y esos números **NO salen de ningún documento del repo**: son los que se han
+puesto para poder probar el cálculo, y están en una tabla cerrada y en un solo sitio
+(`recargoEquivalencia.ts`). ¿Son los vigentes hoy? ¿Hay algún tipo más aplicable a un profesional
+de oficios (por ejemplo para el tabaco, que tiene el suyo), o alguno que no debamos ofrecer nunca?
+
+**P13.2 · El total.** Con recargo, lo que el cliente paga es `base + IVA + recargo`. Hoy
+`Invoice.total` es `base + IVA` y **es el número que se sella**. ¿El `ImporteTotal` del registro de
+facturación tiene que incluir el recargo? (De la respuesta depende que enchufar esto toque o no el
+sellado, que es lo que hoy lo mantiene sin llamadores.)
+
+**P13.3 · A quién se le aplica.** El diseño dice que el recargo es condición de **quién compra**
+(va en la ficha del cliente), y que solo puede aplicarse a comerciantes personas físicas o
+entidades en atribución de rentas, **nunca a sociedades**. ¿Es correcto tal cual? ¿Y qué obligación
+tiene el emisor de comprobarlo, o basta con lo que declare el cliente?
+
+**P13.4 · Criterio de caja (RECC).** El IVA se devenga cuando se cobra. Nosotros tenemos el cobro
+dentro, pero hoy **`paidAt` se pone con `new Date()` en tres sitios del código**: sabemos que
+alguien marcó la factura como cobrada, **no la fecha en que entró el dinero** (y tres de las cinco
+formas de cobro se marcan a mano). ¿Qué exigencia tiene la fecha de cobro para el RECC — vale la
+fecha de marca, o hace falta la fecha real del apunte bancario? Mientras no haya respuesta, lo
+construido **clasifica y avisa; no liquida**.
+
+> **Nota de estado.** El **cálculo del recargo** y la **clasificación por cobro** están construidos
+> y probados, aislados y **sin llamadores** (`recargoEquivalencia.ts`, `criterioCaja.ts`).
+> Enchufarlos toca el `Invoice.total` sellado y el XML del desglose —los dos, STOP— y necesita
+> campos de schema (congelados aparte).
