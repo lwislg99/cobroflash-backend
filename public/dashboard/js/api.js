@@ -49,6 +49,97 @@ async function apiRequest(path, options = {}) {
   return res.json();
 }
 
+// -------- SCRUM-405 · LA ÚNICA FORMA DE DESCARGAR UN FICHERO --------
+//
+// EL DEFECTO QUE CIERRA: tres descargas comprobaban `res.ok` y llamaban a `res.blob()` sin mirar
+// NADA más. Un portal cautivo —la wifi de cortesía de una obra, la del bar de al lado— responde
+// **200 con el HTML de su página de login**. `res.ok` es `true`, el blob se guarda, y el
+// profesional se lleva a casa un `yaqu-datos-2026-08-07.zip` que por dentro es la pantalla de
+// acceso de un router. Se entera el día que se lo abre su asesor.
+//
+// 🔴 Y LO QUE DE VERDAD ARREGLA ESTE BLOQUE NO SON LOS TRES SITIOS: ES QUITAR LA FORMA DE EN MEDIO.
+// Los tres eran el mismo código copiado, y el tercero se escribió en SCRUM-325 imitando a los dos
+// anteriores. Mientras la forma siga siendo copiable, el cuarto nace mal. Por eso existe esta
+// función y por eso hay un guard (`tests/scrum405-descarga-verificada.test.mjs`) que pone en rojo
+// cualquier `.blob()` que no pase por aquí, NOMBRANDO fichero y línea.
+//
+// ⚠️ HASTA DÓNDE LLEGA LA COMPROBACIÓN — y no llega más lejos:
+//
+//   · **Detectar un portal cautivo CON CERTEZA no se puede desde el navegador**, y esto no lo
+//     intenta. Un portal que devolviera `200` con `Content-Type: application/zip` y basura dentro
+//     pasaría esta comprobación entera.
+//   · Lo que sí se puede, y es lo que hace: **no entregar como fichero algo que evidentemente no
+//     lo es.** Si la respuesta dice `text/html`, o dice un tipo que no es el que se pidió, no se
+//     descarga nada.
+//   · **NO se usa `navigator.onLine`.** Miente exactamente en este escenario —el móvil está
+//     conectadísimo… al router del bar— y además hoy tiene CERO usos en el árbol (medido en
+//     SCRUM-356). No se estrena aquí.
+//
+// SIN MICROCOPY: esta función lanza un error con CÓDIGO y **la vista decide el texto**. Ramificar
+// por código y no por texto es la regla de SCRUM-151, y además impide que un helper compartido se
+// convierta en dueño de microcopy que aprueba el fundador (regla 30).
+
+/** El código del error cuando la respuesta no es el fichero que decía ser. */
+const ERROR_NO_ES_FICHERO = 'respuesta_no_es_fichero';
+
+// SCRUM-405 · el mensaje de «esto no es tu fichero». MICROCOPY SIN APROBAR (regla 30).
+//
+// El escenario que describe: una obra con una wifi de cortesía que no deja salir a internet, o el
+// bar de al lado. El texto apunta A ESO —no a que el profesional haya hecho nada mal— y le da la
+// salida que de verdad funciona ahí: sus datos móviles. Propuesta al asesor en el informe.
+const MSG_DESCARGA_NO_ES_FICHERO = '[PENDIENTE microcopy oficial · propuesta: Esta red no ha dejado pasar la descarga: lo que ha llegado no es tu archivo, sino la página de acceso de la wifi. Prueba con tus datos móviles.]';
+
+/**
+ * Descarga un binario y lo entrega al navegador. Lanza si algo no cuadra; NO pinta nada.
+ *
+ * @param {string} url
+ * @param {{tipoEsperado: string, nombrePorDefecto: string}} opciones
+ *        `tipoEsperado` es una subcadena del `Content-Type` (p. ej. `'zip'`, `'csv'`).
+ * @returns {Promise<{nombre: string, res: Response}>} el nombre con el que se guardó y la
+ *        respuesta, para que quien llama pueda leer sus cabeceras (`X-Yaqu-Filas`, etc.).
+ */
+async function descargarBinario(url, { tipoEsperado, nombrePorDefecto }) {
+  const res = await fetch(url, { credentials: 'same-origin' });
+
+  if (!res.ok) {
+    // El error de estado se deja pasar TAL CUAL: cada pantalla lo trata a su manera (una lee el
+    // JSON del cuerpo, otra solo avisa) y unificarlo aquí les quitaría información.
+    const err = new Error(`descarga ${res.status}`);
+    err.status = res.status;
+    err.respuesta = res;
+    throw err;
+  }
+
+  const tipo = (res.headers.get('content-type') || '').toLowerCase();
+  const esHtml = tipo.includes('text/html');
+  const cuadra = tipo.includes(String(tipoEsperado).toLowerCase());
+  if (esHtml || !cuadra) {
+    const err = new Error(`la respuesta no es un fichero (${tipo || 'sin Content-Type'})`);
+    err.code = ERROR_NO_ES_FICHERO;
+    err.tipoRecibido = tipo || null;
+    err.tipoEsperado = tipoEsperado;
+    throw err;
+  }
+
+  // El nombre lo decide el SERVIDOR: lleva la fecha o el periodo, y a veces una señal (el
+  // `INCOMPLETO` del paquete de datos). Esa señal tiene que llegar al fichero guardado.
+  const cd = res.headers.get('content-disposition') || '';
+  const m = /filename="([^"]+)"/.exec(cd);
+  const nombre = m ? m[1] : nombrePorDefecto;
+
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = objectUrl;
+  a.download = nombre;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 10000);
+
+  return { nombre, res };
+}
+
 // -------- UI helpers compartidos (carga / error) --------
 
 // Pinta un estado de error con botón de reintento dentro de `container`.

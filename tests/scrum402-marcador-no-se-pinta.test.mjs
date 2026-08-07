@@ -52,7 +52,14 @@ const MARCA = '[PENDIENTE';
  * a otra tiene que verse, y un total lo escondería (la lección del suelo por FUNCIÓN de SCRUM-392).
  */
 const CENSO = Object.freeze({
-  'exportView.js': 15,
+  // SCRUM-405 (+1, 7-ago-2026, A CONCIENCIA): el mensaje de «esto no es tu fichero». Vive en la
+  // forma común y no en la vista PORQUE LO USAN DOS —`exportView` y `reportsView`—, y en scripts
+  // clásicos una constante duplicada en dos ficheros es SyntaxError en parseo. Es el único
+  // marcador de `api.js` y sale por `showToast`, así que sí se pinta: cuenta.
+  'api.js': 1,
+  // SCRUM-405 (−4, 7-ago-2026): al pasar las tres descargas por la forma común desaparecieron
+  // cuatro ramas de error que pintaban marcador. El trinquete APRIETA: 15 → 11.
+  'exportView.js': 11,
   'invoiceDetailView.js': 9,
   'invoicesView.js': 2,
   'jobDetailView.js': 1,
