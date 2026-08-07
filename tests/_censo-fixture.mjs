@@ -85,6 +85,12 @@ export function repoFixture() {
   g('config', 'user.email', 'fixture@yaqu.test');
   g('config', 'user.name', 'Fixture');
   g('config', 'commit.gpgsign', 'false');
+  // ⚠️ El remoto con refspec COMODÍN, y no es decorado: `capacidadDeMedir` lo usa para saber si
+  // este clon puede ver TODAS las ramas o solo una (SCRUM-388, el fallo de CI). Sin él, el propio
+  // fixture se declararía incapaz de mirar ramas — y tendría razón. Un repositorio sintético que
+  // no reproduce la configuración del real prueba un mundo más fácil que el que hay.
+  g('remote', 'add', 'origin', raiz);
+  g('config', 'remote.origin.fetch', '+refs/heads/*:refs/remotes/origin/*');
   fs.mkdirSync(path.join(raiz, 'docs', 'master'), { recursive: true });
 
   // Relleno: el suelo del censo exige un historial y una carpeta de máster con fondo. Sin esto el
