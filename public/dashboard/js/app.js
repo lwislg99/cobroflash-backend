@@ -11,6 +11,11 @@ async function initApp() {
   window.appUserName   = me.name || '';
   window.appVoiceEnabled = me.voiceEnabled === true; // VZ-1: flag VOICE_QUOTE_ENABLED
   window.appVoiceAlbaranEnabled = me.voiceAlbaranEnabled === true; // SCRUM-71: flag PROPIO del albarán
+  // SCRUM-402: veredicto del SERVIDOR sobre Bizum manual. `=== true` a propósito: si el campo no
+  // llega —un `/admin/me` viejo en caché, un despliegue a medias— sale `false` y el botón NO se
+  // pinta. Fallar cerrado es lo correcto aquí: no pintarlo cuando se podría es un botón de menos;
+  // pintarlo cuando no se puede es lo que este ticket viene a quitar.
+  window.appBizumManualEnabled = me.bizumManualEnabled === true;
   // SCRUM-289 (A0.3) · SCRUM-346 (A0.5): veredicto YA CALCULADO por el servidor
   // (`modoDocumentoSuelto`). El navegador no reimplementa el modo de emisión: lo recibe.
   // Son TRES valores —'factura' | 'justificante' | 'no'— porque el profesional español real no
