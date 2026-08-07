@@ -68,6 +68,40 @@ async function renderExportView(container) {
         </p>
       </div>
 
+      <!-- ── SCRUM-325 (E4) · FACTURAS EMITIDAS POR TRIMESTRE ────────────────────────────
+           TERCERA descarga, y contesta una pregunta distinta de las otras dos: no es «dame mi
+           actividad» ni «dame todo lo mío», es «dame las facturas de UN trimestre con las
+           columnas del libro». Por eso va aparte y con su propio periodo: aquí el trimestre no
+           es un filtro cómodo, es la unidad — y sale del mismo `rangoTrimestre` que el 303.
+
+           🔴 NO SE LLAMA «AEAT» NI «LIBRO REGISTRO», y es una decisión del asesor (7-ago-2026):
+           no hay en el árbol ningún documento oficial contra el que se haya contrastado el
+           formato, así que ese nombre declararía una conformidad que nadie ha verificado. Es un
+           CSV con las columnas del libro. Ver `docs/master/SCRUM-325.md`.
+
+           Rótulos 1-9 y el nombre APROBADOS el 7-ago-2026. La cabecera «Estado» sigue con
+           marcador: ese campo mezcla cobro y anulación y su rótulo está sin decidir.
+      -->
+      <div class="customers-card" style="margin-top:16px" id="libro-emitidas-card">
+        <div style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Facturas emitidas</div>
+        <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">[PENDIENTE microcopy oficial]</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div>
+            <label for="libro-anio" style="display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">[PENDIENTE]</label>
+            <input type="number" id="libro-anio" class="input" style="width:auto" min="2000" max="2100" step="1">
+          </div>
+          <div>
+            <label for="libro-trimestre" style="display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">[PENDIENTE]</label>
+            <select id="libro-trimestre" class="input" style="width:auto">
+              <option value="1">T1</option><option value="2">T2</option>
+              <option value="3">T3</option><option value="4">T4</option>
+            </select>
+          </div>
+          <button class="btn-secondary" id="btn-libro-emitidas">[PENDIENTE microcopy oficial]</button>
+        </div>
+        <p id="libro-emitidas-info" style="margin:12px 0 0;font-size:12px;color:var(--muted)" aria-live="polite"></p>
+      </div>
+
       <!-- ── SCRUM-244 · PORTABILIDAD (art. 15 y 20 RGPD) ───────────────────────────────
            Segunda descarga, y contesta OTRA pregunta: la de arriba es «dame mi actividad»
            (por fechas, para el asesor); ésta es «dame TODO lo mío» (sin filtros, formato
@@ -281,6 +315,54 @@ async function renderExportView(container) {
       btn.textContent = txt;
       generando = false;
       refrescarInfo();                    // re-habilita según el rango actual
+    }
+  });
+
+  // ── SCRUM-325 (E4) · Facturas emitidas del trimestre ────────────────────────────────────
+  //
+  // El año se prerrellena con el ACTUAL y el trimestre con el EN CURSO: son los que se piden el
+  // 99 % de las veces y ahorran dos decisiones. No es un default silencioso — los dos campos se
+  // ven y se cambian; lo que no hay es «sin periodo», porque un libro sin periodo no es un libro.
+  const inpAnio = document.getElementById('libro-anio');
+  const selTri = document.getElementById('libro-trimestre');
+  const btnLibro = document.getElementById('btn-libro-emitidas');
+  const infoLibro = document.getElementById('libro-emitidas-info');
+  const hoy = new Date();
+  inpAnio.value = String(hoy.getFullYear());
+  selTri.value = String(Math.floor(hoy.getMonth() / 3) + 1);
+
+  btnLibro.addEventListener('click', async () => {
+    btnLibro.disabled = true;
+    const txtLibro = btnLibro.textContent;
+    btnLibro.textContent = '[PENDIENTE microcopy oficial]';
+    try {
+      const qs = new URLSearchParams({ 'año': inpAnio.value, trimestre: selTri.value });
+      const res = await fetch('/admin/libros/expedidas.csv?' + qs, { credentials: 'same-origin' });
+      if (!res.ok) {
+        // Por CÓDIGO, nunca por el texto del mensaje (SCRUM-151).
+        showToast('[PENDIENTE microcopy oficial]', 'error');
+        infoLibro.textContent = '[PENDIENTE microcopy oficial]';
+        return;
+      }
+      // El nombre lo pone el servidor y lleva el periodo dentro: dos trimestres seguidos en la
+      // carpeta de Descargas se convertirían en «(1)» y nadie sabría cuál es cuál.
+      const cd = res.headers.get('content-disposition') || '';
+      const m = /filename="([^"]+)"/.exec(cd);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = m ? m[1] : 'facturas-emitidas.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      infoLibro.textContent = '[PENDIENTE microcopy oficial]';
+    } catch {
+      showToast('[PENDIENTE microcopy oficial]', 'error');
+    } finally {
+      btnLibro.textContent = txtLibro;
+      btnLibro.disabled = false;
     }
   });
 }

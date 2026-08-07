@@ -56,21 +56,40 @@ export const MARCA_PENDIENTE = '[PENDIENTE]';
  * test: el vector congelado de R1 se ancla en las claves.
  */
 export const COLUMNAS_EXPEDIDAS = Object.freeze([
-  { clave: 'fechaExpedicion', rotulo: `${MARCA_PENDIENTE} Fecha de expedición` },
-  { clave: 'serieNumero', rotulo: `${MARCA_PENDIENTE} Serie y número` },
-  { clave: 'tipoFactura', rotulo: `${MARCA_PENDIENTE} Tipo de factura` },
-  { clave: 'nifDestinatario', rotulo: `${MARCA_PENDIENTE} NIF del destinatario` },
-  { clave: 'nombreDestinatario', rotulo: `${MARCA_PENDIENTE} Nombre del destinatario` },
-  { clave: 'baseImponible', rotulo: `${MARCA_PENDIENTE} Base imponible` },
-  { clave: 'tipoIva', rotulo: `${MARCA_PENDIENTE} Tipo de IVA (%)` },
-  { clave: 'cuotaIva', rotulo: `${MARCA_PENDIENTE} Cuota de IVA` },
-  { clave: 'totalFactura', rotulo: `${MARCA_PENDIENTE} Total de la factura` },
+  { clave: 'fechaExpedicion', rotulo: 'Fecha de expedición' },
+  { clave: 'serieNumero', rotulo: 'Serie y número' },
+  { clave: 'tipoFactura', rotulo: 'Tipo de factura' },
+  { clave: 'nifDestinatario', rotulo: 'NIF del destinatario' },
+  { clave: 'nombreDestinatario', rotulo: 'Nombre del destinatario' },
+  { clave: 'baseImponible', rotulo: 'Base imponible' },
+  { clave: 'tipoIva', rotulo: 'Tipo de IVA (%)' },
+  { clave: 'cuotaIva', rotulo: 'Cuota de IVA' },
+  { clave: 'totalFactura', rotulo: 'Total de la factura' },
+  /**
+   * 🔴 LA ÚNICA SIN APROBAR, y su motivo está MEDIDO (7-ago-2026).
+   *
+   * Esta celda es `Invoice.status` VERBATIM (`libroRegistro.ts:216`), y ese campo mezcla DOS ejes
+   * en una sola palabra. Medido sobre lo que de verdad se escribe en él:
+   *
+   *   · COBRO ....... `pending` (el default del schema) → `paid`
+   *   · ANULACIÓN ... `annulled`
+   *
+   * No hay estado de EMISIÓN: una factura con número está emitida por definición, el número ES la
+   * identidad fiscal. Así que «Estado» a secas no describe una cosa, describe dos — y en un
+   * documento que sale de casa eso se lee mal en la dirección peor: alguien puede entender
+   * «pendiente de emitir» donde pone «pendiente de cobro».
+   *
+   * ⚠️ `already_paid` NO es un valor de este campo: es un campo de RESPUESTA de la API
+   * (`invoice.routes.ts:88`). Se anota porque aparece en un grep y se lee como si lo fuera.
+   *
+   * Se queda con marcador a propósito: un marcador es mejor que una cabecera ambigua.
+   */
   { clave: 'estado', rotulo: `${MARCA_PENDIENTE} Estado` },
 ] as const);
 
 /** Lo único que hoy se puede entregar. Ver el bloque 🔴 de arriba para por qué no hay recibidas. */
 export const LIBROS_DISPONIBLES = Object.freeze([
-  { clave: 'expedidas', rotulo: `${MARCA_PENDIENTE} Facturas emitidas`, columnas: COLUMNAS_EXPEDIDAS },
+  { clave: 'expedidas', rotulo: 'Facturas emitidas', columnas: COLUMNAS_EXPEDIDAS },
 ]);
 
 /** Lo que hace falta saber del cliente para el libro. Se RESUELVE, no se calcula. */
