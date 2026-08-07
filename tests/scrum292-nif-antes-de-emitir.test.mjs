@@ -280,7 +280,9 @@ test('SCRUM-292 · el marcador lleva PROCEDENCIA, no una fecha suelta', () => {
 
 test('SCRUM-292 · el NIF se guarda por la ruta que YA existe, no por una nueva', () => {
   assert.ok(
-    /apiRequest\(`\/admin\/customers\/\$\{job\.customer\.id\}`, \{\s*method: 'PATCH', body: JSON\.stringify\(\{ taxId: nif \}\)/.test(VISTA),
+    // `clienteA1`, no `job.customer`: SCRUM-386 sacó esta hoja del ámbito de la vista y su guard
+    // exige que no capture nada de `renderJobDetailView`. El cliente entra por `ctx`.
+    /apiRequest\(`\/admin\/customers\/\$\{clienteA1\.id\}`, \{\s*method: 'PATCH', body: JSON\.stringify\(\{ taxId: nif \}\)/.test(VISTA),
     '🔴 el NIF no se guarda con el PATCH de cliente que ya existe: se habría abierto un camino de ' +
       'escritura nuevo para un campo que ya se edita desde la ficha y desde el alta.',
   );

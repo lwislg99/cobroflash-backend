@@ -174,9 +174,17 @@ test('SCRUM-386 · los dos llamadores le pasan el contexto', () => {
   // puede cruzar los `;` del cuerpo del objeto de opciones. El fallo estaba en el instrumento, no
   // en lo medido — igual que el «0 menciones» de un grep apuntado a un fichero inexistente.
   // Ahora se cuentan los PASOS de contexto, que es el hecho, y no la forma de escribirlos.
-  const pasoFacturar = (CODIGO.match(/openFacturarParcialSheet\(alb, \{ refresh, setStatus \}\)/g) || []).length;
+  //
+  // ⚠️ Y VOLVIÓ A PASAR, otra vez con la FORMA en vez de con el hecho: SCRUM-292 añadió `customer`
+  // al contexto —la hoja necesita saber si al cliente le falta el NIF— y este test salió ROJO con
+  // el código CORRECTO, porque exigía el objeto literal `{ refresh, setStatus }`. **Extender un
+  // contexto no es dejar de pasarlo.**
+  //
+  // Lo que hay que proteger es que la hoja RECIBA `refresh` y `setStatus` de su llamador; lo demás
+  // que venga en el mismo objeto es aditivo.
+  const pasoFacturar = (CODIGO.match(/openFacturarParcialSheet\(alb, \{[^}]*\brefresh\b[^}]*\bsetStatus\b[^}]*\}\)/g) || []).length;
   assert.equal(pasoFacturar, 1,
-    '🔴 la hoja de facturar parcial no recibe su contexto del único llamador que tiene');
+    '🔴 la hoja de facturar parcial no recibe `refresh` y `setStatus` de su único llamador');
 
   const pasos = (CODIGO.match(/\{ cur, refresh, setStatus \}\)/g) || []).length;
   assert.equal(
