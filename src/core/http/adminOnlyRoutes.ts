@@ -21,6 +21,9 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   // SCRUM-296 (A6): el libro de registro es la facturación ENTERA del negocio — lectura de
   // admin, no trabajo de campo. Con una ruta basta: el montaje entero comparte la instancia.
   { method: 'GET', path: '/admin/libro-registro' },
+  // SCRUM-325 (E4): el mismo libro de A6, por periodo y en fichero. El CSV lleva el NIF y el
+  // nombre de cada cliente del trimestre, así que es lectura de admin igual que su origen.
+  { method: 'GET', path: '/admin/libros/expedidas.csv' },
   // SCRUM-295 (A5): el 303 del trimestre — misma razón que el libro.
   { method: 'GET', path: '/admin/modelo-303' },
   // SCRUM-297 (A7): el paquete de evidencias — misma razón que el libro y el 303.
