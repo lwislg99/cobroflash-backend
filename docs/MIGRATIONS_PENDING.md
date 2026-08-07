@@ -104,6 +104,103 @@ distingue es quién puede tocarlas. Se descarta llamar a `yaqu_dev_javier` "segu
 staging" (SCRUM-84) porque implicaría el régimen de `railway` y no lo tiene. Si el fundador lo
 ve de otra forma, es una línea.
 
+## 📋 VEREDICTO · ¿alguna migración «aplicada en staging» fue en realidad a dev? (SCRUM-383)
+
+**Medido contra:** `origin/main` = `f56f49038ab9fbeb2e1a21bc2eb9ec0958c48877` · 2026-08-06T15:21:07Z
+**Método:** repo, historial de git y reflogs por worktree. **Cero conexiones a base de datos.**
+
+> La pregunta nace del mapa de arriba: si `DATABASE_URL_STAGING` significa DEV en un árbol y STAGING
+> en otros tres, alguien pudo migrar dev creyendo que migraba staging — dos veces, y con las dos en
+> verde. **Respuesta: no ocurrió en ninguna migración comprobable, y hay UNA que no se puede
+> comprobar.** Se detalla por filas porque un veredicto que esconde su incertidumbre no es un
+> veredicto.
+
+### El origen — no fue el descuido de nadie, y por eso hay que escribirlo
+
+La clave apuntando a dev **era el DISEÑO**. El 23-jul-2026 (SCRUM-84, commit `f56e1f9`) se creó
+`yaqu_dev_javier` como **segunda base de staging, una por carril**, para acabar con las colas por la
+ventana compartida. Sus palabras: *«REPARTO: Sesión 1 → `yaqu_dev_javier` · Sesión 2 → `railway`.
+Cada uno la apunta en `DATABASE_URL_STAGING` de SU `.env` local»*. Con ese reparto, la clave decía
+la verdad en los dos sitios: las dos ERAN staging.
+
+**Lo que la convirtió en mentira fue SCRUM-169, cuatro días después** (27-jul): fijó la nomenclatura,
+ascendió `yaqu_dev_javier` a **DESARROLLO** y descartó expresamente llamarla «segunda BD de staging»
+porque no tiene el régimen de `railway` — todo correcto. Pero **el nombre de la variable no cambió**.
+Desde ese día `DATABASE_URL_STAGING` prometía un papel que en un árbol ya no cumplía, y ningún
+comando lo recordaba. Nadie se equivocó: **una decisión buena caducó el nombre de otra decisión
+buena, y el nombre no se enteró.**
+
+⚠️ **Consecuencia viva, que NO es la de esta pregunta:** por el reparto de SCRUM-84, el carril B
+tenía asignada `yaqu_dev_javier`. Hoy tres de los cuatro árboles de ese carril apuntan a `railway`,
+que es la base **del otro carril**. Eso no afecta a las migraciones (ver abajo) pero sí a tandas
+gateadas, semillas y `clean-staging-tests`. Es otro asunto y necesita su ticket.
+
+### Los tres discriminadores, y qué contesta cada uno
+
+| # | Qué se midió | Resultado |
+| --- | --- | --- |
+| ① | **Quién corrió cada push**, cruzando los 65 commits que tocan `prisma/schema.prisma` contra los reflogs de los cuatro árboles (`.git/worktrees/*/logs/HEAD`) | **0 de 65** salen de estos árboles (62 Luis + 3 `lwislg99`, **ninguno de Javier**). El único que aparece es un *merge commit* de un PR, traído por `fetch`. **Control de sensibilidad: 47 de los últimos 50 commits de Javier SÍ aparecen** — el método ve lo que se hizo aquí; los 3 que faltan son SHAs reescritos por rebase |
+| ② | **Cuándo nació la base de dev** | **23-jul-2026**. Antes de esa fecha solo existía `railway`: no había a dónde desviarse |
+| ③ | **El censo físico de columnas** (`docs/sql/deriva-prod.sql`, 331 columnas / 24 tablas) | staging **en sync** — medido dos veces por caminos distintos: test gateado de SCRUM-222 el **2-ago** (24 tablas / 331 columnas) y censo directo el **6-ago** (331). Dev: **330**, le falta solo `vf_estado` |
+
+**③ es el que zanja**, y en la dirección que importa: si un push «a staging» hubiera caído en dev,
+**staging estaría corta y dev larga**. Lo medido es lo contrario — staging completa, dev la que va
+detrás, exactamente donde el registro dice que va detrás.
+
+### Veredicto por migración
+
+| Veredicto | Migraciones | Por qué |
+| --- | --- | --- |
+| 🟢 **Validada en staging de verdad** | SCRUM-14 (13-jul) · SCRUM-52 (15-jul) · SCRUM-49 (16-jul) · SCRUM-68, SCRUM-66, SCRUM-17, SCRUM-74 (22-jul) · SCRUM-102, SCRUM-109 (23-jul) | **Dos caminos independientes:** son anteriores a que existiera dev (②) **y** su columna está en staging (③) |
+| 🟢 **Validada en staging de verdad** | SCRUM-145 y SCRUM-145d (24-jul) · SCRUM-170, SCRUM-171b (27-jul) · SCRUM-195 paso 1 (28-jul) · SCRUM-205 ALTER (30-jul) | Por el censo (③). **Son las expuestas de verdad**: ya existía dev y su verificación registrada fue el HOST, que no separa `railway` de `yaqu_dev_javier`. Las salvó el censo a posteriori, no su procedimiento |
+| ⚪ **NO SE PUEDE SABER** | **SCRUM-207 · índice `audit_log_merchant_id_entity_type_entity_id_idx`** (29-jul) | Ver abajo |
+| 🔴 **Creída validada pero fue a dev** | **NINGUNA** | Ningún objeto declarado en staging falta en staging |
+
+**Casos que cierran solos, y conviene saberlo:**
+
+* **SCRUM-205** es la prueba directa y en las dos direcciones: `vf_estado` **existe en staging y NO
+  en dev** (6-ago). Ese ALTER fue a staging y no pudo ir a dev.
+* **Los índices de SCRUM-170 y SCRUM-195 no quedan en el aire** aunque el censo no vea índices:
+  viajaron en el mismo `db push` que la tabla o columna que el censo **sí** ve en staging. Un índice
+  no aterriza en otra base que la sentencia que lo acompaña.
+* **SCRUM-195 en dev** es la única aplicación a dev verificada por el carril B, y **registró el
+  NOMBRE DE BASE** (`host=acela.proxy.rlwy.net · db=yaqu_dev_javier`) antes de correr. Se
+  autocertifica: no depende del mapa de worktrees. Es el patrón que SCRUM-383 convirtió en guard.
+
+### ⚪ El único que no se puede saber, y qué lo cerraría
+
+**SCRUM-207 es la ÚNICA migración del registro sin huella de columna** — su propia entrada lo dice:
+*«Es el ÚNICO cambio de schema de SCRUM-207»*. Y ahí se juntan las tres cosas:
+
+1. **El censo no mira índices.** Está declarado en la cabecera de `deriva-prod.sql` y comprobado en
+   su SQL: no consulta `pg_indexes` ni una vez.
+2. **Su verificación registrada fue el HOST** (*«host verificado contra la allowlist
+   (`acela.proxy.rlwy.net`), y comprobado explícitamente que NO es el de prod»*) más `pg_indexes`
+   **en la base a la que apuntaba la clave**. El host no distingue las dos bases: es justo el hueco.
+3. Se corrió desde un clon que no es ninguno de los cuatro árboles medidos (①), así que su `.env`
+   no es observable desde aquí.
+
+**Lo cierra una consulta de solo lectura contra `acela/railway`**, sin credencial en ninguna parte
+(consola de Postgres de Railway, igual que `deriva-prod.sql`):
+
+```sql
+SELECT indexname FROM pg_indexes WHERE tablename = 'audit_log';
+```
+
+Si aparece `audit_log_merchant_id_entity_type_entity_id_idx`, la fila pasa a 🟢. Si no aparece, el
+índice está en dev y hay que aplicarlo a staging. **Riesgo de dejarlo abierto: ninguno funcional** —
+un índice ausente no rompe ninguna consulta, solo la degrada cuando la tabla crezca.
+
+### Los límites de este veredicto, dichos en voz alta
+
+* **El censo prueba «está en staging el 2 y el 6-ago», no «entró el día que dice el registro».** Un
+  objeto aplicado tarde, o corregido por otra sesión, se lee igual. Para la pregunta de este
+  veredicto basta; para una auditoría de FECHAS, no.
+* **Sigue sin mecanismo todo lo ✋**: backfills, tipos, nullability, defaults, claves ajenas y enums.
+  El censo no los ve y este veredicto tampoco.
+* **La ausencia en un reflog no prueba que algo no se hiciera aquí**: un rebase reescribe el SHA y
+  rompe el enlace. Por eso ① lleva su control de sensibilidad (47/50) y no se apoya en el silencio.
+
 ## SCRUM-205 · `invoices.vf_estado` (estado de sellado explícito) — MEDIDO 6-ago-2026, ver tabla
 
 > **Estado POR BASE, con la fecha y el método de cada medición** (antes esta cabecera decía
