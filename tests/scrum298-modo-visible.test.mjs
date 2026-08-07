@@ -219,7 +219,30 @@ test('SCRUM-298 · SUELO del guard: VE las tres formas (ternario, `||` y objeto 
   assert.deepEqual(objeto, ['dos', 'uno'], '🔴 el guard no ve los valores de un objeto indexado');
 });
 
-test('SCRUM-298 · MICROCOPY: las TRES ramas del modo son el marcador (reglas 30 y 26)', () => {
+/**
+ * LOS TEXTOS APROBADOS, CON SU PROCEDENCIA Y CON LO QUE SE MIDIÓ PARA CADA UNO.
+ *
+ * La clave es el texto EXACTO que se pinta; el valor, dónde consta la aprobación y contra qué
+ * mecanismo se verificó. Las dos cosas, y la segunda no es adorno: el fundador aprobó estos textos
+ * **con la condición de comprobar cada afirmación contra el código antes de escribirla**, y de las
+ * tres ramas propuestas una se cayó en esa comprobación (ver `receipt`, que sigue con marcador).
+ *
+ * ⚠️ Un texto aprobado NO es un texto libre: si cambia una coma, deja de estar en esta lista y el
+ * guard vuelve a rojo. Es deliberado — obliga a que la redacción nueva pase por el fundador otra
+ * vez, que es justo lo que la regla 30 pide.
+ */
+const APROBADOS = {
+  'Se emiten facturas':
+    'fundador 7-ago-2026 · numera con la serie fiscal (`formatInvoiceNumber`, lock `SERIE_LOCK_NS`)',
+  'Cada cobro genera una factura con su numeración. Una vez emitida no se puede editar ni borrar.':
+    'fundador 7-ago-2026 · «no se edita ni borra» verificado en `invoicesAdmin.routes.ts:68` (SOLO ALTA, regla 29)',
+  'Cuenta de demostración':
+    'fundador 7-ago-2026 · solo el merchant demo (`isDemoMerchant`)',
+  'Se generan facturas completas con una marca de agua DEMO. No tienen validez: esta cuenta es para probar.':
+    'fundador 7-ago-2026 · `DEMO_WATERMARK = "DEMO — no válida fiscalmente"` (`emission.service.ts:12`), aplicada en `lib/invoicing.ts:122` y `:257`',
+};
+
+test('SCRUM-298 · MICROCOPY: sin aprobar va el marcador; aprobado va con su procedencia (reglas 30 y 26)', () => {
   const vista = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/settingsView.js'), 'utf8');
   // Se acota a MI bloque. La primera versión cortaba desde la primera aparición de «SCRUM-298»
   // —que es la declaración de constantes, arriba del fichero— y se tragaba la cabecera de Ajustes:
@@ -231,10 +254,23 @@ test('SCRUM-298 · MICROCOPY: las TRES ramas del modo son el marcador (reglas 30
   const textos = textosVisibles(
     vista.slice(0, vista.indexOf('function renderSettingsView')) + bloque, 'settingsView.js');
   assert.ok(textos.length >= 3, `🔴 el guard solo ve ${textos.length} textos del modo: tiene que ver las TRES ramas`);
-  const malos = textos.filter((t) => t !== PENDIENTE);
+
+  const malos = textos.filter((t) => t !== PENDIENTE && !(t in APROBADOS));
   assert.deepEqual(malos, [], '🔴 HAY MICROCOPY ESCRITA SIN APROBAR en la fila del modo de emisión:\n    '
     + JSON.stringify(malos) + '\n\n  Regla 30 y, encima, regla 26: este texto dice qué documento fiscal emite un\n'
-    + '  profesional. La pregunta de VeriFactu se responde SOLO con el guion H2.');
+    + '  profesional. La pregunta de VeriFactu se responde SOLO con el guion H2.\n'
+    + '  Si el fundador lo ha aprobado, va a `APROBADOS` CON SU PROCEDENCIA — no basta con borrar\n'
+    + '  el marcador: una aprobación sin dónde-consta es lo que vigila SCRUM-387.');
+
+  // CADUCIDAD, y es la otra mitad. Sin esto, `APROBADOS` sería una lista que solo crece: un texto
+  // retirado de la pantalla seguiría amparado ahí para siempre, y el siguiente que escribiera esa
+  // misma frase en cualquier rama la tendría pre-aprobada sin que nadie lo decidiera.
+  // «Una excepción que sobrevive a su causa deja de ser una nota y pasa a ser un permiso.»
+  const fantasmas = Object.keys(APROBADOS).filter((t) => !textos.includes(t));
+  assert.deepEqual(fantasmas, [],
+    '🔴 hay textos APROBADOS que ya no se pintan:\n    ' + JSON.stringify(fantasmas)
+    + '\n\n  O han cambiado de redacción —y entonces el nuevo necesita su propia aprobación— o se\n'
+    + '  han retirado. En los dos casos, la entrada se borra de `APROBADOS`.');
 });
 
 test('SCRUM-298 · REGLA 26: ni una palabra sobre VeriFactu, la AEAT o el calendario', () => {

@@ -1,19 +1,63 @@
 // public/dashboard/js/settingsView.js
 
-// SCRUM-298 (A8) · LOS TRES RÓTULOS DEL MODO DE EMISIÓN — SIN APROBAR (regla 30 + regla 26).
+// SCRUM-298 (A8) · LOS TRES RÓTULOS DEL MODO DE EMISIÓN — DOS APROBADOS, UNO DEVUELTO.
 //
-// Van los TRES con el marcador, no dos y uno "provisional que se lee bien": un texto que no
-// chirría se queda para siempre porque nadie vuelve a mirarlo. Y aquí el texto no es un rótulo
-// cualquiera — dice qué documento fiscal emite un profesional—, así que además de la regla 30
-// pesa la 26: la pregunta de VeriFactu se responde SOLO con el guion H2.
+// **Aprobados por el fundador el 7-ago-2026**, con la condición de verificar cada afirmación
+// contra el mecanismo antes de escribirla. Se verificaron, y por eso `receipt` sigue con marcador:
+// su texto afirmaba algo que el código NO hace (abajo, en su propia nota).
 //
-// PROCEDENCIA del bloqueo: `docs/master/SCRUM-298.md`, sección «Microcopy».
+// PROCEDENCIA: `docs/master/SCRUM-298.md`, sección «Microcopy». Ahí está el detalle de qué se midió
+// para cada uno y con qué ficheros — no se repite aquí para no tener dos sitios que puedan divergir.
+//
+// ⚠️ REGLA 26 · Ninguno nombra VeriFactu, la AEAT, Hacienda ni el calendario, y no es casualidad:
+// eso se responde SOLO con el guion H2. Hay guard que lo exige, con hermano positivo.
 const PENDIENTE_MODO_EMISION = '[PENDIENTE microcopy oficial]';
-const ROTULO_MODO_EMISION = {
-  fiscal: PENDIENTE_MODO_EMISION,
-  demo: PENDIENTE_MODO_EMISION,
+
+/**
+ * Título y detalle de cada modo. Los dos textos van juntos: el título solo no distingue «factura»
+ * de «justificante» para quien no sepa la diferencia, que es justo el profesional al que esta fila
+ * le importa.
+ *
+ * ⚠️ CADA AFIRMACIÓN ESTÁ MEDIDA CONTRA EL CÓDIGO, no redactada de memoria:
+ *
+ *   · `fiscal`  — numera con la serie fiscal (`formatInvoiceNumber`, con su advisory lock
+ *     `SERIE_LOCK_NS`) y no se edita ni se borra: `invoicesAdmin.routes.ts:68` es SOLO ALTA
+ *     («esta ruta no edita ni borra»), regla 29.
+ *   · `demo`    — `DEMO_WATERMARK = 'DEMO — no válida fiscalmente'` (`emission.service.ts:12`),
+ *     aplicada en `lib/invoicing.ts:122` y `:257`. Factura completa, con marca de agua.
+ *   · `receipt` — DEVUELTO. Ver la nota de abajo.
+ */
+// ⚠️ DOS OBJETOS PLANOS, y no es estilo: es que el guard tiene que poder VERLOS. Al escribirlos
+// primero como un objeto anidado (`{ fiscal: { titulo, detalle } }`) el extractor de microcopy se
+// quedó a CERO textos y su suelo saltó — «solo ve 0 textos del modo». La forma nueva la introduje
+// yo, así que se cambia el código y no el analizador: enseñarle a ver una forma que acabo de
+// inventar es exactamente cómo un guard se vuelve ciego sin que nadie lo note.
+const TITULO_MODO_EMISION = {
+  fiscal: 'Se emiten facturas',
+  demo: 'Cuenta de demostración',
+  // 🔴 DEVUELTO AL FUNDADOR, no olvidado. Ver la nota de abajo.
   receipt: PENDIENTE_MODO_EMISION,
 };
+const DETALLE_MODO_EMISION = {
+  fiscal: 'Cada cobro genera una factura con su numeración. Una vez emitida no se puede editar ni borrar.',
+  demo: 'Se generan facturas completas con una marca de agua DEMO. No tienen validez: esta cuenta es para probar.',
+  receipt: PENDIENTE_MODO_EMISION,
+};
+
+// 🔴 POR QUÉ `receipt` SIGUE CON MARCADOR. El texto propuesto decía «con su propia numeración», y
+// el código dice lo contrario en su propio comentario (`invoiceNumber.service.ts:32-35`):
+//
+//     los merchants ES reales con `INVOICING_ES_ENABLED` off NO consumen la serie fiscal —
+//     reciben una REFERENCIA `J-YYYYMMDD-XXXX` FUERA DE TODA SERIE DE FACTURACIÓN
+//     («sin numeración de factura», Parte M).
+//
+// Y `makeReceiptNumber` cierra la referencia con `Math.random()`, no con un contador: dos
+// justificantes del mismo día no guardan ningún orden entre sí. Prometer «numeración» a un
+// profesional que responde ante Hacienda es prometer una correlatividad que no existe — y éste es
+// precisamente el modo en el que están HOY todos los merchants ES reales.
+//
+// Lo que sí está medido y es cierto: el prefijo `J-`, el `type: 'JUST'` y que nunca entra en la
+// cadena de huellas (`verifactu.service.ts:333`). O sea, «no es una factura» sí se sostiene.
 
 
 function renderSettingsView(container) {
@@ -138,18 +182,38 @@ function renderSettingsView(container) {
     // ⚠️ Y NO ES UN INTERRUPTOR. Esto solo LEE. El modal de dos caminos quedó bloqueado porque
     // «se envía» no existe (sin cliente SOAP/mTLS, sin cola de remisión): una salida inerte le
     // diría al profesional que puede elegir remitir a la AEAT, y no puede.
+    //
+    // ⚠️ VIVE EN `Configuración › Cumplimiento`, y el panel se pide POR EL MAPA
+    // (`panelDeSuperficie`), nunca por una posición escrita a mano: el fallo mudo de B1 es que una
+    // superficie acabe en un panel distinto del que declara el mapa, y el guard de campos —que
+    // solo mira el mapa— seguiría verde. Antes se insertaba en la cabecera de la tarjeta, fuera
+    // de los diez paneles, y por eso el submenú figuraba como hueco declarado.
+    //
+    // La derivación NO se toca al mudarla: sigue siendo `window.appModoEmision`, que viene de
+    // `getEmissionMode` por `/admin/me`. Recalcular aquí el criterio al moverlo habría sido
+    // exactamente la fuente doble que este ticket existe para impedir.
     if (window.appModoEmision) {
       const fila = document.createElement("div");
       fila.className = "settings-modo-emision";
-      fila.style.cssText = "margin:0 0 20px;display:flex;align-items:center;gap:8px";
+      fila.style.cssText = "display:flex;flex-direction:column;gap:6px";
+      fila.dataset.modo = window.appModoEmision;
+      // Regla 30: los rótulos los aprueba el fundador. `receipt` sigue con marcador porque su
+      // texto afirmaba una numeración que el código no da — el guard recorre las TRES ramas, que
+      // es la lección del ternario ciego de SCRUM-346.
       const pill = document.createElement("span");
       pill.className = "status-pill";
       pill.dataset.modo = window.appModoEmision;
-      // Regla 30: los tres rótulos los aprueba el fundador. Las TRES ramas llevan marcador — el
-      // guard las recorre todas, que es la lección del ternario ciego de SCRUM-346.
-      pill.textContent = ROTULO_MODO_EMISION[window.appModoEmision] || PENDIENTE_MODO_EMISION;
+      pill.style.cssText = "align-self:flex-start";
+      pill.textContent = TITULO_MODO_EMISION[window.appModoEmision] || PENDIENTE_MODO_EMISION;
       fila.appendChild(pill);
-      card.insertBefore(fila, nav);
+
+      const detalle = document.createElement("p");
+      // Mismos tokens que el subtítulo de la cabecera: ni un color ni un tamaño nuevos (DESIGN.md).
+      detalle.style.cssText = "margin:0;font-size:13px;color:var(--neutral-400);line-height:1.5";
+      detalle.textContent = DETALLE_MODO_EMISION[window.appModoEmision] || PENDIENTE_MODO_EMISION;
+      fila.appendChild(detalle);
+
+      panelDeSuperficie("modoEmision").appendChild(fila);
     }
 
     const alertBox = document.createElement("div");

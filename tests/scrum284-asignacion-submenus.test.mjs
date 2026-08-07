@@ -200,13 +200,30 @@ test('SCRUM-284 · NEGATIVO: un campo desconocido SÍ cae', () => {
 });
 
 test('SCRUM-284 · NEGATIVO: con el censo entero, ningún submenú REAL queda vacío por accidente', () => {
-  // El complemento del ③: comprobar que los siete que NO están declarados vacíos tienen campos de
+  // El complemento del ③: comprobar que los que NO están declarados vacíos tienen contenido de
   // verdad. Sin esto, ③ podría estar verde porque TODOS estuvieran declarados vacíos.
-  const conCampos = SUBMENUS.filter((s) => REVISION.porSubmenu[s].length > 0);
-  assert.equal(conCampos.length, SUBMENUS.length - Object.keys(VACIOS_DECLARADOS).length,
-    `🔴 el reparto no cuadra: ${conCampos.length} submenús con campos + ` +
+  //
+  // ⚠️ CUENTA LAS DOS POBLACIONES (campos Y superficies), igual que ④. Antes contaba solo campos,
+  // y esa aritmética escondía una premisa que nadie había escrito: «todo submenú no declarado
+  // vacío tiene CAMPOS». SCRUM-298 (A8) la rompió de forma legítima — `cumplimiento` tiene una
+  // superficie (el modo de emisión) y ningún campo, porque el modo es ESTADO y no un ajuste que
+  // se guarde.
+  //
+  // Y no había forma de declarar esa verdad dejando los dos guards verdes: manteniéndolo en
+  // `VACIOS_DECLARADOS` caía ④ (que sí cuenta superficies) y sacándolo caía éste. Cuando ningún
+  // código correcto puede pasar los dos, la contradicción está en los guards — aquí, en que dos
+  // tests del MISMO fichero contaban poblaciones distintas. `tieneAlgo` ya las contaba bien.
+  const conAlgo = SUBMENUS.filter(
+    (s) => REVISION.porSubmenu[s].length > 0 || (REVISION.superficiesPorSubmenu[s] || []).length > 0);
+  assert.equal(conAlgo.length, SUBMENUS.length - Object.keys(VACIOS_DECLARADOS).length,
+    `🔴 el reparto no cuadra: ${conAlgo.length} submenús con contenido + ` +
     `${Object.keys(VACIOS_DECLARADOS).length} declarados vacíos ≠ ${SUBMENUS.length}.`);
-  assert.ok(conCampos.length >= 7,
-    `🔴 solo ${conCampos.length} submenús tienen campos: si casi todos estuvieran declarados ` +
+  assert.ok(conAlgo.length >= 7,
+    `🔴 solo ${conAlgo.length} submenús tienen contenido: si casi todos estuvieran declarados ` +
     'vacíos, el guard ③ estaría verde sin significar nada.');
+  // Y el suelo que la versión anterior daba gratis: que los CAMPOS sigan repartidos de verdad y
+  // no se haya vaciado la pantalla dejando solo superficies.
+  const conCampos = SUBMENUS.filter((s) => REVISION.porSubmenu[s].length > 0);
+  assert.ok(conCampos.length >= 7,
+    `🔴 solo ${conCampos.length} submenús tienen CAMPOS: la pantalla se ha quedado sin ajustes.`);
 });
