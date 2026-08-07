@@ -34,6 +34,13 @@ async function initApp() {
   // Y POR QUÉ no se puede, cuando no se puede: `{ emitidas, ejemplo }`. La puerta es `false` por
   // dos motivos distintos —ya emitió, o ya contestó este año— y solo el primero bloquea el campo.
   window.appSerieEmitida = me.serieEmitida || { emitidas: 0, ejemplo: null };
+  // SCRUM-300 (C5): las SEIS ranuras de «en calidad de qué», los rótulos y las ayudas del
+  // albarán llegan SERVIDOS. El navegador NO los escribe: son microcopy que acaba en un documento
+  // que se puede leer en un juzgado (regla 30), y una segunda copia aquí es cómo dos textos
+  // divergen sin que nadie se entere. Mismo criterio que `appDocumentoSuelto`, encima.
+  window.appAlbaranFirmanteOpciones = Array.isArray(me.albaranFirmanteOpciones) ? me.albaranFirmanteOpciones : [];
+  window.appAlbaranRotulos = me.albaranRotulos || {};
+  window.appAlbaranAyudas = me.albaranAyudas || {};
 
   // A10.2 (Parte L): past_due → banner global "Hay un problema con tu pago"
   // + portal de Stripe. La cuenta sigue funcionando (gracia); solo avisa.

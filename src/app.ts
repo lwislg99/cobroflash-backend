@@ -8,6 +8,8 @@ import { notFoundPageHtml } from './core/http/publicNotFound';
 import { isFlagEnabled } from './core/flags';
 import { modoDocumentoSuelto } from './modules/invoicing/domain/facturaSuelta'; // SCRUM-289 (A0.3) · SCRUM-346 (A0.5)
 import { modoEmisionVisible } from './modules/invoicing/domain/modoVisible'; // SCRUM-298 (A8)
+// SCRUM-300 (C5): microcopy del albarán servida al dashboard vanilla desde su fuente única.
+import { ALBARAN_AYUDAS, ALBARAN_ROTULOS, firmanteCalidadOpciones } from './modules/jobs/domain/albaranFirmante';
 import { requireAuth, requireActivePlan, requireRole } from './core/http/authMiddleware';
 import { mountAdmin } from './core/http/adminMounts'; // SCRUM-55: red fail-closed de /admin
 import { requireInternalSecret } from './core/http/internalAuth';
@@ -377,6 +379,13 @@ app.get('/admin/me', async (req, res) => {
     // un derivado de éste, no una segunda opinión. Con dos lecturas distintas, el botón que se
     // pinta y el modo que se enseña podrían contradecirse.
     modoEmision: modoEmisionVisible(merchantParaModo),
+    // SCRUM-300 (C5): las SEIS ranuras de «en calidad de qué», sus rótulos y sus ayudas se
+    // SIRVEN, no se copian. El dashboard es vanilla y no puede importar el módulo de dominio, y
+    // una segunda copia de una microcopy que acaba en un juzgado es exactamente cómo divergen
+    // dos textos en silencio. Mismo criterio, escrito, que SCRUM-289: el navegador la recibe.
+    albaranFirmanteOpciones: firmanteCalidadOpciones(),
+    albaranRotulos: ALBARAN_ROTULOS,
+    albaranAyudas: ALBARAN_AYUDAS,
     // A10.2 (Parte L): estado de la suscripción para el banner past_due
     subscriptionStatus: owner ? 'active' : ((session.merchant as any).subscriptionStatus ?? null),
     // SCRUM-313 (D2): ¿todavia se le puede preguntar por su numeracion? Mismo patron que la

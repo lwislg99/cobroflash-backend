@@ -12,6 +12,8 @@ import PDFDocument from 'pdfkit';
 import { albaranesDir } from '../../../core/storage/dirs';
 import { loadLogoBuffer } from '../../invoicing/infra/pdf/pdf.service';
 import type { AlbaranLinea, AlbaranModoValoracion, FirmaEvidencia } from '../domain/albaran.service';
+// SCRUM-300: los rótulos NO se escriben aquí. Viven en un solo sitio (regla 30) y el PDF los lee.
+import { ALBARAN_ROTULOS, etiquetaCalidad } from '../domain/albaranFirmante';
 
 export async function generateAlbaranPdf(params: {
   merchantId: number; // SCRUM-48: prefija el nombre de archivo (mata la colisión entre merchants)
@@ -29,13 +31,24 @@ export async function generateAlbaranPdf(params: {
     whatsappPhone?: string | null;
   };
   customer: { name: string | null; legalName?: string | null; taxId?: string | null };
-  obra: string | null;              // Job.direccion (dirección física de la obra, si existe)
+  // SCRUM-300: LUGAR DE ENTREGA. Lo resuelve `obraSegunVersion` en el llamador según la versión
+  // del sello (v:1 → Job.direccion; v:2 → Albaran.lugarEntrega), para que el papel diga lo mismo
+  // que certifica su hash. ⚠️ null se imprime como VACÍO: jamás se sustituye por el domicilio
+  // fiscal — una dirección equivocada en un documento de entrega es peor que ninguna.
+  obra: string | null;
+  // SCRUM-300 (C5) · campo nº 1 del ticket: un albarán se PREPARA un día y se ENTREGA otro.
+  // null en todo lo anterior a esta tarea → la línea no se imprime (retrocompatibilidad).
+  fechaEntrega?: Date | null;
   referenciaTrabajo: string | null; // SCRUM-67: Job.titulo (referencia al Trabajo/presupuesto origen)
   lineas: AlbaranLinea[];
   totales: { base: number; cuota: number; total: number } | null; // solo en modo VALORADO
   notas?: string | null;
   signatureData?: string | null; // data-URI (solo si estado firmado)
   firmadoAt?: Date | null;
+  // SCRUM-300 (C5): quién firmó y en calidad de qué. null en todo lo firmado antes de la 300 —
+  // el bloque de firma sale entonces igual que salía (retrocompatibilidad).
+  firmadoPorNombre?: string | null;
+  firmadoPorCalidad?: string | null;
   // SCRUM-68: evidencias de firma para el certificado. ⚠️ ip/ua vienen en el objeto pero
   // NO se pintan (solo hash/firmante/canal/sello temporal). Ver bloque "Certificado".
   evidencia?: FirmaEvidencia | null;
@@ -115,9 +128,17 @@ export async function generateAlbaranPdf(params: {
   doc.font('Helvetica-Bold').fillColor(INK).text('Receptor: ', { continued: true })
     .font('Helvetica').fillColor(BODY).text(params.customer.legalName || params.customer.name || '—');
   if (params.customer.taxId) doc.fillColor(BODY).text(`NIF: ${params.customer.taxId}`);
+  // SCRUM-300 (C5): el rótulo pasa de «Obra» a «Lugar de entrega» — el nombre que la ley usa para
+  // este dato en un albarán. El VALOR lo resuelve `obraSegunVersion` en el llamador según la
+  // versión del sello, para que el papel diga lo mismo que certifica su hash.
+  // ⚠️ Si no hay dato NO se imprime nada: ni el domicilio fiscal, ni un hueco con rótulo.
   if (params.obra) {
-    doc.font('Helvetica-Bold').fillColor(INK).text('Obra: ', { continued: true })
+    doc.font('Helvetica-Bold').fillColor(INK).text(`${ALBARAN_ROTULOS.lugarEntrega}: `, { continued: true })
       .font('Helvetica').fillColor(BODY).text(params.obra);
+  }
+  if (params.fechaEntrega) {
+    doc.font('Helvetica-Bold').fillColor(INK).text(`${ALBARAN_ROTULOS.fechaEntrega}: `, { continued: true })
+      .font('Helvetica').fillColor(BODY).text(fmtDate(params.fechaEntrega));
   }
   if (params.referenciaTrabajo) {
     doc.font('Helvetica-Bold').fillColor(INK).text('Referencia: ', { continued: true })
@@ -222,6 +243,25 @@ export async function generateAlbaranPdf(params: {
       doc.moveDown(0.3);
       doc.image(imgBuffer, M, doc.y, { width: 180, height: 70, fit: [180, 70] });
       doc.moveDown(5);
+      // SCRUM-300 (C5): el trazo deja de ir sin nombre. Cada línea solo se pinta si HAY dato —
+      // los albaranes firmados antes de la 300 los tienen a null y su bloque sale idéntico al
+      // de siempre, que es la retrocompatibilidad exigida.
+      if (params.firmadoPorNombre) {
+        doc.fontSize(9).font('Helvetica-Bold').fillColor(INK).text(ALBARAN_ROTULOS.pdfFirmadoPor, { continued: true })
+          .font('Helvetica').fillColor(BODY).text(params.firmadoPorNombre);
+      }
+      if (params.firmadoPorCalidad) {
+        // ⚠️ Lo GUARDADO es el `id` (decisión del asesor: cambiar el rótulo no puede obligar a
+        // reescribir un documento firmado). Lo IMPRESO es su etiqueta, que sale de la fuente
+        // única. En la ranura libre la etiqueta ES el texto que escribió el profesional.
+        //
+        // 🔴 GATE: mientras las seis etiquetas sigan sin aprobar, esto imprime
+        // `[PENDIENTE microcopy oficial]`. Es deliberado y es el forzador: NO se puede migrar el
+        // esquema —ni firmar nada en v:2— antes de que el fundador apruebe los seis textos, o un
+        // albarán firmado saldría con el marcador impreso. Ver la cabecera de `albaranFirmante.ts`.
+        doc.fontSize(9).font('Helvetica-Bold').fillColor(INK).text(ALBARAN_ROTULOS.pdfEnCalidadDe, { continued: true })
+          .font('Helvetica').fillColor(BODY).text(String(etiquetaCalidad(params.firmadoPorCalidad)));
+      }
       doc.fontSize(8).font('Helvetica').fillColor(MUTED).text(`Firmado el ${signDate}`);
       doc.fillColor('#000');
       doc.moveDown(0.5);

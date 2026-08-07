@@ -130,7 +130,8 @@ test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, a
 
     // (d) POST público /albaran/:token/firmar → 200 → firmado
     const wa2 = interceptarWaLog({ log: await moduloDeLog(), prisma }); // ventana propia: ver arriba
-    const rFirmar = await fetch(`${base}/albaran/${token}/firmar`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ signatureData: SIG }) });
+    // SCRUM-300: la firma remota también puede declarar QUIÉN firma (campo OPCIONAL en C5).
+    const rFirmar = await fetch(`${base}/albaran/${token}/firmar`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ signatureData: SIG, firmadoPorNombre: 'Ana Pérez' }) });
     assert.equal(rFirmar.status, 200, `firmar público debe ser 200 y fue ${rFirmar.status}`);
     row = await prisma.albaran.findUnique({ where: { id: albaran.id }, select: { estado: true, signatureUrl: true, firmadoAt: true } });
     assert.equal(row.estado, 'firmado', 'la firma remota transiciona a firmado');

@@ -26,6 +26,8 @@ import {
 } from '../../domain/albaran.service';
 import { allocateAlbaranNumber } from '../../domain/albaranNumber.service'; // SCRUM-302: dentro de la tx
 import { datosDuplicado } from '../../domain/albaranDuplicado'; // SCRUM-302: qué viaja al duplicado
+// SCRUM-300 (C5): microcopy y normalización del firmante, en su fuente única.
+import { exigirNombreFirmante, normalizarLugarEntrega, resolverCalidadFirmante } from '../../domain/albaranFirmante';
 import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
 // SCRUM-301 (C1): el listado global. Dominio puro + lector inyectable (la tenencia se ejercita).
 import { listarAlbaranesDelMerchant, type LectorListado } from '../../domain/albaranesListado';
@@ -449,11 +451,37 @@ router.patch('/:id', async (req, res) => {
       data.notas = String(req.body.notas || '').slice(0, 2000) || null;
       cambios.push('notas');
     }
+    // SCRUM-300 (C5): DOS fechas —la del documento y la de ENTREGA— con la misma regla y UNA
+    // sola salida de error. Se hizo así a propósito: duplicar el `return 400 invalid_date` habría
+    // añadido una respuesta pública más sin texto humano, y el trinquete de SCRUM-275 lo cazó al
+    // primer intento. Menos ramas, y el tope de respuestas mudas se queda donde estaba.
+    //
+    // `fechaEntrega` admite vaciarse (''→null); `fecha` no, porque el documento siempre tiene una.
+    let fechaInvalida = false;
+    const leerFecha = (valor: unknown, admiteVacio: boolean): Date | null => {
+      const bruto = String(valor ?? '').trim();
+      if (!bruto && admiteVacio) return null;
+      const d = new Date(bruto);
+      if (isNaN(d.getTime())) { fechaInvalida = true; return null; }
+      return d;
+    };
+
     if (req.body?.fecha !== undefined) {
-      const d = new Date(String(req.body.fecha));
-      if (isNaN(d.getTime())) return res.status(400).json({ error: 'invalid_date' });
-      data.fecha = d;
-      cambios.push('fecha');
+      const d = leerFecha(req.body.fecha, false);
+      if (!fechaInvalida) { data.fecha = d; cambios.push('fecha'); }
+    }
+    if (req.body?.fechaEntrega !== undefined) {
+      const d = leerFecha(req.body.fechaEntrega, true);
+      if (!fechaInvalida) { data.fechaEntrega = d; cambios.push('fechaEntrega'); }
+    }
+    if (fechaInvalida) return res.status(400).json({ error: 'invalid_date' });
+    // SCRUM-300 (C5): LUGAR DE ENTREGA. Se edita aquí —preparando el documento— y NO en el
+    // momento de firmar: teclear una dirección con el cliente delante y las manos sucias es
+    // justo la fricción en obra que el ticket manda evitar. ⚠️ Vacío se guarda como NULL,
+    // nunca se sustituye por el domicilio fiscal (suelo del ticket).
+    if (req.body?.lugarEntrega !== undefined) {
+      data.lugarEntrega = normalizarLugarEntrega(req.body.lugarEntrega);
+      cambios.push('lugarEntrega');
     }
     if (cambios.length === 0) return res.status(400).json({ error: 'nothing_to_update' });
 
@@ -627,6 +655,20 @@ router.post('/:id/firmar', async (req, res) => {
       return res.status(413).json({ error: 'firma_demasiado_grande', message: 'La firma supera el tamaño máximo permitido.' });
     }
 
+    // SCRUM-300 (C5): quién firma y en calidad de qué llegan CON la firma. Se resuelven ANTES de
+    // sellar —por eso no rompen el hash— y un valor inválido corta la firma en vez de guardarse
+    // a medias: el documento no puede quedar diciendo algo que nadie eligió.
+    const calidad = resolverCalidadFirmante({
+      ranura: req.body?.firmadoPorCalidad,
+      textoLibre: req.body?.firmadoPorCalidadOtro,
+    });
+    if (!calidad.ok) return res.status(400).json({ error: calidad.error, message: calidad.message });
+    // SCRUM-300: el nombre es OBLIGATORIO al firmar (columna nullable por las filas viejas; el
+    // acto de firmar lo exige). Ver `exigirNombreFirmante` para el porqué de las dos reglas.
+    const nombre = exigirNombreFirmante(req.body?.firmadoPorNombre);
+    if (!nombre.ok) return res.status(400).json({ error: nombre.error, message: nombre.message });
+    const firmadoPorNombre = nombre.nombre;
+
     const firmadoAt = new Date();
     // SCRUM-68: sella evidencias (canal in situ, sin token). ip/ua se guardan pero NUNCA
     // se exponen (serializeAlbaran no los saca; el PDF solo pinta hash/firmante/canal).
@@ -637,10 +679,15 @@ router.post('/:id/firmar', async (req, res) => {
       ua: (req.headers['user-agent'] as string) || null,
       tokenId: null,
       firmadoAt,
+      firmadoPorNombre,
+      firmadoPorCalidad: calidad.valor,
     });
     const updated = await prisma.albaran.update({
       where: { id: albaran.id },
-      data: { estado: 'firmado', signatureUrl: signatureData, firmadoAt, evidenciaFirma: evidencia as any },
+      data: {
+        estado: 'firmado', signatureUrl: signatureData, firmadoAt, evidenciaFirma: evidencia as any,
+        firmadoPorNombre, firmadoPorCalidad: calidad.valor,
+      },
     });
     // Regenerar el PDF YA con el bloque de firma (force). Si el PDF falla, la firma
     // queda registrada igualmente (el GET /pdf lo regenerará bajo demanda).

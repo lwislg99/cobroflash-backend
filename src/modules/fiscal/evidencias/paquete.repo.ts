@@ -43,10 +43,19 @@ export async function leerPaqueteEvidencias(
       select: {
         id: true, merchantId: true, jobId: true, numero: true, fecha: true,
         modoValoracion: true, lineas: true, notas: true, evidenciaFirma: true,
-        // ⚠️ SIN `lugarEntrega`: ese campo llega con SCRUM-300 (C5) y HOY NO EXISTE en el
-        // esquema — pedirlo revienta la consulta entera. El barrido de SCRUM-371 tampoco lo
-        // selecciona, y `entradaDesdeFilas` lo resuelve a `null`, que es exactamente lo que
-        // se selló en los sobres v:1. Cuando C5 entre, se añade aquí y en el barrido a la vez.
+        // SCRUM-300 (C5), añadidas al entrar el esquema: las CUATRO que el sobre v:2 sella. Sin
+        // ellas `entradaDesdeFilas` las resuelve a `null`, recalcula el hash sin lo que sí se
+        // selló y el paquete declara MANIPULADO un albarán intacto — sobre la población entera.
+        //
+        // ⚠️ Van las cuatro y no solo `lugarEntrega`: el guard singulariza esa porque es la que
+        // usa de rueda, pero el adaptador lee las cuatro. Añadir una y creerse el verde sería
+        // dejar tres agujeros del mismo tamaño detrás del test que acaba de ponerse verde.
+        //
+        // NO cambia nada de lo sellado: esto es el LADO LECTOR. `v:1` se recalcula igual que
+        // antes —su receta ignora estos campos— y por eso los sobres ya firmados no se mueven.
+        // El mismo `select` que el `lectorPrisma` del barrido (SCRUM-371), a propósito: dos
+        // lectores del mismo hash que lean columnas distintas darían veredictos distintos.
+        lugarEntrega: true, fechaEntrega: true, firmadoPorNombre: true, firmadoPorCalidad: true,
         invoiceId: true,
       },
     }) as Promise<(FilaAlbaranFirmado & { invoiceId: number | null })[]>,

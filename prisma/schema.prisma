@@ -767,6 +767,16 @@ model Albaran {
   jobId        Int       @map("job_id")
   numero       String    // ALB-YYYY-NNN, serie propia por merchant (no fiscal)
   fecha        DateTime  @default(now()) // fecha de la visita/entrega (editable en borrador)
+  // SCRUM-300 (C5): un albarán se PREPARA un día y se ENTREGA otro, y hasta hoy solo existía
+  // `fecha`. `fechaEntrega` es el día real de la entrega. null = no se pidió (todo lo anterior
+  // a esta tarea) y entonces se muestra `fecha`, que es lo único que llegamos a saber.
+  fechaEntrega DateTime? @map("fecha_entrega")
+  // SCRUM-300 (C5): DÓNDE se entregó. NO es `Job.direccion` —que no la escribe nadie: medido,
+  // ningún schema de validación la acepta y sus únicas apariciones son lecturas— ni el domicilio
+  // del cliente, que ni siquiera existe en `Customer`. Es un campo PROPIO del albarán, porque el
+  // lugar del trabajo puede no ser el domicilio de quien paga.
+  // ⚠️ Entra en el CONTENIDO SELLADO por la firma → sube `evidenciaFirma.v` a 2.
+  lugarEntrega String?   @map("lugar_entrega")
   // SCRUM-65: SIN_VALORAR (hoy, sin precios) | VALORADO (líneas con precioUnitario+tipoIva
   // opcionales). Aditivo, default SIN_VALORAR = comportamiento actual intacto. Editable solo
   // en 'borrador' (mismo candado que lineas/notas/fecha); congelado desde 'emitido'.
@@ -776,6 +786,17 @@ model Albaran {
   version      Int       @default(1)
   signatureUrl String?   @db.Text @map("signature_url") // data-URI (patrón Quote.signatureUrl)
   firmadoAt    DateTime? @map("firmado_at")
+  // SCRUM-300 (C5): QUIÉN firmó, y EN CALIDAD DE QUÉ. Hasta ahora se guardaba el trazo
+  // (`signatureUrl`) y nada más: una rúbrica anónima no identifica a nadie, así que el albarán
+  // firmado valía poco como prueba de entrega.
+  // ⚠️ El campo se guarda VACÍO y se ofrece un chip de sugerencia de un toque con el nombre del
+  // cliente: prerrellenarlo sería poner en boca del firmante una declaración que no ha hecho —si
+  // firma el encargado y no lo corrige, guardaríamos un NOMBRE FALSO, peor que un hueco.
+  // Por lo mismo, `firmadoPorCalidad` no tiene default: ninguna opción viene marcada.
+  // null = no se pidió al firmar (albaranes anteriores a esta tarea). AMBOS entran en el
+  // contenido sellado → `evidenciaFirma.v` = 2.
+  firmadoPorNombre  String? @map("firmado_por_nombre")
+  firmadoPorCalidad String? @map("firmado_por_calidad")
   // SCRUM-49: firma REMOTA. `firmaToken` = token OPACO de la página pública /albaran/:token
   // (patrón Customer.portalToken, crypto.randomBytes(16).hex; null hasta enviar "para firmar";
   // @unique para el lookup findUnique). FSM SIN cambios (opción A): "esperando firma" se deriva

@@ -132,6 +132,87 @@ function firmadoV1(clave, cambios = {}) {
 
 const POBLACION_INTACTA = () => Object.keys(FUENTES).map((k) => firmadoV1(k));
 
+// ── LA POBLACIÓN v:2 (SCRUM-300 · C5) ────────────────────────────────────────────────────
+//
+// v:2 no añade campos y ya está: **cambia la FUENTE de `obra`**. v:1 la tomaba de
+// `Job.direccion` —que no escribe nadie, así que sellaba vacío—; v:2 la toma de
+// `Albaran.lugarEntrega`, columna propia. Y añade tres claves al final: `fechaEntrega`,
+// `firmadoPorNombre` y `firmadoPorCalidad`.
+//
+// ⚠️ En `completo` y `libre`, `lugarEntrega` va CON VALOR y DISTINTO de `jobDireccion` a
+// propósito: con las dos a null, leer una u otra da el mismo hash y el despacho por versión
+// pasaría en verde sin despachar nada. Un caso mal elegido convierte el guard en decorado.
+//
+// ⚠️ `firmadoPorCalidad` guarda el `id` de la ranura, NO su etiqueta — y en la ranura libre,
+// `otro:<texto>`. Es lo que permite que aprobar la microcopy (hoy PENDIENTE) no reescriba el
+// sello de ningún documento ya firmado. `libre` fija ese formato dentro del hash.
+const FUENTES_V2 = {
+  completo: {
+    ...FUENTES.completo,
+    fechaEntrega: new Date('2026-07-15T00:00:00.000Z'),
+    firmadoPorNombre: 'Marta Ruiz Alonso',
+    firmadoPorCalidad: 'encargado_o_personal_de_obra',
+  },
+  // El caso ORDINARIO de un v:2 sin declarar nada: los tres campos son OPCIONALES y un albarán
+  // sin ellos es válido. Sella `obra: null` porque `lugarEntrega` está vacío — el SUELO del
+  // ticket: vacío se queda vacío, nunca se cae al domicilio fiscal.
+  minimo: {
+    ...FUENTES.minimo,
+    fechaEntrega: null,
+    firmadoPorNombre: null,
+    firmadoPorCalidad: null,
+  },
+  libre: {
+    numero: 'ALB-2026-0300',
+    fecha: '2026-05-09T08:15:00.000Z',
+    modoValoracion: 'SIN_VALORAR',
+    lineas: [{ concepto: 'Desatasco', cantidad: 2, unidad: 'h' }],
+    notas: '',
+    jobDireccion: null,
+    lugarEntrega: 'Nave 4, Pol. Ind. El Cañal',
+    referenciaTrabajo: 'Aviso 4471',
+    cliente: 'Bar El Rincón',
+    emisor: 'Fontanería Pereira S.L.',
+    emisorNif: 'B12345678',
+    fechaEntrega: '2026-05-09T00:00:00.000Z',
+    firmadoPorNombre: 'Vecina del 3.º',
+    firmadoPorCalidad: 'otro:Vecina del 3.º',
+  },
+};
+
+/** El hash que el sellador de v:2 escribe. Literales congelados: misma razón que los de v:1. */
+const SELLOS_V2_CONGELADOS = {
+  completo: '866c413451feacf51873144670282f26f1af5c4a388d24cf3e640d39f1308628',
+  minimo: '7211523af40d0e2c800abc1b60ec8db2beaaabf013a2097f854e9394ba6e87c9',
+  libre: '253ba53e410752267d13eaafc09a8f6d47e2aeb9e50164efa3432bd8f4edb55c',
+};
+
+function firmadoV2(clave, cambios = {}) {
+  return {
+    evidencia: { v: 2, hashAlg: 'sha256', contentHash: SELLOS_V2_CONGELADOS[clave] },
+    contenido: { ...FUENTES_V2[clave], ...cambios },
+  };
+}
+
+/** Lo que el sellador necesita para reproducir un v:2, desde una fuente de este fichero. */
+function paramsSelladorV2(f) {
+  return {
+    numero: f.numero,
+    fecha: f.fecha,
+    modoValoracion: f.modoValoracion,
+    lineas: f.lineas,
+    notas: f.notas,
+    obra: f.lugarEntrega, // ⚠️ v:2 sella `Albaran.lugarEntrega` (v:1 sellaba `Job.direccion`)
+    referenciaTrabajo: f.referenciaTrabajo,
+    cliente: f.cliente,
+    emisor: f.emisor,
+    emisorNif: f.emisorNif,
+    fechaEntrega: f.fechaEntrega,
+    firmadoPorNombre: f.firmadoPorNombre,
+    firmadoPorCalidad: f.firmadoPorCalidad,
+  };
+}
+
 // ── ① CONTROL POSITIVO ───────────────────────────────────────────────────────────────────
 
 test('SCRUM-369 · ① un albarán firmado y SIN TOCAR verifica OK', () => {
@@ -320,17 +401,121 @@ test('SCRUM-369 · ④ cada sobre se recalcula con la receta de SU versión, no 
   assert.match(r.mensaje, /ALB-2026-0369/, '🔴 tampoco aquí se nombra el albarán');
 });
 
-test('SCRUM-369 · hoy el verificador solo despacha v:1, y un v:2 se DECLARA (no se aproxima)', () => {
-  // Estado MEDIDO de este árbol: SCRUM-300 (v:2) todavía no está en `main` — espera una migración
-  // de esquema que es turno humano. Mientras tanto un sobre v:2 no existe... y si apareciera, el
-  // verificador no lo adivina.
-  assert.deepEqual(versionesSoportadas(), [1],
+test('SCRUM-369 · el verificador despacha v:1 y v:2, y una versión sin receta se DECLARA', () => {
+  // Estado MEDIDO de este árbol: SCRUM-300 (C5) trajo el v:2, así que el recetario tiene DOS.
+  // Cada una con su vector congelado más abajo — sin él, «se sabe despachar» sería una promesa.
+  assert.deepEqual(versionesSoportadas(), [1, 2],
     '🔴 el recetario ha cambiado: actualiza este test Y el vector congelado de la versión nueva. ' +
     'Una versión que se sabe despachar sin vector congelado no está verificada, está declarada.');
 
-  const r = verificarSobre({ evidencia: { v: 2, contentHash: 'a'.repeat(64) }, contenido: FUENTES.minimo });
+  // Y una que NO existe sigue declarándose en vez de aproximarse con la más parecida.
+  const r = verificarSobre({ evidencia: { v: 9, contentHash: 'a'.repeat(64) }, contenido: FUENTES.minimo });
   assert.equal(r.motivo, 'version_no_soportada');
-  assert.equal(r.v, 2, '🔴 el resultado debe declarar QUÉ versión no supo recalcular');
+  assert.equal(r.v, 9, '🔴 el resultado debe declarar QUÉ versión no supo recalcular');
+});
+
+// ── SCRUM-300 (C5) · LA POBLACIÓN v:2 ────────────────────────────────────────────────────
+
+test('SCRUM-300/369 · ① un albarán v:2 firmado y SIN TOCAR verifica OK', () => {
+  for (const clave of Object.keys(FUENTES_V2)) {
+    const r = verificarSobre(firmadoV2(clave));
+    assert.equal(r.cuadra, true,
+      `🔴 «${FUENTES_V2[clave].numero}» (v:2) está intacto y el verificador dice que NO cuadra ` +
+      `(${r.motivo}: ${r.mensaje}).`);
+    assert.equal(r.v, 2, '🔴 el resultado no declara la versión con la que se recalculó');
+  }
+});
+
+test('SCRUM-300/369 · los vectores de v:2 siguen CONGELADOS (sellador y verificador, dos testigos)', () => {
+  for (const [clave, f] of Object.entries(FUENTES_V2)) {
+    const delSellador = computeAlbaranContentHash(paramsSelladorV2(f), 2);
+    const delVerificador = RECETAS_POR_VERSION[2](f);
+
+    assert.equal(delSellador, SELLOS_V2_CONGELADOS[clave],
+      `🔴 EL SELLADOR YA NO CALCULA EL v:2 QUE CALCULABA («${clave}»).\n\n` +
+      '  Alguien ha cambiado el contenido canónico de v:2: reordenado una clave, extraído un\n' +
+      '  helper, normalizado un campo. Si el cambio es intencionado, no es v:2: es una versión\n' +
+      '  NUEVA con su número. **Una versión cerrada no se refactoriza.**');
+
+    assert.equal(delVerificador, SELLOS_V2_CONGELADOS[clave],
+      `🔴 la receta v:2 DEL VERIFICADOR ya no reproduce el sello congelado («${clave}»). ` +
+      'El verificador declararía manipulados albaranes intactos.');
+
+    assert.equal(delVerificador, delSellador,
+      `🔴 sellador y verificador discrepan sobre v:2 («${clave}»). Están escritos por separado ` +
+      'justamente para que discrepar sea detectable: uno de los dos se ha movido.');
+  }
+});
+
+test('SCRUM-300/369 · ② 🔴 UN CARÁCTER cambiado en un v:2 y el verificador FALLA NOMBRANDO el albarán', () => {
+  const original = FUENTES_V2.completo.lineas[0].concepto;
+  const manipulado = original.replace('fibrocemento', 'fibrocemenlo');
+  assert.equal(manipulado.length, original.length, 'el sabotaje debe cambiar UN carácter, no la longitud');
+  assert.notEqual(manipulado, original, 'el sabotaje no ha cambiado nada: el test no probaría nada');
+
+  const r = verificarSobre(firmadoV2('completo', {
+    lineas: [{ ...FUENTES_V2.completo.lineas[0], concepto: manipulado }, FUENTES_V2.completo.lineas[1]],
+  }));
+  assert.equal(r.cuadra, false,
+    '🔴 SE HA CAMBIADO EL CONTENIDO DE UN ALBARÁN v:2 FIRMADO Y EL VERIFICADOR DICE QUE CUADRA.');
+  assert.equal(r.motivo, 'hash_no_coincide');
+  assert.match(r.mensaje, /ALB-2026-0369/, '🔴 el rojo NO NOMBRA el albarán');
+});
+
+test('SCRUM-300/369 · 🔴 los CUATRO campos que estrena C5 están DENTRO del sello', () => {
+  // Ésta es la comprobación que decide si C5 sirve de algo: si `lugarEntrega`, `fechaEntrega` o
+  // quién firmó se pudieran cambiar DESPUÉS de firmar sin que el sello lo notara, saldrían
+  // impresos en el papel sin estar protegidos por la firma — que es justo lo que el ticket
+  // exige comprobar («mide dónde entran y compruébalo»).
+  const cambios = {
+    'lugarEntrega (la obra, fuente de v:2)': { lugarEntrega: 'C/ Otra 9 — cambiada tras firmar' },
+    fechaEntrega: { fechaEntrega: new Date('2026-07-16T00:00:00.000Z') },
+    'fechaEntrega · vaciada': { fechaEntrega: null },
+    firmadoPorNombre: { firmadoPorNombre: 'Otra Persona Distinta' },
+    'firmadoPorCalidad (el id de la ranura)': { firmadoPorCalidad: 'el_propio_cliente' },
+  };
+  for (const [campo, cambio] of Object.entries(cambios)) {
+    const r = verificarSobre(firmadoV2('completo', cambio));
+    assert.equal(r.cuadra, false,
+      `🔴 «${campo}» se puede cambiar DESPUÉS de firmar sin que el sello lo note. ` +
+      'Lo que no entra en el hash no está protegido, aunque salga impreso en el papel.');
+  }
+
+  // Y el texto libre de la ranura «otro» también: es lo que el documento DICE de quien firmó.
+  const rLibre = verificarSobre(firmadoV2('libre', { firmadoPorCalidad: 'otro:Otra vecina' }));
+  assert.equal(rLibre.cuadra, false,
+    '🔴 el texto libre de la ranura «otro» se puede cambiar tras firmar sin romper el sello');
+});
+
+test('SCRUM-300/369 · 🔴 v:1 y v:2 NO son intercambiables: el mismo contenido da hashes distintos', () => {
+  // El motivo de que la versión suba. `obra` cambió de fuente: v:1 la tomaba de `Job.direccion`,
+  // v:2 de `Albaran.lugarEntrega`. Con el MISMO contenido delante, las dos recetas tienen que
+  // discrepar — si coincidieran, el número de versión no estaría distinguiendo nada y aplicar la
+  // regla equivocada pasaría desapercibido.
+  const f = FUENTES_V2.completo;
+  assert.notEqual(RECETAS_POR_VERSION[1](f), RECETAS_POR_VERSION[2](f),
+    '🔴 LAS RECETAS DE v:1 Y v:2 DAN EL MISMO HASH sobre el mismo contenido. Entonces el despacho ' +
+    'por versión no protege de nada: dos reglas distintas bajo números distintos deben ser ' +
+    'distinguibles, o un sobre mal versionado se leería como bueno.');
+
+  // Y el despacho REAL lo demuestra: un sobre v:2 recalculado con la regla de v:1 no cuadra.
+  const conRecetaEquivocada = verificarSobre(firmadoV2('completo'), Object.freeze({ 1: RECETAS_POR_VERSION[1] }));
+  assert.equal(conRecetaEquivocada.motivo, 'version_no_soportada',
+    '🔴 un sobre v:2 sin receta de v:2 se ha aproximado con la de v:1 en vez de declararse. ' +
+    'Aproximar es acusar: diría «manipulado» sobre un albarán que nadie tocó.');
+});
+
+test('SCRUM-300/369 · el censo distingue las DOS poblaciones que ahora conviven', () => {
+  // Retrocompatibilidad MEDIDA, no supuesta: tras C5 hay albaranes v:1 (los de antes, que no se
+  // recalculan ni se migran nunca) y v:2. El informe tiene que contarlos por separado.
+  const informe = verificarPoblacion([...POBLACION_INTACTA(), ...Object.keys(FUENTES_V2).map((k) => firmadoV2(k))]);
+  assert.deepEqual(informe.censoPorVersion, { 1: 3, 2: 3 });
+  assert.equal(informe.examinados, 6);
+  assert.equal(informe.cuadran, 6,
+    '🔴 al entrar v:2, algún albarán ha dejado de verificar. Si son los v:1, es EL peor resultado ' +
+    'posible: declararía manipulados todos los albaranes firmados antes de C5.');
+  assert.equal(informe.conclusion, 'todo_cuadra');
+  assert.deepEqual(informe.versionesNoSoportadas, []);
 });
 
 // ── ⑤ CENSO POR VERSIÓN, y los sobres rotos ──────────────────────────────────────────────

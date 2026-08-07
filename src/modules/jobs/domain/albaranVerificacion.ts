@@ -77,6 +77,8 @@ export interface FuentesContenido {
   cliente: string | null;
   emisor: string | null;
   emisorNif: string | null;
+  /** SCRUM-300 · solo v:2. El día de la ENTREGA, distinto del de emisión (`fecha`). */
+  fechaEntrega?: Date | string | null;
   firmadoPorNombre?: string | null;
   firmadoPorCalidad?: string | null;
 }
@@ -182,19 +184,79 @@ const recetaV1: RecetaSobre = (f) =>
     }),
   );
 
+/** Las líneas de v:2, en su forma canónica congelada. */
+function lineasCanonicasV2(lineas: unknown) {
+  return (Array.isArray(lineas) ? (lineas as AlbaranLinea[]) : []).map((l) => ({
+    concepto: l.concepto,
+    cantidad: l.cantidad,
+    unidad: l.unidad ?? null,
+    precioUnitario: l.precioUnitario ?? null,
+    tipoIva: l.tipoIva ?? null,
+  }));
+}
+
+/**
+ * RECETA v:2 — CONGELADA (SCRUM-300 · C5).
+ *
+ * ⚠️ SE ESCRIBE ENTERA Y APARTE, incluidas las líneas, aunque hoy sea CARÁCTER POR CARÁCTER igual
+ * a la de v:1 en sus once primeras claves y `lineasCanonicasV2` sea idéntica a `lineasCanonicasV1`.
+ * Eso NO es un descuido pendiente de deduplicar: es el precio de que romper v:1 sea IMPOSIBLE en
+ * vez de estar vigilado. El día que v:3 añada un campo a las líneas, tocará SU copia y las de
+ * v:1 y v:2 no se moverán. Lee el recuadro de arriba antes de «arreglar» esta repetición.
+ *
+ * Qué cambia respecto de v:1, y por qué la versión sube:
+ *
+ *  · `obra` CAMBIA DE FUENTE: v:1 lo tomaba de `Job.direccion` (que no escribe nadie, así que
+ *    llevaba meses sellando vacío); v:2 lo toma de `Albaran.lugarEntrega`, columna propia. Un
+ *    cambio de significado de un campo YA SELLADO es exactamente lo que obliga a una versión
+ *    nueva: sin ella, dos hashes calculados con reglas distintas serían indistinguibles.
+ *  · Se AÑADEN tres claves al final, en este orden: `fechaEntrega`, `firmadoPorNombre`,
+ *    `firmadoPorCalidad`. Van al final y en bloque para que el delta con v:1 se lea de un
+ *    vistazo. `JSON.stringify` serializa por orden de inserción: este orden queda congelado.
+ *
+ * ⚠️ `firmadoPorCalidad` sella el `id` de la ranura (`encargado_o_personal_de_obra`), NO su
+ * etiqueta. Es deliberado y es lo que permite que aprobar la microcopy —hoy pendiente— no
+ * reescriba el sello de ningún documento ya firmado.
+ */
+const recetaV2: RecetaSobre = (f) =>
+  sha256(
+    JSON.stringify({
+      v: 2,
+      numero: f.numero,
+      fecha: fechaCanonica(f.fecha),
+      modoValoracion: f.modoValoracion,
+      obra: f.lugarEntrega ?? null,
+      referenciaTrabajo: f.referenciaTrabajo ?? null,
+      cliente: f.cliente ?? null,
+      emisor: f.emisor ?? null,
+      emisorNif: f.emisorNif ?? null,
+      notas: f.notas ?? null,
+      lineas: lineasCanonicasV2(f.lineas),
+      fechaEntrega:
+        f.fechaEntrega instanceof Date
+          ? f.fechaEntrega.toISOString()
+          : f.fechaEntrega
+            ? String(f.fechaEntrega)
+            : null,
+      firmadoPorNombre: f.firmadoPorNombre ?? null,
+      firmadoPorCalidad: f.firmadoPorCalidad ?? null,
+    }),
+  );
+
 /**
  * El recetario que este verificador sabe despachar.
  *
- * ⚠️ HOY SOLO ESTÁ v:1, Y ESO ESTÁ MEDIDO, NO SUPUESTO: en este árbol el sellador solo puede
- * emitir v:1 (`albaran.service.ts` construye un único objeto canónico). SCRUM-300 sube a v:2 y
- * todavía NO está en `main` — espera una migración de esquema que es turno humano.
+ * ⚠️ LAS DOS VERSIONES ESTÁN MEDIDAS, NO SUPUESTAS: `albaran.service.ts` construye hoy DOS objetos
+ * canónicos (v:1 y v:2) y el guard de `tests/scrum369-verificador-sello.test.mjs` lo lee del AST,
+ * no de este comentario. Si el sellador estrenara un v:3, ese guard se pondría ROJO hasta que su
+ * receta apareciese aquí con su vector congelado.
  *
- * Cuando v:2 entre, el guard de `tests/scrum369-verificador-sello.test.mjs` se pone ROJO hasta que
- * su receta se añada aquí con su vector congelado. No hace falta acordarse: la suite lo exige.
- * Mientras tanto, un sobre v:2 no se aproxima con la receta de v:1 — se declara no soportado.
+ * Y lo que NO se hace jamás: que una versión nueva reutilice la receta de otra. Dos hashes con
+ * reglas distintas bajo el mismo número son indistinguibles.
  */
 export const RECETAS_POR_VERSION: Recetario = Object.freeze({
   1: recetaV1,
+  2: recetaV2,
 });
 
 /** Las versiones que este verificador sabe recalcular, ordenadas. */

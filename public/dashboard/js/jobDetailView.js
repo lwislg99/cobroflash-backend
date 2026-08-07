@@ -1224,6 +1224,12 @@ async function renderJobDetailView(container, jobId) {
     // vacío y ya lo llenaré».
     const enBlanco = { estado: 'borrador', modoValoracion, lineas: decision.lineas, notas: '' };
 
+    // ⚠️ AQUÍ NO VIAJA `direccionSugerida`, Y NO ES UN OLVIDO. El contexto sí se pasa —abajo, al
+    // cerrar las opciones— pero SIN la sugerencia: es una ayuda de la EDICIÓN de un albarán, no de
+    // su creación (decisión del asesor, 6-ago-2026).
+    // Consecuencia buscada: al crear en blanco no hay placeholder de lugar de entrega. El
+    // `ctx = {}` por defecto de `buildAlbEditor` lo hace inofensivo — `ctx.direccionSugerida` es
+    // `undefined`, falsy, y el campo sale vacío en lugar de reventar.
     buildAlbEditor(bodyEl, enBlanco, {
       onClose: close,
       onError: (msg) => { errEl.textContent = msg; errEl.style.display = 'block'; },
@@ -1328,7 +1334,10 @@ async function renderJobDetailView(container, jobId) {
     // un constructor de botón que ya no llama nadie es código que se pudre sin que nada lo diga, y
     // el siguiente que lo lea creerá que la fila todavía ofrece esas acciones. Lo que sí se queda
     // es el bloque de miniaturas de arriba: eso es LECTURA, y la fila sigue enseñando las fotos.
-    const editBtn = () => mkBtn('Editar líneas', () => openAlbEditorSheet(alb, { cur, refresh, setStatus }));
+    // SCRUM-300 (C5): `direccionSugerida` viaja como UN STRING, no como el `job` entero — el
+    // editor necesita un dato, no acceso a media pantalla. Es la precarga del lugar de entrega,
+    // y solo como placeholder (ver `buildAlbEditor`).
+    const editBtn = () => mkBtn('Editar líneas', () => openAlbEditorSheet(alb, { cur, refresh, setStatus, direccionSugerida: job.direccion || null }));
 
     // SCRUM-302 (C2) · LA FILA YA NO ES UNA BARRA DE ACCIONES: ES UNA ENTRADA.
     //
@@ -1994,6 +2003,66 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
   }
   updateTotales();
 
+  // ── SCRUM-300 (C5): LUGAR y FECHA de entrega ───────────────────────────────────────
+  // Contenido mínimo obligatorio del albarán. Se editan AQUÍ —preparando el documento— y no en
+  // el momento de firmar: teclear una dirección con el cliente delante y las manos sucias es
+  // justo la fricción en obra que el ticket manda evitar.
+  //
+  // ⚠️ Los rótulos y las ayudas NO se escriben aquí: llegan servidos por `/admin/me` desde
+  // `albaranFirmante.ts` (regla 30). Sin ellos el bloque no se pinta.
+  const rotAlb = window.appAlbaranRotulos || {};
+  const ayuAlb = window.appAlbaranAyudas || {};
+  let lugarEl = null, fEntregaEl = null;
+  if (rotAlb.lugarEntrega && rotAlb.fechaEntrega) {
+    const campoAlb = (labelText, ayudaText, el) => {
+      const w = document.createElement('div');
+      w.style.cssText = 'margin-top:8px';
+      const l = document.createElement('label');
+      l.style.cssText = 'display:block;font-size:12px;font-weight:600;color:var(--ink);margin-bottom:3px';
+      l.textContent = labelText;
+      w.appendChild(l);
+      if (ayudaText) {
+        const p = document.createElement('p');
+        p.style.cssText = 'margin:0 0 6px;font-size:12px;color:var(--muted);line-height:1.45';
+        p.textContent = ayudaText;
+        w.appendChild(p);
+      }
+      w.appendChild(el);
+      box.appendChild(w);
+      return w;
+    };
+
+    lugarEl = document.createElement('input');
+    lugarEl.type = 'text';
+    lugarEl.className = 'input';
+    lugarEl.style.cssText = 'width:100%;min-height:44px';
+    lugarEl.maxLength = 300;
+    lugarEl.value = alb.lugarEntrega || '';
+    // ⚠️ SUELO del ticket: si no hay dirección de obra se deja VACÍO. La sugerencia entra solo
+    // como PLACEHOLDER —sugiere, no rellena—: una dirección equivocada en un documento de
+    // entrega es peor que ninguna. Hoy `Job.direccion` es null para cualquier merchant real
+    // (SCRUM-374), así que lo normal es que no haya nada que sugerir y lo escriba el profesional.
+    //
+    // ⚠️ Llega por `ctx.direccionSugerida` —UN STRING—, no por el `Job` entero, y no es un rodeo:
+    // cuando esta función vivía anidada en `renderJobDetailView` cogía `job` por CLAUSURA, y al
+    // sacarla al nivel superior (SCRUM-386/320) esa clausura desapareció. Pasarle el Job le daría
+    // acceso a toda la pantalla e invitaría al acoplamiento siguiente; necesita UN DATO. Y con
+    // `ctx = {}` por defecto, quien no lo pase obtiene `undefined` —falsy—: sin sugerencia, no
+    // pantalla rota. El modo de fallo es el bueno.
+    if (ctx.direccionSugerida && !lugarEl.value) lugarEl.placeholder = ctx.direccionSugerida;
+    campoAlb(rotAlb.lugarEntrega, ayuAlb.lugarEntrega, lugarEl);
+
+    // ⚠️ Columna PROPIA (`Albaran.fechaEntrega`), NO `Albaran.fecha`: un albarán se prepara un
+    // día y se entrega otro, y `fecha` además es la clave del mes natural de la recapitulativa
+    // (art. 13). Escribir una sobre la otra movería la factura de mes sin que nadie lo pidiera.
+    fEntregaEl = document.createElement('input');
+    fEntregaEl.type = 'date';
+    fEntregaEl.className = 'input';
+    fEntregaEl.style.cssText = 'width:100%;min-height:44px';
+    fEntregaEl.value = alb.fechaEntrega ? String(alb.fechaEntrega).slice(0, 10) : '';
+    campoAlb(rotAlb.fechaEntrega, ayuAlb.fechaEntrega, fEntregaEl);
+  }
+
   const notas = document.createElement('textarea');
   notas.className = 'input';
   notas.placeholder = 'Notas del albarán (opcional)';
@@ -2026,6 +2095,11 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
       out.push(linea);
     }
     const body = { lineas: out, notas: notas.value };
+    // SCRUM-300: se mandan SIEMPRE que el bloque exista, también vacíos — vaciar el lugar de
+    // entrega es una decisión legítima del pro y el backend la respeta ('' → null). No tocan
+    // `fecha`, que sigue siendo la del documento.
+    if (lugarEl) body.lugarEntrega = lugarEl.value;
+    if (fEntregaEl) body.fechaEntrega = fEntregaEl.value;
     // Solo se manda modoValoracion cuando es EDITABLE (borrador); en 'emitido' el
     // backend lo rechaza con 409 aunque el valor no cambie — mejor ni ofrecerlo.
     if (modoEditable) body.modoValoracion = modo;
