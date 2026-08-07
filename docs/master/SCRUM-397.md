@@ -80,14 +80,43 @@ dice nada sobre la fiabilidad de la fecha**. Es una etiqueta de método, no un a
 
 ## ⑤ La frase que SÍ es cierta hoy
 
-**Microcopy sin aprobar — la aprueba el fundador (regla 30).** Propuesta:
+✅ **TEXTO OFICIAL — aprobado por el fundador el 7-ago-2026 (regla 30).** No se toca sin su OK.
 
-> **«Cuando te pagan con tarjeta o Bizum, la fecha del cobro la registra la pasarela, no tú.»**
+<!-- MICROCOPY-OFICIAL:fecha-de-cobro -->
+> **«Los cobros con tarjeta los confirma la pasarela: la fecha y la hora las pone ella, no tú. Los que marcas tú a mano quedan con la fecha en que los marcaste.»**
 
-Y si hace falta la versión con el resto dentro, sin perder la honestidad:
+**Dice «tarjeta» porque así se llama en la pantalla del profesional**, comprobado en los tres
+sitios donde ve el método: `reportsView.js:380` (`card: '💳 Tarjeta'`), `quotesView.js:595`
+(`label: "💳 Tarjeta"`) y `quotesListView.js:220` (`q.method === "card" ? "Tarjeta"`). `card` es el
+identificador interno y **nunca se le enseña**; «Stripe» sí aparece, pero en Configuración y
+hablando de la cuenta, no del método de cobro.
 
-> **«Tarjeta y Bizum se confirman solos, con su fecha y su hora. Transferencia y efectivo los
-> confirmas tú, y YaQu guarda cuándo lo hiciste.»**
+### Las dos versiones devueltas, y por qué — queda escrito para que no vuelvan
+
+| | Decía | Por qué no valía |
+| --- | --- | --- |
+| 1ª | «…con tarjeta o **Bizum**…» | apoyaba en **«Bizum automático»**, que no existe en ninguna pantalla: solo en comentarios del código |
+| 2ª | «Transferencia y **efectivo** los confirmas tú…» | **`cash` es inalcanzable**: está en `PAID_VIA` pero ninguna ruta lo escribe |
+
+Y el dato que mató a las dos: **`BIZUM_MANUAL_ENABLED: false` y `BIZUM_AUTO_ENABLED: false`**
+(`src/core/flags.ts:19,23`). Una frase que explique cómo se confirma un Bizum describe algo que hoy
+no ocurre.
+
+La tercera **es cierta esté encendido lo que esté encendido**, que es justo lo que les faltaba a
+las otras dos: solo afirma de la tarjeta —que está viva— y mete todo lo demás en «los que marcas tú
+a mano», que es verdad de `transfer`, de `bizum_manual` y de cualquier método que se encienda
+mañana y se confirme a mano.
+
+### Lo protege un guard, y vigila el hecho, no la palabra
+
+`scripts/_guard-microcopy-mecanismo.mjs` cae si este texto nombra un mecanismo **apagado o
+inalcanzable**. No lleva lista de palabras prohibidas: **lee `src/core/flags.ts` y comprueba qué
+rutas escriben cada método**. Así, el día que se encienda `BIZUM_MANUAL_ENABLED`, la frase podrá
+nombrar Bizum sin tocar el guard; y si alguien apagara la tarjeta, diría que esta frase ha dejado
+de ser cierta.
+
+**Lo que se evita no es un cambio de estilo:** es **volver a afirmar algo de un mecanismo
+apagado**. Misma familia que la regla 24 y que SCRUM-400.
 
 **Por qué esto es más fuerte de lo que parece, y no un recorte:** para `card` y `bizum_auto` la
 fecha **es un hecho medido por un tercero** (Stripe), no una afirmación nuestra ni del usuario. Ese
