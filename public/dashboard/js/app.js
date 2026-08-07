@@ -11,9 +11,13 @@ async function initApp() {
   window.appUserName   = me.name || '';
   window.appVoiceEnabled = me.voiceEnabled === true; // VZ-1: flag VOICE_QUOTE_ENABLED
   window.appVoiceAlbaranEnabled = me.voiceAlbaranEnabled === true; // SCRUM-71: flag PROPIO del albarán
-  // SCRUM-289 (A0.3): veredicto YA CALCULADO por el servidor (puedeCrearFacturaSuelta). El
-  // navegador no reimplementa el modo de emisión: lo recibe.
-  window.appFacturaSueltaDisponible = me.facturaSueltaDisponible === true;
+  // SCRUM-289 (A0.3) · SCRUM-346 (A0.5): veredicto YA CALCULADO por el servidor
+  // (`modoDocumentoSuelto`). El navegador no reimplementa el modo de emisión: lo recibe.
+  // Son TRES valores —'factura' | 'justificante' | 'no'— porque el profesional español real no
+  // es un «no puedes»: emite justificantes, que es otro documento, no una factura degradada.
+  // Un valor desconocido cae a 'no': fallar cerrado, igual que el servidor.
+  window.appDocumentoSuelto =
+    ['factura', 'justificante'].includes(me.documentoSuelto) ? me.documentoSuelto : 'no';
 
   // SCRUM-D1 · LA PUERTA DE ÚLTIMA OPORTUNIDAD. Mismo patrón: el veredicto lo da el servidor
   // (`debeOfrecerArranqueDeSerie`, la MISMA regla que usa `resolveSeriesSeq`) y aquí solo se
