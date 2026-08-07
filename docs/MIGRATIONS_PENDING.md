@@ -1,5 +1,26 @@
 # Migraciones de schema pendientes de aplicar a producción
 
+> ## ⚠️ `current_database()` NO DISTINGUE PRODUCCIÓN DE STAGING — las dos se llaman `railway`
+>
+> Es el nombre por defecto de Railway, así que **las dos bases lo llevan**. `SELECT
+> current_database()` devuelve `railway` en las dos y **NO vale como comprobación de destino**:
+> quien lo use para confirmar dónde está, no ha confirmado nada.
+>
+> **Los discriminadores que sí valen:**
+>
+> | Señal | Producción | Staging | Dev |
+> |---|---|---|---|
+> | **Host** | `autorack…` | `acela.proxy.rlwy.net` | `acela.proxy.rlwy.net` |
+> | **Nombre de base** | `railway` | `railway` | `yaqu_dev_javier` |
+> | **Recuento de `invoices`** (medido 7-ago-2026) | **55** (49 `no_aplica` · 4 `pendiente_de_sellado` · 2 `sellado`) | **7** (6 `no_aplica` · 1 `pendiente_de_sellado`) | **0** |
+>
+> El **host** separa producción de las otras dos; el **nombre de base** separa staging de dev.
+> Hace falta mirar los dos: ninguno solo alcanza. El recuento de `invoices` es la confirmación
+> cruzada — es un dato de estado y por tanto **caduca**, pero un salto de 55 a 7 no se confunde.
+>
+> ⚠️ Y hay una trampa más, de nombres: la base de STAGING vive dentro de un entorno de Railway
+> llamado **«production»**. **El nombre del entorno miente.** Guíate por host + nombre de base.
+
 > ## ⛔ ESTE FICHERO YA NO CONTESTA «¿existe esa columna en esa base?» — SCRUM-225
 >
 > Lo contestaba **a mano**, y una lista a mano se desfasa en silencio. Sus dos direcciones de
@@ -224,6 +245,63 @@ un índice ausente no rompe ninguna consulta, solo la degrada cuando la tabla cr
   El censo no los ve y este veredicto tampoco.
 * **La ausencia en un reflog no prueba que algo no se hiciera aquí**: un rebase reescribe el SHA y
   rompe el enlace. Por eso ① lleva su control de sensibilidad (47/50) y no se apoya en el silencio.
+
+## SCRUM-300 (C5) · cuatro columnas en `albaranes` — ✅ APLICADO en las TRES bases (7-ago-2026)
+
+**REGISTRO de lo que se ejecutó y se verificó el 7-ago-2026.** No es una afirmación sobre el
+estado de hoy: es lo que se midió ese día, con su método.
+
+Las cuatro columnas, todas **nullable y sin default** (`ADD COLUMN` puro, aditivo):
+`fecha_entrega` · `lugar_entrega` · `firmado_por_nombre` · `firmado_por_calidad`.
+
+| Base | Host · nombre | Cómo se aplicó | Verificación | App |
+| --- | --- | --- | --- | --- |
+| **Staging** | `acela.proxy.rlwy.net` / `railway` | `prisma db execute` con el SQL de `migrate diff --from-schema-datasource` | `information_schema`: las 4, `is_nullable=YES`; `fecha_entrega` = `timestamp without time zone`, las otras tres `text` | ✅ arrancó — `[schema] en sync: 24 tablas / 335 columnas`, `/version` HTTP 200 |
+| **Dev** | `acela.proxy.rlwy.net` / `yaqu_dev_javier` | igual, con el SQL **recortado** a solo el `ALTER TABLE` de `albaranes` | mismas 4 columnas, mismos tipos, `is_nullable=YES` | ✅ (ver SCRUM-205 abajo: hasta aplicar `vf_estado` no arrancaba, y no por C5) |
+| **Producción** | `autorack…` / `railway` (55 filas en `invoices`) | **a mano por el fundador**, desde la consola de Railway del servicio `Postgres` | `information_schema`: `fecha_entrega` (`timestamp without time zone`), `lugar_entrega` / `firmado_por_nombre` / `firmado_por_calidad` (`text`), las cuatro `is_nullable=YES` | ✅ `yaqu.app` comprobada en pie después |
+
+> **HUECO DECLARADO (producción):** no se verificó la **precisión (3)** del `timestamp` de
+> `fecha_entrega`. El guard de deriva **no comprueba tipos** —solo que tabla y columna existan—,
+> así que ni él ni `deriva-prod.sql` van a delatar una precisión distinta. Queda dicho para que
+> nadie lo dé por comprobado.
+
+**Comprobación cruzada final (7-ago-2026):** `docs/sql/deriva-prod.sql` **generado desde el schema
+de C5** (335 columnas / 24 tablas) devolvió **0 filas** contra staging y contra dev — o sea que las
+dos tienen todo lo que el código de C5 nombra, no solo las cuatro columnas nuevas.
+
+---
+
+## SCRUM-205 · `invoices.vf_estado` — ✅ APLICADO TAMBIÉN EN DEV (7-ago-2026)
+
+**REGISTRO.** El 7-ago-2026 se aplicaron a **dev** (`acela…/yaqu_dev_javier`) las dos sentencias
+que le faltaban, con autorización expresa del fundador para salir del carril de C5:
+
+```sql
+ALTER TABLE "invoices" ADD COLUMN "vf_estado" TEXT NOT NULL DEFAULT 'pendiente_de_sellado';
+CREATE INDEX "audit_log_merchant_id_entity_type_entity_id_idx" ON "audit_log"("merchant_id", "entity_type", "entity_id");
+```
+
+Verificado en `information_schema`: `invoices.vf_estado` — `text`, `is_nullable=NO`,
+`column_default = 'pendiente_de_sellado'::text`; e índice
+`audit_log_merchant_id_entity_type_entity_id_idx` presente en `pg_indexes`.
+
+> **EL BACKFILL FUE NO-OP, Y ESO NO ES «no se ejecutó».** `SELECT COUNT(*) FROM invoices` contra
+> dev devolvió **0** *antes* de aplicar. El `DEFAULT 'pendiente_de_sellado'` cae sobre las filas
+> existentes, y en dev **no había ninguna**: no existe la fila que `prisma/backfill/scrum205-vf-estado.sql`
+> vendría a corregir. El daño que ese fichero documenta —marcar como pendiente lo que ya está
+> sellado— **no tiene sobre qué caer aquí**. En staging no se plantea: ya estaba aplicado y su
+> reparto medido (6 `no_aplica` · 1 `pendiente_de_sellado`).
+>
+> ⚠️ Esto vale **para dev y para el 7-ago-2026**. En cualquier base con filas, el backfill vuelve
+> a ser obligatorio y en la misma ventana que el `ALTER TABLE`.
+
+**Motivo de que dev fuera por detrás:** medido el 7-ago, dev no tenía ni `vf_estado` ni el índice,
+mientras staging sí. El arranque contra dev fallaba con
+`COLUMNAS que faltan (1): invoices.vf_estado (Invoice.vfEstado)` — **ninguna de las cuatro de C5**,
+que ya estaban aplicadas y verificadas. Tras aplicar lo de arriba, la app arranca contra dev:
+`[schema] en sync: 24 tablas / 331 columnas`, `/version` HTTP 200.
+
+---
 
 ## SCRUM-205 · `invoices.vf_estado` (estado de sellado explícito) — MEDIDO 6-ago-2026, ver tabla
 
