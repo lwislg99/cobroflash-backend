@@ -1,5 +1,33 @@
 // public/dashboard/js/albaranDetailView.js — SCRUM-302 (C2)
 //
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-404 · POR QUÉ HAY DOS MENSAJES DISTINTOS AL FALLAR UNA FIRMA
+//
+// «Sin conexión» y «el servidor la rechazó» piden al profesional acciones OPUESTAS: en el primer
+// caso espera a tener cobertura y reintenta; en el segundo, reintentar no va a servir de nada y
+// lo que toca es mirar qué pasa. Un único mensaje genérico —el «Failed to fetch» de antes— le
+// hace probar diez veces algo que nunca va a funcionar, o rendirse cuando bastaba con esperar.
+//
+// Y los lee CON EL CLIENTE DELANTE: no pueden sonar a error suyo ni obligarle a dar
+// explicaciones.
+//
+// Los textos son MICROCOPY SIN APROBAR (regla 30): van con marcador hasta que el fundador los fije.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Qué mensaje toca según la causa. PURA para poder afirmar en un test QUE SON DISTINTOS: si los
+ * dos casos acabaran diciendo lo mismo, el mecanismo no existiría aunque el código pareciera
+ * tenerlo.
+ *
+ * `sinRed` lo marca `api.js` al envolver el `fetch` (SCRUM-404).
+ */
+function mensajeDeFalloAlFirmar(e) {
+  if (e && e.sinRed) return '[PENDIENTE microcopy oficial · firma sin conexión]';
+  const detalle = (e && e.data && e.data.message) || '';
+  return '[PENDIENTE microcopy oficial · firma rechazada]' + (detalle ? ` (${detalle})` : '');
+}
+if (typeof window !== 'undefined') window.mensajeDeFalloAlFirmar = mensajeDeFalloAlFirmar;
+//
 // LA PÁGINA DE DETALLE DEL ALBARÁN. Hasta hoy el albarán no tenía página: vivía como una FILA
 // dentro de la pila de DOCUMENTOS del Trabajo, con sus acciones apretadas en la fila.
 //
@@ -359,14 +387,19 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
         // «aquí mismo». Va donde está el botón hoy, no donde estaba.
         firmante: { sugerencia: (alb.customer && alb.customer.name) || '' },
         onConfirm: async (dataUri, declaracion) => {
+          // SCRUM-404 · EL ERROR SUBE, y ése es el mecanismo entero: el pad NO cierra hasta que
+          // esto resuelve, así que un fallo deja el trazo en pantalla y se reintenta sin pedirle
+          // al cliente que firme otra vez.
+          //
+          // ⚠️ Antes hacía `setStatus(...); return;`: se tragaba el error, el pad ya se había
+          // cerrado antes de llamar aquí, y la firma se perdía.
           try {
             await apiRequest(`/admin/albaranes/${alb.id}/firmar`, {
               method: 'POST',
               body: JSON.stringify(Object.assign({ signatureData: dataUri }, declaracion || {})),
             });
           } catch (e) {
-            setStatus('error', 'No se pudo firmar: ' + (e?.data?.message || e.message));
-            return;
+            throw new Error(mensajeDeFalloAlFirmar(e));
           }
           // SCRUM-379 · el peor de los cinco para el profesional, aunque los datos aguanten: sin
           // aviso vuelve a pulsar «Firmar aquí mismo», le pide al cliente que firme POR SEGUNDA VEZ
