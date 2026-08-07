@@ -52,6 +52,22 @@ const MARCA = '[PENDIENTE';
  * a otra tiene que verse, y un total lo escondería (la lección del suelo por FUNCIÓN de SCRUM-392).
  */
 const CENSO = Object.freeze({
+  // SCRUM-404 (7-ago-2026) · SUBIDAS A CONCIENCIA, las dos, y con su motivo:
+  //
+  //   `albaranDetailView.js` +1 → el mensaje de «el servidor rechazó la firma». El fundador
+  //   aprobó su texto CON UNA CONDICIÓN: que el profesional tuviera una forma visible de
+  //   avisarnos. **Medido: no la tiene.** El único contacto es `hola@yaqu.app` y solo aparece en
+  //   `privacidad.html` y `terminos.html`; el botón «?» del panel es la GUÍA DE INICIO
+  //   (`tutorial.js:189-201`), no un canal. Así que la frase prometía algo que no existe y se
+  //   devolvió: sale con marcador hasta que el fundador fije un texto que no lo prometa.
+  //
+  //   `signaturePad.js` +1 → el respaldo de cuando el error llega sin mensaje. No estaba entre
+  //   los textos aprobados y NO se inventa uno (regla 30).
+  //
+  // Los otros DOS de SCRUM-404 sí se escribieron, porque sí estaban aprobados: «No se ha podido
+  // conectar…» y «No se ha recogido el trazo…». Por eso esto sube 2 y no 4.
+  'albaranDetailView.js': 1,
+  'signaturePad.js': 1,
   'exportView.js': 15,
   'invoiceDetailView.js': 9,
   'invoicesView.js': 2,

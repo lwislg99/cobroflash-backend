@@ -14,7 +14,22 @@ async function apiRequest(path, options = {}) {
     ...options,
   };
 
-  const res = await fetch(url, finalOptions);
+  // SCRUM-404 · UN FALLO DE RED Y UN RECHAZO DEL SERVIDOR PIDEN COSAS DISTINTAS AL PROFESIONAL:
+  // esperar a tener cobertura, o llamar por teléfono. Sin envolver el `fetch` los dos llegaban
+  // igual —un `TypeError: Failed to fetch`, en inglés— y quien mostrara el error no podía
+  // distinguirlos.
+  //
+  // Se MARCA `sinRed` y NO se toca el `message`: los demás llamadores siguen viendo exactamente
+  // lo que veían. Quien quiera distinguir, mira la marca.
+  let res;
+  try {
+    res = await fetch(url, finalOptions);
+  } catch (errRed) {
+    const e = new Error(errRed && errRed.message ? errRed.message : 'fallo de red');
+    e.sinRed = true;
+    e.causaOriginal = errRed;
+    throw e;
+  }
 
   if (!res.ok) {
     let data = null;
