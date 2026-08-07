@@ -282,3 +282,40 @@ correcto excluirla, o hay una salida que sí modelamos?
 A desbloquea S1-D, **E desbloquea SCRUM-244 (supresión + portabilidad)**, **F desbloquea
 SCRUM-212 (calificación de la operación)**, **G desbloquea la microcopy de SCRUM-290
 (albarán → factura y el presupuesto adicional)**. Estado vivo en `docs/PENDIENTES_FUNDADOR.md`.*
+
+## P12. Suplidos: ¿entran en el ImporteTotal que se sella? (bloquea SCRUM-293 / A2)
+
+**La plantea el código, y con un dato concreto delante.**
+
+Un **suplido** es un gasto pagado **en nombre del cliente** (una tasa, un visado, un permiso): no
+lleva IVA y **no forma parte de la base imponible**. Pero **sí altera lo que el cliente paga**, y
+ahí está la pregunta.
+
+**El detalle técnico, medido el 7-ago-2026:**
+
+* `src/modules/fiscal/verifactu/registro.builder.ts` construye el registro con
+  `calcVatBreakdown` y manda su resultado **literal** al XML: la línea 315 hace
+  `baseImponible: entrada.base.toFixed(2)`, que sale como
+  `<sum1:BaseImponibleOimporteNoSujeto>`.
+* `calcVatBreakdown` mete **TODA** línea en la base (`e.base += qty * price`). No existe hoy
+  ninguna marca que saque una línea de la base: una línea al 0 % entra en la base con cuota cero.
+* `Invoice.total` es `grossOfLines()` = `base + cuota`. **No hay campo** para un importe que no
+  sea ninguna de las dos: cero campos de suplido en `Invoice` y cero en `Merchant`.
+
+**P12.1** Un suplido, ¿debe aparecer en el **ImporteTotal** del registro de facturación
+VeriFactu, o queda **fuera** del importe sellado por no ser contraprestación de la operación?
+
+**P12.2** Si entra en el ImporteTotal pero no en la base imponible, ¿bajo qué clave del desglose
+se declara — o se declara **solo** en el total, sin línea de desglose propia?
+
+**P12.3** ¿Tiene que ir **identificado como suplido en el documento** (concepto, referencia del
+gasto, a nombre de quién se pagó), o basta con separarlo del importe de la operación?
+
+**P12.4** El justificante del gasto está a nombre **del cliente**, no del profesional. ¿Hay que
+conservarlo y referenciarlo desde la factura, y con qué exigencia formal?
+
+> **Nota de estado.** El **cálculo de la retención de IRPF** NO depende de esta respuesta y ya
+> está construido y probado, aislado y sin llamadores (`retencionIrpf.ts`): el fundador confirmó
+> que la retención **no altera el `Invoice.total`** —es un pago a cuenta del pagador— y que el
+> «líquido a percibir» se **deriva al pintar**, nunca se guarda. Lo que sigue bloqueado por P12
+> es el **suplido**, más los campos de schema, que están congelados aparte por SCRUM-383.
