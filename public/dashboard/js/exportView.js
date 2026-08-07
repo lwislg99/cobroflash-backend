@@ -344,6 +344,11 @@ async function renderExportView(container) {
         infoLibro.textContent = '[PENDIENTE microcopy oficial]';
         return;
       }
+      // 🔴 UN PERIODO VACÍO SE DICE. Quien teclea 2062 en vez de 2026 recibe el mismo fichero que
+      // quien no facturó ese trimestre: dos situaciones, una sola pantalla. El servidor manda el
+      // recuento en `X-Yaqu-Filas` para que aquí se pueda distinguir. El fichero se descarga igual
+      // —un libro vacío es una respuesta legítima—, pero deja de ser silencioso.
+      const filas = Number(res.headers.get('X-Yaqu-Filas'));
       // El nombre lo pone el servidor y lleva el periodo dentro: dos trimestres seguidos en la
       // carpeta de Descargas se convertirían en «(1)» y nadie sabría cuál es cuál.
       const cd = res.headers.get('content-disposition') || '';
@@ -357,7 +362,10 @@ async function renderExportView(container) {
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 10000);
-      infoLibro.textContent = '[PENDIENTE microcopy oficial]';
+      // Microcopy PROPUESTA, sin aprobar (regla 30): «No hay facturas emitidas en ese periodo.»
+      infoLibro.textContent = filas === 0
+        ? '[PENDIENTE microcopy oficial · propuesta: No hay facturas emitidas en ese periodo.]'
+        : '[PENDIENTE microcopy oficial]';
     } catch {
       showToast('[PENDIENTE microcopy oficial]', 'error');
     } finally {

@@ -14,7 +14,7 @@ import path from 'node:path';
 
 import {
   COLUMNAS_EXPEDIDAS, LIBROS_DISPONIBLES, exigirLibroLegible, entraEnPeriodo,
-  filasLibroExpedidas, filasDeAsiento,
+  filasLibroExpedidas, filasDeAsiento, MAPA_ESTADO, celdasDeEstado,
 } from '../dist/modules/fiscal/librosAeat/librosAeat.js';
 import { csvLibroExpedidas, celda, nombreFicheroExpedidas } from '../dist/modules/fiscal/librosAeat/librosAeatCsv.js';
 import { rangoTrimestre } from '../dist/modules/fiscal/modelo303/modelo303.js';
@@ -51,7 +51,7 @@ test('SCRUM-325 · 🔴 R1: las columnas del libro están CONGELADAS, en orden y
   // tienen que poder cambiar cuando el fundador los apruebe sin romper el formato.
   const esperado = [
     'fechaExpedicion', 'serieNumero', 'tipoFactura', 'nifDestinatario', 'nombreDestinatario',
-    'baseImponible', 'tipoIva', 'cuotaIva', 'totalFactura', 'estado',
+    'baseImponible', 'tipoIva', 'cuotaIva', 'totalFactura', 'cobro', 'anulada',
   ];
   const real = COLUMNAS_EXPEDIDAS.map((c) => c.clave);
   assert.deepEqual(real, esperado,
@@ -66,7 +66,7 @@ test('SCRUM-325 · 🔴 R1: una fila completa, congelada celda a celda', () => {
   const linea = csvLibroExpedidas(filas).split('\r\n')[1];
   assert.equal(
     linea,
-    '2026-08-15;2026-CF-001;F1;B12345678;Peñalver & Ço, S.L.;100,00;21;21,00;121,00;paid',
+    '2026-08-15;2026-CF-001;F1;B12345678;Peñalver & Ço, S.L.;100,00;21;21,00;121,00;Cobrada;—',
     '🔴 la fila del libro ha cambiado de forma. Si el cambio es querido, actualiza el vector Y di ' +
     'por qué en el commit: este fichero se entrega fuera.',
   );
@@ -88,6 +88,62 @@ test('SCRUM-325 · un importe ILEGIBLE sale vacío, nunca 0,00', () => {
   assert.equal(celda('baseImponible', filas[0].baseImponible), '',
     '🔴 un importe que no se pudo leer sale como 0,00. Eso es declarar una cifra que nadie ha ' +
     'comprobado, en un documento que se entrega a un tercero.');
+});
+
+// ── EL ESTADO, PARTIDO EN DOS EJES ─────────────────────────────────────────────────────────
+
+test('SCRUM-325 · 🔴 un estado SIN columna asignada cae NOMBRÁNDOLO', () => {
+  // El rojo que pidió el asesor antes de aprobar los rótulos. Si mañana entra un cuarto estado y
+  // nadie dice a qué eje pertenece, la factura saldría como NO anulada y sin cobro — una
+  // afirmación que nadie ha hecho, en un documento que se entrega fuera.
+  assert.throws(
+    () => filasDeAsiento(asiento({ estado: 'refunded' }), { nombre: null, nif: null }),
+    /ESTADO DE FACTURA SIN COLUMNA ASIGNADA: «refunded»/,
+    '🔴 un estado desconocido NO hace saltar nada: el mapeo miente en silencio.',
+  );
+  // Y el control por el otro lado: los tres conocidos NO lanzan. Sin esto, el suelo podría estar
+  // rechazándolo todo y este test saldría igual de verde.
+  for (const e of ['pending', 'paid', 'annulled']) {
+    assert.doesNotThrow(() => filasDeAsiento(asiento({ estado: e }), { nombre: null, nif: null }),
+      `🔴 «${e}» es un estado REAL de Invoice.status y el mapeo lo rechaza.`);
+  }
+});
+
+test('SCRUM-325 · el MAPA cubre exactamente los estados que el código escribe', () => {
+  // La tabla no se cree por estar escrita: se compara con lo que `src/` escribe de verdad. Es la
+  // regla de la casa — una tabla a mano que se desincroniza de su fuente es el mismo defecto en
+  // otra capa.
+  const escritos = new Set(['pending']); // el @default del schema
+  const dir = new URL('../src/', import.meta.url);
+  const rec = (d) => {
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      const p = new URL(e.name + (e.isDirectory() ? '/' : ''), d);
+      if (e.isDirectory()) rec(p);
+      else if (e.name.endsWith('.ts')) {
+        const src = fs.readFileSync(p, 'utf8');
+        for (const m of src.matchAll(/invoice\.(?:create|update|updateMany|upsert)\(([\s\S]{0,600}?)\)\s*[;,)]/g)) {
+          for (const s of m[1].matchAll(/status:\s*'([a-z_]+)'/g)) escritos.add(s[1]);
+        }
+      }
+    }
+  };
+  rec(dir);
+  assert.ok(escritos.size >= 3,
+    `🔴 el censo solo ha encontrado ${escritos.size} estados escritos: no está leyendo src/, y ` +
+    'entonces «el mapa los cubre todos» sería verdad por vacío.');
+  const sinMapear = [...escritos].filter((e) => !(e in MAPA_ESTADO)).sort();
+  assert.deepEqual(sinMapear, [],
+    `🔴 el código escribe estados que MAPA_ESTADO no conoce: ${sinMapear.join(', ')}.`);
+});
+
+test('SCRUM-325 · una factura ANULADA no afirma que no se cobró', () => {
+  // Hallazgo declarado: `annulled` PISA el estado de cobro, porque los dos ejes compartían campo.
+  // «Cobro» sale vacío —«no se sabe»— y no «Pendiente», que sería afirmar que no se cobró.
+  const [fila] = filasDeAsiento(asiento({ estado: 'annulled' }), { nombre: null, nif: null });
+  assert.equal(fila.anulada, 'Sí');
+  assert.equal(fila.cobro, '',
+    '🔴 una factura anulada declara un estado de cobro que el dato ya no contiene: al anularse se ' +
+    'perdió si estaba cobrada. Un hueco dice «no se sabe»; una palabra afirma.');
 });
 
 // ── R2 · FRONTERAS DE PERIODO ──────────────────────────────────────────────────────────────
@@ -172,7 +228,11 @@ test('SCRUM-325 · 🔴 R4: periodo VACÍO con la base llena → fichero vacío 
   assert.equal(filas.length, 0);
   const lineas = csvLibroExpedidas(filas).split('\r\n');
   assert.equal(lineas.length, 1, '🔴 un libro sin asientos tiene que traer la cabecera y nada más');
-  assert.ok(lineas[0].includes('[PENDIENTE]'), '🔴 la cabecera no llega: el fichero no es legible');
+  // Se ancla en un rótulo REAL, no en el marcador: los once están aprobados desde el 7-ago-2026 y
+  // ya no queda ninguno pendiente. Un assert que busca `[PENDIENTE]` se vuelve rojo el día que se
+  // aprueba la microcopy — o sea, falla al ARREGLARSE, que es el defecto de SCRUM-381.
+  assert.ok(lineas[0].includes('Fecha de expedición') && lineas[0].includes('Anulada'),
+    '🔴 la cabecera no llega entera: el fichero vacío no sería legible ni como constancia.');
 });
 
 test('SCRUM-325 · 🔴 R4: si el libro NO SE PUDO LEER, FALLA — no devuelve un fichero vacío', () => {

@@ -66,26 +66,68 @@ export const COLUMNAS_EXPEDIDAS = Object.freeze([
   { clave: 'cuotaIva', rotulo: 'Cuota de IVA' },
   { clave: 'totalFactura', rotulo: 'Total de la factura' },
   /**
-   * 🔴 LA ÚNICA SIN APROBAR, y su motivo está MEDIDO (7-ago-2026).
+   * `Invoice.status` SE PARTE EN DOS COLUMNAS, una por eje (decisión del asesor, 7-ago-2026).
    *
-   * Esta celda es `Invoice.status` VERBATIM (`libroRegistro.ts:216`), y ese campo mezcla DOS ejes
-   * en una sola palabra. Medido sobre lo que de verdad se escribe en él:
-   *
-   *   · COBRO ....... `pending` (el default del schema) → `paid`
-   *   · ANULACIÓN ... `annulled`
-   *
-   * No hay estado de EMISIÓN: una factura con número está emitida por definición, el número ES la
-   * identidad fiscal. Así que «Estado» a secas no describe una cosa, describe dos — y en un
-   * documento que sale de casa eso se lee mal en la dirección peor: alguien puede entender
-   * «pendiente de emitir» donde pone «pendiente de cobro».
-   *
-   * ⚠️ `already_paid` NO es un valor de este campo: es un campo de RESPUESTA de la API
-   * (`invoice.routes.ts:88`). Se anota porque aparece en un grep y se lee como si lo fuera.
-   *
-   * Se queda con marcador a propósito: un marcador es mejor que una cabecera ambigua.
+   * Ese campo mezclaba cobro y anulación en una sola palabra, y «Estado: Pendiente» a secas se
+   * lee como «pendiente de EMITIR» — el malentendido más caro posible en un documento que sale
+   * de casa. No hay estado de emisión: una factura con número está emitida por definición, el
+   * número ES la identidad fiscal. Cada columna, un eje.
    */
-  { clave: 'estado', rotulo: `${MARCA_PENDIENTE} Estado` },
+  { clave: 'cobro', rotulo: 'Cobro' },
+  { clave: 'anulada', rotulo: 'Anulada' },
 ] as const);
+
+/**
+ * 🔴 EL CONJUNTO REAL DE `Invoice.status`, MEDIDO (7-ago-2026) — no supuesto.
+ *
+ * Derivado por AST sobre `src/` (7 escrituras en `invoice.create/update/updateMany/upsert`, CERO
+ * asignaciones no literales) más el `@default("pending")` del schema, y contrastado con las tres
+ * semillas (`seed-demo` ×2, `seed-video` ×1), que solo escriben `paid` y `pending`.
+ *
+ * ⚠️ **`already_paid` NO ES UN VALOR DE ESTE CAMPO.** Es un campo de RESPUESTA de la API
+ * (`invoice.routes.ts:88`: `res.json({ ok: true, status: 'already_paid', … })`, la respuesta
+ * idempotente de «esta factura ya estaba pagada»). Aparece en CUALQUIER grep de `status:` del
+ * módulo de facturación y se lee como si fuera un estado — casi cuela en esta misma medición.
+ * Si vas a censar estados, cuenta ESCRITURAS al modelo, no apariciones de la palabra.
+ *
+ * ⚠️ Y el alcance, dicho: esto deriva del CÓDIGO. Un valor escrito a mano contra la base con un
+ * `UPDATE` en su día no aparecería aquí. Lo cubre el suelo de `celdasDeEstado`, que ante un valor
+ * desconocido NO adivina.
+ */
+export const MAPA_ESTADO: Readonly<Record<string, { cobro: string; anulada: string }>> = Object.freeze({
+  pending: { cobro: 'Pendiente', anulada: '—' },
+  paid: { cobro: 'Cobrada', anulada: '—' },
+  /**
+   * 🔴 HALLAZGO AL PARTIR LA COLUMNA, y no se disimula: `annulled` PISA el estado de cobro.
+   *
+   * Como los dos ejes compartían un solo campo, en cuanto una factura se anula **se pierde si
+   * estaba cobrada o no**. Por eso «Cobro» sale VACÍO aquí y no «Pendiente»: escribir «Pendiente»
+   * sería afirmar que no se cobró, y eso no consta. Un hueco dice «no se sabe»; una palabra
+   * afirma. Recuperar ese dato es un cambio de modelo y NO es de este ticket — queda declarado.
+   */
+  annulled: { cobro: '', anulada: 'Sí' },
+});
+
+/**
+ * Las dos celdas de estado. **Un valor desconocido NO se adivina**: el suelo lanza nombrándolo.
+ *
+ * Si mañana alguien añade un cuarto estado y no le asigna columna, el mapeo mentiría en silencio
+ * —la factura saldría como no anulada y sin cobro— sobre un documento que se entrega fuera.
+ */
+export function celdasDeEstado(status: string | null): { cobro: string; anulada: string } {
+  if (status == null || status === '') return { cobro: '', anulada: '' };
+  const m = MAPA_ESTADO[status];
+  if (!m) {
+    throw new Error(
+      `🔴 ESTADO DE FACTURA SIN COLUMNA ASIGNADA: «${status}».\n\n` +
+        `  Conocidos: ${Object.keys(MAPA_ESTADO).join(', ')}.\n` +
+        '  Alguien ha añadido un estado a `Invoice.status` y no ha dicho a qué eje pertenece —\n' +
+        '  ¿cobro o anulación?—. Sin esa decisión, la factura saldría en el libro como NO anulada\n' +
+        '  y sin cobro, que es una afirmación que nadie ha hecho. Añádelo a `MAPA_ESTADO`.',
+    );
+  }
+  return m;
+}
 
 /** Lo único que hoy se puede entregar. Ver el bloque 🔴 de arriba para por qué no hay recibidas. */
 export const LIBROS_DISPONIBLES = Object.freeze([
@@ -143,13 +185,15 @@ export function entraEnPeriodo(fechaIso: string | null, desde: Date, hasta: Date
  * celdas de importe VACÍAS. Un cero es una afirmación —«facturó cero»— y aquí no se sabe.
  */
 export function filasDeAsiento(a: AsientoLibro, destinatario: DatosDestinatario): FilaLibro[] {
+  const estado = celdasDeEstado(a.estado);
   const comun = {
     fechaExpedicion: a.fecha ? String(a.fecha).slice(0, 10) : null,
     serieNumero: a.numero,
     tipoFactura: a.tipo,
     nifDestinatario: destinatario.nif,
     nombreDestinatario: destinatario.nombre,
-    estado: a.estado,
+    cobro: estado.cobro,
+    anulada: estado.anulada,
   };
 
   if (a.importeIlegible) {

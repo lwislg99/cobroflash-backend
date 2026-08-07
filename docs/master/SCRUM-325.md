@@ -64,9 +64,17 @@ fiscales y entregárselos a Hacienda con su nombre encima**. Se declara y no se 
 Lo ata un test: `LIBROS_DISPONIBLES` tiene **un** elemento, y si aparece un segundo el rojo dice que
 `Expense` tiene que haber ganado antes esos campos — que es schema, y el schema no es de este ticket.
 
-### ③ La cabecera «Estado» sigue SIN APROBAR, y el motivo es del dato, no del texto
+### ③ `annulled` PISA el estado de cobro — apareció al partir la columna
 
-Ver el apartado de microcopy: esa celda mezcla dos ejes y **no hay un rótulo honesto de una palabra**.
+«Estado» se partió en dos columnas (**Cobro** y **Anulada**, aprobadas el 7-ago-2026) porque
+`Invoice.status` mezclaba dos ejes en una palabra. Al separarlos salió un hueco del MODELO:
+
+**Como los dos ejes compartían un solo campo, en cuanto una factura se anula se pierde si estaba
+cobrada.** Por eso «Cobro» sale **vacío** para `annulled` y no «Pendiente»: escribir «Pendiente»
+afirmaría que no se cobró, y eso no consta. Un hueco dice «no se sabe»; una palabra afirma.
+
+Recuperar ese dato es un **cambio de modelo** (dos campos, o un histórico de estados) y **no es de
+este ticket**. Queda declarado y con test que lo fija.
 
 ---
 
@@ -143,19 +151,50 @@ Tipo de factura · NIF del destinatario · Nombre del destinatario · Base impon
 Cuota de IVA · Total de la factura), el nombre **«Facturas emitidas»** y el fichero
 `yaqu-emitidas-AAAA-TN.csv`.
 
-**🔴 SIN APROBAR — la cabecera 10, «Estado».** Y el problema no es el texto: es el dato. Esa celda es
-`Invoice.status` **verbatim** (`libroRegistro.ts:216`), y ese campo **mezcla dos ejes en una sola
-palabra**. Medido sobre lo que de verdad se escribe en él:
+**«Estado» se partió en DOS columnas** (aprobado el 7-ago-2026), una por eje:
 
-* **cobro:** `pending` (el default del schema) → `paid`
-* **anulación:** `annulled`
+| Columna | Valores |
+| --- | --- |
+| **Cobro** | `Pendiente` · `Cobrada` · *(vacío si está anulada — ver hueco ③)* |
+| **Anulada** | `Sí` · `—` |
 
 **No hay estado de EMISIÓN**: una factura con número está emitida por definición — el número *es* la
-identidad fiscal. Así que «Estado» a secas no describe una cosa, describe dos, y en un documento que
-sale de casa se lee mal en la dirección peor: alguien puede entender «pendiente de emitir» donde pone
-«pendiente de cobro». Es la familia de SCRUM-372 (el mismo dato viajando con dos nombres).
+identidad fiscal. «Estado: Pendiente» a secas se leía como «pendiente de EMITIR», el malentendido más
+caro posible en un documento que sale de casa. Familia de SCRUM-372.
 
-Se queda con marcador: **un marcador es mejor que una cabecera ambigua.**
+**El conjunto real de `Invoice.status` = {`pending`, `paid`, `annulled`}**, verificado antes de
+aprobar los rótulos y por dos barridos independientes: AST sobre `src/` (7 escrituras a
+`invoice.create/update/updateMany/upsert`, **cero** asignaciones no literales) más el
+`@default("pending")` del schema; y revisión de las tres semillas (`seed-demo` ×2, `seed-video` ×1),
+que solo escriben `paid` y `pending`. **Un cuarto valor sin columna asignada se pone rojo
+nombrándolo** (`celdasDeEstado`), y hay un test que compara el mapa con lo que el código escribe de
+verdad — una tabla que se desincroniza de su fuente es el mismo defecto en otra capa.
 
-**Pendientes de aprobar además:** el texto descriptivo de la card, los rótulos de los dos campos de
-periodo, el rótulo del botón y los mensajes de resultado y de error.
+> ⚠️ **`already_paid` NO es un valor de `Invoice.status`.** Es un campo de RESPUESTA de la API
+> (`invoice.routes.ts:88`, la respuesta idempotente de «esta factura ya estaba pagada»). Aparece en
+> **cualquier grep de `status:`** del módulo de facturación y se lee como si fuera un estado — casi
+> cuela en esta misma medición. **Si vas a censar estados, cuenta ESCRITURAS al modelo, no
+> apariciones de la palabra.** Queda anotado aquí y en `MAPA_ESTADO`; no se anotó en
+> `invoice.routes.ts` porque ese fichero contiene `router.post('/issue')` y es camino de emisión
+> (regla 38): un comentario ahí es un diff en ese fichero y necesita GO.
+
+### El periodo
+
+**Sin rango de años** (decisión del asesor, 7-ago-2026): el `2000-2100` que había me lo inventé yo, y
+**una regla que nadie decidió acaba rechazando algo legítimo**. Se exige año **entero** y trimestre
+**T1-T4** — este último sí tiene motivo: `rangoTrimestre` recorta fuera de rango en silencio
+(`Math.min(4, Math.max(1, …))`), así que un T7 se convertiría en T4 y el fichero diría ser de un
+periodo que no se pidió.
+
+Microcopy **aprobada**: «No reconozco ese periodo. Elige un trimestre (T1 a T4) y un año.» —
+verificada contra lo que el validador rechaza de verdad, caso a caso.
+
+**🔴 Y lo que de verdad protege del error de dedo:** un periodo **válido y vacío** ya no sale en
+silencio. Quien teclea 2062 en vez de 2026 recibía el mismo fichero que quien no facturó ese
+trimestre — dos situaciones, una sola pantalla, el defecto de siempre. El servidor manda el recuento
+en `X-Yaqu-Filas` (y `X-Yaqu-Miradas`) y la pantalla lo dice. **El fichero se sigue entregando**: un
+libro vacío es una respuesta legítima y a veces es justo lo que se necesita como constancia.
+
+**Pendientes de aprobar:** el aviso de periodo vacío (propuesta: «No hay facturas emitidas en ese
+periodo.»), el texto descriptivo de la card, los rótulos de los dos campos de periodo, el rótulo del
+botón y los mensajes de resultado y de error.

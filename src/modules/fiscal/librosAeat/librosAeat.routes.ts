@@ -9,12 +9,27 @@ import { csvLibroExpedidas, nombreFicheroExpedidas } from './librosAeatCsv';
 
 const router = Router();
 
-/** Entero del query string dentro de un rango, o `null`. Nunca un valor inventado por defecto. */
-function enteroEntre(valor: unknown, min: number, max: number): number | null {
+/** Entero del query string, o `null`. Nunca un valor inventado por defecto. */
+function entero(valor: unknown): number | null {
   if (typeof valor !== 'string' || valor === '') return null;
   const n = Number(valor);
-  if (!Number.isInteger(n) || n < min || n > max) return null;
-  return n;
+  return Number.isInteger(n) ? n : null;
+}
+
+/**
+ * El trimestre sí tiene rango, y no es arbitrario: **T1 a T4 es lo que hay**, y `rangoTrimestre`
+ * recorta fuera de eso en silencio (`Math.min(4, Math.max(1, …))`), así que un T7 se convertiría
+ * en T4 y el fichero diría ser de un periodo que no se pidió.
+ *
+ * ⚠️ EL AÑO NO LLEVA RANGO, y se quitó a conciencia (decisión del asesor, 7-ago-2026). El
+ * 2000-2100 que había aquí me lo inventé yo: **una regla que nadie decidió acaba rechazando algo
+ * legítimo**. Lo que aquel rango intentaba mal —proteger del error de dedo, 2062 por 2026— se
+ * resuelve donde de verdad se nota: diciendo que el periodo salió VACÍO. Ver la cabecera
+ * `X-Yaqu-Filas` de abajo.
+ */
+function trimestre(valor: unknown): number | null {
+  const n = entero(valor);
+  return n !== null && n >= 1 && n <= 4 ? n : null;
 }
 
 /**
@@ -26,24 +41,37 @@ function enteroEntre(valor: unknown, min: number, max: number): number | null {
  * Sin periodo legible → 400, y no se emite nada.
  */
 router.get('/expedidas.csv', async (req, res) => {
-  const año = enteroEntre(req.query['año'] ?? req.query.ano, 2000, 2100);
-  const trimestre = enteroEntre(req.query.trimestre, 1, 4);
-  if (año === null || trimestre === null) {
+  const año = entero(req.query['año'] ?? req.query.ano);
+  const tri = trimestre(req.query.trimestre);
+  if (año === null || tri === null) {
     return res.status(400).json({
       error: 'periodo_invalido',
-      // Sin microcopy: el mensaje que vea el profesional lo aprueba el fundador (regla 30).
-      detalle: '[PENDIENTE microcopy oficial]',
+      // Microcopy APROBADA el 7-ago-2026.
+      detalle: 'No reconozco ese periodo. Elige un trimestre (T1 a T4) y un año.',
     });
   }
 
-  const { filas } = await leerLibroExpedidasDelTrimestre(prisma as any, {
+  const { filas, miradas } = await leerLibroExpedidasDelTrimestre(prisma as any, {
     merchantId: req.merchantId!,
     año,
-    trimestre,
+    trimestre: tri,
   });
 
+  // 🔴 QUE EL PERIODO SALGA VACÍO NO PUEDE SER SILENCIOSO.
+  //
+  // Quien teclea 2062 en vez de 2026 recibe HOY el mismo fichero que quien no facturó ese
+  // trimestre, y son cosas distintas. Es el defecto de siempre —dos situaciones producen la misma
+  // pantalla— y aquí acaba en un CSV que se le enseña a un asesor.
+  //
+  // El fichero SE SIGUE ENTREGANDO: un libro vacío es una respuesta legítima y a veces es
+  // justo lo que se necesita (constancia de que no se facturó). Lo que se añade es la SEÑAL, para
+  // que la pantalla pueda decirlo. `miradas` viaja también: distingue «no hay en el periodo» de
+  // «no había facturas que mirar» (ver el suelo de `exigirLibroLegible`).
+  res.setHeader('X-Yaqu-Filas', String(filas.length));
+  res.setHeader('X-Yaqu-Miradas', String(miradas));
+
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-  res.setHeader('Content-Disposition', `attachment; filename="${nombreFicheroExpedidas(año, trimestre)}"`);
+  res.setHeader('Content-Disposition', `attachment; filename="${nombreFicheroExpedidas(año, tri)}"`);
   // Sin caché: un libro es una foto de un instante y dos descargas del mismo trimestre pueden
   // diferir legítimamente (una factura nueva del periodo). Servir una copia vieja sería mentir.
   res.setHeader('Cache-Control', 'no-store');
