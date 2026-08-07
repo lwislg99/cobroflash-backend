@@ -1,11 +1,27 @@
 # SCRUM-388 · El censo del trabajo que está en `main` sin entrada en Jira
 
 **Fecha:** 7-ago-2026 · **Carril:** S3 · **Gate:** sin gate, corre en `npm test`
-**Medido contra:** `origin/main` = `cb6acb3f0b2679b1079a76ff32edac2777a2b7cf`
-**Tanda:** 2166 tests · 2093 pass · **0 fail** · 73 gateados
+**Medido contra:** `origin/main` = `cb2399788aebe786608491734390b45e8b067d1e` · 2026-08-07T19:13:03+01:00
+**Tanda:** 2216 tests · 2142 pass · **0 fail** · 73 gateados
 
 > **Esto MIDE, no arregla Jira.** No toca ningún ticket y no lee Jira: primero tiene que saber
 > medir `main`.
+
+## 🔴 EL PUNTO CIEGO, declarado: mide MECANISMO SIN CONECTAR, no COBERTURA DEL ENUNCIADO
+
+**Un ticket al que se le construyó la mitad EN SILENCIO, y se conectó esa mitad, sale ENTERO.**
+
+No es un defecto a medias: es el límite exacto de lo que este censo puede saber. La pregunta que
+contesta es *«¿queda trabajo aquí?»* —la que se hace antes de asignar— y la contesta mirando si hay
+mecanismo en `main` que todavía no hace nada. **Lo que NO mide es si lo entregado cubre el
+enunciado del ticket**, porque eso exige leer el enunciado y compararlo con el código, y eso hoy
+**no lo mide nadie**.
+
+Queda escrito para que nadie lea un `ENTERO` como «no hay nada que revisar aquí».
+
+Y la virtud que compensa el límite, que es la razón de elegir esta señal: **funciona sin saber qué
+decidió el fundador**. En SCRUM-298 el alcance se recortó por decisión suya, y el censo acierta sin
+tener que enterarse de esa decisión.
 
 ## Por qué existe: nos mordió TRES veces en un día, de tres formas distintas
 
@@ -96,9 +112,48 @@ pasos, y hay test con hermano positivo que comprueba que el caso reproduce el de
   quien lea el informe. Se puede añadir, pero primero tenía que saber medir `main`.
 * **Las ramas salen de `refs/remotes/origin/`**, no de `git ls-remote`: es rápido y sin red, pero
   refleja el **último `fetch`**. Se declara en vez de fingir que es el remoto en vivo.
-* **El banco fija un estado medido.** Si mañana alguien crea `docs/master/SCRUM-354.md`, el test de
-  A9 caerá — y es lo correcto: significa que el estado cambió y hay que re-medirlo, no que el
-  mecanismo esté roto.
+## 🔴 CORREGIDO ANTES DE MERGEAR: el banco fijaba el estado actual
 
-Ficheros: `tests/_censo-tickets.mjs` (el mecanismo) · `tests/scrum388-censo-contra-main.test.mjs`
-(11 tests: R1-R4, suelos y fronteras).
+La primera versión de este fichero decía que si mañana aparecía `docs/master/SCRUM-354.md` el test
+de A9 caería «a propósito». **Estaba mal, y choca de frente con una regla de la casa:**
+
+> **Un test que fija el estado actual convierte un defecto en un requisito.**
+
+Ese test habría caído **el día que alguien construyera A9 haciendo el trabajo BIEN**, y quien lo
+encontrase tendría delante un test exigiéndole que A9 siga sin empezar. Es lo mismo que ya nos pasó
+con el test que falló cuando el import se **arregló**.
+
+Separado en dos, con nombres que lo dicen:
+
+| Fichero | Qué sostiene | Puede caducar |
+|---|---|---|
+| `scrum388-censo-mecanismo.test.mjs` | que el censo sabe **clasificar**, contra un repositorio **sintético** (`_censo-fixture.mjs`) con los cuatro casos reproducidos | **no** |
+| `scrum388-centinela-main.test.mjs` | que el mecanismo **sigue sabiendo leer este repositorio** | solo si cambia cómo se lee el repo |
+
+**Comprobado de verdad, no razonado:** se creó `docs/master/SCRUM-354.md` a mano —simulando que
+alguien construye A9— y **los dos ficheros siguieron VERDES**. Con la versión anterior, el banco
+habría caído.
+
+### El centinela NO fija ningún veredicto, y ésa es la decisión
+
+Se planteó que vigilara los veredictos de los cuatro tickets reales. **No lo hace**, porque eso es
+otra vez fijar el estado actual con otro nombre. Lo que comprueba es que **cada fuente sigue
+encontrando evidencia en alguna parte** del rango 280-400: si un buscador se rompe —o cambia la
+convención de ramas, o el ticket deja de ir en el asunto del commit, o `docs/master/` se mueve— eso
+sale. Que alguien construya un ticket que antes no tenía nada **no lo pone rojo**: es una buena
+noticia, y una buena noticia no puede romper la suite.
+
+Su mensaje de fallo dice literalmente **«RE-MIDE, NO ARREGLES EL TEST»** y nombra la fuente que dejó
+de responder. Ajustar el umbral para que vuelva a pasar sería apagar la alarma en vez de mirar el
+fuego.
+
+## Limitaciones que quedan
+
+* **No lee Jira.** El veredicto dice qué hay en `main`; cruzarlo con el estado del ticket es de
+  quien lea el informe.
+* **Las ramas salen de `refs/remotes/origin/`**, no de `git ls-remote`: rápido y sin red, pero
+  refleja el **último `fetch`**. Se declara en vez de fingir que es el remoto en vivo.
+
+Ficheros: `tests/_censo-tickets.mjs` (el mecanismo) · `tests/_censo-fixture.mjs` (el repositorio
+sintético) · `tests/scrum388-censo-mecanismo.test.mjs` (13) ·
+`tests/scrum388-centinela-main.test.mjs` (3).
