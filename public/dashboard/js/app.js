@@ -16,6 +16,13 @@ async function initApp() {
   // Son TRES valores —'factura' | 'justificante' | 'no'— porque el profesional español real no
   // es un «no puedes»: emite justificantes, que es otro documento, no una factura degradada.
   // Un valor desconocido cae a 'no': fallar cerrado, igual que el servidor.
+  // SCRUM-298 (A8): EL MODO DE EMISIÓN, tal cual lo calculó el servidor. `null` = no se sabe, y
+  // entonces la pantalla NO pinta nada — enseñar el modo equivocado es peor que no enseñar
+  // ninguno. Un valor fuera del contrato cae también a `null`: no se normaliza a un modo, porque
+  // normalizar aquí sería inventarse el estado fiscal de alguien.
+  window.appModoEmision =
+    ['fiscal', 'demo', 'receipt'].includes(me.modoEmision) ? me.modoEmision : null;
+
   window.appDocumentoSuelto =
     ['factura', 'justificante'].includes(me.documentoSuelto) ? me.documentoSuelto : 'no';
 

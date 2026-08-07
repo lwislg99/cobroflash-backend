@@ -1,5 +1,21 @@
 // public/dashboard/js/settingsView.js
 
+// SCRUM-298 (A8) · LOS TRES RÓTULOS DEL MODO DE EMISIÓN — SIN APROBAR (regla 30 + regla 26).
+//
+// Van los TRES con el marcador, no dos y uno "provisional que se lee bien": un texto que no
+// chirría se queda para siempre porque nadie vuelve a mirarlo. Y aquí el texto no es un rótulo
+// cualquiera — dice qué documento fiscal emite un profesional—, así que además de la regla 30
+// pesa la 26: la pregunta de VeriFactu se responde SOLO con el guion H2.
+//
+// PROCEDENCIA del bloqueo: `docs/master/SCRUM-298.md`, sección «Microcopy».
+const PENDIENTE_MODO_EMISION = '[PENDIENTE microcopy oficial]';
+const ROTULO_MODO_EMISION = {
+  fiscal: PENDIENTE_MODO_EMISION,
+  demo: PENDIENTE_MODO_EMISION,
+  receipt: PENDIENTE_MODO_EMISION,
+};
+
+
 function renderSettingsView(container) {
     container.innerHTML = "";
 
@@ -103,6 +119,38 @@ function renderSettingsView(container) {
     subtitle.textContent = "Se usan en presupuestos, facturas y comunicaciones con clientes.";
     subtitle.style.cssText = "margin:0 0 20px;font-size:13px;color:var(--neutral-400)";
     card.insertBefore(subtitle, nav);
+
+    // ── SCRUM-298 (A8) · EL MODO DE EMISIÓN, VISIBLE ─────────────────────────────────────
+    //
+    // Hasta hoy `getEmissionMode` no llegaba ni una vez al navegador, así que dos estados que
+    // producen documentos DISTINTOS —factura, factura con marca de agua, justificante— se veían
+    // exactamente igual en pantalla. El profesional no tenía forma de saber en cuál estaba.
+    //
+    // ⚠️ SIN DATO NO SE PINTA NADA. `null` significa «no se sabe», y una fila que dijera un modo
+    // equivocado es peor que no tener fila: quien la lee toma decisiones fiscales sobre una
+    // pantalla que le miente y no tiene forma de sospecharlo.
+    //
+    // ⚠️ REGLA 26 · AQUÍ NO SE EXPLICA NADA. Ni qué es cada modo, ni por qué, ni desde cuándo, ni
+    // una palabra sobre VeriFactu, la AEAT o el calendario. Esa pregunta se responde SOLO con el
+    // guion H2. Los tres rótulos van con el marcador y su procedencia está en la entrada del
+    // ticket: un texto que explica mal una obligación fiscal no es feo, es peligroso.
+    //
+    // ⚠️ Y NO ES UN INTERRUPTOR. Esto solo LEE. El modal de dos caminos quedó bloqueado porque
+    // «se envía» no existe (sin cliente SOAP/mTLS, sin cola de remisión): una salida inerte le
+    // diría al profesional que puede elegir remitir a la AEAT, y no puede.
+    if (window.appModoEmision) {
+      const fila = document.createElement("div");
+      fila.className = "settings-modo-emision";
+      fila.style.cssText = "margin:0 0 20px;display:flex;align-items:center;gap:8px";
+      const pill = document.createElement("span");
+      pill.className = "status-pill";
+      pill.dataset.modo = window.appModoEmision;
+      // Regla 30: los tres rótulos los aprueba el fundador. Las TRES ramas llevan marcador — el
+      // guard las recorre todas, que es la lección del ternario ciego de SCRUM-346.
+      pill.textContent = ROTULO_MODO_EMISION[window.appModoEmision] || PENDIENTE_MODO_EMISION;
+      fila.appendChild(pill);
+      card.insertBefore(fila, nav);
+    }
 
     const alertBox = document.createElement("div");
     alertBox.className = "alert";
