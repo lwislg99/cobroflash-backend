@@ -7,6 +7,7 @@ import { jsonError } from './core/http/jsonError';
 import { notFoundPageHtml } from './core/http/publicNotFound';
 import { isFlagEnabled } from './core/flags';
 import { modoDocumentoSuelto } from './modules/invoicing/domain/facturaSuelta'; // SCRUM-289 (A0.3) · SCRUM-346 (A0.5)
+import { modoEmisionVisible } from './modules/invoicing/domain/modoVisible'; // SCRUM-298 (A8)
 import { requireAuth, requireActivePlan, requireRole } from './core/http/authMiddleware';
 import { mountAdmin } from './core/http/adminMounts'; // SCRUM-55: red fail-closed de /admin
 import { requireInternalSecret } from './core/http/internalAuth';
@@ -306,6 +307,17 @@ app.get('/admin/me', async (req, res) => {
     select: { country: true, logoUrl: true, email: true, flags: true, invoiceSeriesYear: true },
   });
 
+  // SCRUM-298 (A8) · UN SOLO objeto para las dos preguntas de modo. `documentoSuelto` (qué se
+  // puede crear suelto) y `modoEmision` (en qué modo se emite) son la MISMA verdad mirada desde
+  // dos sitios: construirlo dos veces sería dos lecturas que pueden divergir, y entonces el botón
+  // que se pinta y el modo que se enseña dirían cosas distintas.
+  const merchantParaModo = {
+    id: session.merchantId,
+    email: merchantFull?.email ?? null,
+    country: merchantFull?.country ?? null,
+    flags: merchantFull?.flags,
+  };
+
   // SCRUM-313 (D2) · LA PUERTA DE ULTIMA OPORTUNIDAD. Se lee aqui porque el veredicto tiene que
   // viajar YA RESUELTO: si la pantalla reimplementara la regla habria dos criterios sobre cuando
   // se puede tocar la numeracion, y el del navegador seria el facil de equivocar.
@@ -353,12 +365,18 @@ app.get('/admin/me', async (req, res) => {
     // SCRUM-346 (A0.5): viaja el VEREDICTO de tres valores, no un booleano. Sustituye a
     // `facturaSueltaDisponible` en vez de convivir con él: dos campos del mismo hecho acaban
     // divergiendo, y entonces el botón que se pinta y el documento que sale dicen cosas distintas.
-    documentoSuelto: modoDocumentoSuelto({
-      id: session.merchantId,
-      email: merchantFull?.email ?? null,
-      country: merchantFull?.country ?? null,
-      flags: merchantFull?.flags,
-    }),
+    documentoSuelto: modoDocumentoSuelto(merchantParaModo),
+    // SCRUM-298 (A8): EL MODO DE EMISIÓN, VISIBLE. Hasta hoy `getEmissionMode` no llegaba ni una
+    // vez al navegador (medido: cero consumidores en `public/`), así que dos estados que producen
+    // documentos DISTINTOS se veían exactamente igual en pantalla.
+    //
+    // `null` cuando no se sabe, y la pantalla no pinta nada: enseñar el modo equivocado es peor
+    // que no enseñar ninguno. NO se cae a un modo por defecto.
+    //
+    // Los dos campos salen del MISMO objeto y de la MISMA función de modo — `documentoSuelto` es
+    // un derivado de éste, no una segunda opinión. Con dos lecturas distintas, el botón que se
+    // pinta y el modo que se enseña podrían contradecirse.
+    modoEmision: modoEmisionVisible(merchantParaModo),
     // A10.2 (Parte L): estado de la suscripción para el banner past_due
     subscriptionStatus: owner ? 'active' : ((session.merchant as any).subscriptionStatus ?? null),
     // SCRUM-313 (D2): ¿todavia se le puede preguntar por su numeracion? Mismo patron que la
