@@ -19,9 +19,10 @@ import { fileURLToPath } from 'node:url';
 
 import {
   DESTINOS_ESPERADOS,
-  OK, NO_CUADRA, NO_PUDE_RESOLVER, CLAVE_DESCONOCIDA,
+  OK, NO_CUADRA, NO_PUDE_RESOLVER, CLAVE_DESCONOCIDA, WORKTREE_NO_DECLARADO,
   comprobarClaveVsDestino,
   exigirDestinoCorrecto,
+  nombreDeWorktree,
 } from '../scripts/_clave-vs-destino.mjs';
 
 // URLs de mentira, con credenciales inventadas: este fichero NUNCA lee un `.env` real.
@@ -129,7 +130,77 @@ test('SCRUM-383 · la tabla de destinos cubre las tres bases y NINGUNA se identi
   assert.notEqual(staging.base, dev.base);
 });
 
-// ── ⑥ EL MAPA MEDIDO ESTÁ ESCRITO, Y SIGUE ESTÁNDOLO ─────────────────────────────────────
+// ── ⑥ `DATABASE_URL_TESTS` · LA BASE DE PRUEBAS DEL CARRIL, DECLARADA POR WORKTREE ───────
+//
+// El tercer concepto: los seis consumidores de la tanda no quieren «staging» ni «dev», quieren
+// la base de pruebas de SU carril. Que sea distinta por worktree NO es el defecto — el defecto
+// era un nombre que PROMETÍA staging y daba dev. Éste describe algo verdadero en los cuatro
+// sitios, y la diferencia decisiva es que **se puede declarar y verificar**.
+
+test('SCRUM-383 · `_TESTS` cuadra con la base que le toca a CADA carril', () => {
+  assert.equal(comprobarClaveVsDestino('DATABASE_URL_TESTS', DEV, 'cobroflash-backend').veredicto, OK);
+  for (const w of ['cobroflash-b1', 'cobroflash-b2', 'cobroflash-b3']) {
+    assert.equal(comprobarClaveVsDestino('DATABASE_URL_TESTS', STAGING, w).veredicto, OK,
+      `🔴 en ${w} la base de pruebas del carril es \`railway\` y no ha cuadrado`);
+  }
+});
+
+test('SCRUM-383 · 🔴 `_TESTS` apuntando a la base de OTRO carril CAE, y dice en cuál está', () => {
+  // El accidente que vigila: el árbol principal escribiendo en la base que comparten b1/b2/b3.
+  const r = comprobarClaveVsDestino('DATABASE_URL_TESTS', STAGING, 'cobroflash-backend');
+  assert.equal(r.veredicto, NO_CUADRA,
+    '🔴 el principal apuntando a `railway` ha pasado. Es la base de los otros TRES carriles: ' +
+    'la tanda de aquí crearía y borraría merchants sobre las fixtures vivas de otra sesión.');
+  assert.match(r.mensaje, /cobroflash-backend/, '🔴 no dice EN QUÉ WORKTREE está');
+  assert.match(r.mensaje, /yaqu_dev_javier/, '🔴 no dice qué base le tocaba a este carril');
+  assert.match(r.mensaje, /railway/, '🔴 no dice a qué base apunta de verdad');
+
+  // Y el cruce inverso: un carril b apuntando a la del principal.
+  assert.equal(comprobarClaveVsDestino('DATABASE_URL_TESTS', DEV, 'cobroflash-b2').veredicto, NO_CUADRA);
+});
+
+test('SCRUM-383 · 🔴 SUELO: en un worktree NO declarado, `_TESTS` no se aprueba «por defecto»', () => {
+  // Un árbol nuevo no tiene base asignada. Aprobarlo sería aprobar sin saber contra qué.
+  for (const w of ['cobroflash-b4', 'otro-sitio', '', null, undefined]) {
+    const r = comprobarClaveVsDestino('DATABASE_URL_TESTS', STAGING, w);
+    assert.equal(r.veredicto, WORKTREE_NO_DECLARADO,
+      `🔴 con el worktree «${String(w)}» el veredicto fue «${r.veredicto}». Sin saber qué base le ` +
+      'toca a este carril, «cuadra» es una afirmación que nadie ha comprobado.');
+    assert.notEqual(r.veredicto, OK);
+  }
+  // Y el enganche que usan las operaciones de esquema tiene que LANZAR también aquí.
+  assert.throws(() => exigirDestinoCorrecto('DATABASE_URL_TESTS', STAGING, 'cobroflash-b4'),
+    /NO SE PUEDE COMPROBAR EN ESTE ÁRBOL/);
+});
+
+test('SCRUM-383 · el worktree se identifica por su NOMBRE, venga suelto o como ruta', () => {
+  // El CLI pasa la raíz absoluta del árbol; los tests pasan el nombre. Las dos formas valen, y
+  // el mensaje NUNCA enseña la ruta: es información del disco de quien lo corre.
+  assert.equal(nombreDeWorktree('c:\\Users\\x\\cobroflash-b2'), 'cobroflash-b2');
+  assert.equal(nombreDeWorktree('/home/x/cobroflash-b2/'), 'cobroflash-b2');
+  assert.equal(nombreDeWorktree('cobroflash-b2'), 'cobroflash-b2');
+  assert.equal(nombreDeWorktree(''), null);
+
+  const r = comprobarClaveVsDestino('DATABASE_URL_TESTS', STAGING, 'c:\\Users\\x\\cobroflash-backend');
+  assert.equal(r.veredicto, NO_CUADRA, '🔴 no resolvió el worktree desde una ruta absoluta');
+  assert.doesNotMatch(r.mensaje, /Users/,
+    '🔴 el mensaje enseña la RUTA del disco. Solo se nombra el worktree; la ruta es ruido e ' +
+    'información de la máquina de alguien (mismo criterio que `_identidad-sesion.mjs`).');
+});
+
+test('SCRUM-383 · los cuatro worktrees del reparto están declarados', () => {
+  const mapa = DESTINOS_ESPERADOS.DATABASE_URL_TESTS.porWorktree;
+  assert.deepEqual(Object.keys(mapa).sort(),
+    ['cobroflash-b1', 'cobroflash-b2', 'cobroflash-b3', 'cobroflash-backend']);
+  // El reparto MEDIDO: el principal aislado en dev, los tres carriles b compartiendo staging.
+  assert.equal(mapa['cobroflash-backend'], 'yaqu_dev_javier');
+  assert.equal(mapa['cobroflash-b1'], 'railway');
+  assert.notEqual(mapa['cobroflash-backend'], mapa['cobroflash-b1'],
+    '🔴 si los cuatro carriles apuntaran a la misma base, este ticket habría cambiado el ' +
+    'comportamiento en vez de arreglar el nombre — y el aislamiento por carril es deliberado.');
+});
+
+// ── ⑦ EL MAPA MEDIDO ESTÁ ESCRITO, Y SIGUE ESTÁNDOLO ─────────────────────────────────────
 
 test('SCRUM-383 · el mapa medido de los cuatro worktrees sigue en el documento', () => {
   // Una medición que no está en el repo se pierde con la sesión. Y si alguien la borra, el

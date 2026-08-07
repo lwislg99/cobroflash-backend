@@ -6,7 +6,7 @@
 // cadena rota solo se deshace emitiendo una R1 por cada factura afectada (regla 29).
 //
 // ⚠️ Toca BD real (staging), gateado:
-//   QA_DB_TEST=1 DATABASE_URL_STAGING="..." npm run test:staging
+//   QA_DB_TEST=1 DATABASE_URL_TESTS="..." npm run test:staging
 import './_staging-db.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
