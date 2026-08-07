@@ -123,13 +123,23 @@ async function fetchInvoices(options = {}) {
 
     // SCRUM-289 (A0.3): «nueva factura» sin presupuesto, trabajo ni albarán. El botón solo
     // existe cuando lo que se va a crear ES una factura — el veredicto lo calcula el servidor
-    // con `puedeCrearFacturaSuelta` y viaja en /admin/me: aquí NO se reimplementa la regla.
+    // con `modoDocumentoSuelto` y viaja en /admin/me: aquí NO se reimplementa la regla.
     // Rótulo con [PENDIENTE microcopy oficial] (regla 30) y su guard en la suite.
-    if (window.appFacturaSueltaDisponible === true && typeof openNuevaFacturaModal === 'function') {
+    if (window.appDocumentoSuelto !== 'no' && typeof openNuevaFacturaModal === 'function') {
       const nuevaFacturaBtn = document.createElement('button');
       nuevaFacturaBtn.type = 'button';
       nuevaFacturaBtn.className = 'btn-primary btn-sm';
-      nuevaFacturaBtn.textContent = '[PENDIENTE microcopy oficial]';
+      // SCRUM-346 · EL RÓTULO SALE DEL VEREDICTO, que es de lo que va este ticket: el botón dice
+      // lo que de verdad va a crear. «+ Nuevo justificante» está APROBADO por el fundador
+      // (6-ago-2026, SCRUM-346); el de factura sigue sin aprobar desde A0.3 y conserva su
+      // marcador — que sean distintos no es una asimetría, es que solo uno está firmado.
+      //
+      // ⚠️ REGLA 26 · NO se acompaña de ningún texto que explique POR QUÉ sale un justificante y
+      // no una factura. Ni aquí, ni en un aviso, ni en un tooltip: esa pregunta se responde SOLO
+      // con el guion H2, y un texto que explica mal una obligación fiscal no es feo, es peligroso.
+      nuevaFacturaBtn.textContent = window.appDocumentoSuelto === 'justificante'
+        ? '+ Nuevo justificante'
+        : '[PENDIENTE microcopy oficial]';
       nuevaFacturaBtn.addEventListener('click', () => {
         openNuevaFacturaModal(() => renderInvoicesView(container));
       });

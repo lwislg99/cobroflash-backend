@@ -218,6 +218,35 @@ function renderSettingsView(container) {
     colocar("invoiceSeriesPrefix", fInvoiceSeriesPrefix.wrapper);
     colocar("logoUrl", fLogoUrl.wrapper);
 
+    // ── SCRUM-D1 · LA PUERTA DE ÚLTIMA OPORTUNIDAD ───────────────────────────
+    //
+    // Va en el panel de NUMERACIÓN, encima del campo de la serie, porque es la pregunta que hay
+    // que contestar ANTES de tocarla. Quien pasó el onboarding sin contestarla no tenía dónde.
+    //
+    // 🔴 El veredicto lo da el servidor (`window.appPuertaSerieDisponible`). Aquí NO se comprueba
+    // `invoiceSeriesYear !== año`: esa regla vive en un sitio y solo en uno.
+    const panelNumeracion = paneles[submenuDeCampo("invoiceSeriesPrefix")];
+    if (window.renderPuertaSerie) {
+      window.renderPuertaSerie(panelNumeracion, {
+        prefijoActual: null, // se rellena al cargar el perfil, más abajo
+        onGuardado: () => window.location.reload(),
+      });
+    }
+
+    // Y si YA hay facturas emitidas, el campo de la serie sale BLOQUEADO CON SU MOTIVO. Un campo
+    // editable que el servidor va a rechazar es peor que uno bloqueado: le deja escribir, le deja
+    // guardar y le contesta que no. El motivo también lo deriva el servidor (`serieEmitida`).
+    const motivoBloqueo = window.motivoSerieBloqueada && window.motivoSerieBloqueada();
+    if (motivoBloqueo) {
+      fInvoiceSeriesPrefix.input.disabled = true;
+      fInvoiceSeriesPrefix.input.setAttribute("aria-describedby", "serie-bloqueada-motivo");
+      const nota = document.createElement("p");
+      nota.id = "serie-bloqueada-motivo";
+      nota.style.cssText = "font-size:12px;color:var(--muted);margin:4px 0 0";
+      nota.textContent = motivoBloqueo;
+      fInvoiceSeriesPrefix.wrapper.appendChild(nota);
+    }
+
     // ── Logo: SUBIR imagen en vez de pegar una URL (feedback fundador) ──
     // El input de texto pasa a ser el contenedor oculto del valor (URL antigua
     // o data-URI nuevo); el usuario ve preview + "Subir logo" + "Quitar".

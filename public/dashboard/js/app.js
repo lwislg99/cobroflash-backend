@@ -11,9 +11,22 @@ async function initApp() {
   window.appUserName   = me.name || '';
   window.appVoiceEnabled = me.voiceEnabled === true; // VZ-1: flag VOICE_QUOTE_ENABLED
   window.appVoiceAlbaranEnabled = me.voiceAlbaranEnabled === true; // SCRUM-71: flag PROPIO del albarán
-  // SCRUM-289 (A0.3): veredicto YA CALCULADO por el servidor (puedeCrearFacturaSuelta). El
-  // navegador no reimplementa el modo de emisión: lo recibe.
-  window.appFacturaSueltaDisponible = me.facturaSueltaDisponible === true;
+  // SCRUM-289 (A0.3) · SCRUM-346 (A0.5): veredicto YA CALCULADO por el servidor
+  // (`modoDocumentoSuelto`). El navegador no reimplementa el modo de emisión: lo recibe.
+  // Son TRES valores —'factura' | 'justificante' | 'no'— porque el profesional español real no
+  // es un «no puedes»: emite justificantes, que es otro documento, no una factura degradada.
+  // Un valor desconocido cae a 'no': fallar cerrado, igual que el servidor.
+  window.appDocumentoSuelto =
+    ['factura', 'justificante'].includes(me.documentoSuelto) ? me.documentoSuelto : 'no';
+
+  // SCRUM-D1 · LA PUERTA DE ÚLTIMA OPORTUNIDAD. Mismo patrón: el veredicto lo da el servidor
+  // (`debeOfrecerArranqueDeSerie`, la MISMA regla que usa `resolveSeriesSeq`) y aquí solo se
+  // recibe. El navegador NO comprueba `invoiceSeriesYear !== año` por su cuenta: dos sitios
+  // decidiendo lo mismo acaban discrepando, y el de fuera es el fácil de equivocar.
+  window.appPuertaSerieDisponible = me.puertaSerieDisponible === true;
+  // Y POR QUÉ no se puede, cuando no se puede: `{ emitidas, ejemplo }`. La puerta es `false` por
+  // dos motivos distintos —ya emitió, o ya contestó este año— y solo el primero bloquea el campo.
+  window.appSerieEmitida = me.serieEmitida || { emitidas: 0, ejemplo: null };
 
   // A10.2 (Parte L): past_due → banner global "Hay un problema con tu pago"
   // + portal de Stripe. La cuenta sigue funcionando (gracia); solo avisa.

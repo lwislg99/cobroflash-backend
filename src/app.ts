@@ -6,7 +6,7 @@ import { outboxDir } from './core/storage/dirs'; // SCRUM-72: invoicesDir ya no 
 import { jsonError } from './core/http/jsonError';
 import { notFoundPageHtml } from './core/http/publicNotFound';
 import { isFlagEnabled } from './core/flags';
-import { puedeCrearFacturaSuelta } from './modules/invoicing/domain/facturaSuelta'; // SCRUM-289 (A0.3)
+import { modoDocumentoSuelto } from './modules/invoicing/domain/facturaSuelta'; // SCRUM-289 (A0.3) · SCRUM-346 (A0.5)
 import { requireAuth, requireActivePlan, requireRole } from './core/http/authMiddleware';
 import { mountAdmin } from './core/http/adminMounts'; // SCRUM-55: red fail-closed de /admin
 import { requireInternalSecret } from './core/http/internalAuth';
@@ -46,6 +46,7 @@ import publicProfileRouter from './modules/system/app/routes/publicProfile.route
 import jobsRouter from './modules/jobs/app/routes/jobs.routes';
 import albaranesRouter from './modules/jobs/app/routes/albaranes.routes'; // SCRUM-14 (ALBARAN-1)
 import libroRegistroRouter from './modules/invoicing/app/routes/libroRegistro.routes'; // SCRUM-296 (A6): libro de registro, SOLO LECTURA
+import modelo303Router from './modules/fiscal/modelo303/modelo303.routes'; // SCRUM-295 (A5): modelo 303, SOLO LECTURA
 import maintenanceRouter from './modules/maintenance/app/routes/maintenance.routes';
 
 import quotesRouter from './modules/quotes/app/routes/quotes.routes';
@@ -78,7 +79,7 @@ import { getMerchantProfile, updateMerchantProfile, SlugError, SerieError } from
 // SCRUM-313 (D2): el arranque de serie usa las piezas puras de A4 y la vista previa que
 // IMPORTA a quien decide (regla 38: leer ese camino no es STOP, modificarlo si).
 import { TIT_SERIE_YA_EMITIDA, MSG_SERIE_YA_EMITIDA } from './modules/system/merchantAdmin';
-import { arranqueDeSerie, numerosDeLaSerie, bloqueoCambioDeSerie, invalidPrefijoSerie, debeOfrecerArranqueDeSerie } from './core/validation/fiscalInput';
+import { arranqueDeSerie, numerosDeLaSerie, bloqueoCambioDeSerie, invalidPrefijoSerie, debeOfrecerArranqueDeSerie, resumenSerieEmitida } from './core/validation/fiscalInput';
 import { vistaPreviaSerie } from './modules/invoicing/domain/vistaPreviaSerie';
 import { SERIE_LOCK_NS } from './modules/invoicing/domain/invoiceNumber.service';
 import QRCode from 'qrcode'; // A14.2: QR del perfil público (PNG alta res para furgoneta/tarjeta)
@@ -299,7 +300,7 @@ app.get('/admin/me', async (req, res) => {
 
   const merchantFull = await prisma.merchant.findUnique({
     where: { id: session.merchantId },
-    // SCRUM-289: `email` y `flags` los necesita `puedeCrearFacturaSuelta` — el modo de emisión
+    // SCRUM-289: `email` y `flags` los necesita `modoDocumentoSuelto` — el modo de emisión
     // (V0-0) se resuelve con merchant demo (por email) + flag por merchant, no solo con el país.
     select: { country: true, logoUrl: true, email: true, flags: true, invoiceSeriesYear: true },
   });
@@ -312,6 +313,8 @@ app.get('/admin/me', async (req, res) => {
     where: { merchantId: session.merchantId, number: { startsWith: `${anioSerie}-` } },
     select: { number: true },
   });
+  // Una sola vez: la comparten la puerta y el bloqueo del campo (ver abajo).
+  const deLaSerieDelAnio = numerosDeLaSerie(facturasDelAnio.map((f) => f.number), anioSerie);
 
   const userRole = session.teamMember ? session.teamMember.role : 'admin';
   const userName = session.teamMember ? session.teamMember.name : session.merchant.name;
@@ -346,7 +349,10 @@ app.get('/admin/me', async (req, res) => {
     // factura. El veredicto se calcula AQUÍ, con la MISMA función que gatea `POST /admin/invoices`
     // — el navegador no reimplementa la regla, la recibe. Dos copias del criterio es cómo se llega
     // a que el back acepte lo que el front esconde.
-    facturaSueltaDisponible: puedeCrearFacturaSuelta({
+    // SCRUM-346 (A0.5): viaja el VEREDICTO de tres valores, no un booleano. Sustituye a
+    // `facturaSueltaDisponible` en vez de convivir con él: dos campos del mismo hecho acaban
+    // divergiendo, y entonces el botón que se pinta y el documento que sale dicen cosas distintas.
+    documentoSuelto: modoDocumentoSuelto({
       id: session.merchantId,
       email: merchantFull?.email ?? null,
       country: merchantFull?.country ?? null,
@@ -356,11 +362,19 @@ app.get('/admin/me', async (req, res) => {
     subscriptionStatus: owner ? 'active' : ((session.merchant as any).subscriptionStatus ?? null),
     // SCRUM-313 (D2): ¿todavia se le puede preguntar por su numeracion? Mismo patron que la
     // factura suelta -- veredicto del servidor, no regla en el navegador.
+    // ⚠️ `deLaSerieDelAnio` se calcula UNA vez arriba y lo comparten los dos campos: si cada uno
+    // llamara a `numerosDeLaSerie` por su cuenta, un día divergirían y la puerta y el bloqueo
+    // estarían mirando poblaciones distintas.
     puertaSerieDisponible: debeOfrecerArranqueDeSerie({
       invoiceSeriesYear: merchantFull?.invoiceSeriesYear ?? null,
       año: anioSerie,
-      numerosDeLaSerie: numerosDeLaSerie(facturasDelAnio.map((f) => f.number), anioSerie),
+      numerosDeLaSerie: deLaSerieDelAnio,
     }),
+    // SCRUM-D1: por qué NO se puede tocar la serie, cuando no se puede. `puertaSerieDisponible`
+    // es `false` por DOS motivos distintos —ya emitió, o ya contestó este año— y solo el primero
+    // bloquea el campo. Sin esto la pantalla tendría que adivinar cuál de los dos es, que es
+    // recalcular la regla en el navegador por la puerta de atrás.
+    serieEmitida: resumenSerieEmitida(deLaSerieDelAnio),
   });
 });
 
@@ -382,6 +396,9 @@ mountAdmin(app, '/admin/albaranes',  albaranesRouter); // SCRUM-14 (ALBARAN-1): 
 // SCRUM-296 (A6): libro de facturas emitidas. ADMIN-ONLY, el default de S1 y aquí además el
 // correcto por contenido: es la facturación entera del negocio, no trabajo de campo del Operario.
 mountAdmin(app, '/admin/libro-registro', requireRole('admin'), libroRegistroRouter);
+// SCRUM-295 (A5): el 303 del trimestre. Admin-only por el mismo motivo que el libro: es la
+// declaración fiscal del negocio entero, no trabajo de campo del Operario.
+mountAdmin(app, '/admin/modelo-303', requireRole('admin'), modelo303Router);
 mountAdmin(app, '/admin/maintenance', maintenanceRouter); // A15 (MANT-1): tras flag, 404 sin él
 
 // Rutas solo para admin

@@ -265,3 +265,128 @@ programático**, que es justo lo que da falsos negativos. Queda declarado.
   `montar`/`textoBoton` en el bucle.
 * `tests/scrum313-pantalla-numeracion.test.mjs` (11, sin gate).
 * `tests/scrum234-censo-reserva-serie.test.mjs` — `src/app.ts` declarado en el censo.
+
+
+---
+
+# SCRUM-313 · SEGUNDA ENTREGA (6-ago-2026) — la puerta de última oportunidad, LADO FRONT
+
+> ⚠️ **Va en el fichero de 313 porque es alcance DECLARADO de 313**: su propia entrada nombra la
+> «puerta de última oportunidad» como parte del ticket, y no hay ningún ticket propio en Jira
+> (buscado). Si el fundador le asigna número nuevo, esto se mueve entero — no se reescribe.
+>
+> **Medido contra:** `origin/main` = `f56f49038ab9fbeb2e1a21bc2eb9ec0958c48877` · 2026-08-06T14:26:21+02:00
+> **Tanda:** 2042 tests, 1974 pass, 0 fail
+## El defecto
+
+El Paso 2 del asistente pregunta por la numeración, así que a quien se da de alta HOY sí se le
+pregunta. Lo que **no existía es la segunda oportunidad**: quien ya pasó el onboarding —o se lo
+saltó— no tenía dónde contestar. Y es justo el perfil que importa: el que viene de otro programa
+con facturas ya emitidas y descubre el problema cuando ya ha emitido tres mal numeradas.
+
+**Medido antes de construir:** `puertaSerieDisponible` se calcula y se publica en `/admin/me`, y
+había **CERO ocurrencias en todo `public/`**. El backend ya decía a quién le corresponde y no
+había ninguna pantalla que lo leyera.
+
+## Lo que se construye
+
+Una tarjeta en **Configuración → Numeración**, encima del campo de la serie, con:
+
+* **El veredicto del SERVIDOR**, consumido tal cual (`window.appPuertaSerieDisponible`). El
+  navegador **no** comprueba `invoiceSeriesYear !== año`: hay un test que prohíbe ese nombre en
+  `public/`, con su respaldo en el servidor (SCRUM-237 — una negación necesita quien la sostenga).
+* **La vista previa EN VIVO** ya construida, pedida al mismo endpoint que el asistente. Sin ella
+  la puerta no protege nada: el usuario no sabría qué está confirmando. Y calculándola aquí diría
+  un número y la factura otro.
+* **El campo Serie BLOQUEADO con su motivo** cuando ya hay emitidas, nombrando cuántas y cuál fue
+  la última. Un campo editable que el servidor va a rechazar es peor que uno bloqueado: le deja
+  escribir, le deja guardar y le contesta que no.
+* **Microcopy: el aprobado del asistente, literal** (regla 30), con un test que compara las dos
+  pantallas frase a frase. Que digan lo mismo es parte del punto: quien vuelva a verla tiene que
+  reconocerla.
+
+## Un cambio de servidor, mínimo y por el mismo motivo de siempre
+
+`puertaSerieDisponible` es `false` por **DOS motivos distintos** —ya emitió, o ya contestó este
+año— y solo el primero bloquea el campo. Para que la pantalla no tenga que adivinar cuál es, se
+publica `serieEmitida: { emitidas, ejemplo }`, derivado del **mismo array** que ya se calculaba.
+
+Y para no escribir «el ejemplo es el número más alto» en dos sitios, se extrae
+`resumenSerieEmitida` de `bloqueoCambioDeSerie` y **ésta la usa**. Hay un test que comprueba que
+el aviso de la pantalla y el rechazo del servidor enseñan **el mismo número**.
+
+## Los dos controles, y por qué hacen falta los dos
+
+| | Caso | Resultado |
+| --- | --- | --- |
+| **NEGATIVO** | ya emitió con nosotros | NO ve la puerta |
+| **POSITIVO** | se saltó el asistente, no ha emitido | **SÍ** la ve |
+| tercero | ya contestó este año, sin emitir | no hay puerta, y su campo **no** se bloquea |
+
+Sin el POSITIVO, una puerta que no se le enseña a **nadie** pasaría el negativo tan campante — el
+caso en el que el ticket se da por hecho y la pantalla no existe. Es el mismo par que los dos
+vacíos de SCRUM-385: cada uno solo, engañable; juntos, no.
+
+## Rojo por el mecanismo (por `$?`)
+
+| Inyección | Resultado |
+| --- | --- |
+| el front deja de consumir el flag | exit 1 · «nadie lee `puertaSerieDisponible`… la pantalla no se entera» |
+| Configuración deja de pintarla | exit 1 · «Configuración no pinta la puerta» |
+| la regla se reimplementa en el navegador | exit 1 · «está mirando invoiceSeriesYear» |
+| deja de pedirse la vista previa | exit 1 · «el usuario confirmaría a ciegas» |
+
+## Lo que cazó un guard ajeno
+
+**SCRUM-274**: el script nuevo faltaba en el shell del service worker. Tenía razón — `addAll` es
+atómico y la app se habría servido a medias. Añadido a `public/sw.js`.
+
+## El banco de medición (6-ago-2026) — porque los tests estructurales no ven la pantalla
+
+Banco FUERA del repo (scratchpad), sirviendo por HTTP los ficheros **reales** del árbol —
+`tokens.css`, `styles.css` y `puertaSerie.js`— y pintando la puerta con **la función de verdad**,
+no con marcado retecleado. El aviso de bloqueo se construye con el estilo **extraído** de
+`settingsView.js`, con un suelo que aborta si la extracción falla o si quedan interpolaciones sin
+resolver. Chrome headless por CDP; todo leído por `$?`.
+
+**Verde a 360 y 390 px.** Lo medido:
+
+| | 360 px | 390 px |
+| --- | --- | --- |
+| La vista previa se lee en UNA línea | ✔ `2026-FONTANERIA-000042` | ✔ |
+| No se sale de su tarjeta | ✔ 238,7 ≤ 327,0 | ✔ 238,7 ≤ 357,0 |
+| Aviso de bloqueo visible | ✔ 328×37, contraste **4,51:1** | ✔ 358×37 |
+| Targets ≥ 44 px | ✔ los 5 controles | ✔ |
+| Desbordamiento horizontal | ✔ 0 | ✔ 0 |
+| Foco con **Tab real** (`Input.dispatchKeyEvent`) | ✔ anillo visible en el secundario | ✔ |
+
+Se probó a propósito con el número **más largo** que el formato admite: medir con uno corto habría
+dado verde y no probaría nada. En el asistente este mismo dato se partía en dos líneas justo a
+estos anchos; **aquí no**.
+
+### 🔴 TRES VERDES HUECOS QUE EL BANCO SE COMIÓ ANTES DE DAR EL RESULTADO
+
+El banco se equivocó tres veces **a favor**, y cada corrección hizo la medición más fina:
+
+1. **La tarjeta se midió VACÍA.** Al no escribir número, `refrescarPrevia` salía por
+   `Number('') = 0` y la previa nunca se pedía. «No se sale de su tarjeta» pasó con **0,0 ≤ 0,0**.
+   Lo cazó el suelo de «se pidió la previa al servidor», que estaba puesto antes.
+2. **«¿Hay `box-shadow`?» da verde siempre**, porque `.btn-primary` ya tiene sombra en reposo.
+3. **«¿Cambia al enfocar?» también da verde**, porque sí añade una capa… en `rgba(0, 0, 0, 0)`.
+
+Solo la tercera versión —**exigir alfa > 0 en la capa añadida**— dice la verdad.
+
+### ⚠️ Aviso, y NO es de este ticket
+
+**`.btn-primary` no pinta anillo de foco visible.** Medido: con el foco puesto añade
+`rgba(0, 0, 0, 0) 0px 0px 0px 0px` — una sombra transparente — mientras `:focus-visible` devuelve
+`true`. Es **SCRUM-368** y se reporta, no se arregla (regla 9). El botón secundario sí lo pinta
+(`rgba(34, 197, 94, 0.3) 0 0 0 3px`), así que el defecto es del primario y no de esta pantalla.
+
+### Límites declarados del banco
+
+* El aviso de bloqueo se pinta **al final del panel**, no bajo el campo Serie: el banco monta la
+  puerta suelta, no Configuración entera. Se ha medido que **se ve y se lee**; su posición final
+  dentro del formulario **no** está medida aquí.
+* Sin matriz de dispositivos reales (iPhone/tablet): sigue siendo hueco humano.
+* Capturas: `docs/capturas/scrum-313/scrum313-puerta-{360,390}.png`.

@@ -46,7 +46,7 @@ const VISTA = path.join(RAIZ, 'public', 'dashboard', 'js', 'invoicesView.js');
 const PENDIENTE = '[PENDIENTE microcopy oficial]';
 
 const {
-  puedeCrearFacturaSuelta, validarFacturaSuelta,
+  modoDocumentoSuelto, validarFacturaSuelta,
   ERROR_MODO_SIN_FACTURA, ERROR_CLIENTE_INVALIDO, ERROR_LINEAS_INVALIDAS,
 } = await import('../dist/modules/invoicing/domain/facturaSuelta.js');
 
@@ -96,34 +96,66 @@ test('SCRUM-289b · SUELO: el extractor encuentra el entrypoint', () => {
 // ── EL GATE ──────────────────────────────────────────────────────────────────────────────
 
 test('SCRUM-289b · el gate es el MODO, no el flag: los tres modos y el no-ES', () => {
-  // 'receipt' — ES real sin el flag: NO.
-  assert.equal(puedeCrearFacturaSuelta({ id: 9, email: 'pro@x.es', country: 'ES', flags: null }), false,
-    '🔴 un merchant ES real sin el flag NO emite factura: el botón no puede existir ahí.');
+  // SCRUM-346 (A0.5): el veredicto pasó de booleano a TRES valores. Las cuatro afirmaciones de
+  // A0.3 siguen aquí ENTERAS; lo que cambia es que `receipt` ya no se lee como «no puedes» sino
+  // como lo que siempre fue: «tú emites justificantes».
+
+  // 'receipt' — ES real sin el flag: JUSTIFICANTE. Era `false` y ése era el defecto.
+  assert.equal(modoDocumentoSuelto({ id: 9, email: 'pro@x.es', country: 'ES', flags: null }), 'justificante',
+    '🔴 un merchant ES real emite JUSTIFICANTES, no nada. Devolver «no» aquí le deja sin puerta ' +
+    'para la reparación de 40 € que es el 80 % de su semana.');
   // 'fiscal' por país — el caso que un gate por `isFlagEnabled` habría roto.
-  assert.equal(puedeCrearFacturaSuelta({ id: 9, email: 'pro@x.fr', country: 'FR', flags: null }), true,
+  assert.equal(modoDocumentoSuelto({ id: 9, email: 'pro@x.fr', country: 'FR', flags: null }), 'factura',
     '🔴 EL BUG DE LA VECINA: un merchant no-ES emite factura fiscal SIEMPRE. `INVOICING_ES_ENABLED` ' +
     'es ES-only, así que gatear por el flag le habría quitado el botón teniendo derecho a él.');
   // 'demo' — también es factura (con marca de agua), regla 8.
-  assert.equal(puedeCrearFacturaSuelta({ id: 1, email: 'demo@yaqu.app', country: 'ES', flags: null }), true,
+  assert.equal(modoDocumentoSuelto({ id: 1, email: 'demo@yaqu.app', country: 'ES', flags: null }), 'factura',
     '🔴 el merchant demo emite FACTURA completa con marca de agua: entra.');
   // 'fiscal' por flag de merchant — ES con el flag ON (post SIF-1).
-  assert.equal(puedeCrearFacturaSuelta({ id: 9, email: 'pro@x.es', country: 'ES', flags: { INVOICING_ES_ENABLED: true } }), true);
+  assert.equal(modoDocumentoSuelto({ id: 9, email: 'pro@x.es', country: 'ES', flags: { INVOICING_ES_ENABLED: true } }), 'factura');
   // Sin merchant no se adivina.
-  assert.equal(puedeCrearFacturaSuelta(null), false, '🔴 sin merchant hay que fallar cerrado.');
+  assert.equal(modoDocumentoSuelto(null), 'no', '🔴 sin merchant hay que fallar cerrado.');
+});
+
+test('SCRUM-346 · REGLA 24: hacer explícito el justificante NO enciende la facturación', () => {
+  // El cambio de A0.5 se puede leer mal como «ya emitimos facturas en España». No: el mismo
+  // merchant ES real que ANTES no tenía botón ahora tiene el de JUSTIFICANTE, y sigue sin poder
+  // emitir factura. Si alguien hiciera que `receipt` devolviera 'factura', esto cae.
+  const esReal = { id: 9, email: 'pro@x.es', country: 'ES', flags: null };
+  assert.notEqual(modoDocumentoSuelto(esReal), 'factura',
+    '🔴 un merchant ES real sin `INVOICING_ES_ENABLED` NO emite facturas (regla 24). A0.5 hace ' +
+    'explícito el justificante; no abre la facturación.');
+  // Y con el flag ON —post SIF-1— sí, para que la negación de arriba no sea verde por accidente.
+  assert.equal(modoDocumentoSuelto({ ...esReal, flags: { INVOICING_ES_ENABLED: true } }), 'factura');
 });
 
 test('SCRUM-289b · ROJO POR EL MECANISMO: con el gate cerrado la ruta responde 4xx NOMBRADO', () => {
   // Un 500 no prueba nada: quien lo reciba no puede distinguir «aquí no toca» de «se ha roto algo».
   const h = textoDe(handlerDe('post', '/'));
-  assert.match(h, /if\s*\(\s*!puedeCrearFacturaSuelta\s*\(/,
-    '🔴 el handler no gatea con `puedeCrearFacturaSuelta`. Si usa otra condición, el back podría ' +
+  assert.match(h, /modoDocumentoSuelto\s*\(/,
+    '🔴 el handler no gatea con `modoDocumentoSuelto`. Si usa otra condición, el back podría ' +
     'aceptar lo que el front esconde: dos copias del criterio es exactamente cómo se llega a eso.');
-  const gate = h.slice(h.indexOf('!puedeCrearFacturaSuelta'));
+  const gate = h.slice(h.indexOf("=== 'no'"));
   const status = gate.match(/res\.status\((\d{3})\)/);
   assert.ok(status, '🔴 el gate no responde con un status explícito');
   assert.equal(status[1], '409', '🔴 el gate tiene que responder 409, no 500 ni 200');
-  assert.match(gate.slice(0, 400), new RegExp(`error:\\s*${ERROR_MODO_SIN_FACTURA}|ERROR_MODO_SIN_FACTURA`),
+  assert.match(gate.slice(0, 400), new RegExp(`error:\s*${ERROR_MODO_SIN_FACTURA}|ERROR_MODO_SIN_FACTURA`),
     '🔴 el 409 tiene que llevar el error NOMBRADO. Un status sin nombre obliga a adivinar.');
+});
+
+test('SCRUM-346 · el cinturón del `J-` se RAMIFICA, no se afloja', () => {
+  // A0.3 rechazaba cualquier `J-` que saliera de la serie, y tenía razón: el botón prometía
+  // FACTURA y el documento no era eso. En el camino de justificante ese `J-` es lo correcto, así
+  // que la comprobación tiene que seguir existiendo pero SOLO para el camino de factura.
+  const h = textoDe(handlerDe('post', '/'));
+  assert.match(h, /isReceiptNumber\s*\(/,
+    '🔴 ha desaparecido la comprobación del `J-`. Se ramifica, no se quita: sin ella, un fallo del ' +
+    'modo entregaría como factura un documento que no lo es.');
+  const linea = h.split(String.fromCharCode(10)).find((l) => l.includes('isReceiptNumber(invoice.number)'));
+  assert.ok(linea, '🔴 no se encuentra la comprobación sobre el número emitido');
+  assert.match(linea, /modoSuelto === 'factura'/,
+    '🔴 el `J-` se sigue rechazando en el camino de JUSTIFICANTE, donde es exactamente lo que ' +
+    'debe salir. Eso no protege nada: rompe el caso que A0.5 viene a abrir.');
 });
 
 // ── TENENCIA (regla 2) — el guard cuyo motivo está medido en la cabecera ──────────────────
@@ -232,30 +264,39 @@ function literalesVisibles(codigo, ruta) {
   };
   recogerConstantes(sf);
 
-  /** Texto de un nodo que puede ser literal o un identificador resoluble. `null` = no es texto. */
-  const textoLiteral = (n) => {
-    if (ts.isStringLiteral(n)) return n.text;
-    if (ts.isIdentifier(n) && constantes.has(n.text)) return constantes.get(n.text);
-    return null;
+  /**
+   * Textos de un nodo: literal, identificador resoluble, o LAS DOS RAMAS DE UN TERNARIO.
+   * Devuelve un array — vacío = no es texto.
+   *
+   * 🔴 EL TERNARIO LO AÑADIÓ SCRUM-346, Y NO ERA TEÓRICO. Al hacer que el rótulo dependa del
+   * veredicto (`… === 'justificante' ? '+ Nuevo justificante' : '[PENDIENTE…]'`), el guard dejó de
+   * ver NADA: pasó en verde con un rótulo nuevo, y —peor— también habría dejado meter texto
+   * inventado en la rama del marcador. Medido: con un literal plano saltaba, con el ternario no.
+   *
+   * Un guard que se queda ciego ante una forma de escribir el mismo código es un verde hueco:
+   * nadie lo desactivó, simplemente dejó de mirar.
+   */
+  const textosDe = (n) => {
+    if (ts.isStringLiteral(n)) return [n.text];
+    if (ts.isIdentifier(n) && constantes.has(n.text)) return [constantes.get(n.text)];
+    if (ts.isConditionalExpression(n)) return [...textosDe(n.whenTrue), ...textosDe(n.whenFalse)];
+    return [];
   };
   const visitar = (n) => {
     // x.textContent = '…'
     if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.EqualsToken
       && ts.isPropertyAccessExpression(n.left) && PROPS.has(n.left.name.text)) {
-      const t = textoLiteral(n.right);
-      if (t !== null) out.push({ texto: t, donde: `${n.left.name.text} =` });
+      for (const t of textosDe(n.right)) out.push({ texto: t, donde: `${n.left.name.text} =` });
     }
     // x.setAttribute('aria-label', '…')  ·  showToast('…')
     if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression)
       && n.expression.name.text === 'setAttribute' && n.arguments.length === 2
       && ts.isStringLiteral(n.arguments[0]) && /^aria-label$|^title$/.test(n.arguments[0].text)) {
-      const t = textoLiteral(n.arguments[1]);
-      if (t !== null) out.push({ texto: t, donde: `setAttribute('${n.arguments[0].text}')` });
+      for (const t of textosDe(n.arguments[1])) out.push({ texto: t, donde: `setAttribute('${n.arguments[0].text}')` });
     }
     if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'showToast'
       && n.arguments.length) {
-      const t = textoLiteral(n.arguments[0]);
-      if (t !== null) out.push({ texto: t, donde: 'showToast()' });
+      for (const t of textosDe(n.arguments[0])) out.push({ texto: t, donde: 'showToast()' });
     }
     ts.forEachChild(n, visitar);
   };
@@ -270,6 +311,25 @@ test('SCRUM-289b · SUELO del guard de microcopy: encuentra literales visibles d
     'sin haber mirado la pantalla: cero literales y cero literales MALOS son el mismo resultado.');
 });
 
+/**
+ * TEXTOS FIRMADOS, con su PROCEDENCIA (regla 30 + la regla de procedencia de SCRUM-387).
+ *
+ * No es una lista de perdonados: cada entrada dice QUIÉN lo aprobó y CUÁNDO. Un rótulo que no
+ * chirría se queda para siempre si nadie puede distinguir «aprobado» de «se coló».
+ */
+const APROBADOS = {
+  '+ Nuevo justificante': 'fundador, 6-ago-2026 (SCRUM-346 / A0.5)',
+};
+
+test('SCRUM-346 · SUELO: el guard VE las dos ramas de un ternario', () => {
+  // El agujero que abrió A0.5 y que este fichero ya no tiene. Si alguien vuelve a hacer
+  // `textoLiteral`-de-una-sola-rama, esto cae.
+  const codigo = "b.textContent = x ? 'uno' : 'dos';";
+  const vistos = literalesVisibles(codigo, 'prueba.js').map((l) => l.texto).sort();
+  assert.deepEqual(vistos, ['dos', 'uno'],
+    '🔴 el guard solo ve una rama del ternario (o ninguna): un rótulo escondido en la otra pasaría sin mirar');
+});
+
 test('SCRUM-289b · MICROCOPY: todo literal visible nuevo es exactamente el marcador (regla 30)', () => {
   const malos = [];
   for (const f of [MODAL, VISTA]) {
@@ -280,7 +340,7 @@ test('SCRUM-289b · MICROCOPY: todo literal visible nuevo es exactamente el marc
       ? (codigo.match(/nuevaFacturaBtn[\s\S]*?header\.appendChild\(nuevaFacturaBtn\);/) || [''])[0]
       : codigo;
     for (const l of literalesVisibles(solo, f)) {
-      if (l.texto !== PENDIENTE && !esGlifo(l.texto)) malos.push(`${path.basename(f)} · ${l.donde} · ${JSON.stringify(l.texto)}`);
+      if (l.texto !== PENDIENTE && !esGlifo(l.texto) && !(l.texto in APROBADOS)) malos.push(`${path.basename(f)} · ${l.donde} · ${JSON.stringify(l.texto)}`);
     }
   }
   assert.deepEqual(malos, [],
