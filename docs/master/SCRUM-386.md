@@ -4,10 +4,12 @@
 **Medido contra:** `origin/main` = `4b4f30a6bcfb4ffd75694f781704865510336580` · 2026-08-06T12:57:30+02:00
 **Tanda:** 1957 tests, 1890 pass, 0 fail, 67 skipped
 
-> ⚠️ **ENTREGA PARCIAL, declarada.** Se mueven `openAlbEditorSheet` y su cadena.
-> **`openFacturarParcialSheet` NO se mueve:** toca el camino del dinero y sacarla obliga a
-> cambiar su firma, que es condición de parada de la regla 38. El diff está preparado y va con la
-> pregunta al fundador.
+> ✅ **COMPLETA.** Se paró con el diff delante antes de mover `openFacturarParcialSheet`, y el
+> fundador dio el GO **corrigiendo la regla al darlo**: la 38 se mide **por FICHERO y por LADO**,
+> no por nombre de función. El camino de emisión vive en el SERVIDOR (la ruta, `emitInvoice`,
+> `applyVeriFactu`, el sellado); un fichero de `public/dashboard/js/` que hace un `apiRequest` es
+> un **CLIENTE** del camino, no el camino. Las dos condiciones del GO —cuerpo byte-idéntico y la
+> línea del `apiRequest` intacta— están **medidas, no leídas**.
 
 ## El defecto
 
@@ -60,6 +62,9 @@ nada se lee igual que uno que pasa.
 | `openAlbEditorSheet` vuelve DENTRO | exit 1 · «ha vuelto DENTRO de renderJobDetailView» |
 | `buildAlbEditor` deja de recibir `cur` | exit 1 · «está fuera pero atada… ReferenceError» |
 | «Editar líneas» deja de pasar el contexto | exit 1 · «esperaba DOS pasos de contexto y hay 1» |
+| `openFacturarParcialSheet` vuelve DENTRO | exit 1 · «ha vuelto DENTRO de renderJobDetailView» |
+| cambia la ruta `facturar-parcial` | exit 1 · «la llamada ha cambiado: esto ya no es una mudanza» |
+| su llamador deja de pasar contexto | exit 1 · «no recibe su contexto del único llamador que tiene» |
 
 **Y un guard mío nació malo:** el test de los llamadores buscaba la llamada entera con un regex
 multilínea (`buildAlbEditor\(bodyEl,[^;]*?…`) y salía **roja con el código correcto**, porque
@@ -72,3 +77,19 @@ cuentan los pasos de contexto, que es el hecho, y no la forma de escribirlos.
 No cablea la página del albarán para que las llame. **Qué botones quedan en la fila es decisión de
 producto** y va en su ticket; aquí solo se garantiza que **ya se puede**. El guard lo declara en su
 cabecera para que nadie lo dé por cubierto.
+
+## Dos errores míos durante la verificación, porque son la lección
+
+**① El `while` que se colgó.** La primera inyección buscaba la llave de cierre con
+`while (l[j] !== '}') j++`, que corre hasta el infinito si nunca casa. La maté a los diez minutos.
+**Un rojo que no llega a ejecutarse no demuestra nada** — es literalmente el defecto que llevamos
+la semana cazando. Reescrito con rangos del AST, que son exactos y no dependen de encontrar un
+carácter.
+
+**② Inyecté rojos sobre trabajo SIN COMMITEAR, y `git checkout --` se lo llevó.** El movimiento de
+`openFacturarParcialSheet` estaba hecho y verde, pero no commiteado; el `checkout` de restaurar la
+inyección restauró desde el ÍNDICE y deshizo la mudanza entera. Se rehízo desde el original
+guardado. **Es exactamente la regla que ya existía —comitear la corrección ANTES de inyectar el
+siguiente rojo— y no la apliqué.** Queda escrito aquí porque el coste no fue el trabajo perdido
+(era determinista y se rehízo), sino que los dos rojos siguientes corrieron contra un árbol que no
+era el que yo creía: el de `ruta` dio el mensaje de `anidar`, y eso es un rojo que MIENTE.

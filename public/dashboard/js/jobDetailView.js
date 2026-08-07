@@ -1146,127 +1146,6 @@ async function renderJobDetailView(container, jobId) {
    * Los topes viven también en el servidor (`validarPeticionParcial`): esto es comodidad, no
    * seguridad — el importe de una factura no puede depender de lo que valide un navegador.
    */
-  function openFacturarParcialSheet(alb) {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.setAttribute('role', 'dialog');
-    overlay.setAttribute('aria-modal', 'true');
-    overlay.setAttribute('aria-label', `Facturar parte del albarán ${alb.numero}`);
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    const header = document.createElement('div');
-    header.className = 'modal-header';
-    const title = document.createElement('div');
-    title.className = 'modal-title';
-    title.textContent = `Facturar parte de ${alb.numero}`;
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'modal-close';
-    closeBtn.type = 'button';
-    closeBtn.textContent = '×';
-    closeBtn.setAttribute('aria-label', 'Cerrar');
-    header.append(title, closeBtn);
-
-    const err = document.createElement('div');
-    err.className = 'alert error';
-    err.style.display = 'none';
-
-    const body = document.createElement('div');
-    body.className = 'modal-body';
-    const inputs = [];
-    (alb.pendientes || []).forEach((p) => {
-      if (p.pendiente <= 0) return; // lo ya cobrado no se vuelve a ofrecer
-      const fila = document.createElement('div');
-      fila.style.cssText = 'display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)';
-      const izq = document.createElement('div');
-      izq.style.cssText = 'min-width:0;flex:1';
-      izq.innerHTML =
-        `<div style="font-weight:600">${esc(p.concepto || 'Sin concepto')}</div>` +
-        `<div style="font-size:12px;color:var(--muted)">Servido ${p.servida}${p.unidad ? ' ' + esc(p.unidad) : ''}` +
-        (p.facturada > 0 ? ` · ya facturado ${p.facturada}` : '') +
-        ` · queda <strong>${p.pendiente}</strong></div>`;
-      const inp = document.createElement('input');
-      inp.type = 'number';
-      inp.min = '0';
-      inp.max = String(p.pendiente);
-      inp.step = '0.001';
-      inp.value = String(p.pendiente); // por defecto, lo que queda
-      inp.style.cssText = 'width:110px;min-height:44px'; // target al pulgar (AB6)
-      inp.setAttribute('aria-label', `Cantidad a facturar de ${p.concepto || 'la línea'}`);
-      inputs.push({ index: p.index, input: inp, max: p.pendiente });
-      fila.append(izq, inp);
-      body.appendChild(fila);
-    });
-
-    const footer = document.createElement('div');
-    footer.className = 'modal-footer';
-    const cancelar = document.createElement('button');
-    cancelar.className = 'btn-secondary';
-    cancelar.type = 'button';
-    cancelar.textContent = 'Cancelar';
-    const emitir = document.createElement('button');
-    emitir.className = 'btn-primary';
-    emitir.type = 'button';
-    emitir.textContent = 'Emitir factura';
-    footer.append(cancelar, emitir);
-
-    const cerrar = () => overlay.remove();
-    closeBtn.addEventListener('click', cerrar);
-    cancelar.addEventListener('click', cerrar);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
-
-    // SCRUM-271: el aviso de «se cae alguna línea» necesita recordar si ya se dio, porque la
-    // segunda pulsación es la que confirma. Cualquier cambio en un campo lo vuelve a armar, para
-    // que una confirmación no se herede de una situación distinta de la que se está mirando.
-    let avisadoDeLineasSinCantidad = false;
-    for (const { input } of inputs) {
-      input.addEventListener('input', () => { avisadoDeLineasSinCantidad = false; });
-    }
-
-    emitir.addEventListener('click', async () => {
-      const todas = inputs.map((i) => ({ index: i.index, cantidad: Number(i.input.value) }));
-      const lineas = todas.filter((l) => l.cantidad > 0);
-      if (lineas.length === 0) {
-        err.textContent = 'Indica qué cantidad quieres facturar de al menos una línea.';
-        err.style.display = 'block';
-        return;
-      }
-      // SCRUM-271: antes solo avisaba si se caían TODAS. Con tres líneas y una sin cantidad se
-      // emitía la factura con dos, EN SILENCIO — el pro pedía facturar tres y no se enteraba de
-      // haber perdido una. No corrompe un valor: OMITE una línea, y eso en facturación es peor.
-      //
-      // AVISA Y NO BLOQUEA, a propósito: facturar solo parte de las líneas es un uso legítimo —
-      // para eso existe esta pantalla—, así que impedirlo rompería el flujo. La segunda pulsación
-      // confirma, que es lo que convierte «no se enteró» en «lo decidió».
-      if (lineas.length < todas.length && !avisadoDeLineasSinCantidad) {
-        err.textContent = 'Revisa las líneas sin cantidad: no se facturarán.';
-        err.style.display = 'block';
-        avisadoDeLineasSinCantidad = true;
-        return;
-      }
-      emitir.disabled = true;
-      const orig = emitir.textContent;
-      emitir.textContent = 'Emitiendo…';
-      try {
-        const d = await apiRequest(`/admin/albaranes/${alb.id}/facturar-parcial`, {
-          method: 'POST', body: JSON.stringify({ lineas }),
-        });
-        cerrar();
-        // El sellado que falla NO se calla (mismo criterio que la consolidación).
-        showToast(d && d.veriFactu === false ? '⚠️ Factura emitida, revisa su registro' : '✓ Factura emitida.');
-        if (d && d.message) setStatus('error', d.message);
-        refresh();
-      } catch (e) {
-        err.textContent = e?.data?.message || 'No se pudo emitir la factura.';
-        err.style.display = 'block';
-        emitir.disabled = false;
-        emitir.textContent = orig;
-      }
-    });
-
-    modal.append(header, err, body, footer);
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
-  }
 
 
   /**
@@ -1483,7 +1362,7 @@ async function renderJobDetailView(container, jobId) {
       if (primaria.id === 'btnFacturar') {
         // El ÚNICO cuyo mecanismo vive aquí (`openFacturarParcialSheet`, anidada en esta vista):
         // éste ejecuta. Es también el puente que `scrum302-sin-callejones` exige conservar.
-        const bt = mkBtn(rotulo, () => openFacturarParcialSheet(alb));
+        const bt = mkBtn(rotulo, () => openFacturarParcialSheet(alb, { refresh, setStatus }));
         acts.appendChild(bt);
         // Admin-only como toda emisión (S1): al técnico se le DESHABILITA con explicación, nunca
         // se le esconde (norma de SCRUM-89).
@@ -2221,6 +2100,144 @@ function openAlbEditorSheet(alb, ctx) {
   }, ctx);
   // Foco al primer campo (Concepto) para teclear directo; si no hay, al botón de cerrar.
   (bodyEl.querySelector('.input') || closeBtn).focus();
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-386 · LA HOJA DE FACTURAR PARCIAL, FUERA DE LA VISTA DEL TRABAJO
+//
+// Movida con GO explícito del fundador, que corrigió la regla al darlo: la 38 se mide POR
+// FICHERO Y POR LADO, no por el nombre de la función. El camino de emisión vive en el SERVIDOR
+// (la ruta, `emitInvoice`, `applyVeriFactu`, el sellado). Esto es `public/dashboard/js/`
+// haciendo un `apiRequest`: un CLIENTE del camino de emisión, no el camino.
+//
+// ⚠️ MUDANZA: cuerpo byte-idéntico y la línea del `apiRequest` sin tocar ni un carácter.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+function openFacturarParcialSheet(alb, ctx) {
+  // SCRUM-386 · lo que antes venía del ámbito de `renderJobDetailView`. Desestructurado con
+  // los MISMOS nombres: el cuerpo de abajo no cambia ni un carácter, y eso se comprueba
+  // comparando textos, no leyendo el diff.
+  const { refresh, setStatus } = ctx;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', `Facturar parte del albarán ${alb.numero}`);
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  const header = document.createElement('div');
+  header.className = 'modal-header';
+  const title = document.createElement('div');
+  title.className = 'modal-title';
+  title.textContent = `Facturar parte de ${alb.numero}`;
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'modal-close';
+  closeBtn.type = 'button';
+  closeBtn.textContent = '×';
+  closeBtn.setAttribute('aria-label', 'Cerrar');
+  header.append(title, closeBtn);
+
+  const err = document.createElement('div');
+  err.className = 'alert error';
+  err.style.display = 'none';
+
+  const body = document.createElement('div');
+  body.className = 'modal-body';
+  const inputs = [];
+  (alb.pendientes || []).forEach((p) => {
+    if (p.pendiente <= 0) return; // lo ya cobrado no se vuelve a ofrecer
+    const fila = document.createElement('div');
+    fila.style.cssText = 'display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)';
+    const izq = document.createElement('div');
+    izq.style.cssText = 'min-width:0;flex:1';
+    izq.innerHTML =
+      `<div style="font-weight:600">${esc(p.concepto || 'Sin concepto')}</div>` +
+      `<div style="font-size:12px;color:var(--muted)">Servido ${p.servida}${p.unidad ? ' ' + esc(p.unidad) : ''}` +
+      (p.facturada > 0 ? ` · ya facturado ${p.facturada}` : '') +
+      ` · queda <strong>${p.pendiente}</strong></div>`;
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.min = '0';
+    inp.max = String(p.pendiente);
+    inp.step = '0.001';
+    inp.value = String(p.pendiente); // por defecto, lo que queda
+    inp.style.cssText = 'width:110px;min-height:44px'; // target al pulgar (AB6)
+    inp.setAttribute('aria-label', `Cantidad a facturar de ${p.concepto || 'la línea'}`);
+    inputs.push({ index: p.index, input: inp, max: p.pendiente });
+    fila.append(izq, inp);
+    body.appendChild(fila);
+  });
+
+  const footer = document.createElement('div');
+  footer.className = 'modal-footer';
+  const cancelar = document.createElement('button');
+  cancelar.className = 'btn-secondary';
+  cancelar.type = 'button';
+  cancelar.textContent = 'Cancelar';
+  const emitir = document.createElement('button');
+  emitir.className = 'btn-primary';
+  emitir.type = 'button';
+  emitir.textContent = 'Emitir factura';
+  footer.append(cancelar, emitir);
+
+  const cerrar = () => overlay.remove();
+  closeBtn.addEventListener('click', cerrar);
+  cancelar.addEventListener('click', cerrar);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
+
+  // SCRUM-271: el aviso de «se cae alguna línea» necesita recordar si ya se dio, porque la
+  // segunda pulsación es la que confirma. Cualquier cambio en un campo lo vuelve a armar, para
+  // que una confirmación no se herede de una situación distinta de la que se está mirando.
+  let avisadoDeLineasSinCantidad = false;
+  for (const { input } of inputs) {
+    input.addEventListener('input', () => { avisadoDeLineasSinCantidad = false; });
+  }
+
+  emitir.addEventListener('click', async () => {
+    const todas = inputs.map((i) => ({ index: i.index, cantidad: Number(i.input.value) }));
+    const lineas = todas.filter((l) => l.cantidad > 0);
+    if (lineas.length === 0) {
+      err.textContent = 'Indica qué cantidad quieres facturar de al menos una línea.';
+      err.style.display = 'block';
+      return;
+    }
+    // SCRUM-271: antes solo avisaba si se caían TODAS. Con tres líneas y una sin cantidad se
+    // emitía la factura con dos, EN SILENCIO — el pro pedía facturar tres y no se enteraba de
+    // haber perdido una. No corrompe un valor: OMITE una línea, y eso en facturación es peor.
+    //
+    // AVISA Y NO BLOQUEA, a propósito: facturar solo parte de las líneas es un uso legítimo —
+    // para eso existe esta pantalla—, así que impedirlo rompería el flujo. La segunda pulsación
+    // confirma, que es lo que convierte «no se enteró» en «lo decidió».
+    if (lineas.length < todas.length && !avisadoDeLineasSinCantidad) {
+      err.textContent = 'Revisa las líneas sin cantidad: no se facturarán.';
+      err.style.display = 'block';
+      avisadoDeLineasSinCantidad = true;
+      return;
+    }
+    emitir.disabled = true;
+    const orig = emitir.textContent;
+    emitir.textContent = 'Emitiendo…';
+    try {
+      const d = await apiRequest(`/admin/albaranes/${alb.id}/facturar-parcial`, {
+        method: 'POST', body: JSON.stringify({ lineas }),
+      });
+      cerrar();
+      // El sellado que falla NO se calla (mismo criterio que la consolidación).
+      showToast(d && d.veriFactu === false ? '⚠️ Factura emitida, revisa su registro' : '✓ Factura emitida.');
+      if (d && d.message) setStatus('error', d.message);
+      refresh();
+    } catch (e) {
+      err.textContent = e?.data?.message || 'No se pudo emitir la factura.';
+      err.style.display = 'block';
+      emitir.disabled = false;
+      emitir.textContent = orig;
+    }
+  });
+
+  modal.append(header, err, body, footer);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
 }
 
 window.renderJobDetailView = renderJobDetailView;

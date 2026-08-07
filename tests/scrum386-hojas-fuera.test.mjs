@@ -39,7 +39,7 @@ const CODIGO = fs.readFileSync(RUTA, 'utf8');
 const SF = ts.createSourceFile(RUTA, CODIGO, ts.ScriptTarget.ES2022, true, ts.ScriptKind.JS);
 
 /** Las que tienen que estar fuera. `buildAlbEditor`/`albTotalesJS` van porque el editor las arrastra. */
-const FUERA = ['albTotalesJS', 'buildAlbEditor', 'openAlbEditorSheet'];
+const FUERA = ['albTotalesJS', 'buildAlbEditor', 'openAlbEditorSheet', 'openFacturarParcialSheet'];
 
 /** Declaraciones de función a NIVEL DE MÓDULO (hijas directas del fichero). */
 function funcionesDeModulo() {
@@ -148,6 +148,21 @@ test('SCRUM-386 · el contexto viaja por parámetro (por eso el cuerpo no cambi�
   assert.match(CODIGO, /const \{ cur, refresh, setStatus \} = ctx;/,
     '🔴 el contexto ya no se desestructura con los mismos nombres: el cuerpo habría que reescribirlo');
   assert.match(CODIGO, /function openAlbEditorSheet\(alb, ctx\) \{/);
+  assert.match(CODIGO, /function openFacturarParcialSheet\(alb, ctx\) \{/,
+    '🔴 openFacturarParcialSheet ya no recibe el contexto por parámetro');
+  assert.match(CODIGO, /const \{ refresh, setStatus \} = ctx;/,
+    '🔴 la hoja de facturar ya no desestructura con los mismos nombres');
+});
+
+test('SCRUM-386 · la línea del apiRequest de facturar-parcial no se tocó', () => {
+  // La condición que puso el fundador al dar el GO. Se comprueba el TEXTO EXACTO: esta hoja es un
+  // CLIENTE del camino de emisión (que vive en el servidor), y una mudanza no puede cambiar ni la
+  // ruta ni la forma de la llamada.
+  assert.match(
+    CODIGO,
+    /const d = await apiRequest\(`\/admin\/albaranes\/\$\{alb\.id\}\/facturar-parcial`, \{/,
+    '🔴 la llamada a facturar-parcial ha cambiado: esto ya no es una mudanza',
+  );
 });
 
 test('SCRUM-386 · los dos llamadores le pasan el contexto', () => {
@@ -159,6 +174,10 @@ test('SCRUM-386 · los dos llamadores le pasan el contexto', () => {
   // puede cruzar los `;` del cuerpo del objeto de opciones. El fallo estaba en el instrumento, no
   // en lo medido — igual que el «0 menciones» de un grep apuntado a un fichero inexistente.
   // Ahora se cuentan los PASOS de contexto, que es el hecho, y no la forma de escribirlos.
+  const pasoFacturar = (CODIGO.match(/openFacturarParcialSheet\(alb, \{ refresh, setStatus \}\)/g) || []).length;
+  assert.equal(pasoFacturar, 1,
+    '🔴 la hoja de facturar parcial no recibe su contexto del único llamador que tiene');
+
   const pasos = (CODIGO.match(/\{ cur, refresh, setStatus \}\)/g) || []).length;
   assert.equal(
     pasos, 2,
