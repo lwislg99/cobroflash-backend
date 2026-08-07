@@ -2,7 +2,12 @@
 
 **Fecha:** 7-ago-2026 · **Carril:** E (medición) · **Gate:** sin gate — esta tarea **solo lee**
 
-**Medido contra:** `origin/main` = `cb2399788aebe786608491734390b45e8b067d1e` · 2026-08-07T18:51:38Z
+**Medido contra:** `origin/main` = `572c9414f620f70ef4e980ca4948fccbaf9c47ea` · 2026-08-07T19:07:56Z
+
+> El ancla es la de la **declaración de `amount`** (apartado 1b). El censo original se midió contra
+> `origin/main` = `cb2399788aebe786608491734390b45e8b067d1e` · 2026-08-07T18:51:38Z y **se ha
+> re-verificado contra este main**: `Expense` y `Provider` siguen **idénticos, campo por campo**
+> — ningún campo que se diera por inexistente ha aparecido. El censo sigue siendo cierto.
 
 > **No se ha construido nada.** Ni una línea de dominio, ni un test de comportamiento, ni un campo.
 > `prisma/schema.prisma` **solo se ha leído**. Regla 38: leer no es tocar.
@@ -37,9 +42,75 @@ schema de hoy, que sigue igual: **14 escalares + 3 relaciones**.
 `herramientas`, `subcontrata`, `otros`— y **no se puede inferir de ellas un tipo de IVA**: nada dice
 que «materiales» sea 21 %.
 
-⚠️ **`amount` no declara qué es.** No hay ningún campo, comentario ni validación que diga si el
-profesional teclea la base o el total con IVA. Hoy da igual —solo se usa para margen— y **deja de
-dar igual en cuanto haya un libro**.
+⚠️ **`amount` no declaraba qué es.** No había ningún campo, comentario ni validación que dijera si
+el profesional teclea la base o el total con IVA. Ya está decidido — ver el apartado siguiente.
+
+## 1b · ✅ DECLARADO: `Expense.amount` es el IMPORTE TOTAL, con IVA incluido
+
+**Decisión del asesor, 7-ago-2026.** Y no es una preferencia: **es lo que el producto ya asumía**.
+
+### La prueba, en tres líneas del árbol
+
+```
+reports.routes.ts:71   monthlyRevenue[m] += Number(inv.total);
+reports.routes.ts:85   profit = Math.round((monthlyRevenue[i] - monthlyExpenses[i]) * 100) / 100;
+recargoEquivalencia.ts:31   «Invoice.total = grossOfLines() = base + cuota»
+```
+
+El «Beneficio neto» de Informes **resta gastos a una facturación que lleva IVA**. Esa resta solo
+cuadra si el gasto también lo lleva. O sea: la declaración no cambia ni una cifra — **pone por
+escrito lo único bajo lo cual el cálculo de hoy tiene sentido**.
+
+### 🔴 LA RESPUESTA CORRECTA POR EL MOTIVO EQUIVOCADO SIGUE SIN ESTAR VERIFICADA
+
+El motivo que se iba a dar por bueno era otro: *«es lo que el profesional lee del ticket del
+proveedor»*. Es cierto y es buena razón de producto, pero **no ata nada**: si mañana alguien decide
+que el formulario pida la base, ese argumento no se opone — solo cambia lo que se teclea. El que
+ata es el de arriba, porque nombra **un cálculo vivo que se rompería en silencio**.
+
+> **Acertar por el motivo equivocado deja la decisión sin verificar: el día que el motivo cambie,
+> nadie sabrá que la conclusión dependía de otra cosa.**
+
+Por eso la declaración va con la prueba pegada y no sola.
+
+### Qué CIERRA esta declaración
+
+**No hay defecto vivo entre lectores**, y por tanto **esto NO bloquea E3.** Censo por MODELO
+(accesos a `Expense`, no apariciones de la palabra «amount»): **4 escrituras y 12 lecturas**.
+
+* **Ningún lector interpreta `amount`**: nadie le aplica un tipo de IVA ni lo divide por `(1+tipo)`.
+  Búsqueda explícita de `1.21`, `/(1+`, `*0.21`, `iva`, `vat`, `tax`, `base` sobre gastos, métricas,
+  informes y exports: **cero resultados**. Todos lo SUMAN.
+* **Los tres sitios donde lo ve alguien dicen «Importe» a secas** —formulario
+  (`expensesView.js:282`), tabla (`:210`) y CSV que va al asesor (`exportData.ts:330`)—, ninguno
+  «Importe total» ni «Base imponible». No había declaración de facto en pantalla.
+* **El gasto no entra en NADA fiscal:** cero menciones de `Expense` en el modelo 303 (A5), en el
+  libro de registro (A6), en el paquete de evidencias (A7) y en VeriFactu. Eso acota el daño de
+  cualquier error aquí: llega al «Beneficio neto» que el profesional mira, no a un documento
+  oficial.
+* **El importador (D1 / SCRUM-312) NO escribe gastos**: los importadores son de clientes
+  (`importarClientes.service.ts`) y de productos.
+
+### Qué ABRE — y es **SCRUM-403**, que no se arregla aquí
+
+El «Beneficio neto» resta **cifras con IVA en los dos lados**, y el IVA no es ni ingreso propio ni
+gasto propio: es dinero de la Hacienda que pasa por la cuenta. La resta cuadra internamente y el
+número está inflado por arriba y por abajo. **Va en SCRUM-403** (regla 9: se reporta, no se
+arregla). La declaración de este apartado no lo causa —ya estaba— pero lo deja a la vista.
+
+### ⚠️ Técnica para la próxima sesión: un censo de propiedades pierde los spreads
+
+El primer barrido dio **3 escrituras** y marcó `updateExpense` como «no escribe amount». **Sí lo
+escribe**: pasa el objeto entero (`prisma.expense.update({ where, data })`,
+`expenses.service.ts:177`), y un censo que busca `amount:` como propiedad literal **no ve un
+spread**. Son 4, no 3.
+
+> **Si censas un campo por AST, cuenta también los objetos que se pasan enteros: una propiedad
+> literal se ve, una variable propagada no.**
+
+Misma familia que `already_paid` (SCRUM-325): allí el peligro era contar de más —una palabra que no
+era un estado—, aquí contar de menos. **En los dos casos la regla es la misma: mira lo que llega al
+modelo, no lo que se parece al nombre del campo.**
 
 ## 2 · Qué tiene HOY `Provider` — confirmado campo por campo
 
