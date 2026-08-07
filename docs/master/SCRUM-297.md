@@ -120,3 +120,84 @@ sin tocarse: es zona roja y de otro carril.
 * `src/app.ts` · `src/core/http/adminOnlyRoutes.ts` — montaje admin-only y su 403 ejercido.
 * `tests/scrum297-evidencias-postgres.test.mjs` (2, gateado por `LIBRO_PG_URL`) ·
   `tests/scrum297-paquete-piezas.test.mjs` (8, sin gate).
+
+---
+
+# TRAMO 2 — el aviso convertido en mecanismo
+
+**Fecha:** 7-ago-2026 · **Medido contra:** `origin/main` = `d9a03de5d0dbe2eb3c371379db5c6eeddd2f5cb3`
+· 2026-08-07T11:25:17+02:00 (anclado con `ls-remote`; A7 ya está en main)
+**Tanda:** 2122 tests · 2049 pass · **0 fail** · 73 skipped · `npm test` **`$? = 0`**
+
+En el tramo 1 dejé escrito un aviso: *«cuando C5 entre hay que añadir `lugarEntrega` aquí y en el
+barrido a la vez, o los sobres v:2 se declararán manipulados»*. **Un aviso escrito en una entrada
+no impide nada**: el día que C5 entre, nadie va a releer esta entrada. Esto lo convierte en rueda.
+
+## Qué comprueba, y de dónde sale cada dato
+
+Nada se escribe a mano — los tres extractores derivan de artefactos reales:
+
+| dato | de dónde sale |
+|---|---|
+| las fuentes que el sellador mete en el hash | la **firma real** de `computeAlbaranContentHash` (AST del tipo del parámetro) |
+| quién le da cada fuente al verificador | el objeto `contenido` de `entradaDesdeFilas` (AST) |
+| qué columnas existen | `model Albaran` de `prisma/schema.prisma` |
+| qué columnas trae el paquete | el `select` de `db.albaran.findMany` en `paquete.repo.ts` (AST) |
+
+Y dos afirmaciones:
+
+1. **Toda fuente del sellador la produce el adaptador.** Si el sellador gana una y nadie se la da,
+   el hash se sella CON ella y se recalcula SIN ella → documentos intactos declarados manipulados.
+2. **Toda columna del albarán que el adaptador vaya a leer, el paquete la selecciona** — pero
+   **solo si existe en el esquema**.
+
+## La rueda es esa condición
+
+Hoy el adaptador ya lee `a.lugarEntrega` y la columna **no existe**: pedirla en el `select`
+reventaría la consulta. Por eso no se exige… **hasta que aparezca en el esquema**. En cuanto C5 la
+añada, el guard se pone rojo nombrándola, y no se apaga hasta que el paquete la seleccione.
+
+El único hecho escrito a mano es `RENOMBRES = { obra: ['jobDireccion','lugarEntrega'] }`: la
+traducción entre los dos nombres del mismo dato. No es la lista de fuentes —ésas se derivan—; es
+lo que permite que el resto sea derivado, y está a la vista.
+
+## No duplica el guard ⑥ de SCRUM-371 — MEDIDO, no supuesto
+
+El ⑥ compara **cómo resuelve** cada fuente el adaptador frente al sellador; no lee ningún `select`
+y su `PAREJAS` excluye `lugarEntrega` a propósito. Para no fiarme de la lectura, simulé C5
+(la columna en el esquema) y corrí los dos:
+
+```
+con C5 simulado →  tests/scrum371-barrido-poblacion.test.mjs   $? = 0   (13 pass)
+con C5 simulado →  tests/scrum297-fuentes-selladas.test.mjs    $? = 1
+```
+
+El de 371 **no lo caza**. Son dos afirmaciones distintas sobre el mismo camino y ninguna repite a
+la otra.
+
+## Verificado en rojo — los dos por `$?`
+
+| inyección | lo que dijo |
+|---|---|
+| el sellador gana `coordenadasGps` en su firma | *«EL SELLADOR METE FUENTES QUE NADIE LE DA AL VERIFICADOR: coordenadasGps»* |
+| **la rueda**: `lugarEntrega` aparece en el esquema (C5 simulado) | *«EL PAQUETE DE EVIDENCIAS NO SELECCIONA: lugarEntrega»* + *«SCRUM-300 (C5) ya está en el esquema…»* |
+
+Con su suelo (si el derivador lee menos de 8 fuentes de la firma, **falla**: «cero fuentes» y «no
+supe leer la firma» son el mismo verde, y aquí ese verde acusa de manipulación a documentos
+intactos) y su control positivo (hoy, con las fuentes actuales, pasa, y se nombran una a una las
+seis columnas que el paquete tiene que traer).
+
+## Lo que NO cubre — declarado
+
+* **Solo vigila el `select` DEL PAQUETE.** El `lectorPrisma` del barrido (SCRUM-371) tiene su
+  propio `select` y **este guard no lo mira**: no quise duplicar el ⑥ ni meterme en su fichero
+  (regla 9). Cuando C5 entre, el rojo de aquí recuerda las DOS cosas —el mensaje lo dice—, pero
+  quien las ejecuta sigue siendo una persona. **Si quieres que el barrido también quede atado,
+  es un ticket de una línea y va en su fichero.**
+* **No comprueba que las columnas seleccionadas lleguen con valor**, solo que se pidan.
+* **`RENOMBRES` es el punto ciego consciente**: si alguien renombra una fuente y actualiza ahí el
+  alias sin tocar nada más, el guard sigue verde. Es el precio de que exista la traducción.
+
+## Ficheros (tramo 2)
+
+* `tests/scrum297-fuentes-selladas.test.mjs` (5, sin gate).
