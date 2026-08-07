@@ -23,6 +23,8 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'GET', path: '/admin/libro-registro' },
   // SCRUM-295 (A5): el 303 del trimestre — misma razón que el libro.
   { method: 'GET', path: '/admin/modelo-303' },
+  // SCRUM-297 (A7): el paquete de evidencias — misma razón que el libro y el 303.
+  { method: 'GET', path: '/admin/evidencias.zip' },
   // Configuración / cuenta (S1: Técnico ❌)
   { method: 'PUT', path: '/admin/merchant', body: { name: 'X' } },
   { method: 'GET', path: '/admin/merchant/public-profile-qr' },
