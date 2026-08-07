@@ -61,7 +61,28 @@ const COPY_FIRMADA = {
  */
 function ranurasDeAviso(fuente) {
   const sf = ts.createSourceFile('x.js', fuente, ts.ScriptTarget.Latest, true);
-  const texto = (n) => (n && (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) ? n.text : null);
+
+  // SCRUM-375: el aviso del marcado en bloque dejó de ser un literal en el `catch` y pasó a una
+  // constante con nombre (`COPY_BULK_PAGADAS.escrituraFallida`), porque ese camino se partió en dos
+  // -escritura y recarga- y cada mitad tiene su mensaje. El guard sigue atado a LA RANURA: lo que
+  // cambia es que ahora resuelve la constante en vez de exigir el literal pegado ahí.
+  const constantes = new Map();
+  const recogeConstantes = (n) => {
+    if (ts.isPropertyAssignment(n) && (ts.isIdentifier(n.name) || ts.isStringLiteral(n.name)) &&
+        (ts.isStringLiteral(n.initializer) || ts.isNoSubstitutionTemplateLiteral(n.initializer))) {
+      constantes.set(n.name.text, n.initializer.text);
+    }
+    ts.forEachChild(n, recogeConstantes);
+  };
+  recogeConstantes(sf);
+
+  const texto = (n) => {
+    if (!n) return null;
+    if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) return n.text;
+    // `X.propiedad` → el literal con el que se declaró esa propiedad.
+    if (ts.isPropertyAccessExpression(n) && constantes.has(n.name.text)) return constantes.get(n.name.text);
+    return null;
+  };
 
   // 1) El rango del callback del botón «marcar como pagadas».
   let rangoBulk = null;

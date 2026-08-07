@@ -119,6 +119,67 @@ export function redactarSecretos(valor) {
     .replace(/([a-zA-Z][a-zA-Z0-9+.-]*:\/\/):([^@\s]+)@/g, '$1:***@');
 }
 
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-381 — DÓNDE PUEDE SEMBRAR UN SEMBRADOR.
+//
+// `seed-demo.mjs` traía escrita su propia condición de endurecimiento (SCRUM-208, 29-jul-2026):
+// «Si algún día se confirma que producción nunca debe ser destino de una semilla, se endurece
+// con la allowlist de host de SCRUM-118». El asesor lo confirmó el 6-ago-2026, y esto es esa
+// allowlist.
+//
+// Por qué importa más que la etiqueta `semilla` del AuditLog: la etiqueta hace DISTINGUIBLE un
+// número sembrado; esto impide que llegue a escribirse en una base real. El problema de fondo
+// nunca fue cómo se llama la fila — era que un script de siembra pudiera crearla en producción.
+//
+// ⚠️ ALLOWLIST, no lista negra de producción — y no es una preferencia de estilo: es
+// literalmente el defecto que SCRUM-118 quitó de este mismo fichero (ver cabecera). Comprobar
+// `host !== PROD_HOST` deja pasar CUALQUIER host desconocido: una prod rotada, un pooler, una
+// IP, un alias. Aquí lo desconocido falla CERRADO.
+//
+// Ampliarla es un cambio de CÓDIGO a propósito, no una variable de entorno: si un destino de
+// desarrollo legítimo no está, se añade aquí y se ve en el diff. Una vía de escape por entorno
+// convertiría el guard en un trámite («exporta la variable y sigue»), que es como se saltan los
+// guards de verdad.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+
+/** Los únicos hosts donde un sembrador puede escribir. `PROD_HOST` no está, y no puede estar. */
+export const DESTINOS_SEMBRABLES = Object.freeze([
+  STAGING_HOST,       // staging, y las demás bases del mismo Postgres (SCRUM-84: el criterio es el HOST)
+  'localhost',
+  '127.0.0.1',
+  '[::1]',            // `new URL()` devuelve el IPv6 entre corchetes
+]);
+
+/**
+ * ¿Puede un sembrador escribir en esta BD? Fail-closed.
+ *
+ * NO devuelve la URL por ningún camino: `etiqueta` es `host/base`, que es lo que hace falta
+ * para saber dónde ibas a sembrar y es información pública. Usuario, contraseña y cadena
+ * completa no salen de `parseBDSegura`.
+ * @returns {{ok: true, etiqueta: string} | {ok: false, etiqueta: string, motivo: string}}
+ */
+export function destinoSembrable(urlStr) {
+  const p = parseBDSegura(urlStr);
+  // Ilegible ya es toda la información útil: sin la cadena, a propósito (R7).
+  if (!p) return { ok: false, etiqueta: '(URL de BD ilegible)', motivo: 'la URL de la BD no se pudo parsear' };
+
+  const etiqueta = `${p.host}/${p.base}`;
+  if (!DESTINOS_SEMBRABLES.includes(p.host)) {
+    return {
+      ok: false,
+      etiqueta,
+      motivo: p.host === PROD_HOST
+        ? 'ESE HOST ES PRODUCCIÓN. Un sembrador no escribe ahí: borra y recrea datos, y sus ' +
+          'números de factura entran en el AuditLog como si fueran emisiones.'
+        : `el host «${p.host}» no está en DESTINOS_SEMBRABLES (scripts/_db-guard.mjs), así que ` +
+          'no se trata como sembrable. Un host desconocido falla cerrado a propósito: puede ser ' +
+          'una producción con otro nombre. Si es un destino de desarrollo legítimo, añádelo AHÍ ' +
+          '— no hay variable de entorno que se lo salte.',
+    };
+  }
+  return { ok: true, etiqueta };
+}
+
 /**
  * ¿Es `candidateUrl` una URL segura para tratar como STAGING (nunca producción)?
  * `prodUrl` es opcional — si se pasa (p. ej. `DATABASE_URL` ya cargado), se usa como

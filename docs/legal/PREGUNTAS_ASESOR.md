@@ -179,7 +179,143 @@ registro VeriFactu. Hoy no se nota porque la facturación fiscal está apagada p
 > **16**. Si la respuesta a las tres fuera «en este vertical no se dan», el ticket se cierra sin
 > construir nada y el 0 % pasa a ser simplemente un dato que no debe admitirse (pregunta **17**).
 
+## G. El presupuesto ADICIONAL cuando aparece trabajo en obra (bloquea SCRUM-290 / A0.4)
+
+> Añadido el 6-ago-2026, y **antes de escribir una sola línea de texto de la pantalla**. Lo pide el
+> propio ticket: aquí no basta la regla 30 (la microcopy la aprueba el fundador), porque **un texto
+> legal mal escrito no es feo, es peligroso** — le diría a un profesional lo que puede o no puede
+> cobrarle a su cliente.
+
+**Qué vamos a construir, para que entiendas la pregunta.** El profesional entrega un albarán
+firmado por el cliente. Las **cantidades** salen de ese albarán; los **precios**, del **presupuesto
+que el cliente firmó** — casando línea con línea. Entrega 3 de los 10 metros presupuestados, factura
+3 al precio que el cliente aceptó.
+
+El caso que nos trae aquí es el otro: **en obra aparece trabajo que no estaba en el presupuesto.**
+
+**Lo que hemos leído (fuentes públicas, NO un dictamen — por eso preguntamos):**
+
+- **Cliente empresa o autónomo:** art. 1593 CC — los adicionales se pueden cobrar si hubo
+  **autorización del propietario**, y el Supremo admite que sea **verbal o tácita**. Matiz: reparar
+  algo mal ejecutado no genera derecho a cobro adicional.
+- **Cliente particular** (el 90 % de la clientela de un gremio): el presupuesto aceptado **es
+  vinculante** y la factura debe coincidir con él; los trabajos nuevos exigen que el consumidor
+  **acepte el nuevo presupuesto por escrito**, y **puede rechazarlos**.
+
+**Por eso descartamos la solución fácil.** La primera idea fue «las líneas nuevas entran en la
+factura a 0 € y se avisa». Es cómoda y **creemos que es incorrecta**: convertiría a YaQu en la
+herramienta que produce **la factura mayor que el presupuesto**, que es justo la situación por la
+que se abren la mitad de las reclamaciones en OMIC. Le pondríamos fácil al profesional meterse en un
+lío.
+
+**Lo que vamos a hacer en su lugar:** las líneas que no estaban en el presupuesto **no se facturan**.
+Disparan un **presupuesto adicional** que se manda por WhatsApp y se firma. Si se firma, se
+incorpora y la factura sale entera; si no, se factura lo pactado y lo demás queda **pendiente y
+visible** — nunca descartado en silencio.
+
+**El dato que sí tenemos:** el cliente lleva un campo `tipoDestinatario`, que puede estar **sin
+clasificar** (`null`) porque nunca se preguntó. Mientras no haya respuesta a lo de abajo, esos
+clientes se tratarán con el **criterio estricto de consumidor**, porque equivocarse hacia el lado
+estricto no le cuesta un procedimiento a nadie.
+
+25. **¿Basta la firma digital que ya usamos** —el cliente firma con el dedo en su móvil, sobre una
+    landing a la que llega por un enlace de WhatsApp, y guardamos la imagen de la firma con su
+    sello de tiempo y su evidencia— **para acreditar que el consumidor aceptó por escrito el
+    presupuesto adicional?** Si no basta, ¿qué le falta?
+26. **¿Qué contenido mínimo debe llevar ese presupuesto adicional** para que valga como aceptación
+    de trabajos nuevos? En concreto: ¿tiene que referenciar el presupuesto original?, ¿desglosar
+    unidades y precio unitario?, ¿decir expresamente que el cliente puede rechazarlo?, ¿llevar
+    plazo de validez?
+27. **¿Cambia algo de lo anterior si el cliente es empresa o autónomo** en vez de consumidor? Es
+    decir: ¿podemos aceptar la autorización verbal o tácita del art. 1593 CC y facturar el
+    adicional sin firma, o **conviene exigir firma siempre** por prudencia?
+28. **Reparación de lo mal ejecutado:** si la línea nueva es rehacer algo que salió mal, no se puede
+    cobrar aparte. **¿Debe el sistema preguntárselo al profesional** cuando añade una línea que no
+    estaba en el presupuesto (algo como «¿esto es trabajo nuevo o es rehacer lo anterior?»), o eso
+    es responsabilidad suya y basta con dejarlo registrado?
+
+> **La que más nos urge es la 25.** Si la firma que ya tenemos vale, el mecanismo entero está
+> construido y solo falta enchufarlo. Si no vale, hay que rediseñar la aceptación del adicional
+> antes de escribir la pantalla, y preferimos saberlo ahora.
+
 ---
+
+---
+## P11. Factura SIN identificación del destinatario: ¿art. 61.d o simplificada F2? (bloquea SCRUM-292 / A1)
+
+**La plantea el propio código, y hay una rama apagada esperando la respuesta.**
+
+`src/modules/fiscal/verifactu/registro.builder.ts` tiene tres modos declarados
+(`ModoSinDestinatario = 'SIN_DICTAMEN' | 'ART_61D' | 'SIMPLIFICADA_F2'`) y el activo hoy es
+`SIN_DICTAMEN`. Con él, una factura sin NIF del cliente **no se registra**: lanza
+`DestinatarioSinDictamenError` y el documento queda fuera. Su motivo, literal:
+
+> «la factura no tiene NIF del cliente y la AEAT rechaza una F1/R1 sin `Destinatarios`
+> (error 1189). El esquema admite dos salidas —`FacturaSinIdentifDestinatarioArt61d`
+> (factura completa, art. 61.d RIVA) o `FacturaSimplificadaArt7273` con TipoFactura F2
+> (arts. 7.2/7.3)— y son declaraciones distintas: cuál procede lo decide el dictamen
+> P11, no el código. Hasta entonces la factura queda FUERA del registro, no se declara
+> con un dato inventado. La factura en sí no está bloqueada: se emite, se envía y se
+> cobra igual.»
+
+**P11.1** Para un profesional de oficios que factura a un particular sin pedirle el NIF (la
+reparación de 40 €), ¿lo que procede es la **factura simplificada** (arts. 7.2/7.3 RD 1619/2012,
+`TipoFactura` F2) o la **factura completa sin identificación del destinatario** (art. 61.d RIVA)?
+
+**P11.2** ¿Depende del importe? Si hay umbral, ¿cuál y con qué base legal?
+
+**P11.3** ¿Cambia la respuesta si el cliente es una empresa que no ha facilitado el NIF? (Con una
+simplificada el destinatario **no puede deducir el IVA**, así que el coste del error lo paga él.)
+
+**P11.4** Una **rectificativa** de una factura sin destinatario sería una **R5** (rectificativa de
+simplificada), tipo que el producto **no modela** y que hoy se excluye en vez de inventarse. ¿Es
+correcto excluirla, o hay una salida que sí modelamos?
+
+> **Nota de estado.** SCRUM-292 (A1) elimina el caso más frecuente **pidiendo el NIF antes de
+> emitir**, así que la mayoría de facturas dejan de depender de esta respuesta. Lo que NO cubre es
+> el cliente que legítimamente no tiene NIF: ahí el producto dice que todavía no puede, en vez de
+> emitir algo a medias. La rama `SIMPLIFICADA_F2` sigue **apagada** esperando esta respuesta.
+
+---
+
 *Generado el 13-jun-2026. Cuando vuelvas con respuestas: B y C desbloquean S1-C/S1-E,
 A desbloquea S1-D, **E desbloquea SCRUM-244 (supresión + portabilidad)**, **F desbloquea
-SCRUM-212 (calificación de la operación)**. Estado vivo en `docs/PENDIENTES_FUNDADOR.md`.*
+SCRUM-212 (calificación de la operación)**, **G desbloquea la microcopy de SCRUM-290
+(albarán → factura y el presupuesto adicional)**. Estado vivo en `docs/PENDIENTES_FUNDADOR.md`.*
+
+## P12. Suplidos: ¿entran en el ImporteTotal que se sella? (bloquea SCRUM-293 / A2)
+
+**La plantea el código, y con un dato concreto delante.**
+
+Un **suplido** es un gasto pagado **en nombre del cliente** (una tasa, un visado, un permiso): no
+lleva IVA y **no forma parte de la base imponible**. Pero **sí altera lo que el cliente paga**, y
+ahí está la pregunta.
+
+**El detalle técnico, medido el 7-ago-2026:**
+
+* `src/modules/fiscal/verifactu/registro.builder.ts` construye el registro con
+  `calcVatBreakdown` y manda su resultado **literal** al XML: la línea 315 hace
+  `baseImponible: entrada.base.toFixed(2)`, que sale como
+  `<sum1:BaseImponibleOimporteNoSujeto>`.
+* `calcVatBreakdown` mete **TODA** línea en la base (`e.base += qty * price`). No existe hoy
+  ninguna marca que saque una línea de la base: una línea al 0 % entra en la base con cuota cero.
+* `Invoice.total` es `grossOfLines()` = `base + cuota`. **No hay campo** para un importe que no
+  sea ninguna de las dos: cero campos de suplido en `Invoice` y cero en `Merchant`.
+
+**P12.1** Un suplido, ¿debe aparecer en el **ImporteTotal** del registro de facturación
+VeriFactu, o queda **fuera** del importe sellado por no ser contraprestación de la operación?
+
+**P12.2** Si entra en el ImporteTotal pero no en la base imponible, ¿bajo qué clave del desglose
+se declara — o se declara **solo** en el total, sin línea de desglose propia?
+
+**P12.3** ¿Tiene que ir **identificado como suplido en el documento** (concepto, referencia del
+gasto, a nombre de quién se pagó), o basta con separarlo del importe de la operación?
+
+**P12.4** El justificante del gasto está a nombre **del cliente**, no del profesional. ¿Hay que
+conservarlo y referenciarlo desde la factura, y con qué exigencia formal?
+
+> **Nota de estado.** El **cálculo de la retención de IRPF** NO depende de esta respuesta y ya
+> está construido y probado, aislado y sin llamadores (`retencionIrpf.ts`): el fundador confirmó
+> que la retención **no altera el `Invoice.total`** —es un pago a cuenta del pagador— y que el
+> «líquido a percibir» se **deriva al pintar**, nunca se guarda. Lo que sigue bloqueado por P12
+> es el **suplido**, más los campos de schema, que están congelados aparte por SCRUM-383.

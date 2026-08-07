@@ -18,6 +18,13 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'POST', path: '/admin/invoices/:invoiceId/send-reminder' },
   { method: 'GET', path: '/admin/invoices/:invoiceId/dispute-package' },
   { method: 'POST', path: '/admin/invoices/:invoiceId/payment-anomaly', body: { amount: 1 } },
+  // SCRUM-296 (A6): el libro de registro es la facturación ENTERA del negocio — lectura de
+  // admin, no trabajo de campo. Con una ruta basta: el montaje entero comparte la instancia.
+  { method: 'GET', path: '/admin/libro-registro' },
+  // SCRUM-295 (A5): el 303 del trimestre — misma razón que el libro.
+  { method: 'GET', path: '/admin/modelo-303' },
+  // SCRUM-297 (A7): el paquete de evidencias — misma razón que el libro y el 303.
+  { method: 'GET', path: '/admin/evidencias.zip' },
   // Configuración / cuenta (S1: Técnico ❌)
   { method: 'PUT', path: '/admin/merchant', body: { name: 'X' } },
   { method: 'GET', path: '/admin/merchant/public-profile-qr' },
@@ -87,6 +94,10 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   // sellan VeriFactu igual que la de Job, así que su 403 se ejerce igual.
   { method: 'POST', path: '/admin/albaranes/999999/facturar-parcial', body: { lineas: [{ index: 0, cantidad: 1 }] } },
   { method: 'POST', path: '/admin/albaranes/consolidar', body: { customerId: 999999, albaranIds: [999999] } },
+  // SCRUM-290 (A0.4): la TERCERA vía de emisión desde albarán — cantidades del parte, precios del
+  // presupuesto firmado. Emite factura y sella VeriFactu igual que sus dos hermanas, así que su
+  // 403 se ejerce igual. No hereda el de ninguna: es otra ruta y otro `requireRole`.
+  { method: 'POST', path: '/admin/albaranes/999999/convertir-en-factura' },
   // La factura del resto + payment_request. ERA EL OBJETIVO ORIGINAL DE SCRUM-54,
   // que se cerró sobre consolidar-albaranes y dejó esta abierta: aquí su evidencia.
   { method: 'POST', path: '/admin/jobs/999999/collect-rest' },

@@ -8,7 +8,11 @@ import { notFoundPageHtml } from './core/http/publicNotFound';
 import { isFlagEnabled } from './core/flags';
 // SCRUM-300 (C5): microcopy del albarán servida al dashboard vanilla desde su fuente única.
 import { ALBARAN_AYUDAS, ALBARAN_ROTULOS, firmanteCalidadOpciones } from './modules/jobs/domain/albaranFirmante';
-import { puedeCrearFacturaSuelta } from './modules/invoicing/domain/facturaSuelta'; // SCRUM-289 (A0.3)
+// ⚠️ FUSIÓN: C5 importaba `puedeCrearFacturaSuelta`, que SCRUM-346 (A0.5) RETIRÓ de `main`.
+// Medido antes de resolver: ya no se exporta, y `appFacturaSueltaDisponible` tiene CERO
+// consumidores en `public/`. No son dos cosas que hagan lo mismo — es una que evolucionó, así
+// que conservar la de C5 habría roto la compilación contra una función que ya no existe.
+import { modoDocumentoSuelto } from './modules/invoicing/domain/facturaSuelta'; // SCRUM-289 (A0.3) · SCRUM-346 (A0.5)
 import { requireAuth, requireActivePlan, requireRole } from './core/http/authMiddleware';
 import { mountAdmin } from './core/http/adminMounts'; // SCRUM-55: red fail-closed de /admin
 import { requireInternalSecret } from './core/http/internalAuth';
@@ -47,6 +51,9 @@ import legalPagesRouter from './modules/system/app/routes/legalPages.routes';
 import publicProfileRouter from './modules/system/app/routes/publicProfile.routes';
 import jobsRouter from './modules/jobs/app/routes/jobs.routes';
 import albaranesRouter from './modules/jobs/app/routes/albaranes.routes'; // SCRUM-14 (ALBARAN-1)
+import libroRegistroRouter from './modules/invoicing/app/routes/libroRegistro.routes'; // SCRUM-296 (A6): libro de registro, SOLO LECTURA
+import modelo303Router from './modules/fiscal/modelo303/modelo303.routes'; // SCRUM-295 (A5): modelo 303, SOLO LECTURA
+import evidenciasRouter from './modules/fiscal/evidencias/evidencias.routes'; // SCRUM-297 (A7): paquete de evidencias, SOLO LECTURA
 import maintenanceRouter from './modules/maintenance/app/routes/maintenance.routes';
 
 import quotesRouter from './modules/quotes/app/routes/quotes.routes';
@@ -76,6 +83,12 @@ import { merchantProfileUpdateSchema } from './core/validation/schemas';
 import { barridoDemo } from './modules/system/domain/barridoDemo';
 import { isDemoMerchant } from './modules/invoicing/domain/emission.service';
 import { getMerchantProfile, updateMerchantProfile, SlugError, SerieError } from './modules/system/merchantAdmin';
+// SCRUM-313 (D2): el arranque de serie usa las piezas puras de A4 y la vista previa que
+// IMPORTA a quien decide (regla 38: leer ese camino no es STOP, modificarlo si).
+import { TIT_SERIE_YA_EMITIDA, MSG_SERIE_YA_EMITIDA } from './modules/system/merchantAdmin';
+import { arranqueDeSerie, numerosDeLaSerie, bloqueoCambioDeSerie, invalidPrefijoSerie, debeOfrecerArranqueDeSerie, resumenSerieEmitida } from './core/validation/fiscalInput';
+import { vistaPreviaSerie } from './modules/invoicing/domain/vistaPreviaSerie';
+import { SERIE_LOCK_NS } from './modules/invoicing/domain/invoiceNumber.service';
 import QRCode from 'qrcode'; // A14.2: QR del perfil público (PNG alta res para furgoneta/tarjeta)
 import { resolverOpcionesQr, ErrorQr } from './modules/system/domain/qrPagina.service'; // SCRUM-230
 import { BASE_URL } from './core/config/env';
@@ -294,10 +307,21 @@ app.get('/admin/me', async (req, res) => {
 
   const merchantFull = await prisma.merchant.findUnique({
     where: { id: session.merchantId },
-    // SCRUM-289: `email` y `flags` los necesita `puedeCrearFacturaSuelta` — el modo de emisión
+    // SCRUM-289: `email` y `flags` los necesita `modoDocumentoSuelto` — el modo de emisión
     // (V0-0) se resuelve con merchant demo (por email) + flag por merchant, no solo con el país.
-    select: { country: true, logoUrl: true, email: true, flags: true },
+    select: { country: true, logoUrl: true, email: true, flags: true, invoiceSeriesYear: true },
   });
+
+  // SCRUM-313 (D2) · LA PUERTA DE ULTIMA OPORTUNIDAD. Se lee aqui porque el veredicto tiene que
+  // viajar YA RESUELTO: si la pantalla reimplementara la regla habria dos criterios sobre cuando
+  // se puede tocar la numeracion, y el del navegador seria el facil de equivocar.
+  const anioSerie = new Date().getFullYear();
+  const facturasDelAnio = await prisma.invoice.findMany({
+    where: { merchantId: session.merchantId, number: { startsWith: `${anioSerie}-` } },
+    select: { number: true },
+  });
+  // Una sola vez: la comparten la puerta y el bloqueo del campo (ver abajo).
+  const deLaSerieDelAnio = numerosDeLaSerie(facturasDelAnio.map((f) => f.number), anioSerie);
 
   const userRole = session.teamMember ? session.teamMember.role : 'admin';
   const userName = session.teamMember ? session.teamMember.name : session.merchant.name;
@@ -332,7 +356,10 @@ app.get('/admin/me', async (req, res) => {
     // factura. El veredicto se calcula AQUÍ, con la MISMA función que gatea `POST /admin/invoices`
     // — el navegador no reimplementa la regla, la recibe. Dos copias del criterio es cómo se llega
     // a que el back acepte lo que el front esconde.
-    facturaSueltaDisponible: puedeCrearFacturaSuelta({
+    // SCRUM-346 (A0.5): viaja el VEREDICTO de tres valores, no un booleano. Sustituye a
+    // `facturaSueltaDisponible` en vez de convivir con él: dos campos del mismo hecho acaban
+    // divergiendo, y entonces el botón que se pinta y el documento que sale dicen cosas distintas.
+    documentoSuelto: modoDocumentoSuelto({
       id: session.merchantId,
       email: merchantFull?.email ?? null,
       country: merchantFull?.country ?? null,
@@ -347,6 +374,21 @@ app.get('/admin/me', async (req, res) => {
     albaranAyudas: ALBARAN_AYUDAS,
     // A10.2 (Parte L): estado de la suscripción para el banner past_due
     subscriptionStatus: owner ? 'active' : ((session.merchant as any).subscriptionStatus ?? null),
+    // SCRUM-313 (D2): ¿todavia se le puede preguntar por su numeracion? Mismo patron que la
+    // factura suelta -- veredicto del servidor, no regla en el navegador.
+    // ⚠️ `deLaSerieDelAnio` se calcula UNA vez arriba y lo comparten los dos campos: si cada uno
+    // llamara a `numerosDeLaSerie` por su cuenta, un día divergirían y la puerta y el bloqueo
+    // estarían mirando poblaciones distintas.
+    puertaSerieDisponible: debeOfrecerArranqueDeSerie({
+      invoiceSeriesYear: merchantFull?.invoiceSeriesYear ?? null,
+      año: anioSerie,
+      numerosDeLaSerie: deLaSerieDelAnio,
+    }),
+    // SCRUM-D1: por qué NO se puede tocar la serie, cuando no se puede. `puertaSerieDisponible`
+    // es `false` por DOS motivos distintos —ya emitió, o ya contestó este año— y solo el primero
+    // bloquea el campo. Sin esto la pantalla tendría que adivinar cuál de los dos es, que es
+    // recalcular la regla en el navegador por la puerta de atrás.
+    serieEmitida: resumenSerieEmitida(deLaSerieDelAnio),
   });
 });
 
@@ -365,6 +407,15 @@ mountAdmin(app, '/admin/expenses',   expensesRouter);
 mountAdmin(app, '/admin/bot',        botAdminRouter); // A8.3: handoffs pendientes del bot
 mountAdmin(app, '/admin/jobs',       jobsRouter);    // A13 (JOB-1): trabajos
 mountAdmin(app, '/admin/albaranes',  albaranesRouter); // SCRUM-14 (ALBARAN-1): partes de trabajo NO fiscales
+// SCRUM-296 (A6): libro de facturas emitidas. ADMIN-ONLY, el default de S1 y aquí además el
+// correcto por contenido: es la facturación entera del negocio, no trabajo de campo del Operario.
+mountAdmin(app, '/admin/libro-registro', requireRole('admin'), libroRegistroRouter);
+// SCRUM-295 (A5): el 303 del trimestre. Admin-only por el mismo motivo que el libro: es la
+// declaración fiscal del negocio entero, no trabajo de campo del Operario.
+mountAdmin(app, '/admin/modelo-303', requireRole('admin'), modelo303Router);
+// SCRUM-297 (A7): el paquete que demuestra lo declarado. Admin-only: son las pruebas fiscales
+// del negocio entero, no trabajo de campo del Operario.
+mountAdmin(app, '/admin/evidencias.zip', requireRole('admin'), evidenciasRouter);
 mountAdmin(app, '/admin/maintenance', maintenanceRouter); // A15 (MANT-1): tras flag, 404 sin él
 
 // Rutas solo para admin
@@ -583,6 +634,194 @@ app.post('/admin/onboarding/complete', requireRole('admin'), async (req, res) =>
     data: { onboardingCompleted: true },
   });
   return res.json({ ok: true });
+});
+
+/** SCRUM-313 · alguien emitió mientras se contestaba la pregunta: la serie ya empezó. */
+class SerieYaEmpezada extends Error {}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-313 (D2) · «¿POR QUÉ NÚMERO VAS?» — la continuidad de la serie al venir de otro programa
+//
+// Un autónomo que ya factura no se cambia de programa porque el nuevo sea más bonito: no se cambia
+// porque romper la serie le da miedo con Hacienda. Aquí se guarda esa continuidad.
+//
+// ⚠️ RUTA PROPIA, y no un campo más en `PUT /admin/merchant`. `nextInvoiceNumber` gobierna qué
+// número sale en la próxima factura: abrirlo en el formulario general lo dejaría escribible desde
+// cualquier guardado de Configuración, para siempre. Aquí tiene su puerta y su momento.
+//
+// LOS DOS CAMPOS SE ESCRIBEN JUNTOS. `resolveSeriesSeq` hace `invoiceSeriesYear === year ?
+// nextInvoiceNumber : 1`, así que guardar el número sin el año NO continúa la serie: la reinicia
+// en 1 en silencio, y el profesional emitiría un número que YA usó en su programa anterior.
+// SCRUM-313 · LA VISTA PREVIA, en su propia ruta y SIN escribir nada.
+//
+// Existe porque la vista previa NO se puede calcular en el navegador: hacerlo sería un segundo
+// sitio componiendo el mismo número, y ésa es exactamente la forma en que la pantalla acaba
+// diciendo una cosa y la factura otra. Aquí se resuelve con `resolveSeriesSeq` y
+// `formatInvoiceNumber` — quien de verdad decide al emitir— y se devuelve ya hecha.
+//
+// Es de SOLO LECTURA a propósito: se llama en cada pulsación del teclado, y una ruta que escribe
+// no puede colgar de un `input`.
+app.post('/admin/onboarding/serie/previa', requireRole('admin'), async (req, res, next) => {
+  try {
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: req.merchantId },
+      select: { invoiceSeriesPrefix: true },
+    });
+    if (!merchant) return res.status(404).json({ error: 'not_found' });
+
+    const año = new Date().getFullYear();
+    const emitidas = await prisma.invoice.findMany({
+      where: { merchantId: req.merchantId, number: { startsWith: `${año}-` } },
+      select: { number: true },
+    });
+    const deLaSerie = numerosDeLaSerie(emitidas.map((f) => f.number), año);
+
+    const arranque = arranqueDeSerie({
+      vieneDeOtroSitio: req.body?.vieneDeOtroSitio === true,
+      ultimoNumero: req.body?.ultimoNumero,
+      año,
+      numerosDeLaSerie: deLaSerie,
+    });
+    if (!arranque.ok) {
+      const esChoque = arranque.motivo === 'choca_con_emitidas';
+      return res.status(esChoque ? 409 : 400).json({
+        error: arranque.motivo,
+        ...(esChoque ? { titulo: TIT_SERIE_YA_EMITIDA, message: MSG_SERIE_YA_EMITIDA } : {}),
+        ...(arranque.detalle ?? {}),
+      });
+    }
+
+    const prefijoPedido = typeof req.body?.serie === 'string' ? req.body.serie.trim() : '';
+    const prefijo = prefijoPedido || merchant.invoiceSeriesPrefix;
+    return res.json({
+      ok: true,
+      proximoNumero: vistaPreviaSerie(
+        prefijo,
+        { invoiceSeriesYear: arranque.invoiceSeriesYear, nextInvoiceNumber: arranque.nextInvoiceNumber },
+        año,
+      ),
+    });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+app.post('/admin/onboarding/serie', requireRole('admin'), async (req, res, next) => {
+  try {
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: req.merchantId },
+      select: { invoiceSeriesPrefix: true },
+    });
+    if (!merchant) return res.status(404).json({ error: 'not_found' });
+
+    // El año sale del RELOJ DEL SERVIDOR, nunca del cuerpo: es el mismo año contra el que
+    // `resolveSeriesSeq` decidirá al emitir. Aceptarlo del cliente permitiría declarar una
+    // continuidad para un año que no es el que va a salir en la factura.
+    const año = new Date().getFullYear();
+
+    // Lo ya emitido manda. Se lee por el NÚMERO, que es la identidad fiscal del documento.
+    const emitidas = await prisma.invoice.findMany({
+      where: { merchantId: req.merchantId, number: { startsWith: `${año}-` } },
+      select: { number: true },
+    });
+    const deLaSerie = numerosDeLaSerie(emitidas.map((f) => f.number), año);
+
+    const arranque = arranqueDeSerie({
+      vieneDeOtroSitio: req.body?.vieneDeOtroSitio === true,
+      ultimoNumero: req.body?.ultimoNumero,
+      año,
+      numerosDeLaSerie: deLaSerie,
+    });
+
+    if (!arranque.ok) {
+      // `choca_con_emitidas` se responde con el MISMO texto aprobado que el bloqueo de
+      // Configuración (SCRUM-291): es el mismo hecho —la serie ya tiene facturas— y contarlo de
+      // dos maneras distintas haría parecer que son dos reglas.
+      const esChoque = arranque.motivo === 'choca_con_emitidas';
+      return res.status(esChoque ? 409 : 400).json({
+        error: arranque.motivo,
+        ...(esChoque ? { titulo: TIT_SERIE_YA_EMITIDA, message: MSG_SERIE_YA_EMITIDA } : {}),
+        ...(arranque.detalle ?? {}),
+      });
+    }
+
+    // El prefijo solo se toca si cambió Y la serie no ha empezado. Con emitidas ya habríamos salido
+    // arriba, pero se pregunta igual en vez de deducirlo del flujo: la puerta de SCRUM-291 vive en
+    // `bloqueoCambioDeSerie` y ésta es exactamente la misma pregunta.
+    const prefijoPedido = typeof req.body?.serie === 'string' ? req.body.serie.trim() : '';
+    if (prefijoPedido) {
+      const veredicto = bloqueoCambioDeSerie({
+        prefijoActual: merchant.invoiceSeriesPrefix,
+        prefijoNuevo: prefijoPedido,
+        numerosDeLaSerie: deLaSerie,
+      });
+      if (veredicto.bloqueado) {
+        return res.status(409).json({
+          error: 'serie_ya_emitida', titulo: TIT_SERIE_YA_EMITIDA, message: MSG_SERIE_YA_EMITIDA,
+          emitidas: veredicto.emitidas, ultimo: veredicto.ejemplo,
+        });
+      }
+      const malPrefijo = invalidPrefijoSerie(prefijoPedido);
+      if (malPrefijo) {
+        return res.status(400).json({ error: 'prefijo_invalido', message: `El prefijo de serie ${malPrefijo}` });
+      }
+    }
+
+    // ⚠️ CERROJO, y lo cazó el censo de SCRUM-234 antes de que llegara a main.
+    //
+    // Esto lee lo emitido y escribe un valor ABSOLUTO en el contador: exactamente la tercera forma
+    // que aquel ticket prohíbe. Sin serializar, entre la lectura de `emitidas` y este `update`
+    // cabe una emisión — el merchant tendría ya la 001 consumida y aquí se escribiría 42 encima.
+    // No es un hueco cualquiera: esa 001 DUPLICA un número que él ya usó en su programa anterior,
+    // que es justo el daño que D2 existe para evitar.
+    //
+    // Mismo cerrojo y mismo namespace que `allocateInvoiceNumber`, así que reservar un número y
+    // declarar el arranque no pueden ocurrir a la vez. Se toma como PRIMERA sentencia y la
+    // relectura va dentro: comprobar fuera y escribir dentro no serializa nada.
+    const actualizado = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LOCK_NS}::int, ${req.merchantId!}::int)`;
+      const dentro = await tx.invoice.findMany({
+        where: { merchantId: req.merchantId, number: { startsWith: `${año}-` } },
+        select: { number: true },
+      });
+      if (numerosDeLaSerie(dentro.map((f) => f.number), año).length > 0) {
+        throw new SerieYaEmpezada();
+      }
+      return tx.merchant.update({
+        where: { id: req.merchantId },
+        data: {
+          nextInvoiceNumber: arranque.nextInvoiceNumber,
+          invoiceSeriesYear: arranque.invoiceSeriesYear,
+          ...(prefijoPedido ? { invoiceSeriesPrefix: prefijoPedido } : {}),
+        },
+        select: { invoiceSeriesPrefix: true, nextInvoiceNumber: true, invoiceSeriesYear: true },
+      });
+    });
+
+    // La vista previa se devuelve YA RESUELTA por quien decide, para que la pantalla enseñe el
+    // mismo número que va a salir y no uno calculado aparte.
+    return res.json({
+      ok: true,
+      ...actualizado,
+      proximoNumero: vistaPreviaSerie(
+        actualizado.invoiceSeriesPrefix,
+        {
+          invoiceSeriesYear: actualizado.invoiceSeriesYear,
+          nextInvoiceNumber: actualizado.nextInvoiceNumber,
+        },
+        año,
+      ),
+    });
+  } catch (err) {
+    // La carrera perdida NO es un 500: alguien emitió mientras el profesional contestaba, así que
+    // la serie ya empezó. Se le dice con el MISMO texto aprobado que el bloqueo de Configuración.
+    if (err instanceof SerieYaEmpezada) {
+      return res.status(409).json({
+        error: 'serie_ya_emitida', titulo: TIT_SERIE_YA_EMITIDA, message: MSG_SERIE_YA_EMITIDA,
+      });
+    }
+    return next(err);
+  }
 });
 
 // A6.5: 404 con marca para navegadores (GET que acepta HTML); JSON para la API.

@@ -42,14 +42,18 @@ const SHELL = [
   '/dashboard/js/invoiceDetailView.js',
   '/dashboard/js/jobActionsRegistry.js', // SCRUM-316 (G1)
   '/dashboard/js/jobDocsReparto.js', // SCRUM-319 (G4)
+  '/dashboard/js/jobCobroHuecos.js', // SCRUM-320 (G5)
+  '/dashboard/js/facturaPreEmision.js', // SCRUM-292 (A1)
   '/dashboard/js/jobRailBlocks.js', // SCRUM-318 (G3)
   '/dashboard/js/albaranActionsRegistry.js', // SCRUM-302 (C2)
   '/dashboard/js/albaranDetailView.js',
   '/dashboard/js/albaranesView.js', // SCRUM-301 (C1)
   '/dashboard/js/expensesView.js',
   '/dashboard/js/settingsSubmenus.js', // SCRUM-284
+  '/dashboard/js/puertaSerie.js',
   '/dashboard/js/settingsView.js',
   '/dashboard/js/exportView.js',
+  '/dashboard/js/libroRegistroView.js',
   '/dashboard/js/teamView.js',
   '/dashboard/js/jobsCierreTrabajo.js', // SCRUM-344
   '/dashboard/js/jobsView.js',

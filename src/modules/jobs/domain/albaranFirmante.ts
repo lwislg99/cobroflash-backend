@@ -87,6 +87,12 @@ export const FIRMANTE_CALIDAD_LIBRE: FirmanteCalidadId = 'otro';
 /**
  * La etiqueta de cada ranura. **APROBADAS por el fundador el 6-ago-2026**, literales.
  *
+ * Procedencia (SCRUM-387): consta en `docs/master/SCRUM-300.md`, el mapa de fusión de C5, donde
+ * se registra que las SEIS las validó el fundador — y, de paso, que los cinco textos que la rama
+ * `scrum-300-firmado-por` traía marcados como aprobados no los había aprobado nadie. Una fecha
+ * sola no dice dónde mirar, y una etiqueta falsa de «aprobado» es peor que un marcador: el
+ * marcador pide permiso y la etiqueta lo da.
+ *
  * ⚠️ Cambiar una etiqueta NO obliga a migrar nada, porque lo que se guarda en
  * `Albaran.firmadoPorCalidad` es el `id`. Cambiar un `id` SÍ. Son dos cosas distintas y por eso
  * viven en dos constantes distintas.

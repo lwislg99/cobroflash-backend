@@ -108,7 +108,12 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // Solicitudes entrantes, adjuntos, búsqueda y bot
   { method: 'GET',   path: '/admin/quote-requests', why: 'Solicitudes entrantes que va a presupuestar' },
   { method: 'PATCH', path: '/admin/quote-requests/:id', why: 'Marcar la solicitud como atendida' },
-  { method: 'GET',   path: '/admin/attachments/:id', why: 'Fotos que mandó el cliente con la solicitud' },
+  // SCRUM-302: el motivo decía SOLO lo de las solicitudes, y esta ruta sirve DOS cosas desde hace
+  // meses — también las fotos del albarán (la fila del Trabajo y la ficha del albarán las pintan
+  // desde aquí). En un fichero de declaración de permisos eso no es cosmético: quien audita el rol
+  // lee el motivo para decidir si es el que toca, y con la mitad escrita revisa sobre una premisa
+  // falsa. El rol NO cambia; lo que se corrige es lo que dice servir.
+  { method: 'GET',   path: '/admin/attachments/:id', why: 'Fotos que mandó el cliente con la solicitud y fotos del albarán del trabajo' },
   { method: 'GET',   path: '/admin/search', why: 'Busca clientes/quotes/facturas: todo ello ya es visible para él' },
   { method: 'GET',   path: '/admin/bot/handoffs', why: 'Conversaciones del bot que piden persona (A8.3)' },
 

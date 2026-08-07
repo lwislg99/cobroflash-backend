@@ -222,6 +222,20 @@ tiene STAGING, y quien tiene DEV es el worktree PRINCIPAL, que ahí ni se mencio
 
 **Regla que sale de esto:** antes de cualquier operación, imprimir `host/base` con `describirBD` y
 mirarlo. El nombre de la variable no es una fuente: esta noche ha mentido dos veces.
+### 🔴 ANTES DE APLICAR ESTO: COMPRUEBA A QUÉ BASE APUNTA TU CLAVE
+
+**El mapa medido de los cuatro worktrees está arriba**, en el bloque de las TRES BD («QUÉ BASE TOCA
+CADA WORKTREE»), y **no se repite aquí a propósito**: ese bloque lo protege el guard de SCRUM-225,
+que exige que sea idéntico en `MIGRATIONS_PENDING.md` y `RUNBOOKS.md`. Una segunda copia fuera de
+esa protección es exactamente cómo un dato correcto se vuelve falso en un sitio y no en el otro —
+que es lo que pasó con el reparto anterior, y mintió por duplicado durante días.
+
+Lo que hay que saber al aplicar esta migración: `DATABASE_URL_STAGING` **no significa lo mismo en
+todos los worktrees**, y staging y dev comparten host, así que el guard de hostname
+(`_db-guard.mjs`) no las distingue. Lo vigila `tests/scrum383-clave-vs-destino.test.mjs`.
+
+**Regla:** antes de cualquier operación, imprimir `host/base` con `describirBD` y mirarlo. El
+nombre de la variable no es una fuente: la noche del 6-ago-2026 mintió dos veces.
 
 ### 🔴 NO HAY FORMA DE OBSERVAR PRODUCCIÓN SIN CREDENCIALES DE BASE (medido 6-ago-2026)
 

@@ -103,6 +103,12 @@
           <span id="nav-invoices-badge" class="nav-badge" style="display:none">0</span>
         </button>
 
+        <!-- SCRUM-296 (A6): el libro que pide el asesor. Rotulo MARCADO: sin aprobar (regla 30). -->
+        <button class="nav-item" data-view="libro-registro" id="nav-libro-registro">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M9 7h7M9 11h7"/></svg>
+          <span id="nav-libro-registro-label">[PENDIENTE microcopy oficial] Libro de registro</span>
+        </button>
+
         <button class="nav-item" data-view="expenses">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
           <span>Gastos</span>
@@ -211,11 +217,17 @@
   <!-- SCRUM-318 (G3): constructores del contenido del rail. Puros: devuelven datos, no DOM. -->
   <!-- SCRUM-319 (G4): el reparto de la pila. Antes de jobRailBlocks.js, que clasifica con el. -->
   <script src="./js/jobDocsReparto.js"></script>
+  <!-- SCRUM-320 (G5): importes y huecos de «que falta para cobrar». Puros: devuelven datos. -->
+  <script src="./js/jobCobroHuecos.js"></script>
+  <!-- SCRUM-292 (A1): la revision ANTES de emitir. Puro: devuelve estados, no frases. -->
+  <script src="./js/facturaPreEmision.js"></script>
   <script src="./js/jobRailBlocks.js"></script>
   <script src="./js/expensesView.js"></script>
   <script src="./js/settingsSubmenus.js"></script>
+  <script src="./js/puertaSerie.js"></script>
   <script src="./js/settingsView.js"></script>
   <script src="./js/exportView.js"></script>
+  <script src="./js/libroRegistroView.js"></script> <!-- SCRUM-296 (A6) -->
   <script src="./js/teamView.js"></script>
   <script src="./js/jobsCierreTrabajo.js"></script>
   <script src="./js/jobsView.js"></script>

@@ -54,6 +54,13 @@ import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
 import { emitirRecapitulativas } from '../../domain/recapitulativa.service'; // SCRUM-171a: emisión compartida con la vía de Job
 import { sellarTrasEmision, SELLADO_HECHO } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
+// SCRUM-290 (A0.4): el CRITERIO de qué se factura y a qué precio vive en funciones puras, no aquí.
+import {
+  casarLineas, motivosParaNoEmitir, lineasParaFactura, totalDeFacturables,
+  yaFacturadoPorLineaDePresupuesto, lineasParaAdicional,
+} from '../../domain/albaranAFactura';
+// SCRUM-195: el número del adicional se reserva DENTRO de su transacción, igual que el del alta.
+import { allocateQuoteNumber } from '../../../quotes/domain/quoteNumber.service';
 
 const router = Router();
 
@@ -520,12 +527,30 @@ router.get('/:id', async (req, res) => {
 
     const job = await prisma.job.findFirst({
       where: { id: albaran.jobId, merchantId: req.merchantId },
-      select: { id: true, titulo: true, direccion: true, customerId: true },
+      select: { id: true, titulo: true, direccion: true, customerId: true, quoteId: true },
     });
     const customer = job?.customerId
       ? await prisma.customer.findFirst({
           where: { id: job.customerId, merchantId: req.merchantId },
           select: { id: true, name: true },
+        })
+      : null;
+
+    // SCRUM-302 · EL PRESUPUESTO DE ORIGEN, Y ES DEL DOCUMENTO — NO DE LAS LÍNEAS.
+    //
+    // Se resuelve por `Job.quoteId`: el albarán cuelga de un Trabajo y el Trabajo nació de un
+    // presupuesto. Lo que NO se hace aquí, y no es olvido: emparejar las líneas del albarán con
+    // las del presupuesto. `AlbaranLinea.quoteLineIndex` existe desde SCRUM-367, pero **no cubre
+    // todos los casos** — no lo hay en modo `SIN_VALORAR`, solo lo escribe el prellenado, y el
+    // índice no dice de QUÉ presupuesto es. Un vínculo que es cierto a veces no puede presentarse
+    // como procedencia de cada línea.
+    //
+    // La forma es la de `jobs.routes.ts:275` (`number` con caída al `id`), no una nueva: dos
+    // formas del mismo dato acaban divergiendo y el pro ve dos números para un presupuesto.
+    const quote = job?.quoteId
+      ? await prisma.quote.findFirst({
+          where: { id: job.quoteId, merchantId: req.merchantId },
+          select: { id: true, quoteNumber: true },
         })
       : null;
 
@@ -542,6 +567,9 @@ router.get('/:id', async (req, res) => {
       // El rail: contexto de solo lectura. Nada de aquí es accionable desde esta página.
       job: job ? { id: job.id, titulo: job.titulo, direccion: job.direccion } : null,
       customer,
+      // Del DOCUMENTO. `null` cuando el Trabajo no vino de un presupuesto (`Job.quoteId` es
+      // nullable): el rail lo omite en vez de pintar un enlace que no lleva a ningún sitio.
+      quote: quote ? { id: quote.id, number: quote.quoteNumber ?? quote.id } : null,
       // Los TRES valores, no un booleano (SCRUM-170/302).
       estadoFacturacion,
       // Lo que queda por facturar, por línea: es lo que hace verdadero el «parcial».
@@ -939,6 +967,217 @@ router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
       return res.status(409).json({ error: 'facturacion_no_disponible', message: 'La facturación por partes no está disponible en este modo.' });
     }
     console.error('[POST /admin/albaranes/:id/facturar-parcial]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * SCRUM-290 · TODO texto de esta ruta está SIN APROBAR y se pinta con el marcador.
+ *
+ * Regla 30, y aquí con una capa más: estos mensajes le dicen a un profesional **qué puede y qué no
+ * puede cobrarle a su cliente**. Un texto legal mal escrito no es feo, es peligroso. La procedencia
+ * de la aprobación que falta está en `docs/legal/PREGUNTAS_ASESOR.md` §G (preguntas 25-28); la 25
+ * es la bloqueante. El marcador es feo A PROPÓSITO: un texto provisional que se lee bien se queda
+ * para siempre, y un relleno que se pinta es peor que un hueco porque parece intencionado.
+ */
+const MICROCOPY_PENDIENTE_290 = '[PENDIENTE microcopy oficial]';
+
+/**
+ * POST /admin/albaranes/:id/convertir-en-factura — SCRUM-290 (A0.4)
+ *
+ * CANTIDADES DEL ALBARÁN · PRECIOS DEL PRESUPUESTO FIRMADO. El criterio no vive aquí: vive en
+ * `albaranAFactura.ts`, en funciones puras, para poder probarlo sin levantar la app. Esta ruta
+ * consulta, decide con lo que aquél dice, y emite.
+ *
+ * ⚠️ ES UN LLAMADOR DE `emitInvoice`, NO UNA VÍA DE EMISIÓN NUEVA (regla 38). Nada de
+ * `invoicing/` se ha tocado: `EmitInvoiceInput` ya aceptaba `lines`, `albaranRefs`, `quoteId`,
+ * `total` y `actor`.
+ *
+ * ── EN QUÉ SE DIFERENCIA DE `facturar-parcial` ─────────────────────────────────────────────
+ * Aquélla exige `VALORADO` y saca los precios del PROPIO ALBARÁN. **Ésta es para el albarán
+ * NORMAL** —`SIN_VALORAR`, el valor por defecto y la decisión viva del 2-ago: el parte no lleva
+ * precios para no obligar a teclear en obra—. Hasta hoy ese albarán no se podía facturar de
+ * ninguna manera. No se solapan.
+ *
+ * ── LO QUE NO SE FACTURA SALE EN LA RESPUESTA, NOMBRADO ────────────────────────────────────
+ * Lo añadido en obra no entra en la factura: dispara un PRESUPUESTO ADICIONAL que se firma. Se
+ * devuelve en `paraAdicional` con su motivo para que la pantalla lo ofrezca. Descartarlo en
+ * silencio en un documento que alguien firma es SCRUM-271.
+ */
+router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) => {
+  try {
+    const found = await findAlbaran(req); // tenancy (regla 2)
+    if (!found.ok) return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
+    const albaran = found.albaran;
+
+    // Solo FIRMADO: un parte sin firmar no prueba lo servido, y facturar lo no probado es
+    // exactamente lo que esta pantalla existe para evitar.
+    if (albaran.estado !== 'firmado') {
+      return res.status(409).json({ error: 'albaran_no_firmado', message: MICROCOPY_PENDIENTE_290 });
+    }
+    if (albaran.invoiceId != null) {
+      return res.status(409).json({ error: 'albaran_ya_facturado', message: MICROCOPY_PENDIENTE_290 });
+    }
+
+    const job = await prisma.job.findFirst({
+      where: { id: albaran.jobId, merchantId: req.merchantId },
+      select: { id: true, customerId: true, quoteId: true },
+    });
+    if (!job) return res.status(404).json({ error: 'not_found' });
+
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: req.merchantId },
+      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true },
+    });
+    if (!merchant) return res.status(404).json({ error: 'not_found' });
+    // Documento FISCAL puro, igual que la parcial y la recapitulativa: en modo justificante no
+    // existe. Mejor no ofrecerla que emitir un J- que después no vale como factura (reglas 24/26).
+    if (getEmissionMode(merchant) === 'receipt') {
+      return res.status(409).json({ error: 'facturacion_no_disponible', message: MICROCOPY_PENDIENTE_290 });
+    }
+
+    // EL PRESUPUESTO FIRMADO, que es de donde salen los precios. Filtra por merchant (regla 2):
+    // sin eso se cobrarían los precios del presupuesto de OTRO profesional.
+    const quote = job.quoteId
+      ? await prisma.quote.findFirst({
+          where: { id: job.quoteId, merchantId: req.merchantId },
+          select: { id: true, quoteNumber: true, lines: true },
+        })
+      : null;
+
+    // Lo ya facturado se acumula sobre TODOS los albaranes del Trabajo, no solo sobre éste: dos
+    // partes distintos pueden entregar la misma línea del presupuesto por fases.
+    const albaranesDelJob = await prisma.albaran.findMany({
+      where: { merchantId: req.merchantId, jobId: job.id },
+      select: { id: true, lineas: true },
+    });
+    const libro = await prisma.albaranLineaFacturada.findMany({
+      where: { merchantId: req.merchantId, albaranId: { in: albaranesDelJob.map((a) => a.id) } },
+      select: { albaranId: true, lineaIndex: true, cantidad: true },
+    });
+
+    const lineasAlbaran = (Array.isArray(albaran.lineas) ? albaran.lineas : []) as any[];
+    const casacion = casarLineas(
+      lineasAlbaran,
+      (Array.isArray(quote?.lines) ? quote!.lines : []) as any[],
+      yaFacturadoPorLineaDePresupuesto(albaranesDelJob as any, libro as any),
+    );
+
+    // EL SUELO. Si el casador no encontró nada, NO se emite. Una factura con cero líneas es un
+    // documento fiscal que no dice nada, y una factura emitida no se edita ni se borra (regla 29).
+    const motivos = motivosParaNoEmitir(casacion, !!quote);
+    if (motivos.length) {
+      return res.status(409).json({
+        error: 'albaran_no_convertible',
+        motivos,                       // en claro: son DIAGNÓSTICO, no microcopy de pantalla
+        message: MICROCOPY_PENDIENTE_290,
+        paraAdicional: casacion.paraAdicional,
+      });
+    }
+
+    const fechaTxt = new Date(albaran.fecha).toLocaleDateString('es-ES');
+    // Mismo formato de concepto que la parcial y la recapitulativa: el cliente tiene que poder
+    // cuadrar la factura con su parte sin preguntar cuánto se le cobró de qué.
+    const facturables = casacion.facturables;
+    const invoiceLines = lineasParaFactura(facturables).map((l, i) => ({
+      ...l,
+      concept: `Albarán ${albaran.numero} (${fechaTxt}): ${l.concept} — ${facturables[i].cantidad}`,
+    }));
+    const total = totalDeFacturables(facturables);
+
+    // SCRUM-246 · ANTES de pedir número: si no hay nada que cobrar, la serie ni se entera.
+    // Comprobarlo después obligaría a deshacer una factura ya numerada, y deshacer es lo que crea
+    // el hueco que hay que justificar ante Hacienda.
+    exigirLineasFacturables(invoiceLines);
+
+    const invoice = await prisma.$transaction(async (tx) => {
+      const inv = await emitInvoice(tx, {
+        merchantId: req.merchantId!, customerId: job.customerId, total,
+        currency: merchant.defaultCurrency || 'EUR', type: 'F1',
+        lines: invoiceLines,
+        albaranRefs: [{ albaranId: albaran.id, numero: albaran.numero, fecha: albaran.fecha }],
+        // A DIFERENCIA de la parcial, aquí SÍ va el presupuesto: es de donde salen los precios, y
+        // es lo que permite auditar después que se cobró lo que el cliente firmó.
+        quoteId: quote!.id,
+        actor: actorDeRequest(req),
+      });
+      if (isReceiptNumber(inv.number)) throw new Error('facturacion_no_disponible');
+
+      // El libro, DENTRO de la misma transacción que la factura: si algo falla no queda ni
+      // factura sin apunte ni apunte sin factura. Es lo que sostiene el acumulado por fases.
+      await tx.albaranLineaFacturada.createMany({
+        data: facturables.map((l) => ({
+          merchantId: req.merchantId!, albaranId: albaran.id,
+          lineaIndex: l.lineaIndex, invoiceId: inv.id, cantidad: l.cantidad,
+        })),
+      });
+      return inv;
+    });
+
+    // Sellado FUERA de la transacción (SCRUM-173/205): dentro, las facturas de un lote no se ven
+    // entre sí. Un fallo aquí NO revierte la emisión —deshacer va contra la regla 29—: se dice.
+    const sellada = (await sellarTrasEmision(invoice, merchant, prisma)).estado === SELLADO_HECHO;
+
+    // ── EL PRESUPUESTO ADICIONAL ───────────────────────────────────────────────────────────
+    //
+    // Lo añadido en obra no se factura: se convierte en un adicional que el cliente firma. Se crea
+    // **enganchado al Trabajo** (`Quote.jobId`), que es el camino de SCRUM-195 — aceptarlo NO crea
+    // un segundo Trabajo porque `ensureJobForQuote` pregunta primero por `Quote.jobId`.
+    //
+    // ⚠️ FUERA de la transacción de la factura, y por el mismo motivo que el sellado: si esto
+    // falla, la factura ya emitida **no se revierte** (regla 29). Se dice en la respuesta.
+    //
+    // ⚠️ NACE EN `draft` Y NO SE MANDA SOLO. Sus líneas van sin precio —es trabajo nuevo, no hay
+    // referencia firmada de la que sacarlo— así que el profesional tiene que ponerles importe
+    // antes de enviarlo. Mandar al cliente un documento a 0 € para que lo firme sería pedirle que
+    // firme la nada.
+    const lineasAdicional = lineasParaAdicional(casacion.paraAdicional);
+    let adicional: { id: number; quoteNumber: number | null } | null = null;
+    let falloAdicional = false;
+    if (lineasAdicional.length > 0) {
+      try {
+        adicional = await prisma.$transaction(async (tx) => {
+          const quoteNumber = await allocateQuoteNumber(tx, req.merchantId!);
+          const creado = await tx.quote.create({
+            data: {
+              merchantId: req.merchantId!, customerId: job.customerId, quoteNumber,
+              status: 'draft',
+              total: '0.00',
+              currency: merchant.defaultCurrency || 'EUR',
+              lines: lineasAdicional as any,
+              jobId: job.id, // SCRUM-195: con valor = ADICIONAL sobre este Trabajo
+            },
+            select: { id: true, quoteNumber: true },
+          });
+          return creado;
+        });
+      } catch (e: any) {
+        // No se relanza: la factura ya está emitida y deshacerla va contra la regla 29. Se avisa.
+        falloAdicional = true;
+        console.error('[POST /admin/albaranes/:id/convertir-en-factura] adicional', e?.message || e);
+      }
+    }
+
+    return res.status(201).json({
+      ok: true,
+      factura: { id: invoice.id, number: invoice.number, total: invoice.total.toString(), currency: invoice.currency },
+      // LO QUE NO SE FACTURÓ, nombrado y con su motivo. Nada desaparece sin decirlo (SCRUM-271).
+      paraAdicional: casacion.paraAdicional,
+      // El adicional creado, o `null` si no había nada fuera de presupuesto. `null` NO es un fallo:
+      // es que no hacía falta. El fallo se dice aparte, para que no se confundan.
+      adicional,
+      adicionalFallido: falloAdicional,
+      veriFactu: sellada,
+      ...(sellada && !falloAdicional ? {} : { message: MICROCOPY_PENDIENTE_290 }),
+    });
+  } catch (err: any) {
+    if (esErrorSinLineas(err)) {
+      return res.status(409).json({ error: ERROR_SIN_LINEAS, message: COPY_ADMIN_SIN_LINEAS });
+    }
+    if (err?.message === 'facturacion_no_disponible') {
+      return res.status(409).json({ error: 'facturacion_no_disponible', message: MICROCOPY_PENDIENTE_290 });
+    }
+    console.error('[POST /admin/albaranes/:id/convertir-en-factura]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });

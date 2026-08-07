@@ -11,16 +11,32 @@ async function initApp() {
   window.appUserName   = me.name || '';
   window.appVoiceEnabled = me.voiceEnabled === true; // VZ-1: flag VOICE_QUOTE_ENABLED
   window.appVoiceAlbaranEnabled = me.voiceAlbaranEnabled === true; // SCRUM-71: flag PROPIO del albarán
-  // SCRUM-289 (A0.3): veredicto YA CALCULADO por el servidor (puedeCrearFacturaSuelta). El
-  // navegador no reimplementa el modo de emisión: lo recibe.
-  window.appFacturaSueltaDisponible = me.facturaSueltaDisponible === true;
   // SCRUM-300 (C5): las SEIS ranuras de «en calidad de qué», los rótulos y las ayudas llegan
   // SERVIDOS. El navegador NO los escribe: son microcopy que acaba en un documento que se puede
   // leer en un juzgado (regla 30), y una segunda copia aquí es cómo dos textos divergen sin que
-  // nadie se entere. Mismo criterio que `appFacturaSueltaDisponible`, justo encima.
+  // nadie se entere. Mismo criterio que `appDocumentoSuelto`, justo debajo.
   window.appAlbaranFirmanteOpciones = Array.isArray(me.albaranFirmanteOpciones) ? me.albaranFirmanteOpciones : [];
   window.appAlbaranRotulos = me.albaranRotulos || {};
   window.appAlbaranAyudas = me.albaranAyudas || {};
+  // ⚠️ FUSIÓN: C5 traía aquí `appFacturaSueltaDisponible`, que SCRUM-346 RETIRÓ en `main` (cero
+  // consumidores, medido). No se conserva porque no es un lado distinto: es la versión vieja del
+  // de abajo.
+  // SCRUM-289 (A0.3) · SCRUM-346 (A0.5): veredicto YA CALCULADO por el servidor
+  // (`modoDocumentoSuelto`). El navegador no reimplementa el modo de emisión: lo recibe.
+  // Son TRES valores —'factura' | 'justificante' | 'no'— porque el profesional español real no
+  // es un «no puedes»: emite justificantes, que es otro documento, no una factura degradada.
+  // Un valor desconocido cae a 'no': fallar cerrado, igual que el servidor.
+  window.appDocumentoSuelto =
+    ['factura', 'justificante'].includes(me.documentoSuelto) ? me.documentoSuelto : 'no';
+
+  // SCRUM-D1 · LA PUERTA DE ÚLTIMA OPORTUNIDAD. Mismo patrón: el veredicto lo da el servidor
+  // (`debeOfrecerArranqueDeSerie`, la MISMA regla que usa `resolveSeriesSeq`) y aquí solo se
+  // recibe. El navegador NO comprueba `invoiceSeriesYear !== año` por su cuenta: dos sitios
+  // decidiendo lo mismo acaban discrepando, y el de fuera es el fácil de equivocar.
+  window.appPuertaSerieDisponible = me.puertaSerieDisponible === true;
+  // Y POR QUÉ no se puede, cuando no se puede: `{ emitidas, ejemplo }`. La puerta es `false` por
+  // dos motivos distintos —ya emitió, o ya contestó este año— y solo el primero bloquea el campo.
+  window.appSerieEmitida = me.serieEmitida || { emitidas: 0, ejemplo: null };
 
   // A10.2 (Parte L): past_due → banner global "Hay un problema con tu pago"
   // + portal de Stripe. La cuenta sigue funcionando (gracia); solo avisa.
@@ -279,6 +295,12 @@ async function initApp() {
         viewTitle.textContent = 'Proveedores';
         (window.renderProvidersView || renderProvidersView)(viewContainer);
         break;
+      case 'libro-registro':
+        // SCRUM-296 (A6). El titulo sale de la MISMA constante que la vista: dos copias del
+        // rotulo se desincronizan, y una de ellas se quedaria sin marcador.
+        viewTitle.textContent = (window.LIBRO_COPY && window.LIBRO_COPY.titulo) || '';
+        if (typeof window.renderLibroRegistroView === 'function') window.renderLibroRegistroView(viewContainer);
+        break;
       case 'expenses':
         viewTitle.textContent = 'Gastos';
         renderExpensesView(viewContainer);
@@ -343,7 +365,8 @@ async function initApp() {
   // Deep-links por hash: /dashboard/#products abre Productos directamente.
   // Útil para compartir/QA (y para las capturas de la maqueta A4.7).
   const HASH_VIEWS = ['home','quotes-list','quotes-new','customers','products','providers',
-    'invoices','expenses','export','reports','templates','quote-requests','jobs','plans','team','settings'];
+    'invoices','expenses','export','reports','templates','quote-requests','jobs','plans','team','settings',
+      'libro-registro'];
   function viewFromHash() {
     const h = (window.location.hash || '').replace('#', '');
     return HASH_VIEWS.includes(h) ? h : null;

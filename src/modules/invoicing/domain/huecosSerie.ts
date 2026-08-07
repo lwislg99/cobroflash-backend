@@ -63,12 +63,32 @@ export interface HuecosDeSerie {
  * @param rectificativas  `false` = serie ordinaria (F1); `true` = la de rectificativas (R1),
  *                        que lleva contador propio (`nextRectInvoiceNumber`) y por eso se mira
  *                        aparte: mezclarlas inventaría huecos que no existen.
+ * @param componer  SCRUM-306 (C7) · CÓMO se compone un número esperado. Por defecto,
+ *                  `formatInvoiceNumber` — el comportamiento de siempre, byte a byte.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * SCRUM-306 · POR QUÉ UN PARÁMETRO Y NO UN SEGUNDO DETECTOR
+ *
+ * Los albaranes necesitan lo mismo: saber qué números faltan. Escribir un detector propio sería
+ * el defecto de SCRUM-240 —«no eran dos constructores, era uno escrito dos veces»— y además
+ * duplicaría la decisión que sostiene este módulo: **componer en vez de parsear**. Dos copias de
+ * esa idea envejecen por separado, y la que envejece no avisa: tranquiliza.
+ *
+ * La extensión es ADITIVA: el parámetro es opcional y su valor por defecto es exactamente lo que
+ * hacía antes, así que las llamadas de factura no cambian ni una letra. Hay control positivo con
+ * facturas en el guard: si al generalizar se rompiera el caso viejo, cae ahí.
  */
 export function huecosDeLaSerie(
   numeros: readonly string[],
   prefijo: string | null | undefined,
   año: number,
   rectificativas = false,
+  componer: (
+    prefijo: string | null | undefined,
+    año: number,
+    seq: number,
+    rectificativas: boolean,
+  ) => string = formatInvoiceNumber,
 ): HuecosDeSerie {
   const emitidos = new Set(numeros);
   const casados = new Set<string>();
@@ -80,7 +100,7 @@ export function huecosDeLaSerie(
   // se sabe cuál es N sin parsear— sino «hasta que no quede ninguno por casar».
   for (let seq = 1; seq <= MAX_SEQ_BARRIDO; seq += 1) {
     if (casados.size === emitidos.size) break;
-    const esperado = formatInvoiceNumber(prefijo, año, seq, rectificativas);
+    const esperado = componer(prefijo, año, seq, rectificativas);
     if (emitidos.has(esperado)) {
       casados.add(esperado);
       ultimoSeq = seq;

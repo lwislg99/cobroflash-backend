@@ -995,13 +995,20 @@ html, body { overflow-x: clip; }
 .qq-modal .modal-footer .btn-primary { box-shadow: var(--shadow-brand); }
 .qq-modal .modal-footer .btn-primary:hover:not(:disabled) { box-shadow: var(--shadow-brand); transform: translateY(-1px); }
 @media (max-width: 639px) {
-  /* Targets táctiles >=44px y campos cómodos en el bottom sheet */
-  .qq-modal .field input,
-  .qq-modal .btn,
-  .qq-modal .btn-primary,
-  .qq-modal .btn-secondary { min-height: 44px; }
+  /* Campos cómodos en el bottom sheet. Los INPUT sí necesitan esto: fuera del sheet valen 42 px
+     (regla de arriba) y aquí suben a 44 — la base no los toca.
+     SCRUM-384: los BOTONES salieron de esta lista. `.btn`, `.btn-primary` y `.btn-secondary` ya
+     reciben 44 px en móvil de la regla general (SCRUM-352, más abajo en este fichero), así que
+     repetirlo aquí no añadía nada y escondía de dónde venía el 44. MEDIDO antes de quitarlo, no
+     deducido: a 390 px los botones del pie siguen en 44. */
+  .qq-modal .field input { min-height: 44px; }
   .qq-modal .btn-icon { width: 44px; height: 44px; }
-  /* Footer: botones a ancho completo, "Enviar por WhatsApp" verde dominante arriba */
+  /* ⚠️ ESTO NO ES UN PARCHE DE LAYOUT — ES DISEÑO DELIBERADO, y SCRUM-384 lo dejó fijado con un
+     test para que el siguiente que pase por aquí no lo confunda con lo que sí se retiró.
+     Apila los botones a ancho completo para que "Enviar por WhatsApp" quede DOMINANTE ARRIBA.
+     La prueba de que no compite con `.modal-footer { flex-wrap: wrap }` (SCRUM-350) es que se
+     aplica a un DIV DENTRO del pie, no al pie: son dos contenedores distintos y `wrap` no da
+     esto —daría dos filas alineadas a la derecha, no dos botones a ancho completo—. */
   .qq-modal .modal-footer > div:last-child { flex-direction: column-reverse; gap: 8px; }
   .qq-modal .modal-footer .btn,
   .qq-modal .modal-footer .btn-primary,
@@ -1895,7 +1902,9 @@ tr.dragging { opacity: .5; background: #f0fdf4; }
   line-height: 1; letter-spacing: -.03em; font-variant-numeric: tabular-nums;
 }
 .home-hero-sub { font-size: 13px; color: var(--muted); margin-top: 6px; }
-.home-hero-ok { font-size: 13px; font-weight: 600; color: var(--brand); white-space: nowrap; }
+/* SCRUM-368: --brand como TEXTO da 3,30:1 sobre --surface y 3,07 sobre --bg. --brand-tint-ink
+   es el verde de TEXTO (tokens.css:15): 5,48 y 5,10. El verde de marca no se mueve. */
+.home-hero-ok { font-size: 13px; font-weight: 600; color: var(--brand-tint-ink); white-space: nowrap; }
 @media (max-width: 480px) {
   .home-hero-card { flex-direction: column; align-items: flex-start; }
 }
@@ -1978,7 +1987,8 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 /* La etiqueta de DINERO va a ancho fijo para que los importes queden alineados en columna. */
 .detail-rail-etiqueta { color: var(--muted); min-width: 76px; }
 .detail-rail-fuerte { color: var(--ink); font-weight: 600; }
-.detail-rail-enlace { color: var(--brand, #16a34a); font-weight: 600; text-decoration: none; }
+/* SCRUM-368: mismo caso que .home-hero-ok — verde de TEXTO, no el de fondo. */
+.detail-rail-enlace { color: var(--brand-tint-ink, #047857); font-weight: 600; text-decoration: none; }
 .detail-rail-enlace:hover { text-decoration: underline; }
 .detail-rail-enlace--suelto { display: inline-block; margin-top: 6px; font-size: 13px; }
 /* Objetivo táctil de 44 px (AB6): el teléfono y el mapa se pulsan con las manos sucias, de pie y
@@ -2007,6 +2017,24 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
   border-left: 2px solid var(--border);
 }
 @media (max-width: 720px) { .job-doc-rectificativas { margin-left: 10px; } }
+
+/* SCRUM-320 (G5) · «Qué falta para cobrar». Solo tokens existentes. */
+.cobro-lineas { display: flex; flex-direction: column; gap: 4px; }
+.cobro-linea { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; font-size: 13.5px; color: var(--body); }
+.cobro-linea__etiqueta { color: var(--muted); }
+.cobro-linea__importe { font-variant-numeric: tabular-nums; color: var(--ink); }
+/* El total lleva su filete arriba: es la respuesta, no una fila mas. */
+.cobro-linea--total { margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border); font-weight: 700; }
+.cobro-linea--total .cobro-linea__etiqueta { color: var(--ink); }
+.cobro-linea--total .cobro-linea__importe { font-size: 16px; }
+
+/* Los huecos: cada uno con SU enlace en SU linea. Ninguno es «la» accion — elegir es de la
+   cabecera, y hay una sola cabecera. */
+.cobro-huecos { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+.cobro-hueco { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--body); }
+/* Objetivo tactil de 44 px (AB6): se pulsan de pie y con prisa. */
+.cobro-hueco button { min-height: 44px; }
+@media (max-width: 720px) { .cobro-hueco { align-items: flex-start; } }
 
 .detail-section { padding: 18px 22px; border-bottom: 1px solid var(--border); }
 .detail-section:last-child { border-bottom: none; }
@@ -2294,6 +2322,46 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    de marca es decisión del fundador (regla 30).
    ════════════════════════════════════════════════════════════ */
 .btn-primary:focus-visible { box-shadow: var(--shadow-btn), var(--ring); }
+
+/* ════════════════════════════════════════════════════════════
+   SCRUM-368 · A1 — el botón primario cumple AA por la VÍA DE TEXTO GRANDE
+
+   Blanco sobre --brand da 3,30:1. Con texto normal el umbral es 4,5 y no llega; con texto
+   grande y grueso (>=18,66px y peso >=700) el umbral de WCAG SC 1.4.3 es 3,0 y SÍ llega.
+   NO es mover la portería: la norma lo permite porque es cierto que el texto grande y
+   grueso se lee con menos contraste. Y disuelve el choque medido entre DESIGN.md («la marca
+   es luminosa, nunca oscura») y AA, porque NO TOCA NINGÚN COLOR.
+
+   El :not(.btn-sm) es el mismo mecanismo que SCRUM-352, y por el mismo motivo medido: sin
+   él, un "btn-primary btn-sm" saltaría a 18,66px mientras su gemelo "btn btn-primary btn-sm"
+   se queda en 12,5 — .btn.btn-sm es (0,2,0) y gana, .btn-sm a secas es (0,1,0) y pierde por
+   orden.
+
+   ⚠ LOS btn-sm PRIMARIOS SIGUEN SIN CUMPLIR (12,5px/600 → umbral 4,5, están en 3,30). No es
+   un olvido: a un botón pequeño no se le puede poner letra de 18,66px sin dejar de ser
+   pequeño. Contados y reportados en docs/master/SCRUM-368.md (regla 9). */
+.btn-primary:not(.btn-sm) { font-size: 18.66px; font-weight: 700; }
+
+/* ════════════════════════════════════════════════════════════
+   SCRUM-368 · La variante PEQUEÑA del botón primario no usa el verde de marca
+
+   A un botón pequeño no se le puede aplicar la salida del grande —texto de 18,66px— sin dejar
+   de ser pequeño, así que necesitaba una respuesta propia. Blanco sobre --brand-tint-ink da
+   5,48:1 (medido en navegador) y cumple AA por la vía NORMAL, sin excepción de tipografía.
+
+   NO se toca --brand, ni el primario normal, ni el grande. El token ya existía.
+
+   Y NO ES SOLO CONTRASTE. Con los dos del mismo verde y el mismo peso, el pequeño y el grande
+   competían: la tarjeta tenía dos voces y ninguna mandaba. Con esto aparece una escalera
+   —relleno oscuro › contorno › texto plano— y el grande gana sin discusión. DESIGN.md ya pedía
+   eso por escrito: «una pantalla = un botón verde primario» (Regla de Una Sola Voz), que se
+   incumplía en 35 sitios. El defecto de contraste y el de jerarquía eran EL MISMO defecto.
+
+   Enmienda de DESIGN.md aplicada en el mismo cambio (Buttons → Primary (small)).
+   ════════════════════════════════════════════════════════════ */
+.btn-primary.btn-sm { background: var(--brand-tint-ink); }
+.btn-primary.btn-sm:hover:not(:disabled) { background: var(--brand-ink); }
+
 .qq-modal .modal-footer .btn-primary:focus-visible { box-shadow: var(--shadow-brand), var(--ring); }
 
 /* ════════════════════════════════════════════════════════════

@@ -119,6 +119,92 @@ function pintarBloqueRail(bloque) {
   return sec;
 }
 
+/**
+ * SCRUM-320 (G5) · pinta «QUÉ FALTA PARA COBRAR».
+ *
+ * Aquí no se decide nada: los importes y los huecos salen de `jobCobroHuecos.js`, que es puro y por
+ * eso se puede probar sin navegador. Esta función solo los coloca.
+ *
+ * Cada hueco lleva SU enlace en SU línea. No hay una acción principal de sección: elegir una es el
+ * trabajo de la cabecera, y hay una sola cabecera.
+ */
+function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
+  const i = importesDeCobro(job);
+  sec.innerHTML = '<h3 class="detail-section-title">Qué falta para cobrar</h3>';
+
+  const tabla = document.createElement('div');
+  tabla.className = 'cobro-lineas';
+
+  const fila = (etiqueta, importe, clase) => {
+    const f = document.createElement('div');
+    f.className = 'cobro-linea' + (clase ? ' ' + clase : '');
+    const e = document.createElement('span');
+    e.className = 'cobro-linea__etiqueta';
+    e.textContent = etiqueta;
+    const v = document.createElement('span');
+    v.className = 'cobro-linea__importe';
+    v.textContent = fmt(importe, moneda);
+    f.append(e, v);
+    tabla.appendChild(f);
+  };
+
+  fila('Aceptado', i.aceptado);
+  // ⚠️ La línea del entregado se OMITE si no se pudo medir. Los albaranes SIN_VALORAR —el modo por
+  // DEFECTO— no llevan importe, así que con tres albaranes firmados y sin valorar el número sería
+  // «0,00 €»: una afirmación falsa, no un hueco. Ausencia antes que un cero que parece medido.
+  if (i.albaranesFirmadosConImporte > 0) fila('Entregado y firmado', i.entregadoFirmado);
+  fila('Facturado', i.facturado);
+  fila('Cobrado', i.cobrado);
+  fila('Te falta por cobrar', i.faltaPorCobrar, 'cobro-linea--total');
+  sec.appendChild(tabla);
+
+  // ── LOS HUECOS, cada uno con su enlace ────────────────────────────────────────────────
+  const TEXTO_HUECO = {
+    'sin-firmar': (h) => `${h.cantidad} ${h.cantidad === 1 ? 'albarán' : 'albaranes'} sin firmar`,
+    'sin-facturar': (h) => `${fmt(h.importe, moneda)} entregados sin facturar`,
+    'sin-facturar-nada': (h) => `${fmt(h.importe, moneda)} aceptados y sin facturar`,
+    'sin-cobrar': (h) => `${fmt(h.importe, moneda)} facturados sin cobrar`,
+  };
+  const TEXTO_ACCION = {
+    'ver-albaranes': 'Ver albaranes',
+    'facturar-lo-entregado': 'Facturar lo entregado',
+    'facturar-el-trabajo': 'Facturar el trabajo',
+    'registrar-cobro': 'Registrar cobro',
+  };
+
+  const lista = document.createElement('div');
+  lista.className = 'cobro-huecos';
+  for (const h of huecosDeCobro(job)) {
+    const f = document.createElement('div');
+    f.className = 'cobro-hueco';
+    f.dataset.hueco = h.id;
+    const t = document.createElement('span');
+    t.textContent = TEXTO_HUECO[h.id](h);
+    const a = document.createElement('button');
+    a.type = 'button';
+    a.className = 'btn-ghost btn-sm';
+    a.textContent = TEXTO_ACCION[h.accion];
+    // Los tres llevan al sitio donde se resuelve: dentro de esta misma pantalla (albaranes y
+    // facturas ya tienen su sección tras G4). Navegar, no ejecutar — ejecutar es de la cabecera y
+    // de la fila de cada documento, que ya lo hacen y no se duplica aquí.
+    a.addEventListener('click', () => {
+      // ⚠️ `facturar-el-trabajo` va a ALBARANES, no a FACTURAS: ese hueco sale precisamente cuando
+      // NO hay ninguna factura, así que la sección FACTURAS no está pintada y el enlace no llevaría
+      // a ningún sitio. La de albaranes se monta siempre, y es donde se empieza a documentar el
+      // trabajo que luego se factura.
+      const destino = h.accion === 'registrar-cobro' ? '[data-seccion="facturas"]' : '[data-seccion="albaranes"]';
+      const el = document.querySelector(destino);
+      if (!el || !el.scrollIntoView) return;
+      // AB6: movimiento sobrio y respetando la preferencia del sistema.
+      const quieto = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth', block: 'start' });
+    });
+    f.append(t, a);
+    lista.appendChild(f);
+  }
+  sec.appendChild(lista);
+}
+
 // Fila de <dl> inlineada (autocontenida; NO depende de addDefRow de quotesDetailView).
 function jdAddRow(dl, term, value) {
   if (value === undefined || value === null || value === '' || value === '—') return;
@@ -477,6 +563,25 @@ async function renderJobDetailView(container, jobId) {
   const jobMeta = jobStatusMeta(job.status); // SCRUM-31 (F1): estado del Trabajo, hoy invisible en el detalle
   const isTecnico = window.appUserRole === 'tecnico'; // SCRUM-89: veta de acciones de dinero (admin-only, 403 backend)
 
+  // ── SCRUM-320 (G5) · QUÉ FALTA PARA COBRAR ──────────────────────────────────────────
+  //
+  // G4 dejó el hueco declarado en `SECCIONES_CUERPO`; aquí se llena. Va la PRIMERA del cuerpo, que
+  // es su sitio en el ciclo: qué falta → entregado → facturado.
+  //
+  // ⚠️ NO TIENE CTA PROPIO. La cabecera contesta «¿cuál es LA siguiente acción?» —una sola, y la
+  // elige `jobNextAction`—. Ésta contesta «¿qué falta para cobrar?», que puede tener VARIAS
+  // respuestas a la vez. Enumerar huecos no exige elegir uno: cada hueco lleva su propio enlace en
+  // su propia línea, así que la escalera no se toca y las dos superficies no pueden contradecirse.
+  //
+  // Si no hay ningún hueco, la sección NO SE PINTA: no falta nada, y preguntar qué falta cuando no
+  // falta nada es ruido (misma regla del hueco que G3 y G4).
+  if (typeof seccionCobroVisible === 'function' && seccionCobroVisible(job)) {
+    const cobroSec = document.createElement('div');
+    cobroSec.className = 'detail-section';
+    body.appendChild(cobroSec);
+    pintarQueFaltaParaCobrar(cobroSec, job, fmtMoneyEs, cur);
+  }
+
   // ── Resumen: estado de cobro + total + barra + cobrado/pendiente ──
   const sumSec = document.createElement('div');
   sumSec.className = 'detail-section';
@@ -736,6 +841,7 @@ async function renderJobDetailView(container, jobId) {
   const albaranes = Array.isArray(job.albaranes) ? job.albaranes : [];
   const docsSec = document.createElement('div');
   docsSec.className = 'detail-section';
+  docsSec.dataset.seccion = 'albaranes'; // SCRUM-320: destino del hueco «sin firmar»
   // SCRUM-319 (G4): esta sección ya solo lleva ALBARANES; lo demás salió al rail o a su propio
   // bloque. El rótulo ya existía en el producto: no es microcopy nueva.
   docsSec.innerHTML = '<h3 class="detail-section-title">Albaranes</h3>';
@@ -1014,16 +1120,6 @@ async function renderJobDetailView(container, jobId) {
   // SCRUM-65: totales orientativos en vivo — MISMA regla de céntimos enteros que el
   // backend (calcAlbaranTotales), para que lo que ve el pro al teclear no desentone
   // ni un céntimo con lo que sale luego en el PDF.
-  function albTotalesJS(lineas) {
-    let baseCents = 0, cuotaCents = 0;
-    for (const l of lineas) {
-      if (l.precioUnitario === undefined || l.precioUnitario === null || !Number.isFinite(l.precioUnitario)) continue;
-      const lineaBaseCents = Math.round(l.precioUnitario * (Number(l.cantidad) || 0) * 100);
-      const lineaCuotaCents = Math.round(lineaBaseCents * ((Number(l.tipoIva) || 0) / 100));
-      baseCents += lineaBaseCents; cuotaCents += lineaCuotaCents;
-    }
-    return { base: baseCents / 100, total: (baseCents + cuotaCents) / 100 };
-  }
 
   // Editor de líneas/notas/modo (borrador/emitido). PATCH → version++ en el backend.
   // Inputs creados por DOM (.value directo): sin interpolar valores en HTML.
@@ -1035,403 +1131,6 @@ async function renderJobDetailView(container, jobId) {
   // ellos el editor se comporta EXACTAMENTE igual que antes (PATCH sobre un albarán que ya existe),
   // que es lo que mantiene intacta la edición de los albaranes de siempre — incluidos los que hoy
   // están en BORRADOR vacíos y que no se migran ni se borran.
-  function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } = {}) {
-    box.innerHTML = '';
-    // SCRUM-65: el modo solo se puede TOCAR en 'borrador' (congelado desde 'emitido' —
-    // el backend devolvería 409 albaran_locked si se intentase cambiar después).
-    const modoEditable = alb.estado === 'borrador';
-    let modo = alb.modoValoracion === 'VALORADO' ? 'VALORADO' : 'SIN_VALORAR';
-
-    const modoRow = document.createElement('div');
-    modoRow.style.cssText = 'margin-bottom:10px';
-    if (modoEditable) {
-      const lbl = document.createElement('label');
-      lbl.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);cursor:pointer';
-      const chk = document.createElement('input');
-      chk.type = 'checkbox';
-      chk.checked = modo === 'VALORADO';
-      chk.addEventListener('change', () => {
-        modo = chk.checked ? 'VALORADO' : 'SIN_VALORAR';
-        [...rows.children].forEach(syncRowToModo);
-        updateTotales();
-      });
-      lbl.appendChild(chk);
-      lbl.appendChild(document.createTextNode('Incluir precios en el parte'));
-      modoRow.appendChild(lbl);
-      const hint = document.createElement('p');
-      hint.style.cssText = 'margin:2px 0 0;color:var(--muted);font-size:12px';
-      hint.textContent = 'El parte sigue sin ser una factura.';
-      modoRow.appendChild(hint);
-    } else {
-      const p = document.createElement('p');
-      p.style.cssText = 'margin:0;font-size:12px;color:var(--muted)';
-      p.textContent = modo === 'VALORADO' ? 'Con precios (modo congelado tras emitir).' : 'Sin precios (modo congelado tras emitir).';
-      modoRow.appendChild(p);
-    }
-    box.appendChild(modoRow);
-
-    const rows = document.createElement('div');
-    // Muestra/oculta las columnas precio+IVA de una fila según el modo actual.
-    function syncRowToModo(r) {
-      r.querySelectorAll('.alb-precio-field').forEach((el) => { el.style.display = modo === 'VALORADO' ? '' : 'none'; });
-    }
-    const mkRow = (l) => {
-      const r = document.createElement('div');
-      r.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;align-items:center;flex-wrap:wrap';
-      const c = document.createElement('input');
-      c.className = 'input'; c.placeholder = 'Concepto'; c.style.cssText = 'flex:3;min-width:0';
-      c.value = l.concepto || '';
-      const q = document.createElement('input');
-      q.className = 'input'; q.placeholder = 'Cant.'; q.type = 'number'; q.min = '0'; q.step = 'any';
-      q.style.cssText = 'flex:1;min-width:64px';
-      if (l.cantidad !== undefined && l.cantidad !== null) q.value = l.cantidad;
-      const u = document.createElement('input');
-      u.className = 'input'; u.placeholder = 'Unidad (ud, m, h…)'; u.style.cssText = 'flex:1;min-width:80px';
-      u.value = l.unidad || '';
-      // SCRUM-65: precio unitario + IVA%, solo visibles/exigidos en modo VALORADO.
-      const p = document.createElement('input');
-      p.className = 'input alb-precio-field'; p.placeholder = 'Precio ud.'; p.type = 'number'; p.min = '0'; p.step = 'any';
-      p.style.cssText = 'flex:1;min-width:80px';
-      if (l.precioUnitario !== undefined && l.precioUnitario !== null) p.value = l.precioUnitario;
-      const iv = document.createElement('input');
-      iv.className = 'input alb-precio-field'; iv.placeholder = 'IVA %'; iv.type = 'number'; iv.min = '0'; iv.max = '100'; iv.step = 'any';
-      iv.style.cssText = 'flex:1;min-width:64px';
-      iv.value = (l.tipoIva !== undefined && l.tipoIva !== null) ? l.tipoIva : 21;
-      // ── SCRUM-303 · EL ORIGEN VIAJA CON LA FILA (y sin él, SCRUM-367 se queda en nada) ────────
-      //
-      // `quoteLineIndex` NO tiene input: no se teclea, se hereda del presupuesto. Pero el guardado
-      // reconstruye cada línea **desde los inputs**, así que sin guardarlo en la fila se perdería
-      // aquí — exactamente el mismo fallo que SCRUM-367 cerró en `validarLineas`, una capa más
-      // arriba. Aquel ticket demostró que el backend lo CONSERVA; nadie comprobó que el front lo
-      // MANDE, y no lo hacía: editar un albarán desde esta hoja ya borraba el origen hoy.
-      //
-      // Es lo que le da de comer a C6 («quedan 3 metros por entregar»). Perderlo no da error: da un
-      // albarán que ya no sabe de qué partida salió.
-      if (l.quoteLineIndex !== undefined && l.quoteLineIndex !== null && l.quoteLineIndex !== '') {
-        r.dataset.quoteLineIndex = String(l.quoteLineIndex);
-      }
-      [q, p, iv].forEach((inp) => inp.addEventListener('input', updateTotales));
-      const del = document.createElement('button');
-      del.className = 'btn-ghost btn-sm';
-      del.textContent = '✕';
-      del.setAttribute('aria-label', 'Quitar línea');
-      del.addEventListener('click', () => { r.remove(); updateTotales(); });
-      r.appendChild(c); r.appendChild(q); r.appendChild(u); r.appendChild(p); r.appendChild(iv); r.appendChild(del);
-      syncRowToModo(r);
-      return r;
-    };
-    const lineas = Array.isArray(alb.lineas) ? alb.lineas : [];
-    lineas.forEach((l) => rows.appendChild(mkRow(l)));
-    if (!lineas.length) rows.appendChild(mkRow({}));
-    box.appendChild(rows);
-
-    const addRow = document.createElement('button');
-    addRow.className = 'btn-ghost btn-sm';
-    addRow.textContent = '+ Añadir línea';
-    addRow.addEventListener('click', () => { rows.appendChild(mkRow({})); updateTotales(); });
-    box.appendChild(addRow);
-
-    // ── SCRUM-71 (punto 3) · DICTAR EL PARTE EN OBRA ──────────────────────────────────
-    //
-    // «He cambiado dos grifos monomando y he estado tres horas» → líneas. El operario dicta
-    // con una mano, a pleno sol, con guantes: por eso la revisión va en HOJA INFERIOR (el
-    // bottom sheet de AB3/SCRUM-31 F2, que `.modal-overlay .modal` ya da por debajo de 640 px)
-    // y NO en un modal de escritorio con checkboxes pequeños.
-    //
-    // «LA VOZ PROPONE, EL HUMANO CORRIGE», y aquí se lleva más lejos que en presupuestos: las
-    // líneas aceptadas **caen en las filas de arriba**, que ya son editables y no se guardan
-    // hasta que el pro pulse guardar. No hay una pantalla paralela que «confirme» nada — se
-    // aterriza en el formulario que ya conoce. Un presupuesto se rehace; un albarán lo firma
-    // el cliente y desde `emitido` se congela, así que la última palabra tiene que ser suya.
-    //
-    // GATE doble: el flag PROPIO del albarán (`VOICE_ALBARAN_ENABLED`, servido por /admin/me) y
-    // el `voiceSupportProbe()` de VZ-1 — si el navegador no vale, el micro NO se pinta y queda
-    // el formulario de siempre. Degradación silenciosa: jamás un botón roto.
-    // Escape local, y aquí NO es defensa de manual: el concepto viene de un MODELO DE
-    // LENGUAJE a partir de lo que alguien dictó. Es la entrada menos controlada de toda la
-    // pantalla, va a `innerHTML`, y no se depende de ningún helper global que cargue en otro
-    // fichero (la lección de SCRUM-153c: una dependencia invisible cuyo fallo es inyección).
-    const escVoz = (v) => String(v == null ? '' : v)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-
-    const vozDisponible = window.appVoiceAlbaranEnabled === true
-      && typeof voiceSupportProbe === 'function' && voiceSupportProbe()
-      && typeof attachVoiceInput === 'function';
-
-    if (vozDisponible) {
-      const btnDictar = document.createElement('button');
-      btnDictar.type = 'button';
-      btnDictar.className = 'btn-secondary btn-sm';
-      btnDictar.style.cssText = 'margin-left:8px;min-height:44px'; // target al pulgar (AB6)
-      btnDictar.textContent = '🎤 Dictar el parte';
-      btnDictar.addEventListener('click', () => abrirHojaDictado());
-      box.appendChild(btnDictar);
-
-      function abrirHojaDictado() {
-        const overlay = document.createElement('div');
-        overlay.className = 'modal-overlay';
-        overlay.innerHTML = `
-          <div class="modal" style="max-width:520px" role="dialog" aria-modal="true" aria-labelledby="voz-t">
-            <div class="modal-header">
-              <h3 class="modal-title" id="voz-t">🎤 Dictar el parte</h3>
-              <button class="modal-close" id="voz-x" aria-label="Cerrar">&times;</button>
-            </div>
-            <div class="modal-body">
-              <p style="font-size:13px;color:var(--muted);margin:0 0 10px">
-                Cuenta lo que has hecho, como se lo contarías a un compañero. Luego lo repasas.
-              </p>
-              <textarea id="voz-txt" rows="4" class="input" style="width:100%;resize:vertical"
-                placeholder="Ej: he cambiado dos grifos monomando y he estado tres horas"></textarea>
-              <button class="btn-primary" id="voz-gen" style="width:100%;margin-top:10px;min-height:44px">
-                Convertir en líneas
-              </button>
-              <div class="alert" id="voz-err" style="display:none;margin-top:10px"></div>
-              <div id="voz-res" style="margin-top:12px"></div>
-            </div>
-          </div>`;
-        document.body.appendChild(overlay);
-
-        const cerrar = () => overlay.remove();
-        overlay.querySelector('#voz-x').onclick = cerrar;
-        overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
-        document.addEventListener('keydown', function esc(e) {
-          if (e.key === 'Escape') { cerrar(); document.removeEventListener('keydown', esc); }
-        });
-
-        const ta = overlay.querySelector('#voz-txt');
-        const btnGen = overlay.querySelector('#voz-gen');
-        const err = overlay.querySelector('#voz-err');
-        const res = overlay.querySelector('#voz-res');
-
-        // El micro de VZ-1 sobre el textarea: SIEMPRE editable (la voz propone, el humano
-        // corrige) y con su degradación propia si el permiso falla.
-        attachVoiceInput(ta);
-        ta.focus();
-
-        btnGen.addEventListener('click', async () => {
-          const texto = (ta.value || '').trim();
-          if (!texto) { ta.focus(); return; }
-          btnGen.disabled = true;
-          const orig = btnGen.textContent;
-          btnGen.textContent = 'Convirtiendo…';
-          err.style.display = 'none';
-          try {
-            const d = await apiRequest('/admin/ai/suggest-albaran-lines', {
-              method: 'POST',
-              body: JSON.stringify({ albaranId: alb.id, description: texto }),
-            });
-            pintarPropuesta(Array.isArray(d.lines) ? d.lines : []);
-          } catch (e) {
-            err.textContent = e?.message || 'No se pudieron generar las líneas.';
-            err.style.display = 'block';
-          } finally {
-            btnGen.disabled = false;
-            btnGen.textContent = orig;
-          }
-        });
-
-        function pintarPropuesta(lineas) {
-          res.innerHTML = '';
-          if (!lineas.length) {
-            err.textContent = 'No he sacado ninguna línea. Prueba a contarlo con más detalle.';
-            err.style.display = 'block';
-            return;
-          }
-          const titulo = document.createElement('p');
-          titulo.style.cssText = 'font-size:13px;font-weight:600;margin:0 0 8px';
-          titulo.textContent = 'Repasa antes de añadirlas al parte:';
-          res.appendChild(titulo);
-
-          const marcas = [];
-          lineas.forEach((l, i) => {
-            const fila = document.createElement('label');
-            // ≥44 px y toda la fila es el target: en obra no se acierta a un checkbox de 16 px.
-            fila.style.cssText = 'display:flex;gap:10px;align-items:flex-start;padding:10px;'
-              + 'min-height:44px;border:1px solid var(--border);border-radius:10px;'
-              + 'margin-bottom:6px;background:var(--surface-2);cursor:pointer';
-            const chk = document.createElement('input');
-            chk.type = 'checkbox'; chk.checked = true;
-            chk.style.cssText = 'margin-top:3px;width:20px;height:20px;flex-shrink:0';
-            marcas.push({ chk, linea: l });
-            const txt = document.createElement('div');
-            // SIN_VALORAR: ni se pide ni se muestra precio. El saneado del servidor ya lo
-            // garantiza (SCRUM-71 puntos 1-2), pero la pantalla no puede contradecirlo —
-            // enseñar un precio que luego no se guarda sería peor que no enseñarlo.
-            const detalle = `${l.cantidad} ${l.unidad}`
-              + (modo === 'VALORADO' && l.precioUnitario != null ? ` · ${l.precioUnitario} €/ud` : '');
-            txt.innerHTML = `<div style="font-weight:600;color:var(--ink)">${escVoz(l.concepto)}</div>`
-              + `<div style="color:var(--muted);font-size:13px">${escVoz(detalle)}</div>`;
-            fila.append(chk, txt);
-            res.appendChild(fila);
-          });
-
-          const anadir = document.createElement('button');
-          anadir.className = 'btn-primary';
-          anadir.style.cssText = 'width:100%;margin-top:10px;min-height:44px';
-          anadir.textContent = 'Añadir al parte';
-          anadir.addEventListener('click', () => {
-            marcas.filter((m) => m.chk.checked).forEach((m) => {
-              const l = m.linea;
-              rows.appendChild(mkRow({
-                concepto: l.concepto,
-                cantidad: l.cantidad,
-                unidad: l.unidad,
-                // En SIN_VALORAR no se arrastra precio ni IVA: esas columnas ni se ven.
-                ...(modo === 'VALORADO'
-                  ? { precioUnitario: l.precioUnitario, tipoIva: l.tipoIva != null ? l.tipoIva * 100 : undefined }
-                  : {}),
-              }));
-            });
-            updateTotales();
-            cerrar();
-            showToast('✓ Líneas añadidas — repásalas antes de guardar');
-          });
-          res.appendChild(anadir);
-        }
-      }
-    }
-
-    // Total orientativo (base + total, SIN desglose de cuota — igual que PDF/backend).
-    const totalesBox = document.createElement('p');
-    totalesBox.style.cssText = 'margin:8px 0 0;font-size:13px;color:var(--ink);font-weight:600;text-align:right';
-    box.appendChild(totalesBox);
-    function readRowsForTotales() {
-      return [...rows.children].map((r) => {
-        const inputs = r.querySelectorAll('input');
-        return {
-          cantidad: Number(String(inputs[1].value).replace(',', '.')),
-          precioUnitario: modo === 'VALORADO' && inputs[3].value !== '' ? Number(String(inputs[3].value).replace(',', '.')) : null,
-          tipoIva: modo === 'VALORADO' ? Number(String(inputs[4].value).replace(',', '.')) : null,
-        };
-      });
-    }
-    function updateTotales() {
-      if (modo !== 'VALORADO') { totalesBox.textContent = ''; return; }
-      const t = albTotalesJS(readRowsForTotales());
-      totalesBox.textContent = `Base: ${fmtMoneyEs(t.base, cur)} · Total orientativo: ${fmtMoneyEs(t.total, cur)}`;
-    }
-    updateTotales();
-
-    // ── SCRUM-300 (C5): LUGAR y FECHA de entrega ───────────────────────────────────────
-    // Contenido mínimo obligatorio del albarán. Se editan AQUÍ —preparando el documento— y no en
-    // el momento de firmar: teclear una dirección con el cliente delante y las manos sucias es
-    // justo la fricción en obra que el ticket manda evitar.
-    //
-    // ⚠️ Los rótulos y las ayudas NO se escriben aquí: llegan servidos por `/admin/me` desde
-    // `albaranFirmante.ts` (regla 30). Sin ellos el bloque no se pinta.
-    const rotAlb = window.appAlbaranRotulos || {};
-    const ayuAlb = window.appAlbaranAyudas || {};
-    let lugarEl = null, fEntregaEl = null;
-    if (rotAlb.lugarEntrega && rotAlb.fechaEntrega) {
-      const campoAlb = (labelText, ayudaText, el) => {
-        const w = document.createElement('div');
-        w.style.cssText = 'margin-top:8px';
-        const l = document.createElement('label');
-        l.style.cssText = 'display:block;font-size:12px;font-weight:600;color:var(--ink);margin-bottom:3px';
-        l.textContent = labelText;
-        w.appendChild(l);
-        if (ayudaText) {
-          const p = document.createElement('p');
-          p.style.cssText = 'margin:0 0 6px;font-size:12px;color:var(--muted);line-height:1.45';
-          p.textContent = ayudaText;
-          w.appendChild(p);
-        }
-        w.appendChild(el);
-        box.appendChild(w);
-        return w;
-      };
-
-      lugarEl = document.createElement('input');
-      lugarEl.type = 'text';
-      lugarEl.className = 'input';
-      lugarEl.style.cssText = 'width:100%;min-height:44px';
-      lugarEl.maxLength = 300;
-      lugarEl.value = alb.lugarEntrega || '';
-      // ⚠️ SUELO del ticket: si no hay dirección de obra se deja VACÍO. `Job.direccion` entra solo
-      // como PLACEHOLDER —sugiere, no rellena—: una dirección equivocada en un documento de
-      // entrega es peor que ninguna. Hoy es null para cualquier merchant real (SCRUM-374), así
-      // que lo normal es que no haya nada que sugerir y lo escriba el profesional.
-      if (job.direccion && !lugarEl.value) lugarEl.placeholder = job.direccion;
-      campoAlb(rotAlb.lugarEntrega, ayuAlb.lugarEntrega, lugarEl);
-
-      // ⚠️ Columna PROPIA (`Albaran.fechaEntrega`), NO `Albaran.fecha`: un albarán se prepara un
-      // día y se entrega otro, y `fecha` además es la clave del mes natural de la recapitulativa
-      // (art. 13). Escribir una sobre la otra movería la factura de mes sin que nadie lo pidiera.
-      fEntregaEl = document.createElement('input');
-      fEntregaEl.type = 'date';
-      fEntregaEl.className = 'input';
-      fEntregaEl.style.cssText = 'width:100%;min-height:44px';
-      fEntregaEl.value = alb.fechaEntrega ? String(alb.fechaEntrega).slice(0, 10) : '';
-      campoAlb(rotAlb.fechaEntrega, ayuAlb.fechaEntrega, fEntregaEl);
-    }
-
-    const notas = document.createElement('textarea');
-    notas.className = 'input';
-    notas.placeholder = 'Notas del albarán (opcional)';
-    notas.style.cssText = 'width:100%;margin-top:8px;min-height:56px';
-    notas.value = alb.notas || '';
-    box.appendChild(notas);
-
-    const saveRow = document.createElement('div');
-    saveRow.style.cssText = 'display:flex;gap:8px;margin-top:8px';
-    const save = document.createElement('button');
-    save.className = 'btn-primary btn-sm';
-    save.textContent = textoGuardar || 'Guardar cambios';
-    save.addEventListener('click', async () => {
-      const out = [];
-      for (const r of rows.children) {
-        const inputs = r.querySelectorAll('input');
-        const c = inputs[0].value.trim(), qv = inputs[1].value, u = inputs[2].value.trim();
-        const pv = inputs[3].value, ivv = inputs[4].value;
-        if (!c && !qv && !u) continue; // fila totalmente vacía se ignora
-        const linea = { concepto: c, cantidad: Number(String(qv).replace(',', '.')), unidad: u };
-        // SCRUM-303 · y el origen vuelve a salir con ella. ⚠️ FAMILIA SCRUM-271: `dataset` devuelve
-        // SIEMPRE cadena, y `Number('')` es 0 — un índice ausente se convertiría en «la primera
-        // partida del presupuesto», en silencio. Se exige que sean dígitos ANTES de convertir.
-        const origen = r.dataset.quoteLineIndex;
-        if (typeof origen === 'string' && /^\d+$/.test(origen)) linea.quoteLineIndex = Number(origen);
-        if (modo === 'VALORADO') {
-          linea.precioUnitario = Number(String(pv).replace(',', '.'));
-          linea.tipoIva = Number(String(ivv).replace(',', '.'));
-        }
-        out.push(linea);
-      }
-      const body = { lineas: out, notas: notas.value };
-      // SCRUM-300: se mandan SIEMPRE que el bloque exista, también vacíos — vaciar el lugar de
-      // entrega es una decisión legítima del pro y el backend la respeta ('' → null). No tocan
-      // `fecha`, que sigue siendo la del documento.
-      if (lugarEl) body.lugarEntrega = lugarEl.value;
-      if (fEntregaEl) body.fechaEntrega = fEntregaEl.value;
-      // Solo se manda modoValoracion cuando es EDITABLE (borrador); en 'emitido' el
-      // backend lo rechaza con 409 aunque el valor no cambie — mejor ni ofrecerlo.
-      if (modoEditable) body.modoValoracion = modo;
-      save.disabled = true;
-      try {
-        // SCRUM-303: en creación, ÉSTE es el único sitio del que sale el POST — y por eso no hay
-        // albarán ni número hasta aquí. En edición no cambia nada: sigue siendo el PATCH de antes.
-        if (onGuardar) {
-          await onGuardar({ lineas: out, notas: notas.value, modoValoracion: modo });
-        } else {
-          await apiRequest(`/admin/albaranes/${alb.id}`, { method: 'PATCH', body: JSON.stringify(body) });
-          showToast('✓ Albarán actualizado (nueva versión).');
-        }
-        if (onClose) onClose(); // cierra el sheet antes de re-renderizar
-        refresh();
-      } catch (e) {
-        const msg = e?.data?.message || 'No se pudo guardar el albarán.';
-        if (onError) onError(msg); else setStatus('error', msg); // el error se ve DENTRO del sheet
-        save.disabled = false;
-      }
-    });
-    saveRow.appendChild(save);
-    const cancelEd = document.createElement('button');
-    cancelEd.className = 'btn-secondary btn-sm';
-    cancelEd.textContent = 'Cancelar';
-    cancelEd.addEventListener('click', () => { if (onClose) onClose(); else box.style.display = 'none'; });
-    saveRow.appendChild(cancelEd);
-    box.appendChild(saveRow);
-  }
 
   // SCRUM-31 (F2): abre el editor de líneas en un BOTTOM-SHEET. Reutiliza .modal-overlay/.modal,
   // que en <640px ya es hoja inferior full-width con scroll y slide-from-bottom (styles.css, como
@@ -1447,173 +1146,7 @@ async function renderJobDetailView(container, jobId) {
    * Los topes viven también en el servidor (`validarPeticionParcial`): esto es comodidad, no
    * seguridad — el importe de una factura no puede depender de lo que valide un navegador.
    */
-  function openFacturarParcialSheet(alb) {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.setAttribute('role', 'dialog');
-    overlay.setAttribute('aria-modal', 'true');
-    overlay.setAttribute('aria-label', `Facturar parte del albarán ${alb.numero}`);
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    const header = document.createElement('div');
-    header.className = 'modal-header';
-    const title = document.createElement('div');
-    title.className = 'modal-title';
-    title.textContent = `Facturar parte de ${alb.numero}`;
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'modal-close';
-    closeBtn.type = 'button';
-    closeBtn.textContent = '×';
-    closeBtn.setAttribute('aria-label', 'Cerrar');
-    header.append(title, closeBtn);
 
-    const err = document.createElement('div');
-    err.className = 'alert error';
-    err.style.display = 'none';
-
-    const body = document.createElement('div');
-    body.className = 'modal-body';
-    const inputs = [];
-    (alb.pendientes || []).forEach((p) => {
-      if (p.pendiente <= 0) return; // lo ya cobrado no se vuelve a ofrecer
-      const fila = document.createElement('div');
-      fila.style.cssText = 'display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)';
-      const izq = document.createElement('div');
-      izq.style.cssText = 'min-width:0;flex:1';
-      izq.innerHTML =
-        `<div style="font-weight:600">${esc(p.concepto || 'Sin concepto')}</div>` +
-        `<div style="font-size:12px;color:var(--muted)">Servido ${p.servida}${p.unidad ? ' ' + esc(p.unidad) : ''}` +
-        (p.facturada > 0 ? ` · ya facturado ${p.facturada}` : '') +
-        ` · queda <strong>${p.pendiente}</strong></div>`;
-      const inp = document.createElement('input');
-      inp.type = 'number';
-      inp.min = '0';
-      inp.max = String(p.pendiente);
-      inp.step = '0.001';
-      inp.value = String(p.pendiente); // por defecto, lo que queda
-      inp.style.cssText = 'width:110px;min-height:44px'; // target al pulgar (AB6)
-      inp.setAttribute('aria-label', `Cantidad a facturar de ${p.concepto || 'la línea'}`);
-      inputs.push({ index: p.index, input: inp, max: p.pendiente });
-      fila.append(izq, inp);
-      body.appendChild(fila);
-    });
-
-    const footer = document.createElement('div');
-    footer.className = 'modal-footer';
-    const cancelar = document.createElement('button');
-    cancelar.className = 'btn-secondary';
-    cancelar.type = 'button';
-    cancelar.textContent = 'Cancelar';
-    const emitir = document.createElement('button');
-    emitir.className = 'btn-primary';
-    emitir.type = 'button';
-    emitir.textContent = 'Emitir factura';
-    footer.append(cancelar, emitir);
-
-    const cerrar = () => overlay.remove();
-    closeBtn.addEventListener('click', cerrar);
-    cancelar.addEventListener('click', cerrar);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
-
-    // SCRUM-271: el aviso de «se cae alguna línea» necesita recordar si ya se dio, porque la
-    // segunda pulsación es la que confirma. Cualquier cambio en un campo lo vuelve a armar, para
-    // que una confirmación no se herede de una situación distinta de la que se está mirando.
-    let avisadoDeLineasSinCantidad = false;
-    for (const { input } of inputs) {
-      input.addEventListener('input', () => { avisadoDeLineasSinCantidad = false; });
-    }
-
-    emitir.addEventListener('click', async () => {
-      const todas = inputs.map((i) => ({ index: i.index, cantidad: Number(i.input.value) }));
-      const lineas = todas.filter((l) => l.cantidad > 0);
-      if (lineas.length === 0) {
-        err.textContent = 'Indica qué cantidad quieres facturar de al menos una línea.';
-        err.style.display = 'block';
-        return;
-      }
-      // SCRUM-271: antes solo avisaba si se caían TODAS. Con tres líneas y una sin cantidad se
-      // emitía la factura con dos, EN SILENCIO — el pro pedía facturar tres y no se enteraba de
-      // haber perdido una. No corrompe un valor: OMITE una línea, y eso en facturación es peor.
-      //
-      // AVISA Y NO BLOQUEA, a propósito: facturar solo parte de las líneas es un uso legítimo —
-      // para eso existe esta pantalla—, así que impedirlo rompería el flujo. La segunda pulsación
-      // confirma, que es lo que convierte «no se enteró» en «lo decidió».
-      if (lineas.length < todas.length && !avisadoDeLineasSinCantidad) {
-        err.textContent = 'Revisa las líneas sin cantidad: no se facturarán.';
-        err.style.display = 'block';
-        avisadoDeLineasSinCantidad = true;
-        return;
-      }
-      emitir.disabled = true;
-      const orig = emitir.textContent;
-      emitir.textContent = 'Emitiendo…';
-      try {
-        const d = await apiRequest(`/admin/albaranes/${alb.id}/facturar-parcial`, {
-          method: 'POST', body: JSON.stringify({ lineas }),
-        });
-        cerrar();
-        // El sellado que falla NO se calla (mismo criterio que la consolidación).
-        showToast(d && d.veriFactu === false ? '⚠️ Factura emitida, revisa su registro' : '✓ Factura emitida.');
-        if (d && d.message) setStatus('error', d.message);
-        refresh();
-      } catch (e) {
-        err.textContent = e?.data?.message || 'No se pudo emitir la factura.';
-        err.style.display = 'block';
-        emitir.disabled = false;
-        emitir.textContent = orig;
-      }
-    });
-
-    modal.append(header, err, body, footer);
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
-  }
-
-  function openAlbEditorSheet(alb) {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.setAttribute('role', 'dialog');
-    overlay.setAttribute('aria-modal', 'true');
-    overlay.setAttribute('aria-label', `Editar albarán ${alb.numero}`);
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    const header = document.createElement('div');
-    header.className = 'modal-header';
-    const title = document.createElement('div');
-    title.className = 'modal-title';
-    title.textContent = `Editar albarán ${alb.numero}`;
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'modal-close';
-    closeBtn.type = 'button';
-    closeBtn.textContent = '×';
-    closeBtn.setAttribute('aria-label', 'Cerrar');
-    header.append(title, closeBtn);
-    // Banner de error PROPIO del sheet (el statusBox de la página queda detrás del overlay).
-    const errEl = document.createElement('div');
-    errEl.className = 'alert error';
-    errEl.style.cssText = 'display:none;margin:12px 24px 0';
-    const bodyEl = document.createElement('div');
-    bodyEl.className = 'modal-body';
-    modal.append(header, errEl, bodyEl);
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
-
-    const onKey = (e) => { if (e.key === 'Escape') close(); };
-    function close() {
-      overlay.remove();
-      document.removeEventListener('keydown', onKey);
-    }
-    closeBtn.addEventListener('click', close);
-    document.addEventListener('keydown', onKey);
-    // NO se cierra al pulsar el fondo: evita perder líneas sin querer (usa ×, Cancelar o Esc).
-
-    buildAlbEditor(bodyEl, alb, {
-      onClose: close,
-      onError: (msg) => { errEl.textContent = msg; errEl.style.display = 'block'; },
-    });
-    // Foco al primer campo (Concepto) para teclear directo; si no hay, al botón de cerrar.
-    (bodyEl.querySelector('.input') || closeBtn).focus();
-  }
 
   /**
    * SCRUM-303 (C4) · LA HOJA DE CREAR, QUE ES LA MISMA HOJA DE EDITAR.
@@ -1704,7 +1237,7 @@ async function renderJobDetailView(container, jobId) {
             : '✓ Albarán creado (borrador).',
         );
       },
-    });
+    }, { cur, refresh, setStatus, job });
     (bodyEl.querySelector('.input') || closeBtn).focus();
   }
 
@@ -1795,7 +1328,7 @@ async function renderJobDetailView(container, jobId) {
     // un constructor de botón que ya no llama nadie es código que se pudre sin que nada lo diga, y
     // el siguiente que lo lea creerá que la fila todavía ofrece esas acciones. Lo que sí se queda
     // es el bloque de miniaturas de arriba: eso es LECTURA, y la fila sigue enseñando las fotos.
-    const editBtn = () => mkBtn('Editar líneas', () => openAlbEditorSheet(alb));
+    const editBtn = () => mkBtn('Editar líneas', () => openAlbEditorSheet(alb, { cur, refresh, setStatus, job }));
 
     // SCRUM-302 (C2) · LA FILA YA NO ES UNA BARRA DE ACCIONES: ES UNA ENTRADA.
     //
@@ -1829,7 +1362,7 @@ async function renderJobDetailView(container, jobId) {
       if (primaria.id === 'btnFacturar') {
         // El ÚNICO cuyo mecanismo vive aquí (`openFacturarParcialSheet`, anidada en esta vista):
         // éste ejecuta. Es también el puente que `scrum302-sin-callejones` exige conservar.
-        const bt = mkBtn(rotulo, () => openFacturarParcialSheet(alb));
+        const bt = mkBtn(rotulo, () => openFacturarParcialSheet(alb, { refresh, setStatus, customer: job.customer }));
         acts.appendChild(bt);
         // Admin-only como toda emisión (S1): al técnico se le DESHABILITA con explicación, nunca
         // se le esconde (norma de SCRUM-89).
@@ -2095,6 +1628,7 @@ async function renderJobDetailView(container, jobId) {
   if (restantes.length) {
     const factSec = document.createElement('div');
     factSec.className = 'detail-section';
+    factSec.dataset.seccion = 'facturas'; // SCRUM-320: destino del hueco «sin cobrar»
     factSec.innerHTML = '<h3 class="detail-section-title">Facturas</h3>';
     const lista = document.createElement('div');
     lista.className = 'job-doc-list';
@@ -2152,4 +1686,698 @@ async function renderJobDetailView(container, jobId) {
     cuerpo.classList.add('detail-cuerpo--con-rail');
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-386 · LAS DOS HOJAS DEL ALBARÁN, FUERA DE `renderJobDetailView`
+//
+// Vivían ANIDADAS dentro de la vista del Trabajo, y por eso la página del albarán (SCRUM-302)
+// no podía hacerlas: solo NAVEGAR hasta ellas. La fila tenía que conservar sus botones para no
+// dejar callejones sin salida, que es la deuda que C2 declaró y esto salda.
+//
+// ⚠️ ES UNA MUDANZA, NO UNA MEJORA. El cuerpo de las tres funciones es el mismo carácter por
+// carácter; lo único que cambia son las firmas, porque lo que antes se capturaba del ámbito de
+// fuera ahora entra por parámetro. Se recibe DESESTRUCTURADO con los mismos nombres para que el
+// cuerpo no se toque — una función que capturaba cuatro cosas y ahora recibe tres no es la
+// misma función aunque el diff parezca inocente.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+function albTotalesJS(lineas) {
+  let baseCents = 0, cuotaCents = 0;
+  for (const l of lineas) {
+    if (l.precioUnitario === undefined || l.precioUnitario === null || !Number.isFinite(l.precioUnitario)) continue;
+    const lineaBaseCents = Math.round(l.precioUnitario * (Number(l.cantidad) || 0) * 100);
+    const lineaCuotaCents = Math.round(lineaBaseCents * ((Number(l.tipoIva) || 0) / 100));
+    baseCents += lineaBaseCents; cuotaCents += lineaCuotaCents;
+  }
+  return { base: baseCents / 100, total: (baseCents + cuotaCents) / 100 };
+}
+
+function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } = {}, ctx = {}) {
+  // SCRUM-386 · lo que antes venía del ámbito de `renderJobDetailView`. Se desestructura con
+  // los MISMOS nombres a propósito: así el cuerpo de abajo no cambia ni un carácter, y la
+  // mudanza se puede comprobar comparando textos en vez de leyendo.
+  // ⚠️ FUSIÓN C5 · `job` se añade al contexto, y no es cosmético: el bloque de lugar/fecha de
+  // entrega que trae C5 usaba `job.direccion` CAPTURADO del ámbito de `renderJobDetailView`, y
+  // SCRUM-386 sacó esta función fuera. Tal cual venía, habría reventado con un ReferenceError al
+  // abrir el editor. Viaja por parámetro, que es exactamente lo que el guard de 386 exige.
+  const { cur, refresh, setStatus, job } = ctx;
+  box.innerHTML = '';
+  // SCRUM-65: el modo solo se puede TOCAR en 'borrador' (congelado desde 'emitido' —
+  // el backend devolvería 409 albaran_locked si se intentase cambiar después).
+  const modoEditable = alb.estado === 'borrador';
+  let modo = alb.modoValoracion === 'VALORADO' ? 'VALORADO' : 'SIN_VALORAR';
+
+  const modoRow = document.createElement('div');
+  modoRow.style.cssText = 'margin-bottom:10px';
+  if (modoEditable) {
+    const lbl = document.createElement('label');
+    lbl.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);cursor:pointer';
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.checked = modo === 'VALORADO';
+    chk.addEventListener('change', () => {
+      modo = chk.checked ? 'VALORADO' : 'SIN_VALORAR';
+      [...rows.children].forEach(syncRowToModo);
+      updateTotales();
+    });
+    lbl.appendChild(chk);
+    lbl.appendChild(document.createTextNode('Incluir precios en el parte'));
+    modoRow.appendChild(lbl);
+    const hint = document.createElement('p');
+    hint.style.cssText = 'margin:2px 0 0;color:var(--muted);font-size:12px';
+    hint.textContent = 'El parte sigue sin ser una factura.';
+    modoRow.appendChild(hint);
+  } else {
+    const p = document.createElement('p');
+    p.style.cssText = 'margin:0;font-size:12px;color:var(--muted)';
+    p.textContent = modo === 'VALORADO' ? 'Con precios (modo congelado tras emitir).' : 'Sin precios (modo congelado tras emitir).';
+    modoRow.appendChild(p);
+  }
+  box.appendChild(modoRow);
+
+  const rows = document.createElement('div');
+  // Muestra/oculta las columnas precio+IVA de una fila según el modo actual.
+  function syncRowToModo(r) {
+    r.querySelectorAll('.alb-precio-field').forEach((el) => { el.style.display = modo === 'VALORADO' ? '' : 'none'; });
+  }
+  const mkRow = (l) => {
+    const r = document.createElement('div');
+    r.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;align-items:center;flex-wrap:wrap';
+    const c = document.createElement('input');
+    c.className = 'input'; c.placeholder = 'Concepto'; c.style.cssText = 'flex:3;min-width:0';
+    c.value = l.concepto || '';
+    const q = document.createElement('input');
+    q.className = 'input'; q.placeholder = 'Cant.'; q.type = 'number'; q.min = '0'; q.step = 'any';
+    q.style.cssText = 'flex:1;min-width:64px';
+    if (l.cantidad !== undefined && l.cantidad !== null) q.value = l.cantidad;
+    const u = document.createElement('input');
+    u.className = 'input'; u.placeholder = 'Unidad (ud, m, h…)'; u.style.cssText = 'flex:1;min-width:80px';
+    u.value = l.unidad || '';
+    // SCRUM-65: precio unitario + IVA%, solo visibles/exigidos en modo VALORADO.
+    const p = document.createElement('input');
+    p.className = 'input alb-precio-field'; p.placeholder = 'Precio ud.'; p.type = 'number'; p.min = '0'; p.step = 'any';
+    p.style.cssText = 'flex:1;min-width:80px';
+    if (l.precioUnitario !== undefined && l.precioUnitario !== null) p.value = l.precioUnitario;
+    const iv = document.createElement('input');
+    iv.className = 'input alb-precio-field'; iv.placeholder = 'IVA %'; iv.type = 'number'; iv.min = '0'; iv.max = '100'; iv.step = 'any';
+    iv.style.cssText = 'flex:1;min-width:64px';
+    iv.value = (l.tipoIva !== undefined && l.tipoIva !== null) ? l.tipoIva : 21;
+    // ── SCRUM-303 · EL ORIGEN VIAJA CON LA FILA (y sin él, SCRUM-367 se queda en nada) ────────
+    //
+    // `quoteLineIndex` NO tiene input: no se teclea, se hereda del presupuesto. Pero el guardado
+    // reconstruye cada línea **desde los inputs**, así que sin guardarlo en la fila se perdería
+    // aquí — exactamente el mismo fallo que SCRUM-367 cerró en `validarLineas`, una capa más
+    // arriba. Aquel ticket demostró que el backend lo CONSERVA; nadie comprobó que el front lo
+    // MANDE, y no lo hacía: editar un albarán desde esta hoja ya borraba el origen hoy.
+    //
+    // Es lo que le da de comer a C6 («quedan 3 metros por entregar»). Perderlo no da error: da un
+    // albarán que ya no sabe de qué partida salió.
+    if (l.quoteLineIndex !== undefined && l.quoteLineIndex !== null && l.quoteLineIndex !== '') {
+      r.dataset.quoteLineIndex = String(l.quoteLineIndex);
+    }
+    [q, p, iv].forEach((inp) => inp.addEventListener('input', updateTotales));
+    const del = document.createElement('button');
+    del.className = 'btn-ghost btn-sm';
+    del.textContent = '✕';
+    del.setAttribute('aria-label', 'Quitar línea');
+    del.addEventListener('click', () => { r.remove(); updateTotales(); });
+    r.appendChild(c); r.appendChild(q); r.appendChild(u); r.appendChild(p); r.appendChild(iv); r.appendChild(del);
+    syncRowToModo(r);
+    return r;
+  };
+  const lineas = Array.isArray(alb.lineas) ? alb.lineas : [];
+  lineas.forEach((l) => rows.appendChild(mkRow(l)));
+  if (!lineas.length) rows.appendChild(mkRow({}));
+  box.appendChild(rows);
+
+  const addRow = document.createElement('button');
+  addRow.className = 'btn-ghost btn-sm';
+  addRow.textContent = '+ Añadir línea';
+  addRow.addEventListener('click', () => { rows.appendChild(mkRow({})); updateTotales(); });
+  box.appendChild(addRow);
+
+  // ── SCRUM-71 (punto 3) · DICTAR EL PARTE EN OBRA ──────────────────────────────────
+  //
+  // «He cambiado dos grifos monomando y he estado tres horas» → líneas. El operario dicta
+  // con una mano, a pleno sol, con guantes: por eso la revisión va en HOJA INFERIOR (el
+  // bottom sheet de AB3/SCRUM-31 F2, que `.modal-overlay .modal` ya da por debajo de 640 px)
+  // y NO en un modal de escritorio con checkboxes pequeños.
+  //
+  // «LA VOZ PROPONE, EL HUMANO CORRIGE», y aquí se lleva más lejos que en presupuestos: las
+  // líneas aceptadas **caen en las filas de arriba**, que ya son editables y no se guardan
+  // hasta que el pro pulse guardar. No hay una pantalla paralela que «confirme» nada — se
+  // aterriza en el formulario que ya conoce. Un presupuesto se rehace; un albarán lo firma
+  // el cliente y desde `emitido` se congela, así que la última palabra tiene que ser suya.
+  //
+  // GATE doble: el flag PROPIO del albarán (`VOICE_ALBARAN_ENABLED`, servido por /admin/me) y
+  // el `voiceSupportProbe()` de VZ-1 — si el navegador no vale, el micro NO se pinta y queda
+  // el formulario de siempre. Degradación silenciosa: jamás un botón roto.
+  // Escape local, y aquí NO es defensa de manual: el concepto viene de un MODELO DE
+  // LENGUAJE a partir de lo que alguien dictó. Es la entrada menos controlada de toda la
+  // pantalla, va a `innerHTML`, y no se depende de ningún helper global que cargue en otro
+  // fichero (la lección de SCRUM-153c: una dependencia invisible cuyo fallo es inyección).
+  const escVoz = (v) => String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+  const vozDisponible = window.appVoiceAlbaranEnabled === true
+    && typeof voiceSupportProbe === 'function' && voiceSupportProbe()
+    && typeof attachVoiceInput === 'function';
+
+  if (vozDisponible) {
+    const btnDictar = document.createElement('button');
+    btnDictar.type = 'button';
+    btnDictar.className = 'btn-secondary btn-sm';
+    btnDictar.style.cssText = 'margin-left:8px;min-height:44px'; // target al pulgar (AB6)
+    btnDictar.textContent = '🎤 Dictar el parte';
+    btnDictar.addEventListener('click', () => abrirHojaDictado());
+    box.appendChild(btnDictar);
+
+    function abrirHojaDictado() {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML = `
+        <div class="modal" style="max-width:520px" role="dialog" aria-modal="true" aria-labelledby="voz-t">
+          <div class="modal-header">
+            <h3 class="modal-title" id="voz-t">🎤 Dictar el parte</h3>
+            <button class="modal-close" id="voz-x" aria-label="Cerrar">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p style="font-size:13px;color:var(--muted);margin:0 0 10px">
+              Cuenta lo que has hecho, como se lo contarías a un compañero. Luego lo repasas.
+            </p>
+            <textarea id="voz-txt" rows="4" class="input" style="width:100%;resize:vertical"
+              placeholder="Ej: he cambiado dos grifos monomando y he estado tres horas"></textarea>
+            <button class="btn-primary" id="voz-gen" style="width:100%;margin-top:10px;min-height:44px">
+              Convertir en líneas
+            </button>
+            <div class="alert" id="voz-err" style="display:none;margin-top:10px"></div>
+            <div id="voz-res" style="margin-top:12px"></div>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+
+      const cerrar = () => overlay.remove();
+      overlay.querySelector('#voz-x').onclick = cerrar;
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
+      document.addEventListener('keydown', function esc(e) {
+        if (e.key === 'Escape') { cerrar(); document.removeEventListener('keydown', esc); }
+      });
+
+      const ta = overlay.querySelector('#voz-txt');
+      const btnGen = overlay.querySelector('#voz-gen');
+      const err = overlay.querySelector('#voz-err');
+      const res = overlay.querySelector('#voz-res');
+
+      // El micro de VZ-1 sobre el textarea: SIEMPRE editable (la voz propone, el humano
+      // corrige) y con su degradación propia si el permiso falla.
+      attachVoiceInput(ta);
+      ta.focus();
+
+      btnGen.addEventListener('click', async () => {
+        const texto = (ta.value || '').trim();
+        if (!texto) { ta.focus(); return; }
+        btnGen.disabled = true;
+        const orig = btnGen.textContent;
+        btnGen.textContent = 'Convirtiendo…';
+        err.style.display = 'none';
+        try {
+          const d = await apiRequest('/admin/ai/suggest-albaran-lines', {
+            method: 'POST',
+            body: JSON.stringify({ albaranId: alb.id, description: texto }),
+          });
+          pintarPropuesta(Array.isArray(d.lines) ? d.lines : []);
+        } catch (e) {
+          err.textContent = e?.message || 'No se pudieron generar las líneas.';
+          err.style.display = 'block';
+        } finally {
+          btnGen.disabled = false;
+          btnGen.textContent = orig;
+        }
+      });
+
+      function pintarPropuesta(lineas) {
+        res.innerHTML = '';
+        if (!lineas.length) {
+          err.textContent = 'No he sacado ninguna línea. Prueba a contarlo con más detalle.';
+          err.style.display = 'block';
+          return;
+        }
+        const titulo = document.createElement('p');
+        titulo.style.cssText = 'font-size:13px;font-weight:600;margin:0 0 8px';
+        titulo.textContent = 'Repasa antes de añadirlas al parte:';
+        res.appendChild(titulo);
+
+        const marcas = [];
+        lineas.forEach((l, i) => {
+          const fila = document.createElement('label');
+          // ≥44 px y toda la fila es el target: en obra no se acierta a un checkbox de 16 px.
+          fila.style.cssText = 'display:flex;gap:10px;align-items:flex-start;padding:10px;'
+            + 'min-height:44px;border:1px solid var(--border);border-radius:10px;'
+            + 'margin-bottom:6px;background:var(--surface-2);cursor:pointer';
+          const chk = document.createElement('input');
+          chk.type = 'checkbox'; chk.checked = true;
+          chk.style.cssText = 'margin-top:3px;width:20px;height:20px;flex-shrink:0';
+          marcas.push({ chk, linea: l });
+          const txt = document.createElement('div');
+          // SIN_VALORAR: ni se pide ni se muestra precio. El saneado del servidor ya lo
+          // garantiza (SCRUM-71 puntos 1-2), pero la pantalla no puede contradecirlo —
+          // enseñar un precio que luego no se guarda sería peor que no enseñarlo.
+          const detalle = `${l.cantidad} ${l.unidad}`
+            + (modo === 'VALORADO' && l.precioUnitario != null ? ` · ${l.precioUnitario} €/ud` : '');
+          txt.innerHTML = `<div style="font-weight:600;color:var(--ink)">${escVoz(l.concepto)}</div>`
+            + `<div style="color:var(--muted);font-size:13px">${escVoz(detalle)}</div>`;
+          fila.append(chk, txt);
+          res.appendChild(fila);
+        });
+
+        const anadir = document.createElement('button');
+        anadir.className = 'btn-primary';
+        anadir.style.cssText = 'width:100%;margin-top:10px;min-height:44px';
+        anadir.textContent = 'Añadir al parte';
+        anadir.addEventListener('click', () => {
+          marcas.filter((m) => m.chk.checked).forEach((m) => {
+            const l = m.linea;
+            rows.appendChild(mkRow({
+              concepto: l.concepto,
+              cantidad: l.cantidad,
+              unidad: l.unidad,
+              // En SIN_VALORAR no se arrastra precio ni IVA: esas columnas ni se ven.
+              ...(modo === 'VALORADO'
+                ? { precioUnitario: l.precioUnitario, tipoIva: l.tipoIva != null ? l.tipoIva * 100 : undefined }
+                : {}),
+            }));
+          });
+          updateTotales();
+          cerrar();
+          showToast('✓ Líneas añadidas — repásalas antes de guardar');
+        });
+        res.appendChild(anadir);
+      }
+    }
+  }
+
+  // Total orientativo (base + total, SIN desglose de cuota — igual que PDF/backend).
+  const totalesBox = document.createElement('p');
+  totalesBox.style.cssText = 'margin:8px 0 0;font-size:13px;color:var(--ink);font-weight:600;text-align:right';
+  box.appendChild(totalesBox);
+  function readRowsForTotales() {
+    return [...rows.children].map((r) => {
+      const inputs = r.querySelectorAll('input');
+      return {
+        cantidad: Number(String(inputs[1].value).replace(',', '.')),
+        precioUnitario: modo === 'VALORADO' && inputs[3].value !== '' ? Number(String(inputs[3].value).replace(',', '.')) : null,
+        tipoIva: modo === 'VALORADO' ? Number(String(inputs[4].value).replace(',', '.')) : null,
+      };
+    });
+  }
+  function updateTotales() {
+    if (modo !== 'VALORADO') { totalesBox.textContent = ''; return; }
+    const t = albTotalesJS(readRowsForTotales());
+    totalesBox.textContent = `Base: ${fmtMoneyEs(t.base, cur)} · Total orientativo: ${fmtMoneyEs(t.total, cur)}`;
+  }
+  updateTotales();
+
+  // ── SCRUM-300 (C5): LUGAR y FECHA de entrega ───────────────────────────────────────
+  // Contenido mínimo obligatorio del albarán. Se editan AQUÍ —preparando el documento— y no en
+  // el momento de firmar: teclear una dirección con el cliente delante y las manos sucias es
+  // justo la fricción en obra que el ticket manda evitar.
+  //
+  // ⚠️ Los rótulos y las ayudas NO se escriben aquí: llegan servidos por `/admin/me` desde
+  // `albaranFirmante.ts` (regla 30). Sin ellos el bloque no se pinta.
+  const rotAlb = window.appAlbaranRotulos || {};
+  const ayuAlb = window.appAlbaranAyudas || {};
+  let lugarEl = null, fEntregaEl = null;
+  if (rotAlb.lugarEntrega && rotAlb.fechaEntrega) {
+    const campoAlb = (labelText, ayudaText, el) => {
+      const w = document.createElement('div');
+      w.style.cssText = 'margin-top:8px';
+      const l = document.createElement('label');
+      l.style.cssText = 'display:block;font-size:12px;font-weight:600;color:var(--ink);margin-bottom:3px';
+      l.textContent = labelText;
+      w.appendChild(l);
+      if (ayudaText) {
+        const p = document.createElement('p');
+        p.style.cssText = 'margin:0 0 6px;font-size:12px;color:var(--muted);line-height:1.45';
+        p.textContent = ayudaText;
+        w.appendChild(p);
+      }
+      w.appendChild(el);
+      box.appendChild(w);
+      return w;
+    };
+
+    lugarEl = document.createElement('input');
+    lugarEl.type = 'text';
+    lugarEl.className = 'input';
+    lugarEl.style.cssText = 'width:100%;min-height:44px';
+    lugarEl.maxLength = 300;
+    lugarEl.value = alb.lugarEntrega || '';
+    // ⚠️ SUELO del ticket: si no hay dirección de obra se deja VACÍO. `Job.direccion` entra solo
+    // como PLACEHOLDER —sugiere, no rellena—: una dirección equivocada en un documento de
+    // entrega es peor que ninguna. Hoy es null para cualquier merchant real (SCRUM-374), así
+    // que lo normal es que no haya nada que sugerir y lo escriba el profesional.
+    if (job.direccion && !lugarEl.value) lugarEl.placeholder = job.direccion;
+    campoAlb(rotAlb.lugarEntrega, ayuAlb.lugarEntrega, lugarEl);
+
+    // ⚠️ Columna PROPIA (`Albaran.fechaEntrega`), NO `Albaran.fecha`: un albarán se prepara un
+    // día y se entrega otro, y `fecha` además es la clave del mes natural de la recapitulativa
+    // (art. 13). Escribir una sobre la otra movería la factura de mes sin que nadie lo pidiera.
+    fEntregaEl = document.createElement('input');
+    fEntregaEl.type = 'date';
+    fEntregaEl.className = 'input';
+    fEntregaEl.style.cssText = 'width:100%;min-height:44px';
+    fEntregaEl.value = alb.fechaEntrega ? String(alb.fechaEntrega).slice(0, 10) : '';
+    campoAlb(rotAlb.fechaEntrega, ayuAlb.fechaEntrega, fEntregaEl);
+  }
+
+
+  const notas = document.createElement('textarea');
+  notas.className = 'input';
+  notas.placeholder = 'Notas del albarán (opcional)';
+  notas.style.cssText = 'width:100%;margin-top:8px;min-height:56px';
+  notas.value = alb.notas || '';
+  box.appendChild(notas);
+
+  const saveRow = document.createElement('div');
+  saveRow.style.cssText = 'display:flex;gap:8px;margin-top:8px';
+  const save = document.createElement('button');
+  save.className = 'btn-primary btn-sm';
+  save.textContent = textoGuardar || 'Guardar cambios';
+  save.addEventListener('click', async () => {
+    const out = [];
+    for (const r of rows.children) {
+      const inputs = r.querySelectorAll('input');
+      const c = inputs[0].value.trim(), qv = inputs[1].value, u = inputs[2].value.trim();
+      const pv = inputs[3].value, ivv = inputs[4].value;
+      if (!c && !qv && !u) continue; // fila totalmente vacía se ignora
+      const linea = { concepto: c, cantidad: Number(String(qv).replace(',', '.')), unidad: u };
+      // SCRUM-303 · y el origen vuelve a salir con ella. ⚠️ FAMILIA SCRUM-271: `dataset` devuelve
+      // SIEMPRE cadena, y `Number('')` es 0 — un índice ausente se convertiría en «la primera
+      // partida del presupuesto», en silencio. Se exige que sean dígitos ANTES de convertir.
+      const origen = r.dataset.quoteLineIndex;
+      if (typeof origen === 'string' && /^\d+$/.test(origen)) linea.quoteLineIndex = Number(origen);
+      if (modo === 'VALORADO') {
+        linea.precioUnitario = Number(String(pv).replace(',', '.'));
+        linea.tipoIva = Number(String(ivv).replace(',', '.'));
+      }
+      out.push(linea);
+    }
+    const body = { lineas: out, notas: notas.value };
+    // SCRUM-300: se mandan SIEMPRE que el bloque exista, también vacíos — vaciar el lugar de
+    // entrega es una decisión legítima del pro y el backend la respeta ('' → null). No tocan
+    // `fecha`, que sigue siendo la del documento.
+    if (lugarEl) body.lugarEntrega = lugarEl.value;
+    if (fEntregaEl) body.fechaEntrega = fEntregaEl.value;
+    // Solo se manda modoValoracion cuando es EDITABLE (borrador); en 'emitido' el
+    // backend lo rechaza con 409 aunque el valor no cambie — mejor ni ofrecerlo.
+    if (modoEditable) body.modoValoracion = modo;
+    save.disabled = true;
+    try {
+      // SCRUM-303: en creación, ÉSTE es el único sitio del que sale el POST — y por eso no hay
+      // albarán ni número hasta aquí. En edición no cambia nada: sigue siendo el PATCH de antes.
+      if (onGuardar) {
+        await onGuardar({ lineas: out, notas: notas.value, modoValoracion: modo });
+      } else {
+        await apiRequest(`/admin/albaranes/${alb.id}`, { method: 'PATCH', body: JSON.stringify(body) });
+        showToast('✓ Albarán actualizado (nueva versión).');
+      }
+      if (onClose) onClose(); // cierra el sheet antes de re-renderizar
+      refresh();
+    } catch (e) {
+      const msg = e?.data?.message || 'No se pudo guardar el albarán.';
+      if (onError) onError(msg); else setStatus('error', msg); // el error se ve DENTRO del sheet
+      save.disabled = false;
+    }
+  });
+  saveRow.appendChild(save);
+  const cancelEd = document.createElement('button');
+  cancelEd.className = 'btn-secondary btn-sm';
+  cancelEd.textContent = 'Cancelar';
+  cancelEd.addEventListener('click', () => { if (onClose) onClose(); else box.style.display = 'none'; });
+  saveRow.appendChild(cancelEd);
+  box.appendChild(saveRow);
+}
+
+function openAlbEditorSheet(alb, ctx) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', `Editar albarán ${alb.numero}`);
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  const header = document.createElement('div');
+  header.className = 'modal-header';
+  const title = document.createElement('div');
+  title.className = 'modal-title';
+  title.textContent = `Editar albarán ${alb.numero}`;
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'modal-close';
+  closeBtn.type = 'button';
+  closeBtn.textContent = '×';
+  closeBtn.setAttribute('aria-label', 'Cerrar');
+  header.append(title, closeBtn);
+  // Banner de error PROPIO del sheet (el statusBox de la página queda detrás del overlay).
+  const errEl = document.createElement('div');
+  errEl.className = 'alert error';
+  errEl.style.cssText = 'display:none;margin:12px 24px 0';
+  const bodyEl = document.createElement('div');
+  bodyEl.className = 'modal-body';
+  modal.append(header, errEl, bodyEl);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  const onKey = (e) => { if (e.key === 'Escape') close(); };
+  function close() {
+    overlay.remove();
+    document.removeEventListener('keydown', onKey);
+  }
+  closeBtn.addEventListener('click', close);
+  document.addEventListener('keydown', onKey);
+  // NO se cierra al pulsar el fondo: evita perder líneas sin querer (usa ×, Cancelar o Esc).
+
+  buildAlbEditor(bodyEl, alb, {
+    onClose: close,
+    onError: (msg) => { errEl.textContent = msg; errEl.style.display = 'block'; },
+  }, ctx);
+  // Foco al primer campo (Concepto) para teclear directo; si no hay, al botón de cerrar.
+  (bodyEl.querySelector('.input') || closeBtn).focus();
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-386 · LA HOJA DE FACTURAR PARCIAL, FUERA DE LA VISTA DEL TRABAJO
+//
+// Movida con GO explícito del fundador, que corrigió la regla al darlo: la 38 se mide POR
+// FICHERO Y POR LADO, no por el nombre de la función. El camino de emisión vive en el SERVIDOR
+// (la ruta, `emitInvoice`, `applyVeriFactu`, el sellado). Esto es `public/dashboard/js/`
+// haciendo un `apiRequest`: un CLIENTE del camino de emisión, no el camino.
+//
+// ⚠️ MUDANZA: cuerpo byte-idéntico y la línea del `apiRequest` sin tocar ni un carácter.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+function openFacturarParcialSheet(alb, ctx) {
+  // SCRUM-386 · lo que antes venía del ámbito de `renderJobDetailView`. Desestructurado con
+  // los MISMOS nombres: el cuerpo de abajo no cambia ni un carácter, y eso se comprueba
+  // comparando textos, no leyendo el diff.
+  const { refresh, setStatus } = ctx;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', `Facturar parte del albarán ${alb.numero}`);
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  const header = document.createElement('div');
+  header.className = 'modal-header';
+  const title = document.createElement('div');
+  title.className = 'modal-title';
+  title.textContent = `Facturar parte de ${alb.numero}`;
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'modal-close';
+  closeBtn.type = 'button';
+  closeBtn.textContent = '×';
+  closeBtn.setAttribute('aria-label', 'Cerrar');
+  header.append(title, closeBtn);
+
+  const err = document.createElement('div');
+  err.className = 'alert error';
+  err.style.display = 'none';
+
+  const body = document.createElement('div');
+  body.className = 'modal-body';
+  const inputs = [];
+  (alb.pendientes || []).forEach((p) => {
+    if (p.pendiente <= 0) return; // lo ya cobrado no se vuelve a ofrecer
+    const fila = document.createElement('div');
+    fila.style.cssText = 'display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)';
+    const izq = document.createElement('div');
+    izq.style.cssText = 'min-width:0;flex:1';
+    izq.innerHTML =
+      `<div style="font-weight:600">${esc(p.concepto || 'Sin concepto')}</div>` +
+      `<div style="font-size:12px;color:var(--muted)">Servido ${p.servida}${p.unidad ? ' ' + esc(p.unidad) : ''}` +
+      (p.facturada > 0 ? ` · ya facturado ${p.facturada}` : '') +
+      ` · queda <strong>${p.pendiente}</strong></div>`;
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.min = '0';
+    inp.max = String(p.pendiente);
+    inp.step = '0.001';
+    inp.value = String(p.pendiente); // por defecto, lo que queda
+    inp.style.cssText = 'width:110px;min-height:44px'; // target al pulgar (AB6)
+    inp.setAttribute('aria-label', `Cantidad a facturar de ${p.concepto || 'la línea'}`);
+    inputs.push({ index: p.index, input: inp, max: p.pendiente });
+    fila.append(izq, inp);
+    body.appendChild(fila);
+  });
+
+  const footer = document.createElement('div');
+  footer.className = 'modal-footer';
+  const cancelar = document.createElement('button');
+  cancelar.className = 'btn-secondary';
+  cancelar.type = 'button';
+  cancelar.textContent = 'Cancelar';
+  const emitir = document.createElement('button');
+  emitir.className = 'btn-primary';
+  emitir.type = 'button';
+  emitir.textContent = 'Emitir factura';
+  footer.append(cancelar, emitir);
+
+  const cerrar = () => overlay.remove();
+  closeBtn.addEventListener('click', cerrar);
+  cancelar.addEventListener('click', cerrar);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
+
+  // SCRUM-271: el aviso de «se cae alguna línea» necesita recordar si ya se dio, porque la
+  // segunda pulsación es la que confirma. Cualquier cambio en un campo lo vuelve a armar, para
+  // que una confirmación no se herede de una situación distinta de la que se está mirando.
+  let avisadoDeLineasSinCantidad = false;
+  for (const { input } of inputs) {
+    input.addEventListener('input', () => { avisadoDeLineasSinCantidad = false; });
+  }
+
+  // ── SCRUM-292 (A1) · LA REVISIÓN ANTES DE EMITIR ──────────────────────────────────────
+  //
+  // Una factura sin NIF del cliente se emite, se envía y se cobra — y queda FUERA del registro.
+  // En pantalla es idéntica a una registrada, así que el profesional no se entera. Esta puerta
+  // ELIMINA el caso en vez de avisar de él: con NIF, la derivación tiene lo que necesita.
+  //
+  // ⚠️ NO TOCA EL CAMINO DE EMISIÓN (regla 38). Vive ANTES: quien decide el tipo de factura sigue
+  // siendo `registro.builder.ts`, sin una línea cambiada. Aquí solo se pide el dato que falta.
+  //
+  // ⚠️ CON NIF NO PASA NADA: ni pregunta, ni fricción, ni un clic más. Tiene control positivo.
+  //
+  // ⚠️ EL CLIENTE ENTRA POR `ctx`, EN SU PROPIA LÍNEA. SCRUM-386 sacó esta hoja del ámbito de la
+  // vista, y su guard comprueba dos cosas: que no capture nada de `renderJobDetailView` —por eso
+  // aquí no se puede tocar `job`— y que la desestructuración siga siendo
+  // `const { refresh, setStatus } = ctx;` LITERAL. Añadir `customer` a esa línea la rompería.
+  //
+  // ⚠️ REGLA 26 · ni una palabra sobre el registro, VeriFactu, la AEAT o el calendario: esa
+  // pregunta se responde SOLO con el guion H2. Todo texto sale con marcador (regla 30).
+  // Procedencia: SCRUM-292.
+  const clienteA1 = (ctx && ctx.customer) || {};
+  const MARCA_A1 = (typeof window !== 'undefined' && window.MICROCOPY_PENDIENTE) || '[PENDIENTE microcopy oficial]';
+  const revisionInicial = revisionPreEmision(clienteA1);
+
+  const cajaRevision = document.createElement('div');
+  cajaRevision.className = 'preemision';
+  cajaRevision.dataset.estado = revisionInicial.estado;
+  {
+    // LO QUE VA A SALIR, antes de que sea irreversible (regla 29: emitida no se toca).
+    //
+    // ⚠️ LAS DOS RAMAS LLEVAN MARCADOR, no solo una. Un rótulo que depende de una condición es
+    // justo donde un guard de literales se queda ciego: al pasar el valor a una expresión deja de
+    // ver el texto y pasa en verde sin comprobar nada. Procedencia: SCRUM-292.
+    const linea = document.createElement('p');
+    linea.className = 'preemision__linea';
+    linea.textContent = revisionInicial.decidible ? MARCA_A1 : MARCA_A1;
+    cajaRevision.appendChild(linea);
+
+    if (revisionInicial.faltaNif) {
+      const lbl = document.createElement('label');
+      lbl.className = 'preemision__label';
+      lbl.setAttribute('for', 'preemision-nif');
+      lbl.textContent = MARCA_A1; // procedencia: SCRUM-292
+      const inp = document.createElement('input');
+      inp.id = 'preemision-nif';
+      inp.className = 'input';
+      inp.maxLength = 20; // el mismo tope que ya valida el backend
+      cajaRevision.append(lbl, inp);
+    }
+  }
+  body.appendChild(cajaRevision);
+
+  emitir.addEventListener('click', async () => {
+    const todas = inputs.map((i) => ({ index: i.index, cantidad: Number(i.input.value) }));
+    const lineas = todas.filter((l) => l.cantidad > 0);
+
+    // ── LA PUERTA ─────────────────────────────────────────────────────────────────────
+    // Sin NIF no se emite por este camino sin que el profesional haya visto la pregunta. Si lo
+    // rellena, se guarda en `Customer.taxId` por la ruta que YA existe. Si lo deja vacío, se
+    // para: no se emite a medias.
+    if (revisionInicial.faltaNif) {
+      const campo = document.getElementById('preemision-nif');
+      const nif = String((campo && campo.value) || '').trim();
+      if (!nif) {
+        err.textContent = MARCA_A1; // procedencia: SCRUM-292
+        err.style.display = 'block';
+        return;
+      }
+      try {
+        await apiRequest(`/admin/customers/${clienteA1.id}`, {
+          method: 'PATCH', body: JSON.stringify({ taxId: nif }),
+        });
+        clienteA1.taxId = nif; // en memoria, para que la revisión deje de disparar
+        revisionInicial.faltaNif = false;
+      } catch {
+        err.textContent = MARCA_A1; // procedencia: SCRUM-292
+        err.style.display = 'block';
+        return;
+      }
+    }
+
+    if (lineas.length === 0) {
+      err.textContent = 'Indica qué cantidad quieres facturar de al menos una línea.';
+      err.style.display = 'block';
+      return;
+    }
+    // SCRUM-271: antes solo avisaba si se caían TODAS. Con tres líneas y una sin cantidad se
+    // emitía la factura con dos, EN SILENCIO — el pro pedía facturar tres y no se enteraba de
+    // haber perdido una. No corrompe un valor: OMITE una línea, y eso en facturación es peor.
+    //
+    // AVISA Y NO BLOQUEA, a propósito: facturar solo parte de las líneas es un uso legítimo —
+    // para eso existe esta pantalla—, así que impedirlo rompería el flujo. La segunda pulsación
+    // confirma, que es lo que convierte «no se enteró» en «lo decidió».
+    if (lineas.length < todas.length && !avisadoDeLineasSinCantidad) {
+      err.textContent = 'Revisa las líneas sin cantidad: no se facturarán.';
+      err.style.display = 'block';
+      avisadoDeLineasSinCantidad = true;
+      return;
+    }
+    emitir.disabled = true;
+    const orig = emitir.textContent;
+    emitir.textContent = 'Emitiendo…';
+    try {
+      const d = await apiRequest(`/admin/albaranes/${alb.id}/facturar-parcial`, {
+        method: 'POST', body: JSON.stringify({ lineas }),
+      });
+      cerrar();
+      // El sellado que falla NO se calla (mismo criterio que la consolidación).
+      showToast(d && d.veriFactu === false ? '⚠️ Factura emitida, revisa su registro' : '✓ Factura emitida.');
+      if (d && d.message) setStatus('error', d.message);
+      refresh();
+    } catch (e) {
+      err.textContent = e?.data?.message || 'No se pudo emitir la factura.';
+      err.style.display = 'block';
+      emitir.disabled = false;
+      emitir.textContent = orig;
+    }
+  });
+
+  modal.append(header, err, body, footer);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+
 window.renderJobDetailView = renderJobDetailView;
