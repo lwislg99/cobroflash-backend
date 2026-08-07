@@ -7,6 +7,28 @@
 
 ---
 
+# DOS GUARDS QUE SE TOCAN PERO NO SE SOLAPAN
+
+**SCRUM-297 · 7-ago-2026**
+
+> **Dos guards que se tocan pero no se solapan dejan un hueco con la forma exacta de lo que
+> ninguno mira.**
+
+El caso: `tests/scrum369-*` y `tests/scrum297-fuentes-selladas.test.mjs` vigilan cosas contiguas.
+Ninguno de los dos estaba mal, y cada uno pasaba por su lado. Lo que nadie miraba era **la
+juntura** — y una juntura no se ve revisando los guards de uno en uno, porque cada uno está
+completo respecto de lo que él declara vigilar.
+
+**Cómo se busca ese hueco:** no preguntando «¿qué vigila cada guard?», sino **«¿qué hay entre los
+dos que ninguno nombra?»**. La cobertura de dos vecinos no es la suma de sus alcances: es esa suma
+**menos** lo que cae justo en medio y ninguno reclama.
+
+Es de la familia de «el medidor que no llegó a ejecutarse», con una diferencia que importa: allí un
+guard no miraba **nada**; aquí los dos miran, y miran bien. El fallo no está **dentro** de ninguno
+de los dos, así que ningún test de ninguno de los dos puede delatarlo.
+
+---
+
 # 🔴 LA PRUEBA DE ROJO QUE NUNCA SE EJECUTÓ
 
 **Descubierto por DOS sesiones la misma noche (5-ago-2026), por caminos que no se parecen en nada.**
