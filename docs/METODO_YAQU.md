@@ -457,3 +457,30 @@ vigila lo que cree.
 desde esta rama solo dos —378 (un `<script>` comentado que el guard seguía dando por cargado) y
 381—; de SCRUM-340 no hay entrada en `docs/master/` aquí, así que queda anotado como suyo y sin
 comprobar, no como medición propia.
+
+---
+
+# UN CENSO SE EQUIVOCA HACIA «FALTA TRABAJO», NUNCA HACIA «YA ESTÁ HECHO»
+
+**SCRUM-388, sesión 3 · 7-ago-2026 · asimetría aprobada por el fundador**
+
+> **Los dos errores de un censo no cuestan lo mismo, así que no se tratan igual.** Equivocarse hacia
+> «falta» cuesta un censo perdido: alguien mira, ve que ya estaba, y sigue. Equivocarse hacia
+> «hecho» cuesta **construir dos veces** — o peor, dar por cubierto algo que nadie cubrió.
+
+No es prudencia genérica: es la regla que decide **cada duda del diseño**, y en SCRUM-388 decidió
+tres, todas hacia el mismo lado:
+
+| Duda | Se resolvió | Qué se pierde | Qué se evita |
+| --- | --- | --- | --- |
+| ¿cuenta un commit que cita el ticket solo en el **cuerpo**? | **no** | alguna entrega real que no siga la convención | atribuir a un ticket el trabajo de otro |
+| ¿cuenta una rama cuyo nombre **contiene** el número? | **no**, solo `scrum-N-<slug>` | ramas con nombres raros | `…-rebasada-2` contando como el ticket 2 |
+| ¿un ticket con un mecanismo **parecido** está hecho? | **no** | nada | dar A9 por cerrada midiendo A15 |
+
+**La prueba, en una pregunta:** *si me equivoco aquí, ¿alguien construye algo dos veces, o alguien
+mira una cosa que ya estaba?* Lo segundo es barato. Lo primero es el ticket entero.
+
+⚠️ **Y el corolario que hay que escribir, porque no se deduce solo:** un censo con esta asimetría
+**no puede usarse para cerrar nada**. Dice dónde MIRAR, no qué dar por bueno. Un `ENTERO` suyo es
+«no encontré trabajo suelto», no «esto está terminado» — que es justo la diferencia que se saltó
+quien dio A9 por cerrada.
