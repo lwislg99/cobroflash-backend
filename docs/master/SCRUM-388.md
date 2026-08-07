@@ -147,6 +147,98 @@ Su mensaje de fallo dice literalmente **«RE-MIDE, NO ARREGLES EL TEST»** y nom
 de responder. Ajustar el umbral para que vuelva a pasar sería apagar la alarma en vez de mirar el
 fuego.
 
+## 🔴 TRAMO 2 · el centinela reventó en CI, y fue POR SUERTE
+
+**Medido contra:** `origin/main` = `cb2399788aebe786608491734390b45e8b067d1e` · 2026-08-07T19:13:03+01:00
+**Tanda:** 2216 tests · 2143 pass · **0 fail** · 73 gateados
+
+```
+fatal: ambiguous argument 'origin/main': unknown revision or path not in the working tree.
+  tests/_censo-tickets.mjs:75 · censarTicket:103 · scrum388-centinela-main.test.mjs:71 · status 128
+```
+
+`actions/checkout` clona en superficial y sin refs remotos. **Y es la lección de este mismo ticket
+vuelta contra su autor:** aquí se escribió que «el fixture fabrica su propio mundo» y que por eso
+hacía falta un centinela contra el real — y el centinela dio por hecho que el mundo real se parece
+a un portátil.
+
+> **Reventó por suerte, no por diseño.** Si `git` hubiera devuelto VACÍO en vez de error, el
+> centinela habría dicho «la fuente ramas no encuentra evidencia en NINGÚN ticket»: una falsa alarma
+> **indistinguible de un hallazgo real**.
+
+### Qué necesita cada fuente — medido, no supuesto
+
+Con un clon `--depth 1 --single-branch` (lo que hace `actions/checkout` por defecto):
+
+| Fuente | Necesita | En checkout superficial | Cómo se rompe |
+|---|---|---|---|
+| **commits** | el ref `origin/main` **y** la historia completa | 🔴 **falla** | `unknown revision`, status **128** — ruidoso |
+| **docs/master** | solo el árbol de trabajo | ✅ **funciona** (93 entradas leídas) | no se rompe |
+| **ramas** | que el clon traiga **todas** las ramas | 🔴 **miente** | `for-each-ref` **NO falla**: devuelve **1 ref de ~90** |
+
+**La peligrosa es la tercera.** No revienta: contesta en voz baja una cosa que se lee igual que «no
+hay ninguna». La sospecha de partida («docs sí, ramas no») era correcta en el resultado y **se
+quedaba corta en el motivo**: el problema de ramas no es que falle, es que no falla.
+
+### Cómo se detecta: señales EXACTAS, no umbrales
+
+* `git rev-parse --is-shallow-repository` → `true`/`false`. Dice si la historia está cortada.
+* `git config --get remote.origin.fetch` → `+refs/heads/*:…` (todas) vs `+refs/heads/<una>:…`.
+
+Un umbral («si hay menos de N refs…») confundiría un repositorio nuevo con un clon capado.
+
+### La decisión: (a) **y** (b), y no es no elegir
+
+Ninguna de las dos basta sola, y el motivo de cada una es distinto:
+
+* **(b) sola** → el centinela se declararía no medido en CI **siempre**. Y «un centinela que se
+  salta en todos los sitios donde de verdad corre no es un centinela: saltarse siempre y no existir
+  son lo mismo».
+* **(a) sola** → arregla HOY y deja el mecanismo tan frágil como estaba. El día que cambie el
+  workflow, o que alguien corra la suite en un clon superficial, vuelve la falsa alarma — que es
+  **exactamente el error que se cometió aquí**: suponer un entorno.
+
+Así que **(b) es propiedad del mecanismo** —nunca emite «no encuentro evidencia» sobre lo que no ha
+podido mirar, y arrastra `noMedibles` en cada veredicto— **y (a) es configuración de CI**, para que
+allí pueda medir de verdad.
+
+**`fetch-depth: 0` en `ci.yml`.** Coste medido en este repo: **1.826 commits, 184 refs, 38 MB de
+`.git`**, ~9 s. Y hay precedente en la casa: `zona-roja.yml` ya lo usaba, por el mismo motivo
+(«el histórico completo: `git diff base...HEAD` necesita algo contra lo que comparar»).
+
+Se añade un cuarto valor, **`NO_MEDIBLE`**, que es de otra clase que los tres primeros: aquéllos
+hablan del TICKET, éste habla del ENTORNO. Un entorno capado es un resultado legítimo del censo; lo
+que no es legítimo es que salga disfrazado de `NADA`.
+
+### R1 y R2 — por separado ninguno vale
+
+**R1 · entorno de CI simulado** (clon real `--depth 1 --single-branch`):
+
+```
+ℹ️  NO PUDE MEDIR la fuente «commits»: el ref «origin/main» no existe aquí (checkout sin refs
+    remotos: es lo que hace `actions/checkout` por defecto)
+ℹ️  NO PUDE MEDIR la fuente «ramas»: el clon trae UNA sola rama (…), no todas. No falla: devuelve
+    una lista corta que se lee igual que «no hay ninguna»
+✔ 3 tests · 0 fail   ← y NINGUNO dice «no encuentro evidencia»
+```
+
+**R2 · control positivo** (clon completo, buscador de ramas cegado a propósito):
+
+```
+🔴 la fuente «ramas» SÍ se podía mirar en este entorno y no encuentra evidencia en
+   NINGÚN ticket del rango 280-400.
+   ⚠️ RE-MIDE, NO ARREGLES EL TEST.
+```
+
+**R3** · el banco de fixtures: **13/13 verde en los dos entornos**, incluido el CI simulado. No
+depende de nada de esto, que era el punto de tenerlo aparte.
+
+⚠️ **Y un test de la versión anterior se RETIRÓ**: exigía `comprobarSuelo` limpio, o sea historia
+completa y refs remotos, así que en CI fallaba por el ENTORNO y no por un hallazgo — la confusión
+exacta que este tramo deshace. Lo que hacía de útil lo cubre mejor el test nuevo, que pregunta
+fuente por fuente antes de exigir nada. `comprobarSuelo` sigue vivo donde tiene sentido: en el banco
+de fixtures, donde el entorno lo fabricamos nosotros.
+
 ## Limitaciones que quedan
 
 * **No lee Jira.** El veredicto dice qué hay en `main`; cruzarlo con el estado del ticket es de

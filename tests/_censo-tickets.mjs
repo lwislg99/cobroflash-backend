@@ -87,6 +87,16 @@ export function censarTicket(numero, { raiz = process.cwd(), ref = 'origin/main'
   if (!/^\d+$/.test(n)) throw new Error(`[censo] número de ticket inválido: «${numero}»`);
   const patron = patronTicket(n);
 
+  // 🔴 LA CAPACIDAD SE MIDE ANTES DE CONSULTAR NADA. Antes se consultaba a lo bruto y `git log
+  // origin/main` REVENTABA en CI con status 128 — y eso fue SUERTE: si git hubiera devuelto vacío,
+  // el censo habría dicho «no encuentro evidencia» sobre un mundo que no llegó a mirar.
+  const capacidad = capacidadDeMedir({ raiz, ref });
+  const noMedibles = [
+    ...(capacidad.commits.puede ? [] : [{ fuente: 'commits', motivo: capacidad.commits.motivo }]),
+    ...(capacidad.doc.puede ? [] : [{ fuente: 'docs/master', motivo: capacidad.doc.motivo }]),
+    ...(capacidad.ramas.puede ? [] : [{ fuente: 'ramas', motivo: capacidad.ramas.motivo }]),
+  ];
+
   // ── FUENTE 1 · commits del historial que NOMBRAN el ticket EN SU ASUNTO ─────────────────
   //
   // 🔴 EN EL ASUNTO, y no en el cuerpo. Medido: `58d7753 docs(master): SCRUM-8 …` menciona otro
@@ -100,9 +110,9 @@ export function censarTicket(numero, { raiz = process.cwd(), ref = 'origin/main'
   // este censo se equivoca hacia «falta trabajo», nunca hacia «ya está hecho».
   // `--grep` de git no tiene frontera de palabra portable, así que se filtra después con el
   // patrón propio: pedirle a git `SCRUM-29` devuelve también los del 298.
-  const crudo = git(['log', ref, '--format=%h%cs%an%s', `--grep=SCRUM-${n}`, '-i'], raiz);
+  const crudo = capacidad.commits.puede ? git(['log', ref, '--format=%h%cs%an%s', `--grep=SCRUM-${n}`, '-i'], raiz) : '';
   const commits = crudo.split('\n').filter(Boolean)
-    .map((l) => { const [sha, fecha, autor, asunto] = l.split(''); return { sha, fecha, autor, asunto }; })
+    .map((l) => { const [sha, fecha, autor, asunto] = l.split(''); return { sha, fecha, autor, asunto }; })
     .filter((c) => patron.test(c.asunto));
 
   // ── FUENTE 2 · la entrada de máster ─────────────────────────────────────────────────────
@@ -112,8 +122,9 @@ export function censarTicket(numero, { raiz = process.cwd(), ref = 'origin/main'
   // ── FUENTE 3 · ramas cuyo NOMBRE lleva el número ────────────────────────────────────────
   // De las refs locales de `origin` (rápido y sin red): refleja el último `fetch`, y eso se
   // declara en vez de fingir que es el remoto en vivo.
-  const refs = git(['for-each-ref', '--format=%(refname:short)', 'refs/remotes/origin/'], raiz)
-    .split('\n').filter(Boolean);
+  const refs = capacidad.ramas.puede
+    ? git(['for-each-ref', '--format=%(refname:short)', 'refs/remotes/origin/'], raiz).split('\n').filter(Boolean)
+    : [];
   // 🔴 Con la CONVENCIÓN de la casa (`scrum-<n>-<slug>`), no «el número aparece por ahí». Medido:
   // buscar el número suelto atribuía a SCRUM-2 las ramas `…-rebasada-2` y `codeowners-zona-roja-v2`,
   // donde el 2 es un sufijo de reintento o de versión. Cinco ramas ajenas para un solo ticket.
@@ -124,11 +135,24 @@ export function censarTicket(numero, { raiz = process.cwd(), ref = 'origin/main'
   if (doc) fuentes.push('docs/master');
   if (ramas.length) fuentes.push('ramas');
 
+
   // ── VEREDICTO ───────────────────────────────────────────────────────────────────────────
   if (fuentes.length === 0) {
+    // 🔴 AQUÍ ESTÁ LA DISTINCIÓN QUE COSTÓ UN FALLO EN CI. Si NINGUNA fuente era mirable, esto no
+    // es «no hay trabajo»: es «no he podido mirar». Devolver NADA sería inventarse una medición, y
+    // encima la cómoda — la que dice que no queda nada por hacer.
+    if (noMedibles.length === 3) {
+      return {
+        ticket: `SCRUM-${n}`, veredicto: 'NO_MEDIBLE', fuentes: [], commits: [], ramas, doc: false,
+        marcas: [], noMedibles,
+        porque: 'NO SE HA PODIDO MIRAR NINGUNA FUENTE: ' + noMedibles.map((x) => `${x.fuente} (${x.motivo})`).join(' · '),
+      };
+    }
     return {
-      ticket: `SCRUM-${n}`, veredicto: 'NADA', fuentes: [], commits: [], ramas, doc: false, marcas: [],
-      porque: 'ninguna evidencia NOMBRA el ticket: ni un commit, ni entrada de máster, ni una rama',
+      ticket: `SCRUM-${n}`, veredicto: 'NADA', fuentes: [], commits: [], ramas, doc: false,
+      marcas: [], noMedibles,
+      porque: 'ninguna evidencia NOMBRA el ticket: ni un commit, ni entrada de máster, ni una rama'
+        + (noMedibles.length ? ` ⚠️ y ${noMedibles.length} fuente(s) NO se pudieron mirar: ${noMedibles.map((x) => x.fuente).join(', ')}` : ''),
     };
   }
 
@@ -144,6 +168,7 @@ export function censarTicket(numero, { raiz = process.cwd(), ref = 'origin/main'
     ramas,
     doc: !!doc,
     marcas,
+    noMedibles,
     porque: marcas.length
       ? `la entrega declara mecanismo sin conectar (${marcas.map((m) => `«${m}»`).join(', ')})`
       : 'hay evidencia que nombra el ticket y no declara nada sin conectar',
@@ -154,6 +179,62 @@ const cacheCuerpo = new Map();
 function cuerpoDe(sha, raiz) {
   if (!cacheCuerpo.has(sha)) cacheCuerpo.set(sha, git(['show', '-s', '--format=%b', sha], raiz));
   return cacheCuerpo.get(sha);
+}
+
+/**
+ * ¿PUEDE ESTE ENTORNO MIRAR CADA FUENTE? Una respuesta por fuente, con su motivo.
+ *
+ * ═════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 «NO HE PODIDO MEDIR» ≠ «NO ENCUENTRO EVIDENCIA»
+ *
+ * Esta función existe porque el centinela **reventó en CI** y de la peor manera posible: por
+ * suerte. `actions/checkout` clona en superficial y sin refs remotos, así que `git log origin/main`
+ * murió con `unknown revision` (status 128) y se vio. **Si git hubiera devuelto vacío en vez de
+ * error, el centinela habría dicho «la fuente ramas no encuentra evidencia en NINGÚN ticket» — una
+ * falsa alarma indistinguible de un hallazgo real.**
+ *
+ * Y no es hipotético: **la fuente de ramas hace exactamente eso**. Medido el 7-ago-2026 en un clon
+ * `--depth 1 --single-branch`: `for-each-ref` **no falla**, devuelve **1 ref de ~90**. No revienta:
+ * miente en voz baja. Ésa es la que había que cazar.
+ *
+ * ⚠️ Se detecta con señales EXACTAS, no con umbrales: `--is-shallow-repository` dice si la historia
+ * está cortada, y el refspec de `remote.origin.fetch` dice si el clon trae todas las ramas
+ * (`+refs/heads/*:…`) o una sola. Un umbral («si hay menos de N refs…») confundiría un repo nuevo
+ * con un clon capado.
+ */
+export function capacidadDeMedir({ raiz = process.cwd(), ref = 'origin/main' } = {}) {
+  const intentar = (fn, cuando) => { try { return fn(); } catch (e) { return cuando(e); } };
+
+  // ── commits: necesita que el ref exista Y la historia completa ──────────────────────────
+  let commits = { puede: true, motivo: '' };
+  const refOk = intentar(() => { git(['rev-parse', '--verify', `${ref}^{commit}`], raiz); return true; }, () => false);
+  if (!refOk) {
+    commits = { puede: false, motivo: `el ref «${ref}» no existe aquí (checkout sin refs remotos: es lo que hace \`actions/checkout\` por defecto)` };
+  } else if (intentar(() => git(['rev-parse', '--is-shallow-repository'], raiz).trim() === 'true', () => false)) {
+    commits = { puede: false, motivo: 'la historia está CORTADA (clon superficial): buscar en ella diría «no hay commits» mirando solo los últimos' };
+  }
+
+  // ── docs/master: solo necesita el árbol de trabajo ──────────────────────────────────────
+  // Medido: es la única que sobrevive intacta a un checkout superficial (93 entradas leídas).
+  let doc = { puede: true, motivo: '' };
+  const dir = path.join(raiz, 'docs', 'master');
+  const n = intentar(() => fs.readdirSync(dir).filter((f) => /^SCRUM-\d+\.md$/.test(f)).length, () => -1);
+  if (n < 0) doc = { puede: false, motivo: `no se puede leer ${dir}` };
+  else if (n < 20) doc = { puede: false, motivo: `docs/master/ solo tiene ${n} entradas SCRUM-*.md: el árbol está incompleto` };
+
+  // ── ramas: necesita que el clon traiga TODAS ────────────────────────────────────────────
+  let ramas = { puede: true, motivo: '' };
+  const refspec = intentar(() => git(['config', '--get', 'remote.origin.fetch'], raiz).trim(), () => '');
+  if (!refspec) {
+    ramas = { puede: false, motivo: 'no hay remoto «origin» configurado' };
+  } else if (!refspec.includes('refs/heads/*')) {
+    ramas = {
+      puede: false,
+      motivo: `el clon trae UNA sola rama (${refspec}), no todas. No falla: devuelve una lista corta que se lee igual que «no hay ninguna»`,
+    };
+  }
+
+  return { commits, doc, ramas };
 }
 
 /**
