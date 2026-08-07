@@ -107,6 +107,15 @@ export interface LibroRegistro {
   ajenas: number;
   /** Filas sin número: no son asiento (el número ES la identidad fiscal), pero se declaran. */
   sinNumero: number;
+  /**
+   * SCRUM-389 · el IMPORTE de esas filas sin número, no solo cuántas son.
+   *
+   * Lo pide Informes: su cuadro declara «N facturas sin desglose (total X €) no incluidas». Sin
+   * este número, unificar los dos agregadores obligaría a Informes a enseñar un recuento sin su
+   * importe — y un «hay 3 facturas fuera» sin decir cuánto dinero es no se puede revisar a mano,
+   * que es exactamente lo que ese aviso pide que hagas.
+   */
+  sinNumeroImporte: number;
   /** Números de las facturas cuyo importe no se pudo leer. */
   importesIlegibles: string[];
 }
@@ -157,10 +166,18 @@ export function construirLibroRegistro(params: {
   const firmados = new Set<number>(params.presupuestosFirmados ?? []);
   let ajenas = 0;
   let sinNumero = 0;
+  let sinNumeroImporte = 0;
 
   for (const f of params.facturas) {
     if (f.merchantId !== params.merchantId) { ajenas += 1; continue; }
-    if (typeof f.number !== 'string' || f.number === '') { sinNumero += 1; continue; }
+    if (typeof f.number !== 'string' || f.number === '') {
+      sinNumero += 1;
+      // El importe se acumula solo si se puede LEER: un total ilegible no suma cero (familia
+      // SCRUM-271), se queda fuera y ya lo cuenta `sinNumero`.
+      const suyo = importe(f.total);
+      if (suyo !== null) sinNumeroImporte += suyo;
+      continue;
+    }
 
     const total = importe(f.total);
     const desglose = calcVatBreakdown(Array.isArray(f.lines) ? (f.lines as any[]) : []);
@@ -215,6 +232,7 @@ export function construirLibroRegistro(params: {
     miradas: params.facturas.length,
     ajenas,
     sinNumero,
+    sinNumeroImporte: Math.round(sinNumeroImporte * 100) / 100,
     importesIlegibles,
   };
 }
