@@ -66,19 +66,17 @@ async function renderReportsView(container) {
     const year = yearSelect.value;
     btnVf.disabled = true;
     try {
-      const r = await fetch(`/admin/exports/verifactu.xml?year=${year}`);
-      if (!r.ok) {
-        const d = await r.json().catch(() => ({}));
-        showToast(d.message || 'No se pudo generar el XML VeriFactu.', 'error');
-        return;
-      }
-      const blob = await r.blob();
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `verifactu_${year}.xml`;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    } catch {
+      // SCRUM-405: por la forma común. ERA EL CUARTO SITIO con el defecto, y no estaba en el
+      // censo de SCRUM-356 —que solo miró `exportView.js`—: lo encontró el guard por AST. Aquí
+      // pesa más que en los otros tres, porque lo que se descarga es el registro VeriFactu: con
+      // un portal cautivo, el profesional se guardaba la página de login del router como
+      // `verifactu_2026.xml`.
+      await descargarBinario(`/admin/exports/verifactu.xml?year=${year}`, {
+        tipoEsperado: 'xml',
+        nombrePorDefecto: `verifactu_${year}.xml`,
+      });
+    } catch (e) {
+      if (e && e.code === ERROR_NO_ES_FICHERO) { showToast(MSG_DESCARGA_NO_ES_FICHERO, 'error'); return; }
       showToast('Error de red al descargar el XML.', 'error');
     } finally {
       btnVf.disabled = false;
