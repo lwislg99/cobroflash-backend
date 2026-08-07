@@ -340,3 +340,53 @@ vacíos de SCRUM-385: cada uno solo, engañable; juntos, no.
 
 **SCRUM-274**: el script nuevo faltaba en el shell del service worker. Tenía razón — `addAll` es
 atómico y la app se habría servido a medias. Añadido a `public/sw.js`.
+
+## El banco de medición (6-ago-2026) — porque los tests estructurales no ven la pantalla
+
+Banco FUERA del repo (scratchpad), sirviendo por HTTP los ficheros **reales** del árbol —
+`tokens.css`, `styles.css` y `puertaSerie.js`— y pintando la puerta con **la función de verdad**,
+no con marcado retecleado. El aviso de bloqueo se construye con el estilo **extraído** de
+`settingsView.js`, con un suelo que aborta si la extracción falla o si quedan interpolaciones sin
+resolver. Chrome headless por CDP; todo leído por `$?`.
+
+**Verde a 360 y 390 px.** Lo medido:
+
+| | 360 px | 390 px |
+| --- | --- | --- |
+| La vista previa se lee en UNA línea | ✔ `2026-FONTANERIA-000042` | ✔ |
+| No se sale de su tarjeta | ✔ 238,7 ≤ 327,0 | ✔ 238,7 ≤ 357,0 |
+| Aviso de bloqueo visible | ✔ 328×37, contraste **4,51:1** | ✔ 358×37 |
+| Targets ≥ 44 px | ✔ los 5 controles | ✔ |
+| Desbordamiento horizontal | ✔ 0 | ✔ 0 |
+| Foco con **Tab real** (`Input.dispatchKeyEvent`) | ✔ anillo visible en el secundario | ✔ |
+
+Se probó a propósito con el número **más largo** que el formato admite: medir con uno corto habría
+dado verde y no probaría nada. En el asistente este mismo dato se partía en dos líneas justo a
+estos anchos; **aquí no**.
+
+### 🔴 TRES VERDES HUECOS QUE EL BANCO SE COMIÓ ANTES DE DAR EL RESULTADO
+
+El banco se equivocó tres veces **a favor**, y cada corrección hizo la medición más fina:
+
+1. **La tarjeta se midió VACÍA.** Al no escribir número, `refrescarPrevia` salía por
+   `Number('') = 0` y la previa nunca se pedía. «No se sale de su tarjeta» pasó con **0,0 ≤ 0,0**.
+   Lo cazó el suelo de «se pidió la previa al servidor», que estaba puesto antes.
+2. **«¿Hay `box-shadow`?» da verde siempre**, porque `.btn-primary` ya tiene sombra en reposo.
+3. **«¿Cambia al enfocar?» también da verde**, porque sí añade una capa… en `rgba(0, 0, 0, 0)`.
+
+Solo la tercera versión —**exigir alfa > 0 en la capa añadida**— dice la verdad.
+
+### ⚠️ Aviso, y NO es de este ticket
+
+**`.btn-primary` no pinta anillo de foco visible.** Medido: con el foco puesto añade
+`rgba(0, 0, 0, 0) 0px 0px 0px 0px` — una sombra transparente — mientras `:focus-visible` devuelve
+`true`. Es **SCRUM-368** y se reporta, no se arregla (regla 9). El botón secundario sí lo pinta
+(`rgba(34, 197, 94, 0.3) 0 0 0 3px`), así que el defecto es del primario y no de esta pantalla.
+
+### Límites declarados del banco
+
+* El aviso de bloqueo se pinta **al final del panel**, no bajo el campo Serie: el banco monta la
+  puerta suelta, no Configuración entera. Se ha medido que **se ve y se lee**; su posición final
+  dentro del formulario **no** está medida aquí.
+* Sin matriz de dispositivos reales (iPhone/tablet): sigue siendo hueco humano.
+* Capturas: `docs/capturas/scrum-313/scrum313-puerta-{360,390}.png`.
