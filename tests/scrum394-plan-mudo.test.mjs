@@ -94,25 +94,33 @@ test('SCRUM-394 · R1: y el BUCLE la llama — sin esto, todo lo demás prueba c
   //
   // Por AST y DENTRO del bloque del opt-out: que la función se nombre en el fichero no basta —se
   // nombra en su propia definición, y un `grep` se cazaría a sí mismo.
+  // ⚠️ EL CABLEADO SE MUDÓ EN SCRUM-399, y este test con él. Antes la llamada vivía dentro de
+  // `if (customer.waOptOut)`; ahora el opt-out se decide EN LA CONSULTA (los planes sin canal se
+  // comían un hueco del lote todos los días) y el aviso se registra recorriendo `sinCanalVencidos`.
+  //
+  // Lo que se vigila NO ha cambiado —que alguien llame de verdad al aviso—, solo dónde. Y sigue
+  // pudiendo caer: si se borra la llamada, esto se pone rojo igual.
   const sf = ts.createSourceFile(FUENTE_P, FUENTE, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-  let bloque = null;
+  let recorrido = null;
   const visita = (n) => {
-    if (ts.isIfStatement(n) && /customer\.waOptOut/.test(n.expression.getText(sf))) bloque = n.thenStatement;
+    if (ts.isForOfStatement(n) && /sinCanalVencidos/.test(n.expression.getText(sf))) recorrido = n.statement;
     ts.forEachChild(n, visita);
   };
   visita(sf);
-  assert.ok(bloque, '🔴 ESCÁNER CIEGO: no encuentro el bloque `if (customer.waOptOut)`. Si se renombró, ARREGLA EL ESCÁNER.');
+  assert.ok(recorrido,
+    '🔴 ESCÁNER CIEGO: no encuentro el recorrido `for (… of sinCanalVencidos)`. Si se renombró o se ' +
+    'quitó, ARREGLA EL ESCÁNER — y comprueba antes que el aviso sigue teniendo dónde registrarse.');
 
   let llama = false;
   const buscaLlamada = (n) => {
     if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'avisarPlanSinCanal') llama = true;
     ts.forEachChild(n, buscaLlamada);
   };
-  buscaLlamada(bloque);
+  buscaLlamada(recorrido);
   assert.ok(llama,
-    '🔴 la rama del opt-out YA NO LLAMA a `avisarPlanSinCanal`. El plan vuelve a pararse en silencio, ' +
-    'que es literalmente el defecto de este ticket — y los tests de la función seguirían verdes, ' +
-    'porque estarían probando código que ya no ejecuta nadie.');
+    '🔴 el recorrido de los planes sin canal YA NO LLAMA a `avisarPlanSinCanal`. El plan vuelve a ' +
+    'pararse en silencio, que es literalmente el defecto de SCRUM-394 — y los tests de la función ' +
+    'seguirían verdes, porque estarían probando código que ya no ejecuta nadie.');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════
@@ -223,7 +231,10 @@ test('SCRUM-394 · R5: un plan en opt-out cuyo cliente VUELVE se propone al día
   //
   // Luego el plan sigue entrando en el lote cada día, y el día que `waOptOut` pasa a false ya no
   // entra por esa rama: se propone. Si se reprogramara a +N días, dormiría hasta entonces.
-  assert.ok(FUENTE.includes('where: { active: true, nextDueAt: { lte: now } }'),
+  // (SCRUM-399 movió esta condición a la constante `vencidos` de `seleccionarLotes`, que es la que
+  // comparten los dos lotes. La propiedad es la misma: el recorrido sigue recogiendo por
+  // `nextDueAt <= now`, que es de lo que depende la reanudación.)
+  assert.ok(FUENTE.includes('const vencidos = { active: true, nextDueAt: { lte: now } };'),
     '🔴 el recorrido ya no recoge los planes vencidos por `nextDueAt <= now`: la reanudación automática ' +
     'dependía justo de eso');
   // Y la simulación del ciclo completo, con el doble: dos días en opt-out (un solo aviso) y al

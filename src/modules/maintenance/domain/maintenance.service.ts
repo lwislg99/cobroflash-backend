@@ -157,6 +157,87 @@ export async function avisarPlanSinCanal(
   return true;
 }
 
+/** El tope del lote diario. Se nombra porque ahora hay DOS lotes y comparten techo. */
+export const TOPE_LOTE = 50;
+
+/**
+ * SCRUM-399 · LOS DOS LOTES DEL CICLO, decididos EN LA CONSULTA y no dentro del bucle.
+ *
+ * ═════════════════════════════════════════════════════════════════════════════════════════
+ * EL HAMBRE DEL LOTE
+ *
+ * El recorrido coge `orderBy: nextDueAt asc, take: 50` y el opt-out se filtraba DENTRO del bucle.
+ * Un plan sin canal **nunca se reprograma** —y eso es correcto: es lo que hace cierto el «si
+ * vuelve, se retoma» de SCRUM-394— así que su `nextDueAt` se queda en el pasado **para siempre** y
+ * `asc` lo pone EN CABEZA. Resultado: se come un hueco de los 50 todos los días, por delante de
+ * los demás. Con 50 planes así, el cron **no llega a ningún plan bueno** — y ese fallo también es
+ * mudo: nadie ve una bandeja que no llega.
+ *
+ * ⚠️ LA SALIDA NO ES REPROGRAMAR. Está descartado y el motivo está en `SCRUM-394.md`: rompería la
+ * reanudación automática.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * 🔴 LA TRAMPA, Y CÓMO SE RESUELVE: hacen falta DOS LOTES, no un filtro
+ *
+ * Si los planes sin canal simplemente dejaran de entrar, **desaparecería el sitio donde SCRUM-394
+ * registra su aviso**: para poder decir que un plan está parado hay que verlo. Las dos cosas se
+ * resuelven juntas o no se resuelve ninguna.
+ *
+ *   · `aProponer`        — los que SÍ tienen canal. Es el lote de trabajo, y ya no compite.
+ *   · `sinCanalVencidos` — los mudos, en su PROPIO recorrido y con su propio techo. No se
+ *     proponen (no hay canal), pero se ven, y por eso se les puede avisar.
+ *
+ * ⚠️ Se filtra por `customerId` con una lista, y no con `where: { customer: … }`, porque
+ * **`MaintenancePlan` no declara relación con `Customer`** (solo `customerId Int`) y el schema es
+ * territorio del fundador. Medido, no supuesto.
+ *
+ * ⚠️ Y el `where` se construye SIN la cláusula cuando no hay ningún opt-out, en vez de mandar un
+ * `notIn: []`: un filtro vacío es justo el sitio donde un motor puede decidir por su cuenta que no
+ * pasa nadie, y eso vaciaría el lote entero en el caso más común de todos.
+ */
+export async function seleccionarLotes(
+  now: Date,
+  { prisma: db = prisma }: { prisma?: any } = {},
+): Promise<{ aProponer: any[]; sinCanalVencidos: any[]; idsSinCanal: number[] }> {
+  // ⚠️ SE TRAE EL `merchantId` DEL CLIENTE, y no es por gusto: lo cazó el guard multi-tenant de
+  // SCRUM-243 y era una REGRESIÓN de verdad. El bucle comprobaba `customer.merchantId !==
+  // plan.merchantId` ANTES de tocar nada, y el recorrido nuevo de los mudos se la había saltado —
+  // registrando un `CustomerEvent` en la ficha de un cliente que podría no ser de ese merchant.
+  // Este cron es global (recorre todos los merchants), así que la pareja plan↔cliente es lo único
+  // que ata cada dato a su dueño.
+  const sinCanal = await db.customer.findMany({
+    where: { waOptOut: true }, select: { id: true, merchantId: true },
+  });
+  const idsSinCanal = sinCanal.map((c: any) => c.id);
+  const merchantDeCliente = new Map<number, number>(sinCanal.map((c: any) => [c.id, c.merchantId]));
+  const vencidos = { active: true, nextDueAt: { lte: now } };
+
+  const aProponer = await db.maintenancePlan.findMany({
+    where: idsSinCanal.length ? { ...vencidos, customerId: { notIn: idsSinCanal } } : vencidos,
+    orderBy: { nextDueAt: 'asc' },
+    take: TOPE_LOTE,
+  });
+
+  const sinCanalVencidos = idsSinCanal.length
+    ? await db.maintenancePlan.findMany({
+      where: { ...vencidos, customerId: { in: idsSinCanal } },
+      orderBy: { nextDueAt: 'asc' },
+      take: TOPE_LOTE,
+    })
+    : [];
+
+  // LA RED: un plan solo entra en el lote de los mudos si su cliente es SUYO. Un plan que apunta a
+  // un cliente de otro merchant es un dato roto, y lo que no puede pasar es que además le
+  // escribamos un aviso en la ficha — sería contarle a un profesional algo de un cliente ajeno.
+  // Se descartan aquí, en silencio para el lote pero visibles: el bucle de propuesta ya los
+  // marcaba como `customer_gone` y ese camino no cambia.
+  const mudosPropios = sinCanalVencidos.filter(
+    (p: any) => merchantDeCliente.get(p.customerId) === p.merchantId,
+  );
+
+  return { aProponer, sinCanalVencidos: mudosPropios, idsSinCanal };
+}
+
 export async function runMaintenanceProposals(now: Date = new Date()): Promise<{
   due: number; proposed: number; skipped: string[];
 }> {
@@ -165,11 +246,16 @@ export async function runMaintenanceProposals(now: Date = new Date()): Promise<{
     return { due: 0, proposed: 0, skipped: ['quiet_hours'] };
   }
 
-  const due = await prisma.maintenancePlan.findMany({
-    where: { active: true, nextDueAt: { lte: now } },
-    orderBy: { nextDueAt: 'asc' },
-    take: 50,
-  });
+  const { aProponer, sinCanalVencidos } = await seleccionarLotes(now);
+
+  // Los MUDOS primero, y en su propio recorrido: no se proponen, pero se les avisa. Éste es el
+  // sitio que SCRUM-394 necesita y que un filtro a secas habría borrado.
+  for (const plan of sinCanalVencidos) {
+    await avisarPlanSinCanal(plan, plan.customerId);
+    skipped.push(`plan ${plan.id}: wa_opt_out`);
+  }
+
+  const due = aProponer;
   let proposed = 0;
 
   for (const plan of due) {
@@ -218,9 +304,18 @@ export async function runMaintenanceProposals(now: Date = new Date()): Promise<{
     // ⚠️ Es CONSULTABLE, no una notificación: solo lo ve quien entra en esa ficha. Que se entere
     // sin ir a buscarlo es superficie nueva y otro ticket (no hay pantalla de planes: las rutas
     // de mantenimiento solo tienen POST y DELETE).
+    // 🔴 AQUÍ YA NO SE FILTRA: esto es una DEFENSA, y la diferencia importa.
+    //
+    // Desde SCRUM-399 el opt-out se decide EN LA CONSULTA (`seleccionarLotes`), porque filtrarlo
+    // aquí dejaba a los planes sin canal comiéndose un hueco del lote todos los días. Si uno llega
+    // hasta este punto, el filtro de la consulta se ha roto — así que no se calla como antes: se
+    // marca con un motivo DISTINTO para que se vea en el log del cron.
+    //
+    // No es una segunda opinión sobre el criterio: es que respetar el opt-out no puede depender de
+    // que una consulta salga bien. El aviso NO se registra aquí (ya lo hizo su propio recorrido);
+    // duplicarlo rompería el «una vez por episodio».
     if (customer.waOptOut) {
-      await avisarPlanSinCanal(plan, customer.id);
-      skipped.push(`plan ${plan.id}: wa_opt_out`);
+      skipped.push(`plan ${plan.id}: wa_opt_out_INESPERADO_en_lote`);
       continue;
     }
 
