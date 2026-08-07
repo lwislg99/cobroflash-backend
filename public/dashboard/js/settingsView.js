@@ -25,7 +25,8 @@ const PENDIENTE_MODO_EMISION = '[PENDIENTE microcopy oficial]';
  *     («esta ruta no edita ni borra»), regla 29.
  *   · `demo`    — `DEMO_WATERMARK = 'DEMO — no válida fiscalmente'` (`emission.service.ts:12`),
  *     aplicada en `lib/invoicing.ts:122` y `:257`. Factura completa, con marca de agua.
- *   · `receipt` — DEVUELTO. Ver la nota de abajo.
+ *   · `receipt` — REESCRITO tras devolverlo. Ver la nota de abajo: es el que demuestra que la
+ *     condición sirve para algo.
  */
 // ⚠️ DOS OBJETOS PLANOS, y no es estilo: es que el guard tiene que poder VERLOS. Al escribirlos
 // primero como un objeto anidado (`{ fiscal: { titulo, detalle } }`) el extractor de microcopy se
@@ -35,29 +36,34 @@ const PENDIENTE_MODO_EMISION = '[PENDIENTE microcopy oficial]';
 const TITULO_MODO_EMISION = {
   fiscal: 'Se emiten facturas',
   demo: 'Cuenta de demostración',
-  // 🔴 DEVUELTO AL FUNDADOR, no olvidado. Ver la nota de abajo.
-  receipt: PENDIENTE_MODO_EMISION,
+  receipt: 'Se emiten justificantes de cobro',
 };
 const DETALLE_MODO_EMISION = {
   fiscal: 'Cada cobro genera una factura con su numeración. Una vez emitida no se puede editar ni borrar.',
   demo: 'Se generan facturas completas con una marca de agua DEMO. No tienen validez: esta cuenta es para probar.',
-  receipt: PENDIENTE_MODO_EMISION,
+  receipt: 'Cada cobro genera un justificante para tu cliente, con su propia referencia. No es una factura y no consume tu serie de facturación.',
 };
 
-// 🔴 POR QUÉ `receipt` SIGUE CON MARCADOR. El texto propuesto decía «con su propia numeración», y
-// el código dice lo contrario en su propio comentario (`invoiceNumber.service.ts:32-35`):
+// ── `receipt`: EL QUE SE DEVOLVIÓ, Y POR QUÉ EL DE AHORA SÍ SE SOSTIENE ───────────────────────
 //
-//     los merchants ES reales con `INVOICING_ES_ENABLED` off NO consumen la serie fiscal —
-//     reciben una REFERENCIA `J-YYYYMMDD-XXXX` FUERA DE TODA SERIE DE FACTURACIÓN
-//     («sin numeración de factura», Parte M).
+// La primera redacción decía «con su propia NUMERACIÓN», y el código dice lo contrario en su
+// propio comentario (`invoiceNumber.service.ts:32-35`): los J- **no consumen la serie fiscal**,
+// reciben una **referencia** `J-YYYYMMDD-XXXX` **fuera de toda serie de facturación** («sin
+// numeración de factura», Parte M). Y `makeReceiptNumber` la cierra con `Math.random()`, no con un
+// contador. «Numeración» habría prometido una correlatividad que no existe, a un profesional que
+// responde ante Hacienda, y **en el modo en el que están HOY todos los merchants ES reales**.
 //
-// Y `makeReceiptNumber` cierra la referencia con `Math.random()`, no con un contador: dos
-// justificantes del mismo día no guardan ningún orden entre sí. Prometer «numeración» a un
-// profesional que responde ante Hacienda es prometer una correlatividad que no existe — y éste es
-// precisamente el modo en el que están HOY todos los merchants ES reales.
+// Se devolvió, y la redacción de ahora dice «referencia». Las TRES afirmaciones, medidas:
 //
-// Lo que sí está medido y es cierto: el prefijo `J-`, el `type: 'JUST'` y que nunca entra en la
-// cadena de huellas (`verifactu.service.ts:333`). O sea, «no es una factura» sí se sostiene.
+//   · «con su propia referencia» — cada justificante recibe una distinta, y lo garantiza el
+//     `@@unique([merchantId, number])` de `Invoice`: no pueden coexistir dos iguales. ⚠️ El texto
+//     habla de DISTINCIÓN, nunca de orden — dos del mismo día no guardan ninguno entre sí.
+//     (Que la unicidad la dé la restricción y no el generador es SCRUM-396, otro carril.)
+//   · «no es una factura» — `type: 'JUST'`, prefijo `J-`, y nunca entra en la cadena de huellas
+//     (`verifactu.service.ts:333`).
+//   · «no consume tu serie de facturación» — la más fuerte de las tres:
+//     `invoiceNumber.service.ts:214-219` genera la referencia y hace `return` **antes** del
+//     `tx.merchant.update` que avanza `nextInvoiceNumber`. El contador no se toca ni por accidente.
 
 
 function renderSettingsView(container) {

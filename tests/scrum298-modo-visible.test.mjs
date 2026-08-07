@@ -240,6 +240,15 @@ const APROBADOS = {
     'fundador 7-ago-2026 · solo el merchant demo (`isDemoMerchant`)',
   'Se generan facturas completas con una marca de agua DEMO. No tienen validez: esta cuenta es para probar.':
     'fundador 7-ago-2026 · `DEMO_WATERMARK = "DEMO — no válida fiscalmente"` (`emission.service.ts:12`), aplicada en `lib/invoicing.ts:122` y `:257`',
+  // Los dos de `receipt` son de la SEGUNDA redacción: la primera decía «numeración» y se devolvió
+  // por afirmar una correlatividad que no existe. La condición del fundador —verificar contra el
+  // mecanismo antes de escribir— sirvió exactamente para esto.
+  'Se emiten justificantes de cobro':
+    'fundador 7-ago-2026 (2.ª redacción) · `getEmissionMode` → `receipt` para ES real con el flag off',
+  'Cada cobro genera un justificante para tu cliente, con su propia referencia. No es una factura y no consume tu serie de facturación.':
+    'fundador 7-ago-2026 (2.ª redacción) · «referencia» distinta por `@@unique([merchantId, number])` — sin afirmar orden; '
+    + '«no es una factura» por `type: JUST` y fuera de la cadena (`verifactu.service.ts:333`); '
+    + '«no consume tu serie» por `invoiceNumber.service.ts:214-219`, que hace `return` ANTES del update de `nextInvoiceNumber`',
 };
 
 test('SCRUM-298 · MICROCOPY: sin aprobar va el marcador; aprobado va con su procedencia (reglas 30 y 26)', () => {

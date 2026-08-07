@@ -186,9 +186,9 @@ mecanismo antes de escribirla**. Se verificaron las tres:
 |---|---|---|
 | `fiscal` | ✅ escrito | numera con la serie fiscal (`formatInvoiceNumber`, lock `SERIE_LOCK_NS`); «no se edita ni borra» en `invoicesAdmin.routes.ts:68` — SOLO ALTA, regla 29 |
 | `demo` | ✅ escrito | `DEMO_WATERMARK = 'DEMO — no válida fiscalmente'` (`emission.service.ts:12`), aplicada en `lib/invoicing.ts:122` y `:257` |
-| `receipt` | 🔴 **DEVUELTO** | ver abajo |
+| `receipt` | 🔴 devuelto → ✅ **escrito** (2.ª redacción) | ver abajo |
 
-### 🔴 `receipt` — «con su propia numeración» es FALSO, y por eso sigue con marcador
+### 🔴 `receipt` — la 1.ª redacción decía «con su propia numeración», y era FALSO
 
 El código lo dice en su propio comentario (`invoiceNumber.service.ts:32-35`):
 
@@ -202,6 +202,27 @@ justificantes del mismo día no guardan ningún orden entre sí. Prometer «nume
 
 Lo que sí se sostiene de la propuesta: «**no es una factura**» — `type: 'JUST'`, prefijo `J-`, y
 nunca entra en la cadena de huellas (`verifactu.service.ts:333`).
+
+#### ✅ Resuelto: 2.ª redacción, y las tres afirmaciones medidas
+
+El fundador la reescribió el mismo día cambiando «numeración» por **referencia** y añadiendo lo que
+de verdad le importa al profesional — que su serie no se gasta:
+
+> **Se emiten justificantes de cobro** · «Cada cobro genera un justificante para tu cliente, con su
+> propia referencia. No es una factura y no consume tu serie de facturación.»
+
+| Afirmación | Medición |
+|---|---|
+| «con su propia referencia» | distinta por `@@unique([merchantId, number])` de `Invoice`: no pueden coexistir dos iguales. **Habla de DISTINCIÓN, nunca de orden** — dos del mismo día no guardan ninguno |
+| «no es una factura» | `type: 'JUST'`, prefijo `J-`, fuera de la cadena de huellas |
+| «no consume tu serie de facturación» | **la más fuerte**: `invoiceNumber.service.ts:214-219` genera la referencia y hace `return` **ANTES** del `tx.merchant.update` que avanza `nextInvoiceNumber`. El contador no se toca ni por accidente |
+
+Y la prueba de que el guard protege justo esa regresión: volver a escribir «numeración» en el texto
+aprobado lo pone **rojo** (mutación verificada en disco, fichero restaurado idéntico).
+
+> **La condición del fundador —verificar cada afirmación contra el mecanismo antes de escribirla—
+> se estrenó aquí y cazó una de tres a la primera.** Un rótulo que promete de más es peor que un
+> marcador `[PENDIENTE]`: el marcador pide permiso, y el texto que suena bien ya no lo pide nunca.
 
 ### El guard de microcopy evoluciona: marcador **o** aprobado con procedencia
 
