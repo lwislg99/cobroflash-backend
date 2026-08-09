@@ -28,6 +28,7 @@ import { allocateAlbaranNumber } from '../../domain/albaranNumber.service'; // S
 import { datosDuplicado } from '../../domain/albaranDuplicado'; // SCRUM-302: qué viaja al duplicado
 // SCRUM-300 (C5): microcopy y normalización del firmante, en su fuente única.
 import { exigirNombreFirmante, normalizarLugarEntrega, resolverCalidadFirmante } from '../../domain/albaranFirmante';
+import { fotoYaSubida } from '../../domain/fotoDuplicada'; // SCRUM-382: la misma foto no se guarda dos veces
 import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
 // SCRUM-301 (C1): el listado global. Dominio puro + lector inyectable (la tenencia se ejercita).
 import { listarAlbaranesDelMerchant, type LectorListado } from '../../domain/albaranesListado';
@@ -747,10 +748,28 @@ router.post('/:id/fotos', async (req, res) => {
       return res.status(413).json({ error: 'foto_demasiado_grande', message: 'Cada foto puede ocupar como máximo 5 MB.' });
     }
 
-    const count = await prisma.attachment.count({
+    // SCRUM-382: las que YA están, con sus bytes. Se leen antes del tope a propósito: una foto
+    // repetida no debe consumir plaza ni chocar con el límite.
+    const yaEstan = await prisma.attachment.findMany({
       where: { merchantId: req.merchantId, entityType: 'albaran', entityId: albaran.id },
+      select: { id: true, data: true },
     });
-    if (count >= FOTOS_MAX_POR_ALBARAN) {
+
+    // 🔴 IDEMPOTENTE, como firmar y como emitir: subir DOS VECES la misma foto devuelve la
+    // primera en vez de crear una copia. En obra se sube dos veces con facilidad —el pulgar, la
+    // barra de progreso que no se ve al sol, el «no sé si ha subido»— y la copia se quedaba para
+    // siempre: ocupaba una de las diez plazas, salía repetida en el PDF y en el paquete de
+    // evidencias de A7.
+    //
+    // Responde 200 y no 201, porque no se ha creado nada. Y SIN texto nuevo a propósito: no hace
+    // falta contarle un problema a quien no lo tiene, y un mensaje nuevo sería microcopy que
+    // nadie ha aprobado (regla 30).
+    const duplicada = fotoYaSubida(buffer, yaEstan);
+    if (duplicada !== null) {
+      return res.json({ ok: true, already: true, attachmentId: duplicada, url: `/admin/attachments/${duplicada}` });
+    }
+
+    if (yaEstan.length >= FOTOS_MAX_POR_ALBARAN) {
       return res.status(409).json({ error: 'max_fotos', message: `Máximo ${FOTOS_MAX_POR_ALBARAN} fotos por albarán.` });
     }
 
