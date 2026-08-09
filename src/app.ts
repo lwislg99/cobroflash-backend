@@ -6,10 +6,14 @@ import { outboxDir } from './core/storage/dirs'; // SCRUM-72: invoicesDir ya no 
 import { jsonError } from './core/http/jsonError';
 import { notFoundPageHtml } from './core/http/publicNotFound';
 import { isFlagEnabled } from './core/flags';
-import { modoDocumentoSuelto } from './modules/invoicing/domain/facturaSuelta'; // SCRUM-289 (A0.3) · SCRUM-346 (A0.5)
-import { modoEmisionVisible } from './modules/invoicing/domain/modoVisible'; // SCRUM-298 (A8)
 // SCRUM-300 (C5): microcopy del albarán servida al dashboard vanilla desde su fuente única.
 import { ALBARAN_AYUDAS, ALBARAN_ROTULOS, firmanteCalidadOpciones } from './modules/jobs/domain/albaranFirmante';
+// ⚠️ FUSIÓN: C5 importaba `puedeCrearFacturaSuelta`, que SCRUM-346 (A0.5) RETIRÓ de `main`.
+// Medido antes de resolver: ya no se exporta, y `appFacturaSueltaDisponible` tiene CERO
+// consumidores en `public/`. No son dos cosas que hagan lo mismo — es una que evolucionó, así
+// que conservar la de C5 habría roto la compilación contra una función que ya no existe.
+import { modoDocumentoSuelto } from './modules/invoicing/domain/facturaSuelta'; // SCRUM-289 (A0.3) · SCRUM-346 (A0.5)
+import { modoEmisionVisible } from './modules/invoicing/domain/modoVisible'; // SCRUM-298 (A8)
 import { requireAuth, requireActivePlan, requireRole } from './core/http/authMiddleware';
 import { mountAdmin } from './core/http/adminMounts'; // SCRUM-55: red fail-closed de /admin
 import { requireInternalSecret } from './core/http/internalAuth';

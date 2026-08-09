@@ -439,6 +439,27 @@ migres antes de tener los seis textos del fundador.
 > adivinar: una factura fiscal sin huella y sin motivo para no tenerla. Es un dato de negocio que
 > hay que mirar, no barrer.
 
+### 🔴 LA MISMA CLAVE APUNTA A DOS BASES DISTINTAS SEGÚN EL WORKTREE (medido 6-ago-2026)
+
+Censo de los cuatro árboles, imprimiendo solo `clave → host/base` con `describirBD`:
+
+| Worktree | Clave | Base real |
+| --- | --- | --- |
+| `cobroflash-backend` | `DATABASE_URL_STAGING` | `acela…/yaqu_dev_javier` → **DEV** |
+| `cobroflash-b1` | `DATABASE_URL_STAGING` | `acela…/railway` → **STAGING** |
+| `cobroflash-b2` | `DATABASE_URL_STAGING` | `acela…/railway` → **STAGING** |
+| `cobroflash-b3` | `DATABASE_URL_STAGING` | `acela…/railway` → **STAGING** |
+
+**Un solo nombre de variable, dos bases.** Cuál te toca depende de en qué directorio estés parado
+—algo que ningún comando te recuerda—, y las dos viven en el mismo host, así que el guard de
+hostname (`_db-guard.mjs`) no las distingue. Es el escenario contra el que avisa SCRUM-383.
+
+⚠️ Y el reparto que este mismo documento declara más abajo **también está desfasado**: dice que
+staging es «la base del worktree `cobroflash-b2`» y dev «base de `cobroflash-b1`». Medido: `b1`
+tiene STAGING, y quien tiene DEV es el worktree PRINCIPAL, que ahí ni se menciona.
+
+**Regla que sale de esto:** antes de cualquier operación, imprimir `host/base` con `describirBD` y
+mirarlo. El nombre de la variable no es una fuente: esta noche ha mentido dos veces.
 ### 🔴 ANTES DE APLICAR ESTO: COMPRUEBA A QUÉ BASE APUNTA TU CLAVE
 
 **El mapa medido de los cuatro worktrees está arriba**, en el bloque de las TRES BD («QUÉ BASE TOCA

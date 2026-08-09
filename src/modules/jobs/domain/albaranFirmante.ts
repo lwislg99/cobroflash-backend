@@ -96,6 +96,8 @@ export const FIRMANTE_CALIDAD_LIBRE: FirmanteCalidadId = 'otro';
  * cinco textos declarados «aprobados tal cual, ni una palabra distinta» que **no había aprobado
  * nadie**. Un texto etiquetado como aprobado es peor que uno con marcador: el marcador pide
  * permiso y la etiqueta falsa lo da.
+ * Y el mapa de la fusión (`docs/master/SCRUM-300.md`) recoge el mismo hecho, junto con las dos
+ * implementaciones paralelas de las que salió este fichero.
  *
  * ⚠️ Cambiar una etiqueta NO obliga a migrar nada, porque lo que se guarda en
  * `Albaran.firmadoPorCalidad` es el `id`. Cambiar un `id` SÍ. Son dos cosas distintas y por eso
