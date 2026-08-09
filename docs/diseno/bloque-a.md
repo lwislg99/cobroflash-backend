@@ -155,7 +155,7 @@ Que el recargo esté en el cliente y no en la factura **es correcto**: es condic
 
 Ellos lo ofrecen como casilla. Pero **no saben cuándo cobras**: no tienen pasarela, ni Bizum, ni conciliación. Su usuario con RECC marcado tiene que llevar a mano qué facturas cobró.
 
-**Nosotros sabemos exactamente cuándo entró cada euro.** Así que en YaQu el criterio de caja **no es una casilla informativa: es una liquidación que se calcula sola**. Ver A5.
+**Nosotros tenemos el cobro DENTRO, que ellos no.** Lo que hoy sabemos es que **alguien marcó la factura como cobrada** — no la fecha en que entró el dinero: `paidAt` se pone con `new Date()` (medido en tres sitios de `src`, SCRUM-294) y tres de las cinco formas de cobro se marcan a mano. Así que hoy el criterio de caja **clasifica y avisa; no liquida** (`criterioCaja.ts`), y el 303 sigue devengando por emisión. Lo que convertiría esto en «sabemos cuándo entró cada euro» es la conciliación bancaria: **SCRUM-326**. Ver A5.
 
 Esto no es copiarles mejor. Es hacer algo que ellos **no pueden hacer**.
 
