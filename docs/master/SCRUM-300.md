@@ -137,8 +137,8 @@ el mismo `main`), así que son comparables entre sí.
 
 `src/modules/jobs/domain/albaranFirmante.ts` · `src/app.ts` · `public/dashboard/js/app.js` ·
 `docs/diseno/bloque-c.md` · `docs/capturas/scrum-300/README.md` + las 4 capturas (firma ANTES/DESPUÉS,
-360 y 390 px) · `tests/scrum300-albaran-firmado-por.test.mjs` ·
-`tests/scrum300-microcopy-firmante.test.mjs`
+360 y 390 px) · sus dos tests, `scrum300-albaran-firmado-por` y
+`scrum300-microcopy-firmante` — nombrados sin ruta porque no están en el árbol (ver la nota final).
 
 ## Los dos ficheros de dominio: B cubre más, A tiene dos cosas que B no
 
@@ -292,9 +292,9 @@ encuentra, en vez de comparar en silencio contra la llamada equivocada.
 
 ## Lo que NO se importó de las dos ramas, y por qué
 
-`tests/scrum300-albaran-campos.test.mjs` (288 líneas, rama A) ·
-`tests/scrum300-albaran-firmado-por.test.mjs` (301, B) ·
-`tests/scrum300-microcopy-firmante.test.mjs` (323, B).
+`tests/scrum300-albaran-campos.test.mjs` (288 líneas, rama A — **se ESCRIBIÓ el 9-ago-2026**;
+ver la nota al final) · `scrum300-albaran-firmado-por` (301, B) ·
+`scrum300-microcopy-firmante` (323, B). Los dos de la rama B se nombran SIN RUTA a propósito: no están en el árbol.
 
 Los tres afirman, carácter a carácter, cosas que la fusión revirtió: los ids viejos de cada rama,
 los cinco textos falsamente aprobados y el guardado de la ETIQUETA en vez del `id`. Traerlos tal
@@ -586,9 +586,9 @@ encuentra, en vez de comparar en silencio contra la llamada equivocada.
 
 ## Lo que NO se importó de las dos ramas, y por qué
 
-`tests/scrum300-albaran-campos.test.mjs` (288 líneas, rama A) ·
-`tests/scrum300-albaran-firmado-por.test.mjs` (301, B) ·
-`tests/scrum300-microcopy-firmante.test.mjs` (323, B).
+`tests/scrum300-albaran-campos.test.mjs` (288 líneas, rama A — **se ESCRIBIÓ el 9-ago-2026**;
+ver la nota al final) · `scrum300-albaran-firmado-por` (301, B) ·
+`scrum300-microcopy-firmante` (323, B). Los dos de la rama B se nombran SIN RUTA a propósito: no están en el árbol.
 
 Los tres afirman, carácter a carácter, cosas que la fusión revirtió: los ids viejos de cada rama,
 los cinco textos falsamente aprobados y el guardado de la ETIQUETA en vez del `id`. Traerlos tal
@@ -739,8 +739,8 @@ comprobados **uno a uno contra `main` y contra todas las ramas del remoto**:
 | --- | --- | --- |
 | `tests/scrum300-firmante-ids-y-microcopy.test.mjs` | **sí** | el de la fusión; vigente |
 | `tests/scrum300-albaran-campos.test.mjs` | **no, y en NINGUNA rama** | **se ESCRIBE** (ver abajo) |
-| `tests/scrum300-albaran-firmado-por.test.mjs` | no · solo en `origin/scrum-300-firmado-por` | **declaración RETIRADA**: cubierto |
-| `tests/scrum300-microcopy-firmante.test.mjs` | no · solo en `origin/scrum-300-firmado-por` | **declaración RETIRADA**: cubierto |
+| `scrum300-albaran-firmado-por` *(sin ruta: no está en el árbol)* | no · solo en `origin/scrum-300-firmado-por` | **declaración RETIRADA**: cubierto |
+| `scrum300-microcopy-firmante` *(sin ruta: no está en el árbol)* | no · solo en `origin/scrum-300-firmado-por` | **declaración RETIRADA**: cubierto |
 
 ### Los dos que se retiran, y QUÉ los cubre
 
@@ -770,3 +770,29 @@ del lector (si saca menos de 100 bytes, falla) y el suelo fiscal (sin lugar de e
 domicilio del emisor no ocupa su sitio) con su control del control. **Probado en rojo**: quitando
 del PDF el bloque de quién firma cae nombrando ese campo, y quitando el de la fecha de entrega,
 el suyo.
+
+---
+
+## 📌 NOTA · por qué en esta entrada hay tests nombrados SIN su ruta (9-ago-2026, SCRUM-391)
+
+Los dos tests de la rama B (`scrum300-albaran-firmado-por` y `scrum300-microcopy-firmante`) se
+nombran **sin `tests/…​.test.mjs`**, y no es descuido: **una ruta escrita es una afirmación de
+existencia**, también cuando la frase que la rodea dice justo lo contrario.
+
+El guard de SCRUM-391 extrae toda ruta `tests/*.test.mjs` que aparezca en una entrada de su mismo
+número y exige que el fichero esté. No distingue «declaro que existe» de «explico por qué no
+existe», **y no debería**: para distinguirlo tendría que entender la negación en lenguaje natural,
+y ahí es exactamente donde se escondería un huérfano de verdad — bastaría escribir «ya no hace
+falta X» al lado de una ruta para que dejara de mirarla. **La regla es correcta PORQUE la
+alternativa debilita el detector.**
+
+Lo que se pierde es poder citar el fichero por su ruta. Lo que se conserva —y es lo que hace falta
+para encontrarlo— es **la rama, el nombre y el tamaño**: `origin/scrum-300-firmado-por`, 301 y 323
+líneas. Con eso se recupera en un `git show`.
+
+⚠️ **Y la tensión, dicha en voz alta:** una constancia se escribe para dos lectores —una persona y
+un guard— y aquí sus intereses no coinciden. La persona quiere la ruta exacta; el guard necesita
+que la ruta signifique una sola cosa. Se resuelve a favor del guard **en este caso concreto**
+porque el coste para la persona es un `git show` de más, y el coste del otro lado es un mecanismo
+que deja de vigilar sin avisar. Si algún día el coste se invierte —una entrada donde la ruta sea
+imprescindible para entender qué pasó—, esto se vuelve a discutir en vez de aplicarse por inercia.
