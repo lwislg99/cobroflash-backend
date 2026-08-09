@@ -31,6 +31,7 @@ import { esErrorSinSellar, ERROR_SIN_SELLAR } from '../../../invoicing/domain/po
 import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-289 (C7)
+import { puedeRectificarse } from '../../../invoicing/domain/rectificabilidad'; // SCRUM-308
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-289
 import {
   modoDocumentoSuelto, validarFacturaSuelta,
@@ -813,6 +814,18 @@ router.post('/:id/annul', requireRole('admin'), async (req, res) => {
 });
 
 /**
+ * SCRUM-308 · El texto del rechazo está SIN APROBAR (regla 30).
+ *
+ * Lo lee un profesional al que se le acaba de impedir emitir un documento fiscal, así que tiene
+ * que decirle qué pasa sin explicarle una obligación que no le toca a esta pantalla explicar
+ * (regla 26: la pregunta de VeriFactu se responde SOLO con el guion H2). El código del error sí
+ * va NOMBRADO y en claro — eso es diagnóstico, no microcopy.
+ *
+ * PROCEDENCIA del bloqueo: `docs/master/SCRUM-308.md`, sección «Microcopy».
+ */
+const MICROCOPY_PENDIENTE_308 = '[PENDIENTE microcopy oficial]';
+
+/**
  * POST /admin/invoices/:id/rectify
  * Emite una FACTURA RECTIFICATIVA (tipo R1, RD 1619/2012) de la factura dada:
  * mismas líneas con importes en NEGATIVO, serie propia (2026-CF-R-001) y
@@ -831,6 +844,22 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
     if (!original) return res.status(404).json({ error: 'not_found' });
     if (original.type === 'R1') {
       return res.status(409).json({ error: 'cannot_rectify_rectification' });
+    }
+
+    // SCRUM-308 · NO SE RECTIFICA UNA FACTURA ANULADA. Una rectificativa corrige una operación
+    // que existe; sobre algo ya declarado sin efecto es un documento que no debería existir — y
+    // con la regla 29 delante, si se emite se queda.
+    //
+    // ⚠️ Es una PUERTA que se pregunta ANTES de emitir, igual que los otros tres rechazos de esta
+    // ruta. NO cambia cómo se emite la rectificativa: ni numeración, ni sellado, ni líneas, ni el
+    // orden de la transacción (regla 38).
+    //
+    // ⚠️ Y es LISTA BLANCA: `puedeRectificarse` solo deja pasar los estados explícitamente
+    // permitidos. Un `status` nulo, ilegible o NUEVO se bloquea — equivocarse hacia lo permisivo
+    // aquí emite un documento fiscal que no se deshace.
+    const veredicto = puedeRectificarse(original.status);
+    if (!veredicto.ok) {
+      return res.status(409).json({ error: veredicto.error, message: MICROCOPY_PENDIENTE_308 });
     }
 
     const existing = await prisma.invoice.findFirst({

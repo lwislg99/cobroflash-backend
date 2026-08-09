@@ -13,6 +13,7 @@ import { ALBARAN_AYUDAS, ALBARAN_ROTULOS, firmanteCalidadOpciones } from './modu
 // consumidores en `public/`. No son dos cosas que hagan lo mismo — es una que evolucionó, así
 // que conservar la de C5 habría roto la compilación contra una función que ya no existe.
 import { modoDocumentoSuelto } from './modules/invoicing/domain/facturaSuelta'; // SCRUM-289 (A0.3) · SCRUM-346 (A0.5)
+import { modoEmisionVisible } from './modules/invoicing/domain/modoVisible'; // SCRUM-298 (A8)
 import { requireAuth, requireActivePlan, requireRole } from './core/http/authMiddleware';
 import { mountAdmin } from './core/http/adminMounts'; // SCRUM-55: red fail-closed de /admin
 import { requireInternalSecret } from './core/http/internalAuth';
@@ -52,6 +53,7 @@ import publicProfileRouter from './modules/system/app/routes/publicProfile.route
 import jobsRouter from './modules/jobs/app/routes/jobs.routes';
 import albaranesRouter from './modules/jobs/app/routes/albaranes.routes'; // SCRUM-14 (ALBARAN-1)
 import libroRegistroRouter from './modules/invoicing/app/routes/libroRegistro.routes'; // SCRUM-296 (A6): libro de registro, SOLO LECTURA
+import librosAeatRouter from './modules/fiscal/librosAeat/librosAeat.routes'; // SCRUM-325 (E4): el libro de A6, por periodo y en CSV. SOLO LECTURA
 import modelo303Router from './modules/fiscal/modelo303/modelo303.routes'; // SCRUM-295 (A5): modelo 303, SOLO LECTURA
 import evidenciasRouter from './modules/fiscal/evidencias/evidencias.routes'; // SCRUM-297 (A7): paquete de evidencias, SOLO LECTURA
 import maintenanceRouter from './modules/maintenance/app/routes/maintenance.routes';
@@ -312,6 +314,17 @@ app.get('/admin/me', async (req, res) => {
     select: { country: true, logoUrl: true, email: true, flags: true, invoiceSeriesYear: true },
   });
 
+  // SCRUM-298 (A8) · UN SOLO objeto para las dos preguntas de modo. `documentoSuelto` (qué se
+  // puede crear suelto) y `modoEmision` (en qué modo se emite) son la MISMA verdad mirada desde
+  // dos sitios: construirlo dos veces sería dos lecturas que pueden divergir, y entonces el botón
+  // que se pinta y el modo que se enseña dirían cosas distintas.
+  const merchantParaModo = {
+    id: session.merchantId,
+    email: merchantFull?.email ?? null,
+    country: merchantFull?.country ?? null,
+    flags: merchantFull?.flags,
+  };
+
   // SCRUM-313 (D2) · LA PUERTA DE ULTIMA OPORTUNIDAD. Se lee aqui porque el veredicto tiene que
   // viajar YA RESUELTO: si la pantalla reimplementara la regla habria dos criterios sobre cuando
   // se puede tocar la numeracion, y el del navegador seria el facil de equivocar.
@@ -352,6 +365,15 @@ app.get('/admin/me', async (req, res) => {
     voiceAlbaranEnabled: isFlagEnabled('VOICE_ALBARAN_ENABLED', {
       merchant: { id: session.merchantId, country: merchantFull?.country },
     }),
+    // SCRUM-402: si Bizum manual está APAGADO, el botón «Confirmar Bizum recibido» no puede
+    // pintarse — hoy se pinta como acción PRIMARIA de las facturas `pending` con cobro en vuelo,
+    // y al segundo toque —después de enseñar importe y nombre del cliente— recibe un 409
+    // `bizum_disabled` (`chargesAdmin.routes.ts:29`). El veredicto lo da el SERVIDOR, que es
+    // quien tiene la bandera: el navegador no la reimplementa, la recibe. Mismo criterio que
+    // `documentoSuelto` y `modoEmision` — dos sitios decidiendo lo mismo acaban discrepando.
+    bizumManualEnabled: isFlagEnabled('BIZUM_MANUAL_ENABLED', {
+      merchant: { id: session.merchantId, country: merchantFull?.country },
+    }),
     // SCRUM-289 (A0.3): el botón «Nueva factura» solo existe cuando lo que se va a crear ES una
     // factura. El veredicto se calcula AQUÍ, con la MISMA función que gatea `POST /admin/invoices`
     // — el navegador no reimplementa la regla, la recibe. Dos copias del criterio es cómo se llega
@@ -359,12 +381,18 @@ app.get('/admin/me', async (req, res) => {
     // SCRUM-346 (A0.5): viaja el VEREDICTO de tres valores, no un booleano. Sustituye a
     // `facturaSueltaDisponible` en vez de convivir con él: dos campos del mismo hecho acaban
     // divergiendo, y entonces el botón que se pinta y el documento que sale dicen cosas distintas.
-    documentoSuelto: modoDocumentoSuelto({
-      id: session.merchantId,
-      email: merchantFull?.email ?? null,
-      country: merchantFull?.country ?? null,
-      flags: merchantFull?.flags,
-    }),
+    documentoSuelto: modoDocumentoSuelto(merchantParaModo),
+    // SCRUM-298 (A8): EL MODO DE EMISIÓN, VISIBLE. Hasta hoy `getEmissionMode` no llegaba ni una
+    // vez al navegador (medido: cero consumidores en `public/`), así que dos estados que producen
+    // documentos DISTINTOS se veían exactamente igual en pantalla.
+    //
+    // `null` cuando no se sabe, y la pantalla no pinta nada: enseñar el modo equivocado es peor
+    // que no enseñar ninguno. NO se cae a un modo por defecto.
+    //
+    // Los dos campos salen del MISMO objeto y de la MISMA función de modo — `documentoSuelto` es
+    // un derivado de éste, no una segunda opinión. Con dos lecturas distintas, el botón que se
+    // pinta y el modo que se enseña podrían contradecirse.
+    modoEmision: modoEmisionVisible(merchantParaModo),
     // SCRUM-300 (C5): las SEIS ranuras de «en calidad de qué», sus rótulos y sus ayudas se
     // SIRVEN, no se copian. El dashboard es vanilla y no puede importar el módulo de dominio, y
     // una segunda copia de una microcopy que acaba en un juzgado es exactamente cómo divergen
@@ -410,6 +438,9 @@ mountAdmin(app, '/admin/albaranes',  albaranesRouter); // SCRUM-14 (ALBARAN-1): 
 // SCRUM-296 (A6): libro de facturas emitidas. ADMIN-ONLY, el default de S1 y aquí además el
 // correcto por contenido: es la facturación entera del negocio, no trabajo de campo del Operario.
 mountAdmin(app, '/admin/libro-registro', requireRole('admin'), libroRegistroRouter);
+// SCRUM-325 (E4): admin-only como el de A6 y como todo `/admin/exports` — un libro lleva el NIF
+// del emisor y el de cada cliente, así que no es material de Operario.
+mountAdmin(app, '/admin/libros', requireRole('admin'), librosAeatRouter);
 // SCRUM-295 (A5): el 303 del trimestre. Admin-only por el mismo motivo que el libro: es la
 // declaración fiscal del negocio entero, no trabajo de campo del Operario.
 mountAdmin(app, '/admin/modelo-303', requireRole('admin'), modelo303Router);

@@ -89,9 +89,13 @@ if (modo === 'quien-soy') {
   process.exit(0);
 }
 
-const urlStaging = process.env.DATABASE_URL_STAGING;
+// SCRUM-383 · el turno se toma sobre LA BASE DE PRUEBAS DE ESTE CARRIL, que es donde vive el
+// marcador (el turno se escribe DENTRO de la base, no en un servicio aparte). Por eso hay DOS
+// turnos y no uno: el del árbol principal en `yaqu_dev_javier` y el que comparten b1/b2/b3 en
+// `railway`. No es un descuido — el reparto por carril es deliberado (23-jul-2026).
+const urlStaging = process.env.DATABASE_URL_TESTS;
 if (!urlStaging) {
-  console.error('\n❌ falta DATABASE_URL_STAGING en el entorno. Sin ella no hay turno.\n');
+  console.error('\n❌ falta DATABASE_URL_TESTS en el entorno. Sin ella no hay turno.\n');
   process.exit(2);
 }
 {
@@ -99,7 +103,7 @@ if (!urlStaging) {
   // SCRUM-118. El contrato devuelve `safe`, no `ok` — leerlo mal da un rechazo con motivo vacío.
   const check = assertSafeStagingUrl(urlStaging, process.env.DATABASE_URL);
   if (!check.safe) {
-    console.error(`\n❌ DATABASE_URL_STAGING no es una URL de staging segura (${check.reason}).`);
+    console.error(`\n❌ DATABASE_URL_TESTS no es una URL de pruebas segura (${check.reason}).`);
     console.error(`   Solo se opera contra el host de STAGING: ${STAGING_HOST}.\n`);
     process.exit(2);
   }

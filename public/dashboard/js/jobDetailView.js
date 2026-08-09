@@ -1224,6 +1224,12 @@ async function renderJobDetailView(container, jobId) {
     // vacío y ya lo llenaré».
     const enBlanco = { estado: 'borrador', modoValoracion, lineas: decision.lineas, notas: '' };
 
+    // ⚠️ AQUÍ NO VIAJA `direccionSugerida`, Y NO ES UN OLVIDO. El contexto sí se pasa —abajo, al
+    // cerrar las opciones— pero SIN la sugerencia: es una ayuda de la EDICIÓN de un albarán, no de
+    // su creación (decisión del asesor, 6-ago-2026).
+    // Consecuencia buscada: al crear en blanco no hay placeholder de lugar de entrega. El
+    // `ctx = {}` por defecto de `buildAlbEditor` lo hace inofensivo — `ctx.direccionSugerida` es
+    // `undefined`, falsy, y el campo sale vacío en lugar de reventar.
     buildAlbEditor(bodyEl, enBlanco, {
       onClose: close,
       onError: (msg) => { errEl.textContent = msg; errEl.style.display = 'block'; },
@@ -1237,7 +1243,7 @@ async function renderJobDetailView(container, jobId) {
             : '✓ Albarán creado (borrador).',
         );
       },
-    }, { cur, refresh, setStatus, job });
+    }, { cur, refresh, setStatus });
     (bodyEl.querySelector('.input') || closeBtn).focus();
   }
 
@@ -1328,7 +1334,10 @@ async function renderJobDetailView(container, jobId) {
     // un constructor de botón que ya no llama nadie es código que se pudre sin que nada lo diga, y
     // el siguiente que lo lea creerá que la fila todavía ofrece esas acciones. Lo que sí se queda
     // es el bloque de miniaturas de arriba: eso es LECTURA, y la fila sigue enseñando las fotos.
-    const editBtn = () => mkBtn('Editar líneas', () => openAlbEditorSheet(alb, { cur, refresh, setStatus, job }));
+    // SCRUM-300 (C5): `direccionSugerida` viaja como UN STRING, no como el `job` entero — el
+    // editor necesita un dato, no acceso a media pantalla. Es la precarga del lugar de entrega,
+    // y solo como placeholder (ver `buildAlbEditor`).
+    const editBtn = () => mkBtn('Editar líneas', () => openAlbEditorSheet(alb, { cur, refresh, setStatus, direccionSugerida: job.direccion || null }));
 
     // SCRUM-302 (C2) · LA FILA YA NO ES UNA BARRA DE ACCIONES: ES UNA ENTRADA.
     //
@@ -1716,11 +1725,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
   // SCRUM-386 · lo que antes venía del ámbito de `renderJobDetailView`. Se desestructura con
   // los MISMOS nombres a propósito: así el cuerpo de abajo no cambia ni un carácter, y la
   // mudanza se puede comprobar comparando textos en vez de leyendo.
-  // ⚠️ FUSIÓN C5 · `job` se añade al contexto, y no es cosmético: el bloque de lugar/fecha de
-  // entrega que trae C5 usaba `job.direccion` CAPTURADO del ámbito de `renderJobDetailView`, y
-  // SCRUM-386 sacó esta función fuera. Tal cual venía, habría reventado con un ReferenceError al
-  // abrir el editor. Viaja por parámetro, que es exactamente lo que el guard de 386 exige.
-  const { cur, refresh, setStatus, job } = ctx;
+  const { cur, refresh, setStatus } = ctx;
   box.innerHTML = '';
   // SCRUM-65: el modo solo se puede TOCAR en 'borrador' (congelado desde 'emitido' —
   // el backend devolvería 409 albaran_locked si se intentase cambiar después).
@@ -2033,11 +2038,18 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
     lugarEl.style.cssText = 'width:100%;min-height:44px';
     lugarEl.maxLength = 300;
     lugarEl.value = alb.lugarEntrega || '';
-    // ⚠️ SUELO del ticket: si no hay dirección de obra se deja VACÍO. `Job.direccion` entra solo
+    // ⚠️ SUELO del ticket: si no hay dirección de obra se deja VACÍO. La sugerencia entra solo
     // como PLACEHOLDER —sugiere, no rellena—: una dirección equivocada en un documento de
-    // entrega es peor que ninguna. Hoy es null para cualquier merchant real (SCRUM-374), así
-    // que lo normal es que no haya nada que sugerir y lo escriba el profesional.
-    if (job.direccion && !lugarEl.value) lugarEl.placeholder = job.direccion;
+    // entrega es peor que ninguna. Hoy `Job.direccion` es null para cualquier merchant real
+    // (SCRUM-374), así que lo normal es que no haya nada que sugerir y lo escriba el profesional.
+    //
+    // ⚠️ Llega por `ctx.direccionSugerida` —UN STRING—, no por el `Job` entero, y no es un rodeo:
+    // cuando esta función vivía anidada en `renderJobDetailView` cogía `job` por CLAUSURA, y al
+    // sacarla al nivel superior (SCRUM-386/320) esa clausura desapareció. Pasarle el Job le daría
+    // acceso a toda la pantalla e invitaría al acoplamiento siguiente; necesita UN DATO. Y con
+    // `ctx = {}` por defecto, quien no lo pase obtiene `undefined` —falsy—: sin sugerencia, no
+    // pantalla rota. El modo de fallo es el bueno.
+    if (ctx.direccionSugerida && !lugarEl.value) lugarEl.placeholder = ctx.direccionSugerida;
     campoAlb(rotAlb.lugarEntrega, ayuAlb.lugarEntrega, lugarEl);
 
     // ⚠️ Columna PROPIA (`Albaran.fechaEntrega`), NO `Albaran.fecha`: un albarán se prepara un
@@ -2050,7 +2062,6 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
     fEntregaEl.value = alb.fechaEntrega ? String(alb.fechaEntrega).slice(0, 10) : '';
     campoAlb(rotAlb.fechaEntrega, ayuAlb.fechaEntrega, fEntregaEl);
   }
-
 
   const notas = document.createElement('textarea');
   notas.className = 'input';

@@ -137,6 +137,10 @@ var ASIGNACION_SUPERFICIE = {
   // Bloque inline (no es una funcion render...): estado de Stripe Connect. Es estado + accion, no
   // un ajuste, pero cae solo en Cobros — es de lo que va el submenu.
   connectStatus: 'cobro',
+  // SCRUM-298 (A8) · el modo de emision. Bloque inline, como `connectStatus`: es ESTADO, no un
+  // ajuste, asi que no tiene campo en el mapa y queda fuera del guard de campos. Cae en
+  // Cumplimiento porque es de lo que va el submenu — que documento fiscal sale hoy.
+  modoEmision: 'cumplimiento',
 };
 
 /**
@@ -225,10 +229,20 @@ var VACIOS_DECLARADOS = {
   datos:
     'descargar datos + portabilidad + borrar cuenta. La página YA EXISTE (SCRUM-244) y NO se rehace: ' +
     'aquí solo cambiará de dónde se enlaza, y eso es el incremento de la sidebar.',
-  cumplimiento:
-    'hueco para A7/A8 — VERI*FACTU, firma, evidencias. Nada de eso existe todavía en la pantalla ' +
-    '(regla 7: cero claims fiscales hasta SIF-1 8/8).',
 };
+
+// ⚠️ `cumplimiento` ESTUVO AQUÍ y se ha retirado (SCRUM-298, A8, 7-ago-2026). Su motivo decía
+// «nada de eso existe todavía en la pantalla», y desde que el modo de emisión vive dentro del
+// submenú **ya no es cierto**: `vaciosQueYaNoLoEstan` lo habría cazado en el siguiente `npm test`.
+//
+// Se retira en vez de reescribirse porque un hueco declarado que ya tiene contenido no es un hueco
+// con otro motivo: deja de ser un hueco. **Una excepción que sobrevive a su causa deja de ser una
+// nota y pasa a ser un permiso** — aquí, permiso para que el panel se quedara vacío sin que nada
+// avisara.
+//
+// Lo que NO ha cambiado: de A7/A8 solo entra la VISIBILIDAD del modo. La firma, las evidencias y
+// el modal de dos caminos siguen sin existir en la pantalla, y su motivo está en
+// `docs/master/SCRUM-298.md` — no aquí, para no tener dos sitios diciendo lo mismo.
 
 /**
  * Submenú de un campo. **LANZA si la clave no está en el mapa** — a propósito: un campo que nadie

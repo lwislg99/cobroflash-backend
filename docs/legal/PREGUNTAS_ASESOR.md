@@ -319,3 +319,182 @@ conservarlo y referenciarlo desde la factura, y con qué exigencia formal?
 > que la retención **no altera el `Invoice.total`** —es un pago a cuenta del pagador— y que el
 > «líquido a percibir» se **deriva al pintar**, nunca se guarda. Lo que sigue bloqueado por P12
 > es el **suplido**, más los campos de schema, que están congelados aparte por SCRUM-383.
+
+## P13. Recargo de equivalencia: los tipos, y qué pasa con el total sellado (bloquea SCRUM-294 / A3)
+
+**Lo que ya está medido, para no preguntar lo que se puede leer.** El XSD de la AEAT que está en
+este repo (`SuministroInformacion.xsd`, `DetalleDesglose`) pone `TipoRecargoEquivalencia` y
+`CuotaRecargoEquivalencia` como **hermanos** de `TipoImpositivo` y `CuotaRepercutida`, colgando de
+la **misma** `BaseImponibleOimporteNoSujeto`. **No existe ninguna base propia del recargo**, así
+que el recargo es un impuesto MÁS sobre la misma base y no cambia ni la base ni la cuota de IVA.
+Sobre eso no hace falta preguntar nada.
+
+Lo que sí hace falta:
+
+**P13.1 · Los tipos.** El mecanismo está construido con **21 % → 5,2 %**, **10 % → 1,4 %** y
+**4 % → 0,5 %**, y esos números **NO salen de ningún documento del repo**: son los que se han
+puesto para poder probar el cálculo, y están en una tabla cerrada y en un solo sitio
+(`recargoEquivalencia.ts`). ¿Son los vigentes hoy? ¿Hay algún tipo más aplicable a un profesional
+de oficios (por ejemplo para el tabaco, que tiene el suyo), o alguno que no debamos ofrecer nunca?
+
+**P13.2 · El total.** Con recargo, lo que el cliente paga es `base + IVA + recargo`. Hoy
+`Invoice.total` es `base + IVA` y **es el número que se sella**. ¿El `ImporteTotal` del registro de
+facturación tiene que incluir el recargo? (De la respuesta depende que enchufar esto toque o no el
+sellado, que es lo que hoy lo mantiene sin llamadores.)
+
+**P13.3 · A quién se le aplica.** El diseño dice que el recargo es condición de **quién compra**
+(va en la ficha del cliente), y que solo puede aplicarse a comerciantes personas físicas o
+entidades en atribución de rentas, **nunca a sociedades**. ¿Es correcto tal cual? ¿Y qué obligación
+tiene el emisor de comprobarlo, o basta con lo que declare el cliente?
+
+**P13.4 · Criterio de caja (RECC).** El IVA se devenga cuando se cobra. Nosotros tenemos el cobro
+dentro, pero hoy **`paidAt` se pone con `new Date()` en tres sitios del código**: sabemos que
+alguien marcó la factura como cobrada, **no la fecha en que entró el dinero** (y tres de las cinco
+formas de cobro se marcan a mano). ¿Qué exigencia tiene la fecha de cobro para el RECC — vale la
+fecha de marca, o hace falta la fecha real del apunte bancario? Mientras no haya respuesta, lo
+construido **clasifica y avisa; no liquida**.
+
+> **Nota de estado.** El **cálculo del recargo** y la **clasificación por cobro** están construidos
+> y probados, aislados y **sin llamadores** (`recargoEquivalencia.ts`, `criterioCaja.ts`).
+> Enchufarlos toca el `Invoice.total` sellado y el XML del desglose —los dos, STOP— y necesita
+> campos de schema (congelados aparte).
+
+---
+
+# 🔴🔴 P14 · PRIORITARIA — ¿YaQu, HOY, «fabrica o comercializa» un sistema informático de facturación?
+
+> **La más urgente del documento.** Va al final por orden de llegada, pero **se lee la primera.**
+> Todo lo de abajo son HECHOS MEDIDOS de nuestro producto el 7-ago-2026, con fichero y línea.
+> **Ninguna de estas líneas es una interpretación legal**: quien esto escribe no es abogado, y el
+> fundador tampoco. Por eso la consulta.
+
+## La pregunta, formulada para contestarse sin conocer nuestro código
+
+**Contexto normativo que la motiva** (fuentes oficiales, medido por el fundador):
+
+* El **RDL 15/2025** aplazó la obligación **de los contribuyentes** (sociedades 1-ene-2027,
+  autónomos 1-jul-2027), pero **no la de los productores**: desde el **29 de julio de 2025**
+  debían tener en el mercado sistemas de facturación plenamente adaptados, y ese calendario
+  **no se modifica**.
+* El **art. 201 bis LGT** sanciona con hasta **150.000 €/ejercicio** *fabricar o comercializar*
+  sistemas que no cumplan.
+
+**LO QUE NECESITAMOS QUE NOS DIGAS:**
+
+> **¿La situación descrita en los hechos (A) a (E) constituye «fabricar o comercializar un sistema
+> informático de facturación» a efectos del art. 201 bis LGT y del RD 1007/2023?**
+>
+> Y si la respuesta es «sí» o «depende»: **¿qué de lo descrito habría que cambiar, retirar o
+> completar para no estar en el supuesto**, mientras el producto siga sin emitir facturas a
+> contribuyentes españoles reales?
+
+Tres matices que no sabemos leer y en los que nos interesa especialmente tu criterio:
+
+1. **¿«Comercializar» exige que el módulo esté operativo para el cliente**, o basta con
+   ofrecerlo o anunciarlo aunque esté apagado por bandera?
+2. **¿«Fabricar» se refiere al software que existe**, o al software **puesto en el mercado**?
+   El nuestro existe y está probado; **no está activo para ningún contribuyente español**.
+3. **¿Cambia algo que hoy sí se emitan facturas a merchants NO españoles** con el mismo código?
+
+## (A) ¿Emite hoy facturas algún merchant real?
+
+El modo de documento se decide en **`src/modules/invoicing/domain/emission.service.ts:37-42`**:
+
+```ts
+export function getEmissionMode(m: MerchantLike): EmissionMode {
+  const country = (m.country ?? '').trim().toUpperCase();
+  if (country && country !== 'ES') return 'fiscal';   // ← factura real
+  if (isDemoMerchant(m)) return 'demo';               // ← factura con marca de agua
+  return isFlagEnabled('INVOICING_ES_ENABLED', { merchant: m }) ? 'fiscal' : 'receipt';
+}
+```
+
+| Caso | Qué documento sale | ¿Es factura? |
+| --- | --- | --- |
+| Merchant **español real** (bandera OFF) | **Justificante de cobro**, serie `J-…`, sin numeración de factura y sin QR VeriFactu | **NO** |
+| Merchant **demo** (`id=1` / `demo@yaqu.app`) | Factura **completa** con marca de agua `DEMO — no válida fiscalmente` | Sí, marcada como no válida |
+| Merchant **NO español** (`country` explícito y distinto de `ES`) | **Factura real** | **SÍ** |
+| Merchant español con la bandera ON individualmente | Factura real | Sí — **hoy no hay ninguno** |
+
+* La bandera **`INVOICING_ES_ENABLED` está en `false`** globalmente (`src/core/flags.ts:16`).
+* **Dato que aporta el fundador y esta sesión NO puede verificar**: no hay merchants reales en
+  producción; las 55 facturas de esa base son pruebas internas. Esta sesión **no tiene
+  credenciales de producción** y no ha podido contarlo por sí misma.
+* ⚠️ **Matiz medido**: un merchant con `country` **vacío** cae en la rama española (justificante).
+  Solo un país **explícito y distinto de `ES`** produce factura real.
+
+## (B) Qué dice la web pública, hoy, sobre facturación
+
+Citas literales de **`public/index.html`**. En `public/precios.html` **no hay ninguna mención**.
+
+| Línea | Texto literal |
+| --- | --- |
+| `:377` | «Facturación **VeriFactu en certificación**» *(insignia de la barra de confianza)* |
+| `:510` | «**Te contesto como fabricante**: la facturación VeriFactu **está construida y en certificación** — **con declaración responsable del productor**, que es lo que tu gestor te pedirá. Por ley no puedo activarla hasta cerrarla; por eso la beta es de presupuestos y cobros. Los primeros usuarios la estrenarán al cerrarse, sin cambio de precio.» |
+| `:7`, `:17`, `:37`, `:329`, `:507`, `:511` | «clientes, gastos y **facturas** en el mismo sitio» *(metadatos, descripción y FAQ)* |
+
+**Hecho relevante para el matiz 1:** la web **se autodenomina «fabricante»**, afirma que el módulo
+**está construido y en certificación**, y menciona una **declaración responsable del productor**.
+
+**Estado real de ese documento:** `docs/legal/DECLARACION_RESPONSABLE.md` es una **PLANTILLA** con
+placeholders `[…]`, y su cabecera dice: *«**NO publicar ni entregar a merchants hasta:** (1) SIF-1
+8/8, (2) revisión del asesor fiscal, (3) datos reales del productor rellenados»*. Es decir: **la
+web la menciona y el documento todavía no está emitido.**
+
+## (C) Qué produce hoy el módulo VeriFactu
+
+* **Genera** el XML de los registros de facturación, con builders puros en
+  `src/modules/fiscal/verifactu/registro.builder.ts`, declarados conformes a `SuministroLR.xsd` y
+  `SuministroInformacion.xsd` (`:1-3`).
+* **Contra qué XSD**: seis esquemas **vendorizados** en `src/modules/fiscal/verifactu/xsd/` —
+  `SuministroLR.xsd`, `SuministroInformacion.xsd`, `ConsultaLR.xsd`, `RespuestaConsultaLR.xsd`,
+  `RespuestaSuministro.xsd`, `xmldsig-core-schema.xsd`. Hay validador:
+  `scripts/validate-registros-xsd.ps1`.
+* **Incluye** el bloque obligatorio `SistemaInformatico` —productor, NIF, nombre del sistema,
+  `idSistema`, versión, nº de instalación, `soloVerifactu = 'S'`— en `registro.builder.ts:19-30`,
+  ligado explícitamente a la declaración responsable.
+* **NO hace**, con estas palabras, en `src/modules/invoicing/domain/modoVisible.ts:21-24`:
+
+  > «**"se envía" NO EXISTE.** Cero clientes SOAP/mTLS contra la AEAT, `VfSubmission` no está en el
+  > schema, no hay cola de remisión; `applyVeriFactu` calcula la cadena de huellas y la URL del QR
+  > —o sea **SELLA EN LOCAL**— y los XSD están vendorizados pero **nadie los manda a ningún
+  > sitio**. Hoy todo es "se guarda".»
+
+* La bandera **`SIF_ENABLED` está en `false`** (`src/core/flags.ts:17`).
+
+## (D) La huella encadenada: para quién es verdad hoy
+
+Condición única, en **`src/modules/invoicing/domain/portonDocumento.ts:84`**:
+
+```ts
+return merchant?.country === 'ES' && !!merchant?.taxId && !isReceiptNumber(numero);
+```
+
+Cruzada con (A), hoy la cadena de huellas se aplica **exclusivamente** a:
+
+* el **merchant demo**, cuyas facturas llevan la marca de agua «no válida fiscalmente»;
+* y a un merchant español con la bandera encendida individualmente — **hoy no existe ninguno**.
+
+**Un merchant español real NO entra en la cadena**: su documento es un justificante (`J-…`) y
+`isReceiptNumber` lo excluye. **Un merchant no español tampoco**, porque la condición exige
+`country === 'ES'`.
+
+## (E) ¿Hay especificación oficial en el repo contra la que contrastar?
+
+**Parcialmente, y conviene saberlo con precisión:**
+
+* **SÍ están** los seis XSD oficiales vendorizados (ver C) y el catálogo de errores de la AEAT:
+  `docs/legal/fuentes/aeat-errores.properties` (25 KB).
+* **NO están los textos normativos.** `docs/legal/fuentes/` contiene **un solo fichero**, el de
+  errores. **No hay copia del RD 1007/2023, ni de la Orden HAC/1177/2024, ni del RDL 15/2025.** Se
+  citan en documentos internos (`docs/AUDITORIA_RRSIF.md`, `docs/SIF_SPEC_NOTES.md`,
+  `DECLARACION_RESPONSABLE.md`), pero el articulado **no está en el repositorio**.
+
+**Lo que eso significa, sin adornos:** la conformidad se ha contrastado contra los **XSD** —que son
+estructura— y contra **notas internas**. **Nadie ha contrastado el producto contra el articulado**,
+y eso forma parte de la respuesta que buscamos.
+
+## Lo que esta sesión NO ha hecho
+
+Censo de solo lectura. No se ha modificado el camino de emisión, ni la web, ni las banderas, ni se
+ha escrito copy sobre VeriFactu (regla 26: solo del guion H2).

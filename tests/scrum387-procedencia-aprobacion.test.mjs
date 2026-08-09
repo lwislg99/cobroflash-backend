@@ -102,7 +102,10 @@ function censar() {
 // ── EL TRINQUETE ─────────────────────────────────────────────────────────────────────────────
 // Marcas de aprobación SIN procedencia rastreable que había cuando se encendió el guard.
 // Solo puede BAJAR, y bajarlo obliga a tocar esta línea: así la mejora queda escrita.
-export const SIN_PROCEDENCIA = 10;
+// SCRUM-404 (7-ago-2026): 10 → 9. Al reescribir el fallo de firma en `albaranDetailView.js`, el
+// `'No se pudo firmar: ' + e.message` —texto suelto, sin ticket detrás— pasó a ser un marcador
+// `[PENDIENTE microcopy oficial · …]` con su ticket. Una marca menos sin procedencia.
+export const SIN_PROCEDENCIA = 9;
 
 test('SCRUM-387 · SUELO: el censo encuentra marcas de aprobación de verdad', () => {
   const { conProcedencia, sinProcedencia } = censar();

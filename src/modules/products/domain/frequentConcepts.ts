@@ -15,6 +15,11 @@
 // ellos «tus más usados» es verdad. Los otros cinco no llegan, y a esos NO se les enseña nada
 // — ver `MIN_CONCEPTOS`, que es la regla que salva el motivo original de no construirlo.
 //
+// ⚠️ QUÉ MIDIÓ «reales» AHÍ ARRIBA (anotado el 6-ago-2026; la cifra es correcta y no se toca):
+// «real» = «email distinto de `@test.local`», no «cliente externo». El fundador confirmó el
+// 6-ago-2026 que hoy NO hay ningún merchant externo ni de pago — todas esas cuentas son pruebas
+// del propio equipo. El umbral de abajo no depende de eso y sigue siendo el correcto.
+//
 // La otra mitad del ticket (`QuoteTemplate.usageCount`, con schema) se cerró como GATE NO
 // CUMPLIDO con los números delante: solo 3 merchants tienen plantillas (5, 3 y 3), y F6 ya
 // pinta hasta 3 como fichas de un toque, así que ordenarlas por uso no cambiaría nada para

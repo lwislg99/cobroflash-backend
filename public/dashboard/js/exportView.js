@@ -68,6 +68,40 @@ async function renderExportView(container) {
         </p>
       </div>
 
+      <!-- ── SCRUM-325 (E4) · FACTURAS EMITIDAS POR TRIMESTRE ────────────────────────────
+           TERCERA descarga, y contesta una pregunta distinta de las otras dos: no es «dame mi
+           actividad» ni «dame todo lo mío», es «dame las facturas de UN trimestre con las
+           columnas del libro». Por eso va aparte y con su propio periodo: aquí el trimestre no
+           es un filtro cómodo, es la unidad — y sale del mismo `rangoTrimestre` que el 303.
+
+           🔴 NO SE LLAMA «AEAT» NI «LIBRO REGISTRO», y es una decisión del asesor (7-ago-2026):
+           no hay en el árbol ningún documento oficial contra el que se haya contrastado el
+           formato, así que ese nombre declararía una conformidad que nadie ha verificado. Es un
+           CSV con las columnas del libro. Ver `docs/master/SCRUM-325.md`.
+
+           Rótulos 1-9 y el nombre APROBADOS el 7-ago-2026. La cabecera «Estado» sigue con
+           marcador: ese campo mezcla cobro y anulación y su rótulo está sin decidir.
+      -->
+      <div class="customers-card" style="margin-top:16px" id="libro-emitidas-card">
+        <div style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Facturas emitidas</div>
+        <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">[PENDIENTE microcopy oficial]</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div>
+            <label for="libro-anio" style="display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">[PENDIENTE]</label>
+            <input type="number" id="libro-anio" class="input" style="width:auto" min="2000" max="2100" step="1">
+          </div>
+          <div>
+            <label for="libro-trimestre" style="display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">[PENDIENTE]</label>
+            <select id="libro-trimestre" class="input" style="width:auto">
+              <option value="1">T1</option><option value="2">T2</option>
+              <option value="3">T3</option><option value="4">T4</option>
+            </select>
+          </div>
+          <button class="btn-secondary" id="btn-libro-emitidas">[PENDIENTE microcopy oficial]</button>
+        </div>
+        <p id="libro-emitidas-info" style="margin:12px 0 0;font-size:12px;color:var(--muted)" aria-live="polite"></p>
+      </div>
+
       <!-- ── SCRUM-244 · PORTABILIDAD (art. 15 y 20 RGPD) ───────────────────────────────
            Segunda descarga, y contesta OTRA pregunta: la de arriba es «dame mi actividad»
            (por fechas, para el asesor); ésta es «dame TODO lo mío» (sin filtros, formato
@@ -147,7 +181,8 @@ async function renderExportView(container) {
           ? `Sin facturas en este rango (los CSV se descargan igual). Máximo por descarga: ${d.maximo}.`
           : `${base} en este rango (máximo ${d.maximo}). Preparar el archivo puede tardar hasta un par de minutos.`) + sufijoSeleccion;
       }
-    } catch {
+    } catch (e) {
+      if (e && e.code === ERROR_NO_ES_FICHERO) { showToast(MSG_DESCARGA_NO_ES_FICHERO, 'error'); return; }
       // Si el conteo falla no bloqueamos la descarga: el backend vuelve a validar el tope.
       info.textContent = 'Sin fechas se descarga todo.';
       btn.disabled = false;
@@ -185,34 +220,17 @@ async function renderExportView(container) {
     btnPort.textContent = '[PENDIENTE microcopy oficial]';
 
     try {
-      const res = await fetch('/admin/exports/portabilidad.zip', { credentials: 'same-origin' });
-      if (!res.ok) {
-        // Se ramifica por CÓDIGO, nunca por texto (SCRUM-151). Lo que ve el profesional es
-        // microcopy y todavía no está aprobado.
-        showToast('[PENDIENTE microcopy oficial]', 'error');
-        infoPort.textContent = '[PENDIENTE microcopy oficial]';
-        return;
-      }
-
-      // El nombre lo decide el servidor y LLEVA LA FECHA: dos ZIP iguales en la carpeta de
-      // Descargas se convierten en «(1)» y nadie sabe cuál es cuál.
-      const cd = res.headers.get('content-disposition') || '';
-      const m = /filename="([^"]+)"/.exec(cd);
-      const nombre = m ? m[1] : 'portabilidad.zip';
-
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = nombre;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      // SCRUM-405: por la forma común. El nombre lo decide el servidor y LLEVA LA FECHA: dos ZIP
+      // iguales en la carpeta de Descargas se convierten en «(1)» y nadie sabe cuál es cuál.
+      await descargarBinario('/admin/exports/portabilidad.zip', {
+        tipoEsperado: 'zip',
+        nombrePorDefecto: 'portabilidad.zip',
+      });
 
       showToast('[PENDIENTE microcopy oficial]');
       infoPort.textContent = '[PENDIENTE microcopy oficial]';
-    } catch {
+    } catch (e) {
+      if (e && e.code === ERROR_NO_ES_FICHERO) { showToast(MSG_DESCARGA_NO_ES_FICHERO, 'error'); return; }
       showToast('[PENDIENTE microcopy oficial]', 'error');
       infoPort.textContent = '[PENDIENTE microcopy oficial]';
     } finally {
@@ -240,32 +258,12 @@ async function renderExportView(container) {
 
     try {
       const qs = params();
-      const res = await fetch('/admin/exports/datos.zip' + (qs.toString() ? `?${qs}` : ''), {
-        credentials: 'same-origin',
-      });
-
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        showToast(d.message || 'No se pudo preparar el archivo.', 'error');
-        info.textContent = d.message || 'No se pudo preparar el archivo.';
-        return;
-      }
-
-      // El nombre lo decide el servidor: si el paquete salió incompleto viene marcado
-      // como yaqu-datos-INCOMPLETO-… y esa señal debe llegar al fichero guardado.
-      const cd = res.headers.get('content-disposition') || '';
-      const m = /filename="([^"]+)"/.exec(cd);
-      const nombre = m ? m[1] : 'yaqu-datos.zip';
-
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = nombre;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      // SCRUM-405: por la forma común. El nombre lo decide el servidor: si el paquete salió
+      // incompleto viene marcado como yaqu-datos-INCOMPLETO-… y esa señal debe llegar al fichero.
+      const { nombre } = await descargarBinario(
+        '/admin/exports/datos.zip' + (qs.toString() ? `?${qs}` : ''),
+        { tipoEsperado: 'zip', nombrePorDefecto: 'yaqu-datos.zip' },
+      );
 
       if (nombre.includes('INCOMPLETO')) {
         showToast('Descargado, pero el paquete está INCOMPLETO: faltan PDF. Mira el aviso dentro del ZIP.', 'warn');
@@ -275,12 +273,56 @@ async function renderExportView(container) {
         info.textContent = 'Archivo descargado.';
       }
     } catch (err) {
+      if (err && err.code === ERROR_NO_ES_FICHERO) { showToast(MSG_DESCARGA_NO_ES_FICHERO, 'error'); return; }
       showToast('No se pudo preparar el archivo: ' + (err && err.message ? err.message : 'inténtalo de nuevo'), 'error');
     } finally {
       clearInterval(tick);
       btn.textContent = txt;
       generando = false;
       refrescarInfo();                    // re-habilita según el rango actual
+    }
+  });
+
+  // ── SCRUM-325 (E4) · Facturas emitidas del trimestre ────────────────────────────────────
+  //
+  // El año se prerrellena con el ACTUAL y el trimestre con el EN CURSO: son los que se piden el
+  // 99 % de las veces y ahorran dos decisiones. No es un default silencioso — los dos campos se
+  // ven y se cambian; lo que no hay es «sin periodo», porque un libro sin periodo no es un libro.
+  const inpAnio = document.getElementById('libro-anio');
+  const selTri = document.getElementById('libro-trimestre');
+  const btnLibro = document.getElementById('btn-libro-emitidas');
+  const infoLibro = document.getElementById('libro-emitidas-info');
+  const hoy = new Date();
+  inpAnio.value = String(hoy.getFullYear());
+  selTri.value = String(Math.floor(hoy.getMonth() / 3) + 1);
+
+  btnLibro.addEventListener('click', async () => {
+    btnLibro.disabled = true;
+    const txtLibro = btnLibro.textContent;
+    btnLibro.textContent = '[PENDIENTE microcopy oficial]';
+    try {
+      const qs = new URLSearchParams({ 'año': inpAnio.value, trimestre: selTri.value });
+      // SCRUM-405: por la forma común. El nombre lo pone el servidor y lleva el periodo dentro:
+      // dos trimestres seguidos en Descargas se convertirían en «(1)» y nadie sabría cuál es cuál.
+      const { res } = await descargarBinario('/admin/libros/expedidas.csv?' + qs, {
+        tipoEsperado: 'csv',
+        nombrePorDefecto: 'facturas-emitidas.csv',
+      });
+      // 🔴 UN PERIODO VACÍO SE DICE. Quien teclea 2062 en vez de 2026 recibe el mismo fichero que
+      // quien no facturó ese trimestre: dos situaciones, una sola pantalla. El servidor manda el
+      // recuento en `X-Yaqu-Filas` para que aquí se pueda distinguir. El fichero se descarga igual
+      // —un libro vacío es una respuesta legítima—, pero deja de ser silencioso.
+      const filas = Number(res.headers.get('X-Yaqu-Filas'));
+      // Microcopy PROPUESTA, sin aprobar (regla 30): «No hay facturas emitidas en ese periodo.»
+      infoLibro.textContent = filas === 0
+        ? '[PENDIENTE microcopy oficial · propuesta: No hay facturas emitidas en ese periodo.]'
+        : '[PENDIENTE microcopy oficial]';
+    } catch (e) {
+      if (e && e.code === ERROR_NO_ES_FICHERO) { showToast(MSG_DESCARGA_NO_ES_FICHERO, 'error'); return; }
+      showToast('[PENDIENTE microcopy oficial]', 'error');
+    } finally {
+      btnLibro.textContent = txtLibro;
+      btnLibro.disabled = false;
     }
   });
 }

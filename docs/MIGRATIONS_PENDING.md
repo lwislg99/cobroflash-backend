@@ -1,5 +1,26 @@
 # Migraciones de schema pendientes de aplicar a producción
 
+> ## ⚠️ `current_database()` NO DISTINGUE PRODUCCIÓN DE STAGING — las dos se llaman `railway`
+>
+> Es el nombre por defecto de Railway, así que **las dos bases lo llevan**. `SELECT
+> current_database()` devuelve `railway` en las dos y **NO vale como comprobación de destino**:
+> quien lo use para confirmar dónde está, no ha confirmado nada.
+>
+> **Los discriminadores que sí valen:**
+>
+> | Señal | Producción | Staging | Dev |
+> |---|---|---|---|
+> | **Host** | `autorack…` | `acela.proxy.rlwy.net` | `acela.proxy.rlwy.net` |
+> | **Nombre de base** | `railway` | `railway` | `yaqu_dev_javier` |
+> | **Recuento de `invoices`** (medido 7-ago-2026) | **55** (49 `no_aplica` · 4 `pendiente_de_sellado` · 2 `sellado`) | **7** (6 `no_aplica` · 1 `pendiente_de_sellado`) | **0** |
+>
+> El **host** separa producción de las otras dos; el **nombre de base** separa staging de dev.
+> Hace falta mirar los dos: ninguno solo alcanza. El recuento de `invoices` es la confirmación
+> cruzada — es un dato de estado y por tanto **caduca**, pero un salto de 55 a 7 no se confunde.
+>
+> ⚠️ Y hay una trampa más, de nombres: la base de STAGING vive dentro de un entorno de Railway
+> llamado **«production»**. **El nombre del entorno miente.** Guíate por host + nombre de base.
+
 > ## ⛔ ESTE FICHERO YA NO CONTESTA «¿existe esa columna en esa base?» — SCRUM-225
 >
 > Lo contestaba **a mano**, y una lista a mano se desfasa en silencio. Sus dos direcciones de
@@ -70,6 +91,27 @@ Un cambio de schema NO está aplicado hasta estar en las TRES bases:
 > `describirBD` (nunca el valor). Es una FOTO fechada, no una verdad permanente: si alguien
 > cambia una clave en Railway, esta tabla envejece sin que nadie la toque. Re-medir antes de usarla.
 >
+> **ESTADO ACTUAL — tras SCRUM-383 (6-ago-2026).** Los cuatro árboles llevan las TRES claves, con
+> el mismo host y las mismas credenciales; solo cambia el nombre de la base:
+>
+> | Clave | `cobroflash-backend` | `cobroflash-b1` · `b2` · `b3` |
+> | --- | --- | --- |
+> | `DATABASE_URL_STAGING` | `acela…/railway` | `acela…/railway` |
+> | `DATABASE_URL_DEV` | `acela…/yaqu_dev_javier` | `acela…/yaqu_dev_javier` |
+> | `DATABASE_URL_TESTS` | `acela…/yaqu_dev_javier` | `acela…/railway` |
+>
+> `DATABASE_URL_TESTS` es **la base de pruebas DE ESE CARRIL**, y es la que leen los seis
+> consumidores de la tanda. Que difiera por worktree **no es un defecto**: el reparto por carril
+> es DELIBERADO (23-jul-2026), para aislar los carriles. Lo que se arregló es el NOMBRE.
+>
+> **Y por eso hay DOS turnos de staging, no uno.** El marcador del turno vive DENTRO de la base
+> (`current_database()` + comentario de schema), así que el turno del árbol principal está en
+> `yaqu_dev_javier` y el que comparten b1/b2/b3 está en `railway`. Nadie compite con nadie por un
+> turno ajeno, y no es casualidad: es la consecuencia de que cada carril pruebe en su base.
+>
+> **REGISTRO — lo que se midió el 6-ago-2026 ANTES de SCRUM-383** (se conserva: es la prueba de
+> por qué se hizo el ticket, no una descripción del presente):
+>
 > | Worktree | Clave | Base real | Cuál es |
 > | --- | --- | --- | --- |
 > | `cobroflash-backend` | `DATABASE_URL_STAGING` | `acela…/yaqu_dev_javier` | **DEV** |
@@ -77,16 +119,19 @@ Un cambio de schema NO está aplicado hasta estar en las TRES bases:
 > | `cobroflash-b2` | `DATABASE_URL_STAGING` | `acela…/railway` | **STAGING** |
 > | `cobroflash-b3` | `DATABASE_URL_STAGING` | `acela…/railway` | **STAGING** |
 >
-> 🔴 **La misma clave significa DOS bases distintas según el directorio en el que estés parado**, y
-> ningún comando te lo recuerda. Ninguna apunta a producción (`autorack`).
+> 🔴 **Una misma clave significaba DOS bases distintas según el directorio**, y ningún comando lo
+> recordaba. Ninguna apuntaba a producción (`autorack`). SCRUM-383 no movió a nadie de base: dio
+> nombre propio a cada destino, para que el nombre dejara de mentir.
 >
-> ⚠️ Aquí ponía que staging era «la base del worktree `cobroflash-b2`» y dev la «de
-> `cobroflash-b1`». **Medido: es falso.** `b1` tiene STAGING, y quien tiene DEV es el worktree
+> ⚠️ Antes de eso, aquí ponía que staging era «la base del worktree `cobroflash-b2`» y dev la «de
+> `cobroflash-b1`». **Medido: era falso.** `b1` tiene STAGING, y quien tiene DEV es el worktree
 > PRINCIPAL, que ni se mencionaba. Se corrigió el 6-ago-2026; la afirmación anterior no llevaba
 > fecha ni método, que es justo por lo que pudo envejecer sin que nadie lo notara.
 >
 > **Lo vigila `tests/scrum383-clave-vs-destino.test.mjs`**: compara lo que la clave PROMETE con el
-> destino REAL y aborta antes de cualquier operación de esquema.
+> destino REAL y aborta antes de cualquier operación de esquema. Para comprobarlo en un árbol:
+> `node scripts/comprobar-claves-bd.mjs` — y hay que correrlo EN LOS CUATRO, porque «según la
+> carpeta» era precisamente la dimensión del fallo.
 
 ⚠️ Las dos primeras viven en el MISMO servidor (`acela`) y son bases DISTINTAS. Ninguna es
 "local". Por eso pueden divergir de esquema sin que nada avise: `scripts/_db-guard.mjs` valida
@@ -104,7 +149,177 @@ distingue es quién puede tocarlas. Se descarta llamar a `yaqu_dev_javier` "segu
 staging" (SCRUM-84) porque implicaría el régimen de `railway` y no lo tiene. Si el fundador lo
 ve de otra forma, es una línea.
 
+## 📋 VEREDICTO · ¿alguna migración «aplicada en staging» fue en realidad a dev? (SCRUM-383)
+
+**Medido contra:** `origin/main` = `f56f49038ab9fbeb2e1a21bc2eb9ec0958c48877` · 2026-08-06T15:21:07Z
+**Método:** repo, historial de git y reflogs por worktree. **Cero conexiones a base de datos.**
+
+> La pregunta nace del mapa de arriba: si `DATABASE_URL_STAGING` significa DEV en un árbol y STAGING
+> en otros tres, alguien pudo migrar dev creyendo que migraba staging — dos veces, y con las dos en
+> verde. **Respuesta: no ocurrió en ninguna migración comprobable, y hay UNA que no se puede
+> comprobar.** Se detalla por filas porque un veredicto que esconde su incertidumbre no es un
+> veredicto.
+
+### El origen — no fue el descuido de nadie, y por eso hay que escribirlo
+
+La clave apuntando a dev **era el DISEÑO**. El 23-jul-2026 (SCRUM-84, commit `f56e1f9`) se creó
+`yaqu_dev_javier` como **segunda base de staging, una por carril**, para acabar con las colas por la
+ventana compartida. Sus palabras: *«REPARTO: Sesión 1 → `yaqu_dev_javier` · Sesión 2 → `railway`.
+Cada uno la apunta en `DATABASE_URL_STAGING` de SU `.env` local»*. Con ese reparto, la clave decía
+la verdad en los dos sitios: las dos ERAN staging.
+
+**Lo que la convirtió en mentira fue SCRUM-169, cuatro días después** (27-jul): fijó la nomenclatura,
+ascendió `yaqu_dev_javier` a **DESARROLLO** y descartó expresamente llamarla «segunda BD de staging»
+porque no tiene el régimen de `railway` — todo correcto. Pero **el nombre de la variable no cambió**.
+Desde ese día `DATABASE_URL_STAGING` prometía un papel que en un árbol ya no cumplía, y ningún
+comando lo recordaba. Nadie se equivocó: **una decisión buena caducó el nombre de otra decisión
+buena, y el nombre no se enteró.**
+
+⚠️ **Consecuencia viva, que NO es la de esta pregunta:** por el reparto de SCRUM-84, el carril B
+tenía asignada `yaqu_dev_javier`. Hoy tres de los cuatro árboles de ese carril apuntan a `railway`,
+que es la base **del otro carril**. Eso no afecta a las migraciones (ver abajo) pero sí a tandas
+gateadas, semillas y `clean-staging-tests`. Es otro asunto y necesita su ticket.
+
+### Los tres discriminadores, y qué contesta cada uno
+
+| # | Qué se midió | Resultado |
+| --- | --- | --- |
+| ① | **Quién corrió cada push**, cruzando los 65 commits que tocan `prisma/schema.prisma` contra los reflogs de los cuatro árboles (`.git/worktrees/*/logs/HEAD`) | **0 de 65** salen de estos árboles (62 Luis + 3 `lwislg99`, **ninguno de Javier**). El único que aparece es un *merge commit* de un PR, traído por `fetch`. **Control de sensibilidad: 47 de los últimos 50 commits de Javier SÍ aparecen** — el método ve lo que se hizo aquí; los 3 que faltan son SHAs reescritos por rebase |
+| ② | **Cuándo nació la base de dev** | **23-jul-2026**. Antes de esa fecha solo existía `railway`: no había a dónde desviarse |
+| ③ | **El censo físico de columnas** (`docs/sql/deriva-prod.sql`, 331 columnas / 24 tablas) | staging **en sync** — medido dos veces por caminos distintos: test gateado de SCRUM-222 el **2-ago** (24 tablas / 331 columnas) y censo directo el **6-ago** (331). Dev: **330**, le falta solo `vf_estado` |
+
+**③ es el que zanja**, y en la dirección que importa: si un push «a staging» hubiera caído en dev,
+**staging estaría corta y dev larga**. Lo medido es lo contrario — staging completa, dev la que va
+detrás, exactamente donde el registro dice que va detrás.
+
+### Veredicto por migración
+
+| Veredicto | Migraciones | Por qué |
+| --- | --- | --- |
+| 🟢 **Validada en staging de verdad** | SCRUM-14 (13-jul) · SCRUM-52 (15-jul) · SCRUM-49 (16-jul) · SCRUM-68, SCRUM-66, SCRUM-17, SCRUM-74 (22-jul) · SCRUM-102, SCRUM-109 (23-jul) | **Dos caminos independientes:** son anteriores a que existiera dev (②) **y** su columna está en staging (③) |
+| 🟢 **Validada en staging de verdad** | SCRUM-145 y SCRUM-145d (24-jul) · SCRUM-170, SCRUM-171b (27-jul) · SCRUM-195 paso 1 (28-jul) · SCRUM-205 ALTER (30-jul) | Por el censo (③). **Son las expuestas de verdad**: ya existía dev y su verificación registrada fue el HOST, que no separa `railway` de `yaqu_dev_javier`. Las salvó el censo a posteriori, no su procedimiento |
+| ⚪ **NO SE PUEDE SABER** | **SCRUM-207 · índice `audit_log_merchant_id_entity_type_entity_id_idx`** (29-jul) | Ver abajo |
+| 🔴 **Creída validada pero fue a dev** | **NINGUNA** | Ningún objeto declarado en staging falta en staging |
+
+**Casos que cierran solos, y conviene saberlo:**
+
+* **SCRUM-205** es la prueba directa y en las dos direcciones: `vf_estado` **existe en staging y NO
+  en dev** (6-ago). Ese ALTER fue a staging y no pudo ir a dev.
+* **Los índices de SCRUM-170 y SCRUM-195 no quedan en el aire** aunque el censo no vea índices:
+  viajaron en el mismo `db push` que la tabla o columna que el censo **sí** ve en staging. Un índice
+  no aterriza en otra base que la sentencia que lo acompaña.
+* **SCRUM-195 en dev** es la única aplicación a dev verificada por el carril B, y **registró el
+  NOMBRE DE BASE** (`host=acela.proxy.rlwy.net · db=yaqu_dev_javier`) antes de correr. Se
+  autocertifica: no depende del mapa de worktrees. Es el patrón que SCRUM-383 convirtió en guard.
+
+### ⚪ El único que no se puede saber, y qué lo cerraría
+
+**SCRUM-207 es la ÚNICA migración del registro sin huella de columna** — su propia entrada lo dice:
+*«Es el ÚNICO cambio de schema de SCRUM-207»*. Y ahí se juntan las tres cosas:
+
+1. **El censo no mira índices.** Está declarado en la cabecera de `deriva-prod.sql` y comprobado en
+   su SQL: no consulta `pg_indexes` ni una vez.
+2. **Su verificación registrada fue el HOST** (*«host verificado contra la allowlist
+   (`acela.proxy.rlwy.net`), y comprobado explícitamente que NO es el de prod»*) más `pg_indexes`
+   **en la base a la que apuntaba la clave**. El host no distingue las dos bases: es justo el hueco.
+3. Se corrió desde un clon que no es ninguno de los cuatro árboles medidos (①), así que su `.env`
+   no es observable desde aquí.
+
+**Lo cierra una consulta de solo lectura contra `acela/railway`**, sin credencial en ninguna parte
+(consola de Postgres de Railway, igual que `deriva-prod.sql`):
+
+```sql
+SELECT indexname FROM pg_indexes WHERE tablename = 'audit_log';
+```
+
+Si aparece `audit_log_merchant_id_entity_type_entity_id_idx`, la fila pasa a 🟢. Si no aparece, el
+índice está en dev y hay que aplicarlo a staging. **Riesgo de dejarlo abierto: ninguno funcional** —
+un índice ausente no rompe ninguna consulta, solo la degrada cuando la tabla crezca.
+
+### Los límites de este veredicto, dichos en voz alta
+
+* **El censo prueba «está en staging el 2 y el 6-ago», no «entró el día que dice el registro».** Un
+  objeto aplicado tarde, o corregido por otra sesión, se lee igual. Para la pregunta de este
+  veredicto basta; para una auditoría de FECHAS, no.
+* **Sigue sin mecanismo todo lo ✋**: backfills, tipos, nullability, defaults, claves ajenas y enums.
+  El censo no los ve y este veredicto tampoco.
+* **La ausencia en un reflog no prueba que algo no se hiciera aquí**: un rebase reescribe el SHA y
+  rompe el enlace. Por eso ① lleva su control de sensibilidad (47/50) y no se apoya en el silencio.
+
+## SCRUM-300 (C5) · cuatro columnas en `albaranes` — ✅ APLICADO en las TRES bases (7-ago-2026)
+
+**REGISTRO de lo que se ejecutó y se verificó el 7-ago-2026.** No es una afirmación sobre el
+estado de hoy: es lo que se midió ese día, con su método.
+
+Las cuatro columnas, todas **nullable y sin default** (`ADD COLUMN` puro, aditivo):
+`fecha_entrega` · `lugar_entrega` · `firmado_por_nombre` · `firmado_por_calidad`.
+
+| Base | Host · nombre | Cómo se aplicó | Verificación | App |
+| --- | --- | --- | --- | --- |
+| **Staging** | `acela.proxy.rlwy.net` / `railway` | `prisma db execute` con el SQL de `migrate diff --from-schema-datasource` | `information_schema`: las 4, `is_nullable=YES`; `fecha_entrega` = `timestamp without time zone`, las otras tres `text` | ✅ arrancó — `[schema] en sync: 24 tablas / 335 columnas`, `/version` HTTP 200 |
+| **Dev** | `acela.proxy.rlwy.net` / `yaqu_dev_javier` | igual, con el SQL **recortado** a solo el `ALTER TABLE` de `albaranes` | mismas 4 columnas, mismos tipos, `is_nullable=YES` | ✅ (ver SCRUM-205 abajo: hasta aplicar `vf_estado` no arrancaba, y no por C5) |
+| **Producción** | `autorack…` / `railway` (55 filas en `invoices`) | **a mano por el fundador**, desde la consola de Railway del servicio `Postgres` | `information_schema`: `fecha_entrega` (`timestamp without time zone`), `lugar_entrega` / `firmado_por_nombre` / `firmado_por_calidad` (`text`), las cuatro `is_nullable=YES` | ✅ `yaqu.app` comprobada en pie después |
+
+> **HUECO DECLARADO (producción):** no se verificó la **precisión (3)** del `timestamp` de
+> `fecha_entrega`. El guard de deriva **no comprueba tipos** —solo que tabla y columna existan—,
+> así que ni él ni `deriva-prod.sql` van a delatar una precisión distinta. Queda dicho para que
+> nadie lo dé por comprobado.
+
+**Comprobación cruzada final (7-ago-2026):** `docs/sql/deriva-prod.sql` **generado desde el schema
+de C5** (335 columnas / 24 tablas) devolvió **0 filas** contra staging y contra dev — o sea que las
+dos tienen todo lo que el código de C5 nombra, no solo las cuatro columnas nuevas.
+
+---
+
+## SCRUM-205 · `invoices.vf_estado` — ✅ APLICADO TAMBIÉN EN DEV (7-ago-2026)
+
+**REGISTRO.** El 7-ago-2026 se aplicaron a **dev** (`acela…/yaqu_dev_javier`) las dos sentencias
+que le faltaban, con autorización expresa del fundador para salir del carril de C5:
+
+```sql
+ALTER TABLE "invoices" ADD COLUMN "vf_estado" TEXT NOT NULL DEFAULT 'pendiente_de_sellado';
+CREATE INDEX "audit_log_merchant_id_entity_type_entity_id_idx" ON "audit_log"("merchant_id", "entity_type", "entity_id");
+```
+
+Verificado en `information_schema`: `invoices.vf_estado` — `text`, `is_nullable=NO`,
+`column_default = 'pendiente_de_sellado'::text`; e índice
+`audit_log_merchant_id_entity_type_entity_id_idx` presente en `pg_indexes`.
+
+> **EL BACKFILL FUE NO-OP, Y ESO NO ES «no se ejecutó».** `SELECT COUNT(*) FROM invoices` contra
+> dev devolvió **0** *antes* de aplicar. El `DEFAULT 'pendiente_de_sellado'` cae sobre las filas
+> existentes, y en dev **no había ninguna**: no existe la fila que `prisma/backfill/scrum205-vf-estado.sql`
+> vendría a corregir. El daño que ese fichero documenta —marcar como pendiente lo que ya está
+> sellado— **no tiene sobre qué caer aquí**. En staging no se plantea: ya estaba aplicado y su
+> reparto medido (6 `no_aplica` · 1 `pendiente_de_sellado`).
+>
+> ⚠️ Esto vale **para dev y para el 7-ago-2026**. En cualquier base con filas, el backfill vuelve
+> a ser obligatorio y en la misma ventana que el `ALTER TABLE`.
+
+**Motivo de que dev fuera por detrás:** medido el 7-ago, dev no tenía ni `vf_estado` ni el índice,
+mientras staging sí. El arranque contra dev fallaba con
+`COLUMNAS que faltan (1): invoices.vf_estado (Invoice.vfEstado)` — **ninguna de las cuatro de C5**,
+que ya estaban aplicadas y verificadas. Tras aplicar lo de arriba, la app arranca contra dev:
+`[schema] en sync: 24 tablas / 331 columnas`, `/version` HTTP 200.
+
+---
+
 ## SCRUM-300 · albaranes: entrega + quién firma (C5) — 🔴 SIN APLICAR en ninguna de las tres
+
+> ### ⏳ ESTA CABECERA CADUCÓ — se aplicaron el 7-ago-2026 (anotado al rebasar C5, 7-ago-2026)
+>
+> **«SIN APLICAR en ninguna de las tres» era cierto cuando se escribió y ya no lo es.** El registro
+> de la ejecución está **justo arriba**, en «SCRUM-300 (C5) · cuatro columnas en `albaranes` — ✅
+> APLICADO en las TRES bases»: staging y dev por `prisma db execute`, producción a mano por el
+> fundador, las tres verificadas contra `information_schema`.
+>
+> **Las dos entradas se conservan enteras y ninguna se resume**, que es la regla de la casa cuando
+> dos sesiones escriben a la vez — y aquí además son complementarias: arriba está lo que se
+> EJECUTÓ, y aquí abajo el PREVIEW, el SQL exacto, por qué `fecha_entrega` entra y el aviso de
+> herramienta. Lo único que se corrige es el tiempo verbal de este título, porque una afirmación
+> sobre el presente caduca y un registro fechado no (`docs/METODO_YAQU.md`).
+>
+> ⚠️ **Lo que NO ha caducado es el gate del final de esta entrada:** las seis etiquetas de «en
+> calidad de qué» siguen sin aprobar (regla 30). Que el esquema esté aplicado no levanta ese gate.
 
 > **🔎 VERIFICABLE** — que existan las cuatro columnas: pregúntaselo a `docs/sql/deriva-prod.sql`
 > contra cada base, no a esta cabecera. **✋ SIN MECANISMO** — que estén aplicadas en las tres.
@@ -170,6 +385,29 @@ arregle (`prisma.config.ts` o fijar el CLI al 6), el preview se hace con `npx pr
 **nunca** se da por bueno un diff vacío sin control positivo (`--from-empty` debe escupir el
 esquema entero; si sale vacío, el roto es el CLI).
 
+> 📌 **CADUCADO — MEDIDO EL 6-ago-2026 (SCRUM-385 arreglado).** Lo de arriba se CONSERVA como
+> registro de lo que se midió entonces; **como estado de HOY es falso**, y por eso se anota aquí
+> al lado en vez de borrarlo. El CLI instalado es **prisma 6.18.0** en los cuatro worktrees, y
+> `package.json` fija `^6.18.0`, que no alcanza el 7.x. `migrate diff` **discrimina**, medido con
+> los dos controles que este mismo aviso exigía:
+>
+> | Control | Salida | Veredicto |
+> | --- | --- | --- |
+> | `--from-empty` → schema actual | **24.338 bytes / 718 líneas** de DDL | no es fail-open |
+> | dos esquemas idénticos | `-- This is an empty migration.` (32 bytes) | vacío legítimo |
+> | un campo de más (mismo modo) | su `ALTER TABLE … DROP COLUMN` | discrimina |
+>
+> El tercero va porque `--from-empty` recorre **otro camino** que el `datamodel`-vs-`datamodel`:
+> los dos primeros solos no prueban que ESE modo distinga. Y el hallazgo que cambia la vigilancia:
+> **el vacío legítimo ya no es la cadena vacía** — se autodeclara. Así que **una salida de 0 bytes
+> es firma inequívoca de rotura**, que es justo lo que vigila el suelo anti-silencio de
+> `scripts/db-push-prod:100-111` (aborta sin salida; solo declara «nada que aplicar» si lee
+> literalmente `empty migration`).
+>
+> ⚠️ **Sigue SIN medir `--from-schema-datasource`**, que es el que usa el comando obligatorio de
+> `CLAUDE.md`: conecta a la base de `.env` —producción—, así que no se ejercitó. Lo validado es el
+> motor de diff y el wrapper por lectura, no el camino que conecta.
+
 **Orden de aplicación (regla de las TRES BD, SCRUM-169):** staging → `yaqu_dev_javier` → producción.
 Turno del fundador; esta rama solo deja el preview. El código de la rama **lee y escribe** las cuatro
 columnas, así que aplicar el schema va **antes** del deploy o hay P2022.
@@ -230,7 +468,7 @@ que exige que sea idéntico en `MIGRATIONS_PENDING.md` y `RUNBOOKS.md`. Una segu
 esa protección es exactamente cómo un dato correcto se vuelve falso en un sitio y no en el otro —
 que es lo que pasó con el reparto anterior, y mintió por duplicado durante días.
 
-Lo que hay que saber al aplicar esta migración: `DATABASE_URL_STAGING` **no significa lo mismo en
+Lo que hay que saber al aplicar esta migración (SCRUM-383): `DATABASE_URL_TESTS` **no significa lo mismo en
 todos los worktrees**, y staging y dev comparten host, así que el guard de hostname
 (`_db-guard.mjs`) no las distingue. Lo vigila `tests/scrum383-clave-vs-destino.test.mjs`.
 

@@ -205,6 +205,17 @@
     canvas.addEventListener('pointerup', endStroke);
     canvas.addEventListener('pointercancel', endStroke);
 
+    // SCRUM-404 · El aviso vive DENTRO del modal, no en la pantalla de detrás: si el envío falla,
+    // el profesional sigue aquí con el cliente delante y tiene que leer qué pasa sin cambiar de
+    // sitio. Va ANTES de los botones para que quede junto al que va a volver a pulsar.
+    const aviso = document.createElement('p');
+    aviso.setAttribute('data-sp-aviso', '');
+    aviso.setAttribute('role', 'status');
+    aviso.style.cssText = 'margin:12px 0 0;font-size:13px;color:var(--red-600,#dc2626);display:none';
+    card.appendChild(aviso);
+    function mostrarAviso(texto) { aviso.textContent = texto; aviso.style.display = 'block'; }
+    function limpiarAviso() { aviso.textContent = ''; aviso.style.display = 'none'; }
+
     const btnRow = document.createElement('div');
     btnRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:14px';
     card.appendChild(btnRow);
@@ -259,9 +270,32 @@
     cancelBtn.addEventListener('click', close);
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 
-    okBtn.addEventListener('click', () => {
+    // ─────────────────────────────────────────────────────────────────────────────────────
+    // SCRUM-404 · PRIMERO SE CONFIRMA QUE EL TRABAJO ESTÁ A SALVO; DESPUÉS SE CIERRA LA PANTALLA.
+    // CERRAR ES LO ÚLTIMO, NUNCA LO PRIMERO.
+    //
+    // Antes esto era `close(); onConfirm(...)`: el modal desaparecía ANTES de que la firma
+    // llegara a ningún sitio. Un envío fallido —el sótano sin cobertura— dejaba el trazo en
+    // ninguna parte, y había que pedirle al cliente que firmara OTRA VEZ, delante de él. Ningún
+    // dato roto y la peor escena posible; es la misma lección que SCRUM-379.
+    //
+    // ⚠️ El trazo vive SOLO EN MEMORIA mientras esta pantalla está abierta. **No se persiste**:
+    // guardar una firma en el dispositivo es decisión de H5 y arrastra consecuencias de
+    // privacidad que aquí no se valoran.
+    // ─────────────────────────────────────────────────────────────────────────────────────
+    const okTextoInicial = okBtn.textContent;
+    okBtn.addEventListener('click', async () => {
       if (!hasInk) return;
       const dataUri = canvas.toDataURL('image/png');
+
+      // 🔴 SUELO: un `toDataURL` que no produce imagen NO se envía. Una firma vacía guardada como
+      // buena es peor que un error — queda un albarán «firmado» con un trazo que no existe, y
+      // nadie lo mira hasta el día que hace falta como prueba.
+      if (!esTrazoUtil(dataUri)) {
+        mostrarAviso('No se ha recogido el trazo. Pídele que firme otra vez dentro del recuadro.');
+        return;
+      }
+
       // SCRUM-300: la declaración viaja en un SEGUNDO argumento, así que un llamador que solo
       // espere `onConfirm(dataUri)` sigue funcionando exactamente igual.
       // ⚠️ `firmadoPorCalidadOtro` (sin «a» final): es el nombre que leen las DOS rutas de firma.
@@ -273,13 +307,47 @@
             firmadoPorCalidadOtro: otraEl ? otraEl.value : '',
           }
         : null;
-      close();
-      onConfirm(dataUri, declaracion);
+
+      okBtn.disabled = true;
+      okBtn.textContent = 'Guardando…';
+      limpiarAviso();
+      try {
+        // Se ESPERA al llamador. Si `onConfirm` no devuelve una promesa, `await` la resuelve
+        // igual y el comportamiento es el de siempre: cerrar a continuación.
+        await onConfirm(dataUri, declaracion);
+      } catch (e) {
+        // NO se cierra: el trazo sigue en el canvas y el botón vuelve a estar disponible, así que
+        // se reintenta sin volver a molestar al cliente.
+        mostrarAviso((e && e.message) || '[PENDIENTE microcopy oficial · firma no enviada]');
+        okBtn.disabled = false;
+        okBtn.textContent = 'Reintentar';
+        return;
+      }
+      okBtn.textContent = okTextoInicial;
+      close(); // ← LO ÚLTIMO, y solo si el envío fue bien.
     });
 
     document.body.appendChild(overlay);
     return { close };
   }
 
+  /**
+   * SCRUM-404 · ¿ESTE `toDataURL` ES UNA FIRMA DE VERDAD?
+   *
+   * Un canvas que falla no lanza: devuelve `"data:,"` —o una cadena minúscula— y eso, enviado
+   * como firma, produce un albarán «firmado» con un trazo que no existe. El error se descubriría
+   * el día que la firma haga falta como prueba, que es el peor día para descubrirlo.
+   *
+   * PURA a propósito, y expuesta: así su rojo se ejercita sin navegador.
+   */
+  function esTrazoUtil(dataUri) {
+    if (typeof dataUri !== 'string') return false;
+    if (!/^data:image\/png;base64,/.test(dataUri)) return false;
+    // Un PNG de 1×1 transparente ronda los 100 caracteres de base64. Por debajo de eso no hay
+    // trazo posible: el umbral separa «lienzo con algo» de «lienzo que no se pudo leer».
+    return dataUri.length > 200;
+  }
+
   window.openSignaturePad = openSignaturePad;
+  window.esTrazoUtil = esTrazoUtil; // SCRUM-404: expuesta para su test
 })();

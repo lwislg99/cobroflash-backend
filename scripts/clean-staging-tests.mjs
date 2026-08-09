@@ -20,7 +20,7 @@
 //
 // ⚠️ GUARD ANTI-PRODUCCIÓN (SCRUM-118: por pertenencia — ver scripts/_db-guard.mjs, mismo
 // patrón que scripts/seed-staging.mjs y tests/_staging-db.mjs): aborta si la URL no
-// pertenece al host de staging. Además exige DATABASE_URL_STAGING explícita: no se hereda
+// pertenece al host de staging. Además exige DATABASE_URL_TESTS explícita: no se hereda
 // la DATABASE_URL del .env "por si acaso".
 import { PrismaClient } from '@prisma/client';
 import 'dotenv/config';
@@ -44,14 +44,18 @@ const PISAR = process.argv.includes(BANDERA_PISAR);
 /** Salida cuando se rechaza borrar: distinta de 0 porque lo que se pidió NO se ha hecho. */
 const CODIGO_RECHAZADO = 3;
 
-const url = process.env.DATABASE_URL_STAGING;
+// SCRUM-383 · LA BASE DE PRUEBAS DE ESTE CARRIL, no «staging» a secas. Limpia exactamente donde
+// ensucia la tanda gateada de este worktree, que lee la MISMA clave (`tests/_staging-db.mjs`).
+// Antes las dos leían `DATABASE_URL_STAGING`, un nombre que en el árbol principal apuntaba a
+// `yaqu_dev_javier`: hacía lo correcto por casualidad, con un nombre que decía otra cosa.
+const url = process.env.DATABASE_URL_TESTS;
 if (!url) {
-  console.error('❌ Falta DATABASE_URL_STAGING. Este script NO usa DATABASE_URL (podría ser prod).');
+  console.error('❌ Falta DATABASE_URL_TESTS. Este script NO usa DATABASE_URL (podría ser prod).');
   process.exit(1);
 }
 const urlCheck = assertSafeStagingUrl(url, process.env.DATABASE_URL);
 if (!urlCheck.safe) {
-  console.error(`❌ DATABASE_URL_STAGING no es una URL de staging segura (${urlCheck.reason}) — abortado.`);
+  console.error(`❌ DATABASE_URL_TESTS no es una URL de pruebas segura (${urlCheck.reason}) — abortado.`);
   process.exit(1);
 }
 process.env.DATABASE_URL = url;

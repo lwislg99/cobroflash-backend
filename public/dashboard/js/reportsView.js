@@ -66,19 +66,17 @@ async function renderReportsView(container) {
     const year = yearSelect.value;
     btnVf.disabled = true;
     try {
-      const r = await fetch(`/admin/exports/verifactu.xml?year=${year}`);
-      if (!r.ok) {
-        const d = await r.json().catch(() => ({}));
-        showToast(d.message || 'No se pudo generar el XML VeriFactu.', 'error');
-        return;
-      }
-      const blob = await r.blob();
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `verifactu_${year}.xml`;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    } catch {
+      // SCRUM-405: por la forma común. ERA EL CUARTO SITIO con el defecto, y no estaba en el
+      // censo de SCRUM-356 —que solo miró `exportView.js`—: lo encontró el guard por AST. Aquí
+      // pesa más que en los otros tres, porque lo que se descarga es el registro VeriFactu: con
+      // un portal cautivo, el profesional se guardaba la página de login del router como
+      // `verifactu_2026.xml`.
+      await descargarBinario(`/admin/exports/verifactu.xml?year=${year}`, {
+        tipoEsperado: 'xml',
+        nombrePorDefecto: `verifactu_${year}.xml`,
+      });
+    } catch (e) {
+      if (e && e.code === ERROR_NO_ES_FICHERO) { showToast(MSG_DESCARGA_NO_ES_FICHERO, 'error'); return; }
       showToast('Error de red al descargar el XML.', 'error');
     } finally {
       btnVf.disabled = false;
@@ -376,15 +374,14 @@ async function loadX2(card, year) {
   if (!hasAny) { card.style.display = 'none'; return; }
   card.style.display = 'block';
 
-  const METHOD_LABELS = {
-    card: '💳 Tarjeta', bizum: '📲 Bizum', transfer: '🏦 Transferencia',
-    bank: '🏦 Transferencia', manual: '✍️ Marcado a mano', cash: '💶 Efectivo',
-    mercadopago: '🌎 Mercado Pago',
-  };
+  // SCRUM-398 · las etiquetas salen de `paidViaEtiquetas.js`, que es la ÚNICA fuente y está atada
+  // por guard al conjunto cerrado de `paidVia.ts`. El mapa que había aquí declaraba `bizum`,
+  // `bank` y `mercadopago` —tres valores que NADIE escribe— y le faltaban los que sí llegan
+  // (`bizum_auto`, `card:stripe`, `mp`). Cuatro vocabularios distintos para el mismo dato.
   const maxEur = Math.max(1, ...(d.byMethod || []).map((m) => m.eur));
   const methodRows = (d.byMethod || []).map((m) => `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-      <span style="width:150px;flex:none;font-size:13px;color:var(--body)">${METHOD_LABELS[m.method] || m.method}</span>
+      <span style="width:150px;flex:none;font-size:13px;color:var(--body)">${etiquetaMetodoCobro(m.method)}</span>
       <div style="flex:1;background:var(--neutral-100);border-radius:6px;height:10px;overflow:hidden">
         <div style="width:${Math.round((m.eur / maxEur) * 100)}%;height:100%;background:var(--green-600);border-radius:6px"></div>
       </div>

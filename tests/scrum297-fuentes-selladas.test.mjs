@@ -52,59 +52,50 @@ function arbol(ruta) {
 /**
  * ① LAS FUENTES DEL SELLADOR — de la FIRMA REAL de `computeAlbaranContentHash`, no de una lista.
  * Si mañana el sellador gana un campo, aparece aquí solo.
+ *
+ * ⚠️ RESUELVE EL TIPO, NO LO DELETREA (arreglado al entrar C5, 7-ago-2026). La primera versión
+ * solo entendía el tipo escrito ahí mismo (`params: { … }`). C5 extrajo esos campos a la interfaz
+ * `AlbaranContenidoParams` —un refactor legítimo que no cambia ni una fuente sellada— y el
+ * derivador pasó a devolver CERO. Cero fuentes deja en verde por vacío al test ① de más abajo:
+ * «ninguna fuente huérfana» es trivialmente cierto cuando no hay fuentes.
+ *
+ * Lo cazó el SUELO, que es justo para lo que está: «no supe leer» y «no hay nada» dan el mismo
+ * número y significan lo contrario. Es la familia de SCRUM-381 —fijar un nombre sin resolverlo
+ * vigila la ortografía, no el cableado—, así que se resuelve la referencia en vez de reescribir
+ * el sellador para que vuelva a caber en el analizador.
  */
-function fuentesDelSellador(nombreDelSellador = 'computeAlbaranContentHash') {
+function fuentesDelSellador() {
   const sf = arbol(F_SELLADOR);
 
-  /** Los campos de un tipo literal `{ a: X; b: Y }`. */
-  const camposDeLiteral = (tipo) => tipo.members
-    .filter((m) => ts.isPropertySignature(m) && m.name)
-    .map((m) => m.name.getText(sf));
-
-  /**
-   * ⚠️ EL PARÁMETRO PUEDE VENIR DE DOS FORMAS, Y LAS DOS DICEN LO MISMO:
-   *
-   *     computeAlbaranContentHash(params: { numero: string; … })    ← literal EN LÍNEA
-   *     computeAlbaranContentHash(params: AlbaranContenidoParams)   ← tipo CON NOMBRE
-   *
-   * Esto solo entendía la primera, y SCRUM-300 (C5) pasó a la segunda porque el despacho por
-   * versión que exige SCRUM-369 necesitaba dar nombre al tipo. Al mergear C5: cero fuentes
-   * derivadas → ninguna columna exigida → este guard habría pasado en VERDE. Y ese verde concreto
-   * acusa de MANIPULADOS a albaranes intactos, sobre toda la población a la vez.
-   *
-   * No llegó a pasar porque el SUELO se plantó. Pero el arreglo no es tocar el suelo: es que el
-   * derivador mire el HECHO —qué campos entran al sellador— y no la FORMA de escribirlos.
-   *
-   * Devuelve `null` cuando NO SUPO leer (nombre sin resolver en este fichero), que no es lo mismo
-   * que «no hay campos»: el suelo tiene que poder distinguirlos.
-   */
-  const camposDelTipo = (tipo) => {
+  // Los miembros de un tipo, venga como venga escrito. Ver el aviso de abajo.
+  const miembrosDe = (tipo) => {
     if (!tipo) return null;
-    if (ts.isTypeLiteralNode(tipo)) return camposDeLiteral(tipo);
-    if (ts.isTypeReferenceNode(tipo)) {
-      const nombre = tipo.typeName.getText(sf);
-      let hallado = null;
-      const buscar = (n) => {
-        if (ts.isInterfaceDeclaration(n) && n.name.text === nombre) {
-          hallado = n.members.filter((m) => ts.isPropertySignature(m) && m.name).map((m) => m.name.getText(sf));
-          return;
-        }
-        if (ts.isTypeAliasDeclaration(n) && n.name.text === nombre && ts.isTypeLiteralNode(n.type)) {
-          hallado = camposDeLiteral(n.type);
-          return;
-        }
-        ts.forEachChild(n, buscar);
+    // (a) escrito ahí mismo: `params: { numero: string; … }`
+    if (ts.isTypeLiteralNode(tipo)) return tipo.members;
+    // (b) con nombre: `params: AlbaranContenidoParams` → se RESUELVE su declaración en el fichero.
+    if (ts.isTypeReferenceNode(tipo) && ts.isIdentifier(tipo.typeName)) {
+      const buscado = tipo.typeName.text;
+      let decl = null;
+      const v = (n) => {
+        if (ts.isInterfaceDeclaration(n) && n.name.text === buscado) decl = n.members;
+        else if (ts.isTypeAliasDeclaration(n) && n.name.text === buscado && ts.isTypeLiteralNode(n.type)) decl = n.type.members;
+        ts.forEachChild(n, v);
       };
-      buscar(sf);
-      return hallado;
+      v(sf);
+      return decl;
     }
     return null;
   };
 
   let campos = null;
   const visitar = (n) => {
-    if (ts.isFunctionDeclaration(n) && n.name?.text === nombreDelSellador) {
-      campos = camposDelTipo(n.parameters[0]?.type);
+    if (ts.isFunctionDeclaration(n) && n.name?.text === 'computeAlbaranContentHash') {
+      const miembros = miembrosDe(n.parameters[0]?.type);
+      if (miembros) {
+        campos = miembros
+          .filter((m) => ts.isPropertySignature(m) && m.name)
+          .map((m) => m.name.getText(sf));
+      }
     }
     ts.forEachChild(n, visitar);
   };

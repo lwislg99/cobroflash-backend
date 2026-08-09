@@ -205,7 +205,18 @@ async function fetchInvoiceDetail(id) {
     // pending · paid · annulled · R1 (Parte L). `expired` es un pending vencido → se trata como pending.
     const estadoFactura = invoice.type === 'R1' ? 'R1'
       : (st === 'annulled' ? 'annulled' : (st === 'paid' ? 'paid' : 'pending'));
-    const ctxAcciones = { hayCharge: !!invoice.chargeId };
+    // SCRUM-402: el contexto de la ranura ya no es solo «¿hay cobro en vuelo?». La primaria de
+    // `pending` depende también de si Bizum manual PUEDE funcionar: con la bandera apagada, el
+    // ocupante `con-chargeId` no es una acción, es un callejón. Los dos predicados son
+    // COMPLEMENTARIOS por construcción —uno es la negación del otro— así que la ranura nunca queda
+    // vacía: siempre hay exactamente una primaria. Un estado sin primaria es el callejón sin
+    // salida que C2 vino a quitar.
+    const bizumDisponible = !!invoice.chargeId && window.appBizumManualEnabled === true;
+    const ctxAcciones = {
+      hayCharge: !!invoice.chargeId,
+      'bizum-disponible': bizumDisponible,
+      'bizum-no-disponible': !bizumDisponible,
+    };
     const REGISTRO_ACC = (typeof window !== 'undefined' && window.INVOICE_ACTION_REGISTRY) || [];
     const MARCA_MICRO = (typeof window !== 'undefined' && window.MICROCOPY_PENDIENTE) || '[PENDIENTE microcopy oficial]';
     const cubosAcc = { primaria: [], secundaria: [], overflow: [] };
@@ -404,7 +415,15 @@ async function fetchInvoiceDetail(id) {
     // C1-4: "Confirmar Bizum recibido" (N5) con DOBLE toque — el 1er clic pide
     // confirmación explícita con el importe, el 2º ejecuta. Dispara la misma
     // cadena post-pago que un PSP (paid_via='bizum_manual').
-    if (invoice.chargeId) { // dato: hay cobro en vuelo. El estado (primaria de pending) lo decide el registro.
+    // 🔴 SCRUM-402: LA BANDERA, NO SOLO EL DATO. La condición era `if (invoice.chargeId)` a secas
+    // y el navegador no conocía `BIZUM_MANUAL_ENABLED`, que está en `false`. Resultado: acción
+    // PRIMARIA de las facturas `pending`, y al SEGUNDO toque —después de enseñarle al profesional
+    // el importe y el nombre de su cliente— un 409 `bizum_disabled` (`chargesAdmin.routes.ts:29`).
+    //
+    // El backend rechazaba bien; el problema es que se pintaba. **Si se pinta, es porque puede
+    // funcionar.** El veredicto lo da el servidor (`/admin/me` → `bizumManualEnabled`): aquí no se
+    // reimplementa la bandera, se recibe.
+    if (invoice.chargeId && window.appBizumManualEnabled) {
       const amountTxt = fmtMoneyEs(invoice.total, invoice.currency || 'EUR');
       const custName = (invoice.customer && invoice.customer.name) || 'el cliente';
       const btnBizum = document.createElement('button');

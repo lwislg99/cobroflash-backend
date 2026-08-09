@@ -85,6 +85,11 @@ router.post('/:id/paid-webhook', async (req, res) => {
     if (invoice.status === 'paid') {
       return res.json({
         ok: true,
+        // ⚠️ `already_paid` es un campo de RESPUESTA de esta API —el desenlace idempotente de
+        // «ya estaba pagada»— y NO es un valor de `Invoice.status`, que solo toma `pending`,
+        // `paid` o `annulled` (censado por AST en SCRUM-325). Aparece en cualquier grep de
+        // `status:` de este módulo y se lee como si fuera un estado: si censas estados, cuenta
+        // ESCRITURAS al modelo, no apariciones de la palabra.
         status: 'already_paid',
         invoice: {
           id: invoice.id,

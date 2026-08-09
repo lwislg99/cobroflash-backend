@@ -14,6 +14,12 @@
 // **Medido en producción el 5-ago-2026:** 8 de 13 merchants sin oficio; 4 son cuentas reales y 2
 // tienen actividad — una de ellas de pago, con 31 presupuestos y 6 facturas desde mayo.
 //
+// ⚠️ QUÉ MIDIÓ «reales» AHÍ ARRIBA (anotado el 6-ago-2026; las cifras son correctas y no se tocan):
+// «real» = «email distinto de `@test.local`», no «cliente externo». El fundador confirmó el
+// 6-ago-2026 que todas esas cuentas son pruebas del propio equipo, la de pago incluida. La otra
+// acepción —la del máster: quien paga desde fuera y cuyos datos son sensibles— es la que gobierna
+// el régimen de riesgo, y esta tabla NO la mide.
+//
 // ⚠️ EL SERVIDOR NO SE TOCA y no hacía falta: `load-catalog` ya acepta
 // `req.body?.trade || merchant.trade`. Con oficio guardado, mandar `{}` YA funcionaba. Lo que
 // faltaba no era el dato en la petición: era **poder elegirlo**.

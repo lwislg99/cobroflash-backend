@@ -61,6 +61,7 @@ const SHELL = [
   '/dashboard/js/jobDetailView.js',
   '/dashboard/js/voiceInput.js',
   '/dashboard/js/aiQuoteAssistant.js',
+  '/dashboard/js/paidViaEtiquetas.js',
   '/dashboard/js/reportsView.js',
   '/dashboard/js/templatesView.js',
   '/dashboard/js/quoteRequestsView.js',

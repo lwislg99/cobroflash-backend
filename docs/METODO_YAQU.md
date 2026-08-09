@@ -7,6 +7,28 @@
 
 ---
 
+# DOS GUARDS QUE SE TOCAN PERO NO SE SOLAPAN
+
+**SCRUM-297 · 7-ago-2026**
+
+> **Dos guards que se tocan pero no se solapan dejan un hueco con la forma exacta de lo que
+> ninguno mira.**
+
+El caso: `tests/scrum369-*` y `tests/scrum297-fuentes-selladas.test.mjs` vigilan cosas contiguas.
+Ninguno de los dos estaba mal, y cada uno pasaba por su lado. Lo que nadie miraba era **la
+juntura** — y una juntura no se ve revisando los guards de uno en uno, porque cada uno está
+completo respecto de lo que él declara vigilar.
+
+**Cómo se busca ese hueco:** no preguntando «¿qué vigila cada guard?», sino **«¿qué hay entre los
+dos que ninguno nombra?»**. La cobertura de dos vecinos no es la suma de sus alcances: es esa suma
+**menos** lo que cae justo en medio y ninguno reclama.
+
+Es de la familia de «el medidor que no llegó a ejecutarse», con una diferencia que importa: allí un
+guard no miraba **nada**; aquí los dos miran, y miran bien. El fallo no está **dentro** de ninguno
+de los dos, así que ningún test de ninguno de los dos puede delatarlo.
+
+---
+
 # 🔴 LA PRUEBA DE ROJO QUE NUNCA SE EJECUTÓ
 
 **Descubierto por DOS sesiones la misma noche (5-ago-2026), por caminos que no se parecen en nada.**
@@ -312,6 +334,70 @@ lee como si nunca se hubiera equivocado.
 
 ---
 
+# EL CAMPO QUE SE PIERDE VIVE EN EL CÓDIGO QUE SE MUEVE
+
+**SCRUM-300 (C5), sesión 3 · 6-ago-2026 · al rebasar `scrum-300-c5-fusion` sobre 97 commits de main**
+
+> **Un conflicto POR MOVIMIENTO no se resuelve eligiendo un lado: los dos lados son correctos y lo
+> que falta es el PUENTE.**
+
+Es una familia distinta de las de arriba. Allí el problema era una medición que no llegaba a
+ejecutarse; aquí **todo se ejecuta y todo está bien**, y aun así se pierde trabajo — porque la
+herramienta que marca el conflicto no sabe distinguir «esto cambió» de «esto está en otro sitio».
+
+**El caso.** `buildAlbEditor` vivía ANIDADA dentro de `renderJobDetailView` y cogía `job` por
+CLAUSURA. SCRUM-386/320 la sacó al NIVEL SUPERIOR —un refactor correcto— y le añadió un quinto
+parámetro `ctx = {}` para devolverle el contexto que antes le llegaba solo. Al rebasar C5 encima:
+
+| Lo que git dijo | Lo que realmente había |
+| --- | --- |
+| 397 líneas en conflicto | **58** de la rama; las otras **339** son la misma función en otro sitio |
+| «elige un lado» | los dos lados correctos, y ninguno completo |
+
+**El diff parece enorme justo cuando el problema es diminuto**, y esa desproporción es la trampa:
+invita a resolver por volumen —«son 400 líneas, acepto el lado que parezca más nuevo»— cuando lo que
+toca es leer las 58.
+
+**Lo que se pierde si eliges un lado**, y por qué no hace ruido:
+
+* Aceptando **main**: desaparecen las 58 líneas. La suite sigue verde — no había test.
+* Aceptando **la rama**: reaparece la función vieja, sin `ctx`, **duplicada** con la de main. En JS
+  la segunda declaración gana por hoisting, así que las 397 líneas quedan de código muerto… o pisan
+  a las buenas, según el orden. Tampoco hace ruido.
+
+Y el detalle que da nombre a la regla: de las 58 líneas, **una sola** leía `job.direccion`. Ese era
+el campo que colgaba de la clausura desaparecida. El puente fue `ctx.direccionSugerida` —**un dato,
+no el objeto entero**: pasarle el `Job` le daría acceso a media pantalla e invitaría al acoplamiento
+siguiente—, y con `ctx = {}` por defecto el call site que no lo pasa obtiene `undefined`, falsy: sin
+sugerencia, no pantalla rota. **El modo de fallo es el bueno.**
+
+## Cómo se reconoce, antes de resolver nada
+
+```bash
+git diff --stat <base> <rama> -- <fichero>     # lo que la rama aporta DE VERDAD
+git diff --stat <base> origin/main -- <fichero> # lo que el otro lado movió
+git grep -n "<símbolo>" origin/main -- <ruta>   # ¿la función SIGUE existiendo, en otro sitio?
+```
+
+Si el segundo número es enorme, el tercero encuentra el símbolo **con otra firma o a otra
+indentación**, y el primero es pequeño → es movimiento, no cambio. **Se injertan las líneas del
+primero sobre la versión del segundo**, y se comprueba qué dependencias de ámbito se quedaron por el
+camino: lo que antes llegaba por clausura ahora no llega.
+
+## Y se deja un test, o vuelve a pasar
+
+Esto ya se perdió una vez sin que nada avisara, así que la regla no termina en resolver bien:
+**termina en dejar una red**. `tests/scrum300-direccion-sugerida.test.mjs` extrae el bloque del
+fichero publicado **por AST** y lo ejecuta en los dos sentidos (con dirección y sin ella), más el
+control de que la sugerencia **nunca** se escribe en un `.value`. Probado en rojo con cinco
+mutaciones, incluida la que importa: **mover o renombrar la función deja el escáner ciego, y
+entonces el test falla declarándolo** en vez de pasar sobre un conjunto vacío.
+
+*Un refactor correcto puede borrar trabajo correcto. Lo único que lo impide es que alguien lo mire —
+o un test que se ponga rojo cuando la función vuelva a mudarse.*
+
+---
+
 # EL GUARD QUE VIGILA LA ORTOGRAFÍA, NO EL CABLEADO
 
 **SCRUM-381, sesión 2 · 6-ago-2026**
@@ -371,3 +457,30 @@ vigila lo que cree.
 desde esta rama solo dos —378 (un `<script>` comentado que el guard seguía dando por cargado) y
 381—; de SCRUM-340 no hay entrada en `docs/master/` aquí, así que queda anotado como suyo y sin
 comprobar, no como medición propia.
+
+---
+
+# UN CENSO SE EQUIVOCA HACIA «FALTA TRABAJO», NUNCA HACIA «YA ESTÁ HECHO»
+
+**SCRUM-388, sesión 3 · 7-ago-2026 · asimetría aprobada por el fundador**
+
+> **Los dos errores de un censo no cuestan lo mismo, así que no se tratan igual.** Equivocarse hacia
+> «falta» cuesta un censo perdido: alguien mira, ve que ya estaba, y sigue. Equivocarse hacia
+> «hecho» cuesta **construir dos veces** — o peor, dar por cubierto algo que nadie cubrió.
+
+No es prudencia genérica: es la regla que decide **cada duda del diseño**, y en SCRUM-388 decidió
+tres, todas hacia el mismo lado:
+
+| Duda | Se resolvió | Qué se pierde | Qué se evita |
+| --- | --- | --- | --- |
+| ¿cuenta un commit que cita el ticket solo en el **cuerpo**? | **no** | alguna entrega real que no siga la convención | atribuir a un ticket el trabajo de otro |
+| ¿cuenta una rama cuyo nombre **contiene** el número? | **no**, solo `scrum-N-<slug>` | ramas con nombres raros | `…-rebasada-2` contando como el ticket 2 |
+| ¿un ticket con un mecanismo **parecido** está hecho? | **no** | nada | dar A9 por cerrada midiendo A15 |
+
+**La prueba, en una pregunta:** *si me equivoco aquí, ¿alguien construye algo dos veces, o alguien
+mira una cosa que ya estaba?* Lo segundo es barato. Lo primero es el ticket entero.
+
+⚠️ **Y el corolario que hay que escribir, porque no se deduce solo:** un censo con esta asimetría
+**no puede usarse para cerrar nada**. Dice dónde MIRAR, no qué dar por bueno. Un `ENTERO` suyo es
+«no encontré trabajo suelto», no «esto está terminado» — que es justo la diferencia que se saltó
+quien dio A9 por cerrada.

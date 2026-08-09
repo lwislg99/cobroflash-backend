@@ -11,21 +11,23 @@ async function initApp() {
   window.appUserName   = me.name || '';
   window.appVoiceEnabled = me.voiceEnabled === true; // VZ-1: flag VOICE_QUOTE_ENABLED
   window.appVoiceAlbaranEnabled = me.voiceAlbaranEnabled === true; // SCRUM-71: flag PROPIO del albarán
-  // SCRUM-300 (C5): las SEIS ranuras de «en calidad de qué», los rótulos y las ayudas llegan
-  // SERVIDOS. El navegador NO los escribe: son microcopy que acaba en un documento que se puede
-  // leer en un juzgado (regla 30), y una segunda copia aquí es cómo dos textos divergen sin que
-  // nadie se entere. Mismo criterio que `appDocumentoSuelto`, justo debajo.
-  window.appAlbaranFirmanteOpciones = Array.isArray(me.albaranFirmanteOpciones) ? me.albaranFirmanteOpciones : [];
-  window.appAlbaranRotulos = me.albaranRotulos || {};
-  window.appAlbaranAyudas = me.albaranAyudas || {};
-  // ⚠️ FUSIÓN: C5 traía aquí `appFacturaSueltaDisponible`, que SCRUM-346 RETIRÓ en `main` (cero
-  // consumidores, medido). No se conserva porque no es un lado distinto: es la versión vieja del
-  // de abajo.
+  // SCRUM-402: veredicto del SERVIDOR sobre Bizum manual. `=== true` a propósito: si el campo no
+  // llega —un `/admin/me` viejo en caché, un despliegue a medias— sale `false` y el botón NO se
+  // pinta. Fallar cerrado es lo correcto aquí: no pintarlo cuando se podría es un botón de menos;
+  // pintarlo cuando no se puede es lo que este ticket viene a quitar.
+  window.appBizumManualEnabled = me.bizumManualEnabled === true;
   // SCRUM-289 (A0.3) · SCRUM-346 (A0.5): veredicto YA CALCULADO por el servidor
   // (`modoDocumentoSuelto`). El navegador no reimplementa el modo de emisión: lo recibe.
   // Son TRES valores —'factura' | 'justificante' | 'no'— porque el profesional español real no
   // es un «no puedes»: emite justificantes, que es otro documento, no una factura degradada.
   // Un valor desconocido cae a 'no': fallar cerrado, igual que el servidor.
+  // SCRUM-298 (A8): EL MODO DE EMISIÓN, tal cual lo calculó el servidor. `null` = no se sabe, y
+  // entonces la pantalla NO pinta nada — enseñar el modo equivocado es peor que no enseñar
+  // ninguno. Un valor fuera del contrato cae también a `null`: no se normaliza a un modo, porque
+  // normalizar aquí sería inventarse el estado fiscal de alguien.
+  window.appModoEmision =
+    ['fiscal', 'demo', 'receipt'].includes(me.modoEmision) ? me.modoEmision : null;
+
   window.appDocumentoSuelto =
     ['factura', 'justificante'].includes(me.documentoSuelto) ? me.documentoSuelto : 'no';
 
@@ -37,6 +39,13 @@ async function initApp() {
   // Y POR QUÉ no se puede, cuando no se puede: `{ emitidas, ejemplo }`. La puerta es `false` por
   // dos motivos distintos —ya emitió, o ya contestó este año— y solo el primero bloquea el campo.
   window.appSerieEmitida = me.serieEmitida || { emitidas: 0, ejemplo: null };
+  // SCRUM-300 (C5): las SEIS ranuras de «en calidad de qué», los rótulos y las ayudas del
+  // albarán llegan SERVIDOS. El navegador NO los escribe: son microcopy que acaba en un documento
+  // que se puede leer en un juzgado (regla 30), y una segunda copia aquí es cómo dos textos
+  // divergen sin que nadie se entere. Mismo criterio que `appDocumentoSuelto`, encima.
+  window.appAlbaranFirmanteOpciones = Array.isArray(me.albaranFirmanteOpciones) ? me.albaranFirmanteOpciones : [];
+  window.appAlbaranRotulos = me.albaranRotulos || {};
+  window.appAlbaranAyudas = me.albaranAyudas || {};
 
   // A10.2 (Parte L): past_due → banner global "Hay un problema con tu pago"
   // + portal de Stripe. La cuenta sigue funcionando (gracia); solo avisa.

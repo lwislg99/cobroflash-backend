@@ -277,7 +277,11 @@ test('SCRUM-253 · el id se compone dentro del charset del marcador', () => {
 // como literal, el analizador se encontraría a sí mismo.
 
 const VETADA = ['YAQU', 'LOCK', 'DUENO'].join('_');
-const CONTROL = 'DATABASE_URL_STAGING'; // una que SÍ se lee: es el suelo del analizador
+// SCRUM-383 · era `DATABASE_URL_STAGING`. Al renombrarla a `DATABASE_URL_TESTS` dejó de LEERSE
+// en ningún sitio y solo quedó NOMBRADA como literal en dos tests — así que este suelo seguía
+// verde apoyado en la prosa de otro fichero, no en una lectura real. Un control que sobrevive a
+// su causa deja de ser control: se apunta a la que de verdad se lee (seis sitios hoy).
+const CONTROL = 'DATABASE_URL_TESTS'; // una que SÍ se lee: es el suelo del analizador
 
 function ficherosDeCodigo() {
   const salida = [];

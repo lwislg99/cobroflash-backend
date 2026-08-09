@@ -297,6 +297,27 @@ Un cambio de schema NO está aplicado hasta estar en las TRES bases:
 > `describirBD` (nunca el valor). Es una FOTO fechada, no una verdad permanente: si alguien
 > cambia una clave en Railway, esta tabla envejece sin que nadie la toque. Re-medir antes de usarla.
 >
+> **ESTADO ACTUAL — tras SCRUM-383 (6-ago-2026).** Los cuatro árboles llevan las TRES claves, con
+> el mismo host y las mismas credenciales; solo cambia el nombre de la base:
+>
+> | Clave | `cobroflash-backend` | `cobroflash-b1` · `b2` · `b3` |
+> | --- | --- | --- |
+> | `DATABASE_URL_STAGING` | `acela…/railway` | `acela…/railway` |
+> | `DATABASE_URL_DEV` | `acela…/yaqu_dev_javier` | `acela…/yaqu_dev_javier` |
+> | `DATABASE_URL_TESTS` | `acela…/yaqu_dev_javier` | `acela…/railway` |
+>
+> `DATABASE_URL_TESTS` es **la base de pruebas DE ESE CARRIL**, y es la que leen los seis
+> consumidores de la tanda. Que difiera por worktree **no es un defecto**: el reparto por carril
+> es DELIBERADO (23-jul-2026), para aislar los carriles. Lo que se arregló es el NOMBRE.
+>
+> **Y por eso hay DOS turnos de staging, no uno.** El marcador del turno vive DENTRO de la base
+> (`current_database()` + comentario de schema), así que el turno del árbol principal está en
+> `yaqu_dev_javier` y el que comparten b1/b2/b3 está en `railway`. Nadie compite con nadie por un
+> turno ajeno, y no es casualidad: es la consecuencia de que cada carril pruebe en su base.
+>
+> **REGISTRO — lo que se midió el 6-ago-2026 ANTES de SCRUM-383** (se conserva: es la prueba de
+> por qué se hizo el ticket, no una descripción del presente):
+>
 > | Worktree | Clave | Base real | Cuál es |
 > | --- | --- | --- | --- |
 > | `cobroflash-backend` | `DATABASE_URL_STAGING` | `acela…/yaqu_dev_javier` | **DEV** |
@@ -304,16 +325,19 @@ Un cambio de schema NO está aplicado hasta estar en las TRES bases:
 > | `cobroflash-b2` | `DATABASE_URL_STAGING` | `acela…/railway` | **STAGING** |
 > | `cobroflash-b3` | `DATABASE_URL_STAGING` | `acela…/railway` | **STAGING** |
 >
-> 🔴 **La misma clave significa DOS bases distintas según el directorio en el que estés parado**, y
-> ningún comando te lo recuerda. Ninguna apunta a producción (`autorack`).
+> 🔴 **Una misma clave significaba DOS bases distintas según el directorio**, y ningún comando lo
+> recordaba. Ninguna apuntaba a producción (`autorack`). SCRUM-383 no movió a nadie de base: dio
+> nombre propio a cada destino, para que el nombre dejara de mentir.
 >
-> ⚠️ Aquí ponía que staging era «la base del worktree `cobroflash-b2`» y dev la «de
-> `cobroflash-b1`». **Medido: es falso.** `b1` tiene STAGING, y quien tiene DEV es el worktree
+> ⚠️ Antes de eso, aquí ponía que staging era «la base del worktree `cobroflash-b2`» y dev la «de
+> `cobroflash-b1`». **Medido: era falso.** `b1` tiene STAGING, y quien tiene DEV es el worktree
 > PRINCIPAL, que ni se mencionaba. Se corrigió el 6-ago-2026; la afirmación anterior no llevaba
 > fecha ni método, que es justo por lo que pudo envejecer sin que nadie lo notara.
 >
 > **Lo vigila `tests/scrum383-clave-vs-destino.test.mjs`**: compara lo que la clave PROMETE con el
-> destino REAL y aborta antes de cualquier operación de esquema.
+> destino REAL y aborta antes de cualquier operación de esquema. Para comprobarlo en un árbol:
+> `node scripts/comprobar-claves-bd.mjs` — y hay que correrlo EN LOS CUATRO, porque «según la
+> carpeta» era precisamente la dimensión del fallo.
 
 ⚠️ Las dos primeras viven en el MISMO servidor (`acela`) y son bases DISTINTAS. Ninguna es
 "local". Por eso pueden divergir de esquema sin que nada avise: `scripts/_db-guard.mjs` valida
@@ -351,10 +375,17 @@ que **no es el TTL**: el TTL dice cuándo caduca el turno (1h 10min), no cuánto
 (~27 min). Si la otra sesión corre código anterior a SCRUM-232, sale «NO CONSTA» y el mensaje
 degrada al de siempre.
 
-> Estos comandos leen `DATABASE_URL_STAGING` del `.env`, y `.env` está en `.gitignore`: **solo
-> existe en el checkout principal, no en los worktrees**. Desde un worktree, ejecútalos con el
-> cwd del checkout principal (`cd <principal> && node ../<worktree>/scripts/turno-staging.mjs
-> estado`). Nunca pases la URL por línea de órdenes (regla 9).
+> Estos comandos leen `DATABASE_URL_TESTS` del `.env` **de su propio árbol** (SCRUM-383).
+>
+> ⚠️ **CORREGIDO el 6-ago-2026.** Aquí ponía que `.env` «solo existe en el checkout principal, no
+> en los worktrees», y **medido: es falso** — los CUATRO tienen su `.env` (`b1`/`b2`/`b3` con seis
+> claves cada uno). La instrucción que seguía —ejecutarlos con el cwd del principal— era además
+> **activamente dañina**: el turno se toma sobre la base a la que apunte la clave del árbol desde
+> el que corres, así que hacerlo desde el principal tomaba el turno de `yaqu_dev_javier` cuando lo
+> que querías sostener era `railway`. Cada carril corre sus comandos **desde su propio árbol**.
+>
+> Para ver a qué base apunta cada clave aquí: `node scripts/comprobar-claves-bd.mjs`. Nunca pases
+> la URL por línea de órdenes (regla 9).
 
 **Ninguno de los tres rompe un lock ajeno**, a propósito: para eso está `marcar-staging.mjs`, y
 solo sabiendo que la otra sesión está muerta.
