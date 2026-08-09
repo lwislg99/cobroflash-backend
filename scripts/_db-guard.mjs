@@ -75,6 +75,39 @@ export function parseBDSegura(urlStr) {
 }
 
 /**
+ * SCRUM-408 · LA URL PARTIDA PARA UN PROCESO HIJO, sin que nadie la parsee a pelo.
+ *
+ * `parseBDSegura` no vale aquí y eso es DELIBERADO: devuelve solo partes inocuas y **nunca** la
+ * contraseña. Pero un hijo como `pg_dump` necesita las dos cosas —la URL SIN contraseña para el
+ * argv y la contraseña para su entorno—, así que alguien tiene que partirla. La pregunta no es si
+ * se parte, es DÓNDE.
+ *
+ * Se parte AQUÍ, en el único módulo exento del guard de SCRUM-195, y por su mismo motivo: es donde
+ * el `new URL` vive dentro de un `try` cuyo `catch` **no toca el error**. Hacerlo en cada script
+ * que lo necesite deja la seguridad en manos de que cada `catch` sea correcto para siempre — y esa
+ * apuesta ya se perdió una vez, con una credencial de producción por medio.
+ *
+ * ⚠️ DEVUELVE LA CONTRASEÑA, y por eso conviene decir qué NO devuelve: la URL completa no sale de
+ * aquí. Quien recibe esto tiene un secreto en una variable —que es inevitable si va a autenticar—
+ * pero no una cadena lista para imprimir por accidente.
+ *
+ * Tolera las comillas de `.env`, que son la causa exacta de aquella fuga. `null` si no se puede
+ * parsear: sin `err`, porque capturarlo es como acaba imprimiéndose.
+ */
+export function partirBDParaHijo(urlStr) {
+  if (!urlStr || typeof urlStr !== 'string') return null;
+  const limpia = urlStr.trim().replace(/^['"]|['"]$/g, '');
+  try {
+    const u = new URL(limpia);
+    const password = u.password ? decodeURIComponent(u.password) : '';
+    u.password = ''; // lo que verán argv, `ps` y cualquier e.message: URL SIN contraseña
+    return { urlSinPass: u.toString(), password };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Etiqueta segura para logs: `host/base`. Nunca usuario:contraseña, nunca la URL.
  * Es lo que hay que imprimir en un host-check antes de tocar una BD.
  */
