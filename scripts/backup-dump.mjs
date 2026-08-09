@@ -27,6 +27,8 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
+// SCRUM-408 · el parseo seguro y la redacción viven en UN solo sitio (SCRUM-195/226).
+import { partirBDParaHijo, redactarSecretos } from './_db-guard.mjs';
 
 const KEY_RAW = process.env.BACKUP_ENCRYPTION_KEY || '';
 const OUT_DIR = process.env.BACKUP_DIR || path.join(process.cwd(), 'backups');
@@ -119,7 +121,9 @@ async function main() {
     if (faltan.length || erroneas.length) {
       console.error('✗ restore-test FALLÓ: el backup NO está completo/íntegro (SCRUM-241).');
       if (faltan.length) console.error(`  faltan ${faltan.length} tabla(s) esperada(s): ${faltan.join(', ')}`);
-      if (erroneas.length) console.error(`  ${erroneas.length} tabla(s) con error en el volcado (no son filas): ${erroneas.join(', ')}`);
+      // SCRUM-408 · redactado: `erroneas` sale de la salida de `pg_restore`, que puede traer la
+      // cadena de conexión dentro de su propio mensaje de error.
+      if (erroneas.length) console.error(redactarSecretos(`  ${erroneas.length} tabla(s) con error en el volcado (no son filas): ${erroneas.join(', ')}`));
       process.exit(1);
     }
     const { PrismaClient } = await import('@prisma/client');
@@ -162,16 +166,19 @@ async function main() {
     // Se mueve el secreto de world-visible a owner-only. Elegido sobre un fichero .pgpass: misma
     // exposición owner-only, pero sin fichero temporal que crear/chmod/limpiar ni el riesgo de que
     // un crash lo deje en disco.
-    let urlSinPass, pgPassword;
-    try {
-      const u = new URL(process.env.DATABASE_URL);
-      pgPassword = decodeURIComponent(u.password);
-      u.password = ''; // lo que ven pg_dump, argv, `ps` y e.message: URL SIN contraseña
-      urlSinPass = u.toString();
-    } catch {
+    // SCRUM-408 · EL PARSEO NO SE HACE AQUÍ. `partirBDParaHijo` vive en `_db-guard.mjs`, el único
+    // módulo cuyo `new URL` está dentro de un `try` cuyo `catch` NO TOCA EL ERROR.
+    //
+    // Lo de antes no fugaba —su `catch` imprimía un texto fijo—, pero esa seguridad dependía de
+    // que ESE catch siguiera siendo correcto para siempre, en un fichero que edita cualquiera. Esa
+    // apuesta ya se perdió una vez, con una credencial de producción por medio: el arreglo es que
+    // el parseo viva en un solo sitio, no que cada sitio lo haga con cuidado.
+    const partes = partirBDParaHijo(process.env.DATABASE_URL);
+    if (!partes) {
       console.error('backup FALLÓ: DATABASE_URL no es una URL válida (no se vuelca la cadena).');
       process.exit(1);
     }
+    const { urlSinPass, password: pgPassword } = partes;
     raw = execFileSync('pg_dump', ['--format=custom', '--no-owner', urlSinPass], {
       env: { ...process.env, PGPASSWORD: pgPassword },
       maxBuffer: 1024 * 1024 * 512,
@@ -192,4 +199,4 @@ async function main() {
   console.log('→ MUÉVELO fuera de esta máquina (S4). Verifícalo: node scripts/backup-dump.mjs --restore-test');
 }
 
-main().catch((e) => { console.error('backup FALLÓ:', e?.message || e); process.exit(1); });
+main().catch((e) => { console.error('backup FALLÓ:', redactarSecretos(e?.message || e)); process.exit(1); });
