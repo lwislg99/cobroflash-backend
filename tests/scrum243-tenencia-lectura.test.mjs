@@ -103,9 +103,9 @@ test('SCRUM-243 · ① el analizador distingue los tres cubos y no se deja enga�
   const cm = new Set(['invoice', 'quote']);
   const uno = (codigo) => analizarFuente(codigo, 'x.ts', cm)[0];
 
-  assert.equal(uno('await prisma.invoice.findMany({ where: { merchantId: 1 } });').cubo, 'filtra',
+  assert.equal(uno('await prisma.invoice.findMany({ where: { merchantId: 7 } });').cubo, 'filtra',
     '🔴 no reconoce el filtro más simple que existe');
-  assert.equal(uno('await prisma.invoice.findMany({ where: { quote: { merchantId: 1 } } });').cubo, 'filtra',
+  assert.equal(uno('await prisma.invoice.findMany({ where: { quote: { merchantId: 7 } } });').cubo, 'filtra',
     '🔴 no ve el filtro ANIDADO por relación, que es filtro igual');
   assert.equal(uno('await prisma.invoice.findMany({ where: whereRango(merchantId, r) });').cubo, 'indirecto',
     '🔴 un where por LLAMADA no es «no filtra»: es «no lo puedo afirmar». Contarlo como agujero ' +

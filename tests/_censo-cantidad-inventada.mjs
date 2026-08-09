@@ -118,28 +118,48 @@ export function censarCantidadInventada(fuente, ruta) {
  *      Alguien pensó el caso vacío y eligió 1 a conciencia.
  *   3. Las otras cuatro lecturas de `qtyInput.value` del mismo fichero usan `|| ""`.
  *
- * Va con su motivo y su ticket. Cuando el fundador decida, esta entrada se va — y si el patrón
- * reaparece en OTRA línea, el censo lo caza igual porque la excepción es por ruta+línea, no por
- * fichero entero.
+ * Va con su motivo y su ticket. Cuando el fundador decida, esta entrada se va.
  *
- * ⚠️ SCRUM-286 (5-ago-2026): la línea pasó de **2585 a 2634**. NO ha cambiado el código vigilado
- * ni la decisión pendiente: B3 troceó el formulario en cuatro bloques y metió 49 líneas por
- * encima. El guard cayó él solo con «ya no corresponde a nada: bórrala» — que es exactamente lo
- * que tenía que hacer, y por eso se actualiza el número en vez de borrar la excepción.
+ * 🔴 ANCLADA AL HECHO, NO A LA POSICIÓN (SCRUM-353). Antes decía `linea: 2634`, y eso la rompía
+ * CUALQUIER inserción de más arriba aunque no tocara lo vigilado: ya pasó una vez —SCRUM-286 metió
+ * 49 líneas y la línea saltó de 2585 a 2634—, y el guard cayó con «ya no corresponde a nada» sobre
+ * un código que nadie había tocado. Un guard atado a la POSICIÓN vigila dónde está algo, no qué es.
  *
- * 🔎 HALLAZGO, NO ARREGLADO AQUÍ (regla 9): anclar una excepción por NÚMERO DE LÍNEA la rompe
- * cualquier edición de más arriba, aunque no toque lo vigilado. Cambiar el anclaje a algo estable
- * (el texto del sujeto, o la función que lo contiene) es rediseñar el guard de SCRUM-311 y no es
- * de este ticket. Queda dicho, con su carril: SCRUM-311.
+ * Ahora la excepción es `ruta + sujeto + reserva`: el hecho es «esta lectura concreta, con este
+ * valor de reserva». Sobrevive a cualquier reordenación del fichero y NO se puede ensanchar sola:
+ * si el mismo patrón apareciera una SEGUNDA vez en el fichero, la excepción deja de aplicarse a
+ * ninguna de las dos —ver `esExcepcion`— y el censo las saca las dos. Una excepción que se estira
+ * en silencio es la que alguien acaba ampliando.
+ *
+ * (Historia, porque explica el arreglo: SCRUM-286 movió la línea de 2585 a 2634 sin tocar el
+ * código vigilado, y hubo que venir a actualizar un número. Eso es lo que ya no puede volver a
+ * pasar.)
  */
 export const EXCEPCIONES_CON_MOTIVO = [
   {
     ruta: 'public/dashboard/js/quotesView.js',
-    linea: 2634,
+    // El HECHO, no el sitio: esta lectura, con esta reserva.
+    sujeto: 'line.qtyInput.value',
+    reserva: '1',
     motivo: 'camino de GUARDAR PLANTILLA (no el envío del presupuesto), con segunda defensa en ' +
             '`Number.isFinite(qty) ? qty : 1`. Decisión del fundador pendiente en SCRUM-311.',
   },
 ];
 
-export const esExcepcion = (h) =>
-  EXCEPCIONES_CON_MOTIVO.some((e) => e.ruta === h.ruta && e.linea === h.linea);
+/**
+ * ⚠️ Una excepción solo perdona cuando identifica **un único** hallazgo.
+ *
+ * Si el mismo `sujeto` con la misma `reserva` apareciera DOS veces en el fichero, la excepción ya
+ * no distingue cuál era la perdonada: entonces no perdona ninguna y las dos salen. Es lo que
+ * impide que una excepción se ensanche sola al copiar-pegar el patrón.
+ */
+export const esExcepcion = (h, todos = []) => {
+  const e = EXCEPCIONES_CON_MOTIVO.find(
+    (x) => x.ruta === h.ruta && x.sujeto === h.sujeto && String(x.reserva) === String(h.reserva),
+  );
+  if (!e) return false;
+  const gemelos = todos.filter(
+    (o) => o.ruta === e.ruta && o.sujeto === e.sujeto && String(o.reserva) === String(e.reserva),
+  );
+  return gemelos.length <= 1;
+};

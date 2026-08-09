@@ -150,7 +150,7 @@ const CSV = 'nombre;telefono;email\r\nAna;34000000001;ana@x.es\r\n;34000000002;s
 
 test('③ una fila sin nombre se RECHAZA y se dice, con su número de fila', () => {
   // El defecto viejo: `if (!name) { errors++; continue; }` — se contaba y no se listaba.
-  return importarClientes(1, CSV, MAPEO, clienteFalso()).then((r) => {
+  return importarClientes(7, CSV, MAPEO, clienteFalso()).then((r) => {
     assert.equal(r.creados, 2);
     assert.equal(r.rechazos.length, 1);
     assert.equal(r.rechazos[0].motivo, 'Falta el nombre');
@@ -163,12 +163,12 @@ test('③ los rechazos NO se capan a 10', async () => {
   // El importador viejo hacía `errorList.slice(0, 10)`: con 40 filas malas, el usuario veía 10
   // y no sabía cuáles eran las otras 30.
   const filas = Array.from({ length: 40 }, () => ';34000000004;x@y.z').join('\r\n');
-  const r = await importarClientes(1, `nombre;telefono;email\r\n${filas}`, MAPEO, clienteFalso());
+  const r = await importarClientes(7, `nombre;telefono;email\r\n${filas}`, MAPEO, clienteFalso());
   assert.equal(r.rechazos.length, 40, '🔴 capar la lista es descartar en silencio con otro nombre');
 });
 
 test('③ las rechazadas se pueden DESCARGAR, con su motivo y en el formato que abrirá Excel', async () => {
-  const r = await importarClientes(1, CSV, MAPEO, clienteFalso());
+  const r = await importarClientes(7, CSV, MAPEO, clienteFalso());
   const csv = csvDeRechazos(r);
   assert.ok(csv.startsWith('﻿'), '🔴 sin BOM, Excel abre el fichero de corrección con mojibake');
   assert.match(csv, /MOTIVO/, 'la cabecera original + el motivo');
@@ -182,15 +182,15 @@ test('③ 🔴 NUNCA cero filas en SILENCIO: sin columna de nombre, LANZA', asyn
   // —ya no adivina, propone— pero este test lo PROHÍBE explícitamente, porque el camino viejo
   // puede volver por otro sitio.
   await assert.rejects(
-    () => importarClientes(1, CSV, { phone: 1 }, clienteFalso()),
+    () => importarClientes(7, CSV, { phone: 1 }, clienteFalso()),
     /sin_columna_nombre/,
     '🔴 se ha vuelto a devolver «nada» sin decir por qué',
   );
 });
 
 test('③ un duplicado se OMITE, y omitido no es lo mismo que rechazado', async () => {
-  const cl = clienteFalso({ existentes: [{ merchantId: 1, phone: '34000000001', email: null }] });
-  const r = await importarClientes(1, CSV, MAPEO, cl);
+  const cl = clienteFalso({ existentes: [{ merchantId: 7, phone: '34000000001', email: null }] });
+  const r = await importarClientes(7, CSV, MAPEO, cl);
   assert.equal(r.omitidos, 1, 'ya existía: no es un error del usuario');
   assert.equal(r.creados, 1);
   assert.equal(r.rechazos.length, 1, 'y el de sin nombre sigue siendo rechazo');

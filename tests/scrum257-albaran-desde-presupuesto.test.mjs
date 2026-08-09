@@ -135,14 +135,14 @@ function sustituirPrisma(job) {
   moduloPrisma.prisma.$transaction = async () => ({
     id: 9, jobId: job?.id ?? 1, numero: 'A-2026-0001', fecha: new Date(),
     modoValoracion: 'SIN_VALORAR', lineas: [], estado: 'borrador', version: 1,
-    merchantId: 1, createdAt: new Date(),
+    merchantId: 7, createdAt: new Date(),
   });
 }
 
-const REQ = (id) => ({ params: { id: String(id) }, body: {}, merchantId: 1, query: {}, headers: {} });
+const REQ = (id) => ({ params: { id: String(id) }, body: {}, merchantId: 7, query: {}, headers: {} });
 
 test('SCRUM-257 · (b) job SIN presupuesto → 409 con el texto aprobado', async () => {
-  sustituirPrisma({ id: 3, merchantId: 1, quoteId: null });
+  sustituirPrisma({ id: 3, merchantId: 7, quoteId: null });
   const r = await invocar(REQ(3));
 
   assert.equal(
@@ -161,7 +161,7 @@ test('SCRUM-257 · (b) job SIN presupuesto → 409 con el texto aprobado', async
 test('SCRUM-257 · (b) CONTROL: job CON presupuesto sigue devolviendo 201', async () => {
   // El caso que impide «arreglarlo» bloqueando todo. Sin este control, el guard podría rechazar
   // SIEMPRE y el test de arriba seguiría en verde.
-  sustituirPrisma({ id: 4, merchantId: 1, quoteId: 77 });
+  sustituirPrisma({ id: 4, merchantId: 7, quoteId: 77 });
   const r = await invocar(REQ(4));
 
   assert.equal(
