@@ -57,7 +57,7 @@ const MERCHANT = {
 
 /** Una factura ORIGINAL válida para rectificar, con el `status` que se quiera caracterizar. */
 const original = (status, over = {}) => ({
-  id: 11, merchantId: 1, customerId: 2, type: 'F1', number: '2026-CF-0007',
+  id: 11, merchantId: 7, customerId: 2, type: 'F1', number: '2026-CF-0007',
   total: '100.00', currency: 'EUR', quoteId: null, vfHash: null, status,
   lines: [{ concept: 'Reparación', qty: 1, price: 100, tax: 0.21 }],
   merchant: MERCHANT, ...over,
@@ -91,7 +91,7 @@ function sustituirPrisma(orig) {
 function restaurarPrisma() { for (const k of Object.keys(ORIG)) moduloPrisma.prisma[k] = ORIG[k]; }
 
 const rectify = (id = '11') =>
-  invocar(RUTA, 'post', '/:id/rectify', { params: { id }, body: {}, merchantId: 1, teamMemberId: null, query: {}, headers: {} });
+  invocar(RUTA, 'post', '/:id/rectify', { params: { id }, body: {}, merchantId: 7, teamMemberId: null, query: {}, headers: {} });
 
 // ─── 1. LOS DE ÉXITO (los que faltaban): R1 sobre pending y sobre paid FUNCIONA ──────────────────
 test('SCRUM-308 · caracterización · R1 sobre una factura PENDING → HOY emite (201)', async (t) => {
@@ -163,7 +163,7 @@ test('SCRUM-308 · caracterización · corte isReceiptNumber (J-) → 409 cannot
 test('SCRUM-308 · caracterización · id no numérico → 400 · factura inexistente → 404', async (t) => {
   t.after(restaurarPrisma);
   sustituirPrisma(original('paid'));
-  const rBad = await invocar(RUTA, 'post', '/:id/rectify', { params: { id: 'abc' }, body: {}, merchantId: 1, query: {}, headers: {} });
+  const rBad = await invocar(RUTA, 'post', '/:id/rectify', { params: { id: 'abc' }, body: {}, merchantId: 7, query: {}, headers: {} });
   assert.equal(rBad.code, 400, 'id no numérico');
   moduloPrisma.prisma.invoice.findFirst = async () => null; // no existe
   const rNo = await rectify();

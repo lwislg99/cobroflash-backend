@@ -131,7 +131,7 @@ test('SCRUM-198 · ① el analizador ve las dos evasiones y NO marca lo legítim
   assert.equal(importaElBuilder(conImport).length, 1,
     '🔴 no reconoce el import directo del constructor fiscal');
 
-  assert.equal(llamadasAlEmisor(parsear('x.ts', `const r = await ${EMISOR}({ merchantId: 1 });`)).length, 1,
+  assert.equal(llamadasAlEmisor(parsear('x.ts', `const r = await ${EMISOR}({ merchantId: 7 });`)).length, 1,
     '🔴 no reconoce ni la llamada legítima: no está mirando nodos de llamada');
 
   // Negativo 1: el nombre en un COMENTARIO no es un nodo. Sin esto, este mismo fichero —que

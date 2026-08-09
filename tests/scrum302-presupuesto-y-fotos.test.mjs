@@ -426,7 +426,7 @@ const moduloPrisma = await import(DIST + 'core/db/prisma.js');
 const routerDe = (mod) => mod.default?.default ?? mod.default;
 
 const ALBARAN = {
-  id: 7, merchantId: 1, jobId: 42, numero: 'ALB-2026-0003',
+  id: 7, merchantId: 7, jobId: 42, numero: 'ALB-2026-0003',
   fecha: new Date('2026-07-20T10:00:00Z'), modoValoracion: 'VALORADO',
   lineas: [{ concepto: 'Bajante PVC 110', cantidad: 3, unidad: 'm', precio: 18, iva: 21 }],
   estado: 'firmado', version: 4, notas: '', invoiceId: null,
@@ -455,7 +455,7 @@ async function invocarDetalle({ job, quote }) {
     setHeader() { return this; },
   };
   const hs = capa.route.stack;
-  await hs[hs.length - 1].handle({ params: { id: '7' }, body: {}, merchantId: 1, query: {}, headers: {} }, res, () => {});
+  await hs[hs.length - 1].handle({ params: { id: '7' }, body: {}, merchantId: 7, query: {}, headers: {} }, res, () => {});
   return { salida, wheres };
 }
 
@@ -479,7 +479,7 @@ test('SCRUM-302 · ③ MULTI-TENANT: el presupuesto se lee filtrando por `mercha
   });
   assert.equal(wheres.length, 1, '🔴 el presupuesto no se consultó exactamente una vez');
   assert.equal(
-    wheres[0]?.merchantId, 1,
+    wheres[0]?.merchantId, 7,
     '🔴 la consulta del presupuesto NO filtra por `merchantId`: con solo el `id`, un albarán '
     + 'podría enlazar —y nombrar— el presupuesto de OTRO merchant. Regla 2, y aquí además el '
     + 'número del presupuesto ajeno se pintaría en pantalla.',

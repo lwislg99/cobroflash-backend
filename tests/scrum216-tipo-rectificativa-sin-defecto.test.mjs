@@ -266,7 +266,7 @@ const fakePrisma = (invoices) => ({
 
 const build = async (invoices, opts) => {
   const { buildVerifactuRegistrosXml } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
-  return buildVerifactuRegistrosXml({ merchantId: 1, year: 2026 }, fakePrisma(invoices), opts);
+  return buildVerifactuRegistrosXml({ merchantId: 7, year: 2026 }, fakePrisma(invoices), opts);
 };
 
 test('SCRUM-216 · POR DEFECTO la R1 se declara, y se declara como I', async () => {

@@ -125,7 +125,7 @@ const MERCHANT = { id: 1, name: 'QA', country: 'ES', taxId: 'B12345678', invoice
 const CUSTOMER = { id: 2, name: 'Cliente QA', phone: telefonoDePrueba(263) };
 
 const quoteBase = (lines) => ({
-  id: 7, merchantId: 1, customerId: 2, status: 'accepted', currency: 'EUR',
+  id: 7, merchantId: 7, customerId: 2, status: 'accepted', currency: 'EUR',
   lines, Invoice: [], billingPlan: null, customBillingPlan: null,
   merchant: MERCHANT, customer: CUSTOMER,
 });
@@ -167,7 +167,7 @@ function exigir409ConCopy(resp, copyEsperado, quien) {
 test('SCRUM-263 · POST /admin/quotes/:id/invoice — 409 con el copy del PROFESIONAL', async () => {
   sustituirPrisma(quoteBase([LINEA_SIN_IMPORTE]));
   const resp = await invocar('modules/system/app/routes/quotesAdmin.routes.js', 'post', '/:id/invoice',
-    { params: { id: '7' }, body: {}, merchantId: 1, query: {}, headers: {} });
+    { params: { id: '7' }, body: {}, merchantId: 7, query: {}, headers: {} });
   exigir409ConCopy(resp, COPY_ADMIN_SIN_LINEAS, 'quotesAdmin /:id/invoice');
 });
 
@@ -176,7 +176,7 @@ test('SCRUM-263 · POST /admin/quotes/:id/invoice-manual — 409 con el copy del
   // tramos, y con un plan responde `has_billing_plan` antes de llegar al porton. Medido.
   sustituirPrisma({ ...quoteBase([LINEA_SIN_IMPORTE]), paymentTerms: 'MANUAL' });
   const resp = await invocar('modules/system/app/routes/quotesAdmin.routes.js', 'post', '/:id/invoice-manual',
-    { params: { id: '7' }, body: { amount: '0.00' }, merchantId: 1, query: {}, headers: {} });
+    { params: { id: '7' }, body: { amount: '0.00' }, merchantId: 7, query: {}, headers: {} });
   exigir409ConCopy(resp, COPY_ADMIN_SIN_LINEAS, 'quotesAdmin /:id/invoice-manual');
 });
 
@@ -184,12 +184,12 @@ test('SCRUM-263 · POST /admin/jobs/:id/collect-rest — 409 con el copy del PRO
   const quote = quoteBase([LINEA_SIN_IMPORTE]);
   sustituirPrisma(quote, {
     job: {
-      findFirst: async () => ({ id: 3, merchantId: 1, quoteId: 7, status: 'terminado', quote }),
-      findUnique: async () => ({ id: 3, merchantId: 1, quoteId: 7, status: 'terminado', quote }),
+      findFirst: async () => ({ id: 3, merchantId: 7, quoteId: 7, status: 'terminado', quote }),
+      findUnique: async () => ({ id: 3, merchantId: 7, quoteId: 7, status: 'terminado', quote }),
     },
   });
   const resp = await invocar('modules/jobs/app/routes/jobs.routes.js', 'post', '/:id/collect-rest',
-    { params: { id: '3' }, body: {}, merchantId: 1, query: {}, headers: {} });
+    { params: { id: '3' }, body: {}, merchantId: 7, query: {}, headers: {} });
   exigir409ConCopy(resp, COPY_ADMIN_SIN_LINEAS, 'jobs /:id/collect-rest');
 });
 
@@ -224,7 +224,7 @@ test('SCRUM-264 · POST /admin/invoices/:id/rectify — 409 con el copy del PROF
   // entonces no cargaba peso y ahora sí — y una factura pendiente con una línea a 0 es
   // exactamente el caso real que esta superficie atiende.
   const ORIGINAL = {
-    id: 11, merchantId: 1, type: 'F1', number: '2026-CF-0007', total: '0.00', status: 'pending',
+    id: 11, merchantId: 7, type: 'F1', number: '2026-CF-0007', total: '0.00', status: 'pending',
     lines: [{ concept: 'Pendiente de precio', qty: 1, price: 0 }], merchant: MERCHANT,
   };
   moduloPrisma.prisma.invoice = {
@@ -233,7 +233,7 @@ test('SCRUM-264 · POST /admin/invoices/:id/rectify — 409 con el copy del PROF
   };
 
   const resp = await invocar('modules/system/app/routes/invoicesAdmin.routes.js', 'post', '/:id/rectify',
-    { params: { id: '11' }, body: {}, merchantId: 1, query: {}, headers: {} });
+    { params: { id: '11' }, body: {}, merchantId: 7, query: {}, headers: {} });
   exigir409ConCopy(resp, COPY_ADMIN_SIN_LINEAS, 'invoicesAdmin /:id/rectify');
 });
 
@@ -244,7 +244,7 @@ test('SCRUM-263 · SUELO: con una línea CON importe, NO sale el rechazo por fal
   // cualquier otro motivo. El control demuestra que el 409 lo produce el portón y no el decorado.
   sustituirPrisma(quoteBase([LINEA_CON_IMPORTE]));
   const resp = await invocar('modules/system/app/routes/quotesAdmin.routes.js', 'post', '/:id/invoice',
-    { params: { id: '7' }, body: {}, merchantId: 1, query: {}, headers: {} });
+    { params: { id: '7' }, body: {}, merchantId: 7, query: {}, headers: {} });
 
   assert.ok(resp, '🔴 el handler no respondió nada con líneas válidas');
   assert.notEqual(resp.body?.error, ERROR_SIN_LINEAS,

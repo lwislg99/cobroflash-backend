@@ -98,7 +98,7 @@ test('SCRUM-311 · NEGATIVO: el fichero real de quotesView no dispara sus 36 uso
     fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/quotesView.js'), 'utf8'),
     'public/dashboard/js/quotesView.js',
   );
-  const sinExcepcion = c.hallazgos.filter((h) => !esExcepcion(h));
+  const sinExcepcion = c.hallazgos.filter((h) => !esExcepcion(h, c.hallazgos));
   assert.deepEqual(sinExcepcion, [],
     '🔴 el guard está tumbando usos legítimos de quotesView.js. De sus 37 apariciones de `||` ' +
     'sobre una lectura de input, 36 son correctas: un guard que las caza se acaba desactivando.');
@@ -106,7 +106,7 @@ test('SCRUM-311 · NEGATIVO: el fichero real de quotesView no dispara sus 36 uso
 
 // ── EL REPO, HOY ─────────────────────────────────────────────────────────────
 test('SCRUM-311 · ningún sitio del front inventa una cantidad', () => {
-  const vivos = HALLAZGOS.filter((h) => !esExcepcion(h));
+  const vivos = HALLAZGOS.filter((h) => !esExcepcion(h, HALLAZGOS));
   const detalle = vivos.map((h) => `   · ${h.ruta}:${h.linea} — \`${h.sujeto} || ${h.reserva}\``).join('\n');
   assert.equal(vivos.length, 0,
     '🔴 SCRUM-271/311: una lectura de input cae a un número distinto de cero. Un `<input ' +
@@ -117,11 +117,21 @@ test('SCRUM-311 · ningún sitio del front inventa una cantidad', () => {
 test('SCRUM-311 · toda excepción viva lleva su motivo escrito', () => {
   // Una excepción sin motivo se hereda para siempre. Y si el sitio se arregla, la excepción debe
   // desaparecer con él: una excepción que ya no corresponde a nada es ruido que enseña a ignorar.
-  for (const e of EXCEPCIONES_CON_MOTIVO) {
-    assert.ok(e.motivo && e.motivo.length > 40, `la excepción de ${e.ruta}:${e.linea} no explica por qué`);
-    assert.match(e.motivo, /SCRUM-\d+/, 'una excepción pendiente de decisión cita su ticket');
-    const c = censarCantidadInventada(fs.readFileSync(path.join(RAIZ, e.ruta), 'utf8'), e.ruta);
-    assert.ok(c.hallazgos.some((h) => h.linea === e.linea),
-      `🔴 la excepción de ${e.ruta}:${e.linea} ya no corresponde a nada: bórrala`);
-  }
+    for (const e of EXCEPCIONES_CON_MOTIVO) {
+      const id = `${e.ruta} · ${e.sujeto} || ${e.reserva}`;
+      assert.ok(e.motivo && e.motivo.length > 40, `la excepcion de ${id} no explica por que`);
+      assert.match(e.motivo, /SCRUM-\d+/, 'una excepcion pendiente de decision cita su ticket');
+      // SCRUM-353: la correspondencia se comprueba por el HECHO (sujeto + reserva), no por la
+      // linea. Antes esto caia cada vez que alguien insertaba codigo MAS ARRIBA sin tocar lo
+      // vigilado, y habia que venir a actualizar un numero que no significaba nada.
+      const c = censarCantidadInventada(fs.readFileSync(path.join(RAIZ, e.ruta), 'utf8'), e.ruta);
+      const gemelos = c.hallazgos.filter(
+        (h) => h.sujeto === e.sujeto && String(h.reserva) === String(e.reserva),
+      );
+      assert.ok(gemelos.length >= 1, `🔴 la excepcion de ${id} ya no corresponde a nada: borrala`);
+      assert.equal(gemelos.length, 1,
+        `🔴 la excepcion de ${id} casa con ${gemelos.length} sitios (lineas ` +
+        `${gemelos.map((g) => g.linea).join(', ')}): una excepcion que se ensancha sola es la que ` +
+        'alguien acaba ampliando. Distinguelos o quitala.');
+    }
 });

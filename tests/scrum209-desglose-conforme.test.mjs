@@ -50,7 +50,7 @@ const fakePrisma = (invoices) => ({
 
 const build = async (invoices) => {
   const { buildVerifactuRegistrosXml } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
-  const { xml } = await buildVerifactuRegistrosXml({ merchantId: 1, year: 2026 }, fakePrisma(invoices));
+  const { xml } = await buildVerifactuRegistrosXml({ merchantId: 7, year: 2026 }, fakePrisma(invoices));
   return xml;
 };
 
@@ -128,7 +128,7 @@ test('SCRUM-209 (caso rojo) · el XML anterior al arreglo NO valida, y falla por
 /** Igual que `build`, pero devuelve también el parte de exclusiones. */
 const buildCompleto = async (invoices) => {
   const { buildVerifactuRegistrosXml } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
-  return buildVerifactuRegistrosXml({ merchantId: 1, year: 2026 }, fakePrisma(invoices));
+  return buildVerifactuRegistrosXml({ merchantId: 7, year: 2026 }, fakePrisma(invoices));
 };
 
 test('SCRUM-209 · un tramo al 0% NO se declara: se excluye esa factura y se dice cuál', async () => {
@@ -192,7 +192,7 @@ test('SCRUM-209 · una rectificativa (importes en negativo) SÍ se clasifica y v
   });
   const { buildVerifactuRegistrosXml } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
   const { xml } = await buildVerifactuRegistrosXml(
-    { merchantId: 1, year: 2026 }, fakePrisma([r1]), { modoTipoRectificativa: 'INCREMENTAL_I' },
+    { merchantId: 7, year: 2026 }, fakePrisma([r1]), { modoTipoRectificativa: 'INCREMENTAL_I' },
   );
   const { valido, errores } = await validarRegistrosXml(xml, 'rectificativa.xml');
   assert.equal(valido, true, `🔴 la rectificativa no valida:\n${errores.join('\n')}`);
