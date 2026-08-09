@@ -11,7 +11,7 @@
 // invoicesAdmin R1) aplican VeriFactu INLINE; unificarlos a lazy cambiaría su comportamiento
 // (regla 9 / decisión fundador). Se deja para un ticket aparte con su propia revisión.
 import { Prisma } from '@prisma/client';
-import { allocateInvoiceNumber, isReceiptNumber } from './invoiceNumber.service';
+import { allocateInvoiceNumber, isReceiptNumber, type OrigenC7 } from './invoiceNumber.service';
 import type { ActorAudit } from '../../system/audit.service'; // SCRUM-207
 
 export interface AlbaranRef {
@@ -32,6 +32,22 @@ export interface EmitInvoiceInput {
   stageLabel?: string | null;
   /** SCRUM-207 · OBLIGATORIO: quién emite. Los 2 llamadores de C7 son rutas de admin. */
   actor: ActorAudit;
+  /**
+   * SCRUM-347 · OBLIGATORIO: de cuál de los cuatro caminos de `emitInvoice` nace esta factura.
+   *
+   * Hasta hoy esta función fijaba `camino: 'C7'` a fuego, así que la recapitulativa, el parcial de
+   * albarán, el albarán→factura y la suelta se registraban con la MISMA etiqueta. En una
+   * inspección son cuatro historias distintas.
+   *
+   * Va por parámetro y no se deduce: el origen solo lo sabe quien llama. Inferirlo de
+   * `albaranRefs != null` sería sacar el origen de un dato que no está para eso — y en un registro
+   * fiscal, deducir es inventar.
+   *
+   * MISMO PATRÓN QUE `actor` (SCRUM-207): obligatorio por tipo, así que **un llamador nuevo no
+   * compila hasta declarar de dónde viene**. Es la forma más barata de guard y la más difícil de
+   * saltarse.
+   */
+  origen: OrigenC7;
 }
 
 /**
@@ -40,7 +56,9 @@ export interface EmitInvoiceInput {
  */
 export async function emitInvoice(tx: Prisma.TransactionClient, input: EmitInvoiceInput) {
   const number = await allocateInvoiceNumber(tx, input.merchantId, {
-    camino: 'C7', actor: input.actor,
+    // SCRUM-347: el camino lo dice el LLAMADOR. Antes iba 'C7' a fuego y los cuatro
+    // orígenes se registraban igual.
+    camino: input.origen, actor: input.actor,
   });
   return tx.invoice.create({
     data: {

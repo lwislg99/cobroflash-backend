@@ -125,6 +125,7 @@ router.post('/', requireRole('admin'), async (req, res) => {
         lines: val.lineas,
         quoteId: null, // ESTO es la factura suelta
         actor: actorDeRequest(req),
+        origen: 'C7-suelta', // SCRUM-347: nace sin presupuesto ni albarán detrás (A0.5)
       }),
     );
 

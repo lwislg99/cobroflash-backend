@@ -27,7 +27,44 @@ export type CaminoEmision =
   | 'C4' // emisión manual (SCRUM-178)
   | 'C5' // rectificativa R1 (SCRUM-153)
   | 'C6' // un cobro pagado se convierte en factura (webhooks e interno)
-  | 'C7'; // `emitInvoice()` compartido — recapitulativa y albarán parcial
+  | OrigenC7; // SCRUM-347: los cuatro de `emitInvoice()` — ver abajo
+
+/**
+ * SCRUM-347 · LOS CUATRO CAMINOS QUE `C7` METÍA EN LA MISMA ETIQUETA.
+ *
+ * `C7` no era un fallo de la auditoría: **era un cajón**. La auditoría registra el origen desde
+ * SCRUM-207 —`meta.camino`, obligatorio por tipo— y distingue bien seis. El séptimo etiquetaba a
+ * `emitInvoice()` ENTERO, y por ahí pasan cuatro caminos con historias distintas.
+ *
+ * En una inspección, «esta factura nació de un albarán firmado» y «ésta nació suelta» son dos
+ * cosas distintas — y hasta hoy las dos eran `C7`.
+ *
+ * Censo DERIVADO por AST (SCRUM-347), 199 ficheros `.ts` barridos, 4 llamadores:
+ *   · `POST /albaranes/:id/facturar-parcial`      → `C7-parcial`
+ *   · `POST /albaranes/:id/convertir-en-factura`  → `C7-albaran`      (A0.4)
+ *   · `emitirRecapitulativas()`                   → `C7-recapitulativa`
+ *   · `POST /admin/invoices`                      → `C7-suelta`       (A0.5)
+ *
+ * ⚠️ `'C7'` A SECAS YA NO EXISTE EN EL TIPO, y es deliberado: dejarlo habría permitido que un
+ * llamador nuevo volviera a elegir la etiqueta vaga. Lo que sí sigue existiendo es el DATO: las
+ * facturas ya registradas conservan su `meta.camino: 'C7'` histórico. **No se reescribe, no se
+ * backfillea y no se supone de cuál de los cuatro venía** (regla 29). No saber su origen es un
+ * dato, no un hueco: el censo las cuenta como «N con origen C7 sin desglosar».
+ *
+ * Se comprobó antes de ampliar (condición del GO) que nadie INDEXA por este tipo: un
+ * `ALGO[camino]` se habría quedado en `undefined` **en silencio** al añadir variantes. Medido por
+ * AST sobre 714 ficheros — 0 indexados, 0 switches, 1 anotación de tipo.
+ */
+export type OrigenC7 =
+  | 'C7-parcial'         // parcial de un albarán
+  | 'C7-albaran'         // albarán → factura (A0.4)
+  | 'C7-recapitulativa'  // recapitulativa mensual
+  | 'C7-suelta';         // factura suelta desde admin (A0.5)
+
+/** Los cuatro, para que un guard los DERIVE en vez de reescribir la lista. */
+export const ORIGENES_C7: readonly OrigenC7[] = [
+  'C7-parcial', 'C7-albaran', 'C7-recapitulativa', 'C7-suelta',
+] as const;
 
 /**
  * Justificantes de cobro (V0-0): los merchants ES reales con `INVOICING_ES_ENABLED`

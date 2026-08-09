@@ -921,6 +921,7 @@ router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
         albaranRefs: [{ albaranId: albaran.id, numero: albaran.numero, fecha: albaran.fecha }],
         quoteId: null,
         actor: actorDeRequest(req),
+        origen: 'C7-parcial', // SCRUM-347: parcial de albarán, ya no «C7» a secas
       });
       if (isReceiptNumber(inv.number)) throw new Error('facturacion_no_disponible');
 
@@ -1100,6 +1101,7 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
         // es lo que permite auditar después que se cobró lo que el cliente firmó.
         quoteId: quote!.id,
         actor: actorDeRequest(req),
+        origen: 'C7-albaran', // SCRUM-347: albarán → factura (A0.4)
       });
       if (isReceiptNumber(inv.number)) throw new Error('facturacion_no_disponible');
 
