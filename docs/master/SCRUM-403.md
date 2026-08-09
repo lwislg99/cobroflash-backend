@@ -23,11 +23,44 @@ profesional custodia. Sobre ese número la gente decide si puede comprarse la fu
 Con los vectores del fundador: `1.000 + 210` contra `400 + 84`. El beneficio es **600**. Restando
 totales salen **726** — 126 € de IVA enseñados como beneficio.
 
-- **El lado de la FACTURA sí se puede derivar** y se hace: `baseDeFactura()` usa `calcVatBreakdown`
-  sobre `lines`. Con su suelo: **si no hay líneas utilizables NO se inventa la base**, se devuelve
-  `medible: false`. `null` no es cero — se sumarían igual y significan lo contrario.
 - **El lado del GASTO no es derivable.** `Expense` solo tiene `amount` y **en ninguna parte está
   escrito si lleva IVA**. Suponerlo sería cometer el defecto que este ticket denuncia.
+- **Y el lado de la FACTURA tampoco se puede entregar hoy**, aunque técnicamente sea derivable.
+  El motivo está abajo: los dos guards que lo impiden tienen razón.
+
+## 🔴 El módulo que construí y NO entra — lo cazaron dos guards
+
+La primera versión traía `src/modules/reports/domain/baseSinIva.ts` con `baseDeFactura()`. **Se
+retira.** Dos trinquetes independientes dijeron lo mismo desde lados opuestos:
+
+**① SCRUM-389** retiró primero su `sumaDeBases()`: agregar un periodo por un camino propio es una
+segunda cifra oficial del mismo trimestre. Su criterio manda leer el LIBRO.
+
+**② SCRUM-411** cazó lo que quedó: un módulo de dominio **que nadie alcanza**. Y tenía razón —
+medido: cero importadores, y `reports.routes.ts:71` seguía sumando `Number(inv.total)`. El
+«Beneficio neto» restaba **exactamente igual que antes**, con un módulo verde al lado que parecía
+arreglarlo. **Eso es peor que no haberlo hecho**: el siguiente que lo lea creería que está resuelto.
+
+### Por qué no se pudo cablear, con el dato
+
+`reports.routes.ts` tiene tres rutas, y **el libro ya está cableado en una de ellas**:
+
+| ruta | qué calcula | de dónde |
+|---|---|---|
+| `/vat` (:226) | el IVA del trimestre | **`leerLibroRegistro`** (:240) — agregador único desde SCRUM-389 |
+| `/pl` (:18) | ingresos · gastos · **beneficio** | `Invoice.total` agrupado por **`paidAt`** |
+
+El libro no puede servir a `/pl`: **filtra por `createdAt`** (emisión) y su asiento **no expone
+`paidAt`** (0 ocurrencias). Una factura emitida en marzo y cobrada en junio cae en meses distintos:
+son dos poblaciones. Hacerlo posible exige **modificar el libro**, y el permiso sobre A6 era de
+lectura → otro ticket, otro GO.
+
+Y cablear `baseDeFactura` a `/pl` habría **esquivado el censo de SCRUM-389 por indirección**: ese
+censo busca llamadores de `calcVatBreakdown`, y pasar por un módulo intermedio lo deja verde sin
+estar bien. Es lo mismo que rechacé al negarme a censarlo como `DOCUMENTO`.
+
+> **Un módulo de dominio sin llamadores no se entrega.** Lo que sí se entrega es todo lo demás: la
+> medición, el censo con su guard, la especificación de columnas y la microcopy propuesta.
 
 > **El beneficio sigue sin ser el beneficio hasta que el gasto tenga su base.** Hay un test que
 > falla el día que `Expense` gane esas columnas, para que este aviso no sobreviva a su motivo.

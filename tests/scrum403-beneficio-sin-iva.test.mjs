@@ -22,7 +22,17 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { soloEjecutable } from './_guard-texto.mjs';
-import { baseDeFactura } from '../dist/modules/reports/domain/baseSinIva.js';
+import { calcVatBreakdown } from '../dist/modules/invoicing/domain/vat.service.js';
+
+/** El desglose de UNA factura, con la primitiva compartida. El módulo que envolvía esto se
+ * retiró: nadie lo alcanzaba (SCRUM-411) y agregarlo habría chocado con SCRUM-389. */
+const baseDeFactura = (inv) => {
+  const lines = Array.isArray(inv?.lines) ? inv.lines : null;
+  if (!lines || lines.length === 0) return { base: null, cuota: null, medible: false };
+  const { base, cuota } = calcVatBreakdown(lines);
+  if (!Number.isFinite(base) || !Number.isFinite(cuota)) return { base: null, cuota: null, medible: false };
+  return { base, cuota, medible: true };
+};
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (p) => fs.readFileSync(path.join(RAIZ, p), 'utf8');
@@ -165,32 +175,9 @@ test('SCRUM-403 · el censo NOMBRA las cifras afectadas, para que ninguna se que
 
 // ── EL CRITERIO, FIJADO ─────────────────────────────────────────────────────────────────
 
-test('SCRUM-403 · la base se deriva con `calcVatBreakdown`, no con una copia de la aritmética', () => {
-  const src = soloEjecutable(leer('src/modules/reports/domain/baseSinIva.ts'), { almohadillaEsComentario: false });
-  assert.match(
-    src, /import \{ calcVatBreakdown \} from '\.\.\/\.\.\/invoicing\/domain\/vat\.service'/,
-    '🔴 el módulo ya no importa `calcVatBreakdown`: estaría replicando el cálculo de IVA. Dos copias ' +
-      'de esa aritmética envejecen por separado, y la que envejece no avisa.',
-  );
-  // Y no reimplementa el desglose por su cuenta.
-  for (const prohibido of ['* 0.21', '/ 1.21', '* 1.21', '0.21']) {
-    assert.ok(
-      !src.includes(prohibido),
-      `🔴 el módulo contiene «${prohibido}»: está aplicando un tipo de IVA supuesto en vez de leer el ` +
-        'desglose real de las líneas.',
-    );
-  }
-});
 
-test('SCRUM-403 · el módulo NO toca el camino de emisión (regla 38)', () => {
-  const vat = leer('src/modules/invoicing/domain/vat.service.ts');
-  assert.match(vat, /export function calcVatBreakdown\(/, '🔴 ESCÁNER CIEGO: `calcVatBreakdown` ya no está donde este guard la busca');
-  // Este ticket solo LEE: no hay escritura de facturas ni de gastos en el módulo nuevo.
-  const src = soloEjecutable(leer('src/modules/reports/domain/baseSinIva.ts'), { almohadillaEsComentario: false });
-  for (const escritura of ['prisma.', 'update(', 'create(', 'delete(']) {
-    assert.ok(!src.includes(escritura), `🔴 el módulo de informes escribe (${escritura}): solo debe leer.`);
-  }
-});
+
+
 
 // ── LO QUE FALTA, DECLARADO ─────────────────────────────────────────────────────────────
 

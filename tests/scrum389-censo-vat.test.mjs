@@ -76,16 +76,6 @@ const CENSO = {
   'src/modules/exports/domain/exportData.ts': { veredicto: 'DOCUMENTO', nota: 'una fila por factura en el CSV; no suma un total de periodo' },
   'src/modules/system/app/routes/invoicesAdmin.routes.ts': { veredicto: 'DOCUMENTO', nota: 'previsualización de UNA factura suelta (SCRUM-289)' },
   'src/modules/system/app/routes/quoteDecisionLanding.routes.ts': { veredicto: 'DOCUMENTO', nota: 'desglose del presupuesto que ve el cliente' },
-  // SCRUM-403 · desglosa UNA factura para Informes y NO agrega periodo.
-  //
-  // Su primera versión SÍ traía un `sumaDeBases()`, y este censo lo cazó. Se retiró en vez de
-  // censarlo como DOCUMENTO: habría sido mentir para pasar un guard, y habría creado la segunda
-  // cifra oficial del mismo trimestre que SCRUM-389 vino a cerrar.
-  //
-  // El total del periodo tendrá que salir del LIBRO, y hoy el libro no puede darlo: filtra por
-  // `createdAt` y su asiento no expone `paidAt` (0 ocurrencias), mientras que Informes agrupa por
-  // fecha de COBRO. Hacerlo posible exige tocar el libro → otro ticket con su GO.
-  'src/modules/reports/domain/baseSinIva.ts': { veredicto: 'DOCUMENTO', nota: 'base y cuota de UNA factura para Informes; sin suma de periodo (SCRUM-403)' },
 };
 
 test('SCRUM-389 · SUELO: el extractor ENCUENTRA llamadores', () => {
