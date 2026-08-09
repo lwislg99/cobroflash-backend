@@ -58,7 +58,7 @@ const quoteCompleto = {
 
 /** Una factura con `quote` puesto o a null (la factura suelta de SCRUM-289). */
 const facturaCon = (quote) => ({
-  id: 11, merchantId: 1, number: '2026-CF-0007', currency: 'EUR', status: 'paid',
+  id: 11, merchantId: 7, number: '2026-CF-0007', currency: 'EUR', status: 'paid',
   createdAt: new Date('2026-07-02T09:00:00Z'), paidAt: new Date('2026-07-03T12:00:00Z'),
   total: '250.00', quoteId: quote ? 7 : null, chargeId: 5,
   merchant: { name: 'QA', legalName: 'QA SL', taxId: 'B1234', address: 'Calle X 1' },
@@ -76,7 +76,7 @@ function sustituirPrisma(factura) {
 function restaurarPrisma() { for (const k of Object.keys(ORIG)) moduloPrisma.prisma[k] = ORIG[k]; }
 
 const disputePackage = (id = '11') =>
-  invocar(RUTA, 'get', '/:id/dispute-package', { params: { id }, merchantId: 1 });
+  invocar(RUTA, 'get', '/:id/dispute-package', { params: { id }, merchantId: 7 });
 
 // ─── CARA A · CON presupuesto: renderiza igual que siempre ────────────────────────────────────────
 test('SCRUM-342 · dispute-package CON presupuesto → 200 y renderiza número, importe, firma y evidencia', async (t) => {

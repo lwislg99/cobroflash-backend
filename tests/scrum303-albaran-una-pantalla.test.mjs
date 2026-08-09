@@ -464,7 +464,7 @@ async function invocarAlta(job) {
   moduloPrisma.prisma.$transaction = async () => ({
     id: 9, jobId: job?.id ?? 1, numero: 'A-2026-0001', fecha: new Date(),
     modoValoracion: 'SIN_VALORAR', lineas: [], estado: 'borrador', version: 1,
-    merchantId: 1, createdAt: new Date(),
+    merchantId: 7, createdAt: new Date(),
   });
   const router = routerDe(await import(DIST + 'modules/jobs/app/routes/jobs.routes.js'));
   const capa = router.stack.find((l) => l.route?.path === '/:id/albaranes' && l.route?.methods?.post);
@@ -478,14 +478,14 @@ async function invocarAlta(job) {
   };
   const handlers = capa.route.stack;
   await handlers[handlers.length - 1].handle(
-    { params: { id: String(job?.id ?? 1) }, body: {}, merchantId: 1, query: {}, headers: {} },
+    { params: { id: String(job?.id ?? 1) }, body: {}, merchantId: 7, query: {}, headers: {} },
     res, () => {},
   );
   return salida;
 }
 
 test('SCRUM-303 · LAS DOS CARAS: sin presupuesto sigue dando 409 con su mensaje humano', async () => {
-  const r = await invocarAlta({ id: 3, merchantId: 1, quoteId: null });
+  const r = await invocarAlta({ id: 3, merchantId: 7, quoteId: null });
   assert.equal(r?.code, 409,
     `🔴 el guard de SCRUM-257 se ha debilitado: respondió ${r?.code} con ${JSON.stringify(r?.body)}`);
   assert.equal(r.body?.error, 'job_without_quote');
@@ -496,6 +496,6 @@ test('SCRUM-303 · LAS DOS CARAS: sin presupuesto sigue dando 409 con su mensaje
 test('SCRUM-303 · LAS DOS CARAS: con presupuesto sigue creando (201)', async () => {
   // El control que impide «arreglarlo» bloqueando todo: sin él, un guard que rechace SIEMPRE
   // dejaría el test de arriba en verde.
-  const r = await invocarAlta({ id: 4, merchantId: 1, quoteId: 77 });
+  const r = await invocarAlta({ id: 4, merchantId: 7, quoteId: 77 });
   assert.equal(r?.code, 201, `🔴 se bloquea también a los trabajos que SÍ tienen presupuesto: ${JSON.stringify(r?.body)}`);
 });

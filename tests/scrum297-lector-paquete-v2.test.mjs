@@ -32,14 +32,14 @@ import { verificarSobre } from '../dist/modules/jobs/domain/albaranVerificacion.
 /** Las CUATRO que estrena C5 y que el sobre v:2 sella. */
 const LAS_CUATRO = ['lugarEntrega', 'fechaEntrega', 'firmadoPorNombre', 'firmadoPorCalidad'];
 
-const JOB = { id: 7, titulo: 'Reforma baño', direccion: 'C/ Mayor 3', merchantId: 1, customerId: 70 };
+const JOB = { id: 7, titulo: 'Reforma baño', direccion: 'C/ Mayor 3', merchantId: 7, customerId: 70 };
 const CLIENTE = { id: 70, name: 'Ana Ruiz', legalName: null };
 const EMISOR = { name: 'Fontanería Paco', legalName: 'Paco SL', taxId: 'B12345678' };
 
 /** El albarán tal y como está en la BASE: con las cuatro columnas pobladas. */
 function albaranEnLaBase() {
   return {
-    id: 11, merchantId: 1, jobId: 7,
+    id: 11, merchantId: 7, jobId: 7,
     numero: 'ALB-2026-011',
     fecha: '2026-08-01T00:00:00.000Z',
     modoValoracion: 'con_precios',

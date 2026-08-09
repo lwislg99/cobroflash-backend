@@ -249,7 +249,7 @@ test('SCRUM-286 · el reordenado NO reintroduce la cantidad inventada de SCRUM-2
   // El guard vivo de SCRUM-311 vigila todo el front; esto lo comprueba en el fichero que este
   // ticket toca, para que el rojo apunte aquí si la forma vuelve por este reordenado.
   const c = censarCantidadInventada(FUENTE, RUTA);
-  const vivos = c.hallazgos.filter((h) => !esExcepcion(h));
+  const vivos = c.hallazgos.filter((h) => !esExcepcion(h, c.hallazgos));
   assert.deepEqual(vivos, [],
     '🔴 una lectura de input vuelve a caer a un número distinto de cero en quotesView.js:\n' +
     vivos.map((h) => `   · ${h.ruta}:${h.linea} — \`${h.sujeto} || ${h.reserva}\``).join('\n'));

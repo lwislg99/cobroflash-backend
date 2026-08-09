@@ -95,7 +95,7 @@ test('SCRUM-302 · cada campo clasificado dice POR QUÉ', () => {
 test('SCRUM-302 · 🔴 EL DUPLICADO NO SE LLEVA LA FIRMA, ni nada que afirme un hecho', () => {
   // El albarán de ayer: firmado, con evidencia, con PDF y ya facturado.
   const ayer = {
-    id: 7, merchantId: 1, jobId: 42, numero: 'ALB-2026-0003',
+    id: 7, merchantId: 7, jobId: 42, numero: 'ALB-2026-0003',
     fecha: new Date('2026-07-20T10:00:00Z'),
     modoValoracion: 'VALORADO',
     lineas: [{ concepto: 'Bajante PVC 110', cantidad: 3, unidad: 'm' }],
@@ -144,7 +144,7 @@ test('SCRUM-302 · 🔴 EL DUPLICADO NO SE LLEVA LA FIRMA, ni nada que afirme un
 test('SCRUM-302 · el duplicado se construye SUMANDO, no copiando y borrando', () => {
   // Restar deja pasar lo que nadie se acordó de restar — que es el fallo entero de este módulo.
   // Se comprueba con un campo que el modelo NO tiene: si se copiara el origen, aparecería.
-  const copia = datosDuplicado({ jobId: 1, merchantId: 1, lineas: [], campoInventado: 'no debería estar' });
+  const copia = datosDuplicado({ jobId: 1, merchantId: 7, lineas: [], campoInventado: 'no debería estar' });
   assert.equal(
     copia.campoInventado, undefined,
     '🔴 el duplicado arrastra campos que no están clasificados: se está copiando el origen y ' +
@@ -200,13 +200,13 @@ async function invocarDuplicar(origen) {
   };
   const hs = capa.route.stack;
   await hs[hs.length - 1].handle(
-    { params: { id: '7' }, body: {}, merchantId: 1, query: {}, headers: {} }, res, () => {},
+    { params: { id: '7' }, body: {}, merchantId: 7, query: {}, headers: {} }, res, () => {},
   );
   return { salida, creado, numeroPedidoDentroDeTx };
 }
 
 const ALBARAN_FIRMADO = {
-  id: 7, merchantId: 1, jobId: 42, numero: 'ALB-2026-0003',
+  id: 7, merchantId: 7, jobId: 42, numero: 'ALB-2026-0003',
   fecha: new Date('2026-07-20T10:00:00Z'), modoValoracion: 'VALORADO',
   lineas: [{ concepto: 'Bajante PVC 110', cantidad: 3, unidad: 'm', quoteLineIndex: 0 }],
   estado: 'firmado', version: 4,

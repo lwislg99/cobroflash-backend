@@ -60,7 +60,7 @@ function restaurarPrisma() { for (const k of Object.keys(ORIG)) moduloPrisma.pri
 
 /** Cabecera del CSV suelto: se INVOCA la ruta y se parsea la 1ª línea (sin BOM), separador `;`. */
 async function cabeceraDelSuelto() {
-  const r = await invocar(RUTA, 'get', '/expenses.csv', { query: {}, merchantId: 1, teamMemberId: null, headers: {} });
+  const r = await invocar(RUTA, 'get', '/expenses.csv', { query: {}, merchantId: 7, teamMemberId: null, headers: {} });
   assert.ok(r && typeof r.body === 'string',
     `🔴 SUELO: GET /expenses.csv no devolvió un CSV (body=${typeof r?.body}); no se puede derivar su cabecera`);
   const sinBom = r.body.replace(/^﻿/, '');
@@ -115,7 +115,7 @@ test('SCRUM-343 · dos caras: ZIP y suelto producen un CSV alineado, y el suelto
   assert.equal(zip.rows[0].split(';').length, zip.header.length, 'ZIP: la fila tiene tantos campos como columnas');
 
   // suelto
-  const r = await invocar(RUTA, 'get', '/expenses.csv', { query: {}, merchantId: 1, teamMemberId: null, headers: {} });
+  const r = await invocar(RUTA, 'get', '/expenses.csv', { query: {}, merchantId: 7, teamMemberId: null, headers: {} });
   const lineas = r.body.replace(/^﻿/, '').split('\r\n');
   const cab = lineas[0].split(';');
   const fila = lineas[1].split(';');
