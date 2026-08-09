@@ -43,10 +43,14 @@ export async function leerPaqueteEvidencias(
       select: {
         id: true, merchantId: true, jobId: true, numero: true, fecha: true,
         modoValoracion: true, lineas: true, notas: true, evidenciaFirma: true,
-        // ⚠️ SIN `lugarEntrega`: ese campo llega con SCRUM-300 (C5) y HOY NO EXISTE en el
-        // esquema — pedirlo revienta la consulta entera. El barrido de SCRUM-371 tampoco lo
-        // selecciona, y `entradaDesdeFilas` lo resuelve a `null`, que es exactamente lo que
-        // se selló en los sobres v:1. Cuando C5 entre, se añade aquí y en el barrido a la vez.
+        // ✅ SCRUM-300 (C5) YA ESTÁ EN EL ESQUEMA: las cuatro columnas existen y `entradaDesdeFilas`
+        // las lee para recalcular el hash de un sobre v:2. Sin pedirlas aquí, el adaptador las
+        // encontraría vacías y el paquete declararía MANIPULADOS albaranes intactos — sobre toda
+        // la población a la vez, que es la peor salida posible de esta herramienta.
+        //
+        // La rueda de SCRUM-297 saltó en rojo al mergear C5 y nombró exactamente estas cuatro.
+        // Para eso existía: para que nadie tuviera que acordarse.
+        lugarEntrega: true, fechaEntrega: true, firmadoPorNombre: true, firmadoPorCalidad: true,
         invoiceId: true,
       },
     }) as Promise<(FilaAlbaranFirmado & { invoiceId: number | null })[]>,

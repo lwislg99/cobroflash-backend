@@ -53,17 +53,58 @@ function arbol(ruta) {
  * ① LAS FUENTES DEL SELLADOR — de la FIRMA REAL de `computeAlbaranContentHash`, no de una lista.
  * Si mañana el sellador gana un campo, aparece aquí solo.
  */
-function fuentesDelSellador() {
+function fuentesDelSellador(nombreDelSellador = 'computeAlbaranContentHash') {
   const sf = arbol(F_SELLADOR);
+
+  /** Los campos de un tipo literal `{ a: X; b: Y }`. */
+  const camposDeLiteral = (tipo) => tipo.members
+    .filter((m) => ts.isPropertySignature(m) && m.name)
+    .map((m) => m.name.getText(sf));
+
+  /**
+   * ⚠️ EL PARÁMETRO PUEDE VENIR DE DOS FORMAS, Y LAS DOS DICEN LO MISMO:
+   *
+   *     computeAlbaranContentHash(params: { numero: string; … })    ← literal EN LÍNEA
+   *     computeAlbaranContentHash(params: AlbaranContenidoParams)   ← tipo CON NOMBRE
+   *
+   * Esto solo entendía la primera, y SCRUM-300 (C5) pasó a la segunda porque el despacho por
+   * versión que exige SCRUM-369 necesitaba dar nombre al tipo. Al mergear C5: cero fuentes
+   * derivadas → ninguna columna exigida → este guard habría pasado en VERDE. Y ese verde concreto
+   * acusa de MANIPULADOS a albaranes intactos, sobre toda la población a la vez.
+   *
+   * No llegó a pasar porque el SUELO se plantó. Pero el arreglo no es tocar el suelo: es que el
+   * derivador mire el HECHO —qué campos entran al sellador— y no la FORMA de escribirlos.
+   *
+   * Devuelve `null` cuando NO SUPO leer (nombre sin resolver en este fichero), que no es lo mismo
+   * que «no hay campos»: el suelo tiene que poder distinguirlos.
+   */
+  const camposDelTipo = (tipo) => {
+    if (!tipo) return null;
+    if (ts.isTypeLiteralNode(tipo)) return camposDeLiteral(tipo);
+    if (ts.isTypeReferenceNode(tipo)) {
+      const nombre = tipo.typeName.getText(sf);
+      let hallado = null;
+      const buscar = (n) => {
+        if (ts.isInterfaceDeclaration(n) && n.name.text === nombre) {
+          hallado = n.members.filter((m) => ts.isPropertySignature(m) && m.name).map((m) => m.name.getText(sf));
+          return;
+        }
+        if (ts.isTypeAliasDeclaration(n) && n.name.text === nombre && ts.isTypeLiteralNode(n.type)) {
+          hallado = camposDeLiteral(n.type);
+          return;
+        }
+        ts.forEachChild(n, buscar);
+      };
+      buscar(sf);
+      return hallado;
+    }
+    return null;
+  };
+
   let campos = null;
   const visitar = (n) => {
-    if (ts.isFunctionDeclaration(n) && n.name?.text === 'computeAlbaranContentHash') {
-      const tipo = n.parameters[0]?.type;
-      if (tipo && ts.isTypeLiteralNode(tipo)) {
-        campos = tipo.members
-          .filter((m) => ts.isPropertySignature(m) && m.name)
-          .map((m) => m.name.getText(sf));
-      }
+    if (ts.isFunctionDeclaration(n) && n.name?.text === nombreDelSellador) {
+      campos = camposDelTipo(n.parameters[0]?.type);
     }
     ts.forEachChild(n, visitar);
   };
