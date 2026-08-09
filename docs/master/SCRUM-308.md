@@ -58,3 +58,111 @@ emisión. Implementar el bloqueo (autorizados los tests, NO el cambio). El front
 - `tests/scrum308-caracterizacion-rectify.test.mjs` — 7 tests de caracterización, sin gate.
 
 **Ungated 1303 · 1236 pass · 0 fail · 67 skip.**
+
+
+---
+
+# SCRUM-308 · EL BLOQUEO (9-ago-2026) · No se rectifica una factura ANULADA
+
+**Medido contra:** `origin/main` = `111e7d2f6e10ab807d6f54e4e1a8a7201dd2a69e` · 2026-08-09T12:40:00+02:00
+**Tanda:** 2302 tests, 2229 pass, 0 fail, 73 gateados a staging
+
+> La caracterización de arriba ya estaba **mergeada** y dejó escrito: «autorizados los tests, NO el
+> cambio», y que el test del caso `annulled` **cambiaría su expectativa** cuando se decidiera el
+> bloqueo. Se decidió. Aquí está el cambio.
+
+## PASO 0 — había trabajo empezado, y estaba bien declarado
+
+| Qué | Resultado |
+|---|---|
+| ¿Rama con el 308? | `scrum-308-caracterizacion-rectify` — **ya mergeada** |
+| ¿Entrada? | sí, la de arriba |
+| ¿Tests? | `scrum308-caracterizacion-rectify.test.mjs`, con el caso `annulled` marcado «EN DISCUSIÓN» |
+| ¿El front? | **ya lo impedía**: «Rectificar» no se ofrece en `annulled` (registro B2, `invoiceDetailView.js:503`) |
+
+O sea: **el hueco era solo el backend**, que es justo lo que decía el título del ticket.
+
+## Las tres preguntas del encargo, medidas en la ruta
+
+`/rectify` ya cortaba por **tres** motivos: `cannot_rectify_rectification` (la original es una R1),
+**`already_rectified`** (ya tiene rectificativa) y `cannot_rectify_receipt` (es un justificante).
+**No miraba el `status`.**
+
+Así que la tercera pregunta —«rectificativa sobre una que YA fue rectificada: ¿se permite hoy?»—
+tiene respuesta y no hacía falta construir nada: **ya se impedía**. Este ticket no la toca, pero
+**la fija con test** para que no se pierda al meter la puerta nueva justo al lado.
+
+## El arreglo: AÑADIR una puerta, no cambiar cómo se emite
+
+Comprobado en el diff: **cero líneas borradas o modificadas** en `/rectify` —solo añadidas— y
+**cero cambios** en `invoicing.service.ts`, `invoiceNumber.service.ts`, `verifactu.service.ts` y
+`prisma/`. Es exactamente la forma autorizada (regla 38).
+
+**Y va ANTES de pedir número**, con guard que lo fija: comprobarlo después obligaría a abortar una
+factura ya numerada, y eso deja el hueco en la serie que hay que justificar ante Hacienda.
+
+## 🔴 LISTA BLANCA, y ése es el suelo del ticket
+
+Lo fácil habría sido «si el estado es anulado, bloquear». **No se hizo**, porque falla hacia el
+lado permisivo: un `status` nulo, ilegible o **uno nuevo que alguien añada mañana** pasarían la
+comprobación y emitirían.
+
+`puedeRectificarse` solo deja pasar `pending` y `paid`. Todo lo demás —incluido **no saber**— se
+bloquea.
+
+> Equivocarse hacia lo estricto cuesta un 409 que el profesional entiende. Equivocarse hacia lo
+> permisivo emite un documento fiscal que **no se deshace** (regla 29).
+
+Y **anulada y desconocido NO comparten código**: aplanarlos haría que un dato corrupto se leyera
+como «esta factura está anulada» y nadie mirase por qué. Son síntomas distintos y uno hay que
+investigarlo.
+
+## Verificado en rojo
+
+| # | Qué se rompe | Qué cae |
+|---|---|---|
+| 1 | Se quita la puerta (el defecto original) | 🔴 5 tests, incluida la caracterización |
+| 2 | Lista NEGRA en vez de blanca | 🔴 el suelo: «no saber el estado no es permiso para rectificar» |
+| 3 | La puerta se mueve **dentro de la transacción, tras pedir número** | 🔴 «abortar ahí dejaría un hueco en la serie» |
+| 4 | Anulada y desconocido comparten código | 🔴 el test que los separa |
+
+> **El rojo 3 no salió a la primera, y el fallo era mío:** moví la puerta a justo **antes** del
+> `$transaction`, donde **sigue ejecutándose antes** del número — o sea que no había violación que
+> cazar. La violación real es meterla **dentro**, después de `allocateInvoiceNumber`. Primera
+> hipótesis correcta: «el caso está mal elegido», no «el guard sobra».
+
+## El control positivo, que aquí pesa tanto como el negativo
+
+Esto mete una puerta en un camino fiscal que **hoy funciona**. Un bloqueo demasiado ancho sería
+peor que el defecto: dejaría al profesional sin la única forma legal de corregir una factura ya
+emitida. Hay test de que `pending` y `paid` **siguen rectificándose igual**, con la R1 naciendo en
+negativo.
+
+## Un fixture ajeno se quedó corto, y es la misma familia de siempre
+
+El test de SCRUM-264 (la quinta superficie del copy) montaba una factura **sin `status`**. Con la
+lista blanca, ese fixture se rechaza antes y el test dejaba de llegar al portón que comprueba.
+
+**Omitía un campo que entonces no cargaba peso y ahora sí.** Arreglado poniéndole `status:
+'pending'` —una factura pendiente con una línea a 0 es exactamente el caso real que esa superficie
+atiende—, no relajando nada. Es la otra cara de la lección del fixture con `id: 1`.
+
+## Microcopy
+
+El 409 lleva `[PENDIENTE microcopy oficial]`. **PROCEDENCIA: esta sección.** El **código** del
+error sí va en claro porque es diagnóstico, no texto de pantalla — y el front ramifica por código,
+nunca por el texto (SCRUM-151).
+
+**Regla 26:** no se explica nada. Ni por qué una anulada no se rectifica, ni VeriFactu, ni la AEAT.
+
+## La caracterización NO se borra
+
+El test del caso `annulled` cambia su expectativa de 201 a 409 **y se queda**. Su valor es
+precisamente que, el día que alguien reabra la puerta, el rojo salga **también** en el fichero que
+caracteriza la ruta. Un caso caracterizado que desaparece al arreglarse deja de vigilar el arreglo.
+
+Ficheros: `src/modules/invoicing/domain/rectificabilidad.ts` (nuevo — la decisión, pura) ·
+`src/modules/system/app/routes/invoicesAdmin.routes.ts` (la puerta, solo añadidos) ·
+`tests/scrum308-bloqueo-rectify.test.mjs` (11, nuevo) ·
+`tests/scrum308-caracterizacion-rectify.test.mjs` (la expectativa que cambia) ·
+`tests/scrum263-sin-lineas-409.test.mjs` (el fixture que se quedó corto).

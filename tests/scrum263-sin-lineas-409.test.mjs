@@ -217,8 +217,14 @@ test('SCRUM-264 · POST /admin/invoices/:id/rectify — 409 con el copy del PROF
   // `cannot_rectify_receipt` y no llegaría al portón. Y el `findFirst` distingue las dos
   // consultas por su `where`: la primera trae la original, la segunda busca si YA existe una
   // rectificativa y tiene que devolver `null` para no cortar con `already_rectified`.
+  //
+  // SCRUM-308 · `status: 'pending'` NO es adorno. Desde que `/rectify` mira el estado con LISTA
+  // BLANCA, un fixture sin `status` se rechaza antes con `cannot_rectify_unknown_status` y este
+  // test dejaría de llegar al portón que viene a comprobar. El fixture omitía un campo que
+  // entonces no cargaba peso y ahora sí — y una factura pendiente con una línea a 0 es
+  // exactamente el caso real que esta superficie atiende.
   const ORIGINAL = {
-    id: 11, merchantId: 1, type: 'F1', number: '2026-CF-0007', total: '0.00',
+    id: 11, merchantId: 1, type: 'F1', number: '2026-CF-0007', total: '0.00', status: 'pending',
     lines: [{ concept: 'Pendiente de precio', qty: 1, price: 0 }], merchant: MERCHANT,
   };
   moduloPrisma.prisma.invoice = {

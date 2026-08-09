@@ -112,18 +112,23 @@ test('SCRUM-308 · caracterización · R1 sobre una factura PAID → HOY emite (
 });
 
 // ─── 2. EL CASO QUE NADIE ESCRIBIÓ: R1 sobre una factura ANULADA ─────────────────────────────────
-test('SCRUM-308 · caracterización · R1 sobre una factura ANNULLED → HOY LA EMITE (⚠️ EN DISCUSIÓN)', async (t) => {
-  // 🔴 ESTO NO ESTÁ BENDECIDO. Describe el presente: /rectify no mira `status`, así que rectificar una
-  // ANULADA hoy produce una R1 (201). SCRUM-308 discute BLOQUEARLO (dos registros contradictorios
-  // encadenados en VeriFactu, regla 29 = no se deshace). Cuando se decida el bloqueo, este test
-  // CAMBIARÁ su expectativa — y que cambie es la señal de que el comportamiento cambió.
+test('SCRUM-308 · R1 sobre una factura ANNULLED → 409 (el bloqueo, ya decidido)', async (t) => {
+  // ✅ LA EXPECTATIVA CAMBIÓ, Y ESO ES EL MECANISMO FUNCIONANDO.
+  //
+  // Este test nació diciendo «HOY se emite (201), y NO está bendecido», con el encargo escrito de
+  // que cambiaría cuando se decidiera el bloqueo. Se decidió, se implementó, y aquí está el
+  // cambio: rectificar una anulada responde 409 NOMBRADO y no emite nada.
+  //
+  // Se conserva el test —no se borra— porque su valor es justo éste: **que el día que alguien
+  // reabra la puerta, el rojo salga aquí**, en el fichero que caracteriza la ruta, y no solo en el
+  // del bloqueo. Un caso caracterizado que desaparece al arreglarse deja de vigilar el arreglo.
   t.after(restaurarPrisma);
   sustituirPrisma(original('annulled'));
   const r = await rectify();
-  assert.equal(r.code, 201,
-    `HOY /rectify emite sobre una anulada (no mira status). Si esto ya no es 201, el bloqueo de ` +
-    `SCRUM-308 se aplicó — actualiza la expectativa. Fue ${r.code}: ${JSON.stringify(r.body)}`);
-  assert.equal(r.body.ok, true);
+  assert.equal(r.code, 409,
+    `una rectificativa sobre una ANULADA no debe emitirse (SCRUM-308). Fue ${r.code}: ${JSON.stringify(r.body)}`);
+  assert.equal(r.body.error, 'cannot_rectify_annulled',
+    '🔴 el rechazo tiene que ir NOMBRADO: sin nombre, quien lo recibe no puede distinguirlo de los otros tres cortes de esta ruta');
 });
 
 // ─── 3. LOS TRES CORTES QUE SÍ EXISTEN (para que consten) ────────────────────────────────────────
