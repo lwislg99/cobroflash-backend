@@ -145,12 +145,7 @@ test('SCRUM-386 · el contexto viaja por parámetro (por eso el cuerpo no cambi�
   // tenga que deducirlo del diff.
   assert.match(CODIGO, /function buildAlbEditor\([^)]*ctx = \{\}\) \{/,
     '🔴 buildAlbEditor ya no recibe el contexto por parámetro');
-  // ⚠️ FUSIÓN C5 · el contexto CRECIÓ con `job`, y esto NO es aflojar el guard: es escribir el
-  // contrato nuevo. C5 trae dentro de `buildAlbEditor` un bloque que usa `job.direccion` como
-  // PLACEHOLDER del lugar de entrega, y lo traía CAPTURADO del ámbito de la vista — que es
-  // exactamente lo que este fichero prohíbe. Pasarlo por parámetro es la corrección; lo que no
-  // vale es que viaje por captura, y de eso se ocupa el test de arriba.
-  assert.match(CODIGO, /const \{ cur, refresh, setStatus, job \} = ctx;/,
+  assert.match(CODIGO, /const \{ cur, refresh, setStatus \} = ctx;/,
     '🔴 el contexto ya no se desestructura con los mismos nombres: el cuerpo habría que reescribirlo');
   assert.match(CODIGO, /function openAlbEditorSheet\(alb, ctx\) \{/);
   assert.match(CODIGO, /function openFacturarParcialSheet\(alb, ctx\) \{/,
