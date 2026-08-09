@@ -26,64 +26,102 @@ del ticket (convención de SCRUM-273), así que la fuente es esa misma constanci
   directorio haría que borrar entradas bajara el mínimo y el suelo dejara de serlo (lección de
   SCRUM-379).
 
-### Lo que devuelve hoy
+### 🔴 Y la primera versión FABRICABA falsos positivos: declarar no es mencionar
 
-**103 entradas · 135 declaraciones · 4 HUÉRFANOS.**
+Al escribir la tabla de abajo cité los tests huérfanos de otro ticket, y el detector los contó
+**como si yo los declarara**: mi propia documentación creó tres huérfanos nuevos. `SCRUM-369.md`
+hacía lo mismo, nombrando un test de 300 dentro de una cita en prosa.
+
+Un guard que da falsos positivos es un guard que alguien acaba silenciando, así que la distinción
+tenía que existir **y derivarse**, no listarse:
+
+- una entrada **DECLARA** el test cuyo número de ticket es el suyo → se exige que exista;
+- si nombra el de otro, es una **REFERENCIA** → **su dueño ya lo declara en su entrada**. No se
+  pierde cobertura: cambia quién responde por él.
+
+Se descartó acotar a la sección «Ficheros»: solo **58 de 104** entradas la usan, así que habría
+cegado el detector en las otras 46 — y quedarse ciego es justo lo que este fichero persigue.
+
+### Lo que devuelve hoy (re-medido tras el merge de #522)
+
+**104 entradas · 101 declaraciones propias · 42 referencias ajenas · 3 HUÉRFANOS.**
+
+Los tres son de `SCRUM-300.md`, y **la hipótesis de que #522 los traía era FALSA** — comprobado por
+fichero, no deducido: C5 entró con tests de **otro nombre** (`scrum300-direccion-sugerida`,
+`scrum300-firmante-ids-y-microcopy`), así que lo que queda en la entrada son **nombres viejos** que
+nunca se mergearon con esos nombres. Es la constancia la que dejó de ser cierta.
+
+**Carril de la sesión 3 (regla 9): no lo toco.**
 
 ### Verificación, por `$?`
 
 | Qué | `$?` |
 |---|---|
-| Rojo por el mecanismo: se saca `scrum387-censo-reparto` (su mecanismo sigue en main) | **1**, NOMBRANDO la entrada y el fichero |
-| Suelo: desaparece `docs/master/` | **1**, con el ENOENT y la ruta — nunca «están todos» |
-| Suelo: el detector ve menos declaraciones de las que hay | **1** («solo 135 … en 103 entradas») |
-| Control negativo: declaraciones que sí existen | no salta |
-
-## 🔴 EL GUARD ESTÁ ROJO EN MAIN, y el defecto es real y AJENO
-
-Los cuatro huérfanos son de **SCRUM-300 (C5)**, ticket vivo de otro carril:
-
-```
-SCRUM-300.md → tests/scrum300-albaran-campos.test.mjs
-SCRUM-300.md → tests/scrum300-albaran-firmado-por.test.mjs
-SCRUM-300.md → tests/scrum300-microcopy-firmante.test.mjs
-SCRUM-369.md → tests/scrum300-albaran-firmado-por.test.mjs
-```
-
-Y **el mecanismo SÍ está en main**: `firmadoPorNombre`, `firmadoPorCalidad` y `lugarEntrega` están
-en el schema (me lo descubrió un build roto por cliente Prisma viejo). O sea, **es exactamente el
-defecto de este ticket**, en vivo.
-
-Dos de los tres viven en `scrum-300-firmado-por`, sin mergear. **`scrum300-albaran-campos.test.mjs`
-no existe en NINGUNA rama**: esa declaración nombra un test que nunca se escribió.
-
-**No lo arreglo (regla 9):** ni traigo sus tests ni corrijo su entrada. Decide el carril de C5 —
-traer los tests o corregir la constancia—. Hasta entonces este guard **no puede mergearse verde**,
-y eso no es un defecto del guard: es el guard haciendo su trabajo el primer día.
+| Rojo por el mecanismo: se saca un test cuyo mecanismo sigue en main | **1**, NOMBRANDO entrada y fichero |
+| Suelo: desaparece `docs/master/` | **1**, con el ENOENT y la ruta |
+| Suelo: el detector ve menos declaraciones de las que hay | **1** |
+| Suelo: cero referencias ajenas (el separador no separa) | **1** |
+| Control negativo: las declaraciones presentes | no salta |
 
 ## Los 16, uno por uno
 
-| Guard | Veredicto |
+### Ya existen con otro nombre (5)
+
+| Huérfano | Lo cubre en main |
 |---|---|
-| `scrum166-un-solo-comando` | **SE RETIRA.** Su DoD pedía eliminar `test:staging:gated`; main lo conserva **a propósito**, con el motivo escrito en `package.json` (`"//test:staging"`: ~8 documentos citan uno u otro nombre). Aquí el guard no falta: **sobra**. |
-| `scrum195-url-bd-sin-fuga` | **ENTRA.** Main tiene `scrum226-url-credencial-en-argv`, que vigila **el argv**; el huérfano vigila que un **mensaje de error** no imprima la URL. **Son fugas distintas** — y la del huérfano es la que costó rotar una credencial de producción. |
-| `scrum245-sin-listas-blancas` | **ENTRA.** Los tres `scrum245-*` de main vigilan otra cosa (el `merchantId` del llamador, la exención demo). El huérfano vigila el requisito J0: **ningún envío se decide comparando el destino contra una lista**. No está cubierto. |
-| `scrum222-assert-arranque` | **YA EXISTE CON OTRO NOMBRE**: `tests/scrum222-deriva-arranque.test.mjs`, sobre `src/core/db/schemaDrift.ts`. |
-| `scrum222-manifest` | **SE RETIRA.** Vigila `prisma/schema-manifest.json`, que **no existe en main**. Sin mecanismo no hay nada que vigilar. |
-| `scrum340-contador-plazas-reales` | **YA EXISTE CON OTRO NOMBRE**: `tests/scrum330-contador-solo-activas.test.mjs`. El censo acertó: **lo construyó el 330**. |
-| `scrum253-adopcion-mismo-dueno` | **YA EXISTE**: `tests/scrum253-adopcion.test.mjs`. |
-| `scrum216-tipo-rectificativa` | **YA EXISTE**: `tests/scrum216-tipo-rectificativa-sin-defecto.test.mjs`. |
-| `scrum295-modelo-303` (×2) | **YA EXISTEN**: `scrum295-modelo-303.test.mjs` y `scrum295-modelo-303-postgres.test.mjs`. |
-| `scrum300-*` (×3) | **PENDIENTE, y es el rojo de arriba.** Mecanismo en main, guards sin mergear. **Carril de C5** (regla 9). |
-| `scrum329-legal-pagina-publica` | **SE RETIRA.** El mecanismo **no está en main**: F2 se aparcó sin terminar. Un guard sin mecanismo no vigila nada. |
-| `scrum172-tenencia-nullable` | **PENDIENTE DE MEDIR.** `MODELOS_POR_MERCHANT` sí está en main; **`TENENCIA_NULLABLE_CUBIERTA` no**. El guard exige una declaración que no existe: entra solo si se construye esa lista, y eso es alcance nuevo, no precisión. |
-| `scrum224-sw-revalida` | **PENDIENTE DE MEDIR.** Main tiene `scrum224b-sello-build`, `scrum274-huella-estaticos` y `scrum274-shell-alineado`; hay que comprobar por contenido si alguno cubre la revalidación del SW. |
+| `scrum340-contador-plazas-reales` | `scrum330-contador-solo-activas` — **lo construyó el 330**, como decía el censo |
+| `scrum222-assert-arranque` | `scrum222-deriva-arranque` (sobre `src/core/db/schemaDrift.ts`) |
+| `scrum253-adopcion-mismo-dueno` | `scrum253-adopcion` |
+| `scrum216-tipo-rectificativa` | `scrum216-tipo-rectificativa-sin-defecto` |
+| `scrum295-modelo-303` (×2) | `scrum295-modelo-303` y `scrum295-modelo-303-postgres` |
+
+### Se retiran, con su motivo (3)
+
+- **`scrum166-un-solo-comando`.** Su DoD pedía eliminar `test:staging:gated`; **main lo conserva a
+  propósito**, con la razón escrita en `package.json:12`: los dos nombres apuntan al runner porque
+  ~8 documentos citan uno u otro y borrar uno rompería la mitad de las referencias. **Ahí el guard
+  no falta: SOBRA.** Y de ahí sale lo que más vale de este inventario: *un inventario que solo sabe
+  detectar ausencias convierte cada sobrante en un falso positivo.*
+- **`scrum222-manifest`.** Vigila `prisma/schema-manifest.json`, que **no existe en main**. Sin
+  mecanismo no hay nada que vigilar.
+- **`scrum329-legal-pagina-publica`.** El mecanismo no está: F2 se aparcó sin terminar. Guard sin
+  mecanismo.
+
+### No entran hoy, y por qué (3)
+
+- **`scrum195-url-bd-sin-fuga` · el veredicto se mantiene, y su rojo es un HALLAZGO VIVO.**
+  Main tiene `scrum226-url-credencial-en-argv`, que vigila **el argv**; el huérfano vigila que un
+  **mensaje de error** no imprima la URL. **Son fugas distintas, y la del huérfano es la que costó
+  rotar una credencial de producción. Por nombre parecían cubiertas; por contenido no lo están.**
+  Extraído y corrido **contra main**: **falla**, y no por estar caducado —
+  `scripts/backup-dump.mjs:167` hace `new URL(process.env.DATABASE_URL)` **a pelo**, con **cero**
+  usos de `parseBDSegura`, y ese script pasa la URL de **producción** en el argv de `pg_dump`.
+  🔴 **Defecto vivo, de otro carril (scripts/backup): se reporta, no se arregla aquí (reglas 9/37).**
+  El guard entra el día que se cierre esa fuga — traerlo antes sería un rojo permanente.
+- **`scrum245-sin-listas-blancas` · NO entra: está caducado y además es impreciso.**
+  Corrido contra main, señala `DEMO_SAFE_NUMBERS` y `demoSendBlocked`, que son **V0-2** (máster
+  U1.1, regla 8: el merchant demo solo envía a números seguros) — una decisión **deliberada** que
+  main sostiene. Y señala `huecosDeLaSerie(numeros, …)`, que es de series de factura: **falso
+  positivo**. Re-derivarlo para que distinga el envío real de la excepción demo es **alcance
+  nuevo**, no precisión → ticket propio.
+- **`scrum172-tenencia-nullable` · no entra hoy.** `MODELOS_POR_MERCHANT` sí está en main;
+  **`TENENCIA_NULLABLE_CUBIERTA` no** (medido: 0 apariciones). El guard exige una declaración que
+  no existe, así que entrar exigiría **construir esa lista** — alcance nuevo → ticket propio.
+
+### Pendiente de medir (1)
+
+- **`scrum224-sw-revalida`.** Vigila que el camino network-first del service worker **revalide** en
+  vez de servir de la caché HTTP del navegador. Lo de main es otra cosa: `scrum224b-sello-build`
+  vigila la línea base del aviso de versión. **No cubierto por nombre ni por asunto**, pero no lo
+  he corrido contra main — verdicto honesto: probablemente entra, sin confirmar.
 
 ## Lo que falta para cerrar
 
-1. **Extraer** `scrum195-url-bd-sin-fuga` y `scrum245-sin-listas-blancas` (se EXTRAEN, no se mergean
-   las ramas), con su **rojo probado en main**.
-2. Medir por contenido `scrum172` y `scrum224`.
-3. Que el carril de C5 resuelva sus cuatro declaraciones — y entonces este guard entra verde.
+1. Que el carril de la sesión 3 resuelva las tres declaraciones de `SCRUM-300.md`. **Hasta
+   entonces este guard entra ROJO**, y eso lo anuncia el fundador antes de mergear: un rojo
+   esperado que nadie ha anunciado se convierte en un rojo que la gente aprende a ignorar.
+2. Cerrar la fuga de `scripts/backup-dump.mjs` y **entonces** traer `scrum195-url-bd-sin-fuga`.
+3. Tickets propios para `scrum245` (re-derivar con V0-2) y `scrum172` (construir la lista).
+4. Correr `scrum224-sw-revalida` contra main y decidir.
 
 Ficheros: `tests/scrum391-guards-declarados-presentes.test.mjs` (3, nuevo).

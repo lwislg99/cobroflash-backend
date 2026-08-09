@@ -34,7 +34,27 @@ import path from 'node:path';
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const DIR_MASTER = path.join(RAIZ, 'docs/master');
 
-/** Toda ruta `tests/…​.test.mjs` que nombra una entrada, con la entrada que la nombró. */
+/**
+ * ⚠️ DECLARAR NO ES MENCIONAR, y la primera versión de este guard no lo distinguía.
+ *
+ * Al escribir la entrada de ESTE ticket cité en una tabla los tests huérfanos de otro — y el
+ * detector los contó como si yo los declarara: **mi propia documentación fabricó tres huérfanos
+ * nuevos**. Lo mismo hacía `SCRUM-369.md`, que nombra un test de 300 dentro de una cita en prosa.
+ *
+ * Un guard que da falsos positivos es un guard que alguien acaba silenciando, así que la
+ * distinción tenía que existir — y DERIVARSE, no listarse:
+ *
+ *   · una entrada **DECLARA** el test cuyo número de ticket es el SUYO → se exige que exista;
+ *   · si nombra el de otro ticket, es una **REFERENCIA** → no se exige aquí, porque **su dueño ya
+ *     lo declara en su propia entrada**. No se pierde cobertura: cambia quién responde por él.
+ *
+ * Se descartó acotar a la sección «Ficheros»: solo 58 de las 104 entradas la usan, así que habría
+ * cegado el detector en las otras 46 — y quedarse ciego es el defecto que este fichero persigue.
+ */
+const numeroDeEntrada = (f) => (f.match(/^SCRUM-(\d+)\.md$/) || [])[1] ?? null;
+const esSuyo = (numero, ruta) => new RegExp(`^tests/scrum${numero}[^0-9]`, 'i').test(ruta);
+
+/** Toda ruta `tests/…​.test.mjs` que una entrada DECLARA como suya. */
 function declaracionesDeTests() {
   let ficheros;
   try {
@@ -46,29 +66,35 @@ function declaracionesDeTests() {
       + '  Este guard no puede afirmar que están todos sin haber mirado: «no supe leer el\n'
       + '  directorio» y «están todos» son el mismo verde.');
   }
-  const out = [];
+  const propias = [];
+  const referencias = [];
   for (const f of ficheros) {
-    if (!/^SCRUM-\d+\.md$/.test(f)) continue; // README y notas no declaran nada
+    const numero = numeroDeEntrada(f);
+    if (!numero) continue; // README y notas no declaran nada
     const texto = fs.readFileSync(path.join(DIR_MASTER, f), 'utf8');
     for (const ruta of new Set([...texto.matchAll(/tests\/[A-Za-z0-9_.-]+\.test\.mjs/g)].map((m) => m[0]))) {
-      out.push({ entrada: f, ruta });
+      (esSuyo(numero, ruta) ? propias : referencias).push({ entrada: f, ruta });
     }
   }
-  return out;
+  return { propias, referencias };
 }
 
 // El suelo es un NÚMERO, y se sube a mano a propósito: derivarlo del propio directorio haría que
 // borrar entradas bajara el mínimo y el suelo dejara de ser suelo (lección de SCRUM-379).
 const MINIMO_ENTRADAS = 90;
-const MINIMO_DECLARACIONES = 120;
+const MINIMO_DECLARACIONES = 90;
 
 test('SCRUM-391 · SUELO: el detector encuentra entradas y declaraciones de verdad', () => {
   const entradas = fs.readdirSync(DIR_MASTER).filter((f) => /^SCRUM-\d+\.md$/.test(f));
-  const decls = declaracionesDeTests();
+  const { propias: decls, referencias } = declaracionesDeTests();
   assert.ok(entradas.length >= MINIMO_ENTRADAS,
     `🔴 solo ${entradas.length} entradas de máster: el detector no está mirando donde cree. «Están todos» y «no supe mirar» son el mismo verde`);
   assert.ok(decls.length >= MINIMO_DECLARACIONES,
     `🔴 solo ${decls.length} tests declarados en ${entradas.length} entradas: si las entradas dejaron de nombrar sus tests, este guard no vigila nada`);
+  // Y el otro cero que importa: si NINGUNA entrada nombrara un test ajeno, el separador
+  // declaración/referencia no estaría separando nada y podría estar tragándose declaraciones.
+  assert.ok(referencias.length > 0,
+    '🔴 cero referencias ajenas: el separador entre DECLARAR y MENCIONAR no está distinguiendo nada, así que podría estar descartando declaraciones de verdad');
 });
 
 test('SCRUM-391 · CONTROL NEGATIVO: una declaración que SÍ existe no salta', () => {
@@ -76,14 +102,14 @@ test('SCRUM-391 · CONTROL NEGATIVO: una declaración que SÍ existe no salta', 
   // inservible. Se comprueba con la declaración de ESTE fichero, que existe por construcción.
   const propio = path.join(RAIZ, 'tests/scrum391-guards-declarados-presentes.test.mjs');
   assert.ok(fs.existsSync(propio), 'este mismo fichero tiene que existir para que el control valga');
-  const decls = declaracionesDeTests();
+  const { propias: decls, referencias } = declaracionesDeTests();
   const presentes = decls.filter(({ ruta }) => fs.existsSync(path.join(RAIZ, ruta)));
   assert.ok(presentes.length > 0,
     '🔴 el detector no reconoce NINGUNA declaración como presente: está roto, no es que falten todas');
 });
 
 test('SCRUM-391 · todo test DECLARADO en una entrada EXISTE en el árbol', () => {
-  const huerfanos = declaracionesDeTests()
+  const huerfanos = declaracionesDeTests().propias
     .filter(({ ruta }) => !fs.existsSync(path.join(RAIZ, ruta)))
     .map(({ entrada, ruta }) => `${entrada} declara ${ruta}, que NO está en el árbol`);
 
