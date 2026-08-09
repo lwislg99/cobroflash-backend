@@ -252,7 +252,25 @@ test('SCRUM-291 ① · los esperados se componen con la MISMA función, no con u
 // hace checkout con LF. Hashear los bytes crudos daría un rojo por el sistema operativo, y un
 // guard que grita sin motivo se acaba desactivando — que es como se pierde el que sí importaba.
 const EMISOR = 'src/modules/invoicing/domain/invoiceNumber.service.ts';
-const EMISOR_SHA256 = 'fb0d6216f96bb1e3a8cae6989be06baaab8190c598a647938dd106be06d696bd';
+//
+// ⚠️ SELLO ACTUALIZADO — SCRUM-347. **GO del fundador 9-ago-2026, SCRUM-347, opción A.**
+//
+//   anterior: fb0d6216f96bb1e3a8cae6989be06baaab8190c598a647938dd106be06d696bd
+//   nuevo:    f5d1f65d905da4840ea6c6c9b508078f4028d6cfd3d60263ee3ce10ca76953a8
+//
+// Este trinquete hizo exactamente su trabajo: avisó, y el cambio pasó por un humano con el diff
+// delante antes de que nadie tocara el hash. **Un sello que se actualiza después de que alguien
+// mire el diff no está silenciado: está usado.** El diff completo está pegado en
+// `docs/master/SCRUM-347.md`, que es el precio de tocar el sello.
+//
+// QUÉ CAMBIÓ, y es UNA SOLA HUNK: la unión `CaminoEmision` sustituye `| 'C7'` por `| OrigenC7`, y
+// se añaden el tipo `OrigenC7` (4 variantes), la constante `ORIGENES_C7` y sus comentarios.
+//
+// QUÉ **NO** CAMBIÓ, verificable en ese diff y no solo afirmado: `allocateInvoiceNumber` no tiene
+// ni una línea tocada — ni el `pg_advisory_xact_lock`, ni `SERIE_LOCK_NS`, ni la reserva, ni el
+// `recordAuditOrThrow`, ni el orden de las sentencias. Lo único que varía en ejecución es el VALOR
+// que llega en `opts.camino`, que es justo lo que el GO autoriza.
+const EMISOR_SHA256 = 'f5d1f65d905da4840ea6c6c9b508078f4028d6cfd3d60263ee3ce10ca76953a8';
 
 test('SCRUM-291 · el camino de emisión sigue INTACTO (regla 38)', () => {
   // El fundador puso el límite y esto lo COMPRUEBA en vez de prometerlo. Si algún día hace falta

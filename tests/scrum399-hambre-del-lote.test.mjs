@@ -41,7 +41,7 @@ function prismaDoble({ planes, clientes }) {
           // Devuelve `merchantId` porque la consulta lo pide: es la RED multi-tenant que exige
           // SCRUM-243. Un doble que no da lo que se le pide prueba una consulta que no existe.
           return clientes.filter((c) => c.waOptOut === where.waOptOut)
-            .map((c) => ({ id: c.id, merchantId: c.merchantId ?? 1 }));
+            .map((c) => ({ id: c.id, merchantId: c.merchantId ?? 7 }));
         },
       },
       maintenancePlan: {
@@ -71,11 +71,11 @@ function escenarioHambre() {
   for (let i = 1; i <= 60; i++) {
     clientes.push({ id: i, waOptOut: true });
     // Vencidos hace mucho: `asc` los coloca delante de todo.
-    planes.push({ id: i, merchantId: 1, customerId: i, active: true, nextDueAt: new Date('2026-01-01'), lastProposedAt: null });
+    planes.push({ id: i, merchantId: 7, customerId: i, active: true, nextDueAt: new Date('2026-01-01'), lastProposedAt: null });
   }
   for (let i = 61; i <= 70; i++) {
     clientes.push({ id: i, waOptOut: false });
-    planes.push({ id: i, merchantId: 1, customerId: i, active: true, nextDueAt: AYER, lastProposedAt: null });
+    planes.push({ id: i, merchantId: 7, customerId: i, active: true, nextDueAt: AYER, lastProposedAt: null });
   }
   return { clientes, planes };
 }
@@ -155,11 +155,11 @@ test('SCRUM-399 · MULTI-TENANT: un plan cuyo cliente es de OTRO merchant no ent
   // `customer.merchantId !== plan.merchantId` antes de tocar nada, y el recorrido nuevo se la había
   // saltado: habría escrito un `CustomerEvent` en la ficha de un cliente ajeno — contarle a un
   // profesional algo de un cliente que no es suyo.
-  const clientes = [{ id: 1, merchantId: 1, waOptOut: true }, { id: 2, merchantId: 2, waOptOut: true }];
+  const clientes = [{ id: 1, merchantId: 7, waOptOut: true }, { id: 2, merchantId: 2, waOptOut: true }];
   const planes = [
-    { id: 10, merchantId: 1, customerId: 1, active: true, nextDueAt: AYER, lastProposedAt: null },
+    { id: 10, merchantId: 7, customerId: 1, active: true, nextDueAt: AYER, lastProposedAt: null },
     // Dato roto: plan del merchant 1 apuntando a un cliente del merchant 2.
-    { id: 11, merchantId: 1, customerId: 2, active: true, nextDueAt: AYER, lastProposedAt: null },
+    { id: 11, merchantId: 7, customerId: 2, active: true, nextDueAt: AYER, lastProposedAt: null },
   ];
   const { db } = prismaDoble({ clientes, planes });
   const { sinCanalVencidos } = await seleccionarLotes(HOY, { prisma: db });
@@ -175,7 +175,7 @@ test('SCRUM-399 · R2: el aviso sigue siendo UNA VEZ POR EPISODIO, no una por pa
     async existeEventoDePlan(m, c, type, planId) { return registrados.some((e) => e.type === type && e.meta?.planId === planId); },
     async recordCustomerEvent(e) { registrados.push(e); },
   };
-  const plan = { id: 1, merchantId: 1, lastProposedAt: null };
+  const plan = { id: 1, merchantId: 7, lastProposedAt: null };
   await avisarPlanSinCanal(plan, 1, deps);
   await avisarPlanSinCanal(plan, 1, deps);
   await avisarPlanSinCanal(plan, 1, deps);
@@ -236,7 +236,7 @@ test('SCRUM-399 · R4: sin ningún opt-out, el lote se comporta EXACTAMENTE como
   const planes = [];
   for (let i = 1; i <= 70; i++) {
     clientes.push({ id: i, waOptOut: false });
-    planes.push({ id: i, merchantId: 1, customerId: i, active: true, nextDueAt: AYER, lastProposedAt: null });
+    planes.push({ id: i, merchantId: 7, customerId: i, active: true, nextDueAt: AYER, lastProposedAt: null });
   }
   const { db, consultas } = prismaDoble({ clientes, planes });
   const { aProponer, sinCanalVencidos } = await seleccionarLotes(HOY, { prisma: db });

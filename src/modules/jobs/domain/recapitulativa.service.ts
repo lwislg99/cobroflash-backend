@@ -93,6 +93,7 @@ export async function emitirRecapitulativas(
 
       const invoice = await emitInvoice(tx, {
         merchantId, customerId, total, currency, type: 'F1', lines, albaranRefs, quoteId: null, actor,
+        origen: 'C7-recapitulativa', // SCRUM-347: recapitulativa mensual
       });
       // Robustez fiscal: una recapitulativa JAMÁS puede salir como justificante J-. Si
       // `allocateInvoiceNumber` devolviera serie receipt (porque el gate de modo miró un
