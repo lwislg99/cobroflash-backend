@@ -13,7 +13,7 @@
 // ⚠️ ESTO ARREGLA **LA MITAD**, y hay que decirlo aquí para que nadie lea el fichero y crea que el
 // beneficio ya es correcto. El lado del GASTO no es derivable: `Expense` solo tiene `amount` y **en
 // ninguna parte está escrito si lleva IVA**. Hace falta migración (ver
-// `docs/master/SCRUM-403-ESPEC-COLUMNAS.md`). Suponerlo sería cometer el mismo defecto.
+// `docs/master/SCRUM-403.md`). Suponerlo sería cometer el mismo defecto.
 //
 // ⚠️ NO TOCA EL CAMINO DE EMISIÓN (regla 38): **importa** `calcVatBreakdown` y no modifica nada de
 // `vat.service.ts`. Aquí solo se LEE lo ya emitido.
@@ -57,30 +57,19 @@ export function baseDeFactura(invoice: { lines?: unknown }): BaseDeFactura {
   return { base, cuota, medible: true };
 }
 
-/**
- * Suma las bases de un conjunto de facturas, **separando lo que no se pudo medir**.
- *
- * Devuelve también `sinDesglose`: cuántas quedaron fuera. Ese número **se enseña**, porque una suma
- * que calla lo que no pudo incluir es exactamente el tipo de cifra que este ticket vino a arreglar.
- */
-export function sumaDeBases(invoices: readonly { lines?: unknown }[]): {
-  base: number; cuota: number; medidas: number; sinDesglose: number;
-} {
-  let base = 0;
-  let cuota = 0;
-  let medidas = 0;
-  let sinDesglose = 0;
-  for (const inv of invoices ?? []) {
-    const r = baseDeFactura(inv);
-    if (!r.medible) { sinDesglose += 1; continue; }
-    base += r.base as number;
-    cuota += r.cuota as number;
-    medidas += 1;
-  }
-  return {
-    base: Math.round(base * 100) / 100,
-    cuota: Math.round(cuota * 100) / 100,
-    medidas,
-    sinDesglose,
-  };
-}
+// ⚠️ AQUÍ NO HAY SUMA DE PERIODO, Y ES LA DECISIÓN QUE SOSTIENE ESTE FICHERO.
+//
+// La primera versión traía un `sumaDeBases()`. Lo retiró el guard de SCRUM-389: **un agregador
+// nuevo de un periodo que no lea el libro crea una SEGUNDA CIFRA OFICIAL del mismo trimestre**, y
+// eso ya pasó — `/admin/reports/vat` decía su propio total hasta que ese ticket lo cerró.
+// Censarlo como DOCUMENTO para pasar el guard habría sido mentir.
+//
+// Su criterio dice que quien agregue un periodo LEA EL LIBRO (`leerLibroRegistro`). MEDIDO: hoy
+// no sirve para esta cifra. El libro filtra por `createdAt` (emisión) y su asiento **no expone
+// `paidAt`** (0 ocurrencias); Informes agrupa por fecha de COBRO. Una factura emitida en marzo y
+// cobrada en junio cae en meses distintos: son dos poblaciones.
+//
+// Hacer que sirva exige MODIFICAR el libro —añadir `paidAt` al asiento o un filtro al rango—, y
+// eso es otro ticket con su GO: el permiso sobre A6 era de LECTURA.
+//
+// Así que este módulo se queda en lo que sí es correcto: el desglose de UN documento.

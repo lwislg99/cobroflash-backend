@@ -13,7 +13,7 @@
 //
 // ⚠️ ESTE TICKET ARREGLA **LA MITAD**. El lado del GASTO no es derivable: `Expense` solo tiene
 // `amount` y en ninguna parte está escrito si lleva IVA. Hace falta migración
-// (`docs/master/SCRUM-403-ESPEC-COLUMNAS.md`). Lo que NO se hace es suponerlo — sería cometer el
+// (`docs/master/SCRUM-403.md`). Lo que NO se hace es suponerlo — sería cometer el
 // defecto que el ticket denuncia.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -22,7 +22,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { soloEjecutable } from './_guard-texto.mjs';
-import { baseDeFactura, sumaDeBases } from '../dist/modules/reports/domain/baseSinIva.js';
+import { baseDeFactura } from '../dist/modules/reports/domain/baseSinIva.js';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (p) => fs.readFileSync(path.join(RAIZ, p), 'utf8');
@@ -88,16 +88,8 @@ test('SCRUM-403 · sin líneas utilizables NO se inventa la base: se declara', (
     assert.equal(r.base, null, '🔴 se devuelve 0 en vez de null: «no se pudo medir» y «cero» se ' +
       'sumarían igual y significan lo contrario.');
   }
-  // Y la suma los aparta y los CUENTA, en vez de callarlos.
-  const s = sumaDeBases([FACTURA_1000, {}, { lines: [] }]);
-  assert.equal(s.base, 1000, '🔴 la suma no aparta las facturas sin desglose');
-  assert.equal(s.medidas, 1);
-  assert.equal(
-    s.sinDesglose, 2,
-    '🔴 la suma no dice cuántas quedaron fuera. Una suma que calla lo que no pudo incluir es el ' +
-      'tipo de cifra que este ticket vino a arreglar.',
-  );
 });
+
 
 // ── EL CENSO DERIVADO ───────────────────────────────────────────────────────────────────
 //
@@ -213,12 +205,12 @@ test('SCRUM-403 · el lado del GASTO sigue sin dato, y está declarado', () => {
   assert.equal(
     tieneBase, false,
     '🔴 `Expense` YA tiene columnas de IVA. Entonces la migración de ' +
-      '`docs/master/SCRUM-403-ESPEC-COLUMNAS.md` se aplicó, y toca escribir el test del lado del ' +
+      '`docs/master/SCRUM-403.md` se aplicó, y toca escribir el test del lado del ' +
       'gasto con números reales y quitar este aviso — no dejarlo describiendo un mundo que ya cambió.',
   );
   // Y la especificación existe, para que el hueco tenga a dónde ir.
   assert.ok(
-    fs.existsSync(path.join(RAIZ, 'docs/master/SCRUM-403-ESPEC-COLUMNAS.md')),
-    '🔴 falta la especificación de columnas: el hueco quedaría sin destino.',
+    fs.existsSync(path.join(RAIZ, 'docs/master/SCRUM-403.md')),
+    '🔴 falta la entrada con la especificación de columnas: el hueco quedaría sin destino.',
   );
 });
