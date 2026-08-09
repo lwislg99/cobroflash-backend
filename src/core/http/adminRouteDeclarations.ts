@@ -60,6 +60,13 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'GET',   path: '/admin/jobs/:id', why: 'Detalle de SU trabajo; 404 en el ajeno (SCRUM-23)' },
   { method: 'PATCH', path: '/admin/jobs/:id', why: 'Mover el estado del trabajo es su trabajo (FSM JOB-1)' },
   { method: 'GET',   path: '/admin/jobs/:id/ics', why: 'Su cita en el calendario del móvil' },
+  // SCRUM-370 · DECISIÓN DE PERMISOS, no trámite: el técnico YA puede CREAR gastos en este
+  // Trabajo (`POST /admin/expenses` está abierto a propósito desde SCRUM-135) y hasta hoy no podía
+  // volver a verlos — `GET /admin/expenses` es admin-only y su nav está oculto. Quien puede crear
+  // algo tiene que poder comprobarlo. Se abre por el TRABAJO y no por el listado global: así
+  // hereda el candado de SCRUM-147 —un técnico solo ve SUS Trabajos— en vez de dejar enumerar
+  // cotizaciones ajenas. SIN totales ni márgenes: eso sigue siendo admin-only en /admin/expenses.
+  { method: 'GET',   path: '/admin/jobs/:id/gastos', why: 'Ver los gastos que ÉL acaba de meter en SU trabajo (SCRUM-370)' },
   { method: 'POST',  path: '/admin/jobs/:id/albaranes', why: 'Crear el parte de trabajo en la obra (albarán NO fiscal)' },
 
   // Albaranes — SCRUM-14/47/49: partes de trabajo NO fiscales, el caso de uso del
