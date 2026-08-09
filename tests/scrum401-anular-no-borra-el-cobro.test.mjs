@@ -84,6 +84,21 @@ test('SCRUM-401 · el `update` de la anulación NO borra `paidAt`', () => {
     `🔴 ESCÁNER CIEGO: se encontraron ${updates.length} updates que escriben \`annulled\` y debía ` +
       'haber 1. Si hay más de uno, hay más de un sitio que anula y esta comprobación no los cubre.',
   );
+  // ⚠️ HERMANO POSITIVO de la negación (SCRUM-237). Sin él, `!/paidAt/` pasaría por vacío si el
+  // token no existiera en ninguna parte — y un guard que no puede ver lo que prohíbe siempre está
+  // verde. Primero se comprueba que `paidAt` ES un token real de esta ruta y que el detector lo
+  // vería si estuviera dentro del update.
+  assert.match(
+    RUTA_TXT, /paidAt/,
+    '🔴 ESCÁNER CIEGO: `paidAt` no aparece en la ruta. O cambió de nombre —y entonces la negación ' +
+      'de abajo no protege nada— o este guard está mirando el fichero equivocado.',
+  );
+  const updateFalso = "tx.invoice.update({ where: { id }, data: { status: 'annulled', paidAt: null } })";
+  assert.ok(
+    /paidAt/.test(updateFalso),
+    '🔴 ESCÁNER CIEGO: el detector no reconocería un update que sí borra `paidAt`.',
+  );
+
   assert.ok(
     !/paidAt/.test(updates[0]),
     `🔴 el update de la anulación toca \`paidAt\`: ${updates[0]}\n\n` +
@@ -105,14 +120,6 @@ test('SCRUM-401 · SUELO: `annulled` se ESCRIBE desde un único sitio', () => {
 
   // Barrido de TODO `src/`: solo la ruta de anular puede escribirlo en base de datos.
   const escritores = [];
-  (function walk(d) {
-    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
-      const f = path.join(d, e.name);
-      if (e.isDirectory()) { walk(f); continue; }
-      if (!f.endsWith('.ts')) return;
-    }
-  })(path.join(RAIZ, 'src'));
-
   const ficheros = [];
   (function walk(d) {
     for (const e of fs.readdirSync(d, { withFileTypes: true })) {
