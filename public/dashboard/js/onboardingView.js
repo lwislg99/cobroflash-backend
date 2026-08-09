@@ -40,6 +40,11 @@ window.obTradeLabel = obTradeLabel;
 // SCRUM-313 (D2) · el año de la pregunta sale de la FECHA ACTUAL, jamás cableado. Cablearlo haría
 // que el 1 de enero la pantalla preguntara por el año pasado y produjera un arranque que
 // `resolveSeriesSeq` descarta — el clásico que se descubre en enero con un cliente delante.
+// SCRUM-338 · el aviso de que el catálogo no se cargó NO existe todavía como texto: es microcopy
+// nueva (regla 30) y pintarla con el marcador puesto la vería un profesional (guard de SCRUM-402).
+// La propuesta, para aprobar, está en `docs/master/SCRUM-338.md`. Aquí solo queda el HECHO:
+// `state.catalogFallo`.
+
 const ANIO_EN_CURSO = new Date().getFullYear();
 window.ANIO_EN_CURSO = ANIO_EN_CURSO;
 
@@ -304,7 +309,29 @@ function showOnboardingWizard(onComplete) {
             if (Array.isArray(items) && items.length) {
               state.firstProduct = { name: items[0].name, price: items[0].price };
             }
-          } catch (_) { /* no bloquear el onboarding por esto */ }
+          } catch (_) {
+            // ═════════════════════════════════════════════════════════════════════════════════
+            // 🔴 SCRUM-338 · NO BLOQUEAR SIGUE SIENDO CORRECTO. CALLAR, NO.
+            //
+            // Este `catch` estaba vacío: si la carga del catálogo fallaba, el profesional
+            // terminaba el wizard CREYENDO que tenía catálogo, y lo que veía después —una lista
+            // vacía— era indistinguible de «mi gremio no tiene catálogo predefinido». No había
+            // forma de saberlo, ni para él ni para nosotros. `lifecycle.service.ts` lo dejó
+            // escrito como el cuarto motivo, «el que FALLA EN SILENCIO».
+            //
+            // Sigue sin bloquear —un catálogo que no carga no puede impedir empezar a trabajar—,
+            // pero ahora: (1) se marca el fallo en el estado y (2) se DICE, con la salida que hoy
+            // SÍ existe: SCRUM-364 puso el botón en Productos, y si no hay oficio lo pregunta en
+            // vez de fallar. Mandar a alguien a una pared es lo que este ticket quita.
+            // ⚠️ AQUÍ SE PARA, Y ES LA REGLA 30. El aviso que falta es MICROCOPY NUEVA y visible:
+            // el guard de SCRUM-402 lo caza si se pinta con el marcador puesto, y tiene razón —
+            // un `[PENDIENTE …]` en la pantalla de un profesional es peor que el silencio.
+            //
+            // Lo que SÍ se arregla hoy: el fallo deja de perderse. Queda en el estado, así que la
+            // pantalla que lo quiera contar ya tiene el dato, y el día que el fundador apruebe el
+            // texto es UNA línea. La propuesta está en `docs/master/SCRUM-338.md`.
+            state.catalogFallo = true;
+          }
         }
       },
     },
