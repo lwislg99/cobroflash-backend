@@ -727,3 +727,46 @@ pública) y se retira en cuanto hay un `input` a mano. Lo que teclee el profesio
 
 **La lección:** «borrar lo obsoleto» y «no destruir lo que el usuario ha escrito» chocan, y gana el
 segundo. Un dato nuestro se puede volver a poner; uno suyo, no.
+
+---
+
+## 📌 LOS CUATRO TESTS QUE ESTA ENTRADA DECLARA — medido el 9-ago-2026 (SCRUM-391)
+
+El guard de SCRUM-391 midió que esta entrada nombra tests que no estaban en `main`. Los cuatro,
+comprobados **uno a uno contra `main` y contra todas las ramas del remoto**:
+
+| Test declarado | ¿En `main`? | Veredicto |
+| --- | --- | --- |
+| `tests/scrum300-firmante-ids-y-microcopy.test.mjs` | **sí** | el de la fusión; vigente |
+| `tests/scrum300-albaran-campos.test.mjs` | **no, y en NINGUNA rama** | **se ESCRIBE** (ver abajo) |
+| `tests/scrum300-albaran-firmado-por.test.mjs` | no · solo en `origin/scrum-300-firmado-por` | **declaración RETIRADA**: cubierto |
+| `tests/scrum300-microcopy-firmante.test.mjs` | no · solo en `origin/scrum-300-firmado-por` | **declaración RETIRADA**: cubierto |
+
+### Los dos que se retiran, y QUÉ los cubre
+
+Los dos vivían en la **rama B** (`scrum-300-firmado-por`), que **no se mergeó**: la fusión conservó
+`albaranFirmante.ts` y descartó el otro fichero de dominio, así que sus tests se fueron con él. Lo
+que comprobaban está cubierto por **`tests/scrum300-firmante-ids-y-microcopy.test.mjs`** (14 tests):
+los seis `id` y su orden, las seis etiquetas aprobadas literales, que «representante» no está en el
+vocabulario, que la microcopy viaja SERVIDA y no copiada, que ninguna ranura viene marcada, que se
+guarda el `id` y nunca la etiqueta, la ranura libre de ida y vuelta, el rechazo de un id
+desconocido, los topes (160/120/300) y el suelo del lugar vacío.
+
+### El que se ESCRIBE, y por qué no se borraba la línea
+
+`scrum300-albaran-campos.test.mjs` venía de `scrum-300-campos-albaran` (**PR #492, cerrada**) y no
+existe en ninguna rama. Pero **describía una comprobación que no cubre nadie**, y hay dos medidas
+que lo demuestran:
+
+* `generateAlbaranPdf` tenía **cero consumidores** en `tests/`: ningún test miraba dentro del PDF.
+* `tests/_pdf-texto.mjs` —el lector de texto de PDF que SÍ entró con la fusión— estaba **huérfano**,
+  precisamente porque su único consumidor era este test.
+
+O sea: el PDF pinta el lugar, la fecha de entrega y quién firma, **y nada lo comprobaba**. Los
+tests de PDF de esta casa miran tamaño y `%PDF-`, y un PDF con los campos en blanco pasa las dos.
+
+Escrito con ese alcance exacto —**el DOCUMENTO**, no el dominio, que ya está cubierto— más el suelo
+del lector (si saca menos de 100 bytes, falla) y el suelo fiscal (sin lugar de entrega, el
+domicilio del emisor no ocupa su sitio) con su control del control. **Probado en rojo**: quitando
+del PDF el bloque de quién firma cae nombrando ese campo, y quitando el de la fecha de entrega,
+el suyo.
