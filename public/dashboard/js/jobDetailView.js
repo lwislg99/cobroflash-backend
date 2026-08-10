@@ -163,6 +163,12 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
     'sin-firmar': (h) => `${h.cantidad} ${h.cantidad === 1 ? 'albarán' : 'albaranes'} sin firmar`,
     'sin-facturar': (h) => `${fmt(h.importe, moneda)} entregados sin facturar`,
     'sin-facturar-nada': (h) => `${fmt(h.importe, moneda)} aceptados y sin facturar`,
+    // SCRUM-423 · copy APROBADA por el asesor el 10-ago-2026 (regla 30). El formato copia el de
+    // los otros cuatro, MEDIDO y no supuesto: número delante, sin mayúscula inicial forzada, sin
+    // punto final y sin icono. Singular y plural DE VERDAD —nunca `línea(s)`—, regla dura heredada
+    // de C6: cambia el sustantivo, así que se alterna la palabra entera, igual que hace
+    // `sin-firmar` con albarán/albaranes.
+    'sin-entregar': (h) => `${h.cantidad} ${h.cantidad === 1 ? 'línea' : 'líneas'} del presupuesto sin entregar`,
     'sin-cobrar': (h) => `${fmt(h.importe, moneda)} facturados sin cobrar`,
   };
   const TEXTO_ACCION = {
