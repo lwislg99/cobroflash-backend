@@ -101,8 +101,17 @@ test('SCRUM-427 · la microcopy es la MISMA que ya usa Presupuestos, literal', (
   const detalle = leer(VISTA);
   const presupuestos = leer(path.join(RAIZ, 'public/dashboard/js/quotesDetailView.js'));
 
+  // ⚠️ EL RÓTULO SE COMPARA SIN EL EMOJI (SCRUM-427 tramo 2, 10-ago-2026). La microcopy aprobada
+  // para esta pantalla es «Notas internas» A SECAS: entró copiada de Presupuestos con un `📝`
+  // delante, y **ninguna de las otras seis secciones del detalle lleva emoji** — rompía el registro
+  // visual de la pantalla.
+  //
+  // Presupuestos conserva el suyo y NO se toca aquí: es otro carril y su microcopy no entra en esta
+  // aprobación. Lo que este guard sigue exigiendo —y es lo que de verdad importaba— es que las dos
+  // pantallas llamen a la cosa por el MISMO NOMBRE. La divergencia del adorno queda REPORTADA para
+  // que se decida en los dos sitios a la vez.
   for (const [texto, que] of [
-    ['📝 Notas internas', 'el rótulo'],
+    ['Notas internas', 'el rótulo'],
     ['Solo tú las ves', 'la píldora de privacidad'],
     ['Anota detalles del trabajo, acuerdos verbales, recordatorios…', 'el placeholder'],
   ]) {

@@ -169,6 +169,44 @@ No se declaró — que es **literalmente el fallo del hueco estructurado de B2**
 
 ---
 
+## 🔴 ENMIENDA a §4 · 10-ago-2026 (SCRUM-427)
+
+Este §4 es anterior a decisiones que ya están construidas y vigentes. **Un superávit deliberado no
+se borra por no estar en un documento más viejo que él**, así que se enmienda el documento en vez
+de recortar la pantalla.
+
+### ① `FACTURAS` es sección del cuerpo — decisión POSTERIOR y VIGENTE
+
+El recuadro de arriba no la lista, pero **G4 la entregó a propósito** y sigue viva: se pinta, lleva
+`data-seccion="facturas"`, es el destino del hueco «sin cobrar» de G5 y tiene sus propios tests
+(`tests/scrum319-documentos-por-tipo.test.mjs`).
+
+> **Fuente:** `docs/master/SCRUM-319.md` (G4) · **medido el 10-ago-2026**: no está vacía ni es
+> inalcanzable.
+
+El §4 queda enmendado: las secciones del cuerpo son **QUÉ FALTA PARA COBRAR · ALBARANES · GASTOS ·
+FACTURAS · NOTAS INTERNAS**. Lo comprueba `tests/scrum427-composicion-detalle.test.mjs`, que compara
+esta lista con lo que la pantalla pinta **enumerando** —qué falta y qué sobra—, no contando: G4
+«cuadraba» porque 4 + 5 = 9, con el número correcto y el contenido equivocado.
+
+### ② La regla del hueco vale para LEER, no para ESCRIBIR
+
+«O está el dato, o no está la sección» (G3/G4/G5) se escribió para bloques de **LECTURA**: una
+sección que informa de cero cosas es ruido, y por eso «Qué falta para cobrar» desaparece cuando no
+falta nada.
+
+🔴 **Pero una superficie de ESCRITURA se pinta también vacía**, y no es una excepción de cortesía:
+si el editor sólo apareciera cuando ya hay dato, **no habría forma de escribir el primero**. La
+regla, enunciada entera:
+
+> Un bloque que **informa** se oculta sin dato. Un bloque donde se **escribe** se muestra siempre:
+> su vacío no es ausencia de información, es el sitio donde se pone.
+
+Aplica hoy a **NOTAS INTERNAS** (SCRUM-427), un `textarea` sobre `Job.notes` que se pinta esté o no
+escrito. Lo que **no** lleva es texto de estado vacío: el `placeholder` ya dice qué va ahí.
+
+---
+
 # 5 · Dependencias
 
 **B2** (el patrón) · **C3** (la tabla de albaranes que G4 coloca) · **C6** («quedan N», hueco de G5) · **B4** (la separación factura/cobro que G4 aplica al rail).
