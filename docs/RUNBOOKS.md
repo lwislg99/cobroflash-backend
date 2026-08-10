@@ -548,9 +548,10 @@ Tres cosas que se descubrieron ejecutándolo, por si vuelven a aparecer:
   merchant: `merchants` no está en ella y acaba insertándose después de `customers`, que lo
   referencia.
 - **Los ficheros.** `attachments.data` es `bytea`: las **fotos de los trabajos viven dentro de
-  Postgres**. El volcado las escribe como objeto de claves numéricas y hay que reconstruir el Buffer
-  al insertar. Sin eso: «column "data" is of type bytea but expression is of type jsonb», y se
-  recuperaba todo **menos los ficheros de los clientes**.
+  Postgres**. Sin decodificarlas al insertar: «column "data" is of type bytea but expression is of
+  type jsonb», y se recuperaba todo **menos los ficheros de los clientes**. Desde `yaqu-logical-v2`
+  viajan en **base64** (ver §6, el techo); el códec lo comparten volcado y restauración en
+  `scripts/_backup-codec.mjs`, y la restauración sigue leyendo los ficheros `v1`.
 
 ### 4 · Reponer las secuencias — SIN ESTO LA BASE QUEDA ROTA
 
@@ -588,3 +589,24 @@ el contenido mal es el peor verde del proyecto. Lo que se comprobó, en orden de
 Y una sexta que se olvida: **comprobar que el comparador sabe ver una diferencia**. En la prueba se
 mutó un importe del censo restaurado y se verificó que la comparación lo detectaba. Si no, «los dos
 censos coinciden» y «el comparador no compara nada» son el mismo verde.
+
+### 6 · EL TECHO: hasta cuántas fotos aguanta este formato
+
+**El volcado lógico no crece indefinidamente, y conviene saber dónde para antes de necesitarlo.**
+Todo el volcado acaba en **un único `JSON.stringify`**, así que el límite no es el disco ni la RAM:
+es `MAX_STRING_LENGTH` de V8 — **536.870.888** caracteres en Node 24. Y `attachments.data` es
+`bytea`: **las fotos de los trabajos viven dentro de Postgres** (MEDIA-1, fallback sin R2).
+
+| formato | caracteres por byte de fichero | techo | a 5 MB/foto | a 2 MB/foto |
+|---|---|---|---|---|
+| `yaqu-logical-v1` (objeto de índices) | 12,4–13,4× *(crecía con el tamaño)* | ~41 MB | **8 fotos** | 20 |
+| **`yaqu-logical-v2` (base64)** | **1,333×** *(constante)* | **~384 MB** | **76 fotos** | **191** |
+
+⚠️ **Al pasarse NO se degrada: `JSON.stringify` LANZA**, y con el fail-closed de SCRUM-241 **no se
+escribe fichero**. O sea: el día que se sube la foto que sobra, se deja de tener backup **del todo**.
+Si además el disparador solo escribe en un log, nadie se entera.
+
+**El tope no ha desaparecido, se ha movido**, y 76 fotos siguen siendo pocas para un año de trabajo.
+Cuando se acerque, las salidas son `pg_dump` (formato físico, sin este límite) o sacar los ficheros
+de Postgres a R2. Lo vigila con número `tests/scrum242-backup-codec.test.mjs`: si alguien cambia el
+códec y el factor sube, sale rojo antes de que el techo se desplome en silencio.

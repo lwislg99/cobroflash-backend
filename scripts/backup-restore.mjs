@@ -20,6 +20,9 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
 import { Prisma } from '@prisma/client';
+import {
+  FORMATOS_QUE_SE_RESTAURAN, TIPOS_BINARIOS, decodificarBinario,
+} from './_backup-codec.mjs';
 
 /**
  * 🔴 EL CAST NO ES UN DETALLE: SIN ÉL LA RESTAURACIÓN NO EXISTE.
@@ -39,20 +42,22 @@ import { Prisma } from '@prisma/client';
 const CAST_POR_TIPO = { DateTime: '::timestamp', Decimal: '::numeric', Json: '::jsonb', BigInt: '::bigint' };
 
 /**
- * 🔴 `Bytes` NO LLEVA CAST: LLEVA RECONSTRUCCIÓN. Y esto también salió ejecutándolo.
+ * 🔴 `Bytes` NO LLEVA CAST: LLEVA DECODIFICACIÓN. Y esto también salió ejecutándolo.
  *
  * `attachments.data` es `bytea` — las FOTOS de los trabajos viven dentro de Postgres (MEDIA-1,
- * fallback sin R2). Al volcar, `$queryRawUnsafe` devuelve un `Uint8Array` y `JSON.stringify` lo
- * escribe como **un objeto con claves numéricas**: `{"0":137,"1":80,…}`. No como array, no como
- * `{type:"Buffer"}`. Al restaurar, eso llegaba como objeto y Postgres respondía:
+ * fallback sin R2). Al restaurar llegaba como objeto y Postgres respondía:
  *
  *     column "data" is of type bytea but expression is of type jsonb
  *
  * O sea: **la restauración funcionaba para 23 tablas y se rompía justo en la que guarda ficheros.**
  * No se vio en la primera prueba porque aquel juego de datos no tenía ni un adjunto — un verde
  * hueco: el suelo tiene que estar también en los DATOS, no solo en el detector.
+ *
+ * `TIPOS_BINARIOS` y el códec viven en `_backup-codec.mjs`, **compartidos con el volcado**: dos
+ * mitades que se leen la una a la otra no pueden vivir en dos sitios que nadie obliga a cuadrar, y
+ * el día que se desincronizaran sería el día de la restauración. Ahí está también el porqué del
+ * base64 y el número del techo.
  */
-const TIPOS_BINARIOS = new Set(['Bytes']);
 
 /**
  * EXHAUSTIVIDAD, no lista de excepciones. Estos tipos viajan por JSON sin perder nada y entran en
@@ -63,23 +68,6 @@ const TIPOS_BINARIOS = new Set(['Bytes']);
  * hacer con él — que es exactamente lo que no pasó con `Bytes`.
  */
 export const SIN_TRATAMIENTO = new Set(['String', 'Int', 'Boolean', 'Float']);
-
-/** El objeto de índices que produjo el volcado, de vuelta a Buffer. */
-function aBuffer(v) {
-  if (v === null || v === undefined) return v;
-  if (Buffer.isBuffer(v)) return v;
-  if (Array.isArray(v)) return Buffer.from(v);
-  if (typeof v === 'object') {
-    // Claves "0","1","2"… Se reconstruye POR ÍNDICE y no con `Object.values`, para no depender del
-    // orden de enumeración: un byte movido de sitio es un fichero corrupto que nadie mira hasta
-    // que lo abre.
-    const claves = Object.keys(v);
-    const buf = Buffer.alloc(claves.length);
-    for (const k of claves) buf[Number(k)] = v[k];
-    return buf;
-  }
-  return v;
-}
 
 function columnasDeLaTabla(tabla) {
   const modelo = Prisma.dmmf.datamodel.models.find((m) => (m.dbName || m.name) === tabla);
@@ -160,8 +148,8 @@ function ordenDeInsercion(tablasDelDump) {
 async function main() {
   const plano = zlib.gunzipSync(decrypt(fs.readFileSync(FICHERO)));
   const data = JSON.parse(plano.toString());
-  if (data.format !== 'yaqu-logical-v1') {
-    console.error(`formato ${data.format}: esto solo restaura volcados lógicos. Para .pgdump usa pg_restore.`);
+  if (!FORMATOS_QUE_SE_RESTAURAN.includes(data.format)) {
+    console.error(`formato ${data.format}: esto solo restaura volcados lógicos (${FORMATOS_QUE_SE_RESTAURAN.join(', ')}). Para .pgdump usa pg_restore.`);
     process.exit(1);
   }
   const tablas = data.tables || {};
@@ -204,7 +192,7 @@ async function main() {
       // Los Bytes se reconstruyen a Buffer, que es lo que el driver sabe meter en un `bytea`.
       const valores = cols.map((c) => {
         const v = row[c];
-        if (binarias.has(c)) return aBuffer(v);
+        if (binarias.has(c)) return decodificarBinario(v);
         if (casts.get(c) === '::jsonb' && v !== null && typeof v === 'object') return JSON.stringify(v);
         return v;
       });
