@@ -70,9 +70,14 @@ function errorDeRedVencido(causa) {
 /** Una petición, de principio a fin. El plazo cubre TAMBIÉN la descarga del cuerpo. */
 async function _enviar(url, finalOptions, ctrl) {
   const opciones = ctrl ? { ...finalOptions, signal: ctrl.signal } : finalOptions;
-  // 🔴 El plazo se limpia en el `finally`, no al resolver el `fetch`: `fetch` vuelve con las
-  // CABECERAS, y el cuerpo se sigue bajando después. Cortar solo la cabecera dejaría vivo justo lo
-  // que gasta los datos del profesional.
+  // 🔴 EL PLAZO CUBRE TAMBIÉN EL CUERPO, y de eso depende que corte algo: `fetch` vuelve con las
+  // CABECERAS y el cuerpo se sigue bajando después, así que un plazo que muriera al resolver el
+  // `fetch` dejaría vivo justo lo que gasta los datos del profesional.
+  //
+  // ⚠️ Lo que lo sostiene es el `await` de aquí abajo, no el de dentro de `_pedir`: el `finally`
+  // corre cuando `_enviar` sale, y sin ese `await` saldría con la promesa todavía en la mano —
+  // limpiando el plazo antes de bajar nada—. Probado en rojo: quitarlo pone el test del cuerpo en
+  // rojo; quitar el `await` de `res.json()` NO, porque `_pedir` encadena su promesa igual.
   const plazo = ctrl ? setTimeout(() => ctrl.abort(), PLAZO_RED_MS) : null;
   try {
     return await _pedir(url, opciones);
@@ -168,10 +173,7 @@ async function _pedir(url, finalOptions) {
   }
 
   if (res.status === 204) return null;
-  // 🔴 `await`, no `return` a secas: quien llama a `_pedir` limpia el plazo en su `finally`, y con
-  // un `return` sin esperar ese `finally` corre ANTES de que el cuerpo se haya bajado. El plazo
-  // moriría justo antes de la parte que de verdad gasta los datos del profesional.
-  return await res.json();
+  return res.json();
 }
 
 // -------- SCRUM-405 · LA ÚNICA FORMA DE DESCARGAR UN FICHERO --------
