@@ -56,6 +56,8 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 // SCRUM-408 · el parseo seguro y la redacción viven en UN solo sitio (SCRUM-195/226).
 import { partirBDParaHijo, redactarSecretos } from './_db-guard.mjs';
+// SCRUM-242 · el códec de bytes lo comparten volcado y restauración: ver `_backup-codec.mjs`.
+import { FORMATO_ACTUAL, esBinario, codificarBinario } from './_backup-codec.mjs';
 
 const KEY_RAW = process.env.BACKUP_ENCRYPTION_KEY || '';
 const OUT_DIR = process.env.BACKUP_DIR || path.join(process.cwd(), 'backups');
@@ -104,7 +106,7 @@ const TABLES = [
 ];
 
 async function logicalDump(prisma) {
-  const out = { format: 'yaqu-logical-v1', at: new Date().toISOString(), tables: {} };
+  const out = { format: FORMATO_ACTUAL, at: new Date().toISOString(), tables: {} };
   const fallos = [];
   for (const t of TABLES) {
     try {
@@ -120,7 +122,15 @@ async function logicalDump(prisma) {
   if (fallos.length) {
     throw new Error(`backup lógico INCOMPLETO: ${fallos.length} tabla(s) no se pudieron volcar:\n  ${fallos.join('\n  ')}`);
   }
-  return Buffer.from(JSON.stringify(out, (k, v) => (typeof v === 'bigint' ? String(v) : v)));
+  // ⚠️ EL BASE64 NO ES COSMÉTICO: ES EL TECHO DEL BACKUP. Sin él, un byte de fichero ocupa ~12,5
+  // caracteres (`{"0":137,…}`) y como todo esto acaba en UNA cadena, `MAX_STRING_LENGTH` se alcanza
+  // a los ~41 MB de fotos — OCHO, con `FOTO_MAX_BYTES` a 5 MB. Y no se degrada: LANZA, y el
+  // fail-closed de arriba no escribe fichero. En base64 el factor es 1,34× y el techo ~400 MB.
+  return Buffer.from(JSON.stringify(out, (k, v) => {
+    if (typeof v === 'bigint') return String(v);
+    if (esBinario(v)) return codificarBinario(v);
+    return v;
+  }));
 }
 
 async function main() {

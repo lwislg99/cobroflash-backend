@@ -167,6 +167,53 @@ Lo vigila `tests/scrum242-restauracion-cubre-todos-los-tipos.test.mjs`: **todo t
 schema tiene que estar nombrado** en `backup-restore.mjs` (cast, reconstrucción o «viaja intacto»).
 Es un `switch` sin `default` silencioso, no una lista de exenciones. Dos rojos comprobados por `$?`.
 
+---
+
+# Tercera vuelta (10-ago-2026, 15:40 CEST): base64 — el techo pasa de 8 fotos a 76
+
+`yaqu-logical-v1` escribía los bytes como objeto de índices (`{"0":137,…}`), **12,4–13,4 caracteres
+por byte de fichero**, y el factor **crecía** con el tamaño porque los índices se alargan. Como todo
+el volcado acaba en un único `JSON.stringify`, eso ponía el techo en ~41 MB de ficheros — **8 fotos**
+con `FOTO_MAX_BYTES = 5 MB`. `yaqu-logical-v2` los escribe en **base64**: factor **1,333× constante**.
+
+| | v1 (índices) | v2 (base64) |
+|---|---|---|
+| caracteres por byte | 12,4–13,4× (crecía) | **1,333× (constante)** |
+| techo de ficheros almacenados | ~41 MB | **~384 MB** |
+| a 5 MB/foto | 8 | **76** |
+| a 2 MB/foto | 20 | **191** |
+
+**Medido sobre el fichero real, con los mismos datos:** el backup cifrado pasó de **18.415 bytes** a
+**2.275**. Y dentro del volcado, el adjunto de 4.104 bytes ocupa 5.472 caracteres (**1,33×**),
+empezando por `iVBORw0KGgo` — la cabecera PNG en base64.
+
+## Ciclo completo otra vez, CON adjuntos y sin darlo por bueno
+
+```
+✓ merchants: 1 · attachments: 1 · customers: 1 · invoices: 4
+✓ restauradas 7 filas en 24 tablas · 24 secuencias repuestas
+```
+
+Comparado **lo que contiene el backup** contra **lo que hay en la base restaurada**:
+
+| | sha256 del fichero | bytes |
+|---|---|---|
+| en el backup (decodificando el base64) | `4bece259a349bd9d4a28fe4b8f27875448ca926545348673755b00a6ed86447a` | 4.104 |
+| en la base restaurada | `4bece259a349bd9d4a28fe4b8f27875448ca926545348673755b00a6ed86447a` | 4.104 |
+
+`BACKUP == BASE RESTAURADA: SÍ`, con las cuatro facturas y su cadena `vf_prev_hash`→`vf_hash`
+intacta. **Suelo del comparador:** mutando el `sha256`, la comparación detecta la diferencia.
+
+## Lo que vigila esto de aquí en adelante
+
+`tests/scrum242-backup-codec.test.mjs` — ida y vuelta exacta por JSON (vacío, los 256 valores,
+UTF-8 inválido, cabecera PNG) **y el factor de expansión con número**: si vuelve a subir de 1,40 el
+guard sale rojo diciendo el techo en MB. Tres rojos comprobados por `$?`: volver al objeto de índices
+(reportó `12.36 caracteres`), decodificar como `utf8`, y vaciar `TIPOS_BINARIOS`.
+
+**El tope no ha desaparecido, se ha movido.** 76 fotos siguen siendo pocas: cuando se acerque, la
+salida es `pg_dump` o sacar los ficheros de Postgres a R2.
+
 ## Lo que esta prueba NO demuestra
 
 - **El volumen.** 5 filas en 24 tablas. Un volcado lógico de producción carga fila a fila y no se ha
