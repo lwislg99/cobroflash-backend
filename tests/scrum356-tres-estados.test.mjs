@@ -88,8 +88,40 @@ test('SCRUM-356 · la microcopy aprobada está LITERAL, sin retocar', () => {
   assert.equal(t[b.ctx.FIRMA_A_SALVO].etiqueta, 'A salvo');
   assert.equal(t[b.ctx.FIRMA_A_SALVO].detalle, 'Guardado en YaQu. Ya no depende de este móvil.');
   assert.equal(b.ctx.TEXTO_NO_SE_PUDO_COMPROBAR, 'No hemos podido comprobar si te queda algo por subir.');
+  // ✅ SCRUM-358 fase 3: vuelve el texto aprobado. Entre medias estuvo el provisional —«no suben
+  // solas todavía»— mientras la cola guardaba y nadie la vaciaba. El guard que lo custodiaba
+  // llevaba en su mensaje de fallo la instrucción de retirarlo el día que existiera el drenado, y
+  // ese día es hoy: `drenarAlAbrir` se dispara en `app.js` (paso 9).
   assert.equal(b.ctx.TEXTO_SUBEN_AL_ABRIR,
     'Las firmas pendientes suben cuando abres YaQu. Si no la abres, se quedan aquí.');
+});
+
+test('SCRUM-358 · 🔴 el aviso sólo puede prometer que suben al abrir SI ALGO LAS SUBE', () => {
+  // El guard provisional de la fase 2 se retiró, pero la regla que lo motivó no: **el texto y el
+  // mecanismo tienen que viajar juntos**. Si mañana alguien quita el drenado y deja el texto, el
+  // aviso vuelve a prometer lo que no hay — y esa vez sin nadie que lo note.
+  const b = montarAlmacen(RAIZ);
+  const promete = /suben cuando abres/i.test(b.ctx.TEXTO_SUBEN_AL_ABRIR);
+
+  if (promete) {
+    assert.equal(typeof b.ctx.drenarAlAbrir, 'function',
+      '🔴 EL AVISO PROMETE QUE ABRIR LA APLICACIÓN SUBE LAS FIRMAS Y NADIE LAS SUBE. O vuelve el ' +
+      'drenado, o vuelve el texto provisional de la fase 2 («no suben solas todavía: vuelve a ' +
+      'firmar el albarán cuando tengas cobertura»). Lo que no puede quedarse es el texto sin el ' +
+      'mecanismo: en un bloque cuya regla es «ante la duda, se dice que NO subió», prometer de más ' +
+      'es el fallo mudo que este bloque existe para evitar.');
+    const src = fs.readFileSync(path.join(DIR_JS, 'app.js'), 'utf8');
+    assert.match(src, /window\.drenarAlAbrir\(\)/,
+      '🔴 `drenarAlAbrir` existe y NADIE LA LLAMA al arrancar. Mencionar no es hacer: la cola no ' +
+      'se vaciaría y el aviso seguiría prometiéndolo.');
+  }
+
+  // CONTROL POSITIVO DEL DETECTOR, dentro del mismo test: reconoce la promesa cuando está, y no la
+  // ve donde no está. Sin esto, un `promete` siempre falso haría verdad todo el bloque de arriba.
+  assert.ok(/suben cuando abres/i.test('Las firmas pendientes suben cuando abres YaQu.'),
+    '🔴 el detector no ve la promesa que tiene delante.');
+  assert.ok(!/suben cuando abres/i.test('Las firmas pendientes no suben solas todavía.'),
+    '🔴 el detector ve la promesa donde no está: daría por roto el texto provisional.');
 });
 
 test('SCRUM-356 · el contador dice singular y plural, y cuenta FIRMAS', () => {

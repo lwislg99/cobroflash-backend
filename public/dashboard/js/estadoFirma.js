@@ -81,6 +81,19 @@ const TEXTO_NO_SE_PUDO_COMPROBAR = 'No hemos podido comprobar si te queda algo p
  * sostener. Además evita una segunda detección de plataforma — `isIOS` vive dentro de la IIFE de
  * `voiceInput.js` y no está publicada, y duplicarla es el defecto que cerraron SCRUM-360 y 447.
  */
+// ✅ TEXTO APROBADO EN SCRUM-356, DE VUELTA — porque ya es verdad.
+//
+// Entre medias estuvo el provisional de la fase 2: «Las firmas pendientes no suben solas todavía:
+// vuelve a firmar el albarán cuando tengas cobertura.» Fue necesario mientras la cola guardaba y
+// nadie la vaciaba, porque este texto prometía algo que entonces no ocurría.
+//
+// **La fase 3 lo devuelve a la verdad:** `drenarAlAbrir` vacía la cola en cada arranque del
+// dashboard (`app.js`, paso 9), que es exactamente lo que este texto dice. La reversión estaba
+// escrita en `docs/master/SCRUM-356.md` y el guard provisional llevaba las instrucciones dentro de
+// su mensaje de fallo; se ha retirado con la fase que lo hacía innecesario.
+//
+// ⚠️ Y la segunda frase también es cierta y sigue haciendo falta: si no la abre, se quedan aquí.
+// No hay Background Sync en iOS ni push, así que el drenado no ocurre por su cuenta.
 const TEXTO_SUBEN_AL_ABRIR = 'Las firmas pendientes suben cuando abres YaQu. Si no la abres, se quedan aquí.';
 
 /**

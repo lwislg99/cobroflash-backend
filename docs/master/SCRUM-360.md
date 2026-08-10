@@ -116,3 +116,130 @@ de instalación, que es fase 2 y necesita microcopy aprobada.
 * `public/dashboard/js/api.js` — `entornoDeLaApp()` y sus tres constantes.
 * `public/dashboard/js/voiceInput.js` — pasa a delegar; la copia se retira.
 * `tests/scrum360-entorno-instalada.test.mjs` (nuevo, 8 tests, sin gate).
+
+---
+
+# SCRUM-360 · H5 **fase 2** — guardar el entorno
+
+**Medido contra:** `origin/main` = `e928472efd9acd2d377f5b6f44a5cda39ed69745` · 2026-08-10T23:54:31+01:00
+**Tanda:** 2940 tests · 2866 pass · **0 fail** · 74 gateados · `npm test` exit **0** · `guards:entrada` 17/17
+
+**11-ago-2026** · Cierra lo que la fase 1 dejó parado: la columna ya existe (SCRUM-449, aplicada en
+las tres bases y en el esquema) y `entornoDeLaApp()` ya estaba construida **y sin llamar**.
+
+## PASO 0
+
+* **`docs/master/SCRUM-360.md` SÍ existía en `main`** — es la entrada de arriba. **Documenta la
+  fase 1 y dice explícitamente que la 2 está parada** («sin columna no se ha construido tubería»),
+  así que no documenta lo que este encargo pide y no había que parar.
+* **La premisa se sostiene, medida sobre `origin/main`:** `entornoDeLaApp` aparece en dos ficheros
+  —`api.js`, que la define, y `voiceInput.js`, que la lee para el micrófono— y **nadie la manda a
+  ninguna parte**. La columna está en el esquema (`instaladaPwa Boolean?`).
+* **ENTRADA:** no había. Se crea `POST /admin/entorno`.
+
+## 🔴 EL AVISO QUE VA ANTES DE QUE EXISTA EL DATO
+
+`AuthSession` tiene `expiresAt` y `usedAt`: **se crea una fila por login** y caducan. Un profesional
+que entra diez veces desde el mismo iPhone instalado deja **diez filas**, y el modelo **no tiene
+ningún identificador de dispositivo** que diga que son el mismo teléfono.
+
+> **El número que sale de aquí es «qué proporción de SESIONES se abren desde una app instalada». NO
+> es «cuántos profesionales la tienen instalada». Quien entra mucho pesa más.** Para lo segundo hay
+> que agregar por `merchantId`, y es otra consulta y otro número.
+
+Si alguien publica el segundo número habiendo contado el primero, habremos hecho exactamente lo que
+este dato venía a evitar.
+
+## Cómo se eligió el camino — midiendo, no eligiendo
+
+La otra opción era colgarlo de `/admin/me`, que **ya se pide en cada arranque** y saldría gratis en
+número de peticiones. Se descarta por dos motivos, y el segundo decide:
+
+1. Es un **GET**, y esto **escribe**.
+2. 🔴 **`/admin/me` es la puerta de arranque y su fallo echa al profesional a `/login.html`** —
+   medido en `app.js:6-7`: `catch { window.location.href = '/login.html'; return; }`. Una escritura
+   de **telemetría** no puede tener la capacidad de cerrarle la sesión a nadie. Acoplar lo
+   prescindible a lo imprescindible siempre se paga en la dirección mala.
+
+**Coste aceptado y dicho:** una superficie más que mantener y una petición más por arranque. Va
+suelta, sin `await`, y si falla la app ni se entera.
+
+`requireAuth` pasa a exponer **`req.sessionId`**: la fila ya está cargada ahí, así que no cuesta
+ninguna consulta, y sin ella habría que resolver la cookie por segunda vez.
+
+## Las dos decisiones del fundador, convertidas en mecanismo
+
+**① «El último entorno visto», y se escribe solo cuando CAMBIA.** Ni al crear la sesión —mentiría en
+cuanto el profesional instale la app a mitad, **e instalar es justo la mitigación que queremos ver
+ocurrir**— ni en cada visita, que sería una escritura por visita sobre una tabla caliente. Hay test
+de las dos direcciones del cambio (`pestana`→`instalada` y al revés) y **test de que con el mismo
+valor NO se escribe**: sin él, «solo cuando cambia» es un comentario y no un mecanismo.
+
+**La comparación es del SERVIDOR contra lo guardado, no del cliente:** el navegador no sabe qué hay
+en la fila, y hacérselo recordar en `localStorage` sería otra clave que purgar (SCRUM-457) y que
+además mentiría en cuanto alguien cierre sesión en ese móvil.
+
+**② `null` no se suma nunca a `false`.** `desconocido` se guarda **`null`**. Y el colapso puede
+volver por la puerta de atrás de un operador: la comparación usa **`??` y no `||`**, con su test —
+con `||`, un `false` guardado se leería como `null` y «pestaña» sobre «pestaña» se escribiría en cada
+visita.
+
+## Verificado
+
+**10 tests.** **Cuatro rojos por el MECANISMO**, con post-condición en disco:
+
+| # | qué se rompe | qué sale |
+|---|---|---|
+| **R1** | `desconocido` se guarda `false` | 🔴 «**SE ESTÁ CONTANDO UN «NO LO SÉ» COMO UN «NO»**… ese valor caerá del lado de «pestaña» y habremos fabricado el número tranquilo que este dato venía a impedir» |
+| **R2** | se escribe siempre, no solo al cambiar | 🔴 ««instalada» sobre un `true` ya guardado dice ESCRITO» |
+| **R3** | la fila no se actualiza nunca | 🔴 ««instalada»: no hay escritura» — es la decisión del fundador convertida en guard |
+| **R4** | `||` en vez de `??` | 🔴 ««pestana» sobre un `false` ya guardado dice ESCRITO» |
+
+**Control positivo:** los **tres** estados llegan a la fila como lo que son —`true`, `false`,
+**`null`**— y con el `id` de la sesión correcta. **Control negativo:** con el mismo valor ya
+guardado **no se escribe**, y la unión es **cerrada** (`'INSTALADA'`, `'standalone'`, `''`, `null`,
+`true` se rechazan) — normalizar un valor desconocido a `desconocido` guardaría un `null` que
+**parece medido y no lo es**. **Suelos, por separado:** la unión tiene que tener tres estados · la
+fila tiene que haberse **leído** antes de afirmar que no se escribió · el escáner del servidor tiene
+que encontrar `src/`.
+
+**Y el camino ENTERO, no medio:** hay test de que el navegador **llama** al envío en el arranque, de
+que usa `window.entornoDeLaApp()` —la de la fase 1, no una copia nueva— y de que la llamada va
+**suelta, sin `await`**: telemetría que retrasa el arranque es telemetría que un día impide arrancar.
+Y un guard de que **no ha nacido detección de entorno en el servidor**, que no tiene navegador al que
+preguntar.
+
+### Dos guards de la casa cayeron encima, y los dos pedían una decisión escrita
+
+* **SCRUM-55** (toda ruta `/admin` declara rol): **no** se pone admin-only. Escribe el entorno de
+  **la propia sesión** —el id sale de la cookie de quien llama—, así que no es una capacidad de
+  administración; y dejarlo admin-only **dejaría sin medir justo a los técnicos**, que son los que
+  más van a obra y por tanto los que más riesgo tienen. Va a `TECNICO_ALLOWED` con su motivo.
+* **SCRUM-243** (lecturas sin comprobación de merchant): declarada, en la **misma categoría** que
+  `auth.service` — «se busca por su propio identificador de sesión, no por merchant». El id **no
+  viene del cliente**, así que no hay otra fila alcanzable; filtrar además por merchant no añadiría
+  seguridad y **sugeriría que el id es un parámetro de entrada**, que es la lectura equivocada.
+
+## Lo que NO cubre
+
+* 🔴 **Nadie cuenta el dato todavía.** Esta fase lo **recoge**; contarlo y publicarlo es otra
+  conversación — y cuando llegue, con el aviso de arriba delante.
+* **No se ha probado en un iPhone real.** El borrado de origen a los 7 días **sigue sin medirse**, y
+  no se estima. Lo que hay es la capacidad de distinguir los tres estados.
+* **Las filas viejas se quedan en `null`**, indistinguibles de «no se pudo saber». No hay backfill
+  posible: nadie le preguntó nunca a esos navegadores. Quien cuente tendrá que separar «`null` de
+  sesión antigua» de «`null` medido», y **hoy no hay forma de distinguirlos** — el único
+  discriminador aproximado es `createdAt` anterior a esta entrega.
+* **El texto que le pide al profesional que INSTALE la app** —que deja de ser una sugerencia y pasa
+  a ser condición para que el offline funcione— es la fase siguiente y necesita microcopy aprobada.
+* **`navigator.storage.persist()` y la cuota**: fase siguiente.
+
+## Ficheros (fase 2)
+
+* `src/modules/auth/domain/entornoApp.service.ts` (nuevo) — la conversión pura y la escritura
+  solo-si-cambia.
+* `src/modules/auth/app/routes/entornoAdmin.routes.ts` (nuevo) · `src/app.ts` — `POST /admin/entorno`.
+* `src/core/http/authMiddleware.ts` · `src/types/express.d.ts` — `req.sessionId`.
+* `src/core/http/adminRouteDeclarations.ts` — la ruta, en `TECNICO_ALLOWED` con motivo.
+* `public/dashboard/js/app.js` — `enviarEntornoDeLaApp()`, suelto, en el arranque.
+* `tests/scrum360-entorno-guardado.test.mjs` (nuevo, 10) · `tests/scrum243-…` — la lectura declarada.

@@ -40,6 +40,37 @@ const API_BASE_URL = ""; // mismo origin (http://localhost:3000)
 var PLAZO_RED_MS = (typeof window !== 'undefined' && window.PLAZO_RED_MS) || 10000;
 
 /**
+ * SCRUM-358 (H3 · fase 3) · ESPERAR A LA RED LO QUE LA CASA HAYA DECIDIDO ESPERAR — sin abortar.
+ *
+ * Vive AQUÍ, junto a la constante, y no en quien la usa. El drenado de la cola de firmas necesita
+ * rendirse con una firma para poder pasar a la siguiente —si no, contra una red que acepta y no
+ * entrega la primera petición no vuelve nunca y las demás no suben jamás—, y su primera versión se
+ * declaró su propio plazo. **El guard de SCRUM-451 lo cazó y tenía razón**: el mecanismo era otro,
+ * pero la decisión era la misma —cuánto espera el producto a la red— y ésa vive en un sitio para
+ * que el día que se mida cambie en una línea.
+ *
+ * ⚠️ NO ABORTA NADA, y por eso no es el plazo del `POST`. Abortar una mutación puede duplicar una
+ * factura y eso está PARADO (SCRUM-459): aquí sólo se deja de esperar. La petición sigue su curso;
+ * si llegó, el reintento se encontrará el 409 del documento ya firmado.
+ *
+ * Devuelve `{ valor }`, `{ error }` o `{ vencio: true }` — tres salidas, porque significan cosas
+ * distintas y quien llama tiene que poder separarlas.
+ */
+function esperarLoQueLaRed(promesa, ms) {
+  const tope = ms || PLAZO_RED_MS;
+  return new Promise((resolver) => {
+    let vivo = true;
+    const t = setTimeout(() => { if (vivo) { vivo = false; resolver({ vencio: true }); } }, tope);
+    if (t && t.unref) t.unref();
+    promesa.then(
+      (valor) => { if (vivo) { vivo = false; clearTimeout(t); resolver({ valor }); } },
+      (error) => { if (vivo) { vivo = false; clearTimeout(t); resolver({ error }); } },
+    );
+  });
+}
+if (typeof window !== 'undefined') window.esperarLoQueLaRed = esperarLoQueLaRed;
+
+/**
  * 🔴 QUÉ RESPUESTA MANDA: la de la ÚLTIMA petición lanzada para esa ruta, y solo ésa.
  *
  * Abortar NO quita la necesidad de esto: el aborto no es instantáneo, y una respuesta que ya venía
