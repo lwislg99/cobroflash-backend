@@ -72,6 +72,7 @@ const SHELL = [
   '/dashboard/js/globalSearch.js',
   '/dashboard/js/csvImport.js',
   '/dashboard/js/tutorial.js',
+  '/dashboard/js/almacenLocal.js',
   '/dashboard/js/app.js',
 ];
 
