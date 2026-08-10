@@ -75,6 +75,7 @@ const SHELL = [
   '/dashboard/js/almacenLocal.js',
   '/dashboard/js/estadoFirma.js',
   '/dashboard/js/colaDeFirmas.js',
+  '/dashboard/js/resistenciaAlmacen.js',
   '/dashboard/js/app.js',
 ];
 

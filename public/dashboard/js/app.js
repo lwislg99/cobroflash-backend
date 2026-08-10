@@ -467,6 +467,16 @@ async function initApp() {
   // Va DESPUÉS del render y SIN `await`: pintar el dashboard no puede esperar a la red. El aviso
   // se repinta solo cuando el drenado termina — `drenarAlAbrir` se encarga, y no lanza nunca.
   if (typeof window.drenarAlAbrir === 'function') window.drenarAlAbrir();
+
+  // 10. SCRUM-360 (H5 · fase 3) · QUE iOS NO SE LLEVE UNA FIRMA EN SILENCIO.
+  //
+  // WebKit borra el origen entero —service worker, Cache API e IndexedDB— tras 7 días de usar
+  // Safari sin visitar el sitio (medido en H0). Los web apps añadidos a la pantalla de inicio
+  // están exentos; una pestaña normal, NO. Se pide persistencia —y se MIRA la respuesta, que
+  // pedirla sin mirarla no sirve de nada— y se comprueba si el almacén se ha vaciado solo.
+  //
+  // Va sin `await` y no puede tumbar el arranque: esto informa, no bloquea.
+  if (typeof window.resistenciaAlArrancar === 'function') window.resistenciaAlArrancar();
 }
 
 /**

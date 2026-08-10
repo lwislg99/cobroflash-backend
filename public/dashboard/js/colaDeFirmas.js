@@ -79,6 +79,9 @@ function claveDeFirma(albaranId) {
 async function encolarFirma(albaranId, cuerpo) {
   const claveIdempotencia = claveDeFirma(albaranId);
   if (!claveIdempotencia) return { estado: window.FALLO, motivo: 'sin id de albarán' };
+  // SCRUM-360 fase 3 · queda constancia FUERA de IndexedDB de que este navegador tuvo cola.
+  // Sin esto, un desalojo se lleva la cola Y la prueba de que existió, y no hay nada que detectar.
+  if (typeof window.marcarQueHuboCola === 'function') window.marcarQueHuboCola();
   return window.guardarFirmaPendiente(
     // SCRUM-358 fase 3 · `encoladaEn` lo añade el drenado para poder ORDENAR. Se pone al encolar
     // y NO se toca al reintentar: es cuándo el cliente firmó, no cuándo se intentó subir.
@@ -264,6 +267,9 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
     ? despues.firmas.length
     : null;   // se pudo drenar y no se pudo releer: no se inventa un cero
 
+  // Si la cola quedó vacía DE VERDAD —leída y sin nada—, ya no hay nada que perder: se retira la
+  // marca. Dejarla puesta haría que el siguiente arranque avisara de una pérdida que no hubo.
+  if (quedan === 0 && typeof window.olvidarQueHuboCola === 'function') window.olvidarQueHuboCola();
   return { estado: window.GUARDADO, subidas, yaEstaban, quedan, fallidas };
 }
 
