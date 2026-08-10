@@ -1573,3 +1573,99 @@ ALTER TABLE "merchants" ADD COLUMN "flags" JSONB;
   (precedencia merchant > país > env > default). Escritura solo manual/fundador.
 - Primer uso: PUBLIC_PROFILE_ENABLED=true SOLO en demo (id=1). Ningún otro merchant
   tiene flags (verificado count=0).
+
+---
+
+## SCRUM-441 · `providers.legal_name` + las DOS del programa del asesor (E2/E4)
+
+**Fecha:** 10-ago-2026 · **Medido contra:** `origin/main` = `2bab2e582f6d54419394e9c0205685308c1f9b1b` · 2026-08-10T19:34:06+02:00
+
+**Estado: SQL ENTREGADO Y REVISADO — NO APLICADO A NINGUNA BASE.** Mismo procedimiento que
+`clave_idempotencia` (§ anterior), que ya es el de la casa: **bases primero, schema después**.
+
+Fichero: **`docs/sql/scrum-441-legalname-y-asesor-programa.sql`**. **Aditivo y re-ejecutable**
+(las tres con `IF NOT EXISTS`).
+
+### Qué se añade, y por qué son TRES y no dos
+
+| tabla (leída del `@@map`) | columna | tipo | motivo |
+| --- | --- | --- | --- |
+| `providers` | `legal_name` | `TEXT` | **E4** · `providers` tiene `tax_id` pero no el nombre fiscal. Sin él, el libro de recibidas identifica al proveedor por **el mote que le pone el profesional en su libreta**. |
+| `merchants` | `asesor_programa_preguntado_at` | `TIMESTAMP` | **E2** · ¿se le preguntó, y cuándo? |
+| `merchants` | `asesor_programa` | `TEXT` | **E2** · qué contestó. |
+
+> 🔴 **Las del asesor son DOS y no es un lujo.** Con solo la respuesta, `NULL` significaría a la vez
+> «no se le preguntó» y «se le preguntó y pasó»: el mismo valor con dos sentidos opuestos.
+> `preguntado_at IS NULL` = nunca se le preguntó · `preguntado_at` puesto con `programa NULL` = se
+> le preguntó y no quiso.
+
+> 🔴 **Los nombres físicos se LEEN, no se derivan.** De los 24 modelos del schema, **cuatro** no
+> siguen la convención (`Albaran → albaranes`, `AlbaranLineaFacturada → albaran_lineas_facturadas`,
+> `WhatsAppMessage → whatsapp_messages`, `AuditLog → audit_log`). Aquí las tablas salen de
+> `@@map("providers")` y `@@map("merchants")` (`:109`), y `legal_name` se **copia** del nombre
+> físico que ya usan `Merchant.legalName` (`:15`) y `Customer.legalName` (`:143`).
+
+> 🔴 **Todas NULLABLE y sin `DEFAULT`, a propósito.** Un `DEFAULT` sobre una tabla con filas escribe
+> un valor que nadie ha decidido en **cada fila existente**: sería inventarle una razón social a un
+> proveedor ya dado de alta, o una respuesta a un profesional al que nadie preguntó.
+
+### Recuento de la revisión a mano (sobre el SQL **sin comentarios**)
+
+`ADD COLUMN 3` · `CREATE INDEX 0` · `DROP 0` · `ALTER COLUMN 0` · `NOT NULL 0` · `DEFAULT 0` ·
+**3 sentencias**. Exacto. *(Se cuenta con los comentarios fuera: un comentario que diga «DROP» no es
+un `DROP`, y contarlo dentro es la trampa de medir con la técnica cuyo fallo se denuncia.)*
+
+### ⚠️ Antes de aplicar: SABER DÓNDE SE ESTÁ, y no por el nombre
+
+`current_database()` devuelve **`railway` en producción Y en staging**, y el entorno de Railway donde
+vive staging **se llama «production»**. El host es lo único que distingue: **`acela` = staging/dev ·
+`autorack` = producción**. El host sale de **la conexión**, no de la base: se comprueba antes de
+pegar nada.
+
+### Cruce de control por base — filas ANTES y DESPUÉS
+
+`ADD COLUMN` sin `DEFAULT` no reescribe filas: los dos números tienen que salir **idénticos**. Si
+cambian, algo más se ha ejecutado en esa sesión.
+
+```sql
+-- ANTES y DESPUÉS, la MISMA consulta:
+SELECT (SELECT count(*) FROM providers) AS providers,
+       (SELECT count(*) FROM merchants) AS merchants;
+```
+
+### Verificación al CATÁLOGO (nunca el mensaje del comando)
+
+```sql
+SELECT count(*) FILTER (WHERE table_name='providers' AND column_name='legal_name')                    AS providers_legal_name,
+       count(*) FILTER (WHERE table_name='merchants' AND column_name='asesor_programa_preguntado_at') AS merchants_preguntado_at,
+       count(*) FILTER (WHERE table_name='merchants' AND column_name='asesor_programa')               AS merchants_programa
+FROM information_schema.columns;
+```
+
+Las tres tienen que salir **= 1**. `CREATE INDEX` no aplica: este cambio no lleva ninguno.
+
+| Base | Host (así se distingue) | Cómo se aplicó | Verificación |
+| --- | --- | --- | --- |
+| **Producción** | `autorack…` | ⬜ **PENDIENTE** — a mano por el fundador | ⬜ sin marcar |
+| **Staging** | `acela…` / entorno «production» (el nombre miente) | ⬜ **PENDIENTE** — a mano por el fundador | ⬜ sin marcar |
+| **Dev** | `acela…` / `yaqu_dev_javier` | ⬜ **PENDIENTE** — la corre **Javier**: la base de dev es de su carril y no se aplica desde otra sesión | ⬜ sin marcar |
+
+**Ninguna casilla la marca quien no haya visto el resultado de la consulta al catálogo.**
+
+### Y solo DESPUÉS, el schema
+
+Mientras la base va por delante del schema, **NO se corre `prisma migrate diff` contra ninguna de
+las tres**: propondría **BORRAR** las columnas. Cuando las tres estén aplicadas y verificadas, el
+bloque que le toca a `prisma/schema.prisma` —dominio del fundador— es exactamente éste:
+
+```prisma
+// model Provider
+  legalName String? @map("legal_name")
+
+// model Merchant
+  asesorProgramaPreguntadoAt DateTime? @map("asesor_programa_preguntado_at")
+  asesorPrograma             String?   @map("asesor_programa")
+```
+
+Y tras editarlo, `npx prisma generate` **desde un worktree al día** (no desde el checkout
+compartido, que va por detrás) o el cliente quedará describiendo otro schema.
