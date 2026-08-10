@@ -58,8 +58,8 @@ async function renderExportView(container) {
             <label for="export-to" style="display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Hasta</label>
             <input type="date" id="export-to" class="input" style="width:auto">
           </div>
-          <!-- SCRUM-384: sin `style="min-height:44px"`. La base ya da 44 px en móvil a
-               `.btn-primary` suelta (SCRUM-352); el inline, además, ganaba a 1280 px y dejaba
+          <!-- SCRUM-384: sin «style="min-height:44px"». La base ya da 44 px en móvil a
+               «.btn-primary» suelta (SCRUM-352); el inline, además, ganaba a 1280 px y dejaba
                este botón 8 px más alto que sus hermanos sin que nadie lo decidiera. -->
           <button class="btn-primary" id="btn-export-zip">Descargar ZIP</button>
         </div>
@@ -72,12 +72,12 @@ async function renderExportView(container) {
            TERCERA descarga, y contesta una pregunta distinta de las otras dos: no es «dame mi
            actividad» ni «dame todo lo mío», es «dame las facturas de UN trimestre con las
            columnas del libro». Por eso va aparte y con su propio periodo: aquí el trimestre no
-           es un filtro cómodo, es la unidad — y sale del mismo `rangoTrimestre` que el 303.
+           es un filtro cómodo, es la unidad — y sale del mismo «rangoTrimestre» que el 303.
 
            🔴 NO SE LLAMA «AEAT» NI «LIBRO REGISTRO», y es una decisión del asesor (7-ago-2026):
            no hay en el árbol ningún documento oficial contra el que se haya contrastado el
            formato, así que ese nombre declararía una conformidad que nadie ha verificado. Es un
-           CSV con las columnas del libro. Ver `docs/master/SCRUM-325.md`.
+           CSV con las columnas del libro. Ver «docs/master/SCRUM-325.md».
 
            Rótulos 1-9 y el nombre APROBADOS el 7-ago-2026. La cabecera «Estado» sigue con
            marcador: ese campo mezcla cobro y anulación y su rótulo está sin decidir.
