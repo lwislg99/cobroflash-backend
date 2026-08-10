@@ -20,6 +20,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
+// SCRUM-437 · acotar por estructura, nunca por una longitud.
+import { ramaDeCase } from './_bloque-estructural.mjs';
 
 const RAIZ = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const VISTA = path.join(RAIZ, 'public/dashboard/js/libroRegistroView.js');
@@ -276,7 +278,12 @@ test('SCRUM-296 · el título de la vista sale de LIBRO_COPY, y el rótulo del M
   // test que cae el día que alguien hace el trabajo BIEN (aquí, conseguir la aprobación). Es la
   // misma corrección que SCRUM-388 se hizo a sí mismo con el banco de A9.
   const app = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/app.js'), 'utf8');
-  const caso = app.slice(app.indexOf("case 'libro-registro':"), app.indexOf("case 'libro-registro':") + 500);
+  // SCRUM-437 · la RAMA del `case`, no 500 caracteres. Hoy mide 412 y `LIBRO_COPY` está en el 236:
+  // con 88 caracteres más en esa rama, el guard habría dejado de verlo sin ponerse rojo.
+  const caso = ramaDeCase(app, "case 'libro-registro':");
+  assert.ok(caso,
+    "🔴 ESCÁNER CIEGO: no se localiza la rama `case 'libro-registro':` en app.js. No se puede "
+    + 'afirmar si el título sale de `LIBRO_COPY` o está escrito a mano.');
   assert.ok(caso.includes('LIBRO_COPY'),
     '🔴 el título de la vista está escrito a mano en app.js en vez de salir de `LIBRO_COPY`.');
 

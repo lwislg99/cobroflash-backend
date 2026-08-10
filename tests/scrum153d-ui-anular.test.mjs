@@ -13,6 +13,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { soloEjecutable } from './_guard-texto.mjs';
+// SCRUM-437 · acotar por estructura, nunca por una longitud.
+import { bloqueDeLlaves, sentencia } from './_bloque-estructural.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DETALLE = fs.readFileSync(
@@ -75,8 +77,20 @@ test('SCRUM-153 · anular NO vive en la misma fila que rectificar', () => {
       'Son las dos palabras que el pro confunde, y juntas elegirá ANULAR por sonar a lo que ' +
       'quiere. La separación visual ES el requisito.',
   );
+  // ⚠️ SCRUM-437 · ESTE ASSERT ESTABA PASANDO CON PRUEBA AJENA, desde el 28-jul-2026.
+  //
+  // Miraba `slice(i - 400, i + 200)`: **400 caracteres ANTES del ancla**. En ese trozo previo hay
+  // un `detail-section` de OTRA sección, así que el test daba verde aunque la zona de anular
+  // dejara de usar el componente. Medido: quitándolo de dentro del bloque, seguía en verde.
+  //
+  // No estaba ciego por truncamiento —como el de SCRUM-435— sino por MIRAR DEMASIADO: una ventana
+  // que abarca al vecino demuestra lo del vecino. Ahora se acota al bloque de la propia zona.
+  const zona = bloqueDeLlaves(CODIGO, 'zona-anular');
+  assert.ok(zona,
+    '🔴 ESCÁNER CIEGO: no se localiza el bloque de `zona-anular`. No se puede afirmar nada sobre '
+    + 'qué componente usa — ni que reutiliza `detail-section` ni que no.');
   assert.ok(
-    /detail-section/.test(CODIGO.slice(CODIGO.indexOf('zona-anular') - 400, CODIGO.indexOf('zona-anular') + 200)),
+    /detail-section/.test(zona),
     '🔴 la zona debe reutilizar el componente `detail-section` del inventario AB3, no uno nuevo',
   );
 });
@@ -130,7 +144,13 @@ test('SCRUM-153 · a un técnico se le muestra deshabilitado con explicación', 
 // ── 5. Solo donde procede ────────────────────────────────────────────────────────────────
 
 test('SCRUM-153 · no se ofrece sobre pagadas, rectificativas ni justificantes', () => {
-  const bloque = CODIGO.slice(CODIGO.indexOf('const puedeAnular'), CODIGO.indexOf('const puedeAnular') + 260);
+  // SCRUM-437 · la SENTENCIA entera, no 260 caracteres: `puedeAnular` mide hoy 114, y el margen
+  // hasta la ventana vieja eran 146 — suficiente para que una condición nueva se saliera fuera y
+  // el guard dejara de verla sin decir nada.
+  const bloque = sentencia(CODIGO, 'const puedeAnular');
+  assert.ok(bloque,
+    '🔴 ESCÁNER CIEGO: no se localiza la sentencia `const puedeAnular …;`. Sin ella no se puede '
+    + 'afirmar sobre qué facturas se ofrece anular.');
   assert.ok(/st === 'pending'/.test(bloque), '🔴 se ofrece sobre una PAGADA: el dinero entró, la operación existió → devolución + R1');
   assert.ok(/type !== 'R1'/.test(bloque), '🔴 se ofrece sobre una rectificativa');
   assert.ok(/J-/.test(bloque), '🔴 se ofrece sobre un justificante J- (V0-0: nunca entra en la cadena)');
