@@ -70,38 +70,17 @@ var COBROS_COPY = {
  * Filtrar por cuatro, leer los cinco.
  */
 /**
- * SCRUM-448 · CUÁNTO SE ESPERA ANTES DE DECIR QUE NO SE PUDO CARGAR. **Decisión del fundador.**
+ * SCRUM-451 · EL PLAZO Y EL NÚMERO DE SECUENCIA YA NO VIVEN AQUÍ.
  *
- * DIEZ segundos, y de dónde sale, porque si no no vale: **no hay p95 de `/admin/cobros` en
- * producción y no se inventa**. Sale del umbral clásico de 10 s a partir del cual una persona deja
- * de creer que el sistema trabaja y empieza a creer que está roto. Es una **referencia general, no
- * un dato nuestro**, y así queda escrito.
+ * SCRUM-448 los estrenó en esta vista, y dejó dicho por qué era provisional: **el segundo sitio
+ * donde se copia una decisión es donde deja de ser una decisión y pasa a ser una costumbre.** Los
+ * dos bajaron a `apiRequest` (`api.js`), que es por donde pasan las 136 peticiones del panel, y
+ * allí además **cortan de verdad** con `AbortController` — cosa que aquí no se podía hacer.
  *
- * Va hacia abajo y no hacia arriba porque **los dos fallos no cuestan igual**:
- *   · plazo corto de más → sale el aviso y la respuesta llega luego. Molesto, y RECUPERABLE.
- *   · plazo largo de más → tabla muda, sin información ninguna. De ahí el profesional no sale.
- *
- * En UNA constante y en UN sitio: este número **va a cambiar en cuanto midamos**, y cambiarlo tiene
- * que ser cambiar una línea. Se lee de `window` para que un test pueda bajarlo — probar el
- * vencimiento esperando diez segundos de verdad sería un test que nadie corre.
+ * Lo que esta vista conserva es lo suyo: **sus tres estados y su texto**. Cuando el plazo vence,
+ * `apiRequest` rechaza con `err.vencido`, cae por el `catch` de siempre y se pinta el aviso ya
+ * aprobado en SCRUM-285. Ni un texto genérico ni un plazo propio.
  */
-var COBROS_PLAZO_MS = (typeof window !== 'undefined' && window.COBROS_PLAZO_MS) || 10000;
-
-/**
- * 🔴 QUÉ RESPUESTA MANDA: la de la ÚLTIMA petición lanzada, y solo ésa.
- *
- * Aquí NO se corta la petición vencida —eso es `AbortController` y es SCRUM-451—, así que **sigue
- * viva y va a llegar**. Sin contador pasa esto:
- *
- *   · t=10 s vence el plazo → se pinta el aviso
- *   · se relanza → t=11 s llega la SEGUNDA y pinta la lista buena
- *   · t=13 s llega la PRIMERA y **pinta encima una lista MÁS VIEJA**
- *
- * El profesional se queda mirando datos viejos sin que nada se lo diga. Es el defecto que nadie ve
- * hasta que muerde. El contador vive fuera del render a propósito: así dos renders distintos de la
- * misma pantalla tampoco pueden pisarse.
- */
-var cobrosSecuencia = 0;
 
 var COBROS_METODOS = [
   { clave: 'bizum', rotulo: 'Bizum', casa: ['bizum_auto', 'bizum_manual'] },
@@ -361,33 +340,26 @@ function renderCobrosView(container) {
   // 🔴 EL CASO QUE DECIDE EL DISEÑO: ¿y si la respuesta NO LLEGA NUNCA?
   //
   // Es lo que hace una red que acepta y no entrega: la promesa no resuelve **ni rechaza**, así que
-  // sin plazo ni el `then` ni el `catch` corren jamás y la tabla se quedaría muda para siempre. Un
-  // indicador de carga eterno tampoco sirve: no miente, pero deja al profesional sin saber qué
+  // sin plazo ni el `then` ni el `catch` correrían jamás y la tabla se quedaría muda para siempre.
+  // Un indicador de carga eterno tampoco sirve: no miente, pero deja al profesional sin saber qué
   // hacer.
   //
-  // Al vencer se dice lo mismo que cuando falla, con el texto YA APROBADO en SCRUM-285 —«No hemos
-  // podido cargar los cobros. Vuelve a intentarlo.»—, porque para quien mira es el mismo hecho: no
-  // están sus datos y puede reintentar. Cero microcopy nueva.
-  var mia = ++cobrosSecuencia;
-  var plazo = setTimeout(function () {
-    // Si ya se lanzó otra petición, este plazo es de una vieja y no tiene nada que avisar.
-    if (mia === cobrosSecuencia) pintarNoSePudo();
-  }, COBROS_PLAZO_MS);
-
+  // SCRUM-451 · EL PLAZO LO PONE `apiRequest`, no esta vista. Al vencer, rechaza —con `sinRed` y
+  // `vencido`— y esto cae por el `catch` de siempre. Se dice lo mismo que cuando falla, con el
+  // texto YA APROBADO en SCRUM-285 —«No hemos podido cargar los cobros. Vuelve a intentarlo.»—,
+  // porque para quien mira es el mismo hecho: no están sus datos y puede reintentar.
+  //
+  // Y el número de secuencia también es suyo: si mientras tanto salió otra petición para
+  // `/admin/cobros`, la que manda es la última, y a ésta se le entrega ESE resultado. Aquí no hay
+  // nada que comparar porque ya no puede llegar una respuesta vieja.
   apiRequest('/admin/cobros').then(function (r) {
-    clearTimeout(plazo);
-    // ⚠️ Solo pinta la ÚLTIMA lanzada. Una respuesta vieja que llega tarde se DESCARTA en silencio:
-    // pintarla sustituiría datos buenos por datos peores sin que nada lo dijera.
-    if (mia !== cobrosSecuencia) return;
-    // 🔴 Y EL DATO GANA AL MENSAJE: si venció el plazo y la respuesta llega DESPUÉS, se pinta y
+    // 🔴 EL DATO GANA AL MENSAJE: si venció el plazo y la respuesta llega DESPUÉS, se pinta y
     // sustituye al aviso. Lo que vence no puede acabar contándose como «no hay cobros» — eso es el
-    // defecto entero de este ticket, y colarlo por la puerta del plazo sería reintroducirlo.
+    // defecto entero de SCRUM-448, y colarlo por la puerta del plazo sería reintroducirlo.
     datos = Array.isArray(r) ? r : [];
     estado = 'listo';
     pintarFilas();
   }).catch(function () {
-    clearTimeout(plazo);
-    if (mia !== cobrosSecuencia) return; // el fallo de una vieja tampoco pisa a la de ahora
     pintarNoSePudo();
   });
 }
