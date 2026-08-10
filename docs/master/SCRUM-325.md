@@ -198,3 +198,144 @@ libro vacío es una respuesta legítima y a veces es justo lo que se necesita co
 **Pendientes de aprobar:** el aviso de periodo vacío (propuesta: «No hay facturas emitidas en ese
 periodo.»), el texto descriptivo de la card, los rótulos de los dos campos de periodo, el rótulo del
 botón y los mensajes de resultado y de error.
+
+---
+---
+
+# SCRUM-325 / E4 · segunda entrega · PASO 0 del bloque E — medición, sin escribir una línea
+
+**Medido contra:** `origin/main` = `8bc048788d04bbbe74d77b3abd629ab972f02f73` · 2026-08-10T15:11:50+02:00
+**Rama:** `scrum-e4-medir` · `git diff` sobre `src/` y `prisma/` **vacío**
+
+> Encargo: medir **entrada Y mecanismo** antes de diseñar, porque llevamos seis casos de repartir
+> cosas ya construidas. **La sospecha era correcta: E4 está construido y mergeado.** Y la medición
+> mueve el alcance de sitio.
+
+---
+
+## ① E4 ya existe, y funciona
+
+`scrum-325-libros-por-periodo-rebasada` **está dentro de `main`**. 425 líneas vivas en
+`src/modules/fiscal/librosAeat/`:
+
+| fichero | líneas | qué hace |
+|---|---|---|
+| `librosAeat.ts` | 237 | columnas, mapa de estados, suelo, filtro de periodo, filas por tipo de IVA |
+| `librosAeat.routes.ts` | 81 | `GET /admin/libros/expedidas.csv?año&trimestre` |
+| `librosAeat.repo.ts` | 56 | resuelve `clienteId` → NIF y nombre |
+| `librosAeatCsv.ts` | 51 | CSV **heredando** el formato de SCRUM-86 (no escribe un segundo) |
+
+Montada y gateada en `app.ts:444` con `requireRole('admin')`. Año y trimestre **obligatorios**
+(400 si faltan). Suelo real: `exigirLibroLegible` exige `miradas`, porque *«un periodo sin facturas
+y un lector que no supo mirar producen el mismo fichero en blanco»*. Y `null` sale **celda vacía,
+nunca `0,00`**.
+
+**Queda una rama suelta de Javier** (`scrum-325-libros-por-periodo`, 1 commit, 7-ago) que **no**
+está en main: es su copia pre-rebase. Comprobado que no se perdió nada — sus 12 tests están todos
+en main, que tiene 15. No la toco: las ramas las borra el fundador.
+
+---
+
+## ② 🔴 Los 9 campos de SCRUM-324, RECONTADOS tras la migración de ayer
+
+SCRUM-324 dejó escrito que construir E3 **no** desbloquea E4. Sigue siendo cierto — pero **la
+migración del 10-ago sí lo desbloquea casi entero**, y eso hay que recontarlo, no recordarlo:
+
+| # | Campo | Estado en SCRUM-324 (7-ago) | **Estado HOY** |
+|---|---|---|---|
+| 1 | Fecha | ✅ `Expense.date` | ✅ |
+| 2 | Importe total | ⚠️ `amount` sin declarar qué es | ✅ ahora `baseAmount` + `vatAmount` lo declaran |
+| 3 | NIF del proveedor | ❌ | ✅ **`Provider.taxId`** |
+| 4 | Base imponible | ❌ | ✅ **`Expense.baseAmount`** |
+| 5 | Tipo de IVA | ❌ | ✅ **`Expense.vatRate`** |
+| 6 | Cuota de IVA | ❌ | ✅ **`Expense.vatAmount`** (guardada, no derivada) |
+| 7 | ¿Deducible? | ❌ | ⚠️ **`Expense.vatDeducible`, pero ver ④** |
+| 8 | **Razón social del proveedor** | ❌ | 🔴 **SIGUE FALTANDO** |
+| 9 | Nº y serie del proveedor | ❌ | ✅ **`Expense.providerInvoiceNumber`** |
+
+**8 de 9 desbloqueados.** El que falta es el **#8**, y está medido contra el schema: `Provider`
+tiene `name` (comercial) y `taxId`, **pero no `legalName`** — mientras que `Customer` sí distingue
+`name` de `legalName`. Un libro de recibidas identifica al proveedor por su **razón social**, no
+por cómo lo llame el profesional en su libreta.
+
+> Es **una** columna: `Provider.legalName String? @map("legal_name")`, calcada de `Customer`.
+> Schema = dominio del fundador. No entra aquí.
+
+---
+
+## ③ 🔴 PERO EL BLOQUEO REAL NO ES ÉSE, Y ES MÁS GRANDE: nadie construye asientos de compra
+
+Aunque mañana entrara `legalName`, **E4 seguiría sin poder entregar el libro de recibidas**, y el
+motivo está en la frontera que el propio módulo declara en su cabecera:
+
+> *«A6 decide QUÉ es un asiento (base, cuota, desglose por tipo, enlaces). Aquí solo se decide CÓMO
+> SALE. Si algún día una cifra de aquí no cuadra con el libro, el defecto está en este fichero —
+> nunca al revés, porque aquí no se suma nada.»*
+
+Medido: A6 expone `construirLibroRegistro` / `LibroRegistro` / `AsientoLibro` **solo para
+facturas emitidas**. Barrido de `src/`: **no existe** `leerLibroRecibidas`, ni `libroRecibidas`, ni
+`asientoCompra`, ni nada equivalente. Las cuatro lecturas de `expense.findMany` que hay son de
+gastos, informes y export — **ninguna construye un asiento**.
+
+**Conclusión de alcance, y es la que importa:** que E4 lea `Expense` y arme los asientos sería
+**que E calcule**, que es exactamente lo que el reparto prohíbe («E ENTREGA lo fiscal, A lo
+CALCULA»). El libro de recibidas necesita **un ticket de A6** que lo construya, igual que
+SCRUM-296 construyó el de emitidas. E4 lo formatea después.
+
+---
+
+## ④ Dos huecos que NINGUNA de las dos entradas menciona, y que la migración NO cubre
+
+**(a) `vatDeducible` es un booleano, y la deducibilidad no siempre es sí/no.** El libro de
+recibidas registra la **cuota deducible como IMPORTE**, no como un sí/no — y hay casos de
+deducción **parcial** (el habitual, los vehículos). Con `Boolean?` solo se puede expresar «toda» o
+«nada»: no cabe «la mitad». Si la respuesta es que hace falta un importe, es **otra columna**
+(`vatDeducibleAmount`), no un cambio de código.
+
+**(b) No hay número de recepción.** `providerInvoiceNumber` es el número **del proveedor**. Un
+libro de recibidas numera además sus propios asientos en orden de recepción, y ese contador sería
+**nuestro**. Hoy no existe.
+
+Los dos son **preguntas de norma, no de código**, así que no los decido: van al asesor.
+
+---
+
+## ⑤ 🔴 Y el hallazgo que más afecta al ANCLA del bloque
+
+El bloque E se ancla en E4 porque *«es el que cualquier despacho sabe leer y no depende del plan
+contable de nadie»*. Pues bien — **eso es justo lo que nadie ha verificado**, y el propio código lo
+dice desde el 7-ago:
+
+> *«NO se llama "Libro Registro de la AEAT" en ninguna parte del código ni de la UI. Ese nombre es
+> una PROMESA, y no hay en este árbol ningún documento oficial contra el que se haya contrastado el
+> formato. Las columnas son las del libro de A6, ordenadas como las pide un libro de expedidas;
+> declararlo conforme es una decisión del fundador, no de este fichero.»*
+
+**Lo he comprobado y sigue siendo cierto:** barrido de `docs/` y `src/` — no hay ninguna
+especificación oficial del formato, ni diseño de registro, ni cita del BOE. Las únicas
+coincidencias son entradas del propio máster citándose entre ellas.
+
+Así que las once columnas de `COLUMNAS_EXPEDIDAS` son **razonables y están bien construidas**, pero
+**no están contrastadas contra nada**. Para un ancla que existe precisamente para que «cualquier
+despacho lo sepa leer», eso es el eslabón flojo — y no se arregla escribiendo código.
+
+---
+
+## Lo que hace falta para que E4 sea el ancla de verdad, en orden
+
+| # | Qué | Quién |
+|---|---|---|
+| 1 | **La especificación oficial del formato** contra la que contrastar las columnas de emitidas | asesor / fundador — **sin esto, «formato AEAT» sigue siendo una promesa** |
+| 2 | ¿Cuota deducible como **importe**? ¿Hay **número de recepción**? | asesor |
+| 3 | `Provider.legalName` | fundador (schema) |
+| 4 | Que **A6 construya el libro de recibidas** (hermano de SCRUM-296) | carril A |
+| 5 | E4 formatea recibidas y lo añade a `LIBROS_DISPONIBLES` | **este carril** |
+
+**Los cuatro primeros no son míos.** El quinto es de una tarde, y no puede empezar antes que el
+cuarto sin romper la frontera que hace fiable el módulo entero.
+
+## Lo que NO se ha tocado
+
+`prisma/schema.prisma` · el camino de emisión (regla 38) · microcopy (regla 30) · el 303 (A5) y
+los libros de A6. `git diff` sobre `src/` y `prisma/`: **vacío**. Suite de partida: 2472 tests,
+0 fallos.

@@ -138,6 +138,36 @@ test('SCRUM-273 · ninguna entrada de trabajo NUEVA se escribe en YAQU_MASTER.md
 
 // ── EL FORMATO DEL NUEVO REGISTRO ────────────────────────────────────────────────────────
 
+/**
+ * EL MENSAJE DICE QUÉ HACER EN SU LUGAR, no solo qué está prohibido.
+ *
+ * Tres sesiones distintas crearon un fichero suelto en tres días —`SCRUM-403-ESPEC-COLUMNAS.md`,
+ * `SCRUM-242-RUNBOOK.md` y `SCRUM-406-canal.md`—. Tres personas cometiendo el MISMO error no es un
+ * despiste: es que el mensaje decía qué estaba prohibido y **no decía qué hacer cuando el contenido
+ * no cabe en la entrada**, y entonces la salida obvia es crear un fichero al lado.
+ *
+ * Mismo arreglo que en el guard de SCRUM-391: un mensaje que acusa sin dar salida empuja a pedir
+ * una excepción. Las dos salidas van AQUÍ, en el texto que se lee cuando el guard se pone rojo.
+ */
+const MENSAJE_MAL_NOMBRADOS = (malNombrados) =>
+  '🔴 hay ficheros en docs/master/ que no siguen `SCRUM-<n>.md`:\n    ' + malNombrados.join('\n    ')
+  + '\n\n  El nombre NO es cosmético: es lo que garantiza que dos tickets nunca escriban en el\n'
+  + '  mismo fichero, que es la propiedad entera de este ticket. Un nombre libre reintroduce la\n'
+  + '  colisión por la puerta de atrás.\n\n'
+  + '  QUÉ HACER EN SU LUGAR — hay dos salidas, y ninguna es crear un fichero al lado:\n\n'
+  + '    · Si es REGISTRO DE TRABAJO: va como SECCIÓN dentro de `SCRUM-<n>.md`. Si ese fichero\n'
+  + '      ya existe, se añade como APÉNDICE al final y NO se borra nada de lo que hubiera\n'
+  + '      (precedente: `SCRUM-244.md`, que lleva dos entradas seguidas).\n\n'
+  + '    · Si es un documento OPERATIVO (runbook, procedimiento, algo que alguien EJECUTA):\n'
+  + '      va a `docs/RUNBOOKS.md`, y la entrada `SCRUM-<n>.md` lo NOMBRA con su ruta. Así el\n'
+  + '      que busca el procedimiento lo encuentra donde viven los procedimientos, y el que lee\n'
+  + '      el ticket sabe que existe.'
+  // SCRUM-414 · LA TERCERA COSA: la salida sirve de poco si el rojo sigue llegando por el PR.
+  + '\n\n  Y CÓMO COMPROBARLO ANTES DE EMPUJAR — este no es el único guard que vigila una\n'
+  + '  entrada del registro: son CUATRO (273, 267, 391, 242), y cada sesión los ha ido\n'
+  + '  descubriendo EN ROJO ya con el PR abierto. Los cuatro juntos, en segundos:\n\n'
+  + '      npm run guards:entrada\n';
+
 test('SCRUM-273 · los ficheros de docs/master/ se llaman como su ticket', () => {
   assert.ok(fs.existsSync(DIR_REGISTRO),
     '🔴 no existe docs/master/. Es donde vive el registro desde SCRUM-273.');
@@ -146,11 +176,45 @@ test('SCRUM-273 · los ficheros de docs/master/ se llaman como su ticket', () =>
     .filter((f) => f.endsWith('.md') && f !== 'README.md')
     .filter((f) => !/^SCRUM-\d+\.md$/.test(f));
 
-  assert.deepEqual(malNombrados, [],
-    '🔴 hay ficheros en docs/master/ que no siguen `SCRUM-<n>.md`:\n    ' + malNombrados.join('\n    ') +
-    '\n\n  El nombre NO es cosmético: es lo que garantiza que dos tickets nunca escriban en el\n' +
-    '  mismo fichero, que es la propiedad entera de este ticket. Un nombre libre reintroduce la\n' +
-    '  colisión por la puerta de atrás.\n\n  Y NO ES EL UNICO que vigila una entrada del registro: son CUATRO, y cada sesion los ha\n  ido descubriendo EN ROJO despues de empujar. Compruebalos todos antes con\n  `npm run guards:entrada` (segundos: no compila ni toca la base).');
+  assert.deepEqual(malNombrados, [], MENSAJE_MAL_NOMBRADOS(malNombrados));
+});
+
+test('SCRUM-273 · 🔴 el mensaje del guard ENUNCIA LA ALTERNATIVA, no solo la prohibición', () => {
+  // Este test existe porque el mensaje anterior ya empujó a tres sesiones a crear un fichero
+  // suelto. Si alguien lo recorta «para que sea más corto», vuelve el mismo error dentro de una
+  // semana: lo que evita la reincidencia no es la regla, es la SALIDA escrita en el rojo.
+  const m = MENSAJE_MAL_NOMBRADOS(['SCRUM-999-ejemplo.md']);
+
+  const exigido = [
+    [/SECCIÓN dentro de `SCRUM-<n>\.md`/, 'la salida 1: va como sección dentro de la entrada'],
+    [/AP[ÉE]NDICE|apéndice/, 'que si el fichero ya existe, se añade como apéndice'],
+    [/NO se borra nada/, 'que no se borra nada de lo que hubiera'],
+    [/docs\/RUNBOOKS\.md/, 'la salida 2: los documentos operativos van a docs/RUNBOOKS.md'],
+    [/NOMBRA/, 'que la entrada nombra el runbook con su ruta'],
+    // SCRUM-414 · y la tercera: cómo comprobarlo antes de empujar.
+    [/npm run guards:entrada/, 'CÓMO comprobarlo antes de empujar: `npm run guards:entrada`'],
+    [/CUATRO \(273, 267, 391, 242\)/, 'que son CUATRO los guards de entrada, y cuáles son'],
+  ];
+  const faltan = exigido.filter(([re]) => !re.test(m)).map(([, q]) => q);
+  assert.deepEqual(faltan, [],
+    '🔴 al mensaje del guard le falta enunciar:\n    - ' + faltan.join('\n    - ')
+    + '\n\n  Un mensaje que acusa sin dar salida empuja a pedir una excepción, o a crear un\n'
+    + '  fichero al lado. Ya pasó tres veces en tres días con tres sesiones distintas.');
+
+  // Y que el fichero que se acusa se siga NOMBRANDO: una salida sin el culpable obliga a
+  // buscarlo a mano.
+  assert.match(m, /SCRUM-999-ejemplo\.md/,
+    '🔴 el mensaje ya no nombra el fichero mal nombrado: la salida sin el culpable no sirve');
+});
+
+test('SCRUM-273 · el mensaje bueno es el que se USA de verdad', () => {
+  // Anti-verde-hueco: sin esto, alguien puede dejar `MENSAJE_MAL_NOMBRADOS` intacto (test de
+  // arriba en verde) y a la vez volver a poner un texto corto en línea dentro del `assert`. El
+  // guard seguiría acusando sin dar salida, y nadie se enteraría.
+  const fuente = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8');
+  assert.match(fuente, /assert\.deepEqual\(malNombrados, \[\], MENSAJE_MAL_NOMBRADOS\(malNombrados\)\)/,
+    '🔴 la aserción de nombres ya no usa `MENSAJE_MAL_NOMBRADOS`: el mensaje con las salidas está\n'
+    + '  escrito pero no es el que ve quien rompe la regla.');
 });
 
 test('SCRUM-273 · el máster dice dónde vive el registro ahora', () => {

@@ -246,6 +246,208 @@ un índice ausente no rompe ninguna consulta, solo la degrada cuando la tabla cr
 * **La ausencia en un reflog no prueba que algo no se hiciera aquí**: un rebase reescribe el SHA y
   rompe el enlace. Por eso ① lleva su control de sensibilidad (47/50) y no se apoya en el silencio.
 
+## LOTE ÚNICO · 9 columnas en 4 tablas (SCRUM-403 · A5 · E4 · SCRUM-195 · SCRUM-16/142) — 🔴 SIN APLICAR en ninguna de las tres
+
+**Medido contra:** `origin/main` = `ff5698f` · 2026-08-10 · rama `scrum-lote-migracion-unica`
+
+- [x] **staging · acela/railway** — **aplicado 10-ago-2026** con GO del fundador, por
+      `bash scripts/db-push-prod` (host-check → preview → GO → `db push` **sin**
+      `--accept-data-loss`). Destino confirmado ANTES por host **y nombre de base**
+      (`acela.proxy.rlwy.net` / `railway`), porque el host solo no separa staging de dev.
+      Verificación del script: `-- This is an empty migration.` — el vacío **legítimo, por la
+      frase**. Verificación independiente por `information_schema`: **9/9 columnas, todas
+      `is_nullable = YES` y `column_default` vacío**. Preflight de SCRUM-395 en verde (rama
+      declarada = rama real; 4 sentencias, 9 `ADD COLUMN`, todas aditivas).
+      ⚠️ `expenses` tiene **0 filas** en staging, así que la comprobación de «ningún backfill»
+      **no tiene fuerza aquí**: 0 rellenadas y 0 existentes son el mismo número. Esa comprobación
+      solo dice algo en producción.
+- [ ] **desarrollo · acela/yaqu_dev_javier** — **pendiente — credencial del carril B, la aplica
+      Javier.** No es un olvido: es una casilla sin marcar CON MOTIVO.
+      Medido el 10-ago-2026: **`DATABASE_URL_DEV` no existe en ninguna `.env` de esta máquina**
+      (barrido de todos los árboles de `D:/MILLONARIO/cobroFlash/`). El único árbol con claves de
+      base es `cobroflash-backend`, y tiene `DATABASE_URL` (🔴 producción), `DATABASE_URL_STAGING`
+      (staging) y `SCRATCH_DATABASE_URL` — ninguna apunta a `yaqu_dev_javier`.
+      Concuerda con el reparto: `yaqu_dev_javier` es la base del **carril B**, y se pide, no se
+      aplica desde otra sesión. **Queda pendiente de Javier o de la clave.**
+      ⚠️ Ojo: la tabla de SCRUM-383 de este mismo fichero dice que «los cuatro árboles llevan las
+      TRES claves». **Hoy no se sostiene** para `cobroflash-backend`: le faltan `DATABASE_URL_DEV`
+      y `DATABASE_URL_TESTS`. Es una foto fechada que envejeció, como ella misma avisa.
+- [x] **producción · autorack** — **aplicado 10-ago-2026 con GO EXPLÍCITO del fundador**, dado tras
+      ver la evidencia de staging. Destino confirmado ANTES por host (`autorack.proxy.rlwy.net`) —
+      el **nombre de base no sirve**: producción y staging se llaman las dos `railway`. Solo el
+      host las separa. `db push` **sin** `--accept-data-loss` (no lo pidió). Verificación del
+      script: `-- This is an empty migration.`
+      Verificación independiente por `information_schema`: **9/9 columnas, `is_nullable = YES`,
+      `column_default` vacío** en las nueve.
+      **CERO BACKFILL, y aquí la comprobación SÍ tiene fuerza porque hay datos**: `expenses` 10
+      filas · 0 con `base_amount` · `quotes` 125 filas · 0 con `es_adicional` · `invoices` 55
+      filas · 0 con `deducts_refs`. (Las 55 facturas cuadran con el recuento de producción de la
+      cabecera de este fichero: confirmación cruzada del destino.)
+
+> ### 🔴 QUÉ LE PASA AL ENTORNO DE JAVIER SI NO APLICA ESTO — MEDIDO, NO SUPUESTO
+>
+> **① Su servidor SÍ arranca. Y eso es lo malo.** `src/core/db/schemaDrift.ts:265-267`:
+> `nodeEnv === 'production' ? { arranca: false } : { arranca: true, nivel: 'warn' }`. Fuera de
+> producción la deriva **es un `console.warn` en el arranque**, no una parada. El aviso pasa de
+> largo entre el ruido del boot y la app se queda escuchando como si nada.
+>
+> **② Y entonces se rompe TODO lo que lea esas cuatro tablas — no solo lo que use los campos
+> nuevos.** Medido ejecutando un `expense.findMany()` corriente con el log de consultas activado:
+> Prisma **enumera las columnas, no hace `SELECT *`** — pide las **20** de `expenses`, **las 6
+> nuevas incluidas**. Contra una base que no las tiene, esa consulta muere con
+> `column expenses.base_amount does not exist`.
+>
+> O sea: en cuanto haga `pull` de `main` y regenere el cliente, **cualquier lectura por defecto de
+> `expenses`, `quotes`, `invoices` o `providers` falla** — gastos, presupuestos, facturas y
+> proveedores. No hace falta que su código toque los campos nuevos.
+>
+> **③ Lo arregla en dos minutos** y sin GO de nadie (es su base, cambio aditivo):
+> `DATABASE_URL=<su clave de dev> bash scripts/db-push-prod` → el mismo preview, el mismo `GO`,
+> la misma verificación. El SQL es el de esta entrada, idéntico.
+>
+> **Por qué la casilla se queda sin marcar en vez de esperarle:** `yaqu_dev_javier` es la base de
+> desarrollo **de su carril** y su credencial es suya — no está en ninguna `.env` de esta máquina
+> (medido: barrido de todos los árboles). Bloquear producción esperando al entorno de desarrollo
+> de otra persona sería tener la prioridad al revés. La clave **no se pide ni se pega** en ningún
+> sitio (regla 9).
+
+> **🔎 VERIFICABLE** — que existan las nueve columnas: pregúntaselo a `docs/sql/deriva-prod.sql`
+> contra cada base, **no a estas casillas**. **✋ SIN MECANISMO** — que estén en las tres.
+> **NO HAY BACKFILL, y es deliberado** (ver abajo): las nueve nacen `NULL` y `NULL` es su valor
+> legítimo para todo lo ya registrado.
+
+⚠️ **UNA migración, no cuatro.** Cinco tickets comparten el mismo `db push` porque tres de ellos
+necesitan columnas de la MISMA tabla (`Expense`) y aplicarlos por separado serían tres ventanas de
+riesgo para el mismo cambio.
+
+### Preview generado SIN tocar ninguna base
+
+`node scripts/preview-migracion.mjs --desde <schema de origin/main>` — datamodel contra datamodel,
+**offline**. Se evita a propósito `--from-schema-datasource`, que conectaría a la base de `.env`
+(que es producción), y la variante que recibe la conexión por argumento, que la deja a la vista en
+`argv`/`ps` (motivo de SCRUM-226).
+
+**Control positivo: PASÓ — la herramienta respondió con 24 tablas.** Es lo que distingue «no hay
+cambios» de «la herramienta no contesta»: el incidente de SCRUM-385 fue un `npx` que se bajó
+prisma 7 y devolvió **vacío con exit 0**. El script ejecuta el binario LOCAL por ruta y reconoce el
+vacío legítimo **por la frase** `-- This is an empty migration.`, nunca por el tamaño.
+
+```sql
+-- AlterTable
+ALTER TABLE "quotes" ADD COLUMN     "es_adicional" BOOLEAN;
+
+-- AlterTable
+ALTER TABLE "invoices" ADD COLUMN     "deducts_refs" JSONB;
+
+-- AlterTable
+ALTER TABLE "expenses" ADD COLUMN     "base_amount" DECIMAL(12,2),
+ADD COLUMN     "provider_invoice_date" TIMESTAMP(3),
+ADD COLUMN     "provider_invoice_number" TEXT,
+ADD COLUMN     "vat_amount" DECIMAL(12,2),
+ADD COLUMN     "vat_deducible" BOOLEAN,
+ADD COLUMN     "vat_rate" INTEGER;
+
+-- AlterTable
+ALTER TABLE "providers" ADD COLUMN     "tax_id" TEXT;
+```
+
+### Recuento, contado del SQL y no a ojo
+
+| | n |
+|---|---|
+| `ADD COLUMN` | **9** |
+| `DROP` (cualquier forma) | **0** |
+| `ALTER COLUMN` (columna existente) | **0** |
+| `NOT NULL` | **0** |
+| `DEFAULT` | **0** |
+| `UNIQUE` / `CREATE INDEX` | **0** |
+| `RENAME` / `TRUNCATE` / `DELETE FROM` | **0** |
+| `ALTER TABLE` (sentencias) | 4 |
+
+100 % aditivo: **nueve columnas nullable, sin default, sin unique, sin índice** → `db push` **no
+debe** pedir `--accept-data-loss`. **Si lo pide, PARA**: significaría que el diff no es éste.
+
+### Qué columna sirve a qué ticket
+
+| tabla | columna | tipo | para |
+|---|---|---|---|
+| `expenses` | `base_amount` | `DECIMAL(12,2)` | SCRUM-403 (beneficio) · A5 (303) · E4 |
+| `expenses` | `vat_rate` | `INTEGER` | A5 · E4 — **entero de porcentaje** (21/10/4/0), convención de `AlbaranLinea.tipoIva`, **no** la fracción de `Quote.lines[].tax` |
+| `expenses` | `vat_amount` | `DECIMAL(12,2)` | A5 · E4 — la cuota **se guarda, no se recalcula** |
+| `expenses` | `vat_deducible` | `BOOLEAN` | A5 — `null` = nunca clasificado ≠ `false` = se decidió que no |
+| `expenses` | `provider_invoice_number` | `TEXT` | E4 — identifica el asiento de compra |
+| `expenses` | `provider_invoice_date` | `TIMESTAMP(3)` | E4 — expedición del proveedor, distinta de `Expense.date` (el apunte) |
+| `providers` | `tax_id` | `TEXT` | E4 — `Provider` no tenía **ningún** campo fiscal (medido: 0) |
+| `quotes` | `es_adicional` | `BOOLEAN` | SCRUM-195 — `jobId` no distingue original de adicional |
+| `invoices` | `deducts_refs` | `JSONB` | SCRUM-16/142 (#1) — mismo patrón que `albaran_refs` |
+
+> ⚠️ **Dos columnas de `Expense` y la de `Provider` NO estaban en la lista corta del encargo** —
+> `provider_invoice_number`, `provider_invoice_date` y `providers.tax_id`—, pero **sí** en la
+> especificación medida de `docs/master/SCRUM-403.md`, y son las tres que E4 necesita para que un
+> asiento de compra esté completo. Dejarlas fuera obligaría a una **segunda** migración para E4,
+> que es justo lo que este lote viene a evitar. Se avisó antes de escribir el diff.
+
+### Qué pasa con las filas que YA existen — una por una
+
+**Ninguna fila se toca. Las nueve columnas quedan a `NULL`.**
+
+| tabla | filas existentes | qué les pasa |
+|---|---|---|
+| `expenses` | todas | las **seis** columnas a `NULL`. `amount` **no se toca**: sigue siendo el mismo número que hoy |
+| `providers` | todas | `tax_id` a `NULL` |
+| `quotes` | todas | `es_adicional` a `NULL` |
+| `invoices` | todas | `deducts_refs` a `NULL` |
+
+🔴 **Y en `Expense` el `NULL` NO se rellena por suposición.** `amount` es **ambiguo por diseño**:
+en ninguna parte está escrito si lleva IVA ni a qué tipo. Un backfill que lo adivine —«asumimos
+21 %», «asumimos que es sin IVA»— produciría una base **indistinguible de una base real**, y sobre
+ese número se calcularían el beneficio y el 303. **Es estrictamente peor que dejarlo vacío**: un
+hueco dice «no se sabe», un número inventado afirma.
+
+`NULL` aquí **es un dato**: significa «este gasto es un apunte de caja, no un asiento». El beneficio
+y el 303 deben **excluir o declarar** esas filas, nunca completarlas.
+
+Por eso, además, ninguna es `NOT NULL` y ninguna lleva `@default`: un default rellenaría el pasado
+con una suposición y la haría indistinguible de un dato real.
+
+### ¿Rompe algo mientras está a medias? — medido contra el código de HOY
+
+**① `assertSchemaSinDeriva` solo falla por columnas que FALTAN.** Leído hoy en
+`src/core/db/schemaDrift.ts:110-122`: el bucle recorre **`esperadas`** (lo que el schema declara) y
+comprueba presencia en `real` (lo que la base tiene). **No recorre en la otra dirección ni una
+vez** — una columna que está en la base y no en el schema es sencillamente invisible, y el
+resultado es `en-sync`.
+
+**② Prisma enumera columnas explícitas**, no `SELECT *`, así que un cliente generado del schema
+viejo no ve las columnas nuevas y no puede tropezar con ellas. Esto **no lo he ejecutado contra una
+base** (no se ha tocado ninguna): lo sostiene ① —que sí está medido— más el hecho de que **éste es
+el orden canónico de la casa y se ha usado en las ~25 migraciones del registro**, todas con esa
+misma ventana.
+
+**Conclusión: el orden seguro sigue siendo MIGRAR PRIMERO, DESPLEGAR DESPUÉS.** Y no es simétrico:
+
+| orden | qué ve el chequeo de arranque | resultado |
+|---|---|---|
+| **migrar → desplegar** | el schema viejo pide N columnas, la base tiene N+9 | `en-sync` ✅ |
+| desplegar → migrar | el schema nuevo pide 9 que la base no tiene | `deriva` → **producción NO arranca** 🔴 |
+
+Es exactamente el 500 de SCRUM-220: código desplegado esperando una columna que la base no tenía.
+
+### Lo que este lote NO hace
+
+1. **No cierra E4.** Da el *dónde* guardar, no el *cómo se rellena*: falta la pantalla, y el alta de
+   gasto es deliberadamente rápida (SCRUM-135) — pedir seis campos fiscales ahí rompe ese flujo.
+   Decisión de producto, no de schema.
+2. **No decide qué es deducible.** `vat_deducible` es un campo, no un criterio: eso es dictamen.
+3. **No arregla el pasado.** Los gastos ya registrados siguen sin base, y toda cifra que los use
+   tiene que decirlo.
+4. **No completa SCRUM-195 ni SCRUM-16/142**: da los campos, no la lógica que los rellena ni la que
+   los consume. El diff de `EmitInvoiceInput` (#2 de SCRUM-16) **entra con esta migración, no antes**:
+   sin la columna no compila.
+5. **No toca `Invoice.total` ni ningún dato existente.**
+
+---
+
 ## SCRUM-300 (C5) · cuatro columnas en `albaranes` — ✅ APLICADO en las TRES bases (7-ago-2026)
 
 **REGISTRO de lo que se ejecutó y se verificó el 7-ago-2026.** No es una afirmación sobre el

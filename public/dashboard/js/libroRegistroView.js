@@ -32,6 +32,12 @@
 // SCRUM-263/303.
 (function () {
   const MARCADOR = '[PENDIENTE microcopy oficial]';
+
+  // SCRUM-406 · el ÚNICO contacto del producto. No es microcopy: es el destino, el mismo que ya
+  // usan las páginas legales y la guía de inicio. ⚠️ Está escrito a mano en 6 sitios (privacidad ×3,
+  // términos, tutorial.js y aquí): el día que cambie hay que cambiarlo en todos, y el que se olvide
+  // deja un canal muerto sin que nadie se entere. Unificarlo es hallazgo aparte, no se hace aquí.
+  const CONTACTO = 'hola@yaqu.app';
   /** Marca una ranura de copy sin decidir. El texto va DETRÁS, para que se pueda leer y juzgar. */
   function rotulo(t) { return MARCADOR + ' ' + t; }
 
@@ -155,7 +161,12 @@
       body.appendChild(detalle);
     }
 
-    function avisar(texto, tono) {
+    // SCRUM-406 · «escríbenos» sin decir dónde no es un canal: es una instrucción sin destino, y
+    // encima en la pantalla fiscal. `mailto` es OPCIONAL y se pinta como NODO aparte —no dentro del
+    // texto— porque el copy de esta pantalla sigue siendo `[PENDIENTE microcopy oficial]`: el día
+    // que se apruebe puede no llevar la palabra «escríbenos», y un enlace cosido a una palabra
+    // concreta se rompería en silencio. Aquí no depende de las palabras.
+    function avisar(texto, tono, mailto) {
       const a = document.createElement('div');
       // ⚠️ EL TONO SALE DE ESTA LISTA, NO DE LA IMAGINACIÓN. `styles.css` OCULTA
       // (`display:none`) toda `.alert` que no lleve `success|ok|error|info|warning`, así que un
@@ -165,6 +176,13 @@
       a.className = 'alert ' + (TONOS.includes(tono) ? tono : 'warning');
       a.style.cssText = 'margin:16px 16px 0';
       a.textContent = texto;
+      if (mailto) {
+        const enlace = document.createElement('a');
+        enlace.href = 'mailto:' + mailto;
+        enlace.textContent = ' ' + mailto;
+        enlace.style.cssText = 'color:inherit;font-weight:600';
+        a.appendChild(enlace);
+      }
       body.appendChild(a);
     }
 
@@ -181,7 +199,7 @@
       subtitle.textContent = COPY.recuento(asientos.length);
 
       if (Array.isArray(libro.importesIlegibles) && libro.importesIlegibles.length > 0) {
-        avisar(COPY.avisoIlegibles(libro.importesIlegibles), 'warning');
+        avisar(COPY.avisoIlegibles(libro.importesIlegibles), 'warning', CONTACTO);
       }
       if (libro.ajenas > 0) avisar(COPY.avisoAjenas, 'warning');
       if (libro.sinNumero > 0) avisar(COPY.avisoSinNumero(libro.sinNumero), 'warning');

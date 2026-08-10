@@ -103,7 +103,9 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
     'Recordatorios automáticos de cobro',
     'Gastos y margen por trabajo',
     'Tus datos siempre exportables',
-    'Soporte por email y WhatsApp',
+    // SCRUM-406 · decía «Soporte por email y WhatsApp»; ese WhatsApp de soporte NO EXISTE en el
+    // código (ningún `wa.me` del producto apunta a YaQu). Se retira la mención, no se reescribe.
+    'Soporte por email',
   ];
 
   // V0-4 (W1): banner founding sobre Pro — 9,90 €/mes de por vida, contador REAL

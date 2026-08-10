@@ -141,3 +141,86 @@ vetado (rama parada de C5). Anotado en **SCRUM-380**, que ya cubre los botones d
 Ficheros: `public/dashboard/css/styles.css` (el bloque `.qq-modal`) ·
 `public/dashboard/js/reportsView.js` y `public/dashboard/js/exportView.js` (los inline retirados) ·
 `tests/scrum384-min-height-locales.test.mjs` (9, nuevo).
+
+---
+
+# SCRUM-384 · CORRECCIÓN URGENTE: el comentario que explicaba el arreglo rompió la pantalla
+
+**Fecha:** 10-ago-2026 · **Carril:** front · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `8bc048788d04bbbe74d77b3abd629ab972f02f73` · 2026-08-10T15:00:55+02:00
+
+## Qué pasó
+
+El comentario que este mismo ticket escribió para explicar por qué el botón ya no lleva
+`style="min-height:44px"` **iba dentro del template literal de `container.innerHTML`, y llevaba
+backticks**. El primer backtick **cierra el template**. Lo que sigue se parsea como código:
+
+```
+public/dashboard/js/exportView.js:61
+          <!-- SCRUM-384: sin `style="min-height:44px"`. La base ya da 44 px en móvil a
+                               ^^^^^
+SyntaxError: Unexpected identifier 'style'
+```
+
+`exportView.js` se sirve como script clásico (`public/dashboard/index.html:229`, sin
+`type="module"`), así que el navegador **descarta el fichero entero**: la pantalla «Descargar
+datos» no se renderiza. No a medias — nada.
+
+## Lo que costó no tener el guard, medido
+
+El fichero entró roto en `1527f67` y **pasaron por encima cuatro commits y una PR** sin que nadie
+lo notara. Ninguno tenía por qué notarlo: `npm test` corre contra `dist/`, y **no miraba `public/`**.
+
+| commit | parsea | |
+|---|---|---|
+| `77fe45e` | OK | SCRUM-138 · export selectivo |
+| `53e0535` | OK | SCRUM-244 · la descarga de portabilidad, en el menú |
+| `1527f67` | 🔴 | **SCRUM-384 · aquí se rompe** |
+| `69dd7b0` | 🔴 | SCRUM-280/325 |
+| `283517b` | 🔴 | SCRUM-325 |
+| `7b322a9` | 🔴 | SCRUM-405 |
+
+**Censo del front en main:** 50 ficheros `.js` bajo `public/`, **uno** no parsea, y es ése.
+
+## El arreglo: los BACKTICKS, no el comentario
+
+Se sustituyen los backticks por comillas angulares en las **4 líneas** de dentro del template que
+los llevaban (61, 62, 75, 80). **El texto no se toca**: la explicación de por qué el inline no
+vuelve —medida en el banco: a 1280 px forzaba 44 donde la base da 36— vale y se conserva entera.
+El diff es de 4 líneas y no cambia una palabra.
+
+## El guard, que es lo que demuestra el arreglo
+
+`tests/public-js-parsea.test.mjs` — `node --check` **derivado** sobre todos los `.js` de `public/`,
+dentro de `npm test`. Sin lista que mantener: un fichero nuevo entra solo.
+
+- **SUELO (`>= 40`, hoy son 50):** si el recorrido encuentra menos, **falla**. «Todos parsean» y
+  «no supe encontrar los ficheros» dan el mismo verde, y aquí un verde hueco duró cuatro commits.
+- **Nombra fichero, línea, causa y la línea de código.** Un «error de sintaxis» a secas obliga a
+  buscarlo a mano, que es exactamente lo que costó localizar éste.
+- Un fichero que use `import`/`export` se recomprueba **como módulo** antes de acusarlo, para no
+  llamar roto a lo que solo usa otra sintaxis.
+
+**Rojo probado, y dos veces:** el guard **nace rojo** sobre `main` sin el arreglo, nombrando
+`public/dashboard/js/exportView.js:61`; y con el arreglo puesto, reintroducir **un solo backtick**
+lo vuelve a poner rojo con el mismo mensaje. Verde después de revertir.
+
+*(Corrección del propio guard, anotada porque es del mismo género: la primera versión decía
+`exportView.js:?` — la regex del `stderr` usaba `\n` y en Windows viene `CRLF`. Un guard que no
+sabe decir DÓNDE deja el trabajo a medias.)*
+
+## Por qué esto no fue a la cola de la Parte U
+
+**Es la tercera vez que muerde el mismo mecanismo**: `plansView.js` en SCRUM-345, `exportView.js`
+aquí, y un template literal de otra sesión la misma mañana. Tres veces es un patrón. Decisión del
+fundador (10-ago-2026): PR mínima y aparte —el arreglo y su guard viajan juntos, porque **el guard
+es lo que demuestra el arreglo**— y **no atada al merge de `scrum-244-microcopy-aprobada`**, que
+tiene un conflicto y puede tardar otra vuelta: *un arreglo urgente atado a un merge lento hereda su
+lentitud*.
+
+## Y la lección que sale de aquí, que es de proceso
+
+**«No hay solape de código» y «no hay conflicto» no son lo mismo.** Dos ramas que añaden a
+`docs/master/` chocan aunque toquen partes distintas del producto. Es la tercera vez esta semana
+que `docs/master/` es el punto de fricción entre carriles. Al resolver, **se conservan las dos
+entradas**: ninguna sustituye a la otra.
