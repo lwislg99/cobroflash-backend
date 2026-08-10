@@ -81,7 +81,7 @@ precache** — y por tanto tampoco hay nada que declararle al guard de SCRUM-274
    primera aserción decía que salían y **el rojo era mío**. Ahora se afirma lo que sí importa y sí es
    cierto: que **viajen**, porque son el contenido que la firma sella.
 
-## Microcopy — MEDIDA y PROPUESTA, no dada por buena
+## Microcopy — medida, propuesta y APROBADA
 
 **La caja, con el CSS real:** `.view-container` 12 px de padding a cada lado (≤ 768 px) + `.alert`
 14 px → **ancho útil 338 px a 390 y 268 px a 320**. `.alert` es 13,5 px con `line-height` 1,5 →
@@ -90,14 +90,16 @@ caracteres por línea a 390** y **~39 a 320**.
 
 | # | propuesta | car. | a 390 | a 320 |
 |---|---|---|---|---|
-| **a** | «Este albarán no se descargó y ahora no hay cobertura. Podrás abrirlo cuando tengas señal.» | 89 | 2 líneas (~40 px) | 3 líneas (~60 px) |
+| **a** | «Este albarán **no está descargado** y ahora no hay cobertura. Podrás abrirlo cuando tengas señal.» | 92 | 2 líneas (~40 px) | 3 líneas (~60 px) |
 | **b** | «Sin cobertura no puedes crear albaranes, solo firmar los que ya llevas descargados.» | 83 | 2 líneas (~40 px) | 3 líneas (~60 px) |
 
-Las dos caben sin recortar en los dos anchos. **Salen con marcador `[PENDIENTE microcopy oficial]`
-hasta que las apruebes** (regla 30), y el censo de SCRUM-402 sube de **1 a 3** en
-`albaranDetailView.js` **a conciencia y con su motivo escrito**: el mecanismo no existe sin texto, y
-sin (b) el límite «no se crea sin red» —que quedó fuera de alcance **por decisión**— se vive como una
-avería. **Bajan a 1 el commit que las apruebe.**
+Las dos caben sin recortar en los dos anchos. **APROBADAS por el asesor el 11-ago-2026**, con un
+retoque en la (a): dice **«no está descargado»**, no «no se descargó». No falló nada — la política de
+precarga simplemente no eligió ese albarán, y el primer verbo insinúa una avería nuestra y manda al
+profesional a buscar un culpable que no existe.
+
+El censo de SCRUM-402 subió a 3 mientras estuvieron con marcador y **vuelve a 1** en el mismo commit
+que las escribe: un trinquete que no se aprieta cuando puede deja de serlo.
 
 ## Verificado
 

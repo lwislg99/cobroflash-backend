@@ -128,7 +128,7 @@ test('SCRUM-460 · sin red y SIN precargar, se avisa — ni pantalla en blanco n
   const texto = leer(c);
   assert.ok(texto.trim().length > 0,
     '🔴 la pantalla se ha quedado EN BLANCO. Callar no informa, y aquí encima invita a reintentar.');
-  assert.match(texto, /PENDIENTE microcopy oficial · albarán no precargado/,
+  assert.match(texto, /no está descargado y ahora no hay cobertura/,
     `🔴 sin red y sin precarga no se dice nada útil: ${texto}.`);
   // Y lo que NO puede pasar: que se pinte el documento como si estuviera cargado.
   assert.ok(!/ALB-2026-077|Sustituir bajante/.test(texto),

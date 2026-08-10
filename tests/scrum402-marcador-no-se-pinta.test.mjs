@@ -78,7 +78,10 @@ const CENSO = Object.freeze({
   // Los dos textos están MEDIDOS y PROPUESTOS al asesor con la caja real (338 px a 390, 268 a 320;
   // `.alert` 13,5 px / 1,5), y salen con marcador porque **no se inventa microcopy** (regla 30).
   // Bajan a 1 el commit que los apruebe.
-  'albaranDetailView.js': 3,
+  // SCRUM-460 (11-ago-2026) · 3 → 1: el asesor APROBÓ los dos textos, con un retoque en el
+  // primero —«no está descargado» en vez de «no se descargó»: no falló nada, la política
+  // simplemente no lo eligió—. Un trinquete que no se aprieta cuando puede deja de serlo.
+  'albaranDetailView.js': 1,
   'signaturePad.js': 1,
   // SCRUM-285 (10-ago-2026): `cobrosView.js` ENTRÓ y SALIÓ del censo el mismo día. La pantalla de
   // Cobros nació con nueve ranuras marcadas —no había copy aprobada para ninguna— y el asesor las

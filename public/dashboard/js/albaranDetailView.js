@@ -104,21 +104,23 @@ const ROTULOS_ALBARAN = {
 const COPY_DUPLICADO_CREADO = 'Duplicado creado. Trae las líneas y las notas del original; la firma y las fotos no se copian nunca.';
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════
-// SCRUM-460 · LOS DOS TEXTOS DE «SIN COBERTURA» — PENDIENTES DE APROBACIÓN (regla 30)
+// SCRUM-460 · LOS DOS TEXTOS DE «SIN COBERTURA» — **APROBADOS** por el asesor el 11-ago-2026.
 //
-// Se dejan como marcador a propósito: la microcopy la aprueba el asesor, y ponerla «provisional»
-// es como se cuela un texto sin aprobar. Lo que SÍ está construido y probado es el MECANISMO —que
-// aquí se dice algo en vez de dejar una pantalla en blanco—, y el test afirma eso, no las palabras.
+// ⚠️ LA (a) DICE «NO ESTÁ DESCARGADO», NO «NO SE DESCARGÓ», y el matiz es la corrección del
+// asesor: **no falló nada**. Simplemente la política de precarga no eligió este albarán. «No se
+// descargó» insinúa una avería nuestra y manda al profesional a buscar un culpable que no existe.
 //
-// LA CAJA, MEDIDA CON EL CSS REAL para poder proponer con números:
+// LA CAJA, MEDIDA CON EL CSS REAL:
 //   `.view-container` padding 12 px a cada lado (≤768 px) + `.alert` padding 14 px a cada lado
 //   → ancho útil: **338 px a 390** · **268 px a 320**
 //   `.alert` font-size 13,5 px · line-height 1,5 → **~20 px de alto por línea**
 //   Con Inter a 13,5 px (avance medio ~0,50 em ≈ 6,8 px/carácter): **~49 caracteres/línea a 390**
 //   y **~39 a 320**.
 // ═══════════════════════════════════════════════════════════════════════════════════════════
-const COPY_ALBARAN_SIN_PRECARGA = '[PENDIENTE microcopy oficial · albarán no precargado y sin cobertura]';
-const COPY_SIN_RED_NO_SE_CREA = '[PENDIENTE microcopy oficial · no se pueden crear albaranes sin cobertura]';
+const COPY_ALBARAN_SIN_PRECARGA = 'Este albarán no está descargado y ahora no hay cobertura. '
+  + 'Podrás abrirlo cuando tengas señal.';
+const COPY_SIN_RED_NO_SE_CREA = 'Sin cobertura no puedes crear albaranes, solo firmar los que ya '
+  + 'llevas descargados.';
 
 /**
  * El albarán precargado, si lo hay. Devuelve `null` cuando no está o no se pudo mirar el almacén.
