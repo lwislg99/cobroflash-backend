@@ -96,14 +96,27 @@ export function evaluarPuerta(
   };
 }
 
-/** El aviso, ya redactado, para quien lo tenga que enseñar o registrar. */
+/**
+ * El aviso, ya redactado. **Microcopy APROBADA por el fundador (10-ago-2026)**, literal.
+ *
+ * Solo cambia la linea de la senal; el resto es fijo para que quien lo reciba lo reconozca de un
+ * vistazo.
+ */
 export function textoDelAviso(v: VeredictoPuerta): string {
   if (!v.abierta) return '';
-  const porQue = v.motivos.includes('paga')
-    ? 'hay un merchant con suscripción de Stripe'
+  const senal = v.motivos.includes('paga')
+    ? 'un merchant con suscripción de Stripe'
     : 'hay más merchants que cuentas de prueba declaradas';
-  return `Ha entrado el primer cliente real (${porQue}). Estas decisiones dependían de que no lo hubiera:\n`
-    + v.clausulas.map((c) => `  · ${c}`).join('\n');
+  const LINEAS = [
+    'YaQu · Ha entrado el primer cliente real.',
+    `Señal: ${senal}.`,
+    '',
+    'Estas decisiones dependían de que no lo hubiera y hay que revisarlas ya:',
+    ...v.clausulas.map((c) => `· ${c}`),
+  ];
+  // Se compone por LÍNEAS y se une al final: el mensaje tiene forma fija y así se lee aquí igual
+  // que se lee en el móvil.
+  return LINEAS.join('\n');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════
@@ -145,10 +158,10 @@ export function debeAvisar(v: VeredictoPuerta, c: Cadencia): { avisa: boolean; m
 }
 
 /**
- * El texto del aviso. ⚠️ MARCADO: es microcopy nueva y **la regla 30 no tiene excepción por
- * destinatario** — que solo lo lea el fundador no lo convierte en texto aprobado. La propuesta
- * está en `docs/master/SCRUM-390.md`.
+ * El mensaje que se manda. Texto **APROBADO** (10-ago-2026): ya no lleva marcador, y un test exige
+ * que no vuelva a llevarlo — un `[PENDIENTE …]` en un mensaje que alguien lee es copy sin aprobar
+ * publicada, y la regla 30 no tiene excepcion por destinatario.
  */
 export function mensajeParaElFundador(v: VeredictoPuerta): string {
-  return '[PENDIENTE microcopy oficial] ' + textoDelAviso(v);
+  return textoDelAviso(v);
 }

@@ -180,8 +180,14 @@ test('SCRUM-390 · con la puerta abierta avisa al FUNDADOR, y a nadie más', asy
     '🔴 el aviso lleva merchantId: es un mensaje INTERNO, no puede colgar de ningún merchant (regla 28).');
   assert.match(mandados[0].text, /YAQU_MASTER|MIGRATIONS_PENDING/,
     '🔴 el aviso no NOMBRA las cláusulas que quedan sin cumplir.');
-  assert.match(mandados[0].text, /^\[PENDIENTE microcopy oficial\]/,
-    '🔴 el texto se presenta como aprobado y no lo está — la regla 30 no tiene excepción por destinatario.');
+  assert.doesNotMatch(mandados[0].text, /\[PENDIENTE/,
+    '🔴 el mensaje lleva un marcador de programador. El texto está APROBADO (10-ago-2026): un ' +
+    '`[PENDIENTE …]` en un mensaje que alguien lee es copy sin aprobar publicada, y la regla 30 no ' +
+    'tiene excepción por destinatario.');
+  assert.match(mandados[0].text, /^YaQu · Ha entrado el primer cliente real\./,
+    '🔴 el mensaje ya no empieza como el texto aprobado: quien lo recibe tiene que reconocerlo de un vistazo.');
+  assert.match(mandados[0].text, /^Señal: .+\.$/m, '🔴 falta la línea de la señal.');
+  assert.match(mandados[0].text, /hay que revisarlas ya/, '🔴 falta la frase que pide la acción.');
 });
 
 test('SCRUM-390 · 🔴 si el aviso FALLA, el paso no lanza: devuelve el fallo', async () => {

@@ -101,11 +101,18 @@ la puerta se abre **avisa al fundador por WhatsApp** con la Meta Cloud API que e
   de ningún merchant (regla 28). Sin la variable, el paso **no manda nada y lo dice**.
 * **(d) Rojo por el mecanismo:** quitar el enganche del cron → cae nombrando *«LA PUERTA EXISTE Y
   NADIE LA EVALÚA»*, que es el defecto que este ticket vino a cerrar.
-* **(e) Microcopy propuesta, no escrita.** El texto sale con `[PENDIENTE microcopy oficial]` y un
-  test lo exige: **la regla 30 no tiene excepción por destinatario**. Propuesta:
+* **(e) Microcopy APROBADA por el fundador (10-ago-2026)**, literal y sin marcador. Se propuso
+  marcada —la regla 30 no tiene excepción por destinatario— y se encendió al aprobarse. Dos tests
+  la fijan: que el mensaje empiece por el texto aprobado, y que **no quede ningún marcador**.
 
-  > «Ha entrado el primer cliente real (motivo). Estas decisiones dependían de que no lo hubiera:
-  > …lista de cláusulas…»
+  > YaQu · Ha entrado el primer cliente real.
+  > Señal: {un merchant con suscripción de Stripe | hay más merchants que cuentas de prueba declaradas}.
+  >
+  > Estas decisiones dependían de que no lo hubiera y hay que revisarlas ya:
+  > · docs/YAQU_MASTER.md — la regla fechada sobre los datos de producción
+  > · docs/MIGRATIONS_PENDING.md — el backfill que se dejó caer por ella
+  > · SCRUM-402 — el rótulo de Bizum necesita microcopy aprobada ANTES de encender la bandera
+  > · SCRUM-242 — hay copia de seguridad de la base y sabemos restaurarla (hoy: NINGUNA)
 
 ## La décima cláusula: la copia de seguridad (SCRUM-242)
 
