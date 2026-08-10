@@ -51,7 +51,7 @@
 import 'dotenv/config';
 import fs from 'node:fs';
 import { PrismaClient } from '@prisma/client';
-import { PROD_HOST, STAGING_HOST } from './_db-guard.mjs';
+import { PROD_HOST, STAGING_HOST, parseBDSegura } from './_db-guard.mjs';
 import { esMarcaDeStaging } from './_staging-lock.mjs';
 import { clasificarDocumentos } from './_conciliacion-fiscal.mjs';
 
@@ -95,12 +95,11 @@ if (!url) {
 
 const LOCALES = new Set(['localhost', '127.0.0.1', '::1', 'host.docker.internal']);
 function clasificarHost(u) {
-  let h;
-  try {
-    h = new URL(u).hostname;
-  } catch {
-    return { clase: 'ilegible', host: '(no parseable)' };
-  }
+  // SCRUM-414 · el parseo va por `parseBDSegura`, no a mano: el unico `new URL` que puede ver una
+  // URL con credenciales dentro vive en `_db-guard.mjs`, dentro de un catch que no toca el error.
+  const p = parseBDSegura(u);
+  if (!p) return { clase: 'ilegible', host: '(no parseable)' };
+  const h = p.host;
   if (h === PROD_HOST) return { clase: 'prod', host: h };
   if (h === STAGING_HOST) return { clase: 'staging', host: h };
   if (LOCALES.has(h)) return { clase: 'local', host: h };
