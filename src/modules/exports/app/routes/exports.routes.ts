@@ -387,7 +387,7 @@ router.get('/datos.zip', async (req, res) => {
         cabecera: [
           ...entrega.cabeceraLeeme,
           ...(exclusionesVerifactu.length === 0 ? [] : [
-            `ATENCION: ${exclusionesVerifactu.length} factura(s) NO se han podido declarar y NO estan`,
+            `ATENCION: ${exclusionesVerifactu.length} ${exclusionesVerifactu.length === 1 ? 'factura NO se ha podido declarar y NO esta' : 'facturas NO se han podido declarar y NO estan'}`,
             'en el registro VeriFactu de este paquete. Corrigelas y vuelve a exportar:',
             ...exclusionesVerifactu.map((x) => `  · ${x.number} (${x.year}): ${x.motivo}`),
           ]),

@@ -629,7 +629,18 @@ async function renderJobDetailView(container, jobId) {
   const nextAct = jobNextAction(job, !isTecnico);
   if (nextAct) {
     const cta = document.createElement('button');
-    cta.className = 'btn-primary btn-sm';
+    // 🔴 SCRUM-380 · SIN `btn-sm`, y el arreglo va POR AQUÍ y no por el CSS.
+    //
+    // Medido en Chrome a 360 y 390 px: con `btn-sm` este botón salía a **30×124,9 px**. Es la
+    // acción que se pulsa de pie, en una obra, con una mano y con guantes — y era el objetivo
+    // táctil más pequeño de la pantalla.
+    //
+    // El primer intento fue subir `.btn-primary.btn-sm` a 44 en móvil, y **chocó con el control
+    // negativo de SCRUM-352**: «el bump no debe convertir un `btn-sm` en un botón normal». Ese
+    // guard tiene razón y se respeta ENTERO. El defecto no era que `btn-sm` midiera 30: era que
+    // **la primaria de una pantalla fuera un `btn-sm`**. Se cambia la clase de ESTE botón y
+    // `btn-sm` sigue midiendo 30 para todo lo demás.
+    cta.className = 'btn-primary';
     cta.textContent = nextAct.label;
     cta.addEventListener('click', async () => {
       cta.disabled = true;
@@ -980,7 +991,7 @@ async function renderJobDetailView(container, jobId) {
   albSec.appendChild(consolidaBar);
 
   function updateConsolidaCount() {
-    consolidaCount.textContent = `${consolidaSelected.size} parte(s) seleccionado(s)`;
+    consolidaCount.textContent = `${consolidaSelected.size} ${consolidaSelected.size === 1 ? 'parte seleccionado' : 'partes seleccionados'}`;
     consolidaConfirm.disabled = consolidaSelected.size === 0;
   }
   function setConsolidaMode(on) {
@@ -1016,10 +1027,10 @@ async function renderJobDetailView(container, jobId) {
     card.style.cssText = 'background:#fff;border-radius:16px;max-width:420px;width:100%;padding:22px;box-shadow:0 18px 40px -16px rgba(16,24,40,.3)';
     card.innerHTML =
       `<h3 style="margin:0 0 6px;font-size:17px;color:var(--ink)">Consolidar en factura</h3>` +
-      `<p style="margin:0 0 4px;font-size:14px;color:var(--body,#3f4a45)">Has seleccionado ${sel.length} parte(s) de ${nF} mes(es) distinto(s).</p>` +
+      `<p style="margin:0 0 4px;font-size:14px;color:var(--body,#3f4a45)">Has seleccionado ${sel.length} ${sel.length === 1 ? 'parte' : 'partes'} de ${nF} ${nF === 1 ? 'mes' : 'meses distintos'}.</p>` +
       `<p style="margin:0 0 12px;font-size:13px;color:var(--muted)">La ley solo permite agrupar partes del mismo mes en una factura, así que se crearán <strong>${nF} factura${nF > 1 ? 's' : ''}</strong>:</p>` +
       `<ul style="margin:0 0 16px;padding-left:18px;font-size:14px;color:var(--ink)">` +
-      grupos.map((g) => `<li><strong>${esc(g.label)}</strong> — ${g.count} parte(s) · ${esc(fmtMoneyEs(g.total, cur))}</li>`).join('') +
+      grupos.map((g) => `<li><strong>${esc(g.label)}</strong> — ${g.count} ${g.count === 1 ? 'parte' : 'partes'} · ${esc(fmtMoneyEs(g.total, cur))}</li>`).join('') +
       `</ul>`;
     const btnRow = document.createElement('div');
     btnRow.style.cssText = 'display:flex;gap:10px;justify-content:flex-end';
@@ -1035,7 +1046,7 @@ async function renderJobDetailView(container, jobId) {
       try {
         const res = await apiRequest(`/admin/jobs/${job.id}/consolidar-albaranes`, { method: 'POST', body: JSON.stringify({ albaranIds: sel.map((a) => a.id) }) });
         overlay.remove();
-        showToast(`✓ ${res.facturas.length} factura(s) creada(s).`);
+        showToast(`✓ ${res.facturas.length} ${res.facturas.length === 1 ? 'factura creada' : 'facturas creadas'}.`);
         refresh();
       } catch (e) {
         goM.disabled = false;
@@ -1239,7 +1250,7 @@ async function renderJobDetailView(container, jobId) {
         await apiRequest(`/admin/jobs/${job.id}/albaranes`, { method: 'POST', body: JSON.stringify(cuerpo) });
         showToast(
           lineas.length
-            ? `✓ Albarán creado con ${lineas.length} línea(s).`
+            ? `✓ Albarán creado con ${lineas.length} ${lineas.length === 1 ? 'línea' : 'líneas'}.`
             : '✓ Albarán creado (borrador).',
         );
       },

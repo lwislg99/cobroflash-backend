@@ -50,7 +50,7 @@
       'Hay importes que no se han podido leer (' + numeros.join(', ') + '). '
       + 'No los tomes por cero: escríbenos y los revisamos.'),
     avisoAjenas: rotulo('Se han descartado facturas que no son de este negocio.'),
-    avisoSinNumero: (n) => rotulo(n + ' factura(s) sin número no aparecen como asiento.'),
+    avisoSinNumero: (n) => rotulo(n + (n === 1 ? ' factura sin número no aparece como asiento.' : ' facturas sin número no aparecen como asiento.')),
     colNumero: rotulo('Número'),
     colFecha: rotulo('Fecha'),
     colTipo: rotulo('Tipo'),
