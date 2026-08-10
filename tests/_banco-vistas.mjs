@@ -209,9 +209,11 @@ export function nodo(tag, reg) {
       // y se les copia `id`, `class`, `data-*` y su texto. Antes solo entraban las de `id`, así que
       // un bloque marcado con `data-…` —el estado vacío de Cobros— era invisible para el banco y su
       // test daba un rojo que era del banco. Es plano a propósito: no anida, y se declara.
+      // SCRUM-451: se representan TAMBIÉN las etiquetas SIN atributos. Antes se saltaban, y con eso
+      // un `card.innerHTML = '<div>…</div>'` seguido de `card.querySelector('div')` devolvía `null`
+      // y la vista reventaba —`settingsView` lo hace— por un hueco del banco, no del producto.
       for (const m of String(v).matchAll(/<(\w+)([^>]*)>([^<]*)/g)) {
         const attrs = m[2] || '';
-        if (!/\b(id|class|data-)/.test(attrs)) continue;
         const h = nodo(m[1], reg);
         const id = attrs.match(/\bid="([^"]+)"/);
         const cls = attrs.match(/\bclass="([^"]+)"/);
