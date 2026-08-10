@@ -158,3 +158,57 @@ Unificarlos toca tres vistas ajenas y no cabe en un ticket de lista de Trabajos.
   ③ el helper vuelve a llamarse `num` → cae el guard de colisión (y el mío, ya arreglado).
 - `npm run guards:entrada`: **`$? = 0`** — «4 guards de entrada en verde (17 tests)».
 - `git diff --diff-filter=D --name-only origin/main...HEAD`: **vacío**.
+
+---
+
+# SCRUM-428 (apéndice) · con el texto aprobado, callarse el importe pasa a ser el error
+
+**Fecha:** 10-ago-2026 · **Carril:** front (lista de Trabajos) · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `4cc5e0451e7e5706acaf6e1acd9b5aed6065f523` · 2026-08-10T17:45:20+02:00
+
+## La decisión se invierte, y por su propio motivo
+
+La entrega anterior dejó la cabecera **callándose el importe** cuando había terminados sin importe
+conocido. Era lo correcto **mientras no hubo frase**: la suma de los demás es exacta y se lee como
+el total, y no existía un texto aprobado para decir cuántos quedaban fuera.
+
+Con el texto aprobado por el fundador (10-ago-2026), la misma razón manda lo contrario: **callarse
+el importe es contar menos de lo que se sabe.** La cifra y su salvedad van juntas.
+
+## Lo entregado
+
+**Texto oficial, literal** (regla 30 — no se reescribe ni se «mejora»):
+
+> «{N} sin importe de referencia: no se sabe cuánto falta y no entran en el total.»
+
+Se pinta bajo la cabecera del grupo, **pegado a la cifra** y no en una ayuda que nadie abre. Y la
+cabecera vuelve a mostrar el importe siempre que haya algo que cobrar, haya excluidos o no.
+
+## El guard cambia de forma, no de exigencia
+
+El test que fijaba «el importe se CALLA si no se puede decir entero» **se puso rojo con este
+cambio, y es correcto que lo hiciera**: la conducta que vigilaba ya no es la decidida.
+
+Se sustituye por uno que fija lo que de verdad no puede romperse — **que las dos piezas viajen
+juntas**:
+
+- si desaparece la salvedad, el importe vuelve a leerse como si lo contara todo;
+- si el texto se parafrasea, afirma algo que nadie ha aprobado sobre el dinero de un profesional
+  («no se sabe cuánto falta» y «pendiente de calcular» no dicen lo mismo);
+- y si vuelve un `[PENDIENTE microcopy oficial]` a esta vista, sería enseñar un hueco donde ya hay
+  una frase.
+
+El texto vive en el test como **constante comparada literal**, no como expresión regular laxa.
+
+## Lo que NO entra
+
+El **②** de la propuesta —chip propio «Terminado y sin cobrar · {N} · {IMPORTE}» y ordenar el grupo
+por importe descendente— **no entra**: cambia el orden que el profesional ve hoy, y eso se decide
+con la barra lateral ya reordenada (decisión del fundador, 10-ago-2026).
+
+## Evidencia
+
+- Worktree limpio desde el remoto con entorno completo: **2585 tests · 2511 pass · 0 fail ·
+  74 skipped · `$? = 0`**.
+- `npm run guards:entrada`: **`$? = 0`**.
+- `git diff --diff-filter=D --name-only origin/main...HEAD`: **vacío**.

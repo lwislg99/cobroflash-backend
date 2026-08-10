@@ -126,18 +126,32 @@ function renderJobGroups(list, jobs, container) {
     const resumen = g.key === 'terminado' && typeof resumenTerminadoSinCobrar === 'function'
       ? resumenTerminadoSinCobrar(g.items)
       : null;
-    // 🔴 EL IMPORTE SOLO SE ENSEÑA SI SE PUEDE ENSEÑAR ENTERO.
+    // EL IMPORTE SE ENSEÑA SIEMPRE, PORQUE AHORA LA LÍNEA DE ABAJO DICE QUÉ QUEDA FUERA.
     //
-    // Si hay terminados de los que NO se sabe cuánto falta (`sinImporte`), la suma de los demás
-    // es correcta y SE LEE MAL: quien la ve la lee como el total. «1.300 €» y «1.300 €, con 2
-    // trabajos sin importe fuera de la cuenta» son dos afirmaciones distintas, y la segunda
-    // necesita una FRASE que aún no está aprobada (regla 30, propuesta en `docs/master/SCRUM-428.md`).
+    // Hasta el 10-ago-2026 la cabecera se CALLABA el importe cuando había terminados sin importe
+    // conocido: la suma de los demás es correcta y se lee como el total, y no había una frase
+    // aprobada para decir cuántos quedaban fuera. Callarse era entonces lo único que no mentía.
     //
-    // Hasta que la haya, la cabecera se calla el importe en vez de enseñar uno que induce a error.
-    // El recuento de al lado no cambia y sigue siendo verdad.
-    const puedeDecirseEntero = resumen && resumen.cuantos > 0 && resumen.sinImporte === 0;
-    const importe = puedeDecirseEntero ? ` · ${eurosJobs(resumen.importe)}` : '';
+    // Con el texto aprobado (fundador, 10-ago-2026) la decisión se invierte, y por su propio
+    // motivo: **con la frase puesta, callarse el importe es contar MENOS de lo que se sabe**. La
+    // cifra y su salvedad viajan juntas, que es la única forma en que las dos son verdad.
+    const importe = resumen && resumen.cuantos > 0 ? ` · ${eurosJobs(resumen.importe)}` : '';
     sec.innerHTML = `<div style="font-size:12px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em;margin:4px 0 8px">${g.title} · ${g.items.length}${importe}</div>`;
+
+    // 🔴 LA SALVEDAD, PEGADA A LA CIFRA Y NO EN UNA AYUDA QUE NADIE ABRE.
+    //
+    // Un terminado sin eje de cobro no es un terminado de 0 €: es uno del que no se sabe cuánto
+    // falta. Si esta línea desaparece, el importe de arriba vuelve a leerse como si lo contara
+    // todo — y entonces el número de arriba tampoco se puede enseñar.
+    //
+    // ⚠️ TEXTO OFICIAL APROBADO (regla 30, fundador 10-ago-2026). No se reescribe ni se «mejora».
+    if (resumen && resumen.sinImporte > 0) {
+      const salvedad = document.createElement('div');
+      salvedad.style.cssText = 'font-size:12px;color:var(--muted);margin:-4px 0 8px';
+      salvedad.textContent =
+        `${resumen.sinImporte} sin importe de referencia: no se sabe cuánto falta y no entran en el total.`;
+      sec.appendChild(salvedad);
+    }
 
     const wrap = document.createElement('div');
     wrap.style.cssText = 'display:flex;flex-direction:column;gap:10px';
