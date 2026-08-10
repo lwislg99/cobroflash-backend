@@ -68,19 +68,13 @@ const CENSO = Object.freeze({
   // conectar…» y «No se ha recogido el trazo…». Por eso esto sube 2 y no 4.
   'albaranDetailView.js': 1,
   'signaturePad.js': 1,
-  // SCRUM-285 (+1, 10-ago-2026, A CONCIENCIA): la pantalla de Cobros nace con UN marcador
-  // —`COBROS_MARCA`— y lo pinta en varios sitios: título de la pantalla, cabeceras de la tabla,
-  // estado vacío, el rótulo del filtro «sin método registrado» y la etiqueta de los días de deuda.
+  // SCRUM-285 (10-ago-2026): `cobrosView.js` ENTRÓ y SALIÓ del censo el mismo día. La pantalla de
+  // Cobros nació con nueve ranuras marcadas —no había copy aprobada para ninguna— y el asesor las
+  // aprobó todas: los ocho textos primero, y las seis cabeceras después al partir en dos la quinta
+  // columna. Cero marcadores, así que la entrada se BORRA en vez de bajar a 0: `censoActual()` solo
+  // lista ficheros con marcador, y un 0 escrito aquí sería una bajada permanente sin anotar.
+  // Mismo trato que `jobRailBlocks.js` con SCRUM-424. El trinquete APRIETA.
   //
-  // Sube a conciencia y el motivo es el de siempre, invertido: el diseño §B4 solo NOMBRA dos cosas
-  // —el menú «Cobros» y los cuatro métodos «Bizum · tarjeta · transferencia · efectivo»—, y ésos
-  // se escriben literales porque están aprobados. Todo lo demás de esta pantalla es redacción
-  // nueva que NADIE ha aprobado, y la alternativa a marcarla no era escribirla: era no entregar
-  // la pantalla. Un marcador visible es feo y honesto; un texto inventado es bonito y falso.
-  //
-  // Baja a 0 —o sea, esta línea se borra— cuando el asesor apruebe la lista de microcopy que va
-  // con la entrega.
-  'cobrosView.js': 1,
   // SCRUM-405 (−1, 10-ago-2026): `api.js` SALE del censo. Su único marcador era el mensaje de
   // «esto no es tu fichero», y el asesor aprobó su microcopy (regla 30) — que resultó ser DOS
   // textos y no uno: hasta hoy las dos causas (`esHtml` y `!cuadra`) pintaban el MISMO, así que

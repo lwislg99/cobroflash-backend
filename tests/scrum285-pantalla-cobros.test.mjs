@@ -162,19 +162,188 @@ test('SCRUM-285 · ④ los dos Bizum caen en UN filtro, y la fila conserva cuál
 
 // ═══ ⑤ MICROCOPY (regla 30) ══════════════════════════════════════════════════════════════
 
-test('SCRUM-285 · ⑤ solo se publica el texto APROBADO; el resto lleva marcador', async () => {
+test('SCRUM-285 · ⑤ los rótulos son los APROBADOS, carácter a carácter', async () => {
   const banco = cargarDashboard(RAIZ, { datos: COBROS });
   const r = await pintarVista(banco, 'renderCobrosView');
   const rotulos = botonesFiltro(r.contenedor).map((b) => b.textContent);
-  // Los cuatro del diseño, literales.
-  for (const m of ['Bizum', 'tarjeta', 'transferencia', 'efectivo']) {
-    assert.ok(rotulos.includes(m),
-      `🔴 falta el filtro «${m}», que el diseño §B4 nombra literalmente.`);
+  assert.deepEqual(rotulos,
+    ['Todos', 'Bizum', 'tarjeta', 'transferencia', 'efectivo', 'Método no registrado'],
+    '🔴 los filtros no dicen exactamente el texto aprobado (asesor, 10-ago-2026). Los cuatro ' +
+    'métodos son literales del diseño §B4; «Todos» y «Método no registrado» los aprobó él.');
+  assert.match(textos(r.contenedor).join(' | '), /(^|\| )Cobros( \||$)/,
+    '🔴 el título de la pantalla no es «Cobros».');
+});
+
+test('SCRUM-285 · ⑤ «Método no registrado» y NO «Otro» — y la fila dice «No registrado»', async () => {
+  // «Otro» AFIRMA que hubo un método distinto. Aquí no consta ninguno, y esa es exactamente la
+  // distinción que obligó a crear el cubo: si el rótulo miente, el cubo deja de servir para nada.
+  const banco = cargarDashboard(RAIZ, { datos: COBROS });
+  const r = await pintarVista(banco, 'renderCobrosView');
+  const todo = textos(r.contenedor).join(' | ');
+  assert.ok(!/\bOtro\b/.test(todo),
+    '🔴 la pantalla dice «Otro» en algún sitio. «Otro» afirma un método distinto; lo que pasa es ' +
+    'que NO CONSTA ninguno.');
+  assert.match(todo, /No registrado/,
+    '🔴 el cobro sin método no dice «No registrado» en su fila.');
+});
+
+test('SCRUM-285 · ⑤ los días de deuda: DOS formas, y las dos con singular', async () => {
+  // En tabla la columna ya se llama «Sin cobrar», así que la celda pone solo el número: repetir la
+  // etiqueta en cada fila es ruido, y lo que se hace aquí es BARRER buscando el más viejo. Fuera de
+  // la tabla no hay cabecera que lo explique, así que va la frase entera.
+  const banco = cargarDashboard(RAIZ, { datos: COBROS });
+  await pintarVista(banco, 'renderCobrosView');
+  const C = banco.ctx.COBROS_COPY;
+  assert.equal(C.diasEnTabla(30), '30 días');
+  assert.equal(C.diasEnTabla(1), '1 día',
+    '🔴 con un solo día, «1 días». Un plural mal puesto en la pantalla del dinero se lee como ' +
+    'descuido, y aquí todo lo demás está medido.');
+  assert.equal(C.diasSinCobrar(30), 'Sin cobrar desde hace 30 días');
+  assert.equal(C.diasSinCobrar(1), 'Sin cobrar desde hace 1 día');
+});
+
+test('SCRUM-285 · ⑤ las dos frases están ATADAS: la larga contiene a la corta', async () => {
+  // 🔴 Se pintan LAS DOS a la vez en la misma celda —una para la tabla, otra para la card— y dos
+  // copias de un texto aprobado que pueden divergir son microcopy esperando a romperse: alguien
+  // arregla el singular en una y la otra dice «1 días» justo donde de verdad se mira.
+  //
+  // Hoy no PUEDEN divergir, porque la larga se deriva de la corta. Este test existe para que el
+  // día que alguien las separe se entere por un rojo y no por una captura.
+  const vista = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/cobrosView.js'), 'utf8');
+  assert.match(vista, /diasSinCobrar: function \(n\) \{ return '[^']*' \+ COBROS_COPY\.diasEnTabla\(n\); \}/,
+    '🔴 la frase larga ha dejado de derivarse de la corta. Ahora son dos textos independientes y ' +
+    'nada impide que digan cosas distintas: derívala otra vez, o ata las dos con un test propio.');
+  const banco = cargarDashboard(RAIZ, { datos: COBROS });
+  await pintarVista(banco, 'renderCobrosView');
+  const C = banco.ctx.COBROS_COPY;
+  for (const n of [1, 2, 30, 100]) {
+    assert.ok(C.diasSinCobrar(n).endsWith(C.diasEnTabla(n)),
+      `🔴 con n=${n} la frase larga no termina en la corta: «${C.diasSinCobrar(n)}» vs ` +
+      `«${C.diasEnTabla(n)}». Han divergido.`);
   }
-  // Todo lo demás que se ve, con marcador: título, cabeceras, estado vacío, «sin método».
-  const sinAprobar = rotulos.filter((t) => !['Bizum', 'tarjeta', 'transferencia', 'efectivo'].includes(t));
-  for (const t of sinAprobar) {
-    assert.match(t, /^\[PENDIENTE microcopy oficial\]/,
-      `🔴 «${t}» es redacción nueva sin aprobar y se publica sin marcador (regla 30).`);
+});
+
+test('SCRUM-285 · ⑤ la celda pinta LAS DOS formas: la card es la pantalla, no una degradación', async () => {
+  // A ≤640 px el `thead` desaparece y la tabla es una pila de cards. Este producto se usa desde una
+  // furgoneta: un «3 días» sin cabecera que lo explique se queda SIN REFERENTE justo donde de
+  // verdad se mira. El CSS elige cuál se ve; la vista pinta las dos.
+  const banco = cargarDashboard(RAIZ, { datos: COBROS });
+  const r = await pintarVista(banco, 'renderCobrosView');
+  const celda = todos(r.contenedor).find((n) => n.className === 'cell-status' && n.hijos.length);
+  assert.ok(celda, '🔴 ninguna celda de deuda tiene contenido: el cobro pendiente no pinta nada.');
+
+  const corta = celda.hijos.find((h) => h.className === 'solo-tabla');
+  const larga = celda.hijos.find((h) => h.className === 'solo-card');
+  assert.ok(corta && larga,
+    '🔴 la celda no pinta las dos formas. Sin `solo-card`, en la furgoneta se lee un número suelto ' +
+    'sin nada que diga de qué son esos días.');
+  assert.match(corta.textContent, /^\d+ días?$/, '🔴 en tabla va solo el número.');
+  assert.match(larga.textContent, /^Sin cobrar desde hace \d+ días?$/,
+    '🔴 en la card va la frase entera, que es la que el asesor aprobó para fuera de la tabla.');
+  assert.ok(larga.textContent.endsWith(corta.textContent),
+    '🔴 las dos frases pintadas en la MISMA celda no coinciden entre sí.');
+
+  const cssCard = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8');
+  assert.match(cssCard, /\.solo-card \{ display: none; \}/,
+    '🔴 sin la regla por defecto, en la TABLA se verían las dos frases a la vez.');
+  assert.match(cssCard, /\.table--cards-mobile \.solo-tabla \{ display: none; \}/,
+    '🔴 sin la regla de la card, en móvil se verían las dos.');
+});
+
+test('SCRUM-285 · ⑤ un cobro cobrado deja la celda VACÍA de verdad, sin spans', async () => {
+  // Con un span vacío dentro, `td:empty` deja de aplicar y la celda ocuparía sitio en la card
+  // hablando de una deuda que no existe.
+  const banco = cargarDashboard(RAIZ, { datos: [COBROS[0], COBROS[1]] }); // los dos pagados
+  const r = await pintarVista(banco, 'renderCobrosView');
+  const celdas = todos(r.contenedor).filter((n) => n.className === 'cell-status');
+  assert.equal(celdas.length, 2, 'suelo: una celda de deuda por fila.');
+  for (const c of celdas) {
+    assert.equal(c.hijos.length, 0, '🔴 la celda de un cobro cobrado lleva algo dentro.');
+    assert.equal(c.textContent, '', '🔴 la celda de un cobro cobrado no está vacía.');
   }
+});
+
+test('SCRUM-285 · ⑤ las SEIS cabeceras son las aprobadas, y ninguna necesita una «y»', async () => {
+  // La regla que trajo la sexta columna: **una cabecera que necesita una «y» son dos columnas**.
+  // La quinta se llamaba «documento y deuda» y estaba diciendo sola que ahí cabían dos hechos.
+  const banco = cargarDashboard(RAIZ, { datos: COBROS });
+  const r = await pintarVista(banco, 'renderCobrosView');
+  // ⚠️ `[...]` y no la referencia: el array vive en el contexto del banco (otro realm), y
+  // `deepEqual` estricto compara prototipos. Sin copiarlo, el rojo sería del banco, no del código.
+  const cabeceras = [...banco.ctx.COBROS_COPY.cabeceras];
+  assert.deepEqual(cabeceras, ['Fecha', 'Cliente', 'Importe', 'Método', 'Documento', 'Sin cobrar'],
+    '🔴 las cabeceras no son las seis aprobadas por el asesor el 10-ago-2026.');
+  const conY = cabeceras.filter((h) => / y /i.test(h));
+  assert.deepEqual(conY, [],
+    '🔴 una cabecera con «y» son dos columnas metidas en una: ' + conY.join(', '));
+
+  // Y que la tabla las PINTA, leídas del marcado que la vista escribió. No se cuentan los `<th>`
+  // como nodos: el mini-DOM solo representa las etiquetas con `class`/`id`/`data-`, así que
+  // contarlos mediría el banco. Se mira el marcado, que es lo que el navegador recibe.
+  const thead = todos(r.contenedor).find((n) => n.tagName === 'THEAD');
+  assert.ok(thead, 'suelo: la tabla no tiene cabecera.');
+  for (const h of cabeceras) {
+    assert.ok(thead.innerHTML.includes('>' + h + '<'),
+      `🔴 la cabecera «${h}» está aprobada y la tabla no la pinta.`);
+  }
+  assert.equal((thead.innerHTML.match(/<th/g) || []).length, 6,
+    '🔴 la tabla no pinta seis columnas.');
+});
+
+test('SCRUM-285 · ⑤ la celda de «Sin cobrar» va VACÍA si está cobrado, y sola si no', async () => {
+  const banco = cargarDashboard(RAIZ, { datos: COBROS });
+  const r = await pintarVista(banco, 'renderCobrosView');
+  const celdas = todos(r.contenedor).filter((n) => n.className === 'cell-status');
+  assert.equal(celdas.length, 3, 'suelo: una celda de deuda por fila.');
+  // El texto vive en los dos `<span>` (tabla y card), así que se mira el contenido de la celda por
+  // sus hijos y no por su `textContent`: el mini-DOM no concatena, y leerlo así daría siempre ''.
+  const conTexto = celdas
+    .map((c) => (c.hijos.find((h) => h.className === 'solo-tabla') || {}).textContent)
+    .filter(Boolean);
+  assert.equal(conTexto.length, 1,
+    '🔴 de los tres cobros solo UNO está pendiente, así que solo uno pinta antigüedad. Los ' +
+    'cobrados van VACÍOS: ni guion ni cero — y en la card `td:empty` los hace desaparecer, que es ' +
+    'lo que se quiere: un cobro cobrado no ocupa sitio hablando de una deuda que no existe.');
+  // ⚠️ La FORMA, no el número: la vista cuenta contra `new Date()`, así que fijar «30 días» sería
+  // un test que se pone rojo mañana por el calendario. Lo que importa aquí es que sea la forma
+  // CORTA de tabla —el número solo— y no la frase larga, que es de fuera de la tabla.
+  assert.match(conTexto[0], /^\d+ días?$/,
+    `🔴 la celda dice «${conTexto[0]}». En tabla va la forma corta: la columna ya se llama «Sin ` +
+    'cobrar», y repetir la etiqueta en cada fila impide barrer la columna con la vista.');
+});
+
+test('SCRUM-285 · ⑤ un cobro YA COBRADO no pinta etiqueta de deuda: nada, ni guion ni cero', async () => {
+  const banco = cargarDashboard(RAIZ, { datos: [COBROS[0], COBROS[1]] }); // los dos pagados
+  const r = await pintarVista(banco, 'renderCobrosView');
+  assert.ok(!/Sin cobrar desde hace/.test(textos(r.contenedor).join(' | ')),
+    '🔴 se pinta antigüedad de deuda sobre cobros ya cobrados. No se debe nada: la etiqueta no va.');
+});
+
+// ═══ ⑥ LOS DOS ESTADOS VACÍOS — y confundirlos es el defecto ═════════════════════════════
+
+test('SCRUM-285 · ⑥ SIN NINGÚN COBRO: «Todavía no hay cobros registrados.»', async () => {
+  const banco = cargarDashboard(RAIZ, { datos: [] });
+  const r = await pintarVista(banco, 'renderCobrosView');
+  const vacio = todos(r.contenedor).find((n) => n.dataset && n.dataset.vacio);
+  assert.ok(vacio, '🔴 no se pinta ningún estado vacío con la lista a cero.');
+  assert.equal(vacio.dataset.vacio, 'sin-cobros');
+  assert.equal(vacio.textContent, 'Todavía no hay cobros registrados.');
+});
+
+test('SCRUM-285 · ⑥ HAY COBROS PERO EL FILTRO LOS ESCONDE: es OTRO texto', async () => {
+  // 🔴 EL DEFECTO QUE ESTE PAR EVITA: decir «no hay cobros» cuando lo que pasa es que el propio
+  // profesional ha filtrado. En la pantalla del dinero eso no es un texto impreciso — le contesta
+  // «no te deben nada» a la pregunta que vino a hacer.
+  const banco = cargarDashboard(RAIZ, { datos: COBROS }); // hay tres, ninguno con tarjeta… salvo uno
+  const r = await pintarVista(banco, 'renderCobrosView');
+  const botonCash = botonesFiltro(r.contenedor).find((b) => b.dataset.filtroCobro === 'cash');
+  assert.ok(botonCash, 'suelo: sin el filtro de efectivo no se puede provocar el caso.');
+  botonCash.dispararClick();
+
+  const vacio = todos(r.contenedor).find((n) => n.dataset && n.dataset.vacio);
+  assert.ok(vacio, '🔴 con el filtro puesto y cero resultados no se pinta nada.');
+  assert.equal(vacio.dataset.vacio, 'filtro',
+    '🔴 con cobros en la lista y un filtro que no casa, la pantalla dice «no hay cobros». Eso le ' +
+    'afirma al profesional que no le deben nada, y es falso: los ha escondido su propio filtro.');
+  assert.equal(vacio.textContent, 'Ningún cobro coincide con este filtro.');
 });

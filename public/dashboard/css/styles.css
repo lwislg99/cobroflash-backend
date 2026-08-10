@@ -2132,7 +2132,16 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
   .table--cards-mobile td.cell-actions a { min-height: 44px; }
   /* la card ya no necesita el scroll horizontal de tabla */
   .table--cards-mobile tbody tr td:empty { display: none; }
+  /* SCRUM-285: en la card NO hay cabecera (el `thead` está oculto arriba), así que un dato que
+     dependa de su columna para entenderse se queda sin referente. Aquí se cambia por su forma
+     larga — «Sin cobrar desde hace 3 días» en vez de «3 días». Las dos las pinta la vista a la
+     vez y salen de la misma función, así que no pueden divergir. */
+  .table--cards-mobile .solo-tabla { display: none; }
+  .table--cards-mobile .solo-card { display: inline; }
 }
+
+/* SCRUM-285 · el par de arriba, en su estado por defecto: en TABLA manda la forma corta. */
+.solo-card { display: none; }
 
 /* ── A22.4: transición de vista sobria (AB6: ≤200ms + reduced-motion) ── */
 .view-enter { animation: viewFade .16s ease-out; }
