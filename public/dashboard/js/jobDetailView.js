@@ -227,12 +227,20 @@ function jdAddRow(dl, term, value) {
 // (`destinoEfectivo`), nunca de una jerarquía escrita aquí. Dos tablas de acciones para el mismo
 // documento es el defecto de SCRUM-240, y esta vez en la capa de interacción.
 //
-// ⚠️ EL CONTEXTO NO SE COPIA LITERAL DE C2, Y ESTE ES EL DETALLE QUE ENVENENA:
-// el MISMO derivado de tres valores viaja con NOMBRE DISTINTO según el endpoint —
-// `estadoFacturacion` en el detalle del albarán (`albaranes.routes.ts:437`) y `estadoCobro` en el
-// del Trabajo (`jobs.routes.ts:328`)—. Copiar `alb.estadoFacturacion` aquí daría `undefined`, y
-// `undefined !== 'facturado'` es TRUE: la fila ofrecería «facturar» sobre albaranes ya facturados
-// del todo, sin error y sin que nada se pusiera rojo. Tiene guard propio.
+// ⚠️ EL CONTEXTO NO SE COPIA LITERAL DE C2 — y hasta SCRUM-372 ESO ENVENENABA:
+// el MISMO derivado de tres valores viajaba con NOMBRE DISTINTO según el endpoint —
+// `estadoFacturacion` en el detalle del albarán y `estadoCobro` en el del Trabajo—, siendo la
+// MISMA llamada a `estadoCobroAlbaran`. Copiar el contexto de una vista a otra daba `undefined`, y
+// `undefined !== 'facturado'` es TRUE: la fila ofrecía «facturar» sobre albaranes ya facturados
+// del todo, sin error y sin que nada se pusiera rojo.
+//
+// YA NO: los cuatro productores serializan `estadoFacturacion`, y `estadoCobro` queda significando
+// SOLO el cobro del Trabajo (`Pagado`/`Parcial`/`Pendiente`) — que es otro dato y otro juego de
+// valores. Lo vigila `tests/scrum372-un-dato-un-nombre.test.mjs`.
+//
+// ⚠️ LO QUE EL RENOMBRE **NO** ARREGLA, y por eso queda dicho: leer un campo que el objeto no trae
+// sigue dando `undefined`, y `undefined !== 'facturado'` sigue siendo TRUE. Un nombre único quita
+// el vector conocido, no la clase entera.
 /** Fecha corta para la columna de la tabla: «12 jul». La hora completa vive en el detalle. */
 function albFechaCorta(w) {
   return w ? new Date(w).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : '';
@@ -242,7 +250,7 @@ function ctxAlbaranEnFila(alb) {
   return {
     // Tres valores (`sin_facturar` · `parcial` · `facturado`), no un booleano: en una obra por
     // fases `parcial` es lo normal, y aplanarlo escondería que AÚN QUEDA algo que facturar.
-    'valorado-con-pendiente': alb.modoValoracion === 'VALORADO' && alb.estadoCobro !== 'facturado',
+    'valorado-con-pendiente': alb.modoValoracion === 'VALORADO' && alb.estadoFacturacion !== 'facturado',
   };
 }
 
@@ -1290,9 +1298,9 @@ async function renderJobDetailView(container, jobId) {
         // SCRUM-17/170: «facturado» NO es un estado del documento — es un derivado de TRES valores
         // contra el libro de líneas. Va como badge aparte del pill a propósito: son DOS EJES, y
         // aplanarlos escondería el parcial, que en una obra por fases es el caso normal.
-        (alb.estadoCobro === 'parcial'
+        (alb.estadoFacturacion === 'parcial'
           ? `<span class="job-doc-row__badge">Facturado en parte</span>`
-          : (alb.facturado || alb.estadoCobro === 'facturado' ? `<span class="job-doc-row__badge">Facturado</span>` : '')) +
+          : (alb.facturado || alb.estadoFacturacion === 'facturado' ? `<span class="job-doc-row__badge">Facturado</span>` : '')) +
         (albValorado ? '' : `<span class="job-doc-row__badge">Sin precios</span>`) +
       `</td>` +
       // LÍNEAS se OCULTA en móvil con `col-hide-mobile`, que es lo que la casa hace con lo
@@ -1308,7 +1316,7 @@ async function renderJobDetailView(container, jobId) {
     // SCRUM-17: checkbox de selección (modo consolidación) en albaranes elegibles.
     // SCRUM-170: un albarán a MEDIAS tampoco entra en la consolidación (el backend lo rechaza
     // con `albaran_facturado_parcial`); ofrecer el checkbox sería un botón que solo puede fallar.
-    if (alb.estado === 'firmado' && alb.modoValoracion === 'VALORADO' && !alb.facturado && alb.estadoCobro !== 'parcial' && alb.estadoCobro !== 'facturado') {
+    if (alb.estado === 'firmado' && alb.modoValoracion === 'VALORADO' && !alb.facturado && alb.estadoFacturacion !== 'parcial' && alb.estadoFacturacion !== 'facturado') {
       const wrap = document.createElement('label');
       wrap.style.cssText = 'display:none;align-items:center;gap:6px;margin:0 0 6px;font-size:13px;color:var(--ink);cursor:pointer';
       const cb = document.createElement('input');
