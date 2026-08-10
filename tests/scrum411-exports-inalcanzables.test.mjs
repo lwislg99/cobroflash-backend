@@ -31,8 +31,19 @@ const R = analizar(RAIZ);
  * 🔴 Y fue ESTE número el que lo destapó, no una revisión a ojo: es lo que convirtió «C6 está
  * Finalizada» en «C6 tiene un cierre en falso». Por eso baja en el mismo commit que lo arregla —
  * un tope con holgura habría dejado el hallazgo sin constancia.
+ *
+ * **7 → 8 · 10-ago-2026 · SCRUM-458. SUBE, y eso es un hallazgo, no un trámite.** Entra
+ * `src/modules/jobs/domain/precarga.service.ts`: el paquete de precarga de H1 fase 2, construido y
+ * probado, que **nadie puede llamar todavía** porque el encargo dice literalmente «esta fase no
+ * tiene superficie» — el consumidor es la fase siguiente.
+ *
+ * 🔴 SE SUBE CON SU FECHA Y SU MOTIVO EN VEZ DE CABLEARLO A LA FUERZA, y el número queda como lo
+ * que es: **la constancia de que hay dominio entregado que ningún profesional puede alcanzar**. Si
+ * la fase siguiente no llega, esto sigue aquí acusando. Lo que este trinquete impide no es que el
+ * número suba: es que suba **sin que nadie se entere**, que es como se descubrió el cierre en falso
+ * de C6. **Baja a 7 el commit que le ponga consumidor.**
  */
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 7;
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 8;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
