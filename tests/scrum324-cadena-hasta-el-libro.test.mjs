@@ -28,6 +28,21 @@ const URL_BANCO = process.env.LIBRO_PG_URL || '';
 const ENABLED = URL_BANCO !== '';
 const SELLO = `e3${process.pid}`;
 
+// 🔴 EL CAMINO DE PRODUCTO USA EL CLIENTE SINGLETON, y por eso este test apunta `DATABASE_URL`
+// al banco ANTES de importar nada: `createExpense` es la funcion real que usa la ruta, no un doble,
+// y probar la cadena entera exige que escriba por donde escribe de verdad.
+//
+// ⚠️ La comprobacion va ANTES de asignar, no despues: si la URL no es loopback y con base
+// terminada en `_test`, el proceso PARA aqui y no llega a construirse ningun cliente. Un test que
+// apunta el singleton a donde sea es la forma mas rapida de escribir en produccion.
+if (ENABLED) {
+  const p = parseBDSegura(URL_BANCO);
+  if (!p || !['127.0.0.1', 'localhost', '::1'].includes(p.host) || !p.base.endsWith('_test')) {
+    throw new Error('🔴 LIBRO_PG_URL no es un banco desechable (loopback + base «…_test»). Se para aqui.');
+  }
+  process.env.DATABASE_URL = URL_BANCO;
+}
+
 const { createExpense } = await import('../dist/modules/expenses/domain/expenses.service.js');
 const { leerLibroRecibidas } = await import('../dist/modules/invoicing/domain/libroRecibidas.repo.js');
 const { clasificarJustificante } = await import('../dist/modules/expenses/domain/justificante.js');
@@ -141,7 +156,7 @@ test('SCRUM-324 · 🔴 LA CADENA ENTERA: se da de alta con desglose y el LIBRO 
         assert.equal(enBase.providerInvoiceNumber, `A-2026/${SELLO}`);
 
         // ② 🔴 Y EL LIBRO LO TRAE. Ésta es la prueba; lo demás es preparación.
-        const libro = await leerLibroRecibidas(prisma, m.id, new Date(2026, 3, 1), new Date(2026, 5, 30, 23, 59, 59, 999));
+        const libro = await leerLibroRecibidas(prisma, { merchantId: m.id, desde: new Date(2026, 3, 1), hasta: new Date(2026, 5, 30, 23, 59, 59, 999) });
         assert.ok(libro.miradas >= 1,
           `🔴 el libro dice haber mirado ${libro.miradas} gastos: no está leyendo los del periodo, ` +
           'así que «cero asientos» no significaría nada.');
@@ -173,7 +188,7 @@ test('SCRUM-324 · CONTROL NEGATIVO: un gasto SIN desglose se sigue guardando y 
         assert.ok(gasto.id, '🔴 un gasto sin datos fiscales ha dejado de poder darse de alta.');
         assert.equal(gasto.baseAmount, null, '🔴 se le ha inventado una base a un gasto que no la traía.');
 
-        const libro = await leerLibroRecibidas(prisma, m.id, new Date(2026, 3, 1), new Date(2026, 5, 30, 23, 59, 59, 999));
+        const libro = await leerLibroRecibidas(prisma, { merchantId: m.id, desde: new Date(2026, 3, 1), hasta: new Date(2026, 5, 30, 23, 59, 59, 999) });
         assert.equal(libro.asientos.length, 0, '🔴 un gasto sin base ha entrado como asiento.');
         assert.equal(libro.sinClasificar, 1,
           '🔴 el gasto sin desglose no se está DECLARANDO. Excluirlo en silencio deja un libro que ' +
