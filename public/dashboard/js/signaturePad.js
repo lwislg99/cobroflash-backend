@@ -21,6 +21,11 @@
   //
   // Sin ellas el bloque NO se pinta y se firma como se firmaba: preferimos perder los campos
   // nuevos a inventarnos un texto.
+  // SCRUM-466: el resumen del albarán se monta con `innerHTML`, y su contenido lo escribe el
+  // profesional (conceptos, nombre del cliente). Misma forma que en `albaranDetailView.js`.
+  const esc = (s) => String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
   const rotulos = () => (window.appAlbaranRotulos || {});
   const ayudas = () => (window.appAlbaranAyudas || {});
   const calidades = () => (Array.isArray(window.appAlbaranFirmanteOpciones) ? window.appAlbaranFirmanteOpciones : []);
@@ -32,8 +37,17 @@
     const firmante = (opts && opts.firmante) || null;
 
     const overlay = document.createElement('div');
+    // 🔴 SCRUM-466 · `align-items:flex-start` + `overflow:auto`, y no es cosmética.
+    //
+    // Con `align-items:center` una tarjeta MÁS ALTA que la pantalla se centra y **su parte de
+    // arriba queda fuera y sin forma de alcanzarla**. Medido al añadir el albarán: a 320×568 la
+    // tarjeta pasó a 700 px de alto — el firmante habría perdido de vista justo lo que este ticket
+    // existe para enseñarle, y en el móvil más pequeño, que es donde se firma en obra.
+    //
+    // Antes no se notaba porque la tarjeta cabía. Lo rompió este cambio y lo arregla este cambio.
     overlay.style.cssText =
-      'position:fixed;inset:0;background:rgba(15,28,23,.45);z-index:1200;display:flex;align-items:center;justify-content:center;padding:16px';
+      'position:fixed;inset:0;background:rgba(15,28,23,.45);z-index:1200;display:flex;' +
+      'align-items:flex-start;justify-content:center;padding:16px;overflow:auto';
     const card = document.createElement('div');
     card.setAttribute('role', 'dialog');
     card.setAttribute('aria-modal', 'true');
@@ -155,6 +169,73 @@
         syncOk();
       });
       card.appendChild(lista);
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-466 · EL ALBARÁN, ENCIMA DEL RECUADRO Y EN LA MISMA PANTALLA
+    //
+    // Hasta ahora, quien firmaba en el móvil del profesional NO VEÍA NADA de lo que firmaba:
+    // medido y ejercitado en SCRUM-463 — ni las líneas, ni la cantidad, ni el cliente. Nos
+    // habíamos gastado un bloque entero (SCRUM-438) congelando cinco campos para que nadie
+    // pudiera discutirlos, y el firmante no había leído ninguno.
+    //
+    // Va AQUÍ y no en una pantalla previa por decisión del fundador: el albarán arriba y el
+    // recuadro debajo, a la vez. Es lo que hace defendible el «lo vio» — estaba mirándolo
+    // mientras firmaba.
+    //
+    // 🔴 SIN IMPORTES. NINGUNO: ni unitario, ni de línea, ni total. **Un albarán no lleva
+    // importes** (regla del producto, fundador 11-ago-2026), y el motivo no es de maquetación:
+    // quien firma en obra no es necesariamente quien acordó el precio —un inquilino, un
+    // administrador de finca, el empleado de la tienda—. Hacerle firmar un importe convierte un
+    // acuse de «esto se ha hecho» en una aceptación de precio de alguien sin autoridad sobre él.
+    // Hay guard que lo vigila con un albarán VALORADO, que es donde es fácil que se cuele.
+    const alb = (opts && opts.albaran) || null;
+    if (alb) {
+      const resumen = document.createElement('div');
+      resumen.className = 'firma-albaran';
+      resumen.setAttribute('data-firma-albaran', '1');
+      resumen.style.cssText =
+        'border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:14px;' +
+        'background:var(--surface-2,#f8f9f7);max-height:38vh;overflow:auto';
+
+      const cab = document.createElement('div');
+      cab.style.cssText = 'font-size:13px;color:var(--muted);margin-bottom:8px;line-height:1.5';
+      // Cliente, fecha y lugar: los tres van SELLADOS en v:3, así que se enseñan. «No se sella lo
+      // que no se enseña, y no se enseña menos de lo que se sella.»
+      const trozos = [];
+      if (alb.cliente) trozos.push(esc(alb.cliente));
+      if (alb.fecha) trozos.push(esc(alb.fecha));
+      if (alb.lugar) trozos.push(esc(alb.lugar));
+      cab.innerHTML = trozos.join(' · ');
+      if (trozos.length) resumen.appendChild(cab);
+
+      const tabla = document.createElement('table');
+      tabla.style.cssText = 'width:100%;border-collapse:collapse;font-size:14px';
+      const filas = Array.isArray(alb.lineas) ? alb.lineas : [];
+      tabla.innerHTML = filas.length
+        ? filas.map((l) =>
+            `<tr><td style="padding:5px 0;border-bottom:1px solid var(--border)">${esc(l && l.concepto)}</td>` +
+            `<td style="padding:5px 0;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap">` +
+            `${esc(l && l.cantidad)}${l && l.unidad ? ' ' + esc(l.unidad) : ''}</td></tr>`).join('')
+        : '<tr><td style="padding:5px 0;color:var(--muted)">Sin líneas.</td></tr>';
+      resumen.appendChild(tabla);
+      card.appendChild(resumen);
+    }
+
+    // Los dos textos APROBADOS (asesor, 11-ago-2026), justo encima del recuadro. Salen de
+    // `ALBARAN_ROTULOS`, su fuente única: aquí no se escribe microcopy (regla 30).
+    if (ROT.confirmacionFirma) {
+      const conf = document.createElement('p');
+      conf.setAttribute('data-firma-confirmacion', '1');
+      conf.style.cssText = 'margin:0 0 6px;font-size:14px;color:var(--ink);font-weight:600';
+      conf.textContent = ROT.confirmacionFirma;
+      card.appendChild(conf);
+    }
+    if (ROT.recuadroFirma) {
+      const rot = document.createElement('label');
+      rot.style.cssText = 'display:block;font-size:13px;color:var(--muted);margin-bottom:6px';
+      rot.textContent = ROT.recuadroFirma;
+      card.appendChild(rot);
     }
 
     // Canvas nítido en pantallas retina (escala por devicePixelRatio)

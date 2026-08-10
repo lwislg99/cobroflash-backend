@@ -74,7 +74,17 @@ test('SCRUM-463 · SUELO: hay DOS caminos de firma, y los dos se encuentran', ()
 
 // ── 🔴 CAMINO 1 · EL PANEL — el móvil del profesional, donde firma el cliente ─────────────
 
-test('SCRUM-463 · 🔴 EL PANEL: la pantalla desde la que se firma NO pinta el contenido', async () => {
+// ⚠️ ACTUALIZADO POR SCRUM-466, y conviene leer por qué antes de tocarlo.
+//
+// Cuando esto se escribió, el título decía «la pantalla desde la que se firma NO pinta el
+// contenido», y era verdad de las dos maneras: ni la pantalla de detalle ni el pad enseñaban nada.
+// SCRUM-466 puso el albarán **dentro del pad**, encima del recuadro — así que **el firmante ya ve
+// lo que firma** y ese test vive ahora en `scrum466-el-firmante-ve-el-albaran.test.mjs`.
+//
+// Lo que sigue midiendo esto es otra cosa, más pequeña y todavía cierta: **la pantalla de DETALLE
+// del albarán sigue sin enseñar su contenido**. No es el defecto de la firma —ése está cerrado—,
+// pero es la pantalla del albarán y no muestra el albarán. Se deja medido, no exigido.
+test('SCRUM-463 · la pantalla de DETALLE sigue sin pintar el contenido (la firma ya lo enseña: SCRUM-466)', async () => {
   // Se EJERCITA: se carga el dashboard entero y se pinta la vista de detalle del albarán, que es
   // la que lleva el botón «Firmar aquí mismo» (`albaranDetailView.js`).
   const banco = cargarDashboard(RAIZ);
@@ -114,12 +124,12 @@ test('SCRUM-463 · 🔴 EL PANEL: la pantalla desde la que se firma NO pinta el 
   assert.deepEqual(
     faltan,
     ['las LÍNEAS (el concepto)', 'la CANTIDAD', 'el IMPORTE', 'el CLIENTE'],
-    '🔴 LO QUE ENSEÑA LA PANTALLA DE FIRMA DEL PANEL HA CAMBIADO.\n\n' +
+    '🔴 LO QUE ENSEÑA LA PANTALLA DE DETALLE DEL ALBARÁN HA CAMBIADO.\n\n' +
     `  Medido el 11-ago-2026: NO pintaba ninguno de los cuatro. Ahora faltan: ${faltan.join(', ') || '(ninguno)'}.\n\n` +
     '  · Si faltan MENOS, alguien lo ha arreglado: actualiza esta lista y avisa, es la buena.\n' +
     '  · Si faltan MÁS, se ha quitado algo de una pantalla desde la que se FIRMA.\n\n' +
-    '  Recuerda para qué sirve: un albarán firmado gana la discusión de «yo no pedí eso». Si quien\n' +
-    '  firma no vio las líneas, la firma prueba mucho menos de lo que le vendemos al profesional.');
+    '  Ojo: la FIRMA ya enseña el albarán desde SCRUM-466 (va dentro del pad). Lo que mide esto es\n' +
+    '  la pantalla de detalle, que es otra cosa y sigue sin enseñar lo que el documento contiene.');
 });
 
 test('SCRUM-463 · CONTROL NEGATIVO: el banco SÍ ve el contenido cuando una vista lo pinta', () => {
@@ -184,7 +194,7 @@ test('SCRUM-463 · el detalle del albarán no lee NI UN campo del contenido — 
     .filter((c) => new RegExp(`\b${c}\b`).test(enCodigo));
 
   assert.deepEqual(usados, [],
-    `🔴 LA PANTALLA DE FIRMA DEL PANEL YA LEE ${usados.join(', ')}.\n\n` +
+    `🔴 LA PANTALLA DE DETALLE DEL ALBARÁN YA LEE ${usados.join(', ')}.\n\n` +
     '  Medido el 11-ago-2026: no leía ninguno. Si ahora los lee, puede que alguien lo haya\n' +
     '  arreglado —es la buena noticia— y esta medición hay que actualizarla en\n' +
     '  `docs/master/SCRUM-463.md` en vez de silenciar el assert.');

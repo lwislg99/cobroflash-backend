@@ -159,6 +159,17 @@ export const ALBARAN_ROTULOS = {
   pdfFirmadoPor: 'Firmado por: ',
   /** APROBADO (asesor, 5-ago-2026) con su espacio final — rótulo del bloque de firma del PDF. */
   pdfEnCalidadDe: 'En calidad de: ',
+  // ── SCRUM-466 · lo que lee QUIEN FIRMA, justo encima del recuadro ────────────────────────
+  //
+  // 🔴 Nombra el acto SIN JERGA y SIN MENCIONAR PRECIO, y eso segundo no es estilo: un albarán no
+  // lleva importes porque **quien firma en obra no es necesariamente quien acordó el precio** —un
+  // inquilino, un administrador de finca, el empleado de la tienda—. Hacerle firmar un importe
+  // convierte un acuse de «esto se ha hecho» en una aceptación de precio de alguien sin autoridad
+  // sobre él. El precio vive en el presupuesto (antes) y en la factura (después).
+  /** APROBADO (asesor, 11-ago-2026) — encima del recuadro de firma. */
+  confirmacionFirma: 'Con tu firma confirmas que este trabajo se ha hecho.',
+  /** APROBADO (asesor, 11-ago-2026) — rótulo del propio recuadro. */
+  recuadroFirma: 'Firma aquí',
 } as const;
 
 /**
@@ -169,8 +180,9 @@ export const ALBARAN_ROTULOS = {
  * diff **quién aprobó qué y cuándo**. Un texto aprobado sin rastro de quién lo aprobó vuelve a ser
  * un texto que cualquiera cambia.
  *
- * Hoy están los seis. Que el censo esté completo NO lo convierte en decorado: si mañana nace un
- * rótulo nuevo, nacerá FUERA de esta lista y el guard lo dirá.
+ * Hoy están los ocho. Que el censo esté completo NO lo convierte en decorado: si mañana nace un
+ * rótulo nuevo, nacerá FUERA de esta lista y el guard lo dirá — **es lo que pasó con los dos de
+ * SCRUM-466**, que llegaron aquí porque el guard los cazó al nacer.
  */
 export const ALBARAN_ROTULOS_APROBADOS = [
   'fechaEntrega',
@@ -179,6 +191,9 @@ export const ALBARAN_ROTULOS_APROBADOS = [
   'firmadoPorCalidad',
   'pdfFirmadoPor',
   'pdfEnCalidadDe',
+  // SCRUM-466 · aprobados por el asesor el 11-ago-2026.
+  'confirmacionFirma',
+  'recuadroFirma',
 ] as const;
 
 /**
