@@ -150,7 +150,7 @@ test('SCRUM-273 · los ficheros de docs/master/ se llaman como su ticket', () =>
     '🔴 hay ficheros en docs/master/ que no siguen `SCRUM-<n>.md`:\n    ' + malNombrados.join('\n    ') +
     '\n\n  El nombre NO es cosmético: es lo que garantiza que dos tickets nunca escriban en el\n' +
     '  mismo fichero, que es la propiedad entera de este ticket. Un nombre libre reintroduce la\n' +
-    '  colisión por la puerta de atrás.');
+    '  colisión por la puerta de atrás.\n\n  Y NO ES EL UNICO que vigila una entrada del registro: son CUATRO, y cada sesion los ha\n  ido descubriendo EN ROJO despues de empujar. Compruebalos todos antes con\n  `npm run guards:entrada` (segundos: no compila ni toca la base).');
 });
 
 test('SCRUM-273 · el máster dice dónde vive el registro ahora', () => {

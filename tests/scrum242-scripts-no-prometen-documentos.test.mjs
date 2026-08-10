@@ -95,5 +95,5 @@ test('SCRUM-242 · ningún script nombra un documento que no existe', () => {
     + '\n\n  Peor que no decir nada: quien lo lee se queda tranquilo y no lo busca hasta que lo\n'
     + '  necesita — y a un runbook se llega a las tres de la mañana con la base caída.\n\n'
     + '  Dos salidas, las dos honestas: escribir el documento, o quitar la referencia.\n'
-    + '  Lo que no vale es dejarla apuntando al vacío.');
+    + '  Lo que no vale es dejarla apuntando al vacío.\n\n  Y NO ES EL UNICO que vigila una entrada del registro: son CUATRO, y cada sesion los ha\n  ido descubriendo EN ROJO despues de empujar. Compruebalos todos antes con\n  `npm run guards:entrada` (segundos: no compila ni toca la base).');
 });

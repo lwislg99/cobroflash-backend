@@ -1,5 +1,8 @@
 # SCRUM-414 · El guard atado al NOMBRE de la variable, no al hecho
 
+**Medido contra:** `origin/main` = `8bc048788d04bbbe74d77b3abd629ab972f02f73` · 2026-08-10T15:08:07+02:00
+**Rama:** `scrum-414-url-a-mano`
+
 **10-ago-2026, 14:53 CEST (UTC+0200)** · commit `9064d86ee5199e24cef93b350122b7a99b429af0`
 
 Sale de una comprobación de SCRUM-410: se pidió confirmar que `scrum195-url-bd-sin-fuga` seguía
@@ -91,3 +94,28 @@ Ficheros: `tests/_censo-new-url.mjs` (nuevo) · `tests/scrum414-url-a-mano.test.
 `tests/scrum195-url-bd-sin-fuga.test.mjs` · `.gitignore` · `scripts/backfill-quote-jobid.mjs` ·
 `scripts/conciliar-auditoria-fiscal.mjs` · `scripts/preflight-schema-drift.mjs` ·
 `scripts/guard-contraste.mjs`.
+
+---
+
+## Extra del mismo turno: `npm run guards:entrada`
+
+**El patrón, no el caso.** Esta misma entrada salió roja por SCRUM-267, y en tres días las entradas
+de `docs/master/` han sido cazadas por **cuatro guards distintos** — 273, 267, 391 y el de no
+nombrar documentos inexistentes—, siempre **después de empujar**. No es descuido: ninguna sesión los
+conoce todos hasta que le saltan, y **no había forma de comprobarlos de golpe**. `npm test` compila
+y corre 2.400 tests, así que nadie lo lanza para revisar un fichero de texto.
+
+`scripts/guards-entrada.mjs` los corre juntos. Tarda segundos porque los cuatro son estructurales:
+no compilan ni tocan la base. **Y los cuatro nombran ahora el comando en su mensaje de fallo** — es
+lo mismo que se hizo con el de SCRUM-273: *un guard que acusa sin decir cómo evitarlo la próxima vez
+seguirá cazando a la quinta sesión*.
+
+**Dos suelos, porque un agregador que se queda corto es peor que no tenerlo** —da la tranquilidad
+entera con la cobertura a medias—, los dos probados por `$?`:
+
+- lista con 3 → `🔴 la lista tiene 3 guards y el mínimo son 4. No se ejecuta nada.`
+- un guard renombrado → `🔴 FALTAN GUARDS DE ENTRADA` **nombrando el fichero**, y no corre nada.
+- y un tercero: se lee el recuento de tests del runner, porque «0 tests, 0 fallos» también sale verde.
+
+Verificado además que la pista **aparece en un fallo real**, no solo en el código: quitando el ancla
+de esta entrada, el mensaje termina en `` `npm run guards:entrada` (segundos: no compila ni toca la base).``

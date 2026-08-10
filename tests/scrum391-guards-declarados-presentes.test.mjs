@@ -133,5 +133,5 @@ test('SCRUM-391 · todo test DECLARADO en una entrada EXISTE en el árbol', () =
     + '    · traer el test (se EXTRAE de su rama, nunca se mergea la rama entera), o\n'
     + '    · corregir la ENTRADA, que es la constancia que dejó de ser cierta.\n'
     + '  Lo que NO hay es una lista de excepciones: una excepción que hay que mantener es una\n'
-    + '  excepción que alguien acaba ampliando.');
+    + '  excepción que alguien acaba ampliando.\n\n  Y NO ES EL UNICO que vigila una entrada del registro: son CUATRO, y cada sesion los ha\n  ido descubriendo EN ROJO despues de empujar. Compruebalos todos antes con\n  `npm run guards:entrada` (segundos: no compila ni toca la base).');
 });
