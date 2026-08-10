@@ -781,10 +781,16 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
     emisionAt: albaran.createdAt, // SCRUM-67: fecha de emisión ≠ fecha de entrega/ejecución
     version: albaran.version,
     modoValoracion,
-    merchant: merchant ?? { name: '—', legalName: null, taxId: null, address: null, logoUrl: null, whatsappPhone: null },
-    customer: customer
-      ? { name: customer.name, legalName: customer.legalName, taxId: customer.taxId }
-      : { name: null, legalName: null, taxId: null },
+    // 🔴 SCRUM-452: aquí ya SOLO viaja lo que el sobre NO congela. El nombre del emisor, su NIF y
+    // el nombre del cliente salen del bloque de abajo, resueltos por versión. Que ni siquiera
+    // lleguen por aquí es lo que impide que el PDF vuelva a pintarlos en vivo por descuido.
+    //
+    // `address`, `whatsappPhone`, `logoUrl` y el `taxId` DEL CLIENTE se leen de la fila de hoy, y
+    // es correcto: el sello no los nombra, así que no puede contradecir al papel. Queda declarado
+    // en `docs/master/SCRUM-452.md`. ⚠️ `logoUrl` no tiene arreglo posible por esta vía ni en un
+    // v:4: congelar la URL no congela la imagen que hay detrás de ella.
+    merchant: merchant ?? { address: null, logoUrl: null, whatsappPhone: null },
+    customer: { taxId: customer?.taxId ?? null },
     // ── SCRUM-300 + SCRUM-438 · EL PDF IMPRIME LO QUE SE SELLÓ, Y AHORA SON LOS CINCO ────────
     //
     // SCRUM-300 pasó `obra` por el despachador porque un v:1 se selló con `Job.direccion` y un
@@ -796,22 +802,15 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
     // pasar por ningún despachador. Con v:3 sellándolos, arreglar solo `obra` habría dejado el
     // mismo defecto en cuatro campos.
     //
-    // ⚠️ Y AQUÍ SE ARREGLAN DOS DE LOS CINCO, NO LOS CINCO. Que quede escrito, porque un comentario
-    // que promete una protección que no existe es peor que no tenerlo:
+    // ✅ SCRUM-452 · YA SON LOS CINCO. Antes eran dos —`obra` y `referenciaTrabajo`— y los otros
+    // tres se imprimían EN VIVO por los objetos `customer` y `merchant`. Consecuencia, medida y
+    // ahora cerrada: en un albarán **v:3** cuyo cliente corrigiera su razón social después de
+    // firmar, el papel imprimía la NUEVA mientras el sello certificaba la ANTIGUA — y el
+    // verificador decía «cuadra», porque el sello no mentía: mentía el papel.
     //
-    //   · `obra` y `referenciaTrabajo` SÍ salen del despachador — son escalares y el PDF los recibe
-    //     tal cual, así que sustituirlos por lo sellado no cambia nada más.
-    //   · 🔴 `cliente`, `emisor` y `emisorNif` SIGUEN IMPRIMIÉNDOSE EN VIVO, por los objetos
-    //     `customer` y `merchant` de más arriba. No es un olvido: esos objetos llevan también
-    //     `taxId` del cliente, `address`, `logoUrl` y `whatsappPhone` del emisor, que NO están entre
-    //     los cinco, así que no se pueden sustituir enteros. Decidir cuáles de sus campos vienen del
-    //     sobre y cuáles de la fila de hoy es una decisión sobre el papel, y ésa la toma el asesor.
-    //
-    //   Consecuencia concreta, para que nadie tenga que deducirla: en un albarán **v:3** cuyo
-    //   cliente cambie de razón social después de firmar, el PDF imprimirá la razón social NUEVA
-    //   mientras el sello certifica la ANTIGUA. La firma sigue verificando —ése es el trabajo de
-    //   v:3— pero el papel y el sello dejan de decir lo mismo en esos tres campos. Declarado en
-    //   `docs/master/SCRUM-438.md` (§3 quater, huecos).
+    // 🔴 Y v:1 y v:2 NO CAMBIAN NI UN BYTE. No tienen bloque congelado, así que para ellos
+    // `contenidoSegunVersion` devuelve las MISMAS fuentes vivas que se resolvían aquí abajo, con
+    // las mismas cadenas `||`. Cambia por qué puerta entran, no lo que valen.
     //
     // Sin firmar (`v` undefined) manda el campo de hoy: es un borrador, no una versión rara.
     ...(() => {
@@ -824,7 +823,9 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
         emisorNif: merchant?.taxId || null,
         contenidoCongelado: (albaran.evidenciaFirma as any)?.contenidoCongelado,
       });
-      return { obra: sellado.obra, referenciaTrabajo: sellado.referenciaTrabajo };
+      // Los CINCO, tal cual. Se devuelve el objeto entero y no campo a campo: el día que el bloque
+      // gane un sexto, olvidarlo aquí sería otra vez el papel diciendo una cosa y el sello otra.
+      return sellado;
     })(),
     // SCRUM-300 · campo nº 1 del ticket. null en todo lo anterior a esta tarea: entonces el PDF
     // no imprime la línea, en vez de imprimir un rótulo con un hueco al lado.
