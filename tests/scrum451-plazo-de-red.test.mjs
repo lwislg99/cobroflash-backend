@@ -268,7 +268,7 @@ test('SCRUM-451 · TRINQUETE: las vistas que se quedan MUDAS tras vencer el plaz
   // Un mensaje genérico donde había uno concreto es un empeoramiento, no una unificación.
   //
   // ⚠️ Las vistas se sacan del dispatch (censo derivado de SCRUM-433), no de una lista a mano.
-  const MUDAS_TECHO = 7; // medido el 10-ago-2026. Solo baja.
+  const MUDAS_TECHO = 4; // medido el 10-ago-2026 sobre main = 2e12c2f7: invoices, products, providers, export. Solo baja.
   const { vistas } = vistasDelDispatch(RAIZ);
   const nombreFn = (v) => 'render' + v.split('-').map((p) => p[0].toUpperCase() + p.slice(1)).join('') + 'View';
 
