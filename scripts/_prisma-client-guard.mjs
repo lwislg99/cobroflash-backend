@@ -161,7 +161,22 @@ export function modelosDelSchema(textoSchema) {
  * @returns {Promise<Map<string, Map<string, string>>>} modelo → (campo → columna)
  */
 export async function modelosDelCliente(rutaCliente) {
-  const mod = await import(rutaCliente || '@prisma/client');
+  // ⚠️ SCRUM-429 · SI EL CLIENTE NO SE PUEDE CARGAR, SE DEVUELVE VACÍO — NO SE LANZA.
+  //
+  // Antes, un cliente ausente o ilegible reventaba con el error de ESM crudo
+  // («Cannot find module …», o el de rutas de Windows sin `file://`). Eso es un stack, no un
+  // diagnóstico: quien lo ve no sabe si el guard ha encontrado un problema o si el guard ES el
+  // problema.
+  //
+  // Devolviendo vacío cae en el suelo que ya existe (`sinDatos`), que **falla cerrado** y explica
+  // que no se pudo comparar. Es la diferencia entre «no supe mirar» y «está mal», que es
+  // exactamente lo que este guard existe para no confundir.
+  let mod;
+  try {
+    mod = await import(rutaCliente || '@prisma/client');
+  } catch {
+    return new Map();
+  }
   const modelos = mod.Prisma?.dmmf?.datamodel?.models || [];
   return new Map(modelos.map((m) => [
     m.name,
