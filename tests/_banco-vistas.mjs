@@ -39,14 +39,42 @@ import vm from 'node:vm';
 export function nodo(tag, reg) {
   const n = {
     tagName: String(tag).toUpperCase(),
-    className: '', id: '', type: '', value: '', disabled: false, checked: false,
+    className: '', _id: '', type: '', value: '', disabled: false, checked: false,
     href: '', download: '', title: '', placeholder: '', name: '', src: '',
     style: { cssText: '', color: '', display: '', setProperty() {} },
-    dataset: {}, hijos: [], _texto: '', _html: '',
-    appendChild(h) { n.hijos.push(h); return h; },
-    append(...h) { n.hijos.push(...h); },
-    removeChild(h) { n.hijos = n.hijos.filter((x) => x !== h); },
-    insertBefore(h) { n.hijos.unshift(h); return h; },
+    dataset: {}, hijos: [], _texto: '', _html: '', _padre: null,
+    appendChild(h) { if (h) h._padre = n; n.hijos.push(h); return h; },
+    append(...h) { for (const x of h) { if (x) x._padre = n; } n.hijos.push(...h); },
+    // ⚠️ SCRUM-444 · al quitar un nodo se DESREGISTRA su id. En el navegador, `getElementById` no
+    // encuentra lo que ya no está en el documento; aquí seguía encontrándolo, así que un test que
+    // borrara un contenedor y lo volviera a pedir recibía el nodo MUERTO y seguía escribiendo en
+    // él. Lo cazó la prueba de rojo de SCRUM-444: la inyección del defecto salía VERDE porque la
+    // pila borrada se «encontraba» igual.
+    removeChild(h) {
+      n.hijos = n.hijos.filter((x) => x !== h);
+      if (h) { h._padre = null; if (h._id && reg.porId.get(h._id) === h) reg.porId.delete(h._id); }
+    },
+    insertBefore(h) { if (h) h._padre = n; n.hijos.unshift(h); return h; },
+    // ⚠️ SCRUM-444 · `children`, `firstElementChild` y un `remove()` QUE DE VERDAD QUITA.
+    //
+    // Antes `remove()` era un NO-OP y `children` no existía. Con eso, una vista que gestione una
+    // lista de nodos —quitar el más antiguo, contar los vivos— se medía en un DOM **donde quitar
+    // no quita**: el test pasaría o fallaría por motivos que no son los del producto. Es la clase
+    // de banco infiel que advierte la cabecera de este fichero, y por eso se corrige aquí en vez
+    // de rodearlo desde el test.
+    get children() { return n.hijos; },
+    get firstElementChild() { return n.hijos[0] || null; },
+    get lastElementChild() { return n.hijos[n.hijos.length - 1] || null; },
+    remove() { if (n._padre) n._padre.removeChild(n); },
+    // ⚠️ SCRUM-444 · UN `id` ASIGNADO A MANO TAMBIÉN SE ENCUENTRA.
+    //
+    // `reg.porId` sólo se rellenaba desde `innerHTML`, así que
+    // `const d = createElement('div'); d.id = 'x'; body.appendChild(d);` NO se encontraba nunca con
+    // `getElementById('x')` — cuando en el navegador sí. Eso iba a producir un **falso hallazgo**
+    // en SCRUM-444: la pila de avisos se buscaba, no aparecía, y se creaba una nueva por aviso, con
+    // lo que «no se apilan» habría sido culpa del banco y no del producto.
+    get id() { return n._id; },
+    set id(v) { n._id = String(v); if (n._id) reg.porId.set(n._id, n); },
     // SCRUM-285: los oyentes se GUARDAN y se pueden disparar. Antes eran un no-op y por eso
     // SCRUM-417 declaró «no se pulsa nada» como hueco. Hacía falta de verdad: los dos estados
     // vacíos de Cobros —«no hay ninguno» y «tu filtro los esconde»— solo se distinguen PULSANDO un
@@ -64,7 +92,7 @@ export function nodo(tag, reg) {
     },
     dispararClick() { return n.disparar('click'); },
     click() { return n.disparar('click'); },
-    remove() {}, focus() {}, blur() {},
+    focus() {}, blur() {},
     setAttribute() {}, getAttribute: () => null, removeAttribute() {},
     querySelector: () => null, querySelectorAll: () => [], closest: () => null,
     classList: { add() {}, remove() {}, toggle() {}, contains: () => false },
