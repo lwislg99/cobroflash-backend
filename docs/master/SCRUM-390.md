@@ -107,6 +107,18 @@ la puerta se abre **avisa al fundador por WhatsApp** con la Meta Cloud API que e
   > «Ha entrado el primer cliente real (motivo). Estas decisiones dependían de que no lo hubiera:
   > …lista de cláusulas…»
 
+## La décima cláusula: la copia de seguridad (SCRUM-242)
+
+Añadida a la lista que el aviso nombra, con su dato medido: el panel de Railway dice hoy, literal,
+**«No Backups — this service's volume does not have any backups»**, y PITR solo existe en el plan
+Pro. **Cero copias del proveedor, cero copias propias ejecutándose (0 invocaciones, probado), cero
+fuera de la infraestructura y ningún camino de restauración.**
+
+Hoy no urge **porque los datos de producción son desechables** — la misma regla fechada que esta
+puerta vigila. El día que la puerta se abra es **letal**, y además **incumplimiento fiscal**: las
+facturas emitidas y los albaranes firmados hay obligación de conservarlos. Por eso va aquí y no a
+una lista de tareas: es exactamente el tipo de condición que este mecanismo existe para no olvidar.
+
 ## Lo que NO cubre — declarado
 
 * **El analizador sigue sin ver `const { a } = await import('x')`** (destructuración de importación
@@ -117,5 +129,6 @@ la puerta se abre **avisa al fundador por WhatsApp** con la Meta Cloud API que e
 * **La ② depende de que el tope se mantenga honesto.** Si alguien lo sube sin motivo, deja de cazar.
 * **No se comprueba contra producción desde aquí**: el script necesita `DATABASE_URL` y esta sesión
   no toca bases del proyecto.
-* **La décima cláusula** (SCRUM-402: el rótulo de Bizum necesita microcopy antes de encender la
-  bandera) **viaja ya en la lista que el script nombra**, pero no tiene guard propio que la exija.
+* **Las cláusulas que el aviso nombra son CUATRO** (regla fechada, backfill, SCRUM-402 y
+  **SCRUM-242 · la copia de seguridad**), y un test exige que la de la copia esté. Ninguna tiene
+  guard propio que la haga cumplir: el mecanismo avisa de que ese día llegó, no las resuelve.
