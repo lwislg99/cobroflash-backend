@@ -215,11 +215,18 @@ test('SCRUM-424 · 🔴 R4 · REGLA 29: escribir la dirección NO deja sin verif
 });
 
 test('SCRUM-424 · 🔴 R4b · la ruta CORTA antes del `update`, y lo hace consultando por merchant', () => {
+  // ⚠️ SE BUSCA LA LLAMADA `…(`, NO EL NOMBRE. Escrito como `/albaranesConFirmaQueDependeDelTrabajo/`
+  // el `import` de la cabecera bastaba para dejarlo verde: probado por mutación —quitando la
+  // llamada y dejando el import, esta aserción PASABA— y el rojo salía por el suelo de abajo con un
+  // mensaje que culpa al escáner. Un guard que manda a arreglar el test cuando lo roto es el código
+  // es peor que no tenerlo.
+  const iLlamada = RUTA.indexOf('albaranesConFirmaQueDependeDelTrabajo(');
   assert.ok(
-    /albaranesConFirmaQueDependeDelTrabajo/.test(RUTA),
-    '🔴 el PATCH ya no comprueba las firmas antes de escribir `direccion`. Sin esa comprobación, ' +
-      'un Trabajo con un albarán v:1 queda con su firma sin poder verificarse y NADIE se entera: ' +
-      'no hay error, no hay aviso, el hash simplemente deja de cuadrar el día que alguien mire.',
+    iLlamada > 0,
+    '🔴 EL PATCH YA NO COMPRUEBA LAS FIRMAS antes de escribir `direccion`. Sin esa comprobación, un ' +
+      'Trabajo con un albarán firmado en v:1 queda con su firma sin poder verificarse y NADIE se ' +
+      'entera: no hay error, no hay aviso, el hash simplemente deja de cuadrar el día que alguien ' +
+      'mire. Una evidencia emitida no se toca nunca (regla 29).',
   );
   assert.ok(
     /ERROR_DIRECCION_SELLADA/.test(RUTA) && /status\(409\)/.test(RUTA),
@@ -228,17 +235,10 @@ test('SCRUM-424 · 🔴 R4b · la ruta CORTA antes del `update`, y lo hace consu
   // Regla 2: la consulta de albaranes filtra por merchant. Sin esto, un Trabajo de otro merchant
   // podría decidir si este puede escribir.
   //
-  // ⚠️ SE BUSCA LA LLAMADA, NO EL NOMBRE. Escrito como `indexOf(nombre)` esto encontraba el
-  // `import` de la cabecera —donde el nombre también aparece— y medía los 500 caracteres
-  // anteriores al import, que no contienen ninguna consulta. Salió ROJO con el código correcto, y
-  // la lección es la de siempre: el primer sospechoso de un rojo raro es el escáner.
-  const iLlamada = RUTA.indexOf('albaranesConFirmaQueDependeDelTrabajo(');
-  assert.ok(
-    iLlamada > 0,
-    '🔴 ESCÁNER CIEGO: no encuentro la LLAMADA a `albaranesConFirmaQueDependeDelTrabajo(` — solo ' +
-      'su nombre. Sin este suelo, el recorte de abajo mediría el import y el guard hablaría de un ' +
-      'trozo de fichero que no es la comprobación.',
-  );
+  // El recorte sale de la LLAMADA localizada arriba. Escrito como `indexOf(nombre)` encontraba el
+  // `import` de la cabecera y medía los 500 caracteres anteriores al import, que no contienen
+  // ninguna consulta: salió ROJO con el código correcto. El primer sospechoso de un rojo raro es
+  // el escáner.
   const trozo = RUTA.slice(Math.max(0, iLlamada - 500), iLlamada);
   assert.ok(
     trozo.includes('prisma.albaran.findMany'),
