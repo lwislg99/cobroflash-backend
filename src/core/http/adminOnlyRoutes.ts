@@ -28,6 +28,8 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'GET', path: '/admin/modelo-303' },
   // SCRUM-297 (A7): el paquete de evidencias — misma razón que el libro y el 303.
   { method: 'GET', path: '/admin/evidencias.zip' },
+  // SCRUM-244 (RGPD-1): la supresión del merchant, lo más destructivo que hay.
+  { method: 'POST', path: '/admin/supresion/:merchantId', body: { confirmacion: 'x' } },
   // Configuración / cuenta (S1: Técnico ❌)
   { method: 'PUT', path: '/admin/merchant', body: { name: 'X' } },
   { method: 'GET', path: '/admin/merchant/public-profile-qr' },

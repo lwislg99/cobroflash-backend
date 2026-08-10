@@ -151,9 +151,11 @@ test('SCRUM-267 · ② el barrido encuentra entradas de verdad', () => {
 // para decidir nada**. Su valor es PROSPECTIVO. Hacer que tres sesiones paren para reconstruir
 // mediciones que nadie va a consultar sería coste sin beneficio — y reconstruirlas sería
 // inventarlas, que es peor que no tenerlas.
+// SCRUM-244 SALIO del censo el 10-ago-2026: su seccion 1(b) trae el campo `Medido contra:`, asi
+// que el fichero ya tiene ancla y el guard lo canto solo. Quedan DOS. Este apunte es el requisito
+// del propio guard: si bajar fuese silencioso, el censo declararia tres excepciones habiendo dos.
 const HEREDADAS_SIN_ANCLA = {
   'SCRUM-231.md': 'anterior a SCRUM-267 — el formato existía sin el campo',
-  'SCRUM-244.md': 'anterior a SCRUM-267 — el formato existía sin el campo',
   'SCRUM-264.md': 'anterior a SCRUM-267 — el formato existía sin el campo',
 };
 
