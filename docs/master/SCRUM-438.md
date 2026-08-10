@@ -2,7 +2,9 @@
 
 **Fecha:** 11-ago-2026 · **Carril:** fiscal/evidencias · **Gate:** sin gate, corre en `npm test`
 
-**Medido contra:** `origin/main` = `ddfa8ac5` · **Paso 0:** ninguna rama con `438`/`atestig`.
+**Medido contra:** `origin/main` = `6cd4cffac1c3291da0caad6a3a4a10cc5c4a45c2` · 2026-08-10T19:08:12+02:00
+
+**Paso 0:** ninguna rama remota con `438` ni `atestig`.
 
 > 🔴 **ESTA ENTREGA NO CONSTRUYE v:3.** No se ha tocado `computeAlbaranContentHash`, ni
 > `obraSegunVersion`, ni las recetas congeladas, ni el camino de emisión (regla 38). La propuesta
