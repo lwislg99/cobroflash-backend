@@ -659,7 +659,7 @@ Los 83 quotes sin job de producción son los no aceptados: es correcto que se qu
 > **Este backfill NO se va a ejecutar**, y la razón no es técnica: **todas las cuentas que hay hoy
 > en producción son de prueba**, así que rellenar 42 pares de datos falsos no vale nada. Lo que
 > importa es que los registros NUEVOS nazcan correctos. **Esta decisión caduca el día que entre el
-> primer cliente real** — de ahí la fecha. Regla completa en `docs/YAQU_MASTER.md`.
+> primer cliente real** — de ahí la fecha. **Y desde SCRUM-390 esa condición es EVALUABLE**, no prosa: la puerta de SCRUM-390: **cualquier merchant con `stripeSubscriptionId != null`, o mas merchants que `CUENTAS_DE_PRUEBA_DECLARADAS`** (`src/modules/system/domain/puertaClienteReal.ts`, comprobable con `npm run puerta:cliente-real`). Regla completa en `docs/YAQU_MASTER.md`.
 >
 > ### 🔬 Y AL MEDIRLO APARECIÓ ALGO QUE EL TÍTULO DE ESTA ENTRADA NO DICE
 >
