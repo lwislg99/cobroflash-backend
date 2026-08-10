@@ -1,6 +1,6 @@
 # SCRUM-426 · El libro de facturas RECIBIDAS (A6), y E4 lo consume
 
-**Medido contra:** `origin/main` = `74dbd20ab9308ff9cf980a1cdf29bf8d19e3adc6` · 2026-08-10T16:57:04+02:00
+**Medido contra:** `origin/main` = `8f01d8b2c76f4658d65619438118268b8cdf7463` · 2026-08-10T17:15:46+02:00
 **Rama:** `scrum-426-libro-recibidas` · **Carril:** A (dominio) + la conexión en E (entrega)
 
 ---
@@ -102,17 +102,13 @@ existe. Van dos, en sus propias filas antes de la cabecera, con el BOM conservad
 1. que el formato es **provisional**, no contrastado contra especificación oficial;
 2. cuántos gastos quedaron fuera y **por cuánto dinero** (solo si los hay).
 
-**Microcopy PROPUESTA, no aprobada** (regla 30) — va con `MARCA_PENDIENTE`:
-
-> `[PENDIENTE] Formato provisional: no contrastado contra especificación oficial.`
-> `[PENDIENTE] 2 gastos sin datos de IVA no figuran en este libro. Importe total: 100.`
-> *(en singular: «1 gasto sin datos de IVA no figura en este libro. Importe total: 60.»)*
+**Microcopy APROBADA por el fundador el 10-ago-2026** — ver la sección de microcopy más abajo.
 
 ---
 
 ## La prueba de que la conexión EXISTE: se ejecuta, no se menciona
 
-Cuatro tests **recorren la cadena entera con una base falsa** y comparan lo que sale con lo que el
+Cinco tests **recorren la cadena entera con una base falsa** y comparan lo que sale con lo que el
 motor calculó. No comprueban que haya un `import` ni que un comentario hable de la conexión:
 
 - la cadena corre y devuelve **1 fila de 2 gastos** (el otro no es asiento) con `miradas: 2`;
@@ -125,28 +121,70 @@ motor calculó. No comprueban que haya un `import` ni que un comentario hable de
 
 ---
 
-## 🔴 UN GUARD AJENO SE QUEDA EN ROJO, Y NO LO TOCO
+## ✅ EL TRINQUETE DE SCRUM-325 SE MUEVE DE 1 A 2 — con GO, y por qué se puede
 
-`tests/scrum325-libros-por-periodo.test.mjs:283` — **fichero de Javier**, y la orden de esta tanda
-es no tocar guards ajenos:
+`tests/scrum325-libros-por-periodo.test.mjs` exigía `LIBROS_DISPONIBLES.length === 1`.
 
-```js
-assert.equal(LIBROS_DISPONIBLES.length, 1,
-  '🔴 hay más de un libro ofrecido. Si se ha añadido RECIBIDAS, `Expense` tiene que haber ganado ' +
-  'antes NIF de proveedor, base, tipo y cuota de IVA — y eso es schema, que no es de este ticket.');
-assert.equal(LIBROS_DISPONIBLES[0].clave, 'expedidas');
+**El guard no estaba equivocado: estaba CADUCADO.** Y él mismo había escrito su condición —
+*«si se ha añadido RECIBIDAS, `Expense` tiene que haber ganado antes NIF de proveedor, base, tipo y
+cuota de IVA»*—. Eso ocurrió: la migración del lote metió las seis columnas de `Expense` y
+`Provider.taxId` en **las tres bases** el 10-ago-2026.
+
+> **Un trinquete se mueve solo cuando el hecho que cuenta cambió de verdad y el propio guard había
+> escrito esa condición. Si hubiera que interpretar para moverlo, no se movería.** Aquí no había
+> nada que interpretar.
+
+**Sigue siendo IGUALDAD, nunca `<=`.** Con `<=` un libro ofrecido de más entraría sin que nadie lo
+mirase, que es justo lo que este guard existe para impedir.
+
+### Y ahora no cuenta: COMPRUEBA
+
+Un contador atado a un número es la séptima variante del guard atado a la forma — cualquiera lo
+sube de 2 a 3 y sigue verde. Atado al **hecho**, no. Tras el cambio exige, además del recuento:
+
+1. **las cuatro columnas EN EL LIBRO** — `nifProveedor`, `base`, `tipoIva`, `cuota`: exactamente los
+   cuatro datos cuya ausencia mantuvo el hueco cerrado;
+2. **los campos que las sostienen EN EL SCHEMA** — `Expense.baseAmount`, `vatRate`, `vatAmount` y
+   `Provider.taxId`. Esto es lo que lo ata al hecho y no a nuestra propia lista: sin ello alguien
+   podría declarar las columnas sobre un modelo que no las tiene, y el guard seguiría verde.
+
+## 🔴 Y AL APRETAR EL TEST SALIÓ UN DEFECTO REAL MÍO
+
+Al encender la microcopy quité `MARCA_PENDIENTE` y aproveché para **anclar el aviso a principio de
+línea** (`/^…/m`) en vez de comprobarlo con un `includes` suelto. Se puso rojo, y tenía razón:
+
+**los dos avisos y las doce cabeceras salían en UNA sola celda.** `csvRow` no termina la fila —quien
+une con `\r\n` es `csvBody`— y yo unía el preámbulo con `''`. El texto **estaba**, así que el
+`includes` lo daba por bueno; lo que estaba mal era **dónde**.
+
+Arreglado, y con un test nuevo que comprueba la **estructura**: cada aviso ocupa su fila entera, el
+BOM va el primero, la cabecera arranca la suya y trae una celda por columna.
+
+> Es el mismo patrón de todo el día: *«mencionar no es hacer»*. Un `includes` comprueba que el texto
+> exista; lo que había que comprobar es que esté **en su sitio**.
+
+## Microcopy — APROBADA por el fundador (10-ago-2026)
+
+Los tres textos, tal cual se propusieron, y **sin `MARCA_PENDIENTE`**: el marcador es para lo que
+espera aprobación, y dejarlo sobre texto ya aprobado haría que dejara de significar nada.
+
+```
+Formato provisional: no contrastado contra especificación oficial.
+2 gastos sin datos de IVA no figuran en este libro. Importe total: 100.
+1 gasto sin datos de IVA no figura en este libro. Importe total: 60.
 ```
 
-**Su propia condición está cumplida**: `Expense` ganó NIF de proveedor, base, tipo y cuota **el
-10-ago-2026**, en las tres bases. El guard no está equivocado — está **caducado**, y dice
-exactamente qué lo caducaría.
+El marcador de las **cabeceras** es otra cosa y sigue donde estaba.
 
-El cambio es de dos líneas y lo reparte el fundador:
+## Proveedor: se quedan LAS DOS columnas
 
-```js
-assert.equal(LIBROS_DISPONIBLES.length, 2, '…');
-assert.deepEqual(LIBROS_DISPONIBLES.map((l) => l.clave), ['expedidas', 'recibidas']);
-```
+Decisión del fundador: NIF **y** nombre. La línea no se quita.
+
+## Nota de método, corregida por el fundador
+
+⚠️ **`npm run guards:entrada` NO EXISTE** en `package.json` — el requisito de evidencia venía con
+ese nombre y es incorrecto. Los guards ejecutables son `guard:contraste` y `guard:prisma`, **los dos
+en verde**. Queda anotado para que el siguiente no lo busque.
 
 **Suite: 2516 tests, 1 fallo — solo ése.** Los otros dos rojos que salieron eran míos y están
 arreglados:

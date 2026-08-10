@@ -367,7 +367,7 @@ test('SCRUM-426 · 🔴 lo excluido VIAJA DENTRO del fichero, no en una nota de 
   const r = await leerLibroRecibidasDelTrimestre(db, { merchantId: M, año: 2026, trimestre: 3 });
   const csv = csvLibroRecibidas(r.filas, r.avisos);
 
-  assert.match(csv, /2 gastos sin datos de IVA no figuran/, '🔴 el fichero no dice cuántos quedaron fuera');
+  assert.match(csv, /^2 gastos sin datos de IVA no figuran/m, '🔴 el fichero no dice cuántos quedaron fuera');
   assert.match(csv, /100/, '🔴 el fichero no dice CUÁNTO dinero quedó fuera (60 + 40)');
   assert.match(csv, /Formato provisional/, '🔴 el fichero no declara que el formato no está contrastado');
   assert.ok(csv.startsWith('\ufeff'), '🔴 el BOM ha dejado de ir el primero: Excel leerá «Peña» roto');
@@ -375,4 +375,24 @@ test('SCRUM-426 · 🔴 lo excluido VIAJA DENTRO del fichero, no en una nota de 
   const limpio = csvLibroRecibidas([], avisosLibroRecibidas({ sinClasificar: 0, sinClasificarImporte: 0 }));
   assert.doesNotMatch(limpio, /sin datos de IVA/, '🔴 el aviso de excluidos sale sin haber excluidos');
   assert.match(limpio, /Formato provisional/, '🔴 el de formato provisional tiene que salir siempre');
+});
+
+test('SCRUM-426 · 🔴 cada aviso en SU PROPIA FILA, y la cabecera en la suya', () => {
+  // El defecto que este test cazó: los avisos se unían con `''` y salían pegados entre sí Y a la
+  // cabecera — dos avisos y doce cabeceras en UNA celda. El texto estaba, pero en el sitio
+  // equivocado, así que un `includes` suelto lo daba por bueno. Aquí se comprueba la ESTRUCTURA.
+  const libro = construirLibroRecibidas({
+    gastos: [sinClasificar(), sinClasificar({ amount: '40.00' })], merchantId: M,
+  });
+  const lineas = csvLibroRecibidas([], avisosLibroRecibidas(libro)).split('\r\n');
+
+  assert.equal(lineas[0], '\ufeffFormato provisional: no contrastado contra especificación oficial.',
+    '🔴 el primer aviso no ocupa su fila entera (o el BOM no va delante del todo)');
+  assert.equal(lineas[1], '2 gastos sin datos de IVA no figuran en este libro. Importe total: 100.',
+    '🔴 el segundo aviso no ocupa su fila entera');
+  assert.ok(lineas[2].startsWith('Serie y número del proveedor;'),
+    `🔴 la cabecera no arranca su propia fila: «${lineas[2].slice(0, 60)}…»`);
+  // Y la cabecera tiene sus doce columnas separadas, no una celda gigante.
+  assert.equal(lineas[2].split(';').length, COLUMNAS_RECIBIDAS.length,
+    '🔴 la cabecera no trae una celda por columna');
 });

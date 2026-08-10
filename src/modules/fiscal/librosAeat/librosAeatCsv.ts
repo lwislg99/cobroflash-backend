@@ -64,13 +64,16 @@ export function csvLibroRecibidas(filas: FilaLibro[], avisos: string[] = []): st
   const rows = filas.map((f) => csvRow(COLUMNAS_RECIBIDAS.map((c) => celda(c.clave, f[c.clave]))));
   const cuerpo = csvBody({ header, rows });
   if (avisos.length === 0) return cuerpo;
-  // Cada aviso en su fila, antes de la cabecera. Van por `csvRow` para que las comas y las
-  // comillas de un texto largo no rompan el fichero.
-  const preambulo = avisos.map((a) => csvRow([a])).join('');
+  // \u26a0\ufe0f CADA AVISO EN SU PROPIA FILA: se unen con CRLF y se cierra con otro antes de la cabecera.
+  // `csvRow` NO termina la fila \u2014quien une con `\r\n` es `csvBody`\u2014, as\u00ed que unirlos con `''` los
+  // pegaba entre s\u00ed Y a la cabecera: el fichero sal\u00eda con los dos avisos y las doce cabeceras en
+  // UNA sola celda. Lo caz\u00f3 el test al anclar el aviso a principio de l\u00ednea; con un `includes`
+  // suelto pasaba, porque el texto S\u00cd estaba \u2014 solo que en el sitio equivocado.
+  const preambulo = avisos.map((a) => csvRow([a])).join('\r\n');
   // El BOM tiene que quedarse el PRIMERO del fichero o Excel lee los acentos rotos: se corta del
   // cuerpo y se vuelve a poner delante, en vez de escribir un segundo.
   const bom = cuerpo.startsWith('\ufeff') ? '\ufeff' : '';
-  return bom + preambulo + (bom ? cuerpo.slice(1) : cuerpo);
+  return bom + preambulo + '\r\n' + (bom ? cuerpo.slice(1) : cuerpo);
 }
 
 /**

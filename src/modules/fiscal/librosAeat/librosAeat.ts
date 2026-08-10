@@ -191,25 +191,23 @@ export interface DatosProveedor {
  *      gasto excluido en silencio es un libro vacío pequeño: se verían 10 asientos y se leería
  *      «compré diez cosas» teniendo 190 sin clasificar.
  *
- * ⚠️ MICROCOPY SIN APROBAR (regla 30): va con `MARCA_PENDIENTE` a propósito. Mientras el marcador
- * esté, el fichero se ve provisional de un vistazo — que es justo lo que se quiere.
+ * ✅ MICROCOPY APROBADA por el fundador el 10-ago-2026, los tres textos tal cual se propusieron.
+ * Por eso van SIN `MARCA_PENDIENTE`: el marcador es para lo que espera aprobación, y dejarlo
+ * puesto sobre texto ya aprobado haría que dejara de significar nada — que es como muere un
+ * marcador. El de las CABECERAS sigue siendo otra cosa y no se toca aquí.
  */
 export function avisosLibroRecibidas(libro: {
   sinClasificar: number;
   sinClasificarImporte: number;
 }): string[] {
-  const avisos = [
-    `${MARCA_PENDIENTE} Formato provisional: no contrastado contra especificación oficial.`,
-  ];
+  const avisos = ['Formato provisional: no contrastado contra especificación oficial.'];
   if (libro.sinClasificar > 0) {
     // ⚠️ Sin «gasto(s)»: el plural perezoso lo caza el trinquete de SCRUM-377 y se lee como
     // software a medio hacer. Se resuelve el plural de verdad, que además es una frase mejor.
     const cuantos = libro.sinClasificar === 1
       ? '1 gasto sin datos de IVA no figura'
       : `${libro.sinClasificar} gastos sin datos de IVA no figuran`;
-    avisos.push(
-      `${MARCA_PENDIENTE} ${cuantos} en este libro. Importe total: ${libro.sinClasificarImporte}.`,
-    );
+    avisos.push(`${cuantos} en este libro. Importe total: ${libro.sinClasificarImporte}.`);
   }
   return avisos;
 }
