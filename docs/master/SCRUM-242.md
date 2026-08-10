@@ -111,3 +111,106 @@ llega a existir.
 > sabemos nada.
 
 Ficheros: ninguno. Este ticket **mide**; no construye.
+
+---
+
+# SCRUM-242 · segunda entrega: EL RUNBOOK, ESCRITO Y **PROBADO**
+
+**10-ago-2026, 12:55 CEST (UTC+0200)** · commit `8034f5a1fc0e68f9a35aeb0c4dc918b978d646a9`
+
+El punto 4 de la lista de arriba —*«escribir el RUNBOOK de restauración y probarlo»*— está hecho.
+Procedimiento: **`docs/RUNBOOKS.md` §R14**. Evidencia: **`docs/evidencias/scrum242-restauracion.md`**.
+
+Se ejecutó contra la base desechable `postgres-scratch`, que no tiene ni tendrá jamás un dato real.
+**Nada contra producción ni staging, ni en lectura.**
+
+## El hallazgo: el backup lógico NO ERA RESTAURABLE
+
+Los dos fallos siguientes llevaban ahí desde que existe el script y **solo podían salir
+ejecutándolo**. Es exactamente el motivo de haber probado el runbook en vez de darlo por escrito:
+
+1. **Los tipos.** El volcado va a JSON, y JSON no tiene fechas ni decimales. El primer INSERT murió
+   con *«column "created_at" is of type timestamp without time zone but expression is of type
+   text»*. Corregido con casts **derivados del DMMF**, no escritos a mano: un campo nuevo trae el
+   suyo solo.
+2. **El orden de inserción.** El borrador de R14 decía «`ORDEN_BORRADO_MERCHANT` invertido», y al
+   ejecutarlo saltó *«insert or update on table "customers" violates foreign key constraint
+   "customers_merchant_id_fkey"»*. Esa lista enumera los **hijos** de un merchant: `merchants` no
+   está en ella y caía al final. Corregido con **orden topológico derivado del schema**.
+
+   Merece quedarse escrito porque el error de método es reutilizable: reutilizar una lista existente
+   parecía lo contrario de duplicar, pero **esa lista respondía a otra pregunta**.
+
+## ③ Qué se compara — la pregunta que decide si esto vale algo
+
+Conteos por tabla es el **mínimo** y no basta: una restauración con el número correcto de filas y el
+contenido mal es el peor verde del proyecto. Comprobado, en orden de lo que duele:
+
+1. **Conteos** por tabla.
+2. **Claves**: los ids restaurados son los mismos, no unos nuevos equivalentes.
+3. **Sumas de importes**: el dinero cuadra al céntimo (`600.00`).
+4. **La cadena de huellas VeriFactu**: el `vfPrevHash` de cada factura == el `vfHash` de la
+   anterior. Una cadena rota **no aparece en ningún conteo** y no se recompone después.
+5. **Que la base pueda seguir emitiendo**: un INSERT sin id explícito que no choque.
+6. **Que el comparador sepa ver una diferencia.** Se mutó un importe del censo restaurado y la
+   comparación lo detectó. Sin esto, «los dos censos coinciden» y «el comparador no compara nada»
+   son el mismo verde.
+
+Los censos ANTES y DESPUÉS salieron **idénticos byte a byte**.
+
+## El paso 4 está medido, no razonado
+
+Dejando la secuencia de `invoices` en 1 —como la deja una restauración que se salte el `setval`— el
+siguiente INSERT devolvió *«Unique constraint failed on the fields: (`id`)»*. El paso de reponer
+secuencias **no es cosmético**: sin él la base queda rota en diferido y quien la rompe es el primer
+usuario que emite. En facturas, un id repetido no se arregla borrando (**regla 29**).
+
+## ② Qué hizo falta para probarlo
+
+- Una base **desechable** (`SCRATCH_DATABASE_URL`), separada de prod y staging.
+- `scripts/_scratch-run.mjs`: lee la URL del `.env`, **comprueba que el host no es `PROD_HOST` ni
+  `STAGING_HOST` y para si lo es**, y la pasa **solo por el entorno del hijo, nunca por argv**. Es la
+  lección de SCRUM-196/408: una credencial se protege impidiendo que el error salga, no redactando
+  mensajes.
+- El schema aplicado en el destino con `db push` (preview aditivo: 24 `CREATE TABLE`, cero `DROP`),
+  porque el volcado lógico lleva **filas, no estructura**.
+- Un juego de datos con lo que un conteo no puede comprobar: tres facturas **encadenadas**.
+
+## Lo que sigue pendiente, declarado
+
+- **El volumen.** Fueron 5 filas en 24 tablas. Un volcado lógico de producción carga fila a fila y no
+  se ha medido si aguanta. Sigue siendo el argumento a favor del formato `pg_dump`.
+- **Que exista un backup que restaurar.** Lo medido en la primera entrega no ha cambiado:
+  `backup-dump.mjs` **no lo dispara nadie** (0 invocaciones frente a 11/7/5 de otros scripts). Un
+  procedimiento probado sobre un fichero que nadie genera sigue sin salvar la base. **Es lo que hay
+  que decidir ahora** (puntos 2 y 3 de la lista de la primera entrega).
+
+## CORRECCIÓN a la primera entrega: la política de Railway YA ESTÁ MEDIDA
+
+La primera entrega la dejó como `[VALIDAR]` y dijo que no era medible desde el repo. **Otra sesión la
+midió** y consta en `src/modules/system/domain/avisoPuerta.service.ts` (SCRUM-390, décima cláusula de
+la puerta): el panel de Railway dice, literal, **«No Backups — this service's volume does not have
+any backups»**, y PITR solo existe en el plan Pro.
+
+Es decir, **cero copias del proveedor**. Aquella era la única vía por la que podía existir alguna
+recuperabilidad hoy, y no existe. La respuesta a «¿tenemos backup?» ya no es *no lo sabemos*: es
+**no**.
+
+Con esta entrega la mitad que falta cambia de sitio: **el camino de vuelta ya está probado; lo que no
+hay es el fichero del que volver.**
+
+> **Nota para el fundador, no la arreglo yo (regla 9):** el comentario de esa cláusula dice también
+> «ningún camino de restauración», y eso **ha dejado de ser cierto** con este commit — hoy existen
+> §R14 y `scripts/backup-restore.mjs`. La cláusula en sí sigue abierta con razón, porque su otra
+> mitad («hay copia de seguridad») sigue siendo NINGUNA. Es un comentario del carril de SCRUM-390.
+
+## Sobre el fichero que rompió SCRUM-273
+
+El procedimiento se había escrito en `docs/master/SCRUM-242-RUNBOOK.md`, y el guard tenía razón:
+las entradas son `SCRUM-<n>.md` y punto. Pero mover el fichero habría sido obedecer al guard sin
+entender el error — **un runbook no es una entrada de máster**: se busca con la base caída, y ahí
+nadie abre `docs/master/`. Su sitio es `docs/RUNBOOKS.md`, junto a los otros trece.
+
+Ficheros: `scripts/backup-restore.mjs` (nuevo) · `scripts/_scratch-run.mjs` (nuevo) ·
+`docs/RUNBOOKS.md` §R14 · `docs/evidencias/scrum242-restauracion.md` (nuevo) ·
+`scripts/backup-dump.mjs` · `tests/scrum242-runbook-no-se-declara-probado.test.mjs`.

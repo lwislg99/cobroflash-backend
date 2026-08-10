@@ -482,3 +482,99 @@ hay prisa de verdad: recargar con Ctrl+F5.
 no fue el valor, fue que vivía en un panel que nadie ve desde el código. La solución de fondo es
 fingerprint por contenido en el nombre del fichero (**SCRUM-274**), que permite cachear un año
 sin este riesgo.
+
+## R14 · Restaurar la base de datos desde un backup lógico
+
+> **PROBADO de principio a fin el 10-ago-2026** contra una base desechable: volcar → vaciar →
+> restaurar → comparar → emitir. Evidencia pegada en `docs/evidencias/scrum242-restauracion.md`.
+>
+> La prueba **encontró dos fallos que hacían el backup lógico irrestaurable** (tipos y orden de
+> inserción), y los dos están corregidos en `scripts/backup-restore.mjs`. Ninguno se veía leyendo el
+> código.
+>
+> Lo que la prueba **no** cubre está dicho al final de la evidencia: el volumen (fueron 5 filas), y
+> que hoy **nadie dispara el volcado**.
+
+**Cuándo:** se ha perdido la base y hay un fichero `yaqu-AAAAMMDD.logical.gz.enc`.
+
+**Formato:** el **lógico** (JSON), que es el que se produce en Railway porque su imagen de Node no
+trae `pg_dump`. Si tu fichero es `.pgdump.` en vez de `.logical.`, esto **no** es tu procedimiento:
+usa `pg_restore` con el fichero descifrado.
+
+**Necesitas:** el fichero `.enc`, la `BACKUP_ENCRYPTION_KEY` **con la que se cifró** (sin ella no
+hay restauración posible: el cifrado es AES-256-GCM), y una base de destino **vacía y con el schema
+ya aplicado**.
+
+### 1 · Comprobar que el backup está íntegro ANTES de tocar nada
+
+```
+BACKUP_DIR=<carpeta del fichero> BACKUP_ENCRYPTION_KEY=<la clave>   node scripts/backup-dump.mjs --restore-test
+```
+
+Descifra, valida el tag GCM (integridad criptográfica) y compara los conteos contra la base
+**viva**. Si la base está caída, este paso fallará al comparar conteos: eso es esperado, y lo que
+importa es que **llegue a descifrar**. Si falla al descifrar, la clave no es la correcta o el
+fichero está corrupto — **para aquí**.
+
+### 2 · Preparar el destino
+
+El schema se aplica **desde el repo**, no desde el backup: el volcado lógico lleva **filas, no
+estructura**.
+
+```
+DATABASE_URL=<destino> npx prisma db push
+```
+
+### 3 · Escribir las filas de vuelta
+
+```
+BACKUP_ENCRYPTION_KEY=<la clave> node scripts/backup-restore.mjs <fichero.logical.gz.enc>
+```
+
+`scripts/backup-restore.mjs` descifra, inserta **padres antes que hijos** —orden topológico derivado
+del schema, no una lista a mano— y repone las secuencias del paso 4. Existe desde la prueba de
+SCRUM-242: antes de ella, este paso **no tenía código** y la restauración del formato lógico era una
+promesa escrita en una cabecera.
+
+Dos cosas que se descubrieron ejecutándolo, por si vuelven a aparecer:
+
+- **Los tipos.** JSON no tiene fechas ni decimales; sin castear, Postgres rechaza el INSERT
+  («column … is of type timestamp … but expression is of type text»). Los casts se derivan del DMMF.
+- **El orden NO es `ORDEN_BORRADO_MERCHANT` invertido.** Esa lista enumera los *hijos* de un
+  merchant: `merchants` no está en ella y acaba insertándose después de `customers`, que lo
+  referencia.
+
+### 4 · Reponer las secuencias — SIN ESTO LA BASE QUEDA ROTA
+
+Lo hace el script del paso 3, pero conviene saber por qué está ahí. El volcado hace
+`SELECT * FROM <tabla>`: trae los **ids**, pero **no el estado de las secuencias**. Los **24**
+modelos con `@default(autoincrement())` quedarían con su contador en 1, así que **el siguiente
+INSERT chocaría con una fila restaurada**.
+
+Para cada tabla con id autoincremental:
+
+```
+SELECT setval(pg_get_serial_sequence('"<tabla>"', 'id'), COALESCE((SELECT MAX(id) FROM "<tabla>"), 1));
+```
+
+Esto **está medido**, no razonado: en la prueba, dejando la secuencia en 1 el siguiente INSERT
+devolvió `Unique constraint failed on the fields: (id)`.
+
+**En facturas esto no es un inconveniente, es un incidente:** un número de factura repetido no se
+arregla borrando (regla 29).
+
+### 5 · Comparar — qué se compara, que es lo que decide si la restauración vale
+
+Conteos por tabla es el **mínimo**, y no basta: una restauración con el número correcto de filas y
+el contenido mal es el peor verde del proyecto. Lo que se comprobó, en orden de lo que duele:
+
+1. **Conteos** por tabla.
+2. **Claves**: los ids restaurados son los mismos, no unos nuevos equivalentes.
+3. **Sumas de importes**: el dinero cuadra al céntimo.
+4. **La cadena de huellas VeriFactu**: el `vfPrevHash` de cada factura == el `vfHash` de la
+   anterior. Una cadena rota no se ve en ningún conteo y no se puede recomponer después.
+5. **Que la base pueda seguir emitiendo**: un INSERT sin id explícito que no choque (paso 4).
+
+Y una sexta que se olvida: **comprobar que el comparador sabe ver una diferencia**. En la prueba se
+mutó un importe del censo restaurado y se verificó que la comparación lo detectaba. Si no, «los dos
+censos coinciden» y «el comparador no compara nada» son el mismo verde.
