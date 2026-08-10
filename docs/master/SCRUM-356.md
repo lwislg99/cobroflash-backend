@@ -1,9 +1,118 @@
-# SCRUM-356 · H2 — los tres significados de «guardado» (10-ago) + el informe del 7-ago
+# SCRUM-356 · H2 — el aviso provisional (10-ago tarde) + los tres estados (10-ago) + el informe del 7-ago
 
-> **Este fichero tiene DOS entradas.** Arriba, la del 10-ago: lo construido. Abajo, **sin tocar**,
-> el informe del 7-ago que midió el terreno y del que salen la mitad de las decisiones de arriba.
-> La medición no se reescribe: es la que sostiene el diseño, y quien lo discuta tiene que poder
-> leer sobre qué se decidió. Misma forma que `docs/master/SCRUM-358.md`.
+> **Este fichero tiene TRES entradas.** Arriba, la de la tarde del 10-ago: el aviso que hubo que
+> cambiar porque prometía algo que hoy no es verdad. Después, lo construido esa mañana. Al final,
+> **sin tocar**, el informe del 7-ago que midió el terreno. La medición no se reescribe: es la que
+> sostiene el diseño, y quien lo discuta tiene que poder leer sobre qué se decidió.
+
+---
+
+# 10-ago-2026 (tarde) · EL AVISO DEJA DE PROMETER LO QUE NO HAY
+
+**Medido contra:** `origin/main` = `9edc6d12f26f4cbfc01c9a646fa3cf94d900e003` · 2026-08-10T22:45:30Z
+
+**Carril:** H (albarán sin red) · **Gate:** sin gate, corre en `npm test`
+
+El aviso aprobado en la entrada de abajo —*«Las firmas pendientes suben cuando abres YaQu. Si no la
+abres, se quedan aquí.»*— **es falso desde que existe la cola**. SCRUM-358 fase 2 construyó el
+productor, pero **el drenado es de la fase 3 y no existe**: una firma encolada sólo sube si el
+profesional **vuelve a firmar ese albarán**. Abrir la aplicación no sube nada.
+
+En un bloque cuya regla es *«ante la duda, se dice que NO subió»*, no se puede enviar un texto que
+promete más de lo que hay. El hueco lo declaró la fase 2 y se cierra aquí, antes de que llegue a
+nadie.
+
+## PASO 0
+
+* **`docs/master/SCRUM-358.md` existe y se leyó.** Su tercera entrada —la de la fase 2— **declara
+  este hueco pero no lo arregla**: dice literalmente *«El texto está aprobado y no se toca (regla
+  30)»*. No documenta lo que pide este encargo, así que se sigue.
+* **Premisa comprobada con tres recuentos POR SEPARADO:**
+
+| Qué | Cómo se contó | Resultado |
+|---|---|---|
+| ¿el texto viejo está vivo en `main`? | `git grep -F` sobre `main` | **3 sitios**: doc, `estadoFirma.js:84`, test |
+| ¿hay copias sueltas en la rama? | `git grep -F` sobre `HEAD` | **los mismos 3**, ninguna suelta |
+| ¿sigue sin haber drenado? | `git grep -iE "drenar\|drenado\|reintent"` en `public/dashboard/js/` | **ninguna es drenado de la cola** (son WhatsApp, el poll de versión y un comentario) |
+
+## El texto nuevo — APROBADO por el asesor, literal
+
+> **«Las firmas pendientes no suben solas todavía: vuelve a firmar el albarán cuando tengas
+> cobertura.»**
+
+El **«todavía»** es deliberado: es cierto hoy y anuncia que es temporal. Y dice **qué hacer**, que
+es lo que lo hace útil — un aviso que sólo niega deja al profesional mirando la pantalla sin salida.
+
+## 🔴 LA REVERSIÓN, ESCRITA PARA QUE NO SE PIERDA
+
+**CUANDO EXISTA EL DRENADO (fase 3 de H3) SE VUELVE AL TEXTO DE SCRUM-356**, que entonces sí será
+verdad:
+
+> «Las firmas pendientes suben cuando abres YaQu. Si no la abres, se quedan aquí.»
+
+Ese texto sigue **aprobado** y sigue citado, sin tocar, en la entrada de abajo. Lo que hay que
+retirar ese día es el guard *«el aviso NO promete que las firmas suban solas»*, y su propio mensaje
+de fallo lo dice con esas palabras: *«Si el drenado YA existe, este guard es lo que hay que retirar
+— y entonces vuelve el texto de SCRUM-356, que es el aprobado para ese día.»*
+
+## La caja, MEDIDA EN NAVEGADOR antes de darlo por bueno
+
+Condición de la aprobación, y el texto nuevo es **19 caracteres más largo** (78 → 97). Medido con
+**Edge vía `puppeteer-core`** —el mismo montaje que usa `scripts/guard-contraste.mjs`—, sobre el
+**DOM real del dashboard** y con el **CSS real**:
+
+| viewport | viejo (78 car) | nuevo (97 car) |
+|---|---|---|
+| 390 px | 3 líneas · 83 px | **3 líneas · 83 px** — idéntico |
+| 360 px | 3 líneas · 83 px | **3 líneas · 83 px** — idéntico |
+| 320 px | 3 líneas · 83 px | **4 líneas · 103 px** (+1 línea, +20 px) |
+
+En los tres anchos: **no se trunca, no desborda su caja y no saca barra horizontal en la página**.
+El coste real es **una línea más en el móvil más estrecho**, en un aviso que sólo aparece cuando hay
+firmas pendientes.
+
+> ⚠️ **LA PRIMERA MEDICIÓN FUE FALSA Y CASI ME LA CREO.** Daba 198 px de ancho de caja a viewport
+> 390 y hasta 11 líneas a 320. El número no cuadraba —390 − 198 = 192, y 320 − 128 = los mismos
+> 192— así que se persiguió en vez de aceptarlo. La causa: cargar `/dashboard/` **sin sesión**
+> hace que `app.js` redirija a `/login.html`, y lo que se estaba midiendo era **la caja del
+> login**. Lo delató el diagnóstico que se añadió a la medición: *«no hay .sidebar, no hay .main,
+> se inyectó en BODY»*.
+>
+> Se corrigió sirviendo el **mismo HTML del dashboard con los `<script>` quitados**: mismo DOM,
+> mismo CSS, sin el JS que navega. Entonces los números pasaron a ser coherentes —`.main` con
+> `margin-left: 0`, sidebar fuera de pantalla en `x=-248`, fuente 13.5 px— y son los de la tabla.
+>
+> **Una medición en navegador no es fiable por ser en navegador: hay que comprobar que la página
+> que mediste es la que creías.**
+
+## Lo construido
+
+* `public/dashboard/js/estadoFirma.js` — el texto, con la caducidad escrita al lado.
+* `tests/scrum356-tres-estados.test.mjs` — el texto fijado letra por letra **y un guard nuevo**.
+
+**Son dos guards distintos a propósito.** El de la letra cae con *cualquier* cambio, incluido uno
+bueno; el nuevo dice **por qué** no puede volver el texto viejo, nombrando la promesa concreta
+(`suben cuando abres`) en vez de comparar cadenas. Lleva su control positivo dentro: el detector
+reconoce la promesa cuando está delante, o su «no está» no valdría nada. Y exige que el aviso siga
+diciendo **qué hacer** (`vuelve a firmar`).
+
+## Lo que NO se ha tocado
+
+Los otros cuatro textos de SCRUM-356 —siguen siendo verdad— · nada de la fase 2 de SCRUM-358 · el
+drenado · `prisma/schema.prisma` · el camino de emisión. La cita del texto viejo en la entrada de
+abajo **se deja como estaba**, con una nota al lado: es el texto al que hay que volver.
+
+## Huecos que se declaran
+
+* **La caja se midió a 390, 360 y 320 px, en Edge y en headless.** No es un iPhone real ni Safari:
+  el ajuste de línea puede variar un carácter con otra pila de fuentes. Lo que sí es sólido es que
+  **el CSS no trunca** (`.alert` no tiene `text-overflow`, `white-space: nowrap` ni `max-width`),
+  así que el modo de fallo grave —texto cortado— no depende del navegador.
+* **No hay captura.** La medición es numérica; nadie ha visto el aviso con los ojos.
+
+## Tests
+
+* `tests/scrum356-tres-estados.test.mjs` — 18 tests (1 nuevo)
 
 ---
 
@@ -91,6 +200,10 @@ inventa (regla 30).
 ## El hueco se declara EN LA PANTALLA
 
 *«Las firmas pendientes suben cuando abres YaQu. Si no la abres, se quedan aquí.»*
+
+> ⚠️ **ESTE TEXTO YA NO ES EL QUE SE PINTA.** Lo sustituyó el de la entrada de arriba
+> (10-ago, tarde) porque, sin drenado, **abrir YaQu no sube nada**. La cita se deja como estaba: es
+> el texto aprobado para el día que exista el drenado, y es a él a quien hay que volver.
 
 **Se pinta siempre que haya pendientes, no sólo en iOS**, y es deliberado: hoy **ningún** navegador
 drena la cola solo, porque el drenado es de H3. Restringirlo a iOS afirmaría que en Android sí se
