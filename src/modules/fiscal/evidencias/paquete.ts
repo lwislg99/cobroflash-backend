@@ -119,48 +119,33 @@ export const FICHEROS = Object.freeze({
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
-// SCRUM-438 · POLÍTICA DE LOS SOBRES ANTERIORES A v:3 — **MICROCOPY SIN APROBAR (regla 30)**
+// SCRUM-438 · ALCANCE DE LA VERIFICACIÓN — **APROBADO por el asesor el 11-ago-2026** (regla 30).
 //
-// Lo lee un ASESOR FISCAL o un inspector, no un profesional: el registro es más formal, pero el
-// criterio es el mismo — no puede prometer más de lo que se puede demostrar, y tampoco menos.
+// Se fija ENTERO: reformularlo es cambio de máster. Lo lee un asesor fiscal o un inspector, y lo
+// que tiene que hacer es no prometer más de lo que se puede demostrar **ni menos**.
 //
-// Qué intenta decir, para que se pueda corregir con el criterio delante:
-//   · lo que SÍ se demuestra: que el contenido del documento no ha cambiado desde que se firmó;
-//   · lo que NO: que cinco datos que el sello lee de otras tablas sigan siendo los de aquel día,
-//     porque el sobre no los guardó — los vuelve a leer al verificar;
-//   · y que eso NO es una manipulación ni un defecto del documento: es el alcance del sello.
-export const POLITICA_SOBRES_ANTERIORES = `[PENDIENTE microcopy oficial · propuesta, SCRUM-438]
+// ⚠️ Y VA SIEMPRE DENTRO DEL ZIP, cuadre o no cuadre — **es regla desde hoy**, con su motivo:
+//
+// > Si solo saliera cuando algo falla, su presencia sería la señal, y habría motivo para
+// > quitarla. **Un documento que solo aparece con malas noticias se convierte en la mala noticia.**
+export const POLITICA_SOBRES_ANTERIORES = `ALCANCE DE ESTA VERIFICACIÓN
 
-ALCANCE DE LA VERIFICACIÓN DE ALBARANES FIRMADOS
+Este paquete comprueba que el contenido del albarán es el que se firmó.
 
-Los albaranes de este paquete se verifican recalculando la huella (SHA-256) del contenido que se
-firmó y comparándola con la que quedó guardada en el momento de la firma.
+En los sobres de versión 1 y 2, cinco datos no viajan dentro de la firma y se
+leen en el momento de verificar: la dirección de la obra, la referencia del
+trabajo, el nombre del cliente, y el nombre y el NIF de quien emite.
 
-QUÉ DEMUESTRA UNA VERIFICACIÓN QUE CUADRA
-  El contenido del albarán —su número, su fecha, sus líneas, sus notas y el lugar y la fecha de
-  entrega— es el mismo que el cliente firmó. Ninguno de esos datos se ha alterado después.
+Si alguno de esos cinco ha cambiado desde que se firmó —por ejemplo, al
+corregir el nombre de un cliente— esta verificación no puede demostrar que el
+resto del documento esté intacto, aunque lo esté. En ese caso el resultado dice
+cuál ha cambiado.
 
-QUÉ NO DEMUESTRA, Y POR QUÉ SE DICE AQUÍ
-  La huella incluye además CINCO datos que no se guardaron dentro del sobre de la firma y que se
-  vuelven a leer de la base en cada verificación: la dirección de la obra, el nombre del trabajo,
-  el nombre del cliente, y el nombre y el NIF del emisor.
+Esos albaranes se consideran de INTEGRIDAD PARCIAL VERIFICABLE: lo que viaja
+dentro de la firma se comprueba; lo que no viaja, no.
 
-  Si alguno de esos cinco se corrige después de firmar —por ejemplo, al arreglar la razón social
-  de un cliente— la huella recalculada deja de coincidir SIN que el documento se haya tocado.
-
-  Por eso estos albaranes se declaran DE INTEGRIDAD PARCIAL VERIFICABLE: se puede demostrar que el
-  documento no ha cambiado, y no se puede demostrar por sí solo que esos cinco datos sean los de
-  la fecha de la firma.
-
-CÓMO SE ACOTA ESO
-  Los albaranes firmados antes de la versión 3 del sobre pueden llevar un ATESTIGUAMIENTO: una
-  verificación fechada, ejecutada en un momento concreto, que deja constancia de que entonces la
-  huella coincidía y de con qué valores de esos cinco datos. Un atestiguamiento no es una firma ni
-  un sellado: no añade ninguna garantía criptográfica. Lo que permite es fechar el antes y el
-  después, de modo que una discrepancia posterior se pueda explicar por un cambio concreto.
-
-  A partir de la versión 3 del sobre, los cinco datos quedan dentro de lo firmado y esta salvedad
-  deja de aplicar a los documentos nuevos.
+A partir de la versión 3, los cinco datos viajan dentro de la firma y esta
+limitación no se aplica.
 `;
 
 /** El estado de un asiento a partir de los albaranes que le apuntan. */

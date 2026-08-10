@@ -212,6 +212,100 @@ test('SCRUM-438 · 🔴 REGLA 29: la herramienta SOLO LEE — ni el sobre, ni el
     'decisión del fundador (regla 5, guard de SCRUM-371), no un detalle de esta herramienta.');
 });
 
+// ── LA POLÍTICA DENTRO DEL ZIP ───────────────────────────────────────────────────────────────
+
+test('SCRUM-438 · el texto del alcance es el APROBADO, palabra por palabra (regla 30)', async () => {
+  const { POLITICA_SOBRES_ANTERIORES } = await import(DIST + 'modules/fiscal/evidencias/paquete.js');
+  assert.equal(
+    POLITICA_SOBRES_ANTERIORES,
+    'ALCANCE DE ESTA VERIFICACIÓN\n\n' +
+    'Este paquete comprueba que el contenido del albarán es el que se firmó.\n\n' +
+    'En los sobres de versión 1 y 2, cinco datos no viajan dentro de la firma y se\n' +
+    'leen en el momento de verificar: la dirección de la obra, la referencia del\n' +
+    'trabajo, el nombre del cliente, y el nombre y el NIF de quien emite.\n\n' +
+    'Si alguno de esos cinco ha cambiado desde que se firmó —por ejemplo, al\n' +
+    'corregir el nombre de un cliente— esta verificación no puede demostrar que el\n' +
+    'resto del documento esté intacto, aunque lo esté. En ese caso el resultado dice\n' +
+    'cuál ha cambiado.\n\n' +
+    'Esos albaranes se consideran de INTEGRIDAD PARCIAL VERIFICABLE: lo que viaja\n' +
+    'dentro de la firma se comprueba; lo que no viaja, no.\n\n' +
+    'A partir de la versión 3, los cinco datos viajan dentro de la firma y esta\n' +
+    'limitación no se aplica.\n',
+    '🔴 el texto del alcance no es el aprobado por el asesor el 11-ago-2026. Se fijó ENTERO: ' +
+    'reformularlo es cambio de máster, no una mejora de redacción.',
+  );
+  assert.ok(!POLITICA_SOBRES_ANTERIORES.includes('[PENDIENTE'),
+    '🔴 vuelve el marcador sobre un texto que ya está aprobado');
+});
+
+test('SCRUM-438 · 🔴 SEGUNDA CAPA: el alcance no puede insinuar que esto es una firma', async () => {
+  // Misma capa que el 409 de SCRUM-358, y por el mismo motivo: la comprobación exacta de arriba
+  // se desactiva editando el propio test —que es justo lo que haría alguien «arreglándolo»—, y
+  // este invariante sobrevive a eso. Se probó mutando las dos a la vez.
+  const { POLITICA_SOBRES_ANTERIORES: t } = await import(DIST + 'modules/fiscal/evidencias/paquete.js');
+  const texto = t.toLowerCase();
+  for (const prohibido of ['firmado por yaqu', 'sellado por la plataforma', 'certifica', 'garantiza la autenticidad', 'validez legal', 'con plena validez']) {
+    assert.ok(!texto.includes(prohibido),
+      `🔴 el alcance dice «${prohibido}»: eso INSINÚA que este paquete firma o certifica algo, y no ` +
+      'lo hace. Un documento de alcance que promete de más es peor que no tenerlo.');
+  }
+  // Y lo que SÍ tiene que seguir diciendo: el límite, con su nombre.
+  assert.match(texto, /integridad parcial verificable/,
+    '🔴 desaparece la calificación que acota el alcance. Sin ella, el paquete se lee como una ' +
+    'verificación completa, que es exactamente lo que no es para v:1 y v:2.');
+  assert.match(texto, /lo que no viaja, no/,
+    '🔴 desaparece la frase que dice qué NO se comprueba: el alcance dejaría de acotar nada');
+});
+
+test('SCRUM-438 · 🔴 la política va SIEMPRE dentro del ZIP, cuadren o no los albaranes', async () => {
+  // Regla del asesor (11-ago-2026): «un documento que solo aparece con malas noticias se
+  // convierte en la mala noticia». Se comprueba con los dos extremos.
+  const { construirPaqueteEvidencias, FICHEROS } = await import(DIST + 'modules/fiscal/evidencias/paquete.js');
+  // Las formas del fixture salen del banco de SCRUM-297, no se inventan: un fixture a medias
+  // reventaba con un TypeError y el rojo habría hablado de mi test, no del paquete.
+  const base = {
+    libro: { asientos: [], miradas: 0, ajenas: 0, sinNumero: 0, sinNumeroImporte: 0, importesIlegibles: [] },
+    modelo303: {
+      año: 2026, trimestre: 3, desde: '', hasta: '', moneda: 'EUR',
+      casillas: [], casillaTotalCuota: { casilla: 27, valor: 0 }, totalBase: 0,
+      sinClasificar: [], sinDesglose: [], cruceConCobros: {}, miradas: 0, asientos: 0,
+      motivosParaNoFiarse: [], avisoObligatorio: '',
+    },
+    merchantId: 7,
+    periodo: { desde: '2026-07-01', hasta: '2026-09-30', año: 2026, trimestre: 3 },
+  };
+  const informe = (hallazgos) => ({ examinados: hallazgos.length, cuadran: 0, censoPorVersion: {}, hallazgos, versionesNoSoportadas: [], conclusion: hallazgos.length ? 'hay_hallazgos' : 'no_se_pudo_mirar' });
+
+  for (const [caso, albaranes, inf] of [
+    ['sin hallazgos', [], informe([])],
+    ['con un hallazgo', [], informe([{ cuadra: false, numero: 'ALB-1', v: 1, motivo: 'hash_no_coincide', mensaje: 'x' }])],
+  ]) {
+    const p = construirPaqueteEvidencias({ ...base, albaranes, informeVerificacion: inf });
+    const nombres = p.ficheros.map((f) => f.nombre);
+    assert.ok(nombres.includes(FICHEROS.politicaSobres),
+      `🔴 «${caso}»: el paquete sale SIN el alcance de la verificación. Si solo apareciera cuando ` +
+      'algo falla, su presencia sería la señal y habría motivo para quitarla.');
+  }
+});
+
+// ── EL COMANDO DE PRODUCCIÓN, EN EL PROPIO SCRIPT ────────────────────────────────────────────
+
+test('SCRUM-438 · 🔴 la invocación de producción vive en el `--help` y NO expone la credencial', () => {
+  const cli = fs.readFileSync(path.join(RAIZ, 'scripts/atestiguar-sobres.mjs'), 'utf8');
+  assert.match(cli, /--help/, '🔴 el script ya no tiene `--help`: la invocación buena vive en otro sitio y se separa');
+  // La forma aprobada por el asesor: `read -s` no hace eco ni entra en el historial.
+  assert.match(cli, /read -s -p .* DATABASE_URL && export DATABASE_URL/,
+    '🔴 el `--help` ya no documenta la invocación aprobada. Sin ella, quien ejecute esto contra ' +
+    'producción acabará poniendo la URL en la línea de comandos, que es donde no puede estar.');
+  assert.match(cli, /unset DATABASE_URL/,
+    '🔴 falta el `unset`: la credencial se quedaría exportada en la sesión después de terminar');
+  // Y el ejecutable NO puede llevar la URL en argv, ni siquiera de ejemplo.
+  const ejecutable = soloEjecutable(cli, { almohadillaEsComentario: false })
+    .replace(/export const AYUDA = `[\s\S]*?`;/, ''); // el texto de ayuda es prosa, no argv
+  assert.ok(!/--url|--from-url/.test(ejecutable),
+    '🔴 el script pasa la URL como argumento: quedaría en `ps` y en el historial (SCRUM-195)');
+});
+
 test('SCRUM-438 · los cinco campos vivos son LOS del sobre, no una lista aparte que envejece', () => {
   // Si un día el sobre leyera un sexto campo vivo, este documento se quedaría corto EN SILENCIO.
   // Se cara contra el adaptador que resuelve las fuentes de verdad.
