@@ -788,27 +788,32 @@ function renderSettingsView(container) {
  * No rehace nada: la pantalla es la de SCRUM-244 y sigue siendo la misma vista `export`. Esto es
  * solo el enlace que el diseño §B1 pide («Descargar datos pasa a Configuración › Tus datos»).
  *
- * MICROCOPY (regla 30):
- *   · El título dice `Descargar datos` — NO es redacción nueva: es el rótulo que ya llevaba la
- *     entrada de la barra y el mismo `<h2>` que abre la propia vista `export` (`exportView.js:34`).
- *     Aprobado por el asesor el 10-ago-2026 dentro de la tabla de rótulos.
- *   · El texto del BOTÓN sí es redacción nueva —el verbo de «ir a»— y por eso sale con MARCADOR.
- *     No se rellena por mi cuenta; lo aprueba el asesor. Precedente en la casa: `exportView.js`
- *     ya publica botones con este mismo marcador.
+ * MICROCOPY (regla 30) — «Descargar datos», aprobado por el asesor el 10-ago-2026, y el criterio
+ * queda escrito porque sirve para los que vengan: **un botón de navegación nombra su destino**, y
+ * así no puede mentir sobre lo que pasa al pulsarlo. «Descargar» a secas prometería una descarga
+ * inmediata, y lo que hace es llevar a una pantalla donde se elige qué y de qué fechas.
+ *
+ * 🔴 Y POR ESO NO HAY `<h2>`. La primera versión abría la tarjeta con el título `Descargar datos` y
+ * ponía debajo un botón con el mismo texto: la misma frase dos veces seguidas, que no informa de
+ * nada y encima la lee dos veces quien navega con lector de pantalla. El sitio ya tiene su rótulo
+ * —la pestaña «Tus datos» del submenú—, así que lo que falta aquí no es un título: es el camino.
+ *
+ * Consecuencia declarada: sin `<h2>` esto **no es una SUPERFICIE** para el censo de SCRUM-284 (su
+ * criterio es «función `render…(container)` que pinta un bloque con título propio»), sino un bloque
+ * colocado — la misma clase que `connectStatus` y `modoEmision`, que también viven en
+ * `ASIGNACION_SUPERFICIE` sin ser funciones censadas. Su colocación la sigue vigilando el guard de
+ * `panelDeSuperficie(...)`, que es el que importa: es quien impide que caiga en el panel equivocado.
  */
 function renderDescargarDatosCard(container) {
   if (!container) return;
   const card = document.createElement('div');
   card.className = 'customers-card';
-  card.innerHTML = `
-    <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Descargar datos</h2>
-  `;
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'btn-secondary';
   btn.id = 'btn-ir-descargar-datos';
   btn.style.minHeight = '44px'; // AB6: objetivo al pulgar, igual que las pestañas de los submenús
-  btn.textContent = MARCA_MICROCOPY_SUBMENU;
+  btn.textContent = 'Descargar datos';
   btn.addEventListener('click', () => {
     // El mismo enrutador que usa el resto del dashboard (`app.js:372`). Guardado como en el resto
     // de vistas: si no está, no se rompe la pantalla de Configuración por un enlace.
