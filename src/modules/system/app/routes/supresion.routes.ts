@@ -33,6 +33,19 @@ router.post('/:merchantId', async (req, res) => {
     const merchantId = Number(req.params.merchantId);
     if (!Number.isInteger(merchantId) || merchantId <= 0) return res.status(400).json({ error: 'merchant_invalido' });
 
+    // ── 🔴 SCRUM-440 · TENENCIA. VA ANTES DE MIRAR NADA. ────────────────────────────────────
+    //
+    // El `:merchantId` viene de la URL y `requireAuth` inyecta el del solicitante. Hasta hoy no se
+    // comparaban: un admin autenticado del merchant A que supiera el NOMBRE del negocio B podía
+    // anonimizar a B. La regla 2 dice que toda consulta filtra por `req.merchantId`, y aquí ni
+    // siquiera aparecía la palabra.
+    //
+    // ⚠️ 404 y NO 403, y el orden importa tanto como el código: un 403 —o cualquier respuesta que
+    // llegue DESPUÉS de leer— confirma que ese merchant existe, y eso es información que no se le
+    // debe a quien pregunta por uno ajeno. Por eso la comparación va **antes** del `findUnique`:
+    // pedir uno ajeno no puede ni tocar la base.
+    if (merchantId !== req.merchantId) return res.status(404).json({ error: 'not_found' });
+
     const merchant = await prisma.merchant.findUnique({ where: { id: merchantId }, select: { name: true } });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
 
