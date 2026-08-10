@@ -611,3 +611,63 @@ y su reinicio (¿anual, como la de emitidas?) antes de construirlo, no después.
 > `name` (nombre comercial) y `taxId`, mientras que `Customer` sí distingue `name` de `legalName`.
 > Un libro de recibidas identifica al proveedor por su **razón social**. No se hace una migración
 > de una sola columna: se acumula con la siguiente.
+
+---
+
+# P16. El tipo de factura: qué se le declara hoy a la AEAT, y qué debería (bloquea SCRUM-413)
+
+> **Esto no es una duda de diseño: es un hecho medido POR EJECUCIÓN el 10-ago-2026.**
+
+**Lo que ya está medido, para no preguntar lo que se puede leer.** `Invoice.type` es
+`String @default("F1")` **sin enum, sin unión y sin ningún guard** en los 211 ficheros de `src/`.
+El mapeo al catálogo de la AEAT está en **dos sitios** y es literalmente esto:
+
+```ts
+verifactu.service.ts:286   tipoFactura: invoice.type === 'R1' ? 'R1' : 'F1'
+verifactu.service.ts:703   const tipoBase: 'F1' | 'R1' = inv.type === 'R1' ? 'R1' : 'F1'
+```
+
+**Todo lo que no sea `R1` se declara F1.** Alimentando el constructor de XML con una factura de
+cada tipo (sin base de datos, cliente Prisma falso, con la forma real de producción):
+
+| tipo interno | `TipoFactura` que se declara HOY |
+|---|---|
+| `F1` | F1 ✅ |
+| `R1` | R1 ✅ |
+| **`JUST`** (justificante de cobro, `J-…`) | **F1** 🔴 |
+| **`ANT`** (anticipo, reservado desde SCRUM-17) | **F1** 🔴 |
+| **cualquier cadena inventada** | **F1** 🔴 |
+
+Y en **producción** (censo de solo lectura, 10-ago-2026): **44 documentos `JUST`** y **5 `F1` con
+número `J-`** — tipo y número ya se contradicen en 5 filas reales. Ninguno está sellado: el sellado
+se salva porque `applyVeriFactu` corta con `isReceiptNumber(number)`, **por el NÚMERO, no por el
+tipo**. El **export XML no lleva esa guarda** (medido por AST sobre toda su cadena de funciones).
+
+Lo que sí hace falta:
+
+**P16.1 · El justificante.** Un `J-…` se emite a merchants ES reales con `INVOICING_ES_ENABLED`
+apagado, vive **fuera de toda serie fiscal** (Parte M) y nuestro propio código se niega a sellarlo.
+¿Confirmas que **no debe aparecer en el registro de facturación en ninguna forma** —ni como F1, ni
+como F2, ni con marcador alguno—? Es decir: la corrección es **excluirlo**, no reclasificarlo.
+
+**P16.2 · El anticipo.** `'ANT'` está reservado en un comentario desde SCRUM-17 (22-jul-2026) para
+FISCAL-1. Cuando exista, ¿con qué `TipoFactura` se sella una factura de anticipo? Nuestra lectura es
+que **es una factura completa y por tanto F1** —el anticipo devenga IVA y se factura—, pero hoy
+saldría F1 **por el `else`, no por una decisión**, y queremos que sea lo segundo.
+
+**P16.3 · La factura final que compensa anticipos** (SCRUM-16/142). Lleva líneas negativas que
+descuentan los anticipos ya facturados. ¿Sigue siendo **F1**, o deducir documentos previos la
+convierte en otra cosa del catálogo? No es una R1 —no rectifica un error, regla 29— pero queremos
+oírlo, no deducirlo.
+
+**P16.4 · ¿Falta algún tipo del catálogo que debamos poder emitir?** El código solo conoce `F1` y
+`R1`; el XSD admite además `F2` (simplificada) y las `R2`–`R5`. ¿Alguno aplica a un profesional de
+oficios en nuestro flujo, o F1/R1 cubren todo lo que emitimos?
+
+> **Nota de estado.** SCRUM-413 entrega **el censo, el guard y la divergencia ejecutada**; la
+> corrección del mapeo **NO se ha aplicado**: toca el camino de emisión (regla 38) y el diff está
+> escrito esperando GO en `docs/master/SCRUM-413.md`. El guard que sí entró impide que un tipo
+> **nuevo** se cuele sin decidir su mapeo — no arregla los que ya existen.
+>
+> Y no se ha tocado ninguna factura ya emitida (regla 29): las 5 filas de producción con tipo y
+> número contradictorios **se quedan como están**; qué hacer con ellas es parte de P16.1.
