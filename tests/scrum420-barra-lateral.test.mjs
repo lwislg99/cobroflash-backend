@@ -77,10 +77,17 @@ test('SCRUM-420 · ① `export` y `templates` SIGUEN alcanzables tras salir/qued
   assert.match(vista, /renderDescargarDatosCard\(panelDeSuperficie\("renderDescargarDatosCard"\)\)/,
     '🔴 la tarjeta existe pero no se monta: declarada y no montada es la regresión que la ' +
     'declaración existe para impedir (misma lección que las provisionales de SCRUM-284).');
-  // `templates` se queda en la barra hasta SCRUM-432, justamente para no quedar inalcanzable.
-  assert.ok(vistasEnBarra.has('templates'),
-    '🔴 `Plantillas` ha salido de la barra y la pestaña dentro de Presupuestos es SCRUM-432: hoy ' +
-    'eso deja la vista `templates` sin ningún camino.');
+  // SCRUM-432 · `templates` YA SALIÓ de la barra, y la exigencia cambia de sitio con ella: lo que
+  // había que garantizar nunca fue «que esté en la barra», sino **que tenga camino**. Ahora el
+  // camino es la pestaña de Presupuestos, y esto lo comprueba donde vive.
+  assert.ok(!vistasEnBarra.has('templates'),
+    '🔴 `Plantillas` ha vuelto a la barra. Si es a propósito, hay que deshacer también la pestaña y ' +
+    'volver a declararla en `ANADIDAS_DECLARADAS`: no puede estar en los dos sitios.');
+  const listado = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/quotesListView.js'), 'utf8');
+  assert.match(listado, /renderAppView\('templates'\)/,
+    '🔴 `Plantillas` no está en la barra Y la pestaña de Presupuestos no navega a `templates`: la ' +
+    'vista se ha quedado sin ningún camino. Sacar una entrada sin dejar camino no es reordenar, es ' +
+    'perder la pantalla — lo mismo que se exige arriba para `export`.');
 });
 
 // ═══ ② ENUMERA CONTRA EL DISEÑO: qué falta Y qué sobra ════════════════════════════════════
@@ -152,9 +159,15 @@ test('SCRUM-420 · toda añadida declarada explica por qué, y la de Plantillas 
     assert.ok(d.motivo && d.motivo.length > 60,
       `🔴 la añadida «${clave}» no explica por qué está en la barra si el diseño no la lista.`);
   }
-  assert.equal(ANADIDAS_DECLARADAS.templates.ticket, 'SCRUM-432',
-    '🔴 `Plantillas` está en la barra CONTRA el diseño y eso solo se sostiene mientras su ' +
-    'movimiento tenga ticket abierto.');
+  // SCRUM-432 · `templates` ya NO es una añadida: salió de la barra y su declaración se movió a
+  // `VISTAS_SIN_ENTRADA`. Se exige que NO esté aquí, porque tenerla en los dos sitios sería decir
+  // dos cosas opuestas de la misma vista — y la que se creyera dependería de qué test mirases.
+  assert.ok(!('templates' in ANADIDAS_DECLARADAS),
+    '🔴 `templates` sigue declarada como AÑADIDA (una entrada que la barra tiene y el diseño no ' +
+    'lista) y ya no está en la barra. Su sitio ahora es `VISTAS_SIN_ENTRADA`.');
+  assert.equal(VISTAS_SIN_ENTRADA.templates && VISTAS_SIN_ENTRADA.templates.ticket, 'SCRUM-432',
+    '🔴 `templates` salió de la barra y no queda declarada como vista sin entrada, con su ticket. ' +
+    'Una excepción sin ticket deja de ser excepción y pasa a ser el comportamiento.');
 });
 
 // ═══ ③ LAS VISTAS SIN ENTRADA, TAMBIÉN ENUMERADAS ════════════════════════════════════════

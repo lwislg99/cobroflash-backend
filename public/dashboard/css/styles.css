@@ -2386,3 +2386,41 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    las dos formas.
    ════════════════════════════════════════════════════════════ */
 .jobdet-alb-estado { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+/* ── Pestañas de sección — SCRUM-432 ───────────────────────────────────────────
+   COMPONENTE NUEVO, y se declara: no existía `.tabs` en el inventario AB3. Se
+   propone su alta en la entrada de máster, porque un componente nuevo a
+   escondidas es rediseño encubierto y declarado es inventario.
+
+   SIN LENGUAJE VISUAL NUEVO: no hay ni un color, ni un radio, ni un tamaño que
+   no estuviera ya. El activo usa el MISMO verde de marca y el mismo peso que
+   `.nav-item.active`, para que «dónde estoy» se lea igual en la barra y aquí.
+   El foco lo pone el `:focus-visible` global (`--ring`), no uno propio. */
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--neutral-200);
+  margin-bottom: 16px;
+}
+.tab {
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;                 /* la línea del activo tapa la del grupo */
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+.tab:hover { color: var(--ink); }
+.tab.active {
+  color: var(--green-600);
+  font-weight: 600;
+  border-bottom-color: var(--green-600);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tab { transition: color .15s ease, border-color .15s ease; }
+}

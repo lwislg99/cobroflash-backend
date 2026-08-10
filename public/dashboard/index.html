@@ -77,15 +77,11 @@
           </div>
         </div>
 
-        <!-- SCRUM-432: `Plantillas` deja de ser entrada de menú y pasa a pestaña dentro de
-             Presupuestos («Historial · Plantillas», diseño §B1). HOY SE QUEDA, detrás de
-             Presupuestos: retirarla antes de que exista la pestaña dejaría la vista `templates`
-             inalcanzable — el mismo defecto que esta barra viene a arreglar, por el otro lado. La
-             retirada y la pestaña van en el MISMO commit, y son de SCRUM-432. -->
-        <button class="nav-item" data-view="templates">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-          <span>Plantillas</span>
-        </button>
+        <!-- SCRUM-432: `Plantillas` YA NO es entrada de menú — es una pestaña dentro de
+             Presupuestos («Historial · Plantillas», diseño §B1), que es de donde se usa. Las
+             entradas de VENTA son ESTADOS por los que pasa el dinero y `templates` nunca fue uno:
+             no hay ningún trabajo «en plantillas». `#templates` sigue navegando y abre Presupuestos
+             con esa pestaña activa, porque hay marcadores vivos. -->
 
         <!-- SCRUM-301 (C1): los albaranes son SITIO propio. Rótulo APROBADO por el asesor el
              5-ago-2026: es el nombre del documento, no copy de acción. -->

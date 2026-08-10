@@ -1,5 +1,68 @@
 // public/dashboard/js/quotesListView.js
 
+/**
+ * SCRUM-432 · PRESUPUESTOS, con sus dos pestañas.
+ *
+ * `Plantillas` deja de ser entrada de la barra y pasa a vivir aquí, que es de donde se usa. El
+ * motivo no es de sitio sino de qué es cada cosa: las entradas de VENTA son ESTADOS por los que
+ * pasa el dinero —presupuesto, albarán, factura— y `templates` nunca fue uno. No hay ningún trabajo
+ * «en plantillas»: era una herramienta del paso 1.
+ *
+ * ⚠️ LAS DOS MITADES VAN JUNTAS. Quitar la entrada sin construir la pestaña deja la vista
+ * inalcanzable, que es el mismo defecto que la barra vino a arreglar pero por el otro lado.
+ *
+ * Microcopy aprobada, literal: «Historial» · «Plantillas».
+ */
+const PESTANAS_PRESUPUESTOS = [
+  { clave: 'historial', rotulo: 'Historial', vista: 'quotes-list' },
+  { clave: 'plantillas', rotulo: 'Plantillas', vista: 'templates' },
+];
+
+function renderPresupuestos(container, pestanaActiva) {
+  container.innerHTML = '';
+  const activa = PESTANAS_PRESUPUESTOS.some((p) => p.clave === pestanaActiva)
+    ? pestanaActiva
+    : 'historial';
+
+  const tabs = document.createElement('div');
+  tabs.className = 'tabs';
+  tabs.setAttribute('role', 'tablist');
+  container.appendChild(tabs);
+
+  const cuerpo = document.createElement('div');
+  container.appendChild(cuerpo);
+
+  for (const p of PESTANAS_PRESUPUESTOS) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tab' + (p.clave === activa ? ' active' : '');
+    b.dataset.pestana = p.clave;
+    b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', String(p.clave === activa));
+    b.textContent = p.rotulo;
+    // Se navega por el ROUTER y no cambiando el DOM a mano: así el hash, el título y el menú
+    // activo se enteran, y `#templates` sigue significando lo mismo desde fuera.
+    //
+    // ⚠️ Y con el destino ESCRITO, no `renderAppView(p.vista)`. Dos motivos, y el segundo lo
+    // descubrí al ponerme rojo mi propio guard de SCRUM-433: su censo de «quién abre esta vista»
+    // reconoce el literal, no una variable. Con la variable, `templates` salía como vista sin
+    // camino **teniéndolo**. Escribir los dos destinos es además lo que lee cualquiera que abra
+    // este fichero preguntándose a dónde lleva cada pestaña.
+    b.addEventListener('click', () => {
+      if (p.clave === activa || !window.renderAppView) return;
+      if (p.clave === 'plantillas') window.renderAppView('templates');
+      else window.renderAppView('quotes-list');
+    });
+    tabs.appendChild(b);
+  }
+
+  if (activa === 'plantillas') {
+    if (typeof renderTemplatesView === 'function') renderTemplatesView(cuerpo);
+    return;
+  }
+  renderQuotesListView(cuerpo);
+}
+
 function renderQuotesListView(container) {
   container.innerHTML = "";
 

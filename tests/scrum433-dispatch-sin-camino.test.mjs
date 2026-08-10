@@ -145,30 +145,28 @@ test('SCRUM-433 · las pantallas de DETALLE cuentan por quien las abre, no por l
   }
 });
 
-test('SCRUM-433 · SCRUM-432 puede sacar `Plantillas` de la barra sin chocar conmigo', () => {
-  // ⚠️ La primera versión de este test lo comprobaba leyendo el censo y buscando números fijos. Se
-  // cazó a sí misma: marcaba `statements.length === 1`, que es la detección legítima del alias.
-  // Un guard atado al TEXTO otra vez, y en el mismo turno en que arreglé cuatro por eso.
-  //
-  // Se comprueba el HECHO, simulando el movimiento sobre el núcleo puro.
+test('SCRUM-433 · `Plantillas` salió de la barra y sigue teniendo camino (SCRUM-432)', () => {
+  // Este test se escribió ANTES de que SCRUM-432 existiera, simulando el movimiento para demostrar
+  // que este guard no le estorbaría. **Ya ha pasado**, así que ahora afirma el hecho en vez de la
+  // simulación: dejarlo describiendo el mundo anterior sería el defecto de SCRUM-435.
   const { vistas } = vistasDelDispatch(RAIZ);
   const barra = entradasDeLaBarra(RAIZ);
   const abre = vistasQueAlguienAbre(RAIZ);
-  assert.ok(barra.has('templates'), '🔴 PREMISA: hoy `Plantillas` sigue en la barra');
 
-  const barraSinPlantillas = new Set([...barra].filter((v) => v !== 'templates'));
+  assert.ok(!barra.has('templates'),
+    '🔴 `Plantillas` ha vuelto a la barra. Si es a propósito, actualiza `_barra-lateral.mjs`: hoy '
+    + 'está declarada como vista SIN entrada, y las dos cosas no pueden ser ciertas a la vez.');
+  assert.ok(abre.has('templates'),
+    '🔴 nadie abre `templates`: la pestaña de Presupuestos ha dejado de existir o de navegar, y la '
+    + 'vista se ha quedado sin ningún camino.');
+  assert.ok(!vistasSinCamino(RAIZ).includes('templates'),
+    '🔴 `templates` sale como vista sin camino teniéndolo: la pestaña lo abre');
 
-  // (a) BIEN HECHO — la pestaña de Presupuestos abre la vista: mi guard NO estorba.
-  const conPestana = new Map(abre).set('templates', ['quotesListView.js']);
+  // Y la otra mitad, que es la que lo hace verificable: si la pestaña dejara de abrirla, ESTO CAE.
+  // Es el control positivo que SCRUM-432 pide para sí mismo, comprobado desde fuera.
+  const sinPestana = new Map([...abre].filter(([v]) => v !== 'templates'));
   assert.ok(
-    !sinCamino({ vistas, barra: barraSinPlantillas, abre: conPestana }).includes('templates'),
-    '🔴 este guard se pondría rojo con SCRUM-432 bien hecho: la vista es alcanzable desde la '
-    + 'pestaña y aun así se marca. Estaría bloqueando trabajo correcto de otra sesión.');
-
-  // (b) MAL HECHO — se quita la entrada y no se construye la pestaña: SÍ debe caer. Es exactamente
-  // el control positivo que SCRUM-432 pide para sí mismo, hecho desde fuera.
-  assert.ok(
-    sinCamino({ vistas, barra: barraSinPlantillas, abre }).includes('templates'),
-    '🔴 quitar `Plantillas` de la barra SIN construir la pestaña deja la vista inalcanzable y este '
-    + 'guard no lo nota. Entonces no vigila lo que dice vigilar.');
+    sinCamino({ vistas, barra, abre: sinPestana }).includes('templates'),
+    '🔴 quitar la pestaña dejaría `templates` inalcanzable y este guard no lo notaría. Entonces no '
+    + 'vigila lo que dice vigilar.');
 });

@@ -189,7 +189,11 @@ async function initApp() {
   function setActiveMenu(view) {
     // SCRUM-301 (C1): el detalle del albarán ya tiene sección propia a la que pertenecer. Antes
     // marcaba «Trabajos» porque los albaranes no existían como sitio; ahora sí.
-    const menuView = view === 'quotes-detail' ? 'quotes-list'
+    // SCRUM-432: `templates` ya no tiene entrada propia — es una pestaña de Presupuestos, así que
+    // el menú marca Presupuestos. Sin esto, entrar por `#templates` dejaría la barra sin nada
+    // encendido y el usuario sin saber dónde está.
+    const menuView = view === 'templates' ? 'quotes-list'
+      : view === 'quotes-detail' ? 'quotes-list'
       : view === 'albaran-detail' ? 'albaranes'
       : view === 'invoice-detail' ? 'invoices'
       : view === 'jobs-detail' ? 'jobs' : view;
@@ -233,7 +237,7 @@ async function initApp() {
         break;
       case 'quotes-list':
         viewTitle.textContent = L.quotePlural;
-        renderQuotesListView(viewContainer);
+        renderPresupuestos(viewContainer, 'historial');
         break;
       case 'quotes-new':
         viewTitle.textContent = L.quoteNew;
@@ -253,9 +257,13 @@ async function initApp() {
         viewTitle.textContent = 'Informes';
         if (typeof renderReportsView === 'function') renderReportsView(viewContainer);
         break;
+      // SCRUM-432 · `templates` SIGUE NAVEGANDO y abre Presupuestos con su pestaña activa. Hay
+      // marcadores vivos apuntando a `#templates`: caer donde el usuario venía buscando es mejor
+      // que un 404, y es el mismo criterio que SCRUM-136 usó con `operarios`. Ser coherentes con
+      // esa decisión vale más que ahorrarse un `case`.
       case 'templates':
-        viewTitle.textContent = 'Plantillas';
-        if (typeof renderTemplatesView === 'function') renderTemplatesView(viewContainer);
+        viewTitle.textContent = L.quotePlural;
+        renderPresupuestos(viewContainer, 'plantillas');
         break;
       case 'quote-requests':
         viewTitle.textContent = 'Solicitudes';

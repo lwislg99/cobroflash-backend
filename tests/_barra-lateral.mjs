@@ -158,13 +158,10 @@ export const AUSENCIAS_CONOCIDAS = {
  * se separan por el lado que nadie mira.
  */
 export const ANADIDAS_DECLARADAS = {
-  templates: {
-    ticket: 'SCRUM-432',
-    motivo:
-      'El diseño la SACA de la barra («pasa a pestaña dentro de Presupuestos»), pero la pestaña no ' +
-      'existe todavía: retirarla hoy dejaría la vista `templates` inalcanzable. Se queda en VENTA, ' +
-      'detrás de Presupuestos, hasta que SCRUM-432 haga las dos mitades en el mismo commit.',
-  },
+  // `templates` ESTUVO AQUÍ hasta SCRUM-432, y se ha ido porque dejó de sobrar: ya no está en la
+  // barra. Su declaración se ha MOVIDO a `VISTAS_SIN_ENTRADA`, que es donde le toca ahora — una
+  // vista viva sin entrada, alcanzable desde la pestaña. Dejarla en los dos sitios habría sido
+  // declarar dos veces la misma cosa con dos significados opuestos.
   'libro-registro': {
     ticket: null,
     motivo:
@@ -193,6 +190,15 @@ export const VISTAS_SIN_ENTRADA = {
       'SALE de la barra por el diseño §B1 («pasa a Configuración › Tus datos»). Sigue alcanzable ' +
       'desde `renderDescargarDatosCard`, y hay un test que lo exige: retirarla de la barra sin ' +
       'camino nuevo sería perder la pantalla, no reordenarla.',
+  },
+  templates: {
+    ticket: 'SCRUM-432',
+    motivo:
+      'SALE de la barra por el diseño §B1: es una PESTAÑA dentro de Presupuestos («Historial · ' +
+      'Plantillas»), que es de donde se usa. Las entradas de VENTA son estados por los que pasa el ' +
+      'dinero y ésta nunca fue uno. Sigue alcanzable desde la pestaña, y `#templates` sigue ' +
+      'navegando: abre Presupuestos con esa pestaña activa, porque hay marcadores vivos — mismo ' +
+      'criterio que SCRUM-136 con `operarios`.',
   },
   operarios: {
     ticket: 'SCRUM-433',
