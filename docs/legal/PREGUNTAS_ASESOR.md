@@ -3,6 +3,11 @@
 > Para llevar a la cita (bundle Y3 del master + decisiones nuevas de S1-C y S1-D).
 > Objetivo: desbloquear SIF-1 y cerrar el alcance legal de la beta. Marca la respuesta
 > al lado de cada punto; yo implemento según lo que traigas.
+>
+> 🔴🔴 **LA MÁS URGENTE ESTÁ AL FINAL DEL DOCUMENTO: `P14 · ¿YaQu, HOY, «fabrica o
+> comercializa» un sistema informático de facturación?`** (art. 201 bis LGT + plazo del
+> productor). Llegó la última —7-ago-2026— y por eso está abajo, pero **se lee la primera**.
+> *(Puntero añadido por SCRUM-328; el contenido de P14 no se ha tocado.)*
 
 ## A. Decisión que BLOQUEA S1-D (la más urgente para programar el envío a la AEAT)
 
