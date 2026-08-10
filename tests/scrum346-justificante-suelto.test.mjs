@@ -65,6 +65,10 @@ function montar(merchant, { customer = { id: 5 } } = {}) {
         const numero = modoDocumentoSuelto(merchant) === 'justificante' ? 'J-2026-0001' : 'F-2026-0001';
         return { ...data, id: 44, number: numero, total: { toString: () => data.total } };
       },
+      // SCRUM-396: la referencia del justificante se comprueba contra el índice antes de
+      // devolverse. `null` = libre. Va DENTRO de este objeto y no lo cubre el Proxy de abajo,
+      // porque `invoice` sí está en el destino y el `get` de reserva no llega a mirarlo.
+      findUnique: async () => null,
     },
     merchant: {
       findUnique: async () => ({ ...merchant, invoiceSeq: 0 }),

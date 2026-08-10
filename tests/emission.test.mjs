@@ -70,6 +70,11 @@ function fakeTx(merchant) {
       findUnique: async () => merchant,
       update: async (args) => { calls.updates.push(args); },
     },
+    // SCRUM-396: la referencia del justificante se comprueba contra el indice
+    // `[merchantId, number]` antes de devolverse. `null` = libre, que es el caso de siempre aqui.
+    invoice: {
+      findUnique: async () => { calls.consultas = (calls.consultas ?? 0) + 1; return null; },
+    },
     auditLog: AUDIT_FALSO,
     _calls: {
     },
