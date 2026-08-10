@@ -33,6 +33,7 @@ import { Prisma } from '@prisma/client';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const SCRIPT = path.join(RAIZ, 'scripts/backup-restore.mjs');
+const CODEC = path.join(RAIZ, 'scripts/_backup-codec.mjs');
 
 /** Los tipos escalares que el schema usa DE VERDAD, con cuántos campos los usan. */
 function tiposDelSchema() {
@@ -46,28 +47,36 @@ function tiposDelSchema() {
   return cuenta;
 }
 
-/** Los tipos NOMBRADOS en el script, sea cual sea el sitio en que lo estén. */
+/**
+ * Los tipos NOMBRADOS, vengan del script o del códec.
+ *
+ * Las tres declaraciones ya no viven en el mismo fichero: al pasar los bytes a **base64**, el
+ * tratamiento de `Bytes` se mudó a `_backup-codec.mjs` —que comparten volcado y restauración—
+ * porque la codificación y la decodificación tienen que ser la misma o el backup no vale. El guard
+ * las sigue **donde estén**: si mañana se mueven otra vez, esto se pone rojo en vez de dar verde
+ * mirando a un sitio vacío.
+ */
 function tiposNombrados() {
-  let codigo;
-  try {
-    codigo = fs.readFileSync(SCRIPT, 'utf8');
-  } catch (e) {
-    assert.fail(
-      `🔴 no se pudo leer ${SCRIPT} (${e && e.code ? e.code : e}).\n\n`
-      + '  «Todos los tipos están cubiertos» y «no supe leer el script» son el mismo verde.');
-  }
-  // Se recogen de las TRES declaraciones, acotando a cada una: buscar los nombres sueltos por todo
-  // el fichero los encontraría en los comentarios que explican el problema — la trampa de
-  // autorreferencia de SCRUM-203, que en este repo ya ha mordido cuatro veces.
   const bloques = [
-    /const CAST_POR_TIPO = \{([^}]*)\}/,
-    /const TIPOS_BINARIOS = new Set\(\[([^\]]*)\]\)/,
-    /const SIN_TRATAMIENTO = new Set\(\[([^\]]*)\]\)/,
+    [SCRIPT, /const CAST_POR_TIPO = \{([^}]*)\}/],
+    [CODEC, /export const TIPOS_BINARIOS = Object\.freeze\(new Set\(\[([^\]]*)\]\)\)/],
+    [SCRIPT, /export const SIN_TRATAMIENTO = new Set\(\[([^\]]*)\]\)/],
   ];
   const nombrados = new Set();
-  for (const re of bloques) {
+  for (const [fichero, re] of bloques) {
+    let codigo;
+    try {
+      codigo = fs.readFileSync(fichero, 'utf8');
+    } catch (e) {
+      assert.fail(
+        `🔴 no se pudo leer ${fichero} (${e && e.code ? e.code : e}).\n\n`
+        + '  «Todos los tipos están cubiertos» y «no supe leer el fichero» son el mismo verde.');
+    }
+    // Se acota a CADA declaración: buscar los nombres sueltos por todo el fichero los encontraría
+    // en los comentarios que explican el problema — la trampa de autorreferencia de SCRUM-203, que
+    // en este repo ya ha mordido cuatro veces.
     const m = codigo.match(re);
-    assert.ok(m, `🔴 falta la declaración ${re} en backup-restore.mjs: el guard no puede comprobar nada`);
+    assert.ok(m, `🔴 falta la declaración ${re} en ${path.basename(fichero)}: el guard no puede comprobar nada`);
     for (const ident of m[1].match(/[A-Za-z]+/g) || []) nombrados.add(ident);
   }
   return nombrados;

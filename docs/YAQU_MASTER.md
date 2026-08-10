@@ -417,6 +417,7 @@ Botones: "Firmar y aceptar" · "Acepto sin firmar" · "No me interesa" · "Pagar
 | `BOT_AI_ENABLED` | merchant | OFF | admin F2 tardía | IA del bot (K2) | gates K2 | kill-switch: vuelve a botones |
 | `PUBLIC_PROFILE_ENABLED` | merchant | OFF | merchant opt-in F2 | /p/:slug | PERFIL-1 | 404 digno |
 | `MAINTENANCE_ENABLED` | merchant | OFF | merchant opt-in F2 | planes + cron | MANT-1 | cron ignora |
+| `MERCHANT_DELETE_ENABLED` | global | OFF | admin, caso a caso | ruta de supresión del merchant (RGPD art. 17) | RGPD-1 | **404: la ruta no existe** |
 Gates que NO son flags: venta fuerte/claims ⇐ SIF-1 · tarjeta real ⇐ Connect del merchant · ~~F2 ⇐ 25 pagantes~~ **(retirado 27-jul-2026, regla 13 nueva: los 25 pagantes ordenan la cola, no dan permiso para construir). Los otros dos SIGUEN vigentes: SIF-1 es fiscal y Connect es de dinero real.**
 
 ---

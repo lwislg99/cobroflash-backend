@@ -98,7 +98,13 @@ export type AuditAction =
   //     su guard (§8 T-1…T-4). Eso entra CON el catálogo, no antes.
   | 'aviso_ambar_mostrado'
   | 'aviso_ambar_decidido'
-  | 'bloqueo_rojo_mostrado';
+  | 'bloqueo_rojo_mostrado'
+  // SCRUM-244 (RGPD-1) · DOS acciones y no una, por decisión del fundador (10-ago-2026): borrar y
+  // anonimizar son actos DISTINTOS. Si compartieran acción, dentro de un año nadie podría saber
+  // qué se hizo con los datos de quién — y ése es exactamente el rastro que este ticket existe
+  // para dejar. La regla 5 (unión cerrada) se levanta solo para estas dos.
+  | 'merchant_borrado'
+  | 'merchant_anonimizado';
 
 /**
  * Las que EXIGEN constancia: si no se pueden registrar, la acción NO ocurre.

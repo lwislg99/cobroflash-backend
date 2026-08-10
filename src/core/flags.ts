@@ -28,6 +28,10 @@ export const FLAG_DEFAULTS = {
   // apagarlo sin apagar el del presupuesto, que no tiene esa consecuencia.
   VOICE_ALBARAN_ENABLED: false,
   BOT_INBOUND_ENABLED: false,        // global → merchant · OFF (F2)
+    // SCRUM-244 (RGPD-1) · global · OFF. Gobierna la ruta que SUPRIME un merchant: borra datos y
+    // es irreversible, asi que se construye pero NO se enciende — mismo criterio que la regla 24.
+    // Encenderlo en produccion es decision del fundador, con el diff delante.
+    MERCHANT_DELETE_ENABLED: false,
   BOT_AI_ENABLED: false,             // merchant · OFF (F2 tardía, gates K2)
   PUBLIC_PROFILE_ENABLED: false,     // merchant opt-in · OFF (F2, PERFIL-1)
   MAINTENANCE_ENABLED: false,        // merchant opt-in · OFF (F2, MANT-1)
