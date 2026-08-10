@@ -39,9 +39,56 @@ const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const HTML = path.join(RAIZ, 'public', 'dashboard', 'index.html');
 const SW = path.join(RAIZ, 'public', 'sw.js');
 
-// Suelo: lo que hay hoy son 31. Se exige el mínimo, no el número exacto, para que añadir una
-// pantalla no obligue a tocar el guard — uno que estorba en cada PR acaba desactivado.
-const MINIMO_SCRIPTS = 31;
+// Suelo: se exige el MÍNIMO, no el número exacto, para que añadir una pantalla no obligue a tocar
+// el guard — uno que estorba en cada PR acaba desactivado.
+//
+// 31 → 45 el 10-ago-2026 (SCRUM-450). Cuando se escribió había 31 scripts; **hoy hay 51**, así que
+// el suelo llevaba 20 de margen: seguía cazando al extractor ciego —que es su trabajo— pero ya no
+// tocaba el suelo de nada. Se recalibra dejando holgura para retirar alguna pantalla sin tener que
+// volver aquí. Contado con: leer los `<script src>` locales de `dashboard/index.html`.
+const MINIMO_SCRIPTS = 45;
+
+/**
+ * 🔴 SCRUM-450 · ENTRADAS DEL SHELL QUE **NO** SON FICHEROS DEL REPO.
+ *
+ * El guard de abajo comprueba que cada entrada resuelva a un fichero bajo `public/`. Eso vale
+ * mientras todo lo precacheado sea estático — y **hoy lo es: 54 entradas, 0 que no resuelvan**.
+ *
+ * Pero H1 va a precachear rutas que sirve el servidor, y ésas **no existen en disco por
+ * definición**. El día que entre la primera, este guard acusaría en falso. Y un guard que acusa en
+ * falso no se corrige: **se desactiva** — y entonces nadie vigila el precache, que es el escenario
+ * del sótano sin offline que este fichero existe para impedir.
+ *
+ * Lista EXPLÍCITA y con motivo por entrada, no un prefijo ni un patrón: un `startsWith('/api')`
+ * exceptuaría de golpe cualquier ruta futura que empiece así, incluida una escrita por error. Aquí
+ * cada excepción se declara una a una, como el `CENSO` de SCRUM-402 y las `ENMIENDAS` de SCRUM-427.
+ *
+ * ⚠️ **HOY ESTÁ VACÍA, y eso NO apaga su control negativo.** El test que la vigila no se apoya en
+ * el SHELL real —que no tiene ninguna— sino en un corpus sintético, así que se ejercita igual.
+ * Una lista vacía haría verdad cualquier «las servidas no caen»; por eso no se comprueba contra
+ * ella.
+ */
+const SERVIDAS_POR_EL_SERVIDOR = Object.freeze({
+  // '/ruta/que/sirve/el/servidor': 'quién la sirve y por qué no está en disco',
+});
+
+/** Un directorio se sirve por su `index.html`; el resto es el fichero tal cual bajo `public/`. */
+function aFichero(raiz, r) {
+  return r.endsWith('/') ? path.join(raiz, 'public', r, 'index.html') : path.join(raiz, 'public', r);
+}
+
+/**
+ * Las entradas del SHELL que NO resuelven, excluidas las declaradas como servidas.
+ *
+ * PURA sobre sus argumentos —recibe las rutas y las excepciones— para que el control negativo se
+ * pueda ejercitar con un corpus sintético aunque el SHELL real no tenga ninguna ruta servida.
+ */
+function rutasMuertas(rutas, excepciones, raiz = RAIZ) {
+  return rutas.filter((r) => {
+    if (Object.prototype.hasOwnProperty.call(excepciones, r)) return false;
+    return !fs.existsSync(aFichero(raiz, r));
+  });
+}
 
 /** Los `<script src>` LOCALES del dashboard, normalizados a la URL que pide el navegador. */
 function scriptsDelHtml() {
@@ -143,17 +190,86 @@ test('SCRUM-274 (+302) · toda entrada del SHELL resuelve a un fichero del árbo
     `🔴 ESCÁNER CIEGO: veo ${rutas.length} entradas en el SHELL y hay al menos ${MINIMO_SCRIPTS}`,
   );
 
-  // Un directorio se sirve por su index.html; el resto es el fichero tal cual bajo `public/`.
-  const aFichero = (r) => (r.endsWith('/')
-    ? path.join(RAIZ, 'public', r, 'index.html')
-    : path.join(RAIZ, 'public', r));
-
-  const muertas = rutas.filter((r) => !fs.existsSync(aFichero(r)));
+  // SCRUM-450: las declaradas como SERVIDAS quedan fuera — no existen en disco por definición.
+  const muertas = rutasMuertas(rutas, SERVIDAS_POR_EL_SERVIDOR);
   assert.deepEqual(
     muertas, [],
     '🔴 EL SHELL PRECACHEA RUTAS QUE NO EXISTEN:\n    ' + muertas.join('\n    ') +
       '\n\n  `cache.addAll` es ATÓMICO: con UNA sola que no resuelva, el `install` falla entero y\n' +
       '  NADIE tiene offline — sin error visible en ninguna parte. Con red no se nota.\n' +
-      '  Si el fichero se renombró, actualiza la entrada; si se borró, quítala.',
+      '  Si el fichero se renombró, actualiza la entrada; si se borró, quítala.\n' +
+      '  Si la sirve el SERVIDOR y no existe en disco, decláralo en `SERVIDAS_POR_EL_SERVIDOR`\n' +
+      '  con su motivo — pero sólo entonces: esa lista no es un sitio donde callar un fallo.',
   );
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-450 · EL CONTROL NEGATIVO QUE LE FALTABA A ESTE GUARD
+//
+// El de arriba comprueba que cada entrada del SHELL resuelva a un fichero. Hoy eso vale porque
+// todo lo precacheado es estático —54 entradas, 0 que no resuelvan—, pero **H1 va a precachear
+// rutas que sirve el servidor**, y ésas no existen en disco por definición.
+//
+// El día que entre la primera, el guard acusaría en falso. Y **un guard que acusa en falso no se
+// corrige: se desactiva.** Entonces nadie vigila el precache y volvemos al sótano sin offline.
+//
+// 🔴 EL PROBLEMA DE PROBAR ESTO HOY, Y CÓMO SE RESUELVE
+//
+// `SERVIDAS_POR_EL_SERVIDOR` está VACÍA, porque hoy no hay ninguna. Un control negativo que se
+// apoyara en el SHELL real diría «ninguna servida cae» sobre un conjunto vacío — cierto, hueco, y
+// verde para siempre. **Una lista vacía hace verdad cualquier afirmación sobre sus elementos.**
+//
+// Por eso `rutasMuertas` es PURA sobre sus argumentos: el control negativo se ejercita contra un
+// CORPUS SINTÉTICO que siempre tiene una servida y una de disco, exista o no en el producto. Lo
+// que se prueba es el MECANISMO, y el mecanismo funciona hoy aunque no tenga clientes.
+
+test('SCRUM-450 · 🔴 CONTROL NEGATIVO: una ruta SERVIDA declarada no hace caer el guard', () => {
+  const SERVIDA = '/sintetica/servida/por/el/servidor';
+  const corpus = ['/dashboard/js/api.js', SERVIDA];
+  const excepciones = { [SERVIDA]: 'sintética: la sirve el servidor, no existe en disco' };
+
+  // SUELO DEL PROPIO CONTROL: el corpus tiene que tener las DOS clases y la de disco tiene que
+  // existir de verdad. Si el fichero real desapareciera, este test pasaría por el motivo
+  // equivocado y dejaría de decir nada sobre las excepciones.
+  assert.ok(fs.existsSync(aFichero(RAIZ, '/dashboard/js/api.js')),
+    '🔴 el corpus sintético ya no tiene una ruta de disco REAL: el control negativo compararía ' +
+    'dos ausencias y pasaría por el motivo equivocado.');
+  assert.ok(!fs.existsSync(aFichero(RAIZ, SERVIDA)),
+    '🔴 la ruta «servida» del corpus existe en disco: entonces no prueba la excepción, prueba que ' +
+    'un fichero existe.');
+
+  assert.deepEqual(rutasMuertas(corpus, excepciones), [],
+    '🔴 una entrada declarada como SERVIDA está haciendo caer el guard. Es exactamente el falso ' +
+    'positivo que lo condena: nadie corrige un guard que acusa en falso — lo desactiva.');
+});
+
+test('SCRUM-450 · 🔴 la excepción NO es una puerta trasera: lo NO declarado sigue cayendo', () => {
+  // La otra dirección, y es la que impide que la lista se convierta en un sitio donde callar
+  // fallos: una ruta muerta que *parece* servida, pero que nadie declaró, tiene que caer igual.
+  const MUERTA = '/dashboard/js/esto-no-existe-jamas.js';
+  const PARECE_SERVIDA = '/api/algo/que-nadie-declaro';
+  const corpus = ['/dashboard/js/api.js', MUERTA, PARECE_SERVIDA];
+
+  const muertas = rutasMuertas(corpus, SERVIDAS_POR_EL_SERVIDOR);
+  assert.deepEqual(muertas.sort(), [PARECE_SERVIDA, MUERTA].sort(),
+    '🔴 una ruta que NO resuelve y que NADIE declaró como servida no está cayendo. La excepción ' +
+    'sólo puede excluir lo que está escrito en la lista, una a una: en cuanto excluya por parecido ' +
+    '—un prefijo, un patrón— deja de vigilar justo lo que se escribió por error.');
+
+  // Y nombra la ruta, no «el precache falla».
+  assert.ok(muertas.includes(MUERTA), '🔴 el guard no nombra la ruta muerta concreta.');
+});
+
+test('SCRUM-450 · la lista de servidas está VACÍA hoy, y eso es un hecho medido', () => {
+  // Se afirma el estado de hoy para que el día que entre la primera excepción haya que venir aquí
+  // a decirlo. Y se exige que toda entrada futura traiga su motivo escrito: una excepción sin
+  // motivo es un permiso, no una decisión.
+  const entradas = Object.entries(SERVIDAS_POR_EL_SERVIDOR);
+  assert.equal(entradas.length, 0,
+    `🔴 ha aparecido una excepción y este test no se ha actualizado: ${entradas.map(([k]) => k).join(', ')}. ` +
+    'No es que esté mal — es que tiene que constar, con su motivo, en la entrada de máster.');
+  for (const [ruta, motivo] of entradas) {
+    assert.ok(typeof motivo === 'string' && motivo.length > 20,
+      `🔴 «${ruta}» se exceptúa sin decir quién la sirve ni por qué no está en disco.`);
+  }
 });
