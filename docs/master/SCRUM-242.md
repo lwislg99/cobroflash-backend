@@ -332,3 +332,66 @@ son el mismo desastre.
 
 Y una advertencia que sale de este mismo ticket: **cada paso se prueba restaurando**, no leyendo el
 código. Los tres fallos que han aparecido —tipos, orden y `bytea`— eran invisibles hasta ejecutarlos.
+
+---
+
+# SCRUM-242 · cuarta entrega: ① EL BASE64 — el techo pasa de **8 fotos a 76**
+
+**10-ago-2026, 13:56 CEST (UTC+0200)** · commit `d03a198172a883701ab8698569a9fc131130e908`
+
+Primer punto del orden aprobado (① base64 → ② R2 → ③ cron → ④ retención). **Solo el ①**: R2 necesita
+cuenta y credencial del fundador, y el cron va después.
+
+## El número, medido en las dos formas
+
+`attachments.data` es `bytea` y el volcado entero acaba en **un único `JSON.stringify`**, así que el
+techo del backup es `MAX_STRING_LENGTH` de V8 — **536.870.888** caracteres en Node 24.
+
+| formato | caracteres por byte de fichero | techo | a 5 MB/foto | a 2 MB/foto |
+|---|---|---|---|---|
+| `yaqu-logical-v1` (objeto de índices) | 12,4–13,4× **y crecía con el tamaño** | ~41 MB | **8** | 20 |
+| **`yaqu-logical-v2` (base64)** | **1,333×, constante** | **~384 MB** | **76** | **191** |
+
+El factor de v1 crecía porque las claves (`"0"`, `"1"`, … `"4194303"`) se alargan: cuanto más grande
+la foto, peor el factor. El de base64 no depende del tamaño.
+
+**Sobre el fichero real, con los mismos datos:** el backup cifrado pasó de **18.415 a 2.275 bytes**.
+
+## Probado, no razonado
+
+Ciclo completo contra la base desechable **con adjuntos** —lo que faltó la primera vez—: volcar →
+vaciar → restaurar → comparar. **`sha256` del fichero idéntico** entre lo que contiene el backup y lo
+que queda en la base (`4bece259…`, 4.104 bytes), cadena `vf_prev_hash`→`vf_hash` intacta, y **suelo
+del comparador** comprobado mutando el `sha256`. Evidencia:
+`docs/evidencias/scrum242-restauracion.md`.
+
+## Por qué el códec vive en un módulo aparte
+
+`scripts/_backup-codec.mjs`, **compartido por volcado y restauración**. Dos motivos y el segundo pesa
+igual:
+
+1. Dos mitades que se leen la una a la otra no pueden vivir en dos ficheros que nadie obliga a
+   cuadrar. **El día que se desincronizaran sería el día de la restauración.** Con un solo códec no
+   es disciplina: es que no hay dos sitios.
+2. **Para poder probarlo.** `backup-dump.mjs` y `backup-restore.mjs` ejecutan al importarlos (leen
+   `process.env`, llaman a `process.exit`), así que ningún test podía tocarlos. El códec es puro.
+
+`v1` se sigue restaurando. No consta que exista ningún fichero v1 —el volcado no lo dispara nadie: 0
+invocaciones medidas—, pero **«no consta» no es «no hay»**, y un backup que el propio proyecto dejó
+de entender es la definición de copia inútil. Cuesta una rama del decodificador.
+
+## El tope no ha desaparecido: se ha movido, y ahora alguien lo vigila
+
+`tests/scrum242-backup-codec.test.mjs` comprueba la ida y vuelta exacta por JSON (vacío, los 256
+valores, UTF-8 inválido, cabecera PNG) **y el factor de expansión con número**. Si alguien vuelve al
+objeto de índices, el guard sale rojo diciendo el techo en MB — probado: reportó `12.36 caracteres`.
+Tres rojos por `$?`.
+
+**Y hay que decirlo claro: 76 fotos siguen siendo pocas** para un año de trabajo. Cuando se acerque,
+las salidas son `pg_dump` (formato físico, sin este límite) o sacar los ficheros de Postgres a R2 —
+que es lo que el propio schema ya contempla («fallback persistente sin R2»). Está escrito en R14 §6.
+
+Ficheros: `scripts/_backup-codec.mjs` (nuevo) · `scripts/backup-dump.mjs` ·
+`scripts/backup-restore.mjs` · `tests/scrum242-backup-codec.test.mjs` (nuevo) ·
+`tests/scrum242-restauracion-cubre-todos-los-tipos.test.mjs` · `docs/RUNBOOKS.md` §R14.6 ·
+`docs/evidencias/scrum242-restauracion.md`.
