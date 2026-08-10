@@ -184,7 +184,25 @@ usuario que emite. En facturas, un id repetido no se arregla borrando (**regla 2
   `backup-dump.mjs` **no lo dispara nadie** (0 invocaciones frente a 11/7/5 de otros scripts). Un
   procedimiento probado sobre un fichero que nadie genera sigue sin salvar la base. **Es lo que hay
   que decidir ahora** (puntos 2 y 3 de la lista de la primera entrega).
-- **La política de Railway**, que sigue `[VALIDAR]`: no es medible desde el repo.
+
+## CORRECCIÓN a la primera entrega: la política de Railway YA ESTÁ MEDIDA
+
+La primera entrega la dejó como `[VALIDAR]` y dijo que no era medible desde el repo. **Otra sesión la
+midió** y consta en `src/modules/system/domain/avisoPuerta.service.ts` (SCRUM-390, décima cláusula de
+la puerta): el panel de Railway dice, literal, **«No Backups — this service's volume does not have
+any backups»**, y PITR solo existe en el plan Pro.
+
+Es decir, **cero copias del proveedor**. Aquella era la única vía por la que podía existir alguna
+recuperabilidad hoy, y no existe. La respuesta a «¿tenemos backup?» ya no es *no lo sabemos*: es
+**no**.
+
+Con esta entrega la mitad que falta cambia de sitio: **el camino de vuelta ya está probado; lo que no
+hay es el fichero del que volver.**
+
+> **Nota para el fundador, no la arreglo yo (regla 9):** el comentario de esa cláusula dice también
+> «ningún camino de restauración», y eso **ha dejado de ser cierto** con este commit — hoy existen
+> §R14 y `scripts/backup-restore.mjs`. La cláusula en sí sigue abierta con razón, porque su otra
+> mitad («hay copia de seguridad») sigue siendo NINGUNA. Es un comentario del carril de SCRUM-390.
 
 ## Sobre el fichero que rompió SCRUM-273
 

@@ -121,4 +121,8 @@ rompe es el primer usuario que emite. En facturas, un id repetido no se arregla 
 - **Que exista un backup que restaurar.** Lo medido en `docs/master/SCRUM-242.md` es que
   `backup-dump.mjs` **no lo dispara nadie**: 0 invocaciones frente a 11/7/5 de otros scripts. Un
   procedimiento probado sobre un fichero que nadie genera sigue sin salvar la base.
-- **La política de Railway.** Sigue `[VALIDAR]`: no es medible desde el repo.
+
+  Y la otra mitad ya está medida por otra sesión, en `src/modules/system/domain/avisoPuerta.service.ts`
+  (SCRUM-390): el panel de Railway dice literalmente **«No Backups — this service's volume does not
+  have any backups»**, y PITR solo existe en el plan Pro. **Cero copias del proveedor.** Con eso, lo
+  que esta prueba entrega es el camino de vuelta; **el fichero del que volver sigue sin existir**.
