@@ -121,6 +121,9 @@ export function entradaDesdeFilas(
       fechaEntrega: a.fechaEntrega ?? null,
       firmadoPorNombre: a.firmadoPorNombre ?? null,
       firmadoPorCalidad: a.firmadoPorCalidad ?? null,
+      // SCRUM-438 (v:3): el bloque congelado viaja DESDE EL SOBRE, no desde las filas. Sin esto un
+      // sobre v:3 no se podría verificar en absoluto: su receta no lee ninguna fuente viva.
+      contenidoCongelado: (a.evidenciaFirma as { contenidoCongelado?: unknown } | null)?.contenidoCongelado,
     },
   };
 }

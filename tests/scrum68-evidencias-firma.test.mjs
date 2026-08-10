@@ -14,6 +14,24 @@ import { computeAlbaranContentHash } from '../dist/modules/jobs/domain/albaran.s
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 const HEX64 = /^[0-9a-f]{64}$/;
 
+// ⚠️ SCRUM-438 · EL BLOQUE CONGELADO ES OBLIGATORIO DESDE v:3, y por eso está aquí.
+//
+// `computeAlbaranContentHash` sella con la versión ACTUAL cuando no se le pide otra, y «actual»
+// pasó a ser 3. **El defecto NO se clava a una versión vieja** —eso sellaría contenido en formato
+// antiguo para siempre sin que nadie se enterara—, así que quien llama se hace explícito: o aporta
+// el bloque, o pide una versión concreta con su motivo.
+//
+// Este banco prueba propiedades del hash (determinismo, sensibilidad, colisión null/cadena) sobre
+// la versión que se sella HOY, así que aporta el bloque. Los cinco valores son los mismos que
+// llevan los campos vivos de arriba: así el fixture sigue describiendo el mismo documento.
+const contenidoCongelado = {
+  obra: 'C/ Mayor 12',
+  referenciaTrabajo: 'Reparación fuga',
+  cliente: 'Ana Pérez',
+  emisor: 'Fontanería Torres',
+  emisorNif: 'B12345678',
+};
+
 const baseContent = {
   numero: 'ALB-2026-001',
   fecha: new Date('2026-07-13T10:00:00Z'),
@@ -25,6 +43,7 @@ const baseContent = {
   cliente: 'Ana Pérez',
   emisor: 'Fontanería Torres',
   emisorNif: 'B12345678',
+  contenidoCongelado,
 };
 
 // ── Hash del CONTENIDO canónico (puro) ───────────────────────────────────────

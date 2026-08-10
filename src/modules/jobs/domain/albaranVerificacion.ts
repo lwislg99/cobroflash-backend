@@ -81,6 +81,13 @@ export interface FuentesContenido {
   fechaEntrega?: Date | string | null;
   firmadoPorNombre?: string | null;
   firmadoPorCalidad?: string | null;
+  /**
+   * SCRUM-438 · SOLO v:3. Los cinco campos, SELLADOS dentro del sobre.
+   *
+   * `unknown` a propósito: viene de un `Json` de la base y no tiene garantías de forma. Quien lo
+   * usa pasa por `validarContenidoCongelado`, que exige las cinco claves o lanza.
+   */
+  contenidoCongelado?: unknown;
 }
 
 /** El sobre tal y como quedó guardado en `Albaran.evidenciaFirma` (Json, sin garantías de forma). */
@@ -275,6 +282,97 @@ const recetaV2: RecetaSobre = (f) =>
     }),
   );
 
+/** Las líneas de v:3, en su forma canónica congelada. */
+function lineasCanonicasV3(lineas: unknown) {
+  return (Array.isArray(lineas) ? (lineas as AlbaranLinea[]) : []).map((l) => ({
+    concepto: l.concepto,
+    cantidad: l.cantidad,
+    unidad: l.unidad ?? null,
+    precioUnitario: l.precioUnitario ?? null,
+    tipoIva: l.tipoIva ?? null,
+  }));
+}
+
+/**
+ * RECETA v:3 — CONGELADA (SCRUM-438).
+ *
+ * ⚠️ ENTERA Y APARTE, igual que v:1 y v:2, y por el mismo motivo: `JSON.stringify` serializa por
+ * orden de inserción, así que un helper de ORDEN ataría una versión al de otra. Lee el recuadro
+ * de arriba antes de «arreglar» esta repetición.
+ *
+ * QUÉ CAMBIA RESPECTO DE v:2, y por qué la versión sube:
+ *
+ *  · **Los CINCO campos salen del BLOQUE CONGELADO del sobre**, no de las filas vivas
+ *    (`obra`, `referenciaTrabajo`, `cliente`, `emisor`, `emisorNif`). Ése es el defecto entero que
+ *    v:3 cierra: hasta v:2 el hash dependía de que nadie corrigiera la razón social de un cliente
+ *    o renombrara un Trabajo, y una corrección legítima hacía que el verificador declarara «no
+ *    coincide» sobre un documento intacto (SCRUM-431).
+ *  · **El orden de las claves NO cambia** respecto de v:2. Cambia de DÓNDE salen sus valores, que
+ *    es exactamente el tipo de cambio que obliga a una versión nueva: sin ella, dos hashes
+ *    calculados con reglas distintas serían indistinguibles.
+ *
+ * 🔴 TODO O NADA: si el bloque no trae las cinco claves, `contenidoSegunVersion` LANZA nombrando
+ * la que falta. No se completa con nulos — completar con nulos es fabricar el valor sellado que no
+ * se tenía, y `null` es un valor legítimo aquí (`obra` lo es en todos los sobres viejos).
+ */
+const recetaV3: RecetaSobre = (f) => {
+  // 🔴 SE LEE EL BLOQUE AQUÍ DENTRO, SIN IMPORTAR NADA — y ésa es la corrección C1 del asesor.
+  //
+  // La primera versión llamaba al resolvedor compartido (`contenidoSegunVersion`), y el guard ⑥ de
+  // SCRUM-369 la tumbó: **el verificador no importa código ejecutable.** No era una premisa
+  // caducada, era el diseño:
+  //
+  // > **Dos testigos que comparten código son UN testigo**, y un fallo en lo compartido daría la
+  // > misma respuesta equivocada en los dos lados.
+  //
+  // Así que la validación de las cinco claves se escribe aquí, entera, como el resto de la receta.
+  // Es coherente con la regla del propio fichero —cada receta entera y aparte, sin depender de
+  // nada compartido— y cuesta diez líneas, que es un precio ridículo por no aflojar ese guard.
+  const bloque = f.contenidoCongelado;
+  if (bloque == null || typeof bloque !== 'object' || Array.isArray(bloque)) {
+    throw new Error('receta_v3_sin_contenido_congelado: el sobre v:3 no trae el bloque congelado');
+  }
+  const b = bloque as Record<string, unknown>;
+  // TODO O NADA: falla NOMBRANDO la clave que falta. No se completa con nulos — `null` es un valor
+  // legítimo aquí (`obra` lo es en todos los sobres viejos), así que un hueco y un nulo sellado
+  // serían indistinguibles.
+  const faltan = ['obra', 'referenciaTrabajo', 'cliente', 'emisor', 'emisorNif']
+    .filter((k) => !Object.prototype.hasOwnProperty.call(b, k));
+  if (faltan.length) {
+    throw new Error(`receta_v3_contenido_congelado_incompleto: falta(n) ${faltan.join(', ')}`);
+  }
+  const c = {
+    obra: b.obra == null ? null : String(b.obra),
+    referenciaTrabajo: b.referenciaTrabajo == null ? null : String(b.referenciaTrabajo),
+    cliente: b.cliente == null ? null : String(b.cliente),
+    emisor: b.emisor == null ? null : String(b.emisor),
+    emisorNif: b.emisorNif == null ? null : String(b.emisorNif),
+  };
+  return sha256(
+    JSON.stringify({
+      v: 3,
+      numero: f.numero,
+      fecha: fechaCanonica(f.fecha),
+      modoValoracion: f.modoValoracion,
+      obra: c.obra,
+      referenciaTrabajo: c.referenciaTrabajo,
+      cliente: c.cliente,
+      emisor: c.emisor,
+      emisorNif: c.emisorNif,
+      notas: f.notas ?? null,
+      lineas: lineasCanonicasV3(f.lineas),
+      fechaEntrega:
+        f.fechaEntrega instanceof Date
+          ? f.fechaEntrega.toISOString()
+          : f.fechaEntrega
+            ? String(f.fechaEntrega)
+            : null,
+      firmadoPorNombre: f.firmadoPorNombre ?? null,
+      firmadoPorCalidad: f.firmadoPorCalidad ?? null,
+    }),
+  );
+};
+
 /**
  * El recetario que este verificador sabe despachar.
  *
@@ -289,6 +387,7 @@ const recetaV2: RecetaSobre = (f) =>
 export const RECETAS_POR_VERSION: Recetario = Object.freeze({
   1: recetaV1,
   2: recetaV2,
+  3: recetaV3,
 });
 
 /** Las versiones que este verificador sabe recalcular, ordenadas. */

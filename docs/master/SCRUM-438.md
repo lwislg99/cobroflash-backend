@@ -352,6 +352,100 @@ del PDF **no caduca**: es código, no dato.
 
 ---
 
+## 3 ter · 🔴 TRASPASO · v:3 A MEDIO CONSTRUIR — **la tanda está en ROJO: 2595 pasan, 5 caen**
+
+> **Escrito para quien NO vivió la sesión del 11-ago.** Si vas a seguir esto, léelo entero antes de
+> tocar nada: hay cosas ya medidas que **no hay que volver a medir**, y hay una decisión de diseño
+> que costó dos intentos.
+>
+> **La rama es `scrum-438-v3-sobre`, que sale de `scrum-438-atestiguar`** (no de `main`: las dos
+> comparten este fichero y la fase 1 sigue sin mergear).
+
+### La decisión de diseño que costó dos intentos — **no la reabras**
+
+La primera versión de `recetaV3` llamaba a un resolvedor compartido (`contenidoSegunVersion`), y el
+guard ⑥ de SCRUM-369 la tumbó: **el verificador no importa código ejecutable.**
+
+**No era una premisa caducada: es el diseño.** Palabras del asesor, que conviene tener delante:
+
+> *«Dos testigos que comparten código son UN testigo, y un fallo en lo compartido daría la misma
+> respuesta equivocada en los dos lados.»*
+
+Por eso `recetaV3` lee `f.contenidoCongelado` **directamente**, con su validación de las cinco
+claves escrita **dentro de la propia receta** — coherente con la regla del fichero (cada receta
+entera y aparte, sin depender de nada compartido). El «un solo sitio» sigue existiendo donde sí
+hacía falta: **el sellador y el PDF**, que eran los dos que podían divergir.
+
+**Descartadas con motivo, para que no vuelvan:** aflojar el guard de 369 (cambia el invariante más
+fuerte del sistema de evidencias por diez líneas de validación) y duplicar el resolvedor entero
+(un guard que «cuida» dos copias mantiene una divergencia en vez de impedirla).
+
+### Qué está construido, y qué no
+
+| Pieza | Estado |
+| --- | --- |
+| ① bloque `contenidoCongelado`, **todo o nada**, falla nombrando la clave | ✅ |
+| ② `recetaV3` **entera y aparte, sin importar nada** | ✅ |
+| ③ `ALBARAN_CONTENIDO_VERSION_ACTUAL = 3` + `RECETAS_POR_VERSION[3]` | ✅ |
+| ④ sellador: el bloque se construye **UNA sola vez** (lo sellado y lo guardado salen del mismo objeto) | ✅ |
+| ⑤ `contenidoSegunVersion` lanza ante versión desconocida · el PDF lee **los cinco** por él | ✅ |
+| ⑥ vector congelado de v:3 | ✅ |
+| **⑦ bucle cruzado con TRES recetas** | ❌ **sin test** |
+
+**Ficheros tocados:** `albaran.service.ts` (sellador y PDF) · `albaranVerificacion.ts` (recetaV3) ·
+`albaranBarrido.ts` (el adaptador lleva el bloque desde el sobre; **sin esto un v:3 no se puede
+verificar en absoluto**) · `albaranContenidoFuentes.ts` (**nuevo**) · `scrum68-evidencias-firma.test.mjs`
+· `scrum369-verificador-sello.test.mjs`.
+
+### 🔴 Los cinco guards que caen, con su NATURALEZA
+
+**No son lo mismo y no se arreglan igual.**
+
+| Guard | Naturaleza | Qué hay que hacer |
+| --- | --- | --- |
+| **SCRUM-371 · «el adaptador resuelve CADA FUENTE igual que el sellador»** | 🔴 **REAPUNTADO DE FONDO** | Su analizador de AST ya no resuelve `cliente`/`emisor` porque en v:3 salen del bloque, no de un literal del sellador. El invariante al que hay que reapuntarlo lo fijó el asesor: **«para CADA versión, el resolvedor de contenido lee EXACTAMENTE las fuentes que declara la receta de esa versión — ni una de más, ni una de menos»**. `FUENTES_POR_VERSION` (en `albaranContenidoFuentes.ts`) existe **para eso**: es la declaración contra la que carar. ⚠️ Si al escribirlo ves que el invariante no se puede derivar, **PARA y dilo antes de aflojarlo** |
+| **SCRUM-371 · «el adaptador no disimula lo que no encontró»** | 🔴 **REAPUNTADO DE FONDO** (hermano del anterior) | Mismo analizador |
+| **SCRUM-374** | premisa caducada | Pinea que «la versión de HOY toma la obra de `Albaran.lugarEntrega`». Con v:3 la toma del bloque. Se reapunta, **no se le suma un número** |
+| **SCRUM-415 · SUELO** | premisa caducada | «hay MÁS DE UNA versión viva y dan hashes distintos» — escrito para dos, ahora son tres |
+| **SCRUM-424 · R4** | premisa caducada | `versionLeeJobDireccion(ALBARAN_CONTENIDO_VERSION_ACTUAL)`: con ACTUAL=3 el resolvedor **lanza** en vez de devolver `lugarEntrega`. Es lo correcto; el test es de cuando ACTUAL era 2 |
+
+### Qué falta de tests
+
+* **Sellar → verificar → cuadra, con los CINCO campos vivos CAMBIADOS después de sellar.** Es *el*
+  test: el que prueba que v:3 hace lo que existe para hacer.
+* **v:1 y v:2 imprimen y verifican EXACTAMENTE como hoy, carácter a carácter.** Condición dura del
+  asesor, y la que más va a mirar del diff.
+* **El mismo escenario en v:1/v:2 sigue dando `dato_vivo_cambiado`**, no verde: su comportamiento
+  no mejora ni empeora.
+* **⑦** el bucle cruzado separando «manipulado» de `hash_de_otra_version` **con tres recetas**.
+* **Los rojos por el mecanismo** en ① (clave que falta), ⑤ (versión desconocida) y ⑦, **cada uno con
+  post-condición**: una inyección que no llega al disco es una prueba NO ejecutada.
+* **Y el del bucle `dato_vivo_cambiado` con v:3**, que ya está razonado sobre el código pero sin
+  test: `recetaV3` no lee esos campos, así que anularlos no cambia su hash y la condición no puede
+  cumplirse. Ponle el test igualmente — un razonamiento correcto hoy no impide que alguien cambie
+  la receta mañana.
+
+### ✅ Lo que YA está medido y **no hay que volver a medir**
+
+* **`computeAlbaranContentHash` NO tiene hallazgo.** Sólo hay **dos** llamadores en `src/`
+  (`recomputarHashDeEvidencia`, que pasa `ev.v`; y `buildFirmaEvidencia`, que pasa la actual y
+  aporta el bloque) y **los dos son explícitos**. Los cuatro tests que caían eran el banco de
+  SCRUM-68, **ya arreglado**: aporta el bloque. **Ningún camino sellaría un v:3 sin contenido.**
+* **El defecto por omisión sigue siendo la versión ACTUAL**, por decisión del asesor: clavarlo a una
+  versión vieja sellaría formato antiguo para siempre sin que nadie se enterara.
+* **El guard de SCRUM-369 ya está reapuntado** al invariante *«toda versión del recetario tiene
+  vector congelado»*, con suelo. **Ya no caduca con v:4** y no hay que volver a tocarlo.
+* **El vector congelado de v:3 se calculó CON EL SELLADOR**, nunca con el verificador. Si se
+  calculara con el verificador **dejaría de ser un testigo y pasaría a ser un espejo**.
+* **v:3 ignora por completo las fuentes vivas** — comprobado cambiándolas las seis: mismo hash. Las
+  fuentes vivas de `FUENTES_V3` llevan `'VIVO-NO-USAR'` a propósito, para que una receta que se
+  equivocara y leyera una fila viva no cuadrara con el vector.
+* **`contenidoSegunVersion` acierta en las seis situaciones**, incluida `undefined` = **sin firmar**,
+  que **NO lanza**: es un borrador, no una versión rara. Confundirlas rompería el PDF de todos los
+  albaranes no firmados.
+
+---
+
 ## 4 · La política, dentro del ZIP — ✅ **texto APROBADO** (asesor, 11-ago-2026)
 
 Va como `alcance-de-la-verificacion.txt` **dentro del paquete**, y **siempre** (§2 bis ③). El texto
