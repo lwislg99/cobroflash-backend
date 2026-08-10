@@ -19,6 +19,32 @@
 var COBROS_MARCA = '[PENDIENTE microcopy oficial]';
 
 /**
+ * MICROCOPY APROBADA por el asesor el 10-ago-2026 (regla 30). Solo las cabeceras de la tabla
+ * siguen con marcador: están pendientes de que vea cuáles son las cinco columnas.
+ *
+ * 🔴 EL ESTADO VACÍO SON DOS, Y CONFUNDIRLOS ES EL DEFECTO. «No hay datos» y «tu filtro los ha
+ * escondido» son afirmaciones distintas, y la primera dicha en el sitio de la segunda le dice al
+ * profesional **que no le deben nada**. En una pantalla de dinero eso no es un texto impreciso: es
+ * una respuesta falsa a la pregunta que vino a hacer.
+ *
+ * Y «Método no registrado» no es «Otro»: «otro» AFIRMA que hubo un método distinto, y aquí no
+ * consta ninguno. Es la misma distinción que obligó a crear el cubo.
+ */
+var COBROS_COPY = {
+  titulo: 'Cobros',
+  filtroTodos: 'Todos',
+  filtroSinMetodo: 'Método no registrado',
+  metodoSinRegistrar: 'No registrado',
+  errorCarga: 'No hemos podido cargar los cobros. Vuelve a intentarlo.',
+  vacioSinCobros: 'Todavía no hay cobros registrados.',
+  vacioPorFiltro: 'Ningún cobro coincide con este filtro.',
+  /** `n=1` → «1 día». Un cobro ya cobrado NO pinta esta etiqueta: nada, ni guion ni cero. */
+  diasSinCobrar: function (n) {
+    return 'Sin cobrar desde hace ' + n + (n === 1 ? ' día' : ' días');
+  },
+};
+
+/**
  * Los filtros de método que pide el diseño: «Bizum · tarjeta · transferencia · efectivo».
  *
  * CUATRO botones, no cinco: `bizum_auto` y `bizum_manual` son una distinción NUESTRA —confirmado
@@ -39,9 +65,10 @@ var COBROS_METODOS = [
  * `Invoice` **no guarda método de cobro** —medido sobre el esquema— así que de un cobro marcado a
  * mano no consta cómo entró el dinero. Sin este cubo, esos cobros DESAPARECERÍAN al pulsar
  * cualquier filtro: la misma mentira por omisión que evitamos al fundir las poblaciones, colándose
- * por el filtro. Su rótulo es redacción nueva y va con marcador.
+ * por el filtro. Su rótulo —«Método no registrado»— lo aprobó el asesor el 10-ago-2026, y NO es
+ * «Otro»: «otro» AFIRMA que hubo un método distinto; aquí no consta ninguno.
  */
-var COBROS_SIN_METODO = { clave: 'sin-metodo', rotulo: COBROS_MARCA, casa: [] };
+var COBROS_SIN_METODO = { clave: 'sin-metodo', rotulo: COBROS_COPY.filtroSinMetodo, casa: [] };
 
 /** A qué cubo de filtro cae un cobro. `null` → «no consta». */
 function cuboDeMetodo(metodo) {
@@ -72,7 +99,7 @@ function renderCobrosView(container) {
   card.appendChild(header);
 
   var titulo = document.createElement('h2');
-  titulo.textContent = COBROS_MARCA; // título de la pantalla: redacción nueva
+  titulo.textContent = COBROS_COPY.titulo;
   titulo.style.cssText = 'margin:0;font-size:18px';
   header.appendChild(titulo);
 
@@ -94,7 +121,9 @@ function renderCobrosView(container) {
   tablaScroll.appendChild(tabla);
 
   var thead = document.createElement('thead');
-  // Cabeceras: redacción nueva, todas con marcador salvo los métodos, que son del diseño.
+  // 🔴 LO ÚNICO QUE QUEDA CON MARCADOR. Las cinco columnas son, en orden: fecha · cliente ·
+  // importe · método · documento y deuda. El asesor las aprueba cuando vea cuáles son; hasta
+  // entonces no se les inventa nombre (regla 30).
   thead.innerHTML = '<tr>'
     + '<th>' + COBROS_MARCA + '</th>'
     + '<th>' + COBROS_MARCA + '</th>'
@@ -109,7 +138,7 @@ function renderCobrosView(container) {
 
   function pintarFiltros() {
     barra.innerHTML = '';
-    var todos = [{ clave: 'all', rotulo: COBROS_MARCA }].concat(COBROS_METODOS, [COBROS_SIN_METODO]);
+    var todos = [{ clave: 'all', rotulo: COBROS_COPY.filtroTodos }].concat(COBROS_METODOS, [COBROS_SIN_METODO]);
     todos.forEach(function (m) {
       var b = document.createElement('button');
       b.type = 'button';
@@ -134,11 +163,17 @@ function renderCobrosView(container) {
     var lista = visibles();
 
     if (!lista.length) {
+      // 🔴 DOS ESTADOS VACÍOS, Y NO SON INTERCAMBIABLES. Si no hay NINGÚN cobro, la pantalla lo
+      // dice. Si los hay pero el filtro los esconde, dice ESO. Poner el primero en el sitio del
+      // segundo le contesta al profesional «no te deben nada» cuando lo que pasa es que él mismo
+      // ha filtrado — y en la pantalla del dinero eso no es impreciso, es falso.
+      var texto = datos.length ? COBROS_COPY.vacioPorFiltro : COBROS_COPY.vacioSinCobros;
       var tr0 = document.createElement('tr');
       var td0 = document.createElement('td');
       td0.colSpan = 5;
       td0.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💰</div>'
-        + '<div class="empty-state-title">' + COBROS_MARCA + '</div></div>';
+        + '<div class="empty-state-title" data-vacio="' + (datos.length ? 'filtro' : 'sin-cobros')
+        + '">' + texto + '</div></div>';
       tr0.appendChild(td0);
       tbody.appendChild(tr0);
       return;
@@ -169,7 +204,7 @@ function renderCobrosView(container) {
       // MÉTODO: el valor de la casa TAL CUAL, sin traducir. Traducirlo sería microcopy nueva, y
       // además `bizum_auto`/`bizum_manual` es la distinción que aquí SÍ se lee.
       var tdMetodo = document.createElement('td');
-      tdMetodo.textContent = c.metodo || COBROS_MARCA;
+      tdMetodo.textContent = c.metodo || COBROS_COPY.metodoSinRegistrar;
       tr.appendChild(tdMetodo);
 
       // DOCUMENTO y DEUDA. El tipo lo dice `tipoDeFactura`, no una copia.
@@ -179,7 +214,7 @@ function renderCobrosView(container) {
       if (c.numero && clasifica) partes.push(clasifica({ number: c.numero, type: c.tipo }) + ' ' + c.numero);
       else if (c.numero) partes.push(c.numero);
       var dias = diasDeDeudaCobro(c, ahora);
-      if (dias !== null) partes.push(COBROS_MARCA + ' ' + dias);
+      if (dias !== null) partes.push(COBROS_COPY.diasSinCobrar(dias));
       tdDoc.textContent = partes.join(' · ') || '—';
       tr.appendChild(tdDoc);
 
@@ -198,7 +233,7 @@ function renderCobrosView(container) {
     var tr = document.createElement('tr');
     var td = document.createElement('td');
     td.colSpan = 5;
-    td.textContent = COBROS_MARCA;
+    td.textContent = COBROS_COPY.errorCarga;
     tr.appendChild(td);
     tbody.appendChild(tr);
   });
@@ -206,11 +241,12 @@ function renderCobrosView(container) {
 
 if (typeof window !== 'undefined') {
   window.renderCobrosView = renderCobrosView;
+  window.COBROS_COPY = COBROS_COPY;
   window.COBROS_METODOS = COBROS_METODOS;
   window.COBROS_SIN_METODO = COBROS_SIN_METODO;
   window.cuboDeMetodo = cuboDeMetodo;
   window.diasDeDeudaCobro = diasDeDeudaCobro;
 }
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { renderCobrosView, COBROS_METODOS, COBROS_SIN_METODO, cuboDeMetodo, diasDeDeudaCobro };
+  module.exports = { renderCobrosView, COBROS_COPY, COBROS_METODOS, COBROS_SIN_METODO, cuboDeMetodo, diasDeDeudaCobro };
 }

@@ -73,18 +73,18 @@ const CENSO = Object.freeze({
   // clásicos una constante duplicada en dos ficheros es SyntaxError en parseo. Es el único
   // marcador de `api.js` y sale por `showToast`, así que sí se pinta: cuenta.
   'api.js': 1,
-  // SCRUM-285 (+1, 10-ago-2026, A CONCIENCIA): la pantalla de Cobros nace con UN marcador
-  // —`COBROS_MARCA`— y lo pinta en varios sitios: título de la pantalla, cabeceras de la tabla,
-  // estado vacío, el rótulo del filtro «sin método registrado» y la etiqueta de los días de deuda.
+  // SCRUM-285 (+1, 10-ago-2026, A CONCIENCIA): la pantalla de Cobros. Nació con nueve ranuras
+  // marcadas y el asesor aprobó ocho el mismo día —título, filtro «Todos», «Método no registrado»,
+  // «No registrado», error de carga, los DOS estados vacíos y la etiqueta de días—, así que ya
+  // están escritas carácter a carácter y con test.
   //
-  // Sube a conciencia y el motivo es el de siempre, invertido: el diseño §B4 solo NOMBRA dos cosas
-  // —el menú «Cobros» y los cuatro métodos «Bizum · tarjeta · transferencia · efectivo»—, y ésos
-  // se escriben literales porque están aprobados. Todo lo demás de esta pantalla es redacción
-  // nueva que NADIE ha aprobado, y la alternativa a marcarla no era escribirla: era no entregar
-  // la pantalla. Un marcador visible es feo y honesto; un texto inventado es bonito y falso.
+  // **Lo único que sigue marcado son las CINCO CABECERAS de la tabla** (fecha · cliente · importe ·
+  // método · documento y deuda): el asesor las aprueba cuando vea cuáles son, y no se les inventa
+  // nombre mientras tanto. Un marcador visible es feo y honesto; un texto inventado es bonito y
+  // falso.
   //
-  // Baja a 0 —o sea, esta línea se borra— cuando el asesor apruebe la lista de microcopy que va
-  // con la entrega.
+  // Esta línea se borra el día que apruebe las cinco. El trinquete cuenta ficheros con marcador,
+  // no marcadores: por eso sigue en 1 aunque hayan bajado de nueve ranuras a cinco.
   'cobrosView.js': 1,
   // SCRUM-405 (−4, 7-ago-2026): al pasar las tres descargas por la forma común desaparecieron
   // cuatro ramas de error que pintaban marcador. El trinquete APRIETA: 15 → 11.

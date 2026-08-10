@@ -162,19 +162,72 @@ test('SCRUM-285 · ④ los dos Bizum caen en UN filtro, y la fila conserva cuál
 
 // ═══ ⑤ MICROCOPY (regla 30) ══════════════════════════════════════════════════════════════
 
-test('SCRUM-285 · ⑤ solo se publica el texto APROBADO; el resto lleva marcador', async () => {
+test('SCRUM-285 · ⑤ los rótulos son los APROBADOS, carácter a carácter', async () => {
   const banco = cargarDashboard(RAIZ, { datos: COBROS });
   const r = await pintarVista(banco, 'renderCobrosView');
   const rotulos = botonesFiltro(r.contenedor).map((b) => b.textContent);
-  // Los cuatro del diseño, literales.
-  for (const m of ['Bizum', 'tarjeta', 'transferencia', 'efectivo']) {
-    assert.ok(rotulos.includes(m),
-      `🔴 falta el filtro «${m}», que el diseño §B4 nombra literalmente.`);
-  }
-  // Todo lo demás que se ve, con marcador: título, cabeceras, estado vacío, «sin método».
-  const sinAprobar = rotulos.filter((t) => !['Bizum', 'tarjeta', 'transferencia', 'efectivo'].includes(t));
-  for (const t of sinAprobar) {
-    assert.match(t, /^\[PENDIENTE microcopy oficial\]/,
-      `🔴 «${t}» es redacción nueva sin aprobar y se publica sin marcador (regla 30).`);
-  }
+  assert.deepEqual(rotulos,
+    ['Todos', 'Bizum', 'tarjeta', 'transferencia', 'efectivo', 'Método no registrado'],
+    '🔴 los filtros no dicen exactamente el texto aprobado (asesor, 10-ago-2026). Los cuatro ' +
+    'métodos son literales del diseño §B4; «Todos» y «Método no registrado» los aprobó él.');
+  assert.match(textos(r.contenedor).join(' | '), /(^|\| )Cobros( \||$)/,
+    '🔴 el título de la pantalla no es «Cobros».');
+});
+
+test('SCRUM-285 · ⑤ «Método no registrado» y NO «Otro» — y la fila dice «No registrado»', async () => {
+  // «Otro» AFIRMA que hubo un método distinto. Aquí no consta ninguno, y esa es exactamente la
+  // distinción que obligó a crear el cubo: si el rótulo miente, el cubo deja de servir para nada.
+  const banco = cargarDashboard(RAIZ, { datos: COBROS });
+  const r = await pintarVista(banco, 'renderCobrosView');
+  const todo = textos(r.contenedor).join(' | ');
+  assert.ok(!/\bOtro\b/.test(todo),
+    '🔴 la pantalla dice «Otro» en algún sitio. «Otro» afirma un método distinto; lo que pasa es ' +
+    'que NO CONSTA ninguno.');
+  assert.match(todo, /No registrado/,
+    '🔴 el cobro sin método no dice «No registrado» en su fila.');
+});
+
+test('SCRUM-285 · ⑤ los días de deuda: «días» en plural y «día» en singular', async () => {
+  const banco = cargarDashboard(RAIZ, { datos: COBROS });
+  await pintarVista(banco, 'renderCobrosView');
+  assert.equal(banco.ctx.COBROS_COPY.diasSinCobrar(30), 'Sin cobrar desde hace 30 días');
+  assert.equal(banco.ctx.COBROS_COPY.diasSinCobrar(1), 'Sin cobrar desde hace 1 día',
+    '🔴 con un solo día tiene que decir «1 día». Un plural mal puesto en la pantalla del dinero ' +
+    'se lee como descuido, y aquí todo lo demás está medido.');
+});
+
+test('SCRUM-285 · ⑤ un cobro YA COBRADO no pinta etiqueta de deuda: nada, ni guion ni cero', async () => {
+  const banco = cargarDashboard(RAIZ, { datos: [COBROS[0], COBROS[1]] }); // los dos pagados
+  const r = await pintarVista(banco, 'renderCobrosView');
+  assert.ok(!/Sin cobrar desde hace/.test(textos(r.contenedor).join(' | ')),
+    '🔴 se pinta antigüedad de deuda sobre cobros ya cobrados. No se debe nada: la etiqueta no va.');
+});
+
+// ═══ ⑥ LOS DOS ESTADOS VACÍOS — y confundirlos es el defecto ═════════════════════════════
+
+test('SCRUM-285 · ⑥ SIN NINGÚN COBRO: «Todavía no hay cobros registrados.»', async () => {
+  const banco = cargarDashboard(RAIZ, { datos: [] });
+  const r = await pintarVista(banco, 'renderCobrosView');
+  const vacio = todos(r.contenedor).find((n) => n.dataset && n.dataset.vacio);
+  assert.ok(vacio, '🔴 no se pinta ningún estado vacío con la lista a cero.');
+  assert.equal(vacio.dataset.vacio, 'sin-cobros');
+  assert.equal(vacio.textContent, 'Todavía no hay cobros registrados.');
+});
+
+test('SCRUM-285 · ⑥ HAY COBROS PERO EL FILTRO LOS ESCONDE: es OTRO texto', async () => {
+  // 🔴 EL DEFECTO QUE ESTE PAR EVITA: decir «no hay cobros» cuando lo que pasa es que el propio
+  // profesional ha filtrado. En la pantalla del dinero eso no es un texto impreciso — le contesta
+  // «no te deben nada» a la pregunta que vino a hacer.
+  const banco = cargarDashboard(RAIZ, { datos: COBROS }); // hay tres, ninguno con tarjeta… salvo uno
+  const r = await pintarVista(banco, 'renderCobrosView');
+  const botonCash = botonesFiltro(r.contenedor).find((b) => b.dataset.filtroCobro === 'cash');
+  assert.ok(botonCash, 'suelo: sin el filtro de efectivo no se puede provocar el caso.');
+  botonCash.dispararClick();
+
+  const vacio = todos(r.contenedor).find((n) => n.dataset && n.dataset.vacio);
+  assert.ok(vacio, '🔴 con el filtro puesto y cero resultados no se pinta nada.');
+  assert.equal(vacio.dataset.vacio, 'filtro',
+    '🔴 con cobros en la lista y un filtro que no casa, la pantalla dice «no hay cobros». Eso le ' +
+    'afirma al profesional que no le deben nada, y es falso: los ha escondido su propio filtro.');
+  assert.equal(vacio.textContent, 'Ningún cobro coincide con este filtro.');
 });

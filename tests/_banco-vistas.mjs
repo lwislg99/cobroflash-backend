@@ -47,7 +47,24 @@ export function nodo(tag, reg) {
     append(...h) { n.hijos.push(...h); },
     removeChild(h) { n.hijos = n.hijos.filter((x) => x !== h); },
     insertBefore(h) { n.hijos.unshift(h); return h; },
-    addEventListener() {}, removeEventListener() {}, click() {}, remove() {}, focus() {}, blur() {},
+    // SCRUM-285: los oyentes se GUARDAN y se pueden disparar. Antes eran un no-op y por eso
+    // SCRUM-417 declaró «no se pulsa nada» como hueco. Hacía falta de verdad: los dos estados
+    // vacíos de Cobros —«no hay ninguno» y «tu filtro los esconde»— solo se distinguen PULSANDO un
+    // filtro, y son la diferencia entre informar y decirle al profesional que no le deben nada.
+    _oyentes: {},
+    addEventListener(tipo, fn) { (n._oyentes[tipo] = n._oyentes[tipo] || []).push(fn); },
+    removeEventListener(tipo, fn) {
+      n._oyentes[tipo] = (n._oyentes[tipo] || []).filter((f) => f !== fn);
+    },
+    /** Dispara los oyentes de un tipo. Devuelve cuántos corrieron: 0 se lee igual que «no pasó nada». */
+    disparar(tipo) {
+      const fns = n._oyentes[tipo] || [];
+      for (const f of fns) f.call(n, { type: tipo, target: n, preventDefault() {}, stopPropagation() {} });
+      return fns.length;
+    },
+    dispararClick() { return n.disparar('click'); },
+    click() { return n.disparar('click'); },
+    remove() {}, focus() {}, blur() {},
     setAttribute() {}, getAttribute: () => null, removeAttribute() {},
     querySelector: () => null, querySelectorAll: () => [], closest: () => null,
     classList: { add() {}, remove() {}, toggle() {}, contains: () => false },
@@ -57,11 +74,27 @@ export function nodo(tag, reg) {
     set innerHTML(v) {
       n._html = String(v);
       if (v === '') { n.hijos = []; return; }
-      // Lo que hace el navegador: el marcado se vuelve árbol y sus `id` quedan buscables. Sin
-      // esto, toda vista que pinte con `innerHTML` y luego busque por id daría un rojo falso.
-      for (const m of String(v).matchAll(/<(\w+)[^>]*\bid="([^"]+)"/g)) {
-        const h = nodo(m[1], reg); h.id = m[2];
-        reg.porId.set(m[2], h); n.hijos.push(h);
+      // Lo que hace el navegador: el marcado se vuelve árbol. Sin esto, toda vista que pinte con
+      // `innerHTML` y luego busque por id daría un rojo falso.
+      //
+      // SCRUM-285: se representan TODAS las etiquetas con atributos, no solo las que llevan `id`,
+      // y se les copia `id`, `class`, `data-*` y su texto. Antes solo entraban las de `id`, así que
+      // un bloque marcado con `data-…` —el estado vacío de Cobros— era invisible para el banco y su
+      // test daba un rojo que era del banco. Es plano a propósito: no anida, y se declara.
+      for (const m of String(v).matchAll(/<(\w+)([^>]*)>([^<]*)/g)) {
+        const attrs = m[2] || '';
+        if (!/\b(id|class|data-)/.test(attrs)) continue;
+        const h = nodo(m[1], reg);
+        const id = attrs.match(/\bid="([^"]+)"/);
+        const cls = attrs.match(/\bclass="([^"]+)"/);
+        if (id) { h.id = id[1]; reg.porId.set(id[1], h); }
+        if (cls) h.className = cls[1];
+        for (const d of attrs.matchAll(/\bdata-([\w-]+)="([^"]*)"/g)) {
+          h.dataset[d[1].replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = d[2];
+        }
+        const texto = (m[3] || '').trim();
+        if (texto) h.textContent = texto;
+        n.hijos.push(h);
       }
     },
     get innerHTML() { return n._html; },
