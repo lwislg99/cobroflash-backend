@@ -246,6 +246,151 @@ un índice ausente no rompe ninguna consulta, solo la degrada cuando la tabla cr
 * **La ausencia en un reflog no prueba que algo no se hiciera aquí**: un rebase reescribe el SHA y
   rompe el enlace. Por eso ① lleva su control de sensibilidad (47/50) y no se apoya en el silencio.
 
+## LOTE ÚNICO · 9 columnas en 4 tablas (SCRUM-403 · A5 · E4 · SCRUM-195 · SCRUM-16/142) — 🔴 SIN APLICAR en ninguna de las tres
+
+**Medido contra:** `origin/main` = `ff5698f` · 2026-08-10 · rama `scrum-lote-migracion-unica`
+
+- [ ] **staging · acela/railway** — pendiente.
+- [ ] **desarrollo · acela/yaqu_dev_javier** — pendiente.
+- [ ] **producción · autorack** — pendiente.
+
+> **🔎 VERIFICABLE** — que existan las nueve columnas: pregúntaselo a `docs/sql/deriva-prod.sql`
+> contra cada base, **no a estas casillas**. **✋ SIN MECANISMO** — que estén en las tres.
+> **NO HAY BACKFILL, y es deliberado** (ver abajo): las nueve nacen `NULL` y `NULL` es su valor
+> legítimo para todo lo ya registrado.
+
+⚠️ **UNA migración, no cuatro.** Cinco tickets comparten el mismo `db push` porque tres de ellos
+necesitan columnas de la MISMA tabla (`Expense`) y aplicarlos por separado serían tres ventanas de
+riesgo para el mismo cambio.
+
+### Preview generado SIN tocar ninguna base
+
+`node scripts/preview-migracion.mjs --desde <schema de origin/main>` — datamodel contra datamodel,
+**offline**. Se evita a propósito `--from-schema-datasource`, que conectaría a la base de `.env`
+(que es producción), y la variante que recibe la conexión por argumento, que la deja a la vista en
+`argv`/`ps` (motivo de SCRUM-226).
+
+**Control positivo: PASÓ — la herramienta respondió con 24 tablas.** Es lo que distingue «no hay
+cambios» de «la herramienta no contesta»: el incidente de SCRUM-385 fue un `npx` que se bajó
+prisma 7 y devolvió **vacío con exit 0**. El script ejecuta el binario LOCAL por ruta y reconoce el
+vacío legítimo **por la frase** `-- This is an empty migration.`, nunca por el tamaño.
+
+```sql
+-- AlterTable
+ALTER TABLE "quotes" ADD COLUMN     "es_adicional" BOOLEAN;
+
+-- AlterTable
+ALTER TABLE "invoices" ADD COLUMN     "deducts_refs" JSONB;
+
+-- AlterTable
+ALTER TABLE "expenses" ADD COLUMN     "base_amount" DECIMAL(12,2),
+ADD COLUMN     "provider_invoice_date" TIMESTAMP(3),
+ADD COLUMN     "provider_invoice_number" TEXT,
+ADD COLUMN     "vat_amount" DECIMAL(12,2),
+ADD COLUMN     "vat_deducible" BOOLEAN,
+ADD COLUMN     "vat_rate" INTEGER;
+
+-- AlterTable
+ALTER TABLE "providers" ADD COLUMN     "tax_id" TEXT;
+```
+
+### Recuento, contado del SQL y no a ojo
+
+| | n |
+|---|---|
+| `ADD COLUMN` | **9** |
+| `DROP` (cualquier forma) | **0** |
+| `ALTER COLUMN` (columna existente) | **0** |
+| `NOT NULL` | **0** |
+| `DEFAULT` | **0** |
+| `UNIQUE` / `CREATE INDEX` | **0** |
+| `RENAME` / `TRUNCATE` / `DELETE FROM` | **0** |
+| `ALTER TABLE` (sentencias) | 4 |
+
+100 % aditivo: **nueve columnas nullable, sin default, sin unique, sin índice** → `db push` **no
+debe** pedir `--accept-data-loss`. **Si lo pide, PARA**: significaría que el diff no es éste.
+
+### Qué columna sirve a qué ticket
+
+| tabla | columna | tipo | para |
+|---|---|---|---|
+| `expenses` | `base_amount` | `DECIMAL(12,2)` | SCRUM-403 (beneficio) · A5 (303) · E4 |
+| `expenses` | `vat_rate` | `INTEGER` | A5 · E4 — **entero de porcentaje** (21/10/4/0), convención de `AlbaranLinea.tipoIva`, **no** la fracción de `Quote.lines[].tax` |
+| `expenses` | `vat_amount` | `DECIMAL(12,2)` | A5 · E4 — la cuota **se guarda, no se recalcula** |
+| `expenses` | `vat_deducible` | `BOOLEAN` | A5 — `null` = nunca clasificado ≠ `false` = se decidió que no |
+| `expenses` | `provider_invoice_number` | `TEXT` | E4 — identifica el asiento de compra |
+| `expenses` | `provider_invoice_date` | `TIMESTAMP(3)` | E4 — expedición del proveedor, distinta de `Expense.date` (el apunte) |
+| `providers` | `tax_id` | `TEXT` | E4 — `Provider` no tenía **ningún** campo fiscal (medido: 0) |
+| `quotes` | `es_adicional` | `BOOLEAN` | SCRUM-195 — `jobId` no distingue original de adicional |
+| `invoices` | `deducts_refs` | `JSONB` | SCRUM-16/142 (#1) — mismo patrón que `albaran_refs` |
+
+> ⚠️ **Dos columnas de `Expense` y la de `Provider` NO estaban en la lista corta del encargo** —
+> `provider_invoice_number`, `provider_invoice_date` y `providers.tax_id`—, pero **sí** en la
+> especificación medida de `docs/master/SCRUM-403.md`, y son las tres que E4 necesita para que un
+> asiento de compra esté completo. Dejarlas fuera obligaría a una **segunda** migración para E4,
+> que es justo lo que este lote viene a evitar. Se avisó antes de escribir el diff.
+
+### Qué pasa con las filas que YA existen — una por una
+
+**Ninguna fila se toca. Las nueve columnas quedan a `NULL`.**
+
+| tabla | filas existentes | qué les pasa |
+|---|---|---|
+| `expenses` | todas | las **seis** columnas a `NULL`. `amount` **no se toca**: sigue siendo el mismo número que hoy |
+| `providers` | todas | `tax_id` a `NULL` |
+| `quotes` | todas | `es_adicional` a `NULL` |
+| `invoices` | todas | `deducts_refs` a `NULL` |
+
+🔴 **Y en `Expense` el `NULL` NO se rellena por suposición.** `amount` es **ambiguo por diseño**:
+en ninguna parte está escrito si lleva IVA ni a qué tipo. Un backfill que lo adivine —«asumimos
+21 %», «asumimos que es sin IVA»— produciría una base **indistinguible de una base real**, y sobre
+ese número se calcularían el beneficio y el 303. **Es estrictamente peor que dejarlo vacío**: un
+hueco dice «no se sabe», un número inventado afirma.
+
+`NULL` aquí **es un dato**: significa «este gasto es un apunte de caja, no un asiento». El beneficio
+y el 303 deben **excluir o declarar** esas filas, nunca completarlas.
+
+Por eso, además, ninguna es `NOT NULL` y ninguna lleva `@default`: un default rellenaría el pasado
+con una suposición y la haría indistinguible de un dato real.
+
+### ¿Rompe algo mientras está a medias? — medido contra el código de HOY
+
+**① `assertSchemaSinDeriva` solo falla por columnas que FALTAN.** Leído hoy en
+`src/core/db/schemaDrift.ts:110-122`: el bucle recorre **`esperadas`** (lo que el schema declara) y
+comprueba presencia en `real` (lo que la base tiene). **No recorre en la otra dirección ni una
+vez** — una columna que está en la base y no en el schema es sencillamente invisible, y el
+resultado es `en-sync`.
+
+**② Prisma enumera columnas explícitas**, no `SELECT *`, así que un cliente generado del schema
+viejo no ve las columnas nuevas y no puede tropezar con ellas. Esto **no lo he ejecutado contra una
+base** (no se ha tocado ninguna): lo sostiene ① —que sí está medido— más el hecho de que **éste es
+el orden canónico de la casa y se ha usado en las ~25 migraciones del registro**, todas con esa
+misma ventana.
+
+**Conclusión: el orden seguro sigue siendo MIGRAR PRIMERO, DESPLEGAR DESPUÉS.** Y no es simétrico:
+
+| orden | qué ve el chequeo de arranque | resultado |
+|---|---|---|
+| **migrar → desplegar** | el schema viejo pide N columnas, la base tiene N+9 | `en-sync` ✅ |
+| desplegar → migrar | el schema nuevo pide 9 que la base no tiene | `deriva` → **producción NO arranca** 🔴 |
+
+Es exactamente el 500 de SCRUM-220: código desplegado esperando una columna que la base no tenía.
+
+### Lo que este lote NO hace
+
+1. **No cierra E4.** Da el *dónde* guardar, no el *cómo se rellena*: falta la pantalla, y el alta de
+   gasto es deliberadamente rápida (SCRUM-135) — pedir seis campos fiscales ahí rompe ese flujo.
+   Decisión de producto, no de schema.
+2. **No decide qué es deducible.** `vat_deducible` es un campo, no un criterio: eso es dictamen.
+3. **No arregla el pasado.** Los gastos ya registrados siguen sin base, y toda cifra que los use
+   tiene que decirlo.
+4. **No completa SCRUM-195 ni SCRUM-16/142**: da los campos, no la lógica que los rellena ni la que
+   los consume. El diff de `EmitInvoiceInput` (#2 de SCRUM-16) **entra con esta migración, no antes**:
+   sin la columna no compila.
+5. **No toca `Invoice.total` ni ningún dato existente.**
+
+---
+
 ## SCRUM-300 (C5) · cuatro columnas en `albaranes` — ✅ APLICADO en las TRES bases (7-ago-2026)
 
 **REGISTRO de lo que se ejecutó y se verificó el 7-ago-2026.** No es una afirmación sobre el
