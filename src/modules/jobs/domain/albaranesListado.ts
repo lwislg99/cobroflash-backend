@@ -68,7 +68,18 @@ export interface FilaAlbaranListado {
   /** Fecha de EMISIÓN — `createdAt`. Son distintas a propósito (SCRUM-67). */
   emisionAt: Date | string;
   estado: string;
-  estadoCobro: EstadoCobro;
+  /**
+   * SCRUM-372 · UN DATO, UN NOMBRE. Este derivado —`sin_facturar` · `parcial` · `facturado`, salido
+   * de `estadoCobroAlbaran`— se llamaba `estadoCobro` aquí y `estadoFacturacion` en el detalle del
+   * albarán, siendo LA MISMA llamada. Copiar el contexto de una vista a otra daba `undefined`, y
+   * `undefined !== 'facturado'` es TRUE: se ofrecía «facturar» sobre albaranes ya facturados del
+   * todo, sin error y sin que nada se pusiera rojo.
+   *
+   * Se unifica en `estadoFacturacion` y no al revés porque `estadoCobro` YA nombra otro dato
+   * distinto —el del Trabajo: `Pagado` · `Parcial` · `Pendiente`, de `estadoCobroFor`— y los dos
+   * convivían en `jobDetailView.js`. Un nombre para dos datos es el defecto hermano (SCRUM-398).
+   */
+  estadoFacturacion: EstadoCobro;
   clienteId: number | null;
   cliente: string | null;
   jobId: number;
@@ -104,7 +115,9 @@ export function contarAlbaranes(filas: FilaAlbaranListado[]): ContadoresAlbaran 
     // Un valor que no esté en el eje NO se descarta en silencio: se cuenta igual y aparece en el
     // censo. Si algún día el modelo gana un estado, el contador lo enseña en vez de esconderlo.
     porEstado[f.estado] = (porEstado[f.estado] || 0) + 1;
-    porCobro[f.estadoCobro] = (porCobro[f.estadoCobro] || 0) + 1;
+    // ⚠️ `porCobro` es el nombre del EJE de la pestaña, no el del dato: se queda como está a
+    // propósito (renombrarlo arrastraría los chips de filtro sin arreglar nada de SCRUM-372).
+    porCobro[f.estadoFacturacion] = (porCobro[f.estadoFacturacion] || 0) + 1;
   }
   return { total: filas.length, porEstado, porCobro };
 }
@@ -182,7 +195,7 @@ export async function listarAlbaranesDelMerchant(
       fecha: a.fecha,
       emisionAt: a.createdAt,
       estado: a.estado,
-      estadoCobro: estadoCobroAlbaran(lineas, facturado, !!a.invoiceId),
+      estadoFacturacion: estadoCobroAlbaran(lineas, facturado, !!a.invoiceId),
       clienteId: customer?.id ?? null,
       cliente: customer?.legalName || customer?.name || null,
       jobId: a.jobId,

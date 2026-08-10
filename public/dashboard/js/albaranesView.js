@@ -258,7 +258,8 @@
         const q = busqueda.trim().toLowerCase();
         return filas.filter((f) => {
           if (estadoActivo !== TODOS && f.estado !== estadoActivo) return false;
-          if (cobroActivo !== TODOS && f.estadoCobro !== cobroActivo) return false;
+          // SCRUM-372: el DATO se llama `estadoFacturacion`; `cobroActivo` es el eje de la pestaña.
+          if (cobroActivo !== TODOS && f.estadoFacturacion !== cobroActivo) return false;
           if (!q) return true;
           return [f.numero, f.cliente, f.trabajo]
             .some((v) => String(v || '').toLowerCase().includes(q));
@@ -364,12 +365,12 @@
         pill.className = claseEstado(f.estado);
         pill.textContent = f.estado; // el VALOR del modelo, no un rótulo inventado
         tdEstado.appendChild(pill);
-        const cls = claseCobro(f.estadoCobro);
+        const cls = claseCobro(f.estadoFacturacion);
         if (cls) {
           const chip = document.createElement('span');
           chip.className = cls;
           chip.style.cssText = 'margin-left:6px';
-          chip.textContent = f.estadoCobro;
+          chip.textContent = f.estadoFacturacion;
           tdEstado.appendChild(chip);
         }
         tr.appendChild(tdEstado);

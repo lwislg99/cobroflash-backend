@@ -972,7 +972,8 @@ router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
     return res.status(201).json({
       ok: true,
       factura: { id: invoice.id, number: invoice.number, total: invoice.total.toString(), currency: invoice.currency },
-      estadoCobro: estadoCobroAlbaran(lineas, facturadoTras),
+      // SCRUM-372: el MISMO derivado que la línea 575. Un dato, un nombre.
+      estadoFacturacion: estadoCobroAlbaran(lineas, facturadoTras),
       pendientes: pendientePorLinea(lineas, facturadoTras),
       veriFactu: sellada,
       ...(sellada ? {} : { message: 'Se emitió la factura, pero falló su registro VeriFactu. Revísalo antes de entregarla.' }),
