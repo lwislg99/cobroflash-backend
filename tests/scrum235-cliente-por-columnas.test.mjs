@@ -362,3 +362,32 @@ test('SCRUM-235 · la tanda gateada ejecuta el guard ANTES de tomar el turno', (
     );
   }
 });
+
+// ═══ SCRUM-429 · EL MENSAJE NOMBRA LAS DOS CAUSAS ════════════════════════════════════════
+
+test('SCRUM-429 · el diagnóstico nombra las DOS causas, no solo el node_modules compartido', () => {
+  // 🔴 DE DÓNDE SALE: este mensaje decía que la divergencia «suele pasar al regenerarlo desde otro
+  // worktree, y como `node_modules` se comparte por junction, afecta a todas las sesiones». Con esa
+  // frase delante, una sesión diagnosticó su propia caída como «me la rompió otro» y lo reportó así
+  // — cuando su `node_modules` era REAL y propio, y lo que había cambiado era su rama.
+  //
+  // `prisma/schema.prisma` viaja con la rama; el cliente generado NO. Esa causa existía desde
+  // siempre y el mensaje no la nombraba, así que mandaba a mirar al sitio equivocado. Un
+  // diagnóstico que solo conoce una causa no es una ayuda: es una pista falsa con autoridad.
+  // La forma que `mensaje` espera de verdad — la misma que devuelve `primeraDiscrepancia`.
+  const m = mensaje({ tipo: 'modelo', modelo: 'Invoice', direccion: 'falta' });
+
+  const exigido = [
+    [/rama/i, 'la causa (A): el schema viaja con la rama y el cliente no'],
+    [/junction/i, 'la causa (B): el node_modules compartido'],
+    [/LinkType|linkType/, 'cómo COMPROBAR cuál de las dos es (si el node_modules es propio o no)'],
+    [/prisma:generate|prisma generate/, 'el comando que lo arregla'],
+    [/rompe el de los dem|avisa antes/i, 'el aviso de que en el caso (B) arreglar el tuyo rompe el ajeno'],
+  ];
+  const faltan = exigido.filter(([re]) => !re.test(m)).map(([, q]) => q);
+  assert.deepEqual(faltan, [],
+    '🔴 al diagnóstico le falta enunciar:\n    - ' + faltan.join('\n    - ')
+    + '\n\n  Es el mismo arreglo que se le hizo al mensaje de SCRUM-273: un guard que acusa sin\n'
+    + '  decir dónde mirar manda a la gente al sitio equivocado, y con autoridad. Aquí costó un\n'
+    + '  diagnóstico mal reportado al fundador.');
+});
