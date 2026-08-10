@@ -31,6 +31,7 @@ import ts from 'typescript';
 
 // La herramienta de la casa para leer un fuente SIN comentarios (SCRUM-193). Gana ella.
 import { leerFuente } from './_guard-texto.mjs';
+import { escriturasDeAlbaran } from './_censo-escrituras-albaran.mjs';
 
 import {
   puedeFirmarEstaVersion,
@@ -172,72 +173,15 @@ function tocaContenido(e) {
   return CAMPOS_DE_CONTENIDO.some((c) => new RegExp(`\\b${c}\\b`).test(texto));
 }
 
-/**
- * Todas las escrituras de `Albaran` del árbol, con el texto de su `data:`, DERIVADAS del AST.
- * No por `grep`: un comentario que explique una escritura contaría igual que la escritura.
- */
-function escriturasDeAlbaran() {
-  const out = [];
-  let ficheros = 0;
-  const visitarDir = (dir) => {
-    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-      const p = path.join(dir, e.name);
-      if (e.isDirectory()) { visitarDir(p); continue; }
-      if (!e.name.endsWith('.ts')) continue;
-      ficheros += 1;
-      const src = fs.readFileSync(p, 'utf8');
-      if (!/albaran\.update/i.test(src)) continue;
-      const sf = ts.createSourceFile('x.ts', src, ts.ScriptTarget.Latest, true);
-      const visitar = (n) => {
-        if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression) &&
-            /^(update|updateMany)$/.test(n.expression.name.text) &&
-            /albaran$/i.test(n.expression.expression.getText(sf))) {
-          const arg = n.arguments[0];
-          let data = '';
-          if (arg && ts.isObjectLiteralExpression(arg)) {
-            for (const pr of arg.properties) {
-              if (ts.isPropertyAssignment(pr) && pr.name.getText(sf) === 'data') {
-                data = pr.initializer.getText(sf).replace(/\s+/g, ' ');
-              }
-            }
-          }
-          // 🔴 EL `data:` NO SIEMPRE ES UN LITERAL COMPLETO, y esto costó un rojo falso: el PATCH
-          // escribe `data: { ...data, version: { increment: 1 } }` y va rellenando `data.lineas`,
-          // `data.notas`… más arriba. Mirando solo el literal, la ÚNICA escritura que toca
-          // contenido salía clasificada como metadatos — o sea, el guard habría vigilado todo
-          // menos lo que importa.
-          //
-          // Así que si el `data:` trae un `...ident`, se recogen también las asignaciones
-          // `ident.<campo> =` de la función que contiene la escritura. Con eso el guard caza
-          // igual un `data.lineas = …` nuevo que un literal.
-          const spread = [...data.matchAll(/\.\.\.(\w+)/g)].map((m) => m[1]);
-          let indirecto = '';
-          if (spread.length) {
-            let fn = n;
-            while (fn && !ts.isFunctionDeclaration(fn) && !ts.isFunctionExpression(fn) && !ts.isArrowFunction(fn)) {
-              fn = fn.parent;
-            }
-            const cuerpo = fn ? fn.getText(sf) : src;
-            for (const id of spread) {
-              for (const m of cuerpo.matchAll(new RegExp(`\\b${id}\\.(\\w+)\\s*=`, 'g'))) indirecto += ` ${m[1]}`;
-            }
-          }
-          const { line } = sf.getLineAndCharacterOfPosition(n.getStart(sf));
-          out.push({ fichero: path.relative(RAIZ, p).replace(/\\/g, '/'), linea: line + 1, data, indirecto });
-        }
-        ts.forEachChild(n, visitar);
-      };
-      visitar(sf);
-    }
-  };
-  visitarDir(path.join(RAIZ, 'src'));
-  return { escrituras: out, ficheros };
-}
+// El censo vive en `_censo-escrituras-albaran.mjs` desde SCRUM-462: lo usan DOS tickets para dos
+// preguntas distintas —que toda escritura de CONTENIDO incremente `version` (aquí) y que toda
+// escritura que marque FIRMADO traiga su sobre (allí)—. Dos copias del mismo censo se
+// desincronizan en cuanto una mejore, que es la familia de defectos que esta casa persigue.
 
 test('SCRUM-361 · SUELO del censo de escrituras: ve el árbol, y ve escrituras', () => {
   // Dos recuentos, DOS asserts. Si solo mirase el total de escrituras, un escáner que leyera
   // cuatro ficheros y encontrara escrituras en ellos pasaría igual estando ciego para el resto.
-  const { escrituras, ficheros } = escriturasDeAlbaran();
+  const { escrituras, ficheros } = escriturasDeAlbaran(RAIZ);
   assert.ok(ficheros > 100,
     `🔴 ESCÁNER CIEGO: solo ${ficheros} ficheros .ts recorridos en src/`);
   assert.ok(escrituras.length >= 5,
@@ -247,7 +191,7 @@ test('SCRUM-361 · SUELO del censo de escrituras: ve el árbol, y ve escrituras'
 });
 
 test('SCRUM-361 · 🔴 toda escritura que toca CONTENIDO incrementa `version`', () => {
-  const { escrituras } = escriturasDeAlbaran();
+  const { escrituras } = escriturasDeAlbaran(RAIZ);
   const ciegas = escrituras
     .filter((e) => tocaContenido(e))
     .filter((e) => !/version:\s*\{\s*increment/.test(e.data));
@@ -266,7 +210,7 @@ test('SCRUM-361 · 🔴 toda escritura que toca CONTENIDO incrementa `version`',
 test('SCRUM-361 · CONTROL NEGATIVO: una escritura de METADATOS no hace caer el guard', () => {
   // Si el guard acusara a las siete escrituras que tocan estado, firma, pdfUrl, token o invoiceId,
   // se desactivaría al primer roce. Esas NO cambian lo que el cliente lee, así que no son conflicto.
-  const { escrituras } = escriturasDeAlbaran();
+  const { escrituras } = escriturasDeAlbaran(RAIZ);
   const metadatos = escrituras.filter((e) =>
     !tocaContenido(e));
 
