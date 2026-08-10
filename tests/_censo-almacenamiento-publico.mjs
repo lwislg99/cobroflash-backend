@@ -124,6 +124,13 @@ function resolverClave(arg, sf) {
     // prefijo es vacío y eso no identifica nada: se declara ciego.
     return arg.head.text ? { tipo: 'prefijo', valor: arg.head.text } : null;
   }
+  // `'pf_algo_' + mid` — la otra forma de componer una clave, y hay que saber leerla: si no, una
+  // escritura nueva escrita con `+` se declara ciega y parece un fallo del censo cuando es solo
+  // una forma que no habíamos previsto. Se toma la parte IZQUIERDA si es una cadena.
+  if (ts.isBinaryExpression(arg) && arg.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+    const izq = resolverClave(arg.left, sf);
+    return izq && izq.valor ? { tipo: 'prefijo', valor: izq.valor } : null;
+  }
   if (ts.isCallExpression(arg) && ts.isIdentifier(arg.expression)) {
     const nombre = arg.expression.text;
     let hallada = null;
