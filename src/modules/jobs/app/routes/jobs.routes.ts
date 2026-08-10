@@ -24,7 +24,7 @@ import {
   compararAlta,
   ClaveIdempotenciaReutilizadaError,
   ERROR_CLAVE_REUTILIZADA,
-  MSG_CLAVE_REUTILIZADA,
+  msgClaveReutilizada,
 } from '../../domain/albaranIdempotencia';
 // SCRUM-424 (G3): la dirección de la OBRA — el escritor que le faltaba al bloque DÓNDE del rail.
 import {
@@ -867,7 +867,9 @@ router.post('/:id/albaranes', async (req, res) => {
     if (err instanceof ClaveIdempotenciaReutilizadaError) {
       return res.status(409).json({
         error: ERROR_CLAVE_REUTILIZADA,
-        message: MSG_CLAVE_REUTILIZADA,
+        // El número del original va DENTRO del texto, no solo en el campo de al lado: el
+        // profesional lee el mensaje, no el JSON (asesor, 11-ago-2026).
+        message: msgClaveReutilizada(err.numeroOriginal),
         numeroOriginal: err.numeroOriginal,
         diferencias: err.diferencias,
       });

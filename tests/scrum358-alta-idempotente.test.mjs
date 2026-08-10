@@ -26,6 +26,7 @@ const {
   compararAlta,
   CLAVE_IDEMPOTENCIA_MAX,
   ClaveIdempotenciaReutilizadaError,
+  msgClaveReutilizada,
 } = await import(DIST + 'modules/jobs/domain/albaranIdempotencia.js');
 
 const RUTA = soloEjecutable(
@@ -170,10 +171,33 @@ test('SCRUM-358 · 🔴 «con clave» y «sin clave» NO dan la misma salida', (
   assert.match(cuerpo, /idempotencia \}/, '🔴 el marcador no viaja en la respuesta: no lo puede ver nadie');
 });
 
-test('SCRUM-358 · el 409 del conflicto lleva marcador de microcopy (regla 30)', () => {
+test('SCRUM-358 · el texto del 409 es el APROBADO, palabra por palabra (regla 30)', () => {
   const cuerpo = cuerpoDelAlta();
-  assert.match(cuerpo, /message: MSG_CLAVE_REUTILIZADA/, '🔴 el 409 no usa el texto declarado');
-  const dominio = fs.readFileSync(path.join(RAIZ, 'src/modules/jobs/domain/albaranIdempotencia.ts'), 'utf8');
-  assert.match(dominio, /MSG_CLAVE_REUTILIZADA[\s\S]{0,200}\[PENDIENTE microcopy oficial/,
-    '🔴 el texto del 409 se da por aprobado. Lo lee el PROFESIONAL y no lo ha aprobado nadie (regla 30).');
+  assert.match(cuerpo, /message: msgClaveReutilizada\(err\.numeroOriginal\)/,
+    '🔴 el 409 ya no usa el texto aprobado, o dejó de pasarle el número del original.');
+
+  // Aprobado por el asesor el 11-ago-2026. Se fija ENTERO: reformularlo es cambio de máster.
+  assert.equal(
+    msgClaveReutilizada('ALB-2026-097'),
+    'Este parte ya se creó antes con datos distintos a los que se están enviando ahora. ' +
+    'No hemos creado nada para no duplicarlo: el parte ALB-2026-097 sigue guardado. ' +
+    'Ábrelo desde el trabajo para revisarlo.',
+    '🔴 el texto del 409 no es el aprobado. Se aprobó palabra por palabra (regla 30): no se ' +
+    'reformula, se cambia por máster.',
+  );
+  // Sin número, el texto aprobado tal cual — el número es una mejora, no un requisito.
+  assert.match(msgClaveReutilizada(null), /el parte original sigue guardado/,
+    '🔴 sin número del original el mensaje se rompe, en vez de caer al texto aprobado');
+
+  // 🔴 EL INVARIANTE QUE TRAJO LA CORRECCIÓN DEL ASESOR, y por eso es un guard y no una nota:
+  // la primera versión terminaba en «Vuelve a crearlo desde el trabajo», que CONTRADICE la frase
+  // anterior — si lo que se evita es duplicar, la salida no puede ser crear otro. Un mensaje que
+  // da una salida que produce el problema que acaba de evitar es peor que uno sin salida.
+  const texto = msgClaveReutilizada('ALB-2026-097').toLowerCase();
+  assert.ok(!/vuelve a crear|crea otro|créalo de nuevo|vuelve a crearlo/.test(texto),
+    '🔴 el mensaje vuelve a mandar CREAR OTRO parte. Es lo que el asesor corrigió el 11-ago: el ' +
+    'original existe y lo que se está evitando es duplicarlo, así que la salida es ABRIR el que hay.');
+  assert.match(texto, /ábrelo/, '🔴 el mensaje ya no da la salida que sí existe: abrir el original');
+  assert.ok(!/datos de envío/.test(texto),
+    '🔴 vuelve «datos de envío»: un fontanero no sabe qué es eso (corrección del asesor).');
 });
