@@ -13,8 +13,23 @@
 //
 // Método: si hay `pg_dump` en el PATH se usa (formato custom, restaurable con
 // pg_restore). Si NO lo hay (p. ej. imagen Node de Railway), dump LÓGICO vía
-// Prisma: todas las tablas a JSON (restaurable con este mismo script en un
-// entorno limpio — ver RUNBOOK al final). Un backup no probado no es un backup:
+// Prisma: todas las tablas a JSON.
+//
+// ⚠️ SCRUM-242 · AQUÍ HABÍA UNA PROMESA FALSA, y se retira en vez de dejarla: esta línea decía
+// que el dump lógico era «restaurable con este mismo script en un entorno limpio — ver RUNBOOK al
+// final». **Ese RUNBOOK nunca existió** (una sola mención en el fichero: la promesa), y
+// `docs/RUNBOOKS.md` tampoco tiene procedimiento de restauración.
+//
+// Y la promesa era doble, porque este script **no restaura**: sus dos modos son volcar y
+// `--restore-test`, y NINGUNO escribe de vuelta en la base. `--restore-test` VERIFICA —descifra,
+// valida el tag GCM y compara conteos—, que no es lo mismo.
+//
+// Quien leía la cabecera se quedaba tranquilo y no lo buscaba hasta necesitarlo, que es a las tres
+// de la mañana con la base caída. **ESTADO REAL: para el formato lógico no hay procedimiento de
+// restauración escrito ni código que lo haga.** Lo vigila
+// `tests/scrum242-scripts-no-prometen-documentos.test.mjs`.
+//
+// Un backup no probado no es un backup:
 // --restore-test descifra, valida el GCM tag (integridad criptográfica) y
 // compara los conteos de filas contra la BD viva.
 //
