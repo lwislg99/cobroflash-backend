@@ -58,8 +58,26 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_HOST_AUTH_METHOD: trust
+        # 🔴 PUERTO DINÁMICO — SIN MAPEO FIJO. Aquí solo se declara el puerto DEL CONTENEDOR;
+        # Docker elige uno libre en el host y el job lo lee de
+        # `job.services.postgres.ports['5432']`.
+        #
+        # Fijar `55432:5432` rompió CI para TODAS las PR (10-ago-2026):
+        #   failed to bind host port for 0.0.0.0:55432 … address already in use
+        # Un contenedor de una ejecución anterior seguía vivo —en el log aparece «Clean up
+        # resources from previous jobs»— o había dos jobs a la vez. **Un número fijo en un entorno
+        # compartido choca**, y es la tercera vez que esa familia muerde: la ventana fija de los
+        # guards y el nombre fijo del check requerido de `main` eran la misma forma.
+        #
+        # Y NO se arregla con un `sleep`, un reintento ni un `docker rm` previo: eso ata el arreglo
+        # a que la carrera salga bien y vuelve a chocar el día que haya dos PR a la vez. El puerto
+        # dinámico **elimina** la colisión en vez de esquivarla.
+        #
+        # ⚠️ Va con mapeo (y no por alias de red `postgres:5432`) porque este job **no** declara
+        # `container:`: corre SOBRE el runner, no dentro de un contenedor, así que no comparte la
+        # red de Docker con el servicio. Medido antes de elegir la forma, no supuesto.
         ports:
-          - 55432:5432
+          - 5432
         # Sin el health-check los pasos arrancan antes de que Postgres acepte conexiones, y el
         # fallo se lee como un test roto en vez de como una base que aún no estaba.
         options: >-
@@ -138,15 +156,21 @@ jobs:
       # El nombre de la base termina en `_test` porque los propios tests lo EXIGEN antes de tocarla,
       # junto con que el host sea loopback y que no sea ninguna base del proyecto. Ese guard suyo se
       # queda: aquí no se afloja nada, se le da lo que pide.
+      # ⚠️ EL PUERTO SE LEE, NO SE ESCRIBE. `job.services.postgres.ports['5432']` es el puerto que
+      # Docker asignó en el host para este job. Escribirlo a mano es lo que rompió CI.
       - name: Banco desechable para los tests de libro
+        env:
+          PGPORT_HOST: ${{ job.services.postgres.ports['5432'] }}
         run: |
-          psql "postgresql://postgres@127.0.0.1:55432/postgres" -c 'CREATE DATABASE yaqu_libro_test'
+          test -n "$PGPORT_HOST" || { echo "🔴 no se pudo leer el puerto del servicio: no se toca ninguna base"; exit 1; }
+          echo "banco desechable en 127.0.0.1:$PGPORT_HOST"
+          psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/postgres" -c 'CREATE DATABASE yaqu_libro_test'
           npx prisma migrate diff --from-empty \
-            --to-schema-datamodel prisma/schema.prisma --script > /tmp/esquema.sql
-          test -s /tmp/esquema.sql || { echo "🔴 el esquema salió VACÍO: no se aplica nada a ciegas"; exit 1; }
-          psql "postgresql://postgres@127.0.0.1:55432/yaqu_libro_test" -q -f /tmp/esquema.sql
+            --to-schema-datamodel prisma/schema.prisma --script > "$RUNNER_TEMP/esquema.sql"
+          test -s "$RUNNER_TEMP/esquema.sql" || { echo "🔴 el esquema salió VACÍO: no se aplica nada a ciegas"; exit 1; }
+          psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/yaqu_libro_test" -q -f "$RUNNER_TEMP/esquema.sql"
 
       - name: Tests (incluidos los 7 de banco)
         env:
-          LIBRO_PG_URL: postgresql://postgres@127.0.0.1:55432/yaqu_libro_test
+          LIBRO_PG_URL: postgresql://postgres@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/yaqu_libro_test
         run: npm test
