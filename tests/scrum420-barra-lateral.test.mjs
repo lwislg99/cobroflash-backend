@@ -86,7 +86,9 @@ test('SCRUM-420 · ① `export` y `templates` SIGUEN alcanzables tras salir/qued
     '🔴 `Plantillas` ha vuelto a la barra. El diseño §B1 la quiere solo como pestaña dentro de ' +
     'Presupuestos («se usa desde ahí y solo desde ahí»): dos caminos es el desorden que B1 arregla.');
   const tabs = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/quotesTabs.js'), 'utf8');
-  assert.match(tabs, /vista: 'templates'/,
+  // `ok` y no `match`: un `match` que falla imprime el fichero ENTERO en `actual` y entierra el
+  // mensaje, que es lo único que quien lo lea necesita.
+  assert.ok(/vista: 'templates'/.test(tabs),
     '🔴 `Plantillas` no está en la barra Y la pestaña no la declara: la vista `templates` se ha ' +
     'quedado sin ningún camino. Que CARGUE de verdad lo mide `scrum432`; esto es la composición.');
 });
