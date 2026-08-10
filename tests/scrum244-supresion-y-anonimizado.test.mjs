@@ -175,7 +175,7 @@ test('SCRUM-244 · 🔴 con el flag APAGADO la ruta responde 404 y no consulta n
   const restaurar = doblarCliente(diario); // cualquier consulta EXPLOTA
   try {
     const res = resFalso();
-    await handlerDeLaRuta()({ params: { merchantId: '7' }, body: { confirmacion: 'lo que sea' } }, res);
+    await handlerDeLaRuta()({ params: { merchantId: '7' }, merchantId: 7, body: { confirmacion: 'lo que sea' } }, res);
     assert.equal(res.code, 404,
       `🔴 la ruta responde ${res.code} con MERCHANT_DELETE_ENABLED apagado. Esto borra datos y es ` +
       'irreversible: se construye, no se enciende (regla 24). Y 404 y no 403 a proposito — una ruta ' +
@@ -193,7 +193,7 @@ test('SCRUM-244 · 🔴 confirmacion que no coincide: 409 y ni un dato tocado', 
   try {
     for (const escrito of ['si', 'Fontaneria', '', undefined]) {
       const res = resFalso();
-      await handlerDeLaRuta()({ params: { merchantId: '7' }, body: { confirmacion: escrito } }, res);
+      await handlerDeLaRuta()({ params: { merchantId: '7' }, merchantId: 7, body: { confirmacion: escrito } }, res);
       assert.equal(res.code, 409,
         `🔴 «${escrito}» ha pasado por confirmacion del negocio «Fontaneria Perez». Un «¿seguro?» se ` +
         'pulsa sin leer; hay que escribir el nombre para obligar a MIRAR de quien son los datos que ' +
@@ -216,7 +216,7 @@ test('SCRUM-244 · con el nombre escrito: ANOTA primero y redacta despues, en es
   try {
     const res = resFalso();
     // Con espacios y otra caja: el nombre se compara normalizado, no al caracter.
-    await handlerDeLaRuta()({ params: { merchantId: '7' }, body: { confirmacion: '  fontaneria perez ' } }, res);
+    await handlerDeLaRuta()({ params: { merchantId: '7' }, merchantId: 7, body: { confirmacion: '  fontaneria perez ' } }, res);
     assert.equal(res.code, 200, `🔴 la supresion no completo: ${JSON.stringify(res.body)}`);
     assert.equal(diario.indexOf('auditLog.create'), 1,
       `🔴 el orden real fue ${diario.join(' → ')}. La anotacion va ANTES de tocar un solo dato: si se ` +
