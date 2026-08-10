@@ -166,7 +166,10 @@ export function cargarDashboard(raiz, opciones = {}) {
   const ctx = {
     document: doc,
     location: { href: 'https://yaqu.app/dashboard/', hash: '', pathname: '/dashboard/', search: '', origin: 'https://yaqu.app' },
-    navigator: { userAgent: 'banco', language: 'es-ES', onLine: true, serviceWorker: { register: async () => ({}) } },
+    // SCRUM-362 (H7): si el test trae un ESCENARIO DE RED (`_banco-red.mjs`), manda el suyo — ahí
+    // `onLine` puede mentir, que es medio escenario de «acepta y no entrega».
+    navigator: opciones.red?.navigator
+      ?? { userAgent: 'banco', language: 'es-ES', onLine: true, serviceWorker: { register: async () => ({}) } },
     localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
     sessionStorage: { getItem: () => null, setItem() {}, removeItem() {} },
     // 🔴 EL FIXTURE VA EN `fetch`, NO EN `apiRequest` — corregido en SCRUM-432.
@@ -181,12 +184,14 @@ export function cargarDashboard(raiz, opciones = {}) {
     //
     // `datos` puede ser un valor (igual para toda ruta) o una función `(ruta, opciones)`.
     apiRequest: async () => (typeof opciones.datos === 'function' ? opciones.datos() : (opciones.datos ?? {})),
-    fetch: async (url, opts) => ({
+    // SCRUM-362 (H7): con escenario de red, el `fetch` es el suyo. Sin él, el de siempre —una red
+    // que responde bien— para no cambiar lo que ya miden los demás tests.
+    fetch: opciones.red?.fetch ?? (async (url, opts) => ({
       ok: true, status: 200,
       headers: { get: () => 'application/json' },
       json: async () => (typeof opciones.datos === 'function' ? opciones.datos(String(url), opts) : (opciones.datos ?? {})),
       blob: async () => ({}), text: async () => '',
-    }),
+    })),
     setTimeout, clearTimeout, setInterval, clearInterval, queueMicrotask,
     requestAnimationFrame: (f) => setTimeout(f, 0),
     Intl, Date, Array, Number, String, Boolean, Object, JSON, isNaN, parseInt, parseFloat,
