@@ -4,6 +4,10 @@
 async function renderTemplatesView(container) {
   container.innerHTML = '';
 
+  // SCRUM-432 (B1 · incremento 3): la MISMA tira que el historial. Sin ella aquí, entrar en
+  // Plantillas sería un callejón: la pestaña llevaría a una pantalla sin forma de volver.
+  renderPestanasPresupuestos(container, 'templates');
+
   const wrap = document.createElement('div');
   wrap.style.cssText = 'display:flex;flex-direction:column;gap:20px;max-width:860px';
   container.appendChild(wrap);
