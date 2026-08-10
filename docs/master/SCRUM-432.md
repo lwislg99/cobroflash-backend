@@ -2,7 +2,8 @@
 
 **Fecha:** 10-ago-2026 · **Carril:** B (UI) · **Gate:** sin gate, corre en `npm test`
 **Medido contra:** `origin/main` = `9ed7f26c763a349c8ad0e776e6533f491d606003` · 2026-08-10T17:09:59+01:00
-**Tanda:** 2625 tests · 2551 pass · **0 fail** · 74 gateados · `npm test` exit **0**
+**Tanda:** 2637 tests · 2563 pass · **0 fail** · 74 gateados · `npm test` exit **0**
+(re-corrida entera tras arreglar el rojo de CI de SCRUM-433, que es el último cambio)
 
 > Con esto **el bloque B queda cerrado salvo la entrada `Cobros`**, que es de B4 (SCRUM-285) y entra
 > con su pantalla.
@@ -81,6 +82,61 @@ resuelve ids de marcado anidado, y eso sigue siendo del banco, no del código.
 
 Las tres abortan si el reemplazo no llega al fichero (forma de la casa desde SCRUM-420). **R1 es el
 que pedía el encargo** y cae por los dos lados: el de composición y el que carga la pantalla.
+
+## 🔴 EL ROJO DE CI, Y ERAN DOS COSAS DISTINTAS CON LA MISMA CARA
+
+SCRUM-433 entró en `main` mientras esto se construía, y su guard puso la rama en rojo por **dos**
+aserciones. Parecían la misma —«el test de otra sesión choca con el mío»— y no lo eran. La primera
+era **de fondo, y yo tenía la culpa**.
+
+### ① El camino que puse era invisible para la casa entera
+
+```
+🔴 HAY VISTAS A LAS QUE NO LLEGA NADA: templates
+```
+
+`vistasQueAlguienAbre` busca `renderAppView('<vista>')` **con literal**, y las ~40 navegaciones del
+dashboard se escriben así. Yo había puesto `renderAppView(p.vista)` desde el bucle de la tira: más
+corto, y parecía más limpio. Resultado: **retiré la entrada de la barra y a cambio puse un camino
+que ningún censo de la casa puede ver.** El guard tenía razón por su propia regla, y la pantalla
+habría quedado marcada como huérfana para siempre.
+
+**No se arregla ampliando el censo ajeno** para que entienda despachos dinámicos: eso lo obligaría a
+aceptar cualquier variable y dejaría de distinguir un camino real de uno inventado. Se arregla donde
+estaba la excepción — cada pestaña abre su destino con su literal, en un `abrir()` que se llama de
+verdad. Sigue siendo una tira dirigida por datos; lo que cambia es que su navegación es auditable.
+
+> **Un camino que ningún censo puede ver es medio camino.** Y esto no lo habría cazado ningún test
+> mío: lo cazó el guard de otra sesión, midiendo desde fuera.
+
+### ② La premisa: el estado anterior convertido en requisito
+
+```
+🔴 PREMISA: hoy `Plantillas` sigue en la barra
+```
+
+Ésa **era correcta cuando se escribió**: anclaba una SIMULACIÓN a un estado real, para que simular la
+retirada simulara algo. Hecho el movimiento, esa línea pasó a exigir que el trabajo **no** estuviera
+hecho. Es el tercer caso del mismo género en dos días, después de `scrum296` y del ① de `scrum420`.
+
+**No se borra: se re-apunta al invariante que protegía**, que no era «está en la barra» sino
+**«`Plantillas` tiene exactamente UN camino»**. La mitad (a) —bien hecho— deja de ser simulación
+porque ya es el árbol de hoy; la (b) —quitar la pestaña sin devolver la entrada— sigue siendo el
+contrafactual, y ésa no se puede comprobar de otra forma. El motivo queda escrito en el propio
+fichero, junto a la aserción.
+
+**Rojo por el mecanismo, sobre lo que la aserción protege AHORA** (tres, comprobadas en disco):
+
+| # | qué se rompe | qué sale |
+|---|---|---|
+| **Ra** | se vuelve al despacho dinámico | 🔴 «HAY VISTAS A LAS QUE NO LLEGA NADA: templates» **y** «PREMISA: nadie abre `templates` con `renderAppView('templates')`» |
+| **Rb** | `Plantillas` vuelve a la barra | 🔴 «PREMISA: ha vuelto a la barra … si vuelve a tener DOS caminos, este test está midiendo otro mundo» |
+| **Rc** | `sinCamino` deja de marcar nunca | 🔴 «sin la pestaña … este guard no lo nota. Entonces no vigila lo que dice vigilar» |
+
+> ⚠️ **Y un error de proceso propio, que va escrito porque costó rehacer trabajo:** deshice una
+> inyección con `git checkout -- <fichero>` sobre un fichero que **también tenía mi arreglo sin
+> commitear**, y me llevé el arreglo por delante. Es exactamente para lo que existe la regla de la
+> casa de **commitear en verde ANTES de inyectar** — que esta vez me había saltado.
 
 ## Lo que este ticket cambia del guard de SCRUM-420, y por qué no es relajarlo
 
