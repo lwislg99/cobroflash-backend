@@ -50,8 +50,38 @@ async function fetchInvoices(options = {}) {
 
     const res = await fetch(url.toString(), { headers: { Accept: 'application/json' } });
     if (!res.ok) throw new Error('Error cargando facturas');
-    return res.json();
+    return soloFacturas(await res.json());
   }
+
+  // ── SCRUM-442 (B4 · punto 1) · «Menú Facturas = solo facturas» ─────────────────────────────
+    //
+    // Hasta hoy esta lista mezclaba facturas con JUSTIFICANTES DE COBRO. Son dos documentos con dos
+    // significados legales distintos —uno es el documento fiscal, el otro acredita que se recibió
+    // el dinero— y el profesional que abre esta pantalla para contar cuántas ha emitido este mes
+    // lee un número que no es el que cree. Es un dato que se mira antes de hablar con la gestoría.
+    //
+    // 🔴 SE CLASIFICA CON `tipoDeFactura`, NUNCA CON UNA COPIA. Es la MISMA función que reparte la
+    // pila del Trabajo (G4), alimenta el bloque DINERO del rail y ordena la pantalla de Cobros. Un
+    // `startsWith('J-')` a mano aquí sería la cuarta forma de decidir lo mismo, y el día que una
+    // cambie el documento se irá a dos sitios o a ninguno.
+    //
+    // Y se llama SIN guarda `typeof`: si `tipoDeFactura` no estuviera, esto tiene que reventar
+    // ruidosamente. Un filtro que se desactiva solo devolvería la lista mezclada **en silencio**,
+    // que es justo el defecto que este cambio cierra.
+    //
+  // Las RECTIFICATIVAS se quedan: son facturas (`type === 'R1'`). Solo salen los justificantes,
+  // y su sitio es la pantalla de Cobros (SCRUM-285), donde se pintan con su número y su tipo.
+  //
+  // Va como función CON NOMBRE y publicada, no como un `.filter()` incrustado en la carga: la vista
+  // de Facturas todavía no se puede pintar en el banco de SCRUM-417, así que sin esto la única
+  // forma de «probar» el filtro sería mirar que la lista sale vacía — y una vista que revienta
+  // también sale vacía. Ese verde hueco apareció al construir esto y lo cazó el control positivo.
+  function soloFacturas(documentos) {
+    return (Array.isArray(documentos) ? documentos : [])
+      .filter((doc) => tipoDeFactura(doc) !== 'justificante');
+  }
+
+  if (typeof window !== 'undefined') window.soloFacturas = soloFacturas;
 
   // SCRUM-69 (FACT-1): bandeja "pendientes de facturar" — albaranes firmados y valorados sin
   // facturar, agrupados por cliente→mes, con semáforo de plazo legal (art. 13 RD 1619/2012).

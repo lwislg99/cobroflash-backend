@@ -39,15 +39,60 @@ import vm from 'node:vm';
 export function nodo(tag, reg) {
   const n = {
     tagName: String(tag).toUpperCase(),
-    className: '', id: '', type: '', value: '', disabled: false, checked: false,
+    className: '', _id: '', type: '', value: '', disabled: false, checked: false,
     href: '', download: '', title: '', placeholder: '', name: '', src: '',
     style: { cssText: '', color: '', display: '', setProperty() {} },
-    dataset: {}, hijos: [], _texto: '', _html: '',
-    appendChild(h) { n.hijos.push(h); return h; },
-    append(...h) { n.hijos.push(...h); },
-    removeChild(h) { n.hijos = n.hijos.filter((x) => x !== h); },
-    insertBefore(h) { n.hijos.unshift(h); return h; },
-    addEventListener() {}, removeEventListener() {}, click() {}, remove() {}, focus() {}, blur() {},
+    dataset: {}, hijos: [], _texto: '', _html: '', _padre: null,
+    appendChild(h) { if (h) h._padre = n; n.hijos.push(h); return h; },
+    append(...h) { for (const x of h) { if (x) x._padre = n; } n.hijos.push(...h); },
+    // ⚠️ SCRUM-444 · al quitar un nodo se DESREGISTRA su id. En el navegador, `getElementById` no
+    // encuentra lo que ya no está en el documento; aquí seguía encontrándolo, así que un test que
+    // borrara un contenedor y lo volviera a pedir recibía el nodo MUERTO y seguía escribiendo en
+    // él. Lo cazó la prueba de rojo de SCRUM-444: la inyección del defecto salía VERDE porque la
+    // pila borrada se «encontraba» igual.
+    removeChild(h) {
+      n.hijos = n.hijos.filter((x) => x !== h);
+      if (h) { h._padre = null; if (h._id && reg.porId.get(h._id) === h) reg.porId.delete(h._id); }
+    },
+    insertBefore(h) { if (h) h._padre = n; n.hijos.unshift(h); return h; },
+    // ⚠️ SCRUM-444 · `children`, `firstElementChild` y un `remove()` QUE DE VERDAD QUITA.
+    //
+    // Antes `remove()` era un NO-OP y `children` no existía. Con eso, una vista que gestione una
+    // lista de nodos —quitar el más antiguo, contar los vivos— se medía en un DOM **donde quitar
+    // no quita**: el test pasaría o fallaría por motivos que no son los del producto. Es la clase
+    // de banco infiel que advierte la cabecera de este fichero, y por eso se corrige aquí en vez
+    // de rodearlo desde el test.
+    get children() { return n.hijos; },
+    get firstElementChild() { return n.hijos[0] || null; },
+    get lastElementChild() { return n.hijos[n.hijos.length - 1] || null; },
+    remove() { if (n._padre) n._padre.removeChild(n); },
+    // ⚠️ SCRUM-444 · UN `id` ASIGNADO A MANO TAMBIÉN SE ENCUENTRA.
+    //
+    // `reg.porId` sólo se rellenaba desde `innerHTML`, así que
+    // `const d = createElement('div'); d.id = 'x'; body.appendChild(d);` NO se encontraba nunca con
+    // `getElementById('x')` — cuando en el navegador sí. Eso iba a producir un **falso hallazgo**
+    // en SCRUM-444: la pila de avisos se buscaba, no aparecía, y se creaba una nueva por aviso, con
+    // lo que «no se apilan» habría sido culpa del banco y no del producto.
+    get id() { return n._id; },
+    set id(v) { n._id = String(v); if (n._id) reg.porId.set(n._id, n); },
+    // SCRUM-285: los oyentes se GUARDAN y se pueden disparar. Antes eran un no-op y por eso
+    // SCRUM-417 declaró «no se pulsa nada» como hueco. Hacía falta de verdad: los dos estados
+    // vacíos de Cobros —«no hay ninguno» y «tu filtro los esconde»— solo se distinguen PULSANDO un
+    // filtro, y son la diferencia entre informar y decirle al profesional que no le deben nada.
+    _oyentes: {},
+    addEventListener(tipo, fn) { (n._oyentes[tipo] = n._oyentes[tipo] || []).push(fn); },
+    removeEventListener(tipo, fn) {
+      n._oyentes[tipo] = (n._oyentes[tipo] || []).filter((f) => f !== fn);
+    },
+    /** Dispara los oyentes de un tipo. Devuelve cuántos corrieron: 0 se lee igual que «no pasó nada». */
+    disparar(tipo) {
+      const fns = n._oyentes[tipo] || [];
+      for (const f of fns) f.call(n, { type: tipo, target: n, preventDefault() {}, stopPropagation() {} });
+      return fns.length;
+    },
+    dispararClick() { return n.disparar('click'); },
+    click() { return n.disparar('click'); },
+    focus() {}, blur() {},
     setAttribute() {}, getAttribute: () => null, removeAttribute() {},
     querySelector: () => null, querySelectorAll: () => [], closest: () => null,
     classList: { add() {}, remove() {}, toggle() {}, contains: () => false },
@@ -57,11 +102,27 @@ export function nodo(tag, reg) {
     set innerHTML(v) {
       n._html = String(v);
       if (v === '') { n.hijos = []; return; }
-      // Lo que hace el navegador: el marcado se vuelve árbol y sus `id` quedan buscables. Sin
-      // esto, toda vista que pinte con `innerHTML` y luego busque por id daría un rojo falso.
-      for (const m of String(v).matchAll(/<(\w+)[^>]*\bid="([^"]+)"/g)) {
-        const h = nodo(m[1], reg); h.id = m[2];
-        reg.porId.set(m[2], h); n.hijos.push(h);
+      // Lo que hace el navegador: el marcado se vuelve árbol. Sin esto, toda vista que pinte con
+      // `innerHTML` y luego busque por id daría un rojo falso.
+      //
+      // SCRUM-285: se representan TODAS las etiquetas con atributos, no solo las que llevan `id`,
+      // y se les copia `id`, `class`, `data-*` y su texto. Antes solo entraban las de `id`, así que
+      // un bloque marcado con `data-…` —el estado vacío de Cobros— era invisible para el banco y su
+      // test daba un rojo que era del banco. Es plano a propósito: no anida, y se declara.
+      for (const m of String(v).matchAll(/<(\w+)([^>]*)>([^<]*)/g)) {
+        const attrs = m[2] || '';
+        if (!/\b(id|class|data-)/.test(attrs)) continue;
+        const h = nodo(m[1], reg);
+        const id = attrs.match(/\bid="([^"]+)"/);
+        const cls = attrs.match(/\bclass="([^"]+)"/);
+        if (id) { h.id = id[1]; reg.porId.set(id[1], h); }
+        if (cls) h.className = cls[1];
+        for (const d of attrs.matchAll(/\bdata-([\w-]+)="([^"]*)"/g)) {
+          h.dataset[d[1].replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = d[2];
+        }
+        const texto = (m[3] || '').trim();
+        if (texto) h.textContent = texto;
+        n.hijos.push(h);
       }
     },
     get innerHTML() { return n._html; },

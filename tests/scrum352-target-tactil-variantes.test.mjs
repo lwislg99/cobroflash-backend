@@ -156,3 +156,80 @@ test('ROJO: si se cae el :not(.btn-sm), la asimetría de los pequeños se detect
   assert.equal(uno.conBasePx, 30, 'con base debe seguir en 30');
   assert.equal(uno.solaPx, 44, 'suelta se dispararía a 44: esa es la asimetría');
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-368 · LA EXCEPCIÓN ESCRITA Y LA EXCEPCIÓN DEL CÓDIGO SON LA MISMA LISTA
+//
+// DESIGN.md decía «≥44px en móvil» a secas mientras el CSS eximía a `btn-sm`. El documento decía
+// una cosa, el código hacía otra, y un test bendecía el código. Se enmendó el documento (decisión
+// del fundador, 10-ago-2026) — y se ata aquí, porque **una excepción documentada que no está atada
+// al código vuelve a divergir en un mes**.
+//
+// Las dos listas se DERIVAN: la del CSS de los `:not(...)` de la regla de móvil, la de DESIGN.md
+// del texto. Ninguna se escribe a mano aquí.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+const DESIGN = fs.readFileSync(path.join(RAIZ, 'DESIGN.md'), 'utf8');
+
+/** Las clases eximidas del bump, DERIVADAS de los `:not(.x)` de la regla de 44px en móvil. */
+function exencionesDelCss() {
+  // La regla es la que sube a 44 dentro del bloque de móvil. Se localiza por su efecto
+  // (`min-height: 44px` sobre selectores de botón), no por su número de línea.
+  const bloques = [...HOJA.matchAll(/([^{}]+)\{([^}]*min-height:\s*44px[^}]*)\}/g)];
+  const conNot = bloques.filter(([, sel]) => /\.btn[a-z-]*:not\(/.test(sel));
+  return {
+    reglas: conNot.length,
+    clases: [...new Set(conNot.flatMap(([, sel]) => [...sel.matchAll(/:not\(\.([a-z0-9-]+)\)/g)].map((m) => m[1])))].sort(),
+  };
+}
+
+/** Las clases que DESIGN.md declara exentas, derivadas del texto de la regla de altura. */
+function exencionesDeDesign() {
+  const i = DESIGN.indexOf('- **Shape:** pastilla');
+  const j = DESIGN.indexOf('\n- **Primary:**', i);
+  const bloque = i >= 0 && j > i ? DESIGN.slice(i, j) : '';
+  // Solo cuentan las clases nombradas en la frase de la EXCEPCIÓN, no cualquier `btn-x` del bloque.
+  const frase = /excepción[^.]*?:([\s\S]*?)(?:\n\s*\*\*|$)/i.exec(bloque);
+  const donde = frase ? frase[1] : '';
+  return {
+    hayBloque: bloque.length > 0,
+    diceExcepcion: /excepción/i.test(bloque),
+    clases: [...new Set([...donde.matchAll(/`(btn-[a-z0-9-]+)`/g)].map((m) => m[1]))].sort(),
+  };
+}
+
+test('SCRUM-368 · SUELO: se localizan las DOS listas antes de compararlas', () => {
+  const css = exencionesDelCss();
+  const design = exencionesDeDesign();
+  assert.ok(css.reglas > 0,
+    '🔴 ESCÁNER CIEGO: no se encuentra ninguna regla de `min-height: 44px` con `:not(...)`. ' +
+    '«No hay exenciones» y «no supe mirar el CSS» son el mismo resultado y significan lo contrario.');
+  assert.ok(css.clases.length > 0, '🔴 ESCÁNER CIEGO: la regla existe pero no se extrae ninguna clase de sus `:not(...)`');
+  assert.ok(design.hayBloque, '🔴 ESCÁNER CIEGO: no se localiza el bloque de altura en DESIGN.md');
+  assert.ok(design.diceExcepcion,
+    '🔴 DESIGN.md ya no documenta NINGUNA excepción a «≥44px en móvil», pero el CSS sigue eximiendo ' +
+    `a ${css.clases.join(', ')}. O se quita la exención del CSS, o se vuelve a escribir aquí.`);
+});
+
+test('SCRUM-368 · 🔴 la excepción de DESIGN.md y la del CSS son LA MISMA LISTA', () => {
+  const css = exencionesDelCss();
+  const design = exencionesDeDesign();
+  assert.deepEqual(
+    design.clases, css.clases,
+    '🔴 EL DOCUMENTO Y EL CÓDIGO DICEN COSAS DISTINTAS SOBRE QUÉ SE EXIME DEL TARGET TÁCTIL.\n' +
+    `  DESIGN.md exime: ${design.clases.join(', ') || '(nada)'}\n` +
+    `  el CSS exime:    ${css.clases.join(', ') || '(nada)'}\n\n` +
+    '  Esto es exactamente lo que reabrió SCRUM-368: el documento pedía ≥44 sin matiz y el CSS\n' +
+    '  eximía a una clase. Si se añade una exención al CSS, se escribe aquí Y se justifica; si se\n' +
+    '  quita, se borra de los dos sitios. Un documento que no describe el producto no es la fuente\n' +
+    '  de verdad de nada.');
+});
+
+test('SCRUM-368 · CONTROL NEGATIVO: el comparador NO da por buena una lista vacía', () => {
+  // Sin esto, el día que los dos extractores devolvieran `[]` el test de arriba pasaría —
+  // `deepEqual([], [])` es verde— y estaría comparando dos silencios.
+  const css = exencionesDelCss();
+  assert.ok(css.clases.includes('btn-sm'),
+    '🔴 el extractor del CSS ya no ve `btn-sm` entre las exenciones. O la exención se quitó (y hay ' +
+    'que quitarla de DESIGN.md) o el extractor está roto — y las dos cosas no pueden dar verde.');
+});

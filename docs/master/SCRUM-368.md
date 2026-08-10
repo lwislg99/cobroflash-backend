@@ -1375,3 +1375,101 @@ DESIGN.md y el `:not(.btn-sm)` del CSS **sean la misma lista**.
 Cero líneas de CSS, de DESIGN.md y de tests. No se ha tocado el verde (STOP declarado), ni el
 escritorio (sería rediseño encubierto), ni ninguno de los 39 sitios. **No se ha escrito un segundo
 guard**: el que se pedía ya existe y está verificado en rojo.
+
+---
+
+## ① LA ENMIENDA DE DESIGN.md — aplicada con GO del fundador (10-ago-2026)
+
+`DESIGN.md:168` decía «≥44px en móvil» **sin matiz**, mientras el CSS eximía a `btn-sm` y un test lo
+bendecía. Ya dice lo que el producto hace: el ≥44 en móvil, el escritorio a 36 **a propósito**, la
+excepción de `btn-sm` **con su justificación medida** —sin el `:not`, un `btn-primary btn-sm` suelto
+saltaría a 44 mientras su gemelo con la base se queda en 30, porque `.btn.btn-sm` es (0,2,0) y
+gana— y **su frontera**: una primaria de pantalla nunca usa la variante pequeña (SCRUM-412). Sin esa
+frontera la excepción sería un agujero.
+
+### Y está ATADA: la lista escrita y la del `:not()` son la misma lista
+
+Tres tests nuevos en `scrum352`, con **las dos listas derivadas** —la del CSS de los `:not(...)` de
+la regla de 44px, la de DESIGN.md del texto de la excepción—; ninguna escrita a mano:
+
+- **SUELO**: se localizan las dos listas antes de compararlas. Si el CSS no tiene ninguna regla con
+  `:not(...)`, o DESIGN.md ya no documenta excepción, falla **declarándose ciego** — «no hay
+  exenciones» y «no supe mirar» no pueden dar el mismo verde.
+- **La atadura**: las dos listas tienen que ser iguales, y el mensaje enseña las dos.
+- **CONTROL NEGATIVO**: no da por buena una lista vacía. Sin él, el día que los dos extractores
+  devolvieran `[]` el test pasaría comparando **dos silencios**.
+
+**Verificado en rojo en las DOS direcciones**, que es lo que lo hace atadura y no adorno:
+
+| # | inyección | resultado |
+|---|---|---|
+| 1 | el **CSS** gana una exención nueva y nadie la escribe | rojo por su motivo |
+| 2 | **DESIGN.md** borra la excepción y el CSS la mantiene | rojo por su motivo |
+| 3 | el extractor deja de ver la regla (suelo) | rojo por su motivo |
+
+## ② EL CONTRASTE DE `btn-primary btn-sm` — HUECO DECLARADO, no arreglado
+
+**Decisión del fundador: no se toca.** Queda escrito aquí con el número y la alternativa.
+
+| | |
+|---|---|
+| ratio actual | **3,30:1** — blanco sobre `--brand` `#16a34a` |
+| umbral que le aplica | **4,5:1** (texto de 12,5px, peso 600 → no es «texto grande») |
+| sitios afectados | **39** en `public/` (`.js` + `.html`), medidos el 10-ago-2026 |
+| alternativa conocida | `--brand-tint-ink` `#047857` → **5,48:1** ✅ |
+| por qué no se aplica | cambiar el color de un botón primario es **identidad de marca**: lo decide el fundador |
+
+⚠️ **El grande sí cumple**, y sin tocar ningún color: `.btn-primary:not(.btn-sm)` va a **18,66px con
+peso 700**, y con eso el umbral de WCAG SC 1.4.3 es **3,0**. A un botón pequeño no se le puede poner
+esa letra sin dejar de ser pequeño — de ahí que el residuo sea justo el pequeño.
+
+⚠️ Y **`guard:contraste` no absuelve esto**: su propio mensaje dice «ningún par NUEVO por debajo de
+AA». Vigila regresiones. Su verde no es prueba de que lo viejo cumpla, y por eso el 3,30 está
+recalculado a mano en esta entrada.
+
+---
+
+## 🔴 HALLAZGO · SCRUM-412 está Finalizada y su rama NO está en main — medido
+
+El censo del cementerio no lo vio porque **solo miraba PR abiertas**, y esa rama no tiene PR.
+Censamos por donde era fácil mirar: el mismo defecto que perseguimos todo el día.
+
+**La pregunta correcta no es «¿está el patch?» sino «¿ESTÁ LA FUNCIÓN?».** Medido sobre el árbol de
+main, con suelo (50 ficheros `.js`, 92 líneas con `btn-primary`) y control positivo (el instrumento
+reconoce la combinación teniéndola delante):
+
+| pregunta | respuesta |
+|---|---|
+| ¿existe el guard en main? | **SÍ** — `tests/scrum412-primaria-nunca-es-sm.test.mjs`, ejecutado: **5 pass, 0 fail** |
+| ¿impide que una primaria de pantalla nueva lleve `btn-sm`? | **SÍ** — una combinación nueva **tiene que declararse**, y el suelo del censo lo respalda |
+| ¿está todo lo que la rama arregla? | **NO** |
+
+**La función está. Lo que falta es UNA decisión, y es la que más duele.**
+
+En main, `signaturePad.js` sigue con `okBtn.className = 'btn-primary btn-sm'` → **30px en móvil**. Y
+el guard **pasa** porque está declarado en su allowlist, con esta nota escrita a mano:
+
+> *«MODAL de firma. ⚠️ DECLARADO CON DUDA, y se dice en vez de decidirlo solo: es un modal, pero lo
+> pulsa el CLIENTE en una obra y es el momento más irrepetible del producto (SCRUM-404). Si el
+> fundador decide que un modal así cuenta como primaria, sale de esta lista.»*
+
+**El fundador ya lo decidió** — y esa decisión vive en el commit sin mergear.
+
+### La víctima, dicha
+
+**El cliente firmando en la obra.** Un target de **30px**, con guantes, a pleno sol, en el momento
+que SCRUM-404 midió como el más irrepetible del producto: si falla el toque, hay que pedirle a una
+persona que **firme otra vez, delante del profesional**.
+
+⚠️ **Y que la base suba a 44 en móvil hace ese guard MÁS importante, no menos**: precisamente porque
+todo lo demás sube, `btn-sm` es lo único que se queda en 30 — y sin la frontera de SCRUM-412, ahí es
+donde se cuela una primaria.
+
+### Lo que NO he hecho
+
+**No lo arreglo**, como se me pidió: la corrección existe y está en `scrum-412-primarias-tactiles`
+(`1959751`, Luis, 10-ago-2026). Lo que falta es **mergear esa rama**, no volver a escribirla —
+duplicarla aquí crearía dos versiones de la misma decisión y una allowlist con dos verdades.
+
+**Y el hallazgo de método, que vale más que el caso:** una rama sin PR es invisible para un censo
+que mira PR. El censo del cementerio necesita mirar **ramas**, no solo PR — es su propio suelo.
