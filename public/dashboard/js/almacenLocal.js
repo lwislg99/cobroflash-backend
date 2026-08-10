@@ -304,6 +304,39 @@ function guardarFirmaPendiente(firma) {
   return conElAlmacen((bd) => escribirConfirmando(bd, FIRMAS_PENDIENTES, firma));
 }
 
+/**
+ * Saca UNA firma de la cola, por su clave. SCRUM-358 (H3 · fase 2).
+ *
+ * 🔴 CONFIRMA IGUAL QUE AL ESCRIBIR, y aquí el motivo es el simétrico: dar por desencolado algo
+ * que sigue dentro deja un fantasma que se reintentará; pero decir «no se pudo quitar» cuando sí
+ * se quitó hace que el producto insista sobre una firma que ya no existe. Sólo `tx.oncomplete`
+ * distingue las dos.
+ *
+ * Quitar algo que no está NO es un fallo: `delete` sobre una clave ausente es válido en IndexedDB,
+ * y desencolar dos veces es un caso corriente en cuanto haya reintentos.
+ */
+function quitarFirmaPendiente(clave) {
+  return conElAlmacen((bd) => new Promise((resolve) => {
+    let tx;
+    try {
+      tx = bd.transaction(FIRMAS_PENDIENTES, 'readwrite');
+    } catch (e) {
+      resolve({ estado: FALLO, motivo: String((e && e.message) || e) });
+      return;
+    }
+    let motivoDelFallo = null;
+    try {
+      tx.objectStore(FIRMAS_PENDIENTES).delete(clave);
+    } catch (e) {
+      motivoDelFallo = String((e && e.message) || e);
+    }
+    tx.oncomplete = () => resolve({ estado: GUARDADO });
+    tx.onabort = () => resolve({ estado: FALLO, motivo: motivoDelFallo || 'transacción abortada' });
+    tx.onerror = () => resolve({ estado: FALLO, motivo: motivoDelFallo || 'error en la transacción' });
+    if (motivoDelFallo) { try { tx.abort(); } catch (_e) { /* ya abortada */ } }
+  }));
+}
+
 /** Las firmas que siguen en la cola. El orden y el drenado son de H3. */
 function leerFirmasPendientes() {
   return conElAlmacen(async (bd) => {
@@ -454,6 +487,7 @@ window.tramosQueFaltan = tramosQueFaltan;
 window.abrirAlmacen = abrirAlmacen;
 window.guardarFirmaPendiente = guardarFirmaPendiente;
 window.leerFirmasPendientes = leerFirmasPendientes;
+window.quitarFirmaPendiente = quitarFirmaPendiente;   // SCRUM-358 (H3 fase 2)
 window.guardarAlbaranPrecargado = guardarAlbaranPrecargado;
 window.leerAlbaranesPrecargados = leerAlbaranesPrecargados;
 window.purgarDatosLocales = purgarDatosLocales;
