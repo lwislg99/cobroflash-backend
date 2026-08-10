@@ -88,7 +88,7 @@ const UA = 'QA-UA-SCRUM68/1.0';
 // distinguir «lo declaró alguien» de «se lo pusimos nosotros».
 const FIRMANTE_DECLARADO = 'Encargado de obra Paco';
 
-test('SCRUM-68: sella evidencias (remoto + in situ) y NUNCA expone ip/ua/hash', { skip: !ENABLED }, async () => {
+test('SCRUM-68: sella evidencias (remoto + in situ) y NUNCA expone ip/ua/hash', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);

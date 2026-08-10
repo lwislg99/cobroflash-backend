@@ -41,7 +41,7 @@ async function crearCustomer(prisma, merchantId) {
   });
 }
 
-test('SCRUM-135: un gasto SÍ acepta una cotización propia (guarda de presencia)', { skip: !ENABLED }, async () => {
+test('SCRUM-135: un gasto SÍ acepta una cotización propia (guarda de presencia)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { createExpense } = await import('../dist/modules/expenses/domain/expenses.service.js');
 
@@ -59,7 +59,7 @@ test('SCRUM-135: un gasto SÍ acepta una cotización propia (guarda de presencia
   });
 });
 
-test('SCRUM-135: un gasto NO puede apuntar a la cotización de OTRO merchant', { skip: !ENABLED }, async () => {
+test('SCRUM-135: un gasto NO puede apuntar a la cotización de OTRO merchant', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { createExpense, ExpenseRefError } = await import('../dist/modules/expenses/domain/expenses.service.js');
 
@@ -88,7 +88,7 @@ test('SCRUM-135: un gasto NO puede apuntar a la cotización de OTRO merchant', {
   });
 });
 
-test('SCRUM-135: tampoco por la puerta de atrás del PUT', { skip: !ENABLED }, async () => {
+test('SCRUM-135: tampoco por la puerta de atrás del PUT', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { createExpense, updateExpense, ExpenseRefError } = await import('../dist/modules/expenses/domain/expenses.service.js');
 
@@ -119,7 +119,7 @@ test('SCRUM-135: tampoco por la puerta de atrás del PUT', { skip: !ENABLED }, a
   });
 });
 
-test('SCRUM-135: mismo criterio para el proveedor', { skip: !ENABLED }, async () => {
+test('SCRUM-135: mismo criterio para el proveedor', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { createExpense, ExpenseRefError } = await import('../dist/modules/expenses/domain/expenses.service.js');
 

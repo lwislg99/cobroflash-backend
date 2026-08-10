@@ -23,7 +23,7 @@ import { exigirTodas } from './_evidencia.mjs'; // SCRUM-270: las dos preguntas,
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', { skip: !ENABLED }, async (t) => {
+test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { ADMIN_ONLY_ROUTES } = await import('../dist/core/http/adminOnlyRoutes.js');
@@ -208,7 +208,7 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
 // ve/accede los Trabajos que originó (operarioId), el admin/owner ve todos. Dimensión que
 // A12.1 (cross-merchant) y A12.4 (rutas admin-only) NO cubren.
 // Datos EFÍMEROS propios (nada del seed demo — lección de SCRUM-63) y limpieza en el finally.
-test('SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo merchant)', { skip: !ENABLED }, async (t) => {
+test('SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo merchant)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 

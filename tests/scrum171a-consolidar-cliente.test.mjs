@@ -18,7 +18,7 @@ import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 const ENABLED = process.env.QA_DB_TEST === '1';
 const LINEAS = [{ concepto: 'Mantenimiento mensual', cantidad: 2, unidad: 'h', precioUnitario: 50, tipoIva: 21 }];
 
-test('SCRUM-171a: consolidar por CLIENTE cruzando Trabajos, con rotura por mes', { skip: !ENABLED }, async (t) => {
+test('SCRUM-171a: consolidar por CLIENTE cruzando Trabajos, con rotura por mes', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 

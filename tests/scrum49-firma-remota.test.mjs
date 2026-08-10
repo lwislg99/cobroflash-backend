@@ -47,7 +47,7 @@ async function moduloDeLog() {
   return (await import('../dist/modules/messaging/domain/whatsappLog.service.js')).default;
 }
 
-test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, auto-envío, tenancy', { skip: !ENABLED }, async () => {
+test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, auto-envío, tenancy', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);

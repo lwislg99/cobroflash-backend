@@ -20,7 +20,7 @@ import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-58: la lista de Trabajos no hace N+1 (las consultas no crecen con el nº de jobs)', { skip: !ENABLED }, async (t) => {
+test('SCRUM-58: la lista de Trabajos no hace N+1 (las consultas no crecen con el nº de jobs)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 

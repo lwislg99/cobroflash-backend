@@ -31,7 +31,7 @@ async function buscarAudit(prisma, jobId) {
     .catch(() => null);
 }
 
-test('SCRUM-52: operarioId = quote.teamMemberId (+ null owner) + audit único + índice', { skip: !ENABLED }, async () => {
+test('SCRUM-52: operarioId = quote.teamMemberId (+ null owner) + audit único + índice', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { ensureJobForQuote } = await import('../dist/modules/jobs/domain/job.service.js');
 
