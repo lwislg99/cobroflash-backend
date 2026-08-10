@@ -11,7 +11,7 @@
 // El BOM es la pieza que hace legible una Ñ en Excel: sin él, Excel lee el fichero como ANSI y
 // «Peña» sale «PeÃ±a». Aquí no se reimplementa — se hereda, y el test lo comprueba en BYTES.
 import { csvBody, csvNum, csvRow } from '../../exports/domain/exportData';
-import { COLUMNAS_EXPEDIDAS, type FilaLibro } from './librosAeat';
+import { COLUMNAS_EXPEDIDAS, COLUMNAS_RECIBIDAS, type FilaLibro } from './librosAeat';
 
 /** Las columnas que llevan importe: se formatean con coma decimal. El resto va tal cual. */
 const COLUMNAS_IMPORTE = new Set(['baseImponible', 'cuotaIva', 'totalFactura']);
@@ -48,4 +48,35 @@ export function csvLibroExpedidas(filas: FilaLibro[]): string {
  */
 export function nombreFicheroExpedidas(año: number, trimestre: number): string {
   return `yaqu-emitidas-${año}-T${trimestre}.csv`;
+}
+
+/**
+ * El CSV del libro de RECIBIDAS — SCRUM-426. Mismo formato de la casa (SCRUM-86) y misma regla:
+ * `null` sale VACÍO, nunca `0,00`.
+ *
+ * ⚠️ LOS AVISOS VAN DENTRO DEL FICHERO, arriba y en su propia línea. No en un `header` HTTP ni en
+ * una nota de la pantalla: **el fichero viaja solo**. Se lo reenvían al despacho por correo y ahí
+ * ya no hay pantalla que explique nada — si el aviso no está dentro, no existe. Lo que dicen: que
+ * el formato es provisional, y cuántos gastos quedaron fuera y por cuánto dinero.
+ */
+export function csvLibroRecibidas(filas: FilaLibro[], avisos: string[] = []): string {
+  const header = COLUMNAS_RECIBIDAS.map((c) => c.rotulo);
+  const rows = filas.map((f) => csvRow(COLUMNAS_RECIBIDAS.map((c) => celda(c.clave, f[c.clave]))));
+  const cuerpo = csvBody({ header, rows });
+  if (avisos.length === 0) return cuerpo;
+  // Cada aviso en su fila, antes de la cabecera. Van por `csvRow` para que las comas y las
+  // comillas de un texto largo no rompan el fichero.
+  const preambulo = avisos.map((a) => csvRow([a])).join('');
+  // El BOM tiene que quedarse el PRIMERO del fichero o Excel lee los acentos rotos: se corta del
+  // cuerpo y se vuelve a poner delante, en vez de escribir un segundo.
+  const bom = cuerpo.startsWith('\ufeff') ? '\ufeff' : '';
+  return bom + preambulo + (bom ? cuerpo.slice(1) : cuerpo);
+}
+
+/**
+ * El nombre del fichero de recibidas. Igual que el de emitidas: lleva el periodo dentro y **no
+ * dice «AEAT» ni «Libro Registro»** — esa promesa de conformidad sigue sin poder hacerse (P15.1).
+ */
+export function nombreFicheroRecibidas(año: number, trimestre: number): string {
+  return `yaqu-recibidas-${año}-T${trimestre}.csv`;
 }

@@ -277,3 +277,102 @@ test('SCRUM-426 · no formatea NADA: el formato es E4 y va después', () => {
       'documento oficial en el árbol contra el que se haya contrastado el formato (P15.1).',
   );
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// LA CONEXIÓN CON E4 · SE EJECUTA, NO SE MENCIONA
+//
+// Mencionar no es hacer. Estos tests no comprueban que exista un import ni que un comentario
+// hable de la conexión: RECORREN LA CADENA ENTERA —repo de E4 → lector de A6 → motor → filas—
+// con una base falsa, y comparan lo que sale con lo que el motor calculó. Si alguien desconecta
+// el motor, o hace que E4 se invente sus propias cifras, esto muere.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+import {
+  COLUMNAS_RECIBIDAS, LIBROS_DISPONIBLES, filasLibroRecibidas, avisosLibroRecibidas,
+} from '../dist/modules/fiscal/librosAeat/librosAeat.js';
+import { leerLibroRecibidasDelTrimestre } from '../dist/modules/fiscal/librosAeat/librosAeat.repo.js';
+import { csvLibroRecibidas } from '../dist/modules/fiscal/librosAeat/librosAeatCsv.js';
+
+/** Base falsa: devuelve los gastos que se le den y resuelve el proveedor. Nada más. */
+function dbFalsa(gastos, proveedores = [{ id: 3, name: 'Suministros Peña', taxId: 'B12345678' }]) {
+  const visto = { where: null };
+  return {
+    visto,
+    expense: { findMany: async (args) => { visto.where = args.where; return gastos; } },
+    provider: { findMany: async () => proveedores },
+    invoice: { findMany: async () => [] },
+    quote: { findMany: async () => [] },
+    albaran: { findMany: async () => [] },
+    customer: { findMany: async () => [] },
+  };
+}
+
+test('SCRUM-426 · 🔴 LA CADENA ENTERA CORRE: repo de E4 → lector de A6 → motor → filas', async () => {
+  const db = dbFalsa([clasificado(), sinClasificar()]);
+  const r = await leerLibroRecibidasDelTrimestre(db, { merchantId: M, año: 2026, trimestre: 3 });
+
+  // ① el motor corrió de verdad: solo el clasificado es asiento, y `miradas` cuenta los dos.
+  assert.equal(r.filas.length, 1, `🔴 salieron ${r.filas.length} filas y el motor produce 1 asiento`);
+  assert.equal(r.miradas, 2, '🔴 `miradas` no llega al entregable: sin él, vacío y roto se leen igual');
+
+  // ② las cifras son LAS DEL MOTOR, no unas recalculadas por la capa de formato.
+  const f = r.filas[0];
+  assert.equal(f.base, 100, `🔴 la base sale ${f.base}: E4 está produciendo su propia cifra`);
+  assert.equal(f.cuota, 21, '🔴 la cuota no es la que guardó el motor');
+  assert.equal(f.tipoIva, 21, '🔴 el tipo no es el del motor');
+
+  // ③ el id se resolvió a identidad — que es ENTREGA, no cálculo.
+  assert.equal(f.nifProveedor, 'B12345678', '🔴 no se resuelve el NIF del proveedor');
+  assert.equal(f.nombreProveedor, 'Suministros Peña', '🔴 no se resuelve el nombre del proveedor');
+  assert.ok(!('proveedorId' in f), '🔴 el id interno se está pintando en un libro que sale de casa');
+
+  // ④ y el periodo se aplicó DONDE se dijo: por la fecha del apunte, que siempre existe.
+  assert.ok(db.visto.where.date, '🔴 no se filtró por periodo: el libro traería todo el histórico');
+  assert.equal(db.visto.where.merchantId, M, '🔴 la consulta no está acotada al merchant (regla 2)');
+});
+
+test('SCRUM-426 · 🔴 SI ALGUIEN DESCONECTA EL MOTOR, ESTO MUERE: E4 declara los DOS libros', () => {
+  const claves = LIBROS_DISPONIBLES.map((l) => l.clave);
+  assert.deepEqual(
+    claves, ['expedidas', 'recibidas'],
+    `🔴 \`LIBROS_DISPONIBLES\` declara ${JSON.stringify(claves)}. Si «recibidas» desaparece, el ` +
+      'motor de A6 vuelve a ser dominio que nadie alcanza — que es lo que cazó SCRUM-411.',
+  );
+  const recibidas = LIBROS_DISPONIBLES.find((l) => l.clave === 'recibidas');
+  assert.equal(recibidas.columnas, COLUMNAS_RECIBIDAS, '🔴 el libro declarado no usa sus columnas');
+});
+
+test('SCRUM-426 · las columnas son UNA POR CAMPO DEL MOTOR, en el orden del motor', () => {
+  // Se DERIVAN del asiento que produce el motor, no de una lista escrita a mano: si el motor gana
+  // un campo y nadie le da columna, saldría del libro en silencio.
+  const libro = construirLibroRecibidas({ gastos: [clasificado()], merchantId: M });
+  const delMotor = Object.keys(libro.asientos[0]);
+  const deLaHoja = COLUMNAS_RECIBIDAS.map((c) => c.clave);
+
+  // `proveedorId` es la ÚNICA excepción declarada: se resuelve a nif + nombre, igual que el libro
+  // de expedidas resuelve `clienteId`. Todo lo demás va 1:1 y en el mismo orden.
+  const esperado = delMotor.flatMap((k) => (k === 'proveedorId' ? ['nifProveedor', 'nombreProveedor'] : [k]));
+  assert.deepEqual(
+    deLaHoja, esperado,
+    '🔴 las columnas y los campos del motor han dejado de coincidir.\n' +
+      `   motor: ${JSON.stringify(delMotor)}\n   hoja:  ${JSON.stringify(deLaHoja)}\n\n` +
+      '  Un campo del motor sin columna sale del libro EN SILENCIO; una columna sin campo se pinta ' +
+      'siempre vacía y parece un dato que falta. No hay especificación (P15.1): el orden es el del motor.',
+  );
+});
+
+test('SCRUM-426 · 🔴 lo excluido VIAJA DENTRO del fichero, no en una nota de la pantalla', async () => {
+  // El fichero se reenvía por correo al despacho, y ahí ya no hay pantalla que explique nada.
+  const db = dbFalsa([clasificado(), sinClasificar(), sinClasificar({ amount: '40.00' })]);
+  const r = await leerLibroRecibidasDelTrimestre(db, { merchantId: M, año: 2026, trimestre: 3 });
+  const csv = csvLibroRecibidas(r.filas, r.avisos);
+
+  assert.match(csv, /2 gastos sin datos de IVA no figuran/, '🔴 el fichero no dice cuántos quedaron fuera');
+  assert.match(csv, /100/, '🔴 el fichero no dice CUÁNTO dinero quedó fuera (60 + 40)');
+  assert.match(csv, /Formato provisional/, '🔴 el fichero no declara que el formato no está contrastado');
+  assert.ok(csv.startsWith('\ufeff'), '🔴 el BOM ha dejado de ir el primero: Excel leerá «Peña» roto');
+  // Y el hermano positivo del aviso: sin exclusiones, ese segundo aviso NO aparece.
+  const limpio = csvLibroRecibidas([], avisosLibroRecibidas({ sinClasificar: 0, sinClasificarImporte: 0 }));
+  assert.doesNotMatch(limpio, /sin datos de IVA/, '🔴 el aviso de excluidos sale sin haber excluidos');
+  assert.match(limpio, /Formato provisional/, '🔴 el de formato provisional tiene que salir siempre');
+});

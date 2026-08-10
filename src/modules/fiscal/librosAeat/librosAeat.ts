@@ -14,27 +14,28 @@
 // módulo recibe el libro ya construido y lo formatea.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// 🔴 LO QUE ESTE FICHERO **NO** ENTREGA, Y HAY QUE DECIRLO ANTES QUE NADA
+// ✅ EL LIBRO DE RECIBIDAS YA ENTRA — SCRUM-426 (10-ago-2026)
 //
-// **NO hay libro de facturas RECIBIDAS, y no se puede construir hoy.** No es una omisión de
-// alcance: el dato no existe. Medido en SCRUM-321 (E0, Q2) sobre el DMMF, de los ocho datos
-// que pide un asiento de compra hay **dos completos, uno a medias y cinco que no existen**:
+// > **Registro de lo que decía esta cabecera hasta el 10-ago, porque explica el diseño y no se
+// > borra:** «NO hay libro de facturas RECIBIDAS, y no se puede construir hoy. No es una omisión
+// > de alcance: el dato no existe. Medido en SCRUM-321 (E0, Q2) sobre el DMMF, de los ocho datos
+// > que pide un asiento de compra hay dos completos, uno a medias y cinco que no existen: NIF del
+// > proveedor, base imponible, tipo de IVA, cuota, deducible y nº del proveedor. Por eso
+// > `LIBROS_DISPONIBLES` tiene UN elemento y no dos. El día que `Expense` gane esos campos, se
+// > añade aquí.»
 //
-//   · NIF del proveedor ....... NO (`Provider` no tiene ningún campo fiscal)
-//   · Base imponible .......... NO (`Expense` solo tiene `amount`, y nada dice si es base o total)
-//   · Tipo de IVA ............. NO
-//   · Cuota de IVA ............ NO
-//   · ¿Deducible? ............. NO
-//   · Nº y serie del proveedor. NO
+// **Ese día fue el 10-ago-2026**: la migración del lote metió las seis columnas de `Expense` y
+// `Provider.taxId` en las tres bases. Y el dato lo construye **A6** —`construirLibroRecibidas`,
+// SCRUM-426—, no este fichero: aquí se LLAMA al motor y se pinta lo que devuelve. Eso no cruza la
+// frontera, la ejerce. Cruzarla sería leer `Expense` y armar los asientos aquí.
 //
-// Un gasto de YaQu hoy es **un apunte de caja para calcular margen, no un asiento**. Rellenar
-// esas columnas con `amount` y un IVA supuesto sería inventar los datos fiscales de alguien y
-// entregárselos a Hacienda con su nombre encima. Se declara el hueco y se entrega lo que sí hay.
-//
-// ⚠️ Por eso `LIBROS_DISPONIBLES` tiene UN elemento y no dos. El día que `Expense` gane esos
-// campos, se añade aquí — y hasta entonces la ausencia se ve, en vez de salir un libro de
-// recibidas vacío que se lee como «este trimestre no compré nada».
+// ⚠️ SIGUE FALTANDO, y no se disimula: `Provider.legalName` (hoy solo hay el nombre COMERCIAL) y
+// la respuesta a P15 —¿cuota deducible como importe en vez de booleano? ¿número de recepción
+// propio?—. Y sobre todo: **no hay especificación oficial del formato en el repositorio**, así que
+// las columnas de recibidas son las del motor y el fichero lo DECLARA en su propio contenido.
 import type { LibroRegistro, AsientoLibro } from '../../invoicing/domain/libroRegistro';
+// SCRUM-426: E4 CONSUME el motor de A6. No lo recalcula -- lo llama y pinta lo que devuelve.
+import { exigirLibroRecibidasLegible, type LibroRecibidas } from '../../invoicing/domain/libroRecibidas';
 
 /**
  * ⚠️ MICROCOPY SIN APROBAR (regla 30). Los rótulos van con marcador Y con la propuesta porque un
@@ -129,10 +130,123 @@ export function celdasDeEstado(status: string | null): { cobro: string; anulada:
   return m;
 }
 
-/** Lo único que hoy se puede entregar. Ver el bloque 🔴 de arriba para por qué no hay recibidas. */
+/**
+ * SCRUM-426 · LAS COLUMNAS DE RECIBIDAS: **una por cada campo que devuelve el motor, en el orden
+ * del motor**. Ni una inventada.
+ *
+ * No hay especificación del formato en el repositorio (medido el 10-ago-2026: ni diseño de
+ * registro, ni orden ministerial; los seis XSD son de VeriFactu y no mencionan «recibida» ni
+ * «proveedor» ni una vez). Así que aquí NO se decide qué columnas pide un libro de recibidas: se
+ * pinta lo que el motor de A6 sabe, tal cual. Cuando P15.1 tenga respuesta, el cambio es
+ * **renombrar cabeceras**, no rehacer el fichero.
+ *
+ * ⚠️ LA ÚNICA EXCEPCIÓN al 1:1, dicha aquí para que se pueda recortar de una línea: el motor
+ * devuelve `proveedorId`, que es un id interno y no dice nada en un libro. Se resuelve a **NIF y
+ * nombre**, exactamente como el de expedidas resuelve `clienteId`, y por el motivo que declara
+ * `librosAeat.repo.ts`: resolver un id contra la ficha es ENTREGA, no cálculo — no suma, no
+ * reparte IVA y no toca un asiento.
+ *
+ * ⚠️ `nombreProveedor` sale hoy de `Provider.name`, que es el nombre **comercial**: `Provider` no
+ * tiene `legalName` (pendiente de schema). Un libro identifica por razón social, así que esta
+ * columna está **incompleta a sabiendas** y no se disimula.
+ */
+export const COLUMNAS_RECIBIDAS = Object.freeze([
+  { clave: 'numeroProveedor', rotulo: 'Serie y número del proveedor' },
+  { clave: 'fechaExpedicion', rotulo: 'Fecha de expedición del proveedor' },
+  { clave: 'fechaApunte', rotulo: 'Fecha del apunte' },
+  { clave: 'nifProveedor', rotulo: 'NIF del proveedor' },
+  { clave: 'nombreProveedor', rotulo: 'Nombre del proveedor' },
+  { clave: 'concepto', rotulo: 'Concepto' },
+  { clave: 'base', rotulo: 'Base imponible' },
+  { clave: 'tipoIva', rotulo: 'Tipo de IVA (%)' },
+  { clave: 'cuota', rotulo: 'Cuota de IVA soportada' },
+  { clave: 'deducible', rotulo: '¿Deducible?' },
+  { clave: 'total', rotulo: 'Importe del apunte' },
+  { clave: 'moneda', rotulo: 'Moneda' },
+] as const);
+
+/**
+ * Los DOS libros. Pasa de uno a dos porque el motor de recibidas **existe y está conectado**
+ * (SCRUM-426): lo que faltaba nunca fue el formato, era quién construyera el dato.
+ */
 export const LIBROS_DISPONIBLES = Object.freeze([
   { clave: 'expedidas', rotulo: 'Facturas emitidas', columnas: COLUMNAS_EXPEDIDAS },
+  { clave: 'recibidas', rotulo: 'Facturas recibidas', columnas: COLUMNAS_RECIBIDAS },
 ]);
+
+/** Lo que hace falta saber del proveedor para el libro. Se RESUELVE, no se calcula. */
+export interface DatosProveedor {
+  nombre: string | null;
+  nif: string | null;
+}
+
+/**
+ * 🔴 LO QUE EL LIBRO DE RECIBIDAS DECLARA EN SU PROPIO CONTENIDO, y no en una nota aparte.
+ *
+ * Dos cosas que quien reciba el fichero tiene que leer SIN preguntar:
+ *
+ *   ① el formato es **provisional** — no contrastado contra ninguna especificación oficial
+ *      (P15.1). Un fichero entregado a un despacho sin decirlo se lee como definitivo;
+ *   ② cuántos gastos **quedaron fuera** por no estar clasificados, y **cuánto dinero** son. Un
+ *      gasto excluido en silencio es un libro vacío pequeño: se verían 10 asientos y se leería
+ *      «compré diez cosas» teniendo 190 sin clasificar.
+ *
+ * ⚠️ MICROCOPY SIN APROBAR (regla 30): va con `MARCA_PENDIENTE` a propósito. Mientras el marcador
+ * esté, el fichero se ve provisional de un vistazo — que es justo lo que se quiere.
+ */
+export function avisosLibroRecibidas(libro: {
+  sinClasificar: number;
+  sinClasificarImporte: number;
+}): string[] {
+  const avisos = [
+    `${MARCA_PENDIENTE} Formato provisional: no contrastado contra especificación oficial.`,
+  ];
+  if (libro.sinClasificar > 0) {
+    // ⚠️ Sin «gasto(s)»: el plural perezoso lo caza el trinquete de SCRUM-377 y se lee como
+    // software a medio hacer. Se resuelve el plural de verdad, que además es una frase mejor.
+    const cuantos = libro.sinClasificar === 1
+      ? '1 gasto sin datos de IVA no figura'
+      : `${libro.sinClasificar} gastos sin datos de IVA no figuran`;
+    avisos.push(
+      `${MARCA_PENDIENTE} ${cuantos} en este libro. Importe total: ${libro.sinClasificarImporte}.`,
+    );
+  }
+  return avisos;
+}
+
+/**
+ * Las filas del libro de recibidas. `proveedores` resuelve `proveedorId` → NIF y nombre; lo que no
+ * se pueda resolver sale VACÍO, nunca inventado ni rellenado con el id.
+ *
+ * ⚠️ Aquí NO se suma, no se reparte IVA y no se deriva ninguna cuota: se pinta lo que el motor
+ * devolvió. Si una cifra de este fichero no cuadra con el libro, el defecto está AQUÍ.
+ */
+export function filasLibroRecibidas(
+  libro: LibroRecibidas,
+  proveedores: Map<number, DatosProveedor>,
+): FilaLibro[] {
+  exigirLibroRecibidasLegible(libro);
+  return libro.asientos.map((a) => {
+    const p = (a.proveedorId != null ? proveedores.get(a.proveedorId) : null)
+      ?? { nombre: null, nif: null };
+    return {
+      numeroProveedor: a.numeroProveedor,
+      fechaExpedicion: a.fechaExpedicion ? String(a.fechaExpedicion).slice(0, 10) : null,
+      fechaApunte: a.fechaApunte ? String(a.fechaApunte).slice(0, 10) : null,
+      nifProveedor: p.nif,
+      nombreProveedor: p.nombre,
+      concepto: a.concepto,
+      base: a.base,
+      tipoIva: a.tipoIva,
+      cuota: a.cuota,
+      // `null` NO se aplana a «No»: «nunca se clasificó» y «se decidió que no» son cosas
+      // distintas, y en un libro que se entrega, confundirlas afirma algo que nadie dijo.
+      deducible: a.deducible === null ? null : (a.deducible ? 'Sí' : 'No'),
+      total: a.total,
+      moneda: a.moneda,
+    };
+  });
+}
 
 /** Lo que hace falta saber del cliente para el libro. Se RESUELVE, no se calcula. */
 export interface DatosDestinatario {

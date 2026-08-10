@@ -11,8 +11,13 @@
 // en este módulo y A6 no se toca (0.3 del encargo: si A6 no produce lo que necesitas, declara el
 // hueco; aquí el hueco es un identificador que hay que resolver, y resolverlo no es recalcular).
 import { leerLibroRegistro, type ClienteDelLibro } from '../../invoicing/domain/libroRegistro.repo';
+import { leerLibroRecibidas, type ClienteDeGastos } from '../../invoicing/domain/libroRecibidas.repo'; // SCRUM-426
+import { exigirLibroRecibidasLegible } from '../../invoicing/domain/libroRecibidas';
 import { rangoTrimestre } from '../modelo303/modelo303';
-import { exigirLibroLegible, filasLibroExpedidas, type DatosDestinatario, type FilaLibro } from './librosAeat';
+import {
+  exigirLibroLegible, filasLibroExpedidas, filasLibroRecibidas, avisosLibroRecibidas,
+  type DatosDestinatario, type DatosProveedor, type FilaLibro,
+} from './librosAeat';
 
 export interface ClienteDeLibros extends ClienteDelLibro {
   customer: { findMany(args: any): Promise<any[]> };
@@ -53,4 +58,52 @@ export async function leerLibroExpedidasDelTrimestre(
   );
 
   return { filas: filasLibroExpedidas(libro, destinatarios), miradas: libro.miradas, desde, hasta };
+}
+
+/**
+ * El libro de RECIBIDAS de UN trimestre, ya en filas — SCRUM-426.
+ *
+ * Mismo `rangoTrimestre` que expedidas y que el 303: un asiento no puede caer en el 303 de un
+ * trimestre y en el libro de otro.
+ *
+ * ⚠️ Aquí NO se construye el libro: se LLAMA a `leerLibroRecibidas` (A6) y se pinta lo que
+ * devuelve. Resolver `proveedorId` → NIF y nombre es lo mismo que se hace arriba con `clienteId`,
+ * y por el mismo motivo: resolver un id contra la ficha es ENTREGA, no cálculo.
+ */
+export async function leerLibroRecibidasDelTrimestre(
+  db: ClienteDeLibros & ClienteDeGastos & { provider: { findMany(args: any): Promise<any[]> } },
+  params: { merchantId: number; año: number; trimestre: number },
+): Promise<{ filas: FilaLibro[]; miradas: number; avisos: string[]; desde: Date; hasta: Date }> {
+  const { desde, hasta } = rangoTrimestre(params.año, params.trimestre);
+  const { merchantId } = params;
+
+  const libro = await leerLibroRecibidas(db, { merchantId, desde, hasta });
+  // El suelo va ANTES de resolver nada: si el libro no se pudo leer, no se emite fichero.
+  exigirLibroRecibidasLegible(libro);
+
+  const ids = [...new Set(
+    libro.asientos.map((a) => a.proveedorId).filter((n): n is number => typeof n === 'number'),
+  )];
+  const proveedores = ids.length === 0 ? [] : await db.provider.findMany({
+    where: { merchantId, id: { in: ids } },
+    select: { id: true, name: true, taxId: true },
+  });
+
+  const mapa = new Map<number, DatosProveedor>(
+    proveedores.map((p: any) => [p.id, {
+      // ⚠️ `Provider` no tiene `legalName` (pendiente de schema): esto es el nombre COMERCIAL, y
+      // un libro identifica por razón social. Incompleto a sabiendas, nunca inventado.
+      nombre: p.name || null,
+      nif: p.taxId || null,
+    }]),
+  );
+
+  return {
+    filas: filasLibroRecibidas(libro, mapa),
+    miradas: libro.miradas,
+    // Los avisos VIAJAN con el entregable: lo excluido en silencio es un libro vacío pequeño.
+    avisos: avisosLibroRecibidas(libro),
+    desde,
+    hasta,
+  };
 }
