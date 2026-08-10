@@ -16,9 +16,15 @@
     return /iPad|iPhone|iPod/.test(navigator.userAgent)
       || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS se disfraza de Mac
   }
+  // SCRUM-360 (H5 · fase 1): la detección SE FUE a `api.js` (`entornoDeLaApp`), que es el primer
+  // script del dashboard y ya está precacheado. Aquí queda sólo la lectura — **la copia NO se
+  // conserva**: dos detecciones del mismo hecho derivan en silencio, que es justo el defecto que
+  // SCRUM-436 y SCRUM-447 acaban de cerrar con los formateadores de euros.
+  //
+  // El comportamiento NO cambia: la compartida distingue tres estados y aquí sólo interesa uno, así
+  // que «no se pudo evaluar» sigue dando `false`, igual que antes.
   function isStandalonePWA() {
-    return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
-      || window.navigator.standalone === true; // Safari iOS legacy
+    return window.entornoDeLaApp ? window.entornoDeLaApp() === window.ENTORNO_INSTALADA : false;
   }
 
   // ── Paso 1 del plan: gate estático (si falla, NI SE PINTA) ────────────────

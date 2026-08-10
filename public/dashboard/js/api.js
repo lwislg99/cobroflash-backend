@@ -228,6 +228,58 @@ function uiMarkFieldError(el, scope) {
 }
 window.uiMarkFieldError = uiMarkFieldError;
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-360 (H5 · fase 1) · ¿ESTÁ LA APLICACIÓN INSTALADA EN LA PANTALLA DE INICIO?
+//
+// No es una curiosidad: **es la mitigación entera de H5**. iOS borra el origen completo —service
+// worker, caché e IndexedDB— cuando pasan 7 días sin abrir la aplicación, y con él se llevaría una
+// firma pendiente de subir. **Las aplicaciones añadidas a la pantalla de inicio están EXENTAS de
+// ese borrado; una pestaña normal, no.** Así que saber en cuál estamos es saber si hay riesgo.
+//
+// ⚠️ VIVE AQUÍ, Y NO EN UN FICHERO NUEVO, por dos motivos medidos: `api.js` es el PRIMER script del
+// dashboard —así que la función existe antes que cualquier vista— y ya está en el precache del
+// service worker (`sw.js:23`). Un fichero nuevo habría que meterlo en ese precache, y el service
+// worker no se toca en esta fase.
+//
+// 🔴 TRES ESTADOS, NO DOS, y ésta es la decisión que sostiene el dato:
+//
+//   · `instalada`   — se pudo evaluar y la respuesta es sí;
+//   · `pestana`     — se pudo evaluar y la respuesta es no;
+//   · `desconocido` — **NO SE PUDO EVALUAR**.
+//
+// «No está instalada» y «no supe mirar» son lo CONTRARIO: el primero dice que hay riesgo, el
+// segundo no dice nada. Colapsarlos en un booleano daría un recuento tranquilo y falso — parecería
+// que sabemos que N están en pestaña cuando en realidad no pudimos preguntárselo a nadie.
+
+/** Los tres estados posibles. Cerrado a propósito: quien lo lea no tiene que adivinar. */
+var ENTORNO_INSTALADA = 'instalada';
+var ENTORNO_PESTANA = 'pestana';
+var ENTORNO_DESCONOCIDO = 'desconocido';
+
+/**
+ * En qué contexto se está ejecutando la aplicación.
+ *
+ * Dos vías, y las dos hacen falta: `display-mode: standalone` es el estándar, y
+ * `navigator.standalone` es **la única que responde en Safari de iPhone** — que es el caso peor
+ * del parque medido en H0 y justo el que sufre el borrado a los 7 días.
+ */
+function entornoDeLaApp() {
+  var puedeMatchMedia = typeof window !== 'undefined' && typeof window.matchMedia === 'function';
+  var tieneLegacy = typeof window !== 'undefined' && window.navigator
+    && typeof window.navigator.standalone === 'boolean';
+
+  // Si NINGUNA de las dos vías se puede consultar, no se contesta: se dice que no se sabe.
+  if (!puedeMatchMedia && !tieneLegacy) return ENTORNO_DESCONOCIDO;
+
+  if (puedeMatchMedia && window.matchMedia('(display-mode: standalone)').matches) return ENTORNO_INSTALADA;
+  if (tieneLegacy && window.navigator.standalone === true) return ENTORNO_INSTALADA;
+  return ENTORNO_PESTANA;
+}
+window.entornoDeLaApp = entornoDeLaApp;
+window.ENTORNO_INSTALADA = ENTORNO_INSTALADA;
+window.ENTORNO_PESTANA = ENTORNO_PESTANA;
+window.ENTORNO_DESCONOCIDO = ENTORNO_DESCONOCIDO;
+
 // P-A66-3: dinero SIEMPRE en formato español también dentro del BO — espejo
 // del formatMoneyEs del servidor (core/utils). "2.383,70 €", nunca "2383.70 EUR".
 function fmtMoneyEs(n, currency = 'EUR') {
