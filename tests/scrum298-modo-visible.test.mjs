@@ -17,6 +17,8 @@ import path from 'node:path';
 import ts from 'typescript';
 import { modoEmisionVisible, MODOS_VISIBLES } from '../dist/modules/invoicing/domain/modoVisible.js';
 import { getEmissionMode } from '../dist/modules/invoicing/domain/emission.service.js';
+// SCRUM-437 · acotar por estructura, nunca por una longitud.
+import { sentencia } from './_bloque-estructural.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const PENDIENTE = '[PENDIENTE microcopy oficial]';
@@ -104,7 +106,12 @@ test('SCRUM-298 · SUELO: el navegador tampoco normaliza un valor desconocido', 
   const appJs = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/app.js'), 'utf8');
   const linea = appJs.split(String.fromCharCode(10)).find((l) => l.includes('window.appModoEmision'));
   assert.ok(linea, '🔴 el front ya no recibe el modo');
-  const bloque = appJs.slice(appJs.indexOf('window.appModoEmision'), appJs.indexOf('window.appModoEmision') + 220);
+  // SCRUM-437 · la SENTENCIA entera. Era mío y lo declaré en el censo sin escudarme: 220
+  // caracteres fijos, con `: null` en el 101 de una sentencia de 108. El margen eran 113.
+  const bloque = sentencia(appJs, 'window.appModoEmision');
+  assert.ok(bloque,
+    '🔴 ESCÁNER CIEGO: no se localiza la sentencia de `window.appModoEmision`. Sin ella no se '
+    + 'puede afirmar que un valor desconocido cae a `null`.');
   assert.match(bloque, /:\s*null/,
     '🔴 un valor fuera del contrato tiene que caer a `null`, no a un modo: normalizarlo sería inventarse el estado fiscal');
 });
