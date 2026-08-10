@@ -32,10 +32,15 @@ import {
   barrerSellosAlbaran,
   resumenDelBarrido,
 } from '../dist/modules/jobs/domain/albaranBarrido.js';
+// SCRUM-438: la DECLARACIÓN de dónde sale cada campo en cada versión. No es documentación —es el
+// dato del que sale el resolvedor— y por eso el guard de abajo cara las recetas contra ella en vez
+// de contra una lista escrita en este fichero, que caducaría con cada versión nueva.
+import { FUENTES_POR_VERSION, CLAVES_CONGELADAS } from '../dist/modules/jobs/domain/albaranContenidoFuentes.js';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const F_SELLADOR = path.join(RAIZ, 'src', 'modules', 'jobs', 'domain', 'albaran.service.ts');
 const F_BARRIDO = path.join(RAIZ, 'src', 'modules', 'jobs', 'domain', 'albaranBarrido.ts');
+const F_VERIFICADOR = path.join(RAIZ, 'src', 'modules', 'jobs', 'domain', 'albaranVerificacion.ts');
 const F_CRON = path.join(RAIZ, 'src', 'core', 'cron', 'cron.ts');
 const F_INDEX = path.join(RAIZ, 'src', 'index.ts');
 
@@ -402,52 +407,157 @@ function propiedadesDe(objeto, sf, consts) {
 // ⚠️ SCRUM-300 (C5) CAMBIÓ LA FORMA DE ESTA COMPARACIÓN, y conviene entender por qué antes de
 // tocarla. Aquí ponía `jobDireccion: 'obra'`, dando por hecho que el `obra` del sellador ERA la
 // dirección del Trabajo. Eso valía mientras hubo UNA sola versión de sobre. Desde v:2, el sellador
-// resuelve `obra` POR VERSIÓN —`obraSegunVersion(v, { lugarEntrega, jobDireccion })`—, así que
-// comparar `obra` contra un solo campo dejó de tener sentido: el guard reportó la diferencia, y
-// tenía razón.
+// resuelve `obra` POR VERSIÓN, así que comparar `obra` contra un solo campo dejó de tener sentido:
+// el guard reportó la diferencia, y tenía razón.
 //
-// La forma correcta NO es quitar la pareja para que pase (eso apagaría justo lo que vigila): es
-// comparar las DOS fuentes contra los DOS argumentos que el sellador mete en `obraSegunVersion`.
-// El adaptador las pasa juntas y sin elegir, que es el contrato de `FuentesContenido`; elegir es
-// trabajo de la receta.
+// 🔴 SCRUM-438 SE LA LLEVÓ OTRA VEZ, Y ESTA VEZ NO SE PARCHEA — se reapunta. Los CINCO campos
+// congelados salieron de esta lista: el sellador ya no los mete uno a uno en la llamada al hash,
+// los congela en un bloque. Sumarlos a mano aquí habría sido enseñarle al analizador a ver el
+// código nuevo; lo que hay debajo es el invariante del que la lista era un caso particular.
+//
+// Aquí quedan solo los campos que NO son del bloque: los que el sellador sigue metiendo directos.
 const PAREJAS = {
   numero: 'numero',
   fecha: 'fecha',
   modoValoracion: 'modoValoracion',
   notas: 'notas',
-  referenciaTrabajo: 'referenciaTrabajo',
-  cliente: 'cliente',
-  emisor: 'emisor',
-  emisorNif: 'emisorNif',
   // SCRUM-300 (C5): los tres que estrena v:2 y que el barrido tiene que resolver igual.
   fechaEntrega: 'fechaEntrega',
   firmadoPorNombre: 'firmadoPorNombre',
   firmadoPorCalidad: 'firmadoPorCalidad',
 };
 
-/** Las dos fuentes de `obra`, sacadas del objeto que el sellador le pasa a `obraSegunVersion`. */
-const PAREJAS_OBRA = { jobDireccion: 'jobDireccion', lugarEntrega: 'lugarEntrega' };
+// ── EL INVARIANTE, Y DE DÓNDE SALE ───────────────────────────────────────────────────────────
+//
+//     Para CADA versión, la receta lee EXACTAMENTE las fuentes que declara la receta de esa
+//     versión — ni una de más, ni una de menos.
+//
+// Ni este fichero ni el guard enumeran versiones: las dos listas se LEEN del producto
+// (`RECETAS_POR_VERSION` en el verificador, `FUENTES_POR_VERSION` en la declaración) y se caran
+// entre sí. Por eso una v:4 no lo caduca: entra sola en la comparación, y entra en ROJO hasta que
+// su receta y su declaración digan lo mismo.
+
+/** `'congelado'` no es una fuente viva: es la clave por la que la receta lee el bloque del sobre. */
+const CLAVE_DEL_BLOQUE = 'contenidoCongelado';
+const comoLaLeeLaReceta = (origen) => (origen === 'congelado' ? CLAVE_DEL_BLOQUE : origen);
+
+/** El universo de fuentes de contenido, DERIVADO de la declaración. No hay lista a mano. */
+function universoDeFuentes() {
+  const out = new Set();
+  for (const mapa of Object.values(FUENTES_POR_VERSION)) {
+    for (const origen of Object.values(mapa)) out.add(comoLaLeeLaReceta(origen));
+  }
+  return out;
+}
+
+/** Lo que la declaración dice que lee la versión `v`, ya en el nombre con el que la receta lo lee. */
+function fuentesDeclaradas(v) {
+  return new Set(Object.values(FUENTES_POR_VERSION[v]).map(comoLaLeeLaReceta));
+}
 
 /**
- * El objeto literal que el sellador le pasa a `obraSegunVersion(...)` como segundo argumento.
- * Es donde viven hoy las dos fuentes de `obra`.
+ * Qué versión atiende cada receta, LEÍDO del recetario: `RECETAS_POR_VERSION = { 1: recetaV1, … }`.
+ * No se deduce del nombre —`recetaV3` podría estar apuntada al 4 por error, y ése es justo el fallo
+ * que un guard que confía en los nombres no vería.
  */
-function fuentesDeObraDelSellador(fuente) {
+function recetaPorVersion(fuente) {
   const sf = ts.createSourceFile('x.ts', fuente, ts.ScriptTarget.Latest, true);
-  let objeto = null;
+  const out = new Map();
   const visita = (n) => {
-    // ⚠️ Acotado a `buildFirmaEvidencia` por lo MISMO que la otra: `obraSegunVersion` se llama
-    // también desde `recomputarHashDeEvidencia` y desde `ensureAlbaranPdf`, y las dos quedan
-    // ANTES en el fichero. Coger «la primera» compararía contra la llamada equivocada.
-    if (!objeto && ts.isCallExpression(n) && ts.isIdentifier(n.expression) &&
-        n.expression.text === 'obraSegunVersion' && ts.isObjectLiteralExpression(n.arguments[1]) &&
-        dentroDeFuncion(n, 'buildFirmaEvidencia')) {
-      objeto = n.arguments[1];
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.name.text === 'RECETAS_POR_VERSION') {
+      const lit = (n.initializer && ts.isCallExpression(n.initializer))
+        ? n.initializer.arguments[0]
+        : n.initializer;
+      if (lit && ts.isObjectLiteralExpression(lit)) {
+        for (const p of lit.properties) {
+          if (ts.isPropertyAssignment(p) && ts.isIdentifier(p.initializer)) {
+            out.set(Number(p.name.getText(sf).replace(/['"]/g, '')), p.initializer.text);
+          }
+        }
+      }
     }
     ts.forEachChild(n, visita);
   };
   visita(sf);
-  return objeto ? propiedadesDe(objeto, sf, new Map()) : new Map();
+  return out;
+}
+
+/**
+ * Las propiedades del PARÁMETRO que una receta lee. El nombre del parámetro se toma de la propia
+ * flecha (`(f) => …`), no se supone: renombrarlo no puede dejar ciego a este analizador.
+ */
+function fuentesQueLeeLaReceta(fuente, nombre) {
+  const sf = ts.createSourceFile('x.ts', fuente, ts.ScriptTarget.Latest, true);
+  let flecha = null;
+  const buscar = (n) => {
+    if (!flecha && ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.name.text === nombre &&
+        n.initializer && (ts.isArrowFunction(n.initializer) || ts.isFunctionExpression(n.initializer))) {
+      flecha = n.initializer;
+    }
+    ts.forEachChild(n, buscar);
+  };
+  buscar(sf);
+  if (!flecha || flecha.parameters.length === 0 || !ts.isIdentifier(flecha.parameters[0].name)) return null;
+  const param = flecha.parameters[0].name.text;
+  const out = new Set();
+  const dentro = (n) => {
+    if (ts.isPropertyAccessExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === param) {
+      out.add(n.name.text);
+    }
+    ts.forEachChild(n, dentro);
+  };
+  dentro(flecha.body);
+  return out;
+}
+
+/**
+ * El bloque congelado tal y como lo construye el SELLADOR: `const contenidoCongelado = { … }`
+ * dentro de `buildFirmaEvidencia`. Aquí es donde viven hoy las cinco resoluciones vivas.
+ */
+function bloqueCongeladoDelSellador(fuente) {
+  const sf = ts.createSourceFile('x.ts', fuente, ts.ScriptTarget.Latest, true);
+  const consts = new Map();
+  let objeto = null;
+  const visita = (n) => {
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) {
+      consts.set(n.name.text, n.initializer.getText(sf).replace(/\s+/g, ' '));
+    }
+    // ⚠️ Acotado a `buildFirmaEvidencia`, y por lo mismo que la otra búsqueda: es el único sitio
+    // que escribe un sobre NUEVO. Coger «el primer literal que se llame así» compararía contra
+    // cualquier otro que apareciera antes en el fichero.
+    if (!objeto && ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) &&
+        n.name.text === CLAVE_DEL_BLOQUE && n.initializer &&
+        ts.isObjectLiteralExpression(n.initializer) && dentroDeFuncion(n, 'buildFirmaEvidencia')) {
+      objeto = n.initializer;
+    }
+    ts.forEachChild(n, visita);
+  };
+  visita(sf);
+  return objeto ? propiedadesDe(objeto, sf, consts) : new Map();
+}
+
+/**
+ * Para cada clave congelada, LA FUENTE VIVA que el sellador estaba resolviendo justo antes de
+ * empezar a congelarla: la que declara la versión MÁS ALTA que todavía la lee en vivo.
+ *
+ * No es un rodeo. El sellador de hoy solo emite v:3, que no lee ninguna fuente viva, así que
+ * «como lo resuelve el sellador» ya no se puede leer de la llamada al hash. Pero el adaptador SÍ
+ * sigue entregando esas fuentes vivas —los sobres v:1 y v:2 de la población se recalculan con
+ * ellas— y una divergencia ahí acusaría de manipulación a toda esa población de golpe. La
+ * resolución con la que hay que carearlas es la que el sellador congela, que es la misma, copiada
+ * verbatim a propósito.
+ */
+function fuenteVivaDeCadaClave() {
+  const out = new Map();
+  for (const clave of CLAVES_CONGELADAS) {
+    let mejor = null;
+    for (const v of Object.keys(FUENTES_POR_VERSION).map(Number).sort((a, b) => a - b)) {
+      const origen = FUENTES_POR_VERSION[v][clave];
+      if (origen !== 'congelado') mejor = origen;
+    }
+    if (mejor) out.set(clave, mejor);
+  }
+  return out;
 }
 
 /**
@@ -464,46 +574,162 @@ function mismaResolucion(a, b) {
   return pelar(a) === pelar(b);
 }
 
+test('SCRUM-371 · ⑥ 🔴 CADA VERSIÓN lee EXACTAMENTE las fuentes que declara — ni una más, ni una menos', () => {
+  const verificador = fs.readFileSync(F_VERIFICADOR, 'utf8');
+  const recetas = recetaPorVersion(verificador);
+  const declaradas = Object.keys(FUENTES_POR_VERSION).map(Number).sort((a, b) => a - b);
+
+  // ── SUELO ────────────────────────────────────────────────────────────────────────────────
+  assert.ok(recetas.size >= 3,
+    `🔴 solo se han leído ${recetas.size} recetas del recetario (había 3 al escribir esto). O ` +
+    '`RECETAS_POR_VERSION` cambió de forma, o el analizador dejó de encontrarlo: en los dos casos ' +
+    'este guard habría pasado en verde sin comparar nada.');
+  assert.ok(universoDeFuentes().size >= 3,
+    '🔴 la declaración `FUENTES_POR_VERSION` no aporta ni tres fuentes distintas: no estoy leyendo ' +
+    'lo que creo estar leyendo.');
+
+  // ── LAS DOS LISTAS TIENEN LAS MISMAS VERSIONES ───────────────────────────────────────────
+  // Una versión con receta y sin declaración se verificaría sin que nadie hubiera escrito de dónde
+  // salen sus campos; una con declaración y sin receta es un sobre que no se sabe recalcular.
+  assert.deepEqual([...recetas.keys()].sort((a, b) => a - b), declaradas,
+    '🔴 EL RECETARIO Y LA DECLARACIÓN NO HABLAN DE LAS MISMAS VERSIONES.\n' +
+    `  recetario: v:${[...recetas.keys()].join(', v:')} · declaración: v:${declaradas.join(', v:')}\n` +
+    '  Una versión nueva se declara en `FUENTES_POR_VERSION` Y se escribe su receta. Las dos, o ' +
+    'ninguna.');
+
+  // ── EL INVARIANTE ────────────────────────────────────────────────────────────────────────
+  const universo = universoDeFuentes();
+  const desajustes = [];
+  for (const [v, nombre] of [...recetas.entries()].sort((a, b) => a[0] - b[0])) {
+    const leidas = fuentesQueLeeLaReceta(verificador, nombre);
+    assert.ok(leidas, `🔴 no se ha podido leer el parámetro de \`${nombre}\`: el analizador está ciego`);
+    assert.ok(leidas.size >= 5,
+      `🔴 \`${nombre}\` solo lee ${leidas.size} propiedades de sus fuentes. Ninguna receta lee tan ` +
+      'poco: el analizador ha dejado de mirar donde debía.');
+
+    const usadas = new Set([...leidas].filter((f) => universo.has(f)));
+    const esperadas = fuentesDeclaradas(v);
+    const deMas = [...usadas].filter((f) => !esperadas.has(f));
+    const deMenos = [...esperadas].filter((f) => !usadas.has(f));
+    if (deMas.length) desajustes.push(`v:${v} (${nombre}) lee DE MÁS: ${deMas.join(', ')}`);
+    if (deMenos.length) desajustes.push(`v:${v} (${nombre}) NO lee lo declarado: ${deMenos.join(', ')}`);
+  }
+
+  assert.deepEqual(desajustes, [],
+    '🔴 UNA RECETA NO LEE LO QUE SU VERSIÓN DECLARA:\n    ' + desajustes.join('\n    ') +
+    '\n\n  `FUENTES_POR_VERSION` no es documentación: es el dato del que sale el resolvedor que usan\n' +
+    '  el sellador y el PDF. Si la receta lee una fuente que la declaración no nombra, el papel y el\n' +
+    '  sello dejan de salir del mismo sitio — y una fuente VIVA colada en una versión que se creía\n' +
+    '  congelada devuelve el defecto entero de SCRUM-431 sin que nadie lo note.\n\n' +
+    '  Se arregla en el CÓDIGO, nunca ampliando la declaración para que quepa lo que la receta\n' +
+    '  hace: la declaración es lo aprobado, la receta es lo escrito.');
+});
+
+test('SCRUM-371 · ⑥ SUELO del invariante: ve una fuente colada y ve una que falta', () => {
+  // Sin esto, el guard de arriba podría estar comparando dos conjuntos vacíos. Se le da un
+  // verificador falso —mismo recetario, recetas cambiadas— y tiene que verlo.
+  const falso = (cuerpoV3) => `
+    const recetaV1 = (f) => sha256(JSON.stringify({
+      v: 1, numero: f.numero, fecha: f.fecha, modoValoracion: f.modoValoracion,
+      obra: f.jobDireccion, referenciaTrabajo: f.referenciaTrabajo, cliente: f.cliente,
+      emisor: f.emisor, emisorNif: f.emisorNif, notas: f.notas, lineas: f.lineas }));
+    const recetaV3 = (f) => { ${cuerpoV3} };
+    export const RECETAS_POR_VERSION = Object.freeze({ 1: recetaV1, 3: recetaV3 });`;
+
+  const CUERPO_BUENO =
+    'const b = f.contenidoCongelado; return sha256(JSON.stringify({ v: 3, numero: f.numero, ' +
+    'fecha: f.fecha, modoValoracion: f.modoValoracion, notas: f.notas, lineas: f.lineas, obra: b.obra }));';
+
+  const leidasBuenas = fuentesQueLeeLaReceta(falso(CUERPO_BUENO), 'recetaV3');
+  assert.deepEqual([...leidasBuenas].filter((x) => universoDeFuentes().has(x)), ['contenidoCongelado'],
+    '🔴 el analizador no ve que la v:3 de referencia lee SOLO el bloque: no distingue nada');
+
+  // 🔴 EL ROJO: una fuente VIVA colada en una receta que se declara congelada.
+  const conFugaViva = fuentesQueLeeLaReceta(falso(CUERPO_BUENO + ' const x = f.cliente;'), 'recetaV3');
+  assert.ok(conFugaViva.has('cliente'),
+    '🔴 EL ANALIZADOR NO VE UNA FUENTE VIVA COLADA en una receta congelada. Con esta ceguera, ' +
+    'alguien podría devolver el defecto de SCRUM-431 a v:3 y el guard seguiría verde.');
+
+  // Y el otro lado: una receta que DEJA de leer lo que su versión declara.
+  const sinElBloque = fuentesQueLeeLaReceta(
+    falso('return sha256(JSON.stringify({ v: 3, numero: f.numero, fecha: f.fecha, modoValoracion: f.modoValoracion, notas: f.notas, lineas: f.lineas }));'),
+    'recetaV3');
+  assert.equal(sinElBloque.has('contenidoCongelado'), false,
+    '🔴 el analizador dice que lee el bloque una receta que no lo menciona');
+
+  // El recetario también se lee del AST y no del nombre: aquí el 3 apunta a `recetaV3`.
+  assert.deepEqual([...recetaPorVersion(falso(CUERPO_BUENO)).entries()], [[1, 'recetaV1'], [3, 'recetaV3']],
+    '🔴 el analizador no lee bien qué receta atiende cada versión');
+});
+
 test('SCRUM-371 · ⑥ 🔴 el adaptador resuelve CADA FUENTE igual que el sellador', () => {
-  const sellador = resolucionesDelSellador(fs.readFileSync(F_SELLADOR, 'utf8'));
+  const fuenteSellador = fs.readFileSync(F_SELLADOR, 'utf8');
+  const sellador = resolucionesDelSellador(fuenteSellador);
   const adaptador = resolucionesDelAdaptador(fs.readFileSync(F_BARRIDO, 'utf8'));
+  const congelado = bloqueCongeladoDelSellador(fuenteSellador);
 
   assert.ok(sellador.size >= 10,
     `🔴 solo se han leído ${sellador.size} campos del sellador. O la llamada cambió de forma, o el ` +
     'analizador dejó de encontrarla: en los dos casos este guard habría pasado en verde sin comparar nada.');
   assert.ok(adaptador.size >= 10, `🔴 solo se han leído ${adaptador.size} campos del adaptador`);
-  assert.equal(sellador.get('cliente')?.includes('customer'), true,
+
+  // SUELO del bloque: si el analizador no lo encuentra, «no hay diferencias» y «no supe mirar»
+  // darían el mismo verde sobre las cinco resoluciones más delicadas del sistema.
+  assert.equal(congelado.size, CLAVES_CONGELADAS.length,
+    `🔴 se han leído ${congelado.size} de las ${CLAVES_CONGELADAS.length} claves del bloque congelado ` +
+    'en `buildFirmaEvidencia`. O el bloque cambió de forma, o el analizador dejó de encontrarlo: hay ' +
+    'que mirar esto a mano antes de fiarse del verde.');
+  assert.equal(congelado.get('cliente')?.includes('customer'), true,
     '🔴 no se ha resuelto la abreviatura `cliente,` contra su const: el campo más delicado se ' +
     'estaría comparando contra un texto vacío');
 
-  // Las DOS fuentes de `obra` no se comparan contra `sellador.obra` —que hoy es una llamada a
-  // `obraSegunVersion`— sino contra los argumentos que entran EN esa llamada. Con su suelo: si el
-  // analizador no las encuentra, se dice, en vez de dar el guard por cumplido con cero parejas.
-  const fuentesObra = fuentesDeObraDelSellador(fs.readFileSync(F_SELLADOR, 'utf8'));
-  assert.equal(fuentesObra.size, 2,
-    '🔴 no se han encontrado las dos fuentes de `obra` en la llamada a `obraSegunVersion` del ' +
-    'sellador. O cambió de forma, o `obra` volvió a resolverse de un solo sitio: en los dos casos ' +
-    'hay que mirar esto a mano antes de fiarse del verde.');
+  // Cada clave congelada, contra la fuente viva que el adaptador sigue entregando para ella.
+  const vivas = fuenteVivaDeCadaClave();
+  assert.equal(vivas.size, CLAVES_CONGELADAS.length,
+    '🔴 alguna clave congelada no tiene NINGUNA versión que la lea en vivo. Entonces el adaptador y ' +
+    'el sellador ya no comparten esa resolución y esta comparación dejó de significar algo: hay que ' +
+    'mirarlo, no darlo por bueno.');
 
   const distintas = [
     ...Object.entries(PAREJAS)
       .filter(([mio, suyo]) => !mismaResolucion(adaptador.get(mio), sellador.get(suyo)))
       .map(([mio, suyo]) => `${mio}: barrido «${adaptador.get(mio)}» ≠ sellador.${suyo} «${sellador.get(suyo)}»`),
-    ...Object.entries(PAREJAS_OBRA)
-      .filter(([mio, suyo]) => !mismaResolucion(adaptador.get(mio), fuentesObra.get(suyo)))
-      .map(([mio, suyo]) => `${mio}: barrido «${adaptador.get(mio)}» ≠ obraSegunVersion.${suyo} «${fuentesObra.get(suyo)}»`),
+    ...[...vivas.entries()]
+      .filter(([clave, viva]) => !mismaResolucion(adaptador.get(viva), congelado.get(clave)))
+      .map(([clave, viva]) => `${viva}: barrido «${adaptador.get(viva)}» ≠ contenidoCongelado.${clave} «${congelado.get(clave)}»`),
   ];
 
   assert.deepEqual(distintas, [],
     '🔴 EL BARRIDO RESUELVE UNA FUENTE DISTINTO A COMO LA RESOLVIÓ EL SELLADOR:\n    ' +
     distintas.join('\n    ') +
-    '\n\n  Esto NO es un detalle de estilo. El hash se recalcula con estas fuentes: si una difiere,\n' +
-    '  el barrido dirá «no coincide» sobre albaranes INTACTOS, y lo dirá sobre la población entera\n' +
-    '  a la vez. Es la peor salida posible de esta herramienta.\n\n' +
-    '  Si el cambio del sellador es intencionado (por ejemplo, SCRUM-300 pasa `obra` a resolverse\n' +
-    '  por versión), lo que hay que revisar es que el adaptador siga entregando LAS DOS fuentes de\n' +
-    '  `obra` —`jobDireccion` y `lugarEntrega`— y actualizar esta pareja; NUNCA copiar la lógica de\n' +
-    '  versión aquí: la elige la receta, que es quien conoce el sobre.');
+    '\n\n  Esto NO es un detalle de estilo. El hash de los sobres v:1 y v:2 se recalcula con estas\n' +
+    '  fuentes VIVAS: si una difiere, el barrido dirá «no coincide» sobre albaranes INTACTOS, y lo\n' +
+    '  dirá sobre la población entera a la vez. Es la peor salida posible de esta herramienta.\n\n' +
+    '  Que v:3 las congele no retira la comparación: el sellador sigue resolviéndolas —para\n' +
+    '  congelarlas— y el adaptador sigue entregándolas para recalcular el histórico. Cambiar un\n' +
+    '  `||` por un `??` en cualquiera de los dos lados sigue costando lo mismo.');
+});
+
+test('SCRUM-371 · ⑥ 🔴 el adaptador ENTREGA todas las fuentes que alguna receta declara', () => {
+  // La otra mitad del invariante, y la que no se ve comparando resoluciones: una fuente que
+  // ninguna receta puede leer porque el adaptador no la pone. El sobre saldría `error_al_recalcular`
+  // o, peor, cuadraría con un nulo que nadie selló.
+  const adaptador = resolucionesDelAdaptador(fs.readFileSync(F_BARRIDO, 'utf8'));
+  const faltan = [...universoDeFuentes()].filter((f) => !adaptador.has(f));
+  assert.deepEqual(faltan, [],
+    `🔴 el adaptador NO entrega ${faltan.join(', ')}, y hay al menos una receta que lo declara. ` +
+    'Un sobre de esa versión no se podría verificar en absoluto.');
+
+  // 🔴 Y el bloque congelado llega DESDE EL SOBRE, no reconstruido de las filas vivas. Si alguien
+  // lo rehiciera aquí leyendo `job`/`customer`/`merchant`, v:3 dejaría de ser autocontenido y el
+  // defecto que este ticket cierra volvería entero, en verde.
+  const deDondeSale = adaptador.get('contenidoCongelado') ?? '';
+  assert.match(deDondeSale, /evidenciaFirma/,
+    `🔴 el bloque congelado del adaptador sale de «${deDondeSale}» y no de \`evidenciaFirma\`. Un ` +
+    'bloque reconstruido de filas vivas NO es el que se selló: v:3 volvería a depender de que nadie ' +
+    'corrija una razón social, que es exactamente el defecto que vino a cerrar.');
+  assert.doesNotMatch(deDondeSale, /\b(job|customer|merchant)\b/,
+    `🔴 el bloque congelado se está construyendo con filas vivas: «${deDondeSale}».`);
 });
 
 test('SCRUM-371 · SUELO del comparador: ve una resolución cambiada, y resuelve abreviaturas', () => {
@@ -531,6 +757,33 @@ test('SCRUM-371 · SUELO del comparador: ve una resolución cambiada, y resuelve
     '🔴 EL COMPARADOR NO DISTINGUE dos resoluciones distintas de `emisor`. Con `merchant?.name` en ' +
     'vez de `legalName || name`, todo merchant con nombre fiscal distinto del comercial daría «no ' +
     'coincide» sobre albaranes intactos — y este guard lo habría dejado pasar.');
+
+  // 🔴 SCRUM-438 · Y EL MISMO ROJO POR EL CAMINO NUEVO. Los cuatro campos de otras tablas ya no
+  // viajan sueltos en la llamada al hash: viven en el bloque congelado. Sin este control, el
+  // analizador del bloque podría estar devolviendo un mapa vacío y las cinco comparaciones más
+  // delicadas del sistema pasarían en verde sin comparar nada.
+  const bloqueFalso = `
+    async function buildFirmaEvidencia(params) {
+      const cliente = customer?.legalName || customer?.name || null;
+      const contenidoCongelado = {
+        obra: a.lugarEntrega ?? null,
+        referenciaTrabajo: job?.titulo || null,
+        cliente,
+        emisor: merchant?.name || null,
+        emisorNif: merchant?.taxId || null,
+      };
+    }`;
+  const b = bloqueCongeladoDelSellador(bloqueFalso);
+  assert.equal(b.size, 5, '🔴 el analizador del bloque congelado no lee las cinco claves');
+  assert.equal(b.get('cliente'), 'customer?.legalName || customer?.name || null',
+    '🔴 el analizador del bloque no resuelve la abreviatura `cliente,` contra su const');
+  assert.equal(mismaResolucion(adaptador.get('emisor'), b.get('emisor')), false,
+    '🔴 EL COMPARADOR NO DISTINGUE un `emisor` congelado con `merchant?.name` de uno con ' +
+    '`legalName || name`. Ese cambio movería el hash de cada sobre v:3 nuevo respecto de como el ' +
+    'barrido recalcula los viejos, y este guard lo habría dejado pasar.');
+  assert.equal(mismaResolucion(adaptador.get('lugarEntrega'), b.get('obra')), true,
+    '🔴 CONTROL NEGATIVO: el comparador dice que `a.lugarEntrega ?? null` y `a.lugarEntrega ?? null` ' +
+    'son distintos. Si marcara diferencias donde no las hay, sus rojos no significarían nada.');
 });
 
 test('SCRUM-371 · el adaptador NO importa nada del sellador: dos testigos, no un espejo', () => {
@@ -628,6 +881,15 @@ test('SCRUM-371 · el adaptador no disimula lo que no encontró', () => {
     fechaEntrega: null,
     firmadoPorNombre: null,
     firmadoPorCalidad: null,
+    // 🔴 SCRUM-438 · Y ÉSTE ES EL QUE MÁS IMPORTA DE ESTA LISTA: sin sobre, el bloque congelado
+    // llega `undefined`, NO `{}` y NO cinco nulos. La diferencia no es de estilo:
+    //   · `undefined` = «este sobre no trae bloque». La receta v:3 lo dice y se para.
+    //   · cinco nulos = «se selló con los cinco vacíos», que es una AFIRMACIÓN sobre lo que había
+    //     el día de la firma, y nadie la puede sostener. `null` es un valor legítimo aquí (`obra`
+    //     lo es en todos los sobres viejos), así que rellenar con nulos no se distingue de haber
+    //     sellado nulos: fabricaría el valor que no se tenía.
+    // Que aparezca en esta comparación es lo que impide que alguien lo «arregle» con un `?? {}`.
+    contenidoCongelado: undefined,
   });
   assert.equal(e.evidencia, null, '🔴 un albarán firmado sin sobre tiene que llegar como null, no inventado');
 });

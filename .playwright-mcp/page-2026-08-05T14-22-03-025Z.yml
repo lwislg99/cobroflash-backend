@@ -1,0 +1,26 @@
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - code [ref=f1e3]: .btn.btn-primary
+    - button "Guardar" [ref=f1e4] [cursor=pointer]
+  - generic [ref=f1e5]:
+    - code [ref=f1e6]: .btn.btn-secondary
+    - button "Cancelar" [ref=f1e7] [cursor=pointer]
+  - generic [ref=f1e8]:
+    - code [ref=f1e9]: .btn.btn-danger
+    - button "Eliminar" [ref=f1e10] [cursor=pointer]
+  - generic [ref=f1e11]:
+    - code [ref=f1e12]: .btn.btn-ghost
+    - button "Ghost" [ref=f1e13] [cursor=pointer]
+  - generic [ref=f1e14]:
+    - code [ref=f1e15]: .btn (base sola)
+    - button "Base" [ref=f1e16] [cursor=pointer]
+  - generic [ref=f1e17]:
+    - code [ref=f1e18]: .btn-primary (sin btn)
+    - button "Guardar" [ref=f1e19] [cursor=pointer]
+  - generic [ref=f1e20]:
+    - code [ref=f1e21]: .input
+    - textbox "Un campo" [ref=f1e22]
+  - generic [ref=f1e23]:
+    - code [ref=f1e24]: <a href>
+    - link "Un enlace" [ref=f1e25] [cursor=pointer]:
+      - /url: "#x"

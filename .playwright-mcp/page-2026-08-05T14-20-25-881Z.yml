@@ -1,0 +1,16 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - code [ref=e3]: class="btn btn-primary"
+    - button "Guardar" [ref=e4] [cursor=pointer]
+  - generic [ref=e5]:
+    - code [ref=e6]: class="btn-primary" (sin btn)
+    - button "Guardar" [ref=e7] [cursor=pointer]
+  - generic [ref=e8]:
+    - code [ref=e9]: class="btn btn-secondary"
+    - button "Cancelar" [ref=e10] [cursor=pointer]
+  - generic [ref=e11]:
+    - code [ref=e12]: class="btn-secondary" (sin btn)
+    - button "Cancelar" [ref=e13] [cursor=pointer]
+  - generic [ref=e14]:
+    - code [ref=e15]: class="btn" (base sola)
+    - button "Base" [ref=e16] [cursor=pointer]
