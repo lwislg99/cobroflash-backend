@@ -69,7 +69,7 @@ function censo() {
 
 // El tope se sube A MANO, nunca se deriva del censo: derivarlo haría que añadir uno subiera el
 // techo solo (lección de SCRUM-379 y del trinquete de SCRUM-402).
-const TOPE = 26;   // medido el 9-ago-2026: 26 ocurrencias en 12 ficheros
+const TOPE = 6;    // 9-ago: 26. 10-ago: 6, tras aplicar la microcopy aprobada por el fundador.
 
 test('SCRUM-377 · SUELO: el censo ve «(s)» de verdad, y NO los de código', () => {
   // Dos suelos en uno. Si el censo diera 0, no estaría mirando; si contara `test(s)` o `has(s)`,
@@ -110,4 +110,39 @@ test('SCRUM-377 · el tope no está por encima de lo que hay (no se afloja solo)
   const n = censo().length;
   assert.ok(TOPE - n <= 3,
     `🔴 el tope (${TOPE}) va ${TOPE - n} por encima del censo real (${n}): así caben varios nuevos sin rojo`);
+});
+
+// ── LAS CUATRO COMBINACIONES, porque hay frases con DOS números ─────────────
+
+test('SCRUM-377 · 🔴 «${n} partes de ${nF} meses»: los CUATRO casos, no dos', () => {
+  // ⚠️ EL MATIZ QUE SEÑALÓ EL FUNDADOR. En una frase con dos números, cada uno se resuelve por su
+  // cuenta: probar solo singular-singular y plural-plural deja SIN PROBAR la mitad de los casos,
+  // que además son los que de verdad se dan (1 parte de 3 meses no existe, pero 5 partes de 1 mes
+  // sí, y es el caso normal de una obra por fases dentro del mismo mes).
+  const frase = (n, nF) =>
+    `Has seleccionado ${n} ${n === 1 ? 'parte' : 'partes'} de ${nF} ${nF === 1 ? 'mes' : 'meses distintos'}.`;
+
+  assert.equal(frase(1, 1), 'Has seleccionado 1 parte de 1 mes.');
+  assert.equal(frase(1, 3), 'Has seleccionado 1 parte de 3 meses distintos.');
+  assert.equal(frase(5, 1), 'Has seleccionado 5 partes de 1 mes.');
+  assert.equal(frase(5, 3), 'Has seleccionado 5 partes de 3 meses distintos.');
+
+  // Y la forma real, tal cual está en el fichero: si alguien la simplifica a un solo ternario,
+  // esto lo caza.
+  const job = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/jobDetailView.js'), 'utf8');
+  assert.match(job, /\$\{sel\.length === 1 \? 'parte' : 'partes'\}/,
+    '🔴 el primer número ha dejado de resolverse solo');
+  assert.match(job, /\$\{nF === 1 \? 'mes' : 'meses distintos'\}/,
+    '🔴 el segundo número ha dejado de resolverse solo: es la mitad que se olvida');
+});
+
+test('SCRUM-377 · «1 factura sin desglose … no incluida»: concuerda EN LOS DOS SITIOS', () => {
+  // Misma trampa: la frase lleva el sustantivo y el participio, y los dos tienen que concordar.
+  const frase = (n) =>
+    `${n} ${n === 1 ? 'factura sin desglose de líneas' : 'facturas sin desglose de líneas'} `
+    + `${n === 1 ? 'no incluida' : 'no incluidas'} en el cuadro`;
+  assert.match(frase(1), /^1 factura sin desglose de líneas no incluida /);
+  assert.match(frase(4), /^4 facturas sin desglose de líneas no incluidas /);
+  assert.ok(!frase(1).includes('incluidas'), '🔴 en singular se cuela el participio plural');
+  assert.ok(!frase(4).includes(' no incluida '), '🔴 en plural se cuela el participio singular');
 });

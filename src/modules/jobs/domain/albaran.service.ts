@@ -143,7 +143,7 @@ export function validarLineas(
       if (lineasDelPresupuesto !== undefined && idx >= lineasDelPresupuesto) {
         return {
           ok: false,
-          error: `línea ${i + 1}: quoteLineIndex ${idx} no existe en el presupuesto (tiene ${lineasDelPresupuesto} línea(s))`,
+          error: `línea ${i + 1}: quoteLineIndex ${idx} no existe en el presupuesto (tiene ${lineasDelPresupuesto} ${lineasDelPresupuesto === 1 ? 'línea' : 'líneas'})`,
         };
       }
       linea.quoteLineIndex = idx;

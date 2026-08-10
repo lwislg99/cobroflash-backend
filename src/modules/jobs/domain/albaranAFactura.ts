@@ -225,7 +225,7 @@ export function motivosParaNoEmitir(c: Casacion, hayPresupuesto: boolean): strin
     motivos.push('el albarán no tiene ni una línea: no hay nada entregado que facturar');
   } else if (c.facturables.length === 0) {
     motivos.push(
-      `el albarán tiene ${c.lineasDelAlbaran} línea(s) y NINGUNA casa con el presupuesto. Emitir aquí produciría una factura vacía, que es un documento fiscal que no dice nada y que la regla 29 impide corregir borrándolo`,
+      `el albarán tiene ${c.lineasDelAlbaran} ${c.lineasDelAlbaran === 1 ? 'línea' : 'líneas'} y NINGUNA casa con el presupuesto. Emitir aquí produciría una factura vacía, que es un documento fiscal que no dice nada y que la regla 29 impide corregir borrándolo`,
     );
   }
   return motivos;

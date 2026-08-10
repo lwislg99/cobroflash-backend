@@ -149,7 +149,11 @@ test('SCRUM-290 · SUELO: con líneas pero NINGUNA casada, NO se emite — y lo 
 
   const motivos = motivosParaNoEmitir(c, true);
   assert.ok(motivos.length > 0, '🔴 el casador no casó nada y aun así dejaría emitir: eso es una factura VACÍA');
-  assert.match(motivos.join(' '), /2 línea\(s\) y NINGUNA casa/,
+  // ⚠️ SCRUM-377: el literal pasó de «2 línea(s)» a «2 líneas» al aplicar la microcopy aprobada
+  // por el fundador (el plural se resuelve por el número; `(s)` no se escribe nunca). La PROPIEDAD
+  // que este assert protege no cambia —tiene que decir CUÁNTAS traía—, solo la forma de escribirla.
+  // Mismo criterio con el que SCRUM-303 y SCRUM-305 ya quitaron su `línea(s)`.
+  assert.match(motivos.join(' '), /2 líneas y NINGUNA casa/,
     'tiene que decir cuántas traía: 0 casadas de 2 no es lo mismo que 0 casadas de 0');
   assert.match(motivos.join(' '), /regla 29/, 'y por qué importa: una factura emitida no se borra');
 });

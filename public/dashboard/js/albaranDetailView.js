@@ -541,7 +541,7 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     fila('Facturación', alb.estadoFacturacion) +
     // El «parcial» se enseña con su detalle: decir «parcial» sin decir QUÉ queda es la mitad del
     // dato, y es el caso normal en una obra por fases.
-    (pendientes.length ? fila('Pendiente de facturar', `${pendientes.length} línea(s)`) : '');
+    (pendientes.length ? fila('Pendiente de facturar', `${pendientes.length} ${pendientes.length === 1 ? 'línea' : 'líneas'}`) : '');
   page.appendChild(rail);
 
   // ── ① PRESUPUESTO ORIGEN · ENLACE DEL **DOCUMENTO**, EN EL RAIL ─────────────────────────

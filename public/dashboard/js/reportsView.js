@@ -355,7 +355,7 @@ async function renderReportsView(container) {
     if (data.excluded.count > 0) {
       const note = document.createElement('p');
       note.style.cssText = 'margin:10px 0 0;font-size:12px;color:var(--neutral-500)';
-      note.textContent = `⚠ ${data.excluded.count} factura(s) sin desglose de líneas (total ${fmtMoneyEs(data.excluded.total, data.currency)}) no incluidas en el cuadro — revísalas a mano.`;
+      note.textContent = `⚠ ${data.excluded.count} ${data.excluded.count === 1 ? 'factura sin desglose de líneas' : 'facturas sin desglose de líneas'} (total ${fmtMoneyEs(data.excluded.total, data.currency)}) ${data.excluded.count === 1 ? 'no incluida' : 'no incluidas'} en el cuadro — revísalas a mano.`;
       vatCard.appendChild(note);
     }
   }

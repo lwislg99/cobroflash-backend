@@ -211,7 +211,7 @@ export function construirModelo303(params: {
     );
   }
   if (sinDesglose.length > 0) {
-    motivosParaNoFiarse.push(`${sinDesglose.length} factura(s) sin desglose no se han podido declarar`);
+    motivosParaNoFiarse.push(`${sinDesglose.length} ${sinDesglose.length === 1 ? 'factura sin desglose no se ha podido declarar' : 'facturas sin desglose no se han podido declarar'}`);
   }
   if (sinClasificar.length > 0) {
     motivosParaNoFiarse.push(
@@ -219,7 +219,7 @@ export function construirModelo303(params: {
     );
   }
   if (params.libro.importesIlegibles.length > 0) {
-    motivosParaNoFiarse.push(`${params.libro.importesIlegibles.length} importe(s) ilegibles en el libro`);
+    motivosParaNoFiarse.push(`${params.libro.importesIlegibles.length} ${params.libro.importesIlegibles.length === 1 ? 'importe ilegible' : 'importes ilegibles'} en el libro`);
   }
 
   return {

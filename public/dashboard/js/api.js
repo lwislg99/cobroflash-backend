@@ -400,7 +400,7 @@ function planTramosEstado(tramos, emitidas) {
     return {
       ok: false,
       sumaPct: 0,
-      error: `Ya hay ${yaEmitidos} tramo(s) facturado(s): el plan no puede tener menos.`,
+      error: `Ya hay ${yaEmitidos} ${yaEmitidos === 1 ? 'tramo facturado' : 'tramos facturados'}: el plan no puede tener menos.`,
     };
   }
 
