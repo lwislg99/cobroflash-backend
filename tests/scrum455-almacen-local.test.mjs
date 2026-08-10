@@ -15,6 +15,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
 import {
   montarAlmacen, porQueEstariaCiego, indexedDBQueAbortaTrasEscribir, cacheStorageFalsa,
 } from './_banco-almacen-local.mjs';
@@ -161,6 +162,60 @@ test('SCRUM-455 · la versión declarada y los tramos escritos son coherentes', 
   assert.deepEqual([...b.ctx.tramosQueFaltan(0, b.ctx.VERSION_BD)], [],
     '🔴 se ha subido `VERSION_BD` y falta el tramo. Escríbelo antes de subirla: con el almacén ' +
     'vacío es gratis, después son firmas.');
+});
+
+/**
+ * Los sitios donde se destruye un almacén, por AST.
+ *
+ * ⚠️ AST y no `grep`: este fichero está lleno de prosa que EXPLICA por qué no se puede borrar
+ * `firmasPendientes`, y un guard de texto se cazaría a sí mismo en su propio comentario. Es la
+ * lección de SCRUM-336, y ya mordió en SCRUM-203.
+ *
+ * PURA sobre el código que se le pasa, para poder ejercitar el control negativo con un corpus
+ * sintético: hoy no hay ningún `deleteObjectStore` en el árbol, y una lista vacía hace verdad
+ * cualquier afirmación sobre sus elementos.
+ */
+function almacenesDestruidos(codigo) {
+  const sf = ts.createSourceFile('x.js', codigo, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const encontrados = [];
+  (function walk(n) {
+    if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression)
+        && ['deleteObjectStore', 'deleteDatabase'].includes(n.expression.name.text)) {
+      const arg = n.arguments[0];
+      encontrados.push({
+        metodo: n.expression.name.text,
+        argumento: arg ? arg.getText(sf) : '(sin argumento)',
+        linea: sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1,
+      });
+    }
+    ts.forEachChild(n, walk);
+  })(sf);
+  return encontrados;
+}
+
+test('SCRUM-455 · 🔴 ningún tramo de migración DESTRUYE un almacén', () => {
+  // La regla escrita en `almacenLocal.js` —«ningún tramo futuro puede borrar ni recrear
+  // `firmasPendientes`»— sin mecanismo sería una prohibición en un comentario, que es la familia
+  // que este repo lleva semanas desmontando. Aquí tiene mecanismo.
+
+  // CONTROL POSITIVO, dentro del mismo test: el detector encuentra lo que busca cuando lo hay.
+  const sintetico = `const T = { 1: (bd) => { bd.deleteObjectStore('firmasPendientes'); } };`;
+  assert.equal(almacenesDestruidos(sintetico).length, 1,
+    '🔴 el detector no ve un `deleteObjectStore` que está delante: su «ninguno» no valdría nada.');
+  assert.equal(almacenesDestruidos(sintetico)[0].metodo, 'deleteObjectStore');
+  assert.equal(almacenesDestruidos('const a = 1; // deleteObjectStore en un comentario').length, 0,
+    '🔴 el detector se caza a sí mismo en un comentario: por eso es AST y no `grep`.');
+
+  const codigo = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/almacenLocal.js'), 'utf8');
+  const destruidos = almacenesDestruidos(codigo);
+  assert.deepEqual(destruidos, [],
+    '🔴 UN TRAMO DE MIGRACIÓN DESTRUYE UN ALMACÉN:\n    ' +
+    destruidos.map((d) => `línea ${d.linea}: ${d.metodo}(${d.argumento})`).join('\n    ') +
+    '\n\n  Dentro de `firmasPendientes` hay firmas de clientes que ya no están delante para volver\n' +
+    '  a firmar. Un upgrade que recree el almacén las borra SIN DECIR NADA — es exactamente el\n' +
+    '  modo de fallo que la decisión de versión de este ticket existe para impedir.\n' +
+    '  Y `deleteDatabase` tampoco: se lleva por delante lo que otro ticket haya añadido a esta\n' +
+    '  misma base sin enterarse. Se vacía con `clear()`, almacén por almacén y por su nombre.');
 });
 
 // ── EL PURGADO DEL LOGOUT ──────────────────────────────────────────────────────────────────

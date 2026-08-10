@@ -115,7 +115,7 @@ export function porQueEstariaCiego(b, raiz) {
  */
 export function indexedDBQueAbortaTrasEscribir() {
   const real = new IDBFactory();
-  const testigo = { escriturasConExito: 0, transaccionesAbortadas: 0 };
+  const testigo = { escriturasConExito: 0, transaccionesAbortadas: 0, abortsConfirmados: 0 };
 
   return {
     _testigo: testigo,
@@ -126,7 +126,7 @@ export function indexedDBQueAbortaTrasEscribir() {
         close: () => bd.close(),
         transaction(almacenes, modo) {
           const tx = bd.transaction(almacenes, modo);
-          tx.addEventListener('abort', () => { testigo.transaccionesAbortadas += 1; });
+          tx.addEventListener('abort', () => { testigo.abortsConfirmados += 1; });
           return {
             get error() { return tx.error; },
             set oncomplete(f) { tx.oncomplete = f; },
@@ -141,7 +141,13 @@ export function indexedDBQueAbortaTrasEscribir() {
                   p.addEventListener('success', () => {
                     testigo.escriturasConExito += 1;
                     // La operación fue bien; la transacción, no. Justo aquí se separan los dos.
-                    try { tx.abort(); } catch (_e) { /* ya terminada */ }
+                    //
+                    // 🔴 El contador va AQUÍ y no en el evento `abort`, y la diferencia importa:
+                    // el evento llega un tick después, y un código que resolviera en
+                    // `peticion.onsuccess` ya habría devuelto para entonces. Contándolo allí, el
+                    // test caía diciendo «el escenario no ocurrió» —el motivo equivocado— en vez
+                    // de «se está dando por guardado algo sin confirmar».
+                    try { tx.abort(); testigo.transaccionesAbortadas += 1; } catch (_e) { /* ya terminada */ }
                   });
                   return p;
                 },
