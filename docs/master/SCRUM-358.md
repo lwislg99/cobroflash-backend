@@ -1,8 +1,145 @@
-# SCRUM-358 · H3 — La clave de idempotencia (informe del 10-ago) + el ALTA idempotente (11-ago)
+# SCRUM-358 · H3 — encolar (10-ago) + el ALTA idempotente (11-ago) + la clave (10-ago)
 
-> **Este fichero tiene DOS entradas.** Arriba, la del 11-ago: lo construido. Abajo, sin tocar, la
-> medición del 10-ago que decidió la clave. La medición no se reescribe: es la que sostiene el
-> diseño y quien lo discuta tiene que poder leer sobre qué se decidió.
+> **Este fichero tiene TRES entradas.** Arriba, la de hoy: el productor de la cola, la mitad de
+> CLIENTE que la del 11-ago dejó declarada como no construida. Debajo, sin tocar, las dos
+> anteriores. Ninguna se reescribe: son las que sostienen las decisiones de arriba.
+
+---
+
+# 10-ago-2026 · ENCOLAR UNA FIRMA QUE NO HA PODIDO SUBIR (fase 2, mitad de CLIENTE)
+
+**Medido contra:** `origin/main` = `9f6733ae6977be6e3b643a86e93d9f5ed3ab019e` · 2026-08-10T22:10:26Z
+
+**Carril:** H (albarán sin red) · **Gate:** sin gate, corre en `npm test`
+
+El almacén existía (SCRUM-455) y los tres estados existían (SCRUM-356), pero **nadie escribía en
+`firmasPendientes`**. Esto es lo que convierte lo anterior en producto.
+
+## PASO 0
+
+* **`docs/master/SCRUM-358.md` SÍ existía, y se leyó.** Tiene dos entradas: la del 11-ago construyó
+  **la mitad de SERVIDOR** y su §1 dice literalmente *«**NO se construye la mitad de CLIENTE** —la
+  cola en IndexedDB, el drenado, los reintentos…»*; la del 10-ago es la medición que decidió la
+  clave. **Ninguna documenta lo que pide este encargo**, así que se sigue y se añade esta tercera.
+* **Premisa confirmada:** `guardarFirmaPendiente` no tenía **ni una** llamada fuera del propio
+  `almacenLocal.js` (`grep -rn` sobre `public/` y `src/`).
+
+## 🔴 El orden de las operaciones, que era la tarea
+
+| | Qué falla |
+|---|---|
+| subir → encolar si falla | ventana en la que el proceso muere —el pro cierra la app, iOS la mata— con la firma **ni subida ni encolada**. Se perdió y nadie lo sabe |
+| **encolar → subir → quitar** | la firma no se pierde nunca. El riesgo es el contrario: un **fantasma** encolado que ya subió |
+
+**Se encola antes.** Con la asimetría de coste delante no hay empate: un fantasma se reintenta y
+algo lo para; una firma perdida no la para nada.
+
+⚠️ **Y la ventana del primer camino no es teórica.** El `POST` de firmar **no tiene plazo** —el de
+SCRUM-451 cubre sólo GET, porque abortar una mutación puede duplicar una factura—, así que contra
+una red que acepta y no entrega esa petición **no vuelve nunca**. La ventana no dura milisegundos:
+dura lo que el profesional tarde en cerrar la aplicación.
+
+## 🔴 Quién para al fantasma — y NO es la clave de idempotencia. Medido.
+
+La clave que construyó la entrada del 11-ago es del **ALTA** del albarán. **El endpoint de firmar no
+la acepta**: se leyó entero (`src/modules/jobs/app/routes/albaranes.routes.ts:639-703`) y sus
+entradas son `signatureData`, `firmadoPorNombre`, `firmadoPorCalidad` y `firmadoPorCalidadOtro`.
+
+**Al fantasma lo para el propio documento:** `albaran.estado === 'firmado'` devuelve **409
+`albaran_locked`** (`albaranes.routes.ts:644-646`) y no escribe nada. Firmar es terminal y se puede
+pedir dos veces sin consecuencias en los datos.
+
+Decirlo importa porque la alternativa era **añadir la clave al camino de firma**, y eso es modificar
+el camino de emisión y el sellado — fuera de este carril, y además innecesario: la protección ya
+está y está medida.
+
+## La clave es DETERMINISTA, y ése es todo su sentido
+
+`firma:albaran:<id>`. Un uuid aleatorio parecería más «clave» y sería un defecto: dos intentos de
+firmar el mismo albarán dejarían **dos** entradas en la cola y el pro subiría su firma dos veces.
+Siendo determinista, el `keyPath` de SCRUM-455 hace que el segundo intento **sobrescriba** al
+primero. Una entrada por albarán, sin código que lo vigile.
+
+Se apoya en dos hechos, no en una suposición:
+
+* el albarán **siempre** tiene id de servidor —se crea con cobertura, no hay creación sin red
+  (decisión del fundador)—, así que no hace falta acuñar identidad en el cliente;
+* un albarán sólo se firma **una** vez: `firmado` es terminal.
+
+**SUELO:** sin id utilizable no hay clave, y **sin clave no se firma**. Una firma que no se puede
+identificar no se puede desencolar, y una cola de la que no se puede sacar nada sube la misma firma
+para siempre.
+
+## Sin almacén se sigue firmando — decisión, no descuido
+
+Si `firmasPendientes` no está disponible, el intento sigue adelante: **sin red de seguridad, como el
+producto se comporta hoy**. Lo contrario sería impedir firmar a quien hoy puede, para protegerlo de
+un caso que sólo ocurre si además falla la red. Y no se le miente: sin confirmación no hay ③.
+
+## SCRUM-404 sigue mandando: el error SUBE
+
+Que la firma esté a salvo en la cola **no** autoriza a cerrar el pad en silencio: el pro se iría
+creyendo que subió, que es el fallo mudo que este bloque existe para evitar. Sin confirmación del
+servidor se relanza el mensaje ya aprobado y el trazo sigue en pantalla. **Tiene guard.**
+
+## Verificación — 12 tests, y ninguno se cuelga
+
+> 🔴 **El test tuvo que cambiar de forma, y el motivo es la demostración.** La primera versión
+> esperaba a que la firma resolviera y se colgó en los tres casos de «acepta y no entrega» —porque
+> contra esa red **no resuelve nunca**—. Lo que hay que medir no es qué devuelve la firma, sino que
+> **la firma ya está a salvo mientras la petición sigue colgada**. Ésa es exactamente la ventana en
+> la que el pro cierra la aplicación. El test lanza la firma, **no la espera**, y mira la cola.
+> El más lento tarda **165 ms**.
+
+| Mutación (post-condición en disco) | Cae |
+|---|---|
+| **encolar DESPUÉS de fallar la subida** | los 3 del camino: *«UNA FIRMA SE HA PERDIDO»* |
+| el encolado no guarda el trazo | la entrada existe y no sirve para subir nada |
+| la clave pasa a ser aleatoria | determinismo, dos-intentos, y la cola no se vacía |
+| no se desencola al confirmar | *«LA FIRMA SIGUE EN LA COLA DESPUÉS DE CONFIRMARSE»* |
+| se firma sin clave | el suelo |
+| el error deja de subir (SCRUM-404) | el pad cerraría en silencio |
+
+**Controles positivos** (los que hacen que el resto signifique algo): con red normal la firma sube,
+se confirma **y no queda nada en la cola** —una cola que siempre acumula es tan defectuosa como una
+que no guarda—; y un albarán **distinto** sí añade entrada, o «una sola» podría estar diciendo que
+la cola no guarda más de una cosa.
+
+**Suelo del escenario:** se comprueba `cuerposEntregados === 0`, porque si esa red llegara a
+entregar cuerpo dejaría de ser «acepta y no entrega» y el test mediría otra cosa.
+
+## 🔴 Huecos que se declaran
+
+* **LA COLA HOY NO SE VACÍA SOLA.** No hay drenado: nada reintenta al volver la red. Una firma
+  encolada se queda ahí hasta que el profesional vuelva a pulsar «Firmar aquí mismo» en ese albarán.
+  El reintento, el orden entre varias y la espera creciente son la fase siguiente.
+* **Y por tanto el aviso de SCRUM-356 dice la verdad y se queda corto:** *«Las firmas pendientes
+  suben cuando abres YaQu»* — hoy ni siquiera eso: suben cuando el pro vuelve a firmar ese albarán a
+  mano. El texto está aprobado y no se toca (regla 30), pero **conste que promete un poco más de lo
+  que hay**, y que la fase siguiente lo vuelve cierto.
+* **No hay tope de tamaño de la cola.** Cada firma lleva su trazo en base64. Sin drenado, un
+  profesional con muchas firmas fallidas puede llenar la cuota, y entonces `guardarFirmaPendiente`
+  devolverá `FALLO` — se reporta, no se pierde en silencio, pero no está probado contra una cuota
+  real. El tope de 50 que menciona la entrada del 11-ago sigue sin construirse.
+* **Los conflictos no se tratan** (H6, SCRUM-361): si la misma firma llega dos veces, el 409 la para;
+  qué se le dice al profesional cuando eso pasa no es de esta fase.
+* **`albaranId` sigue siendo el acuerdo mínimo con H2**, ahora consumido desde los dos lados
+  (`hayFirmaEnColaDe` y `claveDeFirma`).
+
+## Lo que no se ha tocado
+
+El drenado · los reintentos · el orden entre varias · H6 · la precarga (SCRUM-458) ·
+`prisma/schema.prisma` · el camino de emisión · el sellado. **`public/sw.js` cambia en una línea**:
+la entrada del fichero nuevo en el `SHELL`, que es lo que exige el guard de SCRUM-274.
+
+**Microcopy: ninguna nueva.** Los cinco textos de SCRUM-356 son los que se usan, y el camino de
+fallo sigue dando los suyos.
+
+## Tests
+
+* `tests/scrum358-encolar-firma.test.mjs` — 12 tests
+
+---
 
 ---
 
