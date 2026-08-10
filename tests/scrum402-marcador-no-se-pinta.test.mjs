@@ -79,7 +79,10 @@ const CENSO = Object.freeze({
   'invoiceDetailView.js': 9,
   'invoicesView.js': 2,
   'jobDetailView.js': 1,
-  'jobRailBlocks.js': 1,
+  // SCRUM-424 (−1, 10-ago-2026): `jobRailBlocks.js` SALE del censo. Su único marcador era el
+  // rótulo del enlace a mapa del bloque DÓNDE, y el asesor aprobó «Abrir en mapa» (regla 30). El
+  // trinquete APRIETA: la entrada se borra en vez de bajar a 0 — `censoActual()` solo lista
+  // ficheros con marcadores, así que un 0 escrito aquí sería una bajada permanente sin anotar.
   'libroRegistroView.js': 1,
   'nuevaFacturaModal.js': 1,
   'patronDetalleAcciones.js': 1,
