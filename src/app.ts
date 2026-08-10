@@ -52,6 +52,7 @@ import legalPagesRouter from './modules/system/app/routes/legalPages.routes';
 import publicProfileRouter from './modules/system/app/routes/publicProfile.routes';
 import jobsRouter from './modules/jobs/app/routes/jobs.routes';
 import albaranesRouter from './modules/jobs/app/routes/albaranes.routes'; // SCRUM-14 (ALBARAN-1)
+import entornoAdminRouter from './modules/auth/app/routes/entornoAdmin.routes'; // SCRUM-360 (H5 fase 2)
 import libroRegistroRouter from './modules/invoicing/app/routes/libroRegistro.routes'; // SCRUM-296 (A6): libro de registro, SOLO LECTURA
 import librosAeatRouter from './modules/fiscal/librosAeat/librosAeat.routes'; // SCRUM-325 (E4): el libro de A6, por periodo y en CSV. SOLO LECTURA
 import modelo303Router from './modules/fiscal/modelo303/modelo303.routes'; // SCRUM-295 (A5): modelo 303, SOLO LECTURA
@@ -438,6 +439,7 @@ mountAdmin(app, '/admin/expenses',   expensesRouter);
 mountAdmin(app, '/admin/bot',        botAdminRouter); // A8.3: handoffs pendientes del bot
 mountAdmin(app, '/admin/jobs',       jobsRouter);    // A13 (JOB-1): trabajos
 mountAdmin(app, '/admin/albaranes',  albaranesRouter); // SCRUM-14 (ALBARAN-1): partes de trabajo NO fiscales
+mountAdmin(app, '/admin/entorno',    entornoAdminRouter); // SCRUM-360 (H5 fase 2): el último entorno visto
 // SCRUM-296 (A6): libro de facturas emitidas. ADMIN-ONLY, el default de S1 y aquí además el
 // correcto por contenido: es la facturación entera del negocio, no trabajo de campo del Operario.
 mountAdmin(app, '/admin/libro-registro', requireRole('admin'), libroRegistroRouter);
