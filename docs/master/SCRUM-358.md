@@ -122,17 +122,42 @@ exactamente un cerrojo y va después de la búsqueda»), y ahí sí cayeron.
 > mutación**, igual que ante un rojo raro el primer sospechoso es el escáner. Una mutación sin
 > post-condición es un experimento sin control.
 
-## 5 · Microcopy pendiente (regla 30)
+## 5 · Microcopy del 409 — ✅ **APROBADA** (asesor, 11-ago-2026)
 
-El mensaje del **409 de clave reutilizada**, con marcador y propuesta dentro
-(`albaranIdempotencia.ts`, `MSG_CLAVE_REUTILIZADA`):
+```
+Este parte ya se creó antes con datos distintos a los que se están enviando ahora.
+No hemos creado nada para no duplicarlo: el parte ALB-2026-097 sigue guardado.
+Ábrelo desde el trabajo para revisarlo.
+```
 
-> *«Este parte ya se había creado con estos mismos datos de envío, pero lo que llega ahora es
-> distinto. No se ha creado nada para no duplicarlo. Vuelve a crearlo desde el trabajo.»*
+**El número del original va DENTRO del texto**, no solo en el campo de al lado del JSON: el
+profesional lee el mensaje, no la respuesta. En el 409 siempre se tiene (`yaExiste.numero`); sin
+él se cae a «el parte original sigue guardado», que es el texto aprobado tal cual.
 
-Lo lee el **profesional**, e intenta cumplir lo que el asesor pidió en SCRUM-424: que un mensaje
-que bloquea **dé salida**. Vive en `src/`, fuera del censo de SCRUM-402 (que escanea
-`public/dashboard/js/`).
+### 🔴 La corrección que trajo, y por qué quedó como guard
+
+Mi propuesta terminaba en *«Vuelve a crearlo desde el trabajo»*, y **contradice la frase
+anterior**: si el original existe y lo que se está evitando es duplicarlo, la salida no puede ser
+crear otro.
+
+> **Un mensaje que da una salida que produce el problema que acaba de evitar es peor que uno sin
+> salida.**
+
+Y fuera *«datos de envío»*: un fontanero no sabe qué es eso.
+
+**No se queda como nota: se queda como test.** El texto se fija **entero** (reformularlo es cambio
+de máster) y, además, hay un invariante aparte que prohíbe que el mensaje vuelva a mandar *crear
+otro*. Las dos capas están probadas en rojo por separado:
+
+| Mutación | Cae diciendo |
+| --- | --- |
+| se cambia la salida a «vuelve a crearlo» | *«el texto del 409 no es el aprobado … no se reformula, se cambia por máster»* |
+| se cambia la salida **y** se actualiza el test exacto a juego —lo que haría alguien «arreglándolo»— | *«el mensaje vuelve a mandar CREAR OTRO parte … la salida es ABRIR el que hay»* |
+
+La segunda es la que justifica tener dos capas: la primera sola se puede desactivar editando el
+propio test.
+
+Vive en `src/`, fuera del censo de SCRUM-402 (que escanea `public/dashboard/js/`).
 
 ## 6 · Lo que no se ha tocado
 
