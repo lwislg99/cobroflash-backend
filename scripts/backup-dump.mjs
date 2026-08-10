@@ -15,19 +15,31 @@
 // pg_restore). Si NO lo hay (p. ej. imagen Node de Railway), dump LÓGICO vía
 // Prisma: todas las tablas a JSON.
 //
-// ⚠️ SCRUM-242 · AQUÍ HABÍA UNA PROMESA FALSA, y se retira en vez de dejarla: esta línea decía
+// ⚠️ SCRUM-242 · AQUÍ HABÍA UNA PROMESA FALSA, y se retiró en vez de dejarla: esta línea decía
 // que el dump lógico era «restaurable con este mismo script en un entorno limpio — ver RUNBOOK al
 // final». **Ese RUNBOOK nunca existió** (una sola mención en el fichero: la promesa), y
-// `docs/RUNBOOKS.md` tampoco tiene procedimiento de restauración.
+// `docs/RUNBOOKS.md` tampoco tenía procedimiento de restauración.
 //
 // Y la promesa era doble, porque este script **no restaura**: sus dos modos son volcar y
 // `--restore-test`, y NINGUNO escribe de vuelta en la base. `--restore-test` VERIFICA —descifra,
 // valida el tag GCM y compara conteos—, que no es lo mismo.
 //
 // Quien leía la cabecera se quedaba tranquilo y no lo buscaba hasta necesitarlo, que es a las tres
-// de la mañana con la base caída. **ESTADO REAL: para el formato lógico no hay procedimiento de
-// restauración escrito ni código que lo haga.** Lo vigila
-// `tests/scrum242-scripts-no-prometen-documentos.test.mjs`.
+// de la mañana con la base caída.
+//
+// ── ESTADO REAL HOY, y por eso vuelve a haber un puntero ───────────────────────────────────────
+// El procedimiento es **`docs/RUNBOOKS.md` §R14** y quien escribe de vuelta es
+// **`scripts/backup-restore.mjs`**. Se probó de punta a punta contra una base desechable —volcar,
+// vaciar, restaurar, comparar, emitir— y la prueba **encontró dos fallos que hacían este volcado
+// lógico irrestaurable**: los tipos (JSON no tiene fechas ni decimales) y el orden de inserción.
+// Ninguno se veía leyendo el código. Evidencia: `docs/evidencias/scrum242-restauracion.md`.
+//
+// La diferencia con la promesa anterior es que esta apunta a documentos que existen y a una prueba
+// que se puede abrir. Lo vigila `tests/scrum242-scripts-no-prometen-documentos.test.mjs`.
+//
+// Lo que sigue SIN resolver es lo otro que midió el ticket: **nadie dispara este script** (0
+// invocaciones frente a 11/7/5 de otros). Un backup restaurable que nadie genera sigue sin salvar
+// la base.
 //
 // Un backup no probado no es un backup:
 // --restore-test descifra, valida el GCM tag (integridad criptográfica) y
