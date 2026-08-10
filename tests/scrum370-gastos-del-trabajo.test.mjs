@@ -81,3 +81,41 @@ test('SCRUM-370 · el listado GLOBAL de gastos NO se ha abierto al técnico', ()
   assert.match(expensesRoutes, /router\.get\('\/', requireRole\('admin'\)/,
     '🔴 `GET /admin/expenses` ha dejado de ser admin-only: eso deja enumerar cotizaciones ajenas');
 });
+
+// ── LA PANTALLA (SCRUM-370, segunda mitad) ──────────────────────────────────
+
+test('SCRUM-370 · 🔴 la ficha del Trabajo PINTA los gastos: si no, su autor no los ve', () => {
+  // Éste es EL defecto, no la estética: quien mete el gasto tiene que poder comprobarlo. Si la
+  // lista desaparece, el técnico vuelve a quedarse con un toast y nada más.
+  const job = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/jobDetailView.js'), 'utf8');
+  assert.match(job, /apiRequest\(`\/admin\/jobs\/\$\{job\.id\}\/gastos`\)/,
+    '🔴 la ficha del Trabajo NO pide los gastos: el gasto que mete el técnico sigue sin ser '
+    + 'visible para quien lo creó, que es el defecto entero de SCRUM-370');
+  assert.match(job, /Gastos de este trabajo/, '🔴 falta el rótulo aprobado de la sección');
+  assert.match(job, /Todavía no hay gastos en este trabajo\./, '🔴 falta el estado vacío aprobado');
+});
+
+test('SCRUM-370 · el fallo de carga NO se confunde con «no hay gastos»', () => {
+  // Una lista vacía por un 500 y un «no hay» se leen igual en pantalla, y uno de los dos manda al
+  // profesional a meter otra vez algo que ya está guardado.
+  const job = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/jobDetailView.js'), 'utf8');
+  const i = job.indexOf('Gastos de este trabajo');
+  const bloqueUI = job.slice(i, i + 2600);
+  assert.match(bloqueUI, /\.catch\(/, '🔴 el fallo de carga se está tragando');
+  assert.ok(
+    bloqueUI.indexOf('Todavía no hay gastos') !== bloqueUI.indexOf('No se pudieron cargar'),
+    '🔴 el vacío y el error dicen lo mismo: son estados distintos y el usuario tiene que poder distinguirlos',
+  );
+});
+
+test('SCRUM-370 · la pantalla NO enseña totales ni califica el importe', () => {
+  // El límite del ticket vecino, ahora también en la UI. Y `Expense` no dice si su importe es base
+  // o con IVA (SCRUM-403): llamarlo de una de las dos formas sería afirmar lo que no consta.
+  const job = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/jobDetailView.js'), 'utf8');
+  const i = job.indexOf('Gastos de este trabajo');
+  const bloqueUI = job.slice(i, i + 2600).replace(/\/\/[^\n]*/g, '');
+  for (const prohibido of ['Total', 'total', 'margen', 'Base imponible', 'con IVA']) {
+    assert.ok(!bloqueUI.includes(prohibido),
+      `🔴 la sección de gastos menciona «${prohibido}»: o invade rentabilidad por obra, o afirma algo que Expense no dice`);
+  }
+});
