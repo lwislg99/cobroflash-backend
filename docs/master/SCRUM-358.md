@@ -1,8 +1,163 @@
-# SCRUM-358 · H3 — encolar (10-ago) + el ALTA idempotente (11-ago) + la clave (10-ago)
+# SCRUM-358 · H3 — el drenado (11-ago) + encolar (10-ago) + el ALTA idempotente (11-ago) + la clave (10-ago)
 
-> **Este fichero tiene TRES entradas.** Arriba, la de hoy: el productor de la cola, la mitad de
-> CLIENTE que la del 11-ago dejó declarada como no construida. Debajo, sin tocar, las dos
-> anteriores. Ninguna se reescribe: son las que sostienen las decisiones de arriba.
+> **Este fichero tiene CUATRO entradas.** Arriba, la del drenado: la cola se vacía sola y el aviso
+> de SCRUM-356 vuelve a ser verdad. Debajo, sin tocar, las tres anteriores. Ninguna se reescribe:
+> son las que sostienen las decisiones de arriba.
+
+---
+
+# 11-ago-2026 · EL DRENADO — QUE LA COLA SE VACÍE SOLA (fase 3)
+
+**Medido contra:** `origin/main` = `e928472efd9acd2d377f5b6f44a5cda39ed69745` · 2026-08-10T23:12:38Z
+
+**Carril:** H (albarán sin red) · **Gate:** sin gate, corre en `npm test`
+
+La fase 2 dejó la cola guardando y sin vaciar. Por eso hubo que degradar el aviso a *«no suben
+solas todavía»*. **Esta fase lo devuelve a la verdad.**
+
+## PASO 0
+
+* **`docs/master/SCRUM-358.md` existe y se leyó.** Su primera entrada —la fase 2— **declara este
+  hueco pero no lo cierra**: *«LA COLA HOY NO SE VACÍA SOLA»*, y lista el drenado en «lo que no se
+  ha tocado». No documenta lo que pide el encargo, así que se sigue y se añade esta cuarta.
+* **Premisa, con tres recuentos POR SEPARADO:** ① ninguna función de drenado publicada;
+  ② `quitarFirmaPendiente` sólo se llamaba desde el desencolado de la fase 2 (`colaDeFirmas.js:136`);
+  ③ `leerFirmasPendientes` sólo se leía desde la vista del albarán y el contador. **Nadie drenaba.**
+
+> ⚠️ **EL PUNTO DE PARTIDA NO ERA EL QUE DECÍA EL ENCARGO.** «Desde main actualizado, con tu fase 2
+> ya dentro»: medido, `main` **no** contenía `colaDeFirmas.js` al empezar. La rama se apiló sobre
+> `scrum-358-h3-encolar`, que es la única forma de tener la fase 2 dentro. A mitad de sesión la
+> fase 2 entró en `main` y el diff volvió a ser sólo el de esta fase.
+
+## Cómo y cuándo se drena
+
+**Al abrir la aplicación** (`app.js`, paso 9). No es comodidad: en iOS **no hay Background Sync**
+(0 % en Safari, medido en H0) y el push está descartado (regla 36). El navegador no nos despierta
+nunca; es el único momento que tenemos.
+
+Va **después del render y sin `await`** —pintar el dashboard no puede esperar a la red— y
+`drenarAlAbrir` **no lanza nunca**: cerrar la cola no puede tumbar el arranque.
+
+## 🔴 El orden, otra vez: se desencola CUANDO EL SERVIDOR CONFIRMA
+
+El mismo que en la fase 2 y por el mismo motivo, pero **aquí equivocarse es peor**: una firma que
+desaparece de la cola sin confirmación es una firma perdida, y ya no hay nadie detrás que la
+reintente. El drenado era el último que la tenía.
+
+## 🔴 Un 409 `albaran_locked` es un ÉXITO — la sutileza de esta fase
+
+Significa *«este albarán ya está firmado»*: el servidor **lo tiene**. Es el caso normal de un
+reintento cuya petición anterior sí llegó y cuya respuesta se perdió.
+
+**Si se tratara como fallo, esa firma no saldría de la cola jamás:** cada apertura reintentaría,
+cada reintento daría 409, y el contador le diría al profesional que tiene pendiente algo que lleva
+semanas a salvo. La cola no se vaciaría nunca y el aviso mentiría en la otra dirección.
+
+Se mira **`err.code`, no el texto** —ramificar por mensaje es lo que nunca hay que hacer, y `api.js`
+expone el código justo para esto—. Y un **409 `invalid_transition` SÍ es fallo**: significa que el
+albarán ni siquiera está emitido, y sacar esa firma de la cola sería perderla. Tiene su test.
+
+## El orden de subida: la más antigua primero
+
+No hay dependencia entre firmas —cada una es de un albarán distinto—, así que el orden **no cambia
+el resultado**. Cambia **quién se queda fuera si algo va mal**, y por eso se elige: la más antigua
+es la que lleva más tiempo en riesgo. Si el navegador desaloja el almacén (iOS a los 7 días, H5) o
+se agota la cuota, lo que se pierde es lo más viejo.
+
+Una firma **sin `encoladaEn` va primero**: sólo puede venir de una versión anterior a esta fase, así
+que lleva ahí más tiempo que cualquiera con marca. Tratarla como la más nueva la dejaría siempre la
+última — justo la que peor lo tiene.
+
+## Una que falla no bloquea a las demás — y colgarse ES bloquear
+
+Se sigue con la siguiente, y la que falló **no se salta en silencio**: cae en `fallidas` con su
+clave y su motivo.
+
+Pero «no bloquea» sería mentira sin rendirse a tiempo: contra una red que **acepta y no entrega**,
+el `POST` de firmar **no vuelve nunca** —no tiene plazo, SCRUM-459 es otro carril— y el bucle se
+quedaría en la primera firma para siempre. Rendirse es **seguro**: no se desencola nada, y si la
+petición llegó, el reintento se encuentra el 409.
+
+> 🔴 **EL GUARD DE SCRUM-451 ME CORRIGIÓ, Y TENÍA RAZÓN.** La primera versión declaró su propio
+> `PLAZO_..._MS` razonando que era «otra decisión»: aquí no se aborta, sólo se deja de esperar. El
+> **mecanismo** es otro, pero **la decisión es la misma** —cuánto espera el producto a la red— y esa
+> vive en un sitio para que el día que se mida cambie en una línea.
+>
+> Se podría haber esquivado renombrando la constante. Habría sido peor que relajar el guard:
+> engaña al siguiente que lea. La espera se ha puesto **en `api.js`, junto a la constante**, como
+> `esperarLoQueLaRed(promesa, ms)`. No toca `apiRequest`, no aborta nada y no pone plazo a ningún
+> `POST`.
+
+## El contador baja, y el repintado va DENTRO
+
+Es el único sitio donde el profesional ve que el drenado funcionó: si sube una firma y el número no
+se mueve, para él no ha pasado nada. Por eso `drenarAlAbrir` repinta el aviso al terminar, en vez de
+confiarlo a quien la llame.
+
+## Microcopy: vuelve el texto aprobado
+
+> «Las firmas pendientes suben cuando abres YaQu. Si no la abres, se quedan aquí.»
+
+Literal, el de SCRUM-356. **Ninguno nuevo.** El provisional de la fase 2 se retira con la fase que
+lo hacía innecesario — un texto provisional que sobrevive a su motivo es peor que el que corrigió.
+
+**Y el guard provisional también se retira, porque él mismo lo pedía.** En su lugar queda uno que
+ata las dos cosas: si el texto promete que suben al abrir, **tiene que existir `drenarAlAbrir` y
+algo tiene que llamarla**. El texto y el mecanismo viajan juntos, o el aviso vuelve a prometer lo
+que no hay — esa vez sin nadie que lo note.
+
+## Verificación — 13 tests nuevos, y diez mutaciones
+
+El positivo es el primero del bloque H que lo recorre de punta a punta: firmar sin cobertura →
+queda en la cola → vuelve la red → se abre la aplicación → **sube, se confirma, sale de la cola y
+el contador baja**.
+
+| Mutación (post-condición en disco) | Cae |
+|---|---|
+| no desencolar tras confirmar | 5 tests: *«LA FIRMA SIGUE EN LA COLA DESPUÉS DE CONFIRMARSE»* |
+| desencolar **antes** de confirmar | 4 tests: *«LA FIRMA HA DESAPARECIDO DE LA COLA SIN CONFIRMACIÓN»* |
+| el 409 `albaran_locked` como fallo | la cola no se vacía nunca |
+| **cualquier** 409 como «ya firmado» | se perdería la firma de un albarán no emitido |
+| quitar el límite de espera | el drenado se cuelga en la primera |
+| el suelo devuelve `quedan: 0` | se reporta cola vacía sin haberla mirado |
+| nadie llama a `drenarAlAbrir` | el aviso promete lo que no hay **+** el cableado |
+| no repintar el contador | el aviso sigue en pantalla con la cola vacía |
+| enviar la firma entera al servidor | viaja lo que no es suyo |
+| volver al texto provisional | la microcopy literal |
+
+> ⚠️ **Y una lección sobre mis propios tests.** Con el límite retirado, el fichero **se quedaba
+> colgado 60 s** hasta que algo lo mataba desde fuera, y el rojo llegaba como «test failed» sin
+> decir nada. Ahora ese test lleva **su propio tope** y cae en 2 s con el mensaje del defecto.
+> Ninguno puede colgarse — y menos el que existe justo para probar que el producto no se cuelga.
+
+## 🔴 Huecos que se declaran
+
+* **No hay reintento dentro de la misma sesión.** Se drena **una vez por apertura**. Si falla, esa
+  firma espera a la siguiente vez que el profesional abra la aplicación. No hay espera creciente ni
+  reintento en segundo plano, y no puede haberlo: no existe el momento en que el navegador nos
+  despierte.
+* **Y por tanto la segunda frase del aviso sigue haciendo falta:** *«Si no la abres, se quedan
+  aquí.»* Es literal.
+* **El drenado no avisa de lo que falló.** `fallidas` lleva clave y motivo, y **nadie los mira**: no
+  hay microcopy aprobada para «esta firma no ha podido subir» y no se inventa (regla 30). El
+  profesional ve el contador, que baja o no baja. Queda propuesto.
+* **Sigue sin haber tope de tamaño de la cola** (era hueco de la fase 2 y lo sigue siendo).
+* **Sin cuota real ni desalojo real.** `fake-indexeddb` es un doble: lo que se demuestra es que
+  nuestro código hace lo que dice, no que un iPhone se comporte así.
+* **No se ha ejercitado el arranque completo del dashboard.** El guard comprueba por texto que
+  `app.js` llama a `drenarAlAbrir()`, y el drenado se ejercita entero por separado; lo que no se ha
+  montado es `initApp` de punta a punta.
+
+## Lo que no se ha tocado
+
+El tope de la cola · los conflictos (H6) · la precarga (SCRUM-460) · el plazo de los `POST`
+(SCRUM-459: `esperarLoQueLaRed` **no aborta**) · `prisma/schema.prisma` · el camino de emisión ·
+el sellado · `sw.js`.
+
+## Tests
+
+* `tests/scrum358-drenado.test.mjs` — 13 tests
+* `tests/scrum356-tres-estados.test.mjs` — 18 tests (el provisional sustituido por el que ata texto y mecanismo)
 
 ---
 
