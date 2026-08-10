@@ -139,7 +139,7 @@ test('SCRUM-170: emitir parte, ver el pendiente, y que la consolidación NO se l
         const r1 = await facturarParcial({ lineas: [{ index: 0, cantidad: 4 }] });
         const b1 = await r1.json();
         assert.equal(r1.status, 201, `debía emitir; devolvió ${r1.status} ${JSON.stringify(b1)}`);
-        assert.equal(b1.estadoCobro, 'parcial', 'con 6 h y 4,5 m pendientes, el albarán está a medias');
+        assert.equal(b1.estadoFacturacion, 'parcial', 'con 6 h y 4,5 m pendientes, el albarán está a medias');
         assert.equal(b1.pendientes[0].pendiente, 6);
         assert.equal(b1.pendientes[1].pendiente, 4.5);
 
@@ -184,13 +184,13 @@ test('SCRUM-170: emitir parte, ver el pendiente, y que la consolidación NO se l
         const r3 = await facturarParcial({ lineas: [{ index: 0, cantidad: 6 }, { index: 1, cantidad: 4.5 }] });
         const b3 = await r3.json();
         assert.equal(r3.status, 201, `debía emitir el resto; devolvió ${r3.status} ${JSON.stringify(b3)}`);
-        assert.equal(b3.estadoCobro, 'facturado', 'sin nada pendiente, el estado derivado es facturado');
+        assert.equal(b3.estadoFacturacion, 'facturado', 'sin nada pendiente, el estado derivado es facturado');
         assert.ok(b3.pendientes.every((p) => p.pendiente === 0));
 
         const finalAlb = await prisma.albaran.findUnique({ where: { id: albaran.id } });
         assert.equal(finalAlb.estado, 'firmado', 'y el documento sigue sin cambiar de estado');
 
-        t.diagnostic(`parcial ${b1.factura.number} + resto ${b3.factura.number} · estado del albarán: ${finalAlb.estado} · cobro derivado: ${b3.estadoCobro}`);
+        t.diagnostic(`parcial ${b1.factura.number} + resto ${b3.factura.number} · estado del albarán: ${finalAlb.estado} · cobro derivado: ${b3.estadoFacturacion}`);
       },
     );
 

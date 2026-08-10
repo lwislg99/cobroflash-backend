@@ -333,7 +333,12 @@ async function serializeJobDetail(job: any) {
       operario: base.operario,
       // `facturado` (invoiceId != null) sigue intacto en serializeAlbaran; esto lo COMPLETA con
       // los tres valores derivados: sin_facturar | parcial | facturado.
-      estadoCobro: estadoCobroAlbaran(lineas, facturado, a.invoiceId != null),
+      //
+      // ⚠️ SCRUM-372 · SE LLAMA IGUAL QUE EN EL DETALLE DEL ALBARÁN, Y ES EL PUNTO DEL TICKET.
+      // Antes salía de aquí como `estadoCobro` y de `albaranes.routes.ts:575` como
+      // `estadoFacturacion`, siendo la MISMA llamada. Y `estadoCobro` ya nombra otra cosa en este
+      // mismo endpoint: el cobro del TRABAJO (`Pagado`/`Parcial`/`Pendiente`, línea 253).
+      estadoFacturacion: estadoCobroAlbaran(lineas, facturado, a.invoiceId != null),
       pendientes: pendientePorLinea(lineas, facturado),
     };
   });

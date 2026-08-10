@@ -178,8 +178,8 @@ test('SCRUM-301 · ③ un estado NUEVO del modelo aparece solo, no se descarta e
   // El día que la Parte L gane un estado, el contador tiene que enseñarlo. Si lo tirase, la
   // pestaña «Todos» seguiría cuadrando y esos albaranes no estarían en ninguna pestaña.
   const filas = [
-    { estado: 'borrador', estadoCobro: 'sin_facturar' },
-    { estado: 'anulado_hipotetico', estadoCobro: 'sin_facturar' },
+    { estado: 'borrador', estadoFacturacion: 'sin_facturar' },
+    { estado: 'anulado_hipotetico', estadoFacturacion: 'sin_facturar' },
   ];
   const c = contarAlbaranes(filas);
   assert.equal(c.porEstado.anulado_hipotetico, 1,
@@ -296,7 +296,7 @@ test('SCRUM-301 · ⑤ control negativo: cambiar el CONTENIDO no mueve ningún c
 test('SCRUM-301 · ⑥ el eje derivado conserva el PARCIAL (lo que se perdería al aplanar)', async () => {
   const { filas } = await listarAlbaranesDelMerchant(M_PROPIO, lectorFalso());
   const aMedias = filas.find((f) => f.numero === 'ALB-2026-004');
-  assert.equal(aMedias.estadoCobro, 'parcial',
+  assert.equal(aMedias.estadoFacturacion, 'parcial',
     '🔴 un albarán con 4 de 8 facturados NO sale como `parcial`. Es el caso NORMAL en una obra ' +
     'por fases, y es justo el que desaparece si los dos ejes se aplanan en cinco pestañas.');
   assert.equal(aMedias.estado, 'firmado',
