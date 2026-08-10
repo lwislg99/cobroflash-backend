@@ -662,3 +662,120 @@ se declara para que quien le dé un llamador sepa que hay que aportarle el bloqu
 **④ `jobDireccion.ts` sale como BINARIO en el diff.** Sus valores de sonda llevan un byte `NUL`
 dentro (ya estaba así antes de esta sesión), y git no muestra el diff de un fichero con NUL. Su
 cambio va enumerado en el informe porque en el PR **no se puede leer**.
+
+---
+
+## 3 quinquies · 🔴 EL CI EN ROJO POR `scrum297` — y no era lo que parecía
+
+**Medido contra:** `origin/main` = `e05087b0bb6edf7fc9a1b9ca391e2340eace76dc` · `2026-08-10T19:45:46Z`
+
+`main` mergeada DENTRO de la rama antes de medir. Tanda tras el merge y antes de tocar nada:
+**2805 tests · 2731 pasan · 0 caen**. Tras el arreglo: **2810 · 2736 · 0**. `guards:entrada` verde.
+
+> **PASO 0 · aviso:** `docs/master/SCRUM-438.md` **ya existe en `main`** — es la **fase 1** de este
+> mismo ticket, mergeada mientras tanto (`scrum-438-atestiguar` está en `main`). No hay colisión con
+> otro ticket, pero **la base del PR cambió**: v:3 va contra `main`, no contra la rama de fase 1. En
+> `main` no hay v:3 (`ALBARAN_CONTENIDO_VERSION_ACTUAL = 2`, sin `albaranContenidoFuentes.ts`).
+
+### La causa: NO había ningún sobre v:3 sin bloque. No puede haberlo.
+
+El stack decía `ContenidoCongeladoIncompletoError: falta(n) obra, referenciaTrabajo, cliente,
+emisor, emisorNif` — las cinco. Se lee como «hay un sobre v:3 huérfano». **Medido, y no lo hay:**
+
+| Comprobación | Resultado |
+| --- | --- |
+| ¿El test fabrica sobres con la versión ACTUAL? | **No.** Sella con `sellar(2, …)` y `sellar(1, …)`, versión **explícita**. `ALBARAN_CONTENIDO_VERSION_ACTUAL` solo aparece en `:115`, **dentro de un texto de mensaje** |
+| ¿Algún camino real sella v:3 sin bloque? | **No.** Dos llamadores de `computeAlbaranContentHash` en `src/` (`:581` recalcula con la `v` guardada · `:664` `buildFirmaEvidencia`, que **aporta el bloque**) |
+| ¿Y si alguien lo intentara? | **El sellador LANZA.** Comprobado por ejecución: un v:3 sin bloque **nunca llega a guardarse** |
+
+**La causa real es `porQueNoCuadra`, la función de DIAGNÓSTICO del propio test.** Recorre
+`versionesSoportadas()` pidiéndole `obra` a cada versión; al entrar v:3 en el recetario, empezó a
+pedírsela a una versión que la toma del **bloque congelado** — y esas fuentes, que son de v:1/v:2,
+no lo traen.
+
+**Y lanzaba desde el MENSAJE de un assert que iba a PASAR.** En JS el argumento `message` se
+construye **antes** de evaluar la condición, así que un diagnóstico roto tumba un test que estaba
+bien. Por eso el rojo salía en el control positivo del paquete de evidencias, que no tenía nada.
+
+### La pregunta de diseño, MIRADA y no resuelta por omisión
+
+`validarContenidoCongelado` **lanza**. ¿Está bien que lo haga dentro del camino del ZIP de
+evidencias? **La premisa del encargo era que sí lo hacía, y NO es así.** Medido:
+
+| Camino | Con un sobre v:3 sin bloque |
+| --- | --- |
+| `verificarSobre` — el del ZIP (`paquete.repo.ts:95`) | ✅ **NO lanza.** Devuelve `error_al_recalcular`: *«la receta de v:3 no pudo recalcular el hash … Esto NO es una manipulación demostrada: es que no se pudo mirar»* |
+| `computeAlbaranContentHash(…, 3)` — el **sellador** | ✅ **LANZA** `ContenidoCongeladoIncompletoError` |
+
+El ZIP **no toca** `obraSegunVersion` ni `validarContenidoCongelado`: entra por `verificarSobre`, que
+envuelve la receta en `try/catch` por diseño (*«un barrido que revienta a mitad deja de ser un censo
+y pasa a ser un accidente»*).
+
+> **Decisión: no se cambia nada, y el motivo se escribe.** Los dos comportamientos ya conviven y
+> están bien repartidos. **Lanzar es correcto donde lanza** —al SELLAR y al imprimir: completar el
+> bloque con nulos fabricaría el valor sellado que no se tenía, y `null` es un valor legítimo aquí—.
+> **Declarar es correcto donde declara** —al verificar: el profesional tiene que poder descargarse
+> su prueba aunque un sobre esté raro—. La barrera está en la **puerta de entrada**; la de salida
+> solo tiene que saber contarlo. Queda con test propio para que siga así.
+
+### El arreglo, y por qué el diagnóstico SALE del fichero
+
+`porQueNoCuadra` vivía dentro de un test gateado por `LIBRO_PG_URL`. Se saca a
+`tests/_diagnostico-sello.mjs`, con las tres funciones **inyectadas**, para poder probarlo **sin
+banco**. Es la lección de SCRUM-419, aplicada a sí misma: **el guard que vigila a los gateados no
+puede estar gateado él mismo.**
+
+Lo que hace no cambia. Lo que sí cambia, dos cosas:
+
+* una versión que no se puede probar con estas fuentes se **anota y se sigue** —igual que el bucle
+  cruzado del verificador—, en vez de reventar;
+* y se **DECLARA** en la salida. Sin eso, la última rama diría *«no lo reproduce NINGUNA versión
+  soportada (v:1, v:2, v:3)»* habiendo probado dos: **una mentira con forma de conclusión**.
+  «No encaja» y «no se pudo mirar» no pueden volver a ser el mismo número.
+
+### Los rojos por el mecanismo — 5 tests nuevos, SIN gate
+
+| Mutación | Cae diciendo |
+| --- | --- |
+| el `catch` **re-lanza** (el rojo del CI, exacto) | *«EL DIAGNÓSTICO LANZA … no puede convertirse ella misma en el fallo»* · `version_pide_bloque:3` |
+| se atrapa pero **no se declara** el hueco | *«no declara la versión que no pudo probar»*, y enseña la frase que mentiría |
+| el sellador **deja nacer** un v:3 sin bloque | *«SE HA ACEPTADO UN BLOQUE SIN «obra» — no ha lanzado nada»* |
+
+Con **control positivo dentro del mismo test** (cuando puede probarlas todas, **no** declara
+huecos: un aviso que sale siempre no informa de nada), control de que **sigue cazando la
+discrepancia de VERSIÓN** —para lo que existe—, y suelo de **≥3 versiones** en el recetario real.
+
+⚠️ La primera mutación se escribió mal (cambiar `try` por `if` deja un `catch` huérfano: eso no
+reproduce el defecto, lo sustituye por un `SyntaxError`). Rehecha para que el `catch` **re-lance**,
+que es el defecto de verdad. *Ante un rojo raro, el primer sospechoso es la mutación.*
+
+### 🔴 SE REPORTA, NO SE ARREGLA · la tanda local no corre 74 tests, y 67 no dicen por qué
+
+**Cómo se contó:** `node --test --test-force-exit --test-reporter=tap tests/*.test.mjs`, contando
+las marcas `# SKIP` del TAP (el reporter `spec` **no** imprime el motivo).
+
+| | Cuántos | Cómo saltan |
+| --- | --- | --- |
+| Saltados en total | **74** | — |
+| Con motivo escrito | **7** | `skip: !ENABLED && 'sin LIBRO_PG_URL …'` — los 7 de banco de SCRUM-419 |
+| 🔴 **MUDOS** | **67** | **65** con `skip: !ENABLED }` + **2** con `skip: !DB }` — booleano, sin texto |
+
+Los mudos salen de `QA_DB_TEST === '1'` (45 ficheros + 2 de `DB`), `BOT_SUITE_TEST` (1) y
+`A55_DB_TEST` (1). El número cuadra consigo mismo: 65 + 2 = 67 mudos, + 7 = 74.
+
+**Y la lección ya está escrita en el repo**, en `scrum419-ci-declara-lo-que-no-corre.test.mjs:128`:
+*«un `skip: true` a secas es un test apagado sin motivo: al leer el log no se distingue de uno…»*.
+El trinquete de SCRUM-419 vigila **solo los 7 de `LIBRO_PG_URL`**; los 67 de `QA_DB_TEST` no los
+mira nadie.
+
+**¿Se pueden correr en local?** `exigirBancoDesechable` exige **loopback** y base terminada en
+`_test` (crean y borran filas), así que **no** valen `DATABASE_URL_DEV` ni `_STAGING` — y hacen bien.
+En esta máquina **no hay `docker`, ni `psql`, ni `pg_ctl`**, así que **no pude reproducir el rojo
+contra una base**; se reprodujo por el mecanismo, sin banco. El cómo **sí está escrito**, pero en 8
+ficheros de `docs/master/`: **cero apariciones de `LIBRO_PG_URL` en `CLAUDE.md`, `RUNBOOKS.md`,
+`QA_MASTER.md` ni `README.md`**, que son los sitios donde se arranca.
+
+**Y una corrección a SCRUM-419:** su cabecera dice que *«`.github/workflows/ci.yml` no define esa
+variable ni levanta ningún Postgres»*. **Ya no es cierto** — el CI de `main` de hoy levanta
+`postgres:16-alpine` y define `LIBRO_PG_URL`; el paso se llama *«Tests (incluidos los 7 de banco)»*.
+Por eso este rojo existe: **antes ni siquiera se habría ejecutado.**
