@@ -121,3 +121,98 @@ test('SCRUM-390 · el tope de cuentas de prueba está declarado y es un número'
     '🔴 el tope no es un número de cuentas plausible: si sube sin motivo, la segunda señal deja de ' +
     'cazar a nadie.');
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// EL ENGANCHE · dónde avisa, y que no pueda tumbar lo que vigila
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+const { debeAvisar, CADENCIA_RECORDATORIO_DIAS, mensajeParaElFundador } =
+  await import('../dist/modules/system/domain/puertaClienteReal.js');
+const { avisarSiEntroClienteReal, CLAUSULAS_DEPENDIENTES } =
+  await import('../dist/modules/system/domain/avisoPuerta.service.js');
+
+/** Un `db` de mentira: dos `count` y un `findFirst`. */
+const baseFalsa = (o = {}) => ({
+  merchant: {
+    count: async (args) => (args?.where?.stripeSubscriptionId ? (o.conSuscripcion ?? 0) : (o.total ?? 13)),
+    findFirst: async () => (o.desde ? { createdAt: o.desde } : null),
+  },
+});
+
+test('SCRUM-390 · la cadencia: día 0 avisa, día 3 no, día 7 recuerda', () => {
+  const abierta = { abierta: true, motivos: ['paga'], clausulas: [], detalle: '' };
+  assert.equal(debeAvisar(abierta, { diasDesdeApertura: 0 }).avisa, true, '🔴 el día de la apertura no suena');
+  assert.equal(debeAvisar(abierta, { diasDesdeApertura: 3 }).avisa, false, '🔴 spamea todos los días');
+  assert.equal(debeAvisar(abierta, { diasDesdeApertura: CADENCIA_RECORDATORIO_DIAS }).avisa, true,
+    '🔴 no hay recordatorio: un día perdido enterraría el aviso para siempre');
+  assert.equal(debeAvisar({ ...abierta, abierta: false }, { diasDesdeApertura: 0 }).avisa, false,
+    '🔴 avisa con la puerta cerrada');
+});
+
+test('SCRUM-390 · sin fecha de apertura NO se calla', () => {
+  // La señal ② (un merchant de más, sin suscripción) no deja fecha. Un aviso de más es barato;
+  // uno de menos es el ticket entero.
+  const r = debeAvisar({ abierta: true, motivos: ['mas_de_los_nuestros'], clausulas: [], detalle: '' }, { diasDesdeApertura: null });
+  assert.equal(r.avisa, true);
+  assert.match(r.motivo, /no se sabe desde cuándo/);
+});
+
+test('SCRUM-390 · con la puerta cerrada no se manda NADA', async () => {
+  let enviados = 0;
+  const r = await avisarSiEntroClienteReal({
+    db: baseFalsa({ total: 13, conSuscripcion: 0 }), enviar: async () => { enviados++; }, telefono: '34600000000',
+  });
+  assert.equal(r.abierta, false);
+  assert.equal(enviados, 0, '🔴 se ha mandado un WhatsApp con la puerta cerrada: eso es spam al fundador.');
+});
+
+test('SCRUM-390 · con la puerta abierta avisa al FUNDADOR, y a nadie más', async () => {
+  const mandados = [];
+  const r = await avisarSiEntroClienteReal({
+    db: baseFalsa({ total: 13, conSuscripcion: 1, desde: new Date() }),
+    enviar: async (p) => { mandados.push(p); },
+    telefono: '34600000000',
+  });
+  assert.equal(r.avisado, true, `🔴 la puerta está abierta y no ha avisado (${r.motivo} · ${r.fallo ?? ''})`);
+  assert.equal(mandados.length, 1, '🔴 o no manda, o manda más de un mensaje.');
+  assert.equal(mandados[0].to, '34600000000');
+  assert.equal(mandados[0].merchantId, undefined,
+    '🔴 el aviso lleva merchantId: es un mensaje INTERNO, no puede colgar de ningún merchant (regla 28).');
+  assert.match(mandados[0].text, /YAQU_MASTER|MIGRATIONS_PENDING/,
+    '🔴 el aviso no NOMBRA las cláusulas que quedan sin cumplir.');
+  assert.match(mandados[0].text, /^\[PENDIENTE microcopy oficial\]/,
+    '🔴 el texto se presenta como aprobado y no lo está — la regla 30 no tiene excepción por destinatario.');
+});
+
+test('SCRUM-390 · 🔴 si el aviso FALLA, el paso no lanza: devuelve el fallo', async () => {
+  // Un vigilante que rompe lo que vigila es peor que no tenerlo: si esto lanzara, tumbaría el
+  // cron de mantenimientos y dejaríamos de proponer a los clientes por vigilar una puerta.
+  const r = await avisarSiEntroClienteReal({
+    db: baseFalsa({ total: 13, conSuscripcion: 1, desde: new Date() }),
+    enviar: async () => { throw new Error('meta caída'); },
+    telefono: '34600000000',
+  });
+  assert.equal(r.avisado, false);
+  assert.match(r.fallo ?? '', /meta caída/, '🔴 el fallo no se devuelve: se ha perdido.');
+});
+
+test('SCRUM-390 · sin teléfono configurado, lo DICE en vez de callar', async () => {
+  const r = await avisarSiEntroClienteReal({
+    db: baseFalsa({ total: 13, conSuscripcion: 1, desde: new Date() }), enviar: async () => {}, telefono: '',
+  });
+  assert.equal(r.avisado, false);
+  assert.match(r.fallo ?? '', /ALERTA_FUNDADOR_TELEFONO/,
+    '🔴 sin número el paso se calla: la puerta abierta quedaría sin avisar y sin decir por qué.');
+});
+
+test('SCRUM-390 · 🔴 EL DEFECTO DEL TICKET: la puerta tiene que estar ENGANCHADA a un disparador', () => {
+  // Sin esto, el mecanismo entero vuelve a ser lo que vino a arreglar: una condición que nadie
+  // evalúa. Si alguien quita el paso del cron, este test cae nombrándolo.
+  const cron = fs.readFileSync(path.join(RAIZ, 'src/core/cron/cron.ts'), 'utf8');
+  assert.match(cron, /avisarSiEntroClienteReal\(/,
+    '🔴 LA PUERTA EXISTE Y NADIE LA EVALÚA. El evaluador está construido y ningún disparador lo ' +
+    'llama, que es exactamente el defecto que SCRUM-390 vino a cerrar: una condición sin quien la ' +
+    'mire es prosa. Vuelve a engancharlo al cron diario, como paso aparte que no bloquea.');
+  assert.ok(CLAUSULAS_DEPENDIENTES.length >= 3,
+    '🔴 la lista de cláusulas que el aviso nombra se ha quedado corta.');
+});

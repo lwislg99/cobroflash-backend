@@ -75,13 +75,45 @@ la constante: bajé el tope a 12 para probar el rojo de la señal ② y **el tes
 guard medido contra sí mismo no mide nada. Ahora el número de hoy va como **literal medido**
 (`MERCHANTS_HOY = 13`) y cualquier cambio del tope lo pone en rojo nombrando los dos números.
 
+## Dónde avisa — decisión del fundador, 10-ago-2026
+
+Se engancha al **cron diario de mantenimientos** (10:00) como **paso aparte y DESPUÉS**, y cuando
+la puerta se abre **avisa al fundador por WhatsApp** con la Meta Cloud API que el producto ya usa.
+
+| descartado | por qué |
+|---|---|
+| **log solo** | con el backup se aprendió que algo que solo escribe en un log es algo que nadie ejecuta. Un aviso que nadie lee es prosa otra vez — el defecto del ticket |
+| **arranque** | un `exit(1)` por esto tiraría el servicio. **La puerta avisa, no frena** |
+| — | **WhatsApp** porque ya está construido (regla 36: cero dependencias nuevas) y es el canal que el fundador lee |
+
+**Las cuatro condiciones, cumplidas y probadas:**
+
+* **(a) No tumba el cron.** `avisarSiEntroClienteReal` **no lanza nunca**: devuelve su fallo. Un
+  vigilante que rompe lo que vigila es peor que no tenerlo. Probado con un envío que revienta.
+* **(b) No spamea, y el criterio está ESCRITO.** Avisa el **día de la apertura** y luego **una vez
+  por semana**. La cadencia se **DERIVA** del `createdAt` del primer merchant que dispara la señal
+  — porque **no hay dónde guardar el estado sin tocar el schema**: `WhatsAppMessage` exige
+  `merchantId` (un aviso interno no tiene merchant, y meterle el del demo es lo que SCRUM-409 acaba
+  de prohibir) y la unión de acciones de `AuditLog` está CERRADA (regla 5). ⚠️ Su límite, dicho: si
+  el cron no corre el día 0, esa notificación se pierde y la recoge el recordatorio semanal.
+* **(c) Solo al fundador.** El número sale de `ALERTA_FUNDADOR_TELEFONO` (Railway); **aquí no se
+  escribe ninguno**. El envío va **sin `merchantId`** —un test lo exige— para que no pueda colgar
+  de ningún merchant (regla 28). Sin la variable, el paso **no manda nada y lo dice**.
+* **(d) Rojo por el mecanismo:** quitar el enganche del cron → cae nombrando *«LA PUERTA EXISTE Y
+  NADIE LA EVALÚA»*, que es el defecto que este ticket vino a cerrar.
+* **(e) Microcopy propuesta, no escrita.** El texto sale con `[PENDIENTE microcopy oficial]` y un
+  test lo exige: **la regla 30 no tiene excepción por destinatario**. Propuesta:
+
+  > «Ha entrado el primer cliente real (motivo). Estas decisiones dependían de que no lo hubiera:
+  > …lista de cláusulas…»
+
 ## Lo que NO cubre — declarado
 
 * **El analizador sigue sin ver `const { a } = await import('x')`** (destructuración de importación
   dinámica). En vez de arrastrarlo, el script importa el evaluador **estáticamente** y el hueco
   queda dicho aquí.
-* **Nadie ejecuta el comando solo.** `npm run puerta:cliente-real` existe y funciona, pero no hay
-  cron que lo dispare: engancharlo a uno es decisión de producto y necesita dónde avisar.
+* **El comando suelto (`npm run puerta:cliente-real`) sigue siendo para mirar a mano**; el que
+  avisa solo es el paso del cron.
 * **La ② depende de que el tope se mantenga honesto.** Si alguien lo sube sin motivo, deja de cazar.
 * **No se comprueba contra producción desde aquí**: el script necesita `DATABASE_URL` y esta sesión
   no toca bases del proyecto.
