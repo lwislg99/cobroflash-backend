@@ -448,6 +448,40 @@ Es exactamente el 500 de SCRUM-220: código desplegado esperando una columna que
 
 ---
 
+## ⚠️ SCRUM-438 · EL DESPLIEGUE QUE ESTRENE v:3 DEL SOBRE DE FIRMA ES **DE IDA** — léelo antes de revertir
+
+> **ESTO NO ES UNA MIGRACIÓN DE SCHEMA**, y se dice con esas palabras para que nadie lo busque en
+> `information_schema`: v:3 **no toca ninguna columna** (los cinco campos caben en `evidenciaFirma`,
+> que ya es `Json?`). Está aquí porque **éste es el fichero que se lee antes de tocar producción**,
+> que es exactamente cuándo hace falta saberlo. Un documento aparte no se abre el día del rollback.
+>
+> **Escrito el 11-ago-2026, ANTES de que exista el primer sobre v:3** y antes de escribir una línea
+> de su código (propuesta aprobada con enmiendas en `docs/master/SCRUM-438.md` §3).
+
+**El escenario:** se despliega v:3 → se firma un albarán → **se revierte el código**. Ese sobre
+queda sellado con una versión que el código anterior no sabe verificar.
+
+**Qué pasa exactamente — medido el 11-ago-2026 ejecutando el código de entonces contra un sobre v:3:**
+
+| Camino | Resultado |
+| --- | --- |
+| `verificarSobre` (el ZIP de evidencias) | **`version_no_soportada`** — *«NO se aproxima con la más parecida»*. **No dice «manipulado»** |
+| `computeAlbaranContentHash(params, 3)` | **lanza** `albaran_contenido_version_desconocida:3` |
+| `scripts/atestiguar-sobres.mjs` | **`SobreIlegibleError`**: lo declara, no lo cuenta como verificado |
+| El **PDF** (vía `obraSegunVersion`) | con la enmienda 3 aplicada, **falla** en vez de imprimir un valor adivinado |
+
+**LA REGLA, y es lo único que hay que recordar:**
+
+1. **Revertir NO produce una acusación falsa.** El sobre pasa a **no verificable**, que es lo
+   correcto: «no pude mirar» y «está manipulado» salen por puertas distintas.
+2. **Se puede revertir** — pero **sabiendo** que los sobres sellados mientras tanto quedan como
+   `version_no_soportada` **hasta que se vuelva a desplegar**. Vuelven solos: no hay que hacer nada.
+3. 🔴 **JAMÁS se «arregla» reescribiendo la `v` del sobre.** Eso es alterar una evidencia emitida
+   (regla 29), y además convierte un «no puedo comprobarlo» —honesto— en un hash que no cuadra, que
+   es la acusación más grave que sabe hacer el verificador.
+
+---
+
 ## SCRUM-425 · `albaranes.clave_idempotencia` + su único — ✅ APLICADO en las TRES bases (10-ago-2026)
 
 **REGISTRO de lo que se ejecutó y se verificó el 10-ago-2026.** No es una afirmación sobre el

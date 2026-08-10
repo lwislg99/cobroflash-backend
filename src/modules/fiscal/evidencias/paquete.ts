@@ -114,7 +114,39 @@ export const FICHEROS = Object.freeze({
   verificacion: 'albaranes-verificacion.csv',
   entregas: 'entregas-por-linea.csv',
   manifiesto: 'manifiesto.json',
+  // SCRUM-438: el alcance de lo que las verificaciones de este paquete pueden demostrar.
+  politicaSobres: 'alcance-de-la-verificacion.txt',
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-438 · ALCANCE DE LA VERIFICACIÓN — **APROBADO por el asesor el 11-ago-2026** (regla 30).
+//
+// Se fija ENTERO: reformularlo es cambio de máster. Lo lee un asesor fiscal o un inspector, y lo
+// que tiene que hacer es no prometer más de lo que se puede demostrar **ni menos**.
+//
+// ⚠️ Y VA SIEMPRE DENTRO DEL ZIP, cuadre o no cuadre — **es regla desde hoy**, con su motivo:
+//
+// > Si solo saliera cuando algo falla, su presencia sería la señal, y habría motivo para
+// > quitarla. **Un documento que solo aparece con malas noticias se convierte en la mala noticia.**
+export const POLITICA_SOBRES_ANTERIORES = `ALCANCE DE ESTA VERIFICACIÓN
+
+Este paquete comprueba que el contenido del albarán es el que se firmó.
+
+En los sobres de versión 1 y 2, cinco datos no viajan dentro de la firma y se
+leen en el momento de verificar: la dirección de la obra, la referencia del
+trabajo, el nombre del cliente, y el nombre y el NIF de quien emite.
+
+Si alguno de esos cinco ha cambiado desde que se firmó —por ejemplo, al
+corregir el nombre de un cliente— esta verificación no puede demostrar que el
+resto del documento esté intacto, aunque lo esté. En ese caso el resultado dice
+cuál ha cambiado.
+
+Esos albaranes se consideran de INTEGRIDAD PARCIAL VERIFICABLE: lo que viaja
+dentro de la firma se comprueba; lo que no viaja, no.
+
+A partir de la versión 3, los cinco datos viajan dentro de la firma y esta
+limitación no se aplica.
+`;
 
 /** El estado de un asiento a partir de los albaranes que le apuntan. */
 function estadoDelAsiento(resultados: ResultadoSobre[]): string {
@@ -281,6 +313,17 @@ export function construirPaqueteEvidencias(params: {
 
   // El manifiesto va EL ÚLTIMO: lleva el SHA-256 de cada fichero anterior, que es lo que permite
   // a un tercero comprobar que el ZIP no se ha tocado desde que se generó.
+  // ── SCRUM-438 · LA POLÍTICA DE LOS SOBRES ANTERIORES, DENTRO DEL PAQUETE ─────────────────
+  //
+  // 🔴 VA AQUÍ Y NO EN UN DOCUMENTO APARTE, y ésa es la decisión: un paquete de evidencias que
+  // afirma integridad tiene que llevar DENTRO el alcance de lo que afirma. Un documento externo
+  // se separa del ZIP el primer día, y entonces quien lo recibe lee las verificaciones sin el
+  // matiz que las acota — que es exactamente la lectura que no se puede permitir.
+  //
+  // Se incluye SIEMPRE, cuadren o no: si solo saliera cuando algo falla, su presencia sería en sí
+  // misma una señal de problema y quien prepara el paquete tendría un motivo para quitarla.
+  ficheros.push({ nombre: FICHEROS.politicaSobres, contenido: POLITICA_SOBRES_ANTERIORES });
+
   const manifiesto = {
     version: 1,
     merchantId: params.merchantId,
@@ -294,6 +337,7 @@ export function construirPaqueteEvidencias(params: {
     })),
   };
   ficheros.push({ nombre: FICHEROS.manifiesto, contenido: JSON.stringify(manifiesto, null, 2) });
+
 
   return { ficheros, indice, resumen, avisos };
 }

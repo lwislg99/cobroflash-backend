@@ -132,3 +132,35 @@ test('SCRUM-432 · ④ `templates` está declarada como vista sin entrada, citan
   assert.ok(VISTAS_SIN_ENTRADA.templates.motivo.length > 60,
     '🔴 la declaración no dice por dónde se llega ahora.');
 });
+
+// ═══ ⑤ LAS DOS MITADES DE «¿DÓNDE ESTOY?», EN EL MISMO TEST ═══════════════════════════════
+
+test('SCRUM-432 · ⑤ entrar por `#templates`: pestaña Plantillas activa Y barra encendida', async () => {
+  // Las dos mitades van JUNTAS a propósito. Son la misma pregunta —«¿dónde estoy?»— contestada en
+  // dos sitios, y separadas pueden divergir sin que caiga nada: hay un test que mira la pestaña y
+  // otro que mira la barra, y los dos pasarían con el producto marcando la pestaña y la barra
+  // apagada. Eso no da error; solo desorienta, que es peor de detectar.
+  //
+  // (a) LA PESTAÑA — sobre el árbol que se pinta de verdad.
+  const banco = cargarDashboard(RAIZ, { datos: [] });
+  const r = await pintarVista(banco, 'renderTemplatesView');
+  assert.equal(r.error, null, `🔴 Plantillas revienta al abrirse: ${r.error && r.error.message}`);
+  const activas = pestanasDe(r.contenedor)
+    .filter((x) => x.className.includes('btn-secondary'))
+    .map((x) => x.vista);
+  assert.deepEqual(activas, ['templates'],
+    '🔴 llegando a Plantillas la tira no la marca como activa: dice a dónde puedes ir, no dónde estás.');
+
+  // (b) LA BARRA — la traducción del router, que es donde vive.
+  const app = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/app.js'), 'utf8');
+  assert.match(app, /view === 'templates' \? 'quotes-list'/,
+    '🔴 la pestaña se marca pero la BARRA se queda apagada: `templates` ya no tiene entrada propia, '
+    + 'así que sin traducirla a `quotes-list` el profesional no sabe en qué sección está.');
+
+  // Y que la puerta siga existiendo, o (a) y (b) hablarían de un sitio al que no se llega.
+  const m = app.match(/const HASH_VIEWS = \[([^\]]*)\]/s);
+  assert.ok(m, '🔴 no encuentro `HASH_VIEWS`');
+  assert.match(m[1], /'templates'/,
+    '🔴 `#templates` ha salido de `HASH_VIEWS`: los marcadores vivos dejan de abrir Plantillas, y '
+    + 'entonces las dos comprobaciones de arriba describen una entrada que ya no existe.');
+});

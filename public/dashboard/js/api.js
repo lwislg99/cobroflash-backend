@@ -97,12 +97,51 @@ async function apiRequest(path, options = {}) {
 /** El código del error cuando la respuesta no es el fichero que decía ser. */
 const ERROR_NO_ES_FICHERO = 'respuesta_no_es_fichero';
 
-// SCRUM-405 · el mensaje de «esto no es tu fichero». MICROCOPY SIN APROBAR (regla 30).
+// SCRUM-405 · el mensaje de «esto no es tu fichero». **MICROCOPY APROBADA** por el asesor el
+// 10-ago-2026 (regla 30). Reformular estos dos textos es cambio de máster, no edición.
 //
-// El escenario que describe: una obra con una wifi de cortesía que no deja salir a internet, o el
-// bar de al lado. El texto apunta A ESO —no a que el profesional haya hecho nada mal— y le da la
-// salida que de verdad funciona ahí: sus datos móviles. Propuesta al asesor en el informe.
-const MSG_DESCARGA_NO_ES_FICHERO = '[PENDIENTE microcopy oficial · propuesta: Esta red no ha dejado pasar la descarga: lo que ha llegado no es tu archivo, sino la página de acceso de la wifi. Prueba con tus datos móviles.]';
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SON DOS CAUSAS DISTINTAS, Y HASTA HOY PINTABAN EL MISMO TEXTO
+//
+// La condición que las dispara es `esHtml || !cuadra`. Cuando la causa era la segunda, el mensaje
+// del portal cautivo **mentía**: culpaba a la wifi de la obra y mandaba al profesional a gastar
+// datos móviles para arreglar algo que no estaba en su red.
+
+/**
+ * CASO A · la respuesta es una PÁGINA: wifi de obra o de bar que intercepta la descarga.
+ *
+ * ⚠️ CORTO A PROPÓSITO. La primera redacción aprobada tenía 157 caracteres —unos 9,5 s de
+ * lectura— en un toast que se va a los 5 s: el profesional lo veía desaparecer justo antes de la
+ * parte que dice QUÉ HACER. El asesor lo acortó al medirlo. Lo que se cayó es la explicación de
+ * POR QUÉ, que en un toast no la lee nadie; lo que se conserva es qué ha pasado y qué puede hacer.
+ */
+const MSG_DESCARGA_PORTAL_CAUTIVO =
+  'Esta red ha devuelto su pantalla de acceso en vez de tu archivo. '
+  + 'Prueba con datos móviles u otra red.';
+
+/**
+ * CASO B · llegó algo que no es el tipo esperado y NO es una página.
+ *
+ * 🔴 La última frase es la que de verdad importa, y es justo la que faltaba: le impide gastar
+ * datos, cambiar de sitio o culpar a la wifi de la obra. Y pone la culpa donde está. No promete
+ * ningún canal de contacto a propósito — no se le da un sitio al que escribir sin haber
+ * comprobado que existe.
+ */
+const MSG_DESCARGA_TIPO_INESPERADO =
+  'Lo que ha llegado no es tu archivo. Vuelve a intentarlo; '
+  + 'si sigue pasando no es tu conexión, es cosa nuestra.';
+
+/**
+ * Qué mensaje toca para un error de descarga.
+ *
+ * ⚠️ El CASO B es el POR DEFECTO, y no por comodidad: si no consta que la respuesta fuera una
+ * página, no se puede afirmar que la culpa sea de la red. Equivocarse hacia «es cosa nuestra» le
+ * cuesta al profesional un reintento; equivocarse hacia «es tu wifi» le cuesta datos, un viaje y
+ * la sospecha de que su conexión está mal. La asimetría decide el defecto.
+ */
+function mensajeDescargaFallida(err) {
+  return err && err.esHtml === true ? MSG_DESCARGA_PORTAL_CAUTIVO : MSG_DESCARGA_TIPO_INESPERADO;
+}
 
 /**
  * Descarga un binario y lo entrega al navegador. Lanza si algo no cuadra; NO pinta nada.
@@ -133,6 +172,10 @@ async function descargarBinario(url, { tipoEsperado, nombrePorDefecto }) {
     err.code = ERROR_NO_ES_FICHERO;
     err.tipoRecibido = tipo || null;
     err.tipoEsperado = tipoEsperado;
+    // SCRUM-405 · CUÁL de las dos causas fue. `tipoRecibido` ya viajaba, pero nadie lo miraba y las
+    // dos causas acababan pintando el mismo texto. Esto lo hace explícito para que la elección del
+    // mensaje no dependa de volver a parsear el Content-Type en cada pantalla.
+    err.esHtml = esHtml;
     throw err;
   }
 
