@@ -17,6 +17,15 @@ import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsA
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-173
 import { allocateAlbaranNumber } from '../../domain/albaranNumber.service';
+// SCRUM-358 (H3): el alta de albarán, idempotente.
+import {
+  normalizarClaveIdempotencia,
+  tomarCerrojoDeSerie,
+  compararAlta,
+  ClaveIdempotenciaReutilizadaError,
+  ERROR_CLAVE_REUTILIZADA,
+  MSG_CLAVE_REUTILIZADA,
+} from '../../domain/albaranIdempotencia';
 // SCRUM-424 (G3): la dirección de la OBRA — el escritor que le faltaba al bloque DÓNDE del rail.
 import {
   normalizarJobDireccion,
@@ -787,7 +796,44 @@ router.post('/:id/albaranes', async (req, res) => {
     }
     const notas = req.body?.notas !== undefined ? String(req.body.notas || '').slice(0, 2000) || null : null;
 
+    // ── SCRUM-358 (H3) · EL ALTA, IDEMPOTENTE ────────────────────────────────────────────
+    //
+    // La clave la acuña el CLIENTE al pulsar crear (una vez, y se persiste con el elemento de la
+    // cola: si se acuñara otra vez al reintentar no habría idempotencia ninguna). Aquí solo se
+    // valida y se pregunta al constraint. El porqué de cada decisión, en `albaranIdempotencia.ts`.
+    const claveNorm = normalizarClaveIdempotencia(req.body?.claveIdempotencia);
+    if (!claveNorm.ok) return res.status(400).json({ error: claveNorm.error, message: claveNorm.message });
+    const clave = claveNorm.clave;
+
+    const contenido = { jobId: job.id, modoValoracion, lineas, notas };
+    let repetida = false;
+
     const albaran = await prisma.$transaction(async (tx) => {
+      // 🔴 EL CERROJO SE TOMA ANTES DE MIRAR LA CLAVE. Es el mismo de la serie y la misma sección
+      // crítica: si la comprobación viviera fuera, dos reintentos simultáneos pasarían los dos el
+      // «no la he visto» y se llevarían DOS números.
+      await tomarCerrojoDeSerie(tx, req.merchantId!);
+
+      if (clave) {
+        // La pregunta al CONSTRAINT, por el nombre que Prisma le da al índice: si el índice
+        // cambiara de forma, esto no compilaría. No se captura el `P2002` — una sentencia fallida
+        // aborta la transacción entera (ver el módulo).
+        const yaExiste = await tx.albaran.findUnique({
+          where: { merchantId_claveIdempotencia: { merchantId: req.merchantId!, claveIdempotencia: clave } },
+        });
+        if (yaExiste) {
+          const cmp = compararAlta(
+            { jobId: yaExiste.jobId, modoValoracion: yaExiste.modoValoracion, lineas: yaExiste.lineas, notas: yaExiste.notas },
+            contenido,
+          );
+          if (!cmp.mismo) throw new ClaveIdempotenciaReutilizadaError(clave, yaExiste.numero, cmp.diferencias);
+          // 🔴 SE DEVUELVE EL ORIGINAL Y **NO SE RESERVA NÚMERO**. Reservarlo aquí lo dejaría
+          // consumido y sin documento: un hueco en la serie abierto por la propia idempotencia.
+          repetida = true;
+          return yaExiste;
+        }
+      }
+
       const numero = await allocateAlbaranNumber(tx, req.merchantId!);
       return tx.albaran.create({
         data: {
@@ -797,11 +843,35 @@ router.post('/:id/albaranes', async (req, res) => {
           modoValoracion,
           lineas,
           notas,
+          claveIdempotencia: clave,
         },
       });
     });
-    return res.status(201).json(serializeAlbaran(albaran));
+
+    // 🔴 «CON CLAVE» Y «SIN CLAVE» NO PUEDEN DAR LA MISMA SALIDA, y por eso la respuesta lo dice.
+    //
+    // Un alta sin clave NO falla —los clientes de hoy no la mandan y los albaranes históricos no
+    // la tienen— pero **tampoco puede pasar en silencio**: si el día de mañana la cola dejara de
+    // enviarla por un fallo suyo, todo seguiría en verde y la idempotencia estaría apagada sin
+    // que nadie lo notara. `idempotencia` es lo que distingue las tres situaciones.
+    //
+    // Y la REPETICIÓN devuelve **200, no 201**: se está entregando un albarán que ya existía, no
+    // creando uno. Tampoco un 409 —eso le diría al profesional que salió mal algo que salió
+    // bien—; el cuerpo es el albarán original, que es lo que la cola necesita para cerrar su
+    // elemento.
+    const idempotencia = !clave ? 'no_solicitada' : repetida ? 'repetida' : 'aplicada';
+    return res.status(repetida ? 200 : 201).json({ ...serializeAlbaran(albaran), idempotencia });
   } catch (err: any) {
+    // SCRUM-358: misma clave con contenido DISTINTO. No es un fallo del servidor: es que la
+    // etiqueta está puesta a dos cosas, y hay que decirlo con los dos documentos delante.
+    if (err instanceof ClaveIdempotenciaReutilizadaError) {
+      return res.status(409).json({
+        error: ERROR_CLAVE_REUTILIZADA,
+        message: MSG_CLAVE_REUTILIZADA,
+        numeroOriginal: err.numeroOriginal,
+        diferencias: err.diferencias,
+      });
+    }
     console.error('[POST /admin/jobs/:id/albaranes]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
   }
