@@ -89,29 +89,64 @@ test('SCRUM-427 · CONTROL POSITIVO: las cuatro del diseño están, una a una', 
 
 // ── LAS EXCEPCIONES, VIGILADAS ───────────────────────────────────────────────────────────
 
-test('SCRUM-427 · `FACTURAS` está ENMENDADA en el diseño, no sólo tolerada aquí', () => {
-  // Una excepción que sólo vive en el guard es invisible para quien lee el diseño. La enmienda
-  // tiene que estar EN el documento, y esto lo comprueba leyéndolo.
+test('SCRUM-427 · CADA enmienda está EN EL DISEÑO con su cita, no sólo tolerada aquí', () => {
+  // Una excepción que sólo vive en el guard es invisible para quien lee el diseño. Tiene que estar
+  // EN el documento, y esto lo comprueba leyéndolo — una por una, no «alguna».
   const md = fs.readFileSync(path.join(RAIZ, 'docs/diseno/bloque-g.md'), 'utf8');
   assert.match(md, /ENMIENDA/i, '🔴 el diseño no declara ninguna enmienda.');
-  assert.match(md, /SCRUM-319/, '🔴 la enmienda de FACTURAS no cita su decisión.');
-  assert.ok(ENMIENDAS.facturas && ENMIENDAS.facturas.fuente.includes('SCRUM-319'),
-    '🔴 la enmienda del guard no apunta a su fuente.');
+
+  for (const [nombre, d] of Object.entries(ENMIENDAS)) {
+    const ticket = /SCRUM-\d+/.exec(d.fuente);
+    assert.ok(ticket, `🔴 la enmienda «${nombre}» no apunta a un ticket.`);
+    assert.ok(md.includes(ticket[0]),
+      `🔴 la enmienda de «${nombre}» cita ${ticket[0]} en el guard pero el diseño no lo menciona: ` +
+      'quien lea el documento no sabrá por qué esa sección está ahí.');
+    assert.ok(d.motivo && d.motivo.length > 30, `🔴 «${nombre}» no declara su motivo.`);
+  }
 });
 
-test('SCRUM-427 · TRINQUETE: los sobrantes sin decidir NO crecen, y siguen ahí', () => {
+test('SCRUM-427 · una enmienda con PREGUNTA ABIERTA no la da por zanjada', () => {
+  // «Tipo de trabajo» se incluye en §4, pero su §7·5 —«qué es y qué gobierna»— sigue SIN
+  // CONTESTAR. Enmendar sin arrastrar la pregunta la cerraría de tapadillo, y una pregunta cerrada
+  // sin respuesta es peor que una abierta: nadie vuelve a mirarla.
+  const abierta = ENMIENDAS['tipo de trabajo'];
+  assert.ok(abierta, '🔴 «tipo de trabajo» ya no está enmendada.');
+  assert.ok(abierta.preguntaAbierta && /§7/.test(abierta.preguntaAbierta),
+    '🔴 la enmienda de «tipo de trabajo» ha perdido su pregunta abierta (§7·5).');
+
+  const md = fs.readFileSync(path.join(RAIZ, 'docs/diseno/bloque-g.md'), 'utf8');
+
+  // ⚠️ SE BUSCA DENTRO DEL BLOQUE DE LA ENMIENDA, no en el documento entero, y esto lo enseñó la
+  // prueba de rojo: al quitar la cita del blockquote el test SEGUÍA VERDE, porque «§7·5» aparece
+  // también en el §7 original y en la prosa de al lado. Un patrón que puede satisfacerse desde
+  // cualquier otra parte del fichero no comprueba que la enmienda cite nada.
+  const bloque = /## 🔴 ENMIENDA a §4[\s\S]*?(?=\n# )/.exec(md);
+  assert.ok(bloque, '🔴 no se encuentra el bloque de la enmienda en el diseño.');
+  const texto = bloque[0];
+
+  assert.match(texto, /§7\s*·\s*5\.?\*\*/,
+    '🔴 la ENMIENDA ya no cita §7·5. La pregunta tiene que seguir viva dentro de la enmienda: si ' +
+    'sólo vive en el §7 original, quien lea por qué se incluyó la sección no verá que sigue abierta.');
+  assert.match(texto, /qué gobierna/,
+    '🔴 la enmienda no reproduce la pregunta literal del §7·5.');
+  assert.match(texto, /FISCAL/,
+    '🔴 la enmienda no dice que «Tipo de trabajo» gobierna un campo FISCAL, que es el motivo de ' +
+    'fondo para no plegarla mientras la pregunta siga abierta.');
+});
+
+test('SCRUM-427 · TRINQUETE: nada esperando decisión sin que se note', () => {
   const r = compararComposicion(RAIZ);
-  // Igualdad, no «≤»: los declarados pueden quedarse mientras se decide, pero uno nuevo sin
-  // decisión pone esto en rojo. Y si uno declarado DESAPARECE, también — para que la lista no se
-  // quede hablando de secciones que ya no existen.
+  // Igualdad, no «≤». Hoy la lista está VACÍA porque las dos que aparecieron se enmendaron; el
+  // mecanismo se queda montado para la siguiente. Si algo entra aquí y nadie lo mira, este test
+  // sigue verde —es su sitio legítimo—, pero si aparece una sección que NO está ni enmendada ni
+  // declarada, el enumerador de arriba cae. Los dos juntos no dejan hueco.
   assert.deepEqual(
     r.pendientesPresentes.sort(), Object.keys(SOBRANTES_SIN_DECIDIR).sort(),
-    '🔴 la lista de sobrantes SIN DECIDIR ya no coincide con la realidad. Si has añadido una ' +
-    'sección, decláralas; si has retirado una, quítala de `SOBRANTES_SIN_DECIDIR` en el mismo ' +
-    'commit — una excepción que sobrevive a lo que excepcionaba es una excepción que nadie retiró.');
+    '🔴 la lista de sobrantes SIN DECIDIR ya no coincide con la realidad: si has retirado una ' +
+    'sección, quítala de `SOBRANTES_SIN_DECIDIR` en el mismo commit — una excepción que sobrevive ' +
+    'a lo que excepcionaba es una excepción que nadie retiró.');
 
-  // Y cada una tiene que decir de dónde sale y qué falta decidir: una entrada sin motivo es una
-  // lista de nombres, y dentro de un mes nadie sabrá por qué están.
+  // Y si alguna vuelve a haber, tiene que decir de dónde sale y qué falta decidir.
   for (const [nombre, d] of Object.entries(SOBRANTES_SIN_DECIDIR)) {
     assert.ok(d.origen && d.origen.length > 30, `🔴 «${nombre}» no declara su origen.`);
     assert.ok(d.pendiente && d.pendiente.includes('?'), `🔴 «${nombre}» no dice qué hay que decidir.`);

@@ -184,12 +184,44 @@ El recuadro de arriba no la lista, pero **G4 la entregó a propósito** y sigue 
 > **Fuente:** `docs/master/SCRUM-319.md` (G4) · **medido el 10-ago-2026**: no está vacía ni es
 > inalcanzable.
 
-El §4 queda enmendado: las secciones del cuerpo son **QUÉ FALTA PARA COBRAR · ALBARANES · GASTOS ·
-FACTURAS · NOTAS INTERNAS**. Lo comprueba `tests/scrum427-composicion-detalle.test.mjs`, que compara
-esta lista con lo que la pantalla pinta **enumerando** —qué falta y qué sobra—, no contando: G4
-«cuadraba» porque 4 + 5 = 9, con el número correcto y el contenido equivocado.
+### ② `DATOS` es sección del cuerpo — decisión POSTERIOR y VIGENTE
 
-### ② La regla del hueco vale para LEER, no para ESCRIBIR
+Mismo caso que FACTURAS. **G3 (SCRUM-318) movió CLIENTE, TELÉFONO y DIRECCIÓN al rail y dejó
+«Datos» a propósito** con lo que se EDITA: el nombre del Trabajo. Está escrito en el propio código
+(`jobDetailView.js`: *«Lo que se queda en "Datos" es lo que se EDITA … el rail es contexto de
+lectura»*).
+
+> **Fuente:** `docs/master/SCRUM-318.md` (G3) · **10-ago-2026**.
+
+El §4 se dibujó **antes** de esa decisión, así que quien está desactualizado es este documento, no
+la pantalla.
+
+### ③ `TIPO DE TRABAJO` es sección del cuerpo — y su pregunta sigue ABIERTA
+
+⚠️ Este caso **no es como los otros dos**, y la diferencia importa: **el diseño de G sí la conocía**.
+Aparece en su §1 (*«TIPO DE TRABAJO: Varios avisos o visitas sueltas [Cambiar]»*, en lo que hay hoy)
+y el §7 la pone entre lo que hay que medir antes de partir el bloque en tareas:
+
+> **§7 · 5.** *«**Qué es «Tipo de trabajo»** (`Varios avisos o visitas sueltas`) y qué gobierna.»*
+
+O sea: **no se omitió de §4 por quererla fuera — se omitió porque §7·5 no se ha contestado nunca.**
+Esa pregunta sigue viva y se deja escrita aquí, no cerrada.
+
+🔴 **Y el motivo de fondo para NO plegarla mientras tanto:** es una **bandera FISCAL**
+(`Job.tipoOperacion`, SCRUM-66 · TRABAJO-4; ver `docs/master/SCRUM-309.md` §5), y gobierna cómo se
+factura el Trabajo. Quitar de la pantalla algo que gobierna un campo fiscal porque un documento de
+diseño no lo listaba sería **el error al revés**: el mismo que esta enmienda existe para corregir,
+pero recortando en vez de añadiendo.
+
+### La lista enmendada
+
+El §4 queda enmendado: las secciones del cuerpo son **QUÉ FALTA PARA COBRAR · DATOS · TIPO DE
+TRABAJO · ALBARANES · GASTOS · FACTURAS · NOTAS INTERNAS**. Lo comprueba
+`tests/scrum427-composicion-detalle.test.mjs`, que compara esta lista con lo que la pantalla pinta
+**enumerando** —qué falta y qué sobra—, no contando: G4 «cuadraba» porque 4 + 5 = 9, con el número
+correcto y el contenido equivocado.
+
+### ④ La regla del hueco vale para LEER, no para ESCRIBIR
 
 «O está el dato, o no está la sección» (G3/G4/G5) se escribió para bloques de **LECTURA**: una
 sección que informa de cero cosas es ruido, y por eso «Qué falta para cobrar» desaparece cuando no

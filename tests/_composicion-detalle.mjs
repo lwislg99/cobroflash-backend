@@ -109,6 +109,26 @@ export const ENMIENDAS = Object.freeze({
     fuente: 'docs/master/SCRUM-319.md',
     enmiendaEnDiseno: true,   // declarada en `docs/diseno/bloque-g.md` §4
   },
+  datos: {
+    motivo: 'G3 movió CLIENTE/TELÉFONO/DIRECCIÓN al rail y dejó «Datos» a propósito con lo que se '
+      + 'EDITA (el nombre del Trabajo). El §4 se dibujó ANTES de esa decisión.',
+    fuente: 'docs/master/SCRUM-318.md',
+    enmiendaEnDiseno: true,
+  },
+  'tipo de trabajo': {
+    motivo: 'Bandera FISCAL `Job.tipoOperacion` (SCRUM-66 · TRABAJO-4): gobierna cómo se factura el '
+      + 'Trabajo. Quitarla de la pantalla porque un documento de diseño no la listaba sería el error '
+      + 'al revés — recortar en vez de añadir.',
+    fuente: 'docs/master/SCRUM-309.md',
+    enmiendaEnDiseno: true,
+    // ⚠️ ÉSTA NO ES COMO LAS OTRAS DOS. El diseño de G **sí la conocía**: sale en su §1 («TIPO DE
+    // TRABAJO: Varios avisos o visitas sueltas [Cambiar]») y su §7·5 pregunta literalmente «Qué es
+    // "Tipo de trabajo" y qué gobierna». No se omitió del §4 por quererla fuera: se omitió porque
+    // esa pregunta **no se ha contestado nunca**. Se deja VIVA en el documento y aquí, para que la
+    // enmienda no la dé por zanjada de tapadillo — una pregunta cerrada sin respuesta es peor que
+    // una pregunta abierta.
+    preguntaAbierta: 'bloque-g §7·5 — qué es «Tipo de trabajo» y qué gobierna. Sin contestar.',
+  },
 });
 
 /**
@@ -125,18 +145,15 @@ export const ENMIENDAS = Object.freeze({
  * una deuda con nombre y una puerta abierta.
  */
 export const SOBRANTES_SIN_DECIDIR = Object.freeze({
-  datos: {
-    hallado: '10-ago-2026',
-    origen: 'G3 (SCRUM-318) movió CLIENTE/TELÉFONO/DIRECCIÓN al rail y dejó «Datos» a propósito '
-      + 'con lo que se EDITA (el nombre del Trabajo). Está escrito en el propio código.',
-    pendiente: '¿el §4 lo incluye como sección de edición, o lo que queda se pliega en otro sitio?',
-  },
-  'tipo de trabajo': {
-    hallado: '10-ago-2026',
-    origen: 'SCRUM-66 (TRABAJO-4), bandera FISCAL `tipoOperacion` (ver docs/master/SCRUM-309.md §5). '
-      + 'Es ANTERIOR al diseño de G, que no la lista ni para quitarla ni para conservarla.',
-    pendiente: '¿el §4 la reconoce, o es superficie que G quería fuera y nadie retiró?',
-  },
+  // VACÍO hoy, y eso es un resultado, no un descuido.
+  //
+  // El enumerador encontró dos —«Datos» y «Tipo de trabajo»— la primera vez que se ejecutó
+  // (10-ago-2026). Estuvieron aquí lo que tardó el fundador en decidir, y las dos **se
+  // ENMENDARON**: pasaron a `ENMIENDAS` con su cita. Ninguna se retiró de la pantalla.
+  //
+  // El mecanismo se queda montado a propósito: la próxima sección que aparezca sin decisión tiene
+  // dónde esperar sin que nadie tenga que aflojar el guard para que pase. Un sitio declarado donde
+  // poner lo indeciso es lo que evita que lo indeciso acabe pasando por decidido.
 });
 
 /**

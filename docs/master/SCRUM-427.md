@@ -84,7 +84,7 @@ Ficheros: `public/dashboard/js/jobDetailView.js` · `public/dashboard/js/jobDocs
 
 # TRAMO 2 — la enmienda al diseño y el ENUMERADOR
 
-**Medido contra:** `origin/main` = `9ed7f26c763a349c8ad0e776e6533f491d606003` · 2026-08-10T17:09:59+01:00
+**Medido contra:** `origin/main` = `7f826e61f5ce1a82d5def188451ef16125f7e704` · 2026-08-10T17:31:04+01:00
 
 **10-ago-2026** · sesión 1 · lo **ortogonal** al tramo 1, que ya está en `main` (PR #603). No se
 toca su código: lo entregó otra sesión y lo medí verde antes de empezar —guards de entrada 17/17,
@@ -140,20 +140,48 @@ También mordió el escáner: el primer patrón casó con la ASIGNACIÓN `h.clas
 'detail-section-title';` y se tragó 300 líneas de código como si fueran el nombre de una sección. De
 ahí el cinturón `LARGO_MAX` y su test.
 
-## 🔴 Dos sobrantes DECLARADOS y pendientes de decisión del fundador
+## Los dos sobrantes que encontró el enumerador — DECIDIDOS: los dos se enmiendan
 
-El enumerador los encontró en su primera ejecución. **Los dos tienen origen documentado, así que no
-son descuidos** — pero nadie ha decidido si el §4 se enmienda para incluirlos, y **esta sesión no
-tiene autorización para decidirlo**: sólo se aprobó enmendar `FACTURAS`.
+El enumerador los encontró en su primera ejecución y **ninguno era un descuido**. El fundador
+decidió el 10-ago-2026 que **los dos se incluyen en §4**, con el mismo tratamiento que `FACTURAS`.
+Ninguna sección se retira de la pantalla.
 
-| sección | origen medido | qué hay que decidir |
+| sección | por qué se enmienda | cita |
 |---|---|---|
-| **Datos** | G3 (SCRUM-318) movió CLIENTE/TELÉFONO/DIRECCIÓN al rail y **dejó «Datos» a propósito** con lo que se EDITA (el nombre del Trabajo). Escrito en el propio código. | ¿el §4 lo incluye como sección de edición, o lo que queda se pliega en otro sitio? |
-| **Tipo de trabajo** | SCRUM-66 (TRABAJO-4), bandera **FISCAL** `tipoOperacion` (`docs/master/SCRUM-309.md` §5). **Anterior** al diseño de G, que no la lista ni para quitarla ni para conservarla. | ¿el §4 la reconoce, o es superficie que G quería fuera y nadie retiró? |
+| **Datos** | G3 movió CLIENTE/TELÉFONO/DIRECCIÓN al rail y **dejó «Datos» a propósito** con lo que se EDITA. El §4 se dibujó ANTES de esa decisión: **quien está desactualizado es el documento, no la pantalla.** | `SCRUM-318` |
+| **Tipo de trabajo** | Bandera **FISCAL** `Job.tipoOperacion`: gobierna cómo se factura. | `SCRUM-66` / `SCRUM-309` §5 |
 
-Viven en `SOBRANTES_SIN_DECIDIR` con un **trinquete de IGUALDAD**: pueden quedarse mientras se
-decide, pero **una sección nueva sin decisión pone el guard en rojo**, y si una de éstas desaparece
-también — para que la lista no acabe hablando de secciones que ya no existen.
+### ⚠️ «Tipo de trabajo» no es como las otras dos, y el matiz cambia la lectura
+
+Yo lo reporté como *«anterior al diseño de G, que no la lista ni para quitarla ni para
+conservarla»*. **Medido con más cuidado: el diseño SÍ la conocía.** Sale en su §1 —*«TIPO DE
+TRABAJO: Varios avisos o visitas sueltas [Cambiar]»*, en lo que hay hoy— y su §7 la pone entre lo
+que hay que medir antes de partir el bloque:
+
+> **§7 · 5.** *«**Qué es «Tipo de trabajo»** (`Varios avisos o visitas sueltas`) y qué gobierna.»*
+
+Así que **no se omitió de §4 por quererla fuera: se omitió porque §7·5 no se ha contestado nunca.**
+La enmienda la incluye **y deja la pregunta viva**, con un test que impide cerrarla de tapadillo —
+una pregunta cerrada sin respuesta es peor que una abierta, porque nadie vuelve a mirarla.
+
+Y el motivo de fondo para no plegarla mientras tanto: **quitar de la pantalla algo que gobierna un
+campo fiscal porque un documento de diseño no lo listaba sería el error al revés** — el mismo que
+esta enmienda corrige, pero recortando en vez de añadiendo.
+
+`SOBRANTES_SIN_DECIDIR` queda **vacío**, y el mecanismo montado: la próxima sección que aparezca sin
+decisión tiene dónde esperar sin que nadie afloje el guard para que pase.
+
+### Los dos rojos de las enmiendas
+
+| inyección | lo que dijo |
+|---|---|
+| una enmienda cita un ticket que el diseño no menciona | *«la enmienda de «datos» cita SCRUM-318 en el guard pero el diseño no lo menciona: quien lea el documento no sabrá por qué esa sección está ahí»* |
+| la enmienda pierde la cita de §7·5 | *«la ENMIENDA ya no cita §7·5… si sólo vive en el §7 original, quien lea por qué se incluyó la sección no verá que sigue abierta»* |
+
+🔴 **El segundo también me corrigió a mí.** En el primer intento el test seguía VERDE al quitar la
+cita, porque buscaba «§7·5» **en todo el documento** y ese texto aparece también en el §7 original.
+Se acotó la búsqueda al bloque de la enmienda. Es la segunda vez en este tramo que la prueba de rojo
+no confirma el guard sino que lo arregla.
 
 ## Lo que NO toca
 
