@@ -857,6 +857,66 @@ async function renderJobDetailView(container, jobId) {
   // bloque. El rótulo ya existía en el producto: no es microcopy nueva.
   docsSec.innerHTML = '<h3 class="detail-section-title">Albaranes</h3>';
   body.appendChild(docsSec);
+
+  // ── SCRUM-370 · GASTOS DE ESTE TRABAJO ──────────────────────────────────────
+  //
+  // 🔴 EL DEFECTO NO ERA ESTÉTICO: «+ Añadir gasto» se construyó para el TÉCNICO (SCRUM-135, el
+  // alta rápida desde la furgoneta), pero `GET /admin/expenses` es admin-only y su nav está
+  // oculto. Metía el gasto, veía el toast, y **no volvía a verlo nunca**. Quien puede crear algo
+  // tiene que poder comprobarlo.
+  //
+  // Se pide a `GET /admin/jobs/:id/gastos`, que hereda el candado del Trabajo (tenencia + la regla
+  // de SCRUM-147: un técnico solo ve LOS SUYOS). Por eso NO hace falta comprobar el rol aquí.
+  //
+  // ⚠️ SIN totales, SIN márgenes y SIN comparar con el presupuesto: eso es rentabilidad por obra y
+  // tiene su propio ticket. Y el importe se enseña **tal como está guardado**, sin llamarlo «base»
+  // ni «con IVA»: hasta la migración de `Expense` no consta cuál de las dos cosas es, y ponerle
+  // nombre sería afirmar algo que no sabemos (SCRUM-403).
+  const gastosSec = document.createElement('div');
+  gastosSec.className = 'detail-section';
+  gastosSec.dataset.seccion = 'gastos';
+  gastosSec.innerHTML = '<h3 class="detail-section-title">Gastos de este trabajo</h3>';
+  body.appendChild(gastosSec);
+  apiRequest(`/admin/jobs/${job.id}/gastos`)
+    .then((r) => {
+      const gastos = (r && r.gastos) || [];
+      if (!gastos.length) {
+        const vacio = document.createElement('p');
+        vacio.style.cssText = 'margin:4px 0 0;font-size:13px;color:var(--muted)';
+        vacio.textContent = 'Todavía no hay gastos en este trabajo.';
+        gastosSec.appendChild(vacio);
+        return;
+      }
+      for (const g of gastos) {
+        const fila = document.createElement('div');
+        fila.className = 'job-doc-row';
+        fila.dataset.gasto = String(g.id);
+        const concepto = document.createElement('span');
+        concepto.textContent = g.description || g.concepto || '—';
+        const importe = document.createElement('strong');
+        importe.style.cssText = 'white-space:nowrap';
+        importe.textContent = fmtMoneyEs(g.amount, g.currency || cur);
+        const cuando = document.createElement('span');
+        cuando.style.cssText = 'color:var(--muted);font-size:12px;white-space:nowrap';
+        cuando.textContent = albFechaCorta(g.date);
+        fila.append(concepto, importe, cuando);
+        gastosSec.appendChild(fila);
+      }
+    })
+    // 🔴 El fallo se DICE, y no se confunde con el vacío. Una lista vacía por un 500 y «no hay
+    // gastos» se leen IGUAL en pantalla, y una de las dos manda al profesional a meter otra vez
+    // algo que ya está guardado — que es justo el daño que este ticket viene a quitar.
+    //
+    // ⚠️ MICROCOPY: el fundador aprobó el rótulo, los campos y el vacío, no este error. Se usa la
+    // FORMA que ya existe en el producto —«No se pudo cargar el albarán» (`albaranDetailView.js`)—
+    // en vez de inventar una frase nueva. Señalado para su visto (regla 30).
+    .catch(() => {
+      const err = document.createElement('p');
+      err.style.cssText = 'margin:4px 0 0;font-size:13px;color:var(--muted)';
+      err.textContent = 'No se pudieron cargar los gastos.';
+      gastosSec.appendChild(err);
+    });
+
   body.appendChild(infoSec); // SCRUM-31 (F6): "Datos" a segundo plano, bajo lo operativo.
   const docs = []; // { when, el } — se ordena ascendente y se vuelca al final en la lista.
   // Formato de fecha ÚNICO de la lista: día + mes + año + hora. Conserva la HORA (que solo tenía el
