@@ -94,6 +94,22 @@ test('SCRUM-427 · no se guarda si la nota NO ha cambiado', () => {
     '🔴 el guardado no comprueba si la nota cambió: cada visita al detalle escribiría en la base');
 });
 
+/**
+ * El rótulo COMPLETO de la sección de notas de una pantalla.
+ *
+ * 🔴 SUELO, y aquí es fácil que muerda: **comparar dos cosas que no encontraste da igualdad
+ * trivial**. Si el extractor devolviera `undefined` en las dos pantallas, `assert.equal` pasaría
+ * tan contento y el guard diría «coinciden» sin haber leído ninguna. «Coinciden» y «no supe leer
+ * uno de los dos» no pueden dar el mismo verde, así que esto LANZA en vez de devolver vacío.
+ */
+function rotuloDeNotas(fuente, dondeDice) {
+  const m = /<h3[^>]*class="detail-section-title"[^>]*>([^<]*Notas[^<]*)</.exec(fuente);
+  assert.ok(m, `🔴 CIEGO: no se encuentra el rótulo de la sección de notas en ${dondeDice}. Sin ` +
+    'los dos rótulos no se puede afirmar que coincidan — comparar dos cosas que no se han leído ' +
+    'da igualdad trivial, que es el verde más peligroso de este fichero.');
+  return m[1].trim();
+}
+
 test('SCRUM-427 · la microcopy es la MISMA que ya usa Presupuestos, literal', () => {
   // Regla 30: no se inventa microcopy. Aquí no hacía falta — la sección de notas ya existe en
   // Presupuestos con su rótulo, su píldora y su placeholder aprobados. Que las dos pantallas digan
@@ -101,8 +117,44 @@ test('SCRUM-427 · la microcopy es la MISMA que ya usa Presupuestos, literal', (
   const detalle = leer(VISTA);
   const presupuestos = leer(path.join(RAIZ, 'public/dashboard/js/quotesDetailView.js'));
 
+  // ⚠️ EL RÓTULO NO SE COMPARA POR `includes` — SE EXTRAE DE LAS DOS PANTALLAS Y SE EXIGE IGUALDAD.
+  //
+  // 🔴 Y ésta es la parte que cierra el asunto, así que conviene entenderla entera:
+  //
+  // El guard original listaba el literal `'📝 Notas internas'` **con emoji** y lo exigía en las dos
+  // pantallas. Cuando la microcopy aprobada dejó el rótulo del detalle en «Notas internas» a secas,
+  // hubo que aflojar esa comparación a `'Notas internas'` para que pasara — y ahí quedó el agujero:
+  //
+  //     '📝 Notas internas'.includes('Notas internas')  →  true
+  //
+  // Con la lista aflojada, **una pantalla con emoji y la otra sin él PASAN LAS DOS**. Es decir, el
+  // guard se relajó para dejar pasar un cambio y se quedó más ciego de lo que estaba. Restaurar la
+  // lista no arregla eso: mientras se compare una SUBCADENA común, la divergencia del adorno es
+  // invisible por construcción.
+  //
+  // Por eso ahora se saca el rótulo COMPLETO de cada fichero y se comparan entre sí. Es más
+  // estricto que el guard original —él comparaba contra un literal escrito aquí; esto compara las
+  // dos pantallas de verdad, una contra otra— y no hay literal que mantener: el día que la copy
+  // cambie, cambia en los dos sitios o esto cae.
+  const rotuloDetalle = rotuloDeNotas(detalle, 'el detalle del Trabajo');
+  const rotuloPresupuestos = rotuloDeNotas(presupuestos, 'Presupuestos');
+
+  assert.equal(
+    rotuloDetalle, rotuloPresupuestos,
+    `🔴 LAS DOS PANTALLAS ROTULAN DISTINTO la misma sección.\n\n` +
+    `   detalle del Trabajo : «${rotuloDetalle}»\n` +
+    `   Presupuestos        : «${rotuloPresupuestos}»\n\n` +
+    '   El mismo concepto con dos rótulos distintos se lee como dos cosas distintas, y la microcopy\n' +
+    '   no se inventa (regla 30). Si uno de los dos tiene que cambiar, cambian LOS DOS — y con\n' +
+    '   aprobación. ⚠️ Ojo con «arreglarlo» comparando sólo un trozo común: eso es exactamente lo\n' +
+    '   que dejó pasar el emoji de más en una sola pantalla.');
+
+  // Y el rótulo aprobado es ése, no cualquier par que coincida: dos pantallas pueden estar de
+  // acuerdo en algo que nadie aprobó.
+  assert.equal(rotuloDetalle, 'Notas internas',
+    '🔴 el rótulo aprobado (10-ago-2026) es «Notas internas» a secas, sin emoji ni adornos.');
+
   for (const [texto, que] of [
-    ['📝 Notas internas', 'el rótulo'],
     ['Solo tú las ves', 'la píldora de privacidad'],
     ['Anota detalles del trabajo, acuerdos verbales, recordatorios…', 'el placeholder'],
   ]) {

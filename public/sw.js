@@ -27,6 +27,7 @@ const SHELL = [
   '/dashboard/js/onboardingView.js',
   '/dashboard/js/plansView.js',
   '/dashboard/js/customersView.js',
+  '/dashboard/js/quotesTabs.js', // SCRUM-432
   '/dashboard/js/quotesListView.js',
   '/dashboard/js/quoteMargen.js',
   '/dashboard/js/quotesView.js',

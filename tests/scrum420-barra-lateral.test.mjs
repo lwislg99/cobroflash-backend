@@ -77,10 +77,20 @@ test('SCRUM-420 · ① `export` y `templates` SIGUEN alcanzables tras salir/qued
   assert.match(vista, /renderDescargarDatosCard\(panelDeSuperficie\("renderDescargarDatosCard"\)\)/,
     '🔴 la tarjeta existe pero no se monta: declarada y no montada es la regresión que la ' +
     'declaración existe para impedir (misma lección que las provisionales de SCRUM-284).');
-  // `templates` se queda en la barra hasta SCRUM-432, justamente para no quedar inalcanzable.
-  assert.ok(vistasEnBarra.has('templates'),
-    '🔴 `Plantillas` ha salido de la barra y la pestaña dentro de Presupuestos es SCRUM-432: hoy ' +
-    'eso deja la vista `templates` sin ningún camino.');
+  // ── SCRUM-432 · POR QUÉ ESTA MITAD CAMBIÓ ────────────────────────────────────────────────
+  // Hasta el 10-ago exigía `templates` EN la barra, y tenía razón: su pestaña no existía y sacarla
+  // la dejaba sin camino. Ahora la pestaña existe, así que mantener aquella exigencia sería fijar
+  // el estado anterior como requisito — el test caería el día que alguien hace el trabajo bien.
+  // Lo que se exige ahora es lo mismo de siempre, contra el camino de hoy: que haya UNO.
+  assert.ok(!vistasEnBarra.has('templates'),
+    '🔴 `Plantillas` ha vuelto a la barra. El diseño §B1 la quiere solo como pestaña dentro de ' +
+    'Presupuestos («se usa desde ahí y solo desde ahí»): dos caminos es el desorden que B1 arregla.');
+  const tabs = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/quotesTabs.js'), 'utf8');
+  // `ok` y no `match`: un `match` que falla imprime el fichero ENTERO en `actual` y entierra el
+  // mensaje, que es lo único que quien lo lea necesita.
+  assert.ok(/vista: 'templates'/.test(tabs),
+    '🔴 `Plantillas` no está en la barra Y la pestaña no la declara: la vista `templates` se ha ' +
+    'quedado sin ningún camino. Que CARGUE de verdad lo mide `scrum432`; esto es la composición.');
 });
 
 // ═══ ② ENUMERA CONTRA EL DISEÑO: qué falta Y qué sobra ════════════════════════════════════
@@ -147,14 +157,18 @@ test('SCRUM-420 · toda ausencia conocida cita un ticket ABIERTO y explica por q
   }
 });
 
-test('SCRUM-420 · toda añadida declarada explica por qué, y la de Plantillas cita su ticket', () => {
+test('SCRUM-420 · toda añadida declarada explica por qué está en la barra', () => {
+  assert.ok(Object.keys(ANADIDAS_DECLARADAS).length >= 1,
+    '🔴 suelo: sin ninguna añadida, este test pasaría por vacío y no diría nada.');
   for (const [clave, d] of Object.entries(ANADIDAS_DECLARADAS)) {
     assert.ok(d.motivo && d.motivo.length > 60,
       `🔴 la añadida «${clave}» no explica por qué está en la barra si el diseño no la lista.`);
   }
-  assert.equal(ANADIDAS_DECLARADAS.templates.ticket, 'SCRUM-432',
-    '🔴 `Plantillas` está en la barra CONTRA el diseño y eso solo se sostiene mientras su ' +
-    'movimiento tenga ticket abierto.');
+  // SCRUM-432: `templates` ya no es una añadida — dejó de estar en la barra. Pasó a
+  // `VISTAS_SIN_ENTRADA`, y allí se le sigue exigiendo su ticket (abajo).
+  assert.ok(!('templates' in ANADIDAS_DECLARADAS),
+    '🔴 `Plantillas` no puede estar declarada como añadida Y fuera de la barra a la vez: una de ' +
+    'las dos listas está mintiendo.');
 });
 
 // ═══ ③ LAS VISTAS SIN ENTRADA, TAMBIÉN ENUMERADAS ════════════════════════════════════════
@@ -176,6 +190,9 @@ test('SCRUM-420 · ③ `operarios` es excepción CONOCIDA y cita SCRUM-433', () 
     '🔴 `operarios` no puede pasar de largo en silencio: se mide en SCRUM-433.');
   assert.equal(VISTAS_SIN_ENTRADA.export.ticket, 'SCRUM-420',
     '🔴 `export` sale de la barra en ESTE ticket: su declaración tiene que decirlo.');
+  assert.equal(VISTAS_SIN_ENTRADA.templates.ticket, 'SCRUM-432',
+    '🔴 `templates` salió de la barra en SCRUM-432 y su declaración tiene que citarlo: una vista ' +
+    'sin entrada y sin ticket deja de ser una decisión y pasa a ser un olvido.');
 });
 
 // ═══ ④ LO QUE YA FUNCIONABA SIGUE FUNCIONANDO ════════════════════════════════════════════

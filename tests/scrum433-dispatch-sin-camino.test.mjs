@@ -145,30 +145,43 @@ test('SCRUM-433 · las pantallas de DETALLE cuentan por quien las abre, no por l
   }
 });
 
-test('SCRUM-433 · SCRUM-432 puede sacar `Plantillas` de la barra sin chocar conmigo', () => {
+test('SCRUM-433 · SCRUM-432 sacó `Plantillas` de la barra sin chocar conmigo — sobre el HECHO', () => {
   // ⚠️ La primera versión de este test lo comprobaba leyendo el censo y buscando números fijos. Se
   // cazó a sí misma: marcaba `statements.length === 1`, que es la detección legítima del alias.
   // Un guard atado al TEXTO otra vez, y en el mismo turno en que arreglé cuatro por eso.
   //
-  // Se comprueba el HECHO, simulando el movimiento sobre el núcleo puro.
+  // ── SCRUM-432 · POR QUÉ LA PREMISA CAMBIÓ DE LADO (10-ago-2026) ───────────────────────────
+  // Decía `assert.ok(barra.has('templates'), 'PREMISA: hoy Plantillas sigue en la barra')`, y era
+  // correcta: anclaba la SIMULACIÓN a un estado real, para que simular la retirada simulara algo.
+  // El movimiento ya está hecho, así que esa línea pasó a exigir que el trabajo NO estuviera hecho
+  // — el estado anterior convertido en requisito, que es lo que ya corrigieron `scrum296` y el ①
+  // de `scrum420` este mismo día.
+  //
+  // Se re-apunta al invariante que de verdad protegía: **`Plantillas` tiene exactamente UN camino**.
+  // La mitad (a) deja de ser simulación —es el estado vivo— y la (b) sigue siendo el contrafactual,
+  // que es la que no se puede comprobar de otra forma.
   const { vistas } = vistasDelDispatch(RAIZ);
   const barra = entradasDeLaBarra(RAIZ);
   const abre = vistasQueAlguienAbre(RAIZ);
-  assert.ok(barra.has('templates'), '🔴 PREMISA: hoy `Plantillas` sigue en la barra');
 
-  const barraSinPlantillas = new Set([...barra].filter((v) => v !== 'templates'));
+  // PREMISA, ahora la de después del movimiento: fuera de la barra y con camino propio.
+  assert.ok(!barra.has('templates'),
+    '🔴 PREMISA: `Plantillas` ha vuelto a la barra. Si vuelve a tener DOS caminos, este test está '
+    + 'midiendo otro mundo — y el diseño §B1 la quiere solo como pestaña.');
+  assert.ok(abre.has('templates'),
+    '🔴 PREMISA: nadie abre `templates` con `renderAppView(\'templates\')`. Es el único camino que '
+    + 'le queda: sin él la vista está huérfana, y eso lo canta el primer test de este fichero.');
 
-  // (a) BIEN HECHO — la pestaña de Presupuestos abre la vista: mi guard NO estorba.
-  const conPestana = new Map(abre).set('templates', ['quotesListView.js']);
-  assert.ok(
-    !sinCamino({ vistas, barra: barraSinPlantillas, abre: conPestana }).includes('templates'),
-    '🔴 este guard se pondría rojo con SCRUM-432 bien hecho: la vista es alcanzable desde la '
-    + 'pestaña y aun así se marca. Estaría bloqueando trabajo correcto de otra sesión.');
+  // (a) BIEN HECHO — y ya no hay que imaginárselo: es el árbol de hoy. La vista no está en la
+  // barra, la abre la pestaña, y este guard NO la marca. Si se relajara, aquí se vería.
+  assert.ok(!sinCamino({ vistas, barra, abre }).includes('templates'),
+    '🔴 este guard marca `templates` como huérfana cuando la pestaña de Presupuestos SÍ la abre: '
+    + 'estaría bloqueando trabajo correcto de otra sesión.');
 
-  // (b) MAL HECHO — se quita la entrada y no se construye la pestaña: SÍ debe caer. Es exactamente
-  // el control positivo que SCRUM-432 pide para sí mismo, hecho desde fuera.
-  assert.ok(
-    sinCamino({ vistas, barra: barraSinPlantillas, abre }).includes('templates'),
-    '🔴 quitar `Plantillas` de la barra SIN construir la pestaña deja la vista inalcanzable y este '
-    + 'guard no lo nota. Entonces no vigila lo que dice vigilar.');
+  // (b) MAL HECHO — el contrafactual, que sigue sin poder comprobarse de otra manera: si la
+  // pestaña desapareciera, la vista se queda sin nada y este guard TIENE que cantarlo.
+  const sinPestana = new Map([...abre].filter(([v]) => v !== 'templates'));
+  assert.ok(sinCamino({ vistas, barra, abre: sinPestana }).includes('templates'),
+    '🔴 sin la pestaña, `Plantillas` no tiene barra ni quien la abra, y este guard no lo nota. '
+    + 'Entonces no vigila lo que dice vigilar.');
 });

@@ -3,6 +3,10 @@
 function renderQuotesListView(container) {
   container.innerHTML = "";
 
+  // SCRUM-432 (B1 · incremento 3): `Historial · Plantillas`. La tira va ANTES de la tarjeta, que es
+  // donde el diseño la coloca: pertenece a Presupuestos, no al historial.
+  renderPestanasPresupuestos(container, "quotes-list");
+
   const card = document.createElement("div");
   card.className = "data-card";
   container.appendChild(card);
