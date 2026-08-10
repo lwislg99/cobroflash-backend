@@ -291,3 +291,76 @@ lleva la sesion 2 · el canal al asesor (E1) · el fichero contable (E2).
 
 Ficheros: `src/modules/expenses/domain/justificante.ts` (nuevo) ·
 `tests/scrum324-justificante-deducible.test.mjs` (nuevo) · `docs/legal/PREGUNTAS_ASESOR.md`.
+
+
+---
+
+# SCRUM-324 (E3) · tercera entrega: LA MICROCOPY APROBADA Y LOS TRES CAMPOS
+
+**Medido contra:** `origin/main` = `65a2830c4851ca2a5c88a1563fc4ca1a470df64d` · 2026-08-10T16:34:38+02:00
+**Rama:** `scrum-324-gasto-usable`
+
+**10-ago-2026, 16:34 CEST (UTC+0200)** · commit `b834d53af0b584b6c6a8a7178ef90bc9c3fb520a`
+
+## La frase, y por qué es ésa
+
+> «Con un ticket no puedes deducir el IVA. Pide en el almacén una factura a tu nombre, con tu NIF y
+> el IVA desglosado.»
+
+Aprobada por el fundador. **Ninguna de las tres que propuse**, y el motivo queda escrito en el
+código porque quien venga a «mejorarla» tiene que saber qué se descartó:
+
+- **«no puedes deducir este gasto»** — falso por exceso: un ticket **sí** puede ser gasto deducible
+  en IRPF en estimación directa, que es otra cosa y otro importe.
+- **«para que tu asesor pueda usar este gasto»** — resuelve el problema **escondiendo** lo que está
+  en juego. Lo que se pierde es **el IVA**, que es dinero del profesional y es cuantificable.
+
+## Los tres campos del momento
+
+| campo | antes | ahora |
+|---|---|---|
+| importe total | ya estaba | igual |
+| fecha | ya estaba | igual |
+| **NIF del proveedor** | **no existía** | selector de proveedor **por nombre** + NIF al lado |
+
+Lo que había en su lugar era un `input type="number"` que pedía **«ID del proveedor»**. De pie en un
+almacén nadie se sabe el 47 — es la misma fricción que SCRUM-135 quitó en Trabajos.
+
+El NIF **se captura en el gasto pero vive en `Provider.taxId`**, que es su sitio. Y **no se pisa uno
+ya guardado**: el de la ficha lo puso alguien mirando una factura; el del almacén se teclea con
+prisa. El `updateMany` filtra por `merchantId` — sin él se saltaría el multi-tenant.
+
+## El aviso es el producto, no un adorno del guardado
+
+Cuando el justificante no deduce, **el modal no se cierra solo**. Si se cerrara, el aviso sería un
+toast que se va antes de que nadie lo lea, y habríamos guardado un ticket inútil con la sensación de
+haber hecho el trabajo. El botón pasa a «Entendido».
+
+⚠️ **Solo con `no_deducible`.** Con `falta_confirmar` no se pinta nada: ahí todo lo comprobable está
+y solo queda mirar el papel. Avisar sería acusar sin saber, y un aviso que salta siempre se aprende
+a ignorar exactamente igual que uno que no salta nunca.
+
+**La clasificación se calcula en el SERVIDOR** y viaja con el gasto creado. Si viviera en el
+navegador, cada pantalla que da de alta un gasto tendría su copia; el día que difirieran, una le
+diría a un profesional que puede deducir algo que no puede.
+
+## Verificado en rojo
+
+Tres rojos por `$?`, los tres vuelven a verde al revertir: microcopy parafraseada · el aviso
+condicionado a `true` (salta siempre) · quitar la captura del NIF, que **cae nombrándola** —
+`FALTA UNO DE LOS TRES CAMPOS DEL MOMENTO: el NIF del proveedor`—, que es literalmente lo que el
+ticket exigía.
+
+## Un bug que cazó `node --check` antes de empujar
+
+Metí acentos graves dentro de un comentario HTML que vive **dentro de un template literal**, y eso
+**termina la cadena**. Se anota porque el comentario parecía inerte y no lo era.
+
+## Lo que NO toca
+
+`prisma/schema.prisma` · **E4**, que sigue siendo de la sesión 2 · E1 · E2 · las cinco
+clasificaciones del gremio (SCRUM-280 punto 6).
+
+Ficheros: `public/dashboard/js/expensesView.js` · `src/modules/expenses/domain/expenses.service.ts` ·
+`src/modules/expenses/app/routes/expenses.routes.ts` ·
+`tests/scrum324-aviso-simplificado-ui.test.mjs` (nuevo).
