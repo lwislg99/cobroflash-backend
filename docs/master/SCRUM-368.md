@@ -1426,3 +1426,50 @@ esa letra sin dejar de ser pequeño — de ahí que el residuo sea justo el pequ
 ⚠️ Y **`guard:contraste` no absuelve esto**: su propio mensaje dice «ningún par NUEVO por debajo de
 AA». Vigila regresiones. Su verde no es prueba de que lo viejo cumpla, y por eso el 3,30 está
 recalculado a mano en esta entrada.
+
+---
+
+## 🔴 HALLAZGO · SCRUM-412 está Finalizada y su rama NO está en main — medido
+
+El censo del cementerio no lo vio porque **solo miraba PR abiertas**, y esa rama no tiene PR.
+Censamos por donde era fácil mirar: el mismo defecto que perseguimos todo el día.
+
+**La pregunta correcta no es «¿está el patch?» sino «¿ESTÁ LA FUNCIÓN?».** Medido sobre el árbol de
+main, con suelo (50 ficheros `.js`, 92 líneas con `btn-primary`) y control positivo (el instrumento
+reconoce la combinación teniéndola delante):
+
+| pregunta | respuesta |
+|---|---|
+| ¿existe el guard en main? | **SÍ** — `tests/scrum412-primaria-nunca-es-sm.test.mjs`, ejecutado: **5 pass, 0 fail** |
+| ¿impide que una primaria de pantalla nueva lleve `btn-sm`? | **SÍ** — una combinación nueva **tiene que declararse**, y el suelo del censo lo respalda |
+| ¿está todo lo que la rama arregla? | **NO** |
+
+**La función está. Lo que falta es UNA decisión, y es la que más duele.**
+
+En main, `signaturePad.js` sigue con `okBtn.className = 'btn-primary btn-sm'` → **30px en móvil**. Y
+el guard **pasa** porque está declarado en su allowlist, con esta nota escrita a mano:
+
+> *«MODAL de firma. ⚠️ DECLARADO CON DUDA, y se dice en vez de decidirlo solo: es un modal, pero lo
+> pulsa el CLIENTE en una obra y es el momento más irrepetible del producto (SCRUM-404). Si el
+> fundador decide que un modal así cuenta como primaria, sale de esta lista.»*
+
+**El fundador ya lo decidió** — y esa decisión vive en el commit sin mergear.
+
+### La víctima, dicha
+
+**El cliente firmando en la obra.** Un target de **30px**, con guantes, a pleno sol, en el momento
+que SCRUM-404 midió como el más irrepetible del producto: si falla el toque, hay que pedirle a una
+persona que **firme otra vez, delante del profesional**.
+
+⚠️ **Y que la base suba a 44 en móvil hace ese guard MÁS importante, no menos**: precisamente porque
+todo lo demás sube, `btn-sm` es lo único que se queda en 30 — y sin la frontera de SCRUM-412, ahí es
+donde se cuela una primaria.
+
+### Lo que NO he hecho
+
+**No lo arreglo**, como se me pidió: la corrección existe y está en `scrum-412-primarias-tactiles`
+(`1959751`, Luis, 10-ago-2026). Lo que falta es **mergear esa rama**, no volver a escribirla —
+duplicarla aquí crearía dos versiones de la misma decisión y una allowlist con dos verdades.
+
+**Y el hallazgo de método, que vale más que el caso:** una rama sin PR es invisible para un censo
+que mira PR. El censo del cementerio necesita mirar **ramas**, no solo PR — es su propio suelo.
