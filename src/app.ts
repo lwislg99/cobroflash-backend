@@ -56,6 +56,7 @@ import libroRegistroRouter from './modules/invoicing/app/routes/libroRegistro.ro
 import librosAeatRouter from './modules/fiscal/librosAeat/librosAeat.routes'; // SCRUM-325 (E4): el libro de A6, por periodo y en CSV. SOLO LECTURA
 import modelo303Router from './modules/fiscal/modelo303/modelo303.routes'; // SCRUM-295 (A5): modelo 303, SOLO LECTURA
 import evidenciasRouter from './modules/fiscal/evidencias/evidencias.routes'; // SCRUM-297 (A7): paquete de evidencias, SOLO LECTURA
+import supresionRouter from './modules/system/app/routes/supresion.routes'; // SCRUM-244 (RGPD-1): tras MERCHANT_DELETE_ENABLED
 import maintenanceRouter from './modules/maintenance/app/routes/maintenance.routes';
 
 import quotesRouter from './modules/quotes/app/routes/quotes.routes';
@@ -447,6 +448,9 @@ mountAdmin(app, '/admin/modelo-303', requireRole('admin'), modelo303Router);
 // SCRUM-297 (A7): el paquete que demuestra lo declarado. Admin-only: son las pruebas fiscales
 // del negocio entero, no trabajo de campo del Operario.
 mountAdmin(app, '/admin/evidencias.zip', requireRole('admin'), evidenciasRouter);
+// SCRUM-244 (RGPD-1) · la supresión del merchant. Admin-only Y tras `MERCHANT_DELETE_ENABLED`
+// (OFF por defecto): borra datos y es irreversible — se construye, no se enciende.
+mountAdmin(app, '/admin/supresion', requireRole('admin'), supresionRouter);
 mountAdmin(app, '/admin/maintenance', maintenanceRouter); // A15 (MANT-1): tras flag, 404 sin él
 
 // Rutas solo para admin
