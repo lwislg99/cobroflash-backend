@@ -162,6 +162,95 @@ sellador y el verificador sigan siendo **dos testigos independientes**.
 | **Riesgo alto** | toca el **sellado** → regla 38 → **STOP**. Un error aquí no se nota el día que se comete: aparece meses después como un «no coincide» sobre un documento intacto |
 | **Lo que NO arregla** | **el pasado.** Los sobres v:1 y v:2 ya emitidos seguirán leyendo en vivo: sus recetas están congeladas y **no se tocan** (regla 29). Para ésos, lo que hay es el atestiguamiento del §2 y la política del §4 |
 
+## 3 bis · PASO 0 de v:3 — medición, **cero código** (11-ago-2026)
+
+### A · Sitios que despachan por versión de sobre — **CINCO, enumerados**
+
+| # | Dónde | Qué hace con una versión que no conoce |
+| --- | --- | --- |
+| 1 | `contenidoCanonico` — `albaran.service.ts:396` (v:1) y `:412` (v:2) | ✅ **LANZA** `albaran_contenido_version_desconocida:<v>` (`:447`), y lo dice: *«no se aproxima con la más parecida»* |
+| 2 | 🔴 `obraSegunVersion` — `:479` | **cae EN SILENCIO a la rama de v:2** |
+| 3 | `verificarSobre` · despacho — `albaranVerificacion.ts:322-336` | ✅ `version_ausente` / `version_no_soportada`; se niega a aproximar |
+| 4 | `verificarSobre` · **diagnóstico cruzado** — `:372-385` (SCRUM-415) | recorre **TODAS las demás recetas** para separar «manipulado» de `hash_de_otra_version` |
+| 5 | `atestiguamiento.ts:113-116` | ✅ lanza `SobreIlegibleError` |
+
+**El nº 4 no lo tenía enumerado y cambia el trabajo de v:3:** ese bucle prueba cada receta contra
+cada sobre. Al añadir v:3 empezará a probar la receta de v:3 sobre los sobres v:1 y v:2 (y al
+revés). Es lo correcto —es lo que evitó la acusación falsa de SCRUM-415— pero **hay que contarlo en
+el coste**: v:3 no añade una receta, añade una receta **y N comparaciones cruzadas más**.
+
+### 🔴 A bis · CORRIJO ALGO QUE DIJE EN EL §3: el fallback mudo SÍ tiene consumidor vivo
+
+`obraSegunVersion` tiene **TRES** llamadores, no dos:
+
+| Llamador | Qué versión le pasa | ¿Vivo? |
+| --- | --- | --- |
+| `recomputarHashDeEvidencia` — `:508` | la **guardada** (`ev.v`) | **no**: sin llamadores fuera del fichero |
+| `buildFirmaEvidencia` — `:569` | la **ACTUAL** (constante) | sí, pero nunca le llega una desconocida |
+| 🔴 **el PDF** — `:685` | la **guardada** (`(albaran.evidenciaFirma as any)?.v`) | **SÍ, VIVO** |
+
+Escribí que era *«una trampa cargada, no una herida abierta»* apoyándome en que
+`recomputarHashDeEvidencia` no tiene llamadores. **Estaba incompleto: el PDF la llama**, con la
+versión guardada, y su comentario (`:681-684`) promete *«el PDF imprime la obra QUE SE SELLÓ»*.
+
+**Consecuencia concreta para v:3, y no es menor:** un albarán v:3 pasaría hoy por
+`obraSegunVersion(3, …)` → rama de v:2 → imprimiría `lugarEntrega`. Coincidiría con lo sellado
+**por accidente**, no por diseño. Así que la pieza ⑤ de la propuesta **no es gratis**:
+`obraSegunVersion` necesita **cambiar de firma** para v:3 —tiene que poder leer el bloque
+congelado, no solo las dos fuentes vivas— y **el PDF es el llamador que lo obliga**. Eso hay que
+aprobarlo con el resto.
+
+### B · Qué hace el guard de SCRUM-369 al subir la versión — **el mecanismo, no la promesa**
+
+`tests/scrum369-verificador-sello.test.mjs:675-698`. No es una lista escrita a mano:
+`versionesQueElSelladorPuedeEmitir(...)` **deriva del código fuente del sellador** qué versiones
+puede construir `contenidoCanonico`, y exige que todas estén en `versionesSoportadas()`.
+
+**Cuándo se pone rojo, exactamente:** **en el commit que añade la rama `if (version === 3)` a
+`contenidoCanonico`**, aunque no se haya tocado nada más — antes de que exista `recetaV3`. Y su
+mensaje dice qué hacer: *«añadir su receta a `RECETAS_POR_VERSION` (ENTERA y aparte, sin helpers
+compartidos) y congelar su vector»*.
+
+Lleva **suelo propio**: si no encuentra ningún contenido canónico en `albaran.service.ts`, falla
+diciendo que *«este guard ha dejado de mirar donde debía»* — no pasa en verde por no encontrar nada.
+
+### C · Recetas vivas hoy, y quién las llama
+
+| Receta | Quién la llama |
+| --- | --- |
+| `recetaV1` · `recetaV2`, en `RECETAS_POR_VERSION` (`albaranVerificacion.ts:289`, `Object.freeze`) | `verificarSobre` y `verificarPoblacion` por parámetro por defecto (`:310`, `:460`) + el bucle cruzado (`:372`) |
+| Camino **vivo** de producto | `paquete.repo.ts:19,95` → el ZIP de evidencias |
+| En el **sellador** | las ramas v:1 (`:396`) y v:2 (`:412`) de `contenidoCanonico` |
+
+**Con la lista delante se demuestra lo declarado:** retirar `recetaV1` dejaría `versionesSoportadas()`
+en `[2]`, y el **único sobre que hay en producción es v:1** → `verificarSobre` devolvería
+`version_no_soportada` y el ZIP de evidencias declararía **no verificable** ese albarán. Por eso las
+viejas no se retiran.
+
+### D · El orden de claves — **SÍ está garantizado. No es hallazgo**
+
+Lo garantizan **vectores congelados escritos a mano** (`scrum369:23-38`), no recalculados:
+
+> *«un test que compara el resultado del sellador contra el resultado del propio sellador no puede
+> fallar nunca — si alguien cambia el cálculo de v:1, los dos lados se mueven juntos… Con el
+> literal congelado, cualquier cambio en el cálculo de v:1 —reordenar una clave, extraer un helper
+> compartido, normalizar un campo— sale ROJO EN EL COMMIT QUE LO HACE.»*
+
+Reforzado por: `RECETAS_POR_VERSION` va con `Object.freeze` y hay test de que **el candado está
+echado** (`:576-579`, con sabotaje que lo demuestra en rojo), y un guard de que **cambiar el
+recetario obliga a actualizar el vector** (`:406-409`): *«una versión que se sabe despachar sin
+vector congelado no está verificada, está declarada»*.
+
+**Consecuencia para v:3:** su vector congelado **no es opcional** — hay guard que lo exige.
+
+### Lo que caduca antes de que ejecutes el atestiguamiento
+
+**Nada nuevo de esta medición.** Sigue en pie lo del §1: el atestiguamiento caduca en cuanto se
+toque uno de los cinco campos vivos (`Job.titulo` y `Job.direccion` ya tienen escritor). El hallazgo
+del PDF **no caduca**: es código, no dato.
+
+---
+
 ## 4 · La política, dentro del ZIP — ✅ **texto APROBADO** (asesor, 11-ago-2026)
 
 Va como `alcance-de-la-verificacion.txt` **dentro del paquete**, y **siempre** (§2 bis ③). El texto
