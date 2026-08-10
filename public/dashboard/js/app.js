@@ -278,6 +278,11 @@ async function initApp() {
         viewTitle.textContent = 'Cliente';
         if (typeof renderCustomer360View === 'function') renderCustomer360View(viewContainer, state.customerId360);
         break;
+      // SCRUM-285 (B4): Cobros, separado de Facturas.
+      case 'cobros':
+        viewTitle.textContent = 'Cobros';
+        if (typeof renderCobrosView === 'function') renderCobrosView(viewContainer);
+        break;
       case 'invoices':
         viewTitle.textContent = 'Facturas';
         renderInvoicesView(viewContainer);
@@ -383,7 +388,7 @@ async function initApp() {
   // vista. No estaba fuera por ningún motivo — el test de abajo hace que no vuelva a pasar.
   // NOTA: las vistas de DETALLE (`albaran-detail`, …) NO van aquí a propósito: necesitan un id que
   // el hash no lleva, así que un deep-link a ellas abriría una ficha vacía.
-  const HASH_VIEWS = ['home','quotes-list','quotes-new','customers','products','providers',
+  const HASH_VIEWS = ['home','cobros','quotes-list','quotes-new','customers','products','providers',
     'invoices','expenses','export','reports','templates','quote-requests','jobs','plans','team','settings',
       'libro-registro','albaranes'];
   function viewFromHash() {
