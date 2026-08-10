@@ -163,3 +163,65 @@ por bueno.
    entonces su comentario sigue siendo verdad y no se toca.
 
 **Lo que NO he tocado:** `src/`, `prisma/schema.prisma`, y ninguna factura emitida.
+
+---
+
+# SCRUM-397 · B · el código — ENTREGADO
+
+## El criterio del LOTE, escrito antes del código
+
+`POST /bulk-paid` marca N facturas de golpe. **UNA fecha para toda la selección**, y es decisión, no
+simplificación: la acción que la persona ejecuta **es una sola afirmación** —«estas se cobraron el
+día X»—. Si se cobraron en días distintos son **dos hechos** y van en dos operaciones.
+
+Lo que no puede pasar es que el producto ponga la misma fecha a documentos de días distintos **sin
+que nadie lo haya dicho** — que es exactamente lo que hacía `new Date()`. Por eso la pantalla lo
+avisa y **la auditoría registra la fecha y si se eligió o se heredó del valor por defecto**
+(`fechaOrigen`): queda escrito que la afirmó una persona.
+
+## Microcopy — APROBADA por el fundador (10-ago-2026)
+
+```
+Rótulo:   ¿Qué día entró el dinero?
+Ayuda:    Por defecto, hoy. Si lo conciliaste más tarde, pon la fecha real del ingreso.
+Error:    Esa fecha no puede ser posterior a hoy.
+Lote:     Se aplicará esta fecha a todas las facturas seleccionadas. Si se cobraron en días
+          distintos, márcalas por separado.
+```
+
+**No se re-propone la frase de Javier** (`scrum-397-fecha-de-cobro-rebasada`): la suya ya está
+aprobada y su guard la vigila.
+
+## Criterio de fecha — APROBADO
+
+No futura · hacia atrás **sin límite**. Un tope convertiría «no me deja» en «pongo la de hoy», que
+es el defecto del ticket con el usuario forzado a cometerlo. **Declarado: roza A3** y se revisa
+cuando el asesor conteste.
+
+## Regla 38, otra vez declarada
+
+`POST /bulk-paid` y `POST /:id/paid-webhook` **no llaman** a `emitInvoice`, `allocateInvoiceNumber`,
+`applyVeriFactu` ni `sellar*`. **Marcar un cobro no es emitir.** Y hay un test que lo fija: si el
+handler del lote empezara a llamar a cualquiera de esos, cae y el ticket pasa a ser STOP.
+
+`invoicesAdmin.routes.ts:907` **sí** está en el camino de emisión (nace una R1) y **queda fuera**.
+
+## 🔴 El rojo NO salió a la primera, y el motivo es el de siempre
+
+Al inyectar `new Date()` en el lote, **el guard siguió verde**. Casaba con `/fecha\.fecha/` sobre
+*cualquier* propiedad `paidAt` del fichero — y encontraba **la metadata de auditoría**
+(`paidAt: fecha.fecha.toISOString()`), tres líneas más abajo, que **no escribe en la base**.
+
+La herramienta funcionaba perfectamente sobre el objeto equivocado. Arreglado: ahora localiza el
+`invoice.updateMany` del handler **por su marca** (`id: { in: ids }`, no por su línea) y mira **su
+`data.paidAt`**. Con eso el rojo sale y **nombra la pérdida de la fecha real**, no un error de fecha
+genérico.
+
+## Lo que queda pendiente, y de qué depende
+
+`POST /admin/charges/:id/confirm-bizum` **no se ha tocado**: `Charge` no tiene `paidAt`, así que hoy
+**no hay dónde guardar la fecha**. Entra con el bloque A, igual que el `deductsRefs` de SCRUM-16
+esperó a su columna. Y `exportData.ts:248` deja de usar `updatedAt` cuando A esté aplicado — hasta
+entonces su comentario sigue siendo verdad y no se toca.
+
+**No se ha tocado:** `prisma/schema.prisma` · el camino de emisión · ninguna factura emitida.
