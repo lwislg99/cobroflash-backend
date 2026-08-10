@@ -14,6 +14,7 @@ import { Prisma } from '@prisma/client';
 import { allocateInvoiceNumber, isReceiptNumber, type OrigenC7 } from './invoiceNumber.service';
 import type { DeductRef } from './finalInvoice.service'; // SCRUM-16/142 (#2)
 import type { ActorAudit } from '../../system/audit.service'; // SCRUM-207
+import type { TipoDocumento } from './tipoDocumento'; // SCRUM-413: union CERRADA
 
 export interface AlbaranRef {
   albaranId: number;
@@ -26,7 +27,15 @@ export interface EmitInvoiceInput {
   customerId: number;
   total: string;              // Decimal(12,2) ya formateado ("218.90")
   currency: string;
-  type?: string;              // default 'F1' (se fuerza 'JUST' si la serie sale J-); FISCAL-1 usará 'ANT'
+  /**
+   * SCRUM-413 · union CERRADA. Era `string` libre, y el mapeo a AEAT declaraba como factura
+   * completa CUALQUIER cadena que llegara. Ahora un tipo nuevo NO COMPILA hasta declarar con que
+   * `TipoFactura` se sella -- que es dictamen fiscal, no una decision de codigo.
+   *
+   * 'ANT' (anticipo) sigue RESERVADO en FISCAL-1 y no esta en la union: entra cuando P16.2 tenga
+   * respuesta. Hasta entonces, escribirlo no compila -- antes se sellaba como F1 en silencio.
+   */
+  type?: TipoDocumento;       // default 'F1' (se fuerza 'JUST' si la serie sale J-)
   lines?: unknown;            // Invoice.lines Json — [{concept, qty, price, tax(fracción)}]
   albaranRefs?: AlbaranRef[]; // FISCAL-2: operaciones agrupadas
   /**
