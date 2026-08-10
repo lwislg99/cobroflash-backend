@@ -66,6 +66,21 @@ const CENSO = Object.freeze({
   //
   // Los otros DOS de SCRUM-404 sí se escribieron, porque sí estaban aprobados: «No se ha podido
   // conectar…» y «No se ha recogido el trazo…». Por eso esto sube 2 y no 4.
+  // SCRUM-460 (10-ago-2026) · `albaranDetailView.js` 1 → 3. SUBIDA A CONCIENCIA, y el motivo es
+  // que **el mecanismo no existe sin texto**: son los dos avisos de «sin cobertura» de H1 fase 3.
+  //
+  //   +1 → el albarán NO está precargado y no hay red. Es el CONTROL NEGATIVO del ticket: sin él
+  //        la pantalla se queda en blanco, que es peor — invita a reintentar y a firmar a ciegas.
+  //   +1 → crear albaranes sin red quedó FUERA DE ALCANCE POR DECISIÓN, y un límite que no se
+  //        cuenta se vive como una avería: el pro busca «+ Nuevo albarán» en el sótano y cree que
+  //        el producto está roto.
+  //
+  // Los dos textos están MEDIDOS y PROPUESTOS al asesor con la caja real (338 px a 390, 268 a 320;
+  // `.alert` 13,5 px / 1,5), y salen con marcador porque **no se inventa microcopy** (regla 30).
+  // Bajan a 1 el commit que los apruebe.
+  // SCRUM-460 (11-ago-2026) · 3 → 1: el asesor APROBÓ los dos textos, con un retoque en el
+  // primero —«no está descargado» en vez de «no se descargó»: no falló nada, la política
+  // simplemente no lo eligió—. Un trinquete que no se aprieta cuando puede deja de serlo.
   'albaranDetailView.js': 1,
   'signaturePad.js': 1,
   // SCRUM-285 (10-ago-2026): `cobrosView.js` ENTRÓ y SALIÓ del censo el mismo día. La pantalla de

@@ -133,15 +133,68 @@ export function motivosDePrecarga(
  * ⚠️ `merchantId` SIEMPRE (regla 2). No es un adorno: sin él, el paquete de un profesional traería
  * albaranes de otro a un móvil que se comparte en la furgoneta.
  */
-export function whereDePrecarga(merchantId: number, ahora: Date) {
+export function whereDePrecarga(merchantId: number, ahora: Date, soloDelTecnico: number | null = null) {
   const v = ventanaDePrecarga(ahora);
-  return {
-    merchantId,
+  const poblaciones = {
     OR: [
       { scheduledAt: { gte: v.desdeAgenda, lt: v.hastaAgenda } },
       { status: { not: ESTADO_CERRADO }, updatedAt: { gte: v.desdeReciente } },
     ],
   };
+  // 🔴 EL DUEÑO NO CAMBIA: sin técnico, la forma es **exactamente** la de antes de SCRUM-464. Es lo
+  // más fácil de romper sin darse cuenta, y por eso el contraste consulta-vs-criterio de SCRUM-458
+  // la sigue midiendo tal cual, sin tocar una línea.
+  if (soloDelTecnico == null) return { merchantId, ...poblaciones };
+  return { merchantId, AND: [poblaciones, condicionDelTecnico(soloDelTecnico)] };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-464 (H1 · fase 4) · QUE EL TÉCNICO LLEVE **SUS** TRABAJOS
+//
+// LA VÍCTIMA: un merchant con equipo. El dueño está en la oficina; **el que baja al sótano es el
+// operario**. Hasta aquí la precarga era admin-only, así que el profesional que de verdad necesita
+// el albarán delante era justo el que no lo llevaba.
+//
+// 🔴 Y SE FILTRA, NO SE LE DA EL MERCHANT ENTERO. Darle todo era trivial y era **lo peor por
+// RGPD**: el móvil de cada técnico llevaría la cartera completa del negocio. **La minimización
+// importa MÁS en el móvil de un técnico, no menos**: es el aparato que más manos toca y sobre el
+// que menos control tiene el dueño.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// POR QUÉ LOS DOS CAMPOS EN UNIÓN, y no uno — MEDIDO, no elegido a ojo
+//
+//   `operarioId`      autoría: el creador del presupuesto, **congelado en el accept** y escrito
+//                     automáticamente (`job.service.ts`). Es el campo por el que la casa YA filtra
+//                     la visibilidad de Trabajos (`jobs.routes.ts`), y está indexado.
+//   `assignedUserId`  «el asignado a ejecutar». Lo escribe **el admin a mano** (`PATCH`,
+//                     `ADMIN_ONLY_JOB_FIELDS`), y **NADIE filtra por él**: cero `where` en el árbol.
+//
+// Significan cosas distintas **por diseño** —el propio esquema lo dice— y cada uno solo falla en un
+// sitio: `operarioId` deja en cero **exactamente a la víctima de este ticket** (el dueño crea, así
+// que vale `null`), y `assignedUserId` deja fuera al técnico que se hace sus propios presupuestos
+// en obra. **La asimetría de coste decide** (decisión del fundador): pasarse de ancha cuesta que un
+// técnico lleve un albarán de un trabajo **que él mismo creó** —datos que ya vio—; quedarse corta
+// cuesta que el profesional esté en el sótano sin nada que firmar **y sin saberlo**.
+//
+// La unión nunca le da un trabajo que no haya tocado: **o lo creó él, o se lo asignaron**.
+//
+// ⚠️ ESTO NO ES UNA BARRERA DE ACCESO, Y CONVIENE NO CONFUNDIRLO: medido, `GET /admin/albaranes/:id`
+// **no filtra por operario** —solo por merchant—, así que un técnico ya puede abrir cualquier
+// albarán del negocio si tiene el id. Lo que este filtro decide es **qué se copia a su móvil**, que
+// es una cuestión de minimización, no de permisos.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/** «Este trabajo es suyo»: o se lo asignaron, o lo creó él. Un solo sitio, y lo usan los dos lados. */
+export function condicionDelTecnico(teamMemberId: number) {
+  return { OR: [{ assignedUserId: teamMemberId }, { operarioId: teamMemberId }] };
+}
+
+/** La misma pregunta, en memoria, para poder contrastar la consulta contra el criterio. */
+export function esDelTecnico(
+  job: { assignedUserId?: number | null; operarioId?: number | null },
+  teamMemberId: number,
+): boolean {
+  return job.assignedUserId === teamMemberId || job.operarioId === teamMemberId;
 }
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -243,12 +296,20 @@ export async function construirPaquetePrecarga(
   merchantId: number,
   ahora: Date,
   prismaClient: any = prisma,
+  // SCRUM-464 · va el CUARTO y opcional a propósito: así las llamadas de SCRUM-458 —y su test de
+  // regresión del dueño— siguen valiendo sin tocar una línea. `null` = el paquete del dueño.
+  soloDelTecnico: number | null = null,
 ): Promise<PaquetePrecarga> {
   const vacio = { total: 0, agendados: 0, recientes: 0, enAmbas: 0 };
   try {
     const jobs = await prismaClient.job.findMany({
-      where: whereDePrecarga(merchantId, ahora),
-      select: { id: true, titulo: true, status: true, scheduledAt: true, updatedAt: true, customerId: true },
+      where: whereDePrecarga(merchantId, ahora, soloDelTecnico),
+      select: {
+        id: true, titulo: true, status: true, scheduledAt: true, updatedAt: true, customerId: true,
+        // SCRUM-464: se leen para poder CONTRASTAR en el test que lo devuelto es DE VERDAD suyo.
+        // Comprobar un filtro mirando solo el resultado aprueba también a un filtro que no filtra.
+        assignedUserId: true, operarioId: true,
+      },
     });
 
     const trabajos = { total: jobs.length, agendados: 0, recientes: 0, enAmbas: 0 };

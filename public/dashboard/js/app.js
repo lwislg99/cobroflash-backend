@@ -608,4 +608,54 @@ function startVersionWatch() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => { initApp(); startVersionWatch(); });
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-460 (H1 · fase 3) · CUÁNDO SE PRECARGA. Es una decisión, no un detalle.
+//
+// 🔴 SOLO AL ARRANCAR NO VALE, y no es una preferencia: sería pedirle al profesional que se
+// acuerde de recargar la app antes de meterse en un sótano — justo lo que la política de precarga
+// venía a evitar. El caso que se escapa es el normal: abre la app en casa por la mañana, la oficina
+// emite el albarán a las diez, y él no vuelve a recargar en todo el día.
+//
+// LOS DOS MOMENTOS, medidos sobre lo que el panel ya tiene:
+//   ① `DOMContentLoaded` — el arranque.
+//   ② `visibilitychange` → `visible` — sacar el móvil del bolsillo. Es el gesto que ocurre JUSTO
+//      ANTES de entrar a la obra, y ya lo usa el vigilante de versión, así que no se estrena nada.
+//
+// ⚠️ LO QUE ESTO DEJA FUERA, DICHO: si el profesional no trae la app al frente **con cobertura**
+// entre que el albarán se emite y él baja al sótano, no se precarga nada. No hay tercer momento
+// disponible: `Periodic Background Sync` no existe en Safari/iOS y el push tampoco está montado.
+// Y no se usa `navigator.onLine` para decidir —miente en este escenario exacto, y tiene CERO usos
+// en el árbol a propósito (SCRUM-356)—: se intenta y se mira el resultado.
+//
+// El intento es silencioso y NO bloquea nada: si falla, la app sigue igual. Quién le cuenta al
+// profesional que hoy no lleva nada precargado es H2 (SCRUM-356), no esto.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/** No se reintenta más seguido que esto: volver a la pestaña doce veces no son doce paquetes. */
+const PRECARGA_MIN_ENTRE_INTENTOS_MS = 5 * 60 * 1000;
+let precargaUltimoIntento = 0;
+
+async function precargarSiTocaAhora() {
+  if (typeof window.precargarAlbaranes !== 'function') return null;
+  const ahora = Date.now();
+  if (ahora - precargaUltimoIntento < PRECARGA_MIN_ENTRE_INTENTOS_MS) return null;
+  precargaUltimoIntento = ahora;
+  try {
+    // El resultado se GUARDA, no se pinta: los tres valores —precargué N, no había nada, no supe
+    // mirar— son lo que H2 va a leer, y colapsarlos aquí destruiría la distinción.
+    window.precargaUltimoResultado = await window.precargarAlbaranes();
+    return window.precargaUltimoResultado;
+  } catch (_e) {
+    // Ni siquiera un fallo inesperado del precargador puede impedir que la app arranque.
+    window.precargaUltimoResultado = { estado: 'NO_SE_PUDO', n: 0, motivo: 'el precargador falló' };
+    return window.precargaUltimoResultado;
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') precargarSiTocaAhora();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  initApp(); startVersionWatch(); precargarSiTocaAhora();
+});

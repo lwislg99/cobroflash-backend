@@ -162,6 +162,10 @@ export function nodo(tag, reg) {
       if (h) { h._padre = null; if (h._id && reg.porId.get(h._id) === h) reg.porId.delete(h._id); }
     },
     insertBefore(h) { if (h) h._padre = n; n.hijos.unshift(h); return h; },
+    // SCRUM-460 · `prepend`. No existía, y por eso `albaranDetailView` REVENTABA al montarse —
+    // quedó reportado como hueco en SCRUM-451 y ahora bloqueaba el test que decide de H1. Nada
+    // podía depender de él antes, porque llamarlo era un `TypeError`.
+    prepend(...h) { for (const x of h) { if (x) x._padre = n; } n.hijos.unshift(...h); },
     // ⚠️ SCRUM-444 · `children`, `firstElementChild` y un `remove()` QUE DE VERDAD QUITA.
     //
     // Antes `remove()` era un NO-OP y `children` no existía. Con eso, una vista que gestione una

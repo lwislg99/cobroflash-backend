@@ -299,7 +299,12 @@ test('SCRUM-451 · TRINQUETE: las vistas que se quedan MUDAS tras vencer el plaz
       await new Promise((r) => setTimeout(r, 60));
       if (revento) { noMontan.push(`${v.nombre} (revienta: ${String(revento.message).slice(0, 50)})`); continue; }
       if (!red.seEjercio()) { noMontan.push(`${v.nombre} (no pidió nada)`); continue; }
-      (/no (hemos|se ha[n]?) pud|no pudimos|error|reintent|vuelve a intentarlo/i.test(leer(c))
+      // ⚠️ SCRUM-460 · UN `[PENDIENTE microcopy oficial]` CUENTA COMO HABLAR, y hay que decir por
+      // qué: lo que este trinquete mide es si la pantalla **se queda muda para siempre**, y un
+      // marcador visible no lo está — el profesional lee que algo pasa. Es además la forma que la
+      // casa tiene de entregar un texto sin aprobar (regla 30), y lo que impide que los marcadores
+      // se multipliquen es OTRO trinquete, el de SCRUM-402, que los cuenta por fichero.
+      (/no (hemos|se ha[n]?) pud|no pudimos|error|reintent|vuelve a intentarlo|no hay cobertura|PENDIENTE microcopy oficial/i.test(leer(c))
         ? hablan : mudas).push(v.nombre);
     }
     // DESAGÜE. Una vista puede tener temporizadores en marcha cuando el bucle acaba, y si explotan

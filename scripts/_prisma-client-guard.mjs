@@ -8,8 +8,15 @@
 // un schema más viejo, y `tsc` empezó a fallar por `decisionToken` y por una relación que "no
 // existía". El cliente estaba ahí. Un guard de presencia habría dicho que todo bien.
 //
-// Y es fácil de provocar sin querer, porque `node_modules` se comparte por JUNCTION entre todos
-// los worktrees: quien regenera, regenera para todos (incidente #11 de `docs/ERRORES_ASESOR.md`).
+// Y es fácil de provocar sin querer. La causa de siempre es que `schema.prisma` viaja con la rama y
+// el cliente generado no. Hay una segunda que DEPENDE DEL MONTAJE: si `node_modules` es un enlace
+// al de otro worktree, quien regenera regenera para todos (incidente #11, `docs/ERRORES_ASESOR.md`).
+//
+// ⚠️ SCRUM-461 · esto ANTES se afirmaba como un hecho —«se comparte por JUNCTION entre todos»—. Se
+// midió el 10-ago con `fs.realpathSync` sobre los cuatro worktrees vivos: **ninguno lo era**, los
+// cuatro son directorios propios. Comprobarlo cuesta una línea, y no comprobarlo ya costó una
+// decisión equivocada (se desaconsejó un `npm install` por un riesgo que no existía):
+//     node -e "console.log(require('fs').lstatSync('node_modules').isSymbolicLink())"
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // SCRUM-235 · POR QUÉ EL CRITERIO ANTERIOR DABA FALSO VERDE
