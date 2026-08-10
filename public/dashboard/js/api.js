@@ -3,6 +3,87 @@
 // Si el backend sirve el dashboard desde el mismo dominio, base = "".
 const API_BASE_URL = ""; // mismo origin (http://localhost:3000)
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-451 · EL PLAZO DE RED VIVE AQUÍ, Y CORTA
+//
+// LA VÍCTIMA: un profesional con mala cobertura abre una pantalla, la petición se queda en el
+// aire, y la pantalla espera PARA SIEMPRE. Ni datos, ni error, ni nada. En SCRUM-448 se midió que
+// de 10 vistas que el banco pinta con la petición colgada, **nueve se quedan mudas**.
+//
+// SCRUM-448 puso el primer plazo de la casa DENTRO de una vista, y dejó dicho que ése era el
+// momento de decidir: o baja a un sitio común, o las otras nueve crecen cada una el suyo. Baja.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 EL PLAZO ES **SOLO PARA GET**, Y ESO NO ES PEREZA: ESTÁ MEDIDO
+//
+// Censo por AST sobre `public/` entero (136 llamadas a `apiRequest`, 31 ficheros):
+//   · **58 GET «pelados»** —sin opciones, o solo `method:'GET'`—. Cero GET con `headers` o `body`,
+//     así que dos peticiones a la misma ruta son LA MISMA petición, sin ambigüedad.
+//   · **78 MUTACIONES** (POST 56 · PATCH 10 · PUT 8 · DELETE 4).
+//   · Las 4 descargas pesadas (ZIP de portabilidad, XML VeriFactu) NO pasan por aquí: van por
+//     `descargarBinario`, con su propio `fetch`. **No les toca este plazo**, y no se les pone uno
+//     a ojo: un ZIP de evidencias y un listado de cobros no aguantan lo mismo.
+//
+// Abortar un GET no cuesta nada: es idempotente y se vuelve a pedir. **Abortar una MUTACIÓN es
+// otra cosa**: el servidor ha podido procesarla ya, el profesional ve un error, lo repite, y sale
+// una segunda factura. Eso es dinero y es el camino de emisión, así que no se decide aquí.
+// Queda PARADO y propuesto al fundador. Las 78 mutaciones siguen exactamente como estaban.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// EL NÚMERO: 10 s, el mismo que ya decidió el fundador en SCRUM-448, y por lo mismo. No hay p95
+// de estas rutas en producción y no se inventa; es el umbral clásico a partir del cual una
+// persona deja de creer que el sistema trabaja y empieza a creer que está roto. Referencia
+// general, no dato nuestro. **Un sitio, una constante**: `cobrosView` ya no tiene el suyo.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/** El plazo, en milisegundos. `var` a propósito: así un test puede acortarlo desde `window`. */
+var PLAZO_RED_MS = (typeof window !== 'undefined' && window.PLAZO_RED_MS) || 10000;
+
+/**
+ * 🔴 QUÉ RESPUESTA MANDA: la de la ÚLTIMA petición lanzada para esa ruta, y solo ésa.
+ *
+ * Abortar NO quita la necesidad de esto: el aborto no es instantáneo, y una respuesta que ya venía
+ * de camino puede llegar DESPUÉS de otra más nueva y pintar encima una lista más vieja, sin que
+ * nada lo diga. Es el defecto que nadie ve hasta que muerde.
+ *
+ * ⚠️ Y NO SE DESCARTA LA VIEJA EN SILENCIO, que era lo primero que pensé: está medido que **22
+ * rutas se piden desde más de un sitio** —`/admin/jobs/{}` desde 7, `/admin/merchant` desde 6,
+ * `/admin/metrics/home` desde 2 en la MISMA vista—. Descartar dejaría a un llamador legítimo sin
+ * su respuesta para siempre, y eso es una avería nueva, no un arreglo. Lo que se hace es
+ * **compartir**: al que se quedó atrás se le entrega el resultado de la MÁS NUEVA. Nadie se queda
+ * sin respuesta y nadie pinta datos viejos.
+ */
+const _secuenciaPorRuta = Object.create(null);
+const _ultimaPorRuta = Object.create(null);
+
+/** Marca el error de un plazo vencido con la MISMA señal que un fallo de red (SCRUM-404). */
+function errorDeRedVencido(causa) {
+  // No se inventa microcopy: se marca. `sinRed` porque para el profesional es el mismo hecho
+  // —no hay cobertura— y las vistas que ya se bifurcan por esa marca siguen valiendo.
+  const e = new Error('la petición ha superado el plazo de red');
+  e.sinRed = true;
+  e.vencido = true;
+  e.causaOriginal = causa;
+  return e;
+}
+
+/** Una petición, de principio a fin. El plazo cubre TAMBIÉN la descarga del cuerpo. */
+async function _enviar(url, finalOptions, ctrl) {
+  const opciones = ctrl ? { ...finalOptions, signal: ctrl.signal } : finalOptions;
+  // 🔴 El plazo se limpia en el `finally`, no al resolver el `fetch`: `fetch` vuelve con las
+  // CABECERAS, y el cuerpo se sigue bajando después. Cortar solo la cabecera dejaría vivo justo lo
+  // que gasta los datos del profesional.
+  const plazo = ctrl ? setTimeout(() => ctrl.abort(), PLAZO_RED_MS) : null;
+  try {
+    return await _pedir(url, opciones);
+  } catch (e) {
+    if (ctrl && ctrl.signal && ctrl.signal.aborted) throw errorDeRedVencido(e);
+    throw e;
+  } finally {
+    if (plazo) clearTimeout(plazo);
+  }
+}
+
 async function apiRequest(path, options = {}) {
   const url = API_BASE_URL + path;
 
@@ -14,6 +95,32 @@ async function apiRequest(path, options = {}) {
     ...options,
   };
 
+  const metodo = String(finalOptions.method || 'GET').toUpperCase();
+  // Mutación: camino de siempre, sin plazo y sin secuencia. Ver el bloque de arriba.
+  if (metodo !== 'GET' || finalOptions.body) return _pedir(url, finalOptions);
+
+  let mia = (_secuenciaPorRuta[path] = (_secuenciaPorRuta[path] || 0) + 1);
+  const ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+  const promesa = _enviar(url, finalOptions, ctrl);
+  _ultimaPorRuta[path] = promesa;
+
+  let resultado; let fallo = null;
+  try { resultado = await promesa; } catch (e) { fallo = e; }
+
+  // Si mientras tanto salió otra para esta misma ruta, la que manda es la suya — y se espera, para
+  // que quien preguntó primero también reciba lo último. El bucle cubre el caso de que la más
+  // nueva quede a su vez superada mientras se la espera.
+  while (_secuenciaPorRuta[path] !== mia) {
+    mia = _secuenciaPorRuta[path];
+    try { resultado = await _ultimaPorRuta[path]; fallo = null; }
+    catch (e) { fallo = e; resultado = undefined; }
+  }
+
+  if (fallo) throw fallo;
+  return resultado;
+}
+
+async function _pedir(url, finalOptions) {
   // SCRUM-404 · UN FALLO DE RED Y UN RECHAZO DEL SERVIDOR PIDEN COSAS DISTINTAS AL PROFESIONAL:
   // esperar a tener cobertura, o llamar por teléfono. Sin envolver el `fetch` los dos llegaban
   // igual —un `TypeError: Failed to fetch`, en inglés— y quien mostrara el error no podía
@@ -61,7 +168,10 @@ async function apiRequest(path, options = {}) {
   }
 
   if (res.status === 204) return null;
-  return res.json();
+  // 🔴 `await`, no `return` a secas: quien llama a `_pedir` limpia el plazo en su `finally`, y con
+  // un `return` sin esperar ese `finally` corre ANTES de que el cuerpo se haya bajado. El plazo
+  // moriría justo antes de la parte que de verdad gasta los datos del profesional.
+  return await res.json();
 }
 
 // -------- SCRUM-405 · LA ÚNICA FORMA DE DESCARGAR UN FICHERO --------

@@ -35,6 +35,84 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-451 · `querySelector` DE VERDAD — el hueco que dejó ciegas a dos vistas
+//
+// Era `() => null`, fijo. Con eso, `invoicesView` y `productsView` **reventaban al montarlas**
+// (`Cannot read properties of null (reading 'addEventListener')`), y SCRUM-448 tuvo que declararlas
+// SIN MEDIR: nadie podía saber qué hacen sin cobertura, y una es la de facturas.
+//
+// 🔴 Y LO PEOR NO ERA QUE FALTARA: era que MENTÍA EN SILENCIO. Un `null` fijo es indistinguible de
+// «ese nodo no existe», así que un test podía dar por bueno «no está» sin que nadie hubiera mirado.
+// Por eso, además de resolver, esto **anota lo que no sabe resolver** en `reg.selectoresNoSoportados`:
+// un banco que no sabe algo tiene que poder declararse ciego, no devolver `null` y callarse.
+//
+// LO QUE SOPORTA: listas separadas por comas · descendencia por espacio · y selectores simples
+// compuestos de `etiqueta`, `#id`, `.clase`, `[attr]` y `[attr="valor"]` (con `data-*`).
+// LO QUE NO: `>`, `+`, `~`, `*` y pseudoclases. Eso NO devuelve `null` a secas: se anota.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+const SIMPLE = /^([a-zA-Z][\w-]*)?((?:[#.][\w-]+|\[[^\]]+\])*)$/;
+
+function casaSimple(n, sel) {
+  const m = SIMPLE.exec(sel.trim());
+  if (!m) return null; // no soportado
+  if (m[1] && n.tagName !== m[1].toUpperCase()) return false;
+  for (const t of (m[2] || '').match(/[#.][\w-]+|\[[^\]]+\]/g) || []) {
+    if (t[0] === '#') { if (n.id !== t.slice(1)) return false; continue; }
+    if (t[0] === '.') {
+      if (!String(n.className || '').split(/\s+/).includes(t.slice(1))) return false;
+      continue;
+    }
+    const a = /^\[([\w-]+)(?:\s*=\s*["']?([^"'\]]*)["']?)?\]$/.exec(t);
+    if (!a) return null;
+    const valor = a[1].startsWith('data-')
+      ? n.dataset[a[1].slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase())]
+      : (a[1] === 'class' ? n.className : (a[1] === 'id' ? n.id : n.getAttribute(a[1])));
+    if (valor === undefined || valor === null) return false;
+    if (a[2] !== undefined && String(valor) !== a[2]) return false;
+  }
+  return true;
+}
+
+/** ¿Casa `n` con un selector con descendencia («a b c»)? Sube por `_padre` para los antepasados. */
+function casa(n, sel) {
+  const partes = sel.trim().split(/\s+/);
+  const propio = casaSimple(n, partes[partes.length - 1]);
+  if (propio !== true) return propio; // false, o null si no se sabe
+  let p = n._padre;
+  for (let i = partes.length - 2; i >= 0; i--) {
+    let encontrado = false;
+    while (p) {
+      const r = casaSimple(p, partes[i]);
+      if (r === null) return null;
+      if (r) { encontrado = true; p = p._padre; break; }
+      p = p._padre;
+    }
+    if (!encontrado) return false;
+  }
+  return true;
+}
+
+/** Busca en el subárbol de `raiz` (sin incluirla, como en el navegador). */
+function buscar(raiz, selector, reg, soloUno) {
+  const out = [];
+  for (const sel of String(selector).split(',')) {
+    const pila = [...raiz.hijos];
+    while (pila.length) {
+      const n = pila.shift();
+      const r = casa(n, sel);
+      if (r === null) {
+        if (reg && !reg.selectoresNoSoportados.includes(selector)) reg.selectoresNoSoportados.push(selector);
+        break;
+      }
+      if (r && !out.includes(n)) { out.push(n); if (soloUno) return out; }
+      pila.unshift(...n.hijos);
+    }
+  }
+  return out;
+}
+
 /** Un nodo del DOM de mentira: lo justo para que una vista corra y se pueda mirar lo que pintó. */
 export function nodo(tag, reg) {
   const n = {
@@ -93,8 +171,30 @@ export function nodo(tag, reg) {
     dispararClick() { return n.disparar('click'); },
     click() { return n.disparar('click'); },
     focus() {}, blur() {},
-    setAttribute() {}, getAttribute: () => null, removeAttribute() {},
-    querySelector: () => null, querySelectorAll: () => [], closest: () => null,
+    // SCRUM-451 · los atributos se GUARDAN. Antes `setAttribute` era un no-op y `getAttribute`
+    // devolvía `null` siempre, así que `[aria-hidden="true"]` o `[type="checkbox"]` no se podían
+    // resolver — y una vista que pusiera un atributo y luego lo buscara medía el banco, no el
+    // producto. `id`, `class` y `data-*` se reflejan en sus campos, como en el navegador.
+    _attrs: {},
+    setAttribute(k, v) {
+      const clave = String(k); n._attrs[clave] = String(v);
+      if (clave === 'id') n.id = String(v);
+      else if (clave === 'class') n.className = String(v);
+      else if (clave.startsWith('data-')) {
+        n.dataset[clave.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = String(v);
+      }
+    },
+    getAttribute: (k) => (Object.prototype.hasOwnProperty.call(n._attrs, String(k)) ? n._attrs[String(k)] : null),
+    hasAttribute: (k) => Object.prototype.hasOwnProperty.call(n._attrs, String(k)),
+    removeAttribute(k) { delete n._attrs[String(k)]; },
+    querySelector: (s) => buscar(n, s, reg, true)[0] || null,
+    querySelectorAll: (s) => buscar(n, s, reg, false),
+    /** Como el del navegador: se mira a SÍ MISMO y luego sube. */
+    closest(s) {
+      let p = n;
+      while (p) { if (casa(p, s) === true) return p; p = p._padre; }
+      return null;
+    },
     classList: { add() {}, remove() {}, toggle() {}, contains: () => false },
     getBoundingClientRect: () => ({ width: 0, height: 0, top: 0, left: 0 }),
     set textContent(v) { n._texto = String(v); n.hijos = []; },
@@ -145,7 +245,9 @@ export function scriptsDelDashboard(raiz) {
  * @param opciones.rol    `window.appUserRole` (varias vistas se bifurcan por él)
  */
 export function cargarDashboard(raiz, opciones = {}) {
-  const reg = { porId: new Map(), errores: [], idsNoResueltos: [] };
+  // `selectoresNoSoportados`: SCRUM-451 · lo que el mini-DOM NO sabe resolver. Un banco que no sabe
+  // algo se declara ciego; devolver `null` y callarse es lo que dejó dos vistas sin medir.
+  const reg = { porId: new Map(), errores: [], idsNoResueltos: [], selectoresNoSoportados: [] };
   const mk = (t) => nodo(t, reg);
 
   const doc = {
@@ -157,7 +259,9 @@ export function cargarDashboard(raiz, opciones = {}) {
       if (!n) reg.idsNoResueltos.push(id);
       return n;
     },
-    querySelector: () => null, querySelectorAll: () => [],
+    // El `document` busca en TODO el árbol: su `body` es la raíz que ven las vistas.
+    querySelector: (sel) => doc.body.querySelector(sel),
+    querySelectorAll: (sel) => doc.body.querySelectorAll(sel),
     addEventListener() {}, removeEventListener() {},
     body: mk('body'), documentElement: mk('html'), head: mk('head'),
     readyState: 'complete', cookie: '',

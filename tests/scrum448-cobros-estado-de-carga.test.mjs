@@ -16,7 +16,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
-import { redNormal, aceptaYNoEntrega, llegaTarde } from './_banco-red.mjs';
+import { redNormal, aceptaYNoEntrega, llegaTarde, porLlamada } from './_banco-red.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -99,7 +99,7 @@ test('SCRUM-448 · si la respuesta no llega nunca, VENCE EL PLAZO y se avisa', a
   // El plazo se baja a 5 ms: esperar quince segundos de verdad sería un test que nadie corre.
   const red = aceptaYNoEntrega();
   const banco = cargarDashboard(RAIZ, { red });
-  banco.ctx.COBROS_PLAZO_MS = 5;
+  banco.ctx.PLAZO_RED_MS = 5;
   const contenedor = banco.mk('div');
   banco.ctx.renderCobrosView(contenedor);
   await new Promise((res) => setTimeout(res, 40));
@@ -114,50 +114,68 @@ test('SCRUM-448 · si la respuesta no llega nunca, VENCE EL PLAZO y se avisa', a
     '🔴 al vencer el plazo se afirma que no hay cobros. Sigue sin saberse.');
 });
 
-test('SCRUM-448 · EL DATO GANA AL MENSAJE: llega tras vencer el plazo y SUSTITUYE al aviso', async () => {
-  // Lo que vence NUNCA puede acabar contándose como «no hay cobros»: eso es el defecto entero de
-  // este ticket, y colarlo por la puerta del plazo sería reintroducirlo.
+test('SCRUM-448 · lo que VENCE se corta, y no acaba contándose como «no hay cobros»', async () => {
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 SCRUM-451 CAMBIA ESTE CASO, Y HAY QUE DECIRLO EN VEZ DE REESCRIBIR EL TEST EN SILENCIO.
+  //
+  // En SCRUM-448 esto se llamaba «EL DATO GANA AL MENSAJE»: sin `AbortController` la petición
+  // vencida seguía viva, llegaba tarde, y lo correcto era pintarla y borrar el aviso.
+  //
+  // Con el aborto **ya no llega**: se corta. La regla no se ha incumplido, se ha quedado SIN CASO
+  // por la puerta buena — deja de gastarle los datos al profesional, que es lo que 448 declaró como
+  // hueco. Lo que este test defiende ahora es lo que sigue siendo verdad y sigue importando: al
+  // vencer se AVISA, no se afirma que no hay cobros; y la petición se corta DE VERDAD.
+  // ═══════════════════════════════════════════════════════════════════════════════════════
   const red = llegaTarde(40, [COBRO_PENDIENTE]);
   const banco = cargarDashboard(RAIZ, { red });
-  banco.ctx.COBROS_PLAZO_MS = 5; // vence mucho antes de que la respuesta llegue
+  banco.ctx.PLAZO_RED_MS = 5; // vence mucho antes de que la respuesta llegue
   const contenedor = banco.mk('div');
   banco.ctx.renderCobrosView(contenedor);
 
   await new Promise((res) => setTimeout(res, 20));
   const durante = todos(contenedor).map((n) => n.textContent).filter(Boolean).join(' | ');
   assert.match(durante, /No hemos podido cargar los cobros/,
-    'suelo: el plazo tiene que haber vencido ya, o este test no prueba la sustitución.');
+    'suelo: el plazo tiene que haber vencido ya, o este test no mide el vencimiento.');
 
   await new Promise((res) => setTimeout(res, 80));
   const despues = todos(contenedor).map((n) => n.textContent).filter(Boolean).join(' | ');
-  assert.match(despues, /F-2026-0007/,
-    '🔴 la respuesta llegó tarde y la pantalla sigue con el aviso. El dato gana al mensaje: si los ' +
-    'cobros están, se enseñan.');
-  assert.ok(!/No hemos podido cargar/.test(despues),
-    '🔴 se enseñan los cobros Y el aviso a la vez: el profesional no sabe cuál creer.');
+  assert.equal(red.reg.abortadas, 1,
+    `🔴 el plazo venció y la petición NO se abortó (${red.describir()}): sigue bajando datos que ` +
+    'ya no se van a pintar, en el peor sitio posible.');
+  assert.equal(red.reg.cuerposEntregados, 0,
+    `🔴 el cuerpo llegó a entregarse pese al corte (${red.describir()}).`);
+  assert.ok(!/Todavía no hay cobros registrados|Ningún cobro coincide/.test(despues),
+    '🔴 lo que venció ha acabado contándose como «no hay cobros». Es el defecto entero de este ' +
+    'ticket, reintroducido por la puerta del plazo.');
+  assert.match(despues, /No hemos podido cargar los cobros/,
+    '🔴 tras el corte la pantalla se ha quedado muda: no es mejor que mentirle, es no contestarle.');
 });
 
-test('SCRUM-448 · CARRERA: una respuesta VIEJA que llega después NO pinta', async () => {
-  // Sin `AbortController` (SCRUM-451) la petición vencida sigue viva y VA A LLEGAR. Sin contador:
-  // vence → se relanza → llega la nueva y pinta bien → llega la vieja y pinta encima datos MÁS
-  // VIEJOS, sin que nada lo diga. Es el defecto que nadie ve hasta que muerde.
+test('SCRUM-448 · CARRERA: la pantalla NUNCA pinta datos de una petición vieja', async () => {
+  // El defecto: vence → se relanza → llega la nueva y pinta bien → llega la VIEJA y pinta encima
+  // datos más viejos, sin que nada lo diga. Es el que nadie ve hasta que muerde.
   //
-  // ⚠️ El segundo lanzamiento se simula incrementando el contador, porque hoy la pantalla no tiene
-  // botón de reintentar: lo que se prueba es la GUARDA, que es lo que este ticket añade.
-  const red = llegaTarde(40, [COBRO_PENDIENTE]);
+  // SCRUM-451 · EL MECANISMO SE MUDÓ, LA GARANTÍA NO. El contador ya no vive en esta vista: vive en
+  // `apiRequest`, por ruta. Este test deja de mirar la tripa —que era simular el contador a mano— y
+  // pasa a ejercitar la carrera DE VERDAD: dos renders seguidos, la 1.ª petición lenta con un
+  // documento VIEJO y la 2.ª rápida con el BUENO. Lo que se afirma es lo único que le importa al
+  // profesional: que en ninguna de las dos pantallas aparezca el viejo.
+  const VIEJO = { ...COBRO_PENDIENTE, numero: 'F-2026-0001' };
+  const NUEVO = { ...COBRO_PENDIENTE, numero: 'F-2026-0009' };
+  const red = porLlamada([{ ms: 60, datos: [VIEJO] }, { ms: 5, datos: [NUEVO] }]);
   const banco = cargarDashboard(RAIZ, { red });
-  banco.ctx.COBROS_PLAZO_MS = 5;
-  const contenedor = banco.mk('div');
-  banco.ctx.renderCobrosView(contenedor);
+  const c1 = banco.mk('div');
+  const c2 = banco.mk('div');
+  banco.ctx.renderCobrosView(c1);
+  banco.ctx.renderCobrosView(c2); // la segunda deja obsoleta a la primera
 
-  const antes = banco.ctx.cobrosSecuencia;
-  assert.equal(typeof antes, 'number',
-    '🔴 no hay contador de secuencia: sin él, una respuesta vieja pinta encima de una nueva.');
-  banco.ctx.cobrosSecuencia = antes + 1; // como si se hubiera lanzado otra petición
-
-  await new Promise((res) => setTimeout(res, 90));
-  const texto = todos(contenedor).map((n) => n.textContent).filter(Boolean).join(' | ');
-  assert.ok(!/F-2026-0007/.test(texto),
+  await new Promise((res) => setTimeout(res, 120));
+  assert.equal(red.reg.peticiones.length, 2,
+    `suelo: hacen falta DOS peticiones para que haya carrera (${red.describir()}).`);
+  const texto = [...todos(c1), ...todos(c2)].map((n) => n.textContent).filter(Boolean).join(' | ');
+  assert.match(texto, /F-2026-0009/,
+    'suelo: la respuesta BUENA tiene que haberse pintado, o este test no prueba nada.');
+  assert.ok(!/F-2026-0001/.test(texto),
     '🔴 la respuesta de una petición VIEJA ha pintado. Con una más nueva en marcha, eso sustituye ' +
     'datos buenos por datos peores y el profesional se queda mirando una lista vieja sin saberlo.');
 });
@@ -167,7 +185,7 @@ test('SCRUM-448 · tras el aviso, FILTRAR no lo convierte en «no hay cobros»',
   // aviso volvía a llamar a `pintarFilas()` con la lista vacía y la pantalla decía «no hay cobros».
   const red = aceptaYNoEntrega();
   const banco = cargarDashboard(RAIZ, { red });
-  banco.ctx.COBROS_PLAZO_MS = 5;
+  banco.ctx.PLAZO_RED_MS = 5;
   const contenedor = banco.mk('div');
   banco.ctx.renderCobrosView(contenedor);
   await new Promise((res) => setTimeout(res, 40));
@@ -184,31 +202,30 @@ test('SCRUM-448 · tras el aviso, FILTRAR no lo convierte en «no hay cobros»',
     '🔴 al filtrar se ha perdido el aviso y la tabla se ha quedado muda.');
 });
 
-test('SCRUM-448 · el plazo son 10 s, en UNA constante con nombre y en UN sitio', () => {
+test('SCRUM-448 · Cobros ya NO tiene plazo propio: el de la casa es el de `apiRequest`', () => {
+  // SCRUM-451 · EL GUARD NO SE BORRA, SE REAPUNTA. Lo que vigilaba —«el plazo vive en UN sitio»—
+  // sigue siendo lo mismo; lo que cambió es cuál es ese sitio. Aquí se comprueba la mitad que le
+  // toca a esta vista: que **no se ha quedado con el suyo**. La otra mitad —que en `api.js` hay una
+  // sola constante y son 10 s— la comprueba `scrum451-plazo-de-red.test.mjs`.
   const fuente = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/cobrosView.js'), 'utf8');
-  assert.match(fuente, /var COBROS_PLAZO_MS = \(typeof window !== 'undefined' && window\.COBROS_PLAZO_MS\) \|\| 10000;/,
-    '🔴 el plazo no son 10000 ms en su constante. Decisión del fundador, y va en UN sitio porque ' +
-    'este número cambia en cuanto midamos: cambiarlo tiene que ser cambiar una línea.');
-  const usos = (fuente.match(/COBROS_PLAZO_MS/g) || []).length;
-  assert.equal(usos, 3,
-    `🔴 \`COBROS_PLAZO_MS\` aparece ${usos} veces (esperadas 3: el comentario del bloque, la ` +
-    'declaración y el `setTimeout`). Si hay otra, el plazo ya vive en dos sitios.');
-  // Sin comentarios y SIN la línea de la propia declaración: si no, el escáner se caza a sí mismo
-  // con el `10000` que va a buscar. (Ante un rojo raro, el primer sospechoso es el escáner — y lo
-  // era: esta aserción nació roja por eso.)
-  const codigo = fuente
-    .replace(/\/\/[^\n]*|\/\*[^]*?\*\//g, '')
-    .split('\n').filter((l) => !l.includes('var COBROS_PLAZO_MS =')).join('\n');
+  const codigo = fuente.replace(/\/\/[^\n]*|\/\*[^]*?\*\//g, '');
+  assert.doesNotMatch(codigo, /COBROS_PLAZO_MS/,
+    '🔴 Cobros ha vuelto a tener su propio plazo. Dos plazos son dos números que se separan: el ' +
+    'segundo sitio donde se copia una decisión es donde deja de ser una decisión y pasa a ser una ' +
+    'costumbre.');
+  assert.doesNotMatch(codigo, /\bsetTimeout\b/,
+    '🔴 ha vuelto un temporizador a esta vista. El plazo lo pone `apiRequest`, y si aquí hace falta ' +
+    'otro es que el común no llega — eso se arregla en el común, no aquí.');
   assert.doesNotMatch(codigo, /\b1[05]000\b/,
-    '🔴 hay otro número de plazo suelto fuera de la constante. El plazo vive en UN sitio porque va ' +
-    'a cambiar en cuanto midamos.');
+    '🔴 hay un número de plazo suelto en Cobros. El plazo vive en UN sitio porque va a cambiar en ' +
+    'cuanto midamos.');
 });
 
 test('SCRUM-448 · el plazo NO pisa una respuesta que sí llegó', async () => {
   // Control negativo del plazo: si llega a tiempo, el aviso no puede aparecer después y borrar los
   // datos que el profesional ya está leyendo.
   const banco = cargarDashboard(RAIZ, { red: redNormal([COBRO_PENDIENTE]) });
-  banco.ctx.COBROS_PLAZO_MS = 5;
+  banco.ctx.PLAZO_RED_MS = 5;
   const contenedor = banco.mk('div');
   banco.ctx.renderCobrosView(contenedor);
   await new Promise((res) => setTimeout(res, 40));
