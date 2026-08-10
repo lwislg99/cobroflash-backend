@@ -5,6 +5,7 @@ import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: dinero = admin)
 import { seesOnlyOwnJobs, seesAllJobs, adminOnlyJobField } from '../../../../core/http/roleCapabilities'; // SCRUM-147 / SCRUM-164
+import { listExpenses } from '../../../expenses/domain/expenses.service'; // SCRUM-370: los gastos de ESTE Trabajo
 import { canTransition, estadoCobroFor, importeDeReferencia, JOB_TIPOS_OPERACION } from '../../domain/job.service';
 import { recordAudit, actorDeRequest, sobreFiscal, flagsFiscalesDe } from '../../../system/audit.service'; // SCRUM-66 · SCRUM-207 · SCRUM-206b
 import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo } from '../../../quotes/domain/billingPlan';
@@ -478,6 +479,52 @@ router.get('/:id', async (req, res) => {
     return res.json(await serializeJobDetail(job));
   } catch (err: any) {
     console.error('[GET /admin/jobs/:id]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * GET /admin/jobs/:id/gastos — SCRUM-370: LOS GASTOS DE ESTE TRABAJO.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * EL DEFECTO: QUIEN PUEDE CREAR ALGO NO PODÍA VOLVER A VERLO
+ *
+ * «+ Añadir gasto» se construyó **para el técnico** (SCRUM-135: compra material en la furgoneta y
+ * lo registra sin llamar al jefe). Pero `GET /admin/expenses` es `requireRole('admin')` y su nav
+ * está oculto, así que tras el toast de confirmación **el gasto desaparecía para él para
+ * siempre**. No es que no se guardara —se guarda, con su `quoteId`—: es que su autor no podía
+ * comprobarlo.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * POR QUÉ UNA RUTA POR TRABAJO Y NO ABRIR `GET /admin/expenses` AL TÉCNICO
+ *
+ * Abrir el listado global con `?quoteId=` habría dejado enumerar cotizaciones y ver los gastos de
+ * CUALQUIER trabajo del merchant, incluidos los que no son suyos. Esta ruta cuelga del Trabajo, así
+ * que hereda el mismo candado que `GET /admin/jobs/:id`: tenencia por `merchantId` **y** la regla
+ * de SCRUM-147 —un técnico solo ve SUS Trabajos—. Se abre lo justo, y por el sitio que ya decide
+ * quién puede mirar.
+ *
+ * ⚠️ ALCANCE DECLARADO, y el límite es del ticket vecino: **sin totales, sin márgenes y sin
+ * comparar con el presupuesto**. Eso es rentabilidad por obra y tiene su propio camino
+ * (`GET /admin/expenses/margin/:quoteId`, admin-only), que aquí NO se toca. Esto solo devuelve lo
+ * que el usuario metió, para que pueda verlo.
+ */
+router.get('/:id/gastos', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
+    if (!job) return res.status(404).json({ error: 'not_found' });
+    if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
+      return res.status(404).json({ error: 'not_found' });
+    }
+    // Un Trabajo sin cotización no puede tener gastos vinculados: el gasto se ata por `quoteId`.
+    // Lista VACÍA, no 404: «no tiene gastos» es una respuesta, no un error.
+    if (job.quoteId == null) return res.json({ gastos: [] });
+    const gastos = await listExpenses(req.merchantId!, { quoteId: job.quoteId });
+    return res.json({ gastos });
+  } catch (err: any) {
+    console.error('[GET /admin/jobs/:id/gastos]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });
