@@ -154,11 +154,11 @@ export function contenidoSegunVersion(
   if (version == null) {
     // Sin firmar: los campos de hoy. Es el estado de un borrador, no una versión desconocida.
     return {
-      obra: fuentes.lugarEntrega ?? null,
-      referenciaTrabajo: fuentes.referenciaTrabajo ?? null,
-      cliente: fuentes.cliente ?? null,
-      emisor: fuentes.emisor ?? null,
-      emisorNif: fuentes.emisorNif ?? null,
+      obra: fuentes.lugarEntrega || null,
+      referenciaTrabajo: fuentes.referenciaTrabajo || null,
+      cliente: fuentes.cliente || null,
+      emisor: fuentes.emisor || null,
+      emisorNif: fuentes.emisorNif || null,
     };
   }
   const mapa = Object.prototype.hasOwnProperty.call(FUENTES_POR_VERSION, version)
@@ -175,7 +175,13 @@ export function contenidoSegunVersion(
     const origen = mapa[clave];
     salida[clave] = origen === 'congelado'
       ? (congelado as ContenidoCongelado)[clave]
-      : ((fuentes as unknown as Record<string, string | null>)[origen] ?? null);
+      // 🔴 `|| null`, NO `?? null`, y la diferencia NO es de estilo — es la CONDICIÓN DURA del
+      // ticket. El `obraSegunVersion` al que esto sustituye colapsaba con `||`
+      // (`fuentes.jobDireccion || null`), y el verificador colapsa igual en `normalizar()`. Con
+      // `??`, una cadena vacía SOBREVIVE donde antes moría: el PDF de un albarán v:1 o v:2
+      // imprimiría `''` donde hoy no imprime nada, y `recomputarHashDeEvidencia` sacaría OTRO
+      // hash sobre un documento intacto. Medido: 12 combinaciones divergían.
+      : ((fuentes as unknown as Record<string, string | null>)[origen] || null);
   }
   return salida;
 }

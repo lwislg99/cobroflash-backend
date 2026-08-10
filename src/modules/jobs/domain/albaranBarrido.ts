@@ -111,7 +111,11 @@ export function entradaDesdeFilas(
       // del sobre (v:1 → `Job.direccion`; v:2 → `Albaran.lugarEntrega`) y elegir es trabajo de la
       // receta, no del adaptador. Es el contrato escrito de `FuentesContenido`.
       jobDireccion: job?.direccion || null,
-      lugarEntrega: a.lugarEntrega ?? null,
+      // SCRUM-438: `|| null` como el sellador, que es lo que este adaptador copia. Era `?? null`, y
+      // el efecto no cambia —`normalizar()` colapsa igual antes de que la receta lo vea—, pero el
+      // texto sí: el guard cara las DOS resoluciones, y dos formas distintas de escribir lo mismo
+      // le obligan a decidir cuál de las dos es «la buena». No tiene que decidir nada.
+      lugarEntrega: a.lugarEntrega || null,
       referenciaTrabajo: job?.titulo || null,
       cliente: customer?.legalName || customer?.name || null,
       emisor: merchant?.legalName || merchant?.name || null,

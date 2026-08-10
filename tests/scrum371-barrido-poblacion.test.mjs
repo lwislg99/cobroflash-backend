@@ -766,7 +766,7 @@ test('SCRUM-371 · SUELO del comparador: ve una resolución cambiada, y resuelve
     async function buildFirmaEvidencia(params) {
       const cliente = customer?.legalName || customer?.name || null;
       const contenidoCongelado = {
-        obra: a.lugarEntrega ?? null,
+        obra: a.lugarEntrega || null,
         referenciaTrabajo: job?.titulo || null,
         cliente,
         emisor: merchant?.name || null,
@@ -782,8 +782,9 @@ test('SCRUM-371 · SUELO del comparador: ve una resolución cambiada, y resuelve
     '`legalName || name`. Ese cambio movería el hash de cada sobre v:3 nuevo respecto de como el ' +
     'barrido recalcula los viejos, y este guard lo habría dejado pasar.');
   assert.equal(mismaResolucion(adaptador.get('lugarEntrega'), b.get('obra')), true,
-    '🔴 CONTROL NEGATIVO: el comparador dice que `a.lugarEntrega ?? null` y `a.lugarEntrega ?? null` ' +
-    'son distintos. Si marcara diferencias donde no las hay, sus rojos no significarían nada.');
+    '🔴 CONTROL NEGATIVO: el comparador marca como distintas dos resoluciones que SÍ son la misma ' +
+    `(barrido «${adaptador.get('lugarEntrega')}» vs bloque «${b.get('obra')}»). Si marcara ` +
+    'diferencias donde no las hay, sus rojos no significarían nada.');
 });
 
 test('SCRUM-371 · el adaptador NO importa nada del sellador: dos testigos, no un espejo', () => {

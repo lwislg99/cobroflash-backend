@@ -650,7 +650,12 @@ export async function buildFirmaEvidencia(params: {
   //
   // ⚠️ CERO CONSULTAS NUEVAS: `job`, `customer` y `merchant` ya estaban leídos arriba.
   const contenidoCongelado: ContenidoCongelado = {
-    obra: a.lugarEntrega ?? null,
+    // 🔴 `|| null`, y NO `?? null`. v:2 resolvía esto como `obraSegunVersion(2, { lugarEntrega:
+    // a.lugarEntrega ?? null, … })`, y esa función colapsaba con `||`: el efecto era
+    // `a.lugarEntrega || null`. Con `??` a secas, un `lugarEntrega` vacío se CONGELARÍA como `''`
+    // donde v:2 congelaba `null` — un cambio de hash que nadie pidió, en la única línea del ticket
+    // que toca el sellado. Es exactamente lo que avisa el párrafo de arriba.
+    obra: a.lugarEntrega || null,
     referenciaTrabajo: job?.titulo || null,
     cliente,
     emisor: merchant?.legalName || merchant?.name || null,
