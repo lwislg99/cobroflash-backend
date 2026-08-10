@@ -29,7 +29,7 @@ async function crearFactura(prisma, merchantId, customerId, numero, createdAt) {
   });
 }
 
-test('SCRUM-173 ①: sellar DENTRO de una transacción está prohibido (rompería el lote)', { skip: !ENABLED }, async () => {
+test('SCRUM-173 ①: sellar DENTRO de una transacción está prohibido (rompería el lote)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { applyVeriFactu } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
 
@@ -59,7 +59,7 @@ test('SCRUM-173 ①: sellar DENTRO de una transacción está prohibido (romperí
   });
 });
 
-test('SCRUM-173 ②: dos facturas con el MISMO createdAt encadenan de forma determinista', { skip: !ENABLED }, async () => {
+test('SCRUM-173 ②: dos facturas con el MISMO createdAt encadenan de forma determinista', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { applyVeriFactu } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
 
@@ -88,7 +88,7 @@ test('SCRUM-173 ②: dos facturas con el MISMO createdAt encadenan de forma dete
   });
 });
 
-test('SCRUM-173 ③: dos sellados CONCURRENTES se serializan y no comparten prev', { skip: !ENABLED }, async () => {
+test('SCRUM-173 ③: dos sellados CONCURRENTES se serializan y no comparten prev', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { applyVeriFactu } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
 
@@ -118,7 +118,7 @@ test('SCRUM-173 ③: dos sellados CONCURRENTES se serializan y no comparten prev
   });
 });
 
-test('SCRUM-173: las cadenas YA PERSISTIDAS siguen siendo válidas tras el cambio', { skip: !ENABLED }, async () => {
+test('SCRUM-173: las cadenas YA PERSISTIDAS siguen siendo válidas tras el cambio', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { computeVeriFactuHash, formatFechaHoraHuso } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
 
@@ -162,7 +162,7 @@ test('SCRUM-173: las cadenas YA PERSISTIDAS siguen siendo válidas tras el cambi
 // Sin esto el arreglo quedaba a medias, que es peor que dos mecanismos declarados: parece uno
 // solo. Un alta y una anulación simultáneas del mismo emisor encadenarían al mismo eslabón.
 
-test('SCRUM-173b: sellar una ANULACIÓN dentro de una transacción está prohibido', { skip: !ENABLED }, async () => {
+test('SCRUM-173b: sellar una ANULACIÓN dentro de una transacción está prohibido', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { applyVeriFactu, applyVeriFactuAnulacion } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
 
@@ -212,7 +212,7 @@ test('SCRUM-173b: sellar una ANULACIÓN dentro de una transacción está prohibi
 // registro anterior. Con dos cadenas, apuntar a un eslabón sin decir a cuál pertenece sería
 // irreconstruible para la AEAT.
 
-test('SCRUM-177: el alta siguiente a una ANULACIÓN encadena a ELLA, no al alta anterior', { skip: !ENABLED }, async () => {
+test('SCRUM-177: el alta siguiente a una ANULACIÓN encadena a ELLA, no al alta anterior', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { applyVeriFactu, applyVeriFactuAnulacion } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
 
@@ -243,7 +243,7 @@ test('SCRUM-177: el alta siguiente a una ANULACIÓN encadena a ELLA, no al alta 
   });
 });
 
-test('SCRUM-177: excluirId — resellar un alta no la encadena a sí misma', { skip: !ENABLED }, async () => {
+test('SCRUM-177: excluirId — resellar un alta no la encadena a sí misma', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { applyVeriFactu } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
 

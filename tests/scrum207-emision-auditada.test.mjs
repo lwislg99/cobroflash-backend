@@ -113,7 +113,7 @@ test('SCRUM-207 · y también falla el justificante si su registro falla', async
 // ── GATEADO · la garantía de verdad, contra PostgreSQL ────────────────────────────────
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-207 · GATEADO: si el registro falla, la EMISIÓN NO OCURRE (rollback real)', { skip: !ENABLED }, async () => {
+test('SCRUM-207 · GATEADO: si el registro falla, la EMISIÓN NO OCURRE (rollback real)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { withMerchant } = await import('./_merchant-fixture.mjs');
 
@@ -176,7 +176,7 @@ test('SCRUM-207 · GATEADO: si el registro falla, la EMISIÓN NO OCURRE (rollbac
   });
 });
 
-test('SCRUM-207 · GATEADO: camino feliz — la factura y su registro se confirman JUNTOS', { skip: !ENABLED }, async () => {
+test('SCRUM-207 · GATEADO: camino feliz — la factura y su registro se confirman JUNTOS', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { withMerchant } = await import('./_merchant-fixture.mjs');
 

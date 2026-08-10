@@ -16,7 +16,7 @@ test('JOB_TIPOS_OPERACION: enum cerrado de 2 valores', () => {
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-66: tipoOperacion — default, edición, validación, audit del cambio y tenancy', { skip: !ENABLED }, async () => {
+test('SCRUM-66: tipoOperacion — default, edición, validación, audit del cambio y tenancy', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);

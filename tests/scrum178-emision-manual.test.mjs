@@ -45,7 +45,7 @@ test('SCRUM-178 (aritmética, sin BD): el tramo único al 100 % reproduce las l�
   }
 });
 
-test('SCRUM-178: emisión manual — emite UNA vez, con líneas, y cierra las cuatro puertas', { skip: !ENABLED }, async (t) => {
+test('SCRUM-178: emisión manual — emite UNA vez, con líneas, y cierra las cuatro puertas', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { grossOfLines } = await import('../dist/modules/invoicing/domain/invoiceLines.service.js');

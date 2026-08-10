@@ -41,7 +41,7 @@ async function moduloDeLog() {
   return (await import('../dist/modules/messaging/domain/whatsappLog.service.js')).default;
 }
 
-test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-teléfono, tenancy 404', { skip: !ENABLED }, async () => {
+test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-teléfono, tenancy 404', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);

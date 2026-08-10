@@ -35,7 +35,7 @@ async function moduloDeLog() {
 
 const ENABLED = process.env.A55_DB_TEST === '1';
 
-test('A5.5: ventana abierta → envío de presupuesto por SESIÓN (service), no plantilla', { skip: !ENABLED }, async () => {
+test('A5.5: ventana abierta → envío de presupuesto por SESIÓN (service), no plantilla', { skip: !ENABLED && 'sin A55_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   assert.equal(process.env.WHATSAPP_DRY_RUN, '1', 'este test exige WHATSAPP_DRY_RUN=1');
 
   const { prisma } = await import('../dist/core/db/prisma.js');

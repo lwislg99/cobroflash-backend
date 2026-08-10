@@ -16,7 +16,7 @@ import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-106: trabajos.csv por fecha de EJECUCIÓN — el de junio ejecutado en julio sale en julio', { skip: !ENABLED }, async (t) => {
+test('SCRUM-106: trabajos.csv por fecha de EJECUCIÓN — el de junio ejecutado en julio sale en julio', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { buildTrabajos, CAMPO_FECHA_TRABAJOS } =
     await import('../dist/modules/exports/domain/exportData.js');

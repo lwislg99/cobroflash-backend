@@ -47,7 +47,7 @@ import { withMerchant } from './_merchant-fixture.mjs';
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos', { skip: !ENABLED }, async () => {
+test('SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { allocateInvoiceNumber } = await import('../dist/modules/invoicing/domain/invoiceNumber.service.js');
 
