@@ -69,6 +69,21 @@ var COBROS_COPY = {
  * profesional piensa en cuatro. La distinción no se pierde: se lee en la fila de cada cobro.
  * Filtrar por cuatro, leer los cinco.
  */
+/**
+ * SCRUM-448 · CUÁNTO SE ESPERA ANTES DE DECIR QUE NO SE PUDO CARGAR.
+ *
+ * ⚠️ Es una DECISIÓN DE PRODUCTO, no un detalle técnico, y **no hay precedente en la casa**: hoy
+ * ninguna petición del dashboard tiene plazo (medido: cero `AbortController`, cero `signal`, cero
+ * constante de espera). Quince segundos es lo que he elegido para una obra con mala cobertura —
+ * bastante para que una red lenta llegue, poco para no dejar al profesional mirando una tabla muda.
+ * **Queda pendiente de que el asesor confirme el número**; el texto que se enseña al vencer ya está
+ * aprobado, así que lo único abierto es cuánto se espera.
+ *
+ * Se lee de `window` para que un test pueda bajarlo: probar el vencimiento esperando quince
+ * segundos de verdad sería un test que nadie corre.
+ */
+var COBROS_PLAZO_MS = (typeof window !== 'undefined' && window.COBROS_PLAZO_MS) || 15000;
+
 var COBROS_METODOS = [
   { clave: 'bizum', rotulo: 'Bizum', casa: ['bizum_auto', 'bizum_manual'] },
   { clave: 'card', rotulo: 'tarjeta', casa: ['card'] },
@@ -128,6 +143,16 @@ function renderCobrosView(container) {
 
   var filtro = 'all';
   var datos = [];
+  // 🔴 SCRUM-448 · EL TERCER ESTADO: «TODAVÍA NO LO SABEMOS».
+  //
+  // SCRUM-285 separó con cuidado los dos vacíos —«no hay ninguno» y «tu filtro los esconde»— y se
+  // dejó el tercero fuera sin verlo: mientras la respuesta no ha llegado, `datos` está vacío y la
+  // pantalla caía en el primero. Con mala cobertura, el profesional abría Cobros y leía **«Todavía
+  // no hay cobros registrados»**: le afirmábamos que no le debe nadie nada. En la pantalla del
+  // dinero eso no es impreciso, es falso — y se cierra tranquilo.
+  //
+  // Lo encontró el banco de SCRUM-362 en su primer uso, con el escenario «acepta y no entrega».
+  var cargado = false;
 
   var tablaScroll = document.createElement('div');
   tablaScroll.className = 'table-scroll';
@@ -184,6 +209,11 @@ function renderCobrosView(container) {
   function pintarFilas() {
     tbody.innerHTML = '';
     var lista = visibles();
+
+    // 🔴 MIENTRAS NO SE SABE, NO SE AFIRMA NADA. Ni «no hay cobros» ni «tu filtro los esconde»:
+    // las dos son afirmaciones sobre unos datos que todavía no han llegado. La tabla se queda sin
+    // filas —vacía y muda— y quien contesta cuando la respuesta no llega es el plazo de abajo.
+    if (!cargado) return;
 
     if (!lista.length) {
       // 🔴 DOS ESTADOS VACÍOS, Y NO SON INTERCAMBIABLES. Si no hay NINGÚN cobro, la pantalla lo
@@ -281,10 +311,10 @@ function renderCobrosView(container) {
   pintarFiltros();
   pintarFilas();
 
-  apiRequest('/admin/cobros').then(function (r) {
-    datos = Array.isArray(r) ? r : [];
-    pintarFilas();
-  }).catch(function () {
+  /** El aviso de que no se pudo cargar. Mismo texto aprobado para el fallo y para el plazo. */
+  function pintarNoSePudo() {
+    if (cargado) return; // ya llegó: no se pisa lo que sí sabemos
+    cargado = true;
     tbody.innerHTML = '';
     var tr = document.createElement('tr');
     var td = document.createElement('td');
@@ -292,6 +322,29 @@ function renderCobrosView(container) {
     td.textContent = COBROS_COPY.errorCarga;
     tr.appendChild(td);
     tbody.appendChild(tr);
+  }
+
+  // 🔴 EL CASO QUE DECIDE EL DISEÑO: ¿y si la respuesta NO LLEGA NUNCA?
+  //
+  // Es lo que hace una red que acepta y no entrega: la promesa no resuelve **ni rechaza**, así que
+  // sin plazo ni el `then` ni el `catch` corren jamás y la tabla se quedaría muda para siempre. Un
+  // indicador de carga eterno tampoco sirve: no miente, pero deja al profesional sin saber qué
+  // hacer.
+  //
+  // Al vencer se dice lo mismo que cuando falla, con el texto YA APROBADO en SCRUM-285 —«No hemos
+  // podido cargar los cobros. Vuelve a intentarlo.»—, porque para quien mira es el mismo hecho: no
+  // están sus datos y puede reintentar. Cero microcopy nueva.
+  var plazo = setTimeout(pintarNoSePudo, COBROS_PLAZO_MS);
+
+  apiRequest('/admin/cobros').then(function (r) {
+    clearTimeout(plazo);
+    if (cargado) return; // venció el plazo y ya se avisó: no se cambia lo que el pro está leyendo
+    datos = Array.isArray(r) ? r : [];
+    cargado = true;
+    pintarFilas();
+  }).catch(function () {
+    clearTimeout(plazo);
+    pintarNoSePudo();
   });
 }
 
