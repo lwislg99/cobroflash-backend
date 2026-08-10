@@ -552,3 +552,62 @@ exceso**. La C evita el término a propósito; queremos saber si hace falta.
 Las cinco clasificaciones del gremio —inversión del sujeto pasivo, IVA 10 % en obra de vivienda,
 retenciones 1 %/15 %, recargo de equivalencia en compras y bienes de inversión— están reportadas en
 SCRUM-280 punto 6 y **no son de este ticket**.
+
+---
+
+# P15. Los Libros Registro: el formato, y dos campos que no sabemos si existen (bloquea E4 / SCRUM-325 y SCRUM-426)
+
+> **Por qué esta pregunta importa más de lo que parece.** El bloque E se ancla en el libro de
+> registro **precisamente porque «cualquier despacho sabe leerlo» y no depende del plan contable de
+> nadie**. Es la pieza que sostiene la decisión de entregar LIBRO y no asiento. Y al medirla
+> aparece que la parte que la hace fiable —el formato— es la única que no está verificada.
+
+**Lo que ya está medido, para no preguntar lo que se puede leer.** Se ha barrido `docs/` y `src/`
+el 10-ago-2026:
+
+* **NO hay ninguna especificación del formato de Libros Registro** en el repositorio: ni diseño de
+  registro, ni orden ministerial, ni cita del articulado. Las únicas coincidencias son entradas
+  internas del máster citándose entre ellas.
+* Los **seis XSD oficiales** que sí están (`src/modules/fiscal/verifactu/xsd/`) son de **VeriFactu**
+  —`RegFactuSistemaFacturacion`, alta y anulación de registros de facturación—. Comprobado con
+  control positivo: reconocen `RegistroAlta`/`Anulacion`/`Desglose`, y tienen **cero** apariciones
+  de «recibida», «compra», «proveedor» o «soportado». La «LR» de `SuministroLR.xsd` es el suministro
+  de VeriFactu, **no los libros registro de IVA**.
+* El propio código lo declara desde el 7-ago y por eso **evita el nombre**: el libro que hoy
+  entregamos **no se llama «Libro Registro de la AEAT» en ninguna parte** del código ni de la UI,
+  porque *«ese nombre es una PROMESA y no hay documento oficial contra el que se haya contrastado el
+  formato»*.
+
+Lo que sí hace falta:
+
+**P15.1 · El formato de EMITIDAS.** Hoy entregamos un CSV por trimestre con once columnas: fecha de
+expedición, serie y número, tipo de factura, NIF y nombre del destinatario, base imponible, tipo de
+IVA, cuota, total, cobro y anulada (una fila por tipo de IVA, no por factura). **Están construidas
+por criterio propio, no contra un documento.** ¿Es ése el contenido y el orden que un despacho
+espera de un libro de facturas expedidas? ¿Falta alguna columna obligatoria — clave de operación,
+fecha de operación distinta de la de expedición, contraparte no establecida? ¿Y podemos llamarlo
+«Libro Registro» sin más, o el nombre exige algo que hoy no cumplimos?
+
+**P15.2 · La cuota deducible: ¿importe o sí/no?** El campo que acaba de entrar en producción es
+`vatDeducible`, un **booleano**: solo puede decir «toda» o «nada». Un libro de recibidas registra la
+**cuota deducible como importe**, y hay casos de deducción **parcial** —el habitual, los vehículos—
+que un booleano no puede expresar. ¿Necesitamos guardar la cuota deducible como **importe** en vez
+de (o además de) el sí/no? De la respuesta depende **una columna de schema**, no una línea de
+código.
+
+**P15.3 · ¿Hay número de recepción propio?** Lo que guardamos es
+`Expense.providerInvoiceNumber`: el número **del proveedor**. Tenemos entendido que un libro de
+recibidas numera además **sus propios asientos**, en orden de recepción, con un contador del
+receptor. ¿Es así? Si lo es, ese contador es **nuestro** y hoy no existe: hay que decidir su serie
+y su reinicio (¿anual, como la de emitidas?) antes de construirlo, no después.
+
+> **Nota de estado.** El **libro de recibidas** (SCRUM-426) se está construyendo **sin esperar a
+> estas respuestas**, y a propósito: el libro es **dato de dominio** y el formato es **otra capa**.
+> Encadenar los dos bloqueos retrasaría los dos sin que uno dependa del otro. Lo que P15 decide es
+> **cómo sale** y **si faltan campos**, no si se puede construir. Y mientras P15.1 no tenga
+> respuesta, el producto **sigue sin llamarlo «Libro Registro de la AEAT»** en ninguna parte.
+>
+> Pendiente de schema y ya aprobado en principio: `Provider.legalName` — hoy `Provider` solo tiene
+> `name` (nombre comercial) y `taxId`, mientras que `Customer` sí distingue `name` de `legalName`.
+> Un libro de recibidas identifica al proveedor por su **razón social**. No se hace una migración
+> de una sola columna: se acumula con la siguiente.
