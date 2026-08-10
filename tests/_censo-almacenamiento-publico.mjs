@@ -74,6 +74,9 @@ export function censarAlmacenamiento(raizPublic, raizRepo) {
               fichero: rel, linea: linea(n), almacen, op, clave,
               escribe: op === 'setItem',
               enElPanel: rel.startsWith(PANEL),
+              // SCRUM-457 · campo AÑADIDO, no sustituido: `clave` sigue diciendo exactamente lo que
+              // decía. Ver `resolverClave` para qué es y por qué puede ser `null`.
+              claveResuelta: resolverClave(n.arguments[0], sf),
               id: `${rel}::${almacen}.${op}('${clave}')`,
             });
           }
@@ -93,6 +96,54 @@ export function censarAlmacenamiento(raizPublic, raizRepo) {
   }
   accesos.sort((a, b) => a.id.localeCompare(b.id));
   return accesos;
+}
+
+/**
+ * SCRUM-457 · QUÉ CLAVE ES, cuando el argumento no es una cadena a secas.
+ *
+ * Hacía falta porque las dos claves que MÁS importan —el borrador y el catálogo con precios— se
+ * escriben como `localStorage.setItem(draftKey(), …)`, y el censo de SCRUM-336 las daba por «clave
+ * no literal». Para decidir si una clave está registrada hay que saber cómo empieza.
+ *
+ * Se resuelve UN salto, no más: literal, plantilla, o llamada a una función del MISMO fichero cuyo
+ * `return` es una de esas dos cosas. Es lo que hay hoy y no se inventa un intérprete.
+ *
+ * 🔴 Y CUANDO NO SE SABE, DEVUELVE `null` — que el guard trata como CEGUERA y pone en rojo, no
+ * como «no hay clave». Un `null` que se lee igual que «no existe» es lo que dejó dos vistas sin
+ * medir en SCRUM-448.
+ *
+ * @returns {{tipo:'exacta'|'prefijo', valor:string}|null}
+ */
+function resolverClave(arg, sf) {
+  if (!arg) return null;
+  if (ts.isStringLiteralLike(arg) && !ts.isTemplateExpression(arg)) {
+    return { tipo: 'exacta', valor: arg.text };
+  }
+  if (ts.isTemplateExpression(arg)) {
+    // `pf_quote_draft_${mid}` → todo lo que hay ANTES del primer hueco. Si no hay nada antes, el
+    // prefijo es vacío y eso no identifica nada: se declara ciego.
+    return arg.head.text ? { tipo: 'prefijo', valor: arg.head.text } : null;
+  }
+  if (ts.isCallExpression(arg) && ts.isIdentifier(arg.expression)) {
+    const nombre = arg.expression.text;
+    let hallada = null;
+    (function busca(n) {
+      if (hallada) return;
+      const esLaFuncion = (ts.isFunctionDeclaration(n) && n.name && n.name.text === nombre)
+        || ((ts.isFunctionExpression(n) || ts.isArrowFunction(n)) && ts.isVariableDeclaration(n.parent)
+            && ts.isIdentifier(n.parent.name) && n.parent.name.text === nombre);
+      if (esLaFuncion && n.body) {
+        (function buscaReturn(b) {
+          if (hallada) return;
+          if (ts.isReturnStatement(b) && b.expression) hallada = resolverClave(b.expression, sf);
+          ts.forEachChild(b, buscaReturn);
+        })(n.body);
+      }
+      ts.forEachChild(n, busca);
+    })(sf);
+    return hallada;
+  }
+  return null;
 }
 
 /**
