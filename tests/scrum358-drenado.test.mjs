@@ -241,10 +241,10 @@ test('SCRUM-358 · 🔴 una firma que falla NO bloquea a las demás, y NO se sal
     '🔴 la que quedó en la cola no es la que falló.');
 });
 
-test('SCRUM-358 · 🔴 una que NO RESPONDE tampoco bloquea: el drenado tiene su propio plazo', async () => {
-  // Sin plazo del drenado esto se colgaría para siempre: el POST de firmar no lo tiene
-  // (SCRUM-459) y contra «acepta y no entrega» la petición no vuelve NUNCA. Es el caso real del
-  // bloque, y sin este plazo «una que falle no bloquea a las otras» sería mentira.
+test('SCRUM-358 · 🔴 una que NO RESPONDE tampoco bloquea: el drenado se rinde y sigue', { timeout: 8000 }, async () => {
+  // Sin límite esto se colgaría para siempre: el POST de firmar no tiene plazo (SCRUM-459) y
+  // contra «acepta y no entrega» la petición no vuelve NUNCA. Es el caso real del bloque, y sin
+  // rendirse «una que falle no bloquea a las otras» sería mentira.
   const b = montarAlmacen(RAIZ);
   await sembrar(b, [10, 11]);
 
@@ -252,7 +252,20 @@ test('SCRUM-358 · 🔴 una que NO RESPONDE tampoco bloquea: el drenado tiene su
     10: () => new Promise(() => {}),    // no vuelve jamás
     11: { id: 11, estado: 'firmado' },
   });
-  const r = await b.ctx.drenarFirmasPendientes(subidor.fn, { plazoMs: 120 });
+
+  // 🔴 EL TEST LLEVA SU PROPIO TOPE, y no es ceremonia: si el drenado deja de rendirse, sin esto
+  // el fichero entero se queda colgado hasta que alguien lo mate desde fuera —medido: 60 s— y el
+  // rojo llega como «test failed» sin decir qué. Aquí cae en 2 s diciendo exactamente qué se rompió.
+  const r = await Promise.race([
+    b.ctx.drenarFirmasPendientes(subidor.fn, { plazoMs: 120 }),
+    new Promise((_r, rechazar) => {
+      const t = setTimeout(() => rechazar(new Error(
+        '🔴 EL DRENADO SE HA COLGADO EN UNA FIRMA QUE NO RESPONDE. El POST de firmar no tiene ' +
+        'plazo, así que contra una red que acepta y no entrega esa petición no vuelve nunca: sin ' +
+        'rendirse, las demás firmas del profesional NO SUBEN JAMÁS y nadie lo sabe.')), 2000);
+      if (t.unref) t.unref();
+    }),
+  ]);
 
   assert.equal(subidor.llamadas.length, 2,
     '🔴 EL DRENADO SE HA COLGADO EN LA PRIMERA. Las demás firmas del profesional no subirían ' +
