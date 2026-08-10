@@ -339,6 +339,49 @@ export function exigirNombreFirmante(v: unknown): { ok: true; nombre: string } |
   return { ok: true, nombre };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-361 (H6) · EL ALBARÁN CAMBIÓ MIENTRAS EL CLIENTE LO TENÍA ABIERTO
+//
+// Lo lee EL CLIENTE, no el profesional, en la página pública de firma. **APROBADO por el asesor**
+// (10-ago-2026), literal: no se reescribe ni se acorta aquí — reformularlo es cambio de máster.
+//
+// Lo que NO dice, y es lo que costó aprobarlo: no suena a error del programa —nada de «ha
+// ocurrido un error» ni «sesión caducada»— y no le pide al cliente entender qué ha pasado por
+// dentro. Le dice lo único que necesita saber: que lo que tiene delante ya no es lo que hay, y
+// que mire otra vez.
+//
+// 🔴 Y el código de error es `albaran_cambiado`, no `conflict`: quien lo lea en un log tiene que
+// saber QUÉ pasó sin abrir el fichero.
+export const ERROR_ALBARAN_CAMBIADO = 'albaran_cambiado';
+export const COPY_ALBARAN_CAMBIADO =
+  'Este albarán ha cambiado desde que abriste esta página. Míralo otra vez antes de firmar.';
+export const COPY_ALBARAN_CAMBIADO_BOTON = 'Ver la versión actual';
+
+/**
+ * 🔴 ¿SE PUEDE FIRMAR ESTA VERSIÓN? — la comparación, en UNA función y no en la ruta.
+ *
+ * Vive aquí por lo mismo que `exigirNombreFirmante`: firmar es un ACTO, y el día que una segunda
+ * superficie firme, tiene que preguntar lo mismo. Una comparación escrita dentro de una ruta es
+ * una comparación que la siguiente ruta no hará.
+ *
+ * ⚠️ **SI LA VERSIÓN NO LLEGA, NO SE FIRMA.** Un cliente con la página vieja en caché, o un enlace
+ * de antes de este ticket, manda la firma SIN versión — y eso NO es «coincide»: es «no lo sé».
+ * La asimetría de coste manda: perder una firma que hay que repetir cuesta cinco minutos; sellar
+ * un contenido que el cliente no vio no se deshace. Ante la duda, se bloquea.
+ */
+export function puedeFirmarEstaVersion(
+  vistaPorElCliente: unknown,
+  laDeAhora: number,
+): { ok: true } | { ok: false; error: string; message: string } {
+  const vista = typeof vistaPorElCliente === 'number' && Number.isInteger(vistaPorElCliente)
+    ? vistaPorElCliente
+    : null;
+  if (vista === null || vista !== laDeAhora) {
+    return { ok: false, error: ERROR_ALBARAN_CAMBIADO, message: COPY_ALBARAN_CAMBIADO };
+  }
+  return { ok: true };
+}
+
 /**
  * Normaliza el lugar de entrega. ⚠️ SUELO (lo pide el ticket y el asesor lo reafirma): vacío se
  * queda VACÍO. Nunca se cae al domicilio fiscal ni a ninguna otra dirección «parecida» — poner

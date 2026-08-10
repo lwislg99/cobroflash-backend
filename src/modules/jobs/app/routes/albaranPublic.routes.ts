@@ -19,8 +19,11 @@ import {
   FIRMANTE_OTRO_MAX,
   COPY_CALIDAD_OTRO_VACIO,
   COPY_FIRMA_SIN_NOMBRE,
+  COPY_ALBARAN_CAMBIADO,
+  COPY_ALBARAN_CAMBIADO_BOTON,
   firmanteCalidadOpciones,
   exigirNombreFirmante,
+  puedeFirmarEstaVersion,
   resolverCalidadFirmante,
 } from '../../domain/albaranFirmante';
 import { sendAlbaranFirmadoWhatsApp } from '../../domain/albaranWhatsApp.service';
@@ -82,6 +85,11 @@ function renderPage(title: string, body: string): string {
   .btn-accept:active{background:#15803d;transform:translateY(1px)}
   .btn-accept:disabled{opacity:.5;cursor:default}
   .status-ok{background:#ecfdf5;border-radius:12px;padding:16px;text-align:center}
+  /* SCRUM-361 (H6): el albarán cambió mientras esta página estaba abierta. Hermana de .status-ok
+     y NO de un error: mismo radio, mismo padding, mismo centrado — solo cambia el tono. Que no
+     parezca un fallo del programa es condición del texto aprobado, y el color es parte del texto. */
+  .status-aviso{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:16px;
+    text-align:center;color:#3f4a45;font-size:15px;line-height:1.45}
   .status-ok strong{color:#166534}
   .success-check{width:72px;height:72px;border-radius:50%;background:#16a34a;color:#fff;font-size:40px;
     display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
@@ -282,6 +290,10 @@ router.get('/:token', async (req: Request, res: Response) => {
           const r=await fetch(${JSON.stringify(`/albaran/${req.params.token}/firmar`)},{
             method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
               signatureData:sig,
+              // SCRUM-361 (H6): la versión que ESTA PÁGINA pintó. El servidor la compara con la de
+              // ahora y NO sella si difieren — el cliente no puede firmar algo que no vio. No es
+              // un hash: es el contador de fila que el PATCH ya incrementaba.
+              version:${JSON.stringify(albaran.version)},
               firmadoPorNombre:(document.getElementById('firmante-nombre')||{}).value||'',
               firmadoPorCalidad:cal?cal.value:'',
               firmadoPorCalidadOtro:(document.getElementById('firmante-otro')||{}).value||''
@@ -291,8 +303,20 @@ router.get('/:token', async (req: Request, res: Response) => {
               '<div style="text-align:center;padding:12px 0"><div class="success-check">✓</div>'+
               '<h1>¡Parte firmado!</h1><p class="meta">Gracias, ${customerName}. Recibirás tu copia por WhatsApp.</p></div>';
           } else {
+            const d=await r.json().catch(()=>({}));
+            // 🔴 SCRUM-361: el albarán cambió mientras esta página estaba abierta. NO es un error
+            // de validación y no puede parecerlo: va en un aviso propio con su botón, no en la
+            // línea roja de «dibuja tu firma». Y se RETIRA el botón de firmar — dejarlo activo
+            // invitaría a reintentar lo mismo, que es exactamente lo que no debe pasar.
+            if(d.error===${JSON.stringify('albaran_cambiado')}){
+              document.querySelector('.card').innerHTML=
+                '<div class="status-aviso"><strong>'+${JSON.stringify(COPY_ALBARAN_CAMBIADO)}+'</strong>'+
+                '<button type="button" class="btn-accept" style="margin-top:14px" onclick="location.reload()">'+
+                ${JSON.stringify(COPY_ALBARAN_CAMBIADO_BOTON)}+'</button></div>';
+              return;
+            }
             btn.disabled=false; btn.textContent='Firmar el parte de trabajo';
-            const d=await r.json().catch(()=>({})); const e=document.getElementById('sig-error');
+            const e=document.getElementById('sig-error');
             e.textContent=d.message||'No se pudo firmar. Inténtalo de nuevo.'; e.style.display='block';
           }
         }catch(_){ btn.disabled=false; btn.textContent='Firmar el parte de trabajo';
@@ -310,6 +334,26 @@ router.post('/:token/firmar', firmaLimiter, async (req: Request, res: Response) 
     if (albaran.estado === 'firmado') return res.json({ ok: true, already: true }); // idempotente
     if (!canTransitionAlbaran(albaran.estado, 'firmado')) {
       return res.status(409).json({ error: 'invalid_transition', message: 'Este parte de trabajo no se puede firmar ahora.' });
+    }
+
+    // ── 🔴 SCRUM-361 (H6) · ¿SIGUE SIENDO EL ALBARÁN QUE EL CLIENTE VIO? ──────────────────────
+    //
+    // El PATCH solo se bloquea cuando el albarán ya está FIRMADO (`albaranes.routes.ts`), así que
+    // un albarán ENVIADO A FIRMAR todavía se puede editar. Si el profesional corrige una línea
+    // mientras el cliente tiene el enlace abierto, el cliente firma la pantalla que tenía y queda
+    // sellado un contenido que NO VIO. La firma vale cero y parece que vale.
+    //
+    // Se compara ANTES de mirar la firma a propósito: si el documento ya no es el mismo, lo que
+    // haya dibujado da igual, y el cliente prefiere enterarse antes que después de firmar.
+    //
+    // ⚠️ NO se recalcula ningún hash aquí ni en el navegador. `Albaran.version` es —hoy,
+    // medido— «el contenido del documento cambió»: la incrementa un solo escritor, el PATCH, y
+    // es el único que toca contenido. Duplicar `computeAlbaranContentHash` en el cliente era el
+    // riesgo que H0 señaló (dos implementaciones que derivan en silencio) y esto lo evita entero.
+    // Que siga siendo verdad lo vigila `tests/scrum361-version-al-firmar.test.mjs`.
+    const mismaVersion = puedeFirmarEstaVersion(req.body?.version, albaran.version);
+    if (!mismaVersion.ok) {
+      return res.status(409).json({ error: mismaVersion.error, message: mismaVersion.message });
     }
 
     const signatureData = String(req.body?.signatureData || '');
