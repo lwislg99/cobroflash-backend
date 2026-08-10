@@ -128,3 +128,88 @@ gate existente: los 7 siguen gateados exactamente igual, porque siguen necesitan
 regla 36. Medido: son 7 tests que **hoy pasan** y que cubren tenencia fiscal contra el motor real y
 el cuadre de las tres pantallas al céntimo — lo que hoy no se comprueba en ningún merge. El día que
 entre, este guard se pone rojo y pide bajar el inventario a 0, que es como tiene que enterarse.
+
+---
+---
+
+# SCRUM-419 · segunda entrega · Postgres EN CI, con GO del fundador
+
+**Medido contra:** `origin/main` = `7f826e61f5ce1a82d5def188451ef16125f7e704` · 2026-08-10T18:48:34+02:00
+
+## 🔴 Mi encuadre estaba mal, y el fundador lo corrigió
+
+Escribí que montar Postgres en CI era **coste recurrente y regla 36**. No lo es: un
+`services: postgres` en GitHub Actions es **un contenedor que levanta el propio runner** — sin
+suscripción, sin proveedor nuevo, sin factura. Nace y muere con el job.
+
+Con eso, el ticket que yo mandaba a la cola **entra aquí**.
+
+## Lo que entra en `ci.yml`
+
+Un servicio `postgres:16-alpine` con health-check, un paso que carga el esquema en una base
+desechable, y `LIBRO_PG_URL` en el paso de tests.
+
+**Y no contradice el aviso que ya tenía el fichero**, que excluye `QA_DB_TEST` /
+`DATABASE_URL_TESTS`. Sus tres motivos son ciertos y siguen en pie —secretos que no viajan
+(regla 9), varios PR escribiendo a la vez en la misma base de staging, y que los guards
+estructurales no la necesitan— **y ninguno le aplica a `LIBRO_PG_URL`**: no es un secreto, no es
+compartida y no es de nadie. Queda escrito ahí para que nadie lo lea como una contradicción.
+
+El esquema se carga con `migrate diff --from-empty` + `psql`, **no con `db push`**: ese mecanismo
+está reservado a las bases del proyecto (regla 3). Y el paso **falla si el DDL sale vacío**, en vez
+de aplicar nada a ciegas — la lección de SCRUM-385.
+
+⚠️ El nombre de la base termina en `_test` porque **los propios tests lo exigen** antes de tocarla,
+junto con que el host sea loopback y que no sea ninguna base del proyecto. **Ese guard suyo no se
+afloja: se le da lo que pide.**
+
+## El guard se ACTUALIZA, no se afloja — y es su mejor prueba
+
+Al añadir la variable al workflow, mi propio guard **se puso rojo**. Estaba bien construido: pedía
+que la declaración correspondiera con lo que CI hace **hoy**. La respuesta correcta era actualizar
+la declaración.
+
+**Antes** exigía que ningún workflow definiera la variable. **Ahora exige lo contrario: que SÍ la
+defina** — porque si alguien quita el servicio, los 7 vuelven a saltarse en silencio y la suite
+seguiría diciendo «0 fallos». Se añade además que el workflow **levante el servicio**: definir la
+variable apuntando a un Postgres que nadie arranca haría fallar los 7 por conexión, y ese rojo se
+lee como «los tests están rotos» en vez de «falta la base».
+
+Y **el aviso de declaración se queda**: en un portátil sin banco sigue imprimiendo qué 7 no se han
+corrido. Eso no sobra — es lo que hace que un desarrollador no confunda su verde local con el de CI.
+
+### 🔴 El rojo que NO salió, y por qué importa
+
+Al probar «CI deja de definir la variable», el guard **siguió verde**. Casaba con
+`contenido.includes('LIBRO_PG_URL')` — y la variable aparece **en el comentario que yo mismo
+escribí explicando por qué entra**. Un guard de texto se caza a sí mismo en el comentario que lo
+explica: **quinta vez en esta sesión**.
+
+Arreglado mirando la **asignación** y no la mención: se quitan las líneas de comentario YAML y se
+exige la forma `LIBRO_PG_URL: <algo>`. Con hermano positivo y **control negativo** — el detector
+reconoce la asignación y **no** cuenta un comentario. Ahora el rojo sale.
+
+## Evidencia
+
+| | tests | pass | fail | skip |
+|---|---|---|---|---|
+| **sin banco** (portátil) | 2637 | 2563 | **0** | 74 |
+
+`guards:entrada` 0 · `guard:contraste` 0 · `guard:prisma` 0.
+
+### ⚠️ Lo que NO he podido re-verificar, dicho
+
+**La pasada CON banco de esta segunda entrega no está hecha.** El Postgres portable que usé para el
+recuento fase por fase pertenece a **otra sesión**, y a mitad de este turno dejó de responder: su
+instalación está **incompleta** (`share/postgres.bki` no existe), así que ni arranca ni se puede
+clonar con `initdb`. No toco el directorio de otra sesión.
+
+Lo medido con banco **sigue siendo válido y está arriba** (recuento fase por fase, los 7 pasando,
+`skip=0`), pero es de **antes** en este mismo turno. Una ejecución posterior dio «7 fail» y **no
+cuenta**: el error era `Can't reach database server`, no una aserción — es el aviso de entorno de
+esta mañana repetido, y por eso se descarta en vez de reportarse.
+
+**Y el workflow en sí solo lo puede verificar CI.** No se puede ejecutar GitHub Actions en local:
+el primer PR que lo corra ES la verificación. Si el paso del banco falla, fallará **con nombre
+propio** («Banco desechable para los tests de libro»), que es justo para que no se lea como un test
+roto.
