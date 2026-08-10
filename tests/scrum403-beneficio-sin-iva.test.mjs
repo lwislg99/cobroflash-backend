@@ -181,23 +181,89 @@ test('SCRUM-403 · el censo NOMBRA las cifras afectadas, para que ninguna se que
 
 // ── LO QUE FALTA, DECLARADO ─────────────────────────────────────────────────────────────
 
-test('SCRUM-403 · el lado del GASTO sigue sin dato, y está declarado', () => {
-  // Que este test exista es el punto: mientras `Expense` no tenga base, el beneficio NO es el
-  // beneficio, y eso no puede quedar solo en una nota que nadie relee.
-  const schema = leer('prisma/schema.prisma');
-  const expense = schema.slice(schema.indexOf('model Expense'), schema.indexOf('model Expense') + 1200);
-  assert.ok(expense.includes('model Expense'), '🔴 ESCÁNER CIEGO: no se encuentra el modelo Expense');
+/**
+ * SCRUM-435 · EL BLOQUE DE UN MODELO SE CORTA POR SU ESTRUCTURA, NUNCA POR UNA LONGITUD.
+ *
+ * La versión anterior de este guard hacía `schema.slice(i, i + 1200)`. Medido: el modelo `Expense`
+ * ocupa **3.473** caracteres y la primera columna que vigilaba —`baseAmount`— está en el offset
+ * **1.417**. O sea que la ventana terminaba 217 caracteres antes de poder ver nada:
+ *
+ *   **el rojo era imposible desde el día uno.** Las columnas entraron y el trinquete siguió verde.
+ *
+ * Un número fijo es una apuesta sobre cuánto va a crecer un fichero que otros editan, y esa apuesta
+ * se pierde sola: basta un comentario nuevo arriba para empujar lo vigilado fuera de la ventana. La
+ * llave que cierra sin candado.
+ */
+function bloqueDeModelo(schema, nombre) {
+  const cabecera = `model ${nombre} {`;
+  const i = schema.indexOf(cabecera);
+  if (i < 0) return null;
+  let p = 0;
+  for (let j = i + cabecera.length - 1; j < schema.length; j++) {
+    if (schema[j] === '{') p++;
+    else if (schema[j] === '}') { p--; if (p === 0) return schema.slice(i, j + 1); }
+  }
+  return null; // llave sin cerrar: es un schema roto, y decirlo es mejor que devolver medio bloque
+}
 
-  const tieneBase = /baseAmount|vatAmount|vatRate|vatDeducible/.test(expense);
-  assert.equal(
-    tieneBase, false,
-    '🔴 `Expense` YA tiene columnas de IVA. Entonces la migración de ' +
-      '`docs/master/SCRUM-403.md` se aplicó, y toca escribir el test del lado del ' +
-      'gasto con números reales y quitar este aviso — no dejarlo describiendo un mundo que ya cambió.',
-  );
-  // Y la especificación existe, para que el hueco tenga a dónde ir.
+const COLUMNAS_IVA_DEL_GASTO = ['baseAmount', 'vatRate', 'vatAmount', 'vatDeducible'];
+
+test('SCRUM-435 · SUELO: el bloque se localiza por ESTRUCTURA, y la ventana vieja era ciega', () => {
+  const schema = leer('prisma/schema.prisma');
+  const bloque = bloqueDeModelo(schema, 'Expense');
+
+  // El defecto exacto que persigue este ticket: si no se encuentra el bloque, se DECLARA. Un
+  // escáner que no localiza lo que vigila y calla es el trinquete muerto otra vez.
+  assert.ok(bloque, '🔴 ESCÁNER CIEGO: no se localiza el bloque `model Expense { … }` en el schema. '
+    + 'No se puede afirmar nada sobre sus columnas — ni que están ni que no.');
+  assert.ok(bloque.endsWith('}'), '🔴 el bloque no llega a su llave de cierre: se está cortando a medias');
+
+  // Y la prueba de que el número fijo era el defecto, no una preferencia de estilo: al menos una de
+  // las columnas vigiladas cae MÁS ALLÁ de donde terminaba la ventana vieja.
+  const VENTANA_VIEJA = 1200;
+  const fuera = COLUMNAS_IVA_DEL_GASTO
+    .map((c) => [c, bloque.indexOf(c)])
+    .filter(([, off]) => off >= VENTANA_VIEJA);
   assert.ok(
-    fs.existsSync(path.join(RAIZ, 'docs/master/SCRUM-403.md')),
-    '🔴 falta la entrada con la especificación de columnas: el hueco quedaría sin destino.',
-  );
+    fuera.length > 0,
+    '🔴 ninguna columna cae fuera de los 1.200 caracteres viejos. Si el modelo ha encogido, este '
+    + 'suelo ya no demuestra nada: revísalo en vez de dejarlo pasando por inercia.');
 });
+
+test('SCRUM-435 · el trinquete YA SALTÓ: las columnas están, y el cálculo aún no las usa', () => {
+  // Este test SUSTITUYE al aviso «`Expense` sigue sin dato», que dejó de ser cierto: las columnas
+  // entraron el 10-ago-2026. Pero **tener la columna no es tener el dato**, y ésa es la distinción
+  // que el aviso viejo no sabía hacer:
+  //
+  //   · son NULLABLE y SIN `@default`, y el propio schema declara que NO HAY BACKFILL — deducir la
+  //     base de `amount` exige saber si lleva IVA y a qué tipo, y eso no está escrito en ninguna
+  //     parte. Así que todo gasto anterior a hoy tiene `baseAmount = null`;
+  //   · y `reports.routes.ts` sigue sumando `Number(exp.amount)`, el total con IVA.
+  //
+  // Por eso el hueco de SCRUM-403 SIGUE ABIERTO, y por eso no se retira sin más: lo que cambia es
+  // el MOTIVO. Ya no es «faltan las columnas»; es «no hay datos y nadie las usa».
+  const bloque = bloqueDeModelo(leer('prisma/schema.prisma'), 'Expense');
+  assert.ok(bloque, '🔴 ESCÁNER CIEGO: sin el bloque no se puede afirmar nada');
+
+  const presentes = COLUMNAS_IVA_DEL_GASTO.filter((c) => bloque.includes(c));
+  assert.deepEqual(
+    presentes, COLUMNAS_IVA_DEL_GASTO,
+    '🔴 faltan columnas de IVA en `Expense`: ' + COLUMNAS_IVA_DEL_GASTO.filter((c) => !presentes.includes(c)).join(', ')
+    + '\n\n  Si se han retirado, el hueco de SCRUM-403 vuelve a su estado anterior y este test tiene\n'
+    + '  que volver a describirlo así. No lo dejes describiendo un mundo que ya cambió.');
+
+  // Y la otra mitad, que es la que mantiene vivo el hueco.
+  const informes = leer('src/modules/reports/app/routes/reports.routes.ts');
+  const usaLaBase = /monthlyExpenses\[[^\]]*\]\s*\+=[^;]*\b(baseAmount|vatAmount)\b/.test(informes);
+  assert.equal(
+    usaLaBase, false,
+    '🔴 INFORMES YA USA LA BASE DEL GASTO, y este test sigue diciendo que el hueco está abierto.\n\n'
+    + '  Columnas encontradas: ' + presentes.join(', ') + '\n'
+    + '  Entonces el «Beneficio neto» ya no resta cifras con IVA en los dos lados, y toca:\n'
+    + '    · retirar la declaración del hueco de `docs/master/SCRUM-403.md`, y\n'
+    + '    · escribir el vector del lado del GASTO con números reales, como se hizo con el de la\n'
+    + '      factura (1.000+210 contra 400+84 → 600, no 726).\n\n'
+    + '  Ojo con los gastos anteriores: sus columnas son `null` y no hay backfill, así que el\n'
+    + '  periodo mezclaría gastos con base y gastos sin ella. Eso hay que decidirlo, no heredarlo.');
+});
+
