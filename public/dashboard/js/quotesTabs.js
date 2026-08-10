@@ -22,10 +22,24 @@
 //   · el router es quien sabe pintar el título de la pantalla, y así no hay dos sitios que decidan
 //     en cuál estás.
 
-/** Las dos pestañas, en el orden del diseño. Rótulos APROBADOS: salen literales de §B1. */
+/**
+ * Las dos pestañas, en el orden del diseño. Rótulos APROBADOS: salen literales de §B1.
+ *
+ * 🔴 CADA UNA ABRE SU DESTINO CON UN LITERAL, y no es decoración: es la convención de la casa.
+ * La primera versión hacía `renderAppView(p.vista)` desde el bucle —más corto, y parecía más
+ * limpio— y con eso **el camino a Plantillas se volvió invisible**: las ~40 navegaciones del
+ * dashboard usan `renderAppView('<vista>')` con literal, y el censo de SCRUM-433 lee justo eso
+ * para saber quién abre cada pantalla. Su guard cantó `HAY VISTAS A LAS QUE NO LLEGA NADA:
+ * templates` — y tenía razón por su propia regla: yo había retirado la entrada de la barra y
+ * puesto a cambio un camino que ningún censo de la casa puede ver.
+ *
+ * No se arregla ampliando el censo ajeno para que entienda despachos dinámicos: eso lo obligaría
+ * a aceptar cualquier variable y dejaría de distinguir un camino real de uno inventado. Se
+ * arregla aquí, que es donde estaba la excepción.
+ */
 var PESTANAS_PRESUPUESTOS = [
-  { vista: 'quotes-list', rotulo: 'Historial' },
-  { vista: 'templates', rotulo: 'Plantillas' },
+  { vista: 'quotes-list', rotulo: 'Historial', abrir: function () { renderAppView('quotes-list'); } },
+  { vista: 'templates', rotulo: 'Plantillas', abrir: function () { renderAppView('templates'); } },
 ];
 
 /**
@@ -55,7 +69,7 @@ function renderPestanasPresupuestos(container, activa) {
     // La activa no navega: pulsarla recargaría la pantalla que ya estás mirando.
     if (!esActiva) {
       b.addEventListener('click', function () {
-        if (window.renderAppView) window.renderAppView(p.vista);
+        if (window.renderAppView) p.abrir();
       });
     }
     nav.appendChild(b);
