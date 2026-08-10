@@ -101,7 +101,8 @@ back (regla 38) · el modelo de datos · `jobDetailView.js` (contraste, solo rep
 
 **Fecha:** 10-ago-2026 · **Carril:** B (UI + dominio) · **Gate:** sin gate, corre en `npm test`
 **Medido contra:** `origin/main` = `6cd4cffac1c3291da0caad6a3a4a10cc5c4a45c2` · 2026-08-10T19:08:12+02:00
-**Tanda:** 2673 tests · 2599 pass · **0 fail** · 74 gateados · `npm test` exit **0**
+**Tanda:** 2712 tests · 2638 pass · **0 fail** · 74 gateados · `npm test` exit **0**
+(re-corrida entera tras mergear main y resolver el conflicto del censo, que es el último cambio)
 
 > ⚠️ **ESTA ENTREGA NO CIERRA SCRUM-285.** El tercer punto de §B4 —el enlace al cobro en la columna
 > derecha del detalle de factura— queda como **FASE 2 dentro de este ticket, que sigue ABIERTO**.
@@ -194,6 +195,9 @@ facturas sin charge siga existiendo).
 | **R1** | el servicio se queda solo con `Charge` | 🔴 «el servicio ya no lee `Invoice`: se ha quedado en la mitad que **ESCONDE el dinero marcado a mano**» |
 | **R2** | se quita el cubo `sin-metodo` | 🔴 «no hay cubo para los cobros SIN método registrado … sin este cubo el dinero marcado a mano desaparece al filtrar» |
 | **R3** | se quita la entrada de la barra | 🔴 «no hay entrada `Cobros`» + «la pantalla de Cobros existe y NO tiene entrada en la barra» |
+| **R4** | los dos estados vacíos se funden en uno | 🔴 «con cobros en la lista y un filtro que no casa, la pantalla dice «no hay cobros». **Eso le afirma al profesional que no le deben nada, y es falso**» |
+| **R5** | se pierde el singular de los días | 🔴 «con un solo día tiene que decir «1 día»» · sale `Sin cobrar desde hace 1 días` |
+| **R6** | «Método no registrado» pasa a «Otro» | 🔴 los rótulos dejan de ser los aprobados **y** cae el test de que «Otro» no se dice |
 
 **Controles negativos:** un método conocido no cae en el cubo de «no consta» —sin esto el cubo
 podría tragárselo todo y el positivo pasaría por avería— y los dos Bizum caen en un filtro mientras
@@ -206,27 +210,115 @@ declara ciego; aquí lo vacío significaría «no le deben nada a nadie».
   DEFAULT de S1** («ruta nueva = declara rol mínimo; default Admin-only»), no una decisión de
   permisos que me corresponda. Abrirla al Técnico sería añadirla a `TECNICO_ALLOWED` con su motivo,
   y **eso lo decide el fundador**. Queda reportado.
-* **SCRUM-402** — el trinquete de marcadores pintables. Sube **+1 a conciencia**, con su motivo en
-  el censo: la alternativa a marcar esos textos no era escribirlos, era no entregar la pantalla.
-  *Un marcador visible es feo y honesto; un texto inventado es bonito y falso.*
+* **SCRUM-402** — el trinquete de marcadores pintables. Subió **+1 a conciencia** y **volvió a
+  bajar el mismo día**, cuando el asesor aprobó toda la microcopy: `cobrosView.js` entró y salió del
+  censo en la misma entrega. *Un marcador visible es feo y honesto; un texto inventado es bonito y
+  falso* — y el trinquete cobró las dos cosas.
 
-## MICROCOPY — la lista para aprobar (regla 30)
+### 🔴 EL COSTE DEL CENSO POR FICHERO, declarado — tercera vez hoy
 
-Publicado y aprobado: **`Cobros`** (entrada) y los cuatro filtros **`Bizum` · `tarjeta` ·
-`transferencia` · `efectivo`**, literales de §B4.
+El `CENSO` de SCRUM-402 chocó en el merge: **dos bajadas correctas del mismo día**, una por cada
+rama — `api.js` salía por SCRUM-405 y `cobrosView.js` por ésta. Git no puede saber que las dos son
+buenas, así que las presentó como alternativas. Se resolvió conservando **los dos comentarios y
+ninguna de las dos entradas**, y del de `api.js` la versión de `main` (la del `−1`): la vieja del
+`+1` justificaba una entrada que ya no existe.
 
-Con MARCADOR, esperando aprobación — **todo sale de una sola constante, `COBROS_MARCA`**:
+**Es el precio correcto y se paga.** Un censo **por fichero** atrapa lo que un total escondería —
+mover un marcador de una pantalla a otra se ve—, y a cambio **choca cada vez que dos ramas mejoran
+cosas distintas el mismo día**. Un total habría dejado pasar las dos bajadas sin que nadie las
+anotara: habría cuadrado solo, y nadie se habría enterado de ninguna de las dos aprobaciones.
 
-| ranura | qué es |
+Verificado **por mecanismo, no a ojo**: cero marcadores de conflicto en **todo el árbol** (no solo
+en ese fichero, que es el fallo clásico de resolver a mano) · `censoActual()` **ejecutado**, 14
+ficheros y ni `api.js` ni `cobrosView.js` entre ellos · y el que separa esto de un arreglo
+cosmético: **con un marcador nuevo inyectado en `cobrosView.js`, R4 vuelve a caer nombrándolo**.
+Salir del censo no saca de la vigilancia.
+
+## MICROCOPY — aprobada por el asesor el 10-ago-2026 (regla 30)
+
+Del diseño §B4, literales: **`Cobros`** y los cuatro filtros **`Bizum` · `tarjeta` ·
+`transferencia` · `efectivo`**. Aprobados aparte, el mismo día, y **con test carácter a carácter**:
+
+| ranura | texto aprobado |
 |---|---|
-| título de la pantalla | el `<h2>` de la tarjeta |
-| filtro «todos» | el botón que quita el filtro |
-| filtro **sin método registrado** | el cubo de los cobros a mano · **el que más importa: tiene que decir que el dato NO CONSTA, no que sea «otro»** |
-| 5 cabeceras de tabla | fecha · cliente · importe · método · documento y deuda |
-| estado vacío | cuando no hay ningún cobro |
-| error de carga | cuando la petición falla |
-| etiqueta de los días de deuda | acompaña al número de días |
-| método no registrado, en la fila | lo que se pinta donde iría el método |
+| título de la pantalla | `Cobros` |
+| filtro «todos» | `Todos` |
+| filtro sin método | `Método no registrado` |
+| método en la fila | `No registrado` |
+| error de carga | `No hemos podido cargar los cobros. Vuelve a intentarlo.` |
+| días de deuda | `Sin cobrar desde hace {n} días` · con `n=1`, **`1 día`** |
+| vacío · sin ningún cobro | `Todavía no hay cobros registrados.` |
+| vacío · con filtro puesto | `Ningún cobro coincide con este filtro.` |
+
+### 🔴 El estado vacío son DOS, y confundirlos es el defecto
+
+*«No hay datos»* y *«tu filtro los ha escondido»* son afirmaciones distintas, y la primera dicha en
+el sitio de la segunda **le contesta al profesional que no le deben nada** — a la pregunta que vino
+a hacer, en la pantalla del dinero. No es un texto impreciso: es una respuesta falsa. Van con test
+**por separado**, y con su rojo (fundirlos en uno cae nombrando el daño).
+
+**Y «Método no registrado» no es «Otro»:** «otro» AFIRMA que hubo un método distinto; aquí no consta
+ninguno. Es la misma distinción que obligó a crear el cubo — si el rótulo miente, el cubo no sirve
+de nada. Hay test de que la palabra «Otro» no aparece en la pantalla.
+
+### 🔴 Y la quinta columna se parte en dos, por una regla que se lleva el asesor
+
+**Una cabecera que necesita una «y» son dos columnas.** La quinta se llamaba «documento y deuda» y
+estaba diciendo sola que ahí cabían dos hechos. Y no es estética: **la antigüedad es lo que el
+profesional BARRE con la vista** buscando lo que lleva más tiempo sin cobrar, y enterrada junto a un
+número de documento no se puede barrer — ni ordenar por ella el día que alguien lo pida.
+
+Las SEIS, aprobadas: `Fecha` · `Cliente` · `Importe` · `Método` · `Documento` · `Sin cobrar`.
+
+Y la antigüedad pasa a tener **dos formas, porque el sitio cambia lo que hace falta decir**: en tabla
+la columna ya se llama «Sin cobrar», así que la celda pone solo `3 días`; fuera de la tabla no hay
+cabecera que lo explique y va la frase entera, `Sin cobrar desde hace 3 días`. Las dos con singular,
+las dos con test. **Ya no queda ningún marcador en esta pantalla** — `cobrosView.js` entró y salió
+del censo de SCRUM-402 el mismo día.
+
+### Las seis columnas en MÓVIL — medido, no supuesto
+
+`.table--cards-mobile` a ≤640 px **esconde el `thead`** y convierte cada fila en una card con seis
+áreas nombradas (`id · client · amount · date · status · actions`). Así que el número de columnas no
+es el problema: **`invoicesView` ya tiene 6 y `quotesListView` 7**, con el mismo mecanismo.
+
+El reparto sigue el de la casa —las que no encajan en un área se esconden con `col-hide-mobile`,
+como hacen esas dos—: `Fecha`→`date`, `Cliente`→`client`, `Importe`→`amount`, `Documento`→`id`,
+**`Sin cobrar`→`status`** (es lo que hay que barrer, así que sobrevive en el bolsillo) y `Método` se
+esconde. Y la celda vacía de un cobro ya cobrado **desaparece sola** (`td:empty { display:none }`),
+que es justo lo que se quiere.
+
+### 🔴 Y la card NO es una degradación de la tabla: ES la pantalla
+
+Lo dejé declarado como resto para otra fase y el asesor lo devolvió, con razón. **Este producto se
+usa desde una furgoneta**: a ≤640 px la card *es* lo que se mira, y ahí no hay cabecera que explique
+un `3 días` suelto. **Un dato sin referente en el sitio donde de verdad se mira no es una pantalla
+terminada** — y no hacía falta ticket nuevo, porque la frase larga ya estaba aprobada y ya tenía
+sitio. Solo había que pintarla donde toca.
+
+La celda pinta **las dos formas** y el CSS elige: `solo-tabla` con el número, `solo-card` con la
+frase entera, en la misma frontera de 640 px que ya usa `col-hide-mobile`.
+
+**Y las dos no pueden divergir, porque la larga SE DERIVA de la corta.** Dos copias de un texto
+aprobado que pueden separarse son microcopy esperando a romperse: alguien arregla el singular en una
+y la otra se queda diciendo «1 días» justo donde más se mira. Aquí la divergencia no se vigila —
+**no puede pasar**. Y aun así hay test que las ata, para que el día que alguien las separe se entere
+por un rojo y no por una captura.
+
+Un cobro cobrado deja la celda **vacía de verdad, sin spans**: con un span vacío dentro, `td:empty`
+dejaría de aplicar y la celda ocuparía sitio en la card hablando de una deuda que no existe.
+
+| # | qué se rompe | qué sale |
+|---|---|---|
+| **R7** | se quita la forma de card | 🔴 «la celda no pinta las dos formas. Sin `solo-card`, **en la furgoneta se lee un número suelto** sin nada que diga de qué son esos días» |
+| **R8** | la frase larga se escribe aparte | 🔴 «la frase larga ha dejado de derivarse de la corta … nada impide que digan cosas distintas» |
+
+## ① Técnico vs admin: ADMIN-ONLY, y queda declarado con su motivo
+
+Decisión del asesor, escrita aquí para que no se lea como descuido: **la pantalla de Cobros es el
+dinero del NEGOCIO, no el de un trabajo.** Un operario viendo la facturación completa de su jefe es
+una decisión de confianza que no se deshace, y su necesidad real —el dinero de SU trabajo— **ya la
+cubre el bloque DINERO del rail** (G3/G4). Se queda con `requireRole('admin')`.
 
 ## Lo que NO cubre
 
@@ -249,4 +341,8 @@ Con MARCADOR, esperando aprobación — **todo sale de una sola constante, `COBR
 * `tests/scrum285-pantalla-cobros.test.mjs` (nuevo, 10)
 * `tests/_barra-lateral.mjs` — la ausencia de `cobros` desaparece
 * `tests/scrum420-barra-lateral.test.mjs` — el guard se da la vuelta, como pedía su propio mensaje
-* `tests/scrum402-marcador-no-se-pinta.test.mjs` — el censo sube +1 a conciencia
+* `tests/scrum402-marcador-no-se-pinta.test.mjs` — el censo sube +1 a conciencia (de nueve ranuras
+  marcadas a cinco tras la aprobación; el trinquete cuenta ficheros, no ranuras)
+* `tests/_banco-vistas.mjs` — los oyentes se guardan y se pueden disparar, y el mini-DOM representa
+  las etiquetas con `class`/`data-*`, no solo las que llevan `id`. Sin las dos cosas, los dos
+  estados vacíos no se podían distinguir: hacía falta PULSAR un filtro y LEER un `data-`.
