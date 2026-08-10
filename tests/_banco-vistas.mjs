@@ -108,8 +108,24 @@ export function cargarDashboard(raiz, opciones = {}) {
     navigator: { userAgent: 'banco', language: 'es-ES', onLine: true, serviceWorker: { register: async () => ({}) } },
     localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
     sessionStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+    // 🔴 EL FIXTURE VA EN `fetch`, NO EN `apiRequest` — corregido en SCRUM-432.
+    //
+    // SCRUM-417 dejó aquí un `apiRequest` de mentira y declaró como hueco que «el banco sirve `{}`
+    // a apiRequest». El hueco era real y **la causa estaba mal escrita**: `api.js` define su propio
+    // `apiRequest` de nivel superior, así que al cargarse **PISA** el del banco. Lo que las vistas
+    // llamaban era el de verdad, contra un `fetch` que devolvía `{}` pasara lo que pasara.
+    //
+    // Servir los datos por `fetch` es lo que hace el banco fiel: se ejercita `apiRequest` ENTERO
+    // —sus errores tipados, su `res.json()`, su trato del 204— en vez de saltárselo.
+    //
+    // `datos` puede ser un valor (igual para toda ruta) o una función `(ruta, opciones)`.
     apiRequest: async () => (typeof opciones.datos === 'function' ? opciones.datos() : (opciones.datos ?? {})),
-    fetch: async () => ({ ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({}), blob: async () => ({}), text: async () => '' }),
+    fetch: async (url, opts) => ({
+      ok: true, status: 200,
+      headers: { get: () => 'application/json' },
+      json: async () => (typeof opciones.datos === 'function' ? opciones.datos(String(url), opts) : (opciones.datos ?? {})),
+      blob: async () => ({}), text: async () => '',
+    }),
     setTimeout, clearTimeout, setInterval, clearInterval, queueMicrotask,
     requestAnimationFrame: (f) => setTimeout(f, 0),
     Intl, Date, Array, Number, String, Boolean, Object, JSON, isNaN, parseInt, parseFloat,

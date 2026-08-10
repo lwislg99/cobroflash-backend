@@ -158,13 +158,6 @@ export const AUSENCIAS_CONOCIDAS = {
  * se separan por el lado que nadie mira.
  */
 export const ANADIDAS_DECLARADAS = {
-  templates: {
-    ticket: 'SCRUM-432',
-    motivo:
-      'El diseño la SACA de la barra («pasa a pestaña dentro de Presupuestos»), pero la pestaña no ' +
-      'existe todavía: retirarla hoy dejaría la vista `templates` inalcanzable. Se queda en VENTA, ' +
-      'detrás de Presupuestos, hasta que SCRUM-432 haga las dos mitades en el mismo commit.',
-  },
   'libro-registro': {
     ticket: null,
     motivo:
@@ -193,6 +186,14 @@ export const VISTAS_SIN_ENTRADA = {
       'SALE de la barra por el diseño §B1 («pasa a Configuración › Tus datos»). Sigue alcanzable ' +
       'desde `renderDescargarDatosCard`, y hay un test que lo exige: retirarla de la barra sin ' +
       'camino nuevo sería perder la pantalla, no reordenarla.',
+  },
+  templates: {
+    ticket: 'SCRUM-432',
+    motivo:
+      'Ya NO es entrada de menú: es la pestaña «Plantillas» dentro de Presupuestos, que es lo que ' +
+      'pide el diseño §B1 («se usa desde ahí y solo desde ahí»). Sigue alcanzable desde ' +
+      '`quotesTabs.js`, que pinta la tira en las dos vistas, y por `#templates` en `HASH_VIEWS`. ' +
+      'La pestaña y la retirada entraron en el mismo commit: en medio la vista no tenía camino.',
   },
   operarios: {
     ticket: 'SCRUM-433',

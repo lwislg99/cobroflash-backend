@@ -189,7 +189,11 @@ async function initApp() {
   function setActiveMenu(view) {
     // SCRUM-301 (C1): el detalle del albarán ya tiene sección propia a la que pertenecer. Antes
     // marcaba «Trabajos» porque los albaranes no existían como sitio; ahora sí.
+    // SCRUM-432: `templates` ya no tiene entrada propia — es la pestaña «Plantillas» DENTRO de
+    // Presupuestos. Sin esta línea, estando en Plantillas la barra no marcaría nada y el
+    // profesional no sabría en qué sección está.
     const menuView = view === 'quotes-detail' ? 'quotes-list'
+      : view === 'templates' ? 'quotes-list'
       : view === 'albaran-detail' ? 'albaranes'
       : view === 'invoice-detail' ? 'invoices'
       : view === 'jobs-detail' ? 'jobs' : view;
