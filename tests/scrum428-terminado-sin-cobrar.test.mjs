@@ -111,18 +111,42 @@ test('SCRUM-428 · 🔴 EL CONTROL: «no se sabe» se cuenta aparte y NO entra e
     'que este control existe para impedir: la cifra se leería como si lo contara todo.');
 });
 
-test('SCRUM-428 · 🔴 el importe se CALLA si no se puede decir entero', () => {
-  // Con terminados de los que no se sabe cuánto falta, la suma de los demás es correcta y SE LEE
-  // MAL: quien la ve la lee como el total. Enseñarla sin la frase que explica qué queda fuera es
-  // exactamente el sesgo silencioso que este ticket existe para no cometer.
+/**
+ * El texto aprobado por el fundador (10-ago-2026), LITERAL y con su `{N}` sustituido.
+ *
+ * Vive aquí como constante para que el guard compare contra el texto oficial y no contra una
+ * paráfrasis: «no se sabe cuánto falta» y «pendiente de calcular» dicen cosas distintas, y sólo
+ * una está aprobada (regla 30).
+ */
+const SALVEDAD_APROBADA = 'sin importe de referencia: no se sabe cuánto falta y no entran en el total.';
+
+test('SCRUM-428 · 🔴 la cifra y su SALVEDAD viajan juntas, o ninguna de las dos es verdad', () => {
+  // Hasta que hubo texto aprobado, la cabecera se callaba el importe: la suma de los demás es
+  // correcta y se lee como el total. Con la frase puesta la decisión se invierte por su propio
+  // motivo — callarse el importe pasa a ser contar MENOS de lo que se sabe.
+  //
+  // Lo que este guard fija NO es cuál de las dos versiones está pintada, sino que **las dos
+  // piezas van juntas**: enseñar la cifra sin la salvedad vuelve a inducir a error, y romper el
+  // texto oficial la deja diciendo otra cosa.
   const vista = leer('public/dashboard/js/jobsView.js');
-  assert.match(vista, /resumen\.sinImporte\s*===\s*0/,
-    '🔴 la vista pinta el importe aunque haya terminados sin importe conocido. «1.300 €» y ' +
-    '«1.300 €, con 2 trabajos fuera de la cuenta» son dos afirmaciones distintas, y sin la segunda ' +
-    'frase —que necesita aprobación (regla 30)— la primera induce a error.');
+
   assert.match(vista, /resumen\.cuantos\s*>\s*0/,
     '🔴 el importe se pinta siempre: con cero terminados con deuda, «0,00 €» afirma que no se debe ' +
     'nada, y eso solo es verdad si además se sabe de todos.');
+
+  assert.match(vista, /resumen\.sinImporte\s*>\s*0/,
+    '🔴 la vista ya no pinta nada cuando hay terminados sin importe conocido. Si desaparece la ' +
+    'salvedad, el importe de arriba vuelve a leerse como si lo contara todo — y entonces ese ' +
+    'importe tampoco se puede enseñar.');
+
+  assert.ok(vista.includes(SALVEDAD_APROBADA),
+    `🔴 no aparece el texto APROBADO, literal:\n      «{N} ${SALVEDAD_APROBADA}»\n\n` +
+    '  Es microcopy oficial (regla 30, fundador 10-ago-2026): no se reescribe ni se «mejora». Una ' +
+    'paráfrasis afirma algo que nadie ha aprobado sobre el dinero de un profesional.');
+
+  assert.doesNotMatch(vista, /\[PENDIENTE microcopy oficial\]/,
+    '🔴 ha vuelto un marcador a esta vista: el texto ya está aprobado y pintarlo como pendiente ' +
+    'sería enseñar un hueco donde hay una frase.');
 });
 
 test('SCRUM-428 · 🔴 el nombre del helper no puede chocar con otro script del dashboard', () => {
