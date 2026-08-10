@@ -3,6 +3,7 @@
 **Fecha:** 10-ago-2026 · **Carril:** B (UI) · **Gate:** sin gate, corre en `npm test`
 **Medido contra:** `origin/main` = `74dbd20ab9308ff9cf980a1cdf29bf8d19e3adc6` · 2026-08-10T16:45:36+02:00
 **Tanda:** 2545 tests · 2471 pass · **0 fail** · 74 gateados · `npm test` exit **0**
+(re-corrida entera tras aprobarse el microcopy del botón, que es el último cambio)
 
 ## El defecto, y por qué llevaba semanas invisible
 
@@ -110,6 +111,10 @@ silencio, pero sí tiene que obligar a reflejarla.
 > Y por eso R2 tiene un hermano **R2b**: la primera versión solo cegaba los grupos, así que el
 > suelo de **entradas** (`≥12`) no se llegó a probar. Un suelo que nadie ha visto caer no es un
 > suelo.
+>
+> **El asesor lo eleva a forma de la casa (10-ago-2026):** *«una mutación que no llega al fichero
+> produce un verde que parece un guard de sobra»* — abortar si el reemplazo no ocurre pasa a ser
+> obligatorio en toda prueba de rojo, y el hermano que prueba cada suelo por separado, igual.
 
 ## Lo que este ticket cambia de un guard ajeno, y por qué no es relajarlo
 
@@ -122,6 +127,14 @@ mapa que usa la pantalla, y aun así salía «sin sitio». El guard le habría p
 pendiente, o sea **escribirle una duda a algo que ya está decidido**. Ahora tiene sitio quien esté
 **asignada** o **pendiente**, y sigue sin tenerlo quien no esté en ninguna de las dos. No se
 relaja: se le enseña la otra mitad de la pregunta.
+
+> **Revisado y confirmado por el asesor:** *«su regla dependía de una propiedad del momento, no del
+> diseño; “asignada o pendiente” es lo que siempre quiso decir. No es relajarlo: la suposición
+> caducó»*. Y sobre `scrum296`: *«un guard que exige que algo siga sin aprobar impide aprobarlo»*.
+>
+> El arreglo **sigue en pie aunque este bloque ya no se cense** (ver arriba, al perder el `<h2>`):
+> lo que estaba mal no era el caso, era la regla — la siguiente superficie decidida se habría
+> encontrado el mismo muro.
 
 **`tests/scrum296-pantalla-libro.test.mjs`.** Exigía que la entrada del menú llevase el marcador, y
 tenía razón mientras nadie la hubiera aprobado. Mantenerlo tras la aprobación habría sido **fijar
@@ -136,10 +149,29 @@ once entradas y los tres rótulos de grupo **salen literales del diseño**, más
 (④) y «Cobros» (①, para cuando toque). Mismo trato que los diez submenús del 5-ago: no es
 redacción nueva, es dejar de usar el marcador.
 
-**Lo único que va con MARCADOR es el texto del botón** de la tarjeta nueva: el verbo de «ir a» sí
-es redacción nueva y no se rellena por cuenta propia. El título de la tarjeta dice `Descargar
-datos`, que es el rótulo que ya llevaba la entrada de la barra y el mismo `<h2>` que abre la propia
-vista (`exportView.js:34`).
+El botón de la tarjeta nueva salió a consulta con MARCADOR —el verbo de «ir a» era redacción nueva
+y no se rellena por cuenta propia— y el asesor lo aprobó como **«Descargar datos»**, con el
+criterio escrito para los que vengan: **un botón de navegación nombra su destino**, y así no puede
+mentir sobre lo que pasa al pulsarlo. *«Descargar» a secas prometería una descarga inmediata, y lo
+que hace es llevar a una pantalla donde se elige.*
+
+**No queda ningún marcador en esta entrega.**
+
+### 🔴 Y eso dejó la misma frase dos veces, así que la tarjeta pierde su `<h2>`
+
+Con el botón aprobado, el título de la tarjeta (`Descargar datos`) y el botón (`Descargar datos`)
+decían lo mismo, uno debajo del otro: no informa de nada y un lector de pantalla lo lee dos veces.
+El sitio **ya tiene su rótulo** —la pestaña «Tus datos» del submenú—, así que lo que faltaba ahí no
+era un título: era el camino. Se quita el `<h2>` y se queda el botón.
+
+**Consecuencia declarada, porque cambia de qué población es el bloque:** sin `<h2>` esto **deja de
+ser una SUPERFICIE** para el censo de SCRUM-284 —su criterio es «función `render…(container)` que
+pinta un bloque con **título propio**»— y pasa a ser un **bloque colocado**, la misma clase que
+`connectStatus` y `modoEmision`, que ya viven en `ASIGNACION_SUPERFICIE` sin ser funciones censadas.
+Lo que **no** cambia es lo que importa: su colocación la sigue vigilando el guard de
+`panelDeSuperficie(...)`, que es quien impide que caiga en el panel equivocado, y `datos` sigue
+contando como no vacío porque el sentido ③ lo deriva del mapa, no del censo. Comprobado: los tres
+ficheros de guards de SCRUM-284 y el de SCRUM-420, **51/51 en verde** tras el cambio.
 
 ## Lo que NO cubre
 
