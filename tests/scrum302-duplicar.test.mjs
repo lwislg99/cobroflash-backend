@@ -17,6 +17,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+// SCRUM-425: para mirar la ruta sin que un COMENTARIO cuente como código (SCRUM-349).
+import { soloEjecutable } from './_guard-texto.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const DIST = pathToFileURL(path.join(RAIZ, 'dist')).href + '/';
@@ -139,6 +141,57 @@ test('SCRUM-302 · 🔴 EL DUPLICADO NO SE LLEVA LA FIRMA, ni nada que afirme un
   const hoy = new Date();
   assert.ok(Math.abs(copia.fecha.getTime() - hoy.getTime()) < 60_000,
     '🔴 el duplicado no nace con la fecha de HOY: se lleva la de la visita del original');
+});
+
+test('SCRUM-425 · 🔴 el duplicado NO hereda la clave de idempotencia — y esto es COMPORTAMIENTO', () => {
+  // ⚠️ POR QUÉ ESTE TEST Y NO SOLO LA CLASIFICACIÓN. El guard de arriba comprueba que el campo
+  // ESTÉ en una de las dos listas — es un censo de la lista, no del código. **Mencionar no es
+  // hacer**: se puede clasificar un campo como «no viaja» y que el duplicador lo copie igual.
+  // Esto ejercita `datosDuplicado`, que es lo que la ruta usa de verdad.
+  const conClave = {
+    merchantId: 7,
+    jobId: 42,
+    numero: 'ALB-2026-0003',
+    modoValoracion: 'SIN_VALORAR',
+    lineas: [{ concepto: 'Bajante PVC 110', cantidad: 3, unidad: 'm' }],
+    notas: 'Acceso por el patio',
+    claveIdempotencia: '3f2a9c1e-7b44-4d8f-9c02-1e5a6b7c8d90',
+  };
+
+  const copia = datosDuplicado(conClave);
+
+  assert.equal(
+    copia.claveIdempotencia, undefined,
+    '🔴 EL DUPLICADO HEREDA LA CLAVE DE IDEMPOTENCIA DEL ORIGINAL.\n\n' +
+    '  La clave identifica UN INTENTO DE ALTA, no un documento, y un duplicado es un alta\n' +
+    '  DISTINTA. Copiarla hace que el `create` del duplicado choque contra\n' +
+    '  `@@unique([merchantId, claveIdempotencia])`: `POST /admin/albaranes/:id/duplicar`\n' +
+    '  devolvería un P2002 — un 500 al profesional al duplicar el parte de ayer, que es de lo\n' +
+    '  que más se usa en un gremio.',
+  );
+  // Control positivo: sin esto, el test pasaría igual si `datosDuplicado` devolviera un objeto
+  // vacío — o sea, si hubiera dejado de duplicar nada.
+  assert.deepEqual(copia.lineas, conClave.lineas,
+    '🔴 el duplicado no se lleva las líneas: entonces la comprobación de arriba no prueba nada, ' +
+    'porque un duplicado vacío también «no hereda la clave».');
+  assert.equal(copia.jobId, 42, '🔴 el duplicado ni siquiera es del mismo Trabajo');
+});
+
+test('SCRUM-425 · la ruta de duplicar compone SOLO desde `datosDuplicado` (+ el número)', () => {
+  // El test de arriba prueba el mecanismo; éste impide que alguien lo esquive en la ruta —
+  // un `...albaran` en el `create` volvería a colar la clave con la clasificación intacta.
+  const RUTA = soloEjecutable(
+    fs.readFileSync(path.join(RAIZ, 'src/modules/jobs/app/routes/albaranes.routes.ts'), 'utf8'),
+    { almohadillaEsComentario: false },
+  );
+  const i = RUTA.indexOf('datosDuplicado(');
+  assert.ok(i > 0, '🔴 ESCÁNER CIEGO: la ruta ya no llama a `datosDuplicado` — entonces el test de ' +
+    'arriba vigila una función que nadie usa.');
+  const linea = RUTA.slice(RUTA.lastIndexOf('\n', i) + 1, RUTA.indexOf('\n', i));
+  assert.match(linea, /\{ \.\.\.datosDuplicado\([^)]*\), numero \}/,
+    `🔴 el \`create\` del duplicado ya no se compone SOLO de \`datosDuplicado\` + \`numero\`:\n    ${linea.trim()}\n` +
+    '  Cualquier otra fuente en ese objeto (un `...albaran`, un campo suelto) salta la ' +
+    'clasificación entera de este módulo.');
 });
 
 test('SCRUM-302 · el duplicado se construye SUMANDO, no copiando y borrando', () => {

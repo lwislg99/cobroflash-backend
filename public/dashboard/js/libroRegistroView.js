@@ -88,14 +88,18 @@
   /**
    * Importe. `null` NO es cero: sale «—». Y el formato es el de España con su símbolo, porque un
    * libro de registro se imprime y se entrega — 9.999,99 € tiene que caber y leerse.
+   *
+   * SCRUM-436 · El «—» se queda: es una decisión deliberada de ESTA pantalla y la única correcta
+   * en un libro de registro. Lo que cambia es QUIÉN formatea: `fmtMoneyEsOAusente` (api.js), que
+   * delega en el `fmtMoneyEs` de la casa.
+   *
+   * 🔴 Y no es cosmético. Este `Intl` propio NO llevaba `useGrouping: 'always'`, así que en es-ES
+   * imprimía «9999,99 €» — **justo lo que el comentario de arriba exige que NO pase**, y lo que
+   * A18.2 (AB6) arregló en el formateador compartido. Cada copia del formato reintroduce el
+   * defecto que la original ya había corregido.
    */
   function euros(v, moneda) {
-    if (v === null || v === undefined) return '—';
-    try {
-      return new Intl.NumberFormat('es-ES', { style: 'currency', currency: moneda || 'EUR' }).format(v);
-    } catch (_e) {
-      return String(v);
-    }
+    return fmtMoneyEsOAusente(v, moneda || 'EUR');
   }
 
   /** Una marca de trazabilidad. Reutiliza el inventario AB3 (`badge`), sin CSS nuevo. */

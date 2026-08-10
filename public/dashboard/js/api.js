@@ -207,6 +207,33 @@ function fmtMoneyEs(n, currency = 'EUR') {
 }
 window.fmtMoneyEs = fmtMoneyEs;
 
+/**
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * SCRUM-436 · EL MISMO IMPORTE, PERO DISTINGUIENDO EL AUSENTE DEL CERO
+ *
+ * `fmtMoneyEs` trata el dato ilegible o ausente como **0,00 €**, y para casi todas las pantallas
+ * eso está bien: un total que aún no se ha calculado se enseña a cero y no pasa nada.
+ *
+ * En un **libro de registro** no: ahí `null` NO es cero — es «no hay dato», y se imprime y se
+ * entrega. Decir «0,00 €» donde no se sabe nada es afirmar un importe que nadie ha calculado.
+ *
+ * Esta variante existe para eso y **NO reimplementa el formato**: delega en `fmtMoneyEs`, así que
+ * el separador de miles, los decimales, la posición del símbolo y la moneda son los mismos POR
+ * CONSTRUCCIÓN. Lo único que añade es la decisión sobre el ausente.
+ *
+ * @param {*} n         el importe
+ * @param {string} [currency='EUR']
+ * @param {string} [ausente='—']  qué se pinta cuando no hay dato
+ */
+function fmtMoneyEsOAusente(n, currency = 'EUR', ausente = '—') {
+  if (n === null || n === undefined || n === '') return ausente;
+  // Un texto que no es un número tampoco es un importe: `fmtMoneyEs` lo daría por 0,00 € y aquí
+  // eso volvería a ser la afirmación que esta función existe para no hacer.
+  if (!Number.isFinite(Number(n))) return ausente;
+  return fmtMoneyEs(n, currency);
+}
+window.fmtMoneyEsOAusente = fmtMoneyEsOAusente;
+
 // A6.2: toast compartido de TODO el BO (una sola voz para el feedback de acción).
 // kind: 'ok' (verde marca) · 'warn' (ámbar) · 'error' (rojo). Sustituye a los
 // alert() del navegador. Uno cada vez; aria-live para lectores de pantalla.
