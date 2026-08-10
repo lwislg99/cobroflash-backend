@@ -144,6 +144,26 @@ también es una decisión tuya.
 
 ## Hallazgo de otro carril (regla 9, reportado y no arreglado)
 
+> ## 🔴 CORREGIDO EL 10-AGO-2026 (SCRUM-447) — ESTE HALLAZGO ERA FALSO
+>
+> Lo de abajo **se deja tal cual porque una entrada de máster no se reescribe**, pero **no es
+> cierto**, y ya generó un ticket sobre un defecto que no existía. Medido sobre el árbol de este
+> mismo commit:
+>
+> * **`fmtMoneyEs` YA EXISTÍA** en `public/dashboard/js/api.js:190`, publicado en `window`, **con
+>   60 llamadas desde 19 ficheros** — incluidos `jobsView.js` (4) y `reportsView.js` (11), o sea
+>   los mismos ficheros que aquí se citan como si no tuvieran a qué recurrir.
+> * **No eran cuatro:** había **nueve** definiciones con nombre de formateador de dinero.
+> * Y la diferencia real entre las copias no era ninguna de las que se suponen: lo que se habían
+>   dejado por el camino era `useGrouping:'always'`, así que imprimían `9999,99 €` en vez de
+>   `9.999,99 €` — justo el tramo del importe corriente de un trabajo de oficio.
+>
+> **La causa, que es lo que importa: esto NO salió de ningún censo.** Ninguna técnica reproducible
+> da «cuatro» sobre este árbol —ni `grep` del símbolo €, ni `grep` de `Intl.NumberFormat`, ni un
+> censo de definiciones—, y **las tres incluyen `api.js`**. Fue una observación de pasada escrita
+> con la forma de una medición. El producto lo arregló `SCRUM-436`; la autopsia está en
+> `docs/master/SCRUM-447.md`.
+
 **Cuatro formateadores de euros distintos** en `public/dashboard/js/`: `expensesView.js:424`,
 `libroRegistroView.js:92`, `reportsView.js:447` y el que he tenido que añadir en `jobsView.js`.
 Unificarlos toca tres vistas ajenas y no cabe en un ticket de lista de Trabajos.
