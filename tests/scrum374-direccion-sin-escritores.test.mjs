@@ -38,6 +38,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ALBARAN_CONTENIDO_VERSION_ACTUAL, obraSegunVersion } from '../dist/modules/jobs/domain/albaran.service.js';
+import { versionLeeJobDireccion } from '../dist/modules/jobs/domain/jobDireccion.js';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SELLADOR = fs.readFileSync(path.join(RAIZ, 'src/modules/jobs/domain/albaran.service.ts'), 'utf8');
@@ -50,25 +51,50 @@ test('SCRUM-374 · SUELO: el sellador se lee y tiene su canónico', () => {
   assert.match(SELLADOR, /contenidoCanonico/, '🔴 el canónico ha cambiado de nombre: revisar antes de fiarse');
 });
 
-test('SCRUM-374 · 🔴 la versión de HOY toma la obra de `Albaran.lugarEntrega`, no del Trabajo', () => {
+/**
+ * 🔴 SCRUM-438 · POR QUÉ ESTE FICHERO YA NO DICE «lugarEntrega» EN SU INVARIANTE.
+ *
+ * El test decía: «la versión de HOY toma la obra de `Albaran.lugarEntrega`». Eso pineaba una
+ * VERSIÓN CONCRETA —la 2— disfrazada de invariante, y con v:3 se puso rojo sobre código correcto:
+ * hoy la obra sale del BLOQUE CONGELADO del sobre, que a su vez se selló desde `lugarEntrega`.
+ *
+ * La forma correcta NO es cambiar el destino esperado por el de v:3 (con v:4 volvería a caer). El
+ * defecto que este ticket cerró nunca fue «tiene que ser lugarEntrega»: era **que la versión de hoy
+ * NO puede leer `Job.direccion`**, un campo que nadie escribe y que, si alguien escribiera, dejaría
+ * cada firma nueva atada a un dato editable. Eso es lo que se pinea, y no caduca.
+ */
+const BLOQUE = Object.freeze({
+  obra: 'SELLADO EN EL SOBRE', referenciaTrabajo: null, cliente: null, emisor: null, emisorNif: null,
+});
+
+test('SCRUM-374 · 🔴 la versión de HOY no saca la obra del Trabajo, sea cual sea esa versión', () => {
   // El defecto original, convertido en invariante — y comprobado EN EJECUCIÓN, no por texto.
   //
   // ⚠️ La primera versión de este test decía «el sellador no puede mencionar `job.direccion`» y
-  // salió ROJA con el código CORRECTO: el sellador SÍ lo lee, y debe, porque `obraSegunVersion`
-  // necesita esa fuente para recalcular un sobre **v:1**. Prohibirlo habría roto los vectores
-  // congelados de SCRUM-369. El invariante no es «no lo menciones»: es «la versión de hoy no lo
-  // usa».
-  assert.equal(
-    obraSegunVersion(ALBARAN_CONTENIDO_VERSION_ACTUAL, { lugarEntrega: 'C/ Mayor 12', jobDireccion: 'NO USAR' }),
-    'C/ Mayor 12',
-    '🔴 la versión actual vuelve a sacar la obra de `Job.direccion`: es el defecto de SCRUM-374',
+  // salió ROJA con el código CORRECTO: el sellador SÍ lo lee, y debe, porque el resolvedor necesita
+  // esa fuente para recalcular un sobre **v:1**. Prohibirlo habría roto los vectores congelados de
+  // SCRUM-369. El invariante no es «no lo menciones»: es «la versión de hoy no lo usa».
+  assert.notEqual(
+    obraSegunVersion(ALBARAN_CONTENIDO_VERSION_ACTUAL, {
+      lugarEntrega: 'C/ Mayor 12', jobDireccion: 'NO USAR', contenidoCongelado: BLOQUE,
+    }),
+    'NO USAR',
+    '🔴 la versión actual vuelve a sacar la obra de `Job.direccion`: es el defecto de SCRUM-374. ' +
+    'Cada firma nueva quedaría atada a un campo que el producto deja editar.',
   );
-  // Y con el campo del albarán vacío da NULL — no cae al Trabajo por detrás.
-  assert.equal(
-    obraSegunVersion(ALBARAN_CONTENIDO_VERSION_ACTUAL, { lugarEntrega: null, jobDireccion: 'NO USAR' }),
-    null,
+  // Y con TODAS las demás fuentes vacías salvo el Trabajo, sigue sin caer a él por detrás.
+  assert.notEqual(
+    obraSegunVersion(ALBARAN_CONTENIDO_VERSION_ACTUAL, {
+      lugarEntrega: null, jobDireccion: 'NO USAR', contenidoCongelado: { ...BLOQUE, obra: null },
+    }),
+    'NO USAR',
     '🔴 sin lugar de entrega se está cayendo a `Job.direccion`: eso sella un dato que nadie escribió',
   );
+
+  // Y la sonda que usa la ruta que escribe la dirección contesta lo mismo. Son dos caminos hacia el
+  // mismo hecho: si dijeran cosas distintas, uno de los dos estaría protegiendo lo que no toca.
+  assert.equal(versionLeeJobDireccion(ALBARAN_CONTENIDO_VERSION_ACTUAL), false,
+    '🔴 la sonda de SCRUM-424 dice que la versión de HOY lee `Job.direccion`.');
 });
 
 test('SCRUM-374 · pero v:1 SIGUE leyendo el Trabajo: los sobres viejos no se tocan', () => {
@@ -77,11 +103,20 @@ test('SCRUM-374 · pero v:1 SIGUE leyendo el Trabajo: los sobres viejos no se to
   // veredicto sobre documentos intactos.
   assert.equal(obraSegunVersion(1, { lugarEntrega: 'C/ Mayor 12', jobDireccion: null }), null);
   assert.equal(obraSegunVersion(1, { lugarEntrega: null, jobDireccion: 'C/ Sol 3' }), 'C/ Sol 3');
+  assert.equal(versionLeeJobDireccion(1), true,
+    '🔴 la sonda dice que un sobre v:1 NO lee `Job.direccion`, y es falso: escribirla dejaría esa ' +
+    'firma sin poder verificarse.');
 });
 
-test('SCRUM-374 · SUELO: las dos versiones dan resultados DISTINTOS con las mismas fuentes', () => {
+test('SCRUM-374 · SUELO: v:1 y la de HOY dan resultados DISTINTOS con las mismas fuentes', () => {
   // Si dieran lo mismo, los dos tests de arriba pasarían sin distinguir nada — y el despacho por
-  // versión podría estar roto sin que se notara.
-  const fuentes = { lugarEntrega: 'ALBARÁN', jobDireccion: 'TRABAJO' };
-  assert.notEqual(obraSegunVersion(1, fuentes), obraSegunVersion(2, fuentes));
+  // versión podría estar roto sin que se notara. Se cara contra la ACTUAL, no contra un 2 escrito
+  // a mano: es lo único que no caduca con la versión siguiente.
+  const fuentes = { lugarEntrega: 'ALBARÁN', jobDireccion: 'TRABAJO', contenidoCongelado: BLOQUE };
+  assert.notEqual(
+    obraSegunVersion(1, fuentes),
+    obraSegunVersion(ALBARAN_CONTENIDO_VERSION_ACTUAL, fuentes),
+    '🔴 SUELO: v:1 y la versión de hoy resuelven la obra igual — el despacho por versión no ' +
+    'distingue nada y los tests de arriba no miden nada.',
+  );
 });

@@ -194,6 +194,77 @@ function firmadoV2(clave, cambios = {}) {
   };
 }
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-438 · v:3 — LOS CINCO CAMPOS VIAJAN DENTRO DEL SOBRE
+//
+// Los tres bloques congelados de abajo son los que sella v:3. Lo que cambia respecto de v:2 no es
+// el orden de las claves —es el mismo— sino DE DÓNDE salen sus valores: del sobre, no de las filas
+// vivas. Por eso las fuentes vivas de `FUENTES_V3` llevan valores DISTINTOS a los congelados: si
+// la receta se equivocara y leyera una fuente viva, el hash no cuadraría con el vector.
+const CONGELADOS_V3 = {
+  completo: { obra: 'C/ Mayor 12', referenciaTrabajo: 'Reparación fuga', cliente: 'Ana Pérez', emisor: 'Fontanería Torres', emisorNif: 'B12345678' },
+  minimo: { obra: null, referenciaTrabajo: null, cliente: null, emisor: null, emisorNif: null },
+  libre: { obra: 'Nave 4', referenciaTrabajo: null, cliente: 'Cliente Libre SL', emisor: 'Fontanería Torres', emisorNif: null },
+};
+
+/**
+ * Vectores congelados de v:3. LITERALES, calculados UNA vez con el SELLADOR
+ * (`computeAlbaranContentHash(..., 3)`) el 11-ago-2026 — nunca con el verificador: un vector
+ * calculado con el verificador compararía el verificador contra sí mismo y no podría fallar.
+ */
+const SELLOS_V3_CONGELADOS = {
+  completo: '1a826b551aa7b3a8cd09ccb6498cbe322ce43d203bb15fc93f0d025d2031acd0',
+  minimo: '3a09d98541b4a3db1b11d2dfcca15f9adb9f0c1e37daeee9196bd70766a637f5',
+  libre: '0520aad8d980ccb976d5b821e7e94bd86dcc4662ac4c6221ffc3e49b02ec53e3',
+};
+
+const FUENTES_V3 = {
+  completo: {
+    numero: 'ALB-2026-0369', fecha: new Date('2026-06-01T09:30:00.000Z'), modoValoracion: 'VALORADO',
+    lineas: [{ concepto: 'Bajante PVC 110', cantidad: 3, unidad: 'm', precioUnitario: 12.5, tipoIva: 21 }],
+    notas: 'Acceso por el patio',
+    fechaEntrega: new Date('2026-07-15T00:00:00.000Z'),
+    firmadoPorNombre: 'Marta Ruiz Alonso', firmadoPorCalidad: 'encargado_o_personal_de_obra',
+    // 🔴 Las fuentes VIVAS dicen otra cosa a propósito: es el control de que v:3 no las lee.
+    jobDireccion: 'VIVO-NO-USAR', lugarEntrega: 'VIVO-NO-USAR', referenciaTrabajo: 'VIVO-NO-USAR',
+    cliente: 'VIVO-NO-USAR', emisor: 'VIVO-NO-USAR', emisorNif: 'VIVO-NO-USAR',
+    contenidoCongelado: CONGELADOS_V3.completo,
+  },
+  minimo: {
+    numero: 'ALB-2026-0001', fecha: '2026-01-02T00:00:00.000Z', modoValoracion: 'SIN_VALORAR',
+    lineas: [], notas: null, fechaEntrega: null, firmadoPorNombre: null, firmadoPorCalidad: null,
+    jobDireccion: 'VIVO-NO-USAR', lugarEntrega: 'VIVO-NO-USAR', referenciaTrabajo: 'VIVO-NO-USAR',
+    cliente: 'VIVO-NO-USAR', emisor: 'VIVO-NO-USAR', emisorNif: 'VIVO-NO-USAR',
+    contenidoCongelado: CONGELADOS_V3.minimo,
+  },
+  libre: {
+    numero: 'ALB-2026-0300', fecha: '2026-05-09T08:15:00.000Z', modoValoracion: 'SIN_VALORAR',
+    lineas: [{ concepto: 'Desatasco', cantidad: 2, unidad: 'h' }], notas: '',
+    fechaEntrega: null, firmadoPorNombre: null, firmadoPorCalidad: null,
+    jobDireccion: 'VIVO-NO-USAR', lugarEntrega: 'VIVO-NO-USAR', referenciaTrabajo: 'VIVO-NO-USAR',
+    cliente: 'VIVO-NO-USAR', emisor: 'VIVO-NO-USAR', emisorNif: 'VIVO-NO-USAR',
+    contenidoCongelado: CONGELADOS_V3.libre,
+  },
+};
+
+function firmadoV3(clave, cambios = {}) {
+  return {
+    evidencia: { v: 3, hashAlg: 'sha256', contentHash: SELLOS_V3_CONGELADOS[clave] },
+    contenido: { ...FUENTES_V3[clave], ...cambios },
+  };
+}
+
+/**
+ * TODOS los vectores congelados, por versión. Es lo que hace que el guard de despacho vigile el
+ * INVARIANTE («toda versión del recetario tiene vector») en vez de una lista escrita a mano que
+ * solo pide sumar un número cada vez que nace una versión.
+ */
+const VECTORES_CONGELADOS = {
+  1: SELLOS_V1_CONGELADOS,
+  2: SELLOS_V2_CONGELADOS,
+  3: SELLOS_V3_CONGELADOS,
+};
+
 /** Lo que el sellador necesita para reproducir un v:2, desde una fuente de este fichero. */
 function paramsSelladorV2(f) {
   return {
@@ -401,12 +472,21 @@ test('SCRUM-369 · ④ cada sobre se recalcula con la receta de SU versión, no 
   assert.match(r.mensaje, /ALB-2026-0369/, '🔴 tampoco aquí se nombra el albarán');
 });
 
-test('SCRUM-369 · el verificador despacha v:1 y v:2, y una versión sin receta se DECLARA', () => {
-  // Estado MEDIDO de este árbol: SCRUM-300 (C5) trajo el v:2, así que el recetario tiene DOS.
-  // Cada una con su vector congelado más abajo — sin él, «se sabe despachar» sería una promesa.
-  assert.deepEqual(versionesSoportadas(), [1, 2],
-    '🔴 el recetario ha cambiado: actualiza este test Y el vector congelado de la versión nueva. ' +
-    'Una versión que se sabe despachar sin vector congelado no está verificada, está declarada.');
+test('SCRUM-369 · TODA versión del recetario tiene vector congelado, y una sin receta se DECLARA', () => {
+  // ⚠️ SCRUM-438 · REAPUNTADO AL INVARIANTE. Este test fijaba `[1, 2]` a mano, así que cada versión
+  // nueva lo ponía rojo pidiendo que alguien **sumara un número**. Eso no vigila nada: vigila que
+  // el número esté escrito dos veces. El invariante que de verdad protegía es el de su propio
+  // mensaje —«una versión que se sabe despachar sin vector congelado no está verificada, está
+  // declarada»— y ése ya no caduca con v:4.
+  const sinVector = versionesSoportadas().filter((v) => !(v in VECTORES_CONGELADOS));
+  assert.deepEqual(sinVector, [],
+    `🔴 el recetario sabe despachar v:${sinVector.join(', v:')} y no hay vector congelado para ` +
+    'esa(s) versión(es). Una versión que se sabe despachar sin vector congelado NO está verificada, ' +
+    'está DECLARADA: el test compararía el sellador contra sí mismo y no podría fallar nunca.');
+  // Suelo: si el mapa de vectores se quedara vacío, lo de arriba pasaría por no tener nada que casar.
+  assert.ok(Object.keys(VECTORES_CONGELADOS).length >= 2,
+    `🔴 solo hay ${Object.keys(VECTORES_CONGELADOS).length} vector(es) congelado(s): con menos de dos ` +
+    'este guard no distingue «todas cubiertas» de «no hay ninguna».');
 
   // Y una que NO existe sigue declarándose en vez de aproximarse con la más parecida.
   const r = verificarSobre({ evidencia: { v: 9, contentHash: 'a'.repeat(64) }, contenido: FUENTES.minimo });

@@ -182,11 +182,31 @@ test('SCRUM-424 · 🔴 R4 · REGLA 29: escribir la dirección NO deja sin verif
   );
   // Suelo de la sonda: las dos ramas tienen que dar resultados DISTINTOS, o «true» y «false»
   // significarían lo mismo y las dos afirmaciones de arriba serían decorativas.
+  //
+  // 🔴 SCRUM-438: la llamada directa lleva ahora el bloque congelado, porque la versión de HOY lo
+  // lee y sin él el resolvedor LANZA. No es una concesión: es el mismo dato que la sonda de
+  // `versionLeeJobDireccion` aporta por dentro, y este suelo mide la misma pregunta por el camino
+  // corto.
+  const BLOQUE = {
+    obra: 'C', referenciaTrabajo: null, cliente: null, emisor: null, emisorNif: null,
+  };
   assert.notEqual(
-    obraSegunVersion(1, { jobDireccion: 'A', lugarEntrega: 'B' }),
-    obraSegunVersion(ALBARAN_CONTENIDO_VERSION_ACTUAL, { jobDireccion: 'A', lugarEntrega: 'B' }),
+    obraSegunVersion(1, { jobDireccion: 'A', lugarEntrega: 'B', contenidoCongelado: BLOQUE }),
+    obraSegunVersion(ALBARAN_CONTENIDO_VERSION_ACTUAL, { jobDireccion: 'A', lugarEntrega: 'B', contenidoCongelado: BLOQUE }),
     '🔴 SUELO: las dos versiones dan lo MISMO con las mismas fuentes — la sonda no distingue nada.',
   );
+
+  // 🔴 Y LA VERSIÓN QUE NADIE SABE INTERPRETAR SE PROTEGE, no se deja pasar. Un sobre con una `v`
+  // que este código no conoce (una v:4 desplegada y luego revertida, una fila tocada a mano) no
+  // permite afirmar que su firma NO depende del Trabajo. Escribir la dirección ahí dejaría esa
+  // firma sin poder verificarse, y eso no se deshace (regla 29); negarse a escribirla es un 409
+  // que alguien resuelve mirando. Y sobre todo: NO revienta —antes lanzaba y la ruta devolvía 500—.
+  assert.equal(versionLeeJobDireccion(99), true,
+    '🔴 una versión de sobre DESCONOCIDA se está tratando como «no depende del Trabajo». Eso es ' +
+    'adivinar hacia el lado caro: si dependía, la firma queda sin poder verificarse.');
+  assert.equal(versionLeeJobDireccion(undefined), false,
+    '🔴 un albarán SIN FIRMAR se está tratando como si tuviera una firma que proteger: entonces la ' +
+    'dirección no se podría escribir nunca y esta tarea no existiría.');
 
   // El caso que se bloquea: un Trabajo con un albarán firmado en v:1.
   const conV1 = [
