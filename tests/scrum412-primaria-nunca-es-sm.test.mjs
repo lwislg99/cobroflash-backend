@@ -26,11 +26,12 @@ const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIR = path.join(RAIZ, 'public/dashboard/js');
 
 /**
- * LAS DIEZ QUE SE QUEDAN, con su motivo. La clave es `fichero:variable`, NO el número de línea:
+ * LAS NUEVE QUE SE QUEDAN, con su motivo. La clave es `fichero:variable`, NO el número de línea:
  * un censo anclado a líneas caduca al primer commit y obliga a reeditarlo por nada.
  *
- * Clasificadas el 10-ago-2026 leyendo cada sitio. Las dos que faltan —`btnBizum` del detalle de
- * factura y `+ Nuevo justificante` del listado— eran PRIMARIA y perdieron el `btn-sm`.
+ * Clasificadas el 10-ago-2026 leyendo cada sitio. Las tres que faltan —`btnBizum` del detalle de factura,
+ * `+ Nuevo justificante` del listado y el `Firmar` del modal de firma— eran PRIMARIA y perdieron el
+ * `btn-sm`.
  */
 const DECLARADAS = {
   'invoiceDetailView.js:btnPdf':
@@ -54,10 +55,6 @@ const DECLARADAS = {
     'FILA. Un «✓ Aprobar» por cada presupuesto pendiente de la lista.',
   'templatesView.js:btnUse':
     'FILA. Un «Usar» por cada plantilla.',
-  'signaturePad.js:okBtn':
-    'MODAL de firma. ⚠️ DECLARADO CON DUDA, y se dice en vez de decidirlo solo: es un modal, pero '
-    + 'lo pulsa el CLIENTE en una obra y es el momento más irrepetible del producto (SCRUM-404). '
-    + 'Si el fundador decide que un modal así cuenta como primaria, sale de esta lista.',
 };
 
 /** Todos los `btn-primary btn-sm` que hay, con el nombre de su variable. */
@@ -108,13 +105,19 @@ test('SCRUM-412 · la lista de declaradas no se llena de fantasmas', () => {
     + 'O se arreglaron y hay que quitarlas de la lista, o cambiaron de nombre.');
 });
 
-test('SCRUM-412 · las dos que ERAN primaria ya no llevan `btn-sm`', () => {
+test('SCRUM-412 · las TRES que ERAN primaria ya no llevan `btn-sm`', () => {
   const invoiceDetail = fs.readFileSync(path.join(DIR, 'invoiceDetailView.js'), 'utf8');
   const invoicesList = fs.readFileSync(path.join(DIR, 'invoicesView.js'), 'utf8');
   assert.ok(!/btnBizum\.className\s*=\s*'btn-primary btn-sm'/.test(invoiceDetail),
     '🔴 `btnBizum` vuelve a ser `btn-sm`, y el registro de C2 lo declara PRIMARIA en `pending`');
   assert.ok(!/nuevaFacturaBtn\.className\s*=\s*'btn-primary btn-sm'/.test(invoicesList),
     '🔴 el botón de crear factura vuelve a ser `btn-sm`: es la primaria de su pantalla');
+
+  // El tercero lo decidió el fundador: el modal de firma existe PARA UNA SOLA COSA, y lo pulsa el
+  // CLIENTE en una obra. SCRUM-404 midió el precio de fallarlo: pedirle que firme OTRA VEZ.
+  const firma = fs.readFileSync(path.join(DIR, 'signaturePad.js'), 'utf8');
+  assert.ok(!/okBtn\.className\s*=\s*'btn-primary btn-sm'/.test(firma),
+    '🔴 el botón de firmar vuelve a ser `btn-sm`: lo pulsa el cliente en una obra y no hay segunda toma');
 });
 
 test('SCRUM-412 · SCRUM-352 intacto: `btn-sm` sigue midiendo 30', () => {

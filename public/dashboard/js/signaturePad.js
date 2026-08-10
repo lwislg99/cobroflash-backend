@@ -255,7 +255,11 @@
     btnRow.appendChild(cancelBtn);
 
     const okBtn = document.createElement('button');
-    okBtn.className = 'btn-primary btn-sm';
+    // 🔴 SCRUM-412 · SIN `btn-sm`: este modal existe PARA UNA SOLA COSA, así que su botón es
+    // primaria por el criterio del fundador. Y encima lo pulsa el CLIENTE en una obra: SCRUM-404
+    // midió lo que cuesta fallar este momento — pedirle a una persona que firme OTRA VEZ, delante
+    // del profesional. 30 px no se pulsan con guantes y sin poder repetir.
+    okBtn.className = 'btn-primary';
     okBtn.textContent = 'Confirmar firma';
     okBtn.disabled = true;
     okBtn.style.opacity = '.6';
