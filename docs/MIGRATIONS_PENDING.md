@@ -482,6 +482,89 @@ queda sellado con una versión que el código anterior no sabe verificar.
 
 ---
 
+## SCRUM-449 · `auth_sessions.instalada_pwa` — ✅ APLICADO en las TRES bases (10-ago-2026)
+
+**REGISTRO de lo que se ejecutó y se verificó el 10-ago-2026.** No es una afirmación sobre el
+estado de hoy: es lo que se midió ese día, con su método.
+
+Es la columna que desbloquea la **fase 2 de H5 (SCRUM-360)** — y, hasta que dev la tuvo,
+`prisma/schema.prisma` **no se podía tocar**: `compararEsquema` recorre el esquema y pregunta si
+cada cosa está en la base, **nunca al revés**. Con el esquema por delante de dev, las tres sesiones
+se ponen rojas a la vez.
+
+```sql
+ALTER TABLE "auth_sessions"
+  ADD COLUMN IF NOT EXISTS "instalada_pwa" BOOLEAN;
+```
+
+Fichero: `docs/sql/scrum-449-instalada-pwa.sql`. **Aditivo y re-ejecutable** (`IF NOT EXISTS`):
+volver a correrlo sobre una base ya aplicada no hace nada y no falla.
+
+> 🔴 **SIN `NOT NULL` Y SIN `DEFAULT`, A PROPÓSITO.** `null` es el **tercer estado** —«no se pudo
+> saber»— y **no es lo mismo que `false`**. Un `DEFAULT false` lo destruiría en la primera fila:
+> «no instalada» y «no supimos si estaba instalada» pasarían a ser el mismo valor, que es
+> exactamente el recuento tranquilo y falso que SCRUM-360 separó en tres estados.
+
+> ⚠️ **NOMBRES DE LA BASE (snake_case), no del modelo.** Salen de los `@@map`/`@map`: la tabla es
+> `auth_sessions`, y la convención de ese modelo es snake_case (`merchant_id`, `team_member_id`,
+> `expires_at`, `used_at`, `created_at`). No se «corrigen».
+
+> ⚠️ **`prisma/schema.prisma` TODAVÍA NO LO LLEVA, y es deliberado:** lo edita el fundador **ahora
+> que las tres bases están**. Mientras dure esa ventana **las bases van por delante del esquema a
+> propósito**, así que **NO se corre `prisma migrate diff` contra ninguna**: propondría **BORRAR**
+> la columna. Esta sesión no lo ha ejecutado.
+
+### Por qué `db execute` y no `db push`
+
+`db push` sincroniza la base **con el schema**, y el schema todavía no tiene la columna: le pediría
+justo lo contrario de lo que se quiere. `db execute --file` aplica **exactamente esa sentencia y
+nada más**. Además, `npm run db:push` y sus envoltorios están rotos (SCRUM-223).
+
+> 🔴 Y lo que eso obliga a añadir: `--accept-data-loss` **protege a `db push`, NO a
+> `db execute --file`** (medido en SCRUM-395). `db execute` corre lo que le des. Por eso dev se
+> aplicó con `scripts/aplicar-sql-dev.mjs`, que **lee el fichero entero, lo enseña línea a línea y
+> solo aplica las formas de una LISTA BLANCA**; lo que no sabe clasificar lo **rechaza**. Se corrió
+> primero **en ensayo** (sin `--go`) y se enseñó el SQL completo antes de tocar nada.
+
+| Base | Host · nombre | Cómo se aplicó | Verificación |
+| --- | --- | --- | --- |
+| **Producción** | `autorack…` / `railway` (55 filas en `invoices`) | **a mano por el fundador**, 10-ago-2026 | ✅ **columna = 1** |
+| **Staging** | `acela.proxy.rlwy.net` / `railway` (7 filas) | **a mano por el fundador**, 10-ago-2026 | ✅ **columna = 1** |
+| **Dev** | `acela.proxy.rlwy.net` / `yaqu_dev_javier` (0 filas) | **esta sesión (SCRUM-449)** con `node scripts/aplicar-sql-dev.mjs --file docs/sql/scrum-449-instalada-pwa.sql --go`, tras el ensayo | ✅ **`yaqu_dev_javier` · 0 · 1** |
+
+**La consulta de verificación —UNA sola, y es la que manda.** Se lee el CATÁLOGO, nunca el mensaje
+del comando:
+
+```sql
+SELECT
+  current_database()                                        AS base,
+  (SELECT count(*) FROM invoices)                           AS invoices,
+  (SELECT count(*) FROM information_schema.columns
+     WHERE table_name = 'auth_sessions'
+       AND column_name = 'instalada_pwa')                   AS columna;
+```
+
+> 🔴 **VA EN UNA SOLA CONSULTA A PROPÓSITO:** confirma **dónde** estás y **qué** hiciste al mismo
+> tiempo, y así ningún número puede esconderse detrás de otro en una consola que ejecuta varias
+> sentencias. Mismo patrón que SCRUM-425.
+
+**Los dos discriminadores, porque dev y staging COMPARTEN HOST.** Mirar solo el host las daría por
+iguales: hace falta el **nombre de base** (`yaqu_dev_javier` es la única con nombre propio; las
+otras dos se llaman `railway`) y el **recuento de `invoices`** como confirmación cruzada.
+
+> **✋ Y el suelo, que no es ceremonia:** si la tabla `invoices` **no existiera**, eso no sería «dev
+> está vacía» — sería no estar donde uno cree, y había que parar. Se comprobó **antes** del `ALTER`
+> con la misma consulta sin la columna: devolvió `yaqu_dev_javier` · 0, o sea que la tabla existe y
+> el 0 es un recuento de verdad, no una tabla ausente. `IF NOT EXISTS` protege la **columna**, no
+> la **tabla**: sobre una base equivocada habría creado la columna tan tranquilo.
+
+**Sobre la credencial:** se usó `DATABASE_URL_DEV` del entorno. **La URL no viaja en `argv`** —ni
+`--url` ni `--from-url`, que quedan en `ps` y dentro de `e.message`—: el aplicador la pasa en el
+entorno del hijo y la parsea con `parseBDSegura`, que no tiene forma de devolver la cadena. En este
+registro solo constan **nombre de la clave, host y base**.
+
+---
+
 ## SCRUM-425 · `albaranes.clave_idempotencia` + su único — ✅ APLICADO en las TRES bases (10-ago-2026)
 
 **REGISTRO de lo que se ejecutó y se verificó el 10-ago-2026.** No es una afirmación sobre el
