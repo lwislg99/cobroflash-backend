@@ -4,6 +4,7 @@ import { sendInvoicePaymentReminders }  from '../../modules/billing/domain/invoi
 import { sendWeeklyDigests }            from '../../modules/messaging/domain/weeklyDigest.service';
 import { runLifecycleEmails }           from '../../modules/messaging/domain/lifecycle.service';
 import { runMaintenanceProposals }      from '../../modules/maintenance/domain/maintenance.service';
+import { avisarSiEntroClienteReal }    from '../../modules/system/domain/avisoPuerta.service'; // SCRUM-390
 import { expireQuotes }                 from '../../modules/quotes/domain/expire.service';
 import { barrerSellosAlbaran, resumenDelBarrido } from '../../modules/jobs/domain/albaranBarrido';
 
@@ -43,6 +44,14 @@ export function startCronJobs(): void {
     } catch (err: any) {
       console.error('[cron] Error en runMaintenanceProposals:', err?.message);
     }
+
+      // SCRUM-390 · LA PUERTA DEL PRIMER CLIENTE REAL. Paso APARTE y DESPUÉS: si esto fallara,
+      // las propuestas de mantenimiento ya están hechas. `avisarSiEntroClienteReal` NO lanza
+      // nunca —devuelve su fallo— porque un vigilante que rompe lo que vigila es peor que no
+      // tenerlo. Y va aquí y no en el arranque: la puerta avisa, no frena.
+      const puerta = await avisarSiEntroClienteReal();
+      if (puerta.fallo) console.error('[cron] puerta cliente real:', puerta.fallo);
+      else if (puerta.avisado) console.log(`[cron] puerta cliente real: AVISADO (${puerta.motivo})`);
   });
 
   // Lunes a las 9:00 AM: digest semanal por email
