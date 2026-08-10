@@ -68,11 +68,6 @@ const CENSO = Object.freeze({
   // conectar…» y «No se ha recogido el trazo…». Por eso esto sube 2 y no 4.
   'albaranDetailView.js': 1,
   'signaturePad.js': 1,
-  // SCRUM-405 (+1, 7-ago-2026, A CONCIENCIA): el mensaje de «esto no es tu fichero». Vive en la
-  // forma común y no en la vista PORQUE LO USAN DOS —`exportView` y `reportsView`—, y en scripts
-  // clásicos una constante duplicada en dos ficheros es SyntaxError en parseo. Es el único
-  // marcador de `api.js` y sale por `showToast`, así que sí se pinta: cuenta.
-  'api.js': 1,
   // SCRUM-285 (+1, 10-ago-2026, A CONCIENCIA): la pantalla de Cobros nace con UN marcador
   // —`COBROS_MARCA`— y lo pinta en varios sitios: título de la pantalla, cabeceras de la tabla,
   // estado vacío, el rótulo del filtro «sin método registrado» y la etiqueta de los días de deuda.
@@ -86,6 +81,15 @@ const CENSO = Object.freeze({
   // Baja a 0 —o sea, esta línea se borra— cuando el asesor apruebe la lista de microcopy que va
   // con la entrega.
   'cobrosView.js': 1,
+  // SCRUM-405 (−1, 10-ago-2026): `api.js` SALE del censo. Su único marcador era el mensaje de
+  // «esto no es tu fichero», y el asesor aprobó su microcopy (regla 30) — que resultó ser DOS
+  // textos y no uno: hasta hoy las dos causas (`esHtml` y `!cuadra`) pintaban el MISMO, así que
+  // cuando era la segunda el texto MENTÍA, culpaba a la wifi de la obra y mandaba al profesional
+  // a gastar datos móviles por algo que no estaba en su red.
+  //
+  // La entrada se BORRA en vez de bajar a 0, siguiendo lo que dejó escrito SCRUM-424 aquí mismo:
+  // `censoActual()` sólo lista ficheros CON marcadores, así que un 0 sería una bajada permanente
+  // sin anotar. Y salir del censo NO saca de la vigilancia — lo fija R4b.
   // SCRUM-405 (−4, 7-ago-2026): al pasar las tres descargas por la forma común desaparecieron
   // cuatro ramas de error que pintaban marcador. El trinquete APRIETA: 15 → 11.
   // 11 → 5 el 10-ago-2026: SCRUM-244 trajo los ocho textos APROBADOS de la card de portabilidad
