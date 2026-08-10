@@ -848,7 +848,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   const notesHeader = document.createElement('div');
   notesHeader.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:10px';
   notesHeader.innerHTML =
-    '<h3 class="detail-section-title" style="margin:0">📝 Notas internas</h3>' +
+    '<h3 class="detail-section-title" style="margin:0">Notas internas</h3>' +
     '<span style="font-size:11px;color:var(--muted);background:var(--neutral-100);padding:2px 8px;border-radius:999px">Solo tú las ves</span>';
   notesSec.appendChild(notesHeader);
 

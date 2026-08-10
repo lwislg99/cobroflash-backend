@@ -1,4 +1,175 @@
-# SCRUM-358 · H3 — La clave de idempotencia, MEDIDA para que la decidas (informe, cero construcción)
+# SCRUM-358 · H3 — La clave de idempotencia (informe del 10-ago) + el ALTA idempotente (11-ago)
+
+> **Este fichero tiene DOS entradas.** Arriba, la del 11-ago: lo construido. Abajo, sin tocar, la
+> medición del 10-ago que decidió la clave. La medición no se reescribe: es la que sostiene el
+> diseño y quien lo discuta tiene que poder leer sobre qué se decidió.
+
+---
+
+# 11-ago-2026 · EL ALTA DE ALBARÁN, IDEMPOTENTE (mitad de SERVIDOR)
+
+**Carril:** H (albarán sin red) · **Gate:** sin gate, corre en `npm test`
+
+**Medido contra:** `origin/main` = `7f826e6…` · con SCRUM-425 dentro (columna en las tres bases
+**y** en `schema.prisma`).
+
+> **Cero `prisma migrate diff`** — ya no está prohibido, pero no hace falta para nada de esto.
+> Cliente de Prisma regenerado desde este worktree antes de la primera tanda, y comprobado que
+> conoce el campo: `claveIdempotencia String nullable=true`, únicos
+> `[["merchantId","claveIdempotencia"],["merchantId","numero"]]`.
+
+## 1 · La rebanada, y lo que NO entra
+
+**Se construye la mitad de SERVIDOR: que el alta sea idempotente.** Es lo que la columna
+desbloqueaba, no necesita navegador y se puede probar entera.
+
+**NO se construye la mitad de CLIENTE** —la cola en IndexedDB, el drenado, los reintentos con
+espera creciente, el tope de 50, el control del portal cautivo— y **no se finge probada**: el
+fichero de tests declara ese hueco en su cabecera. Sigue dependiendo de H5 (almacenamiento) y del
+`[HUECO]` de H0/P2 (qué navegadores usan los pros).
+
+## 2 · Las tres preguntas que quedaban del PASO 0
+
+### 3 · ¿Qué devuelve el servidor a una repetición legítima? **El original, con 200**
+
+Se devuelve `yaExiste` **sin reservar número** y con `200`, no `201`. Tres decisiones, cada una con
+su motivo:
+
+* **El albarán original, nunca un error.** Un 409 ahí le diría al profesional que salió mal algo
+  que salió **bien**, y dejaría a la cola sin el documento con el que cerrar su elemento.
+* **200 y no 201.** Se está entregando algo que ya existía; `201` afirma «he creado».
+* 🔴 **Y no se reserva número.** Si se reservara antes de mirar la clave, en una repetición ese
+  número quedaría **consumido y sin documento**: un **hueco en la serie** abierto por la propia
+  idempotencia — justo lo que `allocateAlbaranNumber` vive dentro de la transacción para evitar
+  (SCRUM-234/302). **Por eso el orden es cerrojo → constraint → número, y hay test del orden.**
+
+### 4 · Misma clave con contenido distinto: **conflicto, y se nombra qué cambió**
+
+`compararAlta` compara `jobId · modoValoracion · lineas · notas`. Si difieren → **409** con
+`numeroOriginal` y `diferencias`. No se devuelve el original (sería tirar el segundo alta en
+silencio) ni se crea otro (chocaría contra el único).
+
+> ⚠️ **LÍMITE DECLARADO:** se compara contra el contenido **ACTUAL** del original, porque no se
+> guarda ninguna huella de cómo nació — eso pediría otra columna. Si alguien **edita** el albarán y
+> luego llega la repetición, saldrá conflicto sobre una repetición legítima. **En el escenario de
+> la cola no puede pasar** (si la respuesta se perdió, el pro no sabe que el albarán existe y no ha
+> podido editarlo), pero fuera de él sí. Queda escrito en el módulo, no supuesto.
+
+### 5 · Ausencia de clave: **no falla, pero no pasa en silencio**
+
+Sin clave el alta funciona igual —los clientes de hoy no la mandan y los albaranes históricos no la
+tienen—, pero la respuesta **lo dice**: `idempotencia: 'no_solicitada' | 'aplicada' | 'repetida'`.
+
+**Por qué importa:** el día que la cola dejara de enviar la clave por un fallo suyo, todo seguiría
+en verde con la idempotencia **apagada** y nadie lo notaría. «Con clave» y «sin clave» no pueden
+dar la misma salida.
+
+## 3 · La forma copiada, y lo que se copió con ella
+
+`invoiceNumber.service.ts:115-122`, **con su motivo**:
+
+* **Se pregunta al constraint**, por el nombre del índice (`merchantId_claveIdempotencia`): si el
+  índice cambiara de forma, esto **no compilaría**.
+* **No se captura el `P2002`.** En PostgreSQL una sentencia fallida **aborta la transacción**:
+  reintentar dentro de la misma `tx` no es reintentar, es insistir sobre una tx muerta (`25P02`).
+  Hay test de que no aparece un `P2002` en el alta.
+* **La consulta va DENTRO de `pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)`**, cuya clave es
+  `merchantId` — exactamente el alcance del índice. Mismo namespace que la numeración **a
+  propósito**: es la misma sección crítica (decidir si este alta ocurre y con qué número), y
+  separarlas dejaría que dos peticiones con la misma clave pasaran a la vez la comprobación.
+
+**Y una clave demasiado larga se RECHAZA, no se recorta** (`VARCHAR(64)`): recortar convertiría dos
+claves con el mismo prefijo en la misma, y la segunda alta se tomaría por repetición de la primera
+— **un albarán perdido en silencio**, el modo de fallo por el que el propio ticket descarta el
+content hash como clave.
+
+> **Y lo que ya sabíamos de SCRUM-425 sigue valiendo aquí:** `claveIdempotencia` **no viaja al
+> duplicar**. Si algo de H3 la copiara por otro camino, chocaría contra el mismo único.
+
+## 4 · Verificación — 9 tests, y tres rojos por el mecanismo
+
+| | Qué | Resultado |
+| --- | --- | --- |
+| **EL test** | la misma alta dos veces es UNA · **y dos albaranes legítimamente idénticos NO se deduplican** (la búsqueda es por CLAVE, jamás por contenido) | ✅ |
+| Conflicto | misma clave + contenido distinto → nombra **cuál** de los cuatro campos cambió | ✅ |
+| Clave larga | se rechaza, con control positivo en el tope exacto | ✅ |
+| Sin clave | no falla · y las tres salidas se distinguen | ✅ |
+| Orden | cerrojo → constraint → número | ✅ |
+| `P2002` | no se captura | ✅ |
+| Microcopy | el 409 lleva marcador (regla 30) | ✅ |
+| SUELO | si no encuentra la ruta o el recorte sale corto, **falla declarándose ciego** | ✅ |
+
+**Los tres rojos, sobre código ya commiteado:**
+
+| Mutación | Cae diciendo |
+| --- | --- |
+| la consulta de la clave, fuera del cerrojo | *«LA CONSULTA DE LA CLAVE VA FUERA DEL CERROJO … dos peticiones con la misma clave pasan las dos la comprobación»* |
+| reservar el número antes de mirar la clave | *«un HUECO EN LA SERIE abierto por la propia idempotencia»* |
+| la repetición devuelve 409 en vez del original | *«le diría al profesional que salió mal algo que salió BIEN»* |
+
+### 🔴 Y una mutación que salió VERDE por estar rota ella, no el guard
+
+La primera prueba del orden **pasó**, y el primer impulso fue buscar el hueco en el guard. No
+estaba ahí: el fichero tiene **CRLF**, el `replace` de la línea del cerrojo llevaba `\n` y **no
+casó**, así que la mutación **duplicó** el cerrojo en vez de moverlo — y con dos, el primero seguía
+antes de la búsqueda. **El guard acertaba al pasar.**
+
+La mutación se declaraba «aplicada» porque el texto había cambiado, y eso no es lo mismo que haber
+cambiado **lo que se pretendía**. Rehechas las tres con **post-condición explícita** («hay
+exactamente un cerrojo y va después de la búsqueda»), y ahí sí cayeron.
+
+> **La lección, dicha para la próxima:** ante un verde bajo mutación, el primer sospechoso es **la
+> mutación**, igual que ante un rojo raro el primer sospechoso es el escáner. Una mutación sin
+> post-condición es un experimento sin control.
+
+## 5 · Microcopy del 409 — ✅ **APROBADA** (asesor, 11-ago-2026)
+
+```
+Este parte ya se creó antes con datos distintos a los que se están enviando ahora.
+No hemos creado nada para no duplicarlo: el parte ALB-2026-097 sigue guardado.
+Ábrelo desde el trabajo para revisarlo.
+```
+
+**El número del original va DENTRO del texto**, no solo en el campo de al lado del JSON: el
+profesional lee el mensaje, no la respuesta. En el 409 siempre se tiene (`yaExiste.numero`); sin
+él se cae a «el parte original sigue guardado», que es el texto aprobado tal cual.
+
+### 🔴 La corrección que trajo, y por qué quedó como guard
+
+Mi propuesta terminaba en *«Vuelve a crearlo desde el trabajo»*, y **contradice la frase
+anterior**: si el original existe y lo que se está evitando es duplicarlo, la salida no puede ser
+crear otro.
+
+> **Un mensaje que da una salida que produce el problema que acaba de evitar es peor que uno sin
+> salida.**
+
+Y fuera *«datos de envío»*: un fontanero no sabe qué es eso.
+
+**No se queda como nota: se queda como test.** El texto se fija **entero** (reformularlo es cambio
+de máster) y, además, hay un invariante aparte que prohíbe que el mensaje vuelva a mandar *crear
+otro*. Las dos capas están probadas en rojo por separado:
+
+| Mutación | Cae diciendo |
+| --- | --- |
+| se cambia la salida a «vuelve a crearlo» | *«el texto del 409 no es el aprobado … no se reformula, se cambia por máster»* |
+| se cambia la salida **y** se actualiza el test exacto a juego —lo que haría alguien «arreglándolo»— | *«el mensaje vuelve a mandar CREAR OTRO parte … la salida es ABRIR el que hay»* |
+
+La segunda es la que justifica tener dos capas: la primera sola se puede desactivar editando el
+propio test.
+
+Vive en `src/`, fuera del censo de SCRUM-402 (que escanea `public/dashboard/js/`).
+
+## 6 · Lo que no se ha tocado
+
+`prisma/schema.prisma` · el sellado, la huella y `computeAlbaranContentHash` · el camino de emisión
+· el mecanismo de firma (que **ya era idempotente**: 409 `albaran_locked`) · la ruta de duplicar ·
+ningún `.env` · ninguna base de datos.
+
+---
+---
+
+# 10-ago-2026 · LA MEDICIÓN QUE DECIDIÓ LA CLAVE (informe, cero construcción)
+
 
 **Fecha:** 10-ago-2026 · **Carril:** H (albarán sin red) · **Gate:** sin gate — esta tarea **solo lee**
 

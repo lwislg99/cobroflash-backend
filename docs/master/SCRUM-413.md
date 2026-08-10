@@ -224,3 +224,106 @@ texto estaba y lo que fallaba era **dónde**.
 
 `prisma/schema.prisma` · el camino de emisión (diff sin aplicar) · `INVOICING_ES_ENABLED` (regla 24)
 · ninguna factura emitida (regla 29) · los dos libros de SCRUM-325/426, que están entregados.
+
+---
+---
+
+# SCRUM-413 · segunda entrega · APLICADO con GO del fundador
+
+**Medido contra:** `origin/main` = `9ccfb2a54b2ce1c9503d7f6ca54827ed44ad4d3d` · 2026-08-10T18:37:17+02:00
+
+> **Regla 38: esto SÍ modifica el camino de emisión.** Por eso llevaba GO, y el GO está dado con
+> los números de la primera entrega delante.
+
+## El diff, por FICHERO y por LADO
+
+| fichero | + | − |
+|---|---|---|
+| `src/modules/invoicing/domain/tipoDocumento.ts` | **nuevo** | — |
+| `src/modules/invoicing/domain/verifactu.service.ts` | 62 | **2** |
+| `src/modules/invoicing/domain/invoicing.service.ts` | 10 | **1** |
+
+**Y las 2 líneas borradas de `verifactu.service.ts` son EXACTAMENTE el ternario mudo, las dos:**
+
+```
+-      tipoFactura: invoice.type === 'R1' ? 'R1' : 'F1',
+-    const tipoBase: 'F1' | 'R1' = inv.type === 'R1' ? 'R1' : 'F1';
+```
+
+No se ha borrado ni una línea más del camino de emisión. La de `invoicing.service.ts` es la firma
+`type?: string` que pasa a `type?: TipoDocumento`.
+
+## El sitio que más importaba: `:703`
+
+`:286` ya lo protegía `applyVeriFactu`. **`:703` no tenía nada en su cadena** y su consulta trae
+todas las facturas del año sin filtrar por tipo ni por sellado. Ahí el arreglo **no lanza a secas**:
+lanza `RegistroNoEmitibleError`, que es el camino que ese constructor **ya tiene** para lo que no se
+puede calificar — el bucle lo recoge y lo mete en `excluidos` **con motivo**. El resto del ejercicio
+sigue siendo entregable, y un paquete al que le falta algo **lo dice**.
+
+## `exigirTipoDeclarable` — la forma, y por qué es la correcta
+
+Va **arriba del todo de `applyVeriFactu`, junto al `isReceiptNumber` que ya estaba**, y devuelve el
+`TipoFactura` o lanza. Tres razones, y la tercera es la que manda:
+
+1. **Es el punto de no retorno**: antes de leer la cadena, calcular la huella o escribir nada.
+2. **Los dos ejes se leen juntos** — el `if` de arriba mira el NÚMERO, éste el TIPO — y eso importa
+   porque **en producción ya discrepan**: 5 facturas con `type: 'F1'` y número `J-`. Con un solo eje,
+   un documento no declarable entra por el otro lado.
+3. **Lanza en vez de excluir, y aquí sí es lo correcto**: esta función sella **UN** documento, no hay
+   lote del que salvar el resto. Es el mismo `throw` que su hermano de dos líneas más arriba. En
+   `construirRegistro` la respuesta correcta es la contraria, y por eso allí se hace al revés.
+   **Mismo veredicto, dos formas de fallar, cada una donde toca.**
+
+Además **devuelve el tipo en vez de solo comprobarlo**: así el punto donde se escribe la huella no
+puede volver a construir el valor por su cuenta. Un `assert` suelto habría dejado el `? :` vivo al
+lado, listo para divergir otra vez.
+
+Y **distingue los dos motivos** (`document_not_invoiceable` vs `unknown_invoice_type`): «no es una
+factura» es correcto y esperado; «no sé qué es esto» es que alguien escribió un tipo sin clasificar.
+Aplastarlos haría que el segundo se leyera como rutina, y es justo el que hay que mirar.
+
+## Por qué el veredicto es una unión etiquetada y no `'F1' | 'R1' | null`
+
+Hay **tres** desenlaces: se declara · **no se declara y es correcto** (justificante) · **no se
+sabe**. Con `null` los dos últimos se aplastan, y un llamador distraído trataría un tipo desconocido
+como «no declarable» — el silencio que este ticket quita. Con la unión etiquetada **el compilador no
+deja olvidarse de ninguno**.
+
+Y `AEAT_POR_TIPO` es un `Record<TipoDocumento, …>`: **si se añade un valor a la unión y no se le da
+entrada, no compila.** Ésa es la diferencia con el `else` — el `else` nunca falta.
+
+## La verificación: la sonda, invertida
+
+| tipo | ANTES | AHORA |
+|---|---|---|
+| `F1` | F1 | **F1** ✅ |
+| `R1` | R1 | **R1** ✅ |
+| `JUST` | **F1** 🔴 | `EXCLUIDA:documento_no_declarable:JUST` ✅ |
+| `ANT` | **F1** 🔴 | `EXCLUIDA:tipo_de_factura_desconocido:ANT` ✅ |
+| inventado | **F1** 🔴 | `EXCLUIDA:tipo_de_factura_desconocido:LO-QUE-SEA` ✅ |
+
+**Y el suelo que me salvó se conserva**: si `F1` y `R1` dejaran de coincidir, la sonda estaría rota y
+el resto no significaría nada.
+
+## 🔴 El guard me cazó a mí
+
+Al reescribir el comentario de `EmitInvoiceInput` cambié el texto de la reserva de `'ANT'`, y el
+assert que exige que esa reserva **no se evapore** se puso rojo. Tenía razón. Ahora ancla en lo
+estable —el valor y la palabra `RESERVADO`— en vez de en una frase concreta: **cuarta vez en esta
+sesión que un guard de texto se rompe por atarse a la forma y no al hecho.**
+
+Y se añadió lo que faltaba: el guard ahora **deriva la unión del producto** y la compara con su
+propia lista. Sin eso vigilaba su copia — alguien podía ampliar `TipoDocumento` y el fichero seguía
+verde.
+
+## Lo que sigue sin tocarse
+
+**Ninguna factura emitida** (regla 29): las 5 filas de producción con `type F1` y número `J-` **se
+quedan como están**. Qué hacer con ellas es otro ticket y otra decisión.
+`prisma/schema.prisma` · `INVOICING_ES_ENABLED` (regla 24) · los dos libros.
+
+**`'ANT'` sigue fuera de la unión a propósito**: hasta que P16.2 diga con qué `TipoFactura` se sella
+un anticipo, escribirlo **no compila** — antes se sellaba F1 por el `else`.
+
+**Suite: 2629 tests · 2555 pass · 0 fail · 74 skip.**
