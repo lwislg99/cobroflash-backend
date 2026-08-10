@@ -929,6 +929,8 @@ async function renderJobDetailView(container, jobId) {
   // tiene su propio ticket. Y el importe se enseña **tal como está guardado**, sin llamarlo «base»
   // ni «con IVA»: hasta la migración de `Expense` no consta cuál de las dos cosas es, y ponerle
   // nombre sería afirmar algo que no sabemos (SCRUM-403).
+  pintarNotasInternas(body, job);
+
   const gastosSec = document.createElement('div');
   gastosSec.className = 'detail-section';
   gastosSec.dataset.seccion = 'gastos';
@@ -2520,3 +2522,58 @@ function openFacturarParcialSheet(alb, ctx) {
 }
 
 window.renderJobDetailView = renderJobDetailView;
+
+// ── SCRUM-427 · NOTAS INTERNAS en el detalle del Trabajo ──────────────────────────────────────
+//
+// ⚠️ NO SE CREA NINGÚN ALMACENAMIENTO, y medirlo antes fue lo que evitó construir uno de más.
+// `Job.notes` ya existía y estaba enchufado de punta a punta MENOS la pantalla: se persiste, la
+// API lo devuelve (`jobs.routes.ts:250`), se escribe por `PATCH` con tope de 2.000 y gate POR CAMPO
+// (SCRUM-120, que se lo da al operario a propósito), y hasta viaja al calendario dentro del
+// `DESCRIPTION:` del `.ics`. Lo único que faltaba era poder verlo y escribirlo desde aquí.
+//
+// Y ya había un editor: en la LISTA de trabajos (`jobsView.js`). O sea que el defecto real no era
+// «no existen las notas», era que **la nota que escribes desde la lista es invisible desde la
+// pantalla donde trabajas** — y quien abre el detalle no tiene forma de saber que existe.
+//
+// ⚠️ `Quote.internalNotes` es OTRA COSA y no se toca: son las notas del PRESUPUESTO, tienen su
+// propia sección en Presupuestos y su indicador en esa lista. Dos trabajos del mismo presupuesto
+// compartirían esa nota; la del trabajo es del trabajo.
+//
+// MICROCOPY: reutilizada LITERAL de la sección que ya existe en Presupuestos
+// (`quotesDetailView.js`), no inventada — mismo rótulo, misma píldora y mismo placeholder. Que las
+// dos pantallas digan lo mismo con las mismas palabras es la mitad del trabajo.
+function pintarNotasInternas(body, job) {
+  const sec = document.createElement('div');
+  sec.className = 'detail-section';
+  sec.dataset.seccion = 'notas';
+
+  const header = document.createElement('div');
+  header.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px';
+  header.innerHTML =
+    '<h3 class="detail-section-title" style="margin:0">📝 Notas internas</h3>' +
+    '<span style="font-size:11px;color:var(--muted);background:var(--neutral-100);padding:2px 8px;border-radius:999px">Solo tú las ves</span>';
+  sec.appendChild(header);
+
+  const ta = document.createElement('textarea');
+  ta.id = 'job-notas-internas';
+  ta.value = job.notes || '';
+  ta.rows = 3;
+  ta.placeholder = 'Anota detalles del trabajo, acuerdos verbales, recordatorios…';
+  ta.style.cssText = 'width:100%;resize:vertical;font:inherit;font-size:14px;padding:10px 12px;'
+    + 'border:1px solid var(--neutral-200);border-radius:var(--r-md);color:var(--body);background:var(--surface)';
+  sec.appendChild(ta);
+
+  // Guardar al perder el foco, igual que en la lista: dos superficies que guardan el mismo campo
+  // de dos maneras distintas acabarían enseñando cosas distintas del mismo trabajo.
+  //
+  // ⚠️ Y solo si CAMBIÓ. Sin esa comparación, abrir el detalle y cerrarlo mandaría un PATCH por
+  // cada visita — escrituras que nadie pidió sobre un campo que otra pantalla también toca.
+  ta.addEventListener('blur', () => {
+    if ((job.notes || '') === ta.value) return;
+    apiRequest(`/admin/jobs/${job.id}`, { method: 'PATCH', body: JSON.stringify({ notes: ta.value }) })
+      .then(() => { job.notes = ta.value; showToast('✓ Notas guardadas'); })
+      .catch(() => showToast('No se pudieron guardar las notas', 'error'));
+  });
+
+  body.appendChild(sec);
+}
