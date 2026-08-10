@@ -131,17 +131,24 @@ test('SCRUM-420 · ② toda entrada de la barra la pide el diseño, o está DECL
     'contrastar:\n   · ' + sobran.join('\n   · '));
 });
 
-test('SCRUM-420 · ② `Cobros` sale como AUSENCIA CONOCIDA, no en silencio', () => {
-  // Control positivo del mecanismo de ausencias: si mañana alguien construye la pantalla de Cobros
-  // y pone su entrada, este test NO cae — cae el de abajo, que exige que la declaración se retire.
-  assert.ok('cobros' in AUSENCIAS_CONOCIDAS,
-    '🔴 `Cobros` es la única entrada del diseño que no está en la barra y tiene que estar ' +
-    'declarada. Una ausencia que no se nombra es una ausencia perdida.');
-  assert.equal(VISTA_POR_ROTULO.cobros, null,
-    '🔴 si `Cobros` ya tiene vista, deja de ser una ausencia: quita la declaración y pon la entrada.');
-  assert.ok(!ROUTER.has('cobros'),
-    '🔴 la vista `cobros` YA EXISTE en el router. Buena noticia, y la barra tiene que reflejarla: ' +
-    'añade la entrada (rótulo «Cobros», ya aprobado) y retira la ausencia de `AUSENCIAS_CONOCIDAS`.');
+test('SCRUM-420 · ② `Cobros` YA NO es una ausencia: está construida y en su sitio', () => {
+  // ── SCRUM-285 (B4) · ESTE TEST SE DA LA VUELTA, Y LO PIDIÓ ÉL MISMO ───────────────────────
+  // Su versión anterior exigía que `Cobros` estuviera declarada como AUSENCIA, y era correcta
+  // mientras su pantalla no existía. Su propio mensaje de fallo decía qué hacer el día que
+  // existiera: «añade la entrada (rótulo «Cobros», ya aprobado) y retira la ausencia». Eso es lo
+  // que pasó. Mantener la exigencia sería declarar ausente lo que ya está — y la siguiente sesión
+  // lo leería como trabajo pendiente.
+  assert.ok(!('cobros' in AUSENCIAS_CONOCIDAS),
+    '🔴 `Cobros` sigue declarada como ausente y su pantalla YA EXISTE. Un hueco declarado sobre ' +
+    'algo construido es peor que ninguno: manda a alguien a hacer trabajo que ya está hecho.');
+  assert.equal(VISTA_POR_ROTULO.cobros, 'cobros',
+    '🔴 el cruce sigue diciendo que `Cobros` no tiene vista.');
+  assert.ok(ROUTER.has('cobros'),
+    '🔴 la entrada `Cobros` está en la barra y el router no la conoce: es la promesa rota que ' +
+    'este fichero existe para impedir.');
+  assert.ok(vistasEnBarra.has('cobros'),
+    '🔴 la pantalla de Cobros existe y NO tiene entrada en la barra. El menú crece cuando existe ' +
+    'el destino — y el destino ya existe.');
 });
 
 test('SCRUM-420 · toda ausencia conocida cita un ticket ABIERTO y explica por qué', () => {

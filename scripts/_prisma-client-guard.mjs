@@ -161,7 +161,22 @@ export function modelosDelSchema(textoSchema) {
  * @returns {Promise<Map<string, Map<string, string>>>} modelo → (campo → columna)
  */
 export async function modelosDelCliente(rutaCliente) {
-  const mod = await import(rutaCliente || '@prisma/client');
+  // ⚠️ SCRUM-429 · SI EL CLIENTE NO SE PUEDE CARGAR, SE DEVUELVE VACÍO — NO SE LANZA.
+  //
+  // Antes, un cliente ausente o ilegible reventaba con el error de ESM crudo
+  // («Cannot find module …», o el de rutas de Windows sin `file://`). Eso es un stack, no un
+  // diagnóstico: quien lo ve no sabe si el guard ha encontrado un problema o si el guard ES el
+  // problema.
+  //
+  // Devolviendo vacío cae en el suelo que ya existe (`sinDatos`), que **falla cerrado** y explica
+  // que no se pudo comparar. Es la diferencia entre «no supe mirar» y «está mal», que es
+  // exactamente lo que este guard existe para no confundir.
+  let mod;
+  try {
+    mod = await import(rutaCliente || '@prisma/client');
+  } catch {
+    return new Map();
+  }
   const modelos = mod.Prisma?.dmmf?.datamodel?.models || [];
   return new Map(modelos.map((m) => [
     m.name,
@@ -253,11 +268,22 @@ export function mensaje(d) {
     '',
     ...porDireccion,
     '',
-    '   El cliente ESTÁ generado — no falta: es de OTRO schema. Suele pasar al regenerarlo desde',
-    '   un worktree que está en otra rama, y como `node_modules` se comparte por junction, afecta',
-    '   a todas las sesiones a la vez.',
+    '   El cliente ESTÁ generado — no falta: es de OTRO schema. Y hay DOS causas distintas, que',
+    '   piden mirar en sitios distintos. Este mensaje solo nombraba la primera, y eso llevó a',
+    '   diagnosticar mal una caída (SCRUM-429, 10-ago-2026):',
     '',
-    '   Arreglo:  npx prisma generate   (desde ESTE worktree)',
+    '     (A) TU PROPIO CAMBIO DE RAMA. `prisma/schema.prisma` viaja con la rama y el cliente',
+    '         generado NO. Cambias de rama o mergeas main, el schema gana una columna, y el',
+    '         cliente que tenías se queda viejo sin que nadie más haya tocado nada.',
+    '         Compruébalo:  git log -1 --format=%h -- prisma/schema.prisma',
+    '',
+    '     (B) OTRO WORKTREE, si tu `node_modules` es un JUNCTION al de otro. Entonces el',
+    '         cliente es de todos y quien regenera último manda.',
+    '         Compruébalo:  (Get-Item node_modules).LinkType     ← vacío = es tuyo, no compartido',
+    '',
+    '   Arreglo, en los dos casos:  npm run prisma:generate   (desde ESTE worktree)',
+    '',
+    '   ⚠️ Y si es (B), regenerar ARREGLA EL TUYO Y ROMPE EL DE LOS DEMÁS: avisa antes.',
     '',
   ].join('\n');
 }

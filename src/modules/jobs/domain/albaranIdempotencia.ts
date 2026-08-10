@@ -44,12 +44,31 @@ export const ERROR_CLAVE_REUTILIZADA = 'clave_idempotencia_reutilizada';
 /** Qué pasó con la idempotencia en esta petición. Va en la respuesta: ver el porqué abajo. */
 export type ResultadoIdempotencia = 'aplicada' | 'repetida' | 'no_solicitada';
 
-// SCRUM-358 · MICROCOPY SIN APROBAR (regla 30). Lo lee el PROFESIONAL, y el texto tiene que
-// decirle qué hacer, no solo que no. Propuesta al asesor en el informe del ticket.
-export const MSG_CLAVE_REUTILIZADA =
-  '[PENDIENTE microcopy oficial · propuesta: Este parte ya se había creado con estos mismos ' +
-  'datos de envío, pero lo que llega ahora es distinto. No se ha creado nada para no duplicarlo. ' +
-  'Vuelve a crearlo desde el trabajo.]';
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// MICROCOPY DEL 409 — **APROBADA por el asesor el 11-ago-2026** (regla 30). NO se reformula.
+//
+// 🔴 LA CORRECCIÓN QUE TRAJO, Y POR QUÉ SE ANOTA AQUÍ: la propuesta anterior terminaba en «Vuelve
+// a crearlo desde el trabajo», y eso **contradice la frase anterior**. Si el original existe y lo
+// que se está evitando es duplicarlo, la salida no puede ser CREAR OTRO: es ABRIR el que hay.
+//
+// > **Un mensaje que da una salida que produce el problema que acaba de evitar es peor que uno
+// > sin salida.**
+//
+// Y fuera «datos de envío»: un fontanero no sabe qué es eso. «Datos distintos», sí.
+//
+// El número del original se NOMBRA cuando se tiene —y en el 409 siempre se tiene—: decirle «el
+// parte ALB-2026-097 sigue guardado» le ahorra buscarlo. Sin número se cae al texto aprobado tal
+// cual, que es el que vale por defecto.
+
+/** El texto aprobado, con el número del original si se conoce. */
+export function msgClaveReutilizada(numeroOriginal?: string | null): string {
+  const cual = numeroOriginal ? `el parte ${numeroOriginal}` : 'el parte original';
+  return (
+    'Este parte ya se creó antes con datos distintos a los que se están enviando ahora. ' +
+    `No hemos creado nada para no duplicarlo: ${cual} sigue guardado. ` +
+    'Ábrelo desde el trabajo para revisarlo.'
+  );
+}
 
 /**
  * 🔴 UNA CLAVE DEMASIADO LARGA SE RECHAZA, NO SE RECORTA.

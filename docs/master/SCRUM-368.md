@@ -1250,3 +1250,226 @@ visible»**. Era mentira: la vista **no había terminado de montarse**. Se cambi
 Backend local parado, `.env.local` borrado, puente temporal de `_wipe-demo.mjs` retirado
 (nunca entró en el diff: `git status` limpio antes y después). **Producción no se tocó ni en
 lectura. Staging no se tocó.** Dev queda liberada.
+
+---
+---
+
+# SCRUM-368 · REABIERTO el 10-ago-2026 — medido, y NO era un cierre en falso
+
+**Medido contra:** `origin/main` = `ddfa8ac567954090274f24ae09cc3d1fc43ca0eb` · 2026-08-10T19:07:43+02:00
+**Rama:** `scrum-368-pulgar-44` · **cero líneas de código tocadas**
+
+> El ticket se reabrió con este dato: *«`min-height: 36px` en los cuatro — `styles.css:379-395`.
+> DESIGN.md pide ≥44px. 36 < 44. Ni se subió el CSS ni se enmendó el documento.»*
+>
+> **Las dos mitades ya estaban resueltas.** Lo que se leyó es la regla BASE; el arreglo vive más
+> abajo, y el de contraste no toca ningún color. Lo compruebo **ejecutando**, no leyendo.
+
+## ① El pulgar: el CSS SÍ da 44 en móvil, desde SCRUM-352
+
+`styles.css:379-395` es la regla base — el **escritorio**. DESIGN.md pide «≥44px **en móvil**», y en
+`@media (max-width: 768px)` (línea 1432) está esto:
+
+```css
+.btn,
+.btn-primary:not(.btn-sm),
+.btn-secondary:not(.btn-sm),
+.btn-danger:not(.btn-sm),
+.btn-ghost:not(.btn-sm) { min-height: 44px; }
+```
+
+**Los cuatro suben a 44 en móvil.** Y el escritorio a 36 **no es un defecto**: DESIGN.md no lo
+exige y subirlo sería rediseño encubierto — que es exactamente lo que el propio ticket prohíbe.
+
+### Y ya está guardado, con todo lo que se me pidió construir
+
+`tests/scrum352-target-tactil-variantes.test.mjs` — **11 tests, ejecutados: 11 pass, 0 fail**:
+
+| lo pedido | dónde está |
+|---|---|
+| rojo por el mecanismo que **nombra la clase** | ✅ `ROJO: si el bump vuelve a alcanzar solo a .btn…` |
+| control negativo (una clase que cumple no salta) | ✅ dos: escritorio a 36 y `btn-sm` pequeño |
+| **SUELO** de ceguera del comparador | ✅ tres: el CSS deriva variantes · toda combinación resuelve altura · el censo cubre los ficheros |
+| DESIGN.md y CSS diciendo lo mismo, y guard que cae al divergir | ✅ `MÓVIL: la variante sin modificador llega a 44px (DESIGN.md)` |
+| clases **derivadas del árbol**, no lista a mano | ✅ `tests/_censo-clases-de-boton.mjs` — 10 clases derivadas |
+
+**Verificado en rojo por mí, no por su nombre:** bajando `.btn-ghost` a 36px en el bloque de móvil
+caen **3 tests**, y el mensaje dice literalmente `DESIGN.md pide ≥44px en móvil: btn-ghost = 36px`.
+Revertido, 11/11 en verde. **Construir otro guard sería el defecto de SCRUM-240: dos herramientas
+haciendo el trabajo de una.**
+
+## ② SCRUM-412: no protege una excepción dejando roto el caso general
+
+Medido, porque el encargo pedía medir los dos juntos:
+
+- `btn-sm` = **30px**, y está **excluido del bump** con `:not(.btn-sm)` — **deliberadamente**.
+  SCRUM-352 lo explica y lo midió: sin ese `:not`, un `btn-primary btn-sm` saltaría a 44 mientras su
+  gemelo `btn btn-primary btn-sm` se queda en 30, porque `.btn.btn-sm` es (0,2,0) y gana.
+- Así que **el caso general NO está roto**: los cuatro suben. La única clase que se queda en 30 es
+  la pequeña, por diseño.
+- **SCRUM-412 protege exactamente esa clase**, y su quinto test —`SCRUM-352 intacto: btn-sm sigue
+  midiendo 30`— ata los dos tickets para que ninguno tape al otro. Ejecutado: **5 pass, 0 fail**.
+
+**El arreglo de uno no tapa al otro: se citan.**
+
+## ③ El contraste: 3,30:1 — medido, y ya resuelto SIN tocar el verde
+
+Recalculado por mí con WCAG 2.1 sobre los tokens de `public/tokens.css`:
+
+| par | ratio |
+|---|---|
+| blanco sobre `--brand` `#16a34a` | **3,30:1** |
+| blanco sobre `--brand-tint-ink` `#047857` | **5,48:1** |
+
+**El número del ticket original se confirma.** Y el aviso sobre `guard:contraste` es correcto: su
+propio mensaje dice «ningún par NUEVO por debajo de AA» — vigila regresiones, **no absuelve**. Su
+verde no es prueba de nada aquí, y por eso lo he recalculado a mano.
+
+**Pero ya está resuelto**, y por una vía que no toca ningún color — `styles.css:2343`:
+
+```css
+.btn-primary:not(.btn-sm) { font-size: 18.66px; font-weight: 700; }
+```
+
+Con texto **≥18,66px y peso ≥700**, el umbral de WCAG SC 1.4.3 es **3,0**, no 4,5. Y 3,30 lo cumple.
+No es mover la portería: la norma lo permite porque es cierto que el texto grande y grueso se lee
+con menos contraste. **Y disuelve el choque que el propio encargo señalaba** — «la marca es luminosa,
+nunca oscura» contra AA — porque no oscurece nada.
+
+### 🔴 Lo que SIGUE sin cumplir, y es un STOP
+
+**Los `btn-primary btn-sm`**: 12,5px con peso 600 → umbral **4,5**, y están en **3,30**. A un botón
+pequeño no se le puede poner letra de 18,66px sin dejar de ser pequeño.
+
+**Medidos hoy: 39 sitios** en `public/` (`.js` + `.html`).
+
+Ya está declarado en esta misma entrada (bloque A/B, y el aviso del propio CSS). **No lo arreglo**:
+la salida sería el token `--brand-tint-ink` (5,48:1), que es cambiar el color de un botón primario —
+identidad de marca, decisión del fundador. DESIGN.md ya describe esa variante en la línea 170; lo
+que falta es la decisión de aplicarla a los 39.
+
+## 🔴 Lo único que SÍ diverge entre DESIGN.md y el CSS
+
+DESIGN.md:168 dice, sin matiz:
+
+> **Shape:** pastilla… **Altura cómoda al pulgar (≥44px en móvil).**
+
+Y el CSS **exime deliberadamente a `btn-sm`**, que en móvil mide 30. Un test lo bendice
+(`CONTROL NEGATIVO: los botones pequeños siguen pequeños en móvil`). O sea: **el documento dice una
+cosa, el código hace otra, y un guard bendice el código.** Ésa es la única divergencia real que
+queda, y es la que el encargo describía — solo que no está en los cuatro, está en el quinto.
+
+**Propuesta de redacción para DESIGN.md:168 — NO aplicada** (regla 30 / la skill: el documento es la
+fuente de tokens y sus cambios se proponen):
+
+> **Shape:** pastilla (radius full, 9999px). Altura cómoda al pulgar: **≥44px en móvil**. Única
+> excepción, deliberada: la variante `small`, que se queda en 30px — un botón pequeño que subiera a
+> 44 dejaría de serlo. Por eso una acción **primaria de pantalla nunca usa la variante pequeña**
+> (SCRUM-412).
+
+Si se aprueba, el guard que la ata es una línea más en `scrum352`: que la excepción escrita en
+DESIGN.md y el `:not(.btn-sm)` del CSS **sean la misma lista**.
+
+## Lo que NO se ha hecho
+
+Cero líneas de CSS, de DESIGN.md y de tests. No se ha tocado el verde (STOP declarado), ni el
+escritorio (sería rediseño encubierto), ni ninguno de los 39 sitios. **No se ha escrito un segundo
+guard**: el que se pedía ya existe y está verificado en rojo.
+
+---
+
+## ① LA ENMIENDA DE DESIGN.md — aplicada con GO del fundador (10-ago-2026)
+
+`DESIGN.md:168` decía «≥44px en móvil» **sin matiz**, mientras el CSS eximía a `btn-sm` y un test lo
+bendecía. Ya dice lo que el producto hace: el ≥44 en móvil, el escritorio a 36 **a propósito**, la
+excepción de `btn-sm` **con su justificación medida** —sin el `:not`, un `btn-primary btn-sm` suelto
+saltaría a 44 mientras su gemelo con la base se queda en 30, porque `.btn.btn-sm` es (0,2,0) y
+gana— y **su frontera**: una primaria de pantalla nunca usa la variante pequeña (SCRUM-412). Sin esa
+frontera la excepción sería un agujero.
+
+### Y está ATADA: la lista escrita y la del `:not()` son la misma lista
+
+Tres tests nuevos en `scrum352`, con **las dos listas derivadas** —la del CSS de los `:not(...)` de
+la regla de 44px, la de DESIGN.md del texto de la excepción—; ninguna escrita a mano:
+
+- **SUELO**: se localizan las dos listas antes de compararlas. Si el CSS no tiene ninguna regla con
+  `:not(...)`, o DESIGN.md ya no documenta excepción, falla **declarándose ciego** — «no hay
+  exenciones» y «no supe mirar» no pueden dar el mismo verde.
+- **La atadura**: las dos listas tienen que ser iguales, y el mensaje enseña las dos.
+- **CONTROL NEGATIVO**: no da por buena una lista vacía. Sin él, el día que los dos extractores
+  devolvieran `[]` el test pasaría comparando **dos silencios**.
+
+**Verificado en rojo en las DOS direcciones**, que es lo que lo hace atadura y no adorno:
+
+| # | inyección | resultado |
+|---|---|---|
+| 1 | el **CSS** gana una exención nueva y nadie la escribe | rojo por su motivo |
+| 2 | **DESIGN.md** borra la excepción y el CSS la mantiene | rojo por su motivo |
+| 3 | el extractor deja de ver la regla (suelo) | rojo por su motivo |
+
+## ② EL CONTRASTE DE `btn-primary btn-sm` — HUECO DECLARADO, no arreglado
+
+**Decisión del fundador: no se toca.** Queda escrito aquí con el número y la alternativa.
+
+| | |
+|---|---|
+| ratio actual | **3,30:1** — blanco sobre `--brand` `#16a34a` |
+| umbral que le aplica | **4,5:1** (texto de 12,5px, peso 600 → no es «texto grande») |
+| sitios afectados | **39** en `public/` (`.js` + `.html`), medidos el 10-ago-2026 |
+| alternativa conocida | `--brand-tint-ink` `#047857` → **5,48:1** ✅ |
+| por qué no se aplica | cambiar el color de un botón primario es **identidad de marca**: lo decide el fundador |
+
+⚠️ **El grande sí cumple**, y sin tocar ningún color: `.btn-primary:not(.btn-sm)` va a **18,66px con
+peso 700**, y con eso el umbral de WCAG SC 1.4.3 es **3,0**. A un botón pequeño no se le puede poner
+esa letra sin dejar de ser pequeño — de ahí que el residuo sea justo el pequeño.
+
+⚠️ Y **`guard:contraste` no absuelve esto**: su propio mensaje dice «ningún par NUEVO por debajo de
+AA». Vigila regresiones. Su verde no es prueba de que lo viejo cumpla, y por eso el 3,30 está
+recalculado a mano en esta entrada.
+
+---
+
+## 🔴 HALLAZGO · SCRUM-412 está Finalizada y su rama NO está en main — medido
+
+El censo del cementerio no lo vio porque **solo miraba PR abiertas**, y esa rama no tiene PR.
+Censamos por donde era fácil mirar: el mismo defecto que perseguimos todo el día.
+
+**La pregunta correcta no es «¿está el patch?» sino «¿ESTÁ LA FUNCIÓN?».** Medido sobre el árbol de
+main, con suelo (50 ficheros `.js`, 92 líneas con `btn-primary`) y control positivo (el instrumento
+reconoce la combinación teniéndola delante):
+
+| pregunta | respuesta |
+|---|---|
+| ¿existe el guard en main? | **SÍ** — `tests/scrum412-primaria-nunca-es-sm.test.mjs`, ejecutado: **5 pass, 0 fail** |
+| ¿impide que una primaria de pantalla nueva lleve `btn-sm`? | **SÍ** — una combinación nueva **tiene que declararse**, y el suelo del censo lo respalda |
+| ¿está todo lo que la rama arregla? | **NO** |
+
+**La función está. Lo que falta es UNA decisión, y es la que más duele.**
+
+En main, `signaturePad.js` sigue con `okBtn.className = 'btn-primary btn-sm'` → **30px en móvil**. Y
+el guard **pasa** porque está declarado en su allowlist, con esta nota escrita a mano:
+
+> *«MODAL de firma. ⚠️ DECLARADO CON DUDA, y se dice en vez de decidirlo solo: es un modal, pero lo
+> pulsa el CLIENTE en una obra y es el momento más irrepetible del producto (SCRUM-404). Si el
+> fundador decide que un modal así cuenta como primaria, sale de esta lista.»*
+
+**El fundador ya lo decidió** — y esa decisión vive en el commit sin mergear.
+
+### La víctima, dicha
+
+**El cliente firmando en la obra.** Un target de **30px**, con guantes, a pleno sol, en el momento
+que SCRUM-404 midió como el más irrepetible del producto: si falla el toque, hay que pedirle a una
+persona que **firme otra vez, delante del profesional**.
+
+⚠️ **Y que la base suba a 44 en móvil hace ese guard MÁS importante, no menos**: precisamente porque
+todo lo demás sube, `btn-sm` es lo único que se queda en 30 — y sin la frontera de SCRUM-412, ahí es
+donde se cuela una primaria.
+
+### Lo que NO he hecho
+
+**No lo arreglo**, como se me pidió: la corrección existe y está en `scrum-412-primarias-tactiles`
+(`1959751`, Luis, 10-ago-2026). Lo que falta es **mergear esa rama**, no volver a escribirla —
+duplicarla aquí crearía dos versiones de la misma decisión y una allowlist con dos verdades.
+
+**Y el hallazgo de método, que vale más que el caso:** una rama sin PR es invisible para un censo
+que mira PR. El censo del cementerio necesita mirar **ramas**, no solo PR — es su propio suelo.

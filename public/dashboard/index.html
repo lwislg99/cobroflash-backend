@@ -98,6 +98,13 @@
           <span id="nav-invoices-badge" class="nav-badge" style="display:none">0</span>
         </button>
 
+        <!-- SCRUM-285 (B4): «Cobros», separado de Facturas. El diseno §B1 lo pone aqui, cerrando
+             el ciclo: Presupuestos -> Albaranes -> Facturas -> Cobros. La entrada entra en el
+             MISMO commit que su pantalla: el menu crece cuando existe el destino, nunca antes. -->
+        <button class="nav-item" data-view="cobros" id="nav-cobros">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+          <span>Cobros</span>
+        </button>
         <!-- ── NEGOCIO · lo que no es un paso del ciclo de venta ───────────────────────────── -->
         <div class="nav-section-label">Negocio</div>
 
@@ -231,6 +238,8 @@
   <script src="./js/productsView.js"></script>
   <script src="./js/providersView.js"></script>
   <script src="./js/invoicesView.js"></script>
+  <!-- SCRUM-285 (B4): la pantalla de Cobros -->
+  <script src="./js/cobrosView.js"></script>
   <script src="./js/nuevaFacturaModal.js"></script>
   <!-- SCRUM-302 (C2): la LEY del patrón va PRIMERO — los registros la consumen al cargarse. -->
   <script src="./js/patronDetalleAcciones.js"></script>

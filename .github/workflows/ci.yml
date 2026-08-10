@@ -36,8 +36,55 @@ concurrency:
 
 jobs:
   test:
-    name: build + tests (sin gate)
+    name: build + tests (con banco desechable)
     runs-on: ubuntu-latest
+
+    # ⚠️ SCRUM-419 · ESTO NO CONTRADICE EL AVISO DE ARRIBA, Y CONVIENE LEER POR QUÉ.
+    #
+    # Lo que ese aviso excluye es `QA_DB_TEST` / `DATABASE_URL_TESTS`: la base de STAGING. Sus tres
+    # motivos son ciertos y siguen en pie — secretos que no viajan (regla 9), varios PR escribiendo
+    # a la vez en la misma base, y que los guards estructurales no la necesitan.
+    #
+    # **`LIBRO_PG_URL` es otra cosa: un Postgres DESECHABLE que levanta el propio runner.** Ni
+    # secreto que compartir, ni base compartida entre PR, ni proveedor externo — el contenedor nace
+    # y muere con el job. Ninguno de los tres motivos le aplica.
+    #
+    # Y sin esto había 7 tests que NO se ejecutaban en NINGÚN merge: los que prueban TENENCIA contra
+    # el motor real —que un merchant no vea ni un euro ni una factura del otro— y el cuadre de las
+    # tres pantallas al céntimo. La suite decía «0 fallos» exactamente igual (SCRUM-419).
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        # 🔴 PUERTO DINÁMICO — SIN MAPEO FIJO. Aquí solo se declara el puerto DEL CONTENEDOR;
+        # Docker elige uno libre en el host y el job lo lee de
+        # `job.services.postgres.ports['5432']`.
+        #
+        # Fijar `55432:5432` rompió CI para TODAS las PR (10-ago-2026):
+        #   failed to bind host port for 0.0.0.0:55432 … address already in use
+        # Un contenedor de una ejecución anterior seguía vivo —en el log aparece «Clean up
+        # resources from previous jobs»— o había dos jobs a la vez. **Un número fijo en un entorno
+        # compartido choca**, y es la tercera vez que esa familia muerde: la ventana fija de los
+        # guards y el nombre fijo del check requerido de `main` eran la misma forma.
+        #
+        # Y NO se arregla con un `sleep`, un reintento ni un `docker rm` previo: eso ata el arreglo
+        # a que la carrera salga bien y vuelve a chocar el día que haya dos PR a la vez. El puerto
+        # dinámico **elimina** la colisión en vez de esquivarla.
+        #
+        # ⚠️ Va con mapeo (y no por alias de red `postgres:5432`) porque este job **no** declara
+        # `container:`: corre SOBRE el runner, no dentro de un contenedor, así que no comparte la
+        # red de Docker con el servicio. Medido antes de elegir la forma, no supuesto.
+        ports:
+          - 5432
+        # Sin el health-check los pasos arrancan antes de que Postgres acepte conexiones, y el
+        # fallo se lee como un test roto en vez de como una base que aún no estaba.
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     # Tope de seguridad: la suite tarda ~30 s. Si algo se queda colgado esperando una red
     # que aquí no existe, se corta pronto en vez de consumir minutos de Actions.
     timeout-minutes: 10
@@ -102,5 +149,28 @@ jobs:
       - name: Compilar (tsc)
         run: npm run build
 
-      - name: Tests sin gate
+      # SCRUM-419 · el esquema, en el banco desechable. `migrate diff --from-empty` NO toca ninguna
+      # base: escribe el DDL a un fichero, y `psql` lo aplica al contenedor. Se evita a propósito
+      # `db push`, que es el mecanismo reservado a las bases del proyecto (regla 3).
+      #
+      # El nombre de la base termina en `_test` porque los propios tests lo EXIGEN antes de tocarla,
+      # junto con que el host sea loopback y que no sea ninguna base del proyecto. Ese guard suyo se
+      # queda: aquí no se afloja nada, se le da lo que pide.
+      # ⚠️ EL PUERTO SE LEE, NO SE ESCRIBE. `job.services.postgres.ports['5432']` es el puerto que
+      # Docker asignó en el host para este job. Escribirlo a mano es lo que rompió CI.
+      - name: Banco desechable para los tests de libro
+        env:
+          PGPORT_HOST: ${{ job.services.postgres.ports['5432'] }}
+        run: |
+          test -n "$PGPORT_HOST" || { echo "🔴 no se pudo leer el puerto del servicio: no se toca ninguna base"; exit 1; }
+          echo "banco desechable en 127.0.0.1:$PGPORT_HOST"
+          psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/postgres" -c 'CREATE DATABASE yaqu_libro_test'
+          npx prisma migrate diff --from-empty \
+            --to-schema-datamodel prisma/schema.prisma --script > "$RUNNER_TEMP/esquema.sql"
+          test -s "$RUNNER_TEMP/esquema.sql" || { echo "🔴 el esquema salió VACÍO: no se aplica nada a ciegas"; exit 1; }
+          psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/yaqu_libro_test" -q -f "$RUNNER_TEMP/esquema.sql"
+
+      - name: Tests (incluidos los 7 de banco)
+        env:
+          LIBRO_PG_URL: postgresql://postgres@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/yaqu_libro_test
         run: npm test

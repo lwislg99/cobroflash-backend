@@ -118,7 +118,7 @@ export const VISTA_POR_ROTULO = {
   presupuestos: 'quotes-list', // el grupo abre en su historial
   albaranes: 'albaranes',
   facturas: 'invoices',
-  cobros: null,                // ⚠️ NO EXISTE: es B4 (SCRUM-285). Ver `AUSENCIAS_CONOCIDAS`.
+  cobros: 'cobros',            // SCRUM-285 (B4): ya existe, con su pantalla y su entrada.
   clientes: 'customers',
   productos: 'products',
   proveedores: 'providers',
@@ -139,14 +139,13 @@ export const VISTA_POR_ROTULO = {
  * abierto no es una ausencia declarada, es una que todavía no se ha notado.
  */
 export const AUSENCIAS_CONOCIDAS = {
-  cobros: {
-    ticket: 'SCRUM-285',
-    motivo:
-      'La pantalla de Cobros es B4 y NO EXISTE: no hay vista `cobros` en el router. Poner la ' +
-      'entrada hoy sería una promesa rota cada vez que el profesional la pulse. La añade B4 en el ' +
-      'mismo commit que su pantalla — el menú crece cuando existe el destino. El rótulo «Cobros» ' +
-      'ya está aprobado (asesor, 10-ago-2026) para que B4 no tenga que pedirlo.',
-  },
+  // ⚠️ VACÍO A PROPÓSITO. `cobros` estuvo aquí desde SCRUM-420 —su pantalla no existía— y salió
+  // con SCRUM-285, que la construyó y puso la entrada en el mismo commit.
+  //
+  // Una ausencia declarada sobre algo que YA ESTÁ es peor que no declararla: el guard afirmaría
+  // que falta lo que ya está en su sitio, y la próxima sesión lo leería como trabajo pendiente.
+  // Que hoy esté vacío no lo desactiva — el test exige que toda ausencia lleve ticket, así que la
+  // siguiente que se declare tendrá que traerlo.
 };
 
 /**

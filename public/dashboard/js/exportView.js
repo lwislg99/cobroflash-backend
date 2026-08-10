@@ -182,7 +182,17 @@ async function renderExportView(container) {
           : `${base} en este rango (máximo ${d.maximo}). Preparar el archivo puede tardar hasta un par de minutos.`) + sufijoSeleccion;
       }
     } catch (e) {
-      if (e && e.code === ERROR_NO_ES_FICHERO) { showToast(MSG_DESCARGA_NO_ES_FICHERO, 'error'); return; }
+      // ⚠️ RAMA DEFENSIVA HOY INALCANZABLE, Y SE QUEDA A PROPÓSITO (medido el 10-ago-2026).
+      //
+      // Esto NO es una descarga: `refrescarInfo` pide el RECUENTO con `apiRequest`, y
+      // `ERROR_NO_ES_FICHERO` sólo lo asigna `descargarBinario` (`api.js`). `apiRequest` pone
+      // `err.code = data?.error`, que sale del JSON del servidor, así que este `if` no se cumple.
+      //
+      // Se conserva porque quitar una rama defensiva porque hoy nadie la alcanza es como se
+      // pierden los mensajes el día que alguien la vuelve a alcanzar. **Quien la haga alcanzable
+      // tiene que comprobar que el texto encaja**: al no ser una descarga no puede ser un portal
+      // cautivo, así que `mensajeDescargaFallida` daría —correctamente— el CASO B.
+      if (e && e.code === ERROR_NO_ES_FICHERO) { showToast(mensajeDescargaFallida(e), 'error'); return; }
       // Si el conteo falla no bloqueamos la descarga: el backend vuelve a validar el tope.
       info.textContent = 'Sin fechas se descarga todo.';
       btn.disabled = false;
@@ -234,7 +244,7 @@ async function renderExportView(container) {
     } catch (e) {
       // Se ramifica por CÓDIGO, nunca por texto (SCRUM-151): lo que el profesional lee es el mismo
       // texto aprobado sea cual sea el código. Nada de reenviarle el mensaje del servidor.
-      if (e && e.code === ERROR_NO_ES_FICHERO) { showToast(MSG_DESCARGA_NO_ES_FICHERO, 'error'); return; }
+      if (e && e.code === ERROR_NO_ES_FICHERO) { showToast(mensajeDescargaFallida(e), 'error'); return; }
       showToast('No hemos podido preparar tus datos ahora mismo. Vuelve a intentarlo en unos minutos; si sigue sin funcionar, escríbenos y lo resolvemos.', 'error');
       infoPort.textContent = 'No hemos podido preparar tus datos ahora mismo. Vuelve a intentarlo en unos minutos; si sigue sin funcionar, escríbenos y lo resolvemos.';
     } finally {
@@ -275,7 +285,7 @@ async function renderExportView(container) {
         info.textContent = 'Archivo descargado.';
       }
     } catch (err) {
-      if (err && err.code === ERROR_NO_ES_FICHERO) { showToast(MSG_DESCARGA_NO_ES_FICHERO, 'error'); return; }
+      if (err && err.code === ERROR_NO_ES_FICHERO) { showToast(mensajeDescargaFallida(err), 'error'); return; }
       showToast('No se pudo preparar el archivo: ' + (err && err.message ? err.message : 'inténtalo de nuevo'), 'error');
     } finally {
       clearInterval(tick);
@@ -320,7 +330,7 @@ async function renderExportView(container) {
         ? '[PENDIENTE microcopy oficial · propuesta: No hay facturas emitidas en ese periodo.]'
         : '[PENDIENTE microcopy oficial]';
     } catch (e) {
-      if (e && e.code === ERROR_NO_ES_FICHERO) { showToast(MSG_DESCARGA_NO_ES_FICHERO, 'error'); return; }
+      if (e && e.code === ERROR_NO_ES_FICHERO) { showToast(mensajeDescargaFallida(e), 'error'); return; }
       showToast('[PENDIENTE microcopy oficial]', 'error');
     } finally {
       btnLibro.textContent = txtLibro;
