@@ -14,7 +14,7 @@ const ENABLED = process.env.QA_DB_TEST === '1';
 const MERCHANT_ID = 1;                 // demo (regla 8)
 const MARK = '(SCRUM-13 QA) cobro parcial';
 
-test('SCRUM-13/28: totalCobrado = Σ Invoices paid — webhook + manual, idempotente', { skip: !ENABLED }, async () => {
+test('SCRUM-13/28: totalCobrado = Σ Invoices paid — webhook + manual, idempotente', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { recalcJobCobradoForCharge, recalcJobCobradoForInvoice, estadoCobroFor } = await import('../dist/modules/jobs/domain/job.service.js');
   const { updateInvoiceStatusAdmin } = await import('../dist/modules/system/invoiceAdmin.js');

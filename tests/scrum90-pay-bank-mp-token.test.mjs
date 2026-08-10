@@ -18,7 +18,7 @@ import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-90: /pay/bank y /pay/mp cierran el IDOR — numérico 404 sin fuga de IBAN, token funciona', { skip: !ENABLED }, async (t) => {
+test('SCRUM-90: /pay/bank y /pay/mp cierran el IDOR — numérico 404 sin fuga de IBAN, token funciona', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { ensureChargeReceiptToken } = await import('../dist/lib/invoicing.js');

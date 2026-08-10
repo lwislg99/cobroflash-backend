@@ -78,7 +78,7 @@ function contenidoEntradasZip(buf) {
   return out;
 }
 
-test('SCRUM-82: datos.zip incluye el XML VeriFactu por año, byte-idéntico al endpoint suelto', { skip: !ENABLED }, async (t) => {
+test('SCRUM-82: datos.zip incluye el XML VeriFactu por año, byte-idéntico al endpoint suelto', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);

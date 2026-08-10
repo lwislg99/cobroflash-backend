@@ -286,7 +286,7 @@ test('el SQL del censo es de SOLO LECTURA y lleva su suelo anti-falso-positivo',
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('GATEADO · contra la BD de staging el arranque da en-sync de verdad', { skip: !ENABLED }, async () => {
+test('GATEADO · contra la BD de staging el arranque da en-sync de verdad', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const r = await comprobarDerivaDeSchema();
   assert.equal(
     r.estado,
@@ -299,7 +299,7 @@ test('GATEADO · contra la BD de staging el arranque da en-sync de verdad', { sk
   assert.ok(r.columnas >= 100, `pocas columnas comprobadas: ${r.columnas}`);
 });
 
-test('GATEADO · contra la BD de staging, una deriva de verdad se ve y NO arrancaría', { skip: !ENABLED }, async () => {
+test('GATEADO · contra la BD de staging, una deriva de verdad se ve y NO arrancaría', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   // La otra mitad: que el en-sync de arriba no sea un «siempre digo que sí». Se le enseña a la
   // base real un datamodel que dice tener una columna que la base NO tiene — que es exactamente
   // la forma del defecto: un PR añade la columna y el `db push` no se ejecuta.
