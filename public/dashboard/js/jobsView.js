@@ -73,12 +73,13 @@ async function renderJobsView(container) {
 
 // Agrupado de LISTA (spec: lista simple por fecha). Extraído (SCRUM-11) para reutilizarlo
 // con el filtro de cobro; el agrupado y su lógica NO cambian.
-// SCRUM-428 · el importe, en el formato de la casa. Local a propósito: hoy hay CUATRO
-// formateadores de euros distintos en `public/dashboard/js/` (`expensesView.js:424`,
-// `libroRegistroView.js:92`, `reportsView.js:447` y éste) y unificarlos es de otro carril —
-// meterlo aquí sería tocar tres vistas ajenas en un ticket de lista de Trabajos (regla 9).
+// SCRUM-436 · el formato de la casa, y NO una copia. Este fichero ya usaba `fmtMoneyEs` en cuatro
+// sitios (`:188`, `:261`, `:347`, `:356`) cuando SCRUM-428 le añadió este formateador local: la
+// misma pantalla imprimía «1000,00 €» en la cabecera del grupo y «1.000,00 €» en las filas de
+// debajo. El censo que lo denunció era mío y estaba MAL: sí había un formateador compartido
+// (`fmtMoneyEs`, api.js:190, 66 usos), y no lo busqué antes de escribir el quinto.
 function eurosJobs(n) {
-  return Number(n || 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+  return fmtMoneyEs(n);
 }
 
 function renderJobGroups(list, jobs, container) {

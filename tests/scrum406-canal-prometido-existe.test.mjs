@@ -163,6 +163,12 @@ async function pintar(respuesta) {
   };
   ctx.globalThis = ctx;
   vm.createContext(ctx);
+  // SCRUM-436 · el banco carga ANTES `api.js`, como el navegador (`index.html:215` va antes que
+  // `:257`): la vista formatea importes con `fmtMoneyEsOAusente`, que vive ahí. Sin cargarlo, este
+  // banco simulaba un navegador al que le falta un <script>, y su rojo no sería del producto.
+  vm.runInContext(fs.readFileSync(path.join(DIR_JS, 'api.js'), 'utf8'), ctx, { filename: 'api.js' });
+  // ⚠️ `api.js` define su propio `apiRequest` —el de red— y pisa el doble de arriba. Se repone.
+  ctx.apiRequest = async () => respuesta;
   vm.runInContext(codigo, ctx, { filename: 'libroRegistroView.js' });
   assert.equal(typeof ctx.window.renderLibroRegistroView, 'function',
     '🔴 la vista no publica `renderLibroRegistroView`: el test no está midiendo la pantalla');

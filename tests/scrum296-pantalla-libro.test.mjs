@@ -25,6 +25,7 @@ import { ramaDeCase } from './_bloque-estructural.mjs';
 
 const RAIZ = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const VISTA = path.join(RAIZ, 'public/dashboard/js/libroRegistroView.js');
+const API = path.join(path.dirname(VISTA), 'api.js');
 
 // ── El DOM de mentira: lo justo para que la vista corra y se pueda mirar lo que pinta ────────
 function nodo(tag) {
@@ -70,6 +71,14 @@ async function pintar(respuesta) {
   };
   ctx.globalThis = ctx;
   vm.createContext(ctx);
+  // SCRUM-436 · el banco carga ANTES `api.js`, como hace el navegador (`index.html:215` va
+  // antes que `:257`). La vista formatea con `fmtMoneyEsOAusente`, que vive ahí: sin cargarlo,
+  // este banco simulaba un navegador al que le falta un <script>, y su rojo no era del producto.
+  vm.runInContext(fs.readFileSync(API, 'utf8'), ctx, { filename: 'api.js' });
+  // ⚠️ `api.js` define su PROPIO `apiRequest` —el de red— y pisa el doble de arriba, que es quien
+  // le da a este banco su respuesta. Se vuelve a poner DESPUÉS: si no, el test dejaría de controlar
+  // los datos que pinta la pantalla y sus rojos serían de la red, no del producto.
+  ctx.apiRequest = async () => { if (respuesta instanceof Error) throw respuesta; return respuesta; };
   vm.runInContext(codigo, ctx, { filename: 'libroRegistroView.js' });
 
   assert.equal(typeof ctx.window.renderLibroRegistroView, 'function',
