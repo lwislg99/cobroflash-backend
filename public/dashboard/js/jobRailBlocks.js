@@ -26,10 +26,10 @@ const JOB_RAIL_TITULOS = {
   responsable: 'RESPONSABLE',
 };
 
-// El marcador de microcopy sin aprobar. `abrir en mapa` no está en la lista aprobada, así que sale
-// con marcador. Hoy no llega a pintarse nunca (ver `bloqueDonde`), pero el texto vive en el código
-// y la regla 30 aplica al código, no a lo que se ve.
-const MARCA_MICRO_RAIL = (typeof window !== 'undefined' && window.MICROCOPY_PENDIENTE) || '[PENDIENTE microcopy oficial]';
+// SCRUM-424 · rótulo del enlace a mapa: APROBADO por el asesor el 10-ago-2026 (regla 30). Sale
+// literalmente del diseño del bloque G («DÓNDE → abrir en mapa»), no se ha inventado aquí. Antes
+// era `[PENDIENTE microcopy oficial]`, y ese marcador se descuenta del censo de SCRUM-402.
+const ROTULO_ABRIR_EN_MAPA = 'Abrir en mapa';
 
 const limpio = (v) => (v == null ? '' : String(v).trim());
 
@@ -59,18 +59,17 @@ function bloqueCliente(job) {
 /**
  * DÓNDE — la dirección de la OBRA y el enlace a mapa.
  *
- * ⚠️ HOY NO SE PINTA NUNCA, y no es un fallo de este código: **`Job.direccion` es campo propio y
- * nadie lo escribe**. Medido — en todo el repo no hay un solo `create`/`update` que lo rellene; la
- * única aparición fuera de un `select` es una lectura, y el propio schema lo dice: «direccion sin
- * fuente hoy (ni Quote ni Customer la tienen)».
+ * ✅ SCRUM-424 · YA SE PINTA. Hasta hoy no lo hacía nunca, y no era un fallo de este código:
+ * **`Job.direccion` es campo propio y nadie lo escribía** — el bloque estaba construido y era
+ * INALCANZABLE. El escritor lo abre `PATCH /admin/jobs/:id` (mismo patrón que `titulo` en
+ * SCRUM-317) y se teclea en «Datos» del detalle del Trabajo.
  *
- * ⚠️ Y NO SE RELLENA CON LA DEL CLIENTE. Primero porque el `Customer` **no tiene** dirección
- * (medido: ni `address`, ni `city`, ni `postal`). Y segundo porque, aunque la tuviera, sería la
- * fiscal y no la de la obra: **un enlace a mapa que lleva al sitio equivocado es peor que no
- * tenerlo, porque el que no existe no se sigue.**
+ * ⚠️ Y SIGUE SIN RELLENARSE CON LA DEL CLIENTE, que era la trampa evidente. Primero porque el
+ * `Customer` **no tiene** dirección (medido: ni `address`, ni `city`, ni `postal`; `Quote` tampoco).
+ * Y segundo porque, aunque la tuviera, sería la fiscal y no la de la obra: **un enlace a mapa que
+ * lleva al sitio equivocado es peor que no tenerlo, porque el que no existe no se sigue.**
  *
- * El código se queda escrito y probado: el día que alguien escriba `direccion`, el bloque aparece
- * solo y con el enlace correcto.
+ * La regla del hueco NO cambia: sin dato, no hay bloque y no hay enlace.
  */
 function bloqueDonde(job) {
   const direccion = limpio(job && job.direccion);
@@ -83,7 +82,7 @@ function bloqueDonde(job) {
     titulo: JOB_RAIL_TITULOS.donde,
     lineas: [{ texto: direccion }],
     enlace: {
-      texto: MARCA_MICRO_RAIL,
+      texto: ROTULO_ABRIR_EN_MAPA,
       href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(direccion)}`,
       desde: direccion, // el dato del que sale el href, para que el guard lo compare con lo pintado
     },

@@ -53,7 +53,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import dotenv from 'dotenv';
-import { PROD_HOST, redactarSecretos } from './_db-guard.mjs';
+import { PROD_HOST, redactarSecretos, parseBDSegura } from './_db-guard.mjs';
 
 // SCRUM-167 (b): resolver TODO contra la raíz del proyecto, no el CWD — así el preflight
 // funciona lanzado desde cualquier directorio (p. ej. desde el runner). Antes, rutas relativas
@@ -86,7 +86,10 @@ if (OVERRIDE) {
 }
 
 function hostOf(u) {
-  try { return new URL(u).hostname; } catch { return null; }
+  // SCRUM-414 · era un `new URL(u)` a mano. Mismo resultado, pero el parseo de una cadena que
+  // puede llevar contrasena dentro ocurre en UN solo sitio del repo.
+  const p = parseBDSegura(u);
+  return p ? p.host : null;
 }
 
 // ── GUARD ANTI-PROD, fail-closed ─────────────────────────────────────────────

@@ -75,11 +75,17 @@ const CENSO = Object.freeze({
   'api.js': 1,
   // SCRUM-405 (−4, 7-ago-2026): al pasar las tres descargas por la forma común desaparecieron
   // cuatro ramas de error que pintaban marcador. El trinquete APRIETA: 15 → 11.
-  'exportView.js': 11,
+  // 11 → 5 el 10-ago-2026: SCRUM-244 trajo los ocho textos APROBADOS de la card de portabilidad
+  // y del diálogo de descarga. Los 5 que quedan son de la card del LIBRO DE EMITIDAS (SCRUM-325),
+  // que nació en `main` después de esa aprobación: nadie ha aprobado su copy todavía.
+  'exportView.js': 5,
   'invoiceDetailView.js': 9,
   'invoicesView.js': 2,
   'jobDetailView.js': 1,
-  'jobRailBlocks.js': 1,
+  // SCRUM-424 (−1, 10-ago-2026): `jobRailBlocks.js` SALE del censo. Su único marcador era el
+  // rótulo del enlace a mapa del bloque DÓNDE, y el asesor aprobó «Abrir en mapa» (regla 30). El
+  // trinquete APRIETA: la entrada se borra en vez de bajar a 0 — `censoActual()` solo lista
+  // ficheros con marcadores, así que un 0 escrito aquí sería una bajada permanente sin anotar.
   'libroRegistroView.js': 1,
   'nuevaFacturaModal.js': 1,
   'patronDetalleAcciones.js': 1,
@@ -206,6 +212,37 @@ test('SCRUM-402 · 🔴 R4: el censo de marcadores PINTABLES no sube, y el rojo 
   assert.deepEqual(bajadas, [],
     `🔴 el censo BAJÓ (enhorabuena) y no se ha actualizado:\n    ${bajadas.join('\n    ')}\n\n` +
     '  Actualiza `CENSO`. Un trinquete que no se aprieta cuando puede deja de ser un trinquete.');
+});
+
+test('SCRUM-402 · 🔴 R4b: un fichero que SALE del censo NO sale de la vigilancia', () => {
+  // Lo pregunta el asesor al aprobar SCRUM-424, y con razón: `jobRailBlocks.js` se borró de
+  // `CENSO` al aprobarse su rótulo. Si el trinquete solo mirase los ficheros que ya conoce, salir
+  // de la lista sería salir del radar — la misma forma que el guard de destino que deja pasar la
+  // clave que no conoce (SCRUM-418).
+  //
+  // NO los tiene: `censoActual()` ENUMERA el directorio y cualquier fichero con marcadores que no
+  // esté en `CENSO` cae por la rama `nuevos`. Se comprueba con el mecanismo, no de palabra.
+  const actual = censoActual();
+  assert.ok(
+    !('jobRailBlocks.js' in CENSO),
+    '🔴 el fixture de este test ya no vale: `jobRailBlocks.js` volvió a `CENSO`, así que esto no ' +
+      'estaría probando el caso de un fichero FUERA de la lista.',
+  );
+  assert.ok(
+    !('jobRailBlocks.js' in actual),
+    '🔴 `jobRailBlocks.js` tiene marcadores otra vez y R4 ya debería estar en rojo.',
+  );
+
+  // La comprobación de verdad: se simula un fichero desconocido CON marcador y se mira que la
+  // regla de R4 lo clasifique como `nuevo`. Es la misma expresión que usa R4, sin tocar el disco.
+  const inventado = { ...actual, 'ficheroQueNadieCensó.js': 1 };
+  const nuevos = Object.keys(inventado).filter((f) => !(f in CENSO));
+  assert.deepEqual(
+    nuevos, ['ficheroQueNadieCensó.js'],
+    '🔴 EL TRINQUETE SOLO VIGILA LO QUE YA CONOCE: un fichero con marcadores que no esté en `CENSO` ' +
+      'no se detecta. Entonces borrar una entrada —lo correcto cuando se aprueba un texto— sacaría ' +
+      'ese fichero de la vigilancia para siempre, y el siguiente marcador entraría en verde.',
+  );
 });
 
 test('SCRUM-402 · 🔴 R5: un marcador en un COMENTARIO no lo pone rojo', () => {

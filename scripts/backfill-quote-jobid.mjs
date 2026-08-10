@@ -31,7 +31,7 @@
 //   node scripts/backfill-quote-jobid.mjs --aplicar       # escribe, tras leer el preview
 
 import { PrismaClient } from '@prisma/client';
-import { describirBD, PROD_HOST } from './_db-guard.mjs';
+import { describirBD, parseBDSegura, PROD_HOST } from './_db-guard.mjs';
 
 const aplicar = process.argv.includes('--aplicar');
 const url = process.env.DATABASE_URL;
@@ -41,13 +41,15 @@ if (!url) {
   process.exit(2);
 }
 
-let host = '(ilegible)';
-try {
-  host = new URL(url).hostname;
-} catch {
-  console.error('❌ DATABASE_URL no es una URL legible.');
+// SCRUM-414 · antes esto era un `new URL(url)` a mano. El `catch` era ciego, así que NO filtraba
+// —pero esa seguridad dependía de que ese catch siguiera siendo correcto para siempre, en un
+// fichero que edita cualquiera. `parseBDSegura` ya estaba importado aquí: solo faltaba usarlo.
+const partes = parseBDSegura(url);
+if (!partes) {
+  console.error('❌ DATABASE_URL no es una URL legible.'); // sin volcar la cadena
   process.exit(2);
 }
+const host = partes.host;
 
 console.log(`\nSCRUM-195 · backfill de Quote.jobId`);
 console.log(`   base    : ${describirBD(url)}`);

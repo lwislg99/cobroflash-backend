@@ -10,6 +10,9 @@ import { fileURLToPath } from 'node:url';
 import { censarConfiguracion } from './_censo-configuracion.mjs';
 import { revisarAsignacion } from './_asignacion-submenus.mjs';
 import { censarSuperficies, revisarSuperficies, SUPERFICIES_PENDIENTES } from './_censo-superficies-configuracion.mjs';
+// SCRUM-420: las superficies DECIDIDAS viven en el mapa que usa la pantalla, no aquí. Sin pasarlo,
+// una superficie ya colocada saldría «sin sitio» y el guard pediría declararla pendiente.
+import mapa from '../public/dashboard/js/settingsSubmenus.js';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const VISTA = path.join(AQUI, '..', 'public/dashboard/js/settingsView.js');
@@ -18,7 +21,7 @@ const FUENTE = fs.readFileSync(VISTA, 'utf8');
 const CAMPOS = censarConfiguracion(FUENTE, 'settingsView.js');
 const SUP = censarSuperficies(FUENTE, 'settingsView.js');
 const REV_CAMPOS = revisarAsignacion(CAMPOS.campos.map((c) => c.clave));
-const REV_SUP = revisarSuperficies(SUP.superficies.map((s) => s.clave));
+const REV_SUP = revisarSuperficies(SUP.superficies.map((s) => s.clave), mapa.ASIGNACION_SUPERFICIE);
 
 const SUELO_CAMPOS = 25;
 const SUELO_SUPERFICIES = 4;

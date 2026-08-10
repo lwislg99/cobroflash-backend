@@ -17,9 +17,19 @@ import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsA
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-173
 import { allocateAlbaranNumber } from '../../domain/albaranNumber.service';
+// SCRUM-424 (G3): la dirección de la OBRA — el escritor que le faltaba al bloque DÓNDE del rail.
+import {
+  normalizarJobDireccion,
+  albaranesConFirmaQueDependeDelTrabajo,
+  ERROR_DIRECCION_SELLADA,
+  MSG_DIRECCION_SELLADA,
+} from '../../domain/jobDireccion';
 // SCRUM-170: derivación del estado de cobro (parcial) — nunca un flag almacenado.
 import { estadoCobroAlbaran, facturadoPorLinea, pendientePorLinea } from '../../domain/albaranFacturacion';
 import { emitirRecapitulativas } from '../../domain/recapitulativa.service'; // SCRUM-171a: emisión compartida
+// SCRUM-423: el eje de ENTREGA (C6 · SCRUM-305) llega por fin a la pantalla. El cálculo NO se
+// toca: esto sólo resuelve sus tres entradas con datos que este serializador ya tiene cargados.
+import { entregaDelTrabajo, entregaParaVista } from '../../domain/entregaDelTrabajo';
 import {
   ALBARAN_MODOS_VALORACION,
   serializeAlbaran,
@@ -352,7 +362,15 @@ async function serializeJobDetail(job: any) {
   // Trabajo manual (SCRUM-51) con un adicional colgado tiene `quoteId` null y SÍ tiene
   // facturas que enseñar.
   const quotesDelTrabajo = await quotesDeJob(job);
-  if (quotesDelTrabajo.length === 0) return { ...base, customer, invoices: [], charge: null, albaranes };
+  // SCRUM-423 · el eje de ENTREGA viaja TAMBIÉN por esta salida temprana. Un Trabajo manual
+  // (SCRUM-51) no tiene presupuesto contra el que medir, y eso es `sin_eje` — una respuesta, no un
+  // fallo. Omitir el campo aquí dejaría a la pantalla sin poder distinguirlo de «no se pudo leer».
+  if (quotesDelTrabajo.length === 0) {
+    return {
+      ...base, customer, invoices: [], charge: null, albaranes,
+      entregaPendiente: entregaParaVista(entregaDelTrabajo([], albaranesRaw)),
+    };
+  }
 
   const detalles = await prisma.quote.findMany({
     where: { id: { in: quotesDelTrabajo.map((q) => q.id) }, merchantId: job.merchantId }, // regla 2
@@ -414,7 +432,14 @@ async function serializeJobDetail(job: any) {
       }
     : null;
 
-  return { ...base, customer, invoices, charge, albaranes };
+  // SCRUM-423 · «qué queda por ENTREGAR», el eje que C6 construyó y que hasta hoy no salía de su
+  // test. Sin consulta nueva: `quotesDelTrabajo` ya viene con `lines` (QUOTE_SELECT) y con el
+  // ORIGINAL el primero, que es lo que `entregaDelTrabajo` necesita para decidir el eje y
+  // `hayAdicionales`. Los albaranes van CRUDOS —`albaranesRaw`— y no los serializados: el cálculo
+  // mira `lineas`, `estado` y `modoValoracion`, y el serializado no está obligado a conservarlos.
+  const entrega = entregaParaVista(entregaDelTrabajo(quotesDelTrabajo, albaranesRaw));
+
+  return { ...base, customer, invoices, charge, albaranes, entregaPendiente: entrega };
 }
 
 // GET /admin/jobs — lista para la vista "Esta semana" (simple, por fecha)
@@ -596,6 +621,39 @@ router.patch('/:id', async (req, res) => {
     // que distinguir `''` de `null` para decidir si pinta el separador.
     if (req.body?.titulo !== undefined) {
       data.titulo = String(req.body.titulo || '').trim().slice(0, 120) || null;
+    }
+    // ── SCRUM-424 (G3) · el pro escribe la DIRECCIÓN DE LA OBRA ──────────────────────────
+    //
+    // Misma puerta que abrió SCRUM-317 para `titulo`, por el mismo motivo y con el mismo coste:
+    // el campo existe en el modelo desde SCRUM-10 y **ninguna ruta lo escribía**, así que el
+    // bloque DÓNDE del rail —con su enlace a mapa, lo que ningún facturador tiene— estaba
+    // construido y era INALCANZABLE. Abrirlo aquí es todo lo que hacía falta: cero schema.
+    //
+    // NO es admin-only, igual que `titulo`: adónde se va a trabajar es un dato operativo, no una
+    // bandera fiscal ni de dinero, y el técnico que está en la obra es quien mejor lo sabe.
+    //
+    // 🔴 SALVO QUE ROMPA UNA FIRMA YA EMITIDA (regla 29). Ver `jobDireccion.ts`: los sobres v:1
+    // calculan su `obra` desde `Job.direccion` Y LA LEEN EN VIVO al verificar, así que escribirla
+    // hoy dejaría sin verificar un albarán firmado que nadie ha tocado. Se comprueba SOLO cuando
+    // el valor CAMBIA de verdad —reenviar el mismo no toca nada y no merece una consulta— y se
+    // corta ANTES del `update`, no después.
+    if (req.body?.direccion !== undefined) {
+      const nueva = normalizarJobDireccion(req.body.direccion);
+      if (nueva !== (job.direccion ?? null)) {
+        const albaranes = await prisma.albaran.findMany({
+          where: { jobId: id, merchantId: req.merchantId! }, // regla 2: siempre por merchant
+          select: { numero: true, evidenciaFirma: true },
+        });
+        const atados = albaranesConFirmaQueDependeDelTrabajo(albaranes);
+        if (atados.length) {
+          return res.status(409).json({
+            error: ERROR_DIRECCION_SELLADA,
+            message: MSG_DIRECCION_SELLADA,
+            albaranes: atados,
+          });
+        }
+        data.direccion = nueva;
+      }
     }
     if (req.body?.assignedUserId !== undefined) {
       const uid = req.body.assignedUserId === null ? null : Number(req.body.assignedUserId);

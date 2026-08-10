@@ -28,6 +28,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { inspect } from 'node:util';
 import { soloEjecutable } from './_guard-texto.mjs';
+// SCRUM-414 · la regla de «no parsear a mano» se deriva del catch, no del nombre.
+import { censoNewUrl } from './_censo-new-url.mjs';
 import { parseBDSegura, describirBD, redactarSecretos } from '../scripts/_db-guard.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -144,45 +146,29 @@ test('SCRUM-195 · el redactor no depende del esquema ni del nombre del usuario'
 
 // ── 3. El repo no puede volver a la forma insegura ───────────────────────────────────────
 
-test('SCRUM-195 · ningún script parsea una URL de BD con `new URL` a pelo', () => {
-  const dir = path.join(RAIZ, 'scripts');
-  // `_db-guard.mjs` es el ÚNICO exento: es donde vive el parseo seguro, y su `new URL` está
-  // dentro del try cuyo catch no toca el error. Excepción DECLARADA, no silenciosa.
-  const EXENTOS = new Set(['_db-guard.mjs']);
-  const culpables = [];
-
-  // SCRUM-408 · SUELO. Sin esto, el día que `readdirSync` devuelva vacío —directorio movido,
-  // filtro que deja de casar— este test pasa EN VACÍO y «ningún script parsea a pelo» pasa a
-  // significar «no miré ninguno». Y no puede exigirse «≥1 violación», porque el objetivo es que
-  // haya CERO: el suelo correcto es demostrar que el detector VE.
+test('SCRUM-195 · ningún script parsea una URL donde su error pueda hablar', () => {
+  // ⚠️ ESTE TEST SE REESCRIBIÓ EN SCRUM-414 PORQUE SU VERDE ERA FALSO.
   //
-  // Se demuestra sobre `_db-guard.mjs`, el exento: ahí SÍ hay `new URL`, así que si el escáner no
-  // lo encuentra es que está roto, no que el árbol esté limpio.
-  const todos = fs.readdirSync(dir).filter((f) => f.endsWith('.mjs'));
-  assert.ok(todos.length >= 10,
-    `🔴 solo ${todos.length} scripts leídos en ${dir}: el detector no está mirando donde cree`);
-  const exento = soloEjecutable(fs.readFileSync(path.join(dir, '_db-guard.mjs'), 'utf8'));
-  assert.match(exento, /new URL\(/,
-    '🔴 el escáner no encuentra `new URL` ni en el módulo que SÍ lo tiene: está roto, y su verde no significa nada');
-
-  for (const f of todos.filter((f) => !EXENTOS.has(f))) {
-    const codigo = soloEjecutable(fs.readFileSync(path.join(dir, f), 'utf8')); // principio 10
-    // `new URL(<algo con pinta de URL de BD>)`.
-    const m = codigo.match(/new URL\(\s*([A-Za-z_$][\w$.]*)/g) || [];
-    for (const hit of m) {
-      const arg = hit.replace(/new URL\(\s*/, '');
-      if (/db|database|conn|dsn|postgres|pg/i.test(arg)) culpables.push(`${f} → ${hit})`);
-    }
-  }
-
+  // Enunciaba «ningún script parsea una URL de BD a mano» y lo hacía cumplir mirando **el nombre de
+  // la variable** (`/db|database|conn|dsn|postgres|pg/i`). Basta llamarla `u` para salir del radar,
+  // y así estaba: tres scripts —`backfill-quote-jobid`, `conciliar-auditoria-fiscal`,
+  // `preflight-schema-drift`— parseaban a mano en `main` **con este test en verde**. Los tres ya
+  // importaban `_db-guard.mjs`; nadie usaba `parseBDSegura` porque nada lo exigía.
+  //
+  // Sexta variante del mismo patrón de la casa: el guard atado a la FORMA en vez de al HECHO
+  // (ternario, `||`, objeto indexado, puntuación, número de línea… y ahora el identificador).
+  //
+  // La regla vive ahora en `_censo-new-url.mjs` y se deriva del **catch**, que es el hecho: un error
+  // de `new URL` lleva la cadena en `e.input`, así que lo que importa es si alguien puede alcanzarlo.
+  // Se llama desde aquí para que quien venga a este fichero por la fuga de SCRUM-195 encuentre la
+  // regla viva, y no dos reglas de las que la floja tranquiliza.
+  const culpables = censoNewUrl(RAIZ)
+    .filter((x) => !x.seguro && !x.esElParseoSeguro)
+    .map((x) => `scripts/${x.fichero}:${x.linea} — new URL(${x.argumento}) · ${x.proteccion}`);
   assert.deepEqual(
-    culpables,
-    [],
-    `🔴 ${culpables.join(', ')} parsea una URL de BD a pelo. Si esa URL viene con comillas del ` +
-      `.env, o mal formada de cualquier otra manera, \`new URL()\` lanza un error que lleva la ` +
-      `CADENA ENTERA —contraseña incluida— en su \`.message\`, y el primer \`console.error(e.message)\` ` +
-      `la publica. Ya pasó con producción. Usa \`parseBDSegura\` de scripts/_db-guard.mjs.`,
-  );
+    culpables, [],
+    `🔴 ${culpables.join(', ')}: el error de ese \`new URL\` es alcanzable, y lleva la cadena ENTERA `
+    + 'dentro. Usa `parseBDSegura` de scripts/_db-guard.mjs. Detalle en tests/scrum414-url-a-mano.test.mjs.');
 });
 
 test('SCRUM-195 · el backup redacta antes de imprimir un fallo', () => {

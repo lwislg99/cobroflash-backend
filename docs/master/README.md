@@ -98,6 +98,29 @@ actualizar el censo, para que la mejora quede anotada en vez de pasar desapercib
 
 Si estas escribiendo una entrada NUEVA, nada de esto te afecta: pon el ancla.
 
+## ANTES DE EMPUJAR: `npm run guards:entrada`
+
+**No es un guard, son CUATRO**, y hasta ahora cada sesion los descubria EN ROJO despues de empujar,
+cuando el PR ya estaba abierto:
+
+| guard | lo que exige |
+|---|---|
+| SCRUM-273 | el fichero se llama `SCRUM-<n>.md`, y el trabajo no se escribe en `YAQU_MASTER.md` |
+| SCRUM-267 | el ancla `**Medido contra:**`, con sha de **40** y hora con huso |
+| SCRUM-391 | todo test que la entrada DECLARA existe en el arbol |
+| SCRUM-242 | no se nombra un documento que no existe |
+
+```
+npm run guards:entrada
+```
+
+Tarda segundos: los cuatro son estructurales -no compilan ni tocan la base-. `npm test` tambien los
+corre, pero compila y lanza 2.400 tests, asi que nadie lo usa para revisar un fichero de texto: por
+eso los rojos llegaban por el PR.
+
+Si el comando corre menos de cuatro, **falla nombrando cual falta**. Un agregador que se queda corto
+da la tranquilidad entera con la cobertura a medias.
+
 ## El guard
 
 `tests/scrum273-registro-por-fichero.test.mjs` se pone **rojo** si aparece una entrada de trabajo

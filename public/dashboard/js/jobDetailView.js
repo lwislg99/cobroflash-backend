@@ -163,6 +163,12 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
     'sin-firmar': (h) => `${h.cantidad} ${h.cantidad === 1 ? 'albarán' : 'albaranes'} sin firmar`,
     'sin-facturar': (h) => `${fmt(h.importe, moneda)} entregados sin facturar`,
     'sin-facturar-nada': (h) => `${fmt(h.importe, moneda)} aceptados y sin facturar`,
+    // SCRUM-423 · copy APROBADA por el asesor el 10-ago-2026 (regla 30). El formato copia el de
+    // los otros cuatro, MEDIDO y no supuesto: número delante, sin mayúscula inicial forzada, sin
+    // punto final y sin icono. Singular y plural DE VERDAD —nunca `línea(s)`—, regla dura heredada
+    // de C6: cambia el sustantivo, así que se alterna la palabra entera, igual que hace
+    // `sin-firmar` con albarán/albaranes.
+    'sin-entregar': (h) => `${h.cantidad} ${h.cantidad === 1 ? 'línea' : 'líneas'} del presupuesto sin entregar`,
     'sin-cobrar': (h) => `${fmt(h.importe, moneda)} facturados sin cobrar`,
   };
   const TEXTO_ACCION = {
@@ -542,6 +548,9 @@ async function renderJobDetailView(container, jobId) {
 
   const nombreCliente = (job.customer?.name || '').trim();
   const nombreTrabajo = (job.titulo || '').trim();
+  // SCRUM-424: el valor actual de la dirección de la obra, para el campo de «Datos» y para saber
+  // si al salir del campo hay algo que guardar. NO se pinta en la cabecera: eso es el rail.
+  const direccionObra = (job.direccion || '').trim();
 
   h2.textContent = nombreCliente || 'Trabajo';
   sub.textContent = unirCon(' · ', nombreTrabajo, fechaCorta(job.createdAt));
@@ -752,6 +761,46 @@ async function renderJobDetailView(container, jobId) {
     } catch {
       nombreInput.value = nombreTrabajo; // se deshace lo tecleado: mentir sería peor
       setStatus('error', 'No se pudo guardar el nombre del trabajo.');
+    }
+  });
+
+  // ── SCRUM-424 (G3) · aquí el pro escribe la DIRECCIÓN DE LA OBRA ─────────────────────
+  //
+  // Va en «Datos», al lado del nombre, y NO en el rail: el rail es contexto de SOLO LECTURA
+  // (patrón B2, regla 4) y su propio guard prohíbe que cree un `input`. Lo que se escribe aquí
+  // es lo que el rail pinta enfrente, con su enlace a mapa.
+  //
+  // Sin este campo, `Job.direccion` seguiría sin escritor y el bloque DÓNDE seguiría siendo
+  // código inalcanzable — que es el defecto entero del ticket.
+  const dirWrap = document.createElement('div');
+  dirWrap.style.cssText = 'margin-top:12px';
+  const dirLabel = document.createElement('label');
+  dirLabel.setAttribute('for', 'job-direccion');
+  dirLabel.style.cssText = 'display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:4px';
+  dirLabel.textContent = 'Dirección de la obra';
+  const dirInput = document.createElement('input');
+  dirInput.id = 'job-direccion';
+  dirInput.className = 'input';
+  dirInput.type = 'text';
+  dirInput.maxLength = 300; // mismo tope que `JOB_DIRECCION_MAX` en el backend
+  dirInput.placeholder = 'Ej. Av. Rey Juan Carlos 145, Leganés';
+  dirInput.value = direccionObra;
+  dirInput.style.minHeight = '44px';
+  dirWrap.appendChild(dirLabel);
+  dirWrap.appendChild(dirInput);
+  infoSec.appendChild(dirWrap);
+
+  dirInput.addEventListener('blur', async () => {
+    const nueva = dirInput.value.trim();
+    if (nueva === direccionObra) return; // nada que guardar
+    try {
+      await apiRequest(`/admin/jobs/${job.id}`, { method: 'PATCH', body: { direccion: nueva } });
+      refresh(); // el rail se repinta desde el dato: el bloque DÓNDE aparece solo
+    } catch (e) {
+      dirInput.value = direccionObra; // se deshace lo tecleado: mentir sería peor
+      // El 409 de la firma sellada trae su propio motivo y se enseña TAL CUAL: «no se pudo» sin
+      // decir por qué obligaría al profesional a adivinar por qué su trabajo es distinto.
+      setStatus('error', (e && e.data && e.data.message) || 'No se pudo guardar la dirección de la obra.');
     }
   });
   // SCRUM-31 (F5): "Ver presupuesto" se mueve a la FILA de presupuesto de la lista 'Documentos'
