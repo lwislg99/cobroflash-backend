@@ -156,6 +156,33 @@ export function corteAMediaSubida() {
   };
 }
 
+/**
+ * LLEGA TARDE — la red va lenta pero **acaba entregando**, y lo hace después del plazo.
+ *
+ * Es distinto de «acepta y no entrega»: aquí sí vuelve. Hace falta para el caso que decide en
+ * SCRUM-448 —**el dato gana al mensaje**— y para cualquier cosa de H que tenga que distinguir
+ * «tardó» de «no llegó», que son dos cosas y se parecen mucho desde fuera.
+ */
+export function llegaTarde(ms, datos = {}) {
+  const b = base({ onLine: true });
+  return {
+    ...b,
+    nombre: `llega tarde (${ms} ms)`,
+    fetch: async (url, opts) => {
+      b.reg.peticiones.push({ url: String(url), opts });
+      await new Promise((res) => setTimeout(res, ms));
+      b.reg.resueltas++;
+      return {
+        ok: true, status: 200,
+        headers: { get: (h) => (String(h).toLowerCase() === 'content-type' ? 'application/json' : null) },
+        json: async () => datos,
+        text: async () => JSON.stringify(datos),
+        blob: async () => ({ size: 1 }),
+      };
+    },
+  };
+}
+
 /** Los cuatro, para recorrerlos en un test sin escribirlos a mano. */
 export const ESCENARIOS = { redNormal, portalCautivo, aceptaYNoEntrega, corteAMediaSubida };
 

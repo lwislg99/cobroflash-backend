@@ -2,7 +2,7 @@
 
 **Fecha:** 10-ago-2026 · **Carril:** B (UI) · **Gate:** sin gate, corre en `npm test`
 **Medido contra:** `origin/main` = `e171c752f61231bec77dc2c22ecc7f82167d964c` · 2026-08-10T19:46:55+01:00
-**Tanda:** 2785 tests · 2711 pass · **0 fail** · 74 gateados · `npm test` exit **0**
+**Tanda:** ver al final
 
 > 🔴 **DEPENDENCIA DE ORDEN DE MERGE:** esta rama sale de `scrum-362-banco-sin-cobertura`, **no de
 > `main`**, porque el escenario «acepta y no entrega» —lo único con lo que se puede probar esto—
@@ -49,7 +49,7 @@ banco no monta **no están medidas**, no están declaradas sanas.
 
 ## Lo que se construye
 
-Un tercer estado, `cargado`, y **cero microcopy nueva**:
+Un tercer estado —`estado`, con tres valores nombrados— y **cero microcopy nueva**:
 
 * mientras no se sabe, `pintarFilas()` **sale sin pintar ningún vacío**: la tabla se queda muda. Ni
   «no hay cobros» ni «tu filtro los esconde» — las dos son afirmaciones sobre datos que no han
@@ -67,10 +67,52 @@ Al vencer el plazo se dice **lo mismo que cuando falla**, con el texto ya aproba
 *«No hemos podido cargar los cobros. Vuelve a intentarlo.»*—, porque para quien mira **es el mismo
 hecho**: no están sus datos y puede reintentar.
 
-**⚠️ Y el plazo es una decisión de producto que hay que confirmar.** No hay precedente en la casa:
-medido, **cero `AbortController`, cero `signal`, cero constante de espera** en todo el dashboard. He
-puesto **15 s** —bastante para que una red lenta llegue, poco para dejar a alguien mirando una tabla
-muda— y **queda pendiente de que el asesor confirme el número**. El texto no: ése ya está aprobado.
+### El plazo: DIEZ segundos — decisión del fundador
+
+De dónde sale, porque si no no vale: **no hay p95 de `/admin/cobros` en producción y no se
+inventa**. Sale del umbral clásico de 10 s a partir del cual una persona deja de creer que el
+sistema trabaja y empieza a creer que está roto. Es una **referencia general, no un dato nuestro**,
+y así queda escrito aquí y en el código.
+
+Va hacia abajo y no hacia arriba porque **los dos fallos no cuestan igual**: un plazo corto de más
+saca el aviso y la respuesta llega luego —molesto, y **recuperable**—; uno largo de más deja la
+tabla muda, sin información ninguna, y **de ahí el profesional no sale**.
+
+En **una constante con nombre y en un sitio**, porque este número va a cambiar en cuanto midamos y
+cambiarlo tiene que ser cambiar una línea. Hay test de que son 10000, de que la constante aparece
+exactamente tres veces y de que no hay otro número de plazo suelto.
+
+### 🔴 Número de secuencia: solo pinta la ÚLTIMA petición lanzada
+
+Aquí **no se introduce `AbortController`** —es SCRUM-451, otro carril—, y la consecuencia directa es
+que **la petición vencida sigue viva y va a llegar**. Sin contador:
+
+* t=10 s vence → se pinta el aviso;
+* se relanza → t=11 s llega la segunda y pinta la lista buena;
+* t=13 s llega la primera y **pinta encima una lista más vieja**, sin que nada lo diga.
+
+Es el defecto que nadie ve hasta que muerde, y tiene test propio. El contador vive **fuera del
+render** para que dos renders de la misma pantalla tampoco puedan pisarse.
+
+### Y el dato gana al mensaje
+
+Si la respuesta llega tarde **y es la última lanzada**, se pinta y **sustituye al aviso**. Lo que
+vence **nunca** se cuenta como «no hay cobros»: eso es el defecto entero de este ticket, y colarlo
+por la puerta del plazo sería reintroducirlo.
+
+### 🔴 El agujero que apareció al añadir el plazo, y por qué hay TRES estados y no dos
+
+Con una sola bandera `cargado`, el aviso ponía `cargado = true`… y entonces **pulsar un filtro
+volvía a llamar a `pintarFilas()` con la lista vacía y la pantalla decía otra vez «no hay cobros»**.
+El defecto de este ticket, reintroducido por su propio arreglo. Se cierra con un estado nombrado
+—`'cargando' | 'listo' | 'sin-respuesta'`— para que **no haya combinación que caiga en el vacío por
+descarte**, y con su test.
+
+## 🔴 EL HUECO QUE SE DECLARA Y NO SE TAPA
+
+**Sin `AbortController`, la petición vencida SE SIGUE DESCARGANDO ENTERA aunque ya no pinte: gasta
+los datos del profesional y ocupa la conexión, en el peor sitio posible.** El plazo de aquí decide
+**qué se enseña**, no corta nada. **El plazo que corta de verdad es SCRUM-451, no éste.**
 
 ## Verificado
 
@@ -109,7 +151,7 @@ no termina.
 
 * **`invoicesView` y `productsView` no están medidas.** El banco no las pinta (hueco de SCRUM-417),
   así que **no se sabe** si afirman un vacío mientras cargan. No se declaran sanas.
-* **El plazo de 15 s está sin confirmar** por el asesor.
+* **La petición vencida se sigue descargando entera**: aquí no se corta. Ver el hueco de arriba.
 * **No se ha visto en un navegador.** Lo verificado es la lógica de estados en el banco.
 * **Solo se arregla Cobros.** Las otras nueve no lo necesitan hoy; nada impide que una nueva nazca
   con el defecto, y **no hay guard que lo impida** — sería un censo de estados de carga, y es otro
@@ -117,6 +159,9 @@ no termina.
 
 ## Ficheros
 
-* `public/dashboard/js/cobrosView.js` — el tercer estado y el plazo.
-* `tests/scrum448-cobros-estado-de-carga.test.mjs` (nuevo, 5).
+* `public/dashboard/js/cobrosView.js` — el tercer estado, el plazo de 10 s y el nº de secuencia.
+* `tests/scrum448-cobros-estado-de-carga.test.mjs` (nuevo, 9).
 * `tests/_banco-vistas.mjs` — `pintarVista` deja de colgarse con vistas `async` sin respuesta.
+* `tests/_banco-red.mjs` — escenario `llegaTarde(ms, datos)`: la red que **tarda pero entrega**,
+  que es lo único con lo que se puede probar «el dato gana al mensaje». «Tardó» y «no llegó» se
+  parecen mucho desde fuera y son dos cosas distintas.
