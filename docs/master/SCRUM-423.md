@@ -1,6 +1,6 @@
 # SCRUM-423 · el eje de ENTREGA llega por fin a la pantalla — y el primer cierre en falso, cerrado
 
-**Medido contra:** `origin/main` = `ca15d694f80bb72758470a346f611b471037c68b` · 2026-08-10T15:25:36+01:00
+**Medido contra:** `origin/main` = `846d072b78352cab32af441a5e66f59a513fea6f` · 2026-08-10T15:55:53+01:00
 
 **Fecha:** 10-ago-2026 · **Carril:** A (producto) · **Gate:** sin gate, corre en `npm test` ·
 **UI:** vanilla (regla 4)
@@ -68,6 +68,50 @@ separa del de facturación.
 ⚠️ `COPY_ENTREGA` (los tres motivos y las dos coletillas) **ya estaba firmada** por el asesor el
 5-ago y así consta en el código y en la entrada de C6. Lo que no existía en ninguna ranura firmada
 era precisamente la frase que lleva el número — por eso hizo falta esta aprobación y no otra.
+
+### La composición, aprobada aparte — y una corrección a mi propuesta
+
+Yo propuse **callar la línea** cuando el número dejara entregas sin contar, para no pintar un
+número mudo. **El asesor lo corrigió, y tenía razón:** mira lo que produce callarse. El profesional
+abre «Qué falta para cobrar», no ve línea de entrega y lee que no queda nada por entregar. **Es la
+pantalla que dice "ya puedes facturar"** — el mismo suelo que este ticket existe para prohibir. Con
+`sinAtribuir` el motor SÍ supo que había algo; sólo no supo dónde ponerlo. Callarse es peor que el
+número incompleto, porque el número incompleto al menos deja al profesional mirando.
+
+Composición aprobada: la coletilla firmada va **en la misma línea**, detrás, separada por « · » —el
+separador de la casa, el de «Presupuesto #2 · 24 jun · 853,05 €»— y con **el mismo peso visual**: ni
+gris, ni más pequeña, ni entre paréntesis. *Una salvedad que se ve menos que el número al que
+corrige no es una salvedad.*
+
+> **El principio que gobierna esto:** un número y el motivo por el que puede estar incompleto **no
+> se pueden separar**. Por eso van en UNA sola cadena y se pintan en UN solo `textContent`, y hay
+> dos tests que lo fijan: uno cae si el rótulo se reparte en dos nodos, y otro si alguna regla CSS
+> que alcance al hueco introduce truncado (`text-overflow`, `nowrap`, `line-clamp`). Los dos
+> verificados en rojo.
+
+⚠️ La coletilla **se compone en el servidor** con `fraseDeCuenta` (la copy firmada de C6). El
+frontend es vanilla y no puede importar ese módulo: si el texto se escribiera allí habría dos
+fuentes de verdad para una frase firmada, y la de la pantalla sería la que nadie firmó.
+
+### El caso sin número: la coletilla se sostiene sola
+
+`lineasPendientes === 0` **con** `sinAtribuir > 0` existe y es corriente — se entrega todo lo
+presupuestado y además algo añadido en obra (medido: presupuesto de 1 línea entregada entera + 1
+línea sin enlace → `calculable: true`, `lineasPendientes: 0`, `sinAtribuir: 1`).
+
+Yo lo propuse dejar **sin pintar**, como deuda de microcopy, porque la frase aprobada no vale ahí:
+«0 líneas del presupuesto sin entregar · …» es una contradicción en una sola línea. Descarté además
+el marcador `[PENDIENTE microcopy oficial]` porque el trinquete de SCRUM-402 cuenta marcadores en
+literales y no puede subir — **y no me pareció bien empeorar un ratchet ajeno por un caso mío**.
+
+El asesor señaló que ese razonamiento era correcto pero la salida no era subir el ratchet: era
+darse cuenta de que **la coletilla se sostiene sola**. «1 línea entregada que no sale del
+presupuesto» ya es una frase completa y verdadera, ya sale de `fraseDeCuenta` —copy firmada—, y ya
+respeta el registro sustantivo-primero de sus cuatro vecinas. Así que ese caso pinta la coletilla
+sin acompañamiento: **sin texto nuevo, sin marcador, sin tocar el trinquete de 402, y sin deuda.**
+
+Con eso **el suelo queda cerrado entero**: no queda ningún estado en el que el motor sepa que hay
+algo y la pantalla se calle.
 
 ## 🔴 DIVERGENCIA DECLARADA: el diseño prometía material, el motor da líneas
 
@@ -139,24 +183,36 @@ de no saber leer es la mentira más cara de esta pantalla, y se caza antes de ll
 
 ## Lo que NO cubre — declarado
 
-* 🔴 **Con `sinAtribuir > 0` la línea NO se pinta.** Si hay líneas entregadas que no salen del
-  presupuesto, el número no las cuenta y C6 exige por escrito que un número declare lo que no pudo
-  contar. Las coletillas están firmadas, pero **la composición** (dónde va la coletilla, con qué
-  separador) es microcopy que hoy no está aprobada, así que no se pinta un número incompleto y
-  mudo. **Es la decisión más restrictiva de este ticket y está pendiente de tu visto bueno.**
+* **Los tres motivos de «no contesto» no se pintan** (regla de G: o está el dato, o no está la
+  línea). Su copy firmada queda construida y sin usar **en esta superficie**.
 * `enPartesSinFirmar > 0` **sí** deja pintar: esas líneas no cuentan *por definición* de C6, y su
   declaración ya está en pantalla en otra línea (el hueco `sin-firmar`). Hay un test que fija esa
   implicación: si se rompe, avisa de que este hueco necesitaría su coletilla.
-* **Los tres motivos de «no contesto» no se pintan** (regla de G: o está el dato, o no está la
-  línea). Su copy firmada queda construida y sin usar **en esta superficie**.
+* **El ticket NO deja deuda de microcopy.** El caso `lineasPendientes === 0` con `sinAtribuir > 0`
+  —que existe y es corriente: se entrega todo lo presupuestado y además algo añadido en obra— se
+  resolvió **sin texto nuevo**: se pinta la coletilla SOLA. Ver abajo.
 * **No se toca la cabecera** (`jobNextAction`, la escalera de SCRUM-366): esta sección enumera, no
   elige.
 * **No hay AB6 de captura**: el cambio es una fila más en una lista ya existente, con sus mismos
   tokens y sin CSS nuevo.
 
+## De paso, y por encargo del asesor: la frase falsa de `CLAUDE.md` (SCRUM-422)
+
+Decía *«`.env` apunta a PROD; dev usa `.env.local`»*. **Es falsa en los cuatro worktrees desde
+SCRUM-383**, y fue la que me hizo afirmar sin medir en SCRUM-418. Se reescribe **como registro
+fechado, no como afirmación de estado**: qué se midió, cuándo, y con qué comando volver a medirlo.
+
+Verificado hoy con el propio guard antes de escribirlo — los cuatro árboles: `fallos = 0`, las tres
+claves `_STAGING`/`_DEV`/`_TESTS`, ninguna `DATABASE_URL`, ningún `.env.local`.
+
+⚠️ La otra mención (`npm run dev … carga .env.local con prioridad`) **no se toca y no es falsa**:
+describe el mecanismo de `loadEnv.ts`, que sigue dando prioridad a ese fichero *si aparece*. La
+diferencia entre «este fichero existe» y «si existe, manda» es justo la que hacía falta.
+
 ## Ficheros
 
 * `src/modules/jobs/domain/entregaDelTrabajo.ts` — **nuevo**, el adaptador puro.
+* `CLAUDE.md` — la frase de las claves de BD, como registro fechado (SCRUM-422).
 * `src/modules/jobs/app/routes/jobs.routes.ts` — expone `entregaPendiente` (sin consulta nueva).
 * `public/dashboard/js/jobCobroHuecos.js` — quinto hueco y `HUECOS_COBRO`.
 * `public/dashboard/js/jobDetailView.js` — el rótulo aprobado.
@@ -166,6 +222,9 @@ de no saber leer es la mentira más cara de esta pantalla, y se caza antes de ll
 
 ## Tanda final
 
-**2512 tests · 2438 pass · 0 fail · 74 skipped · `npm test` `$? = 0`**, corrida **DESPUÉS** de
+**2549 tests · 2475 pass · 0 fail · 74 skipped · `npm test` `$? = 0`**, corrida **DESPUÉS** de
 escribir esta entrada. El orden importa y es la lección de SCRUM-415: allí la tanda se corrió antes
 de crear el documento, se commiteó después, y el CI se puso rojo por el propio documento.
+
+*(Tramo 1 —el cableado— se midió en 2512 · 2438 pass · 0 fail sobre `ca15d694` y está en `main`
+desde el PR #603. Este tramo 2 añade la coletilla y se mide sobre `846d072b`.)*

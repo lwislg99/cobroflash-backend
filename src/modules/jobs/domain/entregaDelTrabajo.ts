@@ -27,7 +27,10 @@
 // 0` para todas, daría `pendienteTotal: 0` y la pantalla diría, con toda tranquilidad, que no
 // queda nada. Un cero derivado de no saber leer es la mentira más cara de esta pantalla, así que
 // se caza aquí: si hay líneas y NINGUNA tiene cantidad legible, esto es ILEGIBLE, no un cero.
-import { resumenEntrega, type ResumenEntrega, type AlbaranParaEntrega } from './entregaPendiente';
+import {
+  resumenEntrega, fraseDeCuenta,
+  type ResumenEntrega, type AlbaranParaEntrega,
+} from './entregaPendiente';
 
 export const SIN_EJE = 'sin_eje';
 export const ILEGIBLE = 'ilegible';
@@ -131,5 +134,10 @@ export function entregaParaVista(e: EntregaDelTrabajo) {
     sinAtribuir: r.sinAtribuir,
     enPartesSinFirmar: r.enPartesSinFirmar,
     albaranesValorados: r.albaranesValorados,
+    // ⚠️ LA COLETILLA SE COMPONE AQUÍ, con la copy FIRMADA de C6 y su `fraseDeCuenta` — la que ya
+    // resuelve el singular/plural de verdad. El frontend es vanilla y no puede importar este
+    // módulo; si el texto se escribiera allí habría DOS fuentes de verdad para una frase firmada,
+    // y la de la pantalla sería la que nadie firmó. Allí solo se coloca detrás del número.
+    fraseSinAtribuir: r.sinAtribuir > 0 ? fraseDeCuenta('sinAtribuir', r.sinAtribuir) : null,
   };
 }
