@@ -32,7 +32,7 @@ FALLA EN SILENCIO», y decía que no se arreglaba allí. Aquí es donde tocaba.
 trabajar. Lo que se arregla no es el flujo: es el silencio. Ahora el fallo **se marca**
 (`state.catalogFallo = true`) y deja de perderse.
 
-### ⚠️ PARADA POR REGLA 30 — y el guard de otro ticket me dio la razón
+### La parada por regla 30, y cómo se levantó
 
 Mi primera versión **pintaba** un aviso con el marcador puesto. El guard de **SCRUM-402** lo cazó:
 
@@ -41,9 +41,13 @@ Mi primera versión **pintaba** un aviso con el marcador puesto. El guard de **S
 Y tiene razón: un `[PENDIENTE …]` en la pantalla de un profesional es peor que el silencio. Así
 que **el aviso no se pinta**. El dato queda; decirlo es **una línea** el día que haya texto.
 
-**PROPUESTA DE MICROCOPY, para aprobar** (no está escrita en el código):
+**MICROCOPY APROBADA por el fundador (9-ago-2026)**, literal y sin marcador:
 
 > «No hemos podido cargar el catálogo de tu gremio. Puedes cargarlo cuando quieras desde Productos.»
+
+Con el texto aprobado, el aviso **ya se pinta**. El guard compara contra la CONSTANTE que publica
+la vista, nunca contra una copia del literal: una copia se desincroniza y el test seguiría verde
+sobre el texto viejo.
 
 Lo que tiene que decir, sea cual sea el texto final: **que no se cargó**, **que no pasa nada**, y
 **dónde está el botón** — mandarle a comprobar sin decirle dónde es mandarle a una pared, que es
@@ -62,8 +66,7 @@ justo el defecto que este ticket cierra.
 
 ## Lo que NO cubre
 
-* **El profesional sigue sin enterarse** hasta que se apruebe el texto. Es una decisión tuya, no
-  un olvido: está en la propuesta de arriba.
+* **El aviso solo aparece en el momento del fallo.** Si el profesional lo cierra, no vuelve.
 * **No se persiste** el fallo en servidor: vive en el estado del wizard. Si recarga, se pierde.
   Persistirlo sería un campo de schema.
 * **No se reintenta** la carga. El botón de Productos ya lo permite.

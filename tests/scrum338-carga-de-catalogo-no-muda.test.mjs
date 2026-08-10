@@ -71,12 +71,12 @@ test('SCRUM-338 · 🔴 el `catch` de la carga YA NO ES MUDO', () => {
     'y la lista vacía que ve después es indistinguible de «mi gremio no tiene catálogo».');
   assert.match(s, /state\.catalogFallo = true/,
     '🔴 el fallo no se marca en el estado: no queda rastro ni para él ni para nosotros.');
-  // ⚠️ Y NO se pinta: el aviso es microcopy nueva (regla 30) y el guard de SCRUM-402 caza un
-  // `[PENDIENTE …]` que pueda acabar en la pantalla de un profesional. Lo que se arregla hoy es
-  // que el fallo DEJE DE PERDERSE; decirlo es una línea el día que haya texto aprobado.
-  assert.doesNotMatch(s, /\[PENDIENTE microcopy oficial\][^']*catálogo/i,
-    '🔴 se está pintando un marcador al profesional. Si el texto ya está aprobado, escríbelo; si ' +
-    'no, esta superficie todavía no se pinta.');
+  assert.match(s, /showToast\(OB_MSG_CATALOGO_FALLO/,
+    '🔴 el fallo no se dice.');
+  // Y se dice con texto APROBADO, no con un marcador: el guard de SCRUM-402 caza lo segundo, y
+  // un `[PENDIENTE …]` en la pantalla de un profesional es peor que el silencio.
+  assert.doesNotMatch(s, /\[PENDIENTE[^\]]*\][^']*cat[áa]logo de tu gremio/i,
+    '🔴 el aviso ha vuelto a llevar marcador.');
 });
 
 test('SCRUM-338 · pero SIGUE SIN BLOQUEAR el onboarding', () => {
@@ -92,7 +92,21 @@ test('SCRUM-338 · pero SIGUE SIN BLOQUEAR el onboarding', () => {
     '🔴 el paso ahora propaga el error y bloquea el onboarding.');
 });
 
-test('SCRUM-338 · el fallo se GUARDA aunque todavía no se cuente', () => {
+test('SCRUM-338 · el aviso es el texto APROBADO, y dice DÓNDE está la salida', () => {
+  // Microcopy aprobada por el fundador el 9-ago-2026. El guard compara contra la CONSTANTE que
+  // publica la vista, nunca contra una copia del literal: una copia se desincroniza y el día que
+  // el texto cambie este test seguiría verde sobre el texto viejo.
+  const { ctx } = correrPasoConFallo();
+  const msg = ctx.window.OB_MSG_CATALOGO_FALLO;
+  assert.ok(msg, '🔴 la vista no publica el mensaje: no se puede comprobar sin copiarlo.');
+  assert.doesNotMatch(msg, /PENDIENTE|\[/, '🔴 el texto lleva marcador y está aprobado.');
+  assert.match(msg, /Productos/,
+    '🔴 el aviso no dice dónde cargarlo. Decirle que falló sin decirle dónde arreglarlo es ' +
+    'mandarle a una pared — el defecto que este ticket cierra.');
+  assert.ok(msg.length > 40, '🔴 el mensaje se ha quedado en un muñón.');
+});
+
+test('SCRUM-338 · el fallo se GUARDA además de contarse', () => {
   // La mitad que sí se puede entregar sin decidir copy: el dato existe. Sin él, el día que haya
   // texto aprobado habría que volver a averiguar que hubo un fallo — y ya no se puede.
   const s = fuente(VISTA);
