@@ -102,6 +102,17 @@ de `null`, porque `Number(null)` es `0` y `0` es finito. El importe ausente habr
 suma como «no debe nada» — justo el defecto que el fichero existe para impedir. Arreglado
 descartando `null`/`undefined`/`''` **antes** de `Number()`.
 
+## Y un guard MÍO que no podía fallar nunca
+
+El test que vigila la colisión de nombres llevaba `/…num/m`, y el `` entró en el fichero como
+el **carácter de retroceso (0x08)**, no como el metacarácter. `/…num/` no casa con nada: el
+guard habría dado verde con la colisión puesta.
+
+Lo descubrí **al inyectar el rojo**, no leyéndolo: revertí el nombre a `num`, el guard de colisión
+del repo cazó el fallo y el mío pasó tan tranquilo. Sustituido por `[ 	]+num[^A-Za-z0-9_]`, sin
+secuencias que se puedan escapar mal. *Un guard que nunca falla no es un guard, y sólo se distingue
+de uno bueno probándolo en rojo.*
+
 ## Lo que NO construí, y por qué
 
 - **Un chip «Terminado y sin cobrar»** en la barra de filtros. Necesita un rótulo, y un rótulo es
@@ -139,7 +150,11 @@ Unificarlos toca tres vistas ajenas y no cabe en un ticket de lista de Trabajos.
 
 ## Evidencia
 
-- `npm test` sobre el árbol del remoto, worktree limpio y con entorno completo:
-  **2540 tests · 2466 pass · 0 fail · 74 skipped · `$? = 0`**.
+- `npm test` sobre el árbol del remoto (main traído DENTRO, `846d072`), worktree limpio y con
+  entorno completo: **2554 tests · 2480 pass · 0 fail · 74 skipped · `$? = 0`**.
+- **Rojos probados por el mecanismo**, cada uno revertido y verde después:
+  ① «no se sabe» pasa a contar como conocido → cae `EL CONTROL: «no se sabe» se cuenta aparte`;
+  ② el importe se pinta aunque haya excluidos → cae `el importe se CALLA si no se puede decir entero`;
+  ③ el helper vuelve a llamarse `num` → cae el guard de colisión (y el mío, ya arreglado).
 - `npm run guards:entrada`: **`$? = 0`** — «4 guards de entrada en verde (17 tests)».
 - `git diff --diff-filter=D --name-only origin/main...HEAD`: **vacío**.
