@@ -122,13 +122,54 @@ test('SCRUM-442 · ① NEGATIVO: sin justificantes, la lista no cambia', () => {
   assert.deepEqual(loQuePasaElFiltro([FACTURA, RECTIFICATIVA]), ['F-2026-0008', 'R1-2026-0002']);
 });
 
-test('SCRUM-442 · ① y la CARGA de la lista pasa por el filtro — mencionar no es hacer', () => {
-  // Que `soloFacturas` exista y funcione no prueba que la pantalla la use. Se comprueba el enlace
-  // en el sitio exacto: lo que `fetchInvoices` devuelve.
+/**
+ * Las CARGAS del listado de facturas en `public/`, y si cada una pasa por el filtro.
+ *
+ * Se censan las que piden `/admin/invoices` **como lista** — el `POST` de crear una factura
+ * (`nuevaFacturaModal.js`) no lo es y queda fuera por construcción, no por lista blanca.
+ */
+function cargasDelListado() {
+  const out = [];
+  for (const f of fs.readdirSync(DIR_JS).filter((n) => n.endsWith('.js'))) {
+    const codigo = fs.readFileSync(path.join(DIR_JS, f), 'utf8');
+    codigo.split('\n').forEach((linea, i) => {
+      if (/^\s*(\/\/|\*)/.test(linea)) return;
+      if (!/['"`]\/admin\/invoices['"`]/.test(linea)) return;
+      if (/method:\s*['"]POST['"]/.test(linea)) return; // crear no es listar
+      // 🔴 Se mira si filtra **esta carga**, no si la palabra aparece en el fichero. Con lo
+      // segundo, borrar el `soloFacturas(...)` de `fetchInvoices` seguiría dando verde porque la
+      // DEFINICIÓN sigue ahí — y eso fue exactamente lo que pasó al probar el rojo la primera vez.
+      const bloque = codigo.split('\n').slice(i, i + 14).join('\n');
+      out.push({ sitio: `${f}:${i + 1}`, filtra: /soloFacturas\(/.test(bloque) });
+    });
+  }
+  return out;
+}
+
+test('SCRUM-442 · ① TODA carga del listado pasa por el filtro — y el rojo dice CUÁNTAS no', () => {
+  // Que `soloFacturas` exista y funcione no prueba que nadie la salte: **mencionar no es hacer**.
+  // Y si mañana otra pantalla pide la lista, tiene que filtrar igual o volveremos a mezclar por
+  // otro sitio — con la diferencia de que esta vez nadie estaría mirando.
+  const cargas = cargasDelListado();
+  assert.ok(cargas.length >= 1,
+    '🔴 CENSO CIEGO: no encuentro NI la carga de `invoicesView`. «Nadie mezcla» y «no supe mirar» ' +
+    'son el mismo verde.');
+
+  const sinFiltrar = cargas.filter((c) => !c.filtra).map((c) => c.sitio);
+  assert.deepEqual(sinFiltrar, [],
+    `🔴 EL LISTADO VUELVE A MEZCLAR facturas con justificantes en ${sinFiltrar.length} de ` +
+    `${cargas.length} carga(s):\n   · ${sinFiltrar.join('\n   · ')}\n\n` +
+    '  Quien pide `/admin/invoices` tiene que pasar la respuesta por `soloFacturas`. El servidor ' +
+    'devuelve los dos documentos a propósito —los usan el detalle y los exports—, así que el que ' +
+    'separa es quien pinta la lista.');
+
+  // Y el enlace exacto, en el sitio exacto: no basta con que la palabra aparezca en el fichero.
   const vista = fs.readFileSync(path.join(DIR_JS, 'invoicesView.js'), 'utf8');
-  assert.match(vista, /return soloFacturas\(await res\.json\(\)\);/,
-    '🔴 `fetchInvoices` ya no pasa la respuesta por `soloFacturas`. La función seguiría estando y ' +
-    'la lista volvería a mezclar: existir no es que alguien la llame.');
+  // `ok` y no `match`: un `match` que falla vuelca el fichero ENTERO en `actual` y entierra el
+  // mensaje, que es lo único que quien lo lea necesita (misma corrección que en SCRUM-420).
+  assert.ok(/return soloFacturas\(await res\.json\(\)\);/.test(vista),
+    '🔴 `fetchInvoices` ya no devuelve la lista filtrada. La función seguiría estando y la lista ' +
+    'volvería a mezclar: existir no es que alguien la llame.');
 });
 
 // ═══ ② LA RESTRICCIÓN: una sola forma de clasificar ══════════════════════════════════════
