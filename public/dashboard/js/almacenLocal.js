@@ -42,6 +42,70 @@ const FIRMAS_PENDIENTES = 'firmasPendientes';
  */
 const PREFIJO_CACHES = 'yaqu-';
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-457 · LAS CLAVES DEL PANEL EN `localStorage` Y `sessionStorage`, Y CUÁLES SOBREVIVEN
+//
+// LA VÍCTIMA: un profesional cierra sesión en el móvil de la furgoneta que comparte con dos
+// compañeros. Dentro se quedan el borrador de presupuesto —con el cliente y los importes— y su
+// catálogo de productos recientes CON SUS PRECIOS. Ha hecho lo único que el producto le ofrece
+// para protegerse, y no ha servido.
+//
+// 🔴 Y ESO ES PEOR QUE NO BORRAR: un borrado parcial que se presenta como borrado hace que el
+// profesional deje de preocuparse. SCRUM-455 purgó IndexedDB y las cachés; sin esto, el logout
+// PARECE que limpia.
+//
+// `pf_recent_products_*` además no es dato de cliente: son **los precios del profesional**, en un
+// aparato que puede acabar en manos de un competidor. Eso no es RGPD, es su negocio.
+//
+// ⚠️ El desalojo automático del navegador NO es un mecanismo de borrado alegable: no está bajo
+// nuestro control, no tiene plazo y no deja constancia.
+//
+// ───────────────────────────────────────────────────────────────────────────────────────────
+// POR QUÉ ESTO ES UN REGISTRO Y NO UN `localStorage.clear()`
+//
+// Misma regla que 455 aplicó a las cachés, y por dos motivos distintos:
+//   1. `clear()` se lleva lo que otro haya dejado en el mismo origen. Borrar por si acaso es
+//      justo lo que el control negativo de este ticket prohíbe.
+//   2. Y OCULTA EL ERROR DE MAÑANA: con `clear()`, la clave que alguien añada el mes que viene se
+//      borra sin que nadie se entere de que existía — y nadie decide nunca si debía sobrevivir.
+//
+// 🔴 LO QUE IMPIDE QUE ESTO SE QUEDE VIEJO NO ES ESTA LISTA: es el guard de
+// `tests/scrum457-logout-purga-claves.test.mjs`, que recorre por AST **todas** las escrituras del
+// panel y pone en rojo, CON SU FICHERO Y SU LÍNEA, cualquiera que no esté aquí. Escribir cuatro
+// nombres a mano y confiar en acordarse es el defecto de forma de SCRUM-265: lo que hay que
+// acordarse de poner, un día no se pone.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Cada clave del panel, con su almacén y su decisión. `purga: false` es una EXCEPCIÓN y por eso
+ * lleva motivo escrito: una excepción sin motivo es una excepción que nadie puede revisar.
+ */
+const CLAVES_LOCALES = [
+  {
+    patron: /^pf_quote_draft_/, almacen: 'localStorage', purga: true,
+    motivo: 'El borrador de presupuesto: cliente, conceptos e importes. Datos de un tercero que '
+      + 'no ha consentido quedarse en el móvil de nadie.',
+  },
+  {
+    patron: /^pf_recent_products_/, almacen: 'localStorage', purga: true,
+    motivo: 'El catálogo reciente CON PRECIOS. No es dato del cliente: es el negocio del '
+      + 'profesional, y quien coja el móvil después puede ser su competencia.',
+  },
+  {
+    patron: /^yaqu_tips_shown$/, almacen: 'localStorage', purga: false,
+    motivo: 'SOBREVIVE. Es el «no me lo vuelvas a enseñar» de los consejos: no hay dato personal '
+      + 'ni de negocio, no lleva merchant, y es una preferencia DEL APARATO. Purgarlo devolvería '
+      + 'el tour entero a cada cierre de sesión sin proteger absolutamente nada.',
+  },
+  {
+    patron: /^voiceUnsupported$/, almacen: 'sessionStorage', purga: false,
+    motivo: 'SOBREVIVE. Es el resultado de probar si el micrófono de ESTE aparato funciona '
+      + '(iOS en PWA lo declara y está roto). No hay dato de nadie; borrarlo solo haría repetir '
+      + 'una prueba que ya se sabe que falla. Y sí hace falta decidirlo: `sessionStorage` NO se '
+      + 'vacía al cerrar sesión, porque la pestaña es la misma.',
+  },
+];
+
 // ── Los tres resultados ────────────────────────────────────────────────────────────────────
 //
 // 🔴 «Está guardado» y «no supe guardarlo» NO pueden ser el mismo valor, y «no supe» tiene dos
@@ -272,6 +336,8 @@ function leerAlbaranesPrecargados() {
  * nuestro control, no tiene plazo y no deja constancia.
  *
  * SE BORRA LO NUESTRO POR SU NOMBRE, no «todo»:
+ *   · las claves de `localStorage`/`sessionStorage` del registro `CLAVES_LOCALES` (SCRUM-457), no
+ *     `localStorage.clear()`;
  *   · los dos almacenes con `clear()`, uno a uno — no `deleteDatabase`, que se lleva por delante
  *     cualquier almacén que otro ticket añada a esta misma base sin enterarse;
  *   · las cachés con el prefijo `yaqu-`, no `caches.keys()` entero.
@@ -279,8 +345,54 @@ function leerAlbaranesPrecargados() {
  * Purgar dos veces seguidas no revienta: `clear()` sobre un almacén vacío es válido, y una caché
  * que ya no está simplemente no se borra.
  */
+/**
+ * SCRUM-457 · Vacía UN almacén de teclas del navegador, por nombre y solo lo nuestro.
+ *
+ * Se recorre lo que HAY guardado y se borra lo que casa con un patrón de purga. Al revés —recorrer
+ * los patrones y borrar— no valdría: `pf_quote_draft_<merchantId>` no es una clave, es una familia,
+ * y el móvil de la furgoneta tiene una por cada compañero que haya entrado.
+ *
+ * Las claves que NO son nuestras se quedan. No sabemos de quién son y borrar por si acaso es lo que
+ * este ticket prohíbe; la que sea nuestra y no esté en el registro la caza el guard, en rojo, con
+ * su fichero y su línea — no en silencio aquí.
+ *
+ * @returns {{borradas: string[], motivo?: string}}
+ */
+function purgarClavesDe(nombreAlmacen, almacen) {
+  const borradas = [];
+  if (!almacen) return { borradas };
+  try {
+    const patrones = CLAVES_LOCALES.filter((c) => c.almacen === nombreAlmacen && c.purga);
+    // Se listan las claves ANTES de borrar: en el navegador, `key(i)` se reindexa al eliminar y un
+    // bucle que borre mientras recorre se salta la mitad. Es el defecto clásico de este API.
+    const claves = [];
+    for (let i = 0; i < (almacen.length || 0); i++) {
+      const k = almacen.key(i);
+      if (typeof k === 'string') claves.push(k);
+    }
+    for (const k of claves) {
+      if (patrones.some((p) => p.patron.test(k))) { almacen.removeItem(k); borradas.push(k); }
+    }
+  } catch (e) {
+    return { borradas, motivo: String((e && e.message) || e) };
+  }
+  return { borradas };
+}
+
 async function purgarDatosLocales() {
-  const resultado = { estado: GUARDADO, almacenes: [], caches: [], motivo: undefined };
+  const resultado = { estado: GUARDADO, almacenes: [], caches: [], claves: [], motivo: undefined };
+
+  // SCRUM-457 · Las teclas del navegador van PRIMERO, y son síncronas: no pueden quedarse a medias
+  // porque IndexedDB no esté disponible. Que Safari en privado no dé almacén no puede ser el motivo
+  // por el que el borrador de un cliente se quede en el móvil.
+  for (const [nombre, almacen] of [
+    ['localStorage', typeof localStorage !== 'undefined' ? localStorage : null],
+    ['sessionStorage', typeof sessionStorage !== 'undefined' ? sessionStorage : null],
+  ]) {
+    const r = purgarClavesDe(nombre, almacen);
+    resultado.claves.push(...r.borradas);
+    if (r.motivo) { resultado.estado = FALLO; resultado.motivo = resultado.motivo || r.motivo; }
+  }
 
   const enAlmacen = await conElAlmacen((bd) => new Promise((resolve) => {
     const nombres = [ALBARANES_PRECARGADOS, FIRMAS_PENDIENTES].filter(
@@ -303,7 +415,11 @@ async function purgarDatosLocales() {
   }));
 
   resultado.almacenes = enAlmacen.vaciados || [];
-  if (enAlmacen.estado !== GUARDADO) {
+  // SCRUM-457 · un FALLO ya anotado NO se pisa con un NO_DISPONIBLE. Son cosas distintas y la peor
+  // manda: «este navegador no da IndexedDB» es una limitación conocida; «había un almacén y algo
+  // que debía borrarse no se borró» es un dato que sigue en el móvil. Colapsarlos daría un recuento
+  // tranquilo y falso, que es justo lo que separó los tres estados en SCRUM-455.
+  if (enAlmacen.estado !== GUARDADO && resultado.estado === GUARDADO) {
     resultado.estado = enAlmacen.estado;
     resultado.motivo = enAlmacen.motivo;
   }
@@ -341,3 +457,6 @@ window.leerFirmasPendientes = leerFirmasPendientes;
 window.guardarAlbaranPrecargado = guardarAlbaranPrecargado;
 window.leerAlbaranesPrecargados = leerAlbaranesPrecargados;
 window.purgarDatosLocales = purgarDatosLocales;
+// SCRUM-457 · el registro se publica para que el guard mida LA MISMA lista que usa el purgado. Dos
+// copias son dos cosas que se separan, y la que se separa siempre es la que nadie ejecuta.
+window.CLAVES_LOCALES = CLAVES_LOCALES;

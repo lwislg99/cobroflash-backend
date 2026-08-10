@@ -113,6 +113,35 @@ function buscar(raiz, selector, reg, soloUno) {
   return out;
 }
 
+/**
+ * SCRUM-457 · UN `localStorage` QUE GUARDA DE VERDAD.
+ *
+ * 🔴 Antes era `{ getItem: () => null, setItem() {}, removeItem() {} }`: un almacén donde escribir
+ * no escribe. Con eso, «después del logout no queda ni un dato» sale VERDE aunque el logout no
+ * borre absolutamente nada — porque nunca hubo nada que borrar. Es el mismo verde vacío que el
+ * `fetch` que ignoraba el `signal` en SCRUM-451, y con las consecuencias del art. 32 detrás.
+ *
+ * Se implementa el API entero que usa el purgado —`length` y `key(i)`, no solo get/set/remove—
+ * porque recorrer el almacén es justamente lo que hay que poder medir. `key(i)` se reindexa al
+ * borrar, igual que en el navegador: un bucle que borre mientras recorre se salta la mitad, y ese
+ * defecto tiene que poder salir aquí.
+ *
+ * @param inicial objeto `{clave: valor}` con lo que ya hubiera guardado.
+ */
+export function almacenDeTeclas(inicial = {}) {
+  const m = new Map(Object.entries(inicial || {}));
+  return {
+    get length() { return m.size; },
+    key: (i) => [...m.keys()][i] ?? null,
+    getItem: (k) => (m.has(String(k)) ? m.get(String(k)) : null),
+    setItem(k, v) { m.set(String(k), String(v)); },
+    removeItem(k) { m.delete(String(k)); },
+    clear() { m.clear(); },
+    /** Solo para los tests: lo que queda dentro, para poder afirmar sobre ello. */
+    _contenido: () => Object.fromEntries(m),
+  };
+}
+
 /** Un nodo del DOM de mentira: lo justo para que una vista corra y se pueda mirar lo que pintó. */
 export function nodo(tag, reg) {
   const n = {
@@ -276,8 +305,8 @@ export function cargarDashboard(raiz, opciones = {}) {
     // `onLine` puede mentir, que es medio escenario de «acepta y no entrega».
     navigator: opciones.red?.navigator
       ?? { userAgent: 'banco', language: 'es-ES', onLine: true, serviceWorker: { register: async () => ({}) } },
-    localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
-    sessionStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+    localStorage: almacenDeTeclas(opciones.localStorage),
+    sessionStorage: almacenDeTeclas(opciones.sessionStorage),
     // 🔴 EL FIXTURE VA EN `fetch`, NO EN `apiRequest` — corregido en SCRUM-432.
     //
     // SCRUM-417 dejó aquí un `apiRequest` de mentira y declaró como hueco que «el banco sirve `{}`
