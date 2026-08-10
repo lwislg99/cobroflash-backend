@@ -90,3 +90,51 @@ exacto por el que volvería la costumbre. Por eso se congela `número → cuánt
 ## Nota de cierre
 
 El censo se congelo en **110** entradas y se cerro en **111**: SCRUM-271 entro en  mientras este ticket se construia, y el guard lo caza durante su propio rebase. Es, literalmente, el ultimo choque que ese fichero va a tener.
+
+---
+
+# SCRUM-273 (parte 2) · el mensaje del guard enuncia LA ALTERNATIVA
+
+**Fecha:** 10-ago-2026 · **Carril:** B · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `036241eb385835005de227631f973d49c17cc8be`
+
+## Por qué se toca un guard que funcionaba
+
+**Tres sesiones distintas crearon un fichero suelto en tres días**: `SCRUM-403-ESPEC-COLUMNAS.md`,
+`SCRUM-242-RUNBOOK.md` y `SCRUM-406-canal.md`. El guard cazó los tres — hacía su trabajo.
+
+Pero tres personas cometiendo **el mismo** error no es un despiste. El mensaje decía **qué estaba
+prohibido** y no decía **qué hacer cuando el contenido no cabe en la entrada**, y ante eso la salida
+obvia es crear un fichero al lado. El defecto no estaba en la regla: estaba en el texto del rojo.
+
+Es el mismo arreglo que se le hizo al guard de SCRUM-391: **un mensaje que acusa sin dar salida
+empuja a pedir una excepción.**
+
+## Las dos salidas, ahora dentro del rojo
+
+* **Registro de trabajo** → va como **SECCIÓN** dentro de `SCRUM-<n>.md`. Si el fichero ya existe,
+  **apéndice al final y no se borra nada** (precedente: `SCRUM-244.md`, con dos entradas seguidas).
+* **Documento operativo** (runbook, procedimiento, algo que alguien EJECUTA) → va a
+  `docs/RUNBOOKS.md`, y la entrada `SCRUM-<n>.md` lo **NOMBRA con su ruta**. Quien busca el
+  procedimiento lo encuentra donde viven los procedimientos; quien lee el ticket sabe que existe.
+
+## Dos tests nuevos, y el segundo es el que importa
+
+| Test | Qué impide |
+| --- | --- |
+| `el mensaje del guard ENUNCIA LA ALTERNATIVA` | que alguien recorte el texto «para acortar» y vuelva el error dentro de una semana |
+| `el mensaje bueno es el que se USA de verdad` | **el verde hueco**: dejar el mensaje largo escrito y a la vez poner un texto corto en línea dentro del `assert`. El guard seguiría acusando sin dar salida y nadie se enteraría |
+
+Rojos probados, confirmando antes que la mutación se aplicó:
+
+| Inyección | Cae |
+| --- | --- |
+| se recorta la salida del runbook | `🔴 el mensaje del guard ENUNCIA LA ALTERNATIVA` — y **lista lo que falta** |
+| el mensaje se deja escrito pero se deja de usar | `🔴 el mensaje bueno es el que se USA de verdad` |
+
+Control positivo con un fichero suelto de verdad: el rojo nombra el fichero **y** enseña las dos
+salidas.
+
+## Lo que NO se ha tocado
+
+La regla. `docs/master/SCRUM-<n>.md` sigue siendo sin excepción, y el censo de colisiones intacto.
