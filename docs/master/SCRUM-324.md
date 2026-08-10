@@ -211,3 +211,83 @@ explícita, no un detalle de implementación.
 * **No se decide el alcance.** Esta medición dice qué falta, qué cuesta schema y qué se deriva. Qué
   entra en E3 y qué se le pide al fundador lo decide el asesor.
 * **No se ha mirado ninguna base de datos.** Todo sale del schema y del código.
+
+
+---
+
+# SCRUM-324 (E3) · segunda entrega: EL DOMINIO DEL JUSTIFICANTE
+
+**Medido contra:** `origin/main` = `8159ee4a200c1623493402ecca0bff57b0ca814c` · 2026-08-10T15:23:34+02:00
+**Rama:** `scrum-324-gasto-usable`
+
+**10-ago-2026, 15:23 CEST (UTC+0200)** · commit `06928ffdde167a6e857b1dc377cb16ac1e7495f3`
+
+La primera entrega (7-ago) midio el hueco y paro. Ya no esta bloqueada: **las seis columnas de
+`Expense` y `providers.tax_id` estan en produccion**, con su semantica decidida en el propio schema.
+
+## Lo que cambia respecto al censo del 7-ago
+
+El censo decia «`Provider` no tiene ni un campo fiscal» y «faltan tipo, cuota, deducible y el numero
+de la factura del proveedor». **Ya estan**: `baseAmount`, `vatRate`, `vatAmount`, `vatDeducible`,
+`providerInvoiceNumber`, `providerInvoiceDate` y `Provider.taxId`. Verificado contra `origin/main`,
+no supuesto — el schema de mi arbol iba detras y lo primero fue comprobarlo.
+
+## La correccion legal, que ordena el diseno entero
+
+**Un ticket o factura SIMPLIFICADA no permite deducir el IVA soportado.** La excepcion es la
+**simplificada CUALIFICADA**: NIF del **DESTINATARIO** —el del profesional, no el del proveedor— y
+**cuota desglosada**. La v1 listaba el NIF del proveedor, que es otro campo.
+
+## La decision de diseno: el veredicto tiene TRES valores
+
+**Si el papel lleva o no el NIF del profesional no esta en ningun campo.** Es un hecho del
+documento, no del modelo.
+
+- Darlo por **SI** repite el error legal de la v1.
+- Darlo por **NO** convierte el aviso en ruido, y un aviso que salta siempre se aprende a ignorar
+  igual que uno que no salta nunca.
+
+Por eso existe `falta_confirmar`, y lo confirma una persona. Es el mismo principio que regiria el
+OCR si algun dia entra: **lo que no se puede comprobar se propone; nunca se da por bueno.** Encaja
+ademas con la semantica que el schema ya declaro para `vatDeducible`: `null` = nunca clasificado,
+`false` = se decidio que no.
+
+## Cero microcopy, y no es prudencia
+
+El modulo devuelve **codigos**, no frases. Las dos preguntas estan en
+`docs/legal/PREGUNTAS_ASESOR.md` con tres versiones propuestas — incluida una que **evita la palabra
+«deducir»**, porque un ticket **si** puede ser gasto deducible en IRPF en estimacion directa y decir
+«no te lo puedes deducir» a secas seria **falso por exceso**. Mientras no haya respuesta aprobada,
+el producto **no dice nada**: mejor un hueco que un relleno que tranquiliza.
+
+## Las verificaciones que exigia el ticket
+
+| exigida | como |
+|---|---|
+| una factura completa **no** dispara el aviso | control negativo explicito — si avisara siempre seria ruido |
+| sin NIF de proveedor no entra en silencio | veredicto `no_deducible` y el fallo **lo nombra** |
+| el mismo ticket dos veces **pasa siempre** | clasificar no es dar de alta; un «ya lo vi» no vive aqui |
+| `Number('')` es 0 y `0 \|\| 1` es 1 | `aCentimos` separa vacio (`null`) de cero (`0`); **ni un `\|\|`** en ese camino |
+| suelo | los **tres** veredictos son alcanzables: si no, el aviso seria una constante disfrazada |
+
+## Dos trampas del schema, respetadas
+
+- **`vatRate` es entero de porcentaje** (21/10/4), no la fraccion de `Quote.lines[].tax`. Un
+  `0 < tipo < 1` se declara como incoherencia: mezclarlas multiplica el IVA por cien sin que nada falle.
+- **Tolerancia de un centimo.** El censo §5 midio que no existe ninguna nocion de tolerancia en el
+  arbol. En estricto, el redondeo del programa del proveedor seria la fabrica de falsos rojos. Y una
+  incoherencia **no cambia el veredicto, solo se anota** — doctrina de `payment-anomaly` (A21.2).
+
+## Un hallazgo de entorno, no del codigo
+
+El build fallo con `'deductsRefs' does not exist`. **No era main:** el schema si lo tiene y el
+cliente de Prisma compartido estaba viejo (`node_modules` por junction entre worktrees). Regenerado
+con el binario local. Se anota porque el sintoma apunta al sitio equivocado y ya mordio antes.
+
+## Lo que NO se ha tocado
+
+`prisma/schema.prisma` · la UI (espera microcopy aprobada) · **E4**, que necesita mas campos y lo
+lleva la sesion 2 · el canal al asesor (E1) · el fichero contable (E2).
+
+Ficheros: `src/modules/expenses/domain/justificante.ts` (nuevo) ·
+`tests/scrum324-justificante-deducible.test.mjs` (nuevo) · `docs/legal/PREGUNTAS_ASESOR.md`.
