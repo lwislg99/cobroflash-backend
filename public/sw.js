@@ -73,6 +73,7 @@ const SHELL = [
   '/dashboard/js/csvImport.js',
   '/dashboard/js/tutorial.js',
   '/dashboard/js/almacenLocal.js',
+  '/dashboard/js/estadoFirma.js',
   '/dashboard/js/app.js',
 ];
 
