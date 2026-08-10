@@ -77,3 +77,50 @@ midiendo una forma que aún no está decidida) · no he añadido ni un «?» (es
   `display:none !important` (`styles.css:2173`) y la firma **porque su overlay está a z-index 1200
   con el FAB en 350** — no oculto, **debajo**. Quien arregle solo el primero verá desaparecer el
   síntoma en 24 de 27 sitios y lo dará por resuelto.
+
+---
+
+# SCRUM-446 · segunda entrega: el constructor, y una QUINTA diferencia — paro otra vez
+
+**Rama:** `scrum-446-cabecera-modal` · **10-ago-2026, 20:5x CEST (UTC+0200)**
+
+Con las tres respuestas —nodo, `<h3>`, cierre opcional— se construyó
+`public/dashboard/js/modalHeader.js`, registrado en `index.html` (antes de las vistas) y en el
+precache de `sw.js`. **Migradas 2 de 24**, y paro aquí por lo de abajo.
+
+## 🔴 La cuarta y la quinta diferencia
+
+**Cuarta — resuelta midiendo, sin criterio nuevo:**
+
+| | qué | resolución |
+|---|---|---|
+| `type="button"` | lo ponían las **7** imperativas y **ninguna** de las 17 de plantilla | **unificado**. Sin `type`, dentro de un `<form>` un botón es `submit`. **Medido: ningún `modal-close` está dentro de un `<form>`** (los 3 del panel, uno a uno) → no cambia nada hoy y protege mañana |
+| `aria-label="Cerrar"` | lo tenían **4 de 24**; los otros 20 se anuncian como «×» | **unificado**. No es microcopy nueva y **el repo ya lo declara**: `api.js:421` — «`aria-label="Cerrar"` NO es microcopy nueva: es el literal que ya usan `invoiceDetailView`…» |
+
+**🔴 QUINTA — y ésta cambió el constructor:** `nuevaFacturaModal.js` pone
+`aria-label = NF_PENDIENTE`, que es **`'[PENDIENTE microcopy oficial]'`** — un **marcador de
+microcopy sin aprobar**, no una etiqueta.
+
+> Forzarle «Cerrar» habría **resuelto en silencio una aprobación pendiente**, que es exactamente lo
+> que el guard de marcadores existe para impedir (regla 30). El constructor gana `etiquetaCierre`
+> para que ese sitio **conserve su marcador**, y la opción queda documentada con ese motivo — no es
+> flexibilidad decorativa, es un caso real.
+
+## Por qué paro con 2 de 24
+
+Porque la quinta diferencia **ya cambió la API del constructor**, y las 22 restantes son ediciones
+mecánicas que habría que rehacer si no te convence `etiquetaCierre` o el `aria-label` unificado.
+**Has dicho tres veces que parar es para esto.** Las dos migradas están para que se vea que la pieza
+funciona sobre las dos mecánicas distintas:
+
+- `customersView` — la del helper local, y **conserva `modalTitleEl`** (esa vista cambia el título
+  entre «Nuevo cliente» y «Editar cliente»): se obtiene con `header.querySelector('.modal-title')`.
+- `nuevaFacturaModal` — la de `document.createElement`, con su marcador intacto.
+
+## Lo que queda, y no se ha tocado
+
+**22 cabeceras** (5 imperativas + 17 de plantilla) · **el guard derivado** — no se escribe todavía
+porque **nacería rojo con 22 sin migrar**, y el ticket exige que nazca verde · **los 3 overlays
+propios**, que se declaran cuando el guard exista · **la ayuda**, que es SCRUM-416.
+
+**Nada roto:** suite en verde con la migración parcial.

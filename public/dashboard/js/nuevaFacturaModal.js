@@ -38,17 +38,10 @@ function openNuevaFacturaModal(onCreated) {
   modal.style.maxWidth = '560px';
   overlay.appendChild(modal);
 
-  const header = document.createElement('div');
-  header.className = 'modal-header';
-  const titulo = document.createElement('div');
-  titulo.className = 'modal-title';
-  titulo.textContent = NF_PENDIENTE;
-  const cerrarX = document.createElement('button');
-  cerrarX.className = 'modal-close';
-  cerrarX.type = 'button';
-  cerrarX.textContent = '×';
-  cerrarX.setAttribute('aria-label', NF_PENDIENTE);
-  header.append(titulo, cerrarX);
+  // SCRUM-446: cabecera del constructor compartido. La etiqueta del botón sigue siendo el MARCADOR
+  // de microcopy sin aprobar, no «Cerrar»: cambiarlo resolvería en silencio una aprobación pendiente.
+  const header = cabeceraModal({ titulo: NF_PENDIENTE, etiquetaCierre: NF_PENDIENTE });
+  const cerrarX = header.querySelector('.modal-close');
   modal.appendChild(header);
 
   const err = document.createElement('div');
