@@ -88,15 +88,18 @@ test('SCRUM-440 · 🔴 pedir la supresión de OTRO merchant: 404 y NI UNA CONSU
       res,
     );
 
+    // El diario PRIMERO: es el hecho más grave y el que se pierde si falla antes el código de
+    // estado. Sin la comparación, la ruta llega a `merchant.findUnique` con un id ajeno — y el
+    // 500 que devuelve el doble al explotar taparía el hallazgo detrás de un «error interno».
+    assert.deepEqual(diario, [],
+      `🔴 SE HA CONSULTADO LA BASE con el merchant de OTRO (${diario.join(', ')}). No basta con ` +
+      'devolver 404: la comparación tiene que ir ANTES de mirar. Una respuesta que llega después ' +
+      'de leer delata por el tiempo, por los logs y por cualquier efecto de esa lectura.');
+
     assert.equal(res.code, 404,
       `🔴 la ruta responde ${res.code} a quien pide un merchant AJENO. Y 404 y no 403 a propósito: ` +
       'un 403 confirmaría que ese merchant existe, y eso es información que no se le debe a quien ' +
       'pregunta por uno ajeno.');
-
-    assert.deepEqual(diario, [],
-      `🔴 SE HA CONSULTADO LA BASE antes de rechazar (${diario.join(', ')}). No basta con devolver ` +
-      '404: la comparación tiene que ir ANTES de mirar. Una respuesta que llega después de leer ' +
-      'delata por el tiempo, por los logs y por cualquier efecto de esa lectura.');
   } finally { restaurar(); delete process.env.MERCHANT_DELETE_ENABLED; }
 });
 
