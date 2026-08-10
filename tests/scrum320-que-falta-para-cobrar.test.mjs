@@ -285,7 +285,12 @@ test('SCRUM-320 · el orden canónico DECLARA todos los huecos que la función p
   // lista que nadie compara con la realidad es una lista que se queda vieja sin avisar — el mismo
   // defecto que este bloque lleva cazando todo el día.
   //
-  // Un Trabajo construido para que salgan LOS CUATRO a la vez.
+  // Un Trabajo construido para que salgan TODOS a la vez.
+  //
+  // SCRUM-423 añadió el quinto (`sin-entregar`) y con él esta línea del fixture. La comparación es
+  // de IGUALDAD, así que un hueco nuevo que este caso no sepa producir deja el guard ROJO hasta que
+  // se le enseñe — que es exactamente para lo que sirve. El dato lo manda el backend en
+  // `job.entregaPendiente` (lo calcula C6 en el servidor); el navegador no deriva el número.
   const todos = {
     totalAceptado: 900, totalCobrado: 0,
     albaranes: [
@@ -293,6 +298,11 @@ test('SCRUM-320 · el orden canónico DECLARA todos los huecos que la función p
       { id: 2, estado: 'firmado', facturado: false, totales: { total: 600 } }, // → sin-facturar
     ],
     invoices: [],                                                          // → sin-facturar-nada
+    // → sin-entregar: calculable, con líneas pendientes y sin nada que se quedara sin contar
+    entregaPendiente: {
+      estado: 'calculado', calculable: true,
+      lineasPendientes: 2, pendienteTotal: 2, sinAtribuir: 0, enPartesSinFirmar: 0,
+    },
   };
   const conFactura = { ...todos, invoices: [{ id: 9, total: 300, status: 'pending' }] }; // → sin-cobrar
 

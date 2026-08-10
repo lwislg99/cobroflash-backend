@@ -151,6 +151,18 @@ vite.config.ts.timestamp-*
 # muestras generadas para validacion XSD (S1-C)
 tmp/
 
+# SCRUM-414: scripts DESECHABLES que tocan una base de datos.
+#
+# La cabecera de tests/scrum195-url-bd-sin-fuga.test.mjs manda ponerlos aqui -en scripts/, no en el
+# scratchpad, para que el guard de `new URL` los VEA- y prometia que ya estaban ignorados. NO lo
+# estaban: solo existia `tmp/`, que es un directorio. Quien seguia la convencion documentada al pie
+# de la letra acababa commiteando su script de base de datos desechable, y la promesa hacia que no
+# lo comprobara.
+#
+# Lo sostiene tests/scrum414-url-a-mano.test.mjs PREGUNTANDOLE A GIT (`git check-ignore`), no
+# leyendo esta linea: que un .gitignore diga algo y que git lo aplique son dos hechos distintos.
+scripts/tmp-*
+
 # A11.3: dumps cifrados locales (datos de prod — JAMÁS al repo)
 backups/
 

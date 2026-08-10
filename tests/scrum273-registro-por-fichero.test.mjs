@@ -161,7 +161,12 @@ const MENSAJE_MAL_NOMBRADOS = (malNombrados) =>
   + '    · Si es un documento OPERATIVO (runbook, procedimiento, algo que alguien EJECUTA):\n'
   + '      va a `docs/RUNBOOKS.md`, y la entrada `SCRUM-<n>.md` lo NOMBRA con su ruta. Así el\n'
   + '      que busca el procedimiento lo encuentra donde viven los procedimientos, y el que lee\n'
-  + '      el ticket sabe que existe.';
+  + '      el ticket sabe que existe.'
+  // SCRUM-414 · LA TERCERA COSA: la salida sirve de poco si el rojo sigue llegando por el PR.
+  + '\n\n  Y CÓMO COMPROBARLO ANTES DE EMPUJAR — este no es el único guard que vigila una\n'
+  + '  entrada del registro: son CUATRO (273, 267, 391, 242), y cada sesión los ha ido\n'
+  + '  descubriendo EN ROJO ya con el PR abierto. Los cuatro juntos, en segundos:\n\n'
+  + '      npm run guards:entrada\n';
 
 test('SCRUM-273 · los ficheros de docs/master/ se llaman como su ticket', () => {
   assert.ok(fs.existsSync(DIR_REGISTRO),
@@ -186,6 +191,9 @@ test('SCRUM-273 · 🔴 el mensaje del guard ENUNCIA LA ALTERNATIVA, no solo la 
     [/NO se borra nada/, 'que no se borra nada de lo que hubiera'],
     [/docs\/RUNBOOKS\.md/, 'la salida 2: los documentos operativos van a docs/RUNBOOKS.md'],
     [/NOMBRA/, 'que la entrada nombra el runbook con su ruta'],
+    // SCRUM-414 · y la tercera: cómo comprobarlo antes de empujar.
+    [/npm run guards:entrada/, 'CÓMO comprobarlo antes de empujar: `npm run guards:entrada`'],
+    [/CUATRO \(273, 267, 391, 242\)/, 'que son CUATRO los guards de entrada, y cuáles son'],
   ];
   const faltan = exigido.filter(([re]) => !re.test(m)).map(([, q]) => q);
   assert.deepEqual(faltan, [],

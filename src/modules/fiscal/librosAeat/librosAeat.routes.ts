@@ -4,8 +4,10 @@
 // toca ni se roza (regla 38). Aquí no hay un solo `create` ni `update`.
 import { Router } from 'express';
 import { prisma } from '../../../core/db/prisma';
-import { leerLibroExpedidasDelTrimestre } from './librosAeat.repo';
-import { csvLibroExpedidas, nombreFicheroExpedidas } from './librosAeatCsv';
+import { leerLibroExpedidasDelTrimestre, leerLibroRecibidasDelTrimestre } from './librosAeat.repo';
+import {
+  csvLibroExpedidas, nombreFicheroExpedidas, csvLibroRecibidas, nombreFicheroRecibidas,
+} from './librosAeatCsv';
 
 const router = Router();
 
@@ -76,6 +78,35 @@ router.get('/expedidas.csv', async (req, res) => {
   // diferir legítimamente (una factura nueva del periodo). Servir una copia vieja sería mentir.
   res.setHeader('Cache-Control', 'no-store');
   return res.send(csvLibroExpedidas(filas));
+});
+
+/**
+ * `GET /admin/libros/recibidas.csv?año=2026&trimestre=3` — SCRUM-426.
+ *
+ * Mismo contrato que expedidas: periodo OBLIGATORIO, sin caché, y las dos cabeceras de señal.
+ * Aquí NO se construye el libro ni se calcula nada: se llama al motor de A6 y se pinta.
+ */
+router.get('/recibidas.csv', async (req, res) => {
+  const año = entero(req.query['año'] ?? req.query.ano);
+  const tri = trimestre(req.query.trimestre);
+  if (año === null || tri === null) {
+    return res.status(400).json({
+      error: 'periodo_invalido',
+      // Microcopy APROBADA el 7-ago-2026 (la misma de expedidas: misma decisión, mismo texto).
+      detalle: 'No reconozco ese periodo. Elige un trimestre (T1 a T4) y un año.',
+    });
+  }
+
+  const { filas, miradas, avisos } = await leerLibroRecibidasDelTrimestre(prisma as any, {
+    merchantId: req.merchantId!, año, trimestre: tri,
+  });
+
+  res.setHeader('X-Yaqu-Filas', String(filas.length));
+  res.setHeader('X-Yaqu-Miradas', String(miradas));
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${nombreFicheroRecibidas(año, tri)}"`);
+  res.setHeader('Cache-Control', 'no-store');
+  return res.send(csvLibroRecibidas(filas, avisos));
 });
 
 export default router;

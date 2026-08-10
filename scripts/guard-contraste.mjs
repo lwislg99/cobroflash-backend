@@ -191,7 +191,16 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=u
 function servir() {
   return new Promise((listo) => {
     const s = http.createServer((req, res) => {
-      const url = new URL(req.url, 'http://x');
+      // SCRUM-414 - sin `try` esto subia al manejador de excepciones no capturadas, que VUELCA EL
+      // OBJETO del error: la via exacta por la que se publico una credencial de produccion. Aqui lo
+      // que viaja es una ruta local, pero la regla es del HECHO, no del contenido: un `new URL`
+      // cuyo error puede alcanzarse es un `new URL` que algun dia imprime su entrada.
+      let url;
+      try {
+        url = new URL(req.url, 'http://x');
+      } catch {
+        res.writeHead(400); res.end('400'); return;
+      }
       let f = path.join(PUBLIC, decodeURIComponent(url.pathname));
       if (url.pathname.endsWith('/')) f = path.join(f, 'index.html');
       fs.readFile(f, (err, buf) => {

@@ -141,6 +141,12 @@ var ASIGNACION_SUPERFICIE = {
   // ajuste, asi que no tiene campo en el mapa y queda fuera del guard de campos. Cae en
   // Cumplimiento porque es de lo que va el submenu — que documento fiscal sale hoy.
   modoEmision: 'cumplimiento',
+  // SCRUM-420 (B1 · incremento 2) · el enlace a «Descargar datos», que SALE de la barra lateral.
+  // Lo pedía el diseño §B1 y lo declaraba el propio hueco de `datos` en `VACIOS_DECLARADOS`:
+  // «la página YA EXISTE (SCRUM-244) y NO se rehace: aquí solo cambiará de dónde se enlaza, y eso
+  // es el incremento de la sidebar». Con esto `datos` deja de estar vacío y sale de esa lista —
+  // los dos en el mismo commit, porque el sentido ④ del trinquete cae si van separados.
+  renderDescargarDatosCard: 'datos',
 };
 
 /**
@@ -226,10 +232,20 @@ var VACIOS_DECLARADOS = {
   facturacion:
     'reglas de emisión (IVA por defecto, lugar de negocio). El prefijo, lo único que existe hoy, se ' +
     'va a Numeración por el nombre del submenú. Se llena con SCRUM-17 y siguientes.',
-  datos:
-    'descargar datos + portabilidad + borrar cuenta. La página YA EXISTE (SCRUM-244) y NO se rehace: ' +
-    'aquí solo cambiará de dónde se enlaza, y eso es el incremento de la sidebar.',
 };
+
+// ⚠️ `datos` ESTUVO AQUÍ y se ha retirado (SCRUM-420, B1 · incremento 2, 10-ago-2026). Su motivo
+// decía que «aquí solo cambiará de dónde se enlaza, y eso es el incremento de la sidebar» — y ese
+// incremento es éste: `renderDescargarDatosCard` ya coloca el enlace en el panel, así que el hueco
+// dejó de serlo. Se retira en vez de reescribirse, por lo mismo que se retiró `cumplimiento`: un
+// hueco declarado que ya tiene contenido no es un hueco con otro motivo, deja de ser un hueco.
+//
+// El sentido ④ del trinquete lo habría cazado en el siguiente `npm test` si se hubiera dejado — y
+// esa es la razón de que la retirada vaya en el MISMO commit que el enlace, no en el siguiente.
+//
+// Lo que NO ha cambiado: «Tus datos» sigue sin contenido PROPIO. Portabilidad y borrar cuenta no
+// están en la pantalla, y el hueco de datos de ejemplo (SCRUM-314) sigue fuera de los diez paneles
+// con su motivo escrito en `SUPERFICIES_PROVISIONALES`. Este panel ya no está vacío; no está lleno.
 
 // ⚠️ `cumplimiento` ESTUVO AQUÍ y se ha retirado (SCRUM-298, A8, 7-ago-2026). Su motivo decía
 // «nada de eso existe todavía en la pantalla», y desde que el modo de emisión vive dentro del

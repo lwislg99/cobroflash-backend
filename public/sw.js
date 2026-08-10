@@ -27,6 +27,7 @@ const SHELL = [
   '/dashboard/js/onboardingView.js',
   '/dashboard/js/plansView.js',
   '/dashboard/js/customersView.js',
+  '/dashboard/js/quotesTabs.js', // SCRUM-432
   '/dashboard/js/quotesListView.js',
   '/dashboard/js/quoteMargen.js',
   '/dashboard/js/quotesView.js',
@@ -34,6 +35,7 @@ const SHELL = [
   '/dashboard/js/productsView.js',
   '/dashboard/js/providersView.js',
   '/dashboard/js/invoicesView.js',
+  '/dashboard/js/cobrosView.js', // SCRUM-285 (B4)
   '/dashboard/js/nuevaFacturaModal.js', // SCRUM-289 (A0.3)
   // SCRUM-302 (C2): la LEY del patrón va antes que los registros que la consumen — el mismo
   // orden que en el shell HTML, porque el registro lee sus globales al cargarse.
@@ -56,6 +58,7 @@ const SHELL = [
   '/dashboard/js/libroRegistroView.js',
   '/dashboard/js/teamView.js',
   '/dashboard/js/jobsCierreTrabajo.js', // SCRUM-344
+  '/dashboard/js/terminadoSinCobrar.js',
   '/dashboard/js/jobsView.js',
   '/dashboard/js/signaturePad.js',
   '/dashboard/js/jobDetailView.js',

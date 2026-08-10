@@ -484,3 +484,60 @@ mira una cosa que ya estaba?* Lo segundo es barato. Lo primero es el ticket ente
 **no puede usarse para cerrar nada**. Dice dónde MIRAR, no qué dar por bueno. Un `ENTERO` suyo es
 «no encontré trabajo suelto», no «esto está terminado» — que es justo la diferencia que se saltó
 quien dio A9 por cerrada.
+
+---
+
+# «SIN SOLAPE» SE MIDE CONTRA EL MAIN DE HOY, NO ENTRE LAS DOS RAMAS
+
+**SCRUM-244 · 10-ago-2026 · sesión 1**
+
+> **«No hay solape de código» y «no hay conflicto» no son lo mismo. Y «sin solape» medido ENTRE
+> dos ramas no dice nada: las dos chocan igual si `main` se movió debajo.**
+
+## El caso
+
+Dos ramas con el mismo número de ticket, `scrum-244-supresion-y-anonimizado` (la supresión, back)
+y `scrum-244-microcopy-aprobada` (los ocho textos, front). Medí las dos **entre sí**, no vi ningún
+fichero de código en común, y escribí: *«no hay solape de código; al mergear se conservan ambas»*.
+
+Al mergear salieron **DOS** conflictos, y solo uno era el que yo esperaba:
+
+1. `docs/master/SCRUM-244.md` — las dos añaden su sección al mismo fichero. Esto sí lo había
+   previsto, y aun así lo llamé «no hay conflicto» porque estaba pensando en el producto.
+2. `public/dashboard/js/exportView.js` — **solape de código real**, y no entre las dos ramas:
+   `main` había recibido **SCRUM-405** («una sola forma de descargar, y un guard para que no nazca
+   la quinta»), que sustituyó el descargador a mano por `descargarBinario`. La rama del front
+   seguía con el descargador de antes porque salió de un `main` anterior.
+
+**Quedarse con el lado de la rama habría resucitado la quinta forma de descargar** — y el guard de
+SCRUM-405 lo habría cazado, pero solo después de mergear.
+
+## Por qué la medición falló
+
+Comparé **rama A ↔ rama B**. El solape no estaba entre ellas: estaba entre **cada una y el `main`
+de hoy**. Dos ramas pueden no tocar un solo fichero común y colisionar igual, porque el tercer
+árbol se movió debajo de las dos. La pregunta correcta no es *«¿se pisan entre ellas?»* sino
+**«¿qué ha cambiado en `main` en los ficheros que toca cada una desde que salió?»**:
+
+```bash
+git diff --name-only $(git merge-base <rama> origin/main)...origin/main \
+  | grep -Fx -f <(git diff --name-only $(git merge-base <rama> origin/main)...<rama>)
+```
+
+## Cómo se resuelve cuando pasa
+
+- **La ESTRUCTURA la manda `main`**, siempre: es lo que ya pasó por revisión y por los guards. Aquí
+  eso fue `descargarBinario` (SCRUM-405) y la retirada del `min-height` en línea (SCRUM-384,
+  medida en el banco).
+- **De la rama entra solo lo que la rama existe para traer.** Aquí, los textos aprobados y nada más.
+- **En `docs/master/` se conservan LAS DOS secciones**, pegadas una detrás de otra. Ninguna
+  sustituye a la otra. Si al resolver desaparece una, la resolución está mal.
+- Y los **trinquetes se aprietan en la misma resolución**: el censo de marcadores de SCRUM-402 bajó
+  de 11 a 5 en `exportView.js` y hay que anotarlo, o deja de ser un trinquete.
+
+## La medida de la fricción
+
+Es la **tercera vez esta semana** que `docs/master/` es el punto de choque entre carriles. Ese
+fichero es, por diseño, el sitio donde dos carriles independientes escriben a la vez: el conflicto
+ahí no es un accidente, es el funcionamiento normal. Lo que no puede pasar es **resolverlo
+eligiendo**.

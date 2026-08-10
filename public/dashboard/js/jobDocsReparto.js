@@ -104,7 +104,11 @@ function repartirDocumentos(items) {
 //     calcular margen — construir lo que no hay, no repartir lo que hay. Y el ticket declara «el
 //     mecanismo de gastos» fuera de alcance.
 //   · `facturas`              — lo facturado, con sus rectificativas colgando.
-const SECCIONES_CUERPO = ['que-falta-para-cobrar', 'albaranes', 'facturas', 'gastos'];
+//   · `notas`                 — SCRUM-427. Va la ÚLTIMA y FUERA del ciclo a propósito: las tres
+//     de arriba son pasos del dinero (qué falta → entregado → facturado) y ésta no es un paso, es
+//     CONTEXTO. Meterla en medio rompería la lectura del ciclo; dejarla fuera de la lista la
+//     escondería del contrato, que es donde se mira qué secciones existen.
+const SECCIONES_CUERPO = ['que-falta-para-cobrar', 'albaranes', 'facturas', 'gastos', 'notas'];
 
 /** Todas las claves repartidas, para comprobar contra las de la pila original. */
 function clavesRepartidas(reparto) {

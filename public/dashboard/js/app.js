@@ -189,7 +189,11 @@ async function initApp() {
   function setActiveMenu(view) {
     // SCRUM-301 (C1): el detalle del albarán ya tiene sección propia a la que pertenecer. Antes
     // marcaba «Trabajos» porque los albaranes no existían como sitio; ahora sí.
+    // SCRUM-432: `templates` ya no tiene entrada propia — es la pestaña «Plantillas» DENTRO de
+    // Presupuestos. Sin esta línea, estando en Plantillas la barra no marcaría nada y el
+    // profesional no sabría en qué sección está.
     const menuView = view === 'quotes-detail' ? 'quotes-list'
+      : view === 'templates' ? 'quotes-list'
       : view === 'albaran-detail' ? 'albaranes'
       : view === 'invoice-detail' ? 'invoices'
       : view === 'jobs-detail' ? 'jobs' : view;
@@ -273,6 +277,11 @@ async function initApp() {
       case 'customer-360':
         viewTitle.textContent = 'Cliente';
         if (typeof renderCustomer360View === 'function') renderCustomer360View(viewContainer, state.customerId360);
+        break;
+      // SCRUM-285 (B4): Cobros, separado de Facturas.
+      case 'cobros':
+        viewTitle.textContent = 'Cobros';
+        if (typeof renderCobrosView === 'function') renderCobrosView(viewContainer);
         break;
       case 'invoices':
         viewTitle.textContent = 'Facturas';
@@ -373,9 +382,15 @@ async function initApp() {
 
   // Deep-links por hash: /dashboard/#products abre Productos directamente.
   // Útil para compartir/QA (y para las capturas de la maqueta A4.7).
-  const HASH_VIEWS = ['home','quotes-list','quotes-new','customers','products','providers',
+  // ⚠️ ESTA LISTA SE MANTIENE A MANO Y POR ESO SE QUEDA ATRÁS. `albaranes` llevaba fuera desde
+  // que C1 le dio sección propia (SCRUM-301): se actualizó el dispatch y se actualizó el menú, y
+  // esta tercera lista no. Quien recargaba estando en Albaranes, o guardaba el enlace, perdía la
+  // vista. No estaba fuera por ningún motivo — el test de abajo hace que no vuelva a pasar.
+  // NOTA: las vistas de DETALLE (`albaran-detail`, …) NO van aquí a propósito: necesitan un id que
+  // el hash no lleva, así que un deep-link a ellas abriría una ficha vacía.
+  const HASH_VIEWS = ['home','cobros','quotes-list','quotes-new','customers','products','providers',
     'invoices','expenses','export','reports','templates','quote-requests','jobs','plans','team','settings',
-      'libro-registro'];
+      'libro-registro','albaranes'];
   function viewFromHash() {
     const h = (window.location.hash || '').replace('#', '');
     return HASH_VIEWS.includes(h) ? h : null;

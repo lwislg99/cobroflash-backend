@@ -76,7 +76,7 @@ async function renderReportsView(container) {
         nombrePorDefecto: `verifactu_${year}.xml`,
       });
     } catch (e) {
-      if (e && e.code === ERROR_NO_ES_FICHERO) { showToast(MSG_DESCARGA_NO_ES_FICHERO, 'error'); return; }
+      if (e && e.code === ERROR_NO_ES_FICHERO) { showToast(mensajeDescargaFallida(e), 'error'); return; }
       showToast('Error de red al descargar el XML.', 'error');
     } finally {
       btnVf.disabled = false;
@@ -444,7 +444,10 @@ async function loadWhatsAppMetrics(card) {
   if (!m || (m.total === 0 && ch.windowMonth === 0)) return;
   card.style.display = '';
 
-  const fmtEur = (n) => Number(n || 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+  // SCRUM-436 · esta MISMA pantalla ya pintaba dinero con `fmtMoneyEs` (`:338`, `:347`, `:388`…):
+  // el formateador de al lado imprimía «9999,99 €» donde el otro imprime «9.999,99 €», y los dos
+  // se veían a la vez. Además forzaba «€» ignorando la moneda y daba «NaN €» con un dato ilegible.
+  const fmtEur = (n) => fmtMoneyEs(n);
 
   const alertHtml = data.alert && data.alert.active
     ? `<div class="alert warning" style="display:block;margin:0 0 14px">⚠ Tasa de entrega de los últimos 7 días: <strong>${data.alert.deliveryRate7d}%</strong> (por debajo del 90%). Revisa el runbook R1/R2.</div>`
@@ -536,7 +539,10 @@ async function loadPlatformFunnel(card) {
 
   // Desgloses de atribución: cómo se cobra y cómo se crean las quotes
   const fmtPairs = (obj, money) => Object.entries(obj || {})
-    .map(([k, v]) => `${k}: <strong>${money ? (v.count + ' · ' + v.amount.toLocaleString('es-ES', { minimumFractionDigits: 2 }) + ' €') : v}</strong>`)
+    // SCRUM-436 · el QUINTO, y no lo vio ninguna persona: lo cazó el censo de este ticket mientras
+    // se escribía. Llevaba `minimumFractionDigits` pero NO `maximumFractionDigits` ni agrupado, así
+    // que imprimía «1000,00 €» y además podía soltar más de dos decimales.
+    .map(([k, v]) => `${k}: <strong>${money ? (v.count + ' · ' + fmtMoneyEs(v.amount)) : v}</strong>`)
     .join(' · ') || '—';
   const meta = document.createElement('p');
   meta.style.cssText = 'margin:0 0 14px;font-size:12px;color:var(--muted)';

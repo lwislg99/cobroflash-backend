@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url'; // SCRUM-426: el guard lee el schema, ver más abajo
 
 import {
   COLUMNAS_EXPEDIDAS, LIBROS_DISPONIBLES, exigirLibroLegible, entraEnPeriodo,
@@ -274,16 +275,56 @@ test('SCRUM-325 · 🔴 R5: la entrega SALE del libro de A6, y se nombra la fuen
     'el libro lo construye A6.');
 });
 
-// ── EL HUECO DECLARADO: no hay libro de RECIBIDAS ──────────────────────────────────────────
+// ── LOS DOS LIBROS, Y LO QUE SOSTIENE AL SEGUNDO ───────────────────────────────────────────
+//
+// ⚠️ ESTE TRINQUETE SE MOVIÓ DE 1 A 2 el 10-ago-2026 (SCRUM-426), con GO del fundador.
+//
+// **No estaba equivocado: estaba CADUCADO**, y él mismo había escrito su condición — «si se ha
+// añadido RECIBIDAS, `Expense` tiene que haber ganado antes NIF de proveedor, base, tipo y cuota
+// de IVA». Eso ocurrió: la migración del lote metió las seis columnas de `Expense` y
+// `Provider.taxId` en las TRES bases ese mismo día.
+//
+// Un trinquete se mueve **solo cuando el hecho que cuenta cambió de verdad y el propio guard había
+// escrito esa condición**. Si hubiera que interpretar para moverlo, no se movería. Aquí no había
+// nada que interpretar.
+//
+// 🔴 Y POR ESO AHORA NO CUENTA: COMPRUEBA. Un contador atado a un número es la séptima variante
+// del guard atado a la forma —cualquiera lo sube de 2 a 3 y sigue verde—. Atado a las CUATRO
+// COLUMNAS, y a los campos de schema que las sostienen, está atado al hecho: si mañana alguien
+// ofrece un tercer libro sin el dato debajo, esto se cae.
 
-test('SCRUM-325 · el hueco de las RECIBIDAS está declarado, no relleno', () => {
-  // Medido en SCRUM-321 (E0, Q2): de los 8 datos de un asiento de compra hay 2 completos, 1 a
-  // medias y 5 que NO existen (NIF del proveedor, base, tipo, cuota, deducible). Entregar un
-  // «libro de recibidas» con `Expense.amount` sería inventarle a alguien sus datos fiscales.
-  assert.equal(LIBROS_DISPONIBLES.length, 1,
-    '🔴 hay más de un libro ofrecido. Si se ha añadido RECIBIDAS, `Expense` tiene que haber ganado ' +
-    'antes NIF de proveedor, base, tipo y cuota de IVA — y eso es schema, que no es de este ticket.');
-  assert.equal(LIBROS_DISPONIBLES[0].clave, 'expedidas');
+test('SCRUM-325/426 · los DOS libros, y el de recibidas tiene sus cuatro datos detrás', () => {
+  // La IGUALDAD se conserva a propósito: con `<=` un libro ofrecido de más entraría sin que nadie
+  // lo mirara, que es justo lo que este guard existe para impedir.
+  assert.equal(LIBROS_DISPONIBLES.length, 2,
+    '🔴 el número de libros ofrecidos ha cambiado. Cada libro nuevo exige que el DATO exista antes ' +
+    '(el de recibidas esperó a que `Expense` ganara NIF, base, tipo y cuota). Añadir uno sin su ' +
+    'dato es entregarle a alguien sus cifras fiscales inventadas.');
+  assert.deepEqual(LIBROS_DISPONIBLES.map((l) => l.clave), ['expedidas', 'recibidas']);
+
+  // ① Las cuatro columnas que el hueco exigía, EN EL LIBRO. No un contador: las columnas.
+  const recibidas = LIBROS_DISPONIBLES.find((l) => l.clave === 'recibidas');
+  const claves = recibidas.columnas.map((c) => c.clave);
+  for (const necesaria of ['nifProveedor', 'base', 'tipoIva', 'cuota']) {
+    assert.ok(claves.includes(necesaria),
+      `🔴 el libro de recibidas se ofrece SIN la columna «${necesaria}», que es uno de los cuatro ` +
+      'datos cuya ausencia mantuvo este hueco cerrado hasta el 10-ago-2026.');
+  }
+
+  // ② Y los campos que las sostienen, EN EL SCHEMA. Es lo que ata el guard al hecho y no a nuestra
+  // propia lista: sin esto, alguien podría declarar las columnas sobre un modelo que no las tiene.
+  const raiz = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const schema = fs.readFileSync(path.join(raiz, 'prisma/schema.prisma'), 'utf8');
+  const expense = schema.slice(schema.indexOf('model Expense'), schema.indexOf('model Expense') + 2600);
+  assert.ok(expense.includes('model Expense'), '🔴 ESCÁNER CIEGO: no se localiza el modelo Expense');
+  for (const campo of ['baseAmount', 'vatRate', 'vatAmount']) {
+    assert.match(expense, new RegExp(`\\b${campo}\\b`),
+      `🔴 el libro de recibidas ofrece sus columnas y \`Expense.${campo}\` NO existe en el schema. ` +
+      'Las columnas estarían pintando un dato que la base no puede tener.');
+  }
+  const provider = schema.slice(schema.indexOf('model Provider'), schema.indexOf('model Provider') + 1200);
+  assert.match(provider, /\btaxId\b/,
+    '🔴 se ofrece la columna de NIF del proveedor y `Provider.taxId` no existe en el schema.');
 });
 
 test('SCRUM-325 · el nombre del fichero lleva el periodo y NO promete conformidad', () => {

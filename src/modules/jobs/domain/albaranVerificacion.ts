@@ -101,11 +101,43 @@ export type MotivoNoVerificado =
   | 'version_no_soportada'
   | 'sin_hash'
   | 'hash_no_coincide'
+  // SCRUM-415: el hash NO cuadra con la receta de su versión, pero SÍ con la de otra. No es lo
+  // mismo y no puede decirse igual: `hash_no_coincide` acusa de manipulación, y esto dice que el
+  // contenido está intacto y lo que no encaja es la VERSIÓN declarada.
+  | 'hash_de_otra_version'
+  // SCRUM-431: el hash cuadra si se recalcula con un dato VIVO vacío. El albarán no se ha tocado:
+  // lo que ha cambiado es una fila de OTRA tabla (`Job`, `Customer`, `Merchant`) que la receta lee
+  // al verificar. No es lo mismo que una manipulación y no puede decirse igual.
+  | 'dato_vivo_cambiado'
   | 'error_al_recalcular';
 
 export type ResultadoSobre =
   | { cuadra: true; numero: string; v: number }
   | { cuadra: false; numero: string; v: number | null; motivo: MotivoNoVerificado; mensaje: string };
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * SCRUM-431 · LOS CAMPOS QUE LA RECETA LEE **EN VIVO**, con la tabla de la que salen.
+ *
+ * La fila del albarán queda congelada al firmarse (`albaranes.routes.ts`, 409 `albaran_locked`),
+ * así que sus campos no pueden cambiar bajo el sello. Éstos NO son suyos: salen de filas que
+ * siguen vivas y que el producto permite editar por motivos legítimos —renombrar un Trabajo,
+ * corregir la razón social de un cliente, arreglar una errata en el NIF—.
+ *
+ * Cambiar cualquiera de ellos altera el hash recalculado de TODOS los albaranes firmados que
+ * cuelgan de esa fila, **en las dos versiones de sobre**. `obra` es el único que v:2 dejó de leer
+ * (SCRUM-300 le cambió la fuente); los otros cuatro siguen vivos en v:1 y en v:2.
+ *
+ * ⚠️ Esta lista NO arregla el defecto —eso exige congelar el contenido dentro del sobre, que es
+ * un sobre nuevo y decisión del fundador—. Sirve para **no acusar en falso** mientras tanto.
+ */
+const CAMPOS_VIVOS: readonly (keyof FuentesContenido)[] = Object.freeze([
+  'jobDireccion',      // Job.direccion      — `obra` en v:1
+  'referenciaTrabajo', // Job.titulo         — v:1 y v:2
+  'cliente',           // Customer.legalName || name
+  'emisor',            // Merchant.legalName || name
+  'emisorNif',         // Merchant.taxId
+]);
 
 /** Una receta recalcula el hash de UNA versión de sobre. Pura: mismas fuentes, mismo hash. */
 export type RecetaSobre = (fuentes: FuentesContenido) => string;
@@ -326,6 +358,69 @@ export function verificarSobre(
   }
 
   if (recalculado !== hashGuardado) {
+    // ── SCRUM-415 · ANTES DE ACUSAR, SE PRUEBAN LAS OTRAS RECETAS ────────────────────────────
+    //
+    // Un sobre cuyo `v` dice 1 pero cuyo hash es el que da la receta de v:2 **no es un albarán
+    // manipulado**: es un sello cuya versión declarada no corresponde a la regla con la que se
+    // calculó. Sin esta comprobación las dos cosas salen por el mismo sitio y con el mismo
+    // texto —«EL CONTENIDO YA NO ES EL QUE SE FIRMÓ»—, que es la acusación más grave que este
+    // verificador sabe hacer.
+    //
+    // Costó media mañana localizar exactamente eso en `scrum297-evidencias-postgres`. El
+    // diagnóstico no es un lujo: es la diferencia entre «investiga una manipulación» y «arregla
+    // el número de versión de esa fila».
+    for (const otra of versionesSoportadas(recetario)) {
+      if (otra === v) continue;
+      let conLaOtra: string;
+      try {
+        conLaOtra = recetario[otra](normalizar(entrada.contenido));
+      } catch {
+        continue;                       // esa receta no aplica a estas fuentes: no dice nada
+      }
+      if (conLaOtra === hashGuardado) {
+        return {
+          cuadra: false, numero, v, motivo: 'hash_de_otra_version',
+          mensaje: `${numero}: el sobre declara v:${v}, pero su hash es EXACTAMENTE el que da la ` +
+            `receta de v:${otra}. El contenido NO está manipulado —cuadra al bit con otra regla—: ` +
+            `lo que no encaja es la versión declarada. Se selló con v:${otra} y se guardó v:${v}, o ` +
+            'al revés. Se corrige la VERSIÓN de la fila, nunca el hash: lo sellado no se toca.',
+        };
+      }
+    }
+
+    // ── SCRUM-431 · ¿Y SI LO QUE CAMBIÓ NO ES EL ALBARÁN? ──────────────────────────────────
+    //
+    // La receta lee cinco campos de filas VIVAS (`CAMPOS_VIVOS`). Si el hash guardado cuadra al
+    // recalcularlo con uno de ellos VACÍO, queda **demostrado** que el sobre se selló cuando ese
+    // dato estaba vacío y que lo único que ha cambiado desde entonces es esa otra fila.
+    //
+    // No se supone nada: o cuadra al bit, o no se dice. Y cuando cuadra, el veredicto sigue siendo
+    // `cuadra: false` —no se puede demostrar la integridad de lo que no viaja con la firma— pero
+    // el MOTIVO deja de acusar de manipulación a un documento que nadie ha tocado.
+    //
+    // El caso real que lo motiva: los albaranes v:1 se sellaron con `obra` vacía porque nadie
+    // escribía `Job.direccion`. El día que ese Job gana dirección, el sobre pasa a decir
+    // «EL CONTENIDO YA NO ES EL QUE SE FIRMÓ» sobre una entrega intacta.
+    for (const campo of CAMPOS_VIVOS) {
+      if ((entrada.contenido as any)?.[campo] == null) continue;   // ya estaba vacío: no dice nada
+      let conElCampoVacio: string;
+      try {
+        conElCampoVacio = receta(normalizar({ ...entrada.contenido, [campo]: null }));
+      } catch {
+        continue;
+      }
+      if (conElCampoVacio === hashGuardado) {
+        return {
+          cuadra: false, numero, v, motivo: 'dato_vivo_cambiado',
+          mensaje: `${numero}: el albarán NO se ha tocado. El sello v:${v} cuadra EXACTAMENTE si se ` +
+            `recalcula con «${campo}» vacío, que es como estaba al firmar: lo que ha cambiado es ese ` +
+            'dato en OTRA tabla (Trabajo, cliente o emisor), y la receta de esta versión lo lee en ' +
+            'vivo. No se puede DEMOSTRAR la integridad —el dato no viaja con la firma—, pero tampoco ' +
+            'hay manipulación que declarar.',
+        };
+      }
+    }
+
     return {
       cuadra: false, numero, v, motivo: 'hash_no_coincide',
       mensaje: `${numero}: EL CONTENIDO YA NO ES EL QUE SE FIRMÓ. Sello v:${v} guardado ` +

@@ -71,8 +71,96 @@ function patronTicket(n) {
   return new RegExp(`SCRUM-${n}(?![0-9])`, 'i');
 }
 
-function git(args, cwd) {
-  return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+/**
+ * 🔴 SCRUM-388 (10-ago-2026) · CUANDO GIT FALLA, EL ROJO TIENE QUE DECIR DÓNDE MIRAR.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * DE DÓNDE SALE ESTO
+ *
+ * CI se puso rojo con un `status: 128` pelado desde `censarTicket`:
+ *
+ *     error: Could not read 52a5fcd…
+ *     fatal: Failed to traverse parents of commit 6fc018fc…
+ *
+ * Con eso en el log no se puede diagnosticar nada: no dice **en qué repositorio** murió (aquí
+ * conviven el repo real y el sintético del fixture), ni si ese repositorio estaba sano. Costó una
+ * sesión entera de mediciones descartar cinco hipótesis —la primera, un clon superficial— cuando
+ * los tres SHA del mensaje eran del **fixture** y bastaba con haberlo dicho.
+ *
+ * ⚠️ ESTO NO RELAJA NADA. Sigue lanzando, el test sigue ROJO y no hay ningún camino nuevo hacia el
+ * verde: un test que se declara bueno porque no pudo mirar es justo el defecto que este censo
+ * existe para cazar. Lo único que cambia es **qué se lee en el rojo**.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * POR QUÉ AQUÍ Y NO EN LOS CUATRO SITIOS
+ *
+ * Medido: de las siete llamadas a git de este fichero, tres iban desnudas (`:log`, `:for-each-ref`,
+ * `:show`), tres pasaban por el `intentar` de `capacidadDeMedir` y una por el `try` propio del
+ * suelo. **Dos tratamientos distintos para la misma operación dejan un hueco con la forma exacta
+ * de lo que nadie mira.** Poniéndolo en el helper, la asimetría no se corrige: deja de existir.
+ *
+ * ⚠️ CÓMO SE DECIDE CUÁNDO DIAGNOSTICAR, Y POR QUÉ NO SE MIRA EL TEXTO DE GIT.
+ *
+ * `capacidadDeMedir` llama a git **esperando que falle** (un `rev-parse --verify` de un ref que no
+ * existe ES la respuesta), así que correr `fsck` en cada uno de esos fallos previstos sería pagar
+ * un censo del repositorio por cada pregunta rutinaria. Hacía falta distinguirlos.
+ *
+ * El primer intento fue una regex sobre el `stderr` («could not read», «failed to traverse»…).
+ * **Una prueba de rojo la tumbó en el primer disparo:** reproducido el síntoma exacto de CI, git
+ * dijo `fatal: cannot read commit object` —una redacción que la lista no tenía— y el diagnóstico
+ * caro NO se disparó. Ampliar la lista habría sido enseñarle al analizador la frase que hoy conozco
+ * y dejarlo ciego ante la siguiente versión de git.
+ *
+ * Así que la diferencia la declara **QUIEN LLAMA**, que es el único que sabe si un fallo es la
+ * respuesta esperada: `{ sondeo: true }`. Todo lo demás diagnostica. No hay nada que adivinar y no
+ * hay ninguna redacción de git de la que dependa esto.
+ */
+
+/** Estado del repositorio, para adjuntar al rojo. Nunca lanza: si no se puede mirar, lo dice. */
+function estadoDelRepo(cwd) {
+  const sonda = (args) => {
+    try {
+      return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    } catch (e) {
+      // El `stderr` de la sonda PRIMERO: cuando la que falla es `fsck`, su salida ES el hallazgo
+      // («missing commit …»), y quedarse con el `Command failed` de Node tira justo el dato útil.
+      const err = String(e?.stderr || '').trim().split('\n').join(' · ');
+      return `(no se pudo: ${err || String(e?.message || e).split('\n')[0]})`;
+    }
+  };
+  return [
+    `      repositorio: ${cwd}`,
+    `      count-objects: ${sonda(['count-objects', '-v']).replace(/\n/g, ' | ')}`,
+    `      superficial: ${sonda(['rev-parse', '--is-shallow-repository'])}`,
+    `      fsck: ${sonda(['fsck', '--no-progress', '--connectivity-only']) || 'sin hallazgos'}`,
+  ].join('\n');
+}
+
+/**
+ * @param {string[]} args
+ * @param {string} cwd
+ * @param {{sondeo?: boolean}} opciones  `sondeo: true` = **este fallo puede ser la respuesta**
+ *        (lo usa `capacidadDeMedir`). Sin él, un fallo es un accidente y se diagnostica entero.
+ */
+function git(args, cwd, { sondeo = false } = {}) {
+  try {
+    return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch (e) {
+    const stderr = String(e?.stderr || '').trim();
+    const partes = [
+      `[censo] \`git ${args.join(' ')}\` falló en ${cwd}`,
+      stderr ? `      stderr: ${stderr.split('\n').join('\n              ')}` : '      (sin stderr)',
+    ];
+    if (!sondeo) {
+      partes.push('      🔴 esto NO era un sondeo: el repositorio falló donde se contaba con él.');
+      partes.push(estadoDelRepo(cwd));
+    }
+    // Se relanza SIEMPRE: quien capturaba antes sigue capturando, y quien no, sigue en rojo.
+    const err = new Error(partes.join('\n'));
+    err.cause = e;
+    err.status = e?.status;
+    throw err;
+  }
 }
 
 /**
@@ -207,10 +295,11 @@ export function capacidadDeMedir({ raiz = process.cwd(), ref = 'origin/main' } =
 
   // ── commits: necesita que el ref exista Y la historia completa ──────────────────────────
   let commits = { puede: true, motivo: '' };
-  const refOk = intentar(() => { git(['rev-parse', '--verify', `${ref}^{commit}`], raiz); return true; }, () => false);
+  // `sondeo: true` en los tres de aquí: su fallo ES la respuesta que se busca, no un accidente.
+  const refOk = intentar(() => { git(['rev-parse', '--verify', `${ref}^{commit}`], raiz, { sondeo: true }); return true; }, () => false);
   if (!refOk) {
     commits = { puede: false, motivo: `el ref «${ref}» no existe aquí (checkout sin refs remotos: es lo que hace \`actions/checkout\` por defecto)` };
-  } else if (intentar(() => git(['rev-parse', '--is-shallow-repository'], raiz).trim() === 'true', () => false)) {
+  } else if (intentar(() => git(['rev-parse', '--is-shallow-repository'], raiz, { sondeo: true }).trim() === 'true', () => false)) {
     commits = { puede: false, motivo: 'la historia está CORTADA (clon superficial): buscar en ella diría «no hay commits» mirando solo los últimos' };
   }
 
@@ -224,7 +313,7 @@ export function capacidadDeMedir({ raiz = process.cwd(), ref = 'origin/main' } =
 
   // ── ramas: necesita que el clon traiga TODAS ────────────────────────────────────────────
   let ramas = { puede: true, motivo: '' };
-  const refspec = intentar(() => git(['config', '--get', 'remote.origin.fetch'], raiz).trim(), () => '');
+  const refspec = intentar(() => git(['config', '--get', 'remote.origin.fetch'], raiz, { sondeo: true }).trim(), () => '');
   if (!refspec) {
     ramas = { puede: false, motivo: 'no hay remoto «origin» configurado' };
   } else if (!refspec.includes('refs/heads/*')) {

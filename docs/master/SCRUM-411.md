@@ -294,3 +294,212 @@ diseño no está en el repo.
 ## Ficheros
 
 Ninguno de producción. Solo esta entrada.
+
+---
+
+# SCRUM-411 · TERCERA ENTREGA (10-ago-2026) — el diseño de D y G entra al repo, y G se contrasta
+
+**Fecha:** 10-ago-2026 · **Carril:** medición · **Gate:** informe, **cero producto** · **Toca código:** NO
+**Medido contra:** `origin/main` = `db814df3d9b438ca969bdb0ec3c5e9587159bb7e` · 2026-08-10T14:55:00+01:00
+**Tanda:** 2484 tests · 2410 pass · **0 fail** · 74 gateados · `npm test` exit **0**
+
+> Cierra el hueco que dejó la segunda entrega: *«copiar las descripciones de SCRUM-279 y SCRUM-282 a
+> `docs/diseno/` es el siguiente paso barato»*. Los textos los copió de Jira el asesor y los pasó a
+> la sesión; **esta sesión no alcanza Jira** y no los reconstruyó — reconstruir un diseño desde lo
+> construido garantiza que coincidan, que es el error entero que este trabajo evita.
+
+## Lo que entra
+
+`docs/diseno/bloque-d.md` (epic SCRUM-279) y `docs/diseno/bloque-g.md` (epic SCRUM-282), con la
+cabecera que estableció SCRUM-287 y reutilizó SCRUM-300: `FUENTE` · `COPIADO EL` · `ORIGEN` ·
+`QUÉ ES` (copia verbatim de la DESCRIPCIÓN, no los comentarios) · `⚠️ STALE`.
+
+**Verbatim de verdad, incluido lo que está mal.** El recuadro de la maqueta de §4 **no cuadra**:
+contados sus bordes, el superior lleva **56** guiones, el siguiente **55** y los dos últimos **54**,
+y las columnas de la derecha no cierran a la misma altura. No se ha alineado. Alinearlo habría sido
+editar, y entonces el fichero dejaría de poder usarse como referencia contra la que contrastar.
+
+### El control de la copia, con su límite declarado
+
+Cada cuerpo se transcribió **dos veces por separado** y se compararon byte a byte:
+
+| | caracteres | líneas | `diff` |
+|---|---|---|---|
+| `bloque-d.md` (cuerpo, sin cabecera) | **1375** | 29 | ✅ idénticos |
+| `bloque-g.md` (cuerpo, sin cabecera) | **9519** | 177 | ✅ idénticos |
+
+🔴 **Y lo que este control NO prueba, porque las dos transcripciones son mías:** demuestra que las
+dos pasadas coinciden —que es el fallo realista: una línea caída, un recuadro estropeado— **pero no
+que ninguna de las dos coincida con Jira**. Eso solo lo puede verificar quien tiene Jira delante.
+Se dice en vez de dejar que un ✅ parezca más de lo que es.
+
+**El control se cazó a sí mismo antes de dar resultado.** La primera extracción del cuerpo usaba
+`awk '/^──+ -->$/'` sobre la línea de guiones de caja de la cabecera; el patrón no casó, el cuerpo
+salió **vacío**, y el `diff` cantó «DIVERGEN» sobre un fichero que estaba perfecto. Es «no supe
+mirar» disfrazado de hallazgo, en el sitio donde más caro sale. Se cambió a buscar la línea del
+`-->` por número, y se le puso suelo: **se imprime la primera línea del cuerpo extraído**, para que
+un cero no pueda volver a leerse como un resultado.
+
+## 🔴 Copiar el diseño de D demuestra que D NO TIENE DISEÑO
+
+El documento de D **termina literalmente en `**Sin diseñar.**`**. Son cuatro viñetas de contenido
+(D1–D4), una dependencia (A4), un argumento de orden frente al Bloque E y una declaración de estado.
+Es una página de **justificación**, no un diseño: no hay maqueta, ni estados, ni acciones, ni
+microcopy, ni criterio de aceptación.
+
+**Copiarlo no lo diseña — deja constancia de que no lo está**, y eso convierte una suposición de la
+segunda entrega en un hecho del repositorio. **Contra esto no se puede contrastar nada**, y no por
+falta de instrumento: no se contrasta contra lo que nunca se escribió.
+
+## G, contrastado promesa por promesa
+
+Ahora sí se puede hacer lo que con B: leer lo que el diseño promete y medir si existe y si un
+profesional lo alcanza.
+
+| promesa del diseño | ¿existe? | ¿alcanzable? |
+|---|---|---|
+| **G1** · patrón B2 (1 primaria + 2 secundarias + ⋮) | sí, `jobActionsRegistry.js` | sí — `jobDetailView.js:481` |
+| **G1** · la primaria sale del **cruce de los dos ejes** | **no como tal** — ver abajo | — |
+| **G2** · el Trabajo se llama por su nombre | sí | sí — `jobDetailView.js:750` `PATCH {titulo}` |
+| **G2** · el presupuesto pasa al rail como origen | sí — `DESTINO_POR_TIPO.presupuesto = 'rail-presupuesto'` | sí |
+| **G3** · DATOS pasa al rail | sí — bloque `CLIENTE` | sí |
+| **G3** · 🏆 **enlace a mapa** | el código sí | **NO — no se pinta nunca** |
+| **G4** · DOCUMENTOS por tipo | sí, y con una sección **de más** | sí |
+| **G4** · justificantes al bloque DINERO | sí — `DESTINO_POR_TIPO.justificante = 'rail-dinero'` | sí |
+| **G5** · las cuatro filas que no dependen de nada | sí — `HUECOS_COBRO` (4) | sí — `:177`, `:586` |
+| **G5** · la línea «quedan N» | el motor sí, la línea **no** | **NO — nadie llama al motor** |
+
+### ① El enlace a mapa está construido y no lo ve nadie → **SCRUM-424**
+
+`jobRailBlocks.js:87` compone bien el `href` (`google.com/maps/search/?api=1&query=…`) y con el mismo
+dato que se pinta. Pero `bloqueDonde` sale por `if (!direccion) return null` (`:77`) **siempre**,
+porque **`Job.direccion` no lo escribe nadie**: `job.service.ts:101` lo deja a `null` al crear y el
+`PATCH /admin/jobs/:id` no lo acepta (solo abrió `titulo`, `jobs.routes.ts:597`). El propio módulo lo
+declara en su comentario. Segundo hueco encima: el rótulo del enlace sigue siendo el marcador
+`[PENDIENTE microcopy oficial]` (`:32`) porque «abrir en mapa» no está aprobado.
+
+**Es el 🏆 del bloque —«que no lo tiene nadie y es de lo más usado desde una furgoneta»— y no existe
+para ningún profesional.** No se cablea aquí: se anota, como se anotó la barra lateral.
+
+### ② «Quedan N»: C6 construyó el motor, cerró, y no lo llamó nadie → **SCRUM-423**
+
+`src/modules/jobs/domain/entregaPendiente.ts` (`resumenEntrega`, `COPY_ENTREGA`, `fraseDeCuenta`)
+está **importado únicamente por `tests/scrum305-entrega-pendiente.test.mjs`**. Es uno de los 8
+inalcanzables del trinquete. **SCRUM-305 (C6) está Finalizada.**
+
+Es un `(b)` de manual, y con una diferencia que lo hace peor que los de la primera entrega: aquí el
+diseño **ya había declarado el hueco** —*«HUECO DECLARADO y entra con C6»*— así que el hueco tenía
+dueño, fecha y ticket. **C6 lo cerró sin cablear, y el hueco declarado dejó de estar en ninguna
+lista.** Un hueco declarado que se cierra en falso es invisible dos veces.
+
+La regla del diseño («sin línea vacía ni pendiente de calcular: o está el dato, o no está la línea»)
+**se cumple**: la línea no se pinta. Lo que no llegó es el dato.
+
+### ③ La primaria NO sale del cruce de ejes — divergencia, no hueco
+
+El diseño da una tabla de cinco filas (`Sin agendar → Agendar` · `Agendado → Empezar` ·
+`En curso → Marcar terminado` · `Terminado + pendiente/parcial → Cobrar` · `Terminado + pagado → —`).
+
+Lo construido delega la primaria en la escalera preexistente: `JOB_ACTION_REGISTRY` la declara como
+`{ id: 'cta', destino: 'primaria', fuente: 'jobNextAction' }`, y `jobNextAction.js` tiene **seis
+niveles que responden a otra pregunta** —cuál es el siguiente paso *documental*— y **solo consulta el
+eje TRABAJO en un sitio**: `job.status === 'terminado'` (`:39`). Medido: `pendiente_agendar`,
+`agendado` y `en_curso` **no aparecen en todo el fichero**.
+
+O sea: **de las cinco filas del cruce, la que está implementada es una** —la importante, `terminado +
+saldo → Cobrar`— y las otras tres del eje TRABAJO no gobiernan la primaria. Las acciones existen
+(`Marcar terminado` está en la cabecera, medido en G0), pero **no salen del cruce**.
+
+**No lo llamo cierre en falso, y el motivo está escrito desde antes:** G0 (`SCRUM-309.md:238`) midió
+que ninguna de las 37 acciones consulta `job.status` y concluyó que *«la tabla acciones-por-estado no
+se puede escribir con lo que hay: si el diseño la quiere, es una decisión nueva»*. G1 lo respetó y
+dejó la escalera *«igual que salió de SCRUM-366»*. **Es una promesa del diseño que el propio bloque
+midió como no transcribible.** Va como divergencia declarada, no como defecto de G1 — y merece
+decisión del asesor, no un ticket automático.
+
+### ④ G4 entregó una sección MÁS que el diseño
+
+El diseño parte DOCUMENTOS en tres (`QUÉ FALTA PARA COBRAR` · `ALBARANES` · `GASTOS`). Lo construido
+tiene cuatro: `SECCIONES_CUERPO = ['que-falta-para-cobrar', 'albaranes', 'facturas', 'gastos']`. La
+de más es **FACTURAS**, con la rectificativa anclada a su original, y está declarada en
+`docs/master/SCRUM-319.md`. **Es un superávit declarado, no un hueco** — se anota porque un
+contraste que solo mira lo que falta no es un contraste.
+
+### ⑤ La maqueta de §4: nueve huecos, **ocho se pintan y uno no es el que pedía el diseño**
+
+Cuerpo 4 (`que-falta-para-cobrar`, `albaranes`, `facturas`, `gastos`) + rail 5 (`cliente`, `donde`,
+`dinero`, `presupuesto`, `responsable`) = **9 huecos**. Pero la cuenta redonda esconde dos cosas:
+
+* **`donde` no se pinta nunca** (①) → ocho de nueve.
+* **El cuarto bloque del cuerpo no coincide.** El diseño pide `NOTAS INTERNAS`; lo construido pone
+  `FACTURAS`. Y medido: **las notas internas del Trabajo no están en el detalle** — el único sitio
+  donde se editan es la tarjeta del **listado** (`jobsView.js:325`, *«Notas internas del trabajo…»*),
+  y no aparecen ni en `jobDetailView.js` ni en el rail. Así que no es que se hayan movido: **en la
+  pantalla que el diseño describe, no están**. Es un hueco de G4 que ninguna entrega declara.
+
+**Y aquí está el valor de haber traído el diseño:** con la cuenta de nueve, G4 salía cuadrado. Es la
+misma forma de error que dio B por acabado — un número que coincide sobre una composición que no.
+
+## 🔴 Corrección al registro de la PRIMERA entrega — no se borra la línea
+
+La tabla «(a) A medio construir con ticket abierto» de la primera entrega atribuye
+`jobs/domain/entregaPendiente.ts` a **«SCRUM-367 / entregas»**. **Es incorrecto:** la cabecera del
+fichero dice `// src/modules/jobs/domain/entregaPendiente.ts — SCRUM-305 (C6)`.
+
+La línea original **se conserva** (regla 16) y esta es su corrección, con el motivo: la primera
+entrega atribuyó por *parecido temático* —367 y 305 tocan los dos el eje de entrega— y eso es
+exactamente el error de atribución que SCRUM-388 existe para impedir, cometido dentro del informe que
+lo cita. Y no es cosmético: mal atribuido, el módulo se leía como **(a) a medio construir con ticket
+abierto**; bien atribuido es **(b) cierre en falso con el ticket Finalizado**, que es otra casilla y
+otra decisión. → **SCRUM-423**.
+
+## Los dos veredictos
+
+**G · NO ACABADO.** Falta, en orden de daño: **(i)** un camino para escribir `Job.direccion`, sin el
+cual el 🏆 del bloque no existe para nadie (**SCRUM-424**); **(ii)** cablear `entregaPendiente` para
+que aparezca la línea «quedan N» (**SCRUM-423**); **(iii)** `NOTAS INTERNAS` en el detalle, que el
+diseño coloca en la maqueta y hoy solo existe en el listado (⑤, **sin ticket**); **(iv)** el
+microcopy aprobado del enlace a mapa. Y una divergencia que no es hueco sino decisión: la primaria no
+sale del cruce de ejes (③). Lo demás del diseño está entregado y es alcanzable.
+
+**D · NO SE PUEDE SABER contra su diseño, y ya no por falta de documento: porque el documento dice
+que no hay diseño.** Lo único que se puede afirmar de D sigue siendo lo de la segunda entrega —sus
+cuatro hijos que construyen (D1–D4) entregaron y son alcanzables; D0 es informe—, y eso **no es un
+veredicto sobre el bloque**: es un veredicto sobre sus hijos. Para pasar de uno a otro hace falta
+que alguien escriba el diseño de D, o que se acepte que D es *«las cuatro tareas que había»* y se
+cierre por esa vía, que es una decisión del asesor y no una medición.
+
+**Y el hueco de D es de registro, no de producto:** `docs/master/SCRUM-312.md` **sigue sin existir**
+—verificado contra el `main` de hoy, no heredado de la entrega anterior—. D1 es el único hijo de los
+tres bloques sin entrada de registro.
+
+## Hallazgo fuera de carril, reportado (regla 9)
+
+La tanda no arrancaba: `_prisma-client-guard.mjs` (SCRUM-252) cortó con *«el campo
+`Quote.esAdicional` está en `schema.prisma` y NO en el cliente generado»*. **El guard tenía razón y
+funcionó como debe** — no dejó correr 2.484 tests contra un cliente de otro schema.
+
+Medido antes de tocar nada, comparando `sha256` de `prisma/schema.prisma` en los cuatro worktrees:
+tres coinciden con el `main` de hoy (`b2064c94…`) y el cuarto —`cobroflash-backend`, en
+`scrum-205-dev-y-registro-migraciones`— tiene otro (`316b2713…`). El cliente compartido por junction
+venía de ése. Se regeneró **desde este worktree** (`npx prisma generate`, el arreglo que el propio
+guard indica), que deja el cliente en el schema que comparten tres de los cuatro.
+
+**No se ha tocado `prisma/schema.prisma`, ni ningún `.env`, ni la base.** Se anota porque afecta a
+`node_modules` compartido: si la sesión de `cobroflash-backend` necesita su cliente, tendrá que
+regenerarlo desde el suyo — y ése es el efecto que hay que saber, no descubrir.
+
+## Lo que NO cubre
+
+* **Que las copias coincidan con Jira.** Ver el límite del control. Y llevan `⚠️ STALE`: son fotos.
+* **El contraste de D**, por el motivo de arriba.
+* **Nada de `public/` queda vigilado.** Este contraste es de una vez, como el de la segunda entrega.
+  El trinquete de SCRUM-411 sigue cubriendo solo `src/modules/*/domain/`.
+* **No se ha abierto, cerrado ni tocado ningún ticket de Jira**, ni SCRUM-423 ni SCRUM-424, que ya
+  existen y son del asesor.
+
+## Ficheros
+
+* `docs/diseno/bloque-d.md` (nuevo) — copia verbatim de la epic SCRUM-279.
+* `docs/diseno/bloque-g.md` (nuevo) — copia verbatim de la epic SCRUM-282.
+* `docs/master/SCRUM-411.md` — esta entrada.

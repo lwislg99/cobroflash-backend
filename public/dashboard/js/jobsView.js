@@ -73,6 +73,15 @@ async function renderJobsView(container) {
 
 // Agrupado de LISTA (spec: lista simple por fecha). Extraído (SCRUM-11) para reutilizarlo
 // con el filtro de cobro; el agrupado y su lógica NO cambian.
+// SCRUM-436 · el formato de la casa, y NO una copia. Este fichero ya usaba `fmtMoneyEs` en cuatro
+// sitios (`:188`, `:261`, `:347`, `:356`) cuando SCRUM-428 le añadió este formateador local: la
+// misma pantalla imprimía «1000,00 €» en la cabecera del grupo y «1.000,00 €» en las filas de
+// debajo. El censo que lo denunció era mío y estaba MAL: sí había un formateador compartido
+// (`fmtMoneyEs`, api.js:190, 66 usos), y no lo busqué antes de escribir el quinto.
+function eurosJobs(n) {
+  return fmtMoneyEs(n);
+}
+
 function renderJobGroups(list, jobs, container) {
   list.innerHTML = '';
   if (!jobs.length) {
@@ -103,7 +112,48 @@ function renderJobGroups(list, jobs, container) {
   for (const g of groups) {
     if (!g.items.length) continue;
     const sec = document.createElement('div');
-    sec.innerHTML = `<div style="font-size:12px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em;margin:4px 0 8px">${g.title} · ${g.items.length}</div>`;
+    // SCRUM-428 · EL DINERO, EN LA CABECERA DEL GRUPO QUE YA LO NOMBRABA.
+    //
+    // El rótulo «✅ Terminados — cobra el resto» ya existía y ya decía qué hacer; lo que no decía
+    // es CUÁNTO. Ese número es el estado más importante del negocio y hasta hoy había que
+    // deducirlo abriendo los Trabajos uno a uno.
+    //
+    // Se añade con el MISMO patrón que el recuento de al lado (` · valor`), sin una palabra
+    // nueva: el importe cuelga del rótulo ya aprobado en vez de estrenar microcopy (regla 30).
+    //
+    // ⚠️ Se calcula sobre `g.items`, que es lo que el profesional TIENE DELANTE con el filtro de
+    // cobro que haya pulsado. Sumar sobre la lista completa daría un total que no corresponde a
+    // lo que se ve, y un importe que no cuadra con las filas de debajo no se cree: se ignora.
+    const resumen = g.key === 'terminado' && typeof resumenTerminadoSinCobrar === 'function'
+      ? resumenTerminadoSinCobrar(g.items)
+      : null;
+    // EL IMPORTE SE ENSEÑA SIEMPRE, PORQUE AHORA LA LÍNEA DE ABAJO DICE QUÉ QUEDA FUERA.
+    //
+    // Hasta el 10-ago-2026 la cabecera se CALLABA el importe cuando había terminados sin importe
+    // conocido: la suma de los demás es correcta y se lee como el total, y no había una frase
+    // aprobada para decir cuántos quedaban fuera. Callarse era entonces lo único que no mentía.
+    //
+    // Con el texto aprobado (fundador, 10-ago-2026) la decisión se invierte, y por su propio
+    // motivo: **con la frase puesta, callarse el importe es contar MENOS de lo que se sabe**. La
+    // cifra y su salvedad viajan juntas, que es la única forma en que las dos son verdad.
+    const importe = resumen && resumen.cuantos > 0 ? ` · ${eurosJobs(resumen.importe)}` : '';
+    sec.innerHTML = `<div style="font-size:12px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em;margin:4px 0 8px">${g.title} · ${g.items.length}${importe}</div>`;
+
+    // 🔴 LA SALVEDAD, PEGADA A LA CIFRA Y NO EN UNA AYUDA QUE NADIE ABRE.
+    //
+    // Un terminado sin eje de cobro no es un terminado de 0 €: es uno del que no se sabe cuánto
+    // falta. Si esta línea desaparece, el importe de arriba vuelve a leerse como si lo contara
+    // todo — y entonces el número de arriba tampoco se puede enseñar.
+    //
+    // ⚠️ TEXTO OFICIAL APROBADO (regla 30, fundador 10-ago-2026). No se reescribe ni se «mejora».
+    if (resumen && resumen.sinImporte > 0) {
+      const salvedad = document.createElement('div');
+      salvedad.style.cssText = 'font-size:12px;color:var(--muted);margin:-4px 0 8px';
+      salvedad.textContent =
+        `${resumen.sinImporte} sin importe de referencia: no se sabe cuánto falta y no entran en el total.`;
+      sec.appendChild(salvedad);
+    }
+
     const wrap = document.createElement('div');
     wrap.style.cssText = 'display:flex;flex-direction:column;gap:10px';
     if (g.collapsed && g.items.length) {

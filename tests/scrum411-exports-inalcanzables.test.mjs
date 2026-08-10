@@ -22,8 +22,17 @@ const R = analizar(RAIZ);
  *
  * ⚠️ SOLO PUEDE BAJAR. Sube = alguien ha entregado dominio nuevo que nadie puede alcanzar, y ese
  * es el caso que este fichero existe para que no vuelva a descubrirse por casualidad.
+ *
+ * **8 → 7 · 10-ago-2026 · SCRUM-423.** Sale `src/modules/jobs/domain/entregaPendiente.ts`, el motor
+ * de C6 (SCRUM-305): construido, probado y en verde, y lo importaba ÚNICAMENTE su propio test —
+ * ningún profesional lo había visto nunca. Ya está cableado a «Qué falta para cobrar» a través de
+ * `entregaDelTrabajo.ts`, que nace alcanzable desde `jobs.routes.ts`.
+ *
+ * 🔴 Y fue ESTE número el que lo destapó, no una revisión a ojo: es lo que convirtió «C6 está
+ * Finalizada» en «C6 tiene un cierre en falso». Por eso baja en el mismo commit que lo arregla —
+ * un tope con holgura habría dejado el hallazgo sin constancia.
  */
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 8;
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 7;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 

@@ -62,6 +62,16 @@ export const CAMPOS_QUE_NO_VIAJAN: Record<string, string> = {
   createdAt: 'lo pone la base de datos al crear',
   updatedAt: 'lo pone la base de datos al escribir',
   invoiceId: 'la factura que consumió al ORIGINAL; el duplicado no lo ha facturado nadie',
+  // ── SCRUM-425 / SCRUM-358 (H3) ────────────────────────────────────────────────────────
+  // 🔴 LA CLAVE DE IDEMPOTENCIA DEL **ALTA**, y ahí está todo el motivo: identifica UN INTENTO
+  // de creación, no un documento. Duplicar es un ALTA DISTINTA —otro día, otro parte— y necesita
+  // su propia clave, o ninguna.
+  //
+  // Y copiarla no sería solo conceptualmente falso: **rompería la ruta**. El duplicado chocaría
+  // contra `@@unique([merchantId, claveIdempotencia])` y `POST /:id/duplicar` devolvería un
+  // `P2002` — un 500 en la cara del profesional al duplicar el parte de ayer, que es de lo que
+  // más se usa en un gremio. El guard de clasificación no pedía papeleo: señalaba esto.
+  claveIdempotencia: '🔴 identifica UN INTENTO DE ALTA, no el documento: el duplicado es otra alta y chocaría contra el único',
   // ── SCRUM-300 (C5) ────────────────────────────────────────────────────────────────────
   // Los tres son HECHOS ocurridos sobre el documento anterior, y los tres van dentro del
   // contenido SELLADO por la firma (sobre v:2). Heredarlos afirmaría en un documento nuevo —y

@@ -163,6 +163,30 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
     'sin-firmar': (h) => `${h.cantidad} ${h.cantidad === 1 ? 'albarán' : 'albaranes'} sin firmar`,
     'sin-facturar': (h) => `${fmt(h.importe, moneda)} entregados sin facturar`,
     'sin-facturar-nada': (h) => `${fmt(h.importe, moneda)} aceptados y sin facturar`,
+    // SCRUM-423 · copy APROBADA por el asesor el 10-ago-2026 (regla 30). El formato copia el de
+    // los otros cuatro, MEDIDO y no supuesto: número delante, sin mayúscula inicial forzada, sin
+    // punto final y sin icono. Singular y plural DE VERDAD —nunca `línea(s)`—, regla dura heredada
+    // de C6: cambia el sustantivo, así que se alterna la palabra entera, igual que hace
+    // `sin-firmar` con albarán/albaranes.
+    //
+    // 🔴 UNA SOLA CADENA, y ése es el punto: el número y el motivo por el que puede estar
+    // INCOMPLETO no se pueden separar. Si fueran dos nodos, un truncado, un ancho estrecho o un
+    // futuro «pinta sólo lo primero» dejarían a alguien leyendo el número a secas — que es
+    // precisamente el número que no se puede leer solo. Van pegados por construcción, no por
+    // acuerdo. Separador « · », el de la casa (el mismo de «Presupuesto #2 · 24 jun · 853,05 €»),
+    // y MISMO PESO VISUAL: ni gris, ni más pequeña, ni entre paréntesis — una salvedad que se ve
+    // menos que el número al que corrige no es una salvedad. La coletilla llega FIRMADA desde el
+    // servidor (`fraseDeCuenta`, C6): aquí no se escribe copy, sólo se coloca.
+    'sin-entregar': (h) => {
+      // 🔴 SIN NÚMERO, LA COLETILLA SE PINTA SOLA. «1 línea entregada que no sale del presupuesto»
+      // ya es una frase completa y verdadera por sí misma, sale de la misma copy firmada y respeta
+      // el registro sustantivo-primero de sus vecinas. Las dos alternativas eran peores: «0 líneas
+      // del presupuesto sin entregar · …» es una contradicción en una sola línea, y callar es la
+      // pantalla que dice «ya puedes facturar» habiendo entregas que el motor no supo atribuir.
+      if (!h.cantidad) return h.fraseSinAtribuir;
+      const base = `${h.cantidad} ${h.cantidad === 1 ? 'línea' : 'líneas'} del presupuesto sin entregar`;
+      return h.fraseSinAtribuir ? `${base} · ${h.fraseSinAtribuir}` : base;
+    },
     'sin-cobrar': (h) => `${fmt(h.importe, moneda)} facturados sin cobrar`,
   };
   const TEXTO_ACCION = {
@@ -542,6 +566,9 @@ async function renderJobDetailView(container, jobId) {
 
   const nombreCliente = (job.customer?.name || '').trim();
   const nombreTrabajo = (job.titulo || '').trim();
+  // SCRUM-424: el valor actual de la dirección de la obra, para el campo de «Datos» y para saber
+  // si al salir del campo hay algo que guardar. NO se pinta en la cabecera: eso es el rail.
+  const direccionObra = (job.direccion || '').trim();
 
   h2.textContent = nombreCliente || 'Trabajo';
   sub.textContent = unirCon(' · ', nombreTrabajo, fechaCorta(job.createdAt));
@@ -754,6 +781,46 @@ async function renderJobDetailView(container, jobId) {
       setStatus('error', 'No se pudo guardar el nombre del trabajo.');
     }
   });
+
+  // ── SCRUM-424 (G3) · aquí el pro escribe la DIRECCIÓN DE LA OBRA ─────────────────────
+  //
+  // Va en «Datos», al lado del nombre, y NO en el rail: el rail es contexto de SOLO LECTURA
+  // (patrón B2, regla 4) y su propio guard prohíbe que cree un `input`. Lo que se escribe aquí
+  // es lo que el rail pinta enfrente, con su enlace a mapa.
+  //
+  // Sin este campo, `Job.direccion` seguiría sin escritor y el bloque DÓNDE seguiría siendo
+  // código inalcanzable — que es el defecto entero del ticket.
+  const dirWrap = document.createElement('div');
+  dirWrap.style.cssText = 'margin-top:12px';
+  const dirLabel = document.createElement('label');
+  dirLabel.setAttribute('for', 'job-direccion');
+  dirLabel.style.cssText = 'display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:4px';
+  dirLabel.textContent = 'Dirección de la obra';
+  const dirInput = document.createElement('input');
+  dirInput.id = 'job-direccion';
+  dirInput.className = 'input';
+  dirInput.type = 'text';
+  dirInput.maxLength = 300; // mismo tope que `JOB_DIRECCION_MAX` en el backend
+  dirInput.placeholder = 'Ej. Av. Rey Juan Carlos 145, Leganés';
+  dirInput.value = direccionObra;
+  dirInput.style.minHeight = '44px';
+  dirWrap.appendChild(dirLabel);
+  dirWrap.appendChild(dirInput);
+  infoSec.appendChild(dirWrap);
+
+  dirInput.addEventListener('blur', async () => {
+    const nueva = dirInput.value.trim();
+    if (nueva === direccionObra) return; // nada que guardar
+    try {
+      await apiRequest(`/admin/jobs/${job.id}`, { method: 'PATCH', body: { direccion: nueva } });
+      refresh(); // el rail se repinta desde el dato: el bloque DÓNDE aparece solo
+    } catch (e) {
+      dirInput.value = direccionObra; // se deshace lo tecleado: mentir sería peor
+      // El 409 de la firma sellada trae su propio motivo y se enseña TAL CUAL: «no se pudo» sin
+      // decir por qué obligaría al profesional a adivinar por qué su trabajo es distinto.
+      setStatus('error', (e && e.data && e.data.message) || 'No se pudo guardar la dirección de la obra.');
+    }
+  });
   // SCRUM-31 (F5): "Ver presupuesto" se mueve a la FILA de presupuesto de la lista 'Documentos'
   // (antes también estaba aquí; se quita para no duplicar).
   // SCRUM-31 (F6): "Datos" pasa a SEGUNDO PLANO — se appendea más abajo, tras Cobros
@@ -880,6 +947,8 @@ async function renderJobDetailView(container, jobId) {
   // tiene su propio ticket. Y el importe se enseña **tal como está guardado**, sin llamarlo «base»
   // ni «con IVA»: hasta la migración de `Expense` no consta cuál de las dos cosas es, y ponerle
   // nombre sería afirmar algo que no sabemos (SCRUM-403).
+  pintarNotasInternas(body, job);
+
   const gastosSec = document.createElement('div');
   gastosSec.className = 'detail-section';
   gastosSec.dataset.seccion = 'gastos';
@@ -2471,3 +2540,58 @@ function openFacturarParcialSheet(alb, ctx) {
 }
 
 window.renderJobDetailView = renderJobDetailView;
+
+// ── SCRUM-427 · NOTAS INTERNAS en el detalle del Trabajo ──────────────────────────────────────
+//
+// ⚠️ NO SE CREA NINGÚN ALMACENAMIENTO, y medirlo antes fue lo que evitó construir uno de más.
+// `Job.notes` ya existía y estaba enchufado de punta a punta MENOS la pantalla: se persiste, la
+// API lo devuelve (`jobs.routes.ts:250`), se escribe por `PATCH` con tope de 2.000 y gate POR CAMPO
+// (SCRUM-120, que se lo da al operario a propósito), y hasta viaja al calendario dentro del
+// `DESCRIPTION:` del `.ics`. Lo único que faltaba era poder verlo y escribirlo desde aquí.
+//
+// Y ya había un editor: en la LISTA de trabajos (`jobsView.js`). O sea que el defecto real no era
+// «no existen las notas», era que **la nota que escribes desde la lista es invisible desde la
+// pantalla donde trabajas** — y quien abre el detalle no tiene forma de saber que existe.
+//
+// ⚠️ `Quote.internalNotes` es OTRA COSA y no se toca: son las notas del PRESUPUESTO, tienen su
+// propia sección en Presupuestos y su indicador en esa lista. Dos trabajos del mismo presupuesto
+// compartirían esa nota; la del trabajo es del trabajo.
+//
+// MICROCOPY: reutilizada LITERAL de la sección que ya existe en Presupuestos
+// (`quotesDetailView.js`), no inventada — mismo rótulo, misma píldora y mismo placeholder. Que las
+// dos pantallas digan lo mismo con las mismas palabras es la mitad del trabajo.
+function pintarNotasInternas(body, job) {
+  const sec = document.createElement('div');
+  sec.className = 'detail-section';
+  sec.dataset.seccion = 'notas';
+
+  const header = document.createElement('div');
+  header.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px';
+  header.innerHTML =
+    '<h3 class="detail-section-title" style="margin:0">Notas internas</h3>' +
+    '<span style="font-size:11px;color:var(--muted);background:var(--neutral-100);padding:2px 8px;border-radius:999px">Solo tú las ves</span>';
+  sec.appendChild(header);
+
+  const ta = document.createElement('textarea');
+  ta.id = 'job-notas-internas';
+  ta.value = job.notes || '';
+  ta.rows = 3;
+  ta.placeholder = 'Anota detalles del trabajo, acuerdos verbales, recordatorios…';
+  ta.style.cssText = 'width:100%;resize:vertical;font:inherit;font-size:14px;padding:10px 12px;'
+    + 'border:1px solid var(--neutral-200);border-radius:var(--r-md);color:var(--body);background:var(--surface)';
+  sec.appendChild(ta);
+
+  // Guardar al perder el foco, igual que en la lista: dos superficies que guardan el mismo campo
+  // de dos maneras distintas acabarían enseñando cosas distintas del mismo trabajo.
+  //
+  // ⚠️ Y solo si CAMBIÓ. Sin esa comparación, abrir el detalle y cerrarlo mandaría un PATCH por
+  // cada visita — escrituras que nadie pidió sobre un campo que otra pantalla también toca.
+  ta.addEventListener('blur', () => {
+    if ((job.notes || '') === ta.value) return;
+    apiRequest(`/admin/jobs/${job.id}`, { method: 'PATCH', body: JSON.stringify({ notes: ta.value }) })
+      .then(() => { job.notes = ta.value; showToast('✓ Notas guardadas'); })
+      .catch(() => showToast('No se pudieron guardar las notas', 'error'));
+  });
+
+  body.appendChild(sec);
+}

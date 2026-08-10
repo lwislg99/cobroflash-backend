@@ -51,7 +51,13 @@ firma del cliente → cobro de señal/total → (post SIF-1) factura VeriFactu. 
 1. **NUNCA n8n.** WhatsApp solo vía `src/integrations/whatsapp.ts` (Meta Cloud API directa).
 2. **Multi-tenant:** toda query filtra por `req.merchantId` (inyectado por `requireAuth`).
 3. **Prisma sin TTY:** siempre `db push` con preview del diff antes de tocar prod;
-   `migrate dev` está PROHIBIDO (el hook lo bloquea). `.env` apunta a PROD; dev usa `.env.local`.
+   `migrate dev` está PROHIBIDO (el hook lo bloquea). **Claves de BD — REGISTRO MEDIDO el
+   10-ago-2026 (SCRUM-418), no afirmación de estado:** los cuatro worktrees llevan
+   `DATABASE_URL_STAGING`, `_DEV` y `_TESTS`; **ninguno tiene `DATABASE_URL`, ninguno apunta a
+   producción, y no existe ningún `.env.local`**. Quien lo vuelva a medir, que lo re-feche aquí:
+   `node scripts/comprobar-claves-bd.mjs` (mapa y guard en `scripts/_clave-vs-destino.mjs`; en un
+   árbol de trabajo NO vive producción, y desde SCRUM-418 el guard lo hace cumplir por DESTINO).
+   `loadEnv.ts` sigue dando prioridad a `.env.local` **si aparece**.
 4. **Frontend vanilla** (sin React/Tailwind/bundler/build). `DESIGN.md` es la única fuente de
    tokens visuales; cambios de UI = una pantalla/componente, jamás rediseño total (Parte AB).
 5. **Estados (L), flags (P) y microcopy (N5/K1) son CERRADOS.** Lo que no está en el master

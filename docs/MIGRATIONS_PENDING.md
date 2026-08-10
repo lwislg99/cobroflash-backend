@@ -448,6 +448,118 @@ Es exactamente el 500 de SCRUM-220: código desplegado esperando una columna que
 
 ---
 
+## ⚠️ SCRUM-438 · EL DESPLIEGUE QUE ESTRENE v:3 DEL SOBRE DE FIRMA ES **DE IDA** — léelo antes de revertir
+
+> **ESTO NO ES UNA MIGRACIÓN DE SCHEMA**, y se dice con esas palabras para que nadie lo busque en
+> `information_schema`: v:3 **no toca ninguna columna** (los cinco campos caben en `evidenciaFirma`,
+> que ya es `Json?`). Está aquí porque **éste es el fichero que se lee antes de tocar producción**,
+> que es exactamente cuándo hace falta saberlo. Un documento aparte no se abre el día del rollback.
+>
+> **Escrito el 11-ago-2026, ANTES de que exista el primer sobre v:3** y antes de escribir una línea
+> de su código (propuesta aprobada con enmiendas en `docs/master/SCRUM-438.md` §3).
+
+**El escenario:** se despliega v:3 → se firma un albarán → **se revierte el código**. Ese sobre
+queda sellado con una versión que el código anterior no sabe verificar.
+
+**Qué pasa exactamente — medido el 11-ago-2026 ejecutando el código de entonces contra un sobre v:3:**
+
+| Camino | Resultado |
+| --- | --- |
+| `verificarSobre` (el ZIP de evidencias) | **`version_no_soportada`** — *«NO se aproxima con la más parecida»*. **No dice «manipulado»** |
+| `computeAlbaranContentHash(params, 3)` | **lanza** `albaran_contenido_version_desconocida:3` |
+| `scripts/atestiguar-sobres.mjs` | **`SobreIlegibleError`**: lo declara, no lo cuenta como verificado |
+| El **PDF** (vía `obraSegunVersion`) | con la enmienda 3 aplicada, **falla** en vez de imprimir un valor adivinado |
+
+**LA REGLA, y es lo único que hay que recordar:**
+
+1. **Revertir NO produce una acusación falsa.** El sobre pasa a **no verificable**, que es lo
+   correcto: «no pude mirar» y «está manipulado» salen por puertas distintas.
+2. **Se puede revertir** — pero **sabiendo** que los sobres sellados mientras tanto quedan como
+   `version_no_soportada` **hasta que se vuelva a desplegar**. Vuelven solos: no hay que hacer nada.
+3. 🔴 **JAMÁS se «arregla» reescribiendo la `v` del sobre.** Eso es alterar una evidencia emitida
+   (regla 29), y además convierte un «no puedo comprobarlo» —honesto— en un hash que no cuadra, que
+   es la acusación más grave que sabe hacer el verificador.
+
+---
+
+## SCRUM-425 · `albaranes.clave_idempotencia` + su único — ✅ APLICADO en las TRES bases (10-ago-2026)
+
+**REGISTRO de lo que se ejecutó y se verificó el 10-ago-2026.** No es una afirmación sobre el
+estado de hoy: es lo que se midió ese día, con su método.
+
+Es la columna que desbloquea **SCRUM-358 (H3)**: la clave de idempotencia del alta de albarán,
+opción 1 del informe (clave acuñada en el cliente + pregunta al constraint DENTRO del cerrojo de
+serie, forma F3 de `invoiceNumber.service.ts:115-122`).
+
+```sql
+ALTER TABLE "albaranes"
+  ADD COLUMN IF NOT EXISTS "clave_idempotencia" VARCHAR(64);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "albaranes_merchant_id_clave_idempotencia_key"
+  ON "albaranes"("merchant_id", "clave_idempotencia");
+```
+
+Fichero: `docs/sql/scrum-425-clave-idempotencia.sql`. **Aditivo y re-ejecutable** (las dos con
+`IF NOT EXISTS`): volver a correrlo sobre una base ya aplicada no hace nada y no falla.
+
+> 🔴 **EL ÍNDICE NO ES UN ACCESORIO, y por eso la verificación lo mira aparte.** El mecanismo de
+> H3 pregunta **al constraint**; sin el único, esa pregunta no tiene a quién hacerse y la columna
+> sola no impide el duplicado. **Si el índice sale 0, NO está hecho** aunque la columna esté.
+
+> ⚠️ **NOMBRES DE LA BASE (snake_case), no del modelo.** Salen de los `@@map`/`@map`, y el del
+> índice es el que **Prisma deriva** de los nombres de base — mismo patrón que
+> `charges_receipt_token_key` y `albaranes_merchant_id_invoice_id_idx`. No se «corrigen».
+
+> ⚠️ **`prisma/schema.prisma` TODAVÍA NO LO LLEVA, y es deliberado:** lo edita el fundador ahora
+> que las tres bases están. **Las bases van por delante del esquema A PROPÓSITO**, así que
+> **NO se corre `prisma migrate diff` contra ninguna** mientras dure esa ventana: propondría
+> **BORRAR** la columna. Ninguna sesión lo ha ejecutado.
+
+### Por qué `db execute` y no `db push`
+
+`db push` sincroniza la base **con el schema**, y el schema todavía no tiene la columna: le pediría
+justo lo contrario de lo que se quiere. `db execute --file` aplica **exactamente estas dos
+sentencias y nada más**. Además, `npm run db:push` y sus envoltorios están rotos (SCRUM-223).
+
+> 🔴 **Y lo que eso obliga a añadir:** `--accept-data-loss` **protege a `db push`, NO a
+> `db execute --file`** (medido en SCRUM-395). `db execute` corre lo que le des. Por eso dev se
+> aplicó con `scripts/aplicar-sql-dev.mjs`, que **lee el fichero entero, lo enseña línea a línea y
+> solo aplica las formas de una LISTA BLANCA** (`ALTER TABLE … ADD COLUMN` y
+> `CREATE [UNIQUE] INDEX`); lo que no sabe clasificar lo **rechaza**. Sus rojos corren en
+> `npm test` (`tests/scrum425-aplicador-sql-dev.test.mjs`).
+
+| Base | Host · nombre | Cómo se aplicó | Verificación |
+| --- | --- | --- | --- |
+| **Producción** | `autorack…` / `railway` | **a mano por el fundador** | ✅ **columna = 1 · índice = 1** |
+| **Staging** | `acela.proxy.rlwy.net` / `railway` | **a mano por el fundador** | ✅ **columna = 1 · índice = 1** |
+| **Dev** | `acela.proxy.rlwy.net` / `yaqu_dev_javier` (0 filas) | sesión de SCRUM-425 con `node scripts/aplicar-sql-dev.mjs --file … --go`, tras GO del fundador y con el ensayo enseñado antes | ✅ **columna = 1 · índice = 1** |
+
+**La consulta de verificación —una sola, y es la que manda.** Se lee el CATÁLOGO, nunca el mensaje
+del comando:
+
+```sql
+SELECT
+  (SELECT count(*) FROM information_schema.columns
+     WHERE table_name='albaranes' AND column_name='clave_idempotencia') AS columna,
+  (SELECT count(*) FROM pg_indexes
+     WHERE tablename='albaranes'
+       AND indexname='albaranes_merchant_id_clave_idempotencia_key') AS indice;
+```
+
+> **✋ DECLARACIÓN MANUAL PARA EL ÍNDICE (SCRUM-225).** El censo de SCRUM-222 declara que **no mira
+> índices** — solo presencia de tabla y columna. Así que ningún verde de esa herramienta dice nada
+> sobre la marca del índice: se cree bajo la palabra de quien la escribió. La **columna** sí es
+> 🔎 verificable por ese camino.
+
+**Un tropiezo del día que conviene dejar escrito:** el primer intento de aplicar a dev **no aplicó
+nada** y dijo `` `prisma db execute` terminó con código null ``. Causa: desde Node 20.12/22
+(arreglo de CVE-2024-27980) `spawn` **se niega a ejecutar un `.cmd`** sin `shell: true`, y se
+invocaba `npx.cmd`. Arreglado llamando al **JS local de Prisma con `node`** —sin shell, sin `.cmd`
+y sin riesgo de que `npx` se baje otro CLI de la red (incidente del 5-ago)— y **reportando
+`r.error`**, porque un `status: null` mudo no dice si falló la base o el lanzamiento.
+
+---
+
 ## SCRUM-300 (C5) · cuatro columnas en `albaranes` — ✅ APLICADO en las TRES bases (7-ago-2026)
 
 **REGISTRO de lo que se ejecutó y se verificó el 7-ago-2026.** No es una afirmación sobre el
