@@ -122,3 +122,114 @@ emisión.
 
 Ficheros: `scripts/_prisma-client-guard.mjs` (solo el mensaje) ·
 `tests/scrum235-cliente-por-columnas.test.mjs`.
+
+---
+
+# SCRUM-429 · segunda entrega: la regeneración automática, y por qué la ③ apenas hacía falta
+
+**Medido contra:** `origin/main` = `c47d03655aacd7fe78044f89e7c55a7d467cbb5b` · 2026-08-10T20:13:06+02:00
+**Rama:** `scrum-429-cliente-prisma`
+
+**10-ago-2026, 20:13 CEST (UTC+0200)** · commit `2edefb9c0d5327cc1f5b5a8c45937610cf82468c`
+
+## 🔴 Lo primero, porque cambia el trabajo: TRES DE LOS CUATRO YA ESTABAN AISLADOS
+
+Antes de tocar nada, miré a qué apunta cada uno de los cuatro con actividad en la última hora —como
+mandaba el encargo, sin suponerlo:
+
+| worktree | último commit | `node_modules` |
+|---|---|---|
+| `wt-226` (el mío) | 19:52 | **REAL** |
+| `wt-419` | 19:47 | **REAL** |
+| `wt-440` | 19:37 | **JUNCTION** → `cobroflash-backend` |
+| `wt-368` | 19:31 | **REAL** |
+
+**Solo uno sigue compartido, y es de otra sesión que commiteó hace un rato.** Convertirlo mientras
+esa sesión trabaja es exactamente el daño que este ticket quiere quitar: le dejaría sin
+`node_modules` a mitad de una tanda. **No lo he tocado.**
+
+## La segunda mitad, que es la que cierra las DOS causas
+
+`scripts/_prisma-sync.mjs`, **delante** del guard en `pretest`. Regenera cuando el cliente no cuadra
+con el schema de **esta** rama, y **solo si `node_modules` es propio**. La condición **se deriva**
+con `lstat` —verificado: un junction sale `isSymbolicLink: true`, un directorio real no—, así que no
+depende de que nadie recuerde en qué worktree está.
+
+Con junction **no toca nada** y dice por qué. **El guard sigue detrás**, en su proceso, y el orden
+tiene test: sincronizar después no serviría de nada, y quitar el guard dejaría el automatismo sin
+vigilante.
+
+## Causa (A), reproducida y arreglada sola — ejecutado, no razonado
+
+```
+main + cliente al día                       → guard 0
+cambio a una rama sin claveIdempotencia     → guard 1   ← nadie más tocó nada
+node scripts/_prisma-sync.mjs               → «el cliente estaba viejo … se ha regenerado solo»
+guard después                               → 0
+```
+
+**Rojo por el mecanismo:** el mismo cambio de rama **sin** el automatismo deja el guard en 1.
+
+## Dos bugs míos que cazó el propio escenario
+
+- **La re-comprobación mentía.** `comprobarCliente` lee el cliente con `import()` dinámico y **Node
+  cachea el módulo**: tras regenerar leía el viejo y el automatismo decía «sigue divergiendo» con el
+  cliente ya arreglado. Ahora **juzga el guard**, en su proceso — que además es lo correcto: el
+  veredicto lo sigue dando el mecanismo de siempre y no una copia dentro del automatismo.
+- **`spawnSync` sobre el `.cmd`** devolvía `EINVAL` en Windows, y con `shell: true` arrastraba un
+  aviso de deprecación. Se invoca el **JS del CLI local** con el `node` que ya corre: sin shell, sin
+  `npx` (que se baja `prisma@latest`, SCRUM-385) y con la versión del proyecto.
+
+## Y un hueco real en el SUELO, que salió al escribirlo
+
+Con el cliente **ausente**, el guard **lanzaba un error de ESM crudo** en vez de declararse ciego.
+**Un stack no es un diagnóstico:** quien lo ve no sabe si el guard encontró un problema o si el guard
+**es** el problema. Ahora cae en el suelo que ya existía (`sinDatos`), que falla cerrado y explica que
+no se pudo comparar.
+
+## El comando de aislamiento, para pasárselo a las cuatro
+
+Solo lo necesita quien tenga **junction**. Comprobar primero, y **el `rmdir` va SIN `/s`** — probado
+aquí mismo con un junction de juguete: **borra el enlace y deja el destino intacto**, que es lo que
+falló en los dos vaciados.
+
+```powershell
+# 1 · ¿es junction?  (vacío = ya es propio, no hagas nada)
+(Get-Item .\node_modules -Force).LinkType
+
+# 2 · quitar SOLO el enlace (NUNCA con /s: seguiría al destino)
+cmd /c rmdir ".\node_modules"
+
+# 3 · instalación propia (~413 MB)
+npm ci
+```
+
+⚠️ **Hay CADENA**: `wt-215-probe`, `wt-216-consolidar` y `wt-248-fixtures` apuntan a
+`wt-209-conflicto`, **no al principal**. Quien esté en uno de ésos tiene que mirar el paso 1 antes de
+nada.
+
+⚠️ **Espacio**: quedan **2,10 GB** libres y cada `node_modules` son **413 MB**. Caben **cuatro**
+justas (1,61 GB) y dejarían 0,49 GB. **Con más de cuatro no cabe**, y por eso la ① —privado para los
+96— sigue descartada.
+
+## La verificación que falta, dicha con sus palabras
+
+**No he podido probar el aislamiento en la dirección que falta.** Exigiría regenerar desde un
+worktree junctionado —hoy solo `wt-440`, que es de otra sesión viva— y eso rompe su cliente. Cómo se
+ejecutaría **cuando los cuatro estén aislados y ya no haya junction que romper**: anotar la marca de
+tiempo del cliente de dos de ellos, regenerar en uno, y comprobar que el otro **no cambia de marca y
+sigue en verde**.
+
+La mitad que sí está hecha: regenerar en `wt-226` (aislado) **no movió** el cliente compartido —
+`19:11:12` antes y después.
+
+## 📌 Acumulación de worktrees — anotado para cuando se ataque
+
+**96 con junction · 45 reales · 25 sin `node_modules`**, para **4 sesiones**. Y hay **cadenas**
+(tres apuntan a `wt-209-conflicto`, no al principal), que es lo que convierte cualquier limpieza en
+peligrosa: un `git worktree remove` siguió una de esas cadenas y vació el compartido. **No se limpia
+hoy**; queda medido.
+
+Ficheros: `scripts/_prisma-sync.mjs` (nuevo) · `scripts/_prisma-client-guard.mjs` ·
+`package.json` (`pretest`) · `tests/scrum429-cliente-privado.test.mjs` (nuevo) ·
+`tests/scrum235-cliente-por-columnas.test.mjs`.
