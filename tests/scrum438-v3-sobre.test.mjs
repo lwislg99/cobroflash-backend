@@ -314,7 +314,11 @@ test('SCRUM-438 · ④ 🔴 TODO O NADA: un bloque incompleto FALLA NOMBRANDO la
       assert.match(e.message, new RegExp(falta),
         `🔴 el MENSAJE no nombra «${falta}». Quien lo lea tiene que saber qué falta sin abrir el código.`);
       return true;
-    });
+    },
+    `🔴 SE HA ACEPTADO UN BLOQUE SIN «${falta}» — no ha lanzado nada. Ese hueco se leería como un ` +
+    '`undefined` sellado, y `undefined` y `null` no se distinguen en un documento firmado: `obra` ' +
+    'es `null` de verdad en todos los sobres viejos. Completar el hueco es fabricar el valor ' +
+    'sellado que no se tenía. TODO O NADA, y falla nombrando la clave.');
 
     // Y por el camino de verdad: el resolvedor y la receta, cada uno con su copia de la validación.
     assert.throws(() => contenidoSegunVersion(3, { ...EL_DIA_DE_LA_FIRMA, contenidoCongelado: cojo }),

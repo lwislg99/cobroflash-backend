@@ -511,3 +511,154 @@ para lo que sirve.
 El sellado · `computeAlbaranContentHash` · `obraSegunVersion` · las recetas congeladas · el
 verificador · el camino de emisión · `prisma/schema.prisma` · `AuditAction` · ningún `.env` ·
 **producción**.
+
+---
+
+## 3 quater · ✅ v:3 CERRADA — los cinco guards en verde, y una medición que sale bien
+
+**Medido contra:** `origin/main` = `e171c752f61231bec77dc2c22ecc7f82167d964c` · `2026-08-10T18:58:26Z`
+
+| | Antes de esta sesión | Después |
+| --- | --- | --- |
+| Tanda | 🔴 2674 tests · 2595 pasan · **5 caen** · salida **1** | ✅ 2691 tests · 2617 pasan · **0 caen** · salida **0** |
+| `guards:entrada` | — | ✅ 4 guards, 17 tests |
+
+### Los cinco guards: ninguno se relajó, a los cinco se les cambió la premisa
+
+**GRUPO A · SCRUM-371 ×2 — el reapuntado de fondo.** El invariante que fijó el asesor está escrito
+y **se deriva del árbol**, que era la duda que la sesión anterior dejó abierta:
+
+> para CADA versión, la receta lee EXACTAMENTE las fuentes que declara `FUENTES_POR_VERSION` para
+> esa versión — ni una de más, ni una de menos.
+
+Las dos listas se leen del **producto**, no del test: `RECETAS_POR_VERSION` sale del AST del
+verificador (y de ahí qué receta atiende cada versión, **no del nombre**: `recetaV3` apuntada al 4
+por error es justo lo que un guard que confía en los nombres no vería) y `FUENTES_POR_VERSION` del
+módulo de declaración. Se exige además que **las dos hablen de las mismas versiones**. Con eso una
+v:4 entra sola en la comparación, y entra **en rojo** hasta que su receta y su declaración digan lo
+mismo: **no caduca**.
+
+Y la comparación vieja —adaptador contra sellador— **no se retiró**. Se reapuntó al bloque
+congelado, que es donde el sellador resuelve hoy los cinco: sigue cazando un `||` cambiado por un
+`??`, que es lo que acusaría de manipulación a **toda la población v:1/v:2 de golpe**. La pareja de
+cada clave se **deriva** (la versión más alta que todavía la lee en vivo), no se escribe a mano.
+
+Dos guards nuevos que antes no existían: el adaptador **entrega** todas las fuentes que alguna
+receta declara, y el bloque congelado le llega **DESDE EL SOBRE** — no reconstruido de filas vivas.
+Sin ese segundo, alguien podía devolver el defecto de SCRUM-431 a v:3 **en verde**.
+
+**GRUPO B · las tres premisas caducadas.** A ninguna se le cambió un 2 por un 3:
+
+* **SCRUM-374** pineaba *«la obra sale de `Albaran.lugarEntrega`»*, que era la **v:2 disfrazada de
+  invariante**. El defecto que ese ticket cerró nunca fue ése: era que **la versión de hoy no puede
+  leer `Job.direccion`**. Eso es lo que pinea ahora, y se cara además contra la sonda de SCRUM-424.
+* **SCRUM-415 · SUELO** ya derivaba el número de versiones; lo que le faltaba eran unas fuentes que
+  ejercieran el delta. Ahora llevan el bloque, con valores **distintos** de los vivos a propósito.
+* **SCRUM-424 · R4** no era un test caducado: **la sonda LANZABA** (ver abajo).
+
+### 🔴 Dos defectos VIVOS que salieron al cerrar los guards — no son mejoras de paso
+
+**① `versionLeeJobDireccion` reventaba con un sobre v:3.** Llamaba al resolvedor con dos sondas y
+sin bloque, así que un Trabajo con un albarán v:3 firmado hacía que **la ruta que escribe la
+dirección devolviera 500**. Ahora la sonda aporta un bloque con un **tercer** valor, y —decisión que
+hay que saber— **una versión que el resolvedor NO conoce se responde `true` (depende → no se
+escribe)**. No es simetría: negarse a escribir es un 409 que alguien resuelve mirando; escribir
+sobre una firma que sí dependía deja esa firma sin poder verificarse, y eso no se deshace (regla 29).
+
+**② El `??` que rompía la CONDICIÓN DURA.** `contenidoSegunVersion` colapsaba las fuentes vivas con
+`?? null` donde el `obraSegunVersion` al que sustituye usaba `|| null`. **Medido: 12 de 36
+combinaciones divergían.** Las dos consecuencias, las dos malas:
+
+* el PDF de un albarán **v:1 o v:2** con una fuente vacía imprimiría la cadena vacía donde hoy no
+  imprime nada — *«ni un carácter»*, dice la condición dura;
+* `recomputarHashDeEvidencia` sacaría **otro hash sobre un documento intacto**, porque el
+  verificador sí colapsa con `||` en `normalizar()`. Los dos testigos habrían dejado de estar en
+  fase sin que ninguna prueba lo dijera.
+
+Es exactamente lo que avisa el comentario del propio sellador. Restaurado en tres sitios —el
+resolvedor, `contenidoCongelado.obra` del sellador y el adaptador— con el motivo escrito al lado.
+El del sellador importa: v:2 resolvía `obraSegunVersion(2, { lugarEntrega: a.lugarEntrega ?? null })`
+y **esa función colapsaba con `||`**, así que el efecto era `a.lugarEntrega || null`. Con `??` a
+secas, un lugar de entrega vacío se **congelaría** como cadena vacía donde v:2 congelaba `null`.
+
+### ✅ LA MEDICIÓN · ¿está la `v` dentro del contenido que se hashea? **SÍ, y está atada**
+
+Calculada, no deducida del orden de claves. **No hay hueco que declarar aquí:**
+
+| Comprobación | Resultado |
+| --- | --- |
+| Un albarán cuyos cinco campos vivos **NO** han cambiado, mismo contenido, dos recetas | `recetaV2` = `03ca0042…` · `recetaV3` = `7cfb5a6d…` → **DISTINTOS** |
+| Se baja la `v` guardada de 3 a 2 **sin tocar nada más** | ✅ **`hash_de_otra_version`**, y lo NOMBRA: *«el sobre declara v:2, pero su hash es EXACTAMENTE el que da la receta de v:3 … se selló con v:3 y se guardó v:2»* |
+| El serializado, rehecho **a mano** sin importar nada del verificador | empieza por la clave `v` y da el mismo hash; quitándosela, **se mueve** (control) |
+
+La cita: en `albaranVerificacion.ts`, `v: 1` / `v: 2` / `v: 3` es la **primera clave** de cada objeto
+serializado, y lo mismo en `contenidoCanonico` del sellador. Las dos consecuencias que se temían
+—que el bucle cruzado no distinga la receta, y que la `v` guardada no esté protegida— **no se dan**.
+Queda con test propio, para que siga siendo verdad.
+
+### Lo que falta de tests: hecho — `tests/scrum438-v3-sobre.test.mjs` (12) + ⑦ en SCRUM-415 (2)
+
+* ① **sellar en v:3 → cambiar los CINCO campos vivos → SIGUE CUADRANDO.** Con suelo (que los cinco
+  cambien de verdad) y **control negativo**: tocar una nota del documento firmado sigue saliendo
+  `hash_no_coincide`. Y el otro lado: tocar el bloque del sobre **tiene** que caer.
+* ② el mismo escenario en v:1/v:2 **no mejora ni empeora**, y su `dato_vivo_cambiado` sigue saliendo
+  cuando corresponde. En **v:3 ese bucle no puede cumplirse**, y se mide en vez de razonarse.
+* ③ **CONDICIÓN DURA**: las 36 combinaciones de v:1, v:2 y sin-firmar contra el comportamiento de
+  ayer **transcrito a mano** (no importado: un test que compara el código de hoy contra el código de
+  hoy no puede fallar). Con suelo que exige ver **≥12** diferencias contra un «ayer» con `??`.
+  Y las recetas de v:1 y v:2 **ignoran** el bloque: un sobre viejo no cambia de veredicto.
+* ④ **rojos por el mecanismo**: el bloque incompleto falla **nombrando cada una de las cinco
+  claves**, por los **cuatro** caminos (validador, resolvedor, receta y **sellador**); el resolvedor
+  **lanza** con `4`, `99`, `0`, `-1`, `NaN` e `Infinity`, con el control de que `null`/`undefined`
+  (sin firmar) **no** lanzan.
+* ⑦ el bucle cruzado con **tres** recetas: las **N×(N−1)** parejas, no una muestra, con el control de
+  que una manipulación de verdad sigue siendo `hash_no_coincide` pese a tener tres sondeos donde
+  colarse.
+
+### Los seis rojos probados POR MUTACIÓN, cada uno con post-condición en disco
+
+Toda mutación comprueba que **cambió el fichero que se dice** antes de correr la tanda: una
+inyección que no llega al disco es una prueba **no ejecutada**, no una superada.
+
+| Mutación | Cae diciendo |
+| --- | --- |
+| una fuente **viva** colada en `recetaV3` | *«v:3 (recetaV3) lee DE MÁS: cliente»* (+3 tests más) |
+| el sellador congela `obra` con `??` | *«lugarEntrega: barrido «a.lugarEntrega ǁ null» ≠ contenidoCongelado.obra «a.lugarEntrega ?? null»»* |
+| el resolvedor vuelve a `??` | *«EL PDF DE UN ALBARÁN VIEJO IMPRIMIRÍA OTRA COSA»* + las 12 líneas divergentes |
+| el adaptador **reconstruye** el bloque de filas vivas | *«sale de «{ obra: a.lugarEntrega…}» y no de `evidenciaFirma`»* |
+| el bloque se completa en vez de fallar | *«SE HA ACEPTADO UN BLOQUE SIN «obra» — no ha lanzado nada»* |
+| la versión desconocida vuelve a adivinar | *«una versión de sobre DESCONOCIDA se está tratando como “no depende del Trabajo”»* |
+
+### 🔴 HUECOS DECLARADOS — lo que NO se construyó, y por qué
+
+**① El PDF resuelve los cinco pero solo consume DOS.** El traspaso de la sesión anterior daba la
+pieza ⑤ por completa con *«el PDF lee los cinco por él»* ✅, y **no es exacto**: `ensureAlbaranPdf`
+pasa las seis fuentes al despachador pero solo usa `obra` y `referenciaTrabajo`. **`cliente`,
+`emisor` y `emisorNif` siguen imprimiéndose en vivo**, por los objetos `customer` y `merchant`.
+
+*Consecuencia concreta:* en un albarán **v:3** cuyo cliente cambie de razón social después de
+firmar, el PDF imprimirá la razón social **nueva** mientras el sello certifica la **antigua**. La
+firma sigue verificando —ése es el trabajo de v:3— pero **el papel y el sello dejan de decir lo
+mismo** en esos tres campos.
+
+*Por qué no se arregla aquí:* esos objetos llevan también `taxId` del cliente y `address`,
+`logoUrl` y `whatsappPhone` del emisor, que **no están entre los cinco**, así que no se pueden
+sustituir enteros. Decidir qué campos del papel vienen del sobre y cuáles de la fila de hoy es una
+decisión **sobre el documento**, y ésa la toma el asesor. Queda escrito **en el código**, junto a la
+línea, además de aquí.
+
+**② Lo que NO verifiqué:** nada se ha ejecutado contra una base de datos. `buildFirmaEvidencia` y
+`ensureAlbaranPdf` tocan `prisma` y aquí se prueban por sus piezas puras (`computeAlbaranContentHash`
+y `contenidoSegunVersion`), no de extremo a extremo. **No existe todavía ningún sobre v:3**, ni en
+dev ni en staging ni en producción: el primero nacerá con el despliegue. Tampoco se ha mirado
+yaqu.app: esta entrega no toca ninguna superficie.
+
+**③ `recomputarHashDeEvidencia` no sabe verificar un v:3.** Llama a `obraSegunVersion(ev.v, …)` sin
+pasarle el bloque, así que con un sobre v:3 **lanzaría**. Sigue sin tener llamadores fuera de su
+fichero (medido en el §3 ter y vuelto a mirar), y el camino vivo —el ZIP de evidencias y el
+barrido— va por `verificarSobre`, que sí lo lleva. Es una **trampa cargada**, no una herida abierta:
+se declara para que quien le dé un llamador sepa que hay que aportarle el bloque.
+
+**④ `jobDireccion.ts` sale como BINARIO en el diff.** Sus valores de sonda llevan un byte `NUL`
+dentro (ya estaba así antes de esta sesión), y git no muestra el diff de un fichero con NUL. Su
+cambio va enumerado en el informe porque en el PR **no se puede leer**.

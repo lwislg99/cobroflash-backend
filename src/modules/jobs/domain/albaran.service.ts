@@ -796,6 +796,23 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
     // pasar por ningún despachador. Con v:3 sellándolos, arreglar solo `obra` habría dejado el
     // mismo defecto en cuatro campos.
     //
+    // ⚠️ Y AQUÍ SE ARREGLAN DOS DE LOS CINCO, NO LOS CINCO. Que quede escrito, porque un comentario
+    // que promete una protección que no existe es peor que no tenerlo:
+    //
+    //   · `obra` y `referenciaTrabajo` SÍ salen del despachador — son escalares y el PDF los recibe
+    //     tal cual, así que sustituirlos por lo sellado no cambia nada más.
+    //   · 🔴 `cliente`, `emisor` y `emisorNif` SIGUEN IMPRIMIÉNDOSE EN VIVO, por los objetos
+    //     `customer` y `merchant` de más arriba. No es un olvido: esos objetos llevan también
+    //     `taxId` del cliente, `address`, `logoUrl` y `whatsappPhone` del emisor, que NO están entre
+    //     los cinco, así que no se pueden sustituir enteros. Decidir cuáles de sus campos vienen del
+    //     sobre y cuáles de la fila de hoy es una decisión sobre el papel, y ésa la toma el asesor.
+    //
+    //   Consecuencia concreta, para que nadie tenga que deducirla: en un albarán **v:3** cuyo
+    //   cliente cambie de razón social después de firmar, el PDF imprimirá la razón social NUEVA
+    //   mientras el sello certifica la ANTIGUA. La firma sigue verificando —ése es el trabajo de
+    //   v:3— pero el papel y el sello dejan de decir lo mismo en esos tres campos. Declarado en
+    //   `docs/master/SCRUM-438.md` (§3 quater, huecos).
+    //
     // Sin firmar (`v` undefined) manda el campo de hoy: es un borrador, no una versión rara.
     ...(() => {
       const sellado = contenidoSegunVersion((albaran.evidenciaFirma as any)?.v, {
