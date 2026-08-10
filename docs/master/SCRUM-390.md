@@ -111,8 +111,14 @@ la puerta se abre **avisa al fundador por WhatsApp** con la Meta Cloud API que e
 
 Añadida a la lista que el aviso nombra, con su dato medido: el panel de Railway dice hoy, literal,
 **«No Backups — this service's volume does not have any backups»**, y PITR solo existe en el plan
-Pro. **Cero copias del proveedor, cero copias propias ejecutándose (0 invocaciones, probado), cero
-fuera de la infraestructura y ningún camino de restauración.**
+Pro. **Cero copias del proveedor, cero copias propias ejecutándose (0 invocaciones, probado) y ninguna
+fuera de la infraestructura.**
+
+⚠️ **Corregido el 10-ago:** el motivo decía además «ningún camino de restauración», y eso **ya no
+es cierto** — la sesión 4 probó la restauración contra la base desechable y existen §R14 y
+`scripts/backup-restore.mjs`. La cláusula **sigue abierta** por su otra mitad, que no se ha movido:
+**el fichero del que volver no existe**, porque nadie dispara el volcado. Se corrige porque un
+motivo que exagera se descarta entero el día que alguien comprueba una de sus partes.
 
 Hoy no urge **porque los datos de producción son desechables** — la misma regla fechada que esta
 puerta vigila. El día que la puerta se abra es **letal**, y además **incumplimiento fiscal**: las

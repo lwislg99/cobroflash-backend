@@ -29,11 +29,18 @@ export const CLAUSULAS_DEPENDIENTES = Object.freeze([
   'SCRUM-402 — el rótulo de Bizum necesita microcopy aprobada ANTES de encender la bandera',
   // SCRUM-242 · Medido: el panel de Railway dice hoy, literal, «No Backups — this service's volume
   // does not have any backups», y PITR solo existe en el plan Pro. Cero copias del proveedor, cero
-  // copias propias ejecutándose (0 invocaciones, probado), cero fuera de la infraestructura y
-  // ningún camino de restauración. Hoy no urge porque los datos de producción son desechables; el
-  // día que la puerta se abra es LETAL — y además incumplimiento fiscal, porque las facturas
-  // emitidas y los albaranes firmados hay obligación de conservarlos.
-  'SCRUM-242 — hay copia de seguridad de la base y sabemos restaurarla (hoy: NINGUNA)',
+  // copias propias ejecutándose (0 invocaciones, probado) y ninguna fuera de la infraestructura.
+  //
+  // ⚠️ CORREGIDO EL 10-AGO: el camino de VUELTA ya no falta. La restauración está probada contra
+  // la base desechable y existen §R14 y `scripts/backup-restore.mjs`. La cláusula sigue abierta por
+  // su OTRA mitad, que es la que no se ha movido: **el fichero del que volver no existe** — nadie
+  // dispara el volcado. Se dice así de exacto a propósito: un motivo que exagera se descarta
+  // entero el día que alguien comprueba una de sus partes.
+  //
+  // Hoy no urge porque los datos de producción son desechables; el día que la puerta se abra es
+  // LETAL — y además incumplimiento fiscal, porque las facturas emitidas y los albaranes firmados
+  // hay obligación de conservarlos.
+  'SCRUM-242 — hay copia de seguridad de la base (restaurar ya está probado; la COPIA no existe)',
 ]);
 
 export interface ResultadoAviso {
