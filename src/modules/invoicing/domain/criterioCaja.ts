@@ -9,7 +9,23 @@
 // facturador normal solo puede ofrecer la casilla, porque no sabe cuándo cobras. Nosotros tenemos
 // el cobro dentro… **pero no la fecha en que entró el euro**:
 //
-//     paidAt: new Date()   ← medido en TRES sitios de `src` (psp.routes ×2, mpWebhook.routes)
+//     paidAt: new Date()   ← CINCO sitios de `src`, no tres (corregido en SCRUM-397, 10-ago-2026)
+//
+// 🔴 AQUÍ PONÍA «TRES», Y ERA FALSO. Los cinco, censados por AST:
+//
+//     mpWebhook.routes.ts:142 · psp.routes.ts:121 · psp.routes.ts:167  ← webhooks: CORRECTO,
+//         el aviso llega en el momento del cobro;
+//     invoicesAdmin.routes.ts:373  ← marcado MANUAL EN LOTE. **Era la víctima**, y faltaba;
+//     invoicesAdmin.routes.ts:907  ← nace una R1 (camino de emisión, otro asunto).
+//
+// Que faltara justo el manual no es casual: el recuento corto se escribió mirando los webhooks, que
+// son los fáciles de encontrar. Y **un censo equivocado escrito en un comentario se hereda como si
+// fuera medida** — éste se citó como dato en el encargo de SCRUM-397 y llegó así a otra sesión. El
+// número vive vigilado desde entonces: `tests/scrum397-fecha-real-de-cobro` falla si el censo ve
+// menos de cinco.
+//
+// ⚠️ Y el de :373 YA NO usa el reloj: desde SCRUM-397, `POST /bulk-paid` guarda la fecha que declara
+// la persona. Los tres webhooks siguen con `new Date()` a propósito.
 //
 // Eso es el instante en que **alguien lo marcó**, no el instante en que el dinero entró. Y tres de
 // las cinco formas de cobro se marcan a mano.
