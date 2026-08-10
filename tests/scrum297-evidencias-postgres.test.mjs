@@ -11,6 +11,7 @@
 // base terminada en `_test`, y si no, FALLA en vez de saltarse.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { porQueNoCuadra as diagnosticarSello } from './_diagnostico-sello.mjs';
 import crypto from 'node:crypto';
 import { parseBDSegura } from '../scripts/_db-guard.mjs';
 import { withMerchant } from './_merchant-fixture.mjs';
@@ -77,58 +78,28 @@ test('SCRUM-297 · el paquete de evidencias: suelo, tenencia y los dos controles
       ),
     });
 
-    /**
-     * ¿POR QUÉ no cuadra este sello? Contesta NOMBRANDO LA VERSIÓN.
-     *
-     * 🔴 El rojo que precedió a este arreglo decía solo «hash_no_coincide», que es verdad y no
-     * sirve: manda a quien lo lee a sospechar del verificador, del contenido o de la fixture, sin
-     * distinguir cuál. Localizar que la causa era la VERSIÓN costó reconstruir el razonamiento
-     * entero. Un rojo mudo obliga al siguiente a repetir ese trabajo.
-     *
-     * Así que aquí se prueba el hash guardado contra TODAS las versiones que el verificador sabe
-     * recalcular: si alguna lo reproduce y NO es la declarada, la discrepancia está demostrada —no
-     * deducida— y se dice con las dos versiones por su número.
-     */
-    // ⚠️ Se prueba cada versión con las TRES resoluciones posibles de `obra`, no solo con la suya.
-    // El fallo histórico sellaba en v:2 pero con la `obra` de v:1 (`Job.direccion` escrita a mano),
-    // así que buscar únicamente «v:2 con su propia obra» NO lo habría reproducido y el diagnóstico
-    // se habría rendido con un «el contenido no es el que se firmó» — verdad a medias que vuelve a
-    // esconder la versión, que es justo lo que hay que dejar de esconder.
-    const porQueNoCuadra = (sobre, fuentes) => {
-      const encajes = [];
-      for (const v of versionesSoportadas()) {
-        for (const [deDonde, obra] of [
-          ['la columna que manda en esa versión', obraSegunVersion(v, fuentes)],
-          ['`Job.direccion` (la fuente de v:1)', fuentes.jobDireccion ?? null],
-          ['`Albaran.lugarEntrega` (la fuente de v:2)', fuentes.lugarEntrega ?? null],
-        ]) {
-          if (computeAlbaranContentHash({ ...fuentes, obra }, v) === sobre.contentHash) {
-            encajes.push({ v, deDonde });
-          }
-        }
-      }
-      const versiones = [...new Set(encajes.map((e) => e.v))];
-
-      if (versiones.length && !versiones.includes(sobre.v)) {
-        return `DISCREPANCIA DE VERSIÓN: el sobre DECLARA v:${sobre.v} pero su contentHash se SELLÓ `
-          + `con v:${versiones.join(' o v:')} —tomando «obra» de ${encajes[0].deDonde}—, y el defecto `
-          + `del sellador es hoy v:${ALBARAN_CONTENIDO_VERSION_ACTUAL}. El verificador está BIEN: `
-          + `recalcula con la regla de la versión que el sobre declara (v:${sobre.v}). Lo que miente `
-          + 'es la FIXTURE, que sella con una versión y declara otra. Se arregla en la fixture, '
-          + 'JAMÁS relajando el verificador ni el despacho por versión.';
-      }
-      if (versiones.includes(sobre.v)) {
-        return `la versión NO es el problema: el SELLADOR sí reproduce este hash en v:${sobre.v} `
-          + `tomando «obra» de ${encajes.find((e) => e.v === sobre.v).deDonde}, y aun así el `
-          + 'VERIFICADOR dice que no cuadra. Los dos testigos discrepan sobre el mismo sobre, así '
-          + 'que o el contenido que llega al verificador no es el que se selló, o alguien ha tocado '
-          + `la receta de v:${sobre.v} —CONGELADA justo para que esto no pase—. Mira el diff de `
-          + '`albaranVerificacion.ts` antes que nada.';
-      }
-      return `el contentHash del sobre v:${sobre.v} no lo reproduce NINGUNA versión soportada `
-        + `(v:${versionesSoportadas().join(', v:')}) con ninguna de las dos fuentes de «obra»: `
-        + 'aquí no hay discrepancia de versión, el contenido no es el que se firmó.';
-    };
+    // ── EL DIAGNÓSTICO VIVE FUERA (SCRUM-438) ───────────────────────────────────────────
+    //
+    // Estaba escrito aquí dentro y SE ROMPIÓ al estrenar v:3: pide «obra» para TODAS las
+    // versiones soportadas, y v:3 la toma de un bloque congelado que estas fuentes —que sellan
+    // v:1 y v:2— no traen. Lanzaba, y lo hacía desde el MENSAJE de un assert que iba a PASAR:
+    // en JS el mensaje se construye antes de evaluar la condición, así que un diagnóstico roto
+    // tumba un test que estaba bien.
+    //
+    // 🔴 Este fichero está gateado por LIBRO_PG_URL, así que la tanda local lo saltaba y el CI
+    // fue lo primero que lo pisó. Por eso el diagnóstico se ha sacado a `_diagnostico-sello.mjs`:
+    // allí se prueba SIN banco (ver `scrum438-v3-sobre.test.mjs`), que es la lección de
+    // SCRUM-419 — el guard que vigila a los gateados no puede estar gateado él mismo.
+    //
+    // Lo que hace, sin cambios: prueba el hash guardado contra TODAS las versiones que el
+    // verificador sabe recalcular y con las TRES resoluciones posibles de «obra», para poder
+    // decir «esto es una discrepancia de VERSIÓN» en vez de un «hash_no_coincide» mudo. Lo que
+    // SÍ cambia: una versión que no se puede probar con estas fuentes se DECLARA en vez de
+    // reventar, y en vez de contarse como «no encaja».
+    const porQueNoCuadra = (sobre, fuentes) => diagnosticarSello(sobre, fuentes, {
+      versionesSoportadas, obraSegunVersion, computeAlbaranContentHash,
+      versionActual: ALBARAN_CONTENIDO_VERSION_ACTUAL,
+    });
 
     try {
       await withMerchant(prisma, { name: `QA A7 MIO ${SELLO}`, email: `a7.${SELLO}@qa.invalid`, taxId: 'B00000000' }, async (mio) => {

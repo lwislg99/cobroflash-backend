@@ -37,6 +37,7 @@ import {
   verificarSobre,
   versionesSoportadas,
 } from '../dist/modules/jobs/domain/albaranVerificacion.js';
+import { porQueNoCuadra } from './_diagnostico-sello.mjs';
 import {
   contenidoSegunVersion,
   validarContenidoCongelado,
@@ -459,4 +460,149 @@ test('SCRUM-438 · la versión ACTUAL es la que este fichero prueba, y la declar
   assert.ok(versionesSoportadas().includes(ALBARAN_CONTENIDO_VERSION_ACTUAL),
     '🔴 el verificador no sabe recalcular la versión que el sellador emite: cada sobre nuevo ' +
     'nacería como `version_no_soportada`.');
+});
+
+// ── ⑥ EL DIAGNÓSTICO DEL SELLO NO PUEDE REVENTAR POR UNA VERSIÓN NUEVA ───────────────────
+//
+// 🔴 ESTE BLOQUE EXISTE PORQUE EL CI CAZÓ LO QUE LA TANDA LOCAL NO PODÍA CAZAR.
+//
+// `porQueNoCuadra` es el diagnóstico que explica por qué un sello no cuadra NOMBRANDO la versión,
+// en vez del `hash_no_coincide` mudo que costó media mañana en SCRUM-415. Vivía dentro de
+// `scrum297-evidencias-postgres.test.mjs`, que está gateado por `LIBRO_PG_URL`.
+//
+// Al estrenar v:3 empezó a LANZAR: recorre `versionesSoportadas()` pidiendo «obra» a cada una, y
+// v:3 la toma del bloque congelado del sobre — que unas fuentes de v:1/v:2 no traen. Y lanzaba
+// desde el MENSAJE de un assert que iba a PASAR, porque en JS el mensaje se construye antes de
+// evaluar la condición: un diagnóstico roto tumbaba un test que estaba bien.
+//
+// Estos tests corren SIN banco a propósito. Es la lección de SCRUM-419: el guard que vigila a los
+// gateados no puede estar gateado él mismo, o volvemos al mismo sitio con la v:4.
+
+/** Un recetario falso con N versiones, para no depender de cuántas haya hoy. */
+function apiFalsa(versiones, { lanzaEn = [], hashDe = () => 'no-encaja' } = {}) {
+  return {
+    versionesSoportadas: () => versiones,
+    obraSegunVersion: (v, f) => {
+      if (lanzaEn.includes(v)) throw new Error(`version_pide_bloque:${v}`);
+      return v === 1 ? (f.jobDireccion || null) : (f.lugarEntrega || null);
+    },
+    computeAlbaranContentHash: (f, v) => {
+      if (lanzaEn.includes(v)) throw new Error(`version_pide_bloque:${v}`);
+      return hashDe(f, v);
+    },
+    versionActual: versiones[versiones.length - 1],
+  };
+}
+
+const FUENTES_SIN_BLOQUE = Object.freeze({
+  ...DOCUMENTO, ...EL_DIA_DE_LA_FIRMA,   // las de un albarán v:1/v:2: NO traen bloque congelado
+});
+
+test('SCRUM-438 · ⑥ 🔴 el diagnóstico NO revienta cuando una versión pide un dato que no está', () => {
+  // Éste es el rojo del CI, capturado y sin banco. Antes: `ContenidoCongeladoIncompletoError`.
+  const api = apiFalsa([1, 2, 3], { lanzaEn: [3] });
+  let texto;
+  assert.doesNotThrow(
+    () => { texto = porQueNoCuadra({ v: 2, contentHash: 'ab'.padEnd(64, '0') }, FUENTES_SIN_BLOQUE, api); },
+    '🔴 EL DIAGNÓSTICO LANZA. Es lo que tumbó el CI: una función que existe para EXPLICAR un fallo ' +
+    'no puede convertirse ella misma en el fallo. Y como se invoca desde el mensaje de un assert, ' +
+    'se lleva por delante tests que estaban pasando.',
+  );
+
+  // 🔴 Y EL SUELO, que es la mitad que importa: no basta con no reventar. Una versión que no se
+  // pudo probar tiene que DECLARARSE, o el diagnóstico diría «no encaja con ninguna» habiendo
+  // mirado dos de tres — una mentira con forma de conclusión.
+  assert.match(texto, /NO SE PUDIERON PROBAR/,
+    `🔴 el diagnóstico no declara la versión que no pudo probar. Dice: «${texto}»`);
+  assert.match(texto, /v:3/, '🔴 no NOMBRA cuál se quedó sin probar');
+  assert.match(texto, /version_pide_bloque/, '🔴 no dice POR QUÉ no se pudo probar');
+  assert.doesNotMatch(texto, /ninguna de las versiones que SÍ se pudieron probar \(v:1, v:2, v:3\)/,
+    '🔴 está contando v:3 entre las probadas y no la probó: «no encaja» y «no se pudo mirar» han ' +
+    'vuelto a ser el mismo número.');
+});
+
+test('SCRUM-438 · ⑥ CONTROL POSITIVO: cuando SÍ puede probarlas todas, no declara huecos', () => {
+  // Sin esto, el test de arriba pasaría igual con un diagnóstico que gritara «no pude probar nada»
+  // siempre. Una lista de huecos que nunca está vacía no informa de nada.
+  const api = apiFalsa([1, 2, 3]);
+  const texto = porQueNoCuadra({ v: 2, contentHash: 'ab'.padEnd(64, '0') }, FUENTES_SIN_BLOQUE, api);
+  assert.doesNotMatch(texto, /NO SE PUDIERON PROBAR/,
+    `🔴 declara huecos sin haberlos: «${texto}»`);
+  assert.match(texto, /v:1, v:2, v:3/,
+    '🔴 no dice que probó las tres. El control positivo del suelo va DENTRO de este mismo test.');
+});
+
+test('SCRUM-438 · ⑥ el diagnóstico SIGUE cazando la discrepancia de VERSIÓN, que es para lo que existe', () => {
+  // El control que impide que «no reventar» se haya conseguido a base de no diagnosticar nada.
+  // Un sobre que declara v:1 pero cuyo hash lo reproduce v:2: el caso de SCRUM-415.
+  const HASH = 'cafe'.padEnd(64, '0');
+  const api = apiFalsa([1, 2, 3], { lanzaEn: [3], hashDe: (_f, v) => (v === 2 ? HASH : 'otro') });
+  const texto = porQueNoCuadra({ v: 1, contentHash: HASH }, FUENTES_SIN_BLOQUE, api);
+
+  assert.match(texto, /DISCREPANCIA DE VERSIÓN/,
+    `🔴 ya no distingue una discrepancia de versión de una manipulación: «${texto}»`);
+  assert.match(texto, /DECLARA v:1/, '🔴 no dice qué versión declara el sobre');
+  assert.match(texto, /se SELLÓ con v:2/, '🔴 no dice con cuál cuadra de verdad');
+  // Y el hueco se arrastra también aquí: da igual qué rama se dispare, quien lo lea tiene que
+  // saber si el diagnóstico miró todo o solo una parte.
+  assert.match(texto, /NO SE PUDIERON PROBAR/,
+    '🔴 en esta rama se pierde el aviso de lo que no se pudo probar');
+});
+
+test('SCRUM-438 · ⑥ y con el recetario DE VERDAD tampoco revienta', () => {
+  // Lo de arriba usa un recetario falso para no depender de cuántas versiones haya hoy. Esto usa
+  // el de verdad: si mañana nace v:4 leyendo otra fuente que estas fuentes no traen, cae aquí.
+  const api = {
+    versionesSoportadas, obraSegunVersion, computeAlbaranContentHash,
+    versionActual: ALBARAN_CONTENIDO_VERSION_ACTUAL,
+  };
+  assert.ok(versionesSoportadas().length >= 3,
+    `🔴 SUELO: el recetario despacha ${versionesSoportadas().length} versión(es). Con menos de tres ` +
+    'este test no ejerce lo que dice ejercer.');
+
+  let texto;
+  assert.doesNotThrow(
+    () => { texto = porQueNoCuadra({ v: 2, contentHash: 'ab'.padEnd(64, '0') }, FUENTES_SIN_BLOQUE, api); },
+    '🔴 con el recetario REAL y unas fuentes de v:1/v:2, el diagnóstico revienta. Es exactamente el ' +
+    'rojo que el CI encontró en `scrum297-evidencias-postgres`.',
+  );
+  assert.match(texto, /NO SE PUDIERON PROBAR[\s\S]*v:3/,
+    `🔴 v:3 no se puede probar con fuentes sin bloque, y el diagnóstico no lo declara: «${texto}»`);
+
+  // CONTROL: con el bloque puesto, v:3 SÍ se prueba y el hueco desaparece. Si no, lo de arriba
+  // estaría midiendo que el aviso sale siempre.
+  const conBloque = porQueNoCuadra({ v: 2, contentHash: 'ab'.padEnd(64, '0') },
+    { ...FUENTES_SIN_BLOQUE, contenidoCongelado: BLOQUE_SELLADO }, api);
+  assert.doesNotMatch(conBloque, /NO SE PUDIERON PROBAR/,
+    `🔴 con el bloque puesto sigue diciendo que no pudo probar v:3: «${conBloque}»`);
+});
+
+test('SCRUM-438 · ⑥ 🔴 y un sobre v:3 sin bloque se DECLARA por el camino del ZIP, no revienta', () => {
+  // La otra mitad, y es una decisión de diseño MIRADA, no por omisión: `validarContenidoCongelado`
+  // LANZA, y eso está bien donde lanza —al SELLAR y al imprimir, porque completar el bloque con
+  // nulos fabricaría el valor sellado que no se tenía—. Pero el camino del ZIP de evidencias no
+  // puede explotar: el profesional tiene que poder descargarse su prueba aunque un sobre esté raro.
+  //
+  // Los dos comportamientos ya conviven y están bien repartidos. Esto lo fija para que siga así.
+  const r = verificarSobre({
+    evidencia: { v: 3, hashAlg: 'sha256', contentHash: 'ab'.padEnd(64, '0') },
+    contenido: { ...FUENTES_SIN_BLOQUE },      // v:3 declarado y SIN bloque
+  });
+  assert.equal(r.cuadra, false);
+  assert.equal(r.motivo, 'error_al_recalcular',
+    `🔴 un sobre v:3 sin bloque sale como «${r.motivo}». No es una manipulación demostrada: es que ` +
+    'no se pudo mirar, y decirlo como manipulación acusa de falsificación a un documento que nadie ' +
+    'ha podido comprobar.');
+  assert.match(r.mensaje, /no se pudo mirar/,
+    '🔴 el mensaje no distingue «no pude comprobarlo» de «está manipulado»');
+
+  // 🔴 Y EL CONTROL QUE LO HACE UN CASO IMPOSIBLE, NO UNO TOLERADO: el SELLADOR no deja nacer un
+  // v:3 sin bloque. La barrera está en la puerta de entrada; la de salida solo tiene que saber
+  // contarlo si alguna vez llegara uno.
+  assert.throws(
+    () => computeAlbaranContentHash({ ...FUENTES_SIN_BLOQUE, obra: null }, 3),
+    { name: 'ContenidoCongeladoIncompletoError' },
+    '🔴 EL SELLADOR ACEPTA SELLAR UN v:3 SIN BLOQUE. Entonces el sobre imposible de arriba deja de ' +
+    'ser imposible y pasa a ser un albarán firmado que nadie puede verificar nunca.',
+  );
 });
