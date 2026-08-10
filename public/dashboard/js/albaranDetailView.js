@@ -103,6 +103,53 @@ const ROTULOS_ALBARAN = {
 // nuestro, no suyo. Él necesita saber qué tiene delante.
 const COPY_DUPLICADO_CREADO = 'Duplicado creado. Trae las líneas y las notas del original; la firma y las fotos no se copian nunca.';
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-460 · LOS DOS TEXTOS DE «SIN COBERTURA» — PENDIENTES DE APROBACIÓN (regla 30)
+//
+// Se dejan como marcador a propósito: la microcopy la aprueba el asesor, y ponerla «provisional»
+// es como se cuela un texto sin aprobar. Lo que SÍ está construido y probado es el MECANISMO —que
+// aquí se dice algo en vez de dejar una pantalla en blanco—, y el test afirma eso, no las palabras.
+//
+// LA CAJA, MEDIDA CON EL CSS REAL para poder proponer con números:
+//   `.view-container` padding 12 px a cada lado (≤768 px) + `.alert` padding 14 px a cada lado
+//   → ancho útil: **338 px a 390** · **268 px a 320**
+//   `.alert` font-size 13,5 px · line-height 1,5 → **~20 px de alto por línea**
+//   Con Inter a 13,5 px (avance medio ~0,50 em ≈ 6,8 px/carácter): **~49 caracteres/línea a 390**
+//   y **~39 a 320**.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+const COPY_ALBARAN_SIN_PRECARGA = '[PENDIENTE microcopy oficial · albarán no precargado y sin cobertura]';
+const COPY_SIN_RED_NO_SE_CREA = '[PENDIENTE microcopy oficial · no se pueden crear albaranes sin cobertura]';
+
+/**
+ * El albarán precargado, si lo hay. Devuelve `null` cuando no está o no se pudo mirar el almacén.
+ *
+ * ⚠️ NO LANZA: esto corre dentro del `catch` de la carga, y un fallo aquí dejaría al profesional
+ * con una excepción en vez de con un aviso — peor que el problema que viene a resolver.
+ */
+async function albaranDesdePrecarga(albaranId) {
+  try {
+    if (typeof window.leerAlbaranPrecargado !== 'function') return null;
+    const r = await window.leerAlbaranPrecargado(albaranId);
+    if (!r || !r.albaran) return null;
+    const a = r.albaran;
+    // 🔴 EL PAQUETE Y LA PANTALLA NO TIENEN LA MISMA FORMA, y sin traducirlo el profesional abre en
+    // el sótano una ficha que dice «Cliente —» y «Trabajo —». Lo cazó el test de modo avión, no una
+    // lectura: el paquete es PLANO por minimización (`clienteNombre`, `jobTitulo`) y el rail lee
+    // `alb.customer.name` y `alb.job.titulo`.
+    //
+    // ⚠️ Lo que NO viaja se deja AUSENTE a propósito: `estadoFacturacion` y `pendientes` no están en
+    // el paquete —son contexto de cobro, no de firma (SCRUM-458)— y el rail ya pinta «—» para lo
+    // que falta. Inventar un `'no facturado'` aquí sería afirmar algo que nadie ha comprobado.
+    return {
+      ...a,
+      job: { id: a.jobId, titulo: a.jobTitulo ?? null, direccion: null },
+      customer: { name: a.clienteNombre ?? '' },
+    };
+  } catch (_e) {
+    return null;
+  }
+}
+
 // LOS RÓTULOS DEL RAIL — APROBADOS por el fundador el 6-ago-2026 (regla 30). Una palabra cada uno.
 //
 // `presupuesto` es «Presupuesto», NO «Presupuesto origen», y el motivo lleva un paso más allá el
@@ -203,19 +250,44 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   };
 
   let alb;
+  let sinRed = false;
   try {
     alb = await apiRequest(`/admin/albaranes/${albaranId}`);
   } catch (e) {
-    // SCRUM-379 · LOS DOS CAMINOS POR LOS QUE FALLA UNA RECARGA, y este es el probable.
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-460 (H1 · fase 3) · SI NO HAY RED, SE MIRA LO PRECARGADO ANTES DE RENDIRSE.
     //
-    // Cuando esta vista se invoca PARA REFRESCAR tras una acción, un GET que falla no es «no se
-    // pudo abrir la ficha»: la acción del profesional YA OCURRIÓ. Decirle aquí «No se pudo cargar
-    // el albarán» le informa de la lectura y le calla lo único que necesita saber —que su acción
-    // salió— así que vuelve a pulsar. Quien invoca sabe en qué caso está y pasa el aviso.
-    if (opciones.avisoSiNoCarga) { setStatus('info', opciones.avisoSiNoCarga); return; }
-    setStatus('error', 'No se pudo cargar el albarán: ' + (e?.data?.message || e.message));
-    return;
+    // Es el punto entero del bloque H: el profesional está en un sótano y lo único que necesita es
+    // abrir el albarán y que se lo firmen. Si bajó, se abre.
+    //
+    // ⚠️ El albarán precargado trae MENOS campos que el del servidor, y a propósito (minimización
+    // del art. 32, SCRUM-458): no vienen presupuesto, estado de facturación ni pendientes. Por eso
+    // se marca `sinRed`: lo que falta es ausencia, no un cero, y pintarlo como cero sería afirmar.
+    const precargado = await albaranDesdePrecarga(albaranId);
+    if (precargado) {
+      alb = precargado;
+      sinRed = true;
+    } else {
+      // SCRUM-379 · LOS DOS CAMINOS POR LOS QUE FALLA UNA RECARGA, y este es el probable.
+      //
+      // Cuando esta vista se invoca PARA REFRESCAR tras una acción, un GET que falla no es «no se
+      // pudo abrir la ficha»: la acción del profesional YA OCURRIÓ. Decirle aquí «No se pudo cargar
+      // el albarán» le informa de la lectura y le calla lo único que necesita saber —que su acción
+      // salió— así que vuelve a pulsar. Quien invoca sabe en qué caso está y pasa el aviso.
+      if (opciones.avisoSiNoCarga) { setStatus('info', opciones.avisoSiNoCarga); return; }
+      // 🔴 EL CONTROL NEGATIVO DEL TICKET: sin red y sin precarga, se DICE. Ni pantalla en blanco,
+      // ni formulario vacío que invite a firmar algo que no se ha cargado.
+      if (e && e.sinRed) { setStatus('error', COPY_ALBARAN_SIN_PRECARGA); return; }
+      setStatus('error', 'No se pudo cargar el albarán: ' + (e?.data?.message || e.message));
+      return;
+    }
   }
+
+  // 🔴 EL LÍMITE SE CUENTA CUANDO IMPORTA. Crear albaranes sin red quedó FUERA DE ALCANCE POR
+  // DECISIÓN, y un límite que no se cuenta se vive como una avería: el profesional que busca el
+  // botón de «+ Nuevo albarán» estando en el sótano cree que el producto está roto. Se dice justo
+  // aquí, que es el único momento en que está mirando una copia descargada.
+  if (sinRed) setStatus('info', COPY_SIN_RED_NO_SE_CREA);
 
   const recargar = () => renderAlbaranDetailView(container, albaranId, { avisoSiNoCarga: COPY_ALBARAN_SIN_REFRESCO });
 

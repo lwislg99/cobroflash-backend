@@ -441,6 +441,87 @@ async function purgarDatosLocales() {
   return resultado;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-460 (H1 · fase 3) · BAJAR EL PAQUETE Y GUARDARLO
+//
+// 🔴 LOS NÚMEROS DE PRODUCCIÓN, MEDIDOS POR EL FUNDADOR EL 10-AGO-2026, CAMBIAN QUÉ ES EL CASO
+// NORMAL: 42 trabajos · 35 no cerrados · **0 agendados hoy o mañana** · 26 sin agendar en absoluto
+// (62 %) · **1 tocado en los últimos 7 días**. Con esos datos la precarga bajaría **como mucho un
+// albarán en toda la producción**.
+//
+// **La unión vacía deja de ser el caso raro: es el que va a ocurrir casi siempre.** Por eso esto
+// distingue TRES cosas y no dos, y por eso el suelo no es una formalidad de cierre:
+//
+//   · `NADA_QUE_PRECARGAR` — no había nada. Es cierto, y hay que decirlo.
+//   · `NO_SE_PUDO`        — no supe mirar. Es un fallo, y hay que decirlo DISTINTO.
+//   · `PRECARGADO`        — precargué N, y **N se puede ver**.
+//
+// Un profesional que abre la app, ve que «está preparado» y baja al sótano con cero albaranes
+// precargados es exactamente la víctima de H1. Los tres primeros valores no se colapsan nunca.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+const PRECARGADO = 'PRECARGADO';
+const NADA_QUE_PRECARGAR = 'NADA_QUE_PRECARGAR';
+const NO_SE_PUDO = 'NO_SE_PUDO';
+
+/**
+ * Baja el paquete y lo guarda. **Nunca lanza**: quien la llama no puede quedarse a medias.
+ *
+ * ⚠️ RESPETA LOS TRES RESULTADOS DEL ALMACÉN (SCRUM-455): un albarán solo cuenta como guardado si
+ * su transacción CONFIRMÓ. `NO_DISPONIBLE` (este navegador no da IndexedDB) y `FALLO` (lo hay y
+ * esta escritura no confirmó) **no se colapsan**: el primero no se arregla reintentando y el
+ * segundo sí.
+ *
+ * @returns {Promise<{estado: string, n: number, motivo?: string}>}
+ */
+async function precargarAlbaranes() {
+  let paquete;
+  try {
+    paquete = await apiRequest('/admin/precarga');
+  } catch (e) {
+    // Sin red no se puede precargar, y eso NO es «no había nada»: es que no se supo mirar.
+    return { estado: NO_SE_PUDO, n: 0, motivo: (e && e.message) || 'no se pudo pedir el paquete' };
+  }
+
+  // El productor ya distingue «no se pudo» de «no había nada» (SCRUM-458). No se reinterpreta aquí:
+  // colapsarlo en el cliente destruiría la distinción que el servidor se molestó en hacer.
+  if (!paquete || paquete.estado !== 'LISTA') {
+    return { estado: NO_SE_PUDO, n: 0, motivo: (paquete && paquete.motivo) || 'el servidor no pudo construir el paquete' };
+  }
+
+  const albaranes = Array.isArray(paquete.albaranes) ? paquete.albaranes : [];
+  if (!albaranes.length) return { estado: NADA_QUE_PRECARGAR, n: 0 };
+
+  let guardados = 0;
+  let motivo;
+  for (const a of albaranes) {
+    const r = await guardarAlbaranPrecargado(a);
+    if (r && r.estado === GUARDADO) guardados++;
+    else if (!motivo) motivo = (r && (r.motivo || r.estado)) || 'la escritura no confirmó';
+  }
+
+  // 🔴 GUARDAR A MEDIAS ES «NO SE PUDO», no «precargué algunos». El profesional que lea «precargado»
+  // y le falte justo el albarán que iba a firmar está peor que si no le hubiéramos dicho nada.
+  if (guardados < albaranes.length) {
+    return { estado: NO_SE_PUDO, n: guardados, motivo: motivo || 'no se guardaron todos' };
+  }
+  return { estado: PRECARGADO, n: guardados };
+}
+
+/**
+ * Un albarán precargado por su `id`, o `null` si no está.
+ *
+ * ⚠️ Devuelve `{estado, albaran}` y no solo el albarán: «no está precargado» y «no se pudo mirar el
+ * almacén» son cosas distintas, y quien pinte el aviso tiene que poder distinguirlas. Colapsarlas
+ * en `null` es cómo se acaba diciendo «no está disponible» cuando en realidad sí lo estaba.
+ */
+async function leerAlbaranPrecargado(id) {
+  const r = await leerAlbaranesPrecargados();
+  if (r.estado !== GUARDADO) return { estado: r.estado, motivo: r.motivo, albaran: null };
+  const albaran = (r.albaranes || []).find((a) => String(a.id) === String(id)) || null;
+  return { estado: GUARDADO, albaran };
+}
+
 // Frontend vanilla, sin bundler: se publica en `window` como el resto del dashboard.
 window.GUARDADO = GUARDADO;
 window.NO_DISPONIBLE = NO_DISPONIBLE;
@@ -460,3 +541,9 @@ window.purgarDatosLocales = purgarDatosLocales;
 // SCRUM-457 · el registro se publica para que el guard mida LA MISMA lista que usa el purgado. Dos
 // copias son dos cosas que se separan, y la que se separa siempre es la que nadie ejecuta.
 window.CLAVES_LOCALES = CLAVES_LOCALES;
+// SCRUM-460 (H1 fase 3)
+window.PRECARGADO = PRECARGADO;
+window.NADA_QUE_PRECARGAR = NADA_QUE_PRECARGAR;
+window.NO_SE_PUDO = NO_SE_PUDO;
+window.precargarAlbaranes = precargarAlbaranes;
+window.leerAlbaranPrecargado = leerAlbaranPrecargado;
