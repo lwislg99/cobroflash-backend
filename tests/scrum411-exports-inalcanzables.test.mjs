@@ -42,8 +42,12 @@ const R = analizar(RAIZ);
  * la fase siguiente no llega, esto sigue aquí acusando. Lo que este trinquete impide no es que el
  * número suba: es que suba **sin que nadie se entere**, que es como se descubrió el cierre en falso
  * de C6. **Baja a 7 el commit que le ponga consumidor.**
+ *
+ * **8 → 7 · 10-ago-2026 · SCRUM-460.** Ése es este commit: `precarga.service.ts` ya se alcanza
+ * desde `GET /admin/precarga` (`precargaAdmin.routes.ts`, montado en `app.ts`). El número estuvo
+ * en 8 exactamente lo que duró la deuda, que es para lo que sirve.
  */
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 8;
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 7;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
