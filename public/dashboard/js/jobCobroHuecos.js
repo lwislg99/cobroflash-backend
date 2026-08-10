@@ -128,6 +128,48 @@ function huecosDeCobro(job) {
     huecos.push({ id: 'sin-facturar-nada', importe: aceptado, accion: 'facturar-el-trabajo' });
   }
 
+  // 3.5 · SIN ENTREGAR — SCRUM-423, el eje de ENTREGA de C6 (SCRUM-305).
+  //
+  // Va ENTRE facturar y cobrar por el mismo orden que rige la sección: primero lo que el pro puede
+  // resolver hoy (firmar), luego lo que depende de él (entregar lo que falta, facturar) y al final
+  // lo que depende del cliente (pagar). Entregar es suyo, y es anterior a que le paguen.
+  //
+  // 🔴 EL NÚMERO NO SE CALCULA AQUÍ. Lo trae el backend en `job.entregaPendiente`, derivado por
+  // `resumenEntrega` (C6). Recalcularlo en el navegador sería tener dos fuentes de verdad para la
+  // misma pregunta — exactamente lo que C6 se negó a hacer con el eje de facturación.
+  //
+  // ⚠️ LAS TRES CONDICIONES DE APARICIÓN, y ninguna es cosmética:
+  //
+  //  ① `calculable` — C6 decide NO contestar en tres casos (adicionales, sin presupuesto, nada
+  //     atribuible). Aquí eso significa que no hay línea: «o está el dato, o no está la línea»
+  //     (regla de G). No se pinta el motivo, y la copy firmada de esos tres motivos queda sin usar
+  //     en esta superficie — declarado en `docs/master/SCRUM-423.md`.
+  //
+  //  ② `pendienteTotal > 0` — cero no es un hueco: es que no falta nada por entregar.
+  //
+  //  ③ `sinAtribuir === 0` — **la que de verdad protege.** Si hay líneas entregadas que no salen
+  //     del presupuesto, el número NO las cuenta, así que diría «quedan 3» dejando fuera entregas
+  //     reales. C6 lo prohíbe por escrito: «un número que resume tiene que declarar lo que no pudo
+  //     contar». Declararlo exige microcopy compuesta que HOY NO ESTÁ APROBADA (regla 30), así que
+  //     mientras no lo esté no se pinta un número incompleto y mudo.
+  //
+  //     Y NO se exige lo mismo de `enPartesSinFirmar`: esas líneas no cuentan **por definición** de
+  //     C6 («solo cuenta lo firmado»), así que el número es completo respecto de lo que promete. Su
+  //     declaración ya está en pantalla, en su propia línea: si hay líneas en albaranes sin firmar,
+  //     existe un albarán sin firmar, y entonces el hueco ① de arriba está pintado. Hay un test que
+  //     fija esa implicación para que siga siendo verdad.
+  //
+  // ⚠️ Y se cuenta con `lineasPendientes`, NO con `pendienteTotal`: el segundo es la suma de
+  // CANTIDADES (horas, m², ud) y rotularlo «2,5 líneas sin entregar» sería falso y encima con
+  // decimal. La copy aprobada habla de líneas, así que el número es de líneas.
+  const entrega = job && job.entregaPendiente;
+  if (entrega
+    && entrega.calculable === true
+    && num(entrega.lineasPendientes) > 0
+    && num(entrega.sinAtribuir) === 0) {
+    huecos.push({ id: 'sin-entregar', cantidad: num(entrega.lineasPendientes), accion: 'ver-albaranes' });
+  }
+
   // 4 · FACTURADO Y SIN COBRAR — por factura, no por resta. Las rectificativas (importe negativo)
   //     no se cuentan como pendiente de cobro: una nota de abono no es dinero que entre.
   let facturadoSinCobrar = 0;
@@ -143,8 +185,16 @@ function huecosDeCobro(job) {
   return huecos;
 }
 
-/** Los ids en su orden canónico. El guard lo usa para comprobar que no se reordenan ni se pierden. */
-const HUECOS_COBRO = ['sin-firmar', 'sin-facturar', 'sin-facturar-nada', 'sin-cobrar'];
+/**
+ * Los ids en su orden canónico. El guard lo usa para comprobar que no se reordenan ni se pierden.
+ *
+ * SCRUM-423 añade `sin-entregar` en la posición que le toca por el orden de la sección (lo que
+ * depende del pro antes que lo que depende del cliente). El guard de SCRUM-320 es de IGUALDAD
+ * —cuenta los ids que el motor puede producir y los compara con esta lista—, así que la lista y el
+ * motor se mueven juntos o sale rojo: es justo lo que impide que un hueco nuevo se pinte sin
+ * declararse, o que uno declarado deje de salir sin que nadie se entere.
+ */
+const HUECOS_COBRO = ['sin-firmar', 'sin-facturar', 'sin-facturar-nada', 'sin-entregar', 'sin-cobrar'];
 
 /**
  * ¿Se pinta la sección? Solo si hay algún hueco.
