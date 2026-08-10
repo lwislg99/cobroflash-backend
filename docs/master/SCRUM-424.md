@@ -175,22 +175,79 @@ ahora el rojo nombra el defecto de verdad.
 
 ---
 
-## 6 · Microcopy — uno aprobado, uno pendiente
+## 6 · Microcopy — dos aprobados, uno **todavía pendiente por una medición**
 
 * ✅ **«Abrir en mapa»** — aprobado por el asesor el 10-ago-2026 (regla 30), del diseño del bloque G.
   Puesto, y descontado del censo de SCRUM-402.
-* ⏳ **El mensaje del 409 de la firma sellada**, con marcador y propuesta dentro
-  (`jobDireccion.ts`, `MSG_DIRECCION_SELLADA`):
+* ✅ **«Dirección de la obra»** y su placeholder — aprobados por el asesor el 10-ago-2026, mismo
+  trato que «Nombre del trabajo» de SCRUM-317: etiqueta de formulario, no copy de producto.
+* ⏸️ **El mensaje del 409 de la firma sellada — SIGUE CON MARCADOR.** El asesor lo condicionó a una
+  medición, y la medición **no da un sí ni un no limpios**. Ver §6.1.
 
-  > *«No se puede añadir la dirección a este trabajo: tiene un albarán ya firmado que la lleva
-  > dentro de su firma. Cambiarla dejaría esa firma sin poder verificarse.»*
+### 6.1 · 🔴 ¿Puede el profesional escribir `Albaran.lugarEntrega` desde la UI? — **NO al crear; SÍ al editar**
 
-  Vive en `src/`, fuera del alcance del censo de SCRUM-402 (que escanea `public/dashboard/js/`). Se
-  ve sólo en el caso raro: un Trabajo con un albarán firmado **antes** de SCRUM-300.
+La condición del asesor era binaria: si existe ese camino, el mensaje lleva salida («puedes ponerla
+en el lugar de entrega del próximo albarán»); si no, va sin ella. **Medido en la ranura y en la
+pantalla, por separado, como se pidió — y el resultado se parte en dos:**
 
-* Los dos rótulos del campo —«Dirección de la obra» y el ejemplo del placeholder— **no llevan
-  marcador**: son etiqueta de formulario, del mismo tipo que «Nombre del trabajo» (SCRUM-317), no
-  copy de producto. Si el fundador prefiere otra cosa, es un cambio de una línea.
+| | Ranura en la ruta | Campo en la pantalla | ¿Se guarda? |
+| --- | --- | --- | --- |
+| **Crear** albarán (`POST /admin/jobs/:id/albaranes`) | **NO existe**: el `create` escribe `merchantId, jobId, numero, modoValoracion, lineas, notas` y nada más (`jobs.routes.ts:734-743`) | **SÍ se pinta** — es el mismo componente `buildAlbEditor` (`jobDetailView.js:2156-2175`) | 🔴 **NO** |
+| **Editar** albarán (`PATCH /admin/albaranes/:id`) | **SÍ** — `albaranes.routes.ts:483-485`, `normalizarLugarEntrega` | el mismo campo | ✅ **SÍ**, mientras no esté `firmado` (`:406-408`) |
+
+Los rótulos **sí están servidos y aprobados** (`ALBARAN_ROTULOS.lugarEntrega = 'Lugar de entrega'`,
+asesor 5-ago-2026, vía `/admin/me`), así que el bloque se pinta de verdad: la respuesta no es «no se
+ve el campo».
+
+### 🔴 Y de paso sale un defecto que NO es de este ticket (regla 37: se reporta, no se arregla)
+
+**Al CREAR un albarán, el «Lugar de entrega» se teclea y se descarta en silencio.** El editor es el
+mismo para crear y para editar, pero las dos ramas no mandan lo mismo (`jobDetailView.js:2232-2236`):
+
+```js
+if (onGuardar) {
+  await onGuardar({ lineas: out, notas: notas.value, modoValoracion: modo }); // ← CREAR: sin lugarEntrega
+} else {
+  await apiRequest(`/admin/albaranes/${alb.id}`, { method: 'PATCH', body: JSON.stringify(body) }); // ← EDITAR: body SÍ lo lleva
+}
+```
+
+`body` sí incluye `lugarEntrega` (`:2223`), pero la rama de creación no usa `body`: pasa un objeto
+propio de tres campos. Y aunque lo pasara, **el POST no lo aceptaría**. El profesional escribe la
+dirección de la obra al crear el parte, pulsa guardar, y no se guarda nada — sin error.
+
+**No se arregla aquí:** es otro carril (albaranes / C), toca una ruta que no es la de esta tarea, y
+no bloquea nada de lo construido. **Carril C · siguiente acción concreta:** aceptar `lugarEntrega` y
+`fechaEntrega` en `POST /admin/jobs/:id/albaranes` y pasarlos desde `onGuardar`, o —si se prefiere
+no ampliar el POST— no pintar los dos campos en el modo creación. **Gate:** ninguno; cero schema.
+
+### Los dos textos del asesor, y por qué no elijo
+
+* **Con salida** — *«… Puedes ponerla en el lugar de entrega del próximo albarán.»*
+* **Sin salida** — el mismo texto sin esa frase.
+
+**La salida que promete la primera es cierta, pero no por donde el profesional la buscaría:** tiene
+que crear el albarán, volver a abrirlo y editarlo, porque al crearlo lo que teclee se pierde. Decir
+«ponla en el próximo albarán» a alguien que va a intentarlo en la pantalla de creación es mandarlo a
+un sitio donde lo va a intentar y va a fallar **sin que nadie se lo diga**.
+
+**Es microcopy y es del asesor (regla 30): el marcador se queda y no se pinta aprobado.** Las dos
+salidas que veo, para que decida con el dato delante: **(1)** aprobar la versión *sin salida* hoy y
+la *con salida* el día que el defecto de arriba se cierre; **(2)** aprobar la *con salida* ya y
+cerrar el defecto en el mismo lote, para que la frase sea cierta por el camino evidente.
+
+### 6.2 · El trinquete de SCRUM-402 sigue vigilando lo que sale del censo — **comprobado**
+
+Preguntaba el asesor si borrar `jobRailBlocks.js` de `CENSO` lo dejaba fuera del radar, como el
+guard de destino de SCRUM-418 que deja pasar la clave que no conoce. **No lo deja:** `censoActual()`
+**enumera el directorio** y la rama `nuevos` de R4 caza cualquier fichero con marcadores que no esté
+en la tabla — al revés que un guard que solo recorre una lista blanca.
+
+Ya lo había demostrado la prueba de rojo de R1b sin buscarlo (devolver el marcador al rótulo produjo
+*«HAY MARCADORES NUEVOS QUE PUEDEN PINTARSE: jobRailBlocks.js (+1)»*), pero eso era un efecto
+lateral de otra mutación. **Se deja escrito como test propio**: `SCRUM-402 · R4b`, que comprueba la
+clasificación de un fichero desconocido con marcador **con la misma expresión que usa R4**, y lleva
+suelo para que no valga si `jobRailBlocks.js` volviera a la tabla.
 
 ---
 
