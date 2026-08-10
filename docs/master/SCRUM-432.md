@@ -185,3 +185,66 @@ tarjeta) · `templatesView.js` más allá de la línea que pinta la tira.
 * `tests/_barra-lateral.mjs` — `templates` pasa de añadida a vista sin entrada, con su ticket.
 * `tests/scrum432-plantillas-pestana.test.mjs` (nuevo, 8) — suelo, positivo, microcopy, no-regresión.
 * `tests/scrum420-barra-lateral.test.mjs` — el guard se da la vuelta, sin dejar de exigir un camino.
+
+---
+
+# SCRUM-432 · apéndice: el injerto de la sesión 4, y lo que resultó no hacer falta
+
+**Medido contra:** `origin/main` = `ddfa8ac567954090274f24ae09cc3d1fc43ca0eb` · 2026-08-10T19:08:02+02:00
+**Rama:** `scrum-432-plantillas-pestana`
+
+## De dónde sale este apéndice
+
+La sesión 4 construyó **el mismo ticket en paralelo**, sin haber comprobado antes
+`git ls-remote --heads origin` con el número — que es la regla de la casa **precisamente porque han
+pasado cuatro duplicados**. El push salió rechazado por non-fast-forward, no se forzó nada, y la
+rama duplicada se aparcó aparte y luego se retiró.
+
+**Gana esta implementación**, y en el punto que más pesa: la sesión 4 construyó un componente
+`.tabs` nuevo, y aquí **no se construyó ninguno** — se reutiliza el control segmentado que ya usan
+el filtro de Trabajos y los diez submenús de Configuración. Escribir un segundo mecanismo de
+pestañas habría sido tener dos formas de lo mismo en el producto.
+
+## Los dos injertos: MEDIDOS, y los dos ya estaban
+
+| injerto | veredicto |
+|---|---|
+| **① la traducción del menú activo** (`templates` → `quotes-list`) | **ya estaba**, con su test |
+| **② el falso positivo del censo de SCRUM-433** | **no ocurre**: los 7 tests en verde sobre esta implementación |
+
+Lo del ② merece quedar escrito porque las dos sesiones **tropezaron con la misma piedra y por
+separado**. El comentario de `quotesTabs.js` lo dice: *«la primera versión hacía
+`renderAppView(p.vista)` desde el bucle —más corto, y parecía más limpio— … el censo de SCRUM-433
+lee justo eso»*. Se resolvió con literales dentro de cada `abrir`.
+
+> **Y ahí está el hallazgo, que NO se arregla aquí (regla 9): el censo de SCRUM-433 solo reconoce
+> `renderAppView('literal')`.** No es que dé un falso positivo hoy — es que **dos implementaciones
+> independientes tuvieron que renunciar a su forma natural para que no lo diera**. Un guard que
+> obliga a escribir el código de otra manera está cobrando un peaje, y el día que alguien navegue
+> desde un bucle tendrá un rojo sin motivo. El arreglo es **resolución de un salto**, como se hizo
+> en SCRUM-245. **Merece ticket.**
+
+## Lo único que se añade: ⑤ las dos mitades de «¿dónde estoy?», en el mismo test
+
+Estaban comprobadas, pero **en tests distintos**: uno mira la pestaña activa y otro la traducción de
+la barra. Separadas pueden divergir sin que caiga nada, y el producto marcando la pestaña con la
+barra apagada **no da error: solo desorienta**, que es peor de detectar.
+
+Verificado en rojo por `$?`, las dos mitades por separado:
+
+- se quita el marcado de la pestaña activa → cae: *«la tira no la marca como activa: dice a dónde
+  puedes ir, no dónde estás»*;
+- se rompe la traducción del menú → cae: *«la pestaña se marca pero la BARRA se queda apagada»*.
+
+*(Y un rojo que no salió a la primera: la primera inyección cambió `btn-secondary` **en un
+comentario** en vez de en el código. Caso mal elegido, no guard de sobra — la primera hipótesis de
+la casa, otra vez.)*
+
+## Un aviso de entorno
+
+A mitad de la verificación el cliente de Prisma compartido volvió a quedarse **de otro schema**
+(`node_modules` va por junction entre los cuatro worktrees, SCRUM-429). Regenerado con el binario
+local. No afecta a lo entregado, pero conviene saber que sigue pasando.
+
+Ficheros de este apéndice: `tests/scrum432-plantillas-pestana.test.mjs` (un test añadido) ·
+`docs/master/SCRUM-432.md`.
