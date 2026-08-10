@@ -863,7 +863,9 @@ model Albaran {
   // SCRUM-17 (FISCAL-2): factura recapitulativa que consolidó este albarán (null = no facturado).
   // El badge "Facturado" se DERIVA de invoiceId != null (sin flag manual; FSM Parte L intacta, regla 27).
   invoiceId    Int?      @map("invoice_id")
+  claveIdempotencia String? @map("clave_idempotencia") @db.VarChar(64)
 
+  @@unique([merchantId, claveIdempotencia])
   @@unique([merchantId, numero])
   @@index([merchantId, jobId])
   @@index([merchantId, invoiceId])
