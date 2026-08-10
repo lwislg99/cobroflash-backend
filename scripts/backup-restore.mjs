@@ -38,17 +38,61 @@ import { Prisma } from '@prisma/client';
  */
 const CAST_POR_TIPO = { DateTime: '::timestamp', Decimal: '::numeric', Json: '::jsonb', BigInt: '::bigint' };
 
-function castsDeLaTabla(tabla) {
-  const modelo = Prisma.dmmf.datamodel.models.find(
-    (m) => (m.dbName || m.name) === tabla || `${(m.dbName || m.name)}` === tabla,
-  );
-  const mapa = new Map();
-  if (!modelo) return mapa;
-  for (const f of modelo.fields) {
-    const cast = CAST_POR_TIPO[f.type];
-    if (cast) mapa.set(f.dbName || f.name, cast);
+/**
+ * 🔴 `Bytes` NO LLEVA CAST: LLEVA RECONSTRUCCIÓN. Y esto también salió ejecutándolo.
+ *
+ * `attachments.data` es `bytea` — las FOTOS de los trabajos viven dentro de Postgres (MEDIA-1,
+ * fallback sin R2). Al volcar, `$queryRawUnsafe` devuelve un `Uint8Array` y `JSON.stringify` lo
+ * escribe como **un objeto con claves numéricas**: `{"0":137,"1":80,…}`. No como array, no como
+ * `{type:"Buffer"}`. Al restaurar, eso llegaba como objeto y Postgres respondía:
+ *
+ *     column "data" is of type bytea but expression is of type jsonb
+ *
+ * O sea: **la restauración funcionaba para 23 tablas y se rompía justo en la que guarda ficheros.**
+ * No se vio en la primera prueba porque aquel juego de datos no tenía ni un adjunto — un verde
+ * hueco: el suelo tiene que estar también en los DATOS, no solo en el detector.
+ */
+const TIPOS_BINARIOS = new Set(['Bytes']);
+
+/**
+ * EXHAUSTIVIDAD, no lista de excepciones. Estos tipos viajan por JSON sin perder nada y entran en
+ * su columna tal cual; están NOMBRADOS para que ningún tipo del schema quede sin decisión. Es un
+ * `switch` sin `default` silencioso: lo vigila
+ * `tests/scrum242-restauracion-cubre-todos-los-tipos.test.mjs`, que compara este fichero contra los
+ * tipos que el schema usa DE VERDAD. Un tipo nuevo pone el guard rojo hasta que alguien decida qué
+ * hacer con él — que es exactamente lo que no pasó con `Bytes`.
+ */
+export const SIN_TRATAMIENTO = new Set(['String', 'Int', 'Boolean', 'Float']);
+
+/** El objeto de índices que produjo el volcado, de vuelta a Buffer. */
+function aBuffer(v) {
+  if (v === null || v === undefined) return v;
+  if (Buffer.isBuffer(v)) return v;
+  if (Array.isArray(v)) return Buffer.from(v);
+  if (typeof v === 'object') {
+    // Claves "0","1","2"… Se reconstruye POR ÍNDICE y no con `Object.values`, para no depender del
+    // orden de enumeración: un byte movido de sitio es un fichero corrupto que nadie mira hasta
+    // que lo abre.
+    const claves = Object.keys(v);
+    const buf = Buffer.alloc(claves.length);
+    for (const k of claves) buf[Number(k)] = v[k];
+    return buf;
   }
-  return mapa;
+  return v;
+}
+
+function columnasDeLaTabla(tabla) {
+  const modelo = Prisma.dmmf.datamodel.models.find((m) => (m.dbName || m.name) === tabla);
+  const casts = new Map();
+  const binarias = new Set();
+  if (!modelo) return { casts, binarias };
+  for (const f of modelo.fields) {
+    const col = f.dbName || f.name;
+    if (TIPOS_BINARIOS.has(f.type)) { binarias.add(col); continue; } // sin cast: va el Buffer
+    const cast = CAST_POR_TIPO[f.type];
+    if (cast) casts.set(col, cast);
+  }
+  return { casts, binarias };
 }
 
 const KEY_RAW = process.env.BACKUP_ENCRYPTION_KEY || '';
@@ -124,16 +168,43 @@ async function main() {
   const { PrismaClient } = await import('@prisma/client');
   const prisma = new PrismaClient();
 
+  // ── EL DESTINO TIENE QUE ESTAR VACÍO, Y SE COMPRUEBA ANTES DE ESCRIBIR ────────────────────
+  // 🔴 También esto salió ejecutándolo: **la restauración no es transaccional**. Un fallo a mitad
+  // —el de `bytea`, por ejemplo— deja la base a medias, y el reintento muere con `Key (id)=(1)
+  // already exists`, que no dice nada de lo que pasa de verdad. A las tres de la mañana eso son
+  // veinte minutos perdidos persiguiendo el error equivocado.
+  //
+  // Se para ANTES en vez de envolverlo todo en una transacción: una restauración grande en una sola
+  // transacción es un candado larguísimo, y aquí el destino DEBE estar vacío de todas formas (R14
+  // §2). Fail-closed y con la instrucción dentro del mensaje.
+  const ocupadas = [];
+  for (const t of Object.keys(tablas)) {
+    const [{ n } = {}] = await prisma.$queryRawUnsafe(`SELECT COUNT(*)::int AS n FROM "${t}"`);
+    if (n > 0) ocupadas.push(`${t} (${n})`);
+  }
+  if (ocupadas.length) {
+    await prisma.$disconnect();
+    console.error(
+      `🔴 EL DESTINO NO ESTÁ VACÍO: ${ocupadas.join(', ')}\n\n`
+      + '  No se escribe nada. Restaurar encima mezclaría el backup con lo que ya hay, y los ids\n'
+      + '  chocarían a mitad dejando la base peor que antes.\n\n'
+      + '  Si vienes de una restauración que falló, la base quedó A MEDIAS: vacíala y vuelve a\n'
+      + '  empezar desde el paso 2 de R14 (`prisma db push` sobre una base limpia).');
+    process.exit(1);
+  }
+
   let filas = 0;
   for (const t of ordenDeInsercion(Object.keys(tablas))) {
     const rows = tablas[t];
     if (!Array.isArray(rows) || !rows.length) continue;
-    const casts = castsDeLaTabla(t);
+    const { casts, binarias } = columnasDeLaTabla(t);
     for (const row of rows) {
       const cols = Object.keys(row);
       // Los Json se re-serializan: el driver los recibiría como objeto y `::jsonb` espera texto.
+      // Los Bytes se reconstruyen a Buffer, que es lo que el driver sabe meter en un `bytea`.
       const valores = cols.map((c) => {
         const v = row[c];
+        if (binarias.has(c)) return aBuffer(v);
         if (casts.get(c) === '::jsonb' && v !== null && typeof v === 'object') return JSON.stringify(v);
         return v;
       });

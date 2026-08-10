@@ -214,3 +214,121 @@ nadie abre `docs/master/`. Su sitio es `docs/RUNBOOKS.md`, junto a los otros tre
 Ficheros: `scripts/backup-restore.mjs` (nuevo) · `scripts/_scratch-run.mjs` (nuevo) ·
 `docs/RUNBOOKS.md` §R14 · `docs/evidencias/scrum242-restauracion.md` (nuevo) ·
 `scripts/backup-dump.mjs` · `tests/scrum242-runbook-no-se-declara-probado.test.mjs`.
+
+---
+
+# SCRUM-242 · tercera entrega: ③ QUÉ DISPARA EL VOLCADO — **medición y propuesta**
+
+**10-ago-2026, 14:10 CEST (UTC+0200)** · mediciones sobre la base desechable y sobre el repo.
+**Aquí no se construye nada:** el gasto y el mecanismo los decide el fundador (regla 36).
+
+## 0 · El hallazgo que cambia el orden de todo: **el volcado se rompe a las 8 fotos**
+
+Antes de hablar de cada cuánto volcar, hay que decir hasta dónde llega el volcado. `logicalDump`
+acumula todas las tablas en un objeto y termina en **un único `JSON.stringify`**, así que el límite
+no es el disco: es `MAX_STRING_LENGTH` de V8, medido en esta máquina en **536.870.888** caracteres.
+
+Y `attachments.data` es `bytea`. Medido con bytes reales:
+
+| foto | JSON que genera | factor |
+|---|---|---|
+| 0,5 MB | 6.479.355 | **12,36×** |
+| 1 MB | 13.118.395 | **12,51×** |
+| 5 MB | 70.036.411 | **13,36×** |
+
+Un byte de fichero ocupa ~12,5 caracteres porque se serializa como `{"0":137,"1":80,…}`.
+
+> **Tope: ~41 MB de fotos almacenadas.** Con `FOTO_MAX_BYTES = 5 MB`
+> (`albaranes.routes.ts:382`), son **8 fotos**. A 2 MB por foto de móvil, **20**.
+
+Pasado ese punto el volcado **no se degrada: lanza**. Y con el fail-closed de SCRUM-241 **no escribe
+fichero**. O sea: el día que se sube la foto nº 9, deja de haber backup — y si el disparador solo
+escribe en un log, nadie se entera. Es la lección de SCRUM-390 otra vez.
+
+**Para las filas normales el margen es enorme**, así que el problema es SOLO el binario: 831 bytes de
+JSON por factura (medido sobre 3.004 facturas con 3 líneas) → ~645.000 facturas hasta el mismo techo,
+y ~660.000 por memoria con un heap de 4,3 GB. Nunca llegaremos ahí; a 8 fotos, sí.
+
+**Propuesta (no construida): serializar `Bytes` en base64.** El factor pasa de 12,5× a 1,37×, y el
+tope de 41 MB a **~390 MB de fotos**: nueve veces más por unas líneas. Exige subir el formato a
+`yaqu-logical-v2` y que la restauración entienda los dos. **Y es lo primero que hay que hacer, antes
+que automatizar nada**: automatizar un volcado que se rompe a las 8 fotos es fabricar la carpeta de
+ficheros inútiles que este ticket vino a evitar.
+
+## 1 · Qué mecanismos de disparo EXISTEN ya (censo, no invención)
+
+- **Seis crons en proceso**, `src/core/cron/cron.ts`: cotizaciones (cada hora), facturas impagadas
+  (10:00), mantenimientos + puerta SCRUM-390 (10:00), digest semanal (lunes 9:00), lifecycle (8:00),
+  **sellos de albarán (3:15)**. `node-cron`, dentro del servicio, con `DISABLE_CRONS` para desarrollo.
+- **Dos workflows de GitHub Actions**: `ci.yml` y `zona-roja.yml`. **Ninguno tiene `schedule:`** —
+  comprobado: no hay ni un `schedule:` en todo `.github/`. Los dos disparan por `pull_request`/`push`.
+- **Nada más.** No hay tarea programada del proveedor, ni cola, ni worker aparte.
+
+### Cuál encaja, y por qué: **un séptimo cron a las 3:30**
+
+El sexto cron ya trae el argumento escrito: va a las 3:15 *«porque no manda nada a nadie —solo LEE y
+escribe una línea de log—, así que no toca horas tranquilas ni compite con los cinco de arriba»*. El
+backup es exactamente ese perfil. **Precedente y razonamiento ya aceptados en el mismo fichero.**
+
+**Y GitHub Actions queda descartado por una decisión ya escrita**, no por opinión: `ci.yml` dice
+*«Regla 9 — los secretos los pega el fundador en Railway, no viajan a terceros»*, y por eso el CI no
+lleva ni `DATABASE_URL_TESTS`. Un workflow programado necesitaría **la `DATABASE_URL` de producción
+como secreto de GitHub**: un sitio nuevo donde vive la credencial de prod, que es justo lo que
+costó una rotación en SCRUM-196.
+
+**Lo que hay que aceptar del cron, dicho antes de elegirlo:** si el servicio está caído, no hay
+backup ese día; y si algún día se escala a más de una instancia, se ejecutaría en todas.
+
+**Y el fallo no puede ser mudo.** `avisoPuerta.service.ts` ya manda WhatsApp al fundador desde el
+cron de las 10:00: el camino existe y es el mismo que hay que usar aquí. Un backup que falla en
+silencio es peor que no tenerlo, porque además tranquiliza.
+
+## 2 · Cada cuánto, con el argumento delante: **qué se pierde entre dos copias**
+
+Lo que se pierde **no se puede rehacer**, y ésa es toda la discusión:
+
+- **Facturas emitidas** — la regla 29 prohíbe reemitirlas, y la **cadena de huellas** (`vfPrevHash`→
+  `vfHash`) se rompe: no se recompone ni a mano. Además hay **obligación legal de conservarlas**.
+- **Albaranes firmados** — la firma es del cliente, en su móvil, ese día. No se vuelve a pedir.
+- **Fotos del trabajo** — se tomaron en la obra, y la obra terminó.
+- Cotizaciones, mensajes y auditoría: rehacibles con esfuerzo, pero la trazabilidad no.
+
+**Propuesta: DIARIO a las 3:30, con RPO declarado de 24 h.** No es una elección técnica sino una
+frase que hay que poder decir en voz alta: *«si la base se pierde, perdemos como mucho un día de
+trabajo»*. Hoy eso no cuesta nada porque los datos de producción son desechables (la puerta de
+SCRUM-390 sigue cerrada); **el día que entre el primer cliente real, 24 h de facturas emitidas
+perdidas es un incidente fiscal**, y ahí habría que bajar a cada 6 h o pasar a `pg_dump` + WAL.
+
+No propongo horario porque el volcado es **completo** (no incremental): a cada hora serían 24 copias
+completas al día de una base que hoy cabe en 2,5 MB — barato en euros, caro en ruido.
+
+## 3 · Dónde vive la copia, FUERA de Railway (opciones y coste — decide el fundador)
+
+Hoy el fichero se escribe en `./backups/` **de la propia máquina**, y el script lo dice: *«MUÉVELO
+fuera de esta máquina»*. En Railway ese disco es efímero: **al siguiente deploy el backup ya no
+está**. No hay medio backup; no hay ninguno.
+
+| Opción | Gratis | Coste después | Nota |
+|---|---|---|---|
+| **Cloudflare R2** | 10 GB | ~0,014 €/GB/mes, **egreso 0 €** | **Recomendada.** Ya está nombrada en el schema como destino previsto de media (*«fallback persistente sin R2»*): la cuenta haría falta igual |
+| Backblaze B2 | 10 GB | ~5,50 €/TB/mes | Barata; egreso gratis hasta 3× lo almacenado |
+| AWS S3 | no | ~0,021 €/GB/mes **+ egreso** | El egreso se paga justo el día del desastre |
+| Otro servicio de Railway | — | — | **No vale**: mismo proveedor, no cubre perder la cuenta |
+
+**Coste real hoy: 0 €.** La base entera son ~2,5 MB de JSON; con 30 copias diarias retenidas no se
+roza el nivel gratuito de ninguna de las tres. La decisión es de **cuenta y credencial**, no de gasto:
+haría falta un token en Railway, que pega el fundador (regla 9).
+
+**Retención sugerida:** 7 diarias + 4 semanales. Y **la clave de cifrado guardada FUERA de Railway**,
+porque sin `BACKUP_ENCRYPTION_KEY` el fichero no sirve para nada — perder la cuenta y perder la clave
+son el mismo desastre.
+
+## 4 · El orden que propongo
+
+1. **base64 para `Bytes`** (`yaqu-logical-v2`). Sin esto, lo demás automatiza algo que se rompe a las 8 fotos.
+2. **Destino R2** + token en Railway + clave de cifrado fuera.
+3. **Séptimo cron a las 3:30**, con aviso por WhatsApp si falla.
+4. Retención y purga.
+
+Y una advertencia que sale de este mismo ticket: **cada paso se prueba restaurando**, no leyendo el
+código. Los tres fallos que han aparecido —tipos, orden y `bytea`— eran invisibles hasta ejecutarlos.
