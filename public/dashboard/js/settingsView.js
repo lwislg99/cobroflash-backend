@@ -657,6 +657,15 @@ function renderSettingsView(container) {
     // vivir en algún sitio, y Avisos es donde encaja: habla de lo que se envía.
     renderWaFairUseCard(panelDeSuperficie("renderWaFairUseCard")); // A9.3: fair use W2 visible
 
+    // SCRUM-420 (B1 · incremento 2) · «Descargar datos» sale de la barra lateral y su camino pasa
+    // por aquí. El diseño §B1 lo dice y lo declaraba el propio hueco de `datos`: «la página YA
+    // EXISTE (SCRUM-244) y NO se rehace: aquí solo cambiará de dónde se enlaza».
+    //
+    // 🔴 ES LA OTRA MITAD DE SACARLA DE LA BARRA, no un extra. Una entrada retirada sin camino
+    // nuevo no es una reorganización: es una pantalla perdida — el mismo defecto que este
+    // incremento viene a arreglar, cometido por el arreglo.
+    renderDescargarDatosCard(panelDeSuperficie("renderDescargarDatosCard"));
+
     // SCRUM-314 (D3): hueco para «Eliminar datos de ejemplo». Nace VACÍO y solo se rellena en la
     // cuenta demo (lo decide el backend con `esCuentaDemo`), así que fuera del demo no ocupa nada
     // ni se ve — no hay botón deshabilitado que invite a preguntar por él.
@@ -773,6 +782,42 @@ function renderSettingsView(container) {
 // "300 plantillas/mes de uso razonable — aviso, NUNCA corte". El contador sale
 // del log J8 (solo cuentan las PLANTILLAS; lo que viaja por ventana es gratis
 // y no computa). Transparencia: en demo responde a "¿y si mando muchos?".
+/**
+ * SCRUM-420 (B1 · incremento 2) · EL CAMINO A «Descargar datos» DESPUÉS DE SALIR DE LA BARRA.
+ *
+ * No rehace nada: la pantalla es la de SCRUM-244 y sigue siendo la misma vista `export`. Esto es
+ * solo el enlace que el diseño §B1 pide («Descargar datos pasa a Configuración › Tus datos»).
+ *
+ * MICROCOPY (regla 30):
+ *   · El título dice `Descargar datos` — NO es redacción nueva: es el rótulo que ya llevaba la
+ *     entrada de la barra y el mismo `<h2>` que abre la propia vista `export` (`exportView.js:34`).
+ *     Aprobado por el asesor el 10-ago-2026 dentro de la tabla de rótulos.
+ *   · El texto del BOTÓN sí es redacción nueva —el verbo de «ir a»— y por eso sale con MARCADOR.
+ *     No se rellena por mi cuenta; lo aprueba el asesor. Precedente en la casa: `exportView.js`
+ *     ya publica botones con este mismo marcador.
+ */
+function renderDescargarDatosCard(container) {
+  if (!container) return;
+  const card = document.createElement('div');
+  card.className = 'customers-card';
+  card.innerHTML = `
+    <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Descargar datos</h2>
+  `;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn-secondary';
+  btn.id = 'btn-ir-descargar-datos';
+  btn.style.minHeight = '44px'; // AB6: objetivo al pulgar, igual que las pestañas de los submenús
+  btn.textContent = MARCA_MICROCOPY_SUBMENU;
+  btn.addEventListener('click', () => {
+    // El mismo enrutador que usa el resto del dashboard (`app.js:372`). Guardado como en el resto
+    // de vistas: si no está, no se rompe la pantalla de Configuración por un enlace.
+    if (window.renderAppView) window.renderAppView('export');
+  });
+  card.appendChild(btn);
+  container.appendChild(card);
+}
+
 async function renderWaFairUseCard(container) {
   const FAIR_USE = 300; // W2: soft, aviso, nunca corte
   let data;
