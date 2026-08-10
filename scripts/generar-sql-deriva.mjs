@@ -20,6 +20,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import { comprobarProcedencia, mensaje } from './_prisma-procedencia-guard.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
@@ -98,8 +99,42 @@ ORDER BY e.tabla, e.columna;
 
 export const RUTA_SQL = path.join(RAIZ, 'docs', 'sql', 'deriva-prod.sql');
 
+/**
+ * 🔴 SCRUM-461 · NO SE ESCRIBE CON EL CLIENTE ATRASADO.
+ *
+ * Ésta es la puerta por la que entró el incidente del 10-ago. `paresEsperados` lee el DMMF del
+ * **cliente generado**, así que con un cliente viejo este script escribe un censo CORTO — y el
+ * censo existe justo para detectar columnas que faltan. Uno encogido **deja de mirarlas** y pasa
+ * en verde.
+ *
+ * Aquel día salió **331** en un worktree cuyo cliente iba cinco campos por detrás, contra **346**
+ * del schema. Se evitó porque el fundador vio un número raro; con una columna en vez de quince,
+ * nadie lo habría notado.
+ *
+ * ⚠️ Y POR QUÉ AQUÍ Y NO EN `pretest`: `_prisma-sync.mjs` ya corre antes de la tanda, así que
+ * `npm test` se autoprotege. Este script lanzado **a mano** no pasa por ahí — y a mano es
+ * exactamente como se lanzó.
+ *
+ * No se comprueba dentro de `paresEsperados` a propósito: los tests la importan con un datamodel
+ * propio y esto los haría depender del entorno. Se comprueba al ESCRIBIR, que es lo que hace daño.
+ */
+export function motivoParaNoEscribir() {
+  const r = comprobarProcedencia();
+  return r.ok ? null : mensaje(r);
+}
+
 // Solo escribe si se ejecuta directamente; importado (desde el test) no toca disco.
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const motivo = motivoParaNoEscribir();
+  if (motivo) {
+    console.error(motivo);
+    console.error(
+      '\n🔴 NO SE HA ESCRITO NADA. Este script deriva el censo del CLIENTE generado, así que con el\n' +
+      '   cliente atrasado escribiría un censo CORTO — y un censo corto deja de vigilar justo las\n' +
+      '   columnas que le faltan, en silencio. Regenera el cliente y vuelve a lanzarlo.',
+    );
+    process.exit(1);
+  }
   fs.mkdirSync(path.dirname(RUTA_SQL), { recursive: true });
   fs.writeFileSync(RUTA_SQL, generarSql(), 'utf8');
   console.log(`escrito ${path.relative(RAIZ, RUTA_SQL)} (${paresEsperados().length} columnas)`);

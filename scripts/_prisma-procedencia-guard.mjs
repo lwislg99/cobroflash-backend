@@ -228,10 +228,22 @@ export function mensaje(r) {
   if (r.soloCliente?.length) {
     partes.push(`   en el cliente y NO en schema.prisma:\n${r.soloCliente.map((l) => `     - ${l}`).join('\n')}`);
   }
+  // 🔴 SCRUM-461 · ESTE AVISO AFIRMABA UN MONTAJE QUE YA NO EXISTE.
+  //
+  // Decía: «`node_modules` se comparte por JUNCTION entre worktrees — regenerar afecta a todos».
+  // Medido el 10-ago con `fs.realpathSync` sobre los cuatro worktrees vivos: **los cuatro son
+  // directorios REALES E INDEPENDIENTES**. No hay junction.
+  //
+  // No es un detalle de redacción: sobre ese aviso se desaconsejó un `npm install` por miedo a
+  // romper la tanda de otras dos sesiones, y el miedo era infundado. Un aviso que describe un
+  // montaje anterior hace tomar decisiones equivocadas con toda la confianza.
+  //
+  // Ya no se AFIRMA el montaje: se dice cómo comprobarlo, que es cierto con junction y sin él.
   partes.push(
     '   Remedio: `npx prisma generate`. (En Windows, si el DLL queda bloqueado, matar node antes.)\n' +
-    '   OJO: `node_modules` se comparte por JUNCTION entre worktrees — regenerar afecta a todos ' +
-    '(incidente #11).',
+    '   ¿Afecta a otros worktrees? Depende de si tu `node_modules` es propio o un enlace:\n' +
+    '     node -e "console.log(require(\'fs\').lstatSync(\'node_modules\').isSymbolicLink())"\n' +
+    '   `false` = es tuyo, regenerar no toca a nadie. `true` = es compartido, y entonces sí.',
   );
   return partes.join('\n');
 }
