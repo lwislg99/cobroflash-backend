@@ -101,8 +101,8 @@ back (regla 38) · el modelo de datos · `jobDetailView.js` (contraste, solo rep
 
 **Fecha:** 10-ago-2026 · **Carril:** B (UI + dominio) · **Gate:** sin gate, corre en `npm test`
 **Medido contra:** `origin/main` = `6cd4cffac1c3291da0caad6a3a4a10cc5c4a45c2` · 2026-08-10T19:08:12+02:00
-**Tanda:** 2680 tests · 2606 pass · **0 fail** · 74 gateados · `npm test` exit **0**
-(re-corrida entera tras partir la quinta columna en dos, que es el último cambio)
+**Tanda:** 2683 tests · 2609 pass · **0 fail** · 74 gateados · `npm test` exit **0**
+(re-corrida entera tras pintar la forma de card, que es el último cambio)
 
 > ⚠️ **ESTA ENTREGA NO CIERRA SCRUM-285.** El tercer punto de §B4 —el enlace al cobro en la columna
 > derecha del detalle de factura— queda como **FASE 2 dentro de este ticket, que sigue ABIERTO**.
@@ -268,10 +268,30 @@ como hacen esas dos—: `Fecha`→`date`, `Cliente`→`client`, `Importe`→`amo
 esconde. Y la celda vacía de un cobro ya cobrado **desaparece sola** (`td:empty { display:none }`),
 que es justo lo que se quiere.
 
-⚠️ **Lo que queda por decidir, y se para aquí:** en la card no hay cabecera, así que «Sin cobrar»
-aparece como un `3 días` suelto. La frase larga que el asesor aprobó *«si algún día hay tarjeta en
-móvil»* **ya tiene sitio hoy** —la tarjeta existe—, pero elegir el texto según el ancho no lo hace
-el CSS solo. **No se ha construido**: es la «otra forma en móvil» que el asesor dejó fuera de carril.
+### 🔴 Y la card NO es una degradación de la tabla: ES la pantalla
+
+Lo dejé declarado como resto para otra fase y el asesor lo devolvió, con razón. **Este producto se
+usa desde una furgoneta**: a ≤640 px la card *es* lo que se mira, y ahí no hay cabecera que explique
+un `3 días` suelto. **Un dato sin referente en el sitio donde de verdad se mira no es una pantalla
+terminada** — y no hacía falta ticket nuevo, porque la frase larga ya estaba aprobada y ya tenía
+sitio. Solo había que pintarla donde toca.
+
+La celda pinta **las dos formas** y el CSS elige: `solo-tabla` con el número, `solo-card` con la
+frase entera, en la misma frontera de 640 px que ya usa `col-hide-mobile`.
+
+**Y las dos no pueden divergir, porque la larga SE DERIVA de la corta.** Dos copias de un texto
+aprobado que pueden separarse son microcopy esperando a romperse: alguien arregla el singular en una
+y la otra se queda diciendo «1 días» justo donde más se mira. Aquí la divergencia no se vigila —
+**no puede pasar**. Y aun así hay test que las ata, para que el día que alguien las separe se entere
+por un rojo y no por una captura.
+
+Un cobro cobrado deja la celda **vacía de verdad, sin spans**: con un span vacío dentro, `td:empty`
+dejaría de aplicar y la celda ocuparía sitio en la card hablando de una deuda que no existe.
+
+| # | qué se rompe | qué sale |
+|---|---|---|
+| **R7** | se quita la forma de card | 🔴 «la celda no pinta las dos formas. Sin `solo-card`, **en la furgoneta se lee un número suelto** sin nada que diga de qué son esos días» |
+| **R8** | la frase larga se escribe aparte | 🔴 «la frase larga ha dejado de derivarse de la corta … nada impide que digan cosas distintas» |
 
 ## ① Técnico vs admin: ADMIN-ONLY, y queda declarado con su motivo
 
@@ -289,8 +309,6 @@ cubre el bloque DINERO del rail** (G3/G4). Se queda con `requireRole('admin')`.
   justificantes — `invoicesView.js` no usa `isReceiptNumber` ni `tipoDeFactura` en ningún filtro.
   **No entra aquí:** tocar Facturas es otra pantalla, y esta entrega ya trae una nueva.
 * **El método de los cobros a mano**, que necesita columna (arriba).
-* **La card en móvil enseña `3 días` sin etiqueta**, porque ahí no hay cabecera. La frase larga ya
-  está escrita y aprobada; elegirla por ancho es otro carril. Ver arriba.
 * **AB6 · matriz de dispositivos y capturas: PENDIENTE** (humano).
 * **No hay test contra BD.** La población fundida se comprueba por estructura —que las dos consultas
   existan— y por comportamiento en la pantalla; que Prisma devuelva lo que se espera no se mide aquí.
