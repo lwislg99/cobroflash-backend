@@ -107,22 +107,19 @@ async function renderExpensesView(container) {
 
   document.getElementById('exp-new-btn').addEventListener('click', () => openExpenseModal(null));
 
-  /**
-   * SCRUM-324 (E3) · MICROCOPY OFICIAL, aprobada por el fundador el 10-ago-2026.
-   *
-   * No se toca ni se parafrasea (regla 30). Se eligió sobre otras tres, y el motivo importa para
-   * quien venga a cambiarla:
-   *
-   *   · «no puedes deducir este gasto» sería FALSO POR EXCESO — un ticket sí puede ser gasto
-   *     deducible en IRPF en estimación directa, que es otra cosa y otro importe;
-   *   · «para que tu asesor pueda usar este gasto» esconde lo que está en juego. El profesional
-   *     merece saber que lo que pierde es EL IVA, que es dinero suyo y es cuantificable.
-   *
-   * Por eso dice exactamente qué se pierde («el IVA»), no afirma nada falso, y la acción está en su
-   * vocabulario: el almacén, a tu nombre, desglosado.
-   */
-  const AVISO_SIMPLIFICADO = 'Con un ticket no puedes deducir el IVA. Pide en el almacén una '
-    + 'factura a tu nombre, con tu NIF y el IVA desglosado.';
+  // SCRUM-324 (E3) · EL AVISO DEL SIMPLIFICADO NO SE ENCIENDE, y el hueco se declara aquí.
+  //
+  // Decir «con un ticket no puedes deducir el IVA» es una AFIRMACIÓN FISCAL, y el producto no
+  // hace afirmaciones fiscales sin el asesor (decisión del fundador, 10-ago-2026). Las tres
+  // versiones candidatas viven en `docs/legal/PREGUNTAS_ASESOR.md:539-542` como preguntas SIN
+  // responder — no como texto pendiente de pegar.
+  //
+  // Y tampoco queda un contenedor vacío esperándolas: un `<div>` mudo es un enlace construido que
+  // no se pinta nunca (SCRUM-424) un paso antes, y encima invita a que alguien lo rellene sin
+  // aprobación. El día que haya frase, el div cuesta una línea.
+  //
+  // El motor SÍ está conectado: la ruta devuelve `justificante.veredicto`. Lo que falta es la
+  // frase, no el mecanismo.
 
   function updateExportLink() {
     const monthSel = document.getElementById('exp-filter-month');
@@ -299,6 +296,40 @@ function openExpenseModal(expense, opts) {
             <label>Importe *</label>
             <input id="exp-amount" type="number" min="0" step="0.01" placeholder="0.00" value="${expense?.amount||''}"/>
           </div>
+        </div>
+
+        <!-- SCRUM-324 (E3) · EL DESGLOSE, que es lo que convierte un apunte en un ASIENTO.
+             «Importe» es el TOTAL con IVA y así se declaró en el censo. Sin base, tipo y cuota, el
+             libro de facturas recibidas EXCLUYE el gasto («libroRecibidas.ts:98») y sale vacío: eso
+             es lo que pasaba hasta hoy, con las columnas ya en las tres bases y nadie escribiéndolas.
+             Los tres son OPCIONALES: un gasto sin desglose se sigue guardando igual. -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+          <div class="field">
+            <label>Base imponible</label>
+            <input id="exp-base" type="number" min="0" step="0.01" placeholder="0.00" value="${expense?.baseAmount ?? ''}"/>
+          </div>
+          <div class="field">
+            <label>Tipo de IVA</label>
+            <select id="exp-vatrate">
+              <option value="">—</option>
+              ${[21, 10, 4, 0].map((t) => `<option value="${t}"${Number(expense?.vatRate) === t ? ' selected' : ''}>${t}%</option>`).join('')}
+            </select>
+          </div>
+          <div class="field">
+            <label>Cuota de IVA</label>
+            <input id="exp-vatamount" type="number" min="0" step="0.01" placeholder="0.00" value="${expense?.vatAmount ?? ''}"/>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="field">
+            <label>Nº de factura del proveedor</label>
+            <input id="exp-provinvnum" type="text" placeholder="A-2026/114" value="${escHtml(expense?.providerInvoiceNumber||'')}"/>
+          </div>
+          <div class="field">
+            <label>Fecha de la factura</label>
+            <input id="exp-provinvdate" type="date" value="${expense?.providerInvoiceDate ? String(expense.providerInvoiceDate).slice(0,10) : ''}"/>
+          </div>
           <div class="field">
             <label>Fecha</label>
             <input id="exp-date" type="date" value="${expense ? new Date(expense.date).toISOString().slice(0,10) : today}"/>
@@ -338,14 +369,14 @@ function openExpenseModal(expense, opts) {
         </div>
         <div class="field" id="exp-receipt-section">
           <label>Foto del ticket (opcional)</label>
+          <!-- SCRUM-324 (E3) · TEXTO OFICIAL APROBADO (regla 30, fundador 10-ago-2026). No se
+               reescribe ni se «mejora». Describe lo que hace el SOFTWARE y no afirma nada sobre lo
+               que Hacienda admite: eso último espera al asesor. -->
+          <p style="margin:0 0 6px;font-size:12.5px;color:var(--muted)">Guardamos la foto como tu copia. Los datos fiscales salen de los campos de arriba.</p>
           ${expense?.receiptData ? `<img src="${expense.receiptData}" style="max-width:100%;max-height:120px;border-radius:8px;object-fit:contain;border:1px solid var(--neutral-200);margin-bottom:6px"/>` : ''}
           <input type="file" id="exp-receipt" accept="image/*" style="font-size:13px"/>
         </div>
         <div id="exp-error" class="alert error" style="display:none"></div>
-        <!-- SCRUM-324 (E3) · el aviso del simplificado. Vacío hasta que el servidor clasifique:
-             el veredicto "falta confirmar" NO pinta nada, porque acusar sin saber es tan inútil
-             como callar. (Sin acentos graves aquí dentro: esto vive en un template literal.) -->
-        <div id="exp-aviso-iva" class="alert warning" style="display:none"></div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" id="exp-cancel">Cancelar</button>
@@ -445,6 +476,14 @@ function openExpenseModal(expense, opts) {
         quoteId: quoteId ? Number(quoteId) : null,
         providerId: providerId ? Number(providerId) : null,
         nifProveedor: document.getElementById('exp-provider-nif').value.trim() || null,
+        // SCRUM-324 (E3) · el desglose. `numeroONull` y no `Number(x)||null`: `Number('')` es 0 y
+        // un 0 aquí sería una AFIRMACIÓN («base cero», «cuota cero») donde el profesional no ha
+        // escrito nada. Un 0 tecleado a propósito —tipo 0%, exento— sí tiene que llegar como 0.
+        baseAmount:  numeroONull(document.getElementById('exp-base').value),
+        vatRate:     numeroONull(document.getElementById('exp-vatrate').value),
+        vatAmount:   numeroONull(document.getElementById('exp-vatamount').value),
+        providerInvoiceNumber: document.getElementById('exp-provinvnum').value.trim() || null,
+        providerInvoiceDate:   document.getElementById('exp-provinvdate').value || null,
         receiptData,
         currency: window.appLocale?.currency || 'EUR',
       };
@@ -456,31 +495,9 @@ function openExpenseModal(expense, opts) {
         creado = await apiRequest('/admin/expenses', { method: 'POST', body: JSON.stringify(payload) });
       }
 
-      // SCRUM-324 (E3) · EL AVISO ES EL PRODUCTO, no un adorno del guardado.
-      //
-      // El ahorro no está en guardar la foto: está en que la PRÓXIMA vez pida la factura bien. Por
-      // eso el modal NO se cierra solo cuando el justificante no deduce — si se cerrara, el aviso
-      // sería un toast que se va antes de que nadie lo lea, y habríamos guardado un ticket inútil
-      // con la sensación de haber hecho el trabajo.
-      //
-      // ⚠️ SOLO con `no_deducible`. Con `falta_confirmar` NO se pinta nada: es el caso en que todo
-      // lo comprobable está y solo queda mirar el papel, y avisar ahí sería acusar sin saber. Un
-      // aviso que salta siempre se aprende a ignorar igual que uno que no salta nunca.
-      if (creado?.justificante?.veredicto === 'no_deducible') {
-        const aviso = document.getElementById('exp-aviso-iva');
-        if (aviso) {
-          aviso.textContent = AVISO_SIMPLIFICADO;
-          aviso.style.display = '';
-          btn.disabled = false;
-          btn.textContent = 'Entendido';
-          btn.onclick = async () => {
-            closeExpModal();
-            if (o.onSaved) await o.onSaved();
-            else await Promise.all([loadSummary(), loadExpenses()]);
-          };
-          return;
-        }
-      }
+      // SCRUM-324 (E3) · aquí iba el aviso del simplificado, y NO se enciende: es una afirmación
+      // fiscal y espera al asesor (ver arriba). El veredicto llega en `creado.justificante` y hoy
+      // no se pinta — deliberadamente, y dicho, en vez de pintarse a medias.
 
       closeExpModal();
       // SCRUM-135: desde el detalle del Trabajo no existe la vista de Gastos que recargar
@@ -501,6 +518,19 @@ function closeExpModal() {
 function showExpError(msg) {
   const el = document.getElementById('exp-error');
   if (el) { el.textContent = msg; el.className = 'alert error'; el.style.display = 'block'; }
+}
+
+/**
+ * SCRUM-324 (E3) · «vacío» y «cero» no son el mismo número.
+ *
+ * `Number('')` vale **0**, así que el atajo `Number(x) || null` convierte un campo en blanco en un
+ * cero y un cero de verdad en `null` — las dos direcciones mal. Aquí un campo sin tocar es `null`
+ * (no se sabe) y un `0` escrito llega como `0` (tipo exento, que existe).
+ */
+function numeroONull(v) {
+  if (v === null || v === undefined || String(v).trim() === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
 }
 
 function fileToBase64(file) {

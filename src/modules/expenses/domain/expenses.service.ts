@@ -24,6 +24,18 @@ export interface CreateExpenseInput {
    * del proveedor es pedirle que se acuerde por la noche — que es justo cuando ya no se acuerda.
    */
   nifProveedor?: string | null;
+  /**
+   * SCRUM-324 (E3) · EL DESGLOSE, que es lo que convierte un apunte en un ASIENTO.
+   *
+   * `amount` es el TOTAL con IVA (declarado en el censo de SCRUM-324). Sin `baseAmount` el libro de
+   * facturas recibidas EXCLUYE el gasto (`libroRecibidas.ts:98`): las seis columnas llevaban desde
+   * el 10-ago en las tres bases, con un lector que las lee y **nadie que las escribiera**.
+   */
+  baseAmount?: number | null;
+  vatRate?: number | null;
+  vatAmount?: number | null;
+  providerInvoiceNumber?: string | null;
+  providerInvoiceDate?: Date | null;
 }
 
 export async function listExpenses(
@@ -173,6 +185,12 @@ export async function createExpense(merchantId: number, data: CreateExpenseInput
       notes:        data.notes       ?? null,
       receiptData:  data.receiptData ?? null,
       teamMemberId: data.teamMemberId ?? null,
+      // SCRUM-324 (E3) · aquí se cierra la cadena. Hasta hoy estas cinco no las escribía NADIE.
+      baseAmount:            data.baseAmount            ?? null,
+      vatRate:               data.vatRate               ?? null,
+      vatAmount:             data.vatAmount             ?? null,
+      providerInvoiceNumber: data.providerInvoiceNumber ?? null,
+      providerInvoiceDate:   data.providerInvoiceDate   ?? null,
     },
   });
   await guardarNifDelProveedor(merchantId, data);

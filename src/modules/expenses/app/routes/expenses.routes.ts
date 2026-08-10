@@ -89,7 +89,10 @@ router.get('/margin/:quoteId', requireRole('admin'), async (req, res) => {
 // POST /admin/expenses
 router.post('/', async (req, res) => {
   try {
-    const { quoteId, providerId, concept, amount, currency, category, date, notes, receiptData, nifProveedor } = req.body || {};
+    // SCRUM-324 (E3) · los cinco del desglose. Sin ellos el gasto se guarda igual, pero el libro
+    // de facturas recibidas lo EXCLUYE (`libroRecibidas.ts:98`) y sale sin un solo asiento.
+    const { quoteId, providerId, concept, amount, currency, category, date, notes, receiptData, nifProveedor,
+            baseAmount, vatRate, vatAmount, providerInvoiceNumber, providerInvoiceDate } = req.body || {};
     if (!concept || typeof concept !== 'string') return res.status(400).json({ error: 'concept_required' });
     if (amount == null || Number.isNaN(Number(amount))) return res.status(400).json({ error: 'amount_required' });
     if (Number(amount) <= 0) return res.status(400).json({ error: 'amount_invalid' });
@@ -108,6 +111,14 @@ router.post('/', async (req, res) => {
       // diferencia de Job.operarioId, que se congela desde el presupuesto en el accept).
       teamMemberId: req.teamMemberId ?? null,
       nifProveedor: nifProveedor ? String(nifProveedor) : null,
+      // SCRUM-324 (E3) · EL DESGLOSE. `?? null` y no `x ? … : null`: un **0** legítimo —tipo 0%,
+      // operación exenta— es falsy, y el atajo lo convertiría en «no se sabe». Cero y vacío no son
+      // el mismo dato, y aquí la diferencia decide si el asiento entra en el libro.
+      baseAmount:  baseAmount  ?? null,
+      vatRate:     vatRate     ?? null,
+      vatAmount:   vatAmount   ?? null,
+      providerInvoiceNumber: providerInvoiceNumber ? String(providerInvoiceNumber) : null,
+      providerInvoiceDate:   providerInvoiceDate ? new Date(providerInvoiceDate) : null,
     });
 
     // SCRUM-324 (E3) · el veredicto viaja CON el gasto recién creado.
@@ -146,7 +157,8 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ error: 'invalid_id' });
-    const { concept, amount, currency, category, date, notes, quoteId, providerId, receiptData } = req.body || {};
+    const { concept, amount, currency, category, date, notes, quoteId, providerId, receiptData,
+            baseAmount, vatRate, vatAmount, providerInvoiceNumber, providerInvoiceDate } = req.body || {};
     const patch: any = {};
     if (concept     !== undefined) patch.concept     = String(concept).trim();
     if (amount      !== undefined) patch.amount      = Number(amount);
@@ -157,6 +169,13 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
     if (quoteId     !== undefined) patch.quoteId     = quoteId ? Number(quoteId) : null;
     if (providerId  !== undefined) patch.providerId  = providerId ? Number(providerId) : null;
     if (receiptData !== undefined) patch.receiptData = receiptData ? String(receiptData) : null;
+      // SCRUM-324 (E3) · en la edición se distingue «no lo mandes» (`undefined`, no se toca) de
+      // «bórralo» (`null`). Sin esa distinción, abrir el modal y guardar borraría el desglose.
+      if (baseAmount  !== undefined) patch.baseAmount  = baseAmount  ?? null;
+      if (vatRate     !== undefined) patch.vatRate     = vatRate     ?? null;
+      if (vatAmount   !== undefined) patch.vatAmount   = vatAmount   ?? null;
+      if (providerInvoiceNumber !== undefined) patch.providerInvoiceNumber = providerInvoiceNumber ? String(providerInvoiceNumber) : null;
+      if (providerInvoiceDate   !== undefined) patch.providerInvoiceDate   = providerInvoiceDate ? new Date(providerInvoiceDate) : null;
     if (!Object.keys(patch).length) return res.status(400).json({ error: 'empty_update' });
     const updated = await updateExpense(req.merchantId, id, patch);
     if (!updated) return res.status(404).json({ error: 'not_found' });

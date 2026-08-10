@@ -46,6 +46,10 @@ const VARIABLE = 'LIBRO_PG_URL';
  * buena.
  */
 const GATEADOS_DECLARADOS = Object.freeze({
+  // SCRUM-324 (E3): los DOS que necesitan base — la cadena entera hasta el libro de recibidas
+  // y su control negativo. Son justo los que prueban que la funcion existe, asi que su skip
+  // es lo mas importante que este inventario declara.
+  'scrum324-cadena-hasta-el-libro.test.mjs': 2,
   'scrum244-supresion-y-anonimizado.test.mjs': 1,
   'scrum295-modelo-303-postgres.test.mjs': 1,
   'scrum296-libro-postgres.test.mjs': 1,

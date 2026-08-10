@@ -39,35 +39,51 @@ function vista() {
   }
 }
 
-test('SCRUM-324 · la microcopy del aviso es EXACTAMENTE la aprobada', () => {
-  const s = vista();
-  // Se busca el texto ya concatenado, para que partirlo en dos líneas no lo escape del guard.
-  const literales = [...s.matchAll(/'([^'\\]*(?:\\.[^'\\]*)*)'/g)].map((m) => m[1]);
-  const unido = literales.join('');
-  assert.ok(
-    unido.includes(TEXTO_APROBADO),
-    '🔴 EL AVISO DEL SIMPLIFICADO NO DICE LA FRASE APROBADA.\n\n'
-    + `  Debe decir, literal:\n    «${TEXTO_APROBADO}»\n\n`
-    + '  No se parafrasea (regla 30). Y ojo con las dos versiones que se DESCARTARON:\n'
-    + '    · «no puedes deducir este gasto» es FALSO POR EXCESO — un ticket sí puede ser gasto\n'
-    + '      deducible en IRPF en estimación directa.\n'
-    + '    · «para que tu asesor pueda usar este gasto» esconde que lo que se pierde es EL IVA,\n'
-    + '      que es dinero del profesional y es cuantificable.');
+test('SCRUM-324 · 🔴 la afirmación FISCAL sobre el ticket NO está encendida', () => {
+  // Este test decía lo contrario: exigía que el aviso «con un ticket no puedes deducir el IVA»
+  // estuviera pintado, con su frase exacta. **Se invierte, y el motivo es la decisión del fundador
+  // del 10-ago-2026:** decir qué admite Hacienda es una afirmación FISCAL y el producto no las hace
+  // sin el asesor. Las tres versiones candidatas siguen en `docs/legal/PREGUNTAS_ASESOR.md:539-542`
+  // como preguntas SIN responder — no como texto pendiente de pegar.
+  //
+  // Y no queda contenedor esperándolas: un `<div>` mudo es un enlace construido que no se pinta
+  // nunca (SCRUM-424) un paso antes, y encima invita a rellenarlo sin aprobación.
+  //
+  // ⚠️ Se mira el fuente SIN COMENTARIOS, o este guard se caza a sí mismo en la línea de arriba.
+  // 🔴 RESPALDO DE LAS NEGACIONES (SCRUM-237). Tres `doesNotMatch` seguidos son un verde
+  // permanente si los tokens que niegan no existen en ninguna parte: el guard de 237 me lo cazó
+  // aquí mismo. Así que primero se DEMUESTRA que el detector encuentra esos tokens cuando están.
+  const conElAviso = [
+    "const AVISO_SIMPLIFICADO = 'Con un ticket no puedes deducir el IVA.';",
+    '<div id="exp-aviso-iva" class="alert warning"></div>',
+  ].join(String.fromCharCode(10));
+  assert.match(conElAviso, /no puedes deducir el IVA/i, '🔴 el detector no ve la frase ni cuando está.');
+  assert.match(conElAviso, /AVISO_SIMPLIFICADO/, '🔴 el detector no ve la constante ni cuando está.');
+  assert.match(conElAviso, /id="exp-aviso-iva"/, '🔴 el detector no ve el contenedor ni cuando está.');
+
+  // Y la frase real, viva donde le toca: en las preguntas al asesor, SIN responder.
+  const preguntas = fs.readFileSync(new URL('../docs/legal/PREGUNTAS_ASESOR.md', import.meta.url), 'utf8');
+  assert.match(preguntas, /deducir el IVA/i,
+    '🔴 la pregunta al asesor sobre el IVA del ticket ha desaparecido del documento: entonces ' +
+    'estas negaciones no protegen una decisión pendiente, protegen un olvido.');
+
+  const codigo = vista().split(String.fromCharCode(10)).filter((l) => !l.trimStart().startsWith('//')).join(String.fromCharCode(10));
+  assert.doesNotMatch(codigo, /no puedes deducir el IVA/i,
+    '🔴 se ha encendido la afirmación fiscal sobre el ticket sin el asesor.');
+  assert.doesNotMatch(codigo, /AVISO_SIMPLIFICADO/,
+    '🔴 ha vuelto la constante del aviso fiscal.');
+  assert.doesNotMatch(codigo, /id="exp-aviso-iva"/,
+    '🔴 ha vuelto el contenedor vacío del aviso.');
+
+  // El MOTOR sí sigue conectado, pero EN LA RUTA y no en la vista: la vista ya no consume el
+  // veredicto porque no hay nada que pintar, y comprobarlo aquí sería exigir un consumidor que
+  // este ticket ha retirado a propósito. El motor vive donde vive la regla fiscal.
+  const ruta = fs.readFileSync(new URL('../src/modules/expenses/app/routes/expenses.routes.ts', import.meta.url), 'utf8');
+  assert.match(ruta, /clasificarJustificante\(/,
+    '🔴 se ha desconectado el motor del justificante de la ruta. El motor se queda —dejo de ser ' +
+    'un fichero sin llamadores—; lo que espera al asesor es la FRASE, no el mecanismo.');
 });
 
-test('SCRUM-324 · el aviso solo salta con `no_deducible`, nunca con `falta_confirmar`', () => {
-  // 🔴 ES LA MITAD QUE HACE ÚTIL AL AVISO. `falta_confirmar` significa «todo lo comprobable está y
-  // solo queda mirar el papel»: avisar ahí es acusar sin saber, y un aviso que salta siempre se
-  // aprende a ignorar exactamente igual que uno que no salta nunca.
-  const s = vista();
-  const condicion = /justificante\?\.veredicto === 'no_deducible'/.test(s);
-  assert.ok(condicion,
-    '🔴 el aviso ya no está condicionado a `no_deducible`. Si salta con `falta_confirmar` estamos '
-    + 'acusando sin saber; si salta siempre, hemos construido ruido.');
-  assert.ok(
-    !/veredicto === 'falta_confirmar'[\s\S]{0,200}AVISO_SIMPLIFICADO/.test(s),
-    '🔴 `falta_confirmar` está pintando el aviso del simplificado');
-});
 
 test('SCRUM-324 · los TRES campos del momento están en el formulario', () => {
   const s = vista();
