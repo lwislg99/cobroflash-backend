@@ -13,9 +13,8 @@
 // Y no es una promesa: el guard de `tests/scrum438-atestiguar.test.mjs` deriva las llamadas a
 // prisma de este fichero y **falla si aparece una que no sea de lectura** — la forma de SCRUM-371.
 //
-// USO:
-//   node scripts/atestiguar-sobres.mjs --clave DATABASE_URL_DEV
-//   node scripts/atestiguar-sobres.mjs --clave DATABASE_URL --salida docs/legal/atestiguamientos/prod-2026-08-11.json
+// USO: `--help` lo cuenta entero, incluida la invocación de producción. Vive AHÍ y no en un
+// documento aparte: quien va a ejecutar esto tiene el script delante, no el documento.
 import 'dotenv/config';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -31,7 +30,49 @@ const SALIDA = valor('--salida');
 const WORKTREE = path.basename(process.cwd());
 
 function morir(m) { console.error(`\n🔴 ${m}\n`); process.exit(1); }
-if (!CLAVE) morir('falta `--clave <NOMBRE_DE_LA_VARIABLE>` (p. ej. DATABASE_URL_DEV)');
+
+/**
+ * 🔴 LA INVOCACIÓN DE PRODUCCIÓN VIVE EN EL `--help`, NO EN UN DOCUMENTO APARTE.
+ *
+ * Quien va a ejecutar esto tiene el script delante; el documento se queda en otra pestaña. Y hay
+ * un guard que compara este texto con lo aprobado, para que no se separe del que se usa.
+ */
+export const AYUDA = `
+atestiguar-sobres — ejecuta la verificación de los sobres firmados y emite su atestiguamiento.
+
+  SOLO LEE. No toca el sobre (regla 29), ni el albarán, ni AuditLog. Por eso —y solo por eso—
+  esta herramienta sí puede apuntar a producción.
+
+USO
+  node scripts/atestiguar-sobres.mjs --clave <NOMBRE_DE_LA_VARIABLE> [--salida <fichero.json>]
+
+  --clave    NOMBRE de la variable de entorno con la URL. Nunca el valor: un valor en argv queda
+             en \`ps\` y en el historial, y dentro del \`e.message\` de cualquier error.
+  --salida   dónde escribir el documento. Sin ella, se imprime por pantalla.
+
+  Salidas:  0 = todos atestiguados · 2 = hay sobres que no se pudieron mirar · 1 = ninguno.
+
+DÓNDE SE GUARDA EL DOCUMENTO
+  En \`docs/legal/atestiguamientos/\`, y entra al repo por PR (decisión del asesor, 11-ago-2026).
+  No en AuditLog: además de ser una unión cerrada, **se escribe en 10 sitios y no se lee en
+  ninguno** — meter ahí un documento legal es guardarlo donde nadie va a mirar. Un fichero en git
+  tiene historia inmutable, revisión antes de entrar y alguien que lo lee para aprobarlo.
+
+EN DESARROLLO
+  node scripts/atestiguar-sobres.mjs --clave DATABASE_URL_DEV
+
+EN PRODUCCIÓN — esta invocación exacta, que no deja la credencial en el historial ni en \`ps\`
+  read -s -p "URL de produccion: " DATABASE_URL && export DATABASE_URL \\
+    && node scripts/atestiguar-sobres.mjs --clave DATABASE_URL \\
+         --salida docs/legal/atestiguamientos/produccion-2026-08-11.json ; \\
+     unset DATABASE_URL
+
+  \`read -s\` no hace eco y no entra en el historial. El \`unset\` va tras \`;\` y no tras \`&&\`
+  a propósito: tiene que ejecutarse tanto si el script sale bien como si falla.
+`;
+
+if (args.includes('--help') || args.includes('-h')) { console.log(AYUDA); process.exit(0); }
+if (!CLAVE) morir(`falta \`--clave <NOMBRE_DE_LA_VARIABLE>\`. Prueba \`--help\`.`);
 const url = process.env[CLAVE];
 if (!url) morir(`no hay ${CLAVE} en el entorno. (No se imprime ningún valor de .env.)`);
 
