@@ -1,9 +1,13 @@
 # SCRUM-415 — el guard de evidencias vuelve a verde: la fixture declaraba una versión y sellaba con otra
 
-**Fecha:** 10-ago-2026 · **Medido contra:** `origin/main` =
-`8bc048788d04bbbe74d77b3abd629ab972f02f73` · 2026-08-10T14:55:31+02:00
-**Tanda:** 2472 tests · 2405 pass · **0 fail** · 67 skipped · `npm test` **`$? = 0`**
-(con `LIBRO_PG_URL` puesto: los dos tests de A7 CORREN, no se saltan)
+**Medido contra:** `origin/main` = `50dcbc0be142e120683ecd19dfefed4ff2e6d95c` · 2026-08-10T14:48:36+01:00
+
+**Fecha:** 10-ago-2026 ·
+**Tanda:** 2474 tests · 2400 pass · **0 fail** · 74 skipped · `npm test` **`$? = 0`**
+(así corre el CI: sin `LIBRO_PG_URL`, los dos tests de A7 se SALTAN)
+**Tanda con banco:** `LIBRO_PG_URL` puesto → 2474 · **2407 pass** · **0 fail** · 67 skipped ·
+**`$? = 0`**. Los siete que dejan de saltarse incluyen los dos de A7: es la única tanda en la que
+este ticket queda realmente medido.
 
 `tests/scrum297-evidencias-postgres.test.mjs` llevaba **rojo en `main`**, con el peor mensaje
 posible para un paquete de cumplimiento: *«el sello del albarán sale como `hash_no_coincide`»*
@@ -117,6 +121,24 @@ públicos ya existentes** y se usan solo para LEER.
   versión más tarde.
 * **No se ha tocado `docs/BUGS.md`**: no era un defecto de producto (el verificador siempre estuvo
   bien), sino de una fixture, y ya estaba reportado en `docs/master/SCRUM-244.md`.
+
+## El CI se puso rojo por ESTA entrada, y el motivo es de proceso
+
+Con el arreglo ya verde, el CI de la rama falló. No por la fixture: por este mismo fichero.
+
+```
+✖ SCRUM-267 · toda entrada NUEVA del registro declara contra qué main se midió, y cuándo
+  actual: [ 'SCRUM-415.md — no declara «Medido contra»' ]
+```
+
+El ancla estaba escrita, pero detrás de `**Fecha:**` y partida en dos líneas, y `RE_ANCLA` la
+exige **al principio de su propia línea y entera**. El guard tenía razón: un ancla que no se puede
+parsear no sirve para saber si la medición caducó, que es para lo único que existe.
+
+**Por qué no salió antes:** la última tanda completa de la sesión se corrió ANTES de escribir esta
+entrada, y después de crearla se commiteó sin volver a correrla. El fallo no fue del guard ni del
+entorno — **fue no repetir la tanda tras añadir el último fichero**. Reproducido en local al primer
+intento, lo que además descarta que dependiera del entorno de CI.
 
 ## Ficheros
 
