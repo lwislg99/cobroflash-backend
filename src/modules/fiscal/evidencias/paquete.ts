@@ -114,7 +114,54 @@ export const FICHEROS = Object.freeze({
   verificacion: 'albaranes-verificacion.csv',
   entregas: 'entregas-por-linea.csv',
   manifiesto: 'manifiesto.json',
+  // SCRUM-438: el alcance de lo que las verificaciones de este paquete pueden demostrar.
+  politicaSobres: 'alcance-de-la-verificacion.txt',
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-438 · POLÍTICA DE LOS SOBRES ANTERIORES A v:3 — **MICROCOPY SIN APROBAR (regla 30)**
+//
+// Lo lee un ASESOR FISCAL o un inspector, no un profesional: el registro es más formal, pero el
+// criterio es el mismo — no puede prometer más de lo que se puede demostrar, y tampoco menos.
+//
+// Qué intenta decir, para que se pueda corregir con el criterio delante:
+//   · lo que SÍ se demuestra: que el contenido del documento no ha cambiado desde que se firmó;
+//   · lo que NO: que cinco datos que el sello lee de otras tablas sigan siendo los de aquel día,
+//     porque el sobre no los guardó — los vuelve a leer al verificar;
+//   · y que eso NO es una manipulación ni un defecto del documento: es el alcance del sello.
+export const POLITICA_SOBRES_ANTERIORES = `[PENDIENTE microcopy oficial · propuesta, SCRUM-438]
+
+ALCANCE DE LA VERIFICACIÓN DE ALBARANES FIRMADOS
+
+Los albaranes de este paquete se verifican recalculando la huella (SHA-256) del contenido que se
+firmó y comparándola con la que quedó guardada en el momento de la firma.
+
+QUÉ DEMUESTRA UNA VERIFICACIÓN QUE CUADRA
+  El contenido del albarán —su número, su fecha, sus líneas, sus notas y el lugar y la fecha de
+  entrega— es el mismo que el cliente firmó. Ninguno de esos datos se ha alterado después.
+
+QUÉ NO DEMUESTRA, Y POR QUÉ SE DICE AQUÍ
+  La huella incluye además CINCO datos que no se guardaron dentro del sobre de la firma y que se
+  vuelven a leer de la base en cada verificación: la dirección de la obra, el nombre del trabajo,
+  el nombre del cliente, y el nombre y el NIF del emisor.
+
+  Si alguno de esos cinco se corrige después de firmar —por ejemplo, al arreglar la razón social
+  de un cliente— la huella recalculada deja de coincidir SIN que el documento se haya tocado.
+
+  Por eso estos albaranes se declaran DE INTEGRIDAD PARCIAL VERIFICABLE: se puede demostrar que el
+  documento no ha cambiado, y no se puede demostrar por sí solo que esos cinco datos sean los de
+  la fecha de la firma.
+
+CÓMO SE ACOTA ESO
+  Los albaranes firmados antes de la versión 3 del sobre pueden llevar un ATESTIGUAMIENTO: una
+  verificación fechada, ejecutada en un momento concreto, que deja constancia de que entonces la
+  huella coincidía y de con qué valores de esos cinco datos. Un atestiguamiento no es una firma ni
+  un sellado: no añade ninguna garantía criptográfica. Lo que permite es fechar el antes y el
+  después, de modo que una discrepancia posterior se pueda explicar por un cambio concreto.
+
+  A partir de la versión 3 del sobre, los cinco datos quedan dentro de lo firmado y esta salvedad
+  deja de aplicar a los documentos nuevos.
+`;
 
 /** El estado de un asiento a partir de los albaranes que le apuntan. */
 function estadoDelAsiento(resultados: ResultadoSobre[]): string {
@@ -281,6 +328,17 @@ export function construirPaqueteEvidencias(params: {
 
   // El manifiesto va EL ÚLTIMO: lleva el SHA-256 de cada fichero anterior, que es lo que permite
   // a un tercero comprobar que el ZIP no se ha tocado desde que se generó.
+  // ── SCRUM-438 · LA POLÍTICA DE LOS SOBRES ANTERIORES, DENTRO DEL PAQUETE ─────────────────
+  //
+  // 🔴 VA AQUÍ Y NO EN UN DOCUMENTO APARTE, y ésa es la decisión: un paquete de evidencias que
+  // afirma integridad tiene que llevar DENTRO el alcance de lo que afirma. Un documento externo
+  // se separa del ZIP el primer día, y entonces quien lo recibe lee las verificaciones sin el
+  // matiz que las acota — que es exactamente la lectura que no se puede permitir.
+  //
+  // Se incluye SIEMPRE, cuadren o no: si solo saliera cuando algo falla, su presencia sería en sí
+  // misma una señal de problema y quien prepara el paquete tendría un motivo para quitarla.
+  ficheros.push({ nombre: FICHEROS.politicaSobres, contenido: POLITICA_SOBRES_ANTERIORES });
+
   const manifiesto = {
     version: 1,
     merchantId: params.merchantId,
@@ -294,6 +352,7 @@ export function construirPaqueteEvidencias(params: {
     })),
   };
   ficheros.push({ nombre: FICHEROS.manifiesto, contenido: JSON.stringify(manifiesto, null, 2) });
+
 
   return { ficheros, indice, resumen, avisos };
 }
