@@ -213,6 +213,11 @@ test('SCRUM-390 · 🔴 EL DEFECTO DEL TICKET: la puerta tiene que estar ENGANCH
     '🔴 LA PUERTA EXISTE Y NADIE LA EVALÚA. El evaluador está construido y ningún disparador lo ' +
     'llama, que es exactamente el defecto que SCRUM-390 vino a cerrar: una condición sin quien la ' +
     'mire es prosa. Vuelve a engancharlo al cron diario, como paso aparte que no bloquea.');
-  assert.ok(CLAUSULAS_DEPENDIENTES.length >= 3,
+  assert.ok(CLAUSULAS_DEPENDIENTES.length >= 4,
     '🔴 la lista de cláusulas que el aviso nombra se ha quedado corta.');
+  assert.ok(CLAUSULAS_DEPENDIENTES.some((c) => /SCRUM-242/.test(c)),
+    '🔴 falta la cláusula de la COPIA DE SEGURIDAD. Medido: cero copias del proveedor, cero propias ' +
+    'y ningún camino de restauración. Hoy no urge porque los datos son desechables; el día que la ' +
+    'puerta se abra es letal, y además incumplimiento fiscal — es exactamente el tipo de condición ' +
+    'que este mecanismo existe para no olvidar.');
 });

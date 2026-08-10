@@ -27,6 +27,13 @@ export const CLAUSULAS_DEPENDIENTES = Object.freeze([
   'docs/YAQU_MASTER.md — la regla fechada de los datos de producción',
   'docs/MIGRATIONS_PENDING.md — el backfill que se dejó caer por ella',
   'SCRUM-402 — el rótulo de Bizum necesita microcopy aprobada ANTES de encender la bandera',
+  // SCRUM-242 · Medido: el panel de Railway dice hoy, literal, «No Backups — this service's volume
+  // does not have any backups», y PITR solo existe en el plan Pro. Cero copias del proveedor, cero
+  // copias propias ejecutándose (0 invocaciones, probado), cero fuera de la infraestructura y
+  // ningún camino de restauración. Hoy no urge porque los datos de producción son desechables; el
+  // día que la puerta se abra es LETAL — y además incumplimiento fiscal, porque las facturas
+  // emitidas y los albaranes firmados hay obligación de conservarlos.
+  'SCRUM-242 — hay copia de seguridad de la base y sabemos restaurarla (hoy: NINGUNA)',
 ]);
 
 export interface ResultadoAviso {
