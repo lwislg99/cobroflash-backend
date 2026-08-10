@@ -2,7 +2,7 @@
 
 **Fecha:** 10-ago-2026 · **Carril:** B (UI) · **Gate:** sin gate, corre en `npm test`
 **Medido contra:** `origin/main` = `e171c752f61231bec77dc2c22ecc7f82167d964c` · 2026-08-10T19:46:55+01:00
-**Tanda:** ver al final
+**Tanda:** 2789 tests · 2715 pass · **0 fail** · 74 gateados · `npm test` exit **0** · `guards:entrada` 17/17
 
 > 🔴 **DEPENDENCIA DE ORDEN DE MERGE:** esta rama sale de `scrum-362-banco-sin-cobertura`, **no de
 > `main`**, porque el escenario «acepta y no entrega» —lo único con lo que se puede probar esto—
@@ -125,8 +125,19 @@ y no significaría nada— y que **no afirma** ninguno de los dos vacíos.
 | **R1** | vuelve el pintado del vacío durante la carga | 🔴 «con la petición **TODAVÍA EN EL AIRE** la pantalla afirma que no hay cobros. Le está diciendo al profesional que **no le debe nadie nada** cuando lo único cierto es que no lo sabemos» |
 | **R2** | el escenario deja de colgar (SUELO) | 🔴 «la petición no se quedó en el aire (1 resueltas · 0 colgadas): **el escenario no se ha montado** y este test estaría aprobando la pantalla sin haberla puesto nunca sin cobertura» |
 | **R3** | desaparece el plazo | 🔴 «pasado el plazo la pantalla **sigue muda**… dejar al profesional mirando una tabla vacía sin decirle nada no es mejor que mentirle: **es no contestarle**» |
+| **R4** | se quita el guard de secuencia | 🔴 «la respuesta de una petición **VIEJA** ha pintado. Con una más nueva en marcha, eso sustituye datos buenos por datos peores y el profesional se queda mirando una lista vieja **sin saberlo**» |
+| **R5** | el aviso bloquea al dato tardío | 🔴 «la respuesta llegó tarde y la pantalla **sigue con el aviso**. El dato gana al mensaje: si los cobros están, se enseñan» |
+| **R6** | el aviso no se repinta al filtrar | 🔴 «un clic en un filtro ha convertido **«no sabemos» en «no hay»**. El defecto de este ticket, reintroducido por la puerta del plazo» |
+| **R7** | otro número de plazo suelto | 🔴 «hay otro número de plazo **fuera de la constante**. El plazo vive en UN sitio porque va a cambiar en cuanto midamos» |
 
-Las tres con **post-condición**: cambió el fichero que digo y la cadena ya no está.
+Las siete con **post-condición**: cambió el fichero que digo, y la cadena ya no está —o, cuando la
+mutación **envuelve** en vez de borrar, que el envoltorio esté en el disco—. Una inyección que no
+llega al fichero es una prueba **no ejecutada**, no una superada. Y cada rojo cae en **su** test y
+en ninguno más: un rojo que tira media suite no dice qué se rompió.
+
+**R7 nació rojo por mi culpa y eso también se cuenta:** el escáner se cazaba a sí mismo en la
+declaración de la constante. Corregido descontando comentarios **y** la propia línea de la
+declaración, y vuelto a probar en rojo con un `10000` suelto de verdad.
 
 **Los otros dos estados, con test propio** — son los que más fácil se rompen al tocar esto: sin
 ningún cobro sigue diciendo lo suyo · con un filtro que no casa (pulsándolo de verdad) sigue
