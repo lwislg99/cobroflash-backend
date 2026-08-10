@@ -243,3 +243,168 @@ preguntar.
 * `src/core/http/adminRouteDeclarations.ts` — la ruta, en `TECNICO_ALLOWED` con motivo.
 * `public/dashboard/js/app.js` — `enviarEntornoDeLaApp()`, suelto, en el arranque.
 * `tests/scrum360-entorno-guardado.test.mjs` (nuevo, 10) · `tests/scrum243-…` — la lectura declarada.
+
+---
+
+# SCRUM-360 · H5 **fase 3** — que iOS no se lleve una firma en silencio
+
+**Medido contra:** `origin/main` = `a18b67704073249cc37791416da08abba970c27d` · 2026-08-10T23:53:53Z
+
+**11-ago-2026** · sin gate, corre en `npm test`
+
+## PASO 0
+
+* **`docs/master/SCRUM-360.md` existe** y documenta las fases 1 y 2. **No documenta ésta**: la fase
+  2 termina diciendo, literalmente, *«**`navigator.storage.persist()` y la cuota**: fase
+  siguiente»*. Se sigue y se añade aquí, dejando las anteriores intactas.
+* **Premisa, con tres recuentos POR SEPARADO:** `navigator.storage`/`persist`/`estimate` → **cero**
+  en `public/` y `src/`; detección de desalojo → **cero** (la única coincidencia de «perdid» era
+  *«lo das por perdido»* de `jobsCierreTrabajo.js`, texto de negocio); tope de la cola → **cero**.
+* **Comprobado lo que el encargo mandaba comprobar:** las fotos van directas al servidor
+  (`POST /admin/albaranes/:id/fotos`); ni la cola ni el almacén saben nada de ellas. **No hay
+  captura de fotos sin red, así que no hay caso todavía** — no hay que parar.
+
+## Por qué ahora
+
+[MEDIDO en H0] WebKit borra **el origen entero** —service worker, Cache API e IndexedDB— tras
+**7 días** de usar Safari sin visitar el sitio. Los web apps de la pantalla de inicio están exentos;
+una pestaña normal, **no**.
+
+Hasta ahora era teoría porque no había nada que perder. Ya lo hay. Un profesional que emite cada dos
+semanas, en una pestaña de Safari, **pierde una firma pendiente** — y no se entera él ni nos
+enteramos nosotros, porque esa firma nunca llegó a nuestro servidor.
+
+## Las tres piezas
+
+### ① Persistencia: se pide y **se mira la respuesta**
+
+Pedirla sin mirarla no sirve de nada: un `false` de `persist()` significa que **el navegador puede
+borrar la cola cuando quiera**. Y `NO_SE_SABE` (sin API) **no es** `NO_PERSISTENTE`: uno dice que
+puede borrar, el otro que no pudimos preguntar. Colapsarlos es la lección de la fase 1.
+
+### ② Detección de desalojo — la pieza nueva
+
+La señal es la **conjunción**: hubo cola alguna vez **y** ahora el almacén está vacío.
+
+> 🔴 **El control que decide si esto sirve:** un profesional **nuevo** también arranca con el almacén
+> vacío. Si no se distinguen, le diríamos que ha perdido trabajo el día que se registra — y un aviso
+> que grita en falso se ignora, y entonces **no avisa del bueno**. Lo que los separa es una marca en
+> `localStorage`, puesta al encolar y retirada cuando el drenado vacía la cola de verdad.
+
+**LÍMITE DECLARADO, no descubierto:** si el borrado se lleva **también** `localStorage` —que es lo
+que hace un borrado de origen completo— la marca se va con la cola y **no detectamos nada**. Lo que
+se cubre es el caso en que IndexedDB se vacía y `localStorage` no. Detectar el borrado total
+exigiría que **el servidor** recordara que este cliente tuvo cola, y eso es una columna nueva: tuya.
+
+### ③ El tope, **medido y no elegido a ojo**
+
+Cuánto ocupa una firma, medido en Edge con el **mismo canvas** y el mismo `toDataURL('image/png')`
+que usa `signaturePad.js` (340×180 css, escalado por `devicePixelRatio`):
+
+| | 1 trazo | 3 trazos | 5 trazos |
+|---|---|---|---|
+| **dpr 1** | 11.470 car (~11 KB) | 22.686 (~22 KB) | 33.510 (~33 KB) |
+| **dpr 2** | 28.866 (~28 KB) | **56.906 (~56 KB)** ← típica | 84.062 (~82 KB) |
+| **dpr 3** | 50.770 (~50 KB) | 97.550 (~95 KB) | **142.274 (~139 KB)** ← peor caso |
+
+El servidor ya rechaza por encima de **500.000 caracteres** (`FIRMA_MAX_CHARS`, ~488 KB): ése es el
+techo absoluto por firma.
+
+**El tope son 50 firmas.** Con el peor caso medido, ~7 MB; con el techo del servidor, ~24 MB. Y 50
+albaranes firmados sin subir son **meses** sin cobertura: si se llega ahí, el problema no es el
+disco, es que el drenado lleva sin funcionar muchísimo tiempo. El número lo proponía ya la entrada
+del 11-ago de SCRUM-358.
+
+**SUELO:** si `estimate()` no contesta, **no se afirma que hay sitio** — devuelve un tercer valor,
+no un «hay espacio» disfrazado.
+
+> ⚠️ **Qué se HACE con ese tercer valor es una decisión, y se declara:** se intenta encolar igual.
+> Bloquear la firma por no haber podido medir el disco dejaría sin cola a cualquier navegador sin
+> `estimate()`, para protegerlo de un caso que puede no darse; y la protección de verdad ya existe
+> un piso más abajo — `guardarFirmaPendiente` devuelve `FALLO` si la escritura no confirma
+> (SCRUM-455), así que una cuota agotada **no pasa por buena**. Lo que el suelo impide es lo otro:
+> **decir que hay sitio sin haberlo mirado.**
+
+## 🔴 MICROCOPY: PROPUESTA, PARADA — la apruebas tú con el fundador
+
+Esta fase **no pinta nada**, así que no hay texto en el código. Harán falta dos, y el segundo es el
+más difícil del producto.
+
+### a) Espacio agotado
+
+| # | Texto | Qué hace |
+|---|---|---|
+| **1** | «No cabe otra firma en este móvil. Conéctate para subir las que tienes pendientes.» | dice el hecho y la salida |
+| 2 | «Este móvil está lleno. Sube las firmas que tienes pendientes para hacer sitio.» | más directo, «lleno» puede sonar a culpa suya |
+| 3 | «No podemos guardar más firmas aquí hasta que subas las que hay.» | el «no podemos» carga el fallo en nosotros |
+
+Recomiendo la **1**: nombra el límite sin culpar a nadie y da la acción concreta.
+
+### b) 🔴 Se ha perdido algo — el difícil
+
+Hay que decirle a un profesional que **puede haber perdido trabajo sin saber exactamente qué**. Lo
+que sabemos: había firmas sin subir y el navegador vació el almacén. Lo que **no** sabemos: cuáles.
+
+| # | Texto | El riesgo |
+|---|---|---|
+| **1** | «El navegador ha borrado las firmas que quedaban por subir. Revisa tus albaranes: los que no aparezcan firmados hay que volver a firmarlos.» | largo, pero dice **qué hacer**; no promete saber cuáles |
+| 2 | «Se han perdido firmas que estaban pendientes de subir. No sabemos cuáles.» | honesto y **deja al pro sin salida** |
+| 3 | «Tus firmas pendientes ya no están en este móvil.» | suave; **no dice que hay que actuar** |
+
+Recomiendo la **1**, y con dos avisos por delante:
+
+* **el peso de la frase es real** — le estamos diciendo que puede tener que pedirle a un cliente que
+  firme otra vez—, y por eso el texto manda a **comprobar** («los que no aparezcan firmados») en vez
+  de afirmar una pérdida concreta que no podemos nombrar;
+* **hay que medir la caja** antes de darla por buena, como en SCRUM-356: la 1 son 148 caracteres y
+  el aviso de firmas pendientes ocupaba 4 líneas a 320 px con 97.
+
+**Nada de esto está en el código.** La primera versión las dejó como constantes con marcador
+`[PENDIENTE …]`, y el trinquete de SCRUM-402 lo puso en rojo con el argumento correcto: *«si el
+texto no está aprobado, esa superficie no se pinta todavía»*. Un marcador entra cuando hay una
+pantalla que necesita decir algo **ya**; aquí no la hay.
+
+## Verificación — 14 tests, nueve mutaciones
+
+| Mutación (post-condición en disco) | Cae |
+|---|---|
+| se supone la persistencia en vez de pedirla | *«NO SE HA PEDIDO NADA»* |
+| la detección deja de avisar | *«SE HA PERDIDO UNA FIRMA SIN AVISAR»* |
+| **la detección grita en falso** | el control del profesional nuevo |
+| el suelo devuelve «hay espacio» | *«SE AFIRMA QUE HAY SITIO SIN HABERLO MIRADO»* |
+| desaparece el tope | se acepta la firma 51 |
+| no se deja la marca al encolar | no hay nada que detectar después |
+| no se retira la marca al vaciar | avisaría de una pérdida que no hubo |
+| nadie lo dispara al arrancar | el cableado |
+| vuelve la microcopy sin aprobar | el guard de textos |
+
+> ⚠️ **MI SIMULACIÓN DEL DESALOJO ERA INFIEL Y EL CÓDIGO TENÍA RAZÓN.** La primera versión del test
+> quitaba `indexedDB` del contexto; el código respondía `NO_SE_SABE` y **acertaba**: no poder abrir
+> el almacén no es que esté vacío. Pero WebKit **no le quita IndexedDB al navegador**: borra los
+> datos del origen, la API sigue ahí y la base se recrea **vacía**. Ahora se simula montando un
+> banco nuevo y conservando el mismo `localStorage`, que es el estado real en que queda el móvil.
+
+## 🔴 Huecos que se declaran
+
+* **`fake-indexeddb` es un DOBLE. No reproduce el desalojo real de WebKit ni una cuota agotada de
+  verdad.** Lo que estos tests demuestran es que **nuestro código** detecta un almacén vaciado y
+  distingue a quien perdió algo de quien nunca tuvo nada. Que iOS borre a los 7 días como dice la
+  documentación es **H7 y la matriz humana: lo prueba el fundador con un iPhone**.
+* **Nadie ve nada todavía.** Las tres medidas se calculan y se devuelven, y **ninguna se pinta**,
+  porque la microcopy está sin aprobar. El hecho se mide; las palabras faltan.
+* **`hayEspacioParaOtraFirma` no está cableada al encolado.** Se puede llamar y está probada, pero
+  `encolarFirma` todavía no la consulta: hacerlo sin el texto de «espacio agotado» sería rechazar
+  una firma sin poder decir por qué. Va con la microcopy.
+* **La marca no sobrevive a un borrado total** (arriba, con su motivo).
+* **`persist()` se pide en cada arranque.** Es idempotente y barato, pero no se ha medido su coste
+  en un móvil de gama baja.
+
+## Lo que no se ha tocado
+
+Las fotos y su cuota (no hay caso) · el texto de «instala la app» (fase siguiente) · la precarga ·
+la pantalla de firma · `prisma/schema.prisma` · el camino de emisión · el precache.
+
+## Ficheros (fase 3)
+
+* `public/dashboard/js/resistenciaAlmacen.js` (nuevo)
+* `tests/scrum360-desalojo.test.mjs` (nuevo) — 14 tests
