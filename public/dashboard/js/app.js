@@ -454,6 +454,16 @@ async function initApp() {
 }
 
 async function logout() {
+  // SCRUM-455 · EL PURGADO VA PRIMERO, y el orden no es indiferente.
+  //
+  // Es local y no depende de la red; el POST puede colgarse minutos en un sótano. Si el pro mata la
+  // pestaña mientras la petición espera, los datos de sus clientes ya se han ido del móvil. Al
+  // revés se quedarían.
+  //
+  // Y NO bloquea la salida: cerrar sesión tiene que funcionar siempre, también si el almacén no
+  // está disponible. Quién mira este resultado y qué le dice al profesional es de H2 (SCRUM-356);
+  // aquí no se pinta nada.
+  try { await window.purgarDatosLocales(); } catch (_e) { /* sin almacén no hay nada que purgar */ }
   await fetch('/auth/logout', { method: 'POST' }).catch(() => {});
   window.location.href = '/login.html';
 }
