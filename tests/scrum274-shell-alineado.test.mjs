@@ -72,9 +72,28 @@ const SERVIDAS_POR_EL_SERVIDOR = Object.freeze({
   // '/ruta/que/sirve/el/servidor': 'quién la sirve y por qué no está en disco',
 });
 
-/** Un directorio se sirve por su `index.html`; el resto es el fichero tal cual bajo `public/`. */
+/**
+ * Un directorio se sirve por su `index.html`; el resto es el fichero tal cual bajo `public/`.
+ *
+ * 🔴 SCRUM-453 · LA QUERY Y EL FRAGMENTO SE PELAN ANTES DE RESOLVER, y no es cosmética.
+ *
+ * Antes, `/dashboard/js/api.js?v=abc` se buscaba en disco como un fichero LITERAL llamado
+ * `api.js?v=abc` — que no existe en ningún sistema de ficheros, y en Windows ni siquiera es un
+ * nombre válido. El guard la habría declarado MUERTA y habría dicho que el `install` falla entero.
+ *
+ * **Y eso es falso.** `express.static` sirve el fichero ignorando la query, así que `cache.addAll`
+ * la traería con 200 y el `install` NO fallaría. El guard acusaría de la avería más grave que sabe
+ * nombrar por un defecto que no es ésa — y un guard que acusa en falso no se corrige: se desactiva
+ * (es el argumento entero de SCRUM-450, aquí aplicado a sí mismo).
+ *
+ * Pelarla deja el veredicto de existencia diciendo la verdad. El defecto REAL que una query en el
+ * SHELL sí supone lo vigila su propio test, abajo.
+ */
 function aFichero(raiz, r) {
-  return r.endsWith('/') ? path.join(raiz, 'public', r, 'index.html') : path.join(raiz, 'public', r);
+  const limpia = r.replace(/[?#].*$/, '');
+  return limpia.endsWith('/')
+    ? path.join(raiz, 'public', limpia, 'index.html')
+    : path.join(raiz, 'public', limpia);
 }
 
 /**
@@ -272,4 +291,83 @@ test('SCRUM-450 · la lista de servidas está VACÍA hoy, y eso es un hecho medi
     assert.ok(typeof motivo === 'string' && motivo.length > 20,
       `🔴 «${ruta}» se exceptúa sin decir quién la sirve ni por qué no está en disco.`);
   }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-453 · EL SHELL SE ESCRIBE PELADO, Y LA HUELLA LA PONE EL SERVIDOR
+//
+// El circuito real, medido entero en SCRUM-453:
+//
+//   1. `dashboard/index.html` en disco pide `./js/api.js` — DESNUDO.
+//   2. El servidor lo reescribe al servirlo: `sellarReferencias` añade `?v=<huella>`
+//      (`core/http/huellaEstaticos.ts`).
+//   3. El navegador pide `/dashboard/js/api.js?v=<huella>`.
+//   4. El SHELL precachea la ruta PELADA.
+//   5. `caches.match(request, { ignoreSearch: true })` las hace casar (guard propio en
+//      `tests/scrum453-precache-con-huella.test.mjs`).
+//
+// 🔴 POR QUÉ UNA HUELLA ESCRITA A MANO EN EL SHELL ES UN DEFECTO INVISIBLE
+//
+// Congela un valor que el servidor recalcula del CONTENIDO. En cuanto ese fichero cambie, la
+// huella escrita queda obsoleta — y el precache seguiría guardando la vieja. Lo peor es que
+// **`ignoreSearch` lo taparía**: la petición del navegador casaría igual con la entrada obsoleta,
+// así que sin cobertura se serviría una versión que ya no es la del despliegue, sin ningún error
+// en ninguna parte. El paso 5, que es lo que hace que el offline funcione, es también lo que
+// hace que este defecto no se note.
+//
+// El guard de existencia no puede cazarlo —ahora que `aFichero` pela la query, resuelve bien—, así
+// que se vigila aquí, por separado y con su propio motivo. Las dos mitades del hueco: el veredicto
+// deja de mentir, y el defecto real pasa a tener quien lo mire.
+
+/** Las rutas del SHELL que llevan query o fragmento escritos a mano. */
+function conQuery(rutas) {
+  return rutas.filter((r) => /[?#]/.test(r));
+}
+
+test('SCRUM-453 · 🔴 ninguna entrada del SHELL lleva la huella escrita a mano', () => {
+  const sw = fs.readFileSync(SW, 'utf8');
+  const bloque = sw.match(/const SHELL = \[([\s\S]*?)\];/);
+  assert.ok(bloque, '🔴 ESCÁNER CIEGO: no encuentro `const SHELL` en public/sw.js');
+  const rutas = [...bloque[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+
+  // SUELO: sin entradas, «ninguna lleva query» sería cierto y hueco.
+  assert.ok(rutas.length >= MINIMO_SCRIPTS,
+    `🔴 ESCÁNER CIEGO: veo ${rutas.length} entradas y hay al menos ${MINIMO_SCRIPTS}.`);
+
+  assert.deepEqual(conQuery(rutas), [],
+    '🔴 EL SHELL LLEVA UNA HUELLA ESCRITA A MANO:\n    ' + conQuery(rutas).join('\n    ') +
+    '\n\n  La huella la calcula el SERVIDOR del contenido del fichero y la inyecta al servir el\n' +
+    '  HTML (`sellarReferencias`). Escribirla aquí la CONGELA: en cuanto el fichero cambie, el\n' +
+    '  precache seguirá guardando la vieja — y `ignoreSearch` hará que case igual, así que sin\n' +
+    '  cobertura se serviría una versión que ya no es la del despliegue, en silencio.\n' +
+    '  Escribe la ruta PELADA: el precache y la petición con huella ya casan solos.');
+});
+
+test('SCRUM-453 · 🔴 CONTROL NEGATIVO: pelar la query no vuelve ciego al guard de existencia', () => {
+  // La mitad peligrosa del arreglo: si `aFichero` pela la query, ¿deja de ver las rutas muertas
+  // que la llevan? Una ruta inexistente CON query tiene que seguir cayendo — si no, bastaría con
+  // ponerle un `?v=1` a cualquier cosa para que el guard dejara de mirarla.
+  const MUERTA_CON_QUERY = '/dashboard/js/esto-no-existe-jamas.js?v=abc123';
+  const VIVA_CON_QUERY = '/dashboard/js/api.js?v=abc123';
+
+  assert.deepEqual(rutasMuertas([MUERTA_CON_QUERY], {}), [MUERTA_CON_QUERY],
+    '🔴 una ruta que NO existe deja de reportarse muerta por llevar `?v=`: el pelado se ha ' +
+    'convertido en una puerta trasera y `cache.addAll` fallaría entero sin que nadie avise.');
+
+  assert.deepEqual(rutasMuertas([VIVA_CON_QUERY], {}), [],
+    '🔴 una ruta que SÍ existe se sigue reportando muerta por llevar `?v=`: el guard acusaría de ' +
+    '«el install falla entero» —lo más grave que sabe nombrar— cuando `express.static` la sirve ' +
+    'sin problema. Un guard que acusa en falso no se corrige: se desactiva.');
+
+  // Y el fragmento se pela igual que la query.
+  assert.deepEqual(rutasMuertas(['/dashboard/js/api.js#trozo'], {}), []);
+});
+
+test('SCRUM-453 · 🔴 SUELO: el detector de query distingue de verdad', () => {
+  // Sin esto, `conQuery` podría devolver siempre `[]` y el test de arriba sería verde para siempre.
+  assert.deepEqual(conQuery(['/a.js', '/b.js?v=1', '/c.js', '/d.js#x']), ['/b.js?v=1', '/d.js#x'],
+    '🔴 el detector no separa las rutas con huella de las peladas: entonces su «ninguna» no es un ' +
+    'hallazgo, es que no sabe mirar.');
+  assert.deepEqual(conQuery([]), [],
+    '🔴 el detector inventa rutas donde no hay ninguna.');
 });
