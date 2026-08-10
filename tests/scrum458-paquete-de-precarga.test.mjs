@@ -125,7 +125,7 @@ test('SCRUM-458 · lo de dentro de un mes y lo de hace dos meses NO entran', asy
 // ═══ ③ AISLAMIENTO POR MERCHANT — lo peor que puede fallar aquí ══════════════════════════
 
 test('SCRUM-458 · el paquete de un profesional NO trae NADA de otro', async () => {
-  const p = prismaFalso({
+  const dosProfesionales = () => prismaFalso({
     jobs: [
       JOB({ id: 1, merchantId: 7, customerId: 100 }),
       JOB({ id: 2, merchantId: 99, customerId: 200, titulo: 'Obra del vecino' }),
@@ -136,7 +136,28 @@ test('SCRUM-458 · el paquete de un profesional NO trae NADA de otro', async () 
     ],
     clientes: [CLI({ id: 100, merchantId: 7 }), CLI({ id: 200, merchantId: 99, name: 'Cliente ajeno' })],
   });
+  const p = dosProfesionales();
   const r = await construirPaquetePrecarga(7, AHORA, p);
+
+  // 🔴 EL HERMANO POSITIVO, y sin él la negación de abajo no vale nada (SCRUM-237): se pide el
+  // paquete DEL OTRO profesional con el MISMO fixture. Si «ALB-AJENO» no apareciera ahí, «no
+  // aparece en el de 7» sería cierto porque ese dato no existe en ningún sitio, no porque esté
+  // aislado.
+  //
+  // ⚠️ Va en OTRA instancia del banco a propósito: el registro de `where` es del banco, y pedir el
+  // paquete ajeno con el mismo lo pisaba — la comprobación por mecanismo de abajo leía el
+  // `merchantId` de la llamada hermana y caía sola. (Rojo del test, no del producto.)
+  const ajeno = JSON.stringify(await construirPaquetePrecarga(99, AHORA, dosProfesionales()));
+  // Y LOS TRES tokens, uno a uno: si solo se respaldara el primero, los otros dos podrían no
+  // existir en ningún sitio y su ausencia abajo no significaría nada. Son tres datos distintos —
+  // el número del documento, el nombre del cliente y el título del trabajo— y los tres tienen que
+  // ser alcanzables para que «no están en el paquete de 7» sea una afirmación.
+  assert.ok(/ALB-AJENO/.test(ajeno),
+    '🔴 SUELO: el albarán del otro profesional no aparece ni en SU PROPIO paquete.');
+  assert.ok(/Cliente ajeno/.test(ajeno),
+    '🔴 SUELO: el nombre del cliente del otro profesional no aparece ni en SU PROPIO paquete.');
+  assert.ok(/Obra del vecino/.test(ajeno),
+    '🔴 SUELO: el título del trabajo del otro profesional no aparece ni en SU PROPIO paquete.');
 
   assert.equal(r.albaranes.length, 1,
     `🔴 el paquete trae ${r.albaranes.length} albaranes: ${JSON.stringify(r.albaranes.map((a) => a.numero))}.`);
