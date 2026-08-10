@@ -201,3 +201,97 @@ export function exigirDestinoCorrecto(clave, url, worktree) {
   console.log(r.mensaje);
   return r;
 }
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-418 · LA OTRA PREGUNTA: ¿DEBERÍA ESTA CREDENCIAL EXISTIR SIQUIERA EN ESTE ÁRBOL?
+//
+// `comprobarClaveVsDestino` contesta «¿apunta a donde promete su nombre?». Es una pregunta de
+// COHERENCIA, y para ella `DATABASE_URL → autorack` es la respuesta CORRECTA: la clave promete
+// producción y a producción apunta. Cuadra.
+//
+// 🔴 Medido el 10-ago-2026, ejecutando el guard: por eso una credencial de PRODUCCIÓN metida en
+// el `.env` de un árbol de trabajo salía **en verde**. No es que el guard no la conociera —la
+// conoce desde SCRUM-383—: es que la BENDECÍA. Y al revés, la variante inofensiva
+// (`DATABASE_URL` → staging) sí fallaba: era más severo con la inocua que con la peligrosa.
+//
+// Son dos preguntas distintas y no se contestan con la misma tabla. Ésta es la segunda: **en un
+// árbol de trabajo no vive producción.** Ya estaba escrita —`comprobar-claves-bd.mjs` la declara
+// en un comentario desde SCRUM-383— pero nada la hacía cumplir, y una regla declarada que nadie
+// ejecuta es una promesa, no una barrera.
+//
+// ⚠️ SE VIGILA POR **DESTINO, NO POR NOMBRE**, y ésa es la decisión de diseño del ticket. Una
+// lista de nombres prohibidos sólo caza los que alguien se acordó de escribir: renombra la clave
+// a `DATABASE_URL_PROD`, `URL_BUENA` o `TMP_1` y pasa. El host de producción es el mismo se llame
+// como se llame la variable. **Un guard que sólo vigila las claves que le enseñaron deja pasar
+// justo la que no conoce.**
+
+/** El host de PRODUCCIÓN. Sale de `DESTINOS_ESPERADOS` para que no haya dos verdades que mantener. */
+export const HOST_PRODUCCION = DESTINOS_ESPERADOS.DATABASE_URL.host;
+
+export const PRODUCCION_EN_ARBOL = 'produccion_en_arbol';
+
+/**
+ * ¿Esta clave de un árbol de trabajo apunta a PRODUCCIÓN? PURA: ni entorno ni ficheros, así que
+ * su rojo se ejercita sin tocar ningún `.env`.
+ *
+ * `OK` aquí significa SOLO «no es producción», no que el destino sea el correcto: de eso responde
+ * `comprobarClaveVsDestino`. Por eso las dos se corren juntas y ninguna sustituye a la otra.
+ *
+ * 🔴 SUELO: una URL ilegible es `NO_PUDE_RESOLVER`, jamás `OK`. Si no se pudo leer el destino no
+ * se puede afirmar que no sea producción, y afirmarlo sería inventarse la medición cómoda.
+ */
+export function comprobarCredencialDeProduccion(clave, url, worktree) {
+  const real = parseBDSegura(url);
+  const donde = nombreDeWorktree(worktree) ?? '(sin identificar)';
+
+  if (!real || !real.host) {
+    return {
+      veredicto: NO_PUDE_RESOLVER,
+      mensaje:
+        `🔴 NO SE PUDO LEER EL DESTINO DE «${clave}» (worktree: ${donde}).\n\n` +
+        '  No se puede afirmar que NO sea producción, y «no pude mirar» no es «no lo es».',
+    };
+  }
+
+  if (real.host === HOST_PRODUCCION) {
+    return {
+      veredicto: PRODUCCION_EN_ARBOL,
+      real,
+      mensaje:
+        '🔴 CREDENCIAL DE PRODUCCIÓN EN UN ÁRBOL DE TRABAJO.\n\n' +
+        `  Worktree: ${donde}\n` +
+        `  Clave:    ${clave}\n` +
+        `  Apunta a: ${real.host}/${real.base}  ← PRODUCCIÓN\n\n` +
+        '  En un árbol de trabajo NO vive producción. Cualquier comando que resuelva su URL por\n' +
+        '  defecto —`prisma db push`, `migrate diff`, un script que lea `process.env`— correría\n' +
+        '  contra la base real sin que nada se lo recordara a nadie.\n\n' +
+        '  ⚠️ Esto NO lo caza `comprobarClaveVsDestino`: para él una clave llamada `DATABASE_URL`\n' +
+        '  que apunta a producción CUADRA — promete producción y a producción va. Son dos\n' +
+        '  preguntas distintas, y ésta es la segunda.\n\n' +
+        '  Qué hacer: quita la clave del `.env` de este árbol. La URL de producción vive en\n' +
+        '  Railway, la pega ahí el fundador y no baja a ninguna máquina (protocolo AA1.9). Si\n' +
+        '  necesitas base para trabajar, usa `DATABASE_URL_TESTS` — la de tu carril.',
+    };
+  }
+
+  return {
+    veredicto: OK,
+    real,
+    mensaje: `[producción] ${clave} → ${real.host}/${real.base} (no es producción) ✅`,
+  };
+}
+
+/**
+ * ¿Qué claves de un entorno son CADENAS DE CONEXIÓN? Se decide por el VALOR, no por el nombre.
+ *
+ * ⚠️ Por el valor a propósito, y es el mismo motivo que lo de arriba: filtrar por nombre
+ * (`/DATABASE/`) devuelve a la lista de nombres conocidos por la puerta de atrás. Y mirar el
+ * prefijo `postgres://` acota además lo que este barrido toca: de un `.env` lleno de secretos
+ * —tokens de Meta, claves de Stripe— sólo se miran los valores que YA son URLs de base de datos.
+ * Ninguno de los demás se lee, ni se parsea, ni puede acabar en un mensaje.
+ */
+export function clavesDeConexion(env) {
+  return Object.entries(env ?? {})
+    .filter(([, v]) => typeof v === 'string' && /^\s*['"]?postgres(ql)?:\/\//i.test(v))
+    .map(([clave, valor]) => ({ clave, valor }));
+}

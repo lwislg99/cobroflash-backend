@@ -18,13 +18,25 @@ import 'dotenv/config';
 import { raizDeTrabajo } from './_identidad-sesion.mjs';
 import {
   DESTINOS_ESPERADOS, OK, comprobarClaveVsDestino, nombreDeWorktree,
+  comprobarCredencialDeProduccion, clavesDeConexion,
 } from './_clave-vs-destino.mjs';
 
-/** Las que un árbol de trabajo tiene que tener. `DATABASE_URL` (producción) NO vive en un .env local. */
+/**
+ * Las que un árbol de trabajo tiene que tener. `DATABASE_URL` (producción) NO vive en un `.env`
+ * local — y desde SCRUM-418 eso ya no es sólo una frase en este comentario: lo hace cumplir el
+ * barrido por destino del final de `comprobarEsteArbol`.
+ */
 const OBLIGATORIAS = ['DATABASE_URL_STAGING', 'DATABASE_URL_DEV', 'DATABASE_URL_TESTS'];
 
-export function comprobarEsteArbol({ env = process.env, desde = process.cwd() } = {}) {
-  const raiz = raizDeTrabajo(desde);
+/**
+ * @param raiz  la raíz del árbol, INYECTABLE. Por defecto se descubre con `raizDeTrabajo`, que
+ *   busca un `.git` hacia arriba — y por eso una ruta que no existe en disco no se puede usar
+ *   para probar. Poder pasarla es lo que permite ejercitar los rojos de los CUATRO worktrees sin
+ *   tener los cuatro delante ni leer un solo `.env` real, que es justo la dimensión en la que
+ *   estaba el fallo de SCRUM-383 (misma clave, distinta base según la carpeta).
+ */
+export function comprobarEsteArbol({ env = process.env, desde = process.cwd(), raiz: raizDada = null } = {}) {
+  const raiz = raizDada ?? raizDeTrabajo(desde);
   const worktree = nombreDeWorktree(raiz) ?? '(no se pudo identificar)';
   const lineas = [`\n[claves de base] worktree: ${worktree}`];
   let fallos = 0;
@@ -45,25 +57,44 @@ export function comprobarEsteArbol({ env = process.env, desde = process.cwd() } 
     else { fallos++; lineas.push(`\n${r.mensaje}\n`); }
   }
 
-  // Si está presente, se comprueba también la de producción. No es obligatoria en un worktree.
-  if (env.DATABASE_URL) {
-    const r = comprobarClaveVsDestino('DATABASE_URL', env.DATABASE_URL, raiz ?? worktree);
-    comprobadas++;
-    if (r.veredicto === OK) lineas.push(`  ${r.mensaje}`);
-    else { fallos++; lineas.push(`\n${r.mensaje}\n`); }
-  } else {
-    lineas.push('  · DATABASE_URL: ausente (normal en un árbol de trabajo; producción no vive aquí).');
+  // ── SCRUM-418 · NINGUNA CLAVE DE ESTE ÁRBOL PUEDE APUNTAR A PRODUCCIÓN ──────────────────
+  //
+  // 🔴 Antes esto se preguntaba SOLO por `DATABASE_URL` y SOLO con `comprobarClaveVsDestino`, y
+  // las dos mitades fallaban a la vez:
+  //
+  //   · por NOMBRE: bastaba llamarla de otra forma para no ser mirada;
+  //   · por VEREDICTO: `DATABASE_URL` → producción daba **`cuadra`**, sumaba a `comprobadas` y NO
+  //     sumaba fallo. O sea que la credencial más peligrosa de todas salía EN VERDE, mientras que
+  //     la misma clave apuntando a staging fallaba. Estaba al revés.
+  //
+  // Ahora se barren TODAS las cadenas de conexión del entorno, se llamen como se llamen, y se
+  // pregunta por su DESTINO. La comprobación de coherencia de arriba se conserva entera: son dos
+  // preguntas distintas y ninguna sustituye a la otra.
+  const conexiones = clavesDeConexion(env);
+  for (const { clave, valor } of conexiones) {
+    const r = comprobarCredencialDeProduccion(clave, valor, raiz ?? worktree);
+    if (r.veredicto === OK) continue;          // ya se informa del destino arriba; aquí sólo el hallazgo
+    fallos++;
+    lineas.push(`\n${r.mensaje}\n`);
+  }
+  if (conexiones.length && !conexiones.some(({ clave }) => clave === 'DATABASE_URL')) {
+    lineas.push('  · DATABASE_URL: ausente (correcto en un árbol de trabajo; producción no vive aquí).');
   }
 
   // 🔴 SUELO. Si no se comprobó NADA, esto no puede terminar en verde: «todas cuadran» y «no
   // había ninguna que mirar» se ven igual en pantalla y significan lo contrario.
-  if (comprobadas === 0) {
+  //
+  // ⚠️ El suelo mira las DOS cosas, y la segunda se añadió en SCRUM-418: sin `conexiones`, el
+  // barrido de producción no ha mirado nada, y un barrido que no mira nada no puede declarar que
+  // no hay credencial de producción — declararía la ceguera como limpieza.
+  if (comprobadas === 0 || conexiones.length === 0) {
     fallos++;
-    lineas.push('  🔴 SUELO: no se comprobó ni una sola clave. Esto NO es un verde — es que no se\n' +
-      '     leyó nada (¿`.env` ausente, o `dotenv` sin cargar?). Un guard que no mira, no vale.');
+    lineas.push('  🔴 SUELO: no se leyó ni una sola cadena de conexión. Esto NO es un verde — es que\n' +
+      '     no se miró nada (¿`.env` ausente, o `dotenv` sin cargar?). «No hay credencial de\n' +
+      '     producción» y «no supe mirar» se ven igual aquí y significan lo contrario.');
   }
 
-  return { worktree, fallos, comprobadas, salida: lineas.join('\n') };
+  return { worktree, fallos, comprobadas, conexiones: conexiones.length, salida: lineas.join('\n') };
 }
 
 // ── CLI ──────────────────────────────────────────────────────────────────────────────────────
@@ -79,7 +110,8 @@ if (esCli) {
     console.error(`\n❌ ${r.fallos} problema(s) de claves en «${r.worktree}». No se sigue.\n`);
     process.exit(1);
   }
-  console.log(`\n✅ las ${r.comprobadas} claves de «${r.worktree}» apuntan a donde prometen.\n`);
+  console.log(`\n✅ las ${r.comprobadas} claves de «${r.worktree}» apuntan a donde prometen, y ` +
+    `ninguna de las ${r.conexiones} cadenas de conexión de este árbol va a producción.\n`);
 }
 
 // Delata el caso de arriba: si alguien invoca este fichero y no se reconoce como CLI, no puede
