@@ -16,11 +16,9 @@
 // dedujera por su cuenta qué es un justificante, tendríamos dos verdades sobre el mismo documento
 // — exactamente lo que G4 evitó a propósito.
 
-var COBROS_MARCA = '[PENDIENTE microcopy oficial]';
-
 /**
- * MICROCOPY APROBADA por el asesor el 10-ago-2026 (regla 30). Solo las cabeceras de la tabla
- * siguen con marcador: están pendientes de que vea cuáles son las cinco columnas.
+ * MICROCOPY APROBADA por el asesor el 10-ago-2026 (regla 30). Las seis cabeceras
+ * se aprobaron al partir la quinta columna en dos: YA NO QUEDA MARCADOR en esta pantalla.
  *
  * 🔴 EL ESTADO VACÍO SON DOS, Y CONFUNDIRLOS ES EL DEFECTO. «No hay datos» y «tu filtro los ha
  * escondido» son afirmaciones distintas, y la primera dicha en el sitio de la segunda le dice al
@@ -38,10 +36,21 @@ var COBROS_COPY = {
   errorCarga: 'No hemos podido cargar los cobros. Vuelve a intentarlo.',
   vacioSinCobros: 'Todavía no hay cobros registrados.',
   vacioPorFiltro: 'Ningún cobro coincide con este filtro.',
-  /** `n=1` → «1 día». Un cobro ya cobrado NO pinta esta etiqueta: nada, ni guion ni cero. */
+  /**
+   * LA ANTIGÜEDAD, en sus dos formas — y son dos porque el sitio cambia lo que hace falta decir.
+   *
+   * · EN TABLA la columna ya se llama «Sin cobrar», así que la celda solo pone el número:
+   *   repetir la etiqueta en cada fila es ruido, y lo que el profesional hace aquí es BARRER con
+   *   la vista buscando el que lleva más tiempo. Un número corto se barre; una frase, no.
+   * · FUERA DE LA TABLA no hay cabecera que lo explique, así que va la frase entera.
+   *
+   * Las dos con singular. `n=1` → «1 día».
+   */
+  diasEnTabla: function (n) { return n + (n === 1 ? ' día' : ' días'); },
   diasSinCobrar: function (n) {
     return 'Sin cobrar desde hace ' + n + (n === 1 ? ' día' : ' días');
   },
+  cabeceras: ['Fecha', 'Cliente', 'Importe', 'Método', 'Documento', 'Sin cobrar'],
 };
 
 /**
@@ -121,15 +130,21 @@ function renderCobrosView(container) {
   tablaScroll.appendChild(tabla);
 
   var thead = document.createElement('thead');
-  // 🔴 LO ÚNICO QUE QUEDA CON MARCADOR. Las cinco columnas son, en orden: fecha · cliente ·
-  // importe · método · documento y deuda. El asesor las aprueba cuando vea cuáles son; hasta
-  // entonces no se les inventa nombre (regla 30).
+  // 🔴 SEIS COLUMNAS, Y LA SEXTA EXISTE POR UNA REGLA QUE SE LLEVA EL ASESOR:
+  // **una cabecera que necesita una «y» son dos columnas.** La versión anterior tenía cinco y la
+  // última se llamaba «documento y deuda» — o sea que ella misma estaba diciendo que ahí cabían
+  // dos hechos. Y no es estética: la antigüedad es lo que se BARRE con la vista buscando lo que
+  // lleva más tiempo sin cobrar, y enterrada junto a un número de documento no se puede barrer.
+  // Ni ordenar por ella el día que alguien lo pida.
+  //
+  // Rótulos APROBADOS por el asesor el 10-ago-2026. Ya no queda marcador en esta pantalla.
   thead.innerHTML = '<tr>'
-    + '<th>' + COBROS_MARCA + '</th>'
-    + '<th>' + COBROS_MARCA + '</th>'
-    + '<th style="text-align:right">' + COBROS_MARCA + '</th>'
-    + '<th>' + COBROS_MARCA + '</th>'
-    + '<th>' + COBROS_MARCA + '</th>'
+    + '<th>' + COBROS_COPY.cabeceras[0] + '</th>'
+    + '<th>' + COBROS_COPY.cabeceras[1] + '</th>'
+    + '<th style="text-align:right">' + COBROS_COPY.cabeceras[2] + '</th>'
+    + '<th class="col-hide-mobile">' + COBROS_COPY.cabeceras[3] + '</th>'
+    + '<th>' + COBROS_COPY.cabeceras[4] + '</th>'
+    + '<th>' + COBROS_COPY.cabeceras[5] + '</th>'
     + '</tr>';
   tabla.appendChild(thead);
 
@@ -170,7 +185,7 @@ function renderCobrosView(container) {
       var texto = datos.length ? COBROS_COPY.vacioPorFiltro : COBROS_COPY.vacioSinCobros;
       var tr0 = document.createElement('tr');
       var td0 = document.createElement('td');
-      td0.colSpan = 5;
+      td0.colSpan = 6;
       td0.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💰</div>'
         + '<div class="empty-state-title" data-vacio="' + (datos.length ? 'filtro' : 'sin-cobros')
         + '">' + texto + '</div></div>';
@@ -203,20 +218,33 @@ function renderCobrosView(container) {
 
       // MÉTODO: el valor de la casa TAL CUAL, sin traducir. Traducirlo sería microcopy nueva, y
       // además `bizum_auto`/`bizum_manual` es la distinción que aquí SÍ se lee.
+      //
+      // `col-hide-mobile`: en la card no hay cabecera que lo explique (el `thead` se oculta a
+      // ≤640px), y un `transfer` suelto no dice nada. Es el reparto de la casa — `invoicesView`
+      // esconde cuatro y `quotesListView` dos por lo mismo.
       var tdMetodo = document.createElement('td');
+      tdMetodo.className = 'col-hide-mobile';
       tdMetodo.textContent = c.metodo || COBROS_COPY.metodoSinRegistrar;
       tr.appendChild(tdMetodo);
 
-      // DOCUMENTO y DEUDA. El tipo lo dice `tipoDeFactura`, no una copia.
+      // DOCUMENTO. El tipo lo dice `tipoDeFactura`, no una copia.
       var tdDoc = document.createElement('td');
+      tdDoc.className = 'cell-id'; // en la card: arriba, pequeño y apagado — es lo que es
       var clasifica = (typeof tipoDeFactura === 'function') ? tipoDeFactura : null;
-      var partes = [];
-      if (c.numero && clasifica) partes.push(clasifica({ number: c.numero, type: c.tipo }) + ' ' + c.numero);
-      else if (c.numero) partes.push(c.numero);
-      var dias = diasDeDeudaCobro(c, ahora);
-      if (dias !== null) partes.push(COBROS_COPY.diasSinCobrar(dias));
-      tdDoc.textContent = partes.join(' · ') || '—';
+      if (c.numero && clasifica) tdDoc.textContent = clasifica({ number: c.numero, type: c.tipo }) + ' ' + c.numero;
+      else tdDoc.textContent = c.numero || '—';
       tr.appendChild(tdDoc);
+
+      // SIN COBRAR. Columna propia: es lo que se barre con la vista.
+      //
+      // 🔴 VACÍA si está cobrado — nada, ni guion ni cero. Y en la card eso además la hace
+      // desaparecer (`td:empty { display:none }`), que es exactamente lo que se quiere: un cobro
+      // cobrado no tiene por qué ocupar sitio hablando de una deuda que no existe.
+      var tdDeuda = document.createElement('td');
+      tdDeuda.className = 'cell-status';
+      var dias = diasDeDeudaCobro(c, ahora);
+      if (dias !== null) tdDeuda.textContent = COBROS_COPY.diasEnTabla(dias);
+      tr.appendChild(tdDeuda);
 
       tbody.appendChild(tr);
     });
@@ -232,7 +260,7 @@ function renderCobrosView(container) {
     tbody.innerHTML = '';
     var tr = document.createElement('tr');
     var td = document.createElement('td');
-    td.colSpan = 5;
+    td.colSpan = 6;
     td.textContent = COBROS_COPY.errorCarga;
     tr.appendChild(td);
     tbody.appendChild(tr);

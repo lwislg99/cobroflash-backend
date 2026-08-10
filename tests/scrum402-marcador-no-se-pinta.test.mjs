@@ -73,19 +73,13 @@ const CENSO = Object.freeze({
   // clásicos una constante duplicada en dos ficheros es SyntaxError en parseo. Es el único
   // marcador de `api.js` y sale por `showToast`, así que sí se pinta: cuenta.
   'api.js': 1,
-  // SCRUM-285 (+1, 10-ago-2026, A CONCIENCIA): la pantalla de Cobros. Nació con nueve ranuras
-  // marcadas y el asesor aprobó ocho el mismo día —título, filtro «Todos», «Método no registrado»,
-  // «No registrado», error de carga, los DOS estados vacíos y la etiqueta de días—, así que ya
-  // están escritas carácter a carácter y con test.
-  //
-  // **Lo único que sigue marcado son las CINCO CABECERAS de la tabla** (fecha · cliente · importe ·
-  // método · documento y deuda): el asesor las aprueba cuando vea cuáles son, y no se les inventa
-  // nombre mientras tanto. Un marcador visible es feo y honesto; un texto inventado es bonito y
-  // falso.
-  //
-  // Esta línea se borra el día que apruebe las cinco. El trinquete cuenta ficheros con marcador,
-  // no marcadores: por eso sigue en 1 aunque hayan bajado de nueve ranuras a cinco.
-  'cobrosView.js': 1,
+  // SCRUM-285 (10-ago-2026): `cobrosView.js` ENTRÓ y SALIÓ del censo el mismo día. La pantalla de
+  // Cobros nació con nueve ranuras marcadas —no había copy aprobada para ninguna— y el asesor las
+  // aprobó todas: los ocho textos primero, y las seis cabeceras después al partir en dos la quinta
+  // columna. Cero marcadores, así que la entrada se BORRA en vez de bajar a 0: `censoActual()` solo
+  // lista ficheros con marcador, y un 0 escrito aquí sería una bajada permanente sin anotar.
+  // Mismo trato que `jobRailBlocks.js` con SCRUM-424. El trinquete APRIETA.
+
   // SCRUM-405 (−4, 7-ago-2026): al pasar las tres descargas por la forma común desaparecieron
   // cuatro ramas de error que pintaban marcador. El trinquete APRIETA: 15 → 11.
   // 11 → 5 el 10-ago-2026: SCRUM-244 trajo los ocho textos APROBADOS de la card de portabilidad

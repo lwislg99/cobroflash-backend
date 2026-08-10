@@ -101,8 +101,8 @@ back (regla 38) · el modelo de datos · `jobDetailView.js` (contraste, solo rep
 
 **Fecha:** 10-ago-2026 · **Carril:** B (UI + dominio) · **Gate:** sin gate, corre en `npm test`
 **Medido contra:** `origin/main` = `6cd4cffac1c3291da0caad6a3a4a10cc5c4a45c2` · 2026-08-10T19:08:12+02:00
-**Tanda:** 2678 tests · 2604 pass · **0 fail** · 74 gateados · `npm test` exit **0**
-(re-corrida entera tras aplicar la microcopy aprobada, que es el último cambio)
+**Tanda:** 2680 tests · 2606 pass · **0 fail** · 74 gateados · `npm test` exit **0**
+(re-corrida entera tras partir la quinta columna en dos, que es el último cambio)
 
 > ⚠️ **ESTA ENTREGA NO CIERRA SCRUM-285.** El tercer punto de §B4 —el enlace al cobro en la columna
 > derecha del detalle de factura— queda como **FASE 2 dentro de este ticket, que sigue ABIERTO**.
@@ -241,9 +241,37 @@ a hacer, en la pantalla del dinero. No es un texto impreciso: es una respuesta f
 ninguno. Es la misma distinción que obligó a crear el cubo — si el rótulo miente, el cubo no sirve
 de nada. Hay test de que la palabra «Otro» no aparece en la pantalla.
 
-**Lo único que sigue con marcador son las CINCO CABECERAS de la tabla** — fecha · cliente · importe ·
-método · documento y deuda. El asesor las aprueba cuando vea cuáles son; no se les inventa nombre
-mientras tanto.
+### 🔴 Y la quinta columna se parte en dos, por una regla que se lleva el asesor
+
+**Una cabecera que necesita una «y» son dos columnas.** La quinta se llamaba «documento y deuda» y
+estaba diciendo sola que ahí cabían dos hechos. Y no es estética: **la antigüedad es lo que el
+profesional BARRE con la vista** buscando lo que lleva más tiempo sin cobrar, y enterrada junto a un
+número de documento no se puede barrer — ni ordenar por ella el día que alguien lo pida.
+
+Las SEIS, aprobadas: `Fecha` · `Cliente` · `Importe` · `Método` · `Documento` · `Sin cobrar`.
+
+Y la antigüedad pasa a tener **dos formas, porque el sitio cambia lo que hace falta decir**: en tabla
+la columna ya se llama «Sin cobrar», así que la celda pone solo `3 días`; fuera de la tabla no hay
+cabecera que lo explique y va la frase entera, `Sin cobrar desde hace 3 días`. Las dos con singular,
+las dos con test. **Ya no queda ningún marcador en esta pantalla** — `cobrosView.js` entró y salió
+del censo de SCRUM-402 el mismo día.
+
+### Las seis columnas en MÓVIL — medido, no supuesto
+
+`.table--cards-mobile` a ≤640 px **esconde el `thead`** y convierte cada fila en una card con seis
+áreas nombradas (`id · client · amount · date · status · actions`). Así que el número de columnas no
+es el problema: **`invoicesView` ya tiene 6 y `quotesListView` 7**, con el mismo mecanismo.
+
+El reparto sigue el de la casa —las que no encajan en un área se esconden con `col-hide-mobile`,
+como hacen esas dos—: `Fecha`→`date`, `Cliente`→`client`, `Importe`→`amount`, `Documento`→`id`,
+**`Sin cobrar`→`status`** (es lo que hay que barrer, así que sobrevive en el bolsillo) y `Método` se
+esconde. Y la celda vacía de un cobro ya cobrado **desaparece sola** (`td:empty { display:none }`),
+que es justo lo que se quiere.
+
+⚠️ **Lo que queda por decidir, y se para aquí:** en la card no hay cabecera, así que «Sin cobrar»
+aparece como un `3 días` suelto. La frase larga que el asesor aprobó *«si algún día hay tarjeta en
+móvil»* **ya tiene sitio hoy** —la tarjeta existe—, pero elegir el texto según el ancho no lo hace
+el CSS solo. **No se ha construido**: es la «otra forma en móvil» que el asesor dejó fuera de carril.
 
 ## ① Técnico vs admin: ADMIN-ONLY, y queda declarado con su motivo
 
@@ -261,7 +289,8 @@ cubre el bloque DINERO del rail** (G3/G4). Se queda con `requireRole('admin')`.
   justificantes — `invoicesView.js` no usa `isReceiptNumber` ni `tipoDeFactura` en ningún filtro.
   **No entra aquí:** tocar Facturas es otra pantalla, y esta entrega ya trae una nueva.
 * **El método de los cobros a mano**, que necesita columna (arriba).
-* **Las cinco cabeceras de la tabla** siguen con marcador, esperando aprobación.
+* **La card en móvil enseña `3 días` sin etiqueta**, porque ahí no hay cabecera. La frase larga ya
+  está escrita y aprobada; elegirla por ancho es otro carril. Ver arriba.
 * **AB6 · matriz de dispositivos y capturas: PENDIENTE** (humano).
 * **No hay test contra BD.** La población fundida se comprueba por estructura —que las dos consultas
   existan— y por comportamiento en la pantalla; que Prisma devuelva lo que se espera no se mide aquí.

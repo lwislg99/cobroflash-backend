@@ -187,13 +187,64 @@ test('SCRUM-285 · ⑤ «Método no registrado» y NO «Otro» — y la fila dic
     '🔴 el cobro sin método no dice «No registrado» en su fila.');
 });
 
-test('SCRUM-285 · ⑤ los días de deuda: «días» en plural y «día» en singular', async () => {
+test('SCRUM-285 · ⑤ los días de deuda: DOS formas, y las dos con singular', async () => {
+  // En tabla la columna ya se llama «Sin cobrar», así que la celda pone solo el número: repetir la
+  // etiqueta en cada fila es ruido, y lo que se hace aquí es BARRER buscando el más viejo. Fuera de
+  // la tabla no hay cabecera que lo explique, así que va la frase entera.
   const banco = cargarDashboard(RAIZ, { datos: COBROS });
   await pintarVista(banco, 'renderCobrosView');
-  assert.equal(banco.ctx.COBROS_COPY.diasSinCobrar(30), 'Sin cobrar desde hace 30 días');
-  assert.equal(banco.ctx.COBROS_COPY.diasSinCobrar(1), 'Sin cobrar desde hace 1 día',
-    '🔴 con un solo día tiene que decir «1 día». Un plural mal puesto en la pantalla del dinero ' +
-    'se lee como descuido, y aquí todo lo demás está medido.');
+  const C = banco.ctx.COBROS_COPY;
+  assert.equal(C.diasEnTabla(30), '30 días');
+  assert.equal(C.diasEnTabla(1), '1 día',
+    '🔴 con un solo día, «1 días». Un plural mal puesto en la pantalla del dinero se lee como ' +
+    'descuido, y aquí todo lo demás está medido.');
+  assert.equal(C.diasSinCobrar(30), 'Sin cobrar desde hace 30 días');
+  assert.equal(C.diasSinCobrar(1), 'Sin cobrar desde hace 1 día');
+});
+
+test('SCRUM-285 · ⑤ las SEIS cabeceras son las aprobadas, y ninguna necesita una «y»', async () => {
+  // La regla que trajo la sexta columna: **una cabecera que necesita una «y» son dos columnas**.
+  // La quinta se llamaba «documento y deuda» y estaba diciendo sola que ahí cabían dos hechos.
+  const banco = cargarDashboard(RAIZ, { datos: COBROS });
+  const r = await pintarVista(banco, 'renderCobrosView');
+  // ⚠️ `[...]` y no la referencia: el array vive en el contexto del banco (otro realm), y
+  // `deepEqual` estricto compara prototipos. Sin copiarlo, el rojo sería del banco, no del código.
+  const cabeceras = [...banco.ctx.COBROS_COPY.cabeceras];
+  assert.deepEqual(cabeceras, ['Fecha', 'Cliente', 'Importe', 'Método', 'Documento', 'Sin cobrar'],
+    '🔴 las cabeceras no son las seis aprobadas por el asesor el 10-ago-2026.');
+  const conY = cabeceras.filter((h) => / y /i.test(h));
+  assert.deepEqual(conY, [],
+    '🔴 una cabecera con «y» son dos columnas metidas en una: ' + conY.join(', '));
+
+  // Y que la tabla las PINTA, leídas del marcado que la vista escribió. No se cuentan los `<th>`
+  // como nodos: el mini-DOM solo representa las etiquetas con `class`/`id`/`data-`, así que
+  // contarlos mediría el banco. Se mira el marcado, que es lo que el navegador recibe.
+  const thead = todos(r.contenedor).find((n) => n.tagName === 'THEAD');
+  assert.ok(thead, 'suelo: la tabla no tiene cabecera.');
+  for (const h of cabeceras) {
+    assert.ok(thead.innerHTML.includes('>' + h + '<'),
+      `🔴 la cabecera «${h}» está aprobada y la tabla no la pinta.`);
+  }
+  assert.equal((thead.innerHTML.match(/<th/g) || []).length, 6,
+    '🔴 la tabla no pinta seis columnas.');
+});
+
+test('SCRUM-285 · ⑤ la celda de «Sin cobrar» va VACÍA si está cobrado, y sola si no', async () => {
+  const banco = cargarDashboard(RAIZ, { datos: COBROS });
+  const r = await pintarVista(banco, 'renderCobrosView');
+  const celdas = todos(r.contenedor).filter((n) => n.className === 'cell-status');
+  assert.equal(celdas.length, 3, 'suelo: una celda de deuda por fila.');
+  const conTexto = celdas.map((c) => c.textContent).filter(Boolean);
+  assert.equal(conTexto.length, 1,
+    '🔴 de los tres cobros solo UNO está pendiente, así que solo uno pinta antigüedad. Los ' +
+    'cobrados van VACÍOS: ni guion ni cero — y en la card `td:empty` los hace desaparecer, que es ' +
+    'lo que se quiere: un cobro cobrado no ocupa sitio hablando de una deuda que no existe.');
+  // ⚠️ La FORMA, no el número: la vista cuenta contra `new Date()`, así que fijar «30 días» sería
+  // un test que se pone rojo mañana por el calendario. Lo que importa aquí es que sea la forma
+  // CORTA de tabla —el número solo— y no la frase larga, que es de fuera de la tabla.
+  assert.match(conTexto[0], /^\d+ días?$/,
+    `🔴 la celda dice «${conTexto[0]}». En tabla va la forma corta: la columna ya se llama «Sin ` +
+    'cobrar», y repetir la etiqueta en cada fila impide barrer la columna con la vista.');
 });
 
 test('SCRUM-285 · ⑤ un cobro YA COBRADO no pinta etiqueta de deuda: nada, ni guion ni cero', async () => {
