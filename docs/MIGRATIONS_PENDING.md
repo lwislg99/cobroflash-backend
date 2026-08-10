@@ -261,7 +261,8 @@ un índice ausente no rompe ninguna consulta, solo la degrada cuando la tabla cr
       ⚠️ `expenses` tiene **0 filas** en staging, así que la comprobación de «ningún backfill»
       **no tiene fuerza aquí**: 0 rellenadas y 0 existentes son el mismo número. Esa comprobación
       solo dice algo en producción.
-- [ ] **desarrollo · acela/yaqu_dev_javier** — 🔴 **NO LA PUEDO APLICAR: no hay credencial.**
+- [ ] **desarrollo · acela/yaqu_dev_javier** — **pendiente — credencial del carril B, la aplica
+      Javier.** No es un olvido: es una casilla sin marcar CON MOTIVO.
       Medido el 10-ago-2026: **`DATABASE_URL_DEV` no existe en ninguna `.env` de esta máquina**
       (barrido de todos los árboles de `D:/MILLONARIO/cobroFlash/`). El único árbol con claves de
       base es `cobroflash-backend`, y tiene `DATABASE_URL` (🔴 producción), `DATABASE_URL_STAGING`
@@ -271,10 +272,44 @@ un índice ausente no rompe ninguna consulta, solo la degrada cuando la tabla cr
       ⚠️ Ojo: la tabla de SCRUM-383 de este mismo fichero dice que «los cuatro árboles llevan las
       TRES claves». **Hoy no se sostiene** para `cobroflash-backend`: le faltan `DATABASE_URL_DEV`
       y `DATABASE_URL_TESTS`. Es una foto fechada que envejeció, como ella misma avisa.
-- [ ] **producción · autorack** — pendiente. **Parada deliberada**: el fundador la autoriza
-      SOLO después de ver la evidencia de staging y dev. `db push` contra `autorack` es lo único
-      sin vuelta atrás fácil, y el **nombre de base no distingue producción de staging** — las dos
-      se llaman `railway`. Solo el host las separa.
+- [x] **producción · autorack** — **aplicado 10-ago-2026 con GO EXPLÍCITO del fundador**, dado tras
+      ver la evidencia de staging. Destino confirmado ANTES por host (`autorack.proxy.rlwy.net`) —
+      el **nombre de base no sirve**: producción y staging se llaman las dos `railway`. Solo el
+      host las separa. `db push` **sin** `--accept-data-loss` (no lo pidió). Verificación del
+      script: `-- This is an empty migration.`
+      Verificación independiente por `information_schema`: **9/9 columnas, `is_nullable = YES`,
+      `column_default` vacío** en las nueve.
+      **CERO BACKFILL, y aquí la comprobación SÍ tiene fuerza porque hay datos**: `expenses` 10
+      filas · 0 con `base_amount` · `quotes` 125 filas · 0 con `es_adicional` · `invoices` 55
+      filas · 0 con `deducts_refs`. (Las 55 facturas cuadran con el recuento de producción de la
+      cabecera de este fichero: confirmación cruzada del destino.)
+
+> ### 🔴 QUÉ LE PASA AL ENTORNO DE JAVIER SI NO APLICA ESTO — MEDIDO, NO SUPUESTO
+>
+> **① Su servidor SÍ arranca. Y eso es lo malo.** `src/core/db/schemaDrift.ts:265-267`:
+> `nodeEnv === 'production' ? { arranca: false } : { arranca: true, nivel: 'warn' }`. Fuera de
+> producción la deriva **es un `console.warn` en el arranque**, no una parada. El aviso pasa de
+> largo entre el ruido del boot y la app se queda escuchando como si nada.
+>
+> **② Y entonces se rompe TODO lo que lea esas cuatro tablas — no solo lo que use los campos
+> nuevos.** Medido ejecutando un `expense.findMany()` corriente con el log de consultas activado:
+> Prisma **enumera las columnas, no hace `SELECT *`** — pide las **20** de `expenses`, **las 6
+> nuevas incluidas**. Contra una base que no las tiene, esa consulta muere con
+> `column expenses.base_amount does not exist`.
+>
+> O sea: en cuanto haga `pull` de `main` y regenere el cliente, **cualquier lectura por defecto de
+> `expenses`, `quotes`, `invoices` o `providers` falla** — gastos, presupuestos, facturas y
+> proveedores. No hace falta que su código toque los campos nuevos.
+>
+> **③ Lo arregla en dos minutos** y sin GO de nadie (es su base, cambio aditivo):
+> `DATABASE_URL=<su clave de dev> bash scripts/db-push-prod` → el mismo preview, el mismo `GO`,
+> la misma verificación. El SQL es el de esta entrada, idéntico.
+>
+> **Por qué la casilla se queda sin marcar en vez de esperarle:** `yaqu_dev_javier` es la base de
+> desarrollo **de su carril** y su credencial es suya — no está en ninguna `.env` de esta máquina
+> (medido: barrido de todos los árboles). Bloquear producción esperando al entorno de desarrollo
+> de otra persona sería tener la prioridad al revés. La clave **no se pide ni se pega** en ningún
+> sitio (regla 9).
 
 > **🔎 VERIFICABLE** — que existan las nueve columnas: pregúntaselo a `docs/sql/deriva-prod.sql`
 > contra cada base, **no a estas casillas**. **✋ SIN MECANISMO** — que estén en las tres.
