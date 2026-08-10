@@ -536,13 +536,21 @@ del schema, no una lista a mano— y repone las secuencias del paso 4. Existe de
 SCRUM-242: antes de ella, este paso **no tenía código** y la restauración del formato lógico era una
 promesa escrita en una cabecera.
 
-Dos cosas que se descubrieron ejecutándolo, por si vuelven a aparecer:
+⚠️ **El destino tiene que estar VACÍO, y el script lo comprueba antes de escribir.** La
+restauración **no es transaccional**: si falla a mitad, la base queda a medias y el reintento muere
+con `Key (id)=(1) already exists`, que despista. Si te pasa: vacía y vuelve al paso 2.
+
+Tres cosas que se descubrieron ejecutándolo, por si vuelven a aparecer:
 
 - **Los tipos.** JSON no tiene fechas ni decimales; sin castear, Postgres rechaza el INSERT
   («column … is of type timestamp … but expression is of type text»). Los casts se derivan del DMMF.
 - **El orden NO es `ORDEN_BORRADO_MERCHANT` invertido.** Esa lista enumera los *hijos* de un
   merchant: `merchants` no está en ella y acaba insertándose después de `customers`, que lo
   referencia.
+- **Los ficheros.** `attachments.data` es `bytea`: las **fotos de los trabajos viven dentro de
+  Postgres**. El volcado las escribe como objeto de claves numéricas y hay que reconstruir el Buffer
+  al insertar. Sin eso: «column "data" is of type bytea but expression is of type jsonb», y se
+  recuperaba todo **menos los ficheros de los clientes**.
 
 ### 4 · Reponer las secuencias — SIN ESTO LA BASE QUEDA ROTA
 
@@ -574,6 +582,8 @@ el contenido mal es el peor verde del proyecto. Lo que se comprobó, en orden de
 4. **La cadena de huellas VeriFactu**: el `vfPrevHash` de cada factura == el `vfHash` de la
    anterior. Una cadena rota no se ve en ningún conteo y no se puede recomponer después.
 5. **Que la base pueda seguir emitiendo**: un INSERT sin id explícito que no choque (paso 4).
+6. **Los ficheros, byte a byte.** `sha256` de `attachments.data` antes y después. Un adjunto con el
+   tamaño correcto y los bytes mal no se nota hasta que alguien abre la foto.
 
 Y una sexta que se olvida: **comprobar que el comparador sabe ver una diferencia**. En la prueba se
 mutó un importe del censo restaurado y se verificó que la comparación lo detectaba. Si no, «los dos

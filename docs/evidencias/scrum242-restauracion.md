@@ -114,6 +114,59 @@ rompe es el primer usuario que emite. En facturas, un id repetido no se arregla 
 
 ---
 
+---
+
+# Segunda vuelta (10-ago-2026, 13:30 CEST): la prueba de 5 filas era un VERDE HUECO
+
+Al medir el volumen apareció que `attachments.data` es **`Bytes`** — las **fotos de los trabajos
+viven dentro de Postgres** (MEDIA-1, fallback sin R2). El juego de datos de la primera vuelta no
+tenía ni un adjunto, así que se declaró «probado» algo que **no restauraba la única tabla con
+ficheros**:
+
+```
+restauración FALLÓ: column "data" is of type bytea but expression is of type jsonb
+```
+
+23 tablas restauraban y esa no. El detector estaba bien; lo incompleto eran **los datos de la
+prueba**. Y `Bytes` es **un campo de 335** en todo el schema: el azar de qué tabla entra en un
+fixture no puede decidir si las fotos de los clientes se recuperan.
+
+**La causa:** el volcado obtiene el `bytea` como `Uint8Array` y `JSON.stringify` lo escribe como un
+objeto de claves numéricas —`{"0":137,"1":80,…}`—, ni array ni `{type:"Buffer"}`. Corregido en
+`backup-restore.mjs` reconstruyendo el Buffer **por índice** (no con `Object.values`: un byte movido
+de sitio es un fichero corrupto que nadie mira hasta que lo abre).
+
+## Ciclo completo, ahora CON el adjunto
+
+Sembrado un fichero de **4.104 bytes** con firma PNG y contenido determinista:
+
+| | sha256 | bytes |
+|---|---|---|
+| ANTES | `4bece259a349bd9d4a28fe4b8f27875448ca926545348673755b00a6ed86447a` | 4.104 |
+| DESPUÉS de volcar → vaciar → restaurar | `4bece259a349bd9d4a28fe4b8f27875448ca926545348673755b00a6ed86447a` | 4.104 |
+
+```
+✓ merchants: 1 fila(s)   ✓ attachments: 1 fila(s)   ✓ customers: 1 fila(s)   ✓ invoices: 4 fila(s)
+✓ restauradas 7 filas en 24 tablas · 24 secuencias repuestas
+```
+
+## Y lo otro que destapó el fallo: la restauración NO es transaccional
+
+El intento fallido dejó la base **a medias**, y el reintento murió con `Key (id)=(1) already
+exists` — un error que no dice nada de lo que pasa de verdad. Añadida una comprobación
+**fail-closed** de destino vacío ANTES de escribir, con la instrucción dentro del mensaje:
+
+```
+🔴 EL DESTINO NO ESTÁ VACÍO: merchants (1), customers (1), invoices (4), attachments (1)
+  No se escribe nada. […]
+  Si vienes de una restauración que falló, la base quedó A MEDIAS: vacíala y vuelve a
+  empezar desde el paso 2 de R14 (`prisma db push` sobre una base limpia).
+```
+
+Lo vigila `tests/scrum242-restauracion-cubre-todos-los-tipos.test.mjs`: **todo tipo escalar del
+schema tiene que estar nombrado** en `backup-restore.mjs` (cast, reconstrucción o «viaja intacto»).
+Es un `switch` sin `default` silencioso, no una lista de exenciones. Dos rojos comprobados por `$?`.
+
 ## Lo que esta prueba NO demuestra
 
 - **El volumen.** 5 filas en 24 tablas. Un volcado lógico de producción carga fila a fila y no se ha
