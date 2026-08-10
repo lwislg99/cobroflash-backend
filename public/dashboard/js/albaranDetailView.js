@@ -262,6 +262,32 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
       ? `<span class="status-pill">${esc(alb.estadoFacturacion)}</span>` : '');
   page.appendChild(chips);
 
+  // ── SCRUM-356 (H2) · DÓNDE ESTÁ LA FIRMA, que no es lo mismo que «guardada» ──────────────
+  //
+  // «Firmado» dice que hay firma; no dice si está a salvo. Un pro que lee «firmado» y se va de la
+  // obra está suponiendo ③ —confirmada por el servidor—, y hasta que H3 encole eso es cierto,
+  // porque hoy la firma va directa a la API. El día que haya cola dejará de serlo, y en silencio
+  // si nadie lo pinta.
+  //
+  // La cola se CONSULTA, no se produce: encolar y drenar son de H3 (SCRUM-358). Y sólo puede
+  // DEGRADAR a ①, nunca ascender — entre «el servidor lo tiene» y «este móvil cree que aún debe
+  // subirlo», gana la lectura que no promete nada.
+  if (alb.estado === 'firmado') {
+    let enCola = [];
+    try {
+      const cola = await window.leerFirmasPendientes();
+      if (cola && cola.estado === window.GUARDADO) enCola = cola.firmas || [];
+    } catch (_e) {
+      // Sin almacén no hay cola que degrade nada: el estado lo declara el servidor, que ya habló.
+    }
+    const cajaFirma = document.createElement('div');
+    cajaFirma.style.cssText = 'margin:0 0 16px';
+    cajaFirma.innerHTML = window.pintarEstadoDeFirma(
+      window.estadoDeLaFirmaDelAlbaran(alb.id, true, enCola),
+    );
+    page.appendChild(cajaFirma);
+  }
+
   // ── ACCIONES · una primaria, dos secundarias, el resto en «⋮» ───────────────────────────
   const acts = document.createElement('div');
   acts.className = 'job-doc-toolbar';
