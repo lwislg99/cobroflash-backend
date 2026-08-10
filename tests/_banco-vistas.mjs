@@ -238,8 +238,18 @@ export async function pintarVista(banco, nombreFn) {
   const idsAntes = banco.reg.idsNoResueltos.length;
   try {
     const r = fn(contenedor);
-    if (r && typeof r.then === 'function') await r;
-    for (let i = 0; i < 10; i++) await new Promise((res) => setImmediate(res));
+    // 🔴 SCRUM-448 · SE ESPERA LA VISTA **O** UNOS TICKS, LO QUE PASE ANTES.
+    //
+    // El `await r` a secas colgaba el test PARA SIEMPRE en cuanto la vista era `async` y esperaba
+    // una petición que no vuelve — que es justo el escenario «acepta y no entrega» de SCRUM-362, o
+    // sea el que este banco existe para poder montar. El propio banco no podía usar su escenario.
+    //
+    // Con el tope, la vista queda **a medio pintar**, que es exactamente lo que hay que mirar: qué
+    // enseña el producto MIENTRAS la respuesta no ha llegado. No es una tolerancia: es la única
+    // forma de observar un estado que por definición no termina.
+    const ticks = (async () => { for (let i = 0; i < 10; i++) await new Promise((res) => setImmediate(res)); })();
+    if (r && typeof r.then === 'function') await Promise.race([r, ticks]);
+    await ticks;
   } catch (e) {
     return { error: e, contenedor };
   }
