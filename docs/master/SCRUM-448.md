@@ -1,12 +1,13 @@
 # SCRUM-448 · Cobros afirmaba «no hay cobros» mientras cargaba
 
 **Fecha:** 10-ago-2026 · **Carril:** B (UI) · **Gate:** sin gate, corre en `npm test`
-**Medido contra:** `origin/main` = `e171c752f61231bec77dc2c22ecc7f82167d964c` · 2026-08-10T19:46:55+01:00
-**Tanda:** 2789 tests · 2715 pass · **0 fail** · 74 gateados · `npm test` exit **0** · `guards:entrada` 17/17
+**Medido contra:** `origin/main` = `e05087b0bb6edf7fc9a1b9ca391e2340eace76dc` · 2026-08-10T20:29:57+01:00
+**Tanda:** 2800 tests · 2726 pass · **0 fail** · 74 gateados · `npm test` exit **0** · `guards:entrada` 17/17
 
-> 🔴 **DEPENDENCIA DE ORDEN DE MERGE:** esta rama sale de `scrum-362-banco-sin-cobertura`, **no de
-> `main`**, porque el escenario «acepta y no entrega» —lo único con lo que se puede probar esto—
-> vive ahí y todavía no está en `main`. **362 primero, 448 después.**
+> **DEPENDENCIA DE ORDEN DE MERGE — RESUELTA.** Esta rama salía de
+> `scrum-362-banco-sin-cobertura`, porque el escenario «acepta y no entrega» —lo único con lo que
+> se puede probar esto— vivía ahí. **362 ya está en `main`** (PR #657, commit de fusión
+> `022f9f98`), main está mergeado dentro, y la rama sale ya contra `main` sin más dependencias.
 
 ## El defecto
 
