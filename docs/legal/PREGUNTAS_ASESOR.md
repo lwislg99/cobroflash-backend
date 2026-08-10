@@ -498,3 +498,52 @@ y eso forma parte de la respuesta que buscamos.
 
 Censo de solo lectura. No se ha modificado el camino de emisión, ni la web, ni las banderas, ni se
 ha escrito copy sobre VeriFactu (regla 26: solo del guion H2).
+
+---
+
+# SCRUM-324 (E3) · El aviso del justificante simplificado — 10-ago-2026
+
+Estas dos preguntas **bloquean la microcopy**, no el código. El dominio ya está construido y
+devuelve **códigos, no frases** (`src/modules/expenses/domain/justificante.ts`): mientras no haya
+respuesta aprobada, el producto **no dice nada**, que es mejor que decir algo falso.
+
+**El contexto, para que la respuesta sea útil:** el usuario es un profesional de oficio, de pie en
+un almacén, con el móvil. Acaba de registrar un gasto en diez segundos y el sistema ha detectado
+que a ese justificante le falta algo para deducir el IVA.
+
+## Pregunta 1 — ¿Qué convierte exactamente un simplificado en CUALIFICADO y deducible?
+
+Lo que el producto asume hoy, y que hay que confirmar o corregir:
+
+1. **NIF del DESTINATARIO** (el del profesional) en el propio documento.
+2. **Cuota de IVA desglosada**.
+3. Y, para el asiento de compra, **número y serie de la factura del proveedor** más el **NIF del
+   proveedor**.
+
+Concretamente: **¿basta con 1 y 2, o el punto 3 también condiciona la deducibilidad** (y no solo el
+libro de recibidas)? Hoy el código exige los cuatro antes de dar por bueno nada, que es lo
+conservador; si con 1 y 2 bastara, estaríamos pidiendo de más y molestando sin motivo.
+
+## Pregunta 2 — ¿Cómo se dice eso en UNA línea sin decir nada falso?
+
+El aviso aparece justo después de guardar. Tiene que caber en una línea de móvil, decir **qué
+pedir** y **dónde**, y no prometer un ahorro que depende de cosas que no controlamos.
+
+**Tres versiones a elegir o corregir** (ninguna está escrita en el producto):
+
+- **A, la más corta:** «Este ticket no permite deducir el IVA. Pide factura con tu NIF.»
+- **B, con el porqué:** «Un ticket no deduce IVA. Pide en el almacén una factura a tu nombre, con tu
+  NIF y el IVA desglosado.»
+- **C, sin la palabra "deducir":** «Para que tu asesor pueda usar este gasto, pide factura con tu
+  NIF y el IVA desglosado.»
+
+**Y una pregunta dentro de la pregunta:** ¿podemos decir «no permite deducir el IVA» tal cual, o hay
+que acotarlo? Un ticket **sí** puede ser gasto deducible en IRPF en estimación directa — que es otra
+cosa y otro importe—, y una frase que diga «no te lo puedes deducir» a secas sería **falsa por
+exceso**. La C evita el término a propósito; queremos saber si hace falta.
+
+## Lo que NO se pregunta aquí
+
+Las cinco clasificaciones del gremio —inversión del sujeto pasivo, IVA 10 % en obra de vivienda,
+retenciones 1 %/15 %, recargo de equivalencia en compras y bienes de inversión— están reportadas en
+SCRUM-280 punto 6 y **no son de este ticket**.
