@@ -1,6 +1,6 @@
 # SCRUM-396 · La referencia del justificante se comprobaba contra NADA
 
-**Medido contra:** origin/main = `74a7592e2b4287106718b42eef61fdba49cff745` · 2026-08-10T11:20:28+02:00
+**Medido contra:** `origin/main` = `74a7592e2b4287106718b42eef61fdba49cff745` · 2026-08-10T11:23:57+02:00
 **Rama:** `scrum-396-referencia-justificante`
 **GO del fundador:** 9-ago-2026, SCRUM-396 — tocar `invoiceNumber.service.ts` (regla 38),
 actualizar `EMISOR_SHA256` con rastro completo, TRES intentos.
