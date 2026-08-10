@@ -29,7 +29,7 @@ cuanto uno de los cinco se toque, para ese albarán ya no se puede hacer.
 | `src/modules/fiscal/evidencias/atestiguamiento.ts` | **nuevo** · el documento, puro, sin `prisma` |
 | `scripts/atestiguar-sobres.mjs` | **nuevo** · CLI **de solo lectura** |
 | `src/modules/fiscal/evidencias/paquete.ts` | la política, **dentro del ZIP** |
-| `tests/scrum438-atestiguar.test.mjs` | **nuevo** · 7 tests |
+| `tests/scrum438-atestiguar.test.mjs` | **nuevo** · 11 tests |
 
 ### 🔴 Qué es el documento, y qué NO es — con esas palabras, dentro de él
 
@@ -48,10 +48,7 @@ producción no son incoherentes: la diferencia es si toca algo. Y no es una prom
 **deriva** las llamadas a prisma del CLI y falla si aparece una que no sea de lectura (forma de
 SCRUM-371), con su propio control en rojo.
 
-> **Dónde NO se guarda, y por qué:** no en `AuditLog`. `AuditAction` es una unión **CERRADA** y
-> ampliarla es **decisión del fundador** (regla 5, dicho por el guard de SCRUM-371). El producto es
-> un documento; **propongo** guardarlo en `docs/legal/atestiguamientos/` —versionado, fechado y con
-> historia de git— y, si prefieres el `AuditLog`, eso es una acción nueva que apruebas tú.
+> **Dónde NO se guarda:** no en `AuditLog` — ver §2 bis ①, ya decidido.
 
 ### Lo probado contra bases reales
 
@@ -61,7 +58,25 @@ SCRUM-371), con su propio control en rojo.
 | **staging** (`railway`) | **1 firmado, y SIN sobre de evidencias** → se declara «NO SE PUDO MIRAR» y, al no poder atestiguar ninguno, sale con código **1** |
 | **producción** | **NO la toco: no tengo la clave y así sigue.** El comando va abajo |
 
-## 3 · 🔴 PROPUESTA DE v:3 — **para aprobar, NO escrita**
+## 2 bis · Las dos decisiones del asesor (11-ago-2026), aplicadas
+
+**① El atestiguamiento vive en `docs/legal/atestiguamientos/`.** Y el motivo de fondo no es solo
+no ampliar `AuditAction`: **el AuditLog se escribe en 10 sitios y no se lee en ninguno**. Meter un
+documento legal en un registro que nadie abre es guardarlo donde no se va a mirar. Un fichero
+versionado tiene tres cosas que el AuditLog no tiene: **historia inmutable, revisión por PR antes
+de entrar, y alguien que lo lee para aprobarlo.** Queda escrito en el `--help` del script.
+
+**③ La política va SIEMPRE dentro del ZIP — es regla desde hoy**, con su motivo:
+
+> *«Si solo saliera cuando algo falla, su presencia sería la señal, y habría motivo para quitarla.
+> Un documento que solo aparece con malas noticias se convierte en la mala noticia.»*
+
+Hay test que construye el paquete en los dos extremos —sin hallazgos y con un hallazgo— y exige la
+pieza en los dos.
+
+---
+
+## 3 · 🔴 PROPUESTA DE v:3 — **para aprobar LÍNEA A LÍNEA. No hay una sola línea de código escrita**
 
 ### Qué entra en el sobre
 
@@ -87,6 +102,57 @@ exactamente `1`: `3`, `99`, `null`, `NaN`. El verificador de SCRUM-369 sí acier
 fuera de su fichero, así que hoy es una **trampa cargada, no una herida abierta** — y es más barato
 desarmarla antes de que v:3 la active.
 
+### Las líneas que habría que escribir, una a una
+
+**① `FirmaEvidencia` gana un bloque `contenidoCongelado`** — dentro de `evidenciaFirma`, que ya es
+`Json?`: **cero schema**. Opcional en el tipo, porque los v:1 y v:2 no lo tienen y **no se rellena
+a posteriori jamás** (mismo criterio que `firmadoPorNombre` en C5).
+
+```ts
+contenidoCongelado?: {
+  obra: string | null;
+  referenciaTrabajo: string | null;
+  cliente: string | null;
+  emisor: string | null;
+  emisorNif: string | null;
+};
+```
+
+**② `recetaV3`, escrita ENTERA y aparte**, con sus claves en su orden — no se deriva de v:2 ni se
+comparte un helper: es la regla escrita del propio fichero (`JSON.stringify` serializa por orden de
+inserción, y un helper compartido ataría el orden de una versión al de otra). El delta con v:2 es
+que los cinco salen de `contenidoCongelado` y no de las fuentes vivas.
+
+**③ `ALBARAN_CONTENIDO_VERSION_ACTUAL = 3`** y `RECETAS_POR_VERSION` gana su `3: recetaV3`. El
+guard de SCRUM-369 ya exige que toda versión que el sellador construya tenga receta en el
+verificador: **se pondría rojo hasta que las dos existan**, que es lo que se quiere.
+
+**④ `buildFirmaEvidencia` guarda los cinco al sellar** — resolviéndolos donde ya los resuelve hoy,
+sin consulta nueva. Es **la única línea que toca el camino de sellado**, y es el STOP.
+
+**⑤ 🔴 `obraSegunVersion` LANZA ante una versión que no conoce** — *aprobado por el asesor desde
+ya*. Hoy es `if (version === 1) → jobDireccion; si no → lugarEntrega`, así que `3`, `99`, `null` y
+`NaN` caen **en silencio** a la rama de v:2.
+
+> *«Un despachador que elige una rama para una versión que no reconoce está adivinando, y hoy
+> acierta solo porque nadie lo llama.»*
+
+Y ese «nadie lo llama» está medido: `recomputarHashDeEvidencia` **no tiene llamadores** fuera de su
+fichero. Es una **trampa cargada, no una herida abierta** — y v:3 sería justo lo que la activa,
+porque estrena una versión que la rama por defecto interpretaría mal.
+
+**⑥ Vector congelado de v:3** en el banco de SCRUM-369, junto a los de v:1 y v:2, para que el
+sellador y el verificador sigan siendo **dos testigos independientes**.
+
+### Lo que NO entra en v:3, y conviene decirlo
+
+* **No se migra ningún sobre.** Ni v:1 ni v:2 se recalculan, se rellenan ni se «arreglan»: lo
+  firmado no se toca ni siquiera para mejorarlo (regla 29).
+* **No se retiran las recetas viejas.** Un verificador que dejara de saber recalcular v:1
+  declararía no verificable el único sobre que hay en producción.
+* **No se tocan los cinco campos de origen** ni se les pone candado: **decisión ya tomada** —
+  prohibir corregir la razón social de un cliente es como se desactiva un sello.
+
 ### Coste y riesgo
 
 | | |
@@ -96,19 +162,28 @@ desarmarla antes de que v:3 la active.
 | **Riesgo alto** | toca el **sellado** → regla 38 → **STOP**. Un error aquí no se nota el día que se comete: aparece meses después como un «no coincide» sobre un documento intacto |
 | **Lo que NO arregla** | **el pasado.** Los sobres v:1 y v:2 ya emitidos seguirán leyendo en vivo: sus recetas están congeladas y **no se tocan** (regla 29). Para ésos, lo que hay es el atestiguamiento del §2 y la política del §4 |
 
-## 4 · La política de los sobres anteriores — **dentro del ZIP** (microcopy con marcador)
+## 4 · La política, dentro del ZIP — ✅ **texto APROBADO** (asesor, 11-ago-2026)
 
-Va como `alcance-de-la-verificacion.txt` **dentro del paquete de evidencias**, no en un documento
-aparte: un documento externo se separa del ZIP el primer día, y entonces quien lo recibe lee las
-verificaciones sin el matiz que las acota.
+Va como `alcance-de-la-verificacion.txt` **dentro del paquete**, y **siempre** (§2 bis ③). El texto
+está **fijado entero** en `paquete.ts` (`POLITICA_SOBRES_ANTERIORES`): reformularlo es cambio de
+máster, no una mejora de redacción.
 
-**Se incluye SIEMPRE, cuadren o no.** Si solo saliera cuando algo falla, su presencia sería en sí
-misma una señal de problema y quien prepara el paquete tendría un motivo para quitarla.
+**Y lleva la misma segunda capa que el 409 de SCRUM-358**: un invariante aparte que impide que el
+texto vuelva a insinuar que esto es una firma —prohíbe «certifica», «garantiza la autenticidad»,
+«validez legal»…— y que exige que siga diciendo **«integridad parcial verificable»** y **«lo que no
+viaja, no»**.
 
-Declara los albaranes previos a v:3 de **«integridad parcial verificable»**: se demuestra que el
-documento no ha cambiado, y **no** se demuestra por sí solo que los cinco datos sean los de la
-fecha de la firma. Texto completo en `paquete.ts` (`POLITICA_SOBRES_ANTERIORES`), **con marcador —
-lo apruebas tú (regla 30)**. Lo lee un asesor o un inspector, no un profesional.
+Las dos capas, probadas en rojo por separado:
+
+| Mutación | Cae diciendo |
+| --- | --- |
+| se reformula el texto | *«no es el aprobado por el asesor el 11-ago-2026 … reformularlo es cambio de máster»* |
+| se reformula **y se actualiza el test exacto a juego** —lo que haría alguien «arreglándolo»— | *«el alcance dice “certifica”: eso INSINÚA que este paquete firma o certifica algo, y no lo hace»* |
+
+> **Nota de método, otra vez:** el primer intento de la segunda mutación **no tocó el test** (mal
+> escapado en el shell) y el rojo salió por la capa equivocada. Rehecha con post-condición que
+> exige que **los dos ficheros** hayan cambiado. Es la misma lección de ayer: ante un rojo o un
+> verde que no encaja, el primer sospechoso es la mutación.
 
 ## 5 · Verificación
 
