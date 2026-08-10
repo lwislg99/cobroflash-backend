@@ -27,9 +27,20 @@
         <div class="sidebar-logo-text">YaQu</div>
       </div>
 
-      <nav class="sidebar-nav">
-        <div class="nav-section-label">Principal</div>
+      <!-- ═══════════════════════════════════════════════════════════════════════════════════
+           SCRUM-420 (B1 · incremento 2) · LA BARRA POR CICLO DE VENTA.
 
+           El orden y los rótulos salen de `docs/diseno/bloque-b.md` §B1 («Lo que proponemos»).
+           Hasta hoy la barra era literalmente el «lo que hay hoy» de ese mismo diseño: el hueco
+           estaba declarado en `docs/master/SCRUM-284.md:416` y SCRUM-284 se cerró, así que dejó de
+           estar en ninguna lista. Por eso las ausencias de esta barra NO se anotan aquí: cada una
+           cita el ticket ABIERTO que la va a cerrar, y `tests/scrum420-barra-lateral.test.mjs` las
+           enumera para que no puedan pasar en silencio.
+
+           Los tres primeros van SIN rótulo de grupo: «son el trabajo del día y no necesitan que
+           nadie los clasifique» (diseño).
+           ═══════════════════════════════════════════════════════════════════════════════════ -->
+      <nav class="sidebar-nav">
         <button class="nav-item" data-view="home">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12L12 3l9 9M5 10v10a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1V10"/></svg>
           <span>Inicio</span>
@@ -46,19 +57,12 @@
           <span>Trabajos</span>
         </button>
 
-        <!-- SCRUM-301 (C1): los albaranes pasan a ser SITIO propio. Va justo detrás de Trabajos
-             porque cuelgan de una obra, no de un cliente. B1 no había creado esta entrada — medido,
-             no supuesto. Rótulo APROBADO por el asesor el 5-ago-2026: es el nombre del documento,
-             no copy de acción (mismo criterio que C2 fijó para el título del detalle). -->
-        <button class="nav-item" data-view="albaranes" id="nav-albaranes">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2h6a2 2 0 012 2v1h2a1 1 0 011 1v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a1 1 0 011-1h2V4a2 2 0 012-2z"/><path d="M9 12h6M9 16h4"/></svg>
-          <span id="nav-albaranes-label">Albaranes</span>
-        </button>
-
-        <button class="nav-item" data-view="customers">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-          <span>Clientes</span>
-        </button>
+        <!-- ── VENTA · el ciclo del documento, en su orden ──────────────────────────────────
+             `Cobros` NO está, y su ausencia es CONOCIDA: la entrada la añade B4 (SCRUM-285, que
+             sigue ABIERTA) en el mismo commit que su pantalla. El menú crece cuando existe el
+             destino: una entrada que apunta a nada es una promesa rota cada vez que se pulsa.
+             El rótulo «Cobros» ya está aprobado, para que B4 no tenga que pedirlo. -->
+        <div class="nav-section-label">Venta</div>
 
         <div class="nav-group" data-group="quotes">
           <button class="nav-item nav-item-parent" type="button">
@@ -73,11 +77,35 @@
           </div>
         </div>
 
-        <div class="nav-section-label">Catálogo</div>
-
+        <!-- SCRUM-432: `Plantillas` deja de ser entrada de menú y pasa a pestaña dentro de
+             Presupuestos («Historial · Plantillas», diseño §B1). HOY SE QUEDA, detrás de
+             Presupuestos: retirarla antes de que exista la pestaña dejaría la vista `templates`
+             inalcanzable — el mismo defecto que esta barra viene a arreglar, por el otro lado. La
+             retirada y la pestaña van en el MISMO commit, y son de SCRUM-432. -->
         <button class="nav-item" data-view="templates">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
           <span>Plantillas</span>
+        </button>
+
+        <!-- SCRUM-301 (C1): los albaranes son SITIO propio. Rótulo APROBADO por el asesor el
+             5-ago-2026: es el nombre del documento, no copy de acción. -->
+        <button class="nav-item" data-view="albaranes" id="nav-albaranes">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2h6a2 2 0 012 2v1h2a1 1 0 011 1v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a1 1 0 011-1h2V4a2 2 0 012-2z"/><path d="M9 12h6M9 16h4"/></svg>
+          <span id="nav-albaranes-label">Albaranes</span>
+        </button>
+
+        <button class="nav-item" data-view="invoices">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          <span>Facturas</span>
+          <span id="nav-invoices-badge" class="nav-badge" style="display:none">0</span>
+        </button>
+
+        <!-- ── NEGOCIO · lo que no es un paso del ciclo de venta ───────────────────────────── -->
+        <div class="nav-section-label">Negocio</div>
+
+        <button class="nav-item" data-view="customers">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+          <span>Clientes</span>
         </button>
 
         <button class="nav-item" data-view="products">
@@ -90,49 +118,48 @@
           <span>Proveedores</span>
         </button>
 
-        <div class="nav-section-label">Finanzas</div>
+        <button class="nav-item" data-view="expenses">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          <span>Gastos</span>
+        </button>
 
         <button class="nav-item" data-view="reports">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           <span>Informes</span>
         </button>
 
-        <button class="nav-item" data-view="invoices">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-          <span>Facturas</span>
-          <span id="nav-invoices-badge" class="nav-badge" style="display:none">0</span>
-        </button>
-
-        <!-- SCRUM-296 (A6): el libro que pide el asesor. Rotulo MARCADO: sin aprobar (regla 30). -->
+        <!-- SCRUM-296 (A6) · SCRUM-420: el rótulo pierde el marcador. «Libro de registro» lo
+             aprueba el asesor el 10-ago-2026 y APROBÓ EL RÓTULO DE NAVEGACIÓN, no copy de
+             VeriFactu: todo lo que se pinte DENTRO de esa pantalla sigue bajo la regla 26 y sale
+             del guion H2. Va en NEGOCIO y no en VENTA porque un libro registro no es un paso del
+             ciclo (Presupuestos → Albaranes → Facturas → Cobros): es un registro del negocio, y
+             vive con Informes. -->
         <button class="nav-item" data-view="libro-registro" id="nav-libro-registro">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M9 7h7M9 11h7"/></svg>
-          <span id="nav-libro-registro-label">[PENDIENTE microcopy oficial] Libro de registro</span>
+          <span id="nav-libro-registro-label">Libro de registro</span>
         </button>
 
-        <button class="nav-item" data-view="expenses">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-          <span>Gastos</span>
-        </button>
-
-        <!-- SCRUM-138: el paquete para el asesor / una inspección estaba enterrado en
-             Configuración. Es dinero, no una preferencia de la cuenta: va en Finanzas. -->
-        <button class="nav-item" data-view="export" id="nav-export">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span>Descargar datos</span>
-        </button>
+        <!-- `Descargar datos` SALE de la barra (diseño §B1: «pasa a Configuración › Tus datos. La
+             página construida en SCRUM-244 NO se rehace: solo cambia de dónde se enlaza»). El
+             enlace nuevo vive en `settingsView.js` → panel `datos`, y `tests/scrum420` comprueba
+             que `export` sigue siendo alcanzable: sacar una entrada de la barra sin dejar camino
+             sería perder la pantalla, no reordenarla. -->
 
         <div class="nav-section-label">Cuenta</div>
+
+        <!-- SCRUM-136: "Operarios" deja de ser apartado propio. Un operario es un ROL del
+             miembro, no una entidad aparte, y su resumen vive ahora dentro de Equipo.
+             ⚠️ La vista `operarios` SIGUE existiendo en el router y NO tiene entrada de barra: es
+             excepción CONOCIDA, con ticket propio (SCRUM-433). El test la nombra citándolo — una
+             excepción sin ticket deja de ser excepción y pasa a ser el comportamiento. -->
+        <button class="nav-item" data-view="team" id="nav-team">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+          <span>Equipo</span>
+        </button>
 
         <button class="nav-item" data-view="plans" id="nav-plans">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           <span>Planes</span>
-        </button>
-
-        <!-- SCRUM-136: "Operarios" deja de ser apartado propio. Un operario es un ROL del
-             miembro, no una entidad aparte, y su resumen vive ahora dentro de Equipo. -->
-        <button class="nav-item" data-view="team" id="nav-team">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-          <span>Equipo</span>
         </button>
 
         <button class="nav-item" data-view="settings">

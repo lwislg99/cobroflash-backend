@@ -657,6 +657,15 @@ function renderSettingsView(container) {
     // vivir en algún sitio, y Avisos es donde encaja: habla de lo que se envía.
     renderWaFairUseCard(panelDeSuperficie("renderWaFairUseCard")); // A9.3: fair use W2 visible
 
+    // SCRUM-420 (B1 · incremento 2) · «Descargar datos» sale de la barra lateral y su camino pasa
+    // por aquí. El diseño §B1 lo dice y lo declaraba el propio hueco de `datos`: «la página YA
+    // EXISTE (SCRUM-244) y NO se rehace: aquí solo cambiará de dónde se enlaza».
+    //
+    // 🔴 ES LA OTRA MITAD DE SACARLA DE LA BARRA, no un extra. Una entrada retirada sin camino
+    // nuevo no es una reorganización: es una pantalla perdida — el mismo defecto que este
+    // incremento viene a arreglar, cometido por el arreglo.
+    renderDescargarDatosCard(panelDeSuperficie("renderDescargarDatosCard"));
+
     // SCRUM-314 (D3): hueco para «Eliminar datos de ejemplo». Nace VACÍO y solo se rellena en la
     // cuenta demo (lo decide el backend con `esCuentaDemo`), así que fuera del demo no ocupa nada
     // ni se ve — no hay botón deshabilitado que invite a preguntar por él.
@@ -773,6 +782,47 @@ function renderSettingsView(container) {
 // "300 plantillas/mes de uso razonable — aviso, NUNCA corte". El contador sale
 // del log J8 (solo cuentan las PLANTILLAS; lo que viaja por ventana es gratis
 // y no computa). Transparencia: en demo responde a "¿y si mando muchos?".
+/**
+ * SCRUM-420 (B1 · incremento 2) · EL CAMINO A «Descargar datos» DESPUÉS DE SALIR DE LA BARRA.
+ *
+ * No rehace nada: la pantalla es la de SCRUM-244 y sigue siendo la misma vista `export`. Esto es
+ * solo el enlace que el diseño §B1 pide («Descargar datos pasa a Configuración › Tus datos»).
+ *
+ * MICROCOPY (regla 30) — «Descargar datos», aprobado por el asesor el 10-ago-2026, y el criterio
+ * queda escrito porque sirve para los que vengan: **un botón de navegación nombra su destino**, y
+ * así no puede mentir sobre lo que pasa al pulsarlo. «Descargar» a secas prometería una descarga
+ * inmediata, y lo que hace es llevar a una pantalla donde se elige qué y de qué fechas.
+ *
+ * 🔴 Y POR ESO NO HAY `<h2>`. La primera versión abría la tarjeta con el título `Descargar datos` y
+ * ponía debajo un botón con el mismo texto: la misma frase dos veces seguidas, que no informa de
+ * nada y encima la lee dos veces quien navega con lector de pantalla. El sitio ya tiene su rótulo
+ * —la pestaña «Tus datos» del submenú—, así que lo que falta aquí no es un título: es el camino.
+ *
+ * Consecuencia declarada: sin `<h2>` esto **no es una SUPERFICIE** para el censo de SCRUM-284 (su
+ * criterio es «función `render…(container)` que pinta un bloque con título propio»), sino un bloque
+ * colocado — la misma clase que `connectStatus` y `modoEmision`, que también viven en
+ * `ASIGNACION_SUPERFICIE` sin ser funciones censadas. Su colocación la sigue vigilando el guard de
+ * `panelDeSuperficie(...)`, que es el que importa: es quien impide que caiga en el panel equivocado.
+ */
+function renderDescargarDatosCard(container) {
+  if (!container) return;
+  const card = document.createElement('div');
+  card.className = 'customers-card';
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn-secondary';
+  btn.id = 'btn-ir-descargar-datos';
+  btn.style.minHeight = '44px'; // AB6: objetivo al pulgar, igual que las pestañas de los submenús
+  btn.textContent = 'Descargar datos';
+  btn.addEventListener('click', () => {
+    // El mismo enrutador que usa el resto del dashboard (`app.js:372`). Guardado como en el resto
+    // de vistas: si no está, no se rompe la pantalla de Configuración por un enlace.
+    if (window.renderAppView) window.renderAppView('export');
+  });
+  card.appendChild(btn);
+  container.appendChild(card);
+}
+
 async function renderWaFairUseCard(container) {
   const FAIR_USE = 300; // W2: soft, aviso, nunca corte
   let data;

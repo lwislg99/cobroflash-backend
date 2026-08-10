@@ -260,16 +260,36 @@ test('SCRUM-296 · TODA la copy de esta pantalla va marcada como PENDIENTE (regl
     '  confundir.');
 });
 
-test('SCRUM-296 · el rótulo del menú y el del título salen de la MISMA constante', () => {
-  // Dos copias del mismo rótulo se desincronizan, y la que se queda atrás pierde el marcador: la
-  // pantalla acabaría enseñando como aprobado un texto que no lo está.
+test('SCRUM-296 · el título de la vista sale de LIBRO_COPY, y el rótulo del MENÚ es el aprobado', () => {
+  // ── SCRUM-420 · POR QUÉ ESTE TEST CAMBIÓ, y no es que se haya relajado ─────────────────────
+  //
+  // Hasta el 10-ago-2026 exigía que la entrada del menú llevase el MARCADOR, y tenía razón: nadie
+  // había aprobado ese rótulo, y el sitio más visible de la pantalla habría sido el único texto
+  // presentándose como decidido.
+  //
+  // El asesor lo aprobó al reordenar la barra (SCRUM-420) y aprobó **exactamente esto**: «Libro de
+  // registro» como RÓTULO DE NAVEGACIÓN, **no como copy de VeriFactu**. Todo lo que se pinta DENTRO
+  // de la pantalla sigue bajo la regla 26 y sale del guion H2 — y eso lo sigue vigilando el test de
+  // arriba, que exige marcador en todas las ranuras de `LIBRO_COPY`.
+  //
+  // Mantener la exigencia del marcador habría sido **fijar el estado anterior como requisito**: un
+  // test que cae el día que alguien hace el trabajo BIEN (aquí, conseguir la aprobación). Es la
+  // misma corrección que SCRUM-388 se hizo a sí mismo con el banco de A9.
   const app = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/app.js'), 'utf8');
   const caso = app.slice(app.indexOf("case 'libro-registro':"), app.indexOf("case 'libro-registro':") + 500);
   assert.ok(caso.includes('LIBRO_COPY'),
     '🔴 el título de la vista está escrito a mano en app.js en vez de salir de `LIBRO_COPY`.');
 
   const html = fs.readFileSync(path.join(RAIZ, 'public/dashboard/index.html'), 'utf8');
-  assert.ok(/id="nav-libro-registro-label">\[PENDIENTE microcopy oficial\]/.test(html),
-    '🔴 la entrada del menú no lleva el marcador: el sitio más visible de la pantalla sería el ' +
-    'único texto que se presenta como decidido.');
+  assert.ok(/id="nav-libro-registro-label">Libro de registro</.test(html),
+    '🔴 el rótulo de navegación aprobado es EXACTAMENTE «Libro de registro». Ni con marcador ' +
+    '(ya está decidido) ni con otra redacción (cambiarlo es microcopy nueva, regla 30).');
+
+  // Y la propiedad que de verdad protege la pantalla sigue en pie: lo de DENTRO no está aprobado.
+  // Se comprueba en la FUENTE de la vista, no en el DOM, para que este test no dependa del banco.
+  const vista = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/libroRegistroView.js'), 'utf8');
+  assert.match(vista, /titulo:\s*rotulo\(/,
+    '🔴 el título DE LA PANTALLA ha dejado de pasar por `rotulo()`, que es quien le pone el ' +
+    'marcador. Lo que se aprobó el 10-ago es el rótulo de NAVEGACIÓN; el contenido del libro es ' +
+    'copy de VeriFactu y va por el guion H2 (regla 26).');
 });

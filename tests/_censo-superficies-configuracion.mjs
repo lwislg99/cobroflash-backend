@@ -99,9 +99,29 @@ export const SUPERFICIES_PENDIENTES = {
     'sobre un contenedor, así que moverlo es cambiar dónde se la llama, NO rehacerla.',
 };
 
-export function revisarSuperficies(claves) {
+/**
+ * ¿Alguna superficie se ha quedado sin sitio?
+ *
+ * 🔴 SCRUM-420 · «TENER SITIO» SON DOS COSAS, Y ESTA FUNCIÓN SOLO MIRABA UNA. Contaba como
+ * colocada la superficie que estuviera en `SUPERFICIES_PENDIENTES`, o sea la que tiene una
+ * PROPUESTA escrita. Funcionaba porque las cuatro que había estaban las cuatro sin decidir.
+ *
+ * La primera superficie DECIDIDA lo rompe: `renderDescargarDatosCard` está asignada a `datos` en
+ * el mapa que usa la pantalla, y aun así salía «sin sitio». El guard le habría pedido que se
+ * declarase pendiente **una superficie que ya está colocada** — o sea, ponerle una propuesta a algo
+ * decidido, que es escribir una duda que nadie tiene.
+ *
+ * Ahora tiene sitio quien esté **asignada** (decidida, en `ASIGNACION_SUPERFICIE`) **o**
+ * **pendiente** (con su propuesta). Y sigue sin tenerlo quien no esté en ninguna de las dos, que
+ * es lo que el guard existe para cazar. No se relaja: se le enseña la otra mitad de la pregunta.
+ *
+ * @param claves     las superficies censadas de la vista
+ * @param asignadas  el mapa `ASIGNACION_SUPERFICIE` de `settingsSubmenus.js` (las decididas)
+ */
+export function revisarSuperficies(claves, asignadas = {}) {
   return {
-    sinSitio: claves.filter((c) => !(c in SUPERFICIES_PENDIENTES)),
+    sinSitio: claves.filter((c) => !(c in SUPERFICIES_PENDIENTES) && !(c in asignadas)),
     pendientes: claves.filter((c) => c in SUPERFICIES_PENDIENTES).length,
+    decididas: claves.filter((c) => c in asignadas).length,
   };
 }
