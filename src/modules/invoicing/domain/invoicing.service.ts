@@ -12,6 +12,7 @@
 // (regla 9 / decisión fundador). Se deja para un ticket aparte con su propia revisión.
 import { Prisma } from '@prisma/client';
 import { allocateInvoiceNumber, isReceiptNumber, type OrigenC7 } from './invoiceNumber.service';
+import type { DeductRef } from './finalInvoice.service'; // SCRUM-16/142 (#2)
 import type { ActorAudit } from '../../system/audit.service'; // SCRUM-207
 
 export interface AlbaranRef {
@@ -28,6 +29,17 @@ export interface EmitInvoiceInput {
   type?: string;              // default 'F1' (se fuerza 'JUST' si la serie sale J-); FISCAL-1 usará 'ANT'
   lines?: unknown;            // Invoice.lines Json — [{concept, qty, price, tax(fracción)}]
   albaranRefs?: AlbaranRef[]; // FISCAL-2: operaciones agrupadas
+  /**
+   * SCRUM-16/142 (#2) · las facturas que esta FINAL descuenta, con su base y su cuota.
+   *
+   * Es lo que hace AUDITABLE la compensación: sin esto, la final dice un importe menor y **no
+   * consta contra qué** — y el art. 6.1 RD 1619/2012 exige identificar los documentos previos.
+   * `buildFinalInvoice` ya las produce; hasta la migración del 10-ago-2026 no tenían dónde ir.
+   *
+   * Mismo patrón EXACTO que `albaranRefs`: `Json?` en la fila, tipado aquí. **No se derivan de
+   * las líneas negativas**: de un concepto en texto no se saca un identificador de factura.
+   */
+  deductsRefs?: DeductRef[];
   quoteId?: number | null;
   stageLabel?: string | null;
   /** SCRUM-207 · OBLIGATORIO: quién emite. Los 2 llamadores de C7 son rutas de admin. */
@@ -72,6 +84,7 @@ export async function emitInvoice(tx: Prisma.TransactionClient, input: EmitInvoi
       currency: input.currency,
       lines: (input.lines as any) ?? undefined,
       albaranRefs: (input.albaranRefs as any) ?? undefined,
+      deductsRefs: (input.deductsRefs as any) ?? undefined,
       stageLabel: input.stageLabel ?? null,
       // LAZY: se rellenan bajo demanda en ensureInvoicePdf (VeriFactu + PDF).
       pdfUrl: 'PENDING_PDF',
