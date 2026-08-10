@@ -135,9 +135,15 @@ test('SCRUM-443 · 🔴 lo que NO se cierra solo SIEMPRE se puede cerrar a mano'
         'cierre: se quedaría en pantalla para siempre.');
     }
   }
+  // La propiedad no cambia; el sitio donde vive, sí. SCRUM-444 sacó el reloj a `programarCierre`
+  // para que refrescar un aviso repetido y estrenarlo pasen por el MISMO camino. Lo que este
+  // assert sigue exigiendo es lo de siempre: que un `null` NO programe cierre.
   const src = fs.readFileSync(path.join(DIR_JS, 'api.js'), 'utf8');
-  assert.match(src, /const ms = duracionToast\(msg, kind\);\s*\r?\n\s*if \(ms !== null\) setTimeout/,
-    '🔴 el `null` ya no evita el autocierre, o se aplica sin comprobarlo.');
+  const cuerpo = /function programarCierre\([^)]*\)\s*\{([\s\S]*?)\n\}/.exec(src);
+  assert.ok(cuerpo, '🔴 no se encuentra `programarCierre`: el reloj ha vuelto a repartirse.');
+  assert.match(cuerpo[1], /if \(ms === null\)\s*\{[^}]*return;/,
+    '🔴 el `null` ya no evita el autocierre, o se aplica sin comprobarlo: un aviso demasiado largo ' +
+    'volvería a irse antes de poder leerse.');
 });
 
 // ── EL NEGATIVO QUE MÁS FÁCIL SE ROMPE ───────────────────────────────────────────────────

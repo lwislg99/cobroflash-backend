@@ -341,21 +341,64 @@ function duracionToast(msg, kind) {
  */
 const TOAST_LARGO_UNA_LINEA = 45;
 
+/**
+ * SCRUM-444 · CUÁNTOS AVISOS CABEN A LA VEZ.
+ *
+ * Con más de esto en pantalla ya no hay nada que leer, hay una pared. Al llegar el que sobra se
+ * retira el MÁS ANTIGUO —el que más tiempo ha tenido para leerse—, y queda declarado como el
+ * único caso en que este ticket sigue perdiendo un aviso.
+ */
+const TOAST_MAX_A_LA_VEZ = 4;
+
+/** La pila donde viven. Se crea sola la primera vez que hace falta. */
+function pilaDeToasts() {
+  let pila = document.getElementById('yaqu-toasts');
+  if (pila) return pila;
+  pila = document.createElement('div');
+  pila.id = 'yaqu-toasts';
+  // Columna INVERSA: el más nuevo aparece abajo, junto al pulgar y donde estaba el toast único de
+  // siempre. Los anteriores suben, así que nada salta de sitio bajo el dedo.
+  pila.style.cssText = `
+    position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
+    z-index:400; display:flex; flex-direction:column-reverse; gap:8px;
+    align-items:center; pointer-events:none;
+  `;
+  document.body.appendChild(pila);
+  return pila;
+}
+
 function showToast(msg, kind = 'ok') {
-  document.getElementById('yaqu-toast')?.remove();
   // Compat: llamadas antiguas showToast(msg, true) = warn
   if (kind === true) kind = 'warn';
+  const pila = pilaDeToasts();
+
+  // ── ① EL MISMO AVISO OTRA VEZ NO SE APILA: SE REFRESCA ──────────────────────────────────
+  //
+  // Medido: «No se pudieron guardar las notas» existe en DOS sitios (`jobsView` y `jobDetailView`)
+  // y se dispara al perder el foco. Si el profesional corrige, vuelve a salir del campo y vuelve a
+  // fallar, el mensaje es EL MISMO — y dos copias idénticas apiladas ocupan el doble sin decir
+  // nada nuevo. Se reinicia el reloj del que ya está: sigue siendo verdad y vuelve a estar entero.
+  const yaEsta = [...pila.children].find(
+    (n) => n.dataset.kind === kind && n.dataset.msg === String(msg == null ? '' : msg),
+  );
+  if (yaEsta) {
+    clearTimeout(Number(yaEsta.dataset.timer));
+    programarCierre(yaEsta, msg, kind);
+    return;
+  }
+
   const colors = { ok: 'var(--brand, #16a34a)', warn: '#b45309', error: '#b91c1c' };
   const toast = document.createElement('div');
-  toast.id = 'yaqu-toast';
+  toast.className = 'yaqu-toast';
+  toast.dataset.kind = kind;
+  toast.dataset.msg = String(msg == null ? '' : msg);
   toast.setAttribute('role', 'status');
   toast.setAttribute('aria-live', kind === 'error' ? 'assertive' : 'polite');
   const unaLinea = String(msg == null ? '' : msg).length <= TOAST_LARGO_UNA_LINEA;
   toast.style.cssText = `
-    position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
     background:${colors[kind] || colors.ok}; color:#fff; max-width:min(92vw,480px);
     padding:10px 20px; border-radius:${unaLinea ? '999px' : '14px'}; font-size:14px; font-weight:600;
-    z-index:400; box-shadow:0 4px 12px rgba(0,0,0,0.2);
+    box-shadow:0 4px 12px rgba(0,0,0,0.2); pointer-events:auto;
     display:flex; align-items:center; gap:12px; text-align:left;
   `;
   const texto = document.createElement('span');
@@ -386,12 +429,34 @@ function showToast(msg, kind = 'ok') {
     toast.appendChild(cerrar);
   }
 
-  document.body.appendChild(toast);
-  // `null` = se queda hasta que lo cierren. Sólo puede pasar en errores, que son los únicos que
-  // llevan botón: un aviso que no se va y no se puede quitar sería una trampa, no una mejora.
-  const ms = duracionToast(msg, kind);
-  if (ms !== null) setTimeout(() => toast.remove(), ms);
+  pila.appendChild(toast);
+
+  // ── ② EL TOPE, Y EL ÚNICO AVISO QUE ESTE TICKET SIGUE PUDIENDO PERDER ───────────────────
+  //
+  // Se retira el MÁS ANTIGUO, que es el que más tiempo ha tenido para leerse. Con cuatro avisos
+  // simultáneos ya no hay nada que leer: hay una pared tapando la pantalla.
+  while (pila.children.length > TOAST_MAX_A_LA_VEZ) {
+    clearTimeout(Number(pila.firstElementChild.dataset.timer));
+    pila.firstElementChild.remove();
+  }
+
+  programarCierre(toast, msg, kind);
 }
+
+/**
+ * Le pone (o le renueva) el reloj a un aviso.
+ *
+ * 🔴 Aparte para que **refrescar un aviso repetido sea exactamente lo mismo que estrenarlo**: si el
+ * cierre se programara en dos sitios, el repetido acabaría con otra duración que el original y
+ * nadie se enteraría. `null` = no se cierra solo (SCRUM-443); sólo pasa en errores, que llevan
+ * botón — un aviso que no se va y no se puede quitar sería una trampa, no una mejora.
+ */
+function programarCierre(toast, msg, kind) {
+  const ms = duracionToast(msg, kind);
+  if (ms === null) { delete toast.dataset.timer; return; }
+  toast.dataset.timer = String(setTimeout(() => toast.remove(), ms));
+}
+
 window.showToast = showToast;
 window.duracionToast = duracionToast;
 
