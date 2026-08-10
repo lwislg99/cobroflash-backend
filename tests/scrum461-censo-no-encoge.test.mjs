@@ -36,6 +36,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
 import { paresDelSchema, paresDelFichero } from '../scripts/_pares-del-schema.mjs';
 import { paresEsperados, motivoParaNoEscribir, RUTA_SQL } from '../scripts/generar-sql-deriva.mjs';
 import { comprobarProcedencia, mensaje } from '../scripts/_prisma-procedencia-guard.mjs';
@@ -220,18 +221,51 @@ test('SCRUM-461 · 🔴 con el cliente ATRASADO se niega, y NOMBRA los campos qu
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
+/**
+ * Dónde se LLAMA a una función en un fichero, por AST. `-1` si no se llama.
+ *
+ * ⚠️ AST y no `indexOf`, y lo aprendí en rojo aquí mismo: la primera versión buscaba el texto
+ * `motivoParaNoEscribir()` y **encontraba su propia declaración**, así que quitar la llamada no
+ * ponía nada en rojo. Es exactamente el «mencionar no es hacer» que este test dice combatir,
+ * cometido por el test.
+ */
+function posicionDeLlamada(codigo, nombre) {
+  const sf = ts.createSourceFile('x.mjs', codigo, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  let pos = -1;
+  (function walk(n) {
+    if (pos === -1 && ts.isCallExpression(n)) {
+      const e = n.expression;
+      const texto = ts.isPropertyAccessExpression(e) ? e.name.text
+        : (ts.isIdentifier(e) ? e.text : '');
+      if (texto === nombre) pos = n.getStart(sf);
+    }
+    ts.forEachChild(n, walk);
+  })(sf);
+  return pos;
+}
+
 test('SCRUM-461 · 🔴 el generador COMPRUEBA antes de escribir — no basta con que exista', () => {
-  // Mencionar no es hacer: que `motivoParaNoEscribir` exista no prueba que el script la use antes
-  // de tocar el disco.
   const src = fs.readFileSync(path.join(RAIZ, 'scripts', 'generar-sql-deriva.mjs'), 'utf8');
-  const i = src.indexOf('motivoParaNoEscribir()');
-  const j = src.indexOf('fs.writeFileSync(RUTA_SQL');
-  assert.ok(i !== -1 && j !== -1 && i < j,
+  const comprueba = posicionDeLlamada(src, 'motivoParaNoEscribir');
+  const escribe = posicionDeLlamada(src, 'writeFileSync');
+
+  assert.ok(comprueba !== -1,
     '🔴 EL GENERADOR ESCRIBE SIN COMPROBAR LA PROCEDENCIA DEL CLIENTE. Es la puerta por la que ' +
     'entró el incidente del 10-ago: `_prisma-sync.mjs` corre en `pretest` y protege la TANDA, pero ' +
     'este script lanzado a mano no pasa por ahí — y a mano es exactamente como se lanzó.');
+  assert.ok(escribe !== -1, '🔴 ESCÁNER CIEGO: no encuentro dónde escribe el fichero.');
+  assert.ok(comprueba < escribe,
+    '🔴 el generador comprueba DESPUÉS de escribir: el censo corto ya está en el disco.');
   assert.match(src, /process\.exit\(1\)/,
     '🔴 detecta el cliente atrasado y escribe igual: avisar no es negarse.');
+
+  // CONTROL POSITIVO Y NEGATIVO DEL DETECTOR, dentro del mismo test: distingue LLAMAR de DECLARAR.
+  // Sin esto, un detector que encontrara la declaración daría este mismo verde — y lo dio.
+  assert.equal(posicionDeLlamada('export function f() { return 1; }', 'f'), -1,
+    '🔴 el detector toma una DECLARACIÓN por una llamada: es el agujero exacto que tuvo la primera ' +
+    'versión de este test, y con él quitar la comprobación no ponía nada en rojo.');
+  assert.ok(posicionDeLlamada('function f(){} const x = f();', 'f') > -1,
+    '🔴 el detector no ve una llamada que tiene delante.');
 });
 
 test('SCRUM-461 · el guard de SCRUM-222 sigue en pie y no se ha relajado', () => {
