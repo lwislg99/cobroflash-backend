@@ -107,6 +107,23 @@ async function renderExpensesView(container) {
 
   document.getElementById('exp-new-btn').addEventListener('click', () => openExpenseModal(null));
 
+  /**
+   * SCRUM-324 (E3) · MICROCOPY OFICIAL, aprobada por el fundador el 10-ago-2026.
+   *
+   * No se toca ni se parafrasea (regla 30). Se eligió sobre otras tres, y el motivo importa para
+   * quien venga a cambiarla:
+   *
+   *   · «no puedes deducir este gasto» sería FALSO POR EXCESO — un ticket sí puede ser gasto
+   *     deducible en IRPF en estimación directa, que es otra cosa y otro importe;
+   *   · «para que tu asesor pueda usar este gasto» esconde lo que está en juego. El profesional
+   *     merece saber que lo que pierde es EL IVA, que es dinero suyo y es cuantificable.
+   *
+   * Por eso dice exactamente qué se pierde («el IVA»), no afirma nada falso, y la acción está en su
+   * vocabulario: el almacén, a tu nombre, desglosado.
+   */
+  const AVISO_SIMPLIFICADO = 'Con un ticket no puedes deducir el IVA. Pide en el almacén una '
+    + 'factura a tu nombre, con tu NIF y el IVA desglosado.';
+
   function updateExportLink() {
     const monthSel = document.getElementById('exp-filter-month');
     const catSel   = document.getElementById('exp-filter-cat');
@@ -301,9 +318,19 @@ function openExpenseModal(expense, opts) {
             : `<select id="exp-quoteid"><option value="">Cargando trabajos…</option></select>`}
           <p style="font-size:12px;color:var(--neutral-400);margin:2px 0 0">Vincula este gasto a un trabajo para calcular el margen.</p>
         </div>
-        <div class="field">
-          <label>Proveedor (opcional)</label>
-          <input id="exp-providerid" type="number" placeholder="ID del proveedor" value="${expense?.provider?.id||expense?.providerId||''}"/>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="field">
+            <label>Proveedor (opcional)</label>
+            <select id="exp-providerid"><option value="">Cargando proveedores…</option></select>
+          </div>
+          <div class="field">
+            <!-- SCRUM-324 (E3) · el tercero de los tres campos del momento. Se teclea aquí y se
+                 guarda en la ficha del proveedor, que es donde vive: en el almacén no se entra a
+                 una ficha. Si el proveedor ya tenía NIF, este campo lo muestra y no lo pisa. -->
+            <label>NIF del proveedor</label>
+            <input id="exp-provider-nif" type="text" inputmode="text" autocapitalize="characters"
+                   placeholder="B12345678" value="${escHtml(expense?.provider?.taxId||'')}"/>
+          </div>
         </div>
         <div class="field">
           <label>Notas</label>
@@ -315,6 +342,10 @@ function openExpenseModal(expense, opts) {
           <input type="file" id="exp-receipt" accept="image/*" style="font-size:13px"/>
         </div>
         <div id="exp-error" class="alert error" style="display:none"></div>
+        <!-- SCRUM-324 (E3) · el aviso del simplificado. Vacío hasta que el servidor clasifique:
+             el veredicto "falta confirmar" NO pinta nada, porque acusar sin saber es tan inútil
+             como callar. (Sin acentos graves aquí dentro: esto vive en un template literal.) -->
+        <div id="exp-aviso-iva" class="alert warning" style="display:none"></div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" id="exp-cancel">Cancelar</button>
@@ -328,6 +359,39 @@ function openExpenseModal(expense, opts) {
   document.getElementById('exp-close').addEventListener('click', closeExpModal);
   document.getElementById('exp-cancel').addEventListener('click', closeExpModal);
   backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeExpModal(); });
+
+  // SCRUM-324 (E3): los proveedores, por su nombre y no por un id numérico. Antes había que
+  // teclear «ID del proveedor» — de pie en un almacén, nadie se sabe el 47. Mismo patrón que el
+  // selector de trabajos, incluido el fallo: si la lista no carga NO se deja un desplegable vacío
+  // que borre la vinculación al guardar.
+  const provSel = document.getElementById('exp-providerid');
+  const nifInput = document.getElementById('exp-provider-nif');
+  if (provSel) {
+    const actualProv = expense?.provider?.id ?? expense?.providerId ?? null;
+    apiRequest('/admin/providers')
+      .then((r) => {
+        if (!document.getElementById('exp-modal')) return;
+        const lista = Array.isArray(r) ? r : (r?.items || []);
+        provSel.innerHTML = '<option value="">— Sin proveedor —</option>'
+          + lista.map((pr) => `<option value="${pr.id}" data-nif="${escHtml(pr.taxId || '')}"`
+            + `${pr.id === actualProv ? ' selected' : ''}>${escHtml(pr.name)}</option>`).join('');
+        // Al elegir proveedor, su NIF se rellena solo: el que ya está guardado manda sobre lo que
+        // se teclee con prisa, y así el usuario ve que ese proveedor ya está resuelto.
+        provSel.addEventListener('change', () => {
+          const op = provSel.selectedOptions[0];
+          const nif = op ? (op.dataset.nif || '') : '';
+          if (nif) { nifInput.value = nif; nifInput.readOnly = true; }
+          else if (nifInput.readOnly) { nifInput.value = ''; nifInput.readOnly = false; }
+        });
+        provSel.dispatchEvent(new Event('change'));
+      })
+      .catch(() => {
+        if (!document.getElementById('exp-modal')) return;
+        provSel.innerHTML = actualProv != null
+          ? `<option value="${actualProv}" selected>Proveedor actual (no se pudo cargar la lista)</option>`
+          : '<option value="">No se pudo cargar la lista de proveedores</option>';
+      });
+  }
 
   // SCRUM-135: los Trabajos se piden a /admin/jobs (endpoint YA existente; para un técnico
   // viene filtrado a los suyos por SCRUM-23, así que el selector nunca enseña trabajo ajeno).
@@ -380,14 +444,42 @@ function openExpenseModal(expense, opts) {
         concept, amount, date, category, notes: notes || null,
         quoteId: quoteId ? Number(quoteId) : null,
         providerId: providerId ? Number(providerId) : null,
+        nifProveedor: document.getElementById('exp-provider-nif').value.trim() || null,
         receiptData,
         currency: window.appLocale?.currency || 'EUR',
       };
 
+      let creado = null;
       if (isEdit) {
         await apiRequest(`/admin/expenses/${expense.id}`, { method: 'PUT', body: JSON.stringify(payload) });
       } else {
-        await apiRequest('/admin/expenses', { method: 'POST', body: JSON.stringify(payload) });
+        creado = await apiRequest('/admin/expenses', { method: 'POST', body: JSON.stringify(payload) });
+      }
+
+      // SCRUM-324 (E3) · EL AVISO ES EL PRODUCTO, no un adorno del guardado.
+      //
+      // El ahorro no está en guardar la foto: está en que la PRÓXIMA vez pida la factura bien. Por
+      // eso el modal NO se cierra solo cuando el justificante no deduce — si se cerrara, el aviso
+      // sería un toast que se va antes de que nadie lo lea, y habríamos guardado un ticket inútil
+      // con la sensación de haber hecho el trabajo.
+      //
+      // ⚠️ SOLO con `no_deducible`. Con `falta_confirmar` NO se pinta nada: es el caso en que todo
+      // lo comprobable está y solo queda mirar el papel, y avisar ahí sería acusar sin saber. Un
+      // aviso que salta siempre se aprende a ignorar igual que uno que no salta nunca.
+      if (creado?.justificante?.veredicto === 'no_deducible') {
+        const aviso = document.getElementById('exp-aviso-iva');
+        if (aviso) {
+          aviso.textContent = AVISO_SIMPLIFICADO;
+          aviso.style.display = '';
+          btn.disabled = false;
+          btn.textContent = 'Entendido';
+          btn.onclick = async () => {
+            closeExpModal();
+            if (o.onSaved) await o.onSaved();
+            else await Promise.all([loadSummary(), loadExpenses()]);
+          };
+          return;
+        }
       }
 
       closeExpModal();

@@ -4,6 +4,9 @@ import {
   getExpenseSummary, getQuoteMargin, EXPENSE_CATEGORIES, ExpenseRefError,
 } from '../../domain/expenses.service';
 import { requireRole } from '../../../../core/http/authMiddleware';
+import { prisma } from '../../../../core/db/prisma';
+// SCRUM-324 (E3) · la regla fiscal vive en el dominio, no en cada pantalla que da de alta un gasto.
+import { clasificarJustificante } from '../../domain/justificante';
 
 const router = Router();
 
@@ -86,7 +89,7 @@ router.get('/margin/:quoteId', requireRole('admin'), async (req, res) => {
 // POST /admin/expenses
 router.post('/', async (req, res) => {
   try {
-    const { quoteId, providerId, concept, amount, currency, category, date, notes, receiptData } = req.body || {};
+    const { quoteId, providerId, concept, amount, currency, category, date, notes, receiptData, nifProveedor } = req.body || {};
     if (!concept || typeof concept !== 'string') return res.status(400).json({ error: 'concept_required' });
     if (amount == null || Number.isNaN(Number(amount))) return res.status(400).json({ error: 'amount_required' });
     if (Number(amount) <= 0) return res.status(400).json({ error: 'amount_invalid' });
@@ -104,8 +107,33 @@ router.post('/', async (req, res) => {
       // SCRUM-109: autoría — quien registra el gasto AHORA, no heredada de nada (a
       // diferencia de Job.operarioId, que se congela desde el presupuesto en el accept).
       teamMemberId: req.teamMemberId ?? null,
+      nifProveedor: nifProveedor ? String(nifProveedor) : null,
     });
-    return res.status(201).json({ ok: true, item: expense });
+
+    // SCRUM-324 (E3) · el veredicto viaja CON el gasto recién creado.
+    //
+    // Se calcula aquí y no en el navegador porque es una regla fiscal: si viviera en el front,
+    // cada pantalla que diera de alta un gasto tendría su propia copia y se desincronizarían — y el
+    // día que difieran, una le diría a un profesional que puede deducir algo que no puede.
+    //
+    // El NIF se lee del PROVEEDOR, que es donde vive, y no de lo que acaba de teclear el usuario:
+    // si el proveedor ya tenía uno, ese es el bueno (ver `guardarNifDelProveedor`).
+    const proveedor = expense.providerId
+      ? await prisma.provider.findFirst({
+          where: { id: expense.providerId, merchantId: req.merchantId },
+          select: { taxId: true },
+        })
+      : null;
+    const justificante = clasificarJustificante({
+      amount: expense.amount,
+      date: expense.date,
+      nifProveedor: proveedor?.taxId ?? null,
+      vatRate: expense.vatRate,
+      vatAmount: expense.vatAmount,
+      providerInvoiceNumber: expense.providerInvoiceNumber,
+      vatDeducible: expense.vatDeducible,
+    });
+    return res.status(201).json({ ok: true, item: expense, justificante });
   } catch (err) {
     if (err instanceof ExpenseRefError) return res.status(400).json(refErrorBody(err));
     console.error('[POST /admin/expenses]', err);

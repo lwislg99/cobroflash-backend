@@ -16,6 +16,14 @@ export interface CreateExpenseInput {
   // SCRUM-109: autoría — el técnico que registró el gasto (null = propietario). Inmutable:
   // no forma parte de updateExpense a propósito, mismo convenio que Job.operarioId (SCRUM-22).
   teamMemberId?: number | null;
+  /**
+   * SCRUM-324 (E3) · el NIF del proveedor, capturado EN EL MOMENTO del gasto.
+   *
+   * No es un campo de `Expense`: vive en `Provider.taxId`, que es su sitio. Se acepta aquí porque
+   * el usuario lo teclea en el almacén, con el ticket en la mano, y obligarle a ir antes a la ficha
+   * del proveedor es pedirle que se acuerde por la noche — que es justo cuando ya no se acuerda.
+   */
+  nifProveedor?: string | null;
 }
 
 export async function listExpenses(
@@ -152,7 +160,7 @@ async function assertRefsOwned(merchantId: number, data: Partial<CreateExpenseIn
 
 export async function createExpense(merchantId: number, data: CreateExpenseInput) {
   await assertRefsOwned(merchantId, data);
-  return prisma.expense.create({
+  const gasto = await prisma.expense.create({
     data: {
       merchantId,
       quoteId:      data.quoteId     ?? null,
@@ -166,6 +174,25 @@ export async function createExpense(merchantId: number, data: CreateExpenseInput
       receiptData:  data.receiptData ?? null,
       teamMemberId: data.teamMemberId ?? null,
     },
+  });
+  await guardarNifDelProveedor(merchantId, data);
+  return gasto;
+}
+
+/**
+ * El NIF va al PROVEEDOR, y solo si no tenía uno.
+ *
+ * No se pisa un NIF ya guardado: el de la ficha lo puso alguien mirando una factura, y el del
+ * almacén se teclea de pie y con prisa. Si difieren, gana el que ya estaba — la diferencia no se
+ * resuelve en silencio aquí.
+ */
+async function guardarNifDelProveedor(merchantId: number, data: Partial<CreateExpenseInput>) {
+  const nif = (data.nifProveedor ?? '').trim();
+  if (!nif || !data.providerId) return;
+  await prisma.provider.updateMany({
+    // El filtro por `merchantId` no es decorativo: un `updateMany` sin él se salta el multi-tenant.
+    where: { id: data.providerId, merchantId, taxId: null },
+    data: { taxId: nif },
   });
 }
 
