@@ -175,3 +175,109 @@ Ordenadas de menos a más invasiva. **Ninguna toca el verificador ni las recetas
 
 El verificador · las recetas congeladas · el sellado · `computeAlbaranContentHash` · el camino de
 emisión · `prisma/schema.prisma` · ningún `.env` · producción · ninguna base de datos.
+
+---
+
+# SCRUM-431 (apéndice) · el cruce, MEDIDO: un sobre v:1 antiguo deja de verificar
+
+**Fecha:** 10-ago-2026 · **Carril:** fiscal/evidencias · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `4cc5e0451e7e5706acaf6e1acd9b5aed6065f523` · 2026-08-10T17:52:52+02:00
+
+> Este apéndice **se añade** al censo de arriba y no reemplaza una línea de él. Aquel dejó los
+> censos 1 y 2 pendientes por necesitar base de datos; **el censo 2 no la necesitaba** —la pregunta
+> se contesta con la receta congelada— y aquí está corrido.
+
+## PASO 0
+
+### (1) ¿Qué lee EN VIVO el verificador v:1, y cuántos sobres v:1 hay emitidos?
+
+**Lo primero, comprobado por mí y no heredado.** La receta v:1 (`albaranVerificacion.ts:174-189`)
+saca cinco campos de filas que **no son el albarán** —y la fila del albarán sí está congelada al
+firmarse—:
+
+| campo del sobre | fila viva | v:1 | v:2 |
+|---|---|---|---|
+| `jobDireccion` → `obra` | `Job.direccion` | ✅ | — (C5 le cambió la fuente) |
+| `referenciaTrabajo` | `Job.titulo` | ✅ | ✅ |
+| `cliente` | `Customer.legalName \|\| name` | ✅ | ✅ |
+| `emisor` | `Merchant.legalName \|\| name` | ✅ | ✅ |
+| `emisorNif` | `Merchant.taxId` | ✅ | ✅ |
+
+**Cuántos sobres v:1 hay emitidos hoy: NO LO SÉ, y no lo he medido.** Exige leer una base real y
+esta tanda no toca ninguna (ni en lectura). Queda como estaba en el censo §4, con su SQL y su
+suelo escritos. **«Cero v:1» y «no supe mirar» no son el mismo número**, así que aquí va el segundo.
+
+### (2) ¿C5 (SCRUM-300) ya lo resuelve para v:2, y v:1 quedó sin migrar?
+
+**No: es defecto de las dos, y ésa es la corrección al encuadre del ticket.** C5 sólo le cambió la
+**fuente a `obra`** (`Job.direccion` → `Albaran.lugarEntrega`), que es un campo del propio albarán.
+Los **otros cuatro** se leen en vivo **igual en v:1 y en v:2**. Subir de versión no protege a lo ya
+firmado, así que «migrar v:1» no es una salida.
+
+## 🔴 EL CRUCE, y es lo que decide el ticket
+
+Medido con la receta **congelada**, sin base de datos, sobre un albarán firmado cuando nadie
+escribía `Job.direccion`:
+
+```
+ANTES  (Job sin dirección):                       cuadra = true
+DESPUÉS (el Job gana dirección HOY, albarán intacto):
+        cuadra = false · motivo = hash_no_coincide
+        «ALB-2026-0007: EL CONTENIDO YA NO ES EL QUE SE FIRMÓ.»
+```
+
+**La respuesta es «deja de verificar»**, y con la acusación más grave que sabe hacer esta
+herramienta, sobre una entrega que nadie ha tocado. SCRUM-424 abre esa escritura: no es un riesgo
+teórico, es el disparador.
+
+Y el mismo experimento con `cliente` sale igual **en las dos versiones**: corregir la razón social
+de un cliente convertía en «manipulados» todos sus albaranes firmados.
+
+## Lo construido — y lo que deliberadamente NO
+
+**No existe arreglo del pasado.** Para un sobre ya emitido, el valor firmado **no viaja con la
+firma**: no hay nada que leer. Congelarlo dentro del sobre (la P4 del censo) es un **v:3** y toca el
+sellado — **STOP, y es tuya**. Lo que sí se puede hacer sin tocar el camino de emisión es **dejar de
+acusar en falso**:
+
+- **Motivo nuevo `dato_vivo_cambiado`** en `albaranVerificacion.ts`. Antes de dar por manipulado un
+  albarán, el verificador recalcula el hash **poniendo vacío cada campo vivo, uno a uno**. Si alguno
+  reproduce el hash guardado, queda **demostrado** —no supuesto— que el sobre se selló con ese dato
+  vacío y que lo único que ha cambiado desde entonces es esa otra fila.
+- El veredicto **sigue siendo `cuadra: false`**: no se puede demostrar la integridad de lo que no
+  viaja con la firma, y decir lo contrario sería peor. Lo que cambia es el **motivo y el mensaje**,
+  que ahora nombran el campo.
+
+**Por fichero y por lado (regla 38):** el diff es **un solo fichero**, `albaranVerificacion.ts`,
+**+61 líneas y 0 borradas**. Comprobado intactos: `albaran.service.ts`, `albaranes.routes.ts` y
+`prisma/schema.prisma`. Ni las recetas ni `obraSegunVersion` ni el despacho de C5 se han tocado.
+
+## 🔴 Regla 29 · los vectores congelados, literales
+
+`VECTORES` fija **a mano** el hash que dan hoy las recetas v:1 y v:2 sobre unas fuentes fijas. Si
+una receta cambiara, este test cae — y su mensaje dice lo único correcto: **no se actualiza el
+número**, porque significaría que todos los sobres emitidos con esa receta acaban de dejar de
+verificar y no se pueden volver a sellar.
+
+Además: **v:1 no puede empezar a mirar los campos que estrenó v:2**. Si lo hiciera, cada sobre v:1
+emitido cambiaría de veredicto en cuanto alguien rellenase un campo que ni siquiera es suyo.
+
+**Y el control que decide:** una manipulación de verdad —cambiar las **líneas**, que son del propio
+albarán— sigue saliendo `hash_no_coincide` con su acusación intacta. Sin él, el motivo nuevo podría
+estar tragándose también las alteraciones reales.
+
+Más el sondeo que **no inventa**: si el dato vivo ya venía vacío, no hay nada que blanquear y el
+veredicto vuelve a ser el estricto.
+
+## Lo que sigue en tu mesa
+
+**P4 (congelar el contenido dentro del sobre, v:3)** sigue siendo la única que ataca la causa, y
+sigue siendo STOP: toca el sellado. Este apéndice no la adelanta — sólo quita la acusación falsa
+mientras tanto y deja el cruce fijado con un test para que no vuelva a discutirse.
+
+## Evidencia
+
+- Worktree limpio desde el remoto, entorno completo: **2591 tests · 2517 pass · 0 fail · 74 skipped ·
+  `$? = 0`**.
+- `npm run guards:entrada`: **`$? = 0`**.
+- `git diff --diff-filter=D --name-only origin/main...HEAD`: **vacío**.
