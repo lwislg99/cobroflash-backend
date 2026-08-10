@@ -280,6 +280,67 @@ window.fmtMoneyEsOAusente = fmtMoneyEsOAusente;
 // A6.2: toast compartido de TODO el BO (una sola voz para el feedback de acción).
 // kind: 'ok' (verde marca) · 'warn' (ámbar) · 'error' (rojo). Sustituye a los
 // alert() del navegador. Uno cada vez; aria-live para lectores de pantalla.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-443 · EL TOAST DE ERROR SE PUEDE LEER ENTERO, Y SE PUEDE QUITAR
+//
+// El defecto, medido: los errores duraban **5 s fijos** y el mensaje de error más largo del
+// producto son **136 caracteres ≈ 7,5 s de lectura**. O sea que había errores que **se iban por la
+// mitad**, y el profesional no podía ni recuperarlos ni pararlos: `showToast` no registraba ningún
+// listener, no pintaba cierre y no tenía `cursor:pointer`.
+//
+// Se queda sabiendo que algo falló y sin saber qué.
+//
+// ⚠️ ESTO CAMBIA EL CONTENEDOR, JAMÁS EL CONTENIDO. Ni un texto se toca aquí.
+
+/**
+ * Cuánto tiempo tiene que estar un aviso en pantalla, DERIVADO DE SU LONGITUD.
+ *
+ * 🔴 EL NÚMERO NO SE ELIGE: SE CALCULA. Un «pongamos 10 segundos» vuelve a romperse el día que
+ * alguien escriba un mensaje más largo — que es exactamente cómo hemos llegado hasta aquí, con un
+ * 5 fijo puesto cuando los mensajes eran cortos.
+ *
+ * `MS_POR_CARACTER` sale de la velocidad de lectura habitual (~3,3 palabras/s a ~5,5 caracteres por
+ * palabra ≈ 18 car/s ≈ 55 ms/car), redondeada al alza. `MS_BASE` es el tiempo de darse cuenta de
+ * que ha aparecido algo antes de empezar a leerlo.
+ *
+ * El SUELO de 5 s es el valor que había: esto sólo puede alargar, nunca acortar.
+ */
+const TOAST_MS_BASE = 1500;
+const TOAST_MS_POR_CARACTER = 60;
+const TOAST_MS_MIN_ERROR = 5000;
+const TOAST_MS_MAX = 15000;
+/** Los avisos de ÉXITO no se tocan: un «guardado» quiere irse rápido y estorbar lo mínimo. */
+const TOAST_MS_OK = 3000;
+
+/**
+ * `null` = **no se cierra solo**; se queda hasta que el profesional lo cierre.
+ *
+ * 🔴 Esto lo destapó el propio guard de este ticket, y merece explicarse porque el primer intento
+ * estaba mal: yo había puesto un tope de 15 s, y con un mensaje de 300 caracteres —que necesita
+ * ~16,7 s— el tope RECORTABA por debajo de lo legible. O sea que había reconstruido el defecto
+ * original, más arriba: un mensaje que se va antes de poder leerse.
+ *
+ * Un tope hace falta —un aviso de 25 s tapando la pantalla es intrusivo—, pero la salida no era
+ * subirlo hasta que cupiera el mensaje más largo imaginable. **Si un aviso no cabe en el tope, lo
+ * que no puede hacer es irse solo.** Ahora que los errores llevan botón de cierre, quedarse es una
+ * opción honesta: el profesional lo lee al ritmo que sea y lo quita cuando termina.
+ */
+function duracionToast(msg, kind) {
+  if (kind !== 'error') return TOAST_MS_OK;
+  const largo = String(msg == null ? '' : msg).length;
+  const necesita = Math.max(TOAST_MS_MIN_ERROR, TOAST_MS_BASE + largo * TOAST_MS_POR_CARACTER);
+  return necesita > TOAST_MS_MAX ? null : necesita;
+}
+
+/**
+ * ¿Es un aviso de una sola línea?
+ *
+ * El `border-radius: 999px` está pensado para una línea: con tres, los extremos curvos se comen las
+ * esquinas del texto. Por debajo de este largo cabe en una línea a 14px dentro del ancho máximo del
+ * toast (480px, y 92vw en móvil); por encima, se usa un radio normal.
+ */
+const TOAST_LARGO_UNA_LINEA = 45;
+
 function showToast(msg, kind = 'ok') {
   document.getElementById('yaqu-toast')?.remove();
   // Compat: llamadas antiguas showToast(msg, true) = warn
@@ -289,17 +350,50 @@ function showToast(msg, kind = 'ok') {
   toast.id = 'yaqu-toast';
   toast.setAttribute('role', 'status');
   toast.setAttribute('aria-live', kind === 'error' ? 'assertive' : 'polite');
+  const unaLinea = String(msg == null ? '' : msg).length <= TOAST_LARGO_UNA_LINEA;
   toast.style.cssText = `
     position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
     background:${colors[kind] || colors.ok}; color:#fff; max-width:min(92vw,480px);
-    padding:10px 20px; border-radius:999px; font-size:14px; font-weight:600;
+    padding:10px 20px; border-radius:${unaLinea ? '999px' : '14px'}; font-size:14px; font-weight:600;
     z-index:400; box-shadow:0 4px 12px rgba(0,0,0,0.2);
+    display:flex; align-items:center; gap:12px; text-align:left;
   `;
-  toast.textContent = msg;
+  const texto = document.createElement('span');
+  texto.textContent = msg;
+  toast.appendChild(texto);
+
+  // ── CERRARLO A MANO ─────────────────────────────────────────────────────────────────────
+  //
+  // Sólo en los errores: son los únicos que duran lo bastante como para estorbar, y los únicos
+  // que alguien puede querer quitarse de encima antes de tiempo. Un «guardado» de 3 s con una
+  // aspa al lado es ruido.
+  //
+  // ⚠️ SE REUTILIZA `.modal-close`, el patrón de cierre que YA existe en la casa (seis
+  // componentes: modales de IA, importador CSV, clientes, gastos, inicio…). No se inventa un
+  // segundo botón de cerrar con otra pinta y otro tamaño.
+  if (kind === 'error') {
+    const cerrar = document.createElement('button');
+    cerrar.type = 'button';
+    cerrar.className = 'modal-close';
+    // `aria-label="Cerrar"` NO es microcopy nueva: es el literal que ya usan `invoiceDetailView`,
+    // `jobDetailView` y `settingsView` con este mismo patrón. Reutilizar no es inventar (regla 30)
+    // — y aquí un marcador sería peor que en ningún sitio: un lector de pantalla leería en voz
+    // alta «PENDIENTE microcopy oficial» a alguien que sólo quiere cerrar un aviso.
+    cerrar.setAttribute('aria-label', 'Cerrar');
+    cerrar.innerHTML = '&times;';
+    cerrar.style.cssText = 'flex:0 0 auto; width:24px; height:24px; font-size:16px; background:rgba(255,255,255,.22); color:#fff';
+    cerrar.addEventListener('click', () => toast.remove());
+    toast.appendChild(cerrar);
+  }
+
   document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), kind === 'error' ? 5000 : 3000);
+  // `null` = se queda hasta que lo cierren. Sólo puede pasar en errores, que son los únicos que
+  // llevan botón: un aviso que no se va y no se puede quitar sería una trampa, no una mejora.
+  const ms = duracionToast(msg, kind);
+  if (ms !== null) setTimeout(() => toast.remove(), ms);
 }
 window.showToast = showToast;
+window.duracionToast = duracionToast;
 
 // Rellena un <tbody> con filas-esqueleto mientras carga una lista. Se sustituyen
 // al pintar los datos (tbody.innerHTML = ''). cols = nº de columnas de la tabla.
