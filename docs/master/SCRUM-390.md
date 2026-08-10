@@ -48,6 +48,7 @@ dependían de que no lo hubiera. Lo que se hace después lo decide una persona.
 | control | resultado |
 |---|---|
 | **negativo**: 13 merchants, 0 pagando → puerta cerrada | ✅ |
+| **② uno de más, probado de verdad**: tope 12 contra 13 reales → cae nombrando los dos números | ✅ |
 | **① paga**: 1 con suscripción → abre, y el aviso NOMBRA las cláusulas | ✅ |
 | **② uno de más**: 14 merchants, 0 pagando → abre | ✅ |
 | las dos a la vez → se declaran las dos | ✅ |
@@ -66,6 +67,13 @@ hueco, y de paso el analizador aprendió tres cosas reales:
 * se resuelven los `import()` **dinámicos** y se traduce `dist/**/x.js` → `src/**/x.ts`.
 
 El censo vuelve a **8/84**, sin tocar el tope.
+
+## ⚠️ Y un guard mío que se medía contra sí mismo
+
+El control negativo usaba `CUENTAS_DE_PRUEBA_DECLARADAS` **en los dos lados**, así que se movía con
+la constante: bajé el tope a 12 para probar el rojo de la señal ② y **el test siguió verde**. Un
+guard medido contra sí mismo no mide nada. Ahora el número de hoy va como **literal medido**
+(`MERCHANTS_HOY = 13`) y cualquier cambio del tope lo pone en rojo nombrando los dos números.
 
 ## Lo que NO cubre — declarado
 

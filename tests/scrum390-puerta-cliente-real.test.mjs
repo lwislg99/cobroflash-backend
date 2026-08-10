@@ -62,9 +62,19 @@ test('SCRUM-390 · SUELO: sin documentos, el censo no dice «todo bien»', () =>
 
 // ── EL EVALUADOR · las dos señales ───────────────────────────────────────────────────────────
 
+/**
+ * Los merchants que HAY hoy en producción, medido (no derivado de la constante).
+ *
+ * ⚠️ VA COMO LITERAL A PROPÓSITO. La primera versión de este control usaba
+ * `CUENTAS_DE_PRUEBA_DECLARADAS` en los dos lados, así que **se movía con la constante y no podía
+ * fallar nunca**: bajé el tope a 12 para probar el rojo de la señal ② y el test siguió verde. Un
+ * guard medido contra sí mismo no mide nada.
+ */
+const MERCHANTS_HOY = 13;
+
 test('SCRUM-390 · CONTROL NEGATIVO: el estado de HOY deja la puerta cerrada', () => {
-  const v = evaluarPuerta({ total: CUENTAS_DE_PRUEBA_DECLARADAS, conSuscripcion: 0 }, CLAUSULAS.map(String));
-  assert.equal(v.abierta, false, `🔴 con ${CUENTAS_DE_PRUEBA_DECLARADAS} merchants y ninguno pagando la puerta se abre: el guard gritaría todos los días y dejaría de leerse.`);
+  const v = evaluarPuerta({ total: MERCHANTS_HOY, conSuscripcion: 0 }, CLAUSULAS.map(String));
+  assert.equal(v.abierta, false, `🔴 con ${MERCHANTS_HOY} merchants y ninguno pagando la puerta se abre. O ha entrado alguien, o el tope (${CUENTAS_DE_PRUEBA_DECLARADAS}) ya no corresponde a la realidad medida.`);
   assert.deepEqual(v.motivos, []);
   assert.equal(textoDelAviso(v), '', '🔴 con la puerta cerrada no se avisa de nada.');
 });
