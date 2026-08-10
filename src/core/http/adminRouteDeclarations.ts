@@ -29,6 +29,11 @@ export interface RouteDeclaration {
 export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // Sesión y negocio (perfil REDUCIDO para técnico — el filtrado vive en app.ts)
   { method: 'GET', path: '/admin/me', why: 'Perfil de la propia sesión; no expone datos de otros' },
+  // SCRUM-464 (H1 fase 4). DECISIÓN DEL FUNDADOR, no un trámite: el que baja al sótano es el
+  // operario, así que dejar la precarga admin-only era resolver H1 para la persona equivocada. El
+  // paquete que recibe va FILTRADO a sus trabajos —los que se le asignaron o los que creó él—,
+  // porque darle el merchant entero era lo peor por RGPD: su móvil llevaría la cartera completa.
+  { method: 'GET', path: '/admin/precarga', why: 'Lo que necesita llevarse a la obra para firmar sin red; FILTRADO a sus trabajos (SCRUM-464)' },
   { method: 'GET', path: '/admin/merchant', why: 'Perfil del negocio REDUCIDO para técnico (sin NIF/IBAN/serie); el recorte vive en app.ts' },
 
   // Clientes — S1: "clientes crear-ver" ✅ (el BORRADO es admin, ver customersAdmin.routes.ts)

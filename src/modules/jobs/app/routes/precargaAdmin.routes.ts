@@ -8,7 +8,7 @@
 // aislamiento por merchant ya tiene test propio en SCRUM-458 y **no se relaja**: es lo peor que
 // puede fallar aquí, porque el móvil de la furgoneta se comparte.
 import { Router } from 'express';
-import { requireRole } from '../../../../core/http/authMiddleware';
+import { seesAllJobs } from '../../../../core/http/roleCapabilities';
 import { construirPaquetePrecarga } from '../../domain/precarga.service';
 
 const router = Router();
@@ -16,21 +16,34 @@ const router = Router();
 /**
  * GET /admin/precarga — lo que hay que bajarse al móvil para poder firmar sin red.
  *
- * 🔴 ADMIN-ONLY, que es el DEFAULT de S1 («ruta nueva = declara rol mínimo; default Admin-only»).
+ * 🔴 SCRUM-464 · YA NO ES ADMIN-ONLY, y era lo que dejaba H1 resolviendo el problema para la
+ * persona equivocada: **el que baja al sótano es el operario**. El rol decide QUÉ paquete toca, no
+ * si hay paquete.
  *
- * ⚠️ Y ESO TIENE UN COSTE QUE HAY QUE DECIR, NO ESCONDER: el que baja al sótano puede ser un
- * TÉCNICO, y así no se precarga nada para él. Abrirlo no es cambiar un rol: el paquete de
- * SCRUM-458 filtra por `merchantId` y **no** por `operarioId`, así que un técnico recibiría los
- * albaranes de TODO el merchant — justo el filtro row-level que SCRUM-23/147 construyó. Serían dos
- * decisiones (permiso + alcance del paquete) y las toma el fundador. Queda reportado.
+ * ⚠️ EL ROL SE PREGUNTA CON `seesAllJobs`, la allowlist de la casa, y **nunca** con
+ * `role !== 'tecnico'`: un rol desconocido tiene que caer del lado RESTRINGIDO. Es la lección de
+ * SCRUM-147, donde una denylist de tres líneas dejaba ver todos los Trabajos a cualquier rol nuevo.
  */
-router.get('/', requireRole('admin'), async (req, res) => {
+router.get('/', async (req, res) => {
+  const r = req as { merchantId: number; userRole: 'admin' | 'tecnico'; teamMemberId: number | null };
   try {
-    const paquete = await construirPaquetePrecarga((req as { merchantId: number }).merchantId, new Date());
-    res.json(paquete);
+    const todoElMerchant = seesAllJobs(r.userRole);
+
+    // 🔴 FAIL-CLOSED, aunque hoy sea imposible. Medido: `requireAuth` pone `userRole = 'admin'`
+    // cuando no hay `teamMember`, así que un no-admin SIEMPRE trae `teamMemberId`. Pero si esa
+    // invariante se rompiera algún día, `soloDelTecnico = null` significaría **el merchant entero**
+    // — el fallo se abriría hacia el lado malo y en silencio. Aquí se cierra en alto.
+    if (!todoElMerchant && r.teamMemberId == null) {
+      return res.status(403).json({ error: 'rol_sin_operario' });
+    }
+
+    const paquete = await construirPaquetePrecarga(
+      r.merchantId, new Date(), undefined, todoElMerchant ? null : r.teamMemberId,
+    );
+    return res.json(paquete);
   } catch (err) {
     console.error('[GET /admin/precarga]', err);
-    res.status(500).json({ error: 'internal_error' });
+    return res.status(500).json({ error: 'internal_error' });
   }
 });
 
