@@ -65,6 +65,7 @@ import invoiceRouter from './modules/invoicing/app/routes/invoice.routes';
 import customersAdminRouter from './modules/system/app/routes/customersAdmin.routes';
 import quotesAdminRouter from './modules/system/app/routes/quotesAdmin.routes';
 import invoicesAdminRouter from './modules/system/app/routes/invoicesAdmin.routes';
+import cobrosAdminRouter from './modules/billing/app/routes/cobrosAdmin.routes'; // SCRUM-285 (B4)
 import productsAdminRouter from './modules/products/app/routes/products.routes';
 import providersAdminRouter from './modules/providers/app/routes/providers.routes';
 import metricsRouter from './modules/metrics/app/routes/metrics.routes';
@@ -429,6 +430,7 @@ mountAdmin(app, '/admin/customers',  customersAdminRouter);
 app.post('/admin/quotes/:id/send-whatsapp', requireActivePlan);
 mountAdmin(app, '/admin/quotes',     quotesAdminRouter);
 mountAdmin(app, '/admin/invoices',   invoicesAdminRouter);
+mountAdmin(app, '/admin/cobros',     cobrosAdminRouter); // SCRUM-285 (B4)
 mountAdmin(app, '/admin/products',   productsAdminRouter);
 mountAdmin(app, '/admin/providers',  providersAdminRouter);
 mountAdmin(app, '/admin/metrics',    metricsRouter);

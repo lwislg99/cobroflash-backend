@@ -73,6 +73,19 @@ const CENSO = Object.freeze({
   // clásicos una constante duplicada en dos ficheros es SyntaxError en parseo. Es el único
   // marcador de `api.js` y sale por `showToast`, así que sí se pinta: cuenta.
   'api.js': 1,
+  // SCRUM-285 (+1, 10-ago-2026, A CONCIENCIA): la pantalla de Cobros nace con UN marcador
+  // —`COBROS_MARCA`— y lo pinta en varios sitios: título de la pantalla, cabeceras de la tabla,
+  // estado vacío, el rótulo del filtro «sin método registrado» y la etiqueta de los días de deuda.
+  //
+  // Sube a conciencia y el motivo es el de siempre, invertido: el diseño §B4 solo NOMBRA dos cosas
+  // —el menú «Cobros» y los cuatro métodos «Bizum · tarjeta · transferencia · efectivo»—, y ésos
+  // se escriben literales porque están aprobados. Todo lo demás de esta pantalla es redacción
+  // nueva que NADIE ha aprobado, y la alternativa a marcarla no era escribirla: era no entregar
+  // la pantalla. Un marcador visible es feo y honesto; un texto inventado es bonito y falso.
+  //
+  // Baja a 0 —o sea, esta línea se borra— cuando el asesor apruebe la lista de microcopy que va
+  // con la entrega.
+  'cobrosView.js': 1,
   // SCRUM-405 (−4, 7-ago-2026): al pasar las tres descargas por la forma común desaparecieron
   // cuatro ramas de error que pintaban marcador. El trinquete APRIETA: 15 → 11.
   // 11 → 5 el 10-ago-2026: SCRUM-244 trajo los ocho textos APROBADOS de la card de portabilidad
