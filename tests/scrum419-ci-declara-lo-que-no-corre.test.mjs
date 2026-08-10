@@ -174,21 +174,60 @@ test('SCRUM-419 · 🔴 CI DECLARA lo que no ha ejecutado, en vez de callarlo', 
 
 // ── Y LA REALIDAD DE CI, ATADA AL FICHERO, NO A UNA CREENCIA ────────────────────────────
 
-test('SCRUM-419 · la declaración corresponde con lo que CI hace HOY', () => {
-  // Si alguien monta el Postgres en CI, este guard se pone rojo y obliga a actualizar la
-  // declaración — en vez de dejar un aviso que ya no es verdad. Es el mismo criterio que aplicamos
-  // a las cabeceras caducadas: una afirmación sobre el presente caduca.
+test('SCRUM-419 · 🔴 CI SIGUE levantando el banco: si deja de hacerlo, se dice', () => {
+  // ⚠️ ESTE TEST SE INVIRTIÓ el 10-ago-2026, y es el ejemplo de por qué el guard estaba bien
+  // construido: pedía que la declaración correspondiera con lo que CI hace HOY. Cuando el fundador
+  // dio GO al `services: postgres`, **se puso rojo** — y la respuesta correcta fue ACTUALIZAR LA
+  // DECLARACIÓN, no aflojar el guard.
+  //
+  // Antes exigía que ningún workflow definiera la variable (CI no los corría, y había que decirlo).
+  // Ahora exige lo contrario: que **SÍ** la defina. El motivo es el mismo de siempre — si alguien
+  // quita el servicio de Postgres, los 7 vuelven a saltarse EN SILENCIO y la suite seguiría
+  // diciendo «0 fallos». Un guard que solo mirase «hay declaración» no vería eso.
   const dir = path.join(RAIZ, '.github/workflows');
   assert.ok(fs.existsSync(dir), '🔴 ESCÁNER CIEGO: no encuentro .github/workflows');
   const flujos = fs.readdirSync(dir).filter((f) => /\.ya?ml$/.test(f));
   assert.ok(flujos.length > 0, '🔴 ESCÁNER CIEGO: cero workflows que mirar');
 
-  const losDefine = flujos.filter((f) => fs.readFileSync(path.join(dir, f), 'utf8').includes(VARIABLE));
-  assert.deepEqual(
-    losDefine, [],
-    `🔴 ${losDefine.join(', ')} YA define ${VARIABLE}.\n\n` +
-      '  Entonces CI **sí** puede correr los tests de banco, y esta declaración —que dice que no los\n' +
-      '  corre— ha caducado: hay que bajar el inventario y quitar el aviso. Montar la base es\n' +
-      '  decisión del fundador (regla 36, coste recurrente), así que si esto salta, alguien la tomó.',
+  // 🔴 SE MIRA LA ASIGNACIÓN, NO LA MENCIÓN — y esto lo aprendí fallando aquí mismo.
+  //
+  // La primera versión hacía `contenido.includes('LIBRO_PG_URL')`, y al probar el rojo —quitar la
+  // variable del workflow— **el guard siguió verde**: casaba con el COMENTARIO que yo mismo había
+  // escrito explicando por qué la variable entra. Un guard de texto se caza a sí mismo en el
+  // comentario que lo explica; es la quinta vez en esta sesión.
+  //
+  // Ahora se quitan los comentarios YAML y se exige la forma `LIBRO_PG_URL: <algo>`, que es una
+  // asignación y no una frase sobre ella.
+  const defineLaVariable = (contenido) => contenido
+    .split(/\r?\n/)
+    .filter((l) => !/^\s*#/.test(l))
+    .some((l) => new RegExp(`^\\s*${VARIABLE}\\s*:\\s*\\S`).test(l));
+
+  const losDefine = flujos.filter((f) => defineLaVariable(fs.readFileSync(path.join(dir, f), 'utf8')));
+
+  // Hermano positivo (SCRUM-237): el detector reconoce la asignación, y NO confunde una mención.
+  assert.ok(defineLaVariable(`      ${VARIABLE}: postgresql://x`), '🔴 ESCÁNER CIEGO: no ve la asignación');
+  assert.ok(!defineLaVariable(`      # ${VARIABLE} es un banco desechable`), '🔴 el detector cuenta un COMENTARIO');
+
+  assert.ok(
+    losDefine.length > 0,
+    `🔴 NINGÚN WORKFLOW DEFINE ${VARIABLE}.\n\n` +
+      `  Entonces los ${TOTAL_DECLARADO} tests de banco han dejado de correr en CI — y la suite\n` +
+      '  seguirá diciendo «0 fallos», porque saltarse y aprobar dan el mismo número. Son los que\n' +
+      '  prueban tenencia contra el motor real y el cuadre de las tres pantallas: sin ellos, un PR\n' +
+      '  que filtre datos entre merchants entra en verde.\n\n' +
+      '  Si el servicio se quitó a propósito, este guard vuelve a su forma anterior (exigir que\n' +
+      '  NADIE lo defina) y el aviso de arriba pasa a declararlos como no ejecutados. Lo que no\n' +
+      '  vale es quedarse a medias: sin servicio y sin declaración.',
+  );
+
+  // Y el suelo del propio workflow: que además levante el SERVICIO. Definir la variable apuntando
+  // a un Postgres que nadie arranca haría que los 7 fallaran por conexión — un rojo que se lee como
+  // «los tests están rotos» cuando lo que falta es la base.
+  const ci = fs.readFileSync(path.join(dir, 'ci.yml'), 'utf8');
+  assert.match(
+    ci, /services:[\s\S]{0,400}?postgres:/,
+    '🔴 `ci.yml` define la variable pero no levanta ningún servicio de Postgres. Los 7 fallarían ' +
+      'por conexión, y ese rojo se lee como «los tests están rotos» en vez de «falta la base».',
   );
 });
