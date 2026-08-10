@@ -317,8 +317,11 @@ test('SCRUM-451 · TRINQUETE: las vistas que se quedan MUDAS tras vencer el plaz
     `🔴 SUELO: solo se han podido medir ${hablan.length + mudas.length} vistas. ` +
     `No medidas: ${noMontan.join(', ')} · explosiones: ${explosiones.join(' / ')}`);
   // Control positivo DENTRO: si NINGUNA hablara, «las mudas no suben» sería verdad y no diría nada.
+  // Y el mensaje NOMBRA a las que se quedan esperando: «falta el plazo» no sirve de nada — lo que
+  // hay que poder leer es CUÁL es la pantalla en la que el profesional se queda mirando.
   assert.ok(hablan.length > 0,
-    '🔴 ninguna vista dice nada al vencer el plazo. O el plazo no llega, o esto no está midiendo.');
+    '🔴 NINGUNA vista dice nada al vencer el plazo: el camino común ha dejado de cortar. Estas ' +
+    `${mudas.length} se quedan esperando para siempre: ${mudas.join(', ')}.`);
 
   assert.ok(mudas.length <= MUDAS_TECHO,
     `🔴 hay ${mudas.length} vistas que se quedan MUDAS tras vencer el plazo (techo ${MUDAS_TECHO}): ` +
