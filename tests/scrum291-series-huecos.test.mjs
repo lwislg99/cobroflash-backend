@@ -253,24 +253,28 @@ test('SCRUM-291 ① · los esperados se componen con la MISMA función, no con u
 // guard que grita sin motivo se acaba desactivando — que es como se pierde el que sí importaba.
 const EMISOR = 'src/modules/invoicing/domain/invoiceNumber.service.ts';
 //
-// ⚠️ SELLO ACTUALIZADO — SCRUM-347. **GO del fundador 9-ago-2026, SCRUM-347, opción A.**
+// ⚠️ SELLO ACTUALIZADO — SCRUM-396. **GO del fundador 9-ago-2026, SCRUM-396.**
 //
-//   anterior: fb0d6216f96bb1e3a8cae6989be06baaab8190c598a647938dd106be06d696bd
-//   nuevo:    f5d1f65d905da4840ea6c6c9b508078f4028d6cfd3d60263ee3ce10ca76953a8
+//   anterior: f5d1f65d905da4840ea6c6c9b508078f4028d6cfd3d60263ee3ce10ca76953a8   (SCRUM-347)
+//   nuevo:    def716fd0dcaaceddb8e1dabab328f5b97f64d504d1b6e39f85d8a7649a7c56d   (SCRUM-396)
 //
-// Este trinquete hizo exactamente su trabajo: avisó, y el cambio pasó por un humano con el diff
+// Tercera vez que este trinquete hace su trabajo: avisó, y el cambio pasó por un humano con el diff
 // delante antes de que nadie tocara el hash. **Un sello que se actualiza después de que alguien
 // mire el diff no está silenciado: está usado.** El diff completo está pegado en
-// `docs/master/SCRUM-347.md`, que es el precio de tocar el sello.
+// `docs/master/SCRUM-396.md`, que es el precio de tocar el sello.
 //
-// QUÉ CAMBIÓ, y es UNA SOLA HUNK: la unión `CaminoEmision` sustituye `| 'C7'` por `| OrigenC7`, y
-// se añaden el tipo `OrigenC7` (4 variantes), la constante `ORIGENES_C7` y sus comentarios.
+// QUÉ CAMBIÓ: la referencia del justificante (`J-YYYYMMDD-XXXX`) se comprueba contra el índice
+// `[merchantId, number]` antes de devolverse, con TRES intentos y error propio al agotarlos. Se
+// añaden `INTENTOS_REFERENCIA_JUSTIFICANTE`, `ReferenciaJustificanteAgotada` y
+// `reservarReferenciaJustificante`; en el cuerpo de `allocateInvoiceNumber` cambia UNA línea, la
+// del modo `receipt`: `makeReceiptNumber(now)` pasa a `await reservarReferenciaJustificante(...)`.
 //
-// QUÉ **NO** CAMBIÓ, verificable en ese diff y no solo afirmado: `allocateInvoiceNumber` no tiene
-// ni una línea tocada — ni el `pg_advisory_xact_lock`, ni `SERIE_LOCK_NS`, ni la reserva, ni el
-// `recordAuditOrThrow`, ni el orden de las sentencias. Lo único que varía en ejecución es el VALOR
-// que llega en `opts.camino`, que es justo lo que el GO autoriza.
-const EMISOR_SHA256 = 'f5d1f65d905da4840ea6c6c9b508078f4028d6cfd3d60263ee3ce10ca76953a8';
+// QUÉ **NO** CAMBIÓ, verificable en ese diff y no solo afirmado: el `pg_advisory_xact_lock` sigue
+// siendo la PRIMERA sentencia y con el mismo `SERIE_LOCK_NS`; la reserva de la serie fiscal
+// (`resolveSeriesSeq`, los dos contadores, el reinicio anual, el `merchant.update`) no tiene ni una
+// línea tocada; el `recordAuditOrThrow` sigue dentro de la misma `tx` y en el mismo punto. El
+// justificante NO consume serie fiscal ni antes ni ahora.
+const EMISOR_SHA256 = 'def716fd0dcaaceddb8e1dabab328f5b97f64d504d1b6e39f85d8a7649a7c56d';
 
 test('SCRUM-291 · el camino de emisión sigue INTACTO (regla 38)', () => {
   // El fundador puso el límite y esto lo COMPRUEBA en vez de prometerlo. Si algún día hace falta
