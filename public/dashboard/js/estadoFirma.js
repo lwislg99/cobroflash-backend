@@ -81,21 +81,20 @@ const TEXTO_NO_SE_PUDO_COMPROBAR = 'No hemos podido comprobar si te queda algo p
  * sostener. Además evita una segunda detección de plataforma — `isIOS` vive dentro de la IIFE de
  * `voiceInput.js` y no está publicada, y duplicarla es el defecto que cerraron SCRUM-360 y 447.
  */
-// ⚠️ PROVISIONAL, Y CON FECHA DE CADUCIDAD ESCRITA.
+// ✅ TEXTO APROBADO EN SCRUM-356, DE VUELTA — porque ya es verdad.
 //
-// Este texto sustituye al de SCRUM-356 —«Las firmas pendientes suben cuando abres YaQu. Si no la
-// abres, se quedan aquí.»— porque **hoy es falso**: abrir YaQu NO las sube. SCRUM-358 fase 2
-// construyó el productor de la cola, pero **el drenado es de la fase 3 y no existe**, así que una
-// firma encolada sólo sube si el profesional vuelve a firmar ese albarán.
+// Entre medias estuvo el provisional de la fase 2: «Las firmas pendientes no suben solas todavía:
+// vuelve a firmar el albarán cuando tengas cobertura.» Fue necesario mientras la cola guardaba y
+// nadie la vaciaba, porque este texto prometía algo que entonces no ocurría.
 //
-// En un bloque cuya regla es «ante la duda, se dice que NO subió», no se puede enviar un texto que
-// promete más de lo que hay. El «todavía» es deliberado: es cierto hoy y anuncia que es temporal.
+// **La fase 3 lo devuelve a la verdad:** `drenarAlAbrir` vacía la cola en cada arranque del
+// dashboard (`app.js`, paso 9), que es exactamente lo que este texto dice. La reversión estaba
+// escrita en `docs/master/SCRUM-356.md` y el guard provisional llevaba las instrucciones dentro de
+// su mensaje de fallo; se ha retirado con la fase que lo hacía innecesario.
 //
-// 🔴 CUANDO EXISTA EL DRENADO (fase 3 de H3) SE VUELVE AL TEXTO DE SCRUM-356, que entonces sí será
-// verdad. La reversión está escrita en `docs/master/SCRUM-356.md` y la vigila
-// `tests/scrum356-tres-estados.test.mjs`, que fija este texto letra por letra: cambiarlo sin pasar
-// por el asesor pone el guard en rojo.
-const TEXTO_SUBEN_AL_ABRIR = 'Las firmas pendientes no suben solas todavía: vuelve a firmar el albarán cuando tengas cobertura.';
+// ⚠️ Y la segunda frase también es cierta y sigue haciendo falta: si no la abre, se quedan aquí.
+// No hay Background Sync en iOS ni push, así que el drenado no ocurre por su cuenta.
+const TEXTO_SUBEN_AL_ABRIR = 'Las firmas pendientes suben cuando abres YaQu. Si no la abres, se quedan aquí.';
 
 /**
  * ¿Esta respuesta es una CONFIRMACIÓN del servidor?
