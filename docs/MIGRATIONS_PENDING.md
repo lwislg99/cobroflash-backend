@@ -250,9 +250,31 @@ un índice ausente no rompe ninguna consulta, solo la degrada cuando la tabla cr
 
 **Medido contra:** `origin/main` = `ff5698f` · 2026-08-10 · rama `scrum-lote-migracion-unica`
 
-- [ ] **staging · acela/railway** — pendiente.
-- [ ] **desarrollo · acela/yaqu_dev_javier** — pendiente.
-- [ ] **producción · autorack** — pendiente.
+- [x] **staging · acela/railway** — **aplicado 10-ago-2026** con GO del fundador, por
+      `bash scripts/db-push-prod` (host-check → preview → GO → `db push` **sin**
+      `--accept-data-loss`). Destino confirmado ANTES por host **y nombre de base**
+      (`acela.proxy.rlwy.net` / `railway`), porque el host solo no separa staging de dev.
+      Verificación del script: `-- This is an empty migration.` — el vacío **legítimo, por la
+      frase**. Verificación independiente por `information_schema`: **9/9 columnas, todas
+      `is_nullable = YES` y `column_default` vacío**. Preflight de SCRUM-395 en verde (rama
+      declarada = rama real; 4 sentencias, 9 `ADD COLUMN`, todas aditivas).
+      ⚠️ `expenses` tiene **0 filas** en staging, así que la comprobación de «ningún backfill»
+      **no tiene fuerza aquí**: 0 rellenadas y 0 existentes son el mismo número. Esa comprobación
+      solo dice algo en producción.
+- [ ] **desarrollo · acela/yaqu_dev_javier** — 🔴 **NO LA PUEDO APLICAR: no hay credencial.**
+      Medido el 10-ago-2026: **`DATABASE_URL_DEV` no existe en ninguna `.env` de esta máquina**
+      (barrido de todos los árboles de `D:/MILLONARIO/cobroFlash/`). El único árbol con claves de
+      base es `cobroflash-backend`, y tiene `DATABASE_URL` (🔴 producción), `DATABASE_URL_STAGING`
+      (staging) y `SCRATCH_DATABASE_URL` — ninguna apunta a `yaqu_dev_javier`.
+      Concuerda con el reparto: `yaqu_dev_javier` es la base del **carril B**, y se pide, no se
+      aplica desde otra sesión. **Queda pendiente de Javier o de la clave.**
+      ⚠️ Ojo: la tabla de SCRUM-383 de este mismo fichero dice que «los cuatro árboles llevan las
+      TRES claves». **Hoy no se sostiene** para `cobroflash-backend`: le faltan `DATABASE_URL_DEV`
+      y `DATABASE_URL_TESTS`. Es una foto fechada que envejeció, como ella misma avisa.
+- [ ] **producción · autorack** — pendiente. **Parada deliberada**: el fundador la autoriza
+      SOLO después de ver la evidencia de staging y dev. `db push` contra `autorack` es lo único
+      sin vuelta atrás fácil, y el **nombre de base no distingue producción de staging** — las dos
+      se llaman `railway`. Solo el host las separa.
 
 > **🔎 VERIFICABLE** — que existan las nueve columnas: pregúntaselo a `docs/sql/deriva-prod.sql`
 > contra cada base, **no a estas casillas**. **✋ SIN MECANISMO** — que estén en las tres.
