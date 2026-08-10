@@ -213,3 +213,66 @@ esta mañana repetido, y por eso se descarta en vez de reportarse.
 el primer PR que lo corra ES la verificación. Si el paso del banco falla, fallará **con nombre
 propio** («Banco desechable para los tests de libro»), que es justo para que no se lea como un test
 roto.
+
+---
+
+## 🔴 TERCERA ENTREGA · el puerto fijo rompió CI para TODAS las PR
+
+```
+failed to bind host port for 0.0.0.0:55432:172.18.0.2:5432/tcp: address already in use
+Error: Docker start fail with exit code 1
+```
+
+**Lo rompí yo**, y la causa es la familia que llevamos tres veces persiguiendo hoy: **un número
+fijo en un entorno compartido choca**. Igual que la ventana fija de los guards y el nombre fijo del
+check requerido de `main`. Escribí `55432:5432` porque era el puerto de mi banco local — y ese
+número no es mío en el runner.
+
+### La medición que decide la forma, hecha ANTES de elegir
+
+**¿El job corre dentro de un contenedor o sobre el runner?** De eso depende cuál de las dos formas
+es la correcta, y no se supone:
+
+- `ci.yml` **no declara `container:`** a nivel de job → el job corre **sobre el runner**, no dentro.
+- Por tanto **no comparte la red de Docker con el servicio**, así que el alias `postgres:5432` **no
+  valdría**. Hace falta mapeo — pero **dinámico**.
+
+### El arreglo
+
+```yaml
+ports:
+  - 5432          # solo el puerto DEL CONTENEDOR; Docker elige uno libre en el host
+```
+
+y el job lo **lee**, no lo escribe:
+
+```yaml
+env:
+  PGPORT_HOST: ${{ job.services.postgres.ports['5432'] }}
+…
+  LIBRO_PG_URL: postgresql://postgres@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/yaqu_libro_test
+```
+
+**Sin `sleep`, sin reintento, sin `docker rm` previo.** Eso ataría el arreglo a que la carrera salga
+bien y volvería a chocar el día que haya dos PR a la vez. El puerto dinámico **elimina** la
+colisión; no la esquiva.
+
+Y un suelo en el paso: si el puerto no se puede leer, **no se toca ninguna base** — se para
+diciéndolo, en vez de intentar conectar a `127.0.0.1:` y que el error hable de otra cosa.
+
+### 🔴 Y quedaba OTRO valor fijo compartido — lo digo porque se me pidió mirar
+
+`/tmp/esquema.sql`. En un runner efímero de GitHub no colisiona; **en uno reutilizado, dos jobs a la
+vez se pisarían el fichero**. Y la evidencia del incidente apunta justo a que sobrevive estado entre
+ejecuciones («Clean up resources from previous jobs» + un puerto ocupado en una VM que debería ser
+nueva). Cerrado con `$RUNNER_TEMP`, que GitHub garantiza **por job**.
+
+**El que NO es un problema, y conviene decir por qué:** el nombre de base `yaqu_libro_test` vive
+**dentro** del contenedor de Postgres, y cada job tiene el suyo. No es un recurso compartido.
+
+### Verificación — dicho sin reclamar lo que no tengo
+
+**No puedo ejecutar GitHub Actions en local.** Mi entrega es el diff y el razonamiento; **el primer
+PR que lo corra ES la prueba**. Lo que sí está verificado aquí: la suite completa en verde
+(2692 · 2618 pass · 0 fail · 74 skip), el guard de SCRUM-419 sigue pasando con la forma nueva, y su
+rojo sigue saltando si alguien quita la variable del workflow.
