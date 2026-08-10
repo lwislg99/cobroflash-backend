@@ -162,7 +162,7 @@ function decisoresDeLaFila() {
   });
 }
 
-const ALB = (extra) => ({ estado: 'borrador', modoValoracion: 'SIN_VALORAR', estadoCobro: 'sin_facturar', ...extra });
+const ALB = (extra) => ({ estado: 'borrador', modoValoracion: 'SIN_VALORAR', estadoFacturacion: 'sin_facturar', ...extra });
 
 test('SCRUM-304 · la acción visible es la PRIMARIA de su estado — LOS TRES estados', () => {
   const { primariaDeAlbaran } = decisoresDeLaFila();
@@ -170,7 +170,7 @@ test('SCRUM-304 · la acción visible es la PRIMARIA de su estado — LOS TRES e
   // Se deriva del registro lo que se espera; escribir 'btnEmitir' a mano aquí sería la segunda
   // fuente de verdad dentro del propio guard.
   for (const estado of registro.ALBARAN_STATES) {
-    const conPendiente = ALB({ estado, modoValoracion: 'VALORADO', estadoCobro: 'parcial' });
+    const conPendiente = ALB({ estado, modoValoracion: 'VALORADO', estadoFacturacion: 'parcial' });
     const ctx = { 'valorado-con-pendiente': true };
     const esperada = registro.ALBARAN_ACTION_REGISTRY
       .find((a) => ley.destinoEfectivo(a, estado, ctx) === 'primaria');
@@ -187,18 +187,18 @@ test('SCRUM-304 · la acción visible es la PRIMARIA de su estado — LOS TRES e
 test('SCRUM-304 · 🔴 EL PARCIAL NO SE APLANA: un albarán a medias SIGUE teniendo qué hacer', () => {
   const { primariaDeAlbaran } = decisoresDeLaFila();
 
-  const aMedias = ALB({ estado: 'firmado', modoValoracion: 'VALORADO', estadoCobro: 'parcial' });
+  const aMedias = ALB({ estado: 'firmado', modoValoracion: 'VALORADO', estadoFacturacion: 'parcial' });
   assert.equal(
     primariaDeAlbaran(aMedias)?.id, 'btnFacturar',
     '🔴 un albarán FIRMADO y facturado A MEDIAS se queda sin acción. Tiene cantidad pendiente: ' +
     'sigue habiendo algo que hacer, y una tabla que lo pinte como terminado se lo esconde.',
   );
 
-  const sinFacturar = ALB({ estado: 'firmado', modoValoracion: 'VALORADO', estadoCobro: 'sin_facturar' });
+  const sinFacturar = ALB({ estado: 'firmado', modoValoracion: 'VALORADO', estadoFacturacion: 'sin_facturar' });
   assert.equal(primariaDeAlbaran(sinFacturar)?.id, 'btnFacturar', '🔴 el que no se ha facturado nada tampoco');
 
   // Y el otro lado: del todo facturado NO tiene siguiente paso, y la celda vacía es información.
-  const cerrado = ALB({ estado: 'firmado', modoValoracion: 'VALORADO', estadoCobro: 'facturado' });
+  const cerrado = ALB({ estado: 'firmado', modoValoracion: 'VALORADO', estadoFacturacion: 'facturado' });
   assert.equal(
     primariaDeAlbaran(cerrado), null,
     '🔴 se ofrece «facturar» sobre un albarán YA FACTURADO DEL TODO: un botón que solo puede fallar.',
@@ -208,29 +208,33 @@ test('SCRUM-304 · 🔴 EL PARCIAL NO SE APLANA: un albarán a medias SIGUE teni
   assert.equal(primariaDeAlbaran(ALB({ estado: 'firmado' })), null, '🔴 ofrece facturar un albarán SIN precios');
 });
 
-test('SCRUM-304 · 🔴 EL CONTEXTO LEE EL CAMPO QUE ESTE ENDPOINT SIRVE, no el del detalle', () => {
-  // EL DETALLE QUE ENVENENA EN SILENCIO: el mismo derivado de tres valores viaja con nombre
+test('SCRUM-304 · 🔴 EL CONTEXTO LEE EL CAMPO QUE ESTE ENDPOINT SIRVE', () => {
+  // EL DETALLE QUE ENVENENABA EN SILENCIO: el mismo derivado de tres valores viajaba con nombre
   // DISTINTO según el endpoint — `estadoFacturacion` en el del albarán, `estadoCobro` en el del
-  // Trabajo. Copiar el ctx de C2 literalmente daría `undefined`, y `undefined !== 'facturado'` es
-  // TRUE: la fila ofrecería facturar sobre albaranes ya cerrados, sin error y sin rojo.
+  // Trabajo. Copiar el ctx de C2 literalmente daba `undefined`, y `undefined !== 'facturado'` es
+  // TRUE: la fila ofrecía facturar sobre albaranes ya cerrados, sin error y sin rojo.
+  //
+  // SCRUM-372 lo unificó en `estadoFacturacion`, PERO este test no sobra: lo que protege no es el
+  // nombre viejo, es que quien LEE la fila y quien SIRVE el endpoint usen el mismo. Un rename a
+  // medias —backend sí, front no— vuelve a producir exactamente el `undefined` de antes.
   const { ctxAlbaranEnFila } = decisoresDeLaFila();
 
   assert.equal(
-    ctxAlbaranEnFila({ modoValoracion: 'VALORADO', estadoCobro: 'facturado' })['valorado-con-pendiente'],
+    ctxAlbaranEnFila({ modoValoracion: 'VALORADO', estadoFacturacion: 'facturado' })['valorado-con-pendiente'],
     false,
-    '🔴 EL CONTEXTO NO VE EL CAMPO. Si lee `estadoFacturacion` (el nombre del OTRO endpoint), aquí ' +
-    'llega `undefined` y el contexto dice «queda pendiente» SIEMPRE.',
+    '🔴 EL CONTEXTO NO VE EL CAMPO: aquí llega `undefined` y el contexto dice «queda pendiente» ' +
+    'SIEMPRE — la fila ofrecería facturar un albarán ya cerrado.',
   );
   assert.equal(
-    ctxAlbaranEnFila({ modoValoracion: 'VALORADO', estadoCobro: 'parcial' })['valorado-con-pendiente'],
+    ctxAlbaranEnFila({ modoValoracion: 'VALORADO', estadoFacturacion: 'parcial' })['valorado-con-pendiente'],
     true, '🔴 el parcial deja de contar como pendiente',
   );
 
   // Suelo: el nombre que se lee tiene que ser el que el backend manda en ESTE endpoint.
   const rutas = fs.readFileSync(path.join(RAIZ, 'src/modules/jobs/app/routes/jobs.routes.ts'), 'utf8');
-  assert.match(rutas, /estadoCobro:\s*estadoCobroAlbaran\(/,
-    '🔴 ESCÁNER CIEGO: el endpoint del Trabajo ya no sirve `estadoCobro` para sus albaranes. Si ' +
-    'cambió de nombre, el contexto de la fila está leyendo un campo que no llega.');
+  assert.match(rutas, /estadoFacturacion:\s*estadoCobroAlbaran\(/,
+    '🔴 ESCÁNER CIEGO: el endpoint del Trabajo ya no sirve `estadoFacturacion` para sus albaranes. ' +
+    'Si cambió de nombre, el contexto de la fila está leyendo un campo que no llega.');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════

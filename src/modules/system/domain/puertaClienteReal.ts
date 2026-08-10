@@ -105,3 +105,50 @@ export function textoDelAviso(v: VeredictoPuerta): string {
   return `Ha entrado el primer cliente real (${porQue}). Estas decisiones dependían de que no lo hubiera:\n`
     + v.clausulas.map((c) => `  · ${c}`).join('\n');
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// LA CADENCIA DEL AVISO — derivada, no guardada
+//
+// El aviso tiene que sonar cuando la puerta PASA de cerrada a abierta, no todos los días. Eso
+// pide memoria… y **no hay dónde guardarla sin tocar el schema**: `WhatsAppMessage` exige un
+// `merchantId` (un aviso interno no tiene merchant, y meterle el del demo es justo lo que
+// SCRUM-409 acaba de prohibir) y `AuditLog` tiene su unión de acciones CERRADA (regla 5).
+//
+// Así que la cadencia se **DERIVA del dato que abre la puerta**: el día en que apareció el primer
+// merchant que la dispara. Con eso:
+//
+//   · día 0 (el de la apertura) → suena: es la transición;
+//   · después, **una vez por semana** → recordatorio, para que un día perdido no lo entierre.
+//
+// ⚠️ EL CRITERIO ESTÁ ESCRITO, no implícito, y su límite también: si el cron no corre el día 0,
+// esa notificación se pierde y la recoge el recordatorio semanal. Se prefiere eso a un estado
+// nuevo en el schema que alguien tendría que mantener.
+export const CADENCIA_RECORDATORIO_DIAS = 7;
+
+export interface Cadencia {
+  /** Días desde que la puerta se abrió (0 = hoy). `null` = no se sabe cuándo se abrió. */
+  diasDesdeApertura: number | null;
+}
+
+export function debeAvisar(v: VeredictoPuerta, c: Cadencia): { avisa: boolean; motivo: string } {
+  if (!v.abierta) return { avisa: false, motivo: 'la puerta sigue cerrada' };
+  const d = c?.diasDesdeApertura;
+  // Sin fecha de apertura NO se calla: un aviso de más es barato; uno de menos es el ticket entero.
+  if (d === null || d === undefined || !Number.isFinite(d)) {
+    return { avisa: true, motivo: 'la puerta está abierta y no se sabe desde cuándo' };
+  }
+  if (d <= 0) return { avisa: true, motivo: 'la puerta acaba de abrirse' };
+  if (d % CADENCIA_RECORDATORIO_DIAS === 0) {
+    return { avisa: true, motivo: `recordatorio semanal (día ${d})` };
+  }
+  return { avisa: false, motivo: `ya avisado; el próximo recordatorio toca el día ${Math.ceil(d / CADENCIA_RECORDATORIO_DIAS) * CADENCIA_RECORDATORIO_DIAS}` };
+}
+
+/**
+ * El texto del aviso. ⚠️ MARCADO: es microcopy nueva y **la regla 30 no tiene excepción por
+ * destinatario** — que solo lo lea el fundador no lo convierte en texto aprobado. La propuesta
+ * está en `docs/master/SCRUM-390.md`.
+ */
+export function mensajeParaElFundador(v: VeredictoPuerta): string {
+  return '[PENDIENTE microcopy oficial] ' + textoDelAviso(v);
+}
