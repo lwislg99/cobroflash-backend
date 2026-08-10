@@ -17,6 +17,13 @@ import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsA
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-173
 import { allocateAlbaranNumber } from '../../domain/albaranNumber.service';
+// SCRUM-424 (G3): la dirección de la OBRA — el escritor que le faltaba al bloque DÓNDE del rail.
+import {
+  normalizarJobDireccion,
+  albaranesConFirmaQueDependeDelTrabajo,
+  ERROR_DIRECCION_SELLADA,
+  MSG_DIRECCION_SELLADA,
+} from '../../domain/jobDireccion';
 // SCRUM-170: derivación del estado de cobro (parcial) — nunca un flag almacenado.
 import { estadoCobroAlbaran, facturadoPorLinea, pendientePorLinea } from '../../domain/albaranFacturacion';
 import { emitirRecapitulativas } from '../../domain/recapitulativa.service'; // SCRUM-171a: emisión compartida
@@ -596,6 +603,39 @@ router.patch('/:id', async (req, res) => {
     // que distinguir `''` de `null` para decidir si pinta el separador.
     if (req.body?.titulo !== undefined) {
       data.titulo = String(req.body.titulo || '').trim().slice(0, 120) || null;
+    }
+    // ── SCRUM-424 (G3) · el pro escribe la DIRECCIÓN DE LA OBRA ──────────────────────────
+    //
+    // Misma puerta que abrió SCRUM-317 para `titulo`, por el mismo motivo y con el mismo coste:
+    // el campo existe en el modelo desde SCRUM-10 y **ninguna ruta lo escribía**, así que el
+    // bloque DÓNDE del rail —con su enlace a mapa, lo que ningún facturador tiene— estaba
+    // construido y era INALCANZABLE. Abrirlo aquí es todo lo que hacía falta: cero schema.
+    //
+    // NO es admin-only, igual que `titulo`: adónde se va a trabajar es un dato operativo, no una
+    // bandera fiscal ni de dinero, y el técnico que está en la obra es quien mejor lo sabe.
+    //
+    // 🔴 SALVO QUE ROMPA UNA FIRMA YA EMITIDA (regla 29). Ver `jobDireccion.ts`: los sobres v:1
+    // calculan su `obra` desde `Job.direccion` Y LA LEEN EN VIVO al verificar, así que escribirla
+    // hoy dejaría sin verificar un albarán firmado que nadie ha tocado. Se comprueba SOLO cuando
+    // el valor CAMBIA de verdad —reenviar el mismo no toca nada y no merece una consulta— y se
+    // corta ANTES del `update`, no después.
+    if (req.body?.direccion !== undefined) {
+      const nueva = normalizarJobDireccion(req.body.direccion);
+      if (nueva !== (job.direccion ?? null)) {
+        const albaranes = await prisma.albaran.findMany({
+          where: { jobId: id, merchantId: req.merchantId! }, // regla 2: siempre por merchant
+          select: { numero: true, evidenciaFirma: true },
+        });
+        const atados = albaranesConFirmaQueDependeDelTrabajo(albaranes);
+        if (atados.length) {
+          return res.status(409).json({
+            error: ERROR_DIRECCION_SELLADA,
+            message: MSG_DIRECCION_SELLADA,
+            albaranes: atados,
+          });
+        }
+        data.direccion = nueva;
+      }
     }
     if (req.body?.assignedUserId !== undefined) {
       const uid = req.body.assignedUserId === null ? null : Number(req.body.assignedUserId);
