@@ -198,3 +198,71 @@ ficheros de guards de SCRUM-284 y el de SCRUM-420, **51/51 en verde** tras el ca
 * `tests/_censo-superficies-configuracion.mjs` — «tener sitio» son dos cosas.
 * `tests/scrum284-dos-poblaciones.test.mjs` — le pasa el mapa de decididas.
 * `tests/scrum296-pantalla-libro.test.mjs` — el rótulo aprobado, y lo de dentro sigue marcado.
+
+
+---
+
+> **Apéndice — sesión distinta, mismo ticket.** Lo de arriba es el incremento 2 (la barra
+> por ciclo de venta) y **no se toca ni una línea**. Esto de abajo es otra sesión arreglando un
+> hueco distinto del mismo fichero. Va como sección dentro de `SCRUM-420.md` porque los ficheros
+> de `docs/master/` se llaman `SCRUM-<n>.md` sin excepción (SCRUM-273).
+
+# SCRUM-420 (parte 3) · una entrada de la barra que no sobrevivía a una recarga
+
+**Fecha:** 10-ago-2026 · **Carril:** B · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `8f01d8b2c76f4658d65619438118268b8cdf7463` · 2026-08-10T20:41:00+02:00
+
+> Alcance de esta entrega: **solo** `albaranes`. El reordenado por ciclo de venta (SCRUM-420
+> propiamente), la pestaña de Plantillas (SCRUM-432) y el guard sobre los `case` del dispatch
+> **no se han hecho** — ver «Lo que NO entra» al final.
+
+## El defecto, y por qué NO era una decisión
+
+`albaranes` estaba en la barra, tenía su `case` propio en el dispatch (`app.js:281`, sección propia
+desde C1/SCRUM-301, rótulo aprobado el 5-ago) y **no estaba en `HASH_VIEWS`**.
+
+Medido antes de tocar nada, que era la condición del encargo — *«si falta por un motivo, el motivo
+importa»*:
+
+| Dato | Medición |
+| --- | --- |
+| ¿Tiene `case` real en el dispatch? | **Sí**, `case 'albaranes'` con su propia vista |
+| ¿Cuándo se tocó `HASH_VIEWS` por última vez? | `1c27d54`, SCRUM-296 (`libro-registro`) |
+| ¿Cuándo entró la sección de albaranes? | `56eb4da`, **después** |
+
+**No faltaba por ningún motivo: faltaba por olvido.** Al crear una sección hay que tocar **tres**
+sitios —el `case`, la entrada del menú y esta lista— y el tercero es el que se cae. Se actualizaron
+los dos primeros.
+
+**Lo que costaba:** quien recargaba estando en Albaranes, o guardaba el enlace, **perdía la vista**.
+En una sección de documentos que el cliente firma, perder el enlace no es cosmético.
+
+## El arreglo
+
+`albaranes` entra en `HASH_VIEWS`. Una línea, más el comentario que explica por qué la lista se
+queda atrás sola.
+
+## El guard
+
+`tests/scrum420-barra-navegable-por-hash.test.mjs` — 3 tests, **derivado**: lee los `data-view` del
+HTML y la lista real de `app.js`, sin listas escritas a mano.
+
+| Test | Qué impide |
+| --- | --- |
+| SUELO — se leen las dos listas | que un cambio de formato deje el guard comparando vacíos: **verde por no ver nada** |
+| ninguna entrada de la barra se pierde al recargar | el defecto entero, en la dirección barra → hash |
+| las vistas de DETALLE siguen fuera | el «arreglo» que mete una ficha en el hash: abriría una **ficha sin id**, una pantalla vacía que parece fallo de datos |
+
+Rojo probado con la mutación confirmada aplicada: quitar `albaranes` de la lista → `exit 1`, y el
+mensaje **dice qué hacer** (añadirla a `HASH_VIEWS`, y que quitar la entrada de la barra para que
+pase **no** es la salida).
+
+## Lo que NO entra, y por qué
+
+* **SCRUM-432** (Plantillas a pestaña) y **el reordenado por ciclo de venta**: no se han empezado.
+* **El guard sobre los `case` del dispatch** (dirección contraria: vistas del router sin entrada en
+  la barra). Necesita AST y distinguir los **alias de compatibilidad** —`case 'operarios'` cuyo
+  único cuerpo es `return renderView('team')`, decisión de SCRUM-136— o marcaría como hueco algo
+  que se retiró a propósito. Este guard mira **una** dirección y lo dice en su cabecera.
+* **Ningún rótulo ni orden nuevo**: son microcopy (regla 30) y la barra es lo primero que ve un
+  profesional que paga.

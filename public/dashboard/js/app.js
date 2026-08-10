@@ -373,9 +373,15 @@ async function initApp() {
 
   // Deep-links por hash: /dashboard/#products abre Productos directamente.
   // Útil para compartir/QA (y para las capturas de la maqueta A4.7).
+  // ⚠️ ESTA LISTA SE MANTIENE A MANO Y POR ESO SE QUEDA ATRÁS. `albaranes` llevaba fuera desde
+  // que C1 le dio sección propia (SCRUM-301): se actualizó el dispatch y se actualizó el menú, y
+  // esta tercera lista no. Quien recargaba estando en Albaranes, o guardaba el enlace, perdía la
+  // vista. No estaba fuera por ningún motivo — el test de abajo hace que no vuelva a pasar.
+  // NOTA: las vistas de DETALLE (`albaran-detail`, …) NO van aquí a propósito: necesitan un id que
+  // el hash no lleva, así que un deep-link a ellas abriría una ficha vacía.
   const HASH_VIEWS = ['home','quotes-list','quotes-new','customers','products','providers',
     'invoices','expenses','export','reports','templates','quote-requests','jobs','plans','team','settings',
-      'libro-registro'];
+      'libro-registro','albaranes'];
   function viewFromHash() {
     const h = (window.location.hash || '').replace('#', '');
     return HASH_VIEWS.includes(h) ? h : null;
