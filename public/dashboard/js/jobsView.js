@@ -73,6 +73,14 @@ async function renderJobsView(container) {
 
 // Agrupado de LISTA (spec: lista simple por fecha). Extraído (SCRUM-11) para reutilizarlo
 // con el filtro de cobro; el agrupado y su lógica NO cambian.
+// SCRUM-428 · el importe, en el formato de la casa. Local a propósito: hoy hay CUATRO
+// formateadores de euros distintos en `public/dashboard/js/` (`expensesView.js:424`,
+// `libroRegistroView.js:92`, `reportsView.js:447` y éste) y unificarlos es de otro carril —
+// meterlo aquí sería tocar tres vistas ajenas en un ticket de lista de Trabajos (regla 9).
+function eurosJobs(n) {
+  return Number(n || 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+}
+
 function renderJobGroups(list, jobs, container) {
   list.innerHTML = '';
   if (!jobs.length) {
@@ -103,7 +111,34 @@ function renderJobGroups(list, jobs, container) {
   for (const g of groups) {
     if (!g.items.length) continue;
     const sec = document.createElement('div');
-    sec.innerHTML = `<div style="font-size:12px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em;margin:4px 0 8px">${g.title} · ${g.items.length}</div>`;
+    // SCRUM-428 · EL DINERO, EN LA CABECERA DEL GRUPO QUE YA LO NOMBRABA.
+    //
+    // El rótulo «✅ Terminados — cobra el resto» ya existía y ya decía qué hacer; lo que no decía
+    // es CUÁNTO. Ese número es el estado más importante del negocio y hasta hoy había que
+    // deducirlo abriendo los Trabajos uno a uno.
+    //
+    // Se añade con el MISMO patrón que el recuento de al lado (` · valor`), sin una palabra
+    // nueva: el importe cuelga del rótulo ya aprobado en vez de estrenar microcopy (regla 30).
+    //
+    // ⚠️ Se calcula sobre `g.items`, que es lo que el profesional TIENE DELANTE con el filtro de
+    // cobro que haya pulsado. Sumar sobre la lista completa daría un total que no corresponde a
+    // lo que se ve, y un importe que no cuadra con las filas de debajo no se cree: se ignora.
+    const resumen = g.key === 'terminado' && typeof resumenTerminadoSinCobrar === 'function'
+      ? resumenTerminadoSinCobrar(g.items)
+      : null;
+    // 🔴 EL IMPORTE SOLO SE ENSEÑA SI SE PUEDE ENSEÑAR ENTERO.
+    //
+    // Si hay terminados de los que NO se sabe cuánto falta (`sinImporte`), la suma de los demás
+    // es correcta y SE LEE MAL: quien la ve la lee como el total. «1.300 €» y «1.300 €, con 2
+    // trabajos sin importe fuera de la cuenta» son dos afirmaciones distintas, y la segunda
+    // necesita una FRASE que aún no está aprobada (regla 30, propuesta en `docs/master/SCRUM-428.md`).
+    //
+    // Hasta que la haya, la cabecera se calla el importe en vez de enseñar uno que induce a error.
+    // El recuento de al lado no cambia y sigue siendo verdad.
+    const puedeDecirseEntero = resumen && resumen.cuantos > 0 && resumen.sinImporte === 0;
+    const importe = puedeDecirseEntero ? ` · ${eurosJobs(resumen.importe)}` : '';
+    sec.innerHTML = `<div style="font-size:12px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em;margin:4px 0 8px">${g.title} · ${g.items.length}${importe}</div>`;
+
     const wrap = document.createElement('div');
     wrap.style.cssText = 'display:flex;flex-direction:column;gap:10px';
     if (g.collapsed && g.items.length) {
