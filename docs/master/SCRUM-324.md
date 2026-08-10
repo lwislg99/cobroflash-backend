@@ -364,3 +364,94 @@ clasificaciones del gremio (SCRUM-280 punto 6).
 Ficheros: `public/dashboard/js/expensesView.js` · `src/modules/expenses/domain/expenses.service.ts` ·
 `src/modules/expenses/app/routes/expenses.routes.ts` ·
 `tests/scrum324-aviso-simplificado-ui.test.mjs` (nuevo).
+
+---
+
+# SCRUM-324 (E3, apéndice) · la cadena se cierra: el gasto con desglose LLEGA al libro
+
+**Fecha:** 10-ago-2026 · **Carril:** E (gastos) · **Gate:** el control de la cadena va tras
+`LIBRO_PG_URL` (banco desechable) y está declarado en el inventario de CI
+**Medido contra:** `origin/main` = `9093c11017e52fcb0e7b085e5054fb8505168f43` · 2026-08-10T20:41:05+02:00
+
+## PASO 0 · la rama valía la MITAD
+
+`scrum-324-gasto-usable` traía tres cosas buenas, y se conservan enteras: el **selector de
+proveedor por nombre** (poblado de `/admin/providers`, con el mismo patrón que el de Trabajos), la
+**captura del NIF** hacia `Provider.taxId` —y solo si estaba `null`— y **`justificante.ts`
+conectado** desde la ruta, que deja de ser un motor sin llamadores.
+
+**Lo que no traía era la función.** `createExpense` seguía escribiendo los mismos 10 campos: ni
+`baseAmount`, ni `vatRate`, ni `vatAmount`, ni `providerInvoiceNumber`, ni `providerInvoiceDate`. Y
+el formulario añadía exactamente tres ids —proveedor, NIF y el aviso— y **ninguno era el desglose**.
+Con esa rama mergeada, **el libro de recibidas seguía saliendo vacío**.
+
+## Lo entregado
+
+- **Formulario**: base imponible, tipo de IVA (21/10/4/0), cuota, nº y fecha de factura del
+  proveedor. `numeroONull` en el envío: `Number('')` es **0**, así que el atajo habitual convierte
+  un campo en blanco en un cero y un cero de verdad en `null` — **las dos direcciones mal**.
+- **Ruta**: los acepta en alta y en edición, distinguiendo «no lo mandes» (`undefined`) de «bórralo»
+  (`null`). Sin esa distinción, abrir el modal y guardar borraría el desglose.
+- **Servicio**: los **escribe**. `?? null` y no `x ? … : null`, porque un **0** legítimo —tipo
+  exento— es falsy y el atajo lo convertiría en «no se sabe».
+
+## 🔴 El aviso fiscal NO se enciende, y el hueco queda declarado
+
+La rama pintaba «Con un ticket no puedes deducir el IVA…». **Decir qué admite Hacienda es una
+afirmación FISCAL y el producto no las hace sin el asesor** (decisión del fundador, 10-ago-2026).
+Fuera la constante, fuera el pintado y **fuera del DOM el contenedor**: un `<div>` mudo esperando
+texto es SCRUM-424 un paso antes, y encima invita a rellenarlo sin aprobación. Las tres versiones
+siguen en **`docs/legal/PREGUNTAS_ASESOR.md:539-542` como preguntas SIN responder**.
+
+El test de la rama que exigía ese aviso **se invierte**, con el motivo escrito dentro.
+
+**Sí entra la microcopy aprobada**, literal, bajo «Foto del ticket (opcional)»:
+
+> Guardamos la foto como tu copia. Los datos fiscales salen de los campos de arriba.
+
+Describe lo que hace el **software**, que es lo único afirmable hoy.
+
+## El test que cierra esto — y corre, no se salta
+
+```
+alta con base/tipo/cuota → se guarda → el libro de recibidas TRAE el asiento
+```
+
+**6/6 en verde contra el banco desechable, cero saltados.** Comprueba la base y la cuota **dentro
+del asiento**, no solo que la fila exista.
+
+- **Rojo por el mecanismo:** quitar la escritura de `baseAmount` pone rojo **dos** tests — el suelo
+  («solo escribe 4 de 5 campos fiscales, faltan: baseAmount») y la cadena («la base NO se ha
+  guardado. La ruta la acepta y el servicio la tira»).
+- **Control negativo:** un gasto sin desglose **se sigue guardando**, no entra como asiento, y se
+  **declara** en `sinClasificar` **con su importe** — «un gasto fuera» y «12,50 € fuera» no son la
+  misma información.
+- **La medida de «se arregla solo»:** el motor del justificante ya **no** da el mismo veredicto con
+  datos y sin ellos. Era una afirmación y ahora tiene su medida: un motor alimentado con nulos
+  *parece* que funciona.
+
+## Tres guards del repo me cazaron a mí, y los tres se arreglaron, no se rebajaron
+
+1. **El backtick dentro del template literal** (SCRUM-417): me lo hice yo solo, en el comentario que
+   explicaba el desglose. Lo cazó `node --check`.
+2. **La auto-referencia**: mi guard buscaba «no puedes deducir el IVA» y **casaba con su propio
+   comentario** explicando la prohibición. Se mira el fuente **sin comentarios**.
+3. **SCRUM-237**: tres `doesNotMatch` seguidos **sin hermano positivo** son un verde permanente.
+   Ahora se demuestra primero que el detector encuentra esos tokens cuando están, y que la pregunta
+   al asesor sigue viva en su documento.
+
+Y dos correcciones del propio test, también mías: `createExpense` escribe por el **singleton**, así
+que el test apunta `DATABASE_URL` al banco **con la comprobación de loopback y base `…_test` DELANTE
+de la asignación**; y `leerLibroRecibidas` es `(db, {merchantId, desde, hasta})` — la llamaba con
+posicionales y el libro contaba **todo como ajeno**: el test medía mi error, no el del producto.
+
+## Lo que NO se ha tocado
+
+`prisma/schema.prisma` (las columnas ya estaban en las tres bases) · el camino de emisión · el motor
+del libro, que estaba bien · ninguna factura emitida · **ninguna base real**: el control corre contra
+el banco desechable y todo lo que lee lo ha creado el propio test.
+
+## Evidencia
+
+- **Suite con banco: 2782 tests · 2715 pass · 0 fail · 67 skipped · `$? = 0`.**
+- `npm run guards:entrada`: **`$? = 0`**.
