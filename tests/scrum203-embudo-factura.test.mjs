@@ -184,7 +184,7 @@ test('SCRUM-203 (autoprueba) · EL CASO PEQUEÑO: llama al embudo y aun así usa
 });
 
 test('SCRUM-203 (autoprueba) · crear sin campo `number` también cae', () => {
-  assert.equal(conFuga('tx.invoice.create({ data: { merchantId: 1, total: "10.00" } });').length, 1);
+  assert.equal(conFuga('tx.invoice.create({ data: { merchantId: 7, total: "10.00" } });').length, 1);
 });
 
 test('SCRUM-203 (autoprueba) · las puertas laterales: anidado, createMany, upsert y SQL crudo', () => {

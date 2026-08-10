@@ -13,8 +13,35 @@
 //
 // Método: si hay `pg_dump` en el PATH se usa (formato custom, restaurable con
 // pg_restore). Si NO lo hay (p. ej. imagen Node de Railway), dump LÓGICO vía
-// Prisma: todas las tablas a JSON (restaurable con este mismo script en un
-// entorno limpio — ver RUNBOOK al final). Un backup no probado no es un backup:
+// Prisma: todas las tablas a JSON.
+//
+// ⚠️ SCRUM-242 · AQUÍ HABÍA UNA PROMESA FALSA, y se retiró en vez de dejarla: esta línea decía
+// que el dump lógico era «restaurable con este mismo script en un entorno limpio — ver RUNBOOK al
+// final». **Ese RUNBOOK nunca existió** (una sola mención en el fichero: la promesa), y
+// `docs/RUNBOOKS.md` tampoco tenía procedimiento de restauración.
+//
+// Y la promesa era doble, porque este script **no restaura**: sus dos modos son volcar y
+// `--restore-test`, y NINGUNO escribe de vuelta en la base. `--restore-test` VERIFICA —descifra,
+// valida el tag GCM y compara conteos—, que no es lo mismo.
+//
+// Quien leía la cabecera se quedaba tranquilo y no lo buscaba hasta necesitarlo, que es a las tres
+// de la mañana con la base caída.
+//
+// ── ESTADO REAL HOY, y por eso vuelve a haber un puntero ───────────────────────────────────────
+// El procedimiento es **`docs/RUNBOOKS.md` §R14** y quien escribe de vuelta es
+// **`scripts/backup-restore.mjs`**. Se probó de punta a punta contra una base desechable —volcar,
+// vaciar, restaurar, comparar, emitir— y la prueba **encontró dos fallos que hacían este volcado
+// lógico irrestaurable**: los tipos (JSON no tiene fechas ni decimales) y el orden de inserción.
+// Ninguno se veía leyendo el código. Evidencia: `docs/evidencias/scrum242-restauracion.md`.
+//
+// La diferencia con la promesa anterior es que esta apunta a documentos que existen y a una prueba
+// que se puede abrir. Lo vigila `tests/scrum242-scripts-no-prometen-documentos.test.mjs`.
+//
+// Lo que sigue SIN resolver es lo otro que midió el ticket: **nadie dispara este script** (0
+// invocaciones frente a 11/7/5 de otros). Un backup restaurable que nadie genera sigue sin salvar
+// la base.
+//
+// Un backup no probado no es un backup:
 // --restore-test descifra, valida el GCM tag (integridad criptográfica) y
 // compara los conteos de filas contra la BD viva.
 //
@@ -27,6 +54,10 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
+// SCRUM-408 · el parseo seguro y la redacción viven en UN solo sitio (SCRUM-195/226).
+import { partirBDParaHijo, redactarSecretos } from './_db-guard.mjs';
+// SCRUM-242 · el códec de bytes lo comparten volcado y restauración: ver `_backup-codec.mjs`.
+import { FORMATO_ACTUAL, esBinario, codificarBinario } from './_backup-codec.mjs';
 
 const KEY_RAW = process.env.BACKUP_ENCRYPTION_KEY || '';
 const OUT_DIR = process.env.BACKUP_DIR || path.join(process.cwd(), 'backups');
@@ -75,7 +106,7 @@ const TABLES = [
 ];
 
 async function logicalDump(prisma) {
-  const out = { format: 'yaqu-logical-v1', at: new Date().toISOString(), tables: {} };
+  const out = { format: FORMATO_ACTUAL, at: new Date().toISOString(), tables: {} };
   const fallos = [];
   for (const t of TABLES) {
     try {
@@ -91,7 +122,15 @@ async function logicalDump(prisma) {
   if (fallos.length) {
     throw new Error(`backup lógico INCOMPLETO: ${fallos.length} tabla(s) no se pudieron volcar:\n  ${fallos.join('\n  ')}`);
   }
-  return Buffer.from(JSON.stringify(out, (k, v) => (typeof v === 'bigint' ? String(v) : v)));
+  // ⚠️ EL BASE64 NO ES COSMÉTICO: ES EL TECHO DEL BACKUP. Sin él, un byte de fichero ocupa ~12,5
+  // caracteres (`{"0":137,…}`) y como todo esto acaba en UNA cadena, `MAX_STRING_LENGTH` se alcanza
+  // a los ~41 MB de fotos — OCHO, con `FOTO_MAX_BYTES` a 5 MB. Y no se degrada: LANZA, y el
+  // fail-closed de arriba no escribe fichero. En base64 el factor es 1,34× y el techo ~400 MB.
+  return Buffer.from(JSON.stringify(out, (k, v) => {
+    if (typeof v === 'bigint') return String(v);
+    if (esBinario(v)) return codificarBinario(v);
+    return v;
+  }));
 }
 
 async function main() {
@@ -119,7 +158,9 @@ async function main() {
     if (faltan.length || erroneas.length) {
       console.error('✗ restore-test FALLÓ: el backup NO está completo/íntegro (SCRUM-241).');
       if (faltan.length) console.error(`  faltan ${faltan.length} tabla(s) esperada(s): ${faltan.join(', ')}`);
-      if (erroneas.length) console.error(`  ${erroneas.length} tabla(s) con error en el volcado (no son filas): ${erroneas.join(', ')}`);
+      // SCRUM-408 · redactado: `erroneas` sale de la salida de `pg_restore`, que puede traer la
+      // cadena de conexión dentro de su propio mensaje de error.
+      if (erroneas.length) console.error(redactarSecretos(`  ${erroneas.length} tabla(s) con error en el volcado (no son filas): ${erroneas.join(', ')}`));
       process.exit(1);
     }
     const { PrismaClient } = await import('@prisma/client');
@@ -162,16 +203,19 @@ async function main() {
     // Se mueve el secreto de world-visible a owner-only. Elegido sobre un fichero .pgpass: misma
     // exposición owner-only, pero sin fichero temporal que crear/chmod/limpiar ni el riesgo de que
     // un crash lo deje en disco.
-    let urlSinPass, pgPassword;
-    try {
-      const u = new URL(process.env.DATABASE_URL);
-      pgPassword = decodeURIComponent(u.password);
-      u.password = ''; // lo que ven pg_dump, argv, `ps` y e.message: URL SIN contraseña
-      urlSinPass = u.toString();
-    } catch {
+    // SCRUM-408 · EL PARSEO NO SE HACE AQUÍ. `partirBDParaHijo` vive en `_db-guard.mjs`, el único
+    // módulo cuyo `new URL` está dentro de un `try` cuyo `catch` NO TOCA EL ERROR.
+    //
+    // Lo de antes no fugaba —su `catch` imprimía un texto fijo—, pero esa seguridad dependía de
+    // que ESE catch siguiera siendo correcto para siempre, en un fichero que edita cualquiera. Esa
+    // apuesta ya se perdió una vez, con una credencial de producción por medio: el arreglo es que
+    // el parseo viva en un solo sitio, no que cada sitio lo haga con cuidado.
+    const partes = partirBDParaHijo(process.env.DATABASE_URL);
+    if (!partes) {
       console.error('backup FALLÓ: DATABASE_URL no es una URL válida (no se vuelca la cadena).');
       process.exit(1);
     }
+    const { urlSinPass, password: pgPassword } = partes;
     raw = execFileSync('pg_dump', ['--format=custom', '--no-owner', urlSinPass], {
       env: { ...process.env, PGPASSWORD: pgPassword },
       maxBuffer: 1024 * 1024 * 512,
@@ -192,4 +236,4 @@ async function main() {
   console.log('→ MUÉVELO fuera de esta máquina (S4). Verifícalo: node scripts/backup-dump.mjs --restore-test');
 }
 
-main().catch((e) => { console.error('backup FALLÓ:', e?.message || e); process.exit(1); });
+main().catch((e) => { console.error('backup FALLÓ:', redactarSecretos(e?.message || e)); process.exit(1); });

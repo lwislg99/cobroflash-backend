@@ -321,15 +321,62 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
     return { wrapper, select };
   }
 
-  // ---------- BLOQUE A: DATOS DEL CLIENTE ----------
+  // ---------- SCRUM-286 (B3): LOS CUATRO BLOQUES, EN ORDEN DE DECISIÓN ----------
+  // Antes había UN bloque —«Datos del cliente»— con SIETE controles de CUATRO asuntos distintos:
+  // el cliente, el IVA por defecto, las condiciones de pago (con sus tramos y la caducidad) y el
+  // envío (formas de pago y datos del documento). El título mentía sobre su contenido, y seis de
+  // esos controles se pintaban ENTRE el cliente y las líneas. El orden es ahora el de la decisión
+  // humana: a quién · qué · cómo se paga · cómo se envía.
+  //
+  // 🔴 LOS CONTENEDORES SE CREAN AQUÍ, TODOS, Y EN ORDEN. El orden del DOM lo fija el orden en
+  // que los bloques se cuelgan de `leftCard`, NO el orden en que se rellenan. Por eso el código
+  // que construye cada campo se queda EXACTAMENTE donde estaba y sólo cambia su destino: mover
+  // código es donde se pierde un campo en silencio, y ese es el fallo mudo de este ticket.
+  //
+  // 🔴 MICROCOPY SIN APROBAR (regla 30): los títulos los aprueba el fundador. Hasta entonces
+  // salen con el marcador, igual que SCRUM-284 (B1). Un rótulo «que suena bien» sin marcador es
+  // microcopy colada por la puerta de atrás.
+  // ⚠️ Los cuatro se escriben ENTEROS, sin una factoría `crearBloque()`, y es a propósito: el
+  // censo de orden (`tests/_orden-pintado-presupuesto.mjs`) deriva el esqueleto estático como
+  // «los `appendChild` que NO están dentro de una función anidada». Una factoría metería el
+  // `leftCard.appendChild` dentro de una función y el censo dejaría de ver el formulario —
+  // habría que retocar el censo para que aceptase justo esta forma, que es medir contra lo que
+  // uno acaba de escribir. Se paga la repetición y el censo sigue siendo independiente.
+  const TITULO_PENDIENTE = function (borrador) {
+    return "[PENDIENTE microcopy oficial] " + borrador;
+  };
+
   const blockClient = document.createElement("div");
   blockClient.className = "quote-block";
   leftCard.appendChild(blockClient);
+  const blockClientTitle = document.createElement("h3");
+  blockClientTitle.className = "quote-block-title";
+  blockClientTitle.textContent = TITULO_PENDIENTE("1. Cliente");
+  blockClient.appendChild(blockClientTitle);
 
-  const blockATitle = document.createElement("h3");
-  blockATitle.textContent = "Datos del cliente";
-  blockATitle.className = "quote-block-title";
-  blockClient.appendChild(blockATitle);
+  const blockLines = document.createElement("div");
+  blockLines.className = "quote-block";
+  leftCard.appendChild(blockLines);
+  const blockLinesTitle = document.createElement("h3");
+  blockLinesTitle.className = "quote-block-title";
+  blockLinesTitle.textContent = TITULO_PENDIENTE("2. Líneas");
+  blockLines.appendChild(blockLinesTitle);
+
+  const blockConditions = document.createElement("div");
+  blockConditions.className = "quote-block";
+  leftCard.appendChild(blockConditions);
+  const blockConditionsTitle = document.createElement("h3");
+  blockConditionsTitle.className = "quote-block-title";
+  blockConditionsTitle.textContent = TITULO_PENDIENTE("3. Condiciones");
+  blockConditions.appendChild(blockConditionsTitle);
+
+  const blockDelivery = document.createElement("div");
+  blockDelivery.className = "quote-block";
+  leftCard.appendChild(blockDelivery);
+  const blockDeliveryTitle = document.createElement("h3");
+  blockDeliveryTitle.className = "quote-block-title";
+  blockDeliveryTitle.textContent = TITULO_PENDIENTE("4. Envío");
+  blockDelivery.appendChild(blockDeliveryTitle);
 
   const clientFormRow = document.createElement("div");
   clientFormRow.className = "quote-form-row";
@@ -347,7 +394,14 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   fieldVatDefault.input.value = "21";
   fieldVatDefault.input.min = "0";
   fieldVatDefault.input.step = "1";
-  clientFormRow.appendChild(fieldVatDefault.wrapper);
+  // SCRUM-286: el IVA por defecto NO es un dato del cliente — es el que se aplica a cada línea
+  // nueva (`addLine` lo lee como reserva, L~2068/2261). Su sitio es el bloque de Líneas, delante
+  // de ellas. Va en su propia `quote-form-row` para conservar el ancho de un tercio que ya tenía:
+  // no es un cambio de tamaño disfrazado de reordenado.
+  const linesVatRow = document.createElement("div");
+  linesVatRow.className = "quote-form-row";
+  blockLines.appendChild(linesVatRow);
+  linesVatRow.appendChild(fieldVatDefault.wrapper);
 
     // Checkbox WhatsApp
     // A2.3: el checkbox "Enviar por WhatsApp automáticamente" desaparece — al
@@ -368,7 +422,9 @@ descLabel.appendChild(descCheck);
 descLabel.appendChild(document.createTextNode(" Incluir descripción en el PDF"));
 descWrapper.appendChild(descLabel);
 
-blockClient.appendChild(descWrapper);
+// SCRUM-286: «Incluir descripción en el PDF» decide QUÉ VE EL CLIENTE en el documento — misma
+// familia que `docFields`. Va al bloque de Envío, no al del cliente.
+blockDelivery.appendChild(descWrapper);
 
   
     // ---------- CONDICIONES DE PAGO (SELECT) ----------
@@ -412,7 +468,7 @@ blockClient.appendChild(descWrapper);
     // Valor por defecto para el MVP
     paymentSelect.value = "FULL_UPFRONT";
 
-    blockClient.appendChild(fieldPaymentTerms.wrapper);
+    blockConditions.appendChild(fieldPaymentTerms.wrapper);
 
     // ---------- SCRUM-27: EDITOR DE TRAMOS PERSONALIZADOS (oculto salvo "Personalizado") ----------
     // Clona el patrón addLine/lines[]: filas {etiqueta, %}, añadir/quitar, recolectar a un array,
@@ -505,7 +561,7 @@ blockClient.appendChild(descWrapper);
     }
 
     addStageBtn.addEventListener("click", () => addStage());
-    blockClient.appendChild(stagesWrapper);
+    blockConditions.appendChild(stagesWrapper);
 
     // ---------- A16.2: CADUCIDAD (validUntil, default 30 días) ----------
     const validWrapper = document.createElement("div");
@@ -524,7 +580,7 @@ blockClient.appendChild(descWrapper);
     validWrapper.appendChild(validLabel);
     validWrapper.appendChild(validInput);
     validWrapper.appendChild(validNote);
-    blockClient.appendChild(validWrapper);
+    blockConditions.appendChild(validWrapper);
 
     // ---------- A2.1: MÉTODOS DE PAGO PARA ESTE PRESUPUESTO ----------
     // ☐ Tarjeta ☐ Bizum ☐ Transferencia — todos marcados por defecto (= null
@@ -562,7 +618,7 @@ blockClient.appendChild(descWrapper);
     pmFee.className = "pay-methods-note";
     pmFee.innerHTML = "💳 La tarjeta lleva una comisión del <strong>0,9 %</strong> por cobro. Bizum y transferencia, gratis.";
     payMethodsWrapper.appendChild(pmFee);
-    blockClient.appendChild(payMethodsWrapper);
+    blockDelivery.appendChild(payMethodsWrapper);
 
     // Devuelve el array para el payload, o undefined si están todas (= sin límite)
     function selectedPayMethods() {
@@ -601,7 +657,7 @@ blockClient.appendChild(descWrapper);
     dfNote.className = "pay-methods-note";
     dfNote.textContent = "Solo aparecen los que el cliente tenga rellenos (la razón social sustituye al nombre si existe).";
     docFieldsWrapper.appendChild(dfNote);
-    blockClient.appendChild(docFieldsWrapper);
+    blockDelivery.appendChild(docFieldsWrapper);
 
     // null = todos (default); objeto solo si el pro desmarca algo
     function selectedDocFields() {
@@ -612,16 +668,9 @@ blockClient.appendChild(descWrapper);
       return out;
     }
 
-  // ---------- BLOQUE B: LÍNEAS DEL PRESUPUESTO ----------
-  const blockLines = document.createElement("div");
-  blockLines.className = "quote-block";
-  leftCard.appendChild(blockLines);
-
-  const blockBTitle = document.createElement("h3");
-  blockBTitle.textContent = "Líneas del presupuesto";
-  blockBTitle.className = "quote-block-title";
-  blockLines.appendChild(blockBTitle);
-
+  // ---------- BLOQUE 2: LÍNEAS ----------
+  // SCRUM-286: `blockLines` y su título se crean ARRIBA, con los otros tres, porque ahí es donde
+  // se decide el orden del DOM. Aquí sólo se sigue rellenando, igual que antes.
   const linesHeader = document.createElement("div");
   linesHeader.className = "quote-lines-header";
 

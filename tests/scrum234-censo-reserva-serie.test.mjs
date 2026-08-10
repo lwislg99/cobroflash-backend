@@ -38,6 +38,26 @@ const SRC = path.join(RAIZ, 'src');
  * función que hace el update.
  */
 const CENSO = {
+  // SCRUM-313 (D2) · ESTE NO AVANZA UN CONTADOR: LO FIJA. Es «¿por qué número vas?» del alta, que
+  // escribe el arranque de la serie una sola vez, antes de la primera factura.
+  //
+  // Entra en el censo igualmente porque hace lo que este test vigila —leer y escribir un valor
+  // ABSOLUTO en `nextInvoiceNumber`—, y de hecho **lo cazó antes de que llegara a `main`**: la
+  // primera versión no llevaba cerrojo. Sin él, entre leer «no hay facturas» y escribir el 42 cabe
+  // una emisión, y esa factura consumiría la 001 — que DUPLICA un número que el profesional ya usó
+  // en su programa anterior. Ni hueco ni carrera abstracta: el daño exacto que D2 viene a evitar.
+  //
+  // Forma `cerrojo`, mismo namespace que `allocateInvoiceNumber`, para que reservar un número y
+  // declarar el arranque no puedan ocurrir a la vez. La relectura va DENTRO de la transacción:
+  // comprobar fuera y escribir dentro no serializa nada.
+  'src/app.ts': {
+    campo: 'nextInvoiceNumber',
+    forma: 'cerrojo',
+    motivo:
+      'SCRUM-313: FIJA el arranque de la serie en el alta (no lo avanza). Lee lo emitido y escribe '
+      + 'un valor absoluto, así que necesita el mismo cerrojo que la reserva — y con la relectura '
+      + 'dentro de la transacción, no fuera.',
+  },
   'src/modules/quotes/domain/quoteNumber.service.ts': {
     campo: 'nextQuoteNumber',
     forma: 'increment',

@@ -1,8 +1,9 @@
 // src/modules/reports/app/routes/reports.routes.ts
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
-import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
 import { desglosarPorEmpleado } from '../../domain/desgloseEmpleado'; // SCRUM-228
+import { leerLibroRegistro } from '../../../invoicing/domain/libroRegistro.repo'; // SCRUM-389: un solo agregador
+import { rangoTrimestre } from '../../../fiscal/modelo303/modelo303'; // SCRUM-389: un solo criterio de fechas
 
 const router = Router();
 
@@ -229,37 +230,44 @@ router.get('/vat', async (req, res) => {
     const qRaw = Number(req.query.quarter) || Math.floor(now.getMonth() / 3) + 1;
     const quarter = Math.min(4, Math.max(1, qRaw));
 
-    const from = new Date(year, (quarter - 1) * 3, 1);
-    const to   = new Date(year, quarter * 3, 0, 23, 59, 59, 999);
+    // SCRUM-389 · el periodo lo fija `rangoTrimestre`, el MISMO que usa el 303. Antes se
+    // construía aquí con las mismas dos líneas, y dos copias del mismo criterio de fechas es
+    // exactamente cómo empiezan a discrepar dos cifras que deberían ser una.
+    const { desde: from, hasta: to } = rangoTrimestre(year, quarter);
 
-    const invoices = await prisma.invoice.findMany({
-      where: {
-        merchantId: req.merchantId,
-        createdAt: { gte: from, lte: to },
-      },
-      select: { id: true, number: true, total: true, currency: true, lines: true, type: true },
-    });
+    // Y los euros salen del LIBRO (SCRUM-296), no de una lectura propia: es la única forma de
+    // que Informes, el Libro y el 303 no puedan decir tres cifras distintas del mismo trimestre.
+    const libro = await leerLibroRegistro(prisma, { merchantId: req.merchantId, desde: from, hasta: to });
 
     const rateMap = new Map<number, { base: number; cuota: number }>();
     let currency = 'EUR';
     let excludedCount = 0;
     let excludedTotal = 0;
 
-    for (const inv of invoices) {
-      if (inv.currency) currency = inv.currency;
-      const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
-      if (lines.length === 0) {
+    for (const a of libro.asientos) {
+      if (a.moneda) currency = a.moneda;
+      // Sin desglose no entra en el cuadro y se informa aparte — el mismo criterio de siempre.
+      if (a.porTipo.length === 0) {
         excludedCount += 1;
-        excludedTotal += Number(inv.total);
+        excludedTotal += a.total ?? 0;
         continue;
       }
-      for (const e of calcVatBreakdown(lines).entries) {
-        const acc = rateMap.get(e.rate) ?? { base: 0, cuota: 0 };
+      for (const e of a.porTipo) {
+        const acc = rateMap.get(e.tipo) ?? { base: 0, cuota: 0 };
         acc.base += e.base;
         acc.cuota += e.cuota;
-        rateMap.set(e.rate, acc);
+        rateMap.set(e.tipo, acc);
       }
     }
+
+    // ⚠️ Las filas SIN NÚMERO cambian de sitio, y se dice: antes sus euros entraban en el cuadro
+    // (el lector viejo no miraba el número); ahora el Libro las aparta, así que van al aviso de
+    // «no incluidas», donde se pueden revisar a mano. Medido antes de tocar nada: con los datos
+    // que el código puede producir hoy no existe ninguna —`formatInvoiceNumber` nunca devuelve
+    // cadena vacía y los siete `invoice.create` del árbol sacan el número de
+    // `allocateInvoiceNumber`—, así que ninguna cifra que el profesional haya visto cambia.
+    excludedCount += libro.sinNumero;
+    excludedTotal += libro.sinNumeroImporte;
 
     const r2 = (n: number) => Math.round(n * 100) / 100;
     const rates = [...rateMap.entries()]
@@ -277,7 +285,9 @@ router.get('/vat', async (req, res) => {
         base:  r2(rates.reduce((a, e) => a + e.base, 0)),
         cuota: r2(rates.reduce((a, e) => a + e.cuota, 0)),
       },
-      invoiceCount: invoices.length,
+      // `miradas` es lo que contaba `invoices.length`: TODAS las filas del periodo, entren o no
+      // en el cuadro.
+      invoiceCount: libro.miradas,
       excluded: { count: excludedCount, total: r2(excludedTotal) },
     });
   } catch (err) {

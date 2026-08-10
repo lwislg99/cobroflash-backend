@@ -55,7 +55,19 @@ function renderCustomersView(container) {
   headActions.style.cssText = "display:flex;align-items:center;gap:8px";
   const importBtn = createElement("button", "btn-secondary btn-sm", "⬆ Importar CSV");
   importBtn.title = "Importar clientes desde un fichero CSV o Excel";
-  importBtn.addEventListener("click", openImportCsvModal);
+  // SCRUM-312: un alta MASIVA de clientes es «catálogo entero» → admin, con el criterio ya
+  // escrito en `adminRouteDeclarations.ts` (línea suelta → técnico, catálogo entero → admin).
+  //
+  // Y se veta AQUÍ además de en la ruta, que es el punto: cerrar solo el servidor cambia un
+  // agujero por un 403 DESPUÉS de que el usuario haya elegido el fichero, confirmado los
+  // acentos y revisado el mapeo. El trabajo tirado es el mismo que si no hubiera guard.
+  // SCRUM-89: DESHABILITADO con explicación, no escondido — la seguridad real la da el 403.
+  const esAdmin = window.appUserRole !== 'tecnico' && window.appUserRole !== 'operario';
+  if (!esAdmin) {
+    lockActionForRole(importBtn);
+  } else {
+    importBtn.addEventListener("click", openImportCsvModal);
+  }
   const newBtn = createElement("button", "btn-primary btn-sm", "+ Nuevo cliente");
   headActions.appendChild(importBtn);
   headActions.appendChild(newBtn);

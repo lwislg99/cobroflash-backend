@@ -54,8 +54,17 @@ test('SCRUM-257 · (a) el prellenado trae concepto y cantidad, y DESCARTA precio
   const lineas = mapear(LINEAS_DE_QUOTE);
 
   assert.equal(lineas.length, 2);
-  assert.deepEqual(lineas[0], { concepto: 'Sustituir grifo monomando', cantidad: 1, unidad: 'ud' });
-  assert.deepEqual(lineas[1], { concepto: 'Tubo cobre 15 mm', cantidad: 3.5, unidad: 'ud' });
+  // SCRUM-367: se comparan los campos de ENTREGA, no la forma exacta del objeto. El prellenado
+  // añade ahora `quoteLineIndex` —el origen de la línea— y la comparación literal se ponía roja por
+  // un campo legítimo. Lo que este test protege es que NO se cuele precio ni IVA, y eso sigue
+  // abajo, entero.
+  const entrega = (l) => ({ concepto: l.concepto, cantidad: l.cantidad, unidad: l.unidad });
+  assert.deepEqual(entrega(lineas[0]), { concepto: 'Sustituir grifo monomando', cantidad: 1, unidad: 'ud' });
+  assert.deepEqual(entrega(lineas[1]), { concepto: 'Tubo cobre 15 mm', cantidad: 3.5, unidad: 'ud' });
+  // Y el origen que añade SCRUM-367: el índice del PRESUPUESTO, que es lo que por fin distingue una
+  // línea prellenada de una añadida en obra — lo que este ticket dio por imposible por no tenerlo.
+  assert.equal(lineas[0].quoteLineIndex, 0, '🔴 la primera línea perdió su origen');
+  assert.equal(lineas[1].quoteLineIndex, 1, '🔴 la segunda línea perdió su origen');
 
   // El albarán es COMPROBANTE DE ENTREGA (decisión 3 del fundador): dice QUÉ se entregó, no cuánto
   // cuesta. Y no es solo criterio: `validarLineas` RECHAZA una línea con precio en SIN_VALORAR, así
@@ -126,14 +135,14 @@ function sustituirPrisma(job) {
   moduloPrisma.prisma.$transaction = async () => ({
     id: 9, jobId: job?.id ?? 1, numero: 'A-2026-0001', fecha: new Date(),
     modoValoracion: 'SIN_VALORAR', lineas: [], estado: 'borrador', version: 1,
-    merchantId: 1, createdAt: new Date(),
+    merchantId: 7, createdAt: new Date(),
   });
 }
 
-const REQ = (id) => ({ params: { id: String(id) }, body: {}, merchantId: 1, query: {}, headers: {} });
+const REQ = (id) => ({ params: { id: String(id) }, body: {}, merchantId: 7, query: {}, headers: {} });
 
 test('SCRUM-257 · (b) job SIN presupuesto → 409 con el texto aprobado', async () => {
-  sustituirPrisma({ id: 3, merchantId: 1, quoteId: null });
+  sustituirPrisma({ id: 3, merchantId: 7, quoteId: null });
   const r = await invocar(REQ(3));
 
   assert.equal(
@@ -152,7 +161,7 @@ test('SCRUM-257 · (b) job SIN presupuesto → 409 con el texto aprobado', async
 test('SCRUM-257 · (b) CONTROL: job CON presupuesto sigue devolviendo 201', async () => {
   // El caso que impide «arreglarlo» bloqueando todo. Sin este control, el guard podría rechazar
   // SIEMPRE y el test de arriba seguiría en verde.
-  sustituirPrisma({ id: 4, merchantId: 1, quoteId: 77 });
+  sustituirPrisma({ id: 4, merchantId: 7, quoteId: 77 });
   const r = await invocar(REQ(4));
 
   assert.equal(

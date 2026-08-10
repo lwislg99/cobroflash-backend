@@ -34,7 +34,7 @@
 //
 // USO
 //   node scripts/conciliar-auditoria-fiscal.mjs                 # usa DATABASE_URL
-//   node scripts/conciliar-auditoria-fiscal.mjs --staging       # usa DATABASE_URL_STAGING
+//   node scripts/conciliar-auditoria-fiscal.mjs --staging       # usa DATABASE_URL_TESTS
 //   node scripts/conciliar-auditoria-fiscal.mjs --merchant 7
 //   node scripts/conciliar-auditoria-fiscal.mjs --desde 2026-01-01 --hasta 2026-07-31
 //   node scripts/conciliar-auditoria-fiscal.mjs --csv salida.csv
@@ -82,9 +82,14 @@ if (merchantFiltro !== null && !Number.isInteger(merchantFiltro)) {
 }
 
 // ── BARRERA 1 · pertenencia del host, ANTES de abrir ninguna conexión ─────────────────
-const url = usarStaging ? process.env.DATABASE_URL_STAGING : process.env.DATABASE_URL;
+// SCRUM-383 · `--staging` lee LA BASE DE PRUEBAS DE ESTE CARRIL (`DATABASE_URL_TESTS`), que es
+// exactamente lo que leía antes: en el árbol principal esa clave ya daba `yaqu_dev_javier`. El
+// comportamiento no cambia; cambia el nombre, que ahora describe lo que hace.
+// ⚠️ El FLAG sigue llamándose `--staging` y en el árbol principal no habla con staging. Renombrar
+// una bandera de CLI es cambiar una interfaz que ~4 documentos citan: no entra en este ticket.
+const url = usarStaging ? process.env.DATABASE_URL_TESTS : process.env.DATABASE_URL;
 if (!url) {
-  console.error(`❌ Falta ${usarStaging ? 'DATABASE_URL_STAGING' : 'DATABASE_URL'} en el entorno.`);
+  console.error(`❌ Falta ${usarStaging ? 'DATABASE_URL_TESTS' : 'DATABASE_URL'} en el entorno.`);
   process.exit(1);
 }
 

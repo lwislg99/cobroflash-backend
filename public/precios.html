@@ -42,8 +42,9 @@
     ul{list-style:none;margin:22px 0;padding:0;display:flex;flex-direction:column;gap:11px}
     li{display:flex;gap:10px;font-size:14.5px;color:var(--body)}
     li::before{content:"✓";color:var(--brand);font-weight:800;flex:none}
+    /* SCRUM-368 · A1: 18.66px (era 16px) para cumplir AA por la vía de texto grande. */
     .cta{display:block;width:100%;text-align:center;background:var(--brand);color:#fff;font-weight:700;
-         font-size:16px;padding:15px 18px;border-radius:var(--r-full);text-decoration:none;
+         font-size:18.66px;padding:15px 18px;border-radius:var(--r-full);text-decoration:none;
          box-shadow:var(--shadow-btn);transition:background .15s}
     .cta:hover{background:var(--brand-700)}
     .trial-note{margin:12px 0 0;text-align:center;font-size:12.5px;color:var(--muted)}
@@ -62,7 +63,7 @@
 
   <div class="founding" id="founding-banner" style="display:none">
     <div>
-      <strong>Oferta founding:</strong> 9,90 €/mes <u>de por vida</u> para los 20 primeros.
+      <strong>Oferta founding:</strong> 9,90 €/mes <u>de por vida</u>, mientras mantengas la suscripción activa, para los 20 primeros.
     </div>
     <span class="seats" id="founding-seats">…</span>
   </div>
@@ -82,7 +83,11 @@
       <li>Cobro integrado: el cliente paga desde el móvil</li>
       <li>Clientes, catálogo y gastos sin límites</li>
       <li>Tus datos siempre exportables</li>
-      <li>Soporte por email y WhatsApp</li>
+      <!-- SCRUM-406 · decía «Soporte por email y WhatsApp». El WhatsApp de soporte NO EXISTE en
+           el código: el dashboard no enseña jamás un número de YaQu y no hay canal entrante. Se
+           RETIRA la mención (no se reescribe la frase). Está en la página de PRECIOS, o sea que
+           forma parte de lo que alguien paga. -->
+      <li>Soporte por email</li>
     </ul>
     <a class="cta" id="cta" href="/register.html">Empezar gratis 14 días</a>
     <p class="trial-note">Sin tarjeta para empezar · Cancelas cuando quieras</p>
@@ -90,35 +95,24 @@
 
   <p class="legal"><a href="/privacidad">Privacidad</a> · <a href="/terminos">Términos</a></p>
 
+  <script src="/js/atribucion.js" defer></script>
   <script>
-    // A9.1 (GTM-1): atribución — misma captura first-touch que la landing.
-    (function () {
-      try {
-        var q = new URLSearchParams(location.search);
-        var ref = (q.get('ref') || '').trim();
-        if (ref && !localStorage.getItem('yaqu_ref')) localStorage.setItem('yaqu_ref', ref);
-        if (localStorage.getItem('yaqu_src')) return;
-        var src = (q.get('utm_source') || '').trim();
-        var attribution = '';
-        if (src) {
-          attribution = [src, (q.get('utm_medium') || '').trim(), (q.get('utm_campaign') || '').trim()]
-            .filter(Boolean).join('/');
-        } else if (q.get('src') === 'profile' || q.get('src') === 'qr') {
-          // A14.2 (PERFIL-1): loop del perfil público / QR de furgoneta
-          attribution = q.get('src');
-        } else if (document.referrer) {
-          var host = new URL(document.referrer).hostname.replace(/^www\./, '');
-          if (host && host !== location.hostname) attribution = 'referrer:' + host;
-        }
-        if (attribution) localStorage.setItem('yaqu_src', attribution);
-      } catch (e) { /* best-effort */ }
-    })();
+    // SCRUM-336: la captura first-touch en `localStorage` se retiró de esta página igual que de la
+    // landing (ePrivacy art. 5.3). La atribución viaja ahora en la URL — ver `js/atribucion.js`.
 
     // Contador REAL de plazas founding (V0-4): si quedan, se muestra el banner y el 29 tachado.
     fetch('/public/founding-status').then(function (r) { return r.json(); }).then(function (f) {
       if (!f || typeof f.seatsLeft !== 'number' || f.seatsLeft <= 0) return;
       document.getElementById('founding-banner').style.display = 'flex';
-      document.getElementById('founding-seats').textContent = 'Quedan ' + f.seatsLeft + ' de ' + f.seatsTotal + ' plazas';
+      // SCRUM-330 · la ESCASEZ solo se pinta si alguien ha comprado DE VERDAD. La OFERTA (precio,
+      // tachado, CTA) se sigue mostrando igual — es otra decisión y no es de este ticket.
+      // «Quedan 20 de 20» no comunica escasez: comunica que no ha comprado nadie. Y con el dato
+      // ilegible tampoco se inventa un número: la frase se queda fuera.
+      var pintarPlazas = !!(f && typeof f.taken === 'number' && f.taken > 0
+        && typeof f.seatsLeft === 'number' && f.seatsLeft > 0);
+      document.getElementById('founding-seats').textContent = pintarPlazas
+        ? 'Quedan ' + f.seatsLeft + ' de ' + f.seatsTotal + ' plazas'
+        : '';
       document.getElementById('price-old').style.display = '';
       document.getElementById('price').textContent = '9,90 €';
       document.getElementById('cta').textContent = 'Quiero mi plaza founding';

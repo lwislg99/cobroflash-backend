@@ -556,7 +556,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     const ayuda = document.createElement('p');
     ayuda.style.cssText = 'font-size:13px;color:var(--muted);margin:0 0 10px';
     ayuda.textContent = emitidos > 0
-      ? `Ya hay ${emitidos} tramo(s) facturado(s): esos quedan fijos. Puedes reajustar los que quedan y añadir tramos nuevos si la obra ha crecido.`
+      ? `Ya hay ${emitidos} ${emitidos === 1 ? 'tramo facturado' : 'tramos facturados'}: esos quedan fijos. Puedes reajustar los que quedan y añadir tramos nuevos si la obra ha crecido.`
       : 'Aún no has facturado ningún tramo: puedes reajustarlos todos y añadir los que necesites.';
     planSec.appendChild(ayuda);
 

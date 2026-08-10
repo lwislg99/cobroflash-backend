@@ -18,6 +18,18 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'POST', path: '/admin/invoices/:invoiceId/send-reminder' },
   { method: 'GET', path: '/admin/invoices/:invoiceId/dispute-package' },
   { method: 'POST', path: '/admin/invoices/:invoiceId/payment-anomaly', body: { amount: 1 } },
+  // SCRUM-296 (A6): el libro de registro es la facturación ENTERA del negocio — lectura de
+  // admin, no trabajo de campo. Con una ruta basta: el montaje entero comparte la instancia.
+  { method: 'GET', path: '/admin/libro-registro' },
+  // SCRUM-325 (E4): el mismo libro de A6, por periodo y en fichero. El CSV lleva el NIF y el
+  // nombre de cada cliente del trimestre, así que es lectura de admin igual que su origen.
+  { method: 'GET', path: '/admin/libros/expedidas.csv' },
+  // SCRUM-295 (A5): el 303 del trimestre — misma razón que el libro.
+  { method: 'GET', path: '/admin/modelo-303' },
+  // SCRUM-297 (A7): el paquete de evidencias — misma razón que el libro y el 303.
+  { method: 'GET', path: '/admin/evidencias.zip' },
+  // SCRUM-244 (RGPD-1): la supresión del merchant, lo más destructivo que hay.
+  { method: 'POST', path: '/admin/supresion/:merchantId', body: { confirmacion: 'x' } },
   // Configuración / cuenta (S1: Técnico ❌)
   { method: 'PUT', path: '/admin/merchant', body: { name: 'X' } },
   { method: 'GET', path: '/admin/merchant/public-profile-qr' },
@@ -35,6 +47,11 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'POST', path: '/admin/connect/onboard' },
   // Supervisión por operario (SCRUM-24): S1 → equipo/supervisión es Admin
   { method: 'GET', path: '/admin/metrics/operarios' },
+  // SCRUM-301 (C1): el listado GLOBAL de albaranes. Un técnico solo ve SUS Trabajos (SCRUM-147,
+  // `seesOnlyOwnJobs`), y los albaranes cuelgan de Trabajos: enseñárselos todos le diría de qué
+  // obras ajenas hay partes, de qué clientes y con qué fechas. Aquí queda su 403 EXIGIDO, no
+  // solo declarado — que es la diferencia entre una decisión de permisos y una intención.
+  { method: 'GET', path: '/admin/albaranes' },
   // SCRUM-55: su hermana /team salía 200 a un Operario en PRODUCCIÓN. Mismo criterio de S1
   // ("equipo ❌ Técnico") y mismo router; estaba aparcada como "Nivel 2" por descuido, no
   // por duda. Aquí queda su 403 exigido.
@@ -82,6 +99,10 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   // sellan VeriFactu igual que la de Job, así que su 403 se ejerce igual.
   { method: 'POST', path: '/admin/albaranes/999999/facturar-parcial', body: { lineas: [{ index: 0, cantidad: 1 }] } },
   { method: 'POST', path: '/admin/albaranes/consolidar', body: { customerId: 999999, albaranIds: [999999] } },
+  // SCRUM-290 (A0.4): la TERCERA vía de emisión desde albarán — cantidades del parte, precios del
+  // presupuesto firmado. Emite factura y sella VeriFactu igual que sus dos hermanas, así que su
+  // 403 se ejerce igual. No hereda el de ninguna: es otra ruta y otro `requireRole`.
+  { method: 'POST', path: '/admin/albaranes/999999/convertir-en-factura' },
   // La factura del resto + payment_request. ERA EL OBJETIVO ORIGINAL DE SCRUM-54,
   // que se cerró sobre consolidar-albaranes y dejó esta abierta: aquí su evidencia.
   { method: 'POST', path: '/admin/jobs/999999/collect-rest' },

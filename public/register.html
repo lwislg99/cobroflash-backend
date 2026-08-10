@@ -56,15 +56,22 @@
 </footer>
 </div>
 <script>
-  // Código de referido desde la URL (?ref=CODIGO)
-  // A9.1: el ?ref de la URL manda; si no, el guardado al aterrizar en la landing
+  // Código de referido desde la URL (?ref=CODIGO).
+  //
+  // SCRUM-336: antes había un segundo origen —lo que la landing hubiera guardado en
+  // `localStorage`— y se retiró: almacenar la atribución en el equipo del visitante sin
+  // consentimiento no es imprescindible para el servicio pedido (ePrivacy art. 5.3). Ahora el
+  // código viaja en la URL desde el enlace de entrada hasta aquí (`js/atribucion.js` lo propaga a
+  // los CTA que apuntan a esta página), así que la URL es la ÚNICA fuente.
   let refCode = (new URLSearchParams(location.search).get('ref') || '').trim();
-  if (!refCode) { try { refCode = (localStorage.getItem('yaqu_ref') || '').trim(); } catch (err) {} }
   if (refCode) document.getElementById('ref-badge').style.display = 'block';
 
-  // V0-3 + A9.1: atribución — UTM de ESTA URL → guardada al aterrizar en la
-  // landing (localStorage, first-touch, sobrevive días) → sessionStorage
-  // (legacy) → "ref:CODIGO". El registro escribe merchants.acquisition_source.
+  // V0-3 + A9.1: atribución — UTM de ESTA URL → "ref:CODIGO". El registro escribe
+  // merchants.acquisition_source, que es lo que agrupa el embudo por canal (getPlatformFunnel).
+  //
+  // SCRUM-336: se retiraron los dos respaldos de almacenamiento. El de `sessionStorage` estaba
+  // MUERTO además de ser almacenamiento: el censo derivado no encontró ni una escritura suya en
+  // toda la superficie pública, así que esa rama no podía devolver nada.
   const qsP = new URLSearchParams(location.search);
   const utmSrc = (qsP.get('utm_source') || '').trim();
   let acquisitionSource = '';
@@ -74,8 +81,6 @@
   } else if (qsP.get('src') === 'profile' || qsP.get('src') === 'qr') {
     // A14.2 (PERFIL-1): registro directo desde el perfil público / QR de furgoneta
     acquisitionSource = qsP.get('src');
-  } else {
-    try { acquisitionSource = localStorage.getItem('yaqu_src') || sessionStorage.getItem('yaqu_src') || ''; } catch (err) {}
   }
   if (!acquisitionSource && refCode) acquisitionSource = 'ref:' + refCode;
 

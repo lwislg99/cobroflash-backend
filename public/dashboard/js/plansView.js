@@ -45,6 +45,16 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
     : null;
   const isCurrent = currentPlan === plan.id;
 
+  // SCRUM-345 · El rotulo «cobros» de la tarjeta de prueba caducada apuntaba a `invoices.csv`, que
+  // el propio auditor llama `facturas.csv`. Se pulsaba «cobros», bajaba algo, se abria, y eran
+  // FACTURAS: el peor caso, porque sale un fichero REAL que no es el que se pidio y el profesional
+  // se lo lleva a su gestoria creyendolo. Llevaba escrito y sin decidir en DOS entradas de master
+  // (SCRUM-343:55-58 y SCRUM-321:121) — cuarta vez que un aviso escrito no impide nada.
+  //
+  // Decision del fundador (10-ago-2026): se REAPUNTA el enlace, no se renombra el rotulo. El boton
+  // dice «cobros», existe una exportacion de cobros de verdad y quien lo pulsa quiere cobros: lo
+  // que estaba mal era el destino. Renombrarlo dejaria esta pantalla sin acceso a cobros — una
+  // perdida de funcion disfrazada de arreglo de copy — y ademas exigiria microcopy nueva.
   const statusHtml = isTrialExpired ? `
     <div class="customers-card" style="display:flex;align-items:center;gap:12px;margin-bottom:20px;border-color:#fde68a;background:#fffbeb">
       <div style="font-size:28px">⏳</div>
@@ -54,7 +64,7 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
         <div style="font-size:12.5px;color:var(--muted);margin-top:6px">
           Tus datos son tuyos y NUNCA se borran — exporta cuando quieras:
           <a href="/admin/exports/quotes.csv" style="color:#15803d">presupuestos</a> ·
-          <a href="/admin/exports/invoices.csv" style="color:#15803d">cobros</a> ·
+          <a href="/admin/exports/charges.csv" style="color:#15803d">cobros</a> ·
           <a href="/admin/exports/expenses.csv" style="color:#15803d">gastos</a>
         </div>
       </div>
@@ -73,7 +83,7 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
     <div class="customers-card" style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       <div style="font-size:28px">✅</div>
       <div>
-        <div style="font-weight:700;font-size:15px;color:var(--neutral-900)">Plan activo: <strong>${currentPlan === 'founding' ? 'Founding (9,90 €/mes de por vida)' : 'Pro'}</strong></div>
+        <div style="font-weight:700;font-size:15px;color:var(--neutral-900)">Plan activo: <strong>${currentPlan === 'founding' ? 'Founding (9,90 €/mes de por vida, mientras mantengas la suscripción activa)' : 'Pro'}</strong></div>
         ${planExpiresAt ? `<div style="font-size:13px;color:var(--neutral-400);margin-top:2px">Próxima renovación: ${new Date(planExpiresAt).toLocaleDateString('es', { day: '2-digit', month: 'long', year: 'numeric' })}</div>` : ''}
       </div>
     </div>
@@ -93,7 +103,9 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
     'Recordatorios automáticos de cobro',
     'Gastos y margen por trabajo',
     'Tus datos siempre exportables',
-    'Soporte por email y WhatsApp',
+    // SCRUM-406 · decía «Soporte por email y WhatsApp»; ese WhatsApp de soporte NO EXISTE en el
+    // código (ningún `wa.me` del producto apunta a YaQu). Se retira la mención, no se reescribe.
+    'Soporte por email',
   ];
 
   // V0-4 (W1): banner founding sobre Pro — 9,90 €/mes de por vida, contador REAL
@@ -102,7 +114,7 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
       <div style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between">
         <div style="font-size:14px;font-weight:700">
           Oferta founding: <span style="text-decoration:line-through;opacity:.7">19,90 €</span>
-          <span style="font-size:18px"> 9,90 €/mes</span> de por vida
+          <span style="font-size:18px"> 9,90 €/mes</span> de por vida, mientras mantengas la suscripción activa
         </div>
         <span style="font-size:12px;font-weight:700;background:rgba(255,255,255,.35);border-radius:999px;padding:4px 12px;white-space:nowrap">
           Quedan ${founding.seatsLeft} de ${founding.seatsTotal} plazas

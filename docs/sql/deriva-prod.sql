@@ -24,7 +24,7 @@
 -- ajenas ni valores de enum. Y no reporta columnas de MÁS en la base: que la base vaya por
 -- delante del código es el orden seguro de un cambio aditivo, no un problema.
 --
--- Columnas esperadas: 331. Tablas: 24.
+-- Columnas esperadas: 344. Tablas: 24.
 
 WITH esperado (tabla, columna) AS (
   VALUES
@@ -40,12 +40,16 @@ WITH esperado (tabla, columna) AS (
     ('albaranes','estado'),
     ('albaranes','evidencia_firma'),
     ('albaranes','fecha'),
+    ('albaranes','fecha_entrega'),
     ('albaranes','firma_token'),
     ('albaranes','firmado_at'),
+    ('albaranes','firmado_por_calidad'),
+    ('albaranes','firmado_por_nombre'),
     ('albaranes','id'),
     ('albaranes','invoice_id'),
     ('albaranes','job_id'),
     ('albaranes','lineas'),
+    ('albaranes','lugar_entrega'),
     ('albaranes','merchant_id'),
     ('albaranes','modo_valoracion'),
     ('albaranes','notas'),
@@ -131,6 +135,7 @@ WITH esperado (tabla, columna) AS (
     ('events','ts'),
     ('events','type'),
     ('expenses','amount'),
+    ('expenses','base_amount'),
     ('expenses','category'),
     ('expenses','concept'),
     ('expenses','created_at'),
@@ -140,16 +145,22 @@ WITH esperado (tabla, columna) AS (
     ('expenses','merchant_id'),
     ('expenses','notes'),
     ('expenses','provider_id'),
+    ('expenses','provider_invoice_date'),
+    ('expenses','provider_invoice_number'),
     ('expenses','quote_id'),
     ('expenses','receipt_data'),
     ('expenses','team_member_id'),
     ('expenses','updated_at'),
+    ('expenses','vat_amount'),
+    ('expenses','vat_deducible'),
+    ('expenses','vat_rate'),
     ('invoices','albaran_refs'),
     ('invoices','charge_id'),
     ('invoices','client_comment'),
     ('invoices','createdAt'),
     ('invoices','currency'),
     ('invoices','customerId'),
+    ('invoices','deducts_refs'),
     ('invoices','id'),
     ('invoices','lines'),
     ('invoices','merchantId'),
@@ -282,6 +293,7 @@ WITH esperado (tabla, columna) AS (
     ('providers','name'),
     ('providers','notes'),
     ('providers','phone'),
+    ('providers','tax_id'),
     ('providers','updated_at'),
     ('quote_requests','created_at'),
     ('quote_requests','customer_id'),
@@ -311,6 +323,7 @@ WITH esperado (tabla, columna) AS (
     ('quotes','decisionChannel'),
     ('quotes','decisionComment'),
     ('quotes','doc_fields'),
+    ('quotes','es_adicional'),
     ('quotes','evidence'),
     ('quotes','id'),
     ('quotes','internal_notes'),

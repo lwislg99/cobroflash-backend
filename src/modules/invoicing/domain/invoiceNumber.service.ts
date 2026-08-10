@@ -27,7 +27,44 @@ export type CaminoEmision =
   | 'C4' // emisión manual (SCRUM-178)
   | 'C5' // rectificativa R1 (SCRUM-153)
   | 'C6' // un cobro pagado se convierte en factura (webhooks e interno)
-  | 'C7'; // `emitInvoice()` compartido — recapitulativa y albarán parcial
+  | OrigenC7; // SCRUM-347: los cuatro de `emitInvoice()` — ver abajo
+
+/**
+ * SCRUM-347 · LOS CUATRO CAMINOS QUE `C7` METÍA EN LA MISMA ETIQUETA.
+ *
+ * `C7` no era un fallo de la auditoría: **era un cajón**. La auditoría registra el origen desde
+ * SCRUM-207 —`meta.camino`, obligatorio por tipo— y distingue bien seis. El séptimo etiquetaba a
+ * `emitInvoice()` ENTERO, y por ahí pasan cuatro caminos con historias distintas.
+ *
+ * En una inspección, «esta factura nació de un albarán firmado» y «ésta nació suelta» son dos
+ * cosas distintas — y hasta hoy las dos eran `C7`.
+ *
+ * Censo DERIVADO por AST (SCRUM-347), 199 ficheros `.ts` barridos, 4 llamadores:
+ *   · `POST /albaranes/:id/facturar-parcial`      → `C7-parcial`
+ *   · `POST /albaranes/:id/convertir-en-factura`  → `C7-albaran`      (A0.4)
+ *   · `emitirRecapitulativas()`                   → `C7-recapitulativa`
+ *   · `POST /admin/invoices`                      → `C7-suelta`       (A0.5)
+ *
+ * ⚠️ `'C7'` A SECAS YA NO EXISTE EN EL TIPO, y es deliberado: dejarlo habría permitido que un
+ * llamador nuevo volviera a elegir la etiqueta vaga. Lo que sí sigue existiendo es el DATO: las
+ * facturas ya registradas conservan su `meta.camino: 'C7'` histórico. **No se reescribe, no se
+ * backfillea y no se supone de cuál de los cuatro venía** (regla 29). No saber su origen es un
+ * dato, no un hueco: el censo las cuenta como «N con origen C7 sin desglosar».
+ *
+ * Se comprobó antes de ampliar (condición del GO) que nadie INDEXA por este tipo: un
+ * `ALGO[camino]` se habría quedado en `undefined` **en silencio** al añadir variantes. Medido por
+ * AST sobre 714 ficheros — 0 indexados, 0 switches, 1 anotación de tipo.
+ */
+export type OrigenC7 =
+  | 'C7-parcial'         // parcial de un albarán
+  | 'C7-albaran'         // albarán → factura (A0.4)
+  | 'C7-recapitulativa'  // recapitulativa mensual
+  | 'C7-suelta';         // factura suelta desde admin (A0.5)
+
+/** Los cuatro, para que un guard los DERIVE en vez de reescribir la lista. */
+export const ORIGENES_C7: readonly OrigenC7[] = [
+  'C7-parcial', 'C7-albaran', 'C7-recapitulativa', 'C7-suelta',
+] as const;
 
 /**
  * Justificantes de cobro (V0-0): los merchants ES reales con `INVOICING_ES_ENABLED`
@@ -50,6 +87,96 @@ export function makeReceiptNumber(now = new Date()): string {
   const ymd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
   const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
   return `${RECEIPT_NUMBER_PREFIX}${ymd}-${rand}`;
+}
+
+/**
+ * SCRUM-396 · LA REFERENCIA DEL JUSTIFICANTE SE COMPROBABA CONTRA NADA.
+ *
+ * `makeReceiptNumber` tira 4 caracteres de `[0-9A-Z]` al aire: 36⁴ = 1.679.616 sufijos, y el
+ * espacio se reparte POR MERCHANT Y POR DÍA porque la fecha va dentro. A 10 justificantes/día la
+ * probabilidad de choque en ese día es 1 entre 37.325; a 200/día baja a **1 entre 85**. Con 200
+ * merchants activos son ~1,3 choques al año. No es teórico: es un martes.
+ *
+ * Y cuando chocaba, ¿qué pasaba? Nada bueno. El número volvía tal cual, el llamador hacía su
+ * `invoice.create` y reventaba contra `@@unique([merchantId, number])` — un `500 internal_error`
+ * en la cara del profesional, al emitir. La segunda emisión era perfectamente válida.
+ *
+ * ── POR QUÉ SE COMPRUEBA EL CONSTRAINT Y NO SE CAPTURA EL `P2002` ─────────────────────────
+ *
+ * Medido, y corrige la forma natural de escribir esto: **el `P2002` no es capturable aquí.**
+ *
+ *   · `allocateInvoiceNumber` DEVUELVE un string. El `invoice.create` que choca vive en el
+ *     llamador —`emitInvoice` y otros 7 sitios—, así que un `try/catch` en este fichero no
+ *     envuelve la sentencia que falla;
+ *   · y aunque lo envolviera: en PostgreSQL una sentencia fallida **aborta la transacción**. El
+ *     segundo intento no daría otro número, daría `25P02 current transaction is aborted`.
+ *     Reintentar dentro de la misma `tx` no es reintentar: es insistir sobre una tx muerta.
+ *
+ * Lo que sí se puede —y es más fuerte— es PREGUNTARLE AL PROPIO CONSTRAINT. Este código corre
+ * dentro del `pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)` que se toma como PRIMERA sentencia
+ * de `allocateInvoiceNumber`, y la clave del cerrojo es `merchantId` — **exactamente el alcance del
+ * índice `[merchantId, number]`**. Dentro de ese cerrojo, «¿está ocupada esta referencia?» no tiene
+ * carrera para el mismo merchant, y entre merchants distintos el choque es imposible por
+ * construcción. La consulta usa `merchantId_number`, que es el nombre que Prisma le da a ESE índice:
+ * si el constraint cambiara de forma, esto **no compilaría** — que es la diferencia entre comprobar
+ * el constraint y reconocer un código de error de memoria.
+ *
+ * ── POR QUÉ TRES, Y POR QUÉ UN TOPE ──────────────────────────────────────────────────────
+ *
+ * Al peor volumen medido, agotar tres intentos tiene probabilidad 1,7·10⁻¹². Es decir: **agotar
+ * tres ya no significa colisión, significa que pasa otra cosa** —el reloj, el generador, la
+ * consulta— y por eso el agotamiento tiene error PROPIO en vez de reintentar en silencio. Un
+ * reintento sin tope haría lo contrario: convertiría ese «otra cosa» en un bucle infinito dentro de
+ * una transacción con un cerrojo tomado, que es la forma de tumbar la emisión de todo el merchant.
+ */
+export const INTENTOS_REFERENCIA_JUSTIFICANTE = 3;
+
+/**
+ * Agotar los intentos NO es una colisión: a 1,7·10⁻¹² es otra cosa. Error propio y con nombre para
+ * que quien lo lea en el log no lo confunda con el choque que este mecanismo sí resuelve.
+ */
+export class ReferenciaJustificanteAgotada extends Error {
+  readonly merchantId: number;
+  readonly intentos: number;
+  readonly candidatas: readonly string[];
+
+  constructor(merchantId: number, candidatas: readonly string[]) {
+    super(
+      `referencia_justificante_agotada: ${candidatas.length} intentos ocupados para el merchant ` +
+      `${merchantId} (${candidatas.join(', ')}). A esta probabilidad esto NO es una colisión: ` +
+      'revisa el generador, el reloj del proceso o la consulta.',
+    );
+    this.name = 'ReferenciaJustificanteAgotada';
+    this.merchantId = merchantId;
+    this.intentos = candidatas.length;
+    this.candidatas = candidatas;
+  }
+}
+
+/**
+ * Devuelve una referencia `J-YYYYMMDD-XXXX` LIBRE para este merchant, o lanza.
+ *
+ * ⚠️ Cada vuelta llama a `makeReceiptNumber` OTRA VEZ. Si reutilizara la candidata, los tres
+ * intentos serían uno y el tope sería decorativo.
+ */
+async function reservarReferenciaJustificante(
+  tx: Prisma.TransactionClient,
+  merchantId: number,
+  now: Date,
+): Promise<string> {
+  const candidatas: string[] = [];
+  for (let intento = 0; intento < INTENTOS_REFERENCIA_JUSTIFICANTE; intento += 1) {
+    const candidata = makeReceiptNumber(now);
+    candidatas.push(candidata);
+    // El índice, por su nombre. Un error de la consulta SUBE: no se reintenta a ciegas, porque
+    // «no pude comprobar si está ocupada» y «está libre» no pueden dar el mismo resultado.
+    const ocupada = await tx.invoice.findUnique({
+      where: { merchantId_number: { merchantId, number: candidata } },
+      select: { id: true },
+    });
+    if (!ocupada) return candidata;
+  }
+  throw new ReferenciaJustificanteAgotada(merchantId, candidatas);
 }
 
 /** Formatea un número de la serie. `rectifying` usa la serie propia de rectificativas (R). */
@@ -213,7 +340,9 @@ export async function allocateInvoiceNumber(
   // para justificantes (solo rectifican facturas emitidas — regla 29).
   if (getEmissionMode(m) === 'receipt') {
     if (rect) throw new Error('invoicing_es_disabled');
-    const numero = makeReceiptNumber(now);
+    // SCRUM-396: la referencia se comprueba contra el índice antes de devolverla. Va DENTRO del
+    // cerrojo de arriba, que es lo que hace que la comprobación no tenga carrera.
+    const numero = await reservarReferenciaJustificante(tx, merchantId, now);
     await auditar(numero, true);
     return numero;
   }

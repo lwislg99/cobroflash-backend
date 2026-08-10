@@ -37,7 +37,19 @@ test('isAlbaranNumber distingue la serie ALB de la fiscal y la J-', () => {
 test('resolveAlbaranSeq: continúa en el mismo año, resetea al cambiar y con serie nueva', () => {
   assert.equal(resolveAlbaranSeq({ albaranSeriesYear: 2026, nextAlbaranNumber: 8 }, 2026), 8);
   assert.equal(resolveAlbaranSeq({ albaranSeriesYear: 2026, nextAlbaranNumber: 8 }, 2027), 1);
-  assert.equal(resolveAlbaranSeq({ albaranSeriesYear: null, nextAlbaranNumber: 5 }, 2026), 1);
+
+  // ⚠️ SCRUM-306 (C7) · ESTE CASO ESTABA MAL Y FIJABA LA TRAMPA COMO COMPORTAMIENTO ESPERADO.
+  //
+  // Decía `{ albaranSeriesYear: null, nextAlbaranNumber: 5 }` → 1, bajo el rótulo «con serie
+  // nueva». Pero un contador en 5 NO es una serie nueva: es una serie a la que alguien le movió el
+  // número sin fijar el año. Este assert hacía que el reinicio silencioso pareciera deliberado — y
+  // un test que dice lo que no es cuesta más que no tenerlo, porque el siguiente que lo lea creerá
+  // que está decidido.
+  //
+  // La serie NUEVA de verdad es el merchant recién creado: año nulo y contador en 1.
+  assert.equal(resolveAlbaranSeq({ albaranSeriesYear: null, nextAlbaranNumber: 1 }, 2026), 1);
+  // Y el contador movido sin año falla en vez de reiniciar (detalle en scrum306-serie-albaranes).
+  assert.throws(() => resolveAlbaranSeq({ albaranSeriesYear: null, nextAlbaranNumber: 5 }, 2026));
 });
 
 test('allocateAlbaranNumber: correlativo y avanza el contador (tx mock)', async () => {
@@ -256,7 +268,10 @@ test('SCRUM-14: tenancy del albarán + lock de firmado end-to-end', { skip: !ENA
     const rSignEarly = await jsonReq(`/admin/albaranes/${alb1.id}/firmar`, cookieA, 'POST', { signatureData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' });
     assert.equal(rSignEarly.status, 409);
     assert.equal((await jsonReq(`/admin/albaranes/${alb1.id}/emitir`, cookieA, 'POST')).status, 200);
-    const rSign = await jsonReq(`/admin/albaranes/${alb1.id}/firmar`, cookieA, 'POST', { signatureData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' });
+    // SCRUM-300: al firmar se puede declarar QUIÉN firma, y ese nombre entra en el contenido
+    // SELLADO (v:2). Es OPCIONAL —los albaranes ya firmados no lo tienen y siguen siendo
+    // válidos—; aquí se manda a propósito para ejercitar el camino con dato.
+    const rSign = await jsonReq(`/admin/albaranes/${alb1.id}/firmar`, cookieA, 'POST', { signatureData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', firmadoPorNombre: 'Ana Pérez' });
     assert.equal(rSign.status, 200);
     const albSigned = await rSign.json(); // serializado con pdfUrl al endpoint auth
     const rLocked = await jsonReq(`/admin/albaranes/${alb1.id}`, cookieA, 'PATCH', { notas: 'tarde' });

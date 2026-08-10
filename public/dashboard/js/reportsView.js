@@ -66,19 +66,17 @@ async function renderReportsView(container) {
     const year = yearSelect.value;
     btnVf.disabled = true;
     try {
-      const r = await fetch(`/admin/exports/verifactu.xml?year=${year}`);
-      if (!r.ok) {
-        const d = await r.json().catch(() => ({}));
-        showToast(d.message || 'No se pudo generar el XML VeriFactu.', 'error');
-        return;
-      }
-      const blob = await r.blob();
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `verifactu_${year}.xml`;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    } catch {
+      // SCRUM-405: por la forma común. ERA EL CUARTO SITIO con el defecto, y no estaba en el
+      // censo de SCRUM-356 —que solo miró `exportView.js`—: lo encontró el guard por AST. Aquí
+      // pesa más que en los otros tres, porque lo que se descarga es el registro VeriFactu: con
+      // un portal cautivo, el profesional se guardaba la página de login del router como
+      // `verifactu_2026.xml`.
+      await descargarBinario(`/admin/exports/verifactu.xml?year=${year}`, {
+        tipoEsperado: 'xml',
+        nombrePorDefecto: `verifactu_${year}.xml`,
+      });
+    } catch (e) {
+      if (e && e.code === ERROR_NO_ES_FICHERO) { showToast(MSG_DESCARGA_NO_ES_FICHERO, 'error'); return; }
       showToast('Error de red al descargar el XML.', 'error');
     } finally {
       btnVf.disabled = false;
@@ -357,7 +355,7 @@ async function renderReportsView(container) {
     if (data.excluded.count > 0) {
       const note = document.createElement('p');
       note.style.cssText = 'margin:10px 0 0;font-size:12px;color:var(--neutral-500)';
-      note.textContent = `⚠ ${data.excluded.count} factura(s) sin desglose de líneas (total ${fmtMoneyEs(data.excluded.total, data.currency)}) no incluidas en el cuadro — revísalas a mano.`;
+      note.textContent = `⚠ ${data.excluded.count} ${data.excluded.count === 1 ? 'factura sin desglose de líneas' : 'facturas sin desglose de líneas'} (total ${fmtMoneyEs(data.excluded.total, data.currency)}) ${data.excluded.count === 1 ? 'no incluida' : 'no incluidas'} en el cuadro — revísalas a mano.`;
       vatCard.appendChild(note);
     }
   }
@@ -376,15 +374,14 @@ async function loadX2(card, year) {
   if (!hasAny) { card.style.display = 'none'; return; }
   card.style.display = 'block';
 
-  const METHOD_LABELS = {
-    card: '💳 Tarjeta', bizum: '📲 Bizum', transfer: '🏦 Transferencia',
-    bank: '🏦 Transferencia', manual: '✍️ Marcado a mano', cash: '💶 Efectivo',
-    mercadopago: '🌎 Mercado Pago',
-  };
+  // SCRUM-398 · las etiquetas salen de `paidViaEtiquetas.js`, que es la ÚNICA fuente y está atada
+  // por guard al conjunto cerrado de `paidVia.ts`. El mapa que había aquí declaraba `bizum`,
+  // `bank` y `mercadopago` —tres valores que NADIE escribe— y le faltaban los que sí llegan
+  // (`bizum_auto`, `card:stripe`, `mp`). Cuatro vocabularios distintos para el mismo dato.
   const maxEur = Math.max(1, ...(d.byMethod || []).map((m) => m.eur));
   const methodRows = (d.byMethod || []).map((m) => `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-      <span style="width:150px;flex:none;font-size:13px;color:var(--body)">${METHOD_LABELS[m.method] || m.method}</span>
+      <span style="width:150px;flex:none;font-size:13px;color:var(--body)">${etiquetaMetodoCobro(m.method)}</span>
       <div style="flex:1;background:var(--neutral-100);border-radius:6px;height:10px;overflow:hidden">
         <div style="width:${Math.round((m.eur / maxEur) * 100)}%;height:100%;background:var(--green-600);border-radius:6px"></div>
       </div>
@@ -910,8 +907,14 @@ function buildDesgloseEmpleado(filas, year, fmt, currency) {
   filas.forEach((f) => {
     const b = document.createElement('button');
     b.type = 'button';
-    // Objetivo táctil ≥44 px (AB6). Clases del inventario: seleccionado = primario.
-    b.style.cssText = 'min-height:44px';
+    // SCRUM-384 · el `style="min-height:44px"` que había aquí SE RETIRÓ, y no solo por redundante.
+    //
+    // La base ya da 44 px en móvil a `.btn-secondary`/`.btn-primary` sueltas desde SCRUM-352
+    // (`.btn-primary:not(.btn-sm)`), así que el objetivo táctil de AB6 se cumple sin esto. Pero
+    // al ser INLINE ganaba siempre: a 1280 px forzaba 44 donde la casa da 36, y este botón de
+    // filtro era 8 px más alto que sus hermanos en escritorio sin que nadie lo hubiera decidido.
+    //
+    // Clases del inventario: seleccionado = primario.
     b.textContent = f.label;
     const sincronizar = () => {
       const on = sel.has(f.key);

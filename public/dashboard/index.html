@@ -46,6 +46,15 @@
           <span>Trabajos</span>
         </button>
 
+        <!-- SCRUM-301 (C1): los albaranes pasan a ser SITIO propio. Va justo detrás de Trabajos
+             porque cuelgan de una obra, no de un cliente. B1 no había creado esta entrada — medido,
+             no supuesto. Rótulo APROBADO por el asesor el 5-ago-2026: es el nombre del documento,
+             no copy de acción (mismo criterio que C2 fijó para el título del detalle). -->
+        <button class="nav-item" data-view="albaranes" id="nav-albaranes">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2h6a2 2 0 012 2v1h2a1 1 0 011 1v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a1 1 0 011-1h2V4a2 2 0 012-2z"/><path d="M9 12h6M9 16h4"/></svg>
+          <span id="nav-albaranes-label">Albaranes</span>
+        </button>
+
         <button class="nav-item" data-view="customers">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
           <span>Clientes</span>
@@ -92,6 +101,12 @@
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
           <span>Facturas</span>
           <span id="nav-invoices-badge" class="nav-badge" style="display:none">0</span>
+        </button>
+
+        <!-- SCRUM-296 (A6): el libro que pide el asesor. Rotulo MARCADO: sin aprobar (regla 30). -->
+        <button class="nav-item" data-view="libro-registro" id="nav-libro-registro">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M9 7h7M9 11h7"/></svg>
+          <span id="nav-libro-registro-label">[PENDIENTE microcopy oficial] Libro de registro</span>
         </button>
 
         <button class="nav-item" data-view="expenses">
@@ -171,6 +186,9 @@
 
   <!-- Scripts -->
   <script src="./js/api.js"></script>
+  <!-- SCRUM-366: la escalera de la siguiente accion, compartida por el listado y el detalle.
+       Detras de api.js porque usa fmtMoneyEs; delante de las dos vistas que la consumen. -->
+  <script src="./js/jobNextAction.js"></script>
   <!-- SCRUM-210: detrás de api.js a propósito — reutiliza su `copyRojo` (copy aprobado). -->
   <script src="./js/semaforoFiscal.js"></script>
   <script src="./js/homeView.js"></script>
@@ -185,16 +203,40 @@
   <script src="./js/productsView.js"></script>
   <script src="./js/providersView.js"></script>
   <script src="./js/invoicesView.js"></script>
+  <script src="./js/nuevaFacturaModal.js"></script>
+  <!-- SCRUM-302 (C2): la LEY del patrón va PRIMERO — los registros la consumen al cargarse. -->
+  <script src="./js/patronDetalleAcciones.js"></script>
+  <script src="./js/invoiceActionsRegistry.js"></script>
+  <script src="./js/albaranActionsRegistry.js"></script>
+  <script src="./js/albaranDetailView.js"></script>
+  <!-- SCRUM-301 (C1): el listado global. Después del detalle porque enlaza a él. -->
+  <script src="./js/albaranesView.js"></script>
   <script src="./js/invoiceDetailView.js"></script>
+  <!-- SCRUM-316 (G1): la ley del patrón aplicada al Trabajo. Carga ANTES de jobDetailView.js, que pinta desde ella. -->
+  <script src="./js/jobActionsRegistry.js"></script>
+  <!-- SCRUM-318 (G3): constructores del contenido del rail. Puros: devuelven datos, no DOM. -->
+  <!-- SCRUM-319 (G4): el reparto de la pila. Antes de jobRailBlocks.js, que clasifica con el. -->
+  <script src="./js/jobDocsReparto.js"></script>
+  <!-- SCRUM-320 (G5): importes y huecos de «que falta para cobrar». Puros: devuelven datos. -->
+  <script src="./js/jobCobroHuecos.js"></script>
+  <!-- SCRUM-292 (A1): la revision ANTES de emitir. Puro: devuelve estados, no frases. -->
+  <script src="./js/facturaPreEmision.js"></script>
+  <script src="./js/jobRailBlocks.js"></script>
   <script src="./js/expensesView.js"></script>
+  <script src="./js/settingsSubmenus.js"></script>
+  <script src="./js/puertaSerie.js"></script>
   <script src="./js/settingsView.js"></script>
   <script src="./js/exportView.js"></script>
+  <script src="./js/libroRegistroView.js"></script> <!-- SCRUM-296 (A6) -->
   <script src="./js/teamView.js"></script>
+  <script src="./js/jobsCierreTrabajo.js"></script>
   <script src="./js/jobsView.js"></script>
   <script src="./js/signaturePad.js"></script>
   <script src="./js/jobDetailView.js"></script>
   <script src="./js/voiceInput.js"></script>
   <script src="./js/aiQuoteAssistant.js"></script>
+  <!-- SCRUM-398: antes de reportsView, que lo usa para traducir la forma de cobro. -->
+  <script src="./js/paidViaEtiquetas.js"></script>
   <script src="./js/reportsView.js"></script>
   <script src="./js/templatesView.js"></script>
   <script src="./js/quoteRequestsView.js"></script>

@@ -129,3 +129,103 @@ cualquier otra razón.
 * `scripts/test-staging-gated.mjs` — no suelta lo que adoptó.
 * `tests/scrum232-turno-contexto.test.mjs` — el vocabulario congelado, ahora con tres.
 * `tests/scrum268-cesion.test.mjs` (11, sin gate).
+
+---
+
+# SCRUM-268 · Punto 3 — un guard: nadie espera el turno en un bucle y lo toma
+
+**Fecha:** 4-ago-2026 · **Carril:** B (tooling) · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `5d0cebef4fee6f180d44e8de4f1a458f29bcd97e`
+**Tanda:** 1272 tests, 1205 pass, 0 fail, 67 skipped (`npm test` con exit **0**)
+**Ficheros:** `tests/_espera-automatica.mjs` (detector puro), `tests/scrum268-espera-automatica.test.mjs` (13)
+
+## Por qué NO lo absorbe la cesión de arriba
+
+La cesión hace que el esperador pierda **por construcción** un turno **cedido**. Pero el propio
+resumen de arriba lo dice: `soltar = «he terminado, queda libre para quien lo pille»`. Contra un
+turno **soltado** —el caso normal— el bucle sigue ganando siempre, porque pregunta más veces por
+segundo que una persona.
+
+Son dos mitades distintas del mismo ticket: **la cesión protege el turno prometido; este guard
+impide que el esperador exista en el repo.** Ninguna sustituye a la otra.
+
+## El incidente
+
+Un esperador en segundo plano consultaba `turno:estado` cada 60 s. En el intento 8 vio LIBRE y
+**tomó** el turno (`DESKTOP-T5MONF5.22844`, 14:01:05Z), quedándose con lo que un humano acababa de
+ceder a otra sesión.
+
+> **cualquier automatismo que espere y tome gana siempre a un humano que espera y decide**
+
+## Qué se prohíbe: la COMPOSICIÓN, no cada mitad
+
+Esperar **mirando** es legítimo; adquirir **una vez** es legítimo (es lo que hacen el CLI y el
+runner, fuera de todo bucle). **Reintentar hasta conseguirlo** es lo que gana siempre al humano.
+
+Por eso `refrescarLock` **no** cuenta como adquisición: medido, el runner adquiere fuera de todo
+bucle y dentro solo refresca. Quien refresca ya tiene el turno; no compite por él. Confundirlos
+habría puesto en rojo al runner legítimo.
+
+**Tras el merge de la cesión se volvió a medir:** la adopción del destinatario pasa por
+`adquirirLock` (que ahora consulta `esMiTurno` por dentro) y `cederLock` **entrega**, no toma. La
+cesión **no abrió ninguna vía de adquisición nueva**, así que el único símbolo vigilado sigue
+cubriéndolas todas.
+
+## AST, no texto — y el segundo motivo es el que decide
+
+1. Un `grep` no distingue «llamada **dentro** de un bucle» de «llamada y, aparte, un bucle».
+2. **Un guard de texto se caza a sí mismo** en el comentario que explica la prohibición
+   (SCRUM-176/168/3). Aquí ni se plantea: el código escrito dentro de una cadena **no produce nodos
+   de bucle**, así que los casos de prueba viven en el propio fichero del guard sin denunciarlo.
+   **La inmunidad es estructural, no una excepción.**
+
+**Censo derivado del árbol** (`scripts/`, `tests/`, `src/` → 434 ficheros), jamás una lista a mano:
+la lista a mano no avisa de lo que le falta.
+
+## El SUELO, y por qué no es decorativo
+
+«No hay esperador» y «no supe mirar» son **el mismo número** y significan lo contrario. Tres
+asserts lo separan: el censo recorrió ≥100 ficheros, el detector **ve** ≥50 bucles reales, y **ve**
+≥1 adquisición real.
+
+**Demostrado, no argumentado.** Con el detector cegado (`LOOPS → false`) **y un esperador real
+presente en el repo**, el test del repo dio **VERDE mintiendo** y lo cazó el suelo:
+`🔴 el detector solo vio 0 bucles en 434 ficheros`.
+
+## Un falso positivo real, cazado y corregido
+
+La primera versión marcó `tests/scrum188-turno-staging.test.mjs:246`, que recorre una **tabla de
+casos** contra un cliente falso para comprobar que `adquirirLock` **se niega**. Eso no espera: itera
+fixtures. **Un guard que tumba lo legítimo no distingue, y uno que no distingue se acaba
+desactivando.**
+
+Un esperador se reconoce porque **su continuación depende de obtener el turno**: **duerme** entre
+intentos · **corta** el flujo (`break`/`return`) · su **condición** está atada a algo que el cuerpo
+asigna. La tabla no tiene ninguna. El caso real queda como **control negativo, no como excepción**.
+
+## Qué cubre
+
+Las **dos vías** de adquirir: en proceso (`adquirirLock`) y por **subproceso** (spawn del CLI en
+modo `tomar`, o del runner). La forma **evasiva** (`const x = adquirir(); if (x)`). Y la
+**indirección dentro del fichero**, por punto fijo sobre las funciones locales.
+
+## Cobertura: medida, no supuesta
+
+Nace de una lección reciente — **SCRUM-253 se cerró con la suite en verde y ningún test ejecutaba
+su CLI**, así que su `ReferenceError` viajó a `main` sin que nada lo delatara (lo arregló SCRUM-258).
+Por eso aquí no basta con ver verde. Medido **sobre esta misma base**:
+
+```
+node --test --experimental-test-coverage tests/scrum268-espera-automatica.test.mjs
+  _espera-automatica.mjs | 100.00 líneas | 96.64 ramas | 96.00 funcs
+```
+
+## Límites declarados
+
+- **Fuera del repo no se ve.** El esperador del incidente era un comando en segundo plano, no un
+  fichero commiteado. Ningún guard de ficheros lo habría parado y este tampoco pararía al siguiente.
+  Esa superficie necesita un hook `PreToolUse` y **no está construida**.
+- **La indirección entre ficheros no se sigue** (bucle en A, adquisición en B).
+- **La recursión con `setTimeout` que se auto-reprograma** no se detecta como repetición.
+- Un bucle que adquiriera **sin dormir, sin cortar y sin condición atada** no caería — pero eso no
+  es un esperador, es un bucle infinito de adquisiciones: un fallo distinto y ruidoso.

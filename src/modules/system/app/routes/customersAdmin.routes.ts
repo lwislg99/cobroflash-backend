@@ -6,6 +6,15 @@ import { prisma } from '../../../../core/db/prisma';
 import { listCustomerEvents } from '../../customerEvents.service';
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (D2: borrado = admin)
 
+// SCRUM-312 (D1): el CSV se parsea en el SERVIDOR, con las primitivas compartidas. Antes lo
+// hacia el navegador, y eso dejaba dos parseos vivos del mismo formato que ni siquiera eran
+// equivalentes (el del navegador no honraba `""` ni el BOM).
+import { trocearCsv } from '../../../../core/csv/csv';
+import {
+  decodificarCsv, proponerMapeo, importarClientes, csvDeRechazos,
+  type Codificacion, type CampoCliente,
+} from '../../domain/importarClientes.service';
+
 const router = Router();
 
 router.get('/', async (req, res) => {
@@ -74,54 +83,86 @@ router.get('/:id/portal-url', async (req, res) => {
   }
 });
 
-// POST /admin/customers/import — importación masiva desde CSV (parseo en cliente, batch en servidor)
-router.post('/import', async (req, res) => {
+/**
+ * POST /admin/customers/import/preparar — PASO 1: leer el fichero y PROPONER.
+ *
+ * Devuelve la primera fila ya decodificada (para la pantalla «¿Se ven bien los acentos?») y el
+ * mapeo propuesto con su confianza (para «Esto es lo que hemos entendido»). NO escribe nada.
+ *
+ * `codificacion` opcional: cuando el usuario pulsa «No, prueba de otra forma», el navegador la
+ * manda y aqui se reintenta con la otra — no se adivina dos veces lo mismo.
+ */
+router.post('/import/preparar', requireRole('admin'), async (req, res) => {
   try {
-    const rows: Array<{ name?: string; phone?: string; email?: string; notes?: string }> =
-      Array.isArray(req.body?.customers) ? req.body.customers : [];
+    const base64 = String(req.body?.fichero ?? '');
+    if (!base64) return res.status(400).json({ error: 'no_data', message: 'No hemos recibido ningún archivo. Vuelve a elegirlo.' });
 
-    if (rows.length === 0) return res.status(400).json({ error: 'no_data' });
-    if (rows.length > 500)  return res.status(400).json({ error: 'too_many_rows', max: 500 });
-
-    const merchantId = req.merchantId;
-    let created = 0, skipped = 0, errors = 0;
-    const errorList: string[] = [];
-
-    for (const row of rows) {
-      const name = String(row.name || '').trim();
-      if (!name) { errors++; continue; }
-
-      const phone = row.phone ? String(row.phone).trim() : null;
-      const email = row.email ? String(row.email).trim().toLowerCase() : null;
-      const notes = row.notes ? String(row.notes).trim() : null;
-
-      try {
-        // Dedup: si ya existe un cliente con el mismo teléfono o email → skip
-        if (phone || email) {
-          const existing = await prisma.customer.findFirst({
-            where: {
-              merchantId,
-              OR: [
-                ...(phone ? [{ phone }] : []),
-                ...(email ? [{ email }] : []),
-              ],
-            },
-          });
-          if (existing) { skipped++; continue; }
-        }
-
-        await prisma.customer.create({ data: { merchantId, name, phone, email, notes } });
-        created++;
-      } catch (e: any) {
-        errors++;
-        errorList.push(`${name}: ${e?.message?.slice(0, 80)}`);
-      }
+    const forzar = req.body?.codificacion as Codificacion | undefined;
+    const d = decodificarCsv(Buffer.from(base64, 'base64'), forzar);
+    const { cabecera } = trocearCsv(d.texto);
+    if (cabecera.length === 0) {
+      return res.status(400).json({ error: 'csv_vacio', message: 'El archivo no tiene ninguna fila.' });
     }
 
-    return res.json({ ok: true, created, skipped, errors, errorList: errorList.slice(0, 10) });
+    return res.json({
+      ok: true,
+      codificacion: d.codificacion,
+      alternativa: d.alternativa,
+      primeraFila: d.primeraFila,
+      columnas: proponerMapeo(cabecera),
+    });
   } catch (err) {
+    console.error('[POST /admin/customers/import/preparar]', err);
+    return res.status(500).json({ error: 'internal_error', message: 'No hemos podido leer el archivo.' });
+  }
+});
+
+// POST /admin/customers/import — importación masiva desde CSV (parseo en cliente, batch en servidor)
+router.post('/import', requireRole('admin'), async (req, res) => {
+  try {
+    // PASO 2: el fichero otra vez + la codificacion y el mapeo YA CONFIRMADOS por el usuario.
+    // Aqui no se adivina nada: si falta el mapeo, se dice.
+    const base64 = String(req.body?.fichero ?? '');
+    if (!base64) return res.status(400).json({ error: 'no_data', message: 'No hemos recibido ningún archivo. Vuelve a elegirlo.' });
+
+    const mapeo = (req.body?.mapeo ?? {}) as Partial<Record<CampoCliente, number>>;
+    if (mapeo.name == null) {
+      return res.status(400).json({
+        error: 'sin_columna_nombre',
+        message: 'Dinos cuál es la columna del nombre: sin ella no podemos crear los clientes.',
+      });
+    }
+
+    const { texto } = decodificarCsv(Buffer.from(base64, 'base64'), req.body?.codificacion as Codificacion | undefined);
+
+    // Tope de filas, como antes. El limite es del lote, no del formato.
+    const { filas } = trocearCsv(texto);
+    if (filas.length === 0) return res.status(400).json({ error: 'no_data', message: 'El archivo no tiene ninguna fila de datos.' });
+    if (filas.length > 500) return res.status(400).json({ error: 'too_many_rows', max: 500, message: 'Este archivo tiene más de 500 filas. Divídelo en varios y súbelos de uno en uno.' });
+
+    // TENENCIA: el merchant sale de la sesion, JAMAS del cuerpo (regla 2). Un import no puede
+    // meter clientes en el merchant de otro.
+    const r = await importarClientes(req.merchantId as number, texto, mapeo, prisma.customer);
+
+    return res.json({
+      ok: true,
+      creados: r.creados,
+      omitidos: r.omitidos,
+      // TODAS las rechazadas, sin capar a 10: el ticket lo pide explicito y capar era el
+      // defecto que tenia el importador viejo.
+      rechazos: r.rechazos.map((x) => ({ fila: x.fila, motivo: x.motivo })),
+      // El CSV para «Descargar las filas con errores», ya listo.
+      csvRechazos: r.rechazos.length ? csvDeRechazos(r) : null,
+    });
+  } catch (err: any) {
+    if (err?.message === 'sin_columna_nombre') {
+      return res.status(400).json({
+        error: 'sin_columna_nombre',
+        message: 'Dinos cuál es la columna del nombre: sin ella no podemos crear los clientes.',
+      });
+    }
     console.error('[POST /admin/customers/import]', err);
-    return res.status(500).json({ error: 'internal_error' });
+    return res.status(500).json({ error: 'internal_error', message: 'No hemos podido importar el archivo.' });
   }
 });
 

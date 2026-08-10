@@ -98,7 +98,13 @@ export type AuditAction =
   //     su guard (§8 T-1…T-4). Eso entra CON el catálogo, no antes.
   | 'aviso_ambar_mostrado'
   | 'aviso_ambar_decidido'
-  | 'bloqueo_rojo_mostrado';
+  | 'bloqueo_rojo_mostrado'
+  // SCRUM-244 (RGPD-1) · DOS acciones y no una, por decisión del fundador (10-ago-2026): borrar y
+  // anonimizar son actos DISTINTOS. Si compartieran acción, dentro de un año nadie podría saber
+  // qué se hizo con los datos de quién — y ése es exactamente el rastro que este ticket existe
+  // para dejar. La regla 5 (unión cerrada) se levanta solo para estas dos.
+  | 'merchant_borrado'
+  | 'merchant_anonimizado';
 
 /**
  * Las que EXIGEN constancia: si no se pueden registrar, la acción NO ocurre.
@@ -159,7 +165,28 @@ export const SOBRE_VERSION = 1;
  * camino de emisión más transitado (C1) lo dispara el CLIENTE FINAL sin login. Sin este
  * campo, una factura emitida por el cliente quedaba atribuida al propietario.
  */
-export type ActorTipo = 'pro_propietario' | 'pro_equipo' | 'cliente_final' | 'sistema' | 'psp';
+export type ActorTipo =
+  | 'pro_propietario'
+  | 'pro_equipo'
+  | 'cliente_final'
+  | 'sistema'
+  | 'psp'
+  // SCRUM-381 · un script de siembra. Decisión del asesor (6-ago-2026), y el eje importa:
+  //
+  //   `camino` contesta POR QUÉ VÍA se emitió el número, y un número sembrado SÍ se emite por
+  //   una vía real — el sembrador llama a este mismo código. Meterle un «C8» ensuciaría una
+  //   lista que enumera CAMINOS DEL PRODUCTO con algo que no lo es. Lo que de verdad es
+  //   distinto es QUIÉN LO PIDIÓ: ni un profesional, ni el sistema actuando por un merchant,
+  //   sino un script. `actor` es exactamente el eje donde vive el «esto no es real».
+  //
+  // Y `sistema` NO se reutiliza para esto — ni como atajo: ya lo escribe un camino real
+  // (`lib/invoicing.ts`, `ref:'ensureInvoiceForCharge'`), así que un número sembrado dejaría
+  // de distinguirse de una emisión de verdad mirando el AuditLog, que es justo lo que hay que
+  // poder hacer. `ref` matiza (qué sembrador, qué tanda) pero NO clasifica.
+  //
+  // ⚠️ NINGUNA ruta real puede escribirlo. Lo sostiene `tests/scrum381-semilla.test.mjs`: el
+  // día que alguien lo use para salir de un apuro, el valor deja de significar nada.
+  | 'semilla';
 
 export interface ActorAudit {
   tipo: ActorTipo;

@@ -16,6 +16,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { soloEjecutable } from './_guard-texto.mjs';
+import registro from '../public/dashboard/js/invoiceActionsRegistry.js'; // SCRUM-283: la visibilidad por estado vive aquí
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -94,10 +95,15 @@ test('SCRUM-153 · listado y detalle usan el mapeo canónico', () => {
 // ── 4. Una anulada no vuelve: ni en el backend ni en la pantalla ─────────────────────────
 
 test('SCRUM-153 · el detalle no ofrece «Marcar como PAGADA» sobre una anulada', () => {
-  const codigo = soloEjecutable(DETALLE);
-  assert.ok(
-    /st !== 'annulled'/.test(codigo),
-    '🔴 vuelve a pintarse el botón de cambiar estado sobre una factura anulada. El backend lo ' +
+  // Tras SCRUM-283 la visibilidad por estado vive en el REGISTRO declarativo, no en un `if` de la
+  // vista. La garantía es la misma —Parte L no declara transición que salga de `annulled`— y ahora
+  // la fija el registro: btnTogglePaid (Marcar como PAGADA/PENDIENTE) queda OCULTA en annulled, así
+  // que el patrón no lo pinta en ningún destino (primaria/secundaria/⋮).
+  const toggle = registro.INVOICE_ACTION_REGISTRY.find((a) => a.id === 'btnTogglePaid');
+  assert.ok(toggle, '🔴 btnTogglePaid ya no está en el registro de acciones de la factura');
+  assert.equal(
+    toggle.destinos.annulled, 'oculta',
+    '🔴 el registro deja «Marcar como PAGADA/PENDIENTE» visible sobre una anulada. El backend lo ' +
       'rechaza con 409, pero un botón que siempre falla es peor que no tenerlo: enseña que la ' +
       'pantalla miente. La Parte L no declara NINGUNA transición que salga de `annulled`.',
   );

@@ -120,6 +120,65 @@ function renderJobGroups(list, jobs, container) {
   }
 }
 
+// SCRUM-344 · SECCIÓN PROPIA DEL CIERRE — la excepción escrita en la regla 5: lo destructivo vive
+// en el «⋮» SALVO los actos irreversibles, que van en su bloque CON SU EXPLICACIÓN. Aquí el riesgo
+// no es el clic accidental (esconder), es NO ENTENDER lo que se hace (explicar).
+//
+// SE AVISA, NO SE IMPIDE (decisión del fundador): cerrar con saldo puede ser legítimo —cobraste por
+// fuera, o lo das por perdido—. Impedirlo obligaría a marcar pagado lo que no se pagó para poder
+// cerrar, y ensuciar el dato de cobro es peor que el problema que resuelve.
+//
+// LAS DOS CARAS: sin saldo por facturar la sección solo EXPLICA y cerrar sigue siendo UN clic, sin
+// fricción nueva. La condición y el importe salen de `avisoCierreTrabajo` (jobsCierreTrabajo.js),
+// que es la única copia de la regla; aquí no se decide nada.
+//
+// NI UNA PALABRA SUELTA: todo el texto visible sale de `CIERRE_TEXTOS` (regla 30, con guard). Lo
+// único que esta función escribe es el IMPORTE, que es un número y no microcopy.
+function jobCierreSection(j, patch) {
+  const aviso = avisoCierreTrabajo(j);
+  const importeFmt = fmtMoneyEs(aviso.importe, aviso.currency);
+
+  const sec = document.createElement('div');
+  sec.className = 'job-cierre';
+  sec.style.cssText = 'border-top:1px solid var(--neutral-200);padding-top:12px;display:flex;flex-direction:column;gap:8px;align-items:flex-start';
+
+  const titulo = document.createElement('div');
+  titulo.style.cssText = 'font-size:12px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em';
+  titulo.textContent = textoCierre('titulo', importeFmt);
+  sec.appendChild(titulo);
+
+  const explicacion = document.createElement('div');
+  explicacion.style.cssText = 'font-size:12.5px;color:var(--muted);line-height:1.5';
+  explicacion.textContent = textoCierre('explicacion', importeFmt);
+  sec.appendChild(explicacion);
+
+  if (aviso.haySaldoPendiente) {
+    // Inventario AB3: `.alert.warning`, componente existente. Cero tokens nuevos.
+    // El importe viaja DENTRO de la frase (va en la ranura, no en un elemento aparte): un número
+    // suelto al lado de un aviso obliga al usuario a relacionarlos él.
+    const banda = document.createElement('div');
+    banda.className = 'alert warning';
+    banda.style.cssText = 'width:100%;font-size:12.5px';
+    banda.textContent = textoCierre('avisoSaldo', importeFmt);
+    sec.appendChild(banda);
+  }
+
+  const btnCerrar = document.createElement('button');
+  btnCerrar.className = 'btn-ghost btn-sm';
+  // AB6 · objetivo al pulgar. `btn-sm` se queda en 30 px (styles.css:442) y esta es la acción que
+  // no se puede deshacer: la que menos puede pulsarse por error de puntería.
+  btnCerrar.style.minHeight = '44px';
+  btnCerrar.textContent = textoCierre('boton', importeFmt);
+  btnCerrar.addEventListener('click', () => {
+    // AVISO, NO BLOQUEO: se puede seguir. Sin saldo no hay confirm — un clic, como siempre.
+    if (aviso.haySaldoPendiente && !window.confirm(textoCierre('confirmar', importeFmt))) return;
+    patch({ status: 'cerrado' }, '🔒 Trabajo cerrado');
+  });
+  sec.appendChild(btnCerrar);
+
+  return sec;
+}
+
 function jobCard(j, container) {
   const meta = JOB_STATE_META[j.status] || JOB_STATE_META.pendiente_agendar;
   const card = document.createElement('div');
@@ -135,8 +194,13 @@ function jobCard(j, container) {
   const aceptado = Number(j.totalAceptado || 0);
   const cobrado = Number(j.totalCobrado || 0);
   const cur = j.quote?.currency || 'EUR';
-  const showCobro = aceptado > 0;
-  const pct = showCobro ? Math.min(100, Math.round((cobrado / aceptado) * 100)) : 0;
+  // SCRUM-363 · el eje lo decide el BACKEND (`importeReferencia`), no esta vista. Antes era
+  // `aceptado > 0`, un segundo criterio: en cuanto el eje puede venir de lo facturado, el mismo
+  // Trabajo salía «Pagado» en el detalle y sin chip aquí. El chip se pinta si hay veredicto; la
+  // barra necesita además un importe contra el que dibujar el porcentaje.
+  const referencia = Number(j.importeReferencia ?? 0);
+  const showCobro = !!j.estadoCobro && referencia > 0;
+  const pct = showCobro ? Math.min(100, Math.round((cobrado / referencia) * 100)) : 0;
   const cobroCls = cobroPillClass(j.estadoCobro);
   const isTecnico = window.appUserRole === 'tecnico'; // SCRUM-89: "Cobrar el resto" es admin-only (403)
 
@@ -151,7 +215,7 @@ function jobCard(j, container) {
       </div>
       <span style="flex:none;white-space:nowrap;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;${meta.pill}">${meta.label}</span>
     </div>
-    ${showCobro ? progressBar(pct, j.estadoCobro, { cobrado, aceptado, currency: cur }) : ''}
+    ${showCobro ? progressBar(pct, j.estadoCobro, { cobrado, aceptado: referencia, currency: cur }) : ''}
     <div class="job-actions" style="display:flex;gap:8px;flex-wrap:wrap"></div>
   `;
 
@@ -203,7 +267,30 @@ function jobCard(j, container) {
     actions.appendChild(ics);
   }
   if (j.status === 'en_curso') {
-    addBtn('✅ Marcar terminado', 'btn-primary btn-sm', () => patch({ status: 'terminado' }, '✅ Trabajo terminado'));
+    // SCRUM-366: baja a SECUNDARIO. Es un movimiento de la FSM, no «la siguiente acción»: esa la
+    // decide la escalera compartida (abajo) y era la que discrepaba con el detalle.
+    addBtn('✅ Marcar terminado', 'btn-secondary btn-sm', () => patch({ status: 'terminado' }, '✅ Trabajo terminado'));
+  }
+
+  // ── SCRUM-366 · LA SIGUIENTE ACCIÓN SALE DE LA ESCALERA COMPARTIDA ───────────────────
+  //
+  // Antes esta tarjeta decidía por su cuenta —`en_curso` → «Marcar terminado»— mientras el
+  // detalle consultaba `jobNextAction`. Mismo Trabajo, mismo estado, dos respuestas distintas y
+  // nada que avisara. No fue descuido: la escalera vivía DENTRO de `jobDetailView.js` y desde
+  // aquí no era nombrable.
+  //
+  // ⚠️ EL BOTÓN NAVEGA AL DETALLE, no ejecuta. Y es deliberado: duplicar aquí la EJECUCIÓN
+  // (collect-rest, enviar-para-firmar, emitir…) reintroduciría exactamente el defecto que este
+  // ticket cierra, solo que un nivel más abajo — dos copias del «cómo» en vez de dos del «qué».
+  // Un solo ejecutor, en el detalle; la lista dice qué toca y lleva hasta allí.
+  // `!isTecnico` es EXACTAMENTE lo que pasa el detalle (`jobDetailView.js`), y las dos lo derivan
+  // de `window.appUserRole`. Si una calculara el rol distinto, volverían a discrepar por otro
+  // camino — el mismo defecto con otro disfraz.
+  const siguiente = typeof jobNextAction === 'function' ? jobNextAction(j, !isTecnico) : null;
+  if (siguiente) {
+    addBtn(siguiente.label, 'btn-primary btn-sm', () => {
+      if (window.renderAppView) window.renderAppView('job-detail', { jobId: j.id });
+    });
   }
   if (j.status === 'terminado') {
     if (j.remaining && j.remaining.amount > 0) {
@@ -228,7 +315,9 @@ function jobCard(j, container) {
       // SCRUM-89: "Cobrar el resto" es admin-only (403). Técnico → deshabilitado con explicación.
       if (isTecnico) { lockActionForRole(cobrarBtn); actions.appendChild(roleLockedNote()); }
     }
-    addBtn('Cerrar trabajo', 'btn-ghost btn-sm', () => patch({ status: 'cerrado' }, '🔒 Trabajo cerrado'));
+    // SCRUM-344: «Cerrar trabajo» YA NO va suelto en este renglón — ver jobCierreSection, que lo
+    // pinta en su propia sección al pie de la tarjeta. Cerrar es el único acto IRREVERSIBLE de la
+    // FSM y mata «Cobrar el resto»; eso se explica, no se esconde.
   }
 
   // Notas internas (blur = guardar)
@@ -245,6 +334,10 @@ function jobCard(j, container) {
     }
   });
   card.appendChild(notes);
+
+  // SCRUM-344: la sección propia del cierre va la ÚLTIMA de la tarjeta — separada del día a día,
+  // con su explicación delante. Solo existe cuando la FSM permite cerrar (`terminado → cerrado`).
+  if (puedeCerrarTrabajo(j)) card.appendChild(jobCierreSection(j, patch));
 
   // SCRUM-12: la tarjeta abre el detalle del Trabajo; los controles internos (botones,
   // enlace .ics, datetime de agendar, notas) NO disparan la navegación (guard por target).

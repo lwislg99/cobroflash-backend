@@ -25,6 +25,31 @@ function obTradeLabel(value) {
   return (OB_TRADES.find((t) => t.value === value) || {}).label || '';
 }
 
+// SCRUM-364 · la lista de oficios se PUBLICA para que otras vistas la reutilicen en vez de
+// escribir la suya. No es ceremonia: el censo de SCRUM-310 encontró TRES listas del mismo gremio
+// escritas a mano en el producto, y la cuarta habría sido la de `productsView`, que necesita
+// ofrecer el oficio a quien se quedó sin él.
+//
+// Por qué `window.` y no fiarse del ámbito compartido de los scripts clásicos: `OB_TRADES` es un
+// `const` de nivel superior y hoy NO lo usa ningún otro fichero — no hay precedente en el panel de
+// que eso funcione. El que sí lo tiene (`updateMerchantProfile`, usado desde tres vistas) es una
+// `function` de `api.js`. Publicarlo convierte una suposición sobre ámbitos en un contrato.
+window.OB_TRADES = OB_TRADES;
+window.obTradeLabel = obTradeLabel;
+
+// SCRUM-313 (D2) · el año de la pregunta sale de la FECHA ACTUAL, jamás cableado. Cablearlo haría
+// que el 1 de enero la pantalla preguntara por el año pasado y produjera un arranque que
+// `resolveSeriesSeq` descarta — el clásico que se descubre en enero con un cliente delante.
+// SCRUM-338 · el aviso de que el catálogo no se cargó. Microcopy APROBADA por el fundador
+// (9-ago-2026), literal: dice que no se cargó, que no pasa nada, y DÓNDE está el botón — mandar a
+// alguien a comprobar sin decirle dónde es mandarle a una pared, que es el defecto del ticket.
+const OB_MSG_CATALOGO_FALLO =
+  'No hemos podido cargar el catálogo de tu gremio. Puedes cargarlo cuando quieras desde Productos.';
+window.OB_MSG_CATALOGO_FALLO = OB_MSG_CATALOGO_FALLO;
+
+const ANIO_EN_CURSO = new Date().getFullYear();
+window.ANIO_EN_CURSO = ANIO_EN_CURSO;
+
 function showOnboardingWizard(onComplete) {
   if (document.getElementById('onboarding-backdrop')) return;
 
@@ -38,6 +63,11 @@ function showOnboardingWizard(onComplete) {
     firstProduct: null,      // { name, price } — para el paso WOW
     customerName: '',
     customerPhone: '',
+    // SCRUM-313 (D2) · la continuidad de numeracion. `vieneDeOtroSitio` arranca en null —ni si ni
+    // no— para que la pantalla no de por elegida una respuesta que el profesional no ha dado.
+    vieneDeOtroSitio: null,
+    serieNumero: '',
+    seriePrefijo: 'CF',
   };
 
   const backdrop = document.createElement('div');
@@ -121,6 +151,125 @@ function showOnboardingWizard(onComplete) {
       },
     },
 
+    // ── Paso 2 · SCRUM-313 (D2) · ¿POR QUÉ NÚMERO VAS? ──────────────────────────────────────
+    //
+    // Un autónomo que ya factura no se cambia de programa porque el nuevo sea más bonito. No se
+    // cambia porque romper la serie de numeración le da miedo con Hacienda. Ésta es la pregunta
+    // que quita ese miedo, y va AQUÍ y no en Configuración: quien viene de otro programa no entra
+    // en Configuración el primer día — entra, hace un presupuesto, y descubre el problema cuando
+    // ya ha emitido tres facturas mal numeradas. La pregunta se hace cuando la respuesta sirve.
+    //
+    // 🔴 EL AÑO VA DENTRO DE LA PREGUNTA, y sale de la FECHA ACTUAL, nunca cableado. Preguntar
+    // «¿de qué año es esa factura?» sería pedirle al usuario que resuelva un problema nuestro; y
+    // cablear el año haría que el 1 de enero la pantalla preguntara por el año pasado y produjera
+    // un arranque que `resolveSeriesSeq` descarta. Al llevar el año dentro, la respuesta ya trae
+    // el par completo que necesita el mecanismo.
+    {
+      title: `¿Ya has facturado en ${ANIO_EN_CURSO}?`,
+      render: () => `
+        <div id="ob-serie-elec" style="display:flex;gap:10px;margin:4px 0 16px">
+          <button type="button" id="ob-serie-si" class="btn-secondary" style="flex:1;min-height:44px">Sí</button>
+          <button type="button" id="ob-serie-no" class="btn-secondary" style="flex:1;min-height:44px">No, empiezo ahora</button>
+        </div>
+        <div id="ob-serie-detalle" style="display:none">
+          <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">
+            ¿Cuál fue el número de tu última factura de ${ANIO_EN_CURSO}?</label>
+          <div style="display:flex;gap:10px">
+            <div style="flex:0 0 40%">
+              <label for="ob-serie-prefijo" style="font-size:12px;color:#6b756f;display:block;margin-bottom:4px">Serie</label>
+              <input id="ob-serie-prefijo" type="text" value="${esc(state.seriePrefijo)}" maxlength="10"
+                style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
+            </div>
+            <div style="flex:1">
+              <label for="ob-serie-numero" style="font-size:12px;color:#6b756f;display:block;margin-bottom:4px">Número</label>
+              <input id="ob-serie-numero" type="number" min="1" inputmode="numeric" placeholder="41"
+                style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
+            </div>
+          </div>
+          <p style="font-size:12px;color:#6b756f;margin:8px 0 14px">
+            Seguimos por ahí para que tu numeración no tenga saltos.</p>
+          <div id="ob-serie-previa" aria-live="polite"
+            style="background:#f4f7f4;border:1px solid #cdd2cb;border-radius:10px;padding:12px;display:none">
+            <p style="margin:0 0 4px;font-size:13px;color:#333c37">Tu primera factura con YaQu será:
+              <strong id="ob-serie-numero-previa" style="font-size:15px;white-space:nowrap"></strong></p>
+            <p style="margin:0;font-size:12px;color:#6b756f">
+              Compruébalo bien: cuando emitas esa factura, este número ya no se puede cambiar.</p>
+          </div>
+          <p id="ob-serie-error" role="alert" style="display:none;font-size:13px;color:#b91c1c;margin:10px 0 0"></p>
+        </div>`,
+      montar: () => {
+        const detalle = document.getElementById('ob-serie-detalle');
+        const previa  = document.getElementById('ob-serie-previa');
+        const salida  = document.getElementById('ob-serie-numero-previa');
+        const numero  = document.getElementById('ob-serie-numero');
+        const prefijo = document.getElementById('ob-serie-prefijo');
+        const error   = document.getElementById('ob-serie-error');
+        const btnSi   = document.getElementById('ob-serie-si');
+        const btnNo   = document.getElementById('ob-serie-no');
+
+        const marcar = (elegido) => {
+          state.vieneDeOtroSitio = elegido;
+          btnSi.className = elegido ? 'btn-primary' : 'btn-secondary';
+          btnNo.className = elegido ? 'btn-secondary' : 'btn-primary';
+          detalle.style.display = elegido ? 'block' : 'none';
+          if (elegido) numero.focus();
+        };
+
+        // ── LA VISTA PREVIA EN VIVO — el corazón de la pantalla, no un adorno ───────────────
+        // Es lo único que convierte «41» en «2026-CF-042» delante de sus ojos ANTES de que sea
+        // irreversible. Sin ella, el aviso de «ya no se puede cambiar» no protege nada: el
+        // usuario no sabría qué está confirmando.
+        //
+        // Y NO SE CALCULA AQUÍ. Se la pide al servidor, que la resuelve con `resolveSeriesSeq` y
+        // `formatInvoiceNumber` — quien de verdad decide al emitir. Dos sitios calculando el
+        // mismo número es exactamente cómo la vista previa dice una cosa y la factura otra.
+        let pedido = 0;
+        const refrescarPrevia = async () => {
+          const n = Number(numero.value);
+          error.style.display = 'none';
+          if (!Number.isInteger(n) || n < 1) { previa.style.display = 'none'; return; }
+          const mio = ++pedido;
+          try {
+            const r = await apiRequest('/admin/onboarding/serie/previa', {
+              method: 'POST',
+              body: JSON.stringify({ vieneDeOtroSitio: true, ultimoNumero: n, serie: prefijo.value.trim() }),
+            });
+            if (mio !== pedido) return; // llegó tarde: manda la última pulsación
+            salida.textContent = r.proximoNumero;
+            previa.style.display = 'block';
+          } catch (e) {
+            if (mio !== pedido) return;
+            previa.style.display = 'none';
+            error.textContent = (e && e.data && e.data.titulo)
+              ? `${e.data.titulo}. ${e.message}`
+              : (e && e.message) || 'No se pudo calcular el número.';
+            error.style.display = 'block';
+          }
+        };
+
+        btnSi.addEventListener('click', () => { marcar(true); refrescarPrevia(); });
+        btnNo.addEventListener('click', () => marcar(false));
+        numero.addEventListener('input', refrescarPrevia);
+        prefijo.addEventListener('input', refrescarPrevia);
+        marcar(state.vieneDeOtroSitio === true);
+      },
+      textoBoton: () => (state.vieneDeOtroSitio ? 'Es correcto' : 'Siguiente'),
+      save: async () => {
+        state.serieNumero  = document.getElementById('ob-serie-numero')?.value || '';
+        state.seriePrefijo = document.getElementById('ob-serie-prefijo')?.value.trim() || state.seriePrefijo;
+        // Se manda SIEMPRE, también en «No, empiezo ahora»: el servidor escribe el par completo y
+        // así el arranque queda declarado en vez de quedar a merced del valor por defecto.
+        await apiRequest('/admin/onboarding/serie', {
+          method: 'POST',
+          body: JSON.stringify({
+            vieneDeOtroSitio: state.vieneDeOtroSitio === true,
+            ultimoNumero: state.vieneDeOtroSitio === true ? Number(state.serieNumero) : undefined,
+            serie: state.vieneDeOtroSitio === true ? state.seriePrefijo : undefined,
+          }),
+        }).catch(() => {});
+      },
+    },
+
     // ── Paso 3 ──────────────────────────────────────────────
     {
       title: 'Tu catálogo en 1 clic',
@@ -162,7 +311,26 @@ function showOnboardingWizard(onComplete) {
             if (Array.isArray(items) && items.length) {
               state.firstProduct = { name: items[0].name, price: items[0].price };
             }
-          } catch (_) { /* no bloquear el onboarding por esto */ }
+          } catch (_) {
+            // ═════════════════════════════════════════════════════════════════════════════════
+            // 🔴 SCRUM-338 · NO BLOQUEAR SIGUE SIENDO CORRECTO. CALLAR, NO.
+            //
+            // Este `catch` estaba vacío: si la carga del catálogo fallaba, el profesional
+            // terminaba el wizard CREYENDO que tenía catálogo, y lo que veía después —una lista
+            // vacía— era indistinguible de «mi gremio no tiene catálogo predefinido». No había
+            // forma de saberlo, ni para él ni para nosotros. `lifecycle.service.ts` lo dejó
+            // escrito como el cuarto motivo, «el que FALLA EN SILENCIO».
+            //
+            // Sigue sin bloquear —un catálogo que no carga no puede impedir empezar a trabajar—,
+            // pero ahora: (1) se marca el fallo en el estado y (2) se DICE, con la salida que hoy
+            // SÍ existe: SCRUM-364 puso el botón en Productos, y si no hay oficio lo pregunta en
+            // vez de fallar. Mandar a alguien a una pared es lo que este ticket quita.
+            // Sigue sin bloquear —un catálogo que no carga no puede impedir empezar a trabajar—,
+            // pero ya no calla: el fallo queda en el estado Y se dice, con la salida que hoy sí
+            // existe (SCRUM-364 puso el botón en Productos, y si no hay oficio lo pregunta).
+            state.catalogFallo = true;
+            if (typeof showToast === 'function') showToast(OB_MSG_CATALOGO_FALLO, 'warn');
+          }
         }
       },
     },
@@ -234,6 +402,9 @@ function showOnboardingWizard(onComplete) {
       <h2 style="margin:0 0 8px;font-size:17px;color:#0f1c17">${step.title}</h2>
       ${step.render()}
     `;
+    // SCRUM-313: los pasos con controles vivos necesitan enganchar sus listeners DESPUES de que
+    // el HTML este en el DOM. Aditivo: un paso sin `montar` se comporta exactamente igual.
+    if (typeof step.montar === 'function') step.montar();
     renderFooter();
     renderDots();
   }
@@ -253,7 +424,7 @@ function showOnboardingWizard(onComplete) {
         ? '<button id="ob-back" style="flex:1;padding:11px;border-radius:10px;border:1px solid #e7e9e5;background:#fff;font-size:14px;cursor:pointer;color:#6b756f">← Atrás</button>'
         : '<button id="ob-skip" style="flex:1;padding:11px;border-radius:10px;border:1px solid #e7e9e5;background:#fff;font-size:14px;cursor:pointer;color:#6b756f">Saltar por ahora</button>'}
       <button id="ob-next" style="flex:2;padding:11px;border-radius:10px;border:none;background:#22c55e;color:#052e16;font-weight:700;font-size:15px;cursor:pointer">
-        Siguiente →
+        ${typeof step.textoBoton === 'function' ? step.textoBoton() : 'Siguiente →'}
       </button>
     `;
     document.getElementById('ob-skip')?.addEventListener('click', complete);

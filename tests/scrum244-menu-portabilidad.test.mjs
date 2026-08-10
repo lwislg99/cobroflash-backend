@@ -84,8 +84,12 @@ test('SCRUM-244 · la portabilidad TIENE DÓNDE PULSARSE, y el botón llama a SU
       '  se intentó abrir a mano detrás del hash del dashboard y la petición nunca salió del\n' +
       '  navegador. Un endpoint sin sitio donde pulsar no existe para quien lo necesita.',
   );
+  // ⚠️ SCRUM-405: esto afirmaba el literal `fetch('/admin/exports/portabilidad.zip'`, y por tanto
+  // vigilaba la ORTOGRAFÍA de la llamada, no el cableado. Cayó cuando la descarga pasó a ir por
+  // `descargarBinario` — o sea, falló porque algo se MOVIÓ, no porque se rompiera: el defecto de
+  // SCRUM-381. Ahora se afirma la PROPIEDAD —que la vista pide ESA ruta— sin fijar cómo la pide.
   assert.ok(
-    VISTA.includes("fetch('/admin/exports/portabilidad.zip'"),
+    VISTA.includes("'/admin/exports/portabilidad.zip'"),
     '🔴 el botón de portabilidad no llama a `/admin/exports/portabilidad.zip`',
   );
 });

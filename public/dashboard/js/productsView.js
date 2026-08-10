@@ -51,6 +51,17 @@ function renderProductsView(container) {
     importFile.style.display = "none";
     headActions.appendChild(importFile);
 
+    // SCRUM-365 · exportar e importar el tarifario son admin-only en el servidor
+    // (`requireRole('admin')`). Sin esto, un Operario vería los dos botones, elegiría un fichero y
+    // se llevaría un 403 después de haber hecho el trabajo. Se VETA en vez de ocultar —helpers de
+    // SCRUM-89, con su copy ya aprobada— porque un botón que desaparece no explica nada y quien
+    // lo busque pensará que la pantalla está rota.
+    const esTecnico = window.appUserRole === 'tecnico';
+    if (esTecnico) {
+      lockActionForRole(exportBtn);
+      lockActionForRole(importBtn);
+    }
+
       // --- search + filters (client-side) ---
   const tools = document.createElement("div");
   tools.className = "data-card-toolbar";
@@ -353,7 +364,7 @@ function renderProductsView(container) {
     
       const data = await res.json().catch(() => null);
       if (!res.ok || !data || !data.ok) throw new Error(data?.error || "Error importando CSV");
-      return { inserted: Number(data.inserted || 0) };
+      return { created: Number(data.created || 0) }; // SCRUM-339: contrato alineado (era data.inserted)
     }
   
     function money(v) {
@@ -388,22 +399,15 @@ function renderProductsView(container) {
         });
         // A18.4 (AB4 "importar") × A17: catálogo del gremio en un clic
         const catBtn = td.querySelector('#products-empty-catalog');
-        if (catBtn) catBtn.addEventListener('click', async () => {
-          catBtn.disabled = true; catBtn.textContent = 'Cargando catálogo…';
-          try {
-            const r = await apiRequest('/admin/products/load-catalog', { method: 'POST', body: JSON.stringify({}) });
-            if (r.inserted > 0) {
-              if (typeof showToast === 'function') showToast('✓ ' + r.inserted + ' servicios cargados' + (r.templates ? ' + ' + r.templates + ' plantillas' : '') + ' — precios orientativos, edítalos a tu gusto');
-              await refresh();
-            } else {
-              catBtn.disabled = false; catBtn.textContent = '📚 Cargar el catálogo de mi gremio';
-              if (typeof showToast === 'function') showToast(r.skipped === 'no_catalog_for_trade' ? 'Tu gremio aún no tiene catálogo predefinido — añade servicios a mano o importa un CSV.' : 'No se pudo cargar el catálogo.', 'error');
-            }
-          } catch (e) {
-            catBtn.disabled = false; catBtn.textContent = '📚 Cargar el catálogo de mi gremio';
-            if (typeof showToast === 'function') showToast('No se pudo cargar el catálogo. Inténtalo de nuevo.', 'error');
-          }
-        });
+        // SCRUM-365 · cargar el catalogo del gremio es admin-only en el servidor: son 25-30
+        // conceptos de golpe, o sea el tarifario entero, no una linea. Al Operario se le veta con
+        // su explicacion en vez de dejarle pulsar para que le devuelvan un 403.
+        if (catBtn && esTecnico) {
+          lockActionForRole(catBtn);
+          catBtn.insertAdjacentElement('afterend', roleLockedNote());
+        }
+        // SCRUM-364 · el rescate: si no hay oficio, ofrece elegirlo en vez de morir en el catch.
+        if (catBtn && !esTecnico) catBtn.addEventListener('click', () => cargarCatalogoDeGremio(catBtn, td, refresh));
         setCount(searching ? "0 resultados" : "0 productos");
         return;
       }
@@ -601,7 +605,13 @@ function renderProductsView(container) {
         const data = await res.json().catch(() => null);
         if (!res.ok || !data || !data.ok) throw new Error(data?.error || "Error importando");
     
-        setAlert("success", `CSV importado. Insertados: ${data.inserted ?? 0} · Duplicados omitidos: ${data.skippedDuplicates ?? 0}`);
+        // SCRUM-339: contrato alineado con clientes (created/skipped/errors/errorList). «Insertados» y
+        // «Duplicados omitidos» son feedback EXISTENTE reusado (no microcopy nueva, regla 30). El rótulo
+        // de los errores SÍ es nuevo → marcador [PENDIENTE microcopy oficial] hasta que lo apruebe el
+        // fundador (guard: tests/scrum339-microcopy-import.test.mjs). Antes las filas inválidas y los
+        // duplicados normales no se veían: el recuento decía «0 y 0».
+        const errNota = (data.errors ?? 0) > 0 ? ` · [PENDIENTE microcopy oficial]: ${data.errors}` : '';
+        setAlert("success", `CSV importado. Insertados: ${data.created ?? 0} · Duplicados omitidos: ${data.skipped ?? 0}${errNota}`);
         await refresh();
       } catch (err) {
         setAlert("error", err.message || "Error importando.");
@@ -665,3 +675,130 @@ function renderProductsView(container) {
     refresh().catch((e) => setAlert("error", e.message || "Error cargando productos."));
   }
   
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-364 · CARGAR EL CATÁLOGO CUANDO NO HAY OFICIO
+//
+// EL DEFECTO, medido: `trade` se captura en UN SOLO SITIO de todo el producto —el paso 1 del
+// asistente de alta— y no es editable en ninguna pantalla. Quien lo saltó se queda sin oficio
+// PARA SIEMPRE, porque el asistente queda marcado como completado y no vuelve a salir. Este
+// botón llamaba a `load-catalog` con `{}`, el servidor respondía 400 `trade_required`, y la
+// pantalla decía «No se pudo cargar el catálogo. Inténtalo de nuevo.» — pidiéndole al usuario
+// que repitiera algo que no iba a funcionar nunca. Medido en producción el 5-ago-2026: 8 de 13
+// merchants sin oficio, 4 de ellos cuentas reales y 2 con actividad (una de pago, con 31
+// presupuestos y 6 facturas emitidas desde mayo).
+//
+// EL SERVIDOR NO SE TOCA, y no hace falta: `load-catalog` ya acepta `req.body?.trade ||
+// merchant.trade`. Con oficio guardado, mandar `{}` YA funciona hoy. Lo que faltaba no era el
+// dato en la petición: era **poder elegirlo**, porque el front no tenía de dónde sacarlo.
+//
+// LO QUE NO SE HACE, a propósito: no se sustituye ni se borra nada. El servidor ya lo garantiza
+// —con 2 o más productos devuelve `already_has_products` y no toca el catálogo—, así que lo que
+// aquí falta no es una protección, es DECIRLO. De ahí el aviso antes de cargar.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+const PV_TXT_CARGAR = '📚 Cargar el catálogo de mi gremio';
+
+/** Pide el catálogo. Si el merchant no tiene oficio, ofrece elegirlo en vez de fallar. */
+async function cargarCatalogoDeGremio(btn, contenedor, refresh) {
+  btn.disabled = true; btn.textContent = 'Cargando catálogo…';
+  try {
+    await pedirCatalogo(undefined, refresh, btn);
+  } catch (e) {
+    btn.disabled = false; btn.textContent = PV_TXT_CARGAR;
+    // Se ramifica por CÓDIGO, no por el texto del mensaje: `api.js` deja el código del servidor
+    // en `err.code` justo para esto.
+    if (e && e.code === 'trade_required') {
+      pedirOficio(btn, contenedor, refresh);
+      return;
+    }
+    if (typeof showToast === 'function') showToast('No se pudo cargar el catálogo. Inténtalo de nuevo.', 'error');
+  }
+}
+
+/** La llamada al servidor y la lectura de su respuesta. Separada para no repetirla en dos sitios. */
+async function pedirCatalogo(trade, refresh, btn) {
+  const cuerpo = trade ? { trade } : {};
+  const r = await apiRequest('/admin/products/load-catalog', { method: 'POST', body: JSON.stringify(cuerpo) });
+  if (r.inserted > 0) {
+    if (typeof showToast === 'function') {
+      showToast('✓ ' + r.inserted + ' servicios cargados' + (r.templates ? ' + ' + r.templates + ' plantillas' : '') + ' — precios orientativos, edítalos a tu gusto');
+    }
+    await refresh();
+    return true;
+  }
+  if (btn) { btn.disabled = false; btn.textContent = PV_TXT_CARGAR; }
+  if (typeof showToast === 'function') {
+    // SCRUM-338 (residuo) · `already_has_products` NO es un fallo: es el servidor protegiendo lo
+    // que el profesional ya tiene (con 2 o más productos no carga y no borra nada). Decirle «no
+    // se pudo» es contarle un error donde hubo una decisión a su favor, y encima le deja sin
+    // saber qué pasa con su catálogo. Los tres casos son distintos y ahora se distinguen.
+    //
+    // 🔴 MICROCOPY PENDIENTE (regla 30): el texto del caso nuevo está marcado. Lo que tiene que
+    // decir, en la entrada `docs/master/SCRUM-313.md`.
+    const MSG = {
+      no_catalog_for_trade: 'Tu gremio aún no tiene catálogo predefinido — añade servicios a mano o importa un CSV.',
+      // Microcopy APROBADA por el fundador (5-ago-2026), literal.
+      already_has_products: 'Tu catálogo ya tiene productos, así que no hemos cargado la plantilla. Tus precios siguen como estaban.',
+    };
+    const msg = MSG[r.skipped] || 'No se pudo cargar el catálogo.';
+    // El caso protegido se anuncia como AVISO ('warn'), no como error: no ha fallado nada, pero
+    // tampoco se ha cargado. 'ok' seria mentira (parece exito) y 'info' NO EXISTE -- showToast
+    // solo admite ok|warn|error y cualquier otra cosa cae al verde de exito (api.js:111).
+    showToast(msg, r.skipped === 'already_has_products' ? 'warn' : 'error');
+  }
+  return false;
+}
+
+/**
+ * El rescate: elegir oficio aquí mismo, sin volver a un asistente que ya no se puede abrir.
+ *
+ * La lista sale de `window.OB_TRADES` (SCRUM-364, publicada por `onboardingView.js`) y NO se
+ * escribe aquí: el censo de SCRUM-310 encontró tres listas del mismo gremio a mano y ésta habría
+ * sido la cuarta. Si por lo que sea no está disponible, se dice y no se inventa media lista.
+ */
+function pedirOficio(btn, contenedor, refresh) {
+  if (contenedor.querySelector('#products-trade-picker')) return; // ya está abierto
+  const oficios = Array.isArray(window.OB_TRADES) ? window.OB_TRADES : null;
+  if (!oficios || oficios.length === 0) {
+    if (typeof showToast === 'function') showToast('No se pudo cargar el catálogo.', 'error');
+    return;
+  }
+
+  const caja = document.createElement('div');
+  caja.id = 'products-trade-picker';
+  caja.style.cssText = 'margin:14px auto 0;max-width:360px;text-align:left;background:var(--surface,#fff);border:1px solid var(--line,#cdd2cb);border-radius:12px;padding:14px';
+  caja.innerHTML =
+    '<label for="products-trade-select" style="font-size:13px;font-weight:600;display:block;margin-bottom:6px">Tu oficio</label>'
+    + '<select id="products-trade-select" style="width:100%;padding:11px 13px;border:1px solid var(--line,#cdd2cb);border-radius:9px;font-size:14px;background:#fff">'
+    + '<option value="">Selecciona…</option>'
+    + oficios.map((t) => '<option value="' + t.value + '">' + t.label + '</option>').join('')
+    + '</select>'
+    // Microcopy APROBADA por el fundador (5-ago-2026). Va ANTES de cargar, no después: dice lo
+    // que va a pasar y que lo suyo no se toca. El defecto de hoy no es que destruya —no lo
+    // hace—, es que no lo dice.
+    + '<p style="font-size:12px;color:var(--muted);margin:10px 0 12px;line-height:1.45">'
+    + 'Cargamos los conceptos de tu oficio. Lo que ya tengas en tu catálogo se queda como está.</p>'
+    + '<button id="products-trade-ok" class="btn-primary btn-sm" style="width:100%">Cargar catálogo</button>';
+  btn.insertAdjacentElement('afterend', caja);
+
+  const sel = caja.querySelector('#products-trade-select');
+  const ok  = caja.querySelector('#products-trade-ok');
+  sel.focus();
+  ok.addEventListener('click', async () => {
+    const trade = sel.value;
+    if (!trade) { sel.focus(); return; }
+    ok.disabled = true; ok.textContent = 'Cargando…';
+    try {
+      // Se GUARDA el oficio antes de cargar: si solo se mandara en la petición, el usuario
+      // volvería a quedarse sin él en cuanto cerrara la pantalla — que es el defecto que este
+      // ticket cierra, repetido con más pasos.
+      await updateMerchantProfile({ trade });
+      const cargado = await pedirCatalogo(trade, refresh, null);
+      if (cargado) caja.remove();
+      else { ok.disabled = false; ok.textContent = 'Cargar catálogo'; }
+    } catch (e) {
+      ok.disabled = false; ok.textContent = 'Cargar catálogo';
+      if (typeof showToast === 'function') showToast('No se pudo cargar el catálogo. Inténtalo de nuevo.', 'error');
+    }
+  });
+}

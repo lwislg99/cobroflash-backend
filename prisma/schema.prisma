@@ -269,6 +269,15 @@ model Quote {
   // servicio de borrado derivado del schema, no cascadas). La integridad Quote.jobId -> Job.id
   // la sostiene el CODIGO, y quien la respeta al borrar es el servicio de SCRUM-192.
   jobId        Int?    @map("job_id")
+  // SCRUM-195 · LA MITAD PENDIENTE: `jobId` dice A QUÉ TRABAJO pertenece, pero no SI ES EL
+  // ORIGINAL O UN ADICIONAL — un adicional aceptado tiene el mismo `jobId` que el original, así
+  // que el rol NO se puede deducir de ahí. `sendQuote.service.ts:31` lo dice literalmente:
+  // «Depende del ROL del presupuesto (`Quote.esAdicional`), que es schema del fundador y está
+  // PENDIENTE. Deducirlo de otra cosa sería simular el rol.»
+  //
+  // Nullable y SIN `@default`: los presupuestos anteriores no tienen rol asignado, y `null`
+  // («no se sabe») no es `false` («se decidió que es el original»).
+  esAdicional  Boolean? @map("es_adicional")
 
   // EXT3: origin (A15: maintenance) · validUntil (A16.2: caducidad, default 30d en código)
   // · docFields (A20.4: qué datos del cliente muestra el documento)
@@ -360,6 +369,15 @@ model Invoice {
   // SCRUM-17 (FISCAL-2): operaciones agrupadas en una recapitulativa — [{albaranId, numero, fecha}].
   // La factura debe identificar los albaranes origen (art. 6 Reglamento + advertencia TEAC).
   albaranRefs Json? @map("albaran_refs")
+  // SCRUM-16/142 (FISCAL-1a): las facturas que esta FINAL descuenta — [{invoiceId, number,
+  // fecha, base, cuota, sinDesglose?}]. Es lo que hace AUDITABLE la compensación: sin esto la
+  // final dice un importe menor y no consta contra qué (art. 6.1 RD 1619/2012 exige identificar
+  // los documentos previos).
+  //
+  // `buildFinalInvoice` ya los produce y hoy NO TIENEN DÓNDE IR. Mismo patrón EXACTO que
+  // `albaranRefs`: `Json?` en la fila, tipado en `EmitInvoiceInput`. NO se derivan de las líneas
+  // negativas — de un concepto en texto no se saca un identificador de factura.
+  deductsRefs Json? @map("deducts_refs")
 
   // Tipo de factura (RD 1619/2012 / VeriFactu): F1 = completa estándar | R1 = rectificativa
   type        String @default("F1")
@@ -438,6 +456,32 @@ model Expense {
   date        DateTime @default(now())
   notes       String?
   receiptData String?  @db.Text @map("receipt_data")
+  // ─────────────────────────────────────────────────────────────────────────────────────
+  // SCRUM-403 / A5 / E4 · EL GASTO NO DICE SI LLEVA IVA, Y TRES CIFRAS DEPENDEN DE ESO.
+  //
+  // `amount` es AMBIGUO POR DISEÑO: nadie escribió nunca si es con IVA o sin él. Sobre esa
+  // ambigüedad se apoyan el «beneficio neto» (resta base contra base), el 303 (IVA soportado
+  // deducible) y el libro de facturas recibidas (E4).
+  //
+  // ⚠️ TODAS NULLABLE Y SIN `@default`, y no es prudencia: `null` ES UN DATO. Significa «este
+  // gasto es un apunte de caja, no un asiento». Un `@default` rellenaría el pasado con una
+  // suposición y la haría INDISTINGUIBLE de un dato real — que es exactamente el defecto que
+  // SCRUM-403 denuncia. NO HAY BACKFILL: deducir la base de `amount` exige saber si lleva IVA
+  // y a qué tipo, y eso no está escrito en ninguna parte.
+  baseAmount    Decimal?  @db.Decimal(12, 2) @map("base_amount")
+  // Tipo en ENTERO DE PORCENTAJE (21/10/4/0) — la convención de `AlbaranLinea.tipoIva`, NO la
+  // fracción de `Quote.lines[].tax`. Mezclar las dos multiplica el IVA por cien sin que nada falle.
+  vatRate       Int?      @map("vat_rate")
+  // La cuota SE GUARDA, no se recalcula: un redondeo distinto entre pantalla y libro es una
+  // discrepancia que después nadie sabe explicar.
+  vatAmount     Decimal?  @db.Decimal(12, 2) @map("vat_amount")
+  // `null` = nunca clasificado · `false` = se decidió que NO. No son lo mismo, y por eso no lleva
+  // `@default` (convención de `Customer.tipoDestinatario`, SCRUM-69).
+  vatDeducible  Boolean?  @map("vat_deducible")
+  // El nº y serie de la factura DEL PROVEEDOR: es lo que identifica el asiento de compra (E4).
+  providerInvoiceNumber String?   @map("provider_invoice_number")
+  // Fecha de EXPEDICIÓN del proveedor. `Expense.date` es la del apunte, y no son la misma.
+  providerInvoiceDate   DateTime? @map("provider_invoice_date")
 
   // SCRUM-109 (carril A, bloqueante de SCRUM-107 V2): autoría del gasto — el técnico que lo
   // registró desde la furgoneta. Int? con null = propietario, misma convención que
@@ -494,6 +538,10 @@ model Provider {
   phone    String?
   email    String?
   notes    String?
+  // E4 · el NIF del proveedor. `Provider` no tenía HOY NINGÚN campo fiscal (medido: 0), y sin
+  // NIF no hay asiento de compra. Nullable: los proveedores ya dados de alta no lo tienen y
+  // no se puede deducir de nada.
+  taxId    String? @map("tax_id")
   isActive Boolean @default(true) @map("is_active")
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -767,6 +815,16 @@ model Albaran {
   jobId        Int       @map("job_id")
   numero       String    // ALB-YYYY-NNN, serie propia por merchant (no fiscal)
   fecha        DateTime  @default(now()) // fecha de la visita/entrega (editable en borrador)
+  // SCRUM-300 (C5): un albarán se PREPARA un día y se ENTREGA otro, y hasta hoy solo existía
+  // `fecha`. `fechaEntrega` es el día real de la entrega. null = no se pidió (todo lo anterior
+  // a esta tarea) y entonces se muestra `fecha`, que es lo único que llegamos a saber.
+  fechaEntrega DateTime? @map("fecha_entrega")
+  // SCRUM-300 (C5): DÓNDE se entregó. NO es `Job.direccion` —que no la escribe nadie: medido,
+  // ningún schema de validación la acepta y sus únicas apariciones son lecturas— ni el domicilio
+  // del cliente, que ni siquiera existe en `Customer`. Es un campo PROPIO del albarán, porque el
+  // lugar del trabajo puede no ser el domicilio de quien paga.
+  // ⚠️ Entra en el CONTENIDO SELLADO por la firma → sube `evidenciaFirma.v` a 2.
+  lugarEntrega String?   @map("lugar_entrega")
   // SCRUM-65: SIN_VALORAR (hoy, sin precios) | VALORADO (líneas con precioUnitario+tipoIva
   // opcionales). Aditivo, default SIN_VALORAR = comportamiento actual intacto. Editable solo
   // en 'borrador' (mismo candado que lineas/notas/fecha); congelado desde 'emitido'.
@@ -776,6 +834,17 @@ model Albaran {
   version      Int       @default(1)
   signatureUrl String?   @db.Text @map("signature_url") // data-URI (patrón Quote.signatureUrl)
   firmadoAt    DateTime? @map("firmado_at")
+  // SCRUM-300 (C5): QUIÉN firmó, y EN CALIDAD DE QUÉ. Hasta ahora se guardaba el trazo
+  // (`signatureUrl`) y nada más: una rúbrica anónima no identifica a nadie, así que el albarán
+  // firmado valía poco como prueba de entrega.
+  // ⚠️ El campo se guarda VACÍO y se ofrece un chip de sugerencia de un toque con el nombre del
+  // cliente: prerrellenarlo sería poner en boca del firmante una declaración que no ha hecho —si
+  // firma el encargado y no lo corrige, guardaríamos un NOMBRE FALSO, peor que un hueco.
+  // Por lo mismo, `firmadoPorCalidad` no tiene default: ninguna opción viene marcada.
+  // null = no se pidió al firmar (albaranes anteriores a esta tarea). AMBOS entran en el
+  // contenido sellado → `evidenciaFirma.v` = 2.
+  firmadoPorNombre  String? @map("firmado_por_nombre")
+  firmadoPorCalidad String? @map("firmado_por_calidad")
   // SCRUM-49: firma REMOTA. `firmaToken` = token OPACO de la página pública /albaran/:token
   // (patrón Customer.portalToken, crypto.randomBytes(16).hex; null hasta enviar "para firmar";
   // @unique para el lookup findUnique). FSM SIN cambios (opción A): "esperando firma" se deriva

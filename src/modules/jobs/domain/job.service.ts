@@ -32,38 +32,75 @@ export function canTransition(from: string, to: string): boolean {
 }
 
 /**
- * Auto-creación al quote→accepted (idempotente: jobs.quote_id es UNIQUE).
- * Fire-and-forget en los call-sites: JAMÁS rompe el flujo de aceptación.
+ * Auto-creación al quote→accepted. Fire-and-forget en los call-sites: JAMÁS rompe el flujo de
+ * aceptación.
+ *
+ * SCRUM-195 · LA IDEMPOTENCIA YA NO DESCANSA EN `jobs.quote_id UNIQUE`, y decirlo importa
+ * porque ese `@unique` seguirá ahí hasta el paso 2 y se lee como si protegiera algo que no
+ * protege: impide que dos Jobs reclamen el MISMO Quote, no que un Quote ADICIONAL fabrique un
+ * segundo Job. Quien decide ahora es `Quote.jobId`.
  */
-export async function ensureJobForQuote(quoteId: number): Promise<void> {
+export async function ensureJobForQuote(quoteId: number, prismaClient = prisma): Promise<void> {
   try {
-    const quote = await prisma.quote.findUnique({
+    const quote = await prismaClient.quote.findUnique({
       where: { id: quoteId },
       // SCRUM-10: además del contexto, el total (para congelarlo) y el nº + cliente (para el título).
       // SCRUM-52: teamMemberId = creador del presupuesto → autoría del operario en el Job.
+      // SCRUM-195: `jobId` — la pertenencia, que es lo que decide si hay que crear Trabajo.
       select: {
         id: true, merchantId: true, customerId: true, status: true,
-        total: true, quoteNumber: true, teamMemberId: true,
+        total: true, quoteNumber: true, teamMemberId: true, jobId: true,
         customer: { select: { name: true } },
       },
     });
     if (!quote || quote.status !== 'accepted') return;
-    // SCRUM-52: idempotencia explícita — si el Job ya existe NO se re-crea ni se re-audita.
-    // (antes: upsert con update {}; ahora guard + create para auditar solo en la creación
-    // real). La constraint UNIQUE de quote_id + este try/catch cubren la carrera.
-    const existing = await prisma.job.findUnique({ where: { quoteId: quote.id }, select: { id: true } });
-    if (existing) return;
-    // SCRUM-10: título propio con el criterio actual (nº de presupuesto + cliente).
-    const num = quote.quoteNumber ?? quote.id;
-    const titulo = `Presupuesto #${num}${quote.customer?.name ? ` · ${quote.customer.name}` : ''}`;
-    const job = await prisma.job.create({
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // SCRUM-195 (rebanada 1) · EL FALLO SILENCIOSO QUE ESTO CIERRA
+    //
+    // Hasta aquí la pertenencia se preguntaba SOLO por `Job.quoteId`. Con varios Quotes por
+    // Job, un presupuesto ADICIONAL tiene un `quoteId` distinto del que el Job apunta, así que
+    // el `findUnique` no encontraba nada y **se creaba un SEGUNDO Trabajo**: el pro veía dos
+    // donde hay uno, con el dinero repartido entre ambos.
+    //
+    // Y no saltaba nada. El `@unique` de `Job.quoteId` no protege de esto: solo impediría que
+    // DOS Jobs reclamaran el MISMO Quote, que no es lo que pasa aquí. Silencio completo.
+    //
+    // Ahora se pregunta primero por `Quote.jobId`, que es el sentido que admite varios.
+    if (quote.jobId) return; // ya pertenece a un Trabajo (el original, o el suyo si es adicional)
+
+    // Sentido VIEJO, mientras conviven (paso 1: `Job.quoteId` no se retira). Un par anterior al
+    // backfill tiene Job pero el Quote todavía no lo sabe: no se crea nada y se ANOTA la
+    // pertenencia, que es el backfill haciéndose solo por el camino caliente.
+    const existing = await prismaClient.job.findUnique({ where: { quoteId: quote.id }, select: { id: true } });
+    if (existing) {
+      await prismaClient.quote.update({ where: { id: quote.id }, data: { jobId: existing.id } });
+      return;
+    }
+    // ── SCRUM-317 (G2) · EL TRABAJO YA NO NACE LLAMÁNDOSE «Presupuesto #N» ──────────────
+    //
+    // Antes se autogeneraba `Presupuesto #<num> · <cliente>` y se guardaba en `Job.titulo`: el
+    // objeto central del producto presentándose como una fase del presupuesto, que es justo la
+    // tesis que nos separa de un facturador al uso.
+    //
+    // Ahora nace SIN título y lo pone el profesional si quiere (PATCH). Mientras no lo ponga, la
+    // pantalla se titula con el CLIENTE — que siempre existe — y el presupuesto se queda como
+    // documento de ORIGEN, no como nombre.
+    //
+    // ⚠️ Los Trabajos YA CREADOS conservan su título viejo: es una columna con datos, no un
+    // cálculo. NO se hace backfill (decisión del fundador, 5-ago-2026), coherente con la regla
+    // fechada del 2-ago: los datos de producción son de prueba y lo que importa es que los
+    // registros NUEVOS nazcan bien.
+    const job = await prismaClient.job.create({
       data: {
         merchantId: quote.merchantId,
         customerId: quote.customerId,
         quoteId: quote.id,
         status: 'pendiente_agendar',
         // SCRUM-10: campos del contenedor "Trabajo". direccion sin fuente hoy → null.
-        titulo,
+        // SCRUM-317: `titulo` tampoco se rellena al crear — lo pone el pro (PATCH), y mientras
+        // no lo ponga la pantalla se titula con el cliente.
         totalAceptado: quote.total, // Decimal(12,2): total del Quote congelado en el accept
         // totalCobrado = 0 por default (materializado; su lógica de sumar cobros = SCRUM-13)
         // SCRUM-52: autoría = creador del presupuesto (quote.teamMemberId), NO quien acepta
@@ -71,6 +108,17 @@ export async function ensureJobForQuote(quoteId: number): Promise<void> {
         operarioId: quote.teamMemberId,
       },
     });
+    // SCRUM-195 · ANOTAR LA PERTENENCIA EN EL SENTIDO NUEVO. Sin esto la columna del paso 1
+    // seguiría muerta: existe en el schema y en la base, y no la escribe nadie.
+    //
+    // NO va en transacción con el `create`, y es deliberado: si esta escritura fallara, el par
+    // queda en el estado VIEJO (Job con `quoteId`, Quote sin `jobId`) — que es exactamente lo
+    // que la mitad legada de `quotesDelJob` sabe resolver. Degrada al comportamiento de hoy, no
+    // a uno roto. Meter una transacción aquí compraría atomicidad contra un fallo que no deja
+    // daño, a cambio de que este camino —fire-and-forget y best-effort por diseño— pueda
+    // bloquear filas del accept.
+    await prismaClient.quote.update({ where: { id: quote.id }, data: { jobId: job.id } });
+
     // SCRUM-52: traza de autoría del operario en la creación del Trabajo (fire-and-forget,
     // como el resto de recordAudit). teamMemberId = operarioId (null = propietario).
     recordAudit({
@@ -95,17 +143,48 @@ export async function ensureJobForQuote(quoteId: number): Promise<void> {
  * ENTERO cada vez → un evento duplicado no cuenta dos veces). Best-effort: nunca lanza.
  */
 /**
- * Los Quotes que pertenecen a un Job. **ÚNICO punto que cambia cuando llegue el 1:N**
- * (SCRUM-37 mecanismo 2): hoy `Job.quoteId` es `@unique`, así que la respuesta tiene como
- * mucho un elemento; con `Quote.jobId` pasará a ser un `findMany` y **nada más de este
- * fichero se entera**.
+ * Los Quotes que pertenecen a un Job. **ÚNICO punto que resuelve la pertenencia**
+ * (SCRUM-37 mec. 2 · SCRUM-195): la promesa de aquel comentario —«cuando llegue `Quote.jobId`
+ * pasará a ser un `findMany` y nada más de este fichero se entera»— **ya está cumplida aquí**,
+ * y por eso el resto del fichero no cambió al pasar al 1:N.
+ *
+ * Devuelve la UNIÓN de los dos sentidos mientras conviven; el porqué, dentro.
  *
  * Existe para que la agregación de dinero deje de estar escrita en términos de «el quote» —
  * ver el porqué en `recalcJobCobradoForJob`.
  */
 export async function quotesDelJob(jobId: number, prismaClient = prisma): Promise<number[]> {
-  const job = await prismaClient.job.findUnique({ where: { id: jobId }, select: { quoteId: true } });
-  return job?.quoteId ? [job.quoteId] : [];
+  // El Job va PRIMERO, y no es orden casual: de él sale el `merchantId` con el que se acota la
+  // consulta de abajo. Sin eso, `quote.findMany({ where: { jobId } })` sería una lectura sin
+  // ninguna comprobación de merchant — una excepción nueva al censo de SCRUM-243, y de las que
+  // se pueden evitar en vez de declarar.
+  const job = await prismaClient.job.findUnique({
+    where: { id: jobId },
+    select: { quoteId: true, merchantId: true },
+  });
+  if (!job) return [];
+
+  // SCRUM-195 (rebanada 1) · LA PERTENENCIA SE LEE POR `Quote.jobId`, que es el sentido que
+  // admite varios. Éste es el `findMany` que anunciaba el comentario de arriba.
+  const porQuote = await prismaClient.quote.findMany({
+    where: { jobId, merchantId: job.merchantId }, // regla 2: toda lectura filtra por merchant
+    select: { id: true },
+  });
+
+  // ⚠️ Y ADEMÁS EL SENTIDO VIEJO, mientras los dos conviven (paso 1 del ticket: `Job.quoteId`
+  // NO se retira). No es cinturón y tirantes: es lo que impide un fallo de DINERO durante la
+  // ventana entre mergear esto y correr el backfill en cada base.
+  //
+  // Sin esta mitad, un Job cuyo Quote todavía no tiene `jobId` devolvería `[]`, y la agregación
+  // sumaría CERO facturas pagadas: `totalCobrado` bajaría a 0 en un Job cobrado. El backfill de
+  // producción lo ejecuta el fundador y no tiene por qué caer en el mismo momento que el
+  // despliegue, así que la ventana existe de verdad.
+  //
+  // El PASO 2 (retirar `Job.quoteId`) es lo que borra esta mitad, y entonces `tsc` señala solo
+  // lo que quede: ése es el ratchet, no la limpieza.
+  const ids = new Set(porQuote.map((q) => q.id));
+  if (job.quoteId) ids.add(job.quoteId);
+  return [...ids];
 }
 
 /**
@@ -165,10 +244,20 @@ export async function recalcJobCobradoForJob(jobId: number, prismaClient = prism
 export async function recalcJobCobradoForQuote(quoteId: number, prismaClient = prisma): Promise<void> {
   try {
     if (!Number.isInteger(quoteId)) return;
-    // Cuando llegue el 1:N este `findUnique` pasa a mirar `Quote.jobId`; el núcleo no cambia.
-    const job = await prismaClient.job.findUnique({ where: { quoteId }, select: { id: true } });
-    if (!job) return; // el Quote no tiene Job
-    await recalcJobCobradoForJob(job.id, prismaClient);
+    // SCRUM-195 (rebanada 1) · SE RESUELVE POR `Quote.jobId`, que es lo que anunciaba este
+    // comentario. El fallo que cierra: con el `findUnique` por `Job.quoteId`, un ADICIONAL daba
+    // `null` y la función se iba muda — cobrar el extra no movía el total del Trabajo.
+    const quote = await prismaClient.quote.findUnique({ where: { id: quoteId }, select: { jobId: true } });
+    let jobId = quote?.jobId ?? null;
+    if (jobId == null) {
+      // Sentido viejo, mientras conviven: par anterior al backfill. Misma razón que en
+      // `quotesDelJob` — sin esto, durante la ventana previa al backfill se dejaría de
+      // recalcular y el total se quedaría congelado tras un cobro.
+      const job = await prismaClient.job.findUnique({ where: { quoteId }, select: { id: true } });
+      jobId = job?.id ?? null;
+    }
+    if (jobId == null) return; // el Quote no tiene Job
+    await recalcJobCobradoForJob(jobId, prismaClient);
   } catch (err: any) {
     console.error('[jobs] recalcJobCobradoForQuote:', err?.message || err);
   }
@@ -209,10 +298,47 @@ export async function recalcJobCobradoForInvoice(invoiceId: number): Promise<voi
  *   0 < cobrado < aceptado            → 'Parcial'
  *   cobrado >= aceptado (aceptado>0)  → 'Pagado'
  */
-export function estadoCobroFor(cobrado: number, aceptado: number): 'Pagado' | 'Parcial' | 'Pendiente' {
+export type EstadoCobro = 'Pagado' | 'Parcial' | 'Pendiente';
+
+/**
+ * SCRUM-363 · EL IMPORTE DE REFERENCIA contra el que se mide el cobro. `null` = **este Trabajo no
+ * tiene eje de cobro**, y entonces no se puede afirmar nada sobre su dinero.
+ *
+ * El orden lo decidió el fundador:
+ *   1. el total ACEPTADO, si existe y es > 0;
+ *   2. si no, el total FACTURADO, si existe y es > 0;
+ *   3. si no hay ninguno, no hay eje.
+ *
+ * El tercero es el que importa. Antes, sin importe de referencia, un Trabajo cobrado se quedaba
+ * en «Parcial» PARA SIEMPRE: el pro cobraba, el dinero entraba, y el Trabajo seguía diciendo que
+ * faltaba — y la pestaña «Pagado» no lo enseñaba nunca, así que perseguía un pago que ya tenía.
+ * Y no es un caso raro: es el camino nuevo (Trabajos sin presupuesto, SCRUM-51; y la factura
+ * suelta de A0 los multiplica).
+ */
+export function importeDeReferencia(aceptado: unknown, facturado?: unknown): number | null {
+  const a = Number(aceptado);
+  if (Number.isFinite(a) && a > 0) return a;
+  const f = Number(facturado);
+  if (Number.isFinite(f) && f > 0) return f;
+  return null;
+}
+
+/**
+ * El semáforo de cobro. `null` = sin eje: **no se pinta chip**, ni «Parcial» ni «Pendiente».
+ *
+ * ⚠️ NO se devuelve un estado intermedio ante la duda. «Parcial» es una AFIRMACIÓN sobre el
+ * dinero de alguien, y afirmarla sin saber contra qué se compara es justo lo que produjo este
+ * defecto. No pintar nada es verdad; pintar «Parcial» no lo es.
+ */
+export function estadoCobroFor(
+  cobrado: number,
+  aceptado: number,
+  facturado?: number,
+): EstadoCobro | null {
+  const referencia = importeDeReferencia(aceptado, facturado);
+  if (referencia === null) return null;
   const c = Number(cobrado) || 0;
-  const a = Number(aceptado) || 0;
-  if (a > 0 && c >= a) return 'Pagado';
+  if (c >= referencia) return 'Pagado';
   if (c > 0) return 'Parcial';
   return 'Pendiente';
 }

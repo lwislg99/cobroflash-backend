@@ -10,7 +10,8 @@
 # en varias sesiones a la vez: toda rama viva es, por definición, anterior a cualquier guard
 # que se mergee mientras ella existe.
 #
-# ⚠️ SOLO LO NO GATEADO. Aquí NO se pone `QA_DB_TEST=1` ni `DATABASE_URL_STAGING`:
+# ⚠️ SOLO LO NO GATEADO. Aquí NO se pone `QA_DB_TEST=1` ni `DATABASE_URL_TESTS` (SCRUM-383; era
+# `DATABASE_URL_STAGING` hasta el 6-ago-2026):
 #   1. Regla 9 — los secretos los pega el fundador en Railway, no viajan a terceros.
 #   2. Los tests gateados CREAN Y BORRAN merchants; varios PR a la vez escribiendo en la
 #      misma BD de staging no los serializa nadie.
@@ -43,6 +44,23 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # SCRUM-388 · EL CENSO DE TICKETS NECESITA EL REPOSITORIO ENTERO PARA PODER MIRAR.
+          #
+          # Por defecto `actions/checkout` clona en SUPERFICIAL y con un solo ref remoto, y con eso
+          # el centinela se queda ciego de dos formas distintas:
+          #   · `git log origin/main` MUERE con `unknown revision` (status 128) — así se descubrió;
+          #   · `for-each-ref` NO muere: devuelve 1 rama de ~90, que se lee igual que «no hay
+          #     ninguna». Ésa es la peligrosa, porque una falsa alarma es indistinguible de un
+          #     hallazgo real.
+          #
+          # El censo ya sabe declarar «NO PUDE MEDIR» en vez de inventarse un hallazgo, pero un
+          # centinela que se declara no medido en el único sitio donde de verdad corre no es un
+          # centinela: saltarse siempre y no existir son lo mismo.
+          #
+          # Coste medido el 7-ago-2026 en este repo: 1.826 commits, 184 refs, **38 MB de `.git`**.
+          # Mismo motivo y misma solución que en `zona-roja.yml`, que ya lo usaba.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:

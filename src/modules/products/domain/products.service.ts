@@ -1,5 +1,8 @@
 // src/modules/products/domain/products.service.ts
-import { prisma } from '../../../core/db/prisma';
+import { prisma } from '../../../core/db/prisma';
+// SCRUM-312: el parseo de CSV vive en UN solo sitio del proyecto. Antes había dos (aquí y en
+// el importador del navegador), y no eran equivalentes.
+import { parsearLineaCsv, quitarBom, detectarSeparador } from '../../../core/csv/csv';
 
 function normalizeSearch(s: string) {
   return String(s || '')
@@ -69,7 +72,10 @@ export async function exportProductsCsv(merchantId: number) {
 
   const escapeCsv = (v: unknown) => {
     const s = String(v ?? '');
-    const needsQuotes = s.includes(',') || s.includes('\n') || s.includes('"');
+    // SCRUM-339 (bug 3): el separador de ESTE export es `;` (abajo, :78/:88). Un campo que contenga `;`
+    // DEBE entrecomillarse o al reimportar parte la fila y desplaza las columnas. Antes solo miraba
+    // `,`/`\n`/`"` — nunca el propio separador —, así que exportar→reimportar no era idempotente.
+    const needsQuotes = s.includes(';') || s.includes(',') || s.includes('\n') || s.includes('"');
     const escaped = s.replace(/"/g, '""');
     return needsQuotes ? `"${escaped}"` : escaped;
   };
@@ -93,15 +99,24 @@ export async function exportProductsCsv(merchantId: number) {
 }
 
 
+
+/**
+ * SCRUM-339: contrato ALINEADO con POST /admin/customers/import → { created, skipped, errors, errorList }.
+ * Antes devolvía { inserted, skippedDuplicates } y skippedDuplicates SOLO contaba el choque P2002: el
+ * duplicado normal (findFirst) hacía `continue` mudo, así que 100 filas duplicadas mostraban «0 y 0».
+ * Y las filas inválidas (nombre vacío, precio ≤0, IVA fuera de 0..1) se tiraban sin reportar nada.
+ */
 export async function importProductsCsv(merchantId: number, csv: string) {
-  const lines = csv.split(/\r?\n/).filter(Boolean);
+  // Bug 4: quita el BOM que antepone nuestro propio export (:92). El `.trim()` de la ruta ya lo mordía
+  // (U+FEFF es whitespace), pero el servicio se defiende solo: no depende de quién lo llame.
+  const lines = csv.replace(/^﻿/, '').split(/\r?\n/).filter(Boolean);
 
   if (lines.length < 2) {
-    return { inserted: 0, skippedDuplicates: 0 };
+    return { created: 0, skipped: 0, errors: 0, errorList: [] as string[] };
   }
 
-  const delimiter = lines[0].includes(';') ? ';' : ',';
-  const header = lines[0].split(delimiter).map(s => s.trim().toLowerCase());
+  const delimiter = detectarSeparador(lines[0]);
+  const header = parsearLineaCsv(lines[0], delimiter).map(s => s.trim().toLowerCase());
 
   const idxName = header.indexOf('name');
   const idxDesc = header.indexOf('description');
@@ -113,79 +128,68 @@ export async function importProductsCsv(merchantId: number, csv: string) {
     throw new Error('invalid_header');
   }
 
-  let inserted = 0;
-  let skippedDuplicates = 0;
+  let created = 0;
+  let skipped = 0;
+  let errors = 0;
+  const errorList: string[] = [];
+  // Como en clientes: errorList se capa a 10; el contador `errors` cuenta TODAS.
+  const anota = (msg: string) => { errors++; if (errorList.length < 10) errorList.push(msg); };
 
   for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(delimiter);
+    const cols = parsearLineaCsv(lines[i], delimiter); // bug 3: honra comillas
 
     const name = String(cols[idxName] || '').trim();
-    if (!name) continue;
+    if (!name) { anota(`fila ${i}: nombre vacío`); continue; } // bug 2: antes era continue mudo
 
     const price = Number(cols[idxPrice]);
-    if (!Number.isFinite(price) || price <= 0) continue;
+    if (!Number.isFinite(price) || price <= 0) { anota(`fila ${i} («${name}»): precio no numérico o ≤ 0`); continue; }
 
-        // Evitar duplicados (MVP): si ya existe un producto con el mismo nameSearch en este merchant, lo saltamos
-        const nameSearch = normalizeSearch(name);
-
-        const exists = await prisma.product.findFirst({
-          where: { merchantId, nameSearch },
-          select: { id: true },
-        });
-    
-        if (exists) {
-          continue;
-        }
-
-    
-
-
+    const nameSearch = normalizeSearch(name);
+    const exists = await prisma.product.findFirst({
+      where: { merchantId, nameSearch },
+      select: { id: true },
+    });
+    if (exists) { skipped++; continue; } // bug 1: antes era `continue` mudo, no sumaba nada
 
     const description = idxDesc >= 0 ? String(cols[idxDesc] || '').trim() : null;
 
     let vat: number | null = null;
-if (idxVat >= 0 && cols[idxVat] !== '') {
-  const v = Number(cols[idxVat]);
-  // VAT en DB es 0..1
-  if (Number.isFinite(v) && v >= 0 && v <= 1) {
-    vat = v;
-  } else {
-    continue; // fila inválida -> la saltamos
-  }
-}
+    if (idxVat >= 0 && cols[idxVat] !== '') {
+      const v = Number(cols[idxVat]);
+      if (Number.isFinite(v) && v >= 0 && v <= 1) {
+        vat = v;
+      } else {
+        anota(`fila ${i} («${name}»): IVA fuera de 0..1`); continue; // bug 2
+      }
+    }
 
-let isActive = true;
-if (idxActive >= 0) {
-  const raw = String(cols[idxActive] ?? '').trim().toLowerCase();
-  if (raw === 'false' || raw === '0' || raw === 'no') isActive = false;
-  else if (raw === 'true' || raw === '1' || raw === 'si' || raw === 'sí') isActive = true;
-}
+    let isActive = true;
+    if (idxActive >= 0) {
+      const raw = String(cols[idxActive] ?? '').trim().toLowerCase();
+      if (raw === 'false' || raw === '0' || raw === 'no') isActive = false;
+      else if (raw === 'true' || raw === '1' || raw === 'si' || raw === 'sí') isActive = true;
+    }
 
-try {
-  await prisma.product.create({
-    data: {
-      merchantId,
-      name,
-      nameSearch: normalizeSearch(name),
-      description: description || null,
-      price,
-      vat,
-      isActive,
-    },
-  });
-
-  inserted++;
-} catch (err: any) {
-  // UNIQUE (merchant_id, name_search)
-  if (err?.code === "P2002") {
-    skippedDuplicates++;
-    continue;
-  }
-  throw err;
-}
+    try {
+      await prisma.product.create({
+        data: {
+          merchantId,
+          name,
+          nameSearch,
+          description: description || null,
+          price,
+          vat,
+          isActive,
+        },
+      });
+      created++;
+    } catch (err: any) {
+      if (err?.code === 'P2002') { skipped++; continue; } // carrera: duplicado por UNIQUE (merchant_id, name_search)
+      anota(`«${name}»: ${String(err?.message ?? err).slice(0, 80)}`);
+    }
   }
 
-  return { inserted, skippedDuplicates };
+  return { created, skipped, errors, errorList };
 }
 
 export async function searchProducts(merchantId: number, q: string) {
