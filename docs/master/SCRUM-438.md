@@ -779,3 +779,19 @@ ficheros de `docs/master/`: **cero apariciones de `LIBRO_PG_URL` en `CLAUDE.md`,
 variable ni levanta ningún Postgres»*. **Ya no es cierto** — el CI de `main` de hoy levanta
 `postgres:16-alpine` y define `LIBRO_PG_URL`; el paso se llama *«Tests (incluidos los 7 de banco)»*.
 Por eso este rojo existe: **antes ni siquiera se habría ejecutado.**
+
+### ⑦ Y el guard que el asesor pedía: la fixture no puede estrenar la versión actual
+
+La fixture `sellar(version, fuentes)` de `scrum297` **no construye bloque congelado** — sus
+fuentes son las de un albarán v:1/v:2. Hoy se la llama con `1` y `2` **literales**, así que no
+revienta; barrido el AST de los **6** ficheros gateados por `LIBRO_PG_URL`, es el único que toca
+el sellador.
+
+El día que alguien la «modernice» a `ALBARAN_CONTENIDO_VERSION_ACTUAL` —que es lo que parece
+correcto al leerla— pedirá un v:3 sin bloque y el sellador lanzará… **en el CI, no en la tanda de
+quien lo escribió**. El guard deriva del AST qué versión recibe cada llamada y la cara contra las
+que `FUENTES_POR_VERSION` declara congeladas. Corre **sin gate**, con suelo (≥2 llamadas, ≥1
+versión congelada) y probado en rojo:
+
+> *«LA FIXTURE DE scrum297 SELLA CON `ALBARAN_CONTENIDO_VERSION_ACTUAL`, Y ESA VERSIÓN PIDE EL
+> BLOQUE CONGELADO (piden bloque: v:3) … el rojo saldrá en el CI y no aquí.»*

@@ -26,6 +26,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
 
 import {
   computeAlbaranContentHash,
@@ -605,4 +609,63 @@ test('SCRUM-438 · ⑥ 🔴 y un sobre v:3 sin bloque se DECLARA por el camino d
     '🔴 EL SELLADOR ACEPTA SELLAR UN v:3 SIN BLOQUE. Entonces el sobre imposible de arriba deja de ' +
     'ser imposible y pasa a ser un albarán firmado que nadie puede verificar nunca.',
   );
+});
+
+// ── ⑦ LA FIXTURE DE scrum297 NO PUEDE ESTRENAR UNA VERSIÓN QUE PIDA EL BLOQUE ────────────
+//
+// El `sellar(version, fuentes)` de `scrum297-evidencias-postgres.test.mjs` fabrica sobres para el
+// paquete de evidencias, y NO construye bloque congelado: sus fuentes son las de un albarán
+// v:1/v:2. Hoy se le llama con `1` y `2` literales, así que no revienta.
+//
+// 🔴 El día que alguien lo "modernice" a `ALBARAN_CONTENIDO_VERSION_ACTUAL` —que es lo que parece
+// correcto al leerlo— pedirá un v:3 sin bloque y el sellador LANZARÁ. Y como aquel fichero está
+// gateado por banco, el rojo saldría otra vez en el CI y no en la tanda de quien lo escribió.
+//
+// Este guard corre SIN gate a propósito, por lo mismo que el resto del bloque ⑥.
+
+test('SCRUM-438 · ⑦ 🔴 la fixture de scrum297 sella con versiones que NO piden bloque congelado', () => {
+  const fuente = fs.readFileSync(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), 'scrum297-evidencias-postgres.test.mjs'),
+    'utf8',
+  );
+  const sf = ts.createSourceFile('x.mjs', fuente, ts.ScriptTarget.Latest, true);
+
+  // Las llamadas a `sellar(<algo>, …)`, derivadas del AST y no por texto: un `grep` casaría también
+  // los comentarios que explican cómo se usa.
+  const argumentos = [];
+  const visita = (n) => {
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'sellar') {
+      argumentos.push(n.arguments[0]?.getText(sf) ?? '(sin argumento)');
+    }
+    ts.forEachChild(n, visita);
+  };
+  visita(sf);
+
+  // SUELO: si el analizador no encuentra las llamadas, «ninguna está mal» y «no supe mirar» darían
+  // el mismo verde.
+  assert.ok(argumentos.length >= 2,
+    `🔴 solo se han encontrado ${argumentos.length} llamada(s) a \`sellar(\` en scrum297. O la ` +
+    'fixture cambió de nombre, o el analizador dejó de verla: en los dos casos este guard habría ' +
+    'pasado en verde sin comprobar nada.');
+
+  // Qué versiones NO pueden usarse ahí: las que la declaración dice que leen del bloque.
+  const pidenBloque = Object.keys(FUENTES_POR_VERSION)
+    .map(Number)
+    .filter((v) => Object.values(FUENTES_POR_VERSION[v]).includes('congelado'));
+  assert.ok(pidenBloque.length >= 1,
+    '🔴 SUELO: ninguna versión declara leer del bloque congelado. Entonces este guard no vigila nada.');
+
+  const malas = argumentos.filter((a) => {
+    if (/^\d+$/.test(a)) return pidenBloque.includes(Number(a));
+    return true;   // cualquier cosa que no sea un literal (una constante, una variable) no se puede
+  });                //  garantizar aquí: se marca y que alguien la mire.
+
+  assert.deepEqual(malas, [],
+    `🔴 LA FIXTURE DE scrum297 SELLA CON ${malas.join(', ')}, Y ESA VERSIÓN PIDE EL BLOQUE ` +
+    `CONGELADO (piden bloque: v:${pidenBloque.join(', v:')}).\n\n` +
+    '  Esa fixture NO construye bloque: sus fuentes son las de un albarán v:1/v:2. El sellador\n' +
+    '  lanzará `ContenidoCongeladoIncompletoError`, y como aquel fichero está gateado por banco el\n' +
+    '  rojo saldrá en el CI y no aquí.\n\n' +
+    '  Qué hacer: o se deja la versión literal que la fixture sí sabe sellar, o se le enseña a\n' +
+    '  construir el bloque congelado. Lo que NO vale es pasarle la versión actual y confiar.');
 });
