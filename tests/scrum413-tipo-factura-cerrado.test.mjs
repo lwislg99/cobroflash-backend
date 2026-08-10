@@ -14,20 +14,29 @@
 // O sea: **todo lo que no sea `R1` se declara como F1, en silencio.** Alimentando el constructor
 // de XML con una factura de cada tipo:
 //
-//     F1          → F1   ✅
-//     R1          → R1   ✅
-//     JUST        → F1   🔴 un justificante NO es una factura y se le declara a Hacienda como una
-//     ANT         → F1   🔴 reservado en un comentario desde SCRUM-17; sin dictamen
-//     (inventado) → F1   🔴 ni siquiera debería compilar
+//     F1          → F1   ✅ ANTES y AHORA
+//     R1          → R1   ✅ ANTES y AHORA
+//     JUST        → F1   🔴 ANTES  ·  EXCLUIDA:documento_no_declarable:JUST      ✅ AHORA
+//     ANT         → F1   🔴 ANTES  ·  EXCLUIDA:tipo_de_factura_desconocido:ANT   ✅ AHORA
+//     (inventado) → F1   🔴 ANTES  ·  EXCLUIDA:tipo_de_factura_desconocido:…     ✅ AHORA
 //
 // En PRODUCCIÓN hay 44 `JUST` y **5 `F1` con número `J-`** (tipo y número ya se contradicen). El
 // SELLADO está a salvo porque `applyVeriFactu` corta con `isReceiptNumber(number)` — por el
 // NÚMERO, no por el tipo—. **El EXPORT no tiene esa guarda**: `buildVerifactuRegistrosXml` no la
 // lleva en ninguna función de su cadena, medido por AST.
 //
-// ⚠️ ESTE FICHERO NO ARREGLA NADA. Arreglarlo es tocar el camino de emisión: regla 38, STOP, y el
-// diff está escrito y SIN APLICAR en `docs/master/SCRUM-413.md`. Lo que hace es (a) cerrar el
-// conjunto por censo derivado y (b) dejar la divergencia EJECUTADA, para que no se pueda olvidar.
+// ✅ ARREGLADO el 10-ago-2026 CON GO DEL FUNDADOR (regla 38: esto modifica el camino de emisión).
+//
+// La unión cerrada vive en `tipoDocumento.ts` y el mapeo es un `Record<TipoDocumento, …>`: si se
+// añade un valor a la unión y no se le da entrada, **no compila** — ésa es la diferencia con el
+// `else`, que nunca falta. Y están cubiertos LOS DOS sitios, que era lo que más importaba:
+//
+//   · `:286` (`applyVeriFactu`) → `exigirTipoDeclarable` LANZA. Sella UN documento: no hay lote.
+//   · `:703` (`construirRegistro`) → EXCLUYE con motivo. Allí sí hay un ejercicio entero que sigue
+//     siendo entregable, y un paquete al que le falta algo lo DICE.
+//
+// Este fichero conserva la divergencia EJECUTADA, ahora invertida: comprueba que `JUST`, `ANT` y un
+// tipo inventado **ya no** se declaran F1.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -138,6 +147,21 @@ test('SCRUM-413 · ningún valor de `Invoice.type` se escribe sin estar declarad
       '  es dictamen fiscal (P16 en docs/legal/PREGUNTAS_ASESOR.md), no una decisión de código.',
   );
 
+  // 🔴 Y ATADO A LA UNIÓN REAL, no a la copia de arriba. Sin esto el guard vigilaría su propia
+  // lista: alguien podría ampliar `TipoDocumento` en el producto y este fichero seguiría verde
+  // comparando contra `TIPOS_DECLARADOS`. Se deriva del `Record` que hace el mapeo — el mismo que
+  // no compila si a un valor le falta entrada.
+  const tipoDoc = fs.readFileSync(path.join(RAIZ, 'src/modules/invoicing/domain/tipoDocumento.ts'), 'utf8');
+  const union = /export type TipoDocumento =([^;]+);/.exec(tipoDoc);
+  assert.ok(union, '🔴 ESCÁNER CIEGO: no se localiza la unión `TipoDocumento`');
+  const deLaUnion = [...union[1].matchAll(/'([^']+)'/g)].map((m) => m[1]).sort();
+  assert.deepEqual(
+    deLaUnion, [...TIPOS_DECLARADOS].sort(),
+    `🔴 la unión del producto (${deLaUnion.join(', ')}) y la lista de este guard ` +
+      `(${TIPOS_DECLARADOS.join(', ')}) han dejado de coincidir. Un guard que vigila su propia copia ` +
+      'no vigila nada. Si se añadió un tipo, decláralo aquí Y dale entrada en `AEAT_POR_TIPO`.',
+  );
+
   // Y el DEFAULT del schema es un valor más aunque nadie lo escriba a mano.
   const schema = fs.readFileSync(path.join(RAIZ, 'prisma/schema.prisma'), 'utf8');
   const inv = schema.slice(schema.indexOf('model Invoice'), schema.indexOf('model Invoice') + 3000);
@@ -225,15 +249,13 @@ test('SCRUM-413 · 🔴 EL VECTOR: un JUSTIFICANTE se declara a la AEAT como fac
   // se niega a sellarlo. Pero el EXPORT no lleva esa guarda, y aquí se ve el resultado.
   const declarado = await tipoDeclaradoHoy(facturaDe('JUST', 'J-20260304-AB12'));
 
-  assert.equal(
-    declarado, 'F1',
-    `🔴 el justificante declara «${declarado}». Si ya no es F1, el defecto está ARREGLADO y este ` +
-      'test tiene que cambiar de sentido: pasa a exigir el valor correcto y se retira este aviso.',
+  assert.match(
+    declarado, /^EXCLUIDA:documento_no_declarable:JUST$/,
+    `🔴 el justificante declara «${declarado}». Desde SCRUM-413 NO se declara: se EXCLUYE con motivo. ` +
+      'Si vuelve a salir F1, el mapeo mudo ha vuelto y un documento que no es una factura se le ' +
+      'está declarando a Hacienda como factura completa.',
   );
-  assert.notEqual(
-    declarado, 'CORRECTO',
-    '🔴 marcador imposible: este assert existe para que el de arriba no se lea como una bendición.',
-  );
+  assert.notEqual(declarado, 'F1', '🔴 el justificante ha vuelto a declararse como factura completa');
   // 🔴 LO QUE ESTO SIGNIFICA, dicho aquí y no solo en la entrada: en producción hay 44 documentos
   // `JUST` y 5 `F1` con número `J-` (medido el 10-ago-2026). Ninguno es una factura fiscal, y el
   // XML los declararía a todos como facturas completas.
@@ -241,27 +263,37 @@ test('SCRUM-413 · 🔴 EL VECTOR: un JUSTIFICANTE se declara a la AEAT como fac
 
 test('SCRUM-413 · 🔴 un tipo DESCONOCIDO también se declara F1, sin que nada avise', async () => {
   const declarado = await tipoDeclaradoHoy(facturaDe('LO-QUE-SEA', '2026-CF-003'));
-  assert.equal(
-    declarado, 'F1',
-    `🔴 un tipo inventado declara «${declarado}». Mientras siga siendo F1, cualquier cadena escrita ` +
-      'en ese campo acaba siendo una factura completa ante Hacienda.',
+  assert.match(
+    declarado, /^EXCLUIDA:tipo_de_factura_desconocido:LO-QUE-SEA$/,
+    `🔴 un tipo inventado declara «${declarado}». Tiene que PARAR, no declararse F1 por si acaso: ` +
+      'declarar de más ante Hacienda con el nombre de un profesional encima es peor que no declarar ' +
+      '— lo segundo se corrige, lo primero ya se dijo.',
   );
 });
 
-test('SCRUM-413 · 🔴 `ANT` está reservado desde SCRUM-17 y HOY se sellaría como F1', async () => {
+test('SCRUM-413 · `ANT` sigue reservado: hoy PARA en vez de sellarse como F1', async () => {
   // `invoicing.service.ts:28`: «default 'F1' (se fuerza 'JUST' si la serie sale J-); FISCAL-1 usará
   // 'ANT'». Es una reserva en un COMENTARIO, de SCRUM-17 (7500782, 22-jul-2026). El día que
   // FISCAL-1 la escriba, se sellará como F1 por el `else` — puede que sea lo correcto, pero lo
   // sería POR ACCIDENTE. Es la pregunta P16.2 al asesor.
   const declarado = await tipoDeclaradoHoy(facturaDe('ANT', '2026-CF-002'));
-  assert.equal(declarado, 'F1', `🔴 'ANT' declara «${declarado}»`);
+  assert.match(
+    declarado, /^EXCLUIDA:tipo_de_factura_desconocido:ANT$/,
+    `🔴 'ANT' declara «${declarado}». Sigue sin estar en la union a proposito: hasta que P16.2 diga ` +
+      'con que TipoFactura se sella un anticipo, escribirlo PARA -- antes se sellaba F1 por el else.',
+  );
 
   // Y el suelo de la reserva: que el comentario siga ahí. Si desaparece sin que nadie decida, la
   // pregunta se pierde y el valor entra sin dictamen.
   const svc = fs.readFileSync(path.join(RAIZ, 'src/modules/invoicing/domain/invoicing.service.ts'), 'utf8');
+  // ⚠️ Este assert me cazó a MÍ al aplicar el diff: al reescribir ese comentario cambié el texto
+  // y la reserva «desapareció» según el guard. Tenía razón. Ahora ancla en lo estable —el valor y
+  // la palabra RESERVADO— en vez de en una frase concreta, que es lo que hace frágil a un guard
+  // de texto (cuarta vez que este patrón muerde en esta sesión).
   assert.match(
-    svc, /FISCAL-1 usará 'ANT'/,
+    svc, /'ANT'[\s\S]{0,40}RESERVADO/,
     "🔴 ha desaparecido la reserva de 'ANT' de `invoicing.service.ts`. O se decidió y hay que " +
-      'declararlo en `TIPOS_DECLARADOS` con su mapeo, o se abandonó — pero no puede evaporarse.',
+      'añadirlo a `TipoDocumento` con su mapeo en `AEAT_POR_TIPO`, o se abandonó — pero no puede ' +
+      'evaporarse: mientras no esté en la unión, escribirlo NO COMPILA, y esa es la protección.',
   );
 });
