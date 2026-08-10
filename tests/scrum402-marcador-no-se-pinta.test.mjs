@@ -75,7 +75,10 @@ const CENSO = Object.freeze({
   'api.js': 1,
   // SCRUM-405 (−4, 7-ago-2026): al pasar las tres descargas por la forma común desaparecieron
   // cuatro ramas de error que pintaban marcador. El trinquete APRIETA: 15 → 11.
-  'exportView.js': 11,
+  // 11 → 5 el 10-ago-2026: SCRUM-244 trajo los ocho textos APROBADOS de la card de portabilidad
+  // y del diálogo de descarga. Los 5 que quedan son de la card del LIBRO DE EMITIDAS (SCRUM-325),
+  // que nació en `main` después de esa aprobación: nadie ha aprobado su copy todavía.
+  'exportView.js': 5,
   'invoiceDetailView.js': 9,
   'invoicesView.js': 2,
   'jobDetailView.js': 1,
