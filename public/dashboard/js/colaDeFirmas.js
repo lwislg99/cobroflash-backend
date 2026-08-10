@@ -80,7 +80,9 @@ async function encolarFirma(albaranId, cuerpo) {
   const claveIdempotencia = claveDeFirma(albaranId);
   if (!claveIdempotencia) return { estado: window.FALLO, motivo: 'sin id de albarán' };
   return window.guardarFirmaPendiente(
-    Object.assign({ claveIdempotencia, albaranId }, cuerpo || {}),
+    // SCRUM-358 fase 3 · `encoladaEn` lo añade el drenado para poder ORDENAR. Se pone al encolar
+    // y NO se toca al reintentar: es cuándo el cliente firmó, no cuándo se intentó subir.
+    Object.assign({ claveIdempotencia, albaranId, encoladaEn: Date.now() }, cuerpo || {}),
   );
 }
 
@@ -137,7 +139,183 @@ async function firmarConRedDeSeguridad(albaranId, cuerpo, subir) {
   return { estado: window.FIRMA_A_SALVO, encolada, respuesta };
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-358 · FASE 3 · EL DRENADO — que la cola se vacíe SOLA
+//
+// Hasta aquí la cola guardaba y no vaciaba: una firma encolada se quedaba dentro hasta que el
+// profesional volviera a pulsar «Firmar aquí mismo» en ese albarán. Por eso el aviso hubo que
+// degradarlo a «no suben solas todavía». Esto lo devuelve a la verdad.
+//
+// 🔴 SE DRENA AL ABRIR LA APLICACIÓN, y no es una elección de comodidad: en iOS **no hay
+// Background Sync** (0 % en Safari, medido en H0) y el push está descartado (regla 36). No existe
+// ningún momento en el que el navegador nos despierte. El único momento que tenemos es éste.
+//
+// 🔴 EL ORDEN ES EL MISMO QUE EN LA FASE 2, Y POR EL MISMO MOTIVO: se desencola CUANDO EL SERVIDOR
+// CONFIRMA, nunca cuando se lanza. Una firma que desaparece de la cola sin confirmación es una
+// firma perdida — y aquí es peor que en la fase 2, porque ya no hay nadie detrás que la reintente.
+
+
+/**
+ * El orden de subida: **la más antigua primero**.
+ *
+ * No hay dependencia entre firmas —cada una es de un albarán distinto— así que el orden no cambia
+ * el resultado. Cambia QUIÉN se queda fuera si algo va mal, y por eso se elige: la más antigua es
+ * la que lleva más tiempo en riesgo. Si el navegador desaloja el almacén (iOS a los 7 días, H5) o
+ * la cuota se agota, lo que se pierde es lo más viejo. Subir eso primero es reducir el daño del
+ * peor caso, no ordenar por ordenar.
+ *
+ * Una firma SIN `encoladaEn` va **primero**: sólo puede venir de una versión anterior a la fase 3,
+ * así que lleva ahí más tiempo que cualquiera con marca. Tratarla como la más nueva la dejaría
+ * siempre la última — justo la que peor lo tiene.
+ */
+function ordenDeDrenado(firmas) {
+  return [...(firmas || [])].sort((a, b) => {
+    const ta = Number(a && a.encoladaEn);
+    const tb = Number(b && b.encoladaEn);
+    const va = Number.isFinite(ta) ? ta : -Infinity;
+    const vb = Number.isFinite(tb) ? tb : -Infinity;
+    if (va !== vb) return va - vb;
+    // Empate: por clave, para que el orden sea estable y el test pueda afirmarlo.
+    return String(a.claveIdempotencia).localeCompare(String(b.claveIdempotencia));
+  });
+}
+
+/**
+ * 🔴 UN 409 `albaran_locked` ES UN ÉXITO, y es la sutileza de esta fase.
+ *
+ * Significa «este albarán ya está firmado»: el servidor LO TIENE. Que llegue como error HTTP no lo
+ * convierte en un fallo nuestro — es el caso normal de un reintento cuya petición anterior sí
+ * llegó y cuya respuesta se perdió.
+ *
+ * Si se tratara como fallo, esa firma **no saldría de la cola jamás**: cada apertura reintentaría,
+ * cada reintento daría 409, y el contador le diría al profesional que tiene algo pendiente que
+ * lleva semanas a salvo. La cola no se vaciaría nunca y el aviso mentiría en la otra dirección.
+ *
+ * Se mira `err.code`, no el texto: ramificar por mensaje es lo que nunca hay que hacer, y `api.js`
+ * expone el código justo para esto.
+ */
+function elServidorYaLaTiene(error) {
+  return !!error && error.status === 409 && error.code === 'albaran_locked';
+}
+
+
+/**
+ * Vacía la cola: sube lo que pueda y deja dentro lo que no.
+ *
+ * `subirFirma(firma)` hace la petición real; se inyecta para poder ejercitar el camino entero
+ * contra el banco de red.
+ *
+ * Devuelve `{ estado, subidas, yaEstaban, quedan, fallidas }`.
+ *
+ * 🔴 EL SUELO: si no se consigue LEER la cola, NO se dice «nada pendiente». Se devuelve el estado
+ * del almacén tal cual —NO_DISPONIBLE o FALLO— y `quedan: null`. «Cola vacía» y «no supe mirarla»
+ * son la misma pantalla y significan lo contrario, y aquí el segundo le dice al profesional que
+ * está todo a salvo.
+ */
+async function drenarFirmasPendientes(subirFirma, opciones) {
+  const plazo = (opciones && opciones.plazoMs) || 0;   // 0 = el de la casa (api.js)
+
+  const cola = await window.leerFirmasPendientes();
+  if (!cola || cola.estado !== window.GUARDADO || !Array.isArray(cola.firmas)) {
+    return {
+      estado: (cola && cola.estado) || window.FALLO,
+      subidas: 0, yaEstaban: 0, quedan: null, fallidas: [],
+    };
+  }
+
+  let subidas = 0;
+  let yaEstaban = 0;
+  const fallidas = [];
+
+  for (const firma of ordenDeDrenado(cola.firmas)) {
+    // 🔴 UNA QUE FALLA NO BLOQUEA A LAS DEMÁS — pero tampoco se salta EN SILENCIO: cae en
+    // `fallidas` con su motivo, para que quien mire pueda decir cuál y por qué.
+    const r = await window.esperarLoQueLaRed(Promise.resolve().then(() => subirFirma(firma)), plazo);
+
+    if (r.vencio) {
+      fallidas.push({ clave: firma.claveIdempotencia, motivo: 'no respondió a tiempo' });
+      continue;
+    }
+    if (r.error) {
+      if (elServidorYaLaTiene(r.error)) {
+        // Ya está a salvo: sale de la cola igual que si la hubiéramos subido nosotros.
+        const quitada = await window.quitarFirmaPendiente(firma.claveIdempotencia);
+        if (quitada && quitada.estado === window.GUARDADO) yaEstaban += 1;
+        else fallidas.push({ clave: firma.claveIdempotencia, motivo: 'el servidor la tiene y no se pudo sacar de la cola' });
+        continue;
+      }
+      fallidas.push({ clave: firma.claveIdempotencia, motivo: String((r.error && r.error.message) || r.error) });
+      continue;
+    }
+    if (!window.confirmaElServidor(r.valor)) {
+      // Respondió algo que no es una confirmación —el HTML de un portal cautivo—. No subió.
+      fallidas.push({ clave: firma.claveIdempotencia, motivo: 'la respuesta no confirma' });
+      continue;
+    }
+
+    // CONFIRMADA. Sólo aquí sale de la cola.
+    const quitada = await window.quitarFirmaPendiente(firma.claveIdempotencia);
+    if (quitada && quitada.estado === window.GUARDADO) subidas += 1;
+    else fallidas.push({ clave: firma.claveIdempotencia, motivo: 'subió y no se pudo sacar de la cola' });
+  }
+
+  const despues = await window.leerFirmasPendientes();
+  const quedan = (despues && despues.estado === window.GUARDADO && Array.isArray(despues.firmas))
+    ? despues.firmas.length
+    : null;   // se pudo drenar y no se pudo releer: no se inventa un cero
+
+  return { estado: window.GUARDADO, subidas, yaEstaban, quedan, fallidas };
+}
+
+/**
+ * Sube UNA firma de la cola por el mismo endpoint que el botón de firmar.
+ *
+ * ⚠️ Se envía SÓLO lo que el servidor acepta —`signatureData`, `firmadoPorNombre`,
+ * `firmadoPorCalidad`, `firmadoPorCalidadOtro`, medido en
+ * `src/modules/jobs/app/routes/albaranes.routes.ts:639-703`—. `claveIdempotencia`, `albaranId` y
+ * `encoladaEn` son NUESTROS: sirven para manejar la cola y no viajan. El endpoint de firmar **no
+ * acepta clave de idempotencia** y metérsela sería tocar el sellado.
+ */
+function subirFirmaDeLaCola(firma) {
+  const cuerpo = { signatureData: firma.signatureData };
+  for (const campo of ['firmadoPorNombre', 'firmadoPorCalidad', 'firmadoPorCalidadOtro']) {
+    if (firma[campo] !== undefined) cuerpo[campo] = firma[campo];
+  }
+  return window.apiRequest(`/admin/albaranes/${firma.albaranId}/firmar`, {
+    method: 'POST',
+    body: JSON.stringify(cuerpo),
+  });
+}
+
+/**
+ * El drenado tal y como lo dispara la aplicación al abrirse.
+ *
+ * No lanza nunca: cerrar la cola no puede tumbar el arranque del dashboard. Y **repinta el aviso**
+ * al terminar, porque el contador es el ÚNICO sitio donde el profesional ve que el drenado
+ * funcionó: si sube una firma y el número no se mueve, para él no ha pasado nada.
+ */
+async function drenarAlAbrir() {
+  if (typeof window.leerFirmasPendientes !== 'function') return null;
+  let r = null;
+  try {
+    r = await drenarFirmasPendientes(subirFirmaDeLaCola);
+  } catch (_e) {
+    r = null;   // el drenado es best-effort; lo que NO puede es quedarse a medias sin decirlo
+  }
+  try {
+    if (typeof window.pintarFirmasPendientesEnHome === 'function') {
+      await window.pintarFirmasPendientesEnHome();
+    }
+  } catch (_e) { /* la home puede no estar montada todavía */ }
+  return r;
+}
+
 // Frontend vanilla, sin bundler: se publica en `window` como el resto del dashboard.
+window.subirFirmaDeLaCola = subirFirmaDeLaCola;
+window.drenarAlAbrir = drenarAlAbrir;
 window.claveDeFirma = claveDeFirma;
 window.encolarFirma = encolarFirma;
 window.firmarConRedDeSeguridad = firmarConRedDeSeguridad;
+window.ordenDeDrenado = ordenDeDrenado;
+window.elServidorYaLaTiene = elServidorYaLaTiene;
+window.drenarFirmasPendientes = drenarFirmasPendientes;

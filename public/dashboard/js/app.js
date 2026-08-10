@@ -451,6 +451,17 @@ async function initApp() {
   } else {
     renderView(window.appState.view || 'home');
   }
+
+  // 9. SCRUM-358 (H3 · fase 3) · LA COLA DE FIRMAS SE VACÍA AL ABRIR.
+  //
+  // Éste es el único momento que tenemos: en iOS no hay Background Sync (0 % en Safari, medido en
+  // H0) y el push está descartado (regla 36), así que el navegador no nos despierta nunca. Si no
+  // se drena aquí, una firma hecha sin cobertura se queda en el móvil hasta que el profesional
+  // vuelva a firmar ese albarán a mano.
+  //
+  // Va DESPUÉS del render y SIN `await`: pintar el dashboard no puede esperar a la red. El aviso
+  // se repinta solo cuando el drenado termina — `drenarAlAbrir` se encarga, y no lanza nunca.
+  if (typeof window.drenarAlAbrir === 'function') window.drenarAlAbrir();
 }
 
 async function logout() {
