@@ -145,16 +145,20 @@ function huecosDeCobro(job) {
   //     (regla de G). No se pinta el motivo, y la copy firmada de esos tres motivos queda sin usar
   //     en esta superficie — declarado en `docs/master/SCRUM-423.md`.
   //
-  //  ② `pendienteTotal > 0` — cero no es un hueco: es que no falta nada por entregar.
+  //  ② `lineasPendientes > 0` — cero no es un hueco: es que no falta nada por entregar.
   //
-  //  ③ `sinAtribuir === 0` — **la que de verdad protege.** Si hay líneas entregadas que no salen
-  //     del presupuesto, el número NO las cuenta, así que diría «quedan 3» dejando fuera entregas
-  //     reales. C6 lo prohíbe por escrito: «un número que resume tiene que declarar lo que no pudo
-  //     contar». Declararlo exige microcopy compuesta que HOY NO ESTÁ APROBADA (regla 30), así que
-  //     mientras no lo esté no se pinta un número incompleto y mudo.
+  //  ③ **CON `sinAtribuir > 0` LA LÍNEA SE PINTA IGUAL, con su coletilla detrás.**
   //
-  //     Y NO se exige lo mismo de `enPartesSinFirmar`: esas líneas no cuentan **por definición** de
-  //     C6 («solo cuenta lo firmado»), así que el número es completo respecto de lo que promete. Su
+  //     🔴 Aquí me equivoqué al proponerlo, y la corrección es del asesor (10-ago-2026). Yo quería
+  //     callar la línea cuando el número dejaba entregas sin contar, para no pintar un número mudo.
+  //     Pero mira lo que produce callarse: el profesional abre «Qué falta para cobrar», NO ve línea
+  //     de entrega, y lee que no queda nada por entregar. **Es la pantalla que dice "ya puedes
+  //     facturar"** — exactamente el suelo que este ticket existe para prohibir. Con `sinAtribuir`
+  //     el motor SÍ supo que había algo; sólo no supo dónde ponerlo. Callarse es peor que el número
+  //     incompleto, porque el número incompleto al menos deja al profesional mirando.
+  //
+  //     Y NO se exige nada de `enPartesSinFirmar`: esas líneas no cuentan **por definición** de C6
+  //     («solo cuenta lo firmado»), así que el número es completo respecto de lo que promete. Su
   //     declaración ya está en pantalla, en su propia línea: si hay líneas en albaranes sin firmar,
   //     existe un albarán sin firmar, y entonces el hueco ① de arriba está pintado. Hay un test que
   //     fija esa implicación para que siga siendo verdad.
@@ -162,12 +166,35 @@ function huecosDeCobro(job) {
   // ⚠️ Y se cuenta con `lineasPendientes`, NO con `pendienteTotal`: el segundo es la suma de
   // CANTIDADES (horas, m², ud) y rotularlo «2,5 líneas sin entregar» sería falso y encima con
   // decimal. La copy aprobada habla de líneas, así que el número es de líneas.
+  //  ④ **`lineasPendientes === 0` CON `sinAtribuir > 0` TAMBIÉN se pinta** — y sin texto nuevo.
+  //
+  //     Ese estado se puede dar y no es rebuscado: se entrega TODO lo presupuestado y además algo
+  //     añadido en obra que no sale del presupuesto (medido el 10-ago-2026 — presupuesto de 1 línea
+  //     entregada entera + 1 línea sin enlace → `calculable: true`, `lineasPendientes: 0`,
+  //     `sinAtribuir: 1`).
+  //
+  //     La frase principal NO vale ahí: «0 líneas del presupuesto sin entregar · …» es una
+  //     contradicción en una sola línea. Pero **la coletilla se sostiene sola** —«1 línea entregada
+  //     que no sale del presupuesto» ya es una frase completa y verdadera, ya sale de
+  //     `fraseDeCuenta` (copy FIRMADA de C6) y ya respeta el registro sustantivo-primero de sus
+  //     cuatro vecinas—, así que se pinta ella sin acompañamiento. Sin inventar copy, sin marcador
+  //     y sin tocar el trinquete de SCRUM-402.
+  //
+  //     🔴 Y esto CIERRA EL SUELO del ticket entero: si este caso callara, el profesional vería la
+  //     sección sin línea de entrega y leería que no queda nada — la pantalla que dice «ya puedes
+  //     facturar» habiendo entregas que el motor no supo atribuir.
   const entrega = job && job.entregaPendiente;
-  if (entrega
-    && entrega.calculable === true
-    && num(entrega.lineasPendientes) > 0
-    && num(entrega.sinAtribuir) === 0) {
-    huecos.push({ id: 'sin-entregar', cantidad: num(entrega.lineasPendientes), accion: 'ver-albaranes' });
+  if (entrega && entrega.calculable === true
+    && (num(entrega.lineasPendientes) > 0 || entrega.fraseSinAtribuir)) {
+    huecos.push({
+      id: 'sin-entregar',
+      cantidad: num(entrega.lineasPendientes),
+      // La coletilla llega YA COMPUESTA del servidor, con la copy FIRMADA de C6. Aquí no se
+      // escribe texto: sólo viaja hasta el rótulo, que la coloca detrás del número — o sola, si
+      // no hay número que acompañar.
+      fraseSinAtribuir: entrega.fraseSinAtribuir || null,
+      accion: 'ver-albaranes',
+    });
   }
 
   // 4 · FACTURADO Y SIN COBRAR — por factura, no por resta. Las rectificativas (importe negativo)

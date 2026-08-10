@@ -103,11 +103,11 @@ test('SCRUM-423 · ② los TRES motivos de «no contesto» tampoco pintan línea
   }
 });
 
-test('SCRUM-423 · ② un número INCOMPLETO tampoco se pinta: `sinAtribuir` lo bloquea', () => {
-  // Hay entregas atribuidas (así que el resumen SÍ es calculable) y ADEMÁS una línea entregada que
-  // no sale del presupuesto. El número dejaría fuera esa entrega y no podría decirlo con copy
-  // aprobada, así que no se pinta. C6: «un número que resume tiene que declarar lo que no pudo
-  // contar».
+test('SCRUM-423 · ② un número INCOMPLETO SÍ se pinta, y con su coletilla FIRMADA detrás', () => {
+  // Corrección del asesor (10-ago-2026) sobre mi propuesta. Yo quería callar la línea para no
+  // pintar un número mudo; callarse produce la pantalla que dice «no queda nada por entregar», o
+  // sea «ya puedes facturar». Con `sinAtribuir` el motor SÍ supo que había algo — sólo no supo
+  // dónde ponerlo—, así que se dice, con la salvedad pegada al número.
   const albMixto = {
     estado: 'firmado', modoValoracion: 'SIN_VALORAR',
     lineas: [{ concepto: 'a', cantidad: 1, quoteLineIndex: 0 }, { concepto: 'b', cantidad: 1 }],
@@ -117,8 +117,111 @@ test('SCRUM-423 · ② un número INCOMPLETO tampoco se pinta: `sinAtribuir` lo 
   assert.ok(vista.lineasPendientes > 0, '🔴 precondición: tiene que quedar algo pendiente.');
   assert.equal(vista.sinAtribuir, 1, '🔴 precondición: tiene que haber 1 línea sin atribuir.');
 
-  assert.equal(G5.huecosDeCobro({ entregaPendiente: vista }).filter((x) => x.id === 'sin-entregar').length, 0,
-    '🔴 se pinta un número que NO cuenta una entrega real y no lo declara. Es peor que no dar número.');
+  const h = G5.huecosDeCobro({ entregaPendiente: vista }).find((x) => x.id === 'sin-entregar');
+  assert.ok(h, '🔴 NO se pinta la línea habiendo entrega pendiente. Callarse aquí es la pantalla ' +
+    'que le dice al profesional que ya puede facturar: el suelo que este ticket prohíbe.');
+  assert.ok(h.fraseSinAtribuir, '🔴 el número va sin la salvedad: sería «quedan 2 y no ha pasado nada más».');
+  assert.equal(rotulo(h), '2 líneas del presupuesto sin entregar · 1 línea entregada que no sale del presupuesto');
+});
+
+test('SCRUM-423 · ② la coletilla es la copy FIRMADA de C6, no una cadena escrita en la vista', async () => {
+  // Si la frase se escribiera en el frontend habría dos fuentes de verdad para un texto firmado, y
+  // la de la pantalla sería la que nadie firmó. Se comprueba contra `fraseDeCuenta`, la de C6.
+  const { fraseDeCuenta } = await import('../dist/modules/jobs/domain/entregaPendiente.js');
+  for (const n of [1, 2, 7]) {
+    const albs = [{
+      estado: 'firmado', modoValoracion: 'SIN_VALORAR',
+      lineas: [{ concepto: 'a', cantidad: 1, quoteLineIndex: 0 },
+        ...Array.from({ length: n }, (_, i) => ({ concepto: `x${i}`, cantidad: 1 }))],
+    }];
+    const vista = entregaParaVista(entregaDelTrabajo([quoteCon(1, 1, 1)], albs));
+    assert.equal(vista.fraseSinAtribuir, fraseDeCuenta('sinAtribuir', n),
+      `🔴 con n=${n} la coletilla no es la que produce la copy firmada de C6.`);
+  }
+  // Y su singular real, que es regla dura de C6.
+  assert.match(entregaParaVista(entregaDelTrabajo([quoteCon(1, 1, 1)], [{
+    estado: 'firmado', modoValoracion: 'SIN_VALORAR',
+    lineas: [{ concepto: 'a', cantidad: 1, quoteLineIndex: 0 }, { concepto: 'b', cantidad: 1 }],
+  }])).fraseSinAtribuir, /^1 línea entregada que no sale del presupuesto$/);
+});
+
+test('SCRUM-423 · 🔴 el número y su salvedad NO SE PUEDEN RENDERIZAR POR SEPARADO', () => {
+  // El principio que gobierna la composición: si un render, un truncado o un ancho pequeño los
+  // parte, alguien leerá el número solo — y ese número es justo el que no se puede leer solo.
+  //
+  // ① El rótulo es UNA sola cadena: la función devuelve un string, no dos trozos.
+  const h = { cantidad: 2, fraseSinAtribuir: '1 línea entregada que no sale del presupuesto' };
+  const salida = rotulo(h);
+  assert.equal(typeof salida, 'string', '🔴 el rótulo ha dejado de ser una sola cadena.');
+  assert.ok(salida.includes('2 líneas del presupuesto sin entregar') && salida.includes(h.fraseSinAtribuir),
+    '🔴 la cadena no lleva las dos partes.');
+  assert.ok(salida.includes(' · '), '🔴 falta el separador « · » de la casa.');
+
+  // ② Y la vista la pinta en UN SOLO nodo de texto. Si alguien la partiera en dos elementos, este
+  //    assert cae: es la diferencia entre «van juntas» y «hoy salen juntas».
+  const render = /const t = document\.createElement\('span'\);\s*t\.textContent = TEXTO_HUECO\[h\.id\]\(h\);/;
+  assert.match(VISTA, render,
+    '🔴 el hueco ha dejado de pintarse como un único `textContent`. Si el número y su salvedad se ' +
+    'reparten en dos nodos, un truncado o un cambio de layout pueden dejar visible sólo el número.');
+
+  // ③ Nadie pinta el número por su cuenta saltándose el rótulo.
+  assert.ok(!/h\.cantidad[^)]*sin entregar/.test(VISTA.replace(/'sin-entregar':[\s\S]*?\n    \},/, '')),
+    '🔴 hay un segundo sitio que compone esta frase: dos rótulos para la misma línea acabarán divergiendo.');
+});
+
+test('SCRUM-423 · 🔴 la salvedad no se pierde por TRUNCADO en ancho de móvil', () => {
+  // Este producto se usa con el móvil en la mano, y ahí es donde el texto largo se corta. Se mide
+  // el CSS real, no se supone: ninguna regla que alcance al hueco puede truncar.
+  const CSS = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8');
+  const reglas = [...CSS.matchAll(/([^{}]*\.cobro-hueco[^{}]*)\{([^}]*)\}/g)];
+  assert.ok(reglas.length >= 2, `🔴 no se encuentran las reglas de .cobro-hueco (${reglas.length}).`);
+
+  const PROHIBIDO = /text-overflow|white-space\s*:\s*nowrap|-webkit-line-clamp|overflow\s*:\s*hidden/;
+  // ⚠️ HERMANO POSITIVO: se demuestra que el detector reconoce un truncado antes de afirmar que no
+  // lo hay. Si no, «no hay truncado» sería verde aunque el patrón estuviera mal escrito.
+  assert.ok(PROHIBIDO.test('.x { text-overflow: ellipsis; }'), '🔴 el detector de truncado no detecta nada.');
+
+  for (const [, selector, cuerpo] of reglas) {
+    assert.ok(!PROHIBIDO.test(cuerpo),
+      `🔴 «${selector.trim()}» trunca el contenido del hueco: la salvedad puede desaparecer y dejar ` +
+      'el número solo, que es exactamente lo que la composición existe para impedir.');
+  }
+  // Y lo que SÍ tiene que haber: que el contenido envuelva en vez de salirse.
+  assert.ok(/\.cobro-hueco\s*\{[^}]*flex-wrap:\s*wrap/.test(CSS),
+    '🔴 `.cobro-hueco` ya no envuelve: en móvil el texto largo se saldría o se cortaría.');
+});
+
+test('SCRUM-423 · 🔴 MEDIDO: `lineasPendientes === 0` CON `sinAtribuir > 0` SÍ puede darse', () => {
+  // La pregunta que el asesor exigió medir antes de cerrar. Se entrega TODO lo presupuestado y
+  // además algo añadido en obra que no sale del presupuesto.
+  const quote = { id: 1, lines: [{ concept: 'Bajante', qty: 1 }] };
+  const alb = {
+    estado: 'firmado', modoValoracion: 'SIN_VALORAR',
+    lineas: [{ concepto: 'Bajante', cantidad: 1, quoteLineIndex: 0 }, { concepto: 'Extra en obra', cantidad: 2 }],
+  };
+  const vista = entregaParaVista(entregaDelTrabajo([quote], [alb]));
+  assert.equal(vista.calculable, true);
+  assert.equal(vista.lineasPendientes, 0);
+  assert.ok(vista.sinAtribuir > 0);
+
+  // Y SE PINTA, con la coletilla SOLA. Es lo que cierra el suelo del ticket entero: si este caso
+  // callara, la sección saldría sin línea de entrega y el profesional leería que no queda nada —
+  // la pantalla que dice «ya puedes facturar» habiendo entregas que el motor no supo atribuir.
+  //
+  // Sin texto nuevo: «1 línea entregada que no sale del presupuesto» ya es una frase completa y
+  // verdadera, ya sale de `fraseDeCuenta` (copy firmada de C6) y ya respeta el registro
+  // sustantivo-primero de sus cuatro vecinas.
+  const h = G5.huecosDeCobro({ entregaPendiente: vista }).find((x) => x.id === 'sin-entregar');
+  assert.ok(h, '🔴 el caso «todo entregado + algo sin atribuir» NO pinta nada. Es exactamente la ' +
+    'pantalla que le dice al profesional que ya puede facturar.');
+  assert.equal(h.cantidad, 0, '🔴 precondición: aquí no hay número que dar.');
+  assert.equal(rotulo(h), '1 línea entregada que no sale del presupuesto',
+    '🔴 el rótulo de este caso no es la coletilla sola.');
+
+  // Y NUNCA la contradicción: ni un «0 líneas», ni un separador suelto sin nada delante.
+  assert.ok(!/^0 /.test(rotulo(h)), '🔴 se está pintando «0 líneas del presupuesto sin entregar».');
+  assert.ok(!rotulo(h).startsWith(' · ') && !rotulo(h).includes(' ·  '),
+    '🔴 ha quedado un separador sin la parte que separaba.');
 });
 
 test('SCRUM-423 · ② en cambio `enPartesSinFirmar` NO bloquea — y su declaración YA está en pantalla', () => {
@@ -205,12 +308,20 @@ test('SCRUM-423 · ④ y «ilegible» NO es lo mismo que «sin eje» ni que «ce
 // ══ LA COPY APROBADA — SINGULAR REAL Y FORMATO COPIADO DE SUS VECINOS ═════════════════════
 
 const VISTA = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/jobDetailView.js'), 'utf8');
-/** El rótulo tal y como lo produciría la vista, sin montar un DOM. */
-function rotulo(cantidad) {
-  const m = /'sin-entregar':\s*\(h\)\s*=>\s*(`[^`]*`)/.exec(VISTA);
+
+/**
+ * El rótulo REAL de la vista, ejecutado sin montar un DOM.
+ *
+ * Se extrae el CUERPO de la función del fichero y se ejecuta: así lo que se prueba es el código que
+ * se despliega, no una copia del rótulo mantenida aquí — que se quedaría vieja el día que alguien
+ * cambie la vista, y el test seguiría verde sobre una frase que ya no se pinta.
+ */
+const CUERPO_ROTULO = (() => {
+  const m = /'sin-entregar':\s*\(h\)\s*=>\s*\{([\s\S]*?)\n    \},/.exec(VISTA);
   assert.ok(m, '🔴 no se encuentra el rótulo de `sin-entregar` en jobDetailView.js.');
-  return new Function('h', `return ${m[1]};`)({ cantidad });
-}
+  return m[1];
+})();
+const rotulo = (h) => new Function('h', CUERPO_ROTULO)(typeof h === 'number' ? { cantidad: h } : h);
 
 test('SCRUM-423 · copy aprobada: SINGULAR REAL con n=1, nunca «1 líneas» ni «línea(s)»', () => {
   assert.equal(rotulo(1), '1 línea del presupuesto sin entregar');
@@ -218,18 +329,28 @@ test('SCRUM-423 · copy aprobada: SINGULAR REAL con n=1, nunca «1 líneas» ni 
   // Las dos trampas que C6 dejó nombradas: el `(s)` y el plural hecho pegando una «s».
   assert.ok(!/\(s\)/.test(rotulo(1) + rotulo(3)), '🔴 ha aparecido un «(s)».');
   assert.notEqual(rotulo(1), rotulo(3).replace('líneas', 'lineas'));
+  // Y el singular también manda en la coletilla, que es la otra mitad de la misma frase.
+  assert.equal(rotulo({ cantidad: 1, fraseSinAtribuir: '1 línea entregada que no sale del presupuesto' }),
+    '1 línea del presupuesto sin entregar · 1 línea entregada que no sale del presupuesto');
 });
 
 test('SCRUM-423 · el formato COPIA el de los otros cuatro huecos (medido, no supuesto)', () => {
-  const rotulos = [...VISTA.matchAll(/'(sin-[a-z-]+)':\s*\(h\)\s*=>\s*`([^`]*)`/g)]
-    .map(([, id, tpl]) => ({ id, tpl }));
-  assert.equal(rotulos.length, 5, `🔴 se esperaban 5 rótulos y hay ${rotulos.length}.`);
+  // Los cuatro vecinos son literales directos; el quinto tiene cuerpo porque compone la salvedad.
+  // Se normalizan a su TEXTO para poder compararlos con la misma vara.
+  const vecinos = [...VISTA.matchAll(/'(sin-[a-z-]+)':\s*\(h\)\s*=>\s*`([^`]*)`/g)]
+    .map(([, id, tpl]) => ({ id, texto: tpl }));
+  assert.equal(vecinos.length, 4, `🔴 se esperaban 4 rótulos de literal directo y hay ${vecinos.length}.`);
 
-  for (const { id, tpl } of rotulos) {
-    assert.ok(tpl.startsWith('${'), `🔴 «${id}» no empieza por su número/importe como los demás.`);
-    assert.ok(!/\.$/.test(tpl.trim()), `🔴 «${id}» acaba en punto y los otros no.`);
-    assert.ok(!/[⬚•·]/.test(tpl), `🔴 «${id}» lleva un icono que los otros no tienen.`);
+  const todos = [...vecinos, { id: 'sin-entregar', texto: rotulo(3) }];
+  for (const { id, texto } of todos) {
+    assert.ok(/^(\$\{|\d)/.test(texto), `🔴 «${id}» no empieza por su número/importe como los demás.`);
+    assert.ok(!/\.$/.test(texto.trim()), `🔴 «${id}» acaba en punto y los otros no.`);
+    assert.ok(!/[⬚•]/.test(texto), `🔴 «${id}» lleva un icono que los otros no tienen.`);
+    assert.ok(!/^[A-ZÁÉÍÓÚÑ]/.test(texto), `🔴 «${id}» empieza con mayúscula y los otros no.`);
   }
+
+  // El « · » sólo aparece SEPARANDO la salvedad, nunca de adorno en un rótulo simple.
+  assert.ok(!rotulo(3).includes('·'), '🔴 el rótulo sin salvedad lleva un separador que no separa nada.');
 });
 
 // ══ ⑤ EL QUE CIERRA EL TICKET — `entregaPendiente.ts` YA NO ES INALCANZABLE ════════════════

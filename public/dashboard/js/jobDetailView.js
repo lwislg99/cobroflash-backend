@@ -168,7 +168,25 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
     // punto final y sin icono. Singular y plural DE VERDAD —nunca `línea(s)`—, regla dura heredada
     // de C6: cambia el sustantivo, así que se alterna la palabra entera, igual que hace
     // `sin-firmar` con albarán/albaranes.
-    'sin-entregar': (h) => `${h.cantidad} ${h.cantidad === 1 ? 'línea' : 'líneas'} del presupuesto sin entregar`,
+    //
+    // 🔴 UNA SOLA CADENA, y ése es el punto: el número y el motivo por el que puede estar
+    // INCOMPLETO no se pueden separar. Si fueran dos nodos, un truncado, un ancho estrecho o un
+    // futuro «pinta sólo lo primero» dejarían a alguien leyendo el número a secas — que es
+    // precisamente el número que no se puede leer solo. Van pegados por construcción, no por
+    // acuerdo. Separador « · », el de la casa (el mismo de «Presupuesto #2 · 24 jun · 853,05 €»),
+    // y MISMO PESO VISUAL: ni gris, ni más pequeña, ni entre paréntesis — una salvedad que se ve
+    // menos que el número al que corrige no es una salvedad. La coletilla llega FIRMADA desde el
+    // servidor (`fraseDeCuenta`, C6): aquí no se escribe copy, sólo se coloca.
+    'sin-entregar': (h) => {
+      // 🔴 SIN NÚMERO, LA COLETILLA SE PINTA SOLA. «1 línea entregada que no sale del presupuesto»
+      // ya es una frase completa y verdadera por sí misma, sale de la misma copy firmada y respeta
+      // el registro sustantivo-primero de sus vecinas. Las dos alternativas eran peores: «0 líneas
+      // del presupuesto sin entregar · …» es una contradicción en una sola línea, y callar es la
+      // pantalla que dice «ya puedes facturar» habiendo entregas que el motor no supo atribuir.
+      if (!h.cantidad) return h.fraseSinAtribuir;
+      const base = `${h.cantidad} ${h.cantidad === 1 ? 'línea' : 'líneas'} del presupuesto sin entregar`;
+      return h.fraseSinAtribuir ? `${base} · ${h.fraseSinAtribuir}` : base;
+    },
     'sin-cobrar': (h) => `${fmt(h.importe, moneda)} facturados sin cobrar`,
   };
   const TEXTO_ACCION = {
