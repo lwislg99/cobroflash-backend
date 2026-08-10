@@ -290,7 +290,10 @@ test('SCRUM-319 · las secciones del cuerpo están declaradas, con GASTOS vacía
   assert.ok(s.includes('albaranes'), '🔴 falta la sección ALBARANES (lo entregado)');
   assert.ok(s.includes('facturas'), '🔴 falta la sección FACTURAS (lo facturado)');
   // El ORDEN es el ciclo: qué falta → entregado → facturado → gastos. No es decorativo.
-  assert.deepEqual(s, ['que-falta-para-cobrar', 'albaranes', 'facturas', 'gastos'],
+  // SCRUM-427 añade `notas` al FINAL. El cambio es deliberado y por eso se toca este contrato en
+  // vez de esquivarlo: las cuatro primeras son el ciclo del dinero y `notas` no es un paso de ese
+  // ciclo, es contexto — por eso va detrás y no en medio.
+  assert.deepEqual(s, ['que-falta-para-cobrar', 'albaranes', 'facturas', 'gastos', 'notas'],
     '🔴 el orden de las secciones ya no es el del ciclo del Trabajo');
   assert.ok(
     s.includes('gastos'),
