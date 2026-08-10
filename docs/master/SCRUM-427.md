@@ -211,3 +211,74 @@ Ficheros de este tramo: `docs/diseno/bloque-g.md` (la enmienda) ·
 `public/dashboard/js/jobDetailView.js` (sólo el emoji) · `tests/_composicion-detalle.mjs` (nuevo) ·
 `tests/scrum427-composicion-detalle.test.mjs` (nuevo) ·
 `tests/scrum427-notas-internas-detalle.test.mjs` (sólo la comparación del rótulo).
+
+---
+
+# TRAMO 3 — el emoji fuera de Presupuestos, y el guard APRETADO otra vez
+
+**Medido contra:** `origin/main` = `b3a480d1102ff5b8ea23bbc9a7692a26e0034009` · 2026-08-10T17:38:58+01:00
+
+⚠️ **Depende del tramo 2**: esta rama sale de `scrum-427-enmienda-y-enumerador`, porque el guard que
+aquí se aprieta es el que allí se aflojó. Hay que mergear ese primero.
+
+## El problema, que es de MECANISMO y no de emoji
+
+El tramo 2 quitó el `📝` del detalle porque la microcopy aprobada es «Notas internas» a secas. Eso
+puso en rojo el guard de coherencia con Presupuestos —que exigía el literal `'📝 Notas internas'` en
+las dos pantallas— y **hubo que aflojarlo a `'Notas internas'` para que pasara**.
+
+🔴 **Y ahí quedó el agujero, medido:**
+
+```
+'📝 Notas internas'.includes('Notas internas')  →  true
+```
+
+Con la comparación aflojada, **una pantalla con emoji y la otra sin él pasan las dos**. El guard se
+relajó para dejar pasar un cambio legítimo y se quedó **más ciego de lo que estaba**. Un guard que
+se afloja y no se vuelve a apretar es un guard perdido.
+
+## ① El emoji, fuera de Presupuestos
+
+`quotesDetailView.js:851` pasa a rotular `Notas internas`. Medido después: **ninguna de las dos
+pantallas tiene ya emojis en sus rótulos de sección** (comprobado con un patrón Unicode sobre todos
+los `detail-section-title` de ambos ficheros; el primer intento dio falsos positivos porque el rango
+que usé se comía los acentos de «Decisión» y «Qué falta»).
+
+## ② El guard, apretado — y más que antes
+
+⚠️ **Restaurar la lista NO habría restaurado la propiedad**, y esto es lo que importa del tramo:
+mientras se compare una SUBCADENA común escrita en el test, la divergencia del adorno es invisible
+**por construcción**. Da igual qué literal se ponga.
+
+Así que el rótulo ya no se compara contra un literal: **se EXTRAE de las dos pantallas y se exigen
+iguales entre sí**. Es estrictamente más fuerte que el guard original —él comparaba cada pantalla
+contra un texto escrito en el test; esto las compara una contra otra— y no deja literal que
+mantener: el día que la copy cambie, cambia en los dos sitios o esto cae. Se conserva además un
+assert contra el rótulo APROBADO, porque dos pantallas pueden estar de acuerdo en algo que nadie
+aprobó.
+
+## Verificado — las dos direcciones y el suelo
+
+| caso | resultado |
+|---|---|
+| **control negativo**: los dos rótulos idénticos | ✅ verde |
+| **dirección 1**: el emoji vuelve a **Presupuestos** | 🔴 *«LAS DOS PANTALLAS ROTULAN DISTINTO… detalle: «Notas internas» · Presupuestos: «📝 Notas internas»»* |
+| **dirección 2**: aparece `🗒️` en **el detalle** | 🔴 mismo mensaje, con los dos textos invertidos |
+| **SUELO**: el rótulo de una pantalla deja de encontrarse | 🔴 *«CIEGO: no se encuentra el rótulo… comparar dos cosas que no se han leído da igualdad trivial»* |
+
+Las dos direcciones se ejercitaron **por separado y en el orden que rompe**, no con una matriz por
+ejes: meter el emoji en una pantalla y luego en la otra son dos fallos distintos del mismo guard, y
+sólo probando los dos se sabe que no está mirando en una sola dirección.
+
+🔴 **El suelo no es teórico aquí**: si el extractor no encontrara ninguno de los dos rótulos,
+`assert.equal(undefined, undefined)` pasaría y el guard diría «coinciden» sin haber leído nada. Por
+eso lanza en vez de devolver vacío.
+
+## Lo que NO toca
+
+El resto de Presupuestos · el detalle del Trabajo (salvo lo ya hecho en el tramo 2) ·
+`prisma/schema.prisma` · el camino de emisión. **No se reescribió historia:** `main` se mergeó
+DENTRO de la rama.
+
+Ficheros: `public/dashboard/js/quotesDetailView.js` (una línea, el rótulo) ·
+`tests/scrum427-notas-internas-detalle.test.mjs` (el guard).
