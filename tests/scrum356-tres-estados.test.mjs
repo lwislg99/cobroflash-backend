@@ -88,8 +88,37 @@ test('SCRUM-356 · la microcopy aprobada está LITERAL, sin retocar', () => {
   assert.equal(t[b.ctx.FIRMA_A_SALVO].etiqueta, 'A salvo');
   assert.equal(t[b.ctx.FIRMA_A_SALVO].detalle, 'Guardado en YaQu. Ya no depende de este móvil.');
   assert.equal(b.ctx.TEXTO_NO_SE_PUDO_COMPROBAR, 'No hemos podido comprobar si te queda algo por subir.');
+  // ⚠️ PROVISIONAL (SCRUM-358 fase 2): el texto de SCRUM-356 decía «suben cuando abres YaQu» y hoy
+  // es FALSO — no hay drenado, así que una firma encolada sólo sube si el pro vuelve a firmar ese
+  // albarán. Se revierte al de 356 cuando exista el drenado (fase 3). La reversión está escrita en
+  // `docs/master/SCRUM-356.md`.
   assert.equal(b.ctx.TEXTO_SUBEN_AL_ABRIR,
-    'Las firmas pendientes suben cuando abres YaQu. Si no la abres, se quedan aquí.');
+    'Las firmas pendientes no suben solas todavía: vuelve a firmar el albarán cuando tengas cobertura.');
+});
+
+test('SCRUM-358 · 🔴 el aviso NO promete que las firmas suban solas', () => {
+  // El guard del contenido, no de la letra: el de arriba fija el texto exacto y caería con
+  // cualquier cambio, incluido uno bueno. Éste dice POR QUÉ no puede volver el texto viejo hasta
+  // que exista el drenado, y por eso nombra la promesa concreta en vez de comparar cadenas.
+  const b = montarAlmacen(RAIZ);
+  const t = b.ctx.TEXTO_SUBEN_AL_ABRIR;
+
+  assert.ok(!/suben cuando abres/i.test(t),
+    '🔴 EL AVISO PROMETE QUE ABRIR LA APLICACIÓN SUBE LAS FIRMAS, y hoy no es verdad: el drenado ' +
+    'es de la fase 3 y no existe. Una firma encolada sólo sube si el profesional vuelve a firmar ' +
+    'ese albarán. En un bloque cuya regla es «ante la duda, se dice que NO subió», no se puede ' +
+    'enviar un texto que promete más de lo que hay.\n\n' +
+    '  Si el drenado YA existe, este guard es lo que hay que retirar — y entonces vuelve el texto ' +
+    'de SCRUM-356, que es el aprobado para ese día.');
+
+  // Y dice qué hacer, que es lo que lo hace útil: un aviso que sólo niega deja al pro sin salida.
+  assert.ok(/vuelve a firmar/i.test(t),
+    '🔴 el aviso ya no dice qué hacer. «No suben solas» sin la salida deja al profesional mirando ' +
+    'la pantalla sin saber cómo poner su albarán a salvo.');
+
+  // CONTROL POSITIVO DENTRO DEL MISMO TEST: el detector reconoce la promesa cuando está.
+  assert.ok(/suben cuando abres/i.test('Las firmas pendientes suben cuando abres YaQu.'),
+    '🔴 el detector no ve la promesa que tiene delante: su «no está» no valdría nada.');
 });
 
 test('SCRUM-356 · el contador dice singular y plural, y cuenta FIRMAS', () => {

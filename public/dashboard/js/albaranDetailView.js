@@ -419,13 +419,34 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
           //
           // ⚠️ Antes hacía `setStatus(...); return;`: se tragaba el error, el pad ya se había
           // cerrado antes de llamar aquí, y la firma se perdía.
+          // SCRUM-358 (H3 · fase 2) · LA FIRMA ENTRA EN LA COLA ANTES DE INTENTAR SUBIR.
+          //
+          // El orden no es indiferente: si se subiera primero y se encolara al fallar, habría una
+          // ventana en la que el proceso puede morir —el pro cierra la app, iOS la mata— con la
+          // firma ni subida ni encolada. Y esa ventana no dura milisegundos: el POST de firmar no
+          // tiene plazo (el de SCRUM-451 cubre sólo GET), así que contra una red que acepta y no
+          // entrega no vuelve nunca. Dura lo que el pro tarde en cerrar la aplicación.
+          //
+          // El riesgo del orden elegido es el fantasma —encolada y ya subida—, y lo para el propio
+          // servidor: `firmado` es terminal y devuelve 409 `albaran_locked` sin escribir nada.
+          //
+          // 🔴 Y SCRUM-404 SIGUE MANDANDO: el error SUBE. Que la firma esté a salvo en la cola no
+          // autoriza a cerrar el pad en silencio — el pro se iría creyendo que subió, que es
+          // exactamente el fallo mudo que el bloque H existe para evitar. Sin confirmación del
+          // servidor no hay ③, así que se relanza el mensaje aprobado y el trazo sigue en pantalla.
+          const cuerpo = Object.assign({ signatureData: dataUri }, declaracion || {});
+          let resultado;
           try {
-            await apiRequest(`/admin/albaranes/${alb.id}/firmar`, {
-              method: 'POST',
-              body: JSON.stringify(Object.assign({ signatureData: dataUri }, declaracion || {})),
-            });
+            resultado = await window.firmarConRedDeSeguridad(alb.id, cuerpo, () =>
+              apiRequest(`/admin/albaranes/${alb.id}/firmar`, {
+                method: 'POST',
+                body: JSON.stringify(cuerpo),
+              }));
           } catch (e) {
             throw new Error(mensajeDeFalloAlFirmar(e));
+          }
+          if (resultado.estado !== window.FIRMA_A_SALVO) {
+            throw new Error(mensajeDeFalloAlFirmar(resultado.error));
           }
           // SCRUM-379 · el peor de los cinco para el profesional, aunque los datos aguanten: sin
           // aviso vuelve a pulsar «Firmar aquí mismo», le pide al cliente que firme POR SEGUNDA VEZ
