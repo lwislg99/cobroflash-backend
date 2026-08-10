@@ -45,6 +45,16 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
     : null;
   const isCurrent = currentPlan === plan.id;
 
+  // SCRUM-345 · El rotulo «cobros» de la tarjeta de prueba caducada apuntaba a `invoices.csv`, que
+  // el propio auditor llama `facturas.csv`. Se pulsaba «cobros», bajaba algo, se abria, y eran
+  // FACTURAS: el peor caso, porque sale un fichero REAL que no es el que se pidio y el profesional
+  // se lo lleva a su gestoria creyendolo. Llevaba escrito y sin decidir en DOS entradas de master
+  // (SCRUM-343:55-58 y SCRUM-321:121) — cuarta vez que un aviso escrito no impide nada.
+  //
+  // Decision del fundador (10-ago-2026): se REAPUNTA el enlace, no se renombra el rotulo. El boton
+  // dice «cobros», existe una exportacion de cobros de verdad y quien lo pulsa quiere cobros: lo
+  // que estaba mal era el destino. Renombrarlo dejaria esta pantalla sin acceso a cobros — una
+  // perdida de funcion disfrazada de arreglo de copy — y ademas exigiria microcopy nueva.
   const statusHtml = isTrialExpired ? `
     <div class="customers-card" style="display:flex;align-items:center;gap:12px;margin-bottom:20px;border-color:#fde68a;background:#fffbeb">
       <div style="font-size:28px">⏳</div>
@@ -54,7 +64,7 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
         <div style="font-size:12.5px;color:var(--muted);margin-top:6px">
           Tus datos son tuyos y NUNCA se borran — exporta cuando quieras:
           <a href="/admin/exports/quotes.csv" style="color:#15803d">presupuestos</a> ·
-          <a href="/admin/exports/invoices.csv" style="color:#15803d">cobros</a> ·
+          <a href="/admin/exports/charges.csv" style="color:#15803d">cobros</a> ·
           <a href="/admin/exports/expenses.csv" style="color:#15803d">gastos</a>
         </div>
       </div>
