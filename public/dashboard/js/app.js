@@ -6,6 +6,11 @@ async function initApp() {
   try { me = await apiRequest('/admin/me'); }
   catch { window.location.href = '/login.html'; return; }
 
+  // SCRUM-360 (H5 fase 2) · SE MANDA EL ENTORNO, y va aquí porque aquí ya sabemos que la sesión
+  // es buena. SUELTO Y SIN `await`: es telemetría, y nada de esto puede retrasar ni tumbar el
+  // arranque. Quién lo consume es la fase siguiente; lo que esta fase cierra es que el dato LLEGUE.
+  enviarEntornoDeLaApp();
+
   window.appMerchantId = me.merchantId;
   window.appUserRole   = me.userRole || 'admin';
   window.appUserName   = me.name || '';
@@ -450,6 +455,39 @@ async function initApp() {
     showOnboardingWizard(() => renderView(window.appState.view || 'home'));
   } else {
     renderView(window.appState.view || 'home');
+  }
+
+  // 9. SCRUM-358 (H3 · fase 3) · LA COLA DE FIRMAS SE VACÍA AL ABRIR.
+  //
+  // Éste es el único momento que tenemos: en iOS no hay Background Sync (0 % en Safari, medido en
+  // H0) y el push está descartado (regla 36), así que el navegador no nos despierta nunca. Si no
+  // se drena aquí, una firma hecha sin cobertura se queda en el móvil hasta que el profesional
+  // vuelva a firmar ese albarán a mano.
+  //
+  // Va DESPUÉS del render y SIN `await`: pintar el dashboard no puede esperar a la red. El aviso
+  // se repinta solo cuando el drenado termina — `drenarAlAbrir` se encarga, y no lanza nunca.
+  if (typeof window.drenarAlAbrir === 'function') window.drenarAlAbrir();
+}
+
+/**
+ * SCRUM-360 (H5 fase 2) · Manda al servidor el ÚLTIMO ENTORNO VISTO de esta sesión.
+ *
+ * 🔴 EL FILTRO DE «SOLO SI CAMBIA» ESTÁ EN EL SERVIDOR, NO AQUÍ, y no es un detalle de reparto: el
+ * navegador **no sabe** qué hay guardado en la fila. Hacérselo recordar en `localStorage` sería otra
+ * clave que purgar (SCRUM-457) y encima mentiría en cuanto alguien cierre sesión en ese móvil.
+ *
+ * NUNCA LANZA. Si falla, no pasa nada: es un dato de telemetría, y perderlo cuesta precisión en un
+ * recuento — no cuesta el trabajo de nadie.
+ */
+async function enviarEntornoDeLaApp() {
+  try {
+    if (typeof window.entornoDeLaApp !== 'function') return null;
+    return await apiRequest('/admin/entorno', {
+      method: 'POST',
+      body: JSON.stringify({ entorno: window.entornoDeLaApp() }),
+    });
+  } catch (_e) {
+    return null;
   }
 }
 

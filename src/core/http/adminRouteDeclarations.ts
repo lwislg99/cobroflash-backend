@@ -29,6 +29,11 @@ export interface RouteDeclaration {
 export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // Sesión y negocio (perfil REDUCIDO para técnico — el filtrado vive en app.ts)
   { method: 'GET', path: '/admin/me', why: 'Perfil de la propia sesión; no expone datos de otros' },
+  // SCRUM-360 (H5 fase 2). DECISIÓN DE PERMISOS, no un trámite: escribe el entorno de LA PROPIA
+  // sesión y de ninguna otra —el id sale de la cookie del que llama—, así que no es una capacidad
+  // de administración. Y al revés: dejarlo admin-only dejaría SIN MEDIR justo a los técnicos, que
+  // son los que más van a obra y por tanto los que más riesgo tienen de perder una firma.
+  { method: 'POST', path: '/admin/entorno', why: 'Marca el entorno de su PROPIA sesión; el operario es quien más va a obra y sin él el recuento de riesgo sale sesgado' },
   { method: 'GET', path: '/admin/merchant', why: 'Perfil del negocio REDUCIDO para técnico (sin NIF/IBAN/serie); el recorte vive en app.ts' },
 
   // Clientes — S1: "clientes crear-ver" ✅ (el BORRADO es admin, ver customersAdmin.routes.ts)
