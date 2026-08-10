@@ -2568,7 +2568,7 @@ function pintarNotasInternas(body, job) {
   const header = document.createElement('div');
   header.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px';
   header.innerHTML =
-    '<h3 class="detail-section-title" style="margin:0">📝 Notas internas</h3>' +
+    '<h3 class="detail-section-title" style="margin:0">Notas internas</h3>' +
     '<span style="font-size:11px;color:var(--muted);background:var(--neutral-100);padding:2px 8px;border-radius:999px">Solo tú las ves</span>';
   sec.appendChild(header);
 
