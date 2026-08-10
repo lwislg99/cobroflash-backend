@@ -128,7 +128,7 @@ async function fetchInvoices(options = {}) {
     if (window.appDocumentoSuelto !== 'no' && typeof openNuevaFacturaModal === 'function') {
       const nuevaFacturaBtn = document.createElement('button');
       nuevaFacturaBtn.type = 'button';
-      nuevaFacturaBtn.className = 'btn-primary btn-sm';
+      nuevaFacturaBtn.className = 'btn-primary';
       // SCRUM-346 · EL RÓTULO SALE DEL VEREDICTO, que es de lo que va este ticket: el botón dice
       // lo que de verdad va a crear. «+ Nuevo justificante» está APROBADO por el fundador
       // (6-ago-2026, SCRUM-346); el de factura sigue sin aprobar desde A0.3 y conserva su

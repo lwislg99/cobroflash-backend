@@ -433,7 +433,7 @@ async function fetchInvoiceDetail(id) {
       btnBizum.addEventListener('click', async () => {
         if (!armed) {
           armed = true;
-          btnBizum.className = 'btn-primary btn-sm';
+          btnBizum.className = 'btn-primary';
           btnBizum.textContent = `¿Has recibido ${amountTxt} de ${custName} en tu Bizum? Sí, confirmar`;
           setTimeout(() => { // desarmar a los 6s si no confirma
             if (armed) { armed = false; btnBizum.className = 'btn-secondary btn-sm'; btnBizum.textContent = '📲 Confirmar Bizum recibido'; }
