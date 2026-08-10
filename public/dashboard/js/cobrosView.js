@@ -47,9 +47,17 @@ var COBROS_COPY = {
    * Las dos con singular. `n=1` → «1 día».
    */
   diasEnTabla: function (n) { return n + (n === 1 ? ' día' : ' días'); },
-  diasSinCobrar: function (n) {
-    return 'Sin cobrar desde hace ' + n + (n === 1 ? ' día' : ' días');
-  },
+  /**
+   * 🔴 SE DERIVA DE LA CORTA, no se escribe otra vez. Las dos frases se pintan a la vez en la misma
+   * celda —una para la tabla y otra para la card— y dos copias de un texto aprobado que pueden
+   * divergir son microcopy esperando a romperse: alguien arregla el singular en una y la otra se
+   * queda diciendo «1 días» en el sitio donde de verdad se mira.
+   *
+   * Derivándola, la divergencia **no es que se vigile: es que no puede pasar**. Y aun así hay test
+   * que las ata, porque el día que alguien las separe tiene que enterarse por un rojo y no por una
+   * captura.
+   */
+  diasSinCobrar: function (n) { return 'Sin cobrar desde hace ' + COBROS_COPY.diasEnTabla(n); },
   cabeceras: ['Fecha', 'Cliente', 'Importe', 'Método', 'Documento', 'Sin cobrar'],
 };
 
@@ -240,10 +248,30 @@ function renderCobrosView(container) {
       // 🔴 VACÍA si está cobrado — nada, ni guion ni cero. Y en la card eso además la hace
       // desaparecer (`td:empty { display:none }`), que es exactamente lo que se quiere: un cobro
       // cobrado no tiene por qué ocupar sitio hablando de una deuda que no existe.
+      //
+      // 🔴 Y SE PINTAN LAS DOS FORMAS, porque la CARD ES LA PANTALLA. Este producto se usa desde
+      // una furgoneta: a ≤640 px la tabla se vuelve una pila de cards y el `thead` desaparece, así
+      // que un «3 días» suelto se queda **sin referente justo donde de verdad se mira**. En la card
+      // va la frase entera; en la tabla, solo el número, que es lo que se barre.
+      //
+      // El CSS elige cuál se ve (`solo-tabla` / `solo-card`, media query de 640 px, la misma
+      // frontera que `col-hide-mobile`). Las dos salen de la MISMA función: la larga se deriva de
+      // la corta, así que no pueden decir cosas distintas.
       var tdDeuda = document.createElement('td');
       tdDeuda.className = 'cell-status';
       var dias = diasDeDeudaCobro(c, ahora);
-      if (dias !== null) tdDeuda.textContent = COBROS_COPY.diasEnTabla(dias);
+      if (dias !== null) {
+        var enTabla = document.createElement('span');
+        enTabla.className = 'solo-tabla';
+        enTabla.textContent = COBROS_COPY.diasEnTabla(dias);
+        var enCard = document.createElement('span');
+        enCard.className = 'solo-card';
+        enCard.textContent = COBROS_COPY.diasSinCobrar(dias);
+        tdDeuda.appendChild(enTabla);
+        tdDeuda.appendChild(enCard);
+      }
+      // Si está cobrado, la celda se queda VACÍA de verdad —sin spans— para que `td:empty` la
+      // haga desaparecer en la card. Meter un span vacío la dejaría ocupando sitio.
       tr.appendChild(tdDeuda);
 
       tbody.appendChild(tr);

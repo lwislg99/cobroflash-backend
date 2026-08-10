@@ -202,6 +202,67 @@ test('SCRUM-285 · ⑤ los días de deuda: DOS formas, y las dos con singular', 
   assert.equal(C.diasSinCobrar(1), 'Sin cobrar desde hace 1 día');
 });
 
+test('SCRUM-285 · ⑤ las dos frases están ATADAS: la larga contiene a la corta', async () => {
+  // 🔴 Se pintan LAS DOS a la vez en la misma celda —una para la tabla, otra para la card— y dos
+  // copias de un texto aprobado que pueden divergir son microcopy esperando a romperse: alguien
+  // arregla el singular en una y la otra dice «1 días» justo donde de verdad se mira.
+  //
+  // Hoy no PUEDEN divergir, porque la larga se deriva de la corta. Este test existe para que el
+  // día que alguien las separe se entere por un rojo y no por una captura.
+  const vista = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/cobrosView.js'), 'utf8');
+  assert.match(vista, /diasSinCobrar: function \(n\) \{ return '[^']*' \+ COBROS_COPY\.diasEnTabla\(n\); \}/,
+    '🔴 la frase larga ha dejado de derivarse de la corta. Ahora son dos textos independientes y ' +
+    'nada impide que digan cosas distintas: derívala otra vez, o ata las dos con un test propio.');
+  const banco = cargarDashboard(RAIZ, { datos: COBROS });
+  await pintarVista(banco, 'renderCobrosView');
+  const C = banco.ctx.COBROS_COPY;
+  for (const n of [1, 2, 30, 100]) {
+    assert.ok(C.diasSinCobrar(n).endsWith(C.diasEnTabla(n)),
+      `🔴 con n=${n} la frase larga no termina en la corta: «${C.diasSinCobrar(n)}» vs ` +
+      `«${C.diasEnTabla(n)}». Han divergido.`);
+  }
+});
+
+test('SCRUM-285 · ⑤ la celda pinta LAS DOS formas: la card es la pantalla, no una degradación', async () => {
+  // A ≤640 px el `thead` desaparece y la tabla es una pila de cards. Este producto se usa desde una
+  // furgoneta: un «3 días» sin cabecera que lo explique se queda SIN REFERENTE justo donde de
+  // verdad se mira. El CSS elige cuál se ve; la vista pinta las dos.
+  const banco = cargarDashboard(RAIZ, { datos: COBROS });
+  const r = await pintarVista(banco, 'renderCobrosView');
+  const celda = todos(r.contenedor).find((n) => n.className === 'cell-status' && n.hijos.length);
+  assert.ok(celda, '🔴 ninguna celda de deuda tiene contenido: el cobro pendiente no pinta nada.');
+
+  const corta = celda.hijos.find((h) => h.className === 'solo-tabla');
+  const larga = celda.hijos.find((h) => h.className === 'solo-card');
+  assert.ok(corta && larga,
+    '🔴 la celda no pinta las dos formas. Sin `solo-card`, en la furgoneta se lee un número suelto ' +
+    'sin nada que diga de qué son esos días.');
+  assert.match(corta.textContent, /^\d+ días?$/, '🔴 en tabla va solo el número.');
+  assert.match(larga.textContent, /^Sin cobrar desde hace \d+ días?$/,
+    '🔴 en la card va la frase entera, que es la que el asesor aprobó para fuera de la tabla.');
+  assert.ok(larga.textContent.endsWith(corta.textContent),
+    '🔴 las dos frases pintadas en la MISMA celda no coinciden entre sí.');
+
+  const cssCard = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8');
+  assert.match(cssCard, /\.solo-card \{ display: none; \}/,
+    '🔴 sin la regla por defecto, en la TABLA se verían las dos frases a la vez.');
+  assert.match(cssCard, /\.table--cards-mobile \.solo-tabla \{ display: none; \}/,
+    '🔴 sin la regla de la card, en móvil se verían las dos.');
+});
+
+test('SCRUM-285 · ⑤ un cobro cobrado deja la celda VACÍA de verdad, sin spans', async () => {
+  // Con un span vacío dentro, `td:empty` deja de aplicar y la celda ocuparía sitio en la card
+  // hablando de una deuda que no existe.
+  const banco = cargarDashboard(RAIZ, { datos: [COBROS[0], COBROS[1]] }); // los dos pagados
+  const r = await pintarVista(banco, 'renderCobrosView');
+  const celdas = todos(r.contenedor).filter((n) => n.className === 'cell-status');
+  assert.equal(celdas.length, 2, 'suelo: una celda de deuda por fila.');
+  for (const c of celdas) {
+    assert.equal(c.hijos.length, 0, '🔴 la celda de un cobro cobrado lleva algo dentro.');
+    assert.equal(c.textContent, '', '🔴 la celda de un cobro cobrado no está vacía.');
+  }
+});
+
 test('SCRUM-285 · ⑤ las SEIS cabeceras son las aprobadas, y ninguna necesita una «y»', async () => {
   // La regla que trajo la sexta columna: **una cabecera que necesita una «y» son dos columnas**.
   // La quinta se llamaba «documento y deuda» y estaba diciendo sola que ahí cabían dos hechos.
@@ -234,7 +295,11 @@ test('SCRUM-285 · ⑤ la celda de «Sin cobrar» va VACÍA si está cobrado, y 
   const r = await pintarVista(banco, 'renderCobrosView');
   const celdas = todos(r.contenedor).filter((n) => n.className === 'cell-status');
   assert.equal(celdas.length, 3, 'suelo: una celda de deuda por fila.');
-  const conTexto = celdas.map((c) => c.textContent).filter(Boolean);
+  // El texto vive en los dos `<span>` (tabla y card), así que se mira el contenido de la celda por
+  // sus hijos y no por su `textContent`: el mini-DOM no concatena, y leerlo así daría siempre ''.
+  const conTexto = celdas
+    .map((c) => (c.hijos.find((h) => h.className === 'solo-tabla') || {}).textContent)
+    .filter(Boolean);
   assert.equal(conTexto.length, 1,
     '🔴 de los tres cobros solo UNO está pendiente, así que solo uno pinta antigüedad. Los ' +
     'cobrados van VACÍOS: ni guion ni cero — y en la card `td:empty` los hace desaparecer, que es ' +
