@@ -101,6 +101,31 @@ export async function ensureJobForQuote(quoteId: number, prismaClient = prisma):
         // SCRUM-10: campos del contenedor "Trabajo". direccion sin fuente hoy → null.
         // SCRUM-317: `titulo` tampoco se rellena al crear — lo pone el pro (PATCH), y mientras
         // no lo ponga la pantalla se titula con el cliente.
+        //
+        // ─────────────────────────────────────────────────────────────────────────────────
+        // 🔴 SCRUM-431 · ANTES DE ABRIR UN ESCRITOR PARA `titulo` O `direccion`, LEE ESTO.
+        //
+        // **Los dos entran en el HASH de la firma de los albaranes de este Trabajo, y se leen EN
+        // VIVO al verificar.** El sobre no guarda su valor: guarda el hash. Quien verifica vuelve
+        // a leer el `Job` DE HOY (`albaranBarrido.ts:113,115` → `albaranVerificacion.ts:178,229`).
+        //
+        //   · `direccion`      → campo `obra` del sobre **v:1**
+        //   · `titulo`         → campo `referenciaTrabajo` del sobre **v:1 Y v:2**
+        //
+        // Consecuencia, medida (SCRUM-431 §1): **cambiar cualquiera de los dos hace que el hash
+        // recalculado de un albarán ya firmado deje de coincidir**, y el verificador dirá «EL
+        // CONTENIDO YA NO ES EL QUE SE FIRMÓ» sobre un documento que nadie ha tocado. No es
+        // hipotético: `verificarSobre` corre de verdad en el paquete de evidencias
+        // (`src/modules/fiscal/evidencias/paquete.repo.ts:95`).
+        //
+        // `titulo` YA tiene escritor (`jobs.routes.ts`, SCRUM-317) y `direccion` lo estrena
+        // SCRUM-424 — que por eso se niega a escribirla si el Trabajo tiene un albarán firmado en
+        // una versión que la lee. **Si abres otro escritor, hereda ese candado o lo rompes.**
+        //
+        // Y no es solo cosa del `Job`: `Customer.name`/`legalName` y `Merchant.legalName`/`taxId`
+        // están en el MISMO caso, en las dos versiones de sobre. La solución de fondo (congelar el
+        // contenido dentro del sobre) es la propuesta P4 de `docs/master/SCRUM-431.md`, sin aprobar.
+        // ─────────────────────────────────────────────────────────────────────────────────
         totalAceptado: quote.total, // Decimal(12,2): total del Quote congelado en el accept
         // totalCobrado = 0 por default (materializado; su lógica de sumar cobros = SCRUM-13)
         // SCRUM-52: autoría = creador del presupuesto (quote.teamMemberId), NO quien acepta
