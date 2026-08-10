@@ -101,6 +101,10 @@ export type MotivoNoVerificado =
   | 'version_no_soportada'
   | 'sin_hash'
   | 'hash_no_coincide'
+  // SCRUM-415: el hash NO cuadra con la receta de su versión, pero SÍ con la de otra. No es lo
+  // mismo y no puede decirse igual: `hash_no_coincide` acusa de manipulación, y esto dice que el
+  // contenido está intacto y lo que no encaja es la VERSIÓN declarada.
+  | 'hash_de_otra_version'
   | 'error_al_recalcular';
 
 export type ResultadoSobre =
@@ -326,6 +330,36 @@ export function verificarSobre(
   }
 
   if (recalculado !== hashGuardado) {
+    // ── SCRUM-415 · ANTES DE ACUSAR, SE PRUEBAN LAS OTRAS RECETAS ────────────────────────────
+    //
+    // Un sobre cuyo `v` dice 1 pero cuyo hash es el que da la receta de v:2 **no es un albarán
+    // manipulado**: es un sello cuya versión declarada no corresponde a la regla con la que se
+    // calculó. Sin esta comprobación las dos cosas salen por el mismo sitio y con el mismo
+    // texto —«EL CONTENIDO YA NO ES EL QUE SE FIRMÓ»—, que es la acusación más grave que este
+    // verificador sabe hacer.
+    //
+    // Costó media mañana localizar exactamente eso en `scrum297-evidencias-postgres`. El
+    // diagnóstico no es un lujo: es la diferencia entre «investiga una manipulación» y «arregla
+    // el número de versión de esa fila».
+    for (const otra of versionesSoportadas(recetario)) {
+      if (otra === v) continue;
+      let conLaOtra: string;
+      try {
+        conLaOtra = recetario[otra](normalizar(entrada.contenido));
+      } catch {
+        continue;                       // esa receta no aplica a estas fuentes: no dice nada
+      }
+      if (conLaOtra === hashGuardado) {
+        return {
+          cuadra: false, numero, v, motivo: 'hash_de_otra_version',
+          mensaje: `${numero}: el sobre declara v:${v}, pero su hash es EXACTAMENTE el que da la ` +
+            `receta de v:${otra}. El contenido NO está manipulado —cuadra al bit con otra regla—: ` +
+            `lo que no encaja es la versión declarada. Se selló con v:${otra} y se guardó v:${v}, o ` +
+            'al revés. Se corrige la VERSIÓN de la fila, nunca el hash: lo sellado no se toca.',
+        };
+      }
+    }
+
     return {
       cuadra: false, numero, v, motivo: 'hash_no_coincide',
       mensaje: `${numero}: EL CONTENIDO YA NO ES EL QUE SE FIRMÓ. Sello v:${v} guardado ` +

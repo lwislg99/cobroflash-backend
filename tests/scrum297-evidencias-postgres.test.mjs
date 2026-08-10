@@ -46,7 +46,8 @@ test('SCRUM-297 · el paquete de evidencias: suelo, tenencia y los dos controles
     const prisma = new PrismaClient({ datasourceUrl: URL_BANCO });
     const { leerPaqueteEvidencias } = await import('../dist/modules/fiscal/evidencias/paquete.repo.js');
     const { FICHEROS } = await import('../dist/modules/fiscal/evidencias/paquete.js');
-    const { computeAlbaranContentHash } = await import('../dist/modules/jobs/domain/albaran.service.js');
+    const { computeAlbaranContentHash, ALBARAN_CONTENIDO_VERSION_ACTUAL } =
+      await import('../dist/modules/jobs/domain/albaran.service.js');
 
     try {
       await withMerchant(prisma, { name: `QA A7 MIO ${SELLO}`, email: `a7.${SELLO}@qa.invalid`, taxId: 'B00000000' }, async (mio) => {
@@ -87,6 +88,10 @@ test('SCRUM-297 · el paquete de evidencias: suelo, tenencia y los dos controles
           data: {
             merchantId: mio.id, jobId: trabajo.id, numero: `ALB-${SELLO}-1`, fecha: EN_EL_2T,
             lineas: lineasAlb, estado: 'firmado', invoiceId: facturaCompleta.id,
+            // SCRUM-415: los tres campos que ESTRENA v:2. Sin ellos el albarán se sella con la
+            // regla de hoy sobre los datos de ayer, que es de donde salió el rojo que arreglo.
+            lugarEntrega: 'Nave 4, Pol. Industrial Sur', fechaEntrega: EN_EL_2T,
+            firmadoPorNombre: 'Ana Pérez', firmadoPorCalidad: 'cliente',
           },
         });
         // ⚠️ Los nombres son los del SELLADOR, no los del verificador: `computeAlbaranContentHash`
@@ -94,15 +99,62 @@ test('SCRUM-297 · el paquete de evidencias: suelo, tenencia y los dos controles
         // pasé `jobDireccion` en el primer intento y el sobre salió `hash_no_coincide` — el test
         // acusaba de manipulado un albarán intacto, que es el peor fallo posible de esta
         // herramienta. Se construye con la firma real de la función, no con los campos que suenan.
+        // ───────────────────────────────────────────────────────────────────────────────────
+        // SCRUM-415 · LA VERSIÓN DEL SELLO SE ESCRIBE, NO SE HEREDA
+        //
+        // Esta fixture nació el 7-ago con `v: 1` a mano y `computeAlbaranContentHash(fuentes)` SIN
+        // versión. Entonces era coherente: `ALBARAN_CONTENIDO_VERSION_ACTUAL` **aún no existía** —
+        // la estrenó SCRUM-300 ese mismo día, más tarde. El `1` no fue la decisión de probar v:1:
+        // era el único número que había.
+        //
+        // Cuando el sellador pasó a v:2, la fixture siguió declarando v:1 y sellando con el
+        // DEFECTO. El verificador hace lo correcto —lee la versión del dato— y recalculaba con v:1
+        // un hash de v:2: «hash_no_coincide» sobre un albarán intacto, durante días.
+        //
+        // Se sella con la versión de HOY tomada de la CONSTANTE, no de un literal: poner un `2` a
+        // mano volvería a romperlo el día que exista v:3, que es exactamente lo que pasó aquí.
         const fuentes = {
           numero: albaran.numero, fecha: albaran.fecha, modoValoracion: albaran.modoValoracion,
+          lineas: lineasAlb, notas: null,
+          // ⚠️ v:2 toma `obra` de `Albaran.lugarEntrega`; v:1 la tomaba de `Job.direccion`. Cuál
+          // es la buena depende de la versión con la que se SELLA, no de la que suene mejor.
+          obra: albaran.lugarEntrega, referenciaTrabajo: trabajo.titulo,
+          cliente: cliMio.legalName || cliMio.name, emisor: mio.legalName || mio.name, emisorNif: mio.taxId || null,
+          fechaEntrega: albaran.fechaEntrega,
+          firmadoPorNombre: albaran.firmadoPorNombre, firmadoPorCalidad: albaran.firmadoPorCalidad,
+        };
+        await prisma.albaran.update({
+          where: { id: albaran.id },
+          data: {
+            evidenciaFirma: {
+              v: ALBARAN_CONTENIDO_VERSION_ACTUAL, canal: 'in_situ', hashAlg: 'sha256',
+              contentHash: computeAlbaranContentHash(fuentes, ALBARAN_CONTENIDO_VERSION_ACTUAL),
+            },
+          },
+        });
+
+        // ── Y UN ALBARÁN v:1, PORQUE EL DESPACHO EXISTE PARA QUE LOS DOS VERIFIQUEN ──────────
+        //
+        // Los sellos v:1 son los de producción: existen, están firmados y NO se pueden volver a
+        // sellar (regla 29). Si el paquete solo se probara con la versión de hoy, el día que v:1
+        // dejara de verificar nadie se enteraría hasta que lo mirase un inspector. Aquí `obra`
+        // sale de `Job.direccion`, que es la regla de v:1, y el sello se pide EXPLÍCITO.
+        const albaranV1 = await prisma.albaran.create({
+          data: {
+            merchantId: mio.id, jobId: trabajo.id, numero: `ALB-${SELLO}-V1`, fecha: EN_EL_2T,
+            lineas: lineasAlb, estado: 'firmado',
+            lugarEntrega: 'Nave 4, Pol. Industrial Sur', fechaEntrega: EN_EL_2T,
+          },
+        });
+        const fuentesV1 = {
+          numero: albaranV1.numero, fecha: albaranV1.fecha, modoValoracion: albaranV1.modoValoracion,
           lineas: lineasAlb, notas: null,
           obra: trabajo.direccion, referenciaTrabajo: trabajo.titulo,
           cliente: cliMio.legalName || cliMio.name, emisor: mio.legalName || mio.name, emisorNif: mio.taxId || null,
         };
         await prisma.albaran.update({
-          where: { id: albaran.id },
-          data: { evidenciaFirma: { v: 1, canal: 'in_situ', hashAlg: 'sha256', contentHash: computeAlbaranContentHash(fuentes) } },
+          where: { id: albaranV1.id },
+          data: { evidenciaFirma: { v: 1, canal: 'in_situ', hashAlg: 'sha256', contentHash: computeAlbaranContentHash(fuentesV1, 1) } },
         });
         await prisma.invoice.update({
           where: { id: facturaCompleta.id },
@@ -167,8 +219,15 @@ test('SCRUM-297 · el paquete de evidencias: suelo, tenencia y los dos controles
           'cumplimiento eso no es una fuga: es entregar como prueba propia la actividad de un tercero.');
         assert.ok(!todo.includes('ALB-AJENO-'),
           '🔴 se ha colado un ALBARÁN del otro merchant.');
-        assert.equal(paquete.resumen.albaranesExaminados, 1,
-          '🔴 el verificador ha examinado albaranes que no son de este merchant.');
+        // SCRUM-415: DOS, y los dos míos —uno sellado en la versión de hoy y otro en v:1—. El
+        // número solo cierra la puerta si además se dice CUÁLES son: un 2 a secas lo daría
+        // igual un albarán mío más uno ajeno.
+        assert.equal(paquete.resumen.albaranesExaminados, 2,
+          '🔴 el verificador ha examinado un número de albaranes distinto de los dos míos.');
+        assert.deepEqual(
+          filasDe(paquete, FICHEROS.verificacion).slice(1).map((f) => f[0]).sort(),
+          [albaran.numero, albaranV1.numero].sort(),
+          '🔴 los albaranes examinados no son EXACTAMENTE los dos míos.');
 
         // ══ CONTROL POSITIVO ① — el asiento CON sus enlaces los lleva TODOS ═════════════════
         const completa = paquete.indice.find((f) => f.numero.endsWith('-001'));
@@ -177,11 +236,41 @@ test('SCRUM-297 · el paquete de evidencias: suelo, tenencia y los dos controles
         assert.equal(completa.presupuestoFirmado, 'true', '🔴 el índice no dice que el presupuesto está FIRMADO.');
         assert.equal(completa.albaranes, albaran.numero, '🔴 falta el albarán en el índice.');
         assert.equal(completa.cobroId, cobro.id, '🔴 falta el cobro en el índice.');
+        // El rojo tiene que decir QUÉ pasa, no solo que algo pasa: se imprime el MENSAJE del
+        // verificador, que es donde vive la explicación. Con «hash_no_coincide» a secas se pierde
+        // media mañana buscando una manipulación que no existe (SCRUM-415).
+        const dijoElVerificador =
+          (filasDe(paquete, FICHEROS.verificacion).slice(1).find((f) => f[0] === albaran.numero) || []).join(' | ');
         assert.equal(completa.estadoSello, 'cuadra',
           `🔴 el sello del albarán sale como «${completa.estadoSello}» y está bien calculado con la ` +
           'función del sellador. Un paquete que declara manipulado un documento intacto es peor que ' +
-          'no tener verificador.');
+          `no tener verificador.\n\n    El verificador dice: ${dijoElVerificador}\n\n` +
+          '    Si el motivo es «hash_de_otra_version», el contenido está INTACTO y lo que no encaja\n' +
+          '    es la versión declarada en el sobre: se corrige el «v» de la fila, jamás el hash.');
         assert.equal(completa.huecos, '', '🔴 un asiento completo no puede tener huecos declarados.');
+
+        // ── 🔴 SCRUM-415 · LAS DOS VERSIONES VERIFICAN, y se comprueba por SEPARADO ───────────
+        //
+        // El despacho por versión existe justo para esto. Con un solo caso, el paquete podría estar
+        // recalculando SIEMPRE con la receta de hoy y dar verde igual: los v:1 de producción —que
+        // están firmados y NO se pueden volver a sellar— saldrían «manipulados» y nadie se enteraría
+        // hasta que lo mirase un inspector.
+        const verifOk = filasDe(paquete, FICHEROS.verificacion).slice(1);
+        const fV2 = verifOk.find((f) => f[0] === albaran.numero);
+        const fV1 = verifOk.find((f) => f[0] === albaranV1.numero);
+        assert.ok(fV2 && fV1,
+          '🔴 el CSV de verificación no trae los DOS albaranes. Si solo mira uno, este control no ' +
+          'demuestra nada sobre el despacho por versión.');
+        // «si» sin tilde: es el valor que ESCRIBE el CSV, no el que suena bien. Comprobado contra
+        // la fila real; suponerlo con tilde daba un rojo que no era del sello.
+        assert.equal(fV2[2], 'si',
+          `🔴 el albarán sellado en la versión de hoy no verifica: ${fV2.join(' | ')}`);
+        assert.equal(fV1[2], 'si',
+          `🔴 EL ALBARÁN v:1 YA NO VERIFICA (${fV1.join(' | ')}). Los sellos v:1 son los de producción y no ` +
+          'se pueden rehacer: lo sellado no se toca (regla 29). Si la receta de v:1 ha cambiado, el ' +
+          'que está mal es el verificador, no los documentos.');
+        assert.equal(paquete.resumen.albaranesConHallazgo, 0,
+          '🔴 el paquete declara hallazgos con dos albaranes intactos, uno en cada versión.');
 
         // Y la trazabilidad línea a línea (SCRUM-367) viaja dentro.
         const entregas = filasDe(paquete, FICHEROS.entregas);

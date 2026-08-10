@@ -89,7 +89,11 @@ test('SCRUM-297 · el estado del índice sale del verificador, sin traducir (reg
   // Los motivos son los del verificador; `cuadra` y `sin_albaranes` son los dos únicos valores
   // que añade el paquete, y los dos son hechos, no interpretaciones. Nada de «pendiente de»,
   // nada de calendarios, nada de la AEAT.
-  const MOTIVOS = ['sin_evidencia', 'version_ausente', 'version_no_soportada', 'sin_hash', 'hash_no_coincide', 'error_al_recalcular'];
+  // SCRUM-415 añadió `hash_de_otra_version`: el hash cuadra con la receta de OTRA versión, así
+  // que el contenido está intacto y lo que falla es la versión declarada. Sale por separado de
+  // `hash_no_coincide` a propósito —ese acusa de manipulación y este no—.
+  const MOTIVOS = ['sin_evidencia', 'version_ausente', 'version_no_soportada', 'sin_hash',
+                   'hash_no_coincide', 'hash_de_otra_version', 'error_al_recalcular'];
   const PERMITIDOS = new Set([...MOTIVOS, 'cuadra', 'sin_albaranes']);
 
   const casos = [
