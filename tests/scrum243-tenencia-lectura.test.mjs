@@ -76,6 +76,13 @@ const CENSO_SIN_RED = [
 
   // ── Sesiones y miembros: se buscan por su propio identificador de sesión, no por merchant.
   ['src/modules/auth/domain/auth.service.ts', 2],
+  // SCRUM-360 (H5 fase 2). DECISIÓN, no trámite: el `sessionId` NO viene del cliente — lo pone
+  // `requireAuth` a partir de la cookie de quien llama, así que la fila leída es SIEMPRE la
+  // sesión del propio llamante y no hay ninguna otra que pueda alcanzar. Filtrar además por
+  // merchant no añadiría seguridad y sí sugeriría que el id es un parámetro de entrada, que es
+  // justo la lectura equivocada. Misma categoría que la línea de arriba: se busca por su propio
+  // identificador de sesión, no por merchant.
+  ['src/modules/auth/domain/entornoApp.service.ts', 1],
 
   // ── Servicios y crons que reciben ids ya resueltos aguas arriba. [CATEGORÍA DECLARADA, NO
   //    VERIFICADA UNA A UNA — es el trabajo caro que este ticket deja explícitamente pendiente.]

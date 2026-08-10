@@ -26,6 +26,9 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   }
 
   req.merchantId = session.merchantId;
+  // SCRUM-360 (H5 fase 2) · QUÉ sesión es. La fila ya está cargada aquí, así que esto no cuesta
+  // ninguna consulta; sin ella, escribir el entorno obligaría a resolver la cookie otra vez.
+  req.sessionId = session.id;
   // El propietario (teamMemberId null) siempre es admin
   req.teamMemberId = session.teamMemberId ?? null;
   req.userRole = session.teamMember ? (session.teamMember.role as 'admin' | 'tecnico') : 'admin';
