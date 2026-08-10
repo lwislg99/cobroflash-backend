@@ -101,8 +101,8 @@ back (regla 38) · el modelo de datos · `jobDetailView.js` (contraste, solo rep
 
 **Fecha:** 10-ago-2026 · **Carril:** B (UI + dominio) · **Gate:** sin gate, corre en `npm test`
 **Medido contra:** `origin/main` = `6cd4cffac1c3291da0caad6a3a4a10cc5c4a45c2` · 2026-08-10T19:08:12+02:00
-**Tanda:** 2683 tests · 2609 pass · **0 fail** · 74 gateados · `npm test` exit **0**
-(re-corrida entera tras pintar la forma de card, que es el último cambio)
+**Tanda:** 2712 tests · 2638 pass · **0 fail** · 74 gateados · `npm test` exit **0**
+(re-corrida entera tras mergear main y resolver el conflicto del censo, que es el último cambio)
 
 > ⚠️ **ESTA ENTREGA NO CIERRA SCRUM-285.** El tercer punto de §B4 —el enlace al cobro en la columna
 > derecha del detalle de factura— queda como **FASE 2 dentro de este ticket, que sigue ABIERTO**.
@@ -210,9 +210,29 @@ declara ciego; aquí lo vacío significaría «no le deben nada a nadie».
   DEFAULT de S1** («ruta nueva = declara rol mínimo; default Admin-only»), no una decisión de
   permisos que me corresponda. Abrirla al Técnico sería añadirla a `TECNICO_ALLOWED` con su motivo,
   y **eso lo decide el fundador**. Queda reportado.
-* **SCRUM-402** — el trinquete de marcadores pintables. Sube **+1 a conciencia**, con su motivo en
-  el censo: la alternativa a marcar esos textos no era escribirlos, era no entregar la pantalla.
-  *Un marcador visible es feo y honesto; un texto inventado es bonito y falso.*
+* **SCRUM-402** — el trinquete de marcadores pintables. Subió **+1 a conciencia** y **volvió a
+  bajar el mismo día**, cuando el asesor aprobó toda la microcopy: `cobrosView.js` entró y salió del
+  censo en la misma entrega. *Un marcador visible es feo y honesto; un texto inventado es bonito y
+  falso* — y el trinquete cobró las dos cosas.
+
+### 🔴 EL COSTE DEL CENSO POR FICHERO, declarado — tercera vez hoy
+
+El `CENSO` de SCRUM-402 chocó en el merge: **dos bajadas correctas del mismo día**, una por cada
+rama — `api.js` salía por SCRUM-405 y `cobrosView.js` por ésta. Git no puede saber que las dos son
+buenas, así que las presentó como alternativas. Se resolvió conservando **los dos comentarios y
+ninguna de las dos entradas**, y del de `api.js` la versión de `main` (la del `−1`): la vieja del
+`+1` justificaba una entrada que ya no existe.
+
+**Es el precio correcto y se paga.** Un censo **por fichero** atrapa lo que un total escondería —
+mover un marcador de una pantalla a otra se ve—, y a cambio **choca cada vez que dos ramas mejoran
+cosas distintas el mismo día**. Un total habría dejado pasar las dos bajadas sin que nadie las
+anotara: habría cuadrado solo, y nadie se habría enterado de ninguna de las dos aprobaciones.
+
+Verificado **por mecanismo, no a ojo**: cero marcadores de conflicto en **todo el árbol** (no solo
+en ese fichero, que es el fallo clásico de resolver a mano) · `censoActual()` **ejecutado**, 14
+ficheros y ni `api.js` ni `cobrosView.js` entre ellos · y el que separa esto de un arreglo
+cosmético: **con un marcador nuevo inyectado en `cobrosView.js`, R4 vuelve a caer nombrándolo**.
+Salir del censo no saca de la vigilancia.
 
 ## MICROCOPY — aprobada por el asesor el 10-ago-2026 (regla 30)
 
