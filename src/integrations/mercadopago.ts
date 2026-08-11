@@ -4,6 +4,7 @@
  */
 import axios from 'axios';
 import crypto from 'crypto';
+import { metodoDesdeMercadoPago } from '../modules/billing/domain/metodoDeCobro';
 
 const MP_API = 'https://api.mercadopago.com';
 
@@ -81,7 +82,11 @@ export async function getMpPayment(
     externalReference: data.external_reference ?? '',
     amount: data.transaction_amount,
     currency: data.currency_id,
-    method: data.payment_type_id ?? 'mp',
+    // SCRUM-474 · el escritor con MÁS fuga de los nueve: cuando `payment_type_id` venía, se
+    // guardaba CRUDO —cualquier valor de MercadoPago, ninguno de PAID_VIA— y cuando no venía se
+    // guardaba «mp», que es literalmente «no consta el tipo». Ahora se traduce al vocabulario
+    // cerrado, y lo que no se reconoce se declara desconocido en vez de inventarse.
+    method: metodoDesdeMercadoPago(data.payment_type_id),
   };
 }
 

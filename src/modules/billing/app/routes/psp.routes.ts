@@ -12,6 +12,7 @@ import { sendPaymentConfirmationInvoice, notifyMerchantPaid } from '../../../../
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { sendMerchantPaymentEmail } from '../../../messaging/domain/merchantNotifications';
+import { esMetodoValido } from '../../domain/metodoDeCobro';
 import { recalcJobCobradoForCharge } from '../../../jobs/domain/job.service'; // SCRUM-13
 import { datosDeCobroPagado, resolverInstanteDeCobro } from '../../domain/instanteDeCobro'; // SCRUM-397
 
@@ -98,7 +99,15 @@ router.post('/', async (req, res) => {
         where: { id: chargeId },
         data: {
           ...datosDeCobroPagado(resolucion.fecha, body),
-          method: body.method ?? charge.method,
+          // 🔴 SCRUM-473 · LA PUERTA ABIERTA, CERRADA. Esto escribía lo que viniera en el cuerpo,
+          // sin mirarlo: es el ÚNICO escritor de los nueve capaz de meter un valor arbitrario, y
+          // por tanto el único que explica los 6 cobros con `bizum` a secas que hay en producción
+          // y que ningún camino vivo escribe.
+          //
+          // Mientras esta línea siguiera abierta, cualquier guard sobre los otros ocho era
+          // decorativo. Un valor que no cumple la forma `<metodo>[:<pasarela>]` NO se guarda: se
+          // conserva el que ya tenía el cobro, que es un dato real, en vez de pisarlo con basura.
+          method: esMetodoValido(body.method) ? body.method : charge.method,
           reference: body.bank_ref ?? charge.reference,
           reconciliations: {
             create: { bankRef: body.bank_ref ?? 'n/a', matched: true },
