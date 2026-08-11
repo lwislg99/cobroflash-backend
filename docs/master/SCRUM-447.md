@@ -117,3 +117,69 @@ problema» o en «no lo hay».
 El guard de `SCRUM-436` · el formateador compartido · ninguna pantalla · `prisma/schema.prisma` ·
 el camino de emisión. **Cero líneas de producto.** Los derivadores de esta autopsia viven en el
 scratchpad y no se añaden al árbol: son de medición puntual, no de vigilancia.
+
+
+---
+
+> **Apéndice.** Otra sesión, mismo ticket. Nada de lo anterior se toca (SCRUM-273).
+
+# SCRUM-447 (parte 2) · el byte invisible que hacía pasar siempre a un guard
+
+**Fecha:** 11-ago-2026 · **Carril:** B · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `8a57b9cd` · 2026-08-11T02:20:00+02:00
+
+## El ticket se abrió por una premisa que ya no era cierta
+
+Decía que el censo de SCRUM-428 **mide mal** y sigue en el árbol. **Medido: no mide mal hoy.** El
+patrón de `scrum428-terminado-sin-cobrar.test.mjs:161` usa `[^A-Za-z0-9_]`, casa, y funciona. Alguien
+lo arregló y dejó el episodio escrito.
+
+Lo que sobrevivía era **el comentario que lo explica, con los dos bytes 0x08 dentro** (L157-158).
+
+## El defecto, que no es un typo
+
+`\b` escrito en una cadena de shell —o en un literal de JS, **donde `"\b"` ES el backspace**— no
+llega como el metacarácter: llega como el **byte 0x08**. El patrón resultante **no casa nunca**, y
+un patrón que no casa nunca devuelve cero… **que se lee igual que «no hay nada»**.
+
+**No se rompe: contesta bien a la pregunta equivocada.** El guard de SCRUM-428 habría pasado
+SIEMPRE, y lo delató **inyectarle el rojo**, no leerlo.
+
+## ¿Se extendió la técnica? Un número, no un miedo
+
+| | |
+| --- | --- |
+| ficheros leídos de `tests/` y `scripts/` | **526** |
+| líneas con el byte 0x08 | **2** — las dos en el mismo comentario |
+
+Buscado **por el byte compilado, no por el texto `\b`**: buscar el texto habría sido cometer el
+mismo error dentro de la búsqueda del error, y habría marcado en rojo cada regex correcta del repo.
+
+## Lo entregado
+
+1. **Los dos 0x08 del comentario → `\b` escapado.** Cosmético salvo por el motivo real: **ese
+   párrafo es el que alguien copiará** la próxima vez que explique el fallo, y copiaría el byte.
+2. **El guard de la CAUSA**, `tests/scrum447-byte-invisible-en-patrones.test.mjs` — 4 tests.
+
+| Test | Qué impide |
+| --- | --- |
+| **SUELO** — el censo lee >100 ficheros | el ticket entero: cero hallazgos y «no miré» dan el mismo verde |
+| ningún fichero lleva el byte | el defecto, en toda la familia |
+| **CONTROL NEGATIVO** — el texto `\b` bien escapado NO cae | lo que separa este guard del error que persigue |
+| ROJO por el mecanismo sobre fichero de mentira | que el detector no vea el byte donde SÍ está |
+
+**Nace verde y con sentido** (526 leídos, 0 afectados). Un guard que nace rojo no protege: entrena
+a ignorarlo.
+
+Rojo probado **sobre el árbol real**, con la mutación confirmada y retirada:
+
+```
+tests/scrum428-terminado-sin-cobrar.test.mjs:158   ← lo nombra con fichero y línea
+```
+
+## El tropiezo, porque es el mejor ejemplo del ticket
+
+El primer intento de arreglo **no aplicó**: usé `"\b"` en un `node -e` y el resultado siguió siendo
+0x08. **Reintroduje el defecto dentro de su propio arreglo.** Lo cazó el contador que puse antes de
+afirmar nada (`antes: 2 · después: 2`). Por eso el script definitivo construye la sustitución con
+`String.fromCharCode(92) + 'b'`: **escribirlo como literal vuelve a producir el byte.**
