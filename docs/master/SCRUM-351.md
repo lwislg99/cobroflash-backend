@@ -211,12 +211,17 @@ una tanda rota. Se retira como regla general y queda como **condición que se co
 
 ## Verificación
 
-* `npm test` — **3.167 tests · 3.091 pass · 0 fail · 76 skipped** (los gateados de siempre; los
+Todo lo de abajo es **con `main` ya fusionado dentro** — entró SCRUM-469 mientras se cerraba esto,
+y el merge fue limpio (`package.json` recibió `guard:caja-avisos` y `topologia` sin conflicto).
+
+* `npm test` — **3.177 tests · 3.101 pass · 0 fail · 76 skipped** (los gateados de siempre; los
   mismos 76 que antes de tocar nada — este ticket no añade ni un salto).
 * `npm run guards:entrada` — **17 tests, 4 guards, 0 fail**.
-* Barrido de marcadores de conflicto sobre el árbol entero: **1.586 ficheros leídos, 0 ilegibles,
+* Barrido de marcadores de conflicto sobre el árbol entero: **1.589 ficheros leídos, 0 ilegibles,
   0 · 0 · 0**.
-* `git merge origin/main` dentro de la rama: *Already up to date*.
+* `npm run topologia` sobre el árbol fusionado: **NO COMPARTEN**, sin ningún árbol ciego.
+* `git diff --numstat docs/PLAN_EJECUCION_Y_PARALELO.md` = **24 añadidas / 0 borradas** — la prueba
+  mecánica de que el bloque 📏 de SCRUM-182 no se ha tocado ni un carácter.
 
 ---
 
