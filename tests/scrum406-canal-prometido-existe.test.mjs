@@ -167,6 +167,10 @@ async function pintar(respuesta) {
   // `:257`): la vista formatea importes con `fmtMoneyEsOAusente`, que vive ahí. Sin cargarlo, este
   // banco simulaba un navegador al que le falta un <script>, y su rojo no sería del producto.
   vm.runInContext(fs.readFileSync(path.join(DIR_JS, 'api.js'), 'utf8'), ctx, { filename: 'api.js' });
+  // SCRUM-406 · y `contacto.js`, por el MISMO motivo del párrafo de arriba: el navegador lo carga
+  // (`index.html:223`, antes que esta vista) y de ahí sale la dirección de contacto. Sin él, este
+  // banco vuelve a simular un navegador al que le falta un `<script>`.
+  vm.runInContext(fs.readFileSync(path.join(DIR_JS, 'contacto.js'), 'utf8'), ctx, { filename: 'contacto.js' });
   // ⚠️ `api.js` define su propio `apiRequest` —el de red— y pisa el doble de arriba. Se repone.
   ctx.apiRequest = async () => respuesta;
   vm.runInContext(codigo, ctx, { filename: 'libroRegistroView.js' });
