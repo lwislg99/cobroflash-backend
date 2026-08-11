@@ -259,8 +259,41 @@ nada de `src/` · nada de `public/` · `tests/scrum362-banco-sin-cobertura.test.
 
 ## Verificación
 
-* `npm test` — **línea base y después, medidas APARTE, no restadas de cabeza** (números abajo).
-* `npm run guards:entrada` · marcadores con el guard oficial `tests/scrum393-marcadores-de-conflicto.test.mjs`.
+Con `main` (`687d262b`) dentro — `Already up to date`.
+
+**La línea base, MEDIDA APARTE y no restada de cabeza:**
+
+| | tests | pass | fail | skipped |
+|---|---|---|---|---|
+| **línea base** — el conjunto de tests **de `main`**, corrido sobre este árbol | **3.224** | **3.147** | **0** | **77** |
+| **después** — la tanda entera de esta rama | **3.235** | **3.158** | **0** | **77** |
+| diferencia | **+11** | **+11** | 0 | **0** |
+
+Los +11 son exactamente los de `scrum362-residuales`, y **los saltos no se mueven: este ticket no
+añade ni uno**.
+
+* `npm run guards:entrada` — **17 tests, 4 guards, 0 fail**.
+* **Marcadores con el guard oficial** `tests/scrum393-marcadores-de-conflicto.test.mjs` — **6 tests,
+  0 fail** (no un barrido a mano).
+
+### 🔴 Y cómo NO se mide una línea base
+
+El primer intento dio **1 fail en la base** y estuvo a punto de reportarse como «main está roja».
+**No lo estaba: el rojo lo produjo el propio método de medir.** Para «volver a la base» se borró del
+disco `tests/scrum362-residuales.test.mjs`, que ya estaba **commiteado**; `scrum239-huella-de-codigo`
+calcula la huella con `git ls-files` + `git hash-object` fichero a fichero, y un fichero **seguido
+por git pero ausente del disco** hace fallar `hash-object` → la huella sale `null` → rojo.
+
+El guard hizo exactamente lo que debía —fail-closed—; quien midió mal fui yo. **Un árbol a medio
+deshacer no es «la base»: es un tercer estado que no existe en ningún sitio.** La base se mide
+**sin borrar nada**, corriendo el conjunto de tests que `main` declara:
+
+```
+node --test $(git ls-tree -r --name-only main -- tests | grep '\.test\.mjs$')
+```
+
+Es el mismo género de error que este bloque persigue: «main está roja» ya se reportó dos veces sobre
+defectos que no existían (SCRUM-471).
 
 ## Ficheros (residuales)
 
