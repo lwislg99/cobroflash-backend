@@ -132,32 +132,77 @@ test('SCRUM-475 · 🔴 el acuse del proveedor VIAJA hasta el llamador', () => {
   // ② Y un llamador REAL lo recoge y lo saca hacia fuera. Sin esto, el acuse llegaría hasta el
   //    borde del emisor y se pararía ahí — «lo devuelve» sin que nadie lo reciba.
   const factura = fs.readFileSync(path.join(RAIZ, 'src/modules/messaging/domain/email.service.ts'), 'utf8');
-  assert.match(
-    factura, /acuseId:\s*r\.acuse\?\.id/,
-    '🔴 NINGÚN LLAMADOR RECOGE EL ACUSE. `email.service` es el que manda la factura al cliente: si ' +
-      'no saca el id, el acuse muere dentro del emisor y para el resto del sistema es como si no ' +
-      'existiera.',
+  const recogen = [...factura.matchAll(/acuseId:\s*r\.acuse\?\.id/g)].length;
+  // ⚠️ CUENTA, no `match`. La primera versión pedía UNA aparición, y `email.service` tiene DOS
+  // llamadores —factura y presupuesto—: al quitarle el acuse a uno, el test SEGUÍA VERDE porque el
+  // otro lo cumplía. Lo destapó su propio rojo. Un guard que se conforma con «hay al menos uno» no
+  // vigila a los demás.
+  assert.equal(
+    recogen, 2,
+    `🔴 EL ACUSE NO LLEGA A TODOS LOS QUE ENVÍAN: lo recogen ${recogen} de 2.\n\n` +
+      '  `email.service` manda la FACTURA y el PRESUPUESTO al cliente. Si uno no saca el id, el\n' +
+      '  acuse muere dentro del emisor y para el resto del sistema ese envío no tiene identidad —\n' +
+      '  que es exactamente el estado del que sale este ticket.',
   );
 });
 
 test('SCRUM-475 · el acuse se registra en el log de forma ESTRUCTURADA y sin el correo entero', () => {
+  // ⚠️ POR AST, Y MIRANDO CADA LOG POR SEPARADO. Las dos primeras versiones de este test daban
+  // VERDE con el fallo dentro, y por el mismo motivo dos veces:
+  //   · el regex `JSON.stringify({[\s\S]*?id,` saltaba de línea hasta encontrar el `id,` del
+  //     `acuse: { id, crudo }` que hay MÁS ABAJO — o sea, casaba aunque el log no llevara el id;
+  //   · `assert.match(/to: maskEmail\(/)` se conformaba con que UNO de los dos logs enmascarara.
+  // «Hay al menos uno» no vigila a los demás.
   const emisor = fs.readFileSync(path.join(RAIZ, EMISOR), 'utf8');
-  assert.match(
-    emisor, /console\.log\('\[correo\]', JSON\.stringify\(\{[\s\S]*?id,/,
-    '🔴 el envío no se registra con su `id` en un log estructurado. Un log en prosa no se puede ' +
-      'buscar ni cruzar: el id tiene que salir como campo.',
+  const sf = ts.createSourceFile('x.ts', emisor, ts.ScriptTarget.Latest, true);
+
+  /** Cada `console.log/error('[correo]', JSON.stringify({…}))`, con sus propiedades. */
+  const logs = [];
+  const visitar = (n) => {
+    if (ts.isCallExpression(n) && /^console\.(log|error)$/.test(n.expression.getText(sf))
+        && n.arguments[0] && /\[correo\]/.test(n.arguments[0].getText(sf))) {
+      const arg = n.arguments[1];
+      const props = {};
+      if (arg && ts.isCallExpression(arg) && /JSON\.stringify$/.test(arg.expression.getText(sf))
+          && arg.arguments[0] && ts.isObjectLiteralExpression(arg.arguments[0])) {
+        for (const p of arg.arguments[0].properties) {
+          if (ts.isPropertyAssignment(p) && p.name) props[p.name.getText(sf)] = p.initializer.getText(sf);
+          else if (ts.isShorthandPropertyAssignment(p)) props[p.name.getText(sf)] = p.name.getText(sf);
+        }
+      }
+      logs.push({ estructurado: !!Object.keys(props).length, props, linea: sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1 });
+    }
+    ts.forEachChild(n, visitar);
+  };
+  visitar(sf);
+
+  assert.ok(logs.length >= 3, `🔴 ESCÁNER CIEGO: solo ${logs.length} logs de [correo] leídos; hay 4.`);
+  const sueltos = logs.filter((l) => !l.estructurado);
+  assert.deepEqual(
+    sueltos.map((l) => `línea ${l.linea}`), [],
+    '🔴 HAY UN LOG DE CORREO EN PROSA. Un log en prosa no se puede buscar ni cruzar: los campos ' +
+      '—id, vía, origen— tienen que salir como campos.',
   );
-  // 🔴 Y el destinatario NO va entero: un correo es un dato personal y los logs de Railway los lee
-  // cualquiera con acceso al panel.
-  assert.match(
-    emisor, /to:\s*maskEmail\(/,
-    '🔴 EL LOG ESTÁ ESCRIBIENDO EL CORREO DEL DESTINATARIO SIN ENMASCARAR. Es un dato personal y ' +
-      'los logs los lee cualquiera con acceso al panel de Railway.',
+
+  // El envío por Resend registra su `id`. Es la mitad del ticket: sin id en el log, el acuse se
+  // devuelve y no queda rastro de él en ninguna parte.
+  const deResend = logs.filter((l) => /'resend'/.test(l.props.via || '') && /enviado/.test(l.props.evento || ''));
+  assert.equal(deResend.length, 1, `🔴 se esperaba UN log de envío por Resend y hay ${deResend.length}.`);
+  assert.ok(
+    'id' in deResend[0].props,
+    `🔴 EL LOG DEL ENVÍO NO LLEVA EL id DEL ACUSE (línea ${deResend[0].linea}). Es lo único que ` +
+      'queda de él en esta fase: sin tabla, el log ES el rastro.',
   );
-  assert.doesNotMatch(
-    emisor, /console\.log\([^)]*c\.html/,
-    '🔴 el cuerpo del correo se está registrando en el log.',
+
+  // 🔴 Y NINGUNO escribe el destinatario entero: un correo es un dato personal y los logs de
+  // Railway los lee cualquiera con acceso al panel.
+  const sinEnmascarar = logs.filter((l) => l.props.to && !/^maskEmail\(/.test(l.props.to));
+  assert.deepEqual(
+    sinEnmascarar.map((l) => `línea ${l.linea}: to: ${l.props.to}`), [],
+    '🔴 UN LOG ESTÁ ESCRIBIENDO EL CORREO DEL DESTINATARIO SIN ENMASCARAR.',
   );
+  const conAsunto = logs.filter((l) => l.props.html || l.props.cuerpo);
+  assert.deepEqual(conAsunto, [], '🔴 el cuerpo del correo se está registrando en el log.');
 });
 
 // ── EL SUELO QUE YA EXISTÍA, Y QUE NO SE PIERDE ──────────────────────────────────────────
