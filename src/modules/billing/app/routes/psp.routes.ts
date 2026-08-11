@@ -13,6 +13,7 @@ import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { sendMerchantPaymentEmail } from '../../../messaging/domain/merchantNotifications';
 import { recalcJobCobradoForCharge } from '../../../jobs/domain/job.service'; // SCRUM-13
+import { datosDeCobroPagado, resolverInstanteDeCobro } from '../../domain/instanteDeCobro'; // SCRUM-397
 
 
 const router = Router();
@@ -80,13 +81,25 @@ router.post('/', async (req, res) => {
     }
 
     if (body.event === 'payment.confirmed') {
+      // SCRUM-397 · el instante del cobro sale de UN generador: columna y evento con la misma
+      // fecha. `body.ts` ya venía en el esquema y no lo leía nadie — es la fecha DECLARADA del
+      // camino manual (confirm-bizum), y es donde el Bizum del 31-mar confirmado el 2-abr cruzaba
+      // de trimestre. Los cinco reenviadores automáticos mandan el instante de proceso, así que
+      // para ellos esto no cambia nada.
+      const resolucion = resolverInstanteDeCobro(body.ts);
+      if (!resolucion.ok) {
+        // Fail-closed: no se marca nada. El único llamador que trae fecha declarada la valida
+        // antes con el mismo criterio, así que esto no debería verse; si se ve, es preferible un
+        // error a un cobro fechado con un reloj que no es el suyo.
+        return res.status(400).json({ error: resolucion.error, message: resolucion.message });
+      }
+
       const updated = await prisma.charge.update({
         where: { id: chargeId },
         data: {
-          status: 'paid',
+          ...datosDeCobroPagado(resolucion.fecha, body),
           method: body.method ?? charge.method,
           reference: body.bank_ref ?? charge.reference,
-          events: { create: { type: 'paid', payload: body as any } },
           reconciliations: {
             create: { bankRef: body.bank_ref ?? 'n/a', matched: true },
           },

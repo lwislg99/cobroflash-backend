@@ -8,6 +8,7 @@
 import { prisma } from '../../../core/db/prisma';
 import { calcVatBreakdown } from '../../invoicing/domain/vat.service';
 import { estadoCobroFor } from '../../jobs/domain/job.service';
+import { fechaDeCobroDeCharge } from '../../billing/domain/instanteDeCobro'; // SCRUM-397
 import type { Dataset } from './seleccionExport'; // SCRUM-138 (export selectivo)
 
 export interface Rango { from: Date | null; to: Date | null }
@@ -231,24 +232,36 @@ export async function buildCobros(merchantId: number, rango: Rango, status = 'al
   const charges = await prisma.charge.findMany({
     where: whereRango(merchantId, rango, 'createdAt', status !== 'all' ? { status } : {}),
     orderBy: { createdAt: 'desc' },
-    include: { customer: { select: { name: true } } },
+    // SCRUM-397: los eventos entran para poder fechar los cobros ANTERIORES a `paid_at`. Es el
+    // mismo hecho leído donde sí estaba, no un dato inventado — y saca de aquí el `updatedAt`.
+    include: { customer: { select: { name: true } }, events: { select: { type: true, ts: true } } },
   });
   return {
     customerIds: idsDe(charges), // SCRUM-104: OJO, Charge.customerId es nullable
     header: ['Cobro #', 'Fecha', 'Cliente', 'Concepto', 'Importe', 'Moneda', 'Método (paid_via)', 'Estado', 'Cobrado en', 'Referencia'],
-    rows: charges.map((ch) => csvRow([
-      ch.id,
-      dia(ch.createdAt),
-      ch.customer?.name ?? '',
-      ch.concept,
-      csvNum(ch.amount),
-      ch.currency,
-      ch.method,
-      ch.status,
-      // El cobro no guarda paidAt: cuando está pagado, updatedAt es el momento del cobro.
-      ch.status === 'paid' ? dia(ch.updatedAt) : '',
-      ch.reference ?? '',
-    ])),
+    rows: charges.map((ch) => {
+      // 🔴 SCRUM-397 · AQUÍ ESTABA EL DEFECTO ORIGINAL DEL TICKET: «Cobrado en» salía de
+      // `updatedAt`, que es la última vez que alguien TOCÓ la fila. Un cobro del 31 de marzo
+      // editado el 2 de abril se exportaba como de abril — y con criterio de caja eso es el euro
+      // declarado en el trimestre que no toca.
+      //
+      // Ahora sale del mismo sitio que el recibo y que el export de fees. Y si no consta, va
+      // VACÍO: mezclar «no se sabe» con una fecha cualquiera es lo que producía el número que no
+      // significa nada.
+      const cobradoEn = fechaDeCobroDeCharge(ch);
+      return csvRow([
+        ch.id,
+        dia(ch.createdAt),
+        ch.customer?.name ?? '',
+        ch.concept,
+        csvNum(ch.amount),
+        ch.currency,
+        ch.method,
+        ch.status,
+        cobradoEn ? dia(cobradoEn) : '',
+        ch.reference ?? '',
+      ]);
+    }),
   };
 }
 
