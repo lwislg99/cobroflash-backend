@@ -477,6 +477,28 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
       if (!window.openSignaturePad) { setStatus('error', 'El componente de firma no está cargado.'); return; }
       window.openSignaturePad({
         title: 'Firma del cliente',
+        // ── SCRUM-466 · EL FIRMANTE VE LO QUE FIRMA ──────────────────────────────────────
+        //
+        // Medido en SCRUM-463: desde aquí se firmaba SIN VER NADA del albarán. Esta pantalla ni
+        // siquiera leía `alb.lineas` —cero apariciones en código—, así que el cliente ponía su
+        // firma sobre un documento que no tenía delante. Un albarán firmado sirve para ganar la
+        // discusión de «yo no pedí eso»; si quien firma no vio las líneas, prueba mucho menos de
+        // lo que le vendemos al profesional.
+        //
+        // Se le pasan los CUATRO que ya sellamos en v:3 —líneas, cliente, fecha y lugar—, porque
+        // «no se sella lo que no se enseña, y no se enseña menos de lo que se sella».
+        //
+        // 🔴 Y NI UN IMPORTE: no se pasa `precioUnitario`, ni `totales`, ni `modoValoracion`. Un
+        // albarán no lleva importes (regla del producto) — quien firma en obra puede no ser quien
+        // acordó el precio. Que no LLEGUEN hasta aquí es lo que hace imposible que se pinten por
+        // descuido, igual que en SCRUM-452 con el PDF.
+        albaran: {
+          cliente: (alb.customer && alb.customer.name) || '',
+          fecha: alb.fecha ? new Date(alb.fecha).toLocaleDateString('es-ES') : '',
+          lugar: alb.lugarEntrega || '',
+          lineas: (Array.isArray(alb.lineas) ? alb.lineas : [])
+            .map((l) => ({ concepto: l && l.concepto, cantidad: l && l.cantidad, unidad: l && l.unidad })),
+        },
         // SCRUM-300 (C5): QUIÉN firma y EN CALIDAD DE QUÉ. `sugerencia` es eso —una sugerencia—:
         // el campo se pinta VACÍO y el chip lo rellena de un toque. Prerrellenarlo pondría en
         // boca del firmante una declaración que no ha hecho; si firma el encargado y nadie lo
