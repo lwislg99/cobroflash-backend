@@ -7,7 +7,7 @@
 import { prisma } from '../../../core/db/prisma';
 import { config } from '../../../core/config/env';
 import { maskEmail } from '../../../core/utils/utils';
-import { enviarCorreo, ResultadoCorreo } from '../../../integrations/enviarCorreo';
+import { enviarCorreo, ResultadoCorreo, resultadoSinDestino } from '../../../integrations/enviarCorreo';
 
 const DASHBOARD_URL = `${config.PUBLIC_BASE_URL || 'https://yaqu.app'}/dashboard/`;
 
@@ -24,7 +24,7 @@ const DASHBOARD_URL = `${config.PUBLIC_BASE_URL || 'https://yaqu.app'}/dashboard
 // Esta fase unifica el EMISOR y rescata el ACUSE; cambiar la semántica de fallo de cinco módulos
 // es otra cosa y no se cuela aquí de tapadillo.
 async function sendEmail(to: string, subject: string, html: string): Promise<ResultadoCorreo> {
-  if (!to || !to.includes('@')) return { enviado: false, motivo: 'sin_destino' };
+  if (!to || !to.includes('@')) return resultadoSinDestino();
   // SCRUM-101: el aviso de dev se conserva. Lo que cambia es que ya no ABANDONA aquí: si hay SMTP
   // configurado, `enviarCorreo` lo usa — antes este emisor era el único que ni lo intentaba.
   if (!config.RESEND_API_KEY) {
