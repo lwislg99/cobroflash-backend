@@ -1,4 +1,9 @@
-# SCRUM-475 · No se puede acreditar que un correo llegó — y hay algo peor: 4 de 7 fallos no los ve nadie
+# SCRUM-475 · No se puede acreditar que un correo llegó — y hay algo peor: fallos que no ve nadie
+
+> 📌 **DOS SESIONES.** Abajo, íntegra, la **sesión 1** (medía 6 emisores y 1 mudo). Al final del
+> documento, la **sesión 2**, que rehízo los tres censos contra un `main` más nuevo y **corrigió
+> los dos números**: son **7 emisores** y **4 mudos**. El título original decía «4 de 7 fallos»;
+> se deja constancia de que ese recuento se quedó corto, y de por qué.
 
 **Medido contra:** `origin/main` = `fd2f0e4a8dabd90cc8be1ff388c8f2dc393a0ecd` · 2026-08-11T20:46:37+02:00
 **Rama:** `scrum-475-constancia-correo`
@@ -171,3 +176,174 @@ consta nada, que es la verdad.
 
 **No se ha tocado:** `prisma/schema.prisma` · el camino de emisión · el embudo de WhatsApp ·
 ninguna credencial.
+
+---
+---
+
+# SESIÓN 2 · Los tres censos rehechos — y los dos números de la sesión 1 que se quedaron cortos
+
+**Medido contra:** `origin/main` = `cffde532a0912803cdf5bea415505f90757874b2` · 2026-08-11
+**Instrumentos:** AST (`typescript` 5.9.2). Cada censo lleva su control positivo dentro.
+
+## PASO 0 — el arranque encontró una rama del mismo ticket
+
+El encargo pedía crear `scrum-475-rastro-del-correo` desde `main`. **No se creó.** Ya existía
+`origin/scrum-475-constancia-correo` (sesión 1, `f2483e9e`, **no mergeada**), y la constitución
+manda parar ante una rama con el mismo número de ticket. Comprobado antes de adoptarla:
+
+| comprobación | |
+|---|---|
+| ¿algún worktree la tiene checkouteada? | **ninguno** de los cuatro → huérfana |
+| último commit | hace **41 minutos**, autor **Luis** |
+| ¿está en `main`? | **no** (`merge-base --is-ancestor` = falso) |
+
+Con el GO del fundador se continuó **dentro de esa rama**. El nombre del encargo era incorrecto:
+él no sabía que la rama existía.
+
+> ⚠️ **Fuera de carril, reportado y NO tocado:** durante la sesión, **dos worktrees cambiaron de
+> rama solos** (`cobroflash-backend` → `scrum-469`, `b3` → `scrum-351`). Hay otra sesión viva.
+> Comprobado que **no solapa**: SCRUM-469 toca `public/dashboard/js/`, no esta zona.
+
+## Por qué la medición de la sesión 1 caducó — y qué parte de ella no
+
+`main` avanzó **4 commits** desde `fd2f0e4a`, todos de **SCRUM-406 «Escríbenos»**. `fd2f0e4a`
+**sí** es ancestro de `main`: no hay deriva, hay crecimiento. Y creció **encima del objeto
+medido** — SCRUM-406 añadió `src/integrations/enviarCorreo.ts`, un emisor nuevo.
+
+**El delta de la sesión 1 sobrevive; su absoluto no.** Los seis emisores que midió siguen ahí y
+siguen cableados. Pero ya no son seis.
+
+## (1) Qué devuelve el proveedor y qué se tiraba — **7**, no 6
+
+| emisor HTTP | |
+|---|---|
+| `src/integrations/enviarCorreo.ts:50` | 🆕 **nació en SCRUM-406**, entró en `main` tirando la respuesta |
+| los seis de la sesión 1 | ya cableados |
+
+🔴 **Y esto es lo que vale la pena contar:** el séptimo **no lo encontró una revisión a mano**. Al
+mergear `main` en la rama, el guard de la sesión 1 —que exige CERO respuestas descartadas y se
+deriva del árbol— **cayó solo**, diciendo:
+
+```
+🔴 HAY ENVÍOS QUE DESCARTAN LA RESPUESTA DEL PROVEEDOR:
+    src/integrations/enviarCorreo.ts:50  enviarCorreo()
+```
+
+Un guard escrito contra una lista de seis ficheros no habría dicho nada. **Ésa es la diferencia
+entre derivar del censo y enumerar a mano**, y aquí se cobró sola.
+
+Además hay **6 puntos SMTP** (`nodemailer.sendMail`); 2 guardan el resultado, pero solo para
+volcar el `.eml` de dev, no para acreditar nada. **Total: 13 puntos de envío en el árbol.**
+
+## (2) ¿Hay tabla de correo? — **0 de 24 modelos** (sin cambio)
+
+Ningún modelo de correo. El único con campos de entrega/rebote sigue siendo **`WhatsAppMessage`**.
+**Control positivo:** el lector encuentra el embudo de WhatsApp; si hubiera devuelto 0 ahí, se
+habría declarado ciego en vez de informar «no hay tabla».
+
+## (3) ¿Alguna ruta recibe `delivered`/`bounced`? — **cero** (sin cambio)
+
+De 235 declaraciones con literal (228 rutas reales + los 7 `axios.post`), **ninguna** recibe
+eventos de correo. El único fichero que maneja esos literales es `whatsappLog.service.ts`.
+**Control positivo:** el censo sí ve **11 webhooks** que existen. Ve los que hay; de correo no hay.
+
+## (4) 🔴 EL NÚMERO QUE MÁS CAMBIA: no son 4 de 7 tragones, son **11 de 21**
+
+El censo B de la sesión 1 recibía la lista de emisores **escrita a mano**:
+
+```js
+const EMISORES = ['sendInvoiceEmail','sendQuoteEmail','sendMagicLink','sendMail','sendMerchantPaymentEmail'];
+```
+
+`enviarCorreo` no estaba en ella — pero el problema es más grande que un nombre que falta.
+**Derivando la lista del árbol** (una función exportada es emisora si alcanza la llamada al
+proveedor, directa o a través de otra del mismo fichero), la superficie pasa de **7 llamadores a
+21**, y los mudos de **1 a 4**:
+
+| veredicto | nº | |
+|---|---|---|
+| ✅ avisa | 4 | contestan que no salió |
+| ⚪ sube | 6 | el error propaga |
+| 🔴 traga-log | 7 | solo una línea de consola |
+| 🔴🔴 **traga-mudo** | **4** | ni una línea |
+
+**Los cuatro mudos, verificados uno a uno leyendo el código** (los cuatro son `.catch(() => {})`):
+
+| dónde | qué correo se pierde |
+|---|---|
+| `psp.routes.ts:276` | «te han pagado» — al profesional |
+| `quotes.routes.ts:294` | «te han aceptado el presupuesto» — al profesional |
+| `whatsappIncoming.routes.ts:478` | ídem, aceptado por WhatsApp |
+| `quotesAdmin.routes.ts:634` | «tu presupuesto fue aprobado» — al técnico |
+
+🔴 **Los cuatro son la misma cosa: el aviso AL PROFESIONAL de que algo bueno ha pasado.** Se
+mandan fire-and-forget y, si fallan, no queda ni una línea. Él cree que le avisamos.
+
+**Tres de los cuatro no son nuevos ni los rompió nadie:** llevaban ahí todo el tiempo, fuera del
+foco de una lista que se escribió una vez y se quedó vieja en silencio. Subir el trinquete de 1 a
+4 **no es relajarlo**: relajarlo sería dejarlo en 1 sabiendo que son 4.
+
+## (5) ¿Webhooks en Resend? — **SÍ, y esta vez verificado en su documentación**
+
+La sesión 1 lo dejó explícitamente sin verificar. Verificado ahora — lectura de documentación
+pública, **ninguna credencial tocada, ningún correo enviado**:
+
+- **Eventos:** `email.sent` · `email.delivered` · `email.bounced` · `email.complained` ·
+  `email.delivery_delayed` · `email.failed` · `email.suppressed` (+ `opened`, `clicked`,
+  `scheduled`, `received`, y los de dominio/contacto/supresión).
+- **Qué exigen:** tres cabeceras Svix (`svix-id`, `svix-timestamp`, `svix-signature`) y un
+  **secreto de firma** que se saca del panel → **es del fundador** (regla 9). No se ha tocado.
+- **Sin dependencia nueva:** la verificación HMAC manual está documentada, así que **no hace falta
+  el SDK de Resend ni la librería `svix`** → **la regla 36 no se activa**.
+- 🔴 **Requisito que toca nuestra arquitectura:** la firma se valida contra el **raw body**; un
+  `express.json()` que parsea y re-serializa la rompe. **Y esto la casa ya sabe hacerlo:**
+  `app.ts:146-152` guarda `rawBody` con `express.json({ verify })` para `/webhooks/whatsapp`, y
+  Stripe usa `express.raw`. **Dos precedentes en casa**: la ruta de fase 2 no es terreno nuevo.
+
+**Conclusión:** si el fundador confirma el alta en el panel, la fase 2 es **una tabla y una ruta**,
+sin proveedor ni dependencia nuevos.
+
+## Lo que entra en la sesión 2
+
+| | |
+|---|---|
+| `src/integrations/enviarCorreo.ts` | el 7º emisor **cableado**: la respuesta se captura y viaja como `Constancia` |
+| `tests/_censo-correo.mjs` | **`nombresDeEmisor()`**: la lista de emisores se DERIVA del árbol; se acabó la lista a mano |
+| `tests/scrum475-constancia-correo.test.mjs` | suelo 6→7 y 5→13 nombres · trinquete de mudos 1→**4**, nombrados · **control positivo** del contrato de SCRUM-406 |
+
+El contrato de SCRUM-406 (`enviado`/`motivo`/`via`) **no cambia**: la pantalla de soporte sigue
+leyendo lo mismo. `constancia` se añade al lado.
+
+## Verificado EN ROJO — por **exit code**, con el árbol limpio comprobado en verde antes
+
+| defecto inyectado | | |
+|---|---|---|
+| el 7º emisor vuelve a tirar la respuesta | 🔴 `test=1` | nombra `enviarCorreo.ts` ✔ |
+| la lista de emisores vuelve a escribirse a mano | 🔴 `test=1` | nombra `TRECE` ✔ |
+| alguien silencia un 5º aviso al profesional | 🔴 `test=1` | nombra `MUDOS` ✔ |
+
+El arnés comprueba además que **cada inyección cambió el fichero de verdad** (un patrón que no
+casa no es un verde: es no haber probado nada) y que el árbol vuelve a verde al restaurar.
+Restaura **por copia del texto original, no con `git checkout --`**: había trabajo sin commitear.
+
+## 🛑 LO QUE NO ENTRA, Y POR QUÉ
+
+1. **La tabla.** El diff de `EmailMessage` de la sesión 1 sigue **preparado y NO aplicado**:
+   `prisma/schema.prisma` es del fundador. Sin ella, el mínimo irrenunciable —que un rebote no se
+   pierda— **no se puede cumplir**, porque un rebote llega por webhook y no hay dónde apuntarlo.
+2. **Los 4 tragones mudos NO se arreglan aquí.** Regla 37: son cuatro rutas ajenas, no bloquean
+   esta tarea y no caben en este PR. Y regla 30: si hay que decirle algo al profesional, **el
+   texto lo aprueba el asesor**. Se proponen y se para. Van con la tabla, que es donde el fallo
+   tendrá dónde constar.
+
+## Hueco conocido del instrumento — dicho, no tapado
+
+El censo B clasifica por lo que pasa **si la llamada lanza una excepción**. `enviarCorreo()` no
+lanza en su camino normal de fallo: **devuelve** `enviado:false`. Por eso su llamador
+(`soporteAdmin.routes.ts:55`) sale como **«sube»** cuando en realidad **avisa** — se comprobó
+leyendo el código. El veredicto no es falso, es que mide otra cosa. **Un emisor que devuelve su
+fallo en vez de lanzarlo necesita otro criterio**, y ése no se ha escrito hoy.
+
+**No se ha tocado en la sesión 2:** `prisma/schema.prisma` · el camino de emisión fiscal (leído,
+nunca modificado — regla 38) · el embudo de WhatsApp · el contenido de ningún correo · ninguna
+credencial · ningún proveedor ni dependencia nuevos.
