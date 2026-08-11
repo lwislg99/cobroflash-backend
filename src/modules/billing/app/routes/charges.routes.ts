@@ -34,7 +34,9 @@ router.post('/', async (req, res) => {
     const expiresAt = body.expires_at ? new Date(body.expires_at) : null;
 
     const methodPref = body.method_preference;
-    const method = methodPref === 'card' ? 'card' : methodPref === 'mp' ? 'mp' : 'bank';
+    // SCRUM-474 · «bank» NO está en PAID_VIA y era el caso POR DEFECTO: todo lo que no fuera
+    // tarjeta ni MercadoPago caía ahí. El valor del conjunto cerrado para eso es «transfer».
+    const method = methodPref === 'card' ? 'card' : methodPref === 'mp' ? 'mp' : 'transfer';
 
     const charge = await prisma.charge.create({
       data: {
