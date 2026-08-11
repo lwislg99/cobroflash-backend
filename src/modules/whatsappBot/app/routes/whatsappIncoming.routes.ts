@@ -9,6 +9,8 @@ import { config } from '../../../../core/config/env';
 import { maskPhone, normalizePhone, formatMoneyEs } from '../../../../core/utils/utils';
 import { sendWhatsAppText, markInboundRead } from '../../../../integrations/whatsapp';
 import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/merchantNotifications';
+// SCRUM-477: un aviso que no sale deja constancia -- y sin poder tumbar la operacion.
+import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 import { updateWaMessageStatus, recordInboundWaMessage } from '../../../messaging/domain/whatsappLog.service';
 import { isFlagEnabled } from '../../../../core/flags';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
@@ -475,14 +477,16 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
     });
 
     if (merchant?.notifyEmailOnQuoteAccepted && merchant.email) {
-      sendMerchantQuoteAcceptedEmail({
+      // SCRUM-477 · ⚠️ SIGUE SIN `await`: el presupuesto ya se aceptó por WhatsApp y un aviso que
+      // no sale NO puede tumbar esa aceptación. Lo que cambia es que ahora deja constancia.
+      conConstancia('presupuesto_aceptado', merchant.email, sendMerchantQuoteAcceptedEmail({
         merchantEmail: merchant.email,
         merchantName:  merchant.name || 'Tu negocio',
         customerName:  customer?.name || 'Cliente',
         quoteId:       quote.id,
         total:         Number(quote.total).toFixed(2),
         currency:      quote.currency,
-      }).catch(() => {});
+      }));
     }
 
     // WhatsApp al merchant

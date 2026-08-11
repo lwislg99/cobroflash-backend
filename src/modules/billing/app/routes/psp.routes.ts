@@ -12,6 +12,8 @@ import { sendPaymentConfirmationInvoice, notifyMerchantPaid } from '../../../../
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { sendMerchantPaymentEmail } from '../../../messaging/domain/merchantNotifications';
+// SCRUM-477: un aviso que no sale deja constancia -- y sin poder tumbar la operacion.
+import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 import { esMetodoValido } from '../../domain/metodoDeCobro';
 import { recalcJobCobradoForCharge } from '../../../jobs/domain/job.service'; // SCRUM-13
 import { datosDeCobroPagado, resolverInstanteDeCobro } from '../../domain/instanteDeCobro'; // SCRUM-397
@@ -273,14 +275,18 @@ router.post('/', async (req, res) => {
       // Email al merchant si tiene notificaciones activadas
       if (merchant?.notifyEmailOnPaid && merchant?.email) {
         const inv = await prisma.invoice.findFirst({ where: { id: invoiceId ?? undefined }, select: { number: true } }).catch(() => null);
-        sendMerchantPaymentEmail({
+        // SCRUM-477 · el `.catch(() => {})` que había aquí se comía el fallo entero: al profesional
+        // no le llegaba el «te han pagado» y no quedaba ni una línea de que no le llegó.
+        // ⚠️ SIGUE SIN `await` a propósito: el cobro ya está registrado y un aviso que no sale NO
+        // puede tumbar la confirmación del pago. Lo que cambia es que ahora deja constancia.
+        conConstancia('pago_recibido', merchant.email, sendMerchantPaymentEmail({
           merchantEmail: merchant.email,
           merchantName: merchant.name || 'Tu negocio',
           customerName: updated.customer?.name || 'Cliente',
           amount: (body.amount ?? updated.amount).toString(),
           currency: body.currency ?? updated.currency,
           invoiceNumber: inv?.number ?? null,
-        }).catch(() => {});
+        }));
       }
 
       // SCRUM-13 (COBROS-1): recalcular Job.totalCobrado (suma desde cero de los Charge
