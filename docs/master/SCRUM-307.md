@@ -201,3 +201,28 @@ construcción**, no por prudencia.
 `prisma/schema.prisma` · el mecanismo de firma · el camino de emisión (regla 38) · el service worker
 · `public/**` · `src/**` · ninguna base de datos. **Cero construcción.** El único fichero de este
 commit es este documento.
+
+# 8 · EL GATE DE CIERRE DEL BLOQUE H — añadido el 12-ago-2026 por SCRUM-362 (residuales)
+
+Este censo no decía **cómo se cierra** el bloque, y hasta hoy no lo decía nadie: `docs/master/SCRUM-362.md`
+existía desde el 10-ago y este documento **no lo mencionaba ni a él ni a «H7»**.
+
+**El gate de cierre de SCRUM-307 es la pasada humana en iPhone de H7 (SCRUM-362), no la tanda.**
+
+La tanda cubre lo que se puede automatizar, y desde hoy son **los cinco escenarios** —el censo y qué
+los cubre está en `docs/master/SCRUM-362.md`—. Lo que **no** puede cubrir, y por eso el gate es
+humano:
+
+* el **desalojo de WebKit a los 7 días** sin abrir la aplicación (H0 lo midió; no hay forma de
+  simularlo en la tanda);
+* **Background Sync al 0 %** en Safari: la cola sólo se mueve al abrir la app, y cuándo el sistema
+  despierta la pestaña no lo decide el producto;
+* que el **sistema operativo mate la app** a media escritura. La tanda prueba la mitad de al lado
+  —que el almacén sobrevive a una carga nueva sin apagado limpio—, que no es lo mismo;
+* **modo avión real**, instalación en pantalla de inicio, y el iPhone en general.
+
+🔸 **El documento de esa pasada NO EXISTE todavía.** Se comprobó el 12-ago-2026: no hay
+`docs/PRUEBA-IPHONE-BLOQUE-H.md` en `main` ni en ninguna rama remota, y **no se nombra aquí a
+propósito** — el guard de SCRUM-242 rechaza una entrada que cite un documento inexistente, que es
+justo la protección que impide convertir una promesa en una referencia. Cuando el fundador lo
+commitee, el mapa bloque→escenario va en `docs/master/SCRUM-362.md`.
