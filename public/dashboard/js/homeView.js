@@ -666,10 +666,6 @@ function openQuickQuoteModal(prefill) {
   backdrop.id = "qq-modal-backdrop";
   backdrop.innerHTML = `
     <div class="modal qq-modal">
-      <div class="modal-header">
-        <span class="modal-title">${qNew} ${qFast}</span>
-        <button class="modal-close" id="qq-close">&times;</button>
-      </div>
 
       <div class="qq-modal-body">
         <!-- Cliente -->
@@ -779,6 +775,10 @@ function openQuickQuoteModal(prefill) {
     </div>
   `;
 
+  // SCRUM-446: la cabecera sale del constructor compartido.
+  backdrop.querySelector('.modal').prepend(cabeceraModal({
+    titulo: `${qNew} ${qFast}`, idCierre: 'qq-close',
+  }));
   document.body.appendChild(backdrop);
 
   document.getElementById("qq-close").addEventListener("click", closeQuickQuote);

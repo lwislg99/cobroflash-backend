@@ -213,11 +213,7 @@ function openAlcanceModal() {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
-      <div class="modal" style="max-width:560px">
-        <div class="modal-header">
-          <h3 class="modal-title">Alcance de la oferta Founding</h3>
-          <button class="modal-close" id="alc-close">&times;</button>
-        </div>
+      <div class="modal" style="max-width:560px">
         <div class="modal-body">
           <iframe src="/legal/alcance-beta" title="Alcance de la beta"
             style="width:100%;height:320px;border:1px solid var(--neutral-200);border-radius:10px;background:#fff"></iframe>
@@ -233,6 +229,8 @@ function openAlcanceModal() {
           </button>
         </div>
       </div>`;
+    // SCRUM-446: la cabecera sale del constructor compartido.
+    overlay.querySelector('.modal').prepend(cabeceraModal({ titulo: "Alcance de la oferta Founding", idCierre: "alc-close" }));
     document.body.appendChild(overlay);
 
     const done = (val) => { overlay.remove(); resolve(val); };

@@ -1318,17 +1318,9 @@ async function renderJobDetailView(container, jobId) {
     overlay.setAttribute('aria-label', ALB_CREAR_COPY.titulo);
     const modal = document.createElement('div');
     modal.className = 'modal';
-    const header = document.createElement('div');
-    header.className = 'modal-header';
-    const title = document.createElement('div');
-    title.className = 'modal-title';
-    title.textContent = ALB_CREAR_COPY.titulo;
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'modal-close';
-    closeBtn.type = 'button';
-    closeBtn.textContent = '×';
-    closeBtn.setAttribute('aria-label', 'Cerrar');
-    header.append(title, closeBtn);
+    // SCRUM-446: la cabecera sale del constructor compartido.
+    const header = cabeceraModal({ titulo: ALB_CREAR_COPY.titulo });
+    const closeBtn = header.querySelector('.modal-close');
 
     const errEl = document.createElement('div');
     errEl.className = 'alert error';
@@ -2010,11 +2002,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
       const overlay = document.createElement('div');
       overlay.className = 'modal-overlay';
       overlay.innerHTML = `
-        <div class="modal" style="max-width:520px" role="dialog" aria-modal="true" aria-labelledby="voz-t">
-          <div class="modal-header">
-            <h3 class="modal-title" id="voz-t">🎤 Dictar el parte</h3>
-            <button class="modal-close" id="voz-x" aria-label="Cerrar">&times;</button>
-          </div>
+        <div class="modal" style="max-width:520px" role="dialog" aria-modal="true" aria-labelledby="voz-t">
           <div class="modal-body">
             <p style="font-size:13px;color:var(--muted);margin:0 0 10px">
               Cuenta lo que has hecho, como se lo contarías a un compañero. Luego lo repasas.
@@ -2028,6 +2016,8 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
             <div id="voz-res" style="margin-top:12px"></div>
           </div>
         </div>`;
+      // SCRUM-446: la cabecera sale del constructor compartido.
+      overlay.querySelector('.modal').prepend(cabeceraModal({ titulo: "🎤 Dictar el parte", idTitulo: "voz-t", idCierre: "voz-x" }));
       document.body.appendChild(overlay);
 
       const cerrar = () => overlay.remove();
@@ -2286,17 +2276,9 @@ function openAlbEditorSheet(alb, ctx) {
   overlay.setAttribute('aria-label', `Editar albarán ${alb.numero}`);
   const modal = document.createElement('div');
   modal.className = 'modal';
-  const header = document.createElement('div');
-  header.className = 'modal-header';
-  const title = document.createElement('div');
-  title.className = 'modal-title';
-  title.textContent = `Editar albarán ${alb.numero}`;
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'modal-close';
-  closeBtn.type = 'button';
-  closeBtn.textContent = '×';
-  closeBtn.setAttribute('aria-label', 'Cerrar');
-  header.append(title, closeBtn);
+  // SCRUM-446: la cabecera sale del constructor compartido.
+  const header = cabeceraModal({ titulo: `Editar albarán ${alb.numero}` });
+  const closeBtn = header.querySelector('.modal-close');
   // Banner de error PROPIO del sheet (el statusBox de la página queda detrás del overlay).
   const errEl = document.createElement('div');
   errEl.className = 'alert error';
@@ -2348,17 +2330,9 @@ function openFacturarParcialSheet(alb, ctx) {
   overlay.setAttribute('aria-label', `Facturar parte del albarán ${alb.numero}`);
   const modal = document.createElement('div');
   modal.className = 'modal';
-  const header = document.createElement('div');
-  header.className = 'modal-header';
-  const title = document.createElement('div');
-  title.className = 'modal-title';
-  title.textContent = `Facturar parte de ${alb.numero}`;
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'modal-close';
-  closeBtn.type = 'button';
-  closeBtn.textContent = '×';
-  closeBtn.setAttribute('aria-label', 'Cerrar');
-  header.append(title, closeBtn);
+  // SCRUM-446: la cabecera sale del constructor compartido.
+  const header = cabeceraModal({ titulo: `Facturar parte de ${alb.numero}` });
+  const closeBtn = header.querySelector('.modal-close');
 
   const err = document.createElement('div');
   err.className = 'alert error';

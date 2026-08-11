@@ -140,13 +140,10 @@ function renderCustomersView(container) {
     modalBackdrop = createElement("div", "modal-overlay");
     const modal = createElement("div", "modal");
 
-    const header = createElement("div", "modal-header");
-    modalTitleEl = createElement("div", "modal-title", "Nuevo cliente");
-    const closeBtn = createElement("button", "modal-close", "×");
-    closeBtn.type = "button";
-    closeBtn.addEventListener("click", closeModal);
-    header.appendChild(modalTitleEl);
-    header.appendChild(closeBtn);
+    // SCRUM-446: la cabecera sale del constructor compartido. `modalTitleEl` se sigue guardando
+    // porque esta vista cambia el título entre «Nuevo cliente» y «Editar cliente».
+    const header = cabeceraModal({ titulo: "Nuevo cliente", alCerrar: closeModal });
+    modalTitleEl = header.querySelector(".modal-title");
 
     modal.appendChild(header);
 

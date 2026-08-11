@@ -689,10 +689,6 @@ async function fetchInvoiceDetail(id) {
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
       <div class="modal" style="max-width:460px" role="dialog" aria-modal="true" aria-labelledby="anul-t">
-        <div class="modal-header">
-          <h3 class="modal-title" id="anul-t">Anular la factura ${escAnul(invoice.number)}</h3>
-          <button class="modal-close" id="anul-x" aria-label="Cerrar">&times;</button>
-        </div>
         <div class="modal-body">
           <div class="field">
             <label for="anul-motivo">¿Por qué se anula?</label>
@@ -723,6 +719,12 @@ async function fetchInvoiceDetail(id) {
         </div>
       </div>
     `;
+    // SCRUM-446: la cabecera sale del constructor compartido. El título va SIN `escAnul`: el
+    // constructor usa `textContent`, así que escaparlo aquí haría visible el «&amp;».
+    // Y conserva `id="anul-t"`, que es a quien apunta el `aria-labelledby` del modal.
+    overlay.querySelector('.modal').prepend(cabeceraModal({
+      titulo: `Anular la factura ${invoice.number}`, idTitulo: 'anul-t', idCierre: 'anul-x',
+    }));
     document.body.appendChild(overlay);
 
     const cerrar = () => overlay.remove();

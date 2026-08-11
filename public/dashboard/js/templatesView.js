@@ -156,11 +156,7 @@ function showRenameModal(tpl, onSuccess, setAlert) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal" style="max-width:380px">
-      <div class="modal-header">
-        <h3 class="modal-title">Renombrar plantilla</h3>
-        <button class="modal-close" id="rename-tpl-close">&times;</button>
-      </div>
+    <div class="modal" style="max-width:380px">
       <div class="modal-body">
         <div class="field">
           <label>Nombre</label>
@@ -170,6 +166,8 @@ function showRenameModal(tpl, onSuccess, setAlert) {
       </div>
     </div>
   `;
+  // SCRUM-446: la cabecera sale del constructor compartido.
+  overlay.querySelector('.modal').prepend(cabeceraModal({ titulo: "Renombrar plantilla", idCierre: "rename-tpl-close" }));
   document.body.appendChild(overlay);
 
   const close = () => overlay.remove();

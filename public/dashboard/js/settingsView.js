@@ -1267,11 +1267,7 @@ function montarDatosDeEjemplo(merchant) {
     // sabe leer. Con concatenación el pie existía pero sus botones eran invisibles para ese guard
     // — y un pie que el censo ve a medias es un modal que su arreglo de CSS no cubre.
     overlay.innerHTML = `
-      <div class="modal" style="max-width:460px" role="dialog" aria-modal="true" aria-labelledby="de-t">
-        <div class="modal-header">
-          <h3 class="modal-title" id="de-t">Eliminar datos de ejemplo</h3>
-          <button class="modal-close" id="de-x" aria-label="Cerrar">&times;</button>
-        </div>
+      <div class="modal" style="max-width:460px" role="dialog" aria-modal="true" aria-labelledby="de-t">
         <div class="modal-body">
           <p>Vamos a borrar los clientes, presupuestos y facturas de ejemplo. Esto no se puede deshacer.</p>
         </div>
@@ -1280,6 +1276,8 @@ function montarDatosDeEjemplo(merchant) {
           <button class="btn-primary" id="de-si" type="button">Sí, eliminar</button>
         </div>
       </div>`;
+    // SCRUM-446: la cabecera sale del constructor compartido.
+    overlay.querySelector('.modal').prepend(cabeceraModal({ titulo: "Eliminar datos de ejemplo", idTitulo: "de-t", idCierre: "de-x" }));
     document.body.appendChild(overlay);
     const cerrar = () => overlay.remove();
     overlay.querySelector('#de-x').addEventListener('click', cerrar);

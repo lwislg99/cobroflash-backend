@@ -28,16 +28,16 @@ function openImportCsvModal() {
   overlay.className = 'modal-overlay';
   overlay.innerHTML = [
     '<div class="modal" style="max-width:600px">',
-    '<div class="modal-header">',
-    '<h3 class="modal-title">⬆ Importar clientes desde CSV</h3>',
-    '<button class="modal-close" id="csv-modal-close">&times;</button>',
-    '</div>',
     '<div class="modal-body">',
     '<div class="alert" id="csv-alert" style="display:none"></div>',
     '<div id="csv-paso"></div>',
     '</div>',
     '</div>',
   ].join('');
+  // SCRUM-446: la cabecera sale del constructor compartido.
+  overlay.querySelector('.modal').prepend(cabeceraModal({
+    titulo: '⬆ Importar clientes desde CSV', idCierre: 'csv-modal-close',
+  }));
   document.body.appendChild(overlay);
 
   const cerrar = function () { overlay.remove(); };

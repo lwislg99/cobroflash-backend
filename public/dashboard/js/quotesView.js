@@ -91,12 +91,10 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   modal.className = "modal";
   modal.style.maxWidth = "860px";
 
-  const mHeader = document.createElement("div");
-  mHeader.className = "modal-header";
-  const mTitle = document.createElement("span");
-  mTitle.className = "modal-title";
-  mTitle.textContent = `Presupuesto #${displayNum} generado`;
-  mHeader.appendChild(mTitle);
+  // SCRUM-446: cabecera del constructor compartido. SIN botón de cierre: hoy no lo tiene, y este
+  // refactor no decide comportamiento — si su ausencia era deliberada se respeta, y si fue descuido
+  // es otro ticket con su propia víctima.
+  const mHeader = cabeceraModal({ titulo: `Presupuesto #${displayNum} generado`, sinCierre: true });
   modal.appendChild(mHeader);
 
   const mBody = document.createElement("div");
@@ -1960,18 +1958,9 @@ conceptInput.addEventListener("input", () => {
     modal.setAttribute("aria-modal", "true");
     modal.setAttribute("aria-label", "Ajustes de la línea");
 
-    const header = document.createElement("div");
-    header.className = "modal-header";
-    const titulo = document.createElement("h3");
-    titulo.className = "modal-title";
-    titulo.textContent = "Ajustes de la línea";
-    const cerrar = document.createElement("button");
-    cerrar.type = "button";
-    cerrar.className = "modal-close";
-    cerrar.setAttribute("aria-label", "Cerrar");
-    cerrar.innerHTML = "&times;";
-    header.appendChild(titulo);
-    header.appendChild(cerrar);
+    // SCRUM-446: cabecera del constructor compartido.
+    const header = cabeceraModal({ titulo: "Ajustes de la línea" });
+    const cerrar = header.querySelector(".modal-close");
 
     const body = document.createElement("div");
     body.className = "modal-body";
@@ -2583,17 +2572,15 @@ if (Number.isFinite(n) && n >= 0) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
-      <div class="modal" style="max-width:480px">
-        <div class="modal-header">
-          <h3 class="modal-title">📋 Usar plantilla</h3>
-          <button class="modal-close" id="tpl-modal-close">&times;</button>
-        </div>
+      <div class="modal" style="max-width:480px">
         <div class="modal-body">
           <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">Elige una plantilla para cargar sus líneas en el presupuesto actual.</p>
           <div style="display:flex;flex-direction:column;gap:8px" id="tpl-list"></div>
         </div>
       </div>
     `;
+    // SCRUM-446: la cabecera sale del constructor compartido.
+    overlay.querySelector('.modal').prepend(cabeceraModal({ titulo: "📋 Usar plantilla", idCierre: "tpl-modal-close" }));
     document.body.appendChild(overlay);
 
     const closeOverlay = () => overlay.remove();
@@ -2653,11 +2640,7 @@ if (Number.isFinite(n) && n >= 0) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
-      <div class="modal" style="max-width:400px">
-        <div class="modal-header">
-          <h3 class="modal-title">💾 Guardar plantilla</h3>
-          <button class="modal-close" id="save-tpl-close">&times;</button>
-        </div>
+      <div class="modal" style="max-width:400px">
         <div class="modal-body">
           <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">Dale un nombre a esta plantilla para reutilizarla en futuros presupuestos.</p>
           <div class="alert" id="save-tpl-alert"></div>
@@ -2670,6 +2653,8 @@ if (Number.isFinite(n) && n >= 0) {
         </div>
       </div>
     `;
+    // SCRUM-446: la cabecera sale del constructor compartido.
+    overlay.querySelector('.modal').prepend(cabeceraModal({ titulo: "💾 Guardar plantilla", idCierre: "save-tpl-close" }));
     document.body.appendChild(overlay);
 
     const closeOverlay = () => overlay.remove();

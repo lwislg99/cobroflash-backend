@@ -217,11 +217,7 @@ function showInviteModal(onSuccess, setAlert, prefill = null) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal" style="max-width:420px">
-      <div class="modal-header">
-        <h3 class="modal-title">${prefill ? 'Reactivar miembro' : 'Invitar miembro'}</h3>
-        <button class="modal-close" id="modal-close-invite">&times;</button>
-      </div>
+    <div class="modal" style="max-width:420px">
       <div class="modal-body">
         <div class="alert error" id="invite-alert" style="display:none"></div>
         <form id="invite-form" style="display:flex;flex-direction:column;gap:14px">
@@ -245,6 +241,8 @@ function showInviteModal(onSuccess, setAlert, prefill = null) {
       </div>
     </div>
   `;
+  // SCRUM-446: la cabecera sale del constructor compartido.
+  overlay.querySelector('.modal').prepend(cabeceraModal({ titulo: `${prefill ? 'Reactivar miembro' : 'Invitar miembro'}`, idCierre: "modal-close-invite" }));
   document.body.appendChild(overlay);
 
   overlay.querySelector('#modal-close-invite').onclick = () => overlay.remove();
@@ -298,11 +296,7 @@ function showEditModal(member, onSuccess, setAlert) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal" style="max-width:380px">
-      <div class="modal-header">
-        <h3 class="modal-title">Editar miembro</h3>
-        <button class="modal-close" id="modal-close-edit">&times;</button>
-      </div>
+    <div class="modal" style="max-width:380px">
       <div class="modal-body">
         <form id="edit-form" style="display:flex;flex-direction:column;gap:14px">
           <div class="field">
@@ -321,6 +315,8 @@ function showEditModal(member, onSuccess, setAlert) {
       </div>
     </div>
   `;
+  // SCRUM-446: la cabecera sale del constructor compartido.
+  overlay.querySelector('.modal').prepend(cabeceraModal({ titulo: "Editar miembro", idCierre: "modal-close-edit" }));
   document.body.appendChild(overlay);
 
   overlay.querySelector('#modal-close-edit').onclick = () => overlay.remove();
