@@ -8,7 +8,7 @@
 > El commit existía solo en su propio mensaje y en comentarios de código. Este fichero es para que
 > el censo se pueda **auditar y encontrar**.
 
-**Medido contra:** `main` = `dd5416f04ed1b8d80a403a9525fab33437fe8b03`
+**Medido contra:** `origin/main` = `dd5416f04ed1b8d80a403a9525fab33437fe8b03` · 2026-08-11T21:10:34+01:00
 **Rama de lectura:** `scrum-473-documentar-lo-mergeado`
 **En main desde:** `e33e9506` (merge del PR #703, rama `scrum-474-metodo-un-solo-trabajo`, ya borrada
 de `origin`). `git merge-base --is-ancestor ef067bbc main` → **sí**.

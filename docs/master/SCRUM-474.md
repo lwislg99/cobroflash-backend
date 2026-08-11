@@ -8,7 +8,7 @@
 > El censo de escritores y el validador van en **`docs/master/SCRUM-473.md`**. Aquí va el lado del
 > **lector**, que es el que el profesional ve.
 
-**Medido contra:** `main` = `dd5416f04ed1b8d80a403a9525fab33437fe8b03`
+**Medido contra:** `origin/main` = `dd5416f04ed1b8d80a403a9525fab33437fe8b03` · 2026-08-11T21:10:34+01:00
 **Rama de lectura:** `scrum-473-documentar-lo-mergeado`
 
 ---
@@ -86,9 +86,15 @@ Rama `origin/scrum-474-filtro-cobros`, **un solo commit propio** sobre main
 - `public/dashboard/js/cobrosView.js` — añade `metodoSinPasarela(metodo)`, que recorta en el primer
   `:`, y hace que `cuboDeMetodo` clasifique por la base en vez de por el valor entero. Se exporta
   también en `module.exports`.
-- `tests/scrum474-filtro-cobros-un-cubo.test.mjs` — **nuevo**, 79 líneas, con suelo y control
-  positivo (`cuboDeMetodo('transfer') === 'transfer'` antes de probar nada más) y el filtro de la
-  pantalla ejercido de verdad.
+- un test nuevo que lo acompaña, 79 líneas, con suelo y control positivo
+  (`cuboDeMetodo('transfer') === 'transfer'` antes de probar nada más) y el filtro de la pantalla
+  ejercido de verdad.
+
+  > Su ruta **no se escribe aquí a propósito**: `tests/scrum391-guards-declarados-presentes.test.mjs`
+  > exige que todo test nombrado por su propia entrada exista en el árbol, y éste vive en la rama sin
+  > mergear. Me lo cazó en rojo al escribir este documento. Las dos salidas honestas eran extraer el
+  > test de su rama o corregir la constancia; extraerlo sería construir, que es justo lo que esta
+  > sesión no hace. Se nombra lo que existe: el commit `79248b55`.
 
 ### 🔴 Lo que hay que mirar antes de mergearla
 
