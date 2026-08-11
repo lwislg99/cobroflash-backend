@@ -1,25 +1,25 @@
 // src/modules/messaging/domain/weeklyDigest.service.ts
 // Resumen semanal por email: se envía los lunes a las 9h.
-import axios from 'axios';
 import { prisma } from '../../../core/db/prisma';
-import { createMailer } from '../../../integrations/mailer';
 import { config } from '../../../core/config/env';
 import { maskEmail } from '../../../core/utils/utils';
+import { enviarCorreo, ResultadoCorreo } from '../../../integrations/enviarCorreo';
 
-async function sendEmail(to: string, subject: string, html: string): Promise<void> {
-  if (!to || !to.includes('@')) return;
-  if (config.RESEND_API_KEY) {
-    await axios.post(
-      'https://api.resend.com/emails',
-      { from: config.EMAIL_FROM, to: [to], subject, html },
-      { headers: { Authorization: `Bearer ${config.RESEND_API_KEY}`, 'Content-Type': 'application/json' }, timeout: 10_000 }
-    );
-    return;
-  }
-  if (config.SMTP_URL) {
-    const mailer = createMailer();
-    await mailer.sendMail({ from: config.EMAIL_FROM, to, subject, html });
-  }
+// SCRUM-475 · el POST propio se retira: emisor único, y la respuesta se devuelve con su acuse.
+// 🔴 SIGUE LANZANDO CUANDO NO SALE, Y ES DELIBERADO (SCRUM-475).
+//
+// Antes el `axios.post` lanzaba ante un error HTTP, y de eso dependía el control de flujo de sus
+// llamadores. Devolver un resultado sin lanzar habría roto DOS cosas en silencio:
+//   · los `.catch()` de los llamadores quedarían muertos — un fallo dejaría de registrarse;
+//   · el `console.log('✓ enviado')` de la línea de abajo se imprimiría sobre un correo que no
+//     salió — el log dejaría de ser una medición y pasaría a ser un adorno.
+// Esta fase unifica el EMISOR y rescata el ACUSE; cambiar la semántica de fallo de cinco módulos
+// es otra cosa y no se cuela aquí de tapadillo.
+async function sendEmail(to: string, subject: string, html: string): Promise<ResultadoCorreo> {
+  if (!to || !to.includes('@')) return { enviado: false, motivo: 'sin_destino' };
+  const r = await enviarCorreo({ to, subject, html, origen: 'weeklyDigest' });
+  if (!r.enviado) throw new Error(`no se pudo enviar el email (${r.motivo || 'desconocido'})`);
+  return r;
 }
 
 function fmt(n: number, currency = '') {

@@ -1,7 +1,6 @@
 import crypto from 'crypto';
-import axios from 'axios';
 import { prisma } from '../../../core/db/prisma';
-import { createMailer } from '../../../integrations/mailer';
+import { enviarCorreo } from '../../../integrations/enviarCorreo';
 import { config } from '../../../core/config/env';
 import { sendWelcomeEmail } from '../../messaging/domain/lifecycle.service';
 import { renderEmailLayout, escEmail } from '../../messaging/domain/emailLayout';
@@ -11,17 +10,23 @@ import { maskEmail } from '../../../core/utils/utils';
 const MAGIC_LINK_TTL_MS = 15 * 60 * 1000;
 const SESSION_TTL_MS    = 30 * 24 * 60 * 60 * 1000; // 30 días
 
+/**
+ * SCRUM-475 · el POST propio se retira: emisor único (`integrations/enviarCorreo.ts`).
+ *
+ * 🔴 SIGUE LANZANDO, Y ES DELIBERADO. Sus DOS llamadores detectan el fallo por la EXCEPCIÓN, y uno
+ * de ellos hace `return { sent: true }` en la línea siguiente al `await`. Devolver un resultado en
+ * vez de lanzar habría hecho que ese `sent: true` se cumpliera **también cuando el correo no sale**
+ * — la mentira exacta que este ticket viene a quitar, introducida al quitarla de otro sitio.
+ *
+ * Lo que sí cambia, y a mejor: sin `RESEND_API_KEY` y sin `SMTP_URL` esto ya **no dice que salió**.
+ * Antes caía a `createMailer()` → `streamTransport`, que escribe en un buffer y resuelve bien, así
+ * que se registraba «email enviado OK» sobre un correo que no existía. El enlace mágico se sigue
+ * imprimiendo en ese caso (SCRUM-39), que es la salida real de dev.
+ */
 async function sendEmail(params: { to: string; subject: string; html: string }) {
-  if (config.RESEND_API_KEY) {
-    await axios.post(
-      'https://api.resend.com/emails',
-      { from: config.EMAIL_FROM, to: [params.to], subject: params.subject, html: params.html },
-      { headers: { Authorization: `Bearer ${config.RESEND_API_KEY}`, 'Content-Type': 'application/json' }, timeout: 10_000 }
-    );
-    return;
-  }
-  const mailer = createMailer();
-  await mailer.sendMail({ from: config.EMAIL_FROM, to: params.to, subject: params.subject, html: params.html });
+  const r = await enviarCorreo({ ...params, origen: 'auth' });
+  if (!r.enviado) throw new Error(`no se pudo enviar el email (${r.motivo || 'desconocido'})`);
+  return r;
 }
 
 function generateToken() {

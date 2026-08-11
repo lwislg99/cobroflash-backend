@@ -2,13 +2,13 @@
 import nodemailer from 'nodemailer';
 import path from 'path';
 import fs from 'fs';
-import axios from 'axios';
 import { PrismaClient } from '@prisma/client';
 import { outboxDir, invoicesDir } from '../../../core/storage/dirs';
 import { config, BASE_URL } from '../../../core/config/env';
 import { ensureInvoicePdf } from '../../../lib/invoicing';
 import { ensureQuoteDecisionToken } from '../../quotes/domain/quoteToken.service'; // SCRUM-95
 import { renderEmailLayout, escEmail } from './emailLayout';
+import { enviarPorResend } from '../../../integrations/enviarCorreo'; // SCRUM-475: el emisor unico
 
 /**
  * Envía la factura al cliente con el PDF adjunto.
@@ -52,20 +52,27 @@ export async function sendInvoiceEmail(args: {
   });
 
   // ── Producción: Resend (HTTP API) con adjunto base64 ──────────────────────
+  //
+  // SCRUM-475 · el POST propio se retira y se llama al emisor único. Se usa `enviarPorResend` y NO
+  // `enviarCorreo` a propósito: este emisor tiene su PROPIO respaldo debajo —el `.eml` del outbox
+  // de dev (SCRUM-76)—, y delegar la política entera se lo llevaría por delante.
+  //
+  // 🔴 Y ahora el acuse del proveedor SALE de aquí: `acuseId` viaja al llamador. Antes la respuesta
+  // era una sentencia suelta y su id se perdía, así que no había forma de volver a preguntar por
+  // este envío concreto.
   if (config.RESEND_API_KEY) {
-    await axios.post(
-      'https://api.resend.com/emails',
-      {
-        from,
-        to: [toEmail],
-        subject,
-        html,
-        // pdfBase64 garantizado no-null por el guard de arriba → el adjunto SIEMPRE viaja.
-        attachments: [{ filename: `${inv.number}.pdf`, content: pdfBase64 }],
-      },
-      { headers: { Authorization: `Bearer ${config.RESEND_API_KEY}`, 'Content-Type': 'application/json' }, timeout: 15_000 },
-    );
-    return { ok: true, resend: true };
+    const r = await enviarPorResend({
+      to: toEmail,
+      subject,
+      html,
+      from,
+      origen: 'factura',
+      timeoutMs: 15_000,
+      // pdfBase64 garantizado no-null por el guard de arriba → el adjunto SIEMPRE viaja.
+      adjuntos: [{ filename: `${inv.number}.pdf`, content: pdfBase64 }],
+    });
+    if (!r.enviado) throw new Error('no se pudo enviar la factura por email');
+    return { ok: true, resend: true, acuseId: r.acuse?.id ?? null };
   }
 
   // ── Dev / sin RESEND: SMTP si hay SMTP_URL; si no, .eml en /public/outbox ──
@@ -143,19 +150,22 @@ export async function sendQuoteEmail(args: { quoteId: number; prisma: PrismaClie
     footnote: 'Podrás revisarlo, firmarlo con el dedo desde el móvil o hacer preguntas.',
   });
 
+  // SCRUM-475 · emisor único, y el acuse sale hacia el llamador. Mismo motivo que en la factura
+  // para usar `enviarPorResend`: debajo vive el respaldo propio del outbox de dev.
   if (config.RESEND_API_KEY) {
-    await axios.post(
-      'https://api.resend.com/emails',
-      {
-        from: config.EMAIL_FROM,
-        to: [toEmail],
-        subject,
-        html,
-        attachments: pdfBase64 ? [{ filename: `presupuesto-${(quote as any).quoteNumber ?? quote.id}.pdf`, content: pdfBase64 }] : undefined,
-      },
-      { headers: { Authorization: `Bearer ${config.RESEND_API_KEY}`, 'Content-Type': 'application/json' }, timeout: 15_000 },
-    );
-    return { ok: true, resend: true };
+    const r = await enviarPorResend({
+      to: toEmail,
+      subject,
+      html,
+      origen: 'presupuesto',
+      timeoutMs: 15_000,
+      // En el presupuesto el adjunto es best-effort: el CTA al enlace /pay/quote es la vía fiable.
+      adjuntos: pdfBase64
+        ? [{ filename: `presupuesto-${(quote as any).quoteNumber ?? quote.id}.pdf`, content: pdfBase64 }]
+        : undefined,
+    });
+    if (!r.enviado) throw new Error('no se pudo enviar el presupuesto por email');
+    return { ok: true, resend: true, acuseId: r.acuse?.id ?? null };
   }
 
   // Dev sin Resend: SMTP o .eml a outbox (mismo patrón que sendInvoiceEmail)

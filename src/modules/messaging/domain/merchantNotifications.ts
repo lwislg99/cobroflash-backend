@@ -1,29 +1,23 @@
 // src/modules/messaging/domain/merchantNotifications.ts
 // Notificaciones por email al merchant: pago recibido, presupuesto aceptado.
-// Usa Resend si hay API key configurada; si no, nodemailer/SMTP.
-import axios from 'axios';
-import { createMailer } from '../../../integrations/mailer';
-import { config } from '../../../core/config/env';
+// SCRUM-475 · Resend o SMTP, pero la decisión ya no vive aquí: la toma el emisor único
+// (`integrations/enviarCorreo.ts`), que además DEVUELVE el acuse del proveedor.
+import { enviarCorreo, ResultadoCorreo } from '../../../integrations/enviarCorreo';
 
-async function sendEmail(to: string, subject: string, html: string): Promise<void> {
-  if (!to || !to.includes('@')) return;
-
-  if (config.RESEND_API_KEY) {
-    await axios.post(
-      'https://api.resend.com/emails',
-      { from: config.EMAIL_FROM, to: [to], subject, html },
-      {
-        headers: { Authorization: `Bearer ${config.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-        timeout: 10_000,
-      },
-    );
-    return;
-  }
-
-  if (config.SMTP_URL) {
-    const mailer = createMailer();
-    await mailer.sendMail({ from: config.EMAIL_FROM, to, subject, html });
-  }
+// 🔴 SIGUE LANZANDO CUANDO NO SALE, Y ES DELIBERADO (SCRUM-475).
+//
+// Antes el `axios.post` lanzaba ante un error HTTP, y de eso dependía el control de flujo de sus
+// llamadores. Devolver un resultado sin lanzar habría roto DOS cosas en silencio:
+//   · los `.catch()` de los llamadores quedarían muertos — un fallo dejaría de registrarse;
+//   · sus TRES llamadores usan `.catch()` para registrar el fallo, y sin excepción no registran
+//     nada: el correo al merchant se perdería sin dejar rastro.
+// Esta fase unifica el EMISOR y rescata el ACUSE; cambiar la semántica de fallo de cinco módulos
+// es otra cosa y no se cuela aquí de tapadillo.
+async function sendEmail(to: string, subject: string, html: string): Promise<ResultadoCorreo> {
+  if (!to || !to.includes('@')) return { enviado: false, motivo: 'sin_destino' };
+  const r = await enviarCorreo({ to, subject, html, origen: 'merchantNotifications' });
+  if (!r.enviado) throw new Error(`no se pudo enviar el email (${r.motivo || 'desconocido'})`);
+  return r;
 }
 
 // ── Pago recibido ──────────────────────────────────────────────────────────
