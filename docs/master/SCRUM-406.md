@@ -205,3 +205,137 @@ Rojos probados, **confirmando primero que la mutación llegó a aplicarse**:
 
 Las dos las cazó el propio rojo, no una revisión: **un rojo que no se pone rojo es indistinguible de
 uno que pasa.**
+
+---
+
+# SCRUM-406 (parte 3) · «Escríbenos»: el otro extremo
+
+**Fecha:** 11-ago-2026 · **Carril:** B · **Tipo:** CONSTRUCCIÓN · **Gate:** sin gate, corre en `npm test`
+
+**Medido contra:** `origin/main` = `b8b8afd9b572cd72c531ad335eb42dfe0948ca43` · 2026-08-11T18:15:40Z
+
+> TERCERA entrada en el MISMO fichero (SCRUM-273): la medición del 10-ago, el canal prometido, y esto.
+> Es lo que se construye tras el reencuadre del fundador: **el botón ya no falta —desde SCRUM-416
+> el «?» está en las 25 cabeceras de modal—; faltaba dónde aterrizar.**
+
+## 1 · Lo que cambió esta tarde, y lo que no
+
+| | 10-ago | Hoy |
+| --- | --- | --- |
+| Puerta con modal abierta | **ninguna** (el FAB se oculta) | «?» en la cabecera de modal (**25 llamadas / 17 ficheros**) |
+| Panel de la guía | `z-index:360`, **detrás** de la modal | `600`, encima (lo subió SCRUM-416) |
+| Qué hay al final del panel | `mailto:` | **formulario** que llega a un buzón, con contexto |
+| Quién lo recibe | **nadie** | `POST /admin/soporte` → Resend |
+
+> ⚠️ **Casi digo que el terreno no había cambiado.** Abrí `SCRUM-416.md`, leí su primera entrega
+> —la que **paró** en (a) sin construir— y estuve a punto de reportar que el «?» seguía igual. El
+> fichero tiene DOS entregas y la segunda (PR #688) sí construyó. Lo destapó mirar los commits del
+> fichero en vez de fiarme de su encabezado.
+
+## 2 · Lo que se construye
+
+**El formulario**, al pie del panel de la guía —la puerta a la que se llega desde el FAB y desde el
+«?» de cualquier modal—. Los cuatro textos aprobados van literales, y la confirmación **no promete
+plazo** a propósito.
+
+**La ruta**, `POST /admin/soporte`, declarada en las **dos** listas que la casa exige:
+
+* `adminRouteDeclarations.ts` — sin rol por encima del default, y por el mismo motivo que
+  `/admin/entorno`: **pedir ayuda no es una capacidad de administración**, y dejarlo admin-only
+  callaría justo al operario que está en la obra.
+* `sendEndpointDeclarations.ts` — la heurística de nombre (`enviar|send|resend`) **no lo habría
+  encontrado**: es el punto ciego nº 2 que ese fichero declara de sí mismo. Se declara a mano.
+
+**El contexto se LEE de donde ya vive.** `AuthSession.instaladaPwa` lo escribe `POST /admin/entorno`
+desde SCRUM-360 (H5 fase 2): aquí no se recoge nada nuevo. Lo único que aporta el cliente es la
+pantalla, que solo él sabe. Una segunda recogida del mismo dato habría dado dos verdades sobre lo
+mismo.
+
+**Y la constante.** `hola@yaqu.app` estaba a mano en seis sitios; el comentario de
+`libroRegistroView.js` ya avisaba: *«el día que cambie hay que cambiarlo en todos, y el que se
+olvide deja un canal muerto sin que nadie se entere»*. Ahora hay una constante por lado
+(`src/core/config/contacto.ts`, `public/dashboard/js/contacto.js`).
+
+> 🔴 **Las dos páginas legales conservan el literal, y es deliberado.** Son HTML estático:
+> sustituirlo por algo que rellena JavaScript significaría que **un fallo de JS deja una página
+> legal sin la vía de contacto que el RGPD exige**. Cambiar seis literales por cinco más una
+> dependencia de JS en la página legal no es una mejora. Lo que impide la divergencia es el guard.
+
+## 3 · 🔴 El suelo: que se entere si no sale
+
+Un formulario que se traga el error y dice «enviado» es **peor que el `mailto:` que sustituye** —
+aquel al menos le deja el correo escrito delante. Se cierra en los **tres** sitios donde se rompe:
+
+1. **El envío.** Sin `RESEND_API_KEY` y sin `SMTP_URL`, `createMailer()` cae a `streamTransport`,
+   que escribe el correo **en un buffer en memoria y resuelve BIEN**. Un `sendMail` que triunfa
+   contra un buffer es la forma que tiene «no configurado» de disfrazarse de «enviado»: se devuelve
+   `sin_transporte`, no éxito.
+2. **La ruta.** `sent: false` con el texto canónico de `SEND_FAILURE_MESSAGES` (SCRUM-126). El 200
+   no es la respuesta a «¿salió?».
+3. **La pantalla.** La confirmación aprobada solo se pinta con `r.sent === true`, y en el fallo
+   **no se borra lo que escribió** y reaparece el `mailto:` como salida.
+
+### Una decisión sobre el tercer estado, declarada
+
+SCRUM-459 marca la mutación vencida como `incierto` —«no sé si llegó»— y avisa de que decir «no
+salió» invita a repetir. **Nadie consume esa marca todavía y no hay copy aprobada para ese estado.**
+Aquí se trata como fallo, a propósito: lo que se repetiría es **un correo de soporte**, y recibirlo
+dos veces no cuesta nada, mientras que callarse deja al profesional sin saber si alguien le va a
+contestar. **En una firma o un cobro la decisión sería la contraria.** Si el fundador quiere un
+tercer texto, es una línea.
+
+## 4 · Los ocho rojos, vistos fallar
+
+Control positivo previo: árbol limpio, **3.150 tests, 0 fallos**.
+
+| Se rompe… | El guard dice… |
+| --- | --- |
+| se quita el destinatario interno | *«NO HAY DIRECCIÓN DE CONTACTO… diría "Lo hemos recibido" sobre un correo que no sale de la máquina»* |
+| el destino depende solo de la env | *«SIN `SOPORTE_EMAIL` NO HAY DESTINO… una env que falta se lee igual que una cadena vacía»* |
+| la pantalla confirma sin mirar `sent` | *«LA CONFIRMACIÓN SE PINTA SIN COMPROBAR `sent` (condición: «r && r.ok»)»* |
+| la ruta responde éxito igualmente | *«LA RUTA NO DEVUELVE UN FALLO CUANDO EL CORREO NO SALE»* |
+| «sin transporte» cuenta como enviado | *«…`streamTransport` escribe en un buffer y resuelve BIEN»* |
+| el contexto deja de viajar | *«EL CORREO NO LLEVA EL MERCHANT ("22")… no vale más que el `mailto:`»* |
+| la dirección diverge en un sitio | *«HAY MÁS DE UNA DIRECCIÓN DE CONTACTO VIVA: soporte@yaqu.app, hola@yaqu.app»* |
+| se toca el FAB del 6-jul | *«…es decisión del fundador del 6-jul y no es de este ticket»* |
+
+## 5 · Dos guards de la casa me cazaron, y los dos tenían razón
+
+* **SCRUM-274** — el shell del service worker lleva **todos** los `<script>` del dashboard. Sin
+  añadir `contacto.js`, la primera visita **sin cobertura** se queda sin la dirección de contacto, y
+  **con red no se nota nada**.
+* **SCRUM-406 (canal prometido)** — el banco del libro registro monta su propio contexto y no
+  cargaba `contacto.js`. Es literalmente lo que avisa su párrafo de SCRUM-436: *un banco al que le
+  falta un `<script>` simula un navegador roto, y su rojo no sería del producto*.
+
+Y un tercero, **SCRUM-348**, marcó la lectura de `AuthSession` como «sin filtro en ruta
+autenticada». Clasificarla como PROCEDENCIA habría subido su trinquete de 5 a 6 — **y el trinquete
+solo baja**. `AuthSession` sí tiene `merchantId`, así que la lectura pasa a `findFirst` con su
+filtro y **la deuda no crece**.
+
+> Y van **siete**: el censo de direcciones salió rojo contra `env.ts:82`, un **comentario** que pone
+> «Ej: "luis@yaqu.app,otro@yaqu.app"». Ahora mira solo `mailto:` y la constante, sobre código sin
+> comentarios.
+
+## 6 · Lo que NO se ha tocado
+
+El FAB y su `display:none` con modal abierta (decisión del 6-jul) · `prisma/schema.prisma` —
+**ningún modelo `SoporteMensaje`: eso es el camino 3** · las dos páginas legales · el panel de la
+guía, que sigue con sus acordeones y su `mailto:` · los **dos sitios sin puerta** que declaró
+SCRUM-416 (firma con overlay `z-1200` y onboarding con `z-300`), que no son de este ticket.
+
+## 7 · Hallazgo, reportado y no arreglado (regla 37)
+
+**Hay SEIS copias del POST a Resend** en el árbol —`auth.service`, `email.service` ×2,
+`lifecycle.service`, `merchantNotifications`, `weeklyDigest`— y **ningún enviador compartido**:
+cada una arma su propio documento. No se migran aquí (ni es mi zona, ni me bloquea, ni cabe en este
+PR). `src/integrations/enviarCorreo.ts` nace **genérico a propósito** para que la séptima no vuelva
+a nacer suelta.
+
+## 8 · Tests que corren
+
+- `tests/scrum406-escribenos.test.mjs` — 11 tests (contexto, destino, suelo ×3, copy, constante,
+  control negativo de legales/guía/FAB)
+- `tests/scrum406-canal-prometido-existe.test.mjs` — el banco carga ahora `contacto.js`
+
+Suite completa: **3.150 tests, 0 fallos**. `guards:entrada` y `guard:prisma` en verde.
