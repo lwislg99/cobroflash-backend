@@ -406,3 +406,61 @@ Rojos probados **confirmando antes que la mutación se aplicó**:
 probado en rojo**: la inyección no llegó a aplicarse y un rojo que no se aplica no cuenta. El test
 existe por un motivo real: **al insertar el bloque borré esa línea sin querer**, y lo cazó la
 relectura. Queda pendiente probarlo en rojo.
+
+---
+
+# SCRUM-285 (fase 3) · el enlace cobro → factura, y el rojo que faltaba
+
+**Fecha:** 11-ago-2026 · **Carril:** B · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `62e57bffe2ea96fc6bdee4d396c07960e9a99273` · 2026-08-11T03:40:00+02:00
+
+> Apéndice. No se toca una línea de las tres entregas anteriores (SCRUM-273).
+
+## ① El enlace COBRO → FACTURA
+
+**El hueco no estaba en ninguna lista.** Salió de leer esta entrada entera: la fase 2 declaraba
+resuelto el sentido factura→cobro y **nadie había escrito que el contrario faltaba**.
+
+Y las dos direcciones son decisiones distintas, no simetría:
+
+| Sentido | Decisión | Motivo |
+| --- | --- | --- |
+| factura → cobro | **sin enlace, a propósito** | no existe ficha de cobro (`charge-detail` no está en el dispatch) |
+| **cobro → factura** | **enlace** | el destino existe (`invoice-detail`)… y **el dato también** |
+
+**`invoiceId` ya viajaba en el payload** (`cobros.service.ts:79`) y **la vista no lo usaba**. El
+arreglo no añade un campo: enciende uno que llevaba tiempo llegando a la pantalla sin que nadie lo
+leyera. Mecanismo reutilizado de `jobDetailView.js:84` — estado + `renderAppView`, sin inventar
+navegación.
+
+**Control negativo, que es la mitad del ticket:** el dinero marcado A MANO llega con
+`invoiceId: null` (`cobros.service.ts:190`) y **no pinta enlace**. O está el destino, o no está el
+enlace.
+
+## ② El rojo que esta misma entrada declaraba pendiente
+
+La fase 2 cerró diciendo *«Queda pendiente probarlo en rojo»* (L408) sobre el cuarto test —el que
+vigila que el TOTAL siga pintándose—. **Ya está probado**: borrado el `appendChild(totalBlock)`
+(mutación confirmada, `antes: 1 · después: 0`), el test cae nombrándolo. Restaurado y verde.
+
+Un rojo sin ejecutar se lee exactamente igual que uno que pasa.
+
+## Los rojos de esta fase
+
+| Inyección | Cae |
+| --- | --- |
+| la navegación apunta a otra vista | `🔴 POSITIVO: desde un cobro con factura se navega a SU factura` |
+| el enlace se pinta siempre (`if (true)`) | `🔴 NEGATIVO: un cobro SIN factura no pinta enlace` |
+| se borra el `appendChild` del total (fase 2) | `el total sigue pintándose` |
+
+### El primer rojo no cayó, y por qué
+
+La aserción buscaba la cadena `invoice-detail` **a secas**, y casaba con el **comentario** que
+explica el enlace: el guard se acusaba a sí mismo y pasaba con el fallo puesto. Corregido a exigir
+el MECANISMO (`renderAppView('invoice-detail')`) sobre el código **sin líneas de comentario**.
+Es la misma trampa de SCRUM-129, y van cinco.
+
+## Lo que queda de SCRUM-285
+
+**Nada de código.** Solo `AB6 · matriz de dispositivos y capturas`, aparcado por decisión del
+fundador y declarado en el ticket.
