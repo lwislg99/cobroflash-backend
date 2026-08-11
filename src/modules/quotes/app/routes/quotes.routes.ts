@@ -19,6 +19,8 @@ import { resolveBillingPlan, distributeStageAmounts, validateCustomBillingPlan }
 import { allocateQuoteNumber, displayQuoteNumber } from '../../domain/quoteNumber.service';
 import { isQuoteExpired } from '../../domain/expire.service';
 import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/merchantNotifications';
+// SCRUM-477: un aviso que no sale deja constancia -- y sin poder tumbar la operacion.
+import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 import { getSession } from '../../../auth/domain/auth.service';
 
 // Lee el teamMemberId de la sesión (si hay cookie válida) para atribuir el creador.
@@ -291,14 +293,16 @@ router.post('/:token/accept', decisionLimiter, async (req, res) => {
 
     // Email al merchant si tiene notificaciones de aceptación activadas
     if (quote.merchant?.notifyEmailOnQuoteAccepted && quote.merchant?.email) {
-      sendMerchantQuoteAcceptedEmail({
+      // SCRUM-477 · ⚠️ SIGUE SIN `await`: el presupuesto ya está aceptado y un aviso que no sale
+      // NO puede tumbar la aceptación. Lo que cambia es que ahora el fallo deja constancia.
+      conConstancia('presupuesto_aceptado', quote.merchant.email, sendMerchantQuoteAcceptedEmail({
         merchantEmail: quote.merchant.email,
         merchantName:  quote.merchant.name || 'Tu negocio',
         customerName:  quote.customer?.name || 'Cliente',
         quoteId: quote.quoteNumber ?? quote.id, // A1.2: solo display en el email
         total: Number(quote.total).toFixed(2),
         currency: quote.currency,
-      }).catch(() => {});
+      }));
     }
 
     return res.json({
